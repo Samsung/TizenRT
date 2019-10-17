@@ -24,13 +24,13 @@
 ** file at : https://github.com/erikd/libsamplerate/blob/master/COPYING
 */
 
-#include	<stdio.h>
-#include	<stdint.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<math.h>
-#include	"samplerate.h"
-#include	"../../utils/remix.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include "samplerate.h"
+#include "../../utils/remix.h"
 
 
 /****************************************************************************
@@ -56,7 +56,7 @@
 #define FRACPART_VALUE(x)   ((x) & 0xffff)
 
 // Calculate new sample data
-#define CALC_NEW_SAMPLE(s1, s2, part) ((s1) + ((((s2) - (s1)) * (int32_t)(part)) >> 16))
+#define CALC_NEW_SAMPLE(s1, s2, part) ((s1) + INTPART_VALUE(((s2) - (s1)) * (int32_t)(part)))
 
 // Convert sample width in bytes
 #define BYTES_PER_SAMPLE(bits_per_sample)   ((bits_per_sample) >> 3)
@@ -73,9 +73,6 @@
 #define FLOAT_ACCURACY      (0.000001f)
 #define FLOAT_EQUAL(a, b)   (fabsf((a)-(b)) < FLOAT_ACCURACY)
 
-#define NUM_COEFF_16KHZ (sizeof(filter_16khz_coeff) / sizeof(filter_16khz_coeff[0]))
-#define OVERLAP_16KHZ   (NUM_COEFF_16KHZ - 1)
-
 #define NUM_COEFF_22KHZ (sizeof(filter_22khz_coeff) / sizeof(filter_22khz_coeff[0]))
 #define OVERLAP_22KHZ   (NUM_COEFF_22KHZ - 2)
 
@@ -90,44 +87,49 @@
 	} while (0)
 
 // Count bytes of the given frames
-#define NEW_FRAMES_TO_BYTES(frames) ((frames) * new_channel_num * bytes_per_sample)
+#define OLD_FRAMES_TO_BYTES(src, frames) ((frames) * (src)->old_channel_num * BYTES_PER_SAMPLE((src)->old_sample_width))
+#define NEW_FRAMES_TO_BYTES(src, frames) ((frames) * (src)->new_channel_num * BYTES_PER_SAMPLE((src)->new_sample_width))
+
+// Check src context initialized or not
+#define CHECK_SRC_CONTEXT_INIT(src) ((src)->in_buffer != NULL)
 
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
 /**
- * @structure resampler_s: main structure used for SRC, it contains context
+ * @structure src_context_s: main structure used for SRC, it contains context
  *            variables used between src_simple() calls.
  * @brief It's internal structure, user can only get the handler via src_init().
  */
-struct resampler_s {
+struct src_context_s {
 	int16_t *in_buffer;     // pointer to the internal input buffer allocated
 	int16_t *out_buffer;    // pointer to the external output buffer assigned
 	int in_buffer_bytes;    // internal input buffer capability in bytes
 	int in_buffer_frames;   // internal input buffer capability in frames
-	int out_buffer_frames;  // external output buffer capability in frames
 	int left_frames;        // number of frames remained in internal input buffer
 	int used_frames;        // number of frames used in internal input buffer
-	int channels_num;       // number of channels of input PCM samples
-	float lastratio;        // memorize last sample rate coversion ratio
-	int lastoldformat;      // memorize last origin sample width(format)
-	int lastnewformat;      // memorize last desired sample width(format)
+	int old_channel_num;    // memorize old channel number
+	int new_channel_num;    // memorize new channel number
+	int old_sample_rate;    // memorize old sample rate
+	int new_sample_rate;    // memorize new sample rate
+	int old_sample_width;   // memorize old sample width(format)
+	int new_sample_width;   // memorize new sample width(format)
+	const int *filter_coeff;// pointer to filter coefficient array
+	int overlap_frames;     // number of overlap frames reserved in internal buffer
+	float ratio;            // (float)new_sample_rate / (float)old_sample_rate
+	float inverse_ratio;    // (float)old_sample_rate / (float)new_sample_rate
+	uint32_t fp_frac;       // fraction part value of last fixed point index
+	/**
+	 * @brief   Function pointer to resampling process function
+	 * @param   src_context_t *: pointer to resampler object.
+	 * @param   int32_t *: give number of frames available for converting
+	 *                     and retrieve number of frames used actually.
+	 * @return  number of frames generated
+	 */
+	int32_t (*src_func)(struct src_context_s *, int32_t *);
 };
 
-typedef struct resampler_s resampler_t;
-
-/**
- * 16.16 fixed point FIR filter coefficients for conversion 44100 -> 32000,
- * 22050 -> 16000, or 11025 -> 8000.
- */
-static const int32_t filter_16khz_coeff[] = {
-	2057290, -2973608, 1880478, 4362037,
-	-14639744, 18523609, -1609189, -38502470,
-	78073125, -68353935, -59103896, 617555440,
-	617555440, -59103896, -68353935, 78073125,
-	-38502470, -1609189, 18523609, -14639744,
-	4362037, 1880478, -2973608, 2057290,
-};
+typedef struct src_context_s src_context_t;
 
 /**
  * 16.16 fixed point FIR filter coefficients for conversion 44100 -> 22050.
@@ -183,192 +185,183 @@ static int16_t clip(int32_t x)
 }
 
 /**
- * @brief   It handles samplerate up scaling in ratio 2.0/3.0... without fraction.
- * @remarks ratio 2.0/3.0..., e.g. 16K->32K, 16K->48K, 22.05K->44.1K...
- * @param   src: pointer to resampler object.
- * @param   num_frames_out: number of frames will be stored in output buffer.
- * @param   quoti: quotient of target samplerate being divided by original samplerate.
- * @return  void
- * @see     upresample_frac()
+ * It handles sample rate up scaling in all ratio cases (i.e. inverse ratio 0.*)
+ * and sample rate down scaling cases in inverse ratio 1.* and 2.* with fraction.
  */
-static void upresample_int(resampler_t *src, int32_t num_frames_out, int32_t quoti)
+static int32_t resample_frac(src_context_t *src, int32_t *num_frames_in)
 {
+	int32_t num_frames_out = (int32_t)((float)*num_frames_in * src->ratio);
 	const int16_t *input = src->in_buffer;
 	int16_t *output = src->out_buffer;
-	int32_t channels_num = src->channels_num;
-	float step_float = (float)1 / (float)quoti;
-	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	int32_t channels_num = src->new_channel_num;
+	uint32_t step = TO_16_16_FIXED(src->inverse_ratio);
+	uint32_t fp_index = src->fp_frac;
+	uint32_t whole, frac;
+	int32_t i, j, s1, s2;
 
-	int32_t j;
-	for (j = 0; j < num_frames_out; ++j, fp_index += step) {
-		uint32_t whole = INTPART_VALUE(fp_index);
-		uint32_t part = FRACPART_VALUE(fp_index);
-		int32_t k;
-		for (k = 0; k < channels_num; k++) {
-			int32_t s1 = input[whole * channels_num + k];
-			int32_t s2 = input[(whole + 1) * channels_num + k];
-			*output++ = clip(CALC_NEW_SAMPLE(s1, s2, part));
+	for (i = 0; i < num_frames_out; ++i, fp_index += step) {
+		whole = INTPART_VALUE(fp_index);
+		frac = FRACPART_VALUE(fp_index);
+		for (j = 0; j < channels_num; j++) {
+			s1 = input[whole * channels_num + j];
+			s2 = input[(whole + 1) * channels_num + j];
+			*output++ = clip(CALC_NEW_SAMPLE(s1, s2, frac));
 		}
 	}
+
+	*num_frames_in = INTPART_VALUE(fp_index);
+	src->fp_frac = FRACPART_VALUE(fp_index);;
+	return num_frames_out;
 }
 
 /**
- * @brief   It handles samplerate up scaling in ratio 1.*,2.*... with fraction.
- * @remarks ratio 1.*,2.* ..., e.g. 16K->24K, 11.025->16K, 11.025->24K ...
- * @param   src: pointer to resampler object.
- * @param   num_frames_out: number of frames will be stored in output buffer.
- * @param   frac: ratio of target samplerate being divided by original samplerate.
- * @return  void
- * @see     upresample_int()
+ * It handles sample rate down scaling cases in inverse ratio 2.0 and 3.0 without fraction.
+ * This function has same logic as resample_frac(), that means resample_frac() also works,
+ * but downresample_int() is more efficient in special inverse ratio 2.0 and 3.0 cases.
+ * Optimization: The fraction value of fp_index is always 0, so remove unnecessary calculation.
  */
-static void upresample_frac(resampler_t *src, int32_t num_frames_out, int32_t quoti, float frac)
+static int32_t downresample_int(src_context_t *src, int32_t *num_frames_in)
 {
+	int32_t quotient = (int32_t)src->inverse_ratio;
+	*num_frames_in = *num_frames_in / quotient * quotient;
+	int32_t num_frames_out = *num_frames_in / quotient;
+
 	const int16_t *input = src->in_buffer;
 	int16_t *output = src->out_buffer;
-	int32_t channels_num = src->channels_num;
-	float step_float = frac;
-	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	int32_t channels_num = src->new_channel_num;
+	uint32_t step = TO_16_16_FIXED(quotient);
+	uint32_t fp_index = 0;
+	uint32_t whole;
+	int32_t i, j;
 
-	int32_t j;
-	for (j = 0; j < num_frames_out; ++j, fp_index += step) {
-		uint32_t whole = INTPART_VALUE(fp_index);
-		uint32_t part = FRACPART_VALUE(fp_index);
-		int32_t k;
-		for (k = 0; k < channels_num; k++) {
-			int32_t s1 = input[(whole / quoti) * channels_num + k];
-			int32_t s2 = input[((whole + 1) / quoti) * channels_num + k];
-			*output++ = clip(CALC_NEW_SAMPLE(s1, s2, part));
+	for (i = 0; i < num_frames_out; ++i, fp_index += step) {
+		whole = INTPART_VALUE(fp_index);
+		for (j = 0; j < channels_num; j++) {
+			*output++ = input[whole * channels_num + j];
 		}
 	}
+
+	return num_frames_out;
 }
 
 /**
- * @brief   It handles samplerate down scaling in ratio 1.* with fraction.
- * @remarks ratio 1.*, e.g. 24K->16K, 16K->11.025K, ...
+ * @brief   Do filtering once new frames added to internal buffer.
  * @param   src: pointer to resampler object.
- * @param   num_frames_out: number of frames will be stored in output buffer.
- * @param   frac: ratio of orig samplerate being divided by target samplerate.
- * @return  void
- * @see
+ * @param   num_frames_add: number of frames added
  */
-static void downresample_frac(resampler_t *src, int32_t num_frames_out, float frac)
+static void convolution_filtering(src_context_t *src, int32_t num_frames_add)
 {
-	const int16_t *input = src->in_buffer;
-	int16_t *output = src->out_buffer;
-	int32_t channels_num = src->channels_num;
-	float step_float = frac;
-	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	if ((src->filter_coeff != NULL) && (src->left_frames > src->overlap_frames)) {
+		int16_t *input;
+		int32_t samples;
+		if (src->left_frames == num_frames_add) {
+			input = src->in_buffer;
+			samples = (num_frames_add - src->overlap_frames) * src->new_channel_num;
+		} else {
+			input = src->in_buffer + src->left_frames - num_frames_add - src->overlap_frames;
+			samples = num_frames_add * src->new_channel_num;
+		}
 
-	int32_t j;
-	for (j = 0; j < num_frames_out; ++j, fp_index += step) {
-		uint32_t whole = INTPART_VALUE(fp_index);
-		uint32_t part = FRACPART_VALUE(fp_index);
-		int32_t k;
-		for (k = 0; k < channels_num; k++) {
-			int32_t s1 = input[whole * channels_num + k];
-			int32_t s2 = input[(whole + 1) * channels_num + k];
-			*output++ = clip(CALC_NEW_SAMPLE(s1, s2, part));
+		int32_t i;
+		for (i = 0; i < samples; ++i) {
+			input[i] = fir_convolve(input + i, src->filter_coeff, src->overlap_frames, src->new_channel_num);
 		}
 	}
 }
 
 /**
- * @brief   It handles samplerate down scaling in ratio 2.0/3.0 without fraction.
- * @remarks ratio 2.0/3.0, e.g. 48K->16K, 48K->24K, 44.1K->22.05K...
+ * @brief   Check validation of the given src_data.
  * @param   src: pointer to resampler object.
- * @param   num_frames_in: number of frames in above input buffer.
- * @param   quoti: quotient of orig samplerate being divided by target samplerate, it is the ratio mentioned above.
- * @return  void
- * @see     downresample_2_1_filter_frac()
+ * @param   src_data: pointer to the user given src_data_t structure
+ * @return  0 on success, negative value means failure.
  */
-static void downresample_int(resampler_t *src, int32_t num_frames_in, int32_t quoti)
+static int check_src_data(src_context_t *src, src_data_t *src_data)
 {
-	const int16_t *input = src->in_buffer;
-	int16_t *output = src->out_buffer;
-	int32_t channels_num = src->channels_num;
-	int32_t num_samples_in = num_frames_in * channels_num;
+	RETURN_VAL_IF_FAIL((src_data != NULL), SRC_ERR_BAD_PARAMS);
+	RETURN_VAL_IF_FAIL(((src_data->data_in != NULL) && (src_data->data_out != NULL)), SRC_ERR_BAD_PARAMS);
 
-	int32_t i;
-	for (i = 0; i < num_samples_in; i += quoti) {
-		output[i / quoti] = clip(fir_convolve(input + i, filter_22khz_coeff, NUM_COEFF_22KHZ, channels_num));
+	if (!CHECK_SRC_CONTEXT_INIT(src)) {
+		// Check supported converting ratio
+		if (!src_is_valid_ratio((float)src_data->desired_sample_rate / (float)src_data->origin_sample_rate)) {
+			return SRC_ERR_BAD_SRC_RATIO;
+		}
+		// Check supported input multichannels number: 1-Mono/.../6-5.1 Stereo
+		RETURN_VAL_IF_FAIL(((src_data->origin_channel_num >= 1) && (src_data->origin_channel_num <= 6)), SRC_ERR_BAD_CHANNEL_COUNT);
+		// Check supported output channel: 1-Mono/2-Stereo
+		RETURN_VAL_IF_FAIL(((src_data->desired_channel_num == 1) || (src_data->desired_channel_num == 2)), SRC_ERR_BAD_CHANNEL_COUNT);
+		// Check supported sample width: SAMPLE_WIDTH_16BITS
+		RETURN_VAL_IF_FAIL((src_data->origin_sample_width == SAMPLE_WIDTH_16BITS), SRC_ERR_NOT_SUPPORT);
+		// Check supported format conversion: Not support!
+		RETURN_VAL_IF_FAIL((src_data->origin_sample_width == src_data->desired_sample_width), SRC_ERR_NOT_SUPPORT);
+	} else {
+		// Old/New sample rate, sample width and channel number must stay the same.
+		RETURN_VAL_IF_FAIL((src->old_sample_rate == src_data->origin_sample_rate), SRC_ERR_NOT_SUPPORT);
+		RETURN_VAL_IF_FAIL((src->new_sample_rate == src_data->desired_sample_rate), SRC_ERR_NOT_SUPPORT);
+		RETURN_VAL_IF_FAIL((src->old_channel_num == src_data->origin_channel_num), SRC_ERR_NOT_SUPPORT);
+		RETURN_VAL_IF_FAIL((src->new_channel_num == src_data->desired_channel_num), SRC_ERR_NOT_SUPPORT);
+		RETURN_VAL_IF_FAIL((src->old_sample_width == src_data->origin_sample_width), SRC_ERR_NOT_SUPPORT);
+		RETURN_VAL_IF_FAIL((src->new_sample_width == src_data->desired_sample_width), SRC_ERR_NOT_SUPPORT);
 	}
+
+	return SRC_ERR_NO_ERROR;
 }
 
 /**
- * @brief   It handles samplerate down scaling in special ratio.
- * @remarks The special ratio is 1.*, e.g. 44.1K->32K, 22.05K->16K, 11.025K->8K
+ * @brief   Initialize src context members before first use (converting).
  * @param   src: pointer to resampler object.
- * @param   num_frames_in: number of frames in above input buffer.
- * @param   num_frames_out: number of frames will be stored in output buffer.
- * @return  void
- * @see
+ * @param   src_data: pointer to the user given src_data_t structure
+ * @return  0 on success, negative value means failure.
  */
-static void downresample_441_320(resampler_t *src, int32_t num_frames_in, int32_t num_frames_out)
+static int init_src_context(src_context_t *src, src_data_t *src_data)
 {
-	int16_t *input = src->in_buffer;
-	int16_t *output = src->out_buffer;
-	int32_t channels_num = src->channels_num;
-	int32_t num_samples_in = num_frames_in * channels_num;
-	float step_float = DOWN_RESAMPLE_441_320_RATIO;
-	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	// Allocate internal buffer
+	src->in_buffer = (int16_t *)malloc(src->in_buffer_bytes);
+	RETURN_VAL_IF_FAIL((src->in_buffer != NULL), SRC_ERR_MALLOC_FAILED);
 
-	int32_t i;
-	for (i = 0; i < num_samples_in; ++i) {
-		input[i] = fir_convolve(input + i, filter_16khz_coeff, OVERLAP_16KHZ, channels_num);
-	}
+	// Initialize other members
+	src->old_channel_num = src_data->origin_channel_num;
+	src->new_channel_num = src_data->desired_channel_num;
+	src->old_sample_width = src_data->origin_sample_width;
+	src->new_sample_width = src_data->desired_sample_width;
+	src->old_sample_rate = src_data->origin_sample_rate;
+	src->new_sample_rate = src_data->desired_sample_rate;
+	src->in_buffer_frames = src->in_buffer_bytes / OLD_FRAMES_TO_BYTES(src, 1);
+	src->left_frames = 0;
+	src->used_frames = 0;
+	src->fp_frac = 0;
 
-	int32_t j;
-	for (j = 0; j < num_frames_out; ++j, fp_index += step) {
-		uint32_t whole = INTPART_VALUE(fp_index);
-		uint32_t part = FRACPART_VALUE(fp_index);
-		int32_t k;
-		for (k = 0; k < channels_num; k++) {
-			int32_t s1 = input[whole * channels_num + k];
-			int32_t s2 = input[(whole + 1) * channels_num + k];
-			*output++ = clip(CALC_NEW_SAMPLE(s1, s2, part));
+	// Calculate converting ratio for later use
+	src->ratio = (float)src->new_sample_rate / (float)src->old_sample_rate;
+	src->inverse_ratio = (float)src->old_sample_rate / (float)src->new_sample_rate;
+
+	// Set overlap frame number and converting function as per converting ratio
+	if (src->old_sample_rate > src->new_sample_rate) {
+		// down resampling
+		if (src->old_sample_rate % src->new_sample_rate == 0) {
+			// inverse ratio 2.0/3.0 cases. e.g. 48K->16K, 48K->24K, 44.1K->22.05K, ...
+			src->filter_coeff = filter_22khz_coeff;
+			src->overlap_frames = OVERLAP_22KHZ;
+			src->src_func = downresample_int;
+		} else if ((int)src->inverse_ratio >= 2) {
+			// inverse ratio 2.* cases. e.g. 48K->22.05K, 44.1K->16K, 24K->11.025K, ...
+			src->filter_coeff = filter_22khz_coeff;
+			src->overlap_frames = OVERLAP_22KHZ;
+			src->src_func = resample_frac;
+		} else {
+			// inverse ratio 1.* cases. e.g. 48K->44.1K, 44.1K->32K, 44.1K->24K, ...
+			src->filter_coeff = NULL;
+			src->overlap_frames = OVERLAP_DEFAULT;
+			src->src_func = resample_frac;
 		}
-	}
-}
-
-/**
- * @brief   It handles samplerate down scaling in ratio 2.* with fraction.
- * @remarks ratio 2.*, e.g. 48K->22.05K, 44.1K->16K, 24K->11.025K ...
- * @param   num_frames_in: number of frames in above input buffer.
- * @param   num_frames_out: number of frames will be stored in output buffer.
- * @param   frac: ratio of orig samplerate being divided by target samplerate, it has fraction value.
- * @return  void
- * @see     downresample_int()
- */
-static void downresample_2_1_filter_frac(resampler_t *src, int32_t num_frames_in, int32_t num_frames_out, float frac)
-{
-	int16_t *input = src->in_buffer;
-	int16_t *output = src->out_buffer;
-	int32_t channels_num = src->channels_num;
-	int32_t num_samples_in = num_frames_in * channels_num;
-	float step_float = frac;
-	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
-
-	int32_t i;
-	for (i = 0; i < num_samples_in; ++i) {
-		input[i] = fir_convolve(input + i, filter_22khz_coeff, OVERLAP_22KHZ, channels_num);
+	} else {
+		// up resampling
+		src->filter_coeff = NULL;
+		src->overlap_frames = OVERLAP_DEFAULT;
+		src->src_func = resample_frac;
+		// TODO: Noises appeared in ratio 2.* cases, consider fir-filtering after converting process
 	}
 
-	int32_t j;
-	for (j = 0; j < num_frames_out; ++j, fp_index += step) {
-		uint32_t whole = INTPART_VALUE(fp_index);
-		uint32_t part = FRACPART_VALUE(fp_index);
-		int32_t k;
-		for (k = 0; k < channels_num; k++) {
-			int32_t s1 = input[whole * channels_num + k];
-			int32_t s2 = input[(whole + 1) * channels_num + k];
-			*output++ = clip(CALC_NEW_SAMPLE(s1, s2, part));
-		}
-	}
+	return SRC_ERR_NO_ERROR;
 }
 
 /****************************************************************************
@@ -376,30 +369,24 @@ static void downresample_2_1_filter_frac(resampler_t *src, int32_t num_frames_in
  ****************************************************************************/
 src_handle_t src_init(int size)
 {
-	resampler_t *src = (resampler_t *)malloc(sizeof(resampler_t));
+	src_context_t *src = (src_context_t *)malloc(sizeof(src_context_t));
 	RETURN_VAL_IF_FAIL((src != NULL), NULL);
 
 	// max frame size for 2(max) channels
 	int max_frame_size = BYTES_PER_SAMPLE(SAMPLE_WIDTH_MAX) * 2;
 	// frame size aligned
 	src->in_buffer_bytes = (((size + max_frame_size - 1) / max_frame_size) * max_frame_size);
-
 	src->in_buffer_frames = 0;
 	src->in_buffer = NULL;
-
-	src->out_buffer_frames = 0;
-	src->out_buffer = NULL;
-
-	src->used_frames = 0;
-	src->left_frames = 0;
-	src->lastratio = 0.0f;
+	// Other members will be initilized before first use,
+	// as soon as in_buffer allocated in init_src_context().
 
 	return (src_handle_t)src;
 }
 
 int src_destroy(src_handle_t handle)
 {
-	resampler_t *src = (resampler_t *)handle;
+	src_context_t *src = (src_context_t *)handle;
 	RETURN_VAL_IF_FAIL((src != NULL), SRC_ERR_BAD_PARAMS);
 
 	free(src->in_buffer);
@@ -420,197 +407,79 @@ bool src_is_valid_ratio(float ratio)
 
 int src_simple(src_handle_t handle, src_data_t *src_data)
 {
-	// Check validation of input params
-	RETURN_VAL_IF_FAIL((handle != NULL && src_data != NULL), SRC_ERR_BAD_PARAMS);
-	RETURN_VAL_IF_FAIL((src_data->data_in != NULL && src_data->data_out != NULL), SRC_ERR_BAD_PARAMS);
+	// Convert and check src_handle
+	src_context_t *src = (src_context_t *)handle;
+	RETURN_VAL_IF_FAIL((src != NULL), SRC_ERR_BAD_PARAMS);
 
-	int old_sample_rate = src_data->origin_sample_rate;
-	int new_sample_rate = src_data->desired_sample_rate;
-	int old_sample_width = src_data->origin_sample_width;
-	int new_sample_width = src_data->desired_sample_width;
-	int old_channel_num = src_data->origin_channel_num;
-	int new_channel_num = src_data->desired_channel_num;
-	int bytes_per_sample = BYTES_PER_SAMPLE(old_sample_width);
+	// Check validation of src_data
+	int ret = check_src_data(src, src_data);
+	RETURN_VAL_IF_FAIL((ret == SRC_ERR_NO_ERROR), ret);
 
-	// Check supported multichannels number
-	RETURN_VAL_IF_FAIL((old_channel_num >= 1 && old_channel_num <= 6), SRC_ERR_BAD_CHANNEL_COUNT);
+	// Calculate output buffer capability
+	int bps = BYTES_PER_SAMPLE(src_data->origin_sample_width);
+	int out_buffer_frames = src_data->out_buf_length / (bps * src_data->desired_channel_num);
+	RETURN_VAL_IF_FAIL((out_buffer_frames > 0), SRC_ERR_BAD_PARAMS);
 
-	// Check supported output channel: 1-Mono/2-Stereo
-	RETURN_VAL_IF_FAIL((new_channel_num == 1 || new_channel_num == 2), SRC_ERR_BAD_CHANNEL_COUNT);
-
-	// Check supported sample width: SAMPLE_WIDTH_16BITS
-	RETURN_VAL_IF_FAIL((old_sample_width == SAMPLE_WIDTH_16BITS), SRC_ERR_NOT_SUPPORT);
-
-	// Check supported format conversion: Not support!
-	RETURN_VAL_IF_FAIL((old_sample_width == new_sample_width), SRC_ERR_NOT_SUPPORT);
-
-	// Check supported resampling ratio
-	float src_ratio = (float)new_sample_rate / (float)old_sample_rate;
-	src_data->src_ratio = src_ratio;
-	if (src_is_valid_ratio(src_ratio) == false) {
-		return SRC_ERR_BAD_SRC_RATIO;
+	// If the sample rate is same, direct to rechannel()
+	int frames;
+	if (src_data->origin_sample_rate == src_data->desired_sample_rate) {
+		frames = rechannel(ch2layout(src_data->origin_channel_num), ch2layout(src_data->desired_channel_num), \
+						(const int16_t *)src_data->data_in, src_data->input_frames, \
+						(int16_t *)src_data->data_out, out_buffer_frames);
+		RETURN_VAL_IF_FAIL((frames > 0), SRC_ERR_BAD_PARAMS);
+		src_data->input_frames_used = frames;
+		src_data->output_frames_gen = frames;
+		return SRC_ERR_NO_ERROR;
 	}
 
-	resampler_t *src = (resampler_t *)handle;
-	src->out_buffer = src_data->data_out;
-	src->out_buffer_frames = src_data->out_buf_length / (BYTES_PER_SAMPLE(new_sample_width) * new_channel_num);
-	RETURN_VAL_IF_FAIL((src->out_buffer_frames > 0), SRC_ERR_BAD_PARAMS);
+	// Sample Rate Converting ...
+	// Initialize src context before first use
+	if (!CHECK_SRC_CONTEXT_INIT(src)) {
+		ret = init_src_context(src, src_data);
+		RETURN_VAL_IF_FAIL((ret == SRC_ERR_NO_ERROR), ret);
+		RETURN_VAL_IF_FAIL((src->src_func != NULL), SRC_ERR_UNKNOWN);
+	}
 
-	if (src->in_buffer == NULL) {
-		src->in_buffer = (int16_t *)malloc(src->in_buffer_bytes);
-		RETURN_VAL_IF_FAIL((src->in_buffer != NULL), SRC_ERR_MALLOC_FAILED);
+	// Update output buffer to src context (used in converting proccess functions)
+	src->out_buffer = (int16_t *)src_data->data_out;
 
-		src->channels_num = new_channel_num;
-		src->in_buffer_frames = src->in_buffer_bytes / (bytes_per_sample * old_channel_num);
-		src->left_frames = 0;
+	// Move remaining frames in internal buffer
+	if ((src->used_frames > 0) && (src->left_frames > 0)) {
+		memcpy((void *)src->in_buffer, \
+			(const void *)((int8_t *)src->in_buffer + NEW_FRAMES_TO_BYTES(src, src->used_frames)), \
+			NEW_FRAMES_TO_BYTES(src, src->left_frames));
 		src->used_frames = 0;
-		src->lastratio = src_ratio;
-		src->lastoldformat = old_sample_width;
-		src->lastnewformat = new_sample_width;
-	} else {
-		// Don't support to do different ratio SRC in same processing.
-		// To be exact, both origin_sample_rate & desired_sample_rate shouldn't be changed.
-		// Same restriction for sample width and channel num.
-		RETURN_VAL_IF_FAIL((src->lastratio == src_ratio), SRC_ERR_NOT_SUPPORT);
-		RETURN_VAL_IF_FAIL((src->channels_num == new_channel_num), SRC_ERR_NOT_SUPPORT);
-		RETURN_VAL_IF_FAIL((src->lastoldformat == old_sample_width), SRC_ERR_NOT_SUPPORT);
-		RETURN_VAL_IF_FAIL((src->lastnewformat == new_sample_width), SRC_ERR_NOT_SUPPORT);
 	}
 
-	int input_frames_used = 0;
+	// Accept input frames as much as possible, append (rechannel/copy) input frames to internal buffer
+	int input_frames_used = MINIMUM(src_data->input_frames, (src->in_buffer_frames - src->left_frames));
+	frames = rechannel(ch2layout(src->old_channel_num), ch2layout(src->new_channel_num), \
+					(const int16_t *)src_data->data_in, input_frames_used, \
+					(int16_t *)((int8_t *)src->in_buffer + NEW_FRAMES_TO_BYTES(src, src->left_frames)), input_frames_used);
+	RETURN_VAL_IF_FAIL((frames == input_frames_used), SRC_ERR_UNKNOWN);
+	src->left_frames += input_frames_used;
+
+	// Filtering on new appended frames
+	convolution_filtering(src, input_frames_used);
+
+	// Calculate how many input frames needed if fill up out buffer
+	float input_frames_need = (float)out_buffer_frames / src->ratio;
+	if (input_frames_need - (int)input_frames_need > 0) {
+		input_frames_need = (int)input_frames_need + 1;
+	}
+
 	int output_frames_gen = 0;
-
-	if (old_sample_rate == new_sample_rate) {
-		// Same sample rate
-		int32_t ret;
-		ret = rechannel(ch2layout(old_channel_num), ch2layout(new_channel_num),\
-				(const int16_t *)src_data->data_in, src_data->input_frames,\
-				(int16_t *)src->out_buffer, src->out_buffer_frames);
-		RETURN_VAL_IF_FAIL((ret > 0), SRC_ERR_BAD_PARAMS);
-		output_frames_gen = ret;
-		input_frames_used = output_frames_gen;
-	} else {
-		// move remaining frames
-		if ((src->used_frames > 0) && (src->left_frames > 0)) {
-			memcpy((void *)src->in_buffer,\
-				(const void *)((int8_t *)src->in_buffer + NEW_FRAMES_TO_BYTES(src->used_frames)),\
-				NEW_FRAMES_TO_BYTES(src->left_frames));
-			src->used_frames = 0;
-		}
-
-		// due to out buffer frames capability, there's a limit of input frames need.
-		float input_frames_need = (float)src->out_buffer_frames / src_ratio;
-		if (input_frames_need - (int)input_frames_need > 0) {
-			input_frames_need = (int)input_frames_need + 1;
-		}
-
-		// also to consider internal buffer capabbility
-		input_frames_need = MINIMUM(src->in_buffer_frames, (int)input_frames_need);
-		RETURN_VAL_IF_FAIL(((int)input_frames_need >= src->left_frames), SRC_ERR_BAD_PARAMS);
-
-		// accept input frames as much as possible
-		input_frames_used = MINIMUM(src_data->input_frames, ((int)input_frames_need - src->left_frames));
-
-		// append(rechannel/copy) some new input frames
-		int32_t ret;
-		ret = rechannel(ch2layout(old_channel_num), ch2layout(new_channel_num),\
-				(const int16_t *)src_data->data_in, input_frames_used,\
-				(int16_t *)((int8_t *)src->in_buffer + NEW_FRAMES_TO_BYTES(src->left_frames)), input_frames_used);
-		RETURN_VAL_IF_FAIL((ret == input_frames_used), SRC_ERR_UNKNOWN);
-		src->left_frames += input_frames_used;
-
-		int frames_num = src->left_frames; // number of frames in internal input buffer
-
-		// resample ...
-		if (old_sample_rate > new_sample_rate) {
-			// down resample
-			int quotient = old_sample_rate / new_sample_rate;
-			int remainer = old_sample_rate % new_sample_rate;
-			float inverse_ratio = ((float)old_sample_rate / (float)new_sample_rate);
-
-			if (quotient >= 2) {
-				if (remainer == 0) {
-					// ratio 2.0/3.0 :: 48K->16K, 48K->24K, 44.1K->22.05K, ...
-					int blocks = (frames_num - OVERLAP_22KHZ) / quotient;
-					src->used_frames = blocks * quotient;
-					src->left_frames = frames_num - src->used_frames;
-
-					output_frames_gen = src->used_frames / quotient;
-					downresample_int(src, src->used_frames, quotient);
-				} else {
-					// ratio 2.* :: 48K->22.05K, 44.1K->16K, 24K->11.025K, ...
-					src->left_frames = OVERLAP_22KHZ;
-					src->used_frames = frames_num - src->left_frames;
-
-					output_frames_gen = LRINTPF((float)src->used_frames * src_ratio);
-					downresample_2_1_filter_frac(src, src->used_frames, output_frames_gen, inverse_ratio);
-				}
-			} else if (FLOAT_EQUAL(inverse_ratio, DOWN_RESAMPLE_441_320_RATIO)) {
-				// ratio 1.* :: 44.1K->32K, 22.05K->16K, 11.025K->8K, ...
-				src->left_frames = OVERLAP_16KHZ;
-				src->used_frames = frames_num - src->left_frames;
-
-				output_frames_gen = LRINTPF((float)src->used_frames * src_ratio);
-				downresample_441_320(src, src->used_frames, output_frames_gen);
-			} else {
-				// other ratio 1.* :: 24K->16K, 16K->11.025K, ...
-				src->left_frames = OVERLAP_DEFAULT;
-				src->used_frames = frames_num - src->left_frames;
-
-				output_frames_gen = LRINTPF((float)src->used_frames * src_ratio);
-				downresample_frac(src, output_frames_gen, inverse_ratio);
-			}
-		} else {
-			// up resample
-			int quotient = new_sample_rate / old_sample_rate;
-			int remainer = new_sample_rate % old_sample_rate;
-
-			src->left_frames = OVERLAP_DEFAULT;
-			src->used_frames = frames_num - src->left_frames;
-
-			if (remainer == 0) {
-				// ratio 2.0/3.0 :: 8K->16K, 8K->24K, 11.025K->22.05K, ...
-				output_frames_gen = src->used_frames * quotient;
-				upresample_int(src, output_frames_gen, quotient);
-			} else {
-				// ratio 1.*/2.* :: 8K->11.025K, 16K->44.1K, 11.025K->12K, ...
-				float frac = (float)((quotient + 1) * old_sample_rate) / (float) new_sample_rate;
-				output_frames_gen = LRINTPF((float)(src->used_frames * (quotient + 1)) / frac);
-				upresample_frac(src, output_frames_gen, quotient + 1, frac);
-			}
+	// Reserve overlap frames, then do converting process with available frames
+	frames = MINIMUM(src->left_frames - src->overlap_frames, (int)input_frames_need);
+	if (frames > 0) {
+		output_frames_gen = src->src_func(src, &frames);
+		if (output_frames_gen != 0) {
+			src->used_frames = frames;
+			src->left_frames -= frames;
 		}
 	}
 
-	src_data->src_ratio = src_ratio;
 	src_data->input_frames_used = input_frames_used;
 	src_data->output_frames_gen = output_frames_gen;
-
 	return SRC_ERR_NO_ERROR;
 }
-
-int src_StereoToMono(short *data, int len)
-{
-	int index = 0;
-	int channels = 2; // 2 channels stereo
-	for (index = 0; index < (len / channels); index++) {
-		// New Mono Sample = (L Sample + R Sample) / 2
-		// Use the average value simpley.
-		data[index] = (data[(index << 1) + 1] + data[index << 1]) >> 1;
-	}
-
-	return index;
-}
-
-int src_MonoToStereo(short *data, int len)
-{
-	int index = 0;
-	for (index = len - 1; index >= 0; index--) {
-		// L Sample = Mono Sample, R Sample = Mono Sample
-		// Copy Mono Sample as L/R Sample simply
-		data[(index << 1) + 1] = data[index];
-		data[index << 1] = data[index];
-	}
-
-	return len << 1;
-}
-

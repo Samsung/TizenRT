@@ -33,6 +33,8 @@
 #include <tinyara/wdog.h>
 #include <tinyara/task_manager_drv.h>
 
+#include <task_manager/task_manager.h>
+
 #include "sched/sched.h"
 #if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
 #include "group/group.h"
@@ -68,17 +70,7 @@ static const struct file_operations taskmgr_fops = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void taskmgr_pause_handler(int signo, siginfo_t *info, void *extra)
-{
-	if (signo != SIGTM_PAUSE) {
-		tmdbg("[TM] Invalid signal. signo = %d\n", signo);
-		return;
-	}
-
-	sigpause(SIGTM_RESUME);
-}
-
-static int taskmgr_task_init(pid_t pid)
+static int taskmgr_task_init(pid_t pid, void *usr_pause_handler)
 {
 	struct tcb_s *tcb;
 	struct sigaction act;
@@ -90,7 +82,7 @@ static int taskmgr_task_init(pid_t pid)
 	}
 
 	memset(&act, '\0', sizeof(act));
-	act.sa_handler = (_sa_handler_t)&taskmgr_pause_handler;
+	act.sa_handler = (_sa_handler_t)usr_pause_handler;
 
 	return sig_sethandler(tcb, SIGTM_PAUSE, &act);
 }
@@ -138,6 +130,10 @@ static int taskmgr_pthread_group_join(pid_t parent_pid, pid_t child_pid)
 
 	parent_group = taskmgr_get_group_struct(parent_pid);
 	child_tcb = (struct pthread_tcb_s *)sched_gettcb(child_pid);
+	if (child_tcb == NULL) {
+		tmdbg("[TM] Cannot find Child TCB.\n");
+		return ERROR;
+	}
 	ret = taskmgr_group_bind(parent_group, child_tcb);
 	if (ret != OK) {
 		tmdbg("[TM] Group bind is failed.\n");
@@ -191,20 +187,27 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	int ret = ERROR;
 	struct tcb_s *tcb;
 	tm_pthread_pid_t *group_info;
+	tm_drv_data_t *data;
 
 	tmvdbg("cmd: %d arg: %ld\n", cmd, arg);
+
+	data = (tm_drv_data_t *)arg;
+	if (data == NULL) {
+		tmdbg("Invalid Argument.\n");
+		return ERROR;
+	}
 
 	/* Handle built-in ioctl commands */
 
 	switch (cmd) {
 	case TMIOC_START:
-		ret = taskmgr_task_init((int)arg);
+		ret = taskmgr_task_init(data->pid, data->addr);
 		if (ret != OK) {
 			tmdbg("Fail to init new task\n");
 		}
 		break;
 	case TMIOC_PAUSE:
-		tcb = sched_gettcb((int)arg);
+		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
 			tmdbg("Invalid pid\n");
 			return ERROR;
@@ -220,7 +223,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = OK;
 		break;
 	case TMIOC_UNICAST:
-		tcb = sched_gettcb((int)arg);
+		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
 			tmdbg("Invalid pid\n");
 			return ERROR;
@@ -234,7 +237,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		break;
 	case TMIOC_BROADCAST:
-		tcb = sched_gettcb((int)arg);
+		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
 			tmdbg("Invalid pid\n");
 			return ERROR;
@@ -248,7 +251,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		break;
 	case TMIOC_CHECK_ALIVE:
-		tcb = sched_gettcb((int)arg);
+		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
 			tmdbg("Invalid pid\n");
 			return ERROR;
@@ -256,7 +259,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = OK;
 		break;
 	case TMIOC_TERMINATE:
-		tcb = sched_gettcb((int)arg);
+		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
 			tmdbg("Invalid pid\n");
 			return ERROR;
@@ -279,7 +282,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 #if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
 	case TMIOC_PTHREAD_PARENT:
-		group_info = (tm_pthread_pid_t *)arg;
+		group_info = (tm_pthread_pid_t *)data->addr;
 		if (group_info == NULL) {
 			return ERROR;
 		}
@@ -302,6 +305,10 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #endif
 		break;
 #endif
+	case TMIOC_EXITCB:
+		tm_set_exit_cb((tm_exit_cb_t)data->addr);
+		ret = OK;
+		break;
 	default:
 		tmdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;

@@ -55,8 +55,8 @@ static void itc_net_inet_addr_n(void)
 static void itc_net_inet_aton_n(void)
 {
 	unsigned long ret;
-
-	ret = inet_aton(NULL, NULL);
+	const char *msg = "-1";
+	ret = inet_aton(msg, NULL);
 
 	TC_ASSERT_EQ("inet", ret, 0);
 	TC_SUCCESS_RESULT();

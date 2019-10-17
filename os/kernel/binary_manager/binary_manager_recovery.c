@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <queue.h>
 #include <errno.h>
+#include <semaphore.h>
 #include <sys/types.h>
 #ifdef CONFIG_BOARDCTL_RESET
 #include <sys/boardctl.h>
@@ -40,6 +41,7 @@
 #include "binary_manager.h"
 
 extern bool abort_mode;
+extern sq_queue_t g_sem_list;
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -60,6 +62,33 @@ static void binary_manager_board_reset(void)
 		up_mdelay(10000);
 	}
 #endif
+}
+
+static void recovery_release_binary_sem(int binid)
+{
+	sem_t *sem;
+	irqstate_t flags;
+	FAR struct semholder_s *holder;
+
+	flags = irqsave();
+
+	sem = (sem_t *)sq_peek(&g_sem_list);
+	while (sem) {
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+		for (holder = sem->hhead; holder; holder = holder->flink)
+#else
+		holder = &sem->holder;
+#endif
+		{
+			if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_loadtask == binid) {
+				/* Increase semcount and release itself from holder */
+				sem->semcount++;
+				sem_releaseholder(sem, holder->htcb);
+			}
+		}
+		sem = sq_next(sem);
+	}
+	irqrestore(flags);
 }
 
 static void recovery_exclude_scheduling_each(FAR struct tcb_s *tcb, FAR void *arg)
@@ -108,6 +137,9 @@ static int recovery_exclude_scheduling(int binid)
 
 	/* Exclude all tasks and pthreads created in a binary which has 'binid' from scheduling */
 	sched_foreach(recovery_exclude_scheduling_each, (FAR void *)binid);
+
+	/* Release all semaphores held by the threads in binary */
+	recovery_release_binary_sem(binid);
 
 	return OK;
 }

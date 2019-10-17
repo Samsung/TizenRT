@@ -34,7 +34,7 @@ if [ $CONFIG_COMPRESSION_TYPE == 1 ]
 then
 	mkdir -p $SRCDIR/lzma
 	TMPDIR=$SRCDIR/lzma
-	SOURCEDIR=$OS_PATH/compression/lzma/
+	SOURCEDIR=$OS_PATH/../external/lzma
 fi
 
 APPNAME=mkcompressimg

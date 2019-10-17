@@ -92,9 +92,9 @@
 FAR void *kmm_memalign(size_t alignment, size_t size)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_memalign(&g_kmmheap, alignment, size, __builtin_return_address(0));
+	return mm_memalign(kmm_get_heap(), alignment, size, __builtin_return_address(0));
 #else
-	return mm_memalign(&g_kmmheap, alignment, size);
+	return mm_memalign(kmm_get_heap(), alignment, size);
 #endif
 }
 

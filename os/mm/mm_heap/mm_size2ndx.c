@@ -85,7 +85,7 @@ int mm_size2ndx(size_t size)
 	}
 
 	size >>= MM_SHIFT_FOR_NDX;
-	while(size > 1) {
+	while (size > 1) {
 		ndx++;
 		size >>= 1;
 	}

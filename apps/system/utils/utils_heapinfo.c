@@ -215,10 +215,7 @@ int utils_heapinfo(int argc, char **args)
 		goto usage;
 	}
 
-	while ((opt = getopt(argc, args, "ikub:ap:fge:r")) != ERROR) {
-#if CONFIG_MM_NHEAPS > 1
-		summary_option = false;
-#endif
+	while ((opt = getopt(argc, args, "ikub:ap:fgr")) != ERROR) {
 		switch (opt) {
 		/* i : initialize the peak allocated memory size. */
 		case 'i':
@@ -246,9 +243,6 @@ int utils_heapinfo(int argc, char **args)
 		case 'a':
 			options.mode = HEAPINFO_DETAIL_ALL;
 			heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
-#if CONFIG_MM_NHEAPS > 1
-			summary_option = true;
-#endif
 			break;
 		case 'p':
 			if (strncmp(optarg, "0", strlen("0") + 1) == 0 || atoi(optarg)) {
@@ -267,15 +261,6 @@ int utils_heapinfo(int argc, char **args)
 		case 'g':
 			options.mode = HEAPINFO_SIMPLE;
 			heapinfo_display_flag = HEAPINFO_DISPLAY_GROUP;
-			break;
-		case 'e':
-#if CONFIG_MM_NHEAPS > 1
-			options.mode = HEAPINFO_DETAIL_SPECIFIC_HEAP;
-			heapinfo_display_flag = HEAPINFO_DISPLAY_SPECIFIC_HEAP;
-			heap_idx = atoi(optarg);
-#else
-			goto usage;
-#endif
 			break;
 		case 'r':
 #if CONFIG_MM_REGIONS > 1
@@ -306,6 +291,7 @@ int utils_heapinfo(int argc, char **args)
 	ret = ioctl(heapinfo_fd, HEAPINFOIOC_PARSE, (int)&options);
 	if (ret == ERROR) {
 		printf("Heapinfo Fail, %d.\n", get_errno());
+		close(heapinfo_fd);
 		return ERROR;		
 	}
 	close(heapinfo_fd);
@@ -318,11 +304,6 @@ int utils_heapinfo(int argc, char **args)
 		return OK;
 	}
 
-#if CONFIG_MM_NHEAPS > 1
-	if (summary_option == true) {
-		heapinfo_print_nheaps();
-	}
-#endif
 	heapinfo_show_taskinfo();
 
 
@@ -353,9 +334,6 @@ usage:
 	printf(" -f             Show the free list \n");
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	printf(" -g             Show the User defined group allocation details \n");
-#endif
-#if CONFIG_MM_NHEAPS > 1
-	printf(" -e HEAP_IDX    Show the heap[HEAP_IDX] allocation details(HEAP_IDX range : 0 ~ %d)\n", CONFIG_MM_NHEAPS - 1);
 #endif
 #if CONFIG_MM_REGIONS > 1
 	printf(" -r             Show the all region information\n");

@@ -24,6 +24,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdint.h>
 
 #ifdef CONFIG_BINARY_MANAGER
 
@@ -76,7 +77,6 @@ enum binary_statecb_state_e {
 enum binmgr_partition_type {
 	BINMGR_PART_KERNEL = 0,
 	BINMGR_PART_USRBIN,
-	BINMGR_PART_LOADPARAM,
 	BINMGR_PART_MAX,
 };
 
@@ -84,7 +84,7 @@ enum binmgr_partition_type {
 enum binmgr_request_msg_type {
 	BINMGR_GET_INFO,
 	BINMGR_GET_INFO_ALL,
-	BINMGR_RELOAD,
+	BINMGR_UPDATE,
 	BINMGR_NOTIFY_STARTED,
 	BINMGR_REGISTER_STATECB,
 	BINMGR_UNREGISTER_STATECB,
@@ -102,19 +102,21 @@ enum binmgr_response_result_type {
 	BINMGR_INVALID_PARAM = -4,
 	BINMGR_NOT_FOUND = -5,
 	BINMGR_ALREADY_REGISTERED = -6,
+	BINMGR_ALREADY_UPDATED = -7,
 };
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-/* The structure of binary information */
-struct binary_info_s {
-	int part_size;
+/* The structure of binary update information */
+struct binary_update_info_s {
+	int inactive_partsize;
 	char name[BIN_NAME_MAX];
-	char version[BIN_VERSION_MAX];
-	char dev_path[BINMGR_DEVNAME_LEN];
+	char active_ver[BIN_VERSION_MAX];
+	char active_dev[BINMGR_DEVNAME_LEN];
+	char inactive_dev[BINMGR_DEVNAME_LEN];
 };
-typedef struct binary_info_s binary_info_t;
+typedef struct binary_update_info_s binary_update_info_t;
 
 /* The sturcture of partition information */
 struct part_info_s {
@@ -136,11 +138,11 @@ struct load_attr_s {
 typedef struct load_attr_s load_attr_t;
 
 /* The structure of binaries' information list */
-struct binary_info_list_s {
-	int bin_count;
-	binary_info_t bin_info[BINARY_COUNT];
+struct binary_update_info_list_s {
+	uint32_t bin_count;
+	binary_update_info_t bin_info[BINARY_COUNT];
 };
-typedef struct binary_info_list_s binary_info_list_t;
+typedef struct binary_update_info_list_s binary_update_info_list_t;
 
 typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
 
@@ -176,13 +178,13 @@ typedef struct binmgr_statecb_response_s binmgr_statecb_response_t;
 
 struct binmgr_getinfo_response_s {
 	int result;
-	binary_info_t data;
+	binary_update_info_t data;
 };
 typedef struct binmgr_getinfo_response_s binmgr_getinfo_response_t;
 
 struct binmgr_getinfo_all_response_s {
 	int result;
-	binary_info_list_t data;
+	binary_update_info_list_t data;
 };
 typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
 

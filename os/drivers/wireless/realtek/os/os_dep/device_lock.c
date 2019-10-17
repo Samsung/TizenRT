@@ -37,7 +37,7 @@ void device_mutex_free(RT_DEV_LOCK_E device)
 		_lock lock;
 		_irqL irqL;
 		rtw_enter_critical(&lock, &irqL);
-		if (!DEVICE_MUTEX_IS_INIT(device)) {
+		if (DEVICE_MUTEX_IS_INIT(device)) {
 			rtw_mutex_free(&device_mutex[device]);
 			DEVICE_MUTEX_CLR_INIT(device);
 		}

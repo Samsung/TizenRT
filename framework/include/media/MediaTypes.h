@@ -103,7 +103,9 @@ typedef enum audio_type_e {
 	/** Audio type is FLAC */
 	AUDIO_TYPE_FLAC = 5,
 	/** Audio type is WAVE */
-	AUDIO_TYPE_WAVE = 6
+	AUDIO_TYPE_WAVE = 6,
+	/* Audio type is MPEG2TS container */
+	AUDIO_TYPE_MP2T = 7
 } audio_type_t;
 
 /**

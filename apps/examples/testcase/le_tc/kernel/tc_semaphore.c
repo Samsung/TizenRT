@@ -362,7 +362,6 @@ static void tc_semaphore_sem_destroy(void)
 	TC_SUCCESS_RESULT();
 }
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
 /**
 * @fn                   :tc_semaphore_sem_setprotocol
 * @brief                :Set semaphore protocol attribute
@@ -384,7 +383,12 @@ static void tc_semaphore_sem_setprotocol(void)
 	TC_ASSERT_EQ("sem_setprotocol", ret_chk, OK);
 
 	ret_chk = sem_setprotocol(&sem, SEM_PRIO_INHERIT);
+#ifdef CONFIG_PRIORITY_INHERITANCE
 	TC_ASSERT_EQ("sem_setprotocol", ret_chk, OK);
+#else
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_setprotocol", errno, ENOSYS);
+#endif
 
 	ret_chk = sem_setprotocol(&sem, SEM_PRIO_PROTECT);
 	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
@@ -400,7 +404,6 @@ static void tc_semaphore_sem_setprotocol(void)
 
 	TC_SUCCESS_RESULT();
 }
-#endif
 
 /**
 * @fn                   :tc_semaphore_sem_tickwait
@@ -431,9 +434,7 @@ int semaphore_main(void)
 {
 	tc_semaphore_sem_destroy();
 	tc_semaphore_sem_post_wait();
-#ifdef CONFIG_PRIORITY_INHERITANCE
 	tc_semaphore_sem_setprotocol();
-#endif
 	tc_semaphore_sem_tickwait();
 	tc_semaphore_sem_trywait();
 	tc_semaphore_sem_timedwait();

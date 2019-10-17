@@ -79,9 +79,9 @@
 FAR void *kmm_calloc(size_t n, size_t elem_size)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_calloc(&g_kmmheap, n, elem_size, __builtin_return_address(0));
+	return mm_calloc(kmm_get_heap(), n, elem_size, __builtin_return_address(0));
 #else
-	return mm_calloc(&g_kmmheap, n, elem_size);
+	return mm_calloc(kmm_get_heap(), n, elem_size);
 #endif
 }
 

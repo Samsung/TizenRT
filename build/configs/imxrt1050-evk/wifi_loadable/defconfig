@@ -1054,6 +1054,7 @@ CONFIG_LIBC_ARCH_ELF=y
 # Program Execution Options
 #
 CONFIG_LIBC_EXECFUNCS=y
+CONFIG_LIBC_SYMTAB=y
 
 #
 # Basic CXX Support

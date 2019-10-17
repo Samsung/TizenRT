@@ -74,17 +74,42 @@ CFLAGS += \
 	-DWITH_TCP \
 	-DDISABLE_TCP_SERVER \
 	-DNO_NFC_ADAPTER \
-	-D__WITH_DTLS__ \
-	-D__WITH_TLS__ \
 	-DROUTING_EP \
 	-DWITH_BWT \
-	-DRD_CLIENT \
+	-DRD_CLIENT
+
+
+ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
+CFLAGS += \
+	-D__WITH_DTLS__ \
+	-D__WITH_TLS__
+endif
+
+ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+CFLAGS += \
 	-DWITH_CLOUD
+endif
 
+ifeq ($(CONFIG_IOTIVITY_DEBUG),y)
+CFLAGS += -DTB_LOG
 
-#ifeq ($(CONFIG_IOTIVITY_ROUTING) , "EP")
-#endif
+ifeq ($(CONFIG_IOTIVITY_LOGGING_LEVEL_DEBUG),y)
+CFLAGS += -DSET_LOG_DEBUG
+endif
+ifeq ($(CONFIG_IOTIVITY_LOGGING_LEVEL_INFO),y)
+CFLAGS += -DSET_LOG_INFO
+endif
+ifeq ($(CONFIG_IOTIVITY_LOGGING_LEVEL_WARNING),y)
+CFLAGS += -DSET_LOG_WARNING
+endif
+ifeq ($(CONFIG_IOTIVITY_LOGGING_LEVEL_ERROR),y)
+CFLAGS += -DSET_LOG_ERROR
+endif
+ifeq ($(CONFIG_IOTIVITY_LOGGING_LEVEL_FATAL),y)
+CFLAGS += -DSET_LOG_FATAL
+endif
 
+endif
 
 #
 # IoTivity
@@ -114,7 +139,6 @@ DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/c_common/oic_malloc/src/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/c_common/oic_string/src/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/c_common/oic_time/src/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/common/src/
-DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/adapter_util/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/ip_adapter/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/ip_adapter/tizenrt/
@@ -126,6 +150,7 @@ DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/resource-directory/src/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/routing/src/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/security/src/
 DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/stack/src/
+DEPPATH += --dep-path $(IOTIVITY_DIR)/resource/csdk/connectivity/src/adapter_util/
 
 CSRCS += \
 	ocrandom.c \
@@ -138,8 +163,7 @@ CSRCS += \
 	uarraylist.c \
 	ulinklist.c \
 	uqueue.c \
-	ca_adapter_net_ssl.c \
-	caadapterutils.c \
+	caadapterutils.c\
 	cablockwisetransfer.c \
 	caconnectivitymanager.c \
 	cainterfacecontroller.c \
@@ -150,7 +174,11 @@ CSRCS += \
 	caretransmission.c \
 	caipadapter.c \
 	caipserver.c \
-	caipnwmonitor.c \
+	logger.c \
+	cafragmentation.c\
+	caipnwmonitor.c
+
+CSRCS += \
 	catcpadapter.c \
 	catcpserver.c \
 	caconnectionmanager.c \
@@ -158,35 +186,9 @@ CSRCS += \
 	camessagearbiter.c \
 	capolicymanager.c \
 	cautilinterface.c \
-	logger.c \
 	trace.c \
 	rd_client.c \
 	routingutility.c \
-	aclresource.c \
-	amaclresource.c \
-	amsmgr.c \
-	base64.c \
-	credresource.c \
-	crlresource.c \
-	directpairing.c \
-	doxmresource.c \
-	dpairingresource.c \
-	iotvticalendar.c \
-	oxmpincommon.c \
-	oxmverifycommon.c \
-	pbkdf2.c \
-	pconfresource.c \
-	pkix_interface.c \
-	policyengine.c \
-	psinterface.c \
-	psiutils.c \
-	pstatresource.c \
-	resourcemanager.c \
-	secureresourcemanager.c \
-	srmresourcestrings.c \
-	srmutility.c \
-	svcresource.c \
-	verresource.c \
 	occlientcb.c \
 	occollection.c \
 	ocobserve.c \
@@ -198,6 +200,40 @@ CSRCS += \
 	ocstack.c \
 	oicgroup.c \
 	oickeepalive.c
+
+CSRCS += \
+	resourcemanager.c\
+	aclresource.c\
+	verresource.c\
+	amaclresource.c\
+	pstatresource.c\
+	doxmresource.c\
+	credresource.c\
+	svcresource.c\
+	pconfresource.c\
+	dpairingresource.c\
+	psinterface.c\
+	amsmgr.c \
+	base64.c \
+	iotvticalendar.c \
+	policyengine.c \
+	secureresourcemanager.c \
+	srmresourcestrings.c \
+	srmutility.c \
+	directpairing.c
+
+ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
+CSRCS += \
+	crlresource.c \
+	oxmpincommon.c \
+	oxmverifycommon.c \
+	pbkdf2.c \
+	pkix_interface.c \
+	psiutils.c
+
+CSRCS += \
+	ca_adapter_net_ssl.c
+endif
 
 
 #

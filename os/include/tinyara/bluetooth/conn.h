@@ -394,7 +394,7 @@ struct bt_conn_cb {
  *
  *  @param cb Callback struct.
  */
-/* void bt_conn_cb_register(struct bt_conn_cb *cb); */
+ void bt_conn_cb_register(struct bt_conn_cb *cb);
 
 /** Enable/disable bonding.
  *

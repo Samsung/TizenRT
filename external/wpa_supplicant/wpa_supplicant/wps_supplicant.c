@@ -1041,7 +1041,10 @@ static int wpas_wps_start_dev_pw(struct wpa_supplicant *wpa_s, const u8 *dev_add
 	} else if (pin == NULL && dev_pw_id == DEV_PW_NFC_CONNECTION_HANDOVER) {
 		os_snprintf(val, sizeof(val), "\"dev_pw_id=%u%s\"", dev_pw_id, hash);
 	} else {
-		rpin = wps_generate_pin();
+		if (wps_generate_pin(&rpin) < 0) {
+			wpa_printf(MSG_DEBUG, "WPS: Could not generate PIN");
+			return -1;
+		}
 		os_snprintf(val, sizeof(val), "\"pin=%08d dev_pw_id=%u%s\"", rpin, dev_pw_id, hash);
 	}
 	if (wpa_config_set(ssid, "phase1", val, 0) < 0) {

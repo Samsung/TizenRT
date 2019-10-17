@@ -679,6 +679,7 @@ static void tc_mqueue_mq_notify(void)
 	notification.sigev_signo = SIGUSR1;
 	sa.sa_handler = mq_notify_handler;
 	sa.sa_flags = 0;
+	sa.sa_mask = 0;
 	sigaction(SIGUSR1, &sa, NULL);
 
 	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), OK, get_errno(), goto cleanup);

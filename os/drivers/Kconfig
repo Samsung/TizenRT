@@ -449,6 +449,7 @@ endif # NETDEVICES
 menuconfig PIPES
 	bool "FIFO and named pipe drivers"
 	default n
+	depends on NFILE_DESCRIPTORS != 0
 	---help---
 		FIFO and named pipe drivers.  Standard interfaces are declared
 		in include/unistd.h

@@ -36,7 +36,11 @@ static void rtw_usb_probe(void)
 
 static int rtw_usb_ctrl_req(void *priv, unsigned char bdir_in, unsigned int wvalue, unsigned char *buf, unsigned int len)
 {
-	return usbhost_ctrl_req(priv, bdir_in, wvalue, buf, len);
+    int ret = 0;
+    if (usbhost_ctrl_req(priv, bdir_in, wvalue, buf, len) == OK) {
+        ret = 1;
+    }
+    return ret;
 }
 
 static int rtw_usb_get_speed_info(void *priv)

@@ -208,6 +208,8 @@ ifeq ($(CONFIG_STM32L4_HAVE_HSI48),y)
 CHIP_CSRCS += stm32l4_hsi48.c
 endif
 
+CFLAGS += -I$(ARCH_SRCDIR)/chip/hal
+
 # ST Defines
 CFLAGS += \
 -DSTM32L4R9xx \

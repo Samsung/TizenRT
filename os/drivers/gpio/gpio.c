@@ -289,6 +289,7 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 }
 #endif
 
+#ifdef CONFIG_IOTDEV
 static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned long arg)
 {
 	FAR struct gpio_lowerhalf_s *lower;
@@ -338,6 +339,7 @@ static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned lon
 
 	return ret;
 }
+#endif
 /****************************************************************************
  * Name: gpio_write
  *
@@ -454,12 +456,12 @@ static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 	}
 #endif /* CONFIG_DISABLE_SIGNALS */
-
+#ifdef CONFIG_IOTDEV
 	case GPIOIOC_SET_INTERRUPT: {
 		ret = gpio_enable_interrupt(priv, arg);
 		break;
 	}
-
+#endif
 	default:
 		ret = -ENOTTY;
 		if (lower->ops->ioctl) {

@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <media/voice/SpeechDetector.h>
 
 #include "tc_common.h"
@@ -103,11 +104,14 @@ static void utc_media_SpeechDetector_startKeywordDetect_p(void)
 {
 	auto instance = media::voice::SpeechDetector::instance();
 	instance->initKeywordDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
+	printf("Do not speak keyword\n");
+	instance->startKeywordDetect(0);
+	printf("Now, speak keyword\n");
 	bool ret = instance->startKeywordDetect(-1);
-	TC_ASSERT_EQ_CLEANUP("utc_media_SpeechDetector_startKeywordDetect", ret, true, goto cleanup);
-	TC_SUCCESS_RESULT();
-cleanup:
 	instance->deinitKeywordDetect();
+	TC_ASSERT_EQ("utc_media_SpeechDetector_startKeywordDetect", ret, true);
+
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_SpeechDetector_startKeywordDetect_n(void)
@@ -123,12 +127,17 @@ static void utc_media_SpeechDetector_startEndPointDetect_p(void)
 	auto instance = media::voice::SpeechDetector::instance();
 	instance->initKeywordDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
 	instance->initEndPointDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
+	printf("Now, speak keyword\n");
 	instance->startKeywordDetect(-1);
+	printf("Do not stop to speak\n");
+	instance->startEndPointDetect(0);
+	printf("Now, stop speaking\n");
 	bool ret = instance->startEndPointDetect(-1);
-	TC_ASSERT_EQ_CLEANUP("utc_media_SpeechDetector_startEndPointDetect", ret, true, goto cleanup);
-	TC_SUCCESS_RESULT();
-cleanup:
+	instance->deinitKeywordDetect();
 	instance->deinitEndPointDetect();
+	TC_ASSERT_EQ("utc_media_SpeechDetector_startEndPointDetect", ret, true);
+
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_SpeechDetector_startEndPointDetect_n(void)
@@ -136,6 +145,93 @@ static void utc_media_SpeechDetector_startEndPointDetect_n(void)
 	auto instance = media::voice::SpeechDetector::instance();
 	bool ret = instance->startEndPointDetect(0);
 	TC_ASSERT_EQ("utc_media_SpeechDetector_startEndPointDetect", ret, false);
+	TC_SUCCESS_RESULT();
+}
+
+static void *thread_waitEndPoint(void *arg)
+{
+	size_t size = 8196;
+	short *noise = (short *)malloc(size * sizeof(short));
+	short *silence = (short *)calloc(size, sizeof(short));
+	auto instance = media::voice::SpeechDetector::instance();
+	sleep(1);
+	instance->detectEndPoint(noise, size);
+	while (instance->detectEndPoint(silence, size) == false) {
+		// do nothing
+	}
+
+	free(noise);
+	free(silence);
+	return NULL;
+}
+
+static void utc_media_SpeechDetector_detectEndPoint_p(void)
+{
+	auto instance = media::voice::SpeechDetector::instance();
+	pthread_t pid;
+	instance->initEndPointDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
+	pthread_create(&pid, NULL, thread_waitEndPoint, NULL);
+	bool ret = instance->waitEndPoint(-1);
+	pthread_join(pid, NULL);
+	instance->deinitEndPointDetect();
+	TC_ASSERT_EQ("utc_media_SpeechDetector_detectEndPoint", ret, true);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_SpeechDetector_detectEndPoint_n(void)
+{
+	/* detectEndPoint without init */
+	{
+		auto instance = media::voice::SpeechDetector::instance();
+		bool ret = instance->detectEndPoint(nullptr, 0);
+		TC_ASSERT_EQ("utc_media_SpeechDetector_waitEndPoint", ret, false);
+	}
+
+	/* invalid param */
+	{
+		auto instance = media::voice::SpeechDetector::instance();
+		instance->initEndPointDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
+		bool ret = instance->detectEndPoint(nullptr, 0);
+		instance->deinitEndPointDetect();
+		TC_ASSERT_EQ("utc_media_SpeechDetector_detectEndPoint", ret, false);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_SpeechDetector_waitEndPoint_p(void)
+{
+	auto instance = media::voice::SpeechDetector::instance();
+	pthread_t pid;
+	instance->initEndPointDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
+	pthread_create(&pid, NULL, thread_waitEndPoint, NULL);
+	bool ret = instance->waitEndPoint(-1);
+	pthread_join(pid, NULL);
+	instance->deinitEndPointDetect();
+	TC_ASSERT_EQ("utc_media_SpeechDetector_waitEndPoint", ret, true);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_SpeechDetector_waitEndPoint_n(void)
+{
+	/* waitEndPoint without init */
+	{
+		auto instance = media::voice::SpeechDetector::instance();
+		bool ret = instance->waitEndPoint(0);
+		TC_ASSERT_EQ("utc_media_SpeechDetector_waitEndPoint", ret, false);
+	}
+
+	/* waitEndPoint, but timeout */
+	{
+		auto instance = media::voice::SpeechDetector::instance();
+		instance->initEndPointDetect(TEST_SAMPLE_RATE, TEST_CHANNELS);
+		bool ret = instance->waitEndPoint(0);
+		instance->deinitEndPointDetect();
+		TC_ASSERT_EQ("utc_media_SpeechDetector_waitEndPoint", ret, false);
+	}
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -154,5 +250,9 @@ int utc_media_SpeechDetector_main(void)
 	utc_media_SpeechDetector_startKeywordDetect_n();
 	utc_media_SpeechDetector_startEndPointDetect_p();
 	utc_media_SpeechDetector_startEndPointDetect_n();
+	utc_media_SpeechDetector_detectEndPoint_p();
+	utc_media_SpeechDetector_detectEndPoint_n();
+	utc_media_SpeechDetector_waitEndPoint_p();
+	utc_media_SpeechDetector_waitEndPoint_n();
 	return 0;
 }

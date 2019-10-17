@@ -6,6 +6,7 @@
 config BINFMT_ENABLE
 	bool "Enable BINFMT support"
 	default n
+	select LIBC_SYMTAB
 	---help---
 		By default, support for loadable binary formats is disable.  This logic
 		may be build by defining this setting.

@@ -299,7 +299,7 @@ static pthread_t create_timer_thread(void *arg)
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int timer_main(int argc, char *argv[])
+int timer_example_main(int argc, char *argv[])
 #endif
 {
 	pthread_t tid;

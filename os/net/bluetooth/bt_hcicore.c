@@ -68,6 +68,7 @@
 #include "bt_conn.h"
 #include "bt_l2cap.h"
 #include "bt_hcicore.h"
+#include "bt_util.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -658,6 +659,7 @@ static void le_conn_complete(FAR struct bt_buf_s *buf)
 	memcpy(conn->src.val, g_btdev.bdaddr.val, sizeof(g_btdev.bdaddr.val));
 	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = BT_LE162HOST(evt->interval);
+	conn->role = evt->role;
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
@@ -797,6 +799,59 @@ done:
 	bt_conn_release(conn);
 }
 
+/* LE Data Length Change Event is optional so this function just ignore
+ * error and stack will continue to use default values.
+ */
+void hci_le_set_data_len(struct bt_conn_s *conn)
+{
+	/*Need to  TODO */
+	return;
+}
+
+int hci_le_set_phy(struct bt_conn_s *conn)
+{
+	/*Need to  TODO */
+	return 0;
+}
+
+static void le_remote_feat_complete(struct bt_buf_s *buf)
+{
+	struct bt_hci_evt_le_remote_feat_complete_s *evt = (void *)buf->data;
+	uint16_t handle = BT_HOST2LE16(evt->handle);
+	struct bt_conn_s *conn;
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		ndbg("Unable to lookup conn for handle %u", handle);
+		return;
+	}
+
+	if (!evt->status) {
+		memcpy(conn->le.features, evt->features, sizeof(conn->le.features));
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) && BT_FEAT_LE_PHY_2M(g_btdev.le.features) && BT_FEAT_LE_PHY_2M(conn->le.features)) {
+		int err;
+
+		err = hci_le_set_phy(conn);
+		if (!err) {
+			bt_atomic_setbit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
+			goto done;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) && BT_FEAT_LE_DLE(g_btdev.le.features) && BT_FEAT_LE_DLE(conn->le.features)) {
+		hci_le_set_data_len(conn);
+	}
+
+	if (conn->role == BT_CONN_ROLE_SLAVE) {
+		slave_update_conn_param(conn);
+	}
+
+done:
+	bt_conn_relref(conn);
+}
+
 static void hci_le_meta_event(FAR struct bt_buf_s *buf)
 {
 	FAR struct bt_hci_evt_le_meta_event_s *evt = (FAR void *)buf->data;
@@ -805,16 +860,20 @@ static void hci_le_meta_event(FAR struct bt_buf_s *buf)
 
 	switch (evt->subevent) {
 	case BT_HCI_EVT_LE_CONN_COMPLETE:
-		le_conn_complete(buf);
+		le_conn_complete_internal(buf);
 		break;
 
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
-		le_adv_report(buf);
+		//le_adv_report(buf);
 		ble_adv_report(buf);
 		break;
 
 	case BT_HCI_EVT_LE_LTK_REQUEST:
 		le_ltk_request(buf);
+		break;
+
+	case BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE:
+		le_remote_feat_complete(buf);
 		break;
 
 	default:
@@ -833,7 +892,7 @@ static void hci_event(FAR struct bt_buf_s *buf)
 
 	switch (hdr->evt) {
 	case BT_HCI_EVT_DISCONN_COMPLETE:
-		hci_disconn_complete(buf);
+		hci_disconn_complete_internal(buf);
 		break;
 
 	case BT_HCI_EVT_ENCRYPT_CHANGE:
@@ -1844,7 +1903,7 @@ int bt_le_scan_update(void)
 }
 
 /****************************************************************************
- * Name: bt_conn_cb_register
+ * Name: bt_conn_cb_register_internal
  *
  * Description:
  *   Register callbacks to monitor the state of connections.
@@ -1854,7 +1913,7 @@ int bt_le_scan_update(void)
  *
  ****************************************************************************/
 
-void bt_conn_cb_register(FAR struct bt_conn_cb_s *cb)
+void bt_conn_cb_register_internal(FAR struct bt_conn_cb_s *cb)
 {
 	cb->flink = g_callback_list;
 	g_callback_list = cb;

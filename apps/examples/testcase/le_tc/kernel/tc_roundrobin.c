@@ -205,6 +205,12 @@ static int taskNpthread_func(int argc, char *argv[])
 	int status;
 	int tc = (int)(argv[1][0]);
 	pthread_t pth[NTHREAD - 1];
+
+	/* Initialize the pth array */
+	for (thread_cnt = 0; thread_cnt < NTHREAD - 1; thread_cnt++) {
+		pth[thread_cnt] = -1;
+	}
+
 	start++;
 	for (thread_cnt = 0; thread_cnt < NTHREAD - 1; thread_cnt++) {
 		param.sched_priority = priority[tc][thread_cnt + 1];
@@ -224,7 +230,9 @@ static int taskNpthread_func(int argc, char *argv[])
 	}
 	write_log();
 	for (thread_cnt = 0; thread_cnt < NTHREAD - 1; thread_cnt++) {
-		pthread_join(pth[thread_cnt], 0);
+		if (pth[thread_cnt] != -1) {
+			pthread_join(pth[thread_cnt], 0);
+		}
 	}
 	task_delete(0);
 	return OK;
@@ -240,6 +248,12 @@ static void tc_roundrobin_rr_pthread(void)
 	for (tc = 0; tc < TESTCASE; tc++) {
 		int pthread_cnt;
 		pthread_t pth[NTHREAD];
+
+		/* Initialize the pth array */
+		for (pthread_cnt = 0; pthread_cnt < NTHREAD; pthread_cnt++) {
+			pth[pthread_cnt] = -1;
+		}
+
 		logidx = 0;
 		start = created = 0;
 		sleep(1);
@@ -256,7 +270,9 @@ static void tc_roundrobin_rr_pthread(void)
 		}
 
 		for (pthread_cnt = 0; pthread_cnt < NTHREAD; pthread_cnt++) {
-			pthread_join(pth[pthread_cnt], 0);
+			if (pth[pthread_cnt] != -1) {
+				pthread_join(pth[pthread_cnt], 0);
+			}
 		}
 
 		ret = check_log();

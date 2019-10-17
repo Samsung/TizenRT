@@ -1137,7 +1137,7 @@ struct _ADAPTER {
 	u8 ra_mask_user_en;
 	u32 ra_mask_define;
 	u8 auto_rate_fallback_user_en;
-
+    int (*frame_handler)(const unsigned char* frame_buf, unsigned int frame_len);
 #ifdef CONFIG_MCC_MODE
 	struct mcc_adapter_priv mcc_adapterpriv;
 #endif

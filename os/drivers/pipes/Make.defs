@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
+ifeq ($(CONFIG_PIPES),y)
 
 # Include pipe driver
 

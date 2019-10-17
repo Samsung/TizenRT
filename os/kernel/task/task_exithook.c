@@ -553,10 +553,6 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 		return;
 	}
 
-#ifdef CONFIG_TASK_MANAGER
-	task_manager_run_exit_cb(tcb->pid);
-#endif
-
 #ifdef CONFIG_CANCELLATION_POINTS
 	/* Mark the task as non-cancelable to avoid additional calls to exit()
 	 * due to any cancellation point logic that might get kicked off by

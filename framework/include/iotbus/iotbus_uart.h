@@ -33,7 +33,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <iotbus/iotbus_common.h>
+#include <tinyara/iotbus_sig.h>
 #include <iotbus/iotbus_error.h>
 
 
@@ -171,19 +171,6 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length);
 
 /**
- * @brief reads data over uart bus.
- *
- * @details @b #include <iotbus/iotbus_uart.h>
- * @param[in] hnd handle of uart_context
- * @param[in] buf the pointer of data buffer
- * @param[in] length size to read
- * @param[in] timeout timeout value (ms).
- * @return On success, size is returned. On failure, a negative value is returned.
- * @since TizenRT v1.0
- */
-int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int length, int timeout);
-
-/**
  * @brief writes data over uart bus.
  *
  * @details @b #include <iotbus/iotbus_uart.h>
@@ -195,32 +182,7 @@ int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int len
  */
 int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int length);
 
-/**
- * @brief async writes data over uart bus.
- *
- * @details @b #include <iotbus/iotbus_uart.h>
- * @param[in] hnd handle of uart_context
- * @param[in] buf the pointer of data buffer
- * @param[in] length size to write
- * @param[in] cb callback funtion called when wrting is done.
- * @param[in] timeout timeout value (ms).
- * @return On success, size is returned. On failure, a negative value is returned.
- * @since TizenRT v1.0
- */
-int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned int length, uart_write_cb cb, int timeout);
-
-/**
- * @brief Set uart interrupt.
- *
- * @details @b #include <iotbus/iotbus_uart.h>
- * @param[in] hnd handle of uart_context
- * @param[in] int_type interrupt type to enable or disable
- * @param[in] cb callback function
- * @return On success, size is returned. On failure, a negative value is returned.
- * @since TizenRT v1.0
- */
-int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, bool enable, uart_isr_cb cb);
-
+#ifdef CONFIG_IOTDEV
 /**
  * @brief Get uart device number.
  *
@@ -230,6 +192,7 @@ int iotbus_uart_set_int(iotbus_uart_context_h hnd, iotbus_int_type_e int_type, b
  * @since TizenRT v2.0
  */
 int iotbus_uart_get_device(iotbus_uart_context_h hnd);
+#endif
 
 #ifdef __cplusplus
 }

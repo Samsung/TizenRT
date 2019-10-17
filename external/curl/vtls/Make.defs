@@ -17,7 +17,7 @@
 ###########################################################################
 # TLS/SSL specific source files
 
-CSRCS+= vtls.c 
+CSRCS+= vtls.c
 CSRCS+= polarssl_threadlock.c
 
 ifeq ($(CONFIG_MBEDTLS),y)

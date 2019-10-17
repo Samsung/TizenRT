@@ -29,12 +29,4 @@ config COMPRESSION_BLOCK_SIZE
 	---help---
 		Enter block size to use for compression of binary.
 
-config DECOMPRESSION_CACHE_BLOCKS
-	int "Blocks for caching when loading binary"
-	default 60
-	range 2 100
-	---help---
-		Enter number of blocks to use for caching decompressed
-		blocks from block-wise compressed binary when loading
-
 endif # COMPRESSED_BINARY

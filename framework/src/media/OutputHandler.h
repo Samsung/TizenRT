@@ -21,37 +21,21 @@
 #include <sys/types.h>
 #include <memory>
 #include <media/OutputDataSource.h>
-#include <media/BufferObserverInterface.h>
 
+#include "StreamHandler.h"
 #include "Encoder.h"
-#include "StreamBuffer.h"
-#include "StreamBufferReader.h"
-#include "StreamBufferWriter.h"
 
 namespace media {
 class MediaRecorderImpl;
 namespace stream {
-class OutputHandler : public BufferObserverInterface
+class OutputHandler : public StreamHandler
 {
 public:
 	OutputHandler();
-	virtual ~OutputHandler() = default;
 	void setOutputDataSource(std::shared_ptr<OutputDataSource> source);
-	std::shared_ptr<OutputDataSource> getOutputDataSource() { return mOutputDataSource; }
-	bool open();
-	bool close();
 	ssize_t write(unsigned char *buf, size_t size);
-	bool start();
-	bool stop();
+	bool stop() override;
 	void flush();
-	void createWorker();
-	void destroyWorker();
-	static void *workerMain(void *arg);
-	void sleepWorker();
-	void wakenWorker();
-
-	std::shared_ptr<StreamBuffer> getStreamBuffer() { return mStreamBuffer; }
-	void setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer);
 
 	virtual void onBufferOverrun() override;
 	virtual void onBufferUnderrun() override;
@@ -62,22 +46,18 @@ public:
 
 	ssize_t writeToStreamBuffer(unsigned char *buf, size_t size);
 
-	bool registerEncoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate);
-	void unregisterEncoder();
-
 private:
+	bool registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate) override;
+	void unregisterCodec() override;
+	void resetWorker() override;
+	void sleepWorker() override;
+	virtual bool processWorker() override;
+	const char *getWorkerName(void) const override { return "OutputHandler"; };
 	void writeToSource(size_t size);
 	std::shared_ptr<OutputDataSource> mOutputDataSource;
 	std::shared_ptr<Encoder> mEncoder;
-	std::shared_ptr<StreamBuffer> mStreamBuffer;
-	std::shared_ptr<StreamBufferReader> mBufferReader;
-	std::shared_ptr<StreamBufferWriter> mBufferWriter;
 
-	pthread_t mWorker;
 	bool mIsFlushing;
-	bool mIsWorkerAlive;
-	std::mutex mMutex;
-	std::condition_variable mCondv;
 	std::mutex mFlushMutex;
 	std::condition_variable mFlushCondv;
 

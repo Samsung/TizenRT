@@ -61,6 +61,7 @@
 #include <errno.h>
 #include <sched.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
@@ -123,9 +124,8 @@
 int sem_post(FAR sem_t *sem)
 {
 	FAR struct tcb_s *stcb = NULL;
-#ifdef CONFIG_SEMAPHORE_HISTORY
 	FAR struct tcb_s *rtcb = NULL;
-#endif
+
 	irqstate_t saved_state;
 	int ret = ERROR;
 
@@ -140,12 +140,11 @@ int sem_post(FAR sem_t *sem)
 		saved_state = irqsave();
 
 		/* Perform the semaphore unlock operation. */
-
+		rtcb = this_task();
 		ASSERT(sem->semcount < SEM_VALUE_MAX);
-		sem_releaseholder(sem);
+		sem_releaseholder(sem, rtcb);
 		sem->semcount++;
 #ifdef CONFIG_SEMAPHORE_HISTORY
-		rtcb = this_task();
 		save_semaphore_history(sem, (void *)rtcb, SEM_RELEASE);
 #endif
 
@@ -195,7 +194,9 @@ int sem_post(FAR sem_t *sem)
 		 */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
-		sem_restorebaseprio(stcb, sem);
+		if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+			sem_restorebaseprio(stcb, sem);
+		}
 		sched_unlock();
 #endif
 		ret = OK;

@@ -65,20 +65,6 @@
 #define MOUNT_DIR CONFIG_MOUNT_POINT
 
 #ifdef CONFIG_FS_SMARTFS
-#if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
-#define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
-#define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME)
-#define TMP_MOUNT_DEV_DIR CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME
-#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
-#define TMP_MOUNT_DEV_DIR "/dev/smart0p0"
-#elif defined(CONFIG_IMXRT_AUTOMOUNT_USERFS)
-#define TMP_MOUNT_DEV_DIR CONFIG_IMXRT_AUTOMOUNT_USERFS_DEVNAME
-#else
-#define TMP_MOUNT_DEV_DIR "/dev/smart1"
-#endif
-
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 #define MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR"d1"
 #else
@@ -110,6 +96,8 @@
 #define DEV_NULL_PATH "/dev/null"
 
 #define DEV_NEW_NULL_PATH "/dev/NULL"
+
+#define DEVNAME_LEN 32
 
 #define VFS_LOOP_COUNT 5
 
@@ -148,9 +136,7 @@
 #define INV_FD -3
 
 #define MTD_CONFIG_PATH "/dev/config"
-#define MTD_FTL_PATH "/dev/mtdblock1"
 #define BUF_SIZE 4096
-
 #define DEV_PATH "/dev"
 #define DEV_INVALID_DIR "/dev/invalid"
 #define DEV_EMPTY_FOLDER_PATH "/dev/folder"
@@ -1647,17 +1633,31 @@ static void tc_driver_mtd_config_ops(void)
 * @precondition     NA
 * @postcondition    NA
 */
-#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH)
+#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
 static void tc_driver_mtd_ftl_ops(void)
 {
 	int fd;
 	int ret;
 	char *buf;
+	char *types = CONFIG_FLASH_PART_TYPE;
+	char MTD_FTL_PATH[DEVNAME_LEN];
+	int partno = 0;
 
 	buf = (char *)malloc(BUF_SIZE);
 	if (!buf) {
 		printf("Memory not allocated \n");
 		return;
+	}
+
+	memset(MTD_FTL_PATH, 0, DEVNAME_LEN);
+	while (*types) {
+		if (!strncmp(types, "ftl,", 4)) {
+			snprintf(MTD_FTL_PATH, sizeof(MTD_FTL_PATH), "/dev/mtdblock%d", partno);
+			break;
+		} else {
+			while (*types++ != ',');
+			partno++;
+		}
 	}
 
 	fd = open(MTD_FTL_PATH, O_RDWR);
@@ -3647,7 +3647,7 @@ int main(int argc, FAR char *argv[])
 int tc_filesystem_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "FileSystem TC") == ERROR) {
+	if (testcase_state_handler(TC_START, "FileSystem TC") == ERROR) {
 		return ERROR;
 	}
 
@@ -3702,7 +3702,7 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_driver_mtd_config_ops();
 #endif
 
-#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH)
+#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
 	tc_driver_mtd_ftl_ops();
 #endif
 
@@ -3770,7 +3770,7 @@ int tc_filesystem_main(int argc, char *argv[])
 #if defined(CONFIG_TC_FS_PROCFS) && defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) && !defined(CONFIG_BUILD_PROTECTED)
 	tc_fs_smartfs_mksmartfs();
 #endif
-	(void)tc_handler(TC_END, "FileSystem TC");
+	(void)testcase_state_handler(TC_END, "FileSystem TC");
 
 	return 0;
 }

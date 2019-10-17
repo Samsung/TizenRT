@@ -97,3 +97,9 @@ unsigned int if_nametoindex(const char *ifname)
 {
 	return 0;					// TODO: Now supports only 1 device
 }
+
+const char *gai_strerror(int errcode)
+{
+	static const char *n_str = "dummy gai_strerror";
+	return n_str;
+}

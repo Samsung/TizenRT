@@ -32,7 +32,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-int binary_manager_send_response(char *q_name, void *response_msg, int msg_size)
+void binary_manager_send_response(char *q_name, void *response_msg, int msg_size)
 {
 	int ret;
 	mqd_t mqfd;
@@ -40,7 +40,7 @@ int binary_manager_send_response(char *q_name, void *response_msg, int msg_size)
 
 	if (q_name == NULL || response_msg == NULL || msg_size < 0) {
 		bmdbg("Invalid param\n");
-		return ERROR;
+		return;
 	}
 
 	attr.mq_maxmsg = BINMGR_MAX_MSG;
@@ -50,17 +50,15 @@ int binary_manager_send_response(char *q_name, void *response_msg, int msg_size)
 	mqfd = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
 	if (mqfd == (mqd_t)ERROR) {
 		bmdbg("mq_open failed!\n");
-		return ERROR;
+		return;
 	}
 
 	ret = mq_send(mqfd, (char *)response_msg, msg_size, BINMGR_NORMAL_PRIO);
 	if (ret < 0) {
 		bmdbg("mq_send failed! %d\n", errno);
 		mq_close(mqfd);
-		return ERROR;
+		return;
 	}
 
 	mq_close(mqfd);
-
-	return OK;
 }

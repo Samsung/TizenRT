@@ -453,7 +453,7 @@ static void settzname(void)
 		const struct ttinfo_s *const ttisp = &sp->ttis[i];
 		char *cp = &sp->chars[ttisp->tt_abbrind];
 
-		if (strlen(cp) > TZ_ABBR_MAX_LEN && strcmp(cp, GRANDPARENTED) != 0) {
+		if (strlen(cp) > TZ_ABBR_MAX_LEN && strncmp(cp, GRANDPARENTED, strlen(GRANDPARENTED) + 1) != 0) {
 			*(cp + TZ_ABBR_MAX_LEN) = '\0';
 		}
 	}
@@ -502,6 +502,8 @@ static int tzload(FAR const char *name, FAR struct state_s *const sp, const int 
 	u_t *up;
 	int doaccess;
 	union local_storage *lsp;
+	size_t p_len;
+	size_t name_len;
 
 	lsp = malloc(sizeof * lsp);
 	if (!lsp) {
@@ -521,16 +523,19 @@ static int tzload(FAR const char *name, FAR struct state_s *const sp, const int 
 		++name;
 	}
 
+	name_len = strlen(name);
+
 	doaccess = name[0] == '/';
 	if (!doaccess) {
 		p = TZDIR;
-		if (!p || sizeof lsp->fullname - 1 <= strlen(p) + strlen(name)) {
+		p_len = strlen(p);
+		if (sizeof lsp->fullname - 1 <= p_len + name_len) {
 			goto oops;
 		}
 
-		strcpy(fullname, p);
-		strcat(fullname, "/");
-		strcat(fullname, name);
+		strncpy(fullname, p, p_len + 1);
+		strncat(fullname, "/", strlen("/"));
+		strncat(fullname, name, name_len);
 
 		/* Set doaccess if '.' (as in "../") shows up in name.  */
 
@@ -803,7 +808,7 @@ static int typesequiv(FAR const struct state_s *const sp, const int a, const int
 		const struct ttinfo_s *ap = &sp->ttis[a];
 		const struct ttinfo_s *bp = &sp->ttis[b];
 		result = ap->tt_gmtoff == bp->tt_gmtoff && ap->tt_isdst == bp->tt_isdst && ap->tt_ttisstd == bp->tt_ttisstd &&\
-				ap->tt_ttisgmt == bp->tt_ttisgmt && strcmp(&sp->chars[ap->tt_abbrind], &sp->chars[bp->tt_abbrind]) == 0;
+				ap->tt_ttisgmt == bp->tt_ttisgmt && strncmp(&sp->chars[ap->tt_abbrind], &sp->chars[bp->tt_abbrind], strlen(&sp->chars[bp->tt_abbrind]) + 1) == 0;
 	}
 
 	return result;
@@ -1397,6 +1402,7 @@ static void tzsetwall(void)
 void tzset(void)
 {
 	FAR const char *name;
+	size_t name_len;
 
 	name = getenv("TZ");
 	if (name == NULL) {
@@ -1404,13 +1410,15 @@ void tzset(void)
 		return;
 	}
 
-	if (g_lcl_isset > 0 && strcmp(g_lcl_tzname, name) == 0) {
+	name_len = strlen(name);
+
+	if (g_lcl_isset > 0 && strncmp(g_lcl_tzname, name, name_len + 1) == 0) {
 		return;
 	}
 
-	g_lcl_isset = strlen(name) < sizeof g_lcl_tzname;
+	g_lcl_isset = name_len < sizeof g_lcl_tzname;
 	if (g_lcl_isset) {
-		(void)strcpy(g_lcl_tzname, name);
+		(void)strncpy(g_lcl_tzname, name, name_len + 1);
 	}
 
 	if (lclptr == NULL) {
@@ -1430,7 +1438,7 @@ void tzset(void)
 		lclptr->ttis[0].tt_isdst = 0;
 		lclptr->ttis[0].tt_gmtoff = 0;
 		lclptr->ttis[0].tt_abbrind = 0;
-		(void)strcpy(lclptr->chars, GMT);
+		(void)strncpy(lclptr->chars, GMT, strlen(GMT) + 1);
 	} else if (tzload(name, lclptr, TRUE) != 0) {
 		if (name[0] == ':' || tzparse(name, lclptr, FALSE) != 0) {
 			(void)gmtload(lclptr);

@@ -127,4 +127,8 @@ bool sched_addreadytorun(FAR struct tcb_s *rtrtcb);
 void notify_cancellation(FAR struct tcb_s *tcb);
 #endif
 
+#ifndef CONFIG_DISABLE_SIGNALS
+void thread_termination_handler(void);
+#endif
+
 #endif							/* __SCHED_TASK_TASK_H */

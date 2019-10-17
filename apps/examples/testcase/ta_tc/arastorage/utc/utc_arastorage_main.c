@@ -1519,7 +1519,7 @@ int main(int argc, FAR char *argv[])
 int utc_arastorage_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Arastorage UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Arastorage UTC") == ERROR) {
 		return ERROR;
 	}
 
@@ -1583,7 +1583,7 @@ int utc_arastorage_main(int argc, char *argv[])
 	cleanup();
 	db_deinit();
 
-	(void)tc_handler(TC_END, "Arastorage UTC");
+	(void)testcase_state_handler(TC_END, "Arastorage UTC");
 
 	return 0;
 }

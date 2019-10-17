@@ -385,13 +385,14 @@ static inline bool dhcpd_leaseexpired(struct lease_s *lease)
 	ndbg("dhcpd_leaseexpired is called!!\n");
 
 	return false;
-
+#if 0
 	if (lease->expiry < dhcpd_time()) {
 		return false;
 	} else {
 //      memset(lease, 0, sizeof(struct lease_s));
 		return true;
 	}
+#endif
 }
 #else
 #define dhcpd_leaseexpired(lease) (false)

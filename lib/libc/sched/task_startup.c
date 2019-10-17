@@ -58,7 +58,9 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <unistd.h>
 
+#include <tinyara/task_manager_drv.h>
 #include <tinyara/userspace.h>
 
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
@@ -114,8 +116,11 @@ void task_startup(main_t entrypt, int argc, FAR char *argv[])
 	/* Call the 'main' entry point passing argc and argv, calling exit()
 	 * if/when the task returns.
 	 */
-
-	exit(entrypt(argc, argv));
+	int status = entrypt(argc, argv);
+#ifdef CONFIG_TASK_MANAGER
+	task_manager_run_exit_cb(getpid());
+#endif
+	exit(status);
 }
 
 #endif							/* CONFIG_BUILD_PROTECTED && !__KERNEL__ */

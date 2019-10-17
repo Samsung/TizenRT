@@ -2675,6 +2675,7 @@ int bt_gatt_server_initialize(void)
 
 	if (!is_gatt_server_initialized) {
 //		ret = bt_adapt_gatt_server_init(&instance_id, _bt_gatt_server_event_proxy, NULL);
+		ret = bt_adapt_gatt_server_init(&instance_id);
 
 		if (ret != BT_ERROR_NONE) {
 			BT_ERR("%s(0x%08x)",
@@ -2712,9 +2713,11 @@ int bt_gatt_server_deinitialize(void)
 		gatt_server_list = NULL;
 #else
 		bt_gatt_server_s *serv = (bt_gatt_server_s *)sq_peek(&gatt_server_list);
+		bt_gatt_server_s *curr_serv = NULL;
 		while (serv) {
-			bt_gatt_server_destroy(serv);
+			curr_serv = serv;
 			serv = (bt_gatt_server_s *)sq_next(serv);
+			bt_gatt_server_destroy(curr_serv);
 		}
 #endif
 
@@ -2899,6 +2902,8 @@ static int __gatt_service_add_num_handle(bt_gatt_service_s *service)
 			desc_numhandles = __bt_sq_queue_length(chr->descriptors);
 			handles_count += desc_numhandles;
 		}
+
+		chr = (bt_gatt_characteristic_s *)sq_next(chr);
 	}
 #endif
 

@@ -43,7 +43,7 @@ int main(int argc, FAR char *argv[])
 int tc_kernel_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Kernel TC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Kernel TC") == ERROR) {
 		return ERROR;
 	}
 
@@ -74,7 +74,7 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_GROUP
-#if (!defined CONFIG_SCHED_HAVE_PARENT) || (!defined CONFIG_SCHED_CHILD_STATUS)
+#if !defined(CONFIG_SCHED_HAVE_PARENT) || !defined(CONFIG_SCHED_CHILD_STATUS)
 #error CONFIG_SCHED_HAVE_PARENT and CONFIG_SCHED_CHILD_STATUS are needed for testing GROUP TC
 #endif
 	group_main();
@@ -97,9 +97,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_MISC
-#if (!defined CONFIG_DEBUG) || (!defined CONFIG_DEBUG_ERROR) || (!defined CONFIG_DEBUG_VERBOSE)
-#error CONFIG_DEBUG, CONFIG_DEBUG_ERROR and CONFIG_DEBUG_VERBOSE are needed for testing LIBC_MISC TC
-#endif
 	libc_misc_main();
 #endif
 
@@ -128,7 +125,7 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_STDLIB
-#if (!defined CONFIG_FS_WRITABLE)
+#if !defined(CONFIG_FS_WRITABLE)
 #error CONFIG_FS_WRITABLE is needed for testing LIBC_STDLIB TC
 #endif
 	libc_stdlib_main();
@@ -179,7 +176,7 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_TIMER
-	timer_main();
+	timer_tc_main();
 #endif
 
 #ifdef CONFIG_TC_KERNEL_ROUNDROBIN
@@ -229,7 +226,7 @@ int tc_kernel_main(int argc, char *argv[])
 	close(g_tc_fd);
 	g_tc_fd = -1;
 
-	(void)tc_handler(TC_END, "Kernel TC");
+	(void)testcase_state_handler(TC_END, "Kernel TC");
 
 	return 0;
 }

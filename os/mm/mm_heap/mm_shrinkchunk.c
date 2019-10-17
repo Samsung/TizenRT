@@ -56,9 +56,9 @@
 
 #include <tinyara/config.h>
 
-#include <assert.h>
-
 #include <tinyara/mm/mm.h>
+
+#include "mm_node.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -105,11 +105,7 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		 * not be a successor node.
 		 */
 
-		DEBUGASSERT(next->blink);
-		next->blink->flink = next->flink;
-		if (next->flink) {
-			next->flink->blink = next->blink;
-		}
+		REMOVE_NODE_FROM_LIST(next);
 
 		/* Create a new chunk that will hold both the next chunk and the
 		 * tailing memory from the aligned chunk.

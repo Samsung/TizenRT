@@ -54,16 +54,14 @@
  ****************************************************************************/
 
 #include <sys/types.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/cancelpt.h>
 #include <tinyara/ttrace.h>
 
-#include "sched/sched.h"
-#include "group/group.h"
 #include "pthread/pthread.h"
 
 /****************************************************************************
@@ -115,6 +113,7 @@
  *   ESRCH   There is no given thread ID.
  *   EDEADLK A deadlock is detected or the value of thread specifies the
  *           calling thread.
+ *   EBUSY   Thread is still alive even non-blocking is given.
  *
  * Assumptions:
  *
@@ -122,117 +121,16 @@
 
 int pthread_tryjoin_np(pthread_t thread, FAR pthread_addr_t *pexit_value)
 {
-	FAR struct tcb_s *rtcb = this_task();
-	FAR struct task_group_s *group = rtcb->group;
-	FAR struct join_s *pjoin;
 	int ret;
 
 	trace_begin(TTRACE_TAG_TASK, "pthread_tryjoin_np");
-	svdbg("thread=%d group=%p\n", thread, group);
-	DEBUGASSERT(group);
 
-	/* pthread_tryjoin_np() is a cancellation point */
-	(void)enter_cancellation_point();
+	/* Execute internal function with non-blocking */
 
-	/* First make sure that this is not an attempt to join to
-	 * ourself.
-	 */
-
-	if ((pid_t)thread == getpid()) {
-		leave_cancellation_point();
-		trace_end(TTRACE_TAG_TASK);
-		return EDEADLK;
-	}
-
-	/* Make sure no other task is mucking with the data structures
-	 * while we are performing the following operations.  NOTE:
-	 * we can be also sure that pthread_exit() will not execute
-	 * because it will also attempt to get this semaphore.
-	 */
-
-	(void)pthread_sem_take(&group->tg_joinsem, false);
-
-	/* Find the join information associated with this thread.
-	 * This can fail for one of three reasons:  (1) There is no
-	 * thread associated with 'thread,' (2) the thread is a task
-	 * and does not have join information, or (3) the thread
-	 * was detached and has exited.
-	 */
-
-	pjoin = pthread_findjoininfo(group, (pid_t)thread);
-	if (!pjoin) {
-		/* Determine what kind of error to return */
-
-		FAR struct tcb_s *tcb = sched_gettcb((pthread_t)thread);
-
-		sdbg("Could not find thread data\n");
-
-		/* Case (1) or (3) -- we can't tell which.  Assume (3) */
-
-		if (!tcb) {
-			ret = ESRCH;
-		}
-
-		/* The thread is still active but has no join info.  In that
-		 * case, it must be a task and not a pthread.
-		 */
-
-		else {
-			ret = EINVAL;
-		}
-
-		(void)pthread_sem_give(&group->tg_joinsem);
-	} else {
-		/* We found the join info structure.  Increment for the reference
-		 * to the join structure that we have.  This will keep things
-		 * stable for we have to do
-		 */
-
-		sched_lock();
-		pjoin->crefs++;
-
-		/* Check if the thread is still running.  If not, then things are
-		 * simpler.  There are still race conditions to be concerned with.
-		 * For example, there could be multiple threads executing in the
-		 * 'else' block below when we enter!
-		 */
-
-		if (pjoin->terminated) {
-			svdbg("Thread has terminated\n");
-
-			/* Get the thread exit value from the terminated thread. */
-
-			if (pexit_value) {
-				svdbg("exit_value=0x%p\n", pjoin->exit_value);
-				*pexit_value = pjoin->exit_value;
-			}
-			ret = OK;
-		} else {
-			svdbg("Thread is still running, let's return an error\n");
-
-			ret = EBUSY;
-		}
-
-		/* Pre-emption is okay now. The logic still cannot be re-entered
-		 * because we hold the join semaphore
-		 */
-
-		sched_unlock();
-
-		/* Release our reference to the join structure and, if the reference
-		 * count decrements to zero, deallocate the join structure.
-		 */
-
-		if (--pjoin->crefs <= 0) {
-			(void)pthread_destroyjoin(group, pjoin);
-		}
-
-		(void)pthread_sem_give(&group->tg_joinsem);
-
-	}
+	ret = pthread_join_internal(thread, pexit_value, false);
 
 	svdbg("Returning %d\n", ret);
-	leave_cancellation_point();
+
 	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

@@ -33,8 +33,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_I2C_I2C_SLAVE_H
-#define __INCLUDE_NUTTX_I2C_I2C_SLAVE_H
+#ifndef __INCLUDE_TINYARA_I2C_I2C_SLAVE_H
+#define __INCLUDE_TINYARA_I2C_I2C_SLAVE_H
 
 /****************************************************************************
  * Included Files

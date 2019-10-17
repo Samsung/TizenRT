@@ -119,6 +119,7 @@ err_t netifapi_netif_common(struct netif *netif, netifapi_void_fn voidfunc, neti
  * @ingroup netifapi
  * To be called from non-TCPIP threads
  */
+ #if LWIP_DHCP_TCPIP_THREAD
 /** @ingroup netifapi_dhcp4 */
 #define netifapi_dhcp_start(n)        netifapi_netif_common(n, NULL, dhcp_start)
 /** @ingroup netifapi_dhcp4 */
@@ -135,6 +136,25 @@ err_t netifapi_netif_common(struct netif *netif, netifapi_void_fn voidfunc, neti
 #define netifapi_dhcps_start(n)        netifapi_netif_common(n, NULL, dhcps_start)
 /** @ingroup netifapi_dhcp4 */
 #define netifapi_dhcps_stop(n)         netifapi_netif_common(n, dhcps_stop, NULL)
+#else
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcp_start(n)        dhcp_start(n)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcp_stop(n)         dhcp_stop(n)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcp_inform(n)       dhcp_inform(n)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcp_renew(n)       dhcp_renew(n)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcp_release(n)      dhcp_release(n)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcp_address_valid(n)      dhcp_address_valid(n)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcps_start(n)        dhcps_start(n)
+/** @ingroup netifapi_dhcp4 */
+#define netifapi_dhcps_stop(n)         dhcps_stop(n)
+
+#endif /*LWIP_DHCP_TCPIP_THREAD */
 
 
 /**

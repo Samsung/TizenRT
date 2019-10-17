@@ -215,6 +215,45 @@ int sem_getprotocol(FAR sem_t *sem, FAR int *protocol);
 
 int sem_setprotocol(FAR sem_t *sem, int protocol);
 
+#ifdef CONFIG_BINMGR_RECOVERY
+/****************************************************************************
+ * Name: sem_register
+ *
+ * Description:
+ *   Register semaphore to a list of kernel semaphores.
+ *
+ * Parameters:
+ *   sem - Semaphore descriptor
+ *
+ * Return Value:
+ *   None
+ *
+ * Assumptions:
+ *   This function may be called when semaphore in kernel region is initialized.
+ *
+ ****************************************************************************/
+void sem_register(FAR sem_t *sem);
+
+/****************************************************************************
+ * Name: sem_unregister
+ *
+ * Description:
+ *   Unegister semaphore from a list of kernel semaphores.
+ *
+ * Parameters:
+ *   sem - Semaphore descriptor
+ *
+ * Return Value:
+ *   None
+ *
+ * Assumptions:
+ *   This function may be called when semaphore in kernel region is destroyed.
+ *
+ ****************************************************************************/
+void sem_unregister(FAR sem_t *sem);
+#endif
+
+
 #undef EXTERN
 #ifdef __cplusplus
 }

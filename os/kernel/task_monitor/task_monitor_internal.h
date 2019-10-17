@@ -22,17 +22,33 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#define NOT_MONITORED (-1)
-#define MONITORED     (0)
+#include <queue.h>
 
 #ifdef CONFIG_TASK_MONITOR
+
+#define TASK_MONITOR_CHECK_TIME    (CONFIG_TASK_MONITOR_MAX_INTERVAL / CONFIG_TASK_MONITOR_INTERVAL)
+
+struct task_monitor_node_s {
+	FAR struct task_monitor_node_s *flink;	/* Doubly linked list */
+	FAR struct task_monitor_node_s *blink;
+	int pid;				/* tcb's pid */
+	int interval;
+};
+
+typedef struct task_monitor_node_s task_monitor_node_t;
+
+struct task_monitor_node_queue_s {
+	dq_queue_t q;
+	int remaining_count;
+};
+
+typedef struct task_monitor_node_queue_s task_monitor_node_queue_t;
 
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
 int task_monitor(int argc, char *argv[]);
-void task_monitor_update_list(int pid, int status);
-
+int task_monitor_register_list(int pid, int interval);
+void task_monitor_unregester_list(int pid);
 #endif							/* CONFIG_TASK_MONITOR */
 #endif							/* __SCHED_TASK_MONITOR_TASK_MONITOR_INTERNAL_H */

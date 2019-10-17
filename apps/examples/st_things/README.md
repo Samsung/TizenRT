@@ -11,7 +11,7 @@ make
 ```
 
 ## Download
-Add 'privatekey', 'certificate', and json file(ex. sampleDevice.json) to $TIZENRT_BASEDIR/tools/fs/contents.
+Add 'privatekey', 'certificate', and json file(ex. sampleDevice.json) to $TIZENRT_BASEDIR/tools/fs/contents-romfs.
 ```bash
 TIZENRT_BASEDIR/os$ make download ALL
 ```

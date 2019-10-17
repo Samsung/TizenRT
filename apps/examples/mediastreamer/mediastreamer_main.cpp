@@ -101,8 +101,7 @@ public:
 					std::cout << "SELECTED RECORDER_START" << std::endl;
 					if (mr.prepare() == RECORDER_OK) {
 						mr.start();
-					}
-					else {
+					} else {
 						std::cout << "prepare failed" << std::endl;
 					}
 				}

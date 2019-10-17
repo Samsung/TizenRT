@@ -107,8 +107,14 @@ int elf_uninit(struct elf_loadinfo_s *loadinfo)
 	if (loadinfo->compression_type > COMPRESS_TYPE_NONE) {
 #ifdef CONFIG_COMPRESSED_BINARY
 		compress_uninit();
+#else
+		berr("No support for reading compressed binary\n");
+		return ERROR;
 #endif
 	}
+#if defined(CONFIG_ELF_CACHE_READ)
+	elf_cache_uninit();
+#endif
 
 	/* Close the ELF file */
 

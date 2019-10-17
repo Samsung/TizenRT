@@ -204,37 +204,29 @@ void messaging_run_callback(int signo, siginfo_t *data)
 
 	ret = mq_getattr(recv_info->mqdes, &attr);
 	if (ret < 0) {
-		MSG_FREE(recv_info);
 		msgdbg("[Messaging] recv fail : get attribute fail.\n");
-		return;
-	}
-
-	/* recv_packet is used for receiving message including header. */
-	recv_packet = (char *)MSG_ALLOC(attr.mq_msgsize);
-	if (recv_packet == NULL) {
-		MSG_FREE(recv_info);
-		msgdbg("[Messaging] recv fail : out of memory for including header.\n");
-		return;
+		goto errout_with_recv_info;
 	}
 
 	while (1) {
+		/* recv_packet is used for receiving message including header. */
+		recv_packet = (char *)MSG_ALLOC(attr.mq_msgsize);
+		if (recv_packet == NULL) {
+			msgdbg("[Messaging] recv fail : out of memory for including header.\n");
+			goto errout_with_recv_info;
+		}
+
 		size = mq_receive(recv_info->mqdes, (char *)recv_packet, attr.mq_msgsize, 0);
 		if (size < 0) {
 			msgdbg("[Messaging] recv fail : mq_receive, errno %d\n", errno);
-			mq_close(recv_info->mqdes);
-			MSG_FREE(recv_packet);
-			MSG_FREE(recv_info);
-			return;
+			goto errout_with_recv_packet;
 		}
 
 		/* Parsing the received data to user message buffer. */
 		ret = messaging_parse_packet(recv_packet, recv_info->msg->buf, recv_info->msg->buflen, &(recv_info->msg->sender_pid), &msg_type);
 		if (ret != OK) {
 			msgdbg("[Messaging] Not supported version, received version : %d.\n", ret);
-			mq_close(recv_info->mqdes);
-			MSG_FREE(recv_packet);
-			MSG_FREE(recv_info);
-			return;
+			goto errout_with_recv_packet;
 		}
 
 		/* Call user callback */
@@ -250,21 +242,26 @@ void messaging_run_callback(int signo, siginfo_t *data)
 			if (ret != OK) {
 				msgdbg("[Messaging] Unlink fail for async-reply, errno %d\n", errno);
 			}
-			MSG_FREE(recv_info);
-			return;
+			goto errout_with_recv_info;
 		}
 
 		ret = mq_getattr(recv_info->mqdes, &attr);
 		if (ret < 0) {
 			msgdbg("[Messaging] recv fail : mq_getattr fail, mqdes is not correct.\n");
-			mq_close(recv_info->mqdes);
-			MSG_FREE(recv_info);
 			MSG_FREE(data);
-			return;
+			goto errout_with_mq_close;
 		} else if (attr.mq_curmsgs == 0) {
 			/* All requests are handled. Register notification again. */
 			messaging_set_notification(SIGMSG_MESSAGING, recv_info);
 			break;
 		}
 	}
+	return;
+
+errout_with_recv_packet:
+	MSG_FREE(recv_packet);
+errout_with_mq_close:
+	mq_close(recv_info->mqdes);
+errout_with_recv_info:
+	MSG_FREE(recv_info);
 }

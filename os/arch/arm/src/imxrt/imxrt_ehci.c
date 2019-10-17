@@ -240,6 +240,7 @@ struct imxrt_qtd_s {
 /* The following is used to manage lists of free QHs and qTDs */
 
 struct imxrt_list_s {
+	struct imxrt_list_s *working;
 	struct imxrt_list_s *flink;	/* Link to next entry in the list */
 	/* Variable length entry data follows */
 };
@@ -988,8 +989,8 @@ static void imxrt_takesem(sem_t *sem)
 		 * awakened by a signal.
 		 */
 
-		DEBUGASSERT(ret == OK || ret == -EINTR);
-	} while (ret == -EINTR);
+		DEBUGASSERT(ret == OK || ret == ERROR);
+	} while (ret == ERROR);
 }
 
 /****************************************************************************
@@ -1035,7 +1036,7 @@ static void imxrt_qh_free(struct imxrt_qh_s *qh)
 	struct imxrt_list_s *entry = (struct imxrt_list_s *)qh;
 
 	/* Put the QH structure back into the free list */
-
+	entry->working = (struct imxrt_list_s *)&g_asynchead;
 	entry->flink = g_ehci.qhfree;
 	g_ehci.qhfree = entry;
 }
@@ -2497,7 +2498,7 @@ static void worker_handler(void *input)
 		} else {                                                                 \
 			udbg("workQueue is not allowed\n");                                  \
 			kmm_free(arg);                                                       \
-			return -1;                                                           \
+			return;                                                           \
 		}                                                                        \
 	} while (0);
 
@@ -2534,7 +2535,7 @@ static void imxrt_asynch_completion(struct imxrt_epinfo_s *epinfo)
 	uaw = (usb_asynch_work *)kmm_malloc(sizeof(usb_asynch_work));
 	if (!uaw) {
 		udbg("Failed to alloc uaw\n");
-		return -1;
+		return;
 	}
 	memset(uaw, 0, sizeof(usb_asynch_work));
 	uaw->nbytes = nbytes;
@@ -2802,7 +2803,7 @@ static int imxrt_qh_cancel(struct imxrt_qh_s *qh, uint32_t **bp, void *arg)
 
 	/* Check if this is the QH that we are looking for */
 
-	if (qh->epinfo == epinfo) {
+	if (qh->epinfo != epinfo) {
 		/* No... keep looking */
 
 		return OK;
@@ -2881,8 +2882,6 @@ static inline void imxrt_ioc_bottomhalf(void)
 
 	bp = (uint32_t *)&g_asynchead.hw.hlp;
 	qh = (struct imxrt_qh_s *)imxrt_virtramaddr(imxrt_swap32(*bp) & QH_HLP_MASK);
-	struct imxrt_epinfo_s *epinfo = qh->epinfo;
-	udbg("EP%d dir=%d\n", epinfo->epno, epinfo->dirin);
 
 	/* If the asynchronous queue is empty, then the forward point in the
 	 * asynchronous queue head will point back to the queue head.
@@ -4227,6 +4226,10 @@ static int imxrt_asynch(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep, FAR 
 	imxrt_takesem(&epinfo->appsem);
 	imxrt_takesem(&g_ehci.exclsem);
 
+	//if (buflen >= 512 * 3) {
+		//buflen = 512 * 3;
+	//}
+
 	/* Set the request for the callback well BEFORE initiating the transfer. */
 
 	ret = imxrt_ioc_async_setup(rhport, epinfo, callback, arg);
@@ -4383,7 +4386,7 @@ static int imxrt_cancel(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep)
 		 * head.
 		 */
 
-		if (qh && qh != &g_asynchead) {
+		if (qh && qh == &g_asynchead) {
 			/* Claim that we successfully cancelled the transfer */
 
 			ret = OK;
@@ -5082,7 +5085,7 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 
 	ret = irq_attach(IMXRT_IRQ_USBOTG1, imxrt_ehci_interrupt, NULL);
 	if (ret != 0) {
-		usbhost_trace1(EHCI_TRACE1_IRQATTACH_FAILED, IMXRT_IRQ_USBOTG);
+		usbhost_trace1(EHCI_TRACE1_IRQATTACH_FAILED, IMXRT_IRQ_USBOTG1);
 		return NULL;
 	}
 
@@ -5139,6 +5142,12 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 
 	g_ehciconn.wait = imxrt_wait;
 	g_ehciconn.enumerate = imxrt_enumerate;
+
+	//Disable IOC delay
+	regval = imxrt_getreg(&HCOR->usbcmd);
+	regval &= ~EHCI_USBCMD_ITHRE_MASK;
+	//imxrt_putreg(regval, &HCOR->usbcmd);
+
 	return &g_ehciconn;
 }
 
@@ -5180,3 +5189,4 @@ FAR const char *usbhost_trformat2(uint16_t id)
 #endif							/* HAVE_USBHOST_TRACE */
 
 #endif							/* CONFIG_IMXRT_USBOTG && CONFIG_USBHOST */
+

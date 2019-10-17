@@ -114,47 +114,57 @@ static void tc_sched_sched_setget_scheduler_param(void)
 	int ret_chk = ERROR;
 	struct sched_param st_setparam;
 	struct sched_param st_getparam;
+	struct sched_param prio_origin;
 	int loop_cnt = LOOPCOUNT;
 	int arr_idx = 0;
 	int sched_arr[ARRLEN] = { SCHED_RR, SCHED_FIFO };
 
+	/* get original priority of task into prio_origin */
+	ret_chk = sched_getparam(getpid(), &prio_origin);
+	TC_ASSERT_EQ("sched_getparam", ret_chk, OK);
+
 	/*  Check null priority parameter */
 
 	ret_chk = sched_setparam(getpid(), NULL);
-	TC_ASSERT_EQ("sched_setparam", ret_chk, ERROR);
+	TC_ASSERT_EQ_CLEANUP("sched_setparam", ret_chk, ERROR, sched_setparam(getpid(), &prio_origin));
 
 	ret_chk = sched_getparam(getpid(), NULL);
-	TC_ASSERT_EQ("sched_getparam", ret_chk, ERROR);
+	TC_ASSERT_EQ_CLEANUP("sched_getparam", ret_chk, ERROR, sched_setparam(getpid(), &prio_origin));
 
 	/*  Check invalid priority parameter */
 
 	st_setparam.sched_priority = SCHED_OTHER;
 	ret_chk = sched_setscheduler(0, SCHED_OTHER, &st_setparam);
-	TC_ASSERT_EQ("sched_setscheduler", ret_chk, ERROR);
+	TC_ASSERT_EQ_CLEANUP("sched_setscheduler", ret_chk, ERROR, sched_setparam(getpid(), &prio_origin));
 
 	/*  Check for invalid scheduling policy */
 
 	ret_chk = sched_setscheduler(0, SCHED_OTHER, &st_setparam);
-	TC_ASSERT_EQ("sched_setscheduler", ret_chk, ERROR);
+	TC_ASSERT_EQ_CLEANUP("sched_setscheduler", ret_chk, ERROR, sched_setparam(getpid(), &prio_origin));
 	TC_ASSERT_EQ("sched_setscheduler", errno, EINVAL);
 
 	while (arr_idx < loop_cnt) {
 		st_setparam.sched_priority = SCHED_PRIORITY;
 		ret_chk = sched_setparam(getpid(), &st_setparam);
-		TC_ASSERT_EQ("sched_setparam", ret_chk, OK);
+		TC_ASSERT_EQ_CLEANUP("sched_setparam", ret_chk, OK, sched_setparam(getpid(), &prio_origin));
 
 		ret_chk = sched_setscheduler(getpid(), sched_arr[arr_idx], &st_setparam);
-		TC_ASSERT_NEQ("sched_setscheduler", ret_chk, ERROR);
+		TC_ASSERT_NEQ_CLEANUP("sched_setscheduler", ret_chk, ERROR, sched_setparam(getpid(), &prio_origin));
 
 		/* ret_chk should be SCHED set */
 		ret_chk = sched_getscheduler(getpid());
-		TC_ASSERT_EQ("sched_getscheduler", ret_chk, sched_arr[arr_idx]);
+		TC_ASSERT_EQ_CLEANUP("sched_getscheduler", ret_chk, sched_arr[arr_idx], sched_setparam(getpid(), &prio_origin));
 
 		ret_chk = sched_getparam(getpid(), &st_getparam);
-		TC_ASSERT_EQ("sched_getparam", ret_chk, OK);
-		TC_ASSERT_EQ("sched_getparam", st_setparam.sched_priority, st_getparam.sched_priority);
+		TC_ASSERT_EQ_CLEANUP("sched_getparam", ret_chk, OK, sched_setparam(getpid(), &prio_origin));
+		TC_ASSERT_EQ_CLEANUP("sched_getparam", st_setparam.sched_priority, st_getparam.sched_priority, sched_setparam(getpid(), &prio_origin));
 		arr_idx++;
 	}
+
+	/* restore the task priority as previous after testing */
+	ret_chk = sched_setparam(getpid(), &prio_origin);
+	TC_ASSERT_EQ_CLEANUP("sched_setparam", ret_chk, OK, sched_setparam(getpid(), &prio_origin));
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -656,23 +666,6 @@ static void tc_sched_task_setcanceltype(void)
 errout:
 	tcb->flags |= defferred_flag;
 }
-
-/**
- * @fn                   :tc_sched_task_testcancel
- * @brief                :This tc tests tc_sched_task_testcancel()
- * @Scenario             :The task_testcancel() function creates a cancellation point in the calling thread.
- *                        It has no effect if cancelability is disabled
- * @API'scovered         :task_testcancel
- * @Preconditions        :none
- * @Postconditions       :none
- * @return               :void
- */
-static void tc_sched_task_testcancel(void)
-{
-	task_testcancel();
-
-	TC_SUCCESS_RESULT();
-}
 #endif
 #endif
 
@@ -702,7 +695,6 @@ int sched_main(void)
 	tc_sched_task_setcancelstate();
 #ifdef CONFIG_CANCELLATION_POINTS
 	tc_sched_task_setcanceltype();
-	tc_sched_task_testcancel();
 #endif
 #endif
 

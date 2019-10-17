@@ -60,6 +60,21 @@ struct _iotbus_gpio_wrapper_s {
 extern "C" {
 #endif
 
+static iotbus_error_e iotbus_gpio_get_errno(void)
+{
+	switch (errno) {
+	case EPERM:
+		ibdbg("unsupported command \n");
+		return IOTBUS_ERROR_NOT_SUPPORTED;
+	case EINVAL:
+		ibdbg("invalid parameter \n");
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	default:
+		ibdbg("ioctl failed \n");
+		return IOTBUS_ERROR_UNKNOWN;
+	}
+}
+
 void gpio_async_handler(void *data)
 {
 	struct _iotbus_gpio_s *handle = (struct _iotbus_gpio_s *)data;
@@ -171,17 +186,7 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 	}
 
 	if (ret != 0) {
-		switch (errno) {
-		case EPERM:
-			ibdbg("unsupported command \n");
-			return IOTBUS_ERROR_NOT_SUPPORTED;
-		case EINVAL:
-			ibdbg("invalid parameter \n");
-			return IOTBUS_ERROR_INVALID_PARAMETER;
-		default:
-			ibdbg("ioctl failed \n");
-			return IOTBUS_ERROR_UNKNOWN;
-		}
+		return iotbus_gpio_get_errno();
 	}
 
 	handle->dir = dir;
@@ -229,17 +234,7 @@ int iotbus_gpio_register_signal(iotbus_gpio_context_h dev, iotbus_gpio_edge_e ed
 	notify.gn_signo = SIGUSR1;
 	ret = ioctl(handle->fd, GPIOIOC_REGISTER, (unsigned long)&notify);
 	if (ret != 0) {
-		switch (errno) {
-		case EPERM:
-			ibdbg("unsupported command \n");
-			return IOTBUS_ERROR_NOT_SUPPORTED;
-		case EINVAL:
-			ibdbg("invalid parameter \n");
-			return IOTBUS_ERROR_INVALID_PARAMETER;
-		default:
-			ibdbg("ioctl failed \n");
-			return IOTBUS_ERROR_UNKNOWN;
-		}
+		return iotbus_gpio_get_errno();
 	}
 	return IOTBUS_ERROR_NONE;
 }
@@ -283,17 +278,7 @@ int iotbus_gpio_set_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge
 
 	ret = ioctl(handle->fd, GPIOIOC_POLLEVENTS, (unsigned long)&pollevents);
 	if (ret != 0) {
-		switch (errno) {
-		case EPERM:
-			ibdbg("unsupported command \n");
-			return IOTBUS_ERROR_NOT_SUPPORTED;
-		case EINVAL:
-			ibdbg("invalid parameter \n");
-			return IOTBUS_ERROR_INVALID_PARAMETER;
-		default:
-			ibdbg("ioctl failed \n");
-			return IOTBUS_ERROR_UNKNOWN;
-		}
+		return iotbus_gpio_get_errno();
 	}
 
 	handle->edge = edge;
@@ -328,17 +313,7 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
 	}
 
 	if (ret != 0) {
-		switch (errno) {
-		case EPERM:
-			ibdbg("unsupported command \n");
-			return IOTBUS_ERROR_NOT_SUPPORTED;
-		case EINVAL:
-			ibdbg("invalid parameter \n");
-			return IOTBUS_ERROR_INVALID_PARAMETER;
-		default:
-			ibdbg("ioctl failed \n");
-			return IOTBUS_ERROR_UNKNOWN;
-		}
+		return iotbus_gpio_get_errno();
 	}
 
 	handle->drive = drive;
@@ -481,6 +456,11 @@ int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int
 	close(fd);
 	return IOTBUS_ERROR_NONE;
 }
+
+void *iotbus_gpio_get_callback(iotbus_gpio_context_h dev)
+{
+	return (void *)dev->handle->cb;
+}
 #endif
 
 /**
@@ -600,11 +580,6 @@ int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e * 
 	*drive = handle->drive;
 
 	return IOTBUS_ERROR_NONE;
-}
-
-void *iotbus_gpio_get_callback(iotbus_gpio_context_h dev)
-{
-	return (void *)dev->handle->cb;
 }
 
 #ifdef __cplusplus

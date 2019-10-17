@@ -32,16 +32,18 @@
 #include "stm32l4xx_hal_interface.h"
 
 #include <stdio.h>
-
+#include <tinyara/kmalloc.h>
+#include <tinyara/fs/ioctl.h>
+#include <tinyara/fs/mtd.h>
 
 
 /**
   * @brief  MX25LM51245G Configuration
   */
-#define MX25LM51245G_FLASH_SIZE                   0x4000000 /* 512 MBits => 64 MBytes */
-#define MX25LM51245G_BLOCK_SIZE                   0x10000   /* 1024 blocks of 64 KBytes */
-#define MX25LM51245G_SECTOR_SIZE                  0x1000    /* 16384 sectors of 4 kBytes */
-#define MX25LM51245G_PAGE_SIZE                    0x100     /* 262144 pages of 256 bytes */
+#define MX25LM51245G_FLASH_SIZE                   (1024*1024*8)//(0x4000000) /* 512 MBits => 64 MBytes */
+#define MX25LM51245G_BLOCK_SIZE                   (0x10000)   /* 1024 blocks of 64 KBytes */
+#define MX25LM51245G_SECTOR_SIZE                  (0x1000)    /* 16384 sectors of 4 kBytes */
+#define MX25LM51245G_PAGE_SIZE                    (0x100)     /* 262144 pages of 256 bytes */
 
 #define MX25LM51245G_DUMMY_CYCLES_READ            8
 #define MX25LM51245G_DUMMY_CYCLES_READ_OCTAL_66M  6
@@ -297,6 +299,7 @@ typedef struct {
 
 /* Uncomment this line to use the memory in SDR mode */
 //#define BSP_OSPI_NOR_DDR_MODE_DEACTIVATED
+#define BSP_OSPI_MEMORY_MAPPED_ENABLE
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -389,10 +392,10 @@ static struct stm32l4_ospidev_s g_ospi0dev =
   {
     .ops             = &g_ospi0ops,
   },
-  .base              = STM32L4_OCTOSPI2_BASE,
+  .base              = STM32L4_OCTOSPI1_BASE,
 #ifdef STM32L4_OSPI_INTERRUPTS
   .handler           = ospi0_interrupt,
-  .irq               = STM32L4_IRQ_OCTOSPI2,
+  .irq               = STM32L4_IRQ_OCTOSPI1,
 #endif
   .intf              = 0,
 #ifdef CONFIG_STM32L4_OSPI_DMA
@@ -402,12 +405,12 @@ static struct stm32l4_ospidev_s g_ospi0dev =
 
 static int ospi_lock(struct ospi_dev_s *dev, bool lock)
 {
-
+  return 0;
 }
 
 static uint32_t ospi_setfrequency(struct ospi_dev_s *dev, uint32_t frequency)
 {
-
+  return 0;
 }
 
 static void ospi_setmode(struct ospi_dev_s *dev, enum ospi_mode_e mode)
@@ -422,22 +425,277 @@ static void ospi_setbits(struct ospi_dev_s *dev, int nbits)
 
 static int ospi_command(struct ospi_dev_s *dev, struct ospi_cmdinfo_s *cmdinfo)
 {
+  return 0;
 }
+#ifdef BSP_OSPI_MEMORY_MAPPED_ENABLE
+#define MEMORY_MAPPED_OFF   (0x00)
+#define MEMORY_MAPPED_ON    (0x01)
+static int ospi_memory(struct ospi_dev_s *dev, struct ospi_meminfo_s *meminfo)
+{
+  static uint8_t mode = MEMORY_MAPPED_OFF;
 
+  OSPI_RegularCmdTypeDef sCommand;
+
+  /* octo spi write mode*/
+  if (OSPIMEM_ISWRITE(meminfo->flags))
+  {
+    uint8_t* pData     = (uint8_t *)meminfo->buffer;
+    uint32_t WriteAddr = meminfo->addr;
+    uint32_t Size      = meminfo->buflen;
+    uint8_t *mem_addr;
+    uint32_t end_addr, current_size, current_addr;
+
+    /* Calculation of the size between the write address and the end of the page */
+    current_size = MX25LM51245G_PAGE_SIZE - (WriteAddr % MX25LM51245G_PAGE_SIZE);
+
+    /* Check if the size of the data is less than the remaining place in the page */
+    if (current_size > Size)
+    {
+      current_size = Size;
+    }
+
+    /* Initialize the adress variables */
+    current_addr = WriteAddr;
+    end_addr = WriteAddr + Size;
+
+    if(mode == MEMORY_MAPPED_ON)
+    {
+      if(stm32l4_ospi_exit_memorymapped((struct ospi_dev_s *)&g_ospi0dev, NULL, 0) != OSPI_NOR_OK)
+      {
+        return OSPI_NOR_ERROR;
+      }
+      mode = MEMORY_MAPPED_OFF;
+    }
+
+  /* Initialize the program command */
+    sCommand.OperationType         = HAL_OSPI_OPTYPE_COMMON_CFG;
+    sCommand.FlashId               = HAL_OSPI_FLASH_ID_1;
+    sCommand.Instruction           = OCTAL_PAGE_PROG_CMD;
+    sCommand.InstructionMode       = HAL_OSPI_INSTRUCTION_8_LINES;
+    sCommand.InstructionSize       = HAL_OSPI_INSTRUCTION_16_BITS;
+    sCommand.AddressMode           = HAL_OSPI_ADDRESS_8_LINES;
+    sCommand.AddressSize           = HAL_OSPI_ADDRESS_32_BITS;
+    sCommand.AlternateBytesMode    = HAL_OSPI_ALTERNATE_BYTES_NONE;
+    sCommand.DataMode              = HAL_OSPI_DATA_8_LINES;
+    sCommand.DummyCycles           = 0;
+    sCommand.SIOOMode              = HAL_OSPI_SIOO_INST_EVERY_CMD;
+
+   #if defined BSP_OSPI_NOR_DDR_MODE_DEACTIVATED
+    sCommand.InstructionDtrMode    = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+    sCommand.AddressDtrMode        = HAL_OSPI_ADDRESS_DTR_DISABLE;
+    sCommand.DataDtrMode           = HAL_OSPI_DATA_DTR_DISABLE;
+    sCommand.DQSMode               = HAL_OSPI_DQS_DISABLE;
+   #else
+    sCommand.InstructionDtrMode    = HAL_OSPI_INSTRUCTION_DTR_ENABLE;
+    sCommand.AddressDtrMode        = HAL_OSPI_ADDRESS_DTR_ENABLE;
+    sCommand.DataDtrMode           = HAL_OSPI_DATA_DTR_ENABLE;
+    sCommand.DQSMode               = HAL_OSPI_DQS_ENABLE;
+   #endif
+
+    /* Perform the write page by page */
+    do
+    {
+      sCommand.Address = current_addr;
+      sCommand.NbData  = current_size;
+
+      /* Enable write operations */
+      if (OSPI_NOR_WriteEnable(&OSPINORHandle) != OSPI_NOR_OK)
+      {
+        printf("Flash OSPI_NOR_WriteEnable error write status : 0x%x\n", OSPINORHandle.State);
+        return OSPI_NOR_ERROR;
+      }
+
+      /* Configure the command */
+      if (HAL_OSPI_Command(&OSPINORHandle, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+      {
+        printf("Flash HAL_OSPI_Command error write status : 0x%x\n", OSPINORHandle.State);
+        return OSPI_NOR_ERROR;
+      }
+
+      /* Transmission of the data */
+      if (HAL_OSPI_Transmit(&OSPINORHandle, pData, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+      {
+        printf("Flash HAL_OSPI_Transmit error write status : 0x%x\n", OSPINORHandle.State);
+        return OSPI_NOR_ERROR;
+      }
+
+      /* Configure automatic polling mode to wait for end of program */
+      if (OSPI_NOR_AutoPollingMemReady(&OSPINORHandle, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != OSPI_NOR_OK)
+      {
+        printf("Flash OSPI_NOR_AutoPollingMemReady error write status : 0x%x\n", OSPINORHandle.State);
+        return OSPI_NOR_ERROR;
+      }
+
+      /* Update the address and size variables for next page programming */
+      current_addr += current_size;
+      pData += current_size;
+      current_size = ((current_addr + MX25LM51245G_PAGE_SIZE) > end_addr) ? (end_addr - current_addr) : MX25LM51245G_PAGE_SIZE;
+    } while (current_addr < end_addr);
+
+
+    return OSPI_NOR_OK;
+  }
+  /* octo spi read mode*/
+  else if(OSPIMEM_ISREAD(meminfo->flags))
+  {
+    uint8_t* pData    = (uint8_t *)meminfo->buffer;
+    uint32_t ReadAddr = meminfo->addr;
+    uint32_t Size     = meminfo->buflen;
+    uint8_t *mem_addr;
+
+    if(mode == MEMORY_MAPPED_OFF)
+    {
+      if(stm32l4_ospi_enter_memorymapped((struct ospi_dev_s *)&g_ospi0dev, NULL, 0) != OSPI_NOR_OK)
+      {
+        return OSPI_NOR_ERROR;
+      }
+      mode = MEMORY_MAPPED_ON;
+    }
+
+    mem_addr = (uint8_t *)(OCTOSPI1_BASE + ReadAddr);
+    for (int index = 0; index < Size; index++)
+    {
+      *pData = *mem_addr;
+
+      mem_addr++;
+      pData++;
+    }
+
+    return OSPI_NOR_OK;
+  }
+  /* octo spi block erase mode*/
+  else if(OSPIMEM_ISERASEBLCK(meminfo->flags))
+  {
+    uint32_t BlockAddress = meminfo->addr;
+
+    if(mode == MEMORY_MAPPED_ON)
+    {
+      if(stm32l4_ospi_exit_memorymapped((struct ospi_dev_s *)&g_ospi0dev, NULL, 0) != OSPI_NOR_OK)
+      {
+        return OSPI_NOR_ERROR;
+      }
+      mode = MEMORY_MAPPED_OFF;
+    }
+
+    sCommand.OperationType         = HAL_OSPI_OPTYPE_COMMON_CFG;
+    sCommand.FlashId               = HAL_OSPI_FLASH_ID_1;
+    sCommand.Instruction           = OCTAL_BLOCK_ERASE_CMD;
+    sCommand.InstructionMode       = HAL_OSPI_INSTRUCTION_8_LINES;
+    sCommand.InstructionSize       = HAL_OSPI_INSTRUCTION_16_BITS;
+    sCommand.Address               = BlockAddress;
+    sCommand.AddressMode           = HAL_OSPI_ADDRESS_8_LINES;
+    sCommand.AddressSize           = HAL_OSPI_ADDRESS_32_BITS;
+    sCommand.AlternateBytesMode    = HAL_OSPI_ALTERNATE_BYTES_NONE;
+    sCommand.DataMode              = HAL_OSPI_DATA_NONE;
+    sCommand.DummyCycles           = 0;
+    sCommand.DQSMode               = HAL_OSPI_DQS_DISABLE;
+    sCommand.SIOOMode              = HAL_OSPI_SIOO_INST_EVERY_CMD;
+
+  #if defined BSP_OSPI_NOR_DDR_MODE_DEACTIVATED
+    sCommand.InstructionDtrMode    = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+    sCommand.AddressDtrMode        = HAL_OSPI_ADDRESS_DTR_DISABLE;
+  #else
+    sCommand.InstructionDtrMode    = HAL_OSPI_INSTRUCTION_DTR_ENABLE;
+    sCommand.AddressDtrMode        = HAL_OSPI_ADDRESS_DTR_ENABLE;
+  #endif
+
+    /* Enable write operations */
+    if (OSPI_NOR_WriteEnable(&OSPINORHandle) != OSPI_NOR_OK)
+    {
+      return OSPI_NOR_ERROR;
+    }
+
+    /* Send the command */
+    if (HAL_OSPI_Command(&OSPINORHandle, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+    {
+      return OSPI_NOR_ERROR;
+    }
+
+    /* Configure automatic polling mode to wait for end of erase */
+    if (OSPI_NOR_AutoPollingMemReady(&OSPINORHandle, MX25LM51245G_BLOCK_ERASE_MAX_TIME) != OSPI_NOR_OK)
+    {
+      return OSPI_NOR_ERROR;
+    }
+
+    return OSPI_NOR_OK;
+  }
+  /* octo spi sector erase mode*/
+  else
+  {
+    uint32_t Sector = meminfo->addr;
+
+    if (Sector >= (uint32_t)(MX25LM51245G_FLASH_SIZE/MX25LM51245G_SECTOR_SIZE))
+    {
+      return OSPI_NOR_ERROR;
+    }
+
+    if(mode == MEMORY_MAPPED_ON)
+    {
+      if(stm32l4_ospi_exit_memorymapped((struct ospi_dev_s *)&g_ospi0dev, NULL, 0) != OSPI_NOR_OK)
+      {
+        return OSPI_NOR_ERROR;
+      }
+      mode = MEMORY_MAPPED_OFF;
+    }
+
+    /* Initialize the erase command */
+    sCommand.OperationType         = HAL_OSPI_OPTYPE_COMMON_CFG;
+    sCommand.FlashId               = HAL_OSPI_FLASH_ID_1;
+    sCommand.Instruction           = OCTAL_SECTOR_ERASE_CMD;
+    sCommand.InstructionMode       = HAL_OSPI_INSTRUCTION_8_LINES;
+    sCommand.InstructionSize       = HAL_OSPI_INSTRUCTION_16_BITS;
+    sCommand.Address               = (Sector * MX25LM51245G_SECTOR_SIZE);
+    sCommand.AddressMode           = HAL_OSPI_ADDRESS_8_LINES;
+    sCommand.AddressSize           = HAL_OSPI_ADDRESS_32_BITS;
+    sCommand.AlternateBytesMode    = HAL_OSPI_ALTERNATE_BYTES_NONE;
+    sCommand.DataMode              = HAL_OSPI_DATA_NONE;
+    sCommand.DummyCycles           = 0;
+    sCommand.DQSMode               = HAL_OSPI_DQS_DISABLE;
+    sCommand.SIOOMode              = HAL_OSPI_SIOO_INST_EVERY_CMD;
+
+  #if defined BSP_OSPI_NOR_DDR_MODE_DEACTIVATED
+    sCommand.InstructionDtrMode    = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+    sCommand.AddressDtrMode        = HAL_OSPI_ADDRESS_DTR_DISABLE;
+  #else
+    sCommand.InstructionDtrMode    = HAL_OSPI_INSTRUCTION_DTR_ENABLE;
+    sCommand.AddressDtrMode        = HAL_OSPI_ADDRESS_DTR_ENABLE;
+  #endif
+
+    /* Enable write operations */
+    if (OSPI_NOR_WriteEnable(&OSPINORHandle) != OSPI_NOR_OK)
+    {
+      printf("Flash OSPI_NOR_WriteEnable erase error status : 0x%x\n", OSPINORHandle.State);
+      return OSPI_NOR_ERROR;
+    }
+
+    /* Send the command */
+    if (HAL_OSPI_Command(&OSPINORHandle, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+    {
+      printf("Flash HAL_OSPI_Command erase error status : 0x%x\n", OSPINORHandle.State);
+      return OSPI_NOR_ERROR;
+    }
+
+    /* Configure automatic polling mode to wait for end of erase */
+    if (OSPI_NOR_AutoPollingMemReady(&OSPINORHandle, MX25LM51245G_SECTOR_ERASE_MAX_TIME) != OSPI_NOR_OK)
+    {
+      printf("Flash OSPI_NOR_AutoPollingMemReady erase error status : 0x%x\n", OSPINORHandle.State);
+      return OSPI_NOR_ERROR;
+    }
+
+    return OSPI_NOR_OK;
+  }
+}
+#else
 static int ospi_memory(struct ospi_dev_s *dev, struct ospi_meminfo_s *meminfo)
 {
   OSPI_RegularCmdTypeDef sCommand;
 
-  printf("Flash memory start : 0x%x\n", meminfo->addr);
-
+  /* octo spi write mode*/
   if (OSPIMEM_ISWRITE(meminfo->flags))
   {
-    printf("Flash write start : 0x%x\n", meminfo->addr);
-
     uint8_t* pData     = (uint8_t *)meminfo->buffer;
     uint32_t WriteAddr = meminfo->addr;
     uint32_t Size      = meminfo->buflen;
-    OSPI_RegularCmdTypeDef sCommand;
     uint32_t end_addr, current_size, current_addr;
 
     /* Calculation of the size between the write address and the end of the page */
@@ -487,24 +745,28 @@ static int ospi_memory(struct ospi_dev_s *dev, struct ospi_meminfo_s *meminfo)
       /* Enable write operations */
       if (OSPI_NOR_WriteEnable(&OSPINORHandle) != OSPI_NOR_OK)
       {
+        printf("Flash OSPI_NOR_WriteEnable error write status : 0x%x\n", OSPINORHandle.State);
         return OSPI_NOR_ERROR;
       }
 
       /* Configure the command */
       if (HAL_OSPI_Command(&OSPINORHandle, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
       {
+        printf("Flash HAL_OSPI_Command error write status : 0x%x\n", OSPINORHandle.State);
         return OSPI_NOR_ERROR;
       }
 
       /* Transmission of the data */
       if (HAL_OSPI_Transmit(&OSPINORHandle, pData, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
       {
+        printf("Flash HAL_OSPI_Transmit error write status : 0x%x\n", OSPINORHandle.State);
         return OSPI_NOR_ERROR;
       }
 
       /* Configure automatic polling mode to wait for end of program */
       if (OSPI_NOR_AutoPollingMemReady(&OSPINORHandle, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != OSPI_NOR_OK)
       {
+        printf("Flash OSPI_NOR_AutoPollingMemReady error write status : 0x%x\n", OSPINORHandle.State);
         return OSPI_NOR_ERROR;
       }
 
@@ -516,14 +778,12 @@ static int ospi_memory(struct ospi_dev_s *dev, struct ospi_meminfo_s *meminfo)
 
     return OSPI_NOR_OK;
   }
+  /* octo spi read mode*/
   else if(OSPIMEM_ISREAD(meminfo->flags))
   {
-    printf("Flash read start : 0x%x\n", meminfo->addr);
-
     uint8_t* pData    = (uint8_t *)meminfo->buffer;
     uint32_t ReadAddr = meminfo->addr;
     uint32_t Size     = meminfo->buflen;
-    OSPI_RegularCmdTypeDef sCommand;
 
     /* Initialize the read command */
     sCommand.OperationType         = HAL_OSPI_OPTYPE_COMMON_CFG;
@@ -556,23 +816,26 @@ static int ospi_memory(struct ospi_dev_s *dev, struct ospi_meminfo_s *meminfo)
     /* Configure the command */
     if (HAL_OSPI_Command(&OSPINORHandle, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     {
+      printf("Flash HAL_OSPI_Command read error status : 0x%x\n", OSPINORHandle.State);
       return OSPI_NOR_ERROR;
     }
 
     /* Reception of the data */
     if (HAL_OSPI_Receive(&OSPINORHandle, pData, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     {
+      printf("Flash HAL_OSPI_Receive read error status : 0x%x\n", OSPINORHandle.State);
       return OSPI_NOR_ERROR;
     }
-
+#ifndef BSP_OSPI_NOR_DDR_MODE_DEACTIVATED
+    *(volatile uint32_t *)(0xA0001400) |= 0x02;
+    //volatile uint32_t dRead = *(volatile uint32_t *)(0xA0001450);
+#endif
     return OSPI_NOR_OK;
   }
+  /* octo spi block erase mode*/
   else if(OSPIMEM_ISERASEBLCK(meminfo->flags))
   {
     uint32_t BlockAddress = meminfo->addr;
-    OSPI_RegularCmdTypeDef sCommand;
-
-    printf("Flash erase block start : 0x%x\n", BlockAddress);
 
     /* Initialize the erase command */
     sCommand.OperationType         = HAL_OSPI_OPTYPE_COMMON_CFG;
@@ -617,10 +880,9 @@ static int ospi_memory(struct ospi_dev_s *dev, struct ospi_meminfo_s *meminfo)
 
     return OSPI_NOR_OK;
   }
-  else
+  /* octo spi sector erase mode*/
+  else if(OSPIMEM_ISERASESECT(meminfo->flags))
   {
-    printf("Flash erase sector start : 0x%x\n", meminfo->addr);
-
     uint32_t Sector = meminfo->addr;
 
     if (Sector >= (uint32_t)(MX25LM51245G_FLASH_SIZE/MX25LM51245G_SECTOR_SIZE))
@@ -654,28 +916,31 @@ static int ospi_memory(struct ospi_dev_s *dev, struct ospi_meminfo_s *meminfo)
     /* Enable write operations */
     if (OSPI_NOR_WriteEnable(&OSPINORHandle) != OSPI_NOR_OK)
     {
+      printf("Flash OSPI_NOR_WriteEnable erase error status : 0x%x\n", OSPINORHandle.State);
       return OSPI_NOR_ERROR;
     }
 
     /* Send the command */
     if (HAL_OSPI_Command(&OSPINORHandle, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     {
+      printf("Flash HAL_OSPI_Command erase error status : 0x%x\n", OSPINORHandle.State);
       return OSPI_NOR_ERROR;
     }
 
     /* Configure automatic polling mode to wait for end of erase */
     if (OSPI_NOR_AutoPollingMemReady(&OSPINORHandle, MX25LM51245G_SECTOR_ERASE_MAX_TIME) != OSPI_NOR_OK)
     {
+      printf("Flash OSPI_NOR_AutoPollingMemReady erase error status : 0x%x\n", OSPINORHandle.State);
       return OSPI_NOR_ERROR;
     }
 
     return OSPI_NOR_OK;
   }
 }
-
+#endif
 static FAR void *ospi_alloc(FAR struct ospi_dev_s *dev, size_t buflen)
 {
-
+  return NULL;
 }
 
 static void ospi_free(FAR struct ospi_dev_s *dev, FAR void *buffer)
@@ -1442,7 +1707,7 @@ int stm32l4_ospi_enter_memorymapped(struct ospi_dev_s *dev,
     Error_Handler(OSPI_NOR_ERROR+4);
   }
 
-  return 0;
+  return OSPI_NOR_OK;
 }
 
 /****************************************************************************
@@ -1465,8 +1730,165 @@ int stm32l4_ospi_exit_memorymapped(struct ospi_dev_s *dev)
   {
     return OSPI_NOR_ERROR;
   }
+  return OSPI_NOR_OK;
+}
+
+
+/****************************************************************************
+ * Name: up_flashinitialize
+ *
+ * Description:
+ *   Put the OSPI device into memory mapped mode
+ *
+ * Input Parameters:
+ *   dev - OSPI device
+ *   meminfo - parameters like for a memory transfer used for reading
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static int this_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
+{
+  struct ospi_meminfo_s meminfo;
+  int ret;
+
+  for(int i=0; i<nblocks; i++)
+  {
+    meminfo.flags = OSPIMEM_ERASESECT;
+    meminfo.addr = startblock + i;
+    ret = ospi_memory((struct ospi_dev_s *)&g_ospi0dev, &meminfo);
+  }
+  //printf("this_erase startblock:%d, nblocks:%d\n", startblock, nblocks);
+
+  if(ret == OSPI_NOR_OK)
+    return nblocks;
+
   return 0;
 }
+
+static ssize_t this_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buffer)
+{
+  struct ospi_meminfo_s meminfo;
+
+  meminfo.flags = OSPIMEM_READ;
+  meminfo.addr = startblock * MX25LM51245G_SECTOR_SIZE;
+  meminfo.buffer = (uint8_t*)buffer;
+  meminfo.buflen = nblocks * MX25LM51245G_SECTOR_SIZE;
+
+  int ret = ospi_memory((struct ospi_dev_s *)&g_ospi0dev, &meminfo);
+
+  //printf("this_bread ret:%d, startblock:%d, nblocks:%d\n", ret, startblock, nblocks);
+
+  if(ret == OSPI_NOR_OK)
+    return  nblocks;
+
+  return 0;
+}
+static ssize_t this_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buffer)
+{
+  struct ospi_meminfo_s meminfo;
+
+  meminfo.flags = OSPIMEM_WRITE;
+  meminfo.addr = startblock * MX25LM51245G_SECTOR_SIZE;
+  meminfo.buffer = (uint8_t*)buffer;
+  meminfo.buflen = nblocks * MX25LM51245G_SECTOR_SIZE;
+
+  int ret = ospi_memory((struct ospi_dev_s *)&g_ospi0dev, &meminfo);
+
+  //printf("this_bwrite ret:%d, startblock:%d, nblocks:%d\n", ret, startblock, nblocks);
+
+  if(ret == OSPI_NOR_OK)
+    return  nblocks;
+
+  return 0;
+}
+static ssize_t this_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer)
+{
+  struct ospi_meminfo_s meminfo;
+
+  meminfo.flags = OSPIMEM_READ;
+  meminfo.addr = offset;
+  meminfo.buffer = (uint8_t*)buffer;
+  meminfo.buflen = nbytes;
+
+  int ret = ospi_memory((struct ospi_dev_s *)&g_ospi0dev, &meminfo);
+
+  //printf("this_read ret:%d, offset:0x%08x, nbytes:%d\n", ret, offset, nbytes);
+
+  if(ret == OSPI_NOR_OK)
+    return nbytes;
+
+  return 0;
+}
+static int this_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
+{
+  struct ospi_meminfo_s meminfo;
+
+  switch (cmd)
+  {
+  case MTDIOC_GEOMETRY:
+  {
+    FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)((uintptr_t)arg);
+    if(geo)
+    {
+      geo->blocksize = MX25LM51245G_SECTOR_SIZE;
+      geo->erasesize = MX25LM51245G_SECTOR_SIZE;
+      geo->neraseblocks = MX25LM51245G_FLASH_SIZE / MX25LM51245G_SECTOR_SIZE;
+    }
+    //printf("MTDIOC_GEOMETRY\n");
+  }
+    break;
+  case MTDIOC_BULKERASE:
+    //printf("MTDIOC_BULKERASE\n");
+    break;
+
+  case MTDIOC_XIPBASE:
+    //printf("MTDIOC_XIPBASE\n");
+    break;
+
+  default:
+    break;
+  }
+
+  return 0;
+}
+/****************************************************************************
+ * Name: up_flashinitialize
+ *
+ * Description:
+ *   Put the OSPI device into memory mapped mode
+ *
+ * Input Parameters:
+ *   dev - OSPI device
+ *   meminfo - parameters like for a memory transfer used for reading
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+FAR struct mtd_dev_s *up_flashinitialize(void)
+{
+  FAR struct mtd_dev_s *priv;
+  priv = (FAR struct mtd_dev_s *)kmm_zalloc(sizeof(struct mtd_dev_s));
+
+  if(priv)
+  {
+    priv->erase = this_erase;
+    priv->bread = this_bread;
+    priv->bwrite = this_bwrite;
+    priv->read = this_read;
+    priv->ioctl = this_ioctl;
+  }
+
+  return priv;
+}
+
+
+
+
+
+
 
 
 

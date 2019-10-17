@@ -713,7 +713,7 @@ int main(int argc, FAR char *argv[])
 int tc_tcp_tls_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "TCPTLS STRESS TC") == ERROR) {
+	if (testcase_state_handler(TC_START, "TCPTLS STRESS TC") == ERROR) {
 		return ERROR;
 	}
 	int res = tcp_tls_signal_init();
@@ -767,6 +767,6 @@ int tc_tcp_tls_main(int argc, char *argv[])
 	}
 
 	tcp_tls_signal_deinit();
-	(void)tc_handler(TC_END, "TCPTLS STRESS TC");
+	(void)testcase_state_handler(TC_END, "TCPTLS STRESS TC");
 	return 0;
 }

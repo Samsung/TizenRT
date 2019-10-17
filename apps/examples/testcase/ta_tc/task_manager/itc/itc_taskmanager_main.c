@@ -578,7 +578,7 @@ void unicast_handler(tm_msg_t *info)
 
 	if (!strncmp((char *)info->msg, TM_START_MSG, strlen(TM_START_MSG))) {
 
-		tm_sample_handle2 = task_manager_register_task("task6", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+		tm_sample_handle2 = task_manager_register_task("task6", 100, 2048, not_builtin_task, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 		if (tm_sample_handle2 < 0) {
 			printf("ERROR: fail to task_manager_register_task in unicast_handler ERR: %d\n", tm_sample_handle2);
 			return;
@@ -787,7 +787,7 @@ void itc_taskmanager_broadcast_twice_p(void)
 	tm_broadcast_msg = task_manager_alloc_broadcast_msg();
 	TC_ASSERT_GEQ("task_manager_alloc_broadcast_msg", tm_broadcast_msg, 0);
 
-	tm_sample_handle = task_manager_register_task("task7", 100, 1024, taskmanager_task7_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register_task("task7", 100, 2048, taskmanager_task7_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
@@ -858,13 +858,13 @@ void itc_taskmanager_group_unregister_p(void)
 	int status;
 	tm_appinfo_t *sample_info;
 
-	tm_sample_handle = task_manager_register_task("task8", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register_task("task8", 100, 2048, not_builtin_task, NULL, TM_APP_PERMISSION_GROUP, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
 
-	tm_sample_handle3 = task_manager_register_task("task10", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle3 = task_manager_register_task("task10", 100, 2048, not_builtin_task, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
 
-	tm_sample_handle2 = task_manager_register_task("task9", 100, 1024, taskmanager_task9_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle2 = task_manager_register_task("task9", 100, 2048, taskmanager_task9_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle2, 0);
 
 	sample_info = (tm_appinfo_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
@@ -932,10 +932,10 @@ void itc_taskmanager_stop_exit_p(void)
 	int ret;
 	tm_appinfo_t *sample_info;
 
-	tm_sample_handle = task_manager_register_task("task11", 100, 1024, not_builtin_task_1, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register_task("task11", 100, 2048, not_builtin_task_1, NULL, TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle, 0);
 
-	tm_sample_handle2 = task_manager_register_task("task12", 100, 1024, taskmanager_task12_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle2 = task_manager_register_task("task12", 100, 2048, taskmanager_task12_main, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_task", tm_sample_handle2, 0);
 
 	sample_info = (tm_appinfo_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
@@ -986,7 +986,7 @@ int itc_taskmanager_main(int argc, char *argv[])
 {
 	int status;
 
-	if (tc_handler(TC_START, "TaskManager ITC") == ERROR) {
+	if (testcase_state_handler(TC_START, "TaskManager ITC") == ERROR) {
 		return ERROR;
 	}
 
@@ -998,7 +998,7 @@ int itc_taskmanager_main(int argc, char *argv[])
 
 	(void)task_manager_unregister(handle_tm_itc, TM_NO_RESPONSE);
 
-	(void)tc_handler(TC_END, "TaskManager itc");
+	(void)testcase_state_handler(TC_END, "TaskManager itc");
 
 	return 0;
 }

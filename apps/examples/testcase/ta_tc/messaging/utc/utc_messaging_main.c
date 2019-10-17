@@ -24,15 +24,7 @@
 #include <sys/types.h>
 #include <messaging/messaging.h>
 #include "tc_common.h"
-
-static void messaging_utc_main(void)
-{
-	utc_messaging_recv_reply_and_cleanup();
-
-	utc_messaging_send();
-
-	utc_messaging_multicast();
-}
+#include "tc_internal.h"
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -40,13 +32,17 @@ int main(int argc, FAR char *argv[])
 int utc_messaging_main(int argc, char *argv[])
 #endif
 {
-	if (tc_handler(TC_START, "Messaging UTC") == ERROR) {
+	if (testcase_state_handler(TC_START, "Messaging UTC") == ERROR) {
 		return ERROR;
 	}
 
-	(void)messaging_utc_main();
+	utc_messaging_recv_reply_and_cleanup_main();
 
-	(void)tc_handler(TC_END, "Messaging UTC");
+	utc_messaging_send_main();
+
+	utc_messaging_multicast_main();
+
+	(void)testcase_state_handler(TC_END, "Messaging UTC");
 
 	return 0;
 }

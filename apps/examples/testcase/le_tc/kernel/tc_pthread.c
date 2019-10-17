@@ -28,13 +28,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <signal.h>
 #include <sched.h>
 #include <pthread.h>
 #include <errno.h>
 #include <sys/types.h>
-#include "../../../../../os/kernel/group/group.h"
 #include "tc_internal.h"
+
+/****************************************************************************
+ * Definitions
+ ****************************************************************************/
 
 #define SEC_1                   1
 #define SEC_2                   2
@@ -52,37 +56,42 @@
 #define INMAIN                  1
 #define SIGQUIT                 3
 #define NOSIG                   333
+#define INVALID_PID             (-1)
 
-struct mallinfo mem;
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
-pthread_t g_thread1;
-pthread_t g_thread2;
-pthread_t thread[PTHREAD_CNT];
+static pthread_t g_thread1;
+static pthread_t g_thread2;
 
-pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t g_cond;
+static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_cond;
 static pthread_once_t g_once;
 static bool g_bpthreadcallback = false;
 
 static int g_cnt;
-bool g_maskquitrecv;
-bool g_maskusrrecv;
 
-pthread_barrier_t g_pthread_barrier;
-int g_barrier_count_in = 0;
-int g_barrier_count_out = 0;
-int g_barrier_count_spare = 0;
+static pthread_barrier_t g_pthread_barrier;
+static int g_barrier_count_in = 0;
+static int g_barrier_count_out = 0;
+static int g_barrier_count_spare = 0;
 
 static pthread_mutex_t g_mutex_timedwait;
 static pthread_cond_t cond;
 static int g_mutex_cnt = 0;
 
-int g_cond_sig_val = 0;
+static int g_cond_sig_val = 0;
 
 static bool g_sig_handle = false;
 
-pthread_t self_pid;
-volatile uint8_t check_prio;
+static pthread_t self_pid;
+static volatile uint8_t check_prio;
+static int chk_val;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 static void *infinite_loop_thread(void *param)
 {
@@ -173,6 +182,21 @@ static void *task_barrier(void *param)
 static void *pthread_exit_thread(void *param)
 {
 	pthread_exit(RETURN_PTHREAD_JOIN);
+	return NULL;
+}
+
+/**
+* @fn                   :self_pthread_join_n_exit
+* @brief                :utility function for tc_pthread_pthread_create_exit_join
+* @return               :void *
+*/
+static void *self_pthread_join_n_exit(void *param)
+{
+	pid_t pid = getpid();
+
+	chk_val = pthread_join((pthread_t)pid, NULL);
+
+	pthread_exit((void *)chk_val);
 	return NULL;
 }
 
@@ -604,15 +628,18 @@ static void tc_pthread_pthread_create_exit_join(void)
 	pthread_t pthread;
 	void *p_value = 0;
 
-	ret_chk = pthread_create(&pthread, NULL, pthread_exit_thread, NULL);
+	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
 	TC_ASSERT_EQ("pthread create", ret_chk, OK);
-
-	/* To make sure thread is created before we join it */
-	sleep(SEC_1);
 
 	ret_chk = pthread_join(pthread, &p_value);
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
-	TC_ASSERT_EQ("pthread_join", p_value, RETURN_PTHREAD_JOIN);
+	TC_ASSERT_EQ("pthread_exit", p_value, (void *)EDEADLK);
+
+	ret_chk = pthread_join(pthread, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, EINVAL);
+
+	ret_chk = pthread_join(INVALID_PID, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, ESRCH);
 
 	TC_SUCCESS_RESULT();
 }
@@ -651,7 +678,7 @@ static void tc_pthread_pthread_tryjoin_np(void)
 	sleep(SEC_1);
 
 	ret_chk = pthread_tryjoin_np(pid, &pexit_value);
-	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, ESRCH);
+	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, OK);
 
 	ret_chk = pthread_create(&pid, NULL, pthread_exit_thread, NULL);
 	TC_ASSERT_EQ("pthread create", ret_chk, OK);
@@ -1257,35 +1284,49 @@ static void tc_pthread_pthread_cond_signal_wait(void)
 	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
 	ret_chk = pthread_cond_init(&g_cond, NULL);
-	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_init", ret_chk, OK, goto errout_with_mutex);
 
 	ret_chk = pthread_mutex_lock(&g_mutex);
-	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", ret_chk, OK, goto errout_with_cond);
 
 	ret_chk = pthread_create(&pthread_waiter, NULL, thread_cond_signal, NULL);
-	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_mutex_unlock(&g_mutex); goto errout_with_cond);
 
 	/* if g_cond_sig_val is not matched with VAL_ONE, then TC fails. but we will not use g_mutex anymore, so destroy it */
-	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", g_cond_sig_val, VAL_ONE, pthread_mutex_destroy(&g_mutex));
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", g_cond_sig_val, VAL_ONE, pthread_mutex_unlock(&g_mutex); goto errout_with_pthread);
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
-	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_unlock", ret_chk, OK, pthread_mutex_unlock(&g_mutex); goto errout_with_pthread);
 
 	sleep(SEC_1);
 
-	TC_ASSERT_EQ("pthread_cond_signal_wait", g_cond_sig_val, VAL_TWO);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_signal_wait", g_cond_sig_val, VAL_TWO, goto errout_with_pthread);
 
 	ret_chk = pthread_cond_signal(&g_cond);
-	TC_ASSERT_EQ("pthread_cond_signal", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_signal", ret_chk, OK, pthread_cond_signal(&g_cond); goto errout_with_pthread);
 
 	sleep(SEC_1);
 
-	TC_ASSERT_EQ("pthread_cond_signal", g_cond_sig_val, VAL_THREE);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_signal", g_cond_sig_val, VAL_THREE, goto errout_with_pthread);
 
 	pthread_cancel(pthread_waiter);
 	pthread_join(pthread_waiter, NULL);
 
+	ret_chk = pthread_cond_destroy(&g_cond);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_destroy", ret_chk, OK, goto errout_with_cond);
+
+	ret_chk = pthread_mutex_destroy(&g_mutex);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_destroy", ret_chk, OK, goto errout_with_mutex);
+
 	TC_SUCCESS_RESULT();
+	return;
+errout_with_pthread:
+	pthread_cancel(pthread_waiter);
+	pthread_join(pthread_waiter, NULL);
+errout_with_cond:
+	pthread_cond_destroy(&g_cond);
+errout_with_mutex:
+	pthread_mutex_destroy(&g_mutex);
 }
 
 static void tc_pthread_pthread_detach(void)
@@ -1476,27 +1517,8 @@ static void tc_pthread_pthread_setcanceltype(void)
 }
 #endif
 
-/**
-* @fn                   :tc_libc_pthread_pthread_testcancel
-* @brief                :This tc tests pthread_testcancel()
-* @Scenario             :The function shall create a cancellation point in the calling thread
-*                        It has no effect if cancelability is disabled.
-* @API'scovered         :pthread_testcancel
-* @Preconditions        :none
-* @Postconditions       :none
-* @return               :void
-*/
-#ifdef CONFIG_CANCELLATION_POINTS
-static void tc_pthread_pthread_testcancel(void)
-{
-	pthread_testcancel();
-
-	TC_SUCCESS_RESULT();
-}
-#endif
-
 /****************************************************************************
- * Name: pthread
+ * Name: pthread_main
  ****************************************************************************/
 
 int pthread_main(void)
@@ -1527,7 +1549,6 @@ int pthread_main(void)
 	tc_pthread_pthread_setgetname_np();
 #ifdef CONFIG_CANCELLATION_POINTS
 	tc_pthread_pthread_setcanceltype();
-	tc_pthread_pthread_testcancel();
 #endif
 
 	return 0;

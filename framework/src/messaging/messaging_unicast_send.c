@@ -33,6 +33,20 @@
 /****************************************************************************
  * private functions
  ****************************************************************************/
+static int messaging_send_param_validation(const char *port_name, msg_send_data_t *send_data)
+{
+	if (port_name == NULL) {
+		msgdbg("[Messaging] unicast send sync fail : no port name.\n");
+		return ERROR;
+	}
+
+	if (send_data == NULL || send_data->msg == NULL || send_data->msglen <= 0 || send_data->priority < 0) {
+		msgdbg("[Messaging] unicast send sync fail : invalid param of send data.\n");
+		return ERROR;
+	}
+
+	return OK;
+}
 static int messaging_sync_recv(const char *port_name, msg_recv_buf_t *reply_buf)
 {
 	int ret = OK;
@@ -98,13 +112,9 @@ static int messaging_sync_recv(const char *port_name, msg_recv_buf_t *reply_buf)
 int messaging_send_sync(const char *port_name, msg_send_data_t *send_data, msg_recv_buf_t *reply_buf)
 {
 	int ret;
-	if (port_name == NULL) {
-		msgdbg("[Messaging] unicast send sync fail : no port name.\n");
-		return ERROR;
-	}
 
-	if (send_data == NULL || send_data->msg == NULL || send_data->msglen <= 0 || send_data->priority < 0) {
-		msgdbg("[Messaging] unicast send sync fail : invalid param of send data.\n");
+	ret = messaging_send_param_validation(port_name, send_data);
+	if (ret == ERROR) {
 		return ERROR;
 	}
 
@@ -132,13 +142,9 @@ int messaging_send_sync(const char *port_name, msg_send_data_t *send_data, msg_r
 int messaging_send_async(const char *port_name, msg_send_data_t *send_data, msg_recv_buf_t *reply_buf, msg_callback_info_t *cb_info)
 {
 	int ret;
-	if (port_name == NULL) {
-		msgdbg("[Messaging] unicast send async fail : no port name.\n");
-		return ERROR;
-	}
 
-	if (send_data == NULL || send_data->msg == NULL || send_data->msglen <= 0 || send_data->priority < 0) {
-		msgdbg("[Messaging] unicast send async fail : invalid param of send data.\n");
+	ret = messaging_send_param_validation(port_name, send_data);
+	if (ret == ERROR) {
 		return ERROR;
 	}
 

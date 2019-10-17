@@ -100,6 +100,7 @@
 
 bool kmm_heapmember(FAR void *mem)
 {
+	struct mm_heap_s *heap = kmm_get_heap();
 #if CONFIG_MM_REGIONS > 1
 	int i;
 
@@ -107,8 +108,8 @@ bool kmm_heapmember(FAR void *mem)
 	 * between the region's two guard nodes.
 	 */
 
-	for (i = 0; i < g_kmmheap.mm_nregions; i++) {
-		if (mem > (FAR void *)g_kmmheap.mm_heapstart[i] && mem < (FAR void *)g_kmmheap.mm_heapend[i]) {
+	for (i = 0; i < heap->mm_nregions; i++) {
+		if (mem > (FAR void *)heap->mm_heapstart[i] && mem < (FAR void *)heap->mm_heapend[i]) {
 			return true;
 		}
 	}
@@ -122,7 +123,7 @@ bool kmm_heapmember(FAR void *mem)
 	 * two guard nodes.
 	 */
 
-	if (mem > (FAR void *)g_kmmheap.mm_heapstart[0] && mem < (FAR void *)g_kmmheap.mm_heapend[0]) {
+	if (mem > (FAR void *)heap->mm_heapstart[0] && mem < (FAR void *)heap->mm_heapend[0]) {
 		return true;
 	}
 

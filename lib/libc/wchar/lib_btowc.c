@@ -88,6 +88,6 @@ wint_t btowc(int c)
 		return WEOF;
 	}
 
-	return (wint_t) pwc;
+	return (wint_t)pwc;
 }
 #endif

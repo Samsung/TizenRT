@@ -29,7 +29,7 @@
  ****************************************************************************/
 int task_manager_broadcast(int msg, tm_msg_t *broadcast_data, int timeout)
 {
-	int status;
+	int status = TM_OUT_OF_MEMORY;
 	tm_request_t request_msg;
 	tm_response_t response_msg;
 
@@ -49,8 +49,7 @@ int task_manager_broadcast(int msg, tm_msg_t *broadcast_data, int timeout)
 	if (broadcast_data != NULL && broadcast_data->msg_size != 0) {
 		((tm_internal_msg_t *)request_msg.data)->msg = (void *)TM_ALLOC(broadcast_data->msg_size);
 		if (((tm_internal_msg_t *)request_msg.data)->msg == NULL) {
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
+			goto errout_with_free_data;
 		}
 		memcpy(((tm_internal_msg_t *)request_msg.data)->msg, broadcast_data->msg, broadcast_data->msg_size);
 		((tm_internal_msg_t *)request_msg.data)->msg_size = broadcast_data->msg_size;
@@ -66,26 +65,27 @@ int task_manager_broadcast(int msg, tm_msg_t *broadcast_data, int timeout)
 	if (timeout != TM_NO_RESPONSE) {
 		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
-			TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
-			TM_FREE(request_msg.data);
-			return TM_OUT_OF_MEMORY;
+			goto errout_with_free_msg;
 		}
 	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
-		TM_FREE(request_msg.data);
 		if (request_msg.q_name != NULL) {
 			TM_FREE(request_msg.q_name);
 		}
-		return status;
+		goto errout_with_free_msg;
 	}
 
 	if (timeout != TM_NO_RESPONSE) {
-		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-		TM_FREE(request_msg.q_name);
+		RECV_RESPONSE_FROM_TM(request_msg, response_msg, status, timeout);
 	}
 
+	return status;
+
+errout_with_free_msg:
+	TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);	
+errout_with_free_data:
+	TM_FREE(request_msg.data);
 	return status;
 }

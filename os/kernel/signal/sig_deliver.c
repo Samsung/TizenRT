@@ -153,6 +153,24 @@ void sig_deliver(FAR struct tcb_s *stcb)
 		 * calling the task.
 		 */
 
+		if (sigq->info.si_signo == SIGKILL) {
+#ifdef CONFIG_SIGKILL_HANDLER
+			if (stcb->sigkillusrhandler != NULL) {
+#if defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)
+				if ((stcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+					siginfo_t info;
+					memcpy(&info, &sigq->info, sizeof(siginfo_t));
+
+					up_signal_dispatch(stcb->sigkillusrhandler, sigq->info.si_signo, &info, NULL);
+				} else
+#endif
+				{
+					stcb->sigkillusrhandler(sigq->info.si_signo, &sigq->info, NULL);
+				}
+			}
+#endif
+			(*sigq->action.sighandler)(0, NULL, NULL);
+		} else
 #if defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)
 		if ((stcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
 			/* The sigq_t pointed to by sigq resides in kernel space.  So we

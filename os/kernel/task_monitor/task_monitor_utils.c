@@ -21,9 +21,9 @@
 #include <sys/prctl.h>
 #include <sys/types.h>
 
-void task_monitor_register(void)
+int task_monitor_register(int interval)
 {
-	prctl(PR_MONITOR_REGISTER, NULL);
+	return prctl(PR_MONITOR_REGISTER, interval);
 }
 
 void task_monitor_update_status(void)

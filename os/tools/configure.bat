@@ -95,8 +95,8 @@ rem Check if we have to build configure.exe
 
 if exist configure.exe goto :HaveConfigureExe
 
-set cc=mingw32-gcc.exe
-set cflags=-Wall -Wstrict-prototypes -Wshadow -g -pipe -I. -DCONFIG_WINDOWS_NATIVE=y
+set cc=gcc
+set cflags=-Wall -Wstrict-prototypes -Wshadow -g -pipe -I. -DCONFIG_WINDOWS_NATIVE=1
 %cc% %cflags% -o configure.exe configure.c cfgparser.c
 if errorlevel 1 (
   echo ERROR: %cc% failed

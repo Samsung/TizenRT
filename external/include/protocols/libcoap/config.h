@@ -37,11 +37,14 @@
 #undef NDEBUG
 #endif
 
-#ifdef CONFIG_NET_SECURITY_TLS
-#define WITH_MBEDTLS
-#else
-#undef WITH_MBEDTLS
-#endif
+/* coap refers easy_tls not supported anymore
+ * So WITH_MBEDTLS is disabled until change easy_tls
+ */
+/* #ifdef CONFIG_NET_SECURITY_TLS */
+/* #define WITH_MBEDTLS */
+/* #else */
+/* #undef WITH_MBEDTLS */
+/* #endif */
 
 /********************************************************
  *  User defined configuration (via Kconfig)

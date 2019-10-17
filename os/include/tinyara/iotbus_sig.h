@@ -26,33 +26,31 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
-#include <iotbus/iotbus_common.h>
-#include <iotbus/iotbus_gpio.h>
-#include <iotbus/iotbus_spi.h>
-#include <iotbus/iotbus_pwm.h>
-#include <iotbus/iotbus_adc.h>
-#include <iotbus/iotbus_i2c.h>
-#include <iotbus/iotbus_uart.h>
-
-#ifdef CONFIG_IOTDEV
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#define IOTBUS_SIGPATH						"/dev/iotsig"
-#define IOTBUS_INT_SIG_TRIG(type)			iotbus_interrupt_trigger(type)
-
-#define IOTBUS_INTR_REGISTER					_IOTBUSIOC(1)
-#define IOTBUS_INTR_UNREGISTER				_IOTBUSIOC(2)
-#define IOTBUS_INTR_INFO					_IOTBUSIOC(3)
+#include <sys/types.h>
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+typedef enum {
+	IOTBUS_UART_TX_EMPTY = 0,
+	IOTBUS_UART_TX_RDY,
+	IOTBUS_UART_RX_AVAIL,
+	IOTBUS_UART_RECEIVED,
+	IOTBUS_GPIO_FALLING,
+	IOTBUS_GPIO_RISING,
+	IOTBUS_INTR_MAX,	
+} iotbus_int_type_e;
+
+typedef enum {
+	IOTBUS_GPIO = 0,
+	IOTBUS_PWM,
+	IOTBUS_ADC,
+	IOTBUS_UART,
+	IOTBUS_I2C,
+	IOTBUS_SPI,
+} iotbus_pin_e;
 
 struct iotbus_int_info_s {
 	void *handle;
@@ -60,6 +58,19 @@ struct iotbus_int_info_s {
 	int int_type;
 	pid_t pid;
 };
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#ifdef CONFIG_IOTDEV
+
+#define IOTBUS_SIGPATH						"/dev/iotsig"
+#define IOTBUS_INT_SIG_TRIG(type)			iotbus_interrupt_trigger(type)
+
+#define IOTBUS_INTR_REGISTER					_IOTBUSIOC(1)
+#define IOTBUS_INTR_UNREGISTER				_IOTBUSIOC(2)
+#define IOTBUS_INTR_INFO					_IOTBUSIOC(3)
 
 /****************************************************************************
  * Public Function Prototypes

@@ -26,7 +26,7 @@
 #include <media/HttpInputDataSource.h>
 #include <chrono>
 
-#include "utils/MediaUtils.h"
+#include <media/MediaUtils.h>
 #include "HttpStream.h"
 #include "StreamBuffer.h"
 #include "StreamBufferReader.h"
@@ -55,13 +55,13 @@ static const std::chrono::seconds WAIT_HEADER_TIMEOUT = std::chrono::seconds(3);
 static const std::chrono::seconds WAIT_DATA_TIMEOUT = std::chrono::seconds(3);
 
 HttpInputDataSource::HttpInputDataSource(const std::string &url)
-	: InputDataSource(), mUrl(url), mThread((pthread_t)0)
+	: InputDataSource(), mUrl(url), mThread((pthread_t)0), mIsHeaderReceived(false), mIsDataReceived(false)
 {
 	medvdbg("url: %s\n", mUrl.c_str());
 }
 
 HttpInputDataSource::HttpInputDataSource(const HttpInputDataSource &source)
-	: InputDataSource(source), mUrl(source.mUrl), mThread((pthread_t)0)
+	: InputDataSource(source), mUrl(source.mUrl), mThread((pthread_t)0), mIsHeaderReceived(source.mIsHeaderReceived), mIsDataReceived(source.mIsDataReceived)
 {
 }
 
@@ -152,7 +152,7 @@ bool HttpInputDataSource::open()
 		size_t dlen = mBufferReader->copy(tempbuf, templen);
 		unsigned int channel;
 		unsigned int sampleRate;
-		bool ret = utils::header_parsing(tempbuf, dlen, audioType, &channel, &sampleRate, NULL);
+		bool ret = utils::buffer_header_parsing(tempbuf, dlen, audioType, &channel, &sampleRate, NULL);
 		delete[] tempbuf;
 
 		if (!ret) {
@@ -257,8 +257,11 @@ size_t HttpInputDataSource::HeaderCallback(char *data, size_t size, size_t nmemb
 	size_t totalsize = size * nmemb;
 	std::string header(data, totalsize);
 	medvdbg("%s\n", header.c_str());
-	if (header.find(TAG_CONTENT_TYPE) != std::string::npos) {
-		source->mContentType = header.substr(TAG_CONTENT_TYPE.length());
+	auto pos = header.find(TAG_CONTENT_TYPE);
+	if (pos != std::string::npos) {
+		pos = header.find_first_not_of(' ', pos + TAG_CONTENT_TYPE.length());
+		auto end = header.find((char)0x0d, pos); // CR: 0x0d
+		source->mContentType = header.substr(pos, end - pos);
 		if (!source->mIsHeaderReceived) {
 			std::lock_guard<std::mutex> lock(source->mMutex);
 			source->mIsHeaderReceived = true;

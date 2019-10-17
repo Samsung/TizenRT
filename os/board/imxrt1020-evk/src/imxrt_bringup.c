@@ -97,20 +97,22 @@
  * Private Functions
  ****************************************************************************/
 
-#if defined(CONFIG_I2C_DRIVER)
+#if defined(CONFIG_I2C)
 static void imxrt_i2c_register(int bus)
 {
 	FAR struct i2c_master_s *i2c;
 	int ret;
+	char path[16];
 
-	i2c = imxrt_i2cbus_initialize(bus);
+	snprintf(path, sizeof(path), "/dev/i2c-%d", bus - 1);
+	i2c = up_i2cinitialize(bus);
 	if (i2c == NULL) {
-		serr("ERROR: Failed to get I2C%d interface\n", bus);
+		syslog("ERROR: Failed to get I2C%d interface\n", bus - 1);
 	} else {
-		ret = i2c_register(i2c, bus);
+		ret = i2c_uioregister(path, i2c);
 		if (ret < 0) {
-			serr("ERROR: Failed to register I2C%d driver: %d\n", bus, ret);
-			imxrt_i2cbus_uninitialize(i2c);
+			syslog("ERROR: Failed to register I2C%d driver: %d\n", bus - 1, ret);
+			up_i2cuninitialize(i2c);
 		}
 	}
 }
@@ -303,16 +305,16 @@ int imxrt_bringup(void)
 	}
 #endif
 
-#if defined(CONFIG_I2C_DRIVER) && defined(CONFIG_IMXRT_LPI2C1)
+#if defined(CONFIG_I2C) && defined(CONFIG_IMXRT_LPI2C1)
 	imxrt_i2c_register(1);
 #endif
-#if defined(CONFIG_I2C_DRIVER) && defined(CONFIG_IMXRT_LPI2C2)
+#if defined(CONFIG_I2C) && defined(CONFIG_IMXRT_LPI2C2)
 	imxrt_i2c_register(2);
 #endif
-#if defined(CONFIG_I2C_DRIVER) && defined(CONFIG_IMXRT_LPI2C3)
+#if defined(CONFIG_I2C) && defined(CONFIG_IMXRT_LPI2C3)
 	imxrt_i2c_register(3);
 #endif
-#if defined(CONFIG_I2C_DRIVER) && defined(CONFIG_IMXRT_LPI2C4)
+#if defined(CONFIG_I2C) && defined(CONFIG_IMXRT_LPI2C4)
 	imxrt_i2c_register(4);
 #endif
 

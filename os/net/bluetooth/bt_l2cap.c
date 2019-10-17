@@ -62,11 +62,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define LE_CONN_MIN_INTERVAL         0x0028
-#define LE_CONN_MAX_INTERVAL         0x0038
-#define LE_CONN_LATENCY              0x0000
-#define LE_CONN_TIMEOUT              0x002a
-
 #define BT_L2CAP_CONN_PARAM_ACCEPTED 0
 #define BT_L2CAP_CONN_PARAM_REJECTED 1
 
@@ -408,6 +403,30 @@ void bt_l2cap_update_conn_param(FAR struct bt_conn_s *conn)
 	req->timeout = BT_HOST2LE16(LE_CONN_TIMEOUT);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+}
+
+int bt_l2cap_update_conn_parameter(FAR struct bt_conn_s *conn, const struct bt_le_conn_param *param)
+{
+	FAR struct bt_l2cap_sig_hdr_s *hdr;
+	FAR struct bt_l2cap_conn_param_req_s *req;
+	FAR struct bt_buf_s *buf;
+
+	buf = bt_l2cap_create_pdu(conn);
+
+	hdr = bt_buf_extend(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONN_PARAM_REQ;
+	hdr->ident = get_ident(conn);
+	hdr->len = BT_HOST2LE16(sizeof(*req));
+
+	req = bt_buf_extend(buf, sizeof(*req));
+	req->min_interval = BT_HOST2LE16(param->interval_min);
+	req->max_interval = BT_HOST2LE16(param->interval_max);
+	req->latency = BT_HOST2LE16(param->latency);
+	req->timeout = BT_HOST2LE16(param->timeout);
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+
+	return 0;
 }
 
 int bt_l2cap_init(void)

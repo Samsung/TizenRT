@@ -421,12 +421,6 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-#ifdef CONFIG_MM_KERNEL_HEAP
-/* This is the kernel heap */
-
-EXTERN struct mm_heap_s g_kmmheap;
-#endif
-
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
 /* In the kernel build, there are multiple user heaps; one for each task
  * group.  In this build configuration, the user heap structure lies
@@ -676,6 +670,10 @@ struct mallinfo kmm_mallinfo(void);
 int kmm_mallinfo(struct mallinfo *info);
 #endif
 #endif							/* CONFIG_CAN_PASS_STRUCTS */
+
+#ifdef CONFIG_MM_KERNEL_HEAP
+struct mm_heap_s *kmm_get_heap(void);
+#endif
 
 /* Functions contained in mm_shrinkchunk.c **********************************/
 

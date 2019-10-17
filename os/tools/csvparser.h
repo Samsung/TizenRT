@@ -78,15 +78,14 @@
  * Public Data
  ****************************************************************************/
 
-extern bool g_debug;
-extern char g_line[LINESIZE + 1];
-extern char g_parm[MAX_FIELDS][MAX_PARMSIZE];
-extern int g_lineno;
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
+void set_debug(bool debug);
+char *get_parm(unsigned int field);
+int get_lineno(void);
+char *get_line(void);
 char *read_line(FILE * stream);
 int parse_csvline(char *ptr);
 

@@ -24,14 +24,18 @@
  * Included Files
  ****************************************************************************/
 #include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <inttypes.h>
+#include <errno.h>
 #include "tc_internal.h"
 
-#define DECIMAL 10
-#define HEXADECIMAL 16
-#define BINARY 2
-#define NVAL1 1000
-#define NVAL2 12
+#define DECIMAL         (10)
+#define HEXADECIMAL     (16)
+#define BINARY          (2)
+#define INVALID_BASE    (-1)
+#define NVAL1           (1000)
+#define NVAL2           (12)
 
 /**
  * @fn                   :tc_libc_inttypes_imaxabs
@@ -131,6 +135,21 @@ static void tc_libc_inttypes_strtoumax(void)
 	const char str_ulnum[] = "201 0x60 1100 0x6f";
 	char *end_ptr;
 	uintmax_t ret_chk;
+#ifdef __INT64_DEFINED
+	const char str_uintmax_plus_1[21] = "18446744073709551616"; // UINT64_MAX + 1
+#else
+	const char str_uintmax_plus_1[11] = "4294967296"; // UINT32_MAX + 1
+#endif
+
+	/* Negative test with invalid base */
+
+	ret_chk = strtoumax(str_ulnum, &end_ptr, INVALID_BASE);
+	TC_ASSERT_EQ("strtoumax", ret_chk, 0);
+
+	/* Negative test with overflow */
+
+	ret_chk = strtoumax(str_uintmax_plus_1, &end_ptr, DECIMAL);
+	TC_ASSERT_EQ("strtoumax", ret_chk, (uintmax_t)UINTMAX_MAX);
 
 	/* ret_chk = 201 for string 201 in decimal */
 

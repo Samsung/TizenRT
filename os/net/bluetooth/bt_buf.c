@@ -573,7 +573,9 @@ FAR void *bt_buf_consume(FAR struct bt_buf_s *buf, size_t len)
 {
 	nvdbg("buf %p len %u\n", buf, len);
 
-	DEBUGASSERT(buf->len >= len);
+	/* TODO: need to check why assert is occured although condition is satisfied */
+	if (buf->len < len)
+		DEBUGASSERT(buf->len >= len);
 
 	buf->len -= len;
 	return buf->data += len;

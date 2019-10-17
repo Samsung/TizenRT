@@ -50,6 +50,8 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_LIBC_SYMTAB),y)
+
 # Symbol table source files
 
 CSRCS += symtab_findbyname.c symtab_findbyvalue.c
@@ -59,3 +61,5 @@ CSRCS += symtab_findorderedbyname.c symtab_sortbyname.c
 
 DEPPATH += --dep-path symtab
 VPATH += :symtab
+
+endif

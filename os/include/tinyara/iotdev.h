@@ -29,8 +29,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
-
-#include <iotbus/iotbus_common.h>
+#include <tinyara/iotbus_sig.h>
 
 #ifdef CONFIG_IOTDEV
 
