@@ -64,7 +64,7 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/video/fb.h>
+#include <tinyara/lcd/lcd.h>
 #include <tinyara/kmalloc.h>
 
 #include <arch/chip/ltdc.h>
@@ -112,6 +112,7 @@ void stm32_dsi_refresh(void);
  * Public Data
  ****************************************************************************/
 DSI_HandleTypeDef    hdsi;
+struct stm32l4_dsi_s dsidev;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -119,6 +120,7 @@ DSI_HandleTypeDef    hdsi;
 /****************************************************************************
  * Configure global register
  ****************************************************************************/
+
 static const struct dsi_ops_s g_dsiops = {
   .config  = stm32l4_dsi_config,
   .enable  = stm32l4_dsi_enable,
@@ -324,4 +326,18 @@ uint8_t stm32l4_dsi_initialize(void)
 void stm32_dsi_refresh(void)
 {
     HAL_DSI_Refresh(&hdsi);
+}
+
+/**
+  * @brief  End of Refresh DSI callback.
+  * @param  hdsi: pointer to a DSI_HandleTypeDef structure that contains
+  *               the configuration information for the DSI.
+  * @retval None
+  */
+void HAL_DSI_EndOfRefreshCallback(DSI_HandleTypeDef *hdsi)
+{
+    /* Clear pending tearing effect flag */
+    __HAL_DSI_CLEAR_FLAG(hdsi, DSI_FLAG_TE);
+    /* Set frame buffer available */
+    dsidev.isframebuffer = 1;
 }

@@ -58,8 +58,10 @@
 #include "up_arch.h"
 #include "up_internal.h"
 #include "stm32l4.h"
+#include "stm32l4xx_hal_interface.h"
 #include "chip/stm32l4_ltdc.h"
 #include "chip/stm32l4_dma2d.h"
+#include "stm32l4xx_hal_dma2d.h"
 #include "stm32l4_dma2d.h"
 #include "stm32l4_ltdc.h"
 /****************************************************************************
@@ -69,16 +71,6 @@
 /* DMA2D supported operation layer (output, foreground, background) */
 
 #define DMA2D_NLAYERS                       3
-
-/* DMA2D blender control */
-
-#define STM32_DMA2D_CR_MODE_BLIT            DMA2D_CR_MODE(0)
-#define STM32_DMA2D_CR_MODE_BLITPFC         DMA2D_CR_MODE(1)
-#define STM32_DMA2D_CR_MODE_BLEND           DMA2D_CR_MODE(2)
-#define STM32_DMA2D_CR_MODE_COLOR           DMA2D_CR_MODE(3)
-#define STM32_DMA2D_CR_MODE_CLEAR           STM32_DMA2D_CR_MODE_BLITPFC | \
-                                            STM32_DMA2D_CR_MODE_BLEND   | \
-                                            STM32_DMA2D_CR_MODE_COLOR
 
 /* Only 8 bit per pixel overal supported */
 
@@ -238,8 +230,10 @@ static int stm32_dma2d_blend(FAR struct stm32_dma2d_overlay_s *doverlay,
                              FAR struct stm32_dma2d_overlay_s *boverlay,
                              FAR const struct fb_area_s *barea);
 #ifdef USE_HAL_DRIVER
-static void stm32_dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
+static void STM32_DMA2D_CopyBuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
                             uint16_t xsize, uint16_t ysize);
+static void STM32_DMA2D_SetLayer_InputColor(uint32_t pf);
+static HAL_StatusTypeDef HAL_DMA2D_InitConfig(DMA2D_HandleTypeDef *hdma2d);
 #endif
 /****************************************************************************
  * Private Data
@@ -290,7 +284,8 @@ static struct stm32_dma2d_s g_dma2ddev =
     .blit        = stm32_dma2d_blit,
     .blend       = stm32_dma2d_blend,
 #ifdef USE_HAL_DRIVER
-    .copybuffer  = stm32_dma2d_copybuffer
+    .copybuffer  = STM32_DMA2D_CopyBuffer,
+    .inputcolor  = STM32_DMA2D_SetLayer_InputColor
 #endif
   },
 #ifdef CONFIG_STM32L4_FB_CMAP
@@ -323,16 +318,7 @@ DMA2D_HandleTypeDef   hdma2d;
 
 static void stm32_dma2d_control(uint32_t setbits, uint32_t clrbits)
 {
-  uint32_t   cr;
-
-  gdbg("setbits=%08x, clrbits=%08x\n", setbits, clrbits);
-
-  cr = getreg32(STM32_DMA2D_CR);
-  cr &= ~clrbits;
-  cr |= setbits;
-
-  gdbg("cr=%08x\n", cr);
-  putreg32(cr, STM32_DMA2D_CR);
+    return 0;
 }
 
 /****************************************************************************
@@ -345,91 +331,7 @@ static void stm32_dma2d_control(uint32_t setbits, uint32_t clrbits)
 
 static int stm32_dma2dirq(int irq, void *context, FAR void *arg)
 {
-  int ret;
-  uint32_t regval = getreg32(STM32_DMA2D_ISR);
-  FAR struct stm32_interrupt_s *priv = &g_interrupt;
-
-  reginfo("irq = %d, regval = %08x\n", irq, regval);
-
-  if (regval & DMA2D_ISR_TCIF)
-    {
-      /* Transfer complete interrupt */
-
-      /* Clear the interrupt status register */
-
-      reginfo("DMA transfer complete\n");
-      putreg32(DMA2D_IFCR_CTCIF, STM32_DMA2D_IFCR);
-      priv->error = OK;
-    }
-#ifdef CONFIG_STM32L4_DMA2D_L8
-  else if (regval & DMA2D_ISR_CTCIF)
-    {
-      /* CLUT transfer complete interrupt */
-
-      /* Clear the interrupt status register */
-
-      reginfo("CLUT transfer complete\n");
-      putreg32(DMA2D_IFCR_CCTCIF, STM32_DMA2D_IFCR);
-      priv->error = OK;
-    }
-#endif
-  else if (regval & DMA2D_ISR_TWIF)
-    {
-      /* Watermark transfer complete interrupt */
-
-      /* Clear the interrupt status register */
-
-      reginfo("Watermark transfer complete\n");
-      putreg32(DMA2D_IFCR_CTWIF, STM32_DMA2D_IFCR);
-      priv->error = OK;
-    }
-  else if (regval & DMA2D_ISR_TEIF)
-    {
-      /* Transfer error interrupt */
-
-      /* Clear the interrupt status register */
-
-      reginfo("ERROR: transfer\n");
-      putreg32(DMA2D_IFCR_CTEIF, STM32_DMA2D_IFCR);
-      priv->error = -ECANCELED;
-    }
-  else if (regval & DMA2D_ISR_CAEIF)
-    {
-      /* CLUT access error interrupt */
-
-      /* Clear the interrupt status register */
-
-      reginfo("ERROR: clut access\n");
-      putreg32(DMA2D_IFCR_CAECIF, STM32_DMA2D_IFCR);
-      priv->error = -ECANCELED;
-    }
-  else if (regval & DMA2D_ISR_CEIF)
-    {
-      /* Configuration error interrupt */
-
-      /* Clear the interrupt status register */
-
-      reginfo("ERROR: configuration\n");
-      putreg32(DMA2D_IFCR_CCEIF, STM32_DMA2D_IFCR);
-      priv->error = -ECANCELED;
-    }
-  else
-    {
-      /* Unknown irq, should not occur */
-
-      DEBUGASSERT("Unknown interrupt error\n");
-    }
-
-  /* Unlock the semaphore if locked */
-
-  ret = sem_post(priv->sem);
-
-  if (ret < 0)
-    {
-      gdbg("ERROR: sem_post() failed\n");
-    }
-
-  return OK;
+    return 0;
 }
 
 /****************************************************************************
@@ -447,20 +349,7 @@ static int stm32_dma2dirq(int irq, void *context, FAR void *arg)
 
 static int stm32_dma2d_waitforirq(void)
 {
-  int ret;
-  FAR struct stm32_interrupt_s *priv = &g_interrupt;
-
-  ret = sem_wait(priv->sem);
-
-  if (ret < 0)
-    {
-      gdbg("ERROR: sem_wait() failed\n");
-      return ret;
-    }
-
-  ret = priv->error;
-
-  return ret;
+    return 0;
 }
 
 /****************************************************************************
@@ -481,22 +370,7 @@ static int stm32_dma2d_waitforirq(void)
 #ifdef CONFIG_STM32L4_DMA2D_L8
 static int stm32_dma2d_loadclut(uintptr_t pfcreg)
 {
-  int        ret;
-  uint32_t   regval;
-
-  /* Start clut loading */
-
-  regval  = getreg32(pfcreg);
-  regval |= DMA2D_xGPFCCR_START;
-  reginfo("set regval=%08x\n", regval);
-  putreg32(regval, pfcreg);
-  reginfo("configured regval=%08x\n", getreg32(pfcreg));
-
-  /* Wait until clut is finished */
-
-  ret = stm32_dma2d_waitforirq();
-
-  return ret;
+    return 0;
 }
 #endif
 
@@ -515,17 +389,7 @@ static int stm32_dma2d_loadclut(uintptr_t pfcreg)
 
 static int stm32_dma2d_start(void)
 {
-  int        ret;
-
-  /* Start dma transfer */
-
-  stm32_dma2d_control(DMA2D_CR_START, 0);
-
-  /* wait until transfer is complete */
-
-  ret = stm32_dma2d_waitforirq();
-
-  return ret;
+    return 0;
 }
 
 /****************************************************************************
@@ -547,13 +411,7 @@ static int stm32_dma2d_start(void)
 static uint32_t stm32_dma2d_memaddress(FAR struct stm32_dma2d_overlay_s *oinfo,
                                        uint32_t xpos, uint32_t ypos)
 {
-  uint32_t offset;
-  FAR struct fb_overlayinfo_s *poverlay = oinfo->oinfo;
-
-  offset = xpos * DMA2D_PF_BYPP(poverlay->bpp) + poverlay->stride * ypos;
-
-  gdbg("%p, offset=%d\n", ((uint32_t) poverlay->fbmem) + offset, offset);
-  return ((uint32_t) poverlay->fbmem) + offset;
+    return 0;
 }
 
 /****************************************************************************
@@ -573,14 +431,7 @@ static uint32_t stm32_dma2d_memaddress(FAR struct stm32_dma2d_overlay_s *oinfo,
 static uint32_t stm32_dma2d_lineoffset(FAR struct stm32_dma2d_overlay_s *oinfo,
                                        FAR const struct fb_area_s *area)
 {
-  uint32_t loffset;
-
-  /* offset at the end of each line in the context to the area layer */
-
-  loffset = oinfo->xres - area->w;
-
-  gdbg("%d\n", loffset);
-  return loffset;
+    return 0;
 }
 
 /****************************************************************************
@@ -600,11 +451,7 @@ static void stm32_dma2d_lfifo(FAR struct stm32_dma2d_overlay_s *oinfo,
                               int lid, uint32_t xpos, uint32_t ypos,
                               FAR const struct fb_area_s *area)
 {
-  gdbg("oinfo=%p, lid=%d, xpos=%d, ypos=%d, area=%p\n",
-           oinfo, lid, xpos, ypos, area);
 
-  putreg32(stm32_dma2d_memaddress(oinfo, xpos, ypos), stm32_mar_layer_t[lid]);
-  putreg32(stm32_dma2d_lineoffset(oinfo, area), stm32_or_layer_t[lid]);
 }
 
 /****************************************************************************
@@ -638,13 +485,7 @@ static void stm32_dma2d_lcolor(int lid, uint32_t argb)
 
 static void stm32_dma2d_llnr(FAR const struct fb_area_s *area)
 {
-  uint32_t nlrreg;
 
-  gdbg("pixel per line: %d, number of lines: %d\n", area->w, area->h);
-
-  nlrreg = getreg32(STM32_DMA2D_NLR);
-  nlrreg = (DMA2D_NLR_PL(area->w) | DMA2D_NLR_NL(area->h));
-  putreg32(nlrreg, STM32_DMA2D_NLR);
 }
 
 /****************************************************************************
@@ -660,13 +501,7 @@ static void stm32_dma2d_llnr(FAR const struct fb_area_s *area)
 
 static int stm32_dma2d_loutpfc(uint8_t fmt)
 {
-  gdbg("pixel format: %d\n", fmt);
-
-  /* Set the mapped pixel format of the destination layer */
-
-  putreg32(DMA2D_OPFCCR_CM(fmt), STM32_DMA2D_OPFCCR);
-
-  return OK;
+  return 0;
 }
 
 /****************************************************************************
@@ -685,58 +520,7 @@ static int stm32_dma2d_loutpfc(uint8_t fmt)
 static void stm32_dma2d_lpfc(int lid, uint32_t blendmode, uint8_t alpha,
                              uint8_t fmt)
 {
-  uint32_t   pfccrreg;
 
-  gdbg("lid=%d, blendmode=%08x, alpha=%02x, fmt=%d\n", lid, blendmode, alpha,
-          fmt);
-
-  /* Set color format */
-
-  pfccrreg = DMA2D_xGPFCCR_CM(fmt);
-
-#ifdef CONFIG_STM32L4_FB_CMAP
-  if (fmt == DMA2D_PF_L8)
-    {
-      FAR struct stm32_dma2d_s * layer = &g_dma2ddev;
-
-      /* Load CLUT automatically */
-
-      pfccrreg |= DMA2D_xGPFCCR_START;
-
-      /* Set the CLUT color mode */
-
-#  ifndef CONFIG_STM32L4_FB_TRANSPARENCY
-      pfccrreg |= DMA2D_xGPFCCR_CCM;
-#  endif
-
-      /* Set CLUT size */
-
-      pfccrreg |= DMA2D_xGPFCCR_CS(DMA2D_CLUT_SIZE);
-
-      /* Set the CLUT memory address */
-
-      putreg32((uint32_t) layer->clut, stm32_cmar_layer_t[lid]);
-
-      /* Start async clut loading */
-
-      stm32_dma2d_loadclut(stm32_pfccr_layer_t[lid]);
-    }
-#endif /* CONFIG_STM32L4_FB_CMAP */
-
-  /* Set alpha blend mode */
-
-  pfccrreg |= DMA2D_xGPFCCR_AM(blendmode);
-
-  if (blendmode == STM32_DMA2D_PFCCR_AM_CONST ||
-        blendmode == STM32_DMA2D_PFCCR_AM_PIXEL)
-    {
-      /* Set alpha value */
-
-      pfccrreg |= DMA2D_xGPFCCR_ALPHA(alpha);
-
-    }
-
-  putreg32(pfccrreg, stm32_pfccr_layer_t[lid]);
 }
 
 /****************************************************************************
@@ -761,48 +545,7 @@ static void stm32_dma2d_lpfc(int lid, uint32_t blendmode, uint8_t alpha,
 #ifdef CONFIG_STM32L4_FB_CMAP
 static int stm32_dma2d_setclut(FAR const struct fb_cmap_s *cmap)
 {
-  int n;
-  FAR struct stm32_dma2d_s * priv = &g_dma2ddev;
-
-  gdbg("cmap=%p\n", cmap);
-
-  sem_wait(priv->lock);
-
-  for (n = cmap->first; n < cmap->len - 1 && n < STM32_DMA2D_NCLUT; n++)
-    {
-      /* Update the layer clut entry, will be automatically loaded before
-       * blit operation becomes active
-       */
-
-#  ifndef CONFIG_STM32L4_FB_TRANSPARENCY
-      uint8_t *clut   = (uint8_t *)g_dma2ddev.clut;
-      uint16_t offset = 3 * n;
-
-      clut[offset]     = cmap->blue[n];
-      clut[offset + 1] = cmap->green[n];
-      clut[offset + 2] = cmap->red[n];
-
-      reginfo("n=%d, red=%02x, green=%02x, blue=%02x\n", n, clut[offset],
-              clut[offset + 1], clut[offset + 2]);
-#  else
-      uint32_t *clut  = g_dma2ddev.clut;
-
-      clut[n] = (uint32_t)DMA2D_CLUT_ALPHA(cmap->transp[n]) |
-                (uint32_t)DMA2D_CLUT_RED(cmap->red[n]) |
-                (uint32_t)DMA2D_CLUT_GREEN(cmap->green[n]) |
-                (uint32_t)DMA2D_CLUT_BLUE(cmap->blue[n]);
-
-      reginfo("n=%d, alpha=%02x, red=%02x, green=%02x, blue=%02x\n", n,
-                DMA2D_CLUT_ALPHA(cmap->transp[n]),
-                DMA2D_CLUT_RED(cmap->red[n]),
-                DMA2D_CLUT_GREEN(cmap->green[n]),
-                DMA2D_CLUT_BLUE(cmap->blue[n]));
-#  endif
-    }
-
-  sem_post(priv->lock);
-
-  return OK;
+    return 0;
 }
 #endif /* CONFIG_STM32L4_FB_CMAP */
 
@@ -830,57 +573,7 @@ static int stm32_dma2d_fillcolor(FAR struct stm32_dma2d_overlay_s *oinfo,
                                  FAR const struct fb_area_s *area,
                                  uint32_t argb)
 {
-  int ret;
-  FAR struct stm32_dma2d_s * priv = &g_dma2ddev;
-  DEBUGASSERT(oinfo != NULL && oinfo->oinfo != NULL && area != NULL);
-
-  gdbg("oinfo=%p, argb=%08x\n", oinfo, argb);
-
-#ifdef CONFIG_STM32L4_FB_CMAP
-  if (oinfo->fmt == DMA2D_PF_L8)
-    {
-      /* CLUT output not supported */
-
-      gdbg("ERROR: Returning ENOSYS, "
-             "output to layer with CLUT format not supported.\n");
-      return -ENOSYS;
-    }
-#endif
-
-  sem_wait(priv->lock);
-
-  /* Set output pfc */
-
-  stm32_dma2d_loutpfc(oinfo->fmt);
-
-  /* Set output fifo */
-
-  stm32_dma2d_lfifo(oinfo, DMA2D_LAYER_LOUT, area->x, area->y, area);
-
-  /* Set the output color register */
-
-  stm32_dma2d_lcolor(DMA2D_LAYER_LOUT, argb);
-
-  /* Set number of lines and pixel per line */
-
-  stm32_dma2d_llnr(area);
-
-  /* Set register to memory transfer */
-
-  stm32_dma2d_control(STM32_DMA2D_CR_MODE_COLOR, STM32_DMA2D_CR_MODE_CLEAR);
-
-  /* Start DMA2D and wait until completed */
-
-  ret = stm32_dma2d_start();
-
-  if (ret != OK)
-    {
-      ret = -ECANCELED;
-      gdbg("ERROR: Returning ECANCELED\n");
-    }
-
-  sem_post(priv->lock);
-  return ret;
+    return 0;
 }
 
 /****************************************************************************
@@ -911,65 +604,8 @@ static int stm32_dma2d_blit(FAR struct stm32_dma2d_overlay_s *doverlay,
                             FAR struct stm32_dma2d_overlay_s *soverlay,
                             FAR const struct fb_area_s *sarea)
 {
-  int        ret;
-  uint32_t  mode;
-  FAR struct stm32_dma2d_s * priv = &g_dma2ddev;
 
-  gdbg("doverlay=%p, destxpos=%d, destypos=%d, soverlay=%p, sarea=%p\n",
-          doverlay, destxpos, destypos, soverlay, sarea);
-
-  sem_wait(priv->lock);
-
-  /* Set output pfc */
-
-  stm32_dma2d_loutpfc(doverlay->fmt);
-
-  /* Set foreground pfc */
-
-  stm32_dma2d_lpfc(DMA2D_LAYER_LFORE, STM32_DMA2D_PFCCR_AM_NONE, 0,
-                   soverlay->fmt);
-
-  /* Set foreground fifo */
-
-  stm32_dma2d_lfifo(soverlay, DMA2D_LAYER_LFORE, sarea->x, sarea->y, sarea);
-
-  /* Set output fifo */
-
-  stm32_dma2d_lfifo(doverlay, DMA2D_LAYER_LOUT, destxpos, destypos, sarea);
-
-  /* Set number of lines and pixel per line */
-
-  stm32_dma2d_llnr(sarea);
-
-  /* Set dma2d mode for blit operation */
-
-  if (doverlay->fmt == soverlay->fmt)
-    {
-      /* Blit without pfc */
-
-      mode = STM32_DMA2D_CR_MODE_BLIT;
-    }
-  else
-    {
-      /* Blit with pfc */
-
-      mode = STM32_DMA2D_CR_MODE_BLITPFC;
-    }
-
-  stm32_dma2d_control(mode, STM32_DMA2D_CR_MODE_CLEAR);
-
-  /* Start DMA2D and wait until completed */
-
-  ret = stm32_dma2d_start();
-
-  if (ret != OK)
-    {
-      ret = -ECANCELED;
-      gdbg("ERROR: Returning ECANCELED\n");
-    }
-
-  sem_post(priv->lock);
-  return ret;
+  return 0;
 }
 
 /****************************************************************************
@@ -1009,97 +645,52 @@ static int stm32_dma2d_blend(FAR struct stm32_dma2d_overlay_s *doverlay,
                              FAR struct stm32_dma2d_overlay_s *boverlay,
                              FAR const struct fb_area_s *barea)
 {
-  int          ret;
-  FAR struct stm32_dma2d_s * priv = &g_dma2ddev;
-
-  gdbg("doverlay=%p, destxpos=%d, destypos=%d, "
-          "foverlay=%p, forexpos=%d, foreypos=%d, "
-          "boverlay=%p, barea=%p, barea.x=%d, barea.y=%d, barea.w=%d, "
-          "barea.h=%d\n", doverlay, destxpos, destypos, foverlay, forexpos,
-          foreypos, boverlay, barea, barea->x, barea->y, barea->w, barea->h);
-
-#ifdef CONFIG_STM32L4_FB_CMAP
-  if (doverlay->fmt == DMA2D_PF_L8)
-    {
-      /* CLUT output not supported */
-
-      gdbg("ERROR: Returning ENOSYS, "
-             "output to layer with CLUT format not supported.\n");
-      return -ENOSYS;
-    }
-#endif
-
-  sem_wait(priv->lock);
-
-  /* Set output pfc */
-
-  stm32_dma2d_loutpfc(doverlay->fmt);
-
-  /* Set background pfc */
-
-  stm32_dma2d_lpfc(DMA2D_LAYER_LBACK, boverlay->transp_mode,
-                   boverlay->oinfo->transp.transp, boverlay->fmt);
-
-  /* Set foreground pfc */
-
-  stm32_dma2d_lpfc(DMA2D_LAYER_LFORE, foverlay->transp_mode,
-                   foverlay->oinfo->transp.transp, foverlay->fmt);
-
-  /* Set background fifo */
-
-  stm32_dma2d_lfifo(boverlay, DMA2D_LAYER_LBACK, barea->x, barea->y, barea);
-
-  /* Set foreground fifo */
-
-  stm32_dma2d_lfifo(foverlay, DMA2D_LAYER_LFORE, forexpos, foreypos, barea);
-
-  /* Set output fifo */
-
-  stm32_dma2d_lfifo(doverlay, DMA2D_LAYER_LOUT, destxpos, destypos, barea);
-
-  /* Set number of lines and pixel per line */
-
-  stm32_dma2d_llnr(barea);
-
-  /* Set watermark */
-
-  /* Enable DMA2D blender */
-
-  stm32_dma2d_control(STM32_DMA2D_CR_MODE_BLEND, STM32_DMA2D_CR_MODE_CLEAR);
-
-  /* Start DMA2D and wait until completed */
-
-  ret = stm32_dma2d_start();
-
-  if (ret != OK)
-    {
-      ret = -ECANCELED;
-      gdbg("ERROR: Returning ECANCELED\n");
-    }
-
-  sem_post(priv->lock);
-  return ret;
+    return 0;
 }
 
 #ifdef USE_HAL_DRIVER
-extern uint32_t              PhysFrameBuffer[];
-static void stm32_dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
+extern uint32_t              PhysFrameBuffer[]; 
+static void STM32_DMA2D_CopyBuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
                                    uint16_t xsize, uint16_t ysize)
 {
     pdst = (uint32_t *)(0x60000000);//PhysFrameBuffer;
-    
-    uint32_t destination = (uint32_t)pdst + (y * 390 + x) * 4;
-    uint32_t source      = (uint32_t)psrc;
-    
+
+    uint32_t destination = (uint32_t)pdst + (y * 390 + x) * 3;
+    uint32_t source      = (uint32_t)psrc;    
     printf("destination : 0x%X, source : 0x%X, xsize %d ysize %d\n", destination, source, xsize, ysize);
-    if(HAL_DMA2D_Start(&hdma2d, source, destination, xsize, ysize) == HAL_OK){
-        if(HAL_DMA2D_PollForTransfer(&hdma2d, 100) != HAL_OK){
-            printf("buffer copy error\n");
-        }else{
-            printf("buffer copy done\n");
+
+    hdma2d.Init.Mode           = DMA2D_M2M_PFC;
+    hdma2d.Init.ColorMode      = DMA2D_OUTPUT_ARGB8888;
+    hdma2d.Init.OutputOffset   = 390 - xsize;
+
+    hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB888;
+    hdma2d.LayerCfg[1].InputOffset    = 0;
+
+    if(HAL_DMA2D_InitConfig(&hdma2d) == HAL_OK){
+        if(HAL_DMA2D_ConfigLayer(&hdma2d, 1) == HAL_OK){
+            if(HAL_DMA2D_Start(&hdma2d, source, destination, xsize, ysize) == HAL_OK){
+                if(HAL_DMA2D_PollForTransfer(&hdma2d, 100) != HAL_OK){
+                    printf("buffer copy error\n");
+                }else{
+                    printf("buffer copy done\n");
+                }
+            }
         }
     }
-    stm32_dsi_refresh();
+}
+
+static void STM32_DMA2D_SetLayer_InputColor(uint32_t pf)
+{
+#if 0//testing ...
+    switch(pf){
+    case :
+        break;
+    case :
+        break;
+    default :
+        break;
+    }
+#endif
 }
 #endif
 /****************************************************************************
@@ -1120,8 +711,8 @@ int stm32l4_dma2dinitialize(void)
   hdma2d.Instance          = DMA2D;
 
   /*##-1- Configure the DMA2D Mode, Color Mode and output offset #############*/
-  hdma2d.Init.Mode           = DMA2D_M2M_PFC;
-  hdma2d.Init.ColorMode      = DMA2D_OUTPUT_RGB888;
+  hdma2d.Init.Mode           = DMA2D_M2M_BLEND;
+  hdma2d.Init.ColorMode      = DMA2D_OUTPUT_ARGB8888;
   hdma2d.Init.OutputOffset   = 0;//1024 - 390;
   hdma2d.Init.AlphaInverted  = DMA2D_REGULAR_ALPHA;  /* No Output Alpha Inversion */
   hdma2d.Init.RedBlueSwap    = DMA2D_RB_REGULAR;     /* No Output Red & Blue swap */
@@ -1133,12 +724,66 @@ int stm32l4_dma2dinitialize(void)
   hdma2d.LayerCfg[1].InputOffset    = 0;
   hdma2d.LayerCfg[1].AlphaMode      = DMA2D_NO_MODIF_ALPHA;
   hdma2d.LayerCfg[1].InputAlpha     = 0xFF;                /* Not used */
-  hdma2d.LayerCfg[1].RedBlueSwap    = DMA2D_RB_SWAP; //DMA2D_RB_REGULAR;    /* No ForeGround Red/Blue swap */
+  hdma2d.LayerCfg[1].RedBlueSwap    = DMA2D_RB_SWAP; //DMA22D_RB_REGULAR;    /* No ForeGround Red/Blue swap */
   hdma2d.LayerCfg[1].AlphaInverted  = DMA2D_REGULAR_ALPHA; /* No ForeGround Alpha inversion */
 
   /* DMA2D Initialization */
   HAL_DMA2D_Init(&hdma2d);
   HAL_DMA2D_ConfigLayer(&hdma2d, 1);
+}
+
+static HAL_StatusTypeDef HAL_DMA2D_InitConfig(DMA2D_HandleTypeDef *hdma2d)
+{
+  /* Check the DMA2D peripheral state */
+  if(hdma2d == NULL)
+  {
+     return HAL_ERROR;
+  }
+
+  /* Check the parameters */
+  assert_param(IS_DMA2D_ALL_INSTANCE(hdma2d->Instance));
+  assert_param(IS_DMA2D_MODE(hdma2d->Init.Mode));
+  assert_param(IS_DMA2D_CMODE(hdma2d->Init.ColorMode));
+  assert_param(IS_DMA2D_OFFSET(hdma2d->Init.OutputOffset));
+  assert_param(IS_DMA2D_ALPHA_INVERTED(hdma2d->Init.AlphaInverted));
+  assert_param(IS_DMA2D_RB_SWAP(hdma2d->Init.RedBlueSwap));
+#if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
+  assert_param(IS_DMA2D_LOM_MODE(hdma2d->Init.LineOffsetMode));
+#endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
+#if defined(DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT)
+  assert_param(IS_DMA2D_BYTES_SWAP(hdma2d->Init.BytesSwap));
+#endif /* DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT */
+
+  /* Change DMA2D peripheral state */
+  hdma2d->State = HAL_DMA2D_STATE_BUSY;
+
+  /* DMA2D CR register configuration -------------------------------------------*/
+#if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
+  MODIFY_REG(hdma2d->Instance->CR, DMA2D_CR_MODE | DMA2D_CR_LOM, hdma2d->Init.Mode | hdma2d->Init.LineOffsetMode);
+#else
+  MODIFY_REG(hdma2d->Instance->CR, DMA2D_CR_MODE, hdma2d->Init.Mode);
+#endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
+
+  /* DMA2D OPFCCR register configuration ---------------------------------------*/
+#if defined(DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT)
+  MODIFY_REG(hdma2d->Instance->OPFCCR, DMA2D_OPFCCR_CM | DMA2D_OPFCCR_SB, hdma2d->Init.ColorMode | hdma2d->Init.BytesSwap);
+#else
+  MODIFY_REG(hdma2d->Instance->OPFCCR, DMA2D_OPFCCR_CM, hdma2d->Init.ColorMode);
+#endif /* DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT */
+
+  /* DMA2D OOR register configuration ------------------------------------------*/
+  MODIFY_REG(hdma2d->Instance->OOR, DMA2D_OOR_LO, hdma2d->Init.OutputOffset);
+  /* DMA2D OPFCCR AI and RBS fields setting (Output Alpha Inversion)*/
+  MODIFY_REG(hdma2d->Instance->OPFCCR,(DMA2D_OPFCCR_AI|DMA2D_OPFCCR_RBS), ((hdma2d->Init.AlphaInverted << DMA2D_OPFCCR_AI_Pos) | (hdma2d->Init.RedBlueSwap << DMA2D_OPFCCR_RBS_Pos)));
+
+
+  /* Update error code */
+  hdma2d->ErrorCode = HAL_DMA2D_ERROR_NONE;
+
+  /* Initialize the DMA2D state*/
+  hdma2d->State  = HAL_DMA2D_STATE_READY;
+
+  return HAL_OK;
 }
 #else
 int stm32l4_dma2dinitialize(void)
@@ -1197,7 +842,7 @@ int stm32l4_dma2dinitialize(void)
 
   return OK;
 }
-#endif
+
 /****************************************************************************
  * Name: stm32_dma2duninitialize
  *
@@ -1208,6 +853,7 @@ int stm32l4_dma2dinitialize(void)
 
 void stm32l4_dma2duninitialize(void)
 {
+
   /* Disable DMA2D interrupts */
 
   up_disable_irq(g_interrupt.irq);
@@ -1220,8 +866,9 @@ void stm32l4_dma2duninitialize(void)
   /* Set initialized state */
 
   g_initialized = false;
-}
 
+}
+#endif
 /****************************************************************************
  * Name: stm32_dma2ddev
  *
@@ -1238,3 +885,6 @@ FAR struct dma2d_layer_s *stm32l4_dma2ddev(void)
 {
     return &g_dma2ddev.dma2d;
 }
+
+
+

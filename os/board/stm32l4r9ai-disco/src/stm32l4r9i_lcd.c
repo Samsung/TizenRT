@@ -45,6 +45,7 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 #include <tinyara/lcd/ieg1120.h>
+#include <tinyara/lcd/lcd.h>
 
 #include <arch/board/stm32l4r9ai-disco.h>
 #include <arch/board/stm32l4r9i_discovery_io.h>
@@ -66,24 +67,43 @@ static uint32_t bsp_lcd_hse_to_disable = 0;
 static uint8_t STM32L4_LCD_LongParamWrite(uint32_t Mode, uint32_t NbParams, uint32_t Param1, uint8_t *ParametersTable);
 static uint8_t STM32L4_LCD_ShortParamWrite(uint32_t Mode, uint32_t Param1, uint32_t Param2);
 static void STM32L4_LCD_Wrapper_Enable(void);
+static void STM32L4_LCD_Refresh(void);
+static void STM32L4_LCD_DisplayOn(void);
+static void STM32L4_LCD_DisplayOff(void);
+
 void LCD_PowerOn(void);
 void LCD_PowerOff(void);
+
 void BSP_LCD_MspInit(void);
 void BSP_LCD_MspDeInit(void);
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 struct stm32l4r9i_lcd_s g_lcddev;
-    
-FAR struct stm32l4_lcd_s *stm32_ieg1120_initialize(void)
+extern struct stm32l4_dsi_s dsidev;
+
+FAR struct stm32l4_lcd_s *stm32l4_lcd_function(void)
 {
     FAR struct stm32l4r9i_lcd_s *priv = &g_lcddev;
 
     priv->dev.sendsparam    = STM32L4_LCD_ShortParamWrite;
     priv->dev.sendlparam    = STM32L4_LCD_LongParamWrite;
     priv->dev.enablewap     = STM32L4_LCD_Wrapper_Enable;
-
+    priv->dev.poweron       = STM32L4_LCD_DisplayOn;//LCD_PowerOn;
+    priv->dev.poweroff      = STM32L4_LCD_DisplayOff;//LCD_PowerOff;
+    priv->dev.refresh       = STM32L4_LCD_Refresh;
+    
     return &priv->dev;
+}
+
+uint8_t STM32L4_LCD_IsFBAvailable(void)
+{
+    FAR struct stm32l4_dsi_s *priv = &dsidev;
+    uint8_t status;
+
+    status = (priv->isframebuffer == 1) ? LCD_OK : LCD_ERROR;
+
+    return (status);
 }
 
 static uint8_t STM32L4_LCD_LongParamWrite(uint32_t Mode, uint32_t NbParams, uint32_t Param1, uint8_t *ParametersTable)
@@ -110,6 +130,40 @@ static void STM32L4_LCD_Wrapper_Enable(void)
 {
     /* Enable DSI Wrapper */
     __HAL_DSI_WRAPPER_ENABLE(&hdsi);
+}
+
+static void STM32L4_LCD_Refresh(void)
+{
+    FAR struct stm32l4_dsi_s *priv = &dsidev;
+    
+    /* Set frame buffer busy */
+    priv->isframebuffer = 0;
+    
+    /* Set tear on */
+    HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, DSI_SET_TEAR_ON, 0x0);
+}
+
+static void STM32L4_LCD_DisplayOn(void)
+{
+  /* Send Display on DCS command to display */
+  HAL_DSI_ShortWrite(&hdsi,
+                     0,
+                     DSI_DCS_SHORT_PKT_WRITE_P0,
+                     DSI_SET_DISPLAY_ON,
+                     0x0);
+}
+
+/**
+  * @brief  Switch Off the display.
+  */
+static void STM32L4_LCD_DisplayOff(void)
+{
+  /* Send Display off DCS Command to display */
+  HAL_DSI_ShortWrite(&hdsi,
+                     0,
+                     DSI_DCS_SHORT_PKT_WRITE_P0,
+                     DSI_SET_DISPLAY_OFF,
+                     0x0);
 }
 
 void LCD_PowerOn(void)

@@ -64,102 +64,103 @@ struct stm32_dma2d_overlay_s
 
 struct dma2d_layer_s
 {
-  /* Name: setclut
-   *
-   * Description:
-   *   Set the cmap table for both foreground and background layer.
-   *   Up to 256 colors supported.
-   *
-   * Parameter:
-   *   cmap  - Reference to the cmap table
-   *
-   * Returned Value:
-   *   On success - OK
-   *   On error   - -EINVAL
-   */
+    /* Name: setclut
+     *
+     * Description:
+     *   Set the cmap table for both foreground and background layer.
+     *   Up to 256 colors supported.
+     *
+     * Parameter:
+     *   cmap  - Reference to the cmap table
+     *
+     * Returned Value:
+     *   On success - OK
+     *   On error   - -EINVAL
+     */
 
 #ifdef CONFIG_STM32_FB_CMAP
-  int (*setclut)(FAR const struct fb_cmap_s * cmap);
+    int (*setclut)(FAR const struct fb_cmap_s * cmap);
 #endif
 
-  /* Name: fillcolor
-   *
-   * Description:
-   *   Fill a specific memory region with a color.
-   *   The caller must ensure that the memory region (area) is within the entire
-   *   overlay.
-   *
-   * Parameter:
-   *   oinfo  - Reference to overlay information
-   *   area   - Reference to the area to fill
-   *   argb   - argb8888 color
-   *
-   * Returned Value:
-   *   On success - OK
-   *   On error   - -EINVAL
-   */
+    /* Name: fillcolor
+     *
+     * Description:
+     *   Fill a specific memory region with a color.
+     *   The caller must ensure that the memory region (area) is within the entire
+     *   overlay.
+     *
+     * Parameter:
+     *   oinfo  - Reference to overlay information
+     *   area   - Reference to the area to fill
+     *   argb   - argb8888 color
+     *
+     * Returned Value:
+     *   On success - OK
+     *   On error   - -EINVAL
+     */
 
-  int (*fillcolor)(FAR struct stm32_dma2d_overlay_s *oinfo,
-                   FAR const struct fb_area_s *area, uint32_t argb);
+    int (*fillcolor)(FAR struct stm32_dma2d_overlay_s *oinfo,
+                     FAR const struct fb_area_s *area, uint32_t argb);
 
-  /* Name: blit
-   *
-   * Description:
-   *   Copies memory from a source overlay (defined by sarea) to destination
-   *   overlay position (defined by destxpos and destypos) without pixelformat
-   *   conversion. The caller must ensure that the memory region (area) is
-   *   within the entire overlay.
-   *
-   * Parameter:
-   *   doverlay - Reference destination overlay
-   *   destxpos - x-Offset destination overlay
-   *   destypos - y-Offset destination overlay
-   *   soverlay - Reference source overlay
-   *   sarea    - Reference source area
-   *
-   * Returned Value:
-   *   On success - OK
-   *   On error   - -EINVAL
-   */
+    /* Name: blit
+     *
+     * Description:
+     *   Copies memory from a source overlay (defined by sarea) to destination
+     *   overlay position (defined by destxpos and destypos) without pixelformat
+     *   conversion. The caller must ensure that the memory region (area) is
+     *   within the entire overlay.
+     *
+     * Parameter:
+     *   doverlay - Reference destination overlay
+     *   destxpos - x-Offset destination overlay
+     *   destypos - y-Offset destination overlay
+     *   soverlay - Reference source overlay
+     *   sarea    - Reference source area
+     *
+     * Returned Value:
+     *   On success - OK
+     *   On error   - -EINVAL
+     */
 
-  int (*blit)(FAR struct stm32_dma2d_overlay_s *doverlay,
-              uint32_t destxpos, uint32_t destypos,
-              FAR struct stm32_dma2d_overlay_s *soverlay,
-              FAR const struct fb_area_s *sarea);
+    int (*blit)(FAR struct stm32_dma2d_overlay_s *doverlay,
+                uint32_t destxpos, uint32_t destypos,
+                FAR struct stm32_dma2d_overlay_s *soverlay,
+                FAR const struct fb_area_s *sarea);
 
-  /* Name: blend
-   *
-   * Description:
-   *   Blends two source memory areas to a destination memory area with
-   *   pixelformat conversion if necessary. The caller must ensure that the
-   *   memory region (area) is within the entire overlays.
-   *
-   * Parameter:
-   *   doverlay - Destination overlay
-   *   destxpos - x-Offset destination overlay
-   *   destypos - y-Offset destination overlay
-   *   foverlay - Foreground overlay
-   *   forexpos - x-Offset foreground overlay
-   *   foreypos - y-Offset foreground overlay
-   *   boverlay - Background overlay
-   *   barea    - x-Offset, y-Offset, x-resolution and y-resolution of
-   *              background overlay
-   *
-   * Returned Value:
-   *   On success - OK
-   *   On error   - -EINVAL or -ECANCELED
-   */
+    /* Name: blend
+     *
+     * Description:
+     *   Blends two source memory areas to a destination memory area with
+     *   pixelformat conversion if necessary. The caller must ensure that the
+     *   memory region (area) is within the entire overlays.
+     *
+     * Parameter:
+     *   doverlay - Destination overlay
+     *   destxpos - x-Offset destination overlay
+     *   destypos - y-Offset destination overlay
+     *   foverlay - Foreground overlay
+     *   forexpos - x-Offset foreground overlay
+     *   foreypos - y-Offset foreground overlay
+     *   boverlay - Background overlay
+     *   barea    - x-Offset, y-Offset, x-resolution and y-resolution of
+     *              background overlay
+     *
+     * Returned Value:
+     *   On success - OK
+     *   On error   - -EINVAL or -ECANCELED
+     */
 
-  int (*blend)(FAR struct stm32_dma2d_overlay_s *doverlay,
-               uint32_t destxpos, uint32_t destypos,
-               FAR struct stm32_dma2d_overlay_s *foverlay,
-               uint32_t forexpos, uint32_t foreypos,
-               FAR struct stm32_dma2d_overlay_s *boverlay,
-               FAR const struct fb_area_s *barea);
+    int (*blend)(FAR struct stm32_dma2d_overlay_s *doverlay,
+                 uint32_t destxpos, uint32_t destypos,
+                 FAR struct stm32_dma2d_overlay_s *foverlay,
+                 uint32_t forexpos, uint32_t foreypos,
+                 FAR struct stm32_dma2d_overlay_s *boverlay,
+                 FAR const struct fb_area_s *barea);
 
 #if 1//def USE_HAL_DRIVER
-  void (*copybuffer)(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
-                      uint16_t xsize, uint16_t ysize);
+    void (*copybuffer)(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
+                       uint16_t xsize, uint16_t ysize);
+    void (*inputcolor)(uint32_t pf);
 #endif
 };
 

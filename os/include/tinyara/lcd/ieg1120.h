@@ -80,6 +80,9 @@ struct stm32l4_lcd_s {
     uint8_t (*sendsparam)(uint32_t Mode, uint32_t Param1, uint32_t Param2);
     uint8_t (*sendlparam)(uint32_t Mode, uint32_t NbParams, uint32_t Param1, uint8_t *ParametersTable);
     void    (*enablewap)(void);
+    void    (*poweron)(void);
+    void    (*poweroff)(void);
+    void    (*refresh)(void);
 };
 
 /**************************************************************************************
@@ -120,7 +123,7 @@ extern "C" {
  *
  **************************************************************************************/
 
-    FAR struct stm32l4_lcd_s *stm32_ieg1120_initialize(void);
+    FAR struct stm32l4_lcd_s *stm32l4_lcd_function(void);
 
 /**************************************************************************************
  * Name:  ili9341_clear

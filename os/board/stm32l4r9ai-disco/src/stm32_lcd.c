@@ -26,6 +26,7 @@
 #include <tinyara/board.h>
 #include <tinyara/spi/spi.h>
 #include <tinyara/lcd/ieg1120.h>
+#include <tinyara/lcd/lcd.h>
 
 #include <arch/board/board.h>
 #include <arch/board/stm32l4r9ai-disco.h>
@@ -40,15 +41,80 @@
  * Private Functions
  ****************************************************************************/
 static uint8_t stm32l4r9i_lcd_initialize(void);
-FAR struct dma2d_layer_s *up_dma2ddev(void);
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+void stm32l4r9i_lcd_poweron(void);
+void stm32l4r9i_lcd_poweroff(void);
+void lcd_refresh(void);
+
+FAR struct dma2d_layer_s *up_dma2ddev(void);
+extern struct stm32l4_dsi_s dsidev;
 extern uint32_t bsp_lcd_initialized;
+
+FAR struct dma2d_layer_s *up_dma2ddev(void)
+{
+    return stm32l4_dma2ddev();
+}
+
+void stm32l4r9i_lcd_poweron(void)
+{
+    FAR struct stm32l4_lcd_s *lcd = stm32l4_lcd_function();
+
+    if (lcd == NULL){
+        return LCD_ERROR;
+    }else{
+        lcd->poweron();
+        printf("LCD Power On\n");
+    }
+}
+
+void stm32l4r9i_lcd_poweroff(void)
+{
+    FAR struct stm32l4_lcd_s *lcd = stm32l4_lcd_function();
+
+    if (lcd == NULL){
+        return LCD_ERROR;
+    }else{
+        lcd->poweroff();
+        printf("LCD Power Off\n");
+    }
+}
+
+#if 0 // testing ... 
+void dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
+                      uint16_t xsize, uint16_t ysize, ui_pixel_format_t pf)
+#else
+void dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
+                      uint16_t xsize, uint16_t ysize)    
+#endif
+{
+    FAR struct dma2d_layer_s *priv = up_dma2ddev();
+    
+    priv->copybuffer(psrc, pdst, x, y, xsize, ysize);
+    //STM32L4_LCD_Refresh();
+}
+
+void dma2d_fillcolor(FAR struct stm32_dma2d_overlay_s *oinfo,
+                     FAR const struct fb_area_s *area, uint32_t argb)
+{
+    FAR struct dma2d_layer_s *dma2d = up_dma2ddev();
+    dma2d->fillcolor(oinfo, area, argb);
+}
+
+void lcd_refresh(void)
+{
+    FAR struct stm32l4_lcd_s *lcd = stm32l4_lcd_function();
+
+    lcd->refresh();
+    
+    while(STM32L4_LCD_IsFBAvailable() != LCD_OK){};
+}
 
 static uint8_t stm32l4r9i_lcd_initialize(void)
 {
-    FAR struct stm32l4_lcd_s *lcd = NULL;
-
-    lcd = stm32_ieg1120_initialize();
+    FAR struct stm32l4_lcd_s *lcd = stm32l4_lcd_function();
     if (lcd == NULL){
         return LCD_ERROR;
     }
@@ -205,8 +271,10 @@ static uint8_t stm32l4r9i_lcd_initialize(void)
 
     /* Set tear off */
     lcd->sendsparam(DSI_DCS_SHORT_PKT_WRITE_P1, DSI_SET_TEAR_OFF, 0x0);
+    
     /* Set DSI mode to internal timing added vs ORIGINAL for Command mode */
     lcd->sendsparam(DSI_DCS_SHORT_PKT_WRITE_P1, 0xC2, 0x0);
+
     /* Set memory address MODIFIED vs ORIGINAL */
     {
         uint8_t InitParam1[4]= {0x00, 0x04, 0x01, 0x89};
@@ -239,7 +307,7 @@ uint8_t stm32l4_lcdinitialize(void)
     //static bool ltdc_initialized = false;
     //static bool dsi_initialized = false;
     uint8_t res = LCD_ERROR;
-
+    FAR struct stm32l4_dsi_s *priv = &dsidev;
     /* Power On LCD */
     LCD_PowerOn();
 
@@ -249,7 +317,7 @@ uint8_t stm32l4_lcdinitialize(void)
         printf("LTDC init error 0x%x\n", res);
         return res;
     }
-
+    
     if(stm32l4_dsi_initialize() != LCD_OK){
         printf("DSI Init error 0x%x\n", res);
         return res;
@@ -259,28 +327,12 @@ uint8_t stm32l4_lcdinitialize(void)
         printf("BSP LCD Init error 0x%x\n", res);
         return res;
     }
+
     printf("LCD Initialization done\n");
     bsp_lcd_initialized = 1;
+    priv->isframebuffer = 1;
 
     return res;
 }
 
-FAR struct dma2d_layer_s *up_dma2ddev(void)
-{
-    return stm32l4_dma2ddev();
-}
 
-void dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
-                      uint16_t xsize, uint16_t ysize)
-{
-    FAR struct dma2d_layer_s *priv = up_dma2ddev();
-    priv->copybuffer(psrc, pdst, x, y, xsize, ysize);
-           
-    //stm32_dma2d_copybuffer(psrc, pdst, x, y, xsize, ysize);
-}
-void dma2d_fillcolor(FAR struct stm32_dma2d_overlay_s *oinfo,
-                     FAR const struct fb_area_s *area, uint32_t argb)
-{
-    FAR struct dma2d_layer_s *dma2d = up_dma2ddev();
-    dma2d->fillcolor(oinfo, area, argb);
-}

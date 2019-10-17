@@ -3023,29 +3023,43 @@ void stm32l4_serial_dma_poll(void)
  *
  ****************************************************************************/
 
-int up_putc(int ch)
+char up_putc(char ch)
 {
 #if CONSOLE_UART > 0
   struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
   uint16_t ie;
 
-  stm32l4serial_disableusartint(priv, &ie);
+  //stm32l4serial_disableusartint(priv, &ie);
 
   /* Check for LF */
-
-  if (ch == '\n')
-    {
+  if (ch == '\n') {
       /* Add CR */
+      lowputc('\r');
+  }
 
-      up_lowputc('\r');
-    }
-
-  up_lowputc(ch);
-  stm32l4serial_restoreusartint(priv, ie);
+  lowputc(ch);
+  //stm32l4serial_restoreusartint(priv, ie);
 #endif
   return ch;
 }
 
+char up_getc(void)
+{
+    struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
+    uint16_t ie;
+    char ch;
+    
+    //stm32l4serial_disableusartint(priv, &ie);
+
+    ch = lowgetc();
+
+    lowputc(ch);
+    lowputc('\n');
+    
+    //stm32l4serial_restoreusartint(priv, ie);
+
+    return ch;
+}
 #else /* USE_SERIALDRIVER */
 
 /****************************************************************************

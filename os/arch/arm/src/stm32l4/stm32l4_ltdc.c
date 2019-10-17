@@ -2992,7 +2992,7 @@ uint8_t stm32l4_ltdc_initialize(void)
     hlayer.WindowX1        = 390;
     hlayer.WindowY0        = 0;
     hlayer.WindowY1        = 390;
-    hlayer.PixelFormat     = LTDC_PIXEL_FORMAT_RGB888;
+    hlayer.PixelFormat     = LTDC_PIXEL_FORMAT_ARGB8888;
     hlayer.Alpha           = 0xFF; /* NU default value */
     hlayer.Alpha0          = 0; /* NU default value */
     hlayer.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA; /* Not Used: default value */

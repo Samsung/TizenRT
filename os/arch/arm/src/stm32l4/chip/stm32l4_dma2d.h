@@ -107,9 +107,6 @@
 #define DMA2D_CR_CAEIE              (1 << 11) /* CLUT Access Error Interrupt Enable Bit */
 #define DMA2D_CR_CTCIE              (1 << 12) /* CLUT Transfer Complete Interrupt Enable Bit */
 #define DMA2D_CR_CEIE               (1 << 13) /* Configuration Error Interrupt Enable Bit */
-#define DMA2D_CR_MODE_SHIFT         (16) /* Bits 16-17 DMA2D mode Bits */
-#define DMA2D_CR_MODE_MASK          (3 << DMA2D_CR_MODE_SHIFT)
-#define DMA2D_CR_MODE(n)            ((uint32_t)(n) << DMA2D_CR_MODE_SHIFT)
 
 /* DMA2D Interrupt Status Register */
 
@@ -180,9 +177,6 @@
 
 /* DMA2D Output PFC Control Register */
 
-#define DMA2D_OPFCCR_CM_SHIFT       (0)  /* Bits 0-2 Color Mode */
-#define DMA2D_OPFCCR_CM_MASK        (7 << DMA2D_OPFCCR_CM_SHIFT)
-#define DMA2D_OPFCCR_CM(n)          ((uint32_t)(n) << DMA2D_OPFCCR_CM_SHIFT)
 
 /* DMA2D PFC Pixel Format */
 
@@ -217,9 +211,7 @@
 
 /* DMA2D Output Offset Register */
 
-#define DMA2D_OOR_LO_SHIFT          (0)  /* Bits 0-13 Line Offset */
-#define DMA2D_OOR_LO_MASK           (0x3FFF << DMA2D_OOR_LO_SHIFT)
-#define DMA2D_OOR_LO(n)             ((uint32_t)(n) << DMA2D_OOR_LO_SHIFT)
+
 
 /* DMA2D Number Of Line Register */
 
@@ -236,12 +228,6 @@
 #define DMA2D_LWR_LW_MASK           (0xFFFF << DMA2D_LWR_LW_SHIFT)
 #define DMA2D_LWR_LW(n)             ((uint32_t)(n) << DMA2D_LWR_LW_SHIFT)
 
-/* DMA2D AHB Master Timer Configuration Register */
-
-#define DMA2D_AMTCR_EN              (1 << 0)  /* Enable */
-#define DMA2D_AMTCR_DT_SHIFT        (0)  /* Bits 8-15 Dead Time */
-#define DMA2D_AMTCR_DT_MASK         (0xFF << DMA2D_AMTCR_DT_SHIFT)
-#define DMA2D_AMTCR_DT(n)           ((uint32_t)(n) << DMA2D_AMTCR_DT_SHIFT)
 
 /****************************************************************************
  * Public Types

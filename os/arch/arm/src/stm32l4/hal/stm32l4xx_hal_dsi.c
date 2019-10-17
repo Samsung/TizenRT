@@ -936,7 +936,7 @@ __weak void HAL_DSI_TearingEffectCallback(DSI_HandleTypeDef *hdsi)
             the HAL_DSI_TearingEffectCallback could be implemented in the user file
    */
 }
-
+#if 0
 /**
   * @brief  End of Refresh DSI callback.
   * @param  hdsi  pointer to a DSI_HandleTypeDef structure that contains
@@ -951,7 +951,7 @@ __weak void HAL_DSI_EndOfRefreshCallback(DSI_HandleTypeDef *hdsi)
             the HAL_DSI_EndOfRefreshCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Operation Error DSI callback.
   * @param  hdsi  pointer to a DSI_HandleTypeDef structure that contains

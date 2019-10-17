@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <image_390x390_rgb888.h>
+#include <loading_00.h>
 /****************************************************************************
  * hello_main
  ****************************************************************************/
@@ -72,9 +73,11 @@ int hello_main(int argc, char *argv[])
 #endif
 {
     printf("Hello, World!!\n");
-
     dma2d_copybuffer((uint32_t *)image_390x390_rgb888, NULL, 0, 0, 390, 390);
-#if 0
+    dma2d_copybuffer((uint32_t *)loading_00, NULL, 200, 200, 64, 64);
+    lcd_refresh();
+
+#if 0 /* External Memory test code */
     exflash_check();
     psram_check();
 #endif

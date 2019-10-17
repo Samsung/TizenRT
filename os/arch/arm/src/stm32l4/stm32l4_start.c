@@ -344,7 +344,7 @@ void __start(void)
   showprogress('B');
   showprogress('C');
   showprogress('D');
-
+  
   /* For the case of the separate user-/kernel-space build, perform whatever
    * platform specific initialization of the user memory is required.
    * Normally this just means initializing the user space .data and .bss
@@ -361,12 +361,11 @@ void __start(void)
   /* Initialize onboard resources */
   //board_initialize();
   showprogress('F');
-
+  
   /* Then start NuttX */
   showprogress('\r');
   showprogress('\n');
 
-  //while(1){}
 #ifdef CONFIG_STACK_COLORATION
   /* Set the IDLE stack to the coloration value and jump into nx_start() */
 
