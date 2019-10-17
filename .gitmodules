@@ -4,3 +4,6 @@
 [submodule "build/tools/esp32/esptool_py/esptool"]
 	path = build/tools/esp32/esptool_py/esptool
 	url = https://github.com/espressif/esptool.git
+[submodule "external/nanopb/nanopb"]
+	path = external/nanopb/nanopb
+	url = https://github.com/nanopb/nanopb.git
