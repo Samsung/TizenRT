@@ -67,7 +67,7 @@
  *    architecture-specific implementation in arch/
  *
  *    NOTE: up_ is supposed to stand for microprocessor; the u is like the
- *    Greek letter micron: ? So it would be µP which is a common shortening
+ *    Greek letter micron: ? So it would be ï¿½P which is a common shortening
  *    of the word microprocessor.
  *
  * 2. Microprocessor-Specific Interfaces.
@@ -1676,6 +1676,26 @@ void up_mdelay(unsigned int milliseconds);
 void up_udelay(useconds_t microseconds);
 
 /****************************************************************************
+ * Name: up_cxxinitialize
+ *
+ * Description:
+ *   If C++ and C++ static constructors are supported, then this function
+ *   must be provided by board-specific logic in order to perform
+ *   initialization of the static C++ class instances.
+ *
+ *   This function should then be called in the application-specific
+ *   logic in order to perform the C++ initialization.  NOTE  that no
+ *   component of the core TinyAra RTOS logic is involved; This function
+ *   definition only provides the 'contract' between application
+ *   specific C++ code and platform-specific toolchain support
+ *
+ ***************************************************************************/
+
+#if defined(CONFIG_HAVE_CXX) && defined(CONFIG_HAVE_CXXINITIALIZE)
+void up_cxxinitialize(void);
+#endif
+
+/****************************************************************************
  * These are standard interfaces that are exported by the OS for use by the
  * architecture specific logic
  ****************************************************************************/
@@ -2085,7 +2105,7 @@ void relays_powermodes(uint32_t relays_stat);
  *
  ****************************************************************************/
 
-int up_putc(int ch);
+char up_putc(char ch);
 
 /****************************************************************************
  * Name: up_getc
@@ -2095,7 +2115,7 @@ int up_putc(int ch);
  *
  ****************************************************************************/
 
-int up_getc(void);
+char up_getc(void);
 
 /****************************************************************************
  * Name: up_puts
@@ -2126,6 +2146,17 @@ void up_wdog_init(uint16_t timeout);
  ****************************************************************************/
 void up_wdog_keepalive(void);
 
+#endif
+
+#ifdef CONFIG_BUILD_PROTECTED
+/****************************************************************************
+ * Name: is_kernel_space
+ *
+ * Description:
+ *   Check the address is in kernel space or not
+ *
+ ****************************************************************************/
+bool is_kernel_space(void *addr);
 #endif
 
 #undef EXTERN
