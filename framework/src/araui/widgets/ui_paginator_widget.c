@@ -26,6 +26,7 @@
 #include "ui_widget_internal.h"
 #include "ui_asset_internal.h"
 #include "ui_commons_internal.h"
+#include "ui_animation_internal.h"
 
 #define CONFIG_UI_PAGINATOR_TWEEN_DURATION (100)
 
@@ -98,7 +99,7 @@ static void _ui_paginator_tween_finish(ui_widget_t widget, ui_anim_t anim)
 	ui_paginator_widget_body_t *body;
 	int32_t next_page_num;
 	int32_t prev_page_num;
-	
+
 	body = (ui_paginator_widget_body_t *)(((ui_widget_body_t *)widget)->parent);
 
 	switch (body->state) {
@@ -143,6 +144,11 @@ static void _ui_paginator_tween_finish(ui_widget_t widget, ui_anim_t anim)
 	}
 
 	body->state = UI_PAGINATOR_STATE_NONE;
+	ui_anim_destroy(anim);
+}
+
+static void _ui_paginator_remove_anim(ui_widget_t widget, ui_anim_t anim)
+{
 	ui_anim_destroy(anim);
 }
 
@@ -242,7 +248,7 @@ void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t e
 					move_next_page = ui_move_anim_create(rect_next_page.x, rect_next_page.y, 0, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
 					
 					ui_widget_play_anim((ui_widget_t)body->cur_page, move_cur_page, _ui_paginator_tween_finish, false);
-					ui_widget_play_anim((ui_widget_t)body->next_page, move_next_page, NULL, false);
+					ui_widget_play_anim((ui_widget_t)body->next_page, move_next_page, _ui_paginator_remove_anim, false);
 				} else if (body->offset > (body->base.local_rect.width * CONFIG_UI_PAGINATOR_THRESHOLD)) {
 					/**
 					 * Paging to Left
@@ -256,7 +262,7 @@ void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t e
 					move_prev_page = ui_move_anim_create(rect_prev_page.x, rect_prev_page.y, 0, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
 
 					ui_widget_play_anim((ui_widget_t)body->cur_page, move_cur_page, _ui_paginator_tween_finish, false);
-					ui_widget_play_anim((ui_widget_t)body->prev_page, move_prev_page, NULL, false);
+					ui_widget_play_anim((ui_widget_t)body->prev_page, move_prev_page, _ui_paginator_remove_anim, false);
 				} else {
 					/**
 					 * Paging to Current
@@ -272,8 +278,8 @@ void ui_paginator_widget_touch_func(ui_widget_body_t *widget, ui_touch_event_t e
 					move_next_page = ui_move_anim_create(rect_next_page.x, rect_next_page.y, body->base.local_rect.width, 0, CONFIG_UI_PAGINATOR_TWEEN_DURATION, UI_INTRP_EASE_OUT_QUAD);
 
 					ui_widget_play_anim((ui_widget_t)body->cur_page, move_cur_page, _ui_paginator_tween_finish, false);
-					ui_widget_play_anim((ui_widget_t)body->prev_page, move_prev_page, NULL, false);
-					ui_widget_play_anim((ui_widget_t)body->next_page, move_next_page, NULL, false);
+					ui_widget_play_anim((ui_widget_t)body->prev_page, move_prev_page, _ui_paginator_remove_anim, false);
+					ui_widget_play_anim((ui_widget_t)body->next_page, move_next_page, _ui_paginator_remove_anim, false);
 				}
 			} else if (body->direction == UI_DIRECTION_VERTICAL) {
 				// todo

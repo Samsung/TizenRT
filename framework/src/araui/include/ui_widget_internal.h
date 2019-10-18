@@ -237,6 +237,9 @@ void ui_widget_init(ui_widget_body_t *body, int32_t width, int32_t height);
 void ui_widget_deinit(ui_widget_body_t *body);
 void ui_widget_update_global_rect(ui_widget_body_t *widget);
 ui_error_t ui_widget_destroy_sync(ui_widget_body_t *body);
+ui_error_t ui_widget_set_position_sync(ui_widget_body_t *body, int32_t x, int32_t y);
+ui_error_t ui_widget_set_rotation_sync(ui_widget_body_t *body, int32_t degree);
+ui_error_t ui_widget_set_scale_sync(ui_widget_body_t *body, uint32_t scale_x, uint32_t scale_y);
 
 ui_widget_body_t *ui_widget_search_by_coord(ui_widget_body_t *widget, ui_coord_t coord);
 

@@ -936,6 +936,44 @@ void ui_widget_update_global_rect(ui_widget_body_t *widget)
 	widget->global_rect.height = (int32_t)UI_MAX4(vertex[0].y, vertex[1].y, vertex[2].y, vertex[3].y) - widget->global_rect.y;
 }
 
+ui_error_t ui_widget_set_position_sync(ui_widget_body_t *body, int32_t x, int32_t y)
+{
+	if (!body) {
+		return UI_INVALID_PARAM;
+	}
+
+	body->local_rect.x = x;
+	body->local_rect.y = y;
+	body->update_flag = true;
+
+	return UI_OK;
+}
+
+ui_error_t ui_widget_set_rotation_sync(ui_widget_body_t *body, int32_t degree)
+{
+	if (!body) {
+		return UI_INVALID_PARAM;
+	}
+
+	body->degree = degree;
+	body->update_flag = true;
+
+	return UI_OK;
+}
+
+ui_error_t ui_widget_set_scale_sync(ui_widget_body_t *body, uint32_t scale_x, uint32_t scale_y)
+{
+	if (!body) {
+		return UI_INVALID_PARAM;
+	}
+
+	body->scale_x = scale_x;
+	body->scale_y = scale_y;
+	body->update_flag = true;
+
+	return UI_OK;
+}
+
 void ui_widget_queue_init(void)
 {
 	g_widget_body_queue.start = 0;

@@ -194,6 +194,7 @@ ui_error_t ui_stop(void)
 static ui_error_t _ui_process_widget(ui_widget_body_t *widget, uint32_t dt)
 {
 	int iter;
+	uint32_t temp;
 	ui_widget_body_t *curr_widget;
 	ui_widget_body_t *child;
 	ui_anim_body_t *anim;
@@ -216,7 +217,8 @@ static ui_error_t _ui_process_widget(ui_widget_body_t *widget, uint32_t dt)
 		anim = (ui_anim_body_t *)curr_widget->anim;
 
 		if (anim) {
-			if (anim->func((ui_widget_t)curr_widget, (ui_anim_t)anim, &dt)) {
+			temp = dt;
+			if (anim->func((ui_widget_t)curr_widget, (ui_anim_t)anim, &temp)) {
 				if (curr_widget->anim_finished_cb) {
 					if (ui_request_callback(_ui_call_anim_finished_cb, curr_widget) != UI_OK) {
 						UI_LOGE("Error: cannot make a request to call.anim_finished_cb!\n");
@@ -308,7 +310,7 @@ static void _ui_call_anim_finished_cb(void *userdata)
 
 	body = (ui_widget_body_t *)userdata;
 	if (body && body->anim_finished_cb) {
-		body->anim_finished_cb((ui_widget_t)body, *body->anim);
+		body->anim_finished_cb((ui_widget_t)body, (ui_anim_t)body->anim);
 		body->anim_finished_cb = UI_NULL;
 		body->anim = UI_NULL;
 	}

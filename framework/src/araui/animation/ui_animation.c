@@ -424,8 +424,10 @@ static bool _ui_anim_move_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 	intrp_x = (int32_t)move_anim_body->intrp_func(anim_body->t, move_anim_body->from_coord.x, move_anim_body->to_coord.x - move_anim_body->from_coord.x, anim_body->d);
 	intrp_y = (int32_t)move_anim_body->intrp_func(anim_body->t, move_anim_body->from_coord.y, move_anim_body->to_coord.y - move_anim_body->from_coord.y, anim_body->d);
 
-	ui_widget_set_position(widget, intrp_x, intrp_y);
-	
+	if (ui_widget_set_position_sync((ui_widget_body_t *)widget, intrp_x, intrp_y) != UI_OK) {
+		UI_LOGE("Failed to set widget position!\n");
+	}
+
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
 		return true;
@@ -437,12 +439,9 @@ static bool _ui_anim_move_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt)
 {
 	ui_anim_body_t *anim_body;
-	ui_opacity_anim_body_t *opacity_anim_body;
 	uint32_t remain_time;
-	// uint32_t intrp_opacity;
 
 	anim_body = (ui_anim_body_t *)anim;
-	opacity_anim_body = (ui_opacity_anim_body_t *)anim;
 	remain_time = anim_body->d - anim_body->t;
 
 	if (*dt <= remain_time) {
@@ -450,10 +449,6 @@ static bool _ui_anim_opacity_func(ui_widget_t widget, ui_anim_t anim, uint32_t *
 	}
 	anim_body->t += remain_time;
 	*dt -= remain_time;
-
-	/* intrp_opacity =  */opacity_anim_body->intrp_func(anim_body->t, opacity_anim_body->from_opacity, opacity_anim_body->to_opacity - opacity_anim_body->from_opacity, anim_body->d);
-
-	// ui_widget_set_opacity(widget, intrp_opacity);
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -482,7 +477,9 @@ static bool _ui_anim_rotate_func(ui_widget_t widget, ui_anim_t anim, uint32_t *d
 
 	intrp_degree = rotate_anim_body->intrp_func(anim_body->t, rotate_anim_body->from_degree, rotate_anim_body->to_degree - rotate_anim_body->from_degree, anim_body->d);
 
-	ui_widget_set_rotation(widget, intrp_degree);
+	if (ui_widget_set_rotation_sync((ui_widget_body_t *)widget, intrp_degree) != UI_OK) {
+		UI_LOGE("Failed to set widget rotation!\n");
+	}
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
@@ -511,7 +508,9 @@ static bool _ui_anim_scale_func(ui_widget_t widget, ui_anim_t anim, uint32_t *dt
 
 	intrp_scale = scale_anim_body->intrp_func(anim_body->t, scale_anim_body->from_scale, scale_anim_body->to_scale - scale_anim_body->from_scale, anim_body->d);
 
-	ui_widget_set_scale(widget, intrp_scale, intrp_scale);
+	if (ui_widget_set_scale_sync((ui_widget_body_t *)widget, intrp_scale, intrp_scale) != UI_OK) {
+		UI_LOGE("Failed to set widget scale!\n");
+	}
 	
 	if (anim_body->t == anim_body->d) {
 		anim_body->t = 0;
