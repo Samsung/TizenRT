@@ -268,7 +268,7 @@ static char *dequote_value(const char *varname, char *varval)
 
 char *get_line_ptr(void)
 {
-       return line;
+	return line;
 }
 
 void generate_definitions(FILE * stream)
