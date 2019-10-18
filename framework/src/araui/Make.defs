@@ -29,6 +29,7 @@ CSRCS += ui_scroll_widget.c
 CSRCS += ui_paginator_widget.c
 CSRCS += ui_quick_panel.c
 CSRCS += ui_renderer.c
+CSRCS += ui_animation.c
 CSRCS += easing_fn.c
 
 ifneq ($(CONFIG_UI_USE_EXTERNAL_DAL_IMPL), y)
@@ -69,6 +70,7 @@ DEPPATH += --dep-path src/araui/core
 DEPPATH += --dep-path src/araui/assets
 DEPPATH += --dep-path src/araui/widgets
 DEPPATH += --dep-path src/araui/renderer
+DEPPATH += --dep-path src/araui/animation
 DEPPATH += --dep-path src/araui/utils
 DEPPATH += --dep-path src/araui/utils/emoji
 VPATH += :src/araui/include
@@ -76,6 +78,7 @@ VPATH += :src/araui/core
 VPATH += :src/araui/assets
 VPATH += :src/araui/widgets
 VPATH += :src/araui/renderer
+VPATH += :src/araui/animation
 VPATH += :src/araui/utils
 VPATH += :src/araui/utils/emoji
 

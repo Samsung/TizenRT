@@ -354,6 +354,19 @@ ui_error_t ui_widget_set_userdata(ui_widget_t widget, void *userdata);
  */
 void *ui_widget_get_userdata(ui_widget_t widget);
 
+/**
+ * @brief Set the animation of the widget.
+ *
+ * Animation finished callback can be NULL.
+ *
+ * @param[in] widget Handle of the widget
+ * @param[in] anim Handle of the widget
+ * @param[in] anim_finished_cb Animation finished callback function
+ * @param[in] loop Flag for animation loop
+ * @return On success, UI_OK is returned. On failure, the defined error type is returned.
+ *
+ * @see ui_error_t
+ */
 ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, anim_finished_callback anim_finished_cb, bool loop);
 
 /********************************
