@@ -203,6 +203,7 @@ exception_common:
 	stmdb	sp!, {r2-r11,r14}		/* Save the remaining registers plus the SP value */
 #else
 	stmdb	sp!, {r2-r11}			/* Save the remaining registers plus the SP value */
+	mov	r7, r14				/* Save R14 value in r7 */
 #endif
 
 #if !defined(CONFIG_ARCH_HIPRI_INTERRUPT) && !defined(CONFIG_ARCH_NESTED_INTERRUPT)
@@ -245,11 +246,12 @@ exception_common:
 	/* If g_nestlevel is zero then behave as normal, switching from the user
 	 * to the interrupt stack; if g_nestlevel is greater than zero, then do
 	 * not switch stacks. In this latter case, we are already using the interrupt stack */
-
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
 	ldr		r5, =g_nestlevel
 	ldr		r6, [r5]
 	cmp		r6, #0
 	bne		9f
+#endif
 	ldr		sp, =g_intstackbase
 9:
 #else
@@ -265,6 +267,7 @@ exception_common:
 
 	bl		up_doirq				/* R0=IRQ, R1=register save (msp) */
 	mov		r1, r4					/* Recover R1=main stack pointer */
+	mov		r14, r7					/* Recover R14=R7 */
 
 	/* On return from up_doirq, R0 will hold a pointer to register context
 	 * array to use for the interrupt return.  If that return value is the same
@@ -307,6 +310,7 @@ exception_common:
 	ldmia	r0, {r2-r11,r14}		/* Recover R4-R11, r14 + 2 temp values */
 #else
 	ldmia	r0, {r2-r11}			/* Recover R4-R11 + 2 temp values */
+	ldr	r14, =EXC_RETURN_PRIVTHR	/* Load the special value */
 #endif
 	b		3f						/* Re-join common logic */
 
@@ -363,12 +367,6 @@ exception_common:
 	msr		control, r2				/* Save the updated control register */
 #else
 	msr		msp, r1					/* Recover the return MSP value */
-
-	/* Preload r14 with the special return value first (so that the return
-	 * actually occurs with interrupts still disabled).
-	 */
-
-	ldr		r14, =EXC_RETURN_PRIVTHR	/* Load the special value */
 #endif
 
 	/* Restore the interrupt state */
@@ -398,7 +396,7 @@ exception_common:
  *
  ************************************************************************************************/
 
-#if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
+#if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 3
 	.bss
 	.global	g_intstackalloc
 	.global	g_intstackbase
