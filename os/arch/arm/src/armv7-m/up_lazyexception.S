@@ -229,6 +229,20 @@ exception_common:
 	msr		basepri, r2				/* Set the BASEPRI */
 #endif
 
+	/* Disable further interrupts until we get g_nestlevel
+	 * and current_regs=regs, If before storing above values, higher priority
+	 * interrupt comes then context will be corrupted.
+	 */
+
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
+#ifdef CONFIG_ARMV7M_USEBASEPRI
+	mov r1, #NVIC_SYSH_DISABLE_PRIORITY
+	msr basepri,r1						/* Set base priority */
+#else
+	cpsid	i
+#endif
+#endif
+
 	/* There are two arguments to up_doirq:
 	 *
 	 *   R0 = The IRQ number
@@ -246,14 +260,30 @@ exception_common:
 	/* If g_nestlevel is zero then behave as normal, switching from the user
 	 * to the interrupt stack; if g_nestlevel is greater than zero, then do
 	 * not switch stacks. In this latter case, we are already using the interrupt stack */
+
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT
 	ldr		r5, =g_nestlevel
 	ldr		r6, [r5]
-	cmp		r6, #0
+	add		r6, r6, 1
+	str		r6, [r5]
+	cmp		r6, #1
 	bne		9f
+	ldr		r5, =current_regs
+	str		r1, [r5]
 #endif
 	ldr		sp, =g_intstackbase
 9:
+	/* Reenabling the interrupts before going into up_doirq
+	 * so that any higher priority interrupt can be served.
+	 */
+
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
+#ifdef CONFIG_ARMv7M_USEBASEPRI
+	msr		basepri, r3
+#else
+	cpsie	i
+#endif
+#endif
 #else
 	/* Otherwise, we will re-use the interrupted thread's stack.  That may
 	 * mean using either MSP or PSP stack for interrupt level processing (in

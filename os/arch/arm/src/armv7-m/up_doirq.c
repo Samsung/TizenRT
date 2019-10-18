@@ -117,14 +117,6 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	 * only be modified for outermost interrupt handler (when g_nestlevel == 0)
 	 */
 
-	flags = irqsave();
-
-	if (g_nestlevel == 0) {
-		current_regs = regs;
-	}
-
-	g_nestlevel++;
-
 	irqrestore(flags);
 #else
 	uint32_t *savestate;
