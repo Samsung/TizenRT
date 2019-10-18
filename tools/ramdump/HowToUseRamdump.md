@@ -6,6 +6,7 @@ and how to actually upload and parse it in the event of a crash during runtime.
 > [Build Steps](#how-to-enable-ramdump)  
 > [Upload Steps](#how-to-upload-ramdump)  
 > [Parsing Steps](#how-to-parse-ramdump)  
+> [Porting Guide](#how-to-port-ramdump)
 
 ## How to enable RAMDUMP
 Below configuration must be enabled to support ramdump upload  
@@ -205,4 +206,66 @@ Call Trace of Crashed Task :[appmain] with pid :2 and state :TSTATE_TASK_RUNNING
 [<40cb828>] hello_main+0x18         [Line 68 of \"hello_main.c\"]
 [<40c9fec>] task_start+0x64         [Line 173 of \"task/task_start.c\"]
 ********************************************************************
+```
+## How to port RAMDUMP
+To port ramdump for a new board, do the following steps:
+
+1. Add low level chip specific API's to receive and transfer characters through UART:
+
+a. **up_putc()** : Output one byte on the serial console
+```
+ * Prototype: int up_putc(int ch)
+ * Input Parameters:
+ *   ch - chatacter to output
+ * Returned Value:
+ *   sent character
+```
+b. **up_getc()** : Read one byte from the serial console
+```
+ * Prototype: int up_getc(void)
+ * Input Parameters:
+ *   none
+ * Returned Value:
+ *   int value, -1 if error, 0~255 if byte successfully read
+```
+c. **up_puts()** : Output string on the serial console
+```
+ * Prototype: void up_puts(const char *str)
+ * Input Parameters:
+ *   str - string to output
+ * Returned Value:
+ *   none
+```
+2. Source the low level API file in the Make.defs of os/arch/<cpu_name>/src/<chip_name>
+```
+CMN_CSRCS += <chip_name>_serial.c
+```
+3. Source the crashdump.c file in chip and board Makefile (os/board/<board_name>/src)
+```
+DEPPATH += --dep-path $(TOPDIR)/board/common
+VPATH += :$(TOPDIR)/board/common
+
+ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
+CSRCS += crashdump.c
+endif
+```
+4. Add board_crashdump() API hook to architecture specific up_assert() if it does not exist already.
+```
+#if defined(CONFIG_BOARD_CRASHDUMP)
+       board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
+#endif
+```
+5. In ramdump_tool.c, configure correct port parameters for the the board's tty serial device port n configure_tty function.
+Like BaudRate, StopBits, Parity, Databits, HardwareFlowControl.
+6. In ramdump_tool.c, add if the serial device port does not exist already.
+```
+        /* Get the tty type  */
+        if (!strcmp(dev_file, "/dev/ttyUSB1")) {
+                strncpy(tty_type, "ttyUSB1", TTYTYPE_LEN);
+        } else if (!strcmp(dev_file, "/dev/ttyACM0")) {
+                strncpy(tty_type, "ttyACM0", TTYTYPE_LEN);
+        } else {
+                printf("Undefined tty %s\n", dev_file);
+                return -1;
+        }
 ```
