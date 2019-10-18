@@ -88,8 +88,8 @@
  * @{
  */
 #ifdef CONFIG_USEC_PER_TICK
-#define CLK_TCK           (1000000/CONFIG_USEC_PER_TICK)
-#define CLOCKS_PER_SEC    (1000000/CONFIG_USEC_PER_TICK)
+#define CLK_TCK           (1000000 / CONFIG_USEC_PER_TICK)
+#define CLOCKS_PER_SEC    (1000000 / CONFIG_USEC_PER_TICK)
 #else
 #define CLK_TCK           (100)
 #define CLOCKS_PER_SEC    (100)

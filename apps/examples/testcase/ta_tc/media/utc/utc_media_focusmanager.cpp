@@ -30,13 +30,10 @@ public:
 void TestFocusChangeListener::onFocusChange(int focusChange)
 {
 	media::FocusChangeListener::onFocusChange(focusChange);
-	if (focusChange == media::FOCUS_GAIN)
-	{
+	if (focusChange == media::FOCUS_GAIN) {
 		printf("GAIN\n");
 		gain_counter++;
-	}
-	else if (focusChange == media::FOCUS_LOSS)
-	{
+	} else if (focusChange == media::FOCUS_LOSS) {
 		printf("LOSS\n");
 		loss_counter++;
 	}

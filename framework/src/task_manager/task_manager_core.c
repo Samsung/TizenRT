@@ -62,7 +62,7 @@ static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 static int tm_broadcast_msg[TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS];
 static int task_manager_pid;
 
-#define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
+#define MAX_HANDLE_MASK      (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
 #define HANDLE_HASH(handle)  ((handle) & MAX_HANDLE_MASK)
 #define TYPE_CANCEL      1
 #define TYPE_EXIT        2
@@ -70,17 +70,17 @@ static int task_manager_pid;
 #define CB_MSG_OF(X)        (X)->cb_data->msg
 #define CB_MSGSIZE_OF(X)    (X)->cb_data->msg_size
 
-#define SET_REGISTER_INFO(handle, type, idx, caller_pid, permission)		\
-	do {					 				\
-		TM_TYPE(handle) = type;						\
-		TM_IDX(handle) = idx;						\
-		TM_GID(handle) = caller_pid;					\
-		TM_STATUS(handle) = TM_APP_STATE_STOP;				\
-		TM_PERMISSION(handle) = permission;				\
-		TM_STOP_CB_INFO(handle) = NULL;					\
-		TM_EXIT_CB_INFO(handle) = NULL;					\
-		sq_init(&TM_BROADCAST_INFO_LIST(handle));			\
-		tmvdbg("Registered handle %d\n", handle);			\
+#define SET_REGISTER_INFO(handle, type, idx, caller_pid, permission)    \
+	do {                                                                \
+		TM_TYPE(handle) = type;                                         \
+		TM_IDX(handle) = idx;                                           \
+		TM_GID(handle) = caller_pid;                                    \
+		TM_STATUS(handle) = TM_APP_STATE_STOP;                          \
+		TM_PERMISSION(handle) = permission;                             \
+		TM_STOP_CB_INFO(handle) = NULL;                                 \
+		TM_EXIT_CB_INFO(handle) = NULL;                                 \
+		sq_init(&TM_BROADCAST_INFO_LIST(handle));                       \
+		tmvdbg("Registered handle %d\n", handle);                       \
 	} while (0)
 
 
