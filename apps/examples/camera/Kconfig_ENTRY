@@ -1,0 +1,3 @@
+config ENTRY_CAMERATEST
+        bool "camera example"
+        depends on EXAMPLES_CAMERATEST
