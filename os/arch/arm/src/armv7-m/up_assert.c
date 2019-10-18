@@ -535,6 +535,10 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	up_dumpstate();
 
+#if defined(CONFIG_BOARD_CRASHDUMP)
+	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
+#endif
+
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (is_kernel_assert == false) {
 		/* recovery user assert through binary manager */
