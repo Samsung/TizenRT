@@ -160,6 +160,17 @@ bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned i
  * @endcond
  */
 bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
+/**
+ * @cond
+ * @internal
+ * @brief Check if the given data stream in buffer is MPEG2-TS format stream.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] buffer: Pointer to the data stream buffer.
+ * @param[in] size: Size in bytes of data in the buffer.
+ * @return true - MPEG2-TS format. false - not MPEG2-TS format.
+ * @endcond
+ */
+bool isMpeg2Ts(const unsigned char *buffer, size_t size);
 } // namespace utils
 } // namespace media
 
