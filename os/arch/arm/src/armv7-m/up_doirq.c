@@ -73,7 +73,7 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-#if CONFIG_ARCH_INTERRUPTSTACK > 7
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
 extern uint32_t g_nestlevel; /* Initial top of interrupt stack */
 #endif
 /****************************************************************************
@@ -90,7 +90,7 @@ extern uint32_t g_nestlevel; /* Initial top of interrupt stack */
 
 uint32_t *up_doirq(int irq, uint32_t *regs)
 {
-#if CONFIG_ARCH_INTERRUPTSTACK > 7
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
 	irqstate_t flags;
 	uint32_t stack_remain;
 #endif
@@ -99,7 +99,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	PANIC();
 #else
 
-#if CONFIG_ARCH_INTERRUPTSTACK > 7
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
 
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT_STACKCHECK
 
@@ -147,7 +147,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 
 	irq_dispatch(irq, regs);
 
-#if CONFIG_ARCH_INTERRUPTSTACK > 7
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
 	/* Context switches are indicated by the returned value of this function.
 	 * If a context switch occurred while processing the interrupt then
 	 * current_regs may have change value.  If we return any value different
