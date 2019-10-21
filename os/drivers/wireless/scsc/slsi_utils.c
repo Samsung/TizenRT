@@ -23,8 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <slsi_wifi/slsi_wifi_api.h>
-#include "wifi_utils.h"
+#include <tinyara/wifi/slsi/slsi_wifi_api.h>
+
+#include <tinyara/wifi/wifi_utils.h>
 
 #define DHCP_RETRY_COUNT		1
 #define WIFI_UTILS_DEBUG        0

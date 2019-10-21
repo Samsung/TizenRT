@@ -82,7 +82,7 @@
 #include<sys/socket.h>
 
 #if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
-#include <slsi_wifi/slsi_wifi_api.h>
+#include <tinyara/wifi/slsi/slsi_wifi_api.h>
 #endif
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)

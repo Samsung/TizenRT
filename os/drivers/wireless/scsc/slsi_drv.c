@@ -40,7 +40,7 @@
 #include <tinyara/lwnl/lwnl80211.h>
 #include <tinyara/lwnl/slsi_drv.h>
 
-#include <slsi_wifi/slsi_wifi_api.h>
+#include <tinyara/wifi/slsi/slsi_wifi_api.h>
 
 #define DHCP_RETRY_COUNT           1
 #define SLSI_DRV_SCAN_DEBUG        0
