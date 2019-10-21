@@ -95,7 +95,9 @@
  *   due to the scheduling of other activity by the system.
  *
  *   The 'usec' argument must be less than 1,000,000. If the value of
- *   'usec' is 0, then the call has no effect.
+ *   'usec' is 0, then the call has no effect. If CONFIG_SCHED_TICKLESS 
+ *   is disabled and the value of 'usec' is less than the value of tick,
+ *   CONFIG_USEC_PER_TICK, then this function operates with the value of tick.
  *
  *   If a SIGALRM signal is generated for the calling process during
  *   execution of usleep() and if the SIGALRM signal is being ignored or
