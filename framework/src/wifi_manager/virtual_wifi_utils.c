@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "wifi_utils.h"
+#include <tinyara/wifi/wifi_utils.h>
 
 
 wifi_utils_result_e wifi_utils_init(void)

@@ -21,7 +21,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <tinyara/lwnl/lwnl80211.h>
-#include "wifi_utils.h"
+#include <tinyara/wifi/wifi_utils.h>
 #include "wifi_event_listener.h"
 
 #define LWNL_TAG "[WU]"
