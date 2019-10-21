@@ -660,7 +660,7 @@ static void STM32_DMA2D_CopyBuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, u
     printf("destination : 0x%X, source : 0x%X, xsize %d ysize %d\n", destination, source, xsize, ysize);
 
     hdma2d.Init.Mode           = DMA2D_M2M_PFC;
-    hdma2d.Init.ColorMode      = DMA2D_OUTPUT_ARGB8888;
+    hdma2d.Init.ColorMode      = DMA2D_OUTPUT_RGB888;
     hdma2d.Init.OutputOffset   = 390 - xsize;
 
     hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB888;
@@ -712,7 +712,7 @@ int stm32l4_dma2dinitialize(void)
 
   /*##-1- Configure the DMA2D Mode, Color Mode and output offset #############*/
   hdma2d.Init.Mode           = DMA2D_M2M_BLEND;
-  hdma2d.Init.ColorMode      = DMA2D_OUTPUT_ARGB8888;
+  hdma2d.Init.ColorMode      = DMA2D_OUTPUT_RGB888;
   hdma2d.Init.OutputOffset   = 0;//1024 - 390;
   hdma2d.Init.AlphaInverted  = DMA2D_REGULAR_ALPHA;  /* No Output Alpha Inversion */
   hdma2d.Init.RedBlueSwap    = DMA2D_RB_REGULAR;     /* No Output Red & Blue swap */
