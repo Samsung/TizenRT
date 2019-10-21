@@ -48,8 +48,17 @@ config EXAMPLES_BINARY_UPDATE_TEST
 	bool "Binary Update example"
 	default n
 	depends on BINMGR_UPDATE
+	select FOTA_DELTA_ENGINE
 	---help---
 		Enable Binary Update example
+
+if EXAMPLES_BINARY_UPDATE_TEST
+config FOTA_DELTA_UPDATE
+	bool "FOTA Delta Update"
+	default n
+	---help---
+		Update entire binary using FOTA Delta Engine
+endif
 
 config EXAMPLES_MICOM_TIMER_TEST
 	bool "Micom Timer Test"

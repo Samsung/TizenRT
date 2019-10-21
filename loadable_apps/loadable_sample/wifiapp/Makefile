@@ -52,6 +52,8 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
+CFLAGS += -D__TizenRT__
+
 SRCS = wifiapp.c
 ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
 SRCS += messaging.c

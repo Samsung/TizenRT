@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <crc32.h>
+#include <apps/system/diff.h>
 
 #include <sys/types.h>
 
@@ -44,34 +44,12 @@
 #define CHECKSUM_SIZE               4
 #define BUFFER_SIZE                 512
 
-/* The maximum length of binary name */
-#define BIN_NAME_MAX                16
-
-/* The maximum length of version name */
-#define BIN_VER_MAX                 16
-
-/* The length of dev name */
-#define KERNEL_VER_MAX              8
-
-struct binary_header_s {
-	uint16_t header_size;
-	uint8_t bin_type;
-	uint8_t compression_type;
-	uint8_t bin_priority;
-	uint32_t bin_size;
-	char bin_name[BIN_NAME_MAX];
-	char bin_ver[BIN_VER_MAX];
-	uint32_t bin_ramsize;
-	uint32_t bin_stacksize;
-	char kernel_ver[KERNEL_VER_MAX];
-	uint32_t jump_addr;
-} __attribute__((__packed__));
-typedef struct binary_header_s binary_header_t;
-
 static volatile bool is_running;
 static volatile bool inf_flag = true;
 static int fail_cnt = 0;
 static unsigned int new_version;
+
+static char *arguments[4];
 
 static void binary_update_cb(void)
 {
@@ -393,6 +371,8 @@ static void binary_update_run_tests(int repetition_num)
 	binary_update_info_t cur_bin_info;
 	printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
 
+#if CONFIG_FOTA_DELTA_UPDATE == 0
+
 	binary_update_getinfo(APP_NAME, &pre_bin_info);
 
 	/* Copy the partition to test the update. */
@@ -415,6 +395,46 @@ static void binary_update_run_tests(int repetition_num)
 	binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_VALID_BIN);
 
 	binary_update_getinfo_all();
+
+#else
+
+	/* get inactive partition path */
+	binary_update_getinfo(APP_NAME, &pre_bin_info);
+
+	/* malloc for arguments */
+	arguments[0] = (char *)malloc((20 + 1) * sizeof(char));
+	arguments[1] = (char *)malloc((sizeof(pre_bin_info.active_dev) + 1) * sizeof(char));
+	arguments[2] = (char *)malloc((15 + 1) * sizeof(char));
+	arguments[3] = (char *)malloc((sizeof(pre_bin_info.inactive_dev) + 1) * sizeof(char));
+
+	/* Copy path names to arguments */
+	memcpy(arguments[0], "blockwise_bin_update", 20);
+	arguments[0][20] = '\0';
+
+	memcpy(arguments[1], "/dev/mtdblock2", sizeof(pre_bin_info.active_dev));
+	arguments[1][sizeof(pre_bin_info.active_dev)] = '\0';
+
+	memcpy(arguments[2], "/mnt/patch_file", 15);
+	arguments[2][15] = '\0';
+
+	memcpy(arguments[3], "/dev/mtdblock3", sizeof(pre_bin_info.inactive_dev));
+	arguments[3][sizeof(pre_bin_info.inactive_dev)] = '\0';
+
+	printf("arguments[0] = %s\n", arguments[0]);
+	printf("arguments[1] = %s\n", arguments[1]);
+	printf("arguments[2] = %s\n", arguments[2]);
+	printf("arguments[3] = %s\n", arguments[3]);
+
+	/* Patch to a new file */
+	blockwise_bin_update_main(4, arguments);
+
+	/* Reload micom binary from patched partition */
+	binary_update_reload(APP_NAME);
+
+	/* Get info for all */
+	binary_update_getinfo_all();
+
+#endif
 
 	binary_update_unregister_state_changed_callback();
 
