@@ -28,6 +28,8 @@
 #include <tinyara/lcd/ieg1120.h>
 #include <tinyara/lcd/lcd.h>
 
+#include "chip/stm32l4_dma2d.h"
+
 #include <arch/board/board.h>
 #include <arch/board/stm32l4r9ai-disco.h>
 #include <arch/board/stm32l4r9i_discovery.h>
@@ -87,11 +89,19 @@ void dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
                       uint16_t xsize, uint16_t ysize, ui_pixel_format_t pf)
 #else
 void dma2d_copybuffer(uint32_t *psrc, uint32_t *pdst, uint16_t x, uint16_t y,
-                      uint16_t xsize, uint16_t ysize)    
+                      uint16_t xsize, uint16_t ysize, bool alpha)
 #endif
 {
     FAR struct dma2d_layer_s *priv = up_dma2ddev();
     
+    if(alpha == true)
+    {
+      priv->inputcolor(DMA2D_PF_ARGB8888);
+    }
+    else
+    {
+      priv->inputcolor(DMA2D_PF_RGB888);
+    }
     priv->copybuffer(psrc, pdst, x, y, xsize, ysize);
     //STM32L4_LCD_Refresh();
 }
