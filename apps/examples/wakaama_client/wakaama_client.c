@@ -26,8 +26,9 @@
 #include "connection.h"
 #include <tinyara/wqueue.h>
 #include <tinyara/clock.h>
+#include <tinyara/wifi/slsi/slsi_wifi_api.h>
 #include <protocols/dhcpc.h>
-#include <slsi_wifi/slsi_wifi_api.h>
+
 
 #ifdef CONFIG_WIFI_MANAGER
 #define NET_DEVNAME	CONFIG_WIFIMGR_STA_IFNAME

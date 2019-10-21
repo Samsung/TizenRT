@@ -38,7 +38,7 @@
 #include <tinyara/cancelpt.h>
 #include <tinyara/wifi/wifi_common.h>
 
-#include "wifi_utils.h"
+#include <tinyara/wifi/wifi_utils.h>
 
 #include "esp_attr.h"
 #include "esp_phy_init.h"

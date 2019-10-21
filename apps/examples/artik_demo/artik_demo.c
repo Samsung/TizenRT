@@ -37,7 +37,7 @@
 #include <protocols/webclient.h>
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
-#include <slsi_wifi/slsi_wifi_api.h>
+#include <tinyara/wifi/slsi/slsi_wifi_api.h>
 
 /****************************************************************************
  * Definitions

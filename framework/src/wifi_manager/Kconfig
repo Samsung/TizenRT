@@ -21,9 +21,11 @@ config SELECT_NO_DRIVER
 
 config SELECT_SCSC_WLAN
 	bool "Enable SCSC Wireless Module"
+	select SCSC_WLAN
 
 config SELECT_RTK_WLAN
-	bool "Enable RTK Wireless Module"
+	bool "Enable RTKWireless Module"
+	select RTK_WLAN
 
 config SELECT_PROPIETARY_WLAN
 	bool "Enable vendor-specific Wireless Module"

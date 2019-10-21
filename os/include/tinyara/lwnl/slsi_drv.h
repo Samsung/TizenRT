@@ -22,6 +22,7 @@
 #include <tinyara/lwnl/lwnl80211.h>
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <debug.h>
 
