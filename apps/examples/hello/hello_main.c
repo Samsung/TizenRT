@@ -58,6 +58,7 @@
 #include <stdio.h>
 #include <image_390x390_rgb888.h>
 #include <loading_00.h>
+#include <b_rich_noti_icon_callendar.h>
 /****************************************************************************
  * hello_main
  ****************************************************************************/
@@ -73,8 +74,12 @@ int hello_main(int argc, char *argv[])
 #endif
 {
     printf("Hello, World!!\n");
-    dma2d_copybuffer((uint32_t *)image_390x390_rgb888, NULL, 0, 0, 390, 390);
-    dma2d_copybuffer((uint32_t *)loading_00, NULL, 200, 200, 64, 64);
+    dma2d_copybuffer((uint32_t *)image_390x390_rgb888, NULL, 0, 0, 390, 390, false);
+    dma2d_copybuffer((uint32_t *)loading_00, NULL, 127, 127, 64, 64, false);
+    dma2d_copybuffer((uint32_t *)&b_rich_noti_icon_callendar[56], NULL, 62, 62, 62, 62, true);
+    dma2d_copybuffer((uint32_t *)loading_00, NULL, 167, 167, 64, 64, false);
+    dma2d_copybuffer((uint32_t *)&b_rich_noti_icon_callendar[56], NULL, 162, 162, 62, 62, true);
+    dma2d_copybuffer((uint32_t *)loading_00, NULL, 200, 200, 64, 64, false);
     lcd_refresh();
 
 #if 0 /* External Memory test code */
