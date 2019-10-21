@@ -415,9 +415,11 @@ lwnl80211_result_e slsidrv_scan_ap(lwnl80211_ap_config_s *config)
 			scan_filter_result.result_list = NULL;
 		}
 		strncpy((char *)scan_filter_result.scan_ssid, (const char *)config->ssid, config->ssid_length + 1);
+		ret = WiFiScanNetwork((char *)scan_filter_result.scan_ssid);
+	} else {
+		ret = WiFiScanNetwork(NULL);
 	}
 
-	ret = WiFiScanNetwork();
 	if (ret != SLSI_STATUS_SUCCESS) {
 		vddbg("[ERR] WiFi scan fail(%d)\n", ret);
 		return result;

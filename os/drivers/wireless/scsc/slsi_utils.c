@@ -363,9 +363,11 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 			scan_filter_result.result_list = NULL;
 		}
 		strncpy((char *)scan_filter_result.scan_ssid, (const char *)ap_connect_config->ssid, ap_connect_config->ssid_length + 1);
+		ret = WiFiScanNetwork((char *)scan_filter_result.scan_ssid);
+	} else {
+		ret = WiFiScanNetwork(NULL);
 	}
 
-	ret = WiFiScanNetwork();
 	if (ret != SLSI_STATUS_SUCCESS) {
 		ndbg("[WU] [ERR] WiFi scan fail(%d)\n", ret);
 		return wuret;

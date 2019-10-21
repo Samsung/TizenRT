@@ -32,6 +32,7 @@
 
 #include <tinyara/wifi/slsi/slsi_wifi_api.h>
 #include <tinyara/wifi/slsi/slsi_wifi_nvmap.h>
+#include <tinyara/kmalloc.h>
 
 #include "utils/includes.h"
 #include "utils/common.h"
@@ -373,7 +374,7 @@ static void slsi_init_nvram(void);
 static uint8_t slsi_stop_supplicant(void);
 static void slsi_deinit(void);
 static int8_t slsi_wpa_close(bool terminate);
-static int8_t slsi_start_scan(void);
+static int8_t slsi_start_scan(char *ssid);
 static int8_t slsi_get_country_code(char *country_code);
 static WiFi_InterFace_ID_t slsi_get_op_mode(void);
 static void slsi_set_scan_interval(uint8_t interval);
@@ -1075,7 +1076,7 @@ static void slsi_verify_back(void)
 	g_link_up = g_recovery_data.link_up;
 	g_link_down = g_recovery_data.link_down;
 	if (g_recovery_data.scan_result_handler) {
-		if (slsi_start_scan() != SLSI_STATUS_SUCCESS) {
+		if (slsi_start_scan(NULL) != SLSI_STATUS_SUCCESS) {
 			EPRINT("Initiate scan failed!\n");
 		}
 	}
@@ -2453,13 +2454,39 @@ errout:
 	return result;
 }
 
-static int8_t slsi_start_scan(void)
+static int8_t slsi_start_scan(char *input)
 {
 	int8_t result = SLSI_STATUS_ERROR;
-	slsi_send_command_str_upto_4(WPA_COMMAND_SCAN, NULL, NULL, NULL, &result);
+	int ssid_idx = 0;
+
+	if (input) {
+		char *prefix = "ssid ";
+		char ssid[SLSI_SSID_LEN * 2 + 1] = { 0, };
+		for (ssid_idx = 0; ssid_idx < strlen(input); ssid_idx++) {
+			snprintf(ssid + (ssid_idx * 2), 3, "%02X", input[ssid_idx]);
+		}
+		ssid[strlen(input) * 2] = '\0';
+
+		char *order = "SCAN ";
+		char *target = (char *)kmm_malloc(strlen(prefix) + strlen(ssid) + strlen(order) + 1);
+		if (target == NULL) {
+			EPRINT("Failed to malloc WPA commands\n");
+			return SLSI_STATUS_ERROR;
+		}
+		strncpy(target, order, strlen(order));
+		strncpy(target + strlen(order), prefix, strlen(prefix) + 1);
+		strncpy(target + strlen(order) + strlen(prefix), ssid, strlen(input) * 2 + 1);
+
+		slsi_send_command_str_upto_4(target, NULL, NULL, NULL, &result);
+		kmm_free(target);
+	} else {
+		slsi_send_command_str_upto_4(WPA_COMMAND_SCAN, NULL, NULL, NULL, &result);
+	}
+
 	if (result == SLSI_STATUS_SUCCESS) {
 		g_scanning = 1;
 	}
+
 	return result;
 }
 
@@ -3394,12 +3421,16 @@ int8_t WiFiStop(void)
 	return result;
 }
 
-int8_t WiFiScanNetwork(void)
+int8_t WiFiScanNetwork(char *ssid)
 {
 	ENTER_CRITICAL;
 	int8_t result = SLSI_STATUS_NOT_STARTED;
 	if (g_state != SLSI_WIFIAPI_STATE_NOT_STARTED) {
-		result = slsi_start_scan();
+		if (ssid) {
+			result = slsi_start_scan(ssid);
+		} else {
+			result = slsi_start_scan(NULL);
+		}
 	}
 	LEAVE_CRITICAL;
 	return result;
