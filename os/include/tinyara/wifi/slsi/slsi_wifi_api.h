@@ -296,7 +296,7 @@ int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handle
 
 /**
  * Scan for Wi-Fi network
- *
+ * @ssid : SSID of target AP, if null, wildcard SSID will be used
  * Return: Scan initiated successfully or failed
  *
  * Start a scan for Wi-Fi AP in the surroundings.
@@ -305,7 +305,7 @@ int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handle
  * or Scan aborted.
  * The scan results are retrieved using WiFiGetScanResults().
  */
-int8_t WiFiScanNetwork(void);
+int8_t WiFiScanNetwork(char *ssid);
 
 /**
  * Return current scan results list

@@ -473,7 +473,7 @@ int dm_conn_free_scan_result(dm_scan_info_t **result)
 
 int dm_conn_wifi_scan(void)
 {
-	if (WiFiScanNetwork() == SLSI_STATUS_SUCCESS) {
+	if (WiFiScanNetwork(NULL) == SLSI_STATUS_SUCCESS) {
 		WiFiFreeScanResults(&g_wifi_scan_result);
 		WiFiGetScanResults(&g_wifi_scan_result);
 		WiFiNetworkJoin((uint8_t *)CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
