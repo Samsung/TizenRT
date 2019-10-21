@@ -55,7 +55,11 @@
 include $(APPDIR)/Make.defs
 
 ASRCS =
+ifeq ($(CONFIG_FOTA_DELTA_PACKETS),y)
+CSRCS = patch_packet.c
+else
 CSRCS = patch.c
+endif
 MAINSRC =
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
