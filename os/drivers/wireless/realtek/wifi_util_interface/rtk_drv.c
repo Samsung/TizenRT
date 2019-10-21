@@ -30,9 +30,14 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "rtk_drv_lwnl80211.h"
+#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/rtk_drv.h>
+
+#include "wifi_conf.h"
 
 #define vTaskDelay(t) usleep(t)
+#define MACADDR_LEN 6
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -40,11 +45,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-static struct lwnl80211_lowerhalf_s *g_dev;
-
 static WiFi_InterFace_ID_t g_mode = RTK_WIFI_NONE;
-
-extern struct netif xnetif[NET_IF_NUM];
 
 static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
 	rtkdrv_init,			/* init */
@@ -68,42 +69,24 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 	RTKDRV_ENTER;
 	int type = (int)(argv[1][0] - '0');
 
-	lwnl80211_cb_status status;
-
-	if (!g_dev) {
-		vddbg("Failed to find upper driver\n");
-		return -1;
-	}
-
-	if (!g_dev->cbk) {
-		vddbg("Failed to find callback function\n");
-		return -1;
-	}
-
 	switch (type) {
 	case 1:
-		status = LWNL80211_STA_CONNECTED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_CONNECTED, NULL);
 		break;
 	case 2:
-		status = LWNL80211_STA_CONNECT_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_CONNECT_FAILED, NULL);
 		break;
 	case 3:
-		status = LWNL80211_SOFTAP_STA_JOINED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SOFTAP_STA_JOINED, NULL);
 		break;
 	case 4:
-		status = LWNL80211_STA_DISCONNECTED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_DISCONNECTED, NULL);
 		break;
 	case 5:
-		status = LWNL80211_SOFTAP_STA_LEFT;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SOFTAP_STA_LEFT, NULL);
 		break;
 	default:
-		status = LWNL80211_UNKNOWN;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_UNKNOWN, NULL);
 		break;
 	}
 
@@ -162,19 +145,12 @@ static void linkdown_handler(rtk_reason_t *reason)
 
 int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input, int scan_num)
 {
-	lwnl80211_cb_status status;
 	lwnl80211_scan_list_s *scan_list = (lwnl80211_scan_list_s *)utils_scan_input;
-	if (!g_dev) {
-		vddbg("Failed to find upper driver\n");
-		return RTK_STATUS_ERROR;
-	}
 
 	if (scan_list) {
-		status = LWNL80211_SCAN_DONE;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, (void *)scan_list);
+		lwnl80211_postmsg(LWNL80211_SCAN_DONE, (void *)scan_list);
 	} else {
-		status = LWNL80211_SCAN_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SCAN_FAILED, NULL);
 	}
 
 	return RTK_STATUS_SUCCESS;
@@ -201,7 +177,6 @@ lwnl80211_result_e rtkdrv_init(struct lwnl80211_lowerhalf_s *dev)
 		vdvdbg("[RTK] Start STA mode\n");
 
 		g_mode = RTK_WIFI_STATION_IF;
-		g_dev = dev;
 		result = LWNL80211_SUCCESS;
 		return result;
 	} else {
@@ -219,7 +194,6 @@ lwnl80211_result_e rtkdrv_deinit(void)
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_NONE;
 		result = LWNL80211_SUCCESS;
-		g_dev = NULL;
 	} else {
 		vddbg("[RTK] Failed to stop STA mode\n");
 	}
@@ -297,7 +271,7 @@ lwnl80211_result_e rtkdrv_get_info(lwnl80211_info *wifi_info)
 	(void)wifi_get_mac_address((char *)mac_str);
 
 	int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &wifi_info->mac_address[0], &wifi_info->mac_address[1], &wifi_info->mac_address[2], &wifi_info->mac_address[3], &wifi_info->mac_address[4], &wifi_info->mac_address[5]);
-	if (ret != WIFIMGR_MACADDR_LEN) {
+	if (ret != MACADDR_LEN) {
 		vddbg("[RTK] Failed to get MAC addr\n");
 		return LWNL80211_FAIL;
 	}
@@ -418,15 +392,14 @@ lwnl80211_result_e rtkdrv_set_autoconnect(uint8_t check)
 struct lwnl80211_lowerhalf_s *rtk_drv_initialize(void)
 {
 	RTKDRV_ENTER;
-	struct rtk_drv_dev_s *priv;
+	struct lwnl80211_lowerhalf_s *dev = NULL;
 
-	priv = (struct rtk_drv_dev_s *)kmm_zalloc(sizeof(struct rtk_drv_dev_s));
-	if (!priv) {
+	dev = (struct lwnl80211_lowerhalf_s *)kmm_malloc(sizeof(struct lwnl80211_lowerhalf_s));
+	if (!dev) {
 		return NULL;
 	}
 
-	priv->dev.ops = &g_lwnl80211_drv_ops;
-	priv->initialized = true;
+	dev->ops = &g_lwnl80211_drv_ops;
 
-	return &priv->dev;
+	return dev;
 }

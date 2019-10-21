@@ -17,10 +17,11 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#include <tinyara/wifi/rtk/wifi_constants.h>
+#include <tinyara/wifi/rtk/wifi_structures.h>
+
 #include "wireless.h"
 #include "wlan_intf.h"
-#include "wifi_constants.h"
-#include "wifi_structures.h"
 
 #ifdef __cplusplus
 extern "C" {

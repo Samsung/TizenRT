@@ -16,9 +16,10 @@
  *
  ******************************************************************/
 #include "pthread.h"
-#include "rtk_wifi_utils.h"
 #include "rtk_lwip_netconf.h"
-#include "wifi_manager.h"
+
+#include <tinyara/wifi/wifi_utils.h>
+#include "wifi_conf.h"
 
 //RTK
 #define CONFIG_INIT_NET                 1
@@ -46,7 +47,7 @@
 
 /* Private define ------------------------------------------------------------*/
 
-extern struct netif xnetif[NET_IF_NUM]; 
+extern struct netif xnetif[NET_IF_NUM];
 
 wifi_utils_cb_s g_cbk = { NULL, NULL, NULL, NULL, NULL };
 
@@ -145,7 +146,7 @@ wifi_utils_result_e wifi_utils_init(void)
 		} else {
 			nvdbg("[RTK] Link callback handles: registered\n");
 		}
-		
+
 		ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
 		if (ret != RTK_STATUS_SUCCESS) {
 			ndbg("[RTK] Failed to start STA mode\n");
@@ -212,14 +213,14 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 		if(wifi_utils_deinit()){
 			ndbg("[RTK] Failed to stop AP mode\n");
 			return WIFI_UTILS_FAIL;
-		}			
+		}
 		vTaskDelay(20);
 		if (wifi_utils_init() < 0){
 			ndbg("\n\rERROR: Wifi on failed!");
 			return WIFI_UTILS_FAIL;
 		}
 	}
-	
+
 	ret = cmd_wifi_connect(ap_connect_config,arg);
 	if (ret != RTK_STATUS_SUCCESS) {
 		ndbg("[RTK] WiFiNetworkJoin failed: %d, %s\n", ret, ap_connect_config->ssid);

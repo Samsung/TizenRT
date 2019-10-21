@@ -46,10 +46,6 @@
 		nldbg(LWNL80211_TAG"<---%s:%d\n", __FILE__, __LINE__);                   \
 	} while (0)
 
-/* #define LWNL80211_MQUEUE_PRIORITY        100 */
-/* #define LWNL80211_MQUEUE_MAX_DATA_LEN    1024 */
-/* #define LWNL80211_MQUEUE_MAX_DATA_NUM    128 */
-
 #define LWNL80211_MACADDR_LEN            6
 #define LWNL80211_MACADDR_STR_LEN        17
 #define LWNL80211_SSID_LEN               32
