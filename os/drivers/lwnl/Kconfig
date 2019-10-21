@@ -4,15 +4,23 @@
 
 choice LWNL80211_DRV
 	prompt"Driver selelction"
-	default LWNL80211_SLSI
+	default LWNL80211_VIRTUAL
+
+config LWNL80211_VIRTUAL
+	bool "Virtual driver"
+	depends on !SELECT_SCSC_WLAN && !SELECT_RTK_WLAN
+	---help---
+		Virtual WiFi driver
 
 config LWNL80211_SLSI
 	bool "SLSI driver"
+	depends on SELECT_SCSC_WLAN
 	---help---
 		Samsung Artik WiFi driver
 
 config LWNL80211_RTK
 	bool "Realtek driver"
+	depends on SELECT_RTK_WLAN
 	---help---
 		Realtek WiFi driver
 endchoice

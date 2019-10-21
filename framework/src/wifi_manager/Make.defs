@@ -17,23 +17,20 @@
 ###########################################################################
 
 ifeq ($(CONFIG_WIFI_MANAGER), y)
-CSRCS += wifi_manager.c 
+CSRCS += wifi_manager.c
 CSRCS += wifi_profile.c
 
 ifeq ($(CONFIG_LWNL80211), y)
 CSRCS += wifi_utils_lwnl80211.c
 CSRCS += wifi_event_monitor_internal.c wifi_event_monitor.c
-endif
-
-ifeq ($(CONFIG_SLSI_WPA_SUPPLICANT), y)
-CSRCS += slsi_wifi_utils.c
-endif
-
+else
 ifeq ($(CONFIG_SELECT_NO_DRIVER), y)
 CSRCS += virtual_wifi_utils.c
+endif
 endif
 
 DEPPATH += --dep-path src/wifi_manager
 VPATH += :src/wifi_manager
+
 endif
 

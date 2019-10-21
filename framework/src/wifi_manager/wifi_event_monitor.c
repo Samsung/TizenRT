@@ -17,7 +17,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <tinyara/lwnl/lwnl_event_listener.h>
-#include "wifi_utils.h"
+#include <tinyara/wifi/wifi_utils.h>
 #include "wifi_event_listener.h"
 
 int lwnl_start_listener(void)

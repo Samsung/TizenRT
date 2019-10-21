@@ -547,14 +547,4 @@ config OTP_NULL
 		Virtual OTP device
 endif
 
-menuconfig LWNL80211
-	bool "Enable light-weight netlink for 80211"
-	default n
-	---help---
-		Lwnl80211 provides a driver interface for 802.11 WiFi hardware.
-
-if LWNL80211
-source drivers/lwnl/Kconfig
-endif
-
 source drivers/seclink/Kconfig

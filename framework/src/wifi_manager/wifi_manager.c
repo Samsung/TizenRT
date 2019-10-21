@@ -28,7 +28,7 @@
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>
 #include <netutils/netlib.h>
-#include "wifi_utils.h"
+#include <tinyara/wifi/wifi_utils.h>
 #include "wifi_profile.h"
 
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT

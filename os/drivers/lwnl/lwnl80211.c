@@ -215,6 +215,8 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 static int lwnl80211_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 {
+	LWNL80211_ENTER;
+
 	FAR struct inode *inode;
 	FAR struct lwnl80211_upperhalf_s *upper;
 	FAR struct lwnl80211_open_s *opriv;

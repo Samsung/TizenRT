@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <tinyara/lwnl/lwnl80211.h>
-#include "wifi_utils.h"
+#include <tinyara/wifi/wifi_utils.h>
 
 #define WU_INTF_NAME "wl1"
 
