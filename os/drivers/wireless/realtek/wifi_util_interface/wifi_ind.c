@@ -18,13 +18,14 @@
  *
  ******************************************************************************/
 //----------------------------------------------------------------------------//
-#include "wifi_ind.h"
-#include "wifi_conf.h"
-#include "osdep_service.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+
+#include "wifi_ind.h"
+#include "wifi_conf.h"
+#include "osdep_service.h"
 
 /******************************************************
  *                    Constants

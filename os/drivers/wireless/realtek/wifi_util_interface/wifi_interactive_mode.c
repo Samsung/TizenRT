@@ -15,7 +15,6 @@
 #include "rtk_lwip_netconf.h"
 #include "net/lwip/ip_addr.h"
 #include "net/lwip/ip4_addr.h"
-#include "rtk_wifi_utils.h"
 #include "net/lwip/tcpip.h"
 
 #define vTaskDelay(t) usleep(t)

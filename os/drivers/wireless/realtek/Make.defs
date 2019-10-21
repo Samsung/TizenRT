@@ -35,54 +35,24 @@ HCI_NAME = usb
 endif
 
 ############################### SOUREC CODE PATH #########################
-DRIVER_DIR = wireless$(DELIM)realtek$(DELIM)rtk
 OS_DIR = wireless$(DELIM)realtek$(DELIM)os
 PLATFORM_DIR = wireless$(DELIM)realtek$(DELIM)platform
-UTIL_INTERFACE_DIR = wireless$(DELIM)realtek$(DELIM)wifi_util_interface
 
-DEPPATH += --dep-path wireless$(DELIM)realtek 
+DEPPATH += --dep-path wireless$(DELIM)realtek
 DEPPATH += --dep-path wireless$(DELIM)realtek$(DELIM)rtk
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)core$(DELIM)efuse
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)core$(DELIM)rom
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)core
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hal
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)phydm$(DELIM)halrf
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)phydm$(DELIM)halrf$(DELIM)rtl8723d
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)phydm
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)phydm$(DELIM)rtl8723d
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hci
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hci$(DELIM)usb
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)osdep
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)$(RTL871X)
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)$(RTL871X)$(DELIM)usb
-#DEPPATH += --dep-path $(DRIVER_DIR)$(DELIM)src$(DELIM)osdep$(DELIM)tizenrt
 DEPPATH += --dep-path $(OS_DIR)$(DELIM)os_dep
 DEPPATH += --dep-path $(OS_DIR)$(DELIM)tizenrt
 DEPPATH += --dep-path $(PLATFORM_DIR)
 DEPPATH += --dep-path $(PLATFORM_DIR)$(DELIM)usb
 DEPPATH += --dep-path wireless$(DELIM)realtek$(DELIM)wifi_util_interface
 
-
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)core$(DELIM)efuse
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)core$(DELIM)rom
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)core
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hal
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)phydm$(DELIM)halrf
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)phydm$(DELIM)halrf$(DELIM)rtl8723d
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)phydm
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)phydm$(DELIM)rtl8723d
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hci
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hci$(DELIM)usb
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)osdep
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)$(RTL871X)
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)hal$(DELIM)$(RTL871X)$(DELIM)usb
-#VPATH += :$(DRIVER_DIR)$(DELIM)src$(DELIM)osdep$(DELIM)tizenrt
+VPATH += :wireless$(DELIM)realtek
+VPATH += :wireless$(DELIM)realtek$(DELIM)rtk
 VPATH += :$(OS_DIR)$(DELIM)os_dep
 VPATH += :$(OS_DIR)$(DELIM)tizenrt
 VPATH += :$(PLATFORM_DIR)
 VPATH += :$(PLATFORM_DIR)$(DELIM)usb
 VPATH += :wireless$(DELIM)realtek$(DELIM)wifi_util_interface
-VPATH += :wireless$(DELIM)realtek$(DELIM)rtk
 
 ######################### UTIL_INTERFACE #####################################
 #realtek/wifi_util_interface
@@ -91,68 +61,44 @@ CSRCS += wifi_conf.c \
 		 wifi_interactive_mode.c \
 		 wifi_util.c \
 		 rtk_lwip_netconf.c
-
-
 ifeq ($(CONFIG_LWNL80211_RTK),y)
-CSRCS += rtk_drv_lwnl80211.c
+CSRCS += rtk_drv.c
+else
+CSRCS += rtk_utils.c
 endif
 ############################### End UTIL_INTERFACE #########################
 
-
 ######################### OS AND PLATFORM #####################################
 #realtek/os/os_dep
-CSRCS += osdep_service.c
-CSRCS += device_lock.c
-
-#realtek/os/tizenrt
-CSRCS += tizenrt_service.c
-
-#hci_spec.h
-#realtek/platform
-
-CSRCS += usb_io_realtek.c
-
-CSRCS += lwip_intf_tizenrt.c
-
-CSRCS += ethernetif_tizenrt.c
+CSRCS += osdep_service.c \
+		 device_lock.c \
+		 tizenrt_service.c \
+		 usb_io_realtek.c \
+		 lwip_intf_tizenrt.c \
+		 ethernetif_tizenrt.c
 
 ######################### END OS AND PLATFORM #################################
 
 ######################### INCLUDE FILES #################################
-#IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek_wifi$(DELIM)platform
-#IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek_wifi$(DELIM)os_dep$(DELIM)tizenrt
-#IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek_wifi$(DELIM)hal$(DELIM)phydm
-#IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek_wifi$(DELIM)hal$(DELIM)phydm$(DELIM)$(RTL871X)
-
-#IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek_wifi$(DELIM)include
 IFLAGS = $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)rtk$(DELIM)include
-IFLAGS += $(TOPDIR)/../external/rtk_wifi/include
 IFLAGS += $(TOPDIR)/../framework/src/wifi_manager
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)rtk$(DELIM)src$(DELIM)osdep
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)rtk$(DELIM)src$(DELIM)hci
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)rtk$(DELIM)src$(DELIM)hal
-
-#IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless/root/tizenrt/os/drivers$(DELIM)realtek$(DELIM)os$(DELIM)os_dep$(DELIM)include
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)os$(DELIM)os_dep$(DELIM)include
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)os$(DELIM)tizenrt
-
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)platform
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)platform$(DELIM)usb
-
 IFLAGS += $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)wifi_util_interface
-
 IFLAGS += $(TOPDIR)$(DELIM)arch$(DELIM)arm$(DELIM)src$(DELIM)imxrt
 ######################### END OF INCLUDE FILES #################################
 
 ############################ COMPILE FLAG ####################################
 CFLAGS += -DCONFIG_LITTLE_ENDIAN
 CFLAGS += -DDM_ODM_SUPPORT_TYPE=0x04
-#CFLAGS += -L./rtk/
 
 CFLAGS += -DCONFIG_USB_HCI
 ############################ End COMPILE FLAG ####################################
 
-
-#CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(IFLAGS)} -lrtl}
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(IFLAGS)} 
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(IFLAGS)}
 endif

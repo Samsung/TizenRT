@@ -24,8 +24,8 @@
  *             base on the functionalities provided by Realtek Wi-Fi driver.
  ******************************************************************************
  */
-#ifndef __WIFI_API_H
-#define __WIFI_API_H
+#ifndef __WIFI_CONF_H__
+#define __WIFI_CONF_H__
 
 /** @addtogroup nic NIC
  *  @ingroup    wlan
@@ -33,14 +33,17 @@
  *  @{
  */
 
-#include "wifi_constants.h"
-#include "wifi_ind.h"
-#include "wifi_structures.h"
-#include "wifi_util.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <tinyara/wifi/wifi_common.h>
+#include <tinyara/wifi/rtk/wifi_constants.h>
+#include <tinyara/wifi/rtk/wifi_structures.h>
+
+#include "wifi_ind.h"
+#include "wifi_util.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,6 +93,26 @@ extern __u32 GlobalDebugEnable;
 #define _PACKED __attribute__((packed))
 #define _WEAK __attribute__((weak))
 
+/* rtk return values */
+#define RTK_STATUS_SUCCESS 0				 // Successfully completed
+#define RTK_STATUS_ERROR 1					 // Error  - unspecified
+#define RTK_STATUS_COMMAND_FAILED 2			 // Failed - command failed
+#define RTK_STATUS_COMMAND_UNKNOWN 3		 // Failed - command unknown
+#define RTK_STATUS_NOT_STARTED 4			 // Failed - mode never initiated
+#define RTK_STATUS_ALREADY_STARTED 5		 // Failed - mode already started
+#define RTK_STATUS_SUPPLICANT_START_FAILED 6 // Failed - start up of wpa_supplicant failed
+#define RTK_STATUS_PARAM_FAILED 7			 // Failed - parameter specified not valid
+#define RTK_STATUS_ALREADY_CONNECTED 8		 // Failed - WiFi already connected
+#define RTK_STATUS_NOT_CONNECTED 9			 // Failed - WiFi not connected
+#define RTK_STATUS_SECURITY_FAILED 10		 // Failed - security setup failed
+#define RTK_STATUS_NOT_ALLOWED 11			 // Failed - not allowed
+#define RTK_STATUS_NOT_SUPPORTED 12			 // Failed - function not supported (maybe due to missing dependencies to filesystem)
+
+/* Added in Join failed scenarios:*/
+#define RTK_REASON_NETWORK_CONFIGURATION_NOT_FOUND 201
+#define RTK_REASON_NETWORK_AUTHENTICATION_FAILED 202
+#define RTK_REASON_ASSOCIATION_REQ_FAILED 203
+
 typedef _int8_t int8_t;
 typedef _uint8_t uint8_t;
 
@@ -100,27 +123,49 @@ typedef _int32_t int32_t;
 typedef _uint32_t uint32_t;
 
 /******************************************************
- *                 Type Definitions
- ******************************************************/
-
-/** Scan result callback function pointer type
- *
- * @param result_ptr  : A pointer to the pointer that indicates where to put the
- * next scan result
- * @param user_data   : User provided data
- */
-typedef void (*rtw_scan_result_callback_t)(rtw_scan_result_t **result_ptr,
-                                           void *user_data);
-typedef rtw_result_t (*rtw_scan_result_handler_t)(
-    rtw_scan_handler_result_t *malloced_scan_result);
-
-/******************************************************
  *                    Structures
  ******************************************************/
 typedef struct {
   char *buf;
   int buf_len;
 } scan_buf_arg;
+
+typedef enum WiFi_InterFace_ID {
+	RTK_WIFI_NONE,		 // default
+	RTK_WIFI_STATION_IF, // Station mode (turns on wpa_supplicant)
+	RTK_WIFI_SOFT_AP_IF, // Soft AP mode (turns on hostapd)
+	RTK_WIFI_P2P_IF		 // P2P mode (turns on wpa_supplicant)
+} WiFi_InterFace_ID_t;
+
+typedef struct rtk_reason {
+	uint32_t reason_code;	  // Reason codes - 0 for success - error code see 'rtk reason codes' above
+	uint8_t locally_generated; // Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
+	int8_t ssid_len;		   // length of ssid - # of valid octets
+	uint8_t ssid[33];		   // 802.11 spec defined up to 32 octets of data
+	char bssid[17];			   // BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
+} rtk_reason_t;
+
+/******************************************************
+ *                 Type Definitions
+ ******************************************************/
+/** Scan result callback function pointer type
+ *
+ * @param result_ptr  : A pointer to the pointer that indicates where to put the
+ * next scan result
+ * @param user_data   : User provided data
+ */
+typedef void (*rtw_scan_result_callback_t)(rtw_scan_result_t **result_ptr, void *user_data);
+typedef void (*rtk_network_link_callback_t)(rtk_reason_t *reason);
+typedef rtw_result_t (*rtw_scan_result_handler_t)(rtw_scan_handler_result_t *malloced_scan_result);
+
+/******************************************************
+ *                 Global Function  Definitions
+ ******************************************************/
+extern rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_result);
+extern int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id);
+extern int8_t cmd_wifi_off(void);
+extern int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg);
+extern int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config);
 
 /******************************************************
  *                    Structures
@@ -149,6 +194,8 @@ typedef struct {
 /******************************************************
  *               Function Declarations
  ******************************************************/
+
+int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_network_link_callback_t link_down);
 
 /**
  * @brief  Join a Wi-Fi network.
@@ -1156,6 +1203,6 @@ int wifi_wowlan_set_pattern(wowlan_pattern_t pattern);
 
 /*\@}*/
 
-#endif // __WIFI_API_H
+#endif // __WIFI_CONF_H__
 
 //----------------------------------------------------------------------------//
