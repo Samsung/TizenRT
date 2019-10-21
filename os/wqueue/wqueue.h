@@ -262,7 +262,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 void work_process(FAR struct wqueue_s *wqueue, int wdx);
 
 /****************************************************************************
- * Name: work_signal
+ * Name: work_qsignal
  *
  * Description:
  *   Signal the worker thread to process the work queue now.  This function
@@ -270,14 +270,14 @@ void work_process(FAR struct wqueue_s *wqueue, int wdx);
  *   user to force an immediate re-assessment of pending work.
  *
  * Input parameters:
- *   qid    - The work queue ID
+ *   pid    - The work queue pid
  *
  * Returned Value:
  *   Zero on success, a negated errno on failure
  *
  ****************************************************************************/
 
-int work_signal(int qid);
+int work_qsignal(pid_t pid);
 
 #endif							/* CONFIG_SCHED_WORKQUEUE */
 #endif							/* __OS_WQUEUE_WQUEUE_H */

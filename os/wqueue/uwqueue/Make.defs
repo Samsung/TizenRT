@@ -54,7 +54,7 @@ ifeq ($(CONFIG_SCHED_USRWORK),y)
 
 # Add the work queue C files to the build
 
-WORK_CSRCS += uwork_thread.c uwork_queue.c uwork_cancel.c uwork_lock.c
+WORK_CSRCS += uwork_thread.c uwork_queue.c uwork_cancel.c uwork_lock.c uwork_signal.c
 
 # Protected mode
 

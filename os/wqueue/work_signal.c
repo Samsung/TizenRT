@@ -69,7 +69,7 @@
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: work_signal
+ * Name: work_qsignal
  *
  * Description:
  *   Signal the worker thread to process the work queue now.  This function
@@ -77,57 +77,16 @@
  *   user to force an immediate re-assessment of pending work.
  *
  * Input parameters:
- *   qid    - The work queue ID
+ *   pid    - The work queue pid
  *
  * Returned Value:
  *   Zero on success, a negated errno on failure
  *
  ****************************************************************************/
 
-int work_signal(int qid)
+int work_qsignal(pid_t pid)
 {
-	pid_t pid;
 	int ret;
-	/* Get the process ID of the worker thread */
-
-#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-	if (qid == USRWORK) {
-		pid = g_usrwork.worker[0].pid;
-	} else
-#endif
-#ifdef CONFIG_SCHED_HPWORK
-	if (qid == HPWORK) {
-		pid = g_hpwork.worker[0].pid;
-	} else
-#endif
-#ifdef CONFIG_SCHED_LPWORK
-	if (qid == LPWORK) {
-		int wndx;
-		int i;
-
-		/* Find an IDLE worker thread */
-
-		for (wndx = 0, i = 0; i < CONFIG_SCHED_LPNTHREADS; i++) {
-			/* Is this worker thread busy? */
-
-			if (!g_lpwork.worker[i].busy) {
-				/* No.. select this thread */
-
-				wndx = i;
-				break;
-			}
-		}
-
-		/* Use the process ID of the IDLE worker thread (or the ID of worker
-			* thread 0 if all of the worker threads are busy).
-			*/
-
-		pid = g_lpwork.worker[wndx].pid;
-	} else
-#endif
-	{
-		return -EINVAL;
-	}
 
 	/* Signal the worker thread */
 	ret = kill(pid, SIGWORK);
