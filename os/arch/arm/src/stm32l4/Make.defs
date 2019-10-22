@@ -209,6 +209,7 @@ CHIP_CSRCS += stm32l4_hsi48.c
 endif
 
 CFLAGS += -I$(ARCH_SRCDIR)/chip/hal
+VPATH += chip/hal
 
 # ST Defines
 CFLAGS += \

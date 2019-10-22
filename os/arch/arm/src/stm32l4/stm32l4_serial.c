@@ -3043,7 +3043,7 @@ char up_putc(char ch)
   return ch;
 }
 
-char up_getc(void)
+int up_getc(void)
 {
     struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
     uint16_t ie;
@@ -3058,7 +3058,7 @@ char up_getc(void)
     
     //stm32l4serial_restoreusartint(priv, ie);
 
-    return ch;
+    return (int)ch;
 }
 #else /* USE_SERIALDRIVER */
 

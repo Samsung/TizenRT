@@ -169,7 +169,6 @@ LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 GCC_LIBDIR := ${shell dirname $(LIBGCC)}
 
 VPATH += chip
-VPATH += chip/hal
 VPATH += common
 VPATH += $(ARCH_SUBDIR)
 
