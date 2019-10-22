@@ -79,7 +79,7 @@
  ****************************************************************************/
 
 static uint32_t g_devno;
-static sem_t g_devno_sem = SEM_INITIALIZER(1);
+static sem_t g_devno_sem;
 
 /****************************************************************************
  * Private Functions
@@ -226,5 +226,25 @@ errout_with_bchdev:
 errout_with_chardev:
 	kmm_free(chardev);
 	return ret;
+}
+
+/****************************************************************************
+ * Name: unique_chardev_initialize
+ *
+ * Description:
+ *   Initialize a semphore for unique character device
+ *
+ * Input parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void unique_chardev_initialize(void)
+{
+	/* Initialize a semphore for unique chardev */
+
+	sem_init(&g_devno_sem, 0, 1);
 }
 #endif /* !CONFIG_DISABLE_MOUNTPOINT && !CONFIG_DISABLE_PSEUDOFS_OPERATIONS */

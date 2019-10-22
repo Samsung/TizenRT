@@ -3947,6 +3947,12 @@ int tiva_ethinitialize(int intf)
 	priv->txpoll = wd_create();	/* Create periodic poll timer */
 	priv->txtimeout = wd_create();	/* Create TX timeout timer */
 
+#ifdef CONFIG_TIVA_PHY_INTERRUPTS
+	/* Initialize a semaphore for phy notification */
+
+	phy_notify_initialize();
+#endif
+
 #ifdef CONFIG_TIVA_BOARDMAC
 	/* If the board can provide us with a MAC address, get the address
 	 * from the board now.  The MAC will not be applied until tiva_ifup()

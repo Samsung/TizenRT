@@ -85,7 +85,7 @@ struct bt_conn_handoff_s {
 
 static struct bt_conn_s g_conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_handoff_s g_conn_handoff = {
-	SEM_INITIALIZER(1),
+	{0},
 	NULL
 };
 
@@ -1131,4 +1131,11 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 	}
 
 	return true;
+}
+
+void bt_conn_handoff_init(void)
+{
+	/* Initialize a semaphore for connection handoff */
+
+	sem_init(&g_conn_handoff.sync_sem, 0, 1);
 }

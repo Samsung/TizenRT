@@ -163,9 +163,9 @@ static struct ramlog_dev_s g_sysdev = {
 #endif
 	0,							/* rl_head */
 	0,							/* rl_tail */
-	SEM_INITIALIZER(1),			/* rl_exclsem */
+	{0},						/* rl_exclsem */
 #ifndef CONFIG_RAMLOG_NONBLOCKING
-	SEM_INITIALIZER(0),			/* rl_waitsem */
+	{0},						/* rl_waitsem */
 #endif
 	CONFIG_RAMLOG_BUFSIZE,		/* rl_bufsize */
 	g_sysbuffer					/* rl_buffer */
@@ -678,6 +678,17 @@ int ramlog_consoleinit(void)
 {
 	FAR struct ramlog_dev_s *priv = &g_sysdev;
 
+	/* Initialize the non-zero values in the RAM logging device structure */
+
+	if ((priv->rl_exclsem.flags & FLAGS_INITIALIZED) == 0) {
+		sem_init(&priv->rl_exclsem, 0, 1);
+	}
+#ifndef CONFIG_RAMLOG_NONBLOCKING
+	if ((priv->rl_waitsem.flags & FLAGS_INITIALIZED) == 0) {
+		sem_init(&priv->rl_waitsem, 0, 0);
+	}
+#endif
+
 	/* Register the console character driver */
 
 	return register_driver("/dev/console", &g_ramlogfops, 0666, priv);
@@ -699,6 +710,17 @@ int ramlog_consoleinit(void)
 #ifdef CONFIG_RAMLOG_SYSLOG
 int ramlog_sysloginit(void)
 {
+	/* Initialize the non-zero values in the RAM logging device structure */
+
+	if ((g_sysdev.rl_exclsem.flags & FLAGS_INITIALIZED) == 0) {
+		sem_init(&g_sysdev.rl_exclsem, 0, 1);
+	}
+#ifndef CONFIG_RAMLOG_NONBLOCKING
+	if ((g_sysdev.rl_waitsem.flags & FLAGS_INITIALIZED) == 0) {
+		sem_init(&g_sysdev.rl_waitsem, 0, 0);
+	}
+#endif
+
 	/* Register the syslog character driver */
 
 	return register_driver(CONFIG_SYSLOG_DEVPATH, &g_ramlogfops, 0666, &g_sysdev);

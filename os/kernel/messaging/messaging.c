@@ -94,7 +94,7 @@ struct msg_recv_node_s {
 };
 typedef struct msg_recv_node_s msg_recv_node_t;
 
-static sem_t port_list_sem = SEM_INITIALIZER(1);
+static sem_t port_list_sem;
 
 /****************************************************************************
  * Public Variables
@@ -376,4 +376,11 @@ int messaging_remove_list(char *port_name)
 	}
 
 	return ret;
+}
+
+void messaging_initialize(void)
+{
+	/* Initialize a sempahore for port list */
+
+	sem_init(&port_list_sem, 0, 1);
 }
