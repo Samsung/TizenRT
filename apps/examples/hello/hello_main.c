@@ -56,16 +56,10 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <image_390x390_rgb888.h>
-#include <loading_00.h>
-#include <b_rich_noti_icon_callendar.h>
+
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-extern bool TouchItOccurred;
-
-static void psram_check(void);
-static void exflash_check(void);
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -73,122 +67,6 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-    printf("Hello, World!!\n");
-    dma2d_copybuffer((uint32_t *)image_390x390_rgb888, NULL, 0, 0, 390, 390, false);
-    dma2d_copybuffer((uint32_t *)loading_00, NULL, 127, 127, 64, 64, false);
-    dma2d_copybuffer((uint32_t *)&b_rich_noti_icon_callendar[56], NULL, 62, 62, 62, 62, true);
-    dma2d_copybuffer((uint32_t *)loading_00, NULL, 167, 167, 64, 64, false);
-    dma2d_copybuffer((uint32_t *)&b_rich_noti_icon_callendar[56], NULL, 162, 162, 62, 62, true);
-    dma2d_copybuffer((uint32_t *)loading_00, NULL, 200, 200, 64, 64, false);
-    lcd_refresh();
-
-#if 0 /* External Memory test code */
-    exflash_check();
-    psram_check();
-#endif
-    while(1) {
-        if(TouchItOccurred == true) {
-            stm32_touch_printf_coord();
-            HAL_Delay(50);
-        }
-        HAL_Delay(100);
-    }
-    return 0;
-}
-
-
-
-
-#define SRAM_BANK_ADDR      ((uint32_t)0x60000000)
-#define BUFFER_SIZE         ((uint32_t)0x0100)
-#define WRITE_READ_ADDR     ((uint32_t)0x0800)
-
-static uint16_t aTxBuffer[BUFFER_SIZE];
-static uint16_t aRxBuffer[BUFFER_SIZE];
-
-/**
-  * @brief  Fills buffer with user predefined data.
-  * @param  pBuffer: pointer on the buffer to fill
-  * @param  uwBufferLength: size of the buffer to fill
-  * @param  uwOffset: first value to fill on the buffer
-  * @retval None
-  */
-static void Fill_Buffer(uint16_t *pBuffer, uint32_t uwBufferLength, uint32_t uwOffset)
-{
-  uint32_t tmpindex = 0;
-
-  /* Put in global buffer different values */
-  for (tmpindex = 0; tmpindex < uwBufferLength; tmpindex++ )
-  {
-    pBuffer[tmpindex] = tmpindex + uwOffset;
-  }
-}
-
-/**
-  * @brief  Compares two buffers.
-  * @param  pBuffer1, pBuffer2: buffers to be compared.
-  * @param  BufferLength: buffer's length
-  * @retval 1: pBuffer identical to pBuffer1
-  *         0: pBuffer differs from pBuffer1
-  */
-static uint8_t Buffercmp(uint16_t* pBuffer1, uint16_t* pBuffer2, uint16_t BufferLength)
-{
-  while (BufferLength--)
-  {
-    if (*pBuffer1 != *pBuffer2)
-    {
-      return 1;
-    }
-
-    pBuffer1++;
-    pBuffer2++;
-  }
-
+  printf("Hello, World!!\n");
   return 0;
 }
-
-
-static void psram_check(void)
-{
-  Fill_Buffer(aTxBuffer, BUFFER_SIZE, 0xC20F);
-
-  /* Write data to the SRAM memory */
-  for(int uwIndex = 0; uwIndex < BUFFER_SIZE; uwIndex++)
-  {
-    *(volatile uint16_t *)(SRAM_BANK_ADDR + WRITE_READ_ADDR + 2 * uwIndex) = aTxBuffer[uwIndex];
-  }
-
-  /* Read back data from the SRAM memory */
-  for(int uwIndex = 0; uwIndex < BUFFER_SIZE; uwIndex++)
-  {
-    aRxBuffer[uwIndex] = *(volatile uint16_t *)(SRAM_BANK_ADDR + WRITE_READ_ADDR + 2 * uwIndex);
-  }
-
-  if(Buffercmp(aTxBuffer, aRxBuffer, BUFFER_SIZE) != 0)
-  {
-    printf("PSRAM DEMO Compare failed!!\n");
-  }
-  else
-  {
-    printf("PSRAM DEMO Compare succeeded!!\n");
-  }
-}
-
-#define EXFLASH_BASE          ((uint32_t)0x90000000)
-#define EXFLASH_BUFF_LEN      (512)
-static void exflash_check(void)
-{
-  volatile uint8_t *mem_addr;
-
-  stm32_exflash_enter_memorymapped();
-
-  mem_addr = (volatile uint8_t *)(EXFLASH_BASE);
-
-  for(int i=0; i<EXFLASH_BUFF_LEN; i++)
-  {
-    printf("mem_addr : 0x%x is with aTxBuffer[%d], 0x%x \n", mem_addr, i, *mem_addr);
-    mem_addr++;
-  }
-}
-
-
