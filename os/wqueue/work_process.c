@@ -78,15 +78,7 @@
  * delays if the time is changed.
  */
 
-#ifdef CONFIG_CLOCK_MONOTONIC
-#define WORK_CLOCK CLOCK_MONOTONIC
-#else
-#define WORK_CLOCK CLOCK_REALTIME
-#endif
-
-#ifndef MIN
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#endif
+#define WORK_DELAY_MAX UINTMAX_MAX
 
 /****************************************************************************
  * Private Type Declarations
@@ -134,11 +126,6 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 	clock_t ctick;
 	clock_t next;
 
-#if (defined(CONFIG_SCHED_LPWORK) && CONFIG_SCHED_LPNTHREADS > 0) || defined(CONFIG_SCHED_WORKQUEUE_SORTING)
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set, SIGWORK);
-#endif
 #ifndef CONFIG_SCHED_WORKQUEUE_SORTING
 	clock_t remaining;
 #endif
@@ -147,7 +134,7 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 	 * we process items in the work list.
 	 */
 
-	next = wqueue->delay;
+	next = WORK_DELAY_MAX;
 
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	while (work_lock() < 0);
@@ -267,49 +254,31 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 		}
 	}
 
-#if (defined(CONFIG_SCHED_LPWORK) && CONFIG_SCHED_LPNTHREADS > 0) || defined(CONFIG_SCHED_WORKQUEUE_SORTING)
-	if ((FAR struct work_s *)wqueue->q.head == NULL) {
-		wqueue->delay = 0;
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-		work_unlock();
+	work_unlock();
 #endif
+
+	if (next == WORK_DELAY_MAX) {
+		sigset_t set;
+		sigemptyset(&set);
+		sigaddset(&set, SIGWORK);
+
 		/* Wait indefinitely until signalled with SIGWORK */
 		wqueue->worker[wndx].busy = false;
 		DEBUGVERIFY(sigwaitinfo(&set, NULL));
 		wqueue->worker[wndx].busy = true;
-	} else
-#endif
-	if (next > 0) {
-		/* Get the delay (in clock ticks) since we started the sampling */
-#ifndef CONFIG_SCHED_WORKQUEUE_SORTING
-		elapsed = clock() - stick;
-		if (elapsed < wqueue->delay) {
-			/* How much time would we need to delay to get to the end of the
-			* sampling period?  The amount of time we delay should be the smaller
-			* of the time to the end of the sampling period and the time to the
-			* next work expiry.
-			*/
+	} else if (next > 0) {
 
-			remaining = wqueue->delay - elapsed;
-			next = MIN(next, remaining);
-		}
-#endif
 		/* Wait awhile to check the work list.  We will wait here until
-			* either the time elapses or until we are awakened by a signal.
-			* Interrupts will be re-enabled while we wait.
-			*/
-#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-		work_unlock();
-#endif
+		 * either the time elapses or until we are awakened by a signal.
+		 * Interrupts will be re-enabled while we wait.
+		 */
 		wqueue->worker[wndx].busy = false;
 		usleep(next * USEC_PER_TICK);
 		wqueue->worker[wndx].busy = true;
 	}
-#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-	else {
-		work_unlock();
-	}
-#else
+
+#if !defined(CONFIG_SCHED_USRWORK) || defined(__KERNEL__)
 	irqrestore(flags);
 #endif
 

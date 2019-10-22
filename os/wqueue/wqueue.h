@@ -89,7 +89,6 @@ struct worker_s {
 /* This structure defines the state of work queue */
 
 struct wqueue_s {
-	uint32_t delay;				/* Delay between polling cycles (ticks) */
 	struct dq_queue_s q;		/* The queue of pending work */
 	struct worker_s worker[1];	/* Describes a worker thread */
 };
@@ -100,7 +99,6 @@ struct wqueue_s {
 
 #ifdef CONFIG_SCHED_HPWORK
 struct hp_wqueue_s {
-	uint32_t delay;				/* Delay between polling cycles (ticks) */
 	struct dq_queue_s q;		/* The queue of pending work */
 	struct worker_s worker[1];	/* Describes the single high priority worker */
 };
@@ -112,7 +110,6 @@ struct hp_wqueue_s {
 
 #ifdef CONFIG_SCHED_LPWORK
 struct lp_wqueue_s {
-	uint32_t delay;				/* Delay between polling cycles (ticks) */
 	struct dq_queue_s q;		/* The queue of pending work */
 
 	/* Describes each thread in the low priority queue's thread pool */

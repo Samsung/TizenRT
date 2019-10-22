@@ -175,7 +175,6 @@ int work_hpstart(void)
 
 	/* Initialize work queue data structures */
 
-	g_hpwork.delay = CONFIG_SCHED_HPWORKPERIOD / USEC_PER_TICK;
 	dq_init(&g_hpwork.q);
 
 	/* Start the high-priority, kernel mode worker thread */

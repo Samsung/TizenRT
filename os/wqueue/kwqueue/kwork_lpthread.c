@@ -210,7 +210,6 @@ int work_lpstart(void)
 
 	memset(&g_lpwork, 0, sizeof(struct wqueue_s));
 
-	g_lpwork.delay = CONFIG_SCHED_LPWORKPERIOD / USEC_PER_TICK;
 	dq_init(&g_lpwork.q);
 
 	/* Don't permit any of the threads to run until we have fully initialized
