@@ -123,8 +123,11 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 
 #ifdef CONFIG_SCHED_WORKQUEUE_SORTING
 	struct work_s *next_work = NULL;
+	clock_t elapsed;
 #endif
 	struct work_s *cur_work;
+	clock_t ctick;
+	ctick = clock();
 
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	while (work_lock() < 0);
@@ -145,17 +148,20 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 			return -EALREADY;
 		}
 #ifdef CONFIG_SCHED_WORKQUEUE_SORTING
-		if (next_work == NULL && cur_work->delay > delay) {
-			next_work = cur_work;
+		if (next_work == NULL) {
+			elapsed = ctick - cur_work->qtime;
+			if (cur_work->delay - elapsed > delay) {
+				next_work = cur_work;
+			}
 		}
 #endif
 		cur_work = (struct work_s *)cur_work->dq.flink;
 	}
 
 	work->worker = worker;		/* Work callback */
-	work->arg = arg;			/* Callback argument */
+	work->arg = arg;		/* Callback argument */
 	work->delay = delay;		/* Delay until work performed */
-	work->qtime = clock();      /* Time work queued */
+	work->qtime = ctick;		/* Time work queued */
 #ifdef CONFIG_SCHED_WORKQUEUE_SORTING
 	if (next_work) {
 		dq_addbefore((FAR dq_entry_t *)next_work, (FAR dq_entry_t *)work, &wqueue->q);
