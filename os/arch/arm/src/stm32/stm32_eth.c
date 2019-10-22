@@ -81,6 +81,9 @@
 #if defined(CONFIG_NET_PKT)
 #include <tinyara/net/pkt.h>
 #endif
+#ifdef CONFIG_ARCH_PHY_INTERRUPT
+#include <tinyara/net/phy.h>
+#endif
 
 #include "up_internal.h"
 
@@ -3972,6 +3975,11 @@ int stm32_ethinitialize(int intf)
 	priv->txpoll = wd_create();	/* Create periodic poll timer */
 	priv->txtimeout = wd_create();	/* Create TX timeout timer */
 
+#ifdef CONFIG_ARCH_PHY_INTERRUPT
+	/* Initialize a semaphore for phy notification */
+
+	phy_notify_initialize();
+#endif
 	/* Configure GPIO pins to support Ethernet */
 
 	stm32_ethgpioconfig(priv);

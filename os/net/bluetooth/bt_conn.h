@@ -471,4 +471,5 @@ struct bt_conn_s *bt_conn_relref(FAR struct bt_conn_s *conn);
 int bt_hci_connect_le_cancel(FAR struct bt_conn_s *conn);
 
 int bt_hci_disconnect(FAR struct bt_conn_s *conn, uint8_t reason);
+void bt_conn_handoff_init(void);
 #endif							/* __NET_BLUETOOTH_BT_CONN_H */

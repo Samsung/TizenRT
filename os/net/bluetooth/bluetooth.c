@@ -304,6 +304,8 @@ static int bt_conn_init(void)
 		return err;
 	}
 
+	bt_conn_handoff_init();
+
 	return err;
 }
 

@@ -141,6 +141,11 @@ struct sem_s {
 typedef struct sem_s sem_t;
 
 /* Initializers */
+/* NOTE : It should NOT be used in kernel space because it doesn't call sem_init.
+ * In app separtion, all kernel semaphores are registered to a list in sem_init and recoverd when fault occurs.
+ * So they should be initialized by sem_init for recovery.
+*/
+
 /**
  * @ingroup SEMAPHORE_KERNEL
  * @brief Sem initializer

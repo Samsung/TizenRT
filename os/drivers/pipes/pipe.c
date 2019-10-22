@@ -105,7 +105,7 @@ static const struct file_operations pipe_fops = {
 	pipecommon_unlink			/* unlink */
 };
 
-static sem_t g_pipesem = SEM_INITIALIZER(1);
+static sem_t g_pipesem;
 static uint32_t g_pipeset = 0;
 static uint32_t g_pipecreated = 0;
 
@@ -293,4 +293,24 @@ errout:
 	return ERROR;
 }
 
+/****************************************************************************
+ * Name: pipe_initialize
+ *
+ * Description:
+ *   Initialize a sempahore for pipe
+ *
+ * Inputs:
+ *   None
+ *
+ * Return:
+ *   None
+ *
+ ****************************************************************************/
+
+void pipe_initialize(void)
+{
+	/* Initialize a semaphore for pipe */
+
+	sem_init(&g_pipesem, 0, 1);
+}
 #endif							/* CONFIG_DEV_PIPE_SIZE > 0 */

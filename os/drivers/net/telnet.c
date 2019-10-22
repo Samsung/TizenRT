@@ -211,7 +211,7 @@ static const struct file_operations g_factory_fops = {
 /* Global information shared amongst telnet driver instanaces. */
 
 static struct telnet_common_s g_telnet_common = {
-	SEM_INITIALIZER(1),
+	{0},
 	0
 };
 
@@ -890,6 +890,11 @@ static int common_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 int telnet_initialize(void)
 {
+
+	/* Initialize a semaphore for telnet */
+
+	sem_init(&g_telnet_common.tc_exclsem, 0, 1);
+
 	return register_driver("/dev/telnet", &g_factory_fops, 0666, NULL);
 }
 

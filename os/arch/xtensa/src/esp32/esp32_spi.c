@@ -506,7 +506,7 @@ static struct esp32_spidev_s g_spi3dev = {
 };
 
 static volatile spi_dma_claim_t g_spi_dma = {
-	.dma_lock = SEM_INITIALIZER(1),
+	.dma_lock = {0},
 	.chan_enabled = 0,
 };
 
@@ -1585,6 +1585,9 @@ struct spi_dev_s *up_spiinitialize(int port)
 #else
 		spi_select_device(priv, 0, &def_dev_config);
 #endif
+
+		/* Initialize a semaphore for spi dma */
+		sem_init(&g_spi_dma.dma_lock, 0, 1);
 		priv->initiallized = true;
 	}
 

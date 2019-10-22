@@ -214,6 +214,12 @@ void up_initialize(void)
 #endif
 #endif
 
+	/* Initialize pipe */
+
+#if defined(CONFIG_PIPES) && CONFIG_DEV_PIPE_SIZE > 0
+	pipe_initialize();
+#endif
+
 	/* Register devices */
 
 #if CONFIG_NFILE_DESCRIPTORS > 0

@@ -156,6 +156,24 @@ int phy_notify_subscribe(FAR const char *intf, pid_t pid, int signo, FAR void *a
 int phy_notify_unsubscribe(FAR const char *intf, pid_t pid);
 #endif
 
+/****************************************************************************
+ * Function: phy_notify_initialize
+ *
+ * Description:
+ *   Initialize a semaphore for phy notification
+ *
+ * Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_PHY_INTERRUPT
+void phy_notify_initialize(void);
+#endif
+
 #undef EXTERN
 #ifdef __cplusplus
 }

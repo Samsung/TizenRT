@@ -846,6 +846,19 @@ int file_fsync(FAR struct file *filep);
 int file_vfcntl(FAR struct file *filep, int cmd, va_list ap);
 #endif
 
+/* fs/driver/block/fs_blockproxy.c ******************************************/
+/****************************************************************************
+ * Name: unique_chardev_initialize
+ *
+ * Description:
+ *  Initialize a semphore for unique character device.
+ *
+ ****************************************************************************/
+
+#if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && !defined(CONFIG_DISABLE_MOUNTPOINT)
+void unique_chardev_initialize(void);
+#endif
+
 /* drivers/dev_null.c *******************************************************/
 /****************************************************************************
  * Name: devnull_register
@@ -965,6 +978,17 @@ ssize_t bchlib_read(FAR void *handle, FAR char *buffer, size_t offset, size_t le
  ****************************************************************************/
 
 ssize_t bchlib_write(FAR void *handle, FAR const char *buffer, size_t offset, size_t len);
+
+/* drivers/pipes/pipe.c ***********************************************/
+/****************************************************************************
+ * Name: pipe_initialize
+ *
+ * Description:
+ *   Initialize a semaphore for pipe
+ *
+ ****************************************************************************/
+
+void pipe_initialize(void);
 
 #undef EXTERN
 #if defined(__cplusplus)

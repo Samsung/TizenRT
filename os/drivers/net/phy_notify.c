@@ -148,7 +148,7 @@ static int phy_handler_3(int irq, FAR void *context, FAR void *arg);
  ****************************************************************************/
 /* Serializes access to the g_notify_clients array */
 
-static sem_t g_notify_clients_sem = SEM_INITIALIZER(1);
+static sem_t g_notify_clients_sem;
 
 /* This is a array the hold information for each PHY notification client */
 
@@ -334,7 +334,6 @@ static int phy_handler_3(int irq, FAR void *context, FAR void *arg)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
 /****************************************************************************
  * Function: phy_notify_subscribe
  *
@@ -467,6 +466,27 @@ int phy_notify_unsubscribe(FAR const char *intf, pid_t pid)
 
 	phy_semgive();
 	return OK;
+}
+
+/****************************************************************************
+ * Function: phy_notify_initialize
+ *
+ * Description:
+ *   Initialize a semaphore for phy notification
+ *
+ * Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void phy_notify_initialize(void)
+{
+	/* Initialize a sempahore phy notification */
+
+	sem_init(&g_notify_clients_sem, 0, 1);
 }
 
 #endif							/* CONFIG_ARCH_PHY_INTERRUPT */

@@ -94,6 +94,9 @@
 #ifdef CONFIG_TASK_MONITOR
 #include "task_monitor/task_monitor_internal.h"
 #endif
+#ifdef CONFIG_MESSAGING_IPC
+#include "messaging/message_ctrl.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -270,6 +273,10 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_TASK_MANAGER
 	task_manager_drv_register();
+#endif
+
+#ifdef CONFIG_MESSAGING_IPC
+	messaging_initialize();
 #endif
 
 #ifdef CONFIG_TASK_MONITOR
