@@ -64,6 +64,9 @@ ENTRYPT = $(patsubst "%",%,$(CONFIG_USER_ENTRYPOINT))
 # Get the paths to the libraries and the links script path in format that
 # is appropriate for the host OS
 
+EXTRA_LIBS ?=
+EXTRA_LIBPATHS ?=
+
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
   USER_LIBPATHS = ${shell for path in $(USERLIBS); do dir=`dirname $(TOPDIR)$(DELIM)$$path`;echo "-L\"`cygpath -w $$dir`\"";done}
@@ -109,7 +112,7 @@ $(COBJS): %$(OBJEXT): %.c
 # Create the tinyara_user.elf file containing all of the user-mode code
 
 tinyara_user.elf: $(OBJS)
-	$(Q) $(LD) -o $@ $(USER_LDFLAGS) $(USER_LIBPATHS) $(OBJS) --start-group $(USER_LDLIBS) --end-group $(USER_LIBGCC)
+	$(Q) $(LD) -o $@ $(USER_LDFLAGS) $(USER_LIBPATHS) $(EXTRA_LIBPATHS) $(OBJS) --start-group $(USER_LDLIBS) $(EXTRA_LIBS) --end-group $(USER_LIBGCC)
 
 $(USER_BINPATH)$(DELIM)tinyara_user.elf: tinyara_user.elf
 	@echo "LD: tinyara_user.elf"
