@@ -63,7 +63,9 @@ CSRCS_DRIVER += block/fs_registerblockdriver.c block/fs_unregisterblockdriver.c
 CSRCS_DRIVER += block/fs_findblockdriver.c block/fs_openblockdriver.c block/fs_closeblockdriver.c block/ramdisk.c
 
 ifneq ($(CONFIG_DISABLE_PSEUDOFS_OPERATIONS),y)
+ifeq ($(CONFIG_BCH),y)
 CSRCS_DRIVER += block/fs_blockproxy.c
+endif
 endif
 endif
 
