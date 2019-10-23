@@ -137,7 +137,7 @@ int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode 
  *
  ****************************************************************************/
 #if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && \
-	!defined(CONFIG_DISABLE_MOUNTPOINT)
+	!defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_BCH)
 int block_proxy(FAR const char *blkdev, int oflags);
 #endif
 

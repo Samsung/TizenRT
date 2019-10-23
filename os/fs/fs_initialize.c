@@ -141,7 +141,8 @@ void fs_initialize(void)
 
 #endif
 
-#if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && !defined(CONFIG_DISABLE_MOUNTPOINT)
+#if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && \
+	!defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_BCH)
 	/* Initialize for unique character device used in  */
 
 	unique_chardev_initialize();
