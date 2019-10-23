@@ -319,7 +319,7 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 
 	if (scan_filter_result.scan_flag) {
 		fetch_scan_results(&scan_filter_result.result_list, &wifi_scan_result, (const char *)scan_filter_result.scan_ssid);
-		lwnl80211_postmsg(LWNL80211_SCAN_DONE, (void *)scan_list);
+		lwnl80211_postmsg(LWNL80211_SCAN_DONE, (void *)scan_filter_result.result_list);
 		sem_post(&scan_filter_result.scan_sem);
 	} else {
 		if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == LWNL80211_SUCCESS) {

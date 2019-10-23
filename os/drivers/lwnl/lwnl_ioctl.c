@@ -103,7 +103,8 @@ int lwnl_message_handle(struct lwnl80211_lowerhalf_s* lower, const char *msg, in
 	break;
 	case LWNL80211_SCAN_AP:
 	{
-		res = lower->ops->scan_ap(NULL);
+		lwnl80211_ap_config_s *config = (lwnl80211_ap_config_s *)data;
+		res = lower->ops->scan_ap(config);
 	}
 	break;
 	default:
