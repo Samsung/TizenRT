@@ -7,7 +7,7 @@ config EXAMPLES_AWS
 	bool "AWS demo application"
 	default n
 	select AWS_SDK
-	select NETUTILS_WIFI
+	select WIFI_MANAGER
 	---help---
 		Enable AWS IoT Device example application
 

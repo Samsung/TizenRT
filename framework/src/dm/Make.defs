@@ -21,7 +21,7 @@ ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
 CSRCS += dm_lwm2m.c
 endif
 CSRCS += dm_common_interface.c
-ifeq ($(CONFIG_NETUTILS_WIFI),y)
+ifeq ($(CONFIG_SCSC_WLAN),y)
 CSRCS += slsi_dm_connectivity.c
 else
 CSRCS += dm_connectivity.c
@@ -38,7 +38,7 @@ endif
 DEPPATH += --dep-path src/dm
 VPATH += :src/dm
 
-ifeq ($(CONFIG_NETUTILS_WIFI),y)
+ifeq ($(CONFIG_SCSC_WLAN),y)
 DEPPATH += --dep-path src/dm/conn/wifi
 VPATH += src/dm/conn/wifi
 endif
