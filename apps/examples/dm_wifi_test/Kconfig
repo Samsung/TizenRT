@@ -6,7 +6,7 @@
 config EXAMPLES_DM_WIFI_TEST
 	bool "DM WIFI example"
 	depends on DM
-	depends on NETUTILS_WIFI
+	depends on SCSC_WLAN
 	default n
 	---help---
 		Enable the WIFI APIs example. This application features a set
