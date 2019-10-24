@@ -3023,7 +3023,7 @@ void stm32l4_serial_dma_poll(void)
  *
  ****************************************************************************/
 
-char up_putc(char ch)
+int up_putc(char ch)
 {
 #if CONSOLE_UART > 0
   struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
