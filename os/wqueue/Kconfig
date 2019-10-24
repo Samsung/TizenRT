@@ -10,13 +10,6 @@ config SCHED_WORKQUEUE
 		Create dedicated "worker" threads to handle delayed or asynchronous
 		processing.
 
-config SCHED_WORKQUEUE_SORTING
-	bool "Sort workers by delay"
-	default y
-	depends on SCHED_WORKQUEUE
-	---help---
-		Sort workers by delay when worker is inserted
-
 comment "Kernel Work Queue"
 
 config SCHED_HPWORK

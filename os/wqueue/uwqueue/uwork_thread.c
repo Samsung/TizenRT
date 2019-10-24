@@ -76,20 +76,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Use CLOCK_MONOTONIC if it is available.  CLOCK_REALTIME can cause bad
- * delays if the time is changed.
- */
-
-#ifdef CONFIG_CLOCK_MONOTONIC
-#define WORK_CLOCK CLOCK_MONOTONIC
-#else
-#define WORK_CLOCK CLOCK_REALTIME
-#endif
-
-#ifndef MIN
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
 /****************************************************************************
  * Private Type Declarations
  ****************************************************************************/

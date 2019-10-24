@@ -74,12 +74,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Use CLOCK_MONOTONIC if it is available.  CLOCK_REALTIME can cause bad
- * delays if the time is changed.
- */
-
-#define WORK_DELAY_MAX UINTMAX_MAX
-
 /****************************************************************************
  * Private Type Declarations
  ****************************************************************************/
@@ -122,19 +116,14 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 	worker_t worker;
 	FAR void *arg;
 	clock_t elapsed;
-	clock_t stick;
 	clock_t ctick;
 	clock_t next;
-
-#ifndef CONFIG_SCHED_WORKQUEUE_SORTING
-	clock_t remaining;
-#endif
 
 	/* Then process queued work.  We need to keep interrupts disabled while
 	 * we process items in the work list.
 	 */
 
-	next = WORK_DELAY_MAX;
+	next = 0;
 
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	while (work_lock() < 0);
@@ -143,8 +132,6 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 	flags = irqsave();
 #endif
 
-	/* Get the time that we started this polling cycle in clock ticks. */
-	stick = clock();
 
 	/* And check each entry in the work queue.  Since we have disabled
 	 * interrupts we know:  (1) we will not be suspended unless we do
@@ -219,46 +206,17 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 			}
 		} else {				/* elapsed < work->delay */
 
-			/* This one is not ready.
-			 *
-			 * NOTE that elapsed is relative to the the current time,
-			 * not the time of beginning of this queue processing pass.
-			 * So it may need an adjustment.
-			 */
-
-			elapsed += (ctick - stick);
-			if (elapsed > work->delay) {
-				/* The delay has expired while we are processing */
-
-				elapsed = work->delay;
-			}
-
-			/* Will it be ready before the next scheduled wakeup interval? */
-
-#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
 			next = work->delay - elapsed;
 
 			/* Then break at while loop due to sorted list */
 			break;
-#else
-			remaining = work->delay - elapsed;
-			if (remaining < next) {
-				/* Yes.. Then schedule to wake up when the work is ready */
-				next = remaining;
-			}
-
-			/* Then try the next in the list. */
-
-			work = (FAR struct work_s *)work->dq.flink;
-#endif
 		}
 	}
 
+	if (wqueue->q.head == NULL) {
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-	work_unlock();
+		work_unlock();
 #endif
-
-	if (next == WORK_DELAY_MAX) {
 		sigset_t set;
 		sigemptyset(&set);
 		sigaddset(&set, SIGWORK);
@@ -268,7 +226,9 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 		DEBUGVERIFY(sigwaitinfo(&set, NULL));
 		wqueue->worker[wndx].busy = true;
 	} else if (next > 0) {
-
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+		work_unlock();
+#endif
 		/* Wait awhile to check the work list.  We will wait here until
 		 * either the time elapses or until we are awakened by a signal.
 		 * Interrupts will be re-enabled while we wait.
@@ -277,8 +237,11 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 		usleep(next * USEC_PER_TICK);
 		wqueue->worker[wndx].busy = true;
 	}
-
-#if !defined(CONFIG_SCHED_USRWORK) || defined(__KERNEL__)
+#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
+	else {
+		work_unlock();
+	}
+#else
 	irqrestore(flags);
 #endif
 
