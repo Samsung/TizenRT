@@ -1,0 +1,3 @@
+config ENTRY_NANOPB_SIMPLE
+	bool "Nanopb simple example"
+	depends on EXAMPLES_NANOPB_SIMPLE
