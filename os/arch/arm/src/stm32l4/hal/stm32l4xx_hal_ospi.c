@@ -1831,6 +1831,7 @@ HAL_StatusTypeDef HAL_OSPI_MemoryMapped(OSPI_HandleTypeDef *hospi, OSPI_MemoryMa
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_ErrorCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1840,12 +1841,13 @@ __weak void HAL_OSPI_ErrorCallback(OSPI_HandleTypeDef *hospi)
             the HAL_OSPI_ErrorCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Abort completed callback.
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_AbortCpltCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1855,12 +1857,13 @@ __weak void HAL_OSPI_AbortCpltCallback(OSPI_HandleTypeDef *hospi)
            the HAL_OSPI_AbortCpltCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  FIFO Threshold callback.
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_FifoThresholdCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1870,7 +1873,7 @@ __weak void HAL_OSPI_FifoThresholdCallback(OSPI_HandleTypeDef *hospi)
             the HAL_OSPI_FIFOThresholdCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Command completed callback.
   * @param  hospi : OSPI handle
@@ -1892,6 +1895,7 @@ __weak void HAL_OSPI_CmdCpltCallback(OSPI_HandleTypeDef *hospi)
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_RxCpltCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1901,12 +1905,13 @@ __weak void HAL_OSPI_RxCpltCallback(OSPI_HandleTypeDef *hospi)
            the HAL_OSPI_RxCpltCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Tx Transfer completed callback.
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
  __weak void HAL_OSPI_TxCpltCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1916,12 +1921,13 @@ __weak void HAL_OSPI_RxCpltCallback(OSPI_HandleTypeDef *hospi)
            the HAL_OSPI_TxCpltCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Rx Half Transfer completed callback.
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_RxHalfCpltCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1931,12 +1937,13 @@ __weak void HAL_OSPI_RxHalfCpltCallback(OSPI_HandleTypeDef *hospi)
            the HAL_OSPI_RxHalfCpltCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Tx Half Transfer completed callback.
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_TxHalfCpltCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1946,12 +1953,13 @@ __weak void HAL_OSPI_TxHalfCpltCallback(OSPI_HandleTypeDef *hospi)
            the HAL_OSPI_TxHalfCpltCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Status Match callback.
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_StatusMatchCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1961,12 +1969,13 @@ __weak void HAL_OSPI_StatusMatchCallback(OSPI_HandleTypeDef *hospi)
             the HAL_OSPI_StatusMatchCallback could be implemented in the user file
    */
 }
-
+#endif
 /**
   * @brief  Timeout callback.
   * @param  hospi : OSPI handle
   * @retval None
   */
+#if 0
 __weak void HAL_OSPI_TimeOutCallback(OSPI_HandleTypeDef *hospi)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -1976,7 +1985,7 @@ __weak void HAL_OSPI_TimeOutCallback(OSPI_HandleTypeDef *hospi)
             the HAL_OSPI_TimeOutCallback could be implemented in the user file
    */
 }
-
+#endif
 #if defined (USE_HAL_OSPI_REGISTER_CALLBACKS) && (USE_HAL_OSPI_REGISTER_CALLBACKS == 1U)
 /**
   * @brief  Register a User OSPI Callback
