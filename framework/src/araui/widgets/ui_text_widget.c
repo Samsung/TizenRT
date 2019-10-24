@@ -477,8 +477,6 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 	x = 0;
 	y = 0;
 
-	memset(g_glyph_bitmap, 0, body->base.local_rect.width * body->base.local_rect.height);
-
 	if (body->align & UI_ALIGN_TOP) {
 		y = body->base.global_rect.y;
 	} else if (body->align & UI_ALIGN_MIDDLE) {
@@ -550,7 +548,7 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 						emoji_v3 = (ui_vec3_t){ .x = x - body->base.global_rect.x + body->font_size, .y = y - body->base.global_rect.y + body->font_size, .w = 1.0f };
 						emoji_v4 = (ui_vec3_t){ .x = x - body->base.global_rect.x + body->font_size, .y = y - body->base.global_rect.y, .w = 1.0f };
 
-						ui_render_quad_uv(emoji_v1, emoji_v2, emoji_v3, emoji_v4,
+						ui_render_quad_uv(&body->base.trans_mat, emoji_v1, emoji_v2, emoji_v3, emoji_v4,
 							(ui_uv_t){ 0.0f, 0.0f },
 							(ui_uv_t){ 0.0f, 1.0f },
 							(ui_uv_t){ 1.0f, 1.0f },
