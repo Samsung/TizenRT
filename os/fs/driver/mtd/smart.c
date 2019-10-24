@@ -1700,8 +1700,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	int sector;
 	int ret;
 	uint16_t totalsectors;
-	//uint16_t sectorsize;
-	uint16_t prerelease;
+	uint16_t sectorsize, prerelease;
 	uint16_t logicalsector;
 	uint16_t loser;
 	uint16_t winner;
@@ -1734,37 +1733,37 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	 * a header and not sector data.
 	 */
 
-//	sectorsize = 0xFFFF;
-//	offset = 16384;
-//
-//	while (sectorsize == 0xFFFF) {
-//		readaddress = 0;
-//
-//		while (readaddress < dev->erasesize * dev->geo.neraseblocks) {
-//			/* Read the next sector from the device. */
-//
-//			ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-//			if (ret != sizeof(struct smart_sect_header_s)) {
-//				goto err_out;
-//			}
-//
-//			if (header.status != CONFIG_SMARTFS_ERASEDSTATE) {
-//				sectorsize = (header.status & SMART_STATUS_SIZEBITS) << 7;
-//				break;
-//			}
-//
-//			readaddress += offset;
-//		}
-//
-//		offset >>= 1;
-//		if (offset < 256 && sectorsize == 0xFFFF) {
-//			sectorsize = CONFIG_MTD_SMART_SECTOR_SIZE;
-//		}
-//	}
+	sectorsize = 0xFFFF;
+	offset = 16384;
+
+	while (sectorsize == 0xFFFF) {
+		readaddress = 0;
+
+		while (readaddress < dev->erasesize * dev->geo.neraseblocks) {
+			/* Read the next sector from the device. */
+
+			ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
+			if (ret != sizeof(struct smart_sect_header_s)) {
+				goto err_out;
+			}
+
+			if (header.status != CONFIG_SMARTFS_ERASEDSTATE) {
+				sectorsize = (header.status & SMART_STATUS_SIZEBITS) << 7;
+				break;
+			}
+
+			readaddress += offset;
+		}
+
+		offset >>= 1;
+		if (offset < 256 && sectorsize == 0xFFFF) {
+			sectorsize = CONFIG_MTD_SMART_SECTOR_SIZE;
+		}
+	}
 
 	/* Now set the sectorsize and other sectorsize derived variables. */
 
-	ret = smart_setsectorsize(dev, CONFIG_MTD_SMART_SECTOR_SIZE);
+	ret = smart_setsectorsize(dev, sectorsize);
 	if (ret != OK) {
 		goto err_out;
 	}
