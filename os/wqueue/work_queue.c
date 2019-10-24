@@ -121,11 +121,9 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 {
 	DEBUGASSERT(work != NULL);
 
-#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
 	struct work_s *next_work = NULL;
-	clock_t elapsed;
-#endif
 	struct work_s *cur_work;
+	clock_t elapsed;
 	clock_t ctick;
 	ctick = clock();
 
@@ -147,14 +145,14 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 #endif
 			return -EALREADY;
 		}
-#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+
 		if (next_work == NULL) {
 			elapsed = ctick - cur_work->qtime;
 			if (cur_work->delay - elapsed > delay) {
 				next_work = cur_work;
 			}
 		}
-#endif
+
 		cur_work = (struct work_s *)cur_work->dq.flink;
 	}
 
@@ -162,12 +160,10 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 	work->arg = arg;		/* Callback argument */
 	work->delay = delay;		/* Delay until work performed */
 	work->qtime = ctick;		/* Time work queued */
-#ifdef CONFIG_SCHED_WORKQUEUE_SORTING
+
 	if (next_work) {
 		dq_addbefore((FAR dq_entry_t *)next_work, (FAR dq_entry_t *)work, &wqueue->q);
-	} else 
-#endif
-	{
+	} else {
 		dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
 	}
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
