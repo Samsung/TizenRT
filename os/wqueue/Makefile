@@ -78,8 +78,11 @@ CSRCS  =
 VPATH =
 DEPPATH = --dep-path .
 
+ifeq ($(KERNEL),y)
 include kwqueue/Make.defs
+else
 include uwqueue/Make.defs
+endif
 include Make.defs
 
 # REVISIT: Backslash causes problems in $(COBJS) target

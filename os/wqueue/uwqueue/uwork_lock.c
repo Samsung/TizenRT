@@ -63,7 +63,6 @@
 
 #include "wqueue.h"
 
-#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -147,5 +146,3 @@ void work_unlock(void)
 	(void)pthread_mutex_unlock(&g_usrmutex);
 #endif
 }
-
-#endif							/* CONFIG_SCHED_USRWORK && !__KERNEL__ */

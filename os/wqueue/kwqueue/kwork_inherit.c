@@ -63,8 +63,6 @@
 #include "sched/sched.h"
 #include "wqueue.h"
 
-#if defined(CONFIG_PRIORITY_INHERITANCE) && defined(CONFIG_SCHED_LPWORK)
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -386,5 +384,3 @@ void lpwork_restorepriority(uint8_t reqprio)
 	sched_unlock();
 	irqrestore(flags);
 }
-
-#endif							/* CONFIG_SCHED_LPWORK && CONFIG_PRIORITY_INHERITANCE */

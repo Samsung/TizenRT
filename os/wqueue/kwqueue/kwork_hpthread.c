@@ -67,8 +67,6 @@
 
 #include "wqueue.h"
 
-#ifdef CONFIG_SCHED_HPWORK
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -196,5 +194,3 @@ int work_hpstart(void)
 	g_hpwork.worker[0].busy = true;
 	return pid;
 }
-
-#endif							/* CONFIG_SCHED_HPWORK */

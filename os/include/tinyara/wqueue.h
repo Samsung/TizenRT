@@ -118,7 +118,11 @@
  * building the user-space libraries.
  */
 
-#ifndef __KERNEL__
+#ifdef __KERNEL__
+
+#undef CONFIG_SCHED_USRWORK
+
+#else
 
 #undef CONFIG_SCHED_HPWORK
 #undef CONFIG_SCHED_LPWORK

@@ -263,7 +263,7 @@ $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT): mm$(DELIM)libmm$(LIBEXT)
 	$(Q) install mm$(DELIM)libmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT)
 
 wqueue$(DELIM)libwque$(LIBEXT): context
-	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libwque$(LIBEXT)
+	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libwque$(LIBEXT) KERNEL=y
 
 $(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT): wqueue$(DELIM)libwque$(LIBEXT)
 	$(Q) install wqueue$(DELIM)libwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT)

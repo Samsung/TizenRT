@@ -70,8 +70,6 @@
 
 #include "wqueue.h"
 
-#ifdef CONFIG_SCHED_LPWORK
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -242,5 +240,3 @@ int work_lpstart(void)
 	sched_unlock();
 	return g_lpwork.worker[0].pid;
 }
-
-#endif							/* CONFIG_SCHED_LPWORK */

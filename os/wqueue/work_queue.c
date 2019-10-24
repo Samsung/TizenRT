@@ -66,8 +66,6 @@
 
 #include "wqueue.h"
 
-#ifdef CONFIG_SCHED_WORKQUEUE
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -174,5 +172,3 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 
 	return OK;
 }
-
-#endif							/* CONFIG_SCHED_WORKQUEUE */
