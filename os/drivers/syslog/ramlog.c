@@ -686,6 +686,12 @@ int ramlog_consoleinit(void)
 #ifndef CONFIG_RAMLOG_NONBLOCKING
 	if ((priv->rl_waitsem.flags & FLAGS_INITIALIZED) == 0) {
 		sem_init(&priv->rl_waitsem, 0, 0);
+
+		/*
+		 * The rl_waitsem semaphore is used for signaling and, hence,
+		 * should not have priority inheritance enabled.
+		 */
+		sem_setprotocol(&priv->rl_waitsem, SEM_PRIO_NONE);
 	}
 #endif
 
@@ -718,6 +724,13 @@ int ramlog_sysloginit(void)
 #ifndef CONFIG_RAMLOG_NONBLOCKING
 	if ((g_sysdev.rl_waitsem.flags & FLAGS_INITIALIZED) == 0) {
 		sem_init(&g_sysdev.rl_waitsem, 0, 0);
+
+		/*
+		 * The rl_waitsem semaphore is used for signaling and, hence,
+		 * should not have priority inheritance enabled.
+		 */
+		sem_setprotocol(&g_sysdev.rl_waitsem, SEM_PRIO_NONE);
+
 	}
 #endif
 
