@@ -67,8 +67,6 @@
 
 #include "wqueue.h"
 
-#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -153,5 +151,3 @@ int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg,
 			return -EINVAL;
 		}
 }
-
-#endif							/* CONFIG_SCHED_HPWORK || CONFIG_SCHED_LPWORK*/

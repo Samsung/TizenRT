@@ -29,8 +29,6 @@
 
 #include "wqueue.h"
 
-#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -90,5 +88,3 @@ int work_signal(int qid)
 
 	return work_qsignal(pid);
 }
-
-#endif							/* CONFIG_SCHED_HPWORK || CONFIG_SCHED_LPWORK*/

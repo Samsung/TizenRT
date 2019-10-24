@@ -63,8 +63,6 @@
 
 #include "wqueue.h"
 
-#ifdef CONFIG_SCHED_WORKQUEUE
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -97,5 +95,3 @@ int work_qsignal(pid_t pid)
 
 	return OK;
 }
-
-#endif							/* CONFIG_SCHED_WORKQUEUE */

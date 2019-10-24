@@ -65,8 +65,6 @@
 
 #include "wqueue.h"
 
-#ifdef CONFIG_SCHED_WORKQUEUE
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -170,4 +168,3 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 	return ret;
 }
 
-#endif							/* CONFIG_SCHED_WORKQUEUE */
