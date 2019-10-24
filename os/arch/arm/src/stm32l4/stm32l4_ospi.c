@@ -955,16 +955,57 @@ static int ospi0_interrupt(int irq, void *context, FAR void *arg)
   return OK;
 }
 
-
-void HAL_OSPI_CmdCpltCallback(OSPI_HandleTypeDef *hospi)
-{
-}
-
 void HAL_OSPI_ErrorCallback(OSPI_HandleTypeDef *hospi)
 {
   Error_Handler(55);
 }
 
+void HAL_OSPI_AbortCpltCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
+
+void HAL_OSPI_FifoThresholdCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
+
+void HAL_OSPI_CmdCpltCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
+
+void HAL_OSPI_RxCpltCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
+
+void HAL_OSPI_TxCpltCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
+
+void HAL_OSPI_RxHalfCpltCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
+
+void HAL_OSPI_TxHalfCpltCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
+
+/* OSPI status flag polling mode functions */
+void HAL_OSPI_StatusMatchCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
+
+/* OSPI memory-mapped mode functions */
+void HAL_OSPI_TimeOutCallback(OSPI_HandleTypeDef *hospi)
+{
+
+}
 
 /**
   * @brief  Initializes the OSPI MSP.
