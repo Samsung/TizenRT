@@ -192,6 +192,10 @@ ARTIK055S [[details]](build/configs/artik055s/README.md)
 
 CY4390X [[details]](build/configs/cy4390x/README.md)
 
+ESP32-DevKitC [[details]](build/configs/esp32_DevKitC/README.md)
+
+ESP-WROVER-KIT [[details]](build/configs/esp_wrover_kit/README.md)
+
 iMX RT 1020 EVK [[details]](build/configs/imxrt1020-evk/README.md)
 
 iMX RT 1050 EVK [[details]](build/configs/imxrt1050-evk/README.md)
