@@ -115,6 +115,7 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 	worker_t worker;
 	FAR void *arg;
 	clock_t elapsed;
+	clock_t stick;
 	clock_t ctick;
 	clock_t next;
 
@@ -131,6 +132,8 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 	flags = irqsave();
 #endif
 
+	/* Get the time that we started this polling cycle in clock ticks. */
+	stick = clock();
 
 	/* And check each entry in the work queue.  Since we have disabled
 	 * interrupts we know:  (1) we will not be suspended unless we do
@@ -204,6 +207,22 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 				work = (FAR struct work_s *)work->dq.flink;
 			}
 		} else {				/* elapsed < work->delay */
+
+			/* This one is not ready.
+			 *
+			 * NOTE that elapsed is relative to the the current time,
+			 * not the time of beginning of this queue processing pass.
+			 * So it may need an adjustment.
+			 */
+
+			elapsed += (ctick - stick);
+			if (elapsed > work->delay) {
+				/* The delay has expired while we are processing */
+
+				elapsed = work->delay;
+			}
+
+			/* Will it be ready before the next scheduled wakeup interval? */
 
 			next = work->delay - elapsed;
 
