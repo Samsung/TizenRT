@@ -3023,7 +3023,7 @@ void stm32l4_serial_dma_poll(void)
  *
  ****************************************************************************/
 
-int up_putc(char ch)
+int up_putc(int ch)
 {
 #if CONSOLE_UART > 0
   struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
@@ -3037,7 +3037,7 @@ int up_putc(char ch)
       lowputc('\r');
   }
 
-  lowputc(ch);
+  lowputc((char)ch);
   //stm32l4serial_restoreusartint(priv, ie);
 #endif
   return ch;
@@ -3082,7 +3082,7 @@ int up_putc(int ch)
       up_lowputc('\r');
     }
 
-  up_lowputc(ch);
+  up_lowputc((char)ch);
 #endif
   return ch;
 }
