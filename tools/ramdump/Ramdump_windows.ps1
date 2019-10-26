@@ -230,7 +230,7 @@ function ramdump_main {
 	catch [System.Exception] {
 		Write-Error ("Failed to connect : " + $_)
 		$error[0] | Format-List -Force
-		if ($port -ne $null) {
+		if ($null -ne $port) {
 			$port.Close()
 		}
 		exit 1
@@ -258,7 +258,7 @@ function ramdump_main {
 
 	Write-Output "`nRamdump received successfully..!"
 
-	if ($port -ne $null) {
+	if ($null -ne $port) {
 		$port.Close()
 	}
 }
