@@ -160,8 +160,8 @@ static int g_mode = 0; // check program is running
 
 #define WM_TEST_WAIT								\
 	do {											\
-		sem_wait(&g_wm_sem);                        \
 		printf(" T%d wait signal\n", getpid());		\
+		sem_wait(&g_wm_sem);                        \
 	} while (0)
 
 #define WM_TEST_FUNC_SIGNAL								\
@@ -172,8 +172,8 @@ static int g_mode = 0; // check program is running
 
 #define WM_TEST_FUNC_WAIT										\
 	do {														\
-		sem_wait(&g_wm_func_sem);                               \
 		printf(" T%d wait func signal\n", getpid());			\
+		sem_wait(&g_wm_func_sem);                               \
 	} while (0)
 
 #define WM_TEST_LOG_START						\
