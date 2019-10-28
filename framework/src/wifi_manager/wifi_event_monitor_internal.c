@@ -228,7 +228,7 @@ static int _wifi_utils_call_event(int fd, lwnl80211_cb_status status, int len)
 		break;
 	}
 	default:
-		ndbg("Bad status received (%d)\n", msg.status);
+		ndbg("Bad status received (%d)\n", status);
 		LWNL_ERR;
 		return -1;
 	}
@@ -243,7 +243,7 @@ static int _wifi_utils_fetch_event(int fd)
 	int nbytes = read(fd, (char *)type_buf, 8);
 
 	if (nbytes < 0) {
-		ndbg("Failed to receive (nbytes=%d, msglen=%d)\n", nbytes, msglen);
+		ndbg("Failed to receive (nbytes=%d)\n", nbytes);
 		LWNL_ERR;
 		return -1;
 	}
