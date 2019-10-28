@@ -84,12 +84,12 @@ config WIFIMGR_STA_IFNAME
 	string "Interface name of station mode"
 	default "wl1"
 
-config WIFIMGR_DISABLE_AUTO_GET_IP
-	bool "Disable auto get ip (ipv4 dhcp)"
+config WIFIMGR_DISABLE_DHCPC
+	bool "Disable auto get ip (ipv4 dhcp client)"
 	default n
 
 config WIFIMGR_DISABLE_DHCPS
-	bool "Disable auto run dhcp server(ipv4 dhcp server)"
+	bool "Disable auto run dhcp server (ipv4 dhcp server)"
 	default n
     help
         If say yes,it allows WiFi vendor to run dhcp server. 

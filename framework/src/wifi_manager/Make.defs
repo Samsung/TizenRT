@@ -19,6 +19,7 @@
 ifeq ($(CONFIG_WIFI_MANAGER), y)
 CSRCS += wifi_manager.c
 CSRCS += wifi_profile.c
+CSRCS += wifi_manager_dhcp_internal.c
 
 ifeq ($(CONFIG_LWNL80211), y)
 CSRCS += wifi_utils_lwnl80211.c
