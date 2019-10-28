@@ -38,8 +38,8 @@ static sem_t g_wifi_manager_test_sem = SEM_INITIALIZER(0);
 
 #define WIFITEST_WAIT                                            \
 	do {                                                         \
-		sem_wait(&g_wifi_manager_test_sem);                      \
 		printf("%s: T%d wait signal\n", __FUNCTION__, getpid()); \
+		sem_wait(&g_wifi_manager_test_sem);                      \
 	} while (0)
 
 void wifi_sta_connected(wifi_manager_result_e result);		// in station mode, connected to ap

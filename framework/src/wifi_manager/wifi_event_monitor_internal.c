@@ -130,7 +130,7 @@ static wifi_utils_result_e _receive_scan_data(int fd, wifi_utils_scan_list_s *sc
 
 static int _wifi_utils_convert_scan(wifi_utils_scan_list_s **scan_list, void *input, int len)
 {
-	printf("len(%d)\n", len);
+	nvdbg("[WU] T%d %s len(%d)\n", getpid(), __FUNCTION__, len);
 	int remain = len;
 	wifi_utils_scan_list_s *prev = NULL;
 

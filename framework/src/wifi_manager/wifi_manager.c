@@ -36,10 +36,6 @@
 #define WIFIADD_ERR_RECORD(reason_code)
 #endif
 
-#undef ndbg
-#define ndbg printf
-#undef nvdbg
-#define nvdbg printf
 #define WIFIMGR_NUM_CALLBACKS 3
 
 enum _wifimgr_state {
@@ -185,7 +181,7 @@ static pthread_cond_t g_disconn_signal = PTHREAD_COND_INITIALIZER;
 		pthread_mutex_lock(&g_disconn_lock);                    \
 		pthread_cond_wait(&g_disconn_signal, &g_disconn_lock);  \
 		pthread_mutex_unlock(&g_disconn_lock);                  \
-		nvdbg("[WM] T%d wait disconnect callback\n", getpid()); \
+		ndbg("[WM] T%d wait disconnect callback\n", getpid()); \
 	} while (0)
 
 #define WIFIMGR_DISCONNECT_CALLBACK_RECEIVED                        \
@@ -194,7 +190,7 @@ static pthread_cond_t g_disconn_signal = PTHREAD_COND_INITIALIZER;
 		g_manager_info.disconn_substate = WIFIMGR_DISCONN_NONE;     \
 		pthread_cond_signal(&g_disconn_signal);                     \
 		pthread_mutex_unlock(&g_disconn_lock);                      \
-		nvdbg("[WM] T%d received disconnect callback\n", getpid()); \
+		ndbg("[WM] T%d received disconnect callback\n", getpid()); \
 	} while (0)
 
 #define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
@@ -321,8 +317,8 @@ static pthread_cond_t g_disconn_signal = PTHREAD_COND_INITIALIZER;
 /**
  * Debugging
  */
-#define WM_LOG_START nvdbg("[WM] T%d\t%s:%d\n", getpid(), __FUNCTION__, __LINE__);
-#define WM_LOG_HANDLER_START nvdbg("[WM] T%d %s:%d state(%d) evt(%d)\n", getpid(), __FUNCTION__, __LINE__, g_manager_info.state, msg->event);
+#define WM_LOG_START printf("[WM] T%d\t%s:%d\n", getpid(), __FUNCTION__, __LINE__);
+#define WM_LOG_HANDLER_START printf("[WM] T%d %s:%d state(%d) evt(%d)\n", getpid(), __FUNCTION__, __LINE__, g_manager_info.state, msg->event);
 #define WM_APINFO_INITIALIZER {{0,}, 0, {0,}, 0, WIFI_MANAGER_AUTH_UNKNOWN, WIFI_MANAGER_CRYPTO_UNKNOWN}
 #define WM_RECONN_INITIALIZER {WIFI_RECONN_NONE, -1, -1}
 
@@ -868,7 +864,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 	wifi_utils_info_s info;
 	wifi_utils_result_e wres = wifi_utils_get_info(&info);
 	if (wres != WIFI_UTILS_SUCCESS) {
-		ndbg("[WM] wifi_utils_get_info fail");
+		ndbg("[WM] T%d wifi_utils_get_info fail\n", getpid());
 		WIFIMGR_CHECK_UTILRESULT(wifi_utils_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 	}
 
@@ -1015,12 +1011,12 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 				ndbg("[WM] [error] pthread_create fail\n");
 				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 			} else {
-				ndbg("[WM] Internal AUTOCONNECT: go to RECONNECT state\n");
+				nvdbg("[WM] Internal AUTOCONNECT: go to RECONNECT state\n");
 			}
 			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
-		ndbg("[WM] External AUTOCONNECT: go to RECONNECT state\n");
+		nvdbg("[WM] External AUTOCONNECT: go to RECONNECT state\n");
 		_handle_user_cb(CB_STA_RECONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
@@ -1080,7 +1076,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		wifi_manager_result_e wres = _wifimgr_connect_ap(apinfo);
 		if (wres == WIFI_MANAGER_ALREADY_CONNECTED) {
 			/* some wifi drivers try to reconnect by itself.*/
-			ndbg("[WM] reconnect state already connected\n");
+			nvdbg("[WM] reconnect state already connected\n");
 			_handle_user_cb(CB_STA_CONNECTED, NULL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 			return WIFI_MANAGER_ALREADY_CONNECTED;
@@ -1101,17 +1097,17 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 	}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	if (msg->event == EVT_DISCONNECT) {
-		ndbg("[WM] AUTOCONNECT fail: go to DISCONNECTED\n");
+		nvdbg("[WM] AUTOCONNECT fail: go to DISCONNECTED\n");
 		_dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
-		ndbg("[WM] AUTOCONNECT wait\n");
+		nvdbg("[WM] AUTOCONNECT wait\n");
 	} else if (msg->event == EVT_STA_CONNECTED) {
-		ndbg("[WM] AUTOCONNECT done: go to CONNECTED\n");
+		nvdbg("[WM] AUTOCONNECT done: go to CONNECTED\n");
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	} else if (msg->event == EVT_DEINIT) {
-		ndbg("[WM] AUTOCONNECT fail: go to DEINIT\n");
+		nvdbg("[WM] AUTOCONNECT fail: go to DEINIT\n");
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	} else {

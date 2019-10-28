@@ -35,15 +35,15 @@
 		int res = -1;                                           \
 		res = netlib_set_ipv4addr(intf, &ip);                   \
 		if (res == -1) {                                        \
-			nvdbg("[WM] set ipv4 addr error\n");                \
+			ndbg("[WM] set ipv4 addr error\n");                \
 		}                                                       \
 		res = netlib_set_ipv4netmask(intf, &netmask);           \
 		if (res == -1) {                                        \
-			nvdbg("[WM] set netmask addr error\n");             \
+			ndbg("[WM] set netmask addr error\n");             \
 		}                                                       \
 		res = netlib_set_dripv4addr(intf, &gateway);            \
 		if (res == -1) {                                        \
-			nvdbg("[WM] set route addr error\n");               \
+			ndbg("[WM] set route addr error\n");               \
 		}                                                       \
 	} while (0)
 
@@ -108,12 +108,12 @@ _dhcp_status_e _dhcps_add_node(void *msg)
 {
 	dhcp_node_s *node = (dhcp_node_s *)msg;
 	if (node != NULL) {
-		ndbg("[DHCP] IP: %d:%d:%d:%d\n",
+		nvdbg("[DHCP] IP: %d:%d:%d:%d\n",
 			  ((char *)&(node->ipaddr))[0],
 			  ((char *)&(node->ipaddr))[1],
 			  ((char *)&(node->ipaddr))[2],
 			  ((char *)&(node->ipaddr))[3]);
-		ndbg("[DHCP] MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		nvdbg("[DHCP] MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 			  node->macaddr[0], node->macaddr[1],
 			  node->macaddr[2], node->macaddr[3],
 			  node->macaddr[4], node->macaddr[5]);
@@ -174,7 +174,7 @@ wifi_manager_result_e _dhcpc_get_ipaddr(void)
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 		return wret;
 	}
-	ndbg("[DHCPC] get IP address %s\n", inet_ntoa(ip));
+	nvdbg("[DHCPC] get IP address %s\n", inet_ntoa(ip));
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -189,7 +189,7 @@ void _dhcpc_close_ipaddr(void)
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 #endif
-	ndbg("[DHCPC] %s - release IP address\n", __FUNC__);
+	nvdbg("[DHCPC] %s - release IP address\n", __FUNCTION__);
 	return;
 }
 
