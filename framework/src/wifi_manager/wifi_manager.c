@@ -25,11 +25,9 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <wifi_manager/wifi_manager.h>
-#include <protocols/dhcpc.h>
-#include <protocols/dhcpd.h>
-#include <netutils/netlib.h>
 #include <tinyara/wifi/wifi_utils.h>
 #include "wifi_profile.h"
+#include "wifi_manager_dhcp_internal.h"
 
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT
 #include <error_report/error_report.h>
@@ -81,8 +79,11 @@ enum _wifimgr_evt {
 	EVT_STA_CONNECTED,		// Event that STA is connected
 	EVT_STA_CONNECT_FAILED, // Event that STA connect failed
 	EVT_STA_DISCONNECTED,   // Event that external STA disconnected from WiFi AP
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
+	EVT_DHCPS_ASSIGN_IP,	// Event that SoftAP got IP address
+#else
 	EVT_JOINED,				// Event that new STA joined softAP
-	EVT_DHCPD_GET_IP,		// Event that SoftAP got IP address
+#endif
 	EVT_LEFT,				// Event that external STA device left softAP
 	EVT_SCAN_DONE,			// Event that WiFi scanning over WLAN channels is done
 	EVT_NONE,
@@ -120,8 +121,6 @@ struct _wifimgr_info {
 	char softap_ssid[WIFIMGR_SSID_LEN + 1];      // SoftAP SSID if mode is a soft ap
 	char mac_address[WIFIMGR_MACADDR_LEN];	   // MAC address of wifi interface
 	int rssi;                  // It is only used for a station mode
-	int num_sta;               // It is only used for a softap mode, it shows the number of stations connected
-	uint32_t ip4_address;
 	_wifimgr_state_e state;
 	_wifimgr_state_e prev_state; // it is for returning to previous state after scanning is done
 	// check_callback
@@ -130,7 +129,6 @@ struct _wifimgr_info {
 	int chk_cbk;
 
 	pthread_mutex_t state_lock;
-	pthread_mutex_t info_lock;
 
 	_wifimgr_disconn_substate_e disconn_substate;
 
@@ -247,45 +245,6 @@ static pthread_cond_t g_disconn_signal = PTHREAD_COND_INITIALIZER;
 		(dest).max_interval = (src).max_interval;	\
 	} while (0)
 
-#define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)	\
-	do {												\
-		int res = -1;									\
-		res = netlib_set_ipv4addr(intf, &ip);			\
-		if (res == -1) {								\
-			nvdbg("[WM] set ipv4 addr error\n");		\
-		}												\
-		res = netlib_set_ipv4netmask(intf, &netmask);	\
-		if (res == -1) {								\
-			nvdbg("[WM] set netmask addr error\n");		\
-		}												\
-		res = netlib_set_dripv4addr(intf, &gateway);	\
-		if (res == -1) {								\
-			nvdbg("[WM] set route addr error\n");		\
-		}												\
-		g_manager_info.ip4_address = ip.s_addr;			\
-	} while (0)
-
-#define WIFIMGR_INC_NUM_CLIENT								\
-	do {													\
-		pthread_mutex_lock(&g_manager_info.info_lock);		\
-		g_manager_info.num_sta++;							\
-		pthread_mutex_unlock(&g_manager_info.info_lock);	\
-	} while (0)
-
-#define WIFIMGR_DEC_NUM_CLIENT								\
-	do {													\
-		pthread_mutex_lock(&g_manager_info.info_lock);		\
-		g_manager_info.num_sta--;							\
-		pthread_mutex_unlock(&g_manager_info.info_lock);	\
-	} while (0)
-
-#define WIFIMGR_RESET_NUM_CLIENT							\
-	do {													\
-		pthread_mutex_lock(&g_manager_info.info_lock);		\
-		g_manager_info.num_sta = 0;							\
-		pthread_mutex_unlock(&g_manager_info.info_lock);	\
-	} while (0)
-
 
 #define WIFIMGR_SPC // to pass the code check ruls
 #define WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, free_rsc)	\
@@ -378,9 +337,8 @@ static pthread_cond_t g_disconn_signal = PTHREAD_COND_INITIALIZER;
 /**
  * global variables
  */
-static _wifimgr_info_s g_manager_info = {{0}, {0}, {0}, 0, 0, 0,
+static _wifimgr_info_s g_manager_info = {{0}, {0}, {0}, 0,
 										 WIFIMGR_UNINITIALIZED, WIFIMGR_UNINITIALIZED, 0,
-										 PTHREAD_MUTEX_INITIALIZER,
 										 PTHREAD_MUTEX_INITIALIZER,
 										 WIFIMGR_DISCONN_NONE,
 										 {NULL, NULL, NULL},
@@ -435,9 +393,6 @@ static void _wifi_utils_disconnect_event(void *arg);
 static void _wifi_utils_join_event(void *arg); // it needs arg which contains sta infomation joined
 static void _wifi_utils_leave_event(void *arg); // it needs arg which contains a sta info left
 static void _wifi_utils_scan_done(wifi_utils_result_e result, wifi_utils_scan_list_s *slist, void *arg);
-#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-static void _wifi_dhcpd_event(dhcp_evt_type_e type, void *data); // join event from dhcpd
-#endif
 
 
 
@@ -447,18 +402,7 @@ static void _wifi_dhcpd_event(dhcp_evt_type_e type, void *data); // join event f
 static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, wifi_utils_scan_list_s *wu_scan_list);
 static void _free_scan_info(wifi_manager_scan_info_s *wm_scan_list);
 static void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _wifimgr_state_e state);
-#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-#define DHCP_OK 0
-#define DHCP_EXIST 1
-static wifi_manager_result_e _start_dhcps(void);
-static wifi_manager_result_e _stop_dhcps(void);
-static int _dhcps_add_node(dhcp_node_s *node);
-static void _dhcps_remove_list(void);
-#endif
 
-#ifndef CONFIG_WIFIMGR_DISABLE_AUTO_GET_IP
-static wifi_manager_result_e _get_ipaddr_dhcpc(void);
-#endif
 static wifi_manager_result_e _wifimgr_deinit(void);
 static wifi_manager_result_e _wifimgr_run_sta(void);
 static wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config);
@@ -507,36 +451,17 @@ static const wifimgr_handler g_handler[] = {
 
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-/* wifi manager stores only one mac address of a node while it is running on softap mode
- * because most of wi-fi chipset that ported to TizenRT supports to join a device.
- * these dhcp function might be modified later when
- * a chipset that supports multiple connections are ported
- */
-#define WIFIMGR_IP4_ZERO 0
-#define WIFIMGR_MAC_ZERO {0, 0, 0, 0, 0, 0}
-// g_dhcp_list is protected by g_manager_info.disconn_lock
-// because it's called while wifimanager is softap mode
-static dhcp_node_s g_dhcp_list = {WIFIMGR_IP4_ZERO, WIFIMGR_MAC_ZERO};
-
-int _dhcps_add_node(dhcp_node_s *node)
+static void _wifi_dhcps_event(dhcp_evt_type_e type, void *data)
 {
-	if (memcmp(g_dhcp_list.macaddr, node->macaddr, 6) == 0) {
-		g_dhcp_list.ipaddr = node->ipaddr;
-		return DHCP_EXIST;
+	WM_LOG_START;
+	if (type == DHCP_ACK_EVT) {
+		_wifimgr_msg_s msg = {EVT_DHCPS_ASSIGN_IP, data};
+		WIFIMGR_CHECK_RESULT_NORET(_handle_request(&msg), "[WM] handle dhcpd event fail\n");
 	}
-	g_dhcp_list.ipaddr = node->ipaddr;
-	memcpy(g_dhcp_list.macaddr, node->macaddr, 6);
-	return DHCP_OK;
-}
-
-void _dhcps_remove_list(void)
-{
-	g_dhcp_list.ipaddr = 0;
-	for (int i = 0; i < 6; i++) {
-		g_dhcp_list.macaddr[i] = 0;
-	}
+	return;
 }
 #endif
+
 
 #if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 wifi_manager_result_e _wifi_manager_reconnect_ap(wifi_manager_ap_config_s *config)
@@ -691,7 +616,7 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 		break;
 	case WIFIMGR_SOFTAP:
 		*mode = SOFTAP_MODE;
-		if (g_manager_info.num_sta > 0) {
+		if (_dhcps_get_num() > 0) {
 			*conn = CLIENT_CONNECTED;
 		} else {
 			*conn = CLIENT_DISCONNECTED;
@@ -709,83 +634,6 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 	}
 }
 
-#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-wifi_manager_result_e _start_dhcps(void)
-{
-	struct in_addr ip = {.s_addr = 0x012fa8c0 };
-	struct in_addr netmask = {.s_addr = 0x00ffffff};
-	struct in_addr gw = {.s_addr = 0x012fa8c0};
-	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
-	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
-	if (dhcp_server_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcpd_event) == OK) {
-		ndbg("[WM] DHCP Server - started successfully\n");
-		wret = WIFI_MANAGER_SUCCESS;
-	} else {
-		ndbg("[WM] DHCP Server - started fail\n");
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_SOFTAP_DHCPD_FAIL);
-	}
-	return wret;
-}
-
-wifi_manager_result_e _stop_dhcps(void)
-{
-	struct in_addr in = { .s_addr = INADDR_NONE };
-	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
-	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
-	if (dhcp_server_stop(WIFIMGR_SOFTAP_IFNAME) == OK) {
-		ndbg("[WM] DHCP Server - stopped successfully\n");
-		wret = WIFI_MANAGER_SUCCESS;
-	}
-	return wret;
-}
-#endif
-
-#ifndef CONFIG_WIFIMGR_DISABLE_AUTO_GET_IP
-wifi_manager_result_e _get_ipaddr_dhcpc(void)
-{
-	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
-	int ret;
-	struct in_addr ip_check;
-
-	ret = dhcp_client_start(WIFIMGR_STA_IFNAME);
-	if (ret != OK) {
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
-		ndbg("[WM] get IP address fail\n");
-		return wret;
-	}
-
-	ret = netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, &ip_check);
-	if (ret != OK) {
-		ndbg("[WM] get IP address fail\n");
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
-		return wret;
-	}
-
-	ndbg("[WM] get IP address %s\n", inet_ntoa(ip_check));
-	g_manager_info.ip4_address = ip_check.s_addr;
-	wret = WIFI_MANAGER_SUCCESS;
-	return wret;
-}
-#endif
-
-void _close_ipaddr_dhcpc(void)
-{
-	int ret;
-	struct in_addr ip_check;
-	dhcp_client_stop(WIFIMGR_STA_IFNAME);
-
-	ret = netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, &ip_check);
-	if (ret != OK) {
-		ndbg("[WM] dhcp_stop - get IP address fail\n");
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
-		return;
-	}
-
-	ndbg("[WM] dhcp_stop - release IP address %s\n", inet_ntoa(ip_check));
-	g_manager_info.ip4_address = ip_check.s_addr;
-
-	return;
-}
 
 wifi_manager_result_e _wifimgr_deinit(void)
 {
@@ -888,14 +736,12 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_softap(&softap_config), "[WM] Starting softap mode failed.", WIFI_MANAGER_FAIL);
-    /*Sometimes WiFi vender run dhcp server*/
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	_dhcps_remove_list();
-	WIFIMGR_CHECK_RESULT(_start_dhcps(), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_RESULT(_dhcps_start((dhcp_sta_joined)_wifi_dhcps_event), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
 #endif
 	/* update wifi_manager_info */
 	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
-	WIFIMGR_RESET_NUM_CLIENT;
+	_dhcps_reset_num();
 
 	/* For tracking softap stats, the LAST value is used */
 	WIFIMGR_STATS_INC(CB_SOFTAP_DONE);
@@ -908,7 +754,7 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 	WM_LOG_START;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_stop_softap(), "[WM] Stoping softap failed", WIFI_MANAGER_FAIL);
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	WIFIMGR_CHECK_RESULT(_stop_dhcps(), "[WM] Stoping softap DHCP server failed.", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_RESULT(_dhcps_stop(), "[WM] Stoping softap DHCP server failed.", WIFI_MANAGER_FAIL);
 #endif
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -964,13 +810,16 @@ void _wifi_utils_disconnect_event(void *arg)
 
 void _wifi_utils_join_event(void *arg)
 {
+#ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
 	WM_LOG_START;
 	_wifimgr_msg_s msg = {EVT_JOINED, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(_handle_request(&msg), "[WM] handle join event fail\n");
+#endif
+	return;
 }
 
 
-void _wifi_utils_leave_event(void * arg)
+void _wifi_utils_leave_event(void *arg)
 {
 	WM_LOG_START;
 	_wifimgr_msg_s msg = {EVT_LEFT, NULL};
@@ -985,14 +834,6 @@ void _wifi_utils_scan_done(wifi_utils_result_e result, wifi_utils_scan_list_s *s
 	WIFIMGR_CHECK_RESULT_NORET(_handle_request(&msg), "[WM] handle scan done event fail\n");
 }
 
-void _wifi_dhcpd_event(dhcp_evt_type_e type, void *data)
-{
-	WM_LOG_START;
-
-	_wifimgr_msg_s msg = {EVT_DHCPD_GET_IP, data};
-	WIFIMGR_CHECK_RESULT_NORET(_handle_request(&msg), "[WM] handle dhcpd event fail\n");
-	return;
-}
 
 /*
  * State Functions
@@ -1080,7 +921,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg)
 		} else {
 			WIFIMGR_RESET_CBK_CHK;
 		}
-		_close_ipaddr_dhcpc();
+		_dhcpc_close_ipaddr();
 		switch (g_manager_info.disconn_substate) {
 		case WIFIMGR_DISCONN_DEINIT:
 		case WIFIMGR_DISCONN_SOFTAP:
@@ -1103,9 +944,9 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
 	if (msg->event == EVT_STA_CONNECTED) {
-#ifndef CONFIG_WIFIMGR_DISABLE_AUTO_GET_IP
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
 		wifi_manager_result_e wret;
-		wret = _get_ipaddr_dhcpc();
+		wret = _dhcpc_get_ipaddr();
 		if (wret != WIFI_MANAGER_SUCCESS) {
 			_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
 			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "[WM] critical error: DHCP failure\n", WIFI_MANAGER_FAIL);
@@ -1123,6 +964,7 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
+
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -1137,7 +979,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 #if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
 			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
-			_close_ipaddr_dhcpc();
+			_dhcpc_close_ipaddr();
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
 			_handle_user_cb(CB_STA_RECONNECTED, NULL);
@@ -1231,7 +1073,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		}
 		close(sd);
 		pthread_join(g_manager_info.reconn_id, NULL);
-		_close_ipaddr_dhcpc();
+		_dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_RECONNECT) {
 		wifi_manager_ap_config_s *apinfo = (wifi_manager_ap_config_s *)msg->param;
@@ -1260,7 +1102,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	if (msg->event == EVT_DISCONNECT) {
 		ndbg("[WM] AUTOCONNECT fail: go to DISCONNECTED\n");
-		_close_ipaddr_dhcpc();
+		_dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
 		ndbg("[WM] AUTOCONNECT wait\n");
@@ -1319,7 +1161,7 @@ wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
-		_close_ipaddr_dhcpc();
+		_dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
@@ -1338,33 +1180,23 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_ap_config_s *)msg->param), "fail scan", WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+#ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
 	} else if (msg->event == EVT_JOINED) {
-#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-		/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
-	} else if (msg->event == EVT_DHCPD_GET_IP) {
-		dhcp_node_s *node = (dhcp_node_s *)msg->param;
-		if (node != NULL) {
-			ndbg("[WM] IP: %d:%d:%d:%d\n",
-				  ((char *)&(node->ipaddr))[0],
-				  ((char *)&(node->ipaddr))[1],
-				  ((char *)&(node->ipaddr))[2],
-				  ((char *)&(node->ipaddr))[3]);
-			ndbg("[WM] MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-				  node->macaddr[0], node->macaddr[1],
-				  node->macaddr[2], node->macaddr[3],
-				  node->macaddr[4], node->macaddr[5]);
-
-			int is_exist = _dhcps_add_node(node);
-
-			if (is_exist == DHCP_EXIST) {
-				return WIFI_MANAGER_SUCCESS;
-			}
+#else
+	/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
+	} else if (msg->event == EVT_DHCPS_ASSIGN_IP) {
+		_dhcp_status_e is_exist = _dhcps_add_node((dhcp_node_s *)msg->param);
+		if (is_exist == DHCP_EXIST) {
+			return WIFI_MANAGER_SUCCESS;
 		}
 #endif
-		WIFIMGR_INC_NUM_CLIENT;
+		_dhcps_inc_num();
 		_handle_user_cb(CB_STA_JOINED, NULL);
 	} else if (msg->event == EVT_LEFT) {
-		WIFIMGR_DEC_NUM_CLIENT;
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
+		_dhcps_del_node();
+#endif
+		_dhcps_dec_num();
 		_handle_user_cb(CB_STA_LEFT, NULL);
 	} else if (msg->event == EVT_DEINIT) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), "critical error\n", WIFI_MANAGER_FAIL);
@@ -1570,12 +1402,20 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 {
+	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	if (info == NULL) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 	LOCK_WIFIMGR;
-	uint8_t *ip = (uint8_t *)&g_manager_info.ip4_address;
+	struct in_addr ip_ref;
+	wret = _dhcpc_fetch_ipaddr(&ip_ref);
+	if (wret != WIFI_MANAGER_SUCCESS) {
+		ndbg("[WM] T%d Failed to fetch ip4 address\n", getpid());
+		return WIFI_MANAGER_FAIL;
+	}
+
+	uint8_t *ip = (uint8_t *)&(ip_ref.s_addr);
 	snprintf(info->ip4_address, 18, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 	memcpy(info->mac_address, g_manager_info.mac_address, WIFIMGR_MACADDR_LEN);
 	/* Get RSSI */
