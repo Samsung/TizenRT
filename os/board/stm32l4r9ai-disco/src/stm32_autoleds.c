@@ -44,13 +44,12 @@
 
 #include <tinyara/board.h>
 #include <arch/board/board.h>
-#include <arch/board/stm32l4r9ai-disco.h>
 
 #include "chip.h"
 #include "up_arch.h"
 #include "up_internal.h"
 #include "stm32l4.h"
-
+#include "stm32l4r9ai-disco.h"
 
 #ifdef CONFIG_ARCH_LEDS
 

@@ -20,6 +20,7 @@
 #include <tinyara/config.h>
 
 #include <debug.h>
+#include <stdio.h>
 #include <stdint.h>
 
 #include <tinyara/arch.h>
@@ -28,13 +29,13 @@
 #include <tinyara/lcd/ieg1120.h>
 #include <tinyara/lcd/lcd.h>
 
-#include "chip/stm32l4_dma2d.h"
-
 #include <arch/board/board.h>
-#include <arch/board/stm32l4r9ai-disco.h>
 #include <arch/board/stm32l4r9i_discovery.h>
 
 #include <stm32l4.h>
+
+#include "chip/stm32l4_dma2d.h"
+#include "stm32l4r9ai-disco.h"
 
 #define BRIGHTNESS_MIN      50
 #define BRIGHTNESS_NORMAL   200
@@ -65,7 +66,7 @@ void stm32l4r9i_lcd_poweron(void)
     FAR struct stm32l4_lcd_s *lcd = stm32l4_lcd_function();
 
     if (lcd == NULL){
-        return LCD_ERROR;
+        return;
     }else{
         lcd->poweron();
         printf("LCD Power On\n");
@@ -77,7 +78,7 @@ void stm32l4r9i_lcd_poweroff(void)
     FAR struct stm32l4_lcd_s *lcd = stm32l4_lcd_function();
 
     if (lcd == NULL){
-        return LCD_ERROR;
+        return;
     }else{
         lcd->poweroff();
         printf("LCD Power Off\n");

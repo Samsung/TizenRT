@@ -6,6 +6,7 @@
  */
 #include <tinyara/config.h>
 
+#include <stdio.h>
 #include <debug.h>
 
 #include <tinyara/arch.h>
@@ -14,9 +15,15 @@
 
 #include <arch/board/board.h>
 #include <arch/board/stm32l4r9i_discovery_io.h>
-#include <arch/board/stm32l4r9ai-disco.h>
+#if defined(CONFIG_FLASH_PARTITION)
+#include <sys/mount.h>
+#include <tinyara/fs/mksmartfs.h>
 
+#include "common.h"
+#endif
 #include "up_arch.h"
+#include "stm32l4_ospi.h"
+
 
 struct ospi_dev_s *g_ospi_ops;
 
