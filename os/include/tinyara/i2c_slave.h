@@ -1,5 +1,5 @@
 /****************************************************************************
- * include/nuttx/i2c/i2c_slave.h
+ * include/tinyara/i2c/i2c_slave.h
  *
  *   Copyright(C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -98,7 +98,7 @@
  *
  ****************************************************************************/
 
-#define I2CS_SETOWNADDRESS(d,a,n)  ((d)->ops->setownaddress(d,a,n))
+#define I2CS_SETOWNADDRESS(d, a, n)  ((d)->ops->setownaddress(d, a, n))
 
 /****************************************************************************
  * Name: I2CS_WRITE
@@ -119,7 +119,7 @@
  *
  ****************************************************************************/
 
-#define I2CS_WRITE(d,b,l) ((d)->ops->write(d,b,l))
+#define I2CS_WRITE(d, b, l) ((d)->ops->write(d, b, l))
 
 /****************************************************************************
  * Name: I2CS_READ
@@ -140,7 +140,7 @@
  *
  ****************************************************************************/
 
-#define I2CS_READ(d,b,l) ((d)->ops->read(d,b,l))
+#define I2CS_READ(d, b, l) ((d)->ops->read(d, b, l))
 
 /****************************************************************************
  * Name: I2CS_REGISTERCALLBACK
@@ -158,7 +158,7 @@
  *
  ****************************************************************************/
 
-#define I2CS_REGISTERCALLBACK(d,c,a) ((d)->ops->registercallback(d,c,a))
+#define I2CS_REGISTERCALLBACK(d, c, a) ((d)->ops->registercallback(d, c, a))
 
 /****************************************************************************
  * Public Types
@@ -167,15 +167,11 @@
 /* The I2C vtable */
 
 struct i2c_slave_s;
-struct i2c_slaveops_s
-{
-  int (*setownaddress)(FAR struct i2c_slave_s *dev, int addr, int nbits);
-  int (*write)(FAR struct i2c_slave_s *dev, FAR const uint8_t *buffer,
-        int buflen);
-  int (*read)(FAR struct i2c_slave_s *dev, FAR uint8_t *buffer,
-        int buflen);
-  int (*registercallback)(FAR struct i2c_slave_s *dev,
-        int (*callback)(FAR void *arg), FAR void *arg);
+struct i2c_slaveops_s {
+	int (*setownaddress)(FAR struct i2c_slave_s *dev, int addr, int nbits);
+	int (*write)(FAR struct i2c_slave_s *dev, FAR const uint8_t *buffer, int buflen);
+	int (*read)(FAR struct i2c_slave_s *dev, FAR uint8_t *buffer, int buflen);
+	int (*registercallback)(FAR struct i2c_slave_s *dev, int (*callback)(FAR void *arg), FAR void *arg);
 };
 
 /* I2C private data.  This structure only defines the initial fields of the
@@ -183,9 +179,8 @@ struct i2c_slaveops_s
  * add additional, device specific fields after the vtable.
  */
 
-struct i2c_slave_s
-{
-  const struct i2c_slaveops_s *ops; /* I2C vtable */
+struct i2c_slave_s {
+	const struct i2c_slaveops_s *ops; /* I2C vtable */
 };
 
 /****************************************************************************
@@ -195,8 +190,7 @@ struct i2c_slave_s
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C"
-{
+extern "C" {
 #else
 #define EXTERN extern
 #endif
@@ -207,4 +201,4 @@ extern "C"
 #endif
 
 #endif /* CONFIG_I2C_SLAVE */
-#endif /* __INCLUDE_NUTTX_I2C_I2C_SLAVE_H */
+#endif /* __INCLUDE_TINYARA_I2C_I2C_SLAVE_H */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * include/nuttx/i2c/i2c_master.h
+ * include/tinyara/i2c/i2c_master.h
  *
  *   Copyright(C) 2009-2012, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -164,7 +164,7 @@
  *
  ****************************************************************************/
 
-#define I2C_TRANSFER(d,m,c) ((d)->ops->transfer(d,m,c))
+#define I2C_TRANSFER(d, m, c) ((d)->ops->transfer(d, m, c))
 
 /************************************************************************************
  * Name: I2C_RESET
@@ -192,12 +192,10 @@
 
 struct i2c_master_s;
 struct i2c_msg_s;
-struct i2c_ops_s
-{
-  CODE int (*transfer)(FAR struct i2c_master_s *dev,
-                       FAR struct i2c_msg_s *msgs, int count);
+struct i2c_ops_s {
+	CODE int (*transfer)(FAR struct i2c_master_s *dev, FAR struct i2c_msg_s *msgs, int count);
 #ifdef CONFIG_I2C_RESET
-  CODE int (*reset)(FAR struct i2c_master_s *dev);
+	CODE int (*reset)(FAR struct i2c_master_s *dev);
 #endif
 };
 
@@ -206,11 +204,10 @@ struct i2c_ops_s
  * performed in a thread safe manner.
  */
 
-struct i2c_config_s
-{
-  uint32_t frequency;          /* I2C frequency */
-  uint16_t address;            /* I2C address (7- or 10-bit) */
-  uint8_t addrlen;             /* I2C address length (7 or 10 bits) */
+struct i2c_config_s {
+	uint32_t frequency;          /* I2C frequency */
+	uint16_t address;            /* I2C address (7- or 10-bit) */
+	uint8_t addrlen;             /* I2C address length (7 or 10 bits) */
 };
 
 /* I2C transaction segment beginning with a START. A number of these can
@@ -218,13 +215,12 @@ struct i2c_config_s
  * to an I2C slave device.
  */
 
-struct i2c_msg_s
-{
-  uint32_t frequency;         /* I2C frequency */
-  uint16_t addr;              /* Slave address (7- or 10-bit) */
-  uint16_t flags;             /* See I2C_M_* definitions */
-  FAR uint8_t *buffer;        /* Buffer to be transferred */
-  ssize_t length;             /* Length of the buffer in bytes */
+struct i2c_msg_s {
+	uint32_t frequency;         /* I2C frequency */
+	uint16_t addr;              /* Slave address (7- or 10-bit) */
+	uint16_t flags;             /* See I2C_M_* definitions */
+	FAR uint8_t *buffer;        /* Buffer to be transferred */
+	ssize_t length;             /* Length of the buffer in bytes */
 };
 
 /* I2C private data.  This structure only defines the initial fields of the
@@ -232,19 +228,17 @@ struct i2c_msg_s
  * add additional, device specific fields after the vtable.
  */
 
-struct i2c_master_s
-{
-  FAR const struct i2c_ops_s *ops; /* I2C vtable */
+struct i2c_master_s {
+	FAR const struct i2c_ops_s *ops; /* I2C vtable */
 };
 
 /* This structure is used to communicate with the I2C character driver in
  * order to perform IOCTL transfers.
  */
 
-struct i2c_transfer_s
-{
-  FAR struct i2c_msg_s *msgv; /* Array of I2C messages for the transfer */
-  size_t msgc;                /* Number of messages in the array. */
+struct i2c_transfer_s {
+	FAR struct i2c_msg_s *msgv; /* Array of I2C messages for the transfer */
+	size_t msgc;                /* Number of messages in the array. */
 };
 
 /****************************************************************************
@@ -254,8 +248,7 @@ struct i2c_transfer_s
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C"
-{
+extern "C" {
 #else
 #define EXTERN extern
 #endif
@@ -307,9 +300,9 @@ int i2c_register(FAR struct i2c_master_s *i2c, int bus);
  ****************************************************************************/
 
 int i2c_writeread(FAR struct i2c_master_s *dev,
-                  FAR const struct i2c_config_s *config,
-                  FAR const uint8_t *wbuffer, int wbuflen,
-                  FAR uint8_t *rbuffer, int rbuflen);
+				FAR const struct i2c_config_s *config,
+				FAR const uint8_t *wbuffer, int wbuflen,
+				FAR uint8_t *rbuffer, int rbuflen);
 
 /****************************************************************************
  * Name: i2c_write
@@ -331,8 +324,8 @@ int i2c_writeread(FAR struct i2c_master_s *dev,
  ****************************************************************************/
 
 int i2c_write(FAR struct i2c_master_s *dev,
-              FAR const struct i2c_config_s *config,
-              FAR const uint8_t *buffer, int buflen);
+			FAR const struct i2c_config_s *config,
+			FAR const uint8_t *buffer, int buflen);
 
 /****************************************************************************
  * Name: i2c_read
@@ -353,11 +346,11 @@ int i2c_write(FAR struct i2c_master_s *dev,
  ****************************************************************************/
 
 int i2c_read(FAR struct i2c_master_s *dev,
-             FAR const struct i2c_config_s *config,
-             FAR uint8_t *buffer, int buflen);
+			FAR const struct i2c_config_s *config,
+			FAR uint8_t *buffer, int buflen);
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
-#endif /* __INCLUDE_NUTTX_I2C_I2C_MASTER_H */
+#endif /* __INCLUDE_TINYARA_I2C_I2C_MASTER_H */

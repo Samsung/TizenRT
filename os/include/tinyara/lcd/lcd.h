@@ -199,10 +199,10 @@ struct lcd_dev_s {
 };
 
 struct dsi_ops_s {
-    uint8_t (*config)(void);
-    void (*enable)(void);
-    void (*disable)(void);
-    void (*refresh)(void);
+	uint8_t (*config)(void);
+	void (*enable)(void);
+	void (*disable)(void);
+	void (*refresh)(void);
 };
 
 struct stm32l4_dsi_s {
