@@ -59,7 +59,15 @@ config ARCH_CHIP_IMXRT
 	select ARMV7M_HAVE_STACKCHECK
 	---help---
 		NXP i.MX RT (ARM Cortex-M7) architectures
-
+		
+config ARCH_CHIP_STM32L4
+	bool "STMicro STM32L4"
+	select ARCH_HAVE_CMNVECTOR
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_HEAPCHECK if DEBUG
+	---help---
+		STMicro STM32 architectures (ARM Cortex-M3/4).
 endchoice
 
 config ARCH_CHIP
@@ -69,6 +77,7 @@ config ARCH_CHIP
 	default "bcm4390x"	if ARCH_CHIP_BCM4390X
 	default "stm32"		if ARCH_CHIP_STM32
 	default "imxrt"		if ARCH_CHIP_IMXRT
+	default "stm32l4"	if ARCH_CHIP_STM32L4
 
 comment "ARM Options"
 
@@ -242,5 +251,7 @@ endif
 if ARCH_CHIP_IMXRT
 source arch/arm/src/imxrt/Kconfig
 endif
-
+if ARCH_CHIP_STM32L4
+source arch/arm/src/stm32l4/Kconfig
+endif
 endif

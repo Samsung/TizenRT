@@ -1,0 +1,245 @@
+############################################################################
+# arch/arm/src/stm32l4/Make.defs
+#
+#   Copyright (C) 2017-2018 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2015-2016 Sebastien Lorquet. All rights reserved.
+#   Author: Sebastien Lorquet <sebastien@lorquet.fr>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+# The start-up, "head", file.  Only common vectors are support so there
+# isn't one.
+
+HEAD_ASRC =
+
+# Common ARM and Cortex-M4 files (copied from stm32/Make.defs)
+
+CMN_UASRCS =
+CMN_UCSRCS =
+
+CMN_ASRCS  = up_saveusercontext.S up_fullcontextrestore.S up_switchcontext.S
+CMN_ASRCS += vfork.S
+
+CMN_CSRCS  = up_assert.c up_blocktask.c up_copyfullstate.c up_createstack.c
+CMN_CSRCS += up_doirq.c up_exit.c up_hardfault.c up_initialize.c
+CMN_CSRCS += up_initialstate.c up_interruptcontext.c up_mdelay.c up_memfault.c
+CMN_CSRCS += up_modifyreg8.c up_modifyreg16.c up_modifyreg32.c
+CMN_CSRCS += up_releasepending.c up_releasestack.c up_reprioritizertr.c
+CMN_CSRCS += up_schedulesigaction.c up_sigdeliver.c up_stackframe.c
+CMN_CSRCS += up_svcall.c up_systemreset.c up_trigger_irq.c up_udelay.c
+CMN_CSRCS += up_unblocktask.c up_usestack.c up_vfork.c
+
+# Configuration-dependent common files
+
+ifeq ($(CONFIG_ARMV7M_STACKCHECK),y)
+CMN_CSRCS += up_stackcheck.c
+endif
+
+ifeq ($(CONFIG_ARMV7M_LAZYFPU),y)
+CMN_ASRCS += up_lazyexception.S
+else
+CMN_ASRCS += up_exception.S
+endif
+CMN_CSRCS += up_vectors.c
+
+ifeq ($(CONFIG_ARCH_FPU),y)
+CMN_ASRCS += up_fpu.S
+CMN_CSRCS += up_copyarmstate.c
+endif
+
+ifeq ($(CONFIG_ARCH_RAMVECTORS),y)
+CMN_CSRCS += up_ramvec_initialize.c up_ramvec_attach.c
+endif
+
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+CMN_CSRCS += up_mpu.c up_task_start.c up_pthread_start.c
+CMN_CSRCS += up_signal_dispatch.c
+CMN_UASRCS += up_signal_handler.S
+endif
+
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += up_checkstack.c
+endif
+
+# Required STM32L4 files
+
+CHIP_ASRCS  =
+CHIP_CSRCS  = stm32l4_allocateheap.c stm32l4_exti_gpio.c stm32l4_gpio.c
+CHIP_CSRCS += stm32l4_irq.c stm32l4_lowputc.c
+CHIP_CSRCS += stm32l4_rcc.c
+CHIP_CSRCS += stm32l4_serial.c stm32l4_start.c stm32l4_waste.c stm32l4_uid.c
+CHIP_CSRCS += stm32l4_spi.c stm32l4_ospi.c stm32l4_i2c.c stm32l4_lse.c stm32l4_lsi.c
+CHIP_CSRCS += stm32l4_pwr.c stm32l4_tim.c stm32l4_flash.c
+CHIP_CSRCS += stm32l4_timerisr.c
+CHIP_CSRCS += stm32l4_fsmc.c stm32l4_fmc.c stm32l4_dma2d.c
+
+CHIP_CSRCS += stm32l4xx_hal.c stm32l4xx_hal_cortex.c system_stm32l4xx.c stm32l4xx_hal_msp.c
+CHIP_CSRCS += stm32l4xx_hal_exti.c stm32l4xx_hal_gpio.c
+CHIP_CSRCS += stm32l4xx_hal_rcc.c stm32l4xx_hal_rcc_ex.c
+CHIP_CSRCS += stm32l4xx_hal_dma.c stm32l4xx_hal_dma_ex.c
+CHIP_CSRCS += stm32l4xx_hal_spi.c stm32l4xx_hal_spi_ex.c stm32l4xx_hal_i2c.c stm32l4xx_hal_i2c_ex.c stm32l4xx_hal_ospi.c
+CHIP_CSRCS += stm32l4xx_hal_pwr.c stm32l4xx_hal_pwr_ex.c 
+CHIP_CSRCS += stm32l4xx_hal_flash.c stm32l4xx_hal_flash_ex.c 
+CHIP_CSRCS += stm32l4xx_hal_uart.c stm32l4xx_hal_uart_ex.c
+CHIP_CSRCS += stm32l4xx_hal_usart.c stm32l4xx_hal_usart_ex.c
+CHIP_CSRCS += stm32l4xx_ll_dma.c stm32l4xx_ll_exti.c
+CHIP_CSRCS += stm32l4xx_ll_gpio.c stm32l4xx_ll_pwr.c stm32l4xx_ll_rcc.c stm32l4xx_ll_utils.c
+CHIP_CSRCS += stm32l4xx_ll_usart.c stm32l4xx_ll_fmc.c
+CHIP_CSRCS += stm32l4xx_hal_interface.c stm32l4xx_hal_sram.c
+CHIP_CSRCS += stm32l4xx_hal_tim.c stm32l4xx_hal_tim_ex.c
+
+ifeq ($(CONFIG_STM32L4_ADC),y)
+CHIP_CSRCS += stm32l4xx_hal_adc.c stm32l4xx_hal_adc_ex.c
+endif
+
+ifeq ($(CONFIG_STM32L4_DAC),y)
+CHIP_CSRCS += stm32l4xx_hal_dac.c stm32l4xx_hal_dac_ex.c
+endif
+
+ifeq ($(CONFIG_STM32L4_DFSDM),y)
+CHIP_CSRCS += stm32l4xx_hal_dfsdm.c
+endif
+
+ifeq ($(CONFIG_STM32L4_DMA),y)
+CHIP_CSRCS += stm32l4xx_hal_dma.c stm32l4xx_hal_dma_ex.c
+endif
+
+ifeq ($(CONFIG_STM32L4_LTDC),y)
+CHIP_CSRCS += stm32l4xx_hal_ltdc.c stm32l4xx_hal_ltdc_ex.c
+CHIP_CSRCS += stm32l4_ltdc.c
+endif
+
+ifeq ($(CONFIG_STM32L4_DSI),y)
+CHIP_CSRCS += stm32l4xx_hal_dsi.c
+CHIP_CSRCS += stm32l4_dsi.c
+endif
+
+ifeq ($(CONFIG_STM32L4_DMA2D),y)
+CHIP_CSRCS += stm32l4xx_hal_dma2d.c
+CHIP_CSRCS += stm32l4_dma2d.c
+endif
+
+ifeq ($(CONFIG_USBDEV),y)
+CHIP_CSRCS += stm32l4xx_hal_pcd.c stm32l4xx_ll_usb.c
+endif
+
+ifeq ($(CONFIG_STM32L4_RTC),y)
+CHIP_CSRCS += stm32l4xx_hal_rtc.c stm32l4xx_hal_rtc_ex.c
+endif
+
+ifeq ($(CONFIG_STM32L4_COMP),y)
+CHIP_CSRCS += stm32l4xx_hal_comp.c
+endif
+
+ifeq ($(CONFIG_STM32L4_RNG),y)
+CHIP_CSRCS += stm32l4xx_hal_rng.c
+endif
+
+ifeq ($(CONFIG_STM32L4_SAI),y)
+CHIP_CSRCS += stm32l4xx_hal_sai.c stm32l4xx_hal_sai_ex.c
+endif
+
+ifeq ($(CONFIG_STM32L4_LPTIM),y)
+CHIP_CSRCS += stm32l4xx_hal_lptim.c
+endif
+
+ifeq ($(CONFIG_STM32L4_OSPI),y)
+CHIP_CSRCS += stm32l4xx_hal_ospi.c
+endif
+
+ifeq ($(CONFIG_STM32L4_IWDG),y)
+#CHIP_CSRCS += stm32l4xx_hal_iwdg.c
+endif
+
+ifneq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
+CHIP_CSRCS += stm32l4_idle.c
+endif
+
+ifeq ($(CONFIG_TIMER),y)
+CHIP_CSRCS += stm32l4_tim_lowerhalf.c
+endif
+
+ifneq ($(CONFIG_SCHED_TICKLESS),y)
+CHIP_CSRCS += stm32l4_timerisr.c
+else
+CHIP_CSRCS += stm32l4_tickless.c
+endif
+
+ifeq ($(CONFIG_STM32L4_ONESHOT),y)
+CHIP_CSRCS += stm32l4_oneshot.c stm32l4_oneshot_lowerhalf.c
+endif
+
+ifeq ($(CONFIG_STM32L4_FREERUN),y)
+CHIP_CSRCS += stm32l4_freerun.c
+endif
+
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+CHIP_CSRCS += stm32l4_userspace.c stm32l4_mpuinit.c
+endif
+
+ifeq ($(CONFIG_STM32L4_HAVE_HSI48),y)
+CHIP_CSRCS += stm32l4_hsi48.c
+endif
+
+CFLAGS += -I$(ARCH_SRCDIR)/chip/hal
+VPATH += chip/hal
+
+# ST Defines
+CFLAGS += \
+-DSTM32L4R9xx \
+-DUSE_HAL_DRIVER \
+-DSTM32L4R9xx \
+-DUSE_FULL_LL_DRIVER \
+-DHSE_VALUE=16000000 \
+-DHSE_STARTUP_TIMEOUT=100 \
+-DLSE_STARTUP_TIMEOUT=5000 \
+-DLSE_VALUE=32768 \
+-DMSI_VALUE=4000000 \
+-DEXTERNALSAI1_CLOCK_VALUE=2097000 \
+-DEXTERNALSAI2_CLOCK_VALUE=2097000 \
+-DHSI_VALUE=16000000 \
+-DLSI_VALUE=32000 \
+-DVDD_VALUE=3300 \
+-DPREFETCH_ENABLE=0 \
+-DINSTRUCTION_CACHE_ENABLE=1 \
+-DDATA_CACHE_ENABLE=1
+
+CFLAGS += -DUSE_HAL_UART_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_USART_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_SPI_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_LTDC_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_I2C_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_DSI_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_ADC_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_DFSDM_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_PCD_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_RTC_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_DMA2D_REGISTER_CALLBACKS=0
+CFLAGS += -DUSE_HAL_TIM_REGISTER_CALLBACKS=0

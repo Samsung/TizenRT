@@ -67,7 +67,7 @@
  *    architecture-specific implementation in arch/
  *
  *    NOTE: up_ is supposed to stand for microprocessor; the u is like the
- *    Greek letter micron: ? So it would be µP which is a common shortening
+ *    Greek letter micron: ? So it would be ï¿½P which is a common shortening
  *    of the word microprocessor.
  *
  * 2. Microprocessor-Specific Interfaces.
