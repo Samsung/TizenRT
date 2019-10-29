@@ -97,8 +97,7 @@ CHIP_CSRCS += stm32l4_rcc.c
 CHIP_CSRCS += stm32l4_serial.c stm32l4_start.c stm32l4_waste.c stm32l4_uid.c
 CHIP_CSRCS += stm32l4_spi.c stm32l4_ospi.c stm32l4_i2c.c stm32l4_lse.c stm32l4_lsi.c
 CHIP_CSRCS += stm32l4_pwr.c stm32l4_tim.c stm32l4_flash.c
-CHIP_CSRCS += stm32l4_timerisr.c
-CHIP_CSRCS += stm32l4_fsmc.c stm32l4_fmc.c stm32l4_dma2d.c
+CHIP_CSRCS += stm32l4_fsmc.c stm32l4_fmc.c
 
 CHIP_CSRCS += stm32l4xx_hal.c stm32l4xx_hal_cortex.c system_stm32l4xx.c stm32l4xx_hal_msp.c
 CHIP_CSRCS += stm32l4xx_hal_exti.c stm32l4xx_hal_gpio.c
