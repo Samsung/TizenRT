@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <queue.h>
 #include <assert.h>
@@ -120,7 +121,7 @@
  *
  ****************************************************************************/
 
-int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
+int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, clock_t delay)
 {
 #if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
 	int result;

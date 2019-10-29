@@ -237,7 +237,7 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work);
  *
  ****************************************************************************/
 
-int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay);
+int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, clock_t delay);
 
 /****************************************************************************
  * Name: work_process
