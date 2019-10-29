@@ -55,6 +55,7 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <queue.h>
 #include <assert.h>
@@ -115,7 +116,7 @@
  *
  ****************************************************************************/
 
-int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay)
+int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, clock_t delay)
 {
 	DEBUGASSERT(work != NULL);
 

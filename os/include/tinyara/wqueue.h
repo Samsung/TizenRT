@@ -387,7 +387,7 @@ int work_lpstart(void);
  *
  ****************************************************************************/
 
-int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, uint32_t delay);
+int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, clock_t delay);
 
 /****************************************************************************
  * Name: work_cancel
