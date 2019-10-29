@@ -13,9 +13,9 @@
 
 #include <arch/board/board.h>
 #include <arch/board/stm32l4r9i_discovery_io.h>
-#include <arch/board/stm32l4r9ai-disco.h>
 
 #include "up_arch.h"
+#include "stm32l4_fmc.h"
 
 extern uint32_t bsp_lcd_initialized;
 extern uint32_t bsp_psram_initialized;

@@ -46,7 +46,7 @@
 #include <arch/board/board.h>
 #include <tinyara/pm/pm.h>
 
-#include <arch/board/stm32l4r9ai-disco.h>
+#include "stm32l4r9ai-disco.h"
 
 #ifdef CONFIG_ARCH_BUTTONS
 

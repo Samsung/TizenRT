@@ -40,6 +40,7 @@
 
 #include <tinyara/config.h>
 
+#include <stdio.h>
 #include <debug.h>
 
 #include <tinyara/arch.h>
@@ -48,9 +49,10 @@
 #include <tinyara/spi/ospi.h>
 
 #include <arch/board/board.h>
-#include <arch/board/stm32l4r9ai-disco.h>
+#include <arch/board/stm32l4r9i_discovery.h>
 
 #include "up_arch.h"
+#include "stm32l4r9ai-disco.h"
 
 /************************************************************************************
  * Name: stm32l4_board_initialize

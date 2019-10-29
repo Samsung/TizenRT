@@ -39,6 +39,7 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <stdio.h>
 #include <errno.h>
 
 #include <tinyara/arch.h>
@@ -47,7 +48,6 @@
 #include <tinyara/lcd/ieg1120.h>
 #include <tinyara/lcd/lcd.h>
 
-#include <arch/board/stm32l4r9ai-disco.h>
 #include <arch/board/stm32l4r9i_discovery_io.h>
 
 /****************************************************************************
@@ -59,7 +59,7 @@ struct stm32l4r9i_lcd_s
 };
 
 extern DSI_HandleTypeDef  hdsi;
-static uint32_t bsp_lcd_hse_to_disable = 0;
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/

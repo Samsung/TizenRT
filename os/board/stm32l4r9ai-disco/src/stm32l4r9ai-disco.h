@@ -134,11 +134,7 @@
  * - When the I/O is HIGH value, the LED is on.
  * - When the I/O is LOW, the LED is off.
  */
-#if 1
-#define GPIO_LED_GRN \
-  (GPIO_PORTH | GPIO_PIN4 | GPIO_OUTPUT_CLEAR | GPIO_OUTPUT | GPIO_PUSHPULL | \
-   GPIO_PULLUP | GPIO_SPEED_50MHz)
-#else
+
 #define GPIO_LED_RED \
   (GPIO_PORTB | GPIO_PIN0 | GPIO_OUTPUT_CLEAR | GPIO_OUTPUT | GPIO_PUSHPULL | \
    GPIO_PULLUP | GPIO_SPEED_50MHz)
@@ -146,7 +142,7 @@
 #define GPIO_LED_GRN \
   (GPIO_PORTH | GPIO_PIN4 | GPIO_OUTPUT_CLEAR | GPIO_OUTPUT | GPIO_PUSHPULL | \
    GPIO_PULLUP | GPIO_SPEED_50MHz)
-#endif
+
 /* Buttons
  *
  *  There is a 4 way d-pad 'joystick' with center button
@@ -274,5 +270,11 @@ void stm32l4_usbinitialize(void);
  *   Called to setup LTDC and DSI.
  *
  ************************************************************************************/
-void stm32l4_lcdinitialize(void);
+uint8_t stm32l4_lcdinitialize(void);
+
+/* To use functions of stm32l4r9i_lcd.c */
+
+void LCD_PowerOn(void);
+uint8_t STM32L4_LCD_IsFBAvailable(void);
+
 #endif /* __CONFIGS_STM32L4R9AI_DISCO_SRC_STM32L4R9AI_DISCO_H */
