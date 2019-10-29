@@ -774,6 +774,9 @@ status_t imxrt_flexspi_nor_flash_erase_sector(FLEXSPI_Type *base, uint32_t addre
 	}
 
 	status = imxrt_flexspi_nor_wait_bus_busy(base);
+
+	arch_invalidate_dcache(address + IMXRT_FLASH_BASE, address + IMXRT_FLASH_BASE + IMXRT_SECTOR_SIZE);
+
 	irqrestore(flags);
 
 	return status;
