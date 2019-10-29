@@ -2394,7 +2394,7 @@ static void verify_erased_block(FAR struct smart_struct_s *dev, uint16_t block)
 		}
 	}
 
-	fvdbg("\t\t\tCLEAR freecount[%d] = %d\n", block, dev->freecount[block]);
+	fdbg("\t\t\tCLEAR freecount[%d] = %d\n", block, dev->freecount[block]);
 }
 
 /****************************************************************************
