@@ -146,7 +146,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 
 		if (next_work == NULL) {
 			elapsed = ctick - cur_work->qtime;
-			if (cur_work->delay - elapsed > delay) {
+			if (cur_work->delay > elapsed && cur_work->delay - elapsed > delay) {
 				next_work = cur_work;
 			}
 		}
