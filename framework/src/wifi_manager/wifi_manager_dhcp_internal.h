@@ -37,7 +37,7 @@ typedef enum {
 	DHCP_ERR = -1,
 	DHCP_OK,
 	DHCP_EXIST,
-} _dhcp_status_e;
+} dhcp_status_e;
 
 #define WIFIMGR_IP4_ZERO 0
 #define WIFIMGR_MAC_ZERO {0, 0, 0, 0, 0, 0}
@@ -47,29 +47,28 @@ typedef void (*dhcp_sta_joined)(dhcp_evt_type_e type, void *data);
 /**
  * Internal APIs
  */
-void _dhcps_inc_num(void);
-void _dhcps_dec_num(void);
-void _dhcps_reset_num(void);
-uint8_t _dhcps_get_num(void);
+void dhcps_inc_num(void);
+void dhcps_dec_num(void);
+void dhcps_reset_num(void);
+uint8_t dhcps_get_num(void);
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-wifi_manager_result_e _dhcps_start(dhcp_sta_joined cb);
-wifi_manager_result_e _dhcps_stop(void);
-
+wifi_manager_result_e dhcps_start(dhcp_sta_joined cb);
+wifi_manager_result_e dhcps_stop(void);
 /* TODO: Currently, wifi manager stores only a single mac address of the associated node
  * while it is running as a softap mode. This might be modified later,
  * when a chipset needs to support multiple connections simultaneously.
  */
-_dhcp_status_e _dhcps_add_node(void *node);
-void _dhcps_del_node(void);
+dhcp_status_e dhcps_add_node(void *node);
+void dhcps_del_node(void);
 static void _dhcps_remove_list(void);
 #endif
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
-wifi_manager_result_e _dhcpc_get_ipaddr(void);
+wifi_manager_result_e dhcpc_get_ipaddr(void);
 #endif
 
-void _dhcpc_close_ipaddr(void);
+void dhcpc_close_ipaddr(void);
 
-wifi_manager_result_e _dhcpc_fetch_ipaddr(struct in_addr *ip);
+wifi_manager_result_e dhcpc_fetch_ipaddr(struct in_addr *ip);
 

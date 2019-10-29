@@ -55,27 +55,33 @@ static uint8_t num_sta = 0;
 /**
  * Internal DHCP server APIs
  */
-void _dhcps_inc_num(void) {
+void dhcps_inc_num(void)
+{
 	num_sta++;
 }
 
-void _dhcps_dec_num(void) {
+void dhcps_dec_num(void)
+{
 	if (num_sta > 0) {
 		num_sta--;
 	}
 }
 
-void _dhcps_reset_num(void) {
+void dhcps_reset_num(void)
+{
 	num_sta = 0;
 }
 
-uint8_t _dhcps_get_num(void) {
+uint8_t dhcps_get_num(void)
+{
 	return num_sta;
 }
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-wifi_manager_result_e _dhcps_start(dhcp_sta_joined cb)
+wifi_manager_result_e dhcps_start(dhcp_sta_joined cb)
 {
+	//Default IP addr for SoftAP; 192.168.47.1.
+	//Please refer to LWIP_DHCPS_SERVER_IP defined in external/dhcpd/Kconfig
 	struct in_addr ip = {.s_addr = 0x012fa8c0 };
 	struct in_addr netmask = {.s_addr = 0x00ffffff};
 	struct in_addr gw = {.s_addr = 0x012fa8c0};
@@ -92,7 +98,7 @@ wifi_manager_result_e _dhcps_start(dhcp_sta_joined cb)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-wifi_manager_result_e _dhcps_stop(void)
+wifi_manager_result_e dhcps_stop(void)
 {
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
@@ -104,7 +110,7 @@ wifi_manager_result_e _dhcps_stop(void)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-_dhcp_status_e _dhcps_add_node(void *msg)
+dhcp_status_e dhcps_add_node(void *msg)
 {
 	dhcp_node_s *node = (dhcp_node_s *)msg;
 	if (node != NULL) {
@@ -131,7 +137,7 @@ _dhcp_status_e _dhcps_add_node(void *msg)
 	return DHCP_OK;
 }
 
-void _dhcps_del_node(void)
+void dhcps_del_node(void)
 {
 	//TODO: Currently only one client can be joined and left
 	g_dhcp_list.ipaddr = 0;
@@ -155,7 +161,7 @@ static void _dhcps_remove_list(void)
  * Internal DHCP client APIs
  */
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
-wifi_manager_result_e _dhcpc_get_ipaddr(void)
+wifi_manager_result_e dhcpc_get_ipaddr(void)
 {
 	int ret;
 	struct in_addr ip;
@@ -181,7 +187,7 @@ wifi_manager_result_e _dhcpc_get_ipaddr(void)
 #endif //CONFIG_WIFIMGR_DISABLE_DHCPC
 
 //Set IP to zero, regardless of DHCPC status
-void _dhcpc_close_ipaddr(void)
+void dhcpc_close_ipaddr(void)
 {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
 	dhcp_client_stop(WIFIMGR_STA_IFNAME);
@@ -193,7 +199,8 @@ void _dhcpc_close_ipaddr(void)
 	return;
 }
 
-wifi_manager_result_e _dhcpc_fetch_ipaddr(struct in_addr *ip) {
+wifi_manager_result_e dhcpc_fetch_ipaddr(struct in_addr *ip)
+{
 	if (netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, ip) != OK) {
 		ndbg("[DHCPC] get IP address fail\n");
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);

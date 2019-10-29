@@ -612,7 +612,7 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 		break;
 	case WIFIMGR_SOFTAP:
 		*mode = SOFTAP_MODE;
-		if (_dhcps_get_num() > 0) {
+		if (dhcps_get_num() > 0) {
 			*conn = CLIENT_CONNECTED;
 		} else {
 			*conn = CLIENT_DISCONNECTED;
@@ -733,11 +733,11 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_softap(&softap_config), "[WM] Starting softap mode failed.", WIFI_MANAGER_FAIL);
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	WIFIMGR_CHECK_RESULT(_dhcps_start((dhcp_sta_joined)_wifi_dhcps_event), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_RESULT(dhcps_start((dhcp_sta_joined)_wifi_dhcps_event), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
 #endif
 	/* update wifi_manager_info */
 	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
-	_dhcps_reset_num();
+	dhcps_reset_num();
 
 	/* For tracking softap stats, the LAST value is used */
 	WIFIMGR_STATS_INC(CB_SOFTAP_DONE);
@@ -750,7 +750,7 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 	WM_LOG_START;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_stop_softap(), "[WM] Stoping softap failed", WIFI_MANAGER_FAIL);
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	WIFIMGR_CHECK_RESULT(_dhcps_stop(), "[WM] Stoping softap DHCP server failed.", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_RESULT(dhcps_stop(), "[WM] Stoping softap DHCP server failed.", WIFI_MANAGER_FAIL);
 #endif
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -917,7 +917,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg)
 		} else {
 			WIFIMGR_RESET_CBK_CHK;
 		}
-		_dhcpc_close_ipaddr();
+		dhcpc_close_ipaddr();
 		switch (g_manager_info.disconn_substate) {
 		case WIFIMGR_DISCONN_DEINIT:
 		case WIFIMGR_DISCONN_SOFTAP:
@@ -942,7 +942,7 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 	if (msg->event == EVT_STA_CONNECTED) {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
 		wifi_manager_result_e wret;
-		wret = _dhcpc_get_ipaddr();
+		wret = dhcpc_get_ipaddr();
 		if (wret != WIFI_MANAGER_SUCCESS) {
 			_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
 			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "[WM] critical error: DHCP failure\n", WIFI_MANAGER_FAIL);
@@ -975,7 +975,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 #if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
 			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
-			_dhcpc_close_ipaddr();
+			dhcpc_close_ipaddr();
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
 			_handle_user_cb(CB_STA_RECONNECTED, NULL);
@@ -1048,8 +1048,8 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
 #if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
+	nvdbg("[WM] INTERNAL AUTOCONNECT event status : %d\n", msg->event);
 	if (msg->event == EVT_DISCONNECT) {
-		nvdbg("[WM] disconnect\n");
 		pthread_mutex_lock(&g_reconn_mutex);
 		g_manager_info.terminate = true;
 		pthread_mutex_unlock(&g_reconn_mutex);
@@ -1069,7 +1069,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		}
 		close(sd);
 		pthread_join(g_manager_info.reconn_id, NULL);
-		_dhcpc_close_ipaddr();
+		dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_RECONNECT) {
 		wifi_manager_ap_config_s *apinfo = (wifi_manager_ap_config_s *)msg->param;
@@ -1088,7 +1088,6 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		}
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECTING);
 	} else if (msg->event == EVT_DEINIT) {
-		nvdbg("[WM] deinit\n");
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	} else {
@@ -1096,18 +1095,16 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		return WIFI_MANAGER_FAIL;
 	}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
+	nvdbg("[WM] EXTERNAL AUTOCONNECT event status : %d\n", msg->event);
 	if (msg->event == EVT_DISCONNECT) {
-		nvdbg("[WM] AUTOCONNECT fail: go to DISCONNECTED\n");
-		_dhcpc_close_ipaddr();
+		dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
-		nvdbg("[WM] AUTOCONNECT wait\n");
+		//nothing to do but to wait
 	} else if (msg->event == EVT_STA_CONNECTED) {
-		nvdbg("[WM] AUTOCONNECT done: go to CONNECTED\n");
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	} else if (msg->event == EVT_DEINIT) {
-		nvdbg("[WM] AUTOCONNECT fail: go to DEINIT\n");
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	} else {
@@ -1157,7 +1154,7 @@ wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
-		_dhcpc_close_ipaddr();
+		dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
@@ -1181,18 +1178,17 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 #else
 	/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
 	} else if (msg->event == EVT_DHCPS_ASSIGN_IP) {
-		_dhcp_status_e is_exist = _dhcps_add_node((dhcp_node_s *)msg->param);
-		if (is_exist == DHCP_EXIST) {
+		if (dhcps_add_node((dhcp_node_s *)msg->param) == DHCP_EXIST) {
 			return WIFI_MANAGER_SUCCESS;
 		}
 #endif
-		_dhcps_inc_num();
+		dhcps_inc_num();
 		_handle_user_cb(CB_STA_JOINED, NULL);
 	} else if (msg->event == EVT_LEFT) {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-		_dhcps_del_node();
+		dhcps_del_node();
 #endif
-		_dhcps_dec_num();
+		dhcps_dec_num();
 		_handle_user_cb(CB_STA_LEFT, NULL);
 	} else if (msg->event == EVT_DEINIT) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), "critical error\n", WIFI_MANAGER_FAIL);
@@ -1405,7 +1401,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	}
 	LOCK_WIFIMGR;
 	struct in_addr ip_ref;
-	wret = _dhcpc_fetch_ipaddr(&ip_ref);
+	wret = dhcpc_fetch_ipaddr(&ip_ref);
 	if (wret != WIFI_MANAGER_SUCCESS) {
 		ndbg("[WM] T%d Failed to fetch ip4 address\n", getpid());
 		return WIFI_MANAGER_FAIL;
