@@ -53,7 +53,7 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
-include $(TOPDIR)/../external/nanopb/nanopb/extra/nanopb.mk
+-include $(TOPDIR)/../external/nanopb/nanopb/extra/nanopb.mk
 
 APPNAME = nanopb_simple
 FUNCNAME = $(APPNAME)_main
