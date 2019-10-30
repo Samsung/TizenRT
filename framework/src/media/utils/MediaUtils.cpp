@@ -74,6 +74,32 @@ namespace utils {
 #define PES_PACKET_LENGTH(buffer)               ((buffer[4] << 8) | buffer[5])
 #define PES_HEADER_DATA_LENGTH(buffer)          (buffer[PES_PACKET_HEAD_BYTES + 2])
 
+// Refer to http://id3.org/d3v2.3.0 for more detailed information about ID3v2 tag.
+// MP3 ID3v2 tag header length
+#define MP3_ID3V2_HEADER_LENGTH 10
+// MP3 ID3v2 tag size (excluding above 10bytes header)
+#define MP3_ID3V2_TAG_SIZE(header) \
+				( ((header[6] & 0x7f) << 21) \
+				| ((header[7] & 0x7f) << 14) \
+				| ((header[8] & 0x7f) << 7) \
+				| ((header[9] & 0x7f)) )
+
+// Frame size = frame samples * (1 / sample rate) * bitrate / 8 + padding
+//            = frame samples * bitrate / 8 / sample rate + padding
+// Number of frame samples is constant value as below table:
+//        MPEG1  MPEG2(LSF)  MPEG2.5(LSF)
+// Layer1  384     384         384
+// Layer2  1152    1152        1152
+// Layer3  1152    576         576
+#define MPEG_LAYER1_FRAME_SIZE(sr, br, pad)  (384 * ((br) * 1000) / 8 / (sr) + ((pad) * 4))
+#define MPEG_LAYER2_FRAME_SIZE(sr, br, pad)  (1152 * ((br) * 1000) / 8 / (sr) + (pad))
+#define MPEG1_LAYER2_LAYER3_FRAME_SIZE(sr, br, pad) MPEG_LAYER2_FRAME_SIZE(sr, br, pad)
+#define MPEG2_LAYER3_FRAME_SIZE(sr, br, pad) (576 * ((br) * 1000) / 8 / (sr) + (pad))
+
+// Match mp3/aac header twice at least
+#define MP3_SYNC_COUNT 2
+#define AAC_SYNC_COUNT 2
+
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
@@ -121,13 +147,16 @@ typedef struct {
 typedef struct {
 	uint16_t pid;           // PID of PES
 	uint16_t packetLen;     // total length bytes of the PES packet
-	uint16_t present;       // present bytes unpacked from TS packets
-	uint16_t esOffset;      // consumed ES data offset from PES packet head
-	uint8_t  continuity;    // continuity counter of last unpacked TS packet
+	uint16_t present;       // present bytes received of the PES packet
+	uint16_t headerLen;     // head data length before ES data of the PES packet
+	uint8_t continuity;     // continuity counter of last unpacked TS packet
+	uint8_t lenPayload;     // length in bytes of payload in last TS packet
+	uint8_t usedPayload;    // used bytes of payload in last TS packet
+	const uint8_t *ptrPayload; // pointer to payload in last TS packet
 } pes_packet_t;
 
 typedef struct {
-	uint8_t *buffer;        // user given mpeg2-ts data buffer
+	const uint8_t *buffer;  // user given mpeg2-ts data buffer
 	size_t buflen;          // length in bytes of data in the buffer
 	size_t offset;          // offset in bytes indicate how many data used in buffer
 	pes_packet_t pes;       // PES
@@ -147,6 +176,16 @@ static const std::string MPEG_MIME_TYPE = "audio/mpeg";
 static const std::string MP4_MIME_TYPE = "audio/mp4";
 static const std::string OPUS_MIME_TYPE = "audio/opus";
 static const std::string MP2T_MIME_TYPE = "video/MP2T";
+
+// Bit Rate (in kbps) tables
+// V1 - MPEG 1, V2 - MPEG 2 and MPEG 2.5
+// L3 - Layer 3
+static const int bitrateV1L3[] = {
+	32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320
+};
+static const int bitrateV2L3[] = {
+	8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160
+};
 
 /****************************************************************************
  * Private Functions
@@ -316,7 +355,7 @@ static void map_pmt_streams(ts_demux_t *demux)
 }
 
 // Initialize the TS demux
-static int ts_demux_init(ts_demux_t *demux, uint8_t *buffer, uint32_t size)
+static int ts_demux_init(ts_demux_t *demux, const uint8_t *buffer, uint32_t size)
 {
 	IF_FAIL_RETURN_VAL(demux != NULL, UTILS_ERROR_BAD_PARAMETER);
 	IF_FAIL_RETURN_VAL(buffer != NULL && size >= TS_SYNC_COUNT * TS_PACKET_SIZE, UTILS_ERROR_BAD_PARAMETER);
@@ -328,6 +367,7 @@ static int ts_demux_init(ts_demux_t *demux, uint8_t *buffer, uint32_t size)
 	demux->numOfStreams = 0;
 	demux->pes.pid = 0x1FFF;
 	demux->pes.continuity = 0xff;
+	demux->pes.ptrPayload = NULL;
 	return UTILS_ERROR_NONE;
 }
 
@@ -339,7 +379,7 @@ static int ts_psi_process(ts_demux_t *demux, uint16_t pid)
 		int ret = findTsPacket(demux->buffer + demux->offset, demux->buflen - demux->offset, false);
 		IF_FAIL_RETURN_VAL(ret >= UTILS_ERROR_NONE, ret);
 		demux->offset += ret;
-		uint8_t *tsPacket = demux->buffer + demux->offset;
+		const uint8_t *tsPacket = demux->buffer + demux->offset;
 		demux->offset += TS_PACKET_SIZE;
 		if (TS_PID(tsPacket) != pid) {
 			continue; // PID not match
@@ -368,21 +408,39 @@ static int ts_psi_process(ts_demux_t *demux, uint16_t pid)
 	}
 }
 
-// Process demuxing to abstract PES/ES data with the given PID.
+// Process demuxing to abstract ES data with the given PID.
 static int ts_pes_process(ts_demux_t *demux, uint16_t pid, uint8_t *buffer, size_t size)
 {
 	pes_packet_t *pes = &demux->pes;
-	IF_FAIL_RETURN_VAL((pes->pid != pid), UTILS_ERROR_NOT_SUPPORTED);
-	pes->pid = pid;
-	pes->continuity = 0xff;
-
-	size_t total = 0;
-	while (total < size) {
+	if (pes->pid != pid) {
+		// PES PID changed, reset PES context
+		pes->pid = pid;
+		pes->continuity = 0xff;
+		pes->ptrPayload = NULL;
+	}
+	size_t fill = 0;
+	while (fill < size) {
+		size_t need = size - fill;
+		if (pes->ptrPayload != NULL) {
+			// get remaining payload in last TS packet, it is ES data part of PES packet.
+			need = MINIMUM(need, (size_t)(pes->lenPayload - pes->usedPayload));
+			memcpy(&buffer[fill], pes->ptrPayload + pes->usedPayload, need);
+			pes->present += need;
+			pes->usedPayload += need;
+			if (pes->usedPayload == pes->lenPayload) {
+				pes->ptrPayload = NULL; // free payload
+			}
+			fill += need;
+			continue;
+		}
 		// locate ts packet
 		int ret = findTsPacket(demux->buffer + demux->offset, demux->buflen - demux->offset, false);
-		IF_FAIL_RETURN_VAL(ret >= UTILS_ERROR_NONE, ret);
+		if (ret < UTILS_ERROR_NONE) {
+			// always return the ES data we have got, unless critical error happened.
+			return (ret == UTILS_ERROR_WANT_MORE_DATA ? fill : ret);
+		}
 		demux->offset += ret;
-		uint8_t *tsPacket = demux->buffer + demux->offset;
+		const uint8_t *tsPacket = demux->buffer + demux->offset;
 		demux->offset += TS_PACKET_SIZE;
 		if (TS_PID(tsPacket) != pid) {
 			continue; // PID not match
@@ -402,30 +460,38 @@ static int ts_pes_process(ts_demux_t *demux, uint16_t pid, uint8_t *buffer, size
 			}
 			pes->present = 0;
 			pes->packetLen = PES_PACKET_HEAD_BYTES + PES_PACKET_LENGTH(ptrPayload);
-			pes->esOffset = PES_PACKET_HEAD_BYTES + PES_STREAM_HEAD_BYTES + PES_HEADER_DATA_LENGTH(ptrPayload);
+			pes->headerLen = PES_PACKET_HEAD_BYTES + PES_STREAM_HEAD_BYTES + PES_HEADER_DATA_LENGTH(ptrPayload);
 		} else if (pes->continuity == 0xff) {
 			// waiting for new start indicator
 			continue;
 		} else if (TS_CONTINUITY_COUNTER(tsPacket) != ((pes->continuity + 1) % TS_CONTINUITY_COUNTER_MOD)) {
 			// continuity is broken
 			pes->continuity = 0xff;
-			total = 0; // drop copied ES data
+			fill = 0; // drop copied ES data
 			continue;
 		}
-		// copy incoming ES data to output buffer
-		uint16_t header = (pes->present < pes->esOffset) ? pes->esOffset - pes->present : 0;
-		if (lenPayload > header) {
-			// ES data is available
-			uint16_t esLen = MINIMUM(pes->present + lenPayload, pes->packetLen) - pes->esOffset;
-			esLen = MINIMUM(size - total, esLen);
-			memcpy((void *)&buffer[total], (const void *)&ptrPayload[header], esLen);
-			total += esLen;
-			pes->esOffset += esLen;
-		} // else, no ES data in this ts packet
 		pes->continuity = TS_CONTINUITY_COUNTER(tsPacket);
-		pes->present += lenPayload;
+		// drop redundant data
+		if (lenPayload + pes->present > pes->packetLen) {
+			lenPayload = pes->packetLen - pes->present;
+		}
+		// drop PES header data before raw ES data
+		size_t header = 0;
+		if (pes->present < pes->headerLen) {
+			header = pes->headerLen - pes->present;
+			if (lenPayload < header) {
+				// drop all payload
+				pes->present += lenPayload;
+				continue;
+			}
+			pes->present += header;
+		}
+		// hold payload (ES data)
+		pes->ptrPayload = ptrPayload;
+		pes->lenPayload = lenPayload;
+		pes->usedPayload = header;
 	}
-	return total;
+	return fill;
 }
 
 /**
@@ -433,7 +499,7 @@ static int ts_pes_process(ts_demux_t *demux, uint16_t pid, uint8_t *buffer, size
  * @param[in] buffer, buffer size, and audio type, channel, sample rate, pcm format adderss to receive.
  * @return true - parsing success. false - parsing fail.
  */
-static bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+static bool ts_parsing(const unsigned char *buffer, unsigned int bufferSize, audio_type_t *audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	int ret;
 	ts_demux_t demux;
@@ -510,11 +576,17 @@ static bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_typ
 	}
 
 	// get ES data
-	uint8_t audioES[64];
-	size_t audioESLen = sizeof(audioES);
+	size_t audioESLen = CONFIG_DATASOURCE_PREPARSE_BUFFER_SIZE;
+	uint8_t *audioES = (uint8_t *)malloc(audioESLen);
+	if (!audioES) {
+		meddbg("Run out of memory, size %u\n", audioESLen);
+		return false;
+	}
+
 	ret = ts_pes_process(&demux, streamInfo.pid, audioES, audioESLen);
 	if (ret < UTILS_ERROR_NONE) {
 		meddbg("Get ES data failed, PID %u, err %d\n", streamInfo.pid, ret);
+		free(audioES);
 		return false;
 	}
 	audioESLen = (size_t)ret;
@@ -524,7 +596,59 @@ static bool ts_parsing(unsigned char *buffer, unsigned int bufferSize, audio_typ
 		// set default value as same as the one in DataSource::DataSource()
 		*pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
 	}
-	return buffer_header_parsing(audioES, (unsigned int)audioESLen, *audioType, channel, sampleRate, pcmFormat);
+	bool parseRet = buffer_header_parsing(audioES, (unsigned int)audioESLen, *audioType, channel, sampleRate, pcmFormat);
+	free(audioES);
+	return parseRet;
+}
+
+static bool isMpeg2Ts(const unsigned char *buffer, size_t size)
+{
+	if (!buffer) {
+		meddbg("Invalid param, buffer is null!\n");
+		return false;
+	}
+
+	int ret = findTsPacket(buffer, size, true);
+	if (ret < UTILS_ERROR_NONE) {
+		meddbg("Not found TS packets, err %d\n", ret);
+		return false;
+	}
+
+	return true;
+}
+
+static bool isMp3(const unsigned char *buffer, size_t size)
+{
+	// Check ID3v2 tag
+	if ((MP3_ID3V2_HEADER_LENGTH <= size) && (memcmp("ID3", buffer, 3) == 0)) {
+		size_t id3Size = MP3_ID3V2_TAG_SIZE(buffer);
+		if (size <= MP3_ID3V2_HEADER_LENGTH + id3Size) {
+			meddbg("Not enough to seek data frame, ID3v2 tag size: %u\n", id3Size);
+			return false;
+		}
+		// Skip ID3v2 tag
+		buffer += MP3_ID3V2_HEADER_LENGTH + id3Size;
+		size -= MP3_ID3V2_HEADER_LENGTH + id3Size;
+	}
+	// try to parse MP3 header
+	unsigned int channel;
+	unsigned int sampleRate;
+	return buffer_header_parsing(buffer, size, AUDIO_TYPE_MP3, &channel, &sampleRate, NULL);
+}
+
+static bool isAdts(const unsigned char *buffer, size_t size)
+{
+	unsigned int channel;
+	unsigned int sampleRate;
+	return buffer_header_parsing(buffer, size, AUDIO_TYPE_AAC, &channel, &sampleRate, NULL);
+}
+
+static bool isWave(const unsigned char *buffer, size_t size)
+{
+	unsigned int channel;
+	unsigned int sampleRate;
+	audio_format_type_t pcmFormat;
+	return buffer_header_parsing(buffer, size, AUDIO_TYPE_WAVE, &channel, &sampleRate, &pcmFormat);
 }
 
 /****************************************************************************
@@ -615,14 +739,17 @@ audio_type_t getAudioTypeFromMimeType(std::string &mimeType)
 	return audioType;
 }
 
-bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate)
+bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *frameLength)
 {
 /**
 *mp3_header is AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
 *A - Frame sync
 *B - MPEG Audio version
+*C - Audio Layer
 *...
+*E - bitrate index
 *F - Sampling rate frequency
+*G - padding
 *.
 *I - Channel Mode
 *...
@@ -645,14 +772,23 @@ bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned i
 		mpegVersion = 0;
 		break;
 	default:
-		medvdbg("Not Supported Format mpeg version : %u\n", mpegVersion);
+		medvdbg("Not Supported Format mpeg version : %u\n", bit);
+		return false;
+	}
+
+	bit = header[1];
+	bit >>= 1;
+	bit &= (unsigned char)0x03;
+	/* we need C information so Shift header[1] one time to the right, and & 0x03 */
+	if (bit != 1) {
+		medvdbg("Not Audio Layer III : %u (0-Undefined, 1-Layer III, 2-Layer II, 3-Layer I)\n", bit);
 		return false;
 	}
 
 	bit = header[2];
 	bit >>= 2;
 	bit &= 0x03;
-	/* we need F information so Shift header[1] two times to the right, and & 0x03 */
+	/* we need F information so Shift header[2] two times to the right, and & 0x03 */
 	switch (bit) {
 	case 0:
 		*sampleRate = AUDIO_SAMPLE_RATE_44100;
@@ -678,21 +814,66 @@ bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned i
 	} else {
 		*channel = 1;
 	}
+
+	/* we need E information so Shift header[2] four times to the right, and & 0x0f */
+	unsigned char bitrateIndex = (header[2] >> 4) & 0x0f;
+	if (bitrateIndex == 0 || bitrateIndex == 0x0f) {
+		medvdbg("Bitrate format is free or forbidden, %u\n", bitrateIndex);
+		return false;
+	}
+
+	if (frameLength) {
+		/* we need G information so Shift header[2] one time to the right, and & 0x01 */
+		unsigned char padding = (header[2] >> 1) & 0x01;
+		if (mpegVersion == 0) { // MPEG1
+			*frameLength = MPEG1_LAYER2_LAYER3_FRAME_SIZE(*sampleRate, bitrateV1L3[bitrateIndex - 1], padding);
+		} else {
+			*frameLength = MPEG2_LAYER3_FRAME_SIZE(*sampleRate, bitrateV2L3[bitrateIndex - 1], padding);
+		}
+		if (*frameLength <= MP3_HEADER_LENGTH) {
+			medvdbg("Abnormal frame length, %u\n", *frameLength);
+			return false;
+		}
+	}
 	return true;
 }
 
-bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate)
+bool aac_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *frameLength)
 {
 /**
-*aac_header is AAAAAAAA AAAABCCD EEFFFFGH HHIJKLMM MMMMMMMM MMMOOOOO OOOOOOPP
+*aac_header is AAAAAAAA AAAABCCD EEFFFFGH HHIJKLMM MMMMMMMM MMMOOOOO OOOOOOPP (QQQQQQQQ QQQQQQQQ)
+*Header consists of 7 or 9 bytes (without or with CRC).
 *A - syncword 0xFFF, all bits must be 1
-*....
+*B - MPEG Version: 0 for MPEG-4, 1 for MPEG-2
+*C - Layer: always '00'
+*...
+*E - Profile: 0 - Main profile, 1 - LC, 2 - SSR, 3 - reserved
 *F - Sampling rate frequency
-*..
+*...
 *H - Channel Mode
-*......
+*...
+*M - frame length, header length (ProtectionAbsent == 1 ? 7 : 9) + size(AACFrame)
+*...
 */
 	unsigned char bit;
+	bit = header[1];
+	bit >>= 1;
+	bit &= 0x03;
+	/* we need C information so Shift header[1] one time to the right, and & 0x03 */
+	if (bit != 0) {
+		meddbg("Layer should always be 0 : %u\n", bit);
+		return false;
+	}
+
+	bit = header[2];
+	bit >>= 6;
+	bit &= 0x03;
+	/* we need E information so Shift header[2] six times to the right, and & 0x03 */
+	if (bit == 3) {
+		meddbg("Profile value 3 is reserved\n");
+		return false;
+	}
+
 	bit = header[2];
 	bit >>= 2;
 	bit &= 0x0F;
@@ -741,6 +922,7 @@ bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned i
 		meddbg("Not Supported Format sample rate : %u\n", sampleRate);
 		return false;
 	}
+
 	bit = header[2];
 	bit <<= 2;
 	bit |= (header[3] >> 6);
@@ -756,10 +938,14 @@ bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned i
 	} else {
 		*channel = (unsigned int)bit;
 	}
+
+	if (frameLength) {
+		*frameLength = ((header[3] & 0x03) << 11) | (header[4] << 3) | (header[5] >> 5);
+	}
 	return true;
 }
 
-bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+bool wave_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 /**
 *wave header is
@@ -769,6 +955,13 @@ bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned 
 *.....       (4byte) / .... (4byte)
 */
 	unsigned short bitPerSample;
+
+	// check "RIFF" chunk
+	IF_FAIL_RETURN_VAL((memcmp(&header[0], "RIFF", 4) == 0), false);
+	IF_FAIL_RETURN_VAL((memcmp(&header[8], "WAVE", 4) == 0), false);
+	// check "fmt" sub-chunk
+	IF_FAIL_RETURN_VAL((memcmp(&header[12], "fmt ", 4) == 0), false);
+
 	*channel = header[23];
 	*channel <<= 8;
 	*channel |= header[22];
@@ -848,7 +1041,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 				return false;
 			}
 
-			if (!mp3_header_parsing(header, channel, sampleRate)) {
+			if (!mp3_header_parsing(header, channel, sampleRate, NULL)) {
 				meddbg("Header parsing failed\n");
 				free(header);
 				return false;
@@ -879,7 +1072,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 				return false;
 			}
 
-			if ((fread(header, sizeof(unsigned char), AAC_HEADER_LENGTH, fp) != AAC_HEADER_LENGTH) || !aac_header_parsing(header, channel, sampleRate)) {
+			if ((fread(header, sizeof(unsigned char), AAC_HEADER_LENGTH, fp) != AAC_HEADER_LENGTH) || !aac_header_parsing(header, channel, sampleRate, NULL)) {
 				free(header);
 				return false;
 			}
@@ -938,83 +1131,64 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 	return true;
 }
 
-bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
+bool buffer_header_parsing(const unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	unsigned int headPoint;
-	unsigned char *header = NULL;
-	bool isHeader;
+	unsigned int headPointBak;
+	unsigned int frameLength;
+	unsigned int counter = 0;
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
-		if (MP3_HEADER_LENGTH > bufferSize) {
-			medvdbg("no header\n");
-			return false;
-		}
-		isHeader = false;
-		headPoint = 0;
-		while (headPoint < bufferSize) {
-			/* 12 bits for MP3 Sync Word(the beginning of the frame) */
-			if ((buffer[headPoint]) == 0xFF && ((buffer[headPoint + 1] & 0xF0) == 0xF0)) {
-				isHeader = true;
-				break;
+		for (headPoint = 0; headPoint + MP3_HEADER_LENGTH <= bufferSize ; headPoint++) {
+			/* 11 bits for MP3 Sync Word(the beginning of the frame) */
+			if ((buffer[headPoint] == 0xFF) && ((buffer[headPoint + 1] & 0xE0) == 0xE0)) {
+				if (!mp3_header_parsing(buffer + headPoint, channel, sampleRate, &frameLength)) {
+					if (counter > 0) {
+						counter = 0;
+						headPoint = headPointBak;
+					}
+					continue;
+				}
+				// mp3 header found
+				if (++counter == MP3_SYNC_COUNT) {
+					return true;
+				}
+				// need to match more header
+				if (counter == 1) {
+					headPointBak = headPoint;
+				}
+				headPoint += frameLength - 1;
 			}
-			headPoint++;
 		}
-		if (isHeader && MP3_HEADER_LENGTH <= bufferSize - headPoint) {
-			header = (unsigned char *)malloc(sizeof(unsigned char) * (MP3_HEADER_LENGTH + 1));
-			if (header == NULL) {
-				medvdbg("malloc failed error\n");
-				return false;
-			}
-			memcpy(header, buffer + headPoint, MP3_HEADER_LENGTH);
-			if (!mp3_header_parsing(header, channel, sampleRate)) {
-				free(header);
-				return false;
-			}
-		} else {
-			medvdbg("no header\n");
-			return false;
-		}
-		break;
+		medvdbg("no header\n");
+		return false;
 	case AUDIO_TYPE_AAC:
-		if (AAC_HEADER_LENGTH > bufferSize) {
-			medvdbg("no header\n");
-			return false;
-		}
-		isHeader = false;
-		headPoint = 0;
-		while (headPoint < bufferSize) {
-			if (buffer[headPoint] == 0xFF) {
-				isHeader = true;
-				break;
+		for (headPoint = 0; headPoint + AAC_HEADER_LENGTH <= bufferSize; headPoint++) {
+			/* 12 bits for ADTS Sync Word(the beginning of the frame) */
+			if ((buffer[headPoint] == 0xFF) && ((buffer[headPoint + 1] & 0xF0) == 0xF0)) {
+				if (!aac_header_parsing(buffer + headPoint, channel, sampleRate, &frameLength)) {
+					if (counter > 0) {
+						counter = 0;
+						headPoint = headPointBak;
+					}
+					continue;
+				}
+				// adts header found
+				if (++counter == AAC_SYNC_COUNT) {
+					return true;
+				}
+				// need to match more header
+				if (counter == 1) {
+					headPointBak = headPoint;
+				}
+				headPoint += frameLength - 1;
 			}
-			headPoint++;
 		}
-		if (isHeader && AAC_HEADER_LENGTH <= bufferSize - headPoint) {
-			header = (unsigned char *)malloc(sizeof(unsigned char) * (AAC_HEADER_LENGTH + 1));
-			if (header == NULL) {
-				medvdbg("malloc failed error\n");
-				return false;
-			}
-			memcpy(header, buffer + headPoint, AAC_HEADER_LENGTH);
-			if (!aac_header_parsing(header, channel, sampleRate)) {
-				free(header);
-				return false;
-			}
-		} else {
-			medvdbg("no header\n");
-			return false;
-		}
-		break;
+		medvdbg("no header\n");
+		return false;
 	case AUDIO_TYPE_WAVE:
 		if (WAVE_HEADER_LENGTH <= bufferSize) {
-			header = (unsigned char *)malloc(sizeof(unsigned char) * (WAVE_HEADER_LENGTH + 1));
-			if (header == NULL) {
-				medvdbg("malloc failed error\n");
-				return false;
-			}
-			memcpy(header, buffer, WAVE_HEADER_LENGTH);
-			if (!wave_header_parsing(header, channel, sampleRate, pcmFormat)) {
-				free(header);
+			if (!wave_header_parsing(buffer, channel, sampleRate, pcmFormat)) {
 				return false;
 			}
 		} else {
@@ -1031,10 +1205,6 @@ bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio
 	default:
 		medvdbg("does not support header parsing\n");
 		return false;
-	}
-
-	if (header != NULL) {
-		free(header);
 	}
 	return true;
 }
@@ -1266,20 +1436,22 @@ float getSignalToNoiseRatio(const short *buffer, size_t size, int windows, int *
 	return energyRatio;
 }
 
-bool isMpeg2Ts(const unsigned char *buffer, size_t size)
+audio_type_t getAudioTypeFromStream(const unsigned char *buffer, size_t size)
 {
-	if (!buffer) {
-		meddbg("Invalid param, buffer is null!\n");
-		return false;
+	audio_type_t audioType;
+	if (isMpeg2Ts(buffer, size)) {
+		audioType = AUDIO_TYPE_MP2T;
+	} else if (isMp3(buffer, size)) {
+		audioType = AUDIO_TYPE_MP3;
+	} else if (isAdts(buffer, size)) {
+		audioType = AUDIO_TYPE_AAC;
+	} else if (isWave(buffer, size)) {
+		audioType = AUDIO_TYPE_WAVE;
+	} else {
+		audioType = AUDIO_TYPE_UNKNOWN;
 	}
-
-	int ret = findTsPacket(buffer, size, true);
-	if (ret < UTILS_ERROR_NONE) {
-		meddbg("Not found TS packets, err %d\n", ret);
-		return false;
-	}
-
-	return true;
+	medvdbg("audioType = %d\n", audioType);
+	return audioType;
 }
 
 } // namespace util

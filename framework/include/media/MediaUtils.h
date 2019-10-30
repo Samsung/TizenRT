@@ -95,7 +95,7 @@ bool file_header_parsing(FILE *fp, audio_type_t AudioType, unsigned int *channel
  * @return true - parsing success. false - parsing fail.
  * @endcond
  */
-bool buffer_header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
+bool buffer_header_parsing(const unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
 /**
  * @cond
  * @internal
@@ -135,21 +135,21 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
  * @internal
  * @brief Parsing the audio information from mp3 header buffer.
  * @details @b #include <media/MediaUtils.h>
- * @param[in] header buffer pointer and channel, sample rate address to receive.
+ * @param[in] header buffer pointer and channel, sample rate, frame length address to receive.
  * @return true - parsing success. false - parsing fail.
  * @endcond
  */
-bool mp3_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate);
+bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *frameLength);
 /**
  * @cond
  * @internal
  * @brief Parsing the audio information from aac header buffer.
  * @details @b #include <media/MediaUtils.h>
- * @param[in] header buffer pointer and channel, sample rate address to receive.
+ * @param[in] header buffer pointer and channel, sample rate, frame length address to receive.
  * @return true - parsing success. false - parsing fail.
  * @endcond
  */
-bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate);
+bool aac_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *frameLength);
 /**
  * @cond
  * @internal
@@ -159,18 +159,18 @@ bool aac_header_parsing(unsigned char *header, unsigned int *channel, unsigned i
  * @return true - parsing success. false - parsing fail.
  * @endcond
  */
-bool wave_header_parsing(unsigned char *header, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
+bool wave_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
 /**
  * @cond
  * @internal
- * @brief Check if the given data stream in buffer is MPEG2-TS format stream.
+ * @brief Gets the audio type from data stream.
  * @details @b #include <media/MediaUtils.h>
  * @param[in] buffer: Pointer to the data stream buffer.
  * @param[in] size: Size in bytes of data in the buffer.
- * @return true - MPEG2-TS format. false - not MPEG2-TS format.
+ * @return The audio type.
  * @endcond
  */
-bool isMpeg2Ts(const unsigned char *buffer, size_t size);
+audio_type_t getAudioTypeFromStream(const unsigned char *buffer, size_t size);
 } // namespace utils
 } // namespace media
 
