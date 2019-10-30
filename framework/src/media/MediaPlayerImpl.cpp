@@ -354,7 +354,7 @@ player_result_t MediaPlayerImpl::stopPlayback()
 	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("%s Fail : invalid state\n", __func__);
 		LOG_STATE_DEBUG(mCurState);
-		return PLAYER_ERROR_INVALID_STATE;		
+		return PLAYER_ERROR_INVALID_STATE;
 	}
 
 	mCurState = PLAYER_STATE_READY;
@@ -365,7 +365,7 @@ player_result_t MediaPlayerImpl::stopPlayback()
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
 		return PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 	}
-	
+
 	return PLAYER_OK;
 }
 
@@ -709,11 +709,8 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 
 	switch (event) {
 	case PLAYER_EVENT_SOURCE_PREPARED: {
-		if (!mInputHandler.open()) {
-			meddbg("MediaPlayer prepare fail : input handler open fail\n");
-			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_FILE_OPEN_FAILED);
-		}
-
+		// Input handler has been opened successfully by InputHandler::doStandBy().
+		// Now setup audio manager and notify player observer the result.
 		auto source = mInputHandler.getDataSource();
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 								 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {

@@ -235,5 +235,11 @@ void OutputHandler::unregisterCodec()
 	mEncoder = nullptr;
 }
 
+bool OutputHandler::probeDataSource()
+{
+	// do nothing
+	return true;
+}
+
 } // namespace stream
 } // namespace media

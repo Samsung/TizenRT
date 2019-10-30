@@ -47,6 +47,7 @@ public:
 	ssize_t writeToStreamBuffer(unsigned char *buf, size_t size);
 
 private:
+	bool probeDataSource() override;
 	bool registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate) override;
 	void unregisterCodec() override;
 	void resetWorker() override;
