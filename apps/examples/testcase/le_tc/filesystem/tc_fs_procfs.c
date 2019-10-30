@@ -282,6 +282,9 @@ static void tc_driver_mtd_procfs_ops(void)
 	ret = stat(MTD_PROCFS_PATH, &st);
 	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd));
 
+	ret = dup(fd);
+	TC_ASSERT_GEQ("dup", fd, 0);
+
 	ret = close(fd);
 	TC_ASSERT_EQ("close", ret, OK);
 
