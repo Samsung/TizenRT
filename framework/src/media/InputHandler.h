@@ -19,7 +19,8 @@
 #define __MEDIA_INPUTHANDLER_H
 
 #include <memory>
-
+#include <mutex>
+#include <condition_variable>
 #include <sys/types.h>
 
 #include <media/InputDataSource.h>
@@ -45,7 +46,8 @@ public:
 	InputHandler();
 	void setInputDataSource(std::shared_ptr<InputDataSource> source);
 	bool doStandBy();
-
+	bool open() override;
+	bool close() override;
 	ssize_t read(unsigned char *buf, size_t size);
 
 	void setBufferState(buffer_state_t state);
@@ -61,6 +63,7 @@ public:
 	ssize_t writeToStreamBuffer(unsigned char *buf, size_t size);
 
 private:
+	bool probeDataSource() override;
 	bool registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate) override;
 	void unregisterCodec() override;
 	size_t getDecodeFrames(unsigned char *buf, size_t *size);
@@ -72,7 +75,11 @@ private:
 	ssize_t getElementaryStream(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 	ssize_t getPCM(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 	size_t fetchData(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
+	ssize_t readFromSource(unsigned char *buf, size_t size);
 
+	std::mutex mMutex;
+	std::condition_variable mCondv;
+	std::shared_ptr<StreamBuffer> mPreloadBuffer;
 	std::shared_ptr<InputDataSource> mInputDataSource;
 	std::shared_ptr<Decoder> mDecoder;
 	std::shared_ptr<Demuxer> mDemuxer;

@@ -159,6 +159,14 @@ config BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD
 	int "Buffer DataSource stream buffer threshold"
 	default 1
 
+config HANDLER_STREAM_BUFFER_SIZE
+	int "Stream handler stream buffer size"
+	default 4096
+
+config HANDLER_STREAM_BUFFER_THRESHOLD
+	int "Stream handler stream buffer threshold"
+	default 2048
+
 endif #MEDIA
 
 config AUDIO_CODEC

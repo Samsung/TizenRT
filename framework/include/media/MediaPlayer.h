@@ -106,6 +106,7 @@ public:
 	 * @brief Allocate and prepare resources related to the player, it should be called before start
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is a synchronous API
+	 * If it takes a lot of time until it's ready, please use `prepareAsync` instead
 	 * @return The result of the prepare operation
 	 * @since TizenRT v2.0
 	 */
@@ -115,7 +116,7 @@ public:
 	 * @brief Prepare resources related to the player asynchronously,
 	 * start() should be called when onAsyncPrepared callback invoked.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is an asynchronous api
+	 * This function is an asynchronous API
 	 * Order to MediaPlayerWorker prepare resources through the queue
 	 * @return The result of the prepare operation
 	 * @since TizenRT v2.0

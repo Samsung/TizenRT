@@ -60,6 +60,7 @@ protected:
 	void wakenWorker();
 	virtual void sleepWorker();
 
+	virtual bool probeDataSource() = 0;
 	virtual bool registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate) = 0;
 	virtual void unregisterCodec() = 0;
 	virtual const char *getWorkerName() const = 0;

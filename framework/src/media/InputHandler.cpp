@@ -20,6 +20,7 @@
 
 #include <debug.h>
 #include <pthread.h>
+#include <media/MediaUtils.h>
 
 #include "InputHandler.h"
 #include "MediaPlayerImpl.h"
@@ -58,7 +59,7 @@ bool InputHandler::doStandBy()
 	std::thread wk = std::thread([=]() {
 		medvdbg("InputHandler::doStandBy thread enter\n");
 		player_event_t event;
-		if (mInputDataSource->open()) {
+		if (open()) {
 			event = PLAYER_EVENT_SOURCE_PREPARED;
 		} else {
 			event = PLAYER_EVENT_SOURCE_OPEN_FAILED;
@@ -71,11 +72,37 @@ bool InputHandler::doStandBy()
 	return true;
 }
 
+bool InputHandler::open()
+{
+	// Open stream handler and start buffering
+	if (!StreamHandler::open()) {
+		meddbg("StreamHandler::open failed!\n");
+		return false;
+	}
+
+	// Wait buffering done
+	std::unique_lock<std::mutex> lock(mMutex);
+	if (mState < BUFFER_STATE_BUFFERED) {
+		medvdbg("PCM buffering...\n");
+		mCondv.wait(lock);
+		medvdbg("PCM buffering done!\n");
+	}
+
+	return true;
+}
+
+bool InputHandler::close()
+{
+	bool ret = StreamHandler::close();
+	// Terminate buffering
+	std::unique_lock<std::mutex> lock(mMutex);
+	mCondv.notify_one();
+	return ret;
+}
+
 ssize_t InputHandler::read(unsigned char *buf, size_t size)
 {
 	size_t rlen = 0;
-
-	start(); // Auto start
 
 	if (mBufferReader) {
 		rlen = mBufferReader->read(buf, size);
@@ -100,7 +127,7 @@ bool InputHandler::processWorker()
 			return false;
 		}
 
-		ssize_t readLen = mInputDataSource->read(buf, size);
+		ssize_t readLen = readFromSource(buf, size);
 		if (readLen <= 0) {
 			// Error occurred, or inputting finished
 			mBufferWriter->setEndOfStream();
@@ -135,6 +162,11 @@ void InputHandler::setBufferState(buffer_state_t state)
 {
 	if (mState != state) {
 		mState = state;
+		if (state >= BUFFER_STATE_BUFFERED) {
+			// Notify buffering done
+			std::unique_lock<std::mutex> lock(mMutex);
+			mCondv.notify_one();
+		}
 		auto mp = getPlayer();
 		if (mp) {
 			mp->notifyObserver(PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED, (int)state);
@@ -246,6 +278,11 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 
 bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
 {
+	if (mDecoder) {
+		medvdbg("Decoder has been registered already!\n");
+		return true;
+	}
+
 	/* Media f/w playback supports only mono and stereo.
 	 * In case of multiple channel audio, we ask decoder always outputting stereo PCM data.
 	 */
@@ -288,7 +325,7 @@ bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, 
 				meddbg("Run out of memory! bytes: 0x%x\n", size);
 				return false;
 			}
-			ssize_t readLen = mInputDataSource->read(buf, size);
+			ssize_t readLen = readFromSource(buf, size);
 			if (readLen <= 0) {
 				meddbg("Read source failed! error: %d\n", readLen);
 				delete[] buf;
@@ -426,6 +463,103 @@ size_t InputHandler::fetchData(unsigned char *buf, size_t size, size_t *used, un
 		*expect = 0;
 	}
 	return *expect;
+}
+
+ssize_t InputHandler::readFromSource(unsigned char *buf, size_t size)
+{
+	// Read from pre-loaded buffer
+	if (mPreloadBuffer) {
+		size = mPreloadBuffer->read(buf, size);
+		if (mPreloadBuffer->sizeOfData() == 0) {
+			// remove pre-loaded buffer when it gets empty
+			mPreloadBuffer = nullptr;
+		}
+		return (ssize_t)size;
+	}
+	// Read from data source
+	return mInputDataSource->read(buf, size);
+}
+
+bool InputHandler::probeDataSource()
+{
+	// Identify audio type and other informations if unspecified
+	audio_type_t audioType = mInputDataSource->getAudioType();
+	unsigned int channels = mInputDataSource->getChannels();
+	unsigned int sampleRate = mInputDataSource->getSampleRate();
+	audio_format_type_t pcmFormat = mInputDataSource->getPcmFormat();
+	if (audioType == AUDIO_TYPE_UNKNOWN || channels == 0 || sampleRate == 0) {
+		// Preload data from data source
+		ssize_t threshold = CONFIG_DATASOURCE_PREPARSE_BUFFER_SIZE;
+		unsigned char *bufptr = new unsigned char[threshold];
+		if (!bufptr) {
+			meddbg("Out of memory\n");
+			return false;
+		}
+		bool bSuccess = false;
+		ssize_t totalBytes = 0;
+		while (totalBytes < threshold) {
+			/* DataSource::read can be implemented in application side,
+			 * If we request large size of data, reading operation may be blocked
+			 * until all requested data is ready. But actually we just need little
+			 * bytes in some cases (e.g. 256bytes for mp3 audio streaming).
+			 * So we use policy: Read data in steps (THRESHOLD/8 bytes each time).
+			 */
+			ssize_t stepBytes = threshold >> 3;
+			if (stepBytes > threshold - totalBytes) {
+				stepBytes = threshold - totalBytes;
+			}
+			ssize_t readBytes = mInputDataSource->read(bufptr + totalBytes, stepBytes);
+			if (readBytes <= 0) {
+				meddbg("Read data source failed, readBytes : %d totalBytes : %d threshold : %d\n", readBytes, totalBytes, threshold);
+				delete[] bufptr;
+				return false;
+			}
+			totalBytes += readBytes;
+			// Try to identify audio type from stream if it's not specified
+			if (audioType == AUDIO_TYPE_UNKNOWN) {
+				audioType = utils::getAudioTypeFromStream(bufptr, (size_t)totalBytes);
+				if (audioType == AUDIO_TYPE_UNKNOWN) {
+					// Can not get audio type, preload more and try again.
+					continue;
+				}
+			}
+			// Try to perform header parsing
+			if (!utils::buffer_header_parsing(bufptr, totalBytes, audioType, &channels, &sampleRate, &pcmFormat)) {
+				// Can not parse audio header, preload more and try again.
+				continue;
+			}
+			bSuccess = true;
+			break;
+		}
+		// Header parsing succeed, or pre-loading data reach threshold
+		if (bSuccess) {
+			// Update data source attributes
+			mInputDataSource->setAudioType(audioType);
+			mInputDataSource->setChannels(channels);
+			mInputDataSource->setSampleRate(sampleRate);
+			mInputDataSource->setPcmFormat(pcmFormat);
+			medvdbg("channels %u sampleRate %u pcmFormat %d\n", channels, sampleRate, pcmFormat);
+		} else {
+			// Regard as PCM data
+			mInputDataSource->setAudioType(AUDIO_TYPE_PCM);
+			medvdbg("Pre-loaded data reached the threshold, maybe it is PCM data!\n");
+		}
+		// Write data to preload-buffer for later use
+		mPreloadBuffer = StreamBuffer::Builder()
+						.setBufferSize(totalBytes)
+						.setThreshold(totalBytes)
+						.build();
+		if (!mPreloadBuffer) {
+			meddbg("Out of memory\n");
+			delete[] bufptr;
+			return false;
+		}
+		mPreloadBuffer->write(bufptr, totalBytes);
+		delete[] bufptr;
+		return true;
+	}
+	// No need to preload and probe data
+	return true;
 }
 
 } // namespace stream
