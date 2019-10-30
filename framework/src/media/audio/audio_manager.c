@@ -1958,10 +1958,6 @@ void print_audio_card_info(audio_io_direction_t direct)
 
 				dbg_noarg("Volume : %d Max Volume : %d\n", card->config[j].volume, card->config[j].max_volume);
 				dbg_noarg("Supports Process Type : ");
-				if ((card->config[j].device_process_type & get_process_type_audio_param_value(AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER)) != 0) {
-					dbg_noarg("%s(%x)\t", "AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER", AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER);
-				}
-
 				if ((card->config[j].device_process_type & get_process_type_audio_param_value(AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR)) != 0) {
 					dbg_noarg("%s(%x)\t", "AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR", AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR);
 				}
