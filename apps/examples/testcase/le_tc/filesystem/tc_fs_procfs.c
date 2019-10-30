@@ -211,6 +211,7 @@ static int procfs_rewind_tc(const char *dirpath)
 
 	return OK;
 }
+
 #if defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) && !defined(CONFIG_BUILD_PROTECTED)
 void tc_fs_smartfs_mksmartfs(void)
 {
@@ -235,6 +236,9 @@ void tc_fs_smartfs_procfs_main(void)
 
 	fd = open(PROC_SMARTFS_PATH, O_RDONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = dup(fd);
+	TC_ASSERT_GEQ("dup", ret, 0);
 
 	ret = close(fd);
 	TC_ASSERT_EQ("close", ret, OK);
