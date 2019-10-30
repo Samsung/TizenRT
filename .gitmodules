@@ -10,3 +10,6 @@
 [submodule "external/libsodium/libsodium"]
 	path = external/libsodium/libsodium
 	url = https://github.com/jedisct1/libsodium.git
+[submodule "external/stdk/st-device-sdk-c"]
+	path = external/stdk/st-device-sdk-c
+	url = https://github.com/SmartThingsCommunity/st-device-sdk-c
