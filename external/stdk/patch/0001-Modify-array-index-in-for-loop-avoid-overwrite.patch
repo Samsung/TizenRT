@@ -1,0 +1,25 @@
+From 477f4bb09cb372cba3d796151390c033d131b9a1 Mon Sep 17 00:00:00 2001
+From: "qin.li" <qin.li@samsung.com>
+Date: Wed, 30 Oct 2019 15:45:04 +0800
+Subject: [PATCH] Modify array index in for loop, avoid overwrite
+
+---
+ src/easysetup/iot_easysetup_d2d.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/easysetup/iot_easysetup_d2d.c b/src/easysetup/iot_easysetup_d2d.c
+index 2d55f60..51e3085 100644
+--- a/src/easysetup/iot_easysetup_d2d.c
++++ b/src/easysetup/iot_easysetup_d2d.c
+@@ -444,7 +444,7 @@ static iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload
+ 		goto exit;
+ 	}
+ 
+-	for (i = 0, j = 0; i < sizeof(rand_asc); i += 2, j++) {
++	for (i = 0, j = 0; i < sizeof(rand_asc) - 1; i += 2, j++) {
+ 		memcpy(tmp, rand_asc + i, 2);
+ 		val = (unsigned char)strtol((const char *)tmp, NULL, 16);
+ 		key_rand[j] = val;
+-- 
+2.7.4
+
