@@ -36,14 +36,14 @@ bool BufferInputDataSource::isPrepared()
 
 bool BufferInputDataSource::open()
 {
-	mFp = fopen("/rom/over_16000.mp3", "rb");
-	mSrcSize = 2048;
-	mSrcBuf = new unsigned char[mSrcSize];
-	setSampleRate(16000);
-	setChannels(2);
-	setPcmFormat(media::AUDIO_FORMAT_TYPE_S16_LE);
-	setAudioType(media::AUDIO_TYPE_MP3);
-	return mFp && mSrcBuf && mSrcSize;
+	if (!isPrepared()) {
+		mFp = fopen("/rom/over_16000.mp3", "rb");
+		mSrcSize = 2048;
+		mSrcBuf = new unsigned char[mSrcSize];
+		// Application can specify all audio informations (audioType/sampleRate/channels/pcmFormat),
+		// Otherwise, player will identify them from data stream during prepareAsync().
+	}
+	return isPrepared();
 }
 
 bool BufferInputDataSource::close()
