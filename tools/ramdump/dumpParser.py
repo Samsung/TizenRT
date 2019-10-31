@@ -37,6 +37,10 @@ PC = 15
 g_stext=0
 g_etext=0
 
+config_path = '../../os/.config'
+elf_path = '../../build/output/bin/tinyara'
+debug_cmd = 'addr2line'
+
 # Top level class to parse the dump and assert logs parsing feature
 class dumpParser:
 
@@ -320,7 +324,7 @@ class dumpParser:
 	def read_halfword(self, address, debug=False):
 		if debug:
 			print('reading {0:x}'.format(address))
-		s = self.read_string(address, '<H', debug)
+		s = self.read_string(address, '<h', debug)
 		if s is None:
 			if debug:
 				print 'read_halfword s is None'
@@ -701,6 +705,131 @@ def main():
 		print ''
 		print '&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
 
+
+		g_mmheap = rParser.get_address_of_symbol("g_mmheap")
+
+		# Read config information
+		fd = open(config_path, 'r')
+		data = fd.read()
+		fd.close()
+
+		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
+			print 'DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage'
+			return
+
+		# This information depends on the mm_heap_s structure
+
+		SIZE_OF_MM_SEM = 4
+		SIZE_OF_MM_HOLDER = 4
+		SIZE_OF_MM_COUNTS_HELD = 4
+
+		HEAP_SIZE_POINT = SIZE_OF_MM_SEM + SIZE_OF_MM_HOLDER + SIZE_OF_MM_COUNTS_HELD
+		SIZE_OF_MM_HEAPSIZE = 4
+
+		PEAK_ALLOC_SIZE_POINT = HEAP_SIZE_POINT + SIZE_OF_MM_HEAPSIZE
+		SIZE_OF_PEAK_ALLOC_SIZE = 4
+
+		TOTAL_ALLOC_SIZE_POINT = PEAK_ALLOC_SIZE_POINT + SIZE_OF_PEAK_ALLOC_SIZE
+		SIZE_OF_TOTAL_ALLOC_SIZE = 4
+
+		SIZE_OF_HEAPINFO_TCB_INFO = 16
+		SIZE_OF_ALLOC_NODE = 16
+
+		ALLOC_LIST_POINT = TOTAL_ALLOC_SIZE_POINT + SIZE_OF_TOTAL_ALLOC_SIZE
+	
+		max_tasks = 0
+		# get MAX_TASKS num
+		if 'CONFIG_MAX_TASKS=' in data:
+			index = data.find('CONFIG_MAX_TASKS=')
+			index += len('CONFIG_MAX_TASKS=')
+			while data[index] != '\n' :
+				max_tasks *= 10
+				max_tasks += int(data[index])
+				index += 1
+
+		HEAP_START_POINT = (ALLOC_LIST_POINT + (max_tasks * SIZE_OF_HEAPINFO_TCB_INFO))
+
+		if 'CONFIG_MM_SMALL=y' in data:
+			MM_ALLOC_BIT = 0x8000
+		else:
+			MM_ALLOC_BIT = 0x80000000
+
+		start_heap = rParser.read_word(g_mmheap + HEAP_START_POINT)
+		end_heap = rParser.read_word(g_mmheap + HEAP_START_POINT + 4)
+
+		print ''
+		print ''
+		print 'Details of Heap Usages (Size in Bytes)'
+		print ''
+		print 'start heap address : ', hex(start_heap)
+		print 'end heap address   : ', hex(end_heap)
+		print ''
+		point = start_heap + SIZE_OF_ALLOC_NODE
+
+		stack_size = [0 for i in range(max_tasks)]
+
+		idle_stack_size = 0
+		if 'CONFIG_IDLETHREAD_STACKSIZE=' in data:
+			index = data.find('CONFIG_IDLETHREAD_STACKSIZE=')
+			index += len('CONFIG_IDLETHREAD_STACKSIZE=')
+			while data[index] != '\n' :
+				idle_stack_size *= 10
+				idle_stack_size += int(data[index])
+				index += 1
+		stack_size[0] = idle_stack_size + SIZE_OF_ALLOC_NODE
+
+		print '******************************************************************'
+		print '  MemAddr |   Size   | Status |  Pid  |           Owner           '
+		print '----------|----------|--------|-------|---------------------------'
+		while point < end_heap:
+			size = rParser.read_word(point)
+			preceding = rParser.read_word(point + 4)
+			owner = rParser.read_word(point + 8)
+			pid = rParser.read_halfword(point + 12)
+			if preceding & MM_ALLOC_BIT :
+				fd_popen = subprocess.Popen([debug_cmd, '-e', elf_path, hex(owner)], stdout=subprocess.PIPE).stdout
+				data = fd_popen.read()
+				fd_popen.close()
+				if pid >= 0:
+					print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(pid), data[14:],
+				else: # If pid is less than 0, it is the stack size of (-pid)
+					stack_size[(-pid) & (max_tasks - 1)] = size
+					print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(-pid), data[14:],
+			else:
+				print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Free'), '{:6}|'.format("")
+			# next node
+			point = point + size
+
+		print ''
+		print '***********************************************************'
+		print '       Summary of Heap Usages (Size in Bytes)'
+		print '***********************************************************'
+
+		heap_size = rParser.read_word(g_mmheap + HEAP_SIZE_POINT)
+		print 'HEAP SIZE        : ', heap_size
+
+		peack_alloc_size = rParser.read_word(g_mmheap + PEAK_ALLOC_SIZE_POINT)
+		print 'PEAK ALLOC SIZE  : ', peack_alloc_size
+
+		total_alloc_size = rParser.read_word(g_mmheap + TOTAL_ALLOC_SIZE_POINT)
+		print 'TOTAL ALLOC SIZE : ', total_alloc_size
+		print 'FREE SIZE        : ', heap_size - total_alloc_size
+		print ''
+		print '***********************************************************'
+		print '  PID  | STACK SIZE |  CUR ALLOC SIZE   | PEAK ALLOC SIZE |'
+		print '-------|------------|-------------------|-----------------|'
+		INVALID_PROCESS_ID = 0xFFFFFFFF
+
+		alloc_list = ALLOC_LIST_POINT + g_mmheap
+		for i in range(0, max_tasks):
+			pid = rParser.read_word(alloc_list)
+			if pid != INVALID_PROCESS_ID :
+				# This information depends on the heapinfo_tcb_info_t
+				cur_alloc = rParser.read_word(alloc_list + 4)
+				peak_alloc = rParser.read_word(alloc_list + 8)
+				print '{:^7}|'.format(pid), '{:>7}'.format(stack_size[i]), '   |', '{:>13}'.format(cur_alloc), '    |', '{:>13}'.format(peak_alloc), '  |'
+			# next alloc list
+			alloc_list += SIZE_OF_HEAPINFO_TCB_INFO
 
 	except Exception, e:
 		print "ERROR:", e
