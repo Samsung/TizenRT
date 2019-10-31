@@ -7,3 +7,6 @@
 [submodule "external/nanopb/nanopb"]
 	path = external/nanopb/nanopb
 	url = https://github.com/nanopb/nanopb.git
+[submodule "external/libsodium/libsodium"]
+	path = external/libsodium/libsodium
+	url = https://github.com/jedisct1/libsodium.git
