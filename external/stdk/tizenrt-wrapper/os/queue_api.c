@@ -31,14 +31,16 @@
 #include <fcntl.h>
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
-#include "esp_attr.h"
-#include "esp32_queue_api.h"
-#include "mq_tryreceive.h"
+#include "queue_api.h"
+
 /************************************************************************
  * Pre-processor Definitions
  ************************************************************************/
 #define MAX_QUEUE_INFO 10
 #define NAME_LEN 20
+
+#define pdPASS          (1)
+#define pdFAIL          (0)
 
 /************************************************************************
  * Private Type Declarations
@@ -50,10 +52,10 @@ enum {
 } queue_prio_e;
 
 typedef struct {
-    bool valid;
-    uint32_t mq_item_size;
-    mqd_t mqd_fd_send;
-    mqd_t mqd_fd_recv;
+	bool valid;
+	uint32_t mq_item_size;
+	mqd_t mqd_fd_send;
+	mqd_t mqd_fd_recv;
 }queue_info_t;
 
 /************************************************************************
@@ -86,24 +88,24 @@ static queue_info_t queues_info[MAX_QUEUE_INFO];
 
 int calc_abs_time(struct timespec *abs_time, int delayticks)
 {
-    int ret; 
-    time_t sec; 
-    uint32_t nsec;
-    int offset = TICK2MSEC(delayticks);
-    sec = offset / MSEC_PER_SEC;
-    nsec = (offset - MSEC_PER_SEC * sec) * NSEC_PER_MSEC;
+	int ret; 
+	time_t sec; 
+	uint32_t nsec;
+	int offset = TICK2MSEC(delayticks);
+	sec = offset / MSEC_PER_SEC;
+	nsec = (offset - MSEC_PER_SEC * sec) * NSEC_PER_MSEC;
 
-    ret = clock_gettime(CLOCK_REALTIME, abs_time);
-    if (ret != 0) { 
-        return ERROR;
-    }    
-    abs_time->tv_sec += sec; 
-    abs_time->tv_nsec += nsec;
-    if (abs_time->tv_nsec >= NSEC_PER_SEC) {
-        abs_time->tv_sec++;
-        abs_time->tv_nsec -= NSEC_PER_SEC;
-    }    
-    return OK;
+	ret = clock_gettime(CLOCK_REALTIME, abs_time);
+	if (ret != 0) { 
+		return ERROR;
+	}    
+	abs_time->tv_sec += sec; 
+	abs_time->tv_nsec += nsec;
+	if (abs_time->tv_nsec >= NSEC_PER_SEC) {
+		abs_time->tv_sec++;
+		abs_time->tv_nsec -= NSEC_PER_SEC;
+	}    
+	return OK;
 }
 
 
@@ -122,13 +124,13 @@ int calc_abs_time(struct timespec *abs_time, int delayticks)
  *	Returns the pionter of the created mqueue, but NULL in a failure.
  *
  ****************************************************************************/
-void *IRAM_ATTR queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
+void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
 {
 	char name[NAME_LEN];
 	bool flag = false;
 	uint32_t mq_id = 0;
-    int i;
-    
+	int i;
+
 	for (i = 0; i < MAX_QUEUE_INFO; i++) {
 		if (!queues_info[i].valid) {
 			flag = true;
@@ -173,7 +175,7 @@ void *IRAM_ATTR queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
  * Return:
  *
  ****************************************************************************/
-void IRAM_ATTR queue_delete_wrapper(void *queue)
+void queue_delete_wrapper(void *queue)
 {
 	queue_info_t *queue_info = NULL;
 
@@ -193,7 +195,7 @@ void IRAM_ATTR queue_delete_wrapper(void *queue)
 	return;
 }
 
-int32_t IRAM_ATTR queue_send_wrapper(void *queue, void *item, uint32_t block_time_tick)
+int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_tick)
 {
 	int32_t ret;
 	queue_info_t *queue_info = NULL;
@@ -238,7 +240,7 @@ int32_t IRAM_ATTR queue_send_wrapper(void *queue, void *item, uint32_t block_tim
  *	Returns pdPASS if success, pdFAIL if failure.
  *
  ****************************************************************************/
-int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw)
+int32_t queue_send_from_isr_wrapper(void *queue, void *item, void *hptw)
 {
 	int32_t ret;
 	queue_info_t *queue_info = NULL;
@@ -272,7 +274,7 @@ int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hpt
  *	Returns pdPASS if success, pdFAIL if failure.
  *
  ****************************************************************************/
-int32_t IRAM_ATTR queue_send_to_back_wrapper(void *queue, void *item, uint32_t block_time_tick)
+int32_t queue_send_to_back_wrapper(void *queue, void *item, uint32_t block_time_tick)
 {
 	if (!queue || !item) {
 		return pdFAIL;
@@ -295,7 +297,7 @@ int32_t IRAM_ATTR queue_send_to_back_wrapper(void *queue, void *item, uint32_t b
  *	Returns pdPASS if success, pdFAIL if failure.
  *
  ****************************************************************************/
-int32_t IRAM_ATTR queue_send_to_front_wrapper(void *queue, void *item, uint32_t block_time_tick)
+int32_t queue_send_to_front_wrapper(void *queue, void *item, uint32_t block_time_tick)
 {
 	int32_t ret;
 	queue_info_t *queue_info = NULL;
@@ -339,73 +341,47 @@ int32_t IRAM_ATTR queue_send_to_front_wrapper(void *queue, void *item, uint32_t 
  *	Returns pdPASS if success, pdFAIL if failure.
  *
  ****************************************************************************/
-int32_t IRAM_ATTR queue_recv_wrapper(void *queue, void *item, uint32_t block_time_tick)
+int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_tick)
 {
 	queue_info_t *queue_info = NULL;
 	size_t msglen = 0;
 	int prio = 0;
 	int32_t ret;
+	int32_t err_no;
 	struct timespec abstime;
 
 	if (!queue || !item) {
 		return pdFAIL;
 	}
-    queue_info = (queue_info_t *)queue;
-	if (queue_info->mqd_fd_recv != (mqd_t)ERROR) {
-		msglen = queue_info->mq_item_size;
-		if (block_time_tick == 0xFFFFFFFF) {
-			ret = mq_receive(queue_info->mqd_fd_recv, (char *)item, msglen, &prio);
-			if (ret == ERROR) {
-				return pdFAIL;
-			}
-		} else {
-            calc_abs_time(&abstime, block_time_tick); 
-            ret = mq_timedreceive(queue_info->mqd_fd_recv, (char *)item, msglen, &prio, &abstime);
-			if (ret == ERROR) {
-				return pdFAIL;
-			}
-		}
-	} else {
-		return pdFAIL;
-	}
-	return pdPASS;
-}
 
-/****************************************************************************
- * Name: queue_recv_from_isr_wrapper
- *
- * Description:
- *	This function is the wrapper of mq_timedreceive to receives the oldest of the highest priority
- *messages from the message queue in an interrupt handle.
- *
- * Inputs:
- *	queue - The queue to receive messages.
- *	item - The received message.
- *	hptw - useless in TizenRT, but needed in the declaration of esp32 wifi os adapter.
- * Return:
- *	Returns pdPASS if success, pdFAIL if failure.
- *
- ****************************************************************************/
-int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, int32_t *const hptw)
-{
-	queue_info_t *queue_info = NULL;
-	size_t msglen = 0;
-	int prio = 0;
-	int32_t ret;
-
-	if (!queue || !item) {
-		return pdFAIL;
-	}
 	queue_info = (queue_info_t *)queue;
-	if (queue_info->mqd_fd_recv != (mqd_t)ERROR) {
-		msglen = queue_info->mq_item_size;
-		ret = mq_tryreceive_isr(queue_info->mqd_fd_recv, (char *)item, msglen, &prio);
+	if (queue_info->mqd_fd_recv == (mqd_t)ERROR) {
+		return pdFAIL;
+	}
+
+	msglen = queue_info->mq_item_size;
+	if (block_time_tick == 0xFFFFFFFF) {
+		ret = mq_receive(queue_info->mqd_fd_recv, (char *)item, msglen, &prio);
 		if (ret == ERROR) {
 			return pdFAIL;
 		}
-		return pdPASS;
+	} else {
+		calc_abs_time(&abstime, block_time_tick);
+		ret = mq_timedreceive(queue_info->mqd_fd_recv, (char *)item, msglen, &prio, &abstime);
+		if (ret == ERROR) {
+			//timedreceive may return for EINTR or ETIMEDOUT when no msg in queue,
+			//for EINTR case we will wait again.
+			if (get_errno() == EINTR) {
+				if (mq_timedreceive(queue_info->mqd_fd_recv, (char *)item, msglen, &prio, &abstime) == ERROR) {
+					return pdFAIL;
+				}
+			} else {
+				return pdFAIL;
+			}
+		}
 	}
-	return pdFAIL;
+
+	return pdPASS;
 }
 
 /****************************************************************************
@@ -420,7 +396,7 @@ int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, int32_t *
  *	Returns the count of messages in the queue if success,  returns pdFAIL if failure.
  *
  ****************************************************************************/
-uint32_t IRAM_ATTR queue_msg_waiting_wrapper(void *queue)
+uint32_t queue_msg_waiting_wrapper(void *queue)
 {
 	queue_info_t *queue_info = NULL;
 	if (queue) {

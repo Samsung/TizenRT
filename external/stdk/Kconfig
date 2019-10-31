@@ -1,0 +1,139 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config STDK_IOT_CORE
+	bool "Enable SmartThings IoT Core"
+	default n
+	---help---
+		Select this option to enable support for the Samsung SmartThings
+		IoT Core via the esp-idf component for the Samsung SmartThings IoT Device C SDK.
+
+if STDK_IOT_CORE
+
+config STDK_IOT_CORE_EASYSETUP_HTTP
+	bool "Use http for easysetup"
+	default y
+	depends on STDK_IOT_CORE
+	---help---
+		If this option is enabled, STDK will use httpd for easy setup.
+
+config STDK_IOT_CORE_EASYSETUP_HTTP_LOG_SUPPORT
+	bool "Logging via device-to-device"
+	default n
+	depends on STDK_IOT_CORE_EASYSETUP_HTTP
+	---help---
+		If this option is enabled, STDK will support logging via device-to-device mechanism.
+
+config STDK_IOT_CORE_EASYSETUP_HTTP_LOG_SIZE
+	int "log buffer size in byte"
+	default 1024
+	depends on STDK_IOT_CORE_EASYSETUP_HTTP_LOG_SUPPORT
+	---help---
+		Configuration for easysetup log size
+
+config STDK_IOT_CORE_EASYSETUP_POSIX_TESTING
+	bool "Skip easysetup for posix testing"
+	default n
+	depends on STDK_IOT_CORE && (!STDK_IOT_CORE_EASYSETUP_HTTP)
+	---help---
+		This option is only for posix testing.
+		If this option is enabled, STDK will use hard coded crendtial information instead of eaysetup.
+		This option isn't for development or production. only for posix testing.
+
+config STDK_IOT_CORE_LOG_LEVEL_ERROR
+	bool "Enable Log Level ERROR"
+	default y
+	depends on STDK_IOT_CORE
+	---help---
+		If this option is disabled, STDK will exclude ERROR message code.
+
+config STDK_IOT_CORE_LOG_LEVEL_WARN
+	bool "Enable Log Level WARNING"
+	default y
+	depends on STDK_IOT_CORE
+	---help---
+		If this option is disabled, STDK will exclude WARN message code.
+
+config STDK_IOT_CORE_LOG_LEVEL_INFO
+	bool "Enable Log Level INFO"
+	default n
+	depends on STDK_IOT_CORE
+	---help---
+		If this option is disabled, STDK will exclude INFO message code.
+
+config STDK_IOT_CORE_LOG_LEVEL_DEBUG
+	bool "Enable Log Level DEBUG"
+	default n
+	depends on STDK_IOT_CORE
+	---help---
+		If this option is disabled, STDK will exclude DEBUG message code.
+
+config STDK_IOT_CORE_SUPPORT_STNV_PARTITION
+	bool "Use STNV Partition"
+	default n
+	depends on STDK_IOT_CORE
+	---help---
+		If this option is enabled, STDK will use STNV partition data for easysetup.
+
+config STDK_MQTT_USE_SSL
+	bool "Enable MQTT SSL Connection"
+	default y
+	depends on STDK_IOT_CORE
+	---help---
+        Connecting MQTT broker through SSL
+
+config STDK_DEBUG_MEMORY_CHECK
+	bool "Enable debug option to check memory utilization"
+	default n
+	depends on STDK_IOT_CORE
+	---help---
+		If this debug option is enabled, IOT_MEM_CHECK will print memory utilization.
+
+menu "Crypto"
+	depends on STDK_IOT_CORE
+
+config STDK_IOT_CORE_USE_MBEDTLS
+	bool "Use mbedTLS for Crypto operations"
+	default y
+	depends on STDK_IOT_CORE
+	---help---
+		If this option is enabled, STDK will use thin wrappers around
+		mbedTLS for Crypto (sha, sign, ...) operations.
+
+config STDK_IOT_CORE_CRYPTO_SUPPORT_RSA
+	bool "Support RSA based crypto"
+	default n
+	depends on STDK_IOT_CORE
+	---help---
+		Support RSA based sign, encryption functions.
+
+config STDK_IOT_CORE_CRYPTO_SUPPORT_ED25519
+	bool "Support Ed25519 based crypto"
+	default n
+	depends on STDK_IOT_CORE
+	---help---
+		Support Ed25519 based sign, encryption functions.
+
+choice STDK_IOT_CORE_FS_ENCRYPTION
+	prompt "Choose FS encryption method"
+	default STDK_IOT_CORE_FS_HW_ENCRYPTION
+	depends on STDK_IOT_CORE
+	---help---
+		Choose the file system encryption method.
+
+		Software based encryption or Hardware based encryption or
+		SE(Secure Element) based encryption.
+
+config STDK_IOT_CORE_FS_SW_ENCRYPTION
+	bool "Software"
+config STDK_IOT_CORE_FS_HW_ENCRYPTION
+	bool "Hardware"
+config STDK_IOT_CORE_FS_SE_ENCRYPTION
+	bool "Hardware (SE)"
+endchoice
+
+endmenu # Crypto
+
+endif  #STDK_IOT_CORE
