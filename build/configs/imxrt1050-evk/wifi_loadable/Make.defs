@@ -179,3 +179,7 @@ define DOWNLOAD
   $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/$(CONFIG_ARCH_BOARD)_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef
 
+define MAKE_BOARD_SPECIFIC_BIN
+  $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/$(CONFIG_ARCH_BOARD)_make_bin.sh
+endef
+

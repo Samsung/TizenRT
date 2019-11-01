@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# build/configs/imxrt1020-evk/SAM/Make.defs
+# build/configs/imxrt1020-evk/wifi_loadable/Make.defs
 #
 #   Copyright (C) 2018 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -74,19 +74,20 @@ ifeq ($(WINTOOL),y)
   DIRLINK = $(TOPDIR)/tools/copydir.sh
   DIRUNLINK = $(TOPDIR)/tools/unlink.sh
   MKDEP = $(TOPDIR)/tools/mkwindeps.sh
-  ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
-  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include/libcxx}"
+  ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}"
+  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/include/cxx}"
   ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT1)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
   ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include
-  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include -isystem $(TOPDIR)/../external/include/libcxx
+  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/include/cxx -isystem $(TOPDIR)/../external/include
   ARCHSCRIPT = -L$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts
 ifeq ($(CONFIG_AUTOGEN_MEMORY_LDSCRIPT),y)
   ARCHSCRIPT += -T$(MEM_LDSCRIPT)
 endif
   ARCHSCRIPT += -T$(KSPACE_LDSCRIPT)
+
 endif
 
 CC = $(CROSSDEV)gcc
@@ -137,10 +138,7 @@ ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 
 CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe -ffunction-sections -fdata-sections
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
-CXXFLAGS  = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES)
-CXXFLAGS += $(ARCHDEFINES) $(EXTRADEFINES) -pipe -std=c++11 -DCLOCK_MONOTONIC -D__TINYARA__
-CXXFLAGS += -fno-exceptions -fcheck-new -fno-rtti
-CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -D_LIBCPP_NO_EXCEPTIONS -ffunction-sections -fdata-sections
+CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
 ifeq ($(CONFIG_LIBCXX),y)
 CXXFLAGS += -DCONFIG_WCHAR_BUILTIN
 endif
