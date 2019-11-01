@@ -26,8 +26,6 @@
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
 #include <tinyara/spi/spi.h>
-#include <tinyara/lcd/ieg1120.h>
-#include <tinyara/lcd/lcd.h>
 
 #include <arch/board/board.h>
 #include <arch/board/stm32l4r9i_discovery.h>
@@ -36,6 +34,7 @@
 
 #include "chip/stm32l4_dma2d.h"
 #include "stm32l4r9ai-disco.h"
+#include "stm32l4_dsi.h"
 
 #define BRIGHTNESS_MIN      50
 #define BRIGHTNESS_NORMAL   200
