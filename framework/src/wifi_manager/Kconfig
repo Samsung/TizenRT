@@ -7,6 +7,7 @@ config WIFI_MANAGER
     bool "Enable Wi-Fi Manager"
     default n
 	select DRIVERS_WIRELESS
+	select NETUTILS_NETLIB
     ---help---
         Easy APIs for applications to use and control Wi-Fi features
 
