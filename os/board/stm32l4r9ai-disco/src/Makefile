@@ -35,6 +35,7 @@
 
 -include $(TOPDIR)/Make.defs
 
+DEPPATH = --dep-path .
 ASRCS =
 CSRCS = stm32_boot.c
 
@@ -132,7 +133,7 @@ libboard$(LIBEXT): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
