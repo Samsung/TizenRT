@@ -197,6 +197,21 @@ extern struct spi_dev_s *g_spi1;
 extern struct spi_dev_s *g_spi2;
 #endif
 
+struct stm32l4_lcd_s {
+	/*  to control STM32L4R9I DISCOVERY Board Round LCD
+	 *
+	 *  - sendsparam    Send a multi length parameter for LCD configuration
+	 *  - sendlparam    Send a multi length parameter for LCD configuration
+	 */
+	uint8_t (*sendsparam)(uint32_t Mode, uint32_t Param1, uint32_t Param2);
+	uint8_t (*sendlparam)(uint32_t Mode, uint32_t NbParams, uint32_t Param1, uint8_t *ParametersTable);
+	void    (*enablewap)(void);
+	void    (*poweron)(void);
+	void    (*poweroff)(void);
+	void    (*refresh)(void);
+};
+
+
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
@@ -274,6 +289,7 @@ uint8_t stm32l4_lcdinitialize(void);
 
 /* To use functions of stm32l4r9i_lcd.c */
 
+FAR struct stm32l4_lcd_s *stm32l4_lcd_function(void);
 void LCD_PowerOn(void);
 uint8_t STM32L4_LCD_IsFBAvailable(void);
 

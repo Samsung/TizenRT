@@ -205,11 +205,6 @@ struct dsi_ops_s {
 	void (*refresh)(void);
 };
 
-struct stm32l4_dsi_s {
-    struct dsi_ops_s g_dsiops;
-    uint32_t isframebuffer;
-};
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
