@@ -17,6 +17,12 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <sys/types.h>
+#include <netutils/netlib.h>
 #include "wifi_manager_dhcp_internal.h"
 
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT
@@ -57,18 +63,27 @@ static uint8_t num_sta = 0;
  */
 void dhcps_inc_num(void)
 {
+	if (num_sta == UINT8_MAX) {
+		ndbg("num_sta overflowed\n");
+		return;
+	}
+	nvdbg("increase num_sta by 1\n");
 	num_sta++;
 }
 
 void dhcps_dec_num(void)
 {
-	if (num_sta > 0) {
-		num_sta--;
+	if (num_sta == 0) {
+		ndbg("num_sta underflowed\n");
+		return;
 	}
+	nvdbg("decrease num_sta by 1\n");
+	num_sta--;
 }
 
 void dhcps_reset_num(void)
 {
+	nvdbg("reset num_sta to 0\n");
 	num_sta = 0;
 }
 
