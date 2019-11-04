@@ -177,6 +177,12 @@ void up_initialize(void)
 	iob_initialize();
 #endif
 
+#if defined(CONFIG_PIPES) && CONFIG_DEV_PIPE_SIZE > 0
+	/* Initialize pipe */
+
+	pipe_initialize();
+#endif
+
 #if CONFIG_NFILE_DESCRIPTORS > 0
 	/* Register devices */
 
