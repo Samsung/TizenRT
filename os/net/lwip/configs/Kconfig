@@ -282,4 +282,13 @@ menuconfig NET_LWIP_NETDB
 
 source "net/lwip/configs/netdb/Kconfig"
 
+config NET_LWIP_SINGLE_PBUF
+	bool "Send data in single pbuf"
+	default n
+	---help---
+		put all data to be sent into one single pbuf. This is for compatibility with
+		DMA-enabled MACs that do not support scatter-gather.
+		Beware that this might involve CPU-memcpy before transmitting that would not
+		be needed without this flag! Use this only if you need to!
+
 endmenu #LwIP options

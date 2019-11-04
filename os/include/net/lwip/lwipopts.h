@@ -1174,4 +1174,8 @@
 #define LWIP_HAVE_LOOPIF                CONFIG_NET_LWIP_LOOPBACK_INTERFACE
 #endif
 
+#if defined(CONFIG_NET_LWIP_SINGLE_PBUF)
+#define LWIP_NETIF_TX_SINGLE_PBUF             1
+#endif
+
 #endif							/* __LWIP_LWIPOPTS_H__ */
