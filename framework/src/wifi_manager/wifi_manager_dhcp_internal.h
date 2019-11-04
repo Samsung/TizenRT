@@ -17,18 +17,12 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-#include <sys/types.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <wifi_manager/wifi_manager.h>
+
+#include <tinyara/wifi/wifi_utils.h>
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>
-#include <netutils/netlib.h>
-#include <tinyara/wifi/wifi_utils.h>
+#include <arpa/inet.h>
+#include <wifi_manager/wifi_manager.h>
 
 /**
  * Enum, definitions and variables
