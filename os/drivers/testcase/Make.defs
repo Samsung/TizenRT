@@ -31,6 +31,10 @@ ifneq ($(CONFIG_DISABLE_SIGNALS),y)
 CSRCS += test_signal.c
 endif
 
+ifeq ($(CONFIG_TC_COMPRESS_READ),y)
+CSRCS += test_compress_decompress.c
+endif
+
 CFLAGS += -I$(TOPDIR)/kernel
 
 # Include kernel testcase driver support

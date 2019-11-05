@@ -112,8 +112,8 @@ static void tc_compression_lzma_4kb(void)
 
 	ret = LzmaCompress(&out_buf[LZMA_PROPS_SIZE], &writesize, arr, SIZE_4KB, out_buf, &propsSize, 0, 1 << 13, -1, -1, -1, -1, 1);
 
-	TC_ASSERT_EQ("LzmaCompress", ret, SZ_OK);
 	/* If FAIL: Dynamic RAM size needed by Lzma is not enough */
+	TC_ASSERT_EQ("LzmaCompress", ret, SZ_OK);
 
 	ret = LzmaUncompress(&arr[0], &destLen, &out_buf[LZMA_PROPS_SIZE], &writesize, &out_buf[0], LZMA_PROPS_SIZE);
 

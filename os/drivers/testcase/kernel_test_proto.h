@@ -27,4 +27,5 @@ int test_sched(int cmd, unsigned long arg);
 #ifndef CONFIG_DISABLE_SIGNALS
 int test_signal(int cmd, unsigned long arg);
 #endif
+int test_compress_decompress(int cmd, unsigned long arg);
 #endif
