@@ -13,7 +13,14 @@ if EXAMPLES_TESTCASE_COMPRESSION
 
 config TC_LZMA
 	bool "LZMA Compression/Decompression testcase"
-	default y
+	default n
 	select LIBLZMA
+
+config TC_COMPRESS_READ
+	bool "Testcase for Compression APIs"
+	default n
+	select KERNEL_TEST_DRV
+	select LIBLZMA
+	select COMPRESSED_BINARY
 
 endif

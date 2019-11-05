@@ -114,6 +114,12 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 	case TESTIOC_TASK_INIT_TEST:
 		ret = test_task(cmd, arg);
 		break;
+#ifdef CONFIG_TC_COMPRESS_READ
+	case TESTIOC_COMPRESSION_TEST:
+		ret = test_compress_decompress(cmd, arg);
+		break;
+#endif
+
 	default:
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;

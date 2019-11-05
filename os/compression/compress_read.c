@@ -20,7 +20,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-
+#include <tinyara/kmalloc.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -415,4 +415,9 @@ void compress_uninit(void)
 
 	kmm_free(compression_header);
 	compression_header = NULL;
+}
+
+struct s_header *get_compression_header(void)
+{
+	return compression_header;
 }
