@@ -72,8 +72,6 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/mm/heap_regioninfo.h>
 
-bool heapx_is_init[CONFIG_MM_NHEAPS];
-
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 #include <string.h>
 #endif
@@ -220,9 +218,8 @@ void up_addregion(void)
 	int region_cnt;
 
 	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
-		if (heapx_is_init[regionx_heap_idx[region_cnt]] != true) {
+		if (BASE_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
 			mm_initialize(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
-			heapx_is_init[regionx_heap_idx[region_cnt]] = true;
 			continue;
 		}
 		mm_addregion(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
