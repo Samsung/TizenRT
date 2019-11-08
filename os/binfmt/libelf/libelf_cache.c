@@ -478,6 +478,11 @@ int elf_cache_init(int filfd, uint16_t offset, off_t filelen, uint8_t compressio
 		number_blocks_caching++;
 	}
 
+	/* Minimum 2 blocks needed for caching logic to work */
+	if (number_blocks_caching < 2) {
+		number_blocks_caching = 2;
+	}
+
 	/* Initialize max_accesed_count to 0 */
 	max_accessed_count = 0;
 
