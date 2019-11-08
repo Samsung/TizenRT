@@ -95,7 +95,7 @@ static void compress_blocks_to_read(int *first_block, int *last_block, int *no_b
 	blocksize = compression_header->blocksize;
 
 	*first_block = offset / blocksize;
-	*last_block = (offset + readsize) / blocksize;
+	*last_block = (offset + readsize - 1) / blocksize;
 	*no_blocks = *last_block - *first_block + 1;
 }
 
