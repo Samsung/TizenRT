@@ -93,7 +93,16 @@ uint8_t dhcps_get_num(void)
 }
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-wifi_manager_result_e dhcps_start(dhcp_sta_joined cb)
+static void _dhcps_remove_list(void)
+{
+	//TODO: Currently only one client can be joined and left
+	g_dhcp_list.ipaddr = 0;
+	for (int i = 0; i < 6; i++) {
+		g_dhcp_list.macaddr[i] = 0;
+	}
+}
+
+wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined cb)
 {
 	//Default IP addr for SoftAP; 192.168.47.1.
 	//Please refer to LWIP_DHCPS_SERVER_IP defined in external/dhcpd/Kconfig
@@ -113,7 +122,7 @@ wifi_manager_result_e dhcps_start(dhcp_sta_joined cb)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-wifi_manager_result_e dhcps_stop(void)
+wifi_manager_result_e wm_dhcps_stop(void)
 {
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
@@ -153,15 +162,6 @@ dhcp_status_e dhcps_add_node(void *msg)
 }
 
 void dhcps_del_node(void)
-{
-	//TODO: Currently only one client can be joined and left
-	g_dhcp_list.ipaddr = 0;
-	for (int i = 0; i < 6; i++) {
-		g_dhcp_list.macaddr[i] = 0;
-	}
-}
-
-static void _dhcps_remove_list(void)
 {
 	//TODO: Currently only one client can be joined and left
 	g_dhcp_list.ipaddr = 0;

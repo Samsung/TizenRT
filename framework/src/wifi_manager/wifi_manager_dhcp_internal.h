@@ -47,15 +47,14 @@ void dhcps_reset_num(void);
 uint8_t dhcps_get_num(void);
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-wifi_manager_result_e dhcps_start(dhcp_sta_joined cb);
-wifi_manager_result_e dhcps_stop(void);
+wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined cb);
+wifi_manager_result_e wm_dhcps_stop(void);
 /* TODO: Currently, wifi manager stores only a single mac address of the associated node
  * while it is running as a softap mode. This might be modified later,
  * when a chipset needs to support multiple connections simultaneously.
  */
 dhcp_status_e dhcps_add_node(void *node);
 void dhcps_del_node(void);
-static void _dhcps_remove_list(void);
 #endif
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
