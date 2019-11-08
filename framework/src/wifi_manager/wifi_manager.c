@@ -733,7 +733,7 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_softap(&softap_config), "[WM] Starting softap mode failed.", WIFI_MANAGER_FAIL);
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	WIFIMGR_CHECK_RESULT(dhcps_start((dhcp_sta_joined)_wifi_dhcps_event), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_RESULT(wm_dhcps_start((dhcp_sta_joined)_wifi_dhcps_event), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
 #endif
 	/* update wifi_manager_info */
 	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
@@ -750,7 +750,7 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 	WM_LOG_START;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_stop_softap(), "[WM] Stoping softap failed", WIFI_MANAGER_FAIL);
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	WIFIMGR_CHECK_RESULT(dhcps_stop(), "[WM] Stoping softap DHCP server failed.", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_RESULT(wm_dhcps_stop(), "[WM] Stoping softap DHCP server failed.", WIFI_MANAGER_FAIL);
 #endif
 	return WIFI_MANAGER_SUCCESS;
 }
