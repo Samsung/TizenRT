@@ -141,7 +141,20 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 	while (readsize > 0) {
 		if (loadinfo->compression_type == COMPRESS_TYPE_NONE) {	/* Uncompressed binary */
 #if defined(CONFIG_ELF_CACHE_READ)
-			nbytes = elf_cache_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
+			/* Cache only if readsize request <= cache block size */
+			if (readsize <= CONFIG_ELF_CACHE_BLOCK_SIZE) {
+				nbytes = elf_cache_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
+			} else {
+				rpos = lseek(loadinfo->filfd, offset, SEEK_SET);
+				if (rpos != offset) {
+					int errval = get_errno();
+					berr("Failed to seek to position %lu: %d\n", (unsigned long)offset, errval);
+					return -errval;
+				}
+
+				/* Read the file data at offset into the user buffer */
+				nbytes = read(loadinfo->filfd, buffer, readsize);
+			}
 #else
 			/* Seek to the next read position */
 
@@ -160,7 +173,12 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 			if (loadinfo->compression_type == CONFIG_COMPRESSION_TYPE) {
 				/* Read readsize bytes from offset from uncompressed file into unser buffer */
 #if defined(CONFIG_ELF_CACHE_READ)
-				nbytes = elf_cache_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
+				/* Cache only if readsize request <= cache block size */
+				if (readsize <= CONFIG_ELF_CACHE_BLOCK_SIZE) {
+					nbytes = elf_cache_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
+				} else {
+					nbytes = compress_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
+				}
 #else
 				nbytes = compress_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
 #endif
