@@ -1404,6 +1404,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	wret = dhcpc_fetch_ipaddr(&ip_ref);
 	if (wret != WIFI_MANAGER_SUCCESS) {
 		ndbg("[WM] T%d Failed to fetch ip4 address\n", getpid());
+		UNLOCK_WIFIMGR;
 		return WIFI_MANAGER_FAIL;
 	}
 
