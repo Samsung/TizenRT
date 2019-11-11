@@ -1,12 +1,18 @@
 # How to Use Peripheral
+TizenRT provides five parts to use peripheral. They are outlined in this document as shown:
 
-Here are 5 parts, [GPIO](#gpio), [UART](#uart), [SPI](#spi), [I2C](#i2c) and [I2S](#i2s) to use peripheral.
+## Contents
+- [GPIO](#gpio)
+- [UART](#uart)
+- [SPI](#spi)
+- [I2C](#i2c)
+- [I2S](#i2s)
 
 ## GPIO
-Each board, shall;
+Each board is required to do the following:
 
-Implement and expose an instance of `struct gpio_lowerhalf_s`.  
-Implement the supported operations on `struct gpio_ops_s`.
+- Implement and expose an instance of `struct gpio_lowerhalf_s`.  
+- Implement the supported operations on `struct gpio_ops_s`.
 
 ### Registering GPIO on dev
 ```
@@ -58,11 +64,12 @@ FAR struct gpio_lowerhalf_s *[BOARD]_gpio_lowerhalf(gpio_pinset_t pinset)
 	return (struct gpio_lowerhalf_s *)([BOARD]_lowerhalf_s);
 }
 ```
+```
+struct gpio_lowerhalf_s *lower = [BOARD]_gpio_lowerhalf(pinset);  
+gpio_register(pin_number, lower);
+```
 
->struct gpio_lowerhalf_s *lower = [BOARD]_gpio_lowerhalf(pinset);  
->gpio_register(pin_number, lower);
-
-If these steps worked well, the result will be shown on /dev/gpio[pin_number]
+If these steps worked well, the result will be shown on /dev/gpio[pin_number].
 
 ### Implement GPIO Operation
 
@@ -99,11 +106,11 @@ CODE int  (*enable)(FAR struct gpio_lowerhalf_s *lower, int falling, int rising,
 	-> typedef CODE void (*gpio_handler_t)(FAR struct gpio_upperhalf_s *upper);
 ```
 
->In [enable] operation, below process must be included.
+In [enable] operation, below process must be included.
 ```
 static int [Interrupt_Function](int irq, FAR void *context, FAR void *arg);
 - irq : irqvector number
-- contetxt : identifying value.
+- context : identifying value
 - arg : user specific pointer
 
 if (handler) {
@@ -115,7 +122,7 @@ if (handler) {
 }
 ```
 
->Example implementation is present in s5j_gpio_lowerhalf.c under os/arch/arm/src/s5j folder.
+Example implementation is present in s5j_gpio_lowerhalf.c under os/arch/arm/src/s5j folder.
 
 ## UART
 UART has two parts, setting early console and setting serial console driver, serial port drivers.
@@ -185,7 +192,7 @@ void up_serialinit(void)
 
 ### Add UART device structure
 The ```CONSOLE_DEV``` and ```TTYSx_DEV``` are UART device driver structure type named *uart_dev_t*.  
-That is defined in **[serial.h](../os/include/tinyara/serial/serial.h)** under *os/include/tinyara/serial* folder.
+This is defined in **[serial.h](../os/include/tinyara/serial/serial.h)** under *os/include/tinyara/serial* folder.
 ```
 struct uart_dev_s {
 	...
@@ -205,12 +212,12 @@ typedef struct uart_dev_s uart_dev_t;
 ```
 
 The **xmit**, **recv**, **ops** and **priv** should be defined.  
-> **xmit** : size and address of transmit buffer  
-> **recv** : size and address of receive buffer  
-> **ops**  : tables of operations like setup, send, receive and etc  
-> **priv** : private data of device like baudrate, interrupt number, parity and etc
+- **xmit** : size and address of transmit buffer  
+- **recv** : size and address of receive buffer  
+- **ops**  : tables of operations like setup, send, receive and etc  
+- **priv** : private data of device like baudrate, interrupt number, parity and etc
 
-Here is an example.
+Following is an example code:
 ```
 #define CONSOLE_DEV		g_uart0port		/* UART0 is console */
 
@@ -242,13 +249,10 @@ static struct up_dev_s g_uart0priv = {
 ```
 
 ## SPI
-All structures and function prototypes to be implemented by the low-level  
-SPI drivers are provided in the header file **[spi.h](../os/include/tinyara/spi/spi.h)**
-under *os/include/tinyara/spi* folder.
+All structures and function prototypes to be implemented by the low-level SPI drivers are provided in the header file **[spi.h](../os/include/tinyara/spi/spi.h)** under *os/include/tinyara/spi* folder.
 
 ### SPI device driver initialization
-Each SPI device driver must implement the definitions of below prototypes for  
-SPI device initialization
+Each SPI device driver must implement the definitions of below prototypes for SPI device initialization.
 ```
 FAR struct spi_dev_s *up_spiinitialize(int port);
 ```
@@ -279,10 +283,8 @@ struct spi_dev_s *up_spiinitialize(int port)
 }
 ```
 
-Low level(hardware-specific) SPI device driver must create an instance of  
-*struct spi_dev_s* and returned to higher level device driver as shown above.  
-Also the SPI driver must create an instance of *struct spi_ops_s* and  
-hook it to the *ops* member of *struct spi_dev_s* instance
+Low level(hardware-specific) SPI device driver must create an instance of *struct spi_dev_s* and returned to higher level device driver as shown above.  Also the SPI driver must create an instance of *struct spi_ops_s* and  
+hook it to the *ops* member of *struct spi_dev_s* instance.
 ```
 struct spi_dev_s {
 	FAR const struct spi_ops_s *ops;
@@ -312,11 +314,8 @@ struct spi_ops_s {
 
 ```
 
-The above structure *struct spi_ops_s* defines a list of function pointers to be  
-implemented by the low level SPI device driver.
-
-Example implementation is present in **[s5j_spi.c](../os/arch/arm/src/s5j/s5j_spi.c)**
-under *os/arch/arm/src/s5j* folder.
+The above structure *struct spi_ops_s* defines a list of function pointers to be implemented by the low level SPI device driver.
+Example implementation is present in **[s5j_spi.c](../os/arch/arm/src/s5j/s5j_spi.c)** under *os/arch/arm/src/s5j* folder.
 ```
 static const struct spi_ops_s g_spiops = {
 #ifndef CONFIG_SPI_OWNBUS
@@ -360,10 +359,10 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
 
 ## I2C
 
-Each board, shall;  
+Each board is required to do the following:
 
-Implement and expose an instance of struct i2c_dev_s.     
-Implement the supported operations on i2c struct i2c_op_s.  
+- Implement and expose an instance of struct i2c_dev_s.     
+- Implement the supported operations on i2c struct i2c_op_s.  
 
 
 ```
@@ -399,9 +398,9 @@ Above declarations are present in **[i2c.h](../os/include/tinyara/i2c.h)**.
 In addition to above, each board level logic shall implement the other functions listed in **[i2c.h](../os/include/tinyara/i2c.h)**.  
 
 ```
-1. EXTERN FAR struct i2c_dev_s *up_i2cinitialize(int port);
-2. EXTERN int up_i2cuninitialize(FAR struct i2c_dev_s *dev);
-3. EXTERN int up_i2creset(FAR struct i2c_dev_s *dev);
+EXTERN FAR struct i2c_dev_s *up_i2cinitialize(int port);
+EXTERN int up_i2cuninitialize(FAR struct i2c_dev_s *dev);
+EXTERN int up_i2creset(FAR struct i2c_dev_s *dev);
 ```  
 
 ### I2C user level I/O
@@ -412,7 +411,8 @@ If user level I/O is needed on i2c port, then board level logic should provide t
 int i2c_uioregister(FAR const char *path, FAR struct i2c_dev_s *dev);
 #endif
 ```
->NOTE:Be aware that i2c user I/O is at premature stage  
+> **Note**
+> Be aware that i2c user I/O is at premature stage.
 
 ### I2C Initialization  
 I2C is initialized by invoking up_i2cinitialize.  
@@ -424,15 +424,14 @@ Please refer to **[i2c.h](../os/include/tinyara/i2c.h)** to know more about the 
 ## I2S
 
 I2S port for a board involves the following;
-1. I2S Device Structure and its Operations.
-2. I2S Initialization and Device Access.  
+- I2S Device Structure and its Operations.
+- I2S Initialization and Device Access.  
 
 ### I2S Device Structure and Operations
-Each board, shall;  
-
-Implement and expose an instance of struct i2s_dev_s for each port.     
-Implement the supported operations on i2s, ie struct i2s_op_s. 
-Data structures below; 
+Each board is required to do the following:
+- Implement and expose an instance of struct i2s_dev_s for each port.     
+- Implement the supported operations on i2s, ie struct i2s_op_s. 
+The relevant data structures are as follows: 
 
 ```
 /* I2S private data.  This structure only defines the initial fields of the
@@ -503,7 +502,8 @@ static const struct i2s_ops_s g_i2sops = {
 ```
 ### I2S Initialization and Device Access
 Board shall export ```struct i2s_dev_s* xxx_i2s_initialize(uint16_t port)``` to initialize a i2s port and get the corresponding device structure.    
-**NOTE**: Current code in s5j_i2s.c has initialize function as ```struct i2s_dev_s* s5j_i2s_initialize(uint16_t port)```.
+>**NOTE**  
+> Current code in s5j_i2s.c has initialize function as ```struct i2s_dev_s* s5j_i2s_initialize(uint16_t port)```. 
 
 This i2s initialize function shall be called with the port number to get the corresponding device structure.
 

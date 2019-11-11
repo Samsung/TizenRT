@@ -2,17 +2,17 @@
 
 To support a new board, you should make changes on three folders, *arch*, *board* and *configs*.  
 
-> 1. **arch** folder includes *CPU* and *chip* architectures.  
-> 2. **board** folder includes board support package(BSP).  
+> 1. **arch** folder includes *CPU* and *chip* architectures.
+> 2. **board** folder includes board support package(BSP).
 > 3. **configs** folder includes build options and flash operations.
 
 ## Contents
 
-> [Folder structure](#folder-structure)  
-> [Architecture](#architecture)  
-> [Board](#board)  
-> [How to include headers](#how-to-include-arch-and-board-header-files)  
-> [Configs](#configs)
+- [Folder structure](#folder-structure)
+- [Architecture](#architecture)
+- [Board](#board)
+- [How to include headers](#how-to-include-arch-and-board-header-files)
+- [Configs](#configs)
 
 ## Folder structure
 
@@ -45,8 +45,8 @@ This includes *CPU* and *chip* architecture inside.
 	                          `- src - <cpu-archname>
 ```
 **CPU** has *\<cpu-familyname\>* along with *\<cpu-archname\>* in the path.  
-> cpu-family : arm, mips (not supported yet), ...  
-> cpu-architecture : armv7-r, armv7-m, common, ...
+- cpu-family : arm, mips (not supported yet), ...
+- cpu-architecture : armv7-r, armv7-m, common, ...
 
 After adding source codes under *os/arch/\<cpu-familyname\>*,  
 to provide selection of new architecture, **Kconfig** on *os/arch* also need to be change like below:
@@ -76,9 +76,9 @@ source arch/arm/Kconfig
 source arch/<cpu-familyname>/Kconfig
 ```
 
-Note: Value of `config ARCH` should be same as folder name of `<cpu-familyname>`.
-
-Currently, TizenRT supports only ARM architecture with *armv7-m*, *armv7-r* and *common* folders.
+>**Note**
+>Value of `config ARCH` should be same as folder name of `<cpu-familyname>`.
+>Currently, TizenRT supports only ARM architecture with *armv7-m*, *armv7-r* and *common* folders.
 
 ### Chip
 
@@ -95,9 +95,9 @@ Currently, TizenRT supports only ARM architecture with *armv7-m*, *armv7-r* and 
 
 Currently, TizenRT includes *bcm4390x*, *s5j* and *tiva* folders for chip architecture.  
 You must add new chip folders under *src* and *include* folders.  
-The chip folder of *src* should include **Make.defs** and **Kconfig** to provide configuration and compilation.
+The `<chip-name>` folders under *src* should include **Make.defs** and **Kconfig** to provide configuration and compilation.
 
-Kconfig of *os/arch/<cpu-familyname>* supports selection of chip among TizenRT supported like CPU.
+Kconfig of *os/arch/\<cpu-familyname\>* supports selection of chip among TizenRT supported like CPU.
 ```
 choice
 	prompt "<CPU-FAMILYNAME> chip selection"
@@ -170,33 +170,34 @@ endif
 ## How to include arch and board header files
 
 At build time, Makefile dynamically links selected chip and board folders into selected cpu folder.  
-After building, you can find *chip* and *board* folders at *os/arch/<cpu-familyname>/src* folder.
+After building, you can find *chip* and *board* folders at *os/arch/\<cpu-familyname\>/src* folder.
 
 Additionally, at that time, *include* folder is linked into *os/include/arch* folder to expose their public APIs and definitions.
 
 For example, to use *bcm4390x* chip API which is defined in *os/arch/arm/include/bcm4390x/chip.h*, `#include <arch/chip/chip.h>` is necessary.  
 For *os/board/artik05x/artik055_alc5658_i2c.h*, `#include <arch/board/artik055_alc5658_i2c.h>` can be used.
 
-*make distclean* command unlinks them.
+>**Note**
+>If you want to unlink the chip and board folders from the linked cpu folder, you can use the *make distclean* command.
 
 ## Configs
 
 Changes in *configs* folder includes build options and flash operations.
 
 1. Add a new folder with board name.
-```
-mkdir build/configs/<board-name>
-```
+	```
+	mkdir build/configs/<board-name>
+	```
 
-2. Add the *script* folder and add the linker script file.
-```
-mkdir build/configs/<board-name>/scripts
-```
+2. Add the *scripts* folder and add the linker script file.
+	```
+	mkdir build/configs/<board-name>/scripts
+	```
 
 3. Add a new folder with representing main program name under \<board-name\> folder.
-```
-mkdir build/configs/<board-name>/<program-name>
-```
+	```
+	mkdir build/configs/<board-name>/<program-name>
+	```
 
 4. Put *defconfig* and *Make.defs* inside \<program-name\>.
 

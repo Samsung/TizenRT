@@ -1,12 +1,13 @@
 # How to Enable and use SmartFS
+SmartFS is a file system used for user partitions in TizenRT. This document provides details on SmartFS in TizenRT, notably on its architecture, and how to enable it on a 
+new target board.
 
 ## Contents
-> [About SmartFS](#about-smartfs)  
-> [SmartFS Code Layering](#smartfs-code-layering)  
-> [How to Enable SmartFS on New Board](#how-to-enable-smartfs-on-new-board)  
+- [About SmartFS](#about-smartfs)  
+- [SmartFS Code Layering](#smartfs-code-layering)  
+- [How to Enable SmartFS on New Board](#how-to-enable-smartfs-on-new-board)  
 
 ## About SmartFS
-SmartFS is a file system used for user partitions in TizenRT.  
 
 SmartFS stands for Sector Mapped Allocation for Really Tiny (SMART) flash.  
 It is a file system that has been designed to work primary with small and
@@ -51,9 +52,9 @@ with management routines.
 1. add *[FLASH Driver](#flash-driver)* for the flash present in the SoC/Board.  
 2. enable *[MTD Driver](#mtd-driver)* corresponding to flash.  
 3. enable *[SMART MTD Driver](#smart-mtd-driver)*.  
-4. enable *[SMART FS](#smart-fs)*
+4. enable *[SMART FS](#smart-fs)*.
 
-## FLASH Driver
+### FLASH Driver
 Flash driver must provide low-level read/write/erase capability for the FLASH HW.  
 Example of flash driver is present at *os/arch/arm/src/s5j/s5j_sflash.c*
 
@@ -90,25 +91,25 @@ void imxrt_boardinitialize(void)
 	imxrt_flash_init();
 }
 ```
-## MTD Driver
+### MTD Driver
 MTD Driver must be enabled to access the underlying FLASH driver.  
 The MTD driver initialization, however, varies by target board.
 
 Below configurations must be enabled to use MTD Driver.
 1. Enable CONFIG_MTD  
-```
-File Systems -> Memory Technology Device (MTD) Support = y
-```
+	```
+	File Systems -> Memory Technology Device (MTD) Support = y
+	```
 2. Enable CONFIG_MTD_PARTITION  
-```
-File Systems -> Memory Technology Device (MTD) Support -> Support MTD partitions = y
-```
+	```
+	File Systems -> Memory Technology Device (MTD) Support -> Support MTD partitions = y
+	```
 3. Enable CONFIG_MTD_PARTITION_NAMES  
-```
-File Systems -> Memory Technology Device (MTD) Support -> Support MTD partition  naming = y
-```
+	```
+	File Systems -> Memory Technology Device (MTD) Support -> Support MTD partition  naming = y
+	```
 
-Refer to *os/board/common/partitions.c* for example of MTD driver initialization
+Refer to *os/board/common/partitions.c* for example of MTD driver initialization.
 ```c
 #ifdef CONFIG_MTD_PROGMEM
 	mtd = progmem_initialize();
@@ -145,16 +146,15 @@ For the board such as imxrt, CONFIG_MTD_PROGMEM is disabled and up_flashinitiali
 (refer *os/arch/arm/src/imxrt/imxrt_norflash.c*)
 
 
-## SMART MTD Driver
-Smart MTD layer can be enabled by enabling CONFIG_MTD_SMART config
+### SMART MTD Driver
+Smart MTD layer can be enabled via the CONFIG_MTD_SMART config parameter.
 ```
 File Systems -> Memory Technology Device (MTD) Support -> Sector Mapped Allocation for Really Tiny (SMART) Flash support = y
 ```
 
 Refer *os/fs/driver/mtd/smart.c* for smart MTD driver code.
 
-And a smart device can be initialized as shown below,
-(refer *os/board/common/partitions.c*)
+And a smart device can be initialized as shown below. (Refer *os/board/common/partitions.c*)
 ```c
 #ifdef CONFIG_MTD_CONFIG
 		if (!strncmp(types, "config,", 7)) {
@@ -176,35 +176,35 @@ And a smart device can be initialized as shown below,
 The above code snippet creates a smart device node similar to */dev/smart0p[partno]*.  
 
 
-## SMART FS
+### SMART FS
 Smart FS layer can be enabled by enabling below configurations.  
 1. Enable CONFIG_FS_SMARTFS
-```
-File Systems -> SMART file system = y
-```
+	```
+	File Systems -> SMART file system = y
+	```
 2. Set CONFIG_SMARTFS_ERASEDSTATE
-```
-File Systems -> SMART file system -> SMARTFS options -> FLASH erased state = 0xff
-```
-3. set CONFIG_SMARTFS_MAXNAMLEN=32
-```
-File Systems -> SMART file system -> SMARTFS options -> Maximum file name length = 32
-```
+	```
+	File Systems -> SMART file system -> SMARTFS options -> FLASH erased state = 0xff
+	```
+3. Set CONFIG_SMARTFS_MAXNAMLEN=32
+	```
+	File Systems -> SMART file system -> SMARTFS options -> Maximum file name length = 32
+	```
 4. Enable CONFIG_SMARTFS_ALIGNED_ACCESS
-```
-File Systems -> SMART file system -> SMARTFS options -> Ensure 16 and 32 bit accesses are aligned = y
-```
+	```
+	File Systems -> SMART file system -> SMARTFS options -> Ensure 16 and 32 bit accesses are aligned = y
+	```
 
 Below are the optional features configurations. Refer *os/fs/smartfs/Kconfig* for more details.  
 1. CONFIG_SMARTFS_MULTI_ROOT_DIRS
 ```
 File Systems -> SMART file system -> SMARTFS options -> Support multiple Root Directories/Mount points
 ```
-2.CONFIG_SMARTFS_BAD_SECTOR
+2. CONFIG_SMARTFS_BAD_SECTOR
 ```
 File Systems -> SMART file system -> SMARTFS options -> Bad Sector Management
 ```
-3.CONFIG_SMARTFS_DYNAMIC_HEADER
+3. CONFIG_SMARTFS_DYNAMIC_HEADER
 ```
 File Systems -> SMART file system -> SMARTFS options -> Dynamic Header
 ```
@@ -243,12 +243,12 @@ Sample code for formatting and mounting SmartFS:
 ```
 Smart FS can also be mounted in TASH Shell as shown below:  
 1. Format the partition using mksmartfs command
-```
-Usage   : mksmartfs <device name>
-Example : mksmartfs /dev/smart0p8
-```
+	```
+	Usage   : mksmartfs <device name>
+	Example : mksmartfs /dev/smart0p8
+	```
 2. Mount smartfs using mount command
-```
-Usage   : mount -t <fs-type> <source/device name> <target/ logical mount path>
-Example : mount -t smartfs /dev/smart0p8 /mnt
-```
+	```
+	Usage   : mount -t <fs-type> <source/device name> <target/ logical mount path>
+	Example : mount -t smartfs /dev/smart0p8 /mnt
+	```

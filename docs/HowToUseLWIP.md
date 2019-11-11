@@ -3,15 +3,15 @@
 Please refer to [lwip_summary](https://savannah.nongnu.org/projects/lwip/) for more details.
 
 ## Contents
-> [Main Features](#main-features)  
-> [Writing device driver](#writing-device-driver)
+-[Main Features](#main-features)  
+-[Writing device driver](#writing-device-driver)
 
 ## Main Features
 **LwIP** provides various features needed for the tcp/ip stack across multiple network layers as below.
-1. **Application layer** - Domain Name Server (DNS), Simple Network Management Protocol (SNMP) agent, Dynamic Host Configuration Protocol (DHCP) server/client, Simple Network Time Protocol (SNTP), Multicast DNS, MQTT client.
-2. **Transport layer** - User Datagram Protocol (UDP), UDP-Lite extentions, Transmission Control Protocol (TCP), RAW socket and pcbs, Berkeley-like socket API.
-3. **Internet layer** - IPv4 and IPv6, packet forwarding over multiple network interfaces, Internet Control Message Protocol (ICMP) and ICMPv6, Internet Group Management Protocol (IGMP).
-4. **Link layer** - Point-to-point protocol (PPP), Ethernet Address Resoultion Protocol (ARP), Neighbor Discovery Protocol (NDP) and NDPv6.
+- **Application layer** - Domain Name Server (DNS), Simple Network Management Protocol (SNMP) agent, Dynamic Host Configuration Protocol (DHCP) server/client, Simple Network Time Protocol (SNTP), Multicast DNS, MQTT client.
+- **Transport layer** - User Datagram Protocol (UDP), UDP-Lite extentions, Transmission Control Protocol (TCP), RAW socket and pcbs, Berkeley-like socket API.
+- **Internet layer** - IPv4 and IPv6, packet forwarding over multiple network interfaces, Internet Control Message Protocol (ICMP) and ICMPv6, Internet Group Management Protocol (IGMP).
+- **Link layer** - Point-to-point protocol (PPP), Ethernet Address Resoultion Protocol (ARP), Neighbor Discovery Protocol (NDP) and NDPv6.
 
 For more details, please refer to [lwip_document](http://www.nongnu.org/lwip/2_0_x/index.html).
 
@@ -23,18 +23,17 @@ cd os
 ./dbuild.sh menuconfig (or make menuconfig)
 ```
 1. Enable LwIP
-```
-Networking Support -> Networking Stack (LwIP)
-```
+	```
+	Networking Support -> Networking Stack (LwIP)
+	```
 2. Select features 
-```
-Networking Support -> LwIP options
-```
+	```
+	Networking Support -> LwIP options
+	```
 3. Initialize LwIP by calling lwip_init() defined in [init.c](../os/net/lwip/src/core/init.c).
 
 ## Writing device driver
-Assumming successful LwIP loading on the system,
-network interface structure (netif) defined in [netif.h](../os/include/net/lwip/netif.h) needs to be initialized, and connected with device driver for in/out packets.
+Assuming successful LwIP loading on the system, network interface structure (netif) defined in [netif.h](../os/include/net/lwip/netif.h) needs to be initialized, and connected with device driver for in/out packets.
 [ethernetif.c](../os/net/mac/ethernetif.c) offers a good outline for what device driver should include.
 
 ### Network Interface Initialization
@@ -91,7 +90,7 @@ A netif can be assigned as a default in LwIP, by calling **netif_set_default()**
 #### Bring the interface up
 
 Before you can use the interface, it should be brought up.  
-This an be accomplished depending on how the interface gets its IP address.  
+This can be accomplished depending on how the interface gets its IP address.  
 
 * Static IP address - **netif_set_up** and **netif_set_down**, using [netifapi.h](../os/include/net/lwip/netifapi.h) directly  
 * DHCP client - Use **dhcp_start** and **dhcp_stop**  
@@ -112,7 +111,7 @@ Callback function registration (netif structure)
 Device driver needs to manage **LwIP state flags** and **network buffer (called pbuf)**. Please refer to the below.
 
 #### LwIP state flags
-1. NETIF_LWIP_UP: When a network interface is enabled and able to process traffic, this flag should be set to true. 
+- NETIF_LWIP_UP: When a network interface is enabled and is able to process traffic, this flag should be set to true. 
 Simply, set it to true or false, according to the device driver's status; initialized or deinitialized.
 Use LwIP APIs as below (defined in netif.c) to control the flag.
 ```
@@ -120,32 +119,35 @@ void netif_set_down(struct netif *netif);
 void netif_set_up(struct netif *netif);
 ```
 
-2. NETIF_LWIP_LINK_UP: This flag should be set to true or false, when the link is activated or deactivated, respectively.
+- NETIF_LWIP_LINK_UP: This flag should be set to true or false, when the link is activated or deactivated, respectively.
 Use LwIP APIs as below (defined in netif.c) to control the flag.
 ```
 void netif_set_link_down(struct netif *netif);
 void netif_set_link_up(struct netif *netif);
 ```
 
-* NOTE: In general, **device driver up/down** and **link up/down** are not strictly distinguished in LwIP structure.
-However, when the device driver changes its operation mode from STATION to AP,
-both NETIF_LWIP_UP and NETIF_LWIP_LINK_UP can be set to 0 simultaneously,
-or only NETIF_LWIP_LINK_UP is set to 0 without changing NETIF_LWIP_UP, depending on the device driver structure.
+> **Note**
+> In general, **device driver up/down** and **link up/down** are not strictly distinguished in LwIP structure.
+> However, when the device driver changes its operation mode from STATION to AP,
+> both NETIF_LWIP_UP and NETIF_LWIP_LINK_UP can be set to 0 simultaneously,
+> or only NETIF_LWIP_LINK_UP is set to 0 without changing NETIF_LWIP_UP, depending on the device driver structure.
 
 #### Network buffer (struct pbuf *p)
-1. INPUT: To pass a packet up the TCP/IP stack by the device driver, **netif->input** registered by netif_add() API should be called with pbuf.
+- INPUT: To pass a packet up the TCP/IP stack by the device driver, **netif->input** registered by netif_add() API should be called with pbuf.
 To allocate pbuf and manage it in the driver level, please refer to APIs defined in pbuf.h (LwIP pbuf APIs).
 In general, **tcpip_input()** defined in tcpip.c is used as below.
 ```
 err_t tcpip_input(struct pbuf *p, struct netif *netif_in);
 ```
-NOTE: Even if pbuf allocation fails due to memory pool overflow from LwIP, the driver should not discard the packet rashly.
+> **Note**
+> Even if pbuf allocation fails due to memory pool overflow from LwIP, the driver should not discard the packet rashly.
 
 
-2. OUTPUT: To send a packet on the interface to the link, **netif->linkoutput** implemented by the device driver should be called with pbuf.
+- OUTPUT: To send a packet on the interface to the link, **netif->linkoutput** implemented by the device driver should be called with pbuf.
 ```
 typedef err_t (*netif_linkoutput_fn)(struct netif * netif, struct pbuf * p);
 ```
-NOTE: The driver can optimize its structure to manage the packets received from the pbuf.
-However, it cannot drop the packet arbitrarily, depending on the queue or status of the driver.
+> **Note**
+> The driver can optimize its structure to manage the packets received from the pbuf.
+> However, it cannot drop the packet arbitrarily, depending on the queue or status of the driver.
 

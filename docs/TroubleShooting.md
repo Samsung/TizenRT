@@ -1,8 +1,8 @@
 # Trouble Shooting
 
 ## Contents
-> [Common](#common)  
-> [Board-Specific](#board-specific)
+- [Common](#common)  
+- [Board-Specific](#board-specific)
 
 ## Common
 ### Issues on Kconfig-frontend
@@ -24,7 +24,7 @@ make[1]: *** [libs/parser/libs_parser_libkconfig_parser_la-yconf.lo] Error 1
 ```
 
 To resolve:
-Modify `kconfig-frontends-4.11.0.1/libs/parser/hconf.c` like below
+Modify `kconfig-frontends-4.11.0.1/libs/parser/hconf.c` like below.
 ```diff
 --- a/libs/parser/hconf.c
 +++ b/libs/parser/hconf.c

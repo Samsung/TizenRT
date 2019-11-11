@@ -8,49 +8,54 @@ Please find project details at [Wiki](https://github.com/Samsung/TizenRT/wiki) e
 
 ## Contents
 
-> [Environment Setup](#environment-setup)  
-> [How to Build](#how-to-build)  
-> [Supported Board / Emulator](#supported-board--emulator)  
+- [Environment Setup](#environment-setup)
+- [How to Build](#how-to-build)
+- [Supported Board / Emulator](#supported-board--emulator)
 
 ## Environment Setup
 
-TizenRT provides the easiest way to build with the use of [Docker](https://www.docker.com/).  
-There is no need to install the required libraries and toolchains since the provided Docker container already includes everything required for TizenRT development.  
-However, if your development systems are not eligible for running the Docker container, all libraries and toolchains should be manually installed.  
+TizenRT provides the easiest way to build with the use of [Docker](https://www.docker.com/).
+There is no need to install the required libraries and toolchains since the provided Docker container already includes everything required for TizenRT development.
+However, if your development systems are not eligible for running the Docker container, all libraries and toolchains should be manually installed.
 Please refer to [Manual Setup Build Environment](docs/HowToSetEnv.md).
 
 For more information of libraries in the TizenRT Docker Image, see https://hub.docker.com/r/tizenrt/tizenrt/.
 
-Especially For Windows environment, configuring CRLF is required as below.
-```
-git config --global core.autocrlf input
-```
-
 ### 1. Installing Docker
 
-To install OS specific Docker engines, see https://docs.docker.com/install/linux/docker-ce/ubuntu/.  
+To install OS specific Docker engines, see https://docs.docker.com/install/. For example, if you are using Ubuntu, you need to install the Docker engine
+located at https://docs.docker.com/install/linux/docker-ce/ubuntu/.
 If you already have a Docker engine, please skip this step.
 
 ### 2. Getting TizenRT source code
-
+If you are building TizenRT on a Windows environment, you need to first configure CRLF as shown below:
+```
+git config --global core.autocrlf input
+```
+Now, clone TizenRT source code as shown below:
 ```bash
 git clone https://github.com/Samsung/TizenRT.git
 cd TizenRT
 TIZENRT_BASEDIR="$PWD"
 ```
-**Note**: To contribute in this community, you need to clone your forked private repository instead.  
-          Github guides this by [working-with-forks](https://help.github.com/articles/working-with-forks).
+>**Note**
+> To contribute in this community, you need to create a fork, and clone your forked private repository instead of the main repository.
+> Github guides this by [working-with-forks](https://help.github.com/articles/working-with-forks).
 
 ## How to build
 
-TizenRT provides an interactive tool (*dbuild.sh*) where you are prompted to select a option among multiple choices.  
-According to your selection, it consecutively provides next-step options.  
-When you become familiar to the TizenRT build system, you may use the *dbuild.sh* script with a specific build option.
-
-As the build script is running based on Docker, it requires *sudo* for root permission.  
-To run Docker without *sudo*, refer to https://docs.docker.com/install/linux/linux-postinstall/.
+There are two ways to build TizenRT.
+- [Using an interactive tool](#Using-an-interactive-tool)
+- [Using specific build options](#usign-specific-build-options)
 
 ### Using an interactive tool
+TizenRT provides an interactive tool (*dbuild.sh*) where you are prompted to select a option among multiple choices.
+According to your selection, it consecutively provides next-step options.
+When you become familiar to the TizenRT build system, you may use the *dbuild.sh* script with a specific build option.
+
+>**Note**
+>As the build script is running based on Docker, it requires *sudo* for root permission.
+>To run Docker without *sudo*, refer to https://docs.docker.com/install/linux/linux-postinstall/.
 
 To get started, use the *dbuild.sh* script with the *menu* option as follows:
 ```bash
@@ -115,38 +120,37 @@ You can see collection of all configuration files at *$TIZENRT_BASEDIR/build/con
 To check all pre-defined configurations, type as follows:
 
 ```bash
-./configure.sh --help
+./tools/configure.sh --help
 ```
-
 ##### 1.1 Additional Configuration (optional)
-
 After basic configuration by [1. Configuration](#1-configuration), you can additionally modify your configuration with *menuconfig*.
 
-```bash
+``bash
 ./dbuild.sh menuconfig
 ```
-
-**Note**: In Docker environment, ```make menuconfig``` command from other README files should be replaced with this command.  
-          ```make menuconfig``` applies only in [Manual Setup Build Environment](docs/HowToSetEnv.md).
+> **Note**
+> In Docker environment, ```make menuconfig``` command from other README files should be replaced with this command.
+> ```make menuconfig``` applies only in [Manual Setup Build Environment](docs/HowToSetEnv.md).
 
 #### 2. Compilation
-
+There are two aspects to compilation, namely Build and Clean, which are described as follows:
+##### Build
+To compile, simply type the following:
 ```bash
 ./dbuild.sh
 ```
+After compilation, built binaries will be located in *$TIZENRT_BASEDIR/build/output/bin*.
 
-Built binaries are located in *$TIZENRT_BASEDIR/build/output/bin*.
+##### Clean
 
-##### 2.1 Clean
-
-There are two types of clean commands, clean and distclean.
+There are two types of clean commands, *clean* and *distclean*.
 
 ```bash
 ./dbuild.sh clean
 ```
 
 This command removes built files including objects, libraries, .depend, Make.dep, etc.  
-After modifying configuration with menuconfig, this command is required.
+After modifying configuration with *menuconfig*, this command is required.
 
 ```bash
 ./dbuild.sh distclean
