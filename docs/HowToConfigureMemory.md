@@ -1,27 +1,27 @@
 # How to configure Memory
 
 ## Contents
-> [Configuration](#configuration)  
-> [Linker Scripts](#linker-scripts)  
-> [Multi-Heap Support](#multi-heap-support)
+- [Configuration](#configuration)
+- [Linker Scripts](#linker-scripts)
+- [Multi-Heap Support](#multi-heap-support)
 
 ## Configuration
 There are two configurations to configure memory, CONFIG_RAM_REGIONx_START and CONFIG_RAM_REGIONx_SIZE.  
 Menuconfig helps to change them as shown below:
-```
-cd $TIZENRT_BASEDIR
-cd os
-make menuconfig
-```
-Find configs with following step:
-```
-Hardware Configuration -> Chip selection -> Boot Memory Configuration
-```
-Set CONFIG_RAM_REGIONx_START as hexa value and set CONFIG_RAM_REGIONx_SIZE as decimal value in bytes.
-```
-CONFIG_RAM_REGIONx_START=0x02023800
-CONFIG_RAM_REGIONx_SIZE=968704
-```
+1. Execute make with the menuconfig option
+	```
+	cd $TIZENRT_BASEDIR
+	cd os
+	make menuconfig
+	```
+2. To find configs, select `Hardware Configuration -> Chip selection -> Boot Memory Configuration`
+
+
+3. Set `CONFIG_RAM_REGIONx_START` as hexa value and set `CONFIG_RAM_REGIONx_SIZE` as decimal value in bytes.
+	```
+	CONFIG_RAM_REGIONx_START=0x02023800
+	CONFIG_RAM_REGIONx_SIZE=968704
+	```
 Heap allocation will use these values for setting heap start and end address.
 
 ## Linker Scripts

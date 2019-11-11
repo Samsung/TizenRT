@@ -4,8 +4,8 @@ There are two methods to include static library, [adding it into arch library](#
 
 ## Adding it into arch library
 
-Makefile or Make.defs in arch can include it for architecture specific library as mentioned below.  
-Libarch.a includes new static library inside.
+Makefile or Make.defs in arch can include static libraries for specific architectures as mentioned below. As a convention, the specified static library
+is added to *libarch.a* in the final build.
 ```
 VPATH += <LIB_PATH>
 EXTRA_LIBS += <LIB_PATH>/<LIB_NAME>.a
@@ -18,7 +18,7 @@ VPATH += chip/abc
 EXTRA_LIBS += chip/abc/libnew.a
 ```
 
-This change makes it add to TizenRT binary by Makefile which is at *os/arch/arm/src* folder.
+This allows adding a static library from within the Makefile located at *os/arch/arm/src* folder. The specified library *libnew.a* will be merged under *libarch.a*.
 ```
 $(OUTBIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
 	$(Q) echo "LD: tinyara"
@@ -29,15 +29,15 @@ $(OUTBIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
 
 ## Adding it as a new library
 
-TizenRT includes it as separated library, not merge it to existed library.
+TizenRT also allows including a static library as a separate entity, without merging it to an existing library. The following steps describe how to include a static library:
 
-1. Add it in *Libtargets.mk*.  
+1. Add the static library in *Libtargets.mk*.
     ```
     $(LIBRARIES_DIR)$(DELIM)<LIB_NAME>$(LIBEXT): <LIB_PATH>$(DELIM)<LIB_NAME>$(LIBEXT)
     	$(Q) install <LIB_PATH>$(DELIM)<LIB_NAME>$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)<LIB_NAME>$(LIBEXT)
     ```
 
-2. Add it in *FlatLibs.mk*, *ProtectedLibs.mk* and *KernelLibs.mk*.
+2. Add the static library in *FlatLibs.mk*, *ProtectedLibs.mk* and *KernelLibs.mk*.
 
     For kernel library,
     ```

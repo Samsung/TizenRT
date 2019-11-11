@@ -2,12 +2,12 @@
 
 There are two parts to use ROMFS, generic and board specific.
 
-## 1. Generic
+## Generic
 
 This part supports making ROMFS image.  
 Please find it at [README](../tools/fs/README_ROMFS.md).
 
-## 2. Board Specific
+## Board Specific
 
 This part supports making partition for ROMFS and programming a ROMFS image.  
 Please find it at each README.

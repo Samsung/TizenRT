@@ -7,22 +7,23 @@ sudo apt-get install bison byacc flex gperf libncurses5-dev zlib1g-dev gettext g
 ```
 
 ## Kconfig-frontend
-1. Download and untar *kconfig-frontends* package.  
+1. Download and unzip *kconfig-frontends* package.  
 One of site is [Yann Morin's Project](http://ymorin.is-a-geek.org/projects/kconfig-frontends).
-```bash
-tar -xvf kconfig-frontends-x.xx.x.x.tar.bz2
-```
+	```bash
+	tar -xvf kconfig-frontends-x.xx.x.x.tar.bz2
+	```
 
 2. Go to *kconfig-frontends* folder.
-```bash
-cd kconfig-frontends-x.xx.x.x
-```
+	```bash
+	cd kconfig-frontends-x.xx.x.x
+	```
 
 3. Configure and Build.
-```bash
-./configure --enable-mconf --disable-gconf --disable-qconf
-make
-sudo make install
-```
+	```bash
+	./configure --enable-mconf --disable-gconf --disable-qconf
+	make
+	sudo make install
+	```
 
-### [Trouble Shooting](https://github.com/Samsung/TizenRT/blob/master/docs/TroubleShooting.md)
+### Trouble Shooting
+Please refer to [Trouble Shooting](https://github.com/Samsung/TizenRT/blob/master/docs/TroubleShooting.md)

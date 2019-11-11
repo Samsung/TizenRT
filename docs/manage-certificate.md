@@ -1,17 +1,18 @@
 # Managing SmartThings&trade; Certificates
-
-## Contents
-> [Creating a Certificate](#creating-a-certificate)  
-> [Importing a Certificate](#importing-a-certificate)  
-> [Activating a Certificate](#activating-a-certificate)  
-
 SmartThings&trade; uses OpenSSL for security. To ensure that only trusted developers and manufactures can develop devices that communicate with the SmartThings Cloud, you must get certificates for devices to use the SmartThings&trade; service.
 
+## Contents
+- [Using a Certificate Manager](#using-a-certificate-manager) 
+- [Creating a Certificate](#creating-a-certificate)  
+- [Importing a Certificate](#importing-a-certificate)  
+- [Activating a Certificate](#activating-a-certificate)  
+
+## Using a Certificate Manager
 In the Tizen RT IDE, you can perform various certificate-related tasks, such as creation, removal, import, and activation, by using the **SmartThings Certificate Manager**.
 
 ![SmartThings Certificate Manager](media/rt_cert_manager.png)
 
-The Certificate Manager is launched automatically if no certificate is set as active when you try to flash a project. To launch the Certificate Manager manually, go to **Tools &gt; ST Certificate Manager** in the Tizen Studio for RT menu.
+The Certificate Manager is launched automatically if no certificate is set as active when you try to flash a project. To launch the Certificate Manager manually, select **Tools &gt; ST Certificate Manager** in the Tizen Studio for RT menu.
 
 <a name="create"></a>
 ## Creating a Certificate
