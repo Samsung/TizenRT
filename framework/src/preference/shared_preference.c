@@ -42,9 +42,9 @@ int preference_shared_set_int(const char *key, int value)
 
 	data.key = key;
 	data.type = SHARED_PREFERENCE;
-	data.value.type = PREFERENCE_TYPE_INT;
-	data.value.len = sizeof(int);
-	data.value.i = value;
+	data.attr.type = PREFERENCE_TYPE_INT;
+	data.attr.len = sizeof(int);
+	data.value = &value;
 
 	/* Set preference with prctl */
 	return prctl(PR_SET_PREFERENCE, &data);
@@ -60,9 +60,9 @@ int preference_shared_set_double(const char *key, double value)
 
 	data.key = key;
 	data.type = SHARED_PREFERENCE;
-	data.value.type = PREFERENCE_TYPE_DOUBLE;
-	data.value.len = sizeof(double);
-	data.value.d = value;
+	data.attr.type = PREFERENCE_TYPE_DOUBLE;
+	data.attr.len = sizeof(double);
+	data.value = &value;
 
 	/* Set preference with prctl */
 	return prctl(PR_SET_PREFERENCE, &data);
@@ -78,13 +78,9 @@ int preference_shared_set_bool(const char *key, bool value)
 
 	data.key = key;
 	data.type = SHARED_PREFERENCE;
-	data.value.type = PREFERENCE_TYPE_BOOL;
-	data.value.len = sizeof(int);
-	if (value) {
-		data.value.i = (int)true;
-	} else {
-		data.value.i = (int)false;
-	}
+	data.attr.type = PREFERENCE_TYPE_BOOL;
+	data.attr.len = sizeof(bool);
+	data.value = &value;
 
 	/* Set preference with prctl */
 	return prctl(PR_SET_PREFERENCE, &data);
@@ -100,9 +96,9 @@ int preference_shared_set_string(const char *key, char *value)
 
 	data.key = key;
 	data.type = SHARED_PREFERENCE;
-	data.value.type = PREFERENCE_TYPE_STRING;
-	data.value.len = strlen(value) + 1;
-	data.value.s = value;
+	data.attr.type = PREFERENCE_TYPE_STRING;
+	data.attr.len = strlen(value) + 1;
+	data.value = value;
 
 	/* Set preference with prctl */
 	return prctl(PR_SET_PREFERENCE, &data);
@@ -122,12 +118,13 @@ int preference_shared_get_int(const char *key, int *value)
 
 	data.key = key;
 	data.type = SHARED_PREFERENCE;
-	data.value.type = PREFERENCE_TYPE_INT;
+	data.attr.type = PREFERENCE_TYPE_INT;
 
 	/* Get preference with prctl */
 	ret = prctl(PR_GET_PREFERENCE, &data);
 	if (ret == OK) {
-		*value = data.value.i;
+		*value = *(int *)data.value;
+		PREFERENCE_FREE(data.value);
 	}
 
 	return ret;
@@ -144,16 +141,13 @@ int preference_shared_get_bool(const char *key, bool *value)
 
 	data.key = key;
 	data.type = SHARED_PREFERENCE;
-	data.value.type = PREFERENCE_TYPE_BOOL;
+	data.attr.type = PREFERENCE_TYPE_BOOL;
 
 	/* Get preference with prctl */
 	ret = prctl(PR_GET_PREFERENCE, &data);
 	if (ret == OK) {
-		if (data.value.i == (int)false) {
-			*value = false;
-		} else if (data.value.i == (int)true) {
-			*value = true;
-		}
+		*value = *(bool *)data.value;
+		PREFERENCE_FREE(data.value);
 	}
 
 	return ret;
@@ -170,12 +164,13 @@ int preference_shared_get_double(const char *key, double *value)
 
 	data.key = key;
 	data.type = SHARED_PREFERENCE;
-	data.value.type = PREFERENCE_TYPE_DOUBLE;
+	data.attr.type = PREFERENCE_TYPE_DOUBLE;
 
 	/* Get preference with prctl */
 	ret = prctl(PR_GET_PREFERENCE, &data);
 	if (ret == OK) {
-		*value = data.value.d;
+		*value = *(double *)data.value;
+		PREFERENCE_FREE(data.value);
 	}
 
 	return ret;
@@ -192,12 +187,12 @@ int preference_shared_get_string(const char *key, char **value)
 
 	data.key = key;
 	data.type = SHARED_PREFERENCE;
-	data.value.type = PREFERENCE_TYPE_STRING;
+	data.attr.type = PREFERENCE_TYPE_STRING;
 
 	/* Get preference with prctl */
 	ret = prctl(PR_GET_PREFERENCE, &data);
 	if (ret == OK) {
-		*value = data.value.s;
+		*value = (char *)data.value;
 	}
 
 	return ret;

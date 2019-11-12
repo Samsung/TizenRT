@@ -31,8 +31,7 @@ static int preference_read_fs_key(char *path, preference_data_t *data)
 {
 	int fd;
 	int ret;
-	int read_size;
-	value_data_t value_data;
+	value_attr_t attr;
 
 	fd = open(path, O_RDONLY, 0666);
 	PREFERENCE_FREE(path);
@@ -44,59 +43,43 @@ static int preference_read_fs_key(char *path, preference_data_t *data)
 		return PREFERENCE_IO_ERROR;
 	}
 
-	/* Read and Verify the type and len of data value */
-	read_size = 2 * sizeof(int);
-	ret = read(fd, (void *)&value_data, read_size);
-	if (ret != read_size) {
+	/* Read and Verify attributes of data : type, len */
+	ret = read(fd, (FAR uint8_t *)&attr, sizeof(value_attr_t));
+	if (ret != sizeof(value_attr_t)) {
+		prefdbg("Failed to read attribute, errno %d\n", errno);
 		ret = PREFERENCE_IO_ERROR;
 		goto errout;
-	} else if (value_data.type < 0 || value_data.len < 0) {
-		prefdbg("Invalid data %d\n", value_data.len);
+	} else if (attr.type < 0 || attr.len < 0) {
+		prefdbg("Invalid data : type %d, len %d\n", attr.type, attr.len);
 		ret = PREFERENCE_OPERATION_FAIL;
 		goto errout;
-	} else if (value_data.type != data->value.type) {
-		prefdbg("Invalid type. request type:%d, read type:%d\n", data->value.type, value_data.type);
+	} else if (attr.type != data->attr.type) {
+		prefdbg("Invalid type. request type:%d, read type:%d\n", data->attr.type, attr.type);
 		ret = PREFERENCE_INVALID_PARAMETER;
 		goto errout;
 	}
-	data->value.len = value_data.len;
-
-	/* Read the data value */
-	switch (data->value.type) {
-	case PREFERENCE_TYPE_INT:
-	case PREFERENCE_TYPE_BOOL:
-		ret = read(fd, (void *)&(data->value.i), data->value.len);
-		prefvdbg("[READ] int type %d\n", data->value.i);
-		break;
-	case PREFERENCE_TYPE_DOUBLE:
-		ret = read(fd, (void *)&(data->value.d), data->value.len);
-		prefvdbg("[READ] double type %f\n", data->value.d);
-		break;
-	case PREFERENCE_TYPE_STRING:
-		data->value.s = (char *)PREFERENCE_ALLOC(data->value.len);
-		if (data->value.s == NULL) {
-			ret = PREFERENCE_OUT_OF_MEMORY;
-			goto errout;
-		}
-		ret = read(fd, data->value.s, data->value.len);
-		prefvdbg("[READ] string type %s\n", data->value.s);
-		if (ret != data->value.len) {
-			PREFERENCE_FREE(data->value.s);
-			data->value.s = NULL;
-		}
-		break;
-	default:
-		prefdbg("Invalid type %d\n");
-		ret = PREFERENCE_INVALID_PARAMETER;
+	data->attr.len = attr.len;
+	data->value = PREFERENCE_ALLOC(data->attr.len);
+	if (data->value == NULL) {
+		ret = PREFERENCE_OUT_OF_MEMORY;
+		goto errout;
 	}
 
-	if (ret == data->value.len) {
-		prefvdbg("Read key Success!\n");
-		ret = OK;
-	} else {
+	/* Read value data */
+	ret = read(fd, (void *)data->value, data->attr.len);
+	if (ret != data->attr.len) {
+		prefdbg("Failed to read key value, errno %d\n", errno);
 		ret = PREFERENCE_IO_ERROR;
+		goto errout_with_free;
 	}
-errout:	
+
+	prefvdbg("Read key Success!\n");
+	close(fd);
+
+	return OK;
+errout_with_free:
+	PREFERENCE_FREE(data->value);
+errout:
 	close(fd);
 
 	return ret;
