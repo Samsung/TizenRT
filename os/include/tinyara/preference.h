@@ -70,21 +70,17 @@ enum preference_result_error_e {
 #define PREFERENCE_CBMQ_LEN         16
 #define PREFERNENCE_CBMSG_MAX       32
 
-struct value_data_s {
+struct value_attr_s {
 	int type;
 	int len;
-	union {
-		int i;
-		double d;
-		char *s;
-	};
 };
-typedef struct value_data_s value_data_t;
+typedef struct value_attr_s value_attr_t;
 
 struct preference_data_s {
 	char *key;
 	int type;
-	value_data_t value;
+	value_attr_t attr;
+	void *value;
 };
 typedef struct preference_data_s preference_data_t;
 

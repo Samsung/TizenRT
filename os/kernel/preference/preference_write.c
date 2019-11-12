@@ -113,7 +113,6 @@ static int preference_write_fs_key(char *path, preference_data_t *data)
 {
 	int fd;
 	int ret;
-	int write_size;
 
 	fd = open(path, O_WRONLY | O_CREAT, 0666);
 	if (fd < 0) {
@@ -122,26 +121,22 @@ static int preference_write_fs_key(char *path, preference_data_t *data)
 		return PREFERENCE_IO_ERROR;
 	}
 
-	if (data->value.type != PREFERENCE_TYPE_STRING) {
-		/* Write type, len, value */
-		write_size = 2 * sizeof(int) + data->value.len;
-		ret = write(fd, (void *)&(data->value), write_size);
-	} else {
-		/* Write type, len */
-		write_size = 2 * sizeof(int);
-		ret = write(fd, (void *)&(data->value), write_size);
-		if (ret == write_size) {
-			/* Write value */
-			write_size += data->value.len;
-			ret += write(fd, (void *)data->value.s, data->value.len);
-		}
-	}
-	if (ret != write_size) {
-		ret = PREFERENCE_IO_ERROR;
+	/* Write attributes of data : type, len */
+	ret = write(fd, (void *)&data->attr, sizeof(value_attr_t));
+	if (ret != sizeof(value_attr_t)) {
+		prefdbg("Failed to write key value, errno %d\n", errno);
 		goto errout_with_close;
 	}
+
+	/* Write value data */
+	ret = write(fd, (void *)data->value, data->attr.len);
+	if (ret != data->attr.len) {
+		prefdbg("Failed to write key value, errno %d\n", errno);
+		goto errout_with_close;
+	}
+
 	close(fd);
-	prefvdbg("Write Key Success : %s, len = %d\n", path, data->value.len);
+	prefvdbg("Write Key Success : %s, len = %d\n", path, data->attr.len);
 	PREFERENCE_FREE(path);
 
 	return OK;
@@ -150,7 +145,7 @@ errout_with_close:
 	unlink(path);
 	PREFERENCE_FREE(path);
 
-	return ret;
+	return PREFERENCE_IO_ERROR;
 }
 
 /****************************************************************************
