@@ -26,7 +26,9 @@
 #include "iot_os_util.h"
 #include "iot_util.h"
 #include "event_groups.h"
-
+#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#include <tinyara/wifi/wifi_utils.h>
+#endif
 #ifdef CONFIG_NETUTILS_NTPCLIENT
 #include <protocols/ntpclient.h>
 #endif
@@ -208,6 +210,19 @@ iot_error_t iot_bsp_wifi_init()
 	return IOT_ERROR_NONE;
 }
 
+int _iot_bsp_sta_mode(void)
+{
+#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+	wifi_utils_info_s info;
+	wifi_utils_get_info(&info);
+	return (info.wifi_status == WIFI_UTILS_SOFTAP_MODE) ? 0 : 1;
+#else
+	wifi_manager_info_s info;
+	wifi_manager_get_info(&info);
+	return (info.mode == STA_MODE) ? 1 : 0;
+#endif
+}
+
 iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 {
 	int str_len = 0;
@@ -223,8 +238,7 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 			//esp_wifi_set_mode(WIFI_MODE_NULL);
 		break;
 		case IOT_WIFI_MODE_SCAN:
-			wifi_manager_get_info(&info);
-			if (info.mode != STA_MODE) {
+			if (_iot_bsp_sta_mode() == 0) {
 				res = wifi_manager_set_mode(STA_MODE, NULL);
 				if (res != WIFI_MANAGER_SUCCESS) {
 					IOT_INFO(" Set STA mode Fail\n");
@@ -240,9 +254,7 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 		break;
 
 		case IOT_WIFI_MODE_STATION:
-			wifi_manager_get_info(&info);
-			//Start STA mode
-			if (info.mode != STA_MODE) {
+			if (_iot_bsp_sta_mode() == 0) {
 				res = wifi_manager_set_mode(STA_MODE, NULL);
 				if (res != WIFI_MANAGER_SUCCESS) {
 					IOT_INFO(" Set STA mode Fail\n");
@@ -346,10 +358,18 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 
 iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac)
 {
+	int ret = -1;
 	if(*((int *)bsp_mac.addr) == 0) {
+#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+		wifi_utils_info_s info;
+		wifi_utils_result_e wret = wifi_utils_get_info(&info);
+		ret = (wret == WIFI_UTILS_SUCCESS) ? 0 : -1;
+#else
 		wifi_manager_info_s info;
 		wifi_manager_result_e res = wifi_manager_get_info(&info);
-		if (res != WIFI_MANAGER_SUCCESS) {
+		ret = (res == WIFI_MANAGER_SUCCESS) ? 0 : -1;
+#endif
+		if (ret != 0) {
 			IOT_INFO("Get info failed\n");
 			return IOT_ERROR_READ_FAIL;
 		}
