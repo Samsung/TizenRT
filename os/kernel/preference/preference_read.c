@@ -22,6 +22,7 @@
 #include <debug.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <crc32.h>
 #include <tinyara/preference.h>
 
 /****************************************************************************
@@ -31,6 +32,7 @@ static int preference_read_fs_key(char *path, preference_data_t *data)
 {
 	int fd;
 	int ret;
+	uint32_t check_crc;
 	value_attr_t attr;
 
 	fd = open(path, O_RDONLY, 0666);
@@ -43,7 +45,7 @@ static int preference_read_fs_key(char *path, preference_data_t *data)
 		return PREFERENCE_IO_ERROR;
 	}
 
-	/* Read and Verify attributes of data : type, len */
+	/* Read and Verify attributes of data : crc, type, len */
 	ret = read(fd, (FAR uint8_t *)&attr, sizeof(value_attr_t));
 	if (ret != sizeof(value_attr_t)) {
 		prefdbg("Failed to read attribute, errno %d\n", errno);
@@ -70,6 +72,15 @@ static int preference_read_fs_key(char *path, preference_data_t *data)
 	if (ret != data->attr.len) {
 		prefdbg("Failed to read key value, errno %d\n", errno);
 		ret = PREFERENCE_IO_ERROR;
+		goto errout_with_free;
+	}
+
+	/* Calculate and Verify the checksum */
+	check_crc = crc32((uint8_t *)&data->attr.type, sizeof(value_attr_t) - sizeof(uint32_t));
+	check_crc = crc32part((uint8_t *)data->value, data->attr.len, check_crc);
+	if (check_crc != attr.crc) {
+		prefdbg("Invalid checksum, read crc : %u, calculated crc : %u\n", attr.crc, check_crc);
+		ret = PREFERENCE_INVALID_DATA;
 		goto errout_with_free;
 	}
 

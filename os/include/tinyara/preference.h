@@ -55,6 +55,7 @@ enum preference_result_error_e {
 	PREFERENCE_OUT_OF_MEMORY = -5,
 	PREFERENCE_OPERATION_FAIL = -6,
 	PREFERENCE_NOT_REGISTERED = -7,
+	PREFERENCE_INVALID_DATA = -8,
 };
 
 #define PRIVATE_PREFERENCE     0
@@ -71,6 +72,7 @@ enum preference_result_error_e {
 #define PREFERNENCE_CBMSG_MAX       32
 
 struct value_attr_s {
+	uint32_t crc;
 	int type;
 	int len;
 };

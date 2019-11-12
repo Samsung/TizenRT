@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <crc32.h>
 #include <sys/stat.h>
 #include <tinyara/preference.h>
 
@@ -113,6 +114,7 @@ static int preference_write_fs_key(char *path, preference_data_t *data)
 {
 	int fd;
 	int ret;
+	uint32_t crc_value;
 
 	fd = open(path, O_WRONLY | O_CREAT, 0666);
 	if (fd < 0) {
@@ -121,7 +123,11 @@ static int preference_write_fs_key(char *path, preference_data_t *data)
 		return PREFERENCE_IO_ERROR;
 	}
 
-	/* Write attributes of data : type, len */
+	/* Calculate checksum of attributes, type, len and value */
+	crc_value = crc32((uint8_t *)&data->attr.type, sizeof(value_attr_t) - sizeof(uint32_t));
+	data->attr.crc = crc32part((uint8_t *)data->value, data->attr.len, crc_value);
+
+	/* Write attributes of data : crc, type, len */
 	ret = write(fd, (void *)&data->attr, sizeof(value_attr_t));
 	if (ret != sizeof(value_attr_t)) {
 		prefdbg("Failed to write key value, errno %d\n", errno);
