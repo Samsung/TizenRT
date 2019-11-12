@@ -58,7 +58,7 @@ void slsi_rx_ba_init(struct slsi_dev *sdev)
 	SLSI_MUTEX_INIT(sdev->rx_ba_buffer_pool_lock);
 }
 
-static struct slsi_ba_session_rx *slsi_rx_ba_alloc_buffer(struct netif *dev)
+static struct slsi_ba_session_rx *slsi_rx_ba_alloc_buffer(struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
@@ -84,7 +84,7 @@ static struct slsi_ba_session_rx *slsi_rx_ba_alloc_buffer(struct netif *dev)
 	return buffer;
 }
 
-static void slsi_rx_ba_free_buffer(struct netif *dev, struct slsi_peer *peer, int tid)
+static void slsi_rx_ba_free_buffer(struct netdev *dev, struct slsi_peer *peer, int tid)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
@@ -103,7 +103,7 @@ static void slsi_rx_ba_free_buffer(struct netif *dev, struct slsi_peer *peer, in
  * is called in the data workqueue context with the
  * netdev_vif mutex held.
  */
-void slsi_ba_process_complete(struct netif *dev)
+void slsi_ba_process_complete(struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *mbuf;
@@ -113,7 +113,7 @@ void slsi_ba_process_complete(struct netif *dev)
 	}
 }
 
-static void slsi_ba_signal_process_complete(struct netif *dev)
+static void slsi_ba_signal_process_complete(struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -121,14 +121,14 @@ static void slsi_ba_signal_process_complete(struct netif *dev)
 	slsi_mbuf_schedule_work(&ndev_vif->rx_data, slsi_rx_netdev_data_work);
 }
 
-static void ba_add_frame_to_ba_complete(struct netif *dev, struct slsi_ba_frame_desc *frame_desc)
+static void ba_add_frame_to_ba_complete(struct netdev *dev, struct slsi_ba_frame_desc *frame_desc)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
 	slsi_mbuf_queue_tail(&ndev_vif->ba_complete, frame_desc->signal);
 }
 
-static void ba_update_expected_sn(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sn)
+static void ba_update_expected_sn(struct netdev *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sn)
 {
 	u32 i, j;
 	u16 gap;
@@ -151,7 +151,7 @@ static void ba_update_expected_sn(struct netif *dev, struct slsi_ba_session_rx *
 	ba_session_rx->expected_sn = sn;
 }
 
-static void ba_complete_ready_sequence(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx)
+static void ba_complete_ready_sequence(struct netdev *dev, struct slsi_ba_session_rx *ba_session_rx)
 {
 	int i;
 
@@ -165,7 +165,7 @@ static void ba_complete_ready_sequence(struct netif *dev, struct slsi_ba_session
 	}
 }
 
-static void ba_scroll_window(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sn)
+static void ba_scroll_window(struct netdev *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sn)
 {
 	if (((sn - ba_session_rx->expected_sn) & 0xFFF) <= BA_WINDOW_BOUNDARY) {
 		ba_update_expected_sn(dev, ba_session_rx, sn);
@@ -173,7 +173,7 @@ static void ba_scroll_window(struct netif *dev, struct slsi_ba_session_rx *ba_se
 	}
 }
 
-static int ba_consume_frame_or_get_buffer_index(struct netif *dev, struct slsi_peer *peer, struct slsi_ba_session_rx *ba_session_rx, u16 sn, struct slsi_ba_frame_desc *frame_desc, bool *stop_timer)
+static int ba_consume_frame_or_get_buffer_index(struct netdev *dev, struct slsi_peer *peer, struct slsi_ba_session_rx *ba_session_rx, u16 sn, struct slsi_ba_frame_desc *frame_desc, bool *stop_timer)
 {
 #ifdef CONFIG_SLSI_WLAN_STATS
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
@@ -243,7 +243,7 @@ static void slsi_ba_aging_timeout_handler(void *data)
 	u8 i, j;
 	u8 gap = 1;
 	u16 temp_sn;
-	struct netif *dev = ba_session_rx->dev;
+	struct netdev *dev = ba_session_rx->dev;
 
 	SLSI_NET_DBG3(dev, SLSI_RX_BA, "enter\n");
 
@@ -293,7 +293,7 @@ static void slsi_ba_aging_timeout_handler(void *data)
 	}
 }
 
-int slsi_ba_process_frame(struct netif *dev, struct slsi_peer *peer, struct max_buff *mbuf, u16 sequence_number, u16 tid)
+int slsi_ba_process_frame(struct netdev *dev, struct slsi_peer *peer, struct max_buff *mbuf, u16 sequence_number, u16 tid)
 {
 	int i;
 	struct slsi_ba_session_rx *ba_session_rx = peer->ba_session_rx[tid];
@@ -393,7 +393,7 @@ bool slsi_ba_check(struct slsi_peer *peer, u16 tid)
 	return peer->ba_session_rx[tid]->active;
 }
 
-static void __slsi_rx_ba_stop(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, bool flush)
+static void __slsi_rx_ba_stop(struct netdev *dev, struct slsi_ba_session_rx *ba_session_rx, bool flush)
 {
 #ifdef CONFIG_SLSI_WLAN_STATS
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
@@ -432,7 +432,7 @@ static void __slsi_rx_ba_stop(struct netif *dev, struct slsi_ba_session_rx *ba_s
 	ba_session_rx->active = false;
 }
 
-static void slsi_rx_ba_stop_lock_held(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, bool flush)
+static void slsi_rx_ba_stop_lock_held(struct netdev *dev, struct slsi_ba_session_rx *ba_session_rx, bool flush)
 {
 	__slsi_rx_ba_stop(dev, ba_session_rx, flush);
 	if (ba_session_rx->timer_on) {
@@ -441,7 +441,7 @@ static void slsi_rx_ba_stop_lock_held(struct netif *dev, struct slsi_ba_session_
 	}
 }
 
-static void slsi_rx_ba_stop_lock_unheld(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, bool flush)
+static void slsi_rx_ba_stop_lock_unheld(struct netdev *dev, struct slsi_ba_session_rx *ba_session_rx, bool flush)
 {
 	SLSI_MUTEX_LOCK(ba_session_rx->ba_lock);
 	__slsi_rx_ba_stop(dev, ba_session_rx, flush);
@@ -452,7 +452,7 @@ static void slsi_rx_ba_stop_lock_unheld(struct netif *dev, struct slsi_ba_sessio
 	SLSI_MUTEX_UNLOCK(ba_session_rx->ba_lock);
 }
 
-void slsi_rx_ba_stop_all(struct netif *dev, struct slsi_peer *peer)
+void slsi_rx_ba_stop_all(struct netdev *dev, struct slsi_peer *peer)
 {
 	int i;
 
@@ -463,7 +463,7 @@ void slsi_rx_ba_stop_all(struct netif *dev, struct slsi_peer *peer)
 		}
 }
 
-static int slsi_rx_ba_start(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, u16 tid, u16 buffer_size, u16 start_sn)
+static int slsi_rx_ba_start(struct netdev *dev, struct slsi_ba_session_rx *ba_session_rx, u16 tid, u16 buffer_size, u16 start_sn)
 {
 	SLSI_NET_DBG1(dev, SLSI_RX_BA, "Request to start a new BA session tid=%d buffer_size=%d start_sn=%d\n", tid, buffer_size, start_sn);
 
@@ -506,7 +506,7 @@ static int slsi_rx_ba_start(struct netif *dev, struct slsi_ba_session_rx *ba_ses
 	return 0;
 }
 
-static void slsi_ba_process_error(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sequence_number)
+static void slsi_ba_process_error(struct netdev *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sequence_number)
 {
 	SLSI_MUTEX_LOCK(ba_session_rx->ba_lock);
 
@@ -523,7 +523,7 @@ static void slsi_ba_process_error(struct netif *dev, struct slsi_ba_session_rx *
 	slsi_ba_signal_process_complete(dev);
 }
 
-void slsi_handle_blockack(struct netif *dev, struct slsi_peer *peer, u16 vif, u8 *peer_qsta_address, u16 parameter_set, u16 sequence_number, u16 reason_code, u16 direction)
+void slsi_handle_blockack(struct netdev *dev, struct slsi_peer *peer, u16 vif, u8 *peer_qsta_address, u16 parameter_set, u16 sequence_number, u16 reason_code, u16 direction)
 {
 	struct slsi_ba_session_rx *ba_session_rx;
 	u16 user_priority = (parameter_set >> 2) & 0x000F;

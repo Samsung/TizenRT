@@ -505,7 +505,7 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 	}
 	case UNIFI_SET_MIB: {
-		struct netif *dev = NULL;
+		struct netdev *dev = NULL;
 
 		if (sdev->device_state != SLSI_DEVICE_STATE_STARTED) {
 			SLSI_ERR(sdev, "UNIFI_SET_MIB: Device not yet available\n");
@@ -560,7 +560,7 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 	}
 	case UNIFI_GET_MIB: {
-		struct netif *dev = NULL;
+		struct netdev *dev = NULL;
 
 		if (sdev->device_state != SLSI_DEVICE_STATE_STARTED) {
 			SLSI_ERR(sdev, "UNIFI_GET_MIB: Device not yet available\n");

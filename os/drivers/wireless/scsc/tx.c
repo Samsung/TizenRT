@@ -38,7 +38,7 @@ void slsi_init_dath_path_stats(struct slsi_dev *sdev)
 
 void slsi_update_queue_stats(struct slsi_dev *sdev)
 {
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct slsi_peer *peer;
 	int i;
@@ -102,7 +102,7 @@ void slsi_reset_data_path_stats(void)
 }
 #endif
 
-static int slsi_tx_eapol(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+static int slsi_tx_eapol(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer;
@@ -188,7 +188,7 @@ void slsi_free_tx_mbuf(struct slsi_dev *sdev)
  *
  *  -ENOSPC
  */
-int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+int slsi_tx_data(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer;
@@ -394,7 +394,7 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 
 int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf)
 {
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct slsi_peer *peer;
 	u16 vif;
@@ -497,7 +497,7 @@ int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf)
  * 2. On error the MBUF is NOT freed, NOR retried (ENOSPC dropped).
  * Callers should take care to free the MBUF eventually.
  */
-int slsi_tx_control(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, bool free_buf)
+int slsi_tx_control(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, bool free_buf)
 {
 	int res = 0;
 	struct fapi_signal_header *hdr;

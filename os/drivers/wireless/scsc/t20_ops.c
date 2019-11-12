@@ -25,6 +25,9 @@
 #include "mib.h"
 #include "wlan_80211_utils.h"
 #include "netif.h"
+#ifndef CONFIG_NET_NETMGR
+#include <tinyara/net/netdev.h>
+#endif
 
 #define SLSI_FW_SCAN_DONE_TIMEOUT_MSEC (15 * 1000)
 #define SLSI_MAX_CHAN_2G_BAND          14
@@ -217,7 +220,7 @@ int slsi_add_key(const char *ifname, void *priv, enum wpa_alg alg, const u8 *mac
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct slsi_peer *peer = NULL;
 	int r = 0;
@@ -288,7 +291,7 @@ int slsi_add_key(const char *ifname, void *priv, enum wpa_alg alg, const u8 *mac
 		}
 	} else if (ndev_vif->vif_type == FAPI_VIFTYPE_AP && !pairwise) {
 		/* AP Group Key will use the Interface address */
-		mac_addr = dev->d_mac.ether_addr_octet;
+		mac_addr = netdev_get_hwaddr_ptr(dev);
 	} else {
 		r = -EINVAL;
 		goto exit;
@@ -379,7 +382,7 @@ int slsi_get_ssid(void *priv, u8 *ssid)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct slsi_peer *peer;
 
@@ -413,7 +416,7 @@ int slsi_get_ssid(void *priv, u8 *ssid)
 	return 0;
 }
 
-int slsi_del_key(void *priv, struct netif *dev, u8 key_index, bool pairwise, const u8 *mac_addr)
+int slsi_del_key(void *priv, struct netdev *dev, u8 key_index, bool pairwise, const u8 *mac_addr)
 {
 	SLSI_UNUSED_PARAMETER(key_index);
 	SLSI_UNUSED_PARAMETER(pairwise);
@@ -433,7 +436,7 @@ int slsi_get_key(const char *ifname, void *priv, const u8 *addr, int idx, u8 *se
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	int r = 0, seq_len = 0;
 
@@ -532,7 +535,7 @@ const u8 *slsi_get_mac_addr(void *priv)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 
 	if (!drv) {
 		SLSI_ERR_NODEV("Driver not available\n");
@@ -551,15 +554,16 @@ const u8 *slsi_get_mac_addr(void *priv)
 		return NULL;
 	}
 
-	SLSI_NET_INFO(dev, "MAC address: " SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(dev->d_mac.ether_addr_octet));
-	return dev->d_mac.ether_addr_octet;
+	//pkbuild SLSI_NET_INFO(dev, "MAC address: " SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(dev->d_mac.ether_addr_octet));
+	SLSI_NET_INFO(dev, "MAC address: " SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(netdev_get_hwaddr_ptr(dev)));
+	return netdev_get_hwaddr_ptr(dev);
 }
 
 int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	u16 scan_type = FAPI_SCANTYPE_FULL_SCAN;
 	int r, i;
@@ -762,7 +766,7 @@ exit:
  *	The wpa_scan_results is updated with the scan results.
  *	Also number of scan result entries is updated.
  */
-static void slsi_add_wpa_scan_entry(struct wpa_scan_results *results, struct max_buff *scan, struct netif *dev)
+static void slsi_add_wpa_scan_entry(struct wpa_scan_results *results, struct max_buff *scan, struct netdev *dev)
 {
 	struct wpa_scan_res *scan_res;
 	struct slsi_80211_mgmt *frame = fapi_get_mgmt(scan);
@@ -807,7 +811,7 @@ struct wpa_scan_results *slsi_get_scan_results(void *priv)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct wpa_scan_results *results = NULL;
 	struct max_buff *scan;
@@ -900,7 +904,7 @@ int slsi_get_ap_bssid(void *priv, u8 *bssid)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct slsi_peer *peer;
 	u8 null_address[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -936,7 +940,7 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	u8 device_address[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 	int r = 0;
@@ -944,7 +948,7 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 	u16 prev_vif_type;
 	u32 action_frame_bmap;
 #ifdef CONFIG_SCSC_ENABLE_P2P
-	struct netif *p2p_dev;
+	struct netdev *p2p_dev;
 #endif
 
 	if (slsi_is_test_mode_enabled()) {
@@ -1049,7 +1053,8 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 
 	ndev_vif->channel_type = SLSI_80211_CHAN_NO_HT;
 	ndev_vif->center_freq = request->freq_hint;
-	if (slsi_mlme_add_vif(sdev, dev, dev->d_mac.ether_addr_octet, device_address) != 0) {
+	u8 *d_mac = netdev_get_hwaddr_ptr(dev);
+	if (slsi_mlme_add_vif(sdev, dev, d_mac, device_address) != 0) {
 		SLSI_NET_ERR(dev, "slsi_mlme_add_vif failed\n");
 		goto exit_with_error;
 	}
@@ -1120,7 +1125,7 @@ int slsi_disconnect(void *priv, const u8 *addr, int reason_code)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct slsi_peer *peer;
 	int r = 0;
@@ -1202,7 +1207,7 @@ int slsi_set_rts(void *priv, int rts)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	int r = 0;
 
 	if (!drv) {
@@ -1235,7 +1240,7 @@ int slsi_get_signal_poll(void *priv, struct wpa_signal_info *si)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	int res = 0;
 
@@ -1282,7 +1287,7 @@ int slsi_set_frag_threshold(void *priv, int frag_threshold)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	int r = 0;
 
 	if (!drv) {
@@ -1316,7 +1321,7 @@ int slsi_set_tx_power(void *priv, int dbm)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 
 	if (!drv) {
 		SLSI_ERR_NODEV("Driver not available\n");
@@ -1366,7 +1371,7 @@ int slsi_del_station(void *priv, const u8 *addr, int reason)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct slsi_peer *peer;
 	int r = 0;
@@ -1459,7 +1464,7 @@ exit:
 }
 
 #ifdef CONFIG_SCSC_ADV_FEATURE
-static void slsi_ap_start_obss_scan(struct slsi_dev *sdev, struct netif *dev, struct netdev_vif *ndev_vif)
+static void slsi_ap_start_obss_scan(struct slsi_dev *sdev, struct netdev *dev, struct netdev_vif *ndev_vif)
 {
 	struct cfg80211_ssid ssids;
 	struct ieee80211_channel *channel;
@@ -1484,7 +1489,7 @@ static void slsi_ap_start_obss_scan(struct slsi_dev *sdev, struct netif *dev, st
 }
 #endif							/* CONFIG_SCSC_ADV_FEATURE */
 
-static int slsi_ap_start_validate(struct netif *dev, struct slsi_dev *sdev, struct wpa_driver_ap_params *settings)
+static int slsi_ap_start_validate(struct netdev *dev, struct slsi_dev *sdev, struct wpa_driver_ap_params *settings)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -1538,7 +1543,7 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	u8 device_address[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 	int r = 0;
@@ -1715,7 +1720,8 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 	}
 
 	ndev_vif->vif_type = FAPI_VIFTYPE_AP;
-	if (slsi_mlme_add_vif(sdev, dev, dev->d_mac.ether_addr_octet, device_address) != 0) {
+	u8 *d_mac = netdev_get_hwaddr_ptr(dev);
+	if (slsi_mlme_add_vif(sdev, dev, d_mac, device_address) != 0) {
 		SLSI_NET_ERR(dev, "slsi_mlme_add_vif failed\n");
 		r = -EINVAL;
 		goto exit_with_vif_mutex;
@@ -1783,7 +1789,8 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 	}
 #endif
 
-	r = slsi_mlme_start(sdev, dev, dev->d_mac.ether_addr_octet, settings, wpa_ie_pos, wmm_ie_pos, append_vht_ies);
+	d_mac = netdev_get_hwaddr_ptr(dev);
+	r = slsi_mlme_start(sdev, dev, d_mac, settings, wpa_ie_pos, wmm_ie_pos, append_vht_ies);
 	if (r != 0) {
 		SLSI_NET_ERR(dev, "Start ap failed: resultcode = %d\n", r);
 		goto exit_with_vif;
@@ -1801,8 +1808,10 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 	}
 
 	SLSI_NET_DBG2(dev, SLSI_T20_80211, "slsi_read_disconnect_ind_timeout: timeout = %d", sdev->device_config.ap_disconnect_ind_timeout);
-
+#ifndef CONFIG_NET_NETMGR
+	// network manager sets device link up
 	netif_set_link_up(dev);
+#endif
 	goto exit_with_vif_mutex;
 
 exit_with_vif:
@@ -1822,7 +1831,7 @@ int slsi_stop_ap(void *priv)
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
 	struct netdev_vif *ndev_vif;
-	struct netif *dev;
+	struct netdev *dev;
 	int r = 0;
 
 	if (!drv) {
@@ -1858,8 +1867,9 @@ int slsi_stop_ap(void *priv)
 		r = -EINVAL;
 		goto exit;
 	}
-
+#ifndef CONFIG_NET_NETMGR
 	netif_set_link_down(dev);
+#endif
 	/* All STA related packets and info should already have been flushed */
 	slsi_mlme_del_vif(sdev, dev);
 	slsi_vif_deactivated(sdev, dev);
@@ -1942,11 +1952,14 @@ exit:
 }
 #endif							/* CONFIG_SCSC_ADV_FEATURE */
 
+extern int slsi_net_open(struct netdev *dev);
+extern int slsi_net_stop(struct netdev *dev);
+
 void *slsi_t20_init(void *ctx, const char *ifname, void *global_priv)
 {
 	struct slsi_t20_drv *drv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	int strlen = 0;
 
 	SLSI_DBG1_NODEV(SLSI_T20_80211, "Init SLSI driver\n");
@@ -1996,13 +2009,22 @@ void *slsi_t20_init(void *ctx, const char *ifname, void *global_priv)
 		return NULL;
 	}
 
+#ifdef CONFIG_NET_NETMGR
+	int res = slsi_net_open(dev);
+	if (res < 0) {
+		kmm_free(drv);
+		return NULL;
+	}
+	nldbg("[pkbuild] sleep 3\n");
+	sleep(3); // lsi code
+#else
 	netdev_ifup(dev);
-
 	/* Free drv context if driver start was unsuccessful (interface is not up) */
 	if ((dev->d_flags & IFF_UP) == 0) {
 		kmm_free(drv);
 		return NULL;
 	}
+#endif
 
 	/* Update sdev with driver context sent to supplicant */
 	sdev->drv = drv;
@@ -2015,7 +2037,7 @@ int slsi_t20_deinit(void *priv)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 
 	SLSI_DBG1_NODEV(SLSI_T20_80211, "Deinit SLSI driver\n");
 
@@ -2040,8 +2062,11 @@ int slsi_t20_deinit(void *priv)
 	sdev->is_supplicant_deinit = 1;
 
 	/* The drv context in supplicant is freed by ifdown handler */
+#ifdef CONFIG_NET_NETMGR
+	slsi_net_stop(dev);
+#else
 	netdev_ifdown(dev);
-
+#endif
 	/* Free the drv context allocated during init */
 	kmm_free(drv);
 	drv = NULL;
@@ -2335,7 +2360,7 @@ ssize_t slsi_set_country(void *priv, const char *country_code)
 {
 	struct slsi_t20_drv *drv = priv;
 	struct slsi_dev *sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	char alpha2_rev[4];
 	int status = 0;
 

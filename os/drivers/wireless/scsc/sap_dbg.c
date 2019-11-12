@@ -54,7 +54,7 @@ static int sap_dbg_version_supported(u16 version)
 	return -EINVAL;
 }
 
-static void slsi_rx_debug(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+static void slsi_rx_debug(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	u16 id = fapi_get_u16(mbuf, id);
 

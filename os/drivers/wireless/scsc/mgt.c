@@ -241,7 +241,7 @@ static void slsi_stop_chip(struct slsi_dev *sdev)
 	SLSI_MUTEX_UNLOCK(sdev->device_config_mutex);
 }
 
-void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_available)
+void slsi_vif_cleanup(struct slsi_dev *sdev, struct netdev *dev, bool hw_available)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	int i;
@@ -261,7 +261,9 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 			bool already_disconnected = false;
 
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Station active: hw_available=%d\n", hw_available);
+#ifndef CONFIG_NET_NETMGR
 			netif_set_link_down(dev);
+#endif
 			if (hw_available) {
 				struct slsi_peer *peer = ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET];
 
@@ -282,7 +284,9 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 			}
 		} else if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "AP active\n");
+#ifndef CONFIG_NET_NETMGR
 			netif_set_link_down(dev);
+#endif
 			if (hw_available) {
 				int r = 0;
 
@@ -310,7 +314,7 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 	}
 }
 
-void slsi_scan_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_available)
+void slsi_scan_cleanup(struct slsi_dev *sdev, struct netdev *dev, bool hw_available)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	int i;
@@ -331,7 +335,7 @@ void slsi_scan_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availab
 	SLSI_MUTEX_UNLOCK(ndev_vif->scan_mutex);
 }
 
-void slsi_stop_net_dev_locked(struct slsi_dev *sdev, struct netif *dev, bool hw_available)
+void slsi_stop_net_dev_locked(struct slsi_dev *sdev, struct netdev *dev, bool hw_available)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -365,7 +369,7 @@ void slsi_stop_net_dev_locked(struct slsi_dev *sdev, struct netif *dev, bool hw_
 }
 
 /* Called when a net device wants to go DOWN */
-void slsi_stop_net_dev(struct slsi_dev *sdev, struct netif *dev)
+void slsi_stop_net_dev(struct slsi_dev *sdev, struct netdev *dev)
 {
 	SLSI_MUTEX_LOCK(sdev->start_stop_mutex);
 	slsi_stop_net_dev_locked(sdev, dev, sdev->recovery_status ? false : true);
@@ -375,7 +379,7 @@ void slsi_stop_net_dev(struct slsi_dev *sdev, struct netif *dev)
 /* Called when we get sdio_removed */
 void slsi_stop(struct slsi_dev *sdev)
 {
-	struct netif *dev;
+	struct netdev *dev;
 	int i;
 
 	SLSI_MUTEX_LOCK(sdev->start_stop_mutex);
@@ -515,7 +519,7 @@ static int slsi_mib_initial_get(struct slsi_dev *sdev)
 	return r;
 }
 
-struct slsi_peer *slsi_peer_add(struct slsi_dev *sdev, struct netif *dev, u8 *peer_address, u16 aid)
+struct slsi_peer *slsi_peer_add(struct slsi_dev *sdev, struct netdev *dev, u8 *peer_address, u16 aid)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = NULL;
@@ -612,7 +616,7 @@ static bool slsi_search_ies_for_qos_indicators(struct slsi_dev *sdev, u8 *ies, i
 	return false;
 }
 
-void slsi_peer_update_assoc_req(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer, struct max_buff *mbuf)
+void slsi_peer_update_assoc_req(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u16 id = fapi_get_u16(mbuf, id);
@@ -667,7 +671,7 @@ void slsi_peer_update_assoc_req(struct slsi_dev *sdev, struct netif *dev, struct
 	}
 }
 
-void slsi_peer_update_assoc_rsp(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer, struct max_buff *mbuf)
+void slsi_peer_update_assoc_rsp(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u16 id = fapi_get_u16(mbuf, id);
@@ -716,7 +720,7 @@ exit_with_warnon:
 	slsi_kfree_mbuf(mbuf);
 }
 
-int slsi_peer_remove(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer)
+int slsi_peer_remove(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *buff_frame;
@@ -769,7 +773,7 @@ int slsi_peer_remove(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer 
 	return 0;
 }
 
-int slsi_vif_activated(struct slsi_dev *sdev, struct netif *dev)
+int slsi_vif_activated(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -801,7 +805,7 @@ int slsi_vif_activated(struct slsi_dev *sdev, struct netif *dev)
 	return 0;
 }
 
-void slsi_vif_deactivated(struct slsi_dev *sdev, struct netif *dev)
+void slsi_vif_deactivated(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	int i;
@@ -861,7 +865,7 @@ void slsi_vif_deactivated(struct slsi_dev *sdev, struct netif *dev)
 	sdev->device_config.qos_info = 0;
 }
 
-int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_address, u16 reason)
+int slsi_handle_disconnect(struct slsi_dev *sdev, struct netdev *dev, u8 *peer_address, u16 reason)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = NULL;
@@ -912,8 +916,9 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 		ndev_vif->sta.is_wps = false;
 
 		/* Delayed ARP only needs to run when connected. */
-
+#ifndef CONFIG_NET_NETMGR
 		netif_set_link_down(dev);
+#endif
 		slsi_mlme_del_vif(sdev, dev);
 		slsi_vif_deactivated(sdev, dev);
 		break;
@@ -939,7 +944,7 @@ exit:
 	return 0;
 }
 
-int slsi_ps_port_control(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer, enum slsi_sta_conn_state s)
+int slsi_ps_port_control(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer, enum slsi_sta_conn_state s)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -985,7 +990,7 @@ int slsi_ps_port_control(struct slsi_dev *sdev, struct netif *dev, struct slsi_p
 	return 0;
 }
 
-int slsi_set_uint_mib(struct slsi_dev *sdev, struct netif *dev, u16 psid, int value)
+int slsi_set_uint_mib(struct slsi_dev *sdev, struct netdev *dev, u16 psid, int value)
 {
 	struct slsi_mib_data mib_data = { 0, NULL };
 	int r = 0;
@@ -1034,7 +1039,7 @@ static void slsi_create_packet_filter_element(u8 filterid, u8 pkt_filter_mode, u
 	SLSI_DBG3_NODEV(SLSI_MLME, "filterid=0x%x,pkt_filter_mode=0x%x,num_pattern_desc=0x%x\n", filterid, pkt_filter_mode, num_pattern_desc);
 }
 
-int slsi_set_multicast_packet_filters(struct slsi_dev *sdev, struct netif *dev, const u8 *addr)
+int slsi_set_multicast_packet_filters(struct slsi_dev *sdev, struct netdev *dev, const u8 *addr)
 {
 	struct slsi_mlme_pattern_desc pattern_desc;
 	u8 pkt_filters_len = 0, num_filters = 0;
@@ -1070,7 +1075,7 @@ int slsi_set_multicast_packet_filters(struct slsi_dev *sdev, struct netif *dev, 
 	return ret;
 }
 
-static int slsi_clear_packet_filters(struct slsi_dev *sdev, struct netif *dev)
+static int slsi_clear_packet_filters(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = slsi_get_peer_from_qs(sdev, dev, SLSI_STA_PEER_QUEUESET);
@@ -1109,7 +1114,7 @@ static int slsi_clear_packet_filters(struct slsi_dev *sdev, struct netif *dev)
 }
 
 /* The mbuf needs to be freed after transmit (success or failure) */
-int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev)
+int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netdev *dev)
 {
 	int ret = 0;
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
@@ -1149,12 +1154,15 @@ int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev)
 	/* Ethernet Header */
 	ehdr = (struct ethhdr *)mbuf_put(arp, sizeof(struct ethhdr));
 	memset(ehdr->h_dest, 0xFF, ETH_ALEN);
-	SLSI_ETHER_COPY(ehdr->h_source, dev->d_mac.ether_addr_octet);
+	//pkbuild u8 d_mac[6];
+	//netdev_get_hwaddr(dev, d_mac, NULL);
+	//SLSI_ETHER_COPY(ehdr->h_source, d_mac);
+	SLSI_ETHER_COPY(ehdr->h_source, netdev_get_hwaddr_ptr(dev));
 	ehdr->h_proto = cpu_to_be16(ETH_P_ARP);
 
 	/* Arp Data */
 	memcpy(mbuf_put(arp, sizeof(arp_hdr)), arp_hdr, sizeof(arp_hdr));
-	SLSI_ETHER_COPY(mbuf_put(arp, ETH_ALEN), dev->d_mac.ether_addr_octet);
+	SLSI_ETHER_COPY(mbuf_put(arp, ETH_ALEN), netdev_get_hwaddr_ptr(dev));
 	memcpy(mbuf_put(arp, sizeof(ndev_vif->ipaddress)), &ndev_vif->ipaddress, sizeof(ndev_vif->ipaddress));
 	memset(mbuf_put(arp, ETH_ALEN), 0xFF, ETH_ALEN);
 	memcpy(mbuf_put(arp, sizeof(ndev_vif->ipaddress)), &ndev_vif->ipaddress, sizeof(ndev_vif->ipaddress));
@@ -1171,7 +1179,7 @@ int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev)
 
 int slsi_auto_chan_select_scan(struct slsi_dev *sdev, int n_channels, struct slsi_80211_channel *channels[])
 {
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	struct max_buff_head unique_scan_results;
 	int scan_result_count[SLSI_AP_AUTO_CHANLS_LIST_FROM_HOSTAPD_MAX] = { 0, 0, 0 };
@@ -1362,7 +1370,7 @@ void slsi_p2p_deinit(struct slsi_dev *sdev, struct netdev_vif *ndev_vif)
  * P2P vif activation:
  * Add unsync vif, register for action frames, configure Probe Rsp IEs if required and set channel
  */
-int slsi_p2p_vif_activate(struct slsi_dev *sdev, struct netif *dev, struct slsi_80211_channel *chan, u16 duration, bool set_probe_rsp_ies)
+int slsi_p2p_vif_activate(struct slsi_dev *sdev, struct netdev *dev, struct slsi_80211_channel *chan, u16 duration, bool set_probe_rsp_ies)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u32 af_bmap_active = SLSI_ACTION_FRAME_PUBLIC;
@@ -1421,7 +1429,7 @@ exit:
 }
 
 /* Delete unsync vif - DON'T update the vif type */
-void slsi_p2p_vif_deactivate(struct slsi_dev *sdev, struct netif *dev, bool hw_available)
+void slsi_p2p_vif_deactivate(struct slsi_dev *sdev, struct netdev *dev, bool hw_available)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -1470,7 +1478,7 @@ void slsi_p2p_vif_deactivate(struct slsi_dev *sdev, struct netif *dev, bool hw_a
  */
 void slsi_p2p_group_start_remove_unsync_vif(struct slsi_dev *sdev)
 {
-	struct netif *dev = NULL;
+	struct netdev *dev = NULL;
 	struct netdev_vif *ndev_vif = NULL;
 
 	SLSI_DBG1(sdev, SLSI_INIT_DEINIT, "Starting P2P Group - Remove unsync vif\n");
@@ -1497,7 +1505,7 @@ void slsi_p2p_group_start_remove_unsync_vif(struct slsi_dev *sdev)
  * which would be used in Listen (ROC) state.
  * If the IEs are received in Listen Offload mode, then configure the IEs in firmware.
  */
-int slsi_p2p_dev_probe_rsp_ie(struct slsi_dev *sdev, struct netif *dev, u8 *probe_rsp_ie, size_t probe_rsp_ie_len)
+int slsi_p2p_dev_probe_rsp_ie(struct slsi_dev *sdev, struct netdev *dev, u8 *probe_rsp_ie, size_t probe_rsp_ie_len)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	int ret = 0;
@@ -1548,7 +1556,7 @@ exit:
  * Use this call as a cue to stop any ongoing P2P scan as there is no API from user space for cancelling scan.
  * If ROC was in progress as part of P2P_FIND then Cancel ROC will be received.
  */
-int slsi_p2p_dev_null_ies(struct slsi_dev *sdev, struct netif *dev)
+int slsi_p2p_dev_null_ies(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -1638,7 +1646,7 @@ int slsi_p2p_get_public_action_subtype(const struct slsi_80211_mgmt *mgmt)
  * Returns the P2P status code of Status attribute of the GO Neg Rsp frame.
  * Returns -1 if status attribute is NOT found.
  */
-int slsi_p2p_get_go_neg_rsp_status(struct netif *dev, const struct slsi_80211_mgmt *mgmt)
+int slsi_p2p_get_go_neg_rsp_status(struct netdev *dev, const struct slsi_80211_mgmt *mgmt)
 {
 	int status = -1;
 	u8 p2p_oui_type[4] = { 0x50, 0x6f, 0x9a, 0x09 };
@@ -2157,7 +2165,7 @@ void slsi_regd_deinit(struct slsi_dev *sdev)
 #ifdef CONFIG_SCSC_ENABLE_P2P
 void slsi_clear_offchannel_data(struct slsi_dev *sdev, bool acquire_lock)
 {
-	struct netif *dev = NULL;
+	struct netdev *dev = NULL;
 	struct netdev_vif *ndev_vif = NULL;
 
 	dev = slsi_get_netdev(sdev, SLSI_NET_INDEX_P2PX);
@@ -2200,7 +2208,7 @@ void slsi_scan_ind_timeout_handle(FAR void *arg)
 {
 	struct slsi_t20_drv *drv = (struct slsi_t20_drv *)arg;
 	struct slsi_dev *sdev = drv->sdev;
-	struct netif *dev = slsi_get_netdev(sdev, SLSI_NET_INDEX_WLAN);
+	struct netdev *dev = slsi_get_netdev(sdev, SLSI_NET_INDEX_WLAN);
 	struct netdev_vif *ndev_vif;
 
 	if (!dev) {
@@ -2329,7 +2337,7 @@ int slsi_get_mib(struct slsi_dev *sdev, u16 psid, int *mib_value)
 	return r;
 }
 
-int slsi_set_mib(struct slsi_dev *dev, struct netif *ndev, u16 psid, int value)
+int slsi_set_mib(struct slsi_dev *dev, struct netdev *ndev, u16 psid, int value)
 {
 	struct slsi_mib_data mib_data = { 0, NULL };
 	int error = SLSI_MIB_STATUS_FAILURE;
