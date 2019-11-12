@@ -220,13 +220,13 @@ ui_anim_t ui_sequence_anim_create(ui_anim_t anim, ...)
 	ui_anim_t *iter;
 	va_list ap;
 
-	if (!anim) {
-		UI_LOGE("error: invalid parameter\n");
-	}
-
 	if (!ui_is_running()) {
 		UI_LOGE("error: UI framework is not running!\n");
 		return UI_NULL;
+	}
+
+	if (!anim) {
+		UI_LOGE("error: invalid parameter\n");
 	}
 
 	body = (ui_sequence_anim_body_t *)UI_ALLOC(sizeof(ui_sequence_anim_body_t));
@@ -264,6 +264,10 @@ ui_anim_t ui_spawn_anim_create(ui_anim_t anim, ...)
 	if (!ui_is_running()) {
 		UI_LOGE("error: UI framework is not running!\n");
 		return UI_NULL;
+	}
+
+	if (!anim) {
+		UI_LOGE("error: invalid parameter\n");
 	}
 
 	body = (ui_spawn_anim_body_t *)UI_ALLOC(sizeof(ui_spawn_anim_body_t));

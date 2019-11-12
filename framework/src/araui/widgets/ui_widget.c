@@ -879,6 +879,10 @@ ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, anim_finished
 {
 	ui_set_anim_info_t *info;
 
+	if (!ui_is_running()) {
+		return UI_NOT_RUNNING;
+	}
+
 	if (!widget) {
 		return UI_INVALID_PARAM;
 	}
