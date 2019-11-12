@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 #include "esp_system.h"
 #include "soc/efuse_reg.h"
 #else
@@ -30,7 +30,7 @@
 
 void iot_bsp_system_reboot()
 {
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	//it's unsupported in current libcore.a, comment it temporarily
 	//esp_restart();
 #else
@@ -44,7 +44,7 @@ void iot_bsp_system_reboot()
 
 void iot_bsp_system_poweroff()
 {
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	//esp_restart(); // no poweroff feature.
 #else
 
@@ -93,7 +93,7 @@ iot_error_t iot_bsp_system_get_uniqueid(unsigned char **uid, size_t *olen)
 {
 	unsigned int *buf;
 	size_t chipid_len = 2 * sizeof(unsigned int);
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	unsigned int chipid_reg = EFUSE_BLK0_RDATA1_REG; /* CRC of MAC */
 #else
 	struct iot_mac umac;
@@ -105,7 +105,7 @@ iot_error_t iot_bsp_system_get_uniqueid(unsigned char **uid, size_t *olen)
 		return IOT_ERROR_MEM_ALLOC;
 	}
 
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	buf[0] = REG_READ(chipid_reg + 0x0);
 	buf[1] = REG_READ(chipid_reg + 0x4);
 #else

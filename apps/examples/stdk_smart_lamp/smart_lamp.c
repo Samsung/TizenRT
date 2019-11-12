@@ -18,11 +18,12 @@
 
 //for implementing main features of IoT device
 #include <stdbool.h>
+#include <stdio.h>
 #include "st_dev.h"
 #include "device_control.h"
 #include "device_info.h"
 #include "onboarding_config.h"
-
+#include "iot_os_util.h"
 
 static const char *TAG = "SLamp";
 #define SL_LOGE(tag, format, ...) do {printf("%s ", tag); printf(format"\n", ##__VA_ARGS__); } while (0)
@@ -166,8 +167,7 @@ static void button_event(IOT_CAP_HANDLE *handle, uint32_t type, uint32_t count)
 		SL_LOGI(TAG, "Button long press, count: %d\n", count);
 		led_blink(GPIO_OUTPUT_NOTIFICATION_LED, 100, 3);
 		/* clean-up provisioning & registered data with reboot option*/
-		//st_conn_cleanup(ctx, true);
-		iot_device_cleanup(ctx);
+		st_conn_cleanup(ctx, true);
 	}
 }
 

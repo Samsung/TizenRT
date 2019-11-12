@@ -347,7 +347,6 @@ int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_tick)
 	size_t msglen = 0;
 	int prio = 0;
 	int32_t ret;
-	int32_t err_no;
 	struct timespec abstime;
 
 	if (!queue || !item) {
@@ -424,7 +423,6 @@ int32_t queue_reset_wrapper(void *queue)
 {
 	queue_info_t *queue_info = NULL;
 	void *item = NULL;
-	struct timespec abstime;
 
 	if (!queue) {
 		return pdFAIL;

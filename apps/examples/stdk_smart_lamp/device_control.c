@@ -16,15 +16,14 @@
  *
  ****************************************************************************/
 
+#include <stdio.h>
 #include "device_control.h"
 #include <iotbus/iotbus_gpio.h>
 #include "iot_os_util.h"
 
-static const char *TAG = "SLamp-control";
-
 static iot_os_queue *button_event_queue = NULL;
-
 static iotbus_gpio_context_h g_pir;
+extern void iotapi_initialize(void);
 
 int gpio_set_level(int port, int value)
 {

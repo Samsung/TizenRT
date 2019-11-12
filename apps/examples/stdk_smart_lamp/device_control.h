@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 
+#include <unistd.h>
 #include <tinyara/clock.h>
 #include <tinyara/config.h>
 

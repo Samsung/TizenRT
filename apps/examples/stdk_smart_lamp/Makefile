@@ -80,7 +80,7 @@ endif
 DEVICE_JSON_FILE=$(ST_APP_PATH)/device_info.json
 DEVICE_HEADER_FILE=$(ST_APP_PATH)/device_info.h
 DEVICE_HEADER_BACKUP_FILE=$(DEVICE_HEADER_FILE).bak
-$(shell cp -n $(TOPDIR)/../framework/include/iot_core/profile/json/device_info_example.json $(DEVICE_JSON_FILE))
+$(shell cp -n $(STDK_SRC_DIR)/include/profile/json/device_info_example.json $(DEVICE_JSON_FILE))
 result := $(shell xxd -i $(DEVICE_JSON_FILE) > $(DEVICE_HEADER_FILE); echo $$?;)
 ifneq ($(result),0)
     $(error)
@@ -91,7 +91,7 @@ $(shell rm $(DEVICE_HEADER_BACKUP_FILE))
 PRODUCT_JSON_FILE=$(ST_APP_PATH)/onboarding_config.json
 PRODUCT_HEADER_FILE=$(ST_APP_PATH)/onboarding_config.h
 PRODUCT_HEADER_BACKUP_FILE=$(PRODUCT_HEADER_FILE).bak
-$(shell cp -n $(TOPDIR)/../framework/include/iot_core/profile/json/onboarding_config_example.json $(PRODUCT_JSON_FILE))
+$(shell cp -n $(STDK_SRC_DIR)/include/profile/json/onboarding_config_example.json $(PRODUCT_JSON_FILE))
 result := $(shell xxd -i $(PRODUCT_JSON_FILE) > $(PRODUCT_HEADER_FILE); echo $$?;)
 ifneq ($(result),0)
     $(error)
