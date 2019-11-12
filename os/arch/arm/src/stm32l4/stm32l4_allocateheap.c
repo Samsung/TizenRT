@@ -110,18 +110,18 @@
 /* Set the range of system SRAM */
 
 #define SRAM1_START  STM32L4_SRAM_BASE
-#define SRAM1_END    (SRAM1_START + STM32L4_SRAM1_SIZE)
+#define SRAM1_END    (SRAM1_START + (void *)STM32L4_SRAM1_SIZE)
 
 /* Set the range of SRAM2 as well, requires a second memory region */
 
 #define SRAM2_START  STM32L4_SRAM2_BASE
-#define SRAM2_END    (SRAM2_START + STM32L4_SRAM2_SIZE)
+#define SRAM2_END    (SRAM2_START + (void *)STM32L4_SRAM2_SIZE)
 
 /* Set the range of SRAM3, requiring a third memory region */
 
 #ifdef STM32L4_SRAM3_SIZE
 #  define SRAM3_START  STM32L4_SRAM3_BASE
-#  define SRAM3_END    (SRAM3_START + STM32L4_SRAM3_SIZE)
+#  define SRAM3_END    (SRAM3_START + (void *)STM32L4_SRAM3_SIZE)
 #endif
 
 /* Some sanity checking.  If multiple memory regions are defined, verify
@@ -157,6 +157,8 @@
  * Private Data
  ****************************************************************************/
 
+static uint8_t is_first_heap_init;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -177,6 +179,40 @@ static inline void up_heap_color(FAR void *start, size_t size)
 #else
 #  define up_heap_color(start,size)
 #endif
+
+static size_t up_calculate_heapsize(void *start, void *end)
+{
+  size_t heap_size;
+
+  if (!is_first_heap_init && ((void *)g_idle_topstack < end)) {
+    heap_size = (size_t)end - g_idle_topstack;
+  } else if (is_first_heap_init) {
+    heap_size = end - start;
+  } else {
+    heap_size = 0;
+  }
+
+  return heap_size;
+}
+
+static inline void up_add_new_region(void *start, size_t size)
+{
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
+
+  /* Allow user-mode access to the SRAM user heap memory */
+
+   stm32l4_mpu_uheap((uintptr_t)start, size);
+
+#endif
+
+  /* Colorize the heap for debug */
+
+  up_heap_color((FAR void *)start, size);
+
+  /* Add the SRAM user heap region. */
+
+  kumm_addregion((FAR void *)start, size);
+}
 
 /****************************************************************************
  * Public Functions
@@ -224,46 +260,68 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
    */
 
   uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
-  size_t    usize = SRAM1_END - ubase;
-  int       log2;
 
-  DEBUGASSERT(ubase < (uintptr_t)SRAM1_END);
+  /* Is ubase in SRAM1 region? */
 
-  /* Adjust that size to account for MPU alignment requirements.
-   * NOTE that there is an implicit assumption that the SRAM1_END
-   * is aligned to the MPU requirement.
-   */
+  if (ubase < SRAM1_END) {
+    /* Yes, let's register remain region as a heap. */
 
-  log2  = (int)mpu_log2regionfloor(usize);
-  DEBUGASSERT((SRAM1_END & ((1 << log2) - 1)) == 0);
+    size_t    usize = SRAM1_END - ubase;
+    int       log2;
 
-  usize = (1 << log2);
-  ubase = SRAM1_END - usize;
+    /* Adjust that size to account for MPU alignment requirements.
+     * NOTE that there is an implicit assumption that the SRAM1_END
+     * is aligned to the MPU requirement.
+     */
 
-  /* Return the user-space heap settings */
+    log2  = (int)mpu_log2regionfloor(usize);
+    DEBUGASSERT((SRAM1_END & ((1 << log2) - 1)) == 0);
 
-  board_led_on(LED_HEAPALLOCATE);
-  *heap_start = (FAR void *)ubase;
-  *heap_size  = usize;
+    usize = (1 << log2);
+    ubase = SRAM1_END - usize;
 
-  /* Colorize the heap for debug */
+    /* Return the user-space heap settings */
 
-  up_heap_color((FAR void *)ubase, usize);
+    board_led_on(LED_HEAPALLOCATE);
+    *heap_start = (FAR void *)ubase;
+    *heap_size  = usize;
 
-  /* Allow user-mode access to the user heap memory */
+    /* Colorize the heap for debug */
 
-  stm32l4_mpu_uheap((uintptr_t)ubase, usize);
+    up_heap_color((FAR void *)ubase, usize);
+
+    /* Allow user-mode access to the user heap memory */
+
+    stm32l4_mpu_uheap((uintptr_t)ubase, usize);
+
+    is_first_heap_init = TRUE;
+  } else {
+    /* No, because of big (data or bss or kernel heap), ubase is not in SRAM1.
+     * Let's skip setting of SRAM1 as heap.
+     */
+
+    *heap_start = NULL;
+    *heap_size  = 0;
+  }
 #else
 
   /* Return the heap settings */
 
   board_led_on(LED_HEAPALLOCATE);
-  *heap_start = (FAR void *)g_idle_topstack;
-  *heap_size  = SRAM1_END - g_idle_topstack;
 
-  /* Colorize the heap for debug */
+  if ((void *)g_idle_topstack < SRAM1_END) {
+    *heap_start = (FAR void *)g_idle_topstack;
+    *heap_size  = (size_t)SRAM1_END - g_idle_topstack;
+    is_first_heap_init = TRUE;
 
-  up_heap_color(*heap_start, *heap_size);
+    /* Colorize the heap for debug */
+
+    up_heap_color(*heap_start, *heap_size);
+  } else {
+    *heap_start = NULL;
+    *heap_size  = 0;
+  }
+
 #endif
 }
 
@@ -286,28 +344,42 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
    */
 
   uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
-  size_t    usize = SRAM1_END - ubase;
-  int       log2;
 
-  DEBUGASSERT(ubase < (uintptr_t)SRAM1_END);
+  /* Is ubase in SRAM1 region? */
 
-  /* Adjust that size to account for MPU alignment requirements.
-   * NOTE that there is an implicit assumption that the SRAM1_END
-   * is aligned to the MPU requirement.
-   */
+  if (ubase < SRAM1_END) {
+    /* Yes, let's register remain region as a heap. */
 
-  log2  = (int)mpu_log2regionfloor(usize);
-  DEBUGASSERT((SRAM1_END & ((1 << log2) - 1)) == 0);
+    size_t    usize = SRAM1_END - ubase;
+    int       log2;
 
-  usize = (1 << log2);
-  ubase = SRAM1_END - usize;
+    /* Adjust that size to account for MPU alignment requirements.
+     * NOTE that there is an implicit assumption that the SRAM1_END
+     * is aligned to the MPU requirement.
+     */
 
-  /* Return the kernel heap settings (i.e., the part of the heap region
-   * that was not dedicated to the user heap).
-   */
+    log2  = (int)mpu_log2regionfloor(usize);
+    DEBUGASSERT((SRAM1_END & ((1 << log2) - 1)) == 0);
 
-  *heap_start = (FAR void *)USERSPACE->us_bssend;
-  *heap_size  = ubase - (uintptr_t)USERSPACE->us_bssend;
+    usize = (1 << log2);
+    ubase = SRAM1_END - usize;
+
+    /* Return the kernel heap settings (i.e., the part of the heap region
+     * that was not dedicated to the user heap).
+     */
+
+    *heap_start = (FAR void *)USERSPACE->us_bssend;
+    *heap_size  = ubase - (uintptr_t)USERSPACE->us_bssend;
+
+    is_first_heap_init = TRUE;
+  } else {
+    /* No, because of big (data or bss or kernel heap), ubase is not in SRAM1.
+     * Let's skip setting of SRAM1 as heap.
+     */
+
+    *heap_start = NULL;
+    *heap_size  = 0;
+  }
 }
 #endif
 
@@ -323,63 +395,30 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 #if CONFIG_MM_REGIONS > 1
 void up_addregion(void)
 {
+  size_t heap_size;
 
 #ifdef CONFIG_STM32L4_SRAM2_HEAP
-
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-
-  /* Allow user-mode access to the SRAM2 heap */
-
-  stm32l4_mpu_uheap((uintptr_t)SRAM2_START, SRAM2_END-SRAM2_START);
-
-#endif
-
-  /* Colorize the heap for debug */
-
-  up_heap_color((FAR void *)SRAM2_START, SRAM2_END-SRAM2_START);
-
-  /* Add the SRAM2 user heap region. */
-
-  kumm_addregion((FAR void *)SRAM2_START, SRAM2_END-SRAM2_START);
-
+  heap_size = up_calculate_heapsize((void *)SRAM2_START, SRAM2_END);
+  if (heap_size) {
+    is_first_heap_init = TRUE;
+    up_add_new_region((void *)SRAM2_START, heap_size);
+  }
 #endif /* SRAM2 */
 
 #ifdef CONFIG_STM32L4_SRAM3_HEAP
-
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-
-  /* Allow user-mode access to the SRAM3 heap */
-
-  stm32l4_mpu_uheap((uintptr_t)SRAM3_START, SRAM3_END-SRAM3_START);
-
-#endif
-
-  /* Colorize the heap for debug */
-
-  up_heap_color((FAR void *)SRAM3_START, SRAM3_END-SRAM3_START);
-
-  /* Add the SRAM3 user heap region. */
-
-  kumm_addregion((FAR void *)SRAM3_START, SRAM3_END-SRAM3_START);
-
+  heap_size = up_calculate_heapsize((void *)SRAM3_START, SRAM3_END);
+  if (heap_size) {
+    is_first_heap_init = TRUE;
+    up_add_new_region((void *)SRAM3_START, heap_size);
+  }
 #endif /* SRAM3 */
 
 #ifdef CONFIG_STM32L4_FSMC_SRAM_HEAP
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-
-  /* Allow user-mode access to the FSMC SRAM user heap memory */
-
-   stm32l4_mpu_uheap((uintptr_t)CONFIG_HEAP2_BASE, CONFIG_HEAP2_SIZE);
-
-#endif
-
-  /* Colorize the heap for debug */
-
-  up_heap_color((FAR void *)CONFIG_HEAP2_BASE, CONFIG_HEAP2_SIZE);
-
-  /* Add the external FSMC SRAM user heap region. */
-
-  kumm_addregion((FAR void *)CONFIG_HEAP2_BASE, CONFIG_HEAP2_SIZE);
+  heap_size = up_calculate_heapsize((void *)CONFIG_HEAP2_BASE, CONFIG_HEAP2_BASE + CONFIG_HEAP2_SIZE);
+  if (heap_size) {
+    is_first_heap_init = TRUE;
+    up_add_new_region((void *)CONFIG_HEAP2_BASE, heap_size);
+  }
 #endif
 }
 #endif
