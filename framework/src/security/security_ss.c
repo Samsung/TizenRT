@@ -105,36 +105,11 @@ security_error ss_delete_secure_storage(security_handle hnd, const char *ss_name
 security_error ss_get_size_secure_storage(security_handle hnd, const char *ss_name, unsigned int *size)
 {
 	SECAPI_ENTER;
-	SECAPI_ISHANDLE_VALID(hnd);
-	struct security_ctx *ctx = (struct security_ctx *)hnd;
-	if (!size) {
-		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
-	}
-
-	SECAPI_LOG("handle (%p)\n", ctx);
-
-	uint32_t ss_idx = 0;
-	SECAPI_CONVERT_PATH(ss_name, &ss_idx);
-
-	// ToDo
-	*size = 0;
-
 	SECAPI_RETURN(SECURITY_NOT_SUPPORT);
 }
 
 security_error ss_get_list_secure_storage(security_handle hnd, security_storage_list *list)
 {
 	SECAPI_ENTER;
-	SECAPI_ISHANDLE_VALID(hnd);
-	struct security_ctx *ctx = (struct security_ctx *)hnd;
-
-	if (!list) {
-		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
-	}
-
-	SECAPI_LOG("handle (%p)\n", ctx);
-	// ToDo
-	*list = NULL;
-
 	SECAPI_RETURN(SECURITY_NOT_SUPPORT);
 }
