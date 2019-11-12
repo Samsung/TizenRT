@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 #include <esp_log.h>
 #else
 #include <tinyara/syslog/syslog.h>
@@ -30,18 +30,17 @@
 void iot_bsp_debug(iot_debug_level_t level, const char *tag, const char *fmt, ...)
 {
 	char buf[BUF_SIZE] = {0,};
-	int ret;
 	va_list va;
 
 	va_start(va, fmt);
-	ret = vsnprintf(buf, BUF_SIZE, fmt, va);
+	vsnprintf(buf, BUF_SIZE, fmt, va);
 	va_end(va);
 
 #if defined(CONFIG_STDK_IOT_CORE_EASYSETUP_HTTP_LOG_SUPPORT)
 	iot_debug_save_log(buf);
 #endif
 
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	if (level == IOT_DEBUG_LEVEL_ERROR) {
 		ESP_LOGE(tag, "%s", buf);
 	} else if (level == IOT_DEBUG_LEVEL_WARN) {
@@ -84,6 +83,7 @@ static unsigned int _iot_bsp_debug_get_maximum_heap_size(void)
 
 void iot_bsp_debug_check_heap(const char *tag, const char *func, const int line, const char *fmt, ...)
 {
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	static int count = 0;
 	char *buf;
 	int ret;
@@ -106,4 +106,5 @@ void iot_bsp_debug_check_heap(const char *tag, const char *func, const int line,
 	if (ret >= 0) {
 		free(buf);
 	}
+#endif
 }

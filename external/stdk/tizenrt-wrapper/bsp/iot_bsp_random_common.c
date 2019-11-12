@@ -17,15 +17,15 @@
  ****************************************************************************/
 
 #include "iot_bsp_random.h"
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
-#include <esp_system.h>
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
+extern uint32_t esp_random(void);
 #else
 #include <stdlib.h>
 #endif
 
 unsigned int iot_bsp_random()
 {
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	return esp_random();
 #else
 	srand(time(0));

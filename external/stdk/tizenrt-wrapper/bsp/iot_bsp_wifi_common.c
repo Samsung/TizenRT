@@ -26,7 +26,7 @@
 #include "iot_os_util.h"
 #include "iot_util.h"
 #include "event_groups.h"
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 #include <tinyara/wifi/wifi_utils.h>
 #endif
 #ifdef CONFIG_NETUTILS_NTPCLIENT
@@ -212,7 +212,7 @@ iot_error_t iot_bsp_wifi_init()
 
 int _iot_bsp_sta_mode(void)
 {
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	wifi_utils_info_s info;
 	wifi_utils_get_info(&info);
 	return (info.wifi_status == WIFI_UTILS_SOFTAP_MODE) ? 0 : 1;
@@ -231,7 +231,6 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 	wifi_manager_result_e res;
 	wifi_manager_softap_config_s sap_config;
 	wifi_manager_ap_config_s apconfig;
-	wifi_manager_info_s info;
 
 	switch(conf->mode) {
 		case IOT_WIFI_MODE_OFF:
@@ -336,7 +335,6 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 {
 	uint16_t ap_num;
 	uint16_t i;
-	wifi_manager_result_e res;
 
 	//Wait scan done
 	event_group_wait_bits(wifi_event_group, WIFI_SCAN_DONE_BIT, false, true, portMAX_DELAY);
@@ -360,7 +358,7 @@ iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac)
 {
 	int ret = -1;
 	if(*((int *)bsp_mac.addr) == 0) {
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 		wifi_utils_info_s info;
 		wifi_utils_result_e wret = wifi_utils_get_info(&info);
 		ret = (wret == WIFI_UTILS_SUCCESS) ? 0 : -1;
@@ -374,7 +372,7 @@ iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac)
 			return IOT_ERROR_READ_FAIL;
 		}
 
-		strncpy(wifi_mac->addr, info.mac_address, 6);
+		strncpy((char *)wifi_mac->addr, (const char *)info.mac_address, 6);
 		bsp_mac = *wifi_mac;
 	} else {
 		*wifi_mac = bsp_mac;

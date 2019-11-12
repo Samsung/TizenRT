@@ -17,10 +17,11 @@
  ****************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 #include <sched.h>
 #include <mqueue.h>
 #include <event_groups.h>
-#if CONFIG_ARCH_BOARD_ESP32_FAMILY
+#ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 #include <esp32_queue_api.h>
 #else
 #include <queue_api.h>
@@ -54,7 +55,7 @@ int iot_os_thread_create(void *thread_function, const char *name, int stack_size
 {
 	int status;
 	pthread_attr_t attr;
-	pthread_t pid = -1;
+	pthread_t *pid_h = (pthread_t *)malloc(sizeof(pthread_t));
 
 	status = pthread_attr_init(&attr);
 	if (status != 0) {
@@ -66,26 +67,26 @@ int iot_os_thread_create(void *thread_function, const char *name, int stack_size
 		return IOT_OS_FALSE;
 	}
 
-	status = pthread_create(&pid, &attr, thread_function, (pthread_addr_t)data);
+	status = pthread_create(pid_h, &attr, thread_function, (pthread_addr_t)data);
 	if (status != 0) {
 		return IOT_OS_FALSE;
 	}
 
-	pthread_setname_np(pid, name);
+	pthread_setname_np(*pid_h, name);
 
-	thread_handle = (iot_os_thread*)&pid;
-
+	if (thread_handle) {
+		*thread_handle = (iot_os_thread)pid_h;
+	}
 	return IOT_OS_TRUE;
 }
 
 void iot_os_thread_delete(iot_os_thread thread_handle)
 {
-	if (thread_handle < 0) {
-		return;
+	if (thread_handle) {
+		pthread_t *pid_h = (pthread_t *)thread_handle;
+		pthread_cancel(*pid_h);
+		free(pid_h);
 	}
-
-	pthread_t pid = (pthread_t)thread_handle;
-	pthread_cancel(pid);
 }
 
 void iot_os_thread_yield()

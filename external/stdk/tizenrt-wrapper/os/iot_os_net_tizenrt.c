@@ -21,6 +21,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "iot_os_net.h"
 #include "iot_debug.h"
