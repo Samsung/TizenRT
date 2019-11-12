@@ -262,7 +262,7 @@ KERNDEPDIRS += logm
 endif
 CLEANDIRS += logm
 
-ifeq ($(CONFIG_LOGM),y)
+ifeq ($(CONFIG_SE),y)
 KERNDEPDIRS += se
 endif
 CLEANDIRS += se
