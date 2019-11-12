@@ -154,7 +154,7 @@ int slsi_fw_test_signal_with_udi_header(struct slsi_dev *sdev, struct slsi_fw_te
 	return 0;
 }
 
-static void slsi_fw_test_connect_station_roam(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_connect_station_roam(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = slsi_get_peer_from_qs(sdev, dev, SLSI_STA_PEER_QUEUESET);
@@ -197,7 +197,7 @@ static void slsi_fw_test_connect_station_roam(struct slsi_dev *sdev, struct neti
 	slsi_peer_update_assoc_rsp(sdev, dev, peer, slsi_mbuf_copy(mbuf));
 }
 
-static void slsi_fw_test_connect_start_station(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_connect_start_station(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -251,7 +251,7 @@ static void slsi_fw_test_connect_start_station(struct slsi_dev *sdev, struct net
 	slsi_peer_update_assoc_req(sdev, dev, peer, slsi_mbuf_copy(mbuf));
 }
 
-static void slsi_fw_test_connect_station(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_connect_station(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -310,7 +310,7 @@ exit:
 	slsi_kfree_mbuf(ind);
 }
 
-static void slsi_fw_test_started_network(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_started_network(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u16 result = fapi_get_u16(mbuf, u.mlme_start_cfm.result_code);
@@ -341,7 +341,7 @@ static void slsi_fw_test_started_network(struct slsi_dev *sdev, struct netif *de
 	}
 }
 
-static void slsi_fw_test_stop_network(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_stop_network(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -364,7 +364,7 @@ static void slsi_fw_test_stop_network(struct slsi_dev *sdev, struct netif *dev, 
 	slsi_vif_deactivated(sdev, dev);
 }
 
-static void slsi_fw_test_started_ibss_network(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_started_ibss_network(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u16 result = fapi_get_u16(mbuf, u.mlme_start_cfm.result_code);
@@ -404,7 +404,7 @@ static void slsi_fw_test_started_ibss_network(struct slsi_dev *sdev, struct neti
 	netif_carrier_on(dev);
 }
 
-static void slsi_fw_test_connect_start_ap(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_connect_start_ap(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = NULL;
@@ -436,7 +436,7 @@ static void slsi_fw_test_connect_start_ap(struct slsi_dev *sdev, struct netif *d
 	peer->connected_state = SLSI_STA_CONN_STATE_CONNECTING;
 }
 
-static void slsi_fw_test_connected_network(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_connected_network(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = NULL;
@@ -468,7 +468,7 @@ static void slsi_fw_test_connected_network(struct slsi_dev *sdev, struct netif *
 	slsi_rx_buffered_frames(sdev, dev, peer);
 }
 
-static void slsi_fw_test_connected_ibss_network(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_connected_ibss_network(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = NULL;
@@ -496,7 +496,7 @@ static void slsi_fw_test_connected_ibss_network(struct slsi_dev *sdev, struct ne
 }
 
 /* Setup the NetDev / Peers based on the saved frames */
-static void slsi_fw_test_procedure_started_ind(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_procedure_started_ind(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *add_vif_req;
@@ -548,7 +548,7 @@ out:
 }
 
 /* Setup the NetDev / Peers based on the saved frames */
-static void slsi_fw_test_connect_ind(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_connect_ind(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *add_vif_req;
@@ -590,7 +590,7 @@ out:
 	slsi_kfree_mbuf(mbuf);
 }
 
-static void slsi_fw_test_connected_ind(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_connected_ind(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *add_vif_req;
@@ -634,7 +634,7 @@ out:
 	slsi_kfree_mbuf(mbuf);
 }
 
-static void slsi_fw_test_roamed_ind(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_roamed_ind(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *add_vif_req;
@@ -675,7 +675,7 @@ out:
 	slsi_kfree_mbuf(mbuf);
 }
 
-static void slsi_fw_test_disconnect_station(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_disconnect_station(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = slsi_get_peer_from_qs(sdev, dev, SLSI_STA_PEER_QUEUESET);
@@ -702,7 +702,7 @@ static void slsi_fw_test_disconnect_station(struct slsi_dev *sdev, struct netif 
 	slsi_vif_deactivated(sdev, dev);
 }
 
-static void slsi_fw_test_disconnect_network(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_disconnect_network(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	/* Find the peer based on MAC address, mlme-disconnect-ind and mlme-disconnected-ind
@@ -725,7 +725,7 @@ static void slsi_fw_test_disconnect_network(struct slsi_dev *sdev, struct netif 
 	}
 }
 
-static void slsi_fw_test_disconnected_ind(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_disconnected_ind(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *add_vif_req;
@@ -769,7 +769,7 @@ out:
 }
 
 /* Setup the NetDev */
-static void slsi_fw_test_start_cfm(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_start_cfm(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *add_vif_req;
@@ -815,7 +815,7 @@ out:
 	slsi_kfree_mbuf(mbuf);
 }
 
-static void slsi_fw_test_add_vif_req(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_add_vif_req(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -827,7 +827,7 @@ static void slsi_fw_test_add_vif_req(struct slsi_dev *sdev, struct netif *dev, s
 	slsi_kfree_mbuf(mbuf);
 }
 
-static void slsi_fw_test_del_vif_req(struct slsi_dev *sdev, struct netif *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
+static void slsi_fw_test_del_vif_req(struct slsi_dev *sdev, struct netdev *dev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *add_vif_req;
@@ -881,7 +881,7 @@ void slsi_fw_test_work(FAR void *arg)
 	struct slsi_fw_test *fw_test = container_of(arg, struct slsi_fw_test, fw_test_work);
 	struct slsi_dev *sdev;
 	struct max_buff *mbuf;
-	struct netif *dev;
+	struct netdev *dev;
 
 	if (fw_test == NULL) {
 		return;

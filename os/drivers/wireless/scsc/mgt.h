@@ -194,7 +194,7 @@ static inline unsigned compare_ether_addr(const u8 *addr1, const u8 *addr2)
  * 1. can NOT block
  * 2. needs to be as quick as possible
  */
-static inline struct slsi_peer *slsi_get_peer_from_mac(struct slsi_dev *sdev, struct netif *dev, const u8 *mac)
+static inline struct slsi_peer *slsi_get_peer_from_mac(struct slsi_dev *sdev, struct netdev *dev, const u8 *mac)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -220,7 +220,7 @@ static inline struct slsi_peer *slsi_get_peer_from_mac(struct slsi_dev *sdev, st
 	return NULL;
 }
 
-static inline struct slsi_peer *slsi_get_peer_from_qs(struct slsi_dev *sdev, struct netif *dev, u16 queueset)
+static inline struct slsi_peer *slsi_get_peer_from_qs(struct slsi_dev *sdev, struct netdev *dev, u16 queueset)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -370,47 +370,47 @@ static inline int slsi_set_mgmt_tx_data(struct netdev_vif *ndev_vif, u64 cookie,
 bool is_multicast_ether_addr(const u8 *addr);
 void slsi_get_hw_mac_address(struct slsi_dev *sdev, u8 *addr);
 int slsi_start(struct slsi_dev *sdev);
-void slsi_stop_net_dev(struct slsi_dev *sdev, struct netif *dev);
+void slsi_stop_net_dev(struct slsi_dev *sdev, struct netdev *dev);
 void slsi_stop(struct slsi_dev *sdev);
 void slsi_stop_locked(struct slsi_dev *sdev);
-struct slsi_peer *slsi_peer_add(struct slsi_dev *sdev, struct netif *dev, u8 *peer_address, u16 aid);
-void slsi_peer_update_assoc_req(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer, struct max_buff *mbuf);
-void slsi_peer_update_assoc_rsp(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer, struct max_buff *mbuf);
-int slsi_peer_remove(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer);
-int slsi_ps_port_control(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer, enum slsi_sta_conn_state s);
-int slsi_vif_activated(struct slsi_dev *sdev, struct netif *dev);
-void slsi_vif_deactivated(struct slsi_dev *sdev, struct netif *dev);
-int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_address, u16 reason);
+struct slsi_peer *slsi_peer_add(struct slsi_dev *sdev, struct netdev *dev, u8 *peer_address, u16 aid);
+void slsi_peer_update_assoc_req(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer, struct max_buff *mbuf);
+void slsi_peer_update_assoc_rsp(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer, struct max_buff *mbuf);
+int slsi_peer_remove(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer);
+int slsi_ps_port_control(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer, enum slsi_sta_conn_state s);
+int slsi_vif_activated(struct slsi_dev *sdev, struct netdev *dev);
+void slsi_vif_deactivated(struct slsi_dev *sdev, struct netdev *dev);
+int slsi_handle_disconnect(struct slsi_dev *sdev, struct netdev *dev, u8 *peer_address, u16 reason);
 int slsi_update_suspend_mode(struct slsi_dev *sdev);
 int slsi_band_update(struct slsi_dev *sdev, int band);
-int slsi_ip_address_changed(struct slsi_dev *sdev, struct netif *dev, __be32 ipaddress);
-int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev);
+int slsi_ip_address_changed(struct slsi_dev *sdev, struct netdev *dev, __be32 ipaddress);
+int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netdev *dev);
 int slsi_find_scan_freq(struct slsi_80211_mgmt *mgmt, size_t mgmt_len, u16 freq);
 int slsi_auto_chan_select_scan(struct slsi_dev *sdev, int chan_count, struct slsi_80211_channel *channels[]);
-int slsi_set_uint_mib(struct slsi_dev *dev, struct netif *ndev, u16 psid, int value);
+int slsi_set_uint_mib(struct slsi_dev *dev, struct netdev *ndev, u16 psid, int value);
 int slsi_update_regd_rules(struct slsi_dev *sdev, bool country_check);
-int slsi_set_uapsd_qos_info(struct slsi_dev *sdev, struct netif *dev, const int qos_info);
+int slsi_set_uapsd_qos_info(struct slsi_dev *sdev, struct netdev *dev, const int qos_info);
 #ifdef CONFIG_SCSC_ENABLE_P2P
 int slsi_p2p_init(struct slsi_dev *sdev, struct netdev_vif *ndev_vif);
 void slsi_p2p_deinit(struct slsi_dev *sdev, struct netdev_vif *ndev_vif);
-int slsi_p2p_vif_activate(struct slsi_dev *sdev, struct netif *dev, struct slsi_80211_channel *chan, u16 duration, bool set_probe_rsp_ies);
-void slsi_p2p_vif_deactivate(struct slsi_dev *sdev, struct netif *dev, bool hw_available);
+int slsi_p2p_vif_activate(struct slsi_dev *sdev, struct netdev *dev, struct slsi_80211_channel *chan, u16 duration, bool set_probe_rsp_ies);
+void slsi_p2p_vif_deactivate(struct slsi_dev *sdev, struct netdev *dev, bool hw_available);
 void slsi_p2p_group_start_remove_unsync_vif(struct slsi_dev *sdev);
-int slsi_p2p_dev_probe_rsp_ie(struct slsi_dev *sdev, struct netif *dev, u8 *probe_rsp_ie, size_t probe_rsp_ie_len);
-int slsi_p2p_dev_null_ies(struct slsi_dev *sdev, struct netif *dev);
+int slsi_p2p_dev_probe_rsp_ie(struct slsi_dev *sdev, struct netdev *dev, u8 *probe_rsp_ie, size_t probe_rsp_ie_len);
+int slsi_p2p_dev_null_ies(struct slsi_dev *sdev, struct netdev *dev);
 int slsi_p2p_get_public_action_subtype(const struct slsi_80211_mgmt *mgmt);
-int slsi_p2p_get_go_neg_rsp_status(struct netif *dev, const struct slsi_80211_mgmt *mgmt);
+int slsi_p2p_get_go_neg_rsp_status(struct netdev *dev, const struct slsi_80211_mgmt *mgmt);
 u8 slsi_p2p_get_exp_peer_frame_subtype(u8 subtype);
 #endif
-int slsi_send_txq_params(struct slsi_dev *sdev, struct netif *ndev);
+int slsi_send_txq_params(struct slsi_dev *sdev, struct netdev *ndev);
 void slsi_abort_sta_scan(struct slsi_dev *sdev);
 int slsi_is_dhcp_packet(u8 *data);
-void slsi_set_packet_filters(struct slsi_dev *sdev, struct netif *dev);
+void slsi_set_packet_filters(struct slsi_dev *sdev, struct netdev *dev);
 int slsi_ap_prepare_add_info_ies(struct netdev_vif *ndev_vif, const u8 *ies, size_t ies_len);
-int slsi_set_mib(struct slsi_dev *dev, struct netif *ndev, u16 psid, int value);
+int slsi_set_mib(struct slsi_dev *dev, struct netdev *ndev, u16 psid, int value);
 int slsi_get_mib(struct slsi_dev *sdev, u16 psid, int *mib_value);
-int slsi_send_max_transmit_msdu_lifetime(struct slsi_dev *dev, struct netif *ndev, u32 msdu_lifetime);
-int slsi_read_max_transmit_msdu_lifetime(struct slsi_dev *dev, struct netif *ndev, u32 *msdu_lifetime);
+int slsi_send_max_transmit_msdu_lifetime(struct slsi_dev *dev, struct netdev *ndev, u32 msdu_lifetime);
+int slsi_read_max_transmit_msdu_lifetime(struct slsi_dev *dev, struct netdev *ndev, u32 *msdu_lifetime);
 int slsi_read_unifi_countrylist(struct slsi_dev *sdev, u16 psid);
 int slsi_read_default_country(struct slsi_dev *sdev, u8 *alpha2, u16 psid);
 int slsi_read_disconnect_ind_timeout(struct slsi_dev *sdev, u16 psid);

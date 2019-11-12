@@ -105,14 +105,14 @@ struct slsi_mlme_pkt_filter_elem {
 u16 slsi_get_chann_info(struct slsi_dev *sdev, struct hostapd_freq_params *chandef);
 int slsi_check_channelization(struct slsi_dev *sdev, struct slsi_80211_chan_def *chandef);
 #ifndef CONFIG_SCSC_WLAN_BLOCK_IPV6
-int slsi_mlme_set_ipv6_address(struct slsi_dev *sdev, struct netif *dev);
+int slsi_mlme_set_ipv6_address(struct slsi_dev *sdev, struct netdev *dev);
 #endif
-int slsi_mlme_set(struct slsi_dev *sdev, struct netif *dev, u8 *req, int req_len);
-int slsi_mlme_get(struct slsi_dev *sdev, struct netif *dev, u8 *req, int req_len, u8 *resp, int resp_buf_len, int *resp_len);
+int slsi_mlme_set(struct slsi_dev *sdev, struct netdev *dev, u8 *req, int req_len);
+int slsi_mlme_get(struct slsi_dev *sdev, struct netdev *dev, u8 *req, int req_len, u8 *resp, int resp_buf_len, int *resp_len);
 
-int slsi_mlme_add_vif(struct slsi_dev *sdev, struct netif *dev, u8 *interface_address, u8 *device_address);
-void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netif *dev);
-int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, struct slsi_80211_channel *chan, u16 duration, u16 interval, u16 count);
+int slsi_mlme_add_vif(struct slsi_dev *sdev, struct netdev *dev, u8 *interface_address, u8 *device_address);
+void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netdev *dev);
+int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netdev *dev, struct slsi_80211_channel *chan, u16 duration, u16 interval, u16 count);
 const u8 *slsi_80211_find_ie(u8 eid, const u8 *ies, int len);
 u8 *slsi_80211_find_ie_mod(u8 eid, u8 *ies, int len);
 const u8 *slsi_80211_find_vendor_ie(unsigned int oui, u8 oui_type, const u8 *ies, int len);
@@ -123,14 +123,14 @@ const u8 *slsi_80211_find_vendor_ie(unsigned int oui, u8 oui_type, const u8 *ies
  * >0 : Scan NOT installed. Not an Error
  * <0 : Scan NOT installed. Error
  */
-int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_type, u16 report_mode, u32 n_ssids, struct wpa_driver_scan_ssid *ssids, u32 n_channels, struct slsi_80211_channel *channels[], void *gscan_param, const u8 *ies, u16 ies_len, bool wait_for_ind);
+int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netdev *dev, u16 scan_type, u16 report_mode, u32 n_ssids, struct wpa_driver_scan_ssid *ssids, u32 n_channels, struct slsi_80211_channel *channels[], void *gscan_param, const u8 *ies, u16 ies_len, bool wait_for_ind);
 
-int slsi_mlme_del_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_id);
-int slsi_mlme_start(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, struct wpa_driver_ap_params *settings, const u8 *wpa_ie_pos, const u8 *wmm_ie_pos, bool append_vht_ies);
-int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_driver_associate_params *sme);
-int slsi_mlme_set_key(struct slsi_dev *sdev, struct netif *dev, u16 key_id, u16 key_type, const u8 *address, struct slsi_key_params *key);
-int slsi_mlme_get_key(struct slsi_dev *sdev, struct netif *dev, u16 key_id, u16 key_type, u8 *seq, int *seq_len);
-int slsi_mlme_set_cckm_key(struct slsi_dev *sdev, struct netif *dev, u8 *gk_key);
+int slsi_mlme_del_scan(struct slsi_dev *sdev, struct netdev *dev, u16 scan_id);
+int slsi_mlme_start(struct slsi_dev *sdev, struct netdev *dev, u8 *bssid, struct wpa_driver_ap_params *settings, const u8 *wpa_ie_pos, const u8 *wmm_ie_pos, bool append_vht_ies);
+int slsi_mlme_connect(struct slsi_dev *sdev, struct netdev *dev, struct wpa_driver_associate_params *sme);
+int slsi_mlme_set_key(struct slsi_dev *sdev, struct netdev *dev, u16 key_id, u16 key_type, const u8 *address, struct slsi_key_params *key);
+int slsi_mlme_get_key(struct slsi_dev *sdev, struct netdev *dev, u16 key_id, u16 key_type, u8 *seq, int *seq_len);
+int slsi_mlme_set_cckm_key(struct slsi_dev *sdev, struct netdev *dev, u8 *gk_key);
 
 /**
  * Sends MLME-DISCONNECT-REQ and waits for the MLME-DISCONNECT-CFM
@@ -142,37 +142,37 @@ int slsi_mlme_set_cckm_key(struct slsi_dev *sdev, struct netif *dev, u8 *gk_key)
  * waits for both the MLME-DISCONNECT-CFM and the MLME-DISCONNECT-IND (if the
  * MLME-DISCONNECT-CFM was successful)
  */
-int slsi_mlme_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, u16 reason_code, bool wait_ind);
+int slsi_mlme_disconnect(struct slsi_dev *sdev, struct netdev *dev, u8 *bssid, u16 reason_code, bool wait_ind);
 
-int slsi_mlme_req(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf);
-struct max_buff *slsi_mlme_req_no_cfm(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf);
+int slsi_mlme_req(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf);
+struct max_buff *slsi_mlme_req_no_cfm(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf);
 
-struct max_buff *slsi_mlme_req_ind(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 ind_id);
+struct max_buff *slsi_mlme_req_ind(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, u16 ind_id);
 /* Reads multiple MIB data related to station info. returns 0 if success else errno*/
-int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netif *dev, struct wpa_signal_info *si);
+int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netdev *dev, struct wpa_signal_info *si);
 #ifdef CONFIG_SCSC_WLAN_POWER_SAVE
-int slsi_mlme_powermgt(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode);
-int slsi_mlme_powermgt_unlocked(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode);
+int slsi_mlme_powermgt(struct slsi_dev *sdev, struct netdev *dev, u16 ps_mode);
+int slsi_mlme_powermgt_unlocked(struct slsi_dev *sdev, struct netdev *dev, u16 ps_mode);
 #endif
-int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netif *dev, u32 af_bitmap_active, u32 af_bitmap_suspended);
-int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netif *dev, u16 center_freq, u16 chan_info);
-int slsi_mlme_add_info_elements(struct slsi_dev *sdev, struct netif *dev, u16 purpose, const u8 *ies, const u16 ies_len);
-int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netif *dev, const u8 *frame, int frame_len, u16 data_desc, u16 msg_type, u16 host_tag, u16 freq, u32 dwell_time, u32 period);
-int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 msg_type);
+int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netdev *dev, u32 af_bitmap_active, u32 af_bitmap_suspended);
+int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netdev *dev, u16 center_freq, u16 chan_info);
+int slsi_mlme_add_info_elements(struct slsi_dev *sdev, struct netdev *dev, u16 purpose, const u8 *ies, const u16 ies_len);
+int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netdev *dev, const u8 *frame, int frame_len, u16 data_desc, u16 msg_type, u16 host_tag, u16 freq, u32 dwell_time, u32 period);
+int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, u16 msg_type);
 #ifdef CONFIG_SCSC_ENABLE_P2P
-int slsi_mlme_reset_dwell_time(struct slsi_dev *sdev, struct netif *dev);
+int slsi_mlme_reset_dwell_time(struct slsi_dev *sdev, struct netdev *dev);
 #endif
-int slsi_mlme_set_packet_filter(struct slsi_dev *sdev, struct netif *dev, int pkt_filter_len, u8 num_filters, struct slsi_mlme_pkt_filter_elem *pkt_filter_elems);
-void slsi_mlme_connect_resp(struct slsi_dev *sdev, struct netif *dev);
-void slsi_mlme_connected_resp(struct slsi_dev *sdev, struct netif *dev, u16 peer_index);
-int slsi_mlme_set_pmk(struct slsi_dev *sdev, struct netif *dev, const u8 *pmk, u16 pmklen);
+int slsi_mlme_set_packet_filter(struct slsi_dev *sdev, struct netdev *dev, int pkt_filter_len, u8 num_filters, struct slsi_mlme_pkt_filter_elem *pkt_filter_elems);
+void slsi_mlme_connect_resp(struct slsi_dev *sdev, struct netdev *dev);
+void slsi_mlme_connected_resp(struct slsi_dev *sdev, struct netdev *dev, u16 peer_index);
+int slsi_mlme_set_pmk(struct slsi_dev *sdev, struct netdev *dev, const u8 *pmk, u16 pmklen);
 #ifdef CONFIG_SCSC_ADV_FEATURE
-void slsi_ap_obss_scan_done_ind(struct netif *dev, struct netdev_vif *ndev_vif);
-int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netif *dev, const struct cfg80211_acl_data *params);
+void slsi_ap_obss_scan_done_ind(struct netdev *dev, struct netdev_vif *ndev_vif);
+int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netdev *dev, const struct cfg80211_acl_data *params);
 #endif
-int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netif *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address);
+int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netdev *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address);
 
-int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct netif *dev, struct slsi_mib_value *mib_val);
-int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netif *dev, const u8 *ies, int ie_len);
-int slsi_modify_ies(struct netif *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index, u8 ie_value);
+int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct netdev *dev, struct slsi_mib_value *mib_val);
+int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netdev *dev, const u8 *ies, int ie_len);
+int slsi_modify_ies(struct netdev *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index, u8 ie_value);
 #endif /*__SLSI_MLME_H__*/

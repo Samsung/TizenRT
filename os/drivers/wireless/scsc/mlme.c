@@ -131,7 +131,7 @@ static struct max_buff *slsi_mlme_wait_for_cfm(struct slsi_dev *sdev, struct sls
 	return cfm;
 }
 
-static struct max_buff *slsi_mlme_wait_for_ind(struct slsi_dev *sdev, struct netif *dev, struct slsi_sig_send *sig_wait, u16 ind_id)
+static struct max_buff *slsi_mlme_wait_for_ind(struct slsi_dev *sdev, struct netdev *dev, struct slsi_sig_send *sig_wait, u16 ind_id)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *ind = NULL;
@@ -191,7 +191,7 @@ static struct max_buff *slsi_mlme_wait_for_ind(struct slsi_dev *sdev, struct net
  * validate_cfm_wait_ind: NULL when not required, if used ind MUS not be 0
  * NOTE: dev can be NULL!
  */
-static struct max_buff *slsi_mlme_tx_rx(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 cfm_id, struct max_buff **mib_error, u16 ind_id, bool(*validate_cfm_wait_ind)(struct slsi_dev *sdev, struct netif *dev, struct max_buff *cfm))
+static struct max_buff *slsi_mlme_tx_rx(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, u16 cfm_id, struct max_buff **mib_error, u16 ind_id, bool(*validate_cfm_wait_ind)(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *cfm))
 {
 	struct max_buff *rx = NULL;
 	int err;
@@ -204,7 +204,7 @@ static struct max_buff *slsi_mlme_tx_rx(struct slsi_dev *sdev, struct netif *dev
 		sig_wait = &ndev_vif->sig_wait;
 	}
 
-	if (sdev->mlme_blocked) {
+	if (sdev->mlme_blocked) { // pkbuild
 		SLSI_DBG3(sdev, SLSI_MLME, "Rejected. mlme_blocked=%d", sdev->mlme_blocked);
 		slsi_kfree_mbuf(mbuf);
 		return NULL;
@@ -301,7 +301,7 @@ clean_exit:
 /**
  * NOTE: dev can be NULL!
  */
-int slsi_mlme_req(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+int slsi_mlme_req(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	int ret = 0;
 	struct slsi_sig_send *sig_wait = &sdev->sig_wait;
@@ -325,7 +325,7 @@ int slsi_mlme_req(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbu
 	return ret;
 }
 
-struct max_buff *slsi_mlme_req_ind(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 ind_id)
+struct max_buff *slsi_mlme_req_ind(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, u16 ind_id)
 {
 	if (WARN_ON(!ind_id)) {
 		goto err;
@@ -336,12 +336,12 @@ err:
 	return NULL;
 }
 
-struct max_buff *slsi_mlme_req_no_cfm(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+struct max_buff *slsi_mlme_req_no_cfm(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	return slsi_mlme_tx_rx(sdev, dev, mbuf, 0, NULL, 0, NULL);
 }
 
-struct max_buff *slsi_mlme_req_cfm(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 cfm_id)
+struct max_buff *slsi_mlme_req_cfm(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, u16 cfm_id)
 {
 	if (WARN_ON(!cfm_id)) {
 		goto err;
@@ -353,7 +353,7 @@ err:
 }
 
 /* NOTE: dev can be NULL! */
-static inline struct max_buff *slsi_mlme_req_cfm_mib(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 cfm_id, struct max_buff **mib_error)
+static inline struct max_buff *slsi_mlme_req_cfm_mib(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, u16 cfm_id, struct max_buff **mib_error)
 {
 	if (WARN_ON(!cfm_id)) {
 		goto err;
@@ -368,7 +368,7 @@ err:
 }
 
 /* NOTE: dev can be NULL! */
-static inline struct max_buff *slsi_mlme_req_cfm_ind(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 cfm_id, u16 ind_id, bool(*validate_cfm_wait_ind)(struct slsi_dev *sdev, struct netif *dev, struct max_buff *cfm))
+static inline struct max_buff *slsi_mlme_req_cfm_ind(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, u16 cfm_id, u16 ind_id, bool(*validate_cfm_wait_ind)(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *cfm))
 {
 	if (WARN_ON(!cfm_id)) {
 		goto err;
@@ -568,7 +568,7 @@ static void mib_buffer_dump_to_log(struct slsi_dev *sdev, u8 *mib_buffer, unsign
 #endif
 #ifndef CONFIG_SCSC_WLAN_BLOCK_IPV6
 
-int slsi_mlme_set_ipv6_address(struct slsi_dev *sdev, struct netif *dev)
+int slsi_mlme_set_ipv6_address(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct max_buff *req;
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
@@ -611,7 +611,7 @@ int slsi_mlme_set_ipv6_address(struct slsi_dev *sdev, struct netif *dev)
 }
 #endif
 
-int slsi_mlme_set(struct slsi_dev *sdev, struct netif *dev, u8 *mib, int mib_len)
+int slsi_mlme_set(struct slsi_dev *sdev, struct netdev *dev, u8 *mib, int mib_len)
 {
 	struct max_buff *req;
 	struct max_buff *cfm;
@@ -650,7 +650,7 @@ int slsi_mlme_set(struct slsi_dev *sdev, struct netif *dev, u8 *mib, int mib_len
 	return r;
 }
 
-int slsi_mlme_get(struct slsi_dev *sdev, struct netif *dev, u8 *mib, int mib_len, u8 *resp, int resp_buf_len, int *resp_len)
+int slsi_mlme_get(struct slsi_dev *sdev, struct netdev *dev, u8 *mib, int mib_len, u8 *resp, int resp_buf_len, int *resp_len)
 {
 	struct max_buff *req;
 	struct max_buff *err = NULL;
@@ -705,7 +705,7 @@ int slsi_mlme_get(struct slsi_dev *sdev, struct netif *dev, u8 *mib, int mib_len
 	return r;
 }
 
-int slsi_mlme_add_vif(struct slsi_dev *sdev, struct netif *dev, u8 *interface_address, u8 *device_address)
+int slsi_mlme_add_vif(struct slsi_dev *sdev, struct netdev *dev, u8 *interface_address, u8 *device_address)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -746,7 +746,7 @@ int slsi_mlme_add_vif(struct slsi_dev *sdev, struct netif *dev, u8 *interface_ad
 	return r;
 }
 
-void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netif *dev)
+void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -788,7 +788,7 @@ void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netif *dev)
 }
 
 #ifdef CONFIG_SCSC_ENABLE_P2P
-int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, struct ieee80211_channel *chan, u16 duration, u16 interval, u16 count)
+int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netdev *dev, struct ieee80211_channel *chan, u16 duration, u16 interval, u16 count)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -844,7 +844,7 @@ static inline bool is_channel_active(struct slsi_80211_channel *channel)
 }
 
 #ifdef CONFIG_SCSC_ADV_FEATURE
-void slsi_ap_obss_scan_done_ind(struct netif *dev, struct netdev_vif *ndev_vif)
+void slsi_ap_obss_scan_done_ind(struct netdev *dev, struct netdev_vif *ndev_vif)
 {
 	struct max_buff *scan_res;
 	u16 scan_id = SLSI_SCAN_HW_ID;
@@ -876,7 +876,7 @@ void slsi_ap_obss_scan_done_ind(struct netif *dev, struct netdev_vif *ndev_vif)
 #endif							/* CONFIG_SCSC_ADV_FEATURE */
 
 /* Null check for cfm done in caller function */
-static bool slsi_scan_cfm_validate(struct slsi_dev *sdev, struct netif *dev, struct max_buff *cfm)
+static bool slsi_scan_cfm_validate(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *cfm)
 {
 	bool r = true;
 
@@ -889,7 +889,7 @@ static bool slsi_scan_cfm_validate(struct slsi_dev *sdev, struct netif *dev, str
 	return r;
 }
 
-static int slsi_mlme_append_channel_list(struct slsi_dev *sdev, struct netif *dev, struct max_buff *req, u32 num_channels, struct slsi_80211_channel *channels[])
+static int slsi_mlme_append_channel_list(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *req, u32 num_channels, struct slsi_80211_channel *channels[])
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	int chann;
@@ -966,16 +966,18 @@ static int slsi_mlme_append_channel_list(struct slsi_dev *sdev, struct netif *de
 	return 0;
 }
 
-static inline int slsi_set_scan_params(struct netif *dev, u16 scan_id, u16 scan_type, u16 report_mode, int num_ssids, struct wpa_driver_scan_ssid *ssids, struct max_buff *req)
+static inline int slsi_set_scan_params(struct netdev *dev, u16 scan_id, u16 scan_type, u16 report_mode, int num_ssids, struct wpa_driver_scan_ssid *ssids, struct max_buff *req)
 {
 	u8 *p = NULL;
 	u8 i;
 	struct wpa_driver_scan_ssid *pssid = ssids;
 
+	// pkbuild u8 d_mac[6];
+	// netdev_get_hwaddr(dev, d_mac, NULL);
 	fapi_set_u16(req, u.mlme_add_scan_req.scan_id, scan_id);
 	fapi_set_u16(req, u.mlme_add_scan_req.scan_type, scan_type);
 	fapi_set_u16(req, u.mlme_add_scan_req.report_mode_bitmap, report_mode);
-	fapi_set_memcpy(req, u.mlme_add_scan_req.device_address, dev->d_mac.ether_addr_octet);
+	fapi_set_memcpy(req, u.mlme_add_scan_req.device_address, netdev_get_hwaddr_ptr(dev));
 
 	for (i = 0; i < num_ssids; i++, pssid++) {
 		p = fapi_append_data(req, NULL, 2 + pssid->ssid_len);
@@ -997,7 +999,7 @@ static inline int slsi_set_scan_params(struct netif *dev, u16 scan_id, u16 scan_
 	return 0;
 }
 
-int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_type, u16 report_mode, u32 n_ssids, struct wpa_driver_scan_ssid *ssids, u32 n_channels, struct slsi_80211_channel *channels[], void *gscan, const u8 *ies, u16 ies_len, bool wait_for_ind)
+int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netdev *dev, u16 scan_type, u16 report_mode, u32 n_ssids, struct wpa_driver_scan_ssid *ssids, u32 n_channels, struct slsi_80211_channel *channels[], void *gscan, const u8 *ies, u16 ies_len, bool wait_for_ind)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -1024,10 +1026,15 @@ int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_type, 
 		SLSI_NET_WARN(dev, "not supported in WlanLite mode\n");
 		return -EOPNOTSUPP;
 	}
-
+#ifndef CONFIG_NET_NETMGR
 	if (WARN_ON(!(dev->d_mac.ether_addr_octet))) {
 		return -EINVAL;
 	}
+#else
+	if (WARN_ON(!netdev_get_hwaddr_ptr(dev))) {
+		return -EINVAL;
+	}
+#endif
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->scan_mutex));
 	SLSI_NET_DBG3(dev, SLSI_MLME, "id:0x%x, n_channels:%d\n", (ndev_vif->ifnum << 8 | SLSI_SCAN_HW_ID), n_channels);
@@ -1088,7 +1095,7 @@ int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_type, 
 	return r;
 }
 
-int slsi_mlme_del_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_id)
+int slsi_mlme_del_scan(struct slsi_dev *sdev, struct netdev *dev, u16 scan_id)
 {
 	struct max_buff *req;
 	struct max_buff *cfm;
@@ -1190,7 +1197,7 @@ static int slsi_prepare_country_ie(struct slsi_dev *sdev, u16 center_freq, u8 *c
 }
 #endif							/* CONFIG_SCSC_ADV_FEATURE */
 
-int slsi_modify_ies(struct netif *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index, u8 ie_value)
+int slsi_modify_ies(struct netdev *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index, u8 ie_value)
 {
 	u8 *ie;
 
@@ -1214,7 +1221,7 @@ int slsi_modify_ies(struct netif *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index
 	return false;
 }
 
-static void slsi_mlme_start_prepare_ies(struct max_buff *req, struct netif *dev, struct netdev_vif *ndev_vif, struct wpa_driver_ap_params *settings, const u8 *wpa_ie_pos, const u8 *wmm_ie_pos)
+static void slsi_mlme_start_prepare_ies(struct max_buff *req, struct netdev *dev, struct netdev_vif *ndev_vif, struct wpa_driver_ap_params *settings, const u8 *wpa_ie_pos, const u8 *wmm_ie_pos)
 {
 	const u8 *wps_ie, *vht_capab_ie, *tail_pos = NULL;
 	size_t beacon_ie_len = 0, tail_length = 0;
@@ -1338,7 +1345,7 @@ static void slsi_mlme_start_prepare_ies(struct max_buff *req, struct netif *dev,
 #define SLSI_VHT_OPERATION_IE_LEN 7
 
 #ifdef CONFIG_SCSC_ADV_FEATURE
-static int slsi_prepare_vht_ies(struct netif *dev, u8 **vht_ie_capab, u8 **vht_ie_operation)
+static int slsi_prepare_vht_ies(struct netdev *dev, u8 **vht_ie_capab, u8 **vht_ie_operation)
 {
 	u32 capabs;
 	u16 mcs;
@@ -1377,7 +1384,7 @@ static int slsi_prepare_vht_ies(struct netif *dev, u8 **vht_ie_capab, u8 **vht_i
 }
 #endif
 
-int slsi_mlme_start(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, struct wpa_driver_ap_params *settings, const u8 *wpa_ie_pos, const u8 *wmm_ie_pos, bool append_vht_ies)
+int slsi_mlme_start(struct slsi_dev *sdev, struct netdev *dev, u8 *bssid, struct wpa_driver_ap_params *settings, const u8 *wpa_ie_pos, const u8 *wmm_ie_pos, bool append_vht_ies)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -1463,7 +1470,7 @@ int slsi_mlme_start(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, struct 
 		}
 	}
 
-	fapi_set_memcpy(req, u.mlme_start_req.bssid, dev->d_mac.ether_addr_octet);
+	fapi_set_memcpy(req, u.mlme_start_req.bssid, netdev_get_hwaddr_ptr(dev));
 	fapi_set_u16(req, u.mlme_start_req.beacon_period, settings->beacon_int);
 	fapi_set_u16(req, u.mlme_start_req.dtim_period, settings->dtim_period);
 	fapi_set_u16(req, u.mlme_start_req.capability_information, le16_to_cpu(mgmt->u.beacon.capab_info));
@@ -1825,7 +1832,7 @@ static int slsi_mlme_connect_info_elems_ie_prep(const u8 *connect_ie, const size
 	return info_elem_length;
 }
 
-static int slsi_mlme_connect_info_elements(struct slsi_dev *sdev, struct netif *dev, struct wpa_driver_associate_params *sme)
+static int slsi_mlme_connect_info_elements(struct slsi_dev *sdev, struct netdev *dev, struct wpa_driver_associate_params *sme)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	int info_elem_length = 0;
@@ -1874,7 +1881,7 @@ static int slsi_mlme_connect_info_elements(struct slsi_dev *sdev, struct netif *
 	return r;
 }
 
-int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_driver_associate_params *sme)
+int slsi_mlme_connect(struct slsi_dev *sdev, struct netdev *dev, struct wpa_driver_associate_params *sme)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2007,7 +2014,7 @@ int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_drive
 	return r;
 }
 
-void slsi_mlme_connect_resp(struct slsi_dev *sdev, struct netif *dev)
+void slsi_mlme_connect_resp(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2026,10 +2033,12 @@ void slsi_mlme_connect_resp(struct slsi_dev *sdev, struct netif *dev)
 
 	cfm = slsi_mlme_req_no_cfm(sdev, dev, req);
 	WARN_ON(cfm);
+#ifndef CONFIG_NET_NETMGR
 	netif_set_link_up(dev);
+#endif
 }
 
-void slsi_mlme_connected_resp(struct slsi_dev *sdev, struct netif *dev, u16 peer_index)
+void slsi_mlme_connected_resp(struct slsi_dev *sdev, struct netdev *dev, u16 peer_index)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2051,7 +2060,7 @@ void slsi_mlme_connected_resp(struct slsi_dev *sdev, struct netif *dev, u16 peer
 }
 
 /* Null check for cfm done in caller function */
-bool slsi_disconnect_cfm_validate(struct slsi_dev *sdev, struct netif *dev, struct max_buff *cfm)
+bool slsi_disconnect_cfm_validate(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *cfm)
 {
 	int result = fapi_get_u16(cfm, u.mlme_disconnect_cfm.result_code);
 	bool r = false;
@@ -2075,7 +2084,7 @@ exit:
 	return r;
 }
 
-int slsi_mlme_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *mac, u16 reason_code, bool wait_ind)
+int slsi_mlme_disconnect(struct slsi_dev *sdev, struct netdev *dev, u8 *mac, u16 reason_code, bool wait_ind)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2124,7 +2133,7 @@ int slsi_mlme_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *mac, u16 
 	return r;
 }
 
-int slsi_mlme_set_key(struct slsi_dev *sdev, struct netif *dev, u16 key_id, u16 key_type, const u8 *address, struct slsi_key_params *key)
+int slsi_mlme_set_key(struct slsi_dev *sdev, struct netdev *dev, u16 key_id, u16 key_type, const u8 *address, struct slsi_key_params *key)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2190,7 +2199,7 @@ int slsi_mlme_set_key(struct slsi_dev *sdev, struct netif *dev, u16 key_id, u16 
 	return r;
 }
 
-int slsi_mlme_get_key(struct slsi_dev *sdev, struct netif *dev, u16 key_id, u16 key_type, u8 *seq, int *seq_len)
+int slsi_mlme_get_key(struct slsi_dev *sdev, struct netdev *dev, u16 key_id, u16 key_type, u8 *seq, int *seq_len)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2288,7 +2297,7 @@ static int slsi_mlme_fw_tx_rate_calc(u16 fw_rate)
 	return channel_txrate;
 }
 
-int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netif *dev, struct wpa_signal_info *si)
+int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netdev *dev, struct wpa_signal_info *si)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_mib_data mibreq = { 0, NULL };
@@ -2357,7 +2366,7 @@ int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netif *dev, struct wpa
  * with ndev_vif. if called without the ndev_vif mutex already taken, other mechanisms
  * must ensure that ndev_vif will exist for the duration of the function.
  */
-int slsi_mlme_powermgt_unlocked(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode)
+int slsi_mlme_powermgt_unlocked(struct slsi_dev *sdev, struct netdev *dev, u16 ps_mode)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2404,7 +2413,7 @@ int slsi_mlme_powermgt_unlocked(struct slsi_dev *sdev, struct netif *dev, u16 ps
 	return r;
 }
 
-int slsi_mlme_powermgt(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode)
+int slsi_mlme_powermgt(struct slsi_dev *sdev, struct netdev *dev, u16 ps_mode)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
@@ -2414,7 +2423,7 @@ int slsi_mlme_powermgt(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode)
 }
 #endif
 
-int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netif *dev, u32 af_bitmap_active, u32 af_bitmap_suspended)
+int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netdev *dev, u32 af_bitmap_active, u32 af_bitmap_suspended)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2446,7 +2455,7 @@ int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netif *dev, u3
 	return r;
 }
 
-int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netif *dev, u16 center_freq, u16 chan_info)
+int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netdev *dev, u16 center_freq, u16 chan_info)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2478,7 +2487,7 @@ int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netif *dev, u16 cente
 	return r;
 }
 
-int slsi_mlme_add_info_elements(struct slsi_dev *sdev, struct netif *dev, u16 purpose, const u8 *ies, const u16 ies_len)
+int slsi_mlme_add_info_elements(struct slsi_dev *sdev, struct netdev *dev, u16 purpose, const u8 *ies, const u16 ies_len)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2518,7 +2527,7 @@ int slsi_mlme_add_info_elements(struct slsi_dev *sdev, struct netif *dev, u16 pu
 	return r;
 }
 
-int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 msg_type)
+int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, u16 msg_type)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u16 host_tag = slsi_tx_host_tag(sdev);
@@ -2605,7 +2614,7 @@ exit:
 	return ret;
 }
 
-int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netif *dev, const u8 *frame, int frame_len, u16 data_desc, u16 msg_type, u16 host_tag, u16 freq, u32 dwell_time, u32 period)
+int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netdev *dev, const u8 *frame, int frame_len, u16 data_desc, u16 msg_type, u16 host_tag, u16 freq, u32 dwell_time, u32 period)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2651,7 +2660,7 @@ int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netif *dev, const u8
 }
 
 #ifdef CONFIG_SCSC_ENABLE_P2P
-int slsi_mlme_reset_dwell_time(struct slsi_dev *sdev, struct netif *dev)
+int slsi_mlme_reset_dwell_time(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2683,7 +2692,7 @@ int slsi_mlme_reset_dwell_time(struct slsi_dev *sdev, struct netif *dev)
 }
 #endif
 
-int slsi_mlme_set_packet_filter(struct slsi_dev *sdev, struct netif *dev, int pkt_filter_len, u8 num_filters, struct slsi_mlme_pkt_filter_elem *pkt_filter_elems)
+int slsi_mlme_set_packet_filter(struct slsi_dev *sdev, struct netdev *dev, int pkt_filter_len, u8 num_filters, struct slsi_mlme_pkt_filter_elem *pkt_filter_elems)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2742,7 +2751,7 @@ int slsi_mlme_set_packet_filter(struct slsi_dev *sdev, struct netif *dev, int pk
 	return r;
 }
 
-int slsi_mlme_set_pmk(struct slsi_dev *sdev, struct netif *dev, const u8 *pmk, u16 pmklen)
+int slsi_mlme_set_pmk(struct slsi_dev *sdev, struct netdev *dev, const u8 *pmk, u16 pmklen)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2782,7 +2791,7 @@ int slsi_mlme_set_pmk(struct slsi_dev *sdev, struct netif *dev, const u8 *pmk, u
 }
 
 #ifdef CONFIG_SCSC_ADV_FEATURE
-int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netif *dev, const struct cfg80211_acl_data *params)
+int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netdev *dev, const struct cfg80211_acl_data *params)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -2821,7 +2830,7 @@ int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netif *dev, const struct cfg
 }
 #endif							/* CONFIG_SCSC_ADV_FEATURE */
 
-int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct netif *dev, struct slsi_mib_value *mib_val)
+int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct netdev *dev, struct slsi_mib_value *mib_val)
 {
 	struct slsi_mib_data mib_data = { 0, NULL };
 	int error = 0;
@@ -2849,7 +2858,7 @@ exit:
 	return error;
 }
 
-int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netif *dev, const u8 *ies, int ie_len)
+int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netdev *dev, const u8 *ies, int ie_len)
 {
 	struct slsi_mib_entry mib_entry;
 	struct slsi_mib_data mibreq = { 0, NULL };
@@ -2906,7 +2915,7 @@ exit:
 	return r;
 }
 
-int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netif *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address)
+int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netdev *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;

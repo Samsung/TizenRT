@@ -91,7 +91,7 @@ static int sap_mlme_version_supported(u16 version)
 	return -EINVAL;
 }
 
-static int slsi_rx_netdev_mlme(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+static int slsi_rx_netdev_mlme(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	u16 id = fapi_get_u16(mbuf, id);
 
@@ -148,7 +148,7 @@ void slsi_rx_netdev_mlme_work(FAR void *arg)
 {
 	FAR struct slsi_mbuf_work *w = (FAR struct slsi_mbuf_work *)arg;
 	struct slsi_dev *sdev = w->sdev;
-	struct netif *dev = w->dev;
+	struct netdev *dev = w->dev;
 	struct max_buff *mbuf = slsi_mbuf_work_dequeue(w);
 
 	if (WARN_ON(!dev)) {
@@ -163,7 +163,7 @@ void slsi_rx_netdev_mlme_work(FAR void *arg)
 
 int slsi_rx_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_buff *mbuf, u16 vif)
 {
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 
 	dev = slsi_get_netdev(sdev, vif);
@@ -185,7 +185,7 @@ int slsi_rx_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_buff *mbuf, u1
 
 static int slsi_rx_action_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_buff *mbuf, u16 vif)
 {
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 
 	dev = slsi_get_netdev(sdev, vif);
@@ -206,7 +206,7 @@ static int slsi_rx_action_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_
 		/*  Check the DA of received action frame with the GO interface address */
 		if (memcmp(mgmt->da, dev->dev_addr, ETH_ALEN) != 0) {
 			/* If not equal, compare DA of received action frame with the P2P DEV address */
-			struct netif *p2pdev = slsi_get_netdev(sdev, SLSI_NET_INDEX_P2P);
+			struct netdev *p2pdev = slsi_get_netdev(sdev, SLSI_NET_INDEX_P2P);
 
 			if (WARN_ON(!p2pdev)) {
 				/* Calling function should free the mbuf */

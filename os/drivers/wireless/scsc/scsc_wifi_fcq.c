@@ -21,7 +21,7 @@
 #include "dev.h"
 
 #ifdef CONFIG_SCSC_ENABLE_PORT_CONTROL
-bool slsi_is_port_blocked(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs)
+bool slsi_is_port_blocked(struct netdev *dev, struct scsc_wifi_fcq_data_qset *qs)
 {
 	if (qs->controlled_port_state == SCSC_WIFI_FCQ_8021x_STATE_BLOCKED) {
 		return true;
@@ -31,7 +31,7 @@ bool slsi_is_port_blocked(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs)
 }
 #endif
 
-static int fcq_transmit(struct netif *dev, struct scsc_wifi_fcq_q_header *queue)
+static int fcq_transmit(struct netdev *dev, struct scsc_wifi_fcq_q_header *queue)
 {
 	if ((queue->qcod + 1) >= queue->qmod) {
 		return ERR_BUF;
@@ -85,7 +85,7 @@ static void scsc_wifi_fcq_redistribute_qmod_timer(void *data)
 }
 #endif
 
-int scsc_wifi_fcq_transmit_data(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority, bool multicast)
+int scsc_wifi_fcq_transmit_data(struct netdev *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority, bool multicast)
 {
 	if (WARN_ON(!dev)) {
 		return ERR_ARG;
@@ -158,7 +158,7 @@ int scsc_wifi_fcq_transmit_data(struct netif *dev, struct scsc_wifi_fcq_data_qse
 	return 0;
 }
 
-static int fcq_receive(struct netif *dev, struct scsc_wifi_fcq_q_header *queue)
+static int fcq_receive(struct netdev *dev, struct scsc_wifi_fcq_q_header *queue)
 {
 	queue->qcod--;
 	if (queue->qcod < 0) {
@@ -169,7 +169,7 @@ static int fcq_receive(struct netif *dev, struct scsc_wifi_fcq_q_header *queue)
 	return 0;
 }
 
-int scsc_wifi_fcq_receive_ctrl(struct netif *dev, struct scsc_wifi_fcq_ctrl_q *queue)
+int scsc_wifi_fcq_receive_ctrl(struct netdev *dev, struct scsc_wifi_fcq_ctrl_q *queue)
 {
 	if (WARN_ON(!dev)) {
 		return -EINVAL;
@@ -182,7 +182,7 @@ int scsc_wifi_fcq_receive_ctrl(struct netif *dev, struct scsc_wifi_fcq_ctrl_q *q
 	return fcq_receive(dev, &queue->head);
 }
 
-int scsc_wifi_fcq_receive_data(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority)
+int scsc_wifi_fcq_receive_data(struct netdev *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority)
 {
 	int rc = 0;
 
@@ -243,7 +243,7 @@ int scsc_wifi_fcq_update_smod(struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi
 	return 0;
 }
 
-int scsc_wifi_fcq_8021x_port_state(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_8021x_state state)
+int scsc_wifi_fcq_8021x_port_state(struct netdev *dev, struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_8021x_state state)
 {
 	if (WARN_ON(!dev)) {
 		return -EINTR;

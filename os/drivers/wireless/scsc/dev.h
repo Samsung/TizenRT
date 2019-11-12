@@ -24,13 +24,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <tinyara/net/net.h>
-#include <tinyara/net/netdev.h>
 #include <tinyara/kmalloc.h>
 #include <scsc/scsc_mx.h>
 #include <tinyara/wdog.h>
-#include <net/lwip/netif.h>
-
+#ifdef CONFIG_NET_NETMGR
+#include <tinyara/netmgr/netdev_mgr.h>
+#endif
 #include "max_buf.h"
 #include "fapi.h"
 #include "utils_scsc.h"
@@ -149,7 +148,7 @@ struct slsi_ba_session_rx {
 	/* Aging timer parameters */
 	bool timer_on;
 	pthread_mutex_t ba_lock;
-	struct netif *dev;
+	struct netdev *dev;
 	struct work_s work;
 };
 
@@ -566,7 +565,7 @@ struct slsi_dev {
 	struct slsi_chip_info_mib chip_info_mib;
 	pthread_mutex_t netdev_add_remove_mutex;
 	int netdev_up_count;
-	struct netif *netdev[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];	/* 0 is reserved */
+	struct netdev *netdev[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];	/* 0 is reserved */
 	u8 netdev_addresses[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1][ETH_ALEN];	/* 0 is reserved */
 	int device_state;
 
@@ -662,19 +661,19 @@ struct slsi_dev {
 extern int firmware_triggered_panic;
 #endif
 
-int slsi_rx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, bool fromBA);
+int slsi_rx_data(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, bool fromBA);
 void slsi_rx_dbg_sap_work(FAR void *arg);
 void slsi_rx_netdev_data_work(FAR void *arg);
 void slsi_rx_netdev_mlme_work(FAR void *arg);
 int slsi_rx_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_buff *mbuf, u16 vif);
-void slsi_rx_buffered_frames(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer);
+void slsi_rx_buffered_frames(struct slsi_dev *sdev, struct netdev *dev, struct slsi_peer *peer);
 int slsi_rx_blocking_signals(struct slsi_dev *sdev, struct max_buff *mbuf);
 void slsi_tx_pause_queues(struct slsi_dev *sdev);
 void slsi_tx_unpause_queues(struct slsi_dev *sdev);
-int slsi_tx_control(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, bool free_buf);
+int slsi_tx_control(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, bool free_buf);
 void slsi_alloc_tx_mbuf(struct slsi_dev *sdev);
 void slsi_free_tx_mbuf(struct slsi_dev *sdev);
-int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf);
+int slsi_tx_data(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf);
 int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf);
 bool slsi_is_wlan_service_active(void);
 bool slsi_is_test_mode_enabled(void);
@@ -689,7 +688,7 @@ static inline u16 slsi_tx_host_tag(struct slsi_dev *sdev)
 	return (u16)(sdev->tx_host_tag);
 }
 
-static inline struct netif *slsi_get_netdev_locked(struct slsi_dev *sdev, u16 ifnum)
+static inline struct netdev *slsi_get_netdev_locked(struct slsi_dev *sdev, u16 ifnum)
 {
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(sdev->netdev_add_remove_mutex));
 	if (ifnum > CONFIG_SCSC_WLAN_MAX_INTERFACES) {
@@ -698,9 +697,9 @@ static inline struct netif *slsi_get_netdev_locked(struct slsi_dev *sdev, u16 if
 	return sdev->netdev[ifnum];
 }
 
-static inline struct netif *slsi_get_netdev(struct slsi_dev *sdev, u16 ifnum)
+static inline struct netdev *slsi_get_netdev(struct slsi_dev *sdev, u16 ifnum)
 {
-	struct netif *dev;
+	struct netdev *dev;
 
 	SLSI_MUTEX_LOCK(sdev->netdev_add_remove_mutex);
 	dev = slsi_get_netdev_locked(sdev, ifnum);

@@ -24,9 +24,6 @@
 #include "mgt.h"
 #include <errno.h>
 #include "utils_scsc.h"
-#include <tinyara/net/netdev.h>
-#include <tinyara/net/ethernet.h>
-#include <tinyara/net/ip.h>
 
 #define SUPPORTED_VERSION       13
 #define SUPPORTED_OLD_VERSION   0
@@ -78,7 +75,7 @@ static int sap_ma_version_supported(u16 version)
 	return -EINVAL;
 }
 
-static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
+static int slsi_rx_amsdu_deaggregate(struct netdev *dev, struct max_buff *mbuf)
 {
 	unsigned int msdu_len;
 	unsigned int subframe_len;
@@ -137,7 +134,7 @@ static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 	return 0;
 }
 
-static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, bool fromBA)
+static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, bool fromBA)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = NULL;
@@ -197,7 +194,7 @@ static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netif *dev, s
 	if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
 		ehdr = (struct ethhdr *)(slsi_mbuf_get_data(mbuf));
 
-		if (is_multicast_ether_addr(ehdr->h_dest) && !compare_ether_addr(ehdr->h_source, dev->d_mac.ether_addr_octet)) {
+		if (is_multicast_ether_addr(ehdr->h_dest) && !compare_ether_addr(ehdr->h_source, netdev_get_hwaddr_ptr(dev))) {
 			SLSI_NET_DBG2(dev, SLSI_RX, "drop locally generated multicast frame relayed back by AP\n");
 			slsi_kfree_mbuf(mbuf);
 			return -EINVAL;
@@ -267,7 +264,7 @@ static void slsi_rx_start_performance_test_timer(struct slsi_dev *sdev)
 	sys_timeout(SLSI_RX_PERFORMANCE_REPORT_INTERVAL * 1000, slsi_rx_performance_test_timer, sdev);
 }
 
-static void slsi_rx_performance_test(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+static void slsi_rx_performance_test(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	static bool init_done;
 
@@ -291,7 +288,7 @@ static void slsi_rx_performance_test(struct slsi_dev *sdev, struct netif *dev, s
 }
 #endif
 
-int slsi_rx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, bool fromBA)
+int slsi_rx_data(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf, bool fromBA)
 {
 	if (slsi_rx_data_process_mbuf(sdev, dev, mbuf, fromBA) == 0) {
 #ifdef CONFIG_SLSI_RX_PERFORMANCE_TEST
@@ -304,7 +301,7 @@ int slsi_rx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 	return 0;
 }
 
-static int slsi_rx_data_cfm(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+static int slsi_rx_data_cfm(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	SLSI_NET_DBG3(dev, SLSI_TX, "ma_unitdata_cfm(vif:%d, host_tag:0x%x, status:%d)\n", fapi_get_vif(mbuf), fapi_get_u16(mbuf, u.ma_unitdata_cfm.host_tag), fapi_get_u16(mbuf, u.ma_unitdata_cfm.transmission_status));
 
@@ -335,7 +332,7 @@ void slsi_rx_netdev_data_work(FAR void *arg)
 {
 	FAR struct slsi_mbuf_work *w = (FAR struct slsi_mbuf_work *)arg;
 	struct slsi_dev *sdev = w->sdev;
-	struct netif *dev = w->dev;
+	struct netdev *dev = w->dev;
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *mbuf;
 
@@ -381,7 +378,7 @@ void slsi_rx_netdev_data_work(FAR void *arg)
 
 static int slsi_rx_queue_data(struct slsi_dev *sdev, struct max_buff *mbuf)
 {
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 	int vif;
 
@@ -433,7 +430,7 @@ static int sap_ma_txdone(struct slsi_dev *sdev, u16 colour)
 	int ret = 0;
 
 #ifdef CONFIG_SCSC_TX_FLOW_CONTROL
-	struct netif *dev;
+	struct netdev *dev;
 	struct slsi_peer *peer;
 	u16 vif, peer_index, ac;
 

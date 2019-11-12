@@ -64,10 +64,21 @@
 
 #define SLSI_IS_MULTICAST_QUEUE_MAPPING(queue) (queue >= SLSI_NETIF_Q_MULTICAST_START && queue < (SLSI_NETIF_Q_MULTICAST_START + SLSI_NETIF_Q_PER_PEER) ? 1 : 0)
 
-static inline void *netdev_priv(const struct netif *dev)
+#ifndef CONFIG_NET_NETMGR
+#include <tinyara/net/netdev.h>
+#include <net/lwip/netif.h>
+#define netdev netif
+#define netdev_get_hwaddr_ptr(dev) (dev)->d_mac.ether_addr_octet
+
+#endif
+static inline void *netdev_priv(const struct netdev *dev)
 {
 	if (dev) {
+#ifdef CONFIG_NET_NETMGR
+		return (FAR struct netdev_vif *)dev->priv;
+#else
 		return (FAR struct netdev_vif *)dev->d_private;
+#endif
 	} else {
 		return NULL;
 	}
@@ -110,9 +121,9 @@ struct slsi_peer;
 int slsi_netif_init(struct slsi_dev *sdev);
 /* returns the index or -E<error> code */
 int slsi_netif_add(struct slsi_dev *sdev, const char *name);
-int slsi_netif_register(struct slsi_dev *sdev, struct netif *dev);
-void slsi_netif_remove(struct slsi_dev *sdev, struct netif *dev);
+int slsi_netif_register(struct slsi_dev *sdev, struct netdev *dev);
+void slsi_netif_remove(struct slsi_dev *sdev, struct netdev *dev);
 void slsi_netif_remove_all(struct slsi_dev *sdev);
 void slsi_netif_deinit(struct slsi_dev *sdev);
-void slsi_ethernetif_input(struct netif *netif, u8_t *frame_ptr, u16_t len);
+void slsi_ethernetif_input(struct netdev *netif, u8_t *frame_ptr, u16_t len);
 #endif /*__SLSI_NETIF_H__*/

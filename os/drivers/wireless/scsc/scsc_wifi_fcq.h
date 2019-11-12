@@ -109,7 +109,7 @@ struct scsc_wifi_fcq_data_qset {
 	struct work_s fcq_work;
 };
 
-bool slsi_is_port_blocked(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs);
+bool slsi_is_port_blocked(struct netdev *dev, struct scsc_wifi_fcq_data_qset *qs);
 /* Queue and queue set management */
 int scsc_wifi_fcq_ctrl_q_init(struct scsc_wifi_fcq_ctrl_q *queue);
 void scsc_wifi_fcq_ctrl_q_deinit(struct scsc_wifi_fcq_ctrl_q *queue);
@@ -119,13 +119,13 @@ int scsc_wifi_fcq_multicast_qset_init(struct scsc_wifi_fcq_data_qset *qs);
 void scsc_wifi_fcq_qset_deinit(struct scsc_wifi_fcq_data_qset *qs);	/* Used for deinit both uni and multicast queue sets */
 
 /* Transmit/receive bookkeeping and smod power save changes / 802.1x handling */
-int scsc_wifi_fcq_transmit_data(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority, bool multicast);
-int scsc_wifi_fcq_receive_data(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority);
+int scsc_wifi_fcq_transmit_data(struct netdev *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority, bool multicast);
+int scsc_wifi_fcq_receive_data(struct netdev *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority);
 
-int scsc_wifi_fcq_receive_ctrl(struct netif *dev, struct scsc_wifi_fcq_ctrl_q *queue);
+int scsc_wifi_fcq_receive_ctrl(struct netdev *dev, struct scsc_wifi_fcq_ctrl_q *queue);
 
 int scsc_wifi_fcq_update_smod(struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_ps_state peer_ps_state, enum scsc_wifi_fcq_queue_set_type type);
-int scsc_wifi_fcq_8021x_port_state(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_8021x_state state);
+int scsc_wifi_fcq_8021x_port_state(struct netdev *dev, struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_8021x_state state);
 
 /* Statistics */
 int scsc_wifi_fcq_stat_queue(struct scsc_wifi_fcq_q_header *queue, struct scsc_wifi_fcq_q_stat *queue_stat, int *qmod, int *qcod);
