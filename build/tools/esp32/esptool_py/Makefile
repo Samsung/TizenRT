@@ -52,6 +52,16 @@ ESPTOOLPY_SRC := $(CURRENTDIR)/esptool_py/esptool/esptool.py
 ESPTOOLPY := $(PYTHON) $(ESPTOOLPY_SRC) --chip esp32
 ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD) --before $(CONFIG_ESPTOOLPY_BEFORE) --after $(CONFIG_ESPTOOLPY_AFTER)
 
+#Check submodule
+ESPTOOLPY_SUBMODULE_PATH := esptool_py/esptool
+ESPTOOLPY_SUBMODULE := esptool_modules
+
+$(ESPTOOLPY_SUBMODULE):
+ifneq ($(ESPTOOLPY_SRC), $(wildcard $(ESPTOOLPY_SRC)))
+	@echo "Get submodule $(ESPTOOLPY_SUBMODULE_PATH) firstly:"
+	git submodule update --init $(ESPTOOLPY_SUBMODULE_PATH)
+endif
+
 ESPTOOL_FLASH_OPTIONS := --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) --flash_size $(ESPFLASHSIZE)
 ifdef CONFIG_ESPTOOLPY_FLASHSIZE_DETECT
 ESPTOOL_WRITE_FLASH_OPTIONS := --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) --flash_size detect
@@ -68,7 +78,7 @@ ESPTOOL_ALL_FLASH_ARGS += $(APP_OFFSET) $(APP_BIN)
 # non-secure boot (or bootloader), both these files are the same
 APP_BIN_UNSIGNED ?= $(APP_BIN)
 
-$(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC)
+$(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SUBMODULE)
 	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
 
@@ -76,25 +86,30 @@ ESPTOOL_ALL_FLASH_ARGS += $(ESPTOOL_BOOTLOADER_FLASH_ARGS)
 
 ALL: flash romfs
 
-OS:app-flash
+OS: app-flash
 
-ROMFS:romfs
+ROMFS: romfs
 
-romfs: $(ESPTOOLPY_SRC)
+BOOTLOADER: bootloader
+
+ERASE_ALL: erase_flash
+
+
+romfs: $(ESPTOOLPY_SUBMODULE)
 ifneq ($(ROMFS_OFFSET),-1)
 	@echo "Flashing romfs image to serial port $(ESPPORT), offset $(ROMFS_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(ROMFS_OFFSET) $(ROMFS_IMG)
 endif
 
-BOOTLOADER:
+bootloader: $(ESPTOOLPY_SUBMODULE)
 	@echo "Flashing bootloader to serial port $(ESPPORT) (app at offset $(BOOTLOADER_OFFSET))..."
 	$(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_BOOTLOADER_FLASH_ARGS)
 
-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info
+flash: $(APP_BIN) $(call prereq_if_explicit,erase_flash) partition_table_get_info
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
 	$(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
-app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info
+app-flash: $(APP_BIN) $(call prereq_if_explicit,erase_flash) partition_table_get_info
 	@echo "Flashing app to serial port $(ESPPORT), offset $(APP_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 
@@ -106,7 +121,7 @@ BOOTLOADER_OFFSET := 0x1000
 BOOTLOADER_BIN := $(CURRENTDIR)/bootloader/bootloader.bin
 
 
-erase_flash:
+erase_flash: $(ESPTOOLPY_SUBMODULE)
 	@echo "Erasing entire flash..."
 	$(ESPTOOLPY_SERIAL) erase_flash
 
