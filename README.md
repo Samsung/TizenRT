@@ -206,4 +206,6 @@ STM32F407-DISC1 [[details]](build/configs/stm32f407-disc1/README.md)
 
 STM32F429I-DISCO [[details]](build/configs/stm32f429i-disco/README.md)
 
+STM32L4R9AI-DISCO [[details]](build/configs/stm32l4r9ai-disco/README.md)
+
 QEMU [[details]](build/configs/qemu/README.md)
