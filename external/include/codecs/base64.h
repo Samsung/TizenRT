@@ -76,10 +76,7 @@
 #include <tinyara/config.h>
 
 #ifdef __cplusplus
-#define EXTERN extern "C"
 extern "C" {
-#else
-#define EXTERN extern
 #endif
 
 /****************************************************************************
@@ -87,15 +84,20 @@ extern "C" {
  ****************************************************************************/
 
 #ifdef CONFIG_CODECS_BASE64
-unsigned char *base64_encode(const unsigned char *src, size_t len, unsigned char *dst, size_t * out_len);
-unsigned char *base64_decode(const unsigned char *src, size_t len, unsigned char *dst, size_t * out_len);
-unsigned char *base64w_encode(const unsigned char *src, size_t len, unsigned char *dst, size_t * out_len);
-unsigned char *base64w_decode(const unsigned char *src, size_t len, unsigned char *dst, size_t * out_len);
-#endif							/* CONFIG_CODECS_BASE64 */
+size_t base64_encode_length(size_t len);
+FAR void *base64_encode(FAR const void *src, size_t len, FAR void *dst,
+						FAR size_t *out_len);
+size_t base64_decode_length(size_t len);
+FAR void *base64_decode(FAR const void *src, size_t len, FAR void *dst,
+						FAR size_t *out_len);
+FAR void *base64w_encode(FAR const void *src, size_t len, FAR void *dst,
+						 FAR size_t *out_len);
+FAR void *base64w_decode(FAR const void *src, size_t len, FAR void *dst,
+						 FAR size_t *out_len);
+#endif /* CONFIG_CODECS_BASE64 */
 
-#undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif							/* __EXTERNAL_INCLUDE_CODECS_BASE64_H */
+#endif /* __EXTERNAL_INCLUDE_CODECS_BASE64_H */

@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/base64.h
+ * external/include/codecs/md5.h
  *
  * This file is part of the NuttX RTOS:
  *
@@ -101,7 +101,7 @@
 /* This is the central step in the MD5 algorithm. */
 
 #define MD5STEP(f, w, x, y, z, data, s) \
-	(w += f(x, y, z) + data,  w = w<<s | w>>(32-s),  w += x)
+	(w += f(x, y, z) + data, w = w << s | w >> (32 - s), w += x)
 
 /****************************************************************************
  * Private Functions
@@ -118,7 +118,10 @@ static void byteReverse(FAR unsigned char *buf, unsigned longs)
 {
 	uint32_t t;
 	do {
-		t = ((uint32_t)buf[3] << 24) | ((uint32_t)buf[2] << 16) | ((uint32_t)buf[1] << 8) | (uint32_t)buf[0];
+		t = ((uint32_t)buf[3] << 24) |
+			((uint32_t)buf[2] << 16) |
+			((uint32_t)buf[1] << 8) |
+			(uint32_t)buf[0];
 
 		*(uint32_t *)buf = t;
 		buf += 4;
@@ -268,7 +271,7 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
 	MD5Transform(ctx->buf, (uint32_t *)ctx->in);
 	byteReverse((unsigned char *)ctx->buf, 4);
 	memcpy(digest, ctx->buf, 16);
-	memset(ctx, 0, sizeof(struct MD5Context));	/* In case it's sensitive */
+	memset(ctx, 0, sizeof(struct MD5Context)); /* In case it's sensitive */
 }
 
 /****************************************************************************
@@ -406,4 +409,4 @@ char *md5_hash(const uint8_t *addr, const size_t len)
 	return hash;
 }
 
-#endif							/* CONFIG_CODECS_HASH_MD5 */
+#endif /* CONFIG_CODECS_HASH_MD5 */
