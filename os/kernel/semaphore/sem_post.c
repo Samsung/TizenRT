@@ -124,7 +124,6 @@
 int sem_post(FAR sem_t *sem)
 {
 	FAR struct tcb_s *stcb = NULL;
-	FAR struct tcb_s *rtcb = NULL;
 
 	irqstate_t saved_state;
 	int ret = ERROR;
@@ -140,12 +139,11 @@ int sem_post(FAR sem_t *sem)
 		saved_state = irqsave();
 
 		/* Perform the semaphore unlock operation. */
-		rtcb = this_task();
 		ASSERT(sem->semcount < SEM_VALUE_MAX);
-		sem_releaseholder(sem, rtcb);
+		sem_releaseholder(sem, this_task());
 		sem->semcount++;
 #ifdef CONFIG_SEMAPHORE_HISTORY
-		save_semaphore_history(sem, (void *)rtcb, SEM_RELEASE);
+		save_semaphore_history(sem, (void *)this_task(), SEM_RELEASE);
 #endif
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
