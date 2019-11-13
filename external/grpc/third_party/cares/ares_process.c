@@ -26,7 +26,7 @@
 #ifdef HAVE_NETINET_TCP_H
 // TODO(TizenRT)
 #if defined(__TINYARA__)
-#include <net/lwip/tcp.h>
+#include "lwip/tcp.h"
 #else
 #  include <netinet/tcp.h>
 #endif // defined(__TINYARA__)

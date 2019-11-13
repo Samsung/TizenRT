@@ -554,7 +554,6 @@ const u8 *slsi_get_mac_addr(void *priv)
 		return NULL;
 	}
 
-	//pkbuild SLSI_NET_INFO(dev, "MAC address: " SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(dev->d_mac.ether_addr_octet));
 	SLSI_NET_INFO(dev, "MAC address: " SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(netdev_get_hwaddr_ptr(dev)));
 	return netdev_get_hwaddr_ptr(dev);
 }
@@ -2015,7 +2014,7 @@ void *slsi_t20_init(void *ctx, const char *ifname, void *global_priv)
 		kmm_free(drv);
 		return NULL;
 	}
-	nldbg("[pkbuild] sleep 3\n");
+	nldbg("sleep 3 sec\n");
 	sleep(3); // lsi code
 #else
 	netdev_ifup(dev);

@@ -53,20 +53,20 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if !NO_SYS						/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/priv/tcpip_priv.h>
-#include <net/lwip/sys.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/init.h>
-#include <net/lwip/ip.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/netif/etharp.h>
-#include <net/lwip/netif/ethernet.h>
-#include <net/lwip/netif/ppp_oe.h>
+#include "lwip/priv/tcpip_priv.h"
+#include "lwip/sys.h"
+#include "lwip/memp.h"
+#include "lwip/mem.h"
+#include "lwip/init.h"
+#include "lwip/ip.h"
+#include "lwip/pbuf.h"
+#include "lwip/netif/etharp.h"
+#include "lwip/netif/ethernet.h"
+#include "lwip/netif/ppp_oe.h"
 
 #define TCPIP_MSG_VAR_REF(name)     API_VAR_REF(name)
 #define TCPIP_MSG_VAR_DECLARE(name) API_VAR_DECLARE(struct tcpip_msg, name)

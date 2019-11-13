@@ -75,8 +75,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include <net/lwip/dns.h>
-#include <net/lwip/prot/dns.h>
+#include "lwip/dns.h"
+#include "lwip/prot/dns.h"
 
 /** Default DNS server port number */
 #ifdef DNS_SERVER_PORT

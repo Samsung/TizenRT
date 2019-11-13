@@ -61,16 +61,16 @@
  */
 
 #include <tinyara/config.h>
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_ARP || LWIP_ETHERNET
 
-#include <net/lwip/inet_chksum.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/snmp.h>
-#include <net/lwip/dhcp.h>
-#include <net/lwip/autoip.h>
-#include <net/lwip/netif/etharp.h>
+#include "lwip/inet_chksum.h"
+#include "lwip/stats.h"
+#include "lwip/snmp.h"
+#include "lwip/dhcp.h"
+#include "lwip/autoip.h"
+#include "lwip/netif/etharp.h"
 #include <net/ethernet.h>
 
 #include <string.h>

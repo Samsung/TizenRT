@@ -73,8 +73,8 @@
 #include <netutils/netlib.h>
 #include <protocols/dhcpd.h>	/* Advertised DHCPD APIs */
 
-#include <net/lwip/netif.h>
-#include <net/lwip/netifapi.h>
+#include "lwip/netif.h"
+#include "lwip/netifapi.h"
 
 /****************************************************************************
  * Global Data

@@ -82,7 +82,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 
@@ -100,8 +100,8 @@
 #include "cbcp.h"
 #endif							/* CBCP_SUPPORT */
 
-#include <net/lwip/inet.h>
-#include <net/lwip/netif/ppp/ppp_opts.h>
+#include "lwip/inet.h"
+#include "lwip/netif/ppp/ppp_opts.h"
 
 #include <string.h>
 

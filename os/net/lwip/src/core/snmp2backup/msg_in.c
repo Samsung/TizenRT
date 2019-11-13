@@ -49,18 +49,18 @@
  * SNMP input message processing (RFC1157).
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_SNMP					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/snmp.h>
-#include <net/lwip/snmp_asn1.h>
-#include <net/lwip/snmp_msg.h>
-#include <net/lwip/snmp_structs.h>
-#include <net/lwip/ipv4/ip_addr.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/stats.h>
+#include "lwip/snmp.h"
+#include "lwip/snmp_asn1.h"
+#include "lwip/snmp_msg.h"
+#include "lwip/snmp_structs.h"
+#include "lwip/ipv4/ip_addr.h"
+#include "lwip/memp.h"
+#include "lwip/udp.h"
+#include "lwip/stats.h"
 
 #include <string.h>
 

@@ -77,10 +77,6 @@
 #include <tinyara/clock.h>
 #include <errno.h>
 
-#ifdef CONFIG_NET_LWIP
-#include <net/lwip/netif.h>
-#endif
-
 /*
  * Define a proper IP socket level if not already done.
  * Required to compile on OS X

@@ -50,7 +50,7 @@ extern "C" {
 #ifdef WITH_LWIP
 
 #include <stdint.h>
-#include <net/lwip/sys.h>
+#include "lwip/sys.h"
 
 /* lwIP provides ms in sys_now */
 #define COAP_TICKS_PER_SECOND 1000

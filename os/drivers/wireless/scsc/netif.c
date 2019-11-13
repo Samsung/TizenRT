@@ -15,7 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-//#include <tinyara/config.h> // pkbuild
+#include <tinyara/config.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -32,9 +32,9 @@
 #include <tinyara/netmgr/netdev_mgr.h>
 #else
 #include <tinyara/net/netdev.h>
-#include <net/lwip/igmp.h>
-#include <net/lwip/etharp.h>
-#include <net/lwip/ethip6.h>
+#include "lwip/igmp.h"
+#include "lwip/etharp.h"
+#include "lwip/ethip6.h"
 #endif
 
 #include "debug_scsc.h"

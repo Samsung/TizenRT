@@ -50,11 +50,11 @@
 #ifndef LWIP_HDR_APPS_SNMP_CORE_PRIV_H
 #define LWIP_HDR_APPS_SNMP_CORE_PRIV_H
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/apps/snmp_core.h>
+#include "lwip/apps/snmp_core.h"
 #include "snmp_asn1.h"
 
 #ifdef __cplusplus

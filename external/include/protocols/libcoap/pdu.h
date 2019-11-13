@@ -31,7 +31,7 @@
 #include <protocols/libcoap/uri.h>
 
 #ifdef WITH_LWIP
-#include <net/lwip/pbuf.h>
+#include "lwip/pbuf.h"
 #endif
 
 /* pre-defined constants that reflect defaults for CoAP */

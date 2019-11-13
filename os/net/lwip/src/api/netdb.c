@@ -56,12 +56,12 @@
 
 #if LWIP_DNS && LWIP_SOCKET
 
-#include <net/lwip/err.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/api.h>
-#include <net/lwip/dns.h>
+#include "lwip/err.h"
+#include "lwip/mem.h"
+#include "lwip/memp.h"
+#include "lwip/ip_addr.h"
+#include "lwip/api.h"
+#include "lwip/dns.h"
 
 #include <string.h>				/* memset */
 #include <stdlib.h>				/* atoi */

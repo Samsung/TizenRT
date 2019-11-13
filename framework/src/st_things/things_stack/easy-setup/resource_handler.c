@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #ifdef __ST_THINGS_RTOS__
-#include <net/lwip/inet.h>
+#include "lwip/inet.h"
 #else
 #include <arpa/inet.h>
 #endif

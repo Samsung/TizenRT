@@ -54,7 +54,7 @@
 #endif
 
 #ifdef WITH_LWIP
-#include <net/lwip/ipv4/ip_addr.h>
+#include "lwip/ipv4/ip_addr.h"
 
 typedef struct coap_address_t {
 	uint16_t port;

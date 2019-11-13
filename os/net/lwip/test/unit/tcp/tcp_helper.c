@@ -18,10 +18,10 @@
 
 #include "tcp_helper.h"
 
-#include <net/lwip/tcp_impl.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/ipv4/inet_chksum.h>
+#include "lwip/tcp_impl.h"
+#include "lwip/stats.h"
+#include "lwip/pbuf.h"
+#include "lwip/ipv4/inet_chksum.h"
 
 #if !LWIP_STATS || !TCP_STATS || !MEMP_STATS
 #error "This tests needs TCP- and MEMP-statistics enabled"

@@ -77,13 +77,13 @@
 #include <net/ethernet.h>
 #include <netinet/in.h>
 
-#include <net/lwip/netif.h>
-#include <net/lwip/netifapi.h>
-#include <net/lwip/igmp.h>
-#include <net/lwip/dhcp.h>
-#include <net/lwip/mld6.h>
-#include <net/lwip/ip6.h>
-#include <net/lwip/stats.h>
+#include "lwip/netif.h"
+#include "lwip/netifapi.h"
+#include "lwip/igmp.h"
+#include "lwip/dhcp.h"
+#include "lwip/mld6.h"
+#include "lwip/ip6.h"
+#include "lwip/stats.h"
 
 #ifdef CONFIG_NET_IGMP
 #include "sys/sockio.h"

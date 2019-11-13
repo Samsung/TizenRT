@@ -17,8 +17,8 @@
 #ifndef __ETHERNETIF_H__
 #define __ETHERNETIF_H__
 
-#include "net/lwip/err.h"
-#include "net/lwip/netif.h"
+#include "lwip/err.h"
+#include "lwip/netif.h"
 
 //----- ------------------------------------------------------------------
 // Ethernet Buffer

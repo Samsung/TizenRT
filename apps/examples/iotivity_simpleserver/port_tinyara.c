@@ -23,7 +23,7 @@
 #include <net/if.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #include <ocstack.h>
 #include "uuid/uuid.h"
 

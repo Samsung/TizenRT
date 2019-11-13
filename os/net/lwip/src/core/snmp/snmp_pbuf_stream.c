@@ -52,12 +52,12 @@
  *
  */
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP					/* don't build if not configured for use in lwipopts.h */
 
 #include "snmp_pbuf_stream.h"
-#include <net/lwip/def.h>
+#include "lwip/def.h"
 #include <string.h>
 
 err_t snmp_pbuf_stream_init(struct snmp_pbuf_stream *pbuf_stream, struct pbuf *p, u16_t offset, u16_t length)

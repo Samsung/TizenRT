@@ -75,7 +75,7 @@
 #include <arpa/inet.h>
 
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/inet.h>
+#include "lwip/inet.h"
 #else
 #include <arpa/inet.h>
 #endif

@@ -49,15 +49,15 @@
  * Author: Dirk Ziegelmeier <dziegel@gmx.de>
  */
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP && SNMP_USE_NETCONN
 
 #include <string.h>
-#include <net/lwip/api.h>
-#include <net/lwip/ip.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/sys.h>
+#include "lwip/api.h"
+#include "lwip/ip.h"
+#include "lwip/udp.h"
+#include "lwip/sys.h"
 #include "snmp_msg.h"
 
 /** SNMP netconn API worker thread */

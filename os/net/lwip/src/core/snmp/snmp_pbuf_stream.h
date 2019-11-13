@@ -55,12 +55,12 @@
 #ifndef LWIP_HDR_APPS_SNMP_PBUF_STREAM_H
 #define LWIP_HDR_APPS_SNMP_PBUF_STREAM_H
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP
 
-#include <net/lwip/err.h>
-#include <net/lwip/pbuf.h>
+#include "lwip/err.h"
+#include "lwip/pbuf.h"
 
 #ifdef __cplusplus
 extern "C" {

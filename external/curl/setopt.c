@@ -28,7 +28,7 @@
 #include <netinet/in.h>
 #endif
 
-#include <net/lwip/tcp.h>
+#include "lwip/tcp.h"
 #include "urldata.h"
 #include "url.h"
 #include "progress.h"

@@ -37,7 +37,7 @@
 #define HAVE_WRITEV 1
 // TODO(TizenRT)
 #elif defined (__TINYARA__)
-#include <net/lwip/tcp.h>
+#include "lwip/tcp.h"
 #include <sys/ioctl.h>
 #endif
 

@@ -66,7 +66,7 @@
 
 #ifndef CONFIG_NET_NETMGR
 #include <tinyara/net/netdev.h>
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #define netdev netif
 #define netdev_get_hwaddr_ptr(dev) (dev)->d_mac.ether_addr_octet
 

@@ -84,18 +84,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <net/lwip/opt.h>
-#include <net/lwip/netif/ppp/ppp_opts.h>
+#include "lwip/opt.h"
+#include "lwip/netif/ppp/ppp_opts.h"
 
 #if PPPOE_SUPPORT				/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/netif/ppp_oe.h>
+#include "lwip/netif/ppp_oe.h"
 
 #include "ppp_impl.h"
 #include "pppdebug.h"
 
-#include <net/lwip/timeouts.h>
-#include <net/lwip/memp.h>
+#include "lwip/timeouts.h"
+#include "lwip/memp.h"
 
 #include <string.h>
 #include <stdio.h>

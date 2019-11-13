@@ -19,20 +19,20 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "net/lwip/mem.h"
-#include "net/lwip/memp.h"
-#include "net/lwip/dhcp.h"
+#include "lwip/mem.h"
+#include "lwip/memp.h"
+#include "lwip/dhcp.h"
 #if LWIP_DNS
 #if LWIP_VERSION_MAJOR >= 2
-#include "net/lwip/prot/dns.h"
+#include "lwip/prot/dns.h"
 #endif
 #endif
-#include "net/lwip/netif.h"
-#include "net/lwip/tcp.h"
+#include "lwip/netif.h"
+#include "lwip/tcp.h"
 #include "ethernetif_tizenrt.h"
 #include "rtk_lwip_netconf.h"
 
-#include "net/lwip/tcpip.h"
+#include "lwip/tcpip.h"
 #include "wifi_ind.h"
 
 //#include <platform/platform_stdlib.h>

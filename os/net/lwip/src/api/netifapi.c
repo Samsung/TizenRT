@@ -48,13 +48,13 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_NETIF_API				/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/netifapi.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/priv/tcpip_priv.h>
+#include "lwip/netifapi.h"
+#include "lwip/memp.h"
+#include "lwip/priv/tcpip_priv.h"
 
 #define NETIFAPI_VAR_REF(name)      API_VAR_REF(name)
 #define NETIFAPI_VAR_DECLARE(name)  API_VAR_DECLARE(struct netifapi_msg, name)

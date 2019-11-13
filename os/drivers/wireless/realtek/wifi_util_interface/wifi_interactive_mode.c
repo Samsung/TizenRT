@@ -22,16 +22,16 @@
 #include <string.h>
 #include <stdint.h>
 #include <debug.h>
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #include <rtk_lwip_netconf.h>
 
 #include "osdep_service.h"
 #include "wifi_conf.h"
 #include "wifi_util.h"
 #include "rtk_lwip_netconf.h"
-#include "net/lwip/ip_addr.h"
-#include "net/lwip/ip4_addr.h"
-#include "net/lwip/tcpip.h"
+#include "lwip/ip_addr.h"
+#include "lwip/ip4_addr.h"
+#include "lwip/tcpip.h"
 
 #define vTaskDelay(t) usleep(t)
 

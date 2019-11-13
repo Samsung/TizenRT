@@ -48,12 +48,12 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_IPV6					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/def.h>
+#include "lwip/ip_addr.h"
+#include "lwip/def.h"
 
 /* used by IP6_ADDR_ANY(6) in ip6_addr.h */
 const ip_addr_t ip6_addr_any = IPADDR6_INIT(0ul, 0ul, 0ul, 0ul);

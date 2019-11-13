@@ -53,14 +53,14 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_STATS					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/def.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/debug.h>
+#include "lwip/def.h"
+#include "lwip/stats.h"
+#include "lwip/mem.h"
+#include "lwip/debug.h"
 
 #include <string.h>
 #include <stdio.h>

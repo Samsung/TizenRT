@@ -79,17 +79,17 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_AUTOIP					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/mem.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/autoip.h>
-#include <net/lwip/etharp.h>
-#include <net/lwip/prot/autoip.h>
+#include "lwip/mem.h"
+#include "lwip/udp.h"
+#include "lwip/ip_addr.h"
+#include "lwip/netif.h"
+#include "lwip/autoip.h"
+#include "lwip/etharp.h"
+#include "lwip/prot/autoip.h"
 
 #include <stdlib.h>
 #include <string.h>

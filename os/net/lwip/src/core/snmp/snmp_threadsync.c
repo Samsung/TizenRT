@@ -49,13 +49,13 @@
  * Author: Dirk Ziegelmeier <dziegel@gmx.de>
  */
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP && (NO_SYS == 0)	/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/apps/snmp_threadsync.h>
-#include <net/lwip/apps/snmp_core.h>
-#include <net/lwip/sys.h>
+#include "lwip/apps/snmp_threadsync.h"
+#include "lwip/apps/snmp_core.h"
+#include "lwip/sys.h"
 #include <string.h>
 
 static void call_synced_function(struct threadsync_data *call_data, snmp_threadsync_called_fn fn)

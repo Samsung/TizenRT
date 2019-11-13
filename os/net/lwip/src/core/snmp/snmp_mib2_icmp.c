@@ -50,14 +50,14 @@
  *         Christiaan Simons <christiaan.simons@axon.tv>
  */
 
-#include <net/lwip/snmp.h>
-#include <net/lwip/apps/snmp.h>
-#include <net/lwip/apps/snmp_core.h>
-#include <net/lwip/apps/snmp_mib2.h>
-#include <net/lwip/apps/snmp_table.h>
-#include <net/lwip/apps/snmp_scalar.h>
-#include <net/lwip/icmp.h>
-#include <net/lwip/stats.h>
+#include "lwip/snmp.h"
+#include "lwip/apps/snmp.h"
+#include "lwip/apps/snmp_core.h"
+#include "lwip/apps/snmp_mib2.h"
+#include "lwip/apps/snmp_table.h"
+#include "lwip/apps/snmp_scalar.h"
+#include "lwip/icmp.h"
+#include "lwip/stats.h"
 
 #if LWIP_SNMP && SNMP_LWIP_MIB2 && LWIP_ICMP
 

@@ -18,8 +18,8 @@
 #define CONFIG_LWIP_LAYER 1
 
 #include <lwip_intf_tizenrt.h>
-#include <net/lwip/init.h>
-#include <net/lwip/netif.h>
+#include "lwip/init.h"
+#include "lwip/netif.h"
 #include <osdep_service.h>
 
 //----- ------------------------------------------------------------------

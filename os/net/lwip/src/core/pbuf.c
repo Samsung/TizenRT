@@ -47,20 +47,20 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
-#include <net/lwip/stats.h>
-#include <net/lwip/def.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/sys.h>
-#include <net/lwip/arch/perf.h>
+#include "lwip/stats.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/memp.h"
+#include "lwip/pbuf.h"
+#include "lwip/sys.h"
+#include "lwip/arch/perf.h"
 #if LWIP_TCP && TCP_QUEUE_OOSEQ
-#include <net/lwip/priv/tcp_priv.h>
+#include "lwip/priv/tcp_priv.h"
 #endif
 #if LWIP_CHECKSUM_ON_COPY
-#include <net/lwip/inet_chksum.h>
+#include "lwip/inet_chksum.h"
 #endif
 
 #include <string.h>
@@ -76,7 +76,7 @@
 
 #if !NO_SYS
 #ifndef PBUF_POOL_FREE_OOSEQ_QUEUE_CALL
-#include <net/lwip/tcpip.h>
+#include "lwip/tcpip.h"
 #define PBUF_POOL_FREE_OOSEQ_QUEUE_CALL()  do { \
 		if (tcpip_callback_with_block(pbuf_free_ooseq_callback, NULL, 0) != ERR_OK) { \
 			SYS_ARCH_PROTECT(old_level);								\

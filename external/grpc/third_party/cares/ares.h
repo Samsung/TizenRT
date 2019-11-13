@@ -51,7 +51,7 @@
 #  include <netinet/in.h>
 #  include <sys/socket.h>
 #if defined(__TINYARA__)
-#include <net/lwip/tcp.h>
+#include "lwip/tcp.h"
 #else
 #  include <tcp.h>
 #endif // defined(__TINYARA__)

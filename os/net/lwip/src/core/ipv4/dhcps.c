@@ -49,21 +49,21 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_IPV4 && LWIP_DHCP /* don't build if not configured for use in lwipopts.h */
 #if LWIP_DHCPS
-#include <net/lwip/stats.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/inet.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/def.h>
-#include <net/lwip/dhcp.h>
-#include <net/lwip/autoip.h>
-#include <net/lwip/netif/etharp.h>
-#include <net/lwip/prot/dhcp.h>
+#include "lwip/stats.h"
+#include "lwip/mem.h"
+#include "lwip/udp.h"
+#include "lwip/ip_addr.h"
+#include "lwip/inet.h"
+#include "lwip/netif.h"
+#include "lwip/def.h"
+#include "lwip/dhcp.h"
+#include "lwip/autoip.h"
+#include "lwip/netif/etharp.h"
+#include "lwip/prot/dhcp.h"
 
 #include <string.h>
 

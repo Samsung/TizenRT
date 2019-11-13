@@ -69,7 +69,7 @@
 
 #include <net/if.h>
 #include <net/ethernet.h>
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #include "netdev/netdev.h"
 
 /****************************************************************************

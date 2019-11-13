@@ -204,7 +204,7 @@ static struct max_buff *slsi_mlme_tx_rx(struct slsi_dev *sdev, struct netdev *de
 		sig_wait = &ndev_vif->sig_wait;
 	}
 
-	if (sdev->mlme_blocked) { // pkbuild
+	if (sdev->mlme_blocked) {
 		SLSI_DBG3(sdev, SLSI_MLME, "Rejected. mlme_blocked=%d", sdev->mlme_blocked);
 		slsi_kfree_mbuf(mbuf);
 		return NULL;
@@ -972,8 +972,6 @@ static inline int slsi_set_scan_params(struct netdev *dev, u16 scan_id, u16 scan
 	u8 i;
 	struct wpa_driver_scan_ssid *pssid = ssids;
 
-	// pkbuild u8 d_mac[6];
-	// netdev_get_hwaddr(dev, d_mac, NULL);
 	fapi_set_u16(req, u.mlme_add_scan_req.scan_id, scan_id);
 	fapi_set_u16(req, u.mlme_add_scan_req.scan_type, scan_type);
 	fapi_set_u16(req, u.mlme_add_scan_req.report_mode_bitmap, report_mode);

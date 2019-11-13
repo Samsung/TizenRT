@@ -53,31 +53,31 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
-#include <net/lwip/init.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/sys.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/sockets.h>
-#include <net/lwip/ip.h>
-#include <net/lwip/raw.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/priv/tcp_priv.h>
-#include <net/lwip/igmp.h>
-#include <net/lwip/dns.h>
-#include <net/lwip/timeouts.h>
-#include <net/lwip/ip6.h>
-#include <net/lwip/nd6.h>
-#include <net/lwip/mld6.h>
-#include <net/lwip/api.h>
-#include <net/lwip/netif/etharp.h>
+#include "lwip/init.h"
+#include "lwip/stats.h"
+#include "lwip/sys.h"
+#include "lwip/mem.h"
+#include "lwip/memp.h"
+#include "lwip/pbuf.h"
+#include "lwip/netif.h"
+#include "lwip/sockets.h"
+#include "lwip/ip.h"
+#include "lwip/raw.h"
+#include "lwip/udp.h"
+#include "lwip/priv/tcp_priv.h"
+#include "lwip/igmp.h"
+#include "lwip/dns.h"
+#include "lwip/timeouts.h"
+#include "lwip/ip6.h"
+#include "lwip/nd6.h"
+#include "lwip/mld6.h"
+#include "lwip/api.h"
+#include "lwip/netif/etharp.h"
 
-#include <net/lwip/netif/ppp/ppp_opts.h>
-#include <net/lwip/netif/ppp/ppp_impl.h>
+#include "lwip/netif/ppp/ppp_opts.h"
+#include "lwip/netif/ppp/ppp_impl.h"
 
 #ifndef LWIP_SKIP_PACKING_CHECK
 

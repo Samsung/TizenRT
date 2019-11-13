@@ -60,18 +60,18 @@
  * something that better describes your network interface.
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if 0							/* don't build, this is only a skeleton, see previous comment */
 
-#include <net/lwip/def.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/snmp.h>
-#include <net/lwip/ethip6.h>
-#include <net/lwip/netif/etharp.h>
-#include <net/lwip/netif/ppp_oe.h>
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/pbuf.h"
+#include "lwip/stats.h"
+#include "lwip/snmp.h"
+#include "lwip/ethip6.h"
+#include "lwip/netif/etharp.h"
+#include "lwip/netif/ppp_oe.h"
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 'e'

@@ -28,9 +28,9 @@
 #include <arpa/inet.h>
 
 #include <net/if.h>
-#include <net/lwip/opt.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/tcpip.h>
+#include "lwip/opt.h"
+#include "lwip/netif.h"
+#include "lwip/tcpip.h"
 
 #include <tinyara/configdata.h>
 

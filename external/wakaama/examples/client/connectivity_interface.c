@@ -14,7 +14,7 @@
 #include "connectivity_interface.h"
 
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #endif
 
 #include "common_monitor_interface.h"
