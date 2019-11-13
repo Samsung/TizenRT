@@ -3456,7 +3456,6 @@ static uint16_t smart_findfreephyssector(FAR struct smart_struct_s *dev, uint8_t
 	uint8_t   *sector_buff;
 	int i;
 	bool bitflipped;
-	struct timeval find_start, find_end;
 	/* Determine which erase block we should allocate the new
 	 * sector from. This is based on the number of free sectors
 	 * available in each erase block. */
@@ -3475,8 +3474,6 @@ retry:
 	if (++dev->lastallocblock >= dev->neraseblocks) {
 		dev->lastallocblock = 0;
 	}
-
-	gettimeofday(&find_start, NULL);
 
 	block = dev->lastallocblock;
 	for (x = 0; x < dev->neraseblocks; x++) {
@@ -3526,10 +3523,6 @@ retry:
 			block = 0;
 		}
 	}
-
-	gettimeofday(&find_end, NULL);
-	printf("Time taken to find a free block(%d sectors) = %ld.%ld - %ld.%ld  \n", dev->sectorsPerBlk,
-			find_end.tv_sec, find_end.tv_usec, find_start.tv_sec, find_start.tv_usec);
 
 	/* Check if we found an allocblock. */
 
