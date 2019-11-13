@@ -6,7 +6,8 @@ Espressif Development Kit for ESP32 chipset.
 
 > [Information](#information)  
 > [Environment Set-up](#environment-set-up)  
- 
+> [How to use GDB](#how-to-use-gdb)  
+
 ## Information
 
 will be updated
@@ -107,3 +108,88 @@ Burn the TizenRT image:
 cd $TIZENRT_BASEDIR/os
 make download APP
 ```
+
+## How to use GDB
+
+1. Connect and configure the external JTAG adapter.  
+    Please edit `TizenRT/build/configs/esp32_DevKitC/scripts/esp32.cfg` to include the configuration file of yours.
+
+    ```txt
+    source [find your/own/interface.cfg]
+    ```
+
+2. Run OpenOCD daemon.
+
+    ```bash
+    @ubuntu:~/TizenRT/os$ ../build/tools/openocd/linux64/openocd-esp32 -s ../build/configs/esp32_DevKitC/scripts -f esp32.cfg
+    Open On-Chip Debugger  v0.10.0-esp32-20191008 (2019-10-08-14:50)
+    Licensed under GNU GPL v2
+    For bug reports, read
+            http://openocd.org/doc/doxygen/bugs.html
+    none separate
+    adapter speed: 20000 kHz
+    Info : Configured 2 cores
+    Info : Listening on port 6666 for tcl connections
+    Info : Listening on port 4444 for telnet connections
+    Error: type 'esp32' is missing virt2phys
+    Info : ftdi: if you experience problems at higher adapter clocks, try the command "ftdi_tdo_sample_edge falling"
+    Info : clock speed 20000 kHz
+    Info : JTAG tap: esp32.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
+    Info : JTAG tap: esp32.cpu1 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
+    Info : esp32: Debug controller 0 was reset.
+    Info : esp32: Core 0 was reset.
+    Info : Listening on port 3333 for gdb connections
+    ```
+
+3. Run GDB at another terminal.  
+    Please find ```<-- COMMAND``` at below logs.
+
+    ```bash
+    @ubuntu:~/TizenRT/os$ xtensa-esp32-elf-gdb ../build/output/bin/tinyara.elf   <-- COMMAND
+    GNU gdb (crosstool-NG crosstool-ng-1.22.0-80-g6c4433a) 7.10
+    Copyright (C) 2015 Free Software Foundation, Inc.
+    License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+    This is free software: you are free to change and redistribute it.
+    There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+    and "show warranty" for details.
+    This GDB was configured as "--host=x86_64-build_pc-linux-gnu --target=xtensa-esp32-elf".
+    Type "show configuration" for configuration details.
+    For bug reporting instructions, please see:
+    <http://www.gnu.org/software/gdb/bugs/>.
+    Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+    For help, type "help".
+    Type "apropos word" to search for commands related to "word"...
+    Reading symbols from ../build/output/bin/tinyara.elf...done.
+    (gdb) set pagination off    <-- COMMAND
+    (gdb) target remote :3333   <-- COMMAND
+    Remote debugging using :3333
+    __start () at chip/esp32_start.c:101
+    101     chip/esp32_start.c: No such file or directory.
+    (gdb) set remote hardware-watchpoint-limit 2   <-- COMMAND
+    (gdb) mon reset halt   <-- COMMAND
+    JTAG tap: esp32.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
+    JTAG tap: esp32.cpu1 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
+    cpu0: Debug controller 0 was reset.
+    cpu0: Core 0 was reset.
+    cpu0: Target halted, PC=0x500000CF, debug_reason=00000000
+    esp32: Core 0 was reset.
+    esp32: Debug controller 1 was reset.
+    esp32: Core 1 was reset.
+    Target halted. CPU0: PC=0x40000400 (active)
+    Target halted. CPU1: PC=0x40000400
+    (gdb) flushregs    <-- COMMAND
+    Register cache flushed.
+    (gdb) thb __start
+    Hardware assisted breakpoint 1 at 0x400808d4: file chip/esp32_start.c, line 101.
+    (gdb) c
+    Continuing.
+    Target halted. CPU0: PC=0x400808D4 (active)
+    Target halted. CPU1: PC=0x400076DD
+
+    Temporary breakpoint 1, __start () at chip/esp32_start.c:101
+    101     in chip/esp32_start.c
+    (gdb)
+    ```
+
+    ```help``` will help you to find GDB commands.
