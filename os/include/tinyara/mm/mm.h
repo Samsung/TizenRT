@@ -389,11 +389,10 @@ struct mm_heap_s {
 #endif
 
 	/* This is the first and last nodes of the heap */
+	FAR struct mm_allocnode_s *mm_heapstart[CONFIG_MM_REGION_NUM];
+	FAR struct mm_allocnode_s *mm_heapend[CONFIG_MM_REGION_NUM];
 
-	FAR struct mm_allocnode_s *mm_heapstart[CONFIG_MM_REGIONS];
-	FAR struct mm_allocnode_s *mm_heapend[CONFIG_MM_REGIONS];
-
-#if CONFIG_MM_REGIONS > 1
+#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
 	int mm_nregions;
 #endif
 
@@ -736,7 +735,6 @@ typedef struct heapinfo_total_info_s heapinfo_total_info_t;
  * @cond
  * @internal
  */
-
 /**
  * @brief Allocate memory to the specific heap.
  * @details @b #include <tinyara/mm/mm.h>\n

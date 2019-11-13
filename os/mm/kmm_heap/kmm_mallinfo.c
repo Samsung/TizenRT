@@ -92,7 +92,11 @@
 struct mallinfo kmm_mallinfo(void)
 {
 	struct mallinfo info;
-	mm_mallinfo(kmm_get_heap(), &info);
+	int kheap_idx;
+	struct mm_heap_s *kheap = kmm_get_heap();
+	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
+		mm_mallinfo(&kheap[kheap_idx], &info);
+	}
 	return info;
 }
 
@@ -100,7 +104,11 @@ struct mallinfo kmm_mallinfo(void)
 
 int kmm_mallinfo(struct mallinfo *info)
 {
-	return mm_mallinfo(kmm_get_heap(), info);
+	int kheap_idx;
+	struct mm_heap_s *kheap = kmm_get_heap();
+	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
+		return mm_mallinfo(&kheap[kheap_idx], info);
+	}
 }
 
 #endif							/* CONFIG_CAN_PASS_STRUCTS */

@@ -685,7 +685,7 @@ void up_signal_handler(_sa_sigaction_t sighand, int signo, FAR siginfo_t *info, 
 
 /* Memory management ********************************************************/
 
-#if CONFIG_MM_REGIONS > 1
+#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
 void up_addregion(void);
 #else
 #define up_addregion()

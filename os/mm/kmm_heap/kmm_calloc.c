@@ -65,6 +65,29 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+static void *kheap_calloc(size_t n, size_t elem_size, size_t retaddr)
+{
+	int heap_idx;
+	void *ret;
+	struct mm_heap_s *kheap = kmm_get_heap();
+
+	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ret = mm_calloc(&kheap[heap_idx], n, elem_size, retaddr);
+#else
+		ret = mm_calloc(&kheap[heap_idx], n, elem_size);
+#endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+
+	return NULL;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -79,10 +102,11 @@
 FAR void *kmm_calloc(size_t n, size_t elem_size)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_calloc(kmm_get_heap(), n, elem_size, __builtin_return_address(0));
+	ARCH_GET_RET_ADDRESS
 #else
-	return mm_calloc(kmm_get_heap(), n, elem_size);
+	size_t retaddr = 0;
 #endif
+	return kheap_calloc(n, elem_size, retaddr);
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */

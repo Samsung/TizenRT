@@ -210,9 +210,28 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 #endif
 
 /****************************************************************************
+ * Name: up_add_kregion
+ ****************************************************************************/
+#if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
+static void up_add_kregion(void)
+{
+	int region_cnt;
+	struct mm_heap_s *kheap;
+	kheap = kmm_get_heap();
+	for (region_cnt = 1; region_cnt < CONFIG_KMM_REGIONS; region_cnt++) {
+		if (kheap[regionx_kheap_idx[region_cnt]].mm_heapsize == 0) {
+			mm_initialize(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
+			continue;
+		}
+		mm_addregion(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
+	}
+}
+#endif
+
+/****************************************************************************
  * Name: up_addregion
  ****************************************************************************/
-#if CONFIG_MM_REGIONS > 1
+#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
 void up_addregion(void)
 {
 	int region_cnt;
@@ -224,5 +243,9 @@ void up_addregion(void)
 		}
 		mm_addregion(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
 	}
+
+#if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
+	up_add_kregion();
+#endif
 }
 #endif

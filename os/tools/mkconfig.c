@@ -208,6 +208,18 @@ int main(int argc, char **argv, char **envp)
 	printf("#ifndef CONFIG_MM_REGIONS\n");
 	printf("# define CONFIG_MM_REGIONS 1\n");
 	printf("#endif\n\n");
+	printf("#ifdef CONFIG_MM_KERNEL_HEAP\n");
+	printf("#ifndef CONFIG_KMM_REGIONS\n");
+	printf("# define CONFIG_KMM_REGIONS 1\n");
+	printf("#endif\n");
+	printf("#if CONFIG_KMM_REGIONS > CONFIG_MM_REGIONS\n");
+	printf("#define CONFIG_MM_REGION_NUM CONFIG_KMM_REGIONS\n");
+	printf("#else\n");
+	printf("#define CONFIG_MM_REGION_NUM CONFIG_MM_REGIONS\n");
+	printf("#endif\n");
+	printf("#else\n");
+	printf("#define CONFIG_MM_REGION_NUM CONFIG_MM_REGIONS\n");
+	printf("#endif\n");
 	printf("/* If the end of FLASH is not specified then it is assumed to be the beginning\n");
 	printf(" * of FLASH plus the FLASH size.\n");
 	printf(" */\n\n");

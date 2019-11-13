@@ -91,11 +91,20 @@
 
 FAR void *kmm_memalign(size_t alignment, size_t size)
 {
+	void *ret;
+	int kheap_idx;
+	struct mm_heap_s *kheap = kmm_get_heap();
+	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_memalign(kmm_get_heap(), alignment, size, __builtin_return_address(0));
+		ret = mm_memalign(&kheap[kheap_idx], alignment, size, __builtin_return_address(0));
 #else
-	return mm_memalign(kmm_get_heap(), alignment, size);
+		ret = mm_memalign(&kheap[kheap_idx], alignment, size);
 #endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+	return NULL;
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */
