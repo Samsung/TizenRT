@@ -70,7 +70,7 @@
 #include <tinyara/fs/fs.h>
 
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/sockets.h>
+#include "lwip/sockets.h"
 #endif
 
 #include <arch/irq.h>

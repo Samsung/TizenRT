@@ -24,7 +24,7 @@
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0 && defined(CONFIG_NET_NETMON) && defined(CONFIG_NET_STATS)
 
 #include <errno.h>
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #include <net/if.h>
 #include "netdev/netdev.h"
 

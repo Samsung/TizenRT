@@ -46,7 +46,7 @@
  * for a 16 bit processor.
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 

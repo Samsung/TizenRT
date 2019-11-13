@@ -63,7 +63,7 @@
 #include <stdint.h>
 #include <tinyara/config.h>
 #include <net/ethernet.h>
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 
 #ifdef CONFIG_NET_ETHERNET
 

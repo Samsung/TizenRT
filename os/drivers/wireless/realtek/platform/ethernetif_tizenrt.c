@@ -58,20 +58,20 @@
  * something that better describes your network interface.
  */
 
-#include "net/lwip/opt.h"
-#include "net/lwip/def.h"
-#include "net/lwip/mem.h"
-#include "net/lwip/pbuf.h"
-#include "net/lwip/sys.h"
-#include "net/lwip/tcpip.h"
-#include "net/lwip/icmp.h"
-#include "net/lwip/netif/etharp.h"
-#include "net/lwip/err.h"
+#include "lwip/opt.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/pbuf.h"
+#include "lwip/sys.h"
+#include "lwip/tcpip.h"
+#include "lwip/icmp.h"
+#include "lwip/netif/etharp.h"
+#include "lwip/err.h"
 #include "ethernetif_tizenrt.h"
 #include "queue.h"
 #include "rtk_lwip_netconf.h"
 
-#include "net/lwip/ethip6.h" //Add for ipv6
+#include "lwip/ethip6.h" //Add for ipv6
 
 #if CONFIG_WLAN
 #include <lwip_intf_tizenrt.h>

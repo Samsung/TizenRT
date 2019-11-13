@@ -42,7 +42,7 @@
 
 #include <tinyara/clock.h>
 #include <tinyara/net/net.h>
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #include <tinyara/net/ip.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB

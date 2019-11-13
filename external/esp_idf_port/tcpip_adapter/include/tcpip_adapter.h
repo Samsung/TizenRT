@@ -62,7 +62,7 @@
 #define CONFIG_DHCP_STA_LIST 1
 
 #if CONFIG_TCPIP_LWIP
-#include "net/lwip/ip_addr.h"
+#include "lwip/ip_addr.h"
 
 #ifdef __cplusplus
 extern "C" {

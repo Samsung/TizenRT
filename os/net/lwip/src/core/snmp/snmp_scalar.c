@@ -52,12 +52,12 @@
  *
  */
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/apps/snmp_scalar.h>
-#include <net/lwip/apps/snmp_core.h>
+#include "lwip/apps/snmp_scalar.h"
+#include "lwip/apps/snmp_core.h"
 
 static s16_t snmp_scalar_array_get_value(struct snmp_node_instance *instance, void *value);
 static snmp_err_t snmp_scalar_array_set_test(struct snmp_node_instance *instance, u16_t value_len, void *value);

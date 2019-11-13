@@ -53,9 +53,9 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
-#include <net/lwip/sys.h>
+#include "lwip/sys.h"
 #include <tinyara/clock.h>
 
 /* Most of the functions defined in sys.h must be implemented in the

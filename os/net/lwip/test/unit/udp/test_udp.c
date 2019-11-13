@@ -18,8 +18,8 @@
 
 #include "test_udp.h"
 
-#include <net/lwip/udp.h>
-#include <net/lwip/stats.h>
+#include "lwip/udp.h"
+#include "lwip/stats.h"
 
 #if !LWIP_STATS || !UDP_STATS || !MEMP_STATS
 #error "This tests needs UDP- and MEMP-statistics enabled"

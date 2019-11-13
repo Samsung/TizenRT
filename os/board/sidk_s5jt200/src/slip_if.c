@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#include <net/lwip/netif/slipif.h>
-#include <net/lwip/opt.h>
+#include "lwip/netif/slipif.h"
+#include "lwip/opt.h"
 
 #include <tinyara/config.h>
 
@@ -42,12 +42,12 @@
 
 #if LWIP_HAVE_SLIPIF
 
-#include <net/lwip/def.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/snmp.h>
-#include <net/lwip/sio.h>
-#include <net/lwip/sys.h>
+#include "lwip/def.h"
+#include "lwip/pbuf.h"
+#include "lwip/stats.h"
+#include "lwip/snmp.h"
+#include "lwip/sio.h"
+#include "lwip/sys.h"
 
 volatile static int i;
 typedef void *sio_fd_t;

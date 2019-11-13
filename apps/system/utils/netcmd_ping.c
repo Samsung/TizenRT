@@ -55,10 +55,10 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <net/lwip/icmp.h>
-#include <net/lwip/icmp6.h>
-#include <net/lwip/ip.h>
-#include <net/lwip/arch.h>
+#include "lwip/icmp.h"
+#include "lwip/icmp6.h"
+#include "lwip/ip.h"
+#include "lwip/arch.h"
 #include "netcmd.h"
 #include "netcmd_ping.h"
 

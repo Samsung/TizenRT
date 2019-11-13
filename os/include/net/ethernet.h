@@ -60,9 +60,9 @@
 #include <stdint.h>
 
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/opt.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/prot/ethernet.h>
+#include "lwip/opt.h"
+#include "lwip/pbuf.h"
+#include "lwip/prot/ethernet.h"
 #endif
 
 /****************************************************************************

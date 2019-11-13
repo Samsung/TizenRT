@@ -68,7 +68,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 
@@ -84,7 +84,7 @@
 #include <string.h>
 
 #if PPPOE_SUPPORT
-#include <net/lwip/netif/ppp_oe.h>
+#include "lwip/netif/ppp_oe.h"
 #else
 #define PPPOE_MAXMTU PPP_MAXMRU
 #endif

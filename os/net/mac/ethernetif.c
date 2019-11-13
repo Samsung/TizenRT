@@ -27,18 +27,18 @@
 
 #ifdef CONFIG_NET_LWIP
 
-#include <net/lwip/netif.h>
-#include <net/lwip/opt.h>
-#include <net/lwip/debug.h>
-#include <net/lwip/def.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/snmp.h>
+#include "lwip/netif.h"
+#include "lwip/opt.h"
+#include "lwip/debug.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/pbuf.h"
+#include "lwip/stats.h"
+#include "lwip/ip_addr.h"
+#include "lwip/snmp.h"
 
-#include <net/lwip/netif/etharp.h>
-#include <net/lwip/ethip6.h>
+#include "lwip/netif/etharp.h"
+#include "lwip/ethip6.h"
 
 #define ETHERNET_MTU 1500
 

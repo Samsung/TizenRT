@@ -63,9 +63,9 @@
 #include <tinyara/irq.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/wdog.h>
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/err.h>
+#include "lwip/err.h"
 #endif
 
 /****************************************************************************

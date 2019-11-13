@@ -57,38 +57,38 @@
 
 #include <netdb.h>
 
-#include <net/lwip/opt.h>
-#include <net/lwip/debug.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/raw.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/tcp.h>
-#include <net/lwip/priv/tcp_priv.h>
-#include <net/lwip/ip4_frag.h>
-#include <net/lwip/netbuf.h>
-#include <net/lwip/api.h>
-#include <net/lwip/priv/tcpip_priv.h>
-#include <net/lwip/priv/api_msg.h>
-#include <net/lwip/sockets.h>
-#include <net/lwip/netifapi.h>
-#include <net/lwip/igmp.h>
-#include <net/lwip/timeouts.h>
-#include <net/lwip/netif/etharp.h>
+#include "lwip/opt.h"
+#include "lwip/debug.h"
+#include "lwip/memp.h"
+#include "lwip/pbuf.h"
+#include "lwip/raw.h"
+#include "lwip/udp.h"
+#include "lwip/tcp.h"
+#include "lwip/priv/tcp_priv.h"
+#include "lwip/ip4_frag.h"
+#include "lwip/netbuf.h"
+#include "lwip/api.h"
+#include "lwip/priv/tcpip_priv.h"
+#include "lwip/priv/api_msg.h"
+#include "lwip/sockets.h"
+#include "lwip/netifapi.h"
+#include "lwip/igmp.h"
+#include "lwip/timeouts.h"
+#include "lwip/netif/etharp.h"
 
 /* needed by default MEMP_NUM_SYS_TIMEOUT */
-#include <net/lwip/netif/ppp/ppp_opts.h>
-#include <net/lwip/dns.h>
-#include <net/lwip/priv/nd6_priv.h>
-#include <net/lwip/ip6_frag.h>
-#include <net/lwip/mld6.h>
+#include "lwip/netif/ppp/ppp_opts.h"
+#include "lwip/dns.h"
+#include "lwip/priv/nd6_priv.h"
+#include "lwip/ip6_frag.h"
+#include "lwip/mld6.h"
 
 #define LWIP_MEMPOOL(name, num, size, desc) LWIP_MEMPOOL_DECLARE(name, num, size, desc)
-#include <net/lwip/priv/memp_std.h>
+#include "lwip/priv/memp_std.h"
 
 const struct memp_desc *const memp_pools[MEMP_MAX] = {
 #define LWIP_MEMPOOL(name, num, size, desc) &memp_ ## name,
-#include <net/lwip/priv/memp_std.h>
+#include "lwip/priv/memp_std.h"
 };
 
 #ifdef LWIP_HOOK_FILENAME

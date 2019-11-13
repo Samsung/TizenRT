@@ -55,24 +55,24 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_IPV4
 
-#include <net/lwip/ip.h>
-#include <net/lwip/def.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/ip4_frag.h>
-#include <net/lwip/inet_chksum.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/icmp.h>
-#include <net/lwip/igmp.h>
-#include <net/lwip/raw.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/priv/tcp_priv.h>
-#include <net/lwip/autoip.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/prot/dhcp.h>
+#include "lwip/ip.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/ip4_frag.h"
+#include "lwip/inet_chksum.h"
+#include "lwip/netif.h"
+#include "lwip/icmp.h"
+#include "lwip/igmp.h"
+#include "lwip/raw.h"
+#include "lwip/udp.h"
+#include "lwip/priv/tcp_priv.h"
+#include "lwip/autoip.h"
+#include "lwip/stats.h"
+#include "lwip/prot/dhcp.h"
 
 #include <string.h>
 

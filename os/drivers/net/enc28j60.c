@@ -86,11 +86,11 @@
 #include <tinyara/sched.h>
 
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/pbuf.h>
-#include <net/lwip/opt.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/tcpip.h>
-#include <net/lwip/ipv4/ip.h>
+#include "lwip/pbuf.h"
+#include "lwip/opt.h"
+#include "lwip/netif.h"
+#include "lwip/tcpip.h"
+#include "lwip/ipv4/ip.h"
 #define net_driver_s netif
 #endif
 

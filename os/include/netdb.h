@@ -78,7 +78,7 @@
 
 #include <inttypes.h>
 
-#include <net/lwip/netdb.h>
+#include "lwip/netdb.h"
 #include <netinet/in.h>
 #include <sys/socket.h>
 

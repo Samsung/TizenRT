@@ -56,16 +56,16 @@
  * <delamer@inicotech.com>
  */
 
-#include <net/lwip/opt.h>
-#include <net/lwip/ip6_frag.h>
-#include <net/lwip/ip6.h>
-#include <net/lwip/icmp6.h>
-#include <net/lwip/nd6.h>
-#include <net/lwip/ip.h>
+#include "lwip/opt.h"
+#include "lwip/ip6_frag.h"
+#include "lwip/ip6.h"
+#include "lwip/icmp6.h"
+#include "lwip/nd6.h"
+#include "lwip/ip.h"
 
-#include <net/lwip/pbuf.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/stats.h>
+#include "lwip/pbuf.h"
+#include "lwip/memp.h"
+#include "lwip/stats.h"
 
 #include <string.h>
 

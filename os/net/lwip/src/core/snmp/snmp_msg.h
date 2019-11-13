@@ -55,14 +55,14 @@
 #ifndef LWIP_HDR_APPS_SNMP_MSG_H
 #define LWIP_HDR_APPS_SNMP_MSG_H
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP
 
-#include <net/lwip/err.h>
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/apps/snmp.h>
-#include <net/lwip/apps/snmp_core.h>
+#include "lwip/err.h"
+#include "lwip/ip_addr.h"
+#include "lwip/apps/snmp.h"
+#include "lwip/apps/snmp_core.h"
 
 #include "snmp_pbuf_stream.h"
 

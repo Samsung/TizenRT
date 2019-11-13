@@ -55,12 +55,12 @@
 #ifndef LWIP_HDR_APPS_SNMP_ASN1_H
 #define LWIP_HDR_APPS_SNMP_ASN1_H
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP
 
-#include <net/lwip/err.h>
-#include <net/lwip/apps/snmp_core.h>
+#include "lwip/err.h"
+#include "lwip/apps/snmp_core.h"
 #include "snmp_pbuf_stream.h"
 
 #ifdef __cplusplus

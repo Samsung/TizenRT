@@ -61,13 +61,13 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
-#include <net/lwip/netdb.h>
-#include <net/lwip/sockets.h>
+#include "lwip/netdb.h"
+#include "lwip/sockets.h"
 #ifdef CONFIG_NET_IPv4
-#include <net/lwip/ip4_addr.h>
+#include "lwip/ip4_addr.h"
 #endif
 #ifdef CONFIG_NET_IPv6
-#include <net/lwip/ip6_addr.h>
+#include "lwip/ip6_addr.h"
 #endif
 #include <tinyara/lwnl/lwnl80211.h>
 

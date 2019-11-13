@@ -129,7 +129,7 @@ typedef struct fd_set {
 #if !defined(CONFIG_NET_SOCKET)
 /* #error Both system poll and network sockets are disabled */
 #else
-#include <net/lwip/sockets.h>
+#include "lwip/sockets.h"
 #endif
 
 #else

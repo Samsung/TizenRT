@@ -59,15 +59,15 @@
  * (>= 484) therefore we use the two encoding passes.
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_SNMP					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/udp.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/snmp.h>
-#include <net/lwip/snmp_asn1.h>
-#include <net/lwip/snmp_msg.h>
+#include "lwip/udp.h"
+#include "lwip/netif.h"
+#include "lwip/snmp.h"
+#include "lwip/snmp_asn1.h"
+#include "lwip/snmp_msg.h"
 
 struct snmp_trap_dst {
 	/* destination IP address in network order */

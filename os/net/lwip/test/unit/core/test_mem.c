@@ -18,8 +18,8 @@
 
 #include "test_mem.h"
 
-#include <net/lwip/mem.h>
-#include <net/lwip/stats.h>
+#include "lwip/mem.h"
+#include "lwip/stats.h"
 
 #if !LWIP_STATS || !MEM_STATS
 #error "This tests needs MEM-statistics enabled"

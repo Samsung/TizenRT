@@ -63,9 +63,9 @@
 #include <stdint.h>
 
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/inet.h>
-#include <net/lwip/sockets.h>
-#include <net/lwip/api.h>
+#include "lwip/inet.h"
+#include "lwip/sockets.h"
+#include "lwip/api.h"
 #endif
 
 #ifndef CONFIG_NET_LWIP

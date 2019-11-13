@@ -52,19 +52,19 @@
 #ifndef PPP_IMPL_H
 #define PPP_IMPL_H
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 
 #include "ppp.h"
-#include <net/lwip/netif/ppp/ppp_opts.h>
-#include <net/lwip/def.h>
-#include <net/lwip/sio.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/sys.h>
-#include <net/lwip/timeouts.h>
+#include "lwip/netif/ppp/ppp_opts.h"
+#include "lwip/def.h"
+#include "lwip/sio.h"
+#include "lwip/stats.h"
+#include "lwip/mem.h"
+#include "lwip/netif.h"
+#include "lwip/sys.h"
+#include "lwip/timeouts.h"
 
 /** Some defines for code we skip compared to the original pppd.
  *  These are just here to minimise the use of the ugly "#if 0". */

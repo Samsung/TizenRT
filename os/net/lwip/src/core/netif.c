@@ -55,41 +55,41 @@
 
 #include <string.h>
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
-#include <net/lwip/def.h>
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/ip6_addr.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/priv/tcp_priv.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/raw.h>
-#include <net/lwip/snmp.h>
-#include <net/lwip/igmp.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/sys.h>
-#include <net/lwip/ip.h>
-#include <net/lwip/netif/etharp.h>
+#include "lwip/def.h"
+#include "lwip/ip_addr.h"
+#include "lwip/ip6_addr.h"
+#include "lwip/netif.h"
+#include "lwip/priv/tcp_priv.h"
+#include "lwip/udp.h"
+#include "lwip/raw.h"
+#include "lwip/snmp.h"
+#include "lwip/igmp.h"
+#include "lwip/stats.h"
+#include "lwip/sys.h"
+#include "lwip/ip.h"
+#include "lwip/netif/etharp.h"
 #if ENABLE_LOOPBACK
 #if LWIP_NETIF_LOOPBACK_MULTITHREADING
-#include <net/lwip/tcpip.h>
+#include "lwip/tcpip.h"
 #endif /* LWIP_NETIF_LOOPBACK_MULTITHREADING */
 #endif /* ENABLE_LOOPBACK */
 
 #if LWIP_AUTOIP
-#include <net/lwip/autoip.h>
+#include "lwip/autoip.h"
 #endif							/* LWIP_AUTOIP */
 #if LWIP_DHCP
-#include <net/lwip/dhcp.h>
+#include "lwip/dhcp.h"
 #endif							/* LWIP_DHCP */
 #if LWIP_IPV6_DHCP6
-#include <net/lwip/dhcp6.h>
+#include "lwip/dhcp6.h"
 #endif							/* LWIP_IPV6_DHCP6 */
 #if LWIP_IPV6_MLD
-#include <net/lwip/mld6.h>
+#include "lwip/mld6.h"
 #endif							/* LWIP_IPV6_MLD */
 #if LWIP_IPV6
-#include <net/lwip/nd6.h>
+#include "lwip/nd6.h"
 #endif
 
 #if LWIP_NETIF_STATUS_CALLBACK

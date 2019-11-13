@@ -34,18 +34,18 @@
 #include <sys/types.h>
 
 /* lwIP includes. */
-#include <net/lwip/stats.h>
-#include <net/lwip/opt.h>
-#include <net/lwip/debug.h>
-#include <net/lwip/def.h>
-#include <net/lwip/sys.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/memp.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/arch/cc.h>
+#include "lwip/stats.h"
+#include "lwip/opt.h"
+#include "lwip/debug.h"
+#include "lwip/def.h"
+#include "lwip/sys.h"
+#include "lwip/mem.h"
+#include "lwip/memp.h"
+#include "lwip/pbuf.h"
+#include "lwip/arch/cc.h"
 
 /* TinyAra RTOS implementation of the lwip operating system abstraction */
-#include <net/lwip/arch/sys_arch.h>
+#include "lwip/arch/sys_arch.h"
 
 /* This is the number of threads that can be started with sys_thread_new() */
 #define SYS_THREAD_MAX 6

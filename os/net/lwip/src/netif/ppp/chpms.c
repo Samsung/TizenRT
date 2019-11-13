@@ -87,11 +87,11 @@
 
 #define USE_CRYPT
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/netif/ppp/ppp_opts.h>
+#include "lwip/netif/ppp/ppp_opts.h"
 
 #if MSCHAP_SUPPORT				/* don't build if not configured for use in lwipopts.h */
 

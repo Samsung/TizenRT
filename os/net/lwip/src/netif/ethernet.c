@@ -55,22 +55,22 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_ARP || LWIP_ETHERNET
 
-#include <net/lwip/arch.h>
-#include <net/lwip/netif/ethernet.h>
-#include <net/lwip/def.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/etharp.h>
-#include <net/lwip/ip.h>
-#include <net/lwip/snmp.h>
+#include "lwip/arch.h"
+#include "lwip/netif/ethernet.h"
+#include "lwip/def.h"
+#include "lwip/stats.h"
+#include "lwip/etharp.h"
+#include "lwip/ip.h"
+#include "lwip/snmp.h"
 
 #include <string.h>
 
 #if PPPOE_SUPPORT
-#include <net/lwip/netif/ppp/pppoe.h>
+#include "lwip/netif/ppp/pppoe.h"
 #endif							/* PPPOE_SUPPORT */
 
 #ifdef LWIP_HOOK_FILENAME

@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <net/lwip/lwipopts.h>
+#include "lwip/lwipopts.h"
 #include "tcpip_adapter.h"
 
 #if CONFIG_TCPIP_LWIP
@@ -47,7 +47,7 @@
 #include "lwip/nd6.h"
 #include "lwip/priv/tcpip_priv.h"
 #include "lwip/netif.h"
-#include <net/lwip/sys.h>
+#include "lwip/sys.h"
 #if LWIP_DNS					/* don't build if not configured for use in lwipopts.h */
 #include "lwip/dns.h"
 #endif

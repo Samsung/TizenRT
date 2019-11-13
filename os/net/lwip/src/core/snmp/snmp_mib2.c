@@ -55,7 +55,7 @@
  * @ingroup snmp
  */
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP && SNMP_LWIP_MIB2	/* don't build if not configured for use in lwipopts.h */
 
@@ -66,15 +66,15 @@
 #error LWIP_SNMP MIB2 needs MIB2_STATS (for MIB2)
 #endif
 
-#include <net/lwip/snmp.h>
-#include <net/lwip/apps/snmp.h>
-#include <net/lwip/apps/snmp_core.h>
-#include <net/lwip/apps/snmp_mib2.h>
-#include <net/lwip/apps/snmp_scalar.h>
+#include "lwip/snmp.h"
+#include "lwip/apps/snmp.h"
+#include "lwip/apps/snmp_core.h"
+#include "lwip/apps/snmp_mib2.h"
+#include "lwip/apps/snmp_scalar.h"
 
 #if SNMP_USE_NETCONN
-#include <net/lwip/tcpip.h>
-#include <net/lwip/priv/tcpip_priv.h>
+#include "lwip/tcpip.h"
+#include "lwip/priv/tcpip_priv.h"
 void snmp_mib2_lwip_synchronizer(snmp_threadsync_called_fn fn, void *arg)
 {
 #if LWIP_TCPIP_CORE_LOCKING

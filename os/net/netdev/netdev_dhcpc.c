@@ -71,8 +71,8 @@
 
 #include <protocols/dhcpc.h>
 #include <netutils/netlib.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/netifapi.h>
+#include "lwip/netif.h"
+#include "lwip/netifapi.h"
 #include "netdev/netdev.h"
 
 /****************************************************************************

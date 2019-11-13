@@ -69,7 +69,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 
@@ -81,7 +81,7 @@
 #include "vj.h"
 #include "ipcp.h"
 
-#include <net/lwip/inet.h>
+#include "lwip/inet.h"
 
 #include <string.h>
 

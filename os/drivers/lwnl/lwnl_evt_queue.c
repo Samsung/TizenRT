@@ -26,7 +26,7 @@
 
 #define LWQ_ENTRY										\
 	do {												\
-		ndbg("[pkbuild] [T%d] %s\t%s:%d\n", getpid(),	\
+		ndbg("[LWQ][T%d] %s\t%s:%d\n", getpid(),	\
 			 __FUNCTION__, __FILE__, __LINE__);			\
 	} while (0)
 

@@ -139,7 +139,7 @@ struct socketlist {
 #endif
 
 /* Callback from netdev_foreach() */
-struct netif;					/* Forward reference. Defined in tinyara/net/lwip/src/include/lwip/netif.h */
+struct netif;					/* Forward reference. Defined in lwip/netif.h */
 typedef int (*netdev_callback_t)(FAR struct netif *dev, void *arg);
 
 /* Semaphore based locking for non-interrupt based logic.

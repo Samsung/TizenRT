@@ -1154,9 +1154,6 @@ int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netdev *dev)
 	/* Ethernet Header */
 	ehdr = (struct ethhdr *)mbuf_put(arp, sizeof(struct ethhdr));
 	memset(ehdr->h_dest, 0xFF, ETH_ALEN);
-	//pkbuild u8 d_mac[6];
-	//netdev_get_hwaddr(dev, d_mac, NULL);
-	//SLSI_ETHER_COPY(ehdr->h_source, d_mac);
 	SLSI_ETHER_COPY(ehdr->h_source, netdev_get_hwaddr_ptr(dev));
 	ehdr->h_proto = cpu_to_be16(ETH_P_ARP);
 

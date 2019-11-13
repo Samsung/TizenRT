@@ -54,7 +54,7 @@ extern "C" {
 #endif
 
 #ifdef WITH_LWIP
-#include <net/lwip/ipv4/ip_addr.h>
+#include "lwip/ipv4/ip_addr.h"
 #endif
 
 #include <protocols/libcoap/option.h>

@@ -20,9 +20,9 @@
 #define __TCP_HELPER_H__
 
 #include "../lwip_check.h"
-#include <net/lwip/arch.h>
-#include <net/lwip/tcp.h>
-#include <net/lwip/netif.h>
+#include "lwip/arch.h"
+#include "lwip/tcp.h"
+#include "lwip/netif.h"
 
 /* counters used for test_tcp_counters_* callback functions */
 struct test_tcp_counters {

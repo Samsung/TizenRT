@@ -58,7 +58,7 @@
 #include <tinyara/config.h>
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 
 #include "netdev/netdev.h"
 

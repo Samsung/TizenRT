@@ -57,13 +57,14 @@ ifeq ($(CONFIG_NET),y)
 
 # Basic networking support
 
+
 NET_ASRCS   =
 NET_CSRCS   = net_initialize.c
 
 #LWIP stack support
 
 LWIP_ASRCS   =
-LWIP_CSRCS   = 
+LWIP_CSRCS   =
 
 # Socket support
 

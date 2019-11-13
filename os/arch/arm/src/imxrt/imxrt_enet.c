@@ -75,14 +75,14 @@
 #include <arch/board/board.h>
 
 #include <tinyara/net/netdev.h>
-#include <net/lwip/netif/etharp.h>
+#include "lwip/netif/etharp.h"
 #include <tinyara/net/ethernet.h>
 #include <tinyara/net/mii.h>
 
 #include <net/if.h>
-#include <net/lwip/opt.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/tcpip.h>
+#include "lwip/opt.h"
+#include "lwip/netif.h"
+#include "lwip/tcpip.h"
 
 #ifdef CONFIG_NET_PKT
 #include <tinyara/net/pkt.h>

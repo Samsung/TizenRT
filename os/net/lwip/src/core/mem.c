@@ -72,12 +72,12 @@
 #include <tinyara/config.h>
 #include <tinyara/kmalloc.h>
 
-#include <net/lwip/opt.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/def.h>
-#include <net/lwip/sys.h>
-#include <net/lwip/stats.h>
-#include <net/lwip/err.h>
+#include "lwip/opt.h"
+#include "lwip/mem.h"
+#include "lwip/def.h"
+#include "lwip/sys.h"
+#include "lwip/stats.h"
+#include "lwip/err.h"
 
 #include <string.h>
 

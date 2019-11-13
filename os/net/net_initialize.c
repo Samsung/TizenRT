@@ -61,8 +61,8 @@
 #include <sys/socket.h>
 #include <tinyara/net/net.h>
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/init.h>
-#include <net/lwip/tcpip.h>
+#include "lwip/init.h"
+#include "lwip/tcpip.h"
 #endif
 #include "netdev/netdev.h"
 #include "utils/utils.h"

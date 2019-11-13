@@ -61,7 +61,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 #include "netdev/netdev.h"
 
 /****************************************************************************

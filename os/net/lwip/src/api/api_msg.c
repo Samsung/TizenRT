@@ -53,23 +53,23 @@
  *
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_NETCONN				/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/priv/api_msg.h>
+#include "lwip/priv/api_msg.h"
 
-#include <net/lwip/ip.h>
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/tcp.h>
-#include <net/lwip/raw.h>
+#include "lwip/ip.h"
+#include "lwip/ip_addr.h"
+#include "lwip/udp.h"
+#include "lwip/tcp.h"
+#include "lwip/raw.h"
 
-#include <net/lwip/memp.h>
-#include <net/lwip/tcpip.h>
-#include <net/lwip/dns.h>
-#include <net/lwip/mld6.h>
-#include <net/lwip/priv/tcpip_priv.h>
+#include "lwip/memp.h"
+#include "lwip/tcpip.h"
+#include "lwip/dns.h"
+#include "lwip/mld6.h"
+#include "lwip/priv/tcpip_priv.h"
 
 #include <string.h>
 

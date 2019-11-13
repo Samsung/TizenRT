@@ -24,7 +24,7 @@
 #include "core/test_mem.h"
 #include "etharp/test_etharp.h"
 
-#include <net/lwip/init.h>
+#include "lwip/init.h"
 
 int main()
 {

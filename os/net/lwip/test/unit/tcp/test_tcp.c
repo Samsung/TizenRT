@@ -18,8 +18,8 @@
 
 #include "test_tcp.h"
 
-#include <net/lwip/tcp_impl.h>
-#include <net/lwip/stats.h>
+#include "lwip/tcp_impl.h"
+#include "lwip/stats.h"
 #include "tcp_helper.h"
 
 #ifdef _MSC_VER

@@ -26,7 +26,7 @@
 #include <netinet/in.h>
 #endif
 
-#include <net/lwip/tcp.h>
+#include "lwip/tcp.h"
 #include <curl/curl.h>
 
 #include "urldata.h"

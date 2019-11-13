@@ -51,11 +51,11 @@
  * @todo not optimised (yet), favor correctness over speed, favor speed over size
  */
 
-#include <net/lwip/opt.h>
+#include "lwip/opt.h"
 
 #if LWIP_SNMP					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/snmp_asn1.h>
+#include "lwip/snmp_asn1.h"
 
 /**
  * Retrieves type field from incoming pbuf chain.

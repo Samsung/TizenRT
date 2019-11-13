@@ -62,8 +62,8 @@
 #include <time.h>
 #include <netinet/in.h>
 #include <net/if.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/opt.h>
+#include "lwip/netif.h"
+#include "lwip/opt.h"
 #include <tinyara/net/net.h>
 #include <tinyara/net/ioctl.h>
 
@@ -80,22 +80,22 @@
 #include <queue.h>
 #endif
 
-#include <net/lwip/api.h>
-#include <net/lwip/igmp.h>
-#include <net/lwip/inet.h>
-#include <net/lwip/mem.h>
-#include <net/lwip/pbuf.h>
-#include <net/lwip/raw.h>
-#include <net/lwip/sockets.h>
-#include <net/lwip/sys.h>
-#include <net/lwip/tcp.h>
-#include <net/lwip/tcpip.h>
-#include <net/lwip/udp.h>
-#include <net/lwip/priv/tcpip_priv.h>
-#include <net/lwip/ip_addr.h>
+#include "lwip/api.h"
+#include "lwip/igmp.h"
+#include "lwip/inet.h"
+#include "lwip/mem.h"
+#include "lwip/pbuf.h"
+#include "lwip/raw.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include "lwip/tcp.h"
+#include "lwip/tcpip.h"
+#include "lwip/udp.h"
+#include "lwip/priv/tcpip_priv.h"
+#include "lwip/ip_addr.h"
 
 #if LWIP_CHECKSUM_ON_COPY
-#include <net/lwip/inet_chksum.h>
+#include "lwip/inet_chksum.h"
 #endif
 
 #if LWIP_SELECT

@@ -52,19 +52,19 @@
  *         Elias Oenal <lwip@eliasoenal.com>
  */
 
-#include <net/lwip/apps/snmp_opts.h>
+#include "lwip/apps/snmp_opts.h"
 
 #if LWIP_SNMP					/* don't build if not configured for use in lwipopts.h */
 
-#include <net/lwip/ip_addr.h>
-#include <net/lwip/stats.h>
+#include "lwip/ip_addr.h"
+#include "lwip/stats.h"
 
 #include "snmp_msg.h"
 #include "snmp_asn1.h"
 #include "snmp_core_priv.h"
 
 #if LWIP_SNMP_V3
-#include <net/lwip/apps/snmpv3.h>
+#include "lwip/apps/snmpv3.h"
 #include "snmpv3_priv.h"
 #ifdef LWIP_SNMPV3_INCLUDE_ENGINE
 #include LWIP_SNMPV3_INCLUDE_ENGINE

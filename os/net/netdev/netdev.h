@@ -64,7 +64,7 @@
 
 #include <tinyara/net/ip.h>
 
-#include <net/lwip/netif.h>
+#include "lwip/netif.h"
 
 /****************************************************************************
  * Pre-processor Definitions
