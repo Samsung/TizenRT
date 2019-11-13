@@ -84,11 +84,21 @@
 
 FAR void *kmm_zalloc(size_t size)
 {
+	void *ret;
+	int kheap_idx;
+	struct mm_heap_s *kheap = kmm_get_heap();
+
+	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_zalloc(kmm_get_heap(), size, __builtin_return_address(0));
+		ret = mm_zalloc(&kheap[kheap_idx], size, __builtin_return_address(0));
 #else
-	return mm_zalloc(kmm_get_heap(), size);
+		ret = mm_zalloc(&kheap[kheap_idx], size);
 #endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+	return NULL;
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */

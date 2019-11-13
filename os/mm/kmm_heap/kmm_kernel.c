@@ -102,38 +102,25 @@
 #ifdef CONFIG_DEBUG
 bool kmm_heapmember(FAR void *mem)
 {
-	struct mm_heap_s *heap = kmm_get_heap();
-#if CONFIG_MM_REGIONS > 1
-	int i;
+	int kheap_idx;
+	int region_idx;
+	struct mm_heap_s *kheap = kmm_get_heap();
 
 	/* A valid address from the kernel heap for this region would have to lie
 	 * between the region's two guard nodes.
 	 */
 
-	for (i = 0; i < heap->mm_nregions; i++) {
-		if (mem > (FAR void *)heap->mm_heapstart[i] && mem < (FAR void *)heap->mm_heapend[i]) {
-			return true;
+	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
+		for (region_idx = 0; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
+			if (mem >= (FAR void *)kheap[kheap_idx].mm_heapstart[region_idx] && mem < (FAR void *)kheap[kheap_idx].mm_heapend[region_idx]) {
+				return true;
+			}
 		}
 	}
 
 	/* The address does not like any any region assigned to kernel heap */
 
 	return false;
-
-#else
-	/* A valid address from the kernel heap would have to lie between the
-	 * two guard nodes.
-	 */
-
-	if (mem > (FAR void *)heap->mm_heapstart[0] && mem < (FAR void *)heap->mm_heapend[0]) {
-		return true;
-	}
-
-	/* Otherwise, the address does not lie in the kernel heap */
-
-	return false;
-
-#endif
 }
 #endif
 

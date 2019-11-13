@@ -80,6 +80,26 @@
  * Private Functions
  ****************************************************************************/
 
+static void *kheap_malloc(size_t size, size_t retaddr)
+{
+	int heap_idx;
+	void *ret;
+	struct mm_heap_s *kheap = kmm_get_heap();
+
+	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ret = mm_malloc(&kheap[heap_idx], size, retaddr);
+#else
+		ret = mm_malloc(&kheap[heap_idx], size);
+#endif
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+
+	return NULL;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -101,9 +121,10 @@
 FAR void *kmm_malloc(size_t size)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_malloc(kmm_get_heap(), size, __builtin_return_address(0));
+	ARCH_GET_RET_ADDRESS
 #else
-	return mm_malloc(kmm_get_heap(), size);
+	size_t retaddr = 0;
 #endif
+	return kheap_malloc(size, retaddr);
 }
 #endif							/* CONFIG_MM_KERNEL_HEAP */

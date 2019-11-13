@@ -67,6 +67,25 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+static void *kheap_brkaddr(int region)
+{
+	int heap_idx;
+	void *ret;
+	struct mm_heap_s *kheap = kmm_get_heap();
+
+	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
+		ret = mm_brkaddr(&kheap[heap_idx], region);
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+
+	return NULL;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -80,7 +99,7 @@
 
 FAR void *kmm_brkaddr(int region)
 {
-	return mm_brkaddr(kmm_get_heap(), region);
+	return kheap_brkaddr(region);
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */
