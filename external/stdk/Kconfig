@@ -116,6 +116,12 @@ config STDK_IOT_CORE_CRYPTO_SUPPORT_ED25519
 	---help---
 		Support Ed25519 based sign, encryption functions.
 
+config MBEDTLS_USER_FILE
+	string "customize mbedtls config for stdk"
+	default "../../stdk/tizenrt-wrapper/mbedtls_config.h"
+	---help---
+		CONFIG used to define the MBEDTLS_USER_CONFIG_FILE
+
 choice STDK_IOT_CORE_FS_ENCRYPTION
 	prompt "Choose FS encryption method"
 	default STDK_IOT_CORE_FS_HW_ENCRYPTION
