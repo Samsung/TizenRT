@@ -655,7 +655,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 #if LWIP_ND6_ALLOW_RA_UPDATES
 					inp->mtu = (u16_t) lwip_htonl(ND6H_MTU_OPT_MTU(mtu_opt));
 					for (i = 0; i < LWIP_ND6_NUM_DESTINATIONS; i++) {
-						if (! ip6_addr_isany(&(destination_cache[i].destination_addr))) {
+						if (!ip6_addr_isany(&(destination_cache[i].destination_addr))) {
 							if ((inp->mtu <= destination_cache[i].pmtu) || (destination_cache[i].pmtu_timer <= 0)) {
 								destination_cache[i].pmtu = inp->mtu;
 								destination_cache[i].pmtu_timer = 10 * 60 * 1000; /* 10 minutes (= 600000 ms) */
@@ -912,7 +912,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		/* Processing validition check as per RFC 4861, 8.1 */
 
-		if (IP6H_HOPLIM(ip6_current_header()) != 255 ) {
+		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
 			pbuf_free(p);
 			ND6_STATS_INC(nd6.drop);
 			return;

@@ -515,7 +515,7 @@ static int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *gro
 
 static struct netdev *slsi_alloc_netdev(int sizeof_priv)
 {
-	struct nic_io_ops nops= {slsi_linkoutput, slsi_set_multicast_list};
+	struct nic_io_ops nops = {slsi_linkoutput, slsi_set_multicast_list};
 	struct netdev_config nconfig;
 	nconfig.ops = &nops;
 	nconfig.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
@@ -566,11 +566,11 @@ void slsi_ethernetif_input(struct netif *dev, u8_t *frame_ptr, u16_t len)
 
 	SLSI_MUTEX_LOCK(sdev->rx_data_mutex);
 
-	dev->d_buf = frame_ptr;
-	dev->d_len = len;
+	//dev->d_buf = frame_ptr;
+	//dev->d_len = len;
 
 	SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_packets_given_to_lwip);
-	ethernetif_input(dev);
+	ethernetif_input(dev, frame_ptr, len);
 
 	SLSI_MUTEX_UNLOCK(sdev->rx_data_mutex);
 }

@@ -239,7 +239,7 @@ int lwnl_add_listener(struct file *filep)
 {
 	LWQ_ENTRY;
 	LWQ_LOCK;
-	for (int i = 0;i < LWNL_NPOLLWAITERS; i++) {
+	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		if (!g_queue[i].filep) {
 			g_queue[i].filep = filep;
 			g_connected++;

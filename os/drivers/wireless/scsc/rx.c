@@ -777,10 +777,6 @@ else
 
 		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 		SLSI_DBG3(sdev, SLSI_RX, "pass %u bytes to local stack\n", mbuf->data_len);
-#ifndef CONFIG_NET_NETMGR
-		dev->d_buf = slsi_mbuf_get_data(mbuf);
-		dev->d_len = mbuf->data_len;
-#endif
 
 		if (ntohs(ehdr->h_proto) == ETH_P_PAE) {
 			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_eapol);
