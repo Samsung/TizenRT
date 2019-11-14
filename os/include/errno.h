@@ -407,8 +407,6 @@
 #define EMEDIUMTYPE_STR     "Wrong medium type"
 #define ECANCELED           125
 #define ECANCELED_STR       "Operation cancelled"
-#define EINVAL_SECTOR       126
-#define EINVAL_SECTOR_STR   "Invalid sector"
 #define EOWNERDEAD          142
 #define EOWNERDEAD_STR      "Previous owner died"
 
