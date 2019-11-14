@@ -1762,7 +1762,6 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 			readwrite.count = fs->fs_llformat.availbytes;
 			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 			if (ret < 0) {
-				ret = -EINVAL_SECTOR;
 				fdbg("Error %d reading sector %d data\n", ret, logsector);
 				goto errout;
 			}
