@@ -436,7 +436,7 @@ else
 				ARG=$1
 			fi
 		else
-			ARG=$(echo $1 | tr '[:upper:]' '[:lower:]')
+			ARG=$1
 		fi
 		case ${STATUS} in
 		NOT_CONFIGURED)
