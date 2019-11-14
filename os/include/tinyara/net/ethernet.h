@@ -96,7 +96,7 @@ struct eth_hdr_s {
 
 void ethernetif_status_callback(struct netif *netif);
 err_t ethernetif_init(struct netif *netif);
-int ethernetif_input(struct netif *netif);
+int ethernetif_input(struct netif *netif, uint8_t *buf, uint16_t buflen);
 
 #ifdef __cplusplus
 #define EXTERN extern "C"

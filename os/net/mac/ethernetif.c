@@ -101,30 +101,32 @@ void ethernetif_status_callback(struct netif *netif)
 
 static err_t ethernetif_output(struct netif *netif, struct pbuf *p)
 {
-	struct pbuf *q;
-
-	netif->d_len = 0;
-	q = p;
-	while (q) {
-		/* Copy the data from the pbuf to the interface buf, one pbuf at a
-		   time. The size of the data in each pbuf is kept in the ->len
-		   variable. */
-		memcpy((void *)(&(netif->d_buf[netif->d_len])), q->payload, q->len);
-		netif->d_len += q->len;
-
-		/* Check if this is the last pbuf of the packet. If yes, then break */
-		if (q->len == q->tot_len) {
-			break;
-		} else {
-			q = q->next;
-		}
-	}
-	/* signal that packet should be sent */
-	netif->d_txavail(netif);
-
-	LINK_STATS_INC(link.xmit);
-
+/*  deprecated */
 	return ERR_OK;
+	/* struct pbuf *q; */
+
+	/* netif->d_len = 0; */
+	/* q = p; */
+	/* while (q) { */
+	/* 	/\* Copy the data from the pbuf to the interface buf, one pbuf at a */
+	/* 	   time. The size of the data in each pbuf is kept in the ->len */
+	/* 	   variable. *\/ */
+	/* 	memcpy((void *)(&(netif->d_buf[netif->d_len])), q->payload, q->len); */
+	/* 	netif->d_len += q->len; */
+
+	/* 	/\* Check if this is the last pbuf of the packet. If yes, then break *\/ */
+	/* 	if (q->len == q->tot_len) { */
+	/* 		break; */
+	/* 	} else { */
+	/* 		q = q->next; */
+	/* 	} */
+	/* } */
+	/* /\* signal that packet should be sent *\/ */
+	/* netif->d_txavail(netif); */
+
+	/* LINK_STATS_INC(link.xmit); */
+
+	/* return ERR_OK; */
 }
 
 /**
@@ -140,20 +142,18 @@ static err_t ethernetif_output(struct netif *netif, struct pbuf *p)
  * @return a pbuf filled with the received packet (including MAC header)
  *         NULL on memory error
  */
-int ethernetif_input(struct netif *netif)
+int ethernetif_input(struct netif *netif, uint8_t *buf, uint16_t buflen)
 {
 
-	LWIP_DEBUGF(NETIF_DEBUG, ("passing to LWIP layer, packet len %d \n", netif->d_len));
+	LWIP_DEBUGF(NETIF_DEBUG, ("passing to LWIP layer, packet len %d \n", buflen));
 	struct pbuf *p, *q;
-	u16_t len = 0;
-	u8_t *frame_ptr;
-	/* Receive the complete packet */
-	frame_ptr = &(netif->d_buf[0]);
-	/* Obtain the size of the packet and put it into the "len" variable. */
-	len = netif->d_len;
+	u16_t len = buflen; 	/* Obtain the size of the packet and put it into the "len" variable. */
+	u8_t *frame_ptr = buf; 	/* Receive the complete packet */
+
 	if (0 == len) {
 		return 0;
 	}
+
 	/* We allocate a pbuf chain of pbufs from the pool. */
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
 

@@ -73,9 +73,7 @@
 
 #include <tinyara/net/ip.h>
 
-#ifndef CONFIG_NET_MULTIBUFFER
 #include "lwip/netif.h"
-#endif
 
 /****************************************************************************
  * Pre-processor Definitions
