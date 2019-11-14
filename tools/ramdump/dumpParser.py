@@ -40,6 +40,7 @@ g_etext=0
 config_path = '../../os/.config'
 elf_path = '../../build/output/bin/tinyara'
 debug_cmd = 'addr2line'
+file_data = 'HeapInfo'
 
 # Top level class to parse the dump and assert logs parsing feature
 class dumpParser:
@@ -776,11 +777,11 @@ def main():
 				idle_stack_size *= 10
 				idle_stack_size += int(data[index])
 				index += 1
-		stack_size[0] = idle_stack_size + SIZE_OF_ALLOC_NODE
-
+		stack_size[0] = idle_stack_size
 		print '******************************************************************'
 		print '  MemAddr |   Size   | Status |  Pid  |           Owner           '
 		print '----------|----------|--------|-------|---------------------------'
+		f = open(file_data, 'w')
 		while point < end_heap:
 			size = rParser.read_word(point)
 			preceding = rParser.read_word(point + 4)
@@ -792,14 +793,18 @@ def main():
 				fd_popen.close()
 				if pid >= 0:
 					print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(pid), data[14:],
+					f.write(str(size) + ' 0 ' + str(hex(point)) + ' ' + str(pid) + ' ' + data[14:])
 				else: # If pid is less than 0, it is the stack size of (-pid)
 					stack_size[(-pid) & (max_tasks - 1)] = size
 					print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(-pid), data[14:],
+					f.write(str(size) + ' 1 ' + str(hex(point)) + ' ' + str(-pid) + ' ' + data[14:])
 			else:
 				print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Free'), '{:6}|'.format("")
+				f.write(str(size) +' 2 ' + str(hex(point)))
 			# next node
 			point = point + size
 
+		f.close()
 		print ''
 		print '***********************************************************'
 		print '       Summary of Heap Usages (Size in Bytes)'
