@@ -930,7 +930,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
-		return WIFI_MANAGER_FAIL;
+		return WIFI_MANAGER_BUSY;
 	}
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -958,7 +958,7 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
-		return WIFI_MANAGER_FAIL;
+		return WIFI_MANAGER_BUSY;
 	}
 
 	return WIFI_MANAGER_SUCCESS;
