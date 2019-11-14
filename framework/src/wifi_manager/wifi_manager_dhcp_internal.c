@@ -104,11 +104,20 @@ static void _dhcps_remove_list(void)
 
 wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined cb)
 {
-	//Default IP addr for SoftAP; 192.168.47.1.
-	//Please refer to LWIP_DHCPS_SERVER_IP defined in external/dhcpd/Kconfig
-	struct in_addr ip = {.s_addr = 0x012fa8c0 };
-	struct in_addr netmask = {.s_addr = 0x00ffffff};
+#ifdef CONFIG_NET_LWIP_DHCP
+	struct in_addr ip = {.s_addr = inet_addr(CONFIG_LWIP_DHCPS_SERVER_IP)};
+	struct in_addr gw = {.s_addr = inet_addr(CONFIG_LWIP_DHCPS_SERVER_IP)};
+	struct in_addr netmask = {.s_addr = inet_addr(CONFIG_LWIP_DHCPS_SERVER_NETMASK)};
+#elif CONFIG_NET_DHCP
+	struct in_addr ip = {.s_addr = CONFIG_NETUTILS_DHCPD_ROUTERIP};
+	struct in_addr gw = {.s_addr = CONFIG_NETUTILS_DHCPD_ROUTERIP};
+	struct in_addr netmask = {.s_addr = CONFIG_NETUTILS_DHCPD_NETMASK};
+#else
+	struct in_addr ip = {.s_addr = 0x012fa8c0};
 	struct in_addr gw = {.s_addr = 0x012fa8c0};
+	struct in_addr netmask = {.s_addr = 0x00ffffff};
+#endif
+
 
 	_dhcps_remove_list();
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
