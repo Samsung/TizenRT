@@ -90,6 +90,37 @@ static void *kheap_calloc(size_t n, size_t elem_size, size_t retaddr)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/************************************************************************
+ * Name: kmm_calloc_at
+ *
+ * Description:
+ *   calloc to the specific kernel heap.
+ *   kmm_calloc_at tries to allocate memory for a specific heap
+ *  which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ *
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
+#if CONFIG_KMM_NHEAPS > 1
+void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
+{
+	struct mm_heap_s *kheap;
+	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
+		mdbg("kmm_calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+		return NULL;
+	}
+
+	kheap = kmm_get_heap();
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	return mm_calloc(&kheap[heap_index], n, elem_size, retaddr);
+#else
+	return mm_calloc(&kheap[heap_index], n, elem_size);
+#endif
+}
+#endif
 
 /****************************************************************************
  * Name: kmm_calloc

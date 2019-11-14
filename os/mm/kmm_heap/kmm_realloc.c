@@ -71,6 +71,37 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/************************************************************************
+ * Name: kmm_realloc_at
+ *
+ * Description:
+ *   realloc to the specific kernel heap.
+ *   kmm_realloc_at tries to allocate memory for a specific kernel heap
+ *  which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ *
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
+#if CONFIG_KMM_NHEAPS > 1
+void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
+{
+	struct mm_heap_s *kheap;
+	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
+		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+		return NULL;
+	}
+
+	kheap = kmm_get_heap();
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	return mm_realloc(&kheap[heap_index], oldmem, size, retaddr);
+#else
+	return mm_realloc(&kheap[heap_index], oldmem, size);
+#endif
+}
+#endif
 
 /****************************************************************************
  * Name: kmm_realloc
