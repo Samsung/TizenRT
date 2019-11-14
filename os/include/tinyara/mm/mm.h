@@ -735,6 +735,22 @@ typedef struct heapinfo_total_info_s heapinfo_total_info_t;
  * @cond
  * @internal
  */
+#ifdef CONFIG_MM_KERNEL_HEAP
+#if CONFIG_KMM_NHEAPS > 1
+void *kmm_malloc_at(int heap_index, size_t size);
+void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size);
+void *kmm_memalign_at(int heap_index, size_t alignment, size_t size);
+void *kmm_realloc_at(int heap_index, void *oldmem, size_t size);
+void *kmm_zalloc_at(int heap_index, size_t size);
+#else
+#define kmm_malloc_at(heap_index, size)              kmm_malloc(size)
+#define kmm_calloc_at(heap_index, n, elem_size)      kmm_calloc(n, elem_size)
+#define kmm_memalign_at(heap_index, alignment, size) kmm_memalign(alignment, size)
+#define kmm_realloc_at(heap_index, oldmem, size)     kmm_realloc(oldmem, size)
+#define kmm_zalloc_at(heap_index, size)              kmm_zalloc(size)
+#endif
+#endif
+
 /**
  * @brief Allocate memory to the specific heap.
  * @details @b #include <tinyara/mm/mm.h>\n

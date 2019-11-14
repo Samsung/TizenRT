@@ -103,6 +103,41 @@ static void *kheap_malloc(size_t size, size_t retaddr)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/************************************************************************
+ * Name: kmm_malloc_at
+ *
+ * Description:
+ *   Allocate memory to the specific kernel heap.
+ *   kmm_malloc_at tries to allocate memory for a specific kernel heap
+ *  which passed by api argument.
+ *   If there is no enough space to allocate, it will return NULL.
+ *
+ * Parameters:
+ *   heap_index - Index of specific heap.
+ *   size - Size (in bytes) of the memory region to be allocated.
+ *
+ * Return Value:
+ *   The address of the allocated memory (NULL on failure to allocate)
+ *
+ ************************************************************************/
+#if CONFIG_KMM_NHEAPS > 1
+void *kmm_malloc_at(int heap_index, size_t size)
+{
+	struct mm_heap_s *kheap;
+	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
+		mdbg("kmm_malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+		return NULL;
+	}
+
+	kheap = kmm_get_heap();
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	return mm_malloc(&kheap[heap_index], size, retaddr);
+#else
+	return mm_malloc(&kheap[heap_index], size);
+#endif
+}
+#endif
 
 /************************************************************************
  * Name: kmm_malloc
