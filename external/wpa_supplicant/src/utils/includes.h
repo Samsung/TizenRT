@@ -52,6 +52,8 @@
 
 #include <sys/select.h>
 
+#ifndef ENOTSUP
 #define ENOTSUP EOPNOTSUPP
+#endif
 
 #endif							/* INCLUDES_H */
