@@ -9,8 +9,10 @@ There are three main functions in SmartFS Dump Visualizer (SDV).
 
 
 ## How to run SDV?
-To run SDV, please download and install Java to a target PC first.
-[Java Download](https://www.oracle.com/technetwork/java/javase/downloads/jdk12-downloads-5295953.html)
+To run SDV, please download and install Java 8 (or the latest Java) to a target PC first.
+[Java Download](https://www.java.com/ko/download/manual.jsp)
+
+>**Note** To use TizenRT IDE together, Java 8 should be installed.
 
 SDV can be released for Windows, Linux (Ubuntu), and Mac OS.
 
@@ -21,11 +23,16 @@ After downloading the SDV release (zip/tar.gz) from the following links,
 Decompress the release file and execute SDV.exe/SDV.
 
 
-## Example of Multi-heap Usage
+## Example of SDV Usage
 After starting the tool, an initial screen is shown like below.  
 ![Initial](./media/Initial_screen.png)
 
-The contents of a smartfs dump file can be shown by opening it through "open" menu.
+The contents of a smartfs dump file* can be shown by opening it through "open" menu.
+
+>**Note** Now dump files can be obtained only though tools provided by board manufacturers.
+>  For example, 'NXP MCU Boot Utility' for NXP board, 
+>               'Airoha IoT Flash Tool' for MediaTek board, and
+>               'STM32 CubeProgrammer' for STM board.
 
 The following is an example screen when a smartfs dump file is opened.  
 
