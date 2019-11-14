@@ -58,7 +58,9 @@
 
 //-----------------------------------------------------------------------------
 
+#ifndef ENOTSUP
 #define ENOTSUP       EOPNOTSUPP
+#endif
 
 #define STDIN_FILNO   0
 #define STDOUT_FILNO  1

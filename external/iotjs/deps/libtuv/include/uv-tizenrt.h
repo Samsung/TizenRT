@@ -57,7 +57,9 @@
 
 //---------------------------------------------------------------------------
 // TUV_CHANGES@20161130: NuttX doesn't provide ENOTSUP.
+#ifndef ENOTSUP
 #define ENOTSUP       EOPNOTSUPP
+#endif
 
 // TUV_CHANGES@20171130:
 // Not defined macros. Copied from x86-64 linux system header
