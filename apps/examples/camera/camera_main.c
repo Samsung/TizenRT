@@ -246,7 +246,7 @@ static void free_buffer(struct v_buffer *buffers, uint8_t bufnum)
  * Public Functions
  ****************************************************************************/
 #ifdef CONFIG_BUILD_KERNEL
-int camera_main(int argc, FAR char *argv[])
+int main(int argc, FAR char *argv[])
 #else
 int camera_main(int argc, char *argv[])
 #endif

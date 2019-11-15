@@ -9,3 +9,7 @@ config EXAMPLES_CAMERATEST
 	depends on VIDEO_SOURCE
 	---help---
 		Enable the camera example
+
+config USER_ENTRYPOINT
+	string
+	default "camera_main" if ENTRY_CAMERATEST
