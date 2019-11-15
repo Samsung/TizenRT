@@ -125,7 +125,7 @@ To check all pre-defined configurations, type as follows:
 ##### 1.1 Additional Configuration (optional)
 After basic configuration by [1. Configuration](#1-configuration), you can additionally modify your configuration with *menuconfig*.
 
-``bash
+```bash
 ./dbuild.sh menuconfig
 ```
 > **Note**
