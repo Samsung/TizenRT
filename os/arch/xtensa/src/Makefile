@@ -69,7 +69,6 @@ ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   ARCH_SRCDIR = $(TOPDIR)\arch\$(CONFIG_ARCH)\src
   TINYARA = "$(TOPDIR)\$(OUTBIN_DIR)\tinyara$(EXEEXT)"
   CFLAGS += -I$(ARCH_SRCDIR)\chip
-  CFLAGS += -I$(ARCH_SRCDIR)\common
   CFLAGS += -I$(ARCH_SRCDIR)\$(ARCH_SUBDIR)
   CFLAGS += -I$(TOPDIR)\sched
 else
@@ -77,13 +76,11 @@ else
 ifeq ($(WINTOOL),y)
   TINYARA = "${shell cygpath -w $(TOPDIR)/$(OUTBIN_DIR)/tinyara$(EXEEXT)}"
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}"
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/common}"
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/$(ARCH_SUBDIR)}"
   CFLAGS += -I "${shell cygpath -w $(TOPDIR)/sched}"
 else
   TINYARA = "$(TOPDIR)/$(OUTBIN_DIR)/tinyara$(EXEEXT)"
   CFLAGS += -I$(ARCH_SRCDIR)/chip
-  CFLAGS += -I$(ARCH_SRCDIR)/common
   CFLAGS += -I$(ARCH_SRCDIR)/$(ARCH_SUBDIR)
   CFLAGS += -I$(ARCH_SRCDIR)/$(ARCH_SUBDIR_LX6)
   CFLAGS += -I$(TOPDIR)/kernel
@@ -147,7 +144,6 @@ LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 GCC_LIBDIR := ${shell dirname $(LIBGCC)}
 
 VPATH += chip
-VPATH += common
 VPATH += $(ARCH_SUBDIR)
 
 all: $(STARTUP_OBJS) libarch$(LIBEXT)
@@ -193,7 +189,7 @@ export_startup: board/libboard$(LIBEXT) $(STARTUP_OBJS)
 ifeq ($(BOARDMAKE),y)
 	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" depend
 endif
-	$(Q) $(MKDEP) --dep-path chip --dep-path common --dep-path $(ARCH_SUBDIR) \
+	$(Q) $(MKDEP) --dep-path chip --dep-path chip/spi_flash --dep-path $(ARCH_SUBDIR) \
 	 "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
