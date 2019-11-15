@@ -1,0 +1,34 @@
+From 6feb5c88c32e96b71d03e16fbce86905b7a0af9b Mon Sep 17 00:00:00 2001
+From: "qin.li" <qin.li@samsung.com>
+Date: Fri, 15 Nov 2019 16:54:02 +0800
+Subject: [PATCH] fix array overwrite issue, and return value issue
+
+---
+ src/easysetup/iot_easysetup_d2d.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/easysetup/iot_easysetup_d2d.c b/src/easysetup/iot_easysetup_d2d.c
+index 2d55f60..79ce1b3 100644
+--- a/src/easysetup/iot_easysetup_d2d.c
++++ b/src/easysetup/iot_easysetup_d2d.c
+@@ -444,7 +444,7 @@ static iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload
+ 		goto exit;
+ 	}
+ 
+-	for (i = 0, j = 0; i < sizeof(rand_asc); i += 2, j++) {
++	for (i = 0, j = 0; i < sizeof(rand_asc) - 1; i += 2, j++) {
+ 		memcpy(tmp, rand_asc + i, 2);
+ 		val = (unsigned char)strtol((const char *)tmp, NULL, 16);
+ 		key_rand[j] = val;
+@@ -593,7 +593,7 @@ void st_conn_ownership_confirm(IOT_CTX *iot_ctx, bool confirm)
+ 	}
+ }
+ 
+-static iot_state_t _es_confirm_check_manager(struct iot_context *ctx, enum ownership_validation_feature confirm_feature, char *sn)
++static iot_error_t _es_confirm_check_manager(struct iot_context *ctx, enum ownership_validation_feature confirm_feature, char *sn)
+ {
+ 	char *dev_sn = NULL;
+ 	unsigned int curr_event = 0;
+-- 
+2.7.4
+
