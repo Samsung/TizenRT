@@ -18,6 +18,7 @@
 #include <mutex>
 #include <cassert>
 #include "libcxx_tc_common.h"
+#include "test_macros.h"
 
 int tc_libcxx_thread_thread_lock_unique_cons_default(void)
 {

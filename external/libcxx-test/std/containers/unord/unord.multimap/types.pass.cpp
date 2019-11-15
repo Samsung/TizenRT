@@ -47,6 +47,7 @@
 
 #include <unordered_map>
 #include <type_traits>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_containers_unord_multimap_types(void)

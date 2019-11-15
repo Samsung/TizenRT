@@ -31,6 +31,7 @@
 #include <cstring>
 #include <string>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_diagnostics_stdexcept_runtime_error(void)

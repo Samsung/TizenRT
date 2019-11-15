@@ -31,6 +31,7 @@
 
 #include <forward_list>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 #include <iterator>
 

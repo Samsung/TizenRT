@@ -30,6 +30,7 @@
 
 #include <vector>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_iterators_iterator_range_begin_const(void)

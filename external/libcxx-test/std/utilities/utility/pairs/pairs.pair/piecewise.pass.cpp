@@ -37,6 +37,7 @@
 #include <utility>
 #include <tuple>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_utilities_pairs_pair_piecewise(void)

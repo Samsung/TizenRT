@@ -47,6 +47,7 @@
 #include <vector>
 #include <iterator>
 #include <type_traits>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 #include "test_allocator.h"

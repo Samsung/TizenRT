@@ -34,6 +34,7 @@
 
 #include <utility>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 #include "archetypes.hpp"

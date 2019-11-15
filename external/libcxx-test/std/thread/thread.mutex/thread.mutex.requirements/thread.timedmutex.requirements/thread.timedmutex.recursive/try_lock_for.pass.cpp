@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cassert>
 #include "libcxx_tc_common.h"
+#include "test_macros.h"
 
 static std::recursive_timed_mutex m;
 

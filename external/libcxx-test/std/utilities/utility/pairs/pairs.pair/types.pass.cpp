@@ -34,6 +34,7 @@
 
 #include <utility>
 #include <type_traits>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_utilities_pairs_pair_types(void)

@@ -36,6 +36,7 @@
 #include <cassert>
 
 #include "test_iterators.h"
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 static std::mt19937 randomness;

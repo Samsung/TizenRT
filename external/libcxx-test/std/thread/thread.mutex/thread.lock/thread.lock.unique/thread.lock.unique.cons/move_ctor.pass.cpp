@@ -19,6 +19,7 @@
 #include <cassert>
 #include "libcxx_tc_common.h"
 #include "nasty_containers.hpp"
+#include "test_macros.h"
 
 int tc_libcxx_thread_thread_lock_unique_cons_move_ctor(void)
 {
@@ -27,6 +28,7 @@ int tc_libcxx_thread_thread_lock_unique_cons_move_ctor(void)
     M m;
     std::unique_lock<M> lk0(m);
     std::unique_lock<M> lk = std::move(lk0);
+//	printf("sangam dbg : cons_move_ctor1\n");
     TC_ASSERT_EXPR(lk.mutex() == std::addressof(m));
     TC_ASSERT_EXPR(lk.owns_lock() == true);
     TC_ASSERT_EXPR(lk0.mutex() == nullptr);
@@ -36,6 +38,7 @@ int tc_libcxx_thread_thread_lock_unique_cons_move_ctor(void)
     typedef nasty_mutex M;
     M m;
     std::unique_lock<M> lk0(m);
+//	printf("sangam dbg : cons_move_ctor2\n");
     std::unique_lock<M> lk = std::move(lk0);
     TC_ASSERT_EXPR(lk.mutex() == std::addressof(m));
     TC_ASSERT_EXPR(lk.owns_lock() == true);

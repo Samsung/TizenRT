@@ -31,6 +31,7 @@
 // tuple_size<pair<T1, T2> >::value
 
 #include <utility>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_utilities_pair_astuple_tuple_size(void)

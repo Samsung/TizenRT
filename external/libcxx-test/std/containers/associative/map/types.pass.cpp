@@ -48,6 +48,7 @@
 
 #include <map>
 #include <type_traits>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_containers_map_types(void)

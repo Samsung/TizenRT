@@ -34,6 +34,7 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_iterators_istreambuf_iterator_op_astrk_pre_increment(void)
