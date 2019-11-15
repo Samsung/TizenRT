@@ -44,6 +44,8 @@ const unsigned int iot_os_max_delay = portMAX_DELAY;
 const unsigned int iot_os_true = pdTRUE;
 const unsigned int iot_os_false = pdFALSE;
 
+#define VALIDATE_MSEC2TICK(ms) (((ms) == iot_os_max_delay) ? iot_os_max_delay : MSEC2TICK(ms))
+
 typedef struct tizenrt_timer {
 	clock_t ticks_to_wait;
 	clock_t time_out;
@@ -112,16 +114,12 @@ void iot_os_queue_delete(iot_os_queue *queue_handle)
 
 int iot_os_queue_send(iot_os_queue *queue_handle, void *data, unsigned int wait_time_ms)
 {
-	if (wait_time_ms == iot_os_max_delay) {
-		return queue_send_wrapper(queue_handle, data, iot_os_max_delay); //wait forever, or no wait in irq
-	} else {
-		return queue_send_wrapper(queue_handle, data, MSEC2TICK(wait_time_ms));
-	}
+	return queue_send_wrapper(queue_handle, data, VALIDATE_MSEC2TICK(wait_time_ms));
 }
 
 int iot_os_queue_receive(iot_os_queue *queue_handle, void *data, unsigned int wait_time_ms)
 {
-	return queue_recv_wrapper((void *)queue_handle, data, MSEC2TICK(wait_time_ms));
+	return queue_recv_wrapper((void *)queue_handle, data, VALIDATE_MSEC2TICK(wait_time_ms));
 }
 
 /* Event Group */
@@ -139,11 +137,7 @@ unsigned int iot_os_eventgroup_wait_bits(iot_os_eventgroup *eventgroup_handle,
 		const unsigned int bits_to_wait_for, const int clear_on_exit,
 		const int wait_for_all_bits, const unsigned int wait_time_ms)
 {
-	if (wait_time_ms == iot_os_max_delay) {
-		return event_group_wait_bits(eventgroup_handle, bits_to_wait_for, clear_on_exit, wait_for_all_bits, iot_os_max_delay);
-	} else {
-		return event_group_wait_bits(eventgroup_handle, bits_to_wait_for, clear_on_exit, wait_for_all_bits, MSEC2TICK(wait_time_ms));
-	}
+	return event_group_wait_bits(eventgroup_handle, bits_to_wait_for, clear_on_exit, wait_for_all_bits, VALIDATE_MSEC2TICK(wait_time_ms));
 }
 
 unsigned int iot_os_eventgroup_set_bits(iot_os_eventgroup *eventgroup_handle,
@@ -281,13 +275,17 @@ static int check_for_timeout(clock_t *const ptime_out, clock_t *const pticks_to_
 
 void iot_os_timer_count_ms(iot_os_timer timer, unsigned int timeout_ms)
 {
-	((tizenrt_timer *)timer)->ticks_to_wait = MSEC2TICK(timeout_ms); /* convert milliseconds to ticks */
+	((tizenrt_timer *)timer)->ticks_to_wait = VALIDATE_MSEC2TICK(timeout_ms); /* convert milliseconds to ticks */
 	((tizenrt_timer *)timer)->time_out = clock_systimer(); /* Record the time at which this function was entered. */
 }
 
 unsigned int iot_os_timer_left_ms(iot_os_timer timer)
 {
 	tizenrt_timer *os_timer = (tizenrt_timer *)timer;
+
+	if (os_timer->ticks_to_wait == portMAX_DELAY) {
+		return portMAX_DELAY;
+	}
 
 	check_for_timeout(&os_timer->time_out, &os_timer->ticks_to_wait); /* updates ticks_to_wait to the number left */
 	return (os_timer->ticks_to_wait <= 0) ? 0 : TICK2MSEC(os_timer->ticks_to_wait);

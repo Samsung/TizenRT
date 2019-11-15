@@ -33,6 +33,7 @@ void iot_bsp_system_reboot()
 #ifdef CONFIG_ARCH_BOARD_ESP32_FAMILY
 	//it's unsupported in current libcore.a, comment it temporarily
 	//esp_restart();
+	IOT_ERROR("esp_restart called, but currently not supported.");
 #else
 
 #ifdef CONFIG_BOARDCTL_RESET
