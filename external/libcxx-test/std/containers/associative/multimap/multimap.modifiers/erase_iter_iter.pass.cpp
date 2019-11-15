@@ -32,6 +32,7 @@
 
 #include <map>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_containers_multimap_modifiers_erase_iter_iter(void)

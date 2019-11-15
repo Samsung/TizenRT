@@ -23,6 +23,7 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_iterators_reverse_iter_conv_tested_elsewhere(void)

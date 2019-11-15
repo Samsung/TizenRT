@@ -36,6 +36,7 @@
 #include <utility>
 #include <tuple>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 class A

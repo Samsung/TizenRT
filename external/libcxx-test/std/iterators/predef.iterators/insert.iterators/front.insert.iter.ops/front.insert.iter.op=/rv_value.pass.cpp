@@ -37,6 +37,7 @@
 #include <list>
 #include <memory>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 template <class C>

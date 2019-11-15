@@ -31,6 +31,7 @@
 // tuple_element<I, pair<T1, T2> >::type
 
 #include <utility>
+#include "test_macros.h"
  #include "libcxx_tc_common.h"
 
 template <class T1, class T2>

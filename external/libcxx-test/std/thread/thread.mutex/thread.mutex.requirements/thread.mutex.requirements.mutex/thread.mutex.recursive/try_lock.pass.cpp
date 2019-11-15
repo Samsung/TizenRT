@@ -19,6 +19,7 @@
 #include <thread>
 #include <cstdlib>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 static std::recursive_mutex m;

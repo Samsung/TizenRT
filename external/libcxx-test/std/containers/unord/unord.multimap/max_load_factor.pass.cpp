@@ -36,6 +36,7 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_containers_unord_multimap_max_load_factor(void)

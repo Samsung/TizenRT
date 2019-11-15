@@ -32,6 +32,7 @@
 
 #include <string>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_strings_char_traits_specializations_char_assign3(void)

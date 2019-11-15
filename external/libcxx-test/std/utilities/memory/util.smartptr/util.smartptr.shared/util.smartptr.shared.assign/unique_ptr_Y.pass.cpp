@@ -33,6 +33,7 @@
 #include <memory>
 #include <type_traits>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 #include "smartptr_shared_common.hpp"
 

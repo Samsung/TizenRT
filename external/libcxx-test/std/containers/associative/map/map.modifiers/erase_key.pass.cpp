@@ -32,6 +32,7 @@
 
 #include <map>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_containers_map_modifiers_erase_key(void)

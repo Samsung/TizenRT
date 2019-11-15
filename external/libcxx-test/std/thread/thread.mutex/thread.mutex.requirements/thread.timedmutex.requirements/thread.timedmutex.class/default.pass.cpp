@@ -17,6 +17,7 @@
 
 #include <mutex>
 #include "libcxx_tc_common.h"
+#include "test_macros.h"
 
 int tc_libcxx_thread_thread_timedmutex_class_default(void)
 {

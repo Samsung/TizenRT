@@ -44,6 +44,7 @@
 
 #include <forward_list>
 #include <type_traits>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 struct A { std::forward_list<A> v; }; // incomplete type support

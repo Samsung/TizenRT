@@ -19,6 +19,7 @@
 #include <cassert>
 #include "libcxx_tc_common.h"
 #include "nasty_containers.hpp"
+#include "test_macros.h"
 
 int tc_libcxx_thread_thread_lock_unique_cons_mutex_adopt_lock(void)
 {

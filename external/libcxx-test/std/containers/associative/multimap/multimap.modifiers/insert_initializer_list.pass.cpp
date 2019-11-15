@@ -34,6 +34,7 @@
 
 #include <map>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 int tc_libcxx_containers_multimap_modifiers_insert_initializer_list(void)

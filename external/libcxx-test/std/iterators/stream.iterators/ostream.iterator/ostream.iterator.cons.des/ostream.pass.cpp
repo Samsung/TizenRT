@@ -33,6 +33,7 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "test_macros.h"
 #include "libcxx_tc_common.h"
 
 struct MyTraits : std::char_traits<char> {};
