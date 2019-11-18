@@ -18,7 +18,7 @@
 
 # Include lwnl drivers
 ifeq ($(CONFIG_LWNL80211),y)
-	CSRCS += lwnl80211.c lwnl_evt_queue.c lwnl_ioctl.c
+	CSRCS += lwnl.c lwnl_evt_queue.c lwnl_ioctl.c lwnl_netdev.c
 
 DEPPATH += --dep-path lwnl
 VPATH += :lwnl

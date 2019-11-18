@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/lwnl.h>
 #include <stdio.h>
 
 void up_netinitialize(void)

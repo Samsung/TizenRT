@@ -62,11 +62,11 @@ source "$EXTERNALDIR/wpa_supplicant/Kconfig"
 endif #SLSI_WPA_SUPPLICANT
 
 menuconfig LWNL80211
-	bool "Enable light-weight netlink for 80211"
+	bool "Enable light-weight netlink"
 	default n
 	depends on !SELECT_PROPIETARY_WLAN
 	---help---
-		Lwnl80211 provides a driver interface for 802.11 WiFi hardware.
+		Lwnl provides a driver interface for NIC hardware.
 
 if LWNL80211
 source "drivers/lwnl/Kconfig"

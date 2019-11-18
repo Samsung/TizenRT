@@ -79,7 +79,9 @@
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 #include <tinyara/net/dns.h>
 #endif
-
+#ifdef CONFIG_NET_NETMGR
+#include <tinyara/netmgr/stack_ioctl.h>
+#endif
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -651,10 +653,23 @@ static int dhcpc_request(void *handle, struct dhcpc_state *presult)
 		 */
 	} while (g_dhcpc_state == STATE_HAVE_OFFER);
 
-	ndbg("Got IP address %d.%d.%d.%d\n", (presult->ipaddr.s_addr) & 0xff, (presult->ipaddr.s_addr >> 8) & 0xff, (presult->ipaddr.s_addr >> 16) & 0xff, (presult->ipaddr.s_addr >> 24) & 0xff);
-	ndbg("Got netmask %d.%d.%d.%d\n", (presult->netmask.s_addr) & 0xff, (presult->netmask.s_addr >> 8) & 0xff, (presult->netmask.s_addr >> 16) & 0xff, (presult->netmask.s_addr >> 24) & 0xff);
-	ndbg("Got DNS server %d.%d.%d.%d\n", (presult->dnsaddr.s_addr) & 0xff, (presult->dnsaddr.s_addr >> 8) & 0xff, (presult->dnsaddr.s_addr >> 16) & 0xff, (presult->dnsaddr.s_addr >> 24) & 0xff);
-	ndbg("Got default router %d.%d.%d.%d\n", (presult->default_router.s_addr) & 0xff, (presult->default_router.s_addr >> 8) & 0xff, (presult->default_router.s_addr >> 16) & 0xff, (presult->default_router.s_addr >> 24) & 0xff);
+	ndbg("Got IP address %d.%d.%d.%d\n", (presult->ipaddr.s_addr) & 0xff,
+		 (presult->ipaddr.s_addr >> 8) & 0xff,
+		 (presult->ipaddr.s_addr >> 16) & 0xff,
+		 (presult->ipaddr.s_addr >> 24) & 0xff);
+
+	ndbg("Got netmask %d.%d.%d.%d\n", (presult->netmask.s_addr) & 0xff,
+		 (presult->netmask.s_addr >> 8) & 0xff,
+		 (presult->netmask.s_addr >> 16) & 0xff,
+		 (presult->netmask.s_addr >> 24) & 0xff);
+	ndbg("Got DNS server %d.%d.%d.%d\n", (presult->dnsaddr.s_addr) & 0xff,
+		 (presult->dnsaddr.s_addr >> 8) & 0xff,
+		 (presult->dnsaddr.s_addr >> 16) & 0xff,
+		 (presult->dnsaddr.s_addr >> 24) & 0xff);
+	ndbg("Got default router %d.%d.%d.%d\n", (presult->deffault_router.s_addr) & 0xff,
+		 (presult->default_router.s_addr >> 8) & 0xff,
+		 (presult->default_router.s_addr >> 16) & 0xff,
+		 (presult->default_router.s_addr >> 24) & 0xff);
 	ndbg("Lease expires in %d seconds\n", presult->lease_time);
 
 #if defined CONFIG_NET_LWIP    // this is temporal fix. it should be modified later
