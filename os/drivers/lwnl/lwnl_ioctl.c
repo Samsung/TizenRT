@@ -17,9 +17,11 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#ifndef CONFIG_NET_NETMGR
+
 #include <errno.h>
 #include <sys/types.h>
-#ifndef CONFIG_NET_NETMGR
+#include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 

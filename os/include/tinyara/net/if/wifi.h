@@ -1,6 +1,5 @@
 #ifndef _TIZENRT_WIRELESS_WIFI_H__
 #define _TIZENRT_WIRELESS_WIFI_H__
-#include <tinyara/lwnl/lwnl.h>
 
 #define TRWIFI_MACADDR_LEN			  6
 #define TRWIFI_MACADDR_STR_LEN		  17
@@ -105,32 +104,42 @@ typedef struct {
 	trwifi_status_e wifi_status;						/**<  @ref trwifi_status					 */
 } trwifi_info;
 
-
-
 struct netdev;
+/*	block call */
+typedef trwifi_result_e (*trwifi_init)(struct netdev *dev);
+/*	block call */
+typedef trwifi_result_e (*trwifi_deinit)(struct netdev *dev);
+/*	non-block */
+typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_ap_config_s *config);
+/*	non-block */
+typedef trwifi_result_e (*trwifi_connect_ap)(struct netdev *dev, trwifi_ap_config_s *config, void *arg);
+/*	non-block */
+typedef trwifi_result_e (*trwifi_disconnect_ap)(struct netdev *dev, void *arg);
+/*	block */
+typedef trwifi_result_e (*trwifi_get_info)(struct netdev *dev, trwifi_info *info);
+/*	block */
+typedef trwifi_result_e (*trwifi_start_sta)(struct netdev *dev);
+/*	block */
+typedef trwifi_result_e (*trwifi_start_softap)(struct netdev *dev, trwifi_softap_config_s *config);
+/*	block */
+typedef trwifi_result_e (*trwifi_stop_softap)(struct netdev *dev);
+/*	block */
+typedef trwifi_result_e (*trwifi_set_autoconnect)(struct netdev *dev, uint8_t chk);
+/*	block */
+typedef trwifi_result_e (*trwifi_drv_ioctl)(struct netdev *dev, int cmd, unsigned long arg);
+
 struct trwifi_ops {
-	/*	block call */
-	trwifi_result_e (*init)(struct netdev *dev);
-	/*	block call */
-	trwifi_result_e (*deinit)(struct netdev *dev);
-	/*	non-block */
-	trwifi_result_e (*scan_ap)(struct netdev *dev, trwifi_ap_config_s *config);
-	/*	non-block */
-	trwifi_result_e (*connect_ap)(struct netdev *dev, trwifi_ap_config_s *config, void *arg);
-	/*	non-block */
-	trwifi_result_e (*disconnect_ap)(struct netdev *dev, void *arg);
-	/*	block */
-	trwifi_result_e (*get_info)(struct netdev *dev, trwifi_info *info);
-	/*	block */
-	trwifi_result_e (*start_sta)(struct netdev *dev);
-	/*	block */
-	trwifi_result_e (*start_softap)(struct netdev *dev, trwifi_softap_config_s *config);
-	/*	block */
-	trwifi_result_e (*stop_softap)(struct netdev *dev);
-	/*	block */
-	trwifi_result_e (*set_autoconnect)(struct netdev *dev, uint8_t chk);
-	/*	block */
-	trwifi_result_e (*drv_ioctl)(struct netdev *dev, int cmd, unsigned long arg);
+	trwifi_init init;
+	trwifi_deinit deinit;
+	trwifi_scan_ap scan_ap;
+	trwifi_connect_ap connect_ap;
+	trwifi_disconnect_ap disconnect_ap;
+	trwifi_get_info get_info;
+	trwifi_start_sta start_sta;
+	trwifi_start_softap start_softap;
+	trwifi_stop_softap stop_softap;
+	trwifi_set_autoconnect set_autoconnect;
+	trwifi_drv_ioctl drv_ioctl;
 };
 
 #endif // _TIZENRT_WIRELESS_WIFI_H__

@@ -1,0 +1,28 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+config NET_NETMGR
+	bool "Network manager"
+	default n
+	---help---
+		network refactoring
+
+config NET_TASK_BIND
+	bool "Bind to the task"
+	depends on NSOCKET_DESCRIPTORS > 0
+	default n
+	---help---
+		Enable bind sockets to task
+		
+		
+menu "Network Device Operations"
+
+config NETDEV_PHY_IOCTL
+	bool "Enable PHY ioctl()"
+	default n
+	---help---
+		Enable support for ioctl() commands to access PHY registers"	
+		
+
+endmenu # Network Device Operations

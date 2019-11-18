@@ -33,7 +33,12 @@ if NET_LWIP
 source net/lwip/configs/Kconfig
 endif #NET_LWIP
 
-
+config NET_TASK_BIND
+	bool "Bind to the task"
+	depends on NSOCKET_DESCRIPTORS > 0
+	default n
+	---help---
+		Enable bind sockets to task
 
 menu "Driver buffer configuration"
 
@@ -168,5 +173,28 @@ source "$EXTERNALDIR/netutils/Kconfig.netutil"
 
 endmenu #menu "Network utilities"
 
+menu "Network Manager"
+
+source "net/netmgr/Kconfig"
+
+endmenu # "Network Manager"
+
+menuconfig LWNL80211
+	bool "Enable light-weight netlink"
+	default n
+	---help---
+		Lwnl provides a driver interface for NIC hardware.
+
+if LWNL80211
+source "drivers/lwnl/Kconfig"
+endif
+
+config NET_LOOPBACK_INTERFACE
+	bool "Support loopback interface"
+	default n
+	---help---
+		Support loop interface (127.0.0.1).
+
 endif # NET
+
 

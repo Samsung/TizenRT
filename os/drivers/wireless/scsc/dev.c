@@ -16,9 +16,7 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <tinyara/lwnl/slsi_drv.h>
 #include <stdbool.h>
-
 #include "dev.h"
 #include "hip.h"
 #include "mgt.h"
@@ -57,13 +55,14 @@ void slsi_driver_initialize(void)
 	slsi_dev_load();
 
 #ifdef CONFIG_LWNL80211_SLSI
+	#ifndef CONFIG_NET_NETMGR
 	int res = slsi_drv_initialize();
 	if (!res) {
 		SLSI_DBG1_NODEV(SLSI_INIT_DEINIT, "register fail\n");
 		return;
 	}
+	#endif
 #endif
-
 }
 
 static void slsi_regd_init(struct slsi_dev *sdev)

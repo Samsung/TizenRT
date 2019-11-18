@@ -30,11 +30,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#ifdef __TizenRT__
-#include <net/lwip/tcp.h>
-#else
 #include <netinet/tcp.h>
-#endif
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>

@@ -64,11 +64,12 @@ CSRCS += \
 	tinyara_wrapper.c
 
 ifeq ($(CONFIG_LWNL80211_SLSI),y)
-#ifeq ($(CONFIG_NET_NETMGR), y)
+ifeq ($(CONFIG_NET_NETMGR), y)
 CSRCS += slsi_drv_netmgr.c
-# else
+ else
+CSRCS += slsi_drv_lwnl.c
 # CSRCS += slsi_drv.c
-# endif
+endif
 else
 CSRCS += slsi_utils.c
 endif

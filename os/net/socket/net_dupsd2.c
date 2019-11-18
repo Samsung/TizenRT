@@ -64,7 +64,7 @@
 #include <debug.h>
 
 #include "socket/socket.h"
-
+#include "netsock_util.h"
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 
 /****************************************************************************
@@ -89,8 +89,8 @@ int dup2(int sockfd1, int sockfd2)
 #endif
 {
 
-	struct socket *sock1;
-	struct socket *sock2;
+	struct lwip_sock *sock1;
+	struct lwip_sock *sock2;
 	int err;
 	int ret;
 
@@ -100,8 +100,8 @@ int dup2(int sockfd1, int sockfd2)
 
 	/* Get the socket structures underly both descriptors */
 
-	sock1 = (struct socket *)get_socket(sockfd1);
-	sock2 = (struct socket *)get_socket(sockfd2);
+	sock1 = (struct lwip_sock *)get_socket(sockfd1);
+	sock2 = (struct lwip_sock *)get_socket(sockfd2);
 
 	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
 	 * descriptors and that sockfd1 has valid allocated conn
@@ -123,7 +123,7 @@ int dup2(int sockfd1, int sockfd2)
 
 	/* Duplicate the socket state */
 
-	ret = net_clone(sock1, sock2);
+	ret = netsock_clone(sock1, sock2);
 	if (ret < 0) {
 		err = -ret;
 		goto errout;

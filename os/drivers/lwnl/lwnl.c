@@ -27,7 +27,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <debug.h>
-
+#include <net/if.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/lwnl/lwnl.h>
@@ -182,6 +182,8 @@ static ssize_t lwnl_read(struct file *filep, char *buffer, size_t len)
 #ifndef CONFIG_NET_NETMGR
 extern int lwnl_message_handle(const char *msg, int msg_len);
 extern void lwnl_initialize_dev(void);
+#else
+extern int netdev_req_handle(const char *msg, size_t msg_len);
 #endif
 
 static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
@@ -194,7 +196,7 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 	LWNLDEV_LOCK(upper);
 
 #ifdef CONFIG_NET_NETMGR
-	ret = netdev_lwnlioctl(cmd, arg);
+	ret = netdev_req_handle(buffer, len);
 #else
 	ret = lwnl_message_handle(buffer, len);
 #endif
@@ -284,8 +286,9 @@ int lwnl_register(struct lwnl_lowerhalf_s *dev)
 	struct lwnl_upperhalf_s *upper = NULL;
 	int ret;
 
-	// netdev
+#ifndef CONFIG_NET_NETMGR
 	lwnl_initialize_dev();
+#endif
 
 	upper = (struct lwnl_upperhalf_s *)kmm_zalloc(sizeof(struct lwnl_upperhalf_s));
 	if (!upper) {

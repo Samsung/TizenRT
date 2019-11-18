@@ -23,6 +23,11 @@ config LWNL80211_RTK
 	depends on SELECT_RTK_WLAN
 	---help---
 		Realtek WiFi driver
+
+config LWNL80211_ETHERNET
+	bool "Ethernet driver"
+	---help---
+		Ethernet driver
 endchoice
 
 config DEBUG_LWNL80211_ERROR

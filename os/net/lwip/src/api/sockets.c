@@ -227,31 +227,8 @@ static void sockaddr_to_ipaddr_port(const struct sockaddr *sockaddr, ip_addr_t *
 /** This is overridable for the rare case where more than 255 threads
  * select on the same socket...
  */
-#ifndef SELWAIT_T
-#define SELWAIT_T u8_t
-#endif
 
-/** Contains all internal pointers and states used for a socket */
-struct lwip_sock {
-	/** sockets currently are built on netconns, each socket has one netconn */
-	struct netconn *conn;
-	/** data that was left from the previous read */
-	void *lastdata;
-	/** offset in the data that was left from the previous read */
-	u16_t lastoffset;
-	/** number of times data was received, set by event_callback(),
-	    tested by the receive and select functions */
-	s16_t rcvevent;
-	/** number of times data was ACKed (free send buffer), set by event_callback(),
-	    tested by select */
-	u16_t sendevent;
-	/** error happened for this socket, set by event_callback(), tested by select */
-	u16_t errevent;
-	/** last error that occurred on this socket (in fact, all our errnos fit into an u8_t) */
-	u8_t err;
-	/** counter of how many threads are waiting for this socket using select */
-	SELWAIT_T select_waiting;
-};
+
 
 #if LWIP_NETCONN_SEM_PER_THREAD
 #define SELECT_SEM_T        sys_sem_t*
@@ -313,7 +290,7 @@ union sockaddr_aligned {
    a socket is closed */
 struct lwip_socket_multicast_pair {
 	/** the socket */
-	struct socket *sock;
+	struct lwip_sock *sock;
 	/** the interface address */
 	ip4_addr_t if_addr;
 	/** the group address */
@@ -328,7 +305,7 @@ static void lwip_socket_drop_registered_memberships(int s);
 #endif							/* LWIP_IGMP */
 
 /** The global array of available sockets */
-static struct socket sockets[NUM_SOCKETS];
+static struct lwip_sock sockets[NUM_SOCKETS];
 /** The global list of tasks waiting for select */
 static struct lwip_select_cb *select_cb_list;
 /** This counter is increased from lwip_select when the list is chagned
@@ -480,9 +457,9 @@ int copy_socket(void *arg)
  * @param s externally used socket index
  * @return struct lwip_sock for the socket or NULL if not found
  */
-struct socket *get_socket(int s)
+struct lwip_sock *get_socket(int s)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 
 	s -= LWIP_SOCKET_OFFSET;
 
@@ -509,7 +486,7 @@ struct socket *get_socket(int s)
  * @param s externally used socket index
  * @return struct lwip_sock for the socket or NULL if not found
  */
-struct socket *tryget_socket(int s)
+struct lwip_sock *tryget_socket(int s)
 {
 	s -= LWIP_SOCKET_OFFSET;
 	if ((s < 0) || (s >= NUM_SOCKETS)) {
@@ -528,7 +505,7 @@ struct socket *tryget_socket(int s)
   * @return struct lwip_sock for the socket with non-zero select_waiting value,
   *         or NULL if not found
   */
-struct socket *trycheck_selwait_socket(int s)
+struct lwip_sock *trycheck_selwait_socket(int s)
 {
 	s -= LWIP_SOCKET_OFFSET;
 	if ((s < 0) || (s >= NUM_SOCKETS)) {
@@ -586,7 +563,7 @@ int alloc_socket(struct netconn *newconn, int accepted)
  * @param sock the socket to free
  * @param is_tcp != 0 for TCP sockets, used to free lastdata
  */
-void free_socket(struct socket *sock, int is_tcp)
+void free_socket(struct lwip_sock *sock, int is_tcp)
 {
 	void *lastdata;
 
@@ -616,7 +593,7 @@ void free_socket(struct socket *sock, int is_tcp)
 
 int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
-	struct socket *sock, *nsock;
+	struct lwip_sock *sock, *nsock;
 	struct netconn *newconn;
 	ip_addr_t naddr;
 	u16_t port = 0;
@@ -706,7 +683,7 @@ int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 
 int lwip_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	ip_addr_t local_addr;
 	u16_t local_port;
 	err_t err;
@@ -754,7 +731,7 @@ int lwip_bind(int s, const struct sockaddr *name, socklen_t namelen)
 
 int lwip_close(int s)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_close(%d)\n", s));
 
@@ -771,12 +748,12 @@ int lwip_close(int s)
 }
 
 /*
- * Close socket by struct socket
+ * Close socket by struct lwip_sock
  * Task in TinyAra need to delete it's socket list when it is destroyed
  * We need this API, becuase Caller deletes it's socket list
  * if it calls lwip_close().
  */
-int lwip_sock_close(struct socket *sock)
+int lwip_sock_close(struct lwip_sock *sock)
 {
 	err_t err;
 	int is_tcp = 0;
@@ -799,7 +776,7 @@ int lwip_sock_close(struct socket *sock)
 
 int lwip_connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	err_t err;
 
 	sock = get_socket(s);
@@ -861,7 +838,7 @@ int lwip_connect(int s, const struct sockaddr *name, socklen_t namelen)
  */
 int lwip_listen(int s, int backlog)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	err_t err;
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_listen(%d, backlog=%d)\n", s, backlog));
@@ -892,7 +869,7 @@ int lwip_listen(int s, int backlog)
 
 int lwip_recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	void *buf = NULL;
 	struct pbuf *p;
 	u16_t buflen, copylen;
@@ -1065,7 +1042,7 @@ int lwip_recv(int s, void *mem, size_t len, int flags)
 
 int lwip_send(int s, const void *data, size_t size, int flags)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	err_t err;
 	u8_t write_flags;
 	size_t written;
@@ -1097,7 +1074,7 @@ int lwip_send(int s, const void *data, size_t size, int flags)
 
 int lwip_sendmsg(int s, const struct msghdr *msg, int flags)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	int i;
 #if LWIP_TCP
 	u8_t write_flags;
@@ -1248,7 +1225,7 @@ int lwip_sendmsg(int s, const struct msghdr *msg, int flags)
 
 int lwip_sendto(int s, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	err_t err;
 	u16_t short_size;
 	u16_t remote_port;
@@ -1422,7 +1399,7 @@ static int lwip_selscan(int maxfdp1, fd_set *readset_in, fd_set *writeset_in, fd
 {
 	int i, nready = 0;
 	fd_set lreadset, lwriteset, lexceptset;
-	struct socket *sock;
+	struct lwip_sock *sock;
 	SYS_ARCH_DECL_PROTECT(lev);
 
 	FD_ZERO(&lreadset);
@@ -1551,7 +1528,7 @@ int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptse
 		maxfdp2 = maxfdp1;
 		for (i = LWIP_SOCKET_OFFSET; i < maxfdp1; i++) {
 			if ((readset && FD_ISSET(i, readset)) || (writeset && FD_ISSET(i, writeset)) || (exceptset && FD_ISSET(i, exceptset))) {
-				struct socket *sock;
+				struct lwip_sock *sock;
 				SYS_ARCH_PROTECT(lev);
 				sock = tryget_socket(i);
 				if (sock != NULL) {
@@ -1595,7 +1572,7 @@ int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptse
 		/* Decrease select_waiting for each socket we are interested in */
 		for (i = LWIP_SOCKET_OFFSET; i < maxfdp2; i++) {
 			if ((readset && FD_ISSET(i, readset)) || (writeset && FD_ISSET(i, writeset)) || (exceptset && FD_ISSET(i, exceptset))) {
-				struct socket *sock;
+				struct lwip_sock *sock;
 				SYS_ARCH_PROTECT(lev);
 				sock = tryget_socket(i);
 				if (sock != NULL) {
@@ -1671,7 +1648,7 @@ return_copy_fdsets:
 
 #else							/* LWIP_SELECT */
 
-static int lwip_poll_scan(int fd, struct socket *sock, struct pollfd *fds)
+static int lwip_poll_scan(int fd, struct lwip_sock *sock, struct pollfd *fds)
 {
 
 	void *lastdata = NULL;
@@ -1711,7 +1688,7 @@ static int lwip_poll_scan(int fd, struct socket *sock, struct pollfd *fds)
 	return nready;
 }
 
-static int lwip_poll_setup(int fd, struct socket *sock, struct pollfd *fds)
+static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 {
 	int nready = 0;
 	int scb_size = 0;
@@ -1787,7 +1764,7 @@ static int lwip_poll_setup(int fd, struct socket *sock, struct pollfd *fds)
 	return 0;
 }
 
-static int lwip_poll_teardown(int fd, struct socket *sock, struct pollfd *fds)
+static int lwip_poll_teardown(int fd, struct lwip_sock *sock, struct pollfd *fds)
 {
 	struct lwip_select_cb *select_cb = NULL;
 	SYS_ARCH_DECL_PROTECT(lev);
@@ -1847,7 +1824,7 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 
 	int ret = 0;
 
-	struct socket *sock = NULL;
+	struct lwip_sock *sock = NULL;
 
 	/* First get the socket's status (protected)... */
 
@@ -1889,7 +1866,7 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len)
 {
 	int s;
-	struct socket *sock;
+	struct lwip_sock *sock;
 	struct lwip_select_cb *scb;
 	int last_select_cb_ctr;
 	SYS_ARCH_DECL_PROTECT(lev);
@@ -2027,7 +2004,7 @@ again:
  */
 int lwip_shutdown(int s, int how)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	err_t err;
 	u8_t shut_rx = 0, shut_tx = 0;
 
@@ -2067,7 +2044,7 @@ int lwip_shutdown(int s, int how)
 
 static int lwip_getaddrname(int s, struct sockaddr *name, socklen_t *namelen, u8_t local)
 {
-	struct socket *sock;
+	struct lwip_sock *sock;
 	union sockaddr_aligned saddr;
 	ip_addr_t naddr;
 	u16_t port;
@@ -2120,7 +2097,7 @@ int lwip_getsockname(int s, struct sockaddr *name, socklen_t *namelen)
 int lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
 {
 	u8_t err;
-	struct socket *sock = get_socket(s);
+	struct lwip_sock *sock = get_socket(s);
 #if !LWIP_TCPIP_CORE_LOCKING
 	LWIP_SETGETSOCKOPT_DATA_VAR_DECLARE(data);
 #endif							/* !LWIP_TCPIP_CORE_LOCKING */
@@ -2214,7 +2191,7 @@ static void lwip_getsockopt_callback(void *arg)
 static u8_t lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *optlen)
 {
 	u8_t err = 0;
-	struct socket *sock = tryget_socket(s);
+	struct lwip_sock *sock = tryget_socket(s);
 	if (!sock) {
 		return EBADF;
 	}
@@ -2494,7 +2471,7 @@ static u8_t lwip_getsockopt_impl(int s, int level, int optname, void *optval, so
 int lwip_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
 	u8_t err = 0;
-	struct socket *sock = get_socket(s);
+	struct lwip_sock *sock = get_socket(s);
 #if !LWIP_TCPIP_CORE_LOCKING
 	LWIP_SETGETSOCKOPT_DATA_VAR_DECLARE(data);
 #endif							/* !LWIP_TCPIP_CORE_LOCKING */
@@ -2584,7 +2561,7 @@ static void lwip_setsockopt_callback(void *arg)
 static u8_t lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
 	u8_t err = 0;
-	struct socket *sock = tryget_socket(s);
+	struct lwip_sock *sock = tryget_socket(s);
 	if (!sock) {
 		return EBADF;
 	}
@@ -2888,7 +2865,7 @@ static u8_t lwip_setsockopt_impl(int s, int level, int optname, const void *optv
 
 int lwip_ioctl(int s, long cmd, void *argp)
 {
-	struct socket *sock = get_socket(s);
+	struct lwip_sock *sock = get_socket(s);
 	u8_t val;
 #if LWIP_SO_RCVBUF
 	u16_t buflen = 0;
@@ -2984,7 +2961,7 @@ int lwip_ioctl(int s, long cmd, void *argp)
  */
 int lwip_fcntl(int s, int cmd, int val)
 {
-	struct socket *sock = get_socket(s);
+	struct lwip_sock *sock = get_socket(s);
 	int ret = -1;
 
 	if (!sock) {
@@ -3023,7 +3000,7 @@ int lwip_fcntl(int s, int cmd, int val)
  */
 static int lwip_socket_register_membership(int s, const ip4_addr_t *if_addr, const ip4_addr_t *multi_addr)
 {
-	struct socket *sock = get_socket(s);
+	struct lwip_sock *sock = get_socket(s);
 	int i;
 
 	if (!sock) {
@@ -3048,7 +3025,7 @@ static int lwip_socket_register_membership(int s, const ip4_addr_t *if_addr, con
  */
 static void lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, const ip4_addr_t *multi_addr)
 {
-	struct socket *sock = get_socket(s);
+	struct lwip_sock *sock = get_socket(s);
 	int i;
 
 	if (!sock) {
@@ -3071,7 +3048,7 @@ static void lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, 
  */
 static void lwip_socket_drop_registered_memberships(int s)
 {
-	struct socket *sock = get_socket(s);
+	struct lwip_sock *sock = get_socket(s);
 	int i;
 
 	if (!sock) {

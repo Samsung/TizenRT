@@ -28,15 +28,12 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/clock.h>
 #include <arpa/inet.h>
-#ifdef CONFIG_NET_NETMGR
-#include <tinyara/netmgr/netdev_mgr.h>
-#else
+#ifndef CONFIG_NET_NETMGR
 #include <tinyara/net/netdev.h>
 #include "lwip/igmp.h"
 #include "lwip/etharp.h"
 #include "lwip/ethip6.h"
 #endif
-
 #include "debug_scsc.h"
 #include "netif.h"
 #include "dev.h"
@@ -404,20 +401,7 @@ static void slsi_free_netdev(struct netdev *dev)
 	kmm_free(dev);
 }
 
-void slsi_ethernetif_input(struct netdev *dev, u8_t *frame_ptr, u16_t len)
-{
-	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct slsi_dev *sdev = ndev_vif->sdev;
-
-	SLSI_MUTEX_LOCK(sdev->rx_data_mutex);
-
-	SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_packets_given_to_lwip);
-	netdev_input(dev, frame_ptr, len);
-
-	SLSI_MUTEX_UNLOCK(sdev->rx_data_mutex);
-}
-
-static int slsi_linkoutput(struct netdev *dev, uint8_t *data, uint16_t dlen)
+int slsi_linkoutput(struct netdev *dev, uint8_t *data, uint16_t dlen)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
@@ -489,7 +473,7 @@ exit:
 	return ret;
 }
 
-static int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action)
+int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
@@ -513,40 +497,12 @@ static int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *gro
 	}
 }
 
+extern struct netdev *slsidrv_register_dev(int size);
 static struct netdev *slsi_alloc_netdev(int sizeof_priv)
 {
-	struct nic_io_ops nops = {slsi_linkoutput, slsi_set_multicast_list};
-	struct netdev_config nconfig;
-	nconfig.ops = &nops;
-	nconfig.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
-	nconfig.mtu = CONFIG_NET_ETH_MTU;
-	nconfig.hwaddr_len = IFHWADDRLEN;
-
-	nconfig.is_default = 1;
-
-	nconfig.type = NM_WIFI;
-	nconfig.t_ops.wl.init = slsidrv_init;
-	nconfig.t_ops.wl.deinit = slsidrv_deinit;
-	nconfig.t_ops.wl.scan_ap = slsidrv_scan_ap;
-	nconfig.t_ops.wl.connect_ap = slsidrv_connect_ap;
-	nconfig.t_ops.wl.disconnect_ap = slsidrv_disconnect_ap;
-	nconfig.t_ops.wl.get_info = slsidrv_get_info;
-	nconfig.t_ops.wl.start_softap = slsidrv_start_softap;
-	nconfig.t_ops.wl.start_sta = slsidrv_start_sta;
-	nconfig.t_ops.wl.stop_softap = slsidrv_stop_softap;
-	nconfig.t_ops.wl.set_autoconnect = slsidrv_set_autoconnect;
-	nconfig.t_ops.wl.drv_ioctl = NULL;
-
-	//nconfig.d_ioctl = slsi_net_ioctl;
-
-	void *priv = kmm_zalloc(sizeof_priv);
-	if (priv == NULL) {
-		return NULL;
-	}
-	nconfig.priv = priv;
-
-	return netdev_register(&nconfig);
+	return slsidrv_register_dev(sizeof_priv);
 }
+
 #else /*  CONFIG_NET_NETMGR */
 
 static void slsi_free_netdev(struct netdev *dev)

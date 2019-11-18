@@ -79,9 +79,6 @@
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 #include <tinyara/net/dns.h>
 #endif
-#ifdef CONFIG_NET_NETMGR
-#include <tinyara/netmgr/stack_ioctl.h>
-#endif
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -666,7 +663,8 @@ static int dhcpc_request(void *handle, struct dhcpc_state *presult)
 		 (presult->dnsaddr.s_addr >> 8) & 0xff,
 		 (presult->dnsaddr.s_addr >> 16) & 0xff,
 		 (presult->dnsaddr.s_addr >> 24) & 0xff);
-	ndbg("Got default router %d.%d.%d.%d\n", (presult->deffault_router.s_addr) & 0xff,
+
+	ndbg("Got default router %d.%d.%d.%d\n", (presult->default_router.s_addr) & 0xff,
 		 (presult->default_router.s_addr >> 8) & 0xff,
 		 (presult->default_router.s_addr >> 16) & 0xff,
 		 (presult->default_router.s_addr >> 24) & 0xff);

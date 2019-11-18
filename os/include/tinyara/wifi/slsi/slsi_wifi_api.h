@@ -46,10 +46,10 @@ extern "C"
 #endif
 
 /* interface name to use */
-#ifdef CONFIG_WIFI_MANAGER
-#define CTRL_IFNAME	CONFIG_WIFIMGR_STA_IFNAME
+#ifdef CONFIG_NET_NETMGR
+#define CTRL_IFNAME	"wlan0"
 #else
-#define CTRL_IFNAME "wl1"
+#define CTRL_IFNAME	"wl1"
 #endif
 
 #ifndef BIT

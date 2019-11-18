@@ -67,7 +67,7 @@
 #include <tinyara/net/net.h>
 
 #include "socket/socket.h"
-
+#include "netsock_util.h"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -82,28 +82,11 @@
 
 int net_clone(FAR struct socket *sock1, FAR struct socket *sock2)
 {
-	net_lock_t flags;
 	int ret = OK;
 
 	/* Parts of this operation need to be atomic */
 
-	flags = net_lock();
-
-	/* Duplicate the socket state */
-	sock2->conn = sock1->conn;	/* Netconn callback */
-	sock2->lastdata = sock1->lastdata;	/* data that was left from the previous read */
-	sock2->lastoffset = sock1->lastoffset;	/* offset in the data that was left from the previous read */
-	sock2->rcvevent = sock1->rcvevent;	/*  number of times data was received, set by event_callback(),
-										   tested by the receive and select / poll functions */
-	sock2->sendevent = sock1->sendevent;	/* number of times data was ACKed (free send buffer), set by event_callback(),
-											   tested by select / poll */
-	sock2->errevent = sock1->errevent;	/* error happened for this socket, set by event_callback(), tested by select / poll */
-
-	sock2->err = sock1->err;	/* last error that occurred on this socket */
-
-	sock2->select_waiting = sock1->select_waiting;	/* counter of how many threads are waiting for this socket using select */
-	sock2->conn->crefs++;
-	net_unlock(flags);
+	netsock_clone(sock1->conn, sock2->conn);
 
 	return ret;
 }

@@ -555,7 +555,7 @@ static FAR struct netif *netdev_ifrdev(FAR struct ifreq *req)
  *
  ****************************************************************************/
 
-static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
+static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 {
 	FAR struct netif *dev;
 	int ret = -EINVAL;
@@ -923,7 +923,7 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
  ****************************************************************************/
 
 #ifdef CONFIG_NET_NETMON
-static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
+static int netdev_nmioctl(int cmd, void  *arg)
 {
 	int ret = -EINVAL;
 	int num_copy;
@@ -971,7 +971,7 @@ static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
  ****************************************************************************/
 
 #ifdef CONFIG_NET_IGMP
-static int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *imsf)
+static int netdev_imsfioctl(int cmd, FAR struct ip_msfilter *imsf)
 {
 	FAR struct netif *dev;
 	int ret = -EINVAL;
@@ -1023,7 +1023,7 @@ static int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfi
  ****************************************************************************/
 
 #ifdef CONFIG_NET_ROUTE
-static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *rtentry)
+static int netdev_rtioctl(int cmd, FAR struct rtentry *rtentry)
 {
 	int ret = -EAFNOSUPPORT;
 
@@ -1400,9 +1400,9 @@ int lwipioctl(int sockfd, int cmd, void *arg)
  *
  ****************************************************************************/
 
-int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
+int net_ioctl(int sockfd, int cmd, unsigned long arg)
 {
-	FAR struct socket *sock = NULL;
+	/* FAR struct lwip_sock *sock = NULL; */
 	int ret = -ENOTTY;
 
 	/* Check if this is a valid command.  In all cases, arg is a pointer that has
@@ -1416,34 +1416,37 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 	}
 
 	/* Verify that the sockfd corresponds to valid, allocated socket */
+    /*  I am confused if sockfd were invalid then the request couldn't be reach here */
+	/*  So checking validation of socket would be unneccessary */
+	/* sock = get_socket(sockfd); */
 
-	sock = get_socket(sockfd);
-
+	/*
 	if (NULL == sock) {
 		ret = -EBADF;
 		goto errout;
 	}
+	*/
 
 	/* Execute the command */
 #ifdef CONFIG_NET_LWIP
 	ret = lwipioctl(sockfd, cmd, (void *)((uintptr_t)arg));
 #endif
 	if (ret == -ENOTTY) {
-		ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
+		ret = netdev_ifrioctl(cmd, (FAR struct ifreq *)((uintptr_t)arg));
 	}
 #ifdef CONFIG_NET_NETMON
 	if (ret == -ENOTTY) {
-		ret = netdev_nmioctl(sock, cmd, (void *)((uintptr_t)arg));
+		ret = netdev_nmioctl(cmd, (void *)((uintptr_t)arg));
 	}
 #endif                          /* CONFIG_NET_NETMON */
 #ifdef CONFIG_NET_IGMP
 	if (ret == -ENOTTY) {
-		ret = netdev_imsfioctl(sock, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
+		ret = netdev_imsfioctl(cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
 	}
 #endif							/* CONFIG_NET_IGMP */
 #ifdef CONFIG_NET_ROUTE
 	if (ret == -ENOTTY) {
-		ret = netdev_rtioctl(sock, cmd, (FAR struct rtentry *)((uintptr_t)arg));
+		ret = netdev_rtioctl(cmd, (FAR struct rtentry *)((uintptr_t)arg));
 	}
 #endif							/* CONFIG_NET_ROUTE */
 

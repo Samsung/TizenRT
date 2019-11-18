@@ -180,7 +180,7 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
-#ifdef CONFIG_LWNL80211
+#if defined(CONFIG_WIFI_MANAGER) && defined(CONFIG_LWNL80211)
 	lwnl_start_listener();
 #endif
 /***********************************************************************************

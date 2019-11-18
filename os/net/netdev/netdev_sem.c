@@ -133,30 +133,7 @@ void netdev_seminit(void)
 
 void netdev_semtake(void)
 {
-	pid_t me = getpid();
-
-	/* Does this thread already hold the semaphore? */
-
-	if (g_devlock.holder == me) {
-		/* Yes.. just increment the reference count */
-
-		g_devlock.count++;
-	} else {
-		/* No.. take the semaphore (perhaps waiting) */
-
-		while (net_lockedwait(&g_devlock.sem) != 0) {
-			/* The only case that an error should occur here is if
-			 * the wait was awakened by a signal.
-			 */
-
-			ASSERT(errno == EINTR);
-		}
-
-		/* Now this thread holds the semaphore */
-
-		g_devlock.holder = me;
-		g_devlock.count = 1;
-	}
+	// deprecate
 }
 
 /****************************************************************************
@@ -169,21 +146,7 @@ void netdev_semtake(void)
 
 void netdev_semgive(void)
 {
-	DEBUGASSERT(g_devlock.holder == getpid() && g_devlock.count > 0);
-
-	/* If the count would go to zero, then release the semaphore */
-
-	if (g_devlock.count == 1) {
-		/* We no longer hold the semaphore */
-
-		g_devlock.holder = NO_HOLDER;
-		g_devlock.count = 0;
-		sem_post(&g_devlock.sem);
-	} else {
-		/* We still hold the semaphore. Just decrement the count */
-
-		g_devlock.count--;
-	}
+	// deprecate
 }
 
 #endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */
