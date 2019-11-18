@@ -65,6 +65,10 @@
 #include <net/ethernet.h>
 #include "lwip/netif.h"
 
+#ifdef CONFIG_NET_NETMGR
+#include <tinyara/netmgr/netdev_mgr.h>
+#endif
+
 #ifdef CONFIG_NET_ETHERNET
 
 /****************************************************************************

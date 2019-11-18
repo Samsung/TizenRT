@@ -19,7 +19,7 @@
 #define __INCLUDE_RTKDRV_H__
 
 #include <tinyara/config.h>
-#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/lwnl.h>
 
 #include <stdint.h>
 #include <stdio.h>

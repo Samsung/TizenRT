@@ -19,52 +19,26 @@
 #define __INCLUDE_SLSIDRV_H__
 
 #include <tinyara/config.h>
-#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/lwnl.h>
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <debug.h>
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-#define SLSIDRV_TAG "[SLSIDRV]"
 
-#define SLSIDRV_ERR                                                         \
-	do {                                                                    \
-		vddbg(SLSIDRV_TAG"[ERR] %s: %d line err(%s)\n",                     \
-				  __FILE__, __LINE__, strerror(errno));                     \
-	} while (0)
-
-#define SLSIDRV_ENTER                                                       \
-	do {                                                                    \
-		vddbg(SLSIDRV_TAG"%s:%d\n", __FILE__, __LINE__);                    \
-	} while (0)
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
 struct slsi_drv_dev_s {
 	bool initialized;
-	struct lwnl80211_lowerhalf_s dev;
+	struct lwnl_lowerhalf_s dev;
 };
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-lwnl80211_result_e slsidrv_init(struct lwnl80211_lowerhalf_s *dev);
-lwnl80211_result_e slsidrv_deinit(void);
-lwnl80211_result_e slsidrv_scan_ap(lwnl80211_ap_config_s *config);
-lwnl80211_result_e slsidrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg);
-lwnl80211_result_e slsidrv_disconnect_ap(void *arg);
-lwnl80211_result_e slsidrv_get_info(lwnl80211_info *wifi_info);
-lwnl80211_result_e slsidrv_start_softap(lwnl80211_softap_config_s *softap_config);
-lwnl80211_result_e slsidrv_start_sta(void);
-lwnl80211_result_e slsidrv_stop_softap(void);
-lwnl80211_result_e slsidrv_set_autoconnect(uint8_t check);
 
-/* Registrations */
-struct lwnl80211_lowerhalf_s *slsi_drv_initialize(void);
 
 #endif /*  __INCLUDE_SLSIDRV_H__ */

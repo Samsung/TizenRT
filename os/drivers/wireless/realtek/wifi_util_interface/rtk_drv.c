@@ -30,7 +30,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/lwnl.h>
 #include <tinyara/lwnl/rtk_drv.h>
 #include <tinyara/kmalloc.h>
 

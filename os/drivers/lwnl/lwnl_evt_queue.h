@@ -19,15 +19,14 @@
 #ifndef _LWNL_EVT_QUEUE_H__
 #define _LWNL_EVT_QUEUE_H__
 
-#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/lwnl.h>
 #include <tinyara/fs/fs.h>
 
 #define LWNL_NPOLLWAITERS 5
 
 struct lwnl_event;
 struct lwnl_queue;
-
-int lwnl_add_event(lwnl80211_cb_status type, void *buffer);
+int lwnl_add_event(lwnl_cb_status type, void *buffer);
 
 void lwnl_queue_initialize(void);
 int lwnl_add_listener(struct file *filep);

@@ -20,57 +20,17 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <errno.h>
-#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/lwnl.h>
 #include <tinyara/wifi/wifi_utils.h>
 #include "wifi_event_listener.h"
 
-#define LWNL_TAG "[WU]"
-
-#define LWNL_ENTER									\
-	do {											\
-		ndbg(LWNL_TAG"%s:%d\n", __FILE__, __LINE__);	\
-	} while (0)
-
-#define LWNL_ERR										\
-	do {											\
-		ndbg(LWNL_TAG"[ERR] %s:%d code(%s)\n",		\
-			 __FILE__, __LINE__, strerror(errno));	\
-	} while (0)
-
-#define LWNL_CALL(fname, func)					\
-	do {										\
-		if (g_cbk.fname) {						\
-			g.cbk.func;							\
-		}										\
-	} while (0)
 
 static wifi_utils_cb_s g_cbk = {NULL, NULL, NULL, NULL, NULL};
 static sem_t g_lwnl_signal;
 
 static void _close_cb_handler(void)
 {
-	int sd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sd < 0) {
-		LWNL_ERR;
-		return;
-	}
-
-	struct sockaddr_in saddr;
-	saddr.sin_family = AF_INET;
-	saddr.sin_port = 9098;
-	saddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-	lwnl80211_cb_data data_s = {LWNL80211_EXIT, .u.data = NULL, 0, 0};
-	int res = sendto(sd, (const char *)&data_s, sizeof(data_s), 0,
-					 (const struct sockaddr *)&saddr, sizeof(saddr));
-	if (res < 0) {
-		LWNL_ERR;
-		return;
-	}
-
-	nvdbg("wait terminate signal\n");
-	sem_wait(&g_lwnl_signal);
-
+	// Todo
 	return;
 }
 
@@ -91,11 +51,11 @@ static wifi_utils_result_e _receive_scan_data(int fd, wifi_utils_scan_list_s *sc
 	int ret;
 	int nbytes;
 	int cnt = 0;
-	int msglen = sizeof(lwnl80211_cb_data);
+	int msglen = sizeof(lwnl_cb_data);
 	wifi_utils_scan_list_s *prev = scan_list;
 
 	while (true) {
-		lwnl80211_cb_data msg;
+		lwnl_cb_data msg;
 		wifi_utils_scan_list_s *cur = NULL;
 		nbytes = read(fd, (char *)&msg, msglen);
 		if (nbytes < 0 || nbytes != msglen) {
@@ -105,7 +65,7 @@ static wifi_utils_result_e _receive_scan_data(int fd, wifi_utils_scan_list_s *sc
 			break;
 		}
 
-		if (msg.status != LWNL80211_SCAN_DONE) {
+		if (msg.status != LWNL_SCAN_DONE) {
 			LWNL_ERR;
 			ret =  WIFI_UTILS_FAIL;
 			break;
@@ -118,7 +78,7 @@ static wifi_utils_result_e _receive_scan_data(int fd, wifi_utils_scan_list_s *sc
 			break;
 		}
 		cur->next = NULL;
-		memcpy(&(cur->ap_info), &(msg.u.ap_info), sizeof(wifi_utils_ap_scan_info_s));
+		memcpy(&(cur->ap_info), msg.data, msg.data_len);
 		cnt++;
 
 		prev->next = cur;
@@ -181,40 +141,40 @@ static wifi_utils_scan_list_s *_handle_scan(int fd, int len)
 	return scan_list;
 }
 
-static int _wifi_utils_call_event(int fd, lwnl80211_cb_status status, int len)
+static int _wifi_utils_call_event(int fd, lwnl_cb_status status, int len)
 {
 	switch (status) {
-	case LWNL80211_STA_CONNECTED:
+	case LWNL_STA_CONNECTED:
 		if (g_cbk.sta_connected) {
 			g_cbk.sta_connected(WIFI_UTILS_SUCCESS, NULL);
 		}
 		break;
-	case LWNL80211_STA_CONNECT_FAILED:
+	case LWNL_STA_CONNECT_FAILED:
 		if (g_cbk.sta_connected) {
 			g_cbk.sta_connected(WIFI_UTILS_FAIL, NULL);
 		}
 		break;
-	case LWNL80211_STA_DISCONNECTED:
+	case LWNL_STA_DISCONNECTED:
 		if (g_cbk.sta_disconnected) {
 			g_cbk.sta_disconnected(NULL);
 		}
 		break;
-	case LWNL80211_SOFTAP_STA_JOINED:
+	case LWNL_SOFTAP_STA_JOINED:
 		if (g_cbk.softap_sta_joined) {
 			g_cbk.softap_sta_joined(NULL);
 		}
 		break;
-	case LWNL80211_SOFTAP_STA_LEFT:
+	case LWNL_SOFTAP_STA_LEFT:
 		if (g_cbk.softap_sta_left) {
 			g_cbk.softap_sta_left(NULL);
 		}
 		break;
-	case LWNL80211_SCAN_FAILED:
+	case LWNL_SCAN_FAILED:
 		if (g_cbk.scan_done) {
 			g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
 		}
 		break;
-	case LWNL80211_SCAN_DONE:
+	case LWNL_SCAN_DONE:
 	{
 		if (!g_cbk.scan_done) {
 			break;
@@ -237,7 +197,7 @@ static int _wifi_utils_call_event(int fd, lwnl80211_cb_status status, int len)
 
 static int _wifi_utils_fetch_event(int fd)
 {
-	lwnl80211_cb_status status;
+	lwnl_cb_status status;
 	uint32_t len;
 	char type_buf[8] = {0,};
 	int nbytes = read(fd, (char *)type_buf, 8);
@@ -248,8 +208,8 @@ static int _wifi_utils_fetch_event(int fd)
 		return -1;
 	}
 
-	memcpy(&status, type_buf, sizeof(lwnl80211_cb_status));
-	memcpy(&len, type_buf + sizeof(lwnl80211_cb_status), sizeof(uint32_t));
+	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
+	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
 	ndbg("%d %d\n", status, len);
 	(void)_wifi_utils_call_event(fd, status, len);
@@ -335,7 +295,7 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 	return 0;
 }
 
-/*
+/**
  * Public
  */
 void lwnl_start_monitor(void)

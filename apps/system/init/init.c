@@ -180,6 +180,9 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
+#ifdef CONFIG_LWNL80211
+	lwnl_start_listener();
+#endif
 /***********************************************************************************
  *	current preapp_start does the up_cxxinitialize which initializes the
  *	static constructors. All the tasks and threads created by preapp refer to
@@ -197,8 +200,5 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
-#ifdef CONFIG_LWNL80211
-	lwnl_start_listener();
-#endif
 	return 0;
 }

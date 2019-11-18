@@ -20,6 +20,7 @@
 #include <debug.h>
 #include <errno.h>
 #include "lwnl_evt_queue.h"
+#include <tinyara/net/if/wifi.h>
 
 #define LWQ_LOCK
 #define LWQ_UNLOCK
@@ -32,7 +33,7 @@
 
 struct lwnl_event {
 	struct lwnl_event *flink;
-	lwnl80211_cb_data data;
+	lwnl_cb_data data;
 	int8_t refs;
 };
 
@@ -84,9 +85,9 @@ int _lwnl_remove_event(struct lwnl_event *evt)
 	}
 
 	// it's not refered.
-	if (evt->data.u.data) {
-		free(evt->data.u.data);
-		evt->data.u.data = NULL;
+	if (evt->data.data) {
+		free(evt->data.data);
+		evt->data.data = NULL;
 	}
 	free(evt);
 
@@ -111,13 +112,13 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 		int written = 0;
 
 		if (g_queue[i].check_header == 0) {
-			if (len < sizeof(lwnl80211_cb_status) + sizeof(uint32_t)) {
+			if (len < sizeof(lwnl_cb_status) + sizeof(uint32_t)) {
 				return -1;
 			}
-			memcpy(buf, &evt->data.status, sizeof(lwnl80211_cb_status));
-			buf += sizeof(lwnl80211_cb_status);
+			memcpy(buf, &evt->data.status, sizeof(lwnl_cb_status));
+			buf += sizeof(lwnl_cb_status);
 			memcpy(buf, &evt->data.data_len, sizeof(uint32_t));
-			written = sizeof(lwnl80211_cb_status) + sizeof(uint32_t);
+			written = sizeof(lwnl_cb_status) + sizeof(uint32_t);
 			if (evt->data.data_len > 0) {
 				g_queue[i].check_header = 1;
 				LWQ_UNLOCK;
@@ -127,7 +128,7 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 			if (len < evt->data.data_len) {
 				return -1;
 			}
-			memcpy(buf, evt->data.u.data, evt->data.data_len);
+			memcpy(buf, evt->data.data, evt->data.data_len);
 			g_queue[i].check_header = 0;
 			written = evt->data.data_len;
 		}
@@ -142,32 +143,32 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 }
 
 
-int _lwnl_copy_scan_info(char **buffer, lwnl80211_scan_list_s *scan_list)
+int _lwnl_copy_scan_info(char **buffer, trwifi_scan_list_s *scan_list)
 {
-	lwnl80211_scan_list_s *item = scan_list;
+	trwifi_scan_list_s *item = scan_list;
 	int cnt = 0, total = 0;
 	while (item) {
 		item = item->next;
 		cnt++;
 	}
 	total = cnt;
-	ndbg("total size(%d) (%d)\n", sizeof(lwnl80211_ap_scan_info_s), sizeof(lwnl80211_ap_scan_info_s) * total);
-	*buffer = (char *)malloc(sizeof(lwnl80211_ap_scan_info_s) * total);
+	ndbg("total size(%d) (%d)\n", sizeof(trwifi_ap_scan_info_s), sizeof(trwifi_ap_scan_info_s) * total);
+	*buffer = (char *)malloc(sizeof(trwifi_ap_scan_info_s) * total);
 	if (!(*buffer)) {
 		return -1;
 	}
 	item = scan_list;
 	cnt = 0;
 	while (item) {
-		memcpy(*buffer + (sizeof(lwnl80211_ap_scan_info_s) * cnt), &item->ap_info, sizeof(lwnl80211_ap_scan_info_s));
+		memcpy(*buffer + (sizeof(trwifi_ap_scan_info_s) * cnt), &item->ap_info, sizeof(trwifi_ap_scan_info_s));
 		item = item->next;
 		cnt++;
 	}
-	return total * sizeof(lwnl80211_ap_scan_info_s);
+	return total * sizeof(trwifi_ap_scan_info_s);
 }
 
 
-int lwnl_add_event(lwnl80211_cb_status type, void *buffer)
+int lwnl_add_event(lwnl_cb_status type, void *buffer)
 {
 	LWQ_ENTRY;
 	struct lwnl_event *evt = (struct lwnl_event *)malloc(sizeof(struct lwnl_event));
@@ -178,37 +179,37 @@ int lwnl_add_event(lwnl80211_cb_status type, void *buffer)
 	evt->refs = 0;
 
 	switch (type) {
-	case LWNL80211_STA_CONNECTED:
-	case LWNL80211_STA_CONNECT_FAILED:
-	case LWNL80211_STA_DISCONNECTED:
-	case LWNL80211_SOFTAP_STA_JOINED:
-	case LWNL80211_SOFTAP_STA_LEFT:
-	case LWNL80211_SCAN_FAILED:
+	case LWNL_STA_CONNECTED:
+	case LWNL_STA_CONNECT_FAILED:
+	case LWNL_STA_DISCONNECTED:
+	case LWNL_SOFTAP_STA_JOINED:
+	case LWNL_SOFTAP_STA_LEFT:
+	case LWNL_SCAN_FAILED:
 	{
 		evt->data.status = type;
-		evt->data.u.data = NULL;
+		evt->data.data = NULL;
 		evt->data.data_len = 0;
 		break;
 	}
-	case LWNL80211_SCAN_DONE:
+	case LWNL_SCAN_DONE:
 	{
 		// ToDo
 		char *output = NULL;
-		int res = _lwnl_copy_scan_info(&output, (lwnl80211_scan_list_s *)buffer);
+		int res = _lwnl_copy_scan_info(&output, (trwifi_scan_list_s *)buffer);
 		if (res < 0) {
-			evt->data.status = LWNL80211_SCAN_FAILED;
-			evt->data.u.data = NULL;
+			evt->data.status = LWNL_SCAN_FAILED;
+			evt->data.data = NULL;
 			evt->data.data_len = 0;
 			break;
 		}
-		evt->data.status = LWNL80211_SCAN_DONE;
-		evt->data.u.data = output;
+		evt->data.status = LWNL_SCAN_DONE;
+		evt->data.data = output;
 		evt->data.data_len = res;
 		break;
 	}
-	case LWNL80211_UNKNOWN:
+	case LWNL_UNKNOWN:
 	default:
-		LWNL80211_ERR;
+		LWNL_ERR;
 		return -3;
 	}
 

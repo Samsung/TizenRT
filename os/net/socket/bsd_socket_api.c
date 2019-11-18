@@ -69,7 +69,7 @@
 #ifdef CONFIG_NET_IPv6
 #include "lwip/ip6_addr.h"
 #endif
-#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/lwnl.h>
 
 /*
  * Private
@@ -80,7 +80,7 @@ int _create_netlink(int type, int protocol)
 	(void)type;
 	(void)protocol;
 
-	int fd = open(LWNL80211_PATH, O_RDWR);
+	int fd = open(LWNL_PATH, O_RDWR);
 	if (fd < 0) {
 		ndbg("open netlink dev fail\n");
 		return -1;

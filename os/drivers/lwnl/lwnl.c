@@ -30,7 +30,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
-#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/lwnl/lwnl.h>
 #include "lwnl_evt_queue.h"
 
 /****************************************************************************
@@ -44,7 +44,7 @@
 	do {										\
 		ret = sem_wait(&upper->exclsem);		\
 		if (ret < 0) {							\
-			LWNL80211_ERR;						\
+			LWNL_ERR;						\
 			return ret;							\
 		}										\
 	} while (0)
@@ -59,7 +59,7 @@
  * Private Types
  ****************************************************************************/
 
-struct lwnl80211_open_s {
+struct lwnl_open_s {
 
 	/* The following will be true if we are closing */
 	volatile bool io_closing;
@@ -73,25 +73,25 @@ struct lwnl80211_open_s {
 #endif
 };
 
-struct lwnl80211_upperhalf_s {
+struct lwnl_upperhalf_s {
 	uint8_t crefs;
 	volatile bool started;
 	sem_t exclsem;
 	void *lower; /* Arch-specific operations */
-	struct lwnl80211_open_s ln_open;
+	struct lwnl_open_s ln_open;
 	struct lwnl_queue *queue;
 };
 
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
-static int lwnl80211_open(struct file *filep);
-static int lwnl80211_close(struct file *filep);
-static ssize_t lwnl80211_read(struct file *filep, char *buffer, size_t len);
-static ssize_t lwnl80211_write(struct file *filep, const char *buffer, size_t len);
-static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg);
+static int lwnl_open(struct file *filep);
+static int lwnl_close(struct file *filep);
+static ssize_t lwnl_read(struct file *filep, char *buffer, size_t len);
+static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len);
+static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg);
 #ifndef CONFIG_DISABLE_POLL
-static int lwnl80211_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
+static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
 #endif
 
 
@@ -99,15 +99,17 @@ static int lwnl80211_poll(FAR struct file *filep, FAR struct pollfd *fds, bool s
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations g_lwnl80211_fops = {
-	lwnl80211_open,                                          /* open */
-	lwnl80211_close,                                         /* close */
-	lwnl80211_read,                                          /* read */
-	lwnl80211_write,                                         /* write */
+
+
+static const struct file_operations g_lwnl_fops = {
+	lwnl_open,                                          /* open */
+	lwnl_close,                                         /* close */
+	lwnl_read,                                          /* read */
+	lwnl_write,                                         /* write */
 	0,                                                       /* seek */
-	lwnl80211_ioctl                                          /* ioctl */
+	lwnl_ioctl                                          /* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	, lwnl80211_poll                                                      /* poll */
+	, lwnl_poll                                                      /* poll */
 #endif
 };
 
@@ -115,11 +117,11 @@ static const struct file_operations g_lwnl80211_fops = {
  * Private Functions
  ****************************************************************************/
 
-static int lwnl80211_open(struct file *filep)
+static int lwnl_open(struct file *filep)
 {
-	LWNL80211_ENTER;
+	LWNL_ENTER;
 	struct inode *inode = filep->f_inode;
-	struct lwnl80211_upperhalf_s *upper = inode->i_private;
+	struct lwnl_upperhalf_s *upper = inode->i_private;
 	int tmp_crefs;
 	int ret = -EMFILE;
 
@@ -138,16 +140,16 @@ static int lwnl80211_open(struct file *filep)
 	ret = OK;
 
 errout:
-	LWNL80211_LEAVE;
+	LWNL_LEAVE;
 	return ret;
 }
 
 
-static int lwnl80211_close(struct file *filep)
+static int lwnl_close(struct file *filep)
 {
-	LWNL80211_ENTER;
+	LWNL_ENTER;
 	struct inode *inode = filep->f_inode;
-	struct lwnl80211_upperhalf_s *upper = inode->i_private;
+	struct lwnl_upperhalf_s *upper = inode->i_private;
 	int ret = OK;
 
 	if (upper->crefs > 0) {
@@ -163,41 +165,42 @@ static int lwnl80211_close(struct file *filep)
 	}
 
 errout:
-	LWNL80211_LEAVE;
+	LWNL_LEAVE;
 	return ret;
 }
 
 
-static ssize_t lwnl80211_read(struct file *filep, char *buffer, size_t len)
+static ssize_t lwnl_read(struct file *filep, char *buffer, size_t len)
 {
-	LWNL80211_ENTER;
+	LWNL_ENTER;
 	int res = lwnl_get_event(filep, buffer, len);
 	// todo_net : convert res to vfs error style?
-	LWNL80211_LEAVE;
+	LWNL_LEAVE;
 	return res;
 }
 
 #ifndef CONFIG_NET_NETMGR
-extern int lwnl_message_handle(struct lwnl80211_lowerhalf_s* lower, const char *msg, int msg_len);
+extern int lwnl_message_handle(const char *msg, int msg_len);
+extern void lwnl_initialize_dev(void);
 #endif
 
-static ssize_t lwnl80211_write(struct file *filep, const char *buffer, size_t len)
+static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 {
-	LWNL80211_ENTER;
+	LWNL_ENTER;
 	int ret = -EINVAL;
 	struct inode *inode = filep->f_inode;
-	struct lwnl80211_upperhalf_s *upper = inode->i_private;
+	struct lwnl_upperhalf_s *upper = inode->i_private;
 
 	LWNLDEV_LOCK(upper);
 
 #ifdef CONFIG_NET_NETMGR
 	ret = netdev_lwnlioctl(cmd, arg);
 #else
-	ret = lwnl_message_handle((struct lwnl80211_lowerhalf_s*)upper->lower, buffer, len);
+	ret = lwnl_message_handle(buffer, len);
 #endif
 
 	LWNLDEV_UNLOCK(upper);
-	LWNL80211_LEAVE;
+	LWNL_LEAVE;
 	if (ret < 0) {
 		return -1;
 	}
@@ -205,27 +208,27 @@ static ssize_t lwnl80211_write(struct file *filep, const char *buffer, size_t le
 }
 
 
-static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
+static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
-	LWNL80211_ENTER;
+	LWNL_ENTER;
 
 	return 0;
 }
 
 
-static int lwnl80211_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
+static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 {
-	LWNL80211_ENTER;
+	LWNL_ENTER;
 
 	FAR struct inode *inode;
-	FAR struct lwnl80211_upperhalf_s *upper;
-	FAR struct lwnl80211_open_s *opriv;
+	FAR struct lwnl_upperhalf_s *upper;
+	FAR struct lwnl_open_s *opriv;
 	int ret = 0;
 
 	DEBUGASSERT(filep && filep->f_inode);
 	inode = filep->f_inode;
 	DEBUGASSERT(inode->i_private);
-	upper  = (FAR struct lwnl80211_upperhalf_s *)inode->i_private;
+	upper  = (FAR struct lwnl_upperhalf_s *)inode->i_private;
 	opriv = &upper->ln_open;
 
 	/* Get exclusive access to the driver structure */
@@ -273,17 +276,20 @@ errout_with_dusem:
 /*
  * Public APIs
  */
-struct lwnl80211_upperhalf_s *g_lwnl_upper = NULL;
+struct lwnl_upperhalf_s *g_lwnl_upper = NULL;
 
-int lwnl80211_register(struct lwnl80211_lowerhalf_s *dev)
+int lwnl_register(struct lwnl_lowerhalf_s *dev)
 {
-	LWNL80211_ENTER;
-	struct lwnl80211_upperhalf_s *upper = NULL;
+	LWNL_ENTER;
+	struct lwnl_upperhalf_s *upper = NULL;
 	int ret;
 
-	upper = (struct lwnl80211_upperhalf_s *)kmm_zalloc(sizeof(struct lwnl80211_upperhalf_s));
+	// netdev
+	lwnl_initialize_dev();
+
+	upper = (struct lwnl_upperhalf_s *)kmm_zalloc(sizeof(struct lwnl_upperhalf_s));
 	if (!upper) {
-		LWNL80211_ERR;
+		LWNL_ERR;
 		return -ENOMEM;
 	}
 
@@ -298,13 +304,13 @@ int lwnl80211_register(struct lwnl80211_lowerhalf_s *dev)
 
 	lwnl_queue_initialize();
 
-	ret = register_driver(LWNL80211_PATH, &g_lwnl80211_fops, 0666, upper);
+	ret = register_driver(LWNL_PATH, &g_lwnl_fops, 0666, upper);
 	if (ret < 0) {
-		LWNL80211_ERR;
+		LWNL_ERR;
 		goto errout_with_priv;
 	}
 
-	LWNL80211_LEAVE;
+	LWNL_LEAVE;
 
 	return OK;
 
@@ -314,12 +320,12 @@ errout_with_priv:
 	return ret;
 }
 
-int lwnl80211_unregister(struct lwnl80211_lowerhalf_s *dev)
+int lwnl_unregister(struct lwnl_lowerhalf_s *dev)
 {
 	return 0;
 }
 
-int lwnl80211_postmsg(lwnl80211_cb_status evttype, void *buffer)
+int lwnl_postmsg(lwnl_cb_status evttype, void *buffer)
 {
 	if (!g_lwnl_upper) {
 		return -1;
