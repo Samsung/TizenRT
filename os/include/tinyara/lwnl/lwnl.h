@@ -18,12 +18,6 @@
 #ifndef __INCLUDE_TINYARA_LWNL_H__
 #define __INCLUDE_TINYARA_LWNL_H__
 
-#include <sys/ioctl.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <net/if.h>
-#include <debug.h>
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -31,20 +25,20 @@
 
 #define LWNL_TAG "[LWNL]"
 
-#define LWNL_ERR                                                            \
-	do {                                                                         \
-		nldbg(LWNL_TAG"[ERR] %s: %d line err(%s)\n",                        \
-				  __FILE__, __LINE__, strerror(errno));                          \
+#define LWNL_ERR										\
+	do {												\
+		nldbg(LWNL_TAG"[ERR] %s: %d line err(%s)\n",	\
+			  __FILE__, __LINE__, strerror(errno));		\
 	} while (0)
 
-#define LWNL_ENTER                                                          \
-	do {                                                                         \
-		nldbg(LWNL_TAG"--->%s:%d\n", __FILE__, __LINE__);                   \
+#define LWNL_ENTER											\
+	do {													\
+		nldbg(LWNL_TAG"--->%s:%d\n", __FILE__, __LINE__);	\
 	} while (0)
 
-#define LWNL_LEAVE                                                          \
-	do {                                                                         \
-		nldbg(LWNL_TAG"<---%s:%d\n", __FILE__, __LINE__);                   \
+#define LWNL_LEAVE											\
+	do {													\
+		nldbg(LWNL_TAG"<---%s:%d\n", __FILE__, __LINE__);	\
 	} while (0)
 
 
@@ -53,7 +47,7 @@
 /* Light-weight netlink domain definition */
 #define AF_LWNL 1
 
-/*  Event type */
+/*	Event type */
 #define LWNL_ROUTE 1
 #define LWNL_NI_NAME_SIZE 7
 
@@ -135,7 +129,7 @@ typedef struct lwnl_lowerhalf_s {
 	void *priv;
 };
 
-// pkbuild netmgr
+#ifndef CONFIG_NET_NETMGR
 typedef enum {
 	NM_LOOPBACK,
 	NM_WIFI,
@@ -155,7 +149,7 @@ struct netdev {
 	netdev_type type;
 	void *ops;
 };
-
+#endif //CONFIG_NET_NETMGR
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -166,6 +160,8 @@ int lwnl_unregister(struct lwnl_lowerhalf_s *ldev);
 int lwnl_register_dev(struct netdev *dev);
 int lwnl_postmsg(lwnl_cb_status status, void *buffer);
 
-/*  netdev registration  pkbuild netmgr*/
+#ifndef CONFIG_NET_NETMGR
 int lwnl_register_dev(struct netdev *dev);
+#endif // CONFIG_NET_NETMGR
+
 #endif /* __INCLUDE_TINYARA_LWNL_H__ */

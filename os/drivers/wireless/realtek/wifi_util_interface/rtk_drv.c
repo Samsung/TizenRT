@@ -29,26 +29,48 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <errno.h>
-
+#include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
-#include <tinyara/lwnl/rtk_drv.h>
-#include <tinyara/kmalloc.h>
-
+#include <tinyara/net/if/wifi.h>
 #include "wifi_conf.h"
 
 #define vTaskDelay(t) usleep(t)
 #define MACADDR_LEN 6
 
+#define RTKDRV_TAG "[RTKDRV]"
+
+#define RTKDRV_ERR                                      \
+	do {                                                \
+		vddbg(RTKDRV_TAG "[ERR] %s: %d line err(%s)\n", \
+			  __FILE__, __LINE__, strerror(errno));     \
+	} while (0)
+
+#define RTKDRV_ENTER                                     \
+	do {                                                 \
+		vddbg(RTKDRV_TAG "%s:%d\n", __FILE__, __LINE__); \
+	} while (0)
+
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+static trwifi_result_e rtkdrv_init(struct netdev *dev);
+static trwifi_result_e rtkdrv_deinit(struct netdev *dev);
+static trwifi_result_e rtkdrv_scan_ap(struct netdev *dev, trwifi_ap_config_s *config);
+static trwifi_result_e rtkdrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg);
+static trwifi_result_e rtkdrv_disconnect_ap(struct netdev *dev, void *arg);
+static trwifi_result_e rtkdrv_get_info(struct netdev *dev, trwifi_info *wifi_info);
+static trwifi_result_e rtkdrv_start_softap(struct netdev *dev, trwifi_softap_config_s *softap_config);
+static trwifi_result_e rtkdrv_start_sta(struct netdev *dev);
+static trwifi_result_e rtkdrv_stop_softap(struct netdev *dev);
+static trwifi_result_e rtkdrv_set_autoconnect(struct netdev *dev, uint8_t check);
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 static WiFi_InterFace_ID_t g_mode = RTK_WIFI_NONE;
 
-static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
+static struct trwifi_ops g_trwifi_drv_ops = {
 	rtkdrv_init,			/* init */
 	rtkdrv_deinit,			/* deinit */
 	rtkdrv_scan_ap,			/* scan_ap */
@@ -72,22 +94,22 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 
 	switch (type) {
 	case 1:
-		lwnl80211_postmsg(LWNL80211_STA_CONNECTED, NULL);
+		lwnl_postmsg(LWNL_STA_CONNECTED, NULL);
 		break;
 	case 2:
-		lwnl80211_postmsg(LWNL80211_STA_CONNECT_FAILED, NULL);
+		lwnl_postmsg(LWNL_STA_CONNECT_FAILED, NULL);
 		break;
 	case 3:
-		lwnl80211_postmsg(LWNL80211_SOFTAP_STA_JOINED, NULL);
+		lwnl_postmsg(LWNL_SOFTAP_STA_JOINED, NULL);
 		break;
 	case 4:
-		lwnl80211_postmsg(LWNL80211_STA_DISCONNECTED, NULL);
+		lwnl_postmsg(LWNL_STA_DISCONNECTED, NULL);
 		break;
 	case 5:
-		lwnl80211_postmsg(LWNL80211_SOFTAP_STA_LEFT, NULL);
+		lwnl_postmsg(LWNL_SOFTAP_STA_LEFT, NULL);
 		break;
 	default:
-		lwnl80211_postmsg(LWNL80211_UNKNOWN, NULL);
+		lwnl_postmsg(LWNL_UNKNOWN, NULL);
 		break;
 	}
 
@@ -146,12 +168,12 @@ static void linkdown_handler(rtk_reason_t *reason)
 
 int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input, int scan_num)
 {
-	lwnl80211_scan_list_s *scan_list = (lwnl80211_scan_list_s *)utils_scan_input;
+	trwifi_scan_list_s *scan_list = (trwifi_scan_list_s *)utils_scan_input;
 
 	if (scan_list) {
-		lwnl80211_postmsg(LWNL80211_SCAN_DONE, (void *)scan_list);
+		lwnl_postmsg(LWNL_SCAN_DONE, (void *)scan_list);
 	} else {
-		lwnl80211_postmsg(LWNL80211_SCAN_FAILED, NULL);
+		lwnl_postmsg(LWNL_SCAN_FAILED, NULL);
 	}
 
 	return RTK_STATUS_SUCCESS;
@@ -160,10 +182,10 @@ int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input, int s
 /*
  * Interface API
 */
-lwnl80211_result_e rtkdrv_init(struct lwnl80211_lowerhalf_s *dev)
+trwifi_result_e rtkdrv_init(struct netdev *dev)
 {
 	RTKDRV_ENTER;
-	lwnl80211_result_e result = LWNL80211_FAIL;
+	trwifi_result_e result = LWNL_FAIL;
 	if (g_mode == RTK_WIFI_NONE) {
 		if (WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler) != RTK_STATUS_SUCCESS) {
 			vddbg("[RTK] Link callback handles: register failed !\n");
@@ -178,7 +200,7 @@ lwnl80211_result_e rtkdrv_init(struct lwnl80211_lowerhalf_s *dev)
 		vdvdbg("[RTK] Start STA mode\n");
 
 		g_mode = RTK_WIFI_STATION_IF;
-		result = LWNL80211_SUCCESS;
+		result = LWNL_SUCCESS;
 		return result;
 	} else {
 		vddbg("[RTK] Already %d\n", g_mode);
@@ -187,83 +209,83 @@ lwnl80211_result_e rtkdrv_init(struct lwnl80211_lowerhalf_s *dev)
 	return result;
 }
 
-lwnl80211_result_e rtkdrv_deinit(void)
+trwifi_result_e rtkdrv_deinit(struct netdev *dev)
 {
 	RTKDRV_ENTER;
-	lwnl80211_result_e result = LWNL80211_FAIL;
+	trwifi_result_e result = LWNL_FAIL;
 	int ret = cmd_wifi_off();
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_NONE;
-		result = LWNL80211_SUCCESS;
+		result = LWNL_SUCCESS;
 	} else {
 		vddbg("[RTK] Failed to stop STA mode\n");
 	}
 	return result;
 }
 
-lwnl80211_result_e rtkdrv_scan_ap(lwnl80211_ap_config_s *config)
+trwifi_result_e rtkdrv_scan_ap(struct netdev *dev, trwifi_ap_config_s *config)
 {
 	RTKDRV_ENTER;
-	lwnl80211_result_e result = LWNL80211_FAIL;
+	trwifi_result_e result = TRWIFI_FAIL;
 	if (wifi_scan_networks(app_scan_result_handler, NULL) != RTW_SUCCESS) {
 		vddbg("[RTK] WiFi scan fail\n");
 		return result;
 	}
-	result = LWNL80211_SUCCESS;
+	result = LWNL_SUCCESS;
 	vddbg("[RTK] WIFi Scan success\n");
 	return result;
 }
 
-lwnl80211_result_e rtkdrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg)
+trwifi_result_e rtkdrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg)
 {
 	RTKDRV_ENTER;
 	if (!ap_connect_config) {
-		return LWNL80211_INVALID_ARGS;
+		return LWNL_INVALID_ARGS;
 	}
 
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		vddbg("[RTK] SoftAP is running\n");
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
 	int ret = cmd_wifi_connect((wifi_utils_ap_config_s *)ap_connect_config, arg);
 	if (ret != RTK_STATUS_SUCCESS) {
 		if (ret == RTK_STATUS_ALREADY_CONNECTED) {
 			vdvdbg("[RTK] Connect failed (alreay connected: %d)\n", ret);
-			return LWNL80211_ALREADY_CONNECTED;
+			return LWNL_ALREADY_CONNECTED;
 		} else {
 			vddbg("[RTK] Connect failed: %d, %s\n", ret, ap_connect_config->ssid);
-			return LWNL80211_FAIL;
+			return LWNL_FAIL;
 		}
 	}
 	vddbg("[RTK] Successfully joined the network: %s(%d)\n", ap_connect_config->ssid, ap_connect_config->ssid_length);
 
-	return LWNL80211_SUCCESS;
+	return LWNL_SUCCESS;
 }
 
-lwnl80211_result_e rtkdrv_disconnect_ap(void *arg)
+trwifi_result_e rtkdrv_disconnect_ap(struct netdev *dev, void *arg)
 {
 	RTKDRV_ENTER;
 	int ret = cmd_wifi_disconnect();
 	if (ret == RTK_STATUS_SUCCESS) {
 		vddbg("[RTK] Disconnect success\n");
-		return LWNL80211_SUCCESS;
+		return LWNL_SUCCESS;
 	}
 	vddbg("[RTK] WiFiNetworkLeave fail because of %d\n", ret);
 
-	return LWNL80211_FAIL;
+	return LWNL_FAIL;
 }
 
-lwnl80211_result_e rtkdrv_get_info(lwnl80211_info *wifi_info)
+trwifi_result_e rtkdrv_get_info(struct netdev *dev, trwifi_info *wifi_info)
 {
 	RTKDRV_ENTER;
 	if (!wifi_info) {
 		vddbg("[RTK] Get failed\n");
-		return LWNL80211_INVALID_ARGS;
+		return LWNL_INVALID_ARGS;
 	}
 
 	if (g_mode == RTK_WIFI_NONE) {
 		vddbg("[RTK] WiFi driver is not initialized\n");
-		return LWNL80211_INVALID_ARGS;
+		return LWNL_INVALID_ARGS;
 	}
 
 	char mac_str[18] = {
@@ -274,69 +296,69 @@ lwnl80211_result_e rtkdrv_get_info(lwnl80211_info *wifi_info)
 	int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &wifi_info->mac_address[0], &wifi_info->mac_address[1], &wifi_info->mac_address[2], &wifi_info->mac_address[3], &wifi_info->mac_address[4], &wifi_info->mac_address[5]);
 	if (ret != MACADDR_LEN) {
 		vddbg("[RTK] Failed to get MAC addr\n");
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
 
 	wifi_info->rssi = (int)0;
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		wifi_info->wifi_status = LWNL80211_SOFTAP_MODE;
+		wifi_info->wifi_status = TRWIFI_SOFTAP_MODE;
 	} else {
 		if (wifi_is_connected_to_ap() == RTW_SUCCESS) {
-			wifi_info->wifi_status = LWNL80211_CONNECTED;
+			wifi_info->wifi_status = TRWIFI_CONNECTED;
 			int rssi_tmp;
 			if (wifi_get_rssi(&rssi_tmp) == RTW_SUCCESS) {
 				wifi_info->rssi = rssi_tmp;
 			} else {
 				vddbg("[RTK] Failed to get rssi\n");
-				return LWNL80211_FAIL;
+				return LWNL_FAIL;
 			}
 		} else {
-			wifi_info->wifi_status = LWNL80211_DISCONNECTED;
+			wifi_info->wifi_status = TRWIFI_DISCONNECTED;
 		}
 	}
 
-	return LWNL80211_SUCCESS;
+	return LWNL_SUCCESS;
 }
 
-lwnl80211_result_e rtkdrv_start_softap(lwnl80211_softap_config_s *softap_config)
+trwifi_result_e rtkdrv_start_softap(struct netdev *dev, trwifi_softap_config_s *softap_config)
 {
 	RTKDRV_ENTER;
 	if (!softap_config) {
-		return LWNL80211_INVALID_ARGS;
+		return LWNL_INVALID_ARGS;
 	}
 
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		vddbg("[RTK] softap is already running\n");
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
 
 	if (cmd_wifi_ap((wifi_utils_softap_config_s *)softap_config) != RTK_STATUS_SUCCESS) {
 		vddbg("[RTK] Failed to start AP mode\n");
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
 
 	vdvdbg("[RTK] Start SoftAp mode\n");
 	if (WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler) != RTK_STATUS_SUCCESS) {
 			vddbg("[RTK] link callback handles: register failed !\n");
-			return LWNL80211_FAIL;
+			return LWNL_FAIL;
 		}
 	vdvdbg("[RTK] link callback handles: registered\n");
 	g_mode = RTK_WIFI_SOFT_AP_IF;
 
-	return LWNL80211_SUCCESS;
+	return LWNL_SUCCESS;
 }
 
-lwnl80211_result_e rtkdrv_start_sta(void)
+trwifi_result_e rtkdrv_start_sta(struct netdev *dev)
 {
 	RTKDRV_ENTER;
 	if (g_mode == RTK_WIFI_STATION_IF) {
 		vddbg("[RTK] Station mode is already running\n");
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
 
 	if (WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler) != RTK_STATUS_SUCCESS) {
 		vddbg("[RTK] link callback handles: register failed !\n");
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
 	vdvdbg("[RTK] link callback handles: registered\n");
 
@@ -349,16 +371,16 @@ lwnl80211_result_e rtkdrv_start_sta(void)
 
 	if (cmd_wifi_on(RTK_WIFI_STATION_IF) != RTK_STATUS_SUCCESS) {
 		vddbg("[RTK] Failed to strate station\n");
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
 
 	vdvdbg("[RTK] Start station mode\n");
 	g_mode = RTK_WIFI_STATION_IF;
 
-	return LWNL80211_SUCCESS;
+	return LWNL_SUCCESS;
 }
 
-lwnl80211_result_e rtkdrv_stop_softap(void)
+trwifi_result_e rtkdrv_stop_softap(struct netdev *dev)
 {
 	RTKDRV_ENTER;
 
@@ -369,38 +391,47 @@ lwnl80211_result_e rtkdrv_stop_softap(void)
 			vdvdbg("[RTK] Stop AP mode successfully\n");
 		} else {
 			vddbg("[RTK] Stop AP mode fail\n");
-			return LWNL80211_FAIL;
+			return LWNL_FAIL;
 		}
 	} else {
 		vddbg("[RTK] Mode is not AP mode\n");
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
-	return LWNL80211_SUCCESS;
+	return LWNL_SUCCESS;
 }
 
-lwnl80211_result_e rtkdrv_set_autoconnect(uint8_t check)
+trwifi_result_e rtkdrv_set_autoconnect(struct netdev *dev, uint8_t check)
 {
 	RTKDRV_ENTER;
 	if (wifi_set_autoreconnect(check) != RTK_STATUS_SUCCESS) {
 		vddbg("External Autoconnect failed to set %d", check);
-		return LWNL80211_FAIL;
+		return LWNL_FAIL;
 	}
 
 	vdvdbg("[RTK] External Autoconnect set to %d\n", check);
-	return LWNL80211_SUCCESS;
+	return LWNL_SUCCESS;
 }
 
-struct lwnl80211_lowerhalf_s *rtk_drv_initialize(void)
+int rtk_drv_initialize(void)
 {
 	RTKDRV_ENTER;
-	struct lwnl80211_lowerhalf_s *dev = NULL;
-
-	dev = (struct lwnl80211_lowerhalf_s *)kmm_malloc(sizeof(struct lwnl80211_lowerhalf_s));
+	struct netdev *dev = NULL;
+	dev = (struct netdev *)malloc(sizeof(struct netdev));
 	if (!dev) {
-		return NULL;
+		return -1;
 	}
+	dev->ifname[0] = 'w';
+	dev->ifname[1] = 'l';
+	dev->ifname[2] = '1';
 
-	dev->ops = &g_lwnl80211_drv_ops;
+	dev->type = NM_WIFI;
+	dev->ops = (void *)&g_trwifi_drv_ops;
 
-	return dev;
+	int res = lwnl_register_dev(dev);
+	if (res < 0) {
+		vddbg("register dev to lwnl fail\n");
+		free(dev);
+		return -1;
+	}
+	return 0;
 }

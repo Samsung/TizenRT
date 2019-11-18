@@ -66,6 +66,10 @@
 #endif
 #include "netdev/netdev.h"
 #include "utils/utils.h"
+#ifdef CONFIG_LWNL80211
+#include <net/if.h>
+#include <tinyara/lwnl/lwnl.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -82,7 +86,9 @@
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
-
+#ifdef CONFIG_LWNL80211
+struct lwnl_lowerhalf_s g_lwnl_dev;
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -116,23 +122,15 @@
 
 void net_setup(void)
 {
-	/* Initialize the locking facility */
-
-	net_lockinitialize();
-
-#ifdef CONFIG_NET_ROUTE
-	/* Initialize the routing table */
-
-	net_initroute();
-#endif
-
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	/* Initialize the socket layer */
-
-	netdev_seminit();
-#endif
 #ifdef CONFIG_NET_LWIP
 	lwip_init();
+#endif
+
+#ifdef CONFIG_LWNL80211
+	int res = lwnl_register(&g_lwnl_dev);
+	if (res < 0) {
+		ndbg("register lwnl device fail\n");
+	}
 #endif
 }
 

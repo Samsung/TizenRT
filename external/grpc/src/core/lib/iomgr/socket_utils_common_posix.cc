@@ -28,13 +28,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <netinet/in.h>
-#ifdef __TizenRT__
-#include <net/lwip/tcp.h>
-#include <sys/sock_internal.h>
-#include <net/if.h>
-#else
 #include <netinet/tcp.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>

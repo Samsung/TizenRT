@@ -88,6 +88,7 @@
 
 int net_dupsd(int sockfd)
 {
+#if 0 // To Do: dup is not working until BIND_TASK is implmented
 	struct socket *sock1 = NULL;
 	struct socket *sock2 = NULL;
 	struct netconn *conn = NULL;
@@ -147,6 +148,7 @@ int net_dupsd(int sockfd)
 errout:
 	sched_unlock();
 	errno = err;
+	#endif
 	return ERROR;
 }
 

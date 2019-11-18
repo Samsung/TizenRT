@@ -37,10 +37,13 @@
 #include <tinyara/arch.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/sched.h>
+#include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
-//pkbuild #include <tinyara/lwnl/slsi_drv.h>
-#include <tinyara/wifi/slsi/slsi_wifi_api.h> // to do
+#include <tinyara/wifi/slsi/slsi_wifi_api.h>
+#include "debug_scsc.h"
+#include "netif.h"
+#include "dev.h"
 
 #define DHCP_RETRY_COUNT           1
 #define SLSI_DRV_SCAN_DEBUG        0
@@ -104,6 +107,21 @@ static struct trwifi_ops g_trwifi_drv_ops = {
 /*
  * DRIVER SPECIFIC
  */
+
+void slsi_ethernetif_input(struct netdev *dev, u8_t *frame_ptr, u16_t len)
+{
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	struct slsi_dev *sdev = ndev_vif->sdev;
+
+	SLSI_MUTEX_LOCK(sdev->rx_data_mutex);
+
+	SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_packets_given_to_lwip);
+	netdev_input(dev, frame_ptr, len);
+
+	SLSI_MUTEX_UNLOCK(sdev->rx_data_mutex);
+}
+
+
 
 static void
 get_security_type(slsi_security_config_t *sec_modes, uint8_t num_sec_modes,
@@ -800,27 +818,29 @@ trwifi_result_e slsidrv_set_autoconnect(struct netdev *dev, uint8_t check)
 	}
 	return result;
 }
+extern int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
+extern int slsi_linkoutput(struct netdev *dev, uint8_t *data, uint16_t dlen);
 
-int slsi_drv_initialize(void)
+struct netdev* slsidrv_register_dev(int sizeof_priv)
 {
-	SLSIDRV_ENTER;
-	struct netdev *dev = NULL;
-	dev = (struct netdev *)malloc(sizeof(struct netdev));
-	if (!dev) {
-		return -1;
-	}
-	dev->ifname[0] = 'w';
-	dev->ifname[1] = 'l';
-	dev->ifname[2] = '1';
+	struct nic_io_ops nops = {slsi_linkoutput, slsi_set_multicast_list};
+	struct netdev_config nconfig;
+	nconfig.ops = &nops;
+	nconfig.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
+	nconfig.mtu = CONFIG_NET_ETH_MTU; // is it right that vendor decides MTU size??
+	nconfig.hwaddr_len = IFHWADDRLEN;
 
-	dev->type = NM_WIFI;
-	dev->ops = (void* )&g_trwifi_drv_ops;
+	nconfig.is_default = 1;
 
-	int res = lwnl_register_dev(dev);
-	if (res < 0) {
-		vddbg("register dev to lwnl fail\n");
-		free(dev);
-		return -1;
+	nconfig.type = NM_WIFI;
+	nconfig.t_ops.wl = &g_trwifi_drv_ops;
+
+	void *priv = kmm_zalloc(sizeof_priv);
+	if (priv == NULL) {
+		return NULL;
 	}
-	return 0;
+	nconfig.priv = priv;
+
+	return netdev_register(&nconfig);
 }
+

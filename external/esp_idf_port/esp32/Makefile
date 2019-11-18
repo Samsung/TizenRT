@@ -16,6 +16,7 @@ PWD=$(shell pwd)
 
 CFLAGS += -I${TOPDIR}/include
 CFLAGS += -I$(TOPDIR)/include/net
+CFLAGS += -I${TOPDIR}/net/lwip/src/include
 CFLAGS += -I${PWD}/../include 
 CFLAGS += -I${PWD}/../nvs_flash/include
 CFLAGS += -I${PWD}/../log/include

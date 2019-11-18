@@ -14,6 +14,7 @@ OBJDUMP = $(CROSSDEV)objdump
 PWD=$(shell pwd)
 
 CFLAGS += -I${TOPDIR}/include
+CFLAGS += -I${TOPDIR}/net/lwip/src/include
 CFLAGS += -I${PWD}/../include 
 CFLAGS += -I${PWD}/../heap/include
 CFLAGS += -I${PWD}/../

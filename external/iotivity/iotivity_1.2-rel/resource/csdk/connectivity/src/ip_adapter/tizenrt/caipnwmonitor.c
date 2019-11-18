@@ -41,6 +41,7 @@
 #include "oic_malloc.h"
 #include "oic_string.h"
 #include <coap/utlist.h>
+#include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 
 #define TAG "OIC_CA_IP_MONITOR"
@@ -313,7 +314,7 @@ static CAInterface_t *CANewInterfaceItem(int index, const char *name, int family
 u_arraylist_t *CAFindInterfaceChange()
 {
     u_arraylist_t *iflist = NULL;
-	lwnl80211_cb_status status;
+	lwnl_cb_status status;
 	uint32_t len;
 	char buf[8] = {0,};
 
@@ -322,8 +323,8 @@ u_arraylist_t *CAFindInterfaceChange()
 		return NULL;
 	}
 
-	memcpy(&status, buf, sizeof(lwnl80211_cb_status));
-	memcpy(&len, buf + sizeof(lwnl80211_cb_status), sizeof(uint32_t));
+	memcpy(&status, buf, sizeof(lwnl_cb_status));
+	memcpy(&len, buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 	printf("status(%d) len(%d)\n", status, len);
 	// flush the event queue
 	// to do: this operation is unnecessary, so this should be fixed later
@@ -333,16 +334,16 @@ u_arraylist_t *CAFindInterfaceChange()
 		free(tmp);
 	}
 
-	if (status == LWNL80211_STA_CONNECTED ||
-		status == LWNL80211_SOFTAP_STA_JOINED) {
+	if (status == LWNL_STA_CONNECTED ||
+		status == LWNL_SOFTAP_STA_JOINED) {
 		printf("Receive the event(IF is UP)\n");
 		iflist = CAIPGetInterfaceInformation(0);
         if (!iflist) {
             OIC_LOG_V(ERROR, TAG, "get interface info failed: %s", strerror(errno));
             return NULL;
         }
-	} else if (status == LWNL80211_STA_DISCONNECTED ||
-		status == LWNL80211_SOFTAP_STA_LEFT) {
+	} else if (status == LWNL_STA_DISCONNECTED ||
+		status == LWNL_SOFTAP_STA_LEFT) {
 		printf("Receive the event(IF is down)\n");
 	} else {
 		printf("message not interest in\n");

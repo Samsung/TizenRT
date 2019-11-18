@@ -61,6 +61,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <net/if.h>
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
 #ifdef CONFIG_NET_IPv4

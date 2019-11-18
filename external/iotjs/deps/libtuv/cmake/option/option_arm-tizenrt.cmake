@@ -46,6 +46,7 @@ endif()
 set(TARGET_INC
       ${TARGET_INC}
       "${TARGET_SYSTEMROOT}/include"
+	  "${TARGET_SYSTEMROOT}/net/lwip/src/include"
       )
 
 # build tester as library

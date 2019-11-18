@@ -64,6 +64,7 @@
 #endif
 
 #ifdef __TIZENRT__
+#include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #endif
 #include <coap/pdu.h>

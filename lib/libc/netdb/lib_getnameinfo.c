@@ -24,9 +24,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-
 #include <netdb.h>
-
 #include <errno.h>
 
 /****************************************************************************
@@ -48,7 +46,7 @@
  *   serv - service string pointer to be returned
  *   servlen - length of the service name buffer
  *   flags - takes NI_NUMERICHOST and NI_NUMERICSERV
- * 
+ *
  * Returned Value:
  *   0 on success, non-zero on failure
  *

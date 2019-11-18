@@ -26,11 +26,16 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <debug.h>
+#include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/wifi/wifi_utils.h>
 #include <tinyara/net/if/wifi.h>
 
+#ifdef CONFIG_NET_NETMGR
+#define WU_INTF_NAME "wlan0"
+#else
 #define WU_INTF_NAME "wl1"
+#endif
 
 #define WU_TAG "[WU]"
 

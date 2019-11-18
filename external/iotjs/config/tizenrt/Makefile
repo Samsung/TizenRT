@@ -34,7 +34,7 @@ all: build
 build:
 	$(Q) python $(IOTJS_ROOT_DIR)/tools/build.py --target-arch=$(CONFIG_ARCH) --target-os=tizenrt \
 	--sysroot=$(TOPDIR) --target-board=$(CONFIG_ARCH_BOARD) --jerry-heaplimit=$(CONFIG_IOTJS_JERRY_HEAP) \
-	--buildtype=$(IOTJS_BUILDTYPE) --no-init-submodule $(IOTJS_BUILD_OPTION)
+	--buildtype=$(IOTJS_BUILDTYPE) --no-init-submodule $(IOTJS_BUILD_OPTION) --external-include-dir=$(TOPDIR)/net/lwip/src/include
 	$(Q) cp $(IOTJS_LIB_DIR)/*.a $(TOPDIR)/$(EXTDIR)/iotjs
 
 depend:

@@ -61,9 +61,7 @@
 #ifndef __LWIP_NETIF_H__
 #define __LWIP_NETIF_H__
 #include <tinyara/config.h>
-//#ifndef CONFIG_NET_NETMGR
 #include <net/ethernet.h>
-//#endif
 
 #include "lwip/opt.h"
 #ifdef CONFIG_NET_ETH_MTU

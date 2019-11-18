@@ -17,10 +17,12 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <debug.h>
+#include <stdlib.h>
 #include <errno.h>
-#include "lwnl_evt_queue.h"
+#include <debug.h>
+#include <net/if.h>
 #include <tinyara/net/if/wifi.h>
+#include "lwnl_evt_queue.h"
 
 #define LWQ_LOCK
 #define LWQ_UNLOCK
@@ -93,7 +95,6 @@ int _lwnl_remove_event(struct lwnl_event *evt)
 
 	return 0;
 }
-
 
 
 int lwnl_get_event(struct file *filep, char *buf, int len)

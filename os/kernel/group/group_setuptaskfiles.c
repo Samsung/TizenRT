@@ -185,12 +185,8 @@ static inline void sched_dupsockets(FAR struct task_tcb_s *tcb)
 		 * socket is allocated because it will have a positive, non-zero
 		 * reference count.
 		 */
-
-		if (parent[i].conn) {
-			/* Yes... duplicate it for the child */
-
-			(void)net_clone(&parent[i], &child[i]);
-		}
+		/* Yes... duplicate it for the child */
+		(void)net_clone(&parent[i], &child[i]);
 	}
 }
 #else							/* CONFIG_NSOCKET_DESCRIPTORS && !CONFIG_SDCLONE_DISABLE */

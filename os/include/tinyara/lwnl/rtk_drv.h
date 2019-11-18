@@ -29,38 +29,11 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define RTKDRV_TAG "[RTKDRV]"
-
-#define RTKDRV_ERR                                      \
-	do {                                                \
-		vddbg(RTKDRV_TAG "[ERR] %s: %d line err(%s)\n", \
-			  __FILE__, __LINE__, strerror(errno));     \
-	} while (0)
-
-#define RTKDRV_ENTER                                     \
-	do {                                                 \
-		vddbg(RTKDRV_TAG "%s:%d\n", __FILE__, __LINE__); \
-	} while (0)
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-lwnl80211_result_e rtkdrv_init(struct lwnl80211_lowerhalf_s *dev);
-lwnl80211_result_e rtkdrv_deinit(void);
-lwnl80211_result_e rtkdrv_scan_ap(lwnl80211_ap_config_s *config);
-lwnl80211_result_e rtkdrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg);
-lwnl80211_result_e rtkdrv_disconnect_ap(void *arg);
-lwnl80211_result_e rtkdrv_get_info(lwnl80211_info *wifi_info);
-lwnl80211_result_e rtkdrv_start_softap(lwnl80211_softap_config_s *softap_config);
-lwnl80211_result_e rtkdrv_start_sta(void);
-lwnl80211_result_e rtkdrv_stop_softap(void);
-lwnl80211_result_e rtkdrv_set_autoconnect(uint8_t check);
-
 /* Registrations */
-struct lwnl80211_lowerhalf_s *rtk_drv_initialize(void);
 
 #endif /*  __INCLUDE_RTKDRV_H__ */

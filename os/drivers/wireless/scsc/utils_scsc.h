@@ -291,8 +291,9 @@ static inline u32 slsi_get_center_freq1(struct slsi_dev *sdev, u16 chann_info, u
  * may be that only one operation succeeds.
  *
  ****************************************************************************/
-
+#ifndef BIT
 #define BIT(nr)            (1 << (nr))
+#endif
 #define BITS_PER_BYTE        8
 #define BIT_MASK(nr)        (1 << ((nr) % BITS_PER_BYTE))
 #define BIT_BYTE(nr)        ((nr) / BITS_PER_BYTE)

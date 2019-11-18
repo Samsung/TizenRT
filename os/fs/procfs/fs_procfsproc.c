@@ -870,7 +870,8 @@ static ssize_t proc_entry_groupfd(FAR struct proc_file_s *procfile, FAR struct t
 	FAR struct file *file;
 #endif
 #if CONFIG_NSOCKET_DESCRIPTORS > 0
-	FAR struct socket *socket;
+	// To Do: dup is not working until BIND_TASK is implmented
+	// FAR struct socket *socket;
 #endif
 	size_t remaining;
 	size_t linesize;
@@ -915,6 +916,7 @@ static ssize_t proc_entry_groupfd(FAR struct proc_file_s *procfile, FAR struct t
 	}
 #endif
 
+#if 0 // To Do: dup is not working until BIND_TASK is implmented
 #if CONFIG_NSOCKET_DESCRIPTORS > 0
 	linesize = snprintf(procfile->line, STATUS_LINELEN, "\n%3-s %-2s %-3s %s", "SD", "RF", "TYP", "FLAGS");
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
@@ -946,7 +948,7 @@ static ssize_t proc_entry_groupfd(FAR struct proc_file_s *procfile, FAR struct t
 		}
 	}
 #endif
-
+#endif // if 0
 	return totalsize;
 }
 

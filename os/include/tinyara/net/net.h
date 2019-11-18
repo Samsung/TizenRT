@@ -106,26 +106,10 @@ typedef uint16_t socktimeo_t;
 /* This is the internal representation of a socket reference by a file
  * descriptor.
  */
-
+struct lwip_sock;
 struct socket {
 	/** sockets currently are built on netconns, each socket has one netconn */
-	struct netconn *conn;
-	/** data that was left from the previous read */
-	void *lastdata;
-	/** offset in the data that was left from the previous read */
-	uint16_t lastoffset;
-	/** number of times data was received, set by event_callback(),
-	    tested by the receive and select functions */
-	int16_t rcvevent;
-	/** number of times data was ACKed (free send buffer), set by event_callback(),
-	    tested by select */
-	uint16_t sendevent;
-	/** error happened for this socket, set by event_callback(), tested by select */
-	uint16_t errevent;
-	/** last error that occurred on this socket */
-	int err;
-	/** counter of how many threads are waiting for this socket using select */
-	int select_waiting;
+	struct lwip_sock *conn;
 };
 
 /* This defines a list of sockets indexed by the socket descriptor */
@@ -192,101 +176,6 @@ extern "C" {
  ****************************************************************************/
 
 /****************************************************************************
- * Critical section management.
- *
- *   net_lock()          - Takes the semaphore().  Implements a re-entrant mutex.
- *   net_unlock()        - Gives the semaphore().
- *   net_lockedwait()    - Like pthread_cond_wait(); releases the semaphore
- *                         momentarily to wait on another semaphore()
- *
- ****************************************************************************/
-
-/****************************************************************************
- * Function: net_lock
- *
- * Description:
- *   Take the lock
- *
- ****************************************************************************/
-
-net_lock_t net_lock(void);
-
-/****************************************************************************
- * Function: net_unlock
- *
- * Description:
- *   Release the lock.
- *
- ****************************************************************************/
-
-void net_unlock(net_lock_t flags);
-
-/****************************************************************************
- * Function: net_timedwait
- *
- * Description:
- *   Atomically wait for sem (or a timeout( while temporarily releasing
- *   the lock on the network.
- *
- * Input Parameters:
- *   sem     - A reference to the semaphore to be taken.
- *   abstime - The absolute time to wait until a timeout is declared.
- *
- * Returned value:
- *   The returned value is the same as sem_timedwait():  Zero (OK) is
- *   returned on success; -1 (ERROR) is returned on a failure with the
- *   errno value set appropriately.
- *
- ****************************************************************************/
-
-struct timespec;
-int net_timedwait(sem_t *sem, FAR const struct timespec *abstime);
-
-/****************************************************************************
- * Function: net_lockedwait
- *
- * Description:
- *   Atomically wait for sem while temporarily releasing lock on the network.
- *
- * Input Parameters:
- *   sem - A reference to the semaphore to be taken.
- *
- * Returned value:
- *   The returned value is the same as sem_wait():  Zero (OK) is returned
- *   on success; -1 (ERROR) is returned on a failure with the errno value
- *   set appropriately.
- *
- ****************************************************************************/
-
-int net_lockedwait(sem_t *sem);
-
-/****************************************************************************
- * Function: net_setipid
- *
- * Description:
- *   This function may be used at boot time to set the initial ip_id.
- *
- * Assumptions:
- *
- ****************************************************************************/
-
-void net_setipid(uint16_t id);
-
-/****************************************************************************
- * Name: net_checksd
- *
- * Description:
- *   Check if the socket descriptor is valid for the provided TCB and if it
- *   supports the requested access.  This trivial operation is part of the
- *   fdopen() operation when the fdopen() is performed on a socket descriptor.
- *   It simply performs some sanity checking before permitting the socket
- *   descriptor to be wrapped as a C FILE stream.
- *
- ****************************************************************************/
-
-int net_checksd(int fd, int oflags);
-
-/****************************************************************************
  * Name: net_setup
  *
  * Description:
@@ -327,6 +216,21 @@ void net_setup(void);
  ****************************************************************************/
 
 void net_initialize(void);
+
+/****************************************************************************
+ * Name: net_checksd
+ *
+ * Description:
+ *   Check if the socket descriptor is valid for the provided TCB and if it
+ *   supports the requested access.  This trivial operation is part of the
+ *   fdopen() operation when the fdopen() is performed on a socket descriptor.
+ *   It simply performs some sanity checking before permitting the socket
+ *   descriptor to be wrapped as a C FILE stream.
+ *
+ ****************************************************************************/
+
+int net_checksd(int fd, int oflags);
+
 
 /****************************************************************************
  * Name:
@@ -377,39 +281,6 @@ void net_releaselist(FAR struct socketlist *list);
  ****************************************************************************/
 
 int net_close(int sockfd);
-
-/****************************************************************************
- * Name: netdev_ioctl
- *
- * Description:
- *   Perform network device specific operations.
- *
- * Parameters:
- *   sockfd   Socket descriptor of device
- *   cmd      The ioctl command
- *   arg      The argument of the ioctl cmd
- *
- * Return:
- *   >=0 on success (positive non-zero values are cmd-specific)
- *   On a failure, -1 is returned with errno set appropriately
- *
- *   EBADF
- *     'sockfd' is not a valid descriptor.
- *   EFAULT
- *     'arg' references an inaccessible memory area.
- *   ENOTTY
- *     'cmd' not valid.
- *   EINVAL
- *     'arg' is not valid.
- *   ENOTTY
- *     'sockfd' is not associated with a network device.
- *   ENOTTY
- *      The specified request does not apply to the kind of object that the
- *      descriptor 'sockfd' references.
- *
- ****************************************************************************/
-
-int netdev_ioctl(int sockfd, int cmd, unsigned long arg);
 
 /****************************************************************************
  * Function: net_dupsd
@@ -467,6 +338,40 @@ int net_clone(FAR struct socket *psock1, FAR struct socket *psock2);
 int net_vfcntl(int sockfd, int cmd, va_list ap);
 
 /****************************************************************************
+ * Name: net_ioctl
+ *
+ * Description:
+ *   Perform network device specific operations.
+ *
+ * Parameters:
+ *   sockfd   Socket descriptor of device
+ *   cmd      The ioctl command
+ *   arg      The argument of the ioctl cmd
+ *
+ * Return:
+ *   >=0 on success (positive non-zero values are cmd-specific)
+ *   On a failure, -1 is returned with errno set appropriately
+ *
+ *   EBADF
+ *     'sockfd' is not a valid descriptor.
+ *   EFAULT
+ *     'arg' references an inaccessible memory area.
+ *   ENOTTY
+ *     'cmd' not valid.
+ *   EINVAL
+ *     'arg' is not valid.
+ *   ENOTTY
+ *     'sockfd' is not associated with a network device.
+ *   ENOTTY
+ *      The specified request does not apply to the kind of object that the
+ *      descriptor 'sockfd' references.
+ *
+ ****************************************************************************/
+
+
+int net_ioctl(int sockfd, int cmd, unsigned long arg);
+
+/****************************************************************************
  * Function: netdev_foreach
  *
  * Description:
@@ -487,7 +392,6 @@ int net_vfcntl(int sockfd, int cmd, va_list ap);
  ****************************************************************************/
 
 int netdev_foreach(netdev_callback_t callback, void *arg);
-
 #undef EXTERN
 #ifdef __cplusplus
 }
