@@ -1,0 +1,3 @@
+config ENTRY_BUNDLE_TEST
+	bool "Data Bundle Test Example"
+	depends on EXAMPLES_BUNDLE_TEST

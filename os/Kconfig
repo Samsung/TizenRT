@@ -640,4 +640,6 @@ menu "Security Framework"
 source "$FRAMEWORK_DIR/src/security/Kconfig"
 endmenu
 
-
+menu "Application Framework"
+source "$FRAMEWORK_DIR/src/app/Kconfig"
+endmenu

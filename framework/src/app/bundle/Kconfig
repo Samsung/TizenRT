@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config DATA_BUNDLE
+	bool "Enable Data Bundle"
+	default n
+	depends on CODECS_BASE64 && CODECS_HASH_MD5
+	---help---
+		Enables Data Bundle.
