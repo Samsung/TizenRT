@@ -60,6 +60,10 @@ VPATH   =
 
 include alt/Make.defs
 
+ifneq ($(CONFIG_MBEDTLS_USER_FILE), "")
+CFLAGS += -DMBEDTLS_USER_CONFIG_FILE=CONFIG_MBEDTLS_USER_FILE
+endif
+
 SRC_CRYPTO_CSRCS =    aes.c           aesni.c         arc4.c                         \
                       asn1parse.c     asn1write.c     base64.c                       \
                       bignum.c        blowfish.c      camellia.c                     \

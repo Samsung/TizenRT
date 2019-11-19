@@ -73,4 +73,11 @@ config TLS_HW_RSA_ENC
 endmenu
 
 endif
+
+config MBEDTLS_USER_FILE
+	string "Customized mbedtls config append in config.h"
+	default ""
+	---help---
+		Config used to define the MBEDTLS_USER_CONFIG_FILE
+
 endif
