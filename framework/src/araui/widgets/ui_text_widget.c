@@ -63,9 +63,9 @@ typedef struct {
 	size_t font_size;
 } ui_set_font_size_info_t;
 
-#define CONFIG_UI_TEXT_FORMAT_MAX_LENGTH  512
-#define CONFIG_UI_GLYPH_BITMAP_WIDTH      256
-#define CONFIG_UI_GLYPH_BITMAP_HEIGHT     256
+#define CONFIG_UI_TEXT_FORMAT_MAX_LENGTH 512
+#define CONFIG_UI_GLYPH_BITMAP_WIDTH 256
+#define CONFIG_UI_GLYPH_BITMAP_HEIGHT 256
 
 static ui_error_t _ui_text_widget_text2utf(ui_text_widget_body_t *body, const char *text);
 static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt);
@@ -163,17 +163,17 @@ static ui_error_t _ui_text_widget_text2utf(ui_text_widget_body_t *body, const ch
 
 	// Convert char array to UTF8 code array
 	while (str_idx < length) {
-		/**
-		 * 7-bits UTF-8
-		 */
 		if ((text[str_idx] & 0x80) != 0x80) {
+			/**
+			* 7-bits UTF-8
+			*/
 			body->utf_code[utf_idx] = (uint32_t)text[str_idx];
 			str_idx++;
 
-		/**
-		 * 16-bits UTF-8 (Such as Korean, Japanese, Chinese)
-		 */
 		} else if (
+			/**
+			* 16-bits UTF-8 (Such as Korean, Japanese, Chinese)
+			*/
 			(str_idx + 2 < length) &&
 			((text[str_idx] & 0xf0) == 0xe0) &&
 			((text[str_idx + 1] & 0xc0) == 0x80) &&
@@ -188,10 +188,10 @@ static ui_error_t _ui_text_widget_text2utf(ui_text_widget_body_t *body, const ch
 			body->utf_code[utf_idx] = (uint16_t)(b1 << 8) + b0;
 			str_idx += 3;
 
-		/**
-		 * 21-bits UTF-8 (Such as Emoji)
-		 */
 		} else if (
+			/**
+			* 21-bits UTF-8 (Such as Emoji)
+			*/
 			(str_idx + 3 < length) &&
 			((text[str_idx] & 0xf8) == 0xf0) &&
 			((text[str_idx + 1] & 0xc0) == 0x80) &&
@@ -545,18 +545,34 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 						emoji_bitmap->height,
 						emoji_bitmap->pf);
 
-						emoji_v1 = (ui_vec3_t){ .x = x - body->base.global_rect.x, .y = y - body->base.global_rect.y, .w = 1.0f };
-						emoji_v2 = (ui_vec3_t){ .x = x - body->base.global_rect.x, .y = y - body->base.global_rect.y + body->font_size, .w = 1.0f };
-						emoji_v3 = (ui_vec3_t){ .x = x - body->base.global_rect.x + body->font_size, .y = y - body->base.global_rect.y + body->font_size, .w = 1.0f };
-						emoji_v4 = (ui_vec3_t){ .x = x - body->base.global_rect.x + body->font_size, .y = y - body->base.global_rect.y, .w = 1.0f };
+					emoji_v1 = (ui_vec3_t) {
+						.x = x - body->base.global_rect.x, .y = y - body->base.global_rect.y, .w = 1.0f
+					};
+					emoji_v2 = (ui_vec3_t) {
+						.x = x - body->base.global_rect.x, .y = y - body->base.global_rect.y + body->font_size, .w = 1.0f
+					};
+					emoji_v3 = (ui_vec3_t) {
+						.x = x - body->base.global_rect.x + body->font_size, .y = y - body->base.global_rect.y + body->font_size, .w = 1.0f
+					};
+					emoji_v4 = (ui_vec3_t) {
+						.x = x - body->base.global_rect.x + body->font_size, .y = y - body->base.global_rect.y, .w = 1.0f
+					};
 
-						ui_render_quad_uv(emoji_v1, emoji_v2, emoji_v3, emoji_v4,
-							(ui_uv_t){ 0.0f, 0.0f },
-							(ui_uv_t){ 0.0f, 1.0f },
-							(ui_uv_t){ 1.0f, 1.0f },
-							(ui_uv_t){ 1.0f, 0.0f });
+					ui_render_quad_uv(&body->base.trans_mat, emoji_v1, emoji_v2, emoji_v3, emoji_v4,
+					(ui_uv_t) {
+						0.0f, 0.0f
+					},
+					(ui_uv_t) {
+						0.0f, 1.0f
+					},
+					(ui_uv_t) {
+						1.0f, 1.0f
+					},
+					(ui_uv_t) {
+						1.0f, 0.0f
+					});
 
-						ui_renderer_set_texture(NULL, 0, 0, UI_PIXEL_FORMAT_UNKNOWN);
+					ui_renderer_set_texture(NULL, 0, 0, UI_PIXEL_FORMAT_UNKNOWN);
 				}
 				x += body->font_size;
 			} else {
@@ -565,22 +581,22 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 
 				/* get bounding box for character (may be offset to account for chars that dip above or below the line */
 				stbtt_GetCodepointBitmapBox(&(body->font->ttf_info), body->utf_code[draw_idx],
-					scale, scale, &c_x1, &c_y1, &c_x2, &c_y2);
+											scale, scale, &c_x1, &c_y1, &c_x2, &c_y2);
 
 				out_w = c_x2 - c_x1;
 				out_h = c_y2 - c_y1;
 
 				/* render character (stride and offset is important here) */
 				stbtt_MakeCodepointBitmap(&(body->font->ttf_info), g_glyph_bitmap,
-					out_w, out_h,
-					CONFIG_UI_GLYPH_BITMAP_WIDTH,
-					scale, scale,
-					body->utf_code[draw_idx]);
+										  out_w, out_h,
+										  CONFIG_UI_GLYPH_BITMAP_WIDTH,
+										  scale, scale,
+										  body->utf_code[draw_idx]);
 
 				for (j = 0; j < out_h; j++) {
 					for (k = 0; k < out_w; k++) {
 						ui_dal_put_pixel_rgba8888(k + x, j + y + (ascent + c_y1),
-							UI_COLOR_RGBA8888(r, g, b, ((uint8_t)((uint32_t)a * g_glyph_bitmap[CONFIG_UI_GLYPH_BITMAP_WIDTH * j + k] / 255))));
+												  UI_COLOR_RGBA8888(r, g, b, ((uint8_t)((uint32_t)a * g_glyph_bitmap[CONFIG_UI_GLYPH_BITMAP_WIDTH * j + k] / 255))));
 					}
 				}
 
@@ -756,12 +772,12 @@ static void _ui_text_widget_calculate_line_num(ui_text_widget_body_t *body)
 					body->width_array[utf_idx] = body->font_size;
 				} else {
 #endif
-					stbtt_GetCodepointHMetrics(&(body->font->ttf_info),  body->utf_code[utf_idx], &ax, 0);
+					stbtt_GetCodepointHMetrics(&(body->font->ttf_info), body->utf_code[utf_idx], &ax, 0);
 					body->width_array[utf_idx] = ax * scale;
 
 					if (utf_idx < body->text_length - 1) {
 						kern = stbtt_GetCodepointKernAdvance(&(body->font->ttf_info), body->utf_code[utf_idx + 1],
-							stbtt_FindGlyphIndex(&(body->font->ttf_info), body->utf_code[utf_idx + 1]));
+															 stbtt_FindGlyphIndex(&(body->font->ttf_info), body->utf_code[utf_idx + 1]));
 						body->width_array[utf_idx] += kern * scale;
 					}
 #if defined(CONFIG_UI_ENABLE_EMOJI)
@@ -789,12 +805,12 @@ static void _ui_text_widget_calculate_line_num(ui_text_widget_body_t *body)
 				body->width_array[utf_idx] = body->font_size;
 			} else {
 #endif
-				stbtt_GetCodepointHMetrics(&(body->font->ttf_info),  body->utf_code[utf_idx], &ax, 0);
+				stbtt_GetCodepointHMetrics(&(body->font->ttf_info), body->utf_code[utf_idx], &ax, 0);
 				body->width_array[utf_idx] = ax * scale;
 
 				if (utf_idx < body->text_length - 1) {
 					kern = stbtt_GetCodepointKernAdvance(&(body->font->ttf_info), body->utf_code[utf_idx + 1],
-						stbtt_FindGlyphIndex(&(body->font->ttf_info), body->utf_code[utf_idx + 1]));
+														 stbtt_FindGlyphIndex(&(body->font->ttf_info), body->utf_code[utf_idx + 1]));
 					body->width_array[utf_idx] += kern * scale;
 				}
 #if defined(CONFIG_UI_ENABLE_EMOJI)
@@ -805,4 +821,3 @@ static void _ui_text_widget_calculate_line_num(ui_text_widget_body_t *body)
 		body->line_num = line_num;
 	}
 }
-
