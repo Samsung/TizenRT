@@ -177,7 +177,7 @@ static size_t _ui_get_bpp_from_pf(ui_pixel_format_t type)
 		return 16;
 	case UI_PIXEL_FORMAT_RGB888:
 		return 24;
-	case UI_PIXEL_FORMAT_ARGA8888:
+	case UI_PIXEL_FORMAT_ARGB8888:
 		return 32;
 	case UI_PIXEL_FORMAT_RGBA8888:
 		return 32;
