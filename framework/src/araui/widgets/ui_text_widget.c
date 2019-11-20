@@ -66,6 +66,7 @@ typedef struct {
 #define CONFIG_UI_TEXT_FORMAT_MAX_LENGTH  512
 #define CONFIG_UI_GLYPH_BITMAP_WIDTH      256
 #define CONFIG_UI_GLYPH_BITMAP_HEIGHT     256
+#define CONFIG_UI_DEFAULT_FILL_COLOR      0x000000
 
 static ui_error_t _ui_text_widget_text2utf(ui_text_widget_body_t *body, const char *text);
 static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt);
@@ -444,10 +445,15 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 	int32_t text_width;
 	size_t utf_idx = 0;
 	size_t draw_idx = 0;
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-	uint8_t a;
+	uint8_t r = 0;
+	uint8_t g = 0;
+	uint8_t b = 0;
+	uint8_t a = 0;
+	ui_vec3_t v1;
+	ui_vec3_t v2;
+	ui_vec3_t v3;
+	ui_vec3_t v4;
+	ui_mat3_t text_mat;
 
 #if defined(CONFIG_UI_ENABLE_EMOJI)
 	ui_bitmap_data_t *emoji_bitmap;
@@ -575,12 +581,40 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 					scale, scale,
 					body->utf_code[draw_idx]);
 
-				for (j = 0; j < out_h; j++) {
-					for (k = 0; k < out_w; k++) {
-						ui_dal_put_pixel_rgba8888(k + x, j + y + (ascent + c_y1),
-							UI_COLOR_RGBA8888(r, g, b, ((uint8_t)((uint32_t)a * g_glyph_bitmap[CONFIG_UI_GLYPH_BITMAP_WIDTH * j + k] / 255))));
-					}
-				}
+				ui_renderer_translate(&body->base.trans_mat, &text_mat, (float)x, (float)(y + ascent + c_y1));
+				ui_renderer_set_texture(g_glyph_bitmap, out_w, out_h, UI_PIXEL_FORMAT_A8);
+				ui_renderer_set_fill_color(body->font_color);
+
+				v1 = (ui_vec3_t){
+					.x = -body->base.pivot_x,
+					.y = -body->base.pivot_y,
+					1.0f
+				};
+				v2 = (ui_vec3_t){
+					.x = -body->base.pivot_x,
+					.y = -body->base.pivot_y + out_h,
+					1.0f
+				};
+				v3 = (ui_vec3_t){
+					.x = -body->base.pivot_x + out_w,
+					.y = -body->base.pivot_y + out_h,
+					1.0f
+				};
+				v4 = (ui_vec3_t){
+					.x = -body->base.pivot_x + out_w,
+					.y = -body->base.pivot_y,
+					1.0f
+				};
+
+				ui_render_quad_uv(&text_mat, v1, v2, v3, v4,
+							(ui_uv_t){ 0.0f, 0.0f },
+							(ui_uv_t){ 0.0f, 1.0f },
+							(ui_uv_t){ 1.0f, 1.0f },
+							(ui_uv_t){ 1.0f, 0.0f });
+
+				ui_renderer_set_texture(NULL, 0, 0, UI_PIXEL_FORMAT_UNKNOWN);
+				ui_renderer_set_fill_color(CONFIG_UI_DEFAULT_FILL_COLOR);
+				memset(g_glyph_bitmap, 0, out_w * out_h);
 
 				x += body->width_array[draw_idx];
 #if defined(CONFIG_UI_ENABLE_EMOJI)
