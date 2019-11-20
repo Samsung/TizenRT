@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_6wlLcMgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.application" bindingContexts="_6wlLecgZEeSyMNYR5xypkQ">
-  <children xsi:type="basic:TrimmedWindow" xmi:id="_6wlLccgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.window.main" label="SmartFS Dump Parser" width="500" height="400">
-    <children xsi:type="basic:PartSashContainer" xmi:id="_6wlLksgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.partsashcontainer.sample">
-      <children xsi:type="basic:PartStack" xmi:id="_6wlLk8gZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.partstack.sample">
-        <children xsi:type="basic:Part" xmi:id="_6wlLlMgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.part.sample" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.DumpViewer" label="File System Info." iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/home.png"/>
+  <children xsi:type="basic:TrimmedWindow" xmi:id="_6wlLccgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.window.main" label="SmartFS Dump Parser" x="500" y="200" width="1000" height="800">
+    <children xsi:type="basic:PartSashContainer" xmi:id="_6wlLksgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.partsashcontainer.sample" horizontal="true">
+      <children xsi:type="basic:PartSashContainer" xmi:id="_DYBUAAmhEeqM_5XslDw0_w" elementId="smartfs_dump_parser.partsashcontainer.summary">
+        <children xsi:type="basic:PartStack" xmi:id="_DTpgoAm9EeqM_5XslDw0_w" elementId="smartfs_dump_parser.partstack.0">
+          <children xsi:type="basic:Part" xmi:id="_ShI9UAmjEeqM_5XslDw0_w" elementId="smartfs_dump_parser.part.geometry_information" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.GeometryViewer" label="File  System Geometry" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/save_edit.png"/>
+        </children>
+        <children xsi:type="basic:PartStack" xmi:id="_DuIdMAm9EeqM_5XslDw0_w" elementId="smartfs_dump_parser.partstack.1">
+          <children xsi:type="basic:Part" xmi:id="_ujbjYAmjEeqM_5XslDw0_w" elementId="smartfs_dump_parser.part.directory_structure" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.DirectoryViewer" label="Directory Structure" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/open_in_app.png"/>
+        </children>
+      </children>
+      <children xsi:type="basic:PartStack" xmi:id="_6wlLk8gZEeSyMNYR5xypkQ" elementId="smartfs_dump_parser.partstack.sectorInfo">
+        <children xsi:type="basic:Part" xmi:id="_6wlLlMgZEeSyMNYR5xypkQ" elementId="smartfs_dump_parser.part.sector_list" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.SectorViewer" label="Logical Sector Information" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/home.png"/>
       </children>
     </children>
     <mainMenu xmi:id="_6wlLicgZEeSyMNYR5xypkQ" elementId="org.eclipse.ui.main.menu">
