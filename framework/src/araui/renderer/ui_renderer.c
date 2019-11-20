@@ -38,6 +38,8 @@
 #define UI_SUB_DIVIDE_SIZE (1 << UI_SUB_DIVIDE_SHIFT)
 #define UI_SUB_PIX(a) (ceilf(a) - (a))
 
+#define CONFIG_UI_DEFAULT_FILL_COLOR 0x000000
+
 /****************************************************************************
  * Private function declaration
  ****************************************************************************/
@@ -51,6 +53,7 @@ typedef struct {
 	int32_t           tex_width;
 	int32_t           tex_height;
 	ui_pixel_format_t tex_pf;
+	ui_color_t        fill_color;
 } ui_render_context_t;
 
 //!< Render context (global instance)
@@ -59,6 +62,7 @@ ui_render_context_t g_rc = {
 	.tex_width = 0,
 	.tex_height = 0,
 	.tex_pf = UI_PIXEL_FORMAT_UNKNOWN
+	.fill_color = CONFIG_UI_DEFAULT_FILL_COLOR;
 };
 
 float g_left_dxdy;
@@ -179,6 +183,11 @@ void ui_renderer_set_texture(uint8_t *bitmap, int32_t width, int32_t height, ui_
 		g_rc.tex_height = 0;
 		g_rc.tex_pf = UI_PIXEL_FORMAT_UNKNOWN;
 	}
+}
+
+void ui_renderer_set_fill_color(ui_color_t color)
+{
+	g_rc.fill_color = color;
 }
 
 void ui_render_triangle_uv(ui_mat3_t *trans_mat,
@@ -382,6 +391,17 @@ void ui_render_triangle_uv(ui_mat3_t *trans_mat,
 	}
 }
 
+void ui_render_quad_uv(ui_mat3_t *trans_mat,
+	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3, ui_vec3_t v4,
+	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3, ui_uv_t uv4)
+{
+	ui_render_triangle_uv(trans_mat, v1, v2, v3, uv1, uv2, uv3);
+	ui_render_triangle_uv(trans_mat, v1, v3, v4, uv1, uv3, uv4);
+}
+
+/****************************************************************************
+ * Private function implementation
+ ****************************************************************************/
 static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 {
 	float u;
@@ -457,6 +477,14 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 						g_rc.texture[uv_offset + 1],
 						g_rc.texture[uv_offset + 2]
 					));
+				} else if (g_rc.text_pf == UI_PIXEL_FORMAT_A8) {
+					uv_offset = ((iv * g_rc.tex_width) + iu);
+					ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
+						(g_rc.fill_color & 0xff0000),
+						(g_rc.fill_color & 0x00ff00),
+						(g_rc.fill_color & 0x0000ff),
+						g_rc.texture[uv_offset]
+					));
 				}
 
 				U += du;
@@ -504,6 +532,14 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 						g_rc.texture[uv_offset + 1],
 						g_rc.texture[uv_offset + 2]
 					));
+				} else if (g_rc.text_pf == UI_PIXEL_FORMAT_A8) {
+					uv_offset = ((iv * g_rc.tex_width) + iu);
+					ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
+						(g_rc.fill_color & 0xff0000),
+						(g_rc.fill_color & 0x00ff00),
+						(g_rc.fill_color & 0x0000ff),
+						g_rc.texture[uv_offset]
+					));
 				}
 
 				U += du;
@@ -519,14 +555,3 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 	}
 }
 
-void ui_render_quad_uv(ui_mat3_t *trans_mat,
-	ui_vec3_t v1, ui_vec3_t v2, ui_vec3_t v3, ui_vec3_t v4,
-	ui_uv_t uv1, ui_uv_t uv2, ui_uv_t uv3, ui_uv_t uv4)
-{
-	ui_render_triangle_uv(trans_mat, v1, v2, v3, uv1, uv2, uv3);
-	ui_render_triangle_uv(trans_mat, v1, v3, v4, uv1, uv3, uv4);
-}
-
-/****************************************************************************
- * Private function implementation
- ****************************************************************************/

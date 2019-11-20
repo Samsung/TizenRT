@@ -74,6 +74,7 @@ void ui_renderer_translate(ui_mat3_t *parent_mat, ui_mat3_t *mat, float x, float
 void ui_renderer_rotate(ui_mat3_t *mat, int32_t deg);
 void ui_renderer_scale(ui_mat3_t *mat, float x, float y);
 void ui_renderer_set_texture(uint8_t *bitmap, int32_t width, int32_t height, ui_pixel_format_t pf);
+void ui_renderer_set_fill_color(ui_color_t color);
 
 /**
  * @brief Rendering geometry functions
