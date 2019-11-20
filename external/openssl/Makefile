@@ -25,6 +25,8 @@ VPATH += :platform
 VPATH += :library
 
 DEPPATH = --dep-path .
+DEPPATH += --dep-path platform
+DEPPATH += --dep-path library
 
 ASRCS =
 
@@ -36,7 +38,7 @@ CFLAGS += -I$(TOPDIR)/../external/openssl/include/internal
 CFLAGS += -I$(TOPDIR)/include/net
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
-COBJS = $(patsubst %.c, %$(OBJEXT), $(CSRCS))
+COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
