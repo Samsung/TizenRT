@@ -3026,6 +3026,11 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
+/* override some previous default for STDK. */
+#if defined(CONFIG_STDK_IOT_CORE)
+#include "stdk/mbedtls_config.h"
+#endif
+
 #include "check_config.h"
 
 #endif /* MBEDTLS_CONFIG_H */

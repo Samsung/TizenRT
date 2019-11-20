@@ -6,6 +6,9 @@
 config STDK_IOT_CORE
 	bool "Enable SmartThings IoT Core"
 	default n
+	depends on NET_SECURITY_TLS
+	select OPENSSL_WRAPPER
+	select LIBSODIUM
 	---help---
 		Select this option to enable support for the Samsung SmartThings
 		IoT Core via the esp-idf component for the Samsung SmartThings IoT Device C SDK.
