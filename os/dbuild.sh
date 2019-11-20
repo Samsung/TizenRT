@@ -307,6 +307,7 @@ function SELECT_DL
 		echo ==================================================
 		echo "  \"1. ALL\""
 		echo "  \"2. OS\""
+		echo "  \"u. USBrule\""
 		echo "  \"x. Exit\""
 		echo ==================================================
 		read SELECTED_DL
@@ -318,6 +319,9 @@ function SELECT_DL
 		;;
 	2|os)
 		DL_ARG=OS
+		;;
+	u|USBrule)
+		DL_ARG=USBrule
 		;;
 	x|exit)
 		exit 1

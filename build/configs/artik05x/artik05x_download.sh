@@ -276,6 +276,15 @@ while test $# -gt 0; do
 		ALL|OS|APPS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|MICOM|WIFI|USER|all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|micom|wifi|user)
 			download $1
 			;;
+		USBrule|usbrule)
+			RET=$(${THIS_PATH}/../usbrule.sh artik 0403 6010)
+			if [ -n "${RET}" ]; then
+				echo $RET
+				exit 1
+			fi
+			echo "USB rule creation succeeded."
+			exit 0
+			;;
 		ERASE_*)
 			erase
 			;;
