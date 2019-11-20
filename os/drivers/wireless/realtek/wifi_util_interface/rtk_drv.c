@@ -32,6 +32,7 @@
 
 #include <tinyara/lwnl/lwnl80211.h>
 #include <tinyara/lwnl/rtk_drv.h>
+#include <tinyara/kmalloc.h>
 
 #include "wifi_conf.h"
 
