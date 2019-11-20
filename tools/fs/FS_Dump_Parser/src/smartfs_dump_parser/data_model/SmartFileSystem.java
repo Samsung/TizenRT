@@ -5,7 +5,7 @@ import java.util.List;
 
 public class SmartFileSystem {
 
-	private static final int SECTOR_SIZE = 512;
+	private static final int SECTOR_SIZE = 1024;
 	private static final int SECTOR_HEADER_SIZE = 5;
 	private static final int CHAIN_HEADER_SIZE = 5;
 	private static final int ENTRY_HEADER_SIZE = 8;
@@ -18,6 +18,7 @@ public class SmartFileSystem {
 	private static final SmartFile dummy = new SmartFile("/", EntryType.DIRECTORY, null, new ArrayList<Sector>());
 
 	private static boolean isValidSmartFS = false;
+	private static int numberOfSectors = 0;	
 	private static List<Sector> sectorList = new ArrayList<Sector>();
 	private static List<Sector> activeSectors = new ArrayList<Sector>();
 	private static List<Sector> dirtySectors = new ArrayList<Sector>();
@@ -53,20 +54,8 @@ public class SmartFileSystem {
 		return SMARTFS_ROOT;
 	}
 
-	public static SmartFile getRootDirectory() {
-		return rootDir;
-	}
-
-	public static void setRootDirectory(SmartFile root) {
-		rootDir = root;
-	}
-
-	public static List<Sector> getSectors() {
-		return sectorList;
-	}
-
-	public static void clearSectors() {
-		sectorList.clear();
+	public static SmartFile getTopDummyDirectory() {
+		return dummy;
 	}
 
 	public static boolean isValidSmartFS() {
@@ -75,6 +64,22 @@ public class SmartFileSystem {
 
 	public static void setValidSmartFS(boolean isValid) {
 		isValidSmartFS = isValid;
+	}
+	
+	public static int getNumberOfSectors() {
+		return numberOfSectors;
+	}
+
+	public static void setNumberOfSectors(int sectorNum) {
+		numberOfSectors = sectorNum;
+	}
+
+	public static List<Sector> getSectors() {
+		return sectorList;
+	}
+
+	public static void clearSectors() {
+		sectorList.clear();
 	}
 
 	public static List<Sector> getActiveSectors() {
@@ -101,10 +106,17 @@ public class SmartFileSystem {
 		cleanSectors = sectors;
 	}
 
-	public static SmartFile getTopDummyDirectory() {
-		return dummy;
+	public static SmartFile getRootDirectory() {
+		return rootDir;
 	}
 
+	public static void setRootDirectory(SmartFile root) {
+		rootDir = root;
+	}
+
+	public static int getNumberOfSectors(int smartfsSize) {
+		return smartfsSize / SECTOR_SIZE;
+	}
 	public static boolean isActiveSector(byte status) {
 		return ((status & SECTOR_STATUS_NOT_COMMITTED) == 0x0 && (status & SECTOR_STATUS_NOT_RELEASED) != 0x0);
 	}
