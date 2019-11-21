@@ -46,7 +46,7 @@ config ARCH_CHIP_STM32
 	select ARCH_HAVE_HEAPCHECK if DEBUG
 	---help---
 		STMicro STM32 architectures (ARM Cortex-M3/4).
-		
+
 config ARCH_CHIP_IMXRT
 	bool "NXP/Freescale iMX.RT"
 	select ARCH_CORTEXM7
@@ -59,7 +59,7 @@ config ARCH_CHIP_IMXRT
 	select ARMV7M_HAVE_STACKCHECK
 	---help---
 		NXP i.MX RT (ARM Cortex-M7) architectures
-		
+
 config ARCH_CHIP_STM32L4
 	bool "STMicro STM32L4"
 	select ARCH_HAVE_CMNVECTOR
