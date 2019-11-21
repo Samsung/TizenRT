@@ -19,7 +19,7 @@
 #include <tinyara/config.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <tinyara/time.h>
 #include <wifi_manager/wifi_manager.h>
 #include "iot_debug.h"
 #include "iot_bsp_wifi.h"
@@ -108,8 +108,8 @@ static void _obtain_time(void)
 		return;
 	}
 
-	// wait for time to be set
-	while (timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) {
+	// wait for time to be set, system time initialized in _initialize_ntp
+	while (timeinfo.tm_year <= (EPOCH_YEAR - TM_YEAR_BASE) && ++retry < retry_count) {
 		IOT_INFO("Waiting for system time to be set... (%d/%d)", retry, retry_count);
 		IOT_DELAY(3000);
 		time(&now);
@@ -226,8 +226,6 @@ int _iot_bsp_sta_mode(void)
 iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 {
 	int str_len = 0;
-	time_t now;
-	struct tm timeinfo;
 	wifi_manager_result_e res;
 	wifi_manager_softap_config_s sap_config;
 	wifi_manager_ap_config_s apconfig;
@@ -296,13 +294,8 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 
 			IOT_DEBUG("connect to ap SSID:%s password:%s", apconfig.ssid, apconfig.passphrase);
 
-			time(&now);
-			localtime_r(&now, &timeinfo);
-
-			if (timeinfo.tm_year < (2016 - 1900)) {
-				IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
-				_obtain_time();
-			}
+			IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
+			_obtain_time();
 		break;
 		case IOT_WIFI_MODE_SOFTAP:
 			memset(&sap_config, 0, sizeof(wifi_manager_softap_config_s));
