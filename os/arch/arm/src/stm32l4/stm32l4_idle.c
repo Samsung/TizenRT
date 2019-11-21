@@ -49,6 +49,8 @@
 #include "chip.h"
 #include "stm32l4_pm.h"
 #include "up_internal.h"
+#include "stm32l4_rtc.h"
+#include <tinyara/rtc.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -67,6 +69,12 @@
 #endif
 
 #define PM_IDLE_DOMAIN 0 /* Revisit */
+
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+#ifndef CONFIG_STM32L4_RTC
+#error "Cannot support ticksuppress without RTC enabled (Enable CONFIG_STM32L4_RTC)"
+#endif
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -87,6 +95,11 @@ static void up_idlepm(void)
   enum pm_state_e newstate;
   irqstate_t flags;
   int ret;
+#ifdef CONFIG_STM32L4_RTC
+  long ns1, ns2;
+  clock_t time_intval;
+  struct tm tp1, tp2;
+#endif
 
   /* Decide, which power saving level can be obtained */
 
@@ -130,14 +143,27 @@ static void up_idlepm(void)
 
         case PM_STANDBY:
 #ifdef CONFIG_SCHED_TICKSUPPRESS
+#ifdef CONFIG_STM32L4_RTC
+		/* Note RTC time before sleep */
+		stm32l4_rtc_getdatetime_with_subseconds(&tp1, &ns1);
+#endif
 		/* Disable tick interrupts */
 		supress_ticks();
 		/* Set waketime interrupt for tickless idle  */
 		set_waketime_interrupt();
 		/* Enter sleep mode */
 		stm32l4_pmsleep(false);
+#ifdef CONFIG_STM32L4_RTC
+		/* Read RTC time after wakeup */
+		stm32l4_rtc_getdatetime_with_subseconds(&tp2, &ns2);
+		time_intval = SEC2TICK(mktime(&tp2) - mktime(&tp1))
+			+ NSEC2TICK(ns2 - ns1);
+		/* Update ticks */
+		g_system_timer +=  time_intval;
+		uwTick += TICK2MSEC(time_intval);
 		/* Execute waketime interrupt */
 		execute_waketime_interrupt(time_intval);
+#endif
 		/* Enable tick interrupts */
 		enable_ticks();
 

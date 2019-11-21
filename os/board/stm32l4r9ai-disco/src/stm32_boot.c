@@ -95,15 +95,16 @@ void board_initialize(void)
 #endif
 
 #ifdef CONFIG_STM32L4_LTDC
-    
     stm32_psram_initialize();
     printf("PSRAM init done\n");
     stm32_exflash_initialize();
     printf("NOR init done\n");
+#if 0	/* TODO */
     stm32l4_lcdinitialize();
     printf("LCD init done\n");
     stm32_touch_initialize();
     printf("TOUCH init done\n");
+#endif
 #endif
     //    stm32_dsi_refresh();
 }
