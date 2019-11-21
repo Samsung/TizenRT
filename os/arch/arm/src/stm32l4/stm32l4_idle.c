@@ -176,6 +176,17 @@ static void up_idlepm(void)
 
         case PM_SLEEP:
           (void)stm32l4_pmstop2();
+
+          /* Re configure clocks */
+          stm32l4_clockenable();
+
+          ret = pm_changestate(PM_IDLE_DOMAIN, PM_NORMAL);
+          if (ret < 0)
+          {
+            oldstate = PM_NORMAL;
+          }
+
+          printf("Wakeup from STOP2!!\n");
           break;
 
         default:
