@@ -100,7 +100,7 @@ static void up_idlepm(void)
 
       /* Perform board-specific, state-dependent logic here */
 
-      _info("newstate= %d oldstate=%d\n", newstate, oldstate);
+      printf("newstate= %d oldstate=%d\n", newstate, oldstate);
 
       /* Then force the global state change */
 
@@ -129,11 +129,11 @@ static void up_idlepm(void)
           break;
 
         case PM_STANDBY:
-          stm32l4_pmstop(true);
+          stm32l4_pmsleep(false);
           break;
 
         case PM_SLEEP:
-          (void)stm32l4_pmstandby();
+          (void)stm32l4_pmstop2();
           break;
 
         default:
