@@ -329,8 +329,8 @@ void __start(void)
   SystemClock_Config();
   stm32l4_fpuconfig();
   ST_USART2_UART_Init();
-#else
   stm32l4_clockconfig();
+#else
   stm32l4_fpuconfig();  
   stm32l4_lowsetup();
 #endif
