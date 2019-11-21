@@ -63,6 +63,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/pm/pm.h>
+#include <tinyara/wdog.h>
 
 #ifdef CONFIG_PM
 
@@ -102,7 +103,7 @@
  *
  ****************************************************************************/
 
-#define pm_lock(domain_index) sem_wait(&g_pmglobals.domain[domain_index].regsem);
+#define pm_lock()	sem_wait(&g_pmglobals.regsem);
 
 /****************************************************************************
  * Name: pm_unlock
@@ -112,7 +113,7 @@
  *
  ****************************************************************************/
 
-#define pm_unlock(domain_index) sem_post(&g_pmglobals.domain[domain_index].regsem);
+#define pm_unlock()	sem_post(&g_pmglobals.regsem);
 
 /****************************************************************************
  * Public Types
@@ -140,7 +141,6 @@ struct pm_domain_s {
 	 */
 
 	int16_t accum;
-	uint16_t thrcnt;
 
 	/* This is the averaging "memory."  The averaging algorithm is simply:
 	 * Y = (An*X + SUM(Ai*Yi))/SUM(Aj), where i = 1..n-1 and j= 1..n, n is the
@@ -159,35 +159,42 @@ struct pm_domain_s {
 #ifdef CONFIG_PM_METRICS
 	sq_queue_t history;
 #endif
-
-	/* This semaphore manages mutually exclusive access to the power management
-	 * registry for each domain.  It must be initialized to the value 1.
-	 */
-
-	sem_t regsem;
-
-	/* registry is a singly-linked list of registered power management
-	 * callback structures.  To ensure mutually exclusive access, this list
-	 * must be locked by calling pm_lock() before it is accessed.
-	 */
-
-	sq_queue_t registry;
-
 	/* stime - The time (in ticks) at the start of the current time slice */
 
 	clock_t stime;
+
+	/* btime - The time (in ticks) at the start of the current state */
+
+	clock_t btime;
+
+	/* The power state lock count */
+
+	uint16_t stay[PM_COUNT];
+
+	/* Timer to decrease state */
+
+	WDOG_ID wdog;
 };
 
 /* This structure encapsulates all of the global data used by the PM module */
 
 struct pm_global_s {
+	/* This semaphore manages mutually exclusive access to the power management
+	 * registry.  It must be initialized to the value 1.
+	 */
+
+	sem_t regsem;
+
+	/* registry is a doubly-linked list of registered power management
+	 * callback structures.  To ensure mutually exclusive access, this list
+	 * must be locked by calling pm_lock() before it is accessed.
+	 */
+
+	dq_queue_t registry;
+
 	/* The activity/state information for each PM domain */
 
 	struct pm_domain_s domain[CONFIG_PM_NDOMAINS];
-
-	/* For work that has been deferred to the worker thread */
-
-	struct work_s work;
 };
 
 /****************************************************************************

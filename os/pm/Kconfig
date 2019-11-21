@@ -6,18 +6,11 @@
 menuconfig PM
 	bool "Power management (PM) driver interfaces"
 	default n
-	depends on SCHED_WORKQUEUE
 	---help---
 		Power management (PM) driver interfaces.  These interfaces are used
 		to manage power usage of a platform by monitoring driver activity
 		and by placing drivers into reduce power usage modes when the
 		drivers are not active.
-
-if PM
-
-config DEBUG_PM
-	bool "Power Management Debug Features"
-	default n
 
 config PM_TEST
 	bool "Power Management Functionality Test"

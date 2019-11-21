@@ -104,6 +104,7 @@ enum pm_state_e pm_checkstate(int domain)
 	FAR struct pm_domain_s *pdom;
 	clock_t now;
 	irqstate_t flags;
+	int index;
 
 	/* Get a convenience pointer to minimize all of the indexing */
 
@@ -146,14 +147,16 @@ enum pm_state_e pm_checkstate(int domain)
 		(void)pm_update(domain, accum);
 	}
 
+	/* Consider the possible power state lock here */
+
+	for (index = 0; index < pdom->recommended; index++) {
+		if (pdom->stay[index] != 0) {
+			pdom->recommended = index;
+			break;
+		}
+	}
+
 	irqrestore(flags);
-
-	/* Return the recommended state.  Assuming that we are called from the
-	 * IDLE thread at the lowest priority level, any updates scheduled on the
-	 * worker thread above should have already been peformed and the recommended
-	 * state should be current:
-	 */
-
 	return pdom->recommended;
 }
 
