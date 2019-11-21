@@ -115,7 +115,7 @@ static void multi_recv_callback(msg_reply_type_t msg_type, msg_recv_buf_t *recv_
 	printf("[M] OK: Multicast(nonblock)Recv [%s].\n", (char *)recv_data->buf);
 }
 
-static void set_messaging_signal(sigset_t *sigset;)
+static void set_messaging_signal(sigset_t *sigset)
 {
 
 	sigfillset(sigset);
@@ -228,6 +228,7 @@ static int nonblock_recv_test(void)
 	int ret;
 	msg_callback_info_t cb_info;
 	msg_recv_buf_t data;
+	sigset_t sigset;
 
 	set_messaging_signal(&sigset);
 
