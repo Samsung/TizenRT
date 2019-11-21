@@ -768,6 +768,7 @@ static struct
   bool serial_suspended;
 } g_serialpm =
   {
+    .pm_cb.name = "serial",
     .pm_cb.notify  = stm32l4serial_pmnotify,
     .pm_cb.prepare = stm32l4serial_pmprepare,
     .serial_suspended = false
@@ -2716,7 +2717,7 @@ static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
            *       Rx/Tx buffers are empty (checked in pmprepare).
            */
 
-          stm32l4serial_pm_setsuspend(true);
+          stm32l4serial_pm_setsuspend(false);
         }
         break;
 
