@@ -61,8 +61,8 @@ ui_render_context_t g_rc = {
 	.texture = NULL,
 	.tex_width = 0,
 	.tex_height = 0,
-	.tex_pf = UI_PIXEL_FORMAT_UNKNOWN
-	.fill_color = CONFIG_UI_DEFAULT_FILL_COLOR;
+	.tex_pf = UI_PIXEL_FORMAT_UNKNOWN,
+	.fill_color = CONFIG_UI_DEFAULT_FILL_COLOR
 };
 
 float g_left_dxdy;
@@ -477,7 +477,7 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 						g_rc.texture[uv_offset + 1],
 						g_rc.texture[uv_offset + 2]
 					));
-				} else if (g_rc.text_pf == UI_PIXEL_FORMAT_A8) {
+				} else if (g_rc.tex_pf == UI_PIXEL_FORMAT_A8) {
 					uv_offset = ((iv * g_rc.tex_width) + iu);
 					ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
 						(g_rc.fill_color & 0xff0000),
@@ -532,7 +532,7 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 						g_rc.texture[uv_offset + 1],
 						g_rc.texture[uv_offset + 2]
 					));
-				} else if (g_rc.text_pf == UI_PIXEL_FORMAT_A8) {
+				} else if (g_rc.tex_pf == UI_PIXEL_FORMAT_A8) {
 					uv_offset = ((iv * g_rc.tex_width) + iu);
 					ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
 						(g_rc.fill_color & 0xff0000),

@@ -432,8 +432,6 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 	float scale;
 	int ascent;
 	int i;
-	int j;
-	int k;
 	int c_x1;
 	int c_y1;
 	int c_x2;
