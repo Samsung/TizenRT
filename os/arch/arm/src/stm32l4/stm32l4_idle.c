@@ -129,8 +129,24 @@ static void up_idlepm(void)
           break;
 
         case PM_STANDBY:
-          stm32l4_pmsleep(false);
-          break;
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+		/* Disable tick interrupts */
+		supress_ticks();
+		/* Set waketime interrupt for tickless idle  */
+		set_waketime_interrupt();
+		/* Enter sleep mode */
+		stm32l4_pmsleep(false);
+		/* Execute waketime interrupt */
+		execute_waketime_interrupt(time_intval);
+		/* Enable tick interrupts */
+		enable_ticks();
+
+		oldstate = PM_IDLE;
+#else
+		stm32l4_pmsleep(false);
+#endif		/* CONFIG_SCHED_TICKSUPPRESS */
+
+		break;
 
         case PM_SLEEP:
           (void)stm32l4_pmstop2();

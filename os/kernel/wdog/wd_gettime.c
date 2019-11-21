@@ -129,3 +129,27 @@ int wd_gettime(WDOG_ID wdog)
 	irqrestore(flags);
 	return 0;
 }
+
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+/********************************************************************************
+ * Name: wd_getdelay
+ *
+ * Description:
+ *  This function returns delay (in system ticks) from head of wdog active list.
+ *  This function is provided by RTOS and called from platform-specific code.
+ *
+ * Parameters:
+ *	None
+ *
+ * Return Value:
+ *  wdog delay in system ticks
+ *
+ * Assumptions:
+ *
+ ********************************************************************************/
+
+int wd_getdelay(void)
+{
+	return (g_wdactivelist.head) ? ((FAR struct wdog_s *)g_wdactivelist.head)->lag : 0;
+}
+#endif

@@ -595,6 +595,7 @@ config STM32L4_STM32L4XR
 	bool
 	default n
 	select ARCH_HAVE_FPU
+	select ARCH_HAVE_TICKSUPPRESS
 	select STM32L4_HAVE_USART1
 	select STM32L4_HAVE_USART2
 	select STM32L4_HAVE_USART3
@@ -636,6 +637,7 @@ config STM32L4_STM32L422XX
 	select STM32L4_HAVE_AES
 
 config STM32L4_STM32L431XX
+
 	bool
 	default n
 	select STM32L4_STM32L4X1
@@ -1727,6 +1729,12 @@ config STM32L4_HAVE_RTC_SUBSECONDS
 
 menu "RTC Configuration"
 	depends on STM32L4_RTC
+
+if PM
+config ARCH_HAVE_TICKSUPPRESS
+	bool
+	default n
+endif
 
 config STM32L4_RTC_MAGIC_REG
 	int "BKP register"
