@@ -63,7 +63,7 @@ void pm_prune_history(sq_queue_t *q)
 
 void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics)
 {
-	pm_lock(indx);
+	pm_lock();
 	sq_entry_t *curnode = NULL;
 	time_t normal_time = 0;
 	time_t idle_time = 0;
@@ -123,7 +123,7 @@ void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics)
 			printf("Invalid state\n");
 		}
 	}
-	pm_unlock(indx);
+	pm_unlock();
 
 	/* Write back metrics */
 	mtrics->normal = normal_time;

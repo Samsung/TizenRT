@@ -24,7 +24,7 @@
 #ifdef CONFIG_PM_METRICS
 void pm_dumpstates(void)
 {
-	pm_lock(0);
+	pm_lock();
 	sq_entry_t *node = NULL;
 	struct pm_statechange_s *sc = NULL;
 
@@ -38,7 +38,7 @@ void pm_dumpstates(void)
 	}
 
 	pmvdbg("#########################################################\n");
-	pm_unlock(0);
+	pm_unlock();
 }
 #endif
 

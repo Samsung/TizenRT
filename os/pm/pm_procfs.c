@@ -416,7 +416,7 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 		domain = priv->dir.domain;
 
 		if (domain >= 0 && domain < CONFIG_PM_NDOMAINS) {
-			entry = sq_peek(&g_pmglobals.domain[domain].registry);
+			entry = dq_peek(&g_pmglobals.registry);
 			while (entry) {
 				callback = (FAR struct pm_callback_s *)entry;
 				copysize = snprintf(buffer, buflen, "%s ", callback->name);

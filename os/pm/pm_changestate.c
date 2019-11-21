@@ -68,8 +68,62 @@
 #ifdef CONFIG_PM
 
 /****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define PM_TIMER_GAP        (TIME_SLICE_TICKS * 2)
+
+/****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static void pm_timer_cb(int argc, wdparm_t arg1, ...)
+{
+	/* Do nothing here, cause we only need TIMER ISR to wake up PM,
+	 * for deceasing PM state.
+	 */
+}
+
+/****************************************************************************
+ * Name: pm_timer
+ *
+ * Description:
+ *   This internal function is called to start one timer to decrease power
+ *   state level.
+ *
+ * Input Parameters:
+ *   domain - The PM domain associated with the accumulator
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void pm_timer(int domain)
+{
+	FAR struct pm_domain_s *pdom = &g_pmglobals.domain[domain];
+	static const int pmtick[3] =
+	{
+		TIME_SLICE_TICKS * CONFIG_PM_IDLEENTER_COUNT,
+		TIME_SLICE_TICKS * CONFIG_PM_STANDBYENTER_COUNT,
+		TIME_SLICE_TICKS * CONFIG_PM_SLEEPENTER_COUNT
+	};
+
+	if (!pdom->wdog) {
+		pdom->wdog = wd_create();
+	}
+
+	if (pdom->state < PM_SLEEP && !pdom->stay[pdom->state] && pmtick[pdom->state]) {
+		int delay = pmtick[pdom->state] + pdom->btime - clock_systimer();
+		int left  = wd_gettime(pdom->wdog);
+
+		if (!WDOG_ISACTIVE(pdom->wdog) || abs(delay - left) > PM_TIMER_GAP) {
+			wd_start(pdom->wdog, delay, pm_timer_cb, 0);
+		}
+	} else {
+		wd_cancel(pdom->wdog);
+	}
+}
 
 /****************************************************************************
  * Name: pm_prepall
@@ -94,19 +148,32 @@
 
 static int pm_prepall(int domain, enum pm_state_e newstate)
 {
-	FAR sq_entry_t *entry;
+	FAR dq_entry_t *entry;
 	int ret = OK;
 
-	/* Visit each registered callback structure. */
+	if (newstate <= g_pmglobals.domain[domain].state) {
+		/* Visit each registered callback structure in normal order. */
 
-	for (entry = sq_peek(&g_pmglobals.domain[domain].registry); entry && ret == OK; entry = sq_next(entry)) {
-		/* Is the prepare callback supported? */
+		for (entry = dq_peek(&g_pmglobals.registry); entry && ret == OK; entry = dq_next(entry)) {
+			/* Is the prepare callback supported? */
 
-		FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-		if (cb->prepare) {
-			/* Yes.. prepare the driver */
+			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
+			if (cb->prepare) {
+				/* Yes.. prepare the driver */
+				ret = cb->prepare(cb, domain, newstate);
+			}
+		}
+	} else {
+		/* Visit each registered callback structure in reverse order. */
 
-			ret = cb->prepare(cb, domain, newstate);
+		for (entry = dq_tail(&g_pmglobals.registry); entry && ret == OK; entry = dq_prev(entry)) {
+			/* Is the prepare callback supported? */
+
+			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
+			if (cb->prepare) {
+				/* Yes.. prepare the driver */
+				ret = cb->prepare(cb, domain, newstate);
+			}
 		}
 	}
 
@@ -132,20 +199,32 @@ static int pm_prepall(int domain, enum pm_state_e newstate)
  *
  ****************************************************************************/
 
-static inline void pm_changeall(int domain_indx, enum pm_state_e newstate)
+static inline void pm_changeall(int domain, enum pm_state_e newstate)
 {
-	FAR sq_entry_t *entry;
+	FAR dq_entry_t *entry;
+	if (newstate <= g_pmglobals.domain[domain].state) {
+		/* Visit each registered callback structure in normal order. */
 
-	/* Visit each registered callback structure. */
+		for (entry = dq_peek(&g_pmglobals.registry); entry; entry = dq_next(entry)) {
+			/* Is the notification callback supported? */
 
-	for (entry = sq_peek(&g_pmglobals.domain[domain_indx].registry); entry; entry = sq_next(entry)) {
-		/* Is the notification callback supported? */
+			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
+			if (cb->notify) {
+				/* Yes.. notify the driver */
+				cb->notify(cb, domain, newstate);
+			}
+		}
+	} else {
+		/* Visit each registered callback structure in reverse order. */
 
-		FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-		if (cb->notify) {
-			/* Yes.. notify the driver */
+		for (entry = dq_tail(&g_pmglobals.registry); entry; entry = dq_prev(entry)) {
+			/* Is the notification callback supported? */
 
-			cb->notify(cb, domain_indx, newstate);
+			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
+			if (cb->notify) {
+				/* Yes.. notify the driver */
+				cb->notify(cb, domain, newstate);
+			}
 		}
 	}
 }
@@ -210,46 +289,19 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 		newstate = g_pmglobals.domain[domain_indx].state;
 		(void)pm_prepall(domain_indx, newstate);
 	}
-#ifdef CONFIG_PM_METRICS
-	else {
-		pm_lock(domain_indx);
-
-		/* Create a state change node */
-		struct pm_statechange_s *sc = NULL;
-		struct timespec ts;
-
-		/* Get current time */
-
-		clock_gettime(CLOCK_REALTIME, &ts);
-
-		/* Remove and free expired nodes of the queue */
-
-		pm_prune_history(&g_pmglobals.domain[domain_indx].history);
-
-		/* Create a new node for new state change */
-
-		sc = (struct pm_statechange_s *)pm_alloc(1, sizeof(struct pm_statechange_s));
-
-		/* fill the new state and time stamp it */
-
-		sc->state = newstate;
-
-		sc->timestamp = ts.tv_sec;
-
-		/* Add the state chagne node to the history queue */
-
-		sq_addlast(&sc->entry, &g_pmglobals.domain[domain_indx].history);
-
-		pm_unlock(domain_indx);
-	}
-#endif
 
 	/* All drivers have agreed to the state change (or, one or more have
 	 * disagreed and the state has been reverted).  Set the new state.
 	 */
 
 	pm_changeall(domain_indx, newstate);
-	g_pmglobals.domain[domain_indx].state = newstate;
+	if (newstate != PM_RESTORE) {
+		g_pmglobals.domain[domain_indx].state = newstate;
+
+		/* Start PM timer to decrease PM state */
+
+		pm_timer(domain_indx);
+	}
 
 	/* Restore the interrupt state */
 

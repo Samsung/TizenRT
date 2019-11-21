@@ -100,7 +100,7 @@
  */
 
 #ifndef CONFIG_PM_NDOMAINS
-#define CONFIG_PM_NDOMAINS 2
+#define CONFIG_PM_NDOMAINS 1
 #endif
 
 #if CONFIG_PM_NDOMAINS < 1
@@ -253,6 +253,10 @@
  */
 
 enum pm_state_e {
+	PM_RESTORE = -1, 			/* PM_RESTORE is not a low power state.
+								 *
+								 * PM_RESTORE is used to notify for restore from low power state.
+								 */
 	PM_NORMAL = 0,				/* Normal full power operating mode.  If the driver is in
 								 * a reduced power usage mode, it should immediately re-
 								 * initialize for normal operatin.
@@ -284,6 +288,7 @@ enum pm_state_e {
 								 *
 								 * PM_SLEEP may be following by PM_NORMAL
 								 */
+	PM_COUNT,
 };
 
 /* This structure contain pointers callback functions in the driver.  These
@@ -292,7 +297,7 @@ enum pm_state_e {
  */
 
 struct pm_callback_s {
-	struct sq_entry_s entry;	/* Supports a singly linked list */
+	struct dq_entry_s entry;   /* Supports a doubly linked list */
 
 	char name[MAX_PM_CALLBACK_NAME];	/* Name of driver which register callback */
 
@@ -405,7 +410,7 @@ void pm_initialize(void);
  *
  ****************************************************************************/
 
-int pm_register(int domain, FAR struct pm_callback_s *callbacks);
+int pm_register(FAR struct pm_callback_s *callbacks);
 
 /****************************************************************************
  * Name: pm_unregister
@@ -423,7 +428,7 @@ int pm_register(int domain, FAR struct pm_callback_s *callbacks);
  *
  ****************************************************************************/
 
-int pm_unregister(int domain, FAR struct pm_callback_s *callbacks);
+int pm_unregister(FAR struct pm_callback_s *callbacks);
 
 /****************************************************************************
  * Name: pm_activity
@@ -453,6 +458,73 @@ int pm_unregister(int domain, FAR struct pm_callback_s *callbacks);
  ****************************************************************************/
 
 void pm_activity(int domain, int priority);
+
+/****************************************************************************
+ * Name: pm_stay
+ *
+ * Description:
+ *   This function is called by a device driver to indicate that it is
+ *   performing meaningful activities (non-idle), needs the power kept at
+ *   last the specified level.
+ *
+ * Input Parameters:
+ *   domain - The domain of the PM activity
+ *   state - The state want to stay.
+ *
+ *     As an example, media player might stay in normal state during playback.
+ *
+ * Returned Value:
+ *   None.
+ *
+ * Assumptions:
+ *   This function may be called from an interrupt handler.
+ *
+ ****************************************************************************/
+
+void pm_stay(int domain, enum pm_state_e state);
+
+/****************************************************************************
+ * Name: pm_relax
+ *
+ * Description:
+ *   This function is called by a device driver to indicate that it is
+ *   idle now, could relax the previous requested power level.
+ *
+ * Input Parameters:
+ *   domain - The domain of the PM activity
+ *   state - The state want to relax.
+ *
+ *     As an example, media player might relax power level after playback.
+ *
+ * Returned Value:
+ *   None.
+ *
+ * Assumptions:
+ *   This function may be called from an interrupt handler.
+ *
+ ****************************************************************************/
+
+void pm_relax(int domain, enum pm_state_e state);
+
+/****************************************************************************
+ * Name: pm_staycount
+ *
+ * Description:
+ *   This function is called to get current stay count.
+ *
+ * Input Parameters:
+ *   domain - The domain of the PM activity
+ *   state - The state want to relax.
+ *
+ * Returned Value:
+ *   Current pm stay count
+ *
+ * Assumptions:
+ *   This function may be called from an interrupt handler.
+ *
+ ****************************************************************************/
+
+uint32_t pm_staycount(int domain, enum pm_state_e state);
 
 /****************************************************************************
  * Name: pm_checkstate
@@ -551,12 +623,14 @@ enum pm_state_e pm_querystate(int domain);
  */
 
 #define pm_initialize()
-#define pm_register(cb)             (0)
-#define pm_unregister(domain, cb)   (0)
-#define pm_activity(domain, prio)
-#define pm_checkstate(domain)       (0)
-#define pm_changestate(domain, state)
-#define pm_querystate(domain)       (0)
+#define pm_register(cb)			(0)
+#define pm_unregister(cb)		(0)
+#define pm_activity(domain,prio)
+#define pm_stay(domain,state)
+#define pm_relax(domain,state)
+#define pm_checkstate(domain)		(0)
+#define pm_changestate(domain, state)	(0)
+#define pm_querystate(domain)        (0)
 
 #endif							/* CONFIG_PM */
 #endif							/* __INCLUDE_TINYARA_POWER_PM_H */

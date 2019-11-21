@@ -294,6 +294,37 @@ config DEBUG_NET_INFO
 
 endif #DEBUG_NET
 
+config DEBUG_PM
+	bool "Power Management Debug Features"
+	default n
+	---help---
+		Enable PM debug feature.
+
+if DEBUG_PM
+
+config DEBUG_PM_ERROR
+	bool "PM Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable PM error debug SYSLOG output.
+
+config DEBUG_PM_WARN
+	bool "PM Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable PM warning debug SYSLOG output.
+
+config DEBUG_PM_INFO
+	bool "PM Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable PM informational debug SYSLOG output.
+
+endif #DEBUG_PM
+
 config DEBUG_SCHED
 	bool "Scheduler Debug Feature"
 	default n

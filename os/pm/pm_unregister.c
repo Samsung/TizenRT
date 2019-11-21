@@ -83,7 +83,7 @@
  *
  ****************************************************************************/
 
-int pm_unregister(int domain_indx, FAR struct pm_callback_s *callbacks)
+int pm_unregister(FAR struct pm_callback_s *callbacks)
 {
 	int ret;
 
@@ -91,10 +91,10 @@ int pm_unregister(int domain_indx, FAR struct pm_callback_s *callbacks)
 
 	/* Remove entry from the list of registered callbacks. */
 
-	ret = pm_lock(domain_indx);
+	ret = pm_lock();
 	if (ret == OK) {
-		sq_rem(&callbacks->entry, &g_pmglobals.domain[domain_indx].registry);
-		pm_unlock(domain_indx);
+		dq_rem(&callbacks->entry, &g_pmglobals.registry);
+		pm_unlock();
 	}
 
 	return ret;

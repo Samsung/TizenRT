@@ -83,7 +83,7 @@ void pmtest_launch_kthread(void)
 	if (kernel_thread("pmtest", PMTEST_THREAD_PRIORITY, PMTEST_THREAD_STACKSIZE, pmtest_kthread, (char *const *)NULL) < 0) {
 		pmvdbg("pmtest kthread launch failed\n");
 		for (i = 0; i < PMTEST_DEVICES; i++) {
-			pm_unregister(0, &pmtest_cbarray[i]);
+			pm_unregister(&pmtest_cbarray[i]);
 		}
 	}
 }
@@ -101,7 +101,7 @@ void pmtest_init(void)
 		strncpy(pmtest_cbarray[i].name, pmtest_dev_names[i], CONFIG_PM_DEVNAME_LEN - 1);
 	}
 	for (i = 0; i < PMTEST_DEVICES; i++) {
-		pm_register(0, &pmtest_cbarray[i]);
+		pm_register(&pmtest_cbarray[i]);
 	}
 	/* Launch test thead */
 	pmtest_launch_kthread();

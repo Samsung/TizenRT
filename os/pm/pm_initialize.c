@@ -72,7 +72,13 @@
 
 /* All PM global data: */
 
-struct pm_global_s g_pmglobals;
+/* Initialize the registry and the PM global data structures.  The PM
+ * global data structure resides in .data which is zeroed at boot time.  So
+ * it is only required to initialize non-zero elements of the PM global
+ * data structure here.
+ */
+
+struct pm_global_s g_pmglobals = { SEM_INITIALIZER(1) };
 
 /****************************************************************************
  * Public Functions
@@ -98,17 +104,14 @@ struct pm_global_s g_pmglobals;
 
 void pm_initialize(void)
 {
-	int domain_indx = 0;
+	FAR struct pm_domain_s *pdom;
+	int i;
 
-	/* Initialize the registry and the PM global data structures.  The PM
-	 * global data structure resides in .bss which is zeroed at boot time.  So
-	 * it is only required to initialize non-zero elements of the PM global
-	 * data structure here.
-	 */
+	for (i = 0; i < CONFIG_PM_NDOMAINS; i++) {
+		pdom = &g_pmglobals.domain[i];
+		pdom->stime = clock_systimer();
+		pdom->btime = clock_systimer();
 
-	for (domain_indx = 0; domain_indx < CONFIG_PM_NDOMAINS; domain_indx++) {
-		sq_init(&g_pmglobals.domain[domain_indx].registry);
-		sem_init(&g_pmglobals.domain[domain_indx].regsem, 0, 1);
 
 #ifdef CONFIG_PM_METRICS
 		struct timespec cur_time;
@@ -120,7 +123,7 @@ void pm_initialize(void)
 
 		/* Initialize the domain's state history queue */
 
-		sq_init(&g_pmglobals.domain[domain_indx].history);
+		sq_init(&g_pmglobals.domain->history);
 
 		/* Create an initial state change node with NORMAL state and bootup time */
 
@@ -131,7 +134,7 @@ void pm_initialize(void)
 
 		/* Add the initial state change node to the head of the history queue */
 
-		sq_addlast((&initnode->entry), &g_pmglobals.domain[domain_indx].history);
+		sq_addlast((&initnode->entry), &g_pmglobals.domain->history);
 #endif
 	}
 	pmtest_init();
