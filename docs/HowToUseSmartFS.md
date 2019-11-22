@@ -6,6 +6,7 @@ new target board.
 - [About SmartFS](#about-smartfs)  
 - [SmartFS Code Layering](#smartfs-code-layering)  
 - [How to Enable SmartFS on New Board](#how-to-enable-smartfs-on-new-board)  
+- [How to make SmartFS user image](#how-to-make-smartfs-user-image)  
 
 ## About SmartFS
 
@@ -252,3 +253,8 @@ Smart FS can also be mounted in TASH Shell as shown below:
 	Usage   : mount -t <fs-type> <source/device name> <target/ logical mount path>
 	Example : mount -t smartfs /dev/smart0p8 /mnt
 	```
+
+## How to make SmartFS user image
+
+TizenRT provides the way of making SmartFS user image with user content. It is possible to program into the filesystem partition.  
+Please find the details in [How to make SmartFS user image](../tools/nxfuse/README_SMARTFS.md).
