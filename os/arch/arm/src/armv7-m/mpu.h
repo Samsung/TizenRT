@@ -667,10 +667,13 @@ static inline void up_set_mpu_app_configuration(struct tcb_s *rtcb)
 	 * This is not a kernel thread AND
 	 * It has a non zero value of base address (This ensures valid MPU setting)
 	 */
-	if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL && rtcb->mpu_regs[REG_RBAR]) {
-		putreg32(rtcb->mpu_regs[REG_RNR], MPU_RNR);
-		putreg32(rtcb->mpu_regs[REG_RBAR], MPU_RBAR);
-		putreg32(rtcb->mpu_regs[REG_RASR], MPU_RASR);
+	int i = 0;
+	for (i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL && rtcb->mpu_regs[i + REG_RBAR]) {
+			putreg32(rtcb->mpu_regs[i + REG_RNR], MPU_RNR);
+			putreg32(rtcb->mpu_regs[i + REG_RBAR], MPU_RBAR);
+			putreg32(rtcb->mpu_regs[i + REG_RASR], MPU_RASR);
+		}
 	}
 }
 #else

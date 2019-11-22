@@ -158,7 +158,9 @@ struct elf_loadinfo_s {
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	struct mm_heap_s *uheap;		/* User heap pointer to allocate memory for sections */
+	uintptr_t roalloc;			/* Allocation start for ro section */
+	size_t rosize;				/* Allocation size for ro section */
+	struct binary_s *binp;				/* Back pointer to binary object */
 #endif
 
 	uint16_t symtabidx;			/* Symbol table section index */

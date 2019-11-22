@@ -149,20 +149,45 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	/* Allocate memory to hold the ELF image */
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	loadinfo->textalloc = (uintptr_t)mm_malloc(loadinfo->uheap, textsize + datasize, retaddr);
-#else
-	loadinfo->textalloc = (uintptr_t)mm_malloc(loadinfo->uheap, textsize + datasize);
-#endif
+        /* Allocate the RAM partition to load the app into */
+        if (mm_allocate_ram_partition(&loadinfo->binp->ramstart, &loadinfo->binp->ramsize) < 0) {
+                berr("ERROR: Failed to allocate RAM partition\n");
+                return -ENOMEM;
+        }
+
+	if (loadinfo->textsize > loadinfo->rosize) {
+		unsigned long align_mask = loadinfo->textsize - 1;
+		loadinfo->textalloc = (loadinfo->binp->ramstart + align_mask) & ~align_mask;
+		align_mask = loadinfo->rosize - 1;
+		loadinfo->roalloc = (loadinfo->textalloc + loadinfo->textsize + align_mask) & ~align_mask;
+		loadinfo->dataalloc = loadinfo->roalloc + loadinfo->rosize;
+	} else {
+		unsigned long align_mask = loadinfo->rosize - 1;
+		loadinfo->roalloc = (loadinfo->binp->ramstart + align_mask) & ~align_mask;
+		align_mask = loadinfo->textsize - 1;
+		loadinfo->textalloc = (loadinfo->roalloc + loadinfo->rosize + align_mask) & ~align_mask;
+		loadinfo->dataalloc = loadinfo->textalloc + loadinfo->textsize;
+	}
+	loadinfo->binp->heapstart = loadinfo->dataalloc + datasize;
+
 #else
 	loadinfo->textalloc = (uintptr_t)kumm_malloc(textsize + datasize);
 #endif
 	if (!loadinfo->textalloc) {
+		berr("ERROR: Failed to allocate text section (size = %u)\n", textsize);
 		return -ENOMEM;
 	}
 
-	loadinfo->dataalloc = loadinfo->textalloc + textsize;
+	if (!loadinfo->dataalloc) {
+		berr("ERROR: Failed to allocate data section (size = %u)\n", datasize);
+		return -ENOMEM;
+	}
+
+	if (!loadinfo->roalloc) {
+		berr("ERROR: Failed to allocate ro section (size = %u)\n", loadinfo->rosize);
+		return -ENOMEM;
+	}
+
 	return OK;
 #endif
 }
@@ -199,13 +224,11 @@ void elf_addrenv_free(FAR struct elf_loadinfo_s *loadinfo)
 #else
 	/* If there is an allocation for the ELF image, free it */
 
+#ifndef CONFIG_APP_BINARY_SEPARATION
 	if (loadinfo->textalloc != 0) {
-#ifdef CONFIG_APP_BINARY_SEPARATION
-		mm_free(loadinfo->uheap, (FAR void *)loadinfo->textalloc);
-#else
 		kumm_free((FAR void *)loadinfo->textalloc);
-#endif
 	}
+#endif
 #endif
 
 	/* Clear out all indications of the allocated address environment */

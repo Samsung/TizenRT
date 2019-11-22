@@ -439,7 +439,7 @@ extern uint32_t _stext;
 #include <tinyara/userspace.h>
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->ram_start)
+#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->uheap)
 #define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
 #define BASE_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
 #else
@@ -839,7 +839,7 @@ struct mm_ram_partition_s {
 
 /* Functions contained in mm_partition_mgr.c **************************************/
 void mm_initialize_ram_partitions(void);
-int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size, char *name);
+int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size);
 void mm_free_ram_partition(uint32_t address);
 
 #endif		/* defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) */

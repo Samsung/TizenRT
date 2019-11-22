@@ -19,6 +19,77 @@
 import os
 import sys
 import struct
+import string
+
+# Temporary file to estimate the static RAM size.
+STATIC_RAM_ESTIMATION = 'temp_static_ram_estimation_file'
+
+def roundup_power_two(size):
+    size = size - 1
+    size |= size >> 1
+    size |= size >> 2
+    size |= size >> 4
+    size |= size >> 8
+    size |= size >> 16
+    size = size + 1
+
+    return size
+
+def check_optimize_config(file_name):
+    with open(file_name, 'r+') as f:
+        lines = f.readlines()
+    
+    return any([True if 'CONFIG_OPTIMIZE_APP_RELOAD=y' in line and not line.startswith('#') else False for line in lines ])
+
+def get_static_ram_size(bin_type):
+    textsize = 0
+    rosize = 0
+    datasize = 0
+    bsssize = 0
+    ram_fp = open(STATIC_RAM_ESTIMATION, 'rb')
+    if bin_type == BIN :
+        # First line is not used for calculating RAM size. So throw away it.
+        ram_fp.readline()
+        ram_array = ram_fp.readline()
+        size_array = ram_array.split('\t')
+        static_ram_size = size_array[SIZE_CMD_SUMMATION_INDEX]
+    elif bin_type == ELF :
+        line = ram_fp.readline()
+        while line:
+            words = line.split('.')
+            if len(words) > 1:
+                words = words[1].split()
+                if len(words) > 1:
+                    section = words[0]
+                    size = int(words[4], 16)
+                    if section == 'text':
+                        textsize = size
+                    elif section == 'rodata':
+                        rosize = size
+                    elif section == 'data':
+                        datasize = size
+                    elif section == 'bss':
+                        bsssize = size
+                        break
+            line = ram_fp.readline()
+        textsize = roundup_power_two(textsize)
+        # If CONFIG_OPTIMIZE_APP_RELOAD is enabled, then we will make a copy
+        # of the data section inside the ro section and it will be used in
+        # reload time. So, we add datasize to rosize to make place for data section.
+        cfg_path = os.getenv('TOPDIR') + '/.config'
+        if check_optimize_config(cfg_path) == True:
+            rosize = rosize + datasize;
+        rosize = roundup_power_two(rosize)
+        static_ram_size = textsize + rosize + datasize + bsssize
+    else : #Not supported.
+        print "Error : Not supported Binary Type"
+        sys.exit(1)
+
+    ram_fp.close()
+    os.remove(STATIC_RAM_ESTIMATION)
+    return static_ram_size
+
+
 ############################################################################
 #
 # header information :
@@ -95,9 +166,6 @@ COMP_MAX = COMP_MINIZ
 # We will use this value for elf.
 SIZE_CMD_SUMMATION_INDEX = 3
 
-# Temporary file to estimate the static RAM size.
-STATIC_RAM_ESTIMATION = 'temp_static_ram_estimation_file'
-
 if int(main_stack_size) >= int(dynamic_ram_size) :
     print "Error : Dynamic ram size should be bigger than Main stack size."
     print "Dynamic ram size : %d, Main stack size : %d" %(int(dynamic_ram_size), int(main_stack_size))
@@ -124,7 +192,7 @@ with open(file_path, 'rb') as fp:
     if bin_type == BIN :
         os.system('size ' + elf_path_for_bin_type + ' > ' + STATIC_RAM_ESTIMATION)
     elif bin_type == ELF :
-        os.system('size ' + file_path + ' > ' + STATIC_RAM_ESTIMATION)
+        os.system('readelf -S ' + file_path + ' > ' + STATIC_RAM_ESTIMATION)
     else : #Not supported.
         print "Error : Not supported Binary Type"
         sys.exit(1)
@@ -135,16 +203,9 @@ with open(file_path, 'rb') as fp:
         print "Error : This binary priority is not valid"
         sys.exit(1)
 
-    ram_fp = open(STATIC_RAM_ESTIMATION, 'rb')
-    # First line is not used for calculating RAM size. So throw away it.
-    ram_fp.readline()
-    ram_array = ram_fp.readline()
-    ram_fp.close()
-    os.remove(STATIC_RAM_ESTIMATION)
-    size_array = ram_array.split('\t')
-    static_ram_size = size_array[SIZE_CMD_SUMMATION_INDEX]
-
+    static_ram_size = get_static_ram_size(bin_type)
     binary_ram_size = int(static_ram_size) + int(dynamic_ram_size)
+    binary_ram_size = roundup_power_two(binary_ram_size)
 
     # based on comp_enabled, check if we need to compress binary.
     # If yes, assign to bin_comp value for compression algorithm to use.
