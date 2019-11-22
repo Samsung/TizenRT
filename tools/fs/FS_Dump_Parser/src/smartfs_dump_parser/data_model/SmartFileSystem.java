@@ -5,33 +5,32 @@ import java.util.List;
 
 public class SmartFileSystem {
 
-	private static final int SECTOR_SIZE = 1024;
 	private static final int SECTOR_HEADER_SIZE = 5;
 	private static final int CHAIN_HEADER_SIZE = 5;
 	private static final int ENTRY_HEADER_SIZE = 8;
 	private static final int FILE_NAME_LENGTH = 32;
 	private static final int SECTOR_STATUS_NOT_COMMITTED = 0x80;
 	private static final int SECTOR_STATUS_NOT_RELEASED = 0x40;
+	private static final int SECTOR_STATUS_SIZEBITS = 0x1C;
 	private static final int SIGNATURE_LOGICAL_SECTOR_ID = 0;
 	private static final int ROOT_LOGICAL_SECTOR_ID = 3;
-	private static final String SMARTFS_ROOT = "SMARTFS ROOT";
+	private static final int MIN_SECTOR_SIZE = 256; // bytes
+	private static final int MAX_SECTOR_SIZE = 65536; // In TizenRT, 4 bytes are used for sector IDs in SmartFS.
+	private static final String SMARTFS_ROOT = "/mnt";
 	private static final SmartFile dummy = new SmartFile("/", EntryType.DIRECTORY, null, new ArrayList<Sector>());
 
 	private static boolean isValidSmartFS = false;
-	private static int numberOfSectors = 0;	
-	private static List<Sector> sectorList = new ArrayList<Sector>();
-	private static List<Sector> activeSectors = new ArrayList<Sector>();
-	private static List<Sector> dirtySectors = new ArrayList<Sector>();
-	private static List<Sector> cleanSectors = new ArrayList<Sector>();
-	private static SmartFile rootDir;
+	private static int mSectorSize = MIN_SECTOR_SIZE;
+	private static int mNumberOfSectors = 0;
+	private static List<Sector> mSectorList = new ArrayList<Sector>();
+	private static List<Sector> mActiveSectors = new ArrayList<Sector>();
+	private static List<Sector> mDirtySectors = new ArrayList<Sector>();
+	private static List<Sector> mCleanSectors = new ArrayList<Sector>();
+	private static SmartFile mRootDir = null;
 
 	// Singleton Design Pattern
 	private SmartFileSystem() {
 
-	}
-
-	public static int getSectorSize() {
-		return SECTOR_SIZE;
 	}
 
 	public static int getSectorHeaderSize() {
@@ -50,6 +49,34 @@ public class SmartFileSystem {
 		return FILE_NAME_LENGTH;
 	}
 
+	public static boolean isActiveSector(byte status) {
+		return ((status & SECTOR_STATUS_NOT_COMMITTED) == 0x0 && (status & SECTOR_STATUS_NOT_RELEASED) != 0x0);
+	}
+
+	public static boolean isDirtySector(byte status) {
+		return ((status & SECTOR_STATUS_NOT_COMMITTED) == 0x0 && (status & SECTOR_STATUS_NOT_RELEASED) == 0x0);
+	}
+
+	public static int getSectorStatusSizebits() {
+		return SECTOR_STATUS_SIZEBITS;
+	}
+
+	public static boolean isSignatureLogicalSector(int logicalSectorId) {
+		return (logicalSectorId == SIGNATURE_LOGICAL_SECTOR_ID);
+	}
+
+	public static boolean isRootLogicalSector(int logicalSectorId) {
+		return (logicalSectorId == ROOT_LOGICAL_SECTOR_ID);
+	}
+
+	public static int getMinSectorSize() {
+		return MIN_SECTOR_SIZE;
+	}
+
+	public static int getMaxSectorSize() {
+		return MAX_SECTOR_SIZE;
+	}
+
 	public static String getSmartFSRoot() {
 		return SMARTFS_ROOT;
 	}
@@ -65,81 +92,74 @@ public class SmartFileSystem {
 	public static void setValidSmartFS(boolean isValid) {
 		isValidSmartFS = isValid;
 	}
-	
+
+	public static int getSectorSize() {
+		return mSectorSize;
+	}
+
+	public static void setSectorSize(int sector_size) {
+		SmartFileSystem.mSectorSize = sector_size;
+	}
+
 	public static int getNumberOfSectors() {
-		return numberOfSectors;
+		return mNumberOfSectors;
 	}
 
 	public static void setNumberOfSectors(int sectorNum) {
-		numberOfSectors = sectorNum;
+		mNumberOfSectors = sectorNum;
 	}
 
 	public static List<Sector> getSectors() {
-		return sectorList;
+		return mSectorList;
 	}
 
 	public static void clearSectors() {
-		sectorList.clear();
+		mSectorList.clear();
 	}
 
 	public static List<Sector> getActiveSectors() {
-		return activeSectors;
+		return mActiveSectors;
 	}
 
 	public static void setActiveSectors(List<Sector> sectors) {
-		activeSectors = sectors;
+		mActiveSectors = sectors;
 	}
 
 	public static List<Sector> getDirtySectors() {
-		return dirtySectors;
+		return mDirtySectors;
 	}
 
 	public static void setDirtySectors(List<Sector> sectors) {
-		dirtySectors = sectors;
+		mDirtySectors = sectors;
 	}
 
 	public static List<Sector> getCleanSectors() {
-		return cleanSectors;
+		return mCleanSectors;
 	}
 
 	public static void setCleanSectors(List<Sector> sectors) {
-		cleanSectors = sectors;
+		mCleanSectors = sectors;
 	}
 
 	public static SmartFile getRootDirectory() {
-		return rootDir;
+		return mRootDir;
 	}
 
 	public static void setRootDirectory(SmartFile root) {
-		rootDir = root;
+		mRootDir = root;
 	}
 
 	public static int getNumberOfSectors(int smartfsSize) {
-		return smartfsSize / SECTOR_SIZE;
-	}
-	public static boolean isActiveSector(byte status) {
-		return ((status & SECTOR_STATUS_NOT_COMMITTED) == 0x0 && (status & SECTOR_STATUS_NOT_RELEASED) != 0x0);
-	}
-
-	public static boolean isDirtySector(byte status) {
-		return ((status & SECTOR_STATUS_NOT_COMMITTED) == 0x0 && (status & SECTOR_STATUS_NOT_RELEASED) == 0x0);
-	}
-
-	public static boolean isSignatureLogicalSector(int logicalSectorId) {
-		return (logicalSectorId == SIGNATURE_LOGICAL_SECTOR_ID);
-	}
-
-	public static boolean isRootLogicalSector(int logicalSectorId) {
-		return (logicalSectorId == ROOT_LOGICAL_SECTOR_ID);
+		return smartfsSize / mSectorSize;
 	}
 
 	public static void clearFileSystem() {
 		isValidSmartFS = false;
-		sectorList.clear();
-		activeSectors.clear();
-		dirtySectors.clear();
-		cleanSectors.clear();
-		rootDir = null;
+		mSectorList.clear();
+		mActiveSectors.clear();
+		mDirtySectors.clear();
+		mCleanSectors.clear();
+		mRootDir = null;
 		dummy.getEntries().clear();
 	}
 }
