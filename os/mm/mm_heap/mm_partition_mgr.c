@@ -151,7 +151,7 @@ void mm_initialize_ram_partitions(void)
  *
  ****************************************************************************/
 
-int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size, char *name)
+int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size)
 {
 	if (*size == 0) {
 		*size = g_default_size;
@@ -200,10 +200,6 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size, char *na
 		mdbg("Failed to allocate RAM partition of size %u\n", *size);
 		return -ENOMEM;
 	}
-
-	/* struct mm_heap_s will be situated at start of partition and heap will be initialized after this */
-	mm_initialize((struct mm_heap_s *)*start_addr, (uint8_t *)*start_addr + sizeof(struct mm_heap_s), *size);
-	mm_add_app_heap_list((struct mm_heap_s *)*start_addr, name);
 
 	mvdbg("Allocated RAM partition with start = 0x%x size = %u (0x%x)\n", *start_addr, *size, *size);
 	return OK;

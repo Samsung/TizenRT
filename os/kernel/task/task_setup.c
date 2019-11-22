@@ -458,12 +458,16 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		tcb->ram_start = rtcb->ram_start;
 		tcb->ram_size = rtcb->ram_size;
 		tcb->uspace = rtcb->uspace;
+		tcb->uheap = rtcb->uheap;
 
 		/* Copy the MPU register values from parent to child task */
 #ifdef CONFIG_ARMV7M_MPU
-		tcb->mpu_regs[REG_RNR] = rtcb->mpu_regs[REG_RNR];
-		tcb->mpu_regs[REG_RBAR] = rtcb->mpu_regs[REG_RBAR];
-		tcb->mpu_regs[REG_RASR] = rtcb->mpu_regs[REG_RASR];
+		int i;
+		for (i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+			tcb->mpu_regs[i + REG_RNR] = rtcb->mpu_regs[i + REG_RNR];
+			tcb->mpu_regs[i + REG_RBAR] = rtcb->mpu_regs[i + REG_RBAR];
+			tcb->mpu_regs[i + REG_RASR] = rtcb->mpu_regs[i + REG_RASR];
+		}
 #endif
 
 #endif

@@ -86,11 +86,14 @@
 /********************************************************************************
  * Pre-processor Definitions
  ********************************************************************************/
-#ifdef CONFIG_ARMV7M_MPU
-#define REG_RNR		0
-#define REG_RBAR	1
-#define REG_RASR	2
-#define MPU_REGS	3
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARMV7M_MPU)
+enum {
+	REG_RNR,
+	REG_RBAR,
+	REG_RASR
+};
+
+#define MPU_NUM_REGIONS		3
 #endif
 /* Configuration ****************************************************************/
 /* Task groups currently only supported for retention of child status */
@@ -615,9 +618,10 @@ struct tcb_s {
 	uint32_t ram_start;		/* Start address of RAM partition for this app */
 	uint32_t ram_size;		/* Size of RAM partition for this app */
 	uint32_t uspace;		/* User space object for app binary */
+	uint32_t uheap;			/* User heap object pointer */
 
 #ifdef CONFIG_ARMV7M_MPU
-	uint32_t mpu_regs[MPU_REGS];
+	uint32_t mpu_regs[3 * MPU_NUM_REGIONS];	/* We need 3 register values to configure each MPU region */
 #endif
 #endif
 

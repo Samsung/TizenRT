@@ -70,8 +70,8 @@
 #ifdef CONFIG_BINFMT_ENABLE
 
 #ifdef CONFIG_ARMV7M_MPU
-extern uint32_t g_app_mpu_region;
-extern void mpu_user_extsram_context(uint32_t region, uintptr_t base, size_t size, uint32_t *regs);
+extern uint32_t g_mpu_region_nr;
+extern void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 #endif
 
 /****************************************************************************
@@ -152,7 +152,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	uint32_t size = 0;
 	struct tcb_s *tcb;
 
-	if (mm_allocate_ram_partition(&start_addr, &size, NULL) < 0) {
+	if (mm_allocate_ram_partition(&start_addr, &size) < 0) {
 		berr("ERROR: Failed to allocate RAM partition\n");
 		errcode = ENOMEM;
 		goto errout;
@@ -212,7 +212,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
 #ifdef CONFIG_ARMV7M_MPU
-	mpu_user_extsram_context(g_app_mpu_region, (uintptr_t)start_addr, size, tcb->mpu_regs);
+	mpu_configure_app_regs(&tcb->mpu_regs[0], g_mpu_region_nr++, (uintptr_t)start_addr, size, false, true);
 #endif
 
 #endif

@@ -189,16 +189,14 @@ int unload_module(FAR struct binary_s *binp)
 
 		/* Free allocated address spaces */
 
+#ifndef CONFIG_APP_BINARY_SEPARATION
 		for (i = 0; i < BINFMT_NALLOC; i++) {
 			if (binp->alloc[i]) {
 				binfo("Freeing alloc[%d]: %p\n", i, binp->alloc[i]);
-#ifdef CONFIG_APP_BINARY_SEPARATION
-				mm_free(binp->uheap, (FAR void *)binp->alloc[i]);
-#else
 				kumm_free((FAR void *)binp->alloc[i]);
-#endif
 			}
 		}
+#endif
 
 		/* Notice that the address environment is not destroyed.  This should
 		 * happen automatically when the task exits.

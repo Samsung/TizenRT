@@ -89,6 +89,8 @@
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
+uint8_t mpu_log2regionceil(uintptr_t base, size_t size);
+
 /****************************************************************************
  * Private Constant Data
  ****************************************************************************/
@@ -96,7 +98,6 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
 /****************************************************************************
  * Name: elf_elfsize
  *
@@ -113,12 +114,18 @@ static void elf_elfsize(struct elf_loadinfo_s *loadinfo)
 {
 	size_t textsize;
 	size_t datasize;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	size_t rosize;
+#endif
 	int i;
 
 	/* Accumulate the size each section into memory that is marked SHF_ALLOC */
 
 	textsize = 0;
 	datasize = 0;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	rosize = 0;
+#endif
 
 	for (i = 0; i < loadinfo->ehdr.e_shnum; i++) {
 		FAR Elf32_Shdr *shdr = &loadinfo->shdr[i];
@@ -134,16 +141,29 @@ static void elf_elfsize(struct elf_loadinfo_s *loadinfo)
 
 			if ((shdr->sh_flags & SHF_WRITE) != 0) {
 				datasize += ELF_ALIGNUP(shdr->sh_size);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			} else if ((shdr->sh_flags & SHF_EXECINSTR) != 0) {
+				textsize += ELF_ALIGNUP(shdr->sh_size);
+			} else {
+				rosize += ELF_ALIGNUP(shdr->sh_size);
+			}
+#else
 			} else {
 				textsize += ELF_ALIGNUP(shdr->sh_size);
 			}
+#endif
 		}
 	}
 
 	/* Save the allocation size */
-
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	loadinfo->textsize = 1 << mpu_log2regionceil(0, textsize);
+	loadinfo->rosize = 1 << mpu_log2regionceil(0, rosize);
+#else
 	loadinfo->textsize = textsize;
+#endif
 	loadinfo->datasize = datasize;
+
 }
 
 /****************************************************************************
@@ -163,6 +183,9 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 {
 	FAR uint8_t *text;
 	FAR uint8_t *data;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	FAR uint8_t *ro;
+#endif
 	FAR uint8_t **pptr;
 	int ret;
 	int i;
@@ -172,6 +195,9 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 	binfo("Loaded sections:\n");
 	text = (FAR uint8_t *)loadinfo->textalloc;
 	data = (FAR uint8_t *)loadinfo->dataalloc;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	ro = (FAR uint8_t *)loadinfo->roalloc;
+#endif
 
 	for (i = 0; i < loadinfo->ehdr.e_shnum; i++) {
 		FAR Elf32_Shdr *shdr = &loadinfo->shdr[i];
@@ -189,9 +215,18 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 
 		if ((shdr->sh_flags & SHF_WRITE) != 0) {
 			pptr = &data;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		} else if ((shdr->sh_flags & SHF_EXECINSTR) != 0) {
+			pptr = &text;
+		} else {
+			pptr = &ro;
+		}
+#else
 		} else {
 			pptr = &text;
 		}
+#endif
+
 
 		/* SHT_NOBITS indicates that there is no data in the file for the
 		 * section.

@@ -40,8 +40,8 @@
 #ifdef CONFIG_BINFMT_ENABLE
 
 #ifdef CONFIG_ARMV7M_MPU
-extern uint32_t g_app_mpu_region;
-extern void mpu_user_extsram_context(uint32_t region, uintptr_t base, size_t size, uint32_t *regs);
+extern uint32_t g_mpu_region_nr;
+void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 #endif
 
 /****************************************************************************
@@ -88,16 +88,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	}
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	/* Allocate the RAM partition to load the app into */
-	uint32_t *start_addr;
-	uint32_t size = load_attr->ram_size;
 	struct tcb_s *tcb;
-
-	if (mm_allocate_ram_partition(&start_addr, &size, load_attr->bin_name) < 0) {
-		berr("ERROR: Failed to allocate RAM partition\n");
-		errcode = ENOMEM;
-		goto errout;
-	}
 #endif
 
 	/* Allocate the load information */
@@ -106,7 +97,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	if (!bin) {
 		berr("ERROR: Failed to allocate binary_s\n");
 		errcode = ENOMEM;
-		goto err_free_partition;
+		goto errout_with_bin;
 	}
 
 	/* Initialize the binary structure */
@@ -118,11 +109,10 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	bin->offset = load_attr->offset;
 	bin->stacksize = load_attr->stack_size;
 	bin->priority = load_attr->priority;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	bin->uheap = (struct mm_heap_s *)start_addr;
-	bin->uheap_size = size;
-#endif
 	bin->compression_type = load_attr->compression_type;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	bin->ramsize = load_attr->ram_size;
+#endif
 
 	/* Load the module into memory */
 
@@ -132,6 +122,13 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		berr("ERROR: Failed to load program '%s': %d\n", filename, errcode);
 		goto errout_with_bin;
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	bin->uheap = (struct mm_heap_s *)bin->heapstart;
+	bin->uheap_size = bin->ramstart + bin->ramsize - bin->heapstart - sizeof(struct mm_heap_s);
+	mm_initialize(bin->uheap, bin->heapstart + sizeof(struct mm_heap_s), bin->uheap_size);
+	mm_add_app_heap_list(bin->uheap, load_attr->bin_name);
+#endif
 
 	/* Disable pre-emption so that the executed module does
 	 * not return until we get a chance to connect the on_exit
@@ -144,13 +141,18 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	/* The first 4 bytes of the text section of the application must contain a
 	pointer to the application's mm_heap object. Here we will store the mm_heap
 	pointer to the start of the text section */
-	*(uint32_t *)(bin->alloc[0]) = (uint32_t)start_addr;
+	*(uint32_t *)(bin->alloc[0]) = (uint32_t)bin->uheap;
 	tcb = (struct tcb_s *)sched_self();
-	tcb->ram_start = (uint32_t)start_addr;
+	tcb->uheap = (uint32_t)bin->uheap;
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
 #ifdef CONFIG_ARMV7M_MPU
-	mpu_user_extsram_context(g_app_mpu_region, (uintptr_t)start_addr, size, tcb->mpu_regs);
+	/* Complete RAM partition will be configured as RW region */
+	mpu_configure_app_regs(&tcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)bin->ramstart, bin->ramsize, false, false);
+	/* Configure text section as RO and executable region */
+	mpu_configure_app_regs(&tcb->mpu_regs[3], g_mpu_region_nr + 1, (uintptr_t)bin->alloc[0], bin->textsize, true, true);
+	/* Configure ro section as RO and non-executable region */
+	mpu_configure_app_regs(&tcb->mpu_regs[6], g_mpu_region_nr + 2, (uintptr_t)bin->alloc[3], bin->rosize, true, false);
 #endif
 
 #endif
@@ -164,14 +166,14 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	}
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	tcb->ram_start = 0;
+	tcb->uheap = 0;
 	tcb = sched_gettcb(pid);
 	if (tcb == NULL) {
 		errcode = ESRCH;
 		goto errout_with_lock;
 	}
-	tcb->ram_start = (uint32_t)start_addr;
-	tcb->ram_size = size;
+	tcb->ram_start = (uint32_t)bin->ramstart;
+	tcb->ram_size = bin->ramsize;
 	/* Set task name as binary name */
 	strncpy(tcb->name, load_attr->bin_name, CONFIG_TASK_NAME_SIZE);
 	tcb->name[CONFIG_TASK_NAME_SIZE] = '\0';
@@ -215,10 +217,6 @@ errout_with_lock:
 	(void)unload_module(bin);
 errout_with_bin:
 	kmm_free(bin);
-err_free_partition:
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	mm_free_ram_partition((uint32_t)start_addr);
-#endif
 errout:
 	set_errno(errcode);
 	return ERROR;

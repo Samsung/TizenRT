@@ -244,12 +244,11 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	loadinfo.offset = binp->offset;
 	loadinfo.filelen = binp->filelen;
 	loadinfo.compression_type = binp->compression_type;
-
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	loadinfo.binp = binp;
+#endif
 
 	ret = elf_init(binp->filename, &loadinfo);
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	loadinfo.uheap = binp->uheap;
-#endif
 	elf_dumploadinfo(&loadinfo);
 	if (ret != 0) {
 		berr("Failed to initialize for load of ELF program: %d\n", ret);
@@ -300,6 +299,16 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	binp->alloc[1] = loadinfo.ctoralloc;
 	binp->alloc[2] = loadinfo.dtoralloc;
 #endif
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	binp->alloc[3] = (FAR void *)loadinfo.roalloc;
+	binp->alloc[4] = (FAR void *)loadinfo.dataalloc;
+#endif
+#endif
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	binp->textsize = loadinfo.textsize;
+	binp->rosize = loadinfo.rosize;
+	binp->datasize = loadinfo.datasize;
 #endif
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS

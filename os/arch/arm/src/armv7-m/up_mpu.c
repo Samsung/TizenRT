@@ -306,15 +306,15 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
 }
 
 /****************************************************************************
- * Name: mpu_user_extsram_context
+ * Name: mpu_configure_app_regs
  *
  * Description:
- *   Configure the user SRAM mpu settings into the context registers
+ *   Configure the user application SRAM mpu settings into the tcb variables
  *
  ****************************************************************************/
 
 #if defined(CONFIG_ARMV7M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)
-void mpu_user_extsram_context(uint32_t region, uintptr_t base, size_t size, uint32_t *regs)
+void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute)
 {
 	uint32_t regval;
 	uint8_t l2size;
@@ -341,8 +341,15 @@ void mpu_user_extsram_context(uint32_t region, uintptr_t base, size_t size, uint
 #ifdef CONFIG_APPS_RAM_REGION_SHAREABLE
 			MPU_RASR_S |                   /* Shareable     */
 #endif
-			MPU_RASR_C |                   /* Cacheable     */
-			MPU_RASR_AP_RWRW;              /* P:RW   U:RW   */
+			MPU_RASR_C;                   /* Cacheable     */
+	if (readonly)
+		regval |= MPU_RASR_AP_RWRO;              /* P:RW   U:RO   */
+	else
+		regval |= MPU_RASR_AP_RWRW;		/* P:RW   U:RW   */
+
+	if (!execute)
+		regval |= MPU_RASR_XN;
+
 	regs[2] = regval;
 }
 #endif

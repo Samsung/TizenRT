@@ -35,18 +35,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/*
- * Region definitions for our platform
- * We use the follwoing enum to map the MPU region type to the MPU region
- * registers.
- */
-enum {
-#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
-	MPU_REG_USER_CODE,
-	MPU_REG_USER_DATA,
-#endif
-	MPU_REG_APP,
-};
 
 #ifndef __ASSEMBLY__
 typedef void (*fptr)(uint32_t region, uintptr_t base, size_t size);

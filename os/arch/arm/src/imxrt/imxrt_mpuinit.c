@@ -85,10 +85,10 @@
 const struct mpu_region_info regions_info[] = {
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	{
-		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, MPU_REG_USER_CODE,
+		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, 0,
 	},
 	{
-		&mpu_userintsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, MPU_REG_USER_DATA,
+		&mpu_userintsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, 1,
 	},
 #endif
 };
@@ -97,8 +97,8 @@ const struct mpu_region_info regions_info[] = {
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
-#ifdef CONFIG_APP_BINARY_SEPARATION
-uint32_t g_app_mpu_region;
+#if defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_APP_BINARY_SEPARATION)
+uint32_t g_mpu_region_nr = 0;
 #endif
 
 /****************************************************************************
@@ -137,14 +137,9 @@ void imxrt_mpu_initialize(void)
 	int i;
 
 	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
-		lldbg("Region = %u base = 0x%x size = %u\n", regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
-		regions_info[i].call(regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
+		lldbg("Region = %u base = 0x%x size = %u\n", g_mpu_region_nr, regions_info[i].base, regions_info[i].size);
+		regions_info[i].call(g_mpu_region_nr++, regions_info[i].base, regions_info[i].size);
 	}
-
-	/* Save the APP MPU region to be used later when loading apps */
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	g_app_mpu_region = MPU_REG_APP;
-#endif
 #endif
 	/* Then enable the MPU */
 
