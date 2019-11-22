@@ -25,7 +25,7 @@ public class OpenHandler {
 		if (dialog.open() != null) {
 			String filePath = dialog.getFilterPath();
 			String fileName = dialog.getFileName();
-			System.out.println("filename = " + fileName);
+			System.out.println("filename = " + fileName + "\n");
 
 			MPart geometry_part = partService.findPart("smartfs_dump_parser.part.geometry_information");
 			GeometryViewer gv = (GeometryViewer) geometry_part.getObject();
