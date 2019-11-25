@@ -67,6 +67,7 @@
 #include "stm32l4_rcc.h"
 #include "up_arch.h"
 #include "up_internal.h"
+#include "hal/stm32l4xx_ll_usart.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -3034,31 +3035,51 @@ int up_putc(int ch)
   /* Check for LF */
   if (ch == '\n') {
       /* Add CR */
-      lowputc('\r');
+      up_lowputc('\r');
   }
 
-  lowputc((char)ch);
+  up_lowputc((char)ch);
   //stm32l4serial_restoreusartint(priv, ie);
 #endif
   return ch;
 }
 
+/****************************************************************************
+ * Name: up_getc
+ *
+ * Description:
+ *   Read one byte from the serial console
+ *
+ * Input Parameters:
+ *   none
+ *
+ * Returned Value:
+ *   int value, -1 if error, 0~255 if byte successfully read
+ *
+ ****************************************************************************/
 int up_getc(void)
 {
-    struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
-    uint16_t ie;
-    char ch;
-    
-    //stm32l4serial_disableusartint(priv, &ie);
+       uint8_t ch = 0x0;
 
-    ch = lowgetc();
+#if defined(USART_CR1_FIFOEN)
+	CLEAR_BIT(USART2->CR1, (USART_CR1_RXNEIE_RXFNEIE | USART_CR1_PEIE));
+#else
+	CLEAR_BIT(USART2->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE));
+#endif
+	CLEAR_BIT(USART2->CR3, USART_CR3_EIE);
 
-    lowputc(ch);
-    lowputc('\n');
-    
-    //stm32l4serial_restoreusartint(priv, ie);
+    if(LL_USART_IsActiveFlag_ORE(USART2)){
+        LL_USART_ClearFlag_ORE(USART2);
+        }
 
-    return (int)ch;
+    while(!LL_USART_IsActiveFlag_RXNE(USART2)){
+    }
+
+	if(ch = LL_USART_ReceiveData8(USART2)) {
+		return ch;
+	} else {
+		return -1;
+	}
 }
 #else /* USE_SERIALDRIVER */
 
@@ -3066,12 +3087,18 @@ int up_getc(void)
  * Name: up_putc
  *
  * Description:
- *   Provide priority, low-level access to support OS debug writes
+ *   Output one byte on the serial console
+ *
+ * Input Parameters:
+ *   ch - chatacter to output
+ *
+ * Returned Value:
+ *  sent character
  *
  ****************************************************************************/
-
 int up_putc(int ch)
 {
+#ifdef HAVE_SERIAL_CONSOLE
 #if CONSOLE_UART > 0
   /* Check for LF */
 
@@ -3085,6 +3112,33 @@ int up_putc(int ch)
   up_lowputc((char)ch);
 #endif
   return ch;
+#endif
 }
 
+/****************************************************************************
+ * Name: up_lowputc
+ *
+ * Description:
+ *   Output one byte on the serial console
+ *
+ * Input Parameters:
+ *   ch - chatacter to output
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void up_lowputc(char ch)
+{
+#if defined(USART_CR1_FIFOEN)
+	CLEAR_BIT(USART2->CR1, USART_CR1_TXEIE_TXFNFIE);
+#else
+	CLEAR_BIT(USART2->CR1, USART_CR1_TXEIE);
+#endif
+	CLEAR_BIT(USART2->CR1, USART_CR1_TCIE);
+
+    while(!LL_USART_IsActiveFlag_TXE(USART2)){}
+    LL_USART_TransmitData8(USART2, (uint8_t)(ch & 0xFFU));
+    while(!LL_USART_IsActiveFlag_TC(USART2)){}
+}
 #endif /* USE_SERIALDRIVER */
