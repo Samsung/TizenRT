@@ -575,7 +575,7 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 				/* render character (stride and offset is important here) */
 				stbtt_MakeCodepointBitmap(&(body->font->ttf_info), g_glyph_bitmap,
 					out_w, out_h,
-					CONFIG_UI_GLYPH_BITMAP_WIDTH,
+					out_w,
 					scale, scale,
 					body->utf_code[draw_idx]);
 
