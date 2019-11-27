@@ -68,7 +68,17 @@
 #include "chip.h"
 #include "imxrt_config.h"
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+/* LPUART Data Register */
+#define LPUART_ALL_INTS (LPUART_CTRL_ORIE(1U) | LPUART_CTRL_NEIE(1U) | LPUART_CTRL_FEIE(1U) |  \
+			LPUART_CTRL_PEIE(1U) | LPUART_CTRL_TIE(1U)  | LPUART_CTRL_TCIE(1U) |  \
+			LPUART_CTRL_RIE(1U)  | LPUART_CTRL_ILIE(1U) | LPUART_CTRL_MA1IE(1U) | \
+			LPUART_CTRL_MA2IE(1U))
 
+#define LPUART_DATA_SHIFT              (0)	/* Bits 0-9: Data bits 0-9 */
+#define LPUART_DATA_MASK               (0x3ff << LPUART_DATA_SHIFT)
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -124,7 +134,8 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
  ************************************************************************************/
 
 #if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG)
-void imxrt_lowputc(int ch);
+void imxrt_lowputc(char ch);
+uint8_t imxrt_lowgetc(void);
 #else
 #define imxrt_lowputc(ch)
 #endif
