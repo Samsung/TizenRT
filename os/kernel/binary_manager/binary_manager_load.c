@@ -36,6 +36,10 @@
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+#include <tinyara/binfmt/binfmt.h>
+#endif
+
 #include "task/task.h"
 #include "binary_manager.h"
 
@@ -163,7 +167,11 @@ static int binary_manager_check_update_binary(char *bin_name)
 }
 
 /* Load binary with index in binary table */
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+int binary_manager_load_binary(int bin_idx, void *binp)
+#else
 int binary_manager_load_binary(int bin_idx)
+#endif
 {
 	int ret;
 	pid_t bin_pid;
@@ -224,6 +232,9 @@ int binary_manager_load_binary(int bin_idx)
 		load_attr.stack_size = header_data[latest_idx].bin_stacksize;
 		load_attr.priority = header_data[latest_idx].bin_priority;
 		load_attr.offset = CHECKSUM_SIZE + header_data[latest_idx].header_size;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		load_attr.binp = binp;
+#endif
 
 		bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, load_attr.bin_size, load_attr.offset);
 
@@ -248,7 +259,13 @@ int binary_manager_load_binary(int bin_idx)
 			retry_count++;
 			bmdbg("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
 		}
-
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		if (binp) {
+			/* If we are here it means that reload has failed. So perform cleanup */
+			((struct binary_s *)binp)->reload = false;
+			binfmt_exit(binp);
+		}
+#endif
 		if (--valid_bin_count > 0) {
 			/* Change index 0 to 1 and 1 to 0. */
 			latest_idx ^= 1;
@@ -269,7 +286,11 @@ static int binary_manager_load_all(void)
 	bin_count = binary_manager_get_binary_count();
 
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		ret = binary_manager_load_binary(bin_idx, NULL);
+#else
 		ret = binary_manager_load_binary(bin_idx);
+#endif
 		if (ret == OK) {
 			load_cnt++;
 		}
@@ -373,7 +394,13 @@ static int binary_manager_reload(char *bin_name)
 		}
 	}
 
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	struct binary_s *binp = sched_gettcb(BIN_ID(bin_idx))->group->tg_bininfo;
+	binp->reload = true;
+#endif
+
 	if (BIN_STATE(bin_idx) != BINARY_INACTIVE) {
+
 		/* Kill its children and restart binary if the binary is registered with the binary manager */
 		ret = reload_kill_binary(BIN_ID(bin_idx));
 		if (ret != OK) {
@@ -390,7 +417,11 @@ static int binary_manager_reload(char *bin_name)
 	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
 
 	/* load binary and update binid */
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	ret = binary_manager_load_binary(bin_idx, binp);
+#else
 	ret = binary_manager_load_binary(bin_idx);
+#endif
 	if (ret != OK) {
 		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
 		return BINMGR_OPERATION_FAIL;

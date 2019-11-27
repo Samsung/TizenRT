@@ -299,16 +299,15 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	binp->alloc[1] = loadinfo.ctoralloc;
 	binp->alloc[2] = loadinfo.dtoralloc;
 #endif
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	binp->alloc[3] = (FAR void *)loadinfo.roalloc;
-	binp->alloc[4] = (FAR void *)loadinfo.dataalloc;
-#endif
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	binp->alloc[3] = (FAR void *)loadinfo.roalloc;
+	binp->alloc[4] = (FAR void *)loadinfo.dataalloc;
 	binp->textsize = loadinfo.textsize;
 	binp->rosize = loadinfo.rosize;
 	binp->datasize = loadinfo.datasize;
+	binp->datastart = loadinfo.dataalloc;
 #endif
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS

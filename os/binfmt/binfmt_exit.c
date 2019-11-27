@@ -129,13 +129,19 @@ int binfmt_exit(FAR struct binary_s *bin)
 		}
 		address = (FAR void *)sq_next((FAR sq_entry_t *)address);
 	}
-
-	/* Free the RAM partition into which this app was loaded */
-	mm_free_ram_partition((uint32_t)bin->ramstart);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	if (!bin->reload)
+#endif
+		/* Free the RAM partition into which this app was loaded */
+		mm_free_ram_partition((uint32_t)bin->ramstart);
 #endif
 	/* Free the load structure */
 
-	kmm_free(bin);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	if (!bin->reload)
+#endif
+		kmm_free(bin);
+
 	return ret;
 }
 

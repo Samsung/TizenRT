@@ -104,12 +104,19 @@ struct binary_s {
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	struct mm_heap_s *uheap;	/* User heap pointer to allocate memory for sections */
 	uint32_t uheap_size;		/* The size of user heap */
-	size_t textsize;		/* Size of text section */
-	size_t rosize;			/* Size of ro section */
-	size_t datasize;		/* Size of data section */
 	uint32_t ramstart;		/* Start address of ram partition */
 	uint32_t ramsize;		/* Size of the RAM paritition */
 	uint32_t heapstart;		/* Start address of app heap area */
+#endif
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	size_t textsize;		/* Size of text section */
+	size_t rosize;			/* Size of ro section */
+	size_t datasize;		/* Size of data section */
+	uint32_t reload;		/* Indicate whether this binary will be reloaded */
+	uint32_t datastart;		/* Start address of data section */
+	uint32_t bssstart;		/* Start address of bss section */
+	size_t bsssize;			/* Size of bss section */
+	uint32_t data_backup;		/* Start address of copy of data section */
 #endif
 
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)

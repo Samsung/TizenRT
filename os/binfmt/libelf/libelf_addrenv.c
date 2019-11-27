@@ -61,11 +61,9 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/mm/mm.h>
 #endif
-
 #include "libelf.h"
 
 /****************************************************************************
@@ -83,6 +81,9 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#ifdef CONFIG_ARMV7M_MPU
+uint8_t mpu_log2regionceil(uintptr_t base, size_t size);
+#endif
 
 /****************************************************************************
  * Name: elf_addrenv_alloc
@@ -149,27 +150,37 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	/* Allocate memory to hold the ELF image */
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-        /* Allocate the RAM partition to load the app into */
-        if (mm_allocate_ram_partition(&loadinfo->binp->ramstart, &loadinfo->binp->ramsize) < 0) {
-                berr("ERROR: Failed to allocate RAM partition\n");
-                return -ENOMEM;
-        }
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	uint32_t rosize = loadinfo->rosize;
+	loadinfo->rosize += loadinfo->datasize;
+#ifdef CONFIG_ARMV7M_MPU
+	loadinfo->textsize = 1 << mpu_log2regionceil(0, loadinfo->textsize);
+	loadinfo->rosize = 1 << mpu_log2regionceil(0, loadinfo->rosize);
+#endif
+#endif
 
+	/* Allocate the RAM partition to load the app into */
+	if (mm_allocate_ram_partition(&loadinfo->binp->ramstart, &loadinfo->binp->ramsize) < 0) {
+		berr("ERROR: Failed to allocate RAM partition\n");
+		return -ENOMEM;
+	}
+
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	if (loadinfo->textsize > loadinfo->rosize) {
-		unsigned long align_mask = loadinfo->textsize - 1;
-		loadinfo->textalloc = (loadinfo->binp->ramstart + align_mask) & ~align_mask;
-		align_mask = loadinfo->rosize - 1;
-		loadinfo->roalloc = (loadinfo->textalloc + loadinfo->textsize + align_mask) & ~align_mask;
+		loadinfo->textalloc = mm_align_up_by_size(loadinfo->binp->ramstart, loadinfo->textsize);
+		loadinfo->roalloc = mm_align_up_by_size(loadinfo->textalloc + loadinfo->textsize, loadinfo->rosize);
 		loadinfo->dataalloc = loadinfo->roalloc + loadinfo->rosize;
 	} else {
-		unsigned long align_mask = loadinfo->rosize - 1;
-		loadinfo->roalloc = (loadinfo->binp->ramstart + align_mask) & ~align_mask;
-		align_mask = loadinfo->textsize - 1;
-		loadinfo->textalloc = (loadinfo->roalloc + loadinfo->rosize + align_mask) & ~align_mask;
+		loadinfo->roalloc = mm_align_up_by_size(loadinfo->binp->ramstart, loadinfo->rosize);
+		loadinfo->textalloc = mm_align_up_by_size(loadinfo->roalloc + loadinfo->rosize, loadinfo->textsize);
 		loadinfo->dataalloc = loadinfo->textalloc + loadinfo->textsize;
 	}
+	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
+#else
+	loadinfo->textalloc = loadinfo->binp->ramstart;
+	loadinfo->dataalloc = loadinfo->textalloc + loadinfo->textsize;
+#endif
 	loadinfo->binp->heapstart = loadinfo->dataalloc + datasize;
-
 #else
 	loadinfo->textalloc = (uintptr_t)kumm_malloc(textsize + datasize);
 #endif
@@ -178,16 +189,19 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 		return -ENOMEM;
 	}
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	if (!loadinfo->dataalloc) {
 		berr("ERROR: Failed to allocate data section (size = %u)\n", datasize);
 		return -ENOMEM;
 	}
 
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	if (!loadinfo->roalloc) {
 		berr("ERROR: Failed to allocate ro section (size = %u)\n", loadinfo->rosize);
 		return -ENOMEM;
 	}
-
+#endif
+#endif
 	return OK;
 #endif
 }

@@ -668,8 +668,15 @@ static inline void up_set_mpu_app_configuration(struct tcb_s *rtcb)
 	 * It has a non zero value of base address (This ensures valid MPU setting)
 	 */
 	int i = 0;
-	for (i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
-		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL && rtcb->mpu_regs[i + REG_RBAR]) {
+	if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_KERNEL) {
+		return;
+	}
+
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	for (i = 0; i < 3 * MPU_NUM_REGIONS; i += 3)
+#endif
+	{
+		if (rtcb->mpu_regs[i + REG_RBAR]) {
 			putreg32(rtcb->mpu_regs[i + REG_RNR], MPU_RNR);
 			putreg32(rtcb->mpu_regs[i + REG_RBAR], MPU_RBAR);
 			putreg32(rtcb->mpu_regs[i + REG_RASR], MPU_RASR);

@@ -462,8 +462,11 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 
 		/* Copy the MPU register values from parent to child task */
 #ifdef CONFIG_ARMV7M_MPU
-		int i;
-		for (i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+		int i = 0;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		for (; i < 3 * MPU_NUM_REGIONS; i += 3)
+#endif
+		{
 			tcb->mpu_regs[i + REG_RNR] = rtcb->mpu_regs[i + REG_RNR];
 			tcb->mpu_regs[i + REG_RBAR] = rtcb->mpu_regs[i + REG_RBAR];
 			tcb->mpu_regs[i + REG_RASR] = rtcb->mpu_regs[i + REG_RASR];

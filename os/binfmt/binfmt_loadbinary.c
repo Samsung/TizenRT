@@ -75,7 +75,7 @@ void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, siz
 #ifdef CONFIG_BINARY_MANAGER
 int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr)
 {
-	FAR struct binary_s *bin;
+	FAR struct binary_s *bin = NULL;
 	int pid;
 	int errcode;
 	int ret;
@@ -91,37 +91,66 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	struct tcb_s *tcb;
 #endif
 
-	/* Allocate the load information */
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	bin = load_attr->binp;
+	/* If we find a non-null value for bin, it means that
+	 * we are in a reload scenario.
+	 */
+	if (bin) {
+		if (!bin->data_backup) {
+			errcode = -EINVAL;
+			berr("ERROR: Failed to find copy of data section from previous load\n");
+			goto errout_with_bin;
+		}
 
-	bin = (FAR struct binary_s *)kmm_zalloc(sizeof(struct binary_s));
-	if (!bin) {
-		berr("ERROR: Failed to allocate binary_s\n");
-		errcode = ENOMEM;
-		goto errout_with_bin;
-	}
-
-	/* Initialize the binary structure */
-
-	bin->filename = filename;
-	bin->exports = NULL;
-	bin->nexports = 0;
-	bin->filelen = load_attr->bin_size;
-	bin->offset = load_attr->offset;
-	bin->stacksize = load_attr->stack_size;
-	bin->priority = load_attr->priority;
-	bin->compression_type = load_attr->compression_type;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	bin->ramsize = load_attr->ram_size;
+		memcpy(bin->datastart, bin->data_backup, bin->datasize);
+		memset(bin->bssstart, 0, bin->bsssize);
+		bin->reload = false;
+	} else {
 #endif
 
-	/* Load the module into memory */
+		/* Allocate the load information */
 
-	ret = load_module(bin);
-	if (ret < 0) {
-		errcode = -ret;
-		berr("ERROR: Failed to load program '%s': %d\n", filename, errcode);
-		goto errout_with_bin;
+		bin = (FAR struct binary_s *)kmm_zalloc(sizeof(struct binary_s));
+		if (!bin) {
+			berr("ERROR: Failed to allocate binary_s\n");
+			errcode = ENOMEM;
+			goto errout_with_bin;
+		}
+
+		/* Initialize the binary structure */
+
+		bin->filename = filename;
+		bin->exports = NULL;
+		bin->nexports = 0;
+		bin->filelen = load_attr->bin_size;
+		bin->offset = load_attr->offset;
+		bin->stacksize = load_attr->stack_size;
+		bin->priority = load_attr->priority;
+		bin->compression_type = load_attr->compression_type;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		bin->ramsize = load_attr->ram_size;
+#endif
+
+		/* Load the module into memory */
+
+		ret = load_module(bin);
+		if (ret < 0) {
+			errcode = -ret;
+			berr("ERROR: Failed to load program '%s': %d\n", filename, errcode);
+			goto errout_with_bin;
+		}
+
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		if (!bin->data_backup) {
+			errcode = -EINVAL;
+			berr("ERROR: data section backup address not initialized\n");
+			goto errout_with_bin;
+		}
+
+		memcpy(bin->data_backup, bin->datastart, bin->datasize);
 	}
+#endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin->uheap = (struct mm_heap_s *)bin->heapstart;
@@ -147,12 +176,17 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
 #ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Complete RAM partition will be configured as RW region */
 	mpu_configure_app_regs(&tcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)bin->ramstart, bin->ramsize, false, false);
 	/* Configure text section as RO and executable region */
 	mpu_configure_app_regs(&tcb->mpu_regs[3], g_mpu_region_nr + 1, (uintptr_t)bin->alloc[0], bin->textsize, true, true);
 	/* Configure ro section as RO and non-executable region */
 	mpu_configure_app_regs(&tcb->mpu_regs[6], g_mpu_region_nr + 2, (uintptr_t)bin->alloc[3], bin->rosize, true, false);
+#else
+	/* Complete RAM partition will be configured as RW region */
+	mpu_configure_app_regs(&tcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)bin->ramstart, bin->ramsize, false, true);
+#endif
 #endif
 
 #endif
