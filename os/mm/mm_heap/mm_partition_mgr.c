@@ -74,7 +74,6 @@ struct mm_part_s g_mm_parts[CONFIG_NUM_APPS];
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -162,20 +161,35 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size, char *na
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	*start_addr = mm_malloc(&g_pheap, *size + sizeof(struct mm_heap_s), retaddr);
+	*start_addr = mm_memalign(&g_pheap, *size, *size, retaddr);
 #else
-	*start_addr = mm_malloc(&g_pheap, *size + sizeof(struct mm_heap_s));
+	*start_addr = mm_memalign(&g_pheap, *size, *size);
 #endif
 
 #else	/* CONFIG_MM_PARTITION_HEAP */
-	uint32_t overhead = sizeof(struct mm_heap_s);
-	if (g_mm_parts[0].size == 0 && g_mm_parts[1].start > g_ram_start + *size + overhead) {
-		*start_addr = (uint32_t *)g_ram_start;
-		g_mm_parts[0].size = *size + overhead;
-	} else if (g_mm_parts[1].size == 0 && g_ram_start + g_ram_size - *size - overhead > g_ram_start + g_mm_parts[0].size) {
-		*start_addr = (uint32_t *)(g_ram_start + g_ram_size - *size - overhead);
+	if (g_mm_parts[0].size == 0) {
+		*start_addr = (uint32_t *)mm_align_up_by_size(g_ram_start, *size);
+		g_mm_parts[0].start = *start_addr;
+		g_mm_parts[0].size = *size;
+
+		if (g_mm_parts[1].start <= (uint32_t)*start_addr + *size) {
+			*start_addr = NULL;
+			*size = 0;
+			mdbg("Failed to allocate RAM partition of size %u\n", *size);
+			return -ENOMEM;
+		}
+	} else if (g_mm_parts[1].size == 0) {
+		*start_addr = (uint32_t *)(g_ram_start + g_ram_size - *size);
+		*start_addr = (uint32_t *)mm_align_down_by_size(*start_addr, *size);
 		g_mm_parts[1].start = *start_addr;
-		g_mm_parts[1].size = *size + overhead;
+		g_mm_parts[1].size = *size;
+
+		if (g_mm_parts[0].start + g_mm_parts[0].size >= g_mm_parts[1].start) {
+			*start_addr = NULL;
+			*size = 0;
+			mdbg("Failed to allocate RAM partition of size %u\n", *size);
+			return -ENOMEM;
+		}
 	} else {
 		mvdbg("Part 1 Start = 0x%x, size = %u\n", g_mm_parts[0].start, g_mm_parts[0].size);
 		mvdbg("Part 2 Start = 0x%x, size = %u\n", g_mm_parts[1].start, g_mm_parts[1].size);
@@ -191,7 +205,7 @@ int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size, char *na
 	mm_initialize((struct mm_heap_s *)*start_addr, (uint8_t *)*start_addr + sizeof(struct mm_heap_s), *size);
 	mm_add_app_heap_list((struct mm_heap_s *)*start_addr, name);
 
-	mvdbg("Allocated RAM partition with start = 0x%x size = %u\n", *start_addr, *size);
+	mvdbg("Allocated RAM partition with start = 0x%x size = %u (0x%x)\n", *start_addr, *size, *size);
 	return OK;
 }
 
@@ -220,6 +234,7 @@ void mm_free_ram_partition(uint32_t address)
 #else
 	if (g_mm_parts[0].start == address) {
 		g_mm_parts[0].size = 0;
+		g_mm_parts[0].start = g_ram_start;
 	} else if (g_mm_parts[1].start == address) {
 		g_mm_parts[1].size = 0;
 		g_mm_parts[1].start = g_ram_start + g_ram_size;

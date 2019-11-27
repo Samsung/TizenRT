@@ -844,6 +844,18 @@ void mm_free_ram_partition(uint32_t address);
 
 #endif		/* defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) */
 
+static inline uint32_t mm_align_up_by_size(uint32_t address, uint32_t size)
+{
+	uint32_t align_mask = size - 1;
+	return ((address + align_mask) & ~align_mask);
+}
+
+static inline uint32_t mm_align_down_by_size(uint32_t address, uint32_t size)
+{
+	uint32_t align_mask = size - 1;
+	return (address & ~align_mask);
+}
+
 #undef EXTERN
 #ifdef __cplusplus
 }
