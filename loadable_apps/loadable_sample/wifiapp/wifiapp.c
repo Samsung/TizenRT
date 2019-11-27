@@ -73,43 +73,48 @@ int wifiapp_main(int argc, char **argv)
 	}
 #endif
 
-#ifndef CONFIG_ENABLE_RECOVERY_AGING_TEST
-	while (is_testing) {
-		display_test_scenario();
-		ch = getchar();
-		switch (ch) {
-#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
-		case 'M':
-		case 'm':
-			messaging_test();
-			break;
-#endif
-#ifdef CONFIG_EXAMPLES_RECOVERY_TEST
-		case 'R':
-		case 'r':
-			recovery_test();
-			is_testing = false;
-			break;
-#endif
-#ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
-		case 'U':
-		case 'u':
-			binary_update_test();
-			break;
-#endif
-		case 'X':
-		case 'x':
-			printf("Test will be finished.\n");
-			is_testing = false;
-			break;
-		default:
-			printf("Invalid Scenario.\n");
-			break;
-		}
-	}
-#else
-	recovery_test();
-#endif
+//#ifndef CONFIG_ENABLE_RECOVERY_AGING_TEST
+//	while (is_testing) {
+//		display_test_scenario();
+//		ch = getchar();
+//		switch (ch) {
+//#ifdef CONFIG_EXAMPLES_MESSAGING_TEST
+//		case 'M':
+//		case 'm':
+//			messaging_test();
+//			break;
+//#endif
+//#ifdef CONFIG_EXAMPLES_RECOVERY_TEST
+//		case 'R':
+//		case 'r':
+//			recovery_test();
+//			is_testing = false;
+//			break;
+//#endif
+//#ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
+//		case 'U':
+//		case 'u':
+//			binary_update_test();
+//			break;
+//#endif
+//		case 'X':
+//		case 'x':
+//			printf("Test will be finished.\n");
+//			is_testing = false;
+//			break;
+//		default:
+//			printf("Invalid Scenario.\n");
+//			break;
+//		}
+//	}
+//#else
+//	recovery_test();
+//#endif
+
+
+	assert(0);
+
+	printf("After ASSERT\n");
 
 #endif /* CONFIG_EXAMPLES_MICOM_TIMER_TEST */
 	while (1) {

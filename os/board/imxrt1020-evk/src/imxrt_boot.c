@@ -248,7 +248,11 @@ void board_initialize(void)
 
 #ifdef CONFIG_BOARD_CRASHDUMP
 	crashdump_init();
+#ifdef CONFIG_BOARD_SMARTFS_DUMP
+	smartfsdump_init();
 #endif
+#endif
+
 #ifdef CONFIG_WATCHDOG
 	imxrt_wdog_initialize(CONFIG_WATCHDOG_DEVPATH, IMXRT_WDOG1);
 #endif

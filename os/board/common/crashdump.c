@@ -69,6 +69,7 @@ extern uint32_t up_dumptoflash(uint32_t offset, uint32_t *buf, uint32_t bytes);
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
+
 #if defined(CONFIG_BOARD_RAMDUMP_FLASH)
 static char ramdump_partname[MTD_PARTNAME_LEN + 1];
 static uint32_t ramdump_partoffset = 0;
@@ -79,6 +80,12 @@ static uint32_t ramdump_partsize = 0;
 static char coredump_partname[MTD_PARTNAME_LEN + 1];
 static uint32_t coredump_partoffset = 0;
 static uint32_t coredump_partsize = 0;
+#endif
+
+#if defined(CONFIG_BOARD_SMARTFS_DUMP)
+static char smartfsdump_partname[MTD_PARTNAME_LEN + 1];
+static uint32_t smartfsdump_partoffset = 0;
+static uint32_t smartfsdump_partsize = 0;
 #endif
 
 /****************************************************************************
@@ -305,6 +312,37 @@ static int ramdump_via_uart(void)
 }
 #endif
 
+#if defined(CONFIG_BOARD_SMARTFS_DUMP)
+void print_sector(char *buf, int size) {
+	for (register int i = 0; i < size/32; i++) {
+		for (register int j = 0; j < 32; j++) {
+			printf("%02x ", buf[i * 32 + j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
+static int smartfs_dump()
+{
+	int totalsectors = smartfsdump_partsize / CONFIG_MTD_SMART_SECTOR_SIZE;
+	char sector_buf[CONFIG_MTD_SMART_SECTOR_SIZE];
+	int offset = smartfsdump_partoffset;
+
+//	for (register int s=0; s<totalsectors; s++) {
+	for (register int s=0; s<5; s++) {
+		memcpy(sector_buf, (void*)(offset), CONFIG_MTD_SMART_SECTOR_SIZE);
+		printf("\tPhysical Sector #%d, offset: 0x%x\n", s, offset);
+		for (register int i = 0; i < 5; i++) {
+			printf("%02x ", sector_buf[i]);
+		}
+		printf("\n");
+		print_sector(sector_buf, CONFIG_MTD_SMART_SECTOR_SIZE);
+		offset += CONFIG_MTD_SMART_SECTOR_SIZE;
+	}
+}
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -340,6 +378,22 @@ void crashdump_init(void)
 	}
 #endif
 }
+
+#if defined(CONFIG_BOARD_SMARTFS_DUMP)
+void smartfsdump_init()
+{
+	int index = mtd_getpartitionindex("userfs");
+	if (index >= 0) {
+		snprintf(smartfsdump_partname, MTD_PARTNAME_LEN + 1, "/dev/mtdblock%d", index);
+		smartfsdump_partsize = mtd_getpartitionsize(index, &smartfsdump_partoffset);
+		if (!smartfsdump_partsize) {
+			fdbg("SmartFS partition size is not obtained\n");
+		}
+	} else {
+		fdbg("SmartFS partition index is wrong\n");
+	}
+}
+#endif
 
 /****************************************************************************
  * Name: board_crashdump
@@ -398,7 +452,12 @@ void board_crashdump(uint32_t cur_sp, void *tcb, uint8_t *filename, int lineno)
 		lldbg("ramdump via uart failed, ret = %d\n", ret);
 	}
 #endif
-
+#if defined(CONFIG_BOARD_SMARTFS_DUMP)
+	ret = smartfs_dump();
+	if (ret != OK) {
+		fdbg("SmartFS dump failed, ret = %d\n", ret);
+	}
+#endif
 	if (ret == OK) {
 		lldbg(" Successfull\n");
 	}

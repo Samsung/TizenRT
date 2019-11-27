@@ -211,6 +211,14 @@ config BOARD_RAMDUMP_UART
 	default n
 	---help---
 		If selected it will send the RAM dump via UART.
+
+config BOARD_SMARTFS_DUMP
+	bool "Enable SmartFS dump when crashed.
+	default n
+	depends on FS_SMARTFS && MTD_PARTITION_NAMES
+	---help---
+		If selected, smartfs is dumped when the current board is crashed.
+
 endif
 
 config BOARD_ASSERT_AUTORESET
