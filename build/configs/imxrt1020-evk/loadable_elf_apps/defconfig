@@ -392,10 +392,9 @@ CONFIG_ARCH_USE_FLASH=y
 #
 CONFIG_FLASH_PARTITION=y
 CONFIG_FLASH_MINOR=0
-CONFIG_FLASH_PART_SIZE="2048,512,1024,1024,1024,1024,1024,128,128,"
-CONFIG_FLASH_PART_TYPE="kernel,none,bin,bin,bin,bin,smartfs,ftl,config,"
-CONFIG_FLASH_PART_NAME="kernel,app,micom,micom,wifi,wifi,userfs,ftl,config,"
-
+CONFIG_FLASH_PART_SIZE="2048,512,1024,1024,1024,1024,1024,128,128,256,"
+CONFIG_FLASH_PART_TYPE="kernel,none,bin,bin,bin,bin,smartfs,ftl,config,ftl,"
+CONFIG_FLASH_PART_NAME="kernel,app,micom,micom,wifi,wifi,userfs,ftl,config,coredump,"
 #
 # SE Selection
 #

@@ -265,6 +265,9 @@ void board_initialize(void)
 
 	imxrt_spi_initialize();
 #endif
+#ifdef CONFIG_BOARD_CRASHDUMP
+	crashdump_init();
+#endif
 #ifdef CONFIG_WATCHDOG
 	imxrt_wdog_initialize(CONFIG_WATCHDOG_DEVPATH, IMXRT_WDOG1);
 #endif
