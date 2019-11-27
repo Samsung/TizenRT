@@ -39,7 +39,7 @@ def check_optimize_config(file_name):
     with open(file_name, 'r+') as f:
         lines = f.readlines()
     
-    return any([True if 'CONFIG_OPTIMIZE_APP_RELOAD=y' in line and not line.startswith('#') else False for line in lines ])
+    return any([True if 'CONFIG_OPTIMIZE_APP_RELOAD_TIME=y' in line and not line.startswith('#') else False for line in lines ])
 
 def get_static_ram_size(bin_type):
     textsize = 0
@@ -72,14 +72,14 @@ def get_static_ram_size(bin_type):
                         bsssize = size
                         break
             line = ram_fp.readline()
-        textsize = roundup_power_two(textsize)
-        # If CONFIG_OPTIMIZE_APP_RELOAD is enabled, then we will make a copy
+        # If CONFIG_OPTIMIZE_APP_RELOAD_TIME is enabled, then we will make a copy
         # of the data section inside the ro section and it will be used in
         # reload time. So, we add datasize to rosize to make place for data section.
         cfg_path = os.getenv('TOPDIR') + '/.config'
         if check_optimize_config(cfg_path) == True:
             rosize = rosize + datasize;
-        rosize = roundup_power_two(rosize)
+            rosize = roundup_power_two(rosize)
+            textsize = roundup_power_two(textsize)
         static_ram_size = textsize + rosize + datasize + bsssize
     else : #Not supported.
         print "Error : Not supported Binary Type"

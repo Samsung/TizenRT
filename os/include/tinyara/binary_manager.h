@@ -134,6 +134,9 @@ struct load_attr_s {
 	uint16_t offset;			/* The offset from which ELF binary has to be read in MTD partition */
 	uint8_t priority;			/* Priority of the binary */
 	uint8_t compression_type;	/* Binary compression type */
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	void *binp;			/* Binary info pointer */
+#endif
 };
 typedef struct load_attr_s load_attr_t;
 

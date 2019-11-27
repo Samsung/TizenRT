@@ -158,9 +158,12 @@ struct elf_loadinfo_s {
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+	struct binary_s *binp;				/* Back pointer to binary object */
+#endif
+
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	uintptr_t roalloc;			/* Allocation start for ro section */
 	size_t rosize;				/* Allocation size for ro section */
-	struct binary_s *binp;				/* Back pointer to binary object */
 #endif
 
 	uint16_t symtabidx;			/* Symbol table section index */

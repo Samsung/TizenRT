@@ -154,7 +154,11 @@ void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response);
 void binary_manager_notify_state_changed(int bin_idx, uint8_t state);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+int binary_manager_load_binary(int bin_idx, void *binp);
+#else
 int binary_manager_load_binary(int bin_idx);
+#endif
 int binary_manager_loading(char *loading_data[]);
 uint32_t binary_manager_get_binary_count(void);
 int binary_manager_get_index_with_binid(int bin_id);

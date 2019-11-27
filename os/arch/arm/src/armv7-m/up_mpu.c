@@ -342,13 +342,15 @@ void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, siz
 			MPU_RASR_S |                   /* Shareable     */
 #endif
 			MPU_RASR_C;                   /* Cacheable     */
-	if (readonly)
+	if (readonly) {
 		regval |= MPU_RASR_AP_RWRO;              /* P:RW   U:RO   */
-	else
+	} else {
 		regval |= MPU_RASR_AP_RWRW;		/* P:RW   U:RW   */
+	}
 
-	if (!execute)
+	if (!execute) {
 		regval |= MPU_RASR_XN;
+	}
 
 	regs[2] = regval;
 }

@@ -75,4 +75,19 @@ config SYMTAB_ORDEREDBYNAME
 		the logic can perform faster lookups using a binary search.
 		Otherwise, the symbol table is assumed to be un-ordered an only
 		slow, linear searches are supported.
+
+config OPTIMIZE_APP_RELOAD_TIME
+        bool "Optimizations for application reload time"
+        default y
+        ---help---
+		If this option is enabled, the app reload time is optimized by maintaining a backup
+		of the data section in the apps RO region. During reload time, the ELF file is not
+		accessed. Instead the RO sections which are already present in RAM are reused. The backup
+		RW sections are copied to appropriate address and the new instance of the application is
+		started. In order for this method to work, the RO regions must be strictly write protected
+		using additional MPU regions. It must also be noted that all the memory regions need to
+		have a size which is power of two and also need to be aligned to their size according to
+		the MPU requirements. Hence, using this option can result in a steep increase in the memory
+		requirement for this application.
+
 endif # BINFMT_ENABLE

@@ -93,7 +93,11 @@ enum {
 	REG_RASR
 };
 
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #define MPU_NUM_REGIONS		3
+#else
+#define MPU_NUM_REGIONS		1
+#endif
 #endif
 /* Configuration ****************************************************************/
 /* Task groups currently only supported for retention of child status */
