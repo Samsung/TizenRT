@@ -473,6 +473,8 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 		return;
 	}
 
+	memset(g_glyph_bitmap, 0, CONFIG_UI_GLYPH_BITMAP_WIDTH * CONFIG_UI_GLYPH_BITMAP_HEIGHT);
+
 	scale = stbtt_ScaleForPixelHeight(&(body->font->ttf_info), body->font_size);
 
 	stbtt_GetFontVMetrics(&(body->font->ttf_info), &ascent, NULL, NULL);
@@ -481,12 +483,10 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 	x = 0;
 	y = 0;
 
-	if (body->align & UI_ALIGN_TOP) {
-		y = body->base.global_rect.y;
-	} else if (body->align & UI_ALIGN_MIDDLE) {
-		y = body->base.global_rect.y + ((body->base.global_rect.height - ((int32_t)body->line_num * body->font_size)) >> 1);
+	if (body->align & UI_ALIGN_MIDDLE) {
+		y = (body->base.global_rect.height - ((int32_t)body->line_num * body->font_size)) >> 1;
 	} else if (body->align & UI_ALIGN_BOTTOM) {
-		y = body->base.global_rect.y + (body->base.global_rect.height - ((int32_t)body->line_num * body->font_size));
+		y = (body->base.global_rect.height - ((int32_t)body->line_num * body->font_size));
 	}
 
 	for (i = 0; i < body->line_num; i++) {
@@ -516,11 +516,11 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 
 		// Calculate proper x coordinate according to align
 		if (body->align & UI_ALIGN_LEFT) {
-			x = body->base.global_rect.x;
+			x = 0;
 		} else if (body->align & UI_ALIGN_CENTER) {
-			x = body->base.global_rect.x + ((body->base.global_rect.width - text_width) >> 1);
+			x = ((body->base.global_rect.width - text_width) >> 1);
 		} else if (body->align & UI_ALIGN_RIGHT) {
-			x = body->base.global_rect.x + (body->base.global_rect.width - text_width);
+			x = (body->base.global_rect.width - text_width);
 		}
 
 #if defined(CONFIG_UI_DISPLAY_RGB888)
@@ -563,8 +563,6 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 				x += body->font_size;
 			} else {
 #endif
-				memset(g_glyph_bitmap, 0, CONFIG_UI_GLYPH_BITMAP_WIDTH * CONFIG_UI_GLYPH_BITMAP_HEIGHT);
-
 				/* get bounding box for character (may be offset to account for chars that dip above or below the line */
 				stbtt_GetCodepointBitmapBox(&(body->font->ttf_info), body->utf_code[draw_idx],
 					scale, scale, &c_x1, &c_y1, &c_x2, &c_y2);
@@ -584,23 +582,23 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 				ui_renderer_set_fill_color(body->font_color);
 
 				v1 = (ui_vec3_t){
-					.x = -body->base.pivot_x,
-					.y = -body->base.pivot_y,
+					.x = 0.0f,
+					.y = 0.0f,
 					1.0f
 				};
 				v2 = (ui_vec3_t){
-					.x = -body->base.pivot_x,
-					.y = -body->base.pivot_y + out_h,
+					.x = 0.0f,
+					.y = out_h,
 					1.0f
 				};
 				v3 = (ui_vec3_t){
-					.x = -body->base.pivot_x + out_w,
-					.y = -body->base.pivot_y + out_h,
+					.x = out_w,
+					.y = out_h,
 					1.0f
 				};
 				v4 = (ui_vec3_t){
-					.x = -body->base.pivot_x + out_w,
-					.y = -body->base.pivot_y,
+					.x = out_w,
+					.y = 0.0f,
 					1.0f
 				};
 
