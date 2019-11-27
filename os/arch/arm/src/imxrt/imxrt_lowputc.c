@@ -71,7 +71,6 @@
 #include "imxrt_iomuxc.h"
 #include "imxrt_gpio.h"
 #include "imxrt_lowputc.h"
-
 #include "up_internal.h"
 
 #include <arch/board/board.h>	/* Include last:  has dependencies */
@@ -503,6 +502,19 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 }
 #endif							/* HAVE_LPUART_DEVICE */
 
+#if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG)
+/****************************************************************************
+ * Name: up_lowputc
+ *
+ * Description:
+ *   Output one character to he UART
+ *
+ ****************************************************************************/
+void up_lowputc(char ch)
+{
+	imxrt_lowputc(ch);
+}
+
 /************************************************************************************
  * Name: imxrt_lowputc
  *
@@ -512,9 +524,7 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
  *   UART is used for the console, of course.)
  *
  ************************************************************************************/
-
-#if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG)
-void imxrt_lowputc(int ch)
+void imxrt_lowputc(char ch)
 {
 	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE(1U)) == 0) {
 	}
@@ -544,5 +554,70 @@ void imxrt_lowputc(int ch)
 
 	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE(1U)) == 0) {
 	}
+}
+
+/****************************************************************************
+ * Name: imxrt_set_rxint
+ *
+ * Description:
+ *   Call to enable or disable RX interrupts
+ *
+ ****************************************************************************/
+void imxrt_set_rxint(bool enable)
+{
+	uint32_t regval;
+	uint32_t mask;
+
+	if (enable) {
+		mask = (LPUART_CTRL_RIE(1U) | LPUART_CTRL_FEIE(1U) | LPUART_CTRL_ORIE(1U));
+		regval = getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_CTRL_OFFSET);
+		regval &= ~LPUART_ALL_INTS;
+		regval |= mask;
+		putreg32(regval, IMXRT_CONSOLE_BASE + IMXRT_LPUART_CTRL_OFFSET);
+	} else {
+		mask = ~(LPUART_CTRL_RIE(1U) | LPUART_CTRL_FEIE(1U) | LPUART_CTRL_ORIE(1U));
+		regval = getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_CTRL_OFFSET);
+		regval &= ~LPUART_ALL_INTS;
+		regval &= mask;
+		putreg32(regval, IMXRT_CONSOLE_BASE + IMXRT_LPUART_CTRL_OFFSET);
+	}
+}
+
+/****************************************************************************
+ * Name: up_getc
+ *
+ * Description:
+ *   Get one character from the UART
+ *
+ ****************************************************************************/
+uint8_t up_getc(void)
+{
+	uint8_t ch;
+
+	imxrt_set_rxint(0);
+	ch = imxrt_lowgetc();
+	imxrt_set_rxint(1);
+	return ch;
+}
+
+/************************************************************************************
+ * Name: imxrt_lowgetc
+ *
+ * Description:
+ *   Receive a byte from UART with as few system dependencies as possible.  This will even work
+ *   BEFORE the console is initialized if we are booting from U-Boot (and the same
+ *   UART is used for the console, of course.)
+ *
+ ************************************************************************************/
+uint8_t imxrt_lowgetc(void)
+{
+	uint32_t rxd;
+
+	/* Receive the character written into the UART_RXD register. */
+	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_RDRF(1U)) == 0) {
+	}
+
+	rxd = getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_DATA_OFFSET);
+	return (rxd & LPUART_DATA_MASK) >> LPUART_DATA_SHIFT;
 }
 #endif
