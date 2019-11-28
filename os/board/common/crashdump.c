@@ -56,6 +56,12 @@
 #define MTD_FLASH_WRITE_SIZE		(32 * MTD_1K_SIZE)
 #endif
 
+#if defined(CONFIG_BOARD_SMARTFS_DUMP)
+#define SDV_HANDSHAKE_STRING	"SMARTFSDUMP"
+#define SDV_HANDSHAKE_STR_LEN	10
+#define SMARTFS_DUMP_CMD		"START"
+#define SMARTFS_DUMP_CMD_LEN	5
+#endif
 
 /****************************************************************************
  * Public Function Prototypes
@@ -325,20 +331,81 @@ void print_sector(char *buf, int size) {
 
 static int smartfs_dump()
 {
+	int i;
+	int ch;
+	size_t size;
+	uint8_t *ptr;
+	char host_reg[1] = "";
+	char *handshake_str = SDV_HANDSHAKE_STRING;
+	char *dump_str = SMARTFS_DUMP_CMD;
+	char handshake_msg_buf[SDV_HANDSHAKE_STR_LEN] = "";
+	char dump_cmd_buf[SMARTFS_DUMP_CMD_LEN] = "";
+
 	int totalsectors = smartfsdump_partsize / CONFIG_MTD_SMART_SECTOR_SIZE;
 	char sector_buf[CONFIG_MTD_SMART_SECTOR_SIZE];
-	int offset = smartfsdump_partoffset;
+	int offset = CONFIG_FLASH_START_ADDR + smartfsdump_partoffset;
 
-//	for (register int s=0; s<totalsectors; s++) {
-	for (register int s=0; s<5; s++) {
-		memcpy(sector_buf, (void*)(offset), CONFIG_MTD_SMART_SECTOR_SIZE);
-		printf("\tPhysical Sector #%d, offset: 0x%x\n", s, offset);
-		for (register int i = 0; i < 5; i++) {
-			printf("%02x ", sector_buf[i]);
+#if !defined(CONFIG_ARCH_LOWPUTC)
+	/* If low-level serial is not available, smartfs_dump is not possible */
+	return -1;
+#endif
+
+	/* Inform the terminal user */
+	up_puts("\n************************************************************************************************\n");
+	up_puts("\t\tDisconnect this serial terminal and Run SDV Tool\n");
+	up_puts("************************************************************************************************\n");
+
+	/* Receive handshake string from HOST */
+	do {
+		handshake_msg_buf[0] = up_getc();
+	} while (handshake_msg_buf[0] != handshake_str[0]);
+
+	for (i = 1; i < strlen(handshake_str);) {
+		if ((ch = up_getc()) != -1) {
+			handshake_msg_buf[i] = ch;
+			i++;
 		}
-		printf("\n");
-		print_sector(sector_buf, CONFIG_MTD_SMART_SECTOR_SIZE);
-		offset += CONFIG_MTD_SMART_SECTOR_SIZE;
+	}
+
+	if (strncmp(handshake_msg_buf, handshake_str, strlen(handshake_str)) != 0) {
+		/* Send NAK */
+		up_putc("NAK");
+	}
+
+	/* Send ACK */
+	up_putc("ACK");
+
+	/* Receive dump command string from HOST */
+	do {
+		dump_cmd_buf[0] = up_getc();
+	} while (dump_cmd_buf[0] != dump_str[0]);
+
+	for (i = 1; i < strlen(dump_str);) {
+		if ((ch = up_getc()) != -1) {
+			dump_cmd_buf[i] = ch;
+			i++;
+		}
+	}
+
+	if (strncmp(dump_cmd_buf, dump_str, strlen(dump_str)) != 0) {
+		printf("Total sectors = %d\n", totalsectors);
+	//	for (register int s=0; s<totalsectors; s++) {
+		for (register int s=0; s<1; s++) {
+			printf("Physical Sector #%d, offset: 0x%x\n", s, offset);
+			memcpy(sector_buf, (void*)(offset), CONFIG_MTD_SMART_SECTOR_SIZE);
+			for (register int i = 0; i < 5; i++) {
+				printf("%02x ", sector_buf[i]);
+			}
+			printf("\n");
+			print_sector(sector_buf, CONFIG_MTD_SMART_SECTOR_SIZE);
+			offset += CONFIG_MTD_SMART_SECTOR_SIZE;
+		}
+	}
+
+	printf("Writing is finished\n");
+
+	while (1) {
+		fvdbg("Waiting...\n");
 	}
 }
 #endif
@@ -383,6 +450,7 @@ void crashdump_init(void)
 void smartfsdump_init()
 {
 	int index = mtd_getpartitionindex("userfs");
+	fdbg("SmartFS partition index = %d\n", index);
 	if (index >= 0) {
 		snprintf(smartfsdump_partname, MTD_PARTNAME_LEN + 1, "/dev/mtdblock%d", index);
 		smartfsdump_partsize = mtd_getpartitionsize(index, &smartfsdump_partoffset);
@@ -423,7 +491,7 @@ void smartfsdump_init()
 void board_crashdump(uint32_t cur_sp, void *tcb, uint8_t *filename, int lineno)
 {
 	int ret = OK;
-
+	fdbg("Crashdump is called.\n");
 #if defined(CONFIG_WATCHDOG)
 	/* system under panic and we are dumping system state.
 	 * watchdog reset might stall the system, causing crashdump hang.
@@ -432,6 +500,12 @@ void board_crashdump(uint32_t cur_sp, void *tcb, uint8_t *filename, int lineno)
 	up_watchdog_disable();
 #endif
 
+#if defined(CONFIG_BOARD_SMARTFS_DUMP)
+	ret = smartfs_dump();
+	if (ret != OK) {
+		fdbg("SmartFS dump failed, ret = %d\n", ret);
+	}
+#endif
 #if defined(CONFIG_BOARD_COREDUMP_FLASH)
 	ret = coredump_to_flash(cur_sp, tcb);
 	if (ret != OK) {
@@ -450,12 +524,6 @@ void board_crashdump(uint32_t cur_sp, void *tcb, uint8_t *filename, int lineno)
 	ret = ramdump_via_uart();
 	if (ret != OK) {
 		lldbg("ramdump via uart failed, ret = %d\n", ret);
-	}
-#endif
-#if defined(CONFIG_BOARD_SMARTFS_DUMP)
-	ret = smartfs_dump();
-	if (ret != OK) {
-		fdbg("SmartFS dump failed, ret = %d\n", ret);
 	}
 #endif
 	if (ret == OK) {
