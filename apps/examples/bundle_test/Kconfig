@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_BUNDLE_TEST
+	bool "Bundle Test Example"
+	depends on DATA_BUNDLE
+	default n
+	---help---
+		Enable the Bundle Test Example
+
+config USER_ENTRYPOINT
+	string
+	default "bundle_test_main" if ENTRY_BUNDLE_TEST

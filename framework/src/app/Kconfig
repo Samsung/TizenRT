@@ -1,0 +1,6 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+source "$FRAMEWORK_DIR/src/app/bundle/Kconfig"
