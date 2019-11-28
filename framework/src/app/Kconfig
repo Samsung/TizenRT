@@ -4,3 +4,12 @@
 #
 
 source "$FRAMEWORK_DIR/src/app/bundle/Kconfig"
+
+config APP
+	bool "Application Framework Support"
+	default n
+	select EVENTLOOP
+	select UI
+	select DATA_BUNDLE
+	---help---
+		Enables overall support for Application Framework.

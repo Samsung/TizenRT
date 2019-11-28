@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2017 Samsung Electronics Co., Ltd All Rights Reserved
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define AUL_K_JOB_ID			"__AUL_JOB_ID__"
+#define AUL_K_JOB_STATUS		"__AUL_JOB_STATUS__"
+#define AUL_K_JOB_REAL_ID		"__AUL_JOB_REAL_ID__"
+
+#define AUL_K_JOB_PERIODIC		"__AUL_JOB_PERIODIC__"
+#define AUL_K_JOB_PERSISTENT		"__AUL_JOB_PERSISTENT__"
+#define AUL_K_JOB_IS_ONCE		"__AUL_JOB_IS_ONCE__"
+
+#define AUL_K_JOB_REQ_TIMEOUT		"__AUL_JOB_REQ_TIMEOUT__"
+#define AUL_K_JOB_REQ_BATTERY_NOT_LOW	"__AUL_JOB_REQ_BATTERY_NOT_LOW__"
+#define AUL_K_JOB_REQ_CHARGING		"__AUL_JOB_REQ_CHARGING__"
+#define AUL_K_JOB_REQ_WIFI_CONNECTION	"__AUL_JOB_REQ_WIFI_CONNECTION__"
+
+#define AUL_K_JOB_TRIG_BATTERY_LEVEL_EMPTY \
+	"__AUL_JOB_TRIG_BATTERY_LEVEL_EMPTY__"
+#define AUL_K_JOB_TRIG_BATTERY_LEVEL_CRITICAL \
+	"__AUL_JOB_TRIG_BATTERY_LEVEL_CRITICAL__"
+#define AUL_K_JOB_TRIG_BATTERY_LEVEL_LOW \
+	"__AUL_JOB_TRIG_BATTERY_LEVEL_LOW__"
+#define AUL_K_JOB_TRIG_BATTERY_LEVEL_HIGH \
+	"__AUL_JOB_TRIG_BATTERY_LEVEL_HIGH__"
+#define AUL_K_JOB_TRIG_CHARGER_STATE_CONNECTED \
+	"__AUL_JOB_TRIG_CHARGER_STATE_CONNECTED__"
+#define AUL_K_JOB_TRIG_CHARGER_STATE_DISCONNECTED \
+	"__AUL_JOB_TRIG_CHARGER_STATE_DISCONNECTED__"
+#define AUL_K_JOB_TRIG_DISPLAY_STATE_ON \
+	"__AUL_JOB_TRIG_DISPLAY_STATE_ON__"
+#define AUL_K_JOB_TRIG_DISPLAY_STATE_OFF \
+	"__AUL_JOB_TRIG_DISPLAY_STATE_OFF__"
+#define AUL_K_JOB_TRIG_DISPLAY_STATE_DIM \
+	"__AUL_JOB_TRIG_DISPLAY_STATE_DIM__"
+#define AUL_K_JOB_TRIG_EARJACK_STATE_CONNECTED \
+	"__AUL_JOB_TRIG_EARJACK_STATE_CONNECTED__"
+#define AUL_K_JOB_TRIG_EARJACK_STATE_DISCONNECTED \
+	"__AUL_JOB_TRIG_EARJACK_STATE_DISCONNECTED__"
+#define AUL_K_JOB_TRIG_GPS_STATE_DISABLED \
+	"__AUL_JOB_TRIG_GPS_STATE_DISABLED__"
+#define AUL_K_JOB_TRIG_GPS_STATE_SEARCHING \
+	"__AUL_JOB_TRIG_GPS_STATE_SEARCHING__"
+#define AUL_K_JOB_TRIG_GPS_STATE_CONNECTED \
+	"__AUL_JOB_TRIG_GPS_STATE_CONNECTED__"
+#define AUL_K_JOB_TRIG_POWERSAVE_MODE_ENABLED \
+	"__AUL_JOB_TRIG_POWERSAVE_MODE_ENABLED__"
+#define AUL_K_JOB_TRIG_POWERSAVE_MODE_DISABLED \
+	"__AUL_JOB_TRIG_POWERSAVE_MODE_DISABLED__"
+#define AUL_K_JOB_TRIG_USB_STATE_CONNECTED \
+	"__AUL_JOB_TRIG_USB_STATE_CONNECTED__"
+#define AUL_K_JOB_TRIG_USB_STATE_DISCONNECTED \
+	"__AUL_JOB_TRIG_USB_STATE_DISCONNECTED__"
+#define AUL_K_JOB_TRIG_WIFI_STATE_DISABLED \
+	"__AUL_JOB_TRIG_WIFI_STATE_DISABLED__"
+#define AUL_K_JOB_TRIG_WIFI_STATE_DISCONNECTED \
+	"__AUL_JOB_TRIG_WIFI_STATE_DISCONNECTED__"
+#define AUL_K_JOB_TRIG_WIFI_STATE_CONNECTED \
+	"__AUL_JOB_TRIG_WIFI_STATE_CONNECTED__"
+
+typedef enum {
+	JOB_STATUS_START,
+	JOB_STATUS_STOPPED,
+	JOB_STATUS_FINISHED,
+} aul_job_status_e;
+
+int aul_job_scheduler_update_job_status(const char *job_id,
+		aul_job_status_e job_status);
+
+#ifdef __cplusplus
+}
+#endif

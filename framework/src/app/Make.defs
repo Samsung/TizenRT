@@ -23,3 +23,15 @@ define Add_AppFW_Module
 endef
 
 $(foreach TDIR, $(APPFWDIRS), $(eval $(call Add_AppFW_Module,$(TDIR))))
+
+CFLAGS += -Isrc/app/include
+DEPPATH += --dep-path src/app/include
+VPATH += :src/app/include
+
+# temporary
+CFLAGS += -Isrc/app/include/aul
+DEPPATH += --dep-path src/app/include/aul
+VPATH += :src/app/include/aul
+CFLAGS += -Isrc/app/include/glib
+DEPPATH += --dep-path src/app/include/glib
+VPATH += :src/app/include/glib
