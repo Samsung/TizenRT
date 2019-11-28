@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_APPFW_TEST
+	bool "App Framework Test Example"
+	default n
+	depends on APP
+	---help---
+		Enable the App Framework Test Example
+
+config USER_ENTRYPOINT
+	string
+	default "appfw_test_main" if ENTRY_APPFW_TEST

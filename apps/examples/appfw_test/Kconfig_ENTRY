@@ -1,0 +1,3 @@
+config ENTRY_APPFW_TEST
+	bool "App Framework Test Example"
+	depends on EXAMPLES_APPFW_TEST
