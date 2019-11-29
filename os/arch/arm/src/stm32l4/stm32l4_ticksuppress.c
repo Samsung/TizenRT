@@ -233,7 +233,7 @@ extern void execute_waketime_interrupt(int elapsed)
  ****************************************************************************/
 extern void supress_ticks(void)
 {
-	up_hal_timer_deinitialize();
+	supress_hal_tick();
 
 	/* Disable SysTick */
 	SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
@@ -252,5 +252,5 @@ extern void enable_ticks(void)
 	SysTick->CTRL  |= SysTick_CTRL_TICKINT_Msk;
 
 	/* Enable HALTick */
-	up_hal_timer_initialize();
+	enable_hal_tick();
 }
