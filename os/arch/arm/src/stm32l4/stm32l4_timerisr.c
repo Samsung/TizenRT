@@ -269,11 +269,18 @@ void up_hal_timer_initialize(void)
 
 void up_hal_timer_deinitialize(void)
 {
-  __HAL_TIM_CLEAR_IT(&htim17, TIM_IT_UPDATE);
-  HAL_TIM_Base_Stop_IT(&htim17);
-  HAL_NVIC_DisableIRQ(TIM1_TRG_COM_TIM17_IRQn);
-  HAL_TIM_Base_DeInit(&htim17);
   __HAL_RCC_TIM17_CLK_DISABLE();
+  HAL_NVIC_DisableIRQ(TIM1_TRG_COM_TIM17_IRQn);
+  (void)irq_detach(STM32L4_IRQ_TIM17);
+  up_disable_irq(STM32L4_IRQ_TIM17);
 }
 
+void supress_hal_tick(void)
+{
+  HAL_NVIC_DisableIRQ(TIM1_TRG_COM_TIM17_IRQn);
+}
 
+void enable_hal_tick(void)
+{
+  HAL_NVIC_EnableIRQ(TIM1_TRG_COM_TIM17_IRQn);
+}
