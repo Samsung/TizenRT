@@ -57,6 +57,8 @@
 #endif /* CONFIG_DEBUG_TASH */
 #endif /* CONFIG_CPP_HAVE_VARARGS */
 
+bool tash_do_autocomplete(char *cmd, int *pos, bool double_tab);
+
 extern void tash_register_basic_cmds(void);
 extern int tash_execute_cmdline(char *buff);
 extern int tash_execute_cmd(char **args, int argc);

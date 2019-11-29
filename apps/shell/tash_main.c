@@ -81,6 +81,7 @@ static char *tash_read_input_line(int fd)
 	int pos = 0;
 	int nbytes = 0;
 	int char_idx = 0;
+	bool is_tab_pressed = false;
 #if !defined(CONFIG_DISABLE_POLL)
 	fd_set tfd;
 	struct timeval stimeout;
@@ -125,6 +126,20 @@ static char *tash_read_input_line(int fd)
 					if ((buffer[valid_char_pos] != 0x0) && (valid_char_pos < TASH_LINEBUFLEN)) {
 						memmove(&buffer[pos], &buffer[valid_char_pos], (bufsize - valid_char_pos));
 					}
+					is_tab_pressed = false;
+				} else if (buffer[pos] == ASCII_TAB) {
+					if (pos > 0 && tash_do_autocomplete(buffer, &pos, is_tab_pressed) == true) {
+						if (write(fd, (const void *)"\r", sizeof("\r")) <= 0) {
+							shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+						}
+						if (write(fd, (const void *)TASH_PROMPT, sizeof(TASH_PROMPT)) <= 0) {
+							shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+						}
+						if (write(fd, (const void *)buffer, pos) <= 0) {
+							shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+						}
+					}
+					is_tab_pressed = true;
 				} else {
 					if (buffer[pos] == ASCII_CR) {
 						buffer[pos] = ASCII_LF;
@@ -141,6 +156,7 @@ static char *tash_read_input_line(int fd)
 						buffer[0] = ASCII_NUL;
 						return buffer;
 					}
+					is_tab_pressed = false;
 				}
 			}
 #if !defined(CONFIG_DISABLE_POLL)

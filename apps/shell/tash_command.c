@@ -269,6 +269,58 @@ int tash_execute_cmd(char **args, int argc)
 	return 0;					/* Need to pass the appropriate error later */
 }
 
+/** @name tash_do_autocomplete
+ * @brief API to TASH tab commands
+ * @ingroup tash
+ * @param[in] cmd - command's first string
+ * @param[in] pos - length of command's first string
+ * @param[in] double_tab : true - tab is pressed more than once
+ *                         false - tab is pressed once
+ */
+bool tash_do_autocomplete(char *cmd, int *pos, bool double_tab)
+{
+	int cmd_idx;
+	bool ret = false;
+	int found_cnt = 0;
+	int idx;
+	uint16_t matched[TASH_MAX_COMMANDS] = {0,};
+
+	/* lock mutex */
+	pthread_mutex_lock(&tash_cmds_info.tmutex);
+
+	for (cmd_idx = 0; cmd_idx < tash_cmds_info.count; cmd_idx++) {
+		/* search for commands starting with cmd */
+		if (strncmp(cmd, tash_cmds_info.cmd[cmd_idx].str, *pos) == 0) {
+			matched[found_cnt++] = cmd_idx;
+		}
+	}
+
+	if (found_cnt == 1 && double_tab == false) {
+		idx = matched[0];
+		/* If it finds only one, it autocompletes the command */
+		while (tash_cmds_info.cmd[idx].str[*pos] != 0) {
+			cmd[*pos] = tash_cmds_info.cmd[idx].str[*pos];
+			(*pos)++;
+		}
+		ret = true;
+	} else if (found_cnt > 1 && double_tab == true) {
+		printf("\n");
+		for (int cnt = 0; cnt < found_cnt; cnt++) {
+			idx = matched[cnt];
+			/* Show commands starting with cmd */
+			printf("%-16s ", tash_cmds_info.cmd[idx].str);
+			if (cnt % TASH_CMDS_PER_LINE == (TASH_CMDS_PER_LINE - 1) && cnt != found_cnt - 1) {
+				printf("\n");
+			}
+		}
+		printf("\n");
+		ret = true;
+	}
+	/* unlock mutex */
+	pthread_mutex_unlock(&tash_cmds_info.tmutex);
+	return ret;
+}
+
 /** @name tash_cmd_install
  * @brief API to install TASH commands
  * @ingroup tash
