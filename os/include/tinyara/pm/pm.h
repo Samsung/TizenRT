@@ -247,6 +247,12 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+ 
+/* This enumeration provides all power management domains */
+enum pm_domain_e {
+	PM_IDLE_DOMAIN = 0,
+	PM_NDOMAINS = CONFIG_PM_NDOMAINS,
+};
 
 /* This enumeration provides all power management states.  Receipt of the
  * state indication is the state transition event.
