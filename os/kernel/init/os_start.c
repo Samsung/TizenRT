@@ -71,6 +71,7 @@
 #include  <tinyara/mm/shm.h>
 #include  <tinyara/kmalloc.h>
 #include  <tinyara/init.h>
+#include  <tinyara/pm/pm.h>
 
 #include  "sched/sched.h"
 #include  "signal/signal.h"
@@ -594,6 +595,10 @@ void os_start(void)
 	/* Bring Up the System ****************************************************/
 	/* Create initial tasks and bring-up the system */
 
+#ifdef CONFIG_PM
+	/* We cannot enter low power state until boot complete */
+	pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
+#endif
 	DEBUGVERIFY(os_bringup());
 
 	/* The IDLE Loop **********************************************************/
