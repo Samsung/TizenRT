@@ -228,7 +228,11 @@ static void up_idlepm(void)
 		/* Enable tick interrupts */
 		enable_ticks();
 
-		oldstate = PM_IDLE;
+		/* We dont want state change directly
+		 * it is the resposibility of the scheduled
+		 * event to inform the PM Core about the
+		 * pm activity based on its requirement */
+		//oldstate = PM_IDLE;	/* Re visit */
 #else
 		stm32l4_pmsleep(false);
 #endif		/* CONFIG_SCHED_TICKSUPPRESS */
