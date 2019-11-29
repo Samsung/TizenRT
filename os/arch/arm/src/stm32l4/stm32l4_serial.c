@@ -2695,11 +2695,13 @@ static void stm32l4serial_dmarxcallback(DMA_HANDLE handle, uint8_t status,
 static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
                                    enum pm_state_e pmstate)
 {
+  struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
   switch (pmstate)
     {
       case PM_NORMAL:
         {
           stm32l4serial_pm_setsuspend(false);
+          HAL_NVIC_SetPriority(priv->irq - STM32L4_IRQ_FIRST, 0xf, 0x0);
         }
         break;
 
@@ -2718,6 +2720,7 @@ static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
            */
 
           stm32l4serial_pm_setsuspend(false);
+          HAL_NVIC_SetPriority(priv->irq - STM32L4_IRQ_FIRST, 0x7, 0x0);
         }
         break;
 
