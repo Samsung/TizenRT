@@ -22,7 +22,7 @@ git submodule update --init "external/libsodium/libsodium"
 ### Apply patch for stdk
 ```shell
 cd external/stdk/st-device-sdk-c
-git apply ../patch/0001-Modify-array-index-in-for-loop-avoid-overwrite.patch
+git apply ../patch/0001-fix-array-overwrite-issue-and-return-value-issue.patch
 ```
 
 ### Register device and update configure info
