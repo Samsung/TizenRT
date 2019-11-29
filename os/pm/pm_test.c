@@ -103,6 +103,11 @@ void pmtest_init(void)
 	for (i = 0; i < PMTEST_DEVICES; i++) {
 		pm_register(&pmtest_cbarray[i]);
 	}
+	/* We cant create threads in pm_initialize,
+	 * also, it will race against idle process for state change
+	 * Therefore, we dont call it here.
+	 * Keeping the thread code only for code coverage reference*/
+
 	/* Launch test thead */
-	pmtest_launch_kthread();
+	//pmtest_launch_kthread();
 }
