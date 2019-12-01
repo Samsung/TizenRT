@@ -37,10 +37,6 @@
 #ifndef VIDEO_DEVNAME
 #define VIDEO_DEVNAME  "/dev/video%d"
 #endif
-/* Note: Buffer size must be multiple of 32. */
-
-#define IMAGE_JPG_SIZE     (512*1024)	/* 512kB */
-#define IMAGE_YUV_SIZE     (320*240*2)	/* QVGA YUV422 */
 
 #define VIDEO_BUFNUM       (3)
 #define STILL_BUFNUM       (1)
@@ -48,6 +44,19 @@
 #define DEFAULT_REPEAT_NUM (10)
 
 #define IMAGE_FILENAME_LEN (32)
+#define MAX_FORMAT          5
+#define MAX_FRAME           15
+#define MAX_FRAME_INTERVALS	5
+
+#define SUPPORTED_FORMAT	"  -L [FORMAT TYPE]     Supported Formats (index)\n"
+#define FORMAT				"                        %s(%d)\n"
+#define FRAME				"                             (%d) %dx%d\n"
+#define SUPPORTED_FRAME		"                       Supported Frames of (%s)\n"
+#define SET_FRAME			"  -U [FRAME SIZE]      Frame (index) for specified format\n"
+#define SUPPORT_INTERVAL1	"                                    Supported Frame Intervals (Numerator/Denominator)\n"
+#define SET_INTERVAL		"  -K [FRAME INTERVAL]  Frame interval (index) for specified format, Ex: camera -t 1 -L 1 -U 5 -K 4\n"
+#define FRAME_INTERVAL_1	"                                     (%d)%d/%d\n"
+#define FRAME_INTERVAL_2	"                                     (%d)(%d - %d) (%d - %d) (%d/%d)\n"
 
 /****************************************************************************
  * Private Types
@@ -58,11 +67,36 @@ struct v_buffer {
 };
 typedef struct v_buffer v_buffer_t;
 
+struct camera_ctrls {
+	uint8_t v4l2_class;
+	uint8_t v4l2_id;
+	uint8_t active;
+	uint8_t neg;
+	char sbuff[128];
+	int32_t value;
+	int32_t min;
+	int8_t req;
+};
+
+struct camera_frames {
+	uint16_t width;
+	uint16_t height;
+	uint16_t interval_count;
+	struct v4l2_frmivalenum fintervals[MAX_FRAME_INTERVALS];
+};
+
+struct camera_formats {
+	struct v4l2_fmtdesc		frames[MAX_FRAME];
+	struct camera_frames	cam_frame[MAX_FRAME];
+	uint16_t frame_count;
+};
+
+uint16_t format_count = 0;
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
-static int write_file(uint8_t *data, size_t len, uint32_t format);
+static int write_file(uint8_t *data, size_t len, uint32_t format, uint32_t frame);
 
 /****************************************************************************
  * Private Data
@@ -76,6 +110,52 @@ static uint8_t camera_main_file_count = 0;
 static char camera_main_filename[IMAGE_FILENAME_LEN];
 static const char *save_dir;
 
+struct camera_formats cm_format[MAX_FORMAT];
+
+struct camera_ctrls ctrls[] = {
+	/* User Control mapping */
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_BRIGHTNESS, 0, 0, "  -b [BRIGHTNESS]      Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_CONTRAST, 0, 0, "  -c [CONTRAST]        Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_SATURATION, 0, 0, "  -s [SATURATION]      Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_HUE, 0, 0, "  -k [HUE]             Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_AUTO_WHITE_BALANCE, 0, 0, "  -A [AWB]             Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_RED_BALANCE, 0, 0, "  -r [RED BALANCE]     Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_BLUE_BALANCE, 0, 0, "  -B [BLUE BALANCE]    Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_GAMMA, 0, 0, "  -g [GAMA]            Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_GAMMA_CURVE, 0, 0, "  -G [GAMA CURVE]      Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_EXPOSURE, 0, 0, "  -e [EXPOSURE]        Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_HFLIP, 0, 0, "  -F [HFLIP]           Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_VFLIP, 0, 0, "  -v [VFLIP]           Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_HFLIP_STILL, 0, 0, "  -w [HFLIP STILL]     Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_VFLIP_STILL, 0, 0, "  -V [VFLIP STILL]     Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_SHARPNESS, 0, 0, "  -S [SHARPNESS]       Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_COLOR_KILLER, 0, 0, "  -C [COLOR KILLER]    Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_COLORFX, 0, 0, "  -E [COLOR EFFECT]    Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_AUTOBRIGHTNESS, 0, 0, "  -T [AUTO BRIGHTNESS] Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_USER, V4L2_CID_ROTATE, 0, 0, "  -R [ROTATE]          Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	/* Camera Control mapping */
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_EXPOSURE_AUTO, 0, 0, "  -x [EXPOSURE AUTO]   Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_EXPOSURE_ABSOLUTE, 0, 0, "  -X [EXPOSURE ABS]    Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_FOCUS_ABSOLUTE, 0, 0, "  -o [FOCUS ABS]       Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_FOCUS_RELATIVE, 0, 0, "  -O [FOCUS RELATIVE]  Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_FOCUS_AUTO, 0, 0, "  -u [FOCUS AUTO]      Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_ZOOM_ABSOLUTE, 0, 0, "  -z [ZOOM ABS]        Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_ZOOM_RELATIVE, 0, 0, "  -Z [ZOOM RELATIVE]   Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_ZOOM_CONTINUOUS, 0, 0, "  -m [ZOOM CONTINOUS]  Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_IRIS_ABSOLUTE, 0, 0, "  -i [IRIS ABS]        Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_IRIS_RELATIVE, 0, 0, "  -I [IRIS RELATIVE]   Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE, 0, 0, "  -p [WHITE PRESET]    Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_WIDE_DYNAMIC_RANGE, 0, 0, "  -d [DYNAMIC RANGE]   Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_IMAGE_STABILIZATION, 0, 0, "  -N [IMAGE STAB]      Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_ISO_SENSITIVITY, 0, 0, "  -q [ISO SENSITIVITY] Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_ISO_SENSITIVITY_AUTO, 0, 0, "  -Q [ISO SENSI AUTO]  Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_EXPOSURE_METERING, 0, 0, "  -M [EXPOSURE METER]  Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_SCENE_MODE, 0, 0, "  -D [SCENE MODE]      Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_3A_LOCK, 0, 0, "  -l [3A LOCK]         Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_AUTO_FOCUS_START, 0, 0, "  -y [FOCUS START]     Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+	{V4L2_CTRL_CLASS_CAMERA, V4L2_CID_AUTO_FOCUS_STOP, 0, 0, "  -Y [FOCUS STOP]      Range(%d - %d) Step(%d)\n                       Default(%d)\n",},
+};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -83,7 +163,7 @@ static const char *save_dir;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static int write_file(uint8_t *data, size_t len, uint32_t format)
+static int write_file(uint8_t *data, size_t len, uint32_t format, uint32_t frame)
 {
 	FILE *fp;
 
@@ -94,11 +174,7 @@ static int write_file(uint8_t *data, size_t len, uint32_t format)
 
 	memset(camera_main_filename, 0, sizeof(camera_main_filename));
 
-	if (format == V4L2_PIX_FMT_JPEG) {
-		snprintf(camera_main_filename, IMAGE_FILENAME_LEN, "%s/VIDEO%03d.JPG", save_dir, camera_main_file_count);
-	} else {
-		snprintf(camera_main_filename, IMAGE_FILENAME_LEN, "%s/VIDEO%03d.YUV", save_dir, camera_main_file_count);
-	}
+	snprintf(camera_main_filename, IMAGE_FILENAME_LEN, "%s/VIDEO%03d.%s", save_dir, camera_main_file_count, cm_format[format].frames[frame].description);
 
 	fprintf(stderr, "FILENAME:%s\n", camera_main_filename);
 
@@ -116,15 +192,16 @@ static int write_file(uint8_t *data, size_t len, uint32_t format)
 	return 0;
 }
 
-static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, uint32_t pixformat, uint16_t hsize, uint16_t vsize, uint8_t buffernum)
+static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, uint32_t idxformat, uint32_t idxframe, uint32_t idx_frame_interval, uint8_t buffernum)
 {
 	int ret;
 	int cnt;
-	uint32_t fsize;
+	uint32_t fsize = 0;
 	struct v4l2_format fmt = { 0 };
 	struct v4l2_requestbuffers req = { 0 };
 	struct v4l2_buffer buf = { 0 };
 	struct v_buffer *buffers;
+	struct v4l2_streamparm frame_interval = {0,};
 
 	/* VIDIOC_REQBUFS initiate user pointer I/O */
 
@@ -140,16 +217,27 @@ static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, ui
 	}
 
 	/* VIDIOC_S_FMT set format */
-
-	fmt.type = type;
-	fmt.fmt.pix.width = hsize;
-	fmt.fmt.pix.height = vsize;
-	fmt.fmt.pix.field = V4L2_FIELD_ANY;
-	fmt.fmt.pix.pixelformat = pixformat;
+	fmt.type				= type;
+	fmt.fmt.pix.width		= cm_format[idxformat].cam_frame[idxframe].width;
+	fmt.fmt.pix.height		= cm_format[idxformat].cam_frame[idxframe].height;
+	fmt.fmt.pix.field		= V4L2_FIELD_ANY;
+	fmt.fmt.pix.pixelformat	= cm_format[idxformat].frames[idxframe].pixelformat;
+	fsize = fmt.fmt.pix.width * fmt.fmt.pix.height * 2;
 
 	ret = ioctl(fd, VIDIOC_S_FMT, (unsigned long)&fmt);
 	if (ret < 0) {
 		fprintf(stderr, "Failed to VIDIOC_S_FMT: errno = %d\n", errno);
+		return ret;
+	}
+
+	/* VIDIOC_S_PARM set frame interval */
+	frame_interval.type = type;
+	frame_interval.parm.capture.timeperframe.numerator		= cm_format[idxformat].cam_frame[idxframe].fintervals[idx_frame_interval].discrete.numerator;
+	frame_interval.parm.capture.timeperframe.denominator	= cm_format[idxformat].cam_frame[idxframe].fintervals[idx_frame_interval].discrete.denominator;
+
+	ret = ioctl(fd, VIDIOC_S_PARM, (unsigned long)&frame_interval);
+	if (ret < 0) {
+		fprintf(stderr, "Failed to VIDIOC_S_PARM: errno = %d\n", errno);
 		return ret;
 	}
 
@@ -164,14 +252,8 @@ static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, ui
 	}
 
 	if (!buffers) {
-		fprintf(stderr, "Out of memory\n");
+		fprintf(stderr, "[%d] Out of memory for size (%d)\n", __LINE__, sizeof(v_buffer_t) * buffernum);
 		return ret;
-	}
-
-	if (pixformat == V4L2_PIX_FMT_UYVY) {
-		fsize = IMAGE_YUV_SIZE;
-	} else {
-		fsize = IMAGE_JPG_SIZE;
 	}
 
 	for (n_buffers = 0; n_buffers < buffernum; ++n_buffers) {
@@ -182,7 +264,7 @@ static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, ui
 
 		buffers[n_buffers].start = memalign(32, fsize);
 		if (!buffers[n_buffers].start) {
-			fprintf(stderr, "Out of memory\n");
+			fprintf(stderr, "[%d] Out of memory for size (%d)\n", __LINE__, fsize);
 			return ret;
 		}
 	}
@@ -227,6 +309,200 @@ static void free_buffer(struct v_buffer *buffers, uint8_t bufnum)
 	}
 }
 
+void clear_camera_options()
+{
+	int i = 0;
+	int size = sizeof(ctrls) / sizeof(struct camera_ctrls) - 1;
+	do {
+		ctrls[i].active = 0;
+		ctrls[i].neg = 0;
+		ctrls[i].req = 0;
+		ctrls[i].value = 0;
+		ctrls[i].min = 0;
+	} while (i++ < size);
+}
+
+void get_camera_options(int fd, int flag)
+{
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	int ret = 0;
+	int size = sizeof(ctrls) / sizeof(struct camera_ctrls) - 1;
+	struct v4l2_queryctrl query;
+	struct v4l2_fmtdesc fmtdesc;
+	struct v4l2_frmsizeenum fsize;
+	struct v4l2_frmivalenum finterval;
+	char buff[128];
+
+	//Before setting data, reset memory
+	memset(&cm_format, 0, sizeof(cm_format));
+	format_count = 0;
+
+	if (flag) {
+		fprintf(stdout, "Supported Camera Options :\n");
+	}
+	/* Control Options */
+	do {
+		query.id = ctrls[i].v4l2_id;
+		query.ctrl_class = ctrls[i].v4l2_class;
+		ret = ioctl(fd, VIDIOC_QUERYCTRL, &query);
+
+		if (ret >= 0) {
+			ctrls[i].active = 1;
+			ctrls[i].neg = 0;
+			if (query.minimum < 0) {
+				ctrls[i].neg = 1;
+				ctrls[i].min = query.minimum * -1;
+				query.maximum += query.minimum * -1;
+				query.minimum = 0;
+				if (query.default_value < 0) {
+					query.default_value += (query.default_value * -1);
+				}
+			}
+			if (flag) {
+				sprintf(buff, ctrls[i].sbuff, query.minimum, query.maximum, query.step, query.default_value);
+				fprintf(stdout, buff);
+			}
+		} else {
+			ctrls[i].active = 0;
+		}
+	} while (i++ < size);
+
+	/* Format options */
+	i = 0;
+	if (flag) {
+		fprintf(stdout, SUPPORTED_FORMAT);
+	}
+	do {
+		fmtdesc.index = i;
+		fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		ret = ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc);
+		if (ret < 0) {
+			continue;
+		} else {
+			if (flag) {
+				sprintf(buff, FORMAT, fmtdesc.description, i);
+				fprintf(stdout, buff);
+				sprintf(buff, SUPPORTED_FRAME, fmtdesc.description);
+				fprintf(stdout, buff);
+			}
+			j = 0;
+			do {
+				//Get framesize details for each format indexes
+				fsize.index = j;
+				fsize.pixel_format = fmtdesc.pixelformat;
+				ret = ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &fsize);
+
+				if (ret < 0) {
+					continue;
+				} else {
+					if (flag) {
+						sprintf(buff, FRAME, j, fsize.discrete.width, fsize.discrete.height);
+						fprintf(stdout, buff);
+					}
+					cm_format[i].frames[j].pixelformat			= fmtdesc.pixelformat;
+					cm_format[i].frames[j].subimg_pixelformat	= fmtdesc.subimg_pixelformat;
+					memcpy(cm_format[i].frames[j].description, fmtdesc.description, sizeof(cm_format[i].frames[j].description));
+
+					cm_format[i].cam_frame[j].width		= fsize.discrete.width;
+					cm_format[i].cam_frame[j].height	= fsize.discrete.height;
+
+					//Get frameinterval for each frame size
+					if (flag) {
+						fprintf(stdout, SUPPORT_INTERVAL1);
+					}
+					k = 0;
+					do {
+						finterval.index			= k;
+						finterval.pixel_format	= fmtdesc.pixelformat;
+						finterval.width			= fsize.discrete.width;
+						finterval.height		= fsize.discrete.height;
+
+						ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &finterval);
+						if (ret < 0) {
+							break;
+						} else {
+							if (flag) {
+								if (finterval.type == V4L2_FRMIVAL_TYPE_DISCRETE) {
+									sprintf(buff, FRAME_INTERVAL_1, k, finterval.discrete.numerator, finterval.discrete.denominator);
+								} else {
+									sprintf(buff, FRAME_INTERVAL_2, k, finterval.stepwise.min.numerator, finterval.stepwise.max.numerator, finterval.stepwise.min.denominator, finterval.stepwise.max.denominator, finterval.stepwise.step.numerator, finterval.stepwise.step.denominator);
+								}
+								fprintf(stdout, buff);
+							}
+
+							memcpy(&cm_format[i].cam_frame[j].fintervals[k], &finterval, sizeof(finterval));
+						}
+						cm_format[i].cam_frame[j].interval_count++;
+					} while (k++ < MAX_FRAME_INTERVALS);
+				}
+				cm_format[i].frame_count++;
+			} while (j++ < MAX_FRAME);
+		}
+		format_count++;
+	} while (i++ < MAX_FORMAT);
+
+	/* Frame & frame_interval command */
+	if (flag) {
+		fprintf(stdout, SET_FRAME);
+		fprintf(stdout, SET_INTERVAL);
+	}
+}
+
+int set_camera_options(int fd)
+{
+	int i = 0;
+	int ret = 0;
+	int size = sizeof(ctrls) / sizeof(struct camera_ctrls) - 1;
+	struct v4l2_control ctrl;
+	struct v4l2_ext_controls extctrls;
+	struct v4l2_ext_control extctrl;
+
+	do {
+		if (ctrls[i].req == 0) {
+			continue;
+		}
+		if (!ctrls[i].active) {
+			char error_str[50] = {0,};
+			int idx = 0;
+
+			while (idx < 50) {
+				error_str[idx] = ctrls[i].sbuff[idx];
+				if (ctrls[i].sbuff[idx] == ']')
+					break;
+				idx++;
+			}
+			fprintf(stdout, "%d:%s unsupported option\n", __LINE__, error_str);
+			ret = -1;
+			break;
+		}
+		if (ctrls[i].value > ctrls[i].min) {
+			ctrls[i].value -= ctrls[i].min;
+		}
+		if (ctrls[i].v4l2_class == V4L2_CTRL_CLASS_USER) {
+			ctrl.id = ctrls[i].v4l2_id;
+			ctrl.value = ctrls[i].value;
+			ret = ioctl(fd, VIDIOC_S_CTRL, &ctrl);
+			if (ret < 0) {
+				break;
+			}
+		} else if (ctrls[i].v4l2_class == V4L2_CTRL_CLASS_CAMERA) {
+			extctrls.count = 1;
+			extctrls.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
+			extctrls.controls = &extctrl;
+			extctrl.id = ctrls[i].v4l2_id;
+			extctrl.value = ctrls[i].value;
+			ret = ioctl(fd, VIDIOC_S_EXT_CTRLS, &extctrls);
+			if (ret < 0) {
+				break;
+			}
+		}
+	} while (i++ < size);
+
+	return ret;
+}
+
 #define USAGE \
 		"Usage: camera\n" \
 		"  or:  camera [-f] VIDEO INTERFACE [OPTION]...\n" \
@@ -240,7 +516,9 @@ static void free_buffer(struct v_buffer *buffers, uint8_t bufnum)
 		"               DEFAULT Capture(0)\n" \
 		"  -n [REPEAT]  Repeat Count.\n" \
 		"               DEFAULT 10\n" \
-		"  -h           display this help and exit\n"
+		"  -h           display this help and exit\n" \
+		"  -H           display available camera options\n "\
+		"               eg. camera [-f] -H \n"
 
 /****************************************************************************
  * Public Functions
@@ -257,17 +535,26 @@ int camera_main(int argc, char *argv[])
 	uint32_t opt = 0;
 	uint32_t dev = 0;
 	uint32_t val = 0;
+	uint32_t idxformat = 1;
+	uint32_t idxframe = 0;
+	uint32_t idx_frame_interval = 0;
 	uint32_t loop = DEFAULT_REPEAT_NUM;
 	char path[_POSIX_PATH_MAX];
 	struct stat stat_buf;
 	uint32_t buf_type;
 	uint32_t format;
 	struct v4l2_buffer buf;
+	bool cam_option = 0;
 
 	optind = 0;
+	buffers_video = NULL;
+	buffers_still = NULL;
+	n_buffers = 0;
+
+	clear_camera_options();
 
 	/* select capture mode */
-	while ((opt = getopt(argc, argv, "t:n:f:h")) != -1) {
+	while ((opt = getopt(argc, argv, "t:n:f:b:c:s:k:K:A:r:B:g:G:e:F:v:w:V:S:C:E:T:R:x:X:o:O:u:z:Z:m:i:I:p:d:N:q:Q:M:D:l:y:Y:L:U:hH")) != -1) {
 		switch (opt) {
 		case 't':
 			val = strtol(optarg, NULL, 10);
@@ -278,6 +565,174 @@ int camera_main(int argc, char *argv[])
 		case 'n':
 			loop = strtol(optarg, NULL, 10);
 			break;
+		case 'L':
+			idxformat = strtol(optarg, NULL, 10);
+			break;
+		case 'U':
+			idxframe = strtol(optarg, NULL, 10);
+			break;
+		case 'K':
+			idx_frame_interval = strtol(optarg, NULL, 10);
+			break;
+		case 'b':
+			ctrls[0].value = strtol(optarg, NULL, 10);
+			ctrls[0].req = 1;
+			break;
+		case 'c':
+			ctrls[1].value = strtol(optarg, NULL, 10);
+			ctrls[1].req = 1;
+			break;
+		case 's':
+			ctrls[2].value = strtol(optarg, NULL, 10);
+			ctrls[2].req = 1;
+			break;
+		case 'k':
+			ctrls[3].value = strtol(optarg, NULL, 10);
+			ctrls[3].req = 1;
+			break;
+		case 'A':
+			ctrls[4].value = strtol(optarg, NULL, 10);
+			ctrls[4].req = 1;
+			break;
+		case 'r':
+			ctrls[5].value = strtol(optarg, NULL, 10);
+			ctrls[5].req = 1;
+			break;
+		case 'B':
+			ctrls[6].value = strtol(optarg, NULL, 10);
+			ctrls[6].req = 1;
+			break;
+		case 'g':
+			ctrls[7].value = strtol(optarg, NULL, 10);
+			ctrls[7].req = 1;
+			break;
+		case 'G':
+			ctrls[8].value = strtol(optarg, NULL, 10);
+			ctrls[8].req = 1;
+			break;
+		case 'e':
+			ctrls[9].value = strtol(optarg, NULL, 10);
+			ctrls[9].req = 1;
+			break;
+		case 'F':
+			ctrls[10].value = strtol(optarg, NULL, 10);
+			ctrls[10].req = 1;
+			break;
+		case 'v':
+			ctrls[11].value = strtol(optarg, NULL, 10);
+			ctrls[11].req = 1;
+			break;
+		case 'w':
+			ctrls[12].value = strtol(optarg, NULL, 10);
+			ctrls[12].req = 1;
+			break;
+		case 'V':
+			ctrls[13].value = strtol(optarg, NULL, 10);
+			ctrls[13].req = 1;
+			break;
+		case 'S':
+			ctrls[14].value = strtol(optarg, NULL, 10);
+			ctrls[14].req = 1;
+			break;
+		case 'C':
+			ctrls[15].value = strtol(optarg, NULL, 10);
+			ctrls[15].req = 1;
+			break;
+		case 'E':
+			ctrls[16].value = strtol(optarg, NULL, 10);
+			ctrls[16].req = 1;
+			break;
+		case 'T':
+			ctrls[17].value = strtol(optarg, NULL, 10);
+			ctrls[17].req = 1;
+			break;
+		case 'R':
+			ctrls[18].value = strtol(optarg, NULL, 10);
+			ctrls[18].req = 1;
+			break;
+		case 'x':
+			ctrls[19].value = strtol(optarg, NULL, 10);
+			ctrls[19].req = 1;
+			break;
+		case 'X':
+			ctrls[20].value = strtol(optarg, NULL, 10);
+			ctrls[20].req = 1;
+			break;
+		case 'o':
+			ctrls[21].value = strtol(optarg, NULL, 10);
+			ctrls[21].req = 1;
+			break;
+		case 'O':
+			ctrls[22].value = strtol(optarg, NULL, 10);
+			ctrls[22].req = 1;
+			break;
+		case 'u':
+			ctrls[23].value = strtol(optarg, NULL, 10);
+			ctrls[23].req = 1;
+			break;
+		case 'z':
+			ctrls[24].value = strtol(optarg, NULL, 10);
+			ctrls[24].req = 1;
+			break;
+		case 'Z':
+			ctrls[25].value = strtol(optarg, NULL, 10);
+			ctrls[25].req = 1;
+			break;
+		case 'm':
+			ctrls[26].value = strtol(optarg, NULL, 10);
+			ctrls[26].req = 1;
+			break;
+		case 'i':
+			ctrls[27].value = strtol(optarg, NULL, 10);
+			ctrls[27].req = 1;
+			break;
+		case 'I':
+			ctrls[28].value = strtol(optarg, NULL, 10);
+			ctrls[28].req = 1;
+			break;
+		case 'p':
+			ctrls[29].value = strtol(optarg, NULL, 10);
+			ctrls[29].req = 1;
+			break;
+		case 'd':
+			ctrls[30].value = strtol(optarg, NULL, 10);
+			ctrls[30].req = 1;
+			break;
+		case 'N':
+			ctrls[31].value = strtol(optarg, NULL, 10);
+			ctrls[31].req = 1;
+			break;
+		case 'q':
+			ctrls[32].value = strtol(optarg, NULL, 10);
+			ctrls[32].req = 1;
+			break;
+		case 'Q':
+			ctrls[33].value = strtol(optarg, NULL, 10);
+			ctrls[33].req = 1;
+			break;
+		case 'M':
+			ctrls[34].value = strtol(optarg, NULL, 10);
+			ctrls[34].req = 1;
+			break;
+		case 'D':
+			ctrls[35].value = strtol(optarg, NULL, 10);
+			ctrls[35].req = 1;
+			break;
+		case 'l':
+			ctrls[36].value = strtol(optarg, NULL, 10);
+			ctrls[36].req = 1;
+			break;
+		case 'y':
+			ctrls[37].value = strtol(optarg, NULL, 10);
+			ctrls[37].req = 1;
+			break;
+		case 'Y':
+			ctrls[38].value = strtol(optarg, NULL, 10);
+			ctrls[38].req = 1;
+			break;
+		case 'H':
+			cam_option = 1;
+			goto camera_options;
 		case 'h':
 		default:
 			fprintf(stdout, USAGE);
@@ -285,6 +740,7 @@ int camera_main(int argc, char *argv[])
 		}
 	}
 
+camera_options:
 	if (optind > argc) {
 		fprintf(stderr, "camera: invalid option -- \'%s\'\n", argv[optind]);
 		fprintf(stdout, USAGE);
@@ -308,16 +764,43 @@ int camera_main(int argc, char *argv[])
 		goto errout_with_video_init;
 	}
 
+	if (cam_option) {
+		get_camera_options(v_fd, 1);
+		goto errout_with_close;
+	}
+
+	get_camera_options(v_fd, 0);
+
+	ret = set_camera_options(v_fd);
+
+	if (idxformat > format_count) {
+		fprintf(stderr, "Failed!!! Invalid Format Index (%d) \n", idxformat);
+		ret = -1;
+	}
+
+	if (idxframe > cm_format[idxformat].frame_count) {
+		fprintf(stderr, "Failed!!! Invalid Frame Index (%d) \n", idxframe);
+		ret = -1;
+	}
+
+	if (idx_frame_interval > cm_format[idxformat].cam_frame[idxframe].interval_count) {
+		fprintf(stderr, "Failed!!! Invalid Frame Interval Index (%d) \n", idx_frame_interval);
+		ret = -1;
+	}
+
+	if (ret < 0) {
+		get_camera_options(v_fd, 1);
+		goto errout_with_close;
+	}
+
 	if (val == 0) {
 		buf_type = V4L2_BUF_TYPE_STILL_CAPTURE;
-		format = V4L2_PIX_FMT_JPEG;
 		/* Prepare STILL_CAPTURE */
-		ret = camera_prepare(v_fd, V4L2_BUF_TYPE_STILL_CAPTURE, V4L2_BUF_MODE_FIFO, V4L2_PIX_FMT_JPEG, VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, STILL_BUFNUM);
+		ret = camera_prepare(v_fd, V4L2_BUF_TYPE_STILL_CAPTURE, V4L2_BUF_MODE_FIFO, idxformat, idxframe, idx_frame_interval, STILL_BUFNUM);
 	} else {
 		buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		format = V4L2_PIX_FMT_UYVY;
 		/* Prepare VIDEO_CAPTURE */
-		ret = camera_prepare(v_fd, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_BUF_MODE_RING, V4L2_PIX_FMT_UYVY, VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, VIDEO_BUFNUM);
+		ret = camera_prepare(v_fd, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_BUF_MODE_RING, idxformat, idxframe, idx_frame_interval, VIDEO_BUFNUM);
 	}
 
 	if (ret < 0) {
@@ -344,7 +827,7 @@ int camera_main(int argc, char *argv[])
 			goto errout_with_buffer;
 		}
 
-		write_file((uint8_t *) buf.m.userptr, (size_t) buf.bytesused, format);
+		write_file((uint8_t *) buf.m.userptr, (size_t) buf.bytesused, idxformat, idxframe);
 
 		/* Note: VIDIOC_QBUF reset released buffer pointer. */
 
@@ -362,15 +845,23 @@ int camera_main(int argc, char *argv[])
 		}
 	}
 
+	/* VIDIOC_STREAMON start stream */
+	ret = ioctl(v_fd, VIDIOC_STREAMOFF, (unsigned long)&buf_type);
+	if (ret < 0) {
+		fprintf(stderr, "Failed to VIDIOC_STREAMOFF: errno = %d\n", errno);
+		goto errout_with_buffer;
+	}
+
 	exitcode = OK;
 
 errout_with_buffer:
-	close(v_fd);
-
 	free_buffer(buffers_video, VIDEO_BUFNUM);
 	free_buffer(buffers_still, STILL_BUFNUM);
 
-errout_with_video_init:
+errout_with_close:
+	close(v_fd);
 
+errout_with_video_init:
+	fprintf(stderr, "App exited Successfully!!!!\n", errno);
 	return exitcode;
 }
