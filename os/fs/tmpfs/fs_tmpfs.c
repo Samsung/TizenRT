@@ -629,15 +629,9 @@ static FAR struct tmpfs_file_s *tmpfs_alloc_file(void)
  * Name: tmpfs_create_file
  ****************************************************************************/
 
-static int tmpfs_create_file(FAR struct tmpfs_s *fs,
-		FAR const char *relpath,
-		FAR struct tmpfs_file_s **tfo)
+static int verify_path(FAR char *copy, FAR const char *relpath, FAR char *name, FAR struct tmpfs_directory_s **parent, FAR struct tmpfs_s *fs)
 {
-	FAR struct tmpfs_directory_s *parent;
-	FAR struct tmpfs_file_s *newtfo;
-	FAR char *copy;
-	FAR char *name;
-	int ret;
+	int ret = OK;
 
 	/* Duplicate the path variable so that we can modify it */
 
@@ -655,12 +649,12 @@ static int tmpfs_create_file(FAR struct tmpfs_s *fs,
 		/* No subdirectories... use the root directory */
 
 		name   = copy;
-		parent = (FAR struct tmpfs_directory_s *)fs->tfs_root.tde_object;
+		*parent = (FAR struct tmpfs_directory_s *)fs->tfs_root.tde_object;
 
 		/* Lock the root directory to emulate the behavior of tmpfs_find_directory() */
 
-		tmpfs_lock_directory(parent);
-		parent->tdo_refs++;
+		tmpfs_lock_directory(*parent);
+		(*parent)->tdo_refs++;
 	} else {
 		/* Terminate the parent directory path */
 
@@ -671,7 +665,7 @@ static int tmpfs_create_file(FAR struct tmpfs_s *fs,
 		 * directory and increment the reference count.
 		 */
 
-		ret = tmpfs_find_directory(fs, copy, &parent, NULL);
+		ret = tmpfs_find_directory(fs, copy, parent, NULL);
 		if (ret < 0) {
 			goto errout_with_copy;
 		}
@@ -679,7 +673,7 @@ static int tmpfs_create_file(FAR struct tmpfs_s *fs,
 
 	/* Verify that no object of this name already exists in the directory */
 
-	ret = tmpfs_find_dirent(parent, name);
+	ret = tmpfs_find_dirent(*parent, name);
 	if (ret != -ENOENT) {
 		/* Something with this name already exists in the directory.
 		 * OR perhaps some fatal error occurred.
@@ -689,6 +683,30 @@ static int tmpfs_create_file(FAR struct tmpfs_s *fs,
 			ret	= -EEXIST;
 		}
 		goto errout_with_parent;
+	}
+
+errout_with_parent:
+	(*parent)->tdo_refs--;
+	tmpfs_unlock_directory(*parent);
+
+errout_with_copy:
+	kmm_free(copy);
+	return ret;
+}
+
+static int tmpfs_create_file(FAR struct tmpfs_s *fs,
+		FAR const char *relpath,
+		FAR struct tmpfs_file_s **tfo)
+{
+	FAR struct tmpfs_directory_s *parent;
+	FAR struct tmpfs_file_s *newtfo;
+	FAR char *copy = NULL;
+	FAR char *name = NULL;
+	int ret = OK;
+
+	ret = verify_path(copy, relpath, name, &parent, fs);
+	if (ret < 0) {
+		return ret;
 	}
 
 	/* Allocate an empty file.  The initial state of the file is locked with one
@@ -728,7 +746,6 @@ errout_with_parent:
 	parent->tdo_refs--;
 	tmpfs_unlock_directory(parent);
 
-errout_with_copy:
 	kmm_free(copy);
 	return ret;
 }
@@ -780,57 +797,13 @@ static int tmpfs_create_directory(FAR struct tmpfs_s *fs,
 {
 	FAR struct tmpfs_directory_s *parent;
 	FAR struct tmpfs_directory_s *newtdo;
-	FAR char *copy;
-	FAR char *name;
+	FAR char *copy = NULL;
+	FAR char *name = NULL;
 	int ret;
 
-	/* Duplicate the path variable so that we can modify it */
-
-	copy = strdup(relpath);
-	if (copy == NULL) {
-		return -ENOMEM;
-	}
-	/* Separate the path into the file name and the path to the parent
-	 * directory.
-	 */
-
-	name = strrchr(copy, '/');
-	if (name == NULL) {
-		/* No subdirectories... use the root directory */
-
-		name   = copy;
-		parent = (FAR struct tmpfs_directory_s *)fs->tfs_root.tde_object;
-
-		tmpfs_lock_directory(parent);
-		parent->tdo_refs++;
-	} else {
-		/* Terminate the parent directory path */
-
-		*name++ = '\0';
-
-		/* Locate the parent directory that should contain this name.
-		 * On success, tmpfs_find_directory() will lockthe parent
-		 * directory and increment the reference count.
-		 */
-
-		ret = tmpfs_find_directory(fs, copy, &parent, NULL);
-		if (ret < 0) {
-			goto errout_with_copy;
-		}
-	}
-
-	/* Verify that no object of this name already exists in the directory */
-
-	ret = tmpfs_find_dirent(parent, name);
-	if (ret != -ENOENT) {
-		/* Something with this name already exists in the directory.
-		 * OR perhaps some fatal error occurred.
-		 */
-
-		if (ret >= 0) {
-			ret = -EEXIST;
-		}
-		goto errout_with_parent;
+	ret = verify_path(copy, relpath, name, &parent, fs);
+	if (ret < 0) {
+		return ret;
 	}
 
 	/* Allocate an empty directory object.  NOTE that there is no reference on
@@ -874,7 +847,6 @@ errout_with_parent:
 	parent->tdo_refs--;
 	tmpfs_unlock_directory(parent);
 
-errout_with_copy:
 	kmm_free(copy);
 	return ret;
 }
