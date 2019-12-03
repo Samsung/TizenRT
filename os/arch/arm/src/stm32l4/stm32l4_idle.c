@@ -45,6 +45,7 @@
 #include <tinyara/irq.h>
 #include <tinyara/board.h>
 #include <tinyara/pm/pm.h>
+#include <arch/chip/pm.h>
 
 #include "chip.h"
 #include "stm32l4_pm.h"
@@ -83,8 +84,40 @@
 #endif
 
 /****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+#ifdef CONFIG_ARCH_SUPPORT_PM_UTIL
+int pm_sleep(void)
+{
+	int ret = OK;
+
+	irqstate_t flags;
+	flags = irqsave();
+	sched_lock();
+
+	ret = pm_changestate(0, PM_SLEEP);
+	if (ret < 0)
+	{
+		printf("change state failed\n");
+		goto errout;
+	}
+	set_exti_button();
+	(void)stm32l4_pmstop2();
+
+	stm32l4_clockenable();
+errout:
+	pm_changestate(0, PM_NORMAL);
+
+	sched_unlock();
+	irqrestore(flags);
+
+	return ret;
+}
+#endif
+/****************************************************************************
  * Private Functions
  ****************************************************************************/
+
 void up_extiisr(int irq, uint32_t *regs)
 {
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
