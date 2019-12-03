@@ -1,8 +1,7 @@
 # How to use IoT.js
 
-
 IoT.js is an open source software platform for Internet of Things with JavaScript.
-For more details, please check: http://www.iotjs.net Or shipped [README](..//external/iotjs/README.md) in sources.
+For more details, please refer to http://www.iotjs.net or shipped [README](..//external/iotjs/README.md) in sources.
 
 ## Contents
 - [Use reference configuration](#use-reference-configuration)

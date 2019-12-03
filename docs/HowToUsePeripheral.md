@@ -1,5 +1,5 @@
 # How to Use Peripheral
-TizenRT provides five parts to use peripheral. They are outlined in this document as shown:
+TizenRT provides five parts to use peripheral. This document describes these five parts.
 
 ## Contents
 - [GPIO](#gpio)
@@ -14,7 +14,7 @@ Each board is required to do the following:
 - Implement and expose an instance of `struct gpio_lowerhalf_s`.  
 - Implement the supported operations on `struct gpio_ops_s`.
 
-### Registering GPIO on dev
+### Register GPIO on dev
 ```
 struct gpio_lowerhalf_s {
 	FAR const struct gpio_ops_s *ops;
@@ -190,7 +190,7 @@ void up_serialinit(void)
 }
 ```
 
-### Add UART device structure
+#### Add UART device structure
 The ```CONSOLE_DEV``` and ```TTYSx_DEV``` are UART device driver structure type named *uart_dev_t*.  
 This is defined in **[serial.h](../os/include/tinyara/serial/serial.h)** under *os/include/tinyara/serial* folder.
 ```
@@ -283,8 +283,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 }
 ```
 
-Low level(hardware-specific) SPI device driver must create an instance of *struct spi_dev_s* and returned to higher level device driver as shown above.  Also the SPI driver must create an instance of *struct spi_ops_s* and  
-hook it to the *ops* member of *struct spi_dev_s* instance.
+Low level(hardware-specific) SPI device driver must create an instance of *struct spi_dev_s* and returned to higher level device driver as shown above. Also the SPI driver must create an instance of *struct spi_ops_s* and hook it to the *ops* member of *struct spi_dev_s* instance.
 ```
 struct spi_dev_s {
 	FAR const struct spi_ops_s *ops;

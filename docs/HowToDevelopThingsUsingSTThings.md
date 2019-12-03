@@ -17,10 +17,10 @@ Please refer to each details.
 A device developed using ST Things based TizenRT can connect to SmartThings Cloud.  
 In order to work with the cloud, it is necessary to sign up Samsung Account at [SmartThings Developers](https://smartthings.developer.samsung.com/) site.
 Then, follow the steps.
-1. Get your MNID - Manufacturer ID - on [My Page](https://smartthings.developer.samsung.com/partner/dashboard)  
-2. Create a cloud-connected device [[Details]](https://smartthings.developer.samsung.com/docs/devices/smartthings-schema/schema-basics.html)
-3. Generate the Certificate Signing Request and issue a new Signing key for the device certificate [[Details]](https://smartthings.developer.samsung.com/develop/workspace/general-tools/certificate-signing-request.html)  
-4. Add `certificate.pem` and `privateKey.der` files to `$TIZENRT_BASEDIR/tools/fs/contents-romfs/`  
+1. Get your MNID - Manufacturer ID - on [My Page](https://smartthings.developer.samsung.com/partner/dashboard).  
+2. Create a cloud-connected device [[Details]](https://smartthings.developer.samsung.com/docs/devices/smartthings-schema/schema-basics.html).
+3. Generate the Certificate Signing Request and issue a new Signing key for the device certificate [[Details]](https://smartthings.developer.samsung.com/develop/workspace/general-tools/certificate-signing-request.html).  
+4. Add `certificate.pem` and `privateKey.der` files to `$TIZENRT_BASEDIR/tools/fs/contents-romfs/`.  
 5. Edit Json file to match the following: JSON  
    ```  
     "certificate": "certificate.pem",    
@@ -28,7 +28,7 @@ Then, follow the steps.
    ```  
 
 To develop App(SmartThings) UI and functionality, use the SmartThings SDK. Please refer to [SmartThings SDK](https://smartthings.developer.samsung.com/develop/workspace/general-tools/sdk.html) site.  
-The device definition is stored in a JSON configuration file that you need to provide [[Device Definition]](https://developer.tizen.org/development/iot-extension-sdk/api-guides/things-sdk-api/device-definition)
+The device definition is stored in a JSON configuration file that you need to provide [[Device Definition]](https://developer.tizen.org/development/iot-extension-sdk/api-guides/things-sdk-api/device-definition).
 
 ## Getting Started
 ### With Tizen Studio for RT
