@@ -7,6 +7,8 @@ This document describes the components that make up TizenRT's Audio Framework.
 - [Audio Codec Drivers](#audio-codec-drivers)
 - [Tinyalsa](#tinyalsa)
 - [Device Drivers](#device-drivers)
+- [Audio Codec Setup](#audio-codec-setup)
+- [Audio Device Registration](#audio-device-registration)
 
 ## Audio Subsystem  
 Audio Subsystem binds the upper half of audio devices exposed to the application to the lower half through POSIX like system APIs.  
@@ -24,7 +26,7 @@ Audio Subsystem binds the upper half of audio devices exposed to the application
 
 ## Device Drivers  
 Most commonly, audio devices use I2S port for audio data path and 
-I2C, SPI etc for audio control path.  
+I2C, SPI etc. for audio control path.  
 Depending on the board schematics, a control path (i2c, spi, etc.) and a data path (i2s, etc.) is to be configured. Please refer [HowToUsePeripheral](HowToUsePeripheral.md).
 
 
@@ -32,7 +34,7 @@ Depending on the board schematics, a control path (i2c, spi, etc.) and a data pa
 
 Board_initialize sets up audio codec with the instance of the control path and data path.
 
-Pseudocode
+Pseudo code
 ```
 void board_initialize()  
 {  
@@ -63,5 +65,5 @@ Example: [os/board/artik05x/src/artik055_alc5658.c](../os/board/artik05x/src/art
 
 Driver registering policy (*devname* Naming)
 
--Input: 	/dev/pcmC[card id]D[device id]  
--Output:	/dev/pcmC[card id]D[device id]
+- Input: /dev/pcmC[card id]D[device id]  
+- Output: /dev/pcmC[card id]D[device id]

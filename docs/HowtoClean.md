@@ -5,7 +5,7 @@ One is ```make clean```, and the other is ```make distclean```. They are execute
 
 ## make clean
 This command removes files which are made on build procedure like objects, libraries, .depend, Make.dep and etc.  
-When configuration is changed, executing this guarantees a re-build from scratch.
+When configuration is changed, executing this command guarantees a re-build from scratch.
 
 ## make distclean
 This command includes ```make clean``` inside. Additionally, it removes configured files like .config and Make.defs.  

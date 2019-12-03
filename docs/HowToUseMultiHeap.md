@@ -5,19 +5,12 @@ There are two cases to use multi-heap.
 - separated physical RAMs but want to use for heap  
 
 ## Contents
-- [Enabling multi-heap](#enabling-multi-heap)
-- [Using multi-heap](#using-multi-heap)
+- [Enable multi-heap](#enable-multi-heap)
+- [Use multi-heap](#use-multi-heap)
 
 
-## Enabling multi-heap
+## Enable multi-heap
 To enable multi-heap, please find three steps as shown below:
-- [Set number of Regions](#1-set-number-of-regions)
-- [Set number of Heaps](#2-set-number-of-heaps)
-- [Set Region start address, size and heap index](#3-set-region-start-address-size-and-heap-index)
-
-## Using multi-heap
-To use multi-heap, please find a link as shown below:  
-[Supported APIs](#supported-apis)
 
 ## 1. Set number of Regions
 
@@ -53,6 +46,10 @@ Each region is separated by `','` and all config should be in `" "` as shown bel
 ```
 
 Based on above configurations, *up_addregion()* function sets new regions automatically.
+
+## Use multi-heap
+To use multi-heap, please find a link as shown below:  
+[Supported APIs](#supported-apis)
 
 ## Example of Multi-heap Usage
 If there are three physical RAMs, and want to use them as four heaps like below.  

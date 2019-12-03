@@ -1,17 +1,17 @@
 # Manual Setup Build Environment
-This document descibes the steps involved in setting up the build environment.
+This document describes the steps involved in setting up the build environment.
 
 ## Contents
-- [Getting the toolchain](#getting-the-toolchain)
-- [Getting the source code](#getting-the-source-code)
+- [Get the toolchain](#get-the-toolchain)
+- [Get the source code](#get-the-source-code)
 - [How to Build](#how-to-build)
 - [Configuration Sets](#configuration-sets)
 
-## Getting the toolchain
+## Get the toolchain
 
 Install the OS specific toolchain. Supported OS types are "linux" and "mac".  
 Get the binaries and libraries from [gcc-arm-none-eabi-6-2017-q1-update-*OS Type*.tar.bz2](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) to build.
-Unzip the gcc-arm-none-eabi-6-2017-q1-update-*OS Type*.tar.bz2 and export the path like
+Unzip the gcc-arm-none-eabi-6-2017-q1-update-*OS Type*.tar.bz2 and export the path as shown below:
 
 ```bash
 tar xvjf gcc-arm-none-eabi-6-2017-q1-update-[OS Type].tar.bz2
@@ -20,7 +20,7 @@ export PATH=<Your Toolchain PATH>:$PATH
 > **Note**
 > The recommended toolchain is fully working on 64 bit machines.
 
-## Getting the source code
+## Get the source code
 
 ```bash
 git clone https://github.com/Samsung/TizenRT.git

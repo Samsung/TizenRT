@@ -25,5 +25,5 @@ One of site is [Yann Morin's Project](http://ymorin.is-a-geek.org/projects/kconf
 	sudo make install
 	```
 
-### Trouble Shooting
-Please refer to [Trouble Shooting](https://github.com/Samsung/TizenRT/blob/master/docs/TroubleShooting.md)
+## Trouble Shooting
+Please refer to [Trouble Shooting](https://github.com/Samsung/TizenRT/blob/master/docs/TroubleShooting.md).
