@@ -51,6 +51,11 @@
 #include "up_internal.h"
 #include "stm32l4_rtc.h"
 #include <tinyara/rtc.h>
+#include "stm32l4.h"
+#include "stm32l4_gpio.h"
+#include "stm32l4_userspace.h"
+#include "stm32l4_start.h"
+#include "stm32l4xx_hal_interface.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -69,6 +74,7 @@
 #endif
 
 #define PM_IDLE_DOMAIN 0 /* Revisit */
+#define STM32L4_EXT_JOYKEY_ACTIVITY			4
 
 #ifdef CONFIG_SCHED_TICKSUPPRESS
 #ifndef CONFIG_STM32L4_RTC
@@ -79,6 +85,28 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+void up_extiisr(int irq, uint32_t *regs)
+{
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+	up_lowputc('i');
+	pm_activity(PM_IDLE_DOMAIN, STM32L4_EXT_JOYKEY_ACTIVITY);
+}
+
+void set_exti_button(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {0};         /* GPIO Ports Clock Enable */
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_SLEEP_ENABLE();
+	__HAL_RCC_GPIOC_CLK_ENABLE();   /*Configure GPIO pin : PC13 */
+	__HAL_RCC_GPIOC_CLK_SLEEP_ENABLE();
+	GPIO_InitStruct.Pin = GPIO_PIN_13;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct); /* EXTI interrupt init*/
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 0);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	(void)irq_attach(STM32L4_IRQ_EXTI1510, (xcpt_t)up_extiisr, NULL);
+}
 
 /****************************************************************************
  * Name: up_idlepm
@@ -175,6 +203,9 @@ static void up_idlepm(void)
 		break;
 
         case PM_SLEEP:
+          /* Set EXTI interrupt */
+          set_exti_button();
+
           (void)stm32l4_pmstop2();
 
           /* Re configure clocks */
