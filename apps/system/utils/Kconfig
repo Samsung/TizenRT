@@ -62,6 +62,13 @@ config ENABLE_CPULOAD
 		CPU load monitor is a daemon that will periodically assess
 		CPU usage by all live tasks and threads in the system.
 
+config PM_UTIL
+	bool "Direct PM state transit utility"
+	default n
+	depends on PM && ARCH_SUPPORT_PM_UTIL
+	---help---
+		Invoke state transition from PM_NORMAL to PM_SLEEP
+
 if ENABLE_CPULOAD
 config CPULOADMONITOR_PRIORITY
 	int "CPU load monitor daemon priority"
