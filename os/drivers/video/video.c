@@ -513,6 +513,7 @@ static int video_qbuf(FAR video_upperhalf_t *priv, FAR struct v4l2_buffer *buf)
 		leave_critical_section(flags);
 		goto streamoff;
 	}
+	leave_critical_section(flags);
 
 	if (buf->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		video_lock(&priv->still_inf.lock_state);
