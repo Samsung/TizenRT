@@ -55,7 +55,6 @@
 
 NETDEV_CSRCS += netdev_mgr.c netdev_mgr_internal.c
 
-NETDEV_CSRCS += netmgr_ioctl_dhcp.c
 NETDEV_CSRCS += netmgr_ioctl_netdev.c
 NETDEV_CSRCS += netdev_lwnl.c
 NETDEV_CSRCS += netdev_wifi.c netdev_eth.c
@@ -64,19 +63,6 @@ ifeq ($(CONFIG_NET_LWIP) ,y)
 NETDEV_CSRCS += netmgr_ioctl_lwip.c
 NETDEV_CSRCS += netdev_lwip.c
 NETDEV_CSRCS += netstack_lwip.c
-
-ifeq ($(CONFIG_NET_LWIP_DHCP),y)
-
-ifeq ($(CONFIG_LWIP_DHCPC),y)
-NETDEV_CSRCS += netdev_dhcpc.c
-endif
-
-ifeq ($(CONFIG_LWIP_DHCPS),y)
-NETDEV_CSRCS += netdev_dhcpd.c
-endif
-
-endif # CONFIG_NET_LWIP_DHCP
-
 endif # CONFIG_NET_LWIP
 
 ifeq ($(CONFIG_NET_NETMON) ,y)

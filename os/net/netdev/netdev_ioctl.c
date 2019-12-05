@@ -1196,11 +1196,6 @@ static void _dhcpd_join(dhcp_evt_type_e type, void *data)
 	return;
 }
 
-extern int netdev_dhcp_client_start(const char *intf);
-extern void netdev_dhcp_client_stop(const char *intf);
-extern int netdev_dhcp_server_status(char *intf);
-extern int netdev_dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb);
-extern int netdev_dhcp_server_stop(char *intf);
 #endif
 
 /****************************************************************************
@@ -1210,6 +1205,7 @@ extern int netdev_dhcp_server_stop(char *intf);
  *   Call lwip API
  *
  * Parameters:
+ *   s        Descriptor of device
  *   cmd      The ioctl command
  *   arg      Type of the information to get
  *
@@ -1217,9 +1213,14 @@ extern int netdev_dhcp_server_stop(char *intf);
  *   0 on success, negated errno on failure.
  *
  ****************************************************************************/
-int lwip_func_ioctl(int cmd, void *arg)
+int lwip_func_ioctl(int s, int cmd, void *arg)
 {
 	int ret = -EINVAL;
+	struct lwip_sock *sock = get_socket(s);
+	if (!sock) {
+		ret = -EBADF;
+		return ret;
+	}
 	struct req_lwip_data *in_arg = (struct req_lwip_data *)arg;
 	if (!in_arg) {
 		return ret;
@@ -1279,7 +1280,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 #if defined(CONFIG_NET_LWIP_DHCP)
 #if defined(CONFIG_LWIP_DHCPC)
 	case DHCPCSTART:
-		in_arg->req_res = netdev_dhcp_client_start((const char *)in_arg->host_name);
+		in_arg->req_res = netdev_dhcp_client_start((const char *)in_arg->intf);
 		if (in_arg->req_res != 0) {
 			ret = -EINVAL;
 			ndbg("start dhcp fail\n");
@@ -1288,14 +1289,14 @@ int lwip_func_ioctl(int cmd, void *arg)
 		}
 		break;
 	case DHCPCSTOP:
-		netdev_dhcp_client_stop((const char *)in_arg->host_name);
+		netdev_dhcp_client_stop((const char *)in_arg->intf);
 		in_arg->req_res = 0;
 		ret = OK;
 		break;
 #endif
 #if defined(CONFIG_LWIP_DHCPS)
 	case DHCPDSTART:
-		in_arg->req_res = netdev_dhcp_server_start((char *)in_arg->host_name, _dhcpd_join);
+		in_arg->req_res = netdev_dhcp_server_start((char *)in_arg->intf, _dhcpd_join);
 		if (in_arg->req_res != 0) {
 			ret = -EINVAL;
 			ndbg("start dhcpd fail\n");
@@ -1304,7 +1305,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 		}
 		break;
 	case DHCPDSTOP:
-		in_arg->req_res = netdev_dhcp_server_stop((char *)in_arg->host_name);
+		in_arg->req_res = netdev_dhcp_server_stop((char *)in_arg->intf);
 		if (in_arg->req_res != 0) {
 			ret = -EINVAL;
 			ndbg("stop dhcpd fail\n");
@@ -1313,7 +1314,7 @@ int lwip_func_ioctl(int cmd, void *arg)
 		}
 		break;
 	case DHCPDSTATUS:
-		in_arg->req_res = netdev_dhcp_server_status((char *)in_arg->host_name);
+		in_arg->req_res = netdev_dhcp_server_status((char *)in_arg->intf);
 		if (in_arg->req_res != 0) {
 			ret = -EINVAL;
 			ndbg("stop dhcpd fail\n");
@@ -1358,7 +1359,7 @@ int lwipioctl(int sockfd, int cmd, void *arg)
 			return -get_errno();
 		}
 	} else if (cmd == SIOCLWIP) {
-		return lwip_func_ioctl(cmd, arg);
+		return lwip_func_ioctl(sockfd, cmd, arg);
 	}
 
 	return ret;

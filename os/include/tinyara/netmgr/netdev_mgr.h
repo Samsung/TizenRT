@@ -21,6 +21,10 @@
 
 #define NM_MAX_HWADDR_LEN 6
 
+#ifndef IFNAMSIZ
+#define IFNAMSIZ           6	/* Older naming standard */
+#endif
+
 #define NM_FLAG_BROADCAST    0x02U
 /** If set, the netif is an ethernet device using ARP.
  * Set by the netif driver in its init function.

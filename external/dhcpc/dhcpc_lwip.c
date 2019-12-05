@@ -121,7 +121,7 @@ int dhcp_client_start(const char *intf)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPCSTART;
-	req.host_name = intf;
+	req.intf = intf;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
@@ -150,7 +150,7 @@ void dhcp_client_stop(const char *intf)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPCSTOP;
-	req.host_name = intf;
+	req.intf = intf;
 
 	(void)ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 

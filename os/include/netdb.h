@@ -143,6 +143,7 @@ typedef enum {
 struct req_lwip_data {
 	req_type type;
 	int req_res;
+	const char *intf;
 	const char *host_name;
 	const char *serv_name;
 	const struct addrinfo *ai_hint;
