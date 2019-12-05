@@ -44,6 +44,10 @@ SOURCES		=  $(wildcard $(SRCDIR)/*.c)
 
 ifeq ($(CONFIG_COMPRESSION_TYPE),1)
 SOURCES		+= $(wildcard $(SRCDIR)/lzma/*.c)
+else
+ifeq ($(CONFIG_COMPRESSION_TYPE),2)
+SOURCES         += $(wildcard $(SRCDIR)/miniz/*.c)
+endif
 endif
 
 SRCTMP		=  $(patsubst $(SRCDIR)/%,%,$(SOURCES))
@@ -62,6 +66,12 @@ ifeq ($(CONFIG_COMPRESSION_TYPE),1)
 	@mkdir -p $(SRCDIR)/lzma
 	@mkdir -p $(OBJDIR)/lzma
 	@mkdir -p $(DEPDIR)/lzma
+else
+ifeq ($(CONFIG_COMPRESSION_TYPE),2)
+	@mkdir -p $(SRCDIR)/miniz
+	@mkdir -p $(OBJDIR)/miniz
+	@mkdir -p $(DEPDIR)/miniz
+endif
 endif
 
 #Include our built dependencies
@@ -114,6 +124,10 @@ clean:
 	$(call DELDIR, $(DEPDIR))
 ifeq ($(CONFIG_COMPRESSION_TYPE),1)
 	$(call DELDIR, $(SRCDIR)/lzma/)
+else
+ifeq ($(CONFIG_COMPRESSION_TYPE),2)
+	$(call DELDIR, $(SRCDIR)/miniz/)
+endif
 endif
 	$(call DELFILE, *.o)
 	$(call DELFILE, mkcompressimg)

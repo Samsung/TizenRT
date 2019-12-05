@@ -35,6 +35,11 @@ then
 	mkdir -p $SRCDIR/lzma
 	TMPDIR=$SRCDIR/lzma
 	SOURCEDIR=$OS_PATH/../external/lzma
+elif [ $CONFIG_COMPRESSION_TYPE == 2 ]
+then
+	mkdir -p $SRCDIR/miniz
+	TMPDIR=$SRCDIR/miniz
+	SOURCEDIR=$OS_PATH/../external/miniz
 fi
 
 APPNAME=mkcompressimg
