@@ -105,28 +105,67 @@ static int ramdump_via_uart(void)
 	/* Send number of memory regions to HOST */
 	up_lowputc(CONFIG_MM_REGIONS);
 
+#if defined(CONFIG_MM_KERNEL_HEAP)
+	/* Send 1 to HOST if kernel heap exists */
+	up_lowputc('1');
+
+	/* Send number of memory regions to HOST */
+	up_lowputc(CONFIG_KMM_REGIONS);
+
+	/* Send number of memory regions to HOST */
+	up_lowputc((CONFIG_MM_REGIONS + CONFIG_KMM_REGIONS));
+
+	/* Send memory region address, size & heap index to HOST */
+	for (x = 0; x < (CONFIG_MM_REGIONS + CONFIG_KMM_REGIONS); x++) {
+#else
 	/* Send memory region address, size & heap index to HOST */
 	for (x = 0; x < CONFIG_MM_REGIONS; x++) {
+#endif
 
-		/* Send RAM address */
-		ptr = (uint8_t *)&regionx_start[x];
-		for (i = 0; i < sizeof(regionx_start[x]); i++) {
-			up_lowputc((uint8_t)*ptr);
-			ptr++;
+		if (x < CONFIG_MM_REGIONS) {
+
+			/* Send RAM address */
+			ptr = (uint8_t *)&regionx_start[x];
+			for (i = 0; i < sizeof(regionx_start[x]); i++) {
+				up_lowputc((uint8_t)*ptr);
+				ptr++;
+			}
+
+			/* Send RAM size */
+			ptr = (uint8_t *)&regionx_size[x];
+			for (i = 0; i < sizeof(regionx_size[x]); i++) {
+				up_lowputc((uint8_t)*ptr);
+				ptr++;
+			}
+
+			/* Send Heap Index */
+			up_lowputc(regionx_heap_idx[x]);
 		}
+#if defined(CONFIG_MM_KERNEL_HEAP)
+		else if (x >= CONFIG_MM_REGIONS) {
+			int y =  x - CONFIG_MM_REGIONS;
 
-		/* Send RAM size */
-		ptr = (uint8_t *)&regionx_size[x];
-		for (i = 0; i < sizeof(regionx_size[x]); i++) {
-			up_lowputc((uint8_t)*ptr);
-			ptr++;
+			/* Send Kernel region address */
+			ptr = (uint8_t *)&kregionx_start[y];
+			for (i = 0; i < sizeof(kregionx_start[y]); i++) {
+				up_lowputc((uint8_t)*ptr);
+				ptr++;
+			}
+
+			/* Send Kernel region size */
+			ptr = (uint8_t *)&kregionx_size[y];
+			for (i = 0; i < sizeof(kregionx_size[y]); i++) {
+				up_lowputc((uint8_t)*ptr);
+				ptr++;
+			}
+
+			/* Send Kernel Heap Index */
+			up_lowputc(regionx_kheap_idx[y]);
 		}
-
-		/* Send Heap Index */
-		up_lowputc(regionx_heap_idx[x]);
+#endif
 	}
 
-	/* Receive number of regions to be dumped from HOST */
+	/* Receive number of user memory regions to be dumped from HOST */
 	do {
 		if ((ch = up_getc()) != -1) {
 			host_reg[0] = ch;
@@ -147,14 +186,32 @@ static int ramdump_via_uart(void)
 
 		target_region = host_reg[0] - '0';
 
-		/* Send RAMDUMP of size bytes */
-		ptr = (uint8_t *)regionx_start[target_region];
-		size = regionx_size[target_region];
-		while (size) {
-			up_lowputc((uint8_t)*ptr);
-			ptr++;
-			size--;
+		if (target_region < CONFIG_MM_REGIONS) {
+
+			/* Send User MM dump of size bytes */
+			ptr = (uint8_t *)regionx_start[target_region];
+			size = regionx_size[target_region];
+			while (size) {
+				up_lowputc((uint8_t)*ptr);
+				ptr++;
+				size--;
+			}
 		}
+#if defined(CONFIG_MM_KERNEL_HEAP)
+		else if (target_region >= CONFIG_MM_REGIONS) {
+			target_region =  target_region - CONFIG_MM_REGIONS;
+
+			/* Send Kernel MM dump of size bytes */
+			ptr = (uint8_t *)kregionx_start[target_region];
+			size = kregionx_size[target_region];
+			while (size) {
+				up_lowputc((uint8_t)*ptr);
+				ptr++;
+				size--;
+			}
+
+		}
+#endif
 	}
 
 	lldbg(" Successfull\n");
