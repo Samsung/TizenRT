@@ -32,6 +32,8 @@
 
 #if CONFIG_COMPRESSION_TYPE == 1
 #include "lzma/LzmaLib.h"
+#elif CONFIG_COMPRESSION_TYPE == 2
+#include "miniz/miniz.h"
 #endif
 
 #define MAX_BLOCK_SIZE 8192
@@ -45,7 +47,7 @@ static void show_usage(const char *progname)
 	exit(1);
 }
 
-static void compress(int block_size, int type, char *in_file, char *out_file)
+static void compress_file(int block_size, int type, char *in_file, char *out_file)
 {
 	unsigned int sections;
 	long unsigned int size;
@@ -62,7 +64,9 @@ static void compress(int block_size, int type, char *in_file, char *out_file)
 	unsigned char *out_buf = NULL;
 	unsigned char *tptr;
 	struct s_header *phdr = NULL;
+#if CONFIG_COMPRESSION_TYPE == 1
 	long unsigned int propsSize = LZMA_PROPS_SIZE;
+#endif
 
 	ret = stat((char *)in_file, &buf);
 	if (ret < 0) {
@@ -87,11 +91,19 @@ static void compress(int block_size, int type, char *in_file, char *out_file)
 		goto error;
 	}
 
+#if CONFIG_COMPRESSION_TYPE == 1
 	out_buf = (unsigned char *)malloc(block_size + LZMA_PROPS_SIZE);
 	if (!out_buf) {
 		printf("Failed to allocate memory for out_buf\n");
 		goto error;
 	}
+#elif CONFIG_COMPRESSION_TYPE == 2
+	out_buf = (unsigned char *)malloc(block_size);
+	if (!out_buf) {
+		printf("Failed to allocate memory for out_buf\n");
+		goto error;
+	}
+#endif
 
 	sections = buf.st_size / block_size;
 	if (buf.st_size % block_size) {
@@ -146,15 +158,23 @@ static void compress(int block_size, int type, char *in_file, char *out_file)
 				tptr += nbytes;
 			}
 		}
-		writesize = block_size;
 #if CONFIG_COMPRESSION_TYPE == 1
 		/* LZMA Compression for data in read_buf into out_buf */
+		writesize = block_size;
 		ret = LzmaCompress(&out_buf[LZMA_PROPS_SIZE], &writesize, read_buf, (block_size - readsize), out_buf, &propsSize, 0, 1<<13 , -1, -1, -1, -1, 1);
 		if (ret != SZ_OK) {
 			printf("LZMA Compress failed, ret = %d\n", ret);
 		}
 
 		printf("==> lzma_compress %d writesize %lu\n", index, writesize);
+#elif CONFIG_COMPRESSION_TYPE == 2
+		/* Miniz Compression for data in read_buf into out_buf */
+		writesize = compressBound(block_size - readsize);
+		ret = mz_compress(out_buf, &writesize, read_buf, (block_size - readsize));
+		if (ret != Z_OK) {
+			printf("Miniz Compress failed, ret = %d\n", ret);
+		}
+		printf("==> miniz_compress %d writesize %lu\n", index, writesize);
 #else
 		printf("Compression for type %d not supported\n", CONFIG_COMPRESSION_TYPE);
 		printf("Set CONFIG_COMPRESSION_TYPE to %d, then generate mkcompressimg again for this type", CONFIG_COMPRESSION_TYPE);
@@ -263,7 +283,7 @@ int main(int argc, char *argv[])	//Main defined
 		exit(4);
 	}
 
-	compress(block_size, comp_format, argv[3], argv[4]);
+	compress_file(block_size, comp_format, argv[3], argv[4]);
 
 	return 0;
 }
