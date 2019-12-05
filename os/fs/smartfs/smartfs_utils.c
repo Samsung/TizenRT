@@ -156,7 +156,6 @@ struct sector_queue_s {
 #define SET_ACTIVE(x, s) ((x)[(s)/SZ_UINT8] |= (1<<(SZ_UINT8-((s)%SZ_UINT8)-1)))
 #define SET_INACTIVE(x, s) ((x)[(s)/SZ_UINT8] &= ~(1<<(SZ_UINT8-((s)%SZ_UINT8)-1)))
 
-
 enum journal_action_e {
 	JOURNAL_LOG,
 	JOURNAL_RESTORE,
@@ -257,8 +256,8 @@ uint16_t smartfs_rdle16(FAR const void *val)
 
 void smartfs_wrle16(FAR void *dest, uint16_t val)
 {
-	((FAR uint8_t *)dest)[0] = val & 0xff;	/* Little endian means LS byte first in byte stream */
-	((FAR uint8_t *)dest)[1] = val >> 8;
+	((FAR uint8_t *) dest)[0] = val & 0xff;	/* Little endian means LS byte first in byte stream */
+	((FAR uint8_t *) dest)[1] = val >> 8;
 }
 
 /****************************************************************************
@@ -279,7 +278,7 @@ uint32_t smartfs_rdle32(FAR const void *val)
 {
 	/* Little endian means LS halfword first in byte stream */
 
-	return (uint32_t)smartfs_rdle16(&((FAR const uint8_t *)val)[2]) << 16 | (uint32_t)smartfs_rdle16(val);
+	return (uint32_t) smartfs_rdle16(&((FAR const uint8_t *)val)[2]) << 16 | (uint32_t) smartfs_rdle16(val);
 }
 
 /****************************************************************************
@@ -317,7 +316,6 @@ uint16_t get_used_byte_count(uint8_t *used)
 	if (i >= USED_ARRAY_SIZE) {
 		goto out;
 	}
-
 #if (CONFIG_SMARTFS_ERASEDSTATE == 0x00)
 	switch (used[i]) {
 	case SET1BITFROMMSB:
@@ -402,7 +400,7 @@ uint16_t get_used_byte_count_from_end(uint8_t *buffer)
 {
 	uint16_t i, ending = CONFIG_MTD_SMART_SECTOR_SIZE - smart_sect_header_size - 1;
 
-	for (i = ending; i >= sizeof(struct smartfs_chain_header_s) && buffer[i] == (uint8_t)CONFIG_SMARTFS_ERASEDSTATE; i--) ;
+	for (i = ending; i >= sizeof(struct smartfs_chain_header_s) && buffer[i] == (uint8_t) CONFIG_SMARTFS_ERASEDSTATE; i--) ;
 	i++;
 	i -= sizeof(struct smartfs_chain_header_s);
 
@@ -425,7 +423,6 @@ int set_used_byte_count(uint8_t *used, uint16_t count)
 	if (i >= USED_ARRAY_SIZE) {
 		goto out;
 	}
-
 #if (CONFIG_SMARTFS_ERASEDSTATE == 0x00)
 	if (leftover_bits > 0) {
 		switch (leftover_bits) {
@@ -750,6 +747,96 @@ int smartfs_unmount(struct smartfs_mountpt_s *fs)
 	return ret;
 }
 
+static int validate_directory(struct smartfs_entry_header_s *entry, uint16_t *dirstack, uint16_t *depth, const char *segment, const char *ptr)
+{
+	int ret = OK;
+	/* Validate it's a directory */
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+	if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) != SMARTFS_DIRENT_TYPE_DIR)
+#else
+	if ((entry->flags & SMARTFS_DIRENT_TYPE) != SMARTFS_DIRENT_TYPE_DIR)
+#endif
+	{
+		/* Not a directory!  Report the error */
+
+		return ret = -ENOTDIR;
+	}
+
+	/* "Push" the directory and continue searching */
+
+	if (*depth >= CONFIG_SMARTFS_DIRDEPTH - 1) {
+		/* Directory depth too big */
+
+		return ret = -ENAMETOOLONG;
+	}
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+	dirstack[++(*depth)] = smartfs_rdle16(&entry->firstsector);
+#else
+	dirstack[++(*depth)] = entry->firstsector;
+#endif
+
+	segment = ptr + 1;
+
+	return ret;
+}
+
+static int calculate_sectors(struct smartfs_mountpt_s *fs, struct smartfs_entry_header_s *entry, struct smartfs_chain_header_s *header, struct smartfs_entry_s *direntry, struct smart_read_write_s *readwrite, uint16_t *dirsector, uint16_t *dirstack, uint16_t *depth, const char *segment, uint16_t *parentdirsector, const char **filename)
+{
+	int ret = -ENOENT;
+
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+	if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
+		*dirsector = smartfs_rdle16(&entry->firstsector);
+#else
+	if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
+		*dirsector = entry->firstsector;
+#endif
+		(*readwrite).count = sizeof(struct smartfs_chain_header_s);
+		(*readwrite).buffer = (uint8_t *) fs->fs_rwbuffer;
+		(*readwrite).offset = 0;
+
+		while (*dirsector != SMARTFS_ERASEDSTATE_16BIT) {
+			/* Read the next sector of the file */
+
+			(*readwrite).logsector = *dirsector;
+			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)readwrite);
+			if (ret < 0) {
+				fdbg("Error in sector chain at %d!\n", dirsector);
+				return ret;
+			}
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+			if (SMARTFS_NEXTSECTOR(&header) == SMARTFS_ERASEDSTATE_16BIT) {
+
+				(*readwrite).count = fs->fs_llformat.availbytes;
+				(*readwrite).buffer = (uint8_t *) fs->fs_chunk_buffer;
+
+				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)readwrite);
+				if (ret < 0) {
+					fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
+					return ret;
+				}
+				used_value = get_leftover_used_byte_count((uint8_t *) readwrite.buffer, get_used_byte_count((uint8_t *)(*header)->used));
+				direntry->datlen += used_value;
+			} else {
+				direntry->datlen += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
+			}
+			readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
+#else
+			/* Add used bytes to the total and point to next sector */
+			if (SMARTFS_USED(header) != SMARTFS_ERASEDSTATE_16BIT) {
+				direntry->datlen += SMARTFS_USED(header);
+			}
+#endif
+			*dirsector = SMARTFS_NEXTSECTOR(header);
+		}
+	}
+
+	*parentdirsector = dirstack[*depth];
+	*filename = segment;
+	ret = OK;
+	return ret;
+}
+
 /****************************************************************************
  * Name: smartfs_finddirentry
  *
@@ -869,7 +956,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 
 				readwrite.logsector = dirsector;
 				readwrite.count = fs->fs_llformat.availbytes;
-				readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+				readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
 				readwrite.offset = 0;
 				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 				if (ret < 0) {
@@ -940,86 +1027,17 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 							 * a rudimentary check.
 							 */
 
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-							if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
-								dirsector = smartfs_rdle16(&entry->firstsector);
-#else
-							if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
-								dirsector = entry->firstsector;
-#endif
-								readwrite.count = sizeof(struct smartfs_chain_header_s);
-								readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-								readwrite.offset = 0;
+							ret = calculate_sectors(fs, entry, header, direntry, &readwrite, &dirsector, dirstack, &depth, segment, parentdirsector, filename);
 
-								while (dirsector != SMARTFS_ERASEDSTATE_16BIT) {
-									/* Read the next sector of the file */
-
-									readwrite.logsector = dirsector;
-									ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-									if (ret < 0) {
-										fdbg("Error in sector chain at %d!\n", dirsector);
-										break;
-									}
-#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-									if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
-
-										readwrite.count = fs->fs_llformat.availbytes;
-										readwrite.buffer = (uint8_t *)fs->fs_chunk_buffer;
-
-										ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-										if (ret < 0) {
-											fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
-											break;
-										}
-										used_value = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
-										direntry->datlen += used_value;
-									} else {
-										direntry->datlen += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
-									}
-									readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-#else
-									/* Add used bytes to the total and point to next sector */
-									if (SMARTFS_USED(header) != SMARTFS_ERASEDSTATE_16BIT) {
-										direntry->datlen += SMARTFS_USED(header);
-									}
-#endif
-									dirsector = SMARTFS_NEXTSECTOR(header);
-								}
+							if (ret < OK) {
+								break;
 							}
-
-							*parentdirsector = dirstack[depth];
-							*filename = segment;
-							ret = OK;
 							goto errout;
 						} else {
-							/* Validate it's a directory */
-
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-							if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) != SMARTFS_DIRENT_TYPE_DIR)
-#else
-							if ((entry->flags & SMARTFS_DIRENT_TYPE) != SMARTFS_DIRENT_TYPE_DIR)
-#endif
-							{
-								/* Not a directory!  Report the error */
-
-								ret = -ENOTDIR;
+							ret = validate_directory(entry, dirstack, &depth, segment, ptr);
+							if (ret != OK) {
 								goto errout;
 							}
-
-							/* "Push" the directory and continue searching */
-
-							if (depth >= CONFIG_SMARTFS_DIRDEPTH - 1) {
-								/* Directory depth too big */
-
-								ret = -ENAMETOOLONG;
-								goto errout;
-							}
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-							dirstack[++depth] = smartfs_rdle16(&entry->firstsector);
-#else
-							dirstack[++depth] = entry->firstsector;
-#endif
-							segment = ptr + 1;
 							break;
 						}
 					}
@@ -1120,7 +1138,7 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 		readwrite.logsector = psector;
 		readwrite.count = fs->fs_llformat.availbytes;
 		readwrite.offset = 0;
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+		readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
 			goto errout;
@@ -1174,7 +1192,7 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 				goto errout;
 			}
 
-			nextsector = (uint16_t)ret;
+			nextsector = (uint16_t) ret;
 
 			/* Chain the next sector into this sector sector */
 
@@ -1220,7 +1238,7 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 			goto errout;
 		}
 
-		nextsector = (uint16_t)ret;
+		nextsector = (uint16_t) ret;
 
 		/* Set the newly allocated sector's type (file or dir) */
 
@@ -1277,7 +1295,7 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 	readwrite.offset = offset;
 	readwrite.count = entrysize;
 	readwrite.buffer = (uint8_t *)&fs->fs_rwbuffer[offset];
-	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long) &readwrite);
+	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 	if (ret < 0) {
 		fdbg("failed to write new entry to parent directory psector : %d\n", psector);
 		goto errout;
@@ -1353,7 +1371,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 	readwrite.offset = 0;
 	readwrite.count = sizeof(struct smartfs_chain_header_s);
-	readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+	readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
 	while (nextsector != SMARTFS_ERASEDSTATE_16BIT) {
 		/* Read the next sector into our buffer */
 
@@ -1380,7 +1398,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 	readwrite.logsector = entry->dsector;
 	readwrite.offset = 0;
 	readwrite.count = fs->fs_llformat.availbytes;
-	readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+	readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
 	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 	if (ret < 0) {
 		fdbg("Error reading directory info at sector %d\n", entry->dsector);
@@ -1452,7 +1470,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 			sector = entry->dfirst;
 			readwrite.offset = 0;
 			readwrite.count = sizeof(struct smartfs_chain_header_s);
-			readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+			readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
 			while (sector != SMARTFS_ERASEDSTATE_16BIT) {
 				/* Read the header for the next sector */
 
@@ -1537,7 +1555,7 @@ int smartfs_countdirentries(struct smartfs_mountpt_s *fs, struct smartfs_entry_s
 		readwrite.logsector = nextsector;
 		readwrite.offset = 0;
 		readwrite.count = fs->fs_llformat.availbytes;
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+		readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
 			fdbg("Error reading sector %d\n", nextsector);
@@ -1605,7 +1623,7 @@ int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *e
 		readwrite.logsector = nextsector;
 		readwrite.offset = 0;
 		readwrite.count = sizeof(struct smartfs_chain_header_s);
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+		readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
 			fdbg("Error reading sector %d header\n", nextsector);
@@ -1678,7 +1696,7 @@ int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *e
 		readwrite.logsector = entry->firstsector;
 		readwrite.offset = 0;
 		readwrite.count = sizeof(struct smartfs_chain_header_s);
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+		readwrite.buffer = (uint8_t *) fs->fs_rwbuffer;
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 
 		memset(sf->buffer, CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes);
@@ -1806,7 +1824,7 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 					}
 					node->sector = firstsector;
 					node->type = entrytype;
-					sq_addlast((FAR sq_entry_t *)node, &g_recovery_queue);
+					sq_addlast((FAR sq_entry_t *) node, &g_recovery_queue);
 					offset += entrysize;
 				}
 			} else if (type == SMARTFS_SECTOR_TYPE_FILE) {
@@ -1862,7 +1880,7 @@ int smartfs_recover(struct smartfs_mountpt_s *fs)
 	}
 	node->sector = rootsector;
 	node->type = SMARTFS_SECTOR_TYPE_DIR;
-	sq_addlast((FAR sq_entry_t *)node, &g_recovery_queue);
+	sq_addlast((FAR sq_entry_t *) node, &g_recovery_queue);
 
 	nusedsectors = 0;
 	ret = smartfs_examine_sector(fs, validsectors, &nusedsectors);
@@ -2295,7 +2313,7 @@ static int read_logging_entry(struct smartfs_mountpt_s *fs, struct
 	req.logsector = *sector;
 	req.offset = *offset;
 	req.count = sizeof(struct smartfs_logging_entry_s);
-	req.buffer = (uint8_t *)j_mgr->buffer;
+	req.buffer = (uint8_t *) j_mgr->buffer;
 
 	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
 	if (ret < 0) {
@@ -2324,7 +2342,7 @@ static int read_logging_data(struct smartfs_mountpt_s *fs, struct
 	startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
 	entry = (struct smartfs_logging_entry_s *)j_mgr->buffer;
 
-	req.buffer = (uint8_t *)j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
+	req.buffer = (uint8_t *) j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
 	req.logsector = *sector;
 	req.offset = *offset;
 	req.count = entry->datalen;
@@ -2405,7 +2423,7 @@ static int restore_write_transactions(struct smartfs_mountpt_s *fs)
 			req.logsector = entry->curr_sector;
 			req.offset = entry->offset;
 			req.count = entry->datalen;
-			req.buffer = (uint8_t *)j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
+			req.buffer = (uint8_t *) j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
 
 			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
 			if (ret != OK) {
@@ -2454,7 +2472,7 @@ static int smartfs_redo_sync(struct smartfs_mountpt_s *fs, uint16_t used_val)
 	header = (struct smartfs_chain_header_s *)(fs->journal->buffer + sizeof(struct smartfs_logging_entry_s));
 
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-	set_used_byte_count((uint8_t *)header->used_val, used);
+	set_used_byte_count((uint8_t *) header->used_val, used);
 #else
 	header->used[0] = (uint8_t)(used_val & 0x00FF);
 	header->used[1] = (uint8_t)(used_val >> 8);
@@ -2462,7 +2480,7 @@ static int smartfs_redo_sync(struct smartfs_mountpt_s *fs, uint16_t used_val)
 	req.logsector = entry->curr_sector;
 	req.offset = offsetof(struct smartfs_chain_header_s, used);
 
-	req.buffer = (uint8_t *)header + req.offset;
+	req.buffer = (uint8_t *) header + req.offset;
 	req.count = sizeof(uint16_t);
 	if (FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req) != OK) {
 		return ERROR;
@@ -2522,9 +2540,9 @@ static int smartfs_redo_rename(struct smartfs_mountpt_s *fs)
 		mode = oldflags & SMARTFS_DIRENT_MODE;
 #endif
 
-		firstsector = (uint16_t)direntry->firstsector;
+		firstsector = (uint16_t) direntry->firstsector;
 		/* Now create new entry at new location */
-		entry->generic_1 = (uint16_t)mode;
+		entry->generic_1 = (uint16_t) mode;
 		memcpy(j_mgr->buffer + sizeof(struct smartfs_logging_entry_s), filename, entry->datalen);
 		ret = smartfs_redo_create(fs, type, firstsector);
 		if (ret != OK) {
@@ -2587,7 +2605,7 @@ static int smartfs_redo_create(struct smartfs_mountpt_s *fs, uint16_t type, uint
 	name = (char *)entry + sizeof(struct smartfs_logging_entry_s);
 
 	nextsector = entry->curr_sector;
-	mode = (mode_t)entry->generic_1;
+	mode = (mode_t) entry->generic_1;
 	direntrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
 	dummyentry.name = (FAR char *)kmm_malloc(fs->fs_llformat.namesize + 1);
 	if (!dummyentry.name) {
@@ -2603,7 +2621,7 @@ static int smartfs_redo_create(struct smartfs_mountpt_s *fs, uint16_t type, uint
 		req.logsector = nextsector;
 		req.count = fs->fs_llformat.availbytes;
 		req.offset = 0;
-		req.buffer = (uint8_t *)fs->fs_rwbuffer;
+		req.buffer = (uint8_t *) fs->fs_rwbuffer;
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
 		if (ret < 0) {
 			goto err_out;
@@ -2675,7 +2693,7 @@ static int smartfs_redo_write(struct smartfs_mountpt_s *fs)
 		req.logsector = entry->curr_sector;
 		req.offset = entry->offset;
 		req.count = entry->datalen;
-		req.buffer = (uint8_t *)j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
+		req.buffer = (uint8_t *) j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
 		if (ret != OK) {
 			return ERROR;
@@ -2978,6 +2996,7 @@ static int get_next_sector_info(struct journal_transaction_manager_s *j_mgr)
 	}
 	return ret;
 }
+
 /****************************************************************************
  * Name: smartfs_write_transaction
  *
@@ -2988,8 +3007,7 @@ static int get_next_sector_info(struct journal_transaction_manager_s *j_mgr)
  *
  ****************************************************************************/
 
-static int smartfs_write_transaction(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr,
-									 uint16_t *sector, uint16_t *offset)
+static int smartfs_write_transaction(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr, uint16_t *sector, uint16_t *offset)
 {
 	int ret;
 	int info;
@@ -3108,7 +3126,7 @@ static int smartfs_set_sequence(struct smartfs_mountpt_s *fs, uint16_t sector, u
 
 	req.count = sizeof(entry->seq_no);
 	req.buffer = (uint8_t *)&(entry->seq_no);
-	if (req.offset + req.count <= j_mgr->availbytes)  {
+	if (req.offset + req.count <= j_mgr->availbytes) {
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
 		if (ret != OK) {
 			fdbg("set sequence failed.. seq no : %d logicsector : %d\n", seq, sector);
@@ -3127,8 +3145,7 @@ static int smartfs_set_sequence(struct smartfs_mountpt_s *fs, uint16_t sector, u
  *              finish that transaction and remove it from the list.
  *
  ****************************************************************************/
-static int add_to_list(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr,
-					   uint16_t j_sector, uint16_t j_offset, enum journal_action_e action)
+static int add_to_list(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr, uint16_t j_sector, uint16_t j_offset, enum journal_action_e action)
 {
 	int ret;
 	struct active_write_node_s *node;
@@ -3314,7 +3331,7 @@ int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_trans
 
 		if (T_NEEDSYNC_CHECK(entry->trans_info)) {
 			/* If the write requires a sync (when written data is appended), we add
-			* it to list */
+			 * it to list */
 			ret = add_to_list(fs, j_mgr, *t_sector, *t_offset, JOURNAL_LOG);
 			if (ret != OK) {
 				fdbg("add_to_list failed ret : %d\n", ret);
@@ -3384,7 +3401,6 @@ static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sec
 		goto error_with_ret;
 	}
 
-
 	req.buffer += req.count;
 	req.offset += req.count;
 	req.count = entry->datalen;
@@ -3423,7 +3439,6 @@ static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sec
 
 	free(buff);
 	return OK;
-
 
 error_with_dumpret:
 	for (i = 0; i < entry->datalen + sizeof(struct smartfs_logging_entry_s); i++) {
@@ -3473,9 +3488,6 @@ static uint8_t smartfs_calc_crc_data(struct journal_transaction_manager_s *j_mgr
 	return crc;
 }
 
-
-
-
 /****************************************************************************
  * Name: smartfs_finish_journalentry
  *
@@ -3504,4 +3516,4 @@ int smartfs_finish_journalentry(struct smartfs_mountpt_s *fs, uint16_t curr_sect
 	}
 	return smartfs_set_transaction(fs, sector, offset, TRANS_FINISHED);
 }
-#endif /* END OF CONFIG_SMARTFS_JOURNALING */
+#endif							/* END OF CONFIG_SMARTFS_JOURNALING */
