@@ -88,7 +88,8 @@ BIN = 2
 
 COMP_NONE = 0
 COMP_LZMA = 1
-COMP_MAX = COMP_LZMA
+COMP_MINIZ = 2
+COMP_MAX = COMP_MINIZ
 
 # In size command on linux, 4th value is the summation of text, data and bss.
 # We will use this value for elf.
