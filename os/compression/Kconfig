@@ -17,10 +17,11 @@ if COMPRESSED_BINARY
 config COMPRESSION_TYPE
 	int "Compression Algorithm Type"
 	default 1
-	range 1 1
+	range 1 2
 	---help---
 		Enter compression type.
 		1 = LZMA
+		2 = MINIZ
 
 config COMPRESSION_BLOCK_SIZE
 	int "Block size for binary compression"
