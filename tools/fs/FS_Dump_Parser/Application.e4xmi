@@ -16,6 +16,7 @@
     </children>
     <mainMenu xmi:id="_6wlLicgZEeSyMNYR5xypkQ" elementId="org.eclipse.ui.main.menu">
       <children xsi:type="menu:Menu" xmi:id="_6wlLisgZEeSyMNYR5xypkQ" elementId="file" label="File">
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_5sj-MA_pEequDuxQnRdxxw" elementId="smartfs_dump_parser.handledmenuitem.connect" label="Connect" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/plug-in-min.png"/>
         <children xsi:type="menu:HandledMenuItem" xmi:id="_6wlLi8gZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.handleditem.file.open" label="Open" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/open_in_app.png" command="_6wlLgMgZEeSyMNYR5xypkQ"/>
         <children xsi:type="menu:HandledMenuItem" xmi:id="_6wlLjMgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.handleditem.save" label="Save" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/save_edit.png" command="_6wlLg8gZEeSyMNYR5xypkQ"/>
         <children xsi:type="menu:HandledMenuItem" xmi:id="_6wlLjcgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.handleditem.quit" label="Quit" command="_6wlLfMgZEeSyMNYR5xypkQ"/>
@@ -26,6 +27,7 @@
     </mainMenu>
     <trimBars xmi:id="_6wlLlcgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.trimbar.top">
       <children xsi:type="menu:ToolBar" xmi:id="_6wlLlsgZEeSyMNYR5xypkQ" elementId="org.eclipse.ui.main.toolbar">
+        <children xsi:type="menu:HandledToolItem" xmi:id="_jz9kIA_yEequDuxQnRdxxw" elementId="smartfs_dump_parser.handleditem.trimbar.top.dump" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/plug-in-min.png" command="_GKwDkA_yEequDuxQnRdxxw"/>
         <children xsi:type="menu:HandledToolItem" xmi:id="_6wlLmMgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.handleditem.trimbar.top.save" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/save_edit.png" command="_6wlLg8gZEeSyMNYR5xypkQ"/>
         <children xsi:type="menu:HandledToolItem" xmi:id="_6wlLl8gZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.handleditem.trimbar.top.open" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/open_in_app.png" command="_6wlLgMgZEeSyMNYR5xypkQ"/>
       </children>
@@ -35,6 +37,7 @@
   <handlers xmi:id="_6wlLgcgZEeSyMNYR5xypkQ" elementId="smartfs_dump_parser.handler.openCommand" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.handlers.OpenHandler" command="_6wlLgMgZEeSyMNYR5xypkQ"/>
   <handlers xmi:id="_6wlLhMgZEeSyMNYR5xypkQ" elementId="smartfs_dump_parser.handler.saveCommand" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.handlers.SaveHandler" command="_6wlLg8gZEeSyMNYR5xypkQ"/>
   <handlers xmi:id="_6wlLh8gZEeSyMNYR5xypkQ" elementId="smartfs_dump_parser.handler.aboutCommand" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.handlers.AboutHandler" command="_6wlLhsgZEeSyMNYR5xypkQ"/>
+  <handlers xmi:id="_N6WzkA_yEequDuxQnRdxxw" elementId="smartfs_dump_parser.handler.dumpCommand" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.handlers.DumpHandler" command="_GKwDkA_yEequDuxQnRdxxw"/>
   <bindingTables xmi:id="_6wlLfsgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.bindingtable" bindingContext="_6wlLecgZEeSyMNYR5xypkQ">
     <bindings xmi:id="_6wlLf8gZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.keybinding.m1q" keySequence="M1+Q" command="_6wlLfMgZEeSyMNYR5xypkQ"/>
     <bindings xmi:id="_6wlLgsgZEeSyMNYR5xypkQ" elementId="SmartFS_Dump_Parser.keybinding.m1o" keySequence="M1+O" command="_6wlLgMgZEeSyMNYR5xypkQ"/>
@@ -49,6 +52,7 @@
   <commands xmi:id="_6wlLgMgZEeSyMNYR5xypkQ" elementId="org.eclipse.ui.file.open" commandName="openCommand"/>
   <commands xmi:id="_6wlLg8gZEeSyMNYR5xypkQ" elementId="org.eclipse.ui.file.save" commandName="saveCommand"/>
   <commands xmi:id="_6wlLhsgZEeSyMNYR5xypkQ" elementId="org.eclipse.ui.help.aboutAction" commandName="aboutCommand"/>
+  <commands xmi:id="_GKwDkA_yEequDuxQnRdxxw" elementId="smartfs_dump_parser.command.dumpcommand" commandName="dumpCommand"/>
   <addons xmi:id="_6wlLcsgZEeSyMNYR5xypkQ" elementId="org.eclipse.e4.core.commands.service" contributionURI="bundleclass://org.eclipse.e4.core.commands/org.eclipse.e4.core.commands.CommandServiceAddon"/>
   <addons xmi:id="_6wlLc8gZEeSyMNYR5xypkQ" elementId="org.eclipse.e4.ui.contexts.service" contributionURI="bundleclass://org.eclipse.e4.ui.services/org.eclipse.e4.ui.services.ContextServiceAddon"/>
   <addons xmi:id="_6wlLdMgZEeSyMNYR5xypkQ" elementId="org.eclipse.e4.ui.bindings.service" contributionURI="bundleclass://org.eclipse.e4.ui.bindings/org.eclipse.e4.ui.bindings.BindingServiceAddon"/>
