@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config COMPRESSION_MINIZ
+	bool "Miniz Compression"
+	default y if COMPRESSION_TYPE=2 && BUILD_PROTECTED=n
+	---help---
+		Miniz Compression Library
