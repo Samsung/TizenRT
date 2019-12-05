@@ -24,16 +24,174 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/netmgr/netdev_mgr.h>
+#include "netdev_mgr_internal.h"
 #include "lwip/opt.h"
+#include "lwip/netif.h"
 #include "lwip/netdb.h"
+#include "lwip/dhcp.h"
 #include "lwip/dns.h"
 #include "lwip/igmp.h"
+#include "lwip/netifapi.h"
+
+#if defined(CONFIG_NET_LWIP_DHCP)
+#define GET_NETIF_FROM_NETDEV(dev) (struct netif *)(((struct netdev_ops *)(dev)->ops)->nic)
+static struct netif *_netdev_dhcp_dev(FAR const char *intf)
+{
+	struct netif *cnif;
+
+	if (intf == NULL) {
+		ndbg("Input NULL\n");
+		return NULL;
+	}
+
+	cnif = GET_NETIF_FROM_NETDEV(nm_get_netdev((uint8_t *)intf));
+	if (cnif == NULL) {
+		ndbg("No netif which has the name of %s\n", intf);
+		return NULL;
+	}
+
+	return cnif;
+}
+#endif
 
 /**********************************************************
  * Private Function
  **********************************************************/
+#if defined(CONFIG_LWIP_DHCPC)
+static void _netdev_set_ipv4addr(FAR struct netif *dev,
+								FAR const struct in_addr *ip,
+								FAR const struct in_addr *netmask,
+								FAR const struct in_addr *gw)
+{
+	ip_addr_t t_ip;
+	ip_addr_t t_netmask;
+	ip_addr_t t_gw;
 
-static struct addrinfo *_copy_addrinfo(struct addrinfo *src)
+	if (ip) {
+		ip_2_ip4(&t_ip)->addr = ip->s_addr;
+	} else {
+		t_ip = dev->ip_addr;
+	}
+
+	if (netmask) {
+		ip_2_ip4(&t_ip)->addr = netmask->s_addr;
+	} else {
+		t_ip = dev->netmask;
+	}
+
+	if (gw) {
+		ip_2_ip4(&t_gw)->addr = gw->s_addr;
+	} else {
+		t_gw = dev->gw;
+	}
+
+	netifapi_netif_set_addr(dev, ip_2_ip4(&t_ip), ip_2_ip4(&t_netmask), ip_2_ip4(&t_gw));
+	netifapi_netif_set_up(dev);
+}
+
+int _netdev_dhcpc_start(const char *intf)
+{
+	nvdbg("LWIP DHCPC started (%s)\n", intf);
+	struct netif *cnif;
+	cnif = _netdev_dhcp_dev(intf);
+	if (cnif == NULL) {
+		ndbg("No network interface for dhcpc %s\n", intf);
+		return ERROR;
+	}
+	int32_t timeleft = CONFIG_LWIP_DHCPC_TIMEOUT;
+	struct in_addr l_ip = { .s_addr = IPADDR_ANY };
+	struct in_addr l_netmask = { .s_addr = IPADDR_ANY };
+	struct in_addr l_gw = { .s_addr = IPADDR_ANY };
+
+	struct in_addr ip_check;
+
+	/* Initialize dhcp structure if exists */
+	if (netif_dhcp_data(cnif)) {
+		netifapi_dhcp_stop(cnif);
+	}
+
+	_netdev_set_ipv4addr(cnif, &l_ip, &l_netmask, &l_gw);
+
+	err_t res = netifapi_dhcp_start(cnif);
+	if (res) {
+		ndbg("DHCP client start failed %d\n", res);
+		return ERROR;
+	}
+
+	nvdbg("DHCP client started successfully, waiting IP address (timeout %d msecs)\n", timeleft);
+	while (netifapi_dhcp_address_valid(cnif) != 0) {
+		usleep(100000);
+		timeleft -= 100;
+		if (timeleft <= 0) {
+			ndbg("DHCP client timeout\n");
+			netifapi_dhcp_stop(cnif);
+			return ERROR;
+		}
+	}
+
+	memcpy(&ip_check, &ip4_addr_get_u32(ip_2_ip4(&cnif->ip_addr)), sizeof(struct in_addr));
+	ndbg("Got IP address %s\n", inet_ntoa(ip_check));
+
+	return 0;
+}
+
+int _netdev_dhcpc_stop(const char *intf)
+{
+	struct in_addr in = { .s_addr = INADDR_NONE };
+	struct netif *cnif;
+	cnif = _netdev_dhcp_dev(intf);
+	if (cnif == NULL) {
+		ndbg("No network interface for dhcpc %s\n", intf);
+		return ERROR;
+	}
+	_netdev_set_ipv4addr(cnif, &in, &in, &in);
+	netifapi_dhcp_stop(cnif);
+	nvdbg("Release IP address (lwip)\n");
+	return OK;
+}
+#endif
+
+#if defined(CONFIG_LWIP_DHCPS)
+#define DHCPD_MQ_NAME "dhcpd_queue"
+#define DHCPD_MQ_LEN 11
+#define DHCPD_MQ_MAX_LEN 20
+
+void _netdev_dhcp_join_cb(dhcp_evt_type_e type, void *data)
+{
+	ndbg("dhcpd joined");
+
+	struct mq_attr attr;
+	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
+	attr.mq_msgsize = DHCPD_MQ_LEN;
+	attr.mq_flags = 0;
+	attr.mq_curmsgs = 0;
+
+	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
+	if (!md) {
+		ndbg("mq open fail (errno %d)\n", errno);
+		mq_close(md);
+		return;
+	}
+
+	char msg[DHCPD_MQ_LEN];
+	dhcp_node_s *node = (dhcp_node_s *)data;
+	msg[0] = 1;
+	memcpy(&msg[1], &node->ipaddr, 4);
+	memcpy(&msg[5], &node->macaddr, 6);
+	int mq_ret = mq_send(md, msg, DHCPD_MQ_LEN, 100);
+	if (mq_ret < 0) {
+		ndbg("send mq fail (errno %d)\n", errno);
+	}
+
+	mq_close(md);
+
+	return;
+}
+#endif
+
+#if LWIP_DNS
+static struct addrinfo *_netdev_copy_addrinfo(struct addrinfo *src)
 {
 	struct addrinfo *tmp = src;
 	struct addrinfo *prev = NULL;
@@ -42,7 +200,7 @@ static struct addrinfo *_copy_addrinfo(struct addrinfo *src)
 		struct addrinfo *dst = NULL;
 		dst = (struct addrinfo *)kumm_malloc(sizeof(struct addrinfo));
 		if (!dst) {
-			ndbg("_copy_addrinfo() kumm_malloc failed\n");
+			ndbg("kumm_malloc failed\n");
 			break;
 		}
 		dst->ai_flags = tmp->ai_flags;
@@ -53,7 +211,7 @@ static struct addrinfo *_copy_addrinfo(struct addrinfo *src)
 
 		dst->ai_addr = (struct sockaddr *)kumm_malloc(sizeof(struct sockaddr));
 		if (!dst->ai_addr) {
-			ndbg("_copy_addrinfo() kumm_malloc failed\n");
+			ndbg("kumm_malloc failed\n");
 			kumm_free(dst);
 			break;
 		}
@@ -62,7 +220,7 @@ static struct addrinfo *_copy_addrinfo(struct addrinfo *src)
 		if (tmp->ai_canonname) {
 			dst->ai_canonname = (char *)kumm_malloc(sizeof(tmp->ai_canonname));
 			if (!dst->ai_canonname) {
-				ndbg("_copy_addrinfo() kumm_malloc failed\n");
+				ndbg("kumm_malloc failed\n");
 				kumm_free(dst->ai_addr);
 				kumm_free(dst);
 				break;
@@ -85,7 +243,7 @@ static struct addrinfo *_copy_addrinfo(struct addrinfo *src)
 	return root;
 }
 
-static int _free_addrinfo(struct addrinfo *ai)
+static int _netdev_free_addrinfo(struct addrinfo *ai)
 {
 	struct addrinfo *next;
 
@@ -96,6 +254,7 @@ static int _free_addrinfo(struct addrinfo *ai)
 	}
 	return 0;
 }
+#endif
 
 /****************************************************************************
  * Function: lwip_func_ioctl
@@ -104,6 +263,7 @@ static int _free_addrinfo(struct addrinfo *ai)
  *   Call lwip API
  *
  * Parameters:
+ *   s        Descriptor of device
  *   cmd      The ioctl command
  *   arg      Type of the information to get
  *
@@ -111,12 +271,18 @@ static int _free_addrinfo(struct addrinfo *ai)
  *   0 on success, negated errno on failure.
  *
  ****************************************************************************/
-static int lwip_func_ioctl(int cmd, void *arg)
+static int lwip_func_ioctl(int s, int cmd, void *arg)
 {
 	int ret = -EINVAL;
-	struct req_lwip_data *in_arg = (struct req_lwip_data *)arg;
-	if (!in_arg) {
+	ndbg("Enter %d\n");
+	struct lwip_sock *sock = get_socket(s);
+	if (!sock) {
+		ret = -EBADF;
 		return ret;
+	}
+	struct req_lwip_data *req = (struct req_lwip_data *)arg;
+	if (!req) {
+		goto errout;
 	}
 
 #if LWIP_DNS
@@ -125,34 +291,34 @@ static int lwip_func_ioctl(int cmd, void *arg)
 	struct hostent *user_ent = NULL;
 #endif
 
-	switch (in_arg->type) {
+	switch (req->type) {
 #if LWIP_DNS
 	case GETADDRINFO:
-		in_arg->req_res = lwip_getaddrinfo(in_arg->host_name, in_arg->serv_name, in_arg->ai_hint, &res);
-		if (in_arg->req_res != 0) {
+		req->req_res = lwip_getaddrinfo(req->host_name, req->serv_name, req->ai_hint, &res);
+		if (req->req_res != 0) {
 			ndbg("lwip_getaddrinfo() returned with the error code: %d\n", ret);
-			in_arg->ai_res = NULL;
+			req->ai_res = NULL;
 			ret = -EINVAL;
 		} else {
-			in_arg->ai_res = _copy_addrinfo(res);
+			req->ai_res = _netdev_copy_addrinfo(res);
 			ret = OK;
 		}
 		break;
 	case FREEADDRINFO:
-		in_arg->req_res = _free_addrinfo(in_arg->ai);
+		req->req_res = _netdev_free_addrinfo(req->ai);
 		ret = OK;
 		break;
 	case DNSSETSERVER:
-		dns_setserver(in_arg->num_dns, in_arg->dns_server);
+		dns_setserver(req->num_dns, req->dns_server);
 		ret = OK;
 		break;
 	case GETHOSTBYNAME:
-		host_ent = lwip_gethostbyname(in_arg->host_name);
+		host_ent = lwip_gethostbyname(req->host_name);
 		if (!host_ent) {
 			ndbg("lwip_gethostbyname() returned with the error code: %d\n", HOST_NOT_FOUND);
 			ret = -EINVAL;
 		} else {
-			user_ent = in_arg->host_entry;
+			user_ent = req->host_entry;
 			strncpy(user_ent->h_name, host_ent->h_name, DNS_MAX_NAME_LENGTH);
 			user_ent->h_name[DNS_MAX_NAME_LENGTH] = 0;
 			memcpy(user_ent->h_addr_list[0], host_ent->h_addr_list[0], sizeof(struct in_addr));
@@ -163,8 +329,8 @@ static int lwip_func_ioctl(int cmd, void *arg)
 		}
 		break;
 	case GETNAMEINFO:
-		in_arg->req_res = lwip_getnameinfo(in_arg->sa, in_arg->sa_len, (char *)in_arg->host_name, in_arg->host_len, (char *)in_arg->serv_name, in_arg->serv_len, in_arg->flags);
-		if (in_arg->req_res != 0) {
+		req->req_res = lwip_getnameinfo(req->sa, req->sa_len, (char *)req->host_name, req->host_len, (char *)req->serv_name, req->serv_len, req->flags);
+		if (req->req_res != 0) {
 			ndbg("lwip_getnameinfo() returned with the error code: %d\n", ret);
 			ret = -EINVAL;
 		} else {
@@ -176,61 +342,97 @@ static int lwip_func_ioctl(int cmd, void *arg)
 #if defined(CONFIG_NET_LWIP_DHCP)
 #if defined(CONFIG_LWIP_DHCPC)
 	case DHCPCSTART:
-		in_arg->req_res = netdev_dhcp_client_start((const char *)in_arg->host_name);
-		if (in_arg->req_res != 0) {
-			ret = -EINVAL;
-			ndbg("start dhcp fail\n");
-		} else {
-			ret = OK;
+		req->req_res = _netdev_dhcpc_start((const char *)req->intf);
+		if (req->req_res != OK) {
+			ndbg("Start DHCP clent failed\n");
+			goto errout;
 		}
+		ret = OK;
 		break;
 	case DHCPCSTOP:
-		netdev_dhcp_client_stop((const char *)in_arg->host_name);
-		in_arg->req_res = 0;
+		req->req_res = _netdev_dhcpc_stop((const char *)req->intf);
+		if (req->req_res != OK) {
+			ndbg("Stop DHCP client failed\n");
+			goto errout;
+		}
 		ret = OK;
 		break;
 #endif
 
 #if defined(CONFIG_LWIP_DHCPS)
-	case DHCPDSTART:
-		in_arg->req_res = netdev_dhcp_server_start((char *)in_arg->host_name, _dhcpd_join);
-		if (in_arg->req_res != 0) {
-			ret = -EINVAL;
-			ndbg("start dhcpd fail\n");
-		} else {
-			ret = OK;
+	case DHCPDSTART: {
+		struct netif *cnif = _netdev_dhcp_dev((const char *)req->intf);
+		if (cnif == NULL) {
+			ndbg("No network interface for dhcpd start\n");
+			req->req_res = ERROR;
+			goto errout;
 		}
-		break;
-	case DHCPDSTOP:
-		in_arg->req_res = netdev_dhcp_server_stop((char *)in_arg->host_name);
-		if (in_arg->req_res != 0) {
-			ret = -EINVAL;
-			ndbg("stop dhcpd fail\n");
-		} else {
-			ret = OK;
+		if (dhcps_register_cb(_netdev_dhcp_join_cb) != OK) {
+			ndbg("Register link callback failed\n");
+			req->req_res = ERROR;
+			goto errout;
 		}
-		break;
-	case DHCPDSTATUS:
-		in_arg->req_res = netdev_dhcp_server_status((char *)in_arg->host_name);
-		if (in_arg->req_res != 0) {
-			ret = -EINVAL;
-			ndbg("stop dhcpd fail\n");
-		} else {
-			ret = OK;
+		if ((req->req_res = netifapi_dhcps_start(cnif)) != OK) {
+			ndbg("DHCP server start failed (LWIP)\n");
+			goto errout;
 		}
+		ndbg("DHCP server started successfully (LWIP)\n");
+		req->req_res = OK;
+		ret = OK;
 		break;
+	}
+	case DHCPDSTOP: {
+		struct netif *cnif = _netdev_dhcp_dev((const char *)req->intf);
+		if (cnif == NULL) {
+			ndbg("No network interface for dhcpd stop\n");
+			req->req_res = ERROR;
+			goto errout;
+		}
+		if (cnif->dhcps_pcb == NULL) {
+			ndbg("stop dhcpd fail: no pcb\n");
+			req->req_res = ERROR;
+			goto errout;
+		}
+		netifapi_dhcps_stop(cnif);
+		ndbg("DHCP server stopped successfully (LWIP)\n");
+		req->req_res = OK;
+		ret = OK;
+		break;
+	}
+	case DHCPDSTATUS: {
+		struct netif *cnif = _netdev_dhcp_dev((const char *)req->intf);
+		if (cnif == NULL) {
+			ndbg("No network interface for dhcpd status\n");
+			req->req_res = ERROR;
+			goto errout;
+		}
+		if (cnif->dhcps_pcb == NULL) {
+			ndbg("DHCP server closed\n");
+			req->req_res = ERROR;
+			goto errout;
+		}
+		nvdbg("DHCP server opened\n");
+		req->req_res = OK;
+		ret = OK;
+		break;
+	}
 #endif // CONFIG_LWIP_DHCPS
 #endif // CONFIG_NET_LWIP_DHCP
 	default:
-		ndbg("Wrong request type: %d\n", in_arg->type);
+		ndbg("Wrong request type: %d\n", req->type);
 		break;
 	}
 
 	return ret;
+
+errout:
+	ret = -EINVAL;
+	return ret;
+
 }
 
 /****************************************************************************
- * Function: lwipioctl
+ * Function: netdev_lwipioctl
  *
  * Description:
  *   Call lwip_ioctl() with FIONREAD/FIONBIO commands or
@@ -249,6 +451,7 @@ static int lwip_func_ioctl(int cmd, void *arg)
 int netdev_lwipioctl(int sockfd, int cmd, void *arg)
 {
 	int ret = -ENOTTY;
+	ndbg("cmd %d\n", cmd);
 
 	if (cmd == FIONREAD || cmd == FIONBIO) {
 		ret = lwip_ioctl(sockfd, (long)cmd, arg);
@@ -256,7 +459,7 @@ int netdev_lwipioctl(int sockfd, int cmd, void *arg)
 			return -get_errno();
 		}
 	} else if (cmd == SIOCLWIP) {
-		return lwip_func_ioctl(cmd, arg);
+		return lwip_func_ioctl(sockfd, cmd, arg);
 	}
 
 	return ret;

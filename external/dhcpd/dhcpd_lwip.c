@@ -131,7 +131,7 @@ void *_dhcpd_join_handler(void *arg)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPDSTART;
-	req.host_name = data->intf;
+	req.intf = data->intf;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
@@ -193,7 +193,7 @@ int dhcp_server_status(char *intf)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPDSTATUS;
-	req.host_name = intf;
+	req.intf = intf;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
@@ -293,7 +293,7 @@ int dhcp_server_stop(char *intf)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPDSTOP;
-	req.host_name = intf;
+	req.intf = intf;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
