@@ -319,6 +319,22 @@ int get_errno(void);
 #  define binfo(...)
 #endif
 
+#ifdef CONFIG_DEBUG_BINARY_COMPRESSION_ERROR
+#define bcmpdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define bcmplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define bcmpdbg(...)
+#define bcmplldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_BINARY_COMPRESSION_INFO
+#define bcmpvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define bcmpllvdbg(format, ...)  llvdbg(format, ##__VA_ARGS__)
+#else
+#define bcmpvdbg(...)
+#define bcmpllvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_BINMGR_ERROR
 #define bmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define bmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1075,6 +1091,22 @@ int get_errno(void);
 #else
 #define audvdbg     (void)
 #define audllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINARY_COMPRESSION_ERROR
+#define bcmpdbg     dbg
+#define bcmplldbg   lldbg
+#else
+#define bcmpdbg     (void)
+#define bcmplldbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BINARY_COMPRESSION_INFO
+#define bcmpvdbg    vdbg
+#define bcmpllvdbg  llvdbg
+#else
+#define bcmpvdbg    (void)
+#define bcmpllvdbg  (void)
 #endif
 
 #ifdef CONFIG_DEBUG_BINFMT_ERROR

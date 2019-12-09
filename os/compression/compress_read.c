@@ -74,7 +74,7 @@ static int compress_decompress_block(unsigned char *out_buffer, long unsigned in
 
 		ret = LzmaUncompress(&out_buffer[0], writesize, &read_buffer[LZMA_PROPS_SIZE], size, &read_buffer[0], LZMA_PROPS_SIZE);
 		if (ret == SZ_ERROR_FAIL) {
-			bmdbg("Failure to decompress with LZMAUncompress API\n");
+			bcmpdbg("Failure to decompress with LZMAUncompress API\n");
 			ret = -ret;
 		}
 	}
@@ -85,7 +85,7 @@ static int compress_decompress_block(unsigned char *out_buffer, long unsigned in
 	
 			ret = mz_uncompress(out_buffer, writesize, read_buffer, *size);
 			if (ret != Z_OK) {
-				bmdbg("Failure to decompress with Miniz's uncompress API; ret = %d\n", ret);
+				bcmpdbg("Failure to decompress with Miniz's uncompress API; ret = %d\n", ret);
 				if (ret > 0)
 					ret = -ret;
 			}
@@ -138,21 +138,21 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	rpos = lseek(filfd, offset, SEEK_SET);
 	if (rpos != offset) {
 		int errval = get_errno();
-		bmdbg("ERROR : lseek to offset %lu failed: %d\n", (unsigned long)offset, errval);
+		bcmpdbg("ERROR : lseek to offset %lu failed: %d\n", (unsigned long)offset, errval);
 		return -errval;
 	}
 
 	/* Read compression header size from the file data */
 	nbytes = read(filfd, &compheader_size, sizeof(compheader_size));
 	if (nbytes != sizeof(compheader_size)) {
-		bmdbg("Read for compression header size from offset %lu failed\n", offset);
+		bcmpdbg("Read for compression header size from offset %lu failed\n", offset);
 		return ERROR;
 	}
 
 	/* Allocate memory for compression header now that we know it's size */
 	compression_header = (struct s_header *)kmm_malloc(compheader_size);
 	if (!compression_header) {
-		bmdbg("Failed kmm_malloc for compression_header\n");
+		bcmpdbg("Failed kmm_malloc for compression_header\n");
 		return -ENOMEM;
 	}
 
@@ -162,11 +162,11 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	/* Read remaining compression header, including section offsets */
 	nbytes = read(filfd, ((uint8_t *)compression_header + sizeof(compression_header->size_header)), compheader_size - sizeof(compression_header->size_header));
 	if (nbytes != (compheader_size - sizeof(compression_header->size_header))) {
-		bmdbg("Read for compression header from offset %lu failed\n", offset);
+		bcmpdbg("Read for compression header from offset %lu failed\n", offset);
 		return ERROR;
 	}
 
-	bmvdbg("Compressed Binary Header info: size (%d), compression format (%d), blocksize (%d), No. sections (%d), Uncompressed binary size = %d\n", compression_header->size_header, compression_header->compression_format, compression_header->blocksize, compression_header->sections, compression_header->binary_size);
+	bcmpvdbg("Compressed Binary Header info: size (%d), compression format (%d), blocksize (%d), No. sections (%d), Uncompressed binary size = %d\n", compression_header->size_header, compression_header->compression_format, compression_header->blocksize, compression_header->sections, compression_header->binary_size);
 
 	return OK;
 }
@@ -209,7 +209,7 @@ static off_t compress_lseek_block(int filfd, uint16_t binary_header_size, int bl
 	/* Calculate block offset from start of file for start of 'block_number' block */
 	block_offset = compress_offset_block(filfd, binary_header_size, block_number);
 	if (block_offset < 0) {
-		bmdbg("Incorrect offset for block number %d\n", block_number);
+		bcmpdbg("Incorrect offset for block number %d\n", block_number);
 		return block_offset;
 	}
 
@@ -217,7 +217,7 @@ static off_t compress_lseek_block(int filfd, uint16_t binary_header_size, int bl
 	rpos = lseek(filfd, block_offset, SEEK_SET);
 	if (rpos != block_offset) {
 		int errval = get_errno();
-		bmdbg("Failed to seek to position %lu: %d\n", (unsigned long)block_offset, errval);
+		bcmpdbg("Failed to seek to position %lu: %d\n", (unsigned long)block_offset, errval);
 		return -errval;
 	}
 
@@ -245,33 +245,33 @@ static off_t compress_read_block(int filfd, uint16_t binary_header_size, FAR uin
 	/* Find out size of 'block_number' block in compressed file. Assign to readsize */
 	next_block_offset = compress_offset_block(filfd, binary_header_size, block_number + 1);
 	if (next_block_offset < 0) {
-		bmdbg("Incorrect offset for block number %d\n", block_number + 1);
+		bcmpdbg("Incorrect offset for block number %d\n", block_number + 1);
 		return ERROR;
 	}
 
 	current_block_offset = compress_offset_block(filfd, binary_header_size, block_number);
 	if (current_block_offset < 0) {
-		bmdbg("Incorrect offset for block number %d\n", block_number);
+		bcmpdbg("Incorrect offset for block number %d\n", block_number);
 		return ERROR;
 	}
 
 	readsize = next_block_offset - current_block_offset;
 	if (readsize < 0) {
-		bmdbg("Incorrect readsize %d for block, has to be positive\n", readsize);
+		bcmpdbg("Incorrect readsize %d for block, has to be positive\n", readsize);
 		return readsize;
 	}
 
 	/* Seek to location of 'block_number' block in compressed file */
 	rpos = compress_lseek_block(filfd, binary_header_size, block_number);
 	if (rpos < 0) {
-		bmdbg("Failed to seek to offset of block number %d\n", block_number);
+		bcmpdbg("Failed to seek to offset of block number %d\n", block_number);
 		return rpos;
 	}
 
 	/* Read 'block_number' block into buf */
 	nbytes = read(filfd, buf, readsize);
 	if (nbytes != readsize) {
-		bmdbg("Read for compressed block %d failed\n", block_number);
+		bcmpdbg("Read for compressed block %d failed\n", block_number);
 		return ERROR;
 	}
 
@@ -314,7 +314,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 	blocksize = compression_header->blocksize;
 	compress_blocks_to_read(&first_block, &last_block, &no_blocks, offset, readsize);
 	if (first_block < 0 || no_blocks < 0) {
-		bmdbg("Incorrect first_block, no_blocks info\n");
+		bcmpdbg("Incorrect first_block, no_blocks info\n");
 		buffer_index = ERROR;
 		goto error_compress_read;
 	}
@@ -329,7 +329,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 		/* Read compressed 'index' block into read_buffer */
 		size = compress_read_block(filfd, binary_header_size, buffers.read_buffer, index);
 		if (size < 0) {
-			bmdbg("Read for compressed block %d failed\n", index);
+			bcmpdbg("Read for compressed block %d failed\n", index);
 			buffer_index = size;
 			goto error_compress_read;
 		}
@@ -337,7 +337,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 		/* Decompress block in read_buffer to out_buffer */
 		ret = compress_decompress_block(buffers.out_buffer, &writesize, buffers.read_buffer, &size, index);
 		if (ret == ERROR) {
-			bmdbg("Failed to decompress %d block of this binary\n", index);
+			bcmpdbg("Failed to decompress %d block of this binary\n", index);
 			buffer_index = ret;
 			goto error_compress_read;
 		}
@@ -392,7 +392,7 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen)
 	/* Parsing compression header for compressed file */
 	ret = compress_parse_header(filfd, offset);
 	if (ret != OK) {
-		bmdbg("Failed to parse compression header from file\n");
+		bcmpdbg("Failed to parse compression header from file\n");
 		goto error_compress_init;
 	}
 
