@@ -23,11 +23,18 @@
         <option desc="Flash all binaries and images">ALL</option>
         <option desc="Flash TizenRT binary">OS</option>
         <option desc="Register the USB rule">USBrule</option>
-        <option desc="Flash Bootloader binaries">BL1 BL2</option>
-        <option desc="Flash Firmware binaries">SSSFW WLANFW</option>
-        <option desc="Flash ROMFS image">ROMFS</option>
-        <option desc="Erase OTA partition">ERASE_OTA</option>
-        <option desc="Erase user file system">ERASE_USERFS</option>
-        <option desc="Erase all of partitions">ERASE_ALL</option>
+        <option desc="Flash TizenRT APPS">APPS</option>
+        <option desc="Flash TizenRT OTA">OTA</option>
+        <option desc="Flash TizenRT ROMFS">ROM</option>
+        <option desc="Flash TizenRT MICOM">MICOM</option>
+        <option desc="Flash TizenRT WIFI">WIFI</option>
+        <option desc="Flash TizenRT LOADPARAM">LOADPARAM</option>
+        <option desc="Flash Bootloader binary">BL1</option>
+        <option desc="Flash Bootloader binary">BL2</option>
+        <option desc="Flash Firmware binary">SSSFW</option>
+        <option desc="Flash Firmware binary">WLANFW</option>
+        <option desc="Erase OTA partition">ERASE OTA</option>
+        <option desc="Erase user file system">ERASE USERFS</option>
+        <option desc="Erase all of partitions">ERASE ALL</option>
     </options>
 </flash>
