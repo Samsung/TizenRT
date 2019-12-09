@@ -25,6 +25,11 @@ THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 # When location of this script is changed, only OS_DIR_PATH should be changed together!!!
 OS_DIR_PATH=${THIS_PATH}/../../../os
 
+USBRULE_PATH=${THIS_PATH}/../usbrule.sh
+USBRULE_BOARD="stm32"
+USBRULE_IDVENDOR="0483"
+USBRULE_IDPRODUCT=("3748" "3752" "3753" "374d" "374e" "374f")
+
 source ${OS_DIR_PATH}/.config
 
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
@@ -52,21 +57,15 @@ download_all()
 	fi
 }
 
-case $1 in
-	os|OS)
+case ${1,,} in
+	os)
 		download_all
 		;;
-	all|ALL)
+	all)
 		download_all
 		;;
-	usbrule|USBrule)
-		RET=$(${THIS_PATH}/../usbrule.sh stm32 0483 3748 3752 3753 374d 374e 374f)
-		if [ -n "${RET}" ]; then
-			echo $RET
-			exit 1
-		fi
-		echo "USB rule creation succeeded."
-		exit 0
+	usbrule)
+		${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT[@]} || exit 1
 		;;
 	*)
 		echo "Not supported"

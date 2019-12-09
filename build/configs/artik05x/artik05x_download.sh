@@ -27,6 +27,11 @@ OS_DIR_PATH=${THIS_PATH}/../../../os
 
 source ${OS_DIR_PATH}/.config
 
+USBRULE_PATH=${THIS_PATH}/../usbrule.sh
+USBRULE_BOARD="artik"
+USBRULE_IDVENDOR="0403"
+USBRULE_IDPRODUCT="6010"
+
 PARTMAP_DIR_PATH=${THIS_PATH}
 PARTITION_KCONFIG=${OS_DIR_PATH}/board/common/Kconfig
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
@@ -186,10 +191,9 @@ download()
 {
 	parts=$1;
 
-	if [[ -n $parts ]] && [[ "$parts" != "all" ]] && [[ "$parts" != "ALL" ]]
+	if [[ -n $parts ]] && [[ "$parts" != "all" ]]
 	then
 		echo "##Download $parts"
-		parts=$(echo $parts | tr '[:upper:]' '[:lower:]')
 	else
 	        default_parts=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
 		configured_parts=${CONFIG_FLASH_PART_NAME:=${default_parts}}
@@ -197,7 +201,7 @@ download()
 	fi
 
 	# Make Openocd commands for parts
-	if [[ "$parts" == "USER" ]] || [[ "$parts" == "user" ]]
+	if [[ "$parts" == "user" ]]
 	then
 		commands=$(compute_ocd_commands_user)
 		echo "ocd command to run: ${commands}"
@@ -220,18 +224,18 @@ download()
 
 erase()
 {
-	case $optarg in
-		OTA|ota)
+	case $1 in
+		ota)
 			PART_NAME=ota
 			;;
-		USERFS|userfs)
+		userfs)
 			PART_NAME=user
 			;;
-		ALL|all)
+		all)
 			PART_NAME=all
 			;;
 		*)
-			echo "${optarg} is not supported"
+			echo "${$1} is not supported"
 			exit 1
 			;;
 	esac
@@ -252,12 +256,11 @@ fi
 
 while test $# -gt 0; do
 	case "$1" in
-		-*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
-		ERASE_*) optarg=`echo "$1" | sed 's/ERASE_//'` ;;
+		-*=*) optarg=`echo "${1,,}" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
 		*) optarg= ;;
 	esac
 
-	case $1 in
+	case ${1,,} in
 		--board*)
 			BOARD_NAME=$optarg
 			BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}
@@ -273,20 +276,18 @@ while test $# -gt 0; do
 		--verify)
 			VERIFY=verify
 			;;
-		ALL|OS|APPS|ROM|BL1|BL2|SSSFW|WLANFW|OTA|MICOM|WIFI|USER|all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|micom|wifi|user)
-			download $1
+		all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|micom|wifi|user)
+			download ${1,,}
 			;;
-		USBrule|usbrule)
-			RET=$(${THIS_PATH}/../usbrule.sh artik 0403 6010)
-			if [ -n "${RET}" ]; then
-				echo $RET
-				exit 1
-			fi
-			echo "USB rule creation succeeded."
-			exit 0
+		usbrule)
+			${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} || exit 1
 			;;
-		ERASE_*)
-			erase
+		erase)
+			while test $# -gt 1
+			do
+				erase ${2,,}
+				shift
+			done
 			;;
 		*)
 			usage 1>&2

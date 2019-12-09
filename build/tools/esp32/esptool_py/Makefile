@@ -36,9 +36,13 @@ define prereq_if_explicit
 $(filter $(1),$(MAKECMDGOALS))
 endef
 
-USBRULE_DIR = $(CURRENTDIR)/../../configs
 BUILD_DIR_BASE = $(CURRENTDIR)/../../output/bin
 BIN_NAME = tinyara
+
+USBRULE_PATH=$(CURRENTDIR)/../../configs/usbrule.sh
+USBRULE_BOARD=esp32_devkit
+USBRULE_IDVENDOR=0403
+USBRULE_IDPRODUCT=6010
 
 APP_ELF:=$(BUILD_DIR_BASE)/$(BIN_NAME).elf
 APP_MAP:=$(APP_ELF:.elf=.map)
@@ -90,8 +94,7 @@ ALL: flash romfs
 OS: app-flash
 
 USBrule:
-	$(USBRULE_DIR)/usbrule.sh esp32_devkit 0403 6010
-	@echo "USB rule creation succeeded."
+	${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} || exit 1
 
 ROMFS: romfs
 
