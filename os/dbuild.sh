@@ -112,7 +112,7 @@ function SELECT_OPTION()
 			read SELECTED_START
 		fi
 
-		case ${SELECTED_START} in
+		case ${SELECTED_START,,} in
 		1|build)
 			BUILD
 			;;
@@ -294,39 +294,77 @@ function SELECT_CONFIG()
 	CONFIGURE ${BOARD}/${CONFIG} || exit 1
 }
 
+function get_selected_board
+{
+	if [ "${CONFIG_ARCH_BOARD_ARTIK053}" == "y" ]; then
+		BOARD=artik053
+	elif [ "${CONFIG_ARCH_BOARD_ARTIK053S}" == "y" ]; then
+		BOARD=artik053s
+	elif [ "${CONFIG_ARCH_BOARD_ARTIK055S}" == "y" ]; then
+		BOARD=artik055s
+	elif [ "${CONFIG_ARCH_BOARD_ESP32_DEVKITC}" == "y" ]; then
+		BOARD=esp32_DevKitC
+	elif [ "${CONFIG_ARCH_BOARD_ESP_WROVER_KIT}" == "y" ]; then
+		BOARD=esp_wrover_kit
+	else
+		BOARD=${CONFIG_ARCH_BOARD}
+	fi
+}
+
 # This function should be replaced to parse and to show the partition map.
 function SELECT_DL
 {
 	unset DL_ARG
-
 	if [ ! -z "$1" ];then
 		SELECTED_DL=$1
 	else
+		if [ -z ${BOARD} ]; then
+			get_selected_board
+		fi
+		contents=`cat ${CONFIGDIR}/${BOARD}/.flashSpec.xml | grep option`
+		command=()
+
+		while [ "${contents}" != "</options>" ]
+		do
+			contents=`echo ${contents#*>}`
+			unset menu
+			for ((i=0;;i++)); do
+				if [ "${contents:$i:1}" == "<" ]; then
+					break
+				fi
+				menu+=${contents:$i:1}
+			done
+			if [ ! -z "${menu}" ]; then
+				command[${#command[@]}]=${menu}
+			fi
+		done
+
 		echo ==================================================
 		echo "  \"Select download option\""
 		echo ==================================================
-		echo "  \"1. ALL\""
-		echo "  \"2. OS\""
+		for ((i=1;i<=${#command[@]};i++)); do
+			if [ "${command[$i-1]}" != "USBrule" ]; then
+				echo "  \"${i}. ${command[$i-1]}\""
+			fi
+		done
 		echo "  \"u. USBrule\""
 		echo "  \"x. Exit\""
 		echo ==================================================
 		read SELECTED_DL
 	fi
 
+	for ((i=1;i<=${#command[@]};i++)); do
+		if [ $SELECTED_DL == $i ]; then
+			DL_ARG=${command[$i-1]}
+		fi
+	done
+
 	case ${SELECTED_DL} in
-	1|all)
-		DL_ARG=ALL
-		;;
-	2|os)
-		DL_ARG=OS
-		;;
 	u|USBrule)
 		DL_ARG=USBrule
 		;;
 	x|exit)
 		exit 1
-		;;
-	*)
 		;;
 	esac
 
