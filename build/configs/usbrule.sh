@@ -65,6 +65,7 @@ function REGISTER_RULE()
 	fi
 
 	`udevadm control --reload-rules && udevadm trigger`
+	echo "USB rule creation succeeded."
 	exit 0
 }
 REGISTER_RULE
