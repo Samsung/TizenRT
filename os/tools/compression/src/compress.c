@@ -30,9 +30,9 @@
 #include "../config.h"
 #include "../compression.h"
 
-#if CONFIG_COMPRESSION_TYPE == 1
+#if CONFIG_COMPRESSION_TYPE == LZMA
 #include "lzma/LzmaLib.h"
-#elif CONFIG_COMPRESSION_TYPE == 2
+#elif CONFIG_COMPRESSION_TYPE == MINIZ
 #include "miniz/miniz.h"
 #endif
 
@@ -64,7 +64,7 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 	unsigned char *out_buf = NULL;
 	unsigned char *tptr;
 	struct s_header *phdr = NULL;
-#if CONFIG_COMPRESSION_TYPE == 1
+#if CONFIG_COMPRESSION_TYPE == LZMA
 	long unsigned int propsSize = LZMA_PROPS_SIZE;
 #endif
 
@@ -91,13 +91,13 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 		goto error;
 	}
 
-#if CONFIG_COMPRESSION_TYPE == 1
+#if CONFIG_COMPRESSION_TYPE == LZMA
 	out_buf = (unsigned char *)malloc(block_size + LZMA_PROPS_SIZE);
 	if (!out_buf) {
 		printf("Failed to allocate memory for out_buf\n");
 		goto error;
 	}
-#elif CONFIG_COMPRESSION_TYPE == 2
+#elif CONFIG_COMPRESSION_TYPE == MINIZ
 	out_buf = (unsigned char *)malloc(block_size);
 	if (!out_buf) {
 		printf("Failed to allocate memory for out_buf\n");
@@ -158,7 +158,7 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 				tptr += nbytes;
 			}
 		}
-#if CONFIG_COMPRESSION_TYPE == 1
+#if CONFIG_COMPRESSION_TYPE == LZMA
 		/* LZMA Compression for data in read_buf into out_buf */
 		writesize = block_size;
 		ret = LzmaCompress(&out_buf[LZMA_PROPS_SIZE], &writesize, read_buf, (block_size - readsize), out_buf, &propsSize, 0, 1<<13 , -1, -1, -1, -1, 1);
@@ -167,7 +167,7 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 		}
 
 		printf("==> lzma_compress %d writesize %lu\n", index, writesize);
-#elif CONFIG_COMPRESSION_TYPE == 2
+#elif CONFIG_COMPRESSION_TYPE == MINIZ
 		/* Miniz Compression for data in read_buf into out_buf */
 		writesize = compressBound(block_size - readsize);
 		ret = mz_compress(out_buf, &writesize, read_buf, (block_size - readsize));

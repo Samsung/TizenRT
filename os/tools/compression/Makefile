@@ -27,6 +27,10 @@ TINYARADIR	?= ../..
 
 APPNAME		= mkcompressimg
 
+# Compression types
+LZMA		?= 1
+MINIZ		?= 2
+
 OBJDIR		=  obj
 DEPDIR		=  dep
 SRCDIR		=  src
@@ -35,17 +39,17 @@ CC		=  gcc
 LDFLAGS		+=  -g
 LIBFILES	+=  -lm -lpthread
 ifeq ($(RELEASE),)
-CFLAGS		+=  -g -Wall -I include -DFAR= -DTRUE=1 -DFALSE=0 -Wno-unused-value -D_FILE_OFFSET_BITS=64 -D_7ZIP_ST
+CFLAGS		+=  -g -Wall -I include -DFAR= -DTRUE=1 -DFALSE=0 -Wno-unused-value -D_FILE_OFFSET_BITS=64 -D_7ZIP_ST -DLZMA=1 -DMINIZ=2
 else
-CFLAGS		+=  -O2 -Wall -I include -DFAR= -DTRUE=1 -DFALSE=0 -Wno-unused-value -D_FILE_OFFSET_BITS=64 -D_7ZIP_ST
+CFLAGS		+=  -O2 -Wall -I include -DFAR= -DTRUE=1 -DFALSE=0 -Wno-unused-value -D_FILE_OFFSET_BITS=64 -D_7ZIP_ST -DLZMA=1 -DMINIZ=2
 endif
 
 SOURCES		=  $(wildcard $(SRCDIR)/*.c)
 
-ifeq ($(CONFIG_COMPRESSION_TYPE),1)
+ifeq ($(CONFIG_COMPRESSION_TYPE),$(LZMA))
 SOURCES		+= $(wildcard $(SRCDIR)/lzma/*.c)
 else
-ifeq ($(CONFIG_COMPRESSION_TYPE),2)
+ifeq ($(CONFIG_COMPRESSION_TYPE),$(MINIZ))
 SOURCES         += $(wildcard $(SRCDIR)/miniz/*.c)
 endif
 endif
@@ -62,12 +66,12 @@ all: init $(APPNAME)
 
 .PHONY: init depend clean distclean
 init:
-ifeq ($(CONFIG_COMPRESSION_TYPE),1)
+ifeq ($(CONFIG_COMPRESSION_TYPE),$(LZMA))
 	@mkdir -p $(SRCDIR)/lzma
 	@mkdir -p $(OBJDIR)/lzma
 	@mkdir -p $(DEPDIR)/lzma
 else
-ifeq ($(CONFIG_COMPRESSION_TYPE),2)
+ifeq ($(CONFIG_COMPRESSION_TYPE),$(MINIZ))
 	@mkdir -p $(SRCDIR)/miniz
 	@mkdir -p $(OBJDIR)/miniz
 	@mkdir -p $(DEPDIR)/miniz
@@ -122,10 +126,10 @@ $(CONFIG): $(TINYARADIR)/.config
 clean:
 	$(call DELDIR, $(OBJDIR))
 	$(call DELDIR, $(DEPDIR))
-ifeq ($(CONFIG_COMPRESSION_TYPE),1)
+ifeq ($(CONFIG_COMPRESSION_TYPE),$(LZMA))
 	$(call DELDIR, $(SRCDIR)/lzma/)
 else
-ifeq ($(CONFIG_COMPRESSION_TYPE),2)
+ifeq ($(CONFIG_COMPRESSION_TYPE),$(MINIZ))
 	$(call DELDIR, $(SRCDIR)/miniz/)
 endif
 endif
