@@ -109,6 +109,31 @@ config DEBUG_BINFMT_INFO
 
 endif # DEBUG_BINFMT
 
+config DEBUG_BINARY_COMPRESSION
+	bool "Binary Compression Debug Features"
+	default n
+	depends on COMPRESSED_BINARY
+	---help---
+		Enable binary compression debug features
+
+if DEBUG_BINARY_COMPRESSION
+
+config DEBUG_BINARY_COMPRESSION_ERROR
+	bool "Enable Error logs of Binary Compression"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enables error logs for Binary Compression interface.
+
+config DEBUG_BINARY_COMPRESSION_INFO
+	bool "Enable Debug logs of Binary Compression"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enables debug logs for Binary Compression interface.
+
+endif # DEBUG_BINARY_COMPRESSION
+
 config DEBUG_BINMGR
         bool "Binary Manager Debug Features"
         default n
