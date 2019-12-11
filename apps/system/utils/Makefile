@@ -103,10 +103,6 @@ ifeq ($(CONFIG_ENABLE_CPULOAD),y)
 CSRCS += utils_cpuload.c
 endif
 
-ifeq ($(CONFIG_PM_UTIL),y)
-CSRCS += utils_pmsleep.c
-endif
-
 ifeq ($(CONFIG_ENABLE_DATE),y)
 CSRCS += utils_date.c
 endif
