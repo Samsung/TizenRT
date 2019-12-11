@@ -732,6 +732,21 @@ status_t imxrt_flexspi_nor_hyperbus_read(FLEXSPI_Type *base, uint32_t addr, uint
 }
 #endif
 
+
+/************************************************************************************
+ * Name: up_dumptoflash
+ *
+ * Description:
+ *   Wrapper function for flexispi write call
+ *
+ ************************************************************************************/
+#if defined(CONFIG_BOARD_CRASHDUMP)
+uint32_t up_dumptoflash(uint32_t addr, uint32_t *buffer, uint32_t bytes)
+{
+	return imxrt_flexspi_nor_flash_page_program(IMXRT_FLEXSPI, addr, (void *)buffer);
+}
+#endif
+
 /************************************************************************************
  * Name: imxrt_flexspi_nor_flash_erase_sector
  *

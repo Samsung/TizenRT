@@ -57,10 +57,8 @@
 #endif
 
 #if defined(CONFIG_BOARD_SMARTFS_DUMP)
-#define SDV_HANDSHAKE_STRING	"SMARTFSDUMP"
-#define SDV_HANDSHAKE_STR_LEN	10
-#define SMARTFS_DUMP_CMD		"START"
-#define SMARTFS_DUMP_CMD_LEN	5
+#define SDV_HANDSHAKE_STRING	"DUMP_SDV"
+#define SDV_HANDSHAKE_STR_LEN	8
 #endif
 
 /****************************************************************************
@@ -320,13 +318,12 @@ static int ramdump_via_uart(void)
 
 #if defined(CONFIG_BOARD_SMARTFS_DUMP)
 void print_sector(char *buf, int size) {
-	for (register int i = 0; i < size/32; i++) {
-		for (register int j = 0; j < 32; j++) {
-			printf("%02x ", buf[i * 32 + j]);
+	for (register int i = 0; i < size/16; i++) {
+		for (register int j = 0; j < 16; j++) {
+			printf("%02x ", buf[i * 16 + j]);
 		}
 		printf("\n");
 	}
-	printf("\n");
 }
 
 static int smartfs_dump()
@@ -335,12 +332,8 @@ static int smartfs_dump()
 	int ch;
 	size_t size;
 	uint8_t *ptr;
-	char host_reg[1] = "";
 	char *handshake_str = SDV_HANDSHAKE_STRING;
-	char *dump_str = SMARTFS_DUMP_CMD;
-	char handshake_msg_buf[SDV_HANDSHAKE_STR_LEN] = "";
-	char dump_cmd_buf[SMARTFS_DUMP_CMD_LEN] = "";
-
+	char handshake_msg_buf[SDV_HANDSHAKE_STR_LEN + 1] = "";
 	int totalsectors = smartfsdump_partsize / CONFIG_MTD_SMART_SECTOR_SIZE;
 	char sector_buf[CONFIG_MTD_SMART_SECTOR_SIZE];
 	int offset = CONFIG_FLASH_START_ADDR + smartfsdump_partoffset;
@@ -361,48 +354,27 @@ static int smartfs_dump()
 	} while (handshake_msg_buf[0] != handshake_str[0]);
 
 	for (i = 1; i < strlen(handshake_str);) {
-		if ((ch = up_getc()) != -1) {
+		ch = up_getc();
+		if (ch != -1) {
 			handshake_msg_buf[i] = ch;
 			i++;
 		}
 	}
+	handshake_msg_buf[SDV_HANDSHAKE_STR_LEN] = '\n';
+	printf("\n");
 
 	if (strncmp(handshake_msg_buf, handshake_str, strlen(handshake_str)) != 0) {
 		/* Send NAK */
-		up_putc("NAK");
+		fdbg("\tHandshake MSG is wrong... len = %d, %s\n", strlen(handshake_str), handshake_msg_buf);
+		return -1;
 	}
+	fvdbg("\t\t\tHandshake msg is received.  Start transmission..\n");
 
-	/* Send ACK */
-	up_putc("ACK");
-
-	/* Receive dump command string from HOST */
-	do {
-		dump_cmd_buf[0] = up_getc();
-	} while (dump_cmd_buf[0] != dump_str[0]);
-
-	for (i = 1; i < strlen(dump_str);) {
-		if ((ch = up_getc()) != -1) {
-			dump_cmd_buf[i] = ch;
-			i++;
-		}
+	for (register int s=0; s<totalsectors; s++) {
+		memcpy(sector_buf, (void*)(offset), CONFIG_MTD_SMART_SECTOR_SIZE);
+		print_sector(sector_buf, CONFIG_MTD_SMART_SECTOR_SIZE);
+		offset += CONFIG_MTD_SMART_SECTOR_SIZE;
 	}
-
-	if (strncmp(dump_cmd_buf, dump_str, strlen(dump_str)) != 0) {
-		printf("Total sectors = %d\n", totalsectors);
-	//	for (register int s=0; s<totalsectors; s++) {
-		for (register int s=0; s<1; s++) {
-			printf("Physical Sector #%d, offset: 0x%x\n", s, offset);
-			memcpy(sector_buf, (void*)(offset), CONFIG_MTD_SMART_SECTOR_SIZE);
-			for (register int i = 0; i < 5; i++) {
-				printf("%02x ", sector_buf[i]);
-			}
-			printf("\n");
-			print_sector(sector_buf, CONFIG_MTD_SMART_SECTOR_SIZE);
-			offset += CONFIG_MTD_SMART_SECTOR_SIZE;
-		}
-	}
-
-	printf("Writing is finished\n");
 
 	while (1) {
 		fvdbg("Waiting...\n");
