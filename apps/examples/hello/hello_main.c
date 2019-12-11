@@ -68,11 +68,5 @@ int hello_main(int argc, char *argv[])
 #endif
 {
 	printf("Hello, World!!\n");
-#ifdef CONFIG_PM
-	/* grace period for system to settle */
-	sleep(5);
-	pm_relax(0, 0);
-	printf("Boot completed ..Unlocked PM!!\n");
-#endif
 	return 0;
 }
