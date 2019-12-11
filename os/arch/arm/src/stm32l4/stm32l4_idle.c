@@ -46,6 +46,7 @@
 #include <tinyara/board.h>
 #include <tinyara/pm/pm.h>
 #include <arch/chip/pm.h>
+#include <errno.h>
 
 #include "chip.h"
 #include "stm32l4_pm.h"
@@ -86,19 +87,26 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-#ifdef CONFIG_ARCH_SUPPORT_PM_UTIL
+#if defined CONFIG_ARCH_SUPPORT_PM_UTIL || (defined(CONFIG_PM) && !defined(CONFIG_FS_PROCFS_EXCLUDE_POWER))
 int pm_sleep(void)
 {
+	int index;
 	int ret = OK;
-
 	irqstate_t flags;
+
 	flags = irqsave();
 	sched_lock();
-
+	for (index = PM_NORMAL; index < PM_SLEEP; index++)
+	{
+		if (pm_staycount(PM_IDLE_DOMAIN, index))
+		{
+			ret = -EAGAIN;
+			goto errout_lock;
+		}
+	}
 	ret = pm_changestate(0, PM_SLEEP);
 	if (ret < 0)
 	{
-		printf("change state failed\n");
 		goto errout;
 	}
 	set_exti_button();
@@ -107,7 +115,7 @@ int pm_sleep(void)
 	stm32l4_clockenable();
 errout:
 	pm_changestate(0, PM_NORMAL);
-
+errout_lock:
 	sched_unlock();
 	irqrestore(flags);
 
