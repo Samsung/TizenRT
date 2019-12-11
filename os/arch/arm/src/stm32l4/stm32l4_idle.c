@@ -87,7 +87,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-#if defined CONFIG_ARCH_SUPPORT_PM_UTIL || (defined(CONFIG_PM) && !defined(CONFIG_FS_PROCFS_EXCLUDE_POWER))
+#ifdef CONFIG_ARCH_SUPPORT_ENTER_SLEEP
 int pm_sleep(void)
 {
 	int index;
