@@ -45,7 +45,6 @@
 #include <tinyara/irq.h>
 #include <tinyara/board.h>
 #include <tinyara/pm/pm.h>
-#include <arch/chip/pm.h>
 #include <errno.h>
 
 #include "chip.h"

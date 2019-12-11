@@ -28,9 +28,6 @@ const static tash_cmdlist_t system_cmds[] = {
 #if defined(CONFIG_ENABLE_CPULOAD)
 	{"cpuload",  utils_cpuload,      TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_PM_UTIL)
-	{"pm_sleep",  utils_pmsleep,      TASH_EXECMD_SYNC},
-#endif
 #if defined(CONFIG_ENABLE_DATE)
 	{"date",     utils_date,         TASH_EXECMD_SYNC},
 #endif

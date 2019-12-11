@@ -38,10 +38,6 @@ void stkmon_logging(struct tcb_s *);
 int utils_cpuload(int argc, char **args);
 #endif
 
-#if defined(CONFIG_PM_UTIL)
-int utils_pmsleep(int argc, char **args);
-#endif
-
 #if defined(CONFIG_ENABLE_DATE)
 int utils_date(int argc, char **args);
 #endif

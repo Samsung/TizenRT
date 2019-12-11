@@ -493,14 +493,6 @@ config ARCH_IDLE_CUSTOM
 		then the default IDLE loop file is not included in the MCU-specific
 		Make.defs file.
 
-config ARCH_SUPPORT_PM_UTIL
-	bool "Support for direct PM state transit"
-	default n
-	depends on PM
-	---help---
-		Each architecture can provide mechanism to directly cause pm state
-		transition from PM_NORMAL to PM_SLEEP
-
 config ARCH_CUSTOM_PMINIT
 	bool "Custom PM initialization"
 	default n
