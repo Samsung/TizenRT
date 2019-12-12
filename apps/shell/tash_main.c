@@ -40,7 +40,6 @@ enum tash_input_state_e {
 /* Following defines are fixed to avoid many configuration variables for TASH */
 #define TASH_TOKEN_MAX        (32)
 #ifdef CONFIG_TASH
-#define TASH_LINEBUFLEN       (128)
 #define TASH_TRY_MAXCNT       (5)
 #if !defined(CONFIG_DISABLE_POLL)
 #define SELECT_TIMEOUT_SECS   (6)
@@ -261,6 +260,15 @@ int tash_execute_cmdline(char *buff)
 	enum tash_input_state_e state;
 	bool is_nextcmd = false;
 	int ret = OK;
+
+#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
+	if (buff[0] == '!') {
+		int cmd_number = atoi(buff + 1);
+		tash_get_cmd_from_history(cmd_number, buff);
+	}
+
+	tash_store_cmd(buff);
+#endif
 
 	do {
 		for (argc = 0, argv[argc] = NULL, is_nextcmd = false, state = IN_VOID; *buff && argc < TASH_TOKEN_MAX - 1 && is_nextcmd == false; buff++) {

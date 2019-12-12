@@ -16,6 +16,12 @@ config TASH_MAX_COMMANDS
 	---help---
 		The maximum number of TASH commands to register.
 
+config TASH_MAX_STORE_COMMANDS
+	int "Max number of stored TASH commands"
+	default 10
+	---help---
+		The maximum number of stored TASH commands.
+
 config TASH_USLEEP
 	bool "Enable 'usleep' command in TASH"
 	default n
