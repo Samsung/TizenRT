@@ -102,13 +102,14 @@ int fstat(int fd, FAR struct stat *buf)
 		return ERROR;
 	}
 
-	/* The descriptor is in a valid range to file descriptor... do the
-	 * read.	First, get the file structure.	Note that on failure,
-	 * fs_getfilep() will set the errno variable. */
-	filep = fs_getfilep(fd);
-	if (filep == NULL) {
-		/* The errno value has already been set */
-		return ERROR;
+	/* The descriptor is in a valid range for a file descriptor... do the
+	 * fstat.  First, get the file structure.  Note that on failure,
+	 * fs_getfilep() will set the errno variable.
+	 */
+
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		goto errout;
 	}
 
 	/* Get the inode from the file structure */
@@ -141,4 +142,7 @@ int fstat(int fd, FAR struct stat *buf)
 
 	/* Successfully fstat'ed the file */
 	return OK;
+errout:
+	set_errno(-ret);
+	return ERROR;
 }

@@ -149,11 +149,9 @@ static int poll_fdsetup(int fd, FAR struct pollfd *fds, bool setup)
 
 	/* Get the file pointer corresponding to this file descriptor */
 
-	filep = fs_getfilep(fd);
-	if (!filep) {
-		/* The errno value has already been set */
-
-		return ERROR;
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		return ret;
 	}
 
 	inode = filep->f_inode;

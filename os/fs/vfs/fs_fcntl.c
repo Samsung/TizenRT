@@ -244,6 +244,7 @@ int fcntl(int fd, int cmd, ...)
 	int ret;
 
 	/* fcntl() is a cancellation point */
+
 	(void)enter_cancellation_point();
 
 	/* Setup to access the variable argument list */
@@ -256,18 +257,16 @@ int fcntl(int fd, int cmd, ...)
 	if ((unsigned int)fd < CONFIG_NFILE_DESCRIPTORS) {
 		/* Get the file structure corresponding to the file descriptor. */
 
-		filep = fs_getfilep(fd);
-		if (!filep) {
-			/* The errno value has already been set */
+		ret = fs_getfilep(fd, &filep);
+		if (ret >= 0) {
+			DEBUGASSERT(filep != NULL);
 
-			va_end(ap);
-			leave_cancellation_point();
-			return ERROR;
+			/* Let file_vfcntl() do the real work.  The errno is not set on
+			 * failures.
+			 */
+
+			ret = file_vfcntl(filep, cmd, ap);
 		}
-
-		/* Let file_vfcntl() do the real work */
-
-		ret = file_vfcntl(filep, cmd, ap);
 	} else
 #endif
 	{
@@ -275,19 +274,27 @@ int fcntl(int fd, int cmd, ...)
 
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			/* Yes.. defer socket descriptor operations to net_vfcntl() */
+			/* Yes.. defer socket descriptor operations to net_vfcntl(). The
+			 * errno is not set on failures.
+			 */
+
 			ret = net_vfcntl(fd, cmd, ap);
 		} else
 #endif
 		{
 			/* No.. this descriptor number is out of range */
 
-			set_errno(EBADF);
-			ret = ERROR;
+			ret = -EBADF;
 		}
 	}
 
 	va_end(ap);
+
+	if (ret < 0) {
+		set_errno(-ret);
+		ret = ERROR;
+	}
+
 	leave_cancellation_point();
 	return ret;
 }

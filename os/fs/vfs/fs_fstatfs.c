@@ -92,14 +92,17 @@ int fstatfs(int fd, FAR struct statfs *buf)
 
 	DEBUGASSERT(buf != NULL);
 
-	/* First, get the file structure.
-     * Note that on failure, fs_getfilep() will set the errno variable.
+	/* The descriptor is in a valid range to file descriptor... do the
+	 * read.  First, get the file structure.  Note that on failure,
+	 * fs_getfilep() will set the errno variable.
 	 */
-	filep = fs_getfilep(fd);
-	if (filep == NULL) {
-		/* The errno value has already been set */
-		return ERROR;
+
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		goto errout;
 	}
+
+	DEBUGASSERT(filep != NULL);
 
 	/* Get the inode from the file structure */
 	inode = filep->f_inode;
@@ -139,4 +142,7 @@ int fstatfs(int fd, FAR struct statfs *buf)
 
 	/* Successfully statfs'ed the file */
 	return OK;
+errout:
+	set_errno(-ret);
+	return ERROR;
 }

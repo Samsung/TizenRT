@@ -121,16 +121,15 @@ FAR struct aio_container_s *aio_contain(FAR struct aiocb *aiocbp)
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	struct sched_param param;
 #endif
+	int ret;
 
 #ifdef AIO_HAVE_FILEP
 	{
 		/* Get the file structure corresponding to the file descriptor. */
 
-		u.filep = fs_getfilep(aiocbp->aio_fildes);
-		if (!u.filep) {
-			/* The errno value has already been set */
-
-			return NULL;
+		ret = fs_getfilep(aiocbp->aio_fildes, &u.filep);
+		if (ret < 0) {
+			goto errout;
 		}
 	}
 #endif
@@ -160,6 +159,9 @@ FAR struct aio_container_s *aio_contain(FAR struct aiocb *aiocbp)
 	dq_addlast(&aioc->aioc_link, &g_aio_pending);
 	aio_unlock();
 	return aioc;
+errout:
+	set_errno(-ret);
+	return NULL;
 }
 
 /****************************************************************************

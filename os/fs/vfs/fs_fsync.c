@@ -154,19 +154,22 @@ int fsync(int fd)
 
 	/* Get the file structure corresponding to the file descriptor. */
 
-	filep = fs_getfilep(fd);
-	if (!filep) {
-		/* The errno value has already been set */
-
-		leave_cancellation_point();
-		return ERROR;
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		goto errout;
 	}
+
+	DEBUGASSERT(filep != NULL);
 
 	/* Perform the fsync operation */
 
 	ret = file_fsync(filep);
 	leave_cancellation_point();
 	return ret;
+errout:
+	leave_cancellation_point();
+	set_errno(-ret);
+	return ERROR;
 }
 
 #endif							/* !CONFIG_DISABLE_MOUNTPOINT */

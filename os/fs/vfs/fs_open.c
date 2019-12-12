@@ -206,11 +206,9 @@ int open(const char *path, int oflags, ...)
 
 	/* Get the file structure corresponding to the file descriptor. */
 
-	filep = fs_getfilep(fd);
-	if (!filep) {
-		/* The errno value has already been set */
-		leave_cancellation_point();
-		return ERROR;
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		goto errout_with_inode;
 	}
 
 	/* Perform the driver open operation.  NOTE that the open method may be
