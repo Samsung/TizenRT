@@ -741,6 +741,23 @@ int lib_flushall(FAR struct streamlist *list);
 int fs_getfilep(int fd, FAR struct file **filep);
 #endif
 
+/****************************************************************************
+ * Name: vopen
+ *
+ * Description:
+ *   vopen() is identical to 'open' except that it accepts a va_list
+ *   as an argument versus taking a variable length list of arguments.
+ *
+ *   vopen() is an internal TizenRT interface and should not be called from
+ *   applications.
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; a negated errno value is
+ *   returned on any failure.
+ *
+ ****************************************************************************/
+int vopen(FAR const char *path, int oflags, va_list ap);
+
 /* fs/fs_read.c *************************************************************/
 /****************************************************************************
  * Name: file_read

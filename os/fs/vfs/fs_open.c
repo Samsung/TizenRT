@@ -72,10 +72,6 @@
 #include "driver/block/driver.h"
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -97,14 +93,22 @@ int inode_checkflags(FAR struct inode *inode, int oflags)
 }
 
 /****************************************************************************
- * Name: open
+ * Name: vopen
  *
  * Description:
- *   Standard 'open' interface
+ *   vopen() is identical to 'open' except that it accepts a va_list
+ *   as an argument versus taking a variable length list of arguments.
+ *
+ *   vopen() is an internal TizenRT interface and should not be called from
+ *   applications.
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; a negated errno value is
+ *   returned on any failure.
  *
  ****************************************************************************/
 
-int open(const char *path, int oflags, ...)
+int vopen(FAR const char *path, int oflags, va_list ap)
 {
 	FAR struct file *filep;
 	FAR struct inode *inode;
@@ -115,18 +119,18 @@ int open(const char *path, int oflags, ...)
 	int ret;
 	int fd;
 
+	if (path == NULL) {
+		return -EINVAL;
+	}
+
 #ifdef CONFIG_FILE_MODE
 #ifdef CONFIG_CPP_HAVE_WARNING
 #warning "File creation not implemented"
 #endif
 
-	/* open() is a cancellation point */
-	(void)enter_cancellation_point();
-
 	/* If the file is opened for creation, then get the mode bits */
 
 	if ((oflags & (O_WRONLY | O_CREAT)) != 0) {
-		va_list ap;
 		va_start(ap, oflags);
 		mode = va_arg(ap, mode_t);
 		va_end(ap);
@@ -142,7 +146,7 @@ int open(const char *path, int oflags, ...)
 		 * symbolic link."
 		 */
 
-		ret = ENOENT;
+		ret = -ENOENT;
 		goto errout;
 	}
 
@@ -164,11 +168,10 @@ int open(const char *path, int oflags, ...)
 		/* Get the file descriptor of the opened character driver proxy */
 		fd = block_proxy(path, oflags);
 		if (fd < 0) {
-			ret = -fd;
+			ret = fd;
 			goto errout;
 		}
 
-		leave_cancellation_point();
 		return fd;
 	} else
 #endif
@@ -184,7 +187,7 @@ int open(const char *path, int oflags, ...)
 	if (!INODE_IS_DRIVER(inode) || !inode->u.i_ops)
 #endif
 	{
-		ret = ENXIO;
+		ret = -ENXIO;
 		goto errout_with_inode;
 	}
 
@@ -192,7 +195,6 @@ int open(const char *path, int oflags, ...)
 
 	ret = inode_checkflags(inode, oflags);
 	if (ret < 0) {
-		ret = -ret;
 		goto errout_with_inode;
 	}
 
@@ -200,7 +202,7 @@ int open(const char *path, int oflags, ...)
 
 	fd = files_allocate(inode, oflags, 0, 0);
 	if (fd < 0) {
-		ret = EMFILE;
+		ret = -EMFILE;
 		goto errout_with_inode;
 	}
 
@@ -229,11 +231,9 @@ int open(const char *path, int oflags, ...)
 	}
 
 	if (ret < 0) {
-		ret = -ret;
 		goto errout_with_fd;
 	}
 
-	leave_cancellation_point();
 	return fd;
 
 errout_with_fd:
@@ -241,7 +241,43 @@ errout_with_fd:
 errout_with_inode:
 	inode_release(inode);
 errout:
-	set_errno(ret);
+	return ret;
+}
+
+/****************************************************************************
+ * Name: open
+ *
+ * Description:
+ *   Standard 'open' interface
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; -1 (ERROR) is returned
+ *   on any failure the errno value set appropriately.
+ *
+ ****************************************************************************/
+
+int open(FAR const char *path, int oflags, ...)
+{
+	va_list ap;
+	int fd;
+
+	/* open() is a cancellation point */
+
+	(void)enter_cancellation_point();
+
+	/* Let vopen() do most of the work */
+
+	va_start(ap, oflags);
+	fd = vopen(path, oflags, ap);
+	va_end(ap);
+
+	/* Set the errno value if any errors were reported by open() */
+
+	if (fd < 0) {
+		set_errno(-fd);
+		fd = ERROR;
+	}
+
 	leave_cancellation_point();
-	return ERROR;
+	return fd;
 }
