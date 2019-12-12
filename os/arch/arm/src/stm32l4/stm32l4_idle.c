@@ -87,7 +87,7 @@
  * Public Functions
  ****************************************************************************/
 #ifdef CONFIG_ARCH_SUPPORT_ENTER_SLEEP
-int pm_sleep(void)
+int up_pmsleep(void)
 {
 	int index;
 	int ret = OK;
