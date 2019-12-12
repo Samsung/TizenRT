@@ -57,8 +57,8 @@
 #endif
 
 #if defined(CONFIG_BOARD_SMARTFS_DUMP)
-#define SDV_HANDSHAKE_STRING	"DUMP_SDV"
-#define SDV_HANDSHAKE_STR_LEN	8
+#define SDV_HANDSHAKE_STRING	"DUMPSDV"
+#define SDV_HANDSHAKE_STR_LEN	7
 #endif
 
 /****************************************************************************
@@ -150,10 +150,10 @@ static int coredump_to_flash(uint32_t cur_sp, void *tcb)
 	/* Add the actual crashlog_size at the beginning */
 	sprintf(pbuf, "%08x", coredump_size);
 
-	ret = up_dumptoflash(coredump_partoffset, (uint32_t *)pbuf, len);
-	if (ret) {
-		lldbg("Failed to write %s: len %d, errno %d\n", coredump_partname, len, errno);
-	}
+//	ret = up_dumptoflash(coredump_partoffset, (uint32_t *)pbuf, len);
+//	if (ret) {
+//		lldbg("Failed to write %s: len %d, errno %d\n", coredump_partname, len, errno);
+//	}
 
 err:
 	sched_unlock();
@@ -326,16 +326,14 @@ void print_sector(char *buf, int size) {
 	}
 }
 
-static int smartfs_dump()
+static int smartfs_dump(void)
 {
 	int i;
 	int ch;
-	size_t size;
-	uint8_t *ptr;
 	char *handshake_str = SDV_HANDSHAKE_STRING;
 	char handshake_msg_buf[SDV_HANDSHAKE_STR_LEN + 1] = "";
 	int totalsectors = smartfsdump_partsize / CONFIG_MTD_SMART_SECTOR_SIZE;
-	char sector_buf[CONFIG_MTD_SMART_SECTOR_SIZE];
+	char *sector_buf;
 	int offset = CONFIG_FLASH_START_ADDR + smartfsdump_partoffset;
 
 #if !defined(CONFIG_ARCH_LOWPUTC)
@@ -361,21 +359,20 @@ static int smartfs_dump()
 		}
 	}
 	handshake_msg_buf[SDV_HANDSHAKE_STR_LEN] = '\n';
-	printf("\n");
 
 	if (strncmp(handshake_msg_buf, handshake_str, strlen(handshake_str)) != 0) {
-		/* Send NAK */
 		fdbg("\tHandshake MSG is wrong... len = %d, %s\n", strlen(handshake_str), handshake_msg_buf);
 		return -1;
 	}
-	fvdbg("\t\t\tHandshake msg is received.  Start transmission..\n");
+	fvdbg("\t\t\tHandshake msg is received.  Start transmission.. for %d sectors, offset = 0x%x\n", totalsectors, offset);
 
+	sector_buf = (char *)malloc(sizeof(char) * CONFIG_MTD_SMART_SECTOR_SIZE);
 	for (register int s=0; s<totalsectors; s++) {
-		memcpy(sector_buf, (void*)(offset), CONFIG_MTD_SMART_SECTOR_SIZE);
-		print_sector(sector_buf, CONFIG_MTD_SMART_SECTOR_SIZE);
+		print_sector((char *)offset, CONFIG_MTD_SMART_SECTOR_SIZE);
 		offset += CONFIG_MTD_SMART_SECTOR_SIZE;
 	}
 
+	free(sector_buf);
 	while (1) {
 		fvdbg("Waiting...\n");
 	}
@@ -419,7 +416,7 @@ void crashdump_init(void)
 }
 
 #if defined(CONFIG_BOARD_SMARTFS_DUMP)
-void smartfsdump_init()
+void smartfsdump_init(void)
 {
 	int index = mtd_getpartitionindex("userfs");
 	fdbg("SmartFS partition index = %d\n", index);
@@ -479,10 +476,10 @@ void board_crashdump(uint32_t cur_sp, void *tcb, uint8_t *filename, int lineno)
 	}
 #endif
 #if defined(CONFIG_BOARD_COREDUMP_FLASH)
-	ret = coredump_to_flash(cur_sp, tcb);
-	if (ret != OK) {
-		lldbg("coredump to flash failed, ret = %d\n", ret);
-	}
+//	ret = coredump_to_flash(cur_sp, tcb);
+//	if (ret != OK) {
+//		lldbg("coredump to flash failed, ret = %d\n", ret);
+//	}
 #endif
 
 #if defined(CONFIG_BOARD_RAMDUMP_FLASH)

@@ -6563,8 +6563,6 @@ char buff_100Kb[102400] = {
 static int make_file(char *filename)
 {
 	FILE *fp;
-	int i;
-	struct timeval erase_start, erase_end;
 
 	fp = fopen(filename, "w+");
 	if (fp == NULL) {

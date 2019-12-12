@@ -259,10 +259,10 @@ static void tc_fs_vfs_mount(void)
 
 	/*For each mountpt operation*/
 
-#if !defined(CONFIG_DISABLE_ENVIRON) && !defined(CONFIG_BUILD_PROTECTED)
-	ret = mount_show();
-	TC_ASSERT_EQ("mount_show", ret, OK);
-#endif
+//#if !defined(CONFIG_DISABLE_ENVIRON) && !defined(CONFIG_BUILD_PROTECTED)
+//	ret = mount_show();
+//	TC_ASSERT_EQ("mount_show", ret, OK);
+//#endif
 	TC_SUCCESS_RESULT();
 }
 /**
