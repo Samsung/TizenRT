@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -63,10 +64,6 @@
 #include <errno.h>
 
 #include "inode/inode.h"
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -80,24 +77,25 @@
  *   file.  NOTE that this function will currently fail if it is provided
  *   with a socket descriptor.
  *
- * Parameters:
- *   fd - The file descriptor
+ * Input Parameters:
+ *   fd    - The file descriptor
+ *   filep - The location to return the struct file instance
  *
- * Return:
- *   A point to the corresponding struct file instance is returned on
- *   success.  On failure,  NULL is returned and the errno value is
- *   set appropriately (EBADF).
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
  *
  ****************************************************************************/
 
-FAR struct file *fs_getfilep(int fd)
+int fs_getfilep(int fd, FAR struct file **filep)
 {
 	FAR struct filelist *list;
-	int errcode;
+
+	DEBUGASSERT(filep != NULL);
+	*filep = (FAR struct file *)NULL;
 
 	if ((unsigned int)fd >= CONFIG_NFILE_DESCRIPTORS) {
-		errcode = EBADF;
-		goto errout;
+		return -EBADF;
 	}
 
 	/* The descriptor is in a valid range to file descriptor... Get the
@@ -106,21 +104,19 @@ FAR struct file *fs_getfilep(int fd)
 
 	list = sched_getfiles();
 
-	/* The file list can be NULL under one obscure cornercase:  When memory
-	 * management debug output is enabled.  Then there may be attempts to
-	 * write to stdout from malloc before the group data has been allocated.
+	/* The file list can be NULL under two cases:  (1) One is an obscure
+	 * cornercase:  When memory management debug output is enabled.  Then
+	 * there may be attempts to write to stdout from malloc before the group
+	 * data has been allocated.  The other other is (2) if this is a kernel
+	 * thread.  Kernel threads have no allocated file descriptors.
 	 */
 
-	if (!list) {
-		errcode = EAGAIN;
-		goto errout;
+	if (list == NULL) {
+		return -EAGAIN;
 	}
 
 	/* And return the file pointer from the list */
 
-	return &list->fl_files[fd];
-
-errout:
-	set_errno(errcode);
-	return NULL;
+	*filep = &list->fl_files[fd];
+	return OK;
 }

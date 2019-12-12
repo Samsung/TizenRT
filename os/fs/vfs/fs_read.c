@@ -181,21 +181,18 @@ ssize_t read(int fd, FAR void *buf, size_t nbytes)
 		FAR struct file *filep;
 
 		/* The descriptor is in a valid range to file descriptor... do the
-		 * read.  First, get the file structure. Note that on failure,
+		 * read.  First, get the file structure.  Note that on failure,
 		 * fs_getfilep() will set the errno variable.
 		 */
 
-		filep = fs_getfilep(fd);
-		if (!filep) {
-			/* The errno value has already been set */
-
-			ret = ERROR;
-		} else {
-
-			/* Then let file_read do all of the work */
-
-			ret = file_read(filep, buf, nbytes);
+		ret = (ssize_t)fs_getfilep(fd, &filep);
+		if (ret < 0) {
+			return ret;
 		}
+
+		/* Then let file_read do all of the work. */
+
+		ret = file_read(filep, buf, nbytes);
 	}
 #endif
 

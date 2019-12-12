@@ -226,6 +226,7 @@ int file_dup(FAR struct file *filep, int minfd)
 {
 	int fd2;
 	struct file *filep2;
+	int ret;
 
 	/* Verify that fd is a valid, open file descriptor */
 	if (!filep || !filep->f_inode) {
@@ -244,15 +245,14 @@ int file_dup(FAR struct file *filep, int minfd)
 		goto errout_with_inode;
 	}
 
-	filep2 = fs_getfilep(fd2);
-	if (!filep2) {
+	ret = fs_getfilep(fd2, &filep2);
+	if (ret < 0) {
 		goto errout_with_inode;
 	}
 
 	DEBUGASSERT(filep->f_inode == filep2->f_inode);
 
 	if (filep->f_inode->u.i_ops && filep->f_inode->u.i_ops->open) {
-		int ret = 0;
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 		if (INODE_IS_MOUNTPT(filep->f_inode)) {
 			/* Dup the open file on the in the new file structure */

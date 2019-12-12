@@ -96,24 +96,27 @@ int dup2(int fd1, int fd2)
 #endif
 {
 	FAR struct file *filep1;
-	FAR struct file *filep2;
+	FAR struct file *filep2 = NULL;
+	int ret;
 
 	/* Get the file structures corresponding to the file descriptors. */
 
-	filep1 = fs_getfilep(fd1);
-	filep2 = fs_getfilep(fd2);
-
-	if (!filep1 || !filep2) {
-		/* The errno value has already been set */
-
-		return ERROR;
+	ret = fs_getfilep(fd1, &filep1);
+	if (ret >= 0) {
+		ret = fs_getfilep(fd2, &filep2);
 	}
+
+	if (ret < 0) {
+		goto errout;
+	}
+
+	DEBUGASSERT(filep1 != NULL && filep2 != NULL);
 
 	/* Verify that fd1 is a valid, open file descriptor */
 
 	if (!DUP_ISOPEN(filep1)) {
-		set_errno(EBADF);
-		return ERROR;
+		ret = -EBADF;
+		goto errout;
 	}
 
 	/* Handle a special case */
@@ -124,7 +127,16 @@ int dup2(int fd1, int fd2)
 
 	/* Perform the dup2 operation */
 
-	return file_dup2(filep1, filep2);
+	ret = file_dup2(filep1, filep2);
+	if (ret < 0) {
+		goto errout;
+	}
+
+	return OK;
+
+errout:
+	set_errno(-ret);
+	return ERROR;
 }
 
 #endif							/* CONFIG_NFILE_DESCRIPTORS > 0 */

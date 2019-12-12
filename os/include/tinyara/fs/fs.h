@@ -727,18 +727,18 @@ int lib_flushall(FAR struct streamlist *list);
  *   file.  NOTE that this function will currently fail if it is provided
  *   with a socket descriptor.
  *
- * Parameters:
- *   fd - The file descriptor
+ * Input Parameters:
+ *   fd    - The file descriptor
+ *   filep - The location to return the struct file instance
  *
- * Return:
- *   A point to the corresponding struct file instance is returned on
- *   success.  On failure,  NULL is returned and the errno value is
- *   set appropriately (EBADF).
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
  *
  ****************************************************************************/
 
 #if CONFIG_NFILE_DESCRIPTORS > 0
-FAR struct file *fs_getfilep(int fd);
+int fs_getfilep(int fd, FAR struct file **filep);
 #endif
 
 /* fs/fs_read.c *************************************************************/

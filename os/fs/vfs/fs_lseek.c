@@ -188,19 +188,33 @@ errout:
 off_t lseek(int fd, off_t offset, int whence)
 {
 	FAR struct file *filep;
+	off_t newpos;
+	int errcode;
+	int ret;
 
 	/* Get the file structure corresponding to the file descriptor. */
 
-	filep = fs_getfilep(fd);
-	if (!filep) {
-		/* The errno value has already been set */
-
-		return (off_t)ERROR;
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		errcode = -ret;
+		goto errout;
 	}
+
+	DEBUGASSERT(filep != NULL);
 
 	/* Then let file_seek do the real work */
 
-	return file_seek(filep, offset, whence);
+	newpos = file_seek(filep, offset, whence);
+	if (newpos < 0) {
+		errcode = (int)-newpos;
+		goto errout;
+	}
+
+	return newpos;
+
+errout:
+	set_errno(errcode);
+	return (off_t)ERROR;
 }
 
 #endif

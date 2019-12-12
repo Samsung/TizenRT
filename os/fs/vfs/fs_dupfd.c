@@ -93,19 +93,29 @@
 int fs_dupfd(int fd, int minfd)
 {
 	FAR struct file *filep;
+	int ret;
 
 	/* Get the file structure corresponding to the file descriptor. */
 
-	filep = fs_getfilep(fd);
-	if (!filep) {
-		/* The errno value has already been set */
-
-		return ERROR;
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		goto errout;
 	}
+
+	DEBUGASSERT(filep != NULL);
 
 	/* Let file_dup() do the real work */
 
-	return file_dup(filep, minfd);
+	ret = file_dup(filep, minfd);
+	if (ret < 0) {
+		goto errout;
+	}
+
+	return ret;
+
+errout:
+	set_errno(-ret);
+	return ERROR;
 }
 
 #endif							/* CONFIG_NFILE_DESCRIPTORS > 0 */

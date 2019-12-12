@@ -107,7 +107,7 @@ int fs_ioctl(int fd, int req, unsigned long arg)
 int ioctl(int fd, int req, unsigned long arg)
 #endif
 {
-	int err;
+	int errcode;
 #if CONFIG_NFILE_DESCRIPTORS > 0
 	FAR struct file *filep;
 	FAR struct inode *inode;
@@ -126,18 +126,17 @@ int ioctl(int fd, int req, unsigned long arg)
 		} else
 #endif
 		{
-			err = EBADF;
+			errcode = EBADF;
 			goto errout;
 		}
 	}
 #if CONFIG_NFILE_DESCRIPTORS > 0
 	/* Get the file structure corresponding to the file descriptor. */
 
-	filep = fs_getfilep(fd);
-	if (!filep) {
-		/* The errno value has already been set */
-
-		return ERROR;
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		errcode = -ret;
+		goto errout;
 	}
 
 	/* Is a driver registered? Does it support the ioctl method? */
@@ -148,11 +147,11 @@ int ioctl(int fd, int req, unsigned long arg)
 
 		ret = (int)inode->u.i_ops->ioctl(filep, req, arg);
 		if (ret < 0) {
-			err = -ret;
+			errcode = -ret;
 			goto errout;
 		}
 	} else {
-		err = ENOTTY;
+		errcode = ENOTTY;
 		goto errout;
 	}
 
@@ -160,6 +159,6 @@ int ioctl(int fd, int req, unsigned long arg)
 #endif
 
 errout:
-	set_errno(err);
+	set_errno(errcode);
 	return ERROR;
 }
