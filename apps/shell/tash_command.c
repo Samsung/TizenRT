@@ -53,6 +53,10 @@
 #endif
 #define TASH_CMDS_PER_LINE			(4)
 
+#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
+#define TASH_MAX_STORE              (CONFIG_TASH_MAX_STORE_COMMANDS)
+#endif
+
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -86,6 +90,7 @@ static int tash_exit(int argc, char **args);
 #if defined(CONFIG_BOARDCTL_RESET)
 static int tash_reboot(int argc, char **argv);
 #endif
+static int tash_history(int argc, char **argv);
 
 /****************************************************************************
  * Private Variables
@@ -109,8 +114,15 @@ const static tash_cmdlist_t tash_basic_cmds[] = {
 #if defined(CONFIG_BOARDCTL_RESET)
 	{"reboot", tash_reboot, TASH_EXECMD_SYNC},
 #endif
+#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
+	{"history", tash_history, TASH_EXECMD_SYNC},
+#endif
 	{NULL,    NULL,        0}
 };
+
+static char cmd_store[TASH_MAX_STORE][TASH_LINEBUFLEN];
+static int cmd_head;
+static int cmd_tail;
 
 /****************************************************************************
  * Private Functions
@@ -174,6 +186,94 @@ static int tash_exit(int argc, char **args)
 	tash_stop();
 	exit(0);
 }
+
+/** @brief Help function in TASH to list all available commands
+ *  @ingroup tash
+ */
+
+#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
+static int tash_history(int argc, char **args)
+{
+	int cmd_idx = 1;
+
+	printf("\t TASH command history\n");
+	printf("\t --------------------\n");
+
+	int head_idx = cmd_head;
+	while (head_idx != cmd_tail) {
+		printf(" %d \t %s\n", cmd_idx++, cmd_store[head_idx]);
+		if (head_idx == TASH_MAX_STORE - 1) {
+			head_idx = 0;
+		} else {
+			head_idx++;
+		}
+	}
+
+	return 0;
+}
+
+void tash_get_cmd_from_history(int num, char *cmd)
+{
+	if (num < 1 || num >= TASH_MAX_STORE) {
+		return;
+	}
+
+	int head_idx = cmd_head;
+	int pos = 0;
+
+	head_idx += (num - 1);
+
+	if (head_idx >= TASH_MAX_STORE) {
+		head_idx -= TASH_MAX_STORE;
+	}
+	if (head_idx >= cmd_tail) {
+		return;
+	}
+
+	while (cmd_store[head_idx][pos] != 0) {
+		cmd[pos] = cmd_store[head_idx][pos];
+		pos++;
+	}
+}
+
+void tash_store_cmd(char *cmd)
+{
+	/* If there is no command, it is not saved. */
+	if (cmd == NULL || cmd[0] == '\0') {
+		return;
+	}
+
+	if (cmd_head != cmd_tail) {
+		/* If it is the same as the previous command, it is not saved. */
+		int prev;
+		if (cmd_tail == 0) {
+			prev = TASH_MAX_STORE - 1;
+		} else {
+			prev = cmd_tail - 1;
+		}
+
+		if (strncmp(cmd_store[prev], cmd, TASH_LINEBUFLEN) == 0) {
+			return;
+		}
+	}
+
+	/* Save current command. */
+	strncpy(cmd_store[cmd_tail], cmd, TASH_LINEBUFLEN);
+	if (cmd_tail == TASH_MAX_STORE - 1) {
+		cmd_tail = 0;
+	} else {
+		cmd_tail++;
+	}
+	/* Move the head when the storage space is full. */
+	if (cmd_tail == cmd_head) {
+		if (cmd_head == TASH_MAX_STORE - 1) {
+			cmd_head = 0;
+		} else {
+			cmd_head++;
+		}
+	}
+}
+#endif
 
 #if defined(CONFIG_BOARDCTL_RESET)
 static int tash_reboot(int argc, char **argv)
