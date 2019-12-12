@@ -495,7 +495,7 @@ static size_t enter_sleep_write(FAR struct file *filep, FAR char *buffer, size_t
 
 	if (len == 5 && !strncmp(buffer, "sleep", len))
 	{
-		ret = pm_sleep();
+		ret = up_pmsleep();
 		if (ret == -EAGAIN) {
 			fdbg("ERROR: PM state locked, try later:%d\n", ret);
 		}
