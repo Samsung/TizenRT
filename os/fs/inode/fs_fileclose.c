@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/vfs/fs_ioctl.c
+ * fs/inode/fs_fileclose.c
  *
- *   Copyright (C) 2007-2010, 2012-2014, 2016-2017 Gregory Nutt. All rights
- *     reserved.
+ *   Copyright (C) 2016-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,16 +56,9 @@
 
 #include <tinyara/config.h>
 
-#include <sys/ioctl.h>
-#include <sched.h>
-#include <errno.h>
 #include <assert.h>
 
-#include <net/if.h>
-
-#ifdef CONFIG_NET
-#include <tinyara/net/net.h>
-#endif
+#include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
 
@@ -75,131 +67,54 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: file_ioctl
+ * Name: file_close
  *
  * Description:
- *   Perform device specific operations.
+ *   Close a file that was previously opend with file_open() (or detached
+ *   with file_detach()).
+ *
+ *   REVISIT:  This is essentially the same as _files_close()
  *
  * Input Parameters:
- *   file     File structure instance
- *   req      The ioctl command
- *   arg      The argument of the ioctl cmd
+ *   filep - A pointer to a user provided memory location containing the
+ *           open file data returned by file_detach().
  *
  * Returned Value:
- *   Returns a non-negative number on success;  A negated errno value is
- *   returned on any failure (see comments ioctl() for a list of appropriate
- *   errno values).
+ *   Zero (OK) is returned on success; A negated errno value is returned on
+ *   any failure to indicate the nature of the failure.
  *
  ****************************************************************************/
 
-int file_ioctl(FAR struct file *filep, int req, unsigned long arg)
+int file_close(FAR struct file *filep)
 {
-	FAR struct inode *inode;
+	struct inode *inode;
+	int ret = OK;
 
 	DEBUGASSERT(filep != NULL);
-
-	/* Is a driver opened? */
-
 	inode = filep->f_inode;
-	if (!inode) {
-		return -EBADF;
-	}
 
-	/* Does the driver support the ioctl method? */
+	/* Check if the struct file is open (i.e., assigned an inode) */
 
-	if (inode->u.i_ops == NULL || inode->u.i_ops->ioctl == NULL) {
-		return -ENOTTY;
-	}
+	if (inode) {
+		/* Close the file, driver, or mountpoint. */
 
-	/* Yes on both accounts.  Let the driver perform the ioctl command */
+		if (inode->u.i_ops && inode->u.i_ops->close) {
+			/* Perform the close operation */
 
-	return (int)inode->u.i_ops->ioctl(filep, req, arg);
-}
-
-/****************************************************************************
- * Name: ioctl/fs_ioctl
- *
- * Description:
- *   Perform device specific operations.
- *
- * Input Parameters:
- *   fd       File/socket descriptor of device
- *   req      The ioctl command
- *   arg      The argument of the ioctl cmd
- *
- * Returned Value:
- *   >=0 on success (positive non-zero values are cmd-specific)
- *   -1 on failure with errno set properly:
- *
- *   EBADF
- *     'fd' is not a valid descriptor.
- *   EFAULT
- *     'arg' references an inaccessible memory area.
- *   EINVAL
- *     'cmd' or 'arg' is not valid.
- *   ENOTTY
- *     'fd' is not associated with a character special device.
- *   ENOTTY
- *      The specified request does not apply to the kind of object that the
- *      descriptor 'fd' references.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_LIBC_IOCTL_VARIADIC
-int fs_ioctl(int fd, int req, unsigned long arg)
-#else
-int ioctl(int fd, int req, unsigned long arg)
-#endif
-{
-	int errcode;
-	FAR struct file *filep;
-	int ret;
-
-	/* Did we get a valid file descriptor? */
-
-	if ((unsigned int)fd >= CONFIG_NFILE_DESCRIPTORS) {
-		/* Perform the socket ioctl */
-
-#ifdef CONFIG_NET
-		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			ret = net_ioctl(fd, req, arg);
-			if (ret < 0) {
-				errcode = -ret;
-				goto errout;
-			}
-
-			return ret;
-		} else
-#endif
-		{
-			errcode = EBADF;
-			goto errout;
+			ret = inode->u.i_ops->close(filep);
 		}
-	}
 
-	/* Get the file structure corresponding to the file descriptor. */
+		/* And release the inode */
 
-	ret = fs_getfilep(fd, &filep);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout;
-	}
+		inode_release(inode);
 
-	DEBUGASSERT(filep != NULL);
+		/* Reset the user file struct instance so that it cannot be reused. */
 
-	/* Perform the file ioctl.  If file_ioctl() fails, it will set the errno
-	 * value appropriately.
-	 */
-
-	ret = file_ioctl(filep, req, arg);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout;
+		filep->f_oflags = 0;
+		filep->f_pos = 0;
+		filep->f_inode = NULL;
+		filep->f_priv = NULL;
 	}
 
 	return ret;
-
-errout:
-	set_errno(errcode);
-	return ERROR;
 }

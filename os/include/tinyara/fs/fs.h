@@ -605,6 +605,74 @@ int fs_dupfd2(int fd1, int fd2);
 #endif
 #endif
 
+/****************************************************************************
+ * Name: file_open
+ *
+ * Description:
+ *   file_open() is similar to the standard 'open' interface except that it
+ *   returns an instance of 'struct file' rather than a file descriptor.  It
+ *   also is not a cancellation point and does not modify the errno variable.
+ *
+ * Input Parameters:
+ *   filep  - The caller provided location in which to return the 'struct
+ *            file' instance.
+ *   path   - The full path to the file to be open.
+ *   oflags - open flags
+ *   ...    - Variable number of arguments, may include 'mode_t mode'
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success.  On failure, a negated errno value is
+ *   returned.
+ *
+ ****************************************************************************/
+
+int file_open(FAR struct file *filep, FAR const char *path, int oflags, ...);
+
+/****************************************************************************
+ * Name: file_detach
+ *
+ * Description:
+ *   This function is used to device drivers to create a task-independent
+ *   handle to an entity in the file system.  file_detach() duplicates the
+ *   'struct file' that underlies the file descriptor, then closes the file
+ *   descriptor.
+ *
+ *   This function will fail if fd is not a valid file descriptor.  In
+ *   particular, it will fail if fd is a socket descriptor.
+ *
+ * Input Parameters:
+ *   fd    - The file descriptor to be detached.  This descriptor will be
+ *           closed and invalid if the file was successfully detached.
+ *   filep - A pointer to a user provided memory location in which to
+ *           received the duplicated, detached file structure.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; A negated errno value is returned on
+ *   any failure to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+
+int file_detach(int fd, FAR struct file *filep);
+
+/****************************************************************************
+ * Name: file_close
+ *
+ * Description:
+ *   Close a file that was previously opened with file_open() (or detached
+ *   with file_detach()).
+ *
+ * Input Parameters:
+ *   filep - A pointer to a user provided memory location containing the
+ *           open file data returned by file_detach().
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; A negated errno value is returned on
+ *   any failure to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+
+int file_close(FAR struct file *filep);
+
 /* fs_openblockdriver.c *****************************************************/
 /****************************************************************************
  * Name: open_blockdriver
@@ -848,6 +916,26 @@ off_t file_seek(FAR struct file *filep, off_t offset, int whence);
 int file_fsync(FAR struct file *filep);
 #endif
 
+/****************************************************************************
+ * Name: file_ioctl
+ *
+ * Description:
+ *   Perform device specific operations.
+ *
+ * Input Parameters:
+ *   file     File structure instance
+ *   req      The ioctl command
+ *   arg      The argument of the ioctl cmd
+ *
+ * Returned Value:
+ *   Returns a non-negative number on success;  A negated errno value is
+ *   returned on any failure (see comments ioctl() for a list of appropriate
+ *   errno values).
+ *
+ ****************************************************************************/
+
+int file_ioctl(FAR struct file *filep, int req, unsigned long arg);
+
 /* fs/fs_fcntl.c ************************************************************/
 /****************************************************************************
  * Name: file_vfcntl
@@ -862,6 +950,47 @@ int file_fsync(FAR struct file *filep);
 #if CONFIG_NFILE_DESCRIPTORS > 0
 int file_vfcntl(FAR struct file *filep, int cmd, va_list ap);
 #endif
+
+/****************************************************************************
+ * Name: file_poll
+ *
+ * Description:
+ *   Low-level poll operation based on struct file.  This is used both to (1)
+ *   support detached file, and also (2) by fdesc_poll() to perform all
+ *   normal operations on file descriptors descriptors.
+ *
+ * Input Parameters:
+ *   file     File structure instance
+ *   fds   - The structure describing the events to be monitored, OR NULL if
+ *           this is a request to stop monitoring events.
+ *   setup - true: Setup up the poll; false: Teardown the poll
+ *
+ * Returned Value:
+ *  0: Success; Negated errno on failure
+ *
+ ****************************************************************************/
+
+int file_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
+
+/****************************************************************************
+ * Name: fdesc_poll
+ *
+ * Description:
+ *   The standard poll() operation redirects operations on file descriptors
+ *   to this function.
+ *
+ * Input Parameters:
+ *   fd    - The file descriptor of interest
+ *   fds   - The structure describing the events to be monitored, OR NULL if
+ *           this is a request to stop monitoring events.
+ *   setup - true: Setup up the poll; false: Teardown the poll
+ *
+ * Returned Value:
+ *  0: Success; Negated errno on failure
+ *
+ ****************************************************************************/
+
+int fdesc_poll(int fd, FAR struct pollfd *fds, bool setup);
 
 /* fs/driver/block/fs_blockproxy.c ******************************************/
 /****************************************************************************

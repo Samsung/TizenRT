@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/vfs/fs_ioctl.c
+ * fs/inode/fs_filedetach.c
  *
- *   Copyright (C) 2007-2010, 2012-2014, 2016-2017 Gregory Nutt. All rights
- *     reserved.
+ *   Copyright (C) 2016-2017, 2019 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,149 +56,122 @@
 
 #include <tinyara/config.h>
 
-#include <sys/ioctl.h>
-#include <sched.h>
-#include <errno.h>
+#include <semaphore.h>
 #include <assert.h>
+#include <errno.h>
 
-#include <net/if.h>
-
-#ifdef CONFIG_NET
-#include <tinyara/net/net.h>
-#endif
+#include <tinyara/sched.h>
+#include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: _files_semtake
+ ****************************************************************************/
+
+static void _files_semtake(FAR struct filelist *list)
+{
+	/* Take the semaphore (perhaps waiting) */
+
+	while (sem_wait(&list->fl_sem) != 0) {
+		/* The only case that an error should occr here is if
+		 * the wait was awakened by a signal.
+		 */
+
+		ASSERT(get_errno() == EINTR);
+	}
+}
+
+/****************************************************************************
+ * Name: _files_semgive
+ ****************************************************************************/
+
+#define _files_semgive(list) sem_post(&list->fl_sem)
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: file_ioctl
+ * Name: file_detach
  *
  * Description:
- *   Perform device specific operations.
+ *   This function is used in device drivers to create a task-independent
+ *   handle to an entity in the file system.  file_detach() duplicates the
+ *   'struct file' that underlies the file descriptor, then closes the file
+ *   descriptor.
+ *
+ *   This function will fail if fd is not a valid file descriptor.  In
+ *   particular, it will fail if fd is a socket descriptor.
  *
  * Input Parameters:
- *   file     File structure instance
- *   req      The ioctl command
- *   arg      The argument of the ioctl cmd
+ *   fd    - The file descriptor to be detached.  This descriptor will be
+ *           closed and invalid if the file was successfully detached.
+ *   filep - A pointer to a user provided memory location in which to
+ *           received the duplicated, detached file structure.
  *
  * Returned Value:
- *   Returns a non-negative number on success;  A negated errno value is
- *   returned on any failure (see comments ioctl() for a list of appropriate
- *   errno values).
+ *   Zero (OK) is returned on success; A negated errno value is returned on
+ *   any failure to indicate the nature of the failure.
  *
  ****************************************************************************/
 
-int file_ioctl(FAR struct file *filep, int req, unsigned long arg)
+int file_detach(int fd, FAR struct file *filep)
 {
-	FAR struct inode *inode;
+	FAR struct filelist *list;
+	FAR struct file *parent;
 
 	DEBUGASSERT(filep != NULL);
 
-	/* Is a driver opened? */
+	/* Verify the file descriptor range */
 
-	inode = filep->f_inode;
-	if (!inode) {
+	if (fd < 0 || fd >= CONFIG_NFILE_DESCRIPTORS) {
+		/* Not a file descriptor (might be a socket descriptor) */
+
 		return -EBADF;
 	}
 
-	/* Does the driver support the ioctl method? */
-
-	if (inode->u.i_ops == NULL || inode->u.i_ops->ioctl == NULL) {
-		return -ENOTTY;
-	}
-
-	/* Yes on both accounts.  Let the driver perform the ioctl command */
-
-	return (int)inode->u.i_ops->ioctl(filep, req, arg);
-}
-
-/****************************************************************************
- * Name: ioctl/fs_ioctl
- *
- * Description:
- *   Perform device specific operations.
- *
- * Input Parameters:
- *   fd       File/socket descriptor of device
- *   req      The ioctl command
- *   arg      The argument of the ioctl cmd
- *
- * Returned Value:
- *   >=0 on success (positive non-zero values are cmd-specific)
- *   -1 on failure with errno set properly:
- *
- *   EBADF
- *     'fd' is not a valid descriptor.
- *   EFAULT
- *     'arg' references an inaccessible memory area.
- *   EINVAL
- *     'cmd' or 'arg' is not valid.
- *   ENOTTY
- *     'fd' is not associated with a character special device.
- *   ENOTTY
- *      The specified request does not apply to the kind of object that the
- *      descriptor 'fd' references.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_LIBC_IOCTL_VARIADIC
-int fs_ioctl(int fd, int req, unsigned long arg)
-#else
-int ioctl(int fd, int req, unsigned long arg)
-#endif
-{
-	int errcode;
-	FAR struct file *filep;
-	int ret;
-
-	/* Did we get a valid file descriptor? */
-
-	if ((unsigned int)fd >= CONFIG_NFILE_DESCRIPTORS) {
-		/* Perform the socket ioctl */
-
-#ifdef CONFIG_NET
-		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			ret = net_ioctl(fd, req, arg);
-			if (ret < 0) {
-				errcode = -ret;
-				goto errout;
-			}
-
-			return ret;
-		} else
-#endif
-		{
-			errcode = EBADF;
-			goto errout;
-		}
-	}
-
-	/* Get the file structure corresponding to the file descriptor. */
-
-	ret = fs_getfilep(fd, &filep);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout;
-	}
-
-	DEBUGASSERT(filep != NULL);
-
-	/* Perform the file ioctl.  If file_ioctl() fails, it will set the errno
-	 * value appropriately.
+	/* Get the thread-specific file list.  It should never be NULL in this
+	 * context.
 	 */
 
-	ret = file_ioctl(filep, req, arg);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout;
+	list = sched_getfiles();
+	DEBUGASSERT(list != NULL);
+
+	/* If the file was properly opened, there should be an inode assigned */
+
+	_files_semtake(list);
+	parent = &list->fl_files[fd];
+	if (parent->f_inode == NULL) {
+		/* File is not open */
+
+		_files_semgive(list);
+		return -EBADF;
 	}
 
-	return ret;
+	/* Duplicate the 'struct file' content into the user-provided file
+	 * structure.
+	 */
 
-errout:
-	set_errno(errcode);
-	return ERROR;
+	filep->f_oflags = parent->f_oflags;
+	filep->f_pos = parent->f_pos;
+	filep->f_inode = parent->f_inode;
+	filep->f_priv = parent->f_priv;
+
+	/* Release the file descriptor *without* calling the driver close method
+	 * and without decrementing the inode reference count.  That will be done
+	 * in file_close().
+	 */
+
+	parent->f_oflags = 0;
+	parent->f_pos = 0;
+	parent->f_inode = NULL;
+	parent->f_priv = NULL;
+
+	_files_semgive(list);
+	return OK;
 }
