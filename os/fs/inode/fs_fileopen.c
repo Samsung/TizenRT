@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/vfs/fs_ioctl.c
+ * fs/inode/fs_fileopen.c
  *
- *   Copyright (C) 2007-2010, 2012-2014, 2016-2017 Gregory Nutt. All rights
- *     reserved.
+ *   Copyright (C) 2018-2019 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,16 +56,13 @@
 
 #include <tinyara/config.h>
 
-#include <sys/ioctl.h>
-#include <sched.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <stdarg.h>
 #include <assert.h>
+#include <unistd.h>
 
-#include <net/if.h>
-
-#ifdef CONFIG_NET
-#include <tinyara/net/net.h>
-#endif
+#include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
 
@@ -75,131 +71,57 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: file_ioctl
+ * Name: file_open
  *
  * Description:
- *   Perform device specific operations.
+ *   file_open() is similar to the standard 'open' interface except that it
+ *   returns an instance of 'struct file' rather than a file descriptor.  It
+ *   also is not a cancellation point and does not modify the errno variable.
  *
  * Input Parameters:
- *   file     File structure instance
- *   req      The ioctl command
- *   arg      The argument of the ioctl cmd
+ *   filep  - The caller provided location in which to return the 'struct
+ *            file' instance.
+ *   path   - The full path to the file to be open.
+ *   oflags - open flags
+ *   ...    - Variable number of arguments, may include 'mode_t mode'
  *
  * Returned Value:
- *   Returns a non-negative number on success;  A negated errno value is
- *   returned on any failure (see comments ioctl() for a list of appropriate
- *   errno values).
+ *   Zero (OK) is returned on success.  On failure, a negated errno value is
+ *   returned.
  *
  ****************************************************************************/
 
-int file_ioctl(FAR struct file *filep, int req, unsigned long arg)
+int file_open(FAR struct file *filep, FAR const char *path, int oflags, ...)
 {
-	FAR struct inode *inode;
-
-	DEBUGASSERT(filep != NULL);
-
-	/* Is a driver opened? */
-
-	inode = filep->f_inode;
-	if (!inode) {
-		return -EBADF;
-	}
-
-	/* Does the driver support the ioctl method? */
-
-	if (inode->u.i_ops == NULL || inode->u.i_ops->ioctl == NULL) {
-		return -ENOTTY;
-	}
-
-	/* Yes on both accounts.  Let the driver perform the ioctl command */
-
-	return (int)inode->u.i_ops->ioctl(filep, req, arg);
-}
-
-/****************************************************************************
- * Name: ioctl/fs_ioctl
- *
- * Description:
- *   Perform device specific operations.
- *
- * Input Parameters:
- *   fd       File/socket descriptor of device
- *   req      The ioctl command
- *   arg      The argument of the ioctl cmd
- *
- * Returned Value:
- *   >=0 on success (positive non-zero values are cmd-specific)
- *   -1 on failure with errno set properly:
- *
- *   EBADF
- *     'fd' is not a valid descriptor.
- *   EFAULT
- *     'arg' references an inaccessible memory area.
- *   EINVAL
- *     'cmd' or 'arg' is not valid.
- *   ENOTTY
- *     'fd' is not associated with a character special device.
- *   ENOTTY
- *      The specified request does not apply to the kind of object that the
- *      descriptor 'fd' references.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_LIBC_IOCTL_VARIADIC
-int fs_ioctl(int fd, int req, unsigned long arg)
-#else
-int ioctl(int fd, int req, unsigned long arg)
-#endif
-{
-	int errcode;
-	FAR struct file *filep;
+	va_list ap;
 	int ret;
+	int fd;
 
-	/* Did we get a valid file descriptor? */
+	DEBUGASSERT(filep != NULL && path != NULL);
 
-	if ((unsigned int)fd >= CONFIG_NFILE_DESCRIPTORS) {
-		/* Perform the socket ioctl */
-
-#ifdef CONFIG_NET
-		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			ret = net_ioctl(fd, req, arg);
-			if (ret < 0) {
-				errcode = -ret;
-				goto errout;
-			}
-
-			return ret;
-		} else
-#endif
-		{
-			errcode = EBADF;
-			goto errout;
-		}
-	}
-
-	/* Get the file structure corresponding to the file descriptor. */
-
-	ret = fs_getfilep(fd, &filep);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout;
-	}
-
-	DEBUGASSERT(filep != NULL);
-
-	/* Perform the file ioctl.  If file_ioctl() fails, it will set the errno
-	 * value appropriately.
+	/* At present, this is just a placeholder.  It is just a wrapper around
+	 * open() followed by a called to file_detach().  Ideally, this should
+	 * a native open function that opens the VFS node directly without using
+	 * any file descriptors.
 	 */
 
-	ret = file_ioctl(filep, req, arg);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout;
+	va_start(ap, oflags);
+	fd = vopen(path, oflags, ap);
+	va_end(ap);
+
+	if (fd < 0) {
+		return fd;
 	}
 
-	return ret;
+	/* Detach the file structure from the file descriptor so that it can be
+	 * used on any thread.
+	 */
 
-errout:
-	set_errno(errcode);
-	return ERROR;
+	ret = file_detach(fd, filep);
+	if (ret < 0) {
+		(void)close(fd);
+		return ret;
+	}
+
+	return OK;
 }

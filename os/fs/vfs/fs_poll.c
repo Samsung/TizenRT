@@ -18,7 +18,7 @@
 /****************************************************************************
  * fs/vfs/fs_poll.c
  *
- *   Copyright (C) 2008-2009, 2012-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2008-2009, 2012-2019 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -124,10 +124,6 @@ static int poll_semtake(FAR sem_t *sem)
 #if CONFIG_NFILE_DESCRIPTORS > 0
 static int poll_fdsetup(int fd, FAR struct pollfd *fds, bool setup)
 {
-	FAR struct file *filep;
-	FAR struct inode *inode;
-	int ret = -ENOSYS;
-
 	/* Check for a valid file descriptor */
 
 	if ((unsigned int)fd >= CONFIG_NFILE_DESCRIPTORS) {
@@ -136,49 +132,16 @@ static int poll_fdsetup(int fd, FAR struct pollfd *fds, bool setup)
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
 #ifdef CONFIG_NET_LWIP
-			ret = lwip_poll(fd, fds, setup);
-			return ret;
+			return lwip_poll(fd, fds, setup);
 #endif
 		} else
 #endif
 		{
-			ret = -EBADF;
-			return ret;
+			return -EBADF;
 		}
 	}
 
-	/* Get the file pointer corresponding to this file descriptor */
-
-	ret = fs_getfilep(fd, &filep);
-	if (ret < 0) {
-		return ret;
-	}
-
-	inode = filep->f_inode;
-
-	if (inode) {
-		/* Is a driver registered? Does it support the poll method?
-		 * If not, return -ENOSYS
-		 */
-
-		if (INODE_IS_DRIVER(inode) && inode->u.i_ops && inode->u.i_ops->poll) {
-			/* Yes, then setup the poll */
-
-			ret = (int)inode->u.i_ops->poll(filep, fds, setup);
-		} else if (INODE_IS_MOUNTPT(inode) || INODE_IS_BLOCK(inode)) {
-			/* Regular files shall always poll TRUE for reading and writing */
-
-			if (setup) {
-				fds->revents |= (fds->events & (POLLIN | POLLOUT));
-				if (fds->revents != 0) {
-					sem_post(fds->sem);
-				}
-			}
-			ret = OK;
-		}
-	}
-
-	return ret;
+	return fdesc_poll(fd, fds, setup);
 }
 #endif
 
@@ -293,6 +256,103 @@ static inline int poll_teardown(FAR struct pollfd *fds, nfds_t nfds, int *count,
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: file_poll
+ *
+ * Description:
+ *   Low-level poll operation based on struct file.  This is used both to (1)
+ *   support detached file, and also (2) by fdesc_poll() to perform all
+ *   normal operations on file descriptors descriptors.
+ *
+ * Input Parameters:
+ *   file     File structure instance
+ *   fds   - The structure describing the events to be monitored, OR NULL if
+ *           this is a request to stop monitoring events.
+ *   setup - true: Setup up the poll; false: Teardown the poll
+ *
+ * Returned Value:
+ *  0: Success; Negated errno on failure
+ *
+ ****************************************************************************/
+
+int file_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
+{
+	FAR struct inode *inode;
+	int ret = -ENOSYS;
+
+	DEBUGASSERT(filep != NULL && filep->f_inode != NULL);
+	inode = filep->f_inode;
+
+	if (inode != NULL) {
+		/* Is a driver registered? Does it support the poll method?
+		 * If not, return -ENOSYS
+		 */
+
+		if (INODE_IS_DRIVER(inode) &&
+			inode->u.i_ops != NULL && inode->u.i_ops->poll != NULL) {
+			/* Yes, it does... Setup the poll */
+
+			ret = (int)inode->u.i_ops->poll(filep, fds, setup);
+		}
+
+		/* Regular files (and block devices) are always readable and
+		 * writable. Open Group: "Regular files shall always poll TRUE for
+		 * reading and writing."
+		 */
+
+		if (INODE_IS_MOUNTPT(inode) || INODE_IS_BLOCK(inode)) {
+			if (setup) {
+				fds->revents |= (fds->events & (POLLIN | POLLOUT));
+				if (fds->revents != 0) {
+					sem_post(fds->sem);
+				}
+			}
+
+			ret = OK;
+		}
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: fdesc_poll
+ *
+ * Description:
+ *   The standard poll() operation redirects operations on file descriptors
+ *   to this function.
+ *
+ * Input Parameters:
+ *   fd    - The file descriptor of interest
+ *   fds   - The structure describing the events to be monitored, OR NULL if
+ *           this is a request to stop monitoring events.
+ *   setup - true: Setup up the poll; false: Teardown the poll
+ *
+ * Returned Value:
+ *  Zero (OK) is returned on success; a negated errno value is returned on
+ *  any failure.
+ *
+ ****************************************************************************/
+
+int fdesc_poll(int fd, FAR struct pollfd *fds, bool setup)
+{
+	FAR struct file *filep;
+	int ret;
+
+	/* Get the file pointer corresponding to this file descriptor */
+
+	ret = fs_getfilep(fd, &filep);
+	if (ret < 0) {
+		return ret;
+	}
+
+	DEBUGASSERT(filep != NULL);
+
+	/* Let file_poll() do the rest */
+
+	return file_poll(filep, fds, setup);
+}
+
+/****************************************************************************
  * Name: poll
  *
  * Description:
@@ -301,14 +361,14 @@ static inline int poll_teardown(FAR struct pollfd *fds, nfds_t nfds, int *count,
  *   occurred for any of  the  file  descriptors,  then  poll() blocks until
  *   one of the events occurs.
  *
- * Inputs:
+ * Input Parameters:
  *   fds  - List of structures describing file descriptors to be monitored
  *   nfds - The number of entries in the list
  *   timeout - Specifies an upper limit on the time for which poll() will
  *     block in milliseconds.  A negative value of timeout means an infinite
  *     timeout.
  *
- * Return:
+ * Returned Value:
  *   On success, the number of structures that have non-zero revents fields.
  *   A value of 0 indicates that the call timed out and no file descriptors
  *   were ready.  On error, -1 is returned, and errno is set appropriately:
@@ -334,12 +394,14 @@ int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout)
 	DEBUGASSERT((nfds == 0) || (fds != NULL));
 
 	/* poll() is a cancellation point */
+
 	(void)enter_cancellation_point();
 
 	/*
 	 * This semaphore is used for signaling and, hence, should not have
 	 * priority inheritance enabled.
 	 */
+
 	sem_init(&sem, 0, 0);
 	sem_setprotocol(&sem, SEM_PRIO_NONE);
 
