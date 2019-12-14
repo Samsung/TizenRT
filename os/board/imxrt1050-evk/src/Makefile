@@ -108,12 +108,12 @@ BOARD_SRCDIR = $(TOPDIR)/board
 ifeq ($(WINTOOL),y)
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}"
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/common}"
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-r}"
+  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-m}"
   CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/common}"
 else
   CFLAGS += -I$(ARCH_SRCDIR)/chip
   CFLAGS += -I$(ARCH_SRCDIR)/common
-  CFLAGS += -I$(ARCH_SRCDIR)/armv7-r
+  CFLAGS += -I$(ARCH_SRCDIR)/armv7-m
   CFLAGS += -I$(BOARD_SRCDIR)/common
 endif
 
