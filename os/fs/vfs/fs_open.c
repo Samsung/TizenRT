@@ -131,9 +131,7 @@ int vopen(FAR const char *path, int oflags, va_list ap)
 	/* If the file is opened for creation, then get the mode bits */
 
 	if ((oflags & (O_WRONLY | O_CREAT)) != 0) {
-		va_start(ap, oflags);
 		mode = va_arg(ap, mode_t);
-		va_end(ap);
 	}
 #endif
 
