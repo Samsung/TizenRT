@@ -447,7 +447,6 @@ static void *_ui_core_thread_loop(void *param)
 	uint32_t dt;
 
 #if (CONFIG_UI_MAXIMUM_FPS > 0)
-	uint32_t fps_dt = 0;
 	const uint32_t ms_per_frame = 1000 / CONFIG_UI_MAXIMUM_FPS;
 #endif
 
@@ -465,11 +464,9 @@ static void *_ui_core_thread_loop(void *param)
 		before = now;
 
 #if (CONFIG_UI_MAXIMUM_FPS > 0)
-		fps_dt += dt;
-		if (fps_dt < ms_per_frame) {
-			usleep((ms_per_frame - fps_dt) * 1000);
+		if (dt < ms_per_frame) {
+			usleep((ms_per_frame - dt) * 1000);
 		}
-		fps_dt -= ms_per_frame;
 #endif
 
 		window = ui_window_get_current();
