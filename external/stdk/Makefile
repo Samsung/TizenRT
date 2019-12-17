@@ -62,8 +62,16 @@ endif
 # st-device-sdk-c
 #################################################
 CSRCS	:= $(wildcard $(STDK_SRC_DIR)/*.c)
-CSRCS	+= $(wildcard $(STDK_SRC_DIR)/crypto/*.c)
 
+ifeq ($(CONFIG_STDK_IOT_CORE_NET_MBEDTLS),y)
+	CSRCS += $(STDK_SRC_DIR)/port/net/mbedtls/iot_net_mbedtls.c
+	CFLAGS += -I$(STDK_SRC_DIR)/port/net/mbedtls
+else
+	CSRCS += $(STDK_SRC_DIR)/port/net/openssl/iot_net_openssl.c
+	CFLAGS += -I$(STDK_SRC_DIR)/port/net/openssl
+endif
+
+CSRCS	+= $(wildcard $(STDK_SRC_DIR)/crypto/*.c)
 ifeq ($(CONFIG_STDK_IOT_CORE_USE_MBEDTLS),y)
 CSRCS	+= $(wildcard $(STDK_SRC_DIR)/crypto/mbedtls/*.c)
 endif
@@ -82,7 +90,6 @@ CSRCS	+= $(wildcard $(STDK_SRC_DIR)/mqtt/client/*.c)
 CSRCS	+= $(wildcard $(STDK_SRC_DIR)/mqtt/packet/*.c)
 CSRCS	+= $(wildcard ./tizenrt-wrapper/bsp/*.c)
 
-CSRCS	+= ./tizenrt-wrapper/os/iot_os_net_tizenrt.c
 CSRCS	+= ./tizenrt-wrapper/os/iot_os_util_tizenrt.c
 ifneq ($(CONFIG_ARCH_BOARD_ESP32_FAMILY),y)
 CSRCS	+= ./tizenrt-wrapper/os/event_groups.c

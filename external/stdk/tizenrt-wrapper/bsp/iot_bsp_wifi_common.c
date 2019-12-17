@@ -300,13 +300,11 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 		case IOT_WIFI_MODE_SOFTAP:
 			memset(&sap_config, 0, sizeof(wifi_manager_softap_config_s));
 			str_len = strlen(conf->ssid);
-			strncpy(sap_config.ssid, conf->ssid, str_len);
-			sap_config.ssid[str_len + 1] = '\0';
+			memcpy(sap_config.ssid, conf->ssid, (str_len > WIFIMGR_SSID_LEN) ? WIFIMGR_SSID_LEN : str_len);
 
 			str_len =  strlen(conf->pass);
-			strncpy(sap_config.passphrase, conf->pass, str_len);
-			sap_config.passphrase[str_len + 1] = '\0';
-			sap_config.channel = 1;
+			memcpy(sap_config.passphrase, conf->pass, (str_len > WIFIMGR_PASSPHRASE_LEN) ? WIFIMGR_PASSPHRASE_LEN : str_len);
+			sap_config.channel = IOT_SOFT_AP_CHANNEL;
 
 			res = wifi_manager_set_mode(SOFTAP_MODE, &sap_config);
 			if (res != WIFI_MANAGER_SUCCESS) {

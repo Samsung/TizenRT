@@ -80,13 +80,6 @@ config STDK_IOT_CORE_SUPPORT_STNV_PARTITION
 	---help---
 		If this option is enabled, STDK will use STNV partition data for easysetup.
 
-config STDK_MQTT_USE_SSL
-	bool "Enable MQTT SSL Connection"
-	default y
-	depends on STDK_IOT_CORE
-	---help---
-        Connecting MQTT broker through SSL
-
 config STDK_DEBUG_MEMORY_CHECK
 	bool "Enable debug option to check memory utilization"
 	default n
@@ -138,5 +131,23 @@ config STDK_IOT_CORE_FS_SE_ENCRYPTION
 endchoice
 
 endmenu # Crypto
+
+menu "Network"
+    depends on STDK_IOT_CORE
+
+choice STDK_IOT_CORE_NET_INTERFACE
+    prompt "Choose Network interface"
+    default STDK_IOT_CORE_NET_MBEDTLS
+    depends on STDK_IOT_CORE
+    help
+       Choose the network interface library which mqtt want to use
+
+config STDK_IOT_CORE_NET_MBEDTLS
+    bool "mbedTLS"
+config STDK_IOT_CORE_NET_OPENSSL
+    bool "OpenSSL"
+endchoice
+
+endmenu # Network
 
 endif  #STDK_IOT_CORE
