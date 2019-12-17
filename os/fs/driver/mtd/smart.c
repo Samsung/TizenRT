@@ -176,7 +176,7 @@
 #if SMART_STATUS_VERSION == 1
 #define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFF && h.seq == 0xFF && h.crc8 == 0xFF && h.status == 0xFF))
 #elif SMART_STATUS_VERSION == 2
-#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFF && h.seq == 0xFF && h.crc16 == 0xFFFF && h.status == 0xFF))
+#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFF && h.seq == 0xFF && UINT8TOUINT16(h.crc16) == 0xFFFF && h.status == 0xFF))
 #elif SMART_STATUS_VERSION == 3
 #define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFFFFFF && h.seq == 0xFF && h.crc32 == 0xFFFFFFFF && h.status == 0xFF))
 #endif
@@ -186,7 +186,7 @@
 #if SMART_STATUS_VERSION == 1
 #define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x0000 && h.seq == 0x00 && h.crc8 == 0x00 && h.status == 0x00))
 #elif SMART_STATUS_VERSION == 2
-#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x0000 && h.seq == 0x00 && h.crc16 == 0x0000 && h.status == 0x00))
+#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x0000 && h.seq == 0x00 && UINT8TOUINT16(h.crc16) == 0x0000 && h.status == 0x00))
 #elif SMART_STATUS_VERSION == 3
 #define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x00000000 && h.seq == 0x00 && h.crc32 == 0x00000000 && h.status == 0x00))
 #endif
