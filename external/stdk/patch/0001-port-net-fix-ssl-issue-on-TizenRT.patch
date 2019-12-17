@@ -1,0 +1,34 @@
+From 2dbff1c03e4f9d0fedf6d1fd002028a984d1da3c Mon Sep 17 00:00:00 2001
+From: "qin.li" <qin.li@samsung.com>
+Date: Fri, 20 Dec 2019 14:17:53 +0800
+Subject: [PATCH] port/net: fix ssl issue on TizenRT
+
+---
+ src/port/net/openssl/iot_net_openssl.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/port/net/openssl/iot_net_openssl.c b/src/port/net/openssl/iot_net_openssl.c
+index 6870adc..06aee3a 100644
+--- a/src/port/net/openssl/iot_net_openssl.c
++++ b/src/port/net/openssl/iot_net_openssl.c
+@@ -193,7 +193,7 @@ static iot_error_t _iot_net_ssl_connect(iot_net_interface_t *n)
+ 	if (!n->context.ctx) {
+ 		goto exit;
+ 	}
+-#if defined(CONFIG_STDK_IOT_CORE_OS_SUPPORT_FREERTOS)
++//#if defined(CONFIG_STDK_IOT_CORE_OS_SUPPORT_FREERTOS)
+ 	if (n->connection.ca_cert) {
+ 		retVal = SSL_CTX_load_verify_buffer(n->context.ctx, n->connection.ca_cert, n->connection.ca_cert_len);
+ 
+@@ -201,7 +201,7 @@ static iot_error_t _iot_net_ssl_connect(iot_net_interface_t *n)
+ 			goto exit1;
+ 		}
+ 	}
+-#endif
++//#endif
+ 	if (n->connection.ca_cert && n->connection.key) {
+ 		retVal = SSL_CTX_use_certificate_ASN1(n->context.ctx, n->connection.ca_cert_len, n->connection.ca_cert);
+ 
+-- 
+2.7.4
+
