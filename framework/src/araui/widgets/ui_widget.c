@@ -883,11 +883,7 @@ ui_error_t ui_widget_play_anim(ui_widget_t widget, ui_anim_t anim, anim_finished
 		return UI_NOT_RUNNING;
 	}
 
-	if (!widget) {
-		return UI_INVALID_PARAM;
-	}
-	
-	if (!anim) {
+	if (!widget || !anim) {
 		return UI_INVALID_PARAM;
 	}
 
@@ -985,8 +981,7 @@ ui_error_t ui_widget_set_scale_sync(ui_widget_body_t *body, uint32_t scale_x, ui
 
 void ui_widget_queue_init(void)
 {
-	g_widget_body_queue.start = 0;
-	g_widget_body_queue.end = 0;
+	g_widget_body_queue.start = g_widget_body_queue.end = 0;
 }
 
 bool ui_widget_is_queue_empty(void)
@@ -1000,17 +995,11 @@ bool ui_widget_is_queue_empty(void)
 
 void ui_widget_queue_enqueue(ui_widget_body_t *body)
 {
-	g_widget_body_queue.queue[g_widget_body_queue.end] = body;
-	g_widget_body_queue.end++;
+	g_widget_body_queue.queue[g_widget_body_queue.end++] = body;
 }
 
 ui_widget_body_t *ui_widget_queue_dequeue(void)
 {
-	int curr_point;
-
-	curr_point = g_widget_body_queue.start;
-	g_widget_body_queue.start++;
-
-	return g_widget_body_queue.queue[curr_point];
+	return g_widget_body_queue.queue[g_widget_body_queue.start++];
 }
 
