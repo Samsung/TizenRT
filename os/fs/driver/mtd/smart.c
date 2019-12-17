@@ -193,6 +193,39 @@
 
 #endif
 
+/*The following are CRC8 and CRC16 generated values which are constant 
+ *for a completely erased sector.These CRC values are indicative of the
+ *fact that the sector is indeed completely erased.
+ */
+
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF && SMART_STATUS_VERSION == 1
+#if CONFIG_MTD_SMART_SECTOR_SIZE == 256
+#define SMART_ERASEDSTATE_CRC  0
+#elif CONFIG_MTD_SMART_SECTOR_SIZE == 512
+#define SMART_ERASEDSTATE_CRC  255
+#elif CONFIG_MTD_SMART_SECTOR_SIZE == 1024
+#define SMART_ERASEDSTATE_CRC  99
+#elif CONFIG_MTD_SMART_SECTOR_SIZE == 2048
+#define SMART_ERASEDSTATE_CRC  242
+#else
+#define SMART_ERASEDSTATE_CRC  -1
+#endif
+#elif CONFIG_SMARTFS_ERASEDSTATE == 0xFF && SMART_STATUS_VERSION == 2
+#if CONFIG_MTD_SMART_SECTOR_SIZE == 256
+#define SMART_ERASEDSTATE_CRC  65021
+#elif CONFIG_MTD_SMART_SECTOR_SIZE == 512
+#define SMART_ERASEDSTATE_CRC  53981
+#elif CONFIG_MTD_SMART_SECTOR_SIZE == 1024
+#define SMART_ERASEDSTATE_CRC  6113
+#elif CONFIG_MTD_SMART_SECTOR_SIZE == 2048
+#define SMART_ERASEDSTATE_CRC  60280
+#else
+#define SMART_ERASEDSTATE_CRC  -1
+#endif
+#else
+#define SMART_ERASEDSTATE_CRC  -1
+#endif
+
 #define SET_TO_TRUE(v, n) v[n/8] |= (1<<(7-(n%8)))
 #define GET_VAL(v, n) (v[n/8] & 1<<(7-(n%8)))
 /* Bit mapping for wear level bits */
@@ -4020,7 +4053,6 @@ static int smart_validate_crc(FAR struct smart_struct_s *dev)
 {
 	crc_t crc;
 	FAR struct smart_sect_header_s *header;
-
 	/* Calculate CRC on data region of the sector. */
 
 	crc = smart_calc_sector_crc(dev);
@@ -4030,7 +4062,7 @@ static int smart_validate_crc(FAR struct smart_struct_s *dev)
 
 	/* Test 16-bit CRC. */
 
-	if (crc != *((uint16_t *)header->crc16)) {
+	if (crc != *((uint16_t *)header->crc16) && crc != SMART_ERASEDSTATE_CRC) {
 		return -EIO;
 	}
 #elif defined(CONFIG_SMART_CRC_32)
@@ -4040,7 +4072,7 @@ static int smart_validate_crc(FAR struct smart_struct_s *dev)
 	}
 #else
 	/* Test 8-bit CRC for CRC8 & basic case for smart_scan. */
-	if (crc != header->crc8) {
+	if (crc != header->crc8 && crc != SMART_ERASEDSTATE_CRC) {
 		return -EIO;
 	}
 
