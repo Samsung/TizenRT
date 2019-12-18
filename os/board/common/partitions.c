@@ -90,7 +90,7 @@ static void type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno,
 #if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
 		if (!strncmp(types, "smartfs,", 8)) {
 			char partref[4];
-
+			printf("   Before smart_initialize, partno = %d\n", partno);
 			snprintf(partref, sizeof(partref), "p%d", partno);
 			smart_initialize(CONFIG_FLASH_MINOR, mtd_part, partref);
 		} else

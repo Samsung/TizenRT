@@ -111,6 +111,8 @@ CHIP_CSRCS += esp32_timerisr.c esp32_periph_ctrl.c
 ifeq ($(CONFIG_ESP32_SPIFLASH),y)
 	VPATH += chip/spi_flash
 	CHIP_CSRCS += cache_utils.c flash_mmap.c flash_ops.c partition.c spi_flash_rom_patch.c esp_ota_eps.c esp32_flash.c
+	VPATH += chip/spi_flash/esp_idf_port
+	CHIP_CSRCS += intr_alloc.c
 endif
 
 ifeq ($(CONFIG_GPIO),y)
@@ -145,6 +147,7 @@ endif
 
 CFLAGS += -Ichip/chip
 CFLAGS += -Ichip/spi_flash/include
+CFLAGS += -Ichip/spi_flash/esp_idf_port
 
 # Configuration-dependent ESP32 files
 

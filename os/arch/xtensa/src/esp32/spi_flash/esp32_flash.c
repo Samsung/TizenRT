@@ -167,7 +167,7 @@ ssize_t esp32_flash_read(size_t addr, void *buf, size_t count)
     if ((addr & 0x3) == 0) {
             //! if addr is 4 bytes aligned
             result = spi_flash_read(addr, buf, count);
-
+            printf("\tresult = %d\n", result);
             if (result != 0) {
                 ret = -EIO;
             } else {
@@ -182,8 +182,9 @@ ssize_t esp32_flash_read(size_t addr, void *buf, size_t count)
                 ret = -EPERM;
             } else {
                 result = spi_flash_read((addr & 0xfffffffc), (char *)aligned_read_buf, count + offset);
+                printf("\t\tresult = %d\n", result);
                 if (result != 0) {
-                    ret = -EIO;
+                	ret = -EIO;
                 } else {
                     ret = count;
                 }
@@ -196,7 +197,7 @@ ssize_t esp32_flash_read(size_t addr, void *buf, size_t count)
     irqrestore(irqs);
 
     if (ret < 0) {
-        printf("[esp32] up_progmem_read Errno: %d, addr %d, buf %p, count %d\n", ret, addr, buf, count);
+        printf("[esp32] up_progmem_read Errno: %d, addr %x, buf %p, count %d\n", ret, addr, buf, count);
     }
     return ret;
 }
@@ -207,6 +208,7 @@ ssize_t esp32_flash_read(size_t addr, void *buf, size_t count)
 static ssize_t esp32_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buffer)
 {
     ssize_t result;
+    printf("[esp32_bread] startblock = %d 0x%x , nblocks = %d\n", startblock, startblock, nblocks);
     result = esp32_flash_read(CONFIG_ESP_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
     return result < 0 ? result : nblocks;
 }
@@ -234,6 +236,7 @@ static ssize_t esp32_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 static ssize_t esp32_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer)
 {
     ssize_t result;
+    printf("[esp32_read] offset = %d %x, nbytes = %d\n", offset, offset, nbytes);
     result = esp32_flash_read(CONFIG_ESP_FLASH_BASE + offset, buffer, nbytes);
     return result < 0 ? result : nbytes;
 }
@@ -257,7 +260,7 @@ static int esp32_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;			/* Assume good command with bad parameters */
     FAR struct esp32_dev_s *priv = (FAR struct mtd_dev_s *)dev;
-	fvdbg("cmd: %d \n", cmd);
+	fdbg("cmd: %d \n", cmd);
 
 	switch (cmd) {
 	case MTDIOC_GEOMETRY: {
@@ -267,7 +270,7 @@ static int esp32_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 			geo->erasesize = CONFIG_ESP32_FLASH_BLOCK_SIZE;
 		    geo->neraseblocks = priv->nsectors;
 			ret = OK;
-			fvdbg("blocksize: %d erasesize: %d neraseblocks: %d\n", geo->blocksize, geo->erasesize, geo->neraseblocks);
+			fdbg("blocksize: %d erasesize: %d neraseblocks: %d\n", geo->blocksize, geo->erasesize, geo->neraseblocks);
 		}
 	}
 	break;

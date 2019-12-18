@@ -485,12 +485,16 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 	// Out of bound reads are checked in ROM code, but we can give better
 	// error code here
 	if (src + size > g_rom_flashchip.chip_size) {
+		printf(" %d \n", __LINE__);
+		printf(" src = %d, 0x%x || size = %d \n", src, src, size);
+		printf(" chip_size = %d, 0x%x\n", g_rom_flashchip.chip_size, g_rom_flashchip.chip_size);
 		return ESP_ERR_INVALID_SIZE;
 	}
 	if (size == 0) {
+		printf(" %d \n", __LINE__);
 		return ESP_OK;
 	}
-
+//	printf(" %d \n", __LINE__);
 	esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
 	COUNTER_START();
 	spi_flash_guard_start();
@@ -502,10 +506,12 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 		uint32_t read_size = (left_off + size + 3) & ~3U;
 		rc = esp_rom_spiflash_read(read_src, t, read_size);
 		if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
+			printf(" %d \n", __LINE__);
 			goto out;
 		}
 		COUNTER_ADD_BYTES(read, read_size);
 		memcpy(dstv, ((uint8_t *) t) + left_off, size);
+//		printf(" %d \n", __LINE__);
 		goto out;
 	}
 	uint8_t *dstc = (uint8_t *) dstv;
@@ -554,6 +560,7 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 			}
 			rc = esp_rom_spiflash_read(src + src_mid_off + mid_read, (uint32_t *) read_dst, read_size);
 			if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
+				printf(" %d \n", __LINE__);
 				goto out;
 			}
 			mid_remaining -= read_size;
@@ -583,11 +590,13 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 				spi_flash_guard_start();
 			}
 		}
+//		printf(" %d \n", __LINE__);
 	}
 	if (pad_left_size > 0) {
 		uint32_t t;
 		rc = esp_rom_spiflash_read(pad_left_src, &t, 4);
 		if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
+			printf(" %d \n", __LINE__);
 			goto out;
 		}
 		COUNTER_ADD_BYTES(read, 4);
@@ -599,11 +608,13 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 			spi_flash_guard_start();
 		}
 	}
+//	printf(" %d \n", __LINE__);
 	if (pad_right_size > 0) {
 		uint32_t t[2];
 		int32_t read_size = (pad_right_size <= 4 ? 4 : 8);
 		rc = esp_rom_spiflash_read(pad_right_src, t, read_size);
 		if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
+			printf(" %d \n", __LINE__);
 			goto out;
 		}
 		COUNTER_ADD_BYTES(read, read_size);
@@ -615,7 +626,9 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 			spi_flash_guard_start();
 		}
 	}
+//	printf(" %d \n", __LINE__);
 out:
+//	printf(" %d \n", __LINE__);
 	spi_flash_guard_end();
 	COUNTER_STOP(read);
 	return spi_flash_translate_rc(rc);
