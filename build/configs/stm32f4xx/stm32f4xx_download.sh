@@ -59,6 +59,15 @@ case $1 in
 	all|ALL)
 		download_all
 		;;
+	usbrule|USBrule)
+		RET=$(${THIS_PATH}/../usbrule.sh stm32 0483 3748 3752 3753 374d 374e 374f)
+		if [ -n "${RET}" ]; then
+			echo $RET
+			exit 1
+		fi
+		echo "USB rule creation succeeded."
+		exit 0
+		;;
 	*)
 		echo "Not supported"
 		;;

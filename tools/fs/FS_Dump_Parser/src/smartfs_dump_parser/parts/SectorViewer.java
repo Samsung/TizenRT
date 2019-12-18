@@ -4,19 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 
 import org.eclipse.e4.ui.di.Focus;
-import org.eclipse.e4.ui.di.Persist;
-import org.eclipse.e4.ui.model.application.ui.basic.MPart;
+
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.viewers.TreeViewer;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -27,49 +23,24 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 
-import smartfs_dump_parser.data_model.SmartFileSystem;
 import smartfs_dump_parser.data_model.Sector;
 import smartfs_dump_parser.data_model.SectorStatus;
-import smartfs_dump_parser.data_model.SmartFile;
+import smartfs_dump_parser.data_model.SmartFileSystem;
 
-public class DumpViewer {
+public class SectorViewer {
 
-	private TreeViewer treeViewer;
 	private TableViewer tableViewer;
 	private Button activeButton;
 	private Button dirtyButton;
 	private Button cleanButton;
 
-	@Inject
-	private MPart part;
-
 	@PostConstruct
 	public void createComposite(Composite parent) {
 		parent.setLayout(new GridLayout(3, false));
 
-		createDirectoryTreeViewer(parent);
-
 		createCheckbox(parent);
 
-		tableViewer = new TableViewer(parent,
-				SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
-
-		createColumns(parent, tableViewer);
-		final Table table = tableViewer.getTable();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
-
-		tableViewer.setContentProvider(new ArrayContentProvider());
-		// Set the content (Model) for the viewer
-		tableViewer.setInput(SmartFileSystem.getSectors());
-
-		GridData gridData = new GridData();
-		gridData.verticalAlignment = GridData.FILL;
-		gridData.horizontalSpan = 3;
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.grabExcessVerticalSpace = true;
-		gridData.horizontalAlignment = GridData.FILL;
-		tableViewer.getControl().setLayoutData(gridData);
+		createSectorTable(parent);
 	}
 
 	@Focus
@@ -77,59 +48,8 @@ public class DumpViewer {
 		tableViewer.getTable().setFocus();
 	}
 
-	@Persist
-	public void save() {
-		part.setDirty(false);
-	}
-
-	public TableViewer getTableViewer() {
+	public TableViewer getSectorViewer() {
 		return tableViewer;
-	}
-
-	public TreeViewer getDirectoryViewer() {
-		return treeViewer;
-	}
-
-	private void createDirectoryTreeViewer(final Composite parent) {
-		treeViewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
-
-		treeViewer.setContentProvider(new ITreeContentProvider() {
-			@Override
-			public Object[] getElements(Object inputElement) {
-				return getChildren(inputElement);
-			}
-
-			@Override
-			public Object[] getChildren(Object parentElement) {
-				return ((SmartFile) parentElement).getEntries().toArray();
-			}
-
-			@Override
-			public Object getParent(Object element) {
-				return ((SmartFile) element).getParent();
-			}
-
-			@Override
-			public boolean hasChildren(Object element) {
-				return !(((SmartFile) element).getEntries().isEmpty());
-			}
-		});
-
-		treeViewer.setLabelProvider(new LabelProvider() {
-			@Override
-			public String getText(Object element) {
-				return ((SmartFile) element).getFileName();
-			}
-		});
-
-		treeViewer.setInput(SmartFileSystem.getTopDummyDirectory());
-
-		GridData gridData = new GridData();
-		gridData.verticalAlignment = GridData.FILL;
-		gridData.horizontalSpan = 3;
-		gridData.grabExcessHorizontalSpace = true;
-		gridData.horizontalAlignment = GridData.FILL;
-		treeViewer.getControl().setLayoutData(gridData);
 	}
 
 	private void createCheckbox(final Composite parent) {
@@ -233,6 +153,28 @@ public class DumpViewer {
 		return resultList;
 	}
 
+	private void createSectorTable(final Composite parent) {
+		tableViewer = new TableViewer(parent,
+				SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+
+		createColumns(parent, tableViewer);
+		final Table table = tableViewer.getTable();
+		table.setHeaderVisible(true);
+		table.setLinesVisible(true);
+
+		tableViewer.setContentProvider(new ArrayContentProvider());
+		// Set the content (Model) for the viewer
+		tableViewer.setInput(SmartFileSystem.getSectors());
+
+		GridData gridData = new GridData();
+		gridData.verticalAlignment = GridData.FILL;
+		gridData.horizontalSpan = 3;
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.grabExcessVerticalSpace = true;
+		gridData.horizontalAlignment = GridData.FILL;
+		tableViewer.getControl().setLayoutData(gridData);
+	}
+	
 	private void createColumns(final Composite parent, final TableViewer viewer) {
 		String[] titles = new String[] { "Physical Sector #", "Sector #", "Seq. #", "CRC", "Status" };
 		int[] bounds = { 150, 80, 80, 80, 80 };

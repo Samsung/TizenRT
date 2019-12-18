@@ -105,7 +105,6 @@ static off_t elf_cache_lseek_block(int filfd, uint16_t binary_header_size, int b
 
 	actual_offset = binary_header_size + block_number * cache_blocks_size;
 
-#ifndef CONFIG_COMPRESSED_BINARY
 	/* Seek to location of this block in actual ELF file */
 	rpos = lseek(filfd, actual_offset, SEEK_SET);
 
@@ -116,10 +115,6 @@ static off_t elf_cache_lseek_block(int filfd, uint16_t binary_header_size, int b
 		berr("Failed to seek to position %lu: %d\n", (unsigned long)actual_offset, errval);
 		return -errval;
 	}
-
-#else
-	rpos = actual_offset;
-#endif
 
 	return rpos;
 }
@@ -143,8 +138,21 @@ static off_t elf_cache_read_block(int filfd, uint16_t binary_header_size, FAR ui
 
 	binfo("filfd: %d block_number: %d binary_header_size: %d\n", filfd, block_number, binary_header_size);
 
-	/* Seek to location of 'block_number' block in elf file */
-	rpos = elf_cache_lseek_block(filfd, binary_header_size, block_number);
+	/* Seek to location of 'block_number' block in elf file for uncompressed elf */
+	if (elf_compress_type == COMPRESS_TYPE_NONE) {
+		rpos = elf_cache_lseek_block(filfd, binary_header_size, block_number);
+	}
+#ifdef CONFIG_COMPRESSED_BINARY
+	else {
+		if (elf_compress_type == CONFIG_COMPRESSION_TYPE) {
+			rpos = binary_header_size + (block_number * cache_blocks_size);
+		} else {
+			berr("No support for decompression of compression format %d of this binary\n", elf_compress_type);
+			return ERROR;
+		}
+	}
+#endif
+
 
 	if (rpos < 0) {
 		berr("Failed to seek to offset of block number %d\n", block_number);
@@ -169,6 +177,7 @@ static off_t elf_cache_read_block(int filfd, uint16_t binary_header_size, FAR ui
 			nbytes = compress_read(filfd, binary_header_size, buf, readsize, rpos - binary_header_size);
 		} else {
 			berr("No support for decompression of compression format %d of this binary\n", elf_compress_type);
+			return ERROR;
 		}
 	}
 #endif
@@ -467,6 +476,11 @@ int elf_cache_init(int filfd, uint16_t offset, off_t filelen, uint8_t compressio
 	if (file_len % cache_blocks_size) {
 		number_of_blocks++;
 		number_blocks_caching++;
+	}
+
+	/* Minimum 2 blocks needed for caching logic to work */
+	if (number_blocks_caching < 2) {
+		number_blocks_caching = 2;
 	}
 
 	/* Initialize max_accesed_count to 0 */

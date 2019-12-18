@@ -2,7 +2,7 @@
 
 There are two methods to include static library, [adding it into arch library](#adding-it-into-arch-library) and [adding it as a new library](#adding-it-as-a-new-library).
 
-## Adding it into arch library
+## Add it into arch library
 
 Makefile or Make.defs in arch can include static libraries for specific architectures as mentioned below. As a convention, the specified static library
 is added to *libarch.a* in the final build.
@@ -27,7 +27,7 @@ $(OUTBIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
 		--start-group $(LDLIBS) $(EXTRA_LIBS) $(LIBGCC) --end-group -Map $(TOPDIR)/../build/output/bin/tinyara.map
 ```
 
-## Adding it as a new library
+## Add it as a new library
 
 TizenRT also allows including a static library as a separate entity, without merging it to an existing library. The following steps describe how to include a static library:
 

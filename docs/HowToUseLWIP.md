@@ -3,8 +3,8 @@
 Please refer to [lwip_summary](https://savannah.nongnu.org/projects/lwip/) for more details.
 
 ## Contents
--[Main Features](#main-features)  
--[Writing device driver](#writing-device-driver)
+- [Main Features](#main-features)  
+- [Write device driver](#write-device-driver)
 
 ## Main Features
 **LwIP** provides various features needed for the tcp/ip stack across multiple network layers as below.
@@ -32,11 +32,11 @@ cd os
 	```
 3. Initialize LwIP by calling lwip_init() defined in [init.c](../os/net/lwip/src/core/init.c).
 
-## Writing device driver
+## Write device driver
 Assuming successful LwIP loading on the system, network interface structure (netif) defined in [netif.h](../os/include/net/lwip/netif.h) needs to be initialized, and connected with device driver for in/out packets.
 [ethernetif.c](../os/net/mac/ethernetif.c) offers a good outline for what device driver should include.
 
-### Network Interface Initialization
+### Initialize Network Interface
 Netif is generic data structure used for all LwIP network interfaces.
 The following is a list of parameters that must be defined for initialization.
 
@@ -114,40 +114,40 @@ Device driver needs to manage **LwIP state flags** and **network buffer (called 
 - NETIF_LWIP_UP: When a network interface is enabled and is able to process traffic, this flag should be set to true. 
 Simply, set it to true or false, according to the device driver's status; initialized or deinitialized.
 Use LwIP APIs as below (defined in netif.c) to control the flag.
-```
-void netif_set_down(struct netif *netif);
-void netif_set_up(struct netif *netif);
-```
+	```
+	void netif_set_down(struct netif *netif);
+	void netif_set_up(struct netif *netif);
+	```
 
 - NETIF_LWIP_LINK_UP: This flag should be set to true or false, when the link is activated or deactivated, respectively.
 Use LwIP APIs as below (defined in netif.c) to control the flag.
-```
-void netif_set_link_down(struct netif *netif);
-void netif_set_link_up(struct netif *netif);
-```
+	```
+	void netif_set_link_down(struct netif *netif);
+	void netif_set_link_up(struct netif *netif);
+	```
 
-> **Note**
-> In general, **device driver up/down** and **link up/down** are not strictly distinguished in LwIP structure.
-> However, when the device driver changes its operation mode from STATION to AP,
-> both NETIF_LWIP_UP and NETIF_LWIP_LINK_UP can be set to 0 simultaneously,
-> or only NETIF_LWIP_LINK_UP is set to 0 without changing NETIF_LWIP_UP, depending on the device driver structure.
+	> **Note**
+	> In general, **device driver up/down** and **link up/down** are not strictly distinguished in LwIP structure.
+	> However, when the device driver changes its operation mode from STATION to AP,
+	> both NETIF_LWIP_UP and NETIF_LWIP_LINK_UP can be set to 0 simultaneously,
+	> or only NETIF_LWIP_LINK_UP is set to 0 without changing NETIF_LWIP_UP, depending on the device driver structure.
 
 #### Network buffer (struct pbuf *p)
 - INPUT: To pass a packet up the TCP/IP stack by the device driver, **netif->input** registered by netif_add() API should be called with pbuf.
 To allocate pbuf and manage it in the driver level, please refer to APIs defined in pbuf.h (LwIP pbuf APIs).
 In general, **tcpip_input()** defined in tcpip.c is used as below.
-```
-err_t tcpip_input(struct pbuf *p, struct netif *netif_in);
-```
-> **Note**
-> Even if pbuf allocation fails due to memory pool overflow from LwIP, the driver should not discard the packet rashly.
+	```
+	err_t tcpip_input(struct pbuf *p, struct netif *netif_in);
+	```
+	> **Note**
+	> Even if pbuf allocation fails due to memory pool overflow from LwIP, the driver should not discard the packet rashly.
 
 
 - OUTPUT: To send a packet on the interface to the link, **netif->linkoutput** implemented by the device driver should be called with pbuf.
-```
-typedef err_t (*netif_linkoutput_fn)(struct netif * netif, struct pbuf * p);
-```
-> **Note**
-> The driver can optimize its structure to manage the packets received from the pbuf.
-> However, it cannot drop the packet arbitrarily, depending on the queue or status of the driver.
+	```
+	typedef err_t (*netif_linkoutput_fn)(struct netif * netif, struct pbuf * p);
+	```
+	> **Note**
+	> The driver can optimize its structure to manage the packets received from the pbuf.
+	> However, it cannot drop the packet arbitrarily, depending on the queue or status of the driver.
 

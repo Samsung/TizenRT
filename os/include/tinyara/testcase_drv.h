@@ -74,6 +74,7 @@
 #define TESTIOC_GROUP_REMOVECHILDREN_TEST      _TESTIOC(17)
 #endif
 #define TESTIOC_TASK_INIT_TEST                 _TESTIOC(18)
+#define TESTIOC_COMPRESSION_TEST	        _TESTIOC(19)
 
 #define KERNEL_TC_DRVPATH                       "/dev/testcase"
 

@@ -36,6 +36,7 @@ define prereq_if_explicit
 $(filter $(1),$(MAKECMDGOALS))
 endef
 
+USBRULE_DIR = $(CURRENTDIR)/../../configs
 BUILD_DIR_BASE = $(CURRENTDIR)/../../output/bin
 BIN_NAME = tinyara
 
@@ -44,7 +45,6 @@ APP_MAP:=$(APP_ELF:.elf=.map)
 APP_BIN:=$(APP_ELF:.elf=.bin)
 ROMFS_IMG:=$(BUILD_DIR_BASE)/romfs.img
 ROMFS_OFFSET = $(shell esptool_py/romfs_flash_address.sh)
-
 # two commands that can be used from other components
 # to invoke esptool.py (with or without serial port args)
 #
@@ -88,12 +88,17 @@ ALL: flash romfs
 
 OS: app-flash
 
+USBrule:
+	$(USBRULE_DIR)/usbrule.sh esp32_devkit 0403 6010
+	@echo "USB rule creation succeeded."
+
 ROMFS: romfs
 
 BOOTLOADER: bootloader
 
 ERASE_ALL: erase_flash
 
+ERASE_REGION: erase_region
 
 romfs: $(ESPTOOLPY_SUBMODULE)
 ifneq ($(ROMFS_OFFSET),-1)
@@ -124,6 +129,10 @@ BOOTLOADER_BIN := $(CURRENTDIR)/bootloader/bootloader.bin
 erase_flash: $(ESPTOOLPY_SUBMODULE)
 	@echo "Erasing entire flash..."
 	$(ESPTOOLPY_SERIAL) erase_flash
+
+erase_region: $(ESPTOOLPY_SUBMODULE)
+	@echo "Erasing specific flash region..."
+	$(ESPTOOLPY_SERIAL) erase_region $(start) $(size)
 
 MONITORBAUD ?= $(CONFIG_MONITOR_BAUD)
 

@@ -89,6 +89,13 @@ VPATH += :$(TOPDIR)/board/common
 CSRCS += partitions.c
 endif
 
+DEPPATH += --dep-path $(TOPDIR)/board/common
+VPATH += :$(TOPDIR)/board/common
+
+ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
+CSRCS += crashdump.c
+endif
+
 CSRCS += stm32l4r9i_discovery.c
 CSRCS += stm32l4r9i_discovery_io.c
 CSRCS += stm32l4r9i_discovery_ts.c

@@ -174,6 +174,15 @@ function get_partition_sizes()
 }
 
 # Start here
+if [ "$1" == "USBrule" ] || [ "$1" == "usbrule" ]; then
+	RET=$(${CURDIR_PATH}/../usbrule.sh imxrt 0d28 0204)
+	if [ -n "${RET}" ]; then
+		echo $RET
+		exit 1
+	fi
+	echo "USB rule creation succeeded."
+	exit 0
+fi
 
 imxrt1020_sanity_check;
 

@@ -80,4 +80,12 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen);
  ****************************************************************************/
 int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, size_t readsize, off_t offset);
 
+/****************************************************************************
+ * Name: get_compression_header
+ *
+ * Returned Value:
+ *   Address of the compression_header
+ ****************************************************************************/
+struct s_header *get_compression_header(void);
+
 #endif							/* __INCLUDE_COMPRESS_READ_H */

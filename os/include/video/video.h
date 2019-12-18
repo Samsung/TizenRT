@@ -319,6 +319,14 @@ extern "C" {
 
 #define V4L2_PIX_FMT_JPEG_WITH_SUBIMG v4l2_fourcc('J', 'S', 'U', 'B')
 
+/** MJPEG */
+
+#define V4L2_PIX_FMT_MJPEG v4l2_fourcc('M', 'J', 'P', 'G')
+
+/** YUY2 */
+
+#define V4L2_PIX_FMT_YUY2 v4l2_fourcc('Y', 'U', 'Y', '2')
+
 /** MAX length of v4l2_fmtdesc description string */
 
 #define V4L2_FMT_DSC_MAX       (32)
@@ -375,6 +383,22 @@ enum v4l2_memory {
 	V4L2_MEMORY_USERPTR = 2, /**< user pointer I/O  */
 	V4L2_MEMORY_OVERLAY = 3, /**< overlay I/O */
 	V4L2_MEMORY_DMABUF = 4,	 /**< DMA shared buffer I/O */
+};
+
+enum v4l2_colorspace {
+	V4L2_COLORSPACE_DEFAULT       = 0, /**< Default colorspace */
+	V4L2_COLORSPACE_SMPTE170M     = 1, /**< SMPTE 170M: used in NTSC/PAL SDTV */
+	V4L2_COLORSPACE_SMPTE240M     = 2, /**< Obsolete pre-1998 SMPTE 240M HDTV standard, superseded by Rec 709 */
+	V4L2_COLORSPACE_REC709        = 3, /**< Rec.709: used for HDTV */
+	V4L2_COLORSPACE_BT878         = 4,
+	V4L2_COLORSPACE_470_SYSTEM_M  = 5,  /**< NTSC 1953 colorspace. */
+	V4L2_COLORSPACE_470_SYSTEM_BG = 6,  /**< EBU Tech 3213 PAL/SECAM colorspace */
+	V4L2_COLORSPACE_JPEG          = 7,  /**< (Motion-)JPEG used in camera */
+	V4L2_COLORSPACE_SRGB          = 8,  /**< RGB colorspaces */
+	V4L2_COLORSPACE_OPRGB         = 9,  /**< opRGB colorspace */
+	V4L2_COLORSPACE_BT2020        = 10, /**< BT.2020 colorspace, used for UHDTV. */
+	V4L2_COLORSPACE_RAW           = 11, /**< Raw colorspace: for RAW unprocessed images */
+	V4L2_COLORSPACE_DCI_P3        = 12, /**< DCI-P3 colorspace, used by cinema projectors */
 };
 
 /** Field order. Currently, support only V4L2_FIELD_ANY */

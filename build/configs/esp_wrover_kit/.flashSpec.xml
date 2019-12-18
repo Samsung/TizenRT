@@ -22,6 +22,7 @@
     <options>
         <option desc="Flash all binaries and images">ALL</option>
         <option desc="Flash TizenRT binary">OS</option>
+        <option desc="Register the USB rule">USBrule</option>
         <option desc="Flash Bootloader binaries">BOOTLOADER</option>
         <option desc="Flash ROMFS image">ROMFS</option>
         <option desc="Erase all of partitions">ERASE_ALL</option>

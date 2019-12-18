@@ -480,9 +480,9 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 				} else if (g_rc.tex_pf == UI_PIXEL_FORMAT_A8) {
 					uv_offset = ((iv * g_rc.tex_width) + iu);
 					ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
-						(g_rc.fill_color & 0xff0000),
-						(g_rc.fill_color & 0x00ff00),
-						(g_rc.fill_color & 0x0000ff),
+						(g_rc.fill_color & 0xff0000) >> 16,
+						(g_rc.fill_color & 0x00ff00) >> 8,
+						(g_rc.fill_color & 0x0000ff) >> 0,
 						g_rc.texture[uv_offset]
 					));
 				}
@@ -515,7 +515,6 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 			while (width--) {
 				iu = (int32_t)((U / 65536.0f) * (g_rc.tex_width - 1) + 0.5f);
 				iv = (int32_t)((V / 65536.0f) * (g_rc.tex_height - 1) + 0.5f);
-				uv_offset = ((iv * g_rc.tex_width) + iu) * 4;
 
 				if (g_rc.tex_pf == UI_PIXEL_FORMAT_RGBA8888) {
 					uv_offset = ((iv * g_rc.tex_width) + iu) * 4;
@@ -535,9 +534,9 @@ static void ui_draw_triangle_segment(int32_t y1, int32_t y2)
 				} else if (g_rc.tex_pf == UI_PIXEL_FORMAT_A8) {
 					uv_offset = ((iv * g_rc.tex_width) + iu);
 					ui_dal_put_pixel_rgba8888(x1++, y, UI_COLOR_RGBA8888(
-						(g_rc.fill_color & 0xff0000),
-						(g_rc.fill_color & 0x00ff00),
-						(g_rc.fill_color & 0x0000ff),
+						(g_rc.fill_color & 0xff0000) >> 16,
+						(g_rc.fill_color & 0x00ff00) >> 8,
+						(g_rc.fill_color & 0x0000ff) >> 0,
 						g_rc.texture[uv_offset]
 					));
 				}

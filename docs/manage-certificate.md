@@ -1,13 +1,13 @@
-# Managing SmartThings&trade; Certificates
+# Manage SmartThings&trade; Certificates
 SmartThings&trade; uses OpenSSL for security. To ensure that only trusted developers and manufactures can develop devices that communicate with the SmartThings Cloud, you must get certificates for devices to use the SmartThings&trade; service.
 
 ## Contents
-- [Using a Certificate Manager](#using-a-certificate-manager) 
-- [Creating a Certificate](#creating-a-certificate)  
-- [Importing a Certificate](#importing-a-certificate)  
-- [Activating a Certificate](#activating-a-certificate)  
+- [Use a Certificate Manager](#use-a-certificate-manager) 
+- [Create a Certificate](#create-a-certificate)  
+- [Import a Certificate](#import-a-certificate)  
+- [Activate a Certificate](#activate-a-certificate)  
 
-## Using a Certificate Manager
+## Use a Certificate Manager
 In the Tizen RT IDE, you can perform various certificate-related tasks, such as creation, removal, import, and activation, by using the **SmartThings Certificate Manager**.
 
 ![SmartThings Certificate Manager](media/rt_cert_manager.png)
@@ -15,7 +15,7 @@ In the Tizen RT IDE, you can perform various certificate-related tasks, such as 
 The Certificate Manager is launched automatically if no certificate is set as active when you try to flash a project. To launch the Certificate Manager manually, select **Tools &gt; ST Certificate Manager** in the Tizen Studio for RT menu.
 
 <a name="create"></a>
-## Creating a Certificate
+## Create a Certificate
 
 The process of creating a new certificate requires you to generate a Certificate Signing Request (CSR) and submit it to the [Developer Workspace](https://devworkspace.developer.samsung.com/smartthingsconsole/iotweb/site/index.html#/main) Web site.
 
@@ -47,7 +47,7 @@ To create a new certificate to use the SmartThings&trade; service:
     ![Creating a certificate in the Certificate Generation Dialog](media/rt_cert_create_download.png)
 
 <a name="import"></a>
-## Importing a Certificate
+## Import a Certificate
 
 To import an existing certificate:
 1. In the SmartThings Certificate Manager, click **Import**.
@@ -60,7 +60,7 @@ To import an existing certificate:
     ![Certificate Import Dialog](media/rt_cert_import.png)
 
 <a name="activate"></a>
-## Activating a Certificate
+## Activate a Certificate
 
 To flash a project, you must have an active certificate. The Tizen RT IDE copies the activated certificate to the project during the flashing process.
 

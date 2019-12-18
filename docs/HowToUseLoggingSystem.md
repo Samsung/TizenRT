@@ -11,7 +11,7 @@ These messages are processed through [logging modules](#logging-modules).
 It is similar to printf with respect to printing messages. However, it differs from printf in that Debug Messages can be configured by menuconfig.  
 Debug Messages can be configured for each module or level. In contrast, printf messages cannot be selectively disabled during buildtime, unless you have disabled it explicitly by a macro definition.
 
-### Adding new Debug Messages
+### Add new Debug Messages
 TizenRT defines debug macros for Debug Messages according to the debug level and interface level.  
 * Debug level represents the severity of the log message, and is available as a configuration in menuconfig.  
    * three debug levels : Error, Warning, Information.  
@@ -47,9 +47,10 @@ make menuconfig
 	Enable Warning Debug Output
 	Enable Informational(Verbose) Debug Output
 	```
-Depending on which level you select, the corresponding options will be displayed on the menuconfig.
+	Depending on which level you select, the corresponding options will be displayed on the menuconfig.
 
-3. Enable the debugging modules with level. For example, to enable filesystem debug with error level and network debug with error and warning level,
+3. Enable the debugging modules with level.
+	For example, to enable filesystem debug with error level and network debug with error and warning level:
 	```
 	 1. Select levels, `Enable Error Debug Output` and `Enable Warning Debug output`
 	 2. Select sub-level for each modules, `File System Debug Output`, `File System Error Output`,

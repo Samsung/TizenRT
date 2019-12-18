@@ -46,8 +46,6 @@
 
 void ST_USART2_UART_Init(void);
 void SystemClock_Config(void);
-void lowputc(char ch);
-char lowgetc(void);
 void debuggpio_init(void);
 void gpio_reset(void);
 void gpio_set(void);
@@ -151,34 +149,6 @@ void ST_USART2_UART_Init(void)
   LL_USART_DisableFIFO(USART2);
   LL_USART_ConfigAsyncMode(USART2);
   LL_USART_Enable(USART2);
-}
-
-void lowputc(char ch)
-{
-#if 1
-    while(!LL_USART_IsActiveFlag_TXE(USART2)){}
-    LL_USART_TransmitData8(USART2, (uint8_t)(ch & 0xFFU));
-    while(!LL_USART_IsActiveFlag_TC(USART2)){}
-#else
-    //while(__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TXE) == 0);
-    //huart2.Instance->TDR = (uint8_t)(ch & 0xFFU);
-    USART2->TDR = (uint8_t)(ch & 0xFFU);                
-    //while(__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) == 0);
-#endif
-}
-
-char lowgetc(void)
-{
-    char ch;
-    if(LL_USART_IsActiveFlag_ORE(USART2)){
-        LL_USART_ClearFlag_ORE(USART2);
-    }
-
-    while(!LL_USART_IsActiveFlag_RXNE(USART2)){
-    }
-
-    ch = LL_USART_ReceiveData8(USART2);
-    return ch;
 }
 
 void debuggpio_init(void)

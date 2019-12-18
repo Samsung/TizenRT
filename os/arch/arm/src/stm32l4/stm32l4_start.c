@@ -118,7 +118,7 @@ static void go_nx_start(void *pv, unsigned int nbytes)
  ****************************************************************************/
 
 #ifdef CONFIG_DEBUG
-#  define showprogress(c) lowputc(c)//up_lowputc(c)
+#  define showprogress(c) up_lowputc(c)
 #else
 #  define showprogress(c)
 #endif

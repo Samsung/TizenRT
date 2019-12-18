@@ -27,4 +27,6 @@
 **********************************************************/
 int lzma_main(void);
 
+int tc_compress_read_main(void);
+
 #endif /* __EXAMPLES_TESTCASE_COMPRESSION_TC_INTERNAL_H */

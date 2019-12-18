@@ -22,7 +22,17 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <tinyara/testcase_drv.h>
+#include "tc_common.h"
 #include "tc_internal.h"
+
+static int g_tc_fd;
+
+int tc2_get_drvfd(void)
+{
+	return g_tc_fd;
+}
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -30,9 +40,19 @@ int main(int argc, FAR char *argv[])
 int tc_compression_main(int argc, char *argv[])
 #endif
 {
+	g_tc_fd = open(KERNEL_TC_DRVPATH, O_WRONLY);
+
+	/*If FAIL : Failed to open testcase driver*/
+	TC_ASSERT_GEQ("open", g_tc_fd, 0);
+
 #ifdef CONFIG_TC_LZMA
 	lzma_main();
 #endif
 
+#ifdef CONFIG_TC_COMPRESS_READ
+	tc_compress_read_main();
+#endif
+
+	close(g_tc_fd);
 	return 0;
 }

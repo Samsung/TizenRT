@@ -21,13 +21,13 @@ Please refer to [Manual Setup Build Environment](docs/HowToSetEnv.md).
 
 For more information of libraries in the TizenRT Docker Image, see https://hub.docker.com/r/tizenrt/tizenrt/.
 
-### 1. Installing Docker
+### 1. Install Docker
 
 To install OS specific Docker engines, see https://docs.docker.com/install/. For example, if you are using Ubuntu, you need to install the Docker engine
 located at https://docs.docker.com/install/linux/docker-ce/ubuntu/.
 If you already have a Docker engine, please skip this step.
 
-### 2. Getting TizenRT source code
+### 2. Get TizenRT source code
 If you are building TizenRT on a Windows environment, you need to first configure CRLF as shown below:
 ```
 git config --global core.autocrlf input
@@ -48,7 +48,7 @@ There are two ways to build TizenRT.
 - [Using an interactive tool](#Using-an-interactive-tool)
 - [Using specific build options](#usign-specific-build-options)
 
-### Using an interactive tool
+### Use an interactive tool
 TizenRT provides an interactive tool (*dbuild.sh*) where you are prompted to select a option among multiple choices.
 According to your selection, it consecutively provides next-step options.
 When you become familiar to the TizenRT build system, you may use the *dbuild.sh* script with a specific build option.
@@ -105,7 +105,7 @@ Finally, you are prompted to select a build option as shown below:
 Once the board and configuration selection is finished,  
 you are prompted to select a build option repeatedly until you remove configuration by the *Re-configure* or *Build Dist-Clean* option.
 
-### Using specific build options
+### Use specific build options
 
 #### 1. Configuration
 

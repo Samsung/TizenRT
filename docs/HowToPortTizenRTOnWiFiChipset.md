@@ -1,17 +1,15 @@
 # How to port TizenRT on new WiFi chipset
-
-## Contents
-- [How to add external WiFi library](#how-to-add-external-wifi-library)
-- [How to use WPA_SUPPLICANT](#how-to-use-wpa_supplicant)
-- [Interfacing to WiFi Manager](#interfacing-to-wifi-manager)
-- [Incorporating WiFi Chipset Driver](#incorporating-wifi-chipset-driver)
-
-
 There are two cases to consider towards porting TizenRT on a new WiFi chipset. The specific case depends on the vendor's decision to either use their proprietary supplicant codebase, or
 to directly use TizenRT's WiFi solution.
 
 Below are mentioned the two cases in detail. Additionally, we provide guidelines on how to interface TizenRT's WiFi Manager to the newly added chipset. Lastly, instructions are provided to incorporate the WiFi chipset driver in TizenRT's code tree. Specifically, details are provided
 to interface driver to network stack, and to get/set WiFi configuration from a higher abstraction layer.
+
+## Contents
+- [How to add external WiFi library](#how-to-add-external-wifi-library)
+- [How to use WPA_SUPPLICANT](#how-to-use-wpa_supplicant)
+- [Interface to WiFi Manager](#interface-to-wifi-manager)
+- [Incorporate WiFi Chipset Driver](#incorporate-wifi-chipset-driver)
  
 ## How to add external WiFi library
 
@@ -36,29 +34,29 @@ is subject to the condition that *CONFIG_SCSC_WLAN* is enabled already.
 	```
 
 2. Add new chipset driver under *external/wpa_supplicant/src/drivers/*, and name it as
-*driver_\<driver_name\>.c*. Select this file for build in *external/wpa_supplicant/src/drivers/Make.defs*, depending on the Kconfig that is defined for your WiFi Driver.
-An example is shown for LSI WiFi:
+*driver_\<driver_name\>.c*. Select this file for build in *external/wpa_supplicant/src/drivers/Make.defs*, depending on the Kconfig that is defined for your WiFi Driver.  
+	An example is shown for LSI WiFi:
 	```
 	ifeq ($(CONFIG_DRIVER_T20), y)
 	CSCRS += driver_t20.c
 	endif
 	```
 
-Inside *driver_\<driver_name\>.c*, declare a driver structure variable named *wpa_driver_\<driver_name\>_ops*.
-*wpa_driver_\<driver_name\>_ops* is a structure of type *wpa_driver_ops* that is declared in *external/wpa_supplicant/src/drivers/driver.h*.
-The *wpa_driver_ops* structure contains function pointers to the specific WiFi Driver that the supplicant links to.
-As an example, refer to the *wpa_driver_t20_ops* structure declared in *external/wpa_supplicant/src/drivers/driver_t20.c* for the LSI WiFi chipset.
-	```
-	const struct wpa_driver_ops wpa_driver_t20_ops = {
-		.name = "slsi_t20",
-		.desc = "SLSI T20 Driver",
-		.init2 = slsi_t20_init,
-		.deinit = slsi_t20_deinit,
-		.get_mac_addr = slsi_get_mac_addr,
-		.get_capa = slsi_t20_get_capa,
-		.scan2 = slsi_hw_scan,…
-	} 
-	```
+	Inside *driver_\<driver_name\>.c*, declare a driver structure variable named *wpa_driver_\<driver_name\>_ops*.
+	*wpa_driver_\<driver_name\>_ops* is a structure of type *wpa_driver_ops* that is declared in *external/wpa_supplicant/src/drivers/driver.h*.
+	The *wpa_driver_ops* structure contains function pointers to the specific WiFi Driver that the supplicant links to.
+	As an example, refer to the *wpa_driver_t20_ops* structure declared in *external/wpa_supplicant/src/drivers/driver_t20.c* for the LSI WiFi chipset.
+		```
+		const struct wpa_driver_ops wpa_driver_t20_ops = {
+			.name = "slsi_t20",
+			.desc = "SLSI T20 Driver",
+			.init2 = slsi_t20_init,
+			.deinit = slsi_t20_deinit,
+			.get_mac_addr = slsi_get_mac_addr,
+			.get_capa = slsi_t20_get_capa,
+			.scan2 = slsi_hw_scan,…
+		} 
+		```
 
 3. Add the driver structure variable created in step 2 to the *wpa_drivers* list in *external/wpa_supplicant/src/drivers/drivers.c*, as shown below:
 	```
@@ -73,14 +71,14 @@ As an example, refer to the *wpa_driver_t20_ops* structure declared in *external
 	...
 	}
 	```
-This links the supplicant to the relevant WiFi Driver.
+	This links the supplicant to the relevant WiFi Driver.
 
-## Interfacing to WiFi Manager
+## Interface to WiFi Manager
 
 TizenRT features a generic WiFi Manager framework (API located at *framework/inc/wifi_manager*) for applications.
 In order to interface the new WiFi chipset to this WiFi Manager, please do the following:
 
-### Configuring new WiFi library, WiFi Driver for WiFi Manager
+### Configure new WiFi library, WiFi Driver for WiFi Manager
 
 When you activate WiFi Manager, you have to specify your preference for WiFi library and WiFi Driver.
 Accordingly, please modify the *framework/src/wifi_manager/Kconfig* as shown in the example below:
@@ -118,7 +116,7 @@ endif #<SUPPLICANT_LIBRARY_NAME>
 ```
 Here, *SELECT_<SUPPLICANT_LIBRARY_NAME>*, and *SELECT_DRIVER_<DRIVER_NAME>* are flags to enable the third-party WiFi supplicant and driver, respectively.
 When enabled, menuconfig will automatically include *<SUPPLICANT_LIBRARY_NAME>* and *DRIVER_<DRIVER_NAME>* for build with WiFi Manager.
-Finally, enable the configuration parameters for the third-party WiFi library by sourcing the Kconfigs in the relevant *driver* folder
+Finally, enable the configuration parameters for the third-party WiFi library by sourcing the Kconfigs in the relevant *driver* folder.
 Recommended folder path is *os/driver/wireless/<wifi_driver_name>/wpa_supplicant*.
 
 Note that, if your WiFi software solution already includes the driver as an external library, you do *not* need a config parameter for build.
@@ -133,7 +131,7 @@ config SELECT_DRIVER_NONE
 Please add the above lines *ONLY* if you do not need wireless driver support from TizenRT. Also note, that in such cases, you should interface TizenRT's network stack directly
 to the WiFi library. These details are covered further in [Incorporating WiFi Chipset Driver](#incorporating-wifi-chipset-driver).
 
-### Choosing the right WiFi utils for build
+### Choose the right WiFi utils for build
 
 The WiFi Manager framework implements specific WiFi utility functions that will either 1) directly
 talk to the WiFi supplicant software or 2) using an interface called light-weight netlink 80211 (*LWNL80211*).
@@ -202,7 +200,7 @@ ifeq ($(CONFIG_LWNL80211_<driver_prefix>),y)
 endif
 ```
 
-## Incorporating WiFi Chipset Driver
+## Incorporate WiFi Chipset Driver
 
 The WiFi Driver source files should reside under a newly created *os/driver/wireless/<wifi_driver_name>* folder.
 In the following subsections, we describe how to configure the new WiFi Driver for build. Additionally, we also describe how
@@ -238,7 +236,7 @@ Make sure you create your board-specific files at *os/arch/arm/src/\<board_name\
 driver initialization function as shown in the example above.
 
 Next, inside your board specific directory, create a *\<board\>_wlan.c* file. This file should include following functionalities:
-#### 1. Initialization of LWNL80211 and driver interface
+#### 1. Initialize LWNL80211 and driver interface
 When the driver is loaded during the board's initialzation routine, LWNL80211 and corresponding vendor-sepcific driver also need to be initiailzed.
 LWNL80211 now adopts a generic virtual file system (vfs) of TizenRT, so the registration API is provided in *os/drivers/lwnl/lwnl80211.c*.
 Please refer to the example code in *os/drivers/wireless/scsc/dev.c*.
@@ -259,7 +257,7 @@ Please refer to the example code in *os/drivers/wireless/scsc/dev.c*.
 #endif
 ```
 
-#### 2. Interfacing the WiFi Driver to the network stack
+#### 2. Interface the WiFi Driver to the network stack
 In TizenRT, the *netif* structure links the WiFi Driver to the overlying network layer. Netif creation and initialization should
 follow immediately after WiFi Driver initialization. Inside the *\<board\>_wlan.c* file, this can be implemented as a three step process:
 1. Allocate memory for LWIP's netif structure, and populate its fields with the driver API
@@ -347,5 +345,5 @@ Please define two functions for reading and writing WiFi configuration data, as 
 The prototype and implementation for the functions are vendor-specific. As a reference, please refer to the *up_wlan_read_config* function in *os/arch/arm/src/sidk_s5jt200/s5jt200_wlan.c*.
 
 
-#### 4. Getting WiFi MAC address and the WiFi firmware address.
+#### 4. Get WiFi MAC address and the WiFi firmware address.
 Please refer to the functions *up_wlan_get_mac_addr* and *up_wlan_get_firmware* in *os/arch/arm/src/sidk_s5jt200/s5jt200_wlan.c*.

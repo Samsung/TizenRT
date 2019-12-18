@@ -13,25 +13,42 @@ import smartfs_dump_parser.data_model.SmartFile;
 
 public class SmartFSOrganizer {
 
+	private static int extractedSectorSize = 0;
+
 	public static boolean organizeSmartFS(String filePath, String fileName) {
 		SmartFile root = SmartFileSystem.getRootDirectory();
 		if (root != null) {
 			SmartFileSystem.clearFileSystem();
 		}
 
-		byte[] buffer = new byte[SmartFileSystem.getSectorSize()];
+		int candidateSectorSize = SmartFileSystem.getMinSectorSize();
+		for (; candidateSectorSize <= SmartFileSystem.getMaxSectorSize(); candidateSectorSize <<= 1) {
+			SmartFileSystem.clearFileSystem();
+
+			if (analyzeDumpFile(filePath, fileName, candidateSectorSize)) {
+				SmartFileSystem.setSectorSize(candidateSectorSize);
+				System.out.println("SmartFS with sector size " + candidateSectorSize + " is found.\n");
+				break;
+			} else {
+				System.out.println("SmartFS with sector size " + candidateSectorSize + " is not found.\n");
+			}
+		}
+
+		return createDirectoryHierarchy();
+	}
+
+	private static boolean analyzeDumpFile(String filePath, String fileName, int candidateSectorSize) {
+		byte[] buffer = new byte[candidateSectorSize];
 		try {
 			FileInputStream fis = new FileInputStream(new File(filePath, fileName));
 			int sectorId = 0;
 			while (fis.read(buffer) > 0) {
 				SmartFSOrganizer.addSector(sectorId, buffer);
-				if (sectorId == 0 || sectorId == 3) {
-					System.out.println(printSector(buffer, sectorId));
-				}
 				sectorId++;
-				buffer = new byte[SmartFileSystem.getSectorSize()];
+				buffer = new byte[candidateSectorSize];
 			}
 			fis.close();
+			SmartFileSystem.setNumberOfSectors(sectorId);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("[ERROR] Parsing failed with the opened file..\nPlease check it.");
@@ -40,7 +57,8 @@ public class SmartFSOrganizer {
 			return false;
 		}
 
-		return createDirectoryHierarchy();
+		return (SmartFileSystem.isValidSmartFS() && (SmartFileSystem.getRootDirectory() != null)
+				&& (candidateSectorSize == extractedSectorSize));
 	}
 
 	private static void addSector(int physicalSectorNum, byte[] sectorData) {
@@ -58,6 +76,8 @@ public class SmartFSOrganizer {
 
 			if (SmartFileSystem.isSignatureLogicalSector(logicalSectorId)) {
 				SmartFileSystem.setValidSmartFS(true);
+				extractedSectorSize = (statusValue & SmartFileSystem.getSectorStatusSizebits());
+				extractedSectorSize <<= 7;
 			} else if (SmartFileSystem.isRootLogicalSector(logicalSectorId)) {
 				List<Sector> sectorList = new ArrayList<Sector>();
 				sectorList.add(sector);
@@ -68,6 +88,7 @@ public class SmartFSOrganizer {
 		} else if (SmartFileSystem.isDirtySector(statusValue)) {
 			SmartFileSystem.getDirtySectors().add(sector);
 		} else {
+			// TODO: Validate whether this sector is clean or corrupted.
 			SmartFileSystem.getCleanSectors().add(sector);
 		}
 	}

@@ -15,7 +15,7 @@ TinyAlsa exposes APIs like `pcm_open()`, `pcm_close()`, `pcm_readi()` and `pcm_w
 - [Open and close audio device with TinyAlsa](#open-and-close-audio-device-with-tinyalsa)
 - [Record audio with TinyAlsa](#record-audio-with-tinyalsa)
 - [Playback audio with TinyAlsa](#playback-audio-with-tinyalsa)
-- [Using the pcm_mmap_xxx APIs](#using-the-pcm_mmap_xxx-apis)
+- [Use the pcm_mmap_xxx APIs](#use-the-pcm_mmap_xxx-apis)
 
 ## Open and close audio device with TinyAlsa
 The user can use `pcm_open()` or `pcm_open_by_name()` to open an audio device, and `pcm_close()` to close an audio device.
@@ -86,7 +86,7 @@ pcm_close(p);
 
 ```
 
-## Using the pcm_mmap_xxx APIs
+## Use the pcm_mmap_xxx APIs
 TinyAlsa provides a set of specialized APIs to allow user to directly access the audio pipeline buffers for reading or writing data. Using these APIs is slightly complicated as compared the above approach for audio record/playback. However, these APIs eliminate multiple data copy steps and thereby help to reduce latency. Hence, it is recommended to use these APIs in case you are facing latency issues in your device while using audio.
 
 A set of four APIs are provided for mmap based operation. The usage of each API is detailed below.

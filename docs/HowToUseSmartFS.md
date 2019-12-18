@@ -1,6 +1,5 @@
 # How to Enable and use SmartFS
-SmartFS is a file system used for user partitions in TizenRT. This document provides details on SmartFS in TizenRT, notably on its architecture, and how to enable it on a 
-new target board.
+SmartFS is a file system used for user partitions in TizenRT. This document provides details on SmartFS in TizenRT, notably on its architecture, and how to enable it on a new target board.
 
 ## Contents
 - [About SmartFS](#about-smartfs)  
@@ -198,33 +197,33 @@ Smart FS layer can be enabled by enabling below configurations.
 
 Below are the optional features configurations. Refer *os/fs/smartfs/Kconfig* for more details.  
 1. CONFIG_SMARTFS_MULTI_ROOT_DIRS
-```
-File Systems -> SMART file system -> SMARTFS options -> Support multiple Root Directories/Mount points
-```
+	```
+	File Systems -> SMART file system -> SMARTFS options -> Support multiple Root Directories/Mount points
+	```
 2. CONFIG_SMARTFS_BAD_SECTOR
-```
-File Systems -> SMART file system -> SMARTFS options -> Bad Sector Management
-```
+	```
+	File Systems -> SMART file system -> SMARTFS options -> Bad Sector Management
+	```
 3. CONFIG_SMARTFS_DYNAMIC_HEADER
-```
-File Systems -> SMART file system -> SMARTFS options -> Dynamic Header
-```
+	```
+	File Systems -> SMART file system -> SMARTFS options -> Dynamic Header
+	```
 4. CONFIG_SMARTFS_JOURNALING
-```
-File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs
-```
+	```
+	File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs
+	```
 5. CONFIG_SMARTFS_VERIFY_JOURNALING
-```
-File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs -> Verify Journal logging
-```
+	```
+	File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs -> Verify Journal logging
+	```
 6. CONFIG_SMARTFS_SECTOR_RECOVERY
-```
-File Systems -> SMART file system -> SMARTFS options -> Enable recovery of lost sectors in Filesystem
-```
+	```
+	File Systems -> SMART file system -> SMARTFS options -> Enable recovery of lost sectors in Filesystem
+	```
 SmartFS filesystem can be mounted on smart mtd device.  
 Before mounting, smart device needs to formatted as smartfs using a mksmartfs function.  
 Sample code for formatting and mounting SmartFS:
-```c
+```
 #ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
