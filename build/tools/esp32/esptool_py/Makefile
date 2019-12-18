@@ -49,8 +49,12 @@ APP_ELF:=$(BUILD_DIR_BASE)/$(BIN_NAME).elf
 APP_MAP:=$(APP_ELF:.elf=.map)
 APP_BIN:=$(APP_ELF:.elf=.bin)
 ROMFS_IMG:=$(BUILD_DIR_BASE)/romfs.img
-ROMFS_OFFSET = $(shell esptool_py/romfs_flash_address.sh)
+part_list=$(shell esptool_py/partition_offset.py -1)
+ret = $(shell esptool_py/partition_offset.py $(index))  
+ret_start = $(shell echo $(ret) | awk -F ' ' '{print $$1}')
+ret_size = $(shell echo $(ret) | awk -F ' ' '{print $$2}')
 
+ROMFS_OFFSET = $(shell esptool_py/romfs_flash_address.sh)
 # two commands that can be used from other components
 # to invoke esptool.py (with or without serial port args)
 #
@@ -105,6 +109,7 @@ ERASE_ALL: erase_flash
 
 DUMP_FLASH: dump_flash
 
+ERASE_REGION: erase_region
 
 romfs: $(ESPTOOLPY_SUBMODULE)
 ifneq ($(ROMFS_OFFSET),-1)
@@ -139,6 +144,16 @@ dump_flash: $(ESPTOOLPY_SUBMODULE)
 	    @echo "Read flash..."
 		$(ESPTOOLPY_SERIAL) read_flash $(start) $(size) $(filename) $(supress)
 		@$(HEXDUMP) $(filename)
+
+erase_region: $(ESPTOOLPY_SUBMODULE)
+ifdef index
+	@echo "Erasing specific flash region..."
+	@$(ESPTOOLPY_SERIAL) erase_region $(ret_start) $(ret_size)
+else
+	@echo "Please type 'make download ERASE_REGION index=partition_index'"
+	@echo "Below is available partition_index"
+	@echo $(part_list)
+endif
 
 MONITORBAUD ?= $(CONFIG_MONITOR_BAUD)
 
