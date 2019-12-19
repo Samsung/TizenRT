@@ -228,6 +228,10 @@ void up_initialize(void)
 	devnull_register();			/* Standard /dev/null */
 #endif
 
+#ifdef CONFIG_VIDEO_NULL
+	video_null_initialize("/dev/video0");	/* Standard /dev/video0 */
+#endif
+
 #if defined(CONFIG_BLUETOOTH) && defined(CONFIG_BLUETOOTH_NULL)
 	btnull_register();    /* bluetooth bt_null */
 #endif

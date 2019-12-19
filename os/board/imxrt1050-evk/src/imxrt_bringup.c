@@ -307,7 +307,6 @@ int imxrt_bringup(void)
 	}
 	#endif
 #endif
-
 	UNUSED(ret);
 	return OK;
 }
