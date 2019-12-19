@@ -1347,8 +1347,10 @@ wifi_manager_result_e wifi_manager_deinit(void)
 		UNLOCK_WIFIMGR;
 		WIFIMGR_WAIT_DISCONNECT_CALLBACK;
 		res = _handle_request(&msg);
+	} else if (g_manager_info.state == WIFIMGR_STA_DISCONNECTED) {
+		UNLOCK_WIFIMGR;
+		res = _handle_request(&msg);
 	} else {
-		nvdbg("[WM] T%d DEINIT called\n", getpid());
 		UNLOCK_WIFIMGR;
 	}
 	return res;
