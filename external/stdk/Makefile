@@ -22,6 +22,10 @@
 
 STDK_INCLUDE_DIR = ./st-device-sdk-c/src/include
 STDK_SRC_DIR = ./st-device-sdk-c/src
+BILERPLATE_HEADER = $(STDK_INCLUDE_DIR)/certs/boilerplate.h
+ROOT_CA_FILE = $(STDK_SRC_DIR)/certs/root_ca.pem
+ROOT_CA_SOURCE = $(STDK_SRC_DIR)/iot_root_ca.c
+ROOT_CA_BACKUP_FILE = $(ROOT_CA_SOURCE).bak
 
 ASRCS =
 
@@ -53,25 +57,6 @@ CFLAGS += -I$(TOPDIR)/arch/xtensa/src/esp32/chip
 else
 CFLAGS += -I./tizenrt-wrapper/os
 endif
-
-#################################################
-# certificate
-#################################################
-BILERPLATE_HEADER = $(STDK_INCLUDE_DIR)/certs/boilerplate.h
-ROOT_CA_FILE = $(STDK_SRC_DIR)/certs/root_ca.pem
-ROOT_CA_SOURCE = $(STDK_SRC_DIR)/iot_root_ca.c
-ROOT_CA_BACKUP_FILE = $(ROOT_CA_SOURCE).bak
-result := $(shell cat $(BILERPLATE_HEADER) > $(ROOT_CA_SOURCE); echo $$?;)
-ifneq ($(result),0)
-    $(error)
-endif
-result := $(shell xxd -i $(ROOT_CA_FILE) >> $(ROOT_CA_SOURCE); echo $$?;)
-ifneq ($(result),0)
-    $(error)
-endif
-$(shell sed -i.bak 's/_.*pem/st_root_ca/g' $(ROOT_CA_SOURCE))
-$(shell sed -i.bak 's/unsigned/const unsigned/g' $(ROOT_CA_SOURCE))
-$(shell rm $(ROOT_CA_BACKUP_FILE))
 
 #################################################
 # st-device-sdk-c
@@ -130,6 +115,16 @@ $(COBJS): %$(OBJEXT): %.c
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
+
+#################################################
+# certificate
+#################################################
+context:
+	$(Q) cat $(BILERPLATE_HEADER) > $(ROOT_CA_SOURCE); echo $$?;
+	$(Q) xxd -i $(ROOT_CA_FILE) >> $(ROOT_CA_SOURCE); echo $$?;
+	$(Q) sed -i.bak 's/_.*pem/st_root_ca/g' $(ROOT_CA_SOURCE)
+	$(Q) sed -i.bak 's/unsigned/const unsigned/g' $(ROOT_CA_SOURCE)
+	$(Q) rm $(ROOT_CA_BACKUP_FILE);
 
 .depend: Makefile $(SRCS)
 	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
