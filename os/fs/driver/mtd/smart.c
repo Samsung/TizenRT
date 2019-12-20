@@ -4070,9 +4070,16 @@ static int smart_validate_crc(FAR struct smart_struct_s *dev)
 	if (crc != *((uint32_t *)header->crc32)) {
 		return -EIO;
 	}
-#else
+#elif defined(CONFIG_SMART_CRC_8)
 	/* Test 8-bit CRC for CRC8 & basic case for smart_scan. */
 	if (crc != header->crc8 && crc != SMART_ERASEDSTATE_CRC) {
+		return -EIO;
+	}
+
+#else
+	/*CRC not enabled, check only for first three bytes i.e. logicalsector and sequence number. */
+
+	if (crc != header->crc8 && (header->logicalsector[0] != CONFIG_SMARTFS_ERASEDSTATE || header->logicalsector[1] != CONFIG_SMARTFS_ERASEDSTATE || header->seq != CONFIG_SMARTFS_ERASEDSTATE)) {
 		return -EIO;
 	}
 
