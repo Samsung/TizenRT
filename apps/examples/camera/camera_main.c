@@ -108,7 +108,7 @@ static unsigned int n_buffers;
 
 static uint8_t camera_main_file_count = 0;
 static char camera_main_filename[IMAGE_FILENAME_LEN];
-static const char *save_dir;
+static const char *save_dir = "/mnt";
 
 struct camera_formats cm_format[MAX_FORMAT];
 
@@ -449,7 +449,24 @@ void get_camera_options(int fd, int flag)
 		fprintf(stdout, SET_INTERVAL);
 	}
 }
+void print_error_log(int ctrlIndex)
+{
+	char error_str[50] = {0,};
+	int idx = 0;
 
+	while (idx < 50) {
+		error_str[idx] = ctrls[ctrlIndex].sbuff[idx];
+		if (ctrls[ctrlIndex].sbuff[idx] == ']')
+			break;
+		idx++;
+	}
+
+	if (errno == EINVAL) {
+		fprintf(stdout, "%d:%s set value(%d) is out-of-range(errno=%d)\n", __LINE__, error_str, ctrls[ctrlIndex].value, errno);
+	} else {
+		fprintf(stdout, "%d:%s unsupported option(errno=%d)\n", __LINE__, error_str, errno);
+	}
+}
 int set_camera_options(int fd)
 {
 	int i = 0;
@@ -464,16 +481,7 @@ int set_camera_options(int fd)
 			continue;
 		}
 		if (!ctrls[i].active) {
-			char error_str[50] = {0,};
-			int idx = 0;
-
-			while (idx < 50) {
-				error_str[idx] = ctrls[i].sbuff[idx];
-				if (ctrls[i].sbuff[idx] == ']')
-					break;
-				idx++;
-			}
-			fprintf(stdout, "%d:%s unsupported option\n", __LINE__, error_str);
+			print_error_log(i);
 			ret = -1;
 			break;
 		}
@@ -485,6 +493,7 @@ int set_camera_options(int fd)
 			ctrl.value = ctrls[i].value;
 			ret = ioctl(fd, VIDIOC_S_CTRL, &ctrl);
 			if (ret < 0) {
+				print_error_log(i);
 				break;
 			}
 		} else if (ctrls[i].v4l2_class == V4L2_CTRL_CLASS_CAMERA) {
@@ -495,6 +504,7 @@ int set_camera_options(int fd)
 			extctrl.value = ctrls[i].value;
 			ret = ioctl(fd, VIDIOC_S_EXT_CTRLS, &extctrls);
 			if (ret < 0) {
+				print_error_log(i);
 				break;
 			}
 		}
@@ -534,7 +544,7 @@ int camera_main(int argc, char *argv[])
 	int v_fd;
 	uint32_t opt = 0;
 	uint32_t dev = 0;
-	uint32_t val = 0;
+	uint32_t val = 1;
 	uint32_t idxformat = 1;
 	uint32_t idxframe = 0;
 	uint32_t idx_frame_interval = 0;
@@ -773,17 +783,17 @@ camera_options:
 
 	ret = set_camera_options(v_fd);
 
-	if (idxformat > format_count) {
+	if (idxformat >= format_count) {
 		fprintf(stderr, "Failed!!! Invalid Format Index (%d) \n", idxformat);
 		ret = -1;
 	}
 
-	if (idxframe > cm_format[idxformat].frame_count) {
+	if (idxframe >= cm_format[idxformat].frame_count) {
 		fprintf(stderr, "Failed!!! Invalid Frame Index (%d) \n", idxframe);
 		ret = -1;
 	}
 
-	if (idx_frame_interval > cm_format[idxformat].cam_frame[idxframe].interval_count) {
+	if (idx_frame_interval >= cm_format[idxformat].cam_frame[idxframe].interval_count) {
 		fprintf(stderr, "Failed!!! Invalid Frame Interval Index (%d) \n", idx_frame_interval);
 		ret = -1;
 	}
@@ -862,6 +872,6 @@ errout_with_close:
 	close(v_fd);
 
 errout_with_video_init:
-	fprintf(stderr, "App exited Successfully!!!!\n", errno);
+	fprintf(stderr, "App exited Successfully!!!!\n");
 	return exitcode;
 }
