@@ -115,10 +115,6 @@ void net_initlist(FAR struct socketlist *list)
 	/* Initialize the list access mutex */
 
 	(void)sem_init(&list->sl_sem, 0, 1);
-	int i = 0;
-	for (; i < CONFIG_NSOCKET_DESCRIPTORS; i++) {
-		list->sl_sockets[i].conn = NULL;
-	}
 }
 
 /****************************************************************************
@@ -138,13 +134,6 @@ void net_initlist(FAR struct socketlist *list)
 void net_releaselist(FAR struct socketlist *list)
 {
 	DEBUGASSERT(list);
-	/* Close each open socket in the list. */
-	int idx = 0;
-	for (; idx < CONFIG_NSOCKET_DESCRIPTORS; idx++) {
-		if (list->sl_sockets[idx].conn) {
-			lwip_sock_close(list->sl_sockets[idx].conn);
-		}
-	}
 
 	/* Destroy the semaphore */
 
