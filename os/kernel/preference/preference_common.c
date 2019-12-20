@@ -40,7 +40,7 @@ int preference_get_private_keypath(const char *key, char **path)
 	/* Get path for app preference */
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	tcb = this_task();
-	pid = tcb->group->tg_loadtask;
+	pid = tcb->group->tg_binid;
 	if (pid > 0) {
 		tcb = sched_gettcb(pid);
 		if (tcb == NULL) {

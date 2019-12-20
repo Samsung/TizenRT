@@ -80,7 +80,7 @@ void binary_manager_unregister_statecb(int pid)
 
 	tcb = sched_gettcb(pid);
 
-	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_loadtask < 0) {
+	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_binid < 0) {
 		bmdbg("Failed to get pid %d binary info\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
@@ -88,9 +88,9 @@ void binary_manager_unregister_statecb(int pid)
 
 	response_msg.result = BINMGR_NOT_FOUND;
 
-	bin_idx = binary_manager_get_index_with_binid(tcb->group->tg_loadtask);
+	bin_idx = binary_manager_get_index_with_binid(tcb->group->tg_binid);
 	if (bin_idx < 0) {
-		bmdbg("binary pid %d is not registered\n", tcb->group->tg_loadtask);
+		bmdbg("binary pid %d is not registered\n", tcb->group->tg_binid);
 		goto send_result;
 	}
 
@@ -133,15 +133,15 @@ void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 	}
 
 	tcb = sched_gettcb(pid);
-	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_loadtask < 0) {
+	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_binid < 0) {
 		bmdbg("Failed to get pid %d binary info\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
 
-	bin_idx = binary_manager_get_index_with_binid(tcb->group->tg_loadtask);
+	bin_idx = binary_manager_get_index_with_binid(tcb->group->tg_binid);
 	if (bin_idx < 0) {
-		bmdbg("binary pid %d is not registered\n", tcb->group->tg_loadtask);
+		bmdbg("binary pid %d is not registered\n", tcb->group->tg_binid);
 		response_msg.result = BINMGR_NOT_FOUND;
 		goto send_result;
 	}

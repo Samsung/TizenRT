@@ -80,6 +80,9 @@
 #include "group/group.h"
 #include "clock/clock.h"
 #include "pthread/pthread.h"
+#ifdef CONFIG_BINARY_MANAGER
+#include "binary_manager/binary_manager.h"
+#endif
 
 /****************************************************************************
  * Public Data
@@ -271,6 +274,13 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		attr = &g_default_pthread_attr;
 	}
 
+#ifdef CONFIG_BINARY_MANAGER
+	if (BM_PRIORITY_MIN - 1 < attr->priority && attr->priority < BM_PRIORITY_MAX + 1) {
+		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", attr->priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
+		return EPERM;
+	}
+#endif
+
 	/* Allocate a TCB for the new task. */
 
 	ptcb = (FAR struct pthread_tcb_s *)kmm_zalloc(sizeof(struct pthread_tcb_s));
@@ -461,6 +471,19 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 			ret = EINVAL;
 		}
 
+#ifdef CONFIG_BINARY_MANAGER
+		FAR struct tcb_s *rtcb = this_task();
+		int binid = rtcb->group->tg_binid;
+		if (binid > 0) {
+			if (ptcb->cmn.sched_priority > BM_PRIORITY_MAX) {
+				int bin_idx = binary_manager_get_index_with_binid(binid);
+				BIN_RTTYPE(bin_idx) = BINARY_TYPE_REALTIME;
+				BIN_RTCOUNT(bin_idx)++;
+			}
+			/* Link it to parent tcb for binary list management */
+			binary_manager_add_binlist(&ptcb->cmn);
+		}
+#endif
 		sched_unlock();
 		(void)sem_destroy(&pjoin->data_sem);
 	} else {

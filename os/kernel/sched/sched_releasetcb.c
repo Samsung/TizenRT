@@ -66,6 +66,9 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "timer/timer.h"
+#ifdef CONFIG_BINARY_MANAGER
+#include "binary_manager/binary_manager.h"
+#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
 
@@ -232,6 +235,11 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		/* Leave the group (if we did not already leave in task_exithook.c) */
 
 		group_leave(tcb);
+#endif
+
+
+#ifdef CONFIG_BINARY_MANAGER
+		binary_manager_remove_binlist(tcb);
 #endif
 
 		/* And, finally, release the TCB itself */

@@ -75,6 +75,7 @@ static const char *utils_statenames[] = {
 	"RUNNING ",
 	"INACTIVE",
 	"WAITSEM ",
+	"WAITUNBLOCK",
 #ifndef CONFIG_DISABLE_SIGNALS
 	"WAITSIG ",
 #endif

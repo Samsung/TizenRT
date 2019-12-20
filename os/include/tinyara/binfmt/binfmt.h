@@ -166,6 +166,14 @@ struct binary_s {
 	size_t filelen;                 /* Size of binary size, used only when underlying is MTD */
 	size_t offset;                  /* Offset of binary from partition start*/
 	uint8_t compression_type;		/* Binary Compression type */
+#ifdef CONFIG_BINARY_MANAGER
+	uint8_t binary_idx;             /* Index of binary in binary table */
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	char bin_name[BIN_NAME_MAX];    /* Name of binary */
+#else
+	char *bin_name;                 /* Name of binary */
+#endif
+#endif
 
 	/* Unload module callback */
 

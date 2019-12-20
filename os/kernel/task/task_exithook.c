@@ -69,6 +69,9 @@
 #include "group/group.h"
 #include "signal/signal.h"
 #include "task/task.h"
+#ifdef CONFIG_BINARY_MANAGER
+#include "binary_manager/binary_manager.h"
+#endif
 
 #ifdef CONFIG_TASK_MANAGER
 #include <task_manager/task_manager.h>
@@ -616,6 +619,20 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 	if (!nonblocking) {
 		task_flushstreams(tcb);
 	}
+
+
+#ifdef CONFIG_BINARY_MANAGER
+	if (tcb->sched_priority > BM_PRIORITY_MAX) {
+		int binid = tcb->group->tg_binid;
+		if (binid > 0) {
+			int bin_idx = binary_manager_get_index_with_binid(binid);
+			if (--(BIN_RTCOUNT(bin_idx)) == 0) {
+				BIN_RTTYPE(bin_idx) = BINARY_TYPE_NONREALTIME;
+			}
+		}
+	}
+#endif
+
 #ifdef HAVE_TASK_GROUP
 	/* Leave the task group.  Perhaps discarding any un-reaped child
 	 * status (no zombies here!)

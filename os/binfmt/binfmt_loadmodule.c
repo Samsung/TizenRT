@@ -136,8 +136,6 @@ static int load_absmodule(FAR struct binary_s *bin)
 	 * the list of registered binary format handlers.
 	 */
 
-	sched_lock();
-
 	/* Traverse the list of registered binary format handlers.  Stop
 	 * when either (1) a handler recognized and loads the format, or
 	 * (2) no handler recognizes the format.
@@ -160,7 +158,6 @@ static int load_absmodule(FAR struct binary_s *bin)
 		}
 	}
 
-	sched_unlock();
 	return ret;
 }
 

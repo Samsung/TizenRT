@@ -92,8 +92,10 @@
 #endif
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <unistd.h>
-#include <mqueue.h>
 #include <stdbool.h>
+#include <queue.h>
+#include <tinyara/wdog.h>
+#include "semaphore/semaphore.h"
 #include "binary_manager/binary_manager.h"
 #endif
 #include "irq/irq.h"
@@ -105,7 +107,11 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 bool abort_mode = false;
 extern uint32_t g_assertpc;
+extern struct tcb_s *g_faultmsg_sender;
+extern sq_queue_t g_faultmsg_list;
+extern sq_queue_t g_freemsg_list;
 #endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -440,36 +446,31 @@ static void _up_assert(int errorcode)
 static void recovery_user_assert(void)
 {
 	int ret;
-	mqd_t mqfd;
-	binmgr_request_t request_msg;
+	int binid;
+	int bin_idx;
 	struct tcb_s *tcb;
+	struct faultmsg_s *msg;
 
-	/* Get mqfd for sending recovery mesage to binary manager */
-	mqfd = binary_manager_get_mqfd();
-	if (mqfd != NULL) {
-		request_msg.cmd = BINMGR_FAULT;
-		request_msg.requester_pid = getpid();
-		if (current_regs) {
-			tcb = sched_self();
-			sched_removereadytorun(tcb);
-#if CONFIG_RR_INTERVAL > 0
-			tcb->timeslice = 0;
-#endif
-			tcb->sched_priority = SCHED_PRIORITY_MIN;
-			sched_addreadytorun(tcb);
+	tcb = this_task();
+	if (tcb != NULL && tcb->group != NULL) {
+		tcb->sched_priority = SCHED_PRIORITY_MIN;
+		tcb->lockcount = 0;
+		binid = tcb->group->tg_binid;
+		bin_idx = binary_manager_get_index_with_binid(binid);
+		if (BIN_RTTYPE(bin_idx) == BINARY_TYPE_REALTIME) {
+			/* Exclude realtime task/pthreads from scheduling */
+			binary_manager_exclude_rtthreads(tcb);
 		}
 
-		/* Send a message to binary manager with pid of the faulty task */
-		ret = mq_send(mqfd, (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
-		if (ret == OK) {
-			if (current_regs) {
-				tcb = sched_self();
-				current_regs = tcb->xcp.regs;
-			}
-			/* Requested recovery to binary manager successfully */
+		/* Add fault message and Unblock Fault message Sender */
+		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
+			msg->binid = binid;
+			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
+			up_unblock_task(g_faultmsg_sender);
 			return;
 		}
 	}
+
 	/* Failed to request for recovery to binary manager */
 	_up_assert(EXIT_FAILURE);
 }
