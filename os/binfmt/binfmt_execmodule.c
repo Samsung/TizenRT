@@ -72,6 +72,10 @@
 #include <tinyara/mm/mm.h>
 #endif
 
+#ifdef CONFIG_BINARY_MANAGER
+#include "binary_manager/binary_manager.h"
+#endif
+
 #include "sched/sched.h"
 #include "binfmt.h"
 
@@ -295,8 +299,19 @@ int exec_module(FAR const struct binary_s *binp)
 
 	pid = tcb->cmn.pid;
 
-#ifdef CONFIG_BINMGR_RECOVERY
-	tcb->cmn.group->tg_loadtask = pid;
+#ifdef CONFIG_BINARY_MANAGER
+	tcb->cmn.group->tg_binid = pid;
+
+	/* Update binary id and state for fault handling */
+	int binary_idx = binp->binary_idx;
+	BIN_ID(binary_idx) = pid;
+	BIN_STATE(binary_idx) = BINARY_LOADING_DONE;
+	if (binp->priority > BM_PRIORITY_MAX) {
+		BIN_RTTYPE(binary_idx) = BINARY_TYPE_REALTIME;
+		BIN_RTCOUNT(binary_idx)++;
+	} else {
+		BIN_RTTYPE(binary_idx) = BINARY_TYPE_NONREALTIME;
+	}
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION

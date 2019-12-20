@@ -230,6 +230,7 @@ enum tstate_e {
 
 	TSTATE_TASK_INACTIVE,		/* BLOCKED      - Initialized but not yet activated */
 	TSTATE_WAIT_SEM,			/* BLOCKED      - Waiting for a semaphore */
+	TSTATE_WAIT_UNBLOCK,		/* BLOCKED		- Waiting to be unblocked by another task */
 #ifndef CONFIG_DISABLE_SIGNALS
 	TSTATE_WAIT_SIG,			/* BLOCKED      - Waiting for a signal */
 #endif
@@ -378,7 +379,7 @@ struct task_group_s {
 	pid_t tg_task;				/* The ID of the task within the group      */
 #endif
 #if defined(CONFIG_BINARY_MANAGER)
-	pid_t tg_loadtask;			/* The ID of the main task in binary        */
+	pid_t tg_binid;				/* The ID of the main task in binary        */
 #endif
 
 	uint8_t tg_flags;			/* See GROUP_FLAG_* definitions             */
@@ -527,6 +528,13 @@ struct tcb_s {
 
 	FAR struct tcb_s *flink;	/* Doubly linked list                  */
 	FAR struct tcb_s *blink;
+
+#ifdef CONFIG_BINARY_MANAGER
+	/* Fields used to support binary list management ***************************** */
+
+	FAR struct tcb_s *bin_flink;	/* Doubly linked list				   */
+	FAR struct tcb_s *bin_blink;
+#endif
 
 	/* Task Group **************************************************************** */
 

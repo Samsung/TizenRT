@@ -28,125 +28,41 @@
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
+
 #include <tinyara/binary_manager.h>
 
+#include "sched/sched.h"
 #include "binary_manager.h"
 
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
-/* Index of 'kernel' data in binary table, bin_table. */
-#define KERNEL_IDX               0
-
-/* Kernel version (not implemented, it will be modified) */
-#ifdef CONFIG_VERSION_STRING
-#define KERNEL_VER               CONFIG_VERSION_STRING
-#else
-#define KERNEL_VER               "2.0"
-#endif
-
-/* Binary table, the first data [0] is for kernel. */
-static binmgr_bininfo_t bin_table[BINARY_COUNT];
-static uint32_t g_bin_count;
 static mqd_t g_binmgr_mq_fd;
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 #ifdef CONFIG_BINMGR_RECOVERY
-/* Get a mqfd of binary manager for binary recovery */
+/****************************************************************************
+ * Name: binary_manager_get_mqfd
+ *
+ * Description:
+ *	 This function gets a mqfd of binary manager for request.
+ *
+ ****************************************************************************/
 mqd_t binary_manager_get_mqfd(void)
 {
 	return g_binmgr_mq_fd;
 }
 #endif
 
-/* Get the number of user binaries */
-uint32_t binary_manager_get_binary_count(void)
-{
-	return g_bin_count;
-}
-
-/* Get a row of binary table with bin_idx */
-binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx)
-{
-	return &bin_table[bin_idx];
-}
-
-/* Register partitions : kernel, loadparam, user binaries */
-void binary_manager_register_partition(int part_num, int part_type, char *name, int part_size)
-{
-	int bin_idx;
-
-	if (part_num < 0 || part_size <= 0 || part_type < 0 || part_type >= BINMGR_PART_MAX) {
-		bmdbg("ERROR: Invalid part info : num %d, type %d size %d\n", part_num, part_type, part_size);
-		return;
-	}
-
-	/* Check partition type and register it */
-	if (part_type == BINMGR_PART_KERNEL) {
-		if (BIN_PARTSIZE(KERNEL_IDX, 0) > 0) {
-			/* Already registered first kernel partition, register it as second partition. */
-			BIN_PARTSIZE(KERNEL_IDX, 1) = part_size;
-			BIN_PARTNUM(KERNEL_IDX, 1) = part_num;
-		} else {
-			BIN_USEIDX(KERNEL_IDX) = 0;
-			BIN_STATE(KERNEL_IDX) = BINARY_RUNNING;
-			BIN_PARTNUM(KERNEL_IDX, 0) = part_num;
-			BIN_PARTSIZE(KERNEL_IDX, 0) = part_size;
-			strncpy(BIN_VER(KERNEL_IDX), KERNEL_VER, KERNEL_VER_MAX);
-			strncpy(BIN_KERNEL_VER(KERNEL_IDX), KERNEL_VER, KERNEL_VER_MAX);
-			strncpy(BIN_NAME(KERNEL_IDX), "kernel", BIN_NAME_MAX);
-		}
-		bmvdbg("[KERNEL] part num %d size %d\n", part_num, part_size);
-	} else {
-		/* Else, It is user binary partition. First, Find the partition in the list. */
-		for (bin_idx = 1; bin_idx <= g_bin_count; bin_idx++) {
-			/* Found in the list, then register it as second partition */
-			if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
-				BIN_PARTNUM(bin_idx, 1) = part_num;
-				BIN_PARTSIZE(bin_idx, 1) = part_size;
-				bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
-				return;
-			}
-		}
-		/* No, Register it as a new user partition */
-		g_bin_count++;
-		BIN_ID(g_bin_count) = -1;
-		BIN_STATE(g_bin_count) = BINARY_INACTIVE;
-		BIN_PARTNUM(g_bin_count, 0) = part_num;
-		BIN_PARTSIZE(g_bin_count, 0) = part_size;
-		strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
-		sq_init(&BIN_CBLIST(g_bin_count));
-		bmvdbg("[USER%d : 1] %s size %d num %d\n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count, 0), BIN_PARTNUM(g_bin_count, 0));
-	}
-}
-
-/* Update binary state to BINARY_RUNNING state */
-void binary_manager_update_running_state(int bin_id)
-{
-	int bin_idx;
-
-	if (bin_id <= 0) {
-		bmdbg("Invalid parameter: bin id %d\n", bin_id);
-		return;
-	}
-
-	bin_idx = binary_manager_get_index_with_binid(bin_id);
-	if (bin_idx < 0) {
-		bmdbg("Failed to get index of binary %d\n", bin_id);
-		return;
-	}
-
-	BIN_STATE(bin_idx) = BINARY_RUNNING;
-	bmvdbg("binary '%s' state is changed, state = %d.\n", BIN_NAME(bin_idx), BIN_STATE(bin_idx));
-
-	/* Notify that binary is started. */
-	binary_manager_notify_state_changed(bin_idx, BINARY_STARTED);
-}
-
 /****************************************************************************
  * Main Function
+ ****************************************************************************/
+/****************************************************************************
+ * Name: binary_manager
+ *
+ * Description:
+ *   This thread is a main thread for binary management.
+ *   It receives messages and handles them according to request type.
+ *
  ****************************************************************************/
 int binary_manager(int argc, char *argv[])
 {
@@ -165,7 +81,7 @@ int binary_manager(int argc, char *argv[])
 	attr.mq_msgsize = sizeof(binmgr_request_t);
 	attr.mq_flags = 0;
 
-	ASSERT(BIN_STATE(KERNEL_IDX) != BINARY_UNREGISTERED && g_bin_count > 0);
+	ASSERT(BIN_STATE(KERNEL_IDX) != BINARY_UNREGISTERED && binary_manager_get_binary_count() > 0);
 
 	bmvdbg("Binary Manager STARTED\n");
 
@@ -173,6 +89,17 @@ int binary_manager(int argc, char *argv[])
 	sigfillset(&sigset);
 	sigdelset(&sigset, SIGKILL);
 	(void)sigprocmask(SIG_SETMASK, &sigset, NULL);
+
+#ifdef CONFIG_BINMGR_RECOVERY
+	ret = kernel_thread(FAULTMSGSENDER_NAME, FAULTMSGSENDER_PRIORITY, FAULTMSGSENDER_STACKSIZE, binary_manager_faultmsg_sender, NULL);
+	if (ret > 0) {
+		bmvdbg("Launch fault msg sender thread with pid %d\n", ret);
+		binary_manager_set_faultmsg_sender(ret);
+	} else {
+		bmdbg("Fail to launch fault msg sender\n");
+		return 0;
+	}
+#endif
 
 	/* Create binary manager message queue */
 	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);

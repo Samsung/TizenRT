@@ -76,6 +76,9 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "task/task.h"
+#ifdef CONFIG_BINARY_MANAGER
+#include "binary_manager/binary_manager.h"
+#endif
 
 /****************************************************************************
  * Preprocessor Definitions
@@ -217,8 +220,19 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 #ifdef CONFIG_BINARY_MANAGER
 	FAR struct tcb_s *rtcb = this_task();
-	/* Set main task id in a binary for recovery */
-	tcb->cmn.group->tg_loadtask = rtcb->group->tg_loadtask;
+	int binid = rtcb->group->tg_binid;
+	if (binid > 0) {
+		/* Set main task id of a binary for recovery */
+		tcb->cmn.group->tg_binid = binid;
+		if (tcb->cmn.sched_priority > BM_PRIORITY_MAX) {
+			int bin_idx = binary_manager_get_index_with_binid(binid);
+			BIN_RTTYPE(bin_idx) = BINARY_TYPE_REALTIME;
+			BIN_RTCOUNT(bin_idx)++;
+		}
+
+		/* Link it to parent tcb for binary list management */
+		binary_manager_add_binlist(&tcb->cmn);
+	}
 #endif
 
 #ifdef CONFIG_HEAPINFO_USER_GROUP
@@ -284,6 +298,12 @@ errout:
 #ifndef CONFIG_BUILD_KERNEL
 int task_create(FAR const char *name, int priority, int stack_size, main_t entry, FAR char *const argv[])
 {
+#ifdef CONFIG_BINARY_MANAGER
+	if (BM_PRIORITY_MIN - 1 < priority && priority < BM_PRIORITY_MAX + 1) {
+		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
+		return EPERM;
+	}
+#endif
 	return thread_create(name, TCB_FLAG_TTYPE_TASK, priority, stack_size, entry, argv);
 }
 #endif

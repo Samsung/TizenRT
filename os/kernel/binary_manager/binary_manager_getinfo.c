@@ -40,7 +40,13 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-/* Get index in binary table with binary id */
+/****************************************************************************
+ * Name: binary_manager_get_index_with_binid
+ *
+ * Description:
+ *	 This function gets index in binary table with binary id.
+ *
+ ****************************************************************************/
 int binary_manager_get_index_with_binid(int bin_id)
 {
 	int bin_idx;
@@ -63,7 +69,13 @@ int binary_manager_get_index_with_binid(int bin_id)
 	return ERROR;
 }
 
-/* Get index in binary table with binary id */
+/****************************************************************************
+ * Name: binary_manager_get_index_with_name
+ *
+ * Description:
+ *	 This function gets index in binary table with binary id.
+ *
+ ****************************************************************************/
 int binary_manager_get_index_with_name(char *bin_name)
 {
 	int bin_idx;
@@ -86,7 +98,13 @@ int binary_manager_get_index_with_name(char *bin_name)
 	return ERROR;
 }
 
-/* Get binary info with binary name */
+/****************************************************************************
+ * Name: binary_manager_get_info_with_name
+ *
+ * Description:
+ *	 This function gets binary info with binary name.
+ *
+ ****************************************************************************/
 void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 {
 	int bin_idx;
@@ -121,7 +139,13 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_response_t));
 }
 
-/* Get info of all registered binaries */
+/****************************************************************************
+ * Name: binary_manager_get_info_all
+ *
+ * Description:
+ *	 This function gets info of all registered binaries.
+ *
+ ****************************************************************************/
 void binary_manager_get_info_all(int requester_pid)
 {
 	int bin_idx;

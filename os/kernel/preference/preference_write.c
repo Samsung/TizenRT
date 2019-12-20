@@ -45,7 +45,7 @@ static int preference_private_setup(void)
 	struct tcb_s *tcb;
 
 	tcb = this_task();
-	pid = tcb->group->tg_loadtask;
+	pid = tcb->group->tg_binid;
 	if (pid > 0) {
 		tcb = sched_gettcb(pid);
 		if (tcb == NULL) {

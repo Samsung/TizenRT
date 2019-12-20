@@ -306,6 +306,7 @@ static const char *g_statenames[] = {
 	"Running",
 	"Inactive",
 	"Semaphore wait",
+	"To be unblocked wait"
 #ifndef CONFIG_DISABLE_MQUEUE
 	"Signal wait",
 #endif

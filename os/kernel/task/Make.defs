@@ -84,6 +84,10 @@ CSRCS += task_execv.c
 endif
 endif
 
+ifeq ($(CONFIG_BINARY_MANAGER),y)
+CSRCS += task_terminate_unloaded.c
+endif
+
 # Include task build support
 
 DEPPATH += --dep-path task

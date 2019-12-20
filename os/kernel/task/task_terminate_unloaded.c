@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************
- * kernel/task/task.h
+/************************************************************************
+ * kernel/task/task_terminate_unloaded.c
  *
- *   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2012-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,90 +48,79 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ****************************************************************************/
+ ************************************************************************/
 
-#ifndef __SCHED_TASK_TASK_H
-#define __SCHED_TASK_TASK_H
-
-/****************************************************************************
+/************************************************************************
  * Included Files
- ****************************************************************************/
+ ************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/compiler.h>
 
 #include <sys/types.h>
-#include <stdbool.h>
+#include <sched.h>
+#include <queue.h>
+#include <arch/irq.h>
 
+#include <tinyara/arch.h>
 #include <tinyara/sched.h>
 
+#include "task/task.h"
+#include "sched/sched.h"
+#include "signal/signal.h"
+#ifdef CONFIG_TASK_MONITOR
+#include "task_monitor/task_monitor.h"
+#endif
+#ifdef CONFIG_PREFERENCE
+#include "preference/preference.h"
+#endif
+
+/************************************************************************
+ * Public Functions
+ ************************************************************************/
 /****************************************************************************
- * Pre-processor Definitions
+ * Name: task_terminate_unloaded
+ *
+ * Description:
+ *   This function is almost same as task_terminate(),
+ *   but it performs essential operations except like recovery for resources, task_recover.
+ *   or signaling to other tasks, task_signalparent.
+ *   That's because it is called after binary manager recovers resources.
+ *   Also, it doesn't need to signaling because all task/threads would be terminated.
+ *
+ * Parameters:
+ *   tcb - The TCB to be released
+ *
+ * Return Value:
+ *   OK on success; ERROR on failure
+ *
  ****************************************************************************/
+int task_terminate_unloaded(FAR struct tcb_s *tcb)
+{
+	irqstate_t saved_state;
 
-/****************************************************************************
- * Public Type Definitions
- ****************************************************************************/
-
-#if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
-struct atexit_s {
-	struct atexit_s *flink;
-	struct atexit_s *blink;
-	atexitfunc_t atexitfunc;
-};
+#if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
+	task_atexit(tcb);
+	task_onexit(tcb, EXIT_SUCCESS);
 #endif
-
-#ifdef CONFIG_SCHED_ONEXIT
-struct onexit_s {
-	struct onexit_s *flink;
-	struct onexit_s *blink;
-	onexitfunc_t onexitfunc;
-	void *onexitarg;
-};
+#ifdef HAVE_TASK_GROUP
+	group_leave(tcb);
 #endif
+	sig_cleanup(tcb);
 
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
+	saved_state = irqsave();
+	dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
+	irqrestore(saved_state);
 
-/* Task start-up */
-
-void task_start(void);
-int task_schedsetup(FAR struct task_tcb_s *tcb, int priority, start_t start, main_t main, uint8_t ttype);
-int task_argsetup(FAR struct task_tcb_s *tcb, FAR const char *name, FAR char *const argv[]);
-
-/* Task exit */
-
-int task_exit(void);
-int task_terminate(pid_t pid, bool nonblocking);
-void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking);
-void task_recover(FAR struct tcb_s *tcb);
-#if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
-void task_atexit(FAR struct tcb_s *tcb);
-#else
-#define task_atexit(tcb)
+#ifdef CONFIG_TASK_MONITOR
+	/* Unregister this pid from task monitor */
+	task_monitor_unregester_list(tcb->pid);
 #endif
-#ifdef CONFIG_SCHED_ONEXIT
-void task_onexit(FAR struct tcb_s *tcb, int status);
-#else
-#define task_onexit(tcb, status)
+#ifdef CONFIG_PREFERENCE
+	preference_clear_callbacks(tcb->pid);
 #endif
-#ifdef CONFIG_BINARY_MANAGER
-int task_terminate_unloaded(FAR struct tcb_s *tcb);
-#endif
-/* Misc. */
+	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
 
-bool sched_addreadytorun(FAR struct tcb_s *rtrtcb);
+	/* Deallocate its TCB */
 
-#ifdef CONFIG_CANCELLATION_POINTS
-void notify_cancellation(FAR struct tcb_s *tcb);
-#endif
-
-#ifndef CONFIG_DISABLE_SIGNALS
-void thread_termination_handler(void);
-#endif
-
-#endif							/* __SCHED_TASK_TASK_H */
+	return sched_releasetcb(tcb, tcb->flags & TCB_FLAG_TTYPE_MASK);
+}

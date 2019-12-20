@@ -128,9 +128,13 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		bin->stacksize = load_attr->stack_size;
 		bin->priority = load_attr->priority;
 		bin->compression_type = load_attr->compression_type;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-		bin->ramsize = load_attr->ram_size;
+		bin->binary_idx = binary_idx;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		strncpy(bin->bin_name, load_attr->bin_name, BIN_NAME_MAX);
+#else
+		bin->bin_name = load_attr->bin_name;
 #endif
+		bin->ramsize = load_attr->ram_size;
 
 		/* Load the module into memory */
 
@@ -164,8 +168,6 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	 * handler.
 	 */
 
-	sched_lock();
-
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* The first 4 bytes of the text section of the application must contain a
 	pointer to the application's mm_heap object. Here we will store the mm_heap
@@ -196,7 +198,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	if (pid < 0) {
 		errcode = -pid;
 		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
-		goto errout_with_lock;
+		goto errout_with_unload;
 	}
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -204,7 +206,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	tcb = sched_gettcb(pid);
 	if (tcb == NULL) {
 		errcode = ESRCH;
-		goto errout_with_lock;
+		goto errout_with_unload;
 	}
 	tcb->ram_start = (uint32_t)bin->ramstart;
 	tcb->ram_size = bin->ramsize;
@@ -238,16 +240,9 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 	binfo("%s loaded @ 0x%08x and running with pid = %d\n", bin->filename, bin->alloc[0], pid);
 
-	/* Update binary id and state for fault handling before unlocking scheduling */
-
-	BIN_ID(binary_idx) = pid;
-	BIN_STATE(binary_idx) = BINARY_LOADING_DONE;
-
-	sched_unlock();
 	return pid;
 
-errout_with_lock:
-	sched_unlock();
+errout_with_unload:
 	(void)unload_module(bin);
 errout_with_bin:
 	kmm_free(bin);

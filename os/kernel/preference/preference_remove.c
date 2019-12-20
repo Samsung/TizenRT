@@ -113,7 +113,7 @@ int preference_remove_all_key(int type, const char *path)
 	if (type == PRIVATE_PREFERENCE) {
 #if CONFIG_APP_BINARY_SEPARATION
 		tcb = this_task();
-		pid = tcb->group->tg_loadtask;
+		pid = tcb->group->tg_binid;
 		if (pid > 0) {
 			tcb = sched_gettcb(pid);
 			if (tcb == NULL) {

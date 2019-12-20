@@ -30,6 +30,7 @@
 #include <sched.h>
 #include <stdint.h>
 #include <string.h>
+#include <queue.h>
 #include <sys/types.h>
 
 #include <tinyara/mm/mm.h>
@@ -40,7 +41,9 @@
 #include <tinyara/binfmt/binfmt.h>
 #endif
 
+#include "sched/sched.h"
 #include "task/task.h"
+
 #include "binary_manager.h"
 
 /****************************************************************************
@@ -64,7 +67,13 @@ typedef struct binary_header_s binary_header_t;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-/* Read header and Check whether header data is valid or not */
+/****************************************************************************
+ * Name: binary_manager_read_header
+ *
+ * Description:
+ *	 This function reads header and checks whether it is valid or not.
+ *
+ ****************************************************************************/
 static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t *header_data)
 {
 	int fd;
@@ -134,39 +143,13 @@ errout_with_fd:
 	return ERROR;
 }
 
-/* Check for an update binary */
-static int binary_manager_check_update_binary(char *bin_name)
-{
-	int ret;
-	int version;
-	int bin_idx;
-	binary_header_t header_data;
-
-	if (bin_name == NULL) {
-		bmdbg("Invalid bin_name %s\n", bin_name);
-		return BINMGR_INVALID_PARAM;
-	}
-
-	bin_idx = binary_manager_get_index_with_name(bin_name);
-	if (bin_idx < 0) {
-		bmdbg("binary %s is not registered\n", bin_name);
-		return BINMGR_NOT_FOUND;
-	}
-
-	ret = binary_manager_read_header(bin_idx, BIN_USEIDX(bin_idx) ^ 1, &header_data);
-	if (ret == OK) {
-		version = (int)atoi(header_data.bin_ver);
-		/* Update if it have new version */
-		if (version > (int)atoi(BIN_VER(bin_idx))) {
-			return BINMGR_OK;
-		}
-	}
-
-	bmdbg("Already latest version\n");
-	return BINMGR_ALREADY_UPDATED;
-}
-
-/* Load binary with index in binary table */
+/****************************************************************************
+ * Name: binary_manager_load_binary
+ *
+ * Description:
+ *	 This function loads binary with index in binary table.
+ *
+ ****************************************************************************/
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 int binary_manager_load_binary(int bin_idx, void *binp)
 #else
@@ -174,7 +157,6 @@ int binary_manager_load_binary(int bin_idx)
 #endif
 {
 	int ret;
-	pid_t bin_pid;
 	int version;
 	int part_idx;
 	int latest_ver;
@@ -275,6 +257,13 @@ int binary_manager_load_binary(int bin_idx)
 	return ERROR;
 }
 
+/****************************************************************************
+ * Name: binary_manager_load_all
+ *
+ * Description:
+ *	 This function loads all user binaries in binary table.
+ *
+ ****************************************************************************/
 static int binary_manager_load_all(void)
 {
 	int ret;
@@ -303,120 +292,122 @@ static int binary_manager_load_all(void)
 	return BINMGR_OPERATION_FAIL;
 }
 
-static void reload_kill_each(FAR struct tcb_s *tcb, FAR void *arg)
+/****************************************************************************
+ * Name: binary_manager_terminate_binary
+ *
+ * Description:
+ *   This function executes registered callbacks for 'unload' state,
+ *   terminates all task/threads of binary, and unloads binary.
+ *
+ ****************************************************************************/
+static int binary_manager_terminate_binary(int bin_idx)
 {
 	int ret;
 	int binid;
+	bool need_recovery;
+	struct tcb_s *btcb;
+	struct tcb_s *tcb;
+	struct tcb_s *ntcb;
 
-	binid = (int)arg;
-	if (binid < 0) {
-		return;
+	need_recovery = false;
+
+	binid = BIN_ID(bin_idx);
+	btcb = (struct tcb_s *)sched_gettcb(binid);
+	if (btcb == NULL) {
+		bmdbg("Failed to get main task of binary %d\n", binid);
+		return BINMGR_OPERATION_FAIL;
 	}
 
-	if (tcb->group->tg_loadtask == binid && tcb->pid != binid) {
-		ret = task_terminate(tcb->pid, true);
-		if (ret < 0) {
-			bmdbg("Failed to terminate %d\n", tcb->pid);
+	if (BIN_STATE(bin_idx) == BINARY_RUNNING) {
+		need_recovery = true;
+		/* Waits until some callbacks for cleanup are done if registered callbacks exist */
+		BIN_STATE(bin_idx) = BINARY_WAITUNLOAD;
+		ret = binary_manager_send_statecb_msg(bin_idx, BIN_NAME(bin_idx), BINARY_READYTOUNLOAD, true);
+		if (ret != OK) {
+			return ERROR;
 		}
-	}
-}
-
-int reload_kill_binary(int binid)
-{
-	int ret;
-
-	if (binid < 0) {
-		return ERROR;
+		/* Release all kernel semaphores held by the threads in binary */
+		recovery_release_binary_sem(binid);
+		BIN_STATE(bin_idx) = BINARY_RUNNING;
 	}
 
-	sched_lock();
-
-	/* Kill all tasks and pthreads created in a binary which has 'binid' */
-	sched_foreach(reload_kill_each, (FAR void *)binid);
+	/* Terminate all children created by a binary */
+	ntcb = tcb = btcb->bin_flink;
+	while (tcb) {
+		ntcb = tcb->bin_flink;
+		if (need_recovery) {
+			task_recover(tcb);
+		}
+		ret = task_terminate_unloaded(tcb);
+		if (ret < 0) {
+			bmdbg("Failed to terminate task of binary %d\n", binid);
+		}
+		tcb = ntcb;
+	}
 
 	/* Finally, unload binary */
-	ret = task_terminate(binid, true);
+	ret = task_terminate_unloaded(btcb);
 	if (ret < 0) {
-		sched_unlock();
-		bmdbg("Failed to unload binary %d, ret %d, errno %d\n", binid, ret, errno);
+		bmdbg("Failed to unload binary %s\n", BIN_NAME(bin_idx));
 		return ERROR;
 	}
-	sched_unlock();
-	bmvdbg("Unload binary! pid %d\n", binid);
+	bmvdbg("Unload binary %s\n", BIN_NAME(bin_idx));
+
+	/* Notify 'Unloaded' state to other binaries */
+	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
 
 	return OK;
 }
 
+#ifdef CONFIG_BINMGR_RECOVERY
 /****************************************************************************
  * Name: binary_manager_reload
  *
  * Description:
  *   This function will terminate all the task/thread created by the binary
- *   i.e input binary name.
- *   If the binary is registered, it terminates its children and unloads binary.
- *   And then, it will load the binary.
+ *   i.e input binary id.
+ *   It is called after all children are excluded from scheduling by fault recovery.
+ *   It terminates its children, unloads binary and then it will load the binary.
  *
  * Input parameters:
- *   bin_name   -   The name of binary to be reload
+ *   binid   -   The pid of binary to be reload
  *
  * Returned Value:
  *   None
  *
  ****************************************************************************/
-static int binary_manager_reload(char *bin_name)
+static int binary_manager_reload(int binid)
 {
 	int ret;
 	int bin_idx;
-
-	if (bin_name == NULL) {
-		bmdbg("Invalid bin_name %s\n", bin_name);
-		return BINMGR_INVALID_PARAM;
-	}
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	struct tcb_s *btcb;
+	struct binary_s *binp = NULL;
+#endif
 
 	/* Check whether it is registered in binary manager */
-	bin_idx = binary_manager_get_index_with_name(bin_name);
+	bin_idx = binary_manager_get_index_with_binid(binid);
 	if (bin_idx < 0) {
-		bmdbg("binary %s is not registered\n", bin_name);
+		bmdbg("binary %s is not registered\n", binid);
 		return BINMGR_NOT_FOUND;
 	}
 
-	if (BIN_STATE(bin_idx) == BINARY_WAITUNLOAD) {
-		bmdbg("Already reloading is requested\n");
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	btcb = sched_gettcb(binid);
+	if (btcb) {
+		binp = btcb->group->tg_bininfo;
+		binp->reload = true;
+	}
+#endif
+
+	/* Terminate binary */
+	ret = binary_manager_terminate_binary(bin_idx);
+	if (ret != OK) {
+		bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
 		return BINMGR_OPERATION_FAIL;
 	}
 
-	if (BIN_STATE(bin_idx) == BINARY_RUNNING) {
-		BIN_STATE(bin_idx) = BINARY_WAITUNLOAD;
-		/* Waits until some callbacks for cleanup are done if registered callbacks exist */
-		ret = binary_manager_send_statecb_msg(bin_idx, BIN_NAME(bin_idx), BINARY_READYTOUNLOAD, true);
-		if (ret != OK) {
-			return BINMGR_OPERATION_FAIL;
-		}
-	}
-
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	struct binary_s *binp = sched_gettcb(BIN_ID(bin_idx))->group->tg_bininfo;
-	binp->reload = true;
-#endif
-
-	if (BIN_STATE(bin_idx) != BINARY_INACTIVE) {
-
-		/* Kill its children and restart binary if the binary is registered with the binary manager */
-		ret = reload_kill_binary(BIN_ID(bin_idx));
-		if (ret != OK) {
-			return BINMGR_OPERATION_FAIL;
-		}
-		BIN_ID(bin_idx) = -1;
-
-		/* Clean callbacks of binary */
-		binary_manager_clear_bin_statecb(bin_idx);
-	}
-
-	/* Update binary state and notify it to other binaries */
-	BIN_STATE(bin_idx) = BINARY_INACTIVE;
-	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
-
-	/* load binary and update binid */
+	/* Load binary */
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	ret = binary_manager_load_binary(bin_idx, binp);
 #else
@@ -426,10 +417,86 @@ static int binary_manager_reload(char *bin_name)
 		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
 		return BINMGR_OPERATION_FAIL;
 	}
+	return BINMGR_OK;
+}
+#endif
 
+/****************************************************************************
+ * Name: binary_manager_update
+ *
+ * Description:
+ *   This function will terminate all the task/thread created by the binary
+ *   i.e input binary name.
+ *   If the binary is registered, it checks current running version and
+ *   executes registered callback for unloading.
+ *   And it terminates its children, unloads binary and loads the binary.
+ *
+ * Input parameters:
+ *   bin_name   -   The name of binary to be reload
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static int binary_manager_update(char *bin_name)
+{
+	int ret;
+	int bin_idx;
+	binary_header_t header_data;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	struct binary_s *binp = NULL;
+#endif
+
+	bin_idx = binary_manager_get_index_with_name(bin_name);
+	if (bin_idx < 0) {
+		bmdbg("binary %s is not registered\n", bin_name);
+		return BINMGR_NOT_FOUND;
+	}
+
+	if (BIN_STATE(bin_idx) < BINARY_INACTIVE || BIN_STATE(bin_idx) > BINARY_RUNNING) {
+		bmdbg("Invalid binary state %d\n", BIN_STATE(bin_idx));
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	/* Terminate binary if binary is already loaded */
+	if (BIN_STATE(bin_idx) == BINARY_LOADING_DONE || BIN_STATE(bin_idx) == BINARY_RUNNING) {
+		/* Check if there is a binary with the latest version in inactive partition */
+		ret = binary_manager_read_header(bin_idx, BIN_USEIDX(bin_idx) ^ 1, &header_data);
+		if (ret != OK || BIN_VER(bin_idx) <= (int)atoi(header_data.bin_ver)) {
+			bmdbg("Already latest version\n");
+			return BINMGR_ALREADY_UPDATED;
+		}
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		binp = sched_gettcb(BIN_ID(bin_idx))->group->tg_bininfo;
+		binp->reload = true;
+#endif
+		ret = binary_manager_terminate_binary(bin_idx);
+		if (ret != OK) {
+			bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
+			return BINMGR_OPERATION_FAIL;
+		}
+	}
+
+	/* Load binary */
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	ret = binary_manager_load_binary(bin_idx, binp);
+#else
+	ret = binary_manager_load_binary(bin_idx);
+#endif
+	if (ret != OK) {
+		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
+		return BINMGR_OPERATION_FAIL;
+	}
 	return BINMGR_OK;
 }
 
+/****************************************************************************
+ * Name: loading_thread
+ *
+ * Description:
+ *	 This thread loads or reloads binaries accroding to request type.
+ *
+ ****************************************************************************/
 static int loading_thread(int argc, char *argv[])
 {
 	int ret;
@@ -453,19 +520,19 @@ static int loading_thread(int argc, char *argv[])
 			bmdbg("Invalid arguments for reloading, argc %d\n", argc);
 			break;
 		}
-		ret = binary_manager_check_update_binary(argv[2]);
-		if (ret == BINMGR_OK) {
-			ret = binary_manager_reload(argv[2]);
-		}
+		/* [2] binary name for reloading */
+		ret = binary_manager_update(argv[2]);
 		break;
+#ifdef CONFIG_BINMGR_RECOVERY
 	case LOADCMD_RELOAD:
 		if (argc <= 2) {
 			bmdbg("Invalid arguments for reloading, argc %d\n", argc);
 			break;
 		}
-		/* [2] bin_name for reloading */
-		ret = binary_manager_reload(argv[2]);
+		/* [2] binary id for reloading */
+		ret = binary_manager_reload((int)atoi(argv[2]));
 		break;
+#endif
 	default:
 		bmdbg("Invalid loading command %d\n", load_cmd);
 	}

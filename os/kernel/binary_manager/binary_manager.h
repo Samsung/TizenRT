@@ -25,7 +25,11 @@
 
 #include <tinyara/config.h>
 #include <queue.h>
+#ifdef CONFIG_BINMGR_RECOVERY
+#include <mqueue.h>
+#endif
 
+#include <tinyara/sched.h>
 #include <tinyara/binary_manager.h>
 
 #ifdef CONFIG_BINARY_MANAGER
@@ -33,9 +37,19 @@
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
+/* Priority Range of Binary Manager Modules */
+#define BM_PRIORITY_MAX            205                        /* The maximum priority of BM module */
+#define BM_PRIORITY_MIN            200                        /* The minimum priority of BM module */
+
+/* Fault Message Sender Thread information */
+#define FAULTMSGSENDER_NAME        "bm_faultmsgsender"        /* Fault Message Sender thread name */
+#define FAULTMSGSENDER_STACKSIZE   1024                       /* Fault Message Sender thread stack size */
+#define FAULTMSGSENDER_PRIORITY    BM_PRIORITY_MAX            /* Fault Message Sender thread priority */
+
+/* Binary Manager Core Thread information */
 #define BINARY_MANAGER_NAME        "binary_manager"           /* Binary manager thread name */
 #define BINARY_MANAGER_STACKSIZE   2048                       /* Binary manager thread stack size */
-#define BINARY_MANAGER_PRIORITY    250                        /* Binary manager thread priority */
+#define BINARY_MANAGER_PRIORITY    201                        /* Binary manager thread priority */
 
 /* Loading Thread information */
 #define LOADINGTHD_NAME            "bm_loader"                 /* Loading thread name */
@@ -54,6 +68,9 @@
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
 
+/* Index of 'kernel' data in binary table, bin_table. */
+#define KERNEL_IDX                 0
+
 /* The number of arguments for loading thread */
 #define LOADTHD_ARGC               2
 
@@ -68,8 +85,10 @@
 enum loading_thread_cmd {
 	LOADCMD_LOAD = 0,
 	LOADCMD_LOAD_ALL = 1,
-	LOADCMD_RELOAD = 2,
-	LOADCMD_UPDATE = 3,          /* Reload on update request */
+	LOADCMD_UPDATE = 2,          /* Reload on update request */
+#ifdef CONFIG_BINMGR_RECOVERY
+	LOADCMD_RELOAD = 3,          /* Reload on recovery request */
+#endif
 	LOADCMD_LOAD_MAX,
 };
 
@@ -84,10 +103,27 @@ enum binary_state_e {
 	BINARY_STATE_MAX,
 };
 
+/* Binary types */
+enum binary_type_e {
+	BINARY_TYPE_REALTIME = 0,
+	BINARY_TYPE_NONREALTIME = 1,
+	BINARY_TYPE_MAX,
+};
+
+#ifdef CONFIG_BINMGR_RECOVERY
+struct faultmsg_s {
+	struct faultmsg_s *flink;	/* Implements singly linked list */
+	int binid;
+};
+typedef struct faultmsg_s faultmsg_t;
+#endif
+
 /* Binary data type in binary table */
 struct binmgr_bininfo_s {
 	pid_t bin_id;
 	uint8_t state;
+	uint8_t rttype;
+	uint8_t rtcount;
 	uint8_t inuse_idx;
 	load_attr_t load_attr;
 	part_info_t part_info[PARTS_PER_BIN];
@@ -107,6 +143,8 @@ typedef struct statecb_node_s statecb_node_t;
 binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx);
 #define BIN_ID(bin_idx)                                 binary_manager_get_binary_data(bin_idx)->bin_id
 #define BIN_STATE(bin_idx)                              binary_manager_get_binary_data(bin_idx)->state
+#define BIN_RTTYPE(bin_idx)                             binary_manager_get_binary_data(bin_idx)->rttype
+#define BIN_RTCOUNT(bin_idx)                            binary_manager_get_binary_data(bin_idx)->rtcount
 #define BIN_USEIDX(bin_idx)                             binary_manager_get_binary_data(bin_idx)->inuse_idx
 #define BIN_PARTSIZE(bin_idx, part_idx)                 binary_manager_get_binary_data(bin_idx)->part_info[part_idx].part_size
 #define BIN_PARTNUM(bin_idx, part_idx)                  binary_manager_get_binary_data(bin_idx)->part_info[part_idx].part_num
@@ -146,9 +184,14 @@ binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx);
  *
  ****************************************************************************/
 void binary_manager_recovery(int pid);
+void binary_manager_exclude_rtthreads(struct tcb_s *tcb);
+void binary_manager_set_faultmsg_sender(pid_t pid);
+int binary_manager_faultmsg_sender(int argc, char *argv[]);
 mqd_t binary_manager_get_mqfd(void);
 #endif
 
+void binary_manager_add_binlist(FAR struct tcb_s *tcb);
+void binary_manager_remove_binlist(FAR struct tcb_s *tcb);
 void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info);
 void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);

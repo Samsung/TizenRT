@@ -168,6 +168,10 @@ volatile dq_queue_t g_waitingformqnotfull;
 volatile dq_queue_t g_waitingforfill;
 #endif
 
+/* This is the list of all tasks that are blocking waiting to be unblocked another threads */
+
+volatile dq_queue_t g_waitingforunblock;
+
 /* This the list of all tasks that have been initialized, but not yet
  * activated. NOTE:  This is the only list that is not prioritized.
  */
@@ -222,7 +226,8 @@ const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] = {
 	{&g_readytorun,           true },	/* TSTATE_TASK_READYTORUN */
 	{&g_readytorun,           true },	/* TSTATE_TASK_RUNNING */
 	{&g_inactivetasks,        false},	/* TSTATE_TASK_INACTIVE */
-	{&g_waitingforsemaphore,  true }	/* TSTATE_WAIT_SEM */
+	{&g_waitingforsemaphore,  true },	/* TSTATE_WAIT_SEM */
+	{&g_waitingforunblock,    true }	/* TSTATE_WAIT_UNBLOCK */
 #ifndef CONFIG_DISABLE_SIGNALS
 	,
 	{&g_waitingforsignal,     false}	/* TSTATE_WAIT_SIG */
