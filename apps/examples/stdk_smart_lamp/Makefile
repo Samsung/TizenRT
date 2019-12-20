@@ -60,6 +60,13 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 STDK_DIR = $(TOPDIR)/../external/stdk
 STDK_SRC_DIR = $(STDK_DIR)/st-device-sdk-c/src
+ST_APP_PATH=$(TOPDIR)/../apps/examples/stdk_smart_lamp
+DEVICE_JSON_FILE=$(ST_APP_PATH)/device_info.json
+DEVICE_HEADER_FILE=$(ST_APP_PATH)/device_info.h
+DEVICE_HEADER_BACKUP_FILE=$(DEVICE_HEADER_FILE).bak
+PRODUCT_JSON_FILE=$(ST_APP_PATH)/onboarding_config.json
+PRODUCT_HEADER_FILE=$(ST_APP_PATH)/onboarding_config.h
+PRODUCT_HEADER_BACKUP_FILE=$(PRODUCT_HEADER_FILE).bak
 
 CFLAGS+=-I$(STDK_SRC_DIR)/include/
 CFLAGS+=-I$(STDK_SRC_DIR)/include/bsp
@@ -70,35 +77,6 @@ CFLAGS+=-I$(STDK_DIR)/tizenrt-wrapper/os
 ASRCS =
 CSRCS =
 MAINSRC = smart_lamp.c device_control.c
-
-####################################
-# Convert device & product profile
-#####################################
-ifeq ($(CONFIG_EXAMPLES_STDK_SMART_LAMP),y)
-ST_APP_PATH=$(TOPDIR)/../apps/examples/stdk_smart_lamp
-endif
-DEVICE_JSON_FILE=$(ST_APP_PATH)/device_info.json
-DEVICE_HEADER_FILE=$(ST_APP_PATH)/device_info.h
-DEVICE_HEADER_BACKUP_FILE=$(DEVICE_HEADER_FILE).bak
-$(shell cp -n $(STDK_SRC_DIR)/include/profile/json/device_info_example.json $(DEVICE_JSON_FILE))
-result := $(shell xxd -i $(DEVICE_JSON_FILE) > $(DEVICE_HEADER_FILE); echo $$?;)
-ifneq ($(result),0)
-    $(error)
-endif
-$(shell sed -i.bak 's/_.*json/device_info/g' $(DEVICE_HEADER_FILE))
-$(shell rm $(DEVICE_HEADER_BACKUP_FILE))
-
-PRODUCT_JSON_FILE=$(ST_APP_PATH)/onboarding_config.json
-PRODUCT_HEADER_FILE=$(ST_APP_PATH)/onboarding_config.h
-PRODUCT_HEADER_BACKUP_FILE=$(PRODUCT_HEADER_FILE).bak
-$(shell cp -n $(STDK_SRC_DIR)/include/profile/json/onboarding_config_example.json $(PRODUCT_JSON_FILE))
-result := $(shell xxd -i $(PRODUCT_JSON_FILE) > $(PRODUCT_HEADER_FILE); echo $$?;)
-ifneq ($(result),0)
-    $(error)
-endif
-$(shell sed -i.bak 's/_.*json/onboarding_config/g' $(PRODUCT_HEADER_FILE))
-$(shell rm $(PRODUCT_HEADER_BACKUP_FILE))
-
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -167,6 +145,17 @@ $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
 context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+####################################
+# Convert device & product profile
+#####################################
+	$(Q) cp -n $(STDK_SRC_DIR)/include/profile/json/device_info_example.json $(DEVICE_JSON_FILE)
+	$(Q) xxd -i $(DEVICE_JSON_FILE) > $(DEVICE_HEADER_FILE); echo $$?;
+	$(Q) sed -i.bak 's/_.*json/device_info/g' $(DEVICE_HEADER_FILE)
+	$(Q) rm $(DEVICE_HEADER_BACKUP_FILE)
+	$(Q) cp -n $(STDK_SRC_DIR)/include/profile/json/onboarding_config_example.json $(PRODUCT_JSON_FILE)
+	$(Q) xxd -i $(PRODUCT_JSON_FILE) > $(PRODUCT_HEADER_FILE); echo $$?;
+	$(Q) sed -i.bak 's/_.*json/onboarding_config/g' $(PRODUCT_HEADER_FILE)
+	$(Q) rm $(PRODUCT_HEADER_BACKUP_FILE)
 
 else
 context:
