@@ -66,7 +66,7 @@ err_status_t error_report_deinit(void)
 	return ERR_SUCCESS;
 }
 
-static unsigned long prv_fetch_taskaddr(pid_t pid)
+static unsigned long prv_fetch_taskaddr(void)
 {
 	unsigned long task_addr = ERROR;
 	const char buf[ERR_TASKADDR_LEN];
@@ -121,7 +121,7 @@ error_data_t *error_report_data_create(int module_id, int error_code, uint32_t p
 	ret->error_code = error_code;
 	ret->pc_value = pc_value;
 	nwerr_vdbg("pc_value: %08x\n", pc_value);
-	ret->task_addr = prv_fetch_taskaddr(getpid());
+	ret->task_addr = prv_fetch_taskaddr();
 	nwerr_vdbg("task_addr: %08x\n", ret->task_addr);
 	if (g_err_info.fsm == ERRSTATE_MEMUNDERFLOW) {
 		g_err_info.fsm = ERRSTATE_INITIALIZED;
