@@ -167,7 +167,7 @@ ssize_t esp32_flash_read(size_t addr, void *buf, size_t count)
     if ((addr & 0x3) == 0) {
             //! if addr is 4 bytes aligned
             result = spi_flash_read(addr, buf, count);
-            printf("\tresult = %d\n", result);
+            printf("\tresult = %d, addr = 0x%x\n", result, addr);
             if (result != 0) {
                 ret = -EIO;
             } else {
@@ -260,7 +260,7 @@ static int esp32_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;			/* Assume good command with bad parameters */
     FAR struct esp32_dev_s *priv = (FAR struct mtd_dev_s *)dev;
-	fdbg("cmd: %d \n", cmd);
+	fdbg("line %d, cmd: %d \n", __LINE__, cmd);
 
 	switch (cmd) {
 	case MTDIOC_GEOMETRY: {
@@ -277,6 +277,7 @@ static int esp32_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 
 	case MTDIOC_BULKERASE: {
 		/* Erase the entire device */
+		fdbg("[BULK_ERASE] called!!\n");
         ret = esp32_erase(dev, 0, priv->nsectors);
 	}
 	break;

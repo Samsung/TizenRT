@@ -206,8 +206,12 @@ static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock(void)
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 {
+	int ret;
 	CHECK_WRITE_ADDRESS(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
-	return spi_flash_erase_range(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
+//	return spi_flash_erase_range(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
+	ret = spi_flash_erase_range(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
+	printf("spi_flash_erase_sector = %d, ret = %d\n", sec, ret);
+	return ret;
 }
 
 esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)

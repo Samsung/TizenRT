@@ -1821,8 +1821,9 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		ret = -ENOMEM;
 		goto err_out;
 	}
-	printf(" line %d\n", __LINE__);
-	for (sector = 0; sector < totalsectors; sector++) {
+	printf(" line %d, totalsectors = %d\n", __LINE__, totalsectors);
+//	for (sector = 0; sector < totalsectors; sector++) {
+	for (sector = 0; sector < 64; sector++) {
 		winner = sector;
 		corrupted = false;
 		fvdbg("Scan sector %d\n", sector);
@@ -1841,7 +1842,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 			printf("Error reading physical sector %d.\n", sector);
 			goto err_out;
 		}
-		printf(" line %d\n", __LINE__);
+//		printf(" line %d\n", __LINE__);
 		memcpy(&header, dev->rwbuffer, sizeof(struct smart_sect_header_s));
 		ret = smart_validate_crc(dev);
 		if (ret != OK) {
@@ -1883,7 +1884,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 			}
 		}
 
-		printf(" line %d\n", __LINE__);
+//		printf(" line %d\n", __LINE__);
 		/* Get the logical sector number for this physical sector. */
 		logicalsector = UINT8TOUINT16(header.logicalsector);
 #if CONFIG_SMARTFS_ERASEDSTATE == 0x00
@@ -1894,14 +1895,14 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 		status_released = SECTOR_IS_RELEASED(header);
 		status_committed = SECTOR_IS_COMMITTED(header);
-		fvdbg("released : %d committed : %d logical : %d physical : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, header.status, header.seq);
+		fdbg("released : %d committed : %d logical : %d physical : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, header.status, header.seq);
 		if (logicalsector > 0 && header.status != CONFIG_SMARTFS_ERASEDSTATE && !status_released && status_committed) {
 
 			/* Map the sector and update the free sector counts. */
 			if (header.seq >= sector_seq_log[logicalsector]) {
 
 				sector_seq_log[logicalsector] = header.seq;
-				fvdbg("logicalsector : physicalsector -> %d : %d\n", logicalsector, sector);
+				fdbg("logicalsector : physicalsector -> %d : %d\n", logicalsector, sector);
 
 				/* Generate bad sector information from start. */
 #ifdef CONFIG_SMARTFS_BAD_SECTOR
@@ -1940,12 +1941,12 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 				}				//if(logicalsector == SMART_BAD_SECTOR_NUMBER)
 #endif							/*CONFIG_SMARTFS_BAD_SECTOR */
 			} else {
-				fvdbg("logicalsector : physicalsector -> %d : %d; status_released: %d, status_committed: %d\n", logicalsector, sector, status_released, status_committed);
+				fdbg("logicalsector : physicalsector -> %d : %d; status_released: %d, status_committed: %d\n", logicalsector, sector, status_released, status_committed);
 			}
 		}
 
 		/* Test if this sector has been committed. */
-		printf(" line %d\n", __LINE__);
+		printf(" line %d, dev->totalsectors = %d\n", __LINE__, dev->totalsectors);
 		if (!status_committed) {
 			/* Confirm that this sector is truly blank. */
 			if (logicalsector < dev->totalsectors) {
@@ -1963,7 +1964,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 					goto err_out;
 				}
 			} else {
-				printf(" continue  line %d\n", __LINE__);
+				printf(" continue  line %d,  logical sector = %d\n", __LINE__, logicalsector);
 				continue;
 			}
 		}
@@ -2332,7 +2333,7 @@ static inline int smart_getformat(FAR struct smart_struct_s *dev, FAR struct sma
 
 	if (dev->formatstatus != SMART_FMT_STAT_FORMATTED) {
 		/* Perform the scan. */
-
+		printf("[smart.c] smart_getformat, line = %d\n", __LINE__);
 		ret = smart_scan(dev);
 
 		if (ret != OK) {
@@ -4141,7 +4142,7 @@ relocate_good_sector:
 	physsector = smart_cache_lookup(dev, req->logsector);
 #endif
 	if (physsector == 0xFFFF) {
-		printf("Logical sector %d not allocated\n", req->logsector);
+		printf("line %d, ERROR: Logical sector %d not allocated\n", __LINE__, req->logsector);
 		ret = -EINVAL;
 		goto errout;
 	}
@@ -5017,7 +5018,7 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 	FAR struct mtd_smart_procfs_data_s *procfs_data;
 	FAR struct mtd_smart_debug_data_s *debug_data;
 #endif
-	fvdbg("Entry cmd : %08x\n", cmd);
+	fdbg("   Entry cmd : %08x\n", cmd);
 	DEBUGASSERT(inode && inode->i_private);
 
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
@@ -5197,6 +5198,8 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 	FAR struct smart_struct_s *dev;
 	int ret = -ENOMEM;
 	uint32_t totalsectors;
+	int e;
+	int sector;
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	FAR struct smart_multiroot_device_s *rootdirdev = NULL;
 #endif
@@ -5350,8 +5353,39 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 		}
 
 		/* Do a scan of the device. */
-		printf("Before SMART_SCAN\n");
+		printf("Before SMART_SCAN... Total Erasable Blocks = %d, dev->sectorsPerBlk = %d\n", dev->geo.neraseblocks, dev->sectorsPerBlk);
+
+//		for (e=0; e<dev->geo.neraseblocks; e++) {
+//		for (e=0; e<16; e++) {
+//			printf("Erase block = %d\n", e);
+//			ret = MTD_ERASE(dev->mtd, e, 1);
+//			if (ret < 0) {
+//				printf("Erase block=%d failed: %d\n", e, ret);
+//
+//				/* Unlock the mutex if we add one. */
+//
+//				return ret;
+//			}
+//
+//			for (sector = e * dev->sectorsPerBlk; sector < e * dev->sectorsPerBlk + dev->availSectPerBlk; sector++) {
+//				struct smart_sect_header_s header;
+//				uint32_t readaddr = sector * dev->mtdBlksPerSector * dev->geo.blocksize;
+//				ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
+//				if (ret != sizeof(struct smart_sect_header_s)) {
+//					printf("line %d, Error reading phys sector %d\n", __LINE__, sector);
+//					return ret;
+//				}
+//				if (!SECTOR_IS_COMMITTED(header) && !SECTOR_IS_RELEASED(header)) {
+//					printf("Sector = %d is clean..\n", sector);
+//				} else {
+//					printf("Sector = %d is DIRTY..\n", sector);
+//				}
+//			}
+//		}
+
+//		printf("ERASED ALL SECTORS...\n");
 		smart_scan(dev);
+		printf("   [smart_initialize] line = %d, smart_scan is finished\n", __LINE__);
 	}
 
 	return OK;

@@ -141,7 +141,7 @@ int mksmartfs(FAR const char *pathname, bool force)
 			return OK;
 		}
 	}
-
+	printf("[smartfs_mksmartfs] before LLFORMAT line = %d\n", __LINE__);
 	/* Validate the block device is a SMART device */
 	/* Perform a low-level SMART format */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
@@ -153,7 +153,7 @@ int mksmartfs(FAR const char *pathname, bool force)
 		fdbg("Error creating low-level format: %d\n", ret);
 		goto errout_with_driver;
 	}
-
+	printf("[smartfs_mksmartfs] after LLFORMAT, line = %d\n", __LINE__);
 	/* Get the format information so we know how big the sectors are */
 	ret = inode->u.i_bops->ioctl(inode, BIOC_GETFORMAT, (unsigned long)&fmt);
 	if (ret != OK) {
@@ -182,7 +182,7 @@ int mksmartfs(FAR const char *pathname, bool force)
 			goto errout_with_driver;
 		}
 #endif							// CONFIG_SMARTFS_BAD_SECTOR
-
+		printf("\tBefore ALLOC sector, line = %d\n", __LINE__);
 		ret = inode->u.i_bops->ioctl(inode, BIOC_ALLOCSECT, SMARTFS_ROOT_DIR_SECTOR + x);
 		if (ret != SMARTFS_ROOT_DIR_SECTOR + x) {
 			ret = -EIO;
@@ -194,7 +194,7 @@ int mksmartfs(FAR const char *pathname, bool force)
 		request.logsector = SMARTFS_ROOT_DIR_SECTOR + x;
 
 		/* Issue a write to the sector, single byte */
-
+		printf("\tBefore WRITE sector, line = %d\n", __LINE__);
 		ret = inode->u.i_bops->ioctl(inode, BIOC_WRITESECT, (unsigned long)&request);
 		if (ret != 0) {
 			ret = -EIO;
