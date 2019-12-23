@@ -31,6 +31,7 @@ CONFIG_ESPTOOLPY_COMPRESSED ?=
 
 PYTHON ?= python
 MAKECMDGOALS ?= all
+HEXDUMP = hexdump
 
 define prereq_if_explicit
 $(filter $(1),$(MAKECMDGOALS))
@@ -99,6 +100,8 @@ BOOTLOADER: bootloader
 
 ERASE_ALL: erase_flash
 
+DUMP_FLASH: dump_flash
+
 
 romfs: $(ESPTOOLPY_SUBMODULE)
 ifneq ($(ROMFS_OFFSET),-1)
@@ -125,10 +128,14 @@ COMPONENT_SUBMODULES += $(COMPONENT_PATH)/esptool
 BOOTLOADER_OFFSET := 0x1000
 BOOTLOADER_BIN := $(CURRENTDIR)/bootloader/bootloader.bin
 
-
 erase_flash: $(ESPTOOLPY_SUBMODULE)
 	@echo "Erasing entire flash..."
 	$(ESPTOOLPY_SERIAL) erase_flash
+
+dump_flash: $(ESPTOOLPY_SUBMODULE)
+	    @echo "Read flash..."
+		$(ESPTOOLPY_SERIAL) read_flash $(start) $(size) $(filename) $(supress)
+		@$(HEXDUMP) $(filename)
 
 MONITORBAUD ?= $(CONFIG_MONITOR_BAUD)
 
