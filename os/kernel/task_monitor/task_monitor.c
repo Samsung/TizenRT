@@ -59,7 +59,7 @@ int task_monitor_register_list(int pid, int interval)
 		}
 	}
 
-	dq_addlast((FAR dq_entry_t *)&g_monitored_tasks_list[hash_pid], &g_que_list[interval - 1].q);
+	dq_addlast((FAR dq_entry_t *)&g_monitored_tasks_list[hash_pid], &g_que_list[g_monitored_tasks_list[hash_pid].interval - 1].q);
 
 	g_monitor_cnt++;
 	if (g_monitor_cnt == 1) {
@@ -144,7 +144,7 @@ int task_monitor(int argc, char *argv[])
 
 			if (g_que_list[time_idx].remaining_count == 0) {
 
-				next_mon_node = (task_monitor_node_t *)dq_peek(&g_que_list[time_idx - 1].q);
+				next_mon_node = (task_monitor_node_t *)dq_peek(&g_que_list[time_idx].q);
 
 				while (next_mon_node != NULL) {
 
@@ -160,7 +160,7 @@ int task_monitor(int argc, char *argv[])
 						/* Reset the registered task's/pthread's active flag. */
 						tcb->is_active = false;
 					}
-					next_mon_node = (task_monitor_node_t *)dq_prev(next_mon_node);
+					next_mon_node = (task_monitor_node_t *)dq_next(next_mon_node);
 				}
 				/* Restore the check time. */
 				g_que_list[time_idx].remaining_count = time_idx;
