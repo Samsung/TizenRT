@@ -24,7 +24,6 @@ depending on the decision by the vendors.
 - [How to use WPA_SUPPLICANT](#how-to-use-wpa_supplicant)
 - [Incorporate Wi-Fi Chipset Driver](#incorporate-wi-fi-chipset-driver)
 
-<br>
 ## Interface to Network Manager
 In this section,
 we offer how to configure Network Manager including vendor specific,
@@ -197,8 +196,6 @@ called by the callback handler (*linkup_handler* and *linkdown_handler*) self-de
 For adding a logging system such as *DEBUG_LWNL80211_<driver_prefix>_ERROR* and *DEBUG_LWNL80211_<driver_prefix>_INFO*,
 please refer to [How to Debug](HowToDebug.md).
 
-
-<br>
 ## How to Add External Wi-Fi Library
 The vendors is able to select whether they use their compiled Wi-Fi library,
 rather than opting for TizenRT's *wpa_supplicant*.
@@ -206,8 +203,6 @@ To support external and independently compiled Wi-Fi supplicant libraries,
 the vendors should add the static library into the output binary of TizenRT.
 For details on how to add libraries, please refer to [How to add Static Library](HowToAddStaticLibrary.md).
 
-
-<br>
 ## Incorporate Wi-Fi Chipset Driver
 The Wi-Fi driver source files should reside under a newly created *os/drivers/wireless/<DRV_NAME>* directory.
 In the following subsections, we describe how to build the new Wi-Fi driver in TizenRT's code tree,
@@ -249,7 +244,6 @@ void board_initialize(void) {
 This procedure only covers the driver's internal initialization,
 prior to bringing up the network stack and device used by Network Manager.
 
-<br>
 ## How to use wpa_supplicant
 The vendor is able either to use their proprietary (vendor-specific) supplicant codebase, or
 to directly use TizenRT's Wi-Fi solution.
