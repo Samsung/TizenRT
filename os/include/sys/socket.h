@@ -87,6 +87,58 @@ extern "C" {
 #endif
 
 /****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* The socket()domain parameter specifies a communication domain; this selects
+ * the protocol family which will be used for communication.
+ */
+
+/* Supported Protocol Families */
+
+#ifndef PF_UNSPEC
+#define PF_UNSPEC 0 /* Protocol family unspecified */
+#endif
+#ifndef PF_UNIX
+#define PF_UNIX 1 /* Local communication */
+#endif
+#ifndef PF_LOCAL
+#define PF_LOCAL 1 /* Local communication */
+#endif
+#ifndef PF_INET
+#define PF_INET 2 /* IPv4 Internet protocols */
+#endif
+#ifndef PF_INET6
+#define PF_INET6 10 /* IPv6 Internet protocols */
+#endif
+#ifndef PF_PACKET
+#define PF_PACKET 17 /* Low level packet interface */
+#endif
+
+/* Supported Address Families. Opengroup.org requires only AF_UNSPEC,
+ * AF_UNIX, AF_INET and AF_INET6.
+ */
+
+#ifndef AF_UNSPEC
+#define AF_UNSPEC PF_UNSPEC
+#endif
+#ifndef AF_UNIX
+#define AF_UNIX PF_UNIX
+#endif
+#ifndef AF_LOCAL
+#define AF_LOCAL PF_LOCAL
+#endif
+#ifndef AF_INET
+#define AF_INET PF_INET
+#endif
+#ifndef AF_INET6
+#define AF_INET6 PF_INET6
+#endif
+#ifndef AF_PACKET
+#define AF_PACKET PF_PACKET
+#endif
+
+/****************************************************************************
  * Public Structure
  ****************************************************************************/
 

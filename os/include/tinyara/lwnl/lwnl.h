@@ -45,7 +45,7 @@
 
 
 /* Light-weight netlink domain definition */
-#define AF_LWNL 1
+#define AF_LWNL 3
 
 /*	Event type */
 #define LWNL_ROUTE 1
