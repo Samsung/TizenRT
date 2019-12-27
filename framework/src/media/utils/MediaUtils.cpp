@@ -1377,7 +1377,7 @@ float getSignalToNoiseRatio(const short *buffer, size_t size, int windows, int *
 {
 	const int NOISE_MIN = 30;
 
-	int i = 0;
+	unsigned int i = 0;
 	int frame_sample = 0;
 
 	float sum = 0.0f;
