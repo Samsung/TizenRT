@@ -106,10 +106,17 @@ typedef uint16_t socktimeo_t;
 /* This is the internal representation of a socket reference by a file
  * descriptor.
  */
-struct lwip_sock;
+typedef enum {
+	TR_SOCKET,
+	TR_UDS,
+	TR_LWNL,
+	TR_UNKNOWN,
+} sock_type;
+
 struct socket {
 	/** sockets currently are built on netconns, each socket has one netconn */
-	struct lwip_sock *conn;
+	void *conn;
+	sock_type type; // lwip_sock, uds, ...
 };
 
 /* This defines a list of sockets indexed by the socket descriptor */
