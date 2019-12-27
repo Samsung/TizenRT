@@ -399,7 +399,7 @@ int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_t
 
 	if (int_type == IOTBUS_GPIO_FALLING) {
 		edge = GPIO_EDGE_FALLING;
-	} else if (int_type == IOTBUS_GPIO_EDGE_RISING) {
+	} else if (int_type == IOTBUS_GPIO_RISING) {
 		edge = GPIO_EDGE_RISING;
 	} else {
 		edge = GPIO_EDGE_NONE;
@@ -424,7 +424,7 @@ int iotbus_gpio_set_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_t
 
 int iotbus_gpio_unset_interrupt(iotbus_gpio_context_h dev, iotbus_int_type_e int_type)
 {
-	int fd, ret, edge;
+	int fd, ret;
 	struct _iotbus_gpio_s *handle;
 	struct iotbus_int_info_s info = { 0, };
 
