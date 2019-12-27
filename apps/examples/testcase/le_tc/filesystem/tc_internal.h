@@ -43,7 +43,8 @@
 **********************************************************/
 void tc_fs_procfs_main(void);
 void tc_fs_smartfs_procfs_main(void);
-void tc_fs_smartfs_mksmartfs(void);
+void tc_fs_smartfs_mksmartfs_p(void);
+void tc_fs_smartfs_mksmartfs_invalid_path_n(void);
 
 void itc_fs_main(void);
 

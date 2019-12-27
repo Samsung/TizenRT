@@ -213,15 +213,26 @@ static int procfs_rewind_tc(const char *dirpath)
 }
 
 #if defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) && !defined(CONFIG_BUILD_PROTECTED)
-void tc_fs_smartfs_mksmartfs(void)
+void tc_fs_smartfs_mksmartfs_p(void)
 {
 	int ret;
+
+	/* Testcase */
 	ret = mksmartfs(SMARTFS_DEV_PATH, 1);
 	TC_ASSERT_EQ("mksmartfs", ret, OK);
-	ret = mksmartfs(INVALID_PATH, 1);
-	TC_ASSERT_NEQ("mksmartfs", ret, OK);
 	ret = mksmartfs(SMARTFS_DEV_PATH, 0);
 	TC_ASSERT_EQ("mksmartfs", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+void tc_fs_smartfs_mksmartfs_invalid_path_n(void)
+{
+	int ret;
+
+	/* Testcase */
+	ret = mksmartfs(INVALID_PATH, 1);
+	TC_ASSERT_NEQ("mksmartfs", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
