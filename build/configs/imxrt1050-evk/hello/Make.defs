@@ -68,13 +68,15 @@ ifeq ($(WINTOOL),y)
   ARCHINCLUDES = -I. -I"${shell cygpath -w $(TOPDIR)/include}"
   ARCHINCLUDES += -isystem "${shell cygpath -w $(TOPDIR)/net/lwip/src/include}"
   ARCHXXINCLUDES = -I. -I"${shell cygpath -w $(TOPDIR)/include}" -I"${shell cygpath -w $(TOPDIR)/include/cxx}"
+  ARCHXXINCLUDES += -isystem "${shell cygpath -w $(TOPDIR)/net/lwip/src/include}"
   ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT1)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
   ARCHINCLUDES = -I. -I$(TOPDIR)/include -I$(TOPDIR)/../framework/include -I$(TOPDIR)/../external/include
-  ARCHINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include/
+  ARCHINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
   ARCHXXINCLUDES = -I. -I$(TOPDIR)/include -I$(TOPDIR)/include/cxx -I$(TOPDIR)/../external/include
+  ARCHXXINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
   ARCHSCRIPT = -T$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT1)
 endif
 
