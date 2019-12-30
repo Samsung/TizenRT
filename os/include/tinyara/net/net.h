@@ -74,11 +74,7 @@
  * socket descriptors
  */
 
-#ifdef CONFIG_NFILE_DESCRIPTORS
 #define __SOCKFD_OFFSET CONFIG_NFILE_DESCRIPTORS
-#else
-#define __SOCKFD_OFFSET 0
-#endif
 
 /****************************************************************************
  * Public Types
