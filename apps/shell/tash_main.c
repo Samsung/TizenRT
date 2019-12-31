@@ -53,6 +53,34 @@ enum tash_input_state_e {
 
 static int tash_running = FALSE;
 
+static void tash_clear_line(int fd, int len)
+{
+	if (write(fd, (const void *)"\r", sizeof("\r")) <= 0) {
+		shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+	}
+
+	for (int i = 0; i < len; ++i) {
+		if (write(fd, (const void *)" ", sizeof(" ")) <= 0) {
+			shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+		}
+	}
+}
+
+static void tash_print_cmd(int fd, char *cmd, int pos)
+{
+	if (write(fd, (const void *)"\r", sizeof("\r")) <= 0) {
+		shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+	}
+
+	if (write(fd, (const void *)TASH_PROMPT, sizeof(TASH_PROMPT)) <= 0) {
+		shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+	}
+
+	if (write(fd, (const void *)cmd, pos) <= 0) {
+		shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+	}
+}
+
 static void tash_remove_char(char *char_pos)
 {
 	int remaining;
@@ -128,18 +156,29 @@ static char *tash_read_input_line(int fd)
 					is_tab_pressed = false;
 				} else if (buffer[pos] == ASCII_TAB) {
 					if (pos > 0 && tash_do_autocomplete(buffer, &pos, is_tab_pressed) == true) {
-						if (write(fd, (const void *)"\r", sizeof("\r")) <= 0) {
-							shdbg("TASH: echo failed (errno = %d)\n", get_errno());
-						}
-						if (write(fd, (const void *)TASH_PROMPT, sizeof(TASH_PROMPT)) <= 0) {
-							shdbg("TASH: echo failed (errno = %d)\n", get_errno());
-						}
-						if (write(fd, (const void *)buffer, pos) <= 0) {
-							shdbg("TASH: echo failed (errno = %d)\n", get_errno());
-						}
+						tash_print_cmd(fd, buffer, pos);
 					}
 					is_tab_pressed = true;
-				} else {
+				}
+#if CONFIG_TASH_MAX_STORE_COMMANDS   > 0
+				else if (buffer[pos] == ASCII_ESC && buffer[pos + 1] == ASCII_LBRACKET) {
+					/* ASCII_ESC + ASCII_LBRACKET + ASCII_A is up
+					 * ASCII_ESC + ASCII_LBRACKET + ASCII_B is down
+					 */
+
+					int len = pos;
+					char_idx += 2;
+
+					buffer[pos] = 0;
+					if (tash_search_cmd(buffer, &pos, buffer[pos + 2]) == true) {
+						tash_clear_line(fd, sizeof(TASH_PROMPT) + len);
+
+						tash_print_cmd(fd, buffer, pos);
+					}
+					is_tab_pressed = false;
+				}
+#endif
+				else {
 					if (buffer[pos] == ASCII_CR) {
 						buffer[pos] = ASCII_LF;
 					}
