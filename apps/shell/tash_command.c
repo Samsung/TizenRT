@@ -54,9 +54,7 @@
 #endif
 #define TASH_CMDS_PER_LINE			(4)
 
-#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
-#define TASH_MAX_STORE              (CONFIG_TASH_MAX_STORE_COMMANDS)
-
+#if TASH_MAX_STORE > 0
 #define CMD_INDEX_UP(x)                                   \
 	do {                                                  \
 		((x) == TASH_MAX_STORE - 1) ? (x) = 0 : (x)++;    \
@@ -100,7 +98,7 @@ static int tash_exit(int argc, char **args);
 #if defined(CONFIG_BOARDCTL_RESET)
 static int tash_reboot(int argc, char **argv);
 #endif
-#if CONFIG_TASH_MAX_STORE_COMMANDS   > 0
+#if TASH_MAX_STORE   > 0
 static int tash_history(int argc, char **argv);
 #endif
 
@@ -126,13 +124,13 @@ const static tash_cmdlist_t tash_basic_cmds[] = {
 #if defined(CONFIG_BOARDCTL_RESET)
 	{"reboot", tash_reboot, TASH_EXECMD_SYNC},
 #endif
-#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
+#if TASH_MAX_STORE > 0
 	{"history", tash_history, TASH_EXECMD_SYNC},
 #endif
 	{NULL,    NULL,        0}
 };
 
-#if CONFIG_TASH_MAX_STORE_COMMANDS   > 0
+#if TASH_MAX_STORE   > 0
 static char cmd_store[TASH_MAX_STORE][TASH_LINEBUFLEN];
 static char cmd_line[TASH_LINEBUFLEN];
 static int cmd_pos;
@@ -207,7 +205,7 @@ static int tash_exit(int argc, char **args)
  *  @ingroup tash
  */
 
-#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
+#if TASH_MAX_STORE > 0
 static int tash_history(int argc, char **args)
 {
 	int cmd_idx = 1;

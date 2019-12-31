@@ -28,6 +28,12 @@
 #define tash_free(a)          free(a)
 #define TASH_LINEBUFLEN       (128)
 
+#ifdef CONFIG_TASH_MAX_STORE_COMMANDS
+#define TASH_MAX_STORE        (CONFIG_TASH_MAX_STORE_COMMANDS)
+#else
+#define TASH_MAX_STORE        (0)
+#endif  
+
 #ifdef CONFIG_CPP_HAVE_VARARGS
 #ifdef CONFIG_DEBUG_TASH
 #ifdef CONFIG_DEBUG_TASH_ERROR
@@ -60,7 +66,7 @@
 
 bool tash_do_autocomplete(char *cmd, int *pos, bool double_tab);
 
-#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
+#if TASH_MAX_STORE > 0
 void tash_get_cmd_from_history(int num, char *cmd);
 bool tash_search_cmd(char *cmd, int *pos, char status);
 void tash_store_line(char *line);

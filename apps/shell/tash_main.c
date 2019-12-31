@@ -160,7 +160,7 @@ static char *tash_read_input_line(int fd)
 					}
 					is_tab_pressed = true;
 				}
-#if CONFIG_TASH_MAX_STORE_COMMANDS   > 0
+#if TASH_MAX_STORE   > 0
 				else if (buffer[pos] == ASCII_ESC && buffer[pos + 1] == ASCII_LBRACKET) {
 					/* ASCII_ESC + ASCII_LBRACKET + ASCII_A is up
 					 * ASCII_ESC + ASCII_LBRACKET + ASCII_B is down
@@ -300,7 +300,7 @@ int tash_execute_cmdline(char *buff)
 	bool is_nextcmd = false;
 	int ret = OK;
 
-#if CONFIG_TASH_MAX_STORE_COMMANDS > 0
+#if TASH_MAX_STORE > 0
 	if (buff[0] == '!') {
 		int cmd_number = atoi(buff + 1);
 		tash_get_cmd_from_history(cmd_number, buff);
