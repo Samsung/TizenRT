@@ -59,8 +59,11 @@
 #endif /* CONFIG_CPP_HAVE_VARARGS */
 
 bool tash_do_autocomplete(char *cmd, int *pos, bool double_tab);
+
 #if CONFIG_TASH_MAX_STORE_COMMANDS > 0
 void tash_get_cmd_from_history(int num, char *cmd);
+bool tash_search_cmd(char *cmd, int *pos, char status);
+void tash_store_line(char *line);
 void tash_store_cmd(char *cmd);
 #endif
 

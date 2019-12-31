@@ -20,6 +20,7 @@
 
 #include <pthread.h>
 #include <tinyara/config.h>
+#include <tinyara/ascii.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -55,8 +56,17 @@
 
 #if CONFIG_TASH_MAX_STORE_COMMANDS > 0
 #define TASH_MAX_STORE              (CONFIG_TASH_MAX_STORE_COMMANDS)
-#endif
 
+#define CMD_INDEX_UP(x)                                   \
+	do {                                                  \
+		((x) == TASH_MAX_STORE - 1) ? (x) = 0 : (x)++;    \
+	} while (0)
+
+#define CMD_INDEX_DOWN(x)                                 \
+	do {                                                  \
+		((x) == 0) ? (x) = TASH_MAX_STORE - 1 : (x)--;    \
+	} while (0)
+#endif
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -90,7 +100,9 @@ static int tash_exit(int argc, char **args);
 #if defined(CONFIG_BOARDCTL_RESET)
 static int tash_reboot(int argc, char **argv);
 #endif
+#if CONFIG_TASH_MAX_STORE_COMMANDS   > 0
 static int tash_history(int argc, char **argv);
+#endif
 
 /****************************************************************************
  * Private Variables
@@ -120,9 +132,13 @@ const static tash_cmdlist_t tash_basic_cmds[] = {
 	{NULL,    NULL,        0}
 };
 
+#if CONFIG_TASH_MAX_STORE_COMMANDS   > 0
 static char cmd_store[TASH_MAX_STORE][TASH_LINEBUFLEN];
+static char cmd_line[TASH_LINEBUFLEN];
+static int cmd_pos;
 static int cmd_head;
 static int cmd_tail;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -202,11 +218,7 @@ static int tash_history(int argc, char **args)
 	int head_idx = cmd_head;
 	while (head_idx != cmd_tail) {
 		printf(" %d \t %s\n", cmd_idx++, cmd_store[head_idx]);
-		if (head_idx == TASH_MAX_STORE - 1) {
-			head_idx = 0;
-		} else {
-			head_idx++;
-		}
+		CMD_INDEX_UP(head_idx);
 	}
 
 	return 0;
@@ -245,12 +257,8 @@ void tash_store_cmd(char *cmd)
 
 	if (cmd_head != cmd_tail) {
 		/* If it is the same as the previous command, it is not saved. */
-		int prev;
-		if (cmd_tail == 0) {
-			prev = TASH_MAX_STORE - 1;
-		} else {
-			prev = cmd_tail - 1;
-		}
+		int prev = cmd_tail;
+		CMD_INDEX_DOWN(prev);
 
 		if (strncmp(cmd_store[prev], cmd, TASH_LINEBUFLEN) == 0) {
 			return;
@@ -259,19 +267,59 @@ void tash_store_cmd(char *cmd)
 
 	/* Save current command. */
 	strncpy(cmd_store[cmd_tail], cmd, TASH_LINEBUFLEN);
-	if (cmd_tail == TASH_MAX_STORE - 1) {
-		cmd_tail = 0;
-	} else {
-		cmd_tail++;
-	}
+	CMD_INDEX_UP(cmd_tail);
+
 	/* Move the head when the storage space is full. */
 	if (cmd_tail == cmd_head) {
-		if (cmd_head == TASH_MAX_STORE - 1) {
-			cmd_head = 0;
+		CMD_INDEX_UP(cmd_head);
+	}
+	cmd_pos = cmd_tail;
+}
+
+bool tash_search_cmd(char *cmd, int *pos, char status)
+{
+	int idx = 0;
+	if (cmd_pos == cmd_tail) {
+		if (status == ASCII_A) {
+			strncpy(cmd_line, cmd, TASH_LINEBUFLEN);
 		} else {
-			cmd_head++;
+			return false;
+		}
+	} else if (cmd_pos == cmd_head && status == ASCII_A) {
+		return false;
+	} else {
+		/* Save current command. */
+		while (idx < TASH_LINEBUFLEN && cmd[idx] != 0) {
+			cmd_store[cmd_pos][idx] = cmd[idx];
+			idx++;
+		}
+		cmd_store[cmd_pos][idx] = 0;
+	}
+
+	if (status == ASCII_A) { // up
+		CMD_INDEX_DOWN(cmd_pos);
+		*pos = 0;
+
+		while (*pos < TASH_LINEBUFLEN && cmd_store[cmd_pos][*pos] != 0) {
+			cmd[*pos] = cmd_store[cmd_pos][*pos];
+			(*pos)++;
+		}
+	} else if (status == ASCII_B) { // down
+		CMD_INDEX_UP(cmd_pos);
+		*pos = 0;
+		if (cmd_pos == cmd_tail) {
+			while (*pos < TASH_LINEBUFLEN && cmd_line[*pos] != 0) {
+				cmd[*pos] = cmd_line[*pos];
+				(*pos)++;
+			}
+		} else {
+			while (*pos < TASH_LINEBUFLEN && cmd_store[cmd_pos][*pos] != 0) {
+				cmd[*pos] = cmd_store[cmd_pos][*pos];
+				(*pos)++;
+			}
 		}
 	}
+	return true;
 }
 #endif
 
