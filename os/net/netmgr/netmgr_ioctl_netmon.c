@@ -37,7 +37,7 @@
  *   0:Success; negated errno on failure
  *
  ****************************************************************************/
-#if CONFIG_NET_NETMON && CONFIG_NET_STATS
+#if defined(CONFIG_NET_NETMON) && defined(CONFIG_NET_STATS)
 static int _copy_socket(void *arg)
 {
 	int num_copy = 0;
@@ -87,7 +87,7 @@ int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 			ret = -EINVAL;
 		}
 	}
-#if CONFIG_NET_NETMON && CONFIG_NET_STATS
+#if defined(CONFIG_NET_NETMON) && defined(CONFIG_NET_STATS)
 	else if (cmd == SIOCGDSTATS) {
 		struct netmon_netdev_stats *stats = (struct netmon_netdev_stats *)arg;
 		struct netdev *dev = nm_get_netdev((uint8_t *)stats->devname);
