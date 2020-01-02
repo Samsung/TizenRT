@@ -367,89 +367,7 @@ void lwip_socket_thread_cleanup(void)
 	netconn_thread_cleanup();
 }
 
-#ifdef CONFIG_NET_NETMON
-/**
- * Copy the global socket contents to the input
- *
- * @param data is used to target
- */
-int copy_socket(void *arg)
-{
-	int i;
-	int num_copy = 0;
-#if LWIP_IPV6
-	const ip_addr_t ip6_addr_any = IPADDR6_INIT(0ul, 0ul, 0ul, 0ul);
-#endif
-	const ip_addr_t ip_addr_any = IPADDR4_INIT(IPADDR_ANY);
-	sq_queue_t *q_sock = (sq_queue_t *) arg;
-	SYS_ARCH_DECL_PROTECT(lev);
 
-	/* copy socket identifier */
-	for (i = 0; i < NUM_SOCKETS; ++i) {
-		/* Protect socket array */
-		SYS_ARCH_PROTECT(lev);
-		if (sockets[i].conn) {
-			num_copy++;
-			if (sockets[i].conn->pcb.ip == NULL) {
-				LWIP_DEBUGF(SOCKETS_DEBUG, ("copy_socket: invalid IP info\n"));
-				set_errno(EBADF);
-				return -1;
-			}
-
-			struct netmon_sock *sock_info = (struct netmon_sock *)malloc(sizeof(struct netmon_sock));
-			if (!sock_info) {
-				LWIP_DEBUGF(SOCKETS_DEBUG, ("copy_socket: invalid IP info\n"));
-				set_errno(ENOMEM);
-				return -1;
-			}
-
-			sock_info->type = sockets[i].conn->type;
-			sock_info->state = sockets[i].conn->state;
-			sock_info->pid = sockets[i].conn->pid;
-
-			if (sockets[i].conn->type & NETCONN_TCP) {
-				if (netconn_getaddr(sockets[i].conn, &sock_info->local_ip, &sock_info->local_port, 1)) {
-					sock_info->local_port = 0;
-					sock_info->local_ip = sockets[i].conn->pcb.tcp->local_ip;
-				}
-				if (netconn_getaddr(sockets[i].conn, &sock_info->remote_ip, &sock_info->remote_port, 0)) {
-					sock_info->remote_port = 0;
-#if LWIP_IPV6
-					if (sockets[i].conn->type & NETCONN_TYPE_IPV6) {
-						sock_info->remote_ip = ip6_addr_any;
-					} else {
-						sock_info->remote_ip = ip_addr_any;
-					}
-#else
-					sock_info->remote_ip = ip_addr_any;
-#endif
-				}
-			} else if ((sockets[i].conn->type & NETCONN_UDP) || (sockets[i].conn->type & NETCONN_UDPLITE) ||
-					(sockets[i].conn->type & NETCONN_UDPNOCHKSUM)) {
-				sock_info->local_ip = sockets[i].conn->pcb.ip->local_ip;
-				sock_info->remote_ip = sockets[i].conn->pcb.ip->remote_ip;
-				sock_info->local_port = sockets[i].conn->pcb.udp->local_port;
-				if (sockets[i].conn->pcb.udp->flags & UDP_FLAGS_CONNECTED) {
-					sock_info->remote_port = sockets[i].conn->pcb.udp->remote_port;
-				} else {
-					sock_info->remote_port = 0;
-				}
-			} else {
-				sock_info->local_ip = sockets[i].conn->pcb.ip->local_ip;
-				sock_info->remote_ip = sockets[i].conn->pcb.ip->remote_ip;
-				sock_info->local_port = (u16_t) sockets[i].conn->pcb.raw->protocol;
-				sock_info->remote_port = 0;
-			}
-			if (pthread_getname_np(sockets[i].conn->pid, sock_info->pid_name)) {
-				strncpy(sock_info->pid_name, "NONE", sizeof("NONE"));
-			}
-			sq_addlast((sq_entry_t *)sock_info, q_sock);
-		}
-		SYS_ARCH_UNPROTECT(lev);
-	}
-	return num_copy;
-}
-#endif
 
 /**
  * Map a externally used socket index to the internal socket representation.
@@ -480,6 +398,12 @@ struct lwip_sock *get_socket(int s)
 	return sock;
 }
 
+#ifdef CONFIG_NET_NETMON
+struct lwip_sock *get_lwip_sock_info(void)
+{
+	return sockets;
+}
+#endif
 /**
  * Same as get_socket but doesn't set errno
  *

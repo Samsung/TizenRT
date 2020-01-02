@@ -44,75 +44,63 @@
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
-#define USAGE							\
-	"\n usage: netmon [options]\n"		\
-	"\n socket information:\n"			\
-	"       netmon sock\n"				\
-	"\n WiFi Manager stats:\n"			\
-	"       netmon wifi\n"				\
-	"\n Net device stats:\n"			\
+#define USAGE									\
+	"\n usage: netmon [options]\n"				\
+	"\n socket information:\n"					\
+	"       netmon sock\n"						\
+	"\n WiFi Manager stats:\n"					\
+	"       netmon wifi\n"						\
+	"\n Net device stats:\n"					\
 	"       netmon [devname]\n\n"
 
 #ifdef CONFIG_NET_IPv6
-#define PRINT_IPV(sock)										\
-	do {													\
-		if (sock->type & NETMON_TYPE_IPV6) {				\
-			printf("IPv6\t");								\
-			printf("%-15s:", _netmon_ip6addr_ntoa((const ip6_addr_t*)&sock->local_ip));	\
-			if (sock->local_port == 0) {					\
-				printf("%-8s", "*");						\
-			} else {										\
-				printf("%-8d", sock->local_port);			\
-			}												\
-			printf("%-15s:", _netmon_ip6addr_ntoa((const ip6_addr_t*)&sock->remote_ip));	\
-			if (sock->remote_port == 0) {					\
-				printf("%-8s", "*");						\
-			} else {										\
-				printf("%-8d", sock->remote_port);			\
-			}												\
-		} else {											\
-			printf("IPv4\t");								\
-			printf("%-15s:", inet_ntoa(sock->local_ip));	\
-			if (sock->local_port == 0) {					\
-				printf("%-8s", "*");						\
-			} else {										\
-				printf("%-8d", sock->local_port);			\
-			}												\
-			printf("%-15s:", inet_ntoa(sock->remote_ip));	\
-			if (sock->remote_port == 0) {					\
-				printf("%-8s", "*");						\
-			} else {										\
-				printf("%-8d", sock->remote_port);			\
-			}												\
-		}													\
-	} while (0)
+static inline void PRINT_IPV(struct netmon_sock *sock)
+{
+	if (sock->type & NETMON_TYPE_IPV6) {
+		printf("IPv6 (not yet supported)\t");
+	} else {
+		printf("IPv4\t");
+		printf("%-15s:", inet_ntoa(sock->local.ip.sin_addr));
+		if (sock->local.ip.sin_port == 0) {
+			printf("%-8s", "*");
+		} else {
+			printf("%-8d", sock->local.ip.sin_port);
+		}
+		printf("%-15s:", inet_ntoa(sock->remote.ip.sin_addr));
+		if (sock->remote.ip.sin_port == 0) {
+			printf("%-8s", "*");
+		} else {
+			printf("%-8d", sock->remote.ip.sin_port);
+		}
+	}
+}
 #else
-#define PRINT_IPV(sock)									\
-	do {												\
-		printf("IPv4\t");								\
-		printf("%-15s:", inet_ntoa(sock->local_ip));	\
-		if (sock->local_port == 0) {					\
-			printf("%-8s", "*");						\
-		} else {										\
-			printf("%-8d", sock->local_port);			\
-		}												\
-		printf("%-15s:", inet_ntoa(sock->remote_ip));	\
-		if (sock->remote_port == 0) {					\
-			printf("%-8s", "*");						\
-		} else {										\
-			printf("%-8d", sock->remote_port);			\
-		}												\
-	} while (0)
+static inline void PRINT_IPV(struct netmon_sock *sock)
+{
+	printf("IPv4\t");
+	printf("%-15s:", inet_ntoa(sock->local.ip.sin_addr));
+	if (sock->local.ip.sin_port == 0) {
+		printf("%-8s", "*");
+	} else {
+		printf("%-8d", sock->local.ip.sin_port);
+	}
+	printf("%-15s:", inet_ntoa(sock->remote.ip.sin_addr));
+	if (sock->remote.ip.sin_port == 0) {
+		printf("%-8s", "*");
+	} else {
+		printf("%-8d", sock->remote.ip.sin_port);
+	}
+}
 #endif
 
 /****************************************************************************
-* Global Data
-****************************************************************************/
+ * Global Data
+ ****************************************************************************/
 
 
 /****************************************************************************
-* Private Functions
-****************************************************************************/
+ * Private Functions
+ ****************************************************************************/
 #ifdef CONFIG_NET_IPv6
 /*
  * To Do: _netmon_ip6addr_ntoa_r is a temporary function to show ipv6
@@ -233,7 +221,7 @@ static char *_netmon_ip6addr_ntoa(const ip6_addr_t *addr)
 /**
  * Print the command list
  */
-static void print_help(void)
+static inline void print_help(void)
 {
 	printf("%s", USAGE);
 	return;
@@ -301,6 +289,73 @@ static void print_devstats(struct netmon_netdev_stats *stats)
 	return;
 }
 #endif							/* CONFIG_NET_STATS */
+
+static inline int _print_wifi_info(void)
+{
+#ifdef CONFIG_WIFI_MANAGER
+	wifi_manager_stats_s stats;
+	wifi_manager_info_s info;
+
+	wifi_manager_result_e res = wifi_manager_get_stats(&stats);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("Get Wi-Fi Manager stats failed\n");
+		return ERROR;
+	}
+	printf("\n=======================================================================\n");
+	printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
+	printf("%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
+	printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
+	printf("=======================================================================\n");
+
+	printf("Connection INFO.\n");
+	res = wifi_manager_get_info(&info);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("Get Wi-Fi Manager Connection info failed\n");
+		return ERROR;
+	}
+	if (info.mode == SOFTAP_MODE) {
+		if (info.status == CLIENT_CONNECTED) {
+			printf("MODE: softap (client connected)\n");
+		} else if (info.status == CLIENT_DISCONNECTED) {
+			printf("MODE: softap (no client)\n");
+		}
+		printf("IP: %s\n", info.ip4_address);
+		printf("SSID: %s\n", info.ssid);
+		printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n",
+			   info.mac_address[0], info.mac_address[1],
+			   info.mac_address[2], info.mac_address[3],
+			   info.mac_address[4], info.mac_address[5]);
+	} else if (info.mode == STA_MODE) {
+		if (info.status == AP_CONNECTED) {
+			printf("MODE: station (connected)\n");
+			printf("IP: %s\n", info.ip4_address);
+			printf("SSID: %s\n", info.ssid);
+			printf("rssi: %d\n", info.rssi);
+		} else if (info.status == AP_DISCONNECTED) {
+			printf("MODE: station (disconnected)\n");
+		} else if (info.status == AP_RECONNECTING) {
+			printf("MODE: station (reconnecting)\n");
+			printf("IP: %s\n", info.ip4_address);
+			printf("SSID: %s\n", info.ssid);
+			printf("rssi: %d\n", info.rssi);
+		}
+		printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0],
+			   info.mac_address[1],
+			   info.mac_address[2],
+			   info.mac_address[3],
+			   info.mac_address[4],
+			   info.mac_address[5]);
+	} else {
+		printf("STATE: NONE\n");
+	}
+	printf("=======================================================================\n");
+	return OK;
+#else
+	printf("Wi-Fi Manager is not enabled\n");
+	return ERROR;
+#endif
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -322,58 +377,7 @@ int cmd_netmon(int argc, char **argv)
 			printf("Failed to fetch socket info.\n");
 		}
 	} else if (!(strncmp(argv[1], "wifi", strlen("wifi") + 1))) {
-#ifdef CONFIG_WIFI_MANAGER
-		wifi_manager_stats_s stats;
-		wifi_manager_info_s info;
-
-		wifi_manager_result_e res = wifi_manager_get_stats(&stats);
-		if (res != WIFI_MANAGER_SUCCESS) {
-			printf("Get Wi-Fi Manager stats failed\n");
-			return ERROR;
-		}
-		printf("\n=======================================================================\n");
-		printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
-		printf("%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
-		printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
-		printf("=======================================================================\n");
-
-		printf("Connection INFO.\n");
-		res = wifi_manager_get_info(&info);
-		if (res != WIFI_MANAGER_SUCCESS) {
-			printf("Get Wi-Fi Manager Connection info failed\n");
-			return ERROR;
-		}
-		if (info.mode == SOFTAP_MODE) {
-			if (info.status == CLIENT_CONNECTED) {
-				printf("MODE: softap (client connected)\n");
-			} else if (info.status == CLIENT_DISCONNECTED) {
-				printf("MODE: softap (no client)\n");
-			}
-			printf("IP: %s\n", info.ip4_address);
-			printf("SSID: %s\n", info.ssid);
-			printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0], info.mac_address[1], info.mac_address[2], info.mac_address[3], info.mac_address[4], info.mac_address[5]);
-		} else if (info.mode == STA_MODE) {
-			if (info.status == AP_CONNECTED) {
-				printf("MODE: station (connected)\n");
-				printf("IP: %s\n", info.ip4_address);
-				printf("SSID: %s\n", info.ssid);
-				printf("rssi: %d\n", info.rssi);
-			} else if (info.status == AP_DISCONNECTED) {
-				printf("MODE: station (disconnected)\n");
-			} else if (info.status == AP_RECONNECTING) {
-				printf("MODE: station (reconnecting)\n");
-				printf("IP: %s\n", info.ip4_address);
-				printf("SSID: %s\n", info.ssid);
-				printf("rssi: %d\n", info.rssi);
-			}
-			printf("MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0], info.mac_address[1], info.mac_address[2], info.mac_address[3], info.mac_address[4], info.mac_address[5]);
-		} else {
-			printf("STATE: NONE\n");
-		}
-		printf("=======================================================================\n");
-#else
-		printf("Wi-Fi Manager is not enabled\n");
-#endif
+		return _print_wifi_info();
 	} else {
 #ifdef CONFIG_NET_STATS
 		struct netmon_netdev_stats stats = {{0,}, 0, 0, 0, 0};

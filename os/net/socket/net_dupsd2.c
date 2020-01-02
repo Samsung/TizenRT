@@ -88,7 +88,6 @@ int net_dupsd2(int sockfd1, int sockfd2)
 int dup2(int sockfd1, int sockfd2)
 #endif
 {
-
 	struct lwip_sock *sock1;
 	struct lwip_sock *sock2;
 	int err;

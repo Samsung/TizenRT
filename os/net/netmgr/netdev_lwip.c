@@ -585,6 +585,13 @@ static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 	nic->igmp_mac_filter = _lwip_set_multicast_list;
 	nic->num = g_num++;
 
+	/*
+	 * Initialize the snmp variables and counters inside the struct netif.
+	 * The last argument should be replaced with your link speed, in units
+	 * of bits per second.
+	 */
+	MIB2_INIT_NETIF(nic, snmp_ifType_ethernet_csmacd, 0);
+
 	struct ip4_addr ipaddr;
 	struct ip4_addr netmask;
 	struct ip4_addr gw;
@@ -658,25 +665,25 @@ static int lwip_input(struct netdev *dev, uint8_t *frame_ptr, uint16_t len)
 	return 0;
 }
 
-struct netdev_ops g_netdev_ops_lwip = {
-	lwip_init_nic,
-	lwip_deinit_nic,
-	lwip_get_ip4addr,
-	lwip_set_ip4addr,
-	lwip_get_ip6addr,
-	lwip_set_ip6addr,
-	lwip_delete_ipaddr,
-	lwip_get_hwaddr,
-	lwip_set_hwaddr,
-	lwip_get_mtu,
-	lwip_get_flag,
-	lwip_ifup,
-	lwip_ifdown,
-	lwip_joingroup,
-	lwip_leavegroup,
-	lwip_input,
-	NULL
-};
+static int lwip_get_stats(struct netdev *dev, struct netmon_netdev_stats *stats)
+{
+	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
+	stats->devinpkts = ni->mib2_counters.ifinucastpkts +
+		ni->mib2_counters.ifinnucastpkts +
+		ni->mib2_counters.ifindiscards +
+		ni->mib2_counters.ifinerrors +
+		ni->mib2_counters.ifinunknownprotos;
+
+	stats->devinoctets = ni->mib2_counters.ifinoctets;
+	stats->devoutpkts = ni->mib2_counters.ifoutucastpkts +
+		ni->mib2_counters.ifoutnucastpkts +
+		ni->mib2_counters.ifoutdiscards +
+		ni->mib2_counters.ifouterrors;
+
+	stats->devoutoctets = ni->mib2_counters.ifoutoctets;
+
+	return 0;
+}
 
 
 struct netdev_ops *get_netdev_ops_lwip(void)
@@ -707,6 +714,8 @@ struct netdev_ops *get_netdev_ops_lwip(void)
 	netdev_ops->leavegroup = lwip_leavegroup;
 
 	netdev_ops->input = lwip_input;
+
+	netdev_ops->get_stats = lwip_get_stats;
 
 	netdev_ops->nic = NULL;
 

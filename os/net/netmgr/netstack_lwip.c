@@ -18,17 +18,25 @@
 
 #include <tinyara/config.h>
 #include <poll.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <net/if.h>
 #include <net/route.h>
 #include <tinyara/net/net.h>
-#include <fcntl.h>
 #include "netstack.h"
 #include "lwip/opt.h"
 #include "lwip/init.h"
 #include "lwip/tcpip.h"
 #include "lwip/sys.h"
 #include "lwip/netif.h"
+#ifdef CONFIG_NET_NETMON
+#include "lwip/ip.h"
+#include "lwip/ip6.h"
+#include "lwip/udp.h"
+#include "lwip/tcp.h"
+#include "lwip/raw.h"
+#endif
 
 static int _socket_argument_validation(int domain, int type, int protocol)
 {
@@ -66,6 +74,32 @@ static int _socket_argument_validation(int domain, int type, int protocol)
 	return 0;
 }
 
+static inline int _netsock_clone(FAR struct lwip_sock *sock1, FAR struct lwip_sock *sock2)
+{
+	int ret = OK;
+
+	/* Parts of this operation need to be atomic */
+	if (sock1 == NULL || sock2 == NULL) {
+		return ERROR;
+	}
+
+	/* Duplicate the socket state */
+	sock2->conn = sock1->conn;	/* Netconn callback */
+	sock2->lastdata = sock1->lastdata;	/* data that was left from the previous read */
+	sock2->lastoffset = sock1->lastoffset;	/* offset in the data that was left from the previous read */
+	sock2->rcvevent = sock1->rcvevent;	/*  number of times data was received, set by event_callback(),
+											tested by the receive and select / poll functions */
+	sock2->sendevent = sock1->sendevent;	/* number of times data was ACKed (free send buffer), set by event_callback(),
+											   tested by select / poll */
+	sock2->errevent = sock1->errevent;	/* error happened for this socket, set by event_callback(), tested by select / poll */
+
+	sock2->err = sock1->err;	/* last error that occurred on this socket */
+
+	sock2->select_waiting = sock1->select_waiting;	/* counter of how many threads are waiting for this socket using select */
+	sock2->conn->crefs++;
+
+	return ret;
+}
 
 /*
  * ops functions
@@ -85,8 +119,53 @@ static int lwip_ns_dup(int sockfd)
 
 static int lwip_ns_dup2(int sockfd1, int sockfd2)
 {
-	// ToDo
+	struct lwip_sock *sock1;
+	struct lwip_sock *sock2;
+	int err;
+	int ret;
+
+	/* Lock the scheduler throughout the following */
+
+	sched_lock();
+
+	/* Get the socket structures underly both descriptors */
+
+	sock1 = (struct lwip_sock *)get_socket(sockfd1);
+	sock2 = (struct lwip_sock *)get_socket(sockfd2);
+
+	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
+	 * descriptors and that sockfd1 has valid allocated conn
+	 */
+
+	if (!sock1 || !sock2) {
+		err = EBADF;
+		goto errout;
+	}
+
+	/* If sockfd2 also has valid allocated conn, then we will have to
+	 * close it!
+	 */
+
+	if (sock2->conn) {
+		netconn_delete(sock2->conn);
+		sock2->conn = NULL;
+	}
+
+	/* Duplicate the socket state */
+
+	ret = _netsock_clone(sock1, sock2);
+	if (ret < 0) {
+		err = -ret;
+		goto errout;
+	}
+
+	sched_unlock();
 	return 0;
+
+errout:
+	sched_unlock();
+	errno = err;
+	return -1;
 }
 
 
@@ -310,6 +389,109 @@ static int lwip_ns_delroute(struct rtentry *entry)
 }
 #endif
 
+#ifdef CONFIG_NET_NETMON
+static inline void _get_tcp_info(struct netmon_sock *sock_info, struct lwip_sock *lsock)
+{
+	ip_addr_t addr = IPADDR4_INIT(0);
+	u16_t port = 0;
+
+	if (netconn_getaddr(lsock->conn, &addr, &port, 1)) {
+		ndbg("fail to get local IP info\n");
+	}
+	sock_info->local.ip.sin_family = AF_INET;
+	sock_info->local.ip.sin_port = port;
+	sock_info->local.ip.sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4((&addr)));
+
+	ip_addr_t raddr = IPADDR4_INIT(0);
+	port = 0;
+
+	if (netconn_getaddr(lsock->conn, &addr, &port, 0)) {
+		ndbg("fail to get remote IP info\n");
+	}
+	sock_info->local.ip.sin_family = AF_INET;
+	sock_info->local.ip.sin_port = port;
+	sock_info->local.ip.sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4((&raddr)));
+}
+
+static void _get_udp_info(struct netmon_sock *sock_info, struct lwip_sock *lsock)
+{
+#if LWIP_IPV4 && LWIP_IPV6
+	if (lsock->conn->pcb.ip->local_ip.type != IPADDR_TYPE_V4) {
+		ndbg("monitoring ipv6 is not supported yet")
+			return;
+	}
+#endif
+
+	sock_info->local.ip.sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4(&(lsock->conn->pcb.ip->local_ip)));
+	sock_info->remote.ip.sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4(&(lsock->conn->pcb.ip->remote_ip)));
+	sock_info->local.ip.sin_port = lsock->conn->pcb.udp->local_port;
+	if (lsock->conn->pcb.udp->flags & UDP_FLAGS_CONNECTED) {
+		sock_info->remote.ip.sin_port = lsock->conn->pcb.udp->remote_port;
+	} else {
+		sock_info->remote.ip.sin_port = 0;
+	}
+}
+
+static void _get_raw_info(struct netmon_sock *sock_info, struct lwip_sock *lsock)
+{
+#if LWIP_IPV4 && LWIP_IPV6
+	if (lsock->conn->pcb.ip->local_ip.type == IPADDR_TYPE_V4) {
+		ndbg("monitoring ipv6 is not supported yet");
+		return;
+	}
+#endif
+	sock_info->local.ip.sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4(&(lsock->conn->pcb.ip->local_ip)));
+	sock_info->remote.ip.sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4(&(lsock->conn->pcb.ip->remote_ip)));
+	sock_info->local.ip.sin_port = (u16_t)lsock->conn->pcb.raw->protocol;
+	sock_info->remote.ip.sin_port = 0;
+}
+
+extern struct lwip_sock *get_lwip_sock_info(void);
+
+/**
+ * Copy the global socket contents to the input
+ *
+ * @param data is used to target
+ */
+extern struct lwip_sock *get_lwip_sock_info(void);
+
+static int lwip_ns_getstats(int fd, struct netmon_sock **sock_info)
+{
+	struct lwip_sock *sockets = get_lwip_sock_info();
+	if (!sockets[fd].conn) {
+		return -1;
+	}
+	if (!sockets[fd].conn->pcb.ip) {
+		return -2;
+	}
+
+	struct netmon_sock *sinfo = (struct netmon_sock *)malloc(sizeof(struct netmon_sock));
+	if (!sinfo) {
+		ndbg("alloc sinfo memory fail\n");
+		return -3;
+	}
+
+	sinfo->type = sockets[fd].conn->type;
+	sinfo->state = sockets[fd].conn->state;
+	sinfo->pid = sockets[fd].conn->pid;
+
+	if (sockets[fd].conn->type & NETCONN_TCP) {
+		_get_tcp_info(sinfo, &sockets[fd]);
+	} else if ((sockets[fd].conn->type & NETCONN_UDP) ||
+			   (sockets[fd].conn->type & NETCONN_UDPLITE) ||
+			   (sockets[fd].conn->type & NETCONN_UDPNOCHKSUM)) {
+		_get_udp_info(sinfo, &sockets[fd]);
+	} else {
+		_get_raw_info(sinfo, &sockets[fd]);
+	}
+	if (pthread_getname_np(sockets[fd].conn->pid, sinfo->pid_name)) {
+		strncpy(sinfo->pid_name, "NONE", 5);
+	}
+	*sock_info = sinfo;
+
+	return 0;
+}
+#endif
 
 struct netstack_ops g_lwip_stack_ops = {
 	lwip_ns_init,
@@ -346,7 +528,10 @@ struct netstack_ops g_lwip_stack_ops = {
 	lwip_ns_getsockopt,
 #ifdef CONFIG_NET_ROUTE
 	lwip_ns_addroute,
-	lwip_ns_delroute
+	lwip_ns_delroute,
+#endif
+#ifdef CONFIG_NET_NETMON
+	lwip_ns_getstats,
 #endif
 };
 

@@ -148,7 +148,7 @@ int net_dupsd(int sockfd)
 errout:
 	sched_unlock();
 	errno = err;
-	#endif
+#endif
 	return ERROR;
 }
 
