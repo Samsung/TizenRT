@@ -67,6 +67,8 @@
 #include "lwip/netif/etharp.h"
 #include "lwip/netif/ethernet.h"
 #include "lwip/netif/ppp_oe.h"
+#include "lwip/api.h"
+#include "lwip/priv/api_msg.h"
 
 #define TCPIP_MSG_VAR_REF(name)     API_VAR_REF(name)
 #define TCPIP_MSG_VAR_DECLARE(name) API_VAR_DECLARE(struct tcpip_msg, name)
@@ -351,10 +353,14 @@ err_t tcpip_send_msg_wait_sem(tcpip_callback_fn fn, void *apimsg, sys_sem_t *sem
 	return ERR_OK;
 #else							/* LWIP_TCPIP_CORE_LOCKING */
 	TCPIP_MSG_VAR_DECLARE(msg);
+	struct api_msg *p_apimsg = (struct api_msg *)apimsg;
 
 	LWIP_ASSERT("semaphore not initialized", sys_sem_valid(sem));
 	LWIP_ASSERT("Invalid mbox", sys_mbox_valid_val(mbox));
-
+	// To Do: Check 'conn' memory allocation case.
+	if (p_apimsg->conn != NULL) {
+		sys_arch_sem_wait(&p_apimsg->conn->op_sync, 0);
+	}
 	TCPIP_MSG_VAR_ALLOC(msg);
 	TCPIP_MSG_VAR_REF(msg).type = TCPIP_MSG_API;
 	TCPIP_MSG_VAR_REF(msg).msg.api_msg.function = fn;
@@ -362,6 +368,10 @@ err_t tcpip_send_msg_wait_sem(tcpip_callback_fn fn, void *apimsg, sys_sem_t *sem
 	sys_mbox_post(&mbox, &TCPIP_MSG_VAR_REF(msg));
 	sys_arch_sem_wait(sem, 0);
 	TCPIP_MSG_VAR_FREE(msg);
+	// To Do: Check 'conn' memory allocation case.
+	if (p_apimsg->conn != NULL) {
+		sys_sem_signal(&p_apimsg->conn->op_sync);
+	}
 	return ERR_OK;
 #endif							/* LWIP_TCPIP_CORE_LOCKING */
 }
