@@ -247,7 +247,10 @@ struct netconn {
 #if !LWIP_NETCONN_SEM_PER_THREAD
 	/* sem that is used to synchronously execute functions in the core context */
 	sys_sem_t op_completed;
+	/* sem that is used to synchroneously post messages on the netconn in tcpip_apimsg() */
+	sys_sem_t op_sync;
 #endif
+
 	/*
 	 * mbox where received packets are stored until they are fetched
 	 * by the netconn application thread (can grow quite big)
