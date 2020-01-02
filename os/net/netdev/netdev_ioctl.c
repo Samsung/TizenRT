@@ -926,16 +926,11 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
 static int netdev_nmioctl(int cmd, void  *arg)
 {
 	int ret = -EINVAL;
-	int num_copy;
 	switch (cmd) {
 	case SIOCGETSOCK:          /* Get socket info. */
-		num_copy = copy_socket(arg);
-		/* num_copy shoud be larger than 0 (this socket) */
-		if (num_copy > 0) {
-			ret = OK;
-		} else {
-			ret = -EINVAL;
-		}
+		// monitoring socket is not supported without network manager
+		// please turn on CONFIG_NETMON
+		ret = -EINVAL;
 		break;
 #ifdef CONFIG_NET_STATS
 	case SIOCGDSTATS:          /* Get netdev info. */

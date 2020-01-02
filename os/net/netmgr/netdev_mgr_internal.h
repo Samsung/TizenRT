@@ -70,6 +70,11 @@ struct netdev_ops {
 	int (*input)(struct netdev *dev, uint8_t *data, uint16_t len);
 	int (*linkoutput)(struct netdev *dev, uint8_t *data, uint16_t len);
 	int (*igmp_mac_filter)(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
+
+	/* statistics
+	 */
+	int (*get_stats)(struct netdev *dev, struct netmon_netdev_stats *stats);
+
 	/*  NIC stack specific */
 	void *nic;
 };

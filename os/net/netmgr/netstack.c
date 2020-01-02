@@ -19,6 +19,7 @@
 #include <tinyara/config.h>
 #include <poll.h>
 #include <sys/socket.h>
+#include <net/if.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
 

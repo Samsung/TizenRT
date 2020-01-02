@@ -25,6 +25,7 @@
 #include <netdb.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/netmgr/netdev_mgr.h>
+#include <net/if.h>
 #include "netdev_mgr_internal.h"
 #include "lwip/opt.h"
 #include "lwip/netif.h"

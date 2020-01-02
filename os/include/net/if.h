@@ -58,7 +58,7 @@
  *******************************************************************************************/
 
 #include <sys/socket.h>
-
+#include <netinet/in.h>
 /*******************************************************************************************
  * Pre-Processor Definitions
  *******************************************************************************************/
@@ -265,10 +265,14 @@ struct netmon_sock {
 	struct netmon_sock *flink;
 	enum netmon_proto type;
 	enum netmon_state state;
-	ip_addr_t local_ip;
-	ip_addr_t remote_ip;
-	uint16_t local_port;
-	uint16_t remote_port;
+	union {
+		struct sockaddr_in ip;
+		struct sockaddr_in6 ip6;
+	} local;
+	union {
+		struct sockaddr_in ip;
+		struct sockaddr_in6 ip6;
+	} remote;
 	pid_t pid;
 	char  pid_name[CONFIG_TASK_NAME_SIZE];
 };

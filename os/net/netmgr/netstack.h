@@ -58,6 +58,10 @@ struct netstack_ops {
 	int (*addroute)(struct rtentry *entry);
 	int (*delroute)(struct rtentry *entry);
 #endif
+
+#ifdef CONFIG_NET_NETMON
+	int (*getstats)(int fd, struct netmon_sock **sock);
+#endif
 };
 
 struct netstack {
