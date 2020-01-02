@@ -689,6 +689,12 @@ struct netconn *netconn_alloc(enum netconn_type t, netconn_callback callback)
 		sys_mbox_free(&conn->recvmbox);
 		goto free_and_return;
 	}
+	if (sys_sem_new(&conn->op_sync, 1) != ERR_OK) {
+		sys_mbox_free(&conn->recvmbox);
+		sys_sem_free(&conn->op_completed);
+		sys_sem_set_invalid(&conn->op_completed);
+		goto free_and_return;
+	}
 #endif
 
 #if LWIP_TCP
@@ -742,6 +748,8 @@ void netconn_free(struct netconn *conn)
 #if !LWIP_NETCONN_SEM_PER_THREAD
 	sys_sem_free(&conn->op_completed);
 	sys_sem_set_invalid(&conn->op_completed);
+	sys_sem_free(&conn->op_sync);
+	sys_sem_set_invalid(&conn->op_sync);
 #endif
 
 	memp_free(MEMP_NETCONN, conn);
