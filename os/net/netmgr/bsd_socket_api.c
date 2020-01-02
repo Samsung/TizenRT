@@ -69,7 +69,7 @@ sock_type _get_socktype(int fd)
 int bind(int sockfd, const struct sockaddr *name, socklen_t namelen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_bind(sockfd, name, namelen);
 	}
 
@@ -80,7 +80,7 @@ int bind(int sockfd, const struct sockaddr *name, socklen_t namelen)
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_accept(sockfd, addr, addrlen);
 	}
 
@@ -94,7 +94,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 int shutdown(int sockfd, int how)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_shutdown(sockfd, how);
 	}
 
@@ -105,7 +105,7 @@ int shutdown(int sockfd, int how)
 int connect(int sockfd, const struct sockaddr *name, socklen_t namelen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_connect(sockfd, name, namelen);
 	}
 
@@ -120,7 +120,7 @@ int connect(int sockfd, const struct sockaddr *name, socklen_t namelen)
 int getsockname(int sockfd, struct sockaddr *name, socklen_t *namelen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_getsockname(sockfd, name, namelen);
 	}
 
@@ -131,7 +131,7 @@ int getsockname(int sockfd, struct sockaddr *name, socklen_t *namelen)
 int getpeername(int sockfd, struct sockaddr *name, socklen_t *namelen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_getpeername(sockfd, name, namelen);
 	}
 
@@ -142,7 +142,7 @@ int getpeername(int sockfd, struct sockaddr *name, socklen_t *namelen)
 int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_setsockopt(sockfd, level, optname, optval, optlen);
 	}
 
@@ -153,7 +153,7 @@ int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t
 int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_getsockopt(sockfd, level, optname, optval, optlen);
 	}
 
@@ -164,7 +164,7 @@ int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optl
 int listen(int sockfd, int backlog)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_listen(sockfd, backlog);
 	}
 
@@ -175,7 +175,7 @@ int listen(int sockfd, int backlog)
 ssize_t recv(int sockfd, void *mem, size_t len, int flags)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_recv(sockfd, mem, len, flags);
 	}
 
@@ -190,7 +190,7 @@ ssize_t recv(int sockfd, void *mem, size_t len, int flags)
 ssize_t recvfrom(int sockfd, void *mem, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_recvfrom(sockfd, mem, len, flags, from, fromlen);
 	}
 
@@ -223,7 +223,7 @@ ssize_t recvfrom(int sockfd, void *mem, size_t len, int flags, struct sockaddr *
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_recvmsg(sockfd, msg, flags);
 	}
 
@@ -235,7 +235,7 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 ssize_t send(int sockfd, const void *data, size_t size, int flags)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return 0;
 	}
 
@@ -250,7 +250,7 @@ ssize_t send(int sockfd, const void *data, size_t size, int flags)
 ssize_t sendto(int sockfd, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen)
 {
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_sendto(sockfd, data, size, flags, to, tolen);
 	}
 
@@ -284,7 +284,7 @@ ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags)
 {
 	// ToDo: It only supports limited features of sendmsg
 	sock_type type = _get_socktype(sockfd);
-	if (type == UDS) {
+	if (type == TR_UDS) {
 		return uds_sendmsg(sockfd, msg, flags);
 	}
 
