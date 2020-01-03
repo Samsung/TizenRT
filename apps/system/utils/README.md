@@ -6,21 +6,21 @@ These commands can be used in shell, and can be used without shell also like rem
 Most of the commands support *--help* option to show how to use.
 
 ## List of Commands
-| Basic commands | Kernel Commands       | FileSystem Commands |
-|----------------|-----------------------|---------------------|
-| [exit](#exit)  | [cpuload](#cpuload)   | [cat](#cat)         |
-| [help](#help)  | [date](#date)         | [cd](#cd)           |
-| [sh](#sh)      | [dmesg](#dmesg)       | [df](#df)           |
-| [sleep](#sleep)| [free](#free)         | [echo](#echo)       |
-|                | [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [ls](#ls)               |
-|                | [heapinfo](#heapinfo) | [mkdir](#mkdir)         |
-|                | [irqinfo](#irqinfo)   | [mkrd](#mkrd)           |
-|                | [kill/killall](#killkillall)                    | [mksmartfs](#mksmartfs) |
-|                | [ps](#ps)             | [mount](#mount)         |
-|                | [reboot](#reboot)     | [pwd](#pwd)             |
-|                | [stkmon](#stkmon)     | [rm](#rm)               |
-|                | [uptime](#uptime)     | [rmdir](#rmdir)         |
-|                |                       | [umount](#umount)       |
+| Basic commands     | Kernel Commands                                 | FileSystem Commands     |
+|--------------------|-------------------------------------------------|-------------------------|
+| [exit](#exit)      | [cpuload](#cpuload)                             | [cat](#cat)             |
+| [help](#help)      | [date](#date)                                   | [cd](#cd)               |
+| [history](#history)| [dmesg](#dmesg)                                 | [df](#df)               |
+| [sh](#sh)          | [free](#free)                                   | [echo](#echo)           |
+| [sleep](#sleep)    | [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [ls](#ls)               |
+|                    | [heapinfo](#heapinfo)                           | [mkdir](#mkdir)         |
+|                    | [irqinfo](#irqinfo)                             | [mkrd](#mkrd)           |
+|                    | [kill/killall](#killkillall)                    | [mksmartfs](#mksmartfs) |
+|                    | [ps](#ps)                                       | [mount](#mount)         |
+|                    | [reboot](#reboot)                               | [pwd](#pwd)             |
+|                    | [stkmon](#stkmon)                               | [rm](#rm)               |
+|                    | [uptime](#uptime)                               | [rmdir](#rmdir)         |
+|                    |                                                 | [umount](#umount)       |
 
 
 ## exit
@@ -506,6 +506,46 @@ Heap Allocation Information per User defined Group
 ```
 
 
+## history
+This command shows the history you executed, and you can re-execute it by calling the number with `!`.
+```bash
+TASH>>history
+         TASH command history
+         --------------------
+ 1       history
+ 2       help
+ 3       sleep 1
+ 4       ps
+ 5       help
+ 6       echo test
+ 7       ls
+ 8       history
+TASH>>!2
+         TASH command list
+         --------------------
+arastorage_itc   arastorage_utc   cat              cd
+date             df               dhcpd            drivers_tc
+echo             exit             filesystem_tc    free
+getenv           heapinfo         help             history
+ifconfig         ifdown           ifup             iperf
+kernel_tc        kill             killall          ls
+mkdir            mount            netdb            netmon
+network_tc       ntpclient        ps               pwd
+reboot           rm               rmdir            setenv
+sleep            start_itc_sampl  stkmon           sysio_itc
+sysio_utc        taskmgr_itc      taskmgr_utc      tm_broadcast1
+tm_broadcast2    tm_broadcast3    tm_itc           tm_sample
+tm_sample_itc    tm_utc           umount           unsetenv
+uptime           wm_test
+TASH>>
+```
+
+### How to Enable
+Set *CONFIG_TASH_MAX_STORE_COMMANDS* value to use this command on menuconfig as shown below:
+```
+Application Configuration -> Shell -> [*] Enable shell -> set the value of Max number of stored TASH commands
+```
+When it has 0 value, `history` command is disabled.
 
 ## irqinfo
 This command shows the number of registered interrupts, it's occurrence counts and corresponding isr.
