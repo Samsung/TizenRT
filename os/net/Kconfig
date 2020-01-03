@@ -195,6 +195,8 @@ config NET_LOOPBACK_INTERFACE
 	---help---
 		Support loop interface (127.0.0.1).
 
+source "net/local/Kconfig"
+
 endif # NET
 
 
