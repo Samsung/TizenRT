@@ -152,7 +152,7 @@ CONTEXTDIRS += wqueue
 #ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 #CONTEXTDIRS += $(EXTDIR)$(DELIM)iotivity
 #endif
-ifeq ($(CONFIG_STDK_IOT_CORE),y))
+ifeq ($(CONFIG_STDK_IOT_CORE),y)
 CONTEXTDIRS += $(EXTDIR)$(DELIM)stdk
 endif
 USERDIRS =
