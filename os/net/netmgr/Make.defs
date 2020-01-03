@@ -80,6 +80,7 @@ endif
 
 NETDEV_CSRCS += netstack.c
 NETDEV_CSRCS += net_vfs.c
+NETDEV_CSRCS += net_sockets.c net_close.c
 
 NETDEV_CSRCS += bsd_socket_api.c
 
