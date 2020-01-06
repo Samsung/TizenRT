@@ -11,11 +11,11 @@ config NET_SOCKET
 
 if NET_SOCKET
 
-config NSOCKET_DESCRIPTORS
-	int "Number of socket descriptor"
+config NBSDSOCKET_DESCRIPTORS
+	int "Number of LWIP socket descriptor"
 	default 8
 	---help---
-		Maximum number of socket descriptors per task/thread.
+		Maximum number of LWIP socket descriptors.
 
 config NET_TCP_KEEPALIVE
 	bool "TCP keepalive"
