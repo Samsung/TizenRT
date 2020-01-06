@@ -265,12 +265,14 @@ int main(int argc, char **argv, char **envp)
 	printf("# define CONFIG_FS_WRITABLE 1\n");
 	printf("#endif\n\n");
 
-	printf("/* The correct way to disable socket support is to set the number of\n");
-	printf(" * socket descriptors to zero.\n");
-	printf(" */\n\n");
-	printf("#ifndef CONFIG_NSOCKET_DESCRIPTORS\n");
-	printf("#  define CONFIG_NSOCKET_DESCRIPTORS 0\n");
+	printf("/* The number of socket descriptors is the sum of each socket(LWIP, UDS) */\n\n");
+	printf("#ifndef CONFIG_NBSDSOCKET_DESCRIPTORS\n");
+	printf("# define CONFIG_NBSDSOCKET_DESCRIPTORS 0\n");
 	printf("#endif\n\n");
+	printf("#ifndef CONFIG_NUDS_DESCRIPTORS\n");
+	printf("# define CONFIG_NUDS_DESCRIPTORS 0\n");
+	printf("#endif\n\n");
+	printf("#define CONFIG_NSOCKET_DESCRIPTORS (CONFIG_NBSDSOCKET_DESCRIPTORS + CONFIG_NUDS_DESCRIPTORS)\n\n");
 
 	printf("/* There can be no network support with no socket descriptors */\n\n");
 	printf("#if CONFIG_NSOCKET_DESCRIPTORS <= 0\n");
