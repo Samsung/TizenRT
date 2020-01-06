@@ -19,6 +19,7 @@
 #ifndef _NETMGR_NETSTACK_H__
 #define _NETMGR_NETSTACK_H__
 
+#include <net/if.h>
 struct netstack_ops {
 	// start, stop
 	int (*init)(void *data);
