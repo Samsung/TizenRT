@@ -78,16 +78,22 @@
  * Name: file_read
  *
  * Description:
- *   This is the internal implementation of read().
+ *   file_read() is an internal OS interface.  It is functionally similar to
+ *   the standard read() interface except:
  *
- * Parameters:
- *   file     File structure instance
- *   buf      User-provided to save the data
- *   nbytes   The maximum size of the user-provided buffer
+ *    - It does not modify the errno variable,
+ *    - It is not a cancellation point,
+ *    - It does not handle socket descriptors, and
+ *    - It accepts a file structure instance instead of file descriptor.
  *
- * Return:
+ * Input Parameters:
+ *   filep  - File structure instance
+ *   buf    - User-provided to save the data
+ *   nbytes - The maximum size of the user-provided buffer
+ *
+ * Returned Value:
  *   The positive non-zero number of bytes read on success, 0 on if an
- *   end-of-file condition, or -1 on failure with errno set appropriately.
+ *   end-of-file condition, or a negated errno value on any failure.
  *
  ****************************************************************************/
 
@@ -111,23 +117,16 @@ ssize_t file_read(FAR struct file *filep, FAR void *buf, size_t nbytes)
 	 * method?
 	 */
 
-	else if (inode && inode->u.i_ops && inode->u.i_ops->read) {
+	else if (inode != NULL && inode->u.i_ops && inode->u.i_ops->read) {
 		/* Yes.. then let it perform the read.  NOTE that for the case of the
 		 * mountpoint, we depend on the read methods being identical in
 		 * signature and position in the operations vtable.
 		 */
 
-		ret = (int)inode->u.i_ops->read(filep, (char *)buf, (size_t)nbytes);
+		ret = (int)inode->u.i_ops->read(filep, (FAR char *)buf, (size_t)nbytes);
 	}
 
-	/* If an error occurred, set errno and return -1 (ERROR) */
-
-	if (ret < 0) {
-		set_errno(-ret);
-		return ERROR;
-	}
-
-	/* Otherwise, return the number of bytes read */
+	/* Return the number of bytes read (or possibly an error code) */
 
 	return ret;
 }
@@ -193,6 +192,11 @@ ssize_t read(int fd, FAR void *buf, size_t nbytes)
 		/* Then let file_read do all of the work. */
 
 		ret = file_read(filep, buf, nbytes);
+		if (ret < 0) {
+			set_errno(-ret);
+			leave_cancellation_point();
+			return ERROR;
+		}
 	}
 #endif
 

@@ -112,7 +112,10 @@ ssize_t file_pread(FAR struct file *filep, FAR void *buf, size_t nbytes, off_t o
 	/* Then perform the read operation */
 
 	ret = file_read(filep, buf, nbytes);
-	errcode = get_errno();
+	if (ret < 0) {
+		errcode = -ret;
+		ret = ERROR;
+	}
 
 	/* Restore the file position */
 
