@@ -826,14 +826,26 @@ int fs_getfilep(int fd, FAR struct file **filep);
  ****************************************************************************/
 int vopen(FAR const char *path, int oflags, va_list ap);
 
-/* fs/fs_read.c *************************************************************/
 /****************************************************************************
  * Name: file_read
  *
  * Description:
- *   Equivalent to the standard read() function except that is accepts a
- *   struct file instance instead of a file descriptor.  Currently used
- *   only by net_sendfile() and aio_read();
+ *   file_read() is an internal OS interface.  It is functionally similar to
+ *   the standard read() interface except:
+ *
+ *    - It does not modify the errno variable,
+ *    - It is not a cancellation point,
+ *    - It does not handle socket descriptors, and
+ *    - It accepts a file structure instance instead of file descriptor.
+ *
+ * Input Parameters:
+ *   filep  - File structure instance
+ *   buf    - User-provided to save the data
+ *   nbytes - The maximum size of the user-provided buffer
+ *
+ * Returned Value:
+ *   The positive non-zero number of bytes read on success, 0 on if an
+ *   end-of-file condition, or a negated errno value on any failure.
  *
  ****************************************************************************/
 
