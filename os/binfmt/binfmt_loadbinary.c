@@ -39,11 +39,6 @@
 
 #ifdef CONFIG_BINFMT_ENABLE
 
-#ifdef CONFIG_ARMV7M_MPU
-extern uint32_t g_mpu_region_nr;
-void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
-#endif
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -86,10 +81,6 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		errcode = EINVAL;
 		goto errout;
 	}
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	struct tcb_s *tcb;
-#endif
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	bin = load_attr->binp;
@@ -156,89 +147,13 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	}
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	bin->uheap = (struct mm_heap_s *)bin->heapstart;
-	bin->uheap_size = bin->ramstart + bin->ramsize - bin->heapstart - sizeof(struct mm_heap_s);
-	mm_initialize(bin->uheap, bin->heapstart + sizeof(struct mm_heap_s), bin->uheap_size);
-	mm_add_app_heap_list(bin->uheap, load_attr->bin_name);
-#endif
-
-	/* Disable pre-emption so that the executed module does
-	 * not return until we get a chance to connect the on_exit
-	 * handler.
-	 */
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	/* The first 4 bytes of the text section of the application must contain a
-	pointer to the application's mm_heap object. Here we will store the mm_heap
-	pointer to the start of the text section */
-	*(uint32_t *)(bin->alloc[0]) = (uint32_t)bin->uheap;
-	tcb = (struct tcb_s *)sched_self();
-	tcb->uheap = (uint32_t)bin->uheap;
-
-	/* Initialize the MPU registers in tcb with suitable protection values */
-#ifdef CONFIG_ARMV7M_MPU
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	/* Complete RAM partition will be configured as RW region */
-	mpu_configure_app_regs(&tcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)bin->ramstart, bin->ramsize, false, false);
-	/* Configure text section as RO and executable region */
-	mpu_configure_app_regs(&tcb->mpu_regs[3], g_mpu_region_nr + 1, (uintptr_t)bin->alloc[0], bin->textsize, true, true);
-	/* Configure ro section as RO and non-executable region */
-	mpu_configure_app_regs(&tcb->mpu_regs[6], g_mpu_region_nr + 2, (uintptr_t)bin->alloc[3], bin->rosize, true, false);
-#else
-	/* Complete RAM partition will be configured as RW region */
-	mpu_configure_app_regs(&tcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)bin->ramstart, bin->ramsize, false, true);
-#endif
-#endif
-
-#endif
-
-	/* Then start the module */
+	/* Start the module */
 	pid = exec_module(bin);
 	if (pid < 0) {
 		errcode = -pid;
 		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
 		goto errout_with_unload;
 	}
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	tcb->uheap = 0;
-	tcb = sched_gettcb(pid);
-	if (tcb == NULL) {
-		errcode = ESRCH;
-		goto errout_with_unload;
-	}
-	tcb->ram_start = (uint32_t)bin->ramstart;
-	tcb->ram_size = bin->ramsize;
-	/* Set task name as binary name */
-	strncpy(tcb->name, load_attr->bin_name, CONFIG_TASK_NAME_SIZE);
-	tcb->name[CONFIG_TASK_NAME_SIZE] = '\0';
-#endif
-
-#if defined(CONFIG_BINARY_MANAGER) && !defined(CONFIG_DISABLE_SIGNALS)
-	/* Clean the signal mask of loaded task because it inherits signal mask from parent task, binary manager. */
-	tcb->sigprocmask = NULL_SIGNAL_SET;
-#endif
-
-#ifdef CONFIG_BINFMT_LOADABLE
-	/* Set up to unload the module (and free the binary_s structure)
-	 * when the task exists.
-	 */
-
-	ret = group_exitinfo(pid, bin);
-	if (ret < 0) {
-		berr("ERROR: Failed to schedule unload '%s': %d\n", filename, ret);
-	}
-#else
-	/* Free the binary_s structure here */
-
-	binfmt_freeargv(bin);
-	kmm_free(bin);
-
-	/* TODO: How does the module get unloaded in this case? */
-#endif
-
-	binfo("%s loaded @ 0x%08x and running with pid = %d\n", bin->filename, bin->alloc[0], pid);
 
 	return pid;
 

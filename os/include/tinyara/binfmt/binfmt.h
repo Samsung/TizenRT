@@ -298,7 +298,7 @@ int unload_module(FAR struct binary_s *bin);
  *
  ****************************************************************************/
 
-int exec_module(FAR const struct binary_s *bin);
+int exec_module(FAR struct binary_s *bin);
 
 /****************************************************************************
  * Name: exec
