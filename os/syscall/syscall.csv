@@ -21,6 +21,7 @@
 "execv","unistd.h","defined(CONFIG_LIBC_EXECFUNCS)","int","FAR const char *","FAR char *const []|FAR char *const *"
 "exit", "stdlib.h", "", "void", "int"
 "fcntl", "fcntl.h", "CONFIG_NFILE_DESCRIPTORS > 0", "int", "int", "int", "..."
+"fin_wait", "tinyara/irq.h", "", "int"
 "fs_fdopen", "tinyara/fs/fs.h", "CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NFILE_STREAMS > 0", "FAR struct file_struct*", "int", "int", "FAR struct tcb_s*"
 "fs_ioctl", "tinyara/fs/fs.h", "defined(CONFIG_LIBC_IOCTL_VARIADIC) && (CONFIG_NSOCKET_DESCRIPTORS > 0 || CONFIG_NFILE_DESCRIPTORS > 0)", "int", "int", "int", "unsigned long"
 "fstat","sys/stat.h","CONFIG_NFILE_DESCRIPTORS > 0","int","int","FAR struct stat*"

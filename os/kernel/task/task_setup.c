@@ -65,6 +65,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/ttrace.h>
+#include <tinyara/irq.h>
 #ifdef CONFIG_SCHED_CPULOAD
 #include <tinyara/clock.h>
 #endif
@@ -474,6 +475,7 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 #endif
 
 #endif
+		tcb->fin_data = NO_FIN_DATA;
 
 		/* Add the task to the inactive task list */
 

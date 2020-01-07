@@ -230,7 +230,7 @@ enum tstate_e {
 
 	TSTATE_TASK_INACTIVE,		/* BLOCKED      - Initialized but not yet activated */
 	TSTATE_WAIT_SEM,			/* BLOCKED      - Waiting for a semaphore */
-	TSTATE_WAIT_UNBLOCK,		/* BLOCKED		- Waiting to be unblocked by another task */
+	TSTATE_WAIT_FIN,		/* BLOCKED		- Waiting to be unblocked by fin */
 #ifndef CONFIG_DISABLE_SIGNALS
 	TSTATE_WAIT_SIG,			/* BLOCKED      - Waiting for a signal */
 #endif
@@ -643,6 +643,9 @@ struct tcb_s {
 #ifdef CONFIG_TASK_MONITOR
 	bool is_active;
 #endif
+
+	int fin_data;			/* Irq notification Data to be handled */
+	int pending_fin_data;		/* Pended irq notification data */
 };
 
 /* struct task_tcb_s *************************************************************/

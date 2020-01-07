@@ -480,10 +480,12 @@
 
 #if CONFIG_TASK_NAME_SIZE > 0
 #define SYS_prctl                      (SYS_nnetsocket + 0)
-#define SYS_maxsyscall                 (SYS_nnetsocket + 1)
+#define SYS_fin_wait                   (SYS_nnetsocket + 1)
 #else
-#define SYS_maxsyscall                 SYS_nnetsocket
+#define SYS_fin_wait                   SYS_nnetsocket
 #endif
+
+#define SYS_maxsyscall                 SYS_fin_wait
 
 /* Note that the reported number of system calls does *NOT* include the
  * architecture-specific system calls.  If the "real" total is required,

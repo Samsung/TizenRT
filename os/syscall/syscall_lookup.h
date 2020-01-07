@@ -351,6 +351,8 @@ SYSCALL_LOOKUP(socket,                  3, STUB_socket)
 SYSCALL_LOOKUP(prctl,                   5, STUB_prctl)
 #endif
 
+SYSCALL_LOOKUP(fin_wait,           	0, STUB_fin_wait)
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
