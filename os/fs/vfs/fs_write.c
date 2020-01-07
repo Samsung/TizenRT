@@ -80,45 +80,47 @@
  *
  * Description:
  *   Equivalent to the standard write() function except that is accepts a
- *   struct file instance instead of a file descriptor.  Currently used
- *   only by aio_write();
+ *   struct file instance instead of a file descriptor.  It is functionally
+ *   equivalent to write() except that in addition to the differences in
+ *   input paramters:
+ *
+ *  - It does not modify the errno variable,
+ *  - It is not a cancellation point, and
+ *  - It does not handle socket descriptors.
+ *
+ * Input Parameters:
+ *   filep  - Instance of struct file to use with the write
+ *   buf    - Data to write
+ *   nbytes - Length of data to write
+ *
+ * Returned Value:
+ *  On success, the number of bytes written are returned (zero indicates
+ *  nothing was written).  On any failure, a negated errno value is returned
+ *  (see comments withwrite() for a description of the appropriate errno
+ *  values).
  *
  ****************************************************************************/
 
 ssize_t file_write(FAR struct file *filep, FAR const void *buf, size_t nbytes)
 {
 	FAR struct inode *inode;
-	ssize_t ret;
-	int err;
 
 	/* Was this file opened for write access? */
 
 	if ((filep->f_oflags & O_WROK) == 0) {
-		err = EBADF;
-		goto errout;
+		return -EBADF;
 	}
 
 	/* Is a driver registered? Does it support the write method? */
 
 	inode = filep->f_inode;
 	if (!inode || !inode->u.i_ops || !inode->u.i_ops->write) {
-		err = EBADF;
-		goto errout;
+		return -EBADF;
 	}
 
 	/* Yes, then let the driver perform the write */
 
-	ret = inode->u.i_ops->write(filep, buf, nbytes);
-	if (ret < 0) {
-		err = -ret;
-		goto errout;
-	}
-
-	return ret;
-
-errout:
-	set_errno(err);
-	return ERROR;
+	return inode->u.i_ops->write(filep, buf, nbytes);
 }
 
 /***************************************************************************
@@ -210,6 +212,11 @@ ssize_t write(int fd, FAR const void *buf, size_t nbytes)
 			 */
 
 			ret = file_write(filep, buf, nbytes);
+			if (ret < 0) {
+				set_errno(-ret);
+				leave_cancellation_point();
+				return ERROR;
+			}
 		}
 	}
 #endif

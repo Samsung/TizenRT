@@ -111,7 +111,10 @@ ssize_t file_pwrite(FAR struct file *filep, FAR const void *buf, size_t nbytes, 
 	/* Then perform the write operation */
 
 	ret = file_write(filep, buf, nbytes);
-	errcode = get_errno();
+	if (ret < 0) {
+		errcode = -ret;
+		ret = ERROR;
+	}
 
 	/* Restore the file position */
 
