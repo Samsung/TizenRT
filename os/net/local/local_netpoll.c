@@ -132,7 +132,7 @@ static int local_accept_pollsetup(FAR struct local_conn_s *conn,
 	}
 
 errout:
-	net_unlock(0);
+	net_unlock();
 	return ret;
 }
 #endif
@@ -222,7 +222,7 @@ int local_pollsetup(FAR struct socket *psock, FAR struct pollfd *fds)
 		while (shadowfds->fd != 0) {
 			shadowfds += 2;
 			if (shadowfds >= &conn->lc_inout_fds[2 * LOCAL_NPOLLWAITERS]) {
-				net_unlock(0);
+				net_unlock();
 				return -ENOMEM;
 			}
 		}
@@ -235,7 +235,7 @@ int local_pollsetup(FAR struct socket *psock, FAR struct pollfd *fds)
 		shadowfds[1].sem = fds->sem;
 		shadowfds[1].events = fds->events & ~POLLIN;
 
-		net_unlock(0);
+		net_unlock();
 
 		/* Setup poll for both shadow pollfds. */
 

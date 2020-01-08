@@ -144,7 +144,7 @@ static int inline local_stream_connect(FAR struct local_conn_s *client,
 
 	if (server->lc_state != LOCAL_STATE_LISTENING ||
 		server->u.server.lc_pending >= server->u.server.lc_backlog) {
-		net_unlock(0);
+		net_unlock();
 		ndbg("ERROR: Server is not listening: lc_state=%d\n",
 			 server->lc_state);
 		ndbg("   OR: The backlog limit was reached: %d or %d\n",
@@ -164,7 +164,7 @@ static int inline local_stream_connect(FAR struct local_conn_s *client,
 		ndbg("ERROR: Failed to create FIFOs for %s: %d\n",
 			 client->lc_path, ret);
 
-		net_unlock(0);
+		net_unlock();
 		return ret;
 	}
 
@@ -177,7 +177,7 @@ static int inline local_stream_connect(FAR struct local_conn_s *client,
 		ndbg("ERROR: Failed to open write-only FIFOs for %s: %d\n",
 			 client->lc_path, ret);
 
-		net_unlock(0);
+		net_unlock();
 		goto errout_with_fifos;
 	}
 
@@ -197,7 +197,7 @@ static int inline local_stream_connect(FAR struct local_conn_s *client,
 		_local_semgive(&server->lc_waitsem);
 	}
 
-	net_unlock(0);
+	net_unlock();
 
 	/* Wait for the server to accept the connections */
 
@@ -295,7 +295,7 @@ int psock_local_connect(FAR struct socket *psock,
 		case LOCAL_TYPE_UNNAMED:  /* A Unix socket that is not bound to any name */
 		case LOCAL_TYPE_ABSTRACT: /* lc_path is length zero */
 		{
-			net_unlock(0);
+			net_unlock();
 			return OK;
 		} break;
 
@@ -321,7 +321,7 @@ int psock_local_connect(FAR struct socket *psock,
 					ret = local_stream_connect(client, conn,
 											   _SS_ISNONBLOCK(psock->s_flags));
 				} else {
-					net_unlock(0);
+					net_unlock();
 				}
 
 				return ret;
@@ -333,13 +333,13 @@ int psock_local_connect(FAR struct socket *psock,
 
 		case LOCAL_TYPE_UNTYPED: /* Type is not determined until the socket is bound */
 		{
-			net_unlock(0);
+			net_unlock();
 			return -EINVAL;
 		}
 		}
 	}
 
-	net_unlock(0);
+	net_unlock();
 	return -EADDRNOTAVAIL;
 }
 

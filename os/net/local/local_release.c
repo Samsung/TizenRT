@@ -139,7 +139,7 @@ int local_release(FAR struct local_conn_s *conn)
 	/* Free the connection structure */
 
 	local_free(conn);
-	net_unlock(0);
+	net_unlock();
 	return OK;
 }
 

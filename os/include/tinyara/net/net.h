@@ -64,6 +64,7 @@
 #include <stdarg.h>
 #include <semaphore.h>
 #include <sys/types.h>
+#include <tinyara/net/net_lock.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -188,13 +189,6 @@ struct socketlist {
 /* Callback from netdev_foreach() */
 struct netif;					/* Forward reference. Defined in lwip/netif.h */
 typedef int (*netdev_callback_t)(FAR struct netif *dev, void *arg);
-
-/* Semaphore based locking for non-interrupt based logic.
- *
- * net_lock_t -- Not used.  Only for compatibility
- */
-
-typedef uint8_t net_lock_t;		/* Not really used */
 
 /****************************************************************************
  * Public Data

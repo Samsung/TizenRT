@@ -85,6 +85,10 @@
 
 void local_initialize(void)
 {
+	/* Initialize the locking facility */
+
+	net_lockinitialize();
+
 #ifdef CONFIG_NET_LOCAL_STREAM
 	dq_init(&g_local_listeners);
 #endif

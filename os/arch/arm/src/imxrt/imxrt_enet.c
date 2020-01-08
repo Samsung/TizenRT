@@ -969,7 +969,6 @@ static void imxrt_enet_interrupt_work(FAR void *arg)
 {
 	FAR struct imxrt_driver_s *priv = (FAR struct imxrt_driver_s *)arg;
 	uint32_t pending;
-	net_lock_t lock_flag;
 #ifdef CONFIG_NET_IGMP
 	uint32_t gaurStore;
 	uint32_t galrStore;
@@ -977,7 +976,7 @@ static void imxrt_enet_interrupt_work(FAR void *arg)
 
 	/* Process pending Ethernet interrupts */
 
-	lock_flag = net_lock();
+	net_lock();
 
 	/* Get the set of unmasked, pending interrupt. */
 
@@ -1046,7 +1045,7 @@ static void imxrt_enet_interrupt_work(FAR void *arg)
 		}
 	}
 
-	net_unlock(lock_flag);
+	net_unlock();
 
 	/* Re-enable Ethernet interrupts */
 
@@ -1111,12 +1110,11 @@ static int imxrt_enet_interrupt(int irq, FAR void *context, FAR void *arg)
 
 static void imxrt_txtimeout_work(FAR void *arg)
 {
-	net_lock_t lock_flag;
 	FAR struct imxrt_driver_s *priv = (FAR struct imxrt_driver_s *)arg;
 
 	/* Increment statistics and dump debug info */
 
-	lock_flag = net_lock();
+	net_lock();
 	nerr("Resetting interface\n");
 
 	EMAC_STAT(priv, tx_timeouts);
@@ -1128,7 +1126,7 @@ static void imxrt_txtimeout_work(FAR void *arg)
 	(void)imxrt_ifdown(&priv->dev);
 	(void)imxrt_ifup_action(&priv->dev, false);
 
-	net_unlock(lock_flag);
+	net_unlock();
 }
 
 /****************************************************************************
@@ -1187,14 +1185,13 @@ static void imxrt_txtimeout_expiry(int argc, uint32_t arg, ...)
 
 static void imxrt_poll_work(FAR void *arg)
 {
-	net_lock_t lock_flag;
 	FAR struct imxrt_driver_s *priv = (FAR struct imxrt_driver_s *)arg;
 
 	/* Check if there is there is a transmission in progress.  We cannot perform
 	 * the TX poll if he are unable to accept another packet for transmission.
 	 */
 
-	lock_flag = net_lock();
+	net_lock();
 	if (!imxrt_txringfull(priv)) {
 		/* If so, update TCP timing states and poll the network for new XMIT
 		 * data. Hmmm.. might be bug here.  Does this mean if there is a
@@ -1207,7 +1204,7 @@ static void imxrt_poll_work(FAR void *arg)
 	/* Setup the watchdog poll timer again in any case */
 
 	(void)wd_start(priv->txpoll, IMXRT_WDDELAY, imxrt_polltimer_expiry, 1, (uint32_t)priv);
-	net_unlock(lock_flag);
+	net_unlock();
 }
 
 /****************************************************************************
@@ -1448,12 +1445,11 @@ static int imxrt_ifdown(struct netif *dev)
 
 static void imxrt_txavail_work(FAR void *arg)
 {
-	net_lock_t lock_flag;
 	FAR struct imxrt_driver_s *priv = (FAR struct imxrt_driver_s *)arg;
 
 	/* Ignore the notification if the interface is not yet up */
 
-	lock_flag = net_lock();
+	net_lock();
 	if (priv->bifup) {
 		/* Check if there is room in the hardware to hold another outgoing
 		 * packet.
@@ -1468,7 +1464,7 @@ static void imxrt_txavail_work(FAR void *arg)
 		}
 	}
 
-	net_unlock(lock_flag);
+	net_unlock();
 }
 
 /****************************************************************************
