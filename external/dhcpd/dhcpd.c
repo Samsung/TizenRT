@@ -336,15 +336,13 @@ static pthread_mutex_t g_dhcpd_lock = PTHREAD_MUTEX_INITIALIZER; // protect a wr
 #ifndef CONFIG_NET_LWIP
 static inline void dhcpd_arpupdate(uint16_t *pipaddr, uint8_t *phwaddr)
 {
-	net_lock_t flags;
-
 	/* Disable interrupts and update the ARP table -- very non-portable hack.
 	 * REVISIT -- switch to the SIOCSARP ioctl call if/when it is implemented.
 	 */
 
-	flags = net_lock();
+	net_lock();
 	arp_update(pipaddr, phwaddr);
-	net_unlock(flags);
+	net_unlock();
 }
 #else
 #define dhcpd_arpupdate(pipaddr, phwaddr)

@@ -21,6 +21,9 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "netmgr/netstack.h"
+#ifdef CONFIG_NET_LOCAL
+#include "utils/utils.h"
+#endif
 
 struct tr_netmgr {
 	void *dev;
@@ -99,6 +102,12 @@ void net_setup(void)
 
 void net_initialize(void)
 {
+#ifdef CONFIG_NET_LOCAL
+	/* Initialize the local, "Unix domain" socket support */
+
+	local_initialize();
+#endif
+
 	/*  start network stack */
 	struct netstack *stk = get_netstack();
 	int res = stk->ops->start(NULL);

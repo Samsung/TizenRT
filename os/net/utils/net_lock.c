@@ -19,7 +19,7 @@
 /****************************************************************************
  * net/utils/net_lock.c
  *
- *   Copyright (C) 2011-2012, 2014-2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2012, 2014-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,18 +63,18 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/semaphore.h>
 #include <tinyara/net/net.h>
 
 #include "utils/utils.h"
-
-#ifdef CONFIG_NET
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define NO_HOLDER (pid_t)-1
+#define NO_HOLDER ((pid_t)-1)
 
 /****************************************************************************
  * Private Data
@@ -88,23 +88,113 @@ static unsigned int g_count = 0;
  * Private Functions
  ****************************************************************************/
 
+static inline int sem_wait_uninterruptible(FAR sem_t *sem)
+{
+	int ret;
+
+	do {
+		/* Take the semaphore (perhaps waiting) */
+
+		ret = sem_wait(sem);
+		if (ret < 0) {
+			ret = -get_errno();
+		}
+	} while (ret == -EINTR || ret == -ECANCELED);
+
+	return ret;
+}
+
+static inline int sem_timedwait_uninterruptible(FAR sem_t *sem, FAR const struct timespec *abstime)
+{
+	int ret;
+
+	do {
+		/* Take the semaphore (perhaps waiting) */
+
+		ret = sem_timedwait(sem, abstime);
+		if (ret < 0) {
+			ret = -get_errno();
+		}
+	} while (ret == -EINTR || ret == -ECANCELED);
+
+	return ret;
+}
+
 /****************************************************************************
- * Function: _net_takesem
+ * Name: _net_takesem
  *
  * Description:
- *   Take the semaphore
+ *   Take the semaphore, waiting indefinitely.
+ *   REVISIT: Should this return if -EINTR?
  *
  ****************************************************************************/
 
-static void _net_takesem(void)
+static int _net_takesem(void)
 {
-	while (sem_wait(&g_netlock) != 0) {
-		/* The only case that an error should occur here is if the wait was
-		 * awakened by a signal.
-		 */
+	return sem_wait_uninterruptible(&g_netlock);
+}
 
-		ASSERT(errno == EINTR);
+/****************************************************************************
+ * Name: _net_timedwait
+ ****************************************************************************/
+
+static int
+_net_timedwait(sem_t *sem, bool interruptable, unsigned int timeout)
+{
+	unsigned int count;
+	irqstate_t flags;
+	int blresult;
+	int ret;
+
+	flags = irqsave(); /* No interrupts */
+	sched_lock();	  /* No context switches */
+
+	/* Release the network lock, remembering my count.  net_breaklock will
+	 * return a negated value if the caller does not hold the network lock.
+	 */
+
+	blresult = net_breaklock(&count);
+
+	/* Now take the semaphore, waiting if so requested. */
+
+	if (timeout != UINT_MAX) {
+		struct timespec abstime;
+
+		DEBUGVERIFY(clock_gettime(CLOCK_REALTIME, &abstime));
+
+		abstime.tv_sec += timeout / MSEC_PER_SEC;
+		abstime.tv_nsec += timeout % MSEC_PER_SEC * NSEC_PER_MSEC;
+		if (abstime.tv_nsec >= NSEC_PER_SEC) {
+			abstime.tv_sec++;
+			abstime.tv_nsec -= NSEC_PER_SEC;
+		}
+
+		/* Wait until we get the lock or until the timeout expires */
+
+		if (interruptable) {
+			ret = sem_timedwait(sem, &abstime);
+		} else {
+			ret = sem_timedwait_uninterruptible(sem, &abstime);
+		}
+	} else {
+		/* Wait as long as necessary to get the lock */
+
+		if (interruptable) {
+			ret = sem_wait(sem);
+		} else {
+			ret = sem_wait_uninterruptible(sem);
+		}
 	}
+
+	/* Recover the network lock at the proper count (if we held it before) */
+
+	if (blresult >= 0) {
+		net_restorelock(count);
+	}
+
+	sched_unlock();
+	irqrestore(flags);
+	return ret;
 }
 
 /****************************************************************************
@@ -112,7 +202,7 @@ static void _net_takesem(void)
  ****************************************************************************/
 
 /****************************************************************************
- * Function: net_lockinitialize
+ * Name: net_lockinitialize
  *
  * Description:
  *   Initialize the locking facility
@@ -125,16 +215,24 @@ void net_lockinitialize(void)
 }
 
 /****************************************************************************
- * Function: net_lock
+ * Name: net_lock
  *
  * Description:
- *   Take the lock
+ *   Take the network lock
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   failured (probably -ECANCELED).
  *
  ****************************************************************************/
 
-net_lock_t net_lock(void)
+int net_lock(void)
 {
 	pid_t me = getpid();
+	int ret = OK;
 
 	/* Does this thread already hold the semaphore? */
 
@@ -145,26 +243,33 @@ net_lock_t net_lock(void)
 	} else {
 		/* No.. take the semaphore (perhaps waiting) */
 
-		_net_takesem();
+		ret = _net_takesem();
+		if (ret >= 0) {
+			/* Now this thread holds the semaphore */
 
-		/* Now this thread holds the semaphore */
-
-		g_holder = me;
-		g_count = 1;
+			g_holder = me;
+			g_count = 1;
+		}
 	}
 
-	return 0;
+	return ret;
 }
 
 /****************************************************************************
- * Function: net_unlock
+ * Name: net_unlock
  *
  * Description:
- *   Release the lock.
+ *   Release the network lock.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
  *
  ****************************************************************************/
 
-void net_unlock(net_lock_t flags)
+void net_unlock(void)
 {
 	DEBUGASSERT(g_holder == getpid() && g_count > 0);
 
@@ -184,85 +289,162 @@ void net_unlock(net_lock_t flags)
 }
 
 /****************************************************************************
- * Function: net_timedwait
+ * Name: net_breaklock
  *
  * Description:
- *   Atomically wait for sem (or a timeout( while temporarily releasing
- *   the lock on the network.
- *
- * Input Parameters:
- *   sem     - A reference to the semaphore to be taken.
- *   abstime - The absolute time to wait until a timeout is declared.
- *
- * Returned value:
- *   The returned value is the same as sem_wait() or sem_timedwait():  Zero
- *   (OK) is returned on success; -1 (ERROR) is returned on a failure with
- *   the errno value set appropriately.
+ *   Break the lock, return information needed to restore re-entrant lock
+ *   state.
  *
  ****************************************************************************/
 
-int net_timedwait(sem_t *sem, FAR const struct timespec *abstime)
+int net_breaklock(FAR unsigned int *count)
 {
-	pid_t me = getpid();
-	unsigned int count;
 	irqstate_t flags;
-	int ret;
+	pid_t me = getpid();
+	int ret = -EPERM;
 
-	flags = irqsave();			/* No interrupts */
-	sched_lock();				/* No context switches */
+	DEBUGASSERT(count != NULL);
+
+	flags = irqsave(); /* No interrupts */
 	if (g_holder == me) {
-		/* Release the network lock, remembering my count */
+		/* Return the lock setting */
 
-		count = g_count;
+		*count = g_count;
+
+		/* Release the network lock  */
+
 		g_holder = NO_HOLDER;
 		g_count = 0;
+
 		sem_post(&g_netlock);
-
-		/* Now take the semaphore, waiting if so requested. */
-
-		if (abstime) {
-			/* Wait until we get the lock or until the timeout expires */
-
-			ret = sem_timedwait(sem, abstime);
-		} else {
-			/* Wait as long as necessary to get the lot */
-
-			ret = sem_wait(sem);
-		}
-
-		/* Recover the network lock at the proper count */
-
-		_net_takesem();
-		g_holder = me;
-		g_count = count;
-	} else {
-		ret = sem_wait(sem);
+		ret = OK;
 	}
 
-	sched_unlock();
 	irqrestore(flags);
 	return ret;
 }
 
 /****************************************************************************
- * Function: net_lockedwait
+ * Name: net_restorelock
  *
  * Description:
- *   Atomically wait for sem while temporarily releasing g_netlock.
+ *   Restore the locked state
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   failured (probably -ECANCELED).
+ *
+ ****************************************************************************/
+
+int net_restorelock(unsigned int count)
+{
+	pid_t me = getpid();
+	int ret;
+
+	DEBUGASSERT(g_holder != me);
+
+	/* Recover the network lock at the proper count */
+
+	ret = _net_takesem();
+	if (ret >= 0) {
+		g_holder = me;
+		g_count = count;
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: net_timedwait
+ *
+ * Description:
+ *   Atomically wait for sem (or a timeout( while temporarily releasing
+ *   the lock on the network.
+ *
+ *   Caution should be utilized.  Because the network lock is relinquished
+ *   during the wait, there could changes in the network state that occur
+ *   before the lock is recovered.  Your design should account for this
+ *   possibility.
+ *
+ * Input Parameters:
+ *   sem     - A reference to the semaphore to be taken.
+ *   timeout - The relative time to wait until a timeout is declared.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
+ *
+ ****************************************************************************/
+
+int net_timedwait(sem_t *sem, unsigned int timeout)
+{
+	return _net_timedwait(sem, true, timeout);
+}
+
+/****************************************************************************
+ * Name: net_lockedwait
+ *
+ * Description:
+ *   Atomically wait for sem while temporarily releasing the network lock.
+ *
+ *   Caution should be utilized.  Because the network lock is relinquished
+ *   during the wait, there could changes in the network state that occur
+ *   before the lock is recovered.  Your design should account for this
+ *   possibility.
  *
  * Input Parameters:
  *   sem - A reference to the semaphore to be taken.
  *
- * Returned value:
- *   The returned value is the same as sem_wait():  Zero (OK) is returned
- *   on success; -1 (ERROR) is returned on a failure with the errno value
- *   set appropriately.
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
  *
  ****************************************************************************/
 
 int net_lockedwait(sem_t *sem)
 {
-	return net_timedwait(sem, NULL);
+	return net_timedwait(sem, UINT_MAX);
 }
 
-#endif							/* CONFIG_NET */
+/****************************************************************************
+ * Name: net_timedwait_uninterruptible
+ *
+ * Description:
+ *   This function is wrapped version of net_timedwait(), which is
+ *   uninterruptible and convenient for use.
+ *
+ * Input Parameters:
+ *   sem     - A reference to the semaphore to be taken.
+ *   timeout - The relative time to wait until a timeout is declared.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
+ *
+ ****************************************************************************/
+
+int net_timedwait_uninterruptible(sem_t *sem, unsigned int timeout)
+{
+	return _net_timedwait(sem, false, timeout);
+}
+
+/****************************************************************************
+ * Name: net_lockedwait_uninterruptible
+ *
+ * Description:
+ *   This function is wrapped version of net_lockedwait(), which is
+ *   uninterruptible and convenient for use.
+ *
+ * Input Parameters:
+ *   sem - A reference to the semaphore to be taken.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
+ *
+ ****************************************************************************/
+
+int net_lockedwait_uninterruptible(sem_t *sem)
+{
+	return net_timedwait_uninterruptible(sem, UINT_MAX);
+}

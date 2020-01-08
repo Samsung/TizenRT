@@ -151,7 +151,7 @@ int local_listen(FAR struct socket *psock, int backlog)
 
 		net_lock();
 		dq_addlast(&server->lc_node, &g_local_listeners);
-		net_unlock(0);
+		net_unlock();
 
 		/* And change the server state to listing */
 

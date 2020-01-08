@@ -153,6 +153,11 @@ void net_setup(void)
 
 void net_initialize(void)
 {
+#ifdef CONFIG_NET_LOCAL
+	/* Initialize the local, "Unix domain" socket support */
+
+	local_initialize();
+#endif
 #ifdef CONFIG_NET_LWIP
 	/* Create tcp_ip stack from lwip thread */
 	tcpip_init(NULL, NULL);

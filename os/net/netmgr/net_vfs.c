@@ -260,7 +260,7 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 
 	/* Interrupts must be disabled in order to perform operations on socket structures */
 
-	// flags = net_lock();
+	// net_lock();
 	switch (cmd) {
 	case F_DUPFD:
 		/* Return a new file descriptor which shall be the lowest numbered
@@ -379,7 +379,7 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 		break;
 	}
 
-	// net_unlock(flags);
+	// net_unlock();
 
 errout:
 	if (err != 0) {

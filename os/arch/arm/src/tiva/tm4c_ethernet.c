@@ -2004,15 +2004,14 @@ static inline void tiva_interrupt_process(FAR struct tiva_ethmac_s *priv)
 static void tiva_interrupt_work(FAR void *arg)
 {
 	FAR struct tiva_ethmac_s *priv = (FAR struct tiva_ethmac_s *)arg;
-	net_lock_t state;
 
 	DEBUGASSERT(priv);
 
 	/* Process pending Ethernet interrupts */
 
-	state = net_lock();
+	net_lock();
 	tiva_interrupt_process(priv);
-	net_unlock(state);
+	net_unlock();
 
 	/* Re-enable Ethernet interrupts at the NVIC */
 
@@ -2152,13 +2151,12 @@ static inline void tiva_txtimeout_process(FAR struct tiva_ethmac_s *priv)
 static void tiva_txtimeout_work(FAR void *arg)
 {
 	FAR struct tiva_ethmac_s *priv = (FAR struct tiva_ethmac_s *)arg;
-	net_lock_t state;
 
 	/* Process pending Ethernet interrupts */
 
-	state = net_lock();
+	net_lock();
 	tiva_txtimeout_process(priv);
-	net_unlock(state);
+	net_unlock();
 }
 #endif
 
@@ -2300,13 +2298,12 @@ static inline void tiva_poll_process(FAR struct tiva_ethmac_s *priv)
 static void tiva_poll_work(FAR void *arg)
 {
 	FAR struct tiva_ethmac_s *priv = (FAR struct tiva_ethmac_s *)arg;
-	net_lock_t state;
 
 	/* Perform the poll */
 
-	state = net_lock();
+	net_lock();
 	tiva_poll_process(priv);
-	net_unlock(state);
+	net_unlock();
 }
 #endif
 
@@ -2503,13 +2500,12 @@ static inline void tiva_txavail_process(FAR struct tiva_ethmac_s *priv)
 static void tiva_txavail_work(FAR void *arg)
 {
 	FAR struct tiva_ethmac_s *priv = (FAR struct tiva_ethmac_s *)arg;
-	net_lock_t state;
 
 	/* Perform the poll */
 
-	state = net_lock();
+	net_lock();
 	tiva_txavail_process(priv);
-	net_unlock(state);
+	net_unlock();
 }
 #endif
 
