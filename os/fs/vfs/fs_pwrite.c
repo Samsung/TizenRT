@@ -18,7 +18,7 @@
 /****************************************************************************
  * fs/vfs/fs_pwrite.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014, 2016-2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,10 +64,6 @@
 #include <tinyara/fs/fs.h>
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -86,46 +82,40 @@ ssize_t file_pwrite(FAR struct file *filep, FAR const void *buf, size_t nbytes, 
 	off_t savepos;
 	off_t pos;
 	ssize_t ret;
-	int errcode;
 
 	/* Perform the seek to the current position.  This will not move the
 	 * file pointer, but will return its current setting
 	 */
 
 	savepos = file_seek(filep, 0, SEEK_CUR);
-	if (savepos == (off_t)-1) {
+	if (savepos < 0) {
 		/* file_seek might fail if this if the media is not seekable */
 
-		return ERROR;
+		return (ssize_t)savepos;
 	}
 
 	/* Then seek to the correct position in the file */
 
 	pos = file_seek(filep, offset, SEEK_SET);
-	if (pos == (off_t)-1) {
+	if (pos < 0) {
 		/* This might fail is the offset is beyond the end of file */
 
-		return ERROR;
+		return (ssize_t)pos;
 	}
 
 	/* Then perform the write operation */
 
 	ret = file_write(filep, buf, nbytes);
-	if (ret < 0) {
-		errcode = -ret;
-		ret = ERROR;
-	}
 
 	/* Restore the file position */
 
 	pos = file_seek(filep, savepos, SEEK_SET);
-	if (pos == (off_t)-1 && ret >= 0) {
+	if (pos < 0 && ret >= 0) {
 		/* This really should not fail */
 
-		return ERROR;
+		ret = (ssize_t)pos;
 	}
 
-	set_errno(errcode);
 	return ret;
 }
 
@@ -144,15 +134,21 @@ ssize_t file_pwrite(FAR struct file *filep, FAR const void *buf, size_t nbytes, 
  *   require four system calls.  If it is implemented within the kernel,
  *   only three.
  *
- * Parameters:
+ * Input Parameters:
  *   fd       file descriptor (or socket descriptor) to write to
  *   buf      Data to write
  *   nbytes   Length of data to write
  *
- * Return:
+ * Returned Value:
  *   The positive non-zero number of bytes read on success, 0 on if an
  *   end-of-file condition, or -1 on failure with errno set appropriately.
  *   See write() return values
+ *
+ * Assumptions/Limitations:
+ *   POSIX requires that opening a file with the O_APPEND flag should have no
+ *   effect on the location at which pwrite() writes data.  However, on NuttX
+ *   like on Linux, if a file is opened with O_APPEND, pwrite() appends data
+ *   to the end of the file, regardless of the value of offset.
  *
  ****************************************************************************/
 
@@ -163,7 +159,7 @@ ssize_t pwrite(int fd, FAR const void *buf, size_t nbytes, off_t offset)
 
 	/* pread() is a cancellation point */
 
-	(void)enter_cancellation_point();
+	enter_cancellation_point();
 
 	/* Get the file structure corresponding to the file descriptor. */
 
