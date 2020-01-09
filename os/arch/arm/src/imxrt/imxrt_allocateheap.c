@@ -363,26 +363,42 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 #endif
 
 /****************************************************************************
- * Name: up_addregion
- *
- * Description:
- *   Memory may be added in non-contiguous chunks.  Additional chunks are
- *   added by calling this function.
- *
+ * Name: up_add_kregion
  ****************************************************************************/
+#if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
+static void up_add_kregion(void)
+{
+	int region_cnt;
+	struct mm_heap_s *kheap;
+	kheap = kmm_get_heap();
+	for (region_cnt = 1; region_cnt < CONFIG_KMM_REGIONS; region_cnt++) {
+		if (kheap[regionx_kheap_idx[region_cnt]].mm_heapsize == 0) {
+			mm_initialize(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
+			continue;
+		}
+		mm_addregion(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
+	}
+}
+#endif
 
-#if CONFIG_MM_REGIONS > 1
+/****************************************************************************
+ * Name: up_addregion
+ ****************************************************************************/
+#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
 void up_addregion(void)
 {
-	/* Add region 1 to the user heap */
+	int region_cnt;
 
-	kumm_addregion((FAR void *)REGION1_RAM_START, REGION1_RAM_SIZE);
+	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
+		if (BASE_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
+			mm_initialize(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+			continue;
+		}
+		mm_addregion(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+	}
 
-#if CONFIG_MM_REGIONS > 2
-	/* Add region 2 to the user heap */
-
-	kumm_addregion((FAR void *)REGION2_RAM_START, REGION2_RAM_SIZE);
-
-#endif							/* CONFIG_MM_REGIONS > 2 */
+#if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
+	up_add_kregion();
+#endif
 }
-#endif							/* CONFIG_MM_REGIONS > 1 */
+#endif

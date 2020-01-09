@@ -826,24 +826,6 @@ void *zalloc_at(int heap_index, size_t size);
  * @endcond
  */
 
-#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
-
-#define MM_PART_FREE    0
-#define MM_PART_USED    1
-
-struct mm_ram_partition_s {
-	uint32_t start;         /* Start address of the partition */
-	uint32_t size;          /* Size of the partition in bytes */
-	uint8_t status;         /* Current status of the partition, free / used */
-};
-
-/* Functions contained in mm_partition_mgr.c **************************************/
-void mm_initialize_ram_partitions(void);
-int8_t mm_allocate_ram_partition(uint32_t **start_addr, uint32_t *size);
-void mm_free_ram_partition(uint32_t address);
-
-#endif		/* defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) */
-
 static inline uint32_t mm_align_up_by_size(uint32_t address, uint32_t size)
 {
 	uint32_t align_mask = size - 1;
