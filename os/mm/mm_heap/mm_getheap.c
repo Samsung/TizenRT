@@ -71,10 +71,6 @@ typedef struct app_heap_s {
 
 static dq_queue_t app_heap_q;
 
-#ifdef CONFIG_MM_PARTITION_HEAP
-extern struct mm_heap_s g_pheap;
-#endif
-
 #endif
 
 /****************************************************************************
@@ -130,14 +126,6 @@ static struct mm_heap_s *mm_get_app_heap(void *address)
 		node = dq_next(node);
 	}
 
-#ifdef CONFIG_MM_PARTITION_HEAP
-	/* If address was not found in the app heaps, then it might be in the partition heap */
-	if ((address > (void *)g_pheap.mm_heapstart[0]) && (address < (void *)g_pheap.mm_heapend[0])) {
-		return &g_pheap;
-	}
-#endif
-
-	mdbg("address 0x%x is not in any app heap region.\n", address);
 	return NULL;
 }
 
@@ -184,6 +172,13 @@ char *mm_get_app_heap_name(void *address)
  ****************************************************************************/
 struct mm_heap_s *mm_get_heap(void *address)
 {
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
+	/* If address was not found in kernel or user heap, search for it in app heaps */
+	struct mm_heap_s *heap =  mm_get_app_heap(address);
+	if (heap) {
+		return heap;
+	}
+#endif
 #ifdef CONFIG_MM_KERNEL_HEAP
 	int kheap_idx;
 	int region_idx;
@@ -200,13 +195,8 @@ struct mm_heap_s *mm_get_heap(void *address)
 	int heap_idx;
 	heap_idx = mm_get_heapindex(address);
 	if (heap_idx == INVALID_HEAP_IDX) {
-#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
-		/* If address was not found in kernel or user heap, search for it in app heaps */
-		return mm_get_app_heap(address);
-#else
 		mdbg("address 0x%x is not in heap region.\n", address);
 		return NULL;
-#endif
 	}
 
 	return &USR_HEAP[heap_idx];
@@ -237,7 +227,7 @@ int mm_get_heapindex(void *mem)
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
 		int region = 0;
 #if CONFIG_MM_REGIONS > 1
-		for (; region < g_mmheap[heap_idx].mm_nregions; region++)
+		for (; region < USR_HEAP[heap_idx].mm_nregions; region++)
 #endif
 		{
 			/* A valid address from the user heap for this region would have to lie

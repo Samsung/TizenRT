@@ -190,11 +190,3 @@ config MM_SHM
 	---help---
 		Build in support for the shared memory interfaces shmget(), shmat(),
 		shmctl(), and shmdt().
-
-config MM_PARTITION_HEAP
-	bool "Maintain Partition heap for apps"
-	default n
-	depends on APP_BINARY_SEPARATION
-	---help---
-		If this is enabled, then RAM partitions for apps will be allocated using
-		partition heap. Otherwise, the allocation will be done statically.

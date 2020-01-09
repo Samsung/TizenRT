@@ -152,7 +152,9 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	uint32_t size = 0;
 	struct tcb_s *tcb;
 
-	if (mm_allocate_ram_partition(&start_addr, &size) < 0) {
+	start_addr = kumm_memalign(size, size);
+
+	if (!start_addr) {
 		berr("ERROR: Failed to allocate RAM partition\n");
 		errcode = ENOMEM;
 		goto errout;
@@ -271,7 +273,7 @@ errout_with_bin:
 	kmm_free(bin);
 err_free_partition:
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	mm_free_ram_partition((uint32_t)start_addr);
+	kumm_free((void *)start_addr);
 errout:
 #endif
 	set_errno(errcode);

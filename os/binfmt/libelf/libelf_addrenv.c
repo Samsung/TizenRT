@@ -160,7 +160,8 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 #endif
 
 	/* Allocate the RAM partition to load the app into */
-	if (mm_allocate_ram_partition(&loadinfo->binp->ramstart, &loadinfo->binp->ramsize) < 0) {
+	loadinfo->binp->ramstart = kumm_memalign(loadinfo->binp->ramsize, loadinfo->binp->ramsize);
+	if (!loadinfo->binp->ramstart) {
 		berr("ERROR: Failed to allocate RAM partition\n");
 		return -ENOMEM;
 	}

@@ -133,7 +133,7 @@ int binfmt_exit(FAR struct binary_s *bin)
 	if (!bin->reload)
 #endif
 		/* Free the RAM partition into which this app was loaded */
-		mm_free_ram_partition((uint32_t)bin->ramstart);
+		kumm_free((void *)bin->ramstart);
 #endif
 	/* Free the load structure */
 
