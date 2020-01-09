@@ -389,46 +389,5 @@ errout:
 	return ret;
 }
 
-
-/****************************************************************************
- * Name: net_initlist
- *
- * Description:
- *   Initialize a list of sockets for a new task
- *
- * Input Parameters:
- *   list -- A reference to the pre-allocated socket list to be initialized.
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void net_initlist(FAR struct socketlist *list)
-{
-	/* ToDo: Initialize the list access mutex */
-	return;
-}
-
-/****************************************************************************
- * Name: net_releaselist
- *
- * Description:
- *   Release resources held by the socket list
- *
- * Input Parameters:
- *   list -- A reference to the pre-allocated socket list to be un-initialized.
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void net_releaselist(FAR struct socketlist *list)
-{
-	/*	Todo */
-	return;
-}
-
 // void net_duplist();
 
