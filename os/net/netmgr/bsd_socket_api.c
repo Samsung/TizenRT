@@ -51,7 +51,7 @@ int _create_netlink(int type, int protocol)
 	return fd;
 }
 
-sock_type _get_socktype(int fd)
+static sock_type _get_socktype(int fd)
 {
 	if (fd < CONFIG_NFILE_DESCRIPTORS) {
 		return TR_LWNL;
