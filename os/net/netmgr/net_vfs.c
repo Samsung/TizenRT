@@ -26,6 +26,19 @@
 #include <net/if.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
+#include "local/uds_net.h"
+
+static sock_type _get_socktype(int fd)
+{
+	if (fd < CONFIG_NFILE_DESCRIPTORS) {
+		return TR_LWNL;
+	} else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NUDS_DESCRIPTORS) {
+		return TR_UDS;
+	} else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS) {
+		return TR_SOCKET;
+	}
+	return TR_UNKNOWN;
+}
 
 /****************************************************************************
  * Name: net_checksd
@@ -40,6 +53,10 @@
  ****************************************************************************/
 int net_checksd(int sd, int oflags)
 {
+	if (_get_socktype(sd) == TR_UDS) {
+		return uds_checksd(sd, oflags);
+	}
+
 	struct netstack *st = get_netstack();
 	return st->ops->checksd(sd, oflags);
 }
