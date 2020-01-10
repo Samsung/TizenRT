@@ -97,6 +97,13 @@ namespace std
 #if __cplusplus >= 201103L
   using nullptr_t = decltype(nullptr);
 #endif
+#if defined(__CLANG_MAX_ALIGN_T_DEFINED) || defined(_GCC_MAX_ALIGN_T) || \
+    defined(__DEFINED_max_align_t) || defined(__NetBSD__)
+// Re-use the compiler's <stddef.h> max_align_t where possible.
+using ::max_align_t;
+#else
+typedef long double max_align_t;
+#endif
 }
 
 #endif // __INCLUDE_CXX_CSTDDEF
