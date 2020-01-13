@@ -71,9 +71,9 @@ namespace std
   using ::srand;
   using ::rand;
 
+#ifndef CONFIG_DISABLE_ENVIRON
   // Environment variable support
 
-#ifndef CONFIG_DISABLE_ENVIRON
   using ::get_environ_ptr;
   using ::getenv;
   using ::putenv;
@@ -130,6 +130,16 @@ namespace std
   using ::calloc;
   using ::mallinfo;
 
+#ifdef CONFIG_PSEUDOTERM
+  // Pseudo-Terminals
+
+#ifdef CONFIG_PSEUDOTERM_SUSV1
+  using ::ptsname;
+  using ::ptsname_r;
+#endif
+  using ::unlockpt;
+#endif
+
   // Misc.
 
   using ::abs;
@@ -140,6 +150,14 @@ namespace std
   using ::mktemp;
   using ::mkstemp;
   using ::qsort;
+
+// Sorting
+
+  using ::qsort;
+
+  // Binary search
+
+  using ::bsearch;
 }
 
 #endif // __INCLUDE_CXX_CSTDLIB

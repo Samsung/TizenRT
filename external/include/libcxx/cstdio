@@ -86,6 +86,7 @@ namespace std
   using ::fputc;
   using ::fputs;
   using ::fread;
+  using ::freopen;
   using ::fseek;
   using ::fsetpos;
   using ::ftell;
