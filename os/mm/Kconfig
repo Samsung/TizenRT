@@ -21,16 +21,6 @@ config MM_KERNEL_HEAP
 		up_allocate_kheap() interface may chose to ignore this setting if it
 		has a more appropriate heap allocation strategy.
 
-config MM_KERNEL_HEAPSIZE
-	int "Kernal heap size"
-	default 8192
-	depends on MM_KERNEL_HEAP
-	---help---
-		This is the size of the a protected, kernel-mode heap (in bytes).
-		The remaining of available memory is given to the unprotected
-		user-mode heap.  This value may need to be aligned to units of the
-		size of the smallest memory protection region.
-
 config REALLOC_DISABLE_NEIGHBOR_EXTENSION
 	bool "Disable Realloc Neighbor Extension"
 	default n
