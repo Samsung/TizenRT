@@ -131,7 +131,7 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
 	 */
 
-	uintptr_t ubase = (uintptr_t) USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
+	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend;
 	size_t usize = REGION_END - ubase;
 	int log2;
 
@@ -185,7 +185,7 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
 	 */
 
-	uintptr_t ubase = (uintptr_t) USERSPACE->us_bssend + CONFIG_MM_KERNEL_HEAPSIZE;
+	uintptr_t ubase = (uintptr_t) USERSPACE->us_bssend;
 	size_t usize = REGION_END - ubase;
 	int log2;
 
