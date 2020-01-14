@@ -61,7 +61,8 @@
 #define VFS_CONTENTS_LEN	20
 #define SEEK_DEF		3
 #define SEEK_OFFSET		6
-#define MOUNT_DIR "/fsmnt/"
+
+#define MOUNT_DIR CONFIG_MOUNT_POINT
 
 #ifdef CONFIG_FS_SMARTFS
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
@@ -84,11 +85,7 @@
 
 #define VFS_DUP2_FILE_PATH MOUNT_DIR"dup2"
 
-#define VFS_UNLINK_FILE_PATH MOUNT_DIR"unlink"
-
 #define VFS_FOLDER_PATH MOUNT_DIR"folder"
-
-#define VFS_STAT_PATH VFS_FOLDER_PATH"/1"
 
 #define VFS_FILE1_PATH MOUNT_DIR"file1.txt"
 
@@ -143,7 +140,6 @@
 #define DEV_PATH "/dev"
 #define DEV_INVALID_DIR "/dev/invalid"
 #define DEV_EMPTY_FOLDER_PATH "/dev/folder"
-#define DEV_EMPTY_UNLINK_FILE_PATH "/dev/unlink"
 #define VFS_INVALID_PATH "/mnt/nofolder"
 #define INVALID_PATH "/empty"
 
@@ -161,14 +157,6 @@
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 static int g_thread_result;
 #endif
-
-/****************************************************************************
- * Init Functions
- ****************************************************************************/
-static void vfs_mount(void);
-static void vfs_unmount(void);
-static void vfs_mkdir(const char *dirpath);
-static void vfs_rmdir(const char *dirpath);
 
 #ifndef CONFIG_DISABLE_ENVIRON
 extern int mount_show(void);
@@ -227,78 +215,6 @@ void mkfifo_test_listener(pthread_addr_t pvarg)
 }
 #endif
 
-static void vfs_mount(void)
-{
-	int ret;
-	struct statfs fs;
-
-	if (0 > statfs(MOUNT_DIR, &fs)) {
-		ret = mount(MOUNT_DEV_DIR, MOUNT_DIR, TARGET_FS_NAME, 0, NULL);
-		TC_ASSERT_EQ("mount", ret, OK);
-	}
-}
-
-static void vfs_unmount(void)
-{
-	int ret;
-	struct statfs fs;
-
-	if (!statfs(MOUNT_DIR, &fs)) {
-		ret = umount(MOUNT_DIR);
-		TC_ASSERT_EQ("umount", ret, OK);
-	}
-}
-
-static void vfs_mkdir(const char *dirpath)
-{
-	char filename[50];
-	struct stat st;
-	int ret;
-	int len;
-	int i;
-
-	if (0 > stat(dirpath, &st)) {
-		ret = mkdir(dirpath, 0777);
-		TC_ASSERT_EQ("mkdir", ret, OK);
-	}
-
-	len = strlen(dirpath) + 3;
-	for (i = 0; i < VFS_LOOP_COUNT; i++) {
-		memset(filename, 0, len);
-		snprintf(filename, len, "%s/%d\0", dirpath, i);
-
-		if (0 > stat(filename, &st)) {
-			ret = mkdir(filename, 0777);
-			TC_ASSERT_EQ("mkdir", ret, OK);
-		}
-	}
-}
-
-static void vfs_rmdir(const char *dirpath)
-{
-	char filename[50];
-	struct stat st;
-	int ret;
-	int len;
-	int i;
-
-	len = strlen(dirpath) + 3;
-	for (i = 0; i < VFS_LOOP_COUNT; i++) {
-		memset(filename, 0, len);
-		snprintf(filename, len, "%s/%d\0", dirpath, i);
-
-		if (!stat(filename, &st)) {
-			ret = rmdir(filename);
-			TC_ASSERT_EQ("rmdir", ret, OK);
-		}
-	}
-
-	if (!stat(dirpath, &st)) {
-		ret = rmdir(dirpath);
-		TC_ASSERT_EQ("rmdir", ret, OK);
-	}
-}
-
 /**
 * @fn               make_long_file
 * @description      Make long size file to execute tc properly.
@@ -334,46 +250,21 @@ static int make_long_file(void)
 * @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
 * @postcondition    NA
 */
-static void tc_fs_vfs_mount_p(void)
+static void tc_fs_vfs_mount(void)
 {
 	int ret;
 
-	/* Init */
-	vfs_unmount();
+	ret = mount(MOUNT_DEV_DIR, CONFIG_MOUNT_POINT, TARGET_FS_NAME, 0, NULL);
+	TC_ASSERT_EQ("mount", ret, OK);
 
-	/* Testcase */
-	ret = mount(MOUNT_DEV_DIR, MOUNT_DIR, TARGET_FS_NAME, 0, NULL);
-	TC_ASSERT_EQ_CLEANUP("mount", ret, OK, vfs_unmount());
+	/*For each mountpt operation*/
 
-	/*search mountpoint operation*/
 #if !defined(CONFIG_DISABLE_ENVIRON) && !defined(CONFIG_BUILD_PROTECTED)
 	ret = mount_show();
-	TC_ASSERT_EQ_CLEANUP("mount_show", ret, OK, vfs_unmount());
+	TC_ASSERT_EQ("mount_show", ret, OK);
 #endif
-
-	/* Deinit */
-	vfs_unmount();
-
 	TC_SUCCESS_RESULT();
 }
-
-static void tc_fs_vfs_mount_exist_path_n(void)
-{
-	int ret;
-
-	/* Init */
-	vfs_mount();
-
-	/* Testcase */
-	ret = mount(MOUNT_DEV_DIR, MOUNT_DIR, TARGET_FS_NAME, 0, NULL);
-	TC_ASSERT_NEQ_CLEANUP("mount", ret, OK, vfs_unmount());
-
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
 /**
 * @testcase         tc_fs_vfs_umount
 * @brief            Unmount file system
@@ -382,34 +273,11 @@ static void tc_fs_vfs_mount_exist_path_n(void)
 * @precondition     File system should be mounted.
 * @postcondition    NA
 */
-static void tc_fs_vfs_umount_p(void)
+static void tc_fs_vfs_umount(void)
 {
 	int ret;
-
-	/* Init */
-	vfs_mount();
-
-	/* Testcase */
-	ret = umount(MOUNT_DIR);
-	TC_ASSERT_EQ_CLEANUP("umount", ret, OK, vfs_unmount());
-
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_umount_noexist_path_n(void)
-{
-	int ret;
-
-	/* Init */
-	vfs_unmount();
-
-	/* Testcase */
-	ret = umount(MOUNT_DIR);
-	TC_ASSERT_NEQ("umount", ret, OK);
-
+	ret = umount(CONFIG_MOUNT_POINT);
+	TC_ASSERT_EQ("umount", ret, OK);
 	TC_SUCCESS_RESULT();
 }
 
@@ -421,39 +289,19 @@ static void tc_fs_vfs_umount_noexist_path_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_open_p(void)
+static void tc_fs_vfs_open(void)
 {
 	int fd;
-
-	/* Init */
-	vfs_mount();
-
-	/* Testcase */
 	fd = open(VFS_FILE_PATH, O_WROK | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Deinit */
+	TC_ASSERT_GEQ("open", fd, 0);
 	close(fd);
-	vfs_unmount();
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_open_invalid_path_n(void)
-{
-	int fd;
 	/* Nagative case with invalid argument, not existing pathname. It will return ERROR */
-
-	/* Testcase */
 	fd = open(VFS_INVALID_FILE_PATH, O_WROK);
 	TC_ASSERT_LT_CLEANUP("open", fd, 0, close(fd));
 
-	/* Deinit */
-	close(fd);
-
 	TC_SUCCESS_RESULT();
 }
-
 /**
 * @testcase         tc_fs_vfs_fdopen
 * @brief            Open file to do file operation using file descriptor
@@ -462,37 +310,18 @@ static void tc_fs_vfs_open_invalid_path_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_fdopen_p(void)
+static void tc_fs_vfs_fdopen(void)
 {
 	int fd;
 	struct file_struct *fp ;
-
-	/* Init */
-	vfs_mount();
 	fd = open(VFS_FILE_PATH, O_WROK | O_CREAT);
 	TC_ASSERT_GEQ("open", fd, 0);
 
-	/* Testcase */
 	fp = fs_fdopen(fd, O_WROK, NULL);
-	TC_ASSERT_NEQ_CLEANUP("fs_fdopen", fp, NULL, close(fd); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("fs_fdopen", fp, NULL, close(fd));
 
-	/* Deinit */
 	fclose(fp);
 	close(fd);
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_fdopen_invalid_fd_n(void)
-{
-	int fd = -1;
-	struct file_struct *fp ;
-
-	/* Testcase */
-	fp = fs_fdopen(fd, O_WROK, NULL);
-	TC_ASSERT_EQ("fs_fdopen", fp, NULL);
-
 	TC_SUCCESS_RESULT();
 }
 
@@ -504,56 +333,25 @@ static void tc_fs_vfs_fdopen_invalid_fd_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_write_p(void)
+static void tc_fs_vfs_write(void)
 {
 	int fd, ret;
 	char *buf = VFS_TEST_CONTENTS_1;
 
-	/* Init */
-	vfs_mount();
 	fd = open(VFS_FILE_PATH, O_WRONLY | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
+	TC_ASSERT_GEQ("open", fd, 0);
 	ret = write(fd, buf, strlen(buf));
-	TC_ASSERT_EQ_CLEANUP("write", ret, strlen(buf), close(fd); vfs_unmount());
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
+	TC_ASSERT_EQ("write", ret, strlen(buf));
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_write_invalid_len_n(void)
-{
-	int fd, ret;
-	char *buf = VFS_TEST_CONTENTS_1;
 	/* Nagative case with invalid argument, no write access. It will return ERROR */
-
-	/* Init */
-	vfs_mount();
 	fd = open(VFS_FILE_PATH, O_RDONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
+	TC_ASSERT_GEQ("open", fd, 0);
 	ret = write(fd, buf, sizeof(buf));
-	TC_ASSERT_LT_CLEANUP("write", ret, 0, close(fd); vfs_unmount());
-
-	/* Deinit */
+	TC_ASSERT_LT_CLEANUP("write", ret, 0, close(fd));
 	close(fd);
-	vfs_unmount();
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_write_invalid_fd_n(void)
-{
-	int ret;
-	char *buf = VFS_TEST_CONTENTS_1;
 	/* Nagative case with invalid argument, fd. It will return ERROR */
-
-	/* Testcase */
 	ret = write(CONFIG_NFILE_DESCRIPTORS, buf, strlen(buf));
 	TC_ASSERT_EQ("write", ret, ERROR);
 
@@ -568,59 +366,28 @@ static void tc_fs_vfs_write_invalid_fd_n(void)
 * @precondition	    NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_read_p(void)
+static void tc_fs_vfs_read(void)
 {
 	int fd, ret;
 	char buf[20];
 
-	/* Init */
-	vfs_mount();
 	fd = open(VFS_FILE_PATH, O_RDONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 	memset(buf, 0, sizeof(buf));
-
-	/* Testcase */
 	ret = read(fd, buf, sizeof(buf));
-	TC_ASSERT_GEQ_CLEANUP("read", ret, 0, close(fd); vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("read", strcmp(buf, VFS_TEST_CONTENTS_1), 0, close(fd); vfs_unmount());
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
+	TC_ASSERT_GEQ("read", ret, 0);
+	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_1), 0);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_read_invalid_flags_n(void)
-{
-	int fd, ret;
-	char buf[20];
 	/* Nagative case with invalid argument, no read access. It will return ERROR */
-
-	/* Init */
-	vfs_mount();
 	fd = open(VFS_FILE_PATH, O_WRONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 	memset(buf, 0, sizeof(buf));
-
-	/* Testcase */
 	ret = read(fd, buf, sizeof(buf));
-	TC_ASSERT_LT_CLEANUP("read", ret, 0, close(fd); vfs_unmount());
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
+	TC_ASSERT_LT("read", ret, 0);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_read_invalid_fd_n(void)
-{
-	int ret;
-	char buf[20];
 	/* Nagative case with invalid argument, fd. It will return ERROR */
-
-	/* Testcase */
 	ret = read(CONFIG_NFILE_DESCRIPTORS, buf, sizeof(buf));
 	TC_ASSERT_EQ("read", ret, ERROR);
 
@@ -635,34 +402,13 @@ static void tc_fs_vfs_read_invalid_fd_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_close_p(void)
+static void tc_fs_vfs_close(void)
 {
 	int fd, ret;
-
-	/* Init */
-	vfs_mount();
 	fd = open(VFS_FILE_PATH, O_RDONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
+	TC_ASSERT_GEQ("open", fd, 0);
 	ret = close(fd);
-	TC_ASSERT_GEQ_CLEANUP("close", ret, 0, vfs_unmount());
-
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_close_invalid_fd_n(void)
-{
-	int ret;
-	int fd = -1;
-
-	/* Testcase */
-	ret = close(fd);
-	TC_ASSERT_EQ("close", ret, ERROR);
-
+	TC_ASSERT_GEQ("close", ret, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -675,7 +421,7 @@ static void tc_fs_vfs_close_invalid_fd_n(void)
 * @precondition	    NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_dup_p(void)
+static void tc_fs_vfs_dup(void)
 {
 	char *filename = VFS_DUP_FILE_PATH;
 	char *str1 = VFS_TEST_CONTENTS_1;
@@ -684,64 +430,49 @@ static void tc_fs_vfs_dup_p(void)
 	ssize_t ret;
 	int fd1, fd2, len;
 
-	/* Init */
-	vfs_mount();
-
 	memset(buf, 0, sizeof(buf));
 	fd1 = open(filename, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd1, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd1, 0);
 
 	len = strlen(str1);
 	ret = write(fd1, str1, len);
-	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd1); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd1));
 
-	/* Testcase */
 	fd2 = dup(fd1);
 	close(fd1);
-	TC_ASSERT_GEQ_CLEANUP("dup", fd2, 0, close(fd2); vfs_unmount());
+	TC_ASSERT_GEQ("dup", fd2, 0);
 
 	len = strlen(str2);
 	ret = write(fd2, str2, strlen(str2));
 	close(fd2);
-	TC_ASSERT_EQ_CLEANUP("write", ret, len, vfs_unmount());
+	TC_ASSERT_EQ("write", ret, len);
 
 	fd1 = open(filename, O_RDOK);
-	TC_ASSERT_GEQ_CLEANUP("open", fd1, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd1, 0);
 
 	len = strlen(str1);
 	ret = read(fd1, buf, len);
 
-	TC_ASSERT_GT_CLEANUP("read", ret, 0, close(fd1); vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("read", strcmp(buf, VFS_TEST_CONTENTS_1), 0, close(fd1); vfs_unmount());
+	TC_ASSERT_GT_CLEANUP("read", ret, 0, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("read", strcmp(buf, VFS_TEST_CONTENTS_1), 0, close(fd1));
 
 	memset(buf, 0, sizeof(buf));
 	len = strlen(str2);
 	ret = read(fd1, buf, len);
-
-	TC_ASSERT_GT_CLEANUP("read", ret, 0, close(fd1); vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("read", strcmp(buf, VFS_TEST_CONTENTS_2), 0, close(fd1); vfs_unmount());
-
-	/* Deinit */
 	close(fd1);
-	vfs_unmount();
 
-	TC_SUCCESS_RESULT();
-}
+	TC_ASSERT_GT("read", ret, 0);
+	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_2), 0);
 
-static void tc_fs_vfs_dup_invalid_fd_n(void)
-{
-	int fd;
 	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
-
-	/* Testcase */
 #if CONFIG_NFILE_DESCRIPTORS > 0
-	fd = dup(CONFIG_NFILE_DESCRIPTORS);
-	TC_ASSERT_LT_CLEANUP("dup", fd, 0, close(fd));
+	fd1 = dup(CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_LT_CLEANUP("dup", fd1, 0, close(fd1));
 #endif
 
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-	fd = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS);
-	TC_ASSERT_LT_CLEANUP("dup", fd, 0, close(fd));
+	fd1 = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS);
+	TC_ASSERT_LT_CLEANUP("dup", fd1, 0, close(fd1));
 #endif
 
 	TC_SUCCESS_RESULT();
@@ -756,7 +487,7 @@ static void tc_fs_vfs_dup_invalid_fd_n(void)
 * @precondition	    NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_dup2_p(void)
+static void tc_fs_vfs_dup2(void)
 {
 	char *filename1 = VFS_DUP_FILE_PATH;
 	char *filename2 = VFS_DUP2_FILE_PATH;
@@ -765,56 +496,39 @@ static void tc_fs_vfs_dup2_p(void)
 	ssize_t ret;
 	int fd1, fd2, len;
 
-	/* Init */
-	vfs_mount();
-
 	memset(buf, 0, sizeof(buf));
 
 	fd1 = open(filename1, O_RDWR);
-	TC_ASSERT_GEQ_CLEANUP("open", fd1, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd1, 0);
 
 	fd2 = open(filename2, O_RDWR | O_CREAT);
 	close(fd1);
-	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd2, 0);
 
-	/* Testcase */
 	/* now fd1 points fd2 */
 	ret = dup2(fd2, fd1);
 	close(fd2);
-	TC_ASSERT_NEQ_CLEANUP("dup2", ret, ERROR, vfs_unmount());
-	TC_ASSERT_GEQ_CLEANUP("dup2", fd1, 0, vfs_unmount());
+	TC_ASSERT_NEQ("dup2", ret, ERROR);
+	TC_ASSERT_GEQ("dup2", fd1, 0);
 
 	len = strlen(VFS_TEST_CONTENTS_3);
 	ret = write(fd1, str, len);
 	close(fd1);
-	TC_ASSERT_EQ_CLEANUP("write", ret, len, vfs_unmount());
+	TC_ASSERT_EQ("write", ret, len);
 
 	fd2 = open(filename2, O_RDONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd2, 0);
 
 	ret = read(fd2, buf, len);
-
-	TC_ASSERT_GT_CLEANUP("read", ret, 0, close(fd2));
-	TC_ASSERT_EQ_CLEANUP("read", strcmp(buf, VFS_TEST_CONTENTS_3), 0, close(fd2));
-
-	/* Deinit */
 	close(fd2);
-	vfs_unmount();
+	TC_ASSERT_GT("read", ret, 0);
+	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_3), 0);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_dup2_invalid_fd_n(void)
-{
-	ssize_t ret;
-	int fd;
 	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
-
-	/* Testcase */
-	fd = -1;
-	ret = dup2(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS, fd);
-	close(fd);
-	TC_ASSERT_LT("dup2", fd, 0);
+	fd1 = -1;
+	ret = dup2(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS, fd1);
+	close(fd1);
+	TC_ASSERT_LT("dup2", fd1, 0);
 	TC_ASSERT_EQ("dup2", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -828,62 +542,32 @@ static void tc_fs_vfs_dup2_invalid_fd_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_fsync_p(void)
+static void tc_fs_vfs_fsync(void)
 {
 	int ret, fd, len;
 	char *filename = VFS_FILE_PATH;
 	char *str = VFS_TEST_CONTENTS_2;
 
-	/* Init */
-	vfs_mount();
-
 	fd = open(filename, O_WROK | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	len = strlen(str);
 	ret = write(fd, str, len);
-	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd));
 
-	/* Testcase */
 	ret = fsync(fd);
-	TC_ASSERT_GEQ_CLEANUP("fsync", ret, 0, close(fd); vfs_unmount());
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
+	TC_ASSERT_GEQ("fsync", ret, 0);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_fsync_invalid_flags_n(void)
-{
-	int ret, fd;
-	char *filename = VFS_FILE_PATH;
 	/* Nagative case with invalid argument, no write access. It will return ERROR */
-
-	/* Init */
-	vfs_mount();
-
 	fd = open(filename, O_RDOK);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 
-	/* Testcase */
 	ret = fsync(fd);
-	TC_ASSERT_EQ_CLEANUP("fsync", ret, ERROR, close(fd); vfs_unmount());
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
+	TC_ASSERT_EQ("fsync", ret, ERROR);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_fsync_invalid_fd_n(void)
-{
-	int ret;
 	/* Nagative case with invalid argument, fd. It will return ERROR */
-
-	/* Testcase */
 	ret = fsync(CONFIG_NFILE_DESCRIPTORS);
 	TC_ASSERT_EQ("fsync", ret, ERROR);
 
@@ -898,73 +582,58 @@ static void tc_fs_vfs_fsync_invalid_fd_n(void)
 * @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
 * @postcondition    NA
 */
-static void tc_fs_vfs_lseek_p(void)
+static void tc_fs_vfs_lseek(void)
 {
 	int ret, fd;
 	char *filename = VFS_FILE_PATH;
 	char buf[20];
 
-	/* Init */
-	vfs_mount();
-
 	fd = open(filename, O_RDONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = lseek(fd, 5, SEEK_SET);
-	TC_ASSERT_EQ_CLEANUP("lseek", ret, 5, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("lseek", ret, 5, close(fd));
 
 	memset(buf, 0, sizeof(buf));
 	ret = read(fd, buf, sizeof(buf));
 	close(fd);
 
-	TC_ASSERT_GT_CLEANUP("read", ret, 0, vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("read", strcmp(buf, "IS VFS TEST 2"), 0, vfs_unmount());
+	TC_ASSERT_GT("read", ret, 0);
+	TC_ASSERT_EQ("read", strcmp(buf, "IS VFS TEST 2"), 0);
+
+	/* Nagative case with invalid argument, fd. It will return ERROR */
+	ret = lseek(CONFIG_NFILE_DESCRIPTORS, 5, SEEK_SET);
+	TC_ASSERT_EQ("lseek", ret, ERROR);
 
 	/* empty file seek*/
 	fd = open(VFS_FILE1_PATH, O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 
-	/* Testcase */
 	ret = lseek(fd, 10, SEEK_SET);
-	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd));
 	close(fd);
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 	ret = mkfifo(FIFO_FILE_PATH, 0666);
 	if (ret < 0) {
-		TC_ASSERT_EQ_CLEANUP("mkfifo", ret, -EEXIST, vfs_unmount());
+		TC_ASSERT_EQ("mkfifo", ret, -EEXIST);
 	}
 	fd = open(FIFO_FILE_PATH, O_WRONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = lseek(fd, 10, SEEK_SET);
-	TC_ASSERT_EQ_CLEANUP("lseek", ret, 10, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("lseek", ret, 10, close(fd));
 
 	ret = lseek(fd, -10, SEEK_SET);
-	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd));
 
 	ret = lseek(fd, 10, SEEK_CUR);
-	TC_ASSERT_GEQ_CLEANUP("lseek", ret, 0, close(fd); vfs_unmount());
+	TC_ASSERT_GEQ_CLEANUP("lseek", ret, 0, close(fd));
 
 	ret = lseek(fd, 10, SEEK_END);
-	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd));
 
-#endif
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_lseek_invalid_fd_n(void)
-{
-	int ret;
-	/* Nagative case with invalid argument, fd. It will return ERROR */
-
-	/* Testcase */
-	ret = lseek(CONFIG_NFILE_DESCRIPTORS, 5, SEEK_SET);
-	TC_ASSERT_EQ("lseek", ret, ERROR);
+#endif
 
 	TC_SUCCESS_RESULT();
 }
@@ -977,36 +646,20 @@ static void tc_fs_vfs_lseek_invalid_fd_n(void)
 * @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
 * @postcondition    NA
 */
-static void tc_fs_vfs_pwrite_p(void)
+static void tc_fs_vfs_pwrite(void)
 {
 	int ret, fd;
 	char *filename = VFS_FILE_PATH;
 	char *str = "pwrite test!";
 
-	/* Init */
-	vfs_mount();
-
 	fd = open(filename, O_WRONLY | O_APPEND);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 
-	/* Testcase */
 	ret = pwrite(fd, str, strlen(str), 10);
-	TC_ASSERT_NEQ_CLEANUP("pwrite", ret, ERROR, close(fd); vfs_unmount());
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
+	TC_ASSERT_NEQ("pwrite", ret, ERROR);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_pwrite_invalid_fd_n(void)
-{
-	int ret;
-	char *str = "pwrite test!";
 	/* Nagative case with invalid argument, fd. It will return ERROR */
-
-	/* Testcase */
 	ret = pwrite(CONFIG_NFILE_DESCRIPTORS, str, strlen(str), 10);
 	TC_ASSERT_EQ("pwrite", ret, ERROR);
 
@@ -1021,40 +674,23 @@ static void tc_fs_vfs_pwrite_invalid_fd_n(void)
 * @precondition     tc_fs_vfs_pwrite should be passed
 * @postcondition    NA
 */
-static void tc_fs_vfs_pread_p(void)
+static void tc_fs_vfs_pread(void)
 {
 	int ret, fd;
 	char *filename = VFS_FILE_PATH;
 	char *str = "pwrite test!";
 	char buf[20];
 
-	/* Init */
-	vfs_mount();
-
 	fd = open(filename, O_RDONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	memset(buf, 0, sizeof(buf));
-
-	/* Testcase */
 	ret = pread(fd, buf, 20, 10);
-	TC_ASSERT_GT_CLEANUP("pread", ret, 0, close(fd); vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("pread", strcmp(buf, str), 0, close(fd); vfs_unmount());
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
+	TC_ASSERT_GT("pread", ret, 0);
+	TC_ASSERT_EQ("pread", strcmp(buf, str), 0);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_pread_invalid_fd_n(void)
-{
-	int ret;
-	char buf[20];
 	/* Nagative case with invalid argument, fd. It will return ERROR */
-
-	/* Testcase */
 	ret = pread(CONFIG_NFILE_DESCRIPTORS, buf, 20, 10);
 	TC_ASSERT_EQ("pread", ret, ERROR);
 
@@ -1069,68 +705,28 @@ static void tc_fs_vfs_pread_invalid_fd_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_mkdir_p(void)
+static void tc_fs_vfs_mkdir(void)
 {
+	char filename[14];
+	int i;
 	int ret;
+	size_t len;
 
-	/* Init */
-	vfs_mount();
-	vfs_rmdir(VFS_FOLDER_PATH);
-	vfs_rmdir(DEV_EMPTY_FOLDER_PATH);
+	len = strlen(VFS_FOLDER_PATH) + 3;
 
-	/* Testcase */
-	vfs_mkdir(VFS_FOLDER_PATH);
+	/** make parent folder first **/
+	ret = mkdir(VFS_FOLDER_PATH, 0777);
+	TC_ASSERT_EQ("mkdir", ret, OK);
 
+	for (i = 0; i < VFS_LOOP_COUNT; i++) {
+		memset(filename, 0, len);
+		snprintf(filename, len, "%s/%d\0", VFS_FOLDER_PATH, i);
+		ret = mkdir(filename, 0777);
+		TC_ASSERT_EQ("mkdir", ret, OK);
+	}
 	/*creating an empty folder */
 	ret = mkdir(DEV_EMPTY_FOLDER_PATH, 0777);
-	TC_ASSERT_EQ_CLEANUP("mkdir", ret, OK, vfs_unmount());
-
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_mkdir_exist_path_n(void)
-{
-	int ret;
-
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-
-	/* Testcase */
-	ret = mkdir(VFS_FOLDER_PATH, 0777);
-	TC_ASSERT_EQ_CLEANUP("mkdir", ret, ERROR, vfs_unmount());
-
-	/* deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_mkdir_exceed_len_n(void)
-{
-	int ret;
-	char *filename;
-	int i;
-
-	/* Init */
-	filename = (char *)malloc(sizeof(char) * (CONFIG_NAME_MAX + 1));
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-
-	for (i = 0; i < CONFIG_NAME_MAX + 1; i++) {
-		sprintf(filename, "%s%c", filename, 'a');
-	}
-
-	/* Testcase */
-	ret = mkdir(filename, 0777);
-	TC_ASSERT_EQ_CLEANUP("mkdir", ret, ERROR, free(filename); vfs_unmount());
-
-	/* Deinit */
-	free(filename);
-	vfs_unmount();
+	TC_ASSERT_EQ("mkdir", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1143,47 +739,28 @@ static void tc_fs_vfs_mkdir_exceed_len_n(void)
 * @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void tc_fs_vfs_opendir_p(void)
+static void tc_fs_vfs_opendir(void)
 {
 	DIR *dir;
 
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-	vfs_mkdir(DEV_EMPTY_FOLDER_PATH);
-
-	/* Testcase */
 	dir = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 	closedir(dir);
-
-	dir = opendir(DEV_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
-	closedir(dir);
-
-	/* Opening an empty folder */
-	dir = opendir(DEV_EMPTY_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
-	closedir(dir);
-
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_opendir_invalid_path_n(void)
-{
-	DIR *dir;
-
-	/* Testcase */
 	/*Path doesnot exist */
 	dir = opendir(INVALID_PATH);
 	TC_ASSERT_EQ("opendir", dir, NULL);
 
+	dir = opendir(DEV_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+	closedir(dir);
 	/* Pseudo file system node covers error condition path is not a directory */
 	dir = opendir(DEV_INVALID_DIR);
 	TC_ASSERT_EQ("opendir", dir, NULL);
+
+	/* Opening an empty folder */
+	dir = opendir(DEV_EMPTY_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+	closedir(dir);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1196,24 +773,17 @@ static void tc_fs_vfs_opendir_invalid_path_n(void)
 * @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void tc_fs_vfs_readdir_p(void)
+static void tc_fs_vfs_readdir(void)
 {
 	int ret;
 	int count;
 	DIR *dir;
 	struct dirent *dirent;
 
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-	vfs_mkdir(DEV_EMPTY_FOLDER_PATH);
-
 	dir = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
 	count = 0;
-
-	/* Testcase */
 	while (1) {
 		dirent = readdir(dir);
 		if (dirent == NULL) {
@@ -1221,50 +791,33 @@ static void tc_fs_vfs_readdir_p(void)
 		}
 		count++;
 	}
-
-	/* Deinit */
 	ret = closedir(dir);
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("readdir", count, VFS_LOOP_COUNT, vfs_unmount());
-
-	/*reading empty folder */
-	/* Init */
-	dir = opendir(DEV_EMPTY_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
-
-	/* Testcase */
-	do {
-		dirent = readdir(dir);
-	} while (dirent != NULL);
-
-	/* Deinit */
-	ret = closedir(dir);
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_readdir_invalid_path_n(void)
-{
-	int ret;
-	DIR *dir;
-	struct dirent *dirent;
+	TC_ASSERT_EQ("closedir", ret, OK);
+	TC_ASSERT_EQ("readdir", count, VFS_LOOP_COUNT);
 
 	/*reading invalid directory */
-	/* Init */
+
 	dir = opendir(VFS_INVALID_PATH);
 	TC_ASSERT_EQ("opendir", dir, NULL);
 
-	/* Testcase */
 	do {
 		dirent = readdir(dir);
 	} while (dirent != NULL);
 
-	/* Deinit */
 	ret = closedir(dir);
 	TC_ASSERT_NEQ("closedir", ret, OK);
 
+	/*reading empty folder */
+
+	dir = opendir(DEV_EMPTY_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+
+	do {
+		dirent = readdir(dir);
+	} while (dirent != NULL);
+
+	ret = closedir(dir);
+	TC_ASSERT_EQ("closedir", ret, OK);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1276,23 +829,17 @@ static void tc_fs_vfs_readdir_invalid_path_n(void)
 * @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void tc_fs_vfs_rewinddir_p(void)
+static void tc_fs_vfs_rewinddir(void)
 {
 	int ret;
 	int count;
 	DIR *dir;
 	struct dirent *dirent;
 
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-
 	dir = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
 	count = 0;
-
-	/* Testcase */
 	while (1) {
 		dirent = readdir(dir);
 		if (dirent == NULL) {
@@ -1304,47 +851,27 @@ static void tc_fs_vfs_rewinddir_p(void)
 		}
 		count++;
 	}
-
-	/* Deinit */
 	ret = closedir(dir);
-
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("rewinddir", count, VFS_LOOP_COUNT * 2, vfs_unmount());
+	TC_ASSERT_EQ("closedir", ret, OK);
+	TC_ASSERT_EQ("rewinddir", count, VFS_LOOP_COUNT * 2);
 
 	/*For Pseudo dir operations */
-	/* Init */
 	dir = opendir(ROOT_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
 	count = 0;
 	while ((dirent = readdir(dir)) != NULL) {
 		count++;
 	}
-
-	/* Testcase */
 	rewinddir(dir);
 
 	while ((dirent = readdir(dir)) != NULL) {
 		count--;
 	}
 
-	/* Deinit */
 	ret = closedir(dir);
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("rewinddir", count, 0, vfs_unmount());
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_rewinddir_null_path_n(void)
-{
-	DIR *dir = NULL;
-
-	/* Testcase */
-	rewinddir(dir);
-	TC_ASSERT_EQ("rewinddir", dir, NULL);
-
+	TC_ASSERT_EQ("closedir", ret, OK);
+	TC_ASSERT_EQ("rewinddir", count, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1356,7 +883,7 @@ static void tc_fs_vfs_rewinddir_null_path_n(void)
 * @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void tc_fs_vfs_seekdir_p(void)
+static void tc_fs_vfs_seekdir(void)
 {
 	int ret;
 	DIR *dir;
@@ -1364,107 +891,45 @@ static void tc_fs_vfs_seekdir_p(void)
 	off_t offset;
 	char filename[1];
 
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-
 	dir = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
-	offset = 2;
-
-	/* Testcase */
+	offset = SEEK_END;
 	seekdir(dir, offset);
-	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir));
 	dirent = readdir(dir);
-	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dir); vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, closedir(dir); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dir));
+	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, closedir(dir));
 
 	itoa((int)offset, filename, 10);
-	TC_ASSERT_EQ_CLEANUP("readdir", strncmp(dirent->d_name, filename, 1), 0, closedir(dir); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("readdir", strncmp(dirent->d_name, filename, 1), 0, closedir(dir));
 
-	/* Deinit */
 	ret = closedir(dir);
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
+	TC_ASSERT_EQ("closedir", ret, OK);
 
-	/* for pseudo dir operations */
-	/* Init */
-	dir = opendir(ROOT_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
-
-	offset = 0;
-
-	/* Testcase */
-	seekdir(dir, offset);
-	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir); vfs_unmount());
-	dirent = readdir(dir);
-	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dir); vfs_unmount());
-
-	/* Deinit */
-	ret = closedir(dir);
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_seekdir_offset_n(void)
-{
-	int ret;
-	DIR *dir;
-	struct dirent *dirent;
-	off_t offset;
 	/* For Negative offset in seekmountdir operations */
-
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-
 	dir = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
 	offset = -2;
-
-	/* Testcase */
 	seekdir(dir, offset);
-	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir); vfs_unmount());
-	dirent = readdir(dir);
-	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, closedir(dir); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir));
 
-	/* Deinit */
 	ret = closedir(dir);
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
-	vfs_unmount();
+	TC_ASSERT_EQ("closedir", ret, OK);
+	/* for pseudo dir operations */
 
-	TC_SUCCESS_RESULT();
-}
+	dir = opendir(ROOT_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
-static void tc_fs_vfs_seekdir_position_n(void)
-{
-	int ret;
-	DIR *dir;
-	struct dirent *dirent;
-	off_t offset;
-
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-
-	dir = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dir, NULL, vfs_unmount());
-
-	offset = 5;
-
-	/* Testcase */
+	offset = SEEK_END;
 	seekdir(dir, offset);
-	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir));
 	dirent = readdir(dir);
-	TC_ASSERT_EQ_CLEANUP("readdir", dirent, NULL, closedir(dir); vfs_unmount());
+	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dir));
 
-	/* Deinit */
 	ret = closedir(dir);
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
-	vfs_unmount();
+	TC_ASSERT_EQ("closedir", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1541,33 +1006,20 @@ static void tc_fs_libc_dirent_telldir(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_closedir_p(void)
+static void tc_fs_vfs_closedir(void)
 {
 	int ret;
 	DIR *dirp;
 
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ_CLEANUP("opendir", dirp, NULL, vfs_unmount());
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
-	/* Testcase */
 	ret = closedir(dirp);
-	TC_ASSERT_EQ_CLEANUP("closedir", ret, OK, vfs_unmount());
+	TC_ASSERT_EQ("closedir", ret, OK);
 
-	/* Deinit */
-	vfs_unmount();
+	dirp = opendir("nodir");
+	TC_ASSERT_EQ_CLEANUP("opendir", dirp, NULL, closedir(dirp));
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_closedir_null_path_n(void)
-{
-	int ret;
-
-	/* Testcase */
 	ret = closedir(NULL);
 	TC_ASSERT_EQ("closedir", ret, ERROR);
 
@@ -1582,32 +1034,33 @@ static void tc_fs_vfs_closedir_null_path_n(void)
 * @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void tc_fs_vfs_rmdir_p(void)
+static void tc_fs_vfs_rmdir(void)
 {
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-	vfs_mkdir(DEV_EMPTY_FOLDER_PATH);
+	char filename[14];
+	size_t len;
+	int i, ret;
 
-	/* Testcase */
-	vfs_rmdir(VFS_FOLDER_PATH);
+	len = strlen(VFS_FOLDER_PATH) + 3;
 
-	/*Removes the empty directory created*/
-	vfs_rmdir(DEV_EMPTY_FOLDER_PATH);
+	/** remove child folders first **/
+	for (i = 0; i < VFS_LOOP_COUNT; i++) {
+		memset(filename, 0, len);
+		snprintf(filename, len, "%s/%d\0", VFS_FOLDER_PATH, i);
+		ret = rmdir(filename);
+		TC_ASSERT_EQ("rmdir", ret, OK);
+	}
 
-	/* Deinit */
-	vfs_unmount();
+	/** now there is no entry, remove parent folder **/
+	ret = rmdir(VFS_FOLDER_PATH);
+	TC_ASSERT_EQ("rmdir", ret, OK);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_rmdir_null_path_n(void)
-{
-	int ret;
 	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
-	/* Testcase */
 	ret = rmdir(NULL);
 	TC_ASSERT_EQ("rmdir", ret, ERROR);
+
+	/*Removes the empty directory created*/
+	ret = rmdir(DEV_EMPTY_FOLDER_PATH);
+	TC_ASSERT_EQ("rmdir", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1620,56 +1073,21 @@ static void tc_fs_vfs_rmdir_null_path_n(void)
 * @precondition     tc_fs_vfs_dup should be passed
 * @postcondition    NA
 */
-static void tc_fs_vfs_unlink_p(void)
+static void tc_fs_vfs_unlink(void)
 {
-	char *filepath = VFS_UNLINK_FILE_PATH;
-	char *impty_filepath = DEV_EMPTY_UNLINK_FILE_PATH;
+	char *filename = VFS_DUP_FILE_PATH;
 	int ret;
-	int fd;
 
-	/* Init */
-	vfs_mount();
+	ret = unlink(filename);
+	TC_ASSERT_EQ("unlink", ret, OK);
 
-	fd = open(filepath, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	close(fd);
-
-	/* Testcase */
-	ret = unlink(filepath);
-	TC_ASSERT_EQ_CLEANUP("unlink", ret, OK, vfs_unmount());
-
-#if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
-	/*Init */
-	ret = mkfifo(impty_filepath, 0666);
-	if (ret < 0) {
-		TC_ASSERT_EQ_CLEANUP("mkfifo", ret, -EEXIST, vfs_unmount());
-	}
-
-	fd = open(impty_filepath, O_WRONLY);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	close(fd);
-
-	/* Testcase */
-	ret = unlink(impty_filepath);
-	TC_ASSERT_EQ_CLEANUP("unlink", ret, OK, vfs_unmount());
-#endif
-
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_unlink_null_path_n(void)
-{
-	int ret;
 	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
-	/* Testcase */
 	ret = unlink(NULL);
 	TC_ASSERT_EQ("unlink", ret, ERROR);
-
+#if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
+	ret = unlink(FIFO_FILE_PATH);
+	TC_ASSERT_EQ("unlink", ret, OK);
+#endif
 	TC_SUCCESS_RESULT();
 }
 
@@ -1681,63 +1099,28 @@ static void tc_fs_vfs_unlink_null_path_n(void)
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void tc_fs_vfs_stat_p(void)
+static void tc_fs_vfs_stat(void)
 {
-	char *filename = VFS_STAT_PATH;
+	char *filename = VFS_FILE_PATH;
 	struct stat st;
 	int ret;
 
-	/* Init */
-	vfs_mount();
-	vfs_mkdir(VFS_FOLDER_PATH);
-
-	/* Testcase */
 	ret = stat(filename, &st);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, vfs_unmount());
+	TC_ASSERT_EQ("stat", ret, OK);
 
 	/* stat root directory */
 	ret = stat("/", &st);
-	TC_ASSERT_EQ_CLEANUP("stat_CLEANUP", ret, OK, vfs_unmount());
+	TC_ASSERT_EQ("stat", ret, OK);
 
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_stat_null_path_n(void)
-{
-	int ret;
-	struct stat st;
 	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
-
-	/* Testcase */
 	ret = stat(NULL, &st);
 	TC_ASSERT_EQ("stat", ret, ERROR);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_stat_invalid_path_n(void)
-{
-	int ret;
-	struct stat st;
 	/* Nagative case with invalid argument, not existing pathname. It will return ERROR */
-
-	/* Testcase */
 	ret = stat(VFS_INVALID_FILE_PATH, &st);
 	TC_ASSERT_EQ("stat", ret, ERROR);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_stat_empty_string_n(void)
-{
-	int ret;
-	struct stat st;
 	/*Negative testcase path is empty string */
-
-	/* Testcase */
 	ret = stat("", &st);
 	TC_ASSERT_EQ("stat", ret, ERROR);
 
@@ -1752,40 +1135,25 @@ static void tc_fs_vfs_stat_empty_string_n(void)
 * @precondition     File system should be mounted
 * @postcondition    NA
 */
-static void tc_fs_vfs_statfs_p(void)
+static void tc_fs_vfs_statfs(void)
 {
 	struct statfs fs;
 	int ret;
 
-	/* Init */
-	vfs_mount();
-
-	/* Testcase */
 	ret = statfs(MOUNT_DIR, &fs);
-	TC_ASSERT_EQ_CLEANUP("statfs", ret, OK, vfs_unmount());
+	TC_ASSERT_EQ("statfs", ret, OK);
 #ifdef CONFIG_FS_SMARTFS
-	TC_ASSERT_EQ_CLEANUP("statfs", fs.f_type, SMARTFS_MAGIC, vfs_unmount());
+	TC_ASSERT_EQ("statfs", fs.f_type, SMARTFS_MAGIC);
 #endif
+
+	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
+	ret = statfs(NULL, &fs);
+	TC_ASSERT_EQ("statfs", ret, ERROR);
 
 	/*root pseudo file system */
 	ret = statfs("/dev", &fs);
-	TC_ASSERT_EQ_CLEANUP("statfs", ret, OK, vfs_unmount());
+	TC_ASSERT_EQ("statfs", ret, OK);
 
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_statfs_null_path_n(void)
-{
-	struct statfs fs;
-	int ret;
-	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
-
-	/* Testcase */
-	ret = statfs(NULL, &fs);
-	TC_ASSERT_EQ("statfs", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1798,44 +1166,18 @@ static void tc_fs_vfs_statfs_null_path_n(void)
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void tc_fs_vfs_fstat_p(void)
+static void tc_fs_vfs_fstat(void)
 {
 	char *filename = VFS_FILE_PATH;
 	struct stat st;
 	int ret;
 	int fd;
+	fd = open(filename, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
 
-	/* Init */
-	vfs_mount();
-
-	ret = unlink(filename);
-	TC_ASSERT_EQ_CLEANUP("unlink", ret, OK, vfs_unmount());
-
-	fd = open(filename, O_RDWR | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
 	ret = fstat(fd, &st);
-	TC_ASSERT_EQ_CLEANUP("fstat", ret, OK, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("fstat", ret, OK, close(fd));
 
-	/* Deinit */
-	close(fd);
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_fstat_invalid_fd_n(void)
-{
-	struct stat st;
-	int ret;
-	int fd = -1;
-
-	/* Testcase */
-	ret = fstat(fd, &st);
-	TC_ASSERT_NEQ_CLEANUP("fstat", ret, OK, close(fd));
-
-	/* Deinit */
 	close(fd);
 	TC_SUCCESS_RESULT();
 }
@@ -1848,53 +1190,30 @@ static void tc_fs_vfs_fstat_invalid_fd_n(void)
 * @precondition     File system should be mounted
 * @postcondition    NA
 */
-static void tc_fs_vfs_fstatfs_p(void)
+static void tc_fs_vfs_fstatfs(void)
 {
 	struct statfs fs;
 	int ret;
 	int fd;
 
-	/* Init */
-	vfs_mount();
+	fd = open(VFS_FILE_PATH, 0666);
+	TC_ASSERT_GEQ("open", fd, 0);
 
-	fd = open(VFS_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
 	ret = fstatfs(fd, &fs);
-	TC_ASSERT_EQ_CLEANUP("fstatfs", ret, OK, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("fstatfs", ret, OK, close(fd));
 #ifdef CONFIG_FS_SMARTFS
-	TC_ASSERT_EQ_CLEANUP("fstatfs", fs.f_type, SMARTFS_MAGIC, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("fstatfs", fs.f_type, SMARTFS_MAGIC, close(fd));
 #endif
-	/* Deinit */
 	close(fd);
 
 #ifdef CONFIG_DEV_ZERO
-	/* Init */
-	fd = open(DEV_ZERO_PATH, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
+	fd = open(DEV_ZERO_PATH, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
 	/*root pseudo file system */
 	ret = fstatfs(fd, &fs);
-	TC_ASSERT_EQ_CLEANUP("fstatfs", ret, OK, close(fd); vfs_unmount());
-
-	/* Deinit */
+	TC_ASSERT_EQ_CLEANUP("fstatfs", ret, OK, close(fd));
 	close(fd);
 #endif
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_fstatfs_invalid_fd_n(void)
-{
-	struct statfs fs;
-	int ret;
-
-	/* Testcase */
-	ret = fstatfs(CONFIG_NFILE_DESCRIPTORS, &fs);
-	TC_ASSERT_NEQ("fstatfs", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1908,7 +1227,7 @@ static void tc_fs_vfs_fstatfs_invalid_fd_n(void)
 * @precondition     CONFIG_PIPES should be enabled & CONFIG_DEV_PIPE_SIZE must greater than 11
 * @postcondition    NA
 */
-static void tc_fs_vfs_mkfifo_p(void)
+static void tc_fs_vfs_mkfifo(void)
 {
 	int fd, ret;
 	pthread_t tid;
@@ -1917,7 +1236,6 @@ static void tc_fs_vfs_mkfifo_p(void)
 	size_t size;
 	g_thread_result = true;
 
-	/* Testcase */
 	ret = mkfifo(FIFO_FILE_PATH, 0666);
 	if (ret < 0) {
 		TC_ASSERT_EQ("mkfifo", ret, -EEXIST);
@@ -1974,7 +1292,6 @@ static void tc_fs_vfs_mkfifo_p(void)
 		count += size;
 	}
 
-	/* Deinit */
 	close(fd);
 
 	ret = unlink(FIFO_FILE_PATH);
@@ -1986,26 +1303,6 @@ errout:
 	pthread_kill(tid, SIGUSR1);
 	close(fd);
 }
-
-static void tc_fs_vfs_mkfifo_exist_path_n(void)
-{
-	int ret;
-	struct stat st;
-
-	/* Testcase */
-	if (0 > stat(FIFO_FILE_PATH, &st)) {
-		ret = mkfifo(FIFO_FILE_PATH, 0666);
-		TC_ASSERT_EQ("mkfifo", ret, OK);
-
-		ret = mkfifo(FIFO_FILE_PATH, 0666);
-		TC_ASSERT_NEQ("mkfifo", ret, OK);
-	} else {
-		ret = mkfifo(FIFO_FILE_PATH, 0666);
-		TC_ASSERT_NEQ("mkfifo", ret, OK);
-	}
-
-	TC_SUCCESS_RESULT();
-}
 #endif
 
 /**
@@ -2016,7 +1313,7 @@ static void tc_fs_vfs_mkfifo_exist_path_n(void)
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void tc_fs_vfs_sendfile_p(void)
+static void tc_fs_vfs_sendfile(void)
 {
 	char *src_file = VFS_FILE_PATH;
 	char dest_file[16];
@@ -2024,150 +1321,78 @@ static void tc_fs_vfs_sendfile_p(void)
 	int fd1, fd2, ret;
 	off_t size;
 	off_t offset;
-	char *str = "sendfile test";
 
-	/* Init */
-	vfs_mount();
-
-	/* Testcase */
 	snprintf(dest_file, sizeof(dest_file), "%s_dest", src_file);
 
-	fd1 = open(src_file, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd1, 0, vfs_unmount());
-
-	ret = pwrite(fd1, str, strlen(str), 0);
-	TC_ASSERT_NEQ_CLEANUP("pwrite", ret, ERROR, close(fd1); vfs_unmount());
+	fd1 = open(src_file, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd1, 0);
 
 	ret = stat(src_file, &st);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
 
 	size = st.st_size;
-	/* offset = 0 */
+	/* case-1: offset = 0 */
 	fd2 = open(dest_file, O_WRONLY | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1); vfs_unmount());
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
 
 	ret = sendfile(fd2, fd1, 0, size);
 	close(fd2);
-	TC_ASSERT_EQ_CLEANUP("sendfile", ret, size, close(fd1); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, size, close(fd1));
 
 	ret = stat(dest_file, &st);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1); vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size, close(fd1); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size, close(fd1));
 
-	/* offset = 1 */
+	/* case-2: offset = 1 */
 	fd2 = open(dest_file, O_WRONLY | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1); vfs_unmount());
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
 
 	offset = 1;
 	ret = sendfile(fd2, fd1, &offset, size - 1);
 	close(fd2);
-	TC_ASSERT_EQ_CLEANUP("sendfile", ret, size - 1, close(fd1); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, size - 1, close(fd1));
 
 	ret = stat(dest_file, &st);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1); vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size - 1, close(fd1); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size - 1, close(fd1));
 
-	/* Deinit */
-	close(fd1);
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_sendfile_invalid_fd_n(void)
-{
-	char *src_file = VFS_FILE_PATH;
-	char dest_file[16];
-	int fd, ret;
-	off_t size;
-	off_t offset;
-	struct stat st;
-	char *str = "sendfile test";
-
-	/* Init */
-	vfs_mount();
-	snprintf(dest_file, sizeof(dest_file), "%s_dest", src_file);
-
-	/* Testcase */
-	/* offset = 1, invalid input fd, returns ERROR */
-	fd = open(dest_file, O_WRONLY | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	ret = pwrite(fd, str, strlen(str), 0);
-	TC_ASSERT_NEQ_CLEANUP("pwrite", ret, ERROR, close(fd); vfs_unmount());
-
-	ret = stat(dest_file, &st);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd); vfs_unmount());
-
-	size = st.st_size;
-	offset = 1;
-	ret = sendfile(fd, INV_FD, &offset, size - 1);
-	close(fd);
-	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, vfs_unmount());
-
-	/* invalid input fd, returns ERROR */
-	fd = open(dest_file, O_WRONLY | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	ret = sendfile(fd, INV_FD, NULL, size);
-	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd); vfs_unmount());
-
-	/* offset = 0, invalid output fd, returns ERROR */
-	offset = 0;
-	ret = sendfile(INV_FD, fd, &offset, size);
-	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd); vfs_unmount());
-
-	/* Deinit */
-	close(fd);
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_sendfile_offset_eof_n(void)
-{
-	char *src_file = VFS_FILE_PATH;
-	char dest_file[16];
-	struct stat st;
-	int fd1, fd2, ret;
-	off_t size;
-	char *str = "sendfile test";
-
-	/* Init */
-	vfs_mount();
-
-	snprintf(dest_file, sizeof(dest_file), "%s_dest", src_file);
-
-	fd1 = open(src_file, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd1, 0, vfs_unmount());
-
-	ret = pwrite(fd1, str, strlen(str), 0);
-	TC_ASSERT_NEQ_CLEANUP("pwrite", ret, ERROR, close(fd1); vfs_unmount());
-
-	ret = stat(src_file, &st);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1); vfs_unmount());
-
-	size = st.st_size;
-
-	/* current offset of input file is EOF, returns ERROR */
+	/* case-3: offset = 1, invalid input fd, returns ERROR */
 	fd2 = open(dest_file, O_WRONLY | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1); vfs_unmount());
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	offset = 1;
+	ret = sendfile(fd2, INV_FD, &offset, size - 1);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-4: invalid input fd, returns ERROR */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	ret = sendfile(fd2, INV_FD, NULL, size);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-5: offset = 0, invalid output fd, returns ERROR */
+	offset = 0;
+	ret = sendfile(INV_FD, fd1, &offset, size);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-6: current offset of input file is EOF, returns ERROR */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
 
 	ret = lseek(fd1, 0, SEEK_END);
-	TC_ASSERT_EQ_CLEANUP("lseek", ret, size, close(fd1); close(fd2); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("lseek", ret, size, close(fd1); close(fd2));
 
-	/* Testcase */
 	ret = sendfile(fd2, fd1, NULL, size);
 	close(fd2);
-	TC_ASSERT_EQ_CLEANUP("sendfile", ret, 0, close(fd1); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, 0, close(fd1));
 
 	ret = stat(dest_file, &st);
 	close(fd1);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, vfs_unmount());
-	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, 0, vfs_unmount());
-
-	/* Deinit */
-	vfs_unmount();
+	TC_ASSERT_EQ("stat", ret, OK);
+	TC_ASSERT_EQ("stat", st.st_size, 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2180,35 +1405,16 @@ static void tc_fs_vfs_sendfile_offset_eof_n(void)
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void tc_fs_vfs_fcntl_p(void)
+static void tc_fs_vfs_fcntl(void)
 {
 	int fd, mode;
 	char *filename = VFS_FILE_PATH;
+	fd = open(filename, O_WROK);
+	TC_ASSERT_GEQ("open", fd, 0);
 
-	/* Init */
-	vfs_mount();
-
-	fd = open(filename, O_WROK | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
 	mode = fcntl(fd, F_GETFL, 0) & O_ACCMODE;
-	TC_ASSERT_EQ_CLEANUP("fcntl", mode, O_WROK, close(fd); vfs_unmount());
-
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_fcntl_invalid_fd_n(void)
-{
-	int ret;
-
-	/* Testcase */
-	ret = fcntl(CONFIG_NFILE_DESCRIPTORS, F_GETFL, 0);
-	TC_ASSERT_EQ("fcntl", ret, ERROR);
+	TC_ASSERT_EQ("fcntl", mode, O_WROK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2222,34 +1428,27 @@ static void tc_fs_vfs_fcntl_invalid_fd_n(void)
 * @precondition     CONFIG_DISABLE_POLL should be disabled
 * @postcondition    NA
 */
-static void tc_fs_vfs_poll_p(void)
+static void tc_fs_vfs_poll(void)
 {
 	struct pollfd pollfd;
 	int ret;
 	int fd;
 	char *filename = VFS_FILE_PATH;
 
-	/* Init */
-	vfs_mount();
+	fd = open(filename, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
 
-	fd = open(filename, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
 	pollfd.fd = fd;
 	pollfd.events = POLLIN | POLLOUT;
 
 	/* Poll regular file, it will always return positive value */
 	ret = poll(&pollfd, 1, -1);
 
-	TC_ASSERT_GT_CLEANUP("poll", ret, 0, close(fd); vfs_unmount());
-	TC_ASSERT_CLEANUP("poll", pollfd.revents & POLLIN, close(fd); vfs_unmount());
-	TC_ASSERT_CLEANUP("poll", pollfd.revents & POLLOUT, close(fd); vfs_unmount());
+	TC_ASSERT_GT_CLEANUP("poll", ret, 0, close(fd));
+	TC_ASSERT_CLEANUP("poll", pollfd.revents & POLLIN, close(fd));
+	TC_ASSERT_CLEANUP("poll", pollfd.revents & POLLOUT, close(fd));
 
-	/* Deinit */
 	close(fd);
-	vfs_unmount();
-
 	TC_SUCCESS_RESULT();
 }
 
@@ -2262,17 +1461,15 @@ static void tc_fs_vfs_poll_p(void)
 * @precondition     CONFIG_DISABLE_POLL should be disabled
 * @postcondition    NA
 */
-static void tc_fs_vfs_select_p(void)
+static void tc_fs_vfs_select(void)
 {
 	struct timeval tv;
 	fd_set readfds;
 	int ret, errcnt;
 
-	/* Init */
 	FD_ZERO(&readfds);
 	FD_SET(STDIN_FILENO, &readfds);
 
-	/* Testcase */
 	tv.tv_sec = 5;
 	tv.tv_usec = 0;
 	errcnt = 1;
@@ -2300,7 +1497,6 @@ static void tc_fs_vfs_select_p(void)
 		tv.tv_usec = 0;
 	}
 	TC_ASSERT_NEQ_CLEANUP("select", errcnt, VFS_LOOP_COUNT, FD_CLR(STDIN_FILENO, &readfds));
-
 	TC_SUCCESS_RESULT();
 }
 #endif
@@ -2314,131 +1510,36 @@ static void tc_fs_vfs_select_p(void)
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void tc_fs_vfs_rename_p(void)
+static void tc_fs_vfs_rename(void)
 {
 	int fd;
 	int ret;
 	char *old_file = VFS_FILE_PATH;
 	char new_file[12];
 
-	/* Init */
-	vfs_mount();
-
-	fd = open(VFS_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
 	snprintf(new_file, 12, "%s_re", old_file);
 	unlink(new_file);
 
-	/* Testcase */
 	ret = rename(old_file, new_file);
-	TC_ASSERT_EQ_CLEANUP("rename", ret, OK, close(fd); vfs_unmount());
+	TC_ASSERT_EQ("rename", ret, OK);
 
-	/* Deinit */
-	close(fd);
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_rename_noexist_path_n(void)
-{
-	int ret;
-	char *noexist_file = VFS_INVALID_FILE_PATH;
-	char new_file[20];
-	/* Nagative case with invalid argument, not existing pathname. It will return ERROR */
-
-	/* Init */
-	snprintf(new_file, 12, "%s_re", noexist_file);
-
-	/* Testcase */
-	ret = rename(noexist_file, new_file);
+	/* Nagative case with invalid argument, not existing old pathname. It will return ERROR */
+	ret = rename(old_file, new_file);
 	TC_ASSERT_EQ("rename", ret, ERROR);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_rename_exist_path_n(void)
-{
-	int fd;
-	int ret;
-	char *exist_file = VFS_FILE_PATH;
-	char old_file[12];
-
-	/* Init */
-	vfs_mount();
-
-	fd = open(VFS_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	snprintf(old_file, 12, "%s_re", exist_file);
-	unlink(old_file);
-
-	/* Testcase */
-	ret = rename(exist_file, old_file);
-	close(fd);
-	TC_ASSERT_EQ_CLEANUP("rename", ret, OK, vfs_unmount());
+	old_file = new_file;
 
 	/* Nagative case with invalid argument, already existing new pathname. It will return ERROR */
 	fd = open(VFS_FILE_PATH, O_WROK | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	TC_ASSERT_GEQ("open", fd, 0);
 	close(fd);
-	ret = rename(old_file, exist_file);
-	TC_ASSERT_EQ_CLEANUP("rename", ret, ERROR, vfs_unmount());
+	ret = rename(old_file, VFS_FILE_PATH);
+	TC_ASSERT_EQ("rename", ret, ERROR);
 
 	/* Nagative case with invalid argument, NULL filepath. It will return ERROR */
 	ret = rename(old_file, NULL);
-	TC_ASSERT_EQ_CLEANUP("rename", ret, ERROR, vfs_unmount());
+	TC_ASSERT_EQ("rename", ret, ERROR);
 
-	/*Condition where rename is not possible*/
-	ret = rename(DEV_NULL_PATH, DEV_NEW_NULL_PATH);
-	TC_ASSERT_NEQ_CLEANUP("rename", ret, ERROR, vfs_unmount());
-
-	ret = rename(DEV_NEW_NULL_PATH, DEV_NULL_PATH);
-	TC_ASSERT_NEQ_CLEANUP("rename", ret, ERROR, vfs_unmount());
-
-	/* Deinit */
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_rename_null_path_n(void)
-{
-	int fd;
-	int ret;
-	char *filename = VFS_FILE_PATH;
-
-	/* Init */
-	vfs_mount();
-
-	fd = open(VFS_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
-
-	/* Testcase */
-	/* Nagative case with invalid argument, NULL filepath. It will return ERROR */
-	ret = rename(filename, NULL);
-	TC_ASSERT_EQ_CLEANUP("rename", ret, ERROR, close(fd); vfs_unmount());
-
-	/*Condition where rename is not possible*/
-	ret = rename(DEV_NULL_PATH, DEV_NEW_NULL_PATH);
-	TC_ASSERT_NEQ_CLEANUP("rename", ret, ERROR, close(fd); vfs_unmount());
-
-	ret = rename(DEV_NEW_NULL_PATH, DEV_NULL_PATH);
-	TC_ASSERT_NEQ_CLEANUP("rename", ret, ERROR, close(fd); vfs_unmount());
-
-	/* Deinit */
-	close(fd);
-	vfs_unmount();
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_rename_not_possible_n(void)
-{
-	int ret;
-
-	/* Testcase */
 	/*Condition where rename is not possible*/
 	ret = rename(DEV_NULL_PATH, DEV_NEW_NULL_PATH);
 	TC_ASSERT_NEQ("rename", ret, ERROR);
@@ -2457,57 +1558,30 @@ static void tc_fs_vfs_rename_not_possible_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void tc_fs_vfs_ioctl_p(void)
+static void tc_fs_vfs_ioctl(void)
 {
-	int fd;
+	int fd1;
+	int fd2;
 	int ret;
 	long size;
 
-	/* Init */
-	fd = open(DEV_CONSOLE_PATH, O_RDWR);
-	TC_ASSERT_GEQ("open", fd, 0);
+	fd1 = open(DEV_CONSOLE_PATH, O_RDWR);
+	TC_ASSERT_GEQ("open", fd1, 0);
+	ret = ioctl(fd1, FIONREAD, (unsigned long)&size);
+	close(fd1);
+	TC_ASSERT_EQ("ioctl", ret, OK);
 
-	/* Testcase */
-	ret = ioctl(fd, FIONREAD, (unsigned long)&size);
-	TC_ASSERT_EQ_CLEANUP("ioctl", ret, OK, close(fd));
-
-	/* Deinit */
-	close(fd);
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_ioctl_invalid_fd_n(void)
-{
-	int ret;
-	long size;
-
-	/* Testcase */
 	/*Negative case where invalid fd */
 	ret = ioctl(INV_FD, FIONREAD, (unsigned long)&size);
 	TC_ASSERT_EQ("ioctl", ret, ERROR);
 
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_fs_vfs_ioctl_invalid_cmd_n(void)
-{
-	int fd;
-	int ret;
-	long size;
-
 	/*Negative cae where invalid cmd */
+	fd2 = open(DEV_CONSOLE_PATH, O_RDWR);
+	TC_ASSERT_GEQ("open", fd2, 0);
 
-	/* Init */
-	fd = open(DEV_CONSOLE_PATH, O_RDWR);
-	TC_ASSERT_GEQ("open", fd, 0);
-
-	/* Testcase */
-	ret = ioctl(fd, FIONREAD, (unsigned long)&size);
-	TC_ASSERT_LEQ_CLEANUP("ioctl", ret, 0, close(fd));
-
-	/* Deinit */
-	close(fd);
+	ret = ioctl(fd2, FIONREAD, (unsigned long)&size);
+	close(fd2);
+	TC_ASSERT_LEQ("ioctl", ret, 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2548,7 +1622,6 @@ static void tc_driver_mtd_config_ops(void)
 
 	ret = close(fd);
 	TC_ASSERT_EQ("close", ret, OK);
-
 	TC_SUCCESS_RESULT();
 }
 #endif
@@ -4568,7 +3641,6 @@ static void tc_fs_driver_ramdisk_ops(void)
 	TC_SUCCESS_RESULT();
 }
 #endif
-
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -4579,88 +3651,47 @@ int tc_filesystem_main(int argc, char *argv[])
 		return ERROR;
 	}
 
-	tc_fs_vfs_umount_p();
-	tc_fs_vfs_umount_noexist_path_n();
-	tc_fs_vfs_mount_p();
-	tc_fs_vfs_mount_exist_path_n();
-	tc_fs_vfs_open_p();
-	tc_fs_vfs_open_invalid_path_n();
-	tc_fs_vfs_write_p();
-	tc_fs_vfs_write_invalid_len_n();
-	tc_fs_vfs_write_invalid_fd_n();
-	tc_fs_vfs_read_p();
-	tc_fs_vfs_read_invalid_flags_n();
-	tc_fs_vfs_read_invalid_fd_n();
-	tc_fs_vfs_close_p();
-	tc_fs_vfs_close_invalid_fd_n();
-	tc_fs_vfs_dup_p();
-	tc_fs_vfs_dup_invalid_fd_n();
-	tc_fs_vfs_dup2_p();
-	tc_fs_vfs_dup2_invalid_fd_n();
-	tc_fs_vfs_fsync_p();
-	tc_fs_vfs_fsync_invalid_flags_n();
-	tc_fs_vfs_fsync_invalid_fd_n();
-	tc_fs_vfs_lseek_p();
-	tc_fs_vfs_lseek_invalid_fd_n();
-	tc_fs_vfs_pwrite_p();
-	tc_fs_vfs_pwrite_invalid_fd_n();
-	tc_fs_vfs_pread_p();
-	tc_fs_vfs_pread_invalid_fd_n();
-	tc_fs_vfs_mkdir_p();
-	tc_fs_vfs_mkdir_exist_path_n();
-	tc_fs_vfs_mkdir_exceed_len_n();
-	tc_fs_vfs_opendir_p();
-	tc_fs_vfs_opendir_invalid_path_n();
-	tc_fs_vfs_readdir_p();
-	tc_fs_vfs_readdir_invalid_path_n();
-	tc_fs_vfs_rewinddir_p();
-	tc_fs_vfs_rewinddir_null_path_n();
-	tc_fs_vfs_seekdir_p();
-	tc_fs_vfs_seekdir_offset_n();
-	tc_fs_vfs_seekdir_position_n();
-	tc_fs_vfs_closedir_p();
-	tc_fs_vfs_closedir_null_path_n();
+	tc_fs_vfs_umount();
+	tc_fs_vfs_mount();
+	tc_fs_vfs_open();
+	tc_fs_vfs_write();
+	tc_fs_vfs_read();
+	tc_fs_vfs_close();
+	tc_fs_vfs_dup();
+	tc_fs_vfs_dup2();
+	tc_fs_vfs_fsync();
+	tc_fs_vfs_lseek();
+	tc_fs_vfs_pwrite();
+	tc_fs_vfs_pread();
+	tc_fs_vfs_mkdir();
+	tc_fs_vfs_opendir();
+	tc_fs_vfs_readdir();
+	tc_fs_vfs_rewinddir();
+	tc_fs_vfs_seekdir();
+	tc_fs_vfs_closedir();
 	tc_fs_libc_dirent_readdir_r();
 	tc_fs_libc_dirent_telldir();
-	tc_fs_vfs_rmdir_p();
-	tc_fs_vfs_rmdir_null_path_n();
-	tc_fs_vfs_unlink_p();
-	tc_fs_vfs_unlink_null_path_n();
-	tc_fs_vfs_stat_p();
-	tc_fs_vfs_stat_null_path_n();
-	tc_fs_vfs_stat_invalid_path_n();
-	tc_fs_vfs_stat_empty_string_n();
-	tc_fs_vfs_statfs_p();
-	tc_fs_vfs_statfs_null_path_n();
-	tc_fs_vfs_fstat_p();
-	tc_fs_vfs_fstat_invalid_fd_n();
-	tc_fs_vfs_fstatfs_p();
-	tc_fs_vfs_fstatfs_invalid_fd_n();
+	tc_fs_vfs_rmdir();
+	tc_fs_vfs_unlink();
+	tc_fs_vfs_stat();
+	tc_fs_vfs_statfs();
+	tc_fs_vfs_fstat();
+	tc_fs_vfs_fstatfs();
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
-	tc_fs_vfs_mkfifo_p();
-	tc_fs_vfs_mkfifo_exist_path_n();
+	tc_fs_vfs_mkfifo();
 #endif
-	tc_fs_vfs_sendfile_p();
-	tc_fs_vfs_sendfile_invalid_fd_n();
-	tc_fs_vfs_sendfile_offset_eof_n();
-	tc_fs_vfs_fcntl_p();
-	tc_fs_vfs_fcntl_invalid_fd_n();
-	tc_fs_vfs_fdopen_p();
-	tc_fs_vfs_fdopen_invalid_fd_n();
+	tc_fs_vfs_sendfile();
+	tc_fs_vfs_fcntl();
+	tc_fs_vfs_fdopen();
 #ifndef CONFIG_DISABLE_POLL
-	tc_fs_vfs_poll_p();
+	tc_fs_vfs_poll();
 #ifndef CONFIG_DISABLE_MANUAL_TESTCASE
-	tc_fs_vfs_select_p();
+	tc_fs_vfs_select();
 #endif
 #endif
-	tc_fs_vfs_rename_p();
-	tc_fs_vfs_rename_noexist_path_n();
-	tc_fs_vfs_rename_exist_path_n();
-	tc_fs_vfs_rename_null_path_n();
-	tc_fs_vfs_rename_not_possible_n();
-	tc_fs_vfs_ioctl_p();
-	tc_fs_vfs_ioctl_invalid_fd_n();
-	tc_fs_vfs_ioctl_invalid_cmd_n();
+
+	tc_fs_vfs_rename();
+	tc_fs_vfs_ioctl();
 #ifdef CONFIG_TC_FS_PROCFS
 	tc_fs_procfs_main();
 #endif
@@ -4674,6 +3705,7 @@ int tc_filesystem_main(int argc, char *argv[])
 #if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
 	tc_driver_mtd_ftl_ops();
 #endif
+
 	tc_libc_stdio_dprintf();
 	tc_libc_stdio_fdopen();
 	tc_libc_stdio_fopen();
