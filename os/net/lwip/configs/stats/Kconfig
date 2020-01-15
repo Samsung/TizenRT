@@ -3,6 +3,7 @@ menu "Enable Statistics"
 config NET_STATS
 	bool "Enable Statistics"
 	default y
+	select NET_NETMON
 	---help---
 		Enable statistics collection in lwip_stats.
 

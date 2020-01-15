@@ -20,6 +20,34 @@
 #define _NETMGR_NETSTACK_H__
 
 #include <net/if.h>
+
+#define NETSTACK_CALL(stk, method, arg)			\
+	do {										\
+		if (stk && stk->ops->method) {			\
+			return (stk->ops->method)arg;		\
+		}										\
+		return -1;								\
+	} while (0)
+
+#define NETSTACK_CALL_RET(stk, method, arg, res)	\
+	do {											\
+		if (stk && stk->ops->method) {				\
+			res = (stk->ops->method)arg;			\
+		}											\
+	} while (0)
+
+#define NETSTACK_CALL_BYFD(fd, method, arg)				\
+	do {												\
+		struct netstack *stk = get_netstack_byfd(fd);	\
+		NETSTACK_CALL(stk, method, arg);				\
+	} while (0)
+
+#define NETSTACK_CALL_BYFD_RET(fd, method, arg, res)	\
+	do {												\
+		struct netstack *stk = get_netstack_byfd(fd);	\
+		NETSTACK_CALL_RET(stk, method, arg, res);		\
+	} while (0)
+
 struct netstack_ops {
 	// start, stop
 	int (*init)(void *data);
@@ -70,6 +98,7 @@ struct netstack {
 	void *data;
 };
 
-struct netstack *get_netstack(void);
+struct netstack *get_netstack(sock_type type);
+struct netstack *get_netstack_byfd(int fd);
 
 #endif //  _NETMGR_NETSTACK_H__
