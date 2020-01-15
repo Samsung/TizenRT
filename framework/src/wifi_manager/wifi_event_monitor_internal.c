@@ -35,60 +35,6 @@ static void _close_cb_handler(void)
 	return;
 }
 
-static void _free_scan_data(wifi_utils_scan_list_s *scan_list)
-{
-	wifi_utils_scan_list_s *cur = scan_list;
-	wifi_utils_scan_list_s *prev = NULL;
-	while (cur) {
-		prev = cur;
-		cur = cur->next;
-		free(prev);
-	}
-	scan_list = NULL;
-}
-
-static wifi_utils_result_e _receive_scan_data(int fd, wifi_utils_scan_list_s *scan_list)
-{
-	int ret;
-	int nbytes;
-	int cnt = 0;
-	int msglen = sizeof(lwnl_cb_data);
-	wifi_utils_scan_list_s *prev = scan_list;
-
-	while (true) {
-		lwnl_cb_data msg;
-		wifi_utils_scan_list_s *cur = NULL;
-		nbytes = read(fd, (char *)&msg, msglen);
-		if (nbytes < 0 || nbytes != msglen) {
-			ndbg("Failed to receive (nbytes=%d, msglen=%d)\n", nbytes, msglen);
-			LWNL_ERR;
-			ret = WIFI_UTILS_FAIL;
-			break;
-		}
-
-		if (msg.status != LWNL_SCAN_DONE) {
-			LWNL_ERR;
-			ret =  WIFI_UTILS_FAIL;
-			break;
-		}
-
-		cur = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
-		if (!cur) {
-			_free_scan_data(scan_list);
-			ret = WIFI_UTILS_FAIL;
-			break;
-		}
-		cur->next = NULL;
-		memcpy(&(cur->ap_info), msg.data, msg.data_len);
-		cnt++;
-
-		prev->next = cur;
-		prev = cur;
-	}
-
-	return ret;
-}
-
 static int _wifi_utils_convert_scan(wifi_utils_scan_list_s **scan_list, void *input, int len)
 {
 	nvdbg("[WU] T%d %s len(%d)\n", getpid(), __FUNCTION__, len);

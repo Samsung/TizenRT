@@ -73,8 +73,9 @@ struct netdev_ops {
 
 	/* statistics
 	 */
+#ifdef CONFIG_NET_NETMON
 	int (*get_stats)(struct netdev *dev, struct netmon_netdev_stats *stats);
-
+#endif
 	/*  NIC stack specific */
 	void *nic;
 };
