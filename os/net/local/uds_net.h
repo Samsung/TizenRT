@@ -19,6 +19,11 @@
 #ifndef __NET_LOCAL_UDS_NET_H
 #define __NET_LOCAL_UDS_NET_H
 
+#include <tinyara/net/net.h>
+
+void uds_net_initlist(FAR struct socketlist *list);
+void uds_net_releaselist(FAR struct socketlist *list);
 int uds_checksd(int fd, int oflags);
+int uds_socket(int domain, int type, int protocol);
 
 #endif /* __NET_LOCAL_UDS_NET_H */

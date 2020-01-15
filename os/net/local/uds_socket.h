@@ -54,8 +54,96 @@
 #ifndef __NET_LOCAL_UDS_SOCKET_H
 #define __NET_LOCAL_UDS_SOCKET_H
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <tinyara/net/net.h>
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* Definitions of 8-bit socket flags */
+
+#define _SF_NONBLOCK 0x08  /* Bit 3: Don't block if no data (TCP/READ only) */
+#define _SF_LISTENING 0x10 /* Bit 4: SOCK_STREAM is listening */
+#define _SF_BOUND 0x20	 /* Bit 5: SOCK_STREAM is bound to an address */
+						   /* Bits 6-7: Connection state */
+#define _SF_CONNECTED 0x40 /* Bit 6: SOCK_STREAM/SOCK_DGRAM is connected */
+#define _SF_CLOSED 0x80	/* Bit 7: SOCK_STREAM was gracefully disconnected */
+
+/* Connection state encoding:
+ *
+ *  _SF_CONNECTED==1 && _SF_CLOSED==0 - the socket is connected
+ *  _SF_CONNECTED==0 && _SF_CLOSED==1 - the socket was gracefully disconnected
+ *  _SF_CONNECTED==0 && _SF_CLOSED==0 - the socket was rudely disconnected
+ */
+
+/* Macro to manage the socket state and flags */
+
+#define _SS_ISNONBLOCK(s) (((s)&_SF_NONBLOCK) != 0)
+#define _SS_ISLISTENING(s) (((s)&_SF_LISTENING) != 0)
+#define _SS_ISBOUND(s) (((s)&_SF_BOUND) != 0)
+#define _SS_ISCONNECTED(s) (((s)&_SF_CONNECTED) != 0)
+#define _SS_ISCLOSED(s) (((s)&_SF_CLOSED) != 0)
+
+/* This macro converts a socket option value into a bit setting */
+
+#define _SO_BIT(o) (1 << (o))
+
+/* These define bit positions for each socket option (see sys/socket.h) */
+
+#define _SO_ACCEPTCONN _SO_BIT(SO_ACCEPTCONN)
+#define _SO_BROADCAST _SO_BIT(SO_BROADCAST)
+#define _SO_DEBUG _SO_BIT(SO_DEBUG)
+#define _SO_DONTROUTE _SO_BIT(SO_DONTROUTE)
+#define _SO_ERROR _SO_BIT(SO_ERROR)
+#define _SO_KEEPALIVE _SO_BIT(SO_KEEPALIVE)
+#define _SO_LINGER _SO_BIT(SO_LINGER)
+#define _SO_OOBINLINE _SO_BIT(SO_OOBINLINE)
+#define _SO_RCVBUF _SO_BIT(SO_RCVBUF)
+#define _SO_RCVLOWAT _SO_BIT(SO_RCVLOWAT)
+#define _SO_RCVTIMEO _SO_BIT(SO_RCVTIMEO)
+#define _SO_REUSEADDR _SO_BIT(SO_REUSEADDR)
+#define _SO_SNDBUF _SO_BIT(SO_SNDBUF)
+#define _SO_SNDLOWAT _SO_BIT(SO_SNDLOWAT)
+#define _SO_SNDTIMEO _SO_BIT(SO_SNDTIMEO)
+#define _SO_TYPE _SO_BIT(SO_TYPE)
+
+/* This is the largest option value.  REVISIT: belongs in sys/socket.h */
+
+#define _SO_MAXOPT (15)
+
+/* Macros to set, test, clear options */
+
+#define _SO_SETOPT(s, o) ((s) |= _SO_BIT(o))
+#define _SO_CLROPT(s, o) ((s) &= ~_SO_BIT(o))
+#define _SO_GETOPT(s, o) (((s)&_SO_BIT(o)) != 0)
+
+/* These are macros that can be used to determine if socket option code is
+ * valid (in range) and supported by API.
+ */
+
+#define _SO_GETONLYSET (_SO_ACCEPTCONN | _SO_ERROR | _SO_TYPE)
+#define _SO_GETONLY(o) ((_SO_BIT(o) & _SO_GETONLYSET) != 0)
+#define _SO_GETVALID(o) (((unsigned int)(o)) <= _SO_MAXOPT)
+#define _SO_SETVALID(o) ((((unsigned int)(o)) <= _SO_MAXOPT) && !_SO_GETONLY(o))
+
+/* Macros to convert timeout value */
+
+#define _SO_TIMEOUT(t) (UINT_MAX)
+
+/* Macro to set socket errors */
+
+#define _SO_SETERRNO(s, e) set_errno(e)
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
 FAR struct socket *sockfd_socket(int sockfd);
+FAR const struct sock_intf_s *
+net_sockif(sa_family_t family, int type, int protocol);
 
 #endif /* __NET_LOCAL_UDS_SOCKET_H */
