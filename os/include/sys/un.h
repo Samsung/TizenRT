@@ -61,6 +61,7 @@
  * sys/socket.h.
  */
 
+#include <tinyara/config.h>
 #include <sys/socket.h>
 
 /****************************************************************************
@@ -86,8 +87,13 @@
  */
 
 struct sockaddr_un {
-	sa_family_t sun_family;		/* AF_UNIX */
-	char sun_path[UNIX_PATH_MAX];	/* pathname */
+#ifdef CONFIG_NET_LWIP
+	u8_t sun_len;
+	u8_t sun_family; /* AF_UNIX */
+#else
+	sa_family_t sun_family; /* AF_UNIX */
+#endif
+	char sun_path[UNIX_PATH_MAX]; /* pathname */
 };
 
 /* There are three types of addresses:
