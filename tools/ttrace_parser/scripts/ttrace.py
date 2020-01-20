@@ -50,6 +50,7 @@
 This is a tool for capturing a trace that includes data from both userland and
 the kernel.  It creates an HTML file for visualizing the trace.
 """
+from __future__ import print_function
 import os
 import sys
 import time
@@ -119,7 +120,7 @@ def compose_html_win(script_dir, options, css, js, templates):
     size = 4096
     dec = zlib.decompressobj()
 
-    for chunk in (data[i:i + size] for i in xrange(0, len(data), size)):
+    for chunk in (data[i:i + size] for i in range(0, len(data), size)):
         decoded_chunk = dec.decompress(chunk)
         html_chunk = decoded_chunk.replace('\n', '\\n\\\n')
         html_file.write(html_chunk)
@@ -132,7 +133,7 @@ def compose_html_win(script_dir, options, css, js, templates):
     # write suffix
     html_file.write(html_suffix)
     html_file.close()
-    print "\n    wrote file://%s\n" % os.path.abspath(options.output_file)
+    print("\n    wrote file://%s\n" % os.path.abspath(options.output_file))
 
     return
 
@@ -173,7 +174,7 @@ def compose_html(script_dir, options, css, js, templates):
     # Write suffix
     html_file.write(html_suffix)
     html_file.close()
-    print "\n    wrote file://%s\n" % os.path.abspath(options.output_file)
+    print("\n    wrote file://%s\n" % os.path.abspath(options.output_file))
 
     return
 
@@ -209,18 +210,18 @@ def is_sdb_available():
         l_devices = str_cmd.split('\n')
         if len(l_devices) > 3:
             if g_device_serial is None:
-                    print 'Please specify serial with -e option'
+                    print('Please specify serial with -e option')
                     sys.exit(1)
         dev_type = str_cmd.split("List of devices attached")[-1].split()
         if 'device' in dev_type:
-            print 'Ready to connect'
+            print('Ready to connect')
             return dev_type[0]
         else:
             no = no + 1
-            print 'retry...' + str(no)
+            print('retry...' + str(no))
             sdb_shell('kill-server')
     if no == max_no:
-        print 'Could not connect to SDB devices'
+        print('Could not connect to SDB devices')
         sys.exit(1)
 
 
@@ -233,7 +234,7 @@ def set_sdb_root():
     if not ('emulator' in dev_type):
         sdb_shell('shell change-booting-mode.sh --update')
 
-    print 'SDB was rooted!!!'
+    print('SDB was rooted!!!')
     return 1
 
 
@@ -241,7 +242,7 @@ def trace_bootup(cmd):
     if set_sdb_root() == 0:
         return
 
-    print cmd + ' > /etc/ttrace.conf\''
+    print(cmd + ' > /etc/ttrace.conf\'')
     str_cmd = cmd + ' > /etc/ttrace.conf\''
     os.system(str_cmd)
     os.system('sleep 2')
@@ -361,13 +362,13 @@ def main():
     html_filename = options.output_file
 
     if options.trace_bootup:
-        print "Trace for bootup"
+        print("Trace for bootup")
         atrace_args.extend(['--async_start'])
         trace_bootup(string.join(atrace_args))
 
-        print "Please pull out the usb cable on target"
+        print("Please pull out the usb cable on target")
         os.system('sleep ' + '40')
-        print "Please plug the usb cable to target"
+        print("Please plug the usb cable to target")
         os.system('sleep ' + '20')
 
         atrace_args.remove('--async_start')
@@ -381,7 +382,7 @@ def main():
         compose_html_win(script_dir, options, css, js, templates)
         return
     elif options.from_file:
-        print "From file"
+        print("From file")
 
     if options.async_start:
         atrace_args.extend(['--async_start'])
@@ -456,12 +457,12 @@ def main():
     if result == 0:
         if expect_trace:
             if not data:
-                print >> sys.stderr, ('No data was captured.    Output file was not ' +
-                    'written.')
+                print(('No data was captured.    Output file was not ' +
+                    'written.'), file=sys.stderr)
                 sys.exit(1)
             else:
                 # Indicate to the user that the data download is complete.
-                print " done\n"
+                print(" done\n")
 
             data = ''.join(data)
 
@@ -482,7 +483,7 @@ def main():
 
             size = 4096
             dec = zlib.decompressobj()
-            for chunk in (data[i:i + size] for i in xrange(0, len(data), size)):
+            for chunk in (data[i:i + size] for i in range(0, len(data), size)):
                 decoded_chunk = dec.decompress(chunk)
                 html_chunk = decoded_chunk.replace('\n', '\\n\\\n')
                 html_file.write(html_chunk)
@@ -497,10 +498,10 @@ def main():
             trace_file.close()
             pid_parser.parse(trace_filename)
             os.remove(trace_filename)
-            print "\nwrote file://%s\n" % os.path.abspath(options.output_file)
+            print("\nwrote file://%s\n" % os.path.abspath(options.output_file))
 
     else:  # i.e. result != 0
-        print >> sys.stderr, 'sdb returned error code %d' % result
+        print('sdb returned error code %d' % result, file=sys.stderr)
         sys.exit(1)
 
 

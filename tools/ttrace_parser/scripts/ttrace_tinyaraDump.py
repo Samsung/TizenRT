@@ -18,6 +18,7 @@
 #
 ###########################################################################
 
+from __future__ import print_function
 from operator import itemgetter
 from distutils import util
 import os
@@ -71,24 +72,24 @@ class GdbManager:
 
     def checkopenocdPath(self):
         if self.openocdPath == None:
-            print "You should set openocd path"
+            print("You should set openocd path")
             return False
-        print "openocdPath: " + self.openocdPath
+        print("openocdPath: " + self.openocdPath)
         return True
 
     def checkBinaryPath(self):
         if self.binaryPath == None:
-            print "You should set binary path that contains tinyara,\
-            System.map files"
+            print("You should set binary path that contains tinyara,\
+            System.map files")
             return False
-        print "binaryPath: " + self.binaryPath
+        print("binaryPath: " + self.binaryPath)
         return True
 
     def checkRamdump(self):
         if os.access("ramdump", os.F_OK):
-            print "Ramdump generated"
+            print("Ramdump generated")
             return True
-        print "Failed to generate ramdump"
+        print("Failed to generate ramdump")
         return False
 
     def connectTarget_artik053(self):
@@ -97,11 +98,11 @@ class GdbManager:
         print("%s -f %s &"
                 % (os.path.join(self.openocdPath, 'linux64/openocd'),
                 os.path.join(self.openocdPath, "artik053.cfg")))
-        print os.system("%s -f %s &"
+        print(os.system("%s -f %s &"
                 % (os.path.join(self.openocdPath, 'linux64/openocd'),
-                os.path.join(self.openocdPath, "artik053.cfg")))
+                os.path.join(self.openocdPath, "artik053.cfg"))))
         time.sleep(3)
-        print os.system("telnet localhost 4444 &")
+        print(os.system("telnet localhost 4444 &"))
         time.sleep(3)
         return True
 
@@ -109,18 +110,18 @@ class GdbManager:
         if (self.targetName == "artik053"):
             return self.connectTarget_artik053()
         else:
-            print "Could not found target name: " + self.targetName
+            print("Could not found target name: " + self.targetName)
         return False
 
     def checkELF(self):
         if os.access("%s/tinyara" % self.binaryPath, os.F_OK):
             return True
-        print "ELF file(tinyara) doesn't exist"
+        print("ELF file(tinyara) doesn't exist")
         return False
 
     def checkSystemMap(self):
         if os.access("%s/System.map" % self.binaryPath, os.F_OK) == False:
-            print "Symbol table file(System.map) doesn't exist"
+            print("Symbol table file(System.map) doesn't exist")
             return False
         return True
 
@@ -165,14 +166,14 @@ class GdbManager:
         elif (self.targetName == "artik053"):
             return self.generateGdbCommands_artik053()
         else:
-            print "Could not found target name: " + self.targetName
+            print("Could not found target name: " + self.targetName)
         return False
 
     def runGdbCommands(self):
         out = os.system("arm-none-eabi-gdb %s --command=%s\n" \
                 % (os.path.join(self.openocdPath, "binary/tinyara"), \
                     self.gdbCommandsPath))
-        print "-----------------------------------------\n"
+        print("-----------------------------------------\n")
         if self.checkRamdump() == False:
             return False
         os.system("mv ramdump %s" % (self.dumpFile))
@@ -184,7 +185,7 @@ class GdbManager:
         if self.addrBegin == False:
             return False
         self.addrBegin = "0x" + self.addrBegin
-        print "addrBegin: " + self.addrBegin
+        print("addrBegin: " + self.addrBegin)
         return True
 
     def setAddrEnd(self):
@@ -193,7 +194,7 @@ class GdbManager:
         if self.addrEnd == False:
             return False
         self.addrEnd = "0x" + self.addrEnd
-        print "addrEnd: " + self.addrEnd
+        print("addrEnd: " + self.addrEnd)
         return True
 
     def setAddrDump(self):
@@ -203,7 +204,7 @@ class GdbManager:
         if self.addrDump == False:
             return False
         self.addrDump = "0x" + self.addrDump
-        print "addrDump: " + self.addrDump
+        print("addrDump: " + self.addrDump)
         return True
 
     def findAddr(self, filename, target):
@@ -230,7 +231,7 @@ class GdbManager:
     def extractDump(self, options):
         out = subprocess.check_output(["./scripts/parse_dump", self.dumpFile])
         if options.verbose == True:
-            print out
+            print(out)
         with open(self.traceFile, "w") as dump:
             dump.write(out)
         return True

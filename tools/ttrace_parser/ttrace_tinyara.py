@@ -18,6 +18,7 @@
 #
 ###########################################################################
 
+from __future__ import print_function
 from operator import itemgetter
 import os
 import sys
@@ -94,7 +95,7 @@ def writeFtraceLogs(options):
     with open(options.outputFile, "wb") as output:
         for line in ftraceLogs:
             if (options.verbose == True):
-                print line
+                print(line)
             output.write(line + "\n")
     return True
 
@@ -113,7 +114,7 @@ def translateTinyaraLogs(options):
             msg = item.extractMsg(lineList[2])
             translatedLine = item.composeLine()
             if (options.verbose == True):
-                print translatedLine
+                print(translatedLine)
             item.addLineToFtraceLogs(translatedLine)
     return True
 
@@ -180,17 +181,17 @@ def main():
         options.curDir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
         if (options.inputFile == None and options.dump == None):
-            print "Please specify reading from file or dump"
+            print("Please specify reading from file or dump")
             exit()
 
         if (options.inputFile != None and options.dump != None):
-            print "Please choose just one option for reading logs"
+            print("Please choose just one option for reading logs")
             exit()
 
         if (options.dump != None):
             if (options.dump != "artik051" and options.dump != "artik053"):
-                print "%s is not supported" % (options.dump)
-                print "T-trace dump supports artik051, artik053"
+                print("%s is not supported" % (options.dump))
+                print("T-trace dump supports artik051, artik053")
                 exit()
             os.system("./%s/ttrace_tinyaraDump.py -t %s -o %s\n" \
                     % (parserDirPath, options.dump, "dump.bin"))
@@ -199,9 +200,9 @@ def main():
         if (options.inputFile != None):
             # Check inputFile existance,
             if not os.access(options.inputFile, os.F_OK | os.R_OK):
-                print "ERROR: " + "Can not read " + options.inputFile
+                print("ERROR: " + "Can not read " + options.inputFile)
                 return
-            print "Input file: " + options.inputFile
+            print("Input file: " + options.inputFile)
 
             options.inputFolder = os.path.split(options.inputFile)[0]
             options.inputFilenameExt = os.path.split(options.inputFile)[1]
@@ -225,7 +226,7 @@ def main():
         options.outputFile = \
         os.path.join(options.outputFolder, options.outputFilenameExt)
 
-        print "output file will be saved at %s" % (options.outputFile)
+        print("output file will be saved at %s" % (options.outputFile))
 
         translateTinyaraLogs(options)
         writeFtraceLogs(options)
