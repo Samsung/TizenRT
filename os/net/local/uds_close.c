@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * net/socket/net_checksd.c
+ * net/socket/net_close.c
  *
- *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,46 +56,98 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <sys/socket.h>
-
-#include <sched.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <debug.h>
+#include <assert.h>
+
+#include <tinyara/net/net.h>
 
 #include "local/uds_socket.h"
+
+#ifdef CONFIG_NET
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: uds_checksd
+ * Name: psock_close
  *
  * Description:
- *   Check if the socket descriptor is valid for the provided TCB and if it
- *   supports the requested access.  This trivial operation is part of the
- *   fdopen() operation when the fdopen() is performed on a socket descriptor.
- *   It simply performs some sanity checking before permitting the socket
- *   descriptor to be wrapped as a C FILE stream.
+ *   Performs the close operation on a socket instance
+ *
+ * Input Parameters:
+ *   psock   Socket instance
+ *
+ * Returned Value:
+ *  Returns zero (OK) on success.  On failure, it returns a negated errno
+ *  value to indicate the nature of the error.
+ *
+ * Assumptions:
  *
  ****************************************************************************/
 
-int uds_checksd(int sd, int oflags)
+int psock_close(FAR struct socket *psock)
 {
-	FAR struct socket *psock = sockfd_socket(sd);
+	int ret;
 
 	/* Verify that the sockfd corresponds to valid, allocated socket */
 
 	if (!psock || psock->s_crefs <= 0) {
-		nvdbg("No valid socket for sd: %d\n", sd);
 		return -EBADF;
 	}
 
-	/* NOTE:  We permit the socket FD to be "wrapped" in a stream as
-	 * soon as the socket descriptor is created by socket().  Therefore
-	 * (1) we don't care if the socket is connected yet, and (2) there
-	 * are no access restrictions that can be enforced yet.
+	/* We perform the close operation only if this is the last count on
+	 * the socket. (actually, I think the socket crefs only takes the values
+	 * 0 and 1 right now).
+	 *
+	 * It is possible for a psock to have no connection, e.g. a TCP socket
+	 * waiting in accept.
 	 */
 
+	if (psock->s_crefs <= 1 && psock->s_conn != NULL) {
+		/* Let the address family's close() method handle the operation */
+
+		DEBUGASSERT(psock->s_sockif != NULL && psock->s_sockif->si_close != NULL);
+		ret = psock->s_sockif->si_close(psock);
+
+		/* Was the close successful */
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* Then release our reference on the socket structure containing the connection */
+
+	psock_release(psock);
 	return OK;
 }
+
+/****************************************************************************
+ * Name: uds_close
+ *
+ * Description:
+ *   Performs the close operation on socket descriptors
+ *
+ * Input Parameters:
+ *   sockfd   Socket descriptor of socket
+ *
+ * Returned Value:
+ *  Returns zero (OK) on success.  On failure, it returns a negated errno
+ *  value to indicate the nature of the error.
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+
+int uds_close(int sockfd)
+{
+	return psock_close(sockfd_socket(sockfd));
+}
+
+#endif /* CONFIG_NET */

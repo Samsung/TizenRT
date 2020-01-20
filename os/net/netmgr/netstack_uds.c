@@ -21,141 +21,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include "netstack.h"
-
-/****************************************************************************
- * Name: sockfd_socket
- *
- * Description:
- *   Given a socket descriptor, return the underlying socket structure.
- *
- * Input Parameters:
- *   sockfd - The socket descriptor index to use.
- *
- * Returned Value:
- *   On success, a reference to the socket structure associated with the
- *   the socket descriptor is returned.  NULL is returned on any failure.
- *
- ****************************************************************************/
-
-FAR struct socket *sockfd_socket(int sockfd)
-{
-	FAR struct socketlist *list;
-	int ndx = sockfd - __SOCKFD_OFFSET;
-
-	if (ndx >= 0 && ndx < CONFIG_NSOCKET_DESCRIPTORS) {
-		list = sched_getsockets();
-		if (list) {
-			return &list->sl_sockets[ndx];
-		}
-	}
-
-	return NULL;
-}
-
-/*
- *
- */
-
-int uds_checksd(int sd, int oflags)
-{
-	FAR struct socket *psock = sockfd_socket(sd);
-
-	/* Verify that the sockfd corresponds to valid, allocated socket */
-
-	if (!psock || psock->s_crefs <= 0) {
-		nvdbg("No valid socket for sd: %d\n", sd);
-		return -EBADF;
-	}
-
-	/* NOTE:  We permit the socket FD to be "wrapped" in a stream as
-	 * soon as the socket descriptor is created by socket().  Therefore
-	 * (1) we don't care if the socket is connected yet, and (2) there
-	 * are no access restrictions that can be enforced yet.
-	 */
-
-	return OK;
-}
-
-static int uds_socket(int domain, int type, int protocol)
-{
-	return 0;
-}
-
-static int uds_bind(int s, const struct sockaddr *name, socklen_t namelen)
-{
-	return 0;
-}
-
-static int uds_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
-{
-	return 0;
-}
-
-static int uds_shutdown(int s, int how)
-{
-	return 0;
-}
-
-static int uds_connect(int s, const struct sockaddr *name, socklen_t namelen)
-{
-	return 0;
-}
-
-static int uds_getsockname(int s, struct sockaddr *name, socklen_t *namelen)
-{
-	return 0;
-}
-
-static int uds_getpeername(int s, struct sockaddr *name, socklen_t *namelen)
-{
-	return 0;
-}
-
-static int uds_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
-{
-	return 0;
-}
-
-static int uds_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
-{
-	return 0;
-}
-
-static int uds_listen(int s, int backlog)
-{
-	return 0;
-}
-
-static ssize_t uds_recv(int s, void *mem, size_t len, int flags)
-{
-	return 0;
-}
-
-static ssize_t uds_recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
-{
-	return 0;
-}
-
-static ssize_t uds_recvmsg(int sockfd, struct msghdr *msg, int flags)
-{
-	return 0;
-}
-
-static ssize_t uds_send(int s, const void *data, size_t size, int flags)
-{
-	return 0;
-}
-
-static ssize_t uds_sendto(int s, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen)
-{
-	return 0;
-}
-
-static ssize_t uds_sendmsg(int sockfd, struct msghdr *msg, int flags)
-{
-	return 0;
-}
-
+#include "local/uds_net.h"
 
 struct netstack_ops g_uds_stack_ops = {
 	NULL,
@@ -177,19 +43,19 @@ struct netstack_ops g_uds_stack_ops = {
 	uds_connect,
 	uds_accept,
 	uds_listen,
-	uds_shutdown,
+	NULL,
 
 	uds_recv,
 	uds_recvfrom,
-	uds_recvmsg,
+	NULL,
 	uds_send,
 	uds_sendto,
-	uds_sendmsg,
+	NULL,
 
 	uds_getsockname,
 	uds_getpeername,
-	uds_setsockopt,
-	uds_getsockopt,
+	NULL,
+	NULL,
 #ifdef CONFIG_NET_ROUTE
 	NULL,
 	NULL,

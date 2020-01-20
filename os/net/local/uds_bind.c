@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * net/socket/net_checksd.c
+ * net/socket/bind.c
  *
- *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2012, 2014-2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,46 +56,128 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <sys/socket.h>
-
-#include <sched.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/net/net.h>
+
 #include "local/uds_socket.h"
+
+#ifdef CONFIG_NET
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: uds_checksd
+ * Name: psock_bind
  *
  * Description:
- *   Check if the socket descriptor is valid for the provided TCB and if it
- *   supports the requested access.  This trivial operation is part of the
- *   fdopen() operation when the fdopen() is performed on a socket descriptor.
- *   It simply performs some sanity checking before permitting the socket
- *   descriptor to be wrapped as a C FILE stream.
+ *   bind() gives the socket 'psock' the local address 'addr'. 'addr' is
+ *   'addrlen' bytes long. Traditionally, this is called "assigning a name
+ *   to a socket." When a socket is created with socket, it exists in a name
+ *   space (address family) but has no name assigned.
+ *
+ * Input Parameters:
+ *   psock    Socket structure of the socket to bind
+ *   addr     Socket local address
+ *   addrlen  Length of 'addr'
+ *
+ * Returned Value:
+ *  Returns zero (OK) on success.  On failure, it returns a negated errno
+ *  value to indicate the nature of the error.
+ *
+ *   EACCES
+ *     The address is protected, and the user is not the superuser.
+ *   EADDRINUSE
+ *     The given address is already in use.
+ *   EINVAL
+ *     The socket is already bound to an address.
+ *   ENOTSOCK
+ *     psock is a descriptor for a file, not a socket.
  *
  ****************************************************************************/
 
-int uds_checksd(int sd, int oflags)
+int psock_bind(FAR struct socket *psock, const struct sockaddr *addr,
+			   socklen_t addrlen)
 {
-	FAR struct socket *psock = sockfd_socket(sd);
+	int ret = OK;
 
-	/* Verify that the sockfd corresponds to valid, allocated socket */
+	/* Verify that the psock corresponds to valid, allocated socket */
 
 	if (!psock || psock->s_crefs <= 0) {
-		nvdbg("No valid socket for sd: %d\n", sd);
-		return -EBADF;
+		return -ENOTSOCK;
 	}
 
-	/* NOTE:  We permit the socket FD to be "wrapped" in a stream as
-	 * soon as the socket descriptor is created by socket().  Therefore
-	 * (1) we don't care if the socket is connected yet, and (2) there
-	 * are no access restrictions that can be enforced yet.
-	 */
+	/* Let the address family's connect() method handle the operation */
+
+	DEBUGASSERT(psock->s_sockif != NULL && psock->s_sockif->si_bind != NULL);
+	ret = psock->s_sockif->si_bind(psock, addr, addrlen);
+
+	/* Was the bind successful */
+
+	if (ret < 0) {
+		return ret;
+	}
 
 	return OK;
 }
+
+/****************************************************************************
+ * Name: bind
+ *
+ * Description:
+ *   bind() gives the socket 'sockfd' the local address 'addr'. 'addr' is
+ *   'addrlen' bytes long. Traditionally, this is called "assigning a name to
+ *   a socket." When a socket is created with socket, it exists in a name
+ *   space (address family) but has no name assigned.
+ *
+ * Input Parameters:
+ *   sockfd   Socket descriptor of the socket to bind
+ *   addr     Socket local address
+ *   addrlen  Length of 'addr'
+ *
+ * Returned Value:
+ *   0 on success; -1 on error with errno set appropriately
+ *
+ *   EACCES
+ *     The address is protected, and the user is not the superuser.
+ *   EADDRINUSE
+ *     The given address is already in use.
+ *   EBADF
+ *     sockfd is not a valid descriptor.
+ *   EINVAL
+ *     The socket is already bound to an address.
+ *   ENOTSOCK
+ *     sockfd is a descriptor for a file, not a socket.
+ *
+ ****************************************************************************/
+
+int uds_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+{
+	FAR struct socket *psock;
+	int ret;
+
+	/* Use the socket descriptor to get the underlying socket structure */
+
+	psock = sockfd_socket(sockfd);
+
+	/* Then let psock_bind do all of the work */
+
+	ret = psock_bind(psock, addr, addrlen);
+	if (ret < 0) {
+		_SO_SETERRNO(psock, -ret);
+		return ERROR;
+	}
+
+	return OK;
+}
+
+#endif /* CONFIG_NET */
