@@ -37,7 +37,7 @@ with open(file_path, 'r') as fp:
     fp.close()
 
     # hash to binary data by crc32.
-    hash_data = zlib.crc32(data) & 0xFFFFFFFFL
+    hash_data = zlib.crc32(data) & 0xFFFFFFFF
 
     fp = open(file_path, 'w')
     fp.write(struct.pack('I', hash_data))

@@ -51,6 +51,7 @@
 #
 ############################################################################
 
+from __future__ import print_function
 import array
 from socket import *
 
@@ -101,14 +102,14 @@ def read_responses(socket):
         return res
 
 if __name__ == '__main__':
-    print 'Sending discover...'
+    print('Sending discover...')
 
     s = socket(AF_INET, SOCK_DGRAM)
     s.bind(('0.0.0.0', PORT))
     s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-    s.settimeout(1.0);
+    s.settimeout(1.0)
     send_discover(s)
     devices = read_responses(s)
     socket.close(s)
 
-    print devices
+    print(devices)
