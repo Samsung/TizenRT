@@ -15,6 +15,7 @@
 #
 ###########################################################################
 
+from __future__ import print_function
 import sys
 import re
 
@@ -39,7 +40,7 @@ size = 0
 lowest_index = 0
 if index < lowest_index:
     for i in range(len(flash_type_list)-1):
-        print i,":",flash_type_list[i] 
+        print(i,":",flash_type_list[i])
 else:
     for offset in range(index):
         size+= int(flash_size_list[offset]) * 1024
@@ -47,5 +48,5 @@ else:
     index_startadr = hex(index_startadr)
     cursize=int(flash_size_list[index])*1024
     cursize = hex(cursize)
-    print index_startadr,cursize
+    print(index_startadr,cursize)
 
