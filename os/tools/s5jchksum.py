@@ -18,7 +18,7 @@ with open(inputfile, 'rb') as fin, open(outputfile, 'wb') as fout:
     size -= (header + tail)
 
     data = fin.read(size)
-    h = hashlib.sha256(data);
+    h = hashlib.sha256(data)
     digest = h.digest()[:4]
 
     fout.seek(4, 0)

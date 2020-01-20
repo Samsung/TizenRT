@@ -16,6 +16,8 @@
 # language governing permissions and limitations under the License.
 #
 ############################################################################
+
+from __future__ import print_function
 import os
 import sys
 import struct
@@ -82,7 +84,7 @@ def get_static_ram_size(bin_type):
             textsize = roundup_power_two(textsize)
         static_ram_size = textsize + rosize + datasize + bsssize
     else : #Not supported.
-        print "Error : Not supported Binary Type"
+        print("Error : Not supported Binary Type")
         sys.exit(1)
 
     ram_fp.close()
@@ -167,8 +169,8 @@ COMP_MAX = COMP_MINIZ
 SIZE_CMD_SUMMATION_INDEX = 3
 
 if int(main_stack_size) >= int(dynamic_ram_size) :
-    print "Error : Dynamic ram size should be bigger than Main stack size."
-    print "Dynamic ram size : %d, Main stack size : %d" %(int(dynamic_ram_size), int(main_stack_size))
+    print("Error : Dynamic ram size should be bigger than Main stack size.")
+    print("Dynamic ram size : %d, Main stack size : %d" %(int(dynamic_ram_size), int(main_stack_size)))
     sys.exit(1)
 
 with open(file_path, 'rb') as fp:
@@ -183,7 +185,7 @@ with open(file_path, 'rb') as fp:
         bin_type = ELF
     else : # Not supported.
         bin_type = 0
-        print "Error : Not supported Binary Type"
+        print("Error : Not supported Binary Type")
         sys.exit(1)
 
     # Calculate RAM size
@@ -194,13 +196,13 @@ with open(file_path, 'rb') as fp:
     elif bin_type == ELF :
         os.system('readelf -S ' + file_path + ' > ' + STATIC_RAM_ESTIMATION)
     else : #Not supported.
-        print "Error : Not supported Binary Type"
+        print("Error : Not supported Binary Type")
         sys.exit(1)
 
     if 0 < int(main_priority) <= 255 :
         main_priority = int(main_priority)
     else :
-        print "Error : This binary priority is not valid"
+        print("Error : This binary priority is not valid")
         sys.exit(1)
 
     static_ram_size = get_static_ram_size(bin_type)
