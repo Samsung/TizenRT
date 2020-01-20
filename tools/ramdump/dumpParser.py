@@ -21,6 +21,7 @@
 # Parser to parse the dump/log file using elf file and print CALL STACK.
 # Gdb and NM tools are used to read the symbols
 
+from __future__ import print_function
 import re
 import os
 import string
@@ -73,14 +74,14 @@ class dumpParser:
 		if self.elf is not None:
 			self.elf_file_fd = open(elf, 'rb')
 			if not self.elf_file_fd:
-				print('Failed to open {0}'.format(elf))
+				print(('Failed to open {0}'.format(elf)))
 				return None
 
 		# Check for ramdump file existence, if exists open the dump file in binary format
 		if self.dump_file is not None:
 			self.dump_file_fd = open(dump_file, 'rb')
 			if not self.dump_file_fd:
-				print('Failed to open {0}'.format(dump_file))
+				print(('Failed to open {0}'.format(dump_file)))
 				return None
 
 			#Split the dump_file with delimiters _ and . to read the start and end addr
@@ -89,8 +90,8 @@ class dumpParser:
 			# Get the Start address and end address from dump file name
 			self.ram_base_addr = int(temp[-3],16)
 			self.ram_end_addr = int(temp[-2],16)
-			print('self.ram_base_addr {0:x}'.format(self.ram_base_addr))
-			print('self.ram_end_addr {0:x}'.format(self.ram_end_addr))
+			print(('self.ram_base_addr {0:x}'.format(self.ram_base_addr)))
+			print(('self.ram_end_addr {0:x}'.format(self.ram_end_addr)))
 
 		# Read the elf header to get the offset of text section and ARM exidx section
 		# These offsets will be used while creating ARM exidx table as well as while reading
@@ -103,8 +104,8 @@ class dumpParser:
 					#word 5 contains the offset value
 					self.text_offset = word[5]
 					if debug:
-						print line
-						print self.text_offset
+						print(line)
+						print(self.text_offset)
 
 	def __del__(self):
 		self.elf_file_fd.close() # Close the elf file instance
@@ -133,7 +134,7 @@ class dumpParser:
 
 			mid = (high + low) >> 1
 
-		print "Sorry. Given address does not present in stack lookup"
+		print("Sorry. Given address does not present in stack lookup")
 		return None
 
 	# Function to Parse the i/p log file (which contains stackdump during assert) passed as part of -t argument ( No dump is supplied )
@@ -154,7 +155,7 @@ class dumpParser:
 					if word[1] == '   size':
 						self.stacksize = int(word[2],16)
 					if debug:
-						print "stackSize :", self.stacksize
+						print("stackSize :", self.stacksize)
 					continue
 				# Read the stack contents of aborted stack and Populate stack_table
 				if 'up_stackdump:' in line:
@@ -170,7 +171,7 @@ class dumpParser:
 						self.stack_start_addr = self.stack_start_addr + 4
 						# Print the generated Stack table
 						if debug:
-							print "{0:x}   {1:x}".format(self.stack_table[i][0],self.stack_table[i][1])
+							print("{0:x}   {1:x}".format(self.stack_table[i][0],self.stack_table[i][1]))
 						i = i + 1
 					continue
 				# Read only critical ARM registers ( PC, LR , SP and FP )
@@ -185,20 +186,20 @@ class dumpParser:
 						sp = int(t[-3],16)
 						fp = int(t[-5],16)
 						if debug:
-							print '&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
-							print ' '
-							print 'stack size : ', self.stacksize
-							print 'PC : ', hex(pc)
-							print 'LR : ', hex(lr)
-							print 'SP : ', hex(sp)
-							print 'FP : ', hex(fp)
-							print ' '
-							print ' '
+							print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+							print(' ')
+							print('stack size : ', self.stacksize)
+							print('PC : ', hex(pc))
+							print('LR : ', hex(lr))
+							print('SP : ', hex(sp))
+							print('FP : ', hex(fp))
+							print(' ')
+							print(' ')
 
 						# If the PC is not withing RAM range, it's a Prefetch issue
 						# So, fill the PC with LR and help to get the call stack
 						if ( pc < g_stext or pc > g_etext):
-							print "It'S A PRE-FETCH ABORT @ PC", hex(pc)
+							print("It'S A PRE-FETCH ABORT @ PC", hex(pc))
 							# Assign LR to PC to help constructing the stack
 							pc = lr
 
@@ -209,14 +210,14 @@ class dumpParser:
 					word = line.split(':')
 					if word[1] == ' CallTrace_Start':
 						got = 1
-						print '&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
-						print 'Call Trace:'
-						print ''
+						print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+						print('Call Trace:')
+						print('')
 						continue
 					if word[1] == ' CallTrace_End':
 						got = 0
-						print ''
-						print '&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
+						print('')
+						print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
 					if got == 1:
 #						word.line.split(':')
 						word = re.split(r'[:><\[\]]',line)
@@ -230,13 +231,13 @@ class dumpParser:
 						pstring = (extra_str + '[<{0:x}>] {1}+0x{2:x}'.format(int(word[3],16), symname, offset))
 						print(pstring)
 					continue
-		print 'CALL STACK of Aborted task: '
-		print '&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
-		print ''
+		print('CALL STACK of Aborted task: ')
+		print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+		print('')
 		# Since Fp is enabled, use simple approach to get backtrace
 		self.unwind_backtrace_with_framepointer(fp,sp,lr,pc,self.stacksize)
-		print ''
-		print '&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
+		print('')
+		print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
 
 
 	# Function to setup the Address to Symbol mapping table from the ELF file ( tinyara in our case)
@@ -253,22 +254,22 @@ class dumpParser:
 
 			# Printing the Created Symbol table
 			if debug:
-				print '~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE START ~~~~~~~~~~~~~~~~~~~~~'
+				print('~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE START ~~~~~~~~~~~~~~~~~~~~~')
 				for line in self.symbol_lookup_table:
-					print "{0:x} {1}".format(line[0], line[1])
-				print '~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE END   ~~~~~~~~~~~~~~~~~~~~~'
+					print("{0:x} {1}".format(line[0], line[1]))
+				print('~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE END   ~~~~~~~~~~~~~~~~~~~~~')
 
 	# Function to read the contents of given length from specific RAM/ELF address
 	def read_address(self, addr, length, debug=False):
 		# First check whether address falls within the code section, if so read from elf
 		if (addr >= g_stext and addr <= g_etext):
 			if debug:
-				print('address {0:x} is in text range'.format(addr))
+				print(('address {0:x} is in text range'.format(addr)))
 			# Checking in ELF file once for the offset at which we need to read the address
 			offset = (addr - g_stext ) + int(self.text_offset, 16)
 			if debug:
-				print('Offset = {0:x}'.format(offset))
-				print('Length = {0:x}'.format(length))
+				print(('Offset = {0:x}'.format(offset)))
+				print(('Length = {0:x}'.format(length)))
 			self.elf_file_fd.seek(offset)
 			a = self.elf_file_fd.read(length)
 			return a
@@ -286,7 +287,7 @@ class dumpParser:
 			self.dump_file_fd.seek(offset)
 			a = self.dump_file_fd.read(length)
 		else:
-			print 'AM HERE, SOMETHING WRONG'
+			print('AM HERE, SOMETHING WRONG')
 			# If only Log file is passed as i/p, Read the contents of address from ELF file
 			self.elf_file_fd.seek(offset+self.text_offset) # offset got from elf header
 			a = self.elf_file_fd.read(length)
@@ -302,7 +303,7 @@ class dumpParser:
 		s = self.read_address(addr, struct.calcsize(format_string), debug)
 		if (s is None) or (s == ''):
 			if debug and addr is not None:
-				print('Failed to read address {0:x}'.format(addr))
+				print(('Failed to read address {0:x}'.format(addr)))
 			return None
 
 		# Unpack the string with proper format and return to calle.
@@ -316,7 +317,7 @@ class dumpParser:
 		s = self.read_string(address, '<I', debug)
 		if s is None:
 			if debug:
-				print 'read_word s is None'
+				print('read_word s is None')
 			return None
 		else:
 			return s[0]
@@ -328,7 +329,7 @@ class dumpParser:
 		s = self.read_string(address, '<h', debug)
 		if s is None:
 			if debug:
-				print 'read_halfword s is None'
+				print('read_halfword s is None')
 			return None
 		else:
 			return s[0]
@@ -341,7 +342,7 @@ class dumpParser:
 		s = self.read_string(address, '<B', debug)
 		if s is None:
 			if debug:
-				print 'read_byte s is None'
+				print('read_byte s is None')
 			return None
 		else:
 			return s[0]
@@ -355,7 +356,7 @@ class dumpParser:
 			return None
 		else:
 			if debug:
-				print "Address of symbol {0:x} {1}".format(self.symbol_lookup_table[i][0], symbol)
+				print("Address of symbol {0:x} {1}".format(self.symbol_lookup_table[i][0], symbol))
 			return self.symbol_lookup_table[i][0]
 
 	# Function to search for a address from "Address to Symbol" mapping table
@@ -404,11 +405,11 @@ class dumpParser:
 
 		# Verify the Addresses passed
 		if debug:
-			print "fp:{0:x}  sp low:{1:x} high:{2:x}".format(frame.fp, frame.sp, high)
+			print("fp:{0:x}  sp low:{1:x} high:{2:x}".format(frame.fp, frame.sp, high))
 
 		# Check current frame pointer is within bounds of Stack*/
 		if (fp < (low + 12) or fp + 4 >= high):
-			print "End of stack frame"
+			print("End of stack frame")
 			return -1
 
 		# If the dump is given, Read contents of address from the DUMP file
@@ -478,44 +479,44 @@ class dumpParser:
 		self.find_stackframe_using_framepointer(frame)
 
 def usage():
-	print '*************************************************************'
-	print '\nUsage: %s -e ELF_FILE -r DUMP_FILE [OPTIONS]' % sys.argv[0]
-	print '                  OR'
-	print 'Usage: %s -e ELF_FILE -t LOG_FILE [OPTIONS]\n' % sys.argv[0]
-	print 'Following options are available'
-	print '\t-e, --elf                       tinyara elf file along with path'
-	print '\t-r, --dump_file                 RAM/FLASH dump_file along with path'
-	print '\t-t, --log_file                  Enter Logfile which contains stackdump during assert'
-	print '\t-G, --gdb_path                  Enter gdb tool path'
-	print '\t-N, --nm_path                   Enter nm tool path'
-	print '\t-E, --readelf_path              Enter readelf tool path'
-	print '\t-h, --help                      Show help'
-	print ''
-	print 'syntax :'
-	print '--------'
-	print 'python %s -e <Tinyara elf path> -r Filename_ramBaseAddr_ramEndAddr.bin -G <Gdb path> -N < NM path> ' % sys.argv[0]
-	print ''
-	print 'I assume, gdb and nm tool exist in your linux machine like /usr/bin/gdb and /usr/bin/nm, so hard coded this path inside script'
-	print ''
-	print 'Below example if you give dump file as path: '
-	print '--------------------------------------------'
-	print 'python dumpParser.py -e build/output/bin/tinyara -r build/output/bin/ramdump_0x4a0000_0x6a0000.bin'
-	print ''
-	print 'Below example if you give simple assert log file as path: '
-	print '---------------------------------------------------------'
-	print 'python dumpParser.py -e build/output/bin/tinyara -r log.txt '
-	print ''
-	print ''
-	print 'Note:'
-	print '--------'
-	print '1) For getting call stack CONFIG_FRAME_POINTER flag should be enabled in your build'
-	print ''
-	print 'If you do not have gdb and nm path set, please pass the path as below'
-	print ''
-	print 'python dumpParser.py -r /build/bin/ramdump_0x4a0000_0x6a0000.bin -e build/bin/tinyara -G <your_gdb_path> -N <your_nm_path>'
-	print ''
-	print ''
-	print '*************************************************************'
+	print('*************************************************************')
+	print('\nUsage: %s -e ELF_FILE -r DUMP_FILE [OPTIONS]' % sys.argv[0])
+	print('                  OR')
+	print('Usage: %s -e ELF_FILE -t LOG_FILE [OPTIONS]\n' % sys.argv[0])
+	print('Following options are available')
+	print('\t-e, --elf                       tinyara elf file along with path')
+	print('\t-r, --dump_file                 RAM/FLASH dump_file along with path')
+	print('\t-t, --log_file                  Enter Logfile which contains stackdump during assert')
+	print('\t-G, --gdb_path                  Enter gdb tool path')
+	print('\t-N, --nm_path                   Enter nm tool path')
+	print('\t-E, --readelf_path              Enter readelf tool path')
+	print('\t-h, --help                      Show help')
+	print('')
+	print('syntax :')
+	print('--------')
+	print('python %s -e <Tinyara elf path> -r Filename_ramBaseAddr_ramEndAddr.bin -G <Gdb path> -N < NM path> ' % sys.argv[0])
+	print('')
+	print('I assume, gdb and nm tool exist in your linux machine like /usr/bin/gdb and /usr/bin/nm, so hard coded this path inside script')
+	print('')
+	print('Below example if you give dump file as path: ')
+	print('--------------------------------------------')
+	print('python dumpParser.py -e build/output/bin/tinyara -r build/output/bin/ramdump_0x4a0000_0x6a0000.bin')
+	print('')
+	print('Below example if you give simple assert log file as path: ')
+	print('---------------------------------------------------------')
+	print('python dumpParser.py -e build/output/bin/tinyara -r log.txt ')
+	print('')
+	print('')
+	print('Note:')
+	print('--------')
+	print('1) For getting call stack CONFIG_FRAME_POINTER flag should be enabled in your build')
+	print('')
+	print('If you do not have gdb and nm path set, please pass the path as below')
+	print('')
+	print('python dumpParser.py -r /build/bin/ramdump_0x4a0000_0x6a0000.bin -e build/bin/tinyara -G <your_gdb_path> -N <your_nm_path>')
+	print('')
+	print('')
+	print('*************************************************************')
 
 	sys.exit(1)
 
@@ -533,11 +534,11 @@ def main():
 
 	try:
 		opts, args = GetOpt(sys.argv[1:],'r:e:G:N:d:t:g:h', ['dump_file=', 'elf=','gdb_path=','nm_path=','readelf_path=','log_file=','help'])
-	except GetoptError, e:
-		print ' '
-		print ' '
-		print '*************************************************************'
-		print 'Usage error:', e
+	except GetoptError as e:
+		print(' ')
+		print(' ')
+		print('*************************************************************')
+		print('Usage error:', e)
 		usage()
 
 	for opt, arg in opts:
@@ -556,40 +557,40 @@ def main():
 		elif opt in ('-h', '--help'):
 			usage()
 
-	print ''
-	print ''
-	print '*************************************************************'
-	print 'dump_file         :', dump_file
-	print 'log_file          :', log_file
-	print 'Tinyara_elf_file  :', elf
-	print '*************************************************************'
-	print ''
+	print('')
+	print('')
+	print('*************************************************************')
+	print('dump_file         :', dump_file)
+	print('log_file          :', log_file)
+	print('Tinyara_elf_file  :', elf)
+	print('*************************************************************')
+	print('')
 
 
 	if not elf :
-		print 'Usage error: Must specify -e option, please find below for proper usage'
+		print('Usage error: Must specify -e option, please find below for proper usage')
 		usage()
 
 	if log_file is not None:
 		if not os.path.exists(log_file):
-			print ('{0} does not exist. Please provide the proper path for log_file...'.format(log_file))
+			print('{0} does not exist. Please provide the proper path for log_file...'.format(log_file))
 			sys.exit(1)
 
 	if dump_file is not None:
 		if not os.path.exists(dump_file):
-			print ('{0} does not exist. Plz provide proper path for dump_file...'.format(dump_file))
+			print('{0} does not exist. Plz provide proper path for dump_file...'.format(dump_file))
 			sys.exit(1)
 
 	if not log_file and not dump_file:
-		print 'Usage error: Must specify one of the -t or -e options. Plz find below for proper usage'
+		print('Usage error: Must specify one of the -t or -e options. Plz find below for proper usage')
 		usage()
 
 	if not os.path.exists(elf):
-		print ('{0} does not exist. Cannot proceed without System.map Exiting...'.format(elf))
+		print('{0} does not exist. Cannot proceed without System.map Exiting...'.format(elf))
 		sys.exit(1)
 
 	if not os.path.exists(gdb_path):
-		print ('{0} does not exist. Cannot proceed without GDB Tool Exiting...'.format(gdb_path))
+		print('{0} does not exist. Cannot proceed without GDB Tool Exiting...'.format(gdb_path))
 		sys.exit(1)
 
 	if not os.access(gdb_path, os.X_OK):
@@ -599,7 +600,7 @@ def main():
 		sys.exit(1)
 
 	if not os.path.exists(nm_path):
-		print ('{0} does not exist. Cannot proceed without NM Tool Exiting...'.format(nm_path))
+		print('{0} does not exist. Cannot proceed without NM Tool Exiting...'.format(nm_path))
 		sys.exit(1)
 
 	if not os.access(nm_path, os.X_OK):
@@ -609,7 +610,7 @@ def main():
 		sys.exit(1)
 
 	if not os.path.exists(readelf_path):
-		print ('{0} does not exist. Cannot proceed without readelf Tool Exiting...'.format(readelf_path))
+		print('{0} does not exist. Cannot proceed without readelf Tool Exiting...'.format(readelf_path))
 		sys.exit(1)
 
 	if not os.access(readelf_path, os.X_OK):
@@ -646,14 +647,14 @@ def main():
 		if current_regs_pointer is not None:
 			ctxt_regs = rParser.read_word(current_regs_pointer)
 			if ctxt_regs != 0x0:
-				print 'current_regs is not NULL'
+				print('current_regs is not NULL')
 			else:
 				cpu_ctxt_regs_pointer = rParser.get_address_of_symbol("cpu_ctxt_regs")
 				if cpu_ctxt_regs_pointer is not None:
 					ctxt_regs = cpu_ctxt_regs_pointer
 
 		if ctxt_regs is None:
-			print 'System is not crashed'
+			print('System is not crashed')
 			return None
 
 		framePointer = rParser.read_word(ctxt_regs+(4* FP))
@@ -663,7 +664,7 @@ def main():
 		# There are spl case where PC can be invalid, So assigning LR to PC
 		if ( programCounter < g_stext or programCounter > g_etext):
 			# This is possible for a prefetch abort. so am taking care by assigning LR to PC
-			print "It's a Prefetch abort at Addr : ", hex(programCounter)
+			print("It's a Prefetch abort at Addr : ", hex(programCounter))
 			programCounter = linkRegister
 
 
@@ -690,21 +691,21 @@ def main():
 		# Reading the stack size value from tbe tcb_s struct
 		stackSize = rParser.read_word(current_task_addr+0x2c)
 
-		print '&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
-		print ''
-		print "Board Crashed at :"
-		print "PC: [0x{0:x}] {1}+0x{2:x}]\"".format(programCounter,temp1_symname,temp1_offset)
-		print "LR: [0x{0:x}] {1}+0x{2:x}]\"".format(linkRegister,temp2_symname,temp2_offset)
-		print ' '
-		print "FP: 0x{0:x} and SP: 0x{1:x}".format(framePointer, stackPointer)
-		print ' '
-		print 'CALL STACK of Aborted task: '
-		print '*******************************************************************'
+		print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+		print('')
+		print("Board Crashed at :")
+		print("PC: [0x{0:x}] {1}+0x{2:x}]\"".format(programCounter,temp1_symname,temp1_offset))
+		print("LR: [0x{0:x}] {1}+0x{2:x}]\"".format(linkRegister,temp2_symname,temp2_offset))
+		print(' ')
+		print("FP: 0x{0:x} and SP: 0x{1:x}".format(framePointer, stackPointer))
+		print(' ')
+		print('CALL STACK of Aborted task: ')
+		print('*******************************************************************')
 
 		rParser.unwind_backtrace_with_framepointer(framePointer,stackPointer,linkRegister,programCounter,stackSize)
-		print ''
-		print ''
-		print '&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
+		print('')
+		print('')
+		print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
 
 
 		g_mmheap = rParser.get_address_of_symbol("g_mmheap")
@@ -715,7 +716,7 @@ def main():
 		fd.close()
 
 		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
-			print 'DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage'
+			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
 			return
 
 		# This information depends on the mm_heap_s structure
@@ -758,13 +759,13 @@ def main():
 		start_heap = rParser.read_word(g_mmheap + HEAP_START_POINT)
 		end_heap = rParser.read_word(g_mmheap + HEAP_START_POINT + 4)
 
-		print ''
-		print ''
-		print 'Details of Heap Usages (Size in Bytes)'
-		print ''
-		print 'start heap address : ', hex(start_heap)
-		print 'end heap address   : ', hex(end_heap)
-		print ''
+		print('')
+		print('')
+		print('Details of Heap Usages (Size in Bytes)')
+		print('')
+		print('start heap address : ', hex(start_heap))
+		print('end heap address   : ', hex(end_heap))
+		print('')
 		point = start_heap + SIZE_OF_ALLOC_NODE
 
 		stack_size = [0 for i in range(max_tasks)]
@@ -778,9 +779,9 @@ def main():
 				idle_stack_size += int(data[index])
 				index += 1
 		stack_size[0] = idle_stack_size
-		print '******************************************************************'
-		print '  MemAddr |   Size   | Status |  Pid  |           Owner           '
-		print '----------|----------|--------|-------|---------------------------'
+		print('******************************************************************')
+		print('  MemAddr |   Size   | Status |  Pid  |           Owner           ')
+		print('----------|----------|--------|-------|---------------------------')
 		f = open(file_data, 'w')
 		while point < end_heap:
 			size = rParser.read_word(point)
@@ -792,37 +793,37 @@ def main():
 				data = fd_popen.read()
 				fd_popen.close()
 				if pid >= 0:
-					print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(pid), data[14:],
+					print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(pid), data[14:], end=' ')
 					f.write(str(size) + ' 0 ' + str(hex(point)) + ' ' + str(pid) + ' ' + data[14:])
 				else: # If pid is less than 0, it is the stack size of (-pid)
 					stack_size[(-pid) & (max_tasks - 1)] = size
-					print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(-pid), data[14:],
+					print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(-pid), data[14:], end=' ')
 					f.write(str(size) + ' 1 ' + str(hex(point)) + ' ' + str(-pid) + ' ' + data[14:])
 			else:
-				print '{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Free'), '{:6}|'.format("")
+				print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Free'), '{:6}|'.format(""))
 				f.write(str(size) +' 2 ' + str(hex(point)))
 			# next node
 			point = point + size
 
 		f.close()
-		print ''
-		print '***********************************************************'
-		print '       Summary of Heap Usages (Size in Bytes)'
-		print '***********************************************************'
+		print('')
+		print('***********************************************************')
+		print('       Summary of Heap Usages (Size in Bytes)')
+		print('***********************************************************')
 
 		heap_size = rParser.read_word(g_mmheap + HEAP_SIZE_POINT)
-		print 'HEAP SIZE        : ', heap_size
+		print('HEAP SIZE        : ', heap_size)
 
 		peack_alloc_size = rParser.read_word(g_mmheap + PEAK_ALLOC_SIZE_POINT)
-		print 'PEAK ALLOC SIZE  : ', peack_alloc_size
+		print('PEAK ALLOC SIZE  : ', peack_alloc_size)
 
 		total_alloc_size = rParser.read_word(g_mmheap + TOTAL_ALLOC_SIZE_POINT)
-		print 'TOTAL ALLOC SIZE : ', total_alloc_size
-		print 'FREE SIZE        : ', heap_size - total_alloc_size
-		print ''
-		print '***********************************************************'
-		print '  PID  | STACK SIZE |  CUR ALLOC SIZE   | PEAK ALLOC SIZE |'
-		print '-------|------------|-------------------|-----------------|'
+		print('TOTAL ALLOC SIZE : ', total_alloc_size)
+		print('FREE SIZE        : ', heap_size - total_alloc_size)
+		print('')
+		print('***********************************************************')
+		print('  PID  | STACK SIZE |  CUR ALLOC SIZE   | PEAK ALLOC SIZE |')
+		print('-------|------------|-------------------|-----------------|')
 		INVALID_PROCESS_ID = 0xFFFFFFFF
 
 		alloc_list = ALLOC_LIST_POINT + g_mmheap
@@ -832,12 +833,12 @@ def main():
 				# This information depends on the heapinfo_tcb_info_t
 				cur_alloc = rParser.read_word(alloc_list + 4)
 				peak_alloc = rParser.read_word(alloc_list + 8)
-				print '{:^7}|'.format(pid), '{:>7}'.format(stack_size[i]), '   |', '{:>13}'.format(cur_alloc), '    |', '{:>13}'.format(peak_alloc), '  |'
+				print('{:^7}|'.format(pid), '{:>7}'.format(stack_size[i]), '   |', '{:>13}'.format(cur_alloc), '    |', '{:>13}'.format(peak_alloc), '  |')
 			# next alloc list
 			alloc_list += SIZE_OF_HEAPINFO_TCB_INFO
 
-	except Exception, e:
-		print "ERROR:", e
+	except Exception as e:
+		print("ERROR:", e)
 
 
 if __name__ == '__main__':
