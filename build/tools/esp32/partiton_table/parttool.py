@@ -36,7 +36,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import print_function, division
+
+from __future__ import print_function
 import argparse
 import os
 import re
@@ -60,7 +61,7 @@ def critical(msg):
     if not quiet:
         sys.stderr.write(msg)
         sys.stderr.write('\n')
-               
+
 def main():
     global quiet
     parser = argparse.ArgumentParser(description='Returns info about the required partition.')
