@@ -54,7 +54,9 @@
 
 ifeq ($(CONFIG_NET_LOCAL),y)
 
-NET_CSRCS += uds_socket.c uds_sockets.c uds_sockif.c uds_close.c
+SOCK_CSRCS += uds_bind.c uds_connect.c uds_getsockname.c uds_getpeername.c
+SOCK_CSRCS += uds_recv.c uds_recvfrom.c uds_send.c uds_sendto.c
+SOCK_CSRCS += uds_socket.c 
 
 # Support for network access using streams
 

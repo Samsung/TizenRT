@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * net/socket/net_checksd.c
+ * net/socket/recv.c
  *
- *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2008, 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,12 +55,11 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#ifdef CONFIG_NET
 
+#include <sys/types.h>
 #include <sys/socket.h>
-
-#include <sched.h>
 #include <errno.h>
-#include <debug.h>
 
 #include "local/uds_socket.h"
 
@@ -69,33 +68,29 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: uds_checksd
+ * Name: uds_recv
  *
  * Description:
- *   Check if the socket descriptor is valid for the provided TCB and if it
- *   supports the requested access.  This trivial operation is part of the
- *   fdopen() operation when the fdopen() is performed on a socket descriptor.
- *   It simply performs some sanity checking before permitting the socket
- *   descriptor to be wrapped as a C FILE stream.
+ *   The recv() call is identical to recvfrom() with a NULL from parameter.
+ *
+ * Input Parameters:
+ *   sockfd   Socket descriptor of socket
+ *   buf      Buffer to receive data
+ *   len      Length of buffer
+ *   flags    Receive flags
+ *
+ * Returned Value:
+ *  (see recvfrom)
+ *
+ * Assumptions:
  *
  ****************************************************************************/
 
-int uds_checksd(int sd, int oflags)
+ssize_t uds_recv(int sockfd, FAR void *buf, size_t len, int flags)
 {
-	FAR struct socket *psock = sockfd_socket(sd);
+	/* recv is a cancellation point, but that can all be handled by recvfrom */
 
-	/* Verify that the sockfd corresponds to valid, allocated socket */
-
-	if (!psock || psock->s_crefs <= 0) {
-		nvdbg("No valid socket for sd: %d\n", sd);
-		return -EBADF;
-	}
-
-	/* NOTE:  We permit the socket FD to be "wrapped" in a stream as
-	 * soon as the socket descriptor is created by socket().  Therefore
-	 * (1) we don't care if the socket is connected yet, and (2) there
-	 * are no access restrictions that can be enforced yet.
-	 */
-
-	return OK;
+	return uds_recvfrom(sockfd, buf, len, flags, NULL, 0);
 }
+
+#endif /* CONFIG_NET */
