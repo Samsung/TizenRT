@@ -20,9 +20,11 @@
 # Description:
 # graphical user interface of dumpParser.
 # Real parsing is operated at dumpParser.py
-from Tkinter import *
-import ttk
-import tkFileDialog
+
+from __future__ import print_function
+from tkinter import *
+import tkinter.ttk
+import tkinter.filedialog
 import os
 import tempfile
 import subprocess
@@ -55,7 +57,7 @@ class PathFrame(Frame):
 		btn.grid(column=2, row=0)
 
 	def OnButtonClick(self):
-		temp = tkFileDialog.askopenfilename(parent=self)
+		temp = tkinter.filedialog.askopenfilename(parent=self)
 		if len(temp) > 0:
 			self.path.set(temp)
 
@@ -114,7 +116,7 @@ class HeapInfo(Tk):
 					size -= remain
 					len = 0
 
-				separator = ttk.Separator(frame, orient="vertical")
+				separator = tkinter.ttk.Separator(frame, orient="vertical")
 				separator.pack(side = 'left')
 
 				# linens[0] = heap size, linens[1] = heap status, linens[2] = Mem address, linens[3] = pid, linens[4] = Owner
@@ -239,7 +241,7 @@ class DumpParser(Tk):
 
 		elif self.modevar.get() == 4:
 			text = self.logtext.get("1.0",END)
-			lines = filter(None, text.split("\n"))
+			lines = [_f for _f in text.split("\n") if _f]
 			for line in lines:
 				addr_start = line.find("[<")
 				addr_end = line.find(">]")
