@@ -68,13 +68,13 @@
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
 
-/* Index of 'kernel' data in binary table, bin_table. */
-#define KERNEL_IDX                 0
-
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 /* bin id value of zero will indicate the library */
 #define BM_BINID_LIBRARY	0
 #endif
+
+/* Index of 'Common Library' data in binary table. */
+#define COMMLIB_IDX                0
 
 /* The number of arguments for loading thread */
 #define LOADTHD_ARGC               2
@@ -123,8 +123,8 @@ struct faultmsg_s {
 typedef struct faultmsg_s faultmsg_t;
 #endif
 
-/* Binary data type in binary table */
-struct binmgr_bininfo_s {
+/* User binary data type in binary table */
+struct binmgr_uinfo_s {
 	pid_t bin_id;
 	uint8_t state;
 	uint8_t rttype;
@@ -136,7 +136,17 @@ struct binmgr_bininfo_s {
 	char kernel_ver[KERNEL_VER_MAX];
 	sq_queue_t cb_list; // list node type : statecb_node_t
 };
-typedef struct binmgr_bininfo_s binmgr_bininfo_t;
+typedef struct binmgr_uinfo_s binmgr_uinfo_t;
+
+/* Kernel binary data type in kernel table */
+struct binmgr_kinfo_s {
+	char name[BIN_NAME_MAX];
+	uint8_t inuse_idx;
+	uint32_t part_count;
+	part_info_t part_info[KERNEL_BIN_COUNT];
+	char version[KERNEL_VER_MAX];
+};
+typedef struct binmgr_kinfo_s binmgr_kinfo_t;
 
 struct statecb_node_s {
 	struct statecb_node_s *flink;
@@ -145,27 +155,27 @@ struct statecb_node_s {
 };
 typedef struct statecb_node_s statecb_node_t;
 
-binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx);
-#define BIN_ID(bin_idx)                                 binary_manager_get_binary_data(bin_idx)->bin_id
-#define BIN_STATE(bin_idx)                              binary_manager_get_binary_data(bin_idx)->state
-#define BIN_RTTYPE(bin_idx)                             binary_manager_get_binary_data(bin_idx)->rttype
-#define BIN_RTCOUNT(bin_idx)                            binary_manager_get_binary_data(bin_idx)->rtcount
-#define BIN_USEIDX(bin_idx)                             binary_manager_get_binary_data(bin_idx)->inuse_idx
-#define BIN_PARTSIZE(bin_idx, part_idx)                 binary_manager_get_binary_data(bin_idx)->part_info[part_idx].part_size
-#define BIN_PARTNUM(bin_idx, part_idx)                  binary_manager_get_binary_data(bin_idx)->part_info[part_idx].part_num
+binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
+#define BIN_ID(bin_idx)                                 binary_manager_get_udata(bin_idx)->bin_id
+#define BIN_STATE(bin_idx)                              binary_manager_get_udata(bin_idx)->state
+#define BIN_RTTYPE(bin_idx)                             binary_manager_get_udata(bin_idx)->rttype
+#define BIN_RTCOUNT(bin_idx)                            binary_manager_get_udata(bin_idx)->rtcount
+#define BIN_USEIDX(bin_idx)                             binary_manager_get_udata(bin_idx)->inuse_idx
+#define BIN_PARTSIZE(bin_idx, part_idx)                 binary_manager_get_udata(bin_idx)->part_info[part_idx].part_size
+#define BIN_PARTNUM(bin_idx, part_idx)                  binary_manager_get_udata(bin_idx)->part_info[part_idx].part_num
 
-#define BIN_VER(bin_idx)                                binary_manager_get_binary_data(bin_idx)->bin_ver
-#define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_binary_data(bin_idx)->kernel_ver
-#define BIN_CBLIST(bin_idx)                             binary_manager_get_binary_data(bin_idx)->cb_list
+#define BIN_VER(bin_idx)                                binary_manager_get_udata(bin_idx)->bin_ver
+#define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->kernel_ver
+#define BIN_CBLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->cb_list
 
-#define BIN_LOAD_ATTR(bin_idx)                          binary_manager_get_binary_data(bin_idx)->load_attr
-#define BIN_NAME(bin_idx)                               binary_manager_get_binary_data(bin_idx)->load_attr.bin_name
-#define BIN_SIZE(bin_idx)                               binary_manager_get_binary_data(bin_idx)->load_attr.bin_size
-#define BIN_RAMSIZE(bin_idx)                            binary_manager_get_binary_data(bin_idx)->load_attr.ram_size
-#define BIN_OFFSET(bin_idx)                             binary_manager_get_binary_data(bin_idx)->load_attr.offset
-#define BIN_STACKSIZE(bin_idx)                          binary_manager_get_binary_data(bin_idx)->load_attr.stack_size
-#define BIN_PRIORITY(bin_idx)                           binary_manager_get_binary_data(bin_idx)->load_attr.priority
-#define BIN_COMPRESSION_TYPE(bin_idx)                   binary_manager_get_binary_data(bin_idx)->load_attr.compression_type
+#define BIN_LOAD_ATTR(bin_idx)                          binary_manager_get_udata(bin_idx)->load_attr
+#define BIN_NAME(bin_idx)                               binary_manager_get_udata(bin_idx)->load_attr.bin_name
+#define BIN_SIZE(bin_idx)                               binary_manager_get_udata(bin_idx)->load_attr.bin_size
+#define BIN_RAMSIZE(bin_idx)                            binary_manager_get_udata(bin_idx)->load_attr.ram_size
+#define BIN_OFFSET(bin_idx)                             binary_manager_get_udata(bin_idx)->load_attr.offset
+#define BIN_STACKSIZE(bin_idx)                          binary_manager_get_udata(bin_idx)->load_attr.stack_size
+#define BIN_PRIORITY(bin_idx)                           binary_manager_get_udata(bin_idx)->load_attr.priority
+#define BIN_COMPRESSION_TYPE(bin_idx)                   binary_manager_get_udata(bin_idx)->load_attr.compression_type
 
 /****************************************************************************
  * Function Prototypes
@@ -208,7 +218,9 @@ int binary_manager_load_binary(int bin_idx, void *binp);
 int binary_manager_load_binary(int bin_idx);
 #endif
 int binary_manager_loading(char *loading_data[]);
-uint32_t binary_manager_get_binary_count(void);
+uint32_t binary_manager_get_ucount(void);
+uint32_t binary_manager_get_kcount(void);
+binmgr_kinfo_t *binary_manager_get_kdata(void);
 int binary_manager_get_index_with_binid(int bin_id);
 void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);

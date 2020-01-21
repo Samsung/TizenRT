@@ -137,9 +137,9 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 static void binary_manager_update_partition_info(int partno, char *part_name, int partsize, const char *types)
 {
 	if (!strncmp(types, "kernel,", 7)) {
-		binary_manager_register_partition(partno, BINMGR_PART_KERNEL, part_name, partsize);
+		binary_manager_register_kpart(partno, partsize);
 	} else if (!strncmp(types, "bin,", 4)) {
-		binary_manager_register_partition(partno, BINMGR_PART_USRBIN, part_name, partsize);
+		binary_manager_register_upart(partno, part_name, partsize);
 	}
 }
 #endif

@@ -294,7 +294,7 @@ void binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 		return;
 	}
 
-	count = binary_manager_get_binary_count();
+	count = binary_manager_get_ucount();
 	fail_count = 0;
 
 	for (send_bin_idx = 1; send_bin_idx < count + 1; send_bin_idx++) {
