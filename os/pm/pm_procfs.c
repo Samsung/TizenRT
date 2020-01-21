@@ -112,7 +112,7 @@ struct power_file_s {
 struct power_procfs_entry_s {
 	const char *name;			/* Name of the directory entry */
 	size_t(*read)(FAR struct file *filep, FAR char *buffer, size_t buflen);
-	size_t(*write)(FAR struct file *filep, FAR char *buffer, size_t buflen);
+	size_t(*write)(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 	uint8_t type;
 };
 
@@ -124,7 +124,7 @@ struct power_procfs_entry_s {
 static int power_open(FAR struct file *filep, FAR const char *relpath, int oflags, mode_t mode);
 static int power_close(FAR struct file *filep);
 static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static ssize_t power_write(FAR struct file *filep, FAR char *buffer, size_t buflen);
+static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 
 static int power_dup(FAR const struct file *oldp, FAR struct file *newp);
 
@@ -141,10 +141,10 @@ static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size
 static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 #endif
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static size_t power_lock_write(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static size_t power_unlock_write(FAR struct file *filep, FAR char *buffer, size_t buflen);
+static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 #ifdef CONFIG_PM_ENTER_SLEEP
-static size_t enter_sleep_write(FAR struct file *filep, FAR char *buffer, size_t buflen);
+static size_t enter_sleep_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 #endif
 /****************************************************************************
  * Private Data
@@ -415,7 +415,7 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 {
 	FAR struct power_file_s *priv;
 	FAR struct pm_callback_s *callback;
-	FAR sq_entry_t *entry;
+	FAR dq_entry_t *entry;
 	size_t copysize;
 	size_t totalsize;
 	int domain;
@@ -449,11 +449,11 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 /****************************************************************************
  * Name: power_lock_write
  ****************************************************************************/
-static size_t power_lock_write(FAR struct file *filep, FAR char *buffer, size_t buflen)
+static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	int state = atoi(buffer);
 
-	if(state >= PM_NORMAL && state < PM_SLEEP) {
+	if (state >= PM_NORMAL && state < PM_SLEEP) {
 		pm_stay(0, state);
 		fvdbg("power locked!\n");
 	} else {
@@ -466,11 +466,11 @@ static size_t power_lock_write(FAR struct file *filep, FAR char *buffer, size_t 
 /****************************************************************************
  * Name: power_unlock_write
  ****************************************************************************/
-static size_t power_unlock_write(FAR struct file *filep, FAR char *buffer, size_t buflen)
+static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	int state = atoi(buffer);
 
-	if(state >= PM_NORMAL && state < PM_SLEEP) {
+	if (state >= PM_NORMAL && state < PM_SLEEP) {
 		pm_relax(0, state);
 		fvdbg("power unlocked!\n");
 	} else {
@@ -484,7 +484,7 @@ static size_t power_unlock_write(FAR struct file *filep, FAR char *buffer, size_
  * Name: enter_sleep_write
  ****************************************************************************/
  #ifdef CONFIG_PM_ENTER_SLEEP
-static size_t enter_sleep_write(FAR struct file *filep, FAR char *buffer, size_t buflen)
+static size_t enter_sleep_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	int len;
 	int ret;
@@ -493,13 +493,11 @@ static size_t enter_sleep_write(FAR struct file *filep, FAR char *buffer, size_t
 	p = memchr(buffer, '\n', buflen);
 	len = p ? p - buffer : buflen;
 
-	if (len == 5 && !strncmp(buffer, "sleep", len))
-	{
+	if (len == 5 && !strncmp(buffer, "sleep", len)) {
 		ret = up_pmsleep();
 		if (ret == -EAGAIN) {
 			fdbg("ERROR: PM state locked, try later:%d\n", ret);
-		}
-		else if (ret < 0) {
+		} else if (ret < 0) {
 			fdbg("ERROR: Some of the drivers refused the state change:%d\n", ret);
 		}
 	}
@@ -598,32 +596,32 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
  * Name: power_write
  ****************************************************************************/
 
-static ssize_t power_write(FAR struct file *filep, FAR char *buffer, size_t buflen)
+static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
-        FAR struct power_file_s *priv;
-        ssize_t ret;
+	FAR struct power_file_s *priv;
+	ssize_t ret;
 
-        fvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
+	fvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
 
-        /* Recover our private data from the struct file instance */
+	/* Recover our private data from the struct file instance */
 
-        priv = (FAR struct power_file_s *)filep->f_priv;
-        DEBUGASSERT(priv);
+	priv = (FAR struct power_file_s *)filep->f_priv;
+	DEBUGASSERT(priv);
 
-        /* Perform the read based on the directory entry */
+	/* Perform the read based on the directory entry */
 
-        ret = 0;
+	ret = 0;
 
-        if (priv->dir.base.level == 3 && priv->dir.direntry < g_power_direntrycount) {
-                ret = g_power_direntry[priv->dir.direntry].write(filep, buffer, buflen);
-        }
+	if (priv->dir.base.level == 3 && priv->dir.direntry < g_power_direntrycount) {
+		ret = g_power_direntry[priv->dir.direntry].write(filep, buffer, buflen);
+	}
 
-        /* Update the file offset */
-        if (ret > 0) {
-                filep->f_pos += ret;
-        }
+	/* Update the file offset */
+	if (ret > 0) {
+		filep->f_pos += ret;
+	}
 
-        return ret;
+	return ret;
 }
 /****************************************************************************
  * Name: power_dup

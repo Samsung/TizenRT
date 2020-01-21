@@ -102,8 +102,7 @@ static void pm_timer_cb(int argc, wdparm_t arg1, ...)
 static void pm_timer(int domain)
 {
 	FAR struct pm_domain_s *pdom = &g_pmglobals.domain[domain];
-	static const int pmtick[3] =
-	{
+	static const int pmtick[3] = {
 		TIME_SLICE_TICKS * CONFIG_PM_IDLEENTER_COUNT,
 		TIME_SLICE_TICKS * CONFIG_PM_STANDBYENTER_COUNT,
 		TIME_SLICE_TICKS * CONFIG_PM_SLEEPENTER_COUNT
@@ -118,7 +117,7 @@ static void pm_timer(int domain)
 		int left  = wd_gettime(pdom->wdog);
 
 		if (!WDOG_ISACTIVE(pdom->wdog) || abs(delay - left) > PM_TIMER_GAP) {
-			wd_start(pdom->wdog, delay, pm_timer_cb, 0);
+			wd_start(pdom->wdog, delay, (wdentry_t)pm_timer_cb, 0);
 		}
 	} else {
 		wd_cancel(pdom->wdog);
