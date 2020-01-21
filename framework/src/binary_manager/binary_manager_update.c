@@ -25,6 +25,7 @@
 #include <debug.h>
 #include <sched.h>
 #include <string.h>
+#include <fcntl.h>
 #include <tinyara/binary_manager.h>
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
@@ -121,6 +122,51 @@ int binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_li
 		memcpy(binary_info_list, &response_msg.data, sizeof(binary_update_info_list_t));
 	} else {
 		bmdbg("Binary manager getinfo_all FAIL %d\n", response_msg.result);
+	}
+
+	return response_msg.result;
+}
+
+int binary_manager_open_new_entry(char *binary_name, int version)
+{
+	int fd;
+	int ret;
+	binmgr_update_bin_t data;
+	binmgr_request_t request_msg;
+	binmgr_createbin_response_t response_msg;
+
+	if (binary_name == NULL || version < 0) {
+		bmdbg("Invalid parameter\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	strncpy(data.bin_name, binary_name, BIN_NAME_MAX);
+	data.version = version;
+
+	ret = binary_manager_set_request(&request_msg, BINMGR_CREATE_BIN, &data);
+	if (ret < 0) {
+		return BINMGR_COMMUNICATION_FAIL;
+	}
+
+	ret = binary_manager_send_request(&request_msg);
+	if (ret < 0) {
+		bmdbg("Failed to send request msg %d\n", ret);
+		return BINMGR_COMMUNICATION_FAIL;
+	}
+
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_createbin_response_t));
+	if (ret < 0) {
+		bmdbg("Failed to receive response msg %d\n", ret);
+		return BINMGR_COMMUNICATION_FAIL;
+	}
+
+	if (response_msg.result == BINMGR_OK) {
+		fd = open(response_msg.binpath, O_RDWR, 0666);
+		if (fd < 0) {
+			bmdbg("Failed to open file %s : %d\n", response_msg.binpath, errno);
+			return BINMGR_OPERATION_FAIL;
+		}
+		return fd;
 	}
 
 	return response_msg.result;

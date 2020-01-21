@@ -115,9 +115,7 @@ void binary_manager_register_upart(int part_num, char *name, int part_size)
 	for (bin_idx = 0; bin_idx < g_bin_count; bin_idx++) {
 		/* Already Registered */
 		if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
-			BIN_PARTNUM(bin_idx, 1) = part_num;
-			BIN_PARTSIZE(bin_idx, 1) = part_size;
-			bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
+			bmdbg("Already registered for binary %s\n", BIN_NAME(bin_idx));
 			return;
 		}
 	}
@@ -125,13 +123,13 @@ void binary_manager_register_upart(int part_num, char *name, int part_size)
 	BIN_ID(g_bin_count) = -1;
 	BIN_RTCOUNT(g_bin_count) = 0;
 	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
-	BIN_PARTNUM(g_bin_count, 0) = part_num;
-	BIN_PARTSIZE(g_bin_count, 0) = part_size;
+	BIN_PARTNUM(g_bin_count) = part_num;
+	BIN_PARTSIZE(g_bin_count) = part_size;
 	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 	sq_init(&BIN_CBLIST(g_bin_count));
 	g_bin_count++;
 
-	bmvdbg("[USER%d : 1] %s size %d num %d\n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count, 0), BIN_PARTNUM(g_bin_count, 0));
+	bmvdbg("[USER %d] %s size %d num %d\n", g_bin_count, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx), BIN_PARTNUM(bin_idx));
 }
 
 /****************************************************************************

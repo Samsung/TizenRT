@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
+#include <dirent.h>
 #include <stdint.h>
 #include <string.h>
 #include <queue.h>
@@ -74,42 +75,44 @@ typedef struct binary_header_s binary_header_t;
  *	 This function reads header and checks whether it is valid or not.
  *
  ****************************************************************************/
-static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t *header_data)
+static int binary_manager_read_header(char *path, binary_header_t *header_data)
 {
 	int fd;
 	int ret;
 	int read_size;
 	int file_size;
+	bool need_unlink;
 	uint32_t crc_hash = 0;
 	uint32_t check_crc = 0;
 	uint8_t crc_buffer[CRC_BUFFER_SIZE];
-	char devname[BINMGR_DEVNAME_LEN];
 
 	memset(header_data, 0, sizeof(binary_header_t));
 
-	snprintf(devname, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
-	fd = open(devname, O_RDONLY);
+	need_unlink = false;
+
+	fd = open(path, O_RDONLY);
 	if (fd < 0) {
-		bmdbg("Failed to open %s: %d, errno %d\n", devname, ret, errno);
+		bmdbg("Failed to open %s: %d, errno %d\n", path, ret, errno);
 		return ERROR;
 	}
 
 	/* Read the checksum */
 	ret = read(fd, (FAR uint8_t *)&crc_hash, CHECKSUM_SIZE);
 	if (ret != CHECKSUM_SIZE) {
-		bmdbg("Failed to read %s: %d, errno %d\n", devname, ret, errno);
+		bmdbg("Failed to read %s: %d, errno %d\n", path, ret, errno);
 		goto errout_with_fd;
 	}
 
 	/* Read the binary header */
 	ret = read(fd, (FAR uint8_t *)header_data, sizeof(binary_header_t));
 	if (ret != sizeof(binary_header_t)) {
-		bmdbg("Failed to read %s: %d, errno %d\n", devname, ret, errno);
+		bmdbg("Failed to read %s: %d, errno %d\n", path, ret, errno);
 		goto errout_with_fd;
 	}
 
 	/* Verify header data */
 	if (header_data->bin_type != BIN_TYPE_ELF) {
+		need_unlink = true;
 		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
 		goto errout_with_fd;
 	}
@@ -129,6 +132,7 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 	}
 
 	if (check_crc != crc_hash) {
+		need_unlink = true;
 		bmdbg("Failed to crc check : %u != %u\n", check_crc, crc_hash);
 		goto errout_with_fd;
 	}
@@ -137,9 +141,12 @@ static int binary_manager_read_header(int bin_idx, int part_idx, binary_header_t
 	close(fd);
 
 	return OK;
+
 errout_with_fd:
 	close(fd);
-
+	if (need_unlink) {
+		unlink(path);
+	}
 	return ERROR;
 }
 
@@ -147,28 +154,194 @@ errout_with_fd:
  * Name: binary_manager_load_binary
  *
  * Description:
- *	 This function loads binary with index in binary table.
+ *	 This function loads and executes binary.
  *
  ****************************************************************************/
-int binary_manager_load_binary(int bin_idx)
+static int binary_manager_load_binary(int bin_idx, char *path, binary_header_t *header_data)
 {
 	int ret;
-	int version;
-	int part_idx;
-	int latest_ver;
-	int latest_idx;
 	int retry_count;
-	int valid_bin_count;
 	load_attr_t load_attr;
-	char devname[BINMGR_DEVNAME_LEN];
-	binary_header_t header_data[PARTS_PER_BIN];
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp;
 #endif
 
+	strncpy(load_attr.bin_name, header_data->bin_name, BIN_NAME_MAX);
+	load_attr.bin_size = header_data->bin_size;
+	load_attr.compression_type = header_data->compression_type;
+	load_attr.ram_size = header_data->bin_ramsize;
+	load_attr.stack_size = header_data->bin_stacksize;
+	load_attr.priority = header_data->bin_priority;
+	load_attr.offset = CHECKSUM_SIZE + header_data->header_size;
+	strncpy(load_attr.bin_ver, header_data->bin_ver, BIN_VER_MAX);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	binp = BIN_LOADINFO(bin_idx);
+	/* If current version is different from version to be loaded, Clean up backup data */
+	if (binp && strncmp(BIN_VER(bin_idx), header_data->bin_ver, strlen(BIN_VER(bin_idx)) + 1)) {
+		binp->reload = false;
+		binfmt_exit(binp);
+		binp = NULL;
+		BIN_LOADINFO(bin_idx) = NULL;
+	}
+	load_attr.binp = binp;
+#endif
+	bmvdbg("BIN[%d] %s %d %d\n", bin_idx, path, load_attr.bin_size, load_attr.offset);
+
+	retry_count = 0;
+	while (retry_count < BINMGR_LOADING_TRYCNT) {
+		ret = load_binary(bin_idx, path, &load_attr);
+		if (ret > 0) {
+			bmvdbg("Load '%s' success! pid = %d\n", path, ret);
+			/* Set the data in table from header */
+			BIN_LOAD_ATTR(bin_idx) = load_attr;
+			strncpy(BIN_KERNEL_VER(bin_idx), header_data->kernel_ver, KERNEL_VER_MAX);
+			strncpy(BIN_NAME(bin_idx), header_data->bin_name, BIN_NAME_MAX);
+			bmvdbg("BIN TABLE[%d] %d %d %s %s %s\n", bin_idx, BIN_SIZE(bin_idx), BIN_RAMSIZE(bin_idx), BIN_VER(bin_idx), BIN_KERNEL_VER(bin_idx), BIN_NAME(bin_idx));
+			return OK;
+		} else if (errno == ENOMEM) {
+			/* Sleep for a moment to get available memory */
+			usleep(1000);
+		}
+		retry_count++;
+		bmdbg("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
+	}
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	if (binp) {
+		/* If we are here it means that reload has failed. So perform cleanup */
+		((struct binary_s *)binp)->reload = false;
+		binfmt_exit(binp);
+		BIN_LOADINFO(bin_idx) = NULL;
+	}
+#endif
+	return ERROR;
+}
+
+/****************************************************************************
+ * Name: binary_manager_load_fs_binary
+ *
+ * Description:
+ *	 This function loads user binary from file system.
+ *
+ ****************************************************************************/
+static int binary_manager_load_fs_binary(int bin_idx)
+{
+	int ret;
+	DIR *dirp;
+	int name_len;
+	char *bin_name;
+	int file_idx;
+	int latest_ver;
+	int latest_idx;
+	int version;
+	int valid_bin_count;
+	char filepath[FILES_PER_BIN][BIN_FILEPATH_MAX];
+	binary_header_t header_data[FILES_PER_BIN];
+
+	bin_name = BIN_NAME(bin_idx);
+	name_len = strlen(bin_name);
+
 	latest_ver = -1;
 	latest_idx = -1;
 	valid_bin_count = 0;
+
+	/* Open a directory for user binaries, BINARY_DIR_PATH */
+	dirp = opendir(BINARY_DIR_PATH);
+	if (!dirp) {
+		bmdbg("Failed to open a directory, %s\n", BINARY_DIR_PATH);
+		return ERROR;
+	}
+
+	file_idx = 0;
+
+	bmvdbg("Open a directory, %s\n", BINARY_DIR_PATH);
+
+	/* Read each directory entry */
+	for (;;) {
+		struct dirent *entryp = readdir(dirp);
+		if (!entryp) {
+			/* Finished with this directory */
+			break;
+		}
+		/* Read and Verify a binary file */
+		if (DIRENT_ISFILE(entryp->d_type) \
+			&& !strncmp(entryp->d_name, bin_name, name_len) && entryp->d_name[name_len] == '_') {
+			snprintf(filepath[file_idx], BIN_FILEPATH_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
+			ret = binary_manager_read_header(filepath[file_idx],  &header_data[file_idx]);
+			if (ret == OK) {
+				valid_bin_count++;
+				version = (int)atoi(header_data[file_idx].bin_ver);
+				bmvdbg("Found valid header in version %d\n", version);
+				if (version > latest_ver) {
+					latest_ver = version;
+					latest_idx = file_idx;
+					bmvdbg("Latest version %d, idx %d\n", latest_ver, latest_idx);
+				}
+			}
+			file_idx++;
+		}
+	}
+	closedir(dirp);
+
+	if (valid_bin_count == 0) {
+		bmdbg("No valid binary in fs : %s\n", BIN_NAME(bin_idx));
+		return ERROR;
+	}
+
+	do {
+		ret = binary_manager_load_binary(bin_idx, filepath[latest_idx], &header_data[latest_idx]);
+		if (ret == OK) {
+			return BINMGR_OK;
+		}
+		if (--valid_bin_count > 0) {
+			/* Change index 0 to 1 and 1 to 0. */
+			latest_idx ^= 1;
+		}
+	} while (valid_bin_count > 0);
+
+	return ERROR;
+}
+
+/****************************************************************************
+ * Name: binary_manager_load_factory_binary
+ *
+ * Description:
+ *	 This function loads user binary from registered partition.
+ *
+ ****************************************************************************/
+static int binary_manager_load_factory_binary(int bin_idx)
+{
+	int ret;
+	char devname[BINMGR_DEVNAME_LEN];
+	binary_header_t header_data;
+
+	/* Read header data of binary partition */
+	snprintf(devname, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx));
+	ret = binary_manager_read_header(devname, &header_data);
+	if (ret != OK) {
+		bmdbg("Failed to find valid header of factory binary %s\n", BIN_NAME(bin_idx));
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	/* Load binary */
+	ret = binary_manager_load_binary(bin_idx, devname, &header_data);
+	if (ret == OK) {
+		bmvdbg("Loading Success, %s\n", BIN_NAME(bin_idx));
+		return BINMGR_OK;
+	}
+
+	return ERROR;
+}
+
+/****************************************************************************
+ * Name: binary_manager_load
+ *
+ * Description:
+ *	 This function loads user binary with binary index.
+ *
+ ****************************************************************************/
+static int binary_manager_load(int bin_idx)
+{
+	int ret;
 
 	if (bin_idx < 0) {
 		bmdbg("Invalid bin idx %d\n", bin_idx);
@@ -181,87 +354,14 @@ int binary_manager_load_binary(int bin_idx)
 		return ERROR;
 	}
 
-	/* Read header data of binary partitions */
-	for (part_idx = 0; part_idx < PARTS_PER_BIN; part_idx++) {
-		if (BIN_PARTNUM(bin_idx, part_idx) < 0) {
-			continue;
-		}
-		ret = binary_manager_read_header(bin_idx, part_idx, &header_data[part_idx]);
-		if (ret == OK) {
-			valid_bin_count++;
-			version = (int)atoi(header_data[part_idx].bin_ver);
-			bmvdbg("Found valid header in part %d, version %d\n", part_idx, version);
-			if (version > latest_ver) {
-				latest_ver = version;
-				latest_idx = part_idx;
-			}
-		}
+	/* Load binary from file system */
+	ret = binary_manager_load_fs_binary(bin_idx);
+	if (ret != OK) {
+		/* If it is failed, Try to load binary in partition */
+		ret = binary_manager_load_factory_binary(bin_idx);
 	}
 
-	if (valid_bin_count == 0) {
-		bmdbg("Failed to find valid header of binary %s\n", BIN_NAME(bin_idx));
-		return ERROR;
-	}
-
-	/* Load binary */
-	do {
-		strncpy(load_attr.bin_name, header_data[latest_idx].bin_name, BIN_NAME_MAX);
-		snprintf(devname, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, latest_idx));
-		load_attr.bin_size = header_data[latest_idx].bin_size;
-		load_attr.compression_type = header_data[latest_idx].compression_type;
-		load_attr.ram_size = header_data[latest_idx].bin_ramsize;
-		load_attr.stack_size = header_data[latest_idx].bin_stacksize;
-		load_attr.priority = header_data[latest_idx].bin_priority;
-		load_attr.offset = CHECKSUM_SIZE + header_data[latest_idx].header_size;
-		strncpy(load_attr.bin_ver, header_data->bin_ver, BIN_VER_MAX);
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		binp = BIN_LOADINFO(bin_idx);
-		/* If current version is different from version to be loaded, Clean up backup data */
-		if (binp && strncmp(BIN_VER(bin_idx), header_data[latest_idx].bin_ver, strlen(BIN_VER(bin_idx)) + 1)) {
-			binp->reload = false;
-			binfmt_exit(binp);
-			binp = NULL;
-			BIN_LOADINFO(bin_idx) = NULL;
-		}
-		load_attr.binp = binp;
-#endif
-		bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, load_attr.bin_size, load_attr.offset);
-
-		retry_count = 0;
-		
-		while (retry_count < BINMGR_LOADING_TRYCNT) {
-			ret = load_binary(bin_idx, devname, &load_attr);
-			if (ret > 0) {
-				bmvdbg("Load '%s' success! pid = %d\n", devname, ret);
-				/* Set the data in table from header */
-				BIN_USEIDX(bin_idx) = latest_idx;
-				BIN_LOAD_ATTR(bin_idx) = load_attr;
-				strncpy(BIN_KERNEL_VER(bin_idx), header_data[latest_idx].kernel_ver, KERNEL_VER_MAX);
-				strncpy(BIN_NAME(bin_idx), header_data[latest_idx].bin_name, BIN_NAME_MAX);
-				bmvdbg("BIN TABLE[%d] %d %d %s %s %s\n", bin_idx, BIN_SIZE(bin_idx), BIN_RAMSIZE(bin_idx), BIN_VER(bin_idx), BIN_KERNEL_VER(bin_idx), BIN_NAME(bin_idx));
-				return OK;
-			} else if (errno == ENOMEM) {
-				/* Sleep for a moment to get available memory */
-				usleep(1000);
-			}
-			retry_count++;
-			bmdbg("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
-		}
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		if (binp) {
-			/* If we are here it means that reload has failed. So perform cleanup */
-			((struct binary_s *)binp)->reload = false;
-			binfmt_exit(binp);
-			BIN_LOADINFO(bin_idx) = NULL;
-		}
-#endif
-		if (--valid_bin_count > 0) {
-			/* Change index 0 to 1 and 1 to 0. */
-			latest_idx ^= 1;
-		}
-	} while (valid_bin_count > 0);
-
-	return ERROR;
+	return ret;
 }
 
 /****************************************************************************
@@ -282,7 +382,7 @@ static int binary_manager_load_all(void)
 	bin_count = binary_manager_get_binary_count();
 
 	for (bin_idx = 0; bin_idx < bin_count; bin_idx++) {
-		ret = binary_manager_load_binary(bin_idx);
+		ret = binary_manager_load(bin_idx);
 		if (ret == OK) {
 			load_cnt++;
 		}
@@ -407,7 +507,7 @@ static int binary_manager_reload(int binid)
 	}
 
 	/* Load binary */
-	ret = binary_manager_load_binary(bin_idx);
+	ret = binary_manager_load(bin_idx);
 	if (ret != OK) {
 		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
 		return BINMGR_OPERATION_FAIL;
@@ -437,7 +537,6 @@ static int binary_manager_update(char *bin_name)
 {
 	int ret;
 	int bin_idx;
-	binary_header_t header_data;
 
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx < 0) {
@@ -452,12 +551,6 @@ static int binary_manager_update(char *bin_name)
 
 	/* Terminate binary if binary is already loaded */
 	if (BIN_STATE(bin_idx) == BINARY_LOADING_DONE || BIN_STATE(bin_idx) == BINARY_RUNNING) {
-		/* Check if there is a binary with the latest version in inactive partition */
-		ret = binary_manager_read_header(bin_idx, BIN_USEIDX(bin_idx) ^ 1, &header_data);
-		if (ret != OK || BIN_VER(bin_idx) <= (int)atoi(header_data.bin_ver)) {
-			bmdbg("Already latest version\n");
-			return BINMGR_ALREADY_UPDATED;
-		}
 		ret = binary_manager_terminate_binary(bin_idx);
 		if (ret != OK) {
 			bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
@@ -466,7 +559,7 @@ static int binary_manager_update(char *bin_name)
 	}
 
 	/* Load binary */
-	ret = binary_manager_load_binary(bin_idx);
+	ret = binary_manager_load(bin_idx);
 	if (ret != OK) {
 		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
 		return BINMGR_OPERATION_FAIL;

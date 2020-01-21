@@ -103,6 +103,17 @@ int binary_manager_register_state_changed_callback(binmgr_statecb_t handler, voi
  */
 int binary_manager_unregister_state_changed_callback(void);
 
+/**
+ * @brief Create a empty file where to be downloaded with version.
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It creates and opens a empty file where to be downloaded binary with version.
+ *  User can perform file operations with returned fd : read, write, lseek, close.
+ * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
+ *         fd of a created file on success. On failure, negative value is returned.
+ * @since TizenRT v3.1 PRE
+ */
+int binary_manager_open_new_entry(char *binary_name, int version);
+
 #endif
 /**
  * @}

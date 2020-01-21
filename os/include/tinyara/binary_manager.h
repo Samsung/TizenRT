@@ -25,9 +25,11 @@
 
 #include <tinyara/config.h>
 #include <stdint.h>
+#include <limits.h>
+
+#include <tinyara/fs/fs.h>
 
 #ifdef CONFIG_BINARY_MANAGER
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -56,6 +58,12 @@
 /* The maximum length of kernel version */
 #define KERNEL_VER_MAX                   8
 
+/* The maximum length of binary file name */
+#define BIN_FILENAME_MAX                 NAME_MAX
+
+/* The maximum length of binary file path */
+#define BIN_FILEPATH_MAX                 CONFIG_PATH_MAX
+
 /* The length of dev name */
 #define BINMGR_DEVNAME_LEN               16
 
@@ -68,6 +76,11 @@
 #define KERNEL_BIN_COUNT                 2
 
 #define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
+
+#define BINARY_MNT_PATH                  CONFIG_MOUNT_POINT
+
+/* Mount point for User binaries */
+#define BINARY_DIR_PATH                  CONFIG_MOUNT_POINT"bins"
 
 /* Binary states used in state callback */
 enum binary_statecb_state_e {
@@ -88,6 +101,7 @@ enum binmgr_request_msg_type {
 	BINMGR_GET_INFO,
 	BINMGR_GET_INFO_ALL,
 	BINMGR_UPDATE,
+	BINMGR_CREATE_BIN,
 	BINMGR_NOTIFY_STARTED,
 	BINMGR_REGISTER_STATECB,
 	BINMGR_UNREGISTER_STATECB,
@@ -113,11 +127,12 @@ enum binmgr_response_result_type {
  ****************************************************************************/
 /* The structure of binary update information */
 struct binary_update_info_s {
-	int inactive_partsize;
+	int available_size;
 	char name[BIN_NAME_MAX];
-	char active_ver[BIN_VER_MAX];
-	char active_dev[BINMGR_DEVNAME_LEN];
+	char version[BIN_VER_MAX];
+#if KERNEL_BIN_COUNT > 1
 	char inactive_dev[BINMGR_DEVNAME_LEN];
+#endif
 };
 typedef struct binary_update_info_s binary_update_info_t;
 
@@ -153,6 +168,12 @@ typedef struct binary_update_info_list_s binary_update_info_list_t;
 
 typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
 
+struct binmgr_update_bin_s {
+	char bin_name[BIN_NAME_MAX];
+	int version;
+};
+typedef struct binmgr_update_bin_s binmgr_update_bin_t;
+
 struct binmgr_cb_s {
 	binmgr_statecb_t func;
 	void *data;
@@ -173,9 +194,16 @@ struct binmgr_request_s {
 	union {
 		char bin_name[BIN_NAME_MAX];
 		binmgr_cb_t *cb_info;
+		binmgr_update_bin_t update_bin;
 	} data;
 };
 typedef struct binmgr_request_s binmgr_request_t;
+
+struct binmgr_createbin_response_s {
+	int result;
+	char binpath[BIN_FILEPATH_MAX];
+};
+typedef struct binmgr_createbin_response_s binmgr_createbin_response_t;
 
 struct binmgr_statecb_response_s {
 	int result;

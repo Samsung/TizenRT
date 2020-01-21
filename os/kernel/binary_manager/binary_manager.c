@@ -150,6 +150,9 @@ int binary_manager(int argc, char *argv[])
 			loading_data[2] = NULL;
 			binary_manager_loading(loading_data);
 			break;
+		case BINMGR_CREATE_BIN:
+			binary_manager_create_binfile(request_msg.requester_pid, request_msg.data.update_bin.bin_name, request_msg.data.update_bin.version);
+			break;
 		case BINMGR_NOTIFY_STARTED:
 			binary_manager_update_running_state(request_msg.requester_pid);
 			break;
