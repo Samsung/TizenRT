@@ -2544,7 +2544,7 @@ void up_serialinit(void)
 	/* Register to receive power management callbacks */
 
 #ifdef CONFIG_PM
-	ret = pm_register(STM32_PM_IDLE_DOMAIN, &g_serialcb);
+	ret = pm_register(&g_serialcb);
 	DEBUGASSERT(ret == OK);
 #endif
 
