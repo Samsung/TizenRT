@@ -340,6 +340,21 @@ void net_releaselist(FAR struct socketlist *list);
 int net_close(int sockfd);
 
 /****************************************************************************
+ * Function: net_poll
+ *
+ * Description:
+ *   poll() waits for one of a set of file descriptors to become ready to
+ *   perform I/O.
+ *
+  * Returned Value:
+ *   0 on success; -1 on error with errno set appropriately.
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+int net_poll(int sd, struct pollfd *fds, bool setup);
+
+/****************************************************************************
  * Function: net_dupsd
  *
  * Description:

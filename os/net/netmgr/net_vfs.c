@@ -123,10 +123,9 @@ int net_close(int sd)
  * Assumptions:
  *
  ****************************************************************************/
-int net_poll(int fd, struct pollfd *fds, bool setup)
+int net_poll(int sd, struct pollfd *fds, bool setup)
 {
-	// ToDo
-	return -1;
+	NETSTACK_CALL_BYFD(sd, poll, (sd, fds, setup));
 }
 
 /****************************************************************************
