@@ -50,8 +50,11 @@
 /* The maximum length of binary name */
 #define BIN_NAME_MAX                     16
 
-/* The maximum length of version name */
-#define BIN_VERSION_MAX                  16
+/* The maximum length of binary version */
+#define BIN_VER_MAX                      16
+
+/* The maximum length of kernel version */
+#define KERNEL_VER_MAX                   8
 
 /* The length of dev name */
 #define BINMGR_DEVNAME_LEN               16
@@ -105,7 +108,7 @@ enum binmgr_response_result_type {
 struct binary_update_info_s {
 	int inactive_partsize;
 	char name[BIN_NAME_MAX];
-	char active_ver[BIN_VERSION_MAX];
+	char active_ver[BIN_VER_MAX];
 	char active_dev[BINMGR_DEVNAME_LEN];
 	char inactive_dev[BINMGR_DEVNAME_LEN];
 };
@@ -127,6 +130,7 @@ struct load_attr_s {
 	uint16_t offset;			/* The offset from which ELF binary has to be read in MTD partition */
 	uint8_t priority;			/* Priority of the binary */
 	uint8_t compression_type;	/* Binary compression type */
+	char bin_ver[BIN_VER_MAX];	/* version of binary */
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	void *binp;			/* Binary info pointer */
 #endif
