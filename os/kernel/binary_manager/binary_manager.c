@@ -81,7 +81,7 @@ int binary_manager(int argc, char *argv[])
 	attr.mq_msgsize = sizeof(binmgr_request_t);
 	attr.mq_flags = 0;
 
-	ASSERT(BIN_STATE(KERNEL_IDX) != BINARY_UNREGISTERED && binary_manager_get_binary_count() > 0);
+	ASSERT(binary_manager_get_kernel_part_count() > 0 && binary_manager_get_binary_count() > 0);
 
 	bmvdbg("Binary Manager STARTED\n");
 

@@ -274,7 +274,7 @@ static int binary_manager_load_all(void)
 	load_cnt = 0;
 	bin_count = binary_manager_get_binary_count();
 
-	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+	for (bin_idx = 0; bin_idx < bin_count; bin_idx++) {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		ret = binary_manager_load_binary(bin_idx, NULL);
 #else

@@ -68,9 +68,6 @@
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
 
-/* Index of 'kernel' data in binary table, bin_table. */
-#define KERNEL_IDX                 0
-
 /* The number of arguments for loading thread */
 #define LOADTHD_ARGC               2
 
@@ -132,6 +129,16 @@ struct binmgr_bininfo_s {
 	sq_queue_t cb_list; // list node type : statecb_node_t
 };
 typedef struct binmgr_bininfo_s binmgr_bininfo_t;
+
+/* Kernel data type in kernel table */
+struct binmgr_kerinfo_s {
+	char name[BIN_NAME_MAX];
+	uint8_t inuse_idx;
+	uint32_t part_count;
+	part_info_t part_info[KERNEL_BIN_COUNT];
+	char version[KERNEL_VER_MAX];
+};
+typedef struct binmgr_kerinfo_s binmgr_kerinfo_t;
 
 struct statecb_node_s {
 	struct statecb_node_s *flink;
@@ -204,6 +211,8 @@ int binary_manager_load_binary(int bin_idx);
 #endif
 int binary_manager_loading(char *loading_data[]);
 uint32_t binary_manager_get_binary_count(void);
+uint32_t binary_manager_get_kernel_part_count(void);
+binmgr_kerinfo_t *binary_manager_get_kernel_data(void);
 int binary_manager_get_index_with_binid(int bin_id);
 void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);

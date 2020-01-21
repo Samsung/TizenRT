@@ -289,7 +289,7 @@ void binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 	int fail_count;
 	int send_bin_idx;
 
-	if (bin_idx <= 0 || state >= BINARY_STATE_MAX) {
+	if (bin_idx < 0 || state >= BINARY_STATE_MAX) {
 		bmdbg("Invalid parameter: bin idx %d, state %d\n", bin_idx, state);
 		return;
 	}
@@ -297,7 +297,7 @@ void binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 	count = binary_manager_get_binary_count();
 	fail_count = 0;
 
-	for (send_bin_idx = 1; send_bin_idx < count + 1; send_bin_idx++) {
+	for (send_bin_idx = 0; send_bin_idx < count; send_bin_idx++) {
 		if (send_bin_idx != bin_idx && !sq_empty(&BIN_CBLIST(send_bin_idx))) {
 			/* Notify the change of binary state if any callback is registered. */
 			ret = binary_manager_send_statecb_msg(send_bin_idx, BIN_NAME(bin_idx), state, false);

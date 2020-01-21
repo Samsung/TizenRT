@@ -62,7 +62,7 @@
 #else
 #define USER_BIN_COUNT                   2
 #endif
-#define KERNEL_BIN_COUNT                 1
+#define KERNEL_BIN_COUNT                 2
 
 #define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
 
@@ -194,7 +194,8 @@ typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-void binary_manager_register_partition(int part_num, int part_type, char *name, int part_size);
+void binary_manager_register_upart(int part_num, char *name, int part_size);
+void binary_manager_register_kpart(int part_num, char *name, int part_size);
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
