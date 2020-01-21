@@ -1045,7 +1045,7 @@ void up_serialinit(void)
 
 	/* Register to receive power management callbacks */
 #ifdef CONFIG_PM
-	DEBUGVERIFY(pm_register(0, &g_serialcb) == OK);
+	DEBUGVERIFY(pm_register(&g_serialcb) == OK);
 #endif
 
 	/* Register the console */
