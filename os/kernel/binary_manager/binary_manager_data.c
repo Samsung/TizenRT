@@ -38,91 +38,130 @@
 #define KERNEL_VER               "2.0"
 #endif
 
-/* Binary table, the first data [0] is for kernel. */
-static binmgr_bininfo_t bin_table[BINARY_COUNT];
+/* Table for User binaries */
+/* Binary table, the first data [0] is for Common Library. */
+static binmgr_uinfo_t bin_table[USER_BIN_COUNT + 1];
 static uint32_t g_bin_count;
+
+/* Data for Kernel partitions */
+static binmgr_kinfo_t kernel_info;
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: binary_manager_get_binary_count
+ * Name: binary_manager_get_ucount
  *
  * Description:
  *	 This function gets the number of user binaries.
  *
  ****************************************************************************/
-uint32_t binary_manager_get_binary_count(void)
+uint32_t binary_manager_get_ucount(void)
 {
 	return g_bin_count;
 }
 
 /****************************************************************************
- * Name: binary_manager_get_binary_data
+ * Name: binary_manager_get_kcount
+ *
+ * Description:
+ *	 This function gets the number of partitions for kernel.
+ *
+ ****************************************************************************/
+uint32_t binary_manager_get_kcount(void)
+{
+	return kernel_info.part_count;
+}
+
+/****************************************************************************
+ * Name: binary_manager_get_udata
  *
  * Description:
  *	 This function gets a row of binary table with bin_idx.
  *
  ****************************************************************************/
-binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx)
+binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx)
 {
 	return &bin_table[bin_idx];
 }
 
 /****************************************************************************
- * Name: binary_manager_register_partition
+ * Name: binary_manager_get_kdata
  *
  * Description:
- *	 This function registers partitions of kernel or user binaries.
+ *	 This function gets a kernel data.
  *
  ****************************************************************************/
-void binary_manager_register_partition(int part_num, int part_type, char *name, int part_size)
+binmgr_kinfo_t *binary_manager_get_kdata(void)
+{
+	return &kernel_info;
+}
+
+/****************************************************************************
+ * Name: binary_manager_register_upart
+ *
+ * Description:
+ *	 This function registers a partition of user binaries.
+ *
+ ****************************************************************************/
+void binary_manager_register_upart(int part_num, char *name, int part_size)
 {
 	int bin_idx;
 
-	if (part_num < 0 || part_size <= 0 || part_type < 0 || part_type >= BINMGR_PART_MAX) {
-		bmdbg("ERROR: Invalid part info : num %d, type %d size %d\n", part_num, part_type, part_size);
+	if (part_num < 0 || part_size <= 0 || g_bin_count >= USER_BIN_COUNT) {
+		bmdbg("ERROR: Invalid part info : num %d, size %d\n", part_num, part_size);
 		return;
 	}
 
-	/* Check partition type and register it */
-	if (part_type == BINMGR_PART_KERNEL) {
-		if (BIN_PARTSIZE(KERNEL_IDX, 0) > 0) {
-			/* Already registered first kernel partition, register it as second partition. */
-			BIN_PARTSIZE(KERNEL_IDX, 1) = part_size;
-			BIN_PARTNUM(KERNEL_IDX, 1) = part_num;
-		} else {
-			BIN_USEIDX(KERNEL_IDX) = 0;
-			BIN_STATE(KERNEL_IDX) = BINARY_RUNNING;
-			BIN_PARTNUM(KERNEL_IDX, 0) = part_num;
-			BIN_PARTSIZE(KERNEL_IDX, 0) = part_size;
-			strncpy(BIN_VER(KERNEL_IDX), KERNEL_VER, KERNEL_VER_MAX);
-			strncpy(BIN_KERNEL_VER(KERNEL_IDX), KERNEL_VER, KERNEL_VER_MAX);
-			strncpy(BIN_NAME(KERNEL_IDX), "kernel", BIN_NAME_MAX);
+	for (bin_idx = 1; bin_idx <= g_bin_count; bin_idx++) {
+		/* Already Registered */
+		if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
+			BIN_PARTNUM(bin_idx, 1) = part_num;
+			BIN_PARTSIZE(bin_idx, 1) = part_size;
+			bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
+			return;
 		}
-		bmvdbg("[KERNEL] part num %d size %d\n", part_num, part_size);
-	} else {
-		/* Else, It is user binary partition. First, Find the partition in the list. */
-		for (bin_idx = 1; bin_idx <= g_bin_count; bin_idx++) {
-			/* Found in the list, then register it as second partition */
-			if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
-				BIN_PARTNUM(bin_idx, 1) = part_num;
-				BIN_PARTSIZE(bin_idx, 1) = part_size;
-				bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
-				return;
-			}
-		}
-		/* No, Register it as a new user partition */
-		g_bin_count++;
-		BIN_ID(g_bin_count) = -1;
-		BIN_RTCOUNT(g_bin_count) = 0;
-		BIN_STATE(g_bin_count) = BINARY_INACTIVE;
-		BIN_PARTNUM(g_bin_count, 0) = part_num;
-		BIN_PARTSIZE(g_bin_count, 0) = part_size;
-		strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
-		sq_init(&BIN_CBLIST(g_bin_count));
-		bmvdbg("[USER%d : 1] %s size %d num %d\n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count, 0), BIN_PARTNUM(g_bin_count, 0));
 	}
+
+	/* If partition is not registered, Register it as a new user partition */
+	g_bin_count++;
+	BIN_ID(g_bin_count) = -1;
+	BIN_RTCOUNT(g_bin_count) = 0;
+	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
+	BIN_PARTNUM(g_bin_count, 0) = part_num;
+	BIN_PARTSIZE(g_bin_count, 0) = part_size;
+	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
+	sq_init(&BIN_CBLIST(g_bin_count));
+
+	bmvdbg("[USER%d : 1] %s size %d num %d\n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count, 0), BIN_PARTNUM(g_bin_count, 0));
+}
+
+/****************************************************************************
+ * Name: binary_manager_register_kpart
+ *
+ * Description:
+ *	 This function registers partitions of kernel binaries.
+ *
+ ****************************************************************************/
+void binary_manager_register_kpart(int part_num, int part_size)
+{
+	int part_count;
+
+	if (part_num < 0 || part_size <= 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
+		bmdbg("ERROR: Invalid part info : num %d, size %d\n", part_num, part_size);
+		return;
+	}
+
+	part_count = kernel_info.part_count;
+	if (part_count == 0) {
+		strncpy(kernel_info.name, "kernel", BIN_NAME_MAX);
+		strncpy(kernel_info.version, KERNEL_VER, KERNEL_VER_MAX);
+	}
+	kernel_info.part_info[part_count].part_size = part_size;
+	kernel_info.part_info[part_count].part_num = part_num;
+	kernel_info.part_count++;
+
+	bmvdbg("[KERNEL %d] part num %d size %d\n", part_count, part_num, part_size);
 }
 
 /****************************************************************************

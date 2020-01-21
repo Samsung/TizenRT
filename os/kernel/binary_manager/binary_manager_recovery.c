@@ -304,7 +304,7 @@ void binary_manager_recovery(int binid)
 	 * We need to reload the library and all the apps
 	 */
 	if (binid == BM_BINID_LIBRARY) {
-		int bin_count = binary_manager_get_binary_count();
+		int bin_count = binary_manager_get_ucount();
 		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 			binid = BIN_ID(bin_idx);
 			/* Exclude its all children from scheduling if the binary is registered with the binary manager */

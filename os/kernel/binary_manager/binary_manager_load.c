@@ -274,14 +274,14 @@ static int binary_manager_load_all(void)
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	char libname[CONFIG_NAME_MAX];
 	snprintf(libname, CONFIG_NAME_MAX, "%s%s", CONFIG_COMMON_BINARY_PATH, CONFIG_COMMON_BINARY_NAME);
-	ret = load_binary(0, libname, NULL);
+	ret = load_binary(COMMLIB_IDX, libname, NULL);
 	if (ret < 0) {
 		return BINMGR_OPERATION_FAIL;
 	}
 #endif
 
 	load_cnt = 0;
-	bin_count = binary_manager_get_binary_count();
+	bin_count = binary_manager_get_ucount();
 
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -545,13 +545,13 @@ static int loading_thread(int argc, char *argv[])
 			/* Reload common library and all binaries */
 			char libname[CONFIG_NAME_MAX];
 			snprintf(libname, CONFIG_NAME_MAX, "%s%s", CONFIG_COMMON_BINARY_PATH, CONFIG_COMMON_BINARY_NAME);
-			ret = load_binary(0, libname, NULL);
+			ret = load_binary(COMMLIB_IDX, libname, NULL);
 			if (ret < 0) {
 				return BINMGR_OPERATION_FAIL;
 			}
 
 			int bin_idx;
-			int bin_count = binary_manager_get_binary_count();
+			int bin_count = binary_manager_get_ucount();
 
 			for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 				ret = binary_manager_reload(BIN_ID(bin_idx));

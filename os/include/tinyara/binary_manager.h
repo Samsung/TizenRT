@@ -62,7 +62,7 @@
 #else
 #define USER_BIN_COUNT                   2
 #endif
-#define KERNEL_BIN_COUNT                 1
+#define KERNEL_BIN_COUNT                 2
 
 #define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
 
@@ -71,13 +71,6 @@ enum binary_statecb_state_e {
 	BINARY_STARTED = 0,           /* Binary is started */
 	BINARY_UNLOADED = 1,          /* Binary is unloaded */
 	BINARY_READYTOUNLOAD = 2,     /* Binary will be unloaded */
-};
-
-/* The types of partition for binary manager */
-enum binmgr_partition_type {
-	BINMGR_PART_KERNEL = 0,
-	BINMGR_PART_USRBIN,
-	BINMGR_PART_MAX,
 };
 
 /* Message type for binary manager */
@@ -194,7 +187,8 @@ typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-void binary_manager_register_partition(int part_num, int part_type, char *name, int part_size);
+void binary_manager_register_upart(int part_num, char *name, int part_size);
+void binary_manager_register_kpart(int part_num, int part_size);
 
 #ifdef __cplusplus
 #define EXTERN extern "C"

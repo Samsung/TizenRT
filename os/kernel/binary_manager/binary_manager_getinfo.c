@@ -57,7 +57,7 @@ int binary_manager_get_index_with_binid(int bin_id)
 		return ERROR;
 	}
 
-	bin_count = binary_manager_get_binary_count();
+	bin_count = binary_manager_get_ucount();
 
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		if (BIN_ID(bin_idx) == bin_id) {
@@ -86,7 +86,7 @@ int binary_manager_get_index_with_name(char *bin_name)
 		return ERROR;
 	}
 
-	bin_count = binary_manager_get_binary_count();
+	bin_count = binary_manager_get_ucount();
 
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		if (!strncmp(BIN_NAME(bin_idx), bin_name, strlen(bin_name) + 1)) {
@@ -121,8 +121,8 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 	memset((void *)&response_msg, 0, sizeof(binmgr_getinfo_response_t));
 	response_msg.result = BINMGR_NOT_FOUND;
 
-	bin_count = binary_manager_get_binary_count();
-	for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
+	bin_count = binary_manager_get_ucount();
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		if (!strncmp(BIN_NAME(bin_idx), bin_name, BIN_NAME_MAX)) {
 			response_msg.result = BINMGR_OK;
 			response_msg.data.inactive_partsize = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
@@ -149,8 +149,10 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 void binary_manager_get_info_all(int requester_pid)
 {
 	int bin_idx;
+	int result_idx;
 	uint32_t bin_count;
 	char q_name[BIN_PRIVMQ_LEN];
+	binmgr_kinfo_t *kerinfo;
 	binmgr_getinfo_all_response_t response_msg;
 
 	if (requester_pid < 0) {
@@ -160,23 +162,33 @@ void binary_manager_get_info_all(int requester_pid)
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
 
 	memset((void *)&response_msg, 0, sizeof(binmgr_getinfo_all_response_t));
+	result_idx = 0;
 
-	bin_count = binary_manager_get_binary_count();
-	if (bin_count > 0) {
-		for (bin_idx = 0; bin_idx < bin_count + 1; bin_idx++) {
-			response_msg.data.bin_info[bin_idx].inactive_partsize = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
-			strncpy(response_msg.data.bin_info[bin_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-			strncpy(response_msg.data.bin_info[bin_idx].active_ver, BIN_VER(bin_idx), BIN_VER_MAX);
-			snprintf(response_msg.data.bin_info[bin_idx].active_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, BIN_USEIDX(bin_idx)));
-			if (BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)) != -1) {
-				snprintf(response_msg.data.bin_info[bin_idx].inactive_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)));
-			}
-		}
-		response_msg.data.bin_count = bin_count + 1;
-		response_msg.result = BINMGR_OK;
-	} else {
-		response_msg.result = BINMGR_NOT_FOUND;
+	/* Kernel data */
+	kerinfo = binary_manager_get_kdata();
+	strncpy(response_msg.data.bin_info[result_idx].name, kerinfo->name , BIN_NAME_MAX);
+	strncpy(response_msg.data.bin_info[result_idx].active_ver, kerinfo->version, KERNEL_VER_MAX);
+	snprintf(response_msg.data.bin_info[result_idx].active_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx].part_num);
+	if (kerinfo->part_count > 1) {
+		response_msg.data.bin_info[result_idx].inactive_partsize = kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_size;
+		snprintf(response_msg.data.bin_info[result_idx].inactive_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_num);
 	}
+	result_idx++;
+
+	/* User binaries data */
+	bin_count = binary_manager_get_ucount();
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+		response_msg.data.bin_info[result_idx].inactive_partsize = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
+		strncpy(response_msg.data.bin_info[result_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
+		strncpy(response_msg.data.bin_info[result_idx].active_ver, BIN_VER(bin_idx), BIN_VER_MAX);
+		snprintf(response_msg.data.bin_info[result_idx].active_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, BIN_USEIDX(bin_idx)));
+		if (BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)) != -1) {
+			snprintf(response_msg.data.bin_info[result_idx].inactive_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)));
+		}
+		result_idx++;
+	}
+	response_msg.data.bin_count = bin_count + 1;
+	response_msg.result = BINMGR_OK;
 
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_all_response_t));
 }
