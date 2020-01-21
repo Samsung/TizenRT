@@ -383,17 +383,6 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 		goto errout_with_buffers;
 	}
 #endif
-
-#if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_APP_BINARY_SEPARATION)
-	/* Save the text and data region size of new binary into its heap
-	 * for excluding those size when calculating the heap usage.
-	 */
-	loadinfo->uheap->elf_sections_size = loadinfo->textsize + loadinfo->datasize;
-
-	loadinfo->uheap->total_alloc_size = 0;
-	loadinfo->uheap->peak_alloc_size = 0;
-#endif
-
 	return OK;
 
 	/* Error exits */
