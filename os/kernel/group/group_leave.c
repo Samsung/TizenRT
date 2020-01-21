@@ -302,6 +302,11 @@ static inline void group_release(FAR struct task_group_s *group)
 		BIN_ID(bin_idx) = -1;
 		/* Clean callbacks of binary */
 		binary_manager_clear_bin_statecb(bin_idx);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		if (!group->tg_bininfo->reload) {
+			BIN_LOADINFO(bin_idx) = NULL;
+		}
+#endif
 #endif
 		binfmt_exit(group->tg_bininfo);
 		group->tg_bininfo = NULL;

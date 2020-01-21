@@ -73,6 +73,7 @@
 #endif
 
 #ifdef CONFIG_BINARY_MANAGER
+#include <string.h>
 #include "binary_manager/binary_manager.h"
 #endif
 
@@ -363,6 +364,10 @@ int exec_module(FAR struct binary_s *binp)
 	} else {
 		BIN_RTTYPE(binary_idx) = BINARY_TYPE_NONREALTIME;
 	}
+	strncpy(BIN_VER(binary_idx), binp->bin_ver, BIN_VER_MAX);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	BIN_LOADINFO(binary_idx) = binp;
+#endif
 #ifndef CONFIG_DISABLE_SIGNALS
 	/* Clean the signal mask of loaded task because it inherits signal mask from parent task, binary manager. */
 	tcb->cmn.sigprocmask = NULL_SIGNAL_SET;
@@ -397,6 +402,17 @@ int exec_module(FAR struct binary_s *binp)
 	return (int)pid;
 
 errout_with_tcbinit:
+#ifdef CONFIG_BINARY_MANAGER
+	BIN_ID(binary_idx) = -1;
+	BIN_STATE(binary_idx) = BINARY_INACTIVE;
+	if (binp->priority > BM_PRIORITY_MAX && --(BIN_RTCOUNT(binary_idx)) == 0) {
+		BIN_RTTYPE(binary_idx) = BINARY_TYPE_NONREALTIME;
+	}
+	memset(BIN_VER(binary_idx), 0, BIN_VER_MAX);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	BIN_LOADINFO(binary_idx) = NULL;
+#endif
+#endif
 	sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
 	return ret;
 

@@ -150,11 +150,7 @@ errout_with_fd:
  *	 This function loads binary with index in binary table.
  *
  ****************************************************************************/
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-int binary_manager_load_binary(int bin_idx, void *binp)
-#else
 int binary_manager_load_binary(int bin_idx)
-#endif
 {
 	int ret;
 	int version;
@@ -166,6 +162,9 @@ int binary_manager_load_binary(int bin_idx)
 	load_attr_t load_attr;
 	char devname[BINMGR_DEVNAME_LEN];
 	binary_header_t header_data[PARTS_PER_BIN];
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	struct binary_s *binp;
+#endif
 
 	latest_ver = -1;
 	latest_idx = -1;
@@ -214,10 +213,18 @@ int binary_manager_load_binary(int bin_idx)
 		load_attr.stack_size = header_data[latest_idx].bin_stacksize;
 		load_attr.priority = header_data[latest_idx].bin_priority;
 		load_attr.offset = CHECKSUM_SIZE + header_data[latest_idx].header_size;
+		strncpy(load_attr.bin_ver, header_data->bin_ver, BIN_VER_MAX);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		binp = BIN_LOADINFO(bin_idx);
+		/* If current version is different from version to be loaded, Clean up backup data */
+		if (binp && strncmp(BIN_VER(bin_idx), header_data[latest_idx].bin_ver, strlen(BIN_VER(bin_idx)) + 1)) {
+			binp->reload = false;
+			binfmt_exit(binp);
+			binp = NULL;
+			BIN_LOADINFO(bin_idx) = NULL;
+		}
 		load_attr.binp = binp;
 #endif
-
 		bmvdbg("BIN[%d] %s %d %d\n", bin_idx, devname, load_attr.bin_size, load_attr.offset);
 
 		retry_count = 0;
@@ -229,7 +236,6 @@ int binary_manager_load_binary(int bin_idx)
 				/* Set the data in table from header */
 				BIN_USEIDX(bin_idx) = latest_idx;
 				BIN_LOAD_ATTR(bin_idx) = load_attr;
-				strncpy(BIN_VER(bin_idx), header_data[latest_idx].bin_ver, BIN_VER_MAX);
 				strncpy(BIN_KERNEL_VER(bin_idx), header_data[latest_idx].kernel_ver, KERNEL_VER_MAX);
 				strncpy(BIN_NAME(bin_idx), header_data[latest_idx].bin_name, BIN_NAME_MAX);
 				bmvdbg("BIN TABLE[%d] %d %d %s %s %s\n", bin_idx, BIN_SIZE(bin_idx), BIN_RAMSIZE(bin_idx), BIN_VER(bin_idx), BIN_KERNEL_VER(bin_idx), BIN_NAME(bin_idx));
@@ -246,6 +252,7 @@ int binary_manager_load_binary(int bin_idx)
 			/* If we are here it means that reload has failed. So perform cleanup */
 			((struct binary_s *)binp)->reload = false;
 			binfmt_exit(binp);
+			BIN_LOADINFO(bin_idx) = NULL;
 		}
 #endif
 		if (--valid_bin_count > 0) {
@@ -275,11 +282,7 @@ static int binary_manager_load_all(void)
 	bin_count = binary_manager_get_binary_count();
 
 	for (bin_idx = 0; bin_idx < bin_count; bin_idx++) {
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		ret = binary_manager_load_binary(bin_idx, NULL);
-#else
 		ret = binary_manager_load_binary(bin_idx);
-#endif
 		if (ret == OK) {
 			load_cnt++;
 		}
@@ -308,6 +311,9 @@ static int binary_manager_terminate_binary(int bin_idx)
 	struct tcb_s *btcb;
 	struct tcb_s *tcb;
 	struct tcb_s *ntcb;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	struct binary_s *binp = NULL;
+#endif
 
 	need_recovery = false;
 
@@ -345,6 +351,11 @@ static int binary_manager_terminate_binary(int bin_idx)
 		tcb = ntcb;
 	}
 
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	binp = BIN_LOADINFO(bin_idx);
+	binp->reload = true;
+#endif
+
 	/* Finally, unload binary */
 	ret = task_terminate_unloaded(btcb);
 	if (ret < 0) {
@@ -380,10 +391,6 @@ static int binary_manager_reload(int binid)
 {
 	int ret;
 	int bin_idx;
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	struct tcb_s *btcb;
-	struct binary_s *binp = NULL;
-#endif
 
 	/* Check whether it is registered in binary manager */
 	bin_idx = binary_manager_get_index_with_binid(binid);
@@ -391,14 +398,6 @@ static int binary_manager_reload(int binid)
 		bmdbg("binary %s is not registered\n", binid);
 		return BINMGR_NOT_FOUND;
 	}
-
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	btcb = sched_gettcb(binid);
-	if (btcb) {
-		binp = btcb->group->tg_bininfo;
-		binp->reload = true;
-	}
-#endif
 
 	/* Terminate binary */
 	ret = binary_manager_terminate_binary(bin_idx);
@@ -408,11 +407,7 @@ static int binary_manager_reload(int binid)
 	}
 
 	/* Load binary */
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	ret = binary_manager_load_binary(bin_idx, binp);
-#else
 	ret = binary_manager_load_binary(bin_idx);
-#endif
 	if (ret != OK) {
 		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
 		return BINMGR_OPERATION_FAIL;
@@ -443,9 +438,6 @@ static int binary_manager_update(char *bin_name)
 	int ret;
 	int bin_idx;
 	binary_header_t header_data;
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	struct binary_s *binp = NULL;
-#endif
 
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx < 0) {
@@ -466,10 +458,6 @@ static int binary_manager_update(char *bin_name)
 			bmdbg("Already latest version\n");
 			return BINMGR_ALREADY_UPDATED;
 		}
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		binp = sched_gettcb(BIN_ID(bin_idx))->group->tg_bininfo;
-		binp->reload = true;
-#endif
 		ret = binary_manager_terminate_binary(bin_idx);
 		if (ret != OK) {
 			bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
@@ -478,11 +466,7 @@ static int binary_manager_update(char *bin_name)
 	}
 
 	/* Load binary */
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	ret = binary_manager_load_binary(bin_idx, binp);
-#else
 	ret = binary_manager_load_binary(bin_idx);
-#endif
 	if (ret != OK) {
 		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
 		return BINMGR_OPERATION_FAIL;

@@ -62,8 +62,6 @@
 
 /* Binary information configuration */
 #define PARTS_PER_BIN              2                          /* The number of partitions per binary */
-#define BIN_VER_MAX                16                         /* The maximum length of binary version */
-#define KERNEL_VER_MAX             8                          /* The maximum length of kernel version */
 
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
@@ -127,6 +125,9 @@ struct binmgr_bininfo_s {
 	char bin_ver[BIN_VER_MAX];
 	char kernel_ver[KERNEL_VER_MAX];
 	sq_queue_t cb_list; // list node type : statecb_node_t
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	struct binary_s *binp;
+#endif
 };
 typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 
@@ -168,6 +169,9 @@ binmgr_bininfo_t *binary_manager_get_binary_data(uint32_t bin_idx);
 #define BIN_STACKSIZE(bin_idx)                          binary_manager_get_binary_data(bin_idx)->load_attr.stack_size
 #define BIN_PRIORITY(bin_idx)                           binary_manager_get_binary_data(bin_idx)->load_attr.priority
 #define BIN_COMPRESSION_TYPE(bin_idx)                   binary_manager_get_binary_data(bin_idx)->load_attr.compression_type
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+#define BIN_LOADINFO(bin_idx)                           binary_manager_get_binary_data(bin_idx)->binp
+#endif
 
 /****************************************************************************
  * Function Prototypes
@@ -204,11 +208,7 @@ void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response);
 void binary_manager_notify_state_changed(int bin_idx, uint8_t state);
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-int binary_manager_load_binary(int bin_idx, void *binp);
-#else
 int binary_manager_load_binary(int bin_idx);
-#endif
 int binary_manager_loading(char *loading_data[]);
 uint32_t binary_manager_get_binary_count(void);
 uint32_t binary_manager_get_kernel_part_count(void);
