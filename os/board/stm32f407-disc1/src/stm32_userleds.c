@@ -242,7 +242,7 @@ void stm32_led_pminitialize(void)
 {
 	/* Register to receive power management callbacks */
 
-	int ret = pm_register(STM32_PM_IDLE_DOMAIN, &g_ledscb);
+	int ret = pm_register(&g_ledscb);
 	if (ret != OK) {
 		board_led_on(LED_ASSERTION);
 	}
