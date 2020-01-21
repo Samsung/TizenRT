@@ -174,6 +174,7 @@ struct binary_s {
 	uint8_t compression_type;		/* Binary Compression type */
 #ifdef CONFIG_BINARY_MANAGER
 	uint8_t binary_idx;             /* Index of binary in binary table */
+	char bin_ver[BIN_VER_MAX];      /* version of binary */
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	char bin_name[BIN_NAME_MAX];    /* Name of binary */
 #else
