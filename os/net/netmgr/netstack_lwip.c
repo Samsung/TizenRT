@@ -206,28 +206,9 @@ static int lwip_ns_vfcntl(int sockfd, int cmd, va_list ap)
 }
 
 
-/****************************************************************************
- * Function: lwip_poll
- *
- * Description:
- *	 The standard poll() operation redirects operations on socket descriptors
- *	 to this function.
- *
- * Input Parameters:
- *	 sock - An instance of the lwip socket structure.
- *	 fds   - The structure describing the events to be monitored, OR NULL if
- *			 this is a request to stop monitoring events.
- *	 setup - true: Setup up the poll; false: Teardown the poll
- *
- * Returned Value:
- *	0: Success; Negated errno on failure
- *
- ****************************************************************************/
-
 static int lwip_ns_poll(int fd, struct pollfd *fds, bool setup)
 {
-	// ToDo
-	return 0;
+	return lwip_poll(fd, fds, setup);
 }
 
 

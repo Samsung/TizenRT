@@ -68,11 +68,7 @@
 #include <tinyara/cancelpt.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
-
-#ifdef CONFIG_NET_LWIP
-#include "lwip/sockets.h"
-#endif
-
+#include <tinyara/net/net.h>
 #include <arch/irq.h>
 
 #include "inode/inode.h"
@@ -131,9 +127,7 @@ static int poll_fdsetup(int fd, FAR struct pollfd *fds, bool setup)
 
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-#ifdef CONFIG_NET_LWIP
-			return lwip_poll(fd, fds, setup);
-#endif
+			return net_poll(fd, fds, setup);
 		} else
 #endif
 		{
