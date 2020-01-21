@@ -219,9 +219,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	printf("     Summary of Heap Usages (Size in Bytes)\n");
 	printf("****************************************************************\n");
 	heap_size = heap->mm_heapsize;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	heap_size -= heap->elf_sections_size;
-#endif
+
 	printf("Total                           : %u (100%%)\n", heap_size);
 	printf("  - Allocated (Current / Peak)  : %u (%d%%) / %u (%d%%)\n",\
 		heap->total_alloc_size, (size_t)((uint64_t)(heap->total_alloc_size) * 100 / heap_size),\
