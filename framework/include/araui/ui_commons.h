@@ -81,7 +81,7 @@ typedef struct {
 } ui_color_rgb888_t;
 
 /**
- * @brief Enum type of the error value returned from the UI Framework
+ * @brief Enum type of the error value returned from the AraUI Framework
  */
 typedef enum {
 	UI_OK                 =  0, //!< No error (Success)
