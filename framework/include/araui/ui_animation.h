@@ -114,7 +114,8 @@ ui_anim_t ui_delay_anim_create(uint32_t duration);
  * The last argument must be NULL, it means end of arguments.
  * Sequence animation will run each animation for each duration sequentially.
  *
- * @param[in] from_scale The scale to start
+ * @param[in] anim First Animation
+ * @param[in] ... Animations that will be executed sequentailly
  * @return On success, the handle of animation is returned. On failure, UI_NULL is returned.
  */
 ui_anim_t ui_sequence_anim_create(ui_anim_t anim, ...);
@@ -125,7 +126,8 @@ ui_anim_t ui_sequence_anim_create(ui_anim_t anim, ...);
  * The last argument must be NULL, it means end of arguments.
  * Spawn animation will run every animation at once for time given by core.
  *
- * @param[in] from_scale The scale to start
+ * @param[in] anim An animation
+ * @param[in] ... Animations that will be executed simultaneously
  * @return On success, the handle of animation is returned. On failure, UI_NULL is returned.
  */
 ui_anim_t ui_spawn_anim_create(ui_anim_t anim, ...);
