@@ -48,7 +48,7 @@ extern "C" {
  *
  * The image created using this function must be destroyed via the @ref ui_image_asset_destroy().
  *
- * @param[in] buf Point address of the buffer containing the image information
+ * @param[in] buf Pointer address of the buffer containing the image information
  * @return On success, the image asset handle is returned. On failure, UI_NULL is returned.
  *
  * @see ui_image_asset_destroy()
@@ -57,7 +57,7 @@ extern "C" {
 ui_asset_t ui_image_asset_create_from_buffer(const uint8_t *buf);
 
 /**
- * @brief Destroys the generated image asset and free the allocated memory.
+ * @brief Destroy the generated image asset and free the allocated memory.
  *
  * @param[in] image Handle of the image asset
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.
@@ -112,7 +112,7 @@ ui_asset_t ui_font_asset_create_from_file(const char *filename);
  *
  * The font created using this function must be destroyed via the @ref ui_font_asset_destroy().
  *
- * @param[in] buf Point address of the buffer containing the font information
+ * @param[in] buf Pointer address of the buffer containing the font information
  * @return On success, the font asset handle is returned. On failure, UI_NULL is returned.
  *
  * @see ui_font_asset_destroy()
@@ -120,7 +120,7 @@ ui_asset_t ui_font_asset_create_from_file(const char *filename);
 ui_asset_t ui_font_asset_create_from_buffer(const uint8_t *buf);
 
 /**
- * @brief Destroys the generated font asset and free the allocated memory.
+ * @brief Destroy the generated font asset and free the allocated memory.
  *
  * @param[in] font Handle of the font asset
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.

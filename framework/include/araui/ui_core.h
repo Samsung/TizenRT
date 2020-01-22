@@ -37,14 +37,14 @@ extern "C" {
 #endif
 
 /**
- * @brief Start the UI Core Service.
+ * @brief Start the AraUI Core Service.
  *
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.
  */
 ui_error_t ui_start(void);
 
 /**
- * @brief Stop the UI Core Service.
+ * @brief Stop the AraUI Core Service.
  *
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.
  */
@@ -62,9 +62,9 @@ ui_error_t ui_stop(void);
 ui_error_t ui_core_set_quick_panel(ui_quick_panel_event_type_t event_type, ui_widget_t widget);
 
 /**
- * @brief Stop the UI Core Service.
+ * @brief Unset the quick panel to the certain event type.
  *
- * @param[in] event_type Event type of the quick panel which want to unset
+ * @param[in] event_type Event type of the quick panel which want to be unset.
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.
  *
  * @see ui_quick_panel_event_type_t
@@ -72,9 +72,9 @@ ui_error_t ui_core_set_quick_panel(ui_quick_panel_event_type_t event_type, ui_wi
 ui_error_t ui_core_unset_quick_panel(ui_quick_panel_event_type_t event_type);
 
 /**
- * @brief Stop the UI Core Service.
+ * @brief Make the quick panel of the certain event type appear.
  *
- * @param[in] event_type Event type of the quick panel which want to appear
+ * @param[in] event_type Event type of the quick panel which want to appear.
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.
  *
  * @see ui_quick_panel_event_type_t
@@ -82,7 +82,7 @@ ui_error_t ui_core_unset_quick_panel(ui_quick_panel_event_type_t event_type);
 ui_error_t ui_core_quick_panel_appear(ui_quick_panel_event_type_t event_type);
 
 /**
- * @brief Stop the UI Core Service.
+ * @brief Make the quick panel of the certain event type disappear.
  *
  * @param[in] event_type Event type of the quick panel which want to disappear
  * @return On success, UI_OK is returned. On failure, the defined error type is returned.
