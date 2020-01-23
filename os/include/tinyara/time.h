@@ -134,9 +134,7 @@ EXTERN int clock_daysbeforemonth(int month, bool leapyear);
  * @return Zero based day of the week 0-6, 0 = Sunday, 1 = Monday... 6 = Saturday
  * @since TizenRT v1.0
  */
-#if defined(CONFIG_TIME_EXTENDED)
 int clock_dayoftheweek(int mday, int month, int year);
-#endif
 /**
  * @endcond
  */

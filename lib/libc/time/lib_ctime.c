@@ -58,8 +58,6 @@
 
 #include <time.h>
 
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -95,5 +93,3 @@ FAR char *ctime(FAR const time_t *timep)
 	return asctime(gmtime(timep));
 #endif
 }
-
-#endif							/* CONFIG_LIBC_LOCALTIME || CONFIG_TIME_EXTENDED */
