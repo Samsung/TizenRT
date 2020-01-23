@@ -78,11 +78,9 @@ static FAR const char *const g_datemontab[] = {
 	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 static FAR const char *const g_dayofweek[] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
-#endif
 
 static const unsigned int g_dayofmonth[] = {
 	31, 28, 31, 30, 31, 30,
@@ -106,7 +104,6 @@ static inline int date_month(FAR const char *abbrev)
 	return ERROR;
 }
 
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 static inline int day_of_week(FAR const char *abbrev)
 {
 	int wday;
@@ -119,15 +116,10 @@ static inline int day_of_week(FAR const char *abbrev)
 
 	return ERROR;
 }
-#endif
 
 static inline int date_showtime(void)
 {
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	static const char format[] = "%b %d %H:%M:%S %Y %a";
-#else
-	static const char format[] = "%b %d %H:%M:%S %Y";
-#endif
 	struct timespec ts;
 	struct tm tm;
 	char timbuf[MAX_TIME_STRING];
@@ -246,7 +238,6 @@ static inline int date_settime(int argc, char **args)
 	}
 	tm.tm_sec = (int)result;
 
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	/* Get the day of the week.  NOTE: Accepts day-of-week from sunday to saturday */
 
 	token = args[6];
@@ -287,8 +278,6 @@ static inline int date_settime(int argc, char **args)
 		tm.tm_isdst = (int)result;
 	}
 
-#endif
-
 	/* Convert this to the right form, then set the timer */
 
 	ts.tv_sec = mktime(&tm);
@@ -319,11 +308,7 @@ int utils_date(int argc, char **args)
 
 	if (argc == 1) {
 		ret = date_showtime();
-#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
-	} else if (!strncmp(args[1], "-s", strlen("-s") + 1) && argc == 6) {
-#else
 	} else if (!strncmp(args[1], "-s", strlen("-s") + 1) && (argc >= 7 && argc <= 9)) {
-#endif
 		ret = date_settime(argc, args);
 	} else {
 
@@ -332,19 +317,12 @@ int utils_date(int argc, char **args)
 		printf("Display, or Set system time and date information\n");
 		printf("\nOptions:\n");
 		printf(" -s FORMAT     Set system time in the given FORMAT\n");
-#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
-		printf("               FORMAT: MMM DD HH:MM:SS YYYY\n");
-		printf("                'month', 'day', 'hour':'minute':'second' 'year'\n");
-		printf("                Example: Apr 21 10:35:22 1991\n");
-#else
 		printf("               FORMAT: MMM DD HH:MM:SS YYYY DWR DYR D\n");
 		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week' 'day_of_year' 'daylight_savings_flag'\n");
 		printf("                Example: Apr 21 10:35:22 1991 Sun 175 1\n");
-
 		printf("                Day of Week Range(DWR) = [Sunday = Sun, Monday = Mon, and so on...]\n");
 		printf("                Day of Year Range(DYR) = [0,365], \n");
 		printf("                daylight_savings_flag: +ve(in effect), 0(low), -ve(information unavailable)\n");
-#endif
 		printf("                Year valid range = [1970,2106]\n");
 		printf("                Month and day of week allows only 3 abbreviation characters like Jan, Sun.\n");
 

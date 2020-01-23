@@ -59,8 +59,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -105,5 +103,3 @@ FAR char *asctime_r(FAR const struct tm *tp, FAR char *buf)
 
 	return buf;
 }
-
-#endif							/* CONFIG_LIBC_LOCALTIME || CONFIG_TIME_EXTENDED */
