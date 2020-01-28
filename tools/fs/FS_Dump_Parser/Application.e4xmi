@@ -9,6 +9,9 @@
         <children xsi:type="basic:PartStack" xmi:id="_DuIdMAm9EeqM_5XslDw0_w" elementId="smartfs_dump_parser.partstack.1">
           <children xsi:type="basic:Part" xmi:id="_ujbjYAmjEeqM_5XslDw0_w" elementId="smartfs_dump_parser.part.directory_structure" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.DirectoryViewer" label="Directory Structure" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/open_in_app.png"/>
         </children>
+        <children xsi:type="basic:PartStack" xmi:id="_4osrsDtSEeqXe99JIAZEtw" elementId="smartfs_dump_parser.partstack.2">
+          <children xsi:type="basic:Part" xmi:id="_6Ap9IDtSEeqXe99JIAZEtw" elementId="smartfs_dump_parser.part.journal_information" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.JournalViewer" label="Journal Information" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/save_edit.png"/>
+        </children>
       </children>
       <children xsi:type="basic:PartStack" xmi:id="_6wlLk8gZEeSyMNYR5xypkQ" elementId="smartfs_dump_parser.partstack.sectorInfo">
         <children xsi:type="basic:Part" xmi:id="_6wlLlMgZEeSyMNYR5xypkQ" elementId="smartfs_dump_parser.part.sector_list" contributionURI="bundleclass://SmartFS_Dump_Parser/smartfs_dump_parser.parts.SectorViewer" label="Logical Sector Information" iconURI="platform:/plugin/SmartFS_Dump_Parser/icons/home.png"/>

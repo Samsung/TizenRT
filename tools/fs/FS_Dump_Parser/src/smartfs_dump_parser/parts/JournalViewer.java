@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////
 //
-// Copyright 2019 Samsung Electronics All Rights Reserved.
+// Copyright 2020 Samsung Electronics All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package smartfs_dump_parser.parts;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -42,16 +41,16 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 
+import smartfs_dump_parser.data_model.JournalStatus;
 import smartfs_dump_parser.data_model.Sector;
-import smartfs_dump_parser.data_model.SectorStatus;
 import smartfs_dump_parser.data_model.SmartFileSystem;
 
-public class SectorViewer {
+public class JournalViewer {
 
 	private TableViewer tableViewer;
-	private Button activeButton;
-	private Button dirtyButton;
-	private Button cleanButton;
+	private Button inProgressButton;
+	private Button finishedButton;
+	private Button existButton;
 
 	@PostConstruct
 	public void createComposite(Composite parent) {
@@ -67,84 +66,84 @@ public class SectorViewer {
 		tableViewer.getTable().setFocus();
 	}
 
-	public TableViewer getSectorViewer() {
+	public TableViewer getJournalViewer() {
 		return tableViewer;
 	}
 
 	private void createCheckbox(final Composite parent) {
-		activeButton = new Button(parent, SWT.CHECK);
-		activeButton.setText("Active Sectors");
-		activeButton.addSelectionListener(new SelectionAdapter() {
+		inProgressButton = new Button(parent, SWT.CHECK);
+		inProgressButton.setText("In Progress");
+		inProgressButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (activeButton.getSelection()) {
+				if (inProgressButton.getSelection()) {
 					if (SmartFileSystem.getSectors().size() == 0) {
 						MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
-						activeButton.setSelection(false);
+						inProgressButton.setSelection(false);
 						return;
 					}
-					Map<Integer, Sector> activeSectors = SmartFileSystem.getActiveSectorsMap();
-					if (activeSectors == null) {
-						System.out.println("Active sectors are not classified yet..");
-					} else {
-						tableViewer.setInput(activeSectors.values());
-						tableViewer.refresh();
-					}
-					dirtyButton.setSelection(false);
-					cleanButton.setSelection(false);
+//					List<Sector> inProgressJournals = SmartFileSystem.getInProgressJournals();
+//					if (inProgressJournals == null) {
+//						System.out.println("There's no journaling sectors in progress..");
+//					}
+//					tableViewer.setInput(inProgressJournals);
+					tableViewer.refresh();
+
+					finishedButton.setSelection(false);
+					existButton.setSelection(false);
 				}
 			}
 		});
 
-		dirtyButton = new Button(parent, SWT.CHECK);
-		dirtyButton.setText("Dirty Sectors");
-		dirtyButton.addSelectionListener(new SelectionAdapter() {
+		finishedButton = new Button(parent, SWT.CHECK);
+		finishedButton.setText("Finished");
+		finishedButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (SmartFileSystem.getSectors().size() == 0) {
 					MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
-					dirtyButton.setSelection(false);
+					finishedButton.setSelection(false);
 					return;
 				}
-				Map<Integer, Sector> dirtySectors = SmartFileSystem.getDirtySectorsMap();
-				if (dirtySectors == null) {
-					System.out.println("Dirty sectors are not classified yet..");
-				} else {
-					tableViewer.setInput(new ArrayList<Sector>(dirtySectors.values()));
-					tableViewer.refresh();
-				}
-				activeButton.setSelection(false);
-				cleanButton.setSelection(false);
+//				List<Sector> finishedJournals = SmartFileSystem.getFinishedJournals();
+//				if (finishedJournals == null) {
+//					System.out.println("Dirty sectors are not classified yet..");
+//				}
+//				tableViewer.setInput(finishedJournals);
+				tableViewer.refresh();
+
+				inProgressButton.setSelection(false);
+				existButton.setSelection(false);
 			}
 		});
 
-		cleanButton = new Button(parent, SWT.CHECK);
-		cleanButton.setText("Clean Sectors");
-		cleanButton.addSelectionListener(new SelectionAdapter() {
+		existButton = new Button(parent, SWT.CHECK);
+		existButton.setText("Exist");
+		existButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (SmartFileSystem.getSectors().size() == 0) {
 					MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
-					cleanButton.setSelection(false);
+					existButton.setSelection(false);
 					return;
 				}
-				Map<Integer, Sector> cleanSectors = SmartFileSystem.getCleanSectorsMap();
-				if (cleanSectors == null) {
-					System.out.println("Clean sectors are not classified yet..");
-				} else {
-					tableViewer.setInput(new ArrayList<Sector>(cleanSectors.values()));
-					tableViewer.refresh();
-				}
-				activeButton.setSelection(false);
-				dirtyButton.setSelection(false);
+//				List<Sector> existJournals = SmartFileSystem.getExistJournals();
+//				if (existJournals == null) {
+//					System.out.println("Clean sectors are not classified yet..");
+//				}
+//				tableViewer.setInput(existJournals);
+				tableViewer.refresh();
+
+				inProgressButton.setSelection(false);
+				finishedButton.setSelection(false);
 			}
 		});
 	}
 
-	public static List<Sector> filterSectors(SectorStatus targetStatus, List<Sector> sectorList) {
+	public static List<Sector> filterSectors(JournalStatus targetStatus, List<Sector> sectorList) {
 		ArrayList<Sector> resultList = new ArrayList<Sector>();
 		switch (targetStatus) {
-		case ACTIVE:
+		case INPROGRESS:
 			for (Sector s : sectorList) {
 				int status = s.getHeader().getStatus();
 				if (status < 128 && status >= 64) {
@@ -152,14 +151,14 @@ public class SectorViewer {
 				}
 			}
 			break;
-		case DIRTY:
+		case FINISHED:
 			for (Sector s : sectorList) {
 				if (s.getHeader().getStatus() < 64) {
 					resultList.add(s);
 				}
 			}
 			break;
-		case CLEAN:
+		case EXIST:
 			for (Sector s : sectorList) {
 				if (s.getHeader().getStatus() == 255) {
 					resultList.add(s);

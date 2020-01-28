@@ -20,19 +20,20 @@ package smartfs_dump_parser.data_model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class SmartFile {
 	private String fileName;
 	private EntryType type;
 	private SmartFile parent;
 	private List<SmartFile> entries;
-	private List<Sector> sectorList;
+	private Map<Integer, Sector> sectorMap;
 
-	public SmartFile(String fileName, EntryType type, SmartFile parent, List<Sector> sectorList) {
+	public SmartFile(String fileName, EntryType type, SmartFile parent, Map<Integer, Sector> sectorMap) {
 		this.fileName = fileName;
 		this.type = type;
 		this.parent = parent;
-		this.sectorList = sectorList;
+		this.sectorMap = sectorMap;
 		entries = new ArrayList<SmartFile>();
 	}
 
@@ -52,7 +53,7 @@ public class SmartFile {
 		return entries;
 	}
 
-	public List<Sector> getSectorList() {
-		return sectorList;
+	public Map<Integer, Sector> getSectorMap() {
+		return sectorMap;
 	}
 }

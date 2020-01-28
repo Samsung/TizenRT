@@ -23,9 +23,6 @@ import time
 import sys
 
 PORT = sys.argv[1]
-PASS_COUNT = 0
-FAIL_COUNT = 0
-SMARTFS_DUMP_HANDSHAKE_MSG = "SMARTFS"
 
 sys.stdout.flush()
 
@@ -129,4 +126,4 @@ def init():
 
 if (__name__ == '__main__'):
     data = []
-    execute_cmd("DUMPSDV", data, PORT, 30)
+    execute_cmd("DUMPFS", data, PORT, 30)
