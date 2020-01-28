@@ -21,7 +21,9 @@ package smartfs_dump_visualizer.controllers;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import smartfs_dump_parser.data_model.EntryType;
 import smartfs_dump_parser.data_model.Header;
@@ -52,7 +54,16 @@ public class SmartFSOrganizer {
 			}
 		}
 
-		return createDirectoryHierarchy();
+		if (!createDirectoryHierarchy()) {
+			return false;
+		}
+
+		// Analyze Journaling Info.
+		int journal_area = existJournalingArea();
+		if (journal_area > 0) {
+
+		}
+		return true;
 	}
 
 	private static boolean analyzeDumpFile(String filePath, String fileName, int candidateSectorSize) {
@@ -90,24 +101,24 @@ public class SmartFSOrganizer {
 
 		byte statusValue = sectorData[4];
 		if (SmartFileSystem.isActiveSector(statusValue)) {
-			SmartFileSystem.getActiveSectors().add(sector);
+			SmartFileSystem.getActiveSectorsMap().put(logicalSectorId, sector);
 
 			if (SmartFileSystem.isSignatureLogicalSector(logicalSectorId)) {
 				SmartFileSystem.setValidSmartFS(true);
 				extractedSectorSize = (statusValue & SmartFileSystem.getSectorStatusSizebits());
 				extractedSectorSize <<= 7;
 			} else if (SmartFileSystem.isRootLogicalSector(logicalSectorId)) {
-				List<Sector> sectorList = new ArrayList<Sector>();
-				sectorList.add(sector);
+				Map<Integer, Sector> sectorMap = new HashMap<Integer, Sector>();
+				sectorMap.put(logicalSectorId, sector);
 				SmartFile rootDir = new SmartFile(SmartFileSystem.getSmartFSRoot(), EntryType.DIRECTORY, null,
-						sectorList);
+						sectorMap);
 				SmartFileSystem.setRootDirectory(rootDir);
 			}
 		} else if (SmartFileSystem.isDirtySector(statusValue)) {
-			SmartFileSystem.getDirtySectors().add(sector);
+			SmartFileSystem.getDirtySectorsMap().put(logicalSectorId, sector);
 		} else {
 			// TODO: Validate whether this sector is clean or corrupted.
-			SmartFileSystem.getCleanSectors().add(sector);
+			SmartFileSystem.getCleanSectorsMap().put(logicalSectorId, sector);
 		}
 	}
 
@@ -155,12 +166,13 @@ public class SmartFSOrganizer {
 	}
 
 	private static int analyzeChildrenEntries(SmartFile sf) {
-		if (sf.getSectorList().size() == 0) {
+		if (sf.getSectorMap().size() == 0) {
 			System.out.println("Warning: No sectors are specified for this entry: " + sf.getFileName());
 			return -1;
 		}
 
-		Sector currSector = sf.getSectorList().get(0);
+		List<Sector> sectorList = new ArrayList<Sector>(sf.getSectorMap().values());
+		Sector currSector = sectorList.get(0);
 		byte[] flashData = currSector.getFlashData();
 		int offset = SmartFileSystem.getSectorHeaderSize();
 
@@ -193,11 +205,45 @@ public class SmartFSOrganizer {
 			}
 			// TODO: Fill sectorList appropriately
 			SmartFile child = new SmartFile(new String(fileNameArray).trim(),
-					(isDirectory ? EntryType.DIRECTORY : EntryType.FILE), sf, new ArrayList<Sector>());
+					(isDirectory ? EntryType.DIRECTORY : EntryType.FILE), sf, new HashMap<Integer, Sector>());
 			sf.getEntries().add(child);
 			offset += fileNameLength;
 		}
 
 		return sf.getEntries().size();
+	}
+
+	private static int existJournalingArea() {
+		Sector area1_start_sector = SmartFileSystem.getActiveSectorsMap()
+				.get(SmartFileSystem.getJournalAreaStartSectorId());
+		Sector area2_start_sector = SmartFileSystem.getActiveSectorsMap()
+				.get(SmartFileSystem.getJournalAreaStartSectorId() + SmartFileSystem.getJournalSectorNumber());
+
+		int[] area_status = new int[2];
+		area_status[0] = makePositiveValue(area1_start_sector.getFlashData()[SmartFileSystem.getSectorHeaderSize()]);
+		area_status[1] = makePositiveValue(area2_start_sector.getFlashData()[SmartFileSystem.getSectorHeaderSize()]);
+		if (area1_start_sector == null && area2_start_sector == null) {
+			System.out.println("Journaling area does not exist..T.T)\n");
+			return -1;
+		} else if (area1_start_sector == null && area_status[1] % 16 == 0) {
+			return 1;
+		} else if (area2_start_sector == null && area_status[0] % 16 == 0) {
+			return 0;
+		}
+
+		int[] area_index = new int[2];
+		for (int i = 0; i <= 1; i++) {
+			if (area_status[i] == 255) {
+				area_index[i] = 0;
+			} else if (area_status[i] == 15 * 16) {
+				area_index[i] = 1;
+			} else if (area_status[i] == 0) {
+				area_index[i] = 2;
+			} else {
+				area_index[i] = 3;
+			}
+		}
+
+		return SmartFileSystem.getJournalArea(area_index[0], area_index[1]);
 	}
 }

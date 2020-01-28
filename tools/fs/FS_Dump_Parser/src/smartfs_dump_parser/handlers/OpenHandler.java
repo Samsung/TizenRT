@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
 
 import smartfs_dump_parser.parts.GeometryViewer;
+import smartfs_dump_parser.parts.JournalViewer;
 import smartfs_dump_parser.data_model.SmartFileSystem;
 import smartfs_dump_parser.parts.DirectoryViewer;
 import smartfs_dump_parser.parts.SectorViewer;
@@ -51,11 +52,14 @@ public class OpenHandler {
 			DirectoryViewer dv = (DirectoryViewer) directory_part.getObject();
 			MPart sector_part = partService.findPart("smartfs_dump_parser.part.sector_list");
 			SectorViewer sv = (SectorViewer) sector_part.getObject();
+			MPart journal_part = partService.findPart("smartfs_dump_parser.part.journal_information");
+			JournalViewer jv = (JournalViewer) journal_part.getObject();
 			
 			if (SmartFSOrganizer.organizeSmartFS(filePath, fileName)) {
 				gv.updateGeometry(SmartFileSystem.getSectorSize(), SmartFileSystem.getNumberOfSectors());				
 				dv.getDirectoryViewer().refresh();
 				sv.getSectorViewer().refresh();
+				jv.getJournalViewer().refresh();
 			}
 		}
 	}
