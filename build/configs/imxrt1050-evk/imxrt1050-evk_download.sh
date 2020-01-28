@@ -130,7 +130,9 @@ function get_executable_name()
 		app) echo "tinyara_user.bin";;
 		micom) echo "micom";;
 		wifi) echo "wifi";;
+		userfs) echo "imxrt1050-evk_smartfs.bin";;
 		*) echo "No Binary Match"
+		exit 1
 	esac
 }	
 
@@ -142,6 +144,14 @@ function get_partition_index()
                 app | App | APP) echo "1";;
                 micom | Micom | MICOM) echo "2";;
                 wifi | Wifi | WIFI) echo "4";;
+                userfs | Userfs | USERFS)
+                for i in "${!parts[@]}"
+                do
+                   if [[ "${parts[$i]}" = "userfs" ]]; then
+                        echo $i
+                fi
+                done
+                ;;
                 *) echo "No Matching Partition"
                 exit 1
         esac
