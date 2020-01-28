@@ -198,6 +198,7 @@
  *fact that the sector is indeed completely erased.
  */
 
+#ifdef NXFUSE_HOST_BUILD
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF && SMART_STATUS_VERSION == 1
 #if CONFIG_MTD_SMART_SECTOR_SIZE == 256
 #define SMART_ERASEDSTATE_CRC  0
@@ -224,6 +225,7 @@
 #endif
 #else
 #define SMART_ERASEDSTATE_CRC  -1
+#endif
 #endif
 
 #define SET_TO_TRUE(v, n) v[n/8] |= (1<<(7-(n%8)))
@@ -4049,6 +4051,7 @@ static int smart_write_alloc_sector(FAR struct smart_struct_s *dev, uint16_t log
  *
  ****************************************************************************/
 
+#ifdef NXFUSE_HOST_BUILD
 static int smart_validate_crc(FAR struct smart_struct_s *dev)
 {
 	crc_t crc;
@@ -4059,30 +4062,67 @@ static int smart_validate_crc(FAR struct smart_struct_s *dev)
 	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
 
 #ifdef CONFIG_SMART_CRC_16
-
 	/* Test 16-bit CRC. */
 
 	if (crc != *((uint16_t *)header->crc16) && crc != SMART_ERASEDSTATE_CRC) {
 		return -EIO;
 	}
 #elif defined(CONFIG_SMART_CRC_32)
-
 	if (crc != *((uint32_t *)header->crc32)) {
 		return -EIO;
 	}
-#else
-	/* Test 8-bit CRC for CRC8 & basic case for smart_scan. */
+#elif defined(CONFIG_SMART_CRC_8)
+	/* Test 8-bit CRC for CRC8. */
+
 	if (crc != header->crc8 && crc != SMART_ERASEDSTATE_CRC) {
+		return -EIO;
+	}
+#else
+	/*CONFIG_MTD_SMART_ENABLE_CRC not set, perform minimal CRC check
+	  (only for first three bytes i.e. logicalsector and sequence number). */
+
+	if (crc != header->crc8 && (header->logicalsector[0] != CONFIG_SMARTFS_ERASEDSTATE || header->logicalsector[1] != CONFIG_SMARTFS_ERASEDSTATE || header->seq != CONFIG_SMARTFS_ERASEDSTATE)) {
 		return -EIO;
 	}
 
 #endif
-
 	/* CRC checkout out okay. */
 
 	return OK;
 }
 
+#else
+static int smart_validate_crc(FAR struct smart_struct_s *dev)
+{
+	crc_t crc;
+	FAR struct smart_sect_header_s *header;
+	/* Calculate CRC on data region of the sector. */
+
+	crc = smart_calc_sector_crc(dev);
+	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
+
+#ifdef CONFIG_SMART_CRC_16
+	/* Test 16-bit CRC. */
+
+	if (crc != *((uint16_t *)header->crc16)) {
+		return -EIO;
+	}
+#elif defined(CONFIG_SMART_CRC_32)
+	if (crc != *((uint32_t *)header->crc32)) {
+		return -EIO;
+	}
+#else
+	/* Test 8-bit CRC for CRC8 & basic case for smart_scan. */
+
+	if (crc != header->crc8) {
+		return -EIO;
+	}
+#endif
+	/* CRC checkout out okay. */
+
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Name: smart_writesector
