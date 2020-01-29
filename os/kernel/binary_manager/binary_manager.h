@@ -130,6 +130,22 @@ struct binmgr_bininfo_s {
 };
 typedef struct binmgr_bininfo_s binmgr_bininfo_t;
 
+/* Binary header data */
+struct binary_header_s {
+	uint32_t crc_hash;
+	uint16_t header_size;
+	uint8_t bin_type;
+	uint8_t compression_type;
+	uint8_t bin_priority;
+	uint32_t bin_size;
+	char bin_name[BIN_NAME_MAX];
+	char bin_ver[BIN_VER_MAX];
+	uint32_t bin_ramsize;
+	uint32_t bin_stacksize;
+	char kernel_ver[KERNEL_VER_MAX];
+	uint32_t jump_addr;
+} __attribute__((__packed__));
+typedef struct binary_header_s binary_header_t;
 
 /* Kernel data type in kernel table */
 struct binmgr_kerinfo_s {
@@ -208,6 +224,7 @@ void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response);
 void binary_manager_notify_state_changed(int bin_idx, uint8_t state);
+int binary_manager_read_header(char *path, binary_header_t *header_data);
 int binary_manager_loading(char *loading_data[]);
 uint32_t binary_manager_get_binary_count(void);
 uint32_t binary_manager_get_kernel_part_count(void);
@@ -216,6 +233,7 @@ int binary_manager_get_index_with_binid(int bin_id);
 void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
+void binary_manager_scan_binfs(void);
 int binary_manager_create_binfile(int requester_pid, char *bin_name, int version);
 
 /****************************************************************************

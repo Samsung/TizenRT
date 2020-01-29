@@ -37,6 +37,9 @@
 #define APP_NAME                   "micom"
 #define APP_FACTORY_DEV            "/dev/mtdblock2"
 
+#define NEW_APP_NAME               "newbin"
+#define NEW_APP_VERSION            "20200421"
+
 #define EXEC_FINITE                 0
 #define EXEC_INFINITE               1
 
@@ -188,6 +191,102 @@ static void binary_update_download_binary(binary_update_info_t *binary_info, int
 		goto errout_with_close_fds;
 	}
 	printf("Download binary %s Done!\n", filepath);
+
+errout_with_close_fds:
+	close(write_fd);
+	close(read_fd);
+	if (ret < 0) {
+		fail_cnt++;
+	}
+	return;
+}
+
+static void binary_update_download_new_binary(void)
+{
+	int read_fd;
+	int write_fd;
+	int ret;
+	int total_size;
+	int copy_size;
+	int read_size;
+	uint32_t crc_hash = 0;
+	uint8_t buffer[BUFFER_SIZE];
+	binary_header_t header_data;
+
+	read_fd = open(APP_FACTORY_DEV, O_RDONLY);
+	if (read_fd < 0) {
+		fail_cnt++;
+		printf("Failed to open %s: %d, errno: %d\n", APP_FACTORY_DEV, read_fd, get_errno());
+		return;
+	}
+
+	/* Read the binary header. */
+	ret = read(read_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
+	if (ret != sizeof(binary_header_t)) {
+		printf("Failed to read header %s: %d\n", APP_FACTORY_DEV, ret);
+		close(read_fd);
+		fail_cnt++;
+		return;
+	}
+
+	write_fd = binary_manager_open_new_entry(NEW_APP_NAME, atoi(NEW_APP_VERSION));
+	if (write_fd < 0) {
+		fail_cnt++;
+		printf("Failed to create: version %d, ret %d, errno %d\n", NEW_APP_VERSION, write_fd, get_errno());
+		close(read_fd);
+		return;
+	}
+
+	/* Update header data : name, version */
+	strncpy(header_data.bin_name, NEW_APP_NAME, CONFIG_NAME_MAX);
+	strncpy(header_data.bin_ver, NEW_APP_VERSION, BIN_VER_MAX);
+
+	/* Write the binary header. */
+	ret = write(write_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
+	if (ret != sizeof(binary_header_t)) {
+		printf("Failed to write header: %d\n", ret);
+		goto errout_with_close_fds;
+		return;
+	}
+
+	crc_hash = crc32part((uint8_t *)&header_data + CHECKSUM_SIZE, header_data.header_size, crc_hash);
+
+	/* Copy binary */
+	total_size = header_data.bin_size;
+	copy_size = 0;
+
+	while (total_size > copy_size) {
+		read_size = ((total_size - copy_size) < BUFFER_SIZE ? (total_size - copy_size) : BUFFER_SIZE);
+		ret = read(read_fd, (FAR uint8_t *)buffer, read_size);
+		if (ret != read_size) {
+			printf("Failed to read buffer : %d\n", ret);
+			goto errout_with_close_fds;
+		}
+		ret = write(write_fd, (FAR uint8_t *)buffer, read_size);
+		if (ret != read_size) {
+			printf("Failed to write buffer : %d\n", ret);
+			goto errout_with_close_fds;
+		}
+		crc_hash = crc32part(buffer, read_size, crc_hash);
+		copy_size += read_size;
+		printf("Copy %s binary from %s [%d%%]\r", NEW_APP_NAME, APP_FACTORY_DEV, copy_size * 100 / total_size);
+	}
+	printf("\nCopy SUCCESS\n");
+
+	/* Write to crc information. */
+	ret = lseek(write_fd, 0, SEEK_SET);
+	if (ret == ERROR) {
+		printf("Failed to lseek %d, errno %d\n", ret, errno);
+		goto errout_with_close_fds;
+	}
+
+	/* Write new crc */
+	ret = write(write_fd, (FAR uint8_t *)&crc_hash, CHECKSUM_SIZE);
+	if (ret != CHECKSUM_SIZE) {
+		printf("Failed to write %d\n", ret);
+		goto errout_with_close_fds;
+	}
+	printf("Download binary %s Done!\n", NEW_APP_NAME);
 
 errout_with_close_fds:
 	close(write_fd);
@@ -376,6 +475,33 @@ static void binary_update_invalid_binary_test(void)
 	binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_INVALID_BIN);
 }
 
+static void binary_update_new_binary_test(void)
+{
+	int ret;
+	binary_update_info_t bin_info;
+
+	ret = binary_manager_get_update_info(NEW_APP_NAME, &bin_info);
+	if (ret != BINMGR_NOT_FOUND) {
+		printf("Get binary info FAIL, ret %d\n", ret);
+		return;
+	}
+
+	/* Download new binary by copying another binary and updating header data */
+	binary_update_download_new_binary();
+
+	binary_update_reload(NEW_APP_NAME);
+
+	sleep(3);
+
+	ret = binary_manager_get_update_info(NEW_APP_NAME, &bin_info);
+	if (ret != BINMGR_OK || strncmp(bin_info.version, NEW_APP_VERSION, sizeof(bin_info.version))) {
+		fail_cnt++;
+		printf("Fail to load valid new binary.\n");
+	} else {
+		printf("Success to load valid new binary.\n");
+	}
+}
+
 static void binary_update_run_tests(int repetition_num)
 {
 	printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
@@ -394,6 +520,9 @@ static void binary_update_run_tests(int repetition_num)
 
 	/* Unregister registered callback */
 	binary_update_unregister_state_changed_callback();
+
+	/* Test new App binary download. */
+	binary_update_new_binary_test();
 
 	/* Get information of all binaries */
 	binary_update_getinfo_all();

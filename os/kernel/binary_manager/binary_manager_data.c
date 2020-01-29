@@ -97,6 +97,47 @@ binmgr_kerinfo_t *binary_manager_get_kernel_data(void)
 }
 
 /****************************************************************************
+ * Name: binary_manager_register_binary
+ *
+ * Description:
+ *	 This function registers user binaries.
+ *
+ ****************************************************************************/
+int binary_manager_register_binary(char *name)
+{
+	int  bin_idx;
+
+	if (name == NULL || g_bin_count >= USER_BIN_COUNT) {
+		bmdbg("Invalid parameter\n");
+		return ERROR;
+	}
+
+	for (bin_idx = 0; bin_idx < g_bin_count; bin_idx++) {
+		/* Already Registered */
+		if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
+			bmdbg("Already registered for binary %s\n", BIN_NAME(bin_idx));
+			return ERROR;
+		}
+	}
+
+	bin_idx = g_bin_count;
+
+	/* If it is not registered, Register it as a new user binary */
+	BIN_ID(bin_idx) = -1;
+	BIN_RTCOUNT(bin_idx) = 0;
+	BIN_STATE(bin_idx) = BINARY_INACTIVE;
+	BIN_PARTNUM(bin_idx) = -1;
+	BIN_PARTSIZE(bin_idx) = 0;
+	strncpy(BIN_NAME(bin_idx), name, BIN_NAME_MAX);
+	sq_init(&BIN_CBLIST(bin_idx));
+	g_bin_count++;
+
+	bmvdbg("[USER %d] %s\n", g_bin_count, BIN_NAME(bin_idx));
+
+	return bin_idx;
+}
+
+/****************************************************************************
  * Name: binary_manager_register_upart
  *
  * Description:
@@ -107,29 +148,16 @@ void binary_manager_register_upart(int part_num, char *name, int part_size)
 {
 	int bin_idx;
 
-	if (part_num < 0 || part_size <= 0 || g_bin_count >= USER_BIN_COUNT) {
+	if (part_num < 0 || part_size <= 0) {
 		bmdbg("ERROR: Invalid part info : num %d, size %d\n", part_num, part_size);
 		return;
 	}
 
-	for (bin_idx = 0; bin_idx < g_bin_count; bin_idx++) {
-		/* Already Registered */
-		if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
-			bmdbg("Already registered for binary %s\n", BIN_NAME(bin_idx));
-			return;
-		}
+	bin_idx = binary_manager_register_binary(name);
+	if (bin_idx >= 0) {
+		BIN_PARTNUM(bin_idx) = part_num;
+		BIN_PARTSIZE(bin_idx) = part_size;
 	}
-	/* If partition is not registered, Register it as a new user partition */
-	BIN_ID(g_bin_count) = -1;
-	BIN_RTCOUNT(g_bin_count) = 0;
-	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
-	BIN_PARTNUM(g_bin_count) = part_num;
-	BIN_PARTSIZE(g_bin_count) = part_size;
-	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
-	sq_init(&BIN_CBLIST(g_bin_count));
-	g_bin_count++;
-
-	bmvdbg("[USER %d] %s size %d num %d\n", g_bin_count, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx), BIN_PARTNUM(bin_idx));
 }
 
 /****************************************************************************

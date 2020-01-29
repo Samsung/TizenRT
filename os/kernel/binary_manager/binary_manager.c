@@ -101,6 +101,9 @@ int binary_manager(int argc, char *argv[])
 	}
 #endif
 
+	/* Scan binary files in fs */
+	binary_manager_scan_binfs();
+
 	/* Create binary manager message queue */
 	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);
 	if (g_binmgr_mq_fd == (mqd_t)ERROR) {

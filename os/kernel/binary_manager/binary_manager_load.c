@@ -50,100 +50,9 @@
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
-struct binary_header_s {
-	uint32_t crc_hash;
-	uint16_t header_size;
-	uint8_t bin_type;
-	uint8_t compression_type;
-	uint8_t bin_priority;
-	uint32_t bin_size;
-	char bin_name[BIN_NAME_MAX];
-	char bin_ver[BIN_VER_MAX];
-	uint32_t bin_ramsize;
-	uint32_t bin_stacksize;
-	char kernel_ver[KERNEL_VER_MAX];
-	uint32_t jump_addr;
-} __attribute__((__packed__));
-typedef struct binary_header_s binary_header_t;
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-/****************************************************************************
- * Name: binary_manager_read_header
- *
- * Description:
- *	 This function reads header and checks whether it is valid or not.
- *
- ****************************************************************************/
-static int binary_manager_read_header(char *path, binary_header_t *header_data)
-{
-	int fd;
-	int ret;
-	int read_size;
-	int file_size;
-	bool need_unlink;
-	uint32_t crc_hash = 0;
-	uint32_t check_crc = 0;
-	uint8_t crc_buffer[CRC_BUFFER_SIZE];
-
-	memset(header_data, 0, sizeof(binary_header_t));
-
-	need_unlink = false;
-
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		bmdbg("Failed to open %s: %d, errno %d\n", path, ret, errno);
-		return ERROR;
-	}
-
-	/* Read the binary header */
-	ret = read(fd, (FAR uint8_t *)header_data, sizeof(binary_header_t));
-	if (ret != sizeof(binary_header_t)) {
-		bmdbg("Failed to read %s: %d, errno %d\n", path, ret, errno);
-		goto errout_with_fd;
-	}
-
-	/* Verify header data */
-	if (header_data->bin_type != BIN_TYPE_ELF) {
-		need_unlink = true;
-		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
-		goto errout_with_fd;
-	}
-
-	/* Caculate checksum and Verify it */
-	check_crc = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_data->header_size, check_crc);
-	file_size = header_data->bin_size;
-	while (file_size > 0) {
-		read_size = file_size < CRC_BUFFER_SIZE ? file_size : CRC_BUFFER_SIZE;
-		ret = read(fd, (FAR uint8_t *)crc_buffer, read_size);
-		if (ret < 0 || ret != read_size) {
-			bmdbg("Failed to read : %d, errno %d\n", ret, errno);
-			goto errout_with_fd;
-		}
-		check_crc = crc32part(crc_buffer, read_size, check_crc);
-		file_size -= read_size;
-	}
-
-	if (check_crc != header_data->crc_hash) {
-		need_unlink = true;
-		bmdbg("Failed to crc check : %u != %u\n", check_crc, header_data->crc_hash);
-		goto errout_with_fd;
-	}
-
-	bmvdbg("Binary header : %d %d %d %s %s %d %s %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver, header_data->jump_addr);
-	close(fd);
-
-	return OK;
-
-errout_with_fd:
-	close(fd);
-	if (need_unlink) {
-		unlink(path);
-	}
-	return ERROR;
-}
-
 /****************************************************************************
  * Name: binary_manager_load_binary
  *
@@ -615,6 +524,81 @@ static int loading_thread(int argc, char *argv[])
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/****************************************************************************
+ * Name: binary_manager_read_header
+ *
+ * Description:
+ *	 This function reads header and checks whether it is valid or not.
+ *
+ ****************************************************************************/
+int binary_manager_read_header(char *path, binary_header_t *header_data)
+{
+	int fd;
+	int ret;
+	int read_size;
+	int file_size;
+	bool need_unlink;
+	uint32_t crc_hash = 0;
+	uint32_t check_crc = 0;
+	uint8_t crc_buffer[CRC_BUFFER_SIZE];
+
+	memset(header_data, 0, sizeof(binary_header_t));
+
+	need_unlink = false;
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		bmdbg("Failed to open %s: %d, errno %d\n", path, ret, errno);
+		return ERROR;
+	}
+
+	/* Read the binary header */
+	ret = read(fd, (FAR uint8_t *)header_data, sizeof(binary_header_t));
+	if (ret != sizeof(binary_header_t)) {
+		bmdbg("Failed to read %s: %d, errno %d\n", path, ret, errno);
+		goto errout_with_fd;
+	}
+
+	/* Verify header data */
+	if (header_data->bin_type != BIN_TYPE_ELF) {
+		need_unlink = true;
+		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
+		goto errout_with_fd;
+	}
+
+	/* Caculate checksum and Verify it */
+	check_crc = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_data->header_size, check_crc);
+	file_size = header_data->bin_size;
+	while (file_size > 0) {
+		read_size = file_size < CRC_BUFFER_SIZE ? file_size : CRC_BUFFER_SIZE;
+		ret = read(fd, (FAR uint8_t *)crc_buffer, read_size);
+		if (ret < 0 || ret != read_size) {
+			bmdbg("Failed to read : %d, errno %d\n", ret, errno);
+			goto errout_with_fd;
+		}
+		check_crc = crc32part(crc_buffer, read_size, check_crc);
+		file_size -= read_size;
+	}
+
+	if (check_crc != header_data->crc_hash) {
+		need_unlink = true;
+		bmdbg("Failed to crc check : %u != %u\n", check_crc, header_data->crc_hash);
+		goto errout_with_fd;
+	}
+
+	bmvdbg("Binary header : %d %d %d %s %s %d %s %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver, header_data->jump_addr);
+	close(fd);
+
+	return OK;
+
+errout_with_fd:
+	close(fd);
+	if (need_unlink) {
+		unlink(path);
+	}
+	return ERROR;
+}
+
 /****************************************************************************
  * Name: binary_manager_loading
  *

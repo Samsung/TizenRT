@@ -85,6 +85,57 @@ static int binary_manager_clear_binfile(int bin_idx)
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
+ * Name: binary_manager_scan_binfs
+ *
+ * Description:
+ *	 This function scans binary files.
+ *
+ ****************************************************************************/
+void binary_manager_scan_binfs(void)
+{
+	int ret;
+	DIR *dirp;
+	binary_header_t header_data;
+	char filepath[BIN_FILEPATH_MAX];
+	char filename[BIN_FILENAME_MAX];
+	char new_filepath[BIN_FILEPATH_MAX];
+
+	/* Open a directory for user binaries, BINARY_DIR_PATH */
+	dirp = opendir(BINARY_DIR_PATH);
+	if (dirp) {
+		/* Read each directory entry */
+		for (;;) {
+			struct dirent *entryp = readdir(dirp);
+			if (!entryp) {
+				/* Finished with this directory */
+				break;
+			}
+			/* Remove binary file which is not running */
+			if (DIRENT_ISFILE(entryp->d_type)) {
+				snprintf(filepath, BIN_FILEPATH_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
+				ret = binary_manager_read_header(filepath, &header_data);
+				if (ret < 0) {
+					continue;
+				}
+				/* If binary is not registered, register it */
+				ret = binary_manager_register_binary(header_data.bin_name);
+				if (ret >= 0) {
+					snprintf(filename, BIN_FILENAME_MAX, "%s_%s", header_data.bin_name, header_data.bin_ver);
+					if (strncmp(filename, entryp->d_name, BIN_FILENAME_MAX)) {
+						/* If valid file doesn't have binary naming rule, rename it */
+						snprintf(new_filepath, BIN_FILEPATH_MAX, "%s/%s", BINARY_DIR_PATH, filename);
+						rename(filepath, new_filepath);
+					}
+				}
+			}
+		}
+		closedir(dirp);
+	} else if (errno != ENOENT) {
+		bmdbg("Failed to open a directory, %s\n", BINARY_DIR_PATH);
+	}
+}
+
+/****************************************************************************
  * Name: binary_manager_create_binfile
  *
  * Description:
@@ -109,23 +160,26 @@ int binary_manager_create_binfile(int requester_pid, char *bin_name, int version
 	response_msg.result = BINMGR_OPERATION_FAIL;
 
 	bin_idx = binary_manager_get_index_with_name(bin_name);
-	if (bin_idx < 0) {
-		bmdbg("binary %s is not registered\n", bin_name);
-		response_msg.result = BINMGR_NOT_FOUND;
-		goto send_result;
-	}
-
-	if (atoi(BIN_VER(bin_idx)) == version) {
-		bmvdbg("Already existing version %d\n", version);
-		response_msg.result = BINMGR_ALREADY_UPDATED;
-		goto send_result;
-	}
-
-	/* Remove old binary files to get space in fs */
-	ret = binary_manager_clear_binfile(bin_idx);
-	if (ret < 0) {
-		response_msg.result = ret;
-		goto send_result;
+	if (bin_idx >= 0) {
+		/* Check version */
+		if (atoi(BIN_VER(bin_idx)) == version) {
+			bmvdbg("Already existing version %d\n", version);
+			response_msg.result = BINMGR_ALREADY_UPDATED;
+			goto send_result;
+		}
+		/* Remove old binary files to get space in fs */
+		ret = binary_manager_clear_binfile(bin_idx);
+		if (ret < 0) {
+			response_msg.result = ret;
+			goto send_result;
+		}
+	} else {
+		/* If it it not registered, register it */
+		ret = binary_manager_register_binary(bin_name);
+		if (ret < 0) {
+			response_msg.result = BINMGR_OPERATION_FAIL;
+			goto send_result;
+		}
 	}
 
 	snprintf(filepath, BIN_FILEPATH_MAX, "%s/%s_%d", BINARY_DIR_PATH, bin_name, version);
