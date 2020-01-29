@@ -56,6 +56,7 @@
 #define KERNEL_VER_MAX              8
 
 struct binary_header_s {
+	uint32_t crc_hash;
 	uint16_t header_size;
 	uint8_t bin_type;
 	uint8_t compression_type;
@@ -113,14 +114,6 @@ static void binary_update_download_binary(binary_update_info_t *binary_info, int
 		}
 	}
 
-	ret = lseek(read_fd, CHECKSUM_SIZE, SEEK_SET);
-	if (ret == ERROR) {
-		fail_cnt++;
-		printf("Failed to lseek %d, errno %d\n", ret, errno);
-		close(write_fd);
-		return;
-	}
-
 	/* Read the binary header. */
 	ret = read(read_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
 	if (ret != sizeof(binary_header_t)) {
@@ -144,13 +137,6 @@ static void binary_update_download_binary(binary_update_info_t *binary_info, int
 	/* Version update */
 	snprintf(header_data.bin_ver, BIN_VER_MAX, "%u", new_version);
 
-	/* Write to crc information. */
-	ret = write(write_fd, (FAR uint8_t *)&crc_hash, CHECKSUM_SIZE);
-	if (ret != CHECKSUM_SIZE) {
-		printf("Failed to write %d\n", ret);
-		goto errout_with_close_fds;
-	}
-
 	/* Write the binary header. */
 	ret = write(write_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
 	if (ret != sizeof(binary_header_t)) {
@@ -159,7 +145,7 @@ static void binary_update_download_binary(binary_update_info_t *binary_info, int
 		return;
 	}
 
-	crc_hash = crc32part((uint8_t *)&header_data, header_data.header_size, crc_hash);
+	crc_hash = crc32part((uint8_t *)&header_data + CHECKSUM_SIZE, header_data.header_size, crc_hash);
 
 	/* Copy binary */
 	total_size = header_data.bin_size;

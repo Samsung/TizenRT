@@ -51,6 +51,7 @@
  * Private Definitions
  ****************************************************************************/
 struct binary_header_s {
+	uint32_t crc_hash;
 	uint16_t header_size;
 	uint8_t bin_type;
 	uint8_t compression_type;
@@ -96,13 +97,6 @@ static int binary_manager_read_header(char *path, binary_header_t *header_data)
 		return ERROR;
 	}
 
-	/* Read the checksum */
-	ret = read(fd, (FAR uint8_t *)&crc_hash, CHECKSUM_SIZE);
-	if (ret != CHECKSUM_SIZE) {
-		bmdbg("Failed to read %s: %d, errno %d\n", path, ret, errno);
-		goto errout_with_fd;
-	}
-
 	/* Read the binary header */
 	ret = read(fd, (FAR uint8_t *)header_data, sizeof(binary_header_t));
 	if (ret != sizeof(binary_header_t)) {
@@ -118,7 +112,7 @@ static int binary_manager_read_header(char *path, binary_header_t *header_data)
 	}
 
 	/* Caculate checksum and Verify it */
-	check_crc = crc32part((uint8_t *)header_data, header_data->header_size, check_crc);
+	check_crc = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_data->header_size, check_crc);
 	file_size = header_data->bin_size;
 	while (file_size > 0) {
 		read_size = file_size < CRC_BUFFER_SIZE ? file_size : CRC_BUFFER_SIZE;
@@ -131,9 +125,9 @@ static int binary_manager_read_header(char *path, binary_header_t *header_data)
 		file_size -= read_size;
 	}
 
-	if (check_crc != crc_hash) {
+	if (check_crc != header_data->crc_hash) {
 		need_unlink = true;
-		bmdbg("Failed to crc check : %u != %u\n", check_crc, crc_hash);
+		bmdbg("Failed to crc check : %u != %u\n", check_crc, header_data->crc_hash);
 		goto errout_with_fd;
 	}
 
