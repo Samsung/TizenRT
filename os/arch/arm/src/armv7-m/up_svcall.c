@@ -375,9 +375,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		* USERSPACE->task_startup method. Instead we pick the PC value
 		* from the app's userspace object stored in its tcb.
 		*
-		* Here, we check if this task is a loadable app (non-zero ram_start)
+		* Here, we check if this task is a loadable app (non-zero uspace)
 		*/
-		if (((struct tcb_s *)sched_self())->ram_start) {
+		if (((struct tcb_s *)sched_self())->uspace) {
 			regs[REG_PC] = (uint32_t)((struct userspace_s *)(((struct tcb_s *)sched_self())->uspace))->task_startup;
 		} else
 		/* If its a normal non-loadable user app, then follow the default method */
@@ -422,9 +422,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		* USERSPACE->task_startup method. Instead we pick the PC value
 		* from the app's userspace object stored in its tcb.
 		*
-		* Here, we check if this task is a loadable app (non-zero ram_start)
+		* Here, we check if this task is a loadable app (non-zero uspace)
 		*/
-		if (((struct tcb_s *)sched_self())->ram_start) {
+		if (((struct tcb_s *)sched_self())->uspace) {
 			regs[REG_PC] = (uint32_t)((struct userspace_s *)(((struct tcb_s *)sched_self())->uspace))->pthread_startup;
 		} else
 		/* If its a normal non-loadable user app, then follow the default method */
@@ -477,9 +477,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		* USERSPACE->task_startup method. Instead we pick the PC value
 		* from the app's userspace object stored in its tcb.
 		*
-		* Here, we check if this task is a loadable app (non-zero ram_start)
+		* Here, we check if this task is a loadable app (non-zero uspace)
 		*/
-		if (rtcb->ram_start) {
+		if (rtcb->uspace) {
 			regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->signal_handler;
 		} else
 		/* If its a normal non-loadable user app, then follow the default method */

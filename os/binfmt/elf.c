@@ -306,7 +306,12 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	binp->alloc[4] = (FAR void *)loadinfo.dataalloc;
 	binp->textsize = loadinfo.textsize;
 	binp->rosize = loadinfo.rosize;
-	binp->datasize = loadinfo.datasize;
+	/* loadinfo.datasize includes the size of data and bss sections.
+	 * But, binp->datasize is used to backup the data section as
+	 * part of RO region. So, we subtract bss size from loadinfo.datasize
+	 * to obtain the size of just the data backup.
+	 */
+	binp->datasize = loadinfo.datasize - binp->bsssize;
 	binp->datastart = loadinfo.dataalloc;
 #endif
 

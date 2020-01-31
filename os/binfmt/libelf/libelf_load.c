@@ -137,6 +137,9 @@ static void elf_elfsize(struct elf_loadinfo_s *loadinfo)
 			if ((shdr->sh_flags & SHF_WRITE) != 0) {
 				datasize += ELF_ALIGNUP(shdr->sh_size);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+				if (shdr->sh_type == SHT_NOBITS) {
+					loadinfo->binp->bsssize = ELF_ALIGNUP(shdr->sh_size);
+				}
 			} else if ((shdr->sh_flags & SHF_EXECINSTR) != 0) {
 				textsize += ELF_ALIGNUP(shdr->sh_size);
 			} else {
@@ -242,7 +245,6 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 		else {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 			loadinfo->binp->bssstart = *pptr;
-			loadinfo->binp->bsssize = shdr->sh_size;
 #endif
 			memset(*pptr, 0, shdr->sh_size);
 		}
