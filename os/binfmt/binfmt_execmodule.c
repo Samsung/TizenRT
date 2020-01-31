@@ -178,7 +178,6 @@ int exec_module(FAR struct binary_s *binp)
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	binp->uheap = (struct mm_heap_s *)binp->heapstart;
-	binp->uheap_size = binp->ramstart + binp->ramsize - binp->heapstart - sizeof(struct mm_heap_s);
 	mm_initialize(binp->uheap, binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
 #ifdef CONFIG_BINARY_MANAGER
 	mm_add_app_heap_list(binp->uheap, binp->bin_name);
@@ -194,12 +193,12 @@ int exec_module(FAR struct binary_s *binp)
 	/* Initialize the MPU registers in tcb with suitable protection values */
 #ifdef CONFIG_ARMV7M_MPU
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	/* Complete RAM partition will be configured as RW region */
-	mpu_configure_app_regs(&rtcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)binp->ramstart, binp->ramsize, false, false);
 	/* Configure text section as RO and executable region */
-	mpu_configure_app_regs(&rtcb->mpu_regs[3], g_mpu_region_nr + 1, (uintptr_t)binp->alloc[0], binp->textsize, true, true);
+	mpu_configure_app_regs(&rtcb->mpu_regs[3], g_mpu_region_nr, (uintptr_t)binp->alloc[0], binp->textsize, true, true);
 	/* Configure ro section as RO and non-executable region */
-	mpu_configure_app_regs(&rtcb->mpu_regs[6], g_mpu_region_nr + 2, (uintptr_t)binp->alloc[3], binp->rosize, true, false);
+	mpu_configure_app_regs(&rtcb->mpu_regs[6], g_mpu_region_nr + 1, (uintptr_t)binp->alloc[3], binp->rosize, true, false);
+	/* Complete RAM partition will be configured as RW region */
+	mpu_configure_app_regs(&rtcb->mpu_regs[0], g_mpu_region_nr + 2, (uintptr_t)binp->alloc[4], binp->ramsize, false, false);
 #else
 	/* Complete RAM partition will be configured as RW region */
 	mpu_configure_app_regs(&rtcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)binp->ramstart, binp->ramsize, false, true);

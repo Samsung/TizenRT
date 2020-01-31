@@ -151,14 +151,30 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	uint32_t datamemsize = loadinfo->datasize + loadinfo->binp->ramsize;
 	uint32_t rosize = loadinfo->rosize;
-	loadinfo->rosize += loadinfo->datasize;
+	/* loadinfo->datasize contains the size of both data and bss sections.
+	 * But we need to backup only the data section in the RO region. So,
+	 * we need to extend the rosize by just the data section size only. Hence,
+	 * we are subtracting bsssize from loadinfo->datasize.
+	 */
+	loadinfo->rosize += loadinfo->datasize - loadinfo->binp->bsssize;
 #ifdef CONFIG_ARMV7M_MPU
 	loadinfo->textsize = 1 << mpu_log2regionceil(0, loadinfo->textsize);
 	loadinfo->rosize = 1 << mpu_log2regionceil(0, loadinfo->rosize);
+	datamemsize = 1 << mpu_log2regionceil(0, datamemsize);
+	loadinfo->binp->ramsize = datamemsize;
 #endif
 #endif
 
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	loadinfo->textalloc = kumm_memalign(loadinfo->textsize, loadinfo->textsize);
+	loadinfo->roalloc = kumm_memalign(loadinfo->rosize, loadinfo->rosize);
+	loadinfo->dataalloc = kumm_memalign(datamemsize, datamemsize);
+
+	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
+	loadinfo->binp->uheap_size = datamemsize - loadinfo->datasize - sizeof(struct mm_heap_s);
+#else
 	/* Allocate the RAM partition to load the app into */
 	loadinfo->binp->ramstart = kumm_memalign(loadinfo->binp->ramsize, loadinfo->binp->ramsize);
 	if (!loadinfo->binp->ramstart) {
@@ -166,22 +182,11 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 		return -ENOMEM;
 	}
 
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	if (loadinfo->textsize > loadinfo->rosize) {
-		loadinfo->textalloc = mm_align_up_by_size(loadinfo->binp->ramstart, loadinfo->textsize);
-		loadinfo->roalloc = mm_align_up_by_size(loadinfo->textalloc + loadinfo->textsize, loadinfo->rosize);
-		loadinfo->dataalloc = loadinfo->roalloc + loadinfo->rosize;
-	} else {
-		loadinfo->roalloc = mm_align_up_by_size(loadinfo->binp->ramstart, loadinfo->rosize);
-		loadinfo->textalloc = mm_align_up_by_size(loadinfo->roalloc + loadinfo->rosize, loadinfo->textsize);
-		loadinfo->dataalloc = loadinfo->textalloc + loadinfo->textsize;
-	}
-	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
-#else
 	loadinfo->textalloc = loadinfo->binp->ramstart;
 	loadinfo->dataalloc = loadinfo->textalloc + loadinfo->textsize;
+	loadinfo->binp->uheap_size = loadinfo->binp->ramsize - (loadinfo->textsize + loadinfo->datasize) - sizeof(struct mm_heap_s);
 #endif
-	loadinfo->binp->heapstart = loadinfo->dataalloc + datasize;
+	loadinfo->binp->heapstart = loadinfo->dataalloc + loadinfo->datasize;
 #else
 	loadinfo->textalloc = (uintptr_t)kumm_malloc(textsize + datasize);
 #endif

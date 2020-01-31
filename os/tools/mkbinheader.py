@@ -206,8 +206,12 @@ with open(file_path, 'rb') as fp:
         sys.exit(1)
 
     static_ram_size = get_static_ram_size(bin_type)
-    binary_ram_size = int(static_ram_size) + int(dynamic_ram_size)
-    binary_ram_size = roundup_power_two(binary_ram_size)
+    cfg_path = os.getenv('TOPDIR') + '/.config'
+    if check_optimize_config(cfg_path) == True:
+        binary_ram_size = int(dynamic_ram_size)
+    else:
+        binary_ram_size = int(static_ram_size) + int(dynamic_ram_size)
+        binary_ram_size = roundup_power_two(binary_ram_size)
 
     # based on comp_enabled, check if we need to compress binary.
     # If yes, assign to bin_comp value for compression algorithm to use.
