@@ -17,6 +17,7 @@ menu "Enable Test Scenarios"
 config EXAMPLES_MESSAGING_TEST
 	bool "Messaging Framework Test"
 	default y
+	depends on MESSAGING_IPC
 	---help---
 		Enable the Messaging Framework Test"
 
@@ -33,6 +34,7 @@ endif
 config EXAMPLES_RECOVERY_TEST
 	bool "Binary Manager Recovery example"
 	default y
+	depends on BINMGR_RECOVERY
 	---help---
 		Enable the Binary Manager Recovery test
 
