@@ -479,6 +479,7 @@ static void binary_update_new_binary_test(void)
 {
 	int ret;
 	binary_update_info_t bin_info;
+	char filepath[CONFIG_NAME_MAX];
 
 	ret = binary_manager_get_update_info(NEW_APP_NAME, &bin_info);
 	if (ret != BINMGR_NOT_FOUND) {
@@ -500,6 +501,10 @@ static void binary_update_new_binary_test(void)
 	} else {
 		printf("Success to load valid new binary.\n");
 	}
+
+	/* Unlink binary file */
+	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%s", BINARY_DIR_PATH, NEW_APP_NAME, NEW_APP_VERSION);
+	unlink(filepath);
 }
 
 static void binary_update_run_tests(int repetition_num)
