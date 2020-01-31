@@ -436,10 +436,10 @@ extern uint32_t _stext;
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->uheap)
-#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)((uint32_t)USERSPACE + sizeof(struct userspace_s))))
 #define BASE_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
 #else
-#define BASE_HEAP ((struct mm_heap_s *)(*(uint32_t *)(CONFIG_TINYARA_USERSPACE + sizeof(struct userspace_s))))
+#define BASE_HEAP ((struct mm_heap_s *)(*(uint32_t *)((uint32_t)USERSPACE + sizeof(struct userspace_s))))
 #endif
 
 #else

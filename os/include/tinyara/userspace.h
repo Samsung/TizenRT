@@ -71,29 +71,17 @@
  * Pre-processor Definitions
  ****************************************************************************/
 /* Configuration ************************************************************/
-/* If CONFIG_BUILD_PROTECTED, then CONFIG_TINYARA_USERSPACE must be defined to
+/* If CONFIG_BUILD_PROTECTED, then linker variable __uflash_segment_start__  must be defined to
  * provide the address where the user-space header can be found in memory.
  */
-
-#ifndef CONFIG_TINYARA_USERSPACE
-#error "CONFIG_TINYARA_USERSPACE is not defined"
-#endif
-
-/* Let's insist on 4-byte alignment.  This alignment may not be required
- * technically for all platforms.  However, neither is it an unreasonable
- * requirement for any platform.
- */
-
-#if (CONFIG_TINYARA_USERSPACE & 3) != 0
-#warning "CONFIG_TINYARA_USERSPACE is not aligned to a 4-byte boundary"
-#endif
+extern uint32_t __uflash_segment_start__[];
 
 /* Helper Macros ************************************************************/
 /* This macro is used to access the struct userpace_s header that can be
  * found at the beginning of the user-space blob.
  */
 
-#define USERSPACE ((FAR struct userspace_s *)CONFIG_TINYARA_USERSPACE)
+#define USERSPACE ((FAR struct userspace_s *)__uflash_segment_start__)
 
 /* In user space, these functions are directly callable.  In kernel space,
  * they can be called through the userspace structure.
@@ -104,7 +92,7 @@
  ****************************************************************************/
 /* Every user-space blob starts with a header that provides information about
  * the blob.  The form of that header is provided by struct userspace_s.  An
- * instance of this structure is expected to reside at CONFIG_TINYARA_USERSPACE.
+ * instance of this structure is expected to reside at __uflash_segment_start__.
  */
 
 struct userspace_s {
