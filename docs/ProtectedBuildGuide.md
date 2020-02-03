@@ -4,7 +4,6 @@
 - [Overview of Flat Build](#overview-of-flat-build)
 - [Overview of Protected Build](#overview-of-protected-build)
 - [Steps for suporting protected build in a new chipset](#steps-for-supporting-protected-build-in-a-new-chipset)
-	- [The CONFIG_TINYARA_USERSPACE configuration setting](#the-config_tinyara_userspace-configuration-setting)
 	- [Make.defs](#makedefs)
 	- [Linker scripts](#linker-scripts)
 	- [Userspace Initialization](#userspace-initialization)
@@ -37,15 +36,6 @@
 
 ## Steps for Supporting Protected Build in a new chipset
 The following sections give detailed explaination regarding some of the steps / code changes involved in supporting protected build on a new Chipset.
-
-### The CONFIG_TINYARA_USERSPACE configuration setting
-- In protected build, CONFIG_TINYARA_USERSPACE should provide the start address of the user binary in the flash memory.
-- This address depends on how the flash is partitioned into kernel and user areas.
-- The binary download procedure must make sure to place the user binary at the address mentioned in this configuration.
-- This config needs to be updated whenever there is a change in the start address of the user binary. This can happen when the flash partition sizes are modified. If this configuration does not contain the proper address then it can lead to one of the following behaviors:
-	- A device might hang (become unresponsive) during early stage of boot up.
-	- An assertion failure can occur in userspace intitialization API.
-
 
 ### Make.defs
 - The make.defs file provides several definitions which are used during the build process. One of the definitions is (ARCHSCRIPT) for the linker script to be used to link the kernel binary.
@@ -89,7 +79,20 @@ The following sections give detailed explaination regarding some of the steps / 
 
 	ksram (rwx)      : ORIGIN = 0x20000000, LENGTH = 320K
 	usram (rwx)      : ORIGIN = 0x2004E200, LENGTH = 320K
+
+        __kflash_segment_start__  = ORIGIN(kflash);
+        __kflash_segment_size__   = LENGTH(kflash);
+        __uflash_segment_start__  = ORIGIN(uflash);
+        __uflash_segment_size__   = LENGTH(uflash);
+        __ksram_segment_start__   = ORIGIN(ksram);
+        __ksram_segment_size__    = LENGTH(ksram);
+        __usram_segment_start__   = ORIGIN(usram);
+        __usram_segment_size__    = LENGTH(usram);
+
 ```
+
+- It is mandatory to define __uflash_segment_start__ linker variable. This will be used in the code to obtain the address of the uerspace object.
+- The user can also enable the CONFIG_AUTOGEN_MEMORY_LDSCRIPT config, which will auto-generate the memory.ld file based on the Flash partition information in CONFIG_FLASH_PART_XXXX configs.
 
 #### user-space.ld
 - This linker script is used while building the user binary. A reference to this script can be found in os/board/common/userspace/Makefile. 
