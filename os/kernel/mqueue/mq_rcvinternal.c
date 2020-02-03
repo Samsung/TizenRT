@@ -136,7 +136,7 @@ int mq_verifyreceive(mqd_t mqdes, FAR char *msg, size_t msglen)
 		return ERROR;
 	}
 
-	if (msglen < (size_t)mqdes->msgq->maxmsgsize) {
+	if (msglen < mqdes->msgq->maxmsgsize) {
 		set_errno(EMSGSIZE);
 		return ERROR;
 	}

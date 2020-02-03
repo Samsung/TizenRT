@@ -111,7 +111,7 @@ int mq_getattr(mqd_t mqdes, struct mq_attr *mq_stat)
 		mq_stat->mq_maxmsg = mqdes->msgq->maxmsgs;
 		mq_stat->mq_msgsize = mqdes->msgq->maxmsgsize;
 		mq_stat->mq_flags = mqdes->oflags;
-		mq_stat->mq_curmsgs = (size_t)mqdes->msgq->nmsgs;
+		mq_stat->mq_curmsgs = mqdes->msgq->nmsgs;
 
 		ret = OK;
 	}

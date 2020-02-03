@@ -108,11 +108,7 @@ struct mqueue_msg_s {
 	FAR struct mqueue_msg_s *next;	/* Forward link to next message */
 	uint8_t type;					/* (Used to manage allocations) */
 	uint8_t priority;				/* priority of message */
-#if MQ_MAX_BYTES < 256
-	uint8_t msglen;					/* Message data length */
-#else
-	uint16_t msglen;				/* Message data length */
-#endif
+	size_t msglen;					/* Message data length */
 	char mail[MQ_MAX_BYTES];		/* Message data */
 };
 

@@ -131,8 +131,8 @@ FAR struct mqueue_inode_s *mq_msgqalloc(mode_t mode, FAR struct mq_attr *attr)
 
 		sq_init(&msgq->msglist);
 		if (attr) {
-			msgq->maxmsgs    = (int16_t)attr->mq_maxmsg;
-			msgq->maxmsgsize = (int16_t)attr->mq_msgsize;
+			msgq->maxmsgs    = attr->mq_maxmsg;
+			msgq->maxmsgsize = attr->mq_msgsize;
 		} else {
 			msgq->maxmsgs    = MQ_MAX_MSGS;
 			msgq->maxmsgsize = MQ_MAX_BYTES;
