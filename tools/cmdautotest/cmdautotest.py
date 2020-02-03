@@ -87,9 +87,9 @@ def serial_read(port, receive="", limit_time=1):
             start_time = time.time()
 
         for line in lines:
-            print ('['+sys._getframe(3).f_code.co_name+']'+" %s" % (line)),
-            ret1 = line.find("unregistered")
-            ret2 = line.find("] FAIL")
+            print (('['+sys._getframe(3).f_code.co_name+']'+" %s" % (line.decode())), end='')
+            ret1 = line.find(("unregistered").encode())
+            ret2 = line.find(("] FAIL").encode())
             if (ret1 != -1) | (ret2 != -1):
                 return False
 
@@ -97,7 +97,7 @@ def serial_read(port, receive="", limit_time=1):
         judge_cnt = 0
         for line in lines:
             for data in receive:
-                ret = line.find(data)
+                ret = line.find(data.encode())
                 if ret != -1:
                     judge_cnt = judge_cnt + 1
                     break
@@ -416,11 +416,11 @@ if (__name__ == '__main__'):
             result_list[key] = ('\n['+(CMD_LIST[key].__name__)+']' + " : PASS")
             PASS_COUNT = PASS_COUNT + 1
 
-        print result_list[key]
+        print (result_list[key])
 
     print ("\n\n########## Auto Test Result ##########")
     for key, log in result_list.items():
-        print (result_list[key]),
+        print (result_list[key], end='')
 
     print ("\n\n########## Auto Test End [PASS : %d, FAIL : %d] ##########" % (
         PASS_COUNT, FAIL_COUNT))
