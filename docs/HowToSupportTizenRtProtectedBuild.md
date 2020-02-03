@@ -21,7 +21,6 @@ CONFIG_BUILD_PROTECTED=y
 CONFIG_BUILD_2PASS=y
 CONFIG_PASS1_TARGET="all"
 CONFIG_PASS1_OBJECT=""
-CONFIG_TINYARA_USERSPACE=0x08080000
 CONFIG_ARM_HAVE_MPU_UNIFIED=y
 CONFIG_ARMV7M_MPU=y
 CONFIG_ARMV7M_MPU_NREGIONS=8
@@ -30,7 +29,6 @@ CONFIG_LIB_SYSCALL=y
 CONFIG_SYS_RESERVED=8
 CONFIG_SYS_NNEST=2
 ```
-- Here CONFIG_TINYARA_USERSPACE should provide the start address of the user binary in the flash memory. This config needs to be updated whenever there is a change in the start address of the user binary.
 
 ### Make.defs
 - Modify the make.defs to include below lines:
@@ -247,4 +245,4 @@ void CHIPSET_mpuinitialize(void)
 ## Changes in the download method
 - Different chipsets have different configs, scripts or different GUI based tools for download purposes.
 - In protected build, two binaries (kernel and user) need to be downloaded. So, the download process should be modified to accomodate this.
-- The download process should ensure that the user binary is flashed at the address given by  CONFIG_TINYARA_USERSPACE defined in 'defconfig' file.
+- The download process should ensure that the user binary is flashed in the "app" partition given by CONFIG_FLASH_PART_NAME defined in 'defconfig' file.
