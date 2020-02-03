@@ -85,15 +85,11 @@ struct mq_des;					/* forward reference */
 struct mqueue_inode_s {
 	FAR struct inode *inode;	/* Containing inode */
 	sq_queue_t msglist;			/* Prioritized message list */
-	int16_t maxmsgs;			/* Maximum number of messages in the queue */
-	int16_t nmsgs;				/* Number of message in the queue */
+	uint16_t maxmsgs;			/* Maximum number of messages in the queue */
+	uint16_t nmsgs;				/* Number of message in the queue */
 	int16_t nwaitnotfull;		/* Number tasks waiting for not full */
 	int16_t nwaitnotempty;		/* Number tasks waiting for not empty */
-#if CONFIG_MQ_MAXMSGSIZE < 256
-	uint8_t maxmsgsize;			/* Max size of message in message queue */
-#else
-	uint16_t maxmsgsize;		/* Max size of message in message queue */
-#endif
+	size_t maxmsgsize;			/* Max size of message in message queue */
 #ifndef CONFIG_DISABLE_SIGNALS
 	FAR struct mq_des *ntmqdes;	/* Notification: Owning mqdes (NULL if none) */
 	pid_t ntpid;				/* Notification: Receiving Task's PID */
