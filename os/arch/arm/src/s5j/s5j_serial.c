@@ -234,6 +234,241 @@ struct up_dev_s {
 };
 
 /****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+static inline uint32_t uart_getreg8(struct up_dev_s *priv, int offset);
+static inline void uart_putreg8(struct up_dev_s *priv, int offset, uint32_t value);
+static inline uint32_t uart_getreg32(struct up_dev_s *priv, int offset);
+static inline void uart_putreg32(struct up_dev_s *priv, int offset, uint32_t value);
+static inline void uart_modifyreg32(struct up_dev_s *priv, int offset, uint32_t clearbits, uint32_t setbits);
+
+static int up_interrupt(int irq, void *context, void *arg);
+static void up_configure(struct up_dev_s *priv);
+static int up_setup(struct uart_dev_s *dev);
+static void up_shutdown(struct uart_dev_s *dev);
+static int up_attach(struct uart_dev_s *dev);
+static void up_detach(struct uart_dev_s *dev);
+static int up_ioctl(struct file *filep, int cmd, unsigned long arg);
+static int up_receive(struct uart_dev_s *dev, uint32_t *status);
+static void up_rxint(struct uart_dev_s *dev, bool enable);
+static bool up_rxavailable(struct uart_dev_s *dev);
+static void up_send(struct uart_dev_s *dev, int ch);
+static void up_txint(struct uart_dev_s *dev, bool enable);
+static bool up_txready(struct uart_dev_s *dev);
+static bool up_txempty(struct uart_dev_s *dev);
+
+#ifdef CONFIG_PM
+static void up_pm_notify(struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
+static int up_pm_prepare(struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
+#endif /* CONFIG_PM */
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/* UART operations structure */
+static const struct uart_ops_s g_uart_ops = {
+	.setup			= up_setup,
+	.shutdown		= up_shutdown,
+	.attach			= up_attach,
+	.detach			= up_detach,
+	.ioctl			= up_ioctl,
+	.receive		= up_receive,
+	.rxint			= up_rxint,
+	.rxavailable	= up_rxavailable,
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+	.rxflowcontrol	= NULL,
+#endif
+	.send			= up_send,
+	.txint			= up_txint,
+	.txready		= up_txready,
+	.txempty		= up_txempty,
+};
+
+/* I/O buffers */
+#ifdef CONFIG_S5J_UART0
+static char g_uart0rxbuffer[CONFIG_UART0_RXBUFSIZE];
+static char g_uart0txbuffer[CONFIG_UART0_TXBUFSIZE];
+#endif
+
+#ifdef CONFIG_S5J_UART1
+static char g_uart1rxbuffer[CONFIG_UART1_RXBUFSIZE];
+static char g_uart1txbuffer[CONFIG_UART1_TXBUFSIZE];
+#endif
+
+#ifdef CONFIG_S5J_UART2
+static char g_uart2rxbuffer[CONFIG_UART2_RXBUFSIZE];
+static char g_uart2txbuffer[CONFIG_UART2_TXBUFSIZE];
+#endif
+
+#ifdef CONFIG_S5J_UART3
+static char g_uart3rxbuffer[CONFIG_UART3_RXBUFSIZE];
+static char g_uart3txbuffer[CONFIG_UART3_TXBUFSIZE];
+#endif
+
+#ifdef CONFIG_S5J_UART4
+static char g_uart4rxbuffer[CONFIG_UART4_RXBUFSIZE];
+static char g_uart4txbuffer[CONFIG_UART4_TXBUFSIZE];
+#endif
+
+#ifdef CONFIG_S5J_UART0
+static struct up_dev_s g_uart0priv = {
+	.uartbase	= S5J_UART0_BASE,
+	.baud		= CONFIG_UART0_BAUD,
+	.irq		= S5J_IRQ_UART0,
+	.parity		= CONFIG_UART0_PARITY,
+	.bits		= CONFIG_UART0_BITS,
+	.stopbits2	= CONFIG_UART0_2STOP,
+	.rxd		= GPIO_UART0_RXD,
+	.txd		= GPIO_UART0_TXD,
+	.pclk		= CLK_GATE_UART0_PCLK,
+	.extclk		= CLK_GATE_UART0_EXTCLK,
+};
+
+static uart_dev_t g_uart0port = {
+	.recv = {
+		.size	= CONFIG_UART0_RXBUFSIZE,
+		.buffer	= g_uart0rxbuffer,
+	},
+	.xmit = {
+		.size	= CONFIG_UART0_TXBUFSIZE,
+		.buffer	= g_uart0txbuffer,
+	},
+	.ops		= &g_uart_ops,
+	.priv		= &g_uart0priv,
+};
+#endif
+
+#ifdef CONFIG_S5J_UART1
+static struct up_dev_s g_uart1priv = {
+	.uartbase	= S5J_UART1_BASE,
+	.baud		= CONFIG_UART1_BAUD,
+	.irq		= S5J_IRQ_UART1,
+	.parity		= CONFIG_UART1_PARITY,
+	.bits		= CONFIG_UART1_BITS,
+	.stopbits2	= CONFIG_UART1_2STOP,
+	.rxd		= GPIO_UART1_RXD,
+	.txd		= GPIO_UART1_TXD,
+	.pclk		= CLK_GATE_UART1_PCLK,
+	.extclk		= CLK_GATE_UART1_EXTCLK,
+};
+
+static uart_dev_t g_uart1port = {
+	.recv = {
+		.size	= CONFIG_UART1_RXBUFSIZE,
+		.buffer	= g_uart1rxbuffer,
+	},
+	.xmit = {
+		.size	= CONFIG_UART1_TXBUFSIZE,
+		.buffer	= g_uart1txbuffer,
+	},
+	.ops		= &g_uart_ops,
+	.priv		= &g_uart1priv,
+};
+#endif
+
+#ifdef CONFIG_S5J_UART2
+static struct up_dev_s g_uart2priv = {
+	.uartbase	= S5J_UART2_BASE,
+	.baud		= CONFIG_UART2_BAUD,
+	.irq		= S5J_IRQ_UART2,
+	.parity		= CONFIG_UART2_PARITY,
+	.bits		= CONFIG_UART2_BITS,
+	.stopbits2	= CONFIG_UART2_2STOP,
+	.rxd		= GPIO_UART2_RXD,
+	.txd		= GPIO_UART2_TXD,
+#ifdef CONFIG_S5J_UART2_FLOWCONTROL
+	.rts		= GPIO_UART2_RTS,
+	.cts		= GPIO_UART2_CTS,
+#endif
+	.pclk		= CLK_GATE_UART2_PCLK,
+	.extclk		= CLK_GATE_UART2_EXTCLK,
+};
+
+static uart_dev_t g_uart2port = {
+	.recv = {
+		.size	= CONFIG_UART2_RXBUFSIZE,
+		.buffer	= g_uart2rxbuffer,
+	},
+	.xmit = {
+		.size	= CONFIG_UART2_TXBUFSIZE,
+		.buffer	= g_uart2txbuffer,
+	},
+	.ops		= &g_uart_ops,
+	.priv		= &g_uart2priv,
+};
+#endif
+
+#ifdef CONFIG_S5J_UART3
+static struct up_dev_s g_uart3priv = {
+	.uartbase	= S5J_UART3_BASE,
+	.baud		= CONFIG_UART3_BAUD,
+	.irq		= S5J_IRQ_UART3,
+	.parity		= CONFIG_UART3_PARITY,
+	.bits		= CONFIG_UART3_BITS,
+	.stopbits2	= CONFIG_UART3_2STOP,
+	.rxd		= GPIO_UART3_RXD,
+	.txd		= GPIO_UART3_TXD,
+#ifdef CONFIG_S5J_UART3_FLOWCONTROL
+	.rts		= GPIO_UART3_RTS,
+	.cts		= GPIO_UART3_CTS,
+#endif
+	.pclk		= CLK_GATE_UART3_PCLK,
+	.extclk		= CLK_GATE_UART3_EXTCLK,
+};
+
+static uart_dev_t g_uart3port = {
+	.recv = {
+		.size	= CONFIG_UART3_RXBUFSIZE,
+		.buffer	= g_uart3rxbuffer,
+	},
+	.xmit = {
+		.size	= CONFIG_UART3_TXBUFSIZE,
+		.buffer	= g_uart3txbuffer,
+	},
+	.ops		= &g_uart_ops,
+	.priv		= &g_uart3priv,
+};
+#endif
+
+#ifdef CONFIG_S5J_UART4
+static struct up_dev_s g_uart4priv = {
+	.uartbase	= S5J_UART4_BASE,
+	.baud		= CONFIG_UART4_BAUD,
+	.irq		= S5J_IRQ_UART4,
+	.parity		= CONFIG_UART4_PARITY,
+	.bits		= CONFIG_UART4_BITS,
+	.stopbits2	= CONFIG_UART4_2STOP,
+	.rxd		= GPIO_UART4_RXD,
+	.txd		= GPIO_UART4_TXD,
+	.pclk		= CLK_GATE_UARTDBG_PCLK,
+	.extclk		= CLK_GATE_UARTDBG_EXTCLK,
+};
+
+static uart_dev_t g_uart4port = {
+	.recv = {
+		.size	= CONFIG_UART4_RXBUFSIZE,
+		.buffer	= g_uart4rxbuffer,
+	},
+	.xmit = {
+		.size	= CONFIG_UART4_TXBUFSIZE,
+		.buffer	= g_uart4txbuffer,
+	},
+	.ops		= &g_uart_ops,
+	.priv		= &g_uart4priv,
+};
+#endif
+
+#ifdef CONFIG_PM
+static struct pm_callback_s g_serialcb = {
+	.name = "UART",
+	.notify  = up_pm_notify,
+	.prepare = up_pm_prepare,
+};
+#endif
+
+/****************************************************************************
  * Private Functions
  ****************************************************************************/
 static inline uint32_t uart_getreg8(struct up_dev_s *priv, int offset)
@@ -283,7 +518,7 @@ static int up_interrupt(int irq, void *context, void *arg)
 
 #if defined(CONFIG_PM) && CONFIG_PM_SERIAL_ACTIVITY > 0
 	/* Report serial activity to the power management logic */
-	pm_activity(PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY);
+	pm_activity(PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY, g_serialcb.name);
 #endif
 
 	if (uintp & UART_UINTP_TXD) {
@@ -792,210 +1027,6 @@ static int up_pm_prepare(struct pm_callback_s *cb, int domain,
 	return OK;
 }
 #endif /* CONFIG_PM */
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/* UART operations structure */
-static const struct uart_ops_s g_uart_ops = {
-	.setup			= up_setup,
-	.shutdown		= up_shutdown,
-	.attach			= up_attach,
-	.detach			= up_detach,
-	.ioctl			= up_ioctl,
-	.receive		= up_receive,
-	.rxint			= up_rxint,
-	.rxavailable	= up_rxavailable,
-#ifdef CONFIG_SERIAL_IFLOWCONTROL
-	.rxflowcontrol	= NULL,
-#endif
-	.send			= up_send,
-	.txint			= up_txint,
-	.txready		= up_txready,
-	.txempty		= up_txempty,
-};
-
-/* I/O buffers */
-#ifdef CONFIG_S5J_UART0
-static char g_uart0rxbuffer[CONFIG_UART0_RXBUFSIZE];
-static char g_uart0txbuffer[CONFIG_UART0_TXBUFSIZE];
-#endif
-
-#ifdef CONFIG_S5J_UART1
-static char g_uart1rxbuffer[CONFIG_UART1_RXBUFSIZE];
-static char g_uart1txbuffer[CONFIG_UART1_TXBUFSIZE];
-#endif
-
-#ifdef CONFIG_S5J_UART2
-static char g_uart2rxbuffer[CONFIG_UART2_RXBUFSIZE];
-static char g_uart2txbuffer[CONFIG_UART2_TXBUFSIZE];
-#endif
-
-#ifdef CONFIG_S5J_UART3
-static char g_uart3rxbuffer[CONFIG_UART3_RXBUFSIZE];
-static char g_uart3txbuffer[CONFIG_UART3_TXBUFSIZE];
-#endif
-
-#ifdef CONFIG_S5J_UART4
-static char g_uart4rxbuffer[CONFIG_UART4_RXBUFSIZE];
-static char g_uart4txbuffer[CONFIG_UART4_TXBUFSIZE];
-#endif
-
-#ifdef CONFIG_S5J_UART0
-static struct up_dev_s g_uart0priv = {
-	.uartbase	= S5J_UART0_BASE,
-	.baud		= CONFIG_UART0_BAUD,
-	.irq		= S5J_IRQ_UART0,
-	.parity		= CONFIG_UART0_PARITY,
-	.bits		= CONFIG_UART0_BITS,
-	.stopbits2	= CONFIG_UART0_2STOP,
-	.rxd		= GPIO_UART0_RXD,
-	.txd		= GPIO_UART0_TXD,
-	.pclk		= CLK_GATE_UART0_PCLK,
-	.extclk		= CLK_GATE_UART0_EXTCLK,
-};
-
-static uart_dev_t g_uart0port = {
-	.recv = {
-		.size	= CONFIG_UART0_RXBUFSIZE,
-		.buffer	= g_uart0rxbuffer,
-	},
-	.xmit = {
-		.size	= CONFIG_UART0_TXBUFSIZE,
-		.buffer	= g_uart0txbuffer,
-	},
-	.ops		= &g_uart_ops,
-	.priv		= &g_uart0priv,
-};
-#endif
-
-#ifdef CONFIG_S5J_UART1
-static struct up_dev_s g_uart1priv = {
-	.uartbase	= S5J_UART1_BASE,
-	.baud		= CONFIG_UART1_BAUD,
-	.irq		= S5J_IRQ_UART1,
-	.parity		= CONFIG_UART1_PARITY,
-	.bits		= CONFIG_UART1_BITS,
-	.stopbits2	= CONFIG_UART1_2STOP,
-	.rxd		= GPIO_UART1_RXD,
-	.txd		= GPIO_UART1_TXD,
-	.pclk		= CLK_GATE_UART1_PCLK,
-	.extclk		= CLK_GATE_UART1_EXTCLK,
-};
-
-static uart_dev_t g_uart1port = {
-	.recv = {
-		.size	= CONFIG_UART1_RXBUFSIZE,
-		.buffer	= g_uart1rxbuffer,
-	},
-	.xmit = {
-		.size	= CONFIG_UART1_TXBUFSIZE,
-		.buffer	= g_uart1txbuffer,
-	},
-	.ops		= &g_uart_ops,
-	.priv		= &g_uart1priv,
-};
-#endif
-
-#ifdef CONFIG_S5J_UART2
-static struct up_dev_s g_uart2priv = {
-	.uartbase	= S5J_UART2_BASE,
-	.baud		= CONFIG_UART2_BAUD,
-	.irq		= S5J_IRQ_UART2,
-	.parity		= CONFIG_UART2_PARITY,
-	.bits		= CONFIG_UART2_BITS,
-	.stopbits2	= CONFIG_UART2_2STOP,
-	.rxd		= GPIO_UART2_RXD,
-	.txd		= GPIO_UART2_TXD,
-#ifdef CONFIG_S5J_UART2_FLOWCONTROL
-	.rts		= GPIO_UART2_RTS,
-	.cts		= GPIO_UART2_CTS,
-#endif
-	.pclk		= CLK_GATE_UART2_PCLK,
-	.extclk		= CLK_GATE_UART2_EXTCLK,
-};
-
-static uart_dev_t g_uart2port = {
-	.recv = {
-		.size	= CONFIG_UART2_RXBUFSIZE,
-		.buffer	= g_uart2rxbuffer,
-	},
-	.xmit = {
-		.size	= CONFIG_UART2_TXBUFSIZE,
-		.buffer	= g_uart2txbuffer,
-	},
-	.ops		= &g_uart_ops,
-	.priv		= &g_uart2priv,
-};
-#endif
-
-#ifdef CONFIG_S5J_UART3
-static struct up_dev_s g_uart3priv = {
-	.uartbase	= S5J_UART3_BASE,
-	.baud		= CONFIG_UART3_BAUD,
-	.irq		= S5J_IRQ_UART3,
-	.parity		= CONFIG_UART3_PARITY,
-	.bits		= CONFIG_UART3_BITS,
-	.stopbits2	= CONFIG_UART3_2STOP,
-	.rxd		= GPIO_UART3_RXD,
-	.txd		= GPIO_UART3_TXD,
-#ifdef CONFIG_S5J_UART3_FLOWCONTROL
-	.rts		= GPIO_UART3_RTS,
-	.cts		= GPIO_UART3_CTS,
-#endif
-	.pclk		= CLK_GATE_UART3_PCLK,
-	.extclk		= CLK_GATE_UART3_EXTCLK,
-};
-
-static uart_dev_t g_uart3port = {
-	.recv = {
-		.size	= CONFIG_UART3_RXBUFSIZE,
-		.buffer	= g_uart3rxbuffer,
-	},
-	.xmit = {
-		.size	= CONFIG_UART3_TXBUFSIZE,
-		.buffer	= g_uart3txbuffer,
-	},
-	.ops		= &g_uart_ops,
-	.priv		= &g_uart3priv,
-};
-#endif
-
-#ifdef CONFIG_S5J_UART4
-static struct up_dev_s g_uart4priv = {
-	.uartbase	= S5J_UART4_BASE,
-	.baud		= CONFIG_UART4_BAUD,
-	.irq		= S5J_IRQ_UART4,
-	.parity		= CONFIG_UART4_PARITY,
-	.bits		= CONFIG_UART4_BITS,
-	.stopbits2	= CONFIG_UART4_2STOP,
-	.rxd		= GPIO_UART4_RXD,
-	.txd		= GPIO_UART4_TXD,
-	.pclk		= CLK_GATE_UARTDBG_PCLK,
-	.extclk		= CLK_GATE_UARTDBG_EXTCLK,
-};
-
-static uart_dev_t g_uart4port = {
-	.recv = {
-		.size	= CONFIG_UART4_RXBUFSIZE,
-		.buffer	= g_uart4rxbuffer,
-	},
-	.xmit = {
-		.size	= CONFIG_UART4_TXBUFSIZE,
-		.buffer	= g_uart4txbuffer,
-	},
-	.ops		= &g_uart_ops,
-	.priv		= &g_uart4priv,
-};
-#endif
-
-#ifdef CONFIG_PM
-static struct pm_callback_s g_serialcb = {
-	.notify  = up_pm_notify,
-	.prepare = up_pm_prepare,
-};
-#endif
 
 /****************************************************************************
  * Public Functions

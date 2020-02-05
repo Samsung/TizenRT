@@ -1003,7 +1003,7 @@ static struct up_dev_s *const uart_devs[STM32_NUSART] = {
 
 #ifdef CONFIG_PM
 static struct pm_callback_s g_serialcb = {
-	.name = "serial",
+	.name = "UART",
 	.notify = up_pm_notify,
 	.prepare = up_pm_prepare,
 };
@@ -1683,7 +1683,7 @@ static int up_interrupt_common(struct up_dev_s *priv)
 	/* Report serial activity to the power management logic */
 
 #if defined(CONFIG_PM) && CONFIG_PM_SERIAL_ACTIVITY > 0
-	pm_activity(STM32_PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY);
+	pm_activity(STM32_PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY, g_serialcb.name);
 #endif
 
 	/* Loop until there are no characters to be transferred or,
