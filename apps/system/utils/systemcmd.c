@@ -70,6 +70,9 @@ const static tash_cmdlist_t system_cmds[] = {
 #if defined(CONFIG_ENABLE_UPTIME)
 	{"uptime",   utils_uptime,       TASH_EXECMD_SYNC},
 #endif
+#if defined(CONFIG_PM_METRICS)
+	{"pminfo",     utils_pminfo,         TASH_EXECMD_SYNC},
+#endif
 	{NULL,       NULL,              0}
 };
 
