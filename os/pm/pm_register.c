@@ -58,6 +58,7 @@
 #include <queue.h>
 #include <assert.h>
 #include <tinyara/pm/pm.h>
+#include "pm_metrics.h"
 
 #include "pm.h"
 
@@ -94,6 +95,20 @@ int pm_register(FAR struct pm_callback_s *callbacks)
 	ret = pm_lock();
 	if (ret == OK) {
 		dq_addlast(&callbacks->entry, &g_pmglobals.registry);
+#ifdef CONFIG_PM_METRICS
+		struct pm_domain_s *pdom = &g_pmglobals.domain[callbacks->domain];
+		struct pm_accumchange_s *initnode = NULL;
+
+		initnode = (struct pm_accumchange_s *)pm_alloc(1, sizeof(struct pm_accumchange_s));
+		if (initnode == NULL) {
+			ret = ERROR;
+			pmdbg("pm_alloc failed..\n");
+		} else {
+			initnode->accum = 0;
+			strncpy(initnode->name, callbacks->name, strlen(callbacks->name) + 1);
+			sq_addlast(&(initnode->entry), &(pdom->each_accum));
+		}
+#endif
 		pm_unlock();
 	}
 
