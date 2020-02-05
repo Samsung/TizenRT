@@ -58,12 +58,15 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <queue.h>
+#include <string.h>
 
 #include <tinyara/pm/pm.h>
 #include <tinyara/clock.h>
 #include <tinyara/irq.h>
 
 #include "pm.h"
+#include "pm_metrics.h"
 
 #ifdef CONFIG_PM
 
@@ -85,6 +88,7 @@
  *   priority - Activity priority, range 0-9.  Larger values correspond to
  *     higher priorities.  Higher priority activity can prevent the system
  *     from entering reduced power states for a longer period of time.
+ *   name - name of the registered driver or application
  *
  *     As an example, a button press might be higher priority activity because
  *     it means that the user is actively interacting with the device.
@@ -98,7 +102,7 @@
  *
  ****************************************************************************/
 
-void pm_activity(int domain, int priority)
+void pm_activity(int domain, int priority, char *name)
 {
 	FAR struct pm_domain_s *pdom;
 	clock_t now;
@@ -139,6 +143,31 @@ void pm_activity(int domain, int priority)
 		 */
 
 		now = clock_systimer();
+
+#ifdef CONFIG_PM_METRICS
+		struct pm_accumchange_s *node = NULL;
+
+		if (name == NULL) {
+			pmdbg("ERROR: name is null\n");
+		} else {
+			for (node = (struct pm_accumchange_s *)sq_peek(&(pdom->each_accum)); node; node = (struct pm_accumchange_s *)(node->entry.flink)) {
+				if (!strncmp(node->name, name, strlen(name) + 1)) {
+					accum = node->accum + priority;
+					if (accum > UINT16_MAX) {
+						accum = UINT16_MAX;
+					}
+					node->accum = (uint16_t)accum;
+					break;
+				}
+			}
+		}
+
+		struct pm_statechange_s *sc = (struct pm_statechange_s *)dq_tail(&(pdom->history));
+		if (pdom->state == PM_SLEEP && strncmp(sc->wakeup_reason, WAKEUP_REASON_INIT, strlen(WAKEUP_REASON_INIT) + 1) == 0) {
+			strncpy(sc->wakeup_reason, name, strlen(name) + 1);
+		}
+#endif
+
 		if (now - pdom->stime >= TIME_SLICE_TICKS) {
 			int16_t tmp;
 
@@ -150,6 +179,14 @@ void pm_activity(int domain, int priority)
 			tmp         = pdom->accum;
 			pdom->stime = now;
 			pdom->accum = 0;
+#ifdef CONFIG_PM_METRICS
+			for (node = (struct pm_accumchange_s *)sq_peek(&(pdom->each_accum)); node; node = (struct pm_accumchange_s *)(node->entry.flink)) {
+				node->accum = 0;
+				if (!strncmp(node->name, name, strlen(name) + 1)) {
+					node->accum = priority;
+				}
+			}
+#endif
 
 			/* Reassessing the PM state may require some computation.  However,
 			 * the work will actually be performed on a worker thread at a user-

@@ -19,14 +19,25 @@
 #ifndef __OS_PM_PM_METRICS_H
 #define __OS_PM_PM_METRICS_H
 
+#include <tinyara/config.h>
 #include <time.h>
 #include <queue.h>
 #include "pm.h"
+#include <tinyara/pm/pm.h>
 
+#ifdef CONFIG_PM
 struct pm_statechange_s {
 	sq_entry_t entry;
+	sq_queue_t accum_history;
 	int state;
+	char wakeup_reason[MAX_PM_CALLBACK_NAME];
 	time_t timestamp;
+};
+
+struct pm_accumchange_s {
+	sq_entry_t entry;
+	uint16_t accum;
+	char name[MAX_PM_CALLBACK_NAME];
 };
 
 struct pm_time_in_each_s {
@@ -42,5 +53,5 @@ extern struct pm_global_s g_pmglobals;
 void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics);
 void pm_prune_history(sq_queue_t *q);
 #endif
-
+#endif
 #endif

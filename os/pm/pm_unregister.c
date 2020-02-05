@@ -60,6 +60,7 @@
 #include <tinyara/pm/pm.h>
 
 #include "pm.h"
+#include "pm_metrics.h"
 
 #ifdef CONFIG_PM
 
@@ -94,6 +95,17 @@ int pm_unregister(FAR struct pm_callback_s *callbacks)
 	ret = pm_lock();
 	if (ret == OK) {
 		dq_rem(&callbacks->entry, &g_pmglobals.registry);
+#ifdef CONFIG_PM_METRICS
+		struct pm_domain_s *pdom = &g_pmglobals.domain[callbacks->domain];
+		struct pm_accumchange_s *node = NULL;
+
+		for (node = (struct pm_accumchange_s *)sq_peek(&(pdom->each_accum)); node; node = (struct pm_accumchange_s *)(node->entry.flink)) {
+			if (!strncmp(node->name, callbacks->name, strlen(callbacks->name) + 1)) {
+				sq_rem(&(node->entry), &(pdom->each_accum));
+				break;
+			}
+		}
+#endif
 		pm_unlock();
 	}
 

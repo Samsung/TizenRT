@@ -243,6 +243,7 @@
 
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
+#define WAKEUP_REASON_INIT "None"
 
 /****************************************************************************
  * Public Types
@@ -306,6 +307,7 @@ struct pm_callback_s {
 	struct dq_entry_s entry;   /* Supports a doubly linked list */
 
 	char name[MAX_PM_CALLBACK_NAME];	/* Name of driver which register callback */
+	int domain;	/* Number of domain */
 
 	/**************************************************************************
 	 * Name: prepare
@@ -450,6 +452,7 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *   priority - Activity priority, range 0-9.  Larger values correspond to
  *     higher priorities.  Higher priority activity can prevent the system
  *     from entering reduced power states for a longer period of time.
+ *   name - name of the registered driver or application
  *
  *     As an example, a button press might be higher priority activity because
  *     it means that the user is actively interacting with the device.
@@ -463,7 +466,7 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *
  ****************************************************************************/
 
-void pm_activity(int domain, int priority);
+void pm_activity(int domain, int priority, char *name);
 
 /****************************************************************************
  * Name: pm_stay
@@ -611,6 +614,23 @@ int pm_changestate(int domain, enum pm_state_e newstate);
 
 enum pm_state_e pm_querystate(int domain);
 
+/****************************************************************************
+ * Name: pm_addhistory
+ *
+ * Description:
+ *   This function add history into pm structure.
+ *
+ * Input Parameters:
+ *   domain - The PM domain to check
+ *   state - Current PM state
+ *
+ * Returned Value:
+ *   Zero (OK) on success; otherwise a negated errno value is returned.
+ *
+ ****************************************************************************/
+
+int pm_addhistory(int domain, int state);
+
 #undef EXTERN
 #ifdef __cplusplus
 }
@@ -631,12 +651,13 @@ enum pm_state_e pm_querystate(int domain);
 #define pm_initialize()
 #define pm_register(cb)			(0)
 #define pm_unregister(cb)		(0)
-#define pm_activity(domain,prio)
-#define pm_stay(domain,state)
-#define pm_relax(domain,state)
+#define pm_activity(domain, prio, name)
+#define pm_stay(domain, state)
+#define pm_relax(domain, state)
 #define pm_checkstate(domain)		(0)
 #define pm_changestate(domain, state)	(0)
 #define pm_querystate(domain)        (0)
+#define pm_addhistory(domain, state)		(0)
 
 #endif							/* CONFIG_PM */
 #endif							/* __INCLUDE_TINYARA_POWER_PM_H */

@@ -56,11 +56,14 @@
 
 #include <tinyara/config.h>
 #include <assert.h>
+#include <string.h>
+#include <queue.h>
 #include <tinyara/pm/pm.h>
 #include <tinyara/clock.h>
 #include <tinyara/irq.h>
 
 #include "pm.h"
+#include "pm_metrics.h"
 
 #ifdef CONFIG_PM
 
@@ -146,6 +149,39 @@ enum pm_state_e pm_checkstate(int domain)
 
 		(void)pm_update(domain, accum);
 	}
+
+#ifdef CONFIG_PM_METRICS
+	struct pm_accumchange_s *node = NULL;
+	struct pm_statechange_s *history = (struct pm_statechange_s *)dq_tail(&(pdom->history));
+	struct pm_accumchange_s *dest = NULL;
+
+	if (pdom->state != pdom->recommended) {
+		do {
+			dest = (struct pm_accumchange_s *)sq_remfirst(&(history->accum_history));
+			if (dest != NULL) {
+				free(dest);
+			}
+		} while (dest);
+
+		for (node = (struct pm_accumchange_s *)sq_peek(&(pdom->each_accum)); node; node = (struct pm_accumchange_s *)(node->entry.flink)) {
+			struct pm_accumchange_s *insert_node = (struct pm_accumchange_s *)pm_alloc(1, sizeof(struct pm_accumchange_s));
+			if (insert_node == NULL) {
+				pmdbg("pm_alloc failed..\n");
+			} else {
+				insert_node->accum = node->accum;
+				strncpy(insert_node->name, node->name, strlen(node->name) + 1);
+				sq_addlast(&(insert_node->entry), &(history->accum_history));
+				node->accum = 0;
+			}
+		}
+	}
+
+	if (now == pdom->stime) {
+		for (node = (struct pm_accumchange_s *)sq_peek(&(pdom->each_accum)); node; node = (struct pm_accumchange_s *)(node->entry.flink)) {
+			node->accum = 0;
+		}
+	}
+#endif
 
 	/* Consider the possible power state lock here */
 
