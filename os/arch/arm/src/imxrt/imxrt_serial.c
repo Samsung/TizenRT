@@ -736,6 +736,7 @@ static struct uart_dev_s g_uart8port = {
 
 #ifdef CONFIG_PM
 static struct pm_callback_s g_serial_pmcb = {
+	.name = "UART",
 	.notify = up_pm_notify,
 	.prepare = up_pm_prepare,
 };
@@ -937,7 +938,7 @@ static int imxrt_interrupt(int irq, void *context, FAR void *arg)
 #if defined(CONFIG_PM) && CONFIG_IMXRT_PM_SERIAL_ACTIVITY > 0
 	/* Report serial activity to the power management logic */
 
-	pm_activity(PM_IDLE_DOMAIN, CONFIG_IMXRT_PM_SERIAL_ACTIVITY);
+	pm_activity(PM_IDLE_DOMAIN, CONFIG_IMXRT_PM_SERIAL_ACTIVITY, g_serial_pmcb.name);
 #endif
 
 	/* Loop until there are no characters to be transferred or,

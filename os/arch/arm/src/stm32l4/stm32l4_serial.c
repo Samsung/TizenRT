@@ -769,7 +769,7 @@ static struct
   bool serial_suspended;
 } g_serialpm =
   {
-    .pm_cb.name = "serial",
+    .pm_cb.name = "UART",
     .pm_cb.notify  = stm32l4serial_pmnotify,
     .pm_cb.prepare = stm32l4serial_pmprepare,
     .serial_suspended = false
@@ -1657,7 +1657,7 @@ static int up_interrupt(int irq, FAR void *context, FAR void *arg)
   /* Report serial activity to the power management logic */
 
 #if defined(CONFIG_PM) && CONFIG_STM32L4_PM_SERIAL_ACTIVITY > 0
-  pm_activity(PM_IDLE_DOMAIN, CONFIG_STM32L4_PM_SERIAL_ACTIVITY);
+  pm_activity(PM_IDLE_DOMAIN, CONFIG_STM32L4_PM_SERIAL_ACTIVITY, g_serialpm.pm_cb.name);
 #endif
 
   /* Loop until there are no characters to be transferred or,
