@@ -22,7 +22,7 @@ git submodule update --init "external/libsodium/libsodium"
 ### Apply patch for stdk
 ```shell
 cd external/stdk/st-device-sdk-c
-git apply ../patch/0001-fix-array-overwrite-issue-and-return-value-issue.patch
+git apply ../patch/0001-port-net-fix-ssl-issue-on-TizenRT.patch
 ```
 
 ### Register device and update configure info
