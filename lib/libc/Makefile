@@ -138,6 +138,10 @@ $(COBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.c
 $(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
+ifeq ($(CONFIG_LIBC_DOWNLOAD_ZONEINFO),y)
+	$(Q) $(MAKE) -C zoneinfo all TOPDIR=$(TOPDIR)
+endif
+
 # C library for the user phase of the two-pass kernel build
 
 ifneq ($(BIN),$(UBIN))
@@ -151,6 +155,14 @@ ifneq ($(BIN),$(KBIN))
 $(KBIN):
 	$(Q) $(MAKE) $(KBIN) BIN=$(KBIN) BINDIR=kbin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
+
+# Context
+
+context:
+ifeq ($(CONFIG_LIBC_DOWNLOAD_ZONEINFO),y)
+	$(Q) $(MAKE) -C zoneinfo context TOPDIR=$(TOPDIR)
+endif
+
 
 # Dependencies
 
@@ -182,6 +194,7 @@ distclean: clean
 	$(Q) $(MAKE) -C bin  distclean TOPDIR=$(TOPDIR)
 	$(Q) $(MAKE) -C ubin distclean TOPDIR=$(TOPDIR)
 	$(Q) $(MAKE) -C kbin distclean TOPDIR=$(TOPDIR)
+	$(Q) $(MAKE) -C zoneinfo distclean TOPDIR=$(TOPDIR)
 	$(call DELFILE, Make_bin.dep)
 	$(call DELFILE, Make_ubin.dep)
 	$(call DELFILE, Make_kbin.dep)
