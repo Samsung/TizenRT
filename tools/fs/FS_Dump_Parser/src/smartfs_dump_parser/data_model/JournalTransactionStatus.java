@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////
 //
-// Copyright 2019 Samsung Electronics All Rights Reserved.
+// Copyright 2020 Samsung Electronics All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,26 +18,6 @@
 
 package smartfs_dump_parser.data_model;
 
-public class Sector {
-	private Header header;
-	private byte[] flashData;
-
-	public Sector() {
-	}
-
-	public Sector(byte[] flashData) {
-		this.flashData = flashData;
-	}
-
-	public Header getHeader() {
-		return header;
-	}
-
-	public void setHeader(Header header) {
-		this.header = header;
-	}
-
-	public byte[] getFlashData() {
-		return flashData;
-	}
+public enum JournalTransactionStatus {
+	EXIST, STARTED, FINISHED, NEEDSYNC
 }

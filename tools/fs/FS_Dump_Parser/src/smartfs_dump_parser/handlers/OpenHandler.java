@@ -47,16 +47,16 @@ public class OpenHandler {
 			System.out.println("filename = " + fileName + "\n");
 
 			MPart geometry_part = partService.findPart("smartfs_dump_parser.part.geometry_information");
-			GeometryViewer gv = (GeometryViewer) geometry_part.getObject();
+			GeometryViewer gv = (GeometryViewer)geometry_part.getObject();
 			MPart directory_part = partService.findPart("smartfs_dump_parser.part.directory_structure");
-			DirectoryViewer dv = (DirectoryViewer) directory_part.getObject();
+			DirectoryViewer dv = (DirectoryViewer)directory_part.getObject();
 			MPart sector_part = partService.findPart("smartfs_dump_parser.part.sector_list");
-			SectorViewer sv = (SectorViewer) sector_part.getObject();
+			SectorViewer sv = (SectorViewer)sector_part.getObject();
 			MPart journal_part = partService.findPart("smartfs_dump_parser.part.journal_information");
-			JournalViewer jv = (JournalViewer) journal_part.getObject();
-			
+			JournalViewer jv = (JournalViewer)journal_part.getObject();
+
 			if (SmartFSOrganizer.organizeSmartFS(filePath, fileName)) {
-				gv.updateGeometry(SmartFileSystem.getSectorSize(), SmartFileSystem.getNumberOfSectors());				
+				gv.updateGeometry(SmartFileSystem.getSectorSize(), SmartFileSystem.getNumberOfSectors());
 				dv.getDirectoryViewer().refresh();
 				sv.getSectorViewer().refresh();
 				jv.getJournalViewer().refresh();

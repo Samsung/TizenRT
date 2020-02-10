@@ -58,7 +58,7 @@ public class DumpFileFilter implements Runnable {
 			long parsedFileSize = parsedFile.length();
 			System.out.println("Parsed file size = " + parsedFileSize);
 
-			String params[] = { "python", file.getParent() + "/" + parsingScriptName, initialFile.getCanonicalPath(),
+			String params[] = { "python3", file.getParent() + "/" + parsingScriptName, initialFile.getCanonicalPath(),
 					parsedFileName };
 			Runtime runtime = Runtime.getRuntime();
 			runtime.exec(params);
