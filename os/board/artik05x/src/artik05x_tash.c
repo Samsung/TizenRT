@@ -265,6 +265,15 @@ int board_app_initialize(void)
 		}
 	}
 #endif /* CONFIG_RAMMTD */
+#ifdef CONFIG_LIBC_ZONEINFO_ROMFS
+	ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_TZDEVNAME,
+		CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
+
+	if (ret != OK) {
+		lldbg("ROMFS ERROR: mounting failed");
+	}
+
+#endif /* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif /* CONFIG_ARTIK05X_AUTOMOUNT */
 
 #if defined(CONFIG_RTC_DRIVER)

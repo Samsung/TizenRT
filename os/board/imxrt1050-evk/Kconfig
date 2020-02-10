@@ -117,6 +117,15 @@ config IMXRT_AUTOMOUNT_ROMFS_MOUNTPOINT
 		Specifies the mount point where romfs file system
 		will be mounted at.
 
+config IMXRT_AUTOMOUNT_TZDEVNAME
+	string "Device name of the partition for zoneinfo file system"
+	default "/dev/mtdblock10"
+	depends on LIBC_ZONEINFO_ROMFS
+	depends on IMXRT_AUTOMOUNT
+	---help---
+		Specifies the device name (/dev/mtdblock10) of the partition
+		for zoneinfo file system.
+
 config SVR_DB_SECURESTORAGE
 	bool "Enable storing SVR DB inside secure storage partition"
 	default n
