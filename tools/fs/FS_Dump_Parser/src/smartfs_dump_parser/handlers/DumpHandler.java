@@ -36,7 +36,7 @@ import smartfs_dump_visualizer.controllers.SmartFSOrganizer;
 
 public class DumpHandler {
 
-	private String initialFileName = "Dump_File.txt";
+	private final String initialFileName = "Dump_File.txt";
 	private String filteredFileName = initialFileName + "_parsed";
 	private String parsedFileName = filteredFileName + "_binary";
 	private String srcPath;
@@ -52,6 +52,13 @@ public class DumpHandler {
 			srcPath = file.getCanonicalPath() + "/python/";
 
 			outputFile = new File(srcPath, initialFileName);
+			if (outputFile.exists()) {
+				if (outputFile.delete()) {
+					outputFile = new File(srcPath, initialFileName);
+				} else {
+					System.err.println("Failed to delete " + initialFileName);
+				}
+			}
 			String filteredFilePath = outputFile.getCanonicalPath() + "_parsed";
 			String parsedFilePath = filteredFilePath + "_binary";
 
@@ -68,13 +75,13 @@ public class DumpHandler {
 			System.out.println("Dumped SmartFS file is parsed!!\n");
 
 			MPart geometry_part = partService.findPart("smartfs_dump_parser.part.geometry_information");
-			GeometryViewer gv = (GeometryViewer) geometry_part.getObject();
+			GeometryViewer gv = (GeometryViewer)geometry_part.getObject();
 			MPart directory_part = partService.findPart("smartfs_dump_parser.part.directory_structure");
-			DirectoryViewer dv = (DirectoryViewer) directory_part.getObject();
+			DirectoryViewer dv = (DirectoryViewer)directory_part.getObject();
 			MPart sector_part = partService.findPart("smartfs_dump_parser.part.sector_list");
-			SectorViewer sv = (SectorViewer) sector_part.getObject();
+			SectorViewer sv = (SectorViewer)sector_part.getObject();
 			MPart journal_part = partService.findPart("smartfs_dump_parser.part.journal_information");
-			JournalViewer jv = (JournalViewer) journal_part.getObject();
+			JournalViewer jv = (JournalViewer)journal_part.getObject();
 
 			if (SmartFSOrganizer.organizeSmartFS(srcPath, parsedFileName)) {
 				gv.updateGeometry(SmartFileSystem.getSectorSize(), SmartFileSystem.getNumberOfSectors());

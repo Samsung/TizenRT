@@ -3,6 +3,7 @@
 
 <product name="SmartFS_Dump_Parser" uid="File System Tool" id="SmartFS_Dump_Parser.product" application="org.eclipse.e4.ui.workbench.swt.E4Application" version="1.0.0.qualifier" useFeatures="false" includeLaunchers="true">
 
+
    <configIni use="default">
    </configIni>
 
@@ -15,14 +16,17 @@
 
    <windowImages/>
 
+
    <launcher>
       <win useIco="false">
          <bmp/>
       </win>
    </launcher>
 
+
    <vm>
    </vm>
+
 
    <plugins>
       <plugin id="SmartFS_Dump_Parser"/>

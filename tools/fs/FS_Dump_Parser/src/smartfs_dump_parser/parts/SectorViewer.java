@@ -196,14 +196,14 @@ public class SectorViewer {
 
 	private void createColumns(final Composite parent, final TableViewer viewer) {
 		String[] titles = new String[] { "Physical Sector #", "Sector #", "Seq. #", "CRC", "Status" };
-		int[] bounds = { 150, 80, 80, 80, 80 };
+		int[] bounds = { 128, 72, 60, 60, 60 };
 
 		// First column is for the physical sector number
 		TableViewerColumn col = createTableViewerColumn(titles[0], bounds[0], 0);
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
+				Sector s = (Sector)element;
 				return s.getHeader().getPhyicalSectorId() + "";
 			}
 		});
@@ -213,7 +213,7 @@ public class SectorViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
+				Sector s = (Sector)element;
 				return s.getHeader().getLogicalSectorId() + "";
 			}
 		});
@@ -223,7 +223,7 @@ public class SectorViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
+				Sector s = (Sector)element;
 				return s.getHeader().getSequenceNumber() + "";
 			}
 		});
@@ -233,7 +233,7 @@ public class SectorViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
+				Sector s = (Sector)element;
 				return s.getHeader().getCrc8() + "";
 			}
 		});
@@ -243,7 +243,7 @@ public class SectorViewer {
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
+				Sector s = (Sector)element;
 				return s.getHeader().getStatus() + "";
 			}
 		});

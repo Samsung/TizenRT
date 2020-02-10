@@ -52,6 +52,7 @@ public class SmartFileSystem {
 	private static Map<Integer, Sector> mActiveSectorsMap = new HashMap<Integer, Sector>();
 	private static Map<Integer, Sector> mDirtySectorsMap = new HashMap<Integer, Sector>();
 	private static Map<Integer, Sector> mCleanSectorsMap = new HashMap<Integer, Sector>();
+	private static List<JournalingInformation> mJournalingInformation = new ArrayList<JournalingInformation>();
 	private static SmartFile mRootDir = null;
 
 	// Singleton Design Pattern
@@ -177,6 +178,14 @@ public class SmartFileSystem {
 
 	public static void setCleanSectorsMap(Map<Integer, Sector> sectorsMap) {
 		mCleanSectorsMap = sectorsMap;
+	}
+
+	public static List<JournalingInformation> getJournalingInformation() {
+		return mJournalingInformation;
+	}
+
+	public static void clearJouranlingInformation() {
+		mJournalingInformation.clear();
 	}
 
 	public static SmartFile getRootDirectory() {

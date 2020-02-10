@@ -27,6 +27,9 @@ import java.util.Map;
 
 import smartfs_dump_parser.data_model.EntryType;
 import smartfs_dump_parser.data_model.Header;
+import smartfs_dump_parser.data_model.JournalTransactionStatus;
+import smartfs_dump_parser.data_model.JournalTransactionType;
+import smartfs_dump_parser.data_model.JournalingInformation;
 import smartfs_dump_parser.data_model.SmartFileSystem;
 import smartfs_dump_parser.data_model.Sector;
 import smartfs_dump_parser.data_model.SmartFile;
@@ -60,8 +63,8 @@ public class SmartFSOrganizer {
 
 		// Analyze Journaling Info.
 		int journal_area = existJournalingArea();
-		if (journal_area > 0) {
-
+		if (journal_area >= 0) {
+			loadJournalingInformation(journal_area);
 		}
 		return true;
 	}
@@ -220,15 +223,24 @@ public class SmartFSOrganizer {
 				.get(SmartFileSystem.getJournalAreaStartSectorId() + SmartFileSystem.getJournalSectorNumber());
 
 		int[] area_status = new int[2];
-		area_status[0] = makePositiveValue(area1_start_sector.getFlashData()[SmartFileSystem.getSectorHeaderSize()]);
-		area_status[1] = makePositiveValue(area2_start_sector.getFlashData()[SmartFileSystem.getSectorHeaderSize()]);
+
 		if (area1_start_sector == null && area2_start_sector == null) {
 			System.out.println("Journaling area does not exist..T.T)\n");
 			return -1;
-		} else if (area1_start_sector == null && area_status[1] % 16 == 0) {
-			return 1;
-		} else if (area2_start_sector == null && area_status[0] % 16 == 0) {
-			return 0;
+		}
+		if (area1_start_sector == null) {
+			area_status[1] = makePositiveValue(
+					area2_start_sector.getFlashData()[SmartFileSystem.getSectorHeaderSize()]);
+			if (area_status[1] % 16 == 0) {
+				return 1;
+			}
+		}
+		if (area2_start_sector == null) {
+			area_status[0] = makePositiveValue(
+					area1_start_sector.getFlashData()[SmartFileSystem.getSectorHeaderSize()]);
+			if (area_status[0] % 16 == 0) {
+				return 0;
+			}
 		}
 
 		int[] area_index = new int[2];
@@ -245,5 +257,123 @@ public class SmartFSOrganizer {
 		}
 
 		return SmartFileSystem.getJournalArea(area_index[0], area_index[1]);
+	}
+
+	private static void loadJournalingInformation(int journal_area) {
+		int start_sector = SmartFileSystem.getJournalAreaStartSectorId()
+				+ journal_area * SmartFileSystem.getJournalSectorNumber();
+		// Only start_sector (12 or else) starts at offset 1
+		// since the byte in the offset is used to journaling area identification in
+		// existJournalingArea().
+		int index = SmartFileSystem.getSectorHeaderSize() + 1;
+		for (int id = start_sector; id < start_sector + SmartFileSystem.getJournalSectorNumber(); id++) {
+			boolean continue_data_reading = false;
+			Sector sector = SmartFileSystem.getActiveSectorsMap().get(id);
+			while (index + 12 < SmartFileSystem.getSectorSize()) {
+				int transaction = makePositiveValue(sector.getFlashData()[index]);
+				// At first, check journal status of which value is EXIST && STARTED
+				if (((transaction & (1 << 0)) != (1 << 0)) && ((transaction & (1 << 1)) != (1 << 1))) {
+					JournalingInformation journal_info = new JournalingInformation(sector);
+					journal_info.setStarted(true);
+					if ((transaction & (1 << 2)) != (1 << 2)) {
+						journal_info.setFinished(true);
+					} else {
+						journal_info.setFinished(false);
+					}
+					if ((transaction & (1 << 3)) != (1 << 3)) {
+						journal_info.setNeedSync(true);
+					} else {
+						journal_info.setNeedSync(false);
+					}
+
+					int temp_transaction = transaction;
+					int type = temp_transaction >> 4;
+					if (type == 0) {
+						journal_info.setType(JournalTransactionType.WRITE);
+					} else if ((type & 1) == 1) {
+						journal_info.setType(JournalTransactionType.CREATE);
+					} else if ((type & 2) == 2) {
+						journal_info.setType(JournalTransactionType.RENAME);
+					} else if ((type & 3) == 3) {
+						journal_info.setType(JournalTransactionType.MKDIR);
+					} else if ((type & 4) == 4) {
+						journal_info.setType(JournalTransactionType.DELETE);
+					} else if ((type & 5) == 5) {
+						journal_info.setType(JournalTransactionType.SYNC);
+					} else {
+						System.out
+								.println("Journal type is invalid. Analyzine the current journaling information sector "
+										+ id + " is halted.");
+						break;
+					}
+
+					byte[] flash_data = sector.getFlashData();
+					int dataSize = -1;
+					if (flash_data[index + 8] != 0xFF && flash_data[index + 9] != 0xFF) {
+						if (journal_info.getType() != JournalTransactionType.SYNC) {
+							dataSize = (makePositiveValue(sector.getFlashData()[index + 9]) << 8)
+									+ makePositiveValue(sector.getFlashData()[index + 8]);
+						}
+					}
+					journal_info.setDataSize(dataSize);
+
+					int target_sector = -1;
+					if (flash_data[index + 4] != 0xFF && flash_data[index + 5] != 0xFF) {
+						target_sector = (makePositiveValue(flash_data[index + 5]) << 8)
+								+ makePositiveValue(flash_data[index + 4]);
+					}
+					journal_info.setTargetSectorId(target_sector);
+
+					int offset = -1;
+					if (flash_data[index + 6] != 0xFF && flash_data[index + 7] != 0xFF) {
+						if (journal_info.getType() == JournalTransactionType.WRITE
+								|| journal_info.getType() == JournalTransactionType.RENAME
+								|| journal_info.getType() == JournalTransactionType.DELETE) {
+							offset = (makePositiveValue(sector.getFlashData()[index + 7]) << 8)
+									+ makePositiveValue(sector.getFlashData()[index + 6]);
+						}
+					}
+					journal_info.setOffset(offset);
+
+					int argument = -1;
+					if (flash_data[index + 10] != 0xFF && flash_data[index + 11] != 0xFF) {
+						if (journal_info.getType() != JournalTransactionType.MKDIR) {
+							argument = (makePositiveValue(sector.getFlashData()[index + 11]) << 8)
+									+ makePositiveValue(sector.getFlashData()[index + 10]);
+							if (journal_info.getType() == JournalTransactionType.CREATE) {
+								argument &= 0x01ff;
+							}
+						}
+					}
+					journal_info.setArgument(argument);
+
+					SmartFileSystem.getJournalingInformation().add(journal_info);
+
+					if (dataSize > 0 && journal_info.getType() != JournalTransactionType.DELETE) {
+						if (dataSize >= SmartFileSystem.getSectorSize() - index - 12) {
+							System.out.println("This journal information sector " + id + " (index=" + index
+									+ ") is skipped by reading subsequent writing data (size=" + dataSize + ")..");
+							index = SmartFileSystem.getSectorHeaderSize()
+									+ (dataSize - (SmartFileSystem.getSectorSize() - index - 12));
+							continue_data_reading = true;
+							break;
+						} else {
+							index += dataSize + 12;
+						}
+						// TODO: Display the actual data to be written also.
+					} else {
+						index += 12;
+					}
+				} else {
+					System.out.println("We meet an invalid journaling information sector " + id + " (index=" + index
+							+ ", transaction=" + transaction + "). Stop Processing..");
+					return;
+				}
+				System.out.println("[JournalingInfo. ADDITION] Sector " + id + ", index = " + index);
+			}
+			if (!continue_data_reading) {
+				index = SmartFileSystem.getSectorHeaderSize();
+			}
+		}
 	}
 }

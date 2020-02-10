@@ -18,6 +18,6 @@
 
 package smartfs_dump_parser.data_model;
 
-public enum JournalStatus {
-	INPROGRESS, FINISHED, EXIST
+public enum JournalTransactionType {
+	WRITE, CREATE, RENAME, MKDIR, DELETE, SYNC
 }

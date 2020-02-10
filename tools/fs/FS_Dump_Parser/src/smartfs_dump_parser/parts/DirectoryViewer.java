@@ -55,24 +55,24 @@ public class DirectoryViewer {
 
 			@Override
 			public Object[] getChildren(Object parentElement) {
-				return ((SmartFile) parentElement).getEntries().toArray();
+				return ((SmartFile)parentElement).getEntries().toArray();
 			}
 
 			@Override
 			public Object getParent(Object element) {
-				return ((SmartFile) element).getParent();
+				return ((SmartFile)element).getParent();
 			}
 
 			@Override
 			public boolean hasChildren(Object element) {
-				return !(((SmartFile) element).getEntries().isEmpty());
+				return !(((SmartFile)element).getEntries().isEmpty());
 			}
 		});
 
 		treeViewer.setLabelProvider(new LabelProvider() {
 			@Override
 			public String getText(Object element) {
-				return ((SmartFile) element).getFileName();
+				return ((SmartFile)element).getFileName();
 			}
 		});
 

@@ -25,38 +25,30 @@ import javax.annotation.PostConstruct;
 
 import org.eclipse.e4.ui.di.Focus;
 
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 
-import smartfs_dump_parser.data_model.JournalStatus;
+import smartfs_dump_parser.data_model.JournalTransactionType;
+import smartfs_dump_parser.data_model.JournalingInformation;
 import smartfs_dump_parser.data_model.Sector;
 import smartfs_dump_parser.data_model.SmartFileSystem;
 
 public class JournalViewer {
 
 	private TableViewer tableViewer;
-	private Button inProgressButton;
-	private Button finishedButton;
-	private Button existButton;
 
 	@PostConstruct
 	public void createComposite(Composite parent) {
 		parent.setLayout(new GridLayout(3, false));
-
-		createCheckbox(parent);
 
 		createSectorTable(parent);
 	}
@@ -70,100 +62,10 @@ public class JournalViewer {
 		return tableViewer;
 	}
 
-	private void createCheckbox(final Composite parent) {
-		inProgressButton = new Button(parent, SWT.CHECK);
-		inProgressButton.setText("In Progress");
-		inProgressButton.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (inProgressButton.getSelection()) {
-					if (SmartFileSystem.getSectors().size() == 0) {
-						MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
-						inProgressButton.setSelection(false);
-						return;
-					}
-//					List<Sector> inProgressJournals = SmartFileSystem.getInProgressJournals();
-//					if (inProgressJournals == null) {
-//						System.out.println("There's no journaling sectors in progress..");
-//					}
-//					tableViewer.setInput(inProgressJournals);
-					tableViewer.refresh();
-
-					finishedButton.setSelection(false);
-					existButton.setSelection(false);
-				}
-			}
-		});
-
-		finishedButton = new Button(parent, SWT.CHECK);
-		finishedButton.setText("Finished");
-		finishedButton.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (SmartFileSystem.getSectors().size() == 0) {
-					MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
-					finishedButton.setSelection(false);
-					return;
-				}
-//				List<Sector> finishedJournals = SmartFileSystem.getFinishedJournals();
-//				if (finishedJournals == null) {
-//					System.out.println("Dirty sectors are not classified yet..");
-//				}
-//				tableViewer.setInput(finishedJournals);
-				tableViewer.refresh();
-
-				inProgressButton.setSelection(false);
-				existButton.setSelection(false);
-			}
-		});
-
-		existButton = new Button(parent, SWT.CHECK);
-		existButton.setText("Exist");
-		existButton.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (SmartFileSystem.getSectors().size() == 0) {
-					MessageDialog.openError(parent.getShell(), "Error", "Please open a dump file first.");
-					existButton.setSelection(false);
-					return;
-				}
-//				List<Sector> existJournals = SmartFileSystem.getExistJournals();
-//				if (existJournals == null) {
-//					System.out.println("Clean sectors are not classified yet..");
-//				}
-//				tableViewer.setInput(existJournals);
-				tableViewer.refresh();
-
-				inProgressButton.setSelection(false);
-				finishedButton.setSelection(false);
-			}
-		});
-	}
-
-	public static List<Sector> filterSectors(JournalStatus targetStatus, List<Sector> sectorList) {
+	public static List<Sector> filterSectors(JournalTransactionType targetStatus, List<Sector> sectorList) {
 		ArrayList<Sector> resultList = new ArrayList<Sector>();
 		switch (targetStatus) {
-		case INPROGRESS:
-			for (Sector s : sectorList) {
-				int status = s.getHeader().getStatus();
-				if (status < 128 && status >= 64) {
-					resultList.add(s);
-				}
-			}
-			break;
-		case FINISHED:
-			for (Sector s : sectorList) {
-				if (s.getHeader().getStatus() < 64) {
-					resultList.add(s);
-				}
-			}
-			break;
-		case EXIST:
-			for (Sector s : sectorList) {
-				if (s.getHeader().getStatus() == 255) {
-					resultList.add(s);
-				}
-			}
+		case WRITE:
 			break;
 		default:
 			break;
@@ -182,7 +84,7 @@ public class JournalViewer {
 
 		tableViewer.setContentProvider(new ArrayContentProvider());
 		// Set the content (Model) for the viewer
-		tableViewer.setInput(SmartFileSystem.getSectors());
+		tableViewer.setInput(SmartFileSystem.getJournalingInformation());
 
 		GridData gridData = new GridData();
 		gridData.verticalAlignment = GridData.FILL;
@@ -194,56 +96,97 @@ public class JournalViewer {
 	}
 
 	private void createColumns(final Composite parent, final TableViewer viewer) {
-		String[] titles = new String[] { "Physical Sector #", "Sector #", "Seq. #", "CRC", "Status" };
-		int[] bounds = { 150, 80, 80, 80, 80 };
+		String[] titles = new String[] { "Logical Sector #", "Physical Sector #", "Type", "Started", "Finished",
+				"Target Sector", "Offset", "Data Size", "Argument" };
+		int[] bounds = { 120, 124, 70, 70, 72, 100, 56, 72, 80 };
 
-		// First column is for the physical sector number
+		// The 1st column displays logical sector numbers.
 		TableViewerColumn col = createTableViewerColumn(titles[0], bounds[0], 0);
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
-				return s.getHeader().getPhyicalSectorId() + "";
+				JournalingInformation j = (JournalingInformation)element;
+				return j.getSector().getHeader().getLogicalSectorId() + "";
 			}
 		});
 
-		// Second column is for the sector number
+		// The 2nd column displays physical sector numbers.
 		col = createTableViewerColumn(titles[1], bounds[1], 1);
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
-				return s.getHeader().getLogicalSectorId() + "";
+				JournalingInformation j = (JournalingInformation)element;
+				return j.getSector().getHeader().getPhyicalSectorId() + "";
 			}
 		});
 
-		// Third column is for the sequence number
+		// The 3rd column displays journal transaction types.
 		col = createTableViewerColumn(titles[2], bounds[2], 2);
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
-				return s.getHeader().getSequenceNumber() + "";
+				JournalingInformation j = (JournalingInformation)element;
+				return j.getType() + "";
 			}
 		});
 
-		// Now the crc8
+		// The 4th column displays whether this journal transaction is started.
 		col = createTableViewerColumn(titles[3], bounds[3], 3);
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
-				return s.getHeader().getCrc8() + "";
+				JournalingInformation j = (JournalingInformation)element;
+				return j.isStarted() ? "true" : "false";
 			}
 		});
 
-		// Now the status
+		// The 5th column displays whether this journal transaction is finished.
 		col = createTableViewerColumn(titles[4], bounds[4], 4);
 		col.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				Sector s = (Sector) element;
-				return s.getHeader().getStatus() + "";
+				JournalingInformation j = (JournalingInformation)element;
+				return j.isFinished() ? "true" : "false";
+			}
+		});
+
+		// The 6th column displays target sectors.
+		col = createTableViewerColumn(titles[5], bounds[5], 5);
+		col.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				JournalingInformation j = (JournalingInformation)element;
+				return j.getTargetSectorId() + "";
+			}
+		});
+
+		// The 7th column displays offsets.
+		col = createTableViewerColumn(titles[6], bounds[6], 6);
+		col.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				JournalingInformation j = (JournalingInformation)element;
+				return j.getOffset() + "";
+			}
+		});
+
+		// The 8th column displays journal data sizes.
+		col = createTableViewerColumn(titles[7], bounds[7], 7);
+		col.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				JournalingInformation j = (JournalingInformation)element;
+				return j.getDataSize() + "";
+			}
+		});
+
+		// The 9th column displays journal arguments.
+		col = createTableViewerColumn(titles[8], bounds[8], 8);
+		col.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				JournalingInformation j = (JournalingInformation)element;
+				return j.getArgument() + "";
 			}
 		});
 	}
