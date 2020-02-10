@@ -299,6 +299,10 @@ void board_initialize(void)
 	board_sensor_initialize();
 	board_wdt_initialize();
 
+#ifdef CONFIG_BOARD_SMARTFS_DUMP
+	smartfsdump_init();
+#endif
+
 #ifdef CONFIG_S5J_SSS
 	/* verify ARTIK Key */
 	sssro_verify();

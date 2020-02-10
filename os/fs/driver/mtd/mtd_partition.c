@@ -837,4 +837,77 @@ int mtd_setpartitionname(FAR struct mtd_dev_s *mtd, FAR const char *name)
 	strncpy(priv->name, name, MTD_PARTNAME_LEN);
 	return OK;
 }
+
+/****************************************************************************
+ * Name: mtd_getpartitionname
+ *
+ * Description:
+ *   Gets the name of the specified partition.
+ *
+ ****************************************************************************/
+int mtd_getpartitionname(FAR struct mtd_dev_s *mtd, FAR char *name)
+{
+	FAR struct mtd_partition_s *priv = (FAR struct mtd_partition_s *)mtd;
+
+	if (priv == NULL) {
+		return -EINVAL;
+	}
+
+	/* Allocate space for the name */
+	strncpy(name, priv->name, MTD_PARTNAME_LEN);
+	return OK;
+}
+
+/****************************************************************************
+ * Name: mtd_getpartitionindex
+ *
+ * Description:
+ *   Gets the index of the specified partition name.
+ *
+ ****************************************************************************/
+int mtd_getpartitionindex(char *part_name)
+{
+	FAR struct mtd_dev_s *mtd;
+	static char temp[MTD_PARTNAME_LEN + 1];
+	uint16_t index = 0;
+
+	do {
+		mtd = get_mtd_partition(index);
+		if (mtd) {
+			mtd_getpartitionname(mtd, temp);
+			if (!strncmp(temp, part_name, strlen(temp)))
+				return index;
+		}
+		index++;
+	} while (mtd);
+
+	return -1;
+}
+
+static void move_to_next_part(const char **par)
+{
+	/* Move to next part information. */
+	while (*(*par)++ != ',');
+}
+
+uint32_t mtd_getpartitionsize(int index, uint32_t *offset)
+{
+	const char *parts = CONFIG_FLASH_PART_SIZE;
+	uint32_t cnt = 0;
+	uint32_t partoffset = 0;
+
+	while (*parts) {
+		int partsize;
+
+		partsize = strtoul(parts, NULL, 0) << 10;
+		fdbg("\tpartoffset = 0x%x, partsize = %d\n", partoffset, partsize);
+		if (cnt++ == index) {
+			*offset = partoffset;
+			return partsize;
+		}
+		partoffset = partoffset + partsize;
+		move_to_next_part(&parts);
+	}
+	return 0;
+}
 #endif

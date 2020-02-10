@@ -97,7 +97,9 @@ void register_examples_cmds(void)
 	const builtin_info_t *map;
 
 	for (map = builtin_list; map->entry; map++) {
+#ifdef CONFIG_TASH
 		tash_cmd_install(map->name, map->entry, map->exectype);
+#endif
 	}
 }
 

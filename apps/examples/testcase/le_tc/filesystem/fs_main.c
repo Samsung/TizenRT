@@ -346,7 +346,7 @@ static void tc_fs_vfs_mount_p(void)
 	TC_ASSERT_EQ_CLEANUP("mount", ret, OK, vfs_unmount());
 
 	/*search mountpoint operation*/
-#if !defined(CONFIG_DISABLE_ENVIRON) && !defined(CONFIG_BUILD_PROTECTED)
+#if defined(CONFIG_FS_CMDS) && !defined(CONFIG_DISABLE_ENVIRON) && !defined(CONFIG_BUILD_PROTECTED)
 	ret = mount_show();
 	TC_ASSERT_EQ_CLEANUP("mount_show", ret, OK, vfs_unmount());
 #endif

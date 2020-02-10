@@ -119,6 +119,9 @@
  ****************************************************************************/
 #define PORT_ASSIGN(a, b) (a >> (GPIO_PORT_SHIFT - 5) | b >> GPIO_PIN_SHIFT)
 
+#ifdef CONFIG_BOARD_SMARTFS_DUMP
+static void smartfsdump_init();
+#endif
 
 /****************************************************************************
  * Name: imxrt_boardinitialize
@@ -245,6 +248,12 @@ void board_initialize(void)
 	(void)imxrt_bringup();
 
 	imxrt_iotbus_initialize();
+
+#ifdef CONFIG_BOARD_CRASHDUMP
+#ifdef CONFIG_BOARD_SMARTFS_DUMP
+	smartfsdump_init();
+#endif
+#endif
 
 #ifdef CONFIG_WATCHDOG
 	imxrt_wdog_initialize(CONFIG_WATCHDOG_DEVPATH, IMXRT_WDOG1);
