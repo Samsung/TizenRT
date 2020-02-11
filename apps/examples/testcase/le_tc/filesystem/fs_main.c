@@ -5597,6 +5597,9 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_fs_smartfs_mksmartfs_p();
 	tc_fs_smartfs_mksmartfs_invalid_path_n();
 #endif
+#ifdef CONFIG_ITC_FS
+	itc_fs_main();
+#endif
 	(void)testcase_state_handler(TC_END, "FileSystem TC");
 
 	return 0;
