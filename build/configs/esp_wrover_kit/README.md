@@ -29,7 +29,7 @@ Get the build in binaries and libraries
 [xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz)
 
 ```bash
-tar xvjf xtensa-esp32-elf-[linux*]-1.22.0-80-g6c4433a-5.2.0.tar.gz
+tar xvf xtensa-esp32-elf-[linux*]-1.22.0-80-g6c4433a-5.2.0.tar.gz
 export PATH=<Your Toolchain PATH>:$PATH
 ```
 
