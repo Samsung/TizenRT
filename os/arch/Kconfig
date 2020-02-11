@@ -801,6 +801,7 @@ config RAM_REGIONx_HEAP_INDEX
 config RAM_KREGIONx_START
 	string "An address or list of start address for kernel RAM region"
 	default "0x00000000,"
+	depends on MM_KERNEL_HEAP
 	---help---
 		The address or address list of the RAM regions.
 		If you want to use more than equal to two RAMs physically, or
@@ -815,6 +816,7 @@ config RAM_KREGIONx_START
 config RAM_KREGIONx_SIZE
 	string "A size or list of size for kernel RAM region"
 	default "0,"
+	depends on MM_KERNEL_HEAP
 	---help---
 		The size list of RAM region.
 		Refer RAM_KREGIONx_START content. One different thing is this has
