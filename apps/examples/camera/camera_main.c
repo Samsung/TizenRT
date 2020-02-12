@@ -38,15 +38,15 @@
 #define VIDEO_DEVNAME  "/dev/video%d"
 #endif
 
-#define VIDEO_BUFNUM       (3)
+#define VIDEO_BUFNUM       (5)
 #define STILL_BUFNUM       (1)
 
 #define DEFAULT_REPEAT_NUM (10)
 
 #define IMAGE_FILENAME_LEN (32)
-#define MAX_FORMAT          5
-#define MAX_FRAME           15
-#define MAX_FRAME_INTERVALS	5
+#define MAX_FORMAT          4
+#define MAX_FRAME           18
+#define MAX_FRAME_INTERVALS	6
 
 #define SUPPORTED_FORMAT	"  -L [FORMAT TYPE]     Supported Formats (index)\n"
 #define FORMAT				"                        %s(%d)\n"
@@ -57,6 +57,11 @@
 #define SET_INTERVAL		"  -K [FRAME INTERVAL]  Frame interval (index) for specified format, Ex: camera -t 1 -L 1 -U 5 -K 4\n"
 #define FRAME_INTERVAL_1	"                                     (%d)%d/%d\n"
 #define FRAME_INTERVAL_2	"                                     (%d)(%d - %d) (%d - %d) (%d/%d)\n"
+
+#define WRITE_THEAD_STACK_SIZE 2048
+#define READ_THREAD_STACK_SIZE 2048
+#define WRITE_THEAD_PRIORITY 255
+#define READ_THREAD_PRIORITY 255
 
 /****************************************************************************
  * Private Types
@@ -86,9 +91,34 @@ struct camera_frames {
 };
 
 struct camera_formats {
-	struct v4l2_fmtdesc		frames[MAX_FRAME];
-	struct camera_frames	cam_frame[MAX_FRAME];
+	struct v4l2_fmtdesc frames[MAX_FRAME];
+	struct camera_frames cam_frame[MAX_FRAME];
 	uint16_t frame_count;
+};
+
+struct buf_object {
+	uint8_t *userptr;
+	uint32_t bytesused;
+	uint32_t format;
+	uint32_t frame;
+	uint32_t buf_type;
+	uint32_t length;
+	uint32_t index;
+};
+
+struct circ_buf {
+	struct buf_object bobj[VIDEO_BUFNUM];
+	int head;
+	int tail;
+	int maxlen;
+	sem_t sem;
+};
+
+struct write_context {
+	int loop;
+	int v_fd;
+	sem_t sem;
+	struct circ_buf cbuf;
 };
 
 uint16_t format_count = 0;
@@ -163,6 +193,156 @@ struct camera_ctrls ctrls[] = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static void circ_bbuf_deinit(struct circ_buf *c)
+{
+	sem_destroy(&c->sem);
+}
+
+static void circ_bbuf_init(struct circ_buf *c)
+{
+	int i = 0;
+	struct buf_object buf = { 0, };
+	c->head = -1;
+	c->tail = -1;
+	c->maxlen = VIDEO_BUFNUM;
+	while (i < c->maxlen) {
+		c->bobj[i] = buf;
+		i++;
+	}
+	sem_init(&c->sem, 0, 1);
+}
+
+static int circ_bbuf_push(struct circ_buf *c, struct buf_object buf)
+{
+	sem_wait(&c->sem);
+	if ((c->head == 0 && c->tail == c->maxlen - 1) || (c->tail == (c->head - 1) % (c->maxlen - 1))) {
+		sem_post(&c->sem);
+		return -1;
+	} else if (c->head == -1) { /* Insert First Element */
+		c->head = c->tail = 0;
+		c->bobj[c->tail] = buf;
+	} else if (c->tail == c->maxlen - 1 && c->head != 0) {
+		c->tail = 0;
+		c->bobj[c->tail] = buf;
+	} else {
+		c->tail++;
+		c->bobj[c->tail] = buf;
+	}
+	sem_post(&c->sem);
+	return 0;
+}
+
+static int circ_bbuf_pop(struct circ_buf *c, struct buf_object **buf)
+{
+	sem_wait(&c->sem);
+	if (c->head == -1) {
+		sem_post(&c->sem);
+		return -1;
+	}
+	*buf = &c->bobj[c->head];
+	if (c->head == c->tail) {
+		c->head = -1;
+		c->tail = -1;
+	} else if (c->head == c->maxlen - 1) {
+		c->head = 0;
+	} else {
+		c->head++;
+	}
+	sem_post(&c->sem);
+	return 0;
+}
+
+static pthread_addr_t write_thread(pthread_addr_t arg)
+{
+	int ret = OK;
+	struct v4l2_buffer buf = { 0, };
+	struct write_context *pContext = (struct write_context *)arg;
+
+	memset(&buf, 0, sizeof(v4l2_buffer_t));
+	buf.memory = V4L2_MEMORY_USERPTR;
+
+	while (sem_wait(&pContext->sem) == 0) {
+		struct buf_object *bobject;
+		if (circ_bbuf_pop(&pContext->cbuf, &bobject) == -1) {
+			if (pContext->loop > 0) {
+				continue;
+			} else {
+				goto error;
+			}
+		}
+		write_file((uint8_t *) bobject->userptr, (size_t) bobject->bytesused, bobject->format, bobject->frame);
+		buf.type = bobject->buf_type;
+		buf.m.userptr = (unsigned long)bobject->userptr;
+		buf.length = bobject->length;
+		buf.index = bobject->index;
+		/* Note: VIDIOC_QBUF reset released buffer pointer. */
+		if (pContext->loop > 0) {
+			ret = ioctl(pContext->v_fd, VIDIOC_QBUF, (unsigned long)&buf);
+			if (ret) {
+				fprintf(stderr, "Fail QBUF %d\n", errno);
+				goto error;
+			}
+		} else {
+			goto error;
+		}
+	}
+error:
+	pthread_exit(NULL);
+	return NULL;
+}
+
+static pthread_t create_write_thread(void *arg)
+{
+	pthread_t tid;
+	pthread_attr_t attr;
+	struct sched_param sparam;
+	int ret = OK;
+
+	ret = pthread_attr_init(&attr);
+	if (ret != OK) {
+		fprintf(stderr, "failed to set pthread init(%d)\n", ret);
+		return -ret;
+	}
+
+	ret = pthread_attr_setschedpolicy(&attr, SCHED_RR);
+	if (ret != OK) {
+		fprintf(stderr, "failed to set policy(%d)\n", ret);
+	}
+
+	ret = pthread_attr_setstacksize(&attr, WRITE_THEAD_STACK_SIZE);
+	if (ret != OK) {
+		fprintf(stderr, "failed to set stack size(%d)\n", ret);
+		return -ret;
+	}
+
+	sparam.sched_priority = WRITE_THEAD_PRIORITY;
+	ret = pthread_attr_setschedparam(&attr, &sparam);
+	if (ret != OK) {
+		fprintf(stderr, "failed to set sched param(%d)\n", ret);
+		return -ret;
+	}
+
+	ret = pthread_create(&tid, &attr, write_thread, arg);
+	if (ret != OK) {
+		fprintf(stderr, "failed to create pthread(%d)\n", ret);
+		return -ret;
+	}
+
+	ret = pthread_setname_np(tid, "write sigwait thread");
+	if (ret != OK) {
+		fprintf(stderr, "failed to set name for pthread(%d)\n", ret);
+		return -ret;
+	}
+
+	ret = pthread_detach(tid);
+	if (ret != OK) {
+		fprintf(stderr, "failed to detach pthread(%d)\n", ret);
+		return -ret;
+	}
+
+	return tid;
+}
+
 static int write_file(uint8_t *data, size_t len, uint32_t format, uint32_t frame)
 {
 	FILE *fp;
@@ -189,6 +369,7 @@ static int write_file(uint8_t *data, size_t len, uint32_t format, uint32_t frame
 	}
 
 	fclose(fp);
+
 	return 0;
 }
 
@@ -201,7 +382,7 @@ static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, ui
 	struct v4l2_requestbuffers req = { 0 };
 	struct v4l2_buffer buf = { 0 };
 	struct v_buffer *buffers;
-	struct v4l2_streamparm frame_interval = {0,};
+	struct v4l2_streamparm frame_interval = { 0, };
 
 	/* VIDIOC_REQBUFS initiate user pointer I/O */
 
@@ -217,11 +398,11 @@ static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, ui
 	}
 
 	/* VIDIOC_S_FMT set format */
-	fmt.type				= type;
-	fmt.fmt.pix.width		= cm_format[idxformat].cam_frame[idxframe].width;
-	fmt.fmt.pix.height		= cm_format[idxformat].cam_frame[idxframe].height;
-	fmt.fmt.pix.field		= V4L2_FIELD_ANY;
-	fmt.fmt.pix.pixelformat	= cm_format[idxformat].frames[idxframe].pixelformat;
+	fmt.type = type;
+	fmt.fmt.pix.width = cm_format[idxformat].cam_frame[idxframe].width;
+	fmt.fmt.pix.height = cm_format[idxformat].cam_frame[idxframe].height;
+	fmt.fmt.pix.field = V4L2_FIELD_ANY;
+	fmt.fmt.pix.pixelformat = cm_format[idxformat].frames[idxframe].pixelformat;
 	fsize = fmt.fmt.pix.width * fmt.fmt.pix.height * 2;
 
 	ret = ioctl(fd, VIDIOC_S_FMT, (unsigned long)&fmt);
@@ -232,8 +413,8 @@ static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, ui
 
 	/* VIDIOC_S_PARM set frame interval */
 	frame_interval.type = type;
-	frame_interval.parm.capture.timeperframe.numerator		= cm_format[idxformat].cam_frame[idxframe].fintervals[idx_frame_interval].discrete.numerator;
-	frame_interval.parm.capture.timeperframe.denominator	= cm_format[idxformat].cam_frame[idxframe].fintervals[idx_frame_interval].discrete.denominator;
+	frame_interval.parm.capture.timeperframe.numerator = cm_format[idxformat].cam_frame[idxframe].fintervals[idx_frame_interval].discrete.numerator;
+	frame_interval.parm.capture.timeperframe.denominator = cm_format[idxformat].cam_frame[idxframe].fintervals[idx_frame_interval].discrete.denominator;
 
 	ret = ioctl(fd, VIDIOC_S_PARM, (unsigned long)&frame_interval);
 	if (ret < 0) {
@@ -253,19 +434,19 @@ static int camera_prepare(int fd, enum v4l2_buf_type type, uint32_t buf_mode, ui
 
 	if (!buffers) {
 		fprintf(stderr, "[%d] Out of memory for size (%d)\n", __LINE__, sizeof(v_buffer_t) * buffernum);
-		return ret;
+		return -ENOMEM;
 	}
 
 	for (n_buffers = 0; n_buffers < buffernum; ++n_buffers) {
 		buffers[n_buffers].length = fsize;
 
 		/* Note: VIDIOC_QBUF set buffer pointer. */
-		/*       Buffer pointer must be 32bytes aligned. */
+		/* Buffer pointer must be 32bytes aligned. */
 
 		buffers[n_buffers].start = memalign(32, fsize);
 		if (!buffers[n_buffers].start) {
 			fprintf(stderr, "[%d] Out of memory for size (%d)\n", __LINE__, fsize);
-			return ret;
+			return -ENOMEM;
 		}
 	}
 
@@ -401,12 +582,12 @@ void get_camera_options(int fd, int flag)
 						sprintf(buff, FRAME, j, fsize.discrete.width, fsize.discrete.height);
 						fprintf(stdout, buff);
 					}
-					cm_format[i].frames[j].pixelformat			= fmtdesc.pixelformat;
-					cm_format[i].frames[j].subimg_pixelformat	= fmtdesc.subimg_pixelformat;
+					cm_format[i].frames[j].pixelformat = fmtdesc.pixelformat;
+					cm_format[i].frames[j].subimg_pixelformat = fmtdesc.subimg_pixelformat;
 					memcpy(cm_format[i].frames[j].description, fmtdesc.description, sizeof(cm_format[i].frames[j].description));
 
-					cm_format[i].cam_frame[j].width		= fsize.discrete.width;
-					cm_format[i].cam_frame[j].height	= fsize.discrete.height;
+					cm_format[i].cam_frame[j].width = fsize.discrete.width;
+					cm_format[i].cam_frame[j].height = fsize.discrete.height;
 
 					//Get frameinterval for each frame size
 					if (flag) {
@@ -414,10 +595,10 @@ void get_camera_options(int fd, int flag)
 					}
 					k = 0;
 					do {
-						finterval.index			= k;
-						finterval.pixel_format	= fmtdesc.pixelformat;
-						finterval.width			= fsize.discrete.width;
-						finterval.height		= fsize.discrete.height;
+						finterval.index = k;
+						finterval.pixel_format = fmtdesc.pixelformat;
+						finterval.width = fsize.discrete.width;
+						finterval.height = fsize.discrete.height;
 
 						ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &finterval);
 						if (ret < 0) {
@@ -548,18 +729,46 @@ int camera_main(int argc, char *argv[])
 	uint32_t idxformat = 1;
 	uint32_t idxframe = 0;
 	uint32_t idx_frame_interval = 0;
-	uint32_t loop = DEFAULT_REPEAT_NUM;
 	char path[_POSIX_PATH_MAX];
 	struct stat stat_buf;
 	uint32_t buf_type;
 	uint32_t format;
 	struct v4l2_buffer buf;
 	bool cam_option = 0;
+	pthread_attr_t attr;
+	struct sched_param sparam;
+	struct write_context context = { 0, };
+	pthread_t tid = -1;
+
+	/* Initialize Current thread priority */
+	sparam.sched_priority = READ_THREAD_PRIORITY;
+	ret = pthread_attr_init(&attr);
+	if (ret != OK) {
+		fprintf(stderr, "failed to set pthread init(%d)\n", ret);
+		return -ret;
+	}
+
+	ret = pthread_attr_setstacksize(&attr, READ_THREAD_STACK_SIZE);
+	if (ret != OK) {
+		fprintf(stderr, "failed to set stack size(%d)\n", ret);
+		return -ret;
+	}
+
+	ret = pthread_attr_setschedparam(&attr, &sparam);
+	if (ret != OK) {
+		fprintf(stderr, "failed to set sched param(%d)\n", ret);
+		return -ret;
+	}
 
 	optind = 0;
 	buffers_video = NULL;
 	buffers_still = NULL;
 	n_buffers = 0;
+
+	/* Initializes write thread object */
+	context.loop = DEFAULT_REPEAT_NUM;
+	circ_bbuf_init(&context.cbuf);
+	sem_init(&context.sem, 0, 0);
 
 	clear_camera_options();
 
@@ -573,7 +782,7 @@ int camera_main(int argc, char *argv[])
 			dev = strtol(optarg, NULL, 10);
 			break;
 		case 'n':
-			loop = strtol(optarg, NULL, 10);
+			context.loop = strtol(optarg, NULL, 10);
 			break;
 		case 'L':
 			idxformat = strtol(optarg, NULL, 10);
@@ -783,23 +992,30 @@ camera_options:
 
 	ret = set_camera_options(v_fd);
 
-	if (idxformat >= format_count) {
+	if (idxformat > format_count) {
 		fprintf(stderr, "Failed!!! Invalid Format Index (%d) \n", idxformat);
 		ret = -1;
 	}
 
-	if (idxframe >= cm_format[idxformat].frame_count) {
+	if (idxframe > cm_format[idxformat].frame_count) {
 		fprintf(stderr, "Failed!!! Invalid Frame Index (%d) \n", idxframe);
 		ret = -1;
 	}
 
-	if (idx_frame_interval >= cm_format[idxformat].cam_frame[idxframe].interval_count) {
+	if (idx_frame_interval > cm_format[idxformat].cam_frame[idxframe].interval_count) {
 		fprintf(stderr, "Failed!!! Invalid Frame Interval Index (%d) \n", idx_frame_interval);
 		ret = -1;
 	}
 
 	if (ret < 0) {
 		get_camera_options(v_fd, 1);
+		goto errout_with_close;
+	}
+
+	context.v_fd = v_fd;
+	/* Create file write Handler Thread */
+	tid = create_write_thread((void *)&context);
+	if (tid < 0) {
 		goto errout_with_close;
 	}
 
@@ -824,7 +1040,8 @@ camera_options:
 		}
 	}
 
-	while (loop-- > 0) {
+	while (context.loop-- > 0) {
+		struct buf_object bobj = { 0, };
 		/* Note: VIDIOC_DQBUF acquire capture data. */
 
 		memset(&buf, 0, sizeof(v4l2_buffer_t));
@@ -836,16 +1053,15 @@ camera_options:
 			fprintf(stderr, "Fail DQBUF %d\n", errno);
 			goto errout_with_buffer;
 		}
-
-		write_file((uint8_t *) buf.m.userptr, (size_t) buf.bytesused, idxformat, idxframe);
-
-		/* Note: VIDIOC_QBUF reset released buffer pointer. */
-
-		ret = ioctl(v_fd, VIDIOC_QBUF, (unsigned long)&buf);
-		if (ret) {
-			fprintf(stderr, "Fail QBUF %d\n", errno);
-			goto errout_with_buffer;
-		}
+		bobj.userptr = (uint8_t *) buf.m.userptr;
+		bobj.bytesused = buf.bytesused;
+		bobj.format = idxformat;
+		bobj.frame = idxframe;
+		bobj.buf_type = buf_type;
+		bobj.length = buf.length;
+		bobj.index = buf.index;
+		circ_bbuf_push(&context.cbuf, bobj);
+		sem_post(&context.sem);
 	}
 
 	if (buf_type == V4L2_BUF_TYPE_STILL_CAPTURE) {
@@ -865,6 +1081,14 @@ camera_options:
 	exitcode = OK;
 
 errout_with_buffer:
+	if (tid >= 0) {
+		context.loop = 0;
+		sem_post(&context.sem);
+		/* Wait a bit showing timer thread */
+		pthread_join(tid, NULL);
+	}
+	circ_bbuf_deinit(&context.cbuf);
+	/* Free buffers */
 	free_buffer(buffers_video, VIDEO_BUFNUM);
 	free_buffer(buffers_still, STILL_BUFNUM);
 
@@ -872,6 +1096,7 @@ errout_with_close:
 	close(v_fd);
 
 errout_with_video_init:
-	fprintf(stderr, "App exited Successfully!!!!\n");
+	sem_destroy(&context.sem);
+	fprintf(stderr, "App exited Successfully!!!!\n", errno);
 	return exitcode;
 }
