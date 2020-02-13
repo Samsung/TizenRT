@@ -176,10 +176,10 @@ extern int mount_show(void);
 
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 /**
-* @fn               mkfifo_test_listener
-* @description      listener thread to read data from fifo
-* @return           int
-*/
+ * @fn               mkfifo_test_listener
+ * @description      listener thread to read data from fifo
+ * @return           int
+ */
 void mkfifo_test_listener(pthread_addr_t pvarg)
 {
 	int fd, count, ret;
@@ -300,10 +300,10 @@ static void vfs_rmdir(const char *dirpath)
 }
 
 /**
-* @fn               make_long_file
-* @description      Make long size file to execute tc properly.
-* @return           int
-*/
+ * @fn               make_long_file
+ * @description      Make long size file to execute tc properly.
+ * @return           int
+ */
 static int make_long_file(void)
 {
 	FILE *fp;
@@ -327,13 +327,13 @@ static int make_long_file(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_mount
-* @brief            Mount file system
-* @scenario         Mount initialized file system
-* @apicovered       mount
-* @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_mount_p
+ * @brief            Mount file system
+ * @scenario         Mount initialized file system
+ * @apicovered       mount
+ * @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_mount_p(void)
 {
 	int ret;
@@ -357,6 +357,14 @@ static void tc_fs_vfs_mount_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_mount_exist_path_n
+ * @brief            Mount file system
+ * @scenario         Mount file system on exist path
+ * @apicovered       mount
+ * @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_mount_exist_path_n(void)
 {
 	int ret;
@@ -375,13 +383,13 @@ static void tc_fs_vfs_mount_exist_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_umount
-* @brief            Unmount file system
-* @scenario         Unmount mounted file system
-* @apicovered       umount
-* @precondition     File system should be mounted.
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_umount_p
+ * @brief            Unmount file system
+ * @scenario         Unmount mounted file system
+ * @apicovered       umount
+ * @precondition     File system should be mounted.
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_umount_p(void)
 {
 	int ret;
@@ -399,6 +407,14 @@ static void tc_fs_vfs_umount_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_umount_noexist_path_n
+ * @brief            Unmount file system
+ * @scenario         Noexist path unmount file system
+ * @apicovered       umount
+ * @precondition     File system should be mounted.
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_umount_noexist_path_n(void)
 {
 	int ret;
@@ -414,13 +430,13 @@ static void tc_fs_vfs_umount_noexist_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_open
-* @brief            Open file to do file operation
-* @scenario         Open specific file
-* @apicovered       open
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_open_p
+ * @brief            Open file to do file operation
+ * @scenario         Open specific file
+ * @apicovered       open
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_open_p(void)
 {
 	int fd;
@@ -439,6 +455,14 @@ static void tc_fs_vfs_open_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_open_invalid_path_n
+ * @brief            Open file to do file operation
+ * @scenario         Invalid path open file
+ * @apicovered       open
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_open_invalid_path_n(void)
 {
 	int fd;
@@ -497,13 +521,13 @@ static void tc_fs_vfs_fdopen_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_write
-* @brief            Write data into specific file
-* @scenario         Open file and then write data, if writing finished, close file
-* @apicovered       open, write
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_write_p
+ * @brief            Write data into specific file
+ * @scenario         Open file and then write data, if writing finished, close file
+ * @apicovered       open, write
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_write_p(void)
 {
 	int fd, ret;
@@ -525,6 +549,14 @@ static void tc_fs_vfs_write_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_write_invalid_len_n
+ * @brief            Write data into specific file
+ * @scenario         Open file and then invalid lengh write data
+ * @apicovered       write
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_write_invalid_len_n(void)
 {
 	int fd, ret;
@@ -547,6 +579,14 @@ static void tc_fs_vfs_write_invalid_len_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_write_invalid_fd_n
+ * @brief            Write data into specific file
+ * @scenario         Write data to invalid file descriptor
+ * @apicovered       write
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_write_invalid_fd_n(void)
 {
 	int ret;
@@ -561,13 +601,13 @@ static void tc_fs_vfs_write_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_read
-* @brief            Read data from specific file
-* @scenario         Open file and then read data, if reading finished, close file
-* @apicovered       open, read
-* @precondition	    NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_read_p
+ * @brief            Read data from specific file
+ * @scenario         Open file and then read data, if reading finished, close file
+ * @apicovered       open, read
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_read_p(void)
 {
 	int fd, ret;
@@ -591,6 +631,14 @@ static void tc_fs_vfs_read_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_read_invalid_flags_n
+ * @brief            Read after open the file for write only
+ * @scenario         Open file and then read data, if reading finished, close file
+ * @apicovered       open, read
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_read_invalid_flags_n(void)
 {
 	int fd, ret;
@@ -614,6 +662,14 @@ static void tc_fs_vfs_read_invalid_flags_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_read_invalid_fd_n
+ * @brief            Read after open the file for write only
+ * @scenario         Read data to invalid file descriptor
+ * @apicovered       read
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_read_invalid_fd_n(void)
 {
 	int ret;
@@ -628,13 +684,13 @@ static void tc_fs_vfs_read_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_close
-* @brief            Close file
-* @scenario         Open and close
-* @apicovered       open, close
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_close_p
+ * @brief            Close file
+ * @scenario         Open and close
+ * @apicovered       open, close
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_close_p(void)
 {
 	int fd, ret;
@@ -654,6 +710,14 @@ static void tc_fs_vfs_close_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_close_invalid_fd_n
+ * @brief            Close file
+ * @scenario         Close invalid file descriptor
+ * @apicovered       close
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_close_invalid_fd_n(void)
 {
 	int ret;
@@ -667,14 +731,14 @@ static void tc_fs_vfs_close_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_dup
-* @brief            Clone a file descriptor to an arbitray descriptor number
-* @scenario         Open and write data. and then Clone descriptor to fd2, write data with fd2.
-*                   After write, check it writes properly or not.
-* @apicovered       open, write, dup, read
-* @precondition	    NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_dup_p
+ * @brief            Clone a file descriptor to an arbitray descriptor number
+ * @scenario         Open and write data. and then Clone descriptor to fd2, write data with fd2.
+ *                   After write, check it writes properly or not.
+ * @apicovered       open, write, dup, read
+ * @precondition	 NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_dup_p(void)
 {
 	char *filename = VFS_DUP_FILE_PATH;
@@ -728,6 +792,14 @@ static void tc_fs_vfs_dup_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_dup_invalid_fd_n
+ * @brief            Clone a file descriptor to an arbitray descriptor number
+ * @scenario         Clone invalid file descriptor
+ * @apicovered       dup
+ * @precondition	 NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_dup_invalid_fd_n(void)
 {
 	int fd;
@@ -748,14 +820,14 @@ static void tc_fs_vfs_dup_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_dup2
-* @brief            Clone a file descriptor  to a specific descriptor number
-* @scenario         Open and write data. and then Clone fd1 to fd2, write data with fd1.
-*                   After write, check it writes properly or not by read data with fd2.
-* @apicovered       open, write, dup2, read
-* @precondition	    NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_dup2_p
+ * @brief            Clone a file descriptor  to a specific descriptor number
+ * @scenario         Open and write data. and then Clone fd1 to fd2, write data with fd1.
+ *                   After write, check it writes properly or not by read data with fd2.
+ * @apicovered       open, write, dup2, read
+ * @precondition	 NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_dup2_p(void)
 {
 	char *filename1 = VFS_DUP_FILE_PATH;
@@ -804,6 +876,14 @@ static void tc_fs_vfs_dup2_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_dup2_invalid_fd_n
+ * @brief            Clone a file descriptor to a specific descriptor number
+ * @scenario         Clone invalid file descriptor
+ * @apicovered       dup2
+ * @precondition	 NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_dup2_invalid_fd_n(void)
 {
 	ssize_t ret;
@@ -821,13 +901,13 @@ static void tc_fs_vfs_dup2_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_fsync
-* @brief            Synchronize the file state on disk to match internal, in-memory state.
-* @scenario         Open and write data. and then check fsync works properly.
-* @apicovered       open, write, fsync, read
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_fsync_p
+ * @brief            Synchronize the file state on disk to match internal, in-memory state.
+ * @scenario         Open and write data. and then check fsync works properly.
+ * @apicovered       open, write, fsync, read
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fsync_p(void)
 {
 	int ret, fd, len;
@@ -855,6 +935,14 @@ static void tc_fs_vfs_fsync_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_fsync_invalid_flags_n
+ * @brief            Synchronize the file state on disk to match internal, in-memory state.
+ * @scenario         Open the data read-only and make sure fsync is working properly.
+ * @apicovered       write, fsync
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fsync_invalid_flags_n(void)
 {
 	int ret, fd;
@@ -878,6 +966,14 @@ static void tc_fs_vfs_fsync_invalid_flags_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_fsync_invalid_fd_n
+ * @brief            Synchronize the file state on disk to match internal, in-memory state.
+ * @scenario         fsync to invalid file descriptor
+ * @apicovered       fsync
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fsync_invalid_fd_n(void)
 {
 	int ret;
@@ -891,13 +987,13 @@ static void tc_fs_vfs_fsync_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_lseek
-* @brief            Move current file position to specific position
-* @scenario         Open file and move position, and then read data to check lseek works properly or not.
-* @apicovered       open, lseek, read
-* @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_lseek_p
+ * @brief            Move current file position to specific position
+ * @scenario         Open file and move position, and then read data to check lseek works properly or not.
+ * @apicovered       open, lseek, read
+ * @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_lseek_p(void)
 {
 	int ret, fd;
@@ -957,6 +1053,14 @@ static void tc_fs_vfs_lseek_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_lseek_invalid_fd_n
+ * @brief            Move current file position to specific position
+ * @scenario         Move position to invalid file descriptor
+ * @apicovered       lseek
+ * @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_lseek_invalid_fd_n(void)
 {
 	int ret;
@@ -970,13 +1074,13 @@ static void tc_fs_vfs_lseek_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_pwrite
-* @brief            Write data at specific position of file
-* @scenario         Open and write data at specific position. And then check file written on disk.
-* @apicovered       open, pwrite, read
-* @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_pwrite_p
+ * @brief            Write data at specific position of file
+ * @scenario         Open and write data at specific position. And then check file written on disk.
+ * @apicovered       open, pwrite, read
+ * @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_pwrite_p(void)
 {
 	int ret, fd;
@@ -1000,6 +1104,14 @@ static void tc_fs_vfs_pwrite_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_pwrite_invalid_fd_n
+ * @brief            Write data at specific position of file
+ * @scenario         Write data at invalid file descriptor
+ * @apicovered       pwrite
+ * @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_pwrite_invalid_fd_n(void)
 {
 	int ret;
@@ -1014,13 +1126,13 @@ static void tc_fs_vfs_pwrite_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_pread
-* @brief            Read data at specific position of file
-* @scenario         Open and read data from specific position.
-* @apicovered       open, pread
-* @precondition     tc_fs_vfs_pwrite should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_pread_p
+ * @brief            Read data at specific position of file
+ * @scenario         Open and read data from specific position.
+ * @apicovered       open, pread
+ * @precondition     tc_fs_vfs_pwrite should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_pread_p(void)
 {
 	int ret, fd;
@@ -1048,6 +1160,14 @@ static void tc_fs_vfs_pread_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_pread_invalid_fd_n
+ * @brief            Read data at specific position of file
+ * @scenario         read data from invalid file descriptor
+ * @apicovered       open, pread
+ * @precondition     tc_fs_vfs_pwrite should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_pread_invalid_fd_n(void)
 {
 	int ret;
@@ -1062,13 +1182,13 @@ static void tc_fs_vfs_pread_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_mkdir
-* @brief            Create folders
-* @scenario         Create folder(VFS_FOLDER_PATH) and create 5 sub-folders
-* @apicovered       mkdir
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_mkdir_p
+ * @brief            Create folders
+ * @scenario         Create folder(VFS_FOLDER_PATH) and create 5 sub-folders
+ * @apicovered       mkdir
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_mkdir_p(void)
 {
 	int ret;
@@ -1091,6 +1211,14 @@ static void tc_fs_vfs_mkdir_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_mkdir_exist_path_n
+ * @brief            Create folders
+ * @scenario         Create folder that is the same path as already exists
+ * @apicovered       mkdir
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_mkdir_exist_path_n(void)
 {
 	int ret;
@@ -1109,6 +1237,14 @@ static void tc_fs_vfs_mkdir_exist_path_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_mkdir_exceed_len_n
+ * @brief            Create folders
+ * @scenario         Create folder that exceed the maximum name length
+ * @apicovered       mkdir
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_mkdir_exceed_len_n(void)
 {
 	int ret;
@@ -1136,13 +1272,13 @@ static void tc_fs_vfs_mkdir_exceed_len_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_opendir
-* @brief            Open specific directory to use APIs defined in dirent.h
-* @scenario         Open specific directory
-* @apicovered       opendir
-* @precondition     tc_fs_vfs_mkdir should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_opendir_p
+ * @brief            Open specific directory to use APIs defined in dirent.h
+ * @scenario         Open specific directory
+ * @apicovered       opendir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_opendir_p(void)
 {
 	DIR *dir;
@@ -1172,6 +1308,14 @@ static void tc_fs_vfs_opendir_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_opendir_invalid_path_n
+ * @brief            Open specific directory to use APIs defined in dirent.h
+ * @scenario         Open invalid directory
+ * @apicovered       opendir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_opendir_invalid_path_n(void)
 {
 	DIR *dir;
@@ -1189,13 +1333,13 @@ static void tc_fs_vfs_opendir_invalid_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_readdir
-* @brief            Read contents in specific directory sequentially
-* @scenario         Read contents in specific folder(VFS_FOLDER_PATH)
-* @apicovered       opendir, readdir, closedir
-* @precondition     tc_fs_vfs_mkdir should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_readdir_p
+ * @brief            Read contents in specific directory sequentially
+ * @scenario         Read contents in specific folder(VFS_FOLDER_PATH)
+ * @apicovered       opendir, readdir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_readdir_p(void)
 {
 	int ret;
@@ -1245,6 +1389,14 @@ static void tc_fs_vfs_readdir_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_readdir_invalid_path_n
+ * @brief            Read contents in specific directory sequentially
+ * @scenario         Read contents in invalid folder
+ * @apicovered       opendir, readdir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_readdir_invalid_path_n(void)
 {
 	int ret;
@@ -1268,13 +1420,13 @@ static void tc_fs_vfs_readdir_invalid_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_rewinddir
-* @brief            Reset current position of directory
-* @scenario         Read contents in specific folder(VFS_FOLDER_PATH), and it reachs end of contents, reset & read again
-* @apicovered       opendir, rewinddir, closedir
-* @precondition     tc_fs_vfs_mkdir should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_rewinddir_p
+ * @brief            Reset current position of directory
+ * @scenario         Read contents in specific folder(VFS_FOLDER_PATH), and it reachs end of contents, reset & read again
+ * @apicovered       opendir, rewinddir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rewinddir_p(void)
 {
 	int ret;
@@ -1336,6 +1488,14 @@ static void tc_fs_vfs_rewinddir_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_rewinddir_null_path_n
+ * @brief            Reset current position of directory
+ * @scenario         Reset & read again at null path
+ * @apicovered       opendir, rewinddir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rewinddir_null_path_n(void)
 {
 	DIR *dir = NULL;
@@ -1348,13 +1508,13 @@ static void tc_fs_vfs_rewinddir_null_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_seekdir
-* @brief            Move current position of directory to specific position
-* @scenario         Change position of directory and read contents
-* @apicovered       opendir, seekdir, readdir, closedir
-* @precondition     tc_fs_vfs_mkdir should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_seekdir_p
+ * @brief            Move current position of directory to specific position
+ * @scenario         Change position of directory and read contents
+ * @apicovered       opendir, seekdir, readdir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_seekdir_p(void)
 {
 	int ret;
@@ -1407,6 +1567,14 @@ static void tc_fs_vfs_seekdir_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_seekdir_offset_n
+ * @brief            Move current position of directory to specific position
+ * @scenario         Change invalid position of directory and read contents
+ * @apicovered       opendir, seekdir, readdir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_seekdir_offset_n(void)
 {
 	int ret;
@@ -1438,6 +1606,14 @@ static void tc_fs_vfs_seekdir_offset_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_seekdir_position_n
+ * @brief            Move current position of directory to specific position
+ * @scenario         Change invalid position of directory and read contents
+ * @apicovered       opendir, seekdir, readdir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_seekdir_position_n(void)
 {
 	int ret;
@@ -1469,13 +1645,13 @@ static void tc_fs_vfs_seekdir_position_n(void)
 }
 
 /**
-* @testcase         fs_libc_dirent_readdir_r
-* @brief            Get position of next contents in specific directory
-* @scenario         Get next contents's position until it reachs end of contents, and check count of contents
-* @apicovered       opendir, readdir_r, closedir
-* @precondition     tc_fs_vfs_mkdir should be passed
-* @postcondition    NA
-*/
+ * @testcase         fs_libc_dirent_readdir_r
+ * @brief            Get position of next contents in specific directory
+ * @scenario         Get next contents's position until it reachs end of contents, and check count of contents
+ * @apicovered       opendir, readdir_r, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_dirent_readdir_r_p(void)
 {
 	int ret, count;
@@ -1509,6 +1685,14 @@ static void tc_libc_dirent_readdir_r_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_dirent_readdir_r_invalid_path_n
+ * @brief            Get position of next contents in specific directory
+ * @scenario         Directory with the invalid position is read
+ * @apicovered       opendir, readdir_r, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_dirent_readdir_r_invalid_path_n(void)
 {
 	int ret;
@@ -1528,13 +1712,13 @@ static void tc_libc_dirent_readdir_r_invalid_path_n(void)
 }
 
 /**
-* @testcase         fs_libc_dirent_telldir
-* @brief            Get position of current contents in specific directory
-* @scenario         Get specific position by seekdir and check telldir returns position properly
-* @apicovered       opendir, seekdir, telldir, closedir
-* @precondition     tc_fs_vfs_mkdir should be passed
-* @postcondition    NA
-*/
+ * @testcase         fs_libc_dirent_telldir_p
+ * @brief            Get position of current contents in specific directory
+ * @scenario         Get specific position by seekdir and check telldir returns position properly
+ * @apicovered       opendir, seekdir, telldir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_dirent_telldir_p(void)
 {
 	DIR *dirp;
@@ -1566,6 +1750,14 @@ static void tc_libc_dirent_telldir_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_dirent_telldir_null_stream_n
+ * @brief            Get position of current contents in specific directory
+ * @scenario         Telldir to the NULL position
+ * @apicovered       opendir, seekdir, telldir, closedir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_dirent_telldir_null_stream_n(void)
 {
 	int ret;
@@ -1578,13 +1770,13 @@ static void tc_libc_dirent_telldir_null_stream_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_closedir
-* @brief            Close opened directory
-* @scenario         Open and close directory
-* @apicovered       opendir, closedir
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_closedir_p
+ * @brief            Close opened directory
+ * @scenario         Open and close directory
+ * @apicovered       opendir, closedir
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_closedir_p(void)
 {
 	int ret;
@@ -1607,6 +1799,14 @@ static void tc_fs_vfs_closedir_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_closedir_null_path_n
+ * @brief            Close opened directory
+ * @scenario         Close null directory
+ * @apicovered       opendir, closedir
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_closedir_null_path_n(void)
 {
 	int ret;
@@ -1619,13 +1819,13 @@ static void tc_fs_vfs_closedir_null_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_rmdir
-* @brief            Remove each of directory
-* @scenario         Remove all exist directory
-* @apicovered       rmdir
-* @precondition     tc_fs_vfs_mkdir should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_rmdir_p
+ * @brief            Remove each of directory
+ * @scenario         Remove all exist directory
+ * @apicovered       rmdir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rmdir_p(void)
 {
 	/* Init */
@@ -1645,6 +1845,14 @@ static void tc_fs_vfs_rmdir_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_rmdir_null_path_n
+ * @brief            Remove each of directory
+ * @scenario         Remove null directory
+ * @apicovered       rmdir
+ * @precondition     tc_fs_vfs_mkdir should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rmdir_null_path_n(void)
 {
 	int ret;
@@ -1657,13 +1865,13 @@ static void tc_fs_vfs_rmdir_null_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_unlink
-* @brief            Unlink specific file
-* @scenario         Unlink specific file(VFS_DUP_FILE_PATH)
-* @apicovered       unlink
-* @precondition     tc_fs_vfs_dup should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_unlink_p
+ * @brief            Unlink specific file
+ * @scenario         Unlink specific file(VFS_DUP_FILE_PATH)
+ * @apicovered       unlink
+ * @precondition     tc_fs_vfs_dup should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_unlink_p(void)
 {
 	char *filepath = VFS_UNLINK_FILE_PATH;
@@ -1706,6 +1914,14 @@ static void tc_fs_vfs_unlink_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_unlink_null_path_n
+ * @brief            Unlink specific file
+ * @scenario         Unlink null file
+ * @apicovered       unlink
+ * @precondition     tc_fs_vfs_dup should be passed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_unlink_null_path_n(void)
 {
 	int ret;
@@ -1718,13 +1934,13 @@ static void tc_fs_vfs_unlink_null_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_stat
-* @brief            Get status of specific file
-* @scenario         Get status of specific file(VFS_FILE_PATH) by stat
-* @apicovered       stat
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_stat_p
+ * @brief            Get status of specific file
+ * @scenario         Get status of specific file(VFS_FILE_PATH) by stat
+ * @apicovered       stat
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_stat_p(void)
 {
 	char *filename = VFS_STAT_PATH;
@@ -1749,6 +1965,14 @@ static void tc_fs_vfs_stat_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_stat_null_path_n
+ * @brief            Get status of specific file
+ * @scenario         Get status of null file path
+ * @apicovered       stat
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_stat_null_path_n(void)
 {
 	int ret;
@@ -1762,6 +1986,14 @@ static void tc_fs_vfs_stat_null_path_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_stat_invalid_path_n
+ * @brief            Get status of specific file
+ * @scenario         Get status of invalid file path
+ * @apicovered       stat
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_stat_invalid_path_n(void)
 {
 	int ret;
@@ -1775,6 +2007,14 @@ static void tc_fs_vfs_stat_invalid_path_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_stat_empty_string_n
+ * @brief            Get status of specific file
+ * @scenario         Get status of empty string file path
+ * @apicovered       stat
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_stat_empty_string_n(void)
 {
 	int ret;
@@ -1789,13 +2029,13 @@ static void tc_fs_vfs_stat_empty_string_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_statfs
-* @brief            Get status of mounted file system
-* @scenario         Get status of mounted file system by statfs and check type of file system
-* @apicovered       statfs
-* @precondition     File system should be mounted
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_statfs_p
+ * @brief            Get status of mounted file system
+ * @scenario         Get status of mounted file system by statfs and check type of file system
+ * @apicovered       statfs
+ * @precondition     File system should be mounted
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_statfs_p(void)
 {
 	struct statfs fs;
@@ -1821,6 +2061,14 @@ static void tc_fs_vfs_statfs_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_statfs_null_path_n
+ * @brief            Get status of mounted file system
+ * @scenario         Statfs and check type of null path
+ * @apicovered       statfs
+ * @precondition     File system should be mounted
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_statfs_null_path_n(void)
 {
 	struct statfs fs;
@@ -1835,13 +2083,13 @@ static void tc_fs_vfs_statfs_null_path_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_fstat
-* @brief            Get status of specific file
-* @scenario         Get status of specific file(VFS_FILE_PATH) by stat
-* @apicovered       fstat
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_fstat_p
+ * @brief            Get status of specific file
+ * @scenario         Get status of specific file(VFS_FILE_PATH) by stat
+ * @apicovered       fstat
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fstat_p(void)
 {
 	char *filename = VFS_FILE_PATH;
@@ -1869,6 +2117,14 @@ static void tc_fs_vfs_fstat_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_fstat_invalid_fd_n
+ * @brief            Get status of specific file
+ * @scenario         Get status of invalid file descriptor
+ * @apicovered       fstat
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fstat_invalid_fd_n(void)
 {
 	struct stat st;
@@ -1885,13 +2141,13 @@ static void tc_fs_vfs_fstat_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_fstatfs
-* @brief            Get status of mounted file system
-* @scenario         Get status of mounted file system by statfs and check type of file system
-* @apicovered       fstatfs
-* @precondition     File system should be mounted
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_fstatfs_p
+ * @brief            Get status of mounted file system
+ * @scenario         Get status of mounted file system by statfs and check type of file system
+ * @apicovered       fstatfs
+ * @precondition     File system should be mounted
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fstatfs_p(void)
 {
 	struct statfs fs;
@@ -1931,6 +2187,14 @@ static void tc_fs_vfs_fstatfs_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_fstatfs_invalid_fd_n
+ * @brief            Get status of mounted file system
+ * @scenario         Get status of invalid file descriptor
+ * @apicovered       fstatfs
+ * @precondition     File system should be mounted
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fstatfs_invalid_fd_n(void)
 {
 	struct statfs fs;
@@ -1945,13 +2209,13 @@ static void tc_fs_vfs_fstatfs_invalid_fd_n(void)
 
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 /**
-* @testcase         tc_fs_vfs_mkfifo
-* @brief            Get data thorugh the pipe which create by mkfifo
-* @scenario         Create fifo and check data between main task and its sub-thread
-* @apicovered       mkfifo, open, pthread_create, write, read
-* @precondition     CONFIG_PIPES should be enabled & CONFIG_DEV_PIPE_SIZE must greater than 11
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_mkfifo_p
+ * @brief            Get data thorugh the pipe which create by mkfifo
+ * @scenario         Create fifo and check data between main task and its sub-thread
+ * @apicovered       mkfifo, open, pthread_create, write, read
+ * @precondition     CONFIG_PIPES should be enabled & CONFIG_DEV_PIPE_SIZE must greater than 11
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_mkfifo_p(void)
 {
 	int fd, ret;
@@ -2031,6 +2295,14 @@ errout:
 	close(fd);
 }
 
+/**
+ * @testcase         tc_fs_vfs_mkfifo_exist_path_n
+ * @brief            Get data thorugh the pipe which create by mkfifo
+ * @scenario         Create fifo on exist path
+ * @apicovered       mkfifo
+ * @precondition     CONFIG_PIPES should be enabled & CONFIG_DEV_PIPE_SIZE must greater than 11
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_mkfifo_exist_path_n(void)
 {
 	int ret;
@@ -2053,13 +2325,13 @@ static void tc_fs_vfs_mkfifo_exist_path_n(void)
 #endif
 
 /**
-* @testcase         tc_fs_vfs_sendfile
-* @brief            Send file data to specific descriptor from another descriptor
-* @scenario         Create new file and send data from exist file
-* @apicovered       open, stat, sendfile
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_sendfile_p
+ * @brief            Send file data to specific descriptor from another descriptor
+ * @scenario         Create new file and send data from exist file
+ * @apicovered       open, stat, sendfile
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_sendfile_p(void)
 {
 	char *src_file = VFS_FILE_PATH;
@@ -2118,6 +2390,14 @@ static void tc_fs_vfs_sendfile_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_sendfile_invalid_fd_n
+ * @brief            Send file data to specific descriptor from another descriptor
+ * @scenario         Create new file and send data from invalid file descriptor
+ * @apicovered       open, stat, sendfile
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_sendfile_invalid_fd_n(void)
 {
 	char *src_file = VFS_FILE_PATH;
@@ -2168,6 +2448,14 @@ static void tc_fs_vfs_sendfile_invalid_fd_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_sendfile_offset_eof_n
+ * @brief            Send file data to specific descriptor from another descriptor
+ * @scenario         Create new file and send data from end of file
+ * @apicovered       open, stat, sendfile
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_sendfile_offset_eof_n(void)
 {
 	char *src_file = VFS_FILE_PATH;
@@ -2217,13 +2505,13 @@ static void tc_fs_vfs_sendfile_offset_eof_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_fcntl
-* @brief            Access & control opened file with fcntl
-* @scenario         Open file with specific flag and get access mode with fcntl
-* @apicovered       open, fcntl
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_fcntl_p
+ * @brief            Access & control opened file with fcntl
+ * @scenario         Open file with specific flag and get access mode with fcntl
+ * @apicovered       open, fcntl
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fcntl_p(void)
 {
 	int fd, mode;
@@ -2246,6 +2534,14 @@ static void tc_fs_vfs_fcntl_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_fcntl_invalid_fd_n
+ * @brief            Access & control opened file with fcntl
+ * @scenario         Invalid file descriptor with specific flag and get access mode with fcntl
+ * @apicovered       fcntl
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_fcntl_invalid_fd_n(void)
 {
 	int ret;
@@ -2259,13 +2555,13 @@ static void tc_fs_vfs_fcntl_invalid_fd_n(void)
 
 #ifndef CONFIG_DISABLE_POLL
 /**
-* @testcase         tc_fs_vfs_poll
-* @brief            Polling for I/O
-* @scenario         Check poll works properly or not
-* @apicovered       poll
-* @precondition     CONFIG_DISABLE_POLL should be disabled
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_poll_p
+ * @brief            Polling for I/O
+ * @scenario         Check poll works properly or not
+ * @apicovered       poll
+ * @precondition     CONFIG_DISABLE_POLL should be disabled
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_poll_p(void)
 {
 	struct pollfd pollfd;
@@ -2299,13 +2595,13 @@ static void tc_fs_vfs_poll_p(void)
 
 #ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 /**
-* @testcase         tc_fs_vfs_select
-* @brief            To monitor multiple I/O
-* @scenario         Input text within 5 sec and check select works properly(check change of STDIN)
-* @apicovered       select
-* @precondition     CONFIG_DISABLE_POLL should be disabled
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_select_p
+ * @brief            To monitor multiple I/O
+ * @scenario         Input text within 5 sec and check select works properly(check change of STDIN)
+ * @apicovered       select
+ * @precondition     CONFIG_DISABLE_POLL should be disabled
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_select_p(void)
 {
 	struct timeval tv;
@@ -2351,13 +2647,13 @@ static void tc_fs_vfs_select_p(void)
 #endif
 
 /**
-* @testcase         tc_fs_vfs_rename
-* @brief            Rename file to specific name
-* @scenario         Rename exist file to specific name
-* @apicovered       rename
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_rename_p
+ * @brief            Rename file to specific name
+ * @scenario         Rename exist file to specific name
+ * @apicovered       rename
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rename_p(void)
 {
 	int fd;
@@ -2385,23 +2681,39 @@ static void tc_fs_vfs_rename_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_rename_noexist_path_n
+ * @brief            Rename file to specific name
+ * @scenario         Rename invalid file path
+ * @apicovered       rename
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rename_noexist_path_n(void)
 {
 	int ret;
-	char *noexist_file = VFS_INVALID_FILE_PATH;
+	char *invalid_file = VFS_INVALID_FILE_PATH;
 	char new_file[20];
 	/* Nagative case with invalid argument, not existing pathname. It will return ERROR */
 
 	/* Init */
-	snprintf(new_file, 12, "%s_re", noexist_file);
+	snprintf(new_file, 12, "%s_re", invalid_file);
 
 	/* Testcase */
-	ret = rename(noexist_file, new_file);
+	ret = rename(invalid_file, new_file);
 	TC_ASSERT_EQ("rename", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_rename_exist_path_n
+ * @brief            Rename file to specific name
+ * @scenario         Rename old file to exist file
+ * @apicovered       rename
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rename_exist_path_n(void)
 {
 	int fd;
@@ -2447,6 +2759,14 @@ static void tc_fs_vfs_rename_exist_path_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_rename_null_path_n
+ * @brief            Rename file to specific name
+ * @scenario         Rename old file to exist file
+ * @apicovered       rename
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rename_null_path_n(void)
 {
 	int fd;
@@ -2464,7 +2784,7 @@ static void tc_fs_vfs_rename_null_path_n(void)
 	ret = rename(filename, NULL);
 	TC_ASSERT_EQ_CLEANUP("rename", ret, ERROR, close(fd); vfs_unmount());
 
-	/*Condition where rename is not possible*/
+	/* Condition where rename is not possible */
 	ret = rename(DEV_NULL_PATH, DEV_NEW_NULL_PATH);
 	TC_ASSERT_NEQ_CLEANUP("rename", ret, ERROR, close(fd); vfs_unmount());
 
@@ -2478,6 +2798,14 @@ static void tc_fs_vfs_rename_null_path_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_rename_not_possible_n
+ * @brief            Rename file to specific name
+ * @scenario         Rename dev path
+ * @apicovered       rename
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_rename_not_possible_n(void)
 {
 	int ret;
@@ -2494,13 +2822,13 @@ static void tc_fs_vfs_rename_not_possible_n(void)
 }
 
 /**
-* @testcase         tc_fs_vfs_ioctl
-* @brief            ioctl with opened file
-* @scenario         Get #byte of data from /dev/console by ioctl
-* @apicovered       open, ioctl
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_vfs_ioctl_p
+ * @brief            ioctl with opened file
+ * @scenario         Get #byte of data from /dev/console by ioctl
+ * @apicovered       open, ioctl
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_ioctl_p(void)
 {
 	int fd;
@@ -2521,6 +2849,14 @@ static void tc_fs_vfs_ioctl_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_ioctl_invalid_fd_n
+ * @brief            ioctl with opened file
+ * @scenario         Get #byte of data from invalid file descriptor by ioctl
+ * @apicovered       ioctl
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_ioctl_invalid_fd_n(void)
 {
 	int ret;
@@ -2534,6 +2870,14 @@ static void tc_fs_vfs_ioctl_invalid_fd_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_vfs_ioctl_invalid_cmd_n
+ * @brief            ioctl with opened file
+ * @scenario         Ioctl call with invalid cmd
+ * @apicovered       open, ioctl
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_vfs_ioctl_invalid_cmd_n(void)
 {
 	int fd;
@@ -2555,15 +2899,16 @@ static void tc_fs_vfs_ioctl_invalid_cmd_n(void)
 
 	TC_SUCCESS_RESULT();
 }
-/**
-* @testcase         tc_driver_mtd_config_ops
-* @brief            mtd_config operations
-* @scenario         Set and get config from /dev/config
-* @apicovered       mtd_config ops
-* @precondition     NA
-* @postcondition    NA
-*/
+
 #if defined(CONFIG_MTD_CONFIG)
+/**
+ * @testcase         tc_driver_mtd_config_ops
+ * @brief            mtd_config operations
+ * @scenario         Set and get config from /dev/config
+ * @apicovered       mtd_config ops
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_driver_mtd_config_ops(void)
 {
 	int fd;
@@ -2596,15 +2941,15 @@ static void tc_driver_mtd_config_ops(void)
 	TC_SUCCESS_RESULT();
 }
 #endif
-/**
-* @testcase         tc_driver_mtd_ftl_ops
-* @brief            ftl block operations
-* @scenario         opens the ftl device and perforsm operations
-* @apicovered       ftl block operations
-* @precondition     NA
-* @postcondition    NA
-*/
 #if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
+/**
+ * @testcase         tc_driver_mtd_ftl_ops
+ * @brief            ftl block operations
+ * @scenario         opens the ftl device and perforsm operations
+ * @apicovered       ftl block operations
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_driver_mtd_ftl_ops(void)
 {
 	int fd;
@@ -2651,14 +2996,15 @@ cleanup:
 	close(fd);
 }
 #endif
+
 /**
-* @testcase         tc_libc_stdio_dprintf
-* @brief            Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
-* @scenario         Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
-* @apicovered       dprintf
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_dprintf_p
+ * @brief            Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
+ * @scenario         Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
+ * @apicovered       dprintf
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_dprintf_p(void)
 {
 	char *filename = VFS_FILE_PATH;
@@ -2682,6 +3028,14 @@ static void tc_libc_stdio_dprintf_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_dprintf_invalid_fd_n
+ * @brief            Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
+ * @scenario         Output string as invalid file descriptor
+ * @apicovered       dprintf
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_dprintf_invalid_fd_n(void)
 {
 	char *str = VFS_TEST_CONTENTS_1;
@@ -2695,13 +3049,13 @@ static void tc_libc_stdio_dprintf_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fdopen
-* @brief            fdopen with available fd value
-* @scenario         Open file with specific flags, and then fdopen with diffrent flag. Then check flag is changed properly
-* @apicovered       open, fdopen
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fdopen_p
+ * @brief            fdopen with available fd value
+ * @scenario         Open file with specific flags, and then fdopen with diffrent flag. Then check flag is changed properly
+ * @apicovered       open, fdopen
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fdopen_p(void)
 {
 	int fd;
@@ -2726,7 +3080,15 @@ static void tc_libc_stdio_fdopen_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_libc_stdio_fdopen_invalid_fd_n(void)
+/**
+ * @testcase         tc_libc_stdio_fdopen_invalid_fd_`n
+ * @brief            fdopen with available fd value
+ * @scenario         Open file with invalid file pointer
+ * @apicovered       fdopen
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
+static void tc_libc_stdio_fdopen_invalid_fd_`n(void)
 {
 	FILE *fp;
 
@@ -2739,13 +3101,13 @@ static void tc_libc_stdio_fdopen_invalid_fd_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fopen
-* @brief            Open file by fopen
-* @scenario         Open file
-* @apicovered       fopen
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fopen_p
+ * @brief            Open file by fopen
+ * @scenario         Open file
+ * @apicovered       fopen
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fopen_p(void)
 {
 	FILE *fp;
@@ -2777,6 +3139,14 @@ static void tc_libc_stdio_fopen_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fopen_invalid_mode_n
+ * @brief            Open file by fopen
+ * @scenario         Open file with invalid mode
+ * @apicovered       fopen
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fopen_invalid_mode_n(void)
 {
 	FILE *fp;
@@ -2809,13 +3179,13 @@ static void tc_libc_stdio_fopen_invalid_mode_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fclose
-* @brief            Close file by fopen
-* @scenario         Open and Close file
-* @apicovered       fopen, fclose
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fclose_p
+ * @brief            Close file by fopen
+ * @scenario         Open and Close file
+ * @apicovered       fopen, fclose
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fclose_p(void)
 {
 	FILE *fp;
@@ -2837,6 +3207,14 @@ static void tc_libc_stdio_fclose_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fclose_invalid_fp_n
+ * @brief            Close file by fopen
+ * @scenario         Open and Close file
+ * @apicovered       fclose
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fclose_invalid_fp_n(void)
 {
 	FILE *fp = NULL;
@@ -2850,13 +3228,13 @@ static void tc_libc_stdio_fclose_invalid_fp_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fputs
-* @brief            Write contents through the fputs
-* @scenario         Write contents through the fputs, and check it works properly or not
-* @apicovered       fopen, fputs
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fputs_p
+ * @brief            Write contents through the fputs
+ * @scenario         Write contents through the fputs, and check it works properly or not
+ * @apicovered       fopen, fputs
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fputs_p(void)
 {
 	FILE *fp;
@@ -2878,6 +3256,14 @@ static void tc_libc_stdio_fputs_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fputs_null_stream_n
+ * @brief            Write contents through the fputs
+ * @scenario         Write contents through the fputs in null stream
+ * @apicovered       fopen, fputs
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fputs_null_stream_n(void)
 {
 	FILE *fp;
@@ -2900,13 +3286,13 @@ static void tc_libc_stdio_fputs_null_stream_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fgets
-* @brief            Read cntents through the fgets
-* @scenario         Read contents through the fgets, and check it is same contents as written by tc_libc_stdio_fgets
-* @apicovered       fopen, fgets
-* @precondition     tc_libc_stdio_fputs  should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fgets_p
+ * @brief            Read cntents through the fgets
+ * @scenario         Read contents through the fgets, and check it is same contents as written by tc_libc_stdio_fgets
+ * @apicovered       fopen, fgets
+ * @precondition     tc_libc_stdio_fputs  should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fgets_p(void)
 {
 	FILE *fp;
@@ -2936,6 +3322,14 @@ static void tc_libc_stdio_fgets_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fgets_buffer_size_n
+ * @brief            Read cntents through the fgets
+ * @scenario         Read contents of invalid buf size via fgets
+ * @apicovered       fopen, fgets
+ * @precondition     tc_libc_stdio_fputs  should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fgets_buffer_size_n(void)
 {
 	FILE *fp;
@@ -2959,13 +3353,13 @@ static void tc_libc_stdio_fgets_buffer_size_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fseek
-* @brief            Move current file position to specific position
-* @scenario         Open file and move position, and then read data to check lseek works properly or not.
-* @apicovered       fopen, fseek, fgets
-* @precondition     tc_libc_stdio_fputs  should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fseek_p
+ * @brief            Move current file position to specific position
+ * @scenario         Open file and move position, and then read data to check lseek works properly or not.
+ * @apicovered       fopen, fseek, fgets
+ * @precondition     tc_libc_stdio_fputs  should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fseek_p(void)
 {
 	FILE *fp;
@@ -2993,6 +3387,14 @@ static void tc_libc_stdio_fseek_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fseek_null_stream_n
+ * @brief            Move current file position to specific position
+ * @scenario         Try move position in null stream
+ * @apicovered       fopen, fseek, fgets
+ * @precondition     tc_libc_stdio_fputs  should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fseek_null_stream_n(void)
 {
 	int ret;
@@ -3006,13 +3408,13 @@ static void tc_libc_stdio_fseek_null_stream_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_ftell
-* @brief            Get current file position
-* @scenario         Open file and move position, and get current position by ftell
-* @apicovered       fopen, fseek, ftell
-* @precondition     tc_libc_stdio_fputs  should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_ftell_p
+ * @brief            Get current file position
+ * @scenario         Open file and move position, and get current position by ftell
+ * @apicovered       fopen, fseek, ftell
+ * @precondition     tc_libc_stdio_fputs  should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_ftell_p(void)
 {
 	FILE *fp;
@@ -3037,6 +3439,14 @@ static void tc_libc_stdio_ftell_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_ftell_null_stream_n
+ * @brief            Get current file position
+ * @scenario         Try move position in null stream
+ * @apicovered       ftell
+ * @precondition     tc_libc_stdio_fputs  should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_ftell_null_stream_n(void)
 {
 	int ret;
@@ -3049,13 +3459,13 @@ static void tc_libc_stdio_ftell_null_stream_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_feof
-* @brief            Check file pointer is positioned at the end of file
-* @scenario         Make long size file and print contents until it reaches at the end of file
-* @apicovered       fopen, feof
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_feof_p
+ * @brief            Check file pointer is positioned at the end of file
+ * @scenario         Make long size file and print contents until it reaches at the end of file
+ * @apicovered       fopen, feof
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_feof_p(void)
 {
 	FILE *fp;
@@ -3087,13 +3497,13 @@ static void tc_libc_stdio_feof_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fprintf
-* @brief            Write contents.
-* @scenario         Write contents through the fprintf.
-* @apicovered       fopen, fprintf
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fprintf_p
+ * @brief            Write contents.
+ * @scenario         Write contents through the fprintf.
+ * @apicovered       fopen, fprintf
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fprintf_p(void)
 {
 	FILE *fp;
@@ -3117,6 +3527,14 @@ static void tc_libc_stdio_fprintf_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fprintf_invalid_fp_n
+ * @brief            Write contents.
+ * @scenario         Write contents through the fprintf in invalid file point
+ * @apicovered       fprintf
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fprintf_invalid_fp_n(void)
 {
 	FILE *fp = NULL;
@@ -3131,13 +3549,13 @@ static void tc_libc_stdio_fprintf_invalid_fp_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fsetpos
-* @brief            Set current file pointer to specific position
-* @scenario         Set new position of file pointer & check read contents to check it works properly
-* @apicovered       fopen, fsetpos, fgetc
-* @precondition     tc_libc_stdio_fprintf should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fsetpos_p
+ * @brief            Set current file pointer to specific position
+ * @scenario         Set new position of file pointer & check read contents to check it works properly
+ * @apicovered       fopen, fsetpos, fgetc
+ * @precondition     tc_libc_stdio_fprintf should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fsetpos_p(void)
 {
 	FILE *fp;
@@ -3167,6 +3585,14 @@ static void tc_libc_stdio_fsetpos_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fsetpos_null_position_n
+ * @brief            Set current file pointer to specific position
+ * @scenario         Set new position of null file pointer
+ * @apicovered       fopen, fsetpos, fgetc
+ * @precondition     tc_libc_stdio_fprintf should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fsetpos_null_position_n(void)
 {
 	FILE *fp;
@@ -3190,6 +3616,14 @@ static void tc_libc_stdio_fsetpos_null_position_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fsetpos_invalid_fp_n
+ * @brief            Set current file pointer to specific position
+ * @scenario         Set new position of invalid file pointer
+ * @apicovered       fopen, fsetpos, fgetc
+ * @precondition     tc_libc_stdio_fprintf should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fsetpos_invalid_fp_n(void)
 {
 	FILE *fp = NULL;
@@ -3204,13 +3638,13 @@ static void tc_libc_stdio_fsetpos_invalid_fp_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fgetpos
-* @brief            Get current file pointer
-* @scenario         Set new position of file pointer & check current position by fgetpos
-* @apicovered       fopen, fsetpos, fgetpos
-* @precondition     tc_libc_stdio_fprintf should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fgetpos_p
+ * @brief            Get current file pointer
+ * @scenario         Set new position of file pointer & check current position by fgetpos
+ * @apicovered       fopen, fsetpos, fgetpos
+ * @precondition     tc_libc_stdio_fprintf should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fgetpos_p(void)
 {
 	FILE *fp;
@@ -3237,6 +3671,14 @@ static void tc_libc_stdio_fgetpos_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fgetpos_null_position_n
+ * @brief            Get current file pointer
+ * @scenario         Set new position of null position
+ * @apicovered       fopen, fsetpos, fgetpos
+ * @precondition     tc_libc_stdio_fprintf should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fgetpos_null_position_n(void)
 {
 	FILE *fp;
@@ -3260,6 +3702,14 @@ static void tc_libc_stdio_fgetpos_null_position_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fgetpos_invalid_fp_n
+ * @brief            Get current file pointer
+ * @scenario         Set new position of invalid file pointer
+ * @apicovered       fopen, fsetpos, fgetpos
+ * @precondition     tc_libc_stdio_fprintf should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fgetpos_invalid_fp_n(void)
 {
 	fpos_t pos = 2;
@@ -3273,13 +3723,13 @@ static void tc_libc_stdio_fgetpos_invalid_fp_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fputc
-* @brief            Put character to file
-* @scenario         Put character 'S' to file
-* @apicovered       fopen, fputc
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fputc_p
+ * @brief            Put character to file
+ * @scenario         Put character 'S' to file
+ * @apicovered       fopen, fputc
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fputc_p(void)
 {
 	FILE *fp;
@@ -3302,6 +3752,14 @@ static void tc_libc_stdio_fputc_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fputc_invalid_fp_n
+ * @brief            Put character to file
+ * @scenario         Put character 'S' to null file pointer
+ * @apicovered       fopen, fputc
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fputc_invalid_fp_n(void)
 {
 	FILE *fp = NULL;
@@ -3314,15 +3772,14 @@ static void tc_libc_stdio_fputc_invalid_fp_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-
 /**
-* @testcase         tc_libc_stdio_fgetc
-* @brief            get character from file
-* @scenario         get character from file and check it is same as which it put in tc_libc_stdio_fputc
-* @apicovered       fopen, fgetc
-* @precondition     tc_libc_stdio_fputc should pass
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fgetc_p
+ * @brief            get character from file
+ * @scenario         get character from file and check it is same as which it put in tc_libc_stdio_fputc
+ * @apicovered       fopen, fgetc
+ * @precondition     tc_libc_stdio_fputc should pass
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fgetc_p(void)
 {
 	FILE *fp;
@@ -3346,6 +3803,14 @@ static void tc_libc_stdio_fgetc_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fgetc_invalid_fp_n
+ * @brief            get character from file
+ * @scenario         get character from null file descriptor
+ * @apicovered       fgetc
+ * @precondition     tc_libc_stdio_fputc should pass
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fgetc_invalid_fp_n(void)
 {
 	FILE *fp = NULL;
@@ -3359,13 +3824,13 @@ static void tc_libc_stdio_fgetc_invalid_fp_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fwrite
-* @brief            Write 1 line of contents
-* @scenario         Write 3 lines of contents and check its return value
-* @apicovered       fopen, fprintf
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fwrite_p
+ * @brief            Write 1 line of contents
+ * @scenario         Write 3 lines of contents and check its return value
+ * @apicovered       fwrite
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fwrite_p(void)
 {
 	FILE *fp;
@@ -3397,6 +3862,14 @@ static void tc_libc_stdio_fwrite_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fwrite_invalid_fp_n
+ * @brief            Write 1 line of contents
+ * @scenario         Write line in invalid file descriptor
+ * @apicovered       fwrite
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fwrite_invalid_fp_n(void)
 {
 	FILE *fp = NULL;
@@ -3411,13 +3884,13 @@ static void tc_libc_stdio_fwrite_invalid_fp_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_fread
-* @brief            Read 1 line of contents
-* @scenario         Read 3 lines of contents and check its same as contents which written in tc_libc_stdio_fwrite
-* @apicovered       fopen, fread
-* @precondition     tc_libc_stdio_fwrite should be passed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fread_p
+ * @brief            Read 1 line of contents
+ * @scenario         Read 3 lines of contents and check its same as contents which written in tc_libc_stdio_fwrite
+ * @apicovered       fopen, fread
+ * @precondition     tc_libc_stdio_fwrite should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fread_p(void)
 {
 	FILE *fp;
@@ -3456,6 +3929,14 @@ static void tc_libc_stdio_fread_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fread_invalid_fp_n
+ * @brief            Read 1 line of contents
+ * @scenario         Read line in null file descriptor
+ * @apicovered       fopen, fread
+ * @precondition     tc_libc_stdio_fwrite should be passed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fread_invalid_fp_n(void)
 {
 	FILE *fp = NULL;
@@ -3472,13 +3953,13 @@ static void tc_libc_stdio_fread_invalid_fp_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_freopen
-* @brief            Open file by freopen
-* @scenario         Open file
-* @apicovered       freopen
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_freopen_p
+ * @brief            Open file by freopen
+ * @scenario         Open file
+ * @apicovered       freopen
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_freopen_p(void)
 {
 	FILE *fp;
@@ -3506,6 +3987,14 @@ static void tc_libc_stdio_freopen_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_freopen_invalid_mode_n
+ * @brief            Open file by freopen
+ * @scenario         Open file in null file descriptor and invalid mode
+ * @apicovered       freopen
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_freopen_invalid_mode_n(void)
 {
 	FILE *fp = NULL;
@@ -3526,6 +4015,14 @@ static void tc_libc_stdio_freopen_invalid_mode_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_freopen_null_path_n
+ * @brief            Open file by freopen
+ * @scenario         Open file null file descriptor and path
+ * @apicovered       freopen
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_freopen_null_path_n(void)
 {
 	FILE *fp = NULL;;
@@ -3545,6 +4042,14 @@ static void tc_libc_stdio_freopen_null_path_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_freopen_null_path_and_stream_n
+ * @brief            Open file by freopen
+ * @scenario         Open file null file null path and stream
+ * @apicovered       freopen
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_freopen_null_path_and_stream_n(void)
 {
 	FILE *fp;
@@ -3558,13 +4063,13 @@ static void tc_libc_stdio_freopen_null_path_and_stream_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_ferror
-* @brief            Check error occured during operation
-* @scenario         Write data to file which opened with read only flag to make an error forcely and check ferror works properly
-* @apicovered       fopen, fputc, ferror
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_ferror_p
+ * @brief            Check error occured during operation
+ * @scenario         Write data to file which opened with read only flag to make an error forcely and check ferror works properly
+ * @apicovered       fopen, fputc, ferror
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_ferror_p(void)
 {
 	FILE *fp;
@@ -3591,14 +4096,14 @@ static void tc_libc_stdio_ferror_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_clearerr
-* @brief            Check error cleared by clearerr after error occured during operation
-* @scenario         Write data to file which opened with read only flag to make an error forcely and
-*                   check ferror works properly and then check error disappeared by clearerr
-* @apicovered       fopen, fputc, ferror, clearerr
-* @precondition     File VFS_FILE_PATH should be existed
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_clearerr_p
+ * @brief            Check error cleared by clearerr after error occured during operation
+ * @scenario         Write data to file which opened with read only flag to make an error forcely and
+ *                   check ferror works properly and then check error disappeared by clearerr
+ * @apicovered       fopen, fputc, ferror, clearerr
+ * @precondition     File VFS_FILE_PATH should be existed
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_clearerr_p(void)
 {
 	FILE *fp;
@@ -3630,13 +4135,13 @@ static void tc_libc_stdio_clearerr_p(void)
 
 #ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 /**
-* @testcase         tc_libc_stdio_gets
-* @brief            get string by user input
-* @scenario         get string by user input and check it is NULL or not
-* @apicovered       gets
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_gets_p
+ * @brief            get string by user input
+ * @scenario         get string by user input and check it is NULL or not
+ * @apicovered       gets
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_gets_p(void)
 {
 	char input_str[64];
@@ -3649,6 +4154,14 @@ static void tc_libc_stdio_gets_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_gets_null_buf_n
+ * @brief            get string by user input
+ * @scenario         Check the result by null argument to gets
+ * @apicovered       gets
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_gets_null_buf_n(void)
 {
 	/* Testcase */
@@ -3660,13 +4173,13 @@ static void tc_libc_stdio_gets_null_buf_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_gets_s
-* @brief            get string by user input
-* @scenario         get string by user input and check it is NULL or not
-* @apicovered       gets
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_gets_s
+ * @brief            get string by user input
+ * @scenario         get string by user input and check it is NULL or not
+ * @apicovered       gets
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_gets_s(void)
 {
 	char input_str[64];
@@ -3679,6 +4192,14 @@ static void tc_libc_stdio_gets_s(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_gets_s_buflen_n
+ * @brief            get string by user input
+ * @scenario         Get a string of the invalid length
+ * @apicovered       gets
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_gets_s_buflen_n(void)
 {
 	char input_str[64];
@@ -3693,13 +4214,13 @@ static void tc_libc_stdio_gets_s_buflen_n(void)
 #endif
 
 /**
-* @testcase         tc_libc_stdio_fileno
-* @brief            Get fd value related to file stream
-* @scenario         Open file with fopen and get fd value through the fileno
-* @apicovered       fopen, fileno
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_fileno_p
+ * @brief            Get fd value related to file stream
+ * @scenario         Open file with fopen and get fd value through the fileno
+ * @apicovered       fopen, fileno
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fileno_p(void)
 {
 	FILE *fp;
@@ -3722,6 +4243,14 @@ static void tc_libc_stdio_fileno_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_fileno_null_stream_n
+ * @brief            Get fd value related to file stream
+ * @scenario         Call fileno with a null file pointer
+ * @apicovered       fopen, fileno
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_fileno_null_stream_n(void)
 {
 	int fd;
@@ -3736,13 +4265,13 @@ static void tc_libc_stdio_fileno_null_stream_n(void)
 
 #ifdef CONFIG_STDIO_LINEBUFFER
 /**
-* @testcase         tc_libc_stdio_lib_snoflush
-* @brief            provides a common, dummy flush method for seekable output streams that are not flushable.
-* @scenario         Only used if CONFIG_STDIO_LINEBUFFER is selected.
-* @apicovered       lib_snoflush
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_lib_snoflush_p
+ * @brief            provides a common, dummy flush method for seekable output streams that are not flushable.
+ * @scenario         Only used if CONFIG_STDIO_LINEBUFFER is selected.
+ * @apicovered       lib_snoflush
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_lib_snoflush_p(void)
 {
 	int ret;
@@ -3755,14 +4284,14 @@ static void tc_libc_stdio_lib_snoflush_p(void)
 #endif
 
 /**
-* @testcase         tc_libc_stdio_lib_sprintf
-* @brief            Composes a string with the same text that would be printed if format was used on printf
-*                   But instead of being printed the content is stored as a C string in the buffer pointed by str
-* @scenario         A terminating null character is automatically appended after the content.
-* @apicovered       lib_sprintf
-* @precondition     The size of the buffer should be large enough to contain the entire resulting string
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_lib_sprintf_p
+ * @brief            Composes a string with the same text that would be printed if format was used on printf
+ *                   But instead of being printed the content is stored as a C string in the buffer pointed by str
+ * @scenario         A terminating null character is automatically appended after the content.
+ * @apicovered       lib_sprintf
+ * @precondition     The size of the buffer should be large enough to contain the entire resulting string
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_lib_sprintf_p(void)
 {
 	struct lib_memoutstream_s memoutstream;
@@ -3780,13 +4309,13 @@ static void tc_libc_stdio_lib_sprintf_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_remove
-* @brief            Deletes the file whose name is specified in filename.
-* @scenario         Open file
-* @apicovered       remove
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_remove_p
+ * @brief            Deletes the file whose name is specified in filename.
+ * @scenario         Open file and remove
+ * @apicovered       remove
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_remove_p(void)
 {
 	char *filename = VFS_FILE_PATH;
@@ -3809,6 +4338,14 @@ static void tc_libc_stdio_remove_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_remove_invalid_path_n
+ * @brief            Deletes the file whose name is specified in filename.
+ * @scenario         remove null path
+ * @apicovered       remove
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_remove_invalid_path_n(void)
 {
 	int ret;
@@ -3819,15 +4356,15 @@ static void tc_libc_stdio_remove_invalid_path_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @testcase         tc_libc_stdio_setbuf
-* @brief            Set stream buffer
-* @scenario         Open file
-* @apicovered       setbuf, setvbuf
-* @precondition     NA
-* @postcondition    NA
-*/
 #if CONFIG_STDIO_BUFFER_SIZE > 0
+/**
+ * @testcase         tc_libc_stdio_setbuf_p
+ * @brief            Set stream buffer
+ * @scenario         Open file
+ * @apicovered       setbuf, setvbuf
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_setbuf_p(void)
 {
 	FILE *fp;
@@ -3860,15 +4397,15 @@ static void tc_libc_stdio_setbuf_p(void)
 }
 #endif
 
-/**
-* @testcase         tc_libc_stdio_setvbuf
-* @brief            Change stream buffering
-* @scenario         Open file
-* @apicovered       setbuf, setvbuf
-* @precondition     NA
-* @postcondition    NA
-*/
 #if CONFIG_STDIO_BUFFER_SIZE > 0
+/**
+ * @testcase         tc_libc_stdio_setvbuf_p
+ * @brief            Change stream buffering
+ * @scenario         Open file
+ * @apicovered       setbuf, setvbuf
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_setvbuf_p(void)
 {
 	FILE *fp;
@@ -3946,13 +4483,13 @@ static void tc_libc_stdio_setvbuf_p(void)
 #endif
 
 /**
-* @testcase         tc_libc_stdio_meminstream
-* @brief            Initializes a stream for use with a fixed-size memory buffer
-* @scenario         Initializes a stream for use with a fixed-size memory buffer
-* @apicovered       lib_meminstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_meminstream_p
+ * @brief            Initializes a stream for use with a fixed-size memory buffer
+ * @scenario         Initializes a stream for use with a fixed-size memory buffer
+ * @apicovered       lib_meminstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_meminstream_p(void)
 {
 	const char *str = STREAM_TEST_CONTENTS;
@@ -3982,13 +4519,13 @@ static void tc_libc_stdio_meminstream_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_memoutstream
-* @brief            Initializes a stream for use with a fixed-size memory buffer
-* @scenario         Initializes a stream for use with a fixed-size memory buffer
-* @apicovered       lib_memoutstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_memoutstream_p
+ * @brief            Initializes a stream for use with a fixed-size memory buffer
+ * @scenario         Initializes a stream for use with a fixed-size memory buffer
+ * @apicovered       lib_memoutstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_memoutstream_p(void)
 {
 	char buffer[STDIO_BUFLEN];
@@ -4010,13 +4547,13 @@ static void tc_libc_stdio_memoutstream_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_memsistream
-* @brief            Initializes a stream for use with a fixed-size memory buffer
-* @scenario         Initializes a stream for use with a fixed-size memory buffer
-* @apicovered       lib_memsistream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_memsistream_p
+ * @brief            Initializes a stream for use with a fixed-size memory buffer
+ * @scenario         Initializes a stream for use with a fixed-size memory buffer
+ * @apicovered       lib_memsistream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_memsistream_p(void)
 {
 	const char *str = STREAM_TEST_CONTENTS;
@@ -4065,13 +4602,13 @@ static void tc_libc_stdio_memsistream_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_memsostream
-* @brief            Initializes a stream for use with a fixed-size memory buffer
-* @scenario         Initializes a stream for use with a fixed-size memory buffer
-* @apicovered       lib_memsostream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_memsostream_p
+ * @brief            Initializes a stream for use with a fixed-size memory buffer
+ * @scenario         Initializes a stream for use with a fixed-size memory buffer
+ * @apicovered       lib_memsostream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_memsostream_p(void)
 {
 	char buffer[STDIO_BUFLEN];
@@ -4111,13 +4648,13 @@ static void tc_libc_stdio_memsostream_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_nullinstream
-* @brief            Initializes a NULL stream. The initialized stream will return only EOF
-* @scenario         Initializes a NULL stream. The initialized stream will return only EOF
-* @apicovered       lib_nullinstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_nullinstream_p
+ * @brief            Initializes a NULL stream. The initialized stream will return only EOF
+ * @scenario         Initializes a NULL stream. The initialized stream will return only EOF
+ * @apicovered       lib_nullinstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_nullinstream_p(void)
 {
 	struct lib_instream_s nullinstream;
@@ -4133,13 +4670,13 @@ static void tc_libc_stdio_nullinstream_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_nulloutstream
-* @brief            Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
-* @scenario         Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
-* @apicovered       lib_nulloutstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_nulloutstream_p
+ * @brief            Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
+ * @scenario         Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
+ * @apicovered       lib_nulloutstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_nulloutstream_p(void)
 {
 	struct lib_outstream_s nulloutstream;
@@ -4154,13 +4691,13 @@ static void tc_libc_stdio_nulloutstream_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_rawinstream
-* @brief            Initializes a stream for use with a file descriptor
-* @scenario         Initializes a stream for use with a file descriptor
-* @apicovered       lib_rawinstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_rawinstream_p
+ * @brief            Initializes a stream for use with a file descriptor
+ * @scenario         Initializes a stream for use with a file descriptor
+ * @apicovered       lib_rawinstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_rawinstream_p(void)
 {
 	int fd;
@@ -4196,6 +4733,14 @@ static void tc_libc_stdio_rawinstream_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_rawinstream_invalid_permission_n
+ * @brief            Initializes a stream for use with a file descriptor
+ * @scenario         Initialize the stream with invalid permissions
+ * @apicovered       lib_rawinstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_rawinstream_invalid_permission_n(void)
 {
 	int fd;
@@ -4226,13 +4771,13 @@ static void tc_libc_stdio_rawinstream_invalid_permission_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_rawoutstream
-* @brief            Initializes a stream for use with a file descriptor
-* @scenario         Initializes a stream for use with a file descriptor
-* @apicovered       lib_rawoutstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_rawoutstream_p
+ * @brief            Initializes a stream for use with a file descriptor
+ * @scenario         Initializes a stream for use with a file descriptor
+ * @apicovered       lib_rawoutstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_rawoutstream_p(void)
 {
 	int fd;
@@ -4271,6 +4816,14 @@ static void tc_libc_stdio_rawoutstream_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_rawoutstream_invalid_permission_n
+ * @brief            Initializes a stream for use with a file descriptor
+ * @scenario         Initialize the stream with invalid permissions
+ * @apicovered       lib_rawoutstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_rawoutstream_invalid_permission_n(void)
 {
 	int fd;
@@ -4298,13 +4851,13 @@ static void tc_libc_stdio_rawoutstream_invalid_permission_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_rawsistream
-* @brief            Initializes a stream for use with a file descriptor
-* @scenario         Initializes a stream for use with a file descriptor
-* @apicovered       lib_rawsistream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_rawsistream_p
+ * @brief            Initializes a stream for use with a file descriptor
+ * @scenario         Initializes a stream for use with a file descriptor
+ * @apicovered       lib_rawsistream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_rawsistream_p(void)
 {
 	int fd;
@@ -4347,6 +4900,14 @@ static void tc_libc_stdio_rawsistream_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_rawsistream_invalid_permission_n
+ * @brief            Initializes a stream for use with a file descriptor
+ * @scenario         Initialize the stream with invalid permissions
+ * @apicovered       lib_rawsistream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_rawsistream_invalid_permission_n(void)
 {
 	int fd;
@@ -4375,13 +4936,13 @@ static void tc_libc_stdio_rawsistream_invalid_permission_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_rawsostream
-* @brief            Initializes a stream for use with a file descriptor
-* @scenario         Initializes a stream for use with a file descriptor
-* @apicovered       lib_rawsostream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_rawsostream_p
+ * @brief            Initializes a stream for use with a file descriptor
+ * @scenario         Initializes a stream for use with a file descriptor
+ * @apicovered       lib_rawsostream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_rawsostream_p(void)
 {
 	int fd;
@@ -4428,6 +4989,14 @@ static void tc_libc_stdio_rawsostream_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_rawsostream_invalid_permission_n
+ * @brief            Initializes a stream for use with a file descriptor
+ * @scenario         Initialize the stream with invalid permissions
+ * @apicovered       lib_rawsostream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_rawsostream_invalid_permission_n(void)
 {
 	int fd;
@@ -4455,14 +5024,14 @@ static void tc_libc_stdio_rawsostream_invalid_permission_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_sprintf
-* @brief            Composes a string with the same text that would be printed if format was used on printf
-*                   But instead of being printed the content is stored as a C string in the buffer pointed by str
-* @scenario         A terminating null character is automatically appended after the content.
-* @apicovered       sprintf
-* @precondition     The size of the buffer should be large enough to contain the entire resulting string
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_sprintf_p
+ * @brief            Composes a string with the same text that would be printed if format was used on printf
+ *                   But instead of being printed the content is stored as a C string in the buffer pointed by str
+ * @scenario         A terminating null character is automatically appended after the content.
+ * @apicovered       sprintf
+ * @precondition     The size of the buffer should be large enough to contain the entire resulting string
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_sprintf_p(void)
 {
 	char buf[STDIO_BUFLEN];
@@ -4477,13 +5046,13 @@ static void tc_libc_stdio_sprintf_p(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_stdinstream
-* @brief            Initializes a stream for use with a FILE instance
-* @scenario         Initializes a stream for use with a FILE instance
-* @apicovered       lib_stdinstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_stdinstream_p
+ * @brief            Initializes a stream for use with a FILE instance
+ * @scenario         Initializes a stream for use with a FILE instance
+ * @apicovered       lib_stdinstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_stdinstream_p(void)
 {
 	FILE *stream;
@@ -4518,6 +5087,14 @@ static void tc_libc_stdio_stdinstream_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_stdinstream_invalid_permission_n
+ * @brief            Initializes a stream for use with a FILE instance
+ * @scenario         Initialize the stream with invalid permissions
+ * @apicovered       lib_stdinstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_stdinstream_invalid_permission_n(void)
 {
 	FILE *stream;
@@ -4547,13 +5124,13 @@ static void tc_libc_stdio_stdinstream_invalid_permission_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_stdoutstream
-* @brief            Initializes a stream for use with a FILE instance
-* @scenario         Initializes a stream for use with a FILE instance
-* @apicovered       lib_stdoutstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_stdoutstream_p
+ * @brief            Initializes a stream for use with a FILE instance
+ * @scenario         Initializes a stream for use with a FILE instance
+ * @apicovered       lib_stdoutstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_stdoutstream_p(void)
 {
 	FILE *stream;
@@ -4597,6 +5174,14 @@ static void tc_libc_stdio_stdoutstream_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_stdoutstream_invalid_permission_n
+ * @brief            Initializes a stream for use with a FILE instance
+ * @scenario         Initialize the stream with invalid permissions
+ * @apicovered       lib_stdoutstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_stdoutstream_invalid_permission_n(void)
 {
 	FILE *stream;
@@ -4625,13 +5210,13 @@ static void tc_libc_stdio_stdoutstream_invalid_permission_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_stdsistream
-* @brief            Initializes a stream for use with a FILE instance
-* @scenario         Initializes a stream for use with a FILE instance
-* @apicovered       lib_stdsistream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_stdsistream_p
+ * @brief            Initializes a stream for use with a FILE instance
+ * @scenario         Initializes a stream for use with a FILE instance
+ * @apicovered       lib_stdsistream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_stdsistream_p(void)
 {
 	FILE *stream;
@@ -4672,6 +5257,14 @@ static void tc_libc_stdio_stdsistream_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_stdsistream_invalid_permission_n
+ * @brief            Initializes a stream for use with a FILE instance
+ * @scenario         Initialize the stream with invalid permissions
+ * @apicovered       lib_stdsistream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_stdsistream_invalid_permission_n(void)
 {
 	FILE *stream;
@@ -4701,13 +5294,13 @@ static void tc_libc_stdio_stdsistream_invalid_permission_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_stdsostream
-* @brief            Initializes a stream for use with a FILE instance
-* @scenario         Initializes a stream for use with a FILE instance
-* @apicovered       lib_stdsostream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_stdsostream_p
+ * @brief            Initializes a stream for use with a FILE instance
+ * @scenario         Initializes a stream for use with a FILE instance
+ * @apicovered       lib_stdsostream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_stdsostream_p(void)
 {
 	FILE *stream;
@@ -4756,6 +5349,14 @@ static void tc_libc_stdio_stdsostream_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_stdsostream_invalid_permission_n
+ * @brief            Initializes a stream for use with a FILE instance
+ * @scenario         Initialize the stream with invalid permissions
+ * @apicovered       lib_stdsostream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_stdsostream_invalid_permission_n(void)
 {
 	FILE *stream;
@@ -4784,13 +5385,13 @@ static void tc_libc_stdio_stdsostream_invalid_permission_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_mktemp
-* @brief            The mktemp() function generates a unique temporary filename from template.
-* @scenario         The mktemp() function generates a unique temporary filename from template.
-* @apicovered       mktemp()
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_mktemp_p
+ * @brief            The mktemp() function generates a unique temporary filename from template.
+ * @scenario         The mktemp() function generates a unique temporary filename from template.
+ * @apicovered       mktemp()
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_mktemp_p(void)
 {
 	char test_template[16] = "test1XXXXXX";
@@ -4845,6 +5446,14 @@ errout:
 	return;
 }
 
+/**
+ * @testcase         tc_libc_stdio_mktemp_invalid_path_n
+ * @brief            The mktemp() function generates a unique temporary filename from template.
+ * @scenario         Generates a unique temporary filename from invalid path
+ * @apicovered       mktemp()
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_mktemp_invalid_path_n(void)
 {
 	char test_template[16] = "test1XXXXXX";
@@ -4892,13 +5501,13 @@ static void tc_libc_stdio_mktemp_invalid_path_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_mkstemp
-* @brief            The  mkstemp() function generates a unique temporary filename from template, creates and opens the file, and returns an open file descriptor for the file.
-* @scenario         The mkstemp() function replaces the contents of the string pointed to by path_template by a unique filename, and returns a file descriptor for the file open for reading and writing.
-* @apicovered       mkstemp()
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_mkstemp_p
+ * @brief            The  mkstemp() function generates a unique temporary filename from template, creates and opens the file, and returns an open file descriptor for the file.
+ * @scenario         The mkstemp() function replaces the contents of the string pointed to by path_template by a unique filename, and returns a file descriptor for the file open for reading and writing.
+ * @apicovered       mkstemp()
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_mkstemp_p(void)
 {
 	char test_template[32] = "/tmp/test1XXXXXX";
@@ -4966,6 +5575,14 @@ errout:
 	return;
 }
 
+/**
+ * @testcase         tc_libc_stdio_mkstemp_invalid_path_n
+ * @brief            The  mkstemp() function generates a unique temporary filename from template, creates and opens the file, and returns an open file descriptor for the file.
+ * @scenario         Call mkstemp with an invalid path argument
+ * @apicovered       mkstemp()
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_mkstemp_invalid_path_n(void)
 {
 	int ret = 0;
@@ -4978,13 +5595,13 @@ static void tc_libc_stdio_mkstemp_invalid_path_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_tempnam
-* @brief            Returns a pointer to a string that is a valid filename
-* @scenario         The tempnam() function returns a pointer to a unique temporary filename, or NULL if a unique name cannot be generated.
-* @apicovered       tempnam(), mkstemp(), mktemp()
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_tempnam_p
+ * @brief            Returns a pointer to a string that is a valid filename
+ * @scenario         The tempnam() function returns a pointer to a unique temporary filename, or NULL if a unique name cannot be generated.
+ * @apicovered       tempnam(), mkstemp(), mktemp()
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_tempnam_p(void)
 {
 	const char filename[] = "tempnam_tc_test";
@@ -5029,6 +5646,14 @@ errout:
 	return;
 }
 
+/**
+ * @testcase         tc_libc_stdio_tempnam_null_arg_n
+ * @brief            Returns a pointer to a string that is a valid filename
+ * @scenario         Call tempnam with null argument
+ * @apicovered       tempnam(), mkstemp(), mktemp()
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_tempnam_null_arg_n(void)
 {
 	char *ret = NULL;
@@ -5073,13 +5698,13 @@ errout:
 }
 
 /**
-* @testcase         tc_libc_stdio_tmpnam
-* @brief            Returns a pointer to a string that is a valid filename
-* @scenario         The tmpnam() function returns a pointer to a unique temporary filename, or NULL if a unique name cannot be generated.
-* @apicovered       tmpnam(), mkstemp(), mktemp()
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_tmpnam_p
+ * @brief            Returns a pointer to a string that is a valid filename
+ * @scenario         The tmpnam() function returns a pointer to a unique temporary filename, or NULL if a unique name cannot be generated.
+ * @apicovered       tmpnam(), mkstemp(), mktemp()
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_tmpnam_p(void)
 {
 	char filename[16] = { '\0' };
@@ -5124,6 +5749,14 @@ errout:
 	return;
 }
 
+/**
+ * @testcase         tc_libc_stdio_tmpnam_null_string_n
+ * @brief            Returns a pointer to a string that is a valid filename
+ * @scenario         Call tmpnam with null string
+ * @apicovered       tmpnam(), mkstemp(), mktemp()
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_tmpnam_null_string_n(void)
 {
 	char *ret = NULL;
@@ -5168,13 +5801,13 @@ errout:
 }
 
 /**
-* @testcase         tc_libc_stdio_zeroinstream
-* @brief            Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
-* @scenario         Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
-* @apicovered       lib_zeroinstream
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_zeroinstream_p
+ * @brief            Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
+ * @scenario         Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
+ * @apicovered       lib_zeroinstream
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_zeroinstream_p(void)
 {
 	struct lib_instream_s zeroinstream;
@@ -5191,13 +5824,13 @@ static void tc_libc_stdio_zeroinstream_p(void)
 }
 
 /**
-* @testcase         tc_fs_mqueue_ops
-* @brief            mqueue creation
-* @scenario         opens the mqueue
-* @apicovered       mq_open and mq_unlink
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_fs_mqueue_ops_p
+ * @brief            mqueue creation
+ * @scenario         opens the mqueue
+ * @apicovered       mq_open and mq_unlink
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_mqueue_ops_p(void)
 {
 	mqd_t mqd_fd;
@@ -5219,6 +5852,14 @@ static void tc_fs_mqueue_ops_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_fs_mqueue_ops_invalid_param_n
+ * @brief            mqueue creation
+ * @scenario         opens the mqueue in invalid param
+ * @apicovered       mq_open and mq_unlink
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_mqueue_ops_invalid_param_n(void)
 {
 	mqd_t mqd_fd;
@@ -5246,13 +5887,13 @@ static void tc_fs_mqueue_ops_invalid_param_n(void)
 }
 
 /**
-* @testcase         tc_libc_stdio_ungetc
-* @brief            Input character into file stream
-* @scenario         Get character by fgets and then input again with ungetc. after that compare both of characters
-* @apicovered       fopen, fputc, fgetc, ungetc
-* @precondition     NA
-* @postcondition    NA
-*/
+ * @testcase         tc_libc_stdio_ungetc_p
+ * @brief            Input character into file stream
+ * @scenario         Get character by fgets and then input again with ungetc. after that compare both of characters
+ * @apicovered       fopen, fputc, fgetc, ungetc
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_ungetc_p(void)
 {
 	FILE *fp;
@@ -5290,6 +5931,14 @@ static void tc_libc_stdio_ungetc_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         tc_libc_stdio_ungetc_invalid_arg_n
+ * @brief            Input character into file stream
+ * @scenario         Call ungetc with an invalid argument
+ * @apicovered       fopen, fputc, fgetc, ungetc
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_libc_stdio_ungetc_invalid_arg_n(void)
 {
 	FILE *fp;
@@ -5336,15 +5985,15 @@ static void tc_libc_stdio_ungetc_invalid_arg_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @testcase         tc_fs_driver_ramdisk_ops
-* @brief            creating an ramddisk device
-* @scenario         Creates an /dev/ram2 and peforms operations on /dev/ram2
-* @apicovered       rd_open, rd_close, ramdisk_register, rd_read, rd_write
-* @precondition     NA
-* @postcondition    NA
-*/
 #if defined(CONFIG_BCH) && !defined(CONFIG_BUILD_PROTECTED)
+/**
+ * @testcase         tc_fs_driver_ramdisk_ops_p
+ * @brief            creating an ramddisk device
+ * @scenario         Creates an /dev/ram2 and peforms operations on /dev/ram2
+ * @apicovered       rd_open, rd_close, ramdisk_register, rd_read, rd_write
+ * @precondition     NA
+ * @postcondition    NA
+ */
 static void tc_fs_driver_ramdisk_ops_p(void)
 {
 	uint8_t *buffer;
