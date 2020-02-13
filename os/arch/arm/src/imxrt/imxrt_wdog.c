@@ -382,6 +382,7 @@ void up_wdog_keepalive(void)
 {
 	imxrt_wdog_refresh(WDOG1);
 }
+#endif
 
 /****************************************************************************
  * Name: up_watchdog_disable
@@ -397,4 +398,3 @@ void up_watchdog_disable(void)
 {
 	imxrt_wdog_disable_all();
 }
-#endif
