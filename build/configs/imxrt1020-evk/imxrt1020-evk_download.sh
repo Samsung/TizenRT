@@ -247,6 +247,12 @@ all)
 		if [[ "$part" == "config" ]];then
 			continue
 		fi
+		if [[ "$part" == "coredump" ]];then
+			continue
+		fi
+		if [[ "$part" == "ramdump" ]];then
+			continue
+		fi
 		gidx=$(get_partition_index $part)
 		flash_erase ${offsets[$gidx]} ${sizes[$gidx]}
 		exe_name=$(get_executable_name ${parts[$gidx]})
