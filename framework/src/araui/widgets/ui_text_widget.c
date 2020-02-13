@@ -443,10 +443,12 @@ static void _ui_text_widget_render_func(ui_widget_t widget, uint32_t dt)
 	int32_t text_width;
 	size_t utf_idx = 0;
 	size_t draw_idx = 0;
+#if defined(CONFIG_UI_DISPLAY_RGB888)
 	uint8_t r = 0;
 	uint8_t g = 0;
 	uint8_t b = 0;
 	uint8_t a = 0;
+#endif
 	ui_vec3_t v1;
 	ui_vec3_t v2;
 	ui_vec3_t v3;
