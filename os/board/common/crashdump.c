@@ -118,6 +118,9 @@ static int ramdump_via_uart(void)
 	/* Send memory region address, size & heap index to HOST */
 	for (x = 0; x < (CONFIG_MM_REGIONS + CONFIG_KMM_REGIONS); x++) {
 #else
+	/* Send 1 to HOST if kernel heap exists */
+	up_lowputc('0');
+
 	/* Send memory region address, size & heap index to HOST */
 	for (x = 0; x < CONFIG_MM_REGIONS; x++) {
 #endif
