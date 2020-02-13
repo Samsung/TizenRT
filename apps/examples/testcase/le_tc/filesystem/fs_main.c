@@ -508,7 +508,7 @@ static void tc_fs_vfs_fdopen_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_fs_vfs_fdopen_invalid_fd_n(void)
+static void tc_fs_vfs_fdopen_invalid_fp_n(void)
 {
 	int fd = -1;
 	struct file_struct *fp ;
@@ -2682,14 +2682,14 @@ static void tc_fs_vfs_rename_p(void)
 }
 
 /**
- * @testcase         tc_fs_vfs_rename_noexist_path_n
+ * @testcase         tc_fs_vfs_rename_invalid_path_n
  * @brief            Rename file to specific name
  * @scenario         Rename invalid file path
  * @apicovered       rename
  * @precondition     File VFS_FILE_PATH should be existed
  * @postcondition    NA
  */
-static void tc_fs_vfs_rename_noexist_path_n(void)
+static void tc_fs_vfs_rename_invalid_path_n(void)
 {
 	int ret;
 	char *invalid_file = VFS_INVALID_FILE_PATH;
@@ -3081,14 +3081,14 @@ static void tc_libc_stdio_fdopen_p(void)
 }
 
 /**
- * @testcase         tc_libc_stdio_fdopen_invalid_fd_`n
+ * @testcase         tc_libc_stdio_fdopen_invalid_fd_n
  * @brief            fdopen with available fd value
  * @scenario         Open file with invalid file pointer
  * @apicovered       fdopen
  * @precondition     File VFS_FILE_PATH should be existed
  * @postcondition    NA
  */
-static void tc_libc_stdio_fdopen_invalid_fd_`n(void)
+static void tc_libc_stdio_fdopen_invalid_fd_n(void)
 {
 	FILE *fp;
 
@@ -4173,14 +4173,14 @@ static void tc_libc_stdio_gets_null_buf_n(void)
 }
 
 /**
- * @testcase         tc_libc_stdio_gets_s
+ * @testcase         tc_libc_stdio_gets_s_p
  * @brief            get string by user input
  * @scenario         get string by user input and check it is NULL or not
  * @apicovered       gets
  * @precondition     NA
  * @postcondition    NA
  */
-static void tc_libc_stdio_gets_s(void)
+static void tc_libc_stdio_gets_s_p(void)
 {
 	char input_str[64];
 
@@ -6114,7 +6114,7 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_fs_vfs_fcntl_p();
 	tc_fs_vfs_fcntl_invalid_fd_n();
 	tc_fs_vfs_fdopen_p();
-	tc_fs_vfs_fdopen_invalid_fd_n();
+	tc_fs_vfs_fdopen_invalid_fp_n();
 #ifndef CONFIG_DISABLE_POLL
 	tc_fs_vfs_poll_p();
 #ifndef CONFIG_DISABLE_MANUAL_TESTCASE
@@ -6122,7 +6122,7 @@ int tc_filesystem_main(int argc, char *argv[])
 #endif
 #endif
 	tc_fs_vfs_rename_p();
-	tc_fs_vfs_rename_noexist_path_n();
+	tc_fs_vfs_rename_invalid_path_n();
 	tc_fs_vfs_rename_exist_path_n();
 	tc_fs_vfs_rename_null_path_n();
 	tc_fs_vfs_rename_not_possible_n();
@@ -6188,7 +6188,7 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 	tc_libc_stdio_gets_p();
 	tc_libc_stdio_gets_null_buf_n();
-	tc_libc_stdio_gets_s();
+	tc_libc_stdio_gets_s_p();
 	tc_libc_stdio_gets_s_buflen_n();
 #endif
 	tc_libc_stdio_fileno_p();
