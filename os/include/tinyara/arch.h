@@ -2127,6 +2127,25 @@ int up_getc(void);
 
 void up_puts(FAR const char *str);
 
+/****************************************************************************
+ * Name: up_dumptoflash
+ *
+ * Description:
+ *   dump the ramdump and core dump data to flash
+ *
+ * Input Parameters:
+ *   offset	- flash offset to be written to
+ *	 buf	- content to be written to flash
+ *	 bytes	- number of bytes written to flash
+ *
+ * Returned Value:
+ *   Zero (OK) on success; non Zero on failure.
+ *
+ ****************************************************************************/
+#if defined(CONFIG_BOARD_CRASHDUMP)
+uint32_t up_dumptoflash(uint32_t offset, uint32_t *buf, uint32_t bytes);
+#endif
+
 #ifdef CONFIG_WATCHDOG_FOR_IRQ
 /****************************************************************************
  * Name: up_wdog_init
