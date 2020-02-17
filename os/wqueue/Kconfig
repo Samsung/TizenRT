@@ -35,7 +35,7 @@ if SCHED_HPWORK
 
 config SCHED_HPWORKPRIORITY
 	int "High priority worker thread priority"
-	default 224
+	default 201
 	---help---
 		The execution priority of the higher priority worker thread.
 
