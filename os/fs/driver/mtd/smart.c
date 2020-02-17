@@ -2624,7 +2624,6 @@ static int smart_relocate_static_data(FAR struct smart_struct_s *dev, uint16_t b
 		newsector = dev->releasecount[x];
 #endif
 		fvdbg("Moving block %d, wear %d, free %d, released %d to block %d, wear %d\n", x, smart_get_wear_level(dev, x), nextsector, newsector, block, smart_get_wear_level(dev, block));
-
 		nextsector = block * dev->sectorsPerBlk;
 		for (sector = x * dev->sectorsPerBlk; sector < x * dev->sectorsPerBlk + dev->availSectPerBlk; sector++) {
 			/* Read the next sector from this erase block. */
@@ -3541,9 +3540,12 @@ retry:
 				 */
 
 				if (x < dev->neraseblocks - 1 || !wornfreecount) {
-					wornfreecount = count;
-					wornblock = block;
-					wornlevel = wearlevel;
+					if (block != 0) {
+						wornfreecount = count;
+						wornblock = block;
+						wornlevel = wearlevel;
+						fvdbg("sMap[0] = %d, block == %d\n", dev->sMap[0], block);
+					}
 				}
 			}
 		} else
@@ -3553,13 +3555,15 @@ retry:
 				/* Assign this block to alloc from. */
 
 				if (x < dev->neraseblocks - 1 || !allocfreecount) {
-					allocblock = block;
-					allocfreecount = count;
-					fvdbg("\t\tallocblock %d (freecount = %d) is selected!!\n",	block, dev->freecount[block]);
+					if (block != 0) {
+						allocblock = block;
+						allocfreecount = count;
+						fvdbg("\t\t\t\tsMap[0] = %d, block == %d\n", dev->sMap[0], block);
+					}
 				}
 			}
 		if (++block >= dev->neraseblocks) {
-			block = 0;
+			block = 1;
 		}
 	}
 
@@ -3575,7 +3579,7 @@ retry:
 		if (canrelocate && wornfreecount < (dev->sectorsPerBlk >> 2) && wornlevel == maxwearlevel) {
 			/* Relocate up to 8 unworn blocks. */
 
-			block = 0;
+			block = 1;
 			for (x = 0; x < 8;) {
 				if (smart_get_wear_level(dev, block) < SMART_WEAR_FORCE_REORG_THRESHOLD) {
 					if (smart_relocate_block(dev, block) < 0) {
@@ -3601,6 +3605,9 @@ retry:
 		/* Test if we found a worn block with free sectors. */
 
 		if (wornblock != 0xFFFF) {
+			if (wornblock == 0) {
+				fvdbg("\n\t[WARNING] Physical Block 0 is allocated!!!\n\n");
+			}
 			allocblock = wornblock;
 		} else
 #endif
@@ -3799,7 +3806,7 @@ static int smart_garbagecollect(FAR struct smart_struct_s *dev)
 
 			collectblock = 0xFFFF;
 			releasemax = 0;
-			for (x = 0; x < dev->neraseblocks; x++) {
+			for (x = 1; x < dev->neraseblocks; x++) {
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 				/* Don't collect blocks that have been worn completely. */
 
@@ -3882,7 +3889,7 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 	int ret;
 	uint8_t buffer[8], write_buffer = 0;
 
-	sector = 0;
+	sector = 1;
 	remaining = dev->geo.neraseblocks >> 1;
 	memset(buffer, 0xFF, sizeof(buffer));
 
@@ -3892,6 +3899,15 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 		write_buffer = 1;
 	}
 #endif
+
+	if (dev->sMap[sector] == 0xffff) {
+		ret = smart_allocsector(dev, sector);
+		if (ret != sector) {
+			fdbg("ERROR: Unable to allocate wear level status sector %d\n", sector);
+			ret = -EINVAL;
+			goto errout;
+		}
+	}
 
 	/* Write the uneven wear count just prior to the wear bits. */
 
@@ -3990,7 +4006,7 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 
 	/* Prepare to read the total block erases and uneven wearcount values. */
 
-	sector = 0;
+	sector = 1;
 	req.logsector = sector;
 	req.offset = SMARTFS_FMT_WEAR_POS - 8;
 	req.count = sizeof(buffer);
