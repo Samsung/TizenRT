@@ -63,6 +63,10 @@ ifeq ($(CONFIG_VIDEO_SOURCE),y)
   CSRCS += video.c
 endif
 
+ifeq ($(CONFIG_VIDEO_NULL),y)
+CSRCS += video_null_driver.c
+endif
+
 DEPPATH += --dep-path video
 VPATH += :video
 

@@ -25,3 +25,8 @@ config FB_OVERLAY_BLIT
 config VIDEO_SOURCE
 	bool "Driver for Video Source"
 	default n
+
+config VIDEO_NULL
+	bool "Driver for Dummy Video lowerhalf"
+	depends on VIDEO_SOURCE
+	default n

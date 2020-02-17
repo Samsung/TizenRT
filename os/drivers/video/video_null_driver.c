@@ -50,23 +50,22 @@
 /* Used only in case of discrete */
 #define MAX_INTERVAL 5
 
-#define CHECK_RANGE(value,min,max,step) do { \
-                                          if ((value < min) || \
-                                              (value > max) || \
-                                              ((value - min) % step != 0)) \
-                                            { \
-                                              return -EINVAL;\
-                                            } \
-                                         } while (0)
-#define max_t(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
+#define CHECK_RANGE(value, min, max, step) do { \
+												if ((value < min) || \
+												(value > max) || \
+												((value - min) % step != 0)) { \
+													return -EINVAL;\
+												} \
+											} while (0)
+#define max_t(a, b) \
+	({ __typeof__(a) _a = (a); \
+		__typeof__(b) _b = (b); \
+	_a > _b ? _a : _b; })
 
-#define min_t(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a < _b ? _a : _b; })
+#define min_t(a, b) \
+	({ __typeof__(a) _a = (a); \
+		__typeof__(b) _b = (b); \
+	_a < _b ? _a : _b; })
 
 /****************************************************************************
  * Private Function Prototypes
@@ -74,8 +73,7 @@
 static int video_null_open(FAR void *video_priv);
 static int video_null_close(FAR void *video_priv);
 static int video_null_do_halfpush(FAR void *video_priv, bool enable);
-static int video_null_set_buftype(FAR void *video_priv, enum v4l2_buf_type type);
-static int video_null_set_buf(FAR void *video_priv, uint32_t bufaddr, uint32_t bufsize);
+static int video_null_set_buf(FAR void *video_priv, enum v4l2_buf_type type, uint32_t bufaddr, uint32_t bufsize);
 static int video_null_cancel_dma(FAR void *video_priv);
 static int video_null_get_range_of_fmt(FAR void *video_priv, FAR struct v4l2_fmtdesc *format);
 static int video_null_get_range_of_framesize(FAR void *video_priv, FAR struct v4l2_frmsizeenum *frmsize);
@@ -153,7 +151,6 @@ struct video_devops_s dummy_null_video_ops = {
 	.open = video_null_open,
 	.close = video_null_close,
 	.do_halfpush = video_null_do_halfpush,
-	.set_buftype = video_null_set_buftype,
 	.set_buf = video_null_set_buf,
 	.cancel_dma = video_null_cancel_dma,
 	.get_range_of_fmt = video_null_get_range_of_fmt,
@@ -172,24 +169,24 @@ struct video_devops_s dummy_null_video_ops = {
 struct v4l2_format_s supported_formats[] = {
 	{
 		"MJPEG", V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_PIX_FMT_MJPEG, V4L2_COLORSPACE_SRGB, 12, {
-			{VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_VGA, VIDEO_VSIZE_VGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_QUADVGA, VIDEO_VSIZE_QUADVGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_HD, VIDEO_VSIZE_HD, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_5M, VIDEO_VSIZE_5M, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_3M, VIDEO_VSIZE_3M, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,}
+			{VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_VGA, VIDEO_VSIZE_VGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_QUADVGA, VIDEO_VSIZE_QUADVGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_HD, VIDEO_VSIZE_HD, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_5M, VIDEO_VSIZE_5M, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_3M, VIDEO_VSIZE_3M, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,}
 		}, MAX_FRAMES
 	},
 	{
 		"YUY2", V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_PIX_FMT_YUY2, V4L2_COLORSPACE_SRGB, 16, {
-			{VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_VGA, VIDEO_VSIZE_VGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_QUADVGA, VIDEO_VSIZE_QUADVGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_HD, VIDEO_VSIZE_HD, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_5M, VIDEO_VSIZE_5M, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,},
-			{VIDEO_HSIZE_3M, VIDEO_VSIZE_3M, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,}}, MAX_INTERVAL,}
+			{VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_VGA, VIDEO_VSIZE_VGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_QUADVGA, VIDEO_VSIZE_QUADVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_HD, VIDEO_VSIZE_HD, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_5M, VIDEO_VSIZE_5M, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_3M, VIDEO_VSIZE_3M, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,}
 		}, MAX_FRAMES
 	}
 };
@@ -600,46 +597,6 @@ static int video_null_do_halfpush(FAR void *video_private, bool enable)
 }
 
 /****************************************************************************
- * Name: video_null_set_buftype
- *
- * Description:
- *   This function is video dev ops to set the tranfer buffer type, still,
- *   capture etc.
- *
- *   This function is called from the video driver using dev ops.
- *
- * Input Parameters:
- *   video_private - Reference to private data.
- *   type - buffer type enum.
- *
- * Returned Values:
- *   OK on success, appropriate error code on failures
- *
- ****************************************************************************/
-static int video_null_set_buftype(FAR void *video_private, enum v4l2_buf_type type)
-{
-	int ret = OK;
-	struct video_lowerhalf_s *phalf = (struct video_lowerhalf_s *)video_private;
-	FAR null_priv_t *priv = NULL;
-
-	if (phalf == NULL) {
-		return -EINVAL;
-	}
-
-	priv = (FAR null_priv_t *) phalf->dev;
-
-	if (priv == NULL) {
-		return -EINVAL;
-	}
-
-	video_null_takesem(&priv->sem);
-	priv->reqtype = type;
-	video_null_givesem(&priv->sem);
-
-	return ret;
-}
-
-/****************************************************************************
  * Name: video_null_set_buf
  *
  * Description:
@@ -658,7 +615,7 @@ static int video_null_set_buftype(FAR void *video_private, enum v4l2_buf_type ty
  *   OK on success, appropriate error code on failures
  *
  ****************************************************************************/
-static int video_null_set_buf(FAR void *video_private, uint32_t bufaddr, uint32_t bufsize)
+static int video_null_set_buf(FAR void *video_private, enum v4l2_buf_type type, uint32_t bufaddr, uint32_t bufsize)
 {
 	int ret = OK;
 	uint32_t size;
@@ -684,6 +641,7 @@ static int video_null_set_buf(FAR void *video_private, uint32_t bufaddr, uint32_
 		return -EINVAL;
 	}
 
+	priv->reqtype = type;
 	priv->reqbuff = (uint32_t *) bufaddr;
 	priv->reqsize = bufsize;
 	priv->reqcancel = 0;
