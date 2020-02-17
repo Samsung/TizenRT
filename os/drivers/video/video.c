@@ -316,14 +316,7 @@ static int change_video_state(FAR video_upperhalf_t *priv, enum video_state_e ne
 	if ((current_state != VIDEO_STATE_DMA) && (next_state == VIDEO_STATE_DMA)) {
 		dma_container = video_framebuff_get_dma_container(&priv->video_inf.bufinf);
 		if (dma_container) {
-			ret = video_devops->set_buftype(priv->dev, V4L2_BUF_TYPE_VIDEO_CAPTURE);
-			if (ret < OK) {
-				return ret;
-			}
-			ret = video_devops->set_buf(priv->dev, dma_container->buf.m.userptr, dma_container->buf.length);
-			if (ret < OK) {
-				return ret;
-			}
+			ret = video_devops->set_buf(priv->dev, V4L2_BUF_TYPE_VIDEO_CAPTURE, dma_container->buf.m.userptr, dma_container->buf.length);
 		} else {
 			updated_next_state = VIDEO_STATE_STREAMON;
 		}
@@ -333,8 +326,11 @@ static int change_video_state(FAR video_upperhalf_t *priv, enum video_state_e ne
 		}
 	}
 
-	priv->video_inf.state = updated_next_state;
-	return OK;
+	if (ret == OK) {
+		priv->video_inf.state = updated_next_state;
+	}
+
+	return ret;
 }
 
 static bool is_taking_still_picture(FAR video_upperhalf_t *priv)
@@ -535,11 +531,7 @@ static int video_qbuf(FAR video_upperhalf_t *priv, FAR struct v4l2_buffer *buf)
 	} else {
 		container = video_framebuff_get_dma_container(&type_inf->bufinf);
 		if (container) {
-			ret = video_devops->set_buftype(priv->dev, buf->type);
-			if (ret < 0) {
-				goto streamoff;
-			}
-			ret = video_devops->set_buf(priv->dev, container->buf.m.userptr, container->buf.length);
+			ret = video_devops->set_buf(priv->dev, buf->type, container->buf.m.userptr, container->buf.length);
 			if (ret < 0) {
 				goto streamoff;
 			}
@@ -895,12 +887,7 @@ static int video_takepict_start(FAR video_upperhalf_t *priv, int32_t capture_num
 		dma_container = video_framebuff_get_dma_container(&priv->still_inf.bufinf);
 		if (dma_container) {
 			/* Start video stream DMA */
-
-			ret = video_devops->set_buftype(priv->dev, V4L2_BUF_TYPE_STILL_CAPTURE);
-			if (ret < 0) {
-				goto error;
-			}
-			ret = video_devops->set_buf(priv->dev, dma_container->buf.m.userptr, dma_container->buf.length);
+			ret = video_devops->set_buf(priv->dev, V4L2_BUF_TYPE_STILL_CAPTURE, dma_container->buf.m.userptr, dma_container->buf.length);
 			if (ret < 0) {
 				goto error;
 			}
@@ -1410,7 +1397,7 @@ int video_common_notify_dma_done(uint8_t err_code, uint32_t buf_type, uint32_t d
 			video_devops->cancel_dma(priv->dev);
 			type_inf->state = VIDEO_STATE_STREAMON;
 		} else {
-			video_devops->set_buf(priv->dev, container->buf.m.userptr, container->buf.length);
+			video_devops->set_buf(priv->dev, buf_type, container->buf.m.userptr, container->buf.length);
 		}
 	}
 

@@ -67,8 +67,7 @@ struct video_devops_s {
 	CODE int (*close)(FAR void *video_priv);
 
 	CODE int (*do_halfpush)(FAR void *video_priv, bool enable);
-	CODE int (*set_buftype)(FAR void *video_priv, enum v4l2_buf_type type);
-	CODE int (*set_buf)(FAR void *video_priv, uint32_t bufaddr, uint32_t bufsize);
+	CODE int (*set_buf)(FAR void *video_priv, enum v4l2_buf_type type, uint32_t bufaddr, uint32_t bufsize);
 	CODE int (*cancel_dma)(FAR void *video_priv);
 	CODE int (*get_range_of_fmt)(FAR void *video_priv, FAR struct v4l2_fmtdesc *format);
 	CODE int (*get_range_of_framesize)(FAR void *video_priv, FAR struct v4l2_frmsizeenum *frmsize);
