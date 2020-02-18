@@ -54,6 +54,7 @@
 # This first group of C files do not depend on having file descriptors or
 # C streams.
 
+CSRCS += lib_dtoa_data.c lib_dtoa_engine.c lib_ultoa_invert.c
 CSRCS += lib_fileno.c lib_printf.c lib_sprintf.c lib_asprintf.c
 CSRCS += lib_snprintf.c lib_libsprintf.c lib_vsprintf.c lib_vasprintf.c
 CSRCS += lib_vsnprintf.c lib_libvsprintf.c lib_dprintf.c lib_vdprintf.c

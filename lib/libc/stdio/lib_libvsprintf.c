@@ -16,10 +16,13 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_libvsprintf.c
+ * lib/libc/stdio/lib_libvsprintf.c
  *
- *   Copyright (C) 2007-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (c) 2002, Alexander Popov (sasho@vip.bg)
+ *   Copyright (c) 2002,2004,2005 Joerg Wunsch
+ *   Copyright (c) 2005, Helmut Wallner
+ *   Copyright (c) 2007, Dmitry Xmelkov
+ *   All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -54,174 +57,100 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/compiler.h>
+#include <tinyara/config.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <sys/types.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
-#include <tinyara/arch.h>
+#include <tinyara/compiler.h>
+#include <tinyara/streams.h>
 
-#include "lib_internal.h"
+#include "lib_dtoa_engine.h"
+#include "lib_ultoa_invert.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* If you have floating point but no fieldwidth, then use a fixed (but
- * configurable) floating point precision.
+
+/* CONFIG_LIBC_LONG_LONG is not a valid selection of the compiler does not
+ * support long long types.
  */
 
-#if defined(CONFIG_LIBC_FLOATINGPOINT) && \
-	defined(CONFIG_NOPRINTF_FIELDWIDTH) && \
-	!defined(CONFIG_LIBC_FIXEDPRECISION)
-#define CONFIG_LIBC_FIXEDPRECISION 3
+#ifndef CONFIG_HAVE_LONG_LONG
+#undef CONFIG_LIBC_LONG_LONG
 #endif
 
-#if defined(CONFIG_LIBC_FLOATINGPOINT) && !defined(CONFIG_LIBC_FLOATPRECISION)
-#define CONFIG_LIBC_FLOATPRECISION 6
+/* [Re]define putc() */
+
+#ifdef putc
+#undef putc
 #endif
 
-#define FLAG_SHOWPLUS            0x01
-#define FLAG_ALTFORM             0x02
-#define FLAG_HASDOT              0x04
-#define FLAG_HASASTERISKWIDTH    0x08
-#define FLAG_HASASTERISKTRUNC    0x10
-#define FLAG_LONGPRECISION       0x20
-#define FLAG_LONGLONGPRECISION   0x40
-#define FLAG_NEGATE              0x80
+#define putc(c, stream)	(total_len++, (stream)->put(stream, c))
 
-#define SET_SHOWPLUS(f)          do { (f) |= FLAG_SHOWPLUS; } while (0)
-#define SET_ALTFORM(f)           do { (f) |= FLAG_ALTFORM; } while (0)
-#define SET_HASDOT(f)            do { (f) |= FLAG_HASDOT; } while (0)
-#define SET_HASASTERISKWIDTH(f)  do { (f) |= FLAG_HASASTERISKWIDTH; } while (0)
-#define SET_HASASTERISKTRUNC(f)  do { (f) |= FLAG_HASASTERISKTRUNC; } while (0)
-#define SET_LONGPRECISION(f)     do { (f) |= FLAG_LONGPRECISION; } while (0)
-#define SET_LONGLONGPRECISION(f) do { (f) |= FLAG_LONGLONGPRECISION; } while (0)
-#define SET_NEGATE(f)            do { (f) |= FLAG_NEGATE; } while (0)
+/* Order is relevant here and matches order in format string */
 
-#define CLR_SHOWPLUS(f)          do { (f) &= ~FLAG_SHOWPLUS; } while (0)
-#define CLR_ALTFORM(f)           do { (f) &= ~FLAG_ALTFORM; } while (0)
-#define CLR_HASDOT(f)            do { (f) &= ~FLAG_HASDOT; } while (0)
-#define CLR_HASASTERISKWIDTH(f)  do { (f) &= ~FLAG_HASASTERISKWIDTH; } while (0)
-#define CLR_HASASTERISKTRUNC(f)  do { (f) &= ~FLAG_HASASTERISKTRUNC; } while (0)
-#define CLR_LONGPRECISION(f)     do { (f) &= ~FLAG_LONGPRECISION; } while (0)
-#define CLR_LONGLONGPRECISION(f) do { (f) &= ~FLAG_LONGLONGPRECISION; } while (0)
-#define CLR_NEGATE(f)            do { (f) &= ~FLAG_NEGATE; } while (0)
-#define CLR_SIGNED(f)            do { (f) &= ~(FLAG_SHOWPLUS|FLAG_NEGATE); } while (0)
+#define FL_ZFILL           0x0001
+#define FL_PLUS            0x0002
+#define FL_SPACE           0x0004
+#define FL_LPAD            0x0008
+#define FL_ALT             0x0010
 
-#define IS_SHOWPLUS(f)           (((f) & FLAG_SHOWPLUS) != 0)
-#define IS_ALTFORM(f)            (((f) & FLAG_ALTFORM) != 0)
-#define IS_HASDOT(f)             (((f) & FLAG_HASDOT) != 0)
-#define IS_HASASTERISKWIDTH(f)   (((f) & FLAG_HASASTERISKWIDTH) != 0)
-#define IS_HASASTERISKTRUNC(f)   (((f) & FLAG_HASASTERISKTRUNC) != 0)
-#define IS_LONGPRECISION(f)      (((f) & FLAG_LONGPRECISION) != 0)
-#define IS_LONGLONGPRECISION(f)  (((f) & FLAG_LONGLONGPRECISION) != 0)
-#define IS_NEGATE(f)             (((f) & FLAG_NEGATE) != 0)
-#define IS_SIGNED(f)             (((f) & (FLAG_SHOWPLUS|FLAG_NEGATE)) != 0)
+#define FL_ARGNUMBER       0x0020
+#define FL_ASTERISK        0x0040
 
-/* If CONFIG_ARCH_ROMGETC is defined, then it is assumed that the format
- * string data cannot be accessed by simply de-referencing the format string
- * pointer.  This might be in the case in Harvard architectures where string
- * data might be stored in instruction space or if string data were stored
- * on some media like EEPROM or external serial FLASH.  In all of these cases,
- * string data has to be accessed indirectly using the architecture-supplied
- * up_romgetc().  The following mechanisms attempt to make these different
- * access methods indistinguishable in the following code.
- *
- * NOTE: It is assumed that string arguments for %s still reside in memory
- * that can be directly accessed by de-referencing the string pointer.
- */
+#define FL_WIDTH           0x0080
+#define FL_PREC            0x0100
+
+#define FL_LONG            0x0200
+#define FL_SHORT           0x0400
+#define FL_REPD_TYPE       0x0800
+
+#define FL_NEGATIVE        0x1000
+
+/* The next 2 groups are Exclusive Or */
+
+#define FL_ALTUPP          0x2000
+#define FL_ALTHEX          0x4000
+
+#define FL_FLTUPP          0x2000
+#define FL_FLTEXP          0x4000
+#define FL_FLTFIX          0x8000
+
+#define TYPE_INT           1
+#define TYPE_LONG          2
+#define TYPE_LONG_LONG     3
+#define TYPE_DOUBLE        4
+#define TYPE_CHAR_POINTER  5
+
+/* Support special access to CODE-space strings for Harvard architectures */
 
 #ifdef CONFIG_ARCH_ROMGETC
-#define FMT_TOP      ch = up_romgetc(src)			/* Loop initialization */
-#define FMT_BOTTOM   src++, ch = up_romgetc(src)	/* Bottom of a loop */
-#define FMT_CHAR     ch								/* Access a character */
-#define FMT_NEXT     src++; ch = up_romgetc(src)	/* Advance to the next character */
-#define FMT_PREV     src--; ch = up_romgetc(src)	/* Backup to the previous character */
+#define fmt_char(fmt)	up_romgetc((fmt)++)
 #else
-#define FMT_TOP					/* Loop initialization */
-#define FMT_BOTTOM   src++		/* Bottom of a loop */
-#define FMT_CHAR     *src		/* Access a character */
-#define FMT_NEXT     src++		/* Advance to the next character */
-#define FMT_PREV     src--		/* Backup to the previous character */
+#define fmt_char(fmt)	(*(fmt)++)
 #endif
 
 /****************************************************************************
- * Private Type Declarations
+ * Private Types
  ****************************************************************************/
 
-enum {
-	FMT_RJUST = 0,				/* Default */
-	FMT_LJUST,
-	FMT_RJUST0,
-	FMT_CENTER
+struct arg {
+	unsigned char type;
+	union {
+		unsigned int u;
+		unsigned long ul;
+#ifdef CONFIG_LIBC_LONG_LONG
+		unsigned long long ull;
+#endif
+		double_t d;
+		FAR char *cp;
+	} value;
 };
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/* Pointer to ASCII conversion */
-
-#ifdef CONFIG_PTR_IS_NOT_INT
-static void ptohex(FAR struct lib_outstream_s *obj, uint8_t flags, FAR void *p);
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static int getsizesize(uint8_t fmt, uint8_t flags, FAR void *p)
-#endif							/* CONFIG_NOPRINTF_FIELDWIDTH */
-#endif							/* CONFIG_PTR_IS_NOT_INT */
-/* Unsigned int to ASCII conversion */
-static void utodec(FAR struct lib_outstream_s *obj, unsigned int n);
-static void utohex(FAR struct lib_outstream_s *obj, unsigned int n, uint8_t a);
-static void utooct(FAR struct lib_outstream_s *obj, unsigned int n);
-static void utobin(FAR struct lib_outstream_s *obj, unsigned int n);
-static void utoascii(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, unsigned int lln);
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void fixup(uint8_t fmt, FAR uint8_t *flags, int *n);
-static int getusize(uint8_t fmt, uint8_t flags, unsigned int lln);
-#endif
-
-/* Unsigned long int to ASCII conversion */
-
-#ifdef CONFIG_LONG_IS_NOT_INT
-static void lutodec(FAR struct lib_outstream_s *obj, unsigned long ln);
-static void lutohex(FAR struct lib_outstream_s *obj, unsigned long ln, uint8_t a);
-static void lutooct(FAR struct lib_outstream_s *obj, unsigned long ln);
-static void lutobin(FAR struct lib_outstream_s *obj, unsigned long ln);
-static void lutoascii(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, unsigned long ln);
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void lfixup(uint8_t fmt, FAR uint8_t *flags, long *ln);
-static int getlusize(uint8_t fmt, FAR uint8_t flags, unsigned long ln);
-#endif
-#endif
-
-/* Unsigned long long int to ASCII conversions */
-
-#ifndef CONFIG_NOPRINTF_LONGLONG_TO_ASCII
-static void llutodec(FAR struct lib_outstream_s *obj, unsigned long long lln);
-static void llutohex(FAR struct lib_outstream_s *obj, unsigned long long lln, uint8_t a);
-static void llutooct(FAR struct lib_outstream_s *obj, unsigned long long lln);
-static void llutobin(FAR struct lib_outstream_s *obj, unsigned long long lln);
-static void llutoascii(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, unsigned long long lln);
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void llfixup(uint8_t fmt, FAR uint8_t *flags, FAR long long *lln);
-static int getllusize(uint8_t fmt, FAR uint8_t flags, FAR unsigned long long lln);
-#endif
-#endif
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void prejustify(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, int fieldwidth, int valwidth);
-static void postjustify(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, int fieldwidth, int valwidth);
-#endif
-
-/****************************************************************************
- * Global Constant Data
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
 
 /****************************************************************************
  * Private Constant Data
@@ -230,1284 +159,898 @@ static void postjustify(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t fl
 static const char g_nullstring[] = "(null)";
 
 /****************************************************************************
- * Private Variables
+ * Public Functions
  ****************************************************************************/
 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/* Include floating point functions */
-
-#ifdef CONFIG_LIBC_FLOATINGPOINT
-#include "stdio/lib_libdtoa.c"
-#endif
-
-/****************************************************************************
- * Name: ptohex
- ****************************************************************************/
-
-#ifdef CONFIG_PTR_IS_NOT_INT
-static void ptohex(FAR struct lib_outstream_s *obj, uint8_t flags, FAR void *p)
+static int vsprintf_internal(FAR struct lib_outstream_s *stream, FAR struct arg *arglist, int numargs, FAR const char *fmt, va_list ap)
 {
+	unsigned char c;			/* Holds a char from the format string */
+	uint16_t flags;
+	int width;
+	int prec;
 	union {
-		uint32_t dw;
-		FAR void *p;
+#if defined(CONFIG_LIBC_LONG_LONG) || (ULONG_MAX > 4294967295UL)
+		unsigned char __buf[22];	/* Size for -1 in octal, without '\0' */
+#else
+		unsigned char __buf[11];	/* Size for -1 in octal, without '\0' */
+#endif
+#ifdef CONFIG_LIBC_FLOATINGPOINT
+		struct dtoa_s __dtoa;
+#endif
 	} u;
-	uint8_t bits;
 
-	/* Check for alternate form */
+#define buf	(u.__buf)
+#define _dtoa	(u.__dtoa)
 
-	if (IS_ALTFORM(flags)) {
-		/* Prefix the number with "0x" */
+	FAR const char *pnt;
+	size_t size;
+	unsigned char len;
+	int total_len = 0;
 
-		obj->put(obj, '0');
-		obj->put(obj, 'x');
-	}
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
 
-	u.dw = 0;
-	u.p = p;
+	int argnumber;
 
-	for (bits = 8 * sizeof(void *); bits > 0; bits -= 4) {
-		uint8_t nibble = (uint8_t)((u.dw >> (bits - 4)) & 0xf);
-		if (nibble < 10) {
-			obj->put(obj, nibble + '0');
-		} else {
-			obj->put(obj, nibble + 'a' - 10);
-		}
-	}
-}
+#endif
 
-/****************************************************************************
- * Name: getpsize
- ****************************************************************************/
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static int getpsize(uint8_t flags, FAR void *p)
-{
-	struct lib_outstream_s nulloutstream;
-	lib_nulloutstream(&nulloutstream);
-
-	ptohex(&nulloutstream, flags, p);
-	return nulloutstream.nput;
-}
-
-#endif							/* CONFIG_NOPRINTF_FIELDWIDTH */
-#endif							/* CONFIG_PTR_IS_NOT_INT */
-
-/****************************************************************************
- * Name: utodec
- ****************************************************************************/
-
-static void utodec(FAR struct lib_outstream_s *obj, unsigned int n)
-{
-	unsigned int remainder = n % 10;
-	unsigned int dividend = n / 10;
-
-	if (dividend) {
-		utodec(obj, dividend);
-	}
-
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
-
-/****************************************************************************
- * Name: utohex
- ****************************************************************************/
-
-static void utohex(FAR struct lib_outstream_s *obj, unsigned int n, uint8_t a)
-{
-	bool nonzero = false;
-	uint8_t bits;
-
-	for (bits = 8 * sizeof(unsigned int); bits > 0; bits -= 4) {
-		uint8_t nibble = (uint8_t)((n >> (bits - 4)) & 0xf);
-		if (nibble || nonzero) {
-			nonzero = true;
-
-			if (nibble < 10) {
-				obj->put(obj, nibble + '0');
-			} else {
-				obj->put(obj, nibble + a - 10);
+	for (;;) {
+		for (;;) {
+			c = fmt_char(fmt);
+			if (c == '\0') {
+				goto ret;
 			}
+
+			if (c == '%') {
+				c = fmt_char(fmt);
+				if (c != '%') {
+					break;
+				}
+			}
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+			if (stream != NULL) {
+				putc(c, stream);
+			}
+#else
+			putc(c, stream);
+#endif
 		}
-	}
 
-	if (!nonzero) {
-		obj->put(obj, '0');
-	}
-}
+		flags = 0;
+		width = 0;
+		prec = 0;
 
-/****************************************************************************
- * Name: utooct
- ****************************************************************************/
+		do {
+			if (flags < FL_ASTERISK) {
+				switch (c) {
+				case '0':
+					flags |= FL_ZFILL;
+					continue;
 
-static void utooct(FAR struct lib_outstream_s *obj, unsigned int n)
-{
-	unsigned int remainder = n & 0x7;
-	unsigned int dividend = n >> 3;
+				case '+':
+					flags |= FL_PLUS;
 
-	if (dividend) {
-		utooct(obj, dividend);
-	}
+					/* FALLTHROUGH */
 
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
+				case ' ':
+					flags |= FL_SPACE;
+					continue;
 
-/****************************************************************************
- * Name: utobin
- ****************************************************************************/
+				case '-':
+					flags |= FL_LPAD;
+					continue;
 
-static void utobin(FAR struct lib_outstream_s *obj, unsigned int n)
-{
-	unsigned int remainder = n & 1;
-	unsigned int dividend = n >> 1;
+				case '#':
+					flags |= FL_ALT;
+					continue;
+				}
+			}
 
-	if (dividend) {
-		utobin(obj, dividend);
-	}
+			if (flags < FL_LONG) {
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+				if (c == '$') {
+					if ((flags & FL_ARGNUMBER) == 0) {
 
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
+						/* No other flag except FL_WIDTH or FL_ZFILL (leading
+						 * zeros) and argument number must be at least 1
+						 */
 
-/****************************************************************************
- * Name: utoascii
- ****************************************************************************/
+						if ((flags & ~(FL_WIDTH | FL_ZFILL)) != 0 || width == 0) {
+							goto ret;
+						}
 
-static void utoascii(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, unsigned int n)
-{
-	/* Perform the integer conversion according to the format specifier */
+						/* It had been the argument number. */
 
-	switch (fmt) {
-	case 'd':
-	case 'i':
-		/* Signed base 10 */
-	{
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-		if ((int)n < 0) {
-			obj->put(obj, '-');
-			n = (unsigned int)(-(int)n);
-		} else if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
+						argnumber = width;
+						width = 0;
+						flags = FL_ARGNUMBER;
+					} else if ((flags & FL_ASTERISK) != 0) {
+						int index;
+
+						flags &= ~FL_ASTERISK;
+
+						if ((flags & FL_PREC) == 0) {
+							index = width;
+						} else {
+							index = prec;
+						}
+						if (index > 0 && index <= numargs) {
+							if (stream == NULL) {
+								arglist[index - 1].type = TYPE_INT;
+								if (index > total_len) {
+									total_len = index;
+								}
+							} else {
+								if ((flags & FL_PREC) == 0) {
+									width = (int)arglist[index - 1].value.u;
+								} else {
+									prec = (int)arglist[index - 1].value.u;
+								}
+							}
+						} else {
+							goto ret;
+						}
+					} else {
+						goto ret;
+					}
+
+					continue;
+				}
+#endif
+
+				if (c >= '0' && c <= '9') {
+					c -= '0';
+					if ((flags & FL_PREC) != 0) {
+						prec = 10 * prec + c;
+						continue;
+					}
+
+					width = 10 * width + c;
+					flags |= FL_WIDTH;
+					continue;
+				}
+
+				if (c == '*') {
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+					if ((flags & FL_ARGNUMBER) != 0) {
+						flags |= FL_ASTERISK;
+						continue;
+					}
+#endif
+
+					if ((flags & FL_PREC) != 0) {
+						prec = va_arg(ap, int);
+						if (prec < 0) {
+							prec = 0;
+						}
+					} else {
+						width = va_arg(ap, int);
+						flags |= FL_WIDTH;
+
+						if (width < 0) {
+							width = -width;
+							flags |= FL_LPAD;
+						}
+					}
+
+					continue;
+				}
+
+				if (c == '.') {
+					if ((flags & FL_PREC) != 0) {
+						goto ret;
+					}
+
+					flags |= FL_PREC;
+					continue;
+				}
+			}
+
+			if (c == 'z') {
+				switch (sizeof(size_t)) {
+					/* The only known cases that the default will be hit are
+					 * (1) the eZ80 which has sizeof(size_t) = 3 which is the
+					 * same as the sizeof(int).  And (2) if CONFIG_LIBC_LONG_LONG
+					 * is not enabled and sizeof(size_t) is equal to
+					 * sizeof(unsigned long long).  This latter case is an
+					 * error.
+					 */
+
+				default:
+					continue;	/* Treat as integer with no size qualifier. */
+
+				case sizeof(unsigned short):
+					c = 'h';
+					break;
+
+				case sizeof(unsigned long):
+					c = 'l';
+					break;
+
+#if defined(CONFIG_LIBC_LONG_LONG) && ULLONG_MAX != ULONG_MAX
+				case sizeof(unsigned long long):
+					c = 'l';
+					flags |= FL_LONG;
+					flags &= ~FL_SHORT;
+					break;
+#endif
+				}
+			}
+
+			if (c == 'l') {
+				if ((flags & FL_LONG) != 0) {
+					flags |= FL_REPD_TYPE;
+				}
+
+				flags |= FL_LONG;
+				flags &= ~FL_SHORT;
+				continue;
+			}
+
+			if (c == 'h') {
+				if ((flags & FL_SHORT) != 0) {
+					flags |= FL_REPD_TYPE;
+				}
+
+				flags |= FL_SHORT;
+				flags &= ~FL_LONG;
+				continue;
+			}
+
+			break;
+		} while ((c = fmt_char(fmt)) != 0);
+
+		/* Only a format character is valid.  */
+
+#if 'F' != 'E'+1  ||  'G' != 'F'+1  ||  'f' != 'e'+1  ||  'g' != 'f'+1
+#error
+#endif
+
+		if (c == 'p') {
+			/* Determine size of pointer and set flags accordingly */
+
+			flags &= ~(FL_LONG | FL_REPD_TYPE);
+
+#ifdef CONFIG_LIBC_LONG_LONG
+			if (sizeof(void *) == sizeof(unsigned long long)) {
+				flags |= (FL_LONG | FL_REPD_TYPE);
+			} else
+#endif
+				if (sizeof(void *) == sizeof(unsigned long)) {
+					flags |= FL_LONG;
+				}
+		}
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+
+		if ((flags & FL_ARGNUMBER) != 0) {
+			if (argnumber > 0 && argnumber <= numargs) {
+				if (stream == NULL) {
+					if ((c >= 'E' && c <= 'G')
+						|| (c >= 'e' && c <= 'g')) {
+						arglist[argnumber - 1].type = TYPE_DOUBLE;
+					} else if (c == 'i' || c == 'd' || c == 'u' || c == 'p') {
+						if ((flags & FL_LONG) == 0) {
+							arglist[argnumber - 1].type = TYPE_INT;
+						} else if ((flags & FL_REPD_TYPE) == 0) {
+							arglist[argnumber - 1].type = TYPE_LONG;
+						} else {
+							arglist[argnumber - 1].type = TYPE_LONG_LONG;
+						}
+					} else if (c == 'c') {
+						arglist[argnumber - 1].type = TYPE_INT;
+					} else if (c == 's') {
+						arglist[argnumber - 1].type = TYPE_CHAR_POINTER;
+					}
+
+					if (argnumber > total_len) {
+						total_len = argnumber;
+					}
+					continue;	/* We do only parsing */
+				}
+			} else {
+				goto ret;
+			}
+		} else if (stream == NULL) {
+			continue;			/* We do only parsing */
 		}
 #endif
-		/* Convert the unsigned value to a string. */
-
-		utodec(obj, n);
-	}
-	break;
-
-	case 'u':
-		/* Unigned base 10 */
-	{
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-		if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
-		}
-#endif
-		/* Convert the unsigned value to a string. */
-
-		utodec(obj, n);
-	}
-	break;
-
-#ifndef CONFIG_PTR_IS_NOT_INT
-	case 'p':
-#endif
-	case 'x':
-	case 'X':
-		/* Hexadecimal */
-	{
-		/* Check for alternate form */
-
-		if (IS_ALTFORM(flags)) {
-			/* Prefix the number with "0x" */
-
-			obj->put(obj, '0');
-			obj->put(obj, 'x');
-		}
-
-		/* Convert the unsigned value to a string. */
-
-		if (fmt == 'X') {
-			utohex(obj, n, 'A');
-		} else {
-			utohex(obj, n, 'a');
-		}
-	}
-	break;
-
-	case 'o':
-		/* Octal */
-	{
-		/* Check for alternate form */
-
-		if (IS_ALTFORM(flags)) {
-			/* Prefix the number with '0' */
-
-			obj->put(obj, '0');
-		}
-
-		/* Convert the unsigned value to a string. */
-
-		utooct(obj, n);
-	}
-	break;
-
-	case 'b':
-		/* Binary */
-	{
-		/* Convert the unsigned value to a string. */
-
-		utobin(obj, n);
-	}
-	break;
-
-#ifdef CONFIG_PTR_IS_NOT_INT
-	case 'p':
-#endif
-	default:
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: fixup
- ****************************************************************************/
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void fixup(uint8_t fmt, FAR uint8_t *flags, FAR int *n)
-{
-	/* Perform the integer conversion according to the format specifier */
-
-	switch (fmt) {
-	case 'd':
-	case 'i':
-		/* Signed base 10 */
-
-		if (*n < 0) {
-			SET_NEGATE(*flags);
-			CLR_SHOWPLUS(*flags);
-			*n = -*n;
-		}
-		break;
-
-	case 'u':
-		/* Unsigned base 10 */
-		break;
-
-	case 'p':
-	case 'x':
-	case 'X':
-	/* Hexadecimal */
-	case 'o':
-	/* Octal */
-	case 'b':
-		/* Binary */
-		CLR_SIGNED(*flags);
-		break;
-
-	default:
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: getusize
- ****************************************************************************/
-
-static int getusize(uint8_t fmt, uint8_t flags, unsigned int n)
-{
-	struct lib_outstream_s nulloutstream;
-	lib_nulloutstream(&nulloutstream);
-
-	utoascii(&nulloutstream, fmt, flags, n);
-	return nulloutstream.nput;
-}
-
-/****************************************************************************
- * Name: getdblsize
- ****************************************************************************/
 
 #ifdef CONFIG_LIBC_FLOATINGPOINT
-static int getdblsize(uint8_t fmt, int trunc, uint8_t flags, double n)
-{
-	struct lib_outstream_s nulloutstream;
-	lib_nulloutstream(&nulloutstream);
+		if (c >= 'E' && c <= 'G') {
+			flags |= FL_FLTUPP;
+			c += 'e' - 'E';
+			goto flt_oper;
+		} else if (c >= 'e' && c <= 'g') {
+			double_t value;
+			int exp;			/* Exponent of master decimal digit */
+			int n;
+			uint8_t sign;		/* Sign character (or 0) */
+			uint8_t ndigs;		/* Number of digits to convert */
+			uint8_t ndecimal;	/* Digits after decimal (for 'f' format), 0 if
+								 * no limit */
 
-	lib_dtoa(&nulloutstream, fmt, trunc, flags, n);
-	return nulloutstream.nput;
-}
-#endif
-#endif							/* CONFIG_NOPRINTF_FIELDWIDTH */
+			flags &= ~FL_FLTUPP;
 
-#ifdef CONFIG_LONG_IS_NOT_INT
-/****************************************************************************
- * Name: lutodec
- ****************************************************************************/
+flt_oper:
+			ndigs = 0;
+			if ((flags & FL_PREC) == 0) {
+				prec = 6;
+			}
 
-static void lutodec(FAR struct lib_outstream_s *obj, unsigned long n)
-{
-	unsigned int remainder = n % 10;
-	unsigned long dividend = n / 10;
+			flags &= ~(FL_FLTEXP | FL_FLTFIX);
 
-	if (dividend) {
-		lutodec(obj, dividend);
-	}
-
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
-
-/****************************************************************************
- * Name: lutohex
- ****************************************************************************/
-
-static void lutohex(FAR struct lib_outstream_s *obj, unsigned long n, uint8_t a)
-{
-	bool nonzero = false;
-	uint8_t bits;
-
-	for (bits = 8 * sizeof(unsigned long); bits > 0; bits -= 4) {
-		uint8_t nibble = (uint8_t)((n >> (bits - 4)) & 0xf);
-		if (nibble || nonzero) {
-			nonzero = true;
-
-			if (nibble < 10) {
-				obj->put(obj, nibble + '0');
+			if (c == 'e') {
+				ndigs = prec + 1;
+				ndecimal = 0;
+				flags |= FL_FLTEXP;
+			} else if (c == 'f') {
+				ndigs = DTOA_MAX_DIG;
+				ndecimal = prec;
+				flags |= FL_FLTFIX;
 			} else {
-				obj->put(obj, nibble + a - 10);
+				ndigs = prec;
+				ndecimal = 0;
+			}
+
+			if (ndigs > DTOA_MAX_DIG) {
+				ndigs = DTOA_MAX_DIG;
+			}
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+			if ((flags & FL_ARGNUMBER) != 0) {
+				value = arglist[argnumber - 1].value.d;
+			} else {
+				value = va_arg(ap, double_t);
+			}
+#else
+			value = va_arg(ap, double_t);
+#endif
+
+			ndigs = __dtoa_engine(value, &_dtoa, ndigs, ndecimal);
+			exp = _dtoa.exp;
+
+			sign = 0;
+			if ((_dtoa.flags & DTOA_MINUS) && !(_dtoa.flags & DTOA_NAN)) {
+				sign = '-';
+			} else if ((flags & FL_PLUS) != 0) {
+				sign = '+';
+			} else if ((flags & FL_SPACE) != 0) {
+				sign = ' ';
+			}
+
+			if (_dtoa.flags & (DTOA_NAN | DTOA_INF)) {
+				FAR const char *p;
+
+				ndigs = sign ? 4 : 3;
+				if (width > ndigs) {
+					width -= ndigs;
+					if ((flags & FL_LPAD) == 0) {
+						do {
+							putc(' ', stream);
+						} while (--width);
+					}
+				} else {
+					width = 0;
+				}
+
+				if (sign) {
+					putc(sign, stream);
+				}
+
+				p = "inf";
+				if (_dtoa.flags & DTOA_NAN) {
+					p = "nan";
+				}
+#if ('I'-'i' != 'N'-'n') || ('I'-'i' != 'F'-'f') || ('I'-'i' != 'A'-'a')
+#error
+#endif
+				while ((ndigs = *p) != 0) {
+					if ((flags & FL_FLTUPP) != 0) {
+						ndigs += 'I' - 'i';
+					}
+
+					putc(ndigs, stream);
+					p++;
+				}
+
+				goto tail;
+			}
+
+			if ((flags & (FL_FLTEXP | FL_FLTFIX)) == 0) {
+				/* 'g(G)' format */
+
+				prec = ndigs;
+
+				/* Remove trailing zeros */
+
+				while (ndigs > 0 && _dtoa.digits[ndigs - 1] == '0') {
+					ndigs--;
+				}
+
+				if (-4 <= exp && exp < prec) {
+					flags |= FL_FLTFIX;
+
+					if (exp < 0 || ndigs > exp) {
+						prec = ndigs - (exp + 1);
+					} else {
+						prec = 0;
+					}
+				} else {
+					/* Limit displayed precision to available precision */
+
+					prec = ndigs - 1;
+				}
+			}
+
+			/* Conversion result length, width := free space length */
+
+			if ((flags & FL_FLTFIX) != 0) {
+				n = (exp > 0 ? exp + 1 : 1);
+			} else {
+				n = 5;			/* 1e+00 */
+			}
+
+			if (sign != 0) {
+				n += 1;
+			}
+
+			if (prec != 0) {
+				n += prec + 1;
+			} else if ((flags & FL_ALT) != 0) {
+				n += 1;
+			}
+
+			width = width > n ? width - n : 0;
+
+			/* Output before first digit */
+
+			if ((flags & (FL_LPAD | FL_ZFILL)) == 0) {
+				while (width) {
+					putc(' ', stream);
+					width--;
+				}
+			}
+
+			if (sign != 0) {
+				putc(sign, stream);
+			}
+
+			if ((flags & FL_LPAD) == 0) {
+				while (width) {
+					putc('0', stream);
+					width--;
+				}
+			}
+
+			if ((flags & FL_FLTFIX) != 0) {
+				/* 'f' format */
+
+				char out;
+
+				/* At this point, we should have exp exponent of leftmost digit
+				 * in _dtoa.digits ndigs number of buffer digits to print prec
+				 * number of digits after decimal In the loop, 'n' walks over
+				 * the exponent value
+				 */
+
+				n = exp > 0 ? exp : 0;	/* Exponent of left digit */
+				do {
+
+					/* Insert decimal point at correct place */
+
+					if (n == -1) {
+						putc('.', stream);
+					}
+
+					/* Pull digits from buffer when in-range, otherwise use 0 */
+
+					if (0 <= exp - n && exp - n < ndigs) {
+						out = _dtoa.digits[exp - n];
+					} else {
+						out = '0';
+					}
+
+					if (--n < -prec) {
+						if ((flags & FL_ALT) != 0 && n == -1) {
+							putc('.', stream);
+						}
+
+						break;
+					}
+
+					putc(out, stream);
+				} while (1);
+
+				if (n == exp && (_dtoa.digits[0] > '5' || (_dtoa.digits[0] == '5' && !(_dtoa.flags & DTOA_CARRY)))) {
+					out = '1';
+				}
+
+				putc(out, stream);
+			} else {
+				/* 'e(E)' format
+				 *
+				 * Mantissa
+				 */
+
+				if (_dtoa.digits[0] != '1') {
+					_dtoa.flags &= ~DTOA_CARRY;
+				}
+
+				putc(_dtoa.digits[0], stream);
+				if (prec > 0) {
+					uint8_t pos;
+
+					putc('.', stream);
+					for (pos = 1; pos < 1 + prec; pos++) {
+						putc(pos < ndigs ? _dtoa.digits[pos] : '0', stream);
+					}
+				} else if ((flags & FL_ALT) != 0) {
+					putc('.', stream);
+				}
+
+				/* Exponent */
+
+				putc(flags & FL_FLTUPP ? 'E' : 'e', stream);
+				ndigs = '+';
+				if (exp < 0 || (exp == 0 && (_dtoa.flags & DTOA_CARRY) != 0)) {
+					exp = -exp;
+					ndigs = '-';
+				}
+
+				putc(ndigs, stream);
+				for (ndigs = '0'; exp >= 10; exp -= 10) {
+					ndigs += 1;
+				}
+
+				putc(ndigs, stream);
+				putc('0' + exp, stream);
+			}
+
+			goto tail;
+		}
+#else							/* !CONFIG_LIBC_FLOATINGPOINT */
+		if ((c >= 'E' && c <= 'G') || (c >= 'e' && c <= 'g')) {
+			va_arg(ap, double_t);
+			pnt = "*float*";
+			size = sizeof("*float*") - 1;
+			goto str_lpad;
+		}
+#endif
+
+		switch (c) {
+
+		case 'c':
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+			if ((flags & FL_ARGNUMBER) != 0) {
+				buf[0] = (int)arglist[argnumber - 1].value.u;
+			} else {
+				buf[0] = va_arg(ap, int);
+			}
+#else
+			buf[0] = va_arg(ap, int);
+#endif
+			pnt = (FAR char *)buf;
+			size = 1;
+			goto str_lpad;
+
+		case 's':
+		case 'S':
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+			if ((flags & FL_ARGNUMBER) != 0) {
+				pnt = (FAR char *)arglist[argnumber - 1].value.cp;
+			} else {
+				pnt = va_arg(ap, FAR char *);
+			}
+#else
+			pnt = va_arg(ap, FAR char *);
+#endif
+			if (pnt == NULL) {
+				pnt = g_nullstring;
+			}
+
+			size = strnlen(pnt, (flags & FL_PREC) ? prec : ~0);
+
+str_lpad:
+			if ((flags & FL_LPAD) == 0) {
+				while (size < width) {
+					putc(' ', stream);
+					width--;
+				}
+			}
+
+			while (size) {
+				putc(*pnt++, stream);
+				if (width != 0) {
+					width -= 1;
+				}
+
+				size -= 1;
+			}
+
+			goto tail;
+		}
+
+		if (c == 'd' || c == 'i') {
+#ifndef CONFIG_LIBC_LONG_LONG
+			long x;
+#else
+			long long x;
+
+			if ((flags & FL_LONG) != 0 && (flags & FL_REPD_TYPE) != 0) {
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+				if ((flags & FL_ARGNUMBER) != 0) {
+					x = (long long)arglist[argnumber - 1].value.ull;
+				} else {
+					x = va_arg(ap, long long);
+				}
+#else
+				x = va_arg(ap, long long);
+#endif
+			} else
+#endif
+			if ((flags & FL_LONG) != 0) {
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+				if ((flags & FL_ARGNUMBER) != 0) {
+					x = (long)arglist[argnumber - 1].value.ul;
+				} else {
+					x = va_arg(ap, long);
+				}
+#else
+				x = va_arg(ap, long);
+#endif
+			} else {
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+				if ((flags & FL_ARGNUMBER) != 0) {
+					x = (int)arglist[argnumber - 1].value.u;
+				} else {
+					x = va_arg(ap, int);
+				}
+#else
+				x = va_arg(ap, int);
+#endif
+				if ((flags & FL_SHORT) != 0) {
+					if ((flags & FL_REPD_TYPE) == 0) {
+						x = (short)x;
+					} else {
+						x = (signed char)x;
+					}
+				}
+			}
+
+			flags &= ~(FL_NEGATIVE | FL_ALT);
+			if (x < 0) {
+				x = -x;
+				flags |= FL_NEGATIVE;
+			}
+
+			if ((flags & FL_PREC) != 0 && prec == 0 && x == 0) {
+				c = 0;
+			} else {
+				c = __ultoa_invert(x, (FAR char *)buf, 10) - (FAR char *)buf;
+			}
+		} else {
+			int base;
+#ifndef CONFIG_LIBC_LONG_LONG
+			unsigned long x;
+#else
+			unsigned long long x;
+
+			if ((flags & FL_LONG) != 0 && (flags & FL_REPD_TYPE) != 0) {
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+				if ((flags & FL_ARGNUMBER) != 0) {
+					x = arglist[argnumber - 1].value.ull;
+				} else {
+					x = va_arg(ap, unsigned long long);
+				}
+#else
+				x = va_arg(ap, unsigned long long);
+#endif
+			} else
+#endif
+			if ((flags & FL_LONG) != 0) {
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+				if ((flags & FL_ARGNUMBER) != 0) {
+					x = arglist[argnumber - 1].value.ul;
+				} else {
+					x = va_arg(ap, unsigned long);
+				}
+#else
+				x = va_arg(ap, unsigned long);
+#endif
+			} else {
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+				if ((flags & FL_ARGNUMBER) != 0) {
+					x = (unsigned int)arglist[argnumber - 1].value.u;
+				} else {
+					x = va_arg(ap, unsigned int);
+				}
+#else
+				x = va_arg(ap, unsigned int);
+#endif
+				if ((flags & FL_SHORT) != 0) {
+					if ((flags & FL_REPD_TYPE) == 0) {
+						x = (unsigned short)x;
+					} else {
+						x = (unsigned char)x;
+					}
+				}
+			}
+
+			flags &= ~(FL_PLUS | FL_SPACE);
+
+			switch (c) {
+			case 'u':
+				flags &= ~FL_ALT;
+				base = 10;
+				break;
+
+			case 'o':
+				base = 8;
+				break;
+
+			case 'p':
+				flags |= FL_ALT;
+
+				/* no break */
+
+			case 'x':
+				if ((flags & FL_ALT) != 0) {
+					flags |= FL_ALTHEX;
+				}
+
+				base = 16;
+				break;
+
+			case 'X':
+				if ((flags & FL_ALT) != 0) {
+					flags |= (FL_ALTHEX | FL_ALTUPP);
+				}
+
+				base = 16 | XTOA_UPPER;
+				break;
+
+			default:
+				putc('%', stream);
+				putc(c, stream);
+				continue;
+			}
+
+			if ((flags & FL_PREC) != 0 && prec == 0 && x == 0) {
+				c = 0;
+			} else {
+				c = __ultoa_invert(x, (FAR char *)buf, base) - (FAR char *)buf;
+			}
+
+			flags &= ~FL_NEGATIVE;
+		}
+
+		len = c;
+
+		if ((flags & FL_PREC) != 0) {
+			flags &= ~FL_ZFILL;
+			if (len < prec) {
+				len = prec;
+				if ((flags & FL_ALT) != 0 && (flags & FL_ALTHEX) == 0) {
+					flags &= ~FL_ALT;
+				}
 			}
 		}
-	}
 
-	if (!nonzero) {
-		obj->put(obj, '0');
-	}
-}
-
-/****************************************************************************
- * Name: lutooct
- ****************************************************************************/
-
-static void lutooct(FAR struct lib_outstream_s *obj, unsigned long n)
-{
-	unsigned int remainder = n & 0x7;
-	unsigned long dividend = n >> 3;
-
-	if (dividend) {
-		lutooct(obj, dividend);
-	}
-
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
-
-/****************************************************************************
- * Name: lutobin
- ****************************************************************************/
-
-static void lutobin(FAR struct lib_outstream_s *obj, unsigned long n)
-{
-	unsigned int remainder = n & 1;
-	unsigned long dividend = n >> 1;
-
-	if (dividend) {
-		lutobin(obj, dividend);
-	}
-
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
-
-/****************************************************************************
- * Name: lutoascii
- ****************************************************************************/
-
-static void lutoascii(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, unsigned long ln)
-{
-	/* Perform the integer conversion according to the format specifier */
-
-	switch (fmt) {
-	case 'd':
-	case 'i':
-		/* Signed base 10 */
-	{
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-		if ((long)ln < 0) {
-			obj->put(obj, '-');
-			ln = (unsigned long)(-(long)ln);
-		} else if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
-		}
-#endif
-		/* Convert the unsigned value to a string. */
-
-		lutodec(obj, ln);
-	}
-	break;
-
-	case 'u':
-		/* Unigned base 10 */
-	{
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-		if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
-		}
-#endif
-		/* Convert the unsigned value to a string. */
-
-		lutodec(obj, ln);
-	}
-	break;
-
-	case 'x':
-	case 'X':
-		/* Hexadecimal */
-	{
-		/* Check for alternate form */
-
-		if (IS_ALTFORM(flags)) {
-			/* Prefix the number with "0x" */
-
-			obj->put(obj, '0');
-			obj->put(obj, 'x');
-		}
-
-		/* Convert the unsigned value to a string. */
-
-		if (fmt == 'X') {
-			lutohex(obj, ln, 'A');
-		} else {
-			lutohex(obj, ln, 'a');
-		}
-	}
-	break;
-
-	case 'o':
-		/* Octal */
-	{
-		/* Check for alternate form */
-
-		if (IS_ALTFORM(flags)) {
-			/* Prefix the number with '0' */
-
-			obj->put(obj, '0');
-		}
-
-		/* Convert the unsigned value to a string. */
-
-		lutooct(obj, ln);
-	}
-	break;
-
-	case 'b':
-		/* Binary */
-	{
-		/* Convert the unsigned value to a string. */
-
-		lutobin(obj, ln);
-	}
-	break;
-
-	case 'p':
-	default:
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: lfixup
- ****************************************************************************/
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void lfixup(uint8_t fmt, FAR uint8_t *flags, FAR long *ln)
-{
-	/* Perform the integer conversion according to the format specifier */
-
-	switch (fmt) {
-	case 'd':
-	case 'i':
-		/* Signed base 10 */
-
-		if (*ln < 0) {
-			SET_NEGATE(*flags);
-			CLR_SHOWPLUS(*flags);
-			*ln = -*ln;
-		}
-		break;
-
-	case 'u':
-		/* Unsigned base 10 */
-		break;
-
-	case 'p':
-	case 'x':
-	case 'X':
-	/* Hexadecimal */
-	case 'o':
-	/* Octal */
-	case 'b':
-		/* Binary */
-		CLR_SIGNED(*flags);
-		break;
-
-	default:
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: getlusize
- ****************************************************************************/
-
-static int getlusize(uint8_t fmt, uint8_t flags, unsigned long ln)
-{
-	struct lib_outstream_s nulloutstream;
-	lib_nulloutstream(&nulloutstream);
-
-	lutoascii(&nulloutstream, fmt, flags, ln);
-	return nulloutstream.nput;
-}
-
-#endif							/* CONFIG_NOPRINTF_FIELDWIDTH */
-#endif							/* CONFIG_LONG_IS_NOT_INT */
-
-#ifndef CONFIG_NOPRINTF_LONGLONG_TO_ASCII
-/****************************************************************************
- * Name: llutodec
- ****************************************************************************/
-
-static void llutodec(FAR struct lib_outstream_s *obj, unsigned long long n)
-{
-	unsigned int remainder = n % 10;
-	unsigned long long dividend = n / 10;
-
-	if (dividend) {
-		llutodec(obj, dividend);
-	}
-
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
-
-/****************************************************************************
- * Name: llutohex
- ****************************************************************************/
-
-static void llutohex(FAR struct lib_outstream_s *obj, unsigned long long n, uint8_t a)
-{
-	bool nonzero = false;
-	uint8_t bits;
-
-	for (bits = 8 * sizeof(unsigned long long); bits > 0; bits -= 4) {
-		uint8_t nibble = (uint8_t)((n >> (bits - 4)) & 0xf);
-		if (nibble || nonzero) {
-			nonzero = true;
-
-			if (nibble < 10) {
-				obj->put(obj, (nibble + '0'));
+		if ((flags & FL_ALT) != 0) {
+			if (buf[c - 1] == '0') {
+				flags &= ~(FL_ALT | FL_ALTHEX | FL_ALTUPP);
 			} else {
-				obj->put(obj, (nibble + a - 10));
+				len += 1;
+				if ((flags & FL_ALTHEX) != 0) {
+					len += 1;
+				}
+			}
+		} else if ((flags & (FL_NEGATIVE | FL_PLUS | FL_SPACE)) != 0) {
+			len += 1;
+		}
+
+		if ((flags & FL_LPAD) == 0) {
+			if ((flags & FL_ZFILL) != 0) {
+				prec = c;
+				if (len < width) {
+					prec += width - len;
+					len = width;
+				}
+			}
+
+			while (len < width) {
+				putc(' ', stream);
+				len++;
 			}
 		}
+
+		width = (len < width) ? width - len : 0;
+
+		if ((flags & FL_ALT) != 0) {
+			putc('0', stream);
+			if ((flags & FL_ALTHEX) != 0) {
+				putc(flags & FL_ALTUPP ? 'X' : 'x', stream);
+			}
+		} else if ((flags & (FL_NEGATIVE | FL_PLUS | FL_SPACE)) != 0) {
+			unsigned char z = ' ';
+			if ((flags & FL_PLUS) != 0) {
+				z = '+';
+			}
+
+			if ((flags & FL_NEGATIVE) != 0) {
+				z = '-';
+			}
+
+			putc(z, stream);
+		}
+
+		while (prec > c) {
+			putc('0', stream);
+			prec--;
+		}
+
+		while (c) {
+			putc(buf[--c], stream);
+		}
+
+tail:
+
+		/* Tail is possible.  */
+
+		while (width) {
+			putc(' ', stream);
+			width--;
+		}
 	}
 
-	if (!nonzero) {
-		obj->put(obj, '0');
-	}
+ret:
+
+	return total_len;
 }
-
-/****************************************************************************
- * Name: llutooct
- ****************************************************************************/
-
-static void llutooct(FAR struct lib_outstream_s *obj, unsigned long long n)
-{
-	unsigned int remainder = n & 0x7;
-	unsigned long long dividend = n >> 3;
-
-	if (dividend) {
-		llutooct(obj, dividend);
-	}
-
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
-
-/****************************************************************************
- * Name: llutobin
- ****************************************************************************/
-
-static void llutobin(FAR struct lib_outstream_s *obj, unsigned long long n)
-{
-	unsigned int remainder = n & 1;
-	unsigned long long dividend = n >> 1;
-
-	if (dividend) {
-		llutobin(obj, dividend);
-	}
-
-	obj->put(obj, (remainder + (unsigned int)'0'));
-}
-
-/****************************************************************************
- * Name: llutoascii
- ****************************************************************************/
-
-static void llutoascii(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, unsigned long long lln)
-{
-	/* Perform the integer conversion according to the format specifier */
-
-	switch (fmt) {
-	case 'd':
-	case 'i':
-		/* Signed base 10 */
-	{
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-		if ((long long)lln < 0) {
-			obj->put(obj, '-');
-			lln = (unsigned long long)(-(long long)lln);
-		} else if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
-		}
-#endif
-		/* Convert the unsigned value to a string. */
-
-		llutodec(obj, (unsigned long long)lln);
-	}
-	break;
-
-	case 'u':
-		/* Unigned base 10 */
-	{
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-		if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
-		}
-#endif
-		/* Convert the unsigned value to a string. */
-
-		llutodec(obj, (unsigned long long)lln);
-	}
-	break;
-
-	case 'x':
-	case 'X':
-		/* Hexadecimal */
-	{
-		/* Check for alternate form */
-
-		if (IS_ALTFORM(flags)) {
-			/* Prefix the number with "0x" */
-
-			obj->put(obj, '0');
-			obj->put(obj, 'x');
-		}
-
-		/* Convert the unsigned value to a string. */
-
-		if (fmt == 'X') {
-			llutohex(obj, (unsigned long long)lln, 'A');
-		} else {
-			llutohex(obj, (unsigned long long)lln, 'a');
-		}
-	}
-	break;
-
-	case 'o':
-		/* Octal */
-	{
-		/* Check for alternate form */
-
-		if (IS_ALTFORM(flags)) {
-			/* Prefix the number with '0' */
-
-			obj->put(obj, '0');
-		}
-
-		/* Convert the unsigned value to a string. */
-
-		llutooct(obj, (unsigned long long)lln);
-	}
-	break;
-
-	case 'b':
-		/* Binary */
-	{
-		/* Convert the unsigned value to a string. */
-
-		llutobin(obj, (unsigned long long)lln);
-	}
-	break;
-
-	case 'p':
-	default:
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: llfixup
- ****************************************************************************/
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void llfixup(uint8_t fmt, FAR uint8_t *flags, FAR long long *lln)
-{
-	/* Perform the integer conversion according to the format specifier */
-
-	switch (fmt) {
-	case 'd':
-	case 'i':
-		/* Signed base 10 */
-
-		if (*lln < 0) {
-			SET_NEGATE(*flags);
-			CLR_SHOWPLUS(*flags);
-			*lln = -*lln;
-		}
-		break;
-
-	case 'u':
-		/* Unsigned base 10 */
-		break;
-
-	case 'p':
-	case 'x':
-	case 'X':
-	/* Hexadecimal */
-	case 'o':
-	/* Octal */
-	case 'b':
-		/* Binary */
-		CLR_SIGNED(*flags);
-		break;
-
-	default:
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: getllusize
- ****************************************************************************/
-
-static int getllusize(uint8_t fmt, uint8_t flags, unsigned long long lln)
-{
-	struct lib_outstream_s nulloutstream;
-	lib_nulloutstream(&nulloutstream);
-
-	llutoascii(&nulloutstream, fmt, flags, lln);
-	return nulloutstream.nput;
-}
-
-#endif							/* CONFIG_NOPRINTF_FIELDWIDTH */
-#endif							/* CONFIG_NOPRINTF_LONGLONG_TO_ASCII */
-
-/****************************************************************************
- * Name: prejustify
- ****************************************************************************/
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void prejustify(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, int fieldwidth, int valwidth)
-{
-	int i;
-
-	switch (fmt) {
-	default:
-	case FMT_RJUST:
-		if (IS_SIGNED(flags)) {
-			valwidth++;
-		}
-
-		for (i = fieldwidth - valwidth; i > 0; i--) {
-			obj->put(obj, ' ');
-		}
-
-		if (IS_NEGATE(flags)) {
-			obj->put(obj, '-');
-		} else if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
-		}
-		break;
-
-	case FMT_RJUST0:
-		if (IS_NEGATE(flags)) {
-			obj->put(obj, '-');
-			valwidth++;
-		} else if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
-			valwidth++;
-		}
-
-		for (i = fieldwidth - valwidth; i > 0; i--) {
-			obj->put(obj, '0');
-		}
-		break;
-
-	case FMT_LJUST:
-		if (IS_NEGATE(flags)) {
-			obj->put(obj, '-');
-		} else if (IS_SHOWPLUS(flags)) {
-			obj->put(obj, '+');
-		}
-		break;
-	}
-}
-#endif
-
-/****************************************************************************
- * Name: postjustify
- ****************************************************************************/
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-static void postjustify(FAR struct lib_outstream_s *obj, uint8_t fmt, uint8_t flags, int fieldwidth, int valwidth)
-{
-	int i;
-
-	/* Apply field justification to the integer value. */
-
-	switch (fmt) {
-	default:
-	case FMT_RJUST:
-	case FMT_RJUST0:
-		break;
-
-	case FMT_LJUST:
-		if (IS_SIGNED(flags)) {
-			valwidth++;
-		}
-
-		for (i = fieldwidth - valwidth; i > 0; i--) {
-			obj->put(obj, ' ');
-		}
-		break;
-	}
-}
-#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/****************************************************************************
- * libc/stdio/lib_vsprintf
- ****************************************************************************/
-
-int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list ap)
+int lib_vsprintf(FAR struct lib_outstream_s *stream, FAR const char *fmt, va_list ap)
 {
-	FAR char *ptmp;
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-	int width;
-#ifdef CONFIG_LIBC_FLOATINGPOINT
-	int trunc;
+#ifdef CONFIG_LIBC_NUMBERED_ARGS
+	int i;
+	struct arg arglist[NL_ARGMAX];
+	int numargs;
+
+	/* We do 2 passes of parsing and fill the arglist between the passes. */
+
+	numargs = vsprintf_internal(NULL, arglist, NL_ARGMAX, fmt, ap);
+
+	for (i = 0; i < numargs; i++) {
+		switch (arglist[i].type) {
+		case TYPE_LONG_LONG:
+#ifdef CONFIG_LIBC_LONG_LONG
+			arglist[i].value.ull = va_arg(ap, unsigned long long);
+			break;
 #endif
-	int trunc_sfmt;
-	uint8_t fmt;
-#endif
-	uint8_t flags;
-#ifdef CONFIG_ARCH_ROMGETC
-	char ch;
-#endif
+		case TYPE_LONG:
+			arglist[i].value.ul = va_arg(ap, unsigned long);
+			break;
 
-	for (FMT_TOP; FMT_CHAR; FMT_BOTTOM) {
-		/* Just copy regular characters */
+		case TYPE_INT:
+			arglist[i].value.u = va_arg(ap, unsigned int);
+			break;
 
-		if (FMT_CHAR != '%') {
-			/* Output the character */
+		case TYPE_DOUBLE:
+			arglist[i].value.d = va_arg(ap, double_t);
+			break;
 
-			obj->put(obj, FMT_CHAR);
-
-			/* Flush the buffer if a newline is encountered */
-
-#ifdef CONFIG_STDIO_LINEBUFFER
-			if (FMT_CHAR == '\n') {
-				/* Should return an error on a failure to flush */
-
-				(void)obj->flush(obj);
-			}
-#endif
-			/* Process the next character in the format */
-
-			continue;
+		case TYPE_CHAR_POINTER:
+			arglist[i].value.cp = va_arg(ap, FAR char *);
+			break;
 		}
-
-		/* We have found a format specifier. Move past it. */
-
-		FMT_NEXT;
-
-		/* Assume defaults */
-
-		flags = 0;
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-		fmt = FMT_RJUST;
-		width = 0;
-#ifdef CONFIG_LIBC_FLOATINGPOINT
-		trunc = CONFIG_LIBC_FLOATPRECISION;
-#endif
-		trunc_sfmt = 0;
-#endif
-
-		/* Process each format qualifier. */
-
-		for (; FMT_CHAR; FMT_BOTTOM) {
-			/* Break out of the loop when the format is known. */
-
-			if (strchr("diuxXpobeEfgGlLsc%", FMT_CHAR)) {
-				break;
-			}
-
-			/* Check for left justification. */
-
-			else if (FMT_CHAR == '-') {
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				fmt = FMT_LJUST;
-#endif
-			}
-
-			/* Check for leading zero fill right justification. */
-
-			else if (FMT_CHAR == '0') {
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				fmt = FMT_RJUST0;
-#endif
-			}
-#if 0
-			/* Center justification. */
-
-			else if (FMT_CHAR == '~') {
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				fmt = FMT_CENTER;
-#endif
-			}
-#endif
-
-			else if (FMT_CHAR == '*') {
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				int value = va_arg(ap, int);
-				if (IS_HASDOT(flags)) {
-#ifdef CONFIG_LIBC_FLOATINGPOINT
-					trunc = value;
-					SET_HASASTERISKTRUNC(flags);
-#endif
-				} else {
-					width = value;
-					SET_HASASTERISKWIDTH(flags);
-				}
-#endif
-			}
-
-			/* Check for field width */
-
-			else if (FMT_CHAR >= '1' && FMT_CHAR <= '9') {
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-				do {
-					FMT_NEXT;
-				} while (FMT_CHAR >= '0' && FMT_CHAR <= '9');
-#else
-				/* Accumulate the field width integer. */
-
-				int n = ((int)(FMT_CHAR)) - (int)'0';
-				for (;;) {
-					FMT_NEXT;
-					if (FMT_CHAR >= '0' && FMT_CHAR <= '9') {
-						n = 10 * n + (((int)(FMT_CHAR)) - (int)'0');
-					} else {
-						break;
-					}
-				}
-
-				if (IS_HASDOT(flags)) {
-#ifdef CONFIG_LIBC_FLOATINGPOINT
-					trunc = n;
-#endif
-					trunc_sfmt = n;
-				} else {
-					width = n;
-				}
-#endif
-				/* Back up to the last digit. */
-
-				FMT_PREV;
-			}
-
-			/* Check for a decimal point. */
-
-			else if (FMT_CHAR == '.') {
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				SET_HASDOT(flags);
-#endif
-			}
-
-			/* Check for leading plus sign. */
-
-			else if (FMT_CHAR == '+') {
-				SET_SHOWPLUS(flags);
-			}
-
-			/* Check for alternate form. */
-
-			else if (FMT_CHAR == '#') {
-				SET_ALTFORM(flags);
-			}
-		}
-
-		/* "%%" means that a literal '%' was intended (instead of a format
-		 * specification).
-		 */
-
-		if (FMT_CHAR == '%') {
-			obj->put(obj, '%');
-			continue;
-		}
-
-		/* Check for the string format. */
-
-		if (FMT_CHAR == 's') {
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-			int swidth;
-#endif
-			/* Get the string to output */
-
-			ptmp = va_arg(ap, char *);
-			if (!ptmp) {
-				ptmp = (char *)g_nullstring;
-			}
-
-			/* Get the width of the string and perform right-justification
-			 * operations.
-			 */
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-			swidth = strlen(ptmp);
-			prejustify(obj, fmt, 0, width, swidth);
-
-			/* Concatenate the string into the output */
-
-			if (trunc_sfmt) {
-				while (*ptmp && trunc_sfmt--) {
-					obj->put(obj, *ptmp);
-					ptmp++;
-				}
-			} else
-#endif
-			{
-				while (*ptmp) {
-					obj->put(obj, *ptmp);
-					ptmp++;
-				}
-			}
-
-			/* Perform left-justification operations. */
-
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-			postjustify(obj, fmt, 0, width, swidth);
-#endif
-			continue;
-		}
-
-		/* Check for the character output */
-
-		else if (FMT_CHAR == 'c') {
-			/* Just copy the character into the output. */
-
-			int n = va_arg(ap, int);
-			obj->put(obj, n);
-			continue;
-		}
-
-		/* Check for the long long prefix. */
-
-		if (FMT_CHAR == 'L') {
-			SET_LONGLONGPRECISION(flags);
-			FMT_NEXT;
-		} else if (FMT_CHAR == 'l') {
-			SET_LONGPRECISION(flags);
-			FMT_NEXT;
-			if (FMT_CHAR == 'l') {
-				SET_LONGLONGPRECISION(flags);
-				FMT_NEXT;
-			}
-		}
-
-		/* Handle integer conversions */
-
-		if (strchr("diuxXpob", FMT_CHAR)) {
-#ifndef CONFIG_NOPRINTF_LONGLONG_TO_ASCII
-			if (IS_LONGLONGPRECISION(flags) && FMT_CHAR != 'p') {
-				long long lln;
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				int lluwidth;
-#endif
-				/* Extract the long long value. */
-
-				lln = va_arg(ap, long long);
-
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-				/* Output the number */
-
-				llutoascii(obj, FMT_CHAR, flags, (unsigned long long)lln);
-#else
-				/* Resolve sign-ness and format issues */
-
-				llfixup(FMT_CHAR, &flags, &lln);
-
-				/* Get the width of the output */
-
-				lluwidth = getllusize(FMT_CHAR, flags, lln);
-
-				/* Perform left field justification actions */
-
-				prejustify(obj, fmt, flags, width, lluwidth);
-
-				/* Output the number */
-
-				llutoascii(obj, FMT_CHAR, flags, (unsigned long long)lln);
-
-				/* Perform right field justification actions */
-
-				postjustify(obj, fmt, flags, width, lluwidth);
-#endif
-			} else
-#endif							/* CONFIG_NOPRINTF_LONGLONG_TO_ASCII */
-#ifdef CONFIG_LONG_IS_NOT_INT
-			if (IS_LONGPRECISION(flags) && FMT_CHAR != 'p') {
-				long ln;
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				int luwidth;
-#endif
-				/* Extract the long value. */
-
-				ln = va_arg(ap, long);
-
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-				/* Output the number */
-
-				lutoascii(obj, FMT_CHAR, flags, (unsigned long)ln);
-#else
-				/* Resolve sign-ness and format issues */
-
-				lfixup(FMT_CHAR, &flags, &ln);
-
-				/* Get the width of the output */
-
-				luwidth = getlusize(FMT_CHAR, flags, ln);
-
-				/* Perform left field justification actions */
-
-				prejustify(obj, fmt, flags, width, luwidth);
-
-				/* Output the number */
-
-				lutoascii(obj, FMT_CHAR, flags, (unsigned long)ln);
-
-				/* Perform right field justification actions */
-
-				postjustify(obj, fmt, flags, width, luwidth);
-#endif
-			} else
-#endif							/* CONFIG_LONG_IS_NOT_INT */
-#ifdef CONFIG_PTR_IS_NOT_INT
-			if (FMT_CHAR == 'p') {
-				void *p;
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				int pwidth;
-#endif
-				/* Extract the integer value. */
-
-				p = va_arg(ap, void *);
-
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-				/* Output the pointer value */
-
-				ptohex(obj, flags, p);
-#else
-				/* Resolve sign-ness and format issues */
-
-				lfixup(FMT_CHAR, &flags, &ln);
-
-				/* Get the width of the output */
-
-				pwidth = getpsize(FMT_CHAR, flags, p);
-
-				/* Perform left field justification actions */
-
-				prejustify(obj, fmt, flags, width, pwidth);
-
-				/* Output the pointer value */
-
-				ptohex(obj, flags, p);
-
-				/* Perform right field justification actions */
-
-				postjustify(obj, fmt, flags, width, pwidth);
-#endif
-			} else
-#endif
-			{
-				int n;
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-				int uwidth;
-#endif
-				/* Extract the long long value. */
-
-				n = va_arg(ap, int);
-
-#ifdef CONFIG_NOPRINTF_FIELDWIDTH
-				/* Output the number */
-
-				utoascii(obj, FMT_CHAR, flags, (unsigned int)n);
-#else
-				/* Resolve sign-ness and format issues */
-
-				fixup(FMT_CHAR, &flags, &n);
-
-				/* Get the width of the output */
-
-				uwidth = getusize(FMT_CHAR, flags, n);
-
-				/* Perform left field justification actions */
-
-				prejustify(obj, fmt, flags, width, uwidth);
-
-				/* Output the number */
-
-				utoascii(obj, FMT_CHAR, flags, (unsigned int)n);
-
-				/* Perform right field justification actions */
-
-				postjustify(obj, fmt, flags, width, uwidth);
-#endif
-			}
-		}
-
-		/* Handle floating point conversions */
-
-#ifdef CONFIG_LIBC_FLOATINGPOINT
-		else if (strchr("eEfgG", FMT_CHAR)) {
-#ifndef CONFIG_NOPRINTF_FIELDWIDTH
-			double dblval = va_arg(ap, double);
-			int dblsize;
-
-			/* Get the width of the output */
-
-			dblsize = getdblsize(FMT_CHAR, trunc, flags, dblval);
-
-			/* Perform left field justification actions */
-
-			prejustify(obj, fmt, 0, width, dblsize);
-
-			/* Output the number */
-
-			lib_dtoa(obj, FMT_CHAR, trunc, flags, dblval);
-
-			/* Perform right field justification actions */
-
-			postjustify(obj, fmt, 0, width, dblsize);
-#else
-			/* Output the number with a fixed precision */
-
-			double dblval = va_arg(ap, double);
-			lib_dtoa(obj, FMT_CHAR, CONFIG_LIBC_FIXEDPRECISION, flags, dblval);
-#endif
-		}
-#endif							/* CONFIG_LIBC_FLOATINGPOINT */
 	}
 
-	return obj->nput;
+	return vsprintf_internal(stream, arglist, numargs, fmt, ap);
+
+#else
+
+	return vsprintf_internal(stream, NULL, 0, fmt, ap);
+
+#endif
 }
