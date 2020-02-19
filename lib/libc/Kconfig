@@ -245,14 +245,23 @@ config LIBC_DOWNLOAD_ZONEINFO
 	---help---
 		Download and build the TZ database.
 
+if LIBC_DOWNLOAD_ZONEINFO
+
+config LIBC_DELETE_ZONEINFO_RULES
+	bool "Delete the previous zoneinfo rules from TZ data"
+	default n
+	---help---
+		Delete the previous zoneinfo rules from TZ data. Deletes the previously
+		registered zoneinfo rules at the time it is bulided.
+
 config LIBC_ZONEINFO_ROMFS
 	bool "Build ROMFS filesystem TZ database"
 	default n
-	depends on LIBC_DOWNLOAD_ZONEINFO
 	depends on FS_ROMFS
 	---help---
 		Build a mountable ROMFS filesystem containing the TZ database
 
+endif # LIBC_DOWNLOAD_ZONEINFO
 endif # LIBC_LOCALTIME
 
 config LIB_SENDFILE_BUFSIZE
