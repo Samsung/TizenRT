@@ -92,10 +92,6 @@ endif
 
 # Other support that depends on specific, configured features.
 
-ifeq ($(CONFIG_LIBC_FLOATINGPOINT),y)
-CSRCS += lib_dtoa.c
-endif
-
 ifeq ($(CONFIG_STDIO_LINEBUFFER),y)
 CSRCS += lib_libnoflush.c lib_libsnoflush.c
 endif
