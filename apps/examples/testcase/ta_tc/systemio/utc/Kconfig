@@ -48,6 +48,7 @@ endif
 
 config SYSIO_UTC_ADC
 	bool "Sysio ADC TC"
+	depends on IOTBUS_ADC
 	default n
 endif
 

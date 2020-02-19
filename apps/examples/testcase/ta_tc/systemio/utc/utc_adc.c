@@ -20,10 +20,11 @@
 #include <stdlib.h>
 #include <iotbus/iotbus_adc.h>
 #include <iotbus/iotbus_error.h>
+#include "utc_internal.h"
 
 iotbus_adc_context_h adc;
 
-static void utc_systemio_adc_init_p(void)
+static void utc_systemio_iotbus_adc_init_p(void)
 {
 	iotbus_adc_context_h m_adc = iotbus_adc_init(0, 1);
 	TC_ASSERT_NEQ("iotbus_adc_init", m_adc, NULL);
@@ -31,7 +32,7 @@ static void utc_systemio_adc_init_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_systemio_adc_init_n(void)
+static void utc_systemio_iotbus_adc_init_n(void)
 {
 	iotbus_adc_context_h m_adc = iotbus_adc_init(-1, -1);
 	TC_ASSERT_EQ("iotbus_adc_init", m_adc, NULL);
@@ -110,15 +111,15 @@ static void utc_systemio_iotbus_adc_stop_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_systemio_adc_deinit_n(void)
+static void utc_systemio_iotbus_adc_deinit_n(void)
 {
 	TC_ASSERT_NEQ("iotbus_adc_deinit", iotbus_adc_deinit(NULL), 0);
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_systemio_adc_deinit_p(void)
+static void utc_systemio_iotbus_adc_deinit_p(void)
 {
-	TC_ASSERT_EQ("iotbus_adc_deinit", iotbus_adc_deinit(adc));
+	TC_ASSERT_EQ("iotbus_adc_deinit", iotbus_adc_deinit(adc), 0);
 	TC_SUCCESS_RESULT();
 }
 
