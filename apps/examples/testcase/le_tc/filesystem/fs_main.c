@@ -3044,6 +3044,7 @@ static void tc_libc_stdio_dprintf_invalid_fd_n(void)
 	/* Testcase */
 	ret = dprintf(CONFIG_NFILE_DESCRIPTORS, "%s", str);
 	TC_ASSERT_EQ("dprintf", ret, ERROR);
+	TC_ASSERT_EQ("dprintf", errno, EBADF);
 
 	TC_SUCCESS_RESULT();
 }
