@@ -58,6 +58,7 @@
 #include <tinyara/config.h>
 
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include "lib_internal.h"
 
@@ -68,6 +69,13 @@
 int vdprintf(int fd, FAR const char *fmt, va_list ap)
 {
 	struct lib_rawoutstream_s rawoutstream;
+	int ret;
+	struct stat st;
+
+	ret = fstat(fd, &st);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Wrap the fd in a stream object and let lib_vsprintf do the work. */
 
