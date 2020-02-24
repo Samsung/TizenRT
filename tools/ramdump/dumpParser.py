@@ -291,9 +291,7 @@ class dumpParser:
 			# If only Log file is passed as i/p, Read the contents of address from ELF file
 			self.elf_file_fd.seek(offset+self.text_offset) # offset got from elf header
 			a = self.elf_file_fd.read(length)
-
-
-	        return a
+		return a
 
 	# returns a tuple of the result by reading address from the "specified format string"
 	# return None on failure
@@ -451,14 +449,13 @@ class dumpParser:
 			address = '{0:x}'.format(frame.pc)
 			cmd = ['addr2line', '-e', self.elf, address]
 			fd_popen = subprocess.Popen(cmd, stdout=subprocess.PIPE).stdout
-			data = fd_popen.read()
+			data = fd_popen.read().decode()
 			temp = data.split('/')[-1]
 			line = temp.split(':')[-1].rstrip()
 			name = temp[:-len(line)-2]
 			pstring = (extra_str + '[<{0:x}>] {1}+0x{2:x} [Line {3} of {4}]'.format(frame.pc, symname, offset, line, name))
-
 			if output_file:
-				out_file.write(pstring + '\n')
+				output_file.write(pstring + '\n')
 			else:
 				print(pstring)
 
@@ -790,7 +787,7 @@ def main():
 			pid = rParser.read_halfword(point + 12)
 			if preceding & MM_ALLOC_BIT :
 				fd_popen = subprocess.Popen([debug_cmd, '-e', elf_path, hex(owner)], stdout=subprocess.PIPE).stdout
-				data = fd_popen.read()
+				data = fd_popen.read().decode()
 				fd_popen.close()
 				if pid >= 0:
 					print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(pid), data[14:], end=' ')
