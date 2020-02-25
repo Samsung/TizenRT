@@ -17,13 +17,26 @@
 ###########################################################################
 
 ifeq ($(CONFIG_WIFI_MANAGER), y)
-CSRCS += wifi_manager.c
-CSRCS += wifi_profile.c
-CSRCS += wifi_manager_dhcp_internal.c
+CSRCS += \
+wifi_manager_api.c\
+wifi_manager_cb.c\
+wifi_manager_message.c\
+wifi_manager_state.c\
+wifi_manager_stats.c\
+wifi_manager_msghandler.c\
+wifi_manager_event.c\
+wifi_manager_info.c
+
+CSRCS += wifi_manager_dhcpc.c
+CSRCS += wifi_manager_dhcps.c
+
+ifeq ($(WIFI_MANAGER_SAVE_CONFIG), y)
+CSRCS += wifi_manager_profile.c
+endif
 
 ifeq ($(CONFIG_LWNL80211), y)
-CSRCS += wifi_utils_lwnl80211.c
-CSRCS += wifi_event_monitor_internal.c wifi_event_monitor.c
+CSRCS += wifi_manager_lwnl.c
+CSRCS += wifi_manager_lwnl_listener.c
 else
 ifeq ($(CONFIG_SELECT_NO_DRIVER), y)
 CSRCS += virtual_wifi_utils.c
@@ -34,4 +47,3 @@ DEPPATH += --dep-path src/wifi_manager
 VPATH += :src/wifi_manager
 
 endif
-

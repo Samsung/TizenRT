@@ -4,6 +4,7 @@
 #
 config NET_NETMGR
 	bool "Network manager"
+	select LWNL80211
 	default n
 	---help---
 		network refactoring

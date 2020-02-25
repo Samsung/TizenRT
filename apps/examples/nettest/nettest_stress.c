@@ -74,17 +74,17 @@ static sem_t g_wifi_sem = SEM_INITIALIZER(0);
 		sem_wait(&g_wifi_sem);                      \
 	} while (0)
 
-void wifi_sta_connected(wifi_manager_result_e result)
+static void wifi_sta_connected(wifi_manager_result_e result)
 {
 	WIFITEST_SIGNAL;
 }
 
-void wifi_sta_disconnected(wifi_manager_disconnect_e disconn)
+static void wifi_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	WIFITEST_SIGNAL;
 }
 
-void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res)
+static void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res)
 {
 	/* Make sure you copy the scan results onto a local data structure.
 	 *	 * It will be deleted soon eventually as you exit this function.

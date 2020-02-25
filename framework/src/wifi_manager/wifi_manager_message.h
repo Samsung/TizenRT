@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,23 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#ifndef _WIFI_MANAGER_MESSAGE_H__
+#define _WIFI_MANAGER_MESSAGE_H__
 
-#ifndef _LWNL_EVENT_LISTENER_H__
-#define _LWNL_EVENT_LISTENER_H__
+typedef struct {
+	int fd;
+} handler_queue;
 
-int lwnl_start_listener(void);
-void lwnl_stop_monitor(void);
+typedef struct {
+	int fd;
+	sem_t *signal;
+	void *msg;
+} handler_msg;
 
-#endif
+int wifimgr_message_in(handler_msg *msg, handler_queue *queue);
+int wifimgr_messsage_out(handler_msg *msg, handler_queue *queue);
+
+#endif //_WIFI_MANAGER_MESSAGE_H__
+
+
+

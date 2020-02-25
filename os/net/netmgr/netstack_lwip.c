@@ -417,7 +417,7 @@ static void _get_udp_info(struct netmon_sock *sock_info, struct lwip_sock *lsock
 {
 #if LWIP_IPV4 && LWIP_IPV6
 	if (lsock->conn->pcb.ip->local_ip.type != IPADDR_TYPE_V4) {
-		ndbg("monitoring ipv6 is not supported yet")
+		ndbg("monitoring ipv6 is not supported yet");
 			return;
 	}
 #endif

@@ -31,7 +31,9 @@
 
 #include <wifi_manager/wifi_manager.h>
 #include <security/security_api.h>
-#include "wifi_profile.h"
+#include "wifi_manager_log.h"
+#include "wifi_manager_profile.h"
+
 
 //#define WIFI_PROFILE_USE_ETC
 
@@ -146,13 +148,13 @@ static int _wifi_profile_store_file(char *buf, unsigned int buf_size, int intern
 	}
 
 	if (!fp) {
-		ndbg("file open error(%d)\n", errno);
+		WM_LOG_ERROR("file open error(%d)\n", errno);
 		return -1;
 	}
 
 	int ret = fwrite(buf, 1, buf_size, fp);
 	if (ret < 0) {
-		ndbg("file write error(%d)\n", errno);
+		WM_LOG_ERROR("file write error(%d)\n", errno);
 		fclose(fp);
 		return -1;
 	}
@@ -170,17 +172,17 @@ static int _wifi_profile_read_file(char *buf, unsigned int buf_size, int interna
 		fp = fopen(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME, "r");
 	}
 	if (!fp) {
-		ndbg("file open error(%d)\n", errno);
+		WM_LOG_ERROR("file open error(%d)\n", errno);
 		return -1;
 	}
 
 	int ret = fread(buf, 1, buf_size, fp);
 	if (ret < 0) {
-		ndbg("fread fail\n");
+		WM_LOG_ERROR("fread fail\n");
 		fclose(fp);
 		return -1;
 	} else if (ret > 107) {
-		ndbg("file is corrupted\n");
+		WM_LOG_ERROR("file is corrupted\n");
 		fclose(fp);
 		return -1;
 	}
@@ -199,7 +201,7 @@ wifi_utils_result_e wifi_profile_init(void)
 #ifdef WIFI_PROFILE_USE_ETC
 	DIR *dir = opendir(WIFI_PROFILE_PATH);
 	if (!dir) {
-		ndbg("error reason (%d)\n", errno);
+		WM_LOG_ERROR("error reason (%d)\n", errno);
 		if (errno == ENOENT || errno == ENOTDIR) {
 			ret = mkdir(WIFI_PROFILE_PATH, 0777);
 			if (ret < 0) {
@@ -223,7 +225,7 @@ wifi_utils_result_e wifi_profile_reset(int internal)
 	security_handle hnd;
 	security_error err = security_init(&hnd);
 	if (err != SECURITY_OK) {
-		ndbg("Reset wi-fi profile in SS fail\n", ret);
+		WM_LOG_ERROR("Reset wi-fi profile in SS fail\n", ret);
 		return WIFI_UTILS_FILE_ERROR;
 	}
 	security_data data = {&buf, 1};
@@ -248,7 +250,7 @@ wifi_utils_result_e wifi_profile_reset(int internal)
 		ret = unlink(WIFI_PROFILE_PATH WIFI_PROFILE_FILENAME);
 	}
 	if (ret < 0) {
-		ndbg("Delete Wi-Fi profile fail(%d)\n", errno);
+		WM_LOG_ERROR("Delete Wi-Fi profile fail(%d)\n", errno);
 		return WIFI_UTILS_FILE_ERROR;
 	}
 #endif
@@ -264,12 +266,12 @@ wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int int
 	if (len < 0) {
 		return WIFI_UTILS_FAIL;
 	}
-	nvdbg("store data to file: buffer len(%d)\n", len);
+	WM_LOG_VERBOSE("store data to file: buffer len(%d)\n", len);
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
 	security_handle hnd;
 	security_error err = security_init(&hnd);
 	if (err != SECURITY_OK) {
-		ndbg("Write Wi-Fi info in SS fail\n", ret);
+		WM_LOG_ERROR("Write Wi-Fi info in SS fail\n", ret);
 		return WIFI_UTILS_FILE_ERROR;
 	}
 	char ss_name[7] = {0,};
@@ -318,7 +320,7 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int inte
 	security_handle hnd;
 	security_error err = security_init(&hnd);
 	if (err != SECURITY_OK) {
-		ndbg("Read Wi-Fi info in SS fail\n", ret);
+		WM_LOG_ERROR("Read Wi-Fi info in SS fail\n", ret);
 		return WIFI_UTILS_FILE_ERROR;
 	}
 
@@ -338,11 +340,11 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int inte
 	}
 
 	if (data.length <= 0) {
-		ndbg("Read length is 0");
+		WM_LOG_ERROR("Read length is 0");
 	}
 	security_deinit(hnd);
 
-	nvdbg("read data len(%u)\n", data.length);
+	WM_LOG_VERBOSE("read data len(%u)\n", data.length);
 
 #else
 	ret = _wifi_profile_read_file(buf, WIFI_PROFILE_BUFSIZE, internal);

@@ -30,31 +30,13 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/wifi/wifi_utils.h>
 #include <tinyara/net/if/wifi.h>
+#include "wifi_manager_log.h"
 
 #ifdef CONFIG_NET_NETMGR
 #define WU_INTF_NAME "wlan0"
 #else
 #define WU_INTF_NAME "wl1"
 #endif
-
-#define WU_TAG "[WU]"
-
-#define WU_ERR										\
-	do {											\
-		ndbg(WU_TAG"[ERR] %s:%d code(%s)\n",		\
-			 __FILE__, __LINE__, strerror(errno));	\
-	} while (0)
-
-#define WU_ERR_FD(fd)									\
-	do {												\
-		ndbg(WU_TAG"[ERR] %s:%d fd(%d) code(%s)\n",		\
-			 __FILE__, __LINE__, fd, strerror(errno));	\
-	} while (0)
-
-#define WU_ENTER									\
-	do {											\
-		ndbg(WU_TAG"%s:%d\n", __FILE__, __LINE__);	\
-	} while (0)
 
 typedef enum {
 	WIFI_UTILS_LWNL_SUCCESS,
@@ -83,7 +65,7 @@ static inline wu_lwnl_status_e _send_msg(lwnl_msg *msg)
 
 wifi_utils_result_e wifi_utils_init(void)
 {
-	WU_ENTER;
+	WM_ENTER;
 
 	/* Start to send ioctl */
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_INIT, 0, NULL, 0};
@@ -97,7 +79,7 @@ wifi_utils_result_e wifi_utils_init(void)
 
 wifi_utils_result_e wifi_utils_deinit(void)
 {
-	WU_ENTER;
+	WM_ENTER;
 	wifi_utils_result_e wuret = WIFI_UTILS_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_DEINIT, 0, NULL, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
@@ -112,7 +94,7 @@ wifi_utils_result_e wifi_utils_deinit(void)
 
 wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 {
-	WU_ENTER;
+	WM_ENTER;
 	wifi_utils_ap_config_s *config = NULL;
 	uint32_t config_len = 0;
 	if (arg) {
@@ -136,7 +118,7 @@ wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk)
 
 	int res = lwnl_join_monitor(cbk);
 	if (res < 0) {
-		ndbg("WiFi callback register failure (no callback)\n");
+		WM_LOG_ERROR("WiFi callback register failure (no callback)\n");
 	} else {
 		wuret = WIFI_UTILS_SUCCESS;
 	}
@@ -146,7 +128,7 @@ wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk)
 
 wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 {
-	WU_ENTER;
+	WM_ENTER;
 
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_CONNECT_AP,
 						 sizeof(wifi_utils_ap_config_s), (void *)ap_connect_config, 0};
@@ -160,7 +142,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 
 wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 {
-	WU_ENTER;
+	WM_ENTER;
 
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_DISCONNECT_AP, 0, NULL, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
@@ -173,7 +155,8 @@ wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 
 wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 {
-	WU_ENTER;
+	WM_ENTER;
+
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_GET_INFO,
 						 sizeof(wifi_utils_info_s), (void *)wifi_info, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
@@ -186,7 +169,7 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 
 wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_config)
 {
-	WU_ENTER;
+	WM_ENTER;
 
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_START_SOFTAP,
 						 sizeof(wifi_utils_softap_config_s), (void *)softap_config, 0};
@@ -200,7 +183,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 
 wifi_utils_result_e wifi_utils_start_sta(void)
 {
-	WU_ENTER;
+	WM_ENTER;
 
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_START_STA, 0, NULL, 0};
 
@@ -215,7 +198,7 @@ wifi_utils_result_e wifi_utils_start_sta(void)
 
 wifi_utils_result_e wifi_utils_stop_softap(void)
 {
-	WU_ENTER;
+	WM_ENTER;
 
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_STOP_SOFTAP, 0, NULL, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
@@ -228,7 +211,7 @@ wifi_utils_result_e wifi_utils_stop_softap(void)
 
 wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
 {
-	WU_ENTER;
+	WM_ENTER;
 
 	uint8_t *chk = &check;
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_SET_AUTOCONNECT,

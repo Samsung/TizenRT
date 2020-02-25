@@ -3013,6 +3013,7 @@ static uint8_t slsi_start_supplicant(void)
 	if (SLSI_WIFI_API_DEBUG_SLEEP) {
 		slsi_demo_app_sleep(1, NULL);
 	}
+
 	g_task = task_create("WPA Supplicant", 100, 4096, wpa_supplicant_main, sup_argv);
 	sleep(1);
 

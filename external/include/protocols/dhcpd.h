@@ -101,7 +101,7 @@ typedef struct dhcp_node {
  * data is allocated where call it. so it is not allowed to access
  * data outside a callback function.
  */
-typedef void (*dhcp_sta_joined)(dhcp_evt_type_e type, void *data);
+typedef void (*dhcp_sta_joined_cb)(dhcp_evt_type_e type, void *data);
 
 /**
  * @brief Returns whether DHCP server is already running or not
@@ -120,7 +120,7 @@ int dhcp_server_status(char *intf);
  * @return On success, 0. On failure, returns -1
  * @since TizenRT v2.0
 */
-int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb);
+int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb);
 
 /**
  * @brief Stops DHCP server which is attached given network interface.

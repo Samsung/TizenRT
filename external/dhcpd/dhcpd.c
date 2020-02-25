@@ -321,7 +321,7 @@ static char DHCPD_IFNAME[IFNAMSIZ] = { 0, };
 static struct timeval g_select_timeout = { 1, 0 };
 #endif
 
-static dhcp_sta_joined g_dhcp_sta_joined = NULL;
+static dhcp_sta_joined_cb g_dhcp_sta_joined = NULL;
 static pthread_mutex_t g_dhcpd_lock = PTHREAD_MUTEX_INITIALIZER; // protect a write operation in g_dhcpd_running
 
 /****************************************************************************
@@ -1656,7 +1656,7 @@ exit_with_error:
 #define DHCPD_SCHED_PRI			100
 #define DHCPD_SCHED_POLICY		SCHED_RR
 
-static int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
+static int dhcpd_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 {
 	pthread_mutex_lock(&g_dhcpd_lock);
 	if (g_dhcpd_running == 1) {
@@ -1745,7 +1745,7 @@ int dhcp_server_status(char *intf)
  * Name: dhcps_server_start
  ****************************************************************************/
 
-int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
+int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 {
 	if (dhcpd_start(intf, dhcp_join_cb) >= 0) {
 		ndbg("[DHCPS] started successfully (External app)\n");
