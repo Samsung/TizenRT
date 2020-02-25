@@ -207,6 +207,15 @@ void binary_manager_exclude_rtthreads(struct tcb_s *tcb)
 	prev = tcb->bin_blink;
 	next = tcb->bin_flink;
 
+	if (tcb->sched_priority > BM_PRIORITY_MAX) {
+		if (tcb->waitdog) {
+			(void)wd_delete(tcb->waitdog);
+			tcb->waitdog = NULL;
+		}
+		/* Remove the TCB from the task list associated with the state */
+		BM_EXCLUDE_SCHEDULING(tcb);
+	}
+
 	while (prev) {
 		if (prev->sched_priority > BM_PRIORITY_MAX) {
 			/* Recover semaphores, message queue, and watchdog timer resources.*/
