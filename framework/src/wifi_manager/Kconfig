@@ -8,6 +8,7 @@ config WIFI_MANAGER
     default n
 	select DRIVERS_WIRELESS
 	select NETUTILS_NETLIB
+	select PIPES
     ---help---
         Easy APIs for applications to use and control Wi-Fi features
 
@@ -61,12 +62,20 @@ if SLSI_WPA_SUPPLICANT
 source "$EXTERNALDIR/wpa_supplicant/Kconfig"
 endif #SLSI_WPA_SUPPLICANT
 
+config WIFI_MANAGER_SAVE_CONFIG
+	bool "Store the Wi-Fi Profile to permanant storage"
+	default n
 
-
+if WIFI_MANAGER_SAVE_CONFIG
 config WIFI_PROFILE_SECURESTORAGE
 	bool "Store the Wi-Fi Profile in a Secure Storage"
 	depends on SECURITY_SS
 	default n
+	---help---
+		if this options is disable then Wi-Fi manager stores information
+		to file system which doesn't support encryption
+
+endif # WIFI_MANAGER_SAVE_CONFIG
 
 config WIFIMGR_SOFTAP_IFNAME
 	string "Interface name of softap mode"

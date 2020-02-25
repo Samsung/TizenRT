@@ -23,8 +23,8 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/wifi/wifi_utils.h>
-#include "wifi_event_listener.h"
-
+#include "wifi_manager_lwnl_listener.h"
+#include "wifi_manager_log.h"
 
 static wifi_utils_cb_s g_cbk = {NULL, NULL, NULL, NULL, NULL};
 static sem_t g_lwnl_signal;
@@ -37,7 +37,7 @@ static void _close_cb_handler(void)
 
 static int _wifi_utils_convert_scan(wifi_utils_scan_list_s **scan_list, void *input, int len)
 {
-	nvdbg("[WU] T%d %s len(%d)\n", getpid(), __FUNCTION__, len);
+	WM_LOG_VERBOSE("[WU] T%d %s len(%d)\n", getpid(), __FUNCTION__, len);
 	int remain = len;
 	wifi_utils_scan_list_s *prev = NULL;
 
@@ -74,7 +74,7 @@ static wifi_utils_scan_list_s *_handle_scan(int fd, int len)
 
 	int res = read(fd, buf, len);
 	if (res != len) {
-		ndbg("read error\n");
+		WM_LOG_ERROR("read error\n");
 		free(buf);
 		return NULL;
 	}
@@ -135,8 +135,8 @@ static int _wifi_utils_call_event(int fd, lwnl_cb_status status, int len)
 		break;
 	}
 	default:
-		ndbg("Bad status received (%d)\n", status);
-		LWNL_ERR;
+		WM_LOG_ERROR("Bad status received (%d)\n", status);
+		WM_ERR;
 		return -1;
 	}
 	return 0;
@@ -150,15 +150,15 @@ static int _wifi_utils_fetch_event(int fd)
 	int nbytes = read(fd, (char *)type_buf, 8);
 
 	if (nbytes < 0) {
-		ndbg("Failed to receive (nbytes=%d)\n", nbytes);
-		LWNL_ERR;
+		WM_LOG_ERROR("Failed to receive (nbytes=%d)\n", nbytes);
+		WM_ERR;
 		return -1;
 	}
 
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	ndbg("%d %d\n", status, len);
+	WM_LOG_VERBOSE("%d %d\n", status, len);
 	(void)_wifi_utils_call_event(fd, status, len);
 
 	return 0;
@@ -166,19 +166,19 @@ static int _wifi_utils_fetch_event(int fd)
 
 static int _wifi_utils_callback_handler(int argc, char *argv[])
 {
-	LWNL_ENTER;
-	ndbg("run utils callback handler (should be moved to booting)\n");
+	WM_ENTER;
+	WM_LOG_VERBOSE("run utils callback handler (should be moved to booting)\n");
 	fd_set rfds, ofds;
 
 	int nd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (nd < 0) {
-		LWNL_ERR;
+		WM_ERR;
 		return -1;
 	}
 
 	int sd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sd < 0) {
-		LWNL_ERR;
+		WM_ERR;
 		close(nd);
 		return -1;
 	}
@@ -190,7 +190,7 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 
 	int res = bind(sd, (struct sockaddr *)&saddr, sizeof(struct sockaddr));
 	if (res < 0) {
-		LWNL_ERR;
+		WM_ERR;
 		close(nd);
 		close(sd);
 		return -1;
@@ -209,12 +209,12 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 		rfds = ofds;
 		res = select(maxfd, &rfds, NULL, NULL, NULL);
 		if (res < 0) {
-			LWNL_ERR;
+			WM_ERR;
 			break;
 		}
 
 		if (res == 0) {
-			LWNL_ERR;
+			WM_ERR;
 			break;
 		}
 
@@ -222,17 +222,17 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 			// get events from netlink driver
 			res = _wifi_utils_fetch_event(nd);
 			if (res < 0) {
-				ndbg("message currupted\n");
+				WM_LOG_ERROR("message currupted\n");
 				break;
 			}
 		} else if (FD_ISSET(sd, &rfds)) {
 			// get terminate event from application
-			nvdbg("get terminate message\n");
+			WM_LOG_VERBOSE("get terminate message\n");
 			sem_post(&g_lwnl_signal);
 			break;
 		} else {
 			// unknown error
-			LWNL_ERR;
+			WM_ERR;
 			break;
 		}
 	}
@@ -249,7 +249,7 @@ void lwnl_start_monitor(void)
 {
 	int tid = task_create("lwnl8021 cb handler", 110, 4096, (main_t)_wifi_utils_callback_handler, NULL);
 	if (tid < 0) {
-		LWNL_ERR;
+		WM_ERR;
 	}
 }
 

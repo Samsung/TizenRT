@@ -24,6 +24,23 @@
 #include <arpa/inet.h>
 #include <wifi_manager/wifi_manager.h>
 
+#define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)         \
+	do {                                                        \
+		int res = -1;                                           \
+		res = netlib_set_ipv4addr(intf, &ip);                   \
+		if (res == -1) {                                        \
+			WM_LOG_ERROR("[WM] set ipv4 addr error\n");                \
+		}                                                       \
+		res = netlib_set_ipv4netmask(intf, &netmask);           \
+		if (res == -1) {                                        \
+			WM_LOG_ERROR("[WM] set netmask addr error\n");             \
+		}                                                       \
+		res = netlib_set_dripv4addr(intf, &gateway);            \
+		if (res == -1) {                                        \
+			WM_LOG_ERROR("[WM] set route addr error\n");               \
+		}                                                       \
+	} while (0)
+
 /**
  * Enum, definitions and variables
  */
@@ -36,19 +53,18 @@ typedef enum {
 #define WIFIMGR_IP4_ZERO 0
 #define WIFIMGR_MAC_ZERO {0, 0, 0, 0, 0, 0}
 
-typedef void (*dhcp_sta_joined)(dhcp_evt_type_e type, void *data);
+/*  dhcp server */
+typedef void (*dhcp_sta_joined_cb)(dhcp_evt_type_e type, void *data);
 
-/**
- * Internal APIs
- */
 void dhcps_inc_num(void);
 void dhcps_dec_num(void);
 void dhcps_reset_num(void);
 uint8_t dhcps_get_num(void);
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined cb);
+wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined_cb cb);
 wifi_manager_result_e wm_dhcps_stop(void);
+
 /* TODO: Currently, wifi manager stores only a single mac address of the associated node
  * while it is running as a softap mode. This might be modified later,
  * when a chipset needs to support multiple connections simultaneously.

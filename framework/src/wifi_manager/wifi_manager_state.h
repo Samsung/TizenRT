@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,26 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#include <tinyara/config.h>
-#include <tinyara/lwnl/lwnl_event_listener.h>
-#include <tinyara/wifi/wifi_utils.h>
-#include "wifi_event_listener.h"
 
-int lwnl_start_listener(void)
-{
-	lwnl_start_monitor();
+#ifndef _WIFI_MANAGER_STATE_H__
+#define _WIFI_MANAGER_STATE_H__
 
-	return 0;
-}
+/*  State Definition */
+enum _wifimgr_state {
+	WIFIMGR_UNINITIALIZED,
+	WIFIMGR_STA_DISCONNECTED,
+	WIFIMGR_STA_DISCONNECTING,
+	WIFIMGR_STA_CONNECTING,
+	WIFIMGR_STA_CONNECTED,
+	WIFIMGR_STA_RECONNECT, // 5
+	WIFIMGR_STA_RECONNECTING,
+	WIFIMGR_STA_CONNECT_CANCEL,
+	WIFIMGR_SOFTAP,
+	WIFIMGR_SCANNING,
+	WIFIMGR_NONE, // it is used for prev state only
+	WIFIMGR_STATE_MAX,
+};
+typedef enum _wifimgr_state wifimgr_state_e;
+
+
+#endif // _WIFI_MANAGER_STATE_H__

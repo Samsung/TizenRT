@@ -121,7 +121,7 @@ int netdev_dhcp_server_status(char *intf)
 /****************************************************************************
  * Name: dhcps_server_start
  ****************************************************************************/
-int netdev_dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
+int netdev_dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 {
 	struct netif *cur_netif;
 	cur_netif = netif_find(intf);

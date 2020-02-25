@@ -92,7 +92,7 @@ static int g_dhcpd_term = 0;
 
 struct dhcp_join_data {
 	char *intf;
-	dhcp_sta_joined fn;
+	dhcp_sta_joined_cb fn;
 };
 typedef struct dhcp_join_data dhcp_join_data_s;
 
@@ -212,7 +212,7 @@ int dhcp_server_status(char *intf)
  ****************************************************************************/
 
 
-int dhcp_server_start(char *intf, dhcp_sta_joined dhcp_join_cb)
+int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 {
 	pthread_attr_t attr;
 	struct sched_param sparam;

@@ -182,7 +182,7 @@ extern void dhcp_set_ntp_servers(u8_t num_ntp_servers, const ip4_addr_t *ntp_ser
 #define netif_dhcp_data(netif) ((struct dhcp*)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP))
 
 /* Register user callback for IP assign */
-err_t dhcps_register_cb(dhcp_sta_joined dhcp_join_cb);
+err_t dhcps_register_cb(dhcp_sta_joined_cb dhcp_join_cb);
 
 /**
  * @brief Starts DHCP server of network interface.

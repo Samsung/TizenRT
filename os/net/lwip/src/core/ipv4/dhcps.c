@@ -158,7 +158,7 @@ static struct list_node *plist;
 static bool renew;
 static const _uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };	//0x63825363; // 99.130.83.99
 
-static dhcp_sta_joined g_dhcp_sta_joined = NULL;
+static dhcp_sta_joined_cb g_dhcp_sta_joined = NULL;
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -791,7 +791,7 @@ static void kill_oldest_dhcps_pool(void)
  * @return err_t
  * @section
  * **/
-err_t dhcps_register_cb(dhcp_sta_joined dhcp_join_cb)
+err_t dhcps_register_cb(dhcp_sta_joined_cb dhcp_join_cb)
 {
 	g_dhcp_sta_joined = NULL;
 	if (dhcp_join_cb) {
