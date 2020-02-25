@@ -462,7 +462,6 @@ static void recovery_user_assert(uint32_t assert_pc)
 
 	tcb = this_task();
 	if (tcb != NULL && tcb->group != NULL) {
-		tcb->sched_priority = SCHED_PRIORITY_MIN;
 		tcb->lockcount = 0;
 		binid = tcb->group->tg_binid;
 		bin_idx = binary_manager_get_index_with_binid(binid);
@@ -485,7 +484,11 @@ static void recovery_user_assert(uint32_t assert_pc)
 		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
 			msg->binid = binid;
 			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
-			up_unblock_task(g_faultmsg_sender);
+
+			/* Unblock fault message sender */
+			if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
+				up_unblock_task(g_faultmsg_sender);
+			}
 			return;
 		}
 	}
