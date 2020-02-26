@@ -65,7 +65,11 @@ else
 ifeq ($(CONFIG_ARCH_CORTEXR4),y)   # Cortex-R4 is ARMv7-R
 ARCH_SUBDIR = armv7-r
 else
+ifeq ($(CONFIG_ARCH_CORTEXM33),y)   # Cortex-M33 is ARMv8-M
+ARCH_SUBDIR = armv8-m
+else
 ARCH_SUBDIR = arm
+endif
 endif
 endif
 endif
@@ -243,5 +247,6 @@ ifeq ($(BOARDMAKE),y)
 endif
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
+	$(call DELFILE, $(COBJS))
 
 -include Make.dep

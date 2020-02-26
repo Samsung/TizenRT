@@ -68,6 +68,16 @@ config ARCH_CHIP_STM32L4
 	select ARCH_HAVE_HEAPCHECK if DEBUG
 	---help---
 		STMicro STM32 architectures (ARM Cortex-M3/4).
+
+config ARCH_CHIP_AMEBAD
+	bool "Realtek AMEBAD"
+	select ARCH_HAVE_CMNVECTOR
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_HEAPCHECK if DEBUG
+	---help---
+		Realtek AMEBAD architectures (ARM Cortex-M23/33).
+
 endchoice
 
 config ARCH_CHIP
@@ -78,6 +88,7 @@ config ARCH_CHIP
 	default "stm32"		if ARCH_CHIP_STM32
 	default "imxrt"		if ARCH_CHIP_IMXRT
 	default "stm32l4"	if ARCH_CHIP_STM32L4
+	default "amebad"	if ARCH_CHIP_AMEBAD
 
 comment "ARM Options"
 
@@ -110,6 +121,13 @@ config ARCH_CORTEXM7
 	select ARCH_HAVE_MEMFAULT_DEBUG
 	select ARCH_HAVE_NESTED_INTERRUPT
 
+config ARCH_CORTEXM33
+	bool
+	default n
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_RAMVECTORS
+	select ARCH_HAVE_HIPRI_INTERRUPT
+	
 config ARCH_CORTEXR4
 	bool
 	default n
@@ -121,6 +139,7 @@ config ARCH_FAMILY
 	string
 	default "armv7-m"	if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
 	default "armv7-r"	if ARCH_CORTEXR4
+	default "cmsis"	if ARCH_CORTEXM33
 
 config ARCH_HAVE_CMNVECTOR
 	bool
@@ -207,7 +226,7 @@ config ARCH_ROMPGTABLE
 config DEBUG_HARDFAULT
 	bool "Verbose Hard-Fault Debug"
 	default n
-	depends on DEBUG && (ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7)
+	depends on DEBUG && (ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7 || ARCH_CORTEXM33)
 	---help---
 		Enables verbose debug output when a hard fault is occurs.  This verbose
 		output is sometimes helpful when debugging difficult hard fault problems,
@@ -233,6 +252,9 @@ config ARCH_DABORTSTACK
 if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
 source arch/arm/src/armv7-m/Kconfig
 endif
+if ARCH_CORTEXM33
+source arch/arm/src/cmsis/Kconfig
+endif
 if ARCH_CORTEXR4
 source arch/arm/src/armv7-r/Kconfig
 endif
@@ -253,5 +275,8 @@ source arch/arm/src/imxrt/Kconfig
 endif
 if ARCH_CHIP_STM32L4
 source arch/arm/src/stm32l4/Kconfig
+endif
+if ARCH_CHIP_AMEBAD
+source arch/arm/src/amebad/Kconfig
 endif
 endif

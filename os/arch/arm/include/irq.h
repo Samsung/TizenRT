@@ -77,6 +77,8 @@
 #include <arch/armv7-m/irq.h>
 #elif defined(CONFIG_ARCH_CORTEXR4)
 #include <arch/armv7-r/irq.h>
+#elif defined(CONFIG_ARCH_CORTEXM33)
+#include <arch/armv8-m/irq.h>
 #else
 #include <arch/arm/irq.h>
 #endif
