@@ -94,4 +94,8 @@ int utils_ttrace(int argc, char **args);
 int utils_uptime(int argc, char **args);
 #endif
 
+#if defined(CONFIG_PM_METRICS)
+int utils_pminfo(int argc, char **args);
+#endif
+
 #endif							/* __APPS_INCLUDE_SYSTEM_UTILS_H */

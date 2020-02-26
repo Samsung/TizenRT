@@ -62,6 +62,10 @@ endif
 ifeq ($(CONFIG_CM),y)
 CSRCS += fs_procfscm.c
 endif
+ifeq ($(CONFIG_PM_METRICS),y)
+CSRCS += fs_procfspminfo.c
+CFLAGS+=-I$(TOPDIR)/pm
+endif
 
 ifeq ($(CONFIG_ARCH_BOARD_SIDK_S5JT200),y)
 CFLAGS+=-I$(TOPDIR)/../apps/include/netutils/wifi

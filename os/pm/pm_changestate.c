@@ -59,6 +59,7 @@
 #include <assert.h>
 #include <time.h>
 #include <debug.h>
+#include <errno.h>
 #include <tinyara/pm/pm.h>
 #include <tinyara/irq.h>
 
@@ -296,7 +297,11 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 	pm_changeall(domain_indx, newstate);
 	if (newstate != PM_RESTORE) {
 		g_pmglobals.domain[domain_indx].state = newstate;
-
+#ifdef CONFIG_PM_METRICS
+		if (pm_addhistory(domain_indx, newstate) == ENOMEM) {
+			pmdbg("pm_alloc failed..\n");
+		}
+#endif
 		/* Start PM timer to decrease PM state */
 
 		pm_timer(domain_indx);

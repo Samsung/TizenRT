@@ -42,6 +42,11 @@ config PM_METRICS_DURATION
 	int "History Duration (secs)"
 	default 60
 
+config PM_HISTORY_COUNT
+	int "History Count"
+	default 5
+	---help---
+		 Defines the number of "history" that record state change information.
 
 endif
 

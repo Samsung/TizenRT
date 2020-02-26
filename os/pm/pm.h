@@ -158,6 +158,9 @@ struct pm_domain_s {
 	/* History of state changes */
 #ifdef CONFIG_PM_METRICS
 	sq_queue_t history;
+	uint8_t history_cnt;
+	sq_queue_t each_accum;
+	uint16_t state_stay[PM_COUNT];
 #endif
 	/* stime - The time (in ticks) at the start of the current time slice */
 

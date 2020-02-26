@@ -70,6 +70,11 @@ config FS_PROCFS_EXCLUDE_POWER
 	depends on PM
 	default n
 
+config FS_PROCFS_EXCLUDE_PMINFO
+	bool "Exclude pminfo"
+	depends on PM_METRICS
+	default n
+
 config FS_PROCFS_EXCLUDE_EREPORT
 	bool "Exclude error report"
 	depends on ERROR_REPORT

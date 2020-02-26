@@ -56,10 +56,12 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <string.h>
 #include <semaphore.h>
 #include <debug.h>
-#include <tinyara/pm/pm.h>
+#include <errno.h>
 #include <time.h>
+#include <tinyara/pm/pm.h>
 #include "pm_test.h"
 #include "pm.h"
 #include "pm_metrics.h"
@@ -106,35 +108,26 @@ void pm_initialize(void)
 {
 	FAR struct pm_domain_s *pdom;
 	int i;
+	int j;
 
 	for (i = 0; i < CONFIG_PM_NDOMAINS; i++) {
 		pdom = &g_pmglobals.domain[i];
 		pdom->stime = clock_systimer();
 		pdom->btime = clock_systimer();
 
-
 #ifdef CONFIG_PM_METRICS
-		struct timespec cur_time;
-
-		/* Get current time */
-		clock_gettime(CLOCK_REALTIME, &cur_time);
-
-		struct pm_statechange_s *initnode = NULL;
-
 		/* Initialize the domain's state history queue */
-
-		sq_init(&g_pmglobals.domain->history);
-
-		/* Create an initial state change node with NORMAL state and bootup time */
-
-		initnode = (struct pm_statechange_s *)pm_alloc(1, sizeof(struct pm_statechange_s));
-
-		initnode->state = PM_NORMAL;
-		initnode->timestamp = cur_time.tv_sec;
+		sq_init(&pdom->history);
+		sq_init(&pdom->each_accum);
+		pdom->history_cnt = 0;
+		for (j = 0; j < PM_COUNT; j++) {
+			pdom->state_stay[j] = 0;
+		}
 
 		/* Add the initial state change node to the head of the history queue */
-
-		sq_addlast((&initnode->entry), &g_pmglobals.domain->history);
+		if (pm_addhistory(i, PM_NORMAL) == ENOMEM) {
+			pmdbg("pm_alloc failed..\n");
+		}
 #endif
 	}
 	pmtest_init();
