@@ -153,6 +153,10 @@ ifeq ($(CONFIG_ENABLE_UPTIME),y)
 CSRCS += utils_uptime.c
 endif
 
+ifeq ($(CONFIG_ENABLE_TZSELECT),y)
+CSRCS += utils_tzselect.c
+endif
+
 ifeq ($(CONFIG_ENABLE_CPULOAD),y)
 CSRCS += utils_proc.c
 else ifeq ($(CONFIG_ENABLE_PS),y)
