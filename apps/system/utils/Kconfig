@@ -138,6 +138,13 @@ config HEAPINFO_USER_GROUP_LIST
 endif
 endif
 
+config ENABLE_TZSELECT
+	bool "tzselect"
+	default n
+	depends on LIBC_LOCALTIME
+	---help---
+		Shows the timzeon that can be set. And select timezone.
+
 config ENABLE_IRQINFO
 	bool "irqinfo"
 	default n
