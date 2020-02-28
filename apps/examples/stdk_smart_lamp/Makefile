@@ -72,7 +72,7 @@ CFLAGS+=-I$(STDK_SRC_DIR)/include/
 CFLAGS+=-I$(STDK_SRC_DIR)/include/bsp
 CFLAGS+=-I$(STDK_SRC_DIR)/include/os
 CFLAGS+=-I$(STDK_SRC_DIR)/include/mqtt
-CFLAGS+=-I$(STDK_DIR)/tizenrt-wrapper/os
+CFLAGS+=-I$(STDK_SRC_DIR)/port/os/tizenrt
 
 ASRCS =
 CSRCS =

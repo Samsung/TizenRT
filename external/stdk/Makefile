@@ -55,7 +55,7 @@ CFLAGS += -I$(TOPDIR)/arch/xtensa/src/esp32
 CFLAGS += -I$(TOPDIR)/arch/xtensa/include/esp32
 CFLAGS += -I$(TOPDIR)/arch/xtensa/src/esp32/chip
 else
-CFLAGS += -I./tizenrt-wrapper/os
+CFLAGS += -I$(STDK_SRC_DIR)/port/os/tizenrt
 endif
 
 #################################################
@@ -88,14 +88,13 @@ endif
 #################################################
 CSRCS	+= $(wildcard $(STDK_SRC_DIR)/mqtt/client/*.c)
 CSRCS	+= $(wildcard $(STDK_SRC_DIR)/mqtt/packet/*.c)
-CSRCS	+= $(wildcard ./tizenrt-wrapper/bsp/*.c)
+CSRCS	+= $(wildcard $(STDK_SRC_DIR)/port/bsp/tizenrt/*.c)
 
-CSRCS	+= ./tizenrt-wrapper/os/iot_os_util_tizenrt.c
+CSRCS	+= $(STDK_SRC_DIR)/port/os/tizenrt/iot_os_util_tizenrt.c
 ifneq ($(CONFIG_ARCH_BOARD_ESP32_FAMILY),y)
-CSRCS	+= ./tizenrt-wrapper/os/event_groups.c
-CSRCS	+= ./tizenrt-wrapper/os/queue_api.c
+CSRCS	+= $(STDK_SRC_DIR)/port/os/tizenrt/event_groups.c
+CSRCS	+= $(STDK_SRC_DIR)/port/os/tizenrt/queue_api.c
 endif
-
 
 VPATH += :st-device-sdk-c/src/
 
@@ -149,4 +148,3 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
-
