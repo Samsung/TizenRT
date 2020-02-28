@@ -249,7 +249,7 @@ db_cursor_t *db_query(char *format)
 	cursor = NULL;
 
 	if (DB_ERROR(aql_get_parse_result(format, &adt))) {
-		DB_LOG_E("DB : Parsing Error in db_create : %d\n");
+		DB_LOG_E("DB : Parsing Error in db_create\n");
 		return NULL;
 	}
 	optype = AQL_GET_OP_TYPE(AQL_GET_TYPE(&adt));
