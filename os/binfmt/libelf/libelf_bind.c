@@ -140,24 +140,11 @@ static inline int elf_readrel(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf
 		return -EINVAL;
 	}
 
-	if (loadinfo->reltab) {
-		/* Get the file offset to the symbol table entry */
+	/* Get the file offset to the symbol table entry */
+	offset = relsec->sh_offset + sizeof(Elf32_Rel) * index;
 
-		offset = sizeof(Elf32_Rel) * index;
-
-		/* And, finally, read the symbol table entry into memory */
-
-		memcpy(rel, loadinfo->reltab + offset, sizeof(Elf32_Rel));
-		return OK;
-	} else {
-		/* Get the file offset to the symbol table entry */
-
-		offset = relsec->sh_offset + sizeof(Elf32_Rel) * index;
-
-		/* And, finally, read the symbol table entry into memory */
-
-		return elf_read(loadinfo, (FAR uint8_t *)rel, sizeof(Elf32_Rel), offset);
-	}
+	/* And, finally, read the symbol table entry into memory */
+	return elf_read(loadinfo, (FAR uint8_t *)rel, sizeof(Elf32_Rel), offset);
 }
 
 /****************************************************************************
@@ -179,6 +166,7 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 	Elf32_Rel rel;
 	Elf32_Sym sym;
 	FAR Elf32_Sym *psym;
+	Elf32_Rel *prel;
 	uintptr_t addr;
 	int symidx;
 	int ret = OK;
@@ -194,32 +182,51 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 
 	for (i = 0; i < relsec->sh_size / sizeof(Elf32_Rel); i++) {
 		psym = &sym;
+		prel = &rel;
+
 
 		/* Read the relocation entry into memory */
-
-		ret = elf_readrel(loadinfo, relsec, i, &rel);
-		if (ret < 0) {
-			berr("Section %d reloc %d: Failed to read relocation entry: %d\n", relidx, i, ret);
-			goto ret_err;
+		if (loadinfo->reltab) {
+			/* Verify that the relocation table index lies within relocation table */
+			if (i < 0 || i > (relsec->sh_size / sizeof(Elf32_Rel))) {
+				berr("Bad relocation symbol index: %d\n", i);
+				ret = -EINVAL;
+				goto ret_err;
+			}
+			prel = loadinfo->reltab + sizeof(Elf32_Rel) * i;
+		} else {
+			ret = elf_readrel(loadinfo, relsec, i, &rel);
+			if (ret < 0) {
+				berr("Section %d reloc %d: Failed to read relocation entry: %d\n", relidx, i, ret);
+				goto ret_err;
+			}
 		}
 
 		/* Get the symbol table index for the relocation.  This is contained
 		 * in a bit-field within the r_info element.
 		 */
 
-		symidx = ELF32_R_SYM(rel.r_info);
+		symidx = ELF32_R_SYM(prel->r_info);
 
 		/* Read the symbol table entry into memory */
-
-		ret = elf_readsym(loadinfo, symidx, &sym);
-		if (ret < 0) {
-			berr("Section %d reloc %d: Failed to read symbol[%d]: %d\n", relidx, i, symidx, ret);
-			goto ret_err;
+		if (loadinfo->symtab) {
+			/* Verify that the symbol table index lies within symbol table */
+			if (symidx < 0 || symidx > (loadinfo->shdr[loadinfo->symtabidx].sh_size / sizeof(Elf32_Sym))) {
+				berr("Bad relocation symbol index: %d\n", symidx);
+				ret = -EINVAL;
+				goto ret_err;
+			}
+			psym = loadinfo->symtab + sizeof(Elf32_Sym) * symidx;
+		} else {
+			ret = elf_readsym(loadinfo, symidx, &sym);
+			if (ret < 0) {
+				berr("Section %d reloc %d: Failed to read symbol[%d]: %d\n", relidx, i, symidx, ret);
+				goto ret_err;
+			}
 		}
-
 		/* Get the value of the symbol (in sym.st_value) */
 
-		ret = elf_symvalue(loadinfo, &sym, exports, nexports);
+		ret = elf_symvalue(loadinfo, psym, exports, nexports);
 		if (ret < 0) {
 			/* The special error -ESRCH is returned only in one condition:  The
 			 * symbol has no name.
@@ -242,16 +249,16 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 
 		/* Calculate the relocation address. */
 
-		if (rel.r_offset > dstsec->sh_size - sizeof(uint32_t)) {
-			berr("Section %d reloc %d: Relocation address out of range, offset %d size %d\n", relidx, i, rel.r_offset, dstsec->sh_size);
+		if (prel->r_offset > dstsec->sh_size - sizeof(uint32_t)) {
+			berr("Section %d reloc %d: Relocation address out of range, offset %d size %d\n", relidx, i, prel->r_offset, dstsec->sh_size);
 			goto ret_err;
 		}
 
-		addr = dstsec->sh_addr + rel.r_offset;
+		addr = dstsec->sh_addr + prel->r_offset;
 
 		/* Now perform the architecture-specific relocation */
 
-		ret = up_relocate(&rel, psym, addr);
+		ret = up_relocate(prel, psym, addr);
 		if (ret < 0) {
 			berr("ERROR: Section %d reloc %d: Relocation failed: %d\n", relidx, i, ret);
 			goto ret_err;
@@ -260,6 +267,7 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 
 ret_err:
 	kmm_free(loadinfo->reltab);
+	loadinfo->reltab = NULL;
 	return ret;
 }
 
@@ -392,5 +400,6 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 
 ret_err:
 	kmm_free(loadinfo->symtab);
+	loadinfo->symtab = NULL;
 	return ret;
 }
