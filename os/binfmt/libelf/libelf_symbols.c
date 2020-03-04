@@ -259,25 +259,11 @@ int elf_readsym(FAR struct elf_loadinfo_s *loadinfo, int index, FAR Elf32_Sym *s
 		return -EINVAL;
 	}
 
-	if (loadinfo->symtab) {
-		/* Get the file offset to the symbol table entry */
+	/* Get the file offset to the symbol table entry */
+	offset = symtab->sh_offset + sizeof(Elf32_Sym) * index;
 
-		offset = sizeof(Elf32_Sym) * index;
-
-		/* And, finally, read the symbol table entry into memory */
-
-		memcpy(sym, loadinfo->symtab + offset, sizeof(Elf32_Sym));
-		return OK;
-	} else {
-
-		/* Get the file offset to the symbol table entry */
-
-		offset = symtab->sh_offset + sizeof(Elf32_Sym) * index;
-
-		/* And, finally, read the symbol table entry into memory */
-
-		return elf_read(loadinfo, (FAR uint8_t *)sym, sizeof(Elf32_Sym), offset);
-	}
+	/* And, finally, read the symbol table entry into memory */
+	return elf_read(loadinfo, (FAR uint8_t *)sym, sizeof(Elf32_Sym), offset);
 }
 
 /****************************************************************************
@@ -356,6 +342,7 @@ int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR co
 		binfo("SHN_UNDEF: name=%s %08x+%08x=%08x\n", loadinfo->iobuffer, sym->st_value, symbol->sym_value, sym->st_value + symbol->sym_value);
 
 		sym->st_value += (Elf32_Word)((uintptr_t)symbol->sym_value);
+		sym->st_shndx = SHN_ABS;
 	}
 	break;
 
@@ -365,6 +352,7 @@ int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR co
 		binfo("Other: %08x+%08x=%08x\n", sym->st_value, secbase, sym->st_value + secbase);
 
 		sym->st_value += secbase;
+		sym->st_shndx = SHN_ABS;
 	}
 	break;
 	}
