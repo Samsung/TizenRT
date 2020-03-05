@@ -69,6 +69,7 @@ ifeq ($(CONFIG_STDK_IOT_CORE_NET_MBEDTLS),y)
 else
 	CSRCS += $(STDK_SRC_DIR)/port/net/openssl/iot_net_openssl.c
 	CFLAGS += -I$(STDK_SRC_DIR)/port/net/openssl
+	CFLAGS += -DCONFIG_STDK_IOT_CORE_OS_SUPPORT_TIZENRT
 endif
 
 CSRCS	+= $(wildcard $(STDK_SRC_DIR)/crypto/*.c)
