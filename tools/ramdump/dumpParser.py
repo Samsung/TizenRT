@@ -348,9 +348,9 @@ class dumpParser:
 	# Function to return the address of a Symbol from mapping table
 	def get_address_of_symbol(self, symbol, debug=False):
 		i = 0
-		while (self.symbol_lookup_table[i][1] != symbol and i <= len(self.symbol_lookup_table)):
+		while (i < len(self.symbol_lookup_table) and self.symbol_lookup_table[i][1] != symbol):
 			i = i+1
-		if (i > len(self.symbol_lookup_table)):
+		if (i >= len(self.symbol_lookup_table)):
 			return None
 		else:
 			if debug:
@@ -474,6 +474,9 @@ class dumpParser:
 		frame.pc = pc
 		self.stacksize = ss
 		self.find_stackframe_using_framepointer(frame)
+
+def getbit(target, bitmask, shift):
+	return (target >> shift) & bitmask
 
 def usage():
 	print('*************************************************************')
@@ -704,7 +707,7 @@ def main():
 		print('')
 		print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
 
-
+		config_info_cnt = rParser.read_byte(rParser.ram_end_addr)
 		g_mmheap = rParser.get_address_of_symbol("g_mmheap")
 
 		# Read config information
@@ -833,6 +836,151 @@ def main():
 				print('{:^7}|'.format(pid), '{:>7}'.format(stack_size[i]), '   |', '{:>13}'.format(cur_alloc), '    |', '{:>13}'.format(peak_alloc), '  |')
 			# next alloc list
 			alloc_list += SIZE_OF_HEAPINFO_TCB_INFO
+
+		# Power Management Parser
+		config_info_start = rParser.ram_end_addr + 1
+		pm_config_info = 0
+		for i in range(0, config_info_cnt):
+			config_info = rParser.read_word(config_info_start + (4 * i))
+			if (config_info & 0xf0000000) == 0:
+				pm_config_info = config_info
+				break
+
+		g_pmglobals = rParser.get_address_of_symbol("g_pmglobals")
+
+		CONFIG_PM_METRICS = getbit(pm_config_info, 0x0001, 0)
+		CONFIG_BINMGR_RECOVERY = getbit(pm_config_info, 0x0001, 1)
+		CONFIG_PRIORITY_INHERITANCE = getbit(pm_config_info, 0x0001, 2)
+		CONFIG_SEM_PREALLOCHOLDERS = getbit(pm_config_info, 0x001f, 3)
+		CONFIG_SYSTEM_TIME64 = getbit(pm_config_info, 0x0001, 8)
+		CONFIG_PM_NDOMAINS = getbit(pm_config_info, 0x000f, 9)
+		CONFIG_PM_MEMORY = getbit(pm_config_info, 0x0007, 13)
+
+		if CONFIG_PM_METRICS == 0:
+			raise Exception("PM_METRICS is not enable. Enable PM_METRICS to see power management information")
+
+		PM_STATUS = ("PM_NORMAL", "PM_IDLE", "PM_STANDBY", "PM_SLEEP")
+
+		# This informations depends on the g_pmglobals structure
+		MAX_SIZE_MEMBER = 4
+		QUOTIENT = 0
+
+		SIZE_OF_REGSEM = 0
+		if CONFIG_BINMGR_RECOVERY:
+			SIZE_OF_REGSEM += 4
+
+		SIZE_OF_REGSEM += 4
+		if CONFIG_PRIORITY_INHERITANCE or CONFIG_BINMGR_RECOVERY:
+			if CONFIG_SEM_PREALLOCHOLDERS:
+				SIZE_OF_REGSEM += 4
+			else:
+				SIZE_OF_REGSEM += 8
+
+		REGISTRY_POINT = SIZE_OF_REGSEM
+		SIZE_OF_REGISTRY = 8
+
+		if CONFIG_SYSTEM_TIME64:
+			MAX_SIZE_MEMBER = 8
+
+		DOMAIN_POINT = REGISTRY_POINT + SIZE_OF_REGISTRY
+
+		for i in range(0, CONFIG_PM_NDOMAINS):
+			if (DOMAIN_POINT % MAX_SIZE_MEMBER) != 0:
+				QUOTIENT = (int)(DOMAIN_POINT / MAX_SIZE_MEMBER) + 1
+				DOMAIN_POINT = QUOTIENT * MAX_SIZE_MEMBER
+
+			SIZE_OF_DOMAIN = 6
+
+			if CONFIG_PM_MEMORY > 1:
+				SIZE_OF_DOMAIN += (2 * (CONFIG_PM_MEMORY - 1))
+
+			MAX_SIZE_MEMBER = 4
+			if (SIZE_OF_DOMAIN % MAX_SIZE_MEMBER) != 0:
+				QUOTIENT = (int)(SIZE_OF_DOMAIN / MAX_SIZE_MEMBER) + 1
+				SIZE_OF_DOMAIN = QUOTIENT * MAX_SIZE_MEMBER
+
+			start_history = rParser.read_word(g_pmglobals + DOMAIN_POINT + SIZE_OF_DOMAIN)
+			end_history = rParser.read_word(g_pmglobals + DOMAIN_POINT + SIZE_OF_DOMAIN + 4)
+
+			STATE_STAY_POINT = g_pmglobals + DOMAIN_POINT + SIZE_OF_DOMAIN + 20
+			print('')
+			print('Domain number is', i)
+			print('***************************')
+			print('Stay time for each PM state')
+			print('***************************')
+			print('')
+
+			print('************************')
+			print('   State  |  Stay(sec) |')
+			print('----------|------------|')
+			for i in range(4):
+				STAY_TIME = rParser.read_halfword(STATE_STAY_POINT + (i * 2))
+				print('{:<10}| {:^11}|'.format(PM_STATUS[i], STAY_TIME))
+			SIZE_OF_DOMAIN += 28
+
+			accum_history = rParser.read_word(start_history + 4)
+			accum_cnt = 0
+			while accum_history != 0:
+				accum_history = rParser.read_word(accum_history)
+				accum_cnt += 1
+			print('')
+			print('')
+
+			print('*****************************************************************')
+			print('Activities of registered drivers and Wakeup reason of Sleep state')
+			print('*****************************************************************')
+			print('')
+
+			print('**********************************************', end='')
+			for i in range(0, accum_cnt):
+				print('***********************', end='')
+			print('')
+
+			print('   State  |  Stay(sec) |    Wakeup Reason    |', end='')
+			for i in range(0, accum_cnt):
+				print('  Drv_name  , activity|', end='')
+			print('')
+
+			print('----------|------------|---------------------|', end='')
+			for i in range(0, accum_cnt):
+				print('----------------------|', end='')
+			print('')
+
+			while start_history != end_history:
+				accum_history = rParser.read_word(start_history + 4)
+				state = rParser.read_word(start_history + 12)
+				wakeup_reason = rParser.read_address(start_history + 16, 32).decode().split('\0')[0]
+				timestamp = rParser.read_word(start_history + 48)
+
+				start_history = rParser.read_word(start_history)
+				next_timestamp = rParser.read_word(start_history + 48)
+				print('{:<10}|'.format(PM_STATUS[state]), '{:^11}|'.format(next_timestamp - timestamp), '{:^20}|'.format(wakeup_reason), end='')
+
+				while accum_history != 0:
+					accum = rParser.read_halfword(accum_history + 4)
+					name = rParser.read_address(accum_history + 6, 32).decode().split('\0')[0]
+					print('{:^12},'.format(name), '{:^8}|'.format(accum), end='')
+					accum_history = rParser.read_word(accum_history)
+				print('')
+
+			if end_history != 0:
+				Current_state = rParser.read_word(end_history + 12)
+				print('')
+				print('Current state is', PM_STATUS[Current_state])
+
+			if CONFIG_SYSTEM_TIME64:
+				MAX_SIZE_MEMBER = 8
+
+			if (SIZE_OF_DOMAIN % MAX_SIZE_MEMBER) != 0:
+				QUOTIENT = (int)(SIZE_OF_DOMAIN / MAX_SIZE_MEMBER) + 1
+				SIZE_OF_DOMAIN = QUOTIENT * MAX_SIZE_MEMBER
+			
+			if CONFIG_SYSTEM_TIME64:
+				SIZE_OF_DOMAIN += 28
+			else:
+				SIZE_OF_DOMAIN += 20
+
+			DOMAIN_POINT += SIZE_OF_DOMAIN # Set next domain position
 
 	except Exception as e:
 		print("ERROR:", e)
