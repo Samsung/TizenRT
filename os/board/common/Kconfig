@@ -46,8 +46,8 @@ config FLASH_PART_TYPE
 
 config FLASH_PART_NAME
 	string "Flash partition name list"
-	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw," if !BUILD_PROTECTED
-	default "bl1,sssro,bl2,sssfw,wlanfw,os,apps,factory,ota,user,nvram,sssrw," if BUILD_PROTECTED
+	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,userfs,nvram,sssrw," if !BUILD_PROTECTED
+	default "bl1,sssro,bl2,sssfw,wlanfw,os,apps,factory,ota,userfs,nvram,sssrw," if BUILD_PROTECTED
 	depends on MTD_PARTITION_NAMES
 	---help---
 		Comma separated list of partition names.

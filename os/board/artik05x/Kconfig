@@ -48,30 +48,30 @@ config ARTIK05X_AUTOMOUNT
 		If enabled, mount userrw and sssrw partitions at boot.
 
 config ARTIK05X_AUTOMOUNT_USERFS
-	bool "Automount user r/w partiton"
+	bool "Automount userfs r/w partiton"
 	default n
 	depends on ARTIK05X_AUTOMOUNT
 	depends on FS_SMARTFS
 	---help---
-		If enabled, user r/w partition will be mounted automatically
+		If enabled, userfs r/w partition will be mounted automatically
 		at boot.
 
 config ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
-	string "Device name of the partition for user r/w file system"
+	string "Device name of the partition for userfs r/w file system"
 	default "/dev/smart0p8"
 	depends on ARTIK05X_AUTOMOUNT_USERFS
 	---help---
 		Specifies the device name (/dev/smart0pX) of the partition
-		for user r/w file system.
+		for userfs r/w file system.
 		when SMARTFS_MULTI_ROOT_DIRS is enabled the device name
 		will be appended by "d1" (/dev/smart0pxd1).
 
 config ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT
-	string "Mountpoint of the partition for user r/w file system"
+	string "Mountpoint of the partition for userfs r/w file system"
 	default "/mnt"
 	depends on ARTIK05X_AUTOMOUNT_USERFS
 	---help---
-		Specifies the mount point where user r/w file system
+		Specifies the mount point where userfs r/w file system
 		will be mounted at.
 
 config ARTIK05X_AUTOMOUNT_SSSRW

@@ -17,7 +17,7 @@ Note that the values for FLASH_PART_SIZE, FLASH_PART_TYPE and FLASH_PART_NAME mu
 
 FLASH_PART_SIZE "16,48,192,32,512,2400,1536,1536,1400,8,512,"  
 FLASH_PART_TYPE "none,none,none,none,none,none,none,none,smartfs,config,none,"  
-FLASH_PART_NAME "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw,"  
+FLASH_PART_NAME "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,userfs,nvram,sssrw,"
 
 name    | type    | size
 ------- | ------- | --------
@@ -28,7 +28,7 @@ sssfw   | none    | 512
 wlanfw  | none    | 2400
 os      | none    | 1536
 factory | none    | 1536
-user    | smartfs | 1400
+userfs  | smartfs | 1400
 nvram   | config  | 8
 sssrw   | none    | 512
 
@@ -67,9 +67,9 @@ You can find and modify it using menuconfig as shown below:
 Here is an example to show how to set romfs partition on ARTIK05x.  
   
 1. Modify partition configs and enable the automount config through *menuconfig*  
-    Below steps creates ROMFS partition with size 400KB at next of user partition. 
+    Below steps creates ROMFS partition with size 400KB at next of userfs partition.
 
-    1. Split user partition size from (1400) to (1000, 400) in FLASH_PART_SIZE
+    1. Split userfs partition size from (1400) to (1000, 400) in FLASH_PART_SIZE
 
         ```bash
         Hardware Configuration -> Board Selection -> change values at Flash partition size list (in KBytes)
@@ -81,7 +81,7 @@ Here is an example to show how to set romfs partition on ARTIK05x.
         Hardware Configuration -> Board Selection -> append string at Flash partition type list
         ```
 
-    3. Append "rom" at next of *user* to FLASH_PART_NAME
+    3. Append "rom" at next of *userfs* to FLASH_PART_NAME
 
         ```bash
         Hardware Configuration -> Board Selection -> append string at Flash partition name list
