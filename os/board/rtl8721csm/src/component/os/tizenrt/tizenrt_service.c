@@ -376,10 +376,10 @@ static int _tizenrt_deinit_xqueue(_xqueue *queue)
 	return 0;
 }
 
-static u64 _tizenrt_get_current_time(void)
+static u32 _tizenrt_get_current_time(void)
 {
 
-	return clock();
+	return (u32)clock();
 }
 
 static u32 _tizenrt_systime_to_ms(u32 sys_time)
@@ -631,10 +631,10 @@ static void _tizenrt_delete_task(struct task_struct *ptask)
 }
 
 
-u32 _tizenrt_wake_task(struct task_struct *task)
+void _tizenrt_wake_task(struct task_struct *task)
 {
 	sem_post(task->wakeup_sema);
-	return _SUCCESS;
+	return;
 }
 
 static void _tizenrt_thread_enter(char *name)
@@ -817,11 +817,11 @@ u32 _tizenrt_timerReset(_timerHandle xTimer,
 	return 0;
 }
 
-void _tizenrt_acquire_wakelock()
+void _tizenrt_acquire_wakelock(void)
 {
 }
 
-void _tizenrt_release_wakelock()
+void _tizenrt_release_wakelock(void)
 {
 }
 
@@ -834,16 +834,6 @@ u8 _tizenrt_get_scheduler_state(void)
 
 	return 0;
 }
-
-uint32_t * vTaskStackAddr(void)
-{
-}
-
-uint32_t vTaskStackSize(void)
-{
-}
-
-
 
 const struct osdep_service_ops osdep_service = {
 	_tizenrt_malloc,				  //rtw_vmalloc
@@ -988,3 +978,14 @@ void shell_switch_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 {
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 }
+
+uint32_t * vTaskStackAddr(void)
+{
+	return NULL;
+}
+
+uint32_t vTaskStackSize(void)
+{
+	return 0;
+}
+

@@ -24,10 +24,7 @@
 #include <wifi_manager/wifi_manager.h>
 #include "../include/debug.h"
 
-//RTK
-#define CONFIG_INIT_NET                 1
 /* WLAN CONFIG ---------------------------------------------------------------*/
-#define CONFIG_WLAN	1
 #define RTK_OK          0		/*!< RTK_err_t value indicating success (no error) */
 #define RTK_FAIL        -1		/*!< Generic RTK_err_t code indicating failure */
 
@@ -46,7 +43,7 @@
 #define RTK_ERR_WIFI_BASE       0x3000	/*!< Starting number of WiFi error codes */
 #define RTK_ERR_MESH_BASE       0x4000	/*!< Starting number of MESH error codes */
 
-#define vTaskDelay(t)   usleep(t)
+#define vTaskDelay(t)   usleep(t*1000)
 
 /* Private define ------------------------------------------------------------*/
 

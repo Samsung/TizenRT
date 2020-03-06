@@ -84,7 +84,7 @@
 #include "mbed/hal/serial_api.h"
 #include "mbed/targets/hal/rtl8721d/PinNames.h"
 #include "mbed/targets/hal/rtl8721d/objects.h"
-#include "../board/rtl8721csm/src/fwlib/include/rtl8721d_uart.h"
+#include "rtl8721d_uart.h"
 #include "tinyara/kmalloc.h"
 /****************************************************************************
  * Preprocessor Definitions

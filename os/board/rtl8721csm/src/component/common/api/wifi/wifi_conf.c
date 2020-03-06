@@ -1873,9 +1873,9 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*buf, int buflen, cha
 		{
 			int plen = 0;
 			while(plen < scan_buf.buf_len){
-				int len, rssi, ssid_len, i, security_mode;
+				int len, rssi, ssid_length, i, security_mode;
 				int wps_password_id;
-				char *mac, *ssid;
+				char *mac, *pssid;
 				//u8 *security_mode;
 				RTW_API_INFO("\n\r");
 				// len
@@ -1911,11 +1911,11 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*buf, int buflen, cha
 				
 				RTW_API_INFO("channel = %d,\t", *(scan_buf.buf + plen + 1 + 6 + 4 + 1 + 1));
 				// ssid
-				ssid_len = len - 1 - 6 - 4 - 1 - 1 - 1;
-				ssid = scan_buf.buf + plen + 1 + 6 + 4 + 1 + 1 + 1;
+				ssid_length = len - 1 - 6 - 4 - 1 - 1 - 1;
+				pssid = scan_buf.buf + plen + 1 + 6 + 4 + 1 + 1 + 1;
 				RTW_API_INFO("ssid = ");
-				for(i=0; i<ssid_len; i++)
-					RTW_API_INFO("%c", *(ssid+i));
+				for(i=0; i<ssid_length; i++)
+					RTW_API_INFO("%c", *(pssid+i));
 				plen += len;
 				add_cnt++;
 			}
@@ -2287,7 +2287,7 @@ int wifi_restart_ap(
 		return -1;
 	}
 
-#if (INCLUDE_uxTaskGetStackHighWaterMark == 1)
+#if defined(INCLUDE_uxTaskGetStackHighWaterMark) && (INCLUDE_uxTaskGetStackHighWaterMark == 1)
 	RTW_API_INFO("\r\nWebServer Thread: High Water Mark is %ld\n", uxTaskGetStackHighWaterMark(NULL));
 #endif
 #ifdef  CONFIG_CONCURRENT_MODE
@@ -2318,7 +2318,7 @@ int wifi_restart_ap(
 	osThreadId_t id = osThreadGetId();
 	RTW_API_INFO("\r\nWebServer Thread: High Water Mark is %ld\n", osThreadGetStackSpace(id));
 #else
-#if (INCLUDE_uxTaskGetStackHighWaterMark == 1)
+#if defined(INCLUDE_uxTaskGetStackHighWaterMark) && (INCLUDE_uxTaskGetStackHighWaterMark == 1)
 	RTW_API_INFO("\r\nWebServer Thread: High Water Mark is %ld\n", uxTaskGetStackHighWaterMark(NULL));
 #endif
 #endif

@@ -53,32 +53,68 @@
 -include $(TOPDIR)/Make.defs
 
 DEPPATH = --dep-path .
+VPATH = .
 ASRCS =
 
-ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
-BOARD_SRCDIR = $(TOPDIR)/board
+include Make.defs
+include component/soc/realtek/amebad/app/monitor/ram/Make.defs
+include component/soc/realtek/amebad/app/monitor/rom/Make.defs
+include component/soc/realtek/amebad/fwlib/crypto/Make.defs
+include component/soc/realtek/amebad/fwlib/ram_hp/Make.defs
+include component/soc/realtek/amebad/fwlib/ram_common/Make.defs
+include component/soc/realtek/amebad/fwlib/usrcfg/Make.defs
+ifeq ($(CONFIG_AMEBAD_WIFI),y)
+include component/common/api/wifi/Make.defs
+include component/common/api/wifi/rtw_wpa_supplicant/wpa_supplicant/Make.defs
+include component/common/api/Make.defs
+include component/common/api/network/src/Make.defs
+include component/common/network/dhcp/Make.defs 
+include component/os/os_dep/Make.defs
+include component/os/tizenrt/Make.defs
+include component/soc/realtek/amebad/misc/Make.defs
+endif
+include component/common/mbed/targets/hal/rtl8721d/Make.defs
+ifeq ($(CONFIG_USBD_AUDIO),y)
+include component/soc/realtek/amebad/fwlib/usb_otg/device/class/audio/src/Make.defs
+endif
+ifeq ($(CONFIG_USBD_CDC_ACM),y)
+include component/soc/realtek/amebad/fwlib/usb_otg/device/class/cdc_acm/src/Make.defs
+endif
+ifeq ($(CONFIG_USBD_MSC),y)
+include component/soc/realtek/amebad/fwlib/usb_otg/device/class/msc/src/Make.defs
+endif
 
-DIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/app/monitor
-PROJ_DIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD_va0_example
-COMPONENT_DIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component
-DIR_WIFI = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/common/api/wifi
-DIR_OSDEP = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os/os_dep
-DIR_OS = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os
+ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src/
+BOARD_SRCDIR = 	$(TOPDIR)/board
+DIR = 		$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/monitor
+PROJ_DIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD_va0_example
+COMPONENT_DIR =	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component
+DIR_WIFI = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/common/api/wifi
+DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os/os_dep
+DIR_OS = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os
+DIR_MBED = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/common/mbed/targets/hal/rtl8721d
+DIR_CRYPTO = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/fwlib/crypto
+DIR_FW = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/fwlib/ram_hp
+DIR_COM = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/fwlib/ram_common
+CFGDIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/fwlib/usrcfg
+DIR_OTG = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/fwlib/usb_otg/device
+
 CFLAGS += -I$(DIR)/../include
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/swlib/string/
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/app/monitor/include/
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/app/xmodem/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/hal/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/api/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/targets/hal/rtl8721d/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/hal/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/hal_ext/
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/swlib/string/
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/monitor/include/
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/xmodem/
 CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src
 CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/armv8-m
 CFLAGS += -I$(PROJ_DIR)/inc/inc_hp
+CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/cmsis/
+CFLAGS += -I$(COMPONENT_DIR)/common/mbed/hal/
+CFLAGS += -I$(COMPONENT_DIR)/common/mbed/hal_ext/
+CFLAGS += -I$(COMPONENT_DIR)/common/mbed/api/
+CFLAGS += -I$(COMPONENT_DIR)/common/mbed/targets/hal/rtl8721d/
 CFLAGS += -I$(COMPONENT_DIR)/common/api/platform
 CFLAGS += -I$(COMPONENT_DIR)/common/api
 CFLAGS += -I$(COMPONENT_DIR)/common/api/wifi
+CFLAGS += -I$(COMPONENT_DIR)/common/api/wifi/rtw_wpa_supplicant/wpa_supplicant
 CFLAGS += -I$(COMPONENT_DIR)/common/network
 CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/include
 CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/src/osdep
@@ -90,141 +126,31 @@ CFLAGS += -I$(TOPDIR)/net/lwip
 CFLAGS += -I$(TOPDIR)/net/lwip/src/include/
 CFLAGS += -I$(TOPDIR)/net/lwip/src/include/lwip
 CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/src
+CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/wpa_supplicant
 CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/misc
-
-CSRCS += $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/rtl8721csm_boot.c
-CSRCS += $(DIR)/ram/monitor_hp.c \
-       #$(DIR)/ram/shell_ram.c \
-       $(DIR)/ram/rtl_trace.c \
-       $(DIR)/rom/shell_rom.c \
-       $(DIR)/rom/monitor_rom.c \
-	   $(DIR)/ram/low_level_io.c 
-	   
-CFLAGS += -I$(ARCH_SRCDIR)/cmsis/
-
-DIR_CRYPTO = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/fwlib/crypto
 CFALGS += -I$(DIR_CRYPTO)/../include/
-
-CSRCS += $(DIR_CRYPTO)/rtl8721dhp_sha.c \
-	$(DIR_CRYPTO)/rtl8721dhp_md5.c \
-	$(DIR_CRYPTO)/rtl8721dhp_chacha_poly1305.c \
-
-DIR_FW = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/fwlib/ram_hp
-DIR_COM = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/fwlib/ram_common
-CFGDIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/fwlib/usrcfg
-
 CFLAGS += -I$(DIR_FW)/../include/
-
-CSRCS += $(DIR_FW)/rtl8721dhp_startup.c \
-	$(DIR_FW)/rtl8721dhp_app_start.c \
-	$(DIR_FW)/rtl8721dhp_clk.c \
-	$(DIR_FW)/rtl8721dhp_pmc.c \
-	$(DIR_FW)/rtl8721dhp_cpft.c \
-	$(DIR_FW)/rtl8721dhp_ota_ram.c \
-	$(DIR_FW)/rtl8721dhp_system.c \
-	$(DIR_FW)/rtl8721dhp_pmc_ram.c \
-	#$(DIR_FW)/rtl8721dhp_simulation.c \
-
-CSRCS += $(DIR_FW)/rtl8721dhp_i2s.c \
-	$(DIR_FW)/rtl8721dhp_sdio.c \
-	$(DIR_FW)/rtl8721dhp_ssi.c \
-	$(DIR_FW)/rtl8721dhp_lcdc.c \
-	$(DIR_FW)/rtl8721dhp_usi_uart.c \
-	$(DIR_FW)/rtl8721dhp_usi_ssi.c \
-	$(DIR_FW)/rtl8721dhp_usi_i2c.c \
-	$(DIR_FW)/rtl8721dhp_audio.c \
-	$(DIR_FW)/rtl8721dhp_sdio_host.c \
-	$(DIR_FW)/rtl8721dhp_sd.c	\
-	$(DIR_FW)/rtl8721dhp_psram.c \
-
-CSRCS += $(DIR_COM)/rtl8721d_i2c.c \
-	$(DIR_COM)/rtl8721d_rtc.c \
-	$(DIR_COM)/rtl8721d_uart.c \
-	$(DIR_COM)/rtl8721d_tim.c \
-	$(DIR_COM)/rtl8721d_adc.c \
-	$(DIR_COM)/rtl8721d_comparator.c \
-	$(DIR_COM)/rtl8721d_wdg.c \
-	$(DIR_COM)/rtl8721d_flash_ram.c \
-	$(DIR_COM)/rtl8721d_pll.c \
-	$(DIR_COM)/rtl8721d_ir.c \
-	$(DIR_COM)/rtl8721d_ipc_api.c \
-	$(DIR_COM)/rtl8721d_sgpio.c \
-	$(DIR_COM)/rtl8721d_keyscan.c \
-	$(DIR_COM)/rtl8721d_captouch.c \
-	$(DIR_COM)/rtl8721d_rand2.c \
-	$(DIR_COM)/rtl8721d_gdma_memcpy.c \
-	$(DIR_COM)/rtl8721d_bor.c \
-	$(DIR_COM)/rtl8721d_ram_libc.c \
-
-CSRCS += $(CFGDIR)/rtl8721dlp_intfcfg.c \
-	$(CFGDIR)/rtl8721dhp_intfcfg.c \
-	$(CFGDIR)/rtl8721d_ipccfg.c \
-	$(CFGDIR)/rtl8721d_wificfg.c \
-	
-ifeq ($(CONFIG_AMEBAD_WIFI),y)
-CSRCS   += $(DIR_WIFI)/wifi_conf.c \
-		 $(DIR_WIFI)/wifi_ind.c \
-		 $(DIR_WIFI)/wifi_util.c	\
-		 $(DIR_WIFI)/wifi_promisc.c	\
-		 $(DIR_WIFI)/rtw_wpa_supplicant/wpa_supplicant/wifi_eap_config.c
-
-CSRCS   += $(COMPONENT_DIR)/common/api/wifi_interactive_mode.c
-CSRCS   += $(COMPONENT_DIR)/common/network/dhcp/dhcps.c 
-CSRCS   += $(COMPONENT_DIR)/common/api/network/src/wlan_network.c 
-		 
-CSRCS    += $(DIR_OSDEP)/osdep_service.c
-CSRCS    += $(DIR_OSDEP)/device_lock.c
-
-CSRCS    += $(DIR_OS)/tizenrt/tizenrt_service.c
-CSRCS    += $(DIR_OS)/tizenrt/lwip_intf_tizenrt.c
-CSRCS    += $(DIR_OS)/tizenrt/ethernetif_tizenrt.c
-CSRCS    += $(DIR_OS)/tizenrt/rtk_lwip_netconf.c
-CSRCS    += $(DIR_OS)/tizenrt/rtk_utils.c
-CSRCS   += $(COMPONENT_DIR)/soc/realtek/amebad/misc/rtl8721d_freertos_pmu.c 
-endif
-		 
-DIR_OTG = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/fwlib/usb_otg/device
-ifeq ($(CONFIG_USBD_AUDIO),y)
-  DIR = $(DIR_OTG)/class/audio/src
-endif
-ifeq ($(CONFIG_USBD_CDC_ACM),y)
-  DIR = $(DIR_OTG)/class/cdc_acm/src
-endif
 ifeq ($(CONFIG_USBD_MSC),y)
-  DIR = $(DIR_OTG)/class/msc/src
-  CFLAGS += -I$(BASEDIR)/component/common/drivers/sdio/realtek/sdio_host/inc
+CFLAGS += -I$(BASEDIR)/component/common/drivers/sdio/realtek/sdio_host/inc
 endif
-  CFLAGS += -I$(DIR_OTG)/class
-  CFLAGS += -I$(DIR_OTG)/core/inc
-  CFLAGS += -I$(DIR_OTG)/composite/inc
-
-ifeq ($(CONFIG_USBD_AUDIO),y)
-  CSRCS += $(DIR)/usb_f_uac1.c
-endif
-ifeq ($(CONFIG_USBD_CDC_ACM),y)
-  CSRCS += $(DIR)/usbd_cdc_acm.c
-endif
-ifeq ($(CONFIG_USBD_MSC),y)
-  CSRCS += $(DIR)/usbd_msc.c \
-       $(DIR)/usbd_scsi.c
-endif
-
+CFLAGS += -I$(DIR_OTG)/class
+CFLAGS += -I$(DIR_OTG)/core/inc
+CFLAGS += -I$(DIR_OTG)/composite/inc
 
 COBJS = $(CSRCS:.c=$(OBJEXT))
-
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
 ifeq ($(WINTOOL),y)
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}"
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/common}"
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/cmsis}"
+  CFLAGS += -I "${shell cygpath -w $(COMPONENT_DIR)/soc/realtek/amebad/cmsis}"
   CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/common}"
   CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src}"
 else
   CFLAGS += -I$(ARCH_SRCDIR)/chip
   CFLAGS += -I$(ARCH_SRCDIR)/common
-  CFLAGS += -I$(ARCH_SRCDIR)/cmsis
+  CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/cmsis
   CFLAGS += -I$(BOARD_SRCDIR)/common
   CFLAGS += -I$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src
 endif
@@ -253,7 +179,6 @@ clean:
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
-	$(call DELFILE, $(COBJS))
 
 -include Make.dep
 #include $(TOPDIR)/configs/Board.mk

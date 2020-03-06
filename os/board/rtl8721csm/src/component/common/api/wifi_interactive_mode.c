@@ -34,7 +34,7 @@
 #include "lwip/tcpip.h"
 #include "rtk_wifi_utils.h"
 
-#define vTaskDelay(t) usleep(t)
+#define vTaskDelay(t) usleep(t*1000)
 
 #ifndef CONFIG_INTERACTIVE_EXT
 #define CONFIG_INTERACTIVE_EXT 0
@@ -312,6 +312,61 @@ static void cmd_wifi_sta_and_ap(int argc, char **argv)
 }
 #endif
 
+static int _find_ap_from_scan_buf(char*buf, int buflen, char *target_ssid, void *user_data)
+{
+	rtw_wifi_setting_t *pwifi = (rtw_wifi_setting_t *)user_data;
+	int plen = 0;
+	while(plen < buflen){
+		u8 len, ssid_len, security_mode;
+		char *ssid;
+
+		// len offset = 0
+		len = (int)*(buf + plen);
+		// check end
+		if(len == 0) break;
+		// ssid offset = 14
+		ssid_len = len - 14;
+		ssid = buf + plen + 14 ;
+		if((ssid_len == strlen(target_ssid))
+			&& (!memcmp(ssid, target_ssid, ssid_len)))
+		{
+			strcpy((char*)pwifi->ssid, target_ssid);
+			// channel offset = 13
+			pwifi->channel = *(buf + plen + 13);
+			// security_mode offset = 11
+			security_mode = (u8)*(buf + plen + 11);
+			if(security_mode == IW_ENCODE_ALG_NONE)
+				pwifi->security_type = RTW_SECURITY_OPEN;
+			else if(security_mode == IW_ENCODE_ALG_WEP)
+				pwifi->security_type = RTW_SECURITY_WEP_PSK;
+			else if(security_mode == IW_ENCODE_ALG_CCMP)
+				pwifi->security_type = RTW_SECURITY_WPA2_AES_PSK;
+			break;
+		}
+		plen += len;
+	}
+	return 0;
+}
+
+static int _get_ap_security_mode(IN char * ssid)
+{
+	rtw_wifi_setting_t wifi;
+	u32 scan_buflen = 1000;
+
+	memset(&wifi, 0, sizeof(wifi));
+	if(wifi_scan_networks_with_ssid(_find_ap_from_scan_buf, (void*)&wifi, scan_buflen, ssid, strlen(ssid)) != RTW_SUCCESS){
+		ndbg("Wifi active scan failed!\n");
+		return RTW_SECURITY_UNKNOWN;
+	}
+	if(strcmp((char *)wifi.ssid, ssid) == 0){
+		//*security_mode = wifi.security_type;
+		//*channel = wifi.channel;
+		return wifi.security_type;
+	}
+	return RTW_SECURITY_UNKNOWN;
+}
+
+
 void dhcpd_event(void)
 {
 	return;
@@ -421,12 +476,13 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 	int ret;
 
 	char *ssid;
-	rtw_security_t security_type;
+	rtw_security_t security_type = -1;
 	char *password;
 	int ssid_len;
 	int password_len;
 	int key_id;
 	void *semaphore;
+	int security_retry_count = 0;
 
 	wifi_utils_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
 	wifi_utils_ap_crypto_type_e crypto = ap_connect_config->ap_crypto_type;
@@ -467,8 +523,22 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 		semaphore = NULL;
 		break;
 	default:
-		ndbg("\n\rUsage: wifi_connect SSID [WPA PASSWORD / (5 or 13) ASCII WEP KEY] [WEP KEY ID 0/1/2/3]");
-		return -1;
+		while (1) {
+			security_type = (_get_ap_security_mode((char*)ssid));
+			if (security_type >= 0)	
+				break;
+
+			security_retry_count++;
+			if(security_retry_count >= 3){
+				ndbg("Can't get AP security mode.\n");
+				break;
+			}
+		}
+		password = ap_connect_config->passphrase;
+		ssid_len = strlen((const char *)ssid);
+		password_len = ap_connect_config->passphrase_length;
+		key_id = 0;
+		semaphore = NULL;
 		break;
 	}
 

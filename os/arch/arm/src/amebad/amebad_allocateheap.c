@@ -166,8 +166,19 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
  ****************************************************************************/
 
 #if CONFIG_MM_REGIONS > 1
+/****************************************************************************
+ * Name: up_addregion
+ ****************************************************************************/
 void up_addregion(void)
 {
-
+	int region_cnt;
+	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
+		if (BASE_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
+			mm_initialize(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+			continue;
+		}
+		mm_addregion(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+	}
 }
 #endif
+

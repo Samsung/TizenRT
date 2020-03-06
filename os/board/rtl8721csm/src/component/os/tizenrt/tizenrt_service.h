@@ -110,7 +110,6 @@ typedef int (*task_fun)(int argc, char *argv[]);
 
 typedef struct sk_buff _pkt;
 typedef unsigned char _buffer;
-typedef unsigned int systime;
 
 #ifndef __LIST_H
 #warning "DLIST_NOT_DEFINE!!!!!!"

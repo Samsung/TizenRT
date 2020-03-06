@@ -93,7 +93,14 @@
 
 #endif	// defined (__IARSTDLIB__)
 
-
-
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+extern void *pvPortMalloc( size_t xWantedSize );
+extern void vPortFree( void *pv );
+extern void *pvPortReAlloc( void *pv,  size_t xWantedSize );
+#define malloc                  pvPortMalloc
+#define free                    vPortFree
+#define realloc			pvPortReAlloc
+#define calloc			rtw_calloc
+#endif
 
 #endif // PLATFORM_STDLIB_8721D_H

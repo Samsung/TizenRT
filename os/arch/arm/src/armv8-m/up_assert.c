@@ -445,9 +445,9 @@ void up_assert(const uint8_t *filename, int lineno)
 	board_led_on(LED_ASSERTION);
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	DiagPrintf("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
+	printf("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
-	DiagPrintf("Assertion failed at file:%s line: %d\n", filename, lineno);
+	printf("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
 	up_dumpstate();

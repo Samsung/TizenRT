@@ -119,6 +119,7 @@ SECTIONS
 		*(.image2.ram.text*)
 		*(.image2.net.ram.text*)
 		_etext = ABSOLUTE(.);
+		__ram_image2_text_end__ = .;
 	} > BD_RAM_NS
 
 	_eronly = ABSOLUTE(.);
@@ -226,6 +227,7 @@ SECTIONS
 	{
 		__psram_image2_text_start__ = .;
 		*(.psram.text*)
+		__psram_image2_text_end__ = .;
 	} > PSRAM_NS
 
 	.psram_image2.data : 
@@ -246,6 +248,7 @@ SECTIONS
 		*(.psram.heap*)
 	} > PSRAM_NS
 	__StackLimit = ABSOLUTE(ORIGIN(BD_RAM_NS) + LENGTH(BD_RAM_NS));
+	__PsramStackLimit = ABSOLUTE(ORIGIN(PSRAM_NS) + LENGTH(PSRAM_NS));
 }
 SECTIONS
 {

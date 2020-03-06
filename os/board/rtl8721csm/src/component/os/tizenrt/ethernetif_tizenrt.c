@@ -67,6 +67,7 @@
 #include "lwip/icmp.h"
 #include "lwip/netif/etharp.h"
 #include "lwip/err.h"
+#include "platform_opts.h"
 #include "ethernetif_tizenrt.h"
 #include "queue.h"
 #include "rtk_lwip_netconf.h"
@@ -80,7 +81,7 @@
 #if defined(CONFIG_INIC_HOST) && CONFIG_INIC_HOST
 #include "freertos/inic_intf.h"
 #endif
-
+	
 #define netifMTU (1500)
 #define netifINTERFACE_TASK_STACK_SIZE (350)
 #define netifINTERFACE_TASK_PRIORITY (configMAX_PRIORITIES - 1)
@@ -161,7 +162,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	if (sg_len) {
 #if CONFIG_WLAN
 		if (rltk_wlan_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len) == 0)
-#elif CONFIG_INIC_HOST
+#elif defined(CONFIG_INIC_HOST) && (CONFIG_INIC_HOST)
 		if (rltk_inic_send(sg_list, sg_len, p->tot_len) == 0)
 #else
 		if (1)

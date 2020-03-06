@@ -247,6 +247,5 @@ ifeq ($(BOARDMAKE),y)
 endif
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
-	$(call DELFILE, $(COBJS))
 
 -include Make.dep

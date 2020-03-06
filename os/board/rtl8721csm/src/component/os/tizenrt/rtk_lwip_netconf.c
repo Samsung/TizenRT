@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "lwip/init.h"
 #include "lwip/mem.h"
 #include "lwip/memp.h"
 #include "lwip/dhcp.h"

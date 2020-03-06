@@ -33,6 +33,7 @@ extern "C" {
 // macros
 /* Give default value if not defined */
 
+#if 0
 #define CONFIG_WLAN 1
 
 #ifndef NET_IF_NUM
@@ -42,6 +43,7 @@ extern "C" {
 #define NET_IF_NUM (CONFIG_WLAN)
 #endif // end of CONFIG_CONCURRENT_MODE
 #endif // end of NET_IF_NUM
+#endif
 
 /* Private typedef -----------------------------------------------------------*/
 typedef enum {

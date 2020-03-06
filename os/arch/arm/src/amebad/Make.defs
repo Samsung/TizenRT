@@ -111,63 +111,34 @@ CMN_CSRCS += up_copyarmstate.c
 endif
 
 ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
-DIR = $(ARCH_SRCDIR)/$(CONFIG_ARCH_CHIP)/mbed/targets/hal/rtl8721d
 
 CFLAGS+= -mcmse
 
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/fwlib/include
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/app/monitor/include/
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/swlib/string/
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/app/xmodem/
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/fwlib/include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/monitor/include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/swlib/string
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/xmodem
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/os_dep/include
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/tizenrt
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common/drivers/wlan/realtek/include
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common/drivers/wlan/realtek/src/osdep
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common/api/platform
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common/api
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD_va0_example/inc/inc_hp
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/hal/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/api/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/targets/hal/rtl8721d/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/hal/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/mbed/hal_ext/
-CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/cmsis/
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common/mbed/hal
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common/mbed/api
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common/mbed/hal_ext
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/common/mbed/targets/hal/rtl8721d
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/misc
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD_va0_example/inc/inc_hp
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/cmsis
 
-CHIP_CSRCS += $(DIR)/flash_api.c
-CHIP_CSRCS +=$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/amebad_start.c
-CHIP_CSRCS +=$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/amebad_allocateheap.c
-CHIP_CSRCS +=$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/amebad_idle.c
-CHIP_CSRCS +=$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/amebad_irq.c
-CHIP_CSRCS +=$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/amebad_timerisr.c
-CHIP_CSRCS +=$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/amebad_serial.c
-CHIP_CSRCS +=$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/amebad_lowerhalf.c
-CHIP_CSRCS +=$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)/amebad_enet.c
-
-#ifeq ($(CONFIG_MBED_API_EN),y)
-CHIP_CSRCS += $(DIR)/serial_api.c
-CHIP_CSRCS += $(DIR)/pinmap_common.c
-CHIP_CSRCS += $(DIR)/sys_api.c 
-CHIP_CSRCS += $(DIR)/us_ticker.c
-CHIP_CSRCS += $(DIR)/timer_api.c
-CHIP_CSRCS += $(DIR)/dma_api.c
-CHIP_CSRCS += $(DIR)/gpio_api.c
-CHIP_CSRCS += $(DIR)/gpio_irq_api.c
-CHIP_CSRCS += $(DIR)/pinmap.c
-CHIP_CSRCS += $(DIR)/port_api.c
-CHIP_CSRCS += $(DIR)/spi_api.c
-CHIP_CSRCS += $(DIR)/i2c_api.c
-CHIP_CSRCS += $(DIR)/i2s_api.c
-CHIP_CSRCS += $(DIR)/pwmout_api.c
-CHIP_CSRCS += $(DIR)/analogin_api.c
-CHIP_CSRCS += $(DIR)/efuse_api.c
-CHIP_CSRCS += $(DIR)/sleep.c
-CHIP_CSRCS += $(DIR)/wdt_api.c
-#CHIP_CSRCS += $(DIR)/spdio_api.c
-CHIP_CSRCS += $(DIR)/us_ticker_api.c
-CHIP_CSRCS += $(DIR)/wait_api.c
-#CHIP_CSRCS += $(DIR)/rtc_api.c
-CHIP_CSRCS += $(DIR)/captouch_api.c
-CHIP_CSRCS += $(DIR)/keyscan_api.c
-CHIP_CSRCS += $(DIR)/lcdc_api.c
-#endif
+CHIP_ASRCS  =
+CHIP_CSRCS = amebad_start.c
+CHIP_CSRCS += amebad_allocateheap.c
+CHIP_CSRCS += amebad_idle.c
+CHIP_CSRCS += amebad_irq.c
+CHIP_CSRCS += amebad_timerisr.c
+CHIP_CSRCS += amebad_serial.c
+CHIP_CSRCS += amebad_lowerhalf.c
+CHIP_CSRCS += amebad_enet.c
