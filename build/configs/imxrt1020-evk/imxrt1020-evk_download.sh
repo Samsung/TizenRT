@@ -42,6 +42,7 @@ OUTBIN_PATH=${TOP_PATH}/build/output/bin
 TTYDEV="/dev/ttyACM0"
 TINYARA_BIN=${OUTBIN_PATH}/tinyara.bin
 CONFIG=${OS_PATH}/.config
+ZONEINFO=${OUTBIN_PATH}/zoneinfo.img
 SUDO=sudo
 
 ##Utility function for sanity check##
@@ -103,6 +104,7 @@ function get_executable_name()
 		app) echo "tinyara_user.bin";;
 		micom) echo "micom";;
 		wifi) echo "wifi";;
+		zoneinfo) echo "zoneinfo.img";;
 		userfs) echo "imxrt1020-evk_smartfs.bin";;
 		*) echo "No Binary Match"
 		exit 1
@@ -117,6 +119,14 @@ function get_partition_index()
 		app | App | APP) echo "1";;
 		micom | Micom | MICOM) echo "2";;
 		wifi | Wifi | WIFI) echo "4";;
+		zoneinfo)
+		for i in "${!parts[@]}"
+		do
+		   if [[ "${parts[$i]}" = "zoneinfo" ]]; then
+			echo $i
+		   fi
+		done
+		;;
 		userfs | Userfs | USERFS)
 		for i in "${!parts[@]}"
 		do

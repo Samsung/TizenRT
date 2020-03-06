@@ -194,6 +194,10 @@ else
 OTHERDIRS += syscall
 endif
 
+ifeq ($(CONFIG_LIBC_DOWNLOAD_ZONEINFO),y)
+CONTEXTDIRS += $(LIB_DIR)$(DELIM)libc
+endif
+
 USERDIRS += $(TOPDIR)$(DELIM)..$(DELIM)loadable_apps
 
 # CLEANDIRS are the directories that will clean in.  These are

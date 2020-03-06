@@ -249,6 +249,15 @@ void imxrt_filesystem_initialize(void)
 		}
 	}
 #endif /* CONFIG_RAMMTD */
+#ifdef CONFIG_LIBC_ZONEINFO_ROMFS
+	ret = mount(CONFIG_IMXRT_AUTOMOUNT_TZDEVNAME,
+		CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
+
+	if (ret != OK) {
+		IMXLOG("ROMFS ERROR: mounting failed");
+	}
+
+#endif /* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif /* CONFIG_IMXRT_AUTOMOUNT */
 }
 

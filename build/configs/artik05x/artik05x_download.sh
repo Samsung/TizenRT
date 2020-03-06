@@ -154,6 +154,14 @@ compute_ocd_commands()
 				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/romfs.img is NOT present";
 				 fi
 				;;
+			zoneinfo)
+			         is_file_present ${OUTPUT_BINARY_PATH}/zoneinfo.img
+				 if [[ $? -eq 1 ]]; then
+				     commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/zoneinfo.img ${VERIFY}; "
+				 else
+				     echo "#NOTE: ${OUTPUT_BINARY_PATH}/zoneinfo.img is NOT present";
+				 fi
+				;;
 			loadparam)
 			         is_file_present ${OUTPUT_BINARY_PATH}/loadparam
 				 if [[ $? -eq 1 ]]; then
@@ -276,7 +284,7 @@ while test $# -gt 0; do
 		--verify)
 			VERIFY=verify
 			;;
-		all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|micom|wifi|user)
+		all|os|apps|rom|bl1|bl2|sssfw|wlanfw|ota|micom|wifi|user|zoneinfo)
 			download ${1,,}
 			;;
 		usbrule)

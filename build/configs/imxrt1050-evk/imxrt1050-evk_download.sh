@@ -130,6 +130,7 @@ function get_executable_name()
 		app) echo "tinyara_user.bin";;
 		micom) echo "micom";;
 		wifi) echo "wifi";;
+		zoneinfo) echo "zoneinfo.img";;
 		userfs) echo "imxrt1050-evk_smartfs.bin";;
 		*) echo "No Binary Match"
 		exit 1
@@ -144,6 +145,14 @@ function get_partition_index()
                 app | App | APP) echo "1";;
                 micom | Micom | MICOM) echo "2";;
                 wifi | Wifi | WIFI) echo "4";;
+                zoneinfo)
+                for i in "${!parts[@]}"
+                do
+                   if [[ "${parts[$i]}" = "zoneinfo" ]]; then
+                        echo $i
+                fi
+                done
+                ;;
                 userfs | Userfs | USERFS)
                 for i in "${!parts[@]}"
                 do
