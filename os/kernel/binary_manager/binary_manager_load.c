@@ -32,8 +32,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <queue.h>
+#include <semaphore.h>
 #include <sys/types.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
@@ -44,8 +46,11 @@
 
 #include "sched/sched.h"
 #include "task/task.h"
+#include "semaphore/semaphore.h"
 
 #include "binary_manager.h"
+
+extern sq_queue_t g_sem_list;
 
 /****************************************************************************
  * Private Definitions
@@ -293,7 +298,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 			return ERROR;
 		}
 		/* Release all kernel semaphores held by the threads in binary */
-		recovery_release_binary_sem(binid);
+		binary_manager_release_binary_sem(binid);
 		BIN_STATE(bin_idx) = BINARY_RUNNING;
 	}
 
@@ -504,6 +509,40 @@ static int loading_thread(int argc, char *argv[])
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/****************************************************************************
+ * Name: binary_manager_release_binary_sem
+ *
+ * Description:
+ *	 This function releases all kernel semaphores held by the threads in binary.
+ *
+ ****************************************************************************/
+void binary_manager_release_binary_sem(int binid)
+{
+	sem_t *sem;
+	irqstate_t flags;
+	FAR struct semholder_s *holder;
+
+	flags = irqsave();
+
+	sem = (sem_t *)sq_peek(&g_sem_list);
+	while (sem) {
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+		for (holder = sem->hhead; holder; holder = holder->flink)
+#else
+		holder = &sem->holder;
+#endif
+		{
+			if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_binid == binid) {
+				/* Increase semcount and release itself from holder */
+				sem->semcount++;
+				sem_releaseholder(sem, holder->htcb);
+			}
+		}
+		sem = sq_next(sem);
+	}
+	irqrestore(flags);
+}
+
 /****************************************************************************
  * Name: binary_manager_read_header
  *

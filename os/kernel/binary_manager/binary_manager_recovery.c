@@ -31,10 +31,14 @@
 #include <sys/boardctl.h>
 #endif
 #include <tinyara/irq.h>
+#include <tinyara/arch.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 #include <tinyara/board.h>
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+#include <tinyara/binfmt/binfmt.h>
+#endif
 
 #include "task/task.h"
 #include "sched/sched.h"
@@ -43,7 +47,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define BM_EXCLUDE_SCHEDULING(tcb) \
+/* Move tcb from current state list to inactive list */
+#define BM_DEACTIVATE_TASK(tcb) \
 	do { \
 		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list); \
 		dq_addlast((FAR dq_entry_t *)tcb, (FAR dq_queue_t *)g_tasklisttable[TSTATE_TASK_INACTIVE].list); \
@@ -57,24 +62,27 @@
 #define FAULTMSG_COUNT         USER_BIN_COUNT
 
 extern bool abort_mode;
-extern sq_queue_t g_sem_list;
 
 struct tcb_s *g_faultmsg_sender;
 sq_queue_t g_faultmsg_list;
 sq_queue_t g_freemsg_list;
 static faultmsg_t g_prealloc_faultmsg[FAULTMSG_COUNT];
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern struct binary_s *g_lib_binp;
+#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: binary_manager_board_reset
+ * Name: binary_manager_reset_board
  *
  * Description:
  *	 This function resets the board.
  *
  ****************************************************************************/
-static void binary_manager_board_reset(void)
+static void binary_manager_reset_board(void)
 {
 #ifdef CONFIG_BOARDCTL_RESET
 	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
@@ -89,47 +97,13 @@ static void binary_manager_board_reset(void)
 }
 
 /****************************************************************************
- * Name: recovery_release_binary_sem
- *
- * Description:
- *	 This function releases all kernel semaphores held by the threads in binary.
- *
- ****************************************************************************/
-void recovery_release_binary_sem(int binid)
-{
-	sem_t *sem;
-	irqstate_t flags;
-	FAR struct semholder_s *holder;
-
-	flags = irqsave();
-
-	sem = (sem_t *)sq_peek(&g_sem_list);
-	while (sem) {
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-		for (holder = sem->hhead; holder; holder = holder->flink)
-#else
-		holder = &sem->holder;
-#endif
-		{
-			if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_binid == binid) {
-				/* Increase semcount and release itself from holder */
-				sem->semcount++;
-				sem_releaseholder(sem, holder->htcb);
-			}
-		}
-		sem = sq_next(sem);
-	}
-	irqrestore(flags);
-}
-
-/****************************************************************************
- * Name: recovery_recover_tcb
+ * Name: binary_manager_recover_tcb
  *
  * Description:
  *	 This function recovers resources, semaphores, message queue, and watchdog.
  *
  ****************************************************************************/
-static void recovery_recover_tcb(struct tcb_s *tcb)
+static void binary_manager_recover_tcb(struct tcb_s *tcb)
 {
 	sem_t *sem;
 	int state;
@@ -157,13 +131,13 @@ static void recovery_recover_tcb(struct tcb_s *tcb)
 }
 
 /****************************************************************************
- * Name: recovery_exclude_binary
+ * Name: binary_manager_deactivate_binary
  *
  * Description:
  *	 This function excludes all active threads in a same binary from scheduling.
  *
  ****************************************************************************/
-static int recovery_exclude_binary(pid_t binid)
+static int binary_manager_deactivate_binary(pid_t binid)
 {
 	irqstate_t flags;
 	struct tcb_s *tcb;
@@ -178,28 +152,31 @@ static int recovery_exclude_binary(pid_t binid)
 		if (tcb->task_state != TSTATE_TASK_INACTIVE) {
 			flags = irqsave();
 			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			recovery_recover_tcb(tcb);
+			binary_manager_recover_tcb(tcb);
 
 			/* Remove the TCB from the task list associated with the state */
-			BM_EXCLUDE_SCHEDULING(tcb);
+			BM_DEACTIVATE_TASK(tcb);
 			irqrestore(flags);
 		}
 		tcb = tcb->bin_flink;
 	}
 	/* Release all kernel semaphores held by the threads in binary */
-	recovery_release_binary_sem(binid);
+	binary_manager_release_binary_sem(binid);
 
 	return OK;
 }
 
 /****************************************************************************
- * Name: binary_manager_exclude_rtthreads
+ * Public Functions
+ ****************************************************************************/
+/****************************************************************************
+ * Name: binary_manager_deactivate_rtthreads
  *
  * Description:
  *	 This function excludes real-time threads in a same binary from scheduling.
  *
  ****************************************************************************/
-void binary_manager_exclude_rtthreads(struct tcb_s *tcb)
+void binary_manager_deactivate_rtthreads(struct tcb_s *tcb)
 {
 	struct tcb_s *prev;
 	struct tcb_s *next;
@@ -213,15 +190,15 @@ void binary_manager_exclude_rtthreads(struct tcb_s *tcb)
 			tcb->waitdog = NULL;
 		}
 		/* Remove the TCB from the task list associated with the state */
-		BM_EXCLUDE_SCHEDULING(tcb);
+		BM_DEACTIVATE_TASK(tcb);
 	}
 
 	while (prev) {
 		if (prev->sched_priority > BM_PRIORITY_MAX) {
 			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			recovery_recover_tcb(prev);
+			binary_manager_recover_tcb(prev);
 			/* Remove the TCB from the task list associated with the state */
-			BM_EXCLUDE_SCHEDULING(prev);
+			BM_DEACTIVATE_TASK(prev);
 		}
 		prev = prev->bin_blink;
 	}
@@ -229,12 +206,62 @@ void binary_manager_exclude_rtthreads(struct tcb_s *tcb)
 	while (next) {
 		if (next->sched_priority > BM_PRIORITY_MAX) {
 			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			recovery_recover_tcb(next);
+			binary_manager_recover_tcb(next);
 			/* Remove the TCB from the task list associated with the state */
-			BM_EXCLUDE_SCHEDULING(next);
+			BM_DEACTIVATE_TASK(next);
 		}
 		next = next->bin_flink;
 	}
+}
+
+/****************************************************************************
+ * Name: binary_manager_recover_userfault
+ *
+ * Description:
+ *	 This function deactivates RT threads and unblocks fault message sender.
+ *
+ ****************************************************************************/
+void binary_manager_recover_userfault(uint32_t assert_pc)
+{
+	int binid;
+	int bin_idx;
+	struct tcb_s *tcb;
+	struct faultmsg_s *msg;
+
+	tcb = this_task();
+	if (tcb != NULL && tcb->group != NULL) {
+		tcb->lockcount = 0;
+		binid = tcb->group->tg_binid;
+		bin_idx = binary_manager_get_index_with_binid(binid);
+		if (BIN_RTTYPE(bin_idx) == BINARY_TYPE_REALTIME) {
+			/* Exclude realtime task/pthreads from scheduling */
+			binary_manager_deactivate_rtthreads(tcb);
+		}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (g_lib_binp) {
+			uint32_t start = (uint32_t)g_lib_binp->alloc[ALLOC_TEXT];
+			uint32_t end = start + g_lib_binp->textsize;
+			if (assert_pc >= start && assert_pc <= end) {
+				binid = BM_BINID_LIBRARY;
+			}
+		}
+#endif
+		/* Add fault message and Unblock Fault message Sender */
+		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
+			msg->binid = binid;
+			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
+
+			/* Unblock fault message sender */
+			if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
+				up_unblock_task(g_faultmsg_sender);
+			}
+			return;
+		}
+	}
+
+	/* Board reset on failure of recovery */
+	binary_manager_reset_board();
 }
 
 /****************************************************************************
@@ -317,7 +344,7 @@ void binary_manager_recovery(int binid)
 		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 			binid = BIN_ID(bin_idx);
 			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-			ret = recovery_exclude_binary(binid);
+			ret = binary_manager_deactivate_binary(binid);
 
 			if (ret != OK) {
 				bmlldbg("Failure during recovery excluding binary pid = %d\n", binid);
@@ -340,12 +367,11 @@ void binary_manager_recovery(int binid)
 		}
 
 		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-		ret = recovery_exclude_binary(binid);
+		ret = binary_manager_deactivate_binary(binid);
 		if (ret != OK) {
 			bmlldbg("Failure during recovery excluding binary pid = %d\n", binid);
 			goto reboot_board;
 		}
-
 		BIN_STATE(bin_idx) = BINARY_FAULT;
 	}
 
@@ -363,5 +389,5 @@ void binary_manager_recovery(int binid)
 reboot_board:
 	/* Reboot the board  */
 	bmlldbg("RECOVERY FAIL, BOARD RESET!!\n");
-	binary_manager_board_reset();
+	binary_manager_reset_board();
 }

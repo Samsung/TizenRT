@@ -90,19 +90,12 @@
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
 #endif
+
 #ifdef CONFIG_BINMGR_RECOVERY
-#include <unistd.h>
 #include <stdbool.h>
-#include <queue.h>
-#include <tinyara/wdog.h>
-#include "semaphore/semaphore.h"
 #include "binary_manager/binary_manager.h"
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-#include <tinyara/binfmt/binfmt.h>
 #endif
 
-#endif
 #include "irq/irq.h"
 
 #include "up_arch.h"
@@ -112,14 +105,6 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 bool abort_mode = false;
 extern uint32_t g_assertpc;
-extern struct tcb_s *g_faultmsg_sender;
-extern sq_queue_t g_faultmsg_list;
-extern sq_queue_t g_freemsg_list;
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-extern struct binary_s *g_lib_binp;
-#endif
-
 #endif
 
 /****************************************************************************
@@ -421,7 +406,6 @@ static void up_dumpstate(void)
 /****************************************************************************
  * Name: _up_assert
  ****************************************************************************/
-
 static void _up_assert(int errorcode)
 {
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
@@ -448,55 +432,6 @@ static void _up_assert(int errorcode)
 #endif
 #endif /* CONFIG_BOARD_ASSERT_AUTORESET */
 }
-
-#ifdef CONFIG_BINMGR_RECOVERY
-/****************************************************************************
- * Name: recovery_user_assert : recovery user assert through binary manager
- ****************************************************************************/
-static void recovery_user_assert(uint32_t assert_pc)
-{
-	int binid;
-	int bin_idx;
-	struct tcb_s *tcb;
-	struct faultmsg_s *msg;
-
-	tcb = this_task();
-	if (tcb != NULL && tcb->group != NULL) {
-		tcb->lockcount = 0;
-		binid = tcb->group->tg_binid;
-		bin_idx = binary_manager_get_index_with_binid(binid);
-		if (BIN_RTTYPE(bin_idx) == BINARY_TYPE_REALTIME) {
-			/* Exclude realtime task/pthreads from scheduling */
-			binary_manager_exclude_rtthreads(tcb);
-		}
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (g_lib_binp) {
-			uint32_t start = (uint32_t)g_lib_binp->alloc[ALLOC_TEXT];
-			uint32_t end = start + g_lib_binp->textsize;
-			if (assert_pc >= start && assert_pc <= end) {
-				binid = BM_BINID_LIBRARY;
-			}
-		}
-#endif
-
-		/* Add fault message and Unblock Fault message Sender */
-		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
-			msg->binid = binid;
-			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
-
-			/* Unblock fault message sender */
-			if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
-				up_unblock_task(g_faultmsg_sender);
-			}
-			return;
-		}
-	}
-
-	/* Failed to request for recovery to binary manager */
-	_up_assert(EXIT_FAILURE);
-}
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -540,7 +475,7 @@ void up_assert(const uint8_t *filename, int lineno)
 
 #ifdef CONFIG_BINMGR_RECOVERY
 	uint32_t assert_pc;
-	bool is_kernel_assert;
+	bool is_kernel_fault;
 
 	/* Extract the PC value of instruction which caused the abort/assert */
 
@@ -550,9 +485,9 @@ void up_assert(const uint8_t *filename, int lineno)
 		assert_pc = (uint32_t)g_assertpc;
 	}
 
-	/* Is the assert in Kernel? */
+	/* Is the fault in Kernel? */
 
-	is_kernel_assert = is_kernel_space((void *)assert_pc);
+	is_kernel_fault = is_kernel_space((void *)assert_pc);
 
 #endif  /* CONFIG_BINMGR_RECOVERY */
 
@@ -563,14 +498,13 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	if (is_kernel_assert == false) {
-		/* recovery user assert through binary manager */
-
-		recovery_user_assert(assert_pc);
+	if (is_kernel_fault == false) {
+		/* Recover user fault through binary manager */
+		binary_manager_recover_userfault(assert_pc);
 	} else
 #endif
 	{
-		/* treat kernel assert */
+		/* treat kernel fault */
 
 		_up_assert(EXIT_FAILURE);
 	}
