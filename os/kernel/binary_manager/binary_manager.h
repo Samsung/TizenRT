@@ -197,10 +197,11 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
  *
  ****************************************************************************/
 void binary_manager_recovery(int pid);
-void binary_manager_exclude_rtthreads(struct tcb_s *tcb);
+void binary_manager_deactivate_rtthreads(struct tcb_s *tcb);
 void binary_manager_set_faultmsg_sender(pid_t pid);
 int binary_manager_faultmsg_sender(int argc, char *argv[]);
 mqd_t binary_manager_get_mqfd(void);
+void binary_manager_recover_userfault(uint32_t assert_pc);
 #endif
 
 void binary_manager_add_binlist(FAR struct tcb_s *tcb);
@@ -222,6 +223,7 @@ int binary_manager_register_ubin(char *name);
 void binary_manager_scan_ubin(void);
 int binary_manager_read_header(char *path, binary_header_t *header_data);
 int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
+void binary_manager_release_binary_sem(int binid);
 
 /****************************************************************************
  * Binary Manager Main Thread
