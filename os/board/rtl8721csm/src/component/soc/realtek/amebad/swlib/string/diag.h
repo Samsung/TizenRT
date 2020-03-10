@@ -90,7 +90,7 @@ extern u32 ConfigDebug[];
   * @brief  Debug Log Mask Set.
   * @param  config[4] --  Print log if bit MODULE_DEFINE of config[LEVEL_DEFINE] is 1;
   * @return void.
-  * @note   Here is a MODULE_BOOT module sample to demostrate the using of LOG_MASK().
+  * @note   Here is a MODULE_BOOT module sample to demostrate the using of RTK_LOG_MASK().
   *         We want to print log under ERROR level and INFO level.
   * @code{.c}
   * u32 debug[4];
@@ -99,17 +99,17 @@ extern u32 ConfigDebug[];
   * debug[LEVEL_INFO]  = BIT(MODULE_BOOT);
   * debug[LEVEL_TRACE] = 0x0;
   * 
-  * LOG_MASK(LEVEL_ERROR, debug[LEVEL_ERROR]);
-  * LOG_MASK(LEVEL_WARN, debug[LEVEL_WARN]);
-  * LOG_MASK(LEVEL_INFO, debug[LEVEL_INFO]);
-  * LOG_MASK(LEVEL_TRACE, debug[LEVEL_TRACE]);
+  * RTK_LOG_MASK(LEVEL_ERROR, debug[LEVEL_ERROR]);
+  * RTK_LOG_MASK(LEVEL_WARN, debug[LEVEL_WARN]);
+  * RTK_LOG_MASK(LEVEL_INFO, debug[LEVEL_INFO]);
+  * RTK_LOG_MASK(LEVEL_TRACE, debug[LEVEL_TRACE]);
   * 
   * DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "MODULE_BOOT Info.\n");
   * DBG_PRINTF(MODULE_BOOT, LEVEL_ERROR, "MODULE_BOOT Error!\n");
   * @endcode
   */
-#undef LOG_MASK
-#define LOG_MASK(level, config) do {\
+#undef RTK_LOG_MASK
+#define RTK_LOG_MASK(level, config) do {\
 		ConfigDebug[level] = config;\
 } while (0)
 

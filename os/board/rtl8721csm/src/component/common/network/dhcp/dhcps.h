@@ -7,7 +7,7 @@
 #include "lwip/udp.h"
 #include "lwip/stats.h"
 #include "lwip/sys.h"
-#include "netif/etharp.h"
+#include "lwip/netif/etharp.h"
 
 #include <platform/platform_stdlib.h>
 

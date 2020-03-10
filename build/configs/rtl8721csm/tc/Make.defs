@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2018 Samsung Electronics All Rights Reserved.
+# Copyright 2020 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 #
 ###########################################################################
 ############################################################################
-# configs/rtl8721csm/tc/Make.defs
 #
-#   Copyright (C) 2011-2012 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -55,7 +54,7 @@ include ${TOPDIR}/tools/Config.mk
 ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
 include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
-LDSCRIPT = kernel-space.ld
+LDSCRIPT = rlx8721d_img2_is.ld
 
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains

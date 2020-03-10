@@ -1,6 +1,6 @@
 
 #include "dhcps.h"
-#include "tcpip.h"
+#include "lwip/tcpip.h"
 #if 0
 //static struct dhcp_server_state dhcp_server_state_machine;
 static uint8_t dhcp_server_state_machine = DHCP_SERVER_STATE_IDLE;

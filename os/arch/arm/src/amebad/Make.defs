@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2020 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 #
 ###########################################################################
 ############################################################################
-# arch/arm/src/amebad/Make.defs
 #
-#   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +30,7 @@
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
-# 3. Neither the name Gregory Nutt nor the names of its contributors may be
+# 3. Neither the name NuttX nor the names of its contributors may be
 #    used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
@@ -136,9 +135,11 @@ CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/ameba
 CHIP_ASRCS  =
 CHIP_CSRCS = amebad_start.c
 CHIP_CSRCS += amebad_allocateheap.c
+CHIP_CSRCS += amebad_flash.c
 CHIP_CSRCS += amebad_idle.c
 CHIP_CSRCS += amebad_irq.c
 CHIP_CSRCS += amebad_timerisr.c
 CHIP_CSRCS += amebad_serial.c
 CHIP_CSRCS += amebad_lowerhalf.c
 CHIP_CSRCS += amebad_enet.c
+

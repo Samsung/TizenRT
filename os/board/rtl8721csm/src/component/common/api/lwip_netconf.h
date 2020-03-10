@@ -15,7 +15,7 @@
  extern "C" {
 #endif
 
-#include "tcpip.h"
+#include "lwip/tcpip.h"
 #include "lwip/init.h" //for lwip version control
 /* Includes ------------------------------------------------------------------*/
 #include <platform/platform_stdlib.h>

@@ -1,6 +1,6 @@
-/******************************************************************
+/****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- ******************************************************************/
-
-/************************************************************************************
+ ****************************************************************************/
+/****************************************************************************
  *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2020 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +47,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 /************************************************************************************
  * Included Files
@@ -56,7 +55,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/fs/mtd.h>
-#include <debug.h>
+#include <../include/debug.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -164,6 +163,33 @@ void board_gpio_initialize(void)
 #endif
 }
 
+void amebad_mount_partions(void)
+{
+#if defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_FS_ROMFS)
+	int ret;
+#endif
+
+#ifdef CONFIG_FLASH_PARTITION
+	/* Initialize and mount user partition (if we have) */
+	ret = mksmartfs(CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME, false);
+	if (ret != OK) {
+		lldbg("ERROR: mksmartfs on %s failed", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
+	} else {
+		ret = mount(CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME, CONFIG_AMEBAD_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
+		if (ret != OK) {
+			lldbg("ERROR: mounting '%s' failed\n", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
+		}
+	}
+#endif
+
+#ifdef CONFIG_FS_ROMFS
+	ret = mount(CONFIG_AMEBAD_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_AMEBAD_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
+	if (ret != OK) {
+		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", CONFIG_AMEBAD_AUTOMOUNT_ROMFS_DEVNAME);
+	}
+#endif
+}
+
 
 /****************************************************************************
  * Name: board_initialize
@@ -181,6 +207,8 @@ void board_gpio_initialize(void)
 #ifdef CONFIG_BOARD_INITIALIZE
 void board_initialize(void)
 {
+	configure_partitions();
+	amebad_mount_partions();
 	board_gpio_initialize();
 }
 #endif

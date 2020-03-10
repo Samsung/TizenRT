@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2019 NXP Semiconductors All Rights Reserved.
+# Copyright 2020 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 #
 ###########################################################################
 ############################################################################
-# os/board/rtl8721csm/src/Makefile
 #
-#   Copyright (C) 2018 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +30,7 @@
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
-# 3. Neither the name TinyARA nor the names of its contributors may be
+# 3. Neither the name NuttX nor the names of its contributors may be
 #    used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
@@ -55,6 +54,12 @@
 DEPPATH = --dep-path .
 VPATH = .
 ASRCS =
+
+ifeq ($(CONFIG_FLASH_PARTITION),y)
+DEPPATH += --dep-path $(TOPDIR)/board/common
+VPATH += :$(TOPDIR)/board/common
+CSRCS += partitions.c
+endif
 
 include Make.defs
 include component/soc/realtek/amebad/app/monitor/ram/Make.defs
@@ -124,12 +129,12 @@ CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(TOPDIR)/include/net
 CFLAGS += -I$(TOPDIR)/net/lwip
 CFLAGS += -I$(TOPDIR)/net/lwip/src/include/
-CFLAGS += -I$(TOPDIR)/net/lwip/src/include/lwip
 CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/src
 CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/wpa_supplicant
 CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/misc
 CFALGS += -I$(DIR_CRYPTO)/../include/
 CFLAGS += -I$(DIR_FW)/../include/
+
 ifeq ($(CONFIG_USBD_MSC),y)
 CFLAGS += -I$(BASEDIR)/component/common/drivers/sdio/realtek/sdio_host/inc
 endif

@@ -7,7 +7,7 @@
 #include <lwip_netconf.h>
 #include <lwip/sockets.h>
 #include <dhcp/dhcps.h>
-#include "tcpip.h"
+#include "lwip/tcpip.h"
 #endif
 #include <platform/platform_stdlib.h>
 #include <wifi/wifi_conf.h>

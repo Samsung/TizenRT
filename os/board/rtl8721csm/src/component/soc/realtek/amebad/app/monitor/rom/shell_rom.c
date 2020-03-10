@@ -563,7 +563,7 @@ VOID shell_rom(u32 MaxWaitCount)
 	}
 
 	/* rom cmd consol need this */
-	LOG_MASK(LEVEL_ERROR, 0xFFFFFFFF);
+	RTK_LOG_MASK(LEVEL_ERROR, 0xFFFFFFFF);
 
 	shell_ctl.BootRdy = 1;
 

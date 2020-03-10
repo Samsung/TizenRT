@@ -1,3 +1,20 @@
+###########################################################################
+#
+# Copyright 2020 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
 
 echo "Realtek Postbuild Actions"
 export TOPDIR=/root/tizenrt/build/
@@ -17,7 +34,7 @@ echo $TOPDIR
 
 
 #if [ 1 -eq 0 ]; then
-#arm-none-eabi-gcc -T/root/tizenrt/build/configs/rtl8721csm/scripts/kernel-space.ld  -O2 -march=armv8-m.main+dsp -mthumb -mcmse -mfloat-abi=hard -mfpu=fpv5-sp-d16 -nostartfiles -nostdlib -specs nosys.specs -Wl,--gc-sections -Wl,--warn-section-align -Wl,-Map=/root/tizenrt/build/output/text.map  -Wl,--cref -Wl,--build-id=none -save-temps  -Wl,--no-enum-size-warning  -Wl,--warn-common -o /root/tizenrt/build/output/target_img2.axf  -Wl,--start-group \
+#arm-none-eabi-gcc -T/root/tizenrt/build/configs/rtl8721csm/scripts/rlx8721d_img2_is.ld -O2 -march=armv8-m.main+dsp -mthumb -mcmse -mfloat-abi=hard -mfpu=fpv5-sp-d16 -nostartfiles -nostdlib -specs nosys.specs -Wl,--gc-sections -Wl,--warn-section-align -Wl,-Map=/root/tizenrt/build/output/text.map  -Wl,--cref -Wl,--build-id=none -save-temps  -Wl,--no-enum-size-warning  -Wl,--warn-common -o /root/tizenrt/build/output/target_img2.axf  -Wl,--start-group \
 #/root/tizenrt/build/output/libraries/libc.a \
 #/root/tizenrt/os/board/rtl8721csm/src/libboard.a \
 #/root/tizenrt/build/output/libraries/libapps.a \
