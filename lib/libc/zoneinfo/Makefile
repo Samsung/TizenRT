@@ -102,7 +102,7 @@ tzdb:
 
 .tzbuilt: tzbin .tzunpack
 	$(Q) $(MAKE) -C tzdb CFLAGS=-DSTD_INSPIRED TOPDIR=$(TZBIN_PATH) posix_only
-ifeq ($(CONFIG_LIBC_DELETE_ZONEINFO_RULES),y)
+ifeq ($(CONFIG_LIBC_OPTIMIZE_ZONEINFO_RULES),y)
 	$(Q) $(ZONEINFO_PATH)/mk_opt_tzrule.py
 endif
 	$(Q) touch $@
