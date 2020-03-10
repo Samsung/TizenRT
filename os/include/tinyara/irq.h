@@ -60,6 +60,8 @@
 #include <assert.h>
 #endif
 
+#include <sys/types.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -75,6 +77,8 @@
 #define irq_detach(irq) irq_attach(irq, NULL, NULL)
 #endif
 #endif
+
+#define NO_FIN_DATA -999
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -133,6 +137,23 @@ int irq_attach(int irq, xcpt_t isr, FAR void *arg);
 void irq_info(void);
 
 #endif
+
+/**
+ * @cond
+ * @internal
+ */
+int fin_notify(pid_t pid, int data);
+/**
+ * @endcond
+ */
+/**
+ * @brief wait for kenrel irq event
+ * @details @b #include <tinyara/irq.h> \n
+ * @return On success, OK is returned. On failure, ERROR will be returned.
+ * SYSTEM CALL API \n
+ * @since TizenRT v3.1 PRE
+ */
+int fin_wait(void);
 
 #undef EXTERN
 #ifdef __cplusplus

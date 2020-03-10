@@ -262,12 +262,12 @@ config LIBC_DOWNLOAD_ZONEINFO
 
 if LIBC_DOWNLOAD_ZONEINFO
 
-config LIBC_DELETE_ZONEINFO_RULES
-	bool "Delete the previous zoneinfo rules from TZ data"
+config LIBC_OPTIMIZE_ZONEINFO_RULES
+	bool "Optimize zoneinfo rules from TZ data"
 	default n
 	---help---
-		Delete the previous zoneinfo rules from TZ data. Deletes the previously
-		registered zoneinfo rules at the time it is bulided.
+		Optimize zoneinfo rules from TZ data. Delete the previous
+		unused rules except the latest.
 
 config LIBC_ZONEINFO_ROMFS
 	bool "Build ROMFS filesystem TZ database"
