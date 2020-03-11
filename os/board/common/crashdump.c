@@ -42,6 +42,33 @@
 #define HANDSHAKE_STR_LEN_MAX           (7)
 #endif
 
+#if defined(CONFIG_PM_METRICS)
+#define RAMDUMP_CONFIG_PM_METRICS 0x0001
+#endif
+
+#if defined(CONFIG_BINMGR_RECOVERY)
+#define RAMDUMP_CONFIG_BINMGR_RECOVERY 0x0002
+#endif
+
+#if defined(CONFIG_PRIORITY_INHERITANCE)
+#define RAMDUMP_CONFIG_PRIORITY_INHERITANCE 0x0004
+#endif
+
+#if defined(CONFIG_SEM_PREALLOCHOLDERS)
+#define RAMDUMP_CONFIG_SEM_PREALLOCHOLDERS 0x00f8 & (CONFIG_SEM_PREALLOCHOLDERS << 3)
+#endif
+
+#if defined(CONFIG_SYSTEM_TIME64)
+#define RAMDUMP_CONFIG_SYSTEM_TIME64 0x0100
+#endif
+
+#if defined(CONFIG_PM_NDOMAINS)
+#define RAMDUMP_CONFIG_PM_NDOMAINS 0x1e00 & (CONFIG_PM_NDOMAINS << 9)
+#endif
+
+#if defined(CONFIG_PM_MEMORY)
+#define RAMDUMP_CONFIG_PM_MEMORY 0xe000 & (CONFIG_PM_MEMORY << 13)
+#endif
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -71,6 +98,44 @@ static int ramdump_via_uart(void)
 	char host_reg[1] = "";
 	char *target_str = HANDSHAKE_STRING;
 	char host_buf[HANDSHAKE_STR_LEN_MAX] = "";
+	uint8_t config_info_cnt = 0;
+#if defined(CONFIG_PM_METRICS)
+	uint32_t pm_config_info = 0;
+	config_info_cnt += 1;
+
+	/* Turn on the first bit if CONFIG_PM_METRICS is defined */
+	pm_config_info |= RAMDUMP_CONFIG_PM_METRICS;
+
+#if defined(CONFIG_BINMGR_RECOVERY)
+	/* Turn on the second bit if CONFIG_BINMGR_RECOVERY is defined */
+	pm_config_info |= RAMDUMP_CONFIG_BINMGR_RECOVERY;
+#endif
+
+#if defined(CONFIG_PRIORITY_INHERITANCE)
+	/* Turn on the third bit if CONFIG_PRIORITY_INHERITANCE is defined */
+	pm_config_info |= RAMDUMP_CONFIG_PRIORITY_INHERITANCE;
+#endif
+
+#if defined(CONFIG_SEM_PREALLOCHOLDERS)
+	/* If CONFIG_SEM_PREALLOCHOLDERS is defined, the value is stored in 4 to 8 bit */
+	pm_config_info |= RAMDUMP_CONFIG_SEM_PREALLOCHOLDERS;
+#endif
+
+#if defined(CONFIG_SYSTEM_TIME64)
+	/* Turn on the 9th bit if CONFIG_SYSTEM_TIME64 is defined */
+	pm_config_info |= RAMDUMP_CONFIG_SYSTEM_TIME64;
+#endif
+
+#if defined(CONFIG_PM_NDOMAINS)
+	/* If CONFIG_PM_NDOMAINS is defined, the value is stored in 10 to 13 bit */
+	pm_config_info |= RAMDUMP_CONFIG_PM_NDOMAINS;
+#endif
+
+#if defined(CONFIG_PM_MEMORY)
+	/* If CONFIG_PM_MEMORY is defined, the value is stored in 14 to 16 bit */
+	pm_config_info |= RAMDUMP_CONFIG_PM_MEMORY;
+#endif
+#endif
 
 #if !defined(CONFIG_ARCH_LOWPUTC)
 	/* If lowlevel serial is not available, ramdump is not possible */
@@ -213,6 +278,16 @@ static int ramdump_via_uart(void)
 				size--;
 			}
 
+		}
+#endif
+		ptr = (uint8_t *)&config_info_cnt;
+		up_lowputc((uint8_t)*ptr);
+
+#ifdef CONFIG_PM_METRICS
+		ptr = (uint8_t *)&pm_config_info;
+		for (i = 0; i < sizeof(uint32_t); i++) {
+			up_lowputc((uint8_t)*ptr);
+			ptr++;
 		}
 #endif
 	}
