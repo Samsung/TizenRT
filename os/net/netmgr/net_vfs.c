@@ -401,8 +401,8 @@ errout:
 
 void net_initlist(FAR struct socketlist *list)
 {
-	/* ToDo: Initialize the list access mutex */
-	return;
+	struct netstack *stk = get_netstack(TR_UDS);
+	stk->ops->initlist(list);
 }
 
 /****************************************************************************
@@ -421,6 +421,6 @@ void net_initlist(FAR struct socketlist *list)
 
 void net_releaselist(FAR struct socketlist *list)
 {
-	/*	Todo */
-	return;
+	struct netstack *stk = get_netstack(TR_UDS);
+	stk->ops->releaselist((void *)list);
 }

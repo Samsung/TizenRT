@@ -91,6 +91,9 @@ struct netstack_ops {
 #ifdef CONFIG_NET_NETMON
 	int (*getstats)(int fd, struct netmon_sock **sock);
 #endif
+
+	void (*initlist)(void *list);
+	void (*releaselist)(void *list);
 };
 
 struct netstack {

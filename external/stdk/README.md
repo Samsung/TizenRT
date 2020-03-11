@@ -19,12 +19,6 @@ git submodule update --init "external/stdk/st-device-sdk-c"
 git submodule update --init "external/libsodium/libsodium"
 ```
 
-### Apply patch for stdk
-```shell
-cd external/stdk/st-device-sdk-c
-git apply ../patch/0001-port-net-fix-ssl-issue-on-TizenRT.patch
-```
-
 ### Register device and update configure info
 refering https://github.com/SmartThingsCommunity/st-device-sdk-c-ref/blob/master/doc/getting_started.md 
 
