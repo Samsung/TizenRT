@@ -138,6 +138,10 @@ ifeq ($(CONFIG_RTK_WLAN),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_AMEBAD_WIFI),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
+endif
+
 # Add library for wifi driver
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libwifidriver$(LIBEXT)
 # Add library for wifi stack

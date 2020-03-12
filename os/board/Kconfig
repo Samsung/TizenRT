@@ -117,7 +117,15 @@ config ARCH_BOARD_STM32L4R9AI_DISCO
 	select ARCH_HAVE_IRQBUTTONS
 	---help---
 		STMicro STM32L4R9AI-Discovery board based on the STMicro STM32L4R9AI MCU.
-		
+
+config ARCH_BOARD_RTL8721CSM
+	bool "Realtek RTL8721CSM-Discovery board"
+	depends on ARCH_CHIP_RTL8721CSM
+	#select ARCH_HAVE_LEDS
+	#select ARCH_HAVE_BUTTONS
+	#select ARCH_HAVE_IRQBUTTONS
+	---help---
+		Realtek RTL8721CSM-Discovery board based on the Realtek RTL8721CSM MCU.		
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -140,6 +148,7 @@ config ARCH_BOARD
 	default "imxrt1020-evk"      if ARCH_BOARD_IMXRT1020_EVK
 	default "imxrt1050-evk"      if ARCH_BOARD_IMXRT1050_EVK
 	default "stm32l4r9ai-disco"  if ARCH_BOARD_STM32L4R9AI_DISCO
+	default "rtl8721csm"         if ARCH_BOARD_RTL8721CSM
 	
 comment "Common Board Options"
 
@@ -307,6 +316,9 @@ source board/imxrt1050-evk/Kconfig
 endif
 if ARCH_BOARD_STM32L4R9AI_DISCO
 source board/stm32l4r9ai-disco/Kconfig
+endif
+if ARCH_BOARD_RTL8721CSM
+source board/rtl8721csm/Kconfig
 endif
 comment "Board-Partition Options"
 

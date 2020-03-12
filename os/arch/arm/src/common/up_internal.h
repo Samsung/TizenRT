@@ -348,7 +348,7 @@ void up_pminitialize(void);
 #define up_pminitialize()
 #endif
 
-#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
+#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7) || defined(CONFIG_ARCH_CORTEXM33)
 void up_systemreset(void) noreturn_function;
 #endif
 
@@ -366,7 +366,7 @@ uint32_t *arm_doirq(int irq, uint32_t *regs);
 
 /* Exception handling logic unique to the Cortex-M family */
 
-#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
+#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7) || defined(CONFIG_ARCH_CORTEXM33)
 
 /* Interrupt acknowledge and dispatch */
 

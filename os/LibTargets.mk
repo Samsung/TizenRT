@@ -285,6 +285,11 @@ $(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT): $(TOPDIR)$(DELIM)drivers$(DELIM)wireles
 	$(Q) install $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)realtek$(DELIM)librtl$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_AMEBAD_WIFI),y)
+$(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
+endif
+
 # External esp32 wifi static Lib builds
 ifeq ($(CONFIG_ESP32_WIFI_SUPPORT),y)
 $(LIBRARIES_DIR)$(DELIM)libcoexist$(LIBEXT): $(EXTDIR)$(DELIM)esp_idf_port/esp32$(DELIM)lib$(DELIM)libcoexist$(LIBEXT)

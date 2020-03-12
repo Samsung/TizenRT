@@ -1,0 +1,504 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "AMEBAD Configuration Options"
+
+choice
+	prompt "AMEBAD Chip Selection"
+	default ARCH_CHIP_RTL8721CSM
+	depends on ARCH_CHIP_AMEBAD
+
+config ARCH_CHIP_RTL8721CSM
+	bool "RTL8721CSM"
+	select RTL8721D
+	select ARCH_CORTEXM33
+	select CHIP_A_CUT
+	select KERNEL
+	select SOC_PS_EN
+	select SDIO_DEVICE_EN
+	select MBED_API_EN
+	select WIFI_EN
+	select NETWORK
+	select USE_MBEDTLS_ROM
+	select MBED_TLS_ENABLED
+	select DEBUG_LOG
+	select TOOLCHAIN_ASDK
+	select LINK_ROM_SYMB
+
+endchoice
+
+choice
+	prompt "Product"
+	default RTL8721D
+
+config RTL8721D
+	bool "RTL8721D"
+
+endchoice
+
+
+config FPGA
+	bool "Select FPGA"
+	default n
+
+
+choice
+	prompt "Chip Version"
+	default CHIP_A_CUT
+
+config CHIP_A_CUT
+	bool "A cut"
+
+config CHIP_B_CUT
+	bool "B cut"
+
+endchoice
+
+config CPU_CLK
+	bool "CPU Clock"
+	default n
+	depends on !FPGA
+
+menu "cpu clock configuration"
+	depends on CPU_CLK
+
+choice
+	prompt "CPU Clock Config Type"
+	default CPU_200MHZ
+
+	config CPU_200MHZ
+		bool "200MHz"
+
+	config CPU_100MHZ
+		bool "100MHz"
+
+	config CPU_50MHZ
+		bool "50MHz"
+
+	config CPU_25MHZ
+		bool "25MHz"
+
+	config CPU_XTAL
+		bool "Crystal"
+
+	config FPGA_CLK
+		bool "FPGA Clock"
+
+endchoice
+
+endmenu
+
+
+choice
+	prompt "Mass Production"
+	default MP
+
+	config MP
+		bool "MP"
+
+	config CP
+		bool "CP"
+
+	config FT
+		bool "FT"
+
+	config EQC
+		bool "EQC"
+
+endchoice
+
+config TRUSTZONE
+	bool "Enable TrustZone"
+	default n
+
+config KERNEL
+	bool "Enable Kernel"
+	default n
+
+config SOC_PS_EN
+	bool "Enable SOC PS"
+	default n
+	select SOC_PS_MODULE
+
+config SOC_PS_MODULE
+	bool "CONFIG SOC PS"
+	default n
+
+menuconfig SDIO_DEVICE_EN
+	bool "Enable Sdio Device"
+	default n
+
+if SDIO_DEVICE_EN
+
+	config SDIO_DEVICE_NORMAL
+		bool "Normal"
+		default n
+	config SDIO_DEVICE_MODULE
+		bool "Module"
+		default n
+endif
+
+config PINMAP_ENABLE
+	bool "PINMAP Enable"
+	default n
+
+config MBED_API_EN
+	bool "Enable MBED_API"
+	default n
+
+menuconfig PER_TEST
+	bool "Enable Peripheral Test"
+	default n
+
+if PER_TEST
+
+	config DBGPORT_ENABLE
+		bool "DBGPORT Enable"
+		default n
+
+	config TIMER_VERIFY
+		bool "Timer_Verify_Mode"
+		default n
+
+	config WDG_VERIFY
+		bool "WDG_Verify_Mode"
+		default n
+
+	config GDMA_VERIFY
+		bool "Gdma_Verify_Mode"
+		default n
+
+	config GPIO_VERIFY
+		bool "GPIO_Verify_Mode"
+		default n
+
+	config SPI_COM_VERIFY
+		bool "SPI_COM_Verify_Mode"
+		default n
+
+	config SPI_VERIFY
+		bool "USI_SPI_Verify_Mode"
+		default n
+
+	config UART_VERIFY
+		bool "UART_Verify_Mode"
+		default n
+
+	config USI_UART_VERIFY
+		bool "USI_UART_Verify_Mode"
+		default n
+
+	config LCDC_VERIFY
+		bool "LCDC_Verify_Mode"
+		default n
+
+	config I2C_VERIFY
+		bool "I2C_Verify_Mode"
+		default n
+
+	config PMC_VERIFY
+		bool "PMC_Verify_Mode"
+		default n
+
+	config USI_I2C_VERIFY
+		bool "USI_I2C_Verify_Mode"
+		default n
+
+	config KEYSCAN_VERIFY
+		bool "KeyScan_Verify_Mode"
+		default n
+
+	config SGPIO_VERIFY
+		bool "SGPIO_Verify_Mode"
+		default n
+
+	config PSRAM_VERIFY
+		bool "PSRAM_Verify_Mode"
+		default n
+
+	config I2S_VERIFY
+		bool "I2S_Verify_Mode"
+		default n
+
+	config AUDIO_VERIFY
+		bool "AUDIO_Verify_Mode"
+		default n
+
+	config SOC_PS_VERIFY
+		bool "SOC_PS_Verify_Mode"
+		default n
+
+	config CRYPTO_VERIFY
+		bool "Crypto_Verify_Mode"
+		default n
+
+	config EFUSE_VERIFY
+		bool "EFUSE_Verify_Mode"
+		default n
+
+	config SPIC_VERIFY
+		bool "SPIC_Verify_Mode"
+		default n
+
+	config FTL_VERIFY
+		bool "FTL_Verify_Mode"
+		default n
+
+	config ADC_VERIFY
+		bool "ADC_Verify_Mode"
+		default n
+
+	config RSIP_VERIFY
+		bool "RSIP_Verify_Mode"
+		default n
+
+	config SDIO_DEVICE_VERIFY
+		bool "SDIO_DEVICE_Verify_Mode"
+		default n
+
+	config SDIOH_VERIFY
+		bool "SDIO_HOST_Verify_Mode"
+		default n
+
+	config DHRYSTONE_TEST
+		bool "Dhrystone Test"
+		default n
+
+	config RTLIB_VERIFY
+		bool "RTLIB ROM Test"
+		default n
+
+	config IPC_VERIFY
+		bool "IPC Test"
+		default n
+
+	config IR_VERIFY
+		bool "IR Test"
+		default n
+
+	config MPU_VERIFY
+		bool "MPU Test"
+		default n
+
+	config CACHE_VERIFY
+		bool "CACHE Test"
+		default n
+
+	config WFE_VERIFY
+		bool "WFE Test"
+		default n
+
+endif
+
+menuconfig SEC_VERIFY
+	bool "SEC_Verify_Mode"
+	default n
+
+if SEC_VERIFY
+
+	config CACHE_SEC_VERIFY
+		bool "CACHE Secure Test"
+		default n
+
+	config EFUSE_SEC_VERIFY
+		bool "EFUSE Secure Test"
+		default n
+
+	config GDMA_SEC_VERIFY
+		bool "GDMA Secure Test"
+		default n
+
+	config AES_SEC_VERIFY
+		bool "AES Secure Test"
+		default n
+
+	config CRYPTO_SEC_VERIFY
+		bool "Crypto Secure Test"
+		default n
+
+	config CRC_SEC_VERIFY
+		bool "CRC Secure Test"
+		default n
+
+	config RDP_SEC_VERIFY
+		bool "RDP Secure Test"
+		default n
+endif
+
+
+config BT_EN
+	bool "Enable BT"
+	default n
+
+if BT_EN
+
+	config BT
+		bool
+		default n
+
+	config BT_PERIPHERAL
+		bool "BT_Peripheral"
+		default n
+
+	config BT_CENTRAL
+		bool "BT_Central"
+		default n
+
+	config BT_SCATTERNET
+		bool "BT_Scatternet"
+		default n
+		depends on BT_PERIPHERAL && BT_CENTRAL
+
+	config BT_BEACON
+		bool "BT_Beacon"
+		default n
+
+	config BT_CONFIG
+		bool "BT_Simple_Config"
+		default n
+
+	config BT_AIRSYNC_CONFIG
+		bool "BT_Airsync_Config"
+		default n
+endif
+
+
+menuconfig WIFI_EN
+	bool "Enable Wifi"
+	default n
+	select WIFI_NORMAL
+
+if WIFI_EN
+
+	config HIGH_TP_TEST
+		bool "Enable High TP Test"
+		default n
+
+choice
+	prompt "WIFI Config Type"
+	default WIFI_NORMAL
+
+	config WIFI_NORMAL
+		bool "Normal Wi-Fi"
+		select WIFI_MODULE
+
+	config WIFI_TEST
+		bool "Test Wi-Fi"
+		select WIFI_MODULE
+		select WIFI_VERIFY
+
+endchoice
+
+	config WIFI_MODULE
+		bool
+		default n
+		depends WIFI_NORMAL
+
+	config WIFI_VERIFY
+		bool
+		default n
+		depends on WIFI_TEST
+
+endif
+
+
+config NETWORK
+	bool "Enable Network"
+	default n
+
+menu "USB"
+	config USB_OTG_EN
+		bool "Enable USB"
+		default n
+
+config USB_DEVICE_EN
+		bool "USB OTG Type"
+		default n
+	depends on USB_OTG_EN
+
+if USB_DEVICE_EN
+
+choice
+
+	prompt "USB Device Type"
+	default USBD_AUDIO
+
+	config USBD_AUDIO
+		bool "USB_DEVICE_AUDIO"
+
+	config USBD_MSC
+		bool "USB_DEVICE_MSC"
+
+	config USBD_CDC_ACM
+		bool "USB_DEVICE_CDC_ACM"
+endchoice
+endif
+endmenu
+
+config USE_MBEDTLS_ROM
+	bool "SSL Config"
+	default n
+
+config MBED_TLS_ENABLED
+	bool "MBEDTLS Enable"
+	default n
+
+config SSL_ROM_TEST
+	bool "SSL ROM Test"
+	default n
+
+config BAIDU_DUER
+	bool "Enable DuerOS"
+	default n
+
+config MQTT_EN
+	bool "Enable MQTT"
+	default n
+
+config GUI_EN
+	bool "Enable GUI"
+	default n
+	select EMWIN_EN
+	select LITTLEVGL_EN
+
+config EMWIN_EN
+	bool "emWin"
+	default n
+
+config LITTLEVGL_EN
+	bool "LittlevGL"
+	default n
+
+config AUDIO_EN
+	bool "Enable Audio"
+	default n
+
+config DEBUG_LOG
+	bool "Enable debug log"
+	default n
+
+choice
+	prompt "Toolchain"
+	default TOOLCHAIN_ASDK
+
+	config TOOLCHAIN_ASDK
+		bool "ASDK"
+
+	config TOOLCHAIN_ARM_GCC
+		bool "ARM_GCC"
+
+endchoice
+
+choice
+	prompt "Link ROM Mode"
+	default LINK_ROM_LIB
+
+	config LINK_ROM_LIB
+		bool "Link_ROM_Library"
+
+	config LINK_ROM_SYMB
+		bool "Link_ROM_Symbol"
+
+endchoice
