@@ -471,21 +471,16 @@
 #define SYS_setsockopt                 (__SYS_network + 12)
 #define SYS_shutdown                   (__SYS_network + 13)
 #define SYS_socket                     (__SYS_network + 14)
-#define SYS_nnetsocket                 (__SYS_network + 15)
+#define __SYS_prctl                    (__SYS_network + 15)
 #else
-#define SYS_nnetsocket                 __SYS_network
+#define __SYS_prctl                    __SYS_network
 #endif
 
-/* The following is defined only if CONFIG_TASK_NAME_SIZE > 0 */
+#define SYS_prctl                      __SYS_prctl
 
-#if CONFIG_TASK_NAME_SIZE > 0
-#define SYS_prctl                      (SYS_nnetsocket + 0)
-#define SYS_fin_wait                   (SYS_nnetsocket + 1)
-#else
-#define SYS_fin_wait                   SYS_nnetsocket
-#endif
+#define SYS_fin_wait                   SYS_prctl + 1
 
-#define SYS_maxsyscall                 SYS_fin_wait
+#define SYS_maxsyscall                 (SYS_fin_wait + 1)
 
 /* Note that the reported number of system calls does *NOT* include the
  * architecture-specific system calls.  If the "real" total is required,
