@@ -72,7 +72,11 @@
 #include "svcall.h"
 #include "exc_return.h"
 #include "up_internal.h"
+#ifdef CONFIG_ARMV8M_MPU
+#include "mpu.h"
+#endif
 
+#define INDEX_ERROR (-1)
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -92,6 +96,9 @@
 #define svcdbg(...)
 #endif
 
+#ifdef CONFIG_BINMGR_RECOVERY
+extern uint32_t g_assertpc;
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -173,12 +180,16 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 {
 	uint32_t *regs = (uint32_t *)context;
 	uint32_t cmd;
+
 	DEBUGASSERT(regs && regs == current_regs);
 	cmd = regs[REG_R0];
 
 	/* The SVCall software interrupt is called with R0 = system call command
 	 * and R1..R7 =  variable number of arguments depending on the system call.
 	 */
+#ifdef CONFIG_BINMGR_RECOVERY
+	g_assertpc = regs[REG_R14];
+#endif
 
 #if defined(CONFIG_DEBUG_SYSCALL) || defined(CONFIG_DEBUG_SVCALL)
 #ifndef CONFIG_DEBUG_SVCALL
@@ -223,9 +234,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV8M_CMNVECTOR)
 		up_savefpu((uint32_t *)regs[REG_R1]);
 #endif
-#if defined(CONFIG_BUILD_PROTECTED)
-		up_mpucontextsave((uint32_t *)(regs[REG_R1]));
-#endif
 	}
 	break;
 
@@ -247,6 +255,18 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	case SYS_restore_context: {
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
+
+#if defined(CONFIG_ARMV8M_MPU) || defined(CONFIG_TASK_MONITOR)
+		struct tcb_s *tcb = sched_self();
+#endif
+		/* Restore the MPU registers in case we are switching to an application task */
+#ifdef CONFIG_ARMV8M_MPU
+		up_set_mpu_app_configuration(tcb);
+#endif
+#ifdef CONFIG_TASK_MONITOR
+		/* Update tcb active flag for monitoring. */
+		tcb->is_active = true;
+#endif
 	}
 	break;
 
@@ -272,10 +292,19 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV8M_CMNVECTOR)
 		up_savefpu((uint32_t *)regs[REG_R1]);
 #endif
-#if defined(CONFIG_BUILD_PROTECTED)
-		up_mpucontextsave((uint32_t *)(regs[REG_R1]));
-#endif
 		current_regs = (uint32_t *)regs[REG_R2];
+
+#if defined(CONFIG_ARMV8M_MPU) || defined(CONFIG_TASK_MONITOR)
+		struct tcb_s *tcb = sched_self();
+#endif
+		/* Restore the MPU registers in case we are switching to an application task */
+#ifdef CONFIG_ARMV8M_MPU
+		up_set_mpu_app_configuration(tcb);
+#endif
+#ifdef CONFIG_TASK_MONITOR
+		/* Update tcb active flag for monitoring. */
+		tcb->is_active = true;
+#endif
 	}
 	break;
 
@@ -299,6 +328,10 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		/* Make sure that there is a saved syscall return address. */
 
 		DEBUGASSERT(index >= 0);
+		DEBUGASSERT(index < CONFIG_SYS_NNEST);
+		if (index < 0 || index >= CONFIG_SYS_NNEST) {
+			return INDEX_ERROR;
+		}
 
 		/* Setup to return to the saved syscall return address in
 		 * the original mode.
@@ -337,7 +370,22 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		 * unprivileged mode.
 		 */
 
-		regs[REG_PC] = (uint32_t)USERSPACE->task_startup;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		/* While starting loadable apps, we cannot go through the
+		* USERSPACE->task_startup method. Instead we pick the PC value
+		* from the app's userspace object stored in its tcb.
+		*
+		* Here, we check if this task is a loadable app (non-zero uspace)
+		*/
+		if (((struct tcb_s *)sched_self())->uspace) {
+			regs[REG_PC] = (uint32_t)((struct userspace_s *)(((struct tcb_s *)sched_self())->uspace))->task_startup;
+		} else
+		/* If its a normal non-loadable user app, then follow the default method */
+#endif
+		{
+			regs[REG_PC] = (uint32_t)USERSPACE->task_startup;
+		}
+
 		regs[REG_EXC_RETURN] = EXC_RETURN_UNPRIVTHR;
 
 		/* Change the parameter ordering to match the expectation of struct
@@ -347,6 +395,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		regs[REG_R0] = regs[REG_R1];	/* Task entry */
 		regs[REG_R1] = regs[REG_R2];	/* argc */
 		regs[REG_R2] = regs[REG_R3];	/* argv */
+
 	}
 	break;
 #endif
@@ -368,7 +417,22 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		 * unprivileged mode.
 		 */
 
-		regs[REG_PC] = (uint32_t)USERSPACE->pthread_startup;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		/* While starting loadable apps, we cannot go through the
+		* USERSPACE->task_startup method. Instead we pick the PC value
+		* from the app's userspace object stored in its tcb.
+		*
+		* Here, we check if this task is a loadable app (non-zero uspace)
+		*/
+		if (((struct tcb_s *)sched_self())->uspace) {
+			regs[REG_PC] = (uint32_t)((struct userspace_s *)(((struct tcb_s *)sched_self())->uspace))->pthread_startup;
+		} else
+		/* If its a normal non-loadable user app, then follow the default method */
+#endif
+		{
+			regs[REG_PC] = (uint32_t)USERSPACE->pthread_startup;
+		}
+
 		regs[REG_EXC_RETURN] = EXC_RETURN_UNPRIVTHR;
 
 		/* Change the parameter ordering to match the expectation of struct
@@ -408,7 +472,22 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		 * unprivileged mode.
 		 */
 
-		regs[REG_PC] = (uint32_t)USERSPACE->signal_handler;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		/* While starting loadable apps, we cannot go through the
+		* USERSPACE->task_startup method. Instead we pick the PC value
+		* from the app's userspace object stored in its tcb.
+		*
+		* Here, we check if this task is a loadable app (non-zero uspace)
+		*/
+		if (rtcb->uspace) {
+			regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->signal_handler;
+		} else
+		/* If its a normal non-loadable user app, then follow the default method */
+#endif
+		{
+			regs[REG_PC] = (uint32_t)USERSPACE->signal_handler;
+		}
+
 		regs[REG_EXC_RETURN] = EXC_RETURN_UNPRIVTHR;
 
 		/* Change the parameter ordering to match the expectation of struct
@@ -471,6 +550,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		 */
 
 		DEBUGASSERT(index < CONFIG_SYS_NNEST);
+		if (index >= CONFIG_SYS_NNEST) {
+			return INDEX_ERROR;
+		}
 
 		/* Setup to return to dispatch_syscall in privileged mode. */
 

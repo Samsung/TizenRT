@@ -95,14 +95,13 @@ extern char _ebss;
  *
  * Note that the [ ... ] designated initialiser is a GCC extension.
  */
-#if 0
+
 unsigned _vectors[] __attribute__((section(".vectors"))) = {
 	/* Initial stack */
 
-	0x10004FFC,
+	IDLE_STACK,
 	/* Reset exception handler */
 	(unsigned) &__start,
 	/* Vectors 2 - n point directly at the generic handler */
 	[2 ...(15 + ARMV8M_PERIPHERAL_INTERRUPTS)] = (unsigned) &exception_common
 };
-#endif

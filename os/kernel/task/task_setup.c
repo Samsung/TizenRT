@@ -462,7 +462,7 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		tcb->uheap = rtcb->uheap;
 
 		/* Copy the MPU register values from parent to child task */
-#ifdef CONFIG_ARMV7M_MPU
+#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARM_MPU)
 		int i = 0;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		for (; i < 3 * MPU_NUM_REGIONS; i += 3)

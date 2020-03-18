@@ -73,6 +73,7 @@ config ARCH_CHIP_AMEBAD
 	bool "Realtek AMEBAD"
 	select ARCH_HAVE_CMNVECTOR
 	select ARCH_HAVE_MPU
+	select ARMV8M_MPU
 	select ARCH_HAVE_I2CRESET
 	select ARCH_HAVE_HEAPCHECK if DEBUG
 	---help---
@@ -188,12 +189,15 @@ config ARM_HAVE_MPU_UNIFIED
 		Automatically selected to indicate that the CPU supports a
 		unified MPU for both instruction and data addresses.
 
+config ARM_MPU
+	bool "Common MPU support"
 
 config ARMV7M_MPU
 	bool "MPU support"
 	default n
 	depends on ARCH_HAVE_MPU
 	select ARCH_USE_MPU
+	select ARM_MPU
 	---help---
 		Build in support for the ARM Cortex-M3/4 Memory Protection Unit (MPU).
 		Check your chip specifications first; not all Cortex-M3/4 chips support the MPU.
@@ -203,6 +207,23 @@ config ARMV7M_MPU_NREGIONS
 	default 16 if ARCH_CORTEXM7
 	default 8 if !ARCH_CORTEXM7
 	depends on ARMV7M_MPU
+	---help---
+		This is the number of protection regions supported by the MPU.
+
+config ARMV8M_MPU
+	bool "MPU support"
+	default n
+	depends on ARCH_HAVE_MPU
+	select ARCH_USE_MPU
+	select ARM_MPU
+	---help---
+		Build in support for the ARM Cortex-M33 Memory Protection Unit (MPU).
+		Check your chip specifications first; not all Cortex-M33 chips support the MPU.
+
+config ARMV8M_MPU_NREGIONS
+	int "Number of MPU regions"
+	default 8 if ARCH_CORTEXM33
+	depends on ARMV8M_MPU
 	---help---
 		This is the number of protection regions supported by the MPU.
 
@@ -253,7 +274,7 @@ if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
 source arch/arm/src/armv7-m/Kconfig
 endif
 if ARCH_CORTEXM33
-source os/board/rtl8721csm/src/component/soc/realtek/amebad/cmsis/Kconfig
+source arch/arm/src/armv8-m/Kconfig
 endif
 if ARCH_CORTEXR4
 source arch/arm/src/armv7-r/Kconfig

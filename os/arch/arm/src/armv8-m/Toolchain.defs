@@ -159,6 +159,7 @@ ifeq ($(CONFIG_ARCH_CORTEXM33),y)
   TOOLCHAIN_ARM8EM   := n
   TOOLCHAIN_MCPU     := -mcpu=cortex-m33
   TOOLCHAIN_MTUNE    := -mtune=cortex-m33
+  TOOLCHAIN_MARCH    := -march=armv8-m.main+dsp
   TOOLCHAIN_MFLOAT   := -mfloat-abi=soft
 endif
 
@@ -170,9 +171,9 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),ATOLLIC)
   MAXOPTIMIZATION ?= -Os
   ifeq ($(CONFIG_ARCH_CORTEXM33),y)
     ifeq ($(CONFIG_ARCH_FPU),y)
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
@@ -186,15 +187,15 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),BUILDROOT)
 ifeq ($(CONFIG_ARMV8M_OABI_TOOLCHAIN),y)
   CROSSDEV ?= arm-nuttx-elf-
   ARCROSSDEV ?= arm-nuttx-elf-
-  ARCHCPUFLAGS = -mtune=cortex-m3 -mfloat-abi=soft
+  ARCHCPUFLAGS = -mtune=cortex-m33 -mfloat-abi=soft
 else
   CROSSDEV ?= arm-nuttx-eabi-
   ARCROSSDEV ?= arm-nuttx-eabi-
   ifeq ($(CONFIG_ARCH_CORTEXM33),y)
     ifeq ($(CONFIG_ARCH_FPU),y)
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
 endif
@@ -209,9 +210,9 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),CODEREDL)
   MAXOPTIMIZATION ?= -Os
   ifeq ($(CONFIG_ARCH_CORTEXM33),y)
     ifeq ($(CONFIG_ARCH_FPU),y)
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
 endif
@@ -226,7 +227,7 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),CODEREDW)
     ifeq ($(CONFIG_ARCH_FPU),y)
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
@@ -242,9 +243,9 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),CODESOURCERYL)
   MAXOPTIMIZATION ?= -O2
   ifeq ($(CONFIG_ARCH_CORTEXM33),y)
     ifeq ($(CONFIG_ARCH_FPU),y)
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
 endif
@@ -257,9 +258,9 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),CODESOURCERYW)
   MAXOPTIMIZATION ?= -Os
   ifeq ($(CONFIG_ARCH_CORTEXM33),y)
     ifeq ($(CONFIG_ARCH_FPU),y)
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
@@ -275,7 +276,7 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),DEVKITARM)
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
     WINTOOL = y
   endif
-  ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+  ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
 endif
 
 # Generic GNU EABI toolchain on OS X, Linux or any typical Posix system
@@ -287,10 +288,9 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),GNU_EABIL)
   MAXOPTIMIZATION ?= -Os
   ifeq ($(CONFIG_ARCH_CORTEXM33),y)
     ifeq ($(CONFIG_ARCH_FPU),y)
-      #ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=hard -mfpu=fpv5-sp-d16
     else
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
 endif
@@ -303,9 +303,9 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),GNU_EABIW)
   MAXOPTIMIZATION ?= -Os
   ifeq ($(CONFIG_ARCH_CORTEXM33),y)
     ifeq ($(CONFIG_ARCH_FPU),y)
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
-      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mfloat-abi=soft
+      ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
   endif
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)

@@ -81,7 +81,7 @@
 
 #ifdef CONFIG_BINFMT_ENABLE
 
-#ifdef CONFIG_ARMV7M_MPU
+#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARM_MPU)
 extern uint32_t g_mpu_region_nr;
 void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 #endif
@@ -191,7 +191,7 @@ int exec_module(FAR struct binary_s *binp)
 	rtcb->uheap = (uint32_t)binp->uheap;
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
-#ifdef CONFIG_ARMV7M_MPU
+#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARM_MPU)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
 	mpu_configure_app_regs(&rtcb->mpu_regs[3], g_mpu_region_nr, (uintptr_t)binp->alloc[0], binp->textsize, true, true);
