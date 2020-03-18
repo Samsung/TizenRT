@@ -136,7 +136,7 @@
  * some configurations.
  */
 
-#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
+#if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7) || defined(CONFIG_ARCH_CORTEXM33)
 
 /* If the floating point unit is present and enabled, then save the
  * floating point registers as well as normal ARM registers.  This only
@@ -144,7 +144,7 @@
  * (i.e., not CONFIG_ARMV7M_CMNVECTOR).
  */
 
-#if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR)
+#if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARMV7M_CMNVECTOR) && !defined(CONFIG_ARMV8M_CMNVECTOR)
 #define up_savestate(regs)  up_copyarmstate(regs, (uint32_t *)current_regs)
 #else
 #define up_savestate(regs)  up_copyfullstate(regs, (uint32_t *)current_regs)
@@ -378,7 +378,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs);
 int up_svcall(int irq, FAR void *context, FAR void *arg);
 int up_hardfault(int irq, FAR void *context, FAR void *arg);
 
-#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
+#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7) || defined(CONFIG_ARCH_CORTEXM33)
 
 int up_memfault(int irq, FAR void *context, FAR void *arg);
 

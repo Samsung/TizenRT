@@ -72,6 +72,7 @@
 #define CONFIG_DEBUG_VERBOSE 1
 #endif
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -83,16 +84,33 @@
 #include <tinyara/syslog/syslog.h>
 
 #include <arch/board/board.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
+#endif
+#ifdef CONFIG_BINMGR_RECOVERY
+#include <unistd.h>
+#include <stdbool.h>
+#include <queue.h>
+#include <tinyara/wdog.h>
+#include "semaphore/semaphore.h"
+#include "binary_manager/binary_manager.h"
 #endif
 #include "irq/irq.h"
 
 #include "up_arch.h"
 #include "up_internal.h"
 #include "mpu.h"
+
+#ifdef CONFIG_BINMGR_RECOVERY
+bool abort_mode = false;
+extern uint32_t g_assertpc;
+extern struct tcb_s *g_faultmsg_sender;
+extern sq_queue_t g_faultmsg_list;
+extern sq_queue_t g_freemsg_list;
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -196,21 +214,26 @@ static inline void up_registerdump(void)
 #ifdef CONFIG_STACK_COLORATION
 static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 {
+	size_t used_stack_size;
+
+	used_stack_size = up_check_tcbstack(tcb);
+
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%10s | %5d | %4d | %7lu / %7lu\n",
+	lldbg("%*s | %5d | %4d | %7lu / %7lu\n", CONFIG_TASK_NAME_SIZE,
 			tcb->name, tcb->pid, tcb->sched_priority,
-			(unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
+			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size);
 #else
 	lldbg("%5d | %4d | %7lu / %7lu\n",
-			tcb->pid, tcb->sched_priority, (unsigned long)up_check_tcbstack(tcb),
+			tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size,
 			(unsigned long)tcb->adj_stack_size);
 #endif
 
-	if (tcb->pid != 0 && up_check_tcbstack(tcb) == tcb->adj_stack_size) {
+	if (used_stack_size == tcb->adj_stack_size) {
 		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
 	}
+
 }
 #endif
 
@@ -226,10 +249,10 @@ static inline void up_showtasks(void)
 	lldbg("*******************************************\n");
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK\n");
-	lldbg("-------------------------------------------------\n");
+	lldbg("%*s | %5s | %4s | %7s / %7s\n", CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK");
+	lldbg("---------------------------------------------------------------------\n");
 #else
-	lldbg("  PID | PRI |   USED / TOTAL STACK\n");
+	lldbg("%5s | %4s | %7s / %7s\n", "PID", "PRI", "USED", "TOTAL STACK");
 	lldbg("----------------------------------\n");
 #endif
 
@@ -285,13 +308,8 @@ static void up_dumpstate(void)
 
 	/* Get the limits on the user stack memory */
 
-	if (rtcb->pid == 0) {
-		ustackbase = g_idle_topstack - 4;
-		ustacksize = CONFIG_IDLETHREAD_STACKSIZE;
-	} else {
-		ustackbase = (uint32_t)rtcb->adj_stack_ptr;
-		ustacksize = (uint32_t)rtcb->adj_stack_size;
-	}
+	ustackbase = (uint32_t)rtcb->adj_stack_ptr;
+	ustacksize = (uint32_t)rtcb->adj_stack_size;
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 	/* Get the limits on the interrupt stack memory */
@@ -394,25 +412,69 @@ static void up_dumpstate(void)
  * Name: _up_assert
  ****************************************************************************/
 
-static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#else
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	/* Are we in an interrupt handler or the idle task? */
 
 	if (current_regs || (this_task())->pid == 0) {
+#endif
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
-			board_led_on(LED_PANIC);
+			//board_led_on(LED_PANIC);
 			up_mdelay(250);
-			board_led_off(LED_PANIC);
+			//board_led_off(LED_PANIC);
 			up_mdelay(250);
 #endif
 		}
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	} else {
 		exit(errorcode);
 	}
+#endif
+#endif /* CONFIG_BOARD_ASSERT_AUTORESET */
 }
+
+#ifdef CONFIG_BINMGR_RECOVERY
+/****************************************************************************
+ * Name: recovery_user_assert : recovery user assert through binary manager
+ ****************************************************************************/
+static void recovery_user_assert(void)
+{
+	int ret;
+	int binid;
+	int bin_idx;
+	struct tcb_s *tcb;
+	struct faultmsg_s *msg;
+
+	tcb = this_task();
+	if (tcb != NULL && tcb->group != NULL) {
+		tcb->sched_priority = SCHED_PRIORITY_MIN;
+		tcb->lockcount = 0;
+		binid = tcb->group->tg_binid;
+		bin_idx = binary_manager_get_index_with_binid(binid);
+		if (BIN_RTTYPE(bin_idx) == BINARY_TYPE_REALTIME) {
+			/* Exclude realtime task/pthreads from scheduling */
+			binary_manager_exclude_rtthreads(tcb);
+		}
+
+		/* Add fault message and Unblock Fault message Sender */
+		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
+			msg->binid = binid;
+			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
+			up_unblock_task(g_faultmsg_sender);
+			return;
+		}
+	}
+
+	/* Failed to request for recovery to binary manager */
+	_up_assert(EXIT_FAILURE);
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -444,15 +506,50 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 	board_led_on(LED_ASSERTION);
 
-#if CONFIG_TASK_NAME_SIZE > 0
-	printf("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
-#else
-	printf("Assertion failed at file:%s line: %d\n", filename, lineno);
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
+	abort_mode = true;
 #endif
 
-	up_dumpstate();
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
-	(void)boardctl(BOARDIOC_RESET, 0);
+#if CONFIG_TASK_NAME_SIZE > 0
+	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
+#else
+	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
-	_up_assert(EXIT_FAILURE);
+
+#ifdef CONFIG_BINMGR_RECOVERY
+	uint32_t assert_pc;
+	bool is_kernel_assert;
+
+	/* Extract the PC value of instruction which caused the abort/assert */
+
+	if (current_regs) {
+		assert_pc = current_regs[REG_R14];
+	} else {
+		assert_pc = (uint32_t)g_assertpc;
+	}
+
+	/* Is the assert in Kernel? */
+
+	is_kernel_assert = is_kernel_space(assert_pc);
+
+#endif  /* CONFIG_BINMGR_RECOVERY */
+
+	up_dumpstate();
+
+#if defined(CONFIG_BOARD_CRASHDUMP)
+	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
+#endif
+
+#ifdef CONFIG_BINMGR_RECOVERY
+	if (is_kernel_assert == false) {
+		/* recovery user assert through binary manager */
+
+		recovery_user_assert();
+	} else
+#endif
+	{
+		/* treat kernel assert */
+
+		_up_assert(EXIT_FAILURE);
+	}
 }

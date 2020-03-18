@@ -81,7 +81,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-#ifdef CONFIG_ARMV7M_MPU
+#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARM_MPU)
 uint8_t mpu_log2regionceil(uintptr_t base, size_t size);
 #endif
 
@@ -159,7 +159,7 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	 * we are subtracting bsssize from loadinfo->datasize.
 	 */
 	loadinfo->rosize += loadinfo->datasize - loadinfo->binp->bsssize;
-#ifdef CONFIG_ARMV7M_MPU
+#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARM_MPU)
 	loadinfo->textsize = 1 << mpu_log2regionceil(0, loadinfo->textsize);
 	loadinfo->rosize = 1 << mpu_log2regionceil(0, loadinfo->rosize);
 	datamemsize = 1 << mpu_log2regionceil(0, datamemsize);

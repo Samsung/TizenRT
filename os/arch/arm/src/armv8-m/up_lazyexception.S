@@ -203,16 +203,18 @@ exception_common:
 	stmdb	sp!, {r2-r11,r14}		/* Save the remaining registers plus the SP value */
 #else
 	stmdb	sp!, {r2-r11}			/* Save the remaining registers plus the SP value */
+	mov	r7, r14				/* Save R14 value in r7 */
 #endif
 
-#ifndef CONFIG_ARCH_HIPRI_INTERRUPT
+#if !defined(CONFIG_ARCH_HIPRI_INTERRUPT) && !defined(CONFIG_ARCH_NESTED_INTERRUPT)
+
 	/* Disable interrupts, select the stack to use for interrupt handling
 	 * and call up_doirq to handle the interrupt
 	 */
 
 	cpsid	i						/* Disable further interrupts */
 
-#else
+#elif !defined(CONFIG_ARCH_NESTED_INTERRUPT)
 	/* Set the BASEPRI register so that further normal interrupts will be
 	 * masked.  Nested, high priority may still occur, however.
 	 *
@@ -225,6 +227,20 @@ exception_common:
 
 	mov		r2, #NVIC_SYSH_DISABLE_PRIORITY
 	msr		basepri, r2				/* Set the BASEPRI */
+#endif
+
+	/* Disable further interrupts until we get g_nestlevel
+	 * and current_regs=regs, If before storing above values, higher priority
+	 * interrupt comes then context will be corrupted.
+	 */
+
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
+#ifdef CONFIG_ARMV8M_USEBASEPRI
+	mov r1, #NVIC_SYSH_DISABLE_PRIORITY
+	msr basepri,r1						/* Set base priority */
+#else
+	cpsid	i
+#endif
 #endif
 
 	/* There are two arguments to up_doirq:
@@ -240,13 +256,34 @@ exception_common:
 	mov		r4, sp
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
-	/* If CONFIG_ARCH_INTERRUPTSTACK is defined, we will set the MSP to use
-	 * a special special interrupt stack pointer.  The way that this is done
-	 * here prohibits nested interrupts without some additional logic!
+
+	/* If g_nestlevel is zero then behave as normal, switching from the user
+	 * to the interrupt stack; if g_nestlevel is greater than zero, then do
+	 * not switch stacks. In this latter case, we are already using the interrupt stack */
+
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
+	ldr		r5, =g_nestlevel
+	ldr		r6, [r5]
+	add		r6, r6, 1
+	str		r6, [r5]
+	cmp		r6, #1
+	bne		9f
+	ldr		r5, =current_regs
+	str		r1, [r5]
+#endif
+	ldr		sp, =g_intstackbase
+9:
+	/* Reenabling the interrupts before going into up_doirq
+	 * so that any higher priority interrupt can be served.
 	 */
 
-	setintstack	r2, r3
-
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
+#ifdef CONFIG_ARMv8M_USEBASEPRI
+	msr		basepri, r3
+#else
+	cpsie	i
+#endif
+#endif
 #else
 	/* Otherwise, we will re-use the interrupted thread's stack.  That may
 	 * mean using either MSP or PSP stack for interrupt level processing (in
@@ -260,6 +297,7 @@ exception_common:
 
 	bl		up_doirq				/* R0=IRQ, R1=register save (msp) */
 	mov		r1, r4					/* Recover R1=main stack pointer */
+	mov		r14, r7					/* Recover R14=R7 */
 
 	/* On return from up_doirq, R0 will hold a pointer to register context
 	 * array to use for the interrupt return.  If that return value is the same
@@ -302,6 +340,7 @@ exception_common:
 	ldmia	r0, {r2-r11,r14}		/* Recover R4-R11, r14 + 2 temp values */
 #else
 	ldmia	r0, {r2-r11}			/* Recover R4-R11 + 2 temp values */
+	ldr	r14, =EXC_RETURN_PRIVTHR	/* Load the special value */
 #endif
 	b		3f						/* Re-join common logic */
 
@@ -358,19 +397,13 @@ exception_common:
 	msr		control, r2				/* Save the updated control register */
 #else
 	msr		msp, r1					/* Recover the return MSP value */
-
-	/* Preload r14 with the special return value first (so that the return
-	 * actually occurs with interrupts still disabled).
-	 */
-
-	ldr		r14, =EXC_RETURN_PRIVTHR	/* Load the special value */
 #endif
 
 	/* Restore the interrupt state */
 
 #ifdef CONFIG_ARMV8M_USEBASEPRI
 	msr		basepri, r3				/* Restore interrupts priority masking */
-#ifndef CONFIG_ARCH_HIPRI_INTERRUPT
+#if !defined(CONFIG_ARCH_HIPRI_INTERRUPT) && !defined(CONFIG_ARCH_NESTED_INTERRUPT)
 	cpsie	i						/* Re-enable interrupts */
 #endif
 
@@ -393,15 +426,20 @@ exception_common:
  *
  ************************************************************************************************/
 
-#if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
+#if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 3
 	.bss
 	.global	g_intstackalloc
 	.global	g_intstackbase
+	.global	g_nestlevel
 	.align	8
 g_intstackalloc:
 	.skip	((CONFIG_ARCH_INTERRUPTSTACK + 4) & ~7)
 g_intstackbase:
 	.size	g_intstackalloc, .-g_intstackalloc
+	.skip 	4
+g_nestlevel:
+	.skip   4
+	.size   g_nestlevel, 4
 #endif
 
 	.end

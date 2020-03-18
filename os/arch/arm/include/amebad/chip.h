@@ -49,7 +49,7 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_INCLUDE_RTL8721D_CHIP_H
+#ifndef __ARCH_ARM_INCLUDE_AMEBAD_CHIP_H
 #define __ARCH_ARM_INCLUDE_AMEBAD_CHIP_H
 
 /************************************************************************************
@@ -64,16 +64,21 @@
 
 /* NVIC priority levels *************************************************************/
 
-/* NVIC priority levels *************************************************************/
-
-#define NVIC_SYSH_PRIORITY_MIN     0xf0	/* All bits set in minimum priority */
+/* The AmebaD only supports 8 priority levels.  The hardware priority
+ * mechanism will only look at the upper N bits of the 8-bit priority level
+ * (where N is 3 for the AmebaD family), so any prioritization must be
+ * performed in those bits.  The default priority level is set to the middle
+ * value
+ */
+#define NVIC_SYSH_PRIORITY_MIN     0xe0	/* Bits [5:7] set in minimum priority */
 #define NVIC_SYSH_PRIORITY_DEFAULT 0x80	/* Midpoint is the default */
 #define NVIC_SYSH_PRIORITY_MAX     0x00	/* Zero is maximum priority */
-#define NVIC_SYSH_PRIORITY_STEP    0x10	/* Four bits of interrupt priority used */
+#define NVIC_SYSH_PRIORITY_STEP    0x20	/* Three bits of interrupt priority used */
 
-#define ARMV8M_PERIPHERAL_INTERRUPTS 64	//MAX_PERIPHERAL_IRQ_NUM
 
-/* If CONFIG_ARMV7M_USEBASEPRI is selected, then interrupts will be disabled
+#define ARMV8M_PERIPHERAL_INTERRUPTS 64//MAX_PERIPHERAL_IRQ_NUM
+
+/* If CONFIG_ARMV8M_USEBASEPRI is selected, then interrupts will be disabled
  * by setting the BASEPRI register to NVIC_SYSH_DISABLE_PRIORITY so that most
  * interrupts will not have execution priority.  SVCall must have execution
  * priority in all cases.
