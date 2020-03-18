@@ -15,9 +15,6 @@
  ******************************************************************************/
 #include <osdep_service.h>
 #include <stdio.h>
-//#include <../arch/arm/src/imxrt/imxrt_config.h>
-//#include <tcm_heap.h>
-//#include <drv_types.h>
 #include "rtl8721d_cache.h"
 /********************* os depended utilities ********************/
 
@@ -25,24 +22,23 @@
 #define USE_MUTEX_FOR_SPINLOCK 1
 #endif
 
+#define USE_PTHREAD_MUTEX 0 //todo
+
 //----- ------------------------------------------------------------------
 // Misc Function
 //----- ------------------------------------------------------------------
 extern void timer_wrapper(_timerHandle timer_hdl);
-//void timer_wrapper(_timerHandle timer_hdl)
-//{
-//}
 
-irqstate_t flags;
+static irqstate_t tizen_flags;
 void save_and_cli()
 {
-	flags = 0;
-	flags = irqsave();
+	tizen_flags = 0;
+	tizen_flags = irqsave();
 }
 
 void restore_flags()
 {
-	irqrestore(flags);
+	irqrestore(tizen_flags);
 }
 
 void cli()
@@ -101,6 +97,9 @@ u8 *_tizenrt_zmalloc(u32 sz)
 
 void _tizenrt_mfree(u8 *pbuf, u32 sz)
 {
+	/* To avoid gcc warnings */
+	( void ) sz;
+
 	kmm_free(pbuf);
 }
 
@@ -126,15 +125,19 @@ static void _tizenrt_memset(void *pbuf, int c, u32 sz)
 static void _tizenrt_init_sema(_sema *sema, int init_val)
 {
 	if (*sema == NULL) {
-		*sema = _tizenrt_zmalloc(sizeof(sem_t));
+		*sema = (_sema)_tizenrt_zmalloc(sizeof(sem_t));
 		if (*sema == NULL) {
 			DiagPrintf("\r\n Failed to kmm_zalloc in %s\n", __FUNCTION__);
 			return;
 		}
+	} else {
+		DiagPrintf("\r\n already inited %s\n", __FUNCTION__);
+		return;
 	}
-	int ret = sem_init(*sema, 0, init_val);
-	if (ret < 0) {
+	int ret = sem_init((sem_t *)(*sema), 0, init_val);
+	if (ret != OK) {
 			DiagPrintf("\r\n Failed to sem_init in %s\n", __FUNCTION__);
+			_tizenrt_mfree(*sema, sizeof(sem_t));
 			return;
 	}
 }
@@ -155,20 +158,26 @@ static void _tizenrt_free_sema(_sema *sema)
 
 static void _tizenrt_up_sema(_sema *sema)
 {
-	sem_post(*sema);
+	sem_post((sem_t *)(*sema));
 }
 
 static void _tizenrt_up_sema_from_isr(_sema *sema)
 {
-	sem_post(*sema);
+	sem_post((sem_t *)(*sema));
 }
 
 static u32 _tizenrt_down_sema(_sema *sema, u32 timeout)
 {
 	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
-	ts.tv_sec += timeout / 1000;
-	if (sem_timedwait(*sema, &ts) < 0) {
+	int ret;
+	if(timeout == RTW_MAX_DELAY){
+		ret = sem_wait((sem_t *)(*sema));
+	} else {
+		clock_gettime(CLOCK_REALTIME, &ts);
+		ts.tv_sec += timeout / 1000;
+		ret = sem_timedwait((sem_t *)(*sema), &ts);
+	}
+	if (ret != OK) {
 		return _FAIL;
 	} else {
 		return _SUCCESS;
@@ -177,6 +186,38 @@ static u32 _tizenrt_down_sema(_sema *sema, u32 timeout)
 
 static void _tizenrt_mutex_init(_mutex *pmutex)
 {
+#if USE_PTHREAD_MUTEX
+	pthread_mutexattr_t mutex_attr;
+	int err;
+
+	if (*pmutex == NULL) {
+		*pmutex = _tizenrt_zmalloc(sizeof(pthread_mutex_t));
+		if (*pmutex == NULL) {
+			ndbg("\r\n _tizenrt_mutex_init failed \n");
+			goto err_exit;
+		}
+	}
+	err = pthread_mutexattr_init(&mutex_attr);
+	if (err) {
+		ndbg("pthread_mutexattr_init failed with error code (%d).", err);
+		goto err_exit;
+	}
+	err = pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
+	if (err) {
+		ndbg("pthread_mutexattr_settype failed with error code (%d).", err);
+		goto err_exit;
+	}
+	err = pthread_mutex_init((pthread_mutex_t *)(*pmutex), &mutex_attr);
+	if (err) {
+		ndbg("pthread_mutex_init failed with error code (%d).", err);
+		goto err_exit;
+	}
+	return;
+err_exit:
+	if(*pmutex)
+		_tizenrt_mfree(*pmutex);
+	return;
+#else
 	if (*pmutex == NULL) {
 		*pmutex = _tizenrt_zmalloc(sizeof(sem_t));
 		if (*pmutex == NULL) {
@@ -186,10 +227,20 @@ static void _tizenrt_mutex_init(_mutex *pmutex)
 	}
 	sem_init(*pmutex, 0, 1);
 	sem_setprotocol(*pmutex, SEM_PRIO_NONE);
+#endif
 }
 
 static void _tizenrt_mutex_free(_mutex *pmutex)
 {
+#if USE_PTHREAD_MUTEX
+	if(*pmutex == NULL)
+		return;
+	int err = pthread_mutex_destroy((pthread_mutex_t *)(*pmutex));
+	if (err) {
+		ndbg("pthread_mutex_destroy failed with error code (%d).", err);
+	}
+	_tizenrt_mfree(*pmutex);
+#else
 	int i;
 	if (*pmutex != NULL) {
 		i = sem_destroy(*pmutex);
@@ -199,19 +250,27 @@ static void _tizenrt_mutex_free(_mutex *pmutex)
 			ndbg("\r\n _tizenrt_mutex_free fail!!! \n");
 		}
 	}
+#endif
 	*pmutex = NULL;
 }
 
-static void _tizenrt_mutex_get(_lock *plock)
+static void _tizenrt_mutex_get(_mutex *plock)
 {
+#if USE_PTHREAD_MUTEX
+	int err = pthread_mutex_lock((pthread_mutex_t *)(*plock));
+	if (err) {
+		ndbg("Failed to acquire lock. Error code: (%d).", err);
+	}
+#else
 	int temp;
 	temp = sem_wait(*plock);
 	if (temp != 0) {
 		DBG_ERR("_tizenrt_spinlock failed!\n");
 	}
+#endif
 }
 
-static int _tizenrt_mutex_get_timeout(_lock *plock, u32 timeout_ms)
+static int _tizenrt_mutex_get_timeout(_mutex *plock, u32 timeout_ms)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -240,10 +299,12 @@ static void _tizenrt_exit_critical(_lock *plock, _irqL *pirqL)
 
 static void _tizenrt_enter_critical_from_isr(_lock *plock, _irqL *pirqL)
 {
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 }
 
 static void _tizenrt_exit_critical_from_isr(_lock *plock, _irqL *pirqL)
 {
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 }
 
 static int _tizenrt_enter_critical_mutex(_mutex *pmutex, _irqL *pirqL)
@@ -354,31 +415,30 @@ static void _tizenrt_spinunlock_irqsave(_lock *plock, _irqL *irqL)
 
 static int _tizenrt_init_xqueue(_xqueue *queue, const char *name, u32 message_size, u32 number_of_messages)
 {
-
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 static int _tizenrt_push_to_xqueue(_xqueue *queue, void *message, u32 timeout_ms)
 {
-
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 static int _tizenrt_pop_from_xqueue(_xqueue *queue, void *message, u32 timeout_ms)
 {
-
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 static int _tizenrt_deinit_xqueue(_xqueue *queue)
 {
-
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 static u32 _tizenrt_get_current_time(void)
 {
-
 	return (u32)clock();
 }
 
@@ -408,37 +468,31 @@ static u32 _tizenrt_sec_to_systime(u32 sec)
 
 static void _tizenrt_msleep_os(int ms)
 {
-
 	usleep((unsigned int)ms * 1000);
 }
 
 static void _tizenrt_usleep_os(int us)
 {
-
 	usleep((unsigned int)us);
 }
 
 static void _tizenrt_mdelay_os(int ms)
 {
-
 	up_mdelay((unsigned long)ms);
 }
 
 static void _tizenrt_udelay_os(int us)
 {
-
 	up_udelay((unsigned long)us);
 }
 
 static void _tizenrt_yield_os(void)
 {
-
 	sched_yield();
 }
 
 static void _tizenrt_ATOMIC_SET(ATOMIC_T *v, int i)
 {
-
 	atomic_set(v, i);
 }
 
@@ -573,63 +627,79 @@ static u32 _tizenrt_GetFreeHeapSize(void)
 	return 0;
 }
 void *tcm_heap_malloc(int size);
-
+extern int debug_steps;
 static int _tizenrt_create_task(struct task_struct *ptask, const char *name,
 		u32 stack_size, u32 priority, thread_func_t func, void *thctx)
 {
-	ptask->task_name = name;
-	u32 priority_tmp = priority;
-
-	stack_size *= sizeof(uint32_t);
-	priority_tmp = SCHED_PRIORITY_DEFAULT + priority;
-	pthread_t tid;
 	pthread_attr_t attr;
+	struct sched_param sparam;
 	int res = 0;
 
+	pthread_t *tid = _tizenrt_zmalloc(sizeof(pthread_t));
+	if (tid == NULL) {
+		DBG_ERR("Failed to malloc for tid\n");
+		goto err_exit;
+	}
+
 	res = pthread_attr_init(&attr);
-	if (res != 0) {
-		DiagPrintf("Failed to pthread_attr_init\n");
-		return _FAIL;
+	if (res != OK) {
+		DBG_ERR("Failed to pthread_attr_init\n");
+		goto err_exit;
 	}
 
+	stack_size *= sizeof(uint32_t);
 	res = pthread_attr_setstacksize(&attr, stack_size);
-	if (res != 0) {
-		DiagPrintf("Failed to pthread_attr_setstacksize\n");
-		return _FAIL;
+	if (res != OK) {
+		DBG_ERR("Failed to pthread_attr_setstacksize\n");
+		goto err_exit;
+	}
+	
+	sparam.sched_priority = PTHREAD_DEFAULT_PRIORITY + priority;
+	res = pthread_attr_setschedparam(&attr, &sparam);
+	if (res != OK) {
+		DBG_ERR("Failed to pthread_attr_setstacksize\n");
+		goto err_exit;
 	}
 
-	res = pthread_create(&tid, &attr, (pthread_startroutine_t)func, thctx);
-	if (res < 0) {
-		DiagPrintf("hal key manager test fail\n");
-		return _FAIL;
+	res = pthread_create(tid, &attr, (pthread_startroutine_t)func, thctx);
+	if (res != OK) {
+		DBG_ERR("Failed to pthread_create\n");
+		goto err_exit;
+	}
+	if (*tid == 0) {
+		DBG_ERR("create the task %s failed!", name);
+		goto err_exit;
 	}
 	ptask->task = tid;
-
-	if (!ptask->task) {
-		DBG_ERR("create the task %s failed!", name);
-		ptask->task = 0;
-		return _FAIL;
-	}
-
+	ptask->task_name = name;
 	return _SUCCESS;
+err_exit:
+	if (tid) {
+		_tizenrt_mfree(tid, sizeof(*tid));
+	}
+	ptask->task = NULL;
+	ptask->task_name = NULL;
+	return _FAIL;
 }
 
 static void _tizenrt_delete_task(struct task_struct *ptask)
 {
 	int status = 0;
-	if (!ptask->task) {
-		DBG_ERR("_tizenrt_delete_task(): ptask is NULL!\n", ptask->task_name);
+	pthread_t *tid = (pthread_t *)ptask->task;
+	if (!ptask->task || *tid == 0) {
+		DBG_ERR("_tizenrt_delete_task(): ptask is NULL %s!\n", ptask->task_name);
 		return;
 	}
 	//status = task_delete(ptask->task); //TODO
-	status = pthread_cancel(ptask->task);
+	status = pthread_cancel(*tid);
 	if (status != OK) {
 		DBG_ERR("delete the task failed!", ptask->task_name);
 		return;
 	}
+	_tizenrt_mfree(tid, sizeof(*tid));
+	ptask->task = NULL;
 	return;
 }
-
 
 void _tizenrt_wake_task(struct task_struct *task)
 {
@@ -783,24 +853,28 @@ void *_tizenrt_timerGetID(_timerHandle xTimer)
 u32 _tizenrt_timerStart(_timerHandle xTimer,
 		osdepTickType xBlockTime)
 {
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerStartFromISR(_timerHandle xTimer,
 		osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerStopFromISR(_timerHandle xTimer,
 		osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerResetFromISR(_timerHandle xTimer,
 							   osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -808,12 +882,14 @@ u32 _tizenrt_timerChangePeriodFromISR(_timerHandle xTimer,
 									  osdepTickType xNewPeriod,
 									  osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerReset(_timerHandle xTimer,
 						osdepTickType xBlockTime)
 {
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -831,7 +907,7 @@ void _tizenrt_wakelock_timeout(uint32_t timeout)
 
 u8 _tizenrt_get_scheduler_state(void)
 {
-
+	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -863,8 +939,8 @@ const struct osdep_service_ops osdep_service = {
 	NULL,							  //rtw_exit_critical_bh
 	_tizenrt_enter_critical_mutex,	//rtw_enter_critical_mutex
 	_tizenrt_exit_critical_mutex,	 //rtw_exit_critical_mutex
-	NULL,
-	NULL,
+	NULL,                            //rtw_suspend_task
+	NULL,                            //rtw_resume_task
 	_tizenrt_spinlock_init,		 //rtw_spinlock_init
 	_tizenrt_spinlock_free,		 //rtw_spinlock_free
 	_tizenrt_spinlock,			 //rtw_spin_lock
@@ -904,6 +980,8 @@ const struct osdep_service_ops osdep_service = {
 	_tizenrt_create_task, //rtw_create_task
 	_tizenrt_delete_task, //rtw_delete_task
 	_tizenrt_wake_task,   //rtw_wakeup_task
+	NULL, 
+	NULL,
 
 	_tizenrt_thread_enter, //rtw_thread_enter
 	_tizenrt_thread_exit,  //rtw_thread_exit
@@ -926,11 +1004,17 @@ const struct osdep_service_ops osdep_service = {
 	_tizenrt_wakelock_timeout,   //rtw_wakelock_timeout
 	_tizenrt_get_scheduler_state, //rtw_get_scheduler_state
 	NULL,	// rtw_create_secure_context
+	NULL,   //rtw_get_current_TaskHandle
 };
 
 static IRQ_FUN TizenUserIrqFunTable[MAX_PERIPHERAL_IRQ_NUM];
 static int wrapper_IrqFun(int irq, FAR void *context, FAR void *arg)
 {
+	if(irq < AMEBAD_IRQ_FIRST){
+		DiagPrintf("INT %d should not come here\r\n", irq);
+		return OK;
+	}
+	__NVIC_ClearPendingIRQ(irq-AMEBAD_IRQ_FIRST);
 	if (TizenUserIrqFunTable[irq-AMEBAD_IRQ_FIRST] != NULL) {
 		TizenUserIrqFunTable[irq-AMEBAD_IRQ_FIRST]((VOID *)(arg));
 	} else {
@@ -940,16 +1024,27 @@ static int wrapper_IrqFun(int irq, FAR void *context, FAR void *arg)
 }
 
 BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data,  u32 Priority) {
+	if(IrqNum < 0){
+		DiagPrintf("INT %d should not come here\r\n", IrqNum);
+		return _TRUE;
+	}
 	Priority = (Priority >> IRQ_PRIORITY_SHIFT);
+	if(IrqNum == WL_DMA_IRQ || IrqNum == WL_PROTOCOL_IRQ)
+		Priority = 4;
+	DiagPrintf("%s %d %d\r\n", __func__, IrqNum, Priority);
 	TizenUserIrqFunTable[IrqNum] = (IRQ_FUN)((u32)IrqFun | 0x1);
+	Priority = (Priority << (8 - __NVIC_PRIO_BITS));
 	irq_attach(IrqNum + AMEBAD_IRQ_FIRST, wrapper_IrqFun, (void *)Data);
-	//up_prioritize_irq(IrqNum + AMEBAD_IRQ_FIRST, Priority); //Need to fix, because it can't get the same result as __NVIC_SetPriority
-	__NVIC_SetPriority(IrqNum, Priority); //use CMSIS for now
+	up_prioritize_irq(IrqNum + AMEBAD_IRQ_FIRST, Priority); //Need to fix, because it can't get the same result as __NVIC_SetPriority
 	return _TRUE;
 }
 
 BOOL irq_unregister(IRQn_Type IrqNum)
-{ 
+{
+	if(IrqNum < 0){
+		DiagPrintf("INT %d should not come here\r\n", IrqNum);
+		return _TRUE;
+	}
 	irq_detach(IrqNum);
 	TizenUserIrqFunTable[IrqNum] = NULL;
 	return _TRUE;
@@ -957,14 +1052,22 @@ BOOL irq_unregister(IRQn_Type IrqNum)
 
 void irq_enable(IRQn_Type IrqNum)
 {
+	if(IrqNum < 0){
+		DiagPrintf("INT %d should not come here\r\n", IrqNum);
+		return;
+	}
 	up_enable_irq(IrqNum + AMEBAD_IRQ_FIRST);
 }
 
 void irq_disable(IRQn_Type IrqNum)
 {
+	if(IrqNum < 0){
+		DiagPrintf("INT %d should not come here\r\n", IrqNum);
+		return;
+	}
 	up_disable_irq(IrqNum + AMEBAD_IRQ_FIRST);
 }
-/*
+
 int __wrap_printf(const char *format, ...) {
     int ret = 0;
     va_list args;
@@ -973,7 +1076,7 @@ int __wrap_printf(const char *format, ...) {
     va_end(args);
     return ret;
 }
-*/
+
 void shell_switch_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 {
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
@@ -987,5 +1090,14 @@ uint32_t * vTaskStackAddr(void)
 uint32_t vTaskStackSize(void)
 {
 	return 0;
+}
+
+void vPortEnterCritical(void)
+{
+	save_and_cli();
+}
+void vPortExitCritical(void)
+{
+	restore_flags();
 }
 

@@ -198,15 +198,12 @@ void LwIP_Init_If(void)
 		 }
 #endif
 
+		 xnetif[idx].name[0] = 'r';
+		 xnetif[idx].name[1] = '0' + idx;
 		 if (idx == 0) {
-			 strncpy(xnetif[idx].name, CONFIG_NET_STA_IFNAME, IFNAME_LEN);
 			 strcpy(xnetif[idx].d_ifname, CONFIG_WIFIMGR_STA_IFNAME);
 		 } else if (idx == 1) {
-			 strncpy(xnetif[idx].name, CONFIG_NET_SOFTAP_IFNAME, IFNAME_LEN);
 			 strcpy(xnetif[idx].d_ifname, CONFIG_WIFIMGR_SOFTAP_IFNAME);
-		 } else {
-			 xnetif[idx].name[0] = 'r';
-			 xnetif[idx].name[1] = '0' + idx;
 		 }
 
 #if LWIP_VERSION_MAJOR >= 2

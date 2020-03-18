@@ -125,12 +125,18 @@ void up_timer_initialize(void)
 {
   uint32_t regval;
 
-  /* Set the SysTick interrupt to the default priority */
-
+  /* Set the SysTick interrupt to the min priority */ 
+#ifdef CONFIG_ARCH_IRQPRIO
+  up_prioritize_irq(AMEBAD_IRQ_SYSTICK, NVIC_SYSH_PRIORITY_DEFAULT);
+#else
   regval = getreg32(NVIC_SYSH12_15_PRIORITY);
   regval &= ~NVIC_SYSH_PRIORITY_PR15_MASK;
-  regval |= (NVIC_SYSH_PRIORITY_DEFAULT << NVIC_SYSH_PRIORITY_PR15_SHIFT);
+  regval |= (NVIC_SYSH_PRIORITY_MIN << NVIC_SYSH_PRIORITY_PR15_SHIFT);
   putreg32(regval, NVIC_SYSH12_15_PRIORITY);
+#endif
+
+  putreg32(0, NVIC_SYSTICK_CTRL);
+  putreg32(0, NVIC_SYSTICK_CURRENT);
 
   /* Configure SysTick to interrupt at the requested rate */
 
@@ -147,6 +153,5 @@ void up_timer_initialize(void)
 
   /* And enable the timer interrupt */
 
-  up_enable_irq(AMEBAD_IRQ_SYSTICK);
- 
+  //up_enable_irq(AMEBAD_IRQ_SYSTICK);
 }

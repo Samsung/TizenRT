@@ -250,8 +250,6 @@ err_t ethernetif_init_rtk(struct netif *netif)
 {
 	LWIP_ASSERT("netif != NULL", (netif != NULL));
 
-	printf("-----------> ethernetif_init_rtk \n ");
-
 #if LWIP_NETIF_HOSTNAME
 	/* Initialize interface hostname */
 	if (netif->name[1] == '0')

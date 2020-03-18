@@ -30,6 +30,8 @@ extern void INT_HardFault_C(uint32_t mstack[], uint32_t pstack[], uint32_t lr_va
 void app_init_psram(void);
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
+extern void vPortEnterCritical(void);
+extern void vPortExitCritical(void);
 extern unsigned int _ebss;
 extern unsigned int __StackLimit;
 extern unsigned int __PsramStackLimit;
@@ -528,7 +530,7 @@ void parse_cfsr(uint32_t cfsr)
     
 }
 
-void UsageFault_Handler(void)
+void UsageFault_Handler_ram(void)
 {
     __ASM volatile(
         "PUSH {R4-R11}\n\t"
@@ -543,7 +545,7 @@ void UsageFault_Handler(void)
     );
 }
 
-void BusFault_Handler(void)
+void BusFault_Handler_ram(void)
 {
     __ASM volatile(
         "PUSH {R4-R11}\n\t"
@@ -558,7 +560,7 @@ void BusFault_Handler(void)
     );
 }
 
-void MemManage_Handler(void)
+void MemManage_Handler_ram(void)
 {
     __ASM volatile(
         "PUSH {R4-R11}\n\t"
@@ -573,7 +575,7 @@ void MemManage_Handler(void)
     );
 }
 
-void SecureFault_Handler(void)
+void SecureFault_Handler_ram(void)
 {
     __ASM volatile(
         "PUSH {R4-R11}\n\t"
@@ -588,7 +590,7 @@ void SecureFault_Handler(void)
     );
 }
 
-void HardFault_Handler(void)
+void HardFault_Handler_ram(void)
 {
 	__ASM volatile(
         "PUSH {R4-R11}\n\t"
@@ -602,7 +604,6 @@ void HardFault_Handler(void)
         "BX R4\n\t"
     );
 }
-#endif
 
 /** 
  *  @brief The default hard fault interrupt handler.
@@ -896,6 +897,7 @@ void hard_fault_handler_c(uint32_t mstack[], uint32_t pstack[], uint32_t lr_valu
     }
     while (1);
 }
+#endif
 
 void app_section_init(void)
 {
@@ -1103,13 +1105,13 @@ VOID VectorTableOverride(VOID)
 #endif
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 	int i;
-	NewVectorTable[3] = (HAL_VECTOR_FUN)HardFault_Handler;
-	NewVectorTable[4] = (HAL_VECTOR_FUN)MemManage_Handler;
-	NewVectorTable[5] = (HAL_VECTOR_FUN)BusFault_Handler;
-	NewVectorTable[6] = (HAL_VECTOR_FUN)UsageFault_Handler;
-	NewVectorTable[7] = (HAL_VECTOR_FUN)SecureFault_Handler;
-	for(i=8;i<MAX_VECTOR_TABLE_NUM;i++)
+	for(i=3;i<MAX_VECTOR_TABLE_NUM;i++)
 		NewVectorTable[i] = exception_common;
+	//NewVectorTable[AMEBAD_IRQ_HARDFAULT] = (HAL_VECTOR_FUN)HardFault_Handler_ram;
+	//NewVectorTable[AMEBAD_IRQ_MEMFAULT] = (HAL_VECTOR_FUN)MemManage_Handler_ram;
+	//NewVectorTable[AMEBAD_IRQ_BUSFAULT] = (HAL_VECTOR_FUN)BusFault_Handler_ram;
+	//NewVectorTable[AMEBAD_IRQ_USAGEFAULT] = (HAL_VECTOR_FUN)UsageFault_Handler_ram;
+	NewVectorTable[7] = (HAL_VECTOR_FUN)SecureFault_Handler_ram;
 #endif
 }
 
@@ -1239,14 +1241,12 @@ static void app_psram_load_s(void)
 #endif
 }
 
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
 /*initialize driver call os_function map*/
 static void app_driver_call_os_func_init(void)
 {
 	driver_call_os_func_map.driver_enter_critical = vPortEnterCritical;
 	driver_call_os_func_map.driver_exit_critical = vPortExitCritical;
 }
-#endif
 
 // The Main App entry point
 void app_start(void)

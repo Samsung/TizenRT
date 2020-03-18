@@ -505,9 +505,11 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 
 	UART_StructInit(&puart_adapter->UART_InitStruct);
 	UART_Init(puart_adapter->UARTx, &puart_adapter->UART_InitStruct);
-	
+
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	InterruptRegister((IRQ_FUN)uart_irqhandler, puart_adapter->IrqNum, (u32)puart_adapter, 5);
 	InterruptEn(puart_adapter->IrqNum, 5);
+#endif
 
 #ifdef CONFIG_MBED_ENABLED
 	// For stdio management
@@ -1289,6 +1291,11 @@ void serial_enable (serial_t *obj)
 	default:
 	break;
 	}
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	InterruptRegister((IRQ_FUN)uart_irqhandler, puart_adapter->IrqNum, (u32)puart_adapter, 5);
+	InterruptEn(puart_adapter->IrqNum, 5);
+#endif
 }
 
 

@@ -66,8 +66,10 @@
 #define __Vendor_SysTickConfig         1         /**< Vendor specific implementation of SysTickConfig is defined *///see vPortSetupTimerInterrupt
 #define __SAUREGION_PRESENT            1        /*!< SAU present or not                                                        */
 
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS) || defined(CONFIG_ARCH_FPU)
 #define __FPU_PRESENT             1       /*!< FPU present                                   */
 #define __VFP_FP__	1
+#endif
 #ifndef __ARM_FEATURE_CMSE
 #define __ARM_FEATURE_CMSE	3
 #endif

@@ -160,38 +160,15 @@ extern "C" {
 #define OS_SCHEDULER_RUNNING		1
 #define OS_SCHEDULER_SUSPENDED		2
 
-#define TC_ASSERT_EQ_CLEANUP(api_name, var, ref, freeResource)                                                                                                         \
-{                                                                                                                                                                      \
-	if ((var) != (ref)) {                                                                                                                                              \
-		printf("\n[%s] FAIL [Line : %d] %s : Values (%s == 0x%x) and (%s == 0x%x) are not equal\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
-		freeResource;                                                                                                                                                  \
-		return;                                                                                                                                                        \
-	}                                                                                                                                                                  \
-}
-
 /******************************************************
  *                    Structures
  ******************************************************/
-#if 0//def CONFIG_PLATFORM_TIZENRT_OS
-#define TMR_NAME_SIZE 16
-struct timer_list {
-        struct timer_list *prev, *next;
-        _timerHandle timer_hdl;
-        struct work_s *work_hdl;
-        int timer_id;
-        unsigned char timer_name[TMR_NAME_SIZE];
-        int live;
-        long timevalue;
-        void *data;
-        void (*function)(void *args);
-};
-#else
 struct timer_list {
 	_timerHandle 	timer_hdl;
 	unsigned long	data;
 	void (*function)(void *);
 };
-#endif
+
 /******************************************************
  *                 Type Definitions
  ******************************************************/
@@ -202,11 +179,7 @@ typedef int (*event_handler_t)(char *buf, int buf_len, int flags, void *user_dat
 #define CONFIG_THREAD_COMM_SEMA
 struct task_struct {
 	const char *task_name;
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-	pid_t task;	
-#else
 	_thread_hdl_ task;	/* I: workqueue thread */
-#endif
 
 #ifdef CONFIG_THREAD_COMM_SIGNAL
 	const char *name;	/* I: workqueue thread name */
@@ -1041,6 +1014,10 @@ void rtw_delete_task(struct task_struct * task);
  */
 void rtw_wakeup_task(struct task_struct *task);
 
+void rtw_suspend_task (void* task);
+
+void rtw_resume_task (void* task);
+
 /**
  * @brief  This function creates a new worker thread.
  * @param[in] worker_thread:  The pointer to the worker thread stucture.
@@ -1404,6 +1381,8 @@ struct osdep_service_ops {
 	int (*rtw_create_task)(struct task_struct *task, const char *name, u32 stack_size, u32 priority, thread_func_t func, void *thctx);
 	void (*rtw_delete_task)(struct task_struct *task);
 	void (*rtw_wakeup_task)(struct task_struct *task);
+	void (*rtw_suspend_task)(void *task);
+	void (*rtw_resume_task)(void *task);
 	
 #if 0	//TODO
 	void (*rtw_init_delayed_work)(struct delayed_work *dwork, work_func_t func, const char *name);
@@ -1450,6 +1429,7 @@ struct osdep_service_ops {
 	void (*rtw_wakelock_timeout)(u32 timeoutMs);
 	u8 (*rtw_get_scheduler_state)(void);
 	void (*rtw_create_secure_context)(u32 secure_stack_size);
+	void* (*rtw_get_current_TaskHandle)(void);
 };
 
 #ifdef __cplusplus

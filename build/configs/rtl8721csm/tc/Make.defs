@@ -152,14 +152,14 @@ CFLAGS += -march=armv8-m.main+dsp
 CFLAGS += -mthumb 
 CFLAGS += -mcmse 
 #CFLAGS += -mfloat-abi=hard
-CFLAGS += -mfpu=fpv5-sp-d16
+#CFLAGS += -mfpu=fpv5-sp-d16
 
 
 #CFLAGS += -g
 #CFLAGS += -gdwarf-3
 #CFLAGS += -nodefaultlibs
 #CFLAGS += -O2
-CFLAGS += -D__FPU_PRESENT
+#CFLAGS += -D__FPU_PRESENT
 
 #CFLAGS += -fstack-usage
 #CFLAGS += -fdata-sections
@@ -179,6 +179,11 @@ CFLAGS += -DCONFIG_PLATFORM_8721D
 CFLAGS += -DCONFIG_USE_MBEDTLS_ROM_ALG
 CFLAGS += -DCONFIG_FUNCION_O0_OPTIMIZE
 CFLAGS += -DDM_ODM_SUPPORT_TYPE=32
+CFLAGS += -DSTD_PRINTF
+CFLAGS += -DCONFIG_PLATFORM_TIZENRT_OS=1
+
+#LDFLAGS += --wrap=printf
+
 ##########################################################################################################################################
 
 ASMEXT = .S
@@ -193,7 +198,7 @@ endif
 HOSTCC = gcc
 HOSTINCLUDES = -I.
 HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
-HOSTLDFLAGS =
+HOSTLDFLAGS = 
 
 define MAKE_BOARD_SPECIFIC_BIN
   $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_make_bin.sh

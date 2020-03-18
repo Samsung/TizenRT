@@ -66,7 +66,7 @@
 #include "ram_vectors.h"
 #include "up_arch.h"
 #include "up_internal.h"
-
+#include "ameba_soc.h"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -115,9 +115,25 @@ volatile uint32_t *current_regs;
  *
  ****************************************************************************/
 
-#if defined(CONFIG_DEBUG_IRQ_INFO)
+#if defined(CONFIG_DEBUG_IRQ)
 static void amebad_dumpnvic(const char *msg, int irq)
 {
+	irqstate_t flags;
+
+	flags = irqsave();
+	lldbg("NVIC (%s, irq=%d):\n", msg, irq);
+	lldbg("  INTCTRL:    %08x VECTAB:  %08x\n", getreg32(NVIC_INTCTRL), getreg32(NVIC_VECTAB));
+#if 0
+	lldbg("  SYSH ENABLE MEMFAULT: %08x BUSFAULT: %08x USGFAULT: %08x SYSTICK: %08x\n", getreg32(NVIC_SYSHCON_MEMFAULTENA), getreg32(NVIC_SYSHCON_BUSFAULTENA), getreg32(NVIC_SYSHCON_USGFAULTENA), getreg32(NVIC_SYSTICK_CTRL_ENABLE));
+#endif
+	lldbg("  IRQ ENABLE: %08x %08x %08x\n", getreg32(NVIC_IRQ0_31_ENABLE), getreg32(NVIC_IRQ32_63_ENABLE), getreg32(NVIC_IRQ64_95_ENABLE));
+	lldbg("  SYSH_PRIO:  %08x %08x %08x\n", getreg32(NVIC_SYSH4_7_PRIORITY), getreg32(NVIC_SYSH8_11_PRIORITY), getreg32(NVIC_SYSH12_15_PRIORITY));
+	lldbg("  IRQ PRIO:   %08x %08x %08x %08x\n", getreg32(NVIC_IRQ0_3_PRIORITY), getreg32(NVIC_IRQ4_7_PRIORITY), getreg32(NVIC_IRQ8_11_PRIORITY), getreg32(NVIC_IRQ12_15_PRIORITY));
+	lldbg("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ16_19_PRIORITY), getreg32(NVIC_IRQ20_23_PRIORITY), getreg32(NVIC_IRQ24_27_PRIORITY), getreg32(NVIC_IRQ28_31_PRIORITY));
+	lldbg("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ32_35_PRIORITY), getreg32(NVIC_IRQ36_39_PRIORITY), getreg32(NVIC_IRQ40_43_PRIORITY), getreg32(NVIC_IRQ44_47_PRIORITY));
+	lldbg("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ48_51_PRIORITY), getreg32(NVIC_IRQ52_55_PRIORITY), getreg32(NVIC_IRQ56_59_PRIORITY), getreg32(NVIC_IRQ60_63_PRIORITY));
+	lldbg("              %08x\n", getreg32(NVIC_IRQ64_67_PRIORITY));
+	irqrestore(flags);
 }
 #else
 #  define amebad_dumpnvic(msg, irq)
@@ -277,14 +293,6 @@ void up_irqinitialize(void)
   int num_priority_registers;
   int i;
 
-  /* Disable all interrupts */
-
-  for (i = 0; i < NR_IRQS - AMEBAD_IRQ_FIRST; i += 32)
-    {
-      putreg32(0xffffffff, NVIC_IRQ_CLEAR(i));
-    }
-
-  //putreg32((uint32_t)_vectors, NVIC_VECTAB);
 
 #ifdef CONFIG_ARCH_RAMVECTORS
   /* If CONFIG_ARCH_RAMVECTORS is defined, then we are using a RAM-based
@@ -294,30 +302,6 @@ void up_irqinitialize(void)
   up_ramvec_initialize();
 #endif
 
-  /* Set all interrupts (and exceptions) to the default priority */
-
-  putreg32(DEFPRIORITY32, NVIC_SYSH4_7_PRIORITY);
-  putreg32(DEFPRIORITY32, NVIC_SYSH8_11_PRIORITY);
-  putreg32(DEFPRIORITY32, NVIC_SYSH12_15_PRIORITY);
-
-  /* The NVIC ICTR register (bits 0-4) holds the number of of interrupt
-   * lines that the NVIC supports:
-   *
-   *  0 -> 32 interrupt lines,  8 priority registers
-   *  1 -> 64 "       " "   ", 16 priority registers
-   *  2 -> 96 "       " "   ", 32 priority registers
-   *  ...
-   */
-
-  num_priority_registers = (getreg32(NVIC_ICTR) + 1) * 8;
-
-  /* Now set all of the interrupt lines to the default priority */
-  regaddr = NVIC_IRQ0_3_PRIORITY;
-  while (num_priority_registers--)
-    {
-      putreg32(DEFPRIORITY32, regaddr);
-      regaddr += 4;
-    }
 
   /* currents_regs is non-NULL only while processing an interrupt */
 
@@ -335,27 +319,21 @@ void up_irqinitialize(void)
   /* Set the priority of the SVCall interrupt */
 
 #ifdef CONFIG_ARCH_IRQPRIO
-  /* up_prioritize_irq(AMEBAD_IRQ_PENDSV, NVIC_SYSH_PRIORITY_MIN); */
+  up_prioritize_irq(AMEBAD_IRQ_PENDSV, NVIC_SYSH_PRIORITY_MIN);
 #endif
 #ifdef CONFIG_ARMV8M_USEBASEPRI
+#ifdef CONFIG_ARCH_IRQPRIO
+  up_prioritize_irq(AMEBAD_IRQ_SVCALL,NVIC_SYSH_SVCALL_PRIORITY);
+#else
   amebad_prioritize_syscall(NVIC_SYSH_SVCALL_PRIORITY);
 #endif
-
-  /* If the MPU is enabled, then attach and enable the Memory Management
-   * Fault handler.
-   */
-
-#ifdef CONFIG_ARM_MPU
-  //irq_attach(AMEBAD_IRQ_MEMFAULT, up_memfault, NULL);
-  up_enable_irq(AMEBAD_IRQ_MEMFAULT);
 #endif
-
   /* Attach all other processor exceptions (except reset and sys tick) */
 
 #ifdef CONFIG_DEBUG
   irq_attach(AMEBAD_IRQ_NMI, amebad_nmi, NULL);
-#ifndef CONFIG_ARM_MPU
-  //irq_attach(AMEBAD_IRQ_MEMFAULT, up_memfault, NULL);
+#ifndef CONFIG_ARMV8M_MPU
+  irq_attach(AMEBAD_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
   irq_attach(AMEBAD_IRQ_BUSFAULT, amebad_busfault, NULL);
   irq_attach(AMEBAD_IRQ_USAGEFAULT, amebad_usagefault, NULL);
@@ -387,7 +365,10 @@ void up_disable_irq(int irq)
   uintptr_t regaddr;
   uint32_t regval;
   uint32_t bit;
-
+#if 1
+	  irq -= AMEBAD_IRQ_FIRST;
+	  __NVIC_DisableIRQ(irq);
+#else
   if (amebad_irqinfo(irq, &regaddr, &bit, NVIC_CLRENA_OFFSET) == 0)
     {
       /* Modify the appropriate bit in the register to disable the interrupt.
@@ -407,8 +388,8 @@ void up_disable_irq(int irq)
           putreg32(regval, regaddr);
         }
     }
-
-  // stm32l4_dumpnvic("disable", irq);
+#endif
+	amebad_dumpnvic("disable", irq);
 }
 
 /****************************************************************************
@@ -421,31 +402,33 @@ void up_disable_irq(int irq)
 
 void up_enable_irq(int irq)
 {
-  uintptr_t regaddr;
-  uint32_t regval;
-  uint32_t bit;
-
-  if (amebad_irqinfo(irq, &regaddr, &bit, NVIC_ENA_OFFSET) == 0)
-    {
-      /* Modify the appropriate bit in the register to enable the interrupt.
-       * For normal interrupts, we need to set the bit in the associated
-       * Interrupt Set Enable register.  For other exceptions, we need to
-       * set the bit in the System Handler Control and State Register.
-       */
-
-      if (irq >= AMEBAD_IRQ_FIRST)
-        {
-          putreg32(bit, regaddr);
-        }
-      else
-        {
-          regval  = getreg32(regaddr);
-          regval |= bit;
-          putreg32(regval, regaddr);
-        }
-    }
-
-  // stm32l4_dumpnvic("enable", irq);
+	uintptr_t regaddr;
+	uint32_t regval;
+	uint32_t bit;
+#if 1
+	irq -= AMEBAD_IRQ_FIRST;
+	__NVIC_EnableIRQ(irq);
+#else
+	if (amebad_irqinfo(irq, &regaddr, &bit, NVIC_ENA_OFFSET) == 0)
+	{
+		/* Modify the appropriate bit in the register to enable the interrupt.
+		* For normal interrupts, we need to set the bit in the associated
+		* Interrupt Set Enable register.  For other exceptions, we need to
+		* set the bit in the System Handler Control and State Register.
+		*/
+		if (irq >= AMEBAD_IRQ_FIRST)
+		{
+			putreg32(bit, regaddr);
+		}
+		else
+		{
+			regval  = getreg32(regaddr);
+			regval |= bit;
+			putreg32(regval, regaddr);
+		}
+	}
+#endif
+	amebad_dumpnvic("enable", irq);
 }
 
 /****************************************************************************
@@ -480,7 +463,11 @@ int up_prioritize_irq(int irq, int priority)
 
   DEBUGASSERT(irq >= AMEBAD_IRQ_MEMFAULT && irq < NR_IRQS &&
               (unsigned)priority <= NVIC_SYSH_PRIORITY_MIN);
-
+#if 1
+  irq -= AMEBAD_IRQ_FIRST;
+  priority = priority >> (8U - __NVIC_PRIO_BITS);
+  __NVIC_SetPriority(irq, priority); //use CMSIS for now
+#else
   if (irq < AMEBAD_IRQ_FIRST)
     {
       /* NVIC_SYSH_PRIORITY() maps {0..15} to one of three priority
@@ -503,7 +490,7 @@ int up_prioritize_irq(int irq, int priority)
   regval     &= ~(0xff << shift);
   regval     |= (priority << shift);
   putreg32(regval, regaddr);
-
+#endif
   amebad_dumpnvic("prioritize", irq);
   return OK;
 }
