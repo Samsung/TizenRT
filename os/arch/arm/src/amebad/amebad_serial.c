@@ -790,8 +790,7 @@ void up_serialinit(void)
  ****************************************************************************/
 void up_lowputc(char ch)
 {
-	DEBUGASSERT(sdrv[2]);
-	serial_putc(sdrv[2], ch);
+	LOGUART_PutChar(ch);
 }
 
 /****************************************************************************
@@ -809,9 +808,8 @@ void up_lowputc(char ch)
  ****************************************************************************/
 char up_lowgetc(void)
 {
-	uint32_t rxd;
-	DEBUGASSERT(sdrv[2]);
-	rxd = serial_getc(sdrv[2]);
+	uint8_t rxd;
+	rxd = LOGUART_GetChar(_TRUE);
 	return rxd & 0xff;
 }
 
@@ -858,11 +856,8 @@ int up_putc(int ch)
 int up_getc(void)
 {
 	int ch;
-	DEBUGASSERT(sdrv[2]);
-	serial_irq_set(sdrv[2], RxIrq, 0);
 	ch = up_lowgetc();
-	serial_irq_set(sdrv[2], RxIrq, 1);
-        return ch;
+	return ch;
 }
 
 #else							/* USE_SERIALDRIVER */
@@ -909,11 +904,7 @@ int up_putc(int ch)
 int up_getc(void)
 {
 	int ch;
-
-	serial_irq_set(sdrv[2], RxIrq, 0);
 	ch = up_lowgetc();
-	serial_irq_set(sdrv[2], RxIrq, 1);
-
 	return ch;
 }
 #endif							/* USE_SERIALDRIVER */

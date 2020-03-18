@@ -1198,10 +1198,10 @@ void dhcps_deinit(void)
 #else
 void dhcps_init(struct netif * pnetif)
 {
-printf("not implemented yet\r\n");
+	printf("%s %d not implemented yet\r\n", __func__, __LINE__);
 }
 void dhcps_deinit(void)
 {
-printf("not implemented yet\r\n");
+	printf("%s %d not implemented yet\r\n", __func__, __LINE__);
 }
 #endif

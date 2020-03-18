@@ -71,7 +71,7 @@
 #define NVIC_SYSH_PRIORITY_MAX     0x00	/* Zero is maximum priority */
 #define NVIC_SYSH_PRIORITY_STEP    0x10	/* Four bits of interrupt priority used */
 
-#define ARMV8M_PERIPHERAL_INTERRUPTS 58
+#define ARMV8M_PERIPHERAL_INTERRUPTS 64	//MAX_PERIPHERAL_IRQ_NUM
 
 /* If CONFIG_ARMV7M_USEBASEPRI is selected, then interrupts will be disabled
  * by setting the BASEPRI register to NVIC_SYSH_DISABLE_PRIORITY so that most

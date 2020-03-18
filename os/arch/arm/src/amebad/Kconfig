@@ -394,7 +394,7 @@ endchoice
 	config WIFI_MODULE
 		bool
 		default n
-		depends WIFI_NORMAL
+		depends on WIFI_NORMAL
 
 	config WIFI_VERIFY
 		bool
