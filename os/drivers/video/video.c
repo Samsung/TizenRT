@@ -307,7 +307,7 @@ static enum video_state_e estimate_next_video_state(FAR video_upperhalf_t *priv,
 
 static int change_video_state(FAR video_upperhalf_t *priv, enum video_state_e next_state)
 {
-	int ret = OK;
+	int ret;
 	enum video_state_e current_state = priv->video_inf.state;
 	enum video_state_e updated_next_state = next_state;
 	FAR vbuf_container_t *dma_container;
@@ -317,6 +317,10 @@ static int change_video_state(FAR video_upperhalf_t *priv, enum video_state_e ne
 		dma_container = video_framebuff_get_dma_container(&priv->video_inf.bufinf);
 		if (dma_container) {
 			ret = video_devops->set_buf(priv->dev, V4L2_BUF_TYPE_VIDEO_CAPTURE, dma_container->buf.m.userptr, dma_container->buf.length);
+			if (ret != OK) {
+				videodbg("Unable to set buffer for state change.\n");
+				return ret;
+			}
 		} else {
 			updated_next_state = VIDEO_STATE_STREAMON;
 		}
@@ -326,11 +330,8 @@ static int change_video_state(FAR video_upperhalf_t *priv, enum video_state_e ne
 		}
 	}
 
-	if (ret == OK) {
-		priv->video_inf.state = updated_next_state;
-	}
-
-	return ret;
+	priv->video_inf.state = updated_next_state;
+	return OK;
 }
 
 static bool is_taking_still_picture(FAR video_upperhalf_t *priv)
