@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+#include <fcntl.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
@@ -531,11 +532,9 @@ int video_null_init_transfer(FAR null_priv_t *priv)
 	priv->trfsize = priv->cur_frame->wWidth * priv->cur_frame->wHeight * 2;
 
 	/* Free the old buffer and allocate memory for new size */
-	if (priv->trfsize != priv->reqsize) {
-		if (priv->trfbuff) {
-			kmm_free(priv->trfbuff);
-			priv->trfbuff = NULL;
-		}
+	if (priv->trfbuff) {
+		kmm_free(priv->trfbuff);
+		priv->trfbuff = NULL;
 	}
 
 	if (!priv->trfbuff) {
@@ -548,18 +547,17 @@ int video_null_init_transfer(FAR null_priv_t *priv)
 	snprintf(filename, FILE_NAMELEN, FILE_FORMAT, priv->cur_frame->wWidth, priv->cur_frame->wHeight, priv->cur_format->description);
 	videodbg("Video File Name: %s\n", filename);
 
-#if 0
 	fd = open(filename, O_RDOK);
 	if (fd < 0) {
 		return -ENOENT;
 	}
 
-	ret = read(fd, priv->trfbuff, priv->reqsize);
+	ret = read(fd, priv->trfbuff, priv->trfsize);
 	if (ret < 0) {
-		return ret;
+		videovdbg("No bytes read, init_transfer failed.\n");
 	}
-#endif
 
+	close(fd);
 	return ret;
 }
 
