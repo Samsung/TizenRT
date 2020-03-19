@@ -92,7 +92,7 @@
  *
  * Description:
  *   Queue work to be performed at a later time.  All queued work will be
- *   performed on the worker thread of of execution (not the caller's).
+ *   performed on the worker thread of execution (not the caller's).
  *
  *   The work structure is allocated by caller, but completely managed by
  *   the work queue logic.  The caller should never modify the contents of
