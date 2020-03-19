@@ -335,14 +335,13 @@
 #define SYS_seekdir                    (__SYS_readdir + 2)
 #define SYS_stat                       (__SYS_readdir + 3)
 #define SYS_statfs                     (__SYS_readdir + 4)
-#define SYS_telldir                    (__SYS_readdir + 5)
 
 #if CONFIG_NFILE_STREAMS > 0
-#define SYS_fs_fdopen                  (__SYS_readdir + 6)
-#define SYS_sched_getstreams           (__SYS_readdir + 7)
-#define __SYS_mountpoint               (__SYS_readdir + 8)
+#define SYS_fs_fdopen                  (__SYS_readdir + 5)
+#define SYS_sched_getstreams           (__SYS_readdir + 6)
+#define __SYS_mountpoint               (__SYS_readdir + 7)
 #else
-#define __SYS_mountpoint               (__SYS_readdir + 6)
+#define __SYS_mountpoint               (__SYS_readdir + 5)
 #endif
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT)
@@ -398,23 +397,22 @@
 
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 #define SYS_pthread_mutex_consistent   (__SYS_pthread + 18)
-#define __SYS_pthread_setcancelstate   (__SYS_pthread + 19)
+#define __SYS_pthread_setschedparam   (__SYS_pthread + 19)
 #else
-#define __SYS_pthread_setcancelstate   (__SYS_pthread + 18)
+#define __SYS_pthread_setschedparam   (__SYS_pthread + 18)
 #endif
 
-#define SYS_pthread_setcancelstate     (__SYS_pthread_setcancelstate + 0)
-#define SYS_pthread_setschedparam      (__SYS_pthread_setcancelstate + 1)
-#define SYS_pthread_setschedprio       (__SYS_pthread_setcancelstate + 2)
-#define SYS_pthread_setspecific        (__SYS_pthread_setcancelstate + 3)
+#define SYS_pthread_setschedparam      (__SYS_pthread_setschedparam + 0)
+#define SYS_pthread_setschedprio       (__SYS_pthread_setschedparam + 1)
+#define SYS_pthread_setspecific        (__SYS_pthread_setschedparam + 2)
 
 #ifndef CONFIG_DISABLE_SIGNAL
-#define SYS_pthread_cond_timedwait     (__SYS_pthread_setcancelstate + 4)
-#define SYS_pthread_kill               (__SYS_pthread_setcancelstate + 5)
-#define SYS_pthread_sigmask            (__SYS_pthread_setcancelstate + 6)
-#define __SYS_mqueue                   (__SYS_pthread_setcancelstate + 7)
+#define SYS_pthread_cond_timedwait     (__SYS_pthread_setschedparam + 3)
+#define SYS_pthread_kill               (__SYS_pthread_setschedparam + 4)
+#define SYS_pthread_sigmask            (__SYS_pthread_setschedparam + 5)
+#define __SYS_mqueue                   (__SYS_pthread_setschedparam + 6)
 #else
-#define __SYS_mqueue                   (__SYS_pthread_setcancelstate + 4)
+#define __SYS_mqueue                   (__SYS_pthread_setschedparam + 3)
 #endif
 
 #else
