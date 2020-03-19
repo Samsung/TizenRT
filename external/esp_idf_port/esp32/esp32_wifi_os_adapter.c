@@ -74,7 +74,7 @@ extern void esp_dport_access_stall_other_cpu_end_wrap(void);
 extern int64_t get_instant_time(void);
 
 
-/*=================seamphore API=================*/
+/*=================semaphore API=================*/
 static void *IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init)
 {
 	if (max > SEM_VALUE_MAX || init > SEM_VALUE_MAX) {

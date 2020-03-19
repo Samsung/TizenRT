@@ -362,7 +362,7 @@ static int i2c_esp32_isr(int irq, FAR void *context, FAR void *arg)
 					break;
 				}
 
-				/* not need to give seamphore, do work in isr itself*/
+				/* not need to give semaphore, do work in isr itself */
 				if (priv->status == I2C_STATUS_READ) {
 					i2c_esp32_get_i2c_data(priv);
 					ret = i2c_esp32_send_read_cmd(priv, 0, 0);

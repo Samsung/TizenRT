@@ -80,7 +80,7 @@
  *
  * Description:
  *   This function initializes the UNAMED semaphore sem. Following a
- *   successful call to sem_init(), the semaophore may be used in subsequent
+ *   successful call to sem_init(), the semaphore may be used in subsequent
  *   calls to sem_wait(), sem_post(), and sem_trywait().  The semaphore
  *   remains usable until it is destroyed.
  *
@@ -107,7 +107,7 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 	 */
 
 	if (sem && value <= SEM_VALUE_MAX) {
-		/* Initialize the seamphore count */
+		/* Initialize the semaphore count */
 
 		sem->semcount = (int16_t)value;
 #ifdef CONFIG_SEMAPHORE_HISTORY
