@@ -55,7 +55,6 @@ public:
 	 * param[in] channels   The channels that the channels of audio
 	 * param[in] sampleRate The sampleRate that the sample rate of audio
 	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio
-	 * param[in] callback   The callback that the callback function
 	 * @since TizenRT v2.0
 	 */
 	BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat);
