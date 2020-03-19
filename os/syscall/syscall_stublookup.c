@@ -233,7 +233,6 @@ uintptr_t STUB_rewinddir(int nbr, uintptr_t parm1);
 uintptr_t STUB_seekdir(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_stat(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_statfs(int nbr, uintptr_t parm1, uintptr_t parm2);
-uintptr_t STUB_telldir(int nbr, uintptr_t parm1);
 
 uintptr_t STUB_fs_fdopen(int nbr, uintptr_t parm1, uintptr_t parm2,
 						 uintptr_t parm3);
@@ -285,8 +284,6 @@ uintptr_t STUB_pthread_mutex_lock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_trylock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_unlock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_consistent(int nbr, uintptr_t parm1);
-uintptr_t STUB_pthread_setcancelstate(int nbr, uintptr_t parm1,
-									  uintptr_t parm2);
 uintptr_t STUB_pthread_setschedparam(int nbr, uintptr_t parm1,
 									 uintptr_t parm2, uintptr_t parm3);
 uintptr_t STUB_pthread_setschedprio(int nbr, uintptr_t parm1,

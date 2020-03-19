@@ -236,7 +236,6 @@ SYSCALL_LOOKUP(rewinddir,               1, STUB_rewinddir)
 SYSCALL_LOOKUP(seekdir,                 2, STUB_seekdir)
 SYSCALL_LOOKUP(stat,                    2, STUB_stat)
 SYSCALL_LOOKUP(statfs,                  2, STUB_statfs)
-SYSCALL_LOOKUP(telldir,                 1, STUB_telldir)
 
 #  if CONFIG_NFILE_STREAMS > 0
 SYSCALL_LOOKUP(fdopen,                  3, STUB_fs_fdopen)
@@ -288,7 +287,6 @@ SYSCALL_LOOKUP(pthread_mutex_unlock,    1, STUB_pthread_mutex_unlock)
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 SYSCALL_LOOKUP(pthread_mutex_consistent, 1, STUB_pthread_mutex_consistent)
 #endif
-SYSCALL_LOOKUP(pthread_setcancelstate,  2, STUB_pthread_setcancelstate)
 SYSCALL_LOOKUP(pthread_setschedparam,   3, STUB_pthread_setschedparam)
 SYSCALL_LOOKUP(pthread_setschedprio,    2, STUB_pthread_setschedprio)
 SYSCALL_LOOKUP(pthread_setspecific,     2, STUB_pthread_setspecific)
@@ -351,7 +349,7 @@ SYSCALL_LOOKUP(socket,                  3, STUB_socket)
 SYSCALL_LOOKUP(prctl,                   5, STUB_prctl)
 #endif
 
-SYSCALL_LOOKUP(fin_wait,           	0, STUB_fin_wait)
+SYSCALL_LOOKUP(fin_wait,		0, STUB_fin_wait)
 
 /****************************************************************************
  * Private Functions
