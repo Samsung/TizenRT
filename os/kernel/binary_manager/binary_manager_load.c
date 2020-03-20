@@ -271,6 +271,15 @@ static int binary_manager_load_all(void)
 	int load_cnt;
 	uint32_t bin_count;
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	char libname[CONFIG_NAME_MAX];
+	snprintf(libname, CONFIG_NAME_MAX, "%s%s", CONFIG_COMMON_BINARY_PATH, CONFIG_COMMON_BINARY_NAME);
+	ret = load_binary(0, libname, NULL);
+	if (ret < 0) {
+		return BINMGR_OPERATION_FAIL;
+	}
+#endif
+
 	load_cnt = 0;
 	bin_count = binary_manager_get_binary_count();
 
