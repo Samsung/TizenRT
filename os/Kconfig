@@ -270,6 +270,31 @@ config APPS_RAM_REGION_SHAREABLE
 		shareable region in the MPU. If the system has multiple cores which might access
 		the external applicaiton RAM region, then this config needs to be set to true.
 
+config SUPPORT_COMMON_BINARY
+	bool "Support Common Binary"
+	default n
+	depends on FS_SMARTFS
+	---help---
+		This config indicates whether we support common binary. The common binary will
+		contain all the common libraries which will be used by the different loadable
+		applications. The common binary will be stored in the file system.
+
+if SUPPORT_COMMON_BINARY
+
+config COMMON_BINARY_PATH
+	string "Path where common binary is stored"
+	default "/mnt/"
+	---help---
+		Path where common binary is stored.
+
+config COMMON_BINARY_NAME
+	string "Name of common binary file"
+	default "tinyara_common_binary"
+	---help---
+		Filename of the common binary file.
+
+endif # SUPPORT_COMMON_BINARY
+
 endif # APP_BINARY_SEPARATION
 
 
