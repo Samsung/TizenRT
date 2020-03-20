@@ -39,6 +39,10 @@
 
 #ifdef CONFIG_BINFMT_ENABLE
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+struct binary_s *g_lib_binp;
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -59,7 +63,7 @@
  *               program.
  *
  *   load_attr - This structure contains the information that the binary
- *               to be loaded.
+ *               to be loaded. load_attr will be NULL while loading a library.
  *
  * Returned Value:
  *   This is an end-user function, so it follows the normal convention:
@@ -76,14 +80,23 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	int ret;
 
 	/* Sanity check */
-	if (load_attr->bin_size <= 0) {
+	if (load_attr && load_attr->bin_size <= 0) {
 		berr("ERROR: Invalid file length!\n");
 		errcode = EINVAL;
 		goto errout;
 	}
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	if (load_attr) {
+		bin = load_attr->binp;
+	} else {
+		bin = g_lib_binp;
+	}
+#else
 	bin = load_attr->binp;
+#endif
 	/* If we find a non-null value for bin, it means that
 	 * we are in a reload scenario.
 	 */
@@ -105,28 +118,34 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		bin = (FAR struct binary_s *)kmm_zalloc(sizeof(struct binary_s));
 		if (!bin) {
 			berr("ERROR: Failed to allocate binary_s\n");
-			errcode = ENOMEM;
+			errcode = -ENOMEM;
 			goto errout_with_bin;
 		}
 
 		/* Initialize the binary structure */
 
 		bin->filename = filename;
-		bin->exports = NULL;
-		bin->nexports = 0;
-		bin->filelen = load_attr->bin_size;
-		bin->offset = load_attr->offset;
-		bin->stacksize = load_attr->stack_size;
-		bin->priority = load_attr->priority;
-		bin->compression_type = load_attr->compression_type;
-		bin->binary_idx = binary_idx;
+		if (load_attr) {
+			bin->exports = NULL;
+			bin->nexports = 0;
+			bin->filelen = load_attr->bin_size;
+			bin->offset = load_attr->offset;
+			bin->stacksize = load_attr->stack_size;
+			bin->priority = load_attr->priority;
+			bin->compression_type = load_attr->compression_type;
+			bin->binary_idx = binary_idx;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		strncpy(bin->bin_name, load_attr->bin_name, BIN_NAME_MAX);
+			strncpy(bin->bin_name, load_attr->bin_name, BIN_NAME_MAX);
 #else
-		bin->bin_name = load_attr->bin_name;
+			bin->bin_name = load_attr->bin_name;
 #endif
-		bin->ramsize = load_attr->ram_size;
-
+			bin->ramsize = load_attr->ram_size;
+		} else {
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			bin->islibrary = true;
+			g_lib_binp = bin;
+#endif
+		}
 		/* Load the module into memory */
 
 		ret = load_module(bin);
@@ -147,20 +166,31 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	}
 #endif
 
-	/* Start the module */
-	pid = exec_module(bin);
-	if (pid < 0) {
-		errcode = -pid;
-		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
-		goto errout_with_unload;
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	if (!bin->islibrary) {
+#endif
+		/* Start the module */
+		pid = exec_module(bin);
+		if (pid < 0) {
+			errcode = -pid;
+			berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
+			goto errout_with_unload;
+		}
+
+		return pid;
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
 	}
 
-	return pid;
+	return OK;
+#endif
 
 errout_with_unload:
 	(void)unload_module(bin);
 errout_with_bin:
 	kmm_free(bin);
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	g_lib_binp = NULL;
+#endif
 errout:
 	set_errno(errcode);
 	return ERROR;

@@ -118,7 +118,9 @@ struct binary_s {
 	size_t bsssize;			/* Size of bss section */
 	uint32_t data_backup;		/* Start address of copy of data section */
 #endif
-
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	uint8_t islibrary;		/* Is this bin object containing a library */
+#endif
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
 	FAR char *argbuffer;		/* Allocated argument list */
 	FAR char **argv;			/* Copy of argument list */
