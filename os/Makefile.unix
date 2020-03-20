@@ -442,6 +442,10 @@ include LibTargets.mk
 # is unknown to this makefile unless CONFIG_PASS1_OBJECT is defined.
 
 PASS1_BUILDIR = board/common/userspace
+ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
+COMMONLIBS = -luarch -luc -lumm -lproxies
+endif
 
 pass1deps: pass1dep $(USERLIBS)
 
@@ -458,6 +462,11 @@ ifeq ($(CONFIG_BUILD_2PASS),y)
 	$(call DELFILE, $(PASS1_BUILDIR)/up_userspace.o)
 	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" LINKLIBS="$(LINKLIBS)" USERLIBS="$(USERLIBS)" "$(CONFIG_PASS1_TARGET)"
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
+ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/binfmt/libelf/gnu-elf.ld -L $(LIBRARIES_DIR) --start-group $(COMMONLIBS) $(LIBGCC) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
+	$(Q) $(STRIP) -g -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
+	$(Q) $(OBJCOPY) --remove-section .comment $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
+endif
 endif
 
 pass2deps: pass2dep $(TINYARALIBS)

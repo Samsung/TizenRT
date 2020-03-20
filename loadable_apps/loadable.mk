@@ -27,8 +27,17 @@ USERSPACE = $(TOPDIR)/board/common/userspace/up_userspace
 LDELFFLAGS += -Bstatic
 LDLIBPATH += -L $(TINYARALIB)
 
+ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+# If we support common binary, then we exclude some of the libraries from here
+LDLIBS := $(patsubst %-luarch,%,$(LDLIBS))
+LDLIBS := $(patsubst %-luc,%,$(LDLIBS))
+LDLIBS := $(patsubst %-lumm,%,$(LDLIBS))
+LDLIBS := $(patsubst %-lproxies,%,$(LDLIBS))
+else
+
 LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
+endif
 
 OBJCOPY = $(CROSSDEV)objcopy
 
@@ -59,6 +68,9 @@ $(OBJS): %$(OBJEXT): %.c
 $(BIN): $(OBJS)
 	@echo "LD: $<"
 	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
+ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+	$(Q) $(NM) -u $(BIN) | awk -F"U " '{print "--require-defined "$$2}' >> $(USER_BIN_DIR)/lib_symbols.txt
+endif
 
 clean:
 	$(call DELFILE, $(BIN))
@@ -79,9 +91,13 @@ endif
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
 
 verify:
+# If we support common binary, then the symbols in the common binary will appear as UNDEFINED
+# in the application binary. So, verification is required only when we dont support common binary.
+ifneq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	$(Q) if [ "`nm -u $(BIN) | wc -l`" != "0" ]; then \
 		echo "Undefined Symbols"; \
 		nm -u -l $(BIN); \
 		rm $(BIN); \
 		exit 1; \
 	fi
+endif
