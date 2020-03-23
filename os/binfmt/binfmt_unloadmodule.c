@@ -193,7 +193,7 @@ int unload_module(FAR struct binary_s *binp)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		if (!binp->reload) {
 #endif
-			for (i = 0; i < BINFMT_NALLOC; i++) {
+			for (i = 0; i < ALLOC_MAX; i++) {
 				if (binp->alloc[i]) {
 					binfo("Freeing alloc[%d]: %p\n", i, binp->alloc[i]);
 					kumm_free((FAR void *)binp->alloc[i]);

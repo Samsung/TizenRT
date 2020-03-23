@@ -185,7 +185,7 @@ int exec_module(FAR struct binary_s *binp)
 	/* The first 4 bytes of the text section of the application must contain a
 	pointer to the application's mm_heap object. Here we will store the mm_heap
 	pointer to the start of the text section */
-	*(uint32_t *)(binp->alloc[0]) = (uint32_t)binp->uheap;
+	*(uint32_t *)(binp->alloc[ALLOC_TEXT]) = (uint32_t)binp->uheap;
 	rtcb = (struct tcb_s *)sched_self();
 	rtcb->uheap = (uint32_t)binp->uheap;
 
@@ -193,11 +193,11 @@ int exec_module(FAR struct binary_s *binp)
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
-	mpu_get_register_value(&rtcb->mpu_regs[3], g_mpu_region_nr, (uintptr_t)binp->alloc[0], binp->textsize, true, true);
+	mpu_configure_app_regs(&rtcb->mpu_regs[3], g_mpu_region_nr, (uintptr_t)binp->alloc[ALLOC_TEXT], binp->textsize, true, true);
 	/* Configure ro section as RO and non-executable region */
-	mpu_get_register_value(&rtcb->mpu_regs[6], g_mpu_region_nr + 1, (uintptr_t)binp->alloc[3], binp->rosize, true, false);
+	mpu_configure_app_regs(&rtcb->mpu_regs[6], g_mpu_region_nr + 1, (uintptr_t)binp->alloc[ALLOC_RO], binp->rosize, true, false);
 	/* Complete RAM partition will be configured as RW region */
-	mpu_get_register_value(&rtcb->mpu_regs[0], g_mpu_region_nr + 2, (uintptr_t)binp->alloc[4], binp->ramsize, false, false);
+	mpu_configure_app_regs(&rtcb->mpu_regs[0], g_mpu_region_nr + 2, (uintptr_t)binp->alloc[ALLOC_DATA], binp->ramsize, false, false);
 #else
 	/* Complete RAM partition will be configured as RW region */
 	mpu_get_register_value(&rtcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
@@ -299,7 +299,7 @@ int exec_module(FAR struct binary_s *binp)
 	 * must be the first allocated address space.
 	 */
 
-	tcb->cmn.dspace = binp->alloc[0];
+	tcb->cmn.dspace = binp->alloc[ALLOC_TEXT];
 
 	/* Re-initialize the task's initial state to account for the new PIC base */
 
@@ -340,7 +340,7 @@ int exec_module(FAR struct binary_s *binp)
 
 	/* Store the address of the applications userspace object in the tcb  */
 	/* The app's userspace object will be found at an offset of 4 bytes from the start of the binary */
-	tcb->cmn.uspace = (uint32_t)binp->alloc[0] + 4;
+	tcb->cmn.uspace = (uint32_t)binp->alloc[ALLOC_TEXT] + 4;
 	tcb->cmn.uheap = binp->uheap;
 	tcb->cmn.ram_start = (uint32_t)binp->ramstart;
 	tcb->cmn.ram_size = binp->ramsize;
@@ -390,7 +390,7 @@ int exec_module(FAR struct binary_s *binp)
 		goto errout_with_tcbinit;
 	}
 #endif
-	binfo("%s loaded @ 0x%08x and running with pid = %d\n", binp->filename, binp->alloc[0], pid);
+	binfo("%s loaded @ 0x%08x and running with pid = %d\n", binp->filename, binp->alloc[ALLOC_TEXT], pid);
 
 	return (int)pid;
 
