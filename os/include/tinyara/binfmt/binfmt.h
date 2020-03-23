@@ -71,15 +71,19 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-#define BINFMT_NALLOC 5
-#else
-#define BINFMT_NALLOC 3
-#endif
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+enum {
+	ALLOC_TEXT,
+	ALLOC_CTOR,
+	ALLOC_DTOR,
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	ALLOC_RO,
+	ALLOC_DATA,
+#endif
+	ALLOC_MAX
+};
 
 /* The type of one C++ constructor or destructor */
 
@@ -136,7 +140,7 @@ struct binary_s {
 
 	main_t entrypt;				/* Entry point into a program module */
 	FAR void *mapped;			/* Memory-mapped, address space */
-	FAR void *alloc[BINFMT_NALLOC];	/* Allocated address spaces */
+	FAR void *alloc[ALLOC_MAX];	/* Allocated address spaces */
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	/* Constructors/destructors */

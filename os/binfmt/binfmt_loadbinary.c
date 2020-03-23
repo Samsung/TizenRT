@@ -39,8 +39,15 @@
 
 #ifdef CONFIG_BINFMT_ENABLE
 
+#include <tinyara/mm/mm.h>
+
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 struct binary_s *g_lib_binp;
+
+#ifdef CONFIG_ARMV7M_MPU
+extern uint32_t g_mpu_region_nr;
+void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
+#endif
 #endif
 
 /****************************************************************************
@@ -167,7 +174,13 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 #endif
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	if (!bin->islibrary) {
+	if (bin->islibrary) {
+#ifdef CONFIG_ARMV7M_MPU
+		mpu_configure_app_regs(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_TEXT], bin->textsize, true, true);
+		mpu_configure_app_regs(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_RO], bin->rosize, true, false);
+		mpu_configure_app_regs(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_DATA], bin->ramsize, false, false);
+#endif
+	} else {
 #endif
 		/* Start the module */
 		pid = exec_module(bin);

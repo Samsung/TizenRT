@@ -311,6 +311,14 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
  * Description:
  *   Configure the user application SRAM mpu settings into the tcb variables
  *
+ * Params:
+ * 	regs     : pointer to array in which to store the configured values
+ * 		   If regs is NULL, then configure the mpu registers directly
+ * 	region   : number of the region to be configured
+ * 	base     : start address for the region
+ * 	size     : size of the region in bytes
+ * 	readonly : true indicates a readonly region
+ *	execute  : true indicates that the region has execute permission
  ****************************************************************************/
 
 #if (defined(CONFIG_ARM_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
@@ -321,12 +329,6 @@ void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, siz
 	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV7M_MPU_NREGIONS);
-
-	/* Select the region */
-	regs[0] = region;
-
-	/* Select the region base address */
-	regs[1] = (base & MPU_RBAR_ADDR_MASK) | region;
 
 	/* Select the region size and the sub-region map */
 
@@ -352,6 +354,16 @@ void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, siz
 		regval |= MPU_RASR_XN;
 	}
 
-	regs[2] = regval;
+	if (regs) {
+		regs[0] = region;
+		regs[1] = (base & MPU_RBAR_ADDR_MASK) | region;
+		regs[2] = regval;
+	} else {
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		putreg32(region, MPU_RNR);
+		putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
+		putreg32(regval, MPU_RASR);
+#endif
+	}
 }
 #endif

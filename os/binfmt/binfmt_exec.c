@@ -209,7 +209,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	}
 
 #ifdef CONFIG_DEBUG
-	dbg("%s loaded @ 0x%08x and running with pid = %d\n", bin->filename, bin->alloc[0], pid);
+	dbg("%s loaded @ 0x%08x and running with pid = %d\n", bin->filename, bin->alloc[ALLOC_TEXT], pid);
 #endif
 
 	sched_unlock();

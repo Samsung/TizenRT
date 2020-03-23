@@ -294,16 +294,16 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 
 	up_addrenv_clone(&loadinfo.addrenv, &binp->addrenv);
 #else
-	binp->alloc[0] = (FAR void *)loadinfo.textalloc;
+	binp->alloc[ALLOC_TEXT] = (FAR void *)loadinfo.textalloc;
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-	binp->alloc[1] = loadinfo.ctoralloc;
-	binp->alloc[2] = loadinfo.dtoralloc;
+	binp->alloc[ALLOC_CTOR] = loadinfo.ctoralloc;
+	binp->alloc[ALLOC_DTOR] = loadinfo.dtoralloc;
 #endif
 #endif
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	binp->alloc[3] = (FAR void *)loadinfo.roalloc;
-	binp->alloc[4] = (FAR void *)loadinfo.dataalloc;
+	binp->alloc[ALLOC_RO] = (FAR void *)loadinfo.roalloc;
+	binp->alloc[ALLOC_DATA] = (FAR void *)loadinfo.dataalloc;
 	binp->textsize = loadinfo.textsize;
 	binp->rosize = loadinfo.rosize;
 	/* loadinfo.datasize includes the size of data and bss sections.

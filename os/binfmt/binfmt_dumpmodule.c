@@ -91,7 +91,7 @@ int dump_module(FAR const struct binary_s *bin)
 		berr("  argv:      %p\n", bin->argv);
 		berr("  entrypt:   %p\n", bin->entrypt);
 		berr("  mapped:    %p size=%d\n", bin->mapped, bin->mapsize);
-		berr("  alloc:     %p %p %p\n", bin->alloc[0], bin->alloc[1], bin->alloc[2]);
+		berr("  alloc:     %p %p %p\n", bin->alloc[ALLOC_TEXT], bin->alloc[ALLOC_CTOR], bin->alloc[ALLOC_DTOR]);
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 		berr("  ctors:     %p nctors=%d\n", bin->ctors, bin->nctors);
 		berr("  dtors:     %p ndtors=%d\n", bin->dtors, bin->ndtors);
