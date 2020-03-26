@@ -190,7 +190,8 @@ config ARM_HAVE_MPU_UNIFIED
 		unified MPU for both instruction and data addresses.
 
 config ARM_MPU
-	bool "Common MPU support"
+	bool
+	defaut n
 
 config ARMV7M_MPU
 	bool "MPU support"
