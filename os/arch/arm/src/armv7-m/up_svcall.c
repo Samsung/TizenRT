@@ -99,6 +99,9 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 extern uint32_t g_assertpc;
 #endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t *g_umm_app_id;
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -266,6 +269,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		up_set_mpu_stack_guard(tcb);
 #endif
 #endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (g_umm_app_id) {
+			*g_umm_app_id = tcb->app_id;
+		}
+#endif
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
 		tcb->is_active = true;
@@ -306,6 +314,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 		up_set_mpu_stack_guard(tcb);
 #endif
+#endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (g_umm_app_id) {
+			*g_umm_app_id = tcb->app_id;
+		}
 #endif
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */

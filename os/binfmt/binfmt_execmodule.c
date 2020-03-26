@@ -346,6 +346,10 @@ int exec_module(FAR struct binary_s *binp)
 	tcb->cmn.ram_size = binp->ramsize;
 
 #ifdef CONFIG_BINARY_MANAGER
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	tcb->cmn.app_id = binp->binary_idx;
+#endif
+
 	/* Set task name as binary name */
 	strncpy(tcb->cmn.name, binp->bin_name, CONFIG_TASK_NAME_SIZE);
 	tcb->cmn.name[CONFIG_TASK_NAME_SIZE] = '\0';

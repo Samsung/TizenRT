@@ -460,6 +460,9 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		tcb->ram_size = rtcb->ram_size;
 		tcb->uspace = rtcb->uspace;
 		tcb->uheap = rtcb->uheap;
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		tcb->app_id = rtcb->app_id;
+#endif
 
 		/* Copy the MPU register values from parent to child task */
 #ifdef CONFIG_ARM_MPU

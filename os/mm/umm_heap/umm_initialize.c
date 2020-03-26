@@ -78,6 +78,24 @@ struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
 #if defined(CONFIG_BUILD_PROTECTED)
 struct mm_heap_s *g_mmheap_p __attribute__((section(".usrheapptr"))) = g_mmheap;
 #endif
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+/* g_cur_app will contain the id of the currently executing application.
+ * It will be used to index into the app_heap_table to get the heap pointer
+ * for the currently executing application. This variable will be placed at
+ * the first byte of the data section. The value contained in this variable
+ * will be used only by the common binary. The cur_app will be updated by
+ * the kernel during every context switch.
+ */
+uint32_t g_cur_app __attribute__((section(".curapp")));
+
+/* The app_heap_table will contain pointers to the heap of each application.
+ * These pointers will be populated by the loader at the time of loading the
+ * application and creating its heap.
+ */
+struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1] __attribute__((section(".appheaptable")));
+#endif
+
 /************************************************************************
  * Private Functions
  ************************************************************************/

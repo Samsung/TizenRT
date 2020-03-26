@@ -43,6 +43,7 @@
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 struct binary_s *g_lib_binp;
+uint32_t *g_umm_app_id;
 
 #ifdef CONFIG_ARMV7M_MPU
 extern uint32_t g_mpu_region_nr;
@@ -89,7 +90,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	/* Sanity check */
 	if (load_attr && load_attr->bin_size <= 0) {
 		berr("ERROR: Invalid file length!\n");
-		errcode = EINVAL;
+		errcode = -EINVAL;
 		goto errout;
 	}
 
@@ -157,7 +158,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 		ret = load_module(bin);
 		if (ret < 0) {
-			errcode = -ret;
+			errcode = ret;
 			berr("ERROR: Failed to load program '%s': %d\n", filename, errcode);
 			goto errout_with_bin;
 		}
@@ -168,6 +169,18 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			berr("ERROR: data section backup address not initialized\n");
 			goto errout_with_bin;
 		}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (bin->islibrary) {
+			g_umm_app_id = bin->alloc[ALLOC_DATA];
+		} else {
+			/* If we support common binary, then we need to place a pointer to the app's heap object
+			 * into the heap table which is present at the start of the common library data section
+			 */
+			uint32_t *heap_table = (uint32_t)g_lib_binp->alloc[ALLOC_DATA] + 4;
+			heap_table[binary_idx] = bin->heapstart;
+		}
+#endif
 
 		memcpy(bin->data_backup, bin->datastart, bin->datasize);
 	}
@@ -185,7 +198,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		/* Start the module */
 		pid = exec_module(bin);
 		if (pid < 0) {
-			errcode = -pid;
+			errcode = pid;
 			berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
 			goto errout_with_unload;
 		}
