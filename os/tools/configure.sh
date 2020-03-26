@@ -254,6 +254,7 @@ if [ ! -z ${IOTIVITY} ]; then
     echo "  CAUTION!! To build ${boardconfig}, scons should be installed"
     echo "  Find details at https://github.com/Samsung/TizenRT/blob/master/docs/HowToUseIotivity.md"
     echo " "
+    TOOL_CAUTION=y
   fi
 fi
 
@@ -264,6 +265,7 @@ if [ ! -z ${ROMFS} ]; then
     echo "  CAUTION!! To download ${boardconfig} built image, genromfs should be installed"
     echo "  Find details at https://github.com/Samsung/TizenRT/blob/master/docs/HowToUseROMFS.md"
     echo " "
+    TOOL_CAUTION=y
   fi
 fi
 
@@ -274,6 +276,7 @@ if [ ! -z ${IOTJS} ]; then
     echo "  CAUTION!! To build ${boardconfig}, cmake should be installed"
     echo "  Find details at https://github.com/Samsung/TizenRT/blob/master/external/iotjs/README.md"
     echo " "
+    TOOL_CAUTION=y
   fi
 fi
 
@@ -284,7 +287,14 @@ if [ ! -z ${GRPC} ]; then
     echo "  CAUTION!! To build ${boardconfig}, protoc should be installed"
     echo "  Find details at https://github.com/Samsung/TizenRT/blob/master/external/protobuf/README.md"
     echo " "
+    TOOL_CAUTION=y
   fi
+fi
+
+if [ "${TOOL_CAUTION}" = "y" ]; then
+  echo " "
+  echo " NOTE!! You can ignore the caution above when you use the docker through the dbuild script. "
+  echo " "
 fi
 
 echo "  Configuration is Done!"
