@@ -90,7 +90,15 @@
 
 #elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
 extern uint32_t _stext;
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS];
+extern uint32_t g_cur_app;
+#define USR_HEAP (g_app_heap_table[g_cur_app])
+
+#else
 #define USR_HEAP ((struct mm_heap_s *)_stext)
+#endif
 
 #else
 /* Otherwise, the user heap data structures are in common .bss */

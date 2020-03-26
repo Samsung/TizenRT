@@ -98,9 +98,11 @@ SECTIONS
       _eronly = .;
     }
 
-  .data :
+  .data 0x00000000 :
     {
       _sdata = . ;
+      *(.curapp)
+      *(.appheaptable)
       *(.data)
       *(.data1)
       *(.data.*)

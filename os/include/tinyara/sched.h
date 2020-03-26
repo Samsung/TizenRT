@@ -625,6 +625,9 @@ struct tcb_s {
 #if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
 uint32_t stack_mpu_regs[REG_MAX]; /* need 3 MPU registers to configure a region */
 #endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	uint32_t app_id;			/* Indicates app id of the task and used to index into umm_heap_table */
+#endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];	/* Task name (with NUL terminator)     */
