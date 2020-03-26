@@ -86,7 +86,7 @@
 /********************************************************************************
  * Pre-processor Definitions
  ********************************************************************************/
-#if defined(CONFIG_APP_BINARY_SEPARATION) && (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARM_MPU))
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
 enum {
 	REG_RNR,
 	REG_RBAR,
@@ -632,7 +632,7 @@ struct tcb_s {
 	uint32_t uspace;		/* User space object for app binary */
 	uint32_t uheap;			/* User heap object pointer */
 
-#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARM_MPU)
+#ifdef CONFIG_ARM_MPU
 	uint32_t mpu_regs[3 * MPU_NUM_REGIONS];	/* We need 3 register values to configure each MPU region */
 #endif
 #endif
