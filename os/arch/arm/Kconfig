@@ -191,7 +191,7 @@ config ARM_HAVE_MPU_UNIFIED
 
 config ARM_MPU
 	bool
-	defaut n
+	default n
 
 config ARMV7M_MPU
 	bool "MPU support"
