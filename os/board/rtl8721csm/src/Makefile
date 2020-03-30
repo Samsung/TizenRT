@@ -142,6 +142,8 @@ CFLAGS += -I$(DIR_OTG)/class
 CFLAGS += -I$(DIR_OTG)/core/inc
 CFLAGS += -I$(DIR_OTG)/composite/inc
 
+CFLAGS += -DARM_CORE_CM4
+
 COBJS = $(CSRCS:.c=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
