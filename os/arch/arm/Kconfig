@@ -140,7 +140,7 @@ config ARCH_FAMILY
 	string
 	default "armv7-m"	if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
 	default "armv7-r"	if ARCH_CORTEXR4
-	default "cmsis"		if ARCH_CORTEXM33
+	default "armv8-m"	if ARCH_CORTEXM33
 
 config ARCH_HAVE_CMNVECTOR
 	bool
