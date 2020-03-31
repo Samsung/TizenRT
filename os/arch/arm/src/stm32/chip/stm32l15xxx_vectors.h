@@ -71,7 +71,7 @@
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 45 interrupt table entries for I/O interrupts. */
 
@@ -131,7 +131,7 @@ VECTOR(stm32_TIM7, STM32_IRQ_TIM7)	/* 44: TIM7 global interrupt */
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 61 interrupt table entries for I/O interrupts. */
 
@@ -200,7 +200,7 @@ VECTOR(stm32_compacq, STM32_IRQ_COMPACQ)	/* 53: Comparator Channel Acquisition I
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 61 interrupt table entries for I/O interrupts. */
 

@@ -139,7 +139,7 @@ void __start(void) __attribute__((no_instrument_function));
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_FPU
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 static inline void stm32_fpuconfig(void)
 {

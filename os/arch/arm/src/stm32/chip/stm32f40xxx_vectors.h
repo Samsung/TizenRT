@@ -65,7 +65,7 @@
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve interrupt table entries for I/O interrupts. */
 
@@ -174,4 +174,4 @@ VECTOR(stm32_ltdcint, STM32_IRQ_LTDCINT)	/* Vector 16+88: LTDC interrupt */
 VECTOR(stm32_ltdcerrint, STM32_IRQ_LTDCERRINT)	/* Vector 16+89: LTDC Error interrupt */
 VECTOR(stm32_dma2d, STM32_IRQ_DMA2D)	/* Vector 16+90: DMA2D interrupt */
 #endif
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */

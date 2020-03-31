@@ -124,7 +124,7 @@
 
 /* Check if common ARMv7 interrupt vectoring is used (see arch/arm/src/armv7-m/up_vectors.S) */
 
-#ifndef CONFIG_ARMV7M_CMNVECTOR
+#ifndef CONFIG_ARM_CMNVECTOR
 
 	.globl		__start
 
@@ -475,7 +475,7 @@ g_intstackalloc:
 g_intstackbase:
 	.size	g_intstackalloc, .-g_intstackalloc
 #endif
-#endif /* CONFIG_ARMV7M_CMNVECTOR */
+#endif /* CONFIG_ARM_CMNVECTOR */
 
 /************************************************************************************
  * .rodata

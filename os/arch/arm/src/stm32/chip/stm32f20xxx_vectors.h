@@ -65,7 +65,7 @@
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 82 interrupt table entries for I/O interrupts. */
 
@@ -154,4 +154,4 @@ VECTOR(stm32_otghs, STM32_IRQ_OTGHS)	/* Vector 16+77: USB On The Go HS global in
 VECTOR(stm32_dcmi, STM32_IRQ_DCMI)	/* Vector 16+78: DCMI global interrupt */
 VECTOR(stm32_cryp, STM32_IRQ_CRYP)	/* Vector 16+79: CRYP crypto global interrupt */
 VECTOR(stm32_hash, STM32_IRQ_HASH)	/* Vector 16+80: Hash and Rng global interrupt */
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */
