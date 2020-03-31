@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_ARMV7M_CMNVECTOR),y)
+ifeq ($(CONFIG_ARM_CMNVECTOR),y)
 HEAD_ASRC =
 else
 HEAD_ASRC = stm32_vectors.S
@@ -83,7 +83,7 @@ ifeq ($(CONFIG_ARMV7M_STACKCHECK),y)
 CMN_CSRCS += up_stackcheck.c
 endif
 
-ifeq ($(CONFIG_ARMV7M_CMNVECTOR),y)
+ifeq ($(CONFIG_ARM_CMNVECTOR),y)
 CMN_ASRCS += up_exception.S
 CMN_CSRCS += up_vectors.c
 endif
@@ -114,7 +114,7 @@ endif
 
 ifeq ($(CONFIG_ARCH_FPU),y)
 CMN_ASRCS += up_fpu.S
-ifneq ($(CONFIG_ARMV7M_CMNVECTOR),y)
+ifneq ($(CONFIG_ARM_CMNVECTOR),y)
 CMN_CSRCS += up_copyarmstate.c
 endif
 endif
@@ -130,7 +130,7 @@ ifneq ($(CONFIG_SCHED_TICKLESS),y)
 CHIP_CSRCS += stm32_timerisr.c
 endif
 
-ifeq ($(CONFIG_ARMV7M_CMNVECTOR),y)
+ifeq ($(CONFIG_ARM_CMNVECTOR),y)
 CHIP_ASRCS += stm32_vectors.S
 endif
 

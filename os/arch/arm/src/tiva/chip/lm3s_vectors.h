@@ -71,7 +71,7 @@
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 71 interrupt table entries for I/O interrupts. */
 
@@ -147,7 +147,7 @@ UNUSED(TIVA_RESERVED_70)	/* Vector 70: Reserved */
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 71 interrupt table entries for I/O interrupts. */
 
@@ -223,7 +223,7 @@ UNUSED(TIVA_RESERVED_70)	/* Vector 70: Reserved */
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 71 interrupt table entries for I/O interrupts. */
 
@@ -299,7 +299,7 @@ UNUSED(TIVA_RESERVED_70)	/* Vector 70: Reserved */
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 71 interrupt table entries for I/O interrupts. */
 
@@ -375,7 +375,7 @@ UNUSED(TIVA_RESERVED_70)	/* Vector 70: Reserved */
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 72 interrupt table entries for I/O interrupts. */
 

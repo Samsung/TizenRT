@@ -71,7 +71,7 @@
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 155 interrupt table entries for I/O interrupts. */
 
@@ -232,7 +232,7 @@ UNUSED(TIVA_RESERVED_152)	/* Vector 152: Reserved */
 UNUSED(TIVA_RESERVED_153)	/* Vector 153: Reserved */
 UNUSED(TIVA_RESERVED_154)
 /* Vector 154: Reserved */
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */
 #else
 #error "Vectors not known for this Stellaris chip"
 #endif

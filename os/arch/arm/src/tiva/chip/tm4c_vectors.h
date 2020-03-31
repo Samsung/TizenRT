@@ -71,7 +71,7 @@
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 155 interrupt table entries for I/O interrupts. */
 
@@ -232,14 +232,14 @@ VECTOR(tiva_pwm1_gen2, TIVA_IRQ_PWM1_GEN2)	/* Vector 152: PWM1 Generator 2 */
 VECTOR(tiva_pwm1_gen3, TIVA_IRQ_PWM1_GEN3)	/* Vector 153: PWM1 Generator 3 */
 VECTOR(tiva_pwm1_fault, TIVA_IRQ_PWM1_FAULT)
 /* Vector 154: PWM1 Fault */
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */
 #elif defined(CONFIG_ARCH_CHIP_TM4C123GH6PMI)
 
 /* If the common ARMv7-M vector handling is used, then all it needs is the following
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 155 interrupt table entries for I/O interrupts. */
 
@@ -400,14 +400,14 @@ VECTOR(tiva_pwm1_gen2, TIVA_IRQ_PWM1_GEN2)	/* Vector 152: PWM1 Generator 2 */
 VECTOR(tiva_pwm1_gen3, TIVA_IRQ_PWM1_GEN3)	/* Vector 153: PWM1 Generator 3 */
 VECTOR(tiva_pwm1_fault, TIVA_IRQ_PWM1_FAULT)
 /* Vector 154: PWM1 Fault */
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */
 #elif defined(CONFIG_ARCH_CHIP_TM4C129XNC)
 
 /* If the common ARMv7-M vector handling is used, then all it needs is the following
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 130 interrupt table entries for I/O interrupts. */
 
@@ -540,14 +540,14 @@ VECTOR(tiva_gpiot, TIVA_IRQ_GPIOT)	/* Vector 127: GPIO Port T */
 UNUSED(TIVA_RESERVED_128)	/* Vector 128: Reserved */
 UNUSED(TIVA_RESERVED_129)
 /* Vector 129: Reserved */
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */
 #elif defined(CONFIG_ARCH_CHIP_TM4C1294NC)
 
 /* If the common ARMv7-M vector handling is used, then all it needs is the following
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 130 interrupt table entries for I/O interrupts. */
 
@@ -680,7 +680,7 @@ UNUSED(TIVA_RESERVED_127)	/* Vector 127: Reserved */
 UNUSED(TIVA_RESERVED_128)	/* Vector 128: Reserved */
 UNUSED(TIVA_RESERVED_129)
 /* Vector 129: Reserved */
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */
 #else
 #error "Vectors not known for this Tiva chip"
 #endif

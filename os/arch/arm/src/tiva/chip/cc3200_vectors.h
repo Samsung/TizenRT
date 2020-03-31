@@ -76,7 +76,7 @@
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 155 interrupt table entries for I/O interrupts. */
 
@@ -276,7 +276,7 @@ UNUSED(TIVA_RESERVED_192)	/* Vector 192: SPI A0 */
 UNUSED(TIVA_RESERVED_193)	/* Vector 193: SPI A1 */
 UNUSED(TIVA_RESERVED_194)
 /* Vector 194: Reserved */
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */
 #else
 #error "Vectors not known for this Tiva chip"
 #endif							/* defined(CONFIG_ARCH_CHIP_CC3200) */

@@ -71,7 +71,7 @@
 
 /* Included implementation-dependent register save structure layouts */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 #include <arch/armv7-m/irq_cmnvector.h>
 #else
 #include <arch/armv7-m/irq_lazyfpu.h>

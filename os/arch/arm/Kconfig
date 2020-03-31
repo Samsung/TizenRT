@@ -146,15 +146,14 @@ config ARCH_FAMILY
 config ARCH_HAVE_CMNVECTOR
 	bool
 
-config ARMV7M_CMNVECTOR
-	bool "Use common ARMv7-M vectors"
+config ARM_CMNVECTOR
+	bool "Use common ARM vectors"
 	default n
 	depends on ARCH_HAVE_CMNVECTOR
 	---help---
 		Some architectures use their own, built-in vector logic.  Some use only
 		the common vector logic.  Some can use either their own built-in vector
-		logic or the common vector logic.  This applies only to ARMv7-M
-		architectures.
+		logic or the common vector logic.
 
 config ARCH_HAVE_FPU
 	bool

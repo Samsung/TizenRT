@@ -64,7 +64,7 @@
  * definition that provides the number of supported vectors.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 
 /* Reserve 82 interrupt table entries for I/O interrupts. */
 
@@ -154,4 +154,4 @@ UNUSED(STM32_IRQ_RESERVED78)	/* 78: Reserved */
 UNUSED(STM32_IRQ_RESERVED79)	/* 79: Reserved */
 UNUSED(STM32_IRQ_RESERVED80)	/* 80: Reserved */
 VECTOR(stm32_fpu, STM32_IRQ_FPU)	/* 81: FPU global interrupt */
-#endif							/* CONFIG_ARMV7M_CMNVECTOR */
+#endif							/* CONFIG_ARM_CMNVECTOR */

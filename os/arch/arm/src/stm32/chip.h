@@ -154,7 +154,7 @@
  * required vector definitions as well.
  */
 
-#ifdef CONFIG_ARMV7M_CMNVECTOR
+#ifdef CONFIG_ARM_CMNVECTOR
 #if defined(CONFIG_STM32_STM32L15XX)
 #include "chip/stm32l15xxx_vectors.h"
 #elif defined(CONFIG_STM32_STM32F10XX)
