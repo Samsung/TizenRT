@@ -302,6 +302,13 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 #endif
 {
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
+#ifdef CONFIG_IMXRT_SEMC_SDRAM
+	*heap_start = regionx_start[0];
+	*heap_size = regionx_size[0];
+
+	DEBUGASSERT(*heap_start != 0);
+	DEBUGASSERT(*heap_size != 0);
+#else
 	/* Get the unaligned size and position of the user-space heap.
 	 * This heap begins after the user-space .bss section at an offset
 	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
@@ -319,6 +326,7 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	board_led_on(LED_HEAPALLOCATE);
 	*heap_start = (FAR void *)ubase;
 	*heap_size = usize;
+#endif
 #else
 
 	/* Return the heap settings */
