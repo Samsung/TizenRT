@@ -271,6 +271,28 @@ config ARCH_DABORTSTACK
 		will be used during data abort handling. Recommended data abort stack
 		size is 1K.
 
+config MPU_STACK_OVERFLOW_PROTECTION
+	bool "MPU Stack Overflow Protection"
+	depends on BUILD_PROTECTED
+	depends on ARM_MPU
+	default n
+	---help---
+		Enables stack overflow protection.
+		It protects each task's stack overflow outside its max allocated stack memory.
+		This is applicable to user mode tasks created in protected build.
+
+if MPU_STACK_OVERFLOW_PROTECTION
+
+config MPU_STACK_GUARD_SIZE
+	int "Stack Guard size configuration range(32-1024)"
+	default 32
+	range 32 1024
+	---help---
+		Set size for the stack guard. It must be set with 32 byte aligned values.
+		The size can be set in the range of 32 to 1024 bytes.
+		Setting large stack guard size will be a wastage of memory.
+endif
+
 if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
 source arch/arm/src/armv7-m/Kconfig
 endif

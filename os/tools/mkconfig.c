@@ -305,6 +305,16 @@ int main(int argc, char **argv, char **envp)
 	printf("# undef CONFIG_DEBUG_SPI\n");
 	printf("# undef CONFIG_DEBUG_HEAP\n");
 	printf("#endif\n\n");
+	printf("#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)\n");
+	printf("# if (CONFIG_MPU_STACK_GUARD_SIZE != 32) && \\\n");
+	printf("    (CONFIG_MPU_STACK_GUARD_SIZE != 64) && \\\n");
+	printf("    (CONFIG_MPU_STACK_GUARD_SIZE != 128) && \\\n");
+	printf("    (CONFIG_MPU_STACK_GUARD_SIZE != 256) && \\\n");
+	printf("    (CONFIG_MPU_STACK_GUARD_SIZE != 512) && \\\n");
+	printf("    (CONFIG_MPU_STACK_GUARD_SIZE != 1024) \n");
+	printf("#  define CONFIG_MPU_STACK_GUARD_SIZE 32\n");
+	printf("# endif\n");
+	printf("#endif\n\n");
 	printf("#endif /* __INCLUDE_CONFIG_H */\n");
 	fclose(stream);
 

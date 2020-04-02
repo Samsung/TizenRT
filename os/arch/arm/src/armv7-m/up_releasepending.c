@@ -133,6 +133,9 @@ void up_release_pending(void)
 			/* Restore the MPU registers in case we are switching to an application task */
 #ifdef CONFIG_ARMV7M_MPU
 			up_set_mpu_app_configuration(rtcb);
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+			up_set_mpu_stack_guard(rtcb);
+#endif
 #endif
 #ifdef CONFIG_TASK_MONITOR
 			/* Update rtcb active flag for monitoring. */

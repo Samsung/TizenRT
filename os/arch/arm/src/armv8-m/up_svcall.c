@@ -262,6 +262,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		up_set_mpu_app_configuration(tcb);
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		up_set_mpu_stack_guard(tcb);
+#endif
 #endif
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
@@ -300,6 +303,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		up_set_mpu_app_configuration(tcb);
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		up_set_mpu_stack_guard(tcb);
+#endif
 #endif
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
