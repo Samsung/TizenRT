@@ -72,6 +72,10 @@
 #include "up_arch.h"
 #include "up_internal.h"
 
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+#include <tinyara/mpu.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Macros
  ****************************************************************************/
@@ -158,6 +162,8 @@
 
 int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 {
+	size_t stack_alloc_size = stack_size;
+
 	/* Is there already a stack allocated of a different size?  Because of
 	 * alignment issues, stack_size might erroneously appear to be of a
 	 * different size.  Fortunately, this is not a critical operation.
@@ -180,12 +186,17 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		/* Use the kernel allocator if this is a kernel thread */
 
 		if (ttype == TCB_FLAG_TTYPE_KERNEL) {
-			tcb->stack_alloc_ptr = (uint32_t *)kmm_malloc(stack_size);
+			tcb->stack_alloc_ptr = (uint32_t *)kmm_malloc(stack_alloc_size);
 		} else
 #endif
 		{
 			/* Use the user-space allocator if this is a task or pthread */
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION	/* address must be aligned to 32 byte for MPU region */
+			stack_alloc_size = stack_alloc_size + CONFIG_MPU_STACK_GUARD_SIZE;
+			tcb->stack_alloc_ptr = (uint32_t *)kumm_memalign(CONFIG_MPU_STACK_GUARD_SIZE, stack_alloc_size);
+#else
 			tcb->stack_alloc_ptr = (uint32_t *)kumm_malloc(stack_size);
+#endif
 		}
 
 #ifdef CONFIG_DEBUG
@@ -209,7 +220,8 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 * on the stack are referenced as positive word offsets from sp.
 		 */
 
-		top_of_stack = (uint32_t)tcb->stack_alloc_ptr + stack_size - 4;
+		top_of_stack = (uint32_t)tcb->stack_alloc_ptr + stack_alloc_size - 4;
+
 
 		/* The ARM stack must be aligned; 4 byte alignment for OABI and
 		 * 8-byte alignment for EABI. If necessary top_of_stack must be
@@ -226,6 +238,10 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 
 		size_of_stack = top_of_stack - (uint32_t)tcb->stack_alloc_ptr + 4;
 
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		/* Adjust stack size after guard_size calculationn */
+		size_of_stack = size_of_stack - CONFIG_MPU_STACK_GUARD_SIZE;
+#endif
 		/* Save the adjusted stack values in the struct tcb_s */
 
 		tcb->adj_stack_ptr = (uint32_t *)top_of_stack;
@@ -243,6 +259,12 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		heapinfo_exclude_stacksize(tcb->stack_alloc_ptr);
 #endif
 		board_led_on(LED_STACKCREATED);
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		/* The smallest size that can be programmed for an MPU region is 32 bytes */
+		mpu_get_register_value(&tcb->stack_mpu_regs[0], STACKGUARD_MPU_REGION_NUM,
+			(uint32_t)tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
+#endif
+
 		return OK;
 	}
 

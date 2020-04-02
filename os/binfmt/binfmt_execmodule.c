@@ -83,7 +83,6 @@
 
 #ifdef CONFIG_ARM_MPU
 extern uint32_t g_mpu_region_nr;
-void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 #endif
 
 /****************************************************************************
@@ -194,14 +193,14 @@ int exec_module(FAR struct binary_s *binp)
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
-	mpu_configure_app_regs(&rtcb->mpu_regs[3], g_mpu_region_nr, (uintptr_t)binp->alloc[0], binp->textsize, true, true);
+	mpu_get_register_value(&rtcb->mpu_regs[3], g_mpu_region_nr, (uintptr_t)binp->alloc[0], binp->textsize, true, true);
 	/* Configure ro section as RO and non-executable region */
-	mpu_configure_app_regs(&rtcb->mpu_regs[6], g_mpu_region_nr + 1, (uintptr_t)binp->alloc[3], binp->rosize, true, false);
+	mpu_get_register_value(&rtcb->mpu_regs[6], g_mpu_region_nr + 1, (uintptr_t)binp->alloc[3], binp->rosize, true, false);
 	/* Complete RAM partition will be configured as RW region */
-	mpu_configure_app_regs(&rtcb->mpu_regs[0], g_mpu_region_nr + 2, (uintptr_t)binp->alloc[4], binp->ramsize, false, false);
+	mpu_get_register_value(&rtcb->mpu_regs[0], g_mpu_region_nr + 2, (uintptr_t)binp->alloc[4], binp->ramsize, false, false);
 #else
 	/* Complete RAM partition will be configured as RW region */
-	mpu_configure_app_regs(&rtcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
+	mpu_get_register_value(&rtcb->mpu_regs[0], g_mpu_region_nr, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
 #endif
 #endif
 #endif /* CONFIG_APP_BINARY_SEPARATION */

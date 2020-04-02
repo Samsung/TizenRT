@@ -184,6 +184,9 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				/* Restore the MPU registers in case we are switching to an application task */
 #ifdef CONFIG_ARMV8M_MPU
 				up_set_mpu_app_configuration(rtcb);
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+				up_set_mpu_stack_guard(rtcb);
+#endif
 #endif
 #ifdef CONFIG_TASK_MONITOR
 				/* Update rtcb active flag for monitoring. */

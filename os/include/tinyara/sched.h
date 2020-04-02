@@ -80,25 +80,10 @@
 #include <tinyara/mm/shm.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
+#include <tinyara/mpu.h>
 
 #include <arch/arch.h>
 
-/********************************************************************************
- * Pre-processor Definitions
- ********************************************************************************/
-#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
-enum {
-	REG_RNR,
-	REG_RBAR,
-	REG_RASR
-};
-
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-#define MPU_NUM_REGIONS		3
-#else
-#define MPU_NUM_REGIONS		1
-#endif
-#endif
 /* Configuration ****************************************************************/
 /* Task groups currently only supported for retention of child status */
 
@@ -635,6 +620,10 @@ struct tcb_s {
 #ifdef CONFIG_ARM_MPU
 	uint32_t mpu_regs[3 * MPU_NUM_REGIONS];	/* We need 3 register values to configure each MPU region */
 #endif
+#endif
+
+#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+uint32_t stack_mpu_regs[REG_MAX]; /* need 3 MPU registers to configure a region */
 #endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
