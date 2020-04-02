@@ -66,27 +66,27 @@
 
 #define AWRAP_TAG "[AMEBA_WRAPPER]"
 
-#define AWRAP_ENTER																	\
-	do {																			\
-		sedbg(AWRAP_TAG"[INFO] %s %s:%d\n", __FUNCTION__, __FILE__, __LINE__);		\
+#define AWRAP_ENTER                                                                 \
+	do {                                                                             \
+		sedbg(AWRAP_TAG"[INFO] %s %s:%d\n", __FUNCTION__, __FILE__, __LINE__);       \
 	} while (0)
 
-#define HAL_MAX_RANDOM_SIZE			256
-#define HAL_MAX_BUF_SIZE			2048
-#define HAL_MAX_SHARED_SECRET_LEN	256
-#define KEY_STORAGE_INDEX_MAX		32
+#define HAL_MAX_RANDOM_SIZE 256
+#define HAL_MAX_BUF_SIZE 2048
+#define HAL_MAX_SHARED_SECRET_LEN 256
+#define KEY_STORAGE_INDEX_MAX 32
 
-#define AES_128_KEY_SIZE			16
-#define AES_192_KEY_SIZE			24
-#define AES_256_KEY_SIZE			32
-#define MBEDTLS_HASH_SHA224			1
-#define MBEDTLS_HASH_SHA256			0
-#define MBEDTLS_HASH_SHA384			1
-#define MBEDTLS_HASH_SHA512			0
+#define AES_128_KEY_SIZE 16
+#define AES_192_KEY_SIZE 24
+#define AES_256_KEY_SIZE 32
+#define MBEDTLS_HASH_SHA224 1
+#define MBEDTLS_HASH_SHA256 0
+#define MBEDTLS_HASH_SHA384 1
+#define MBEDTLS_HASH_SHA512 0
 
-//Factory Key and Cert define
-#define FACTORYKEY_RTL_DEVICE		(0x00010120)
-#define FACTORYKEY_RTL_CERT			(0x00010122)
+/* Factory Key and Cert define */
+#define FACTORYKEY_RTL_DEVICE (0x00010120)
+#define FACTORYKEY_RTL_CERT (0x00010122)
 
 #define HAL_COPY_DATA(in, out, len)                     \
 	do {                                                \
@@ -117,7 +117,7 @@ static const unsigned char EC_Private_Key[128] = {
 	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
 };
 
-//DER format Cert
+/* DER format Cert */
 static const unsigned char HA_IOT_Device_Cert[681] = {
 	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
 	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
@@ -164,7 +164,7 @@ static const unsigned char HA_IOT_Device_Cert[681] = {
 	0x2e, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A
 };
 
-//RSA 1024 => N, P, Q, D, E element
+/* RSA 1024 => N, P, Q, D, E element */
 static const unsigned char RSA_1024_N[128] = {
 	0x80, 0x80, 0xa2, 0x34, 0x24, 0xe0, 0x64, 0xf8, 0x94, 0x47, 0xf9, 0x3f, 0xc7, 0x66, 0x5d, 0x71,
 	0xd3, 0x20, 0x1a, 0xf1, 0xfb, 0xef, 0x2, 0x22, 0x7b, 0x78, 0xb7, 0xcc, 0x7a, 0x3a, 0x6a, 0x23,
@@ -202,10 +202,10 @@ static const unsigned char RSA_1024_D[128] = {
 };
 
 static const unsigned char RSA_1024_E[4] = {
-	0x0,0x1,0x0,0x1
+	0x0, 0x1, 0x0, 0x1
 };
 
-//RSA 2048 => N, P, Q, D, E element
+/* RSA 2048 => N, P, Q, D, E element */
 static const unsigned char RSA_2048_N[256] = {
 	0xa4, 0x20, 0x92, 0xb6, 0x12, 0x5a, 0x9a, 0xca, 0x80, 0x6c, 0x53, 0xd7, 0xd1, 0x3d, 0x4, 0x6a,
 	0xc1, 0x97, 0x72, 0xb, 0xbd, 0xf5, 0xd4, 0x60, 0x85, 0x5c, 0xbf, 0x95, 0xa0, 0x8a, 0xd8, 0x22,
@@ -267,10 +267,10 @@ static const unsigned char RSA_2048_D[256] = {
 };
 
 static const unsigned char RSA_2048_E[4] = {
-	0x0,0x1,0x0,0x1
+	0x0, 0x1, 0x0, 0x1
 };
 
-//RSA 3072 => N, P, Q, D, E element
+/* RSA 3072 => N, P, Q, D, E element */
 static const unsigned char RSA_3072_N[384] = {
 	0x8b, 0xb8, 0x8b, 0xae, 0x74, 0x26, 0x84, 0x4d, 0xdb, 0xe3, 0xd0, 0xaa, 0xd8, 0xcd, 0xf3, 0x46,
 	0xf2, 0xf4, 0x2a, 0xb1, 0x4a, 0x6c, 0x5, 0x80, 0xf2, 0xb, 0x69, 0x76, 0xed, 0xc, 0xc7, 0xbb,
@@ -356,10 +356,10 @@ static const unsigned char RSA_3072_D[384] = {
 };
 
 static const unsigned char RSA_3072_E[4] = {
-	0x0,0x1,0x0,0x1
+	0x0, 0x1, 0x0, 0x1
 };
 
-//RSA 4096 => N, P, Q, D, E element
+/* RSA 4096 => N, P, Q, D, E element */
 static const unsigned char RSA_4096_N[512] = {
 	0x8f, 0x26, 0x98, 0x0, 0xd6, 0xaa, 0xc, 0xd9, 0x6d, 0x24, 0xf9, 0x39, 0x9e, 0xe1, 0x65, 0x76,
 	0xd, 0x5d, 0xbd, 0xea, 0x64, 0x5b, 0xac, 0x26, 0x7, 0x50, 0xc8, 0xd7, 0x75, 0x8d, 0x77, 0x90,
@@ -469,33 +469,33 @@ static const unsigned char RSA_4096_D[512] = {
 };
 
 static const unsigned char RSA_4096_E[4] = {
-	0x0,0x1,0x0,0x1
+	0x0, 0x1, 0x0, 0x1
 };
 
 typedef struct key_struc{
-	hal_key_type			key_type;
+	hal_key_type key_type;
 
-	//AES Key must be 4Byte Aligned, due to hardware crypto
-	unsigned char			aes_key[32] __attribute__((aligned(4)));
-	uint32_t				aes_key_len;
+	/* AES Key must be 4Byte Aligned, due to hardware crypto */
+	unsigned char aes_key[32] __attribute__((aligned(4)));
+	uint32_t aes_key_len;
 
-	mbedtls_rsa_context		rsa_ctx;
-	mbedtls_ecdh_context	ecdh_ctx;
-	mbedtls_ecdsa_context	ecdsa_ctx;
-	mbedtls_dhm_context		dhm_ctx;
+	mbedtls_rsa_context rsa_ctx;
+	mbedtls_ecdh_context ecdh_ctx;
+	mbedtls_ecdsa_context ecdsa_ctx;
+	mbedtls_dhm_context dhm_ctx;
 
-	unsigned char			hmac_key[32];
+	unsigned char hmac_key[32];
 
-	unsigned char			*cert_data;
-	uint32_t				cert_len;
+	unsigned char *cert_data;
+	uint32_t cert_len;
 } key_struc;
 
-static key_struc			key_storage[KEY_STORAGE_INDEX_MAX] = { 0 };
-static uint32_t				init_stat = HAL_NOT_INITIALIZED;
+static key_struc key_storage[KEY_STORAGE_INDEX_MAX] = { 0 };
+static uint32_t init_stat = HAL_NOT_INITIALIZED;
 
 #define MBEDTLS_CHECKBUSY() while (init_stat == HAL_BUSY) {}
 
-//Extern api from rtl_security_api_wrapper.c
+/* Extern api from rtl_security_api_wrapper.c */
 extern uint32_t rtl_cryptoEngine_init_wrapper(void);
 extern uint32_t rtl_write_storage_wrapper(uint32_t ss_idx, hal_data *data);
 extern uint32_t rtl_read_storage_wrapper(uint32_t ss_idx, hal_data *data);
@@ -504,7 +504,9 @@ extern uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t* key, uint32_t keylen, unsigne
 extern uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
 extern uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
 
-//Helper function
+/**
+ * Helper function
+ */
 static int hal_rand(void *rng_state, unsigned char *output, size_t len)
 {
 	rtw_get_random_bytes(output, len);
@@ -516,7 +518,6 @@ static int hal_rand(void *rng_state, unsigned char *output, size_t len)
  */
 int ameba_hal_init(hal_init_param *params)
 {
-	//Temporary take out
 	AWRAP_ENTER;
 
 	uint32_t ret = HAL_SUCCESS;
@@ -525,8 +526,8 @@ int ameba_hal_init(hal_init_param *params)
 		return init_stat;
 	}
 
-	//For mbedtls interna Debug log
-	//mbedtls_debug_set_threshold(3);
+	/* For mbedtls interna Debug log */
+	/* mbedtls_debug_set_threshold(3); */
 	for (uint32_t i = 0; i < KEY_STORAGE_INDEX_MAX; i++) {
 		memset(key_storage[i].aes_key, 0, sizeof(key_storage[i].aes_key));
 		key_storage[i].aes_key_len = 0;
@@ -539,7 +540,7 @@ int ameba_hal_init(hal_init_param *params)
 		memset(key_storage[i].hmac_key, 0, sizeof(key_storage[i].hmac_key));
 	}
 
-	ret = rtl_cryptoEngine_init_wrapper();					// init crypto engine
+	ret = rtl_cryptoEngine_init_wrapper();					/* init crypto engine */
 	if (ret == HAL_SUCCESS) {
 		init_stat = HAL_SUCCESS;
 	}
@@ -611,10 +612,10 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 	if (init_stat == HAL_NOT_INITIALIZED) {
 		return HAL_NOT_INITIALIZED;
 	}
-	if (prikey != NULL) {						//If private key is pass in
+	if (prikey != NULL) {	/* If private key is pass in */
 		return HAL_NOT_SUPPORTED;
 	}
-	if (key_idx > KEY_STORAGE_INDEX_MAX) {		//Index Out of Range
+	if (key_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
@@ -623,8 +624,8 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 	case HAL_KEY_AES_128:
 	case HAL_KEY_AES_192:
 	case HAL_KEY_AES_256:
-		//Key size is fixed, 128 = 16, 192 = 24, 256 = 32, if key size large then 32bytes, is invalid input
-		if (sizeof(key_storage[key_idx].aes_key) < key->data_len) {	//Key size larger than storage
+		/* Key size is fixed, 128 = 16, 192 = 24, 256 = 32, if key size large then 32bytes, is invalid input */
+		if (sizeof(key_storage[key_idx].aes_key) < key->data_len) {	/* Key size larger than storage */
 			ret = HAL_INVALID_ARGS;
 			goto exit;
 		}
@@ -635,7 +636,7 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 	case HAL_KEY_RSA_2048:
 	case HAL_KEY_RSA_3072:
 	case HAL_KEY_RSA_4096:
-		//Not sure what to do, hal test case did not mention
+		/* Not sure what to do, hal test case did not mention */
 		break;
 	case HAL_KEY_ECC_BRAINPOOL_P256R1:
 	case HAL_KEY_ECC_BRAINPOOL_P384R1:
@@ -645,11 +646,11 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 	case HAL_KEY_ECC_SEC_P256R1:
 	case HAL_KEY_ECC_SEC_P384R1:
 	case HAL_KEY_ECC_SEC_P512R1:
-		//For ECC there two public key X and Y, key->data and key->priv? information base on spec
-		//Read Public key from char format to MPI format
+		/* For ECC there two public key X and Y, key->data and key->priv? information base on spec */
+		/* Read Public key from char format to MPI format */
 		if ((mbedtls_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Q.X), key->data, key->data_len) != HAL_SUCCESS)
 		|| (mbedtls_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Q.Y), key->priv, key->priv_len) != HAL_SUCCESS)) {
-			ret = HAL_INVALID_ARGS;										//if not success
+			ret = HAL_INVALID_ARGS;	/* if not success */
 		}
 		break;
 	case HAL_KEY_HMAC_MD5:
@@ -658,9 +659,9 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 	case HAL_KEY_HMAC_SHA256:
 	case HAL_KEY_HMAC_SHA384:
 	case HAL_KEY_HMAC_SHA512:
-		//Key is no use, due to not support HMAC, do not let key size more then storage size
-		if (sizeof(key_storage[key_idx].hmac_key) < key->data_len) {		//Key size larger than storage
-			//Prevent overflow
+		/* Key is no use, due to not support HMAC, do not let key size more then storage size */
+		if (sizeof(key_storage[key_idx].hmac_key) < key->data_len) {	/* Key size larger than storage */
+			/* Prevent overflow */
 			memcpy(key_storage[key_idx].hmac_key, key->data, sizeof(key_storage[key_idx].hmac_key));
 		} else {
 			memcpy(key_storage[key_idx].hmac_key, key->data, key->data_len);
@@ -688,46 +689,46 @@ int ameba_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 {
 	AWRAP_ENTER;
 
-	uint32_t		ret = HAL_SUCCESS;
-	uint32_t		puk_x_len, puk_y_len;
-	unsigned char	*puk_x;
-	unsigned char	*puk_y;
+	uint32_t ret = HAL_SUCCESS;
+	uint32_t puk_x_len, puk_y_len;
+	unsigned char *puk_x;
+	unsigned char *puk_y;
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
 		return HAL_NOT_INITIALIZED;
 	}
-	if (key_idx > KEY_STORAGE_INDEX_MAX) {		//Index Out of Range
+	if (key_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
-	//Base on SSS function it only accept ((mode <= HAL_KEY_ECC_SEC_P512R1) && (mode >= HAL_KEY_ECC_BRAINPOOL_P256R1))
+	/* Base on SSS function it only accept ((mode <= HAL_KEY_ECC_SEC_P512R1) && (mode >= HAL_KEY_ECC_BRAINPOOL_P256R1)) */
 	if ((mode <= HAL_KEY_ECC_SEC_P512R1) && (mode >= HAL_KEY_ECC_BRAINPOOL_P256R1)) {
 		init_stat = HAL_BUSY;
 
-		puk_x_len = mbedtls_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.X));				//Get length
-		puk_y_len = mbedtls_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Y));				//Get length
-		puk_x = (unsigned char *)malloc(puk_x_len);										//Allocate memory
-		puk_y = (unsigned char *)malloc(puk_y_len);										//Allocate memory
+		puk_x_len = mbedtls_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.X));	/* Get length */
+		puk_y_len = mbedtls_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Y));	/* Get length */
+		puk_x = (unsigned char *)malloc(puk_x_len);	/* Allocate memory */
+		puk_y = (unsigned char *)malloc(puk_y_len);	/* Allocate memory */
 
-		if ((puk_x == NULL) || (puk_y == NULL)){
-			ret = HAL_NOT_ENOUGH_MEMORY;												//Memory not enough
+		if ((puk_x == NULL) || (puk_y == NULL)) {
+			ret = HAL_NOT_ENOUGH_MEMORY;	/* Memory not enough */
 		} else {
-			//For ECC there two public key X and Y, key->data and key->priv? information base on spec
-			//Read Public key from MPI format to char format
+			/* For ECC there two public key X and Y, key->data and key->priv? information base on spec */
+			/* Read Public key from MPI format to char format */
 			if ((mbedtls_mpi_write_binary(&(key_storage[key_idx].ecdh_ctx.Q.X), puk_x, puk_x_len) != HAL_SUCCESS)
 			|| (mbedtls_mpi_write_binary(&(key_storage[key_idx].ecdh_ctx.Q.Y), puk_y, puk_y_len) != HAL_SUCCESS)) {
-				ret = HAL_FAIL;															//if not success
-			} else {																	//Success Case, Copy data
-				HAL_COPY_DATA(key, puk_x, puk_x_len);									//data: publickey_x, priv: publickey_y
+				ret = HAL_FAIL;	/* if not success */
+			} else {	/* Success Case, Copy data */
+				HAL_COPY_DATA(key, puk_x, puk_x_len);	/* data: publickey_x, priv: publickey_y */
 				HAL_COPY_PRIV_DATA(key, puk_y, puk_y_len);
 			}
 		}
 		if (puk_x != NULL) {
-			free(puk_x);																//free memory
+			free(puk_x);	/* free memory */
 		}
 		if (puk_y != NULL) {
-			free(puk_y);																//free memory
+			free(puk_y);	/* free memory */
 		}
 	} else {
 		return HAL_NOT_SUPPORTED;
@@ -749,15 +750,15 @@ int ameba_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 	if (init_stat == HAL_NOT_INITIALIZED) {
 		return HAL_NOT_INITIALIZED;
 	}
-	if (key_idx > KEY_STORAGE_INDEX_MAX) {			//Index Out of Range
+	if (key_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 	if (mode != key_storage[key_idx].key_type) {
-		return HAL_BAD_KEY;							//Key is empty
+		return HAL_BAD_KEY;	/* Key is empty */
 	}
 	init_stat = HAL_BUSY;
 
-	//Init all key info for key index
+	/* Init all key info for key index */
 	memset(key_storage[key_idx].aes_key, 0, sizeof(key_storage[key_idx].aes_key));
 	key_storage[key_idx].aes_key_len = 0;
 
@@ -767,7 +768,7 @@ int ameba_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 	mbedtls_dhm_init(&(key_storage[key_idx].dhm_ctx));
 
 	memset(key_storage[key_idx].hmac_key, 0, sizeof(key_storage[key_idx].hmac_key));
-	key_storage[key_idx].key_type = HAL_KEY_UNKNOWN;	//Remove key type for key index
+	key_storage[key_idx].key_type = HAL_KEY_UNKNOWN;	/* Remove key type for key index */
 
 	init_stat = HAL_SUCCESS;
 	return HAL_SUCCESS;
@@ -777,8 +778,8 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 {
 	AWRAP_ENTER;
 
-	uint32_t				ret = HAL_SUCCESS;
-	mbedtls_ecp_group_id	ecp_curve_id;
+	uint32_t ret = HAL_SUCCESS;
+	mbedtls_ecp_group_id ecp_curve_id;
 
 	MBEDTLS_CHECKBUSY();
 
@@ -788,48 +789,48 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 	init_stat = HAL_BUSY;
 	switch (mode) {
 	case HAL_KEY_AES_128:
-		//Generate Random Key
+		/* Generate Random Key */
 		rtw_get_random_bytes(key_storage[key_idx].aes_key, AES_128_KEY_SIZE);
 		key_storage[key_idx].aes_key_len = AES_128_KEY_SIZE;
 		break;
 	case HAL_KEY_AES_192:
-		//Generate Random Key
+		/* Generate Random Key */
 		rtw_get_random_bytes(key_storage[key_idx].aes_key, AES_192_KEY_SIZE);
 		key_storage[key_idx].aes_key_len = AES_192_KEY_SIZE;
 		break;
 	case HAL_KEY_AES_256:
-		//Generate Random Key
+		/* Generate Random Key */
 		rtw_get_random_bytes(key_storage[key_idx].aes_key, AES_256_KEY_SIZE);
 		key_storage[key_idx].aes_key_len = AES_256_KEY_SIZE;
 		break;
 	case HAL_KEY_RSA_1024:
-		//ret = mbedtls_rsa_gen_key(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, 1024, 65537);
+		/* ret = mbedtls_rsa_gen_key(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, 1024, 65537); */
 
-		ret = mbedtls_rsa_import_raw(&(key_storage[key_idx].rsa_ctx), RSA_1024_N, sizeof(RSA_1024_N), RSA_1024_P, sizeof(RSA_1024_P), RSA_1024_Q, sizeof(RSA_1024_Q), RSA_1024_D, sizeof(RSA_1024_D), RSA_1024_E,sizeof(RSA_1024_E));
+		ret = mbedtls_rsa_import_raw(&(key_storage[key_idx].rsa_ctx), RSA_1024_N, sizeof(RSA_1024_N), RSA_1024_P, sizeof(RSA_1024_P), RSA_1024_Q, sizeof(RSA_1024_Q), RSA_1024_D, sizeof(RSA_1024_D), RSA_1024_E, sizeof(RSA_1024_E));
 		if (ret == HAL_SUCCESS) {
 			ret = mbedtls_rsa_complete(&(key_storage[key_idx].rsa_ctx));
 		}
 		break;
 	case HAL_KEY_RSA_2048:
-		//ret = mbedtls_rsa_gen_key(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, 2048, 65537);
+		/* ret = mbedtls_rsa_gen_key(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, 2048, 65537); */
 
-		ret = mbedtls_rsa_import_raw(&(key_storage[key_idx].rsa_ctx), RSA_2048_N, sizeof(RSA_2048_N), RSA_2048_P, sizeof(RSA_2048_P), RSA_2048_Q, sizeof(RSA_2048_Q), RSA_2048_D, sizeof(RSA_2048_D), RSA_2048_E,sizeof(RSA_2048_E));
+		ret = mbedtls_rsa_import_raw(&(key_storage[key_idx].rsa_ctx), RSA_2048_N, sizeof(RSA_2048_N), RSA_2048_P, sizeof(RSA_2048_P), RSA_2048_Q, sizeof(RSA_2048_Q), RSA_2048_D, sizeof(RSA_2048_D), RSA_2048_E, sizeof(RSA_2048_E));
 		if (ret == HAL_SUCCESS) {
 			ret = mbedtls_rsa_complete(&(key_storage[key_idx].rsa_ctx));
 		}
 		break;
 	case HAL_KEY_RSA_3072:
-		//ret = mbedtls_rsa_gen_key(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, 3072, 65537);
+		/* ret = mbedtls_rsa_gen_key(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, 3072, 65537); */
 
-		ret = mbedtls_rsa_import_raw(&(key_storage[key_idx].rsa_ctx), RSA_3072_N, sizeof(RSA_3072_N), RSA_3072_P, sizeof(RSA_3072_P), RSA_3072_Q, sizeof(RSA_3072_Q), RSA_3072_D, sizeof(RSA_3072_D), RSA_3072_E,sizeof(RSA_3072_E));
+		ret = mbedtls_rsa_import_raw(&(key_storage[key_idx].rsa_ctx), RSA_3072_N, sizeof(RSA_3072_N), RSA_3072_P, sizeof(RSA_3072_P), RSA_3072_Q, sizeof(RSA_3072_Q), RSA_3072_D, sizeof(RSA_3072_D), RSA_3072_E, sizeof(RSA_3072_E));
 		if (ret == HAL_SUCCESS) {
 			ret = mbedtls_rsa_complete(&(key_storage[key_idx].rsa_ctx));
 		}
 		break;
 	case HAL_KEY_RSA_4096:
-		//ret = mbedtls_rsa_gen_key(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, 4096, 65537);
+		/* ret = mbedtls_rsa_gen_key(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, 4096, 65537); */
 
-		ret = mbedtls_rsa_import_raw(&(key_storage[key_idx].rsa_ctx), RSA_4096_N, sizeof(RSA_4096_N), RSA_4096_P, sizeof(RSA_4096_P), RSA_4096_Q, sizeof(RSA_4096_Q), RSA_4096_D, sizeof(RSA_4096_D), RSA_4096_E,sizeof(RSA_4096_E));
+		ret = mbedtls_rsa_import_raw(&(key_storage[key_idx].rsa_ctx), RSA_4096_N, sizeof(RSA_4096_N), RSA_4096_P, sizeof(RSA_4096_P), RSA_4096_Q, sizeof(RSA_4096_Q), RSA_4096_D, sizeof(RSA_4096_D), RSA_4096_E, sizeof(RSA_4096_E));
 		if (ret == HAL_SUCCESS) {
 			ret = mbedtls_rsa_complete(&(key_storage[key_idx].rsa_ctx));
 		}
@@ -856,7 +857,7 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 		ecp_curve_id = MBEDTLS_ECP_DP_SECP384R1;
 		break;
 	case HAL_KEY_ECC_SEC_P512R1:
-		ecp_curve_id = MBEDTLS_ECP_DP_SECP521R1; 
+		ecp_curve_id = MBEDTLS_ECP_DP_SECP521R1;
 		break;
 	case HAL_KEY_HMAC_MD5:
 	case HAL_KEY_HMAC_SHA1:
@@ -872,10 +873,10 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 
 	if ((HAL_KEY_ECC_BRAINPOOL_P256R1 <= mode)
 	&& (HAL_KEY_ECC_SEC_P512R1 >= mode)) {
-		//ECDH and ECDASA share same curve ID, but use diffrent struct to store key info
-		//ECDSA operation
-		if ((mbedtls_ecdsa_genkey(&(key_storage[key_idx].ecdsa_ctx), ecp_curve_id, hal_rand, NULL) != HAL_SUCCESS) 
-		//ECDH operation
+		/* ECDH and ECDASA share same curve ID, but use diffrent struct to store key info */
+		/* ECDSA operation */
+		if ((mbedtls_ecdsa_genkey(&(key_storage[key_idx].ecdsa_ctx), ecp_curve_id, hal_rand, NULL) != HAL_SUCCESS)
+		/* ECDH operation */
 		|| (mbedtls_ecp_group_load(&(key_storage[key_idx].ecdh_ctx.grp), ecp_curve_id) != HAL_SUCCESS)
 		|| (mbedtls_ecdh_gen_public(&(key_storage[key_idx].ecdh_ctx.grp), &(key_storage[key_idx].ecdh_ctx.d), &(key_storage[key_idx].ecdh_ctx.Q), hal_rand, NULL) != HAL_SUCCESS)) {
 			ret = HAL_FAIL;
@@ -883,7 +884,7 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 	}
 
 	if (ret == HAL_SUCCESS) {
-		key_storage[key_idx].key_type = mode;					//Set storage key mode
+		key_storage[key_idx].key_type = mode;	/* Set storage key mode */
 	}
 
 	init_stat = HAL_SUCCESS;
@@ -924,8 +925,8 @@ int ameba_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 {
 	AWRAP_ENTER;
 	
-	uint32_t		len;
-	unsigned char	output[64];
+	uint32_t len;
+	unsigned char output[64];
 
 	switch (mode) {
 	case HAL_HASH_MD5:
@@ -977,9 +978,9 @@ int ameba_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, h
 {
 	AWRAP_ENTER;
 
-	uint32_t			ret;
-	mbedtls_md_type_t	sha_mode;
-	unsigned char		sig_out[1024];
+	uint32_t ret;
+	mbedtls_md_type_t sha_mode;
+	unsigned char sig_out[1024];
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
@@ -1041,8 +1042,8 @@ int ameba_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, u
 {
 	AWRAP_ENTER;
 
-	uint32_t			ret;
-	mbedtls_md_type_t	sha_mode;
+	uint32_t ret;
+	mbedtls_md_type_t sha_mode;
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
@@ -1100,10 +1101,10 @@ int ameba_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_id
 {
 	AWRAP_ENTER;
 
-	uint32_t			ret;
-	uint32_t			sig_len;
-	unsigned char		sig[MBEDTLS_ECDSA_MAX_LEN];
-	mbedtls_md_type_t	hash_type;
+	uint32_t ret;
+	uint32_t sig_len;
+	unsigned char sig[MBEDTLS_ECDSA_MAX_LEN];
+	mbedtls_md_type_t hash_type;
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
@@ -1170,11 +1171,11 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 {
 	AWRAP_ENTER;
 
-	uint32_t		ret;
-	size_t			p_size, output_len = 0;
-	unsigned char	*output;
-	mbedtls_mpi		mpi_P;
-	mbedtls_mpi		mpi_G;
+	uint32_t ret;
+	size_t p_size, output_len = 0;
+	unsigned char *output;
+	mbedtls_mpi mpi_P;
+	mbedtls_mpi mpi_G;
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
@@ -1196,10 +1197,10 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	mbedtls_mpi_init(&mpi_P);
 	mbedtls_mpi_init(&mpi_G);
 
-	//Read G and P from G inout, Then G and P set in the context
-	if ((mbedtls_mpi_read_binary(&mpi_P, dh_param->P->data, dh_param->P->data_len) != HAL_SUCCESS )
-	|| (mbedtls_mpi_read_binary(&mpi_G, dh_param->G->data, dh_param->G->data_len) != HAL_SUCCESS )
-	|| (mbedtls_dhm_set_group(&(key_storage[dh_idx].dhm_ctx), &mpi_P, &mpi_G) != HAL_SUCCESS )) {
+	/* Read G and P from G inout, Then G and P set in the context */
+	if ((mbedtls_mpi_read_binary(&mpi_P, dh_param->P->data, dh_param->P->data_len) != HAL_SUCCESS)
+	|| (mbedtls_mpi_read_binary(&mpi_G, dh_param->G->data, dh_param->G->data_len) != HAL_SUCCESS)
+	|| (mbedtls_dhm_set_group(&(key_storage[dh_idx].dhm_ctx), &mpi_P, &mpi_G) != HAL_SUCCESS)) {
 		ret = HAL_FAIL;
 		goto exit;
 	}
@@ -1209,10 +1210,10 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 		ret = HAL_NOT_ENOUGH_MEMORY;
 		goto exit;
 	}
-	//Sets up and writes the ServerKeyExchange parameters
+	/* Sets up and writes the ServerKeyExchange parameters */
 	p_size = mbedtls_mpi_size(&key_storage[dh_idx].dhm_ctx.P);
 	ret = mbedtls_dhm_make_params(&(key_storage[dh_idx].dhm_ctx), (int)p_size, output, &output_len, hal_rand, NULL);
-	free(output);											//Output is not needed to exports, Output is Param 
+	free(output);	/* Output is not needed to exports, Output is Param */
 
 	if (ret == HAL_SUCCESS) {
 		output_len = key_storage[dh_idx].dhm_ctx.len;
@@ -1221,11 +1222,11 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 			ret = HAL_NOT_ENOUGH_MEMORY;
 			goto exit;
 		}
-		//Creates its own private value X and exports G^X, GX = (G^X mod P)
+		/* Creates its own private value X and exports G^X, GX = (G^X mod P) */
 		ret = mbedtls_dhm_make_public(&(key_storage[dh_idx].dhm_ctx), key_storage[dh_idx].dhm_ctx.len, output, output_len, hal_rand, NULL);
 
 		if (ret == HAL_SUCCESS) {
-			//This API generates GX (G^X mod P) wichi is a pubkey in dh_param with the given input G and P.
+			/* This API generates GX (G^X mod P) wichi is a pubkey in dh_param with the given input G and P. */
 			memcpy(dh_param->pubkey->data, output, output_len);
 			dh_param->pubkey->data_len = output_len;
 		}	
@@ -1248,11 +1249,11 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 {
 	AWRAP_ENTER;
 
-	uint32_t		ret;
-	size_t			buf_size, output_len = 0;
-	unsigned char	*output;
-	mbedtls_mpi		mpi_P;
-	mbedtls_mpi		mpi_G;
+	uint32_t ret;
+	size_t buf_size, output_len = 0;
+	unsigned char *output;
+	mbedtls_mpi mpi_P;
+	mbedtls_mpi mpi_G;
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
@@ -1271,11 +1272,11 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 	mbedtls_mpi_init(&mpi_P);
 	mbedtls_mpi_init(&mpi_G);
 
-	//Read G and P from G inout, Then G and P set in the context
-	//Read public key from input
-	if ((mbedtls_mpi_read_binary(&mpi_P, dh_param->P->data, dh_param->P->data_len) != HAL_SUCCESS )
-	|| (mbedtls_mpi_read_binary(&mpi_G, dh_param->G->data, dh_param->G->data_len) != HAL_SUCCESS )
-	|| (mbedtls_dhm_set_group(&(key_storage[dh_idx].dhm_ctx), &mpi_P, &mpi_G) != HAL_SUCCESS ) 
+	/* Read G and P from G inout, Then G and P set in the context */
+	/* Read public key from input */
+	if ((mbedtls_mpi_read_binary(&mpi_P, dh_param->P->data, dh_param->P->data_len) != HAL_SUCCESS)
+	|| (mbedtls_mpi_read_binary(&mpi_G, dh_param->G->data, dh_param->G->data_len) != HAL_SUCCESS)
+	|| (mbedtls_dhm_set_group(&(key_storage[dh_idx].dhm_ctx), &mpi_P, &mpi_G) != HAL_SUCCESS)
 	|| (mbedtls_dhm_read_public(&(key_storage[dh_idx].dhm_ctx), dh_param->pubkey->data, dh_param->pubkey->data_len) != HAL_SUCCESS)) {
 		ret = HAL_FAIL;
 		goto exit;
@@ -1306,10 +1307,10 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 {
 	AWRAP_ENTER;
 
-	uint32_t		ret;
-	uint32_t		Qp_z_len, output_len = 0;
-	unsigned char	*Qp_z;
-	unsigned char	output[HAL_MAX_SHARED_SECRET_LEN];
+	uint32_t ret;
+	uint32_t Qp_z_len, output_len = 0;
+	unsigned char *Qp_z;
+	unsigned char output[HAL_MAX_SHARED_SECRET_LEN];
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
@@ -1321,37 +1322,37 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 	}
 	init_stat = HAL_BUSY;
 
-	//Read peer public key X and Y
-	if ((mbedtls_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Qp.X), ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len ) != HAL_SUCCESS)
-	|| (mbedtls_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Qp.Y), ecdh_param->pubkey_y->data, ecdh_param->pubkey_y->data_len ) != HAL_SUCCESS)) {
+	/* Read peer public key X and Y */
+	if ((mbedtls_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Qp.X), ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len) != HAL_SUCCESS)
+	|| (mbedtls_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Qp.Y), ecdh_param->pubkey_y->data, ecdh_param->pubkey_y->data_len) != HAL_SUCCESS)) {
 		ret = HAL_FAIL;
 		goto exit;
 	}
 
-	//Set Z key
-	Qp_z_len = mbedtls_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Z));				//Get Key size
-	Qp_z = (unsigned char *)malloc(Qp_z_len);										//Allocate memory
+	/* Set Z key */
+	Qp_z_len = mbedtls_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Z));	/* Get Key size */
+	Qp_z = (unsigned char *)malloc(Qp_z_len);	/* Allocate memory */
 	if (Qp_z == NULL) {
-		ret = HAL_NOT_ENOUGH_MEMORY;												//Memory not enough
+		ret = HAL_NOT_ENOUGH_MEMORY;	/* Memory not enough */
 		goto exit;
 	}
-	memset(Qp_z, 0, Qp_z_len);														//Set All zero
-	Qp_z[Qp_z_len - 1] = 1;															//Set last byte 1
-	if (mbedtls_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Qp.Z), Qp_z, Qp_z_len ) != HAL_SUCCESS) {
+	memset(Qp_z, 0, Qp_z_len);	/* Set All zero */
+	Qp_z[Qp_z_len - 1] = 1;	/* Set last byte 1 */
+	if (mbedtls_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Qp.Z), Qp_z, Qp_z_len) != HAL_SUCCESS) {
 		ret = HAL_FAIL;
 		goto exit;
 	}
 
-	//Secret compute
+	/* Secret compute */
 	ret = mbedtls_ecdh_compute_shared(&(key_storage[key_idx].ecdh_ctx.grp), &(key_storage[key_idx].ecdh_ctx.z), &(key_storage[key_idx].ecdh_ctx.Qp), &(key_storage[key_idx].ecdh_ctx.d), hal_rand, NULL);
-	//Shared Secret compute success
+	/* Shared Secret compute success */
 	if (ret == HAL_SUCCESS) {
-		//Write Shared Secret from MPI formtat to char format
+		/* Write Shared Secret from MPI formtat to char format */
 		ret = mbedtls_mpi_write_binary(&(key_storage[key_idx].ecdh_ctx.z), output, HAL_MAX_SHARED_SECRET_LEN);
-		output_len = mbedtls_mpi_size(&(key_storage[key_idx].ecdh_ctx.z));			//Get size
+		output_len = mbedtls_mpi_size(&(key_storage[key_idx].ecdh_ctx.z));	/* Get size */
 
 		if (ret == HAL_SUCCESS) {
-			//Copy Shared Secret to output buffer
+			/* Copy Shared Secret to output buffer */
 			HAL_COPY_DATA(shared_secret, output, output_len);
 		}
 	}
@@ -1377,18 +1378,18 @@ int ameba_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 	if (init_stat == HAL_NOT_INITIALIZED) {
 		return HAL_NOT_INITIALIZED;
 	}
-	if (cert_idx > KEY_STORAGE_INDEX_MAX) {			//Index Out of Range
+	if (cert_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 	init_stat = HAL_BUSY;
 
-	//If cert exist
+	/* If cert exist */
 	if (key_storage[cert_idx].cert_data != NULL) {
-		free(key_storage[cert_idx].cert_data);		//Free existing Cert memory
+		free(key_storage[cert_idx].cert_data);	/* Free existing Cert memory */
 	}
-	key_storage[cert_idx].cert_data = malloc(cert_in->data_len);	//malloc for new cert
+	key_storage[cert_idx].cert_data = malloc(cert_in->data_len);	/* malloc for new cert */
 
-	//Copy cert data and length into local storage
+	/* Copy cert data and length into local storage */
 	memcpy(key_storage[cert_idx].cert_data, cert_in->data, cert_in->data_len);
 	key_storage[cert_idx].cert_len = cert_in->data_len;
 
@@ -1410,7 +1411,7 @@ int ameba_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 	if (init_stat == HAL_NOT_INITIALIZED) {
 		return HAL_NOT_INITIALIZED;
 	}
-	if (cert_idx > KEY_STORAGE_INDEX_MAX) {		//Index Out of Range
+	if (cert_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 	if (key_storage[cert_idx].cert_data == NULL) {
@@ -1489,7 +1490,7 @@ int ameba_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t
 	if ((HAL_KEY_AES_128 != key_storage[key_idx].key_type)
 	&& (HAL_KEY_AES_192 != key_storage[key_idx].key_type)
 	&& (HAL_KEY_AES_256 != key_storage[key_idx].key_type)) {
-		return HAL_INVALID_ARGS;					//Mode not match
+		return HAL_INVALID_ARGS;	/* Mode not match */
 	}
 
 	init_stat = HAL_BUSY;
@@ -1583,9 +1584,9 @@ int ameba_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t k
 {
 	AWRAP_ENTER;
 
-	uint32_t		ret;
-	size_t			output_len;
-	unsigned char	output[HAL_MAX_BUF_SIZE] = {0};
+	uint32_t ret;
+	size_t output_len;
+	unsigned char output[HAL_MAX_BUF_SIZE] = {0};
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
@@ -1599,7 +1600,7 @@ int ameba_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t k
 
 	ret = mbedtls_rsa_pkcs1_encrypt(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, MBEDTLS_RSA_PUBLIC, dec_data->data_len, dec_data->data, output);
 
-	//Output length always size of \p ctx->N, For example, 128 Bytes if RSA-1024 is used.
+	/* Output length always size of \p ctx->N, For example, 128 Bytes if RSA-1024 is used. */
 	output_len = mbedtls_mpi_size(&(key_storage[key_idx].rsa_ctx.N));
 
 	if (ret == HAL_SUCCESS) {
@@ -1618,10 +1619,10 @@ int ameba_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t k
 {
 	AWRAP_ENTER;
 
-	uint32_t			ret;
-	size_t				output_len;
-	unsigned char		input[HAL_MAX_BUF_SIZE] = {0};
-	unsigned char		output[HAL_MAX_BUF_SIZE] = {0};
+	uint32_t ret;
+	size_t output_len;
+	unsigned char input[HAL_MAX_BUF_SIZE] = {0};
+	unsigned char output[HAL_MAX_BUF_SIZE] = {0};
 
 	MBEDTLS_CHECKBUSY();
 	if (init_stat == HAL_NOT_INITIALIZED) {
