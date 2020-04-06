@@ -299,6 +299,29 @@ void binary_manager_recovery(int binid)
 
 	bmllvdbg("Try to recover fault with binid %d\n", binid);
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	/* binid is zero means a crash happened in common library
+	 * We need to reload the library and all the apps
+	 */
+	if (binid == BM_BINID_LIBRARY) {
+		int bin_count = binary_manager_get_binary_count();
+		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+			binid = BIN_ID(bin_idx);
+			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
+			ret = recovery_exclude_binary(binid);
+
+			if (ret != OK) {
+				bmlldbg("Failure during recovery excluding binary pid = %d\n", binid);
+				goto reboot_board;
+			}
+
+			BIN_STATE(bin_idx) = BINARY_FAULT;
+		}
+
+		binid = BM_BINID_LIBRARY;
+	}
+#endif
+
 	if (binid > 0) {
 		/* Get binary id of fault task and check it is registered in binary manager */
 		bin_idx = binary_manager_get_index_with_binid(binid);
@@ -309,20 +332,23 @@ void binary_manager_recovery(int binid)
 
 		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
 		ret = recovery_exclude_binary(binid);
-		if (ret == OK) {
-			/* load binary and update binid */
-			BIN_STATE(bin_idx) = BINARY_FAULT;
-			memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
-			loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-			loading_data[1] = itoa(binid, data_str, 10);
-			loading_data[2] = NULL;
-			ret = binary_manager_loading(loading_data);
-			if (ret > 0) {
-				abort_mode = false;
-				bmllvdbg("Loading thread with pid %d will reload binaries!\n", ret);
-				return;
-			}
+		if (ret != OK) {
+			bmlldbg("Failure during recovery excluding binary pid = %d\n", binid);
+			goto reboot_board;
 		}
+
+		BIN_STATE(bin_idx) = BINARY_FAULT;
+	}
+
+	memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
+	loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
+	loading_data[1] = itoa(binid, data_str, 10);
+	loading_data[2] = NULL;
+	ret = binary_manager_loading(loading_data);
+	if (ret > 0) {
+		abort_mode = false;
+		bmllvdbg("Loading thread with pid %d will reload binaries!\n", ret);
+		return;
 	}
 
 reboot_board:

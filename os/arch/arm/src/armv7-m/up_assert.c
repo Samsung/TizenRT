@@ -97,6 +97,11 @@
 #include <tinyara/wdog.h>
 #include "semaphore/semaphore.h"
 #include "binary_manager/binary_manager.h"
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+#include <tinyara/binfmt/binfmt.h>
+#endif
+
 #endif
 #include "irq/irq.h"
 
@@ -110,6 +115,11 @@ extern uint32_t g_assertpc;
 extern struct tcb_s *g_faultmsg_sender;
 extern sq_queue_t g_faultmsg_list;
 extern sq_queue_t g_freemsg_list;
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern struct binary_s *g_lib_binp;
+#endif
+
 #endif
 
 /****************************************************************************
@@ -443,7 +453,7 @@ static void _up_assert(int errorcode)
 /****************************************************************************
  * Name: recovery_user_assert : recovery user assert through binary manager
  ****************************************************************************/
-static void recovery_user_assert(void)
+static void recovery_user_assert(uint32_t assert_pc)
 {
 	int ret;
 	int binid;
@@ -461,6 +471,16 @@ static void recovery_user_assert(void)
 			/* Exclude realtime task/pthreads from scheduling */
 			binary_manager_exclude_rtthreads(tcb);
 		}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (g_lib_binp) {
+			uint32_t start = (uint32_t)g_lib_binp->alloc[ALLOC_TEXT];
+			uint32_t end = start + g_lib_binp->textsize;
+			if (assert_pc >= start && assert_pc <= end) {
+				binid = BM_BINID_LIBRARY;
+			}
+		}
+#endif
 
 		/* Add fault message and Unblock Fault message Sender */
 		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
@@ -544,7 +564,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	if (is_kernel_assert == false) {
 		/* recovery user assert through binary manager */
 
-		recovery_user_assert();
+		recovery_user_assert(assert_pc);
 	} else
 #endif
 	{

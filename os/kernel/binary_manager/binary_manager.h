@@ -71,6 +71,11 @@
 /* Index of 'kernel' data in binary table, bin_table. */
 #define KERNEL_IDX                 0
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+/* bin id value of zero will indicate the library */
+#define BM_BINID_LIBRARY	0
+#endif
+
 /* The number of arguments for loading thread */
 #define LOADTHD_ARGC               2
 

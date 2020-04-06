@@ -175,6 +175,11 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
 	loadinfo->binp->uheap_size = datamemsize - loadinfo->datasize - sizeof(struct mm_heap_s);
 #else
+	/* ramsize may be zero in case of loading library since we dont have header for library */
+	if (loadinfo->binp->ramsize == 0) {
+		loadinfo->binp->ramsize = loadinfo->textsize + loadinfo->datasize;
+	}
+
 	/* Allocate the RAM partition to load the app into */
 	loadinfo->binp->ramstart = kumm_memalign(loadinfo->binp->ramsize, loadinfo->binp->ramsize);
 	if (!loadinfo->binp->ramstart) {
