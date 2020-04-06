@@ -47,7 +47,7 @@ uint32_t *g_umm_app_id;
 
 #ifdef CONFIG_ARMV7M_MPU
 extern uint32_t g_mpu_region_nr;
-void mpu_configure_app_regs(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
+void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 #endif
 #endif
 
@@ -154,14 +154,28 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			g_lib_binp = bin;
 #endif
 		}
-		/* Load the module into memory */
 
+		/* Load the module into memory */
 		ret = load_module(bin);
 		if (ret < 0) {
 			errcode = ret;
 			berr("ERROR: Failed to load program '%s': %d\n", filename, errcode);
 			goto errout_with_bin;
 		}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (bin->islibrary) {
+#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+			mpu_get_register_value(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_TEXT], bin->textsize, true, true);
+			mpu_get_register_value(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_RO], bin->rosize, true, false);
+			mpu_get_register_value(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_DATA], bin->ramsize, false, false);
+#else
+			mpu_get_register_value(NULL, g_mpu_region_nr++, bin->ramstart, bin->ramsize, false, false);
+#endif
+#endif
+		}
+#endif
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		if (!bin->data_backup) {
@@ -170,31 +184,21 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			goto errout_with_bin;
 		}
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (bin->islibrary) {
-			g_umm_app_id = bin->alloc[ALLOC_DATA];
-		} else {
-			/* If we support common binary, then we need to place a pointer to the app's heap object
-			 * into the heap table which is present at the start of the common library data section
-			 */
-			uint32_t *heap_table = (uint32_t)g_lib_binp->alloc[ALLOC_DATA] + 4;
-			heap_table[binary_idx] = bin->heapstart;
-		}
-#endif
-
 		memcpy(bin->data_backup, bin->datastart, bin->datasize);
 	}
 #endif
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
-#ifdef CONFIG_ARMV7M_MPU
-		mpu_configure_app_regs(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_TEXT], bin->textsize, true, true);
-		mpu_configure_app_regs(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_RO], bin->rosize, true, false);
-		mpu_configure_app_regs(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_DATA], bin->ramsize, false, false);
-#endif
+		g_umm_app_id = bin->alloc[ALLOC_DATA];
 	} else {
+		/* If we support common binary, then we need to place a pointer to the app's heap object
+		 * into the heap table which is present at the start of the common library data section
+		 */
+		uint32_t *heap_table = (uint32_t)g_lib_binp->alloc[ALLOC_DATA] + 4;
+		heap_table[binary_idx] = bin->heapstart;
 #endif
+
 		/* Start the module */
 		pid = exec_module(bin);
 		if (pid < 0) {

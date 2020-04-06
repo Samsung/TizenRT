@@ -539,7 +539,30 @@ static int loading_thread(int argc, char *argv[])
 			break;
 		}
 		/* [2] binary id for reloading */
-		ret = binary_manager_reload((int)atoi(argv[2]));
+		int binid = (int)atoi(argv[2]);
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (binid == BM_BINID_LIBRARY) {
+			/* Reload common library and all binaries */
+			char libname[CONFIG_NAME_MAX];
+			snprintf(libname, CONFIG_NAME_MAX, "%s%s", CONFIG_COMMON_BINARY_PATH, CONFIG_COMMON_BINARY_NAME);
+			ret = load_binary(0, libname, NULL);
+			if (ret < 0) {
+				return BINMGR_OPERATION_FAIL;
+			}
+
+			int bin_idx;
+			int bin_count = binary_manager_get_binary_count();
+
+			for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+				ret = binary_manager_reload(BIN_ID(bin_idx));
+
+				if (ret < 0) {
+					return ret;
+				}
+			}
+		} else
+#endif
+			ret = binary_manager_reload(binid);
 		break;
 #endif
 	default:
