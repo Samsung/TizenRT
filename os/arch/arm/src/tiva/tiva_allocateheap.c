@@ -135,7 +135,7 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	size_t usize = REGION_END - ubase;
 	int log2;
 
-	DEBUGASSERT(ubase < (uintptr_t)(REGION_END);
+	DEBUGASSERT(ubase < (uintptr_t)(REGION_END));
 
 	/* Adjust that size to account for MPU alignment requirements.
 	 * NOTE that there is an implicit assumption that the RAM_END(REGION_START + REGION_SIZE)
