@@ -174,6 +174,7 @@ struct elf_loadinfo_s {
 	uint8_t compression_type;		/* Binary Compression type */
 	uintptr_t symtab;			/* Copy of symbol table */
 	uintptr_t reltab;			/* Copy of relocation table */
+	uintptr_t strtab;			/* Copy of string table */
 };
 
 /****************************************************************************

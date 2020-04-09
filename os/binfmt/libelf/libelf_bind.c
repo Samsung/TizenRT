@@ -384,17 +384,9 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 	/* Read the symbol table into memory */
 	elf_readsymtab(loadinfo);
 
-	/* Allocate an I/O buffer.  This buffer is used by elf_symname() to
-	 * accumulate the variable length symbol name.
-	 */
-
-	ret = elf_allocbuffer(loadinfo);
-	if (ret < 0) {
-		berr("elf_allocbuffer failed: %d\n", ret);
-		goto ret_err;
-	}
-
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
+	elf_readstrtab(loadinfo);
+
 	if (loadinfo->binp->islibrary) {
 		ret = export_library_symtab(loadinfo);
 		if (ret < 0) {
@@ -484,6 +476,10 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 #endif
 
 ret_err:
+	if (loadinfo->strtab) {
+		kmm_free(loadinfo->strtab);
+		loadinfo->strtab = NULL;
+	}
 	kmm_free(loadinfo->symtab);
 	loadinfo->symtab = NULL;
 	return ret;

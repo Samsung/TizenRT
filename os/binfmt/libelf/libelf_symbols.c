@@ -84,6 +84,39 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: elf_readstrtab
+ *
+ * Description:
+ *   Read the ELF string table into memory.
+ *
+ * Input Parameters:
+ *   loadinfo - Load state information
+ *
+ ****************************************************************************/
+int elf_readstrtab(FAR struct elf_loadinfo_s *loadinfo)
+{
+	int ret = OK;
+	FAR Elf32_Shdr *strtab = &loadinfo->shdr[loadinfo->strtabidx];
+
+	loadinfo->strtab = (uintptr_t)kmm_malloc(strtab->sh_size);
+
+	if (!loadinfo->strtab) {
+		berr("ERROR: Failed to allocate space for str table. Size = %u\n", strtab->sh_size);
+		return -ENOMEM;
+	}
+
+	ret = elf_read(loadinfo, loadinfo->strtab, strtab->sh_size, strtab->sh_offset);
+	if (ret != OK) {
+		berr("ERROR: Failed to load string table into memory\n");
+		kmm_free(loadinfo->strtab);
+		loadinfo->strtab = NULL;
+		return ret;
+	}
+
+	return ret;
+}
+
+/****************************************************************************
  * Name: elf_symname
  *
  * Description:
@@ -101,10 +134,6 @@
 
 int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym)
 {
-	FAR uint8_t *buffer;
-	off_t offset;
-	size_t readlen;
-	size_t bytesread;
 	int ret;
 
 	/* Get the file offset to the string that is the name of the symbol.  The
@@ -116,54 +145,21 @@ int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym)
 		return -ESRCH;
 	}
 
-	offset = loadinfo->shdr[loadinfo->strtabidx].sh_offset + sym->st_name;
+	if (!loadinfo->strtab) {
+		ret = elf_readstrtab(loadinfo);
 
-	/* Loop until we get the entire symbol name into memory */
-
-	bytesread = 0;
-
-	for (;;) {
-		/* Get the number of bytes to read */
-
-		readlen = loadinfo->buflen - bytesread;
-		if (offset + readlen > loadinfo->filelen) {
-			if (loadinfo->filelen <= offset) {
-				berr("At end of file\n");
-				return -EINVAL;
-			}
-
-			readlen = loadinfo->filelen - offset;
-		}
-
-		/* Read that number of bytes into the array */
-
-		buffer = &loadinfo->iobuffer[bytesread];
-		ret = elf_read(loadinfo, buffer, readlen, offset + bytesread);
-		if (ret < 0) {
-			berr("elf_read failed: %d\n", ret);
-			return ret;
-		}
-
-		bytesread += readlen;
-
-		/* Did we read the NUL terminator? */
-
-		if (memchr(buffer, '\0', readlen) != NULL) {
-			/* Yes, the buffer contains a NUL terminator. */
-
-			return OK;
-		}
-
-		/* No.. then we have to read more */
-
-		ret = elf_reallocbuffer(loadinfo, CONFIG_ELF_BUFFERINCR);
-		if (ret < 0) {
-			berr("elf_reallocbuffer failed: %d\n", ret);
+		if (ret != OK) {
+			berr("Error reading str table\n");
 			return ret;
 		}
 	}
 
-	/* We will not get here */
+	if (sym->st_name >= loadinfo->shdr[loadinfo->strtabidx].sh_size) {
+		berr("At end of strtab\n");
+		return -EINVAL;
+	}
+
+	loadinfo->iobuffer = loadinfo->strtab + sym->st_name;
 
 	return OK;
 }
