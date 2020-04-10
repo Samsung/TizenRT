@@ -50,7 +50,7 @@ After all SmartFS contents are dumped, analysis is performed and information ext
 ![JournalingLoaded](./media/Journaling_loaded.png)
 
 >**Note** Please wait until SDV displays SmartFS information  
->         since the dumping takes a few miniutes..
+>         since the dumping takes a few minutes..
 
 The contents of a smartfs dump file* can also be shown by opening it through "open" menu.
 
