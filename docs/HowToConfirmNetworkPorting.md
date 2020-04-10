@@ -132,7 +132,7 @@ It supports tuning of various parameters related to timing, buffers and protocol
 Please refer to [iperf](https://iperf.fr) for more details.
 
 ### How to Use iperf
-Assumming successful LwIP loading on the system, TCP/UDP throughput can be measured by using iperf3.
+Assuming successful LwIP loading on the system, TCP/UDP throughput can be measured by using iperf3.
 To enable iperf, do the following:
 1. Execute the dbuild.sh script with the menuconfig option.
 	```
