@@ -29,13 +29,13 @@
 - As for the memory, the code memory (Flash) region and data memory (RAM) region will be split into two parts each, for use by user and kernel.
 - The kernel and user binaries will be placed in separate code memory regions and during runtime they will use separate data memory regions.
 - If the architecture supports MPU(Memory Protection Unit), the kernel logic runs in the privileged mode and the user logic runs in the unprivileged mode. MPU prohibits access to all kernel memory regions in un-privileged mode.
-- When the processor runs in previleged mode, it will have access to all the memory regions. When the processor is running in un-previleged mode, it has access only to user-space memory areas which are configured by the kernel during boot up.
+- When the processor runs in privileged mode, it will have access to all the memory regions. When the processor is running in un-privileged mode, it has access only to user-space memory areas which are configured by the kernel during boot up.
 - User-space code will be able to access the kernel services only through System Calls (downward communication)
 - Information about user-space such as memory regions, and some user-space API's needs to be shared to kernel. This information will be stored in a special data structure called as the User Space Object which will be linked to the kernel binary during build time. The kernel can use the function pointers to user-space APIs available in the user space object to invoke required user space functionality.
 
 
 ## Steps for Supporting Protected Build in a new chipset
-The following sections give detailed explaination regarding some of the steps / code changes involved in supporting protected build on a new Chipset.
+The following sections give detailed explanation regarding some of the steps / code changes involved in supporting protected build on a new Chipset.
 
 ### Make.defs
 - The make.defs file provides several definitions which are used during the build process. One of the definitions is (ARCHSCRIPT) for the linker script to be used to link the kernel binary.

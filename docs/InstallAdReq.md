@@ -20,7 +20,7 @@ Please refer [gRPC prerequisites](https://github.com/Samsung/TizenRT/blob/master
 Please refer [How to use ROMFS](https://github.com/Samsung/TizenRT/blob/master/docs/HowToUseROMFS.md).
 
 ## OCF
-Pleaser refer [Getting Started of IoTivity](https://iotivity.org/documentation/linux/getting-started).
+Please refer [Getting Started of IoTivity](https://iotivity.org/documentation/linux/getting-started).
 
 ## IoT.js
 There is a README, [How to use IoTjs](https://github.com/Samsung/TizenRT/blob/master/docs/HowToUseIoTjs.md).  

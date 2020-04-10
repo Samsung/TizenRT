@@ -244,5 +244,5 @@ void CHIPSET_mpuinitialize(void)
 
 ## Changes in the download method
 - Different chipsets have different configs, scripts or different GUI based tools for download purposes.
-- In protected build, two binaries (kernel and user) need to be downloaded. So, the download process should be modified to accomodate this.
+- In protected build, two binaries (kernel and user) need to be downloaded. So, the download process should be modified to accommodate this.
 - The download process should ensure that the user binary is flashed in the "app" partition given by CONFIG_FLASH_PART_NAME defined in 'defconfig' file.
