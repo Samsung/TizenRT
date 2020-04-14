@@ -65,8 +65,19 @@ enum button_gpio_state {
 
 #define GPIO_OUTPUT_NOTIFICATION_LED 4
 #define GPIO_INPUT_BUTTON 5
+#if defined(CONFIG_ARCH_BOARD_ESP32_DEVKITC)
+#define GPIO_INPUT_BUTTON_EDGE IOTBUS_GPIO_EDGE_FALLING
+enum button_gpio_state {
+	BUTTON_GPIO_RELEASED = 1,
+	BUTTON_GPIO_PRESSED = 0,
+};
+#else
 #define GPIO_INPUT_BUTTON_EDGE IOTBUS_GPIO_EDGE_RISING
-
+enum button_gpio_state {
+	BUTTON_GPIO_RELEASED = 0,
+	BUTTON_GPIO_PRESSED = 1,
+};
+#endif
 #define GPIO_OUTPUT_COLORLED_R 18
 #define GPIO_OUTPUT_COLORLED_G 21
 #define GPIO_OUTPUT_COLORLED_B 19
@@ -76,10 +87,6 @@ enum notification_led_gpio_state {
 	NOTIFICATION_LED_GPIO_OFF = 1,
 };
 
-enum button_gpio_state {
-	BUTTON_GPIO_RELEASED = 0,
-	BUTTON_GPIO_PRESSED = 1,
-};
 #endif
 
 #define LED_BLINK_TIME 50
