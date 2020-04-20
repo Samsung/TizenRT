@@ -121,9 +121,8 @@ config ARCH_BOARD_STM32L4R9AI_DISCO
 config ARCH_BOARD_RTL8721CSM
 	bool "Realtek RTL8721CSM-Discovery board"
 	depends on ARCH_CHIP_RTL8721CSM
-	#select ARCH_HAVE_LEDS
-	#select ARCH_HAVE_BUTTONS
-	#select ARCH_HAVE_IRQBUTTONS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
 	---help---
 		Realtek RTL8721CSM-Discovery board based on the Realtek RTL8721CSM MCU.		
 endchoice
@@ -323,4 +322,5 @@ endif
 comment "Board-Partition Options"
 
 source board/common/Kconfig
+
 
