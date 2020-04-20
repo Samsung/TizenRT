@@ -22,7 +22,7 @@
 #define USE_MUTEX_FOR_SPINLOCK 1
 #endif
 
-#define USE_PTHREAD_MUTEX 0 //todo
+#define USE_PTHREAD_MUTEX 0		//todo
 
 //----- ------------------------------------------------------------------
 // Misc Function
@@ -57,11 +57,11 @@ static unsigned int __div64_32(u64 *n, unsigned int base)
 	res = 0;
 	if (high >= base) {
 		high /= base;
-		res = (u64)high << 32;
+		res = (u64) high << 32;
 		rem -= (u64)(high * base) << 32;
 	}
 
-	while ((u64)b > 0 && b < rem) {
+	while ((u64) b > 0 && b < rem) {
 		b = b + b;
 		d = d + d;
 	}
@@ -85,12 +85,14 @@ u8 *_tizenrt_malloc(u32 sz)
 {
 	return kmm_zalloc(sz);
 }
+
 u8 *_tizenrt_zmalloc(u32 sz)
 {
 	u8 *pbuf = _tizenrt_malloc(sz);
 
-	if (pbuf != NULL)
+	if (pbuf != NULL) {
 		memset(pbuf, 0, sz);
+	}
 
 	return pbuf;
 }
@@ -98,7 +100,7 @@ u8 *_tizenrt_zmalloc(u32 sz)
 void _tizenrt_mfree(u8 *pbuf, u32 sz)
 {
 	/* To avoid gcc warnings */
-	( void ) sz;
+	(void)sz;
 
 	kmm_free(pbuf);
 }
@@ -110,14 +112,14 @@ static void _tizenrt_memcpy(void *dst, void *src, u32 sz)
 
 static int _tizenrt_memcmp(void *dst, void *src, u32 sz)
 {
-	if (!(memcmp(dst, src, sz)))
+	if (!(memcmp(dst, src, sz))) {
 		return 1;
+	}
 
 	return 0;
 }
 
 static void _tizenrt_memset(void *pbuf, int c, u32 sz)
-
 {
 	memset(pbuf, c, sz);
 }
@@ -125,7 +127,7 @@ static void _tizenrt_memset(void *pbuf, int c, u32 sz)
 static void _tizenrt_init_sema(_sema *sema, int init_val)
 {
 	if (*sema == NULL) {
-		*sema = (_sema)_tizenrt_zmalloc(sizeof(sem_t));
+		*sema = (_sema) _tizenrt_zmalloc(sizeof(sem_t));
 		if (*sema == NULL) {
 			DiagPrintf("\r\n Failed to kmm_zalloc in %s\n", __FUNCTION__);
 			return;
@@ -136,9 +138,9 @@ static void _tizenrt_init_sema(_sema *sema, int init_val)
 	}
 	int ret = sem_init((sem_t *)(*sema), 0, init_val);
 	if (ret != OK) {
-			DiagPrintf("\r\n Failed to sem_init in %s\n", __FUNCTION__);
-			_tizenrt_mfree(*sema, sizeof(sem_t));
-			return;
+		DiagPrintf("\r\n Failed to sem_init in %s\n", __FUNCTION__);
+		_tizenrt_mfree(*sema, sizeof(sem_t));
+		return;
 	}
 }
 
@@ -170,7 +172,7 @@ static u32 _tizenrt_down_sema(_sema *sema, u32 timeout)
 {
 	struct timespec ts;
 	int ret;
-	if(timeout == RTW_MAX_DELAY){
+	if (timeout == RTW_MAX_DELAY) {
 		ret = sem_wait((sem_t *)(*sema));
 	} else {
 		clock_gettime(CLOCK_REALTIME, &ts);
@@ -214,8 +216,9 @@ static void _tizenrt_mutex_init(_mutex *pmutex)
 	}
 	return;
 err_exit:
-	if(*pmutex)
+	if (*pmutex) {
 		_tizenrt_mfree(*pmutex);
+	}
 	return;
 #else
 	if (*pmutex == NULL) {
@@ -233,8 +236,9 @@ err_exit:
 static void _tizenrt_mutex_free(_mutex *pmutex)
 {
 #if USE_PTHREAD_MUTEX
-	if(*pmutex == NULL)
+	if (*pmutex == NULL) {
 		return;
+	}
 	int err = pthread_mutex_destroy((pthread_mutex_t *)(*pmutex));
 	if (err) {
 		ndbg("pthread_mutex_destroy failed with error code (%d).", err);
@@ -318,7 +322,6 @@ static int _tizenrt_enter_critical_mutex(_mutex *pmutex, _irqL *pirqL)
 }
 
 static void _tizenrt_exit_critical_mutex(_mutex *pmutex, _irqL *pirqL)
-
 {
 	sem_post(*pmutex);
 }
@@ -335,7 +338,7 @@ static void _tizenrt_cpu_lock(void)
 	dcache_disable();
 
 	gtimer_init(&tmp_timer_obj, 0xff);
-	gtimer_reload(&tmp_timer_obj, 400 * 1000); // 4s
+	gtimer_reload(&tmp_timer_obj, 400 * 1000);	// 4s
 	gtimer_start(&tmp_timer_obj);
 #endif
 }
@@ -381,7 +384,6 @@ static void _tizenrt_spinlock_free(_lock *plock)
 }
 
 static void _tizenrt_spinlock(_lock *plock)
-
 {
 	int temp;
 	temp = sem_wait(*plock);
@@ -439,7 +441,7 @@ static int _tizenrt_deinit_xqueue(_xqueue *queue)
 
 static u32 _tizenrt_get_current_time(void)
 {
-	return (u32)clock();
+	return (u32) clock();
 }
 
 static u32 _tizenrt_systime_to_ms(u32 sys_time)
@@ -588,15 +590,14 @@ static int _tizenrt_arc4random(void)
 	static unsigned long seed = 0xDEADB00B;
 
 #if defined(CONFIG_PLATFORM_8711B)
-	if(random_seed){
+	if (random_seed) {
 		seed = random_seed;
 		random_seed = 0;
 	}
 #endif
 
-	seed = ((seed & 0x007F00FF) << 7) ^
-		((seed & 0x0F80FF00) >> 8) ^ // be sure to stir those low bits
-		(res << 13) ^ (res >> 9);	// using the clock too!
+	seed = ((seed & 0x007F00FF) << 7) ^ ((seed & 0x0F80FF00) >> 8) ^	// be sure to stir those low bits
+		   (res << 13) ^ (res >> 9);	// using the clock too!
 	return (int)seed;
 #endif
 }
@@ -622,14 +623,13 @@ static int _tizenrt_get_random_bytes(void *buf, size_t len)
 }
 
 static u32 _tizenrt_GetFreeHeapSize(void)
-
 {
 	return 0;
 }
+
 void *tcm_heap_malloc(int size);
 extern int debug_steps;
-static int _tizenrt_create_task(struct task_struct *ptask, const char *name,
-		u32 stack_size, u32 priority, thread_func_t func, void *thctx)
+static int _tizenrt_create_task(struct task_struct *ptask, const char *name, u32 stack_size, u32 priority, thread_func_t func, void *thctx)
 {
 	pthread_attr_t attr;
 	struct sched_param sparam;
@@ -653,15 +653,21 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name,
 		DBG_ERR("Failed to pthread_attr_setstacksize\n");
 		goto err_exit;
 	}
-	
+
 	sparam.sched_priority = PTHREAD_DEFAULT_PRIORITY + priority;
+	if(strcmp(name, "rtw_interrupt_thread") == 0)
+				sparam.sched_priority = 206;
+	if(strcmp(name, "rtw_recv_tasklet") == 0)
+				sparam.sched_priority = 205;
+	if(strcmp(name, "rtw_xmit_tasklet") == 0)
+				sparam.sched_priority = 205;
 	res = pthread_attr_setschedparam(&attr, &sparam);
 	if (res != OK) {
 		DBG_ERR("Failed to pthread_attr_setstacksize\n");
 		goto err_exit;
 	}
 
-	res = pthread_create(tid, &attr, (pthread_startroutine_t)func, thctx);
+	res = pthread_create(tid, &attr, (pthread_startroutine_t) func, thctx);
 	if (res != OK) {
 		DBG_ERR("Failed to pthread_create\n");
 		goto err_exit;
@@ -685,7 +691,7 @@ err_exit:
 static void _tizenrt_delete_task(struct task_struct *ptask)
 {
 	int status = 0;
-	pthread_t *tid = (pthread_t *)ptask->task;
+	pthread_t *tid = (pthread_t *) ptask->task;
 	if (!ptask->task || *tid == 0) {
 		DBG_ERR("_tizenrt_delete_task(): ptask is NULL %s!\n", ptask->task_name);
 		return;
@@ -719,11 +725,7 @@ static void _tizenrt_thread_exit(void)
 	//task_delete(0);
 }
 
-_timerHandle _tizenrt_timerCreate(const signed char *pcTimerName,
-		osdepTickType xTimerPeriodInTicks,
-		u32 uxAutoReload,
-		void * pvTimerID, 
-		TIMER_FUN pxCallbackFunction )
+_timerHandle _tizenrt_timerCreate(const signed char *pcTimerName, osdepTickType xTimerPeriodInTicks, u32 uxAutoReload, void *pvTimerID, TIMER_FUN pxCallbackFunction)
 {
 	struct timer_list_priv *timer = (struct timer_list_priv *)_tizenrt_zmalloc(sizeof(struct timer_list_priv));
 	if (timer == NULL) {
@@ -744,11 +746,10 @@ _timerHandle _tizenrt_timerCreate(const signed char *pcTimerName,
 	timer->timevalue = xTimerPeriodInTicks;
 	timer->data = pvTimerID;
 	timer->function = pxCallbackFunction;
-	return (_timerHandle)timer;
+	return (_timerHandle) timer;
 }
 
-u32 _tizenrt_timerDelete(_timerHandle xTimer,
-		osdepTickType xBlockTime)
+u32 _tizenrt_timerDelete(_timerHandle xTimer, osdepTickType xBlockTime)
 {
 	struct timer_list_priv *timer = (struct timer_list_priv *)xTimer;
 	int ret = work_cancel(LPWORK, timer->work_hdl);
@@ -792,8 +793,7 @@ u32 _tizenrt_timerIsTimerActive(_timerHandle xTimer)
 	//return (timer->work_hdl->worker != NULL);
 }
 
-u32 _tizenrt_timerStop(_timerHandle xTimer,
-		osdepTickType xBlockTime)
+u32 _tizenrt_timerStop(_timerHandle xTimer, osdepTickType xBlockTime)
 {
 	struct timer_list_priv *timer = (struct timer_list_priv *)xTimer;
 
@@ -818,9 +818,7 @@ cleanup:
 	return _SUCCESS;
 }
 
-u32 _tizenrt_timerChangePeriod( _timerHandle xTimer,
-							   osdepTickType xNewPeriod,
-							   osdepTickType xBlockTime)
+u32 _tizenrt_timerChangePeriod(_timerHandle xTimer, osdepTickType xNewPeriod, osdepTickType xBlockTime)
 {
 	int ret;
 	struct timer_list_priv *timer = (struct timer_list_priv *)xTimer;
@@ -850,44 +848,37 @@ void *_tizenrt_timerGetID(_timerHandle xTimer)
 	return timer->data;
 }
 
-u32 _tizenrt_timerStart(_timerHandle xTimer,
-		osdepTickType xBlockTime)
+u32 _tizenrt_timerStart(_timerHandle xTimer, osdepTickType xBlockTime)
 {
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
-u32 _tizenrt_timerStartFromISR(_timerHandle xTimer,
-		osdepBASE_TYPE *pxHigherPriorityTaskWoken)
+u32 _tizenrt_timerStartFromISR(_timerHandle xTimer, osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
-u32 _tizenrt_timerStopFromISR(_timerHandle xTimer,
-		osdepBASE_TYPE *pxHigherPriorityTaskWoken)
+u32 _tizenrt_timerStopFromISR(_timerHandle xTimer, osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
-u32 _tizenrt_timerResetFromISR(_timerHandle xTimer,
-							   osdepBASE_TYPE *pxHigherPriorityTaskWoken)
+u32 _tizenrt_timerResetFromISR(_timerHandle xTimer, osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
-u32 _tizenrt_timerChangePeriodFromISR(_timerHandle xTimer,
-									  osdepTickType xNewPeriod,
-									  osdepBASE_TYPE *pxHigherPriorityTaskWoken)
+u32 _tizenrt_timerChangePeriodFromISR(_timerHandle xTimer, osdepTickType xNewPeriod, osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
-u32 _tizenrt_timerReset(_timerHandle xTimer,
-						osdepTickType xBlockTime)
+u32 _tizenrt_timerReset(_timerHandle xTimer, osdepTickType xBlockTime)
 {
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 	return 0;
@@ -912,55 +903,55 @@ u8 _tizenrt_get_scheduler_state(void)
 }
 
 const struct osdep_service_ops osdep_service = {
-	_tizenrt_malloc,				  //rtw_vmalloc
-	_tizenrt_zmalloc,				  //rtw_zvmalloc
-	_tizenrt_mfree,					  //rtw_vmfree
-	_tizenrt_malloc,				  //rtw_malloc
-	_tizenrt_zmalloc,				  //rtw_zmalloc
-	_tizenrt_mfree,					  //rtw_mfree
-	_tizenrt_memcpy,				  //rtw_memcpy
-	_tizenrt_memcmp,				  //rtw_memcmp
-	_tizenrt_memset,				  //rtw_memset
-	_tizenrt_init_sema,				  //rtw_init_sema
-	_tizenrt_free_sema,				  //rtw_free_sema
-	_tizenrt_up_sema,				  //rtw_up_sema
-	_tizenrt_up_sema_from_isr,		  //rtw_up_sema_from_isr
-	_tizenrt_down_sema,				  //rtw_down_sema
-	_tizenrt_mutex_init,			  //rtw_mutex_init
-	_tizenrt_mutex_free,			  //rtw_mutex_free
-	_tizenrt_mutex_get,				  //rtw_mutex_get
-	_tizenrt_mutex_get_timeout,		  //rtw_mutex_get_timeout
-	_tizenrt_mutex_put,				  //rtw_mutex_put
-	_tizenrt_enter_critical,		  //rtw_enter_critical
-	_tizenrt_exit_critical,			  //rtw_exit_critical
-	_tizenrt_enter_critical_from_isr, //rtw_enter_critical_from_isr
-	_tizenrt_exit_critical_from_isr,  //rtw_exit_critical_from_isr
-	NULL,							  //rtw_enter_critical_bh
-	NULL,							  //rtw_exit_critical_bh
+	_tizenrt_malloc,			//rtw_vmalloc
+	_tizenrt_zmalloc,			//rtw_zvmalloc
+	_tizenrt_mfree,				//rtw_vmfree
+	_tizenrt_malloc,			//rtw_malloc
+	_tizenrt_zmalloc,			//rtw_zmalloc
+	_tizenrt_mfree,				//rtw_mfree
+	_tizenrt_memcpy,			//rtw_memcpy
+	_tizenrt_memcmp,			//rtw_memcmp
+	_tizenrt_memset,			//rtw_memset
+	_tizenrt_init_sema,			//rtw_init_sema
+	_tizenrt_free_sema,			//rtw_free_sema
+	_tizenrt_up_sema,			//rtw_up_sema
+	_tizenrt_up_sema_from_isr,	//rtw_up_sema_from_isr
+	_tizenrt_down_sema,			//rtw_down_sema
+	_tizenrt_mutex_init,		//rtw_mutex_init
+	_tizenrt_mutex_free,		//rtw_mutex_free
+	_tizenrt_mutex_get,			//rtw_mutex_get
+	_tizenrt_mutex_get_timeout,	//rtw_mutex_get_timeout
+	_tizenrt_mutex_put,			//rtw_mutex_put
+	_tizenrt_enter_critical,	//rtw_enter_critical
+	_tizenrt_exit_critical,		//rtw_exit_critical
+	_tizenrt_enter_critical_from_isr,	//rtw_enter_critical_from_isr
+	_tizenrt_exit_critical_from_isr,	//rtw_exit_critical_from_isr
+	NULL,						//rtw_enter_critical_bh
+	NULL,						//rtw_exit_critical_bh
 	_tizenrt_enter_critical_mutex,	//rtw_enter_critical_mutex
-	_tizenrt_exit_critical_mutex,	 //rtw_exit_critical_mutex
-	NULL,                            //rtw_suspend_task
-	NULL,                            //rtw_resume_task
-	_tizenrt_spinlock_init,		 //rtw_spinlock_init
-	_tizenrt_spinlock_free,		 //rtw_spinlock_free
-	_tizenrt_spinlock,			 //rtw_spin_lock
-	_tizenrt_spinunlock,		 //rtw_spin_unlock
-	_tizenrt_spinlock_irqsave,   //rtw_spinlock_irqsave
-	_tizenrt_spinunlock_irqsave, //rtw_spinunlock_irqsave
-	_tizenrt_init_xqueue,		 //rtw_init_xqueue
-	_tizenrt_push_to_xqueue,	 //rtw_push_to_xqueue
+	_tizenrt_exit_critical_mutex,	//rtw_exit_critical_mutex
+	NULL,						//rtw_suspend_task
+	NULL,						//rtw_resume_task
+	_tizenrt_spinlock_init,		//rtw_spinlock_init
+	_tizenrt_spinlock_free,		//rtw_spinlock_free
+	_tizenrt_spinlock,			//rtw_spin_lock
+	_tizenrt_spinunlock,		//rtw_spin_unlock
+	_tizenrt_spinlock_irqsave,	//rtw_spinlock_irqsave
+	_tizenrt_spinunlock_irqsave,	//rtw_spinunlock_irqsave
+	_tizenrt_init_xqueue,		//rtw_init_xqueue
+	_tizenrt_push_to_xqueue,	//rtw_push_to_xqueue
 	_tizenrt_pop_from_xqueue,	//rtw_pop_from_xqueue
-	_tizenrt_deinit_xqueue,		 //rtw_deinit_xqueue
-	_tizenrt_get_current_time,   //rtw_get_current_time
-	_tizenrt_systime_to_ms,		 //rtw_systime_to_ms
-	_tizenrt_systime_to_sec,	 //rtw_systime_to_sec
-	_tizenrt_ms_to_systime,		 //rtw_ms_to_systime
-	_tizenrt_sec_to_systime,	 //rtw_sec_to_systime
-	_tizenrt_msleep_os,			 //rtw_msleep_os
-	_tizenrt_usleep_os,			 //rtw_usleep_os
-	_tizenrt_mdelay_os,			 //rtw_mdelay_os
-	_tizenrt_udelay_os,			 //rtw_udelay_os
-	_tizenrt_yield_os,			 //rtw_yield_os
+	_tizenrt_deinit_xqueue,		//rtw_deinit_xqueue
+	_tizenrt_get_current_time,	//rtw_get_current_time
+	_tizenrt_systime_to_ms,		//rtw_systime_to_ms
+	_tizenrt_systime_to_sec,	//rtw_systime_to_sec
+	_tizenrt_ms_to_systime,		//rtw_ms_to_systime
+	_tizenrt_sec_to_systime,	//rtw_sec_to_systime
+	_tizenrt_msleep_os,			//rtw_msleep_os
+	_tizenrt_usleep_os,			//rtw_usleep_os
+	_tizenrt_mdelay_os,			//rtw_mdelay_os
+	_tizenrt_udelay_os,			//rtw_udelay_os
+	_tizenrt_yield_os,			//rtw_yield_os
 
 	_tizenrt_ATOMIC_SET,		//ATOMIC_SET
 	_tizenrt_ATOMIC_READ,		//ATOMIC_READ
@@ -968,80 +959,81 @@ const struct osdep_service_ops osdep_service = {
 	_tizenrt_ATOMIC_SUB,		//ATOMIC_SUB
 	_tizenrt_ATOMIC_INC,		//ATOMIC_INC
 	_tizenrt_ATOMIC_DEC,		//ATOMIC_DEC
-	_tizenrt_ATOMIC_ADD_RETURN, //ATOMIC_ADD_RETURN
-	_tizenrt_ATOMIC_SUB_RETURN, //ATOMIC_SUB_RETURN
-	_tizenrt_ATOMIC_INC_RETURN, //ATOMIC_INC_RETURN
-	_tizenrt_ATOMIC_DEC_RETURN, //ATOMIC_DEC_RETURN
+	_tizenrt_ATOMIC_ADD_RETURN,	//ATOMIC_ADD_RETURN
+	_tizenrt_ATOMIC_SUB_RETURN,	//ATOMIC_SUB_RETURN
+	_tizenrt_ATOMIC_INC_RETURN,	//ATOMIC_INC_RETURN
+	_tizenrt_ATOMIC_DEC_RETURN,	//ATOMIC_DEC_RETURN
 
-	_tizenrt_modular64,		   //rtw_modular64
-	_tizenrt_get_random_bytes, //rtw_get_random_bytes
-	_tizenrt_GetFreeHeapSize,  //rtw_getFreeHeapSize
+	_tizenrt_modular64,			//rtw_modular64
+	_tizenrt_get_random_bytes,	//rtw_get_random_bytes
+	_tizenrt_GetFreeHeapSize,	//rtw_getFreeHeapSize
 
-	_tizenrt_create_task, //rtw_create_task
-	_tizenrt_delete_task, //rtw_delete_task
-	_tizenrt_wake_task,   //rtw_wakeup_task
-	NULL, 
+	_tizenrt_create_task,		//rtw_create_task
+	_tizenrt_delete_task,		//rtw_delete_task
+	_tizenrt_wake_task,			//rtw_wakeup_task
+	NULL,
 	NULL,
 
-	_tizenrt_thread_enter, //rtw_thread_enter
-	_tizenrt_thread_exit,  //rtw_thread_exit
+	_tizenrt_thread_enter,		//rtw_thread_enter
+	_tizenrt_thread_exit,		//rtw_thread_exit
 
-	_tizenrt_timerCreate,			   //rtw_timerCreate,
-	_tizenrt_timerDelete,			   //rtw_timerDelete,
-	_tizenrt_timerIsTimerActive,	   //rtw_timerIsTimerActive,
-	_tizenrt_timerStop,				   //rtw_timerStop,
-	_tizenrt_timerChangePeriod,		   //rtw_timerChangePeriod
-	_tizenrt_timerGetID,			   //rtw_timerGetID
-	_tizenrt_timerStart,			   //rtw_timerStart
-	_tizenrt_timerStartFromISR,		   //rtw_timerStartFromISR
-	_tizenrt_timerStopFromISR,		   //rtw_timerStopFromISR
-	_tizenrt_timerResetFromISR,		   //rtw_timerResetFromISR
-	_tizenrt_timerChangePeriodFromISR, //rtw_timerChangePeriodFromISR
-	_tizenrt_timerReset,			   //rtw_timerReset
+	_tizenrt_timerCreate,		//rtw_timerCreate,
+	_tizenrt_timerDelete,		//rtw_timerDelete,
+	_tizenrt_timerIsTimerActive,	//rtw_timerIsTimerActive,
+	_tizenrt_timerStop,			//rtw_timerStop,
+	_tizenrt_timerChangePeriod,	//rtw_timerChangePeriod
+	_tizenrt_timerGetID,		//rtw_timerGetID
+	_tizenrt_timerStart,		//rtw_timerStart
+	_tizenrt_timerStartFromISR,	//rtw_timerStartFromISR
+	_tizenrt_timerStopFromISR,	//rtw_timerStopFromISR
+	_tizenrt_timerResetFromISR,	//rtw_timerResetFromISR
+	_tizenrt_timerChangePeriodFromISR,	//rtw_timerChangePeriodFromISR
+	_tizenrt_timerReset,		//rtw_timerReset
 
-	_tizenrt_acquire_wakelock,   //rtw_acquire_wakelock
-	_tizenrt_release_wakelock,   //rtw_release_wakelock
-	_tizenrt_wakelock_timeout,   //rtw_wakelock_timeout
-	_tizenrt_get_scheduler_state, //rtw_get_scheduler_state
-	NULL,	// rtw_create_secure_context
-	NULL,   //rtw_get_current_TaskHandle
+	_tizenrt_acquire_wakelock,	//rtw_acquire_wakelock
+	_tizenrt_release_wakelock,	//rtw_release_wakelock
+	_tizenrt_wakelock_timeout,	//rtw_wakelock_timeout
+	_tizenrt_get_scheduler_state,	//rtw_get_scheduler_state
+	NULL,						// rtw_create_secure_context
+	NULL,						//rtw_get_current_TaskHandle
 };
 
 static IRQ_FUN TizenUserIrqFunTable[MAX_PERIPHERAL_IRQ_NUM];
 static int wrapper_IrqFun(int irq, FAR void *context, FAR void *arg)
 {
-	if(irq < AMEBAD_IRQ_FIRST){
+	if (irq < AMEBAD_IRQ_FIRST) {
 		DiagPrintf("INT %d should not come here\r\n", irq);
 		return OK;
 	}
-	__NVIC_ClearPendingIRQ(irq-AMEBAD_IRQ_FIRST);
-	if (TizenUserIrqFunTable[irq-AMEBAD_IRQ_FIRST] != NULL) {
-		TizenUserIrqFunTable[irq-AMEBAD_IRQ_FIRST]((VOID *)(arg));
+	__NVIC_ClearPendingIRQ(irq - AMEBAD_IRQ_FIRST);
+	if (TizenUserIrqFunTable[irq - AMEBAD_IRQ_FIRST] != NULL) {
+		TizenUserIrqFunTable[irq - AMEBAD_IRQ_FIRST]((VOID *)(arg));
 	} else {
-		DiagPrintf("INT_Entry Irq %d Fun Not Assign!!!!!", irq-AMEBAD_IRQ_FIRST);
+		DiagPrintf("INT_Entry Irq %d Fun Not Assign!!!!!", irq - AMEBAD_IRQ_FIRST);
 	}
 	return OK;
 }
 
-BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data,  u32 Priority) {
-	if(IrqNum < 0){
+BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data, u32 Priority)
+{
+	if (IrqNum < 0) {
 		DiagPrintf("INT %d should not come here\r\n", IrqNum);
 		return _TRUE;
 	}
 	Priority = (Priority >> IRQ_PRIORITY_SHIFT);
-	if(IrqNum == WL_DMA_IRQ || IrqNum == WL_PROTOCOL_IRQ)
+	if (IrqNum == WL_DMA_IRQ || IrqNum == WL_PROTOCOL_IRQ) {
 		Priority = 4;
-	DiagPrintf("%s %d %d\r\n", __func__, IrqNum, Priority);
-	TizenUserIrqFunTable[IrqNum] = (IRQ_FUN)((u32)IrqFun | 0x1);
+	}
+	TizenUserIrqFunTable[IrqNum] = (IRQ_FUN)((u32) IrqFun | 0x1);
 	Priority = (Priority << (8 - __NVIC_PRIO_BITS));
 	irq_attach(IrqNum + AMEBAD_IRQ_FIRST, wrapper_IrqFun, (void *)Data);
-	up_prioritize_irq(IrqNum + AMEBAD_IRQ_FIRST, Priority); //Need to fix, because it can't get the same result as __NVIC_SetPriority
+	up_prioritize_irq(IrqNum + AMEBAD_IRQ_FIRST, Priority);	//Need to fix, because it can't get the same result as __NVIC_SetPriority
 	return _TRUE;
 }
 
 BOOL irq_unregister(IRQn_Type IrqNum)
 {
-	if(IrqNum < 0){
+	if (IrqNum < 0) {
 		DiagPrintf("INT %d should not come here\r\n", IrqNum);
 		return _TRUE;
 	}
@@ -1052,7 +1044,7 @@ BOOL irq_unregister(IRQn_Type IrqNum)
 
 void irq_enable(IRQn_Type IrqNum)
 {
-	if(IrqNum < 0){
+	if (IrqNum < 0) {
 		DiagPrintf("INT %d should not come here\r\n", IrqNum);
 		return;
 	}
@@ -1061,20 +1053,21 @@ void irq_enable(IRQn_Type IrqNum)
 
 void irq_disable(IRQn_Type IrqNum)
 {
-	if(IrqNum < 0){
+	if (IrqNum < 0) {
 		DiagPrintf("INT %d should not come here\r\n", IrqNum);
 		return;
 	}
 	up_disable_irq(IrqNum + AMEBAD_IRQ_FIRST);
 }
 
-int __wrap_printf(const char *format, ...) {
-    int ret = 0;
-    va_list args;
-    va_start(args, (const char *)format);
-    ret = DiagPrintf((const char *)format, args);
-    va_end(args);
-    return ret;
+int __wrap_printf(const char *format, ...)
+{
+	int ret = 0;
+	va_list args;
+	va_start(args, (const char *)format);
+	ret = DiagPrintf((const char *)format, args);
+	va_end(args);
+	return ret;
 }
 
 void shell_switch_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
@@ -1082,7 +1075,7 @@ void shell_switch_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 }
 
-uint32_t * vTaskStackAddr(void)
+uint32_t *vTaskStackAddr(void)
 {
 	return NULL;
 }
@@ -1096,8 +1089,8 @@ void vPortEnterCritical(void)
 {
 	save_and_cli();
 }
+
 void vPortExitCritical(void)
 {
 	restore_flags();
 }
-
