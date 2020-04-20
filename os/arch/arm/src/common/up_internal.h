@@ -144,7 +144,7 @@
  * (i.e., not CONFIG_ARM_CMNVECTOR).
  */
 
-#if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARM_CMNVECTOR) && !defined(CONFIG_ARMV8M_CMNVECTOR)
+#if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARM_CMNVECTOR)
 #define up_savestate(regs)  up_copyarmstate(regs, (uint32_t *)current_regs)
 #else
 #define up_savestate(regs)  up_copyfullstate(regs, (uint32_t *)current_regs)
