@@ -5,4 +5,50 @@
 
 if ARCH_BOARD_RTL8721CSM
 
+menu "SPI Flash driver"
+
+config AMEBAD_FLASH_BASE
+    hex "Start address for user filesystem"
+    default 0x180000
+    help
+        Setting this vaule to configure flash start address for user filesystem,
+        such as smartfs, romfs.
+
+config AMEBAD_FLASH_CAPACITY
+    hex "Size for user filesystem"
+    default 0x80000
+    help
+        Setting this vaule to configure flash size  for user filesystem,
+        such as smartfs, romfs.
+
+config AMEBAD_FLASH_PAGE_SIZE
+    int "Read/write unit size of SPI flash"
+    default 256
+    help
+        Setting this vaule to configure read/write unit size of esp32 SPI flash.
+
+config AMEBAD_FLASH_BLOCK_SIZE
+    int "Erase unit size of SPI flash"
+    default 4096
+    help
+        Setting this vaule to configure erase unit size of esp32 SPI flash.
+		
+config AMEBAD_AUTOMOUNT_USERFS_DEVNAME
+    string "Device name of the partition for user r/w file system"
+    default "/dev/smart0p0"
+
+config AMEBAD_AUTOMOUNT_USERFS_MOUNTPOINT
+    string "Mountpoint of the partition for user r/w file system"
+    default "/mnt"
+
+config AMEBAD_AUTOMOUNT_ROMFS_DEVNAME
+    string "Device name of the partition for rom read only file system"
+    default "/dev/mtdblock0"
+
+config AMEBAD_AUTOMOUNT_ROMFS_MOUNTPOINT
+    string "Mountpoint of the partition for rom read only file system"
+    default "/rom"
+	
+endmenu
 endif
+
