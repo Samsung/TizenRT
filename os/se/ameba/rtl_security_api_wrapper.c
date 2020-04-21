@@ -45,8 +45,12 @@ static const unsigned char aes_iv[16] = {
 #define SAMSUNG_KEY_ADDR 0x150
 #define SAMSUNG_KEY_SIZE 32
 
+/* Factory Cert Key */
+#define FACTORY_CERT_ADDR CONFIG_SE_FACTORY_CERT_ADDRESS
+#define FACTORY_KEY_ADDR CONFIG_SE_FACTORY_KEY_ADDRESS
+
 /* Secure Storage Variable */
-#define SEC_STORE_OFFSET 0x1C0000
+#define SEC_STORE_OFFSET CONFIG_SE_SSTORAGE_ADDRESS
 #define TAG_LENGTH 16
 
 static const unsigned char aes_test_iv_gcm[12] = {
@@ -110,6 +114,7 @@ uint32_t rtl_cryptoEngine_init_wrapper(void)
 
 	return ret;
 }
+
 /**
  * AES Crpyto Wrapper
  */
@@ -194,6 +199,103 @@ uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t* key, uint32_t keylen, unsigned char*
 }
 
 /**
+ * Factory Key and Cert
+ */
+uint32_t rtl_read_factory_cert_wrapper(hal_data *data)
+{
+	uint32_t ret;
+	uint32_t data_len;
+	uint8_t buf_length[4];
+	uint8_t *buf_flash = NULL;
+	flash_t flash;
+
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	flash_stream_read(&flash, FACTORY_CERT_ADDR, 4, buf_length);
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
+	data_len = atoi(buf_length);	/* Cert Length */
+
+	buf_flash = (uint8_t *) malloc(data_len + 4);	/* Allocate buff */
+
+	if (buf_flash) {
+		memset(buf_flash, 0, data_len + 4);
+
+		device_mutex_lock(RT_DEV_LOCK_FLASH);
+		flash_stream_read(&flash, FACTORY_CERT_ADDR, data_len + 4, buf_flash);
+		device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
+		memcpy(data->data, buf_flash + 4, data_len);	/* Copy Cert into output buff */
+		data->data_len = data_len;
+
+		ret = RTL_HAL_SUCCESS;
+	} else {
+		ret = RTL_HAL_FAIL;
+	}
+
+	if (buf_flash != NULL) {
+		free(buf_flash);
+	}
+
+	return ret;
+}
+
+uint32_t rtl_read_factory_key_wrapper(hal_data *data)
+{
+	uint32_t ret;
+	uint32_t data_len;
+	uint8_t buf_length[4];
+	uint8_t *buf_plain = NULL;
+	uint8_t *buf_crypt = NULL;
+	uint8_t *buf_flash = NULL;
+	flash_t flash;
+	unsigned char aes_key[32] __attribute__((aligned(4)));
+
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	flash_stream_read(&flash, FACTORY_KEY_ADDR, 4, buf_length);
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
+	data_len = atoi(buf_length);	/* Key Length */
+
+	/* Allocate buff */
+	buf_flash = (uint8_t *) malloc(data_len + 4);
+	buf_crypt = (uint8_t *) malloc(data_len);
+	buf_plain = (uint8_t *) malloc(data_len);
+
+	if (buf_plain && buf_crypt && buf_flash) {
+		memset(buf_flash, 0, data_len + 4);
+		memcpy(aes_key, samsung_key, sizeof(samsung_key));
+
+		device_mutex_lock(RT_DEV_LOCK_FLASH);
+		flash_stream_read(&flash, FACTORY_KEY_ADDR, data_len + 4, buf_flash);	/* Read data */
+		device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
+		memcpy(buf_crypt, buf_flash + 4, data_len);
+
+		/* Decrypt data */
+		ret = rtl_cryptoAES_ecb_wrapper(aes_key, sizeof(aes_key), buf_crypt, data_len, buf_plain, RTL_DECRYPT);
+
+		if (ret == RTL_HAL_SUCCESS) {
+			memcpy(data->data, buf_plain, data_len);	/* Copy Key into output buff */
+			data->data_len = data_len;
+		}
+	} else {
+		ret = RTL_HAL_FAIL;
+	}
+
+	if (buf_flash != NULL) {
+		free(buf_flash);
+	}
+	if (buf_plain != NULL) {
+		free(buf_plain);
+	}
+	if (buf_crypt != NULL) {
+		free(buf_crypt);
+	}
+
+	return ret;
+}
+
+/**
  * Secure Storage
  */
 uint32_t rtl_write_storage_wrapper(uint32_t ss_idx, hal_data *data)
@@ -266,9 +368,15 @@ uint32_t rtl_write_storage_wrapper(uint32_t ss_idx, hal_data *data)
 	}
 
 exit:
-	free(buf);
-	free(buf_flash);
-	free(data_plain);
+	if (buf != NULL) {
+		free(buf);
+	}
+	if (buf_flash != NULL) {
+		free(buf_flash);
+	}
+	if (data_plain != NULL) {
+		free(data_plain);
+	}
 
 	return ret;
 }
@@ -354,9 +462,15 @@ uint32_t rtl_read_storage_wrapper(uint32_t ss_idx, hal_data *data)
 	}
 
 exit:
-	free(buf);
-	free(buf_flash);
-	free(data_plain);
+	if (buf != NULL) {
+		free(buf);
+	}
+	if (buf_flash != NULL) {
+		free(buf_flash);
+	}
+	if (data_plain != NULL) {
+		free(data_plain);
+	}
 
 	return ret;
 }
