@@ -65,6 +65,9 @@
 #define RTL_HASH_SHA384 1
 #define RTL_HASH_SHA512 0
 
+/* Function return Enum define */
+#define RTL_HAL_SUCCESS 0
+
 /* Factory Key and Cert define */
 #define FACTORYKEY_RTL_DEVICE (0x00010120)
 #define FACTORYKEY_RTL_CERT (0x00010122)
@@ -209,64 +212,6 @@ typedef struct {
 
 /* End of ROM mbedtls define */
 
-static const unsigned char EC_Private_Key[128] = {
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-};
-
-/* DER format Cert */
-static const unsigned char HA_IOT_Device_Cert[681] = {
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-	0x2e, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A
-};
-
 typedef struct key_struc {
 	hal_key_type key_type;
 
@@ -288,8 +233,6 @@ typedef struct key_struc {
 static key_struc key_storage[KEY_STORAGE_INDEX_MAX] = { 0 };
 static uint32_t init_stat = HAL_NOT_INITIALIZED;
 
-#define HAL_RTL_CHECKBUSY() while (init_stat == HAL_BUSY) {}
-
 /* Extern api from rtl_security_api_wrapper.c */
 extern uint32_t rtl_cryptoEngine_init_wrapper(void);
 extern uint32_t rtl_write_storage_wrapper(uint32_t ss_idx, hal_data *data);
@@ -298,10 +241,21 @@ extern uint32_t rtl_delete_storage_wrapper(uint32_t ss_idx);
 extern uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
 extern uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
 extern uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
+extern uint32_t rtl_read_factory_key_wrapper(hal_data *data);
+extern uint32_t rtl_read_factory_cert_wrapper(hal_data *data);
 
 /**
  * Helper function
  */
+static int rtl_chk_stat(void)
+{
+	if (init_stat == HAL_NOT_INITIALIZED) {
+		return HAL_NOT_INITIALIZED;
+	}
+
+	return HAL_SUCCESS;
+}
+
 static void* my_calloc(size_t nelements, size_t elementSize)
 {
 	size_t size;
@@ -369,12 +323,12 @@ int ameba_hal_init(hal_init_param *params)
 	p_rom_ssl_ram_map->ssl_calloc = my_calloc;
 	p_rom_ssl_ram_map->ssl_free = free;
 
-	ret = rtl_cryptoEngine_init_wrapper();					/* init crypto engine */
-	if (ret == HAL_SUCCESS) {
+	ret = rtl_cryptoEngine_init_wrapper();	/* init crypto engine */
+	if (ret == RTL_HAL_SUCCESS) {
 		init_stat = HAL_SUCCESS;
 	}
 
-	if (ret != HAL_SUCCESS) {
+	if (ret != RTL_HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;;
 	}
@@ -385,12 +339,13 @@ int ameba_hal_deinit(void)
 {
 	AWRAP_ENTER;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat != HAL_SUCCESS) {
-		return init_stat;
+	uint32_t ret = HAL_SUCCESS;
+
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
-	init_stat = HAL_BUSY;
 	for (uint32_t i = 0; i < KEY_STORAGE_INDEX_MAX; i++) {
 		memset(key_storage[i].aes_key, 0, sizeof(key_storage[i].aes_key));
 		key_storage[i].aes_key_len = 0;
@@ -436,11 +391,11 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 
 	uint32_t ret = HAL_SUCCESS;
 
-	HAL_RTL_CHECKBUSY();
-
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if (prikey != NULL) {	/* If private key is pass in */
 		return HAL_NOT_SUPPORTED;
 	}
@@ -448,7 +403,6 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
-	init_stat = HAL_BUSY;
 	switch (mode) {
 	case HAL_KEY_AES_128:
 	case HAL_KEY_AES_192:
@@ -501,12 +455,12 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 	case HAL_KEY_DH_4096:
 		break;
 	default:
-		return HAL_NOT_SUPPORTED;
+		ret = HAL_NOT_SUPPORTED;
+		goto exit;
 	}
 	key_storage[key_idx].key_type = mode;
 
 exit:
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;;
@@ -520,20 +474,19 @@ int ameba_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 
 	uint32_t ret = HAL_SUCCESS;
 	uint32_t puk_x_len, puk_y_len;
-	unsigned char *puk_x;
-	unsigned char *puk_y;
+	unsigned char *puk_x = NULL;
+	unsigned char *puk_y = NULL;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if (key_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
 	if ((mode <= HAL_KEY_ECC_SEC_P512R1) && (mode >= HAL_KEY_ECC_BRAINPOOL_P256R1)) {
-		init_stat = HAL_BUSY;
-
 		puk_x_len = rtl_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.X));	/* Get length */
 		puk_y_len = rtl_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Y));	/* Get length */
 		puk_x = (unsigned char *)malloc(puk_x_len);	/* Allocate memory */
@@ -552,17 +505,17 @@ int ameba_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 				HAL_COPY_PRIV_DATA(key, puk_y, puk_y_len);
 			}
 		}
-		if (puk_x != NULL) {
-			free(puk_x);	/* free memory */
-		}
-		if (puk_y != NULL) {
-			free(puk_y);	/* free memory */
-		}
 	} else {
 		return HAL_NOT_SUPPORTED;
 	}
 
-	init_stat = HAL_SUCCESS;
+	if (puk_x != NULL) {
+		free(puk_x);	/* free memory */
+	}
+	if (puk_y != NULL) {
+		free(puk_y);	/* free memory */
+	}
+
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -574,17 +527,19 @@ int ameba_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 {
 	AWRAP_ENTER;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	uint32_t ret = HAL_SUCCESS;
+
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if (key_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 	if (mode != key_storage[key_idx].key_type) {
 		return HAL_BAD_KEY;	/* Key is empty */
 	}
-	init_stat = HAL_BUSY;
 
 	/* Init all key info for key index */
 	memset(key_storage[key_idx].aes_key, 0, sizeof(key_storage[key_idx].aes_key));
@@ -598,7 +553,6 @@ int ameba_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 	memset(key_storage[key_idx].hmac_key, 0, sizeof(key_storage[key_idx].hmac_key));
 	key_storage[key_idx].key_type = HAL_KEY_UNKNOWN;	/* Remove key type for key index */
 
-	init_stat = HAL_SUCCESS;
 	return HAL_SUCCESS;
 }
 
@@ -609,12 +563,11 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 	uint32_t ret = HAL_SUCCESS;
 	rtl_ecp_group_id ecp_curve_id;
 
-	HAL_RTL_CHECKBUSY();
-
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
-	init_stat = HAL_BUSY;
+
 	switch (mode) {
 	case HAL_KEY_AES_128:
 		/* Generate Random Key */
@@ -675,7 +628,6 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 	case HAL_KEY_HMAC_SHA512:
 		break;
 	default:
-		init_stat = HAL_SUCCESS;
 		return HAL_NOT_SUPPORTED;
 	}
 
@@ -695,7 +647,6 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 		key_storage[key_idx].key_type = mode;	/* Set storage key mode */
 	}
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -736,6 +687,10 @@ int ameba_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 	uint32_t len;
 	unsigned char output[64];
 
+	if (init_stat == HAL_NOT_INITIALIZED) {
+		return HAL_NOT_INITIALIZED;
+	}
+
 	switch (mode) {
 	case HAL_HASH_MD5:
 		rtl_md5(input->data, input->data_len, output);
@@ -773,12 +728,13 @@ int ameba_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, ha
 {
 	AWRAP_ENTER;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	uint32_t ret;
+
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
-	init_stat = HAL_BUSY;
-	init_stat = HAL_SUCCESS;
+
 	return HAL_NOT_SUPPORTED;
 }
 
@@ -790,10 +746,11 @@ int ameba_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, h
 	rtl_md_type_t sha_mode;
 	unsigned char sig_out[1024];
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_RSA_1024 > key_storage[key_idx].key_type)
 	|| (HAL_KEY_RSA_4096 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
@@ -821,7 +778,6 @@ int ameba_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, h
 	default:
 		return HAL_NOT_SUPPORTED;
 	}
-	init_stat = HAL_BUSY;
 
 	if (mode.rsa_a == HAL_RSASSA_PKCS1_V1_5) {
 		rtl_rsa_set_padding(&(key_storage[key_idx].rsa_ctx), RTL_RSA_PKCS_V15, 0);
@@ -838,7 +794,6 @@ int ameba_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, h
 	}
 
 exit:
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -853,10 +808,11 @@ int ameba_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, u
 	uint32_t ret;
 	rtl_md_type_t sha_mode;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_RSA_1024 > key_storage[key_idx].key_type)
 	|| (HAL_KEY_RSA_4096 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
@@ -884,7 +840,6 @@ int ameba_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, u
 	default:
 		return HAL_NOT_SUPPORTED;
 	}
-	init_stat = HAL_BUSY;
 
 	if (mode.rsa_a == HAL_RSASSA_PKCS1_V1_5) {
 		rtl_rsa_set_padding(&(key_storage[key_idx].rsa_ctx), RTL_RSA_PKCS_V15, 0);
@@ -897,7 +852,6 @@ int ameba_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, u
 	ret = rtl_rsa_pkcs1_verify(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, RTL_RSA_PUBLIC, sha_mode, hash->data_len, hash->data, (unsigned char *)sign->data);
 
 exit:
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -914,10 +868,11 @@ int ameba_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_id
 	unsigned char sig[RTL_ECDSA_MAX_LEN];
 	rtl_md_type_t hash_type;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_ECC_BRAINPOOL_P256R1 > key_storage[key_idx].key_type)
 	|| (HAL_KEY_ECC_SEC_P512R1 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
@@ -938,14 +893,12 @@ int ameba_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_id
 	default:
 		return HAL_INVALID_ARGS;
 	}
-	init_stat = HAL_BUSY;
 
 	ret = rtl_ecdsa_write_signature(&(key_storage[key_idx].ecdsa_ctx), hash_type, hash->data, hash->data_len, sig, &sig_len, hal_rand, NULL);
 	if (ret == HAL_SUCCESS) {
 		HAL_COPY_DATA(sign, sig, sig_len);
 	}
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -959,19 +912,18 @@ int ameba_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sig
 
 	uint32_t ret;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_ECC_BRAINPOOL_P256R1 > key_storage[key_idx].key_type)
 	|| (HAL_KEY_ECC_SEC_P512R1 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
 	}
-	init_stat = HAL_BUSY;
-	
+
 	ret = rtl_ecdsa_read_signature(&(key_storage[key_idx].ecdsa_ctx), hash->data, hash->data_len, sign->data, sign->data_len);
 
-	init_stat = HAL_SUCCESS;
 	return ret;
 }
 
@@ -981,14 +933,15 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 
 	uint32_t ret;
 	size_t p_size, output_len = 0;
-	unsigned char *output;
+	unsigned char *output = NULL;
 	rtl_mpi mpi_P;
 	rtl_mpi mpi_G;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if (!dh_param->pubkey->data) {
 		return HAL_INVALID_ARGS;
 	}
@@ -1000,7 +953,6 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	default:
 		return HAL_INVALID_ARGS;
 	}
-	init_stat = HAL_BUSY;
 
 	rtl_mpi_init(&mpi_P);
 	rtl_mpi_init(&mpi_G);
@@ -1043,9 +995,10 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 exit:
 	rtl_mpi_free(&mpi_P);
 	rtl_mpi_free(&mpi_G);
-	free(output);
+	if (output != NULL) {
+		free(output);
+	}
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -1059,14 +1012,15 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 
 	uint32_t ret;
 	size_t buf_size, output_len = 0;
-	unsigned char *output;
+	unsigned char *output = NULL;
 	rtl_mpi mpi_P;
 	rtl_mpi mpi_G;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	switch (dh_param->mode) {
 	case HAL_DH_1024:
 	case HAL_DH_2048:
@@ -1075,7 +1029,6 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 	default:
 		return HAL_INVALID_ARGS;
 	}
-	init_stat = HAL_BUSY;
 
 	rtl_mpi_init(&mpi_P);
 	rtl_mpi_init(&mpi_G);
@@ -1092,6 +1045,10 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 
 	buf_size = key_storage[dh_idx].dhm_ctx.len;
 	output = (unsigned char *)malloc(buf_size);
+	if (output == NULL) {
+		ret = HAL_NOT_ENOUGH_MEMORY;
+		goto exit;
+	}
 	ret = rtl_dhm_calc_secret(&(key_storage[dh_idx].dhm_ctx), output, buf_size, &output_len, hal_rand, NULL);
 
 	if (ret == HAL_SUCCESS) {
@@ -1101,9 +1058,10 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 exit:
 	rtl_mpi_free(&mpi_P);
 	rtl_mpi_free(&mpi_G);
-	free(output);
+	if (output != NULL) {
+		free(output);
+	}
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -1117,18 +1075,18 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 
 	uint32_t ret;
 	uint32_t Qp_z_len, output_len = 0;
-	unsigned char *Qp_z;
+	unsigned char *Qp_z = NULL;
 	unsigned char output[HAL_MAX_SHARED_SECRET_LEN];
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_ECC_BRAINPOOL_P256R1 > key_storage[key_idx].key_type)
 	&& (HAL_KEY_ECC_SEC_P512R1 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
 	}
-	init_stat = HAL_BUSY;
 
 	/* Read peer public key X and Y */
 	if ((rtl_mpi_read_binary(&(key_storage[key_idx].ecdh_ctx.Qp.X), ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len) != HAL_SUCCESS)
@@ -1166,9 +1124,10 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 	}
 
 exit:
-	free(Qp_z);
+	if (Qp_z != NULL) {
+		free(Qp_z);
+	}
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -1182,14 +1141,14 @@ int ameba_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 
 	uint32_t ret = HAL_SUCCESS;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if (cert_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
-	init_stat = HAL_BUSY;
 
 	/* If cert exist */
 	if (key_storage[cert_idx].cert_data != NULL) {
@@ -1201,7 +1160,6 @@ int ameba_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 	memcpy(key_storage[cert_idx].cert_data, cert_in->data, cert_in->data_len);
 	key_storage[cert_idx].cert_len = cert_in->data_len;
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -1215,21 +1173,20 @@ int ameba_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 
 	uint32_t ret = HAL_SUCCESS;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if (cert_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 	if (key_storage[cert_idx].cert_data == NULL) {
 		return HAL_EMPTY_SLOT;
 	}
-	init_stat = HAL_BUSY;
 
 	HAL_COPY_DATA(cert_out, key_storage[cert_idx].cert_data, key_storage[cert_idx].cert_len);
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -1248,14 +1205,22 @@ int ameba_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 {
 	AWRAP_ENTER;
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	uint32_t ret;
+
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if (key_idx == FACTORYKEY_RTL_DEVICE) {
-		HAL_COPY_DATA(key, EC_Private_Key, sizeof(EC_Private_Key));
+		ret = rtl_read_factory_key_wrapper(key);
 	} else {
 		return HAL_NOT_SUPPORTED;
+	}
+
+	if (ret != RTL_HAL_SUCCESS) {
+		sedbg("RTL SE failed (%zu)\n", ret);
+		return HAL_FAIL;
 	}
 	return HAL_SUCCESS;
 }
@@ -1264,12 +1229,22 @@ int ameba_hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 {
 	AWRAP_ENTER;
 
-	HAL_RTL_CHECKBUSY();
+	uint32_t ret;
+
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
+	}
 
 	if (cert_idx == FACTORYKEY_RTL_CERT) {
-		HAL_COPY_DATA(cert, HA_IOT_Device_Cert, sizeof(HA_IOT_Device_Cert));
+		ret = rtl_read_factory_cert_wrapper(cert);
 	} else {
 		return HAL_NOT_SUPPORTED;
+	}
+
+	if (ret != RTL_HAL_SUCCESS) {
+		sedbg("RTL SE failed (%zu)\n", ret);
+		return HAL_FAIL;
 	}
 	return HAL_SUCCESS;
 }
@@ -1291,17 +1266,17 @@ int ameba_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t
 	uint32_t ret;
 	unsigned char aes_output[HAL_MAX_BUF_SIZE];
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_AES_128 != key_storage[key_idx].key_type)
 	&& (HAL_KEY_AES_192 != key_storage[key_idx].key_type)
 	&& (HAL_KEY_AES_256 != key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;	/* Mode not match */
 	}
 
-	init_stat = HAL_BUSY;
 	switch (aes_param->mode) {
 	case HAL_AES_ECB_NOPAD:
 	case HAL_AES_ECB_ISO9797_M1:
@@ -1318,18 +1293,17 @@ int ameba_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t
 		ret = rtl_cryptoAES_cbc_wrapper(key_storage[key_idx].aes_key, key_storage[key_idx].aes_key_len, dec_data->data, dec_data->data_len, aes_output, RTL_ENCRYPT);
 		break;
 	case HAL_AES_CTR:
-		ret = rtl_cryptoAES_cbc_wrapper(key_storage[key_idx].aes_key, key_storage[key_idx].aes_key_len, dec_data->data, dec_data->data_len, aes_output, RTL_ENCRYPT);
+		ret = rtl_cryptoAES_ctr_wrapper(key_storage[key_idx].aes_key, key_storage[key_idx].aes_key_len, dec_data->data, dec_data->data_len, aes_output, RTL_ENCRYPT);
 		break;
 	default:
 		return HAL_NOT_SUPPORTED;
 	}
 
-	if (ret == HAL_SUCCESS) {
+	if (ret == RTL_HAL_SUCCESS) {
 		HAL_COPY_DATA(enc_data, aes_output, dec_data->data_len);
 	}
 
-	init_stat = HAL_SUCCESS;
-	if (ret != HAL_SUCCESS) {
+	if (ret != RTL_HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
@@ -1343,17 +1317,17 @@ int ameba_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t
 	uint32_t ret;
 	unsigned char aes_output[HAL_MAX_BUF_SIZE];
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_AES_128 != key_storage[key_idx].key_type)
 	&& (HAL_KEY_AES_192 != key_storage[key_idx].key_type)
 	&& (HAL_KEY_AES_256 != key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
 	}
 
-	init_stat = HAL_BUSY;
 	switch (aes_param->mode) {
 	case HAL_AES_ECB_NOPAD:
 	case HAL_AES_ECB_ISO9797_M1:
@@ -1370,18 +1344,17 @@ int ameba_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t
 		ret = rtl_cryptoAES_cbc_wrapper(key_storage[key_idx].aes_key, key_storage[key_idx].aes_key_len, enc_data->data, enc_data->data_len, aes_output, RTL_DECRYPT);
 		break;
 	case HAL_AES_CTR:
-		ret = rtl_cryptoAES_cbc_wrapper(key_storage[key_idx].aes_key, key_storage[key_idx].aes_key_len, enc_data->data, enc_data->data_len, aes_output, RTL_DECRYPT);
+		ret = rtl_cryptoAES_ctr_wrapper(key_storage[key_idx].aes_key, key_storage[key_idx].aes_key_len, enc_data->data, enc_data->data_len, aes_output, RTL_DECRYPT);
 		break;
 	default:
 		return HAL_NOT_SUPPORTED;
 	}
 
-	if (ret == HAL_SUCCESS) {
+	if (ret == RTL_HAL_SUCCESS) {
 		HAL_COPY_DATA(dec_data, aes_output, enc_data->data_len);
 	}
 
-	init_stat = HAL_SUCCESS;
-	if (ret != HAL_SUCCESS) {
+	if (ret != RTL_HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
@@ -1396,15 +1369,15 @@ int ameba_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t k
 	size_t output_len;
 	unsigned char output[HAL_MAX_BUF_SIZE] = {0};
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_RSA_1024 > key_storage[key_idx].key_type)
 	&& (HAL_KEY_RSA_4096 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
 	}
-	init_stat = HAL_BUSY;
 
 	ret = rtl_rsa_pkcs1_encrypt(&(key_storage[key_idx].rsa_ctx), hal_rand, NULL, RTL_RSA_PUBLIC, dec_data->data_len, dec_data->data, output);
 
@@ -1415,7 +1388,6 @@ int ameba_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t k
 		HAL_COPY_DATA(enc_data, output, output_len);
 	}
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -1432,15 +1404,15 @@ int ameba_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t k
 	unsigned char input[HAL_MAX_BUF_SIZE] = {0};
 	unsigned char output[HAL_MAX_BUF_SIZE] = {0};
 
-	HAL_RTL_CHECKBUSY();
-	if (init_stat == HAL_NOT_INITIALIZED) {
-		return HAL_NOT_INITIALIZED;
+	ret = rtl_chk_stat();
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
+
 	if ((HAL_KEY_RSA_1024 > key_storage[key_idx].key_type)
 	&& (HAL_KEY_RSA_4096 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
 	}
-	init_stat = HAL_BUSY;
 
 	memcpy(input, enc_data->data, enc_data->data_len);
 
@@ -1450,7 +1422,6 @@ int ameba_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t k
 		HAL_COPY_DATA(dec_data, output, output_len);
 	}
 
-	init_stat = HAL_SUCCESS;
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -1469,7 +1440,7 @@ int ameba_hal_write_storage(uint32_t ss_idx, hal_data *data)
 
 	ret = rtl_write_storage_wrapper(ss_idx, data);
 
-	if (ret != HAL_SUCCESS) {
+	if (ret != RTL_HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
@@ -1484,7 +1455,7 @@ int ameba_hal_read_storage(uint32_t ss_idx, hal_data *data)
 	
 	ret = rtl_read_storage_wrapper(ss_idx, data);
 
-	if (ret != HAL_SUCCESS) {
+	if (ret != RTL_HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
 	}
