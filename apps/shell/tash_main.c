@@ -53,6 +53,7 @@ enum tash_input_state_e {
 
 static int tash_running = FALSE;
 
+#if TASH_MAX_STORE > 0
 static void tash_clear_line(int fd, int len)
 {
 	if (write(fd, (const void *)"\r", sizeof("\r")) <= 0) {
@@ -65,6 +66,7 @@ static void tash_clear_line(int fd, int len)
 		}
 	}
 }
+#endif
 
 static void tash_print_cmd(int fd, char *cmd, int pos)
 {

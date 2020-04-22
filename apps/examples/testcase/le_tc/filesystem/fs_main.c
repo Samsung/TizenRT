@@ -1875,7 +1875,9 @@ static void tc_fs_vfs_rmdir_null_path_n(void)
 static void tc_fs_vfs_unlink_p(void)
 {
 	char *filepath = VFS_UNLINK_FILE_PATH;
+#if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 	char *impty_filepath = DEV_EMPTY_UNLINK_FILE_PATH;
+#endif
 	int ret;
 	int fd;
 
