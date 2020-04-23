@@ -709,6 +709,11 @@ static int video_set_fmt(FAR video_upperhalf_t *priv, FAR struct v4l2_format *fm
 		return -EINVAL;
 	}
 
+	if (priv->video_inf.state == VIDEO_STATE_STREAMON || priv->still_inf.state == VIDEO_STATE_STREAMON) {
+		videodbg("Device currently streaming, unable to change parameters.\n");
+		return -EBUSY;
+	}
+
 	video_devops = priv->dev->ops;
 
 	if ((video_devops == NULL) || (video_devops->set_format == NULL)) {
@@ -747,6 +752,11 @@ static int video_set_parm(FAR video_upperhalf_t *priv, FAR struct v4l2_streampar
 
 	if (priv == NULL) {
 		return -EINVAL;
+	}
+
+	if (priv->video_inf.state == VIDEO_STATE_STREAMON || priv->still_inf.state == VIDEO_STATE_STREAMON) {
+		videodbg("Device currently streaming, unable to change parameters.\n");
+		return -EBUSY;
 	}
 
 	video_devops = priv->dev->ops;
@@ -1116,6 +1126,11 @@ static int video_set_ext_ctrls(FAR video_upperhalf_t *priv, FAR struct v4l2_ext_
 
 	if ((priv == NULL) || (ctrls == NULL)) {
 		return -EINVAL;
+	}
+
+	if (priv->video_inf.state == VIDEO_STATE_STREAMON || priv->still_inf.state == VIDEO_STATE_STREAMON) {
+		videodbg("Device currently streaming, unable to change parameters.\n");
+		return -EBUSY;
 	}
 
 	video_devops = priv->dev->ops;
