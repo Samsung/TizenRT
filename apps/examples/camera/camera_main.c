@@ -138,7 +138,7 @@ static unsigned int n_buffers;
 
 static uint8_t camera_main_file_count = 0;
 static char camera_main_filename[IMAGE_FILENAME_LEN];
-static const char *save_dir = "/mnt";
+static const char *save_dir = "/mnt/videos";
 
 struct camera_formats cm_format[MAX_FORMAT];
 

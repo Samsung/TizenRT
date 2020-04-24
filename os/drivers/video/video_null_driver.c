@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+#include <fcntl.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
@@ -35,6 +36,7 @@
 #include <tinyara/wqueue.h>
 
 #include <video/video_halif.h>
+#include <video/video.h>
 
 #include "video_null_driver.h"
 
@@ -49,6 +51,36 @@
 #define MAX_FRAMES 7
 /* Used only in case of discrete */
 #define MAX_INTERVAL 5
+
+/* Normalized Frame Interval numerators based on fps */
+#define FINT_30_NUM 333333
+#define FINT_20_NUM 500000
+#define FINT_15_NUM 666666
+#define FINT_10_NUM 1000000 /* Two denominators defined for 10fps transfer, refer "v4l2_format_s supported_formats[]" */
+#define FINT_10a_NUM 999999 /* We regard both as same for setting the worker delay */
+
+/* Normalized 8 digit denominator for simplified mathematical calculations
+   of up to 6 decimal places with aforementioned Frame Interval Numerators
+*/
+#define FINT_DEN 10000000
+
+/* Standard delay (in ms) for worker thread callback at 30fps for various resolutions*/
+#define S_DELAY_QVGA 32
+#define S_DELAY_VGA 28
+#define S_DELAY_QUADVGA 15
+#define S_DELAY_HD 19
+#define S_DELAY_FULLHD 4
+#define S_DELAY_5M 0
+#define S_DELAY_3M 0
+
+/* Excess delay (in ms) for worker thread callback for lower fps */
+#define E_DELAY_FPS_30 0
+#define E_DELAY_FPS_20 17
+#define E_DELAY_FPS_15 33
+#define E_DELAY_FPS_10 67
+
+/* Default Worker Delay, QVGA Video Frames at 30 fps */
+#define W_DELAY_DEFAULT 32
 
 #define CHECK_RANGE(value, min, max, step) do { \
 												if ((value < min) || \
@@ -144,8 +176,14 @@ struct dummy_null_priv_s {
 	struct v4l2_format_s *def_format;	/* Reference to default format */
 	struct v4l2_format_s *cur_format;	/* Reference to current format */
 	struct v4l2_frames_s *cur_frame;	/* Reference to current frame */
+	struct v4l2_fract cur_fintvl;		/* Current Frame Interval, Default 30 fps*/
+	uint8_t w_delay;			/* Delay, in clock ticks, for the worker*/
 };
 typedef struct dummy_null_priv_s null_priv_t;
+
+/* Array of worker thread time delays(in ms) for streaming at 30fps */
+/* TODO: Proper worker delays for 3M and 5M resolutions to be calculated */
+uint8_t std_w_delays[] = {S_DELAY_QVGA, S_DELAY_VGA, S_DELAY_QUADVGA, S_DELAY_HD, S_DELAY_FULLHD, S_DELAY_5M, S_DELAY_3M};
 
 struct video_devops_s dummy_null_video_ops = {
 	.open = video_null_open,
@@ -169,24 +207,24 @@ struct video_devops_s dummy_null_video_ops = {
 struct v4l2_format_s supported_formats[] = {
 	{
 		"MJPEG", V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_PIX_FMT_MJPEG, V4L2_COLORSPACE_SRGB, 12, {
-			{VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_VGA, VIDEO_VSIZE_VGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_QUADVGA, VIDEO_VSIZE_QUADVGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_HD, VIDEO_VSIZE_HD, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_5M, VIDEO_VSIZE_5M, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_3M, VIDEO_VSIZE_3M, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,}
+			{VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_VGA, VIDEO_VSIZE_VGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_QUADVGA, VIDEO_VSIZE_QUADVGA, V4L2_FRMIVAL_TYPE_DISCRETE, {{FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_HD, VIDEO_VSIZE_HD, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_5M, VIDEO_VSIZE_5M, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_3M, VIDEO_VSIZE_3M, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,}
 		}, MAX_FRAMES
 	},
 	{
 		"YUY2", V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_PIX_FMT_YUY2, V4L2_COLORSPACE_SRGB, 16, {
-			{VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_VGA, VIDEO_VSIZE_VGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_QUADVGA, VIDEO_VSIZE_QUADVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_HD, VIDEO_VSIZE_HD, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_5M, VIDEO_VSIZE_5M, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,},
-			{VIDEO_HSIZE_3M, VIDEO_VSIZE_3M, V4L2_FRMIVAL_TYPE_DISCRETE, { {333333,}, {500000,}, {666666,}, {1000000,}, {999999,} }, MAX_INTERVAL,}
+			{VIDEO_HSIZE_QVGA, VIDEO_VSIZE_QVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_VGA, VIDEO_VSIZE_VGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_QUADVGA, VIDEO_VSIZE_QUADVGA, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_HD, VIDEO_VSIZE_HD, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_FULLHD, VIDEO_VSIZE_FULLHD, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_5M, VIDEO_VSIZE_5M, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,},
+			{VIDEO_HSIZE_3M, VIDEO_VSIZE_3M, V4L2_FRMIVAL_TYPE_DISCRETE, { {FINT_30_NUM,}, {FINT_20_NUM,}, {FINT_15_NUM,}, {FINT_10_NUM,}, {FINT_10a_NUM,} }, MAX_INTERVAL,}
 		}, MAX_FRAMES
 	}
 };
@@ -237,6 +275,88 @@ struct v4l2_mapping_s ctrl_mapping[] = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: video_null_set_worker_delay
+ *
+ * Description:
+ *   This function calculates the delay requred for the worker thread
+ *   to invoke a callback based on the resolution chosen and the
+ *   video frames-per-second required.
+ *
+ * Input Paramaters:
+ *   priv - pointer to null_priv_t object holding the frame
+ *   resolution attributes.
+ *
+ * Returned Values:
+ *   OK on success, appropriate error code otherwise.
+ ****************************************************************************/
+static int video_null_set_worker_delay(FAR null_priv_t *priv)
+{
+	int i;
+	struct v4l2_format_s *format;
+	if (priv == NULL) {
+		videodbg("Unable to set worker delay duration!!!\n");
+		return -EINVAL;
+	}
+
+	format = priv->cur_format;
+
+	/* Delay depends on frame size to be read from file to the transfer buffer */
+	/* Getting the time delay for the default 30fps transfer based on resolution */
+	if (format == NULL) {
+		videodbg("No current format set, using default format instead\n");
+		format = priv->def_format;
+	}
+
+	if (!priv->cur_frame) {
+		priv->w_delay = W_DELAY_DEFAULT;
+		videodbg("No current frame set, continue with default worker_delay\n");
+		return OK;
+	}
+
+	for (i = 0; i < format->framecount; i++) {
+		if (format->frames[i].wHeight == priv->cur_frame->wHeight) {
+			break;
+		}
+	}
+
+	if (i == format->framecount) {
+		videodbg("No matching standard frame resolution found, kindly check");
+		return -EINVAL;
+	}
+
+	priv->w_delay = std_w_delays[i];
+	videodbg("Frame Interval = %d/%d\n", priv->cur_fintvl.numerator, priv->cur_fintvl.denominator);
+	/* Adding the excess delay required for transfer at less than 30fps */
+
+	switch (priv->cur_fintvl.numerator) {
+	case FINT_30_NUM: {
+		priv->w_delay += E_DELAY_FPS_30;
+		break;
+	}
+	case FINT_20_NUM: {
+		priv->w_delay += E_DELAY_FPS_20;
+		break;
+	}
+	case FINT_15_NUM: {
+		priv->w_delay += E_DELAY_FPS_15;
+		break;
+	}
+	case FINT_10a_NUM:
+	case FINT_10_NUM: {
+		priv->w_delay += E_DELAY_FPS_10;
+		break;
+	}
+	default: {
+		priv->w_delay = 0;
+		videodbg("Invalid Frame Interval, please choose from current options!!!\n");
+		return -EINVAL;
+	}
+	}
+	return OK;
+}
+
 /****************************************************************************
 * Name: video_null_takesem
 *
@@ -412,11 +532,9 @@ int video_null_init_transfer(FAR null_priv_t *priv)
 	priv->trfsize = priv->cur_frame->wWidth * priv->cur_frame->wHeight * 2;
 
 	/* Free the old buffer and allocate memory for new size */
-	if (priv->trfsize != priv->reqsize) {
-		if (priv->trfbuff) {
-			kmm_free(priv->trfbuff);
-			priv->trfbuff = NULL;
-		}
+	if (priv->trfbuff) {
+		kmm_free(priv->trfbuff);
+		priv->trfbuff = NULL;
 	}
 
 	if (!priv->trfbuff) {
@@ -429,18 +547,17 @@ int video_null_init_transfer(FAR null_priv_t *priv)
 	snprintf(filename, FILE_NAMELEN, FILE_FORMAT, priv->cur_frame->wWidth, priv->cur_frame->wHeight, priv->cur_format->description);
 	videodbg("Video File Name: %s\n", filename);
 
-#if 0
 	fd = open(filename, O_RDOK);
 	if (fd < 0) {
 		return -ENOENT;
 	}
 
-	ret = read(fd, priv->trfbuff, priv->reqsize);
+	ret = read(fd, priv->trfbuff, priv->trfsize);
 	if (ret < 0) {
-		return ret;
+		videovdbg("No bytes read, init_transfer failed.\n");
 	}
-#endif
 
+	close(fd);
 	return ret;
 }
 
@@ -648,7 +765,7 @@ static int video_null_set_buf(FAR void *video_private, enum v4l2_buf_type type, 
 	video_null_givesem(&priv->sem);
 
 	if (work_available(&priv->trfwork)) {
-		(void)work_queue(HPWORK, &priv->trfwork, (worker_t) video_null_transfer_work, priv, 3);
+		(void)work_queue(HPWORK, &priv->trfwork, (worker_t) video_null_transfer_work, priv, priv->w_delay);
 	}
 	return ret;
 }
@@ -1002,6 +1119,10 @@ static int video_null_set_format(FAR void *video_private, FAR struct v4l2_format
 	}
 
 	ret = video_null_v4l2_try_format(priv, fmt, 1);
+	/* Format changed, set worker function delay accordingly */
+	if (ret > 0) {
+		video_null_set_worker_delay(priv);
+	}
 
 done:
 	video_null_givesem(&priv->sem);
@@ -1079,16 +1200,16 @@ static int video_null_get_range_of_frameinterval(FAR void *video_private, FAR st
 	if (frame->type == V4L2_FRMIVAL_TYPE_DISCRETE) {
 		fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
 		fival->discrete.numerator = frame->intervals[index].min_numerator;
-		fival->discrete.denominator = 10000000;
+		fival->discrete.denominator = FINT_DEN;
 		video_null_reduce_fraction(&fival->discrete.numerator, &fival->discrete.denominator);
 	} else if (frame->type == V4L2_FRMIVAL_TYPE_STEPWISE) {
 		fival->type = V4L2_FRMIVAL_TYPE_STEPWISE;
 		fival->stepwise.min.numerator = frame->intervals[index].min_numerator;
-		fival->stepwise.min.denominator = 10000000;
+		fival->stepwise.min.denominator = FINT_DEN;
 		fival->stepwise.max.numerator = frame->intervals[index].max_numerator;
-		fival->stepwise.max.denominator = 10000000;
+		fival->stepwise.max.denominator = FINT_DEN;
 		fival->stepwise.step.numerator = frame->intervals[index].step_numerator;
-		fival->stepwise.step.denominator = 10000000;
+		fival->stepwise.step.denominator = FINT_DEN;
 		video_null_reduce_fraction(&fival->stepwise.min.numerator, &fival->stepwise.min.denominator);
 		video_null_reduce_fraction(&fival->stepwise.max.numerator, &fival->stepwise.max.denominator);
 		video_null_reduce_fraction(&fival->stepwise.step.numerator, &fival->stepwise.step.denominator);
@@ -1159,12 +1280,23 @@ static int video_null_set_frameinterval(FAR void *video_private, FAR struct v4l2
 
 	/* Return the actual frame period. */
 	timeperframe.numerator = frameInterval;
-	timeperframe.denominator = 10000000;
-	video_null_reduce_fraction(&timeperframe.numerator, &timeperframe.denominator);
+	timeperframe.denominator = FINT_DEN;
 
+	/* Set current frame interval details according to the unreduced numerator and denominator */
+	priv->cur_fintvl.numerator = timeperframe.numerator;
+	priv->cur_fintvl.denominator = timeperframe.denominator;
+
+	video_null_reduce_fraction(&timeperframe.numerator, &timeperframe.denominator);
+	videovdbg("Reduced frame time interval numerator = %d, denominator = %d\n", timeperframe.numerator, timeperframe.denominator);
 	parm->parm.capture.timeperframe = timeperframe;
+
 	/* Initialze the tranfer buffer with current frame details */
 	ret = video_null_init_transfer(priv);
+	/* Frame Interval changed, set worker function delay accordingly */
+	if (ret > 0) {
+		video_null_set_worker_delay(priv);
+	}
+
 out:
 	video_null_givesem(&priv->sem);
 	return ret;
@@ -1481,6 +1613,13 @@ int video_null_initialize(const char *devpath)
 	priv->def_format = &priv->fmt[0];
 	priv->cur_format = &priv->fmt[0];
 	priv->cur_frame = &priv->fmt[0].frames[0];
+	/* Set the default frame interval(30 fps) */
+	priv->cur_fintvl.numerator = FINT_30_NUM; /*Standard numerator for 30fps transfer*/
+	priv->cur_fintvl.denominator = FINT_DEN;  /*Standard 8 digit denominator for convenient
+						    mathematical calculations with 6 decimal places
+						  */
+	priv->w_delay = W_DELAY_DEFAULT;
+
 	/* The initial reference count is 1 */
 	priv->crefs = 1;
 
