@@ -256,11 +256,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
 
-#if defined(CONFIG_ARMV8M_MPU) || defined(CONFIG_TASK_MONITOR)
+#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_TASK_MONITOR)
 		struct tcb_s *tcb = sched_self();
 #endif
 		/* Restore the MPU registers in case we are switching to an application task */
-#ifdef CONFIG_ARMV8M_MPU
+#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		up_set_mpu_app_configuration(tcb);
 #endif
 #ifdef CONFIG_TASK_MONITOR
@@ -294,11 +294,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
 
-#if defined(CONFIG_ARMV8M_MPU) || defined(CONFIG_TASK_MONITOR)
+#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_TASK_MONITOR)
 		struct tcb_s *tcb = sched_self();
 #endif
 		/* Restore the MPU registers in case we are switching to an application task */
-#ifdef CONFIG_ARMV8M_MPU
+#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		up_set_mpu_app_configuration(tcb);
 #endif
 #ifdef CONFIG_TASK_MONITOR
