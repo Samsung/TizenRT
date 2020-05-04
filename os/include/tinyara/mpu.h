@@ -45,8 +45,46 @@ enum {
 #endif
 #endif
 
+/* Enum for MPU region numbers */
+
+enum MPU_REG_NUM {
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	MPU_REG_NUM_COM_LIB_TXT,	/* Common Binary */
+	MPU_REG_NUM_COM_LIB_RO,
+	MPU_REG_NUM_COM_LIB_DATA,
+#else
+	MPU_REG_NUM_COM_LIB,
+#endif
+#endif
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	MPU_REG_NUM_APP_TXT,		/* Apps */
+	MPU_REG_NUM_APP_RO,
+	MPU_REG_NUM_APP_DATA,
+#else
+	MPU_REG_NUM_APP,
+#endif
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-#define STACKGUARD_MPU_REGION_NUM		3	/* Region number 3 is reserved for stack protection */
+	MPU_REG_NUM_STK,		/* Stack */
+#endif
+#else
+	MPU_REG_NUM_UFLASH,
+	MPU_REG_NUM_URAM,
+#endif
+	MPU_REG_NUM_MAX
+};
+
+#ifdef CONFIG_ARMV7M_MPU
+#define CUR_MPU_REG_NUM CONFIG_ARMV7M_MPU_NREGIONS
+#elif defined(CONFIG_ARMV8M_MPU)
+#define CUR_MPU_REG_NUM CONFIG_ARMV8M_MPU_NREGIONS
+#endif
+
+#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU)
+#if (MPU_REG_NUM_MAX >= CUR_MPU_REG_NUM)
+#error "MPU region numbers exceeded !!"
+#endif
 #endif
 
 #endif

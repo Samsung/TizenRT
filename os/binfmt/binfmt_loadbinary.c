@@ -33,6 +33,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binary_manager.h>
+#include <tinyara/mpu.h>
 
 #include "binfmt.h"
 #include "binary_manager/binary_manager.h"
@@ -46,7 +47,6 @@ struct binary_s *g_lib_binp;
 uint32_t *g_umm_app_id;
 
 #ifdef CONFIG_ARMV7M_MPU
-extern uint32_t g_mpu_region_nr;
 void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 #endif
 #endif
@@ -168,11 +168,11 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		if (bin->islibrary) {
 #ifdef CONFIG_ARMV7M_MPU
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			mpu_get_register_value(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_TEXT], bin->textsize, true, true);
-			mpu_get_register_value(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_RO], bin->rosize, true, false);
-			mpu_get_register_value(NULL, g_mpu_region_nr++, bin->alloc[ALLOC_DATA], bin->ramsize, false, false);
+			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_TXT, bin->alloc[ALLOC_TEXT], bin->textsize, true, true);
+			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_RO, bin->alloc[ALLOC_RO], bin->rosize, true, false);
+			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_DATA, bin->alloc[ALLOC_DATA], bin->ramsize, false, false);
 #else
-			mpu_get_register_value(NULL, g_mpu_region_nr++, bin->ramstart, bin->ramsize, false, false);
+			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB, bin->ramstart, bin->ramsize, false, false);
 #endif
 #endif
 		}
