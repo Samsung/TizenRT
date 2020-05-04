@@ -59,6 +59,7 @@
 #include <assert.h>
 
 #include <tinyara/userspace.h>
+#include <tinyara/mpu.h>
 
 #include "mpu.h"
 #include "cache.h"
@@ -85,10 +86,10 @@
 const struct mpu_region_info regions_info[] = {
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	{
-		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, 0,
+		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, MPU_REG_NUM_UFLASH,
 	},
 	{
-		&mpu_userintsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, 1,
+		&mpu_userintsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, MPU_REG_NUM_URAM,
 	},
 #endif
 };
@@ -97,9 +98,6 @@ const struct mpu_region_info regions_info[] = {
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
-#if defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_APP_BINARY_SEPARATION)
-uint32_t g_mpu_region_nr = 0;
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -137,8 +135,8 @@ void imxrt_mpu_initialize(void)
 	int i;
 
 	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
-		lldbg("Region = %u base = 0x%x size = %u\n", g_mpu_region_nr, regions_info[i].base, regions_info[i].size);
-		regions_info[i].call(g_mpu_region_nr++, regions_info[i].base, regions_info[i].size);
+		lldbg("Region = %u base = 0x%x size = %u\n", regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
+		regions_info[i].call(regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
 	}
 #endif
 	/* Then enable the MPU */
