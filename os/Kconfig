@@ -274,6 +274,7 @@ config SUPPORT_COMMON_BINARY
 	bool "Support Common Binary"
 	default n
 	depends on FS_SMARTFS
+	select LIB_HASHMAP
 	---help---
 		This config indicates whether we support common binary. The common binary will
 		contain all the common libraries which will be used by the different loadable

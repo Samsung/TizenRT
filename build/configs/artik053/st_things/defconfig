@@ -1200,6 +1200,7 @@ CONFIG_MEMCPY_INDEXED_COPY=y
 # CONFIG_ARCH_STRNLEN is not set
 # CONFIG_ARCH_BZERO is not set
 # CONFIG_LIB_ENVPATH is not set
+CONFIG_LIB_HASHMAP=y
 
 #
 # Program Execution Options

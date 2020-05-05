@@ -472,6 +472,12 @@ config LIB_ENVPATH
                 Use the contents of the common environment variable to locate executable
                 or library files.  Default: n
 
+config LIB_HASHMAP
+	bool "Generic hashmap implementation"
+	default n
+	---help---
+		Implementation of generic hashmap API's
+
 comment "Program Execution Options"
 
 config LIBC_EXECFUNCS

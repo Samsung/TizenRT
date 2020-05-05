@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
+#include <hashmap.h>
 
 #include "ocpayload.h"
 
@@ -43,7 +44,6 @@
 #include "things_data_manager.h"
 
 #include "things_req_handler.h"
-#include "utils/things_hashmap.h"
 
 #ifdef __ST_THINGS_RTOS__
 #include "ctype.h"

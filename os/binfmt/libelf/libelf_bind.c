@@ -95,7 +95,8 @@
  * Private Data
  ****************************************************************************/
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-static struct symtab_s *g_lib_symtab;
+#include <hashmap.h>
+static struct hashmap_s *g_lib_symhash;
 static int g_num_lib_syms;
 #endif
 
@@ -290,61 +291,65 @@ static int export_library_symtab(FAR struct elf_loadinfo_s *loadinfo)
 	Elf32_Shdr *symtab = &loadinfo->shdr[loadinfo->symtabidx];
 	int nsyms = symtab->sh_size / sizeof(Elf32_Sym);
 
-	g_lib_symtab = kmm_malloc(nsyms * sizeof(struct symtab_s));
-	if (!g_lib_symtab) {
-		berr("Failed to allocate memory for exporting symbol table\n");
-		return -ENOMEM;
-	}
+	/* nsyms is the number of symbols in the binary. We create a hashmap
+	 * of half this number, because generally every binary contains some
+	 * global and some local symbols. We are interested only to export the
+	 * global symbols. So, we start with a hashmap size of nsyms/2. If
+	 * the number of global symbols is more than nsyms/2, the hashmap will
+	 * increase its own size automatically with a realloc. This is a trade-off
+	 * to achieve optimal size versus load time
+	 */
+	g_lib_symhash = hashmap_create(nsyms / 2);
 
 	g_num_lib_syms = 0;
 	for (i = 0; i < nsyms; i++) {
 		Elf32_Sym sym;
-		ret = elf_readsym(loadinfo, i, &sym);
-		if (ret < 0) {
-			berr("Failed to read symbol[%d]: %d\n", i, ret);
-			goto ret_err;
+		Elf32_Sym *psym = &sym;
+
+		if (loadinfo->symtab) {
+			psym = loadinfo->symtab + sizeof(Elf32_Sym) * i;
+		} else {
+			ret = elf_readsym(loadinfo, i, &sym);
+			if (ret < 0) {
+				berr("Failed to read symbol[%d]: %d\n", i, ret);
+				goto ret_err;
+			}
 		}
 
-		if (ELF32_ST_BIND(sym.st_info) == STB_GLOBAL) {
-			ret = elf_symname(loadinfo, &sym);
+		if (ELF32_ST_BIND(psym->st_info) == STB_GLOBAL) {
+			ret = elf_symname(loadinfo, psym);
 			if (ret < 0) {
 				berr("SHN_UNDEF: Failed to get symbol name: %d\n", ret);
 				goto ret_err;
 			}
 
-			g_lib_symtab[g_num_lib_syms].sym_name = kmm_zalloc(strlen(loadinfo->iobuffer) + 1);
-			if (!g_lib_symtab[g_num_lib_syms].sym_name) {
-				berr("Error allocating symbol name %d entry\n", g_num_lib_syms);
-				ret = -ENOMEM;
-				goto ret_err_free_name;
-			}
+			unsigned long key = hashmap_get_hashval(loadinfo->iobuffer);
 
-			strcpy(g_lib_symtab[g_num_lib_syms].sym_name, loadinfo->iobuffer);
-			ret = elf_symvalue(loadinfo, &sym, 0, 0);
+			ret = elf_symvalue(loadinfo, psym, 0, 0);
 			if (ret < 0) {
 				if (ret == -ESRCH) {
 					berr("Undefined symbol[%d] has no name: %d\n", i, ret);
 				} else {
 					berr("Failed to get value of symbol[%d]: %d\n", i, ret);
 				}
-				goto ret_err_free_name;
+				goto ret_err;
 			}
-			g_lib_symtab[g_num_lib_syms].sym_value = sym.st_value;
+
+			if (!psym->st_value) {
+				binfo("Ignore symbol %s from export table due to zero address value\n", loadinfo->iobuffer);
+				continue;
+			}
+
+			hashmap_insert(g_lib_symhash, (void *)psym->st_value, key);
+
 			g_num_lib_syms++;
 		}
 	}
 
 	binfo("Total symbols in library = %d. Exported symbols = %d\n", nsyms, g_num_lib_syms);
-	kmm_realloc(g_lib_symtab, g_num_lib_syms * sizeof(struct symtab_s));
 	return OK;
-
-ret_err_free_name:
-	for (i = 0; i <= g_num_lib_syms; i++) {
-		kmm_free(g_lib_symtab[i].sym_name);
-	}
-
 ret_err:
-	kmm_free(g_lib_symtab);
+	hashmap_delete(g_lib_symhash);
 	return ret;
 }
 #endif
@@ -393,7 +398,7 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 			goto ret_err;
 		}
 	} else {
-		exports = g_lib_symtab;
+		exports = (struct symtab_s *)g_lib_symhash;
 		nexports = g_num_lib_syms;
 	}
 #endif

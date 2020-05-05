@@ -322,6 +322,20 @@ int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR co
 		}
 
 		/* Check if the base code exports a symbol of this name */
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (!exports) {
+			berr("SHN_UNDEF: Exports not found\n");
+			return -ENOENT;
+		}
+
+		sym->st_value = (uint32_t)hashmap_get((struct hashmap_s *) exports, hashmap_get_hashval(loadinfo->iobuffer));
+
+		if (!sym->st_value) {
+			berr("SHN_UNDEF: Exported symbol \"%s\" not found\n", loadinfo->iobuffer);
+			return -ENOENT;
+		}
+
+#else
 
 #ifdef CONFIG_SYMTAB_ORDEREDBYNAME
 		symbol = symtab_findorderedbyname(exports, (FAR char *)loadinfo->iobuffer, nexports);
@@ -338,6 +352,8 @@ int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR co
 		binfo("SHN_UNDEF: name=%s %08x+%08x=%08x\n", loadinfo->iobuffer, sym->st_value, symbol->sym_value, sym->st_value + symbol->sym_value);
 
 		sym->st_value += (Elf32_Word)((uintptr_t)symbol->sym_value);
+#endif
+
 		sym->st_shndx = SHN_ABS;
 	}
 	break;
