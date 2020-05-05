@@ -98,6 +98,12 @@ ifeq ($(CONFIG_LIB_ENVPATH),y)
 CSRCS += lib_envpath.c
 endif
 
+# Hashmap implementation
+
+ifeq ($(CONFIG_LIB_HASHMAP),y)
+CSRCS += lib_hashmap.c
+endif
+
 # Add the misc directory to the build
 
 DEPPATH += --dep-path misc

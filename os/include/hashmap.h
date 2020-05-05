@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef _THINGS_HASHMAP_H
-#define _THINGS_HASHMAP_H
+#ifndef _HASHMAP_H
+#define _HASHMAP_H
 
 /** Hashmap structure (forward declaration) */
 typedef struct {
@@ -53,4 +53,4 @@ extern unsigned long hashmap_get_hashval(unsigned char *str);
 
 extern unsigned long* hashmap_get_keyset(struct hashmap_s *);
 
-#endif							//_THINGS_HASHMAP_H
+#endif							//_HASHMAP_H

@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <json/cJSON.h>
+#include <hashmap.h>
 
 #include "octypes.h"
 #include "ocpayload.h"
@@ -33,7 +34,6 @@
 #include "logging/things_logger.h"
 #include "utils/things_malloc.h"
 #include "utils/things_util.h"
-#include "utils/things_hashmap.h"
 #include "utils/things_string.h"
 #include "things_resource.h"
 #include "things_data_manager.h"

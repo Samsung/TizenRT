@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 
-#include "things_hashmap.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "things_malloc.h"
+#include <tinyara/mm/mm.h>
+#include <hashmap.h>
 
 /* this should be prime */
 #define TABLE_STARTSIZE 1021
@@ -72,7 +72,11 @@ static void rehash(struct hashmap_s *hm)
 	h_entry_s *table = hm->table;
 
 	hm->size = find_prime_greater_than(size << 1);
-	hm->table = (h_entry_s *) things_calloc(sizeof(h_entry_s), hm->size);
+#ifdef __KERNEL__
+	hm->table = (h_entry_s *) kmm_calloc(sizeof(h_entry_s), hm->size);
+#else
+	hm->table = (h_entry_s *) calloc(sizeof(h_entry_s), hm->size);
+#endif
 	hm->count = 0;
 
 	while (--size >= 0) {
@@ -81,12 +85,20 @@ static void rehash(struct hashmap_s *hm)
 		}
 	}
 
-	things_free(table);
+#ifdef __KERNEL__
+	kmm_free(table);
+#else
+	free(table);
+#endif
 }
 
 struct hashmap_s *hashmap_create(int startsize)
 {
-	struct hashmap_s *hm = (struct hashmap_s *)things_malloc(sizeof(struct hashmap_s));
+#ifdef __KERNEL__
+	struct hashmap_s *hm = (struct hashmap_s *)kmm_malloc(sizeof(struct hashmap_s));
+#else
+	struct hashmap_s *hm = (struct hashmap_s *)malloc(sizeof(struct hashmap_s));
+#endif
 
 	if (hm == NULL) {
 		return NULL;
@@ -98,7 +110,11 @@ struct hashmap_s *hashmap_create(int startsize)
 		startsize = find_prime_greater_than(startsize - 2);
 	}
 
-	hm->table = (h_entry_s *) things_calloc(sizeof(h_entry_s), startsize);
+#ifdef __KERNEL__
+	hm->table = (h_entry_s *) kmm_calloc(sizeof(h_entry_s), startsize);
+#else
+	hm->table = (h_entry_s *) calloc(sizeof(h_entry_s), startsize);
+#endif
 	hm->size = startsize;
 	hm->count = 0;
 
@@ -171,7 +187,11 @@ unsigned long* hashmap_get_keyset(struct hashmap_s *hash)
 	if (hash->count) {
 		int i = 0;
 		int idx = 0;
-		keyset = things_malloc(sizeof(unsigned long) * hash->count);
+#ifdef __KERNEL__
+		keyset = kmm_malloc(sizeof(unsigned long) * hash->count);
+#else
+		keyset = malloc(sizeof(unsigned long) * hash->count);
+#endif
 		if (keyset != NULL) {
 			for (i = 0; i < hash->size; i++) {
 				if (hash->table[i].flags & ACTIVE) {
@@ -191,10 +211,17 @@ long hashmap_count(struct hashmap_s *hash)
 
 void hashmap_delete(struct hashmap_s *hash)
 {
+#ifdef __KERNEL__
 	if (hash != NULL) {
-		things_free(hash->table);
+		kmm_free(hash->table);
 	}
-	things_free(hash);
+	kmm_free(hash);
+#else
+	if (hash != NULL) {
+		free(hash->table);
+	}
+	free(hash);
+#endif
 }
 
 /*
