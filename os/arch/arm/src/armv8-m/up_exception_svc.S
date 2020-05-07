@@ -136,7 +136,6 @@
 	.thumb_func
 exception_common_svc:
 
-	mrs		r0, ipsr				/* R0=exception number */
 
 	/* Complete the context save */
 
@@ -148,6 +147,19 @@ exception_common_svc:
 	mov		sp, r1					/* Set the MSP to the PSP */
 
 1:
+	ldr		r2, xSecureContextConst		/* Read the location of xSecureContext i.e. &( xSecureContext ). */
+	ldr		r0, [r2]			/* Read xSecureContext - Value of xSecureContext must be in r0 as it is used as a parameter later. */
+
+	cbz		r0, save_ns_context
+	dmb
+	isb
+	push		{r0-r2, r14}
+	bl		SecureContext_SaveContext
+	pop		{r0-r3}				/* LR is now in r3. */
+	mov		lr, r3				/* LR = r3. */
+	mrs		r9, psplim
+	mov		r8, r0
+save_ns_context:
 	mov		r2, sp				/* R2=Copy of the main/process stack pointer */
 	add		r2, #HW_XCPT_SIZE		/* R2=MSP/PSP before the interrupt was taken */
 									/* (ignoring the xPSR[9] alignment bit) */
@@ -198,7 +210,7 @@ exception_common_svc:
 	 *   R0 = The IRQ number
 	 *   R1 = The top of the stack points to the saved state
 	 */
-
+	mrs		r0, ipsr			/* R0=exception number */
 	mov		r1, sp
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
@@ -302,6 +314,18 @@ exception_common_svc:
 	msrne	psp, r1					/* R1=The process stack pointer */
 #endif
 
+	msr		psplim, r9				/* Restore the PSPLIM register value for the task. */
+	ldr		r9, xSecureContextConst		/* Read the location of xSecureContext i.e. &( xSecureContext ). */
+	str		r8, [r9]
+	cmp		r8, #0
+	beq		6f
+	mov		r0, r8
+	dmb
+	isb
+	push		{r1, r14}
+	bl		SecureContext_LoadContext		/* Restore the secure context. */
+	pop		{r1, r14}
+6:
 	/* Restore the interrupt state */
 
 #ifdef CONFIG_ARMV8M_USEBASEPRI
@@ -319,5 +343,7 @@ exception_common_svc:
 	 */
 
 	bx		r14						/* And return */
+
+	xSecureContextConst: .word xSecureContext
 	.size	exception_common_svc, .-exception_common_svc
 	.end
