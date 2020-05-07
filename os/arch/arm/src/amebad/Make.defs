@@ -83,6 +83,10 @@ ifeq ($(CONFIG_ARCH_RAMVECTORS),y)
 CMN_CSRCS += up_ramvec_initialize.c up_ramvec_attach.c
 endif
 
+ifeq ($(CONFIG_ARMV8M_TRUSTZONE),y)
+CMN_ASRCS += up_secure_context.S
+endif
+
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CMN_CSRCS += up_mpu.c up_task_start.c up_pthread_start.c up_checkspace.c
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)

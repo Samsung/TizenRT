@@ -58,6 +58,13 @@ config ARMV8M_USEBASEPRI
 		hardfaults can confuse some debuggers. With the BASEPRI
 		register, these hardfaults, will be avoided.
 
+config ARMV8M_TRUSTZONE
+	bool "Enable Security Extension of ARMv8M"
+	default y
+	depends on ARCH_CORTEXM33
+	---help---
+		Enable the Security Extension for ARMv8M.
+
 config ARMV8M_ICACHE
 	bool "Use I-Cache"
 	default n

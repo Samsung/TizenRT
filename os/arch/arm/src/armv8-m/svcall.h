@@ -152,8 +152,77 @@
 
 #define SYS_signal_handler_return (7)
 
-#endif							/* CONFIG_BUILD_PROTECTED */
-#endif							/* CONFIG_LIB_SYSCALL */
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+/* SYS call 3:
+ *
+ * void SecureContext_Init(void);
+ */
+
+#define SYS_init_securecontext        (8)
+
+/* SYS call 4:
+ *
+ * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
+ */
+
+#define SYS_allocate_securecontext        (9)
+
+/* SYS call 5:
+ *
+ * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
+ */
+
+#define SYS_free_securecontext        (10)
+#endif					/* CONFIG_BUILD_PROTECTED */
+#else
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+/* SYS call 3:
+ *
+ * void SecureContext_Init(void);
+ */
+
+#define SYS_init_securecontext        (4)
+
+/* SYS call 4:
+ *
+ * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
+ */
+
+#define SYS_allocate_securecontext        (5)
+
+/* SYS call 5:
+ *
+ * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
+ */
+
+#define SYS_free_securecontext        (6)
+#endif
+
+#endif
+#else
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+/* SYS call 3:
+ *
+ * void SecureContext_Init(void);
+ */
+
+#define SYS_init_securecontext        (3)
+
+/* SYS call 4:
+ *
+ * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
+ */
+
+#define SYS_allocate_securecontext        (4)
+
+/* SYS call 5:
+ *
+ * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
+ */
+
+#define SYS_free_securecontext        (5)
+#endif
+#endif					/* CONFIG_LIB_SYSCALL */
 
 /************************************************************************************
  * Inline Functions

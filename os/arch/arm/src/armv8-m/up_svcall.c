@@ -99,6 +99,26 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 extern uint32_t g_assertpc;
 #endif
+
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+/**
+ * @brief A task is created without a secure context, and must call
+ * up_allocate_secure_context() to give itself a secure context before it makes
+ * any secure calls.
+ */
+#define NO_SECURE_CONTEXT			0x0
+/**
+ * @brief Opaque handle.
+ */
+struct SecureContext;
+typedef struct SecureContext*   SecureContextHandle_t;
+/**
+ * @brief Saved as part of the task context to indicate which context the
+ * task is using on the secure side.
+ */
+volatile SecureContextHandle_t xSecureContext = NO_SECURE_CONTEXT;
+#endif /* CONFIG_ARMV8M_TRUSTZONE */
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -537,6 +557,41 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	break;
 #endif
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+	case SYS_init_securecontext: {
+		/* De-prioritize the non-secure exceptions so that the
+		 * non-secure pendSV runs at the lowest priority
+		 */
+		SecureInit_DePrioritizeNSExceptions();
+
+		/* Initialize the secure context management system. */
+		SecureContext_Init();
+	}
+	break;
+
+	case SYS_allocate_securecontext: {
+		uint32_t ulR1;
+		struct tcb_s *tcb = sched_self();
+		ulR1 = regs[REG_R1];
+
+		/* Allocate and load a context for the secure task. */
+		xSecureContext = (SecureContextHandle_t) SecureContext_AllocateContext( ulR1 );
+		tcb->secure_handle = xSecureContext;
+
+		ASSERT( xSecureContext != NULL );
+		SecureContext_LoadContext( xSecureContext );
+	}
+	break;
+
+	case SYS_free_securecontext: {
+		uint32_t ulR1;
+		ulR1 = regs[REG_R1];
+
+		/* Free the secure context. */
+		SecureContext_FreeContext( ( SecureContextHandle_t ) ulR1 );
+	}
+	break;
+#endif
 	/* This is not an architecture-specific system call.  If TinyAra is built
 	 * as a standalone kernel with a system call interface, then all of the
 	 * additional system calls must be handled as in the default case.
