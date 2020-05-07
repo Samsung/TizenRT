@@ -49,6 +49,7 @@ COMPRESSION_TYPE = 0
 BLOCK_SIZE = 0
 endif
 
+BOARDNAME=$(CONFIG_ARCH_BOARD)
 APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
 
 SRCS += $(USERSPACE).c
@@ -75,6 +76,7 @@ endif
 clean:
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
+	$(call DELFILE, $(TOPDIR)/../tools/fs/contents-smartfs/$(BOARDNAME)/base-files/bins/$(BIN)_$(BIN_VER))
 	$(call CLEAN)
 
 distclean: clean
@@ -89,6 +91,8 @@ ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
 endif
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE)
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
+	$(Q) mkdir -p $(TOPDIR)/../tools/fs/contents-smartfs/$(BOARDNAME)/base-files/bins
+	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(TOPDIR)/../tools/fs/contents-smartfs/$(BOARDNAME)/base-files/bins/$(BIN)_$(BIN_VER)
 
 verify:
 # If we support common binary, then the symbols in the common binary will appear as UNDEFINED

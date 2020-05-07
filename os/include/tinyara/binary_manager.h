@@ -26,8 +26,9 @@
 #include <tinyara/config.h>
 #include <stdint.h>
 
-#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/fs/fs.h>
 
+#ifdef CONFIG_BINARY_MANAGER
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -69,6 +70,11 @@
 
 #define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
 
+#define BINARY_MNT_PATH                  CONFIG_MOUNT_POINT
+
+/* Mount point for User binaries */
+#define BINARY_DIR_PATH                  CONFIG_MOUNT_POINT"bins"
+
 /* Binary states used in state callback */
 enum binary_statecb_state_e {
 	BINARY_STARTED = 0,           /* Binary is started */
@@ -104,13 +110,31 @@ enum binmgr_response_result_type {
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+/* Binary header data */
+struct binary_header_s {
+	uint32_t crc_hash;
+	uint16_t header_size;
+	uint8_t bin_type;
+	uint8_t compression_type;
+	uint8_t bin_priority;
+	uint32_t bin_size;
+	char bin_name[BIN_NAME_MAX];
+	char bin_ver[BIN_VER_MAX];
+	uint32_t bin_ramsize;
+	uint32_t bin_stacksize;
+	char kernel_ver[KERNEL_VER_MAX];
+	uint32_t jump_addr;
+} __attribute__((__packed__));
+typedef struct binary_header_s binary_header_t;
+
 /* The structure of binary update information */
 struct binary_update_info_s {
-	int inactive_partsize;
+	int available_size;
 	char name[BIN_NAME_MAX];
-	char active_ver[BIN_VER_MAX];
-	char active_dev[BINMGR_DEVNAME_LEN];
+	char version[BIN_VER_MAX];
+#if KERNEL_BIN_COUNT > 1
 	char inactive_dev[BINMGR_DEVNAME_LEN];
+#endif
 };
 typedef struct binary_update_info_s binary_update_info_t;
 
@@ -191,7 +215,6 @@ typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-void binary_manager_register_upart(int part_num, char *name, int part_size);
 void binary_manager_register_kpart(int part_num, int part_size);
 
 #ifdef __cplusplus
