@@ -248,8 +248,10 @@ case ${1,,} in
 #Download ALL option
 all)
 	for part in ${uniq_parts[@]}; do
-		if [[ "$part" == "userfs" ]];then
-			continue
+		if [[ "${CONFIG_SUPPORT_COMMON_BINARY}" != "y" ]];then
+			if [[ "$part" == "userfs" ]];then
+				continue
+			fi
 		fi
 		if [[ "$part" == "ftl" ]];then
 			continue
