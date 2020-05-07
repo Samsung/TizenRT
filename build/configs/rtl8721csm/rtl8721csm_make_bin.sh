@@ -1,3 +1,4 @@
+#!/bin/bash
 ###########################################################################
 #
 # Copyright 2020 Samsung Electronics All Rights Reserved.
@@ -15,6 +16,11 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+
+THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
+TOP_PATH=${THIS_PATH}/../../../
+OS_PATH=${TOP_PATH}/os
+CONFIG=${OS_PATH}/.config
 
 echo "Realtek Postbuild Actions"
 export TOPDIR=/root/tizenrt/build/
@@ -90,9 +96,25 @@ cat /root/tizenrt/build/output/bin/xip_image2_prepend.bin /root/tizenrt/build/ou
 
 /root/tizenrt/build/tools/amebad/gnu_utility/pad.sh /root/tizenrt/build/output/bin/km4_image2_all.bin
 
-cat /root/tizenrt/build/output/bin/xip_image2_prepend.bin /root/tizenrt/build/output/bin/ram_2_prepend.bin /root/tizenrt/build/output/bin/psram_2_prepend.bin  > /root/tizenrt/build/output/bin/km4_image2_all.bin
+function concatenate_binary()
+{
+	if [ ! -f ${CONFIG} ];then
+		echo "No .config file"
+		exit 1
+	fi
 
-cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin  > /root/tizenrt/build/output/bin/km0_km4_image2.bin
+	source ${CONFIG}
+
+	if [ "${CONFIG_ARMV8M_TRUSTZONE}" != "y" ];then
+		echo "========== Concatenate_binary for TZ disabled =========="
+		cat /root/tizenrt/build/output/bin/xip_image2_prepend.bin /root/tizenrt/build/output/bin/ram_2_prepend.bin /root/tizenrt/build/output/bin/psram_2_prepend.bin  > /root/tizenrt/build/output/bin/km4_image2_all.bin
+		cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin  > /root/tizenrt/build/output/bin/km0_km4_image2.bin
+	else
+		echo "========== Concatenate_binary for TZ enabled =========="
+		cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin /root/tizenrt/build/tools/amebad/gnu_utility/km4_image3_all-en.bin /root/tizenrt/build/tools/amebad/gnu_utility/km4_image3_psram-en.bin > /root/tizenrt/build/output/bin/km0_km4_image2.bin
+	fi
+}
+concatenate_binary;
 
 #fi
 
