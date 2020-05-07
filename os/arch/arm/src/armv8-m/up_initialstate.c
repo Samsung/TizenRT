@@ -115,7 +115,9 @@ void up_initial_state(struct tcb_s *tcb)
 
 	xcp->regs[REG_R10] = (uint32_t)tcb->stack_alloc_ptr + 64;
 #endif
-
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+	xcp->regs[REG_R8] = (uint32_t)tcb->secure_handle;
+#endif
 	/* Save the task entry point (stripping off the thumb bit) */
 
 	xcp->regs[REG_PC] = (uint32_t)tcb->start & ~1;

@@ -119,7 +119,9 @@
 #include <sched.h>
 
 #include <arch/arch.h>
-
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#include <arch/chip/amebad_nsc.h>
+#endif
 /****************************************************************************
  * Pre-processor definitions
  ****************************************************************************/
@@ -386,6 +388,49 @@ FAR void *up_stack_frame(FAR struct tcb_s *tcb, size_t frame_size);
  ****************************************************************************/
 
 void up_release_stack(FAR struct tcb_s *dtcb, uint8_t ttype);
+
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+/****************************************************************************
+ * Name: up_init_secure_context
+ *
+ * Description:
+ *
+ *   Initializes the secure context management system.
+ *   A task must allocate and load a context before calling any
+ *   secure side function in the thread mode.
+ *
+ ****************************************************************************/
+
+void up_init_secure_context(void);
+
+/****************************************************************************
+ * Name: up_allocate_secure_context
+ *
+ * Description:
+ *    Allocates a context on the secure side.
+ *    It allocates an Opaque context handle if context is
+ *    successfully allocated, NULL otherwise
+ *
+ * Inputs:
+ *   size: Size of the stack to allocate on secure side.
+ *
+ ****************************************************************************/
+
+void up_allocate_secure_context(uint32_t size);
+
+/****************************************************************************
+ * Name: up_free_secure_context
+ *
+ * Description:
+ *   Frees the given context.
+ *
+ * Inputs:
+ *   handle: Secure context handle corresponding to the context to be freed
+ *
+ ****************************************************************************/
+
+void up_free_secure_context(SecureContextHandle_t handle);
+#endif
 
 /****************************************************************************
  * Name: up_unblock_task
