@@ -75,7 +75,9 @@
 #ifdef CONFIG_ARMV8M_MPU
 #include "mpu.h"
 #endif
-
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#include <arch/chip/amebad_nsc.h>
+#endif
 #define INDEX_ERROR (-1)
 /****************************************************************************
  * Pre-processor Definitions
@@ -102,19 +104,9 @@ extern uint32_t g_assertpc;
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 /**
- * @brief A task is created without a secure context, and must call
- * up_allocate_secure_context() to give itself a secure context before it makes
- * any secure calls.
- */
-#define NO_SECURE_CONTEXT			0x0
-/**
- * @brief Opaque handle.
- */
-struct SecureContext;
-typedef struct SecureContext*   SecureContextHandle_t;
-/**
- * @brief Saved as part of the task context to indicate which context the
- * task is using on the secure side.
+ * Saved as part of the task context to indicate which context the
+ * task is using on the secure side. By default thread is created
+ * without a secure context.
  */
 volatile SecureContextHandle_t xSecureContext = NO_SECURE_CONTEXT;
 #endif /* CONFIG_ARMV8M_TRUSTZONE */

@@ -1,0 +1,16 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_RDP
+	bool "Read Protect example"
+	default n
+	depends on ARCH_CHIP_AMEBAD
+	depends on ARMV8M_TRUSTZONE
+	---help---
+		Enable the Read Protect example
+
+config USER_ENTRYPOINT
+	string
+	default "rdp_main" if ENTRY_RDP
