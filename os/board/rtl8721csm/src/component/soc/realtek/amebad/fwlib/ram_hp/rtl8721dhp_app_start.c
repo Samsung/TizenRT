@@ -1094,6 +1094,7 @@ INT_MemFault_Patch(void)
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 void exception_common(void);
+void exception_common_svc(void);
 #endif
 VOID VectorTableOverride(VOID)
 {
@@ -1112,6 +1113,9 @@ VOID VectorTableOverride(VOID)
 	//NewVectorTable[AMEBAD_IRQ_BUSFAULT] = (HAL_VECTOR_FUN)BusFault_Handler_ram;
 	//NewVectorTable[AMEBAD_IRQ_USAGEFAULT] = (HAL_VECTOR_FUN)UsageFault_Handler_ram;
 	NewVectorTable[7] = (HAL_VECTOR_FUN)SecureFault_Handler_ram;
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+	NewVectorTable[AMEBAD_IRQ_SVCALL] = (HAL_VECTOR_FUN)exception_common_svc;
+#endif
 #endif
 }
 
