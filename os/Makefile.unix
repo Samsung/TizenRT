@@ -472,6 +472,13 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	fi
 	$(Q) $(STRIP) -g -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
 	$(Q) $(OBJCOPY) --remove-section .comment $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
+	$(Q) if [ ! -d "$(TOPDIR)/../tools/fs/contents-smartfs" ]; then \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs"; \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)"; \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files"; \
+	fi
+	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files/
+	$(Q) $(MAKE) smartfs
 endif
 endif
 

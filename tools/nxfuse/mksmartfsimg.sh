@@ -34,8 +34,24 @@ CONTENTSDIR=$BASE_DIR/tools/fs/contents-smartfs
 NXFUSEDIR=$NXFUSE_TOOL_PATH
 
 # For the below values check partition sizes in .config
-blkcount=512
+parts=${CONFIG_FLASH_PART_NAME}
+IFS=',' read -ra parts <<< "$parts"
+smartidx=0
+for i in "${!parts[@]}"
+do
+	if [[ "${parts[$i]}" = "userfs" ]]; then
+		smartidx=$i
+	fi
+done
+if [[ ${smartidx} = 0 ]]; then
+	echo "ERROR: Failed to find userfs partition in config file!!!"
+	exit
+fi
+sizes=${CONFIG_FLASH_PART_SIZE}
+IFS=',' read -ra sizes <<< "$sizes"
+smartsize=$((sizes[$smartidx] * 1024))
 blksize=$CONFIG_MTD_SMART_SECTOR_SIZE
+blkcount=$((${smartsize}/${blksize}))
 pagesize=256
 erasesize=4096
 
@@ -57,12 +73,15 @@ dd if=/dev/zero of=$BINDIR/$BINNAME bs=$blksize count=$blkcount
 #Copying the nxfuse
 cp $NXFUSEDIR/nxfuse .
 
+
 # Formatting
 ./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m $BINDIR/$BINNAME || exit 1
 
+modprobe fuse
 # Mounting mnt
 ./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt $BINDIR/$BINNAME || exit 1
 
+modprobe fuse
 # Copying files to smartfs file system
 cp -a $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
 
