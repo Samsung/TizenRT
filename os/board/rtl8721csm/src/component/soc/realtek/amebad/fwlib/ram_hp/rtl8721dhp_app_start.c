@@ -1240,7 +1240,7 @@ static void app_psram_load_ns(void)
 
 static void app_psram_load_s(void)
 {
-#if defined (configENABLE_TRUSTZONE) && (configENABLE_TRUSTZONE == 1U)
+#ifdef CONFIG_ARMV8M_TRUSTZONE
 	load_psram_image_s();
 #endif
 }
@@ -1263,7 +1263,7 @@ void app_start(void)
 	app_section_init();
 	_memset((void *) __bss_start__, 0, (__bss_end__ - __bss_start__));
 
-#if defined (configENABLE_TRUSTZONE) && (configENABLE_TRUSTZONE == 1U)
+#ifdef CONFIG_ARMV8M_TRUSTZONE
 	BOOT_IMG3();
 #endif
 
