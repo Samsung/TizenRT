@@ -79,6 +79,8 @@ all: build verify install
 .PHONY: all build clean install distclean depend verify preconfig
 
 install: $(foreach BDIR, $(CONFIGURED), $(BDIR)_install)
+	$(Q) ./../tools/nxfuse/mknxfuse.sh
+	$(Q) ./../tools/nxfuse/mksmartfsimg.sh
 
 verify: $(foreach BDIR, $(CONFIGURED), $(BDIR)_verify)
 else # !CONFIG_APP_BINARY_SEPARATION

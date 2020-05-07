@@ -53,15 +53,14 @@
 
 /* Loading Thread information */
 #define LOADINGTHD_NAME            "bm_loader"                 /* Loading thread name */
-#define LOADINGTHD_STACKSIZE       2048                        /* Loading thread stack size */
+#define LOADINGTHD_STACKSIZE       4096                        /* Loading thread stack size */
 #define LOADINGTHD_PRIORITY        200                         /* Loading thread priority */
 
 /* Supported binary types */
 #define BIN_TYPE_BIN               0                          /* 'bin' type for kernel binary */
 #define BIN_TYPE_ELF               1                          /* 'elf' type for user binary */
 
-/* Binary information configuration */
-#define PARTS_PER_BIN              2                          /* The number of partitions per binary */
+#define FILES_PER_BIN              2                          /* The number of files per binary */
 
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
@@ -127,9 +126,7 @@ struct binmgr_uinfo_s {
 	uint8_t state;
 	uint8_t rttype;
 	uint8_t rtcount;
-	uint8_t inuse_idx;
 	load_attr_t load_attr;
-	part_info_t part_info[PARTS_PER_BIN];
 	char bin_ver[BIN_VER_MAX];
 	char kernel_ver[KERNEL_VER_MAX];
 	sq_queue_t cb_list; // list node type : statecb_node_t
@@ -161,9 +158,6 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_STATE(bin_idx)                              binary_manager_get_udata(bin_idx)->state
 #define BIN_RTTYPE(bin_idx)                             binary_manager_get_udata(bin_idx)->rttype
 #define BIN_RTCOUNT(bin_idx)                            binary_manager_get_udata(bin_idx)->rtcount
-#define BIN_USEIDX(bin_idx)                             binary_manager_get_udata(bin_idx)->inuse_idx
-#define BIN_PARTSIZE(bin_idx, part_idx)                 binary_manager_get_udata(bin_idx)->part_info[part_idx].part_size
-#define BIN_PARTNUM(bin_idx, part_idx)                  binary_manager_get_udata(bin_idx)->part_info[part_idx].part_num
 
 #define BIN_VER(bin_idx)                                binary_manager_get_udata(bin_idx)->bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->kernel_ver
@@ -216,7 +210,6 @@ void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response);
 void binary_manager_notify_state_changed(int bin_idx, uint8_t state);
-int binary_manager_load_binary(int bin_idx);
 int binary_manager_loading(char *loading_data[]);
 uint32_t binary_manager_get_ucount(void);
 uint32_t binary_manager_get_kcount(void);
@@ -224,8 +217,10 @@ binmgr_kinfo_t *binary_manager_get_kdata(void);
 int binary_manager_get_index_with_binid(int bin_id);
 void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);
-
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
+int binary_manager_register_ubin(char *name);
+void binary_manager_scan_ubin(void);
+int binary_manager_read_header(char *path, binary_header_t *header_data);
 
 /****************************************************************************
  * Binary Manager Main Thread

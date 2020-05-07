@@ -132,17 +132,6 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 	}
 }
 #endif
-
-#ifdef CONFIG_BINARY_MANAGER
-static void binary_manager_update_partition_info(int partno, char *part_name, int partsize, const char *types)
-{
-	if (!strncmp(types, "kernel,", 7)) {
-		binary_manager_register_kpart(partno, partsize);
-	} else if (!strncmp(types, "bin,", 4)) {
-		binary_manager_register_upart(partno, part_name, partsize);
-	}
-}
-#endif
 #endif /* CONFIG_FLASH_PARTITION */
 
 void configure_partitions(void)
@@ -196,7 +185,9 @@ void configure_partitions(void)
 #ifdef CONFIG_MTD_PARTITION_NAMES
 		configure_partition_name(mtd_part, &names, &index, part_name);
 #ifdef CONFIG_BINARY_MANAGER
-		binary_manager_update_partition_info(partno, part_name, partsize, types);
+		if (!strncmp(types, "kernel,", 7)) {
+			binary_manager_register_kpart(partno, partsize);
+		}
 #endif
 #endif
 		move_to_next_part(&parts);

@@ -73,13 +73,12 @@ int binary_manager(int argc, char *argv[])
 #endif
 	char type_str[1];
 	char data_str[1];
+	struct mq_attr attr;
 	char *loading_data[LOADTHD_ARGC + 1];
 	binmgr_request_t request_msg;
 
-	struct mq_attr attr;
-	attr.mq_maxmsg = BINMGR_MAX_MSG;
-	attr.mq_msgsize = sizeof(binmgr_request_t);
-	attr.mq_flags = 0;
+	/* Scan user binary files and Register them */
+	binary_manager_scan_ubin();
 
 	ASSERT(binary_manager_get_kcount() > 0 && binary_manager_get_ucount() > 0);
 
@@ -100,6 +99,9 @@ int binary_manager(int argc, char *argv[])
 		return 0;
 	}
 #endif
+	attr.mq_maxmsg = BINMGR_MAX_MSG;
+	attr.mq_msgsize = sizeof(binmgr_request_t);
+	attr.mq_flags = 0;
 
 	/* Create binary manager message queue */
 	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);

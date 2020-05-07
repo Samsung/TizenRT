@@ -98,28 +98,26 @@ binmgr_kinfo_t *binary_manager_get_kdata(void)
 }
 
 /****************************************************************************
- * Name: binary_manager_register_upart
+ * Name: binary_manager_register_ubin
  *
  * Description:
- *	 This function registers a partition of user binaries.
+ *	 This function registers user binaries.
  *
  ****************************************************************************/
-void binary_manager_register_upart(int part_num, char *name, int part_size)
+int binary_manager_register_ubin(char *name)
 {
 	int bin_idx;
 
-	if (part_num < 0 || part_size <= 0 || g_bin_count >= USER_BIN_COUNT) {
-		bmdbg("ERROR: Invalid part info : num %d, size %d\n", part_num, part_size);
-		return;
+	if (name == NULL || g_bin_count >= USER_BIN_COUNT) {
+		bmdbg("ERROR: Invalid parameter\n");
+		return ERROR;
 	}
 
 	for (bin_idx = 1; bin_idx <= g_bin_count; bin_idx++) {
 		/* Already Registered */
 		if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
-			BIN_PARTNUM(bin_idx, 1) = part_num;
-			BIN_PARTSIZE(bin_idx, 1) = part_size;
-			bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
-			return;
+			bmdbg("Already registered for binary %s\n", BIN_NAME(bin_idx));
+			return ERROR;
 		}
 	}
 
@@ -128,12 +126,12 @@ void binary_manager_register_upart(int part_num, char *name, int part_size)
 	BIN_ID(g_bin_count) = -1;
 	BIN_RTCOUNT(g_bin_count) = 0;
 	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
-	BIN_PARTNUM(g_bin_count, 0) = part_num;
-	BIN_PARTSIZE(g_bin_count, 0) = part_size;
 	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 	sq_init(&BIN_CBLIST(g_bin_count));
 
-	bmvdbg("[USER%d : 1] %s size %d num %d\n", g_bin_count, BIN_NAME(g_bin_count), BIN_PARTSIZE(g_bin_count, 0), BIN_PARTNUM(g_bin_count, 0));
+	bmvdbg("[USER %d] %s\n", g_bin_count, BIN_NAME(g_bin_count));
+
+	return g_bin_count;
 }
 
 /****************************************************************************

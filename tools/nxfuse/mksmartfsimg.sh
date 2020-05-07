@@ -62,6 +62,9 @@ echo "============================================================="
 
 if [ ! -d $CONTENTSDIR/$BOARDNAME/mnt ]; then
 mkdir -p $CONTENTSDIR/$BOARDNAME/mnt/
+if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]; then
+mkdir $CONTENTSDIR/$BOARDNAME/mnt/bins
+fi
 fi
 
 #Make a dummy .bin file
@@ -79,11 +82,11 @@ cp $NXFUSEDIR/nxfuse .
 
 modprobe fuse
 # Mounting mnt
-./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt $BINDIR/$BINNAME || exit 1
+./nxfuse -o nonempty -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt $BINDIR/$BINNAME || exit 1
 
 modprobe fuse
 # Copying files to smartfs file system
-cp -a $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
+cp -rf $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
 
 # Unmounting
 sleep 2
