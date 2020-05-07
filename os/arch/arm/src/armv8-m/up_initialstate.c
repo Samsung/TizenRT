@@ -117,6 +117,7 @@ void up_initial_state(struct tcb_s *tcb)
 #endif
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 	xcp->regs[REG_R8] = (uint32_t)tcb->secure_handle;
+	xcp->regs[REG_R9] = (uint32_t)tcb->stack_alloc_ptr;
 #endif
 	/* Save the task entry point (stripping off the thumb bit) */
 
@@ -156,8 +157,11 @@ void up_initial_state(struct tcb_s *tcb)
 	 * mode before transferring control to the user task.
 	 */
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+	xcp->regs[REG_EXC_RETURN] = 0xFFFFFFBC;
+#else
 	xcp->regs[REG_EXC_RETURN] = EXC_RETURN_PRIVTHR;
-
+#endif
 #endif							/* CONFIG_ARM_CMNVECTOR || CONFIG_BUILD_PROTECTED */
 
 #if defined(CONFIG_ARM_CMNVECTOR) && defined(CONFIG_ARCH_FPU)
