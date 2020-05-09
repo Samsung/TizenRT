@@ -57,6 +57,11 @@ include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
 LDSCRIPT = rlx8721d_img2_ns.ld
 
+ifeq ($(CONFIG_ARMV8M_TRUSTZONE),y)
+EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/cmse_implib.a
+LINKLIBS=$(EXTRA_LIBS)
+endif
+
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
   DIRLINK = $(TOPDIR)/tools/copydir.sh
