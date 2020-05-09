@@ -172,10 +172,6 @@ endif
 LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 GCC_LIBDIR := ${shell dirname $(LIBGCC)}
 
-ifeq ($(CONFIG_ARMV8M_TRUSTZONE),y)
-EXTRA_LIBS += armv8-m/cmse_implib.a
-endif
-
 VPATH += chip
 VPATH += common
 VPATH += $(ARCH_SUBDIR)
