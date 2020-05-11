@@ -659,7 +659,7 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name, u32
 		sparam.sched_priority = 206;
 	}
 	if (strcmp(name, "rtw_recv_tasklet") == 0) {
-		sparam.sched_priority = 205;
+		sparam.sched_priority = 206;
 	}
 	if (strcmp(name, "rtw_xmit_tasklet") == 0) {
 		sparam.sched_priority = 205;
