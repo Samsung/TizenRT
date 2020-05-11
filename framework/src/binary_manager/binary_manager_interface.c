@@ -46,6 +46,15 @@ int binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg
 		}
 		snprintf(request_msg->data.bin_name, BIN_NAME_MAX, "%s", (char *)arg);
 		break;
+	case BINMGR_CREATE_BIN:
+		if (arg == NULL) {
+			bmdbg("Invalid param, cmd : %d\n", cmd);
+			return ERROR;
+		}
+		binmgr_update_bin_t *data = (binmgr_update_bin_t *)arg;
+		strncpy(request_msg->data.update_bin.bin_name, data->bin_name, BIN_NAME_MAX);
+		request_msg->data.update_bin.version = data->version;
+		break;
 	case BINMGR_REGISTER_STATECB:
 		if (arg == NULL) {
 			bmdbg("Invalid param, cmd : %d\n", cmd);

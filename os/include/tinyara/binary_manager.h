@@ -25,6 +25,7 @@
 
 #include <tinyara/config.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include <tinyara/fs/fs.h>
 
@@ -87,6 +88,7 @@ enum binmgr_request_msg_type {
 	BINMGR_GET_INFO,
 	BINMGR_GET_INFO_ALL,
 	BINMGR_UPDATE,
+	BINMGR_CREATE_BIN,
 	BINMGR_NOTIFY_STARTED,
 	BINMGR_REGISTER_STATECB,
 	BINMGR_UNREGISTER_STATECB,
@@ -170,6 +172,13 @@ typedef struct binary_update_info_list_s binary_update_info_list_t;
 
 typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
 
+struct binmgr_update_bin_s {
+	char bin_name[NAME_MAX];
+	int type;
+	int version;
+};
+typedef struct binmgr_update_bin_s binmgr_update_bin_t;
+
 struct binmgr_cb_s {
 	binmgr_statecb_t func;
 	void *data;
@@ -190,9 +199,16 @@ struct binmgr_request_s {
 	union {
 		char bin_name[BIN_NAME_MAX];
 		binmgr_cb_t *cb_info;
+		binmgr_update_bin_t update_bin;
 	} data;
 };
 typedef struct binmgr_request_s binmgr_request_t;
+
+struct binmgr_createbin_response_s {
+	int result;
+	char binpath[CONFIG_PATH_MAX];
+};
+typedef struct binmgr_createbin_response_s binmgr_createbin_response_t;
 
 struct binmgr_statecb_response_s {
 	int result;

@@ -124,7 +124,6 @@ int binary_manager(int argc, char *argv[])
 
 	while (1) {
 		bmvdbg("Wait for message\n");
-
 		nbytes = mq_receive(g_binmgr_mq_fd, (char *)&request_msg, sizeof(binmgr_request_t), NULL);
 		if (nbytes <= 0) {
 			bmdbg("receive ERROR %d, errno %d, retry!\n", nbytes, errno);
@@ -151,6 +150,9 @@ int binary_manager(int argc, char *argv[])
 			loading_data[1] = (char *)request_msg.data.bin_name;
 			loading_data[2] = NULL;
 			binary_manager_loading(loading_data);
+			break;
+		case BINMGR_CREATE_BIN:
+			binary_manager_create_entry(request_msg.requester_pid, request_msg.data.update_bin.bin_name, request_msg.data.update_bin.version);
 			break;
 		case BINMGR_NOTIFY_STARTED:
 			binary_manager_update_running_state(request_msg.requester_pid);
