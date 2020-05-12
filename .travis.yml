@@ -37,7 +37,7 @@ before_install:
 - echo "${TRAVIS_BUILD_DIR}"
 
 script:
-- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt:${TIZENRT_IMG_VERSION} /bin/bash
+- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${TIZENRT_IMG_VERSION} /bin/bash
 - docker exec tizenrt_docker arm-none-eabi-gcc --version
 - docker exec tizenrt_docker make distclean
 
