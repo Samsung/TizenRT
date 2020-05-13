@@ -413,6 +413,24 @@ static inline void flexspi_clock_update(void)
 }
 
 /************************************************************************************
++ * Name: up_dumptoflash
++ *
++ * Description:
++ *   Wrapper function for flexispi write/read call
++ *
++ ************************************************************************************/
+#if defined(CONFIG_BOARD_CRASHDUMP)
+uint32_t up_dumptoflash(uint32_t addr, uint32_t *buffer, uint32_t bytes)
+{
+	return imxrt_flexspi_nor_hyperbus_write(NULL, addr, buffer, bytes);
+}
+uint32_t up_dumpfromflash(uint32_t addr, uint32_t *buffer, uint32_t bytes)
+{
+	return imxrt_flexspi_nor_hyperbus_read(NULL, addr, buffer, bytes);
+}
+#endif
+
+/************************************************************************************
  * Public Functions
  ************************************************************************************/
 /****************************************************************************
@@ -430,6 +448,11 @@ status_t imxrt_flexspi_nor_hyperbus_read(FLEXSPI_Type *base, uint32_t addr, uint
 	flexspi_transfer_t flashXfer;
 	status_t status;
 
+#if defined(CONFIG_BOARD_CRASHDUMP)
+	if (base == NULL) {
+		base = IMXRT_FLEXSPI;
+	}
+#endif
 	flashXfer.deviceAddress = addr * 2;
 	flashXfer.port = kFLEXSPI_PortA1;
 	flashXfer.cmdType = kFLEXSPI_Read;
@@ -458,6 +481,11 @@ status_t imxrt_flexspi_nor_hyperbus_write(FLEXSPI_Type *base, uint32_t addr, uin
 	flexspi_transfer_t flashXfer;
 	status_t status;
 
+#if defined(CONFIG_BOARD_CRASHDUMP)
+	if (base == NULL) {
+		base = IMXRT_FLEXSPI;
+	}
+#endif
 	flashXfer.deviceAddress = addr * 2;
 	flashXfer.port = kFLEXSPI_PortA1;
 	flashXfer.cmdType = kFLEXSPI_Write;

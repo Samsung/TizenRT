@@ -30,6 +30,10 @@
 
 #define HANDSHAKE_STRING	"RAMDUMP"
 #define HANDSHAKE_STR_LEN_MAX	(7)
+#define HANDSHAKE_STRING_COREDUMPFLASH		"COREDUMPFLASH"
+#define HANDSHAKE_STRLEN_MAX_COREDUMPFLASH		(13)
+#define HANDSHAKE_STRING_RAMDUMPFLASH		"RAMDUMPFLASH"
+#define HANDSHAKE_STRLEN_MAX_RAMDUMPFLASH		(12)
 #define BINFILE_NAME_SIZE	(40)
 #define KB_CHECK_COUNT		(16 * 1024)
 
@@ -50,6 +54,32 @@ typedef struct {
 	int rd_regionx_mark;
 } rd_regionx;
 rd_regionx *mem_info;
+
+enum {
+	RAMDUMP_UART = 0,
+	COREDUMP_FLASH,
+	RAMDUMP_FLASH,
+	DUMP_ALL
+};
+
+static int receive_dumptype(int dev_fd)
+{
+	int index;
+	int ret;
+
+	printf("\n=========================================================================\n");
+	printf("Receive dump type:\n");
+	printf(" \tRAMDUMP from UART :0\n \tCOREDUMP from FLASH :1\n");
+	printf(" \tRAMDUMP from FLASH :2\n \tDUMP ALL :3\n");
+	printf("\n=========================================================================\n");
+	scanf("%d", &index);
+	ret = write(dev_fd, &index, 1);
+	if (ret != 1) {
+		printf("Sending handshake failed, ret = %d\n", ret);
+		return -1;
+	}
+	return index;
+}
 
 static int do_handshake(int dev_fd)
 {
@@ -189,6 +219,108 @@ static int send_region_info(int dev_fd, char *host_region)
 	}
 
 	return 0;
+}
+
+static int coredump_flash_recv(int dev_fd)
+{
+	char bin_file[BINFILE_NAME_SIZE] = { '\0' };
+	FILE *bin_fp;
+	char buf;
+	uint32_t len;
+	int count = 0;
+	int ret;
+
+	snprintf(bin_file, BINFILE_NAME_SIZE, "coredump_flash.bin");
+	bin_fp = fopen(bin_file, "w");
+	if (bin_fp == NULL) {
+		printf("%s create failed\n", bin_file);
+		return -1;
+	}
+	printf("[>");
+	fflush(stdout);
+
+	ret = b_read(dev_fd, (uint8_t *)&len, 8);
+	if (ret != 8) {
+		printf("Receiving length failed, ret = %d\n", ret);
+		return -1;
+	}
+
+	while (len) {
+		ret = read(dev_fd, &buf, 1);
+		if (ret != 1) {
+			printf("Receiving ramdump %dTH byte failed, ret = %d\n", count, ret);
+			fclose(bin_fp);
+			return -1;
+		}
+
+		ret = fwrite(&buf, 1, 1, bin_fp);
+		if (ret != 1) {
+			printf("Writing ramdump %dTH byte failed, ret = %d\n", count, ret);
+			fclose(bin_fp);
+			return -1;
+		}
+
+		count++;
+		len--;
+
+		if ((count % (KB_CHECK_COUNT)) == 0) {
+			printf("\b=>");
+			fflush(stdout);
+		}
+	}
+	printf("]\n");
+	fclose(bin_fp);
+}
+
+static int ramdump_flash_recv(int dev_fd)
+{
+	char bin_file[BINFILE_NAME_SIZE] = { '\0' };
+	FILE *bin_fp;
+	char buf;
+	uint32_t len;
+	int count = 0;
+	int ret;
+
+	snprintf(bin_file, BINFILE_NAME_SIZE, "ramdump_flash.bin");
+	bin_fp = fopen(bin_file, "w");
+	if (bin_fp == NULL) {
+		printf("%s create failed\n", bin_file);
+		return -1;
+	}
+	printf("[>");
+	fflush(stdout);
+
+	ret = b_read(dev_fd, (uint8_t *)&len, sizeof(uint32_t));
+	if (ret != sizeof(uint32_t)) {
+		printf("Receiving length failed, ret = %d\n", ret);
+		return -1;
+	}
+
+	while (len) {
+		ret = read(dev_fd, &buf, 1);
+		if (ret != 1) {
+			printf("Receiving ramdump %dTH byte failed, ret = %d\n", count, ret);
+			fclose(bin_fp);
+			return -1;
+		}
+
+		ret = fwrite(&buf, 1, 1, bin_fp);
+		if (ret != 1) {
+			printf("Writing ramdump %dTH byte failed, ret = %d\n", count, ret);
+			fclose(bin_fp);
+			return -1;
+		}
+
+		count++;
+		len--;
+
+		if ((count % (KB_CHECK_COUNT)) == 0) {
+			printf("\b=>");
+			fflush(stdout);
+		}
+	}
+	printf("]\n");
+	fclose(bin_fp);
 }
 
 static int ramdump_recv(int dev_fd)
@@ -430,20 +562,37 @@ int main(int argc, char *argv[])
 		goto handshake_err;
 	}
 
-	printf("Target entered to ramdump mode\n");
+	ret = receive_dumptype(dev_fd);
 
-	if (ramdump_info_init(dev_fd) != 0) {
-		printf("Ramdump initialization failed\n");
-		goto init_err;
+	if ((ret == COREDUMP_FLASH) || (ret == DUMP_ALL)) {
+		if (coredump_flash_recv(dev_fd) != 0) {
+			printf("Coredump receive from flash failed\n");
+		} else {
+			ret = 0;
+		}
 	}
 
-	if (ramdump_recv(dev_fd) != 0) {
-		printf("Ramdump receive failed\n");
-		goto ramdump_err;
+	if ((ret == RAMDUMP_FLASH) || (ret == DUMP_ALL)) {
+		if (ramdump_flash_recv(dev_fd) != 0) {
+			printf("Ramdump receive from flash failed\n");
+		} else {
+			ret = 0;
+		}
 	}
+	if ((ret == RAMDUMP_UART) || (ret == DUMP_ALL)) {
+		printf("Target entered to ramdump mode\n");
+		if (ramdump_info_init(dev_fd) != 0) {
+			printf("Ramdump initialization failed\n");
+			goto init_err;
+		}
 
-	printf("Ramdump received successfully..!\n");
-	ret = 0;
+		if (ramdump_recv(dev_fd) != 0) {
+			printf("Ramdump receive failed\n");
+			goto ramdump_err;
+		}
+		printf("Ramdump received successfully..!\n");
+		ret = 0;
+	}
 
 init_err:
 	free(mem_info);
