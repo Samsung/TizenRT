@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_STACK_PROTECTION
+	bool "Stack Protection Test Example"
+	depends on MPU_STACK_OVERFLOW_PROTECTION
+	---help---
+		Enable the Stack Overflow Protection Test Example
+
+config USER_ENTRYPOINT
+	string
+	default "stack_prot_main" if ENTRY_STACK_PROTECTION
