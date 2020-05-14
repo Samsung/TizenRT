@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2019 Samsung Electronics All Rights Reserved.
+# Copyright 2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-############################################################################
+
+# external/xmlrpc/Make.defs
+# Adds selected applications to external/ build
 #
-#   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,65 +51,6 @@
 #
 ############################################################################
 
--include $(TOPDIR)/.config
--include $(TOPDIR)/Make.defs
-
-CFLAGS += -D__TizenRT__
-
-SRCS = wifiapp.c
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-SRCS += messaging.c
+ifeq ($(CONFIG_ZLIB),y)
+CONFIGURED_EXT += zlib
 endif
-ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
-SRCS += recovery.c
-endif
-ifeq ($(CONFIG_EXAMPLES_BINARY_UPDATE_TEST),y)
-SRCS += binary_update.c
-endif
-#########################################
-# Case of Loadable separated binary build
-# Make separated ELF type binary
-#########################################
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-
-BIN = wifi
-# need to update
-BIN_TYPE = ELF
-BIN_VER = 20190412
-DYNAMIC_RAM_SIZE = 512000
-KERNEL_VER = 2.0
-STACKSIZE = 8192
-PRIORITY = 180
-
-include $(TOPDIR)/$(LOADABLEDIR)/loadable.mk
-
-###################################
-# Cases of Flat and Protected build
-# Merge into libapps.a
-###################################
-else
-
-OBJS = $(SRCS:.c=$(OBJEXT))
-
-BIN = ../../../apps/libapps$(LIBEXT)
-
-all: .built
-.PHONY: clean depend distclean
-
-$(OBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
-
-.built: $(OBJS)
-	$(call ARCHIVE, $(BIN), $(OBJS))
-	@touch .built
-
-clean:
-	$(call DELFILE, .built)
-	$(call CLEAN)
-
-distclean: clean
-	$(call DELFILE, Make.dep)
-	$(call DELFILE, .depend)
-endif # CONFIG_APP_BINARY_SEPARATION
-
-preconfig:

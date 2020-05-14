@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2019 Samsung Electronics All Rights Reserved.
+# Copyright 2016 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 #
 ###########################################################################
 ############################################################################
+# external/xmlrpc/Makefile
 #
-#   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,54 +53,53 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-CFLAGS += -D__TizenRT__
+CFLAGS		+=  -D__TizenRT__
 
-SRCS = wifiapp.c
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-SRCS += messaging.c
-endif
-ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
-SRCS += recovery.c
-endif
-ifeq ($(CONFIG_EXAMPLES_BINARY_UPDATE_TEST),y)
-SRCS += binary_update.c
-endif
-#########################################
-# Case of Loadable separated binary build
-# Make separated ELF type binary
-#########################################
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+ASRCS		=
+CSRCS 		+= gzwrite.c gzread.c adler32.c compress.c crc32.c
+CSRCS 		+= deflate.c gzclose.c gzlib.c infback.c inffast.c
+CSRCS 		+= inflate.c inftrees.c trees.c uncompr.c zutil.c
 
-BIN = wifi
-# need to update
-BIN_TYPE = ELF
-BIN_VER = 20190412
-DYNAMIC_RAM_SIZE = 512000
-KERNEL_VER = 2.0
-STACKSIZE = 8192
-PRIORITY = 180
+AOBJS		= $(ASRCS:.S=$(OBJEXT))
+COBJS		= $(patsubst %.c, zlib_%$(OBJEXT), $(CSRCS))
 
-include $(TOPDIR)/$(LOADABLEDIR)/loadable.mk
+SRCS		= $(ASRCS) $(CSRCS)
+OBJS		= $(AOBJS) $(COBJS)
 
-###################################
-# Cases of Flat and Protected build
-# Merge into libapps.a
-###################################
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN		= ..\libexternal$(LIBEXT)
 else
+ifeq ($(WINTOOL),y)
+  BIN		= ..\\libexternal$(LIBEXT)
+else
+  BIN		= ../libexternal$(LIBEXT)
+endif
+endif
 
-OBJS = $(SRCS:.c=$(OBJEXT))
+DEPPATH	= --dep-path .
 
-BIN = ../../../apps/libapps$(LIBEXT)
+# Common build
+
+VPATH		=
 
 all: .built
-.PHONY: clean depend distclean
+.PHONY: depend clean distclean
 
-$(OBJS): %$(OBJEXT): %.c
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS): zlib_%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
-	@touch .built
+	$(Q) touch .built
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
 
 clean:
 	$(call DELFILE, .built)
@@ -108,6 +108,5 @@ clean:
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
-endif # CONFIG_APP_BINARY_SEPARATION
 
-preconfig:
+-include Make.dep

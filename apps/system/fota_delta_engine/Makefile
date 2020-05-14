@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2019 Samsung Electronics All Rights Reserved.
+# Copyright 2016 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 #
 ###########################################################################
 ############################################################################
+# apps/system/fota_hal/Makefile
 #
-#   Copyright (C) 2012, 2014, 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,55 +52,88 @@
 
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
-CFLAGS += -D__TizenRT__
-
-SRCS = wifiapp.c
-ifeq ($(CONFIG_EXAMPLES_MESSAGING_TEST),y)
-SRCS += messaging.c
-endif
-ifeq ($(CONFIG_EXAMPLES_RECOVERY_TEST),y)
-SRCS += recovery.c
-endif
-ifeq ($(CONFIG_EXAMPLES_BINARY_UPDATE_TEST),y)
-SRCS += binary_update.c
-endif
-#########################################
-# Case of Loadable separated binary build
-# Make separated ELF type binary
-#########################################
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-
-BIN = wifi
-# need to update
-BIN_TYPE = ELF
-BIN_VER = 20190412
-DYNAMIC_RAM_SIZE = 512000
-KERNEL_VER = 2.0
-STACKSIZE = 8192
-PRIORITY = 180
-
-include $(TOPDIR)/$(LOADABLEDIR)/loadable.mk
-
-###################################
-# Cases of Flat and Protected build
-# Merge into libapps.a
-###################################
+ASRCS =
+ifeq ($(CONFIG_FOTA_DELTA_PACKETS),y)
+CSRCS = patch_packet.c
 else
+CSRCS = patch.c
+endif
+MAINSRC =
 
-OBJS = $(SRCS:.c=$(OBJEXT))
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
+MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 
-BIN = ../../../apps/libapps$(LIBEXT)
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS = $(AOBJS) $(COBJS)
+
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  OBJS += $(MAINOBJ)
+endif
+
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN = ..\..\libapps$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN = ..\\..\\libapps$(LIBEXT)
+else
+  BIN = ../../libapps$(LIBEXT)
+endif
+endif
+
+ifeq ($(WINTOOL),y)
+  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
+else
+  INSTALL_DIR = $(BIN_DIR)
+endif
+
+PROGNAME =
+
+ROOTDEPPATH = --dep-path .
+
+# Common build
+
+VPATH =
 
 all: .built
-.PHONY: clean depend distclean
+.PHONY: depend clean distclean
 
-$(OBJS): %$(OBJEXT): %.c
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
-	@touch .built
+	$(Q) touch .built
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
+else
+install:
+
+endif
+
+# Register application
+
+context:
+
+# Create dependencies
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
 
 clean:
 	$(call DELFILE, .built)
@@ -108,6 +142,7 @@ clean:
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
-endif # CONFIG_APP_BINARY_SEPARATION
 
+-include Make.dep
+.PHONY: preconfig
 preconfig:

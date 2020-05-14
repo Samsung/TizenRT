@@ -538,7 +538,7 @@ ota_img:
 # pass1dep: Create pass1 build dependencies
 # pass2dep: Create pass2 build dependencies
 
-pass1dep: context tools/mkdeps$(HOSTEXEEXT) tools/compression/mkcompresstool.sh
+pass1dep: context tools/mkdeps$(HOSTEXEEXT) tools/compression/mkcompresstool.sh ../tools/fota_delta/mkfotadeltatool.sh
 	$(Q) for dir in $(USERDEPDIRS) ; do \
 		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" depend ; \
 	done
@@ -713,3 +713,18 @@ endif
 smartfs: include/tinyara/config.h
 	$(Q) ./../tools/nxfuse/mknxfuse.sh
 	$(Q) ./../tools/nxfuse/mksmartfsimg.sh
+
+# ../tools/fota_delta/mkfotadeltatool.sh
+#
+# This target will make a compression tool by calling mkcompresstool.sh.
+# This compression tool (mkcompressimg) will be used to compress binaries.
+# Hence, this tool needs to be created before we build those binaries.
+
+../tools/fota_delta/mkfotadeltatool.sh: include/tinyara/config.h
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+	$(Q) ../tools/fota_delta/mkfotadeltatool.sh
+else
+ifeq ($(CONFIG_FOTA_DELTA_ENGINE),y)
+	$(Q) ../tools/fota_delta/mkfotadeltatool.sh
+endif
+endif

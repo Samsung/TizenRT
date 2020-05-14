@@ -1,0 +1,44 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FOTA_DELTA_ENGINE
+	bool "FOTA DELTA ENGINE"
+	default n
+	select LIBLZMA
+	select ZLIB
+	---help---
+		Enable FOTA DELTA ENGINE
+
+if FOTA_DELTA_ENGINE
+
+config FOTA_DELTA_PACKETS
+	bool "Get Delta packet-by-packet"
+	default n
+	---help---
+		Get patch file packet-by-packet. Patch the old file
+		block-by-block using delta obtained from each packet
+
+if FOTA_DELTA_PACKETS
+
+config FOTA_DOWNLOAD_PACKET_SIZE
+	int "Size of Packets to be downloaded one-by-one"
+	default 8192
+	---help---
+		Set size of packets of delta to be downloaded one-by-one
+		for updating old file
+
+endif
+
+config BLOCKSIZE_FOR_FOTA_DELTA
+	int "Blocksize for FOTA Delta b/w Uncompressed Binaries"
+	default 8192
+	range 512 8192
+	---help---
+		Enter blocksize to use for FOTA delta b/w 2 uncompressed
+		binaries. In case of compressed binaries, blocksize used
+		is read from their compression header and the value here
+		is ignored.
+
+endif
