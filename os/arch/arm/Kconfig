@@ -96,6 +96,7 @@ config ARCH_CORTEXM3
 	select ARCH_HAVE_CMNVECTOR
 	select ARCH_HAVE_RAMVECTORS
 	select ARCH_HAVE_HIPRI_INTERRUPT
+	select ARCH_ARMV7M_FAMILY
 
 config ARCH_CORTEXM4
 	bool
@@ -104,6 +105,7 @@ config ARCH_CORTEXM4
 	select ARCH_HAVE_CMNVECTOR
 	select ARCH_HAVE_RAMVECTORS
 	select ARCH_HAVE_HIPRI_INTERRUPT
+	select ARCH_ARMV7M_FAMILY
 
 config ARCH_CORTEXM7
 	bool
@@ -120,6 +122,7 @@ config ARCH_CORTEXM7
 	select ARCH_HAVE_HARDFAULT_DEBUG
 	select ARCH_HAVE_MEMFAULT_DEBUG
 	select ARCH_HAVE_NESTED_INTERRUPT
+	select ARCH_ARMV7M_FAMILY
 
 config ARCH_CORTEXM33
 	bool
@@ -128,7 +131,8 @@ config ARCH_CORTEXM33
 	select ARCH_HAVE_CMNVECTOR
 	select ARCH_HAVE_RAMVECTORS
 	select ARCH_HAVE_HIPRI_INTERRUPT
-	
+	select ARCH_ARMV8M_FAMILY
+
 config ARCH_CORTEXR4
 	bool
 	default n
@@ -136,12 +140,25 @@ config ARCH_CORTEXR4
 	select ARCH_HAVE_CMNVECTOR
 	select ARCH_HAVE_COHERENT_DCACHE if ELF || MODULE
 	select ARCH_HAVE_DABORTSTACK if !ARCH_CHIP_BCM4390X
+	select ARCH_ARMV7R_FAMILY
+
+config ARCH_ARMV7M_FAMILY
+	bool
+	default n
+
+config ARCH_ARMV8M_FAMILY
+	bool
+	default n
+
+config ARCH_ARMV7R_FAMILY
+	bool
+	default n
 
 config ARCH_FAMILY
 	string
-	default "armv7-m"	if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
-	default "armv7-r"	if ARCH_CORTEXR4
-	default "armv8-m"	if ARCH_CORTEXM33
+	default "armv7-m"	if ARCH_ARMV7M_FAMILY
+	default "armv7-r"	if ARCH_ARMV7R_FAMILY
+	default "armv8-m"	if ARCH_ARMV8M_FAMILY
 
 config ARCH_HAVE_CMNVECTOR
 	bool
@@ -248,7 +265,7 @@ config ARCH_ROMPGTABLE
 config DEBUG_HARDFAULT
 	bool "Verbose Hard-Fault Debug"
 	default n
-	depends on DEBUG && (ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7 || ARCH_CORTEXM33)
+	depends on DEBUG && (ARCH_ARMV7M_FAMILY || ARCH_ARMV8M_FAMILY)
 	---help---
 		Enables verbose debug output when a hard fault is occurs.  This verbose
 		output is sometimes helpful when debugging difficult hard fault problems,
@@ -293,13 +310,13 @@ config MPU_STACK_GUARD_SIZE
 		Setting large stack guard size will be a wastage of memory.
 endif
 
-if ARCH_CORTEXM3 || ARCH_CORTEXM4 || ARCH_CORTEXM7
+if ARCH_ARMV7M_FAMILY
 source arch/arm/src/armv7-m/Kconfig
 endif
-if ARCH_CORTEXM33
+if ARCH_ARMV8M_FAMILY
 source arch/arm/src/armv8-m/Kconfig
 endif
-if ARCH_CORTEXR4
+if ARCH_ARMV7R_FAMILY
 source arch/arm/src/armv7-r/Kconfig
 endif
 if ARCH_CHIP_LM
