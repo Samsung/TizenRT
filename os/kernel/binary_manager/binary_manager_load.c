@@ -546,7 +546,7 @@ int binary_manager_read_header(char *path, binary_header_t *header_data)
 		goto errout_with_fd;
 	}
 
-	/* Caculate checksum and Verify it */
+	/* Calculate checksum and Verify it */
 	check_crc = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_data->header_size, check_crc);
 	file_size = header_data->bin_size;
 	while (file_size > 0) {
