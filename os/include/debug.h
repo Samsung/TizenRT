@@ -1330,8 +1330,8 @@ int get_errno(void);
 #define medvdbg     vdbg
 #define medllvdbg   llvdbg
 #else
+#define medvdbg     (void)
 #define medllvdbg   (void)
-#define medllvdbg   (...)
 #endif
 
 #ifdef CONFIG_DEBUG_MESSAGE_IPC
