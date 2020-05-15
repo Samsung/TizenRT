@@ -209,12 +209,13 @@ config ARM_HAVE_MPU_UNIFIED
 config ARM_MPU
 	bool
 	default n
+	select ARCH_USE_MPU
 
 config ARMV7M_MPU
 	bool "MPU support"
 	default n
 	depends on ARCH_HAVE_MPU
-	select ARCH_USE_MPU
+	depends on ARCH_ARMV7M_FAMILY || ARCH_ARMV7R_FAMILY
 	select ARM_MPU
 	---help---
 		Build in support for the ARM Cortex-M3/4 Memory Protection Unit (MPU).
@@ -232,7 +233,7 @@ config ARMV8M_MPU
 	bool "MPU support"
 	default n
 	depends on ARCH_HAVE_MPU
-	select ARCH_USE_MPU
+	depends on ARCH_ARMV8M_FAMILY
 	select ARM_MPU
 	---help---
 		Build in support for the ARM Cortex-M33 Memory Protection Unit (MPU).
@@ -240,7 +241,7 @@ config ARMV8M_MPU
 
 config ARMV8M_MPU_NREGIONS
 	int "Number of MPU regions"
-	default 8 if ARCH_CORTEXM33
+	default 8
 	depends on ARMV8M_MPU
 	---help---
 		This is the number of protection regions supported by the MPU.
