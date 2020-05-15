@@ -56,10 +56,12 @@
 #define _SRC_NXFUSE_H
 
 #define FIOUTIME        _FIOC(0x0007)  /* IN:  None
-                                                                                * OUT: OK if successful, -ENOSYS if not
-                                                                                */
+                                        * OUT: OK if successful, -ENOSYS if not
+                                        */
 #define FIOCHMOD        _FIOC(0x0008)  /* IN:  New mode flags (int)
-                                                                                * OUT: OK if successful, -ENOSYS if not
+                                        * OUT: OK if successful, -ENOSYS if not
+                                        */
+
 /* The logical sector number of the root directory. */
 
 #define SMARTFS_ROOT_DIR_SECTOR   3
