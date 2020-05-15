@@ -88,14 +88,17 @@ static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		switch (option->heap_type) {
 #ifndef CONFIG_BUILD_PROTECTED
 		case HEAPINFO_HEAP_TYPE_KERNEL:
-			heap = &BASE_HEAP[regionx_heap_idx[0]];
+			/* When we are in flat build, there is a single heap for the whole system,
+			 * and it is handled using the USR_HEAP object by the umm code.
+			 */
+			heap = &USR_HEAP[regionx_heap_idx[0]];
 			break;
 #else /* CONFIG_BUILD_PROTECTED */
 		case HEAPINFO_HEAP_TYPE_KERNEL:
 			heap = &g_kmmheap;
 			break;
 		case HEAPINFO_HEAP_TYPE_USER:
-			heap = &BASE_HEAP[regionx_heap_idx[0]];
+			heap = &USR_HEAP[regionx_heap_idx[0]];
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case HEAPINFO_HEAP_TYPE_BINARY:

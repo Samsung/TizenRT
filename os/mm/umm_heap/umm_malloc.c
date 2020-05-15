@@ -59,7 +59,6 @@
 #include <unistd.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
-#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -186,7 +185,7 @@ FAR void *malloc(size_t size)
 	 */
 
 	do {
-		mem = mm_malloc(BASE_HEAP, size);
+		mem = mm_malloc(USR_HEAP, size);
 		if (!mem) {
 			brkaddr = sbrk(size);
 			if (brkaddr == (FAR void *)-1) {

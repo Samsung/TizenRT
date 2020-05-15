@@ -59,7 +59,6 @@
 #include <string.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
-#include "umm_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions

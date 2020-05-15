@@ -113,7 +113,7 @@ void up_addregion(void)
 	int region_cnt;
 
 	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
-		if (BASE_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
+		if (USR_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
 			mm_initialize(&g_mmheap[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
 			continue;
 		}

@@ -151,5 +151,5 @@ struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1] __attribute__((section("
 
 void umm_initialize(FAR void *heap_start, size_t heap_size)
 {
-	mm_initialize(BASE_HEAP, heap_start, heap_size);
+	mm_initialize(USR_HEAP, heap_start, heap_size);
 }
