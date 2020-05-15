@@ -398,11 +398,11 @@ void up_addregion(void)
 	int region_cnt;
 
 	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
-		if (BASE_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
-			mm_initialize(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+		if (USR_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
+			mm_initialize(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
 			continue;
 		}
-		mm_addregion(&BASE_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+		mm_addregion(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
 	}
 
 #if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)

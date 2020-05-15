@@ -424,29 +424,36 @@ extern "C" {
  * ARCH_DATA_RESERVE_SIZE
  */
 #include <tinyara/addrenv.h>
-#define BASE_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
-
-#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
-extern uint32_t _stext;
-#define BASE_HEAP ((struct mm_heap_s *)_stext)
+#define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
 
 #elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
 
 #include <tinyara/userspace.h>
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/sched.h>
 #define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->uheap)
-#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)((uint32_t)USERSPACE + sizeof(struct userspace_s))))
-#define BASE_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
+#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(((struct userspace_s *)USERSPACE)->us_textstart)))
+#define USR_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
 #else
-#define BASE_HEAP ((struct mm_heap_s *)(*(uint32_t *)((uint32_t)USERSPACE + sizeof(struct userspace_s))))
+#define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(((struct userspace_s *)USERSPACE)->us_textstart)))
+#endif
+
+#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+extern uint32_t _stext;
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1];
+extern uint32_t g_cur_app;
+#define USR_HEAP (g_app_heap_table[g_cur_app])
+
+#else
+#define USR_HEAP ((struct mm_heap_s *)_stext)
 #endif
 
 #else
-/* Otherwise, the user heap data structures are in common .bss */
 extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
-#define BASE_HEAP g_mmheap
-
+#define USR_HEAP       g_mmheap
 #endif
 
 /****************************************************************************

@@ -30,36 +30,6 @@
 #include <tinyara/binary_manager.h>
 #endif
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
-
-#include <tinyara/userspace.h>
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-#include <tinyara/sched.h>
-#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->uheap)
-#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)((uint32_t)USERSPACE + sizeof(struct userspace_s))))
-#define USR_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
-#else
-#define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)((uint32_t)USERSPACE + sizeof(struct userspace_s))))
-#endif
-
-#elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
-extern uint32_t _stext;
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-extern struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS];
-extern uint32_t g_cur_app;
-#define USR_HEAP (g_app_heap_table[g_cur_app])
-
-#else
-#define USR_HEAP ((struct mm_heap_s *)_stext)
-#endif
-
-#else
-extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
-#define USR_HEAP       g_mmheap
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
