@@ -69,14 +69,15 @@
 #include <syscall.h>
 #endif
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#include <tinyara/tz_context.h>
+#endif
+
 #include "svcall.h"
 #include "exc_return.h"
 #include "up_internal.h"
 #ifdef CONFIG_ARMV8M_MPU
 #include "mpu.h"
-#endif
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-#include <arch/chip/amebad_nsc.h>
 #endif
 #define INDEX_ERROR (-1)
 /****************************************************************************
@@ -103,14 +104,9 @@ extern uint32_t g_assertpc;
 #endif
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
-/**
- * Saved as part of the task context to indicate which context the
- * task is using on the secure side. By default thread is created
- * without a secure context.
- */
-volatile SecureContextHandle_t xSecureContext = NO_SECURE_CONTEXT;
-#endif /* CONFIG_ARMV8M_TRUSTZONE */
-
+/* By default, a task is created without a secure context */
+volatile TZ_ModuleId_t tz_memory = 0x0;
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -551,13 +547,8 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 	case SYS_init_securecontext: {
-		/* De-prioritize the non-secure exceptions so that the
-		 * non-secure pendSV runs at the lowest priority
-		 */
-		SecureInit_DePrioritizeNSExceptions();
-
 		/* Initialize the secure context management system. */
-		SecureContext_Init();
+		TZ_InitContextSystem_S();
 	}
 	break;
 
@@ -567,11 +558,10 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		ulR1 = regs[REG_R1];
 
 		/* Allocate and load a context for the secure task. */
-		xSecureContext = (SecureContextHandle_t) SecureContext_AllocateContext( ulR1 );
-		tcb->secure_handle = xSecureContext;
+		tz_memory = TZ_AllocModuleContext_S(ulR1);
 
-		ASSERT( xSecureContext != NULL );
-		SecureContext_LoadContext( xSecureContext );
+		ASSERT(tz_memory != NULL);
+		TZ_LoadContext_S(tz_memory);
 	}
 	break;
 
@@ -580,7 +570,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		ulR1 = regs[REG_R1];
 
 		/* Free the secure context. */
-		SecureContext_FreeContext( ( SecureContextHandle_t ) ulR1 );
+		TZ_FreeModuleContext_S((TZ_MemoryId_t) ulR1);
 	}
 	break;
 #endif
