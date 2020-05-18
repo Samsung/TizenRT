@@ -147,3 +147,6 @@ CHIP_CSRCS += amebad_serial.c
 CHIP_CSRCS += amebad_lowerhalf.c
 CHIP_CSRCS += amebad_enet.c
 
+ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
+CHIP_CSRCS += amebad_nsc.c
+endif

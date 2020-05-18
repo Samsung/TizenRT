@@ -28,19 +28,43 @@
 #ifndef __NON_SECURE_CALLABLE_H__
 #define __NON_SECURE_CALLABLE_H__
 
+
 /*
  * This header file contains function prototypes for the interfaces exposed
- * from Secure world through Non-secure callable gateway
+ * from Secure world of AmebaD through Non-secure callable gateway
  */
 
-/* By default, a task is created without a secure context */
-#define NO_SECURE_CONTEXT			0x0
+/************************************************************************************
+ * Included Files
+ ************************************************************************************/
+
+#include <tinyara/tz_context.h>
+
+/************************************************************************************
+ * Pre-processor Definitions
+ ************************************************************************************/
+
+#define PASS								(1)
+#define FAIL								(0)
+
+/****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+
+extern volatile TZ_MemoryId_t tz_memory;
+
+/************************************************************************************
+ * Private Types
+ ************************************************************************************/
 
 /* Opaque handle */
 struct SecureContext;
 typedef struct SecureContext *SecureContextHandle_t;
-
 typedef uint32_t nsFunc(uint32_t);
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: SecureContext_Init
