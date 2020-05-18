@@ -84,6 +84,7 @@
 
 #ifdef CONFIG_ARM_MPU
 extern uint32_t g_mpu_region_nr;
+void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 #endif
 
 /****************************************************************************
@@ -178,7 +179,7 @@ int exec_module(FAR struct binary_s *binp)
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	binp->uheap = (struct mm_heap_s *)binp->heapstart;
-	mm_initialize(binp->uheap, binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
+	mm_initialize(binp->uheap, (void *)binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
 #ifdef CONFIG_BINARY_MANAGER
 	mm_add_app_heap_list(binp->uheap, binp->bin_name);
 #endif
@@ -342,7 +343,7 @@ int exec_module(FAR struct binary_s *binp)
 	/* Store the address of the applications userspace object in the tcb  */
 	/* The app's userspace object will be found at an offset of 4 bytes from the start of the binary */
 	tcb->cmn.uspace = (uint32_t)binp->alloc[ALLOC_TEXT] + 4;
-	tcb->cmn.uheap = binp->uheap;
+	tcb->cmn.uheap = (uint32_t)binp->uheap;
 	tcb->cmn.ram_start = (uint32_t)binp->ramstart;
 	tcb->cmn.ram_size = binp->ramsize;
 

@@ -134,6 +134,19 @@ int elf_loadshdrs(FAR struct elf_loadinfo_s *loadinfo);
 int elf_findsection(FAR struct elf_loadinfo_s *loadinfo, FAR const char *sectname);
 
 /****************************************************************************
+ * Name: elf_readstrtab
+ *
+ * Description:
+ *   Read the ELF string table into memory.
+ *
+ * Input Parameters:
+ *   loadinfo - Load state information
+ *
+ ****************************************************************************/
+
+int elf_readstrtab(FAR struct elf_loadinfo_s *loadinfo);
+
+/****************************************************************************
  * Name: elf_findsymtab
  *
  * Description:
@@ -205,6 +218,24 @@ int elf_readsym(FAR struct elf_loadinfo_s *loadinfo, int index, FAR Elf32_Sym *s
  ****************************************************************************/
 
 int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR const struct symtab_s *exports, int nexports);
+
+/****************************************************************************
+ * Name: elf_symname
+ *
+ * Description:
+ *   Get the symbol name in loadinfo->iobuffer[].
+ *
+ * Returned Value:
+ *   0 (OK) is returned on success and a negated errno is returned on
+ *   failure.
+ *
+ *   EINVAL - There is something inconsistent in the symbol table (should only
+ *            happen if the file is corrupted).
+ *   ESRCH - Symbol has no name
+ *
+ ****************************************************************************/
+
+int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym);
 
 /****************************************************************************
  * Name: elf_freebuffers
