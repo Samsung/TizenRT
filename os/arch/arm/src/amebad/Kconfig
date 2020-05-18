@@ -59,3 +59,12 @@ config AMEBAD_WIFI
 	default n
 
 endmenu
+
+menu "Realtek RTL8721D TrustZone Support"
+
+config AMEBAD_TRUSTZONE
+	bool "Enable Amebad TrustZone"
+	default n
+	select ARMV8M_TRUSTZONE
+
+endmenu

@@ -554,7 +554,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 	case SYS_allocate_securecontext: {
 		uint32_t ulR1;
-		struct tcb_s *tcb = sched_self();
 		ulR1 = regs[REG_R1];
 
 		/* Allocate and load a context for the secure task. */
