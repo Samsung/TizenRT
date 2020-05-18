@@ -60,6 +60,9 @@
 #include <string.h>
 #include <errno.h>
 #include <debug.h>
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+#include <hashmap.h>
+#endif
 
 #include <tinyara/binfmt/elf.h>
 #include <tinyara/binfmt/symtab.h>
@@ -105,11 +108,11 @@ int elf_readstrtab(FAR struct elf_loadinfo_s *loadinfo)
 		return -ENOMEM;
 	}
 
-	ret = elf_read(loadinfo, loadinfo->strtab, strtab->sh_size, strtab->sh_offset);
+	ret = elf_read(loadinfo, (FAR uint8_t *)loadinfo->strtab, strtab->sh_size, strtab->sh_offset);
 	if (ret != OK) {
 		berr("ERROR: Failed to load string table into memory\n");
-		kmm_free(loadinfo->strtab);
-		loadinfo->strtab = NULL;
+		kmm_free((void *)loadinfo->strtab);
+		loadinfo->strtab = (uintptr_t)NULL;
 		return ret;
 	}
 
@@ -159,7 +162,7 @@ int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym)
 		return -EINVAL;
 	}
 
-	loadinfo->iobuffer = loadinfo->strtab + sym->st_name;
+	loadinfo->iobuffer = (uint8_t *)(loadinfo->strtab + sym->st_name);
 
 	return OK;
 }
@@ -221,7 +224,7 @@ void elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo)
 		return;
 	}
 
-	if (elf_read(loadinfo, loadinfo->symtab, symtab->sh_size, symtab->sh_offset) < 0) {
+	if (elf_read(loadinfo, (FAR uint8_t *)loadinfo->symtab, symtab->sh_size, symtab->sh_offset) < 0) {
 		berr("ERROR: Failed to load symbol table into memory\n");
 	}
 }
@@ -287,7 +290,9 @@ int elf_readsym(FAR struct elf_loadinfo_s *loadinfo, int index, FAR Elf32_Sym *s
 
 int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR const struct symtab_s *exports, int nexports)
 {
+#if !defined(CONFIG_SUPPORT_COMMON_BINARY)
 	FAR const struct symtab_s *symbol;
+#endif
 	uintptr_t secbase;
 	int ret;
 
@@ -328,7 +333,7 @@ int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR co
 			return -ENOENT;
 		}
 
-		sym->st_value = (uint32_t)hashmap_get((struct hashmap_s *) exports, hashmap_get_hashval(loadinfo->iobuffer));
+		sym->st_value = (uint32_t)hashmap_get((struct hashmap_s *)exports, hashmap_get_hashval(loadinfo->iobuffer));
 
 		if (!sym->st_value) {
 			berr("SHN_UNDEF: Exported symbol \"%s\" not found\n", loadinfo->iobuffer);

@@ -168,9 +168,9 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 #endif
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	loadinfo->textalloc = kumm_memalign(loadinfo->textsize, loadinfo->textsize);
-	loadinfo->roalloc = kumm_memalign(loadinfo->rosize, loadinfo->rosize);
-	loadinfo->dataalloc = kumm_memalign(datamemsize, datamemsize);
+	loadinfo->textalloc = (uintptr_t)kumm_memalign(loadinfo->textsize, loadinfo->textsize);
+	loadinfo->roalloc = (uintptr_t)kumm_memalign(loadinfo->rosize, loadinfo->rosize);
+	loadinfo->dataalloc = (uintptr_t)kumm_memalign(datamemsize, datamemsize);
 
 	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
 	loadinfo->binp->uheap_size = datamemsize - loadinfo->datasize - sizeof(struct mm_heap_s);

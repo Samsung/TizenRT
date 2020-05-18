@@ -244,7 +244,7 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 
 		else {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			loadinfo->binp->bssstart = *pptr;
+			loadinfo->binp->bssstart = (uint32_t)*pptr;
 #endif
 			memset(*pptr, 0, shdr->sh_size);
 		}
@@ -253,7 +253,7 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 
 		binfo("%d. %08lx->%08lx\n", i, (unsigned long)shdr->sh_addr, (unsigned long)*pptr);
 
-		shdr->sh_addr = (uintptr_t) * pptr;
+		shdr->sh_addr = (uintptr_t)*pptr;
 
 		/* Setup the memory pointer for the next time through the loop */
 
