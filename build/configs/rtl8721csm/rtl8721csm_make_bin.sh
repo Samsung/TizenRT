@@ -105,7 +105,7 @@ function concatenate_binary()
 
 	source ${CONFIG}
 
-	if [ "${CONFIG_ARMV8M_TRUSTZONE}" != "y" ];then
+	if [ "${CONFIG_AMEBAD_TRUSTZONE}" != "y" ];then
 		echo "========== Concatenate_binary for TZ disabled =========="
 		cat /root/tizenrt/build/output/bin/xip_image2_prepend.bin /root/tizenrt/build/output/bin/ram_2_prepend.bin /root/tizenrt/build/output/bin/psram_2_prepend.bin  > /root/tizenrt/build/output/bin/km4_image2_all.bin
 		cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin  > /root/tizenrt/build/output/bin/km0_km4_image2.bin
