@@ -117,11 +117,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <sched.h>
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#include <tinyara/tz_context.h>
+#endif
 
 #include <arch/arch.h>
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-#include <arch/chip/amebad_nsc.h>
-#endif
 /****************************************************************************
  * Pre-processor definitions
  ****************************************************************************/
@@ -416,7 +416,7 @@ void up_init_secure_context(void);
  *
  ****************************************************************************/
 
-void up_allocate_secure_context(uint32_t size);
+void up_allocate_secure_context(TZ_ModuleId_t size);
 
 /****************************************************************************
  * Name: up_free_secure_context
@@ -429,7 +429,7 @@ void up_allocate_secure_context(uint32_t size);
  *
  ****************************************************************************/
 
-void up_free_secure_context(SecureContextHandle_t handle);
+void up_free_secure_context(TZ_MemoryId_t handle);
 #endif
 
 /****************************************************************************
