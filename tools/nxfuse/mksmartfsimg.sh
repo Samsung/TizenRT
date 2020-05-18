@@ -80,11 +80,9 @@ cp $NXFUSEDIR/nxfuse .
 # Formatting
 ./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m $BINDIR/$BINNAME || exit 1
 
-modprobe fuse
 # Mounting mnt
 ./nxfuse -o nonempty -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt $BINDIR/$BINNAME || exit 1
 
-modprobe fuse
 # Copying files to smartfs file system
 cp -rf $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
 
