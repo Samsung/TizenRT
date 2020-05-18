@@ -67,6 +67,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/mm/shm.h>
 #include <tinyara/binfmt/binfmt.h>
+#include <tinyara/mpu.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
@@ -84,7 +85,6 @@
 
 #ifdef CONFIG_ARM_MPU
 extern uint32_t g_mpu_region_nr;
-void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 #endif
 
 /****************************************************************************
