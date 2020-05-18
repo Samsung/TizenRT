@@ -27,6 +27,9 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
+#include <stdint.h>
+
 /********************************************************************************
  * Pre-processor Definitions
  ********************************************************************************/
@@ -48,5 +51,12 @@ enum {
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 #define STACKGUARD_MPU_REGION_NUM		3	/* Region number 3 is reserved for stack protection */
 #endif
+
+
+/********************************************************************************
+ * Public Function Prototypes
+ ********************************************************************************/
+
+void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 
 #endif
