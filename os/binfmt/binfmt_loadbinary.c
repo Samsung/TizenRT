@@ -45,10 +45,6 @@
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 struct binary_s *g_lib_binp;
 uint32_t *g_umm_app_id;
-
-#ifdef CONFIG_ARMV7M_MPU
-void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
-#endif
 #endif
 
 /****************************************************************************

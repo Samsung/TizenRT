@@ -83,10 +83,6 @@
 
 #ifdef CONFIG_BINFMT_ENABLE
 
-#ifdef CONFIG_ARM_MPU
-void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
