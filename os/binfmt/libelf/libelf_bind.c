@@ -198,7 +198,7 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 				ret = -EINVAL;
 				goto ret_err;
 			}
-			prel = loadinfo->reltab + sizeof(Elf32_Rel) * i;
+			prel = (Elf32_Rel *)(loadinfo->reltab + sizeof(Elf32_Rel) * i);
 		} else {
 			ret = elf_readrel(loadinfo, relsec, i, &rel);
 			if (ret < 0) {
@@ -221,7 +221,7 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 				ret = -EINVAL;
 				goto ret_err;
 			}
-			psym = loadinfo->symtab + sizeof(Elf32_Sym) * symidx;
+			psym = (FAR Elf32_Sym *)(loadinfo->symtab + sizeof(Elf32_Sym) * symidx);
 		} else {
 			ret = elf_readsym(loadinfo, symidx, &sym);
 			if (ret < 0) {
@@ -271,8 +271,8 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 	}
 
 ret_err:
-	kmm_free(loadinfo->reltab);
-	loadinfo->reltab = NULL;
+	kmm_free((void *)loadinfo->reltab);
+	loadinfo->reltab = (uintptr_t)NULL;
 	return ret;
 }
 
@@ -307,7 +307,7 @@ static int export_library_symtab(FAR struct elf_loadinfo_s *loadinfo)
 		Elf32_Sym *psym = &sym;
 
 		if (loadinfo->symtab) {
-			psym = loadinfo->symtab + sizeof(Elf32_Sym) * i;
+			psym = (Elf32_Sym *)(loadinfo->symtab + sizeof(Elf32_Sym) * i);
 		} else {
 			ret = elf_readsym(loadinfo, i, &sym);
 			if (ret < 0) {
@@ -482,10 +482,10 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 
 ret_err:
 	if (loadinfo->strtab) {
-		kmm_free(loadinfo->strtab);
-		loadinfo->strtab = NULL;
+		kmm_free((void *)loadinfo->strtab);
+		loadinfo->strtab = (uintptr_t)NULL;
 	}
-	kmm_free(loadinfo->symtab);
-	loadinfo->symtab = NULL;
+	kmm_free((void *)loadinfo->symtab);
+	loadinfo->symtab = (uintptr_t)NULL;
 	return ret;
 }

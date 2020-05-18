@@ -145,7 +145,6 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	/* Allocate the RAM partition to load the app into */
 	uint32_t *start_addr;
 	uint32_t size = 0;
-	struct tcb_s *tcb;
 
 	start_addr = kumm_memalign(size, size);
 

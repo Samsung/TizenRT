@@ -115,8 +115,8 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			goto errout_with_bin;
 		}
 
-		memcpy(bin->datastart, bin->data_backup, bin->datasize);
-		memset(bin->bssstart, 0, bin->bsssize);
+		memcpy((void *)bin->datastart, (const void *)bin->data_backup, bin->datasize);
+		memset((void *)bin->bssstart, 0, bin->bsssize);
 		bin->reload = false;
 	} else {
 #endif
@@ -168,11 +168,11 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		if (bin->islibrary) {
 #ifdef CONFIG_ARMV7M_MPU
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_TXT, bin->alloc[ALLOC_TEXT], bin->textsize, true, true);
-			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_RO, bin->alloc[ALLOC_RO], bin->rosize, true, false);
-			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_DATA, bin->alloc[ALLOC_DATA], bin->ramsize, false, false);
+			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_TXT,  (uintptr_t)bin->alloc[ALLOC_TEXT], bin->textsize, true,  true);
+			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_RO,   (uintptr_t)bin->alloc[ALLOC_RO],   bin->rosize,   true,  false);
+			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB_DATA, (uintptr_t)bin->alloc[ALLOC_DATA], bin->ramsize,  false, false);
 #else
-			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB, bin->ramstart, bin->ramsize, false, false);
+			mpu_get_register_value(NULL, MPU_REG_NUM_COM_LIB,      (uintptr_t)bin->ramstart,          bin->ramsize,  false, false);
 #endif
 #endif
 		}
@@ -185,7 +185,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			goto errout_with_bin;
 		}
 
-		memcpy(bin->data_backup, bin->datastart, bin->datasize);
+		memcpy((void *)bin->data_backup, (const void *)bin->datastart, bin->datasize);
 	}
 #endif
 
@@ -196,7 +196,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		/* If we support common binary, then we need to place a pointer to the app's heap object
 		 * into the heap table which is present at the start of the common library data section
 		 */
-		uint32_t *heap_table = (uint32_t)g_lib_binp->alloc[ALLOC_DATA] + 4;
+		uint32_t *heap_table = (uint32_t *)g_lib_binp->alloc[ALLOC_DATA] + 4;
 		heap_table[binary_idx] = bin->heapstart;
 #endif
 
