@@ -445,7 +445,6 @@ static void _up_assert(int errorcode)
  ****************************************************************************/
 static void recovery_user_assert(void)
 {
-	int ret;
 	int binid;
 	int bin_idx;
 	struct tcb_s *tcb;
@@ -530,7 +529,7 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	/* Is the assert in Kernel? */
 
-	is_kernel_assert = is_kernel_space(assert_pc);
+	is_kernel_assert = is_kernel_space((void *)assert_pc);
 
 #endif  /* CONFIG_BINMGR_RECOVERY */
 
