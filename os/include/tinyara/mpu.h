@@ -33,7 +33,7 @@
 /********************************************************************************
  * Pre-processor Definitions
  ********************************************************************************/
-#if (defined(CONFIG_ARM_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+
 enum {
 	REG_RNR,
 	REG_RBAR,
@@ -58,5 +58,3 @@ enum {
  ********************************************************************************/
 
 void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
-
-#endif
