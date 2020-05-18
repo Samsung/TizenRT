@@ -1094,7 +1094,9 @@ INT_MemFault_Patch(void)
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 void exception_common(void);
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 void exception_common_svc(void);
+#endif
 #endif
 VOID VectorTableOverride(VOID)
 {
@@ -1113,7 +1115,7 @@ VOID VectorTableOverride(VOID)
 	//NewVectorTable[AMEBAD_IRQ_BUSFAULT] = (HAL_VECTOR_FUN)BusFault_Handler_ram;
 	//NewVectorTable[AMEBAD_IRQ_USAGEFAULT] = (HAL_VECTOR_FUN)UsageFault_Handler_ram;
 	NewVectorTable[7] = (HAL_VECTOR_FUN)SecureFault_Handler_ram;
-#ifdef CONFIG_ARMV8M_TRUSTZONE
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 	NewVectorTable[AMEBAD_IRQ_SVCALL] = (HAL_VECTOR_FUN)exception_common_svc;
 #endif
 #endif
@@ -1240,7 +1242,7 @@ static void app_psram_load_ns(void)
 
 static void app_psram_load_s(void)
 {
-#ifdef CONFIG_ARMV8M_TRUSTZONE
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 	load_psram_image_s();
 #endif
 }
@@ -1263,7 +1265,7 @@ void app_start(void)
 	app_section_init();
 	_memset((void *) __bss_start__, 0, (__bss_end__ - __bss_start__));
 
-#ifdef CONFIG_ARMV8M_TRUSTZONE
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 	BOOT_IMG3();
 #endif
 
