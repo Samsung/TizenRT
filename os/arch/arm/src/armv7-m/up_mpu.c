@@ -321,7 +321,6 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
  *	execute  : true indicates that the region has execute permission
  ****************************************************************************/
 
-#if (defined(CONFIG_ARM_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
 void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute)
 {
 	uint32_t regval;
@@ -366,4 +365,3 @@ void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, siz
 #endif
 	}
 }
-#endif

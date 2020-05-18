@@ -33,7 +33,7 @@
 /********************************************************************************
  * Pre-processor Definitions
  ********************************************************************************/
-#if (defined(CONFIG_ARM_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+
 enum {
 	REG_RNR,
 	REG_RBAR,
@@ -45,7 +45,6 @@ enum {
 #define MPU_NUM_REGIONS		3
 #else
 #define MPU_NUM_REGIONS		1
-#endif
 #endif
 
 /* Enum for MPU region numbers */
