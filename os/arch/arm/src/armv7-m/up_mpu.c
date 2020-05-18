@@ -312,13 +312,13 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
  *   Configure the user application SRAM mpu settings into the tcb variables
  *
  * Params:
- * 	regs     : pointer to array in which to store the configured values
- * 		   If regs is NULL, then configure the mpu registers directly
- * 	region   : number of the region to be configured
- * 	base     : start address for the region
- * 	size     : size of the region in bytes
- * 	readonly : true indicates a readonly region
- *	execute  : true indicates that the region has execute permission
+ *  regs     : pointer to array in which to store the configured values
+ *             If regs is NULL, then configure the mpu registers directly
+ *  region   : number of the region to be configured
+ *  base     : start address for the region
+ *  size     : size of the region in bytes
+ *  readonly : true indicates a readonly region
+ *  execute  : true indicates that the region has execute permission
  ****************************************************************************/
 
 void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute)
@@ -340,13 +340,13 @@ void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, siz
 			MPU_RASR_SIZE_LOG2((uint32_t)l2size) | /* Region size   */
 			((uint32_t)subregions << MPU_RASR_SRD_SHIFT) | /* Sub-regions   */
 #ifdef CONFIG_APPS_RAM_REGION_SHAREABLE
-			MPU_RASR_S |                   /* Shareable     */
+			MPU_RASR_S |                /* Shareable     */
 #endif
-			MPU_RASR_C;                   /* Cacheable     */
+			MPU_RASR_C;                 /* Cacheable     */
 	if (readonly) {
-		regval |= MPU_RASR_AP_RWRO;              /* P:RW   U:RO   */
+		regval |= MPU_RASR_AP_RWRO;     /* P:RW   U:RO   */
 	} else {
-		regval |= MPU_RASR_AP_RWRW;		/* P:RW   U:RW   */
+		regval |= MPU_RASR_AP_RWRW;     /* P:RW   U:RW   */
 	}
 
 	if (!execute) {
