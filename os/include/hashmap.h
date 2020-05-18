@@ -16,41 +16,43 @@
  *
  ****************************************************************************/
 
-#ifndef _HASHMAP_H
-#define _HASHMAP_H
+#ifndef __INCLUDE_HASHMAP_H
+#define __INCLUDE_HASHMAP_H
 
 /** Hashmap structure (forward declaration) */
-typedef struct {
+struct h_entry_s {
 	void *data;
 	int flags;
 	long key;
-} h_entry_s;
+};
+typedef struct h_entry_s h_entry_t;
 
-typedef struct hashmap_s {
-	h_entry_s *table;
-	long size, count;
-} hashmap_s;
+struct hashmap_s {
+	h_entry_t *table;
+	long size;
+	long count;
+};
 
 // struct s_hashmap;
 // typedef struct s_hashmap hashmap;
 
 /** Creates a new hashmap near the given size. */
-extern struct hashmap_s *hashmap_create(int startsize);
+struct hashmap_s *hashmap_create(int startsize);
 
 /** Inserts a new element into the hashmap. */
-extern void hashmap_insert(struct hashmap_s *, const void *data, unsigned long key);
+void hashmap_insert(struct hashmap_s *hash, const void *data, unsigned long key);
 
 /** Returns the element for the key. */
-extern void *hashmap_get(struct hashmap_s *, unsigned long key);
+void *hashmap_get(struct hashmap_s *hash, unsigned long key);
 
 /** Returns the number of saved elements. */
-extern long hashmap_count(struct hashmap_s *);
+long hashmap_count(struct hashmap_s *hash);
 
 /** Removes the hashmap structure. */
-extern void hashmap_delete(struct hashmap_s *);
+void hashmap_delete(struct hashmap_s *hash);
 
-extern unsigned long hashmap_get_hashval(unsigned char *str);
+unsigned long hashmap_get_hashval(unsigned char *str);
 
-extern unsigned long* hashmap_get_keyset(struct hashmap_s *);
+unsigned long *hashmap_get_keyset(struct hashmap_s *hash);
 
-#endif							//_HASHMAP_H
+#endif	//__INCLUDE_HASHMAP_H
