@@ -147,14 +147,14 @@ exception_common_svc:
 	mov		sp, r1					/* Set the MSP to the PSP */
 
 1:
-	ldr		r2, xSecureContextConst		/* Read the location of xSecureContext i.e. &( xSecureContext ). */
-	ldr		r0, [r2]			/* Read xSecureContext - Value of xSecureContext must be in r0 as it is used as a parameter later. */
+	ldr		r2, tz_memory_const		/* Read the location of tz_memory i.e. &( tz_memory ). */
+	ldr		r0, [r2]			/* Read tz_memory - Value of tz_memory must be in r0 as it is used as a parameter later. */
 
 	cbz		r0, save_ns_context
 	dmb
 	isb
 	push		{r0-r2, r14}
-	bl		SecureContext_SaveContext
+	bl		TZ_StoreContext_S
 	pop		{r0-r3}				/* LR is now in r3. */
 	mov		lr, r3				/* LR = r3. */
 	mrs		r9, psplim
@@ -315,7 +315,7 @@ save_ns_context:
 #endif
 
 	msr		psplim, r9				/* Restore the PSPLIM register value for the task. */
-	ldr		r9, xSecureContextConst		/* Read the location of xSecureContext i.e. &( xSecureContext ). */
+	ldr		r9, tz_memory_const		/* Read the location of tz_memory i.e. &( tz_memory ). */
 	str		r8, [r9]
 	cmp		r8, #0
 	beq		6f
@@ -323,7 +323,7 @@ save_ns_context:
 	dmb
 	isb
 	push		{r1, r14}
-	bl		SecureContext_LoadContext		/* Restore the secure context. */
+	bl		TZ_LoadContext_S		/* Restore the secure context. */
 	pop		{r1, r14}
 6:
 	/* Restore the interrupt state */
@@ -344,6 +344,6 @@ save_ns_context:
 
 	bx		r14						/* And return */
 
-	xSecureContextConst: .word xSecureContext
+	tz_memory_const: .word tz_memory
 	.size	exception_common_svc, .-exception_common_svc
 	.end

@@ -60,10 +60,8 @@ config ARMV8M_USEBASEPRI
 
 config ARMV8M_TRUSTZONE
 	bool "Enable Security Extension of ARMv8M"
-	default y
+	default n
 	depends on ARCH_CORTEXM33
-	---help---
-		Enable the Security Extension for ARMv8M.
 
 config ARMV8M_ICACHE
 	bool "Use I-Cache"
