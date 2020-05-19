@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_HASHMAP_H
-#define __INCLUDE_HASHMAP_H
+#ifndef __INCLUDE_TINYARA_HASHMAP_H
+#define __INCLUDE_TINYARA_HASHMAP_H
 
 /** Hashmap structure (forward declaration) */
 struct h_entry_s {
@@ -55,4 +55,4 @@ unsigned long hashmap_get_hashval(unsigned char *str);
 
 unsigned long *hashmap_get_keyset(struct hashmap_s *hash);
 
-#endif	//__INCLUDE_HASHMAP_H
+#endif	//__INCLUDE_TINYARA_HASHMAP_H

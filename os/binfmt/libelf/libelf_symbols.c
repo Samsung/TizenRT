@@ -61,7 +61,7 @@
 #include <errno.h>
 #include <debug.h>
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-#include <hashmap.h>
+#include <tinyara/hashmap.h>
 #endif
 
 #include <tinyara/binfmt/elf.h>
