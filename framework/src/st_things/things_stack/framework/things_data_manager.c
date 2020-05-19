@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <json/cJSON.h>
-#include <hashmap.h>
+#include <tinyara/hashmap.h>
 
 #include "octypes.h"
 #include "ocpayload.h"

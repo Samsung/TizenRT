@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <tinyara/mm/mm.h>
-#include <hashmap.h>
+#include <tinyara/hashmap.h>
 
 /* this should be prime */
 #define TABLE_STARTSIZE 1021

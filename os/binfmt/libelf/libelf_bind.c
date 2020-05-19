@@ -95,7 +95,7 @@
  * Private Data
  ****************************************************************************/
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-#include <hashmap.h>
+#include <tinyara/hashmap.h>
 static struct hashmap_s *g_lib_symhash;
 static int g_num_lib_syms;
 #endif

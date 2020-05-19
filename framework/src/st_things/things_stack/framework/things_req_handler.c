@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
-#include <hashmap.h>
+#include <tinyara/hashmap.h>
 
 #include "ocpayload.h"
 
