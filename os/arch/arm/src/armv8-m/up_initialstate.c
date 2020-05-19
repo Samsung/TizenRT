@@ -116,7 +116,9 @@ void up_initial_state(struct tcb_s *tcb)
 	xcp->regs[REG_R10] = (uint32_t)tcb->stack_alloc_ptr + 64;
 #endif
 #ifdef CONFIG_ARMV8M_TRUSTZONE
-	xcp->regs[REG_R8] = (uint32_t)tcb->secure_handle;
+	/* By default, a task is created without a secure context */
+	xcp->regs[REG_R8] = 0;
+	/* for stack limit register */
 	xcp->regs[REG_R9] = (uint32_t)tcb->stack_alloc_ptr;
 #endif
 	/* Save the task entry point (stripping off the thumb bit) */
@@ -158,7 +160,7 @@ void up_initial_state(struct tcb_s *tcb)
 	 */
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
-	xcp->regs[REG_EXC_RETURN] = 0xFFFFFFBC;
+	xcp->regs[REG_EXC_RETURN] = 0xFFFFFFB8;
 #else
 	xcp->regs[REG_EXC_RETURN] = EXC_RETURN_PRIVTHR;
 #endif

@@ -559,7 +559,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		/* Allocate and load a context for the secure task. */
 		tz_memory = TZ_AllocModuleContext_S(ulR1);
 
-		ASSERT(tz_memory != NULL);
+		ASSERT(tz_memory != 0);
 		TZ_LoadContext_S(tz_memory);
 	}
 	break;
