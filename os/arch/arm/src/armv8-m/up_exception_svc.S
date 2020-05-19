@@ -141,25 +141,30 @@ exception_common_svc:
 
 	/* The EXC_RETURN value tells us whether the context is on the MSP or PSP */
 
-	tst		r14, #EXC_RETURN_PROCESS_STACK /* nonzero if context on process stack */
-	beq		1f						/* Branch if context already on the MSP */
-	mrs		r1, psp					/* R1=The process stack pointer (PSP) */
-	mov		sp, r1					/* Set the MSP to the PSP */
+	tst		r14, #EXC_RETURN_PROCESS_STACK	/* nonzero if context on process stack */
+	beq		1f				/* Branch if context already on the MSP */
+	mrs		r1, psp				/* R1=The process stack pointer (PSP) */
+	mov		sp, r1				/* Set the MSP to the PSP */
 
 1:
-	ldr		r2, tz_memory_const		/* Read the location of tz_memory i.e. &( tz_memory ). */
+	ldr		r2, =tz_memory			/* Read the location of tz_memory i.e. &( tz_memory ). */
 	ldr		r0, [r2]			/* Read tz_memory - Value of tz_memory must be in r0 as it is used as a parameter later. */
 
 	cbz		r0, save_ns_context
-	dmb
-	isb
 	push		{r0-r2, r14}
 	bl		TZ_StoreContext_S
-	pop		{r0-r3}				/* LR is now in r3. */
-	mov		lr, r3				/* LR = r3. */
-	mrs		r9, psplim
-	mov		r8, r0
+	pop		{r0-r2, r14}
+
 save_ns_context:
+	mrs		r9, psplim			/* R9=PSPLIM */
+	mov		r8, r0				/* r8=Value of tz_memory */
+
+        ldr		r2, =tz_memory
+        mov		r1, #0
+        str		r1, [r2]                        /* Clear tz_memory when secure context saved */
+        dsb
+        isb
+
 	mov		r2, sp				/* R2=Copy of the main/process stack pointer */
 	add		r2, #HW_XCPT_SIZE		/* R2=MSP/PSP before the interrupt was taken */
 									/* (ignoring the xPSR[9] alignment bit) */
@@ -273,7 +278,20 @@ save_ns_context:
 	vldmia	r0, {s16-s31}			/* Recover S16-S31 */
 #endif
 
-	b		3f						/* Re-join common logic */
+	msr		psplim, r9                              /* Restore the PSPLIM register value for the task. */
+	ldr		r9, =tz_memory                          /* Read the location of tz_memory i.e. &( tz_memory ). */
+	str		r8, [r9]
+	dsb
+	isb
+	mrs		r9, psplim
+	cmp		r8, #0
+	beq		3f
+	mov		r0, r8
+	push		{r0-r2, r14}
+	bl		TZ_LoadContext_S                /* Restore the secure context. */
+	pop		{r0-r2, r14}
+3:
+	b		4f						/* Re-join common logic */
 
 2:
 	/* We are returning with no context switch.  We simply need to "unwind"
@@ -285,7 +303,7 @@ save_ns_context:
 	vldmia  r1!, {s16-s31}			/* Recover S16-S31 */
 #endif
 
-3:
+4:
 	/* The EXC_RETURN value tells us whether we are returning on the MSP or PSP
 	 */
 
@@ -297,15 +315,15 @@ save_ns_context:
 
 	mrs		r2, control				/* R2=Contents of the control register */
 	tst		r14, #EXC_RETURN_PROCESS_STACK /* nonzero if context on process stack */
-	beq		4f						/* Branch if privileged */
+	beq		5f						/* Branch if privileged */
 
 	orr		r2, r2, #1				/* Unprivileged mode */
 	msr		psp, r1					/* R1=The process stack pointer */
-	b		5f
-4:
+	b		6f
+5:
 	bic		r2, r2, #1				/* Privileged mode */
 	msr		msp, r1					/* R1=The main stack pointer */
-5:
+6:
 	msr		control, r2				/* Save the updated control register */
 #else
 	tst		r14, #EXC_RETURN_PROCESS_STACK /* nonzero if context on process stack */
@@ -314,18 +332,6 @@ save_ns_context:
 	msrne	psp, r1					/* R1=The process stack pointer */
 #endif
 
-	msr		psplim, r9				/* Restore the PSPLIM register value for the task. */
-	ldr		r9, tz_memory_const		/* Read the location of tz_memory i.e. &( tz_memory ). */
-	str		r8, [r9]
-	cmp		r8, #0
-	beq		6f
-	mov		r0, r8
-	dmb
-	isb
-	push		{r1, r14}
-	bl		TZ_LoadContext_S		/* Restore the secure context. */
-	pop		{r1, r14}
-6:
 	/* Restore the interrupt state */
 
 #ifdef CONFIG_ARMV8M_USEBASEPRI
@@ -344,6 +350,5 @@ save_ns_context:
 
 	bx		r14						/* And return */
 
-	tz_memory_const: .word tz_memory
 	.size	exception_common_svc, .-exception_common_svc
 	.end
