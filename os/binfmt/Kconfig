@@ -90,4 +90,11 @@ config OPTIMIZE_APP_RELOAD_TIME
 		the MPU requirements. Hence, using this option can result in a steep increase in the memory
 		requirement for this application.
 
+config SAVE_BIN_SECTION_ADDR
+	bool "Save binary section address"
+	default n
+	depends on APP_BINARY_SEPARATION
+	---help---
+		For debugging binary symbol, save the each section address.
+
 endif # BINFMT_ENABLE

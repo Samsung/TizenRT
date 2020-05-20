@@ -65,6 +65,12 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/elf.h>
 
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+#include <queue.h>
+#include <string.h>
+#include <tinyara/binfmt/binfmt.h>
+#endif
+
 #include "libelf.h"
 
 /****************************************************************************
@@ -180,6 +186,40 @@ static inline int elf_sectname(FAR struct elf_loadinfo_s *loadinfo, FAR const El
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+void elf_save_bin_section_addr(struct binary_s *bin)
+{
+	bin_addr_info_t *bin_info;
+	bin_info = (bin_addr_info_t *)kmm_malloc(sizeof(bin_addr_info_t));
+	if (bin_info != NULL) {
+		strncpy(bin_info->bin_name, bin->bin_name, BIN_NAME_MAX);
+		bin_info->text_addr = (uint32_t)bin->alloc[ALLOC_TEXT];
+		bin_info->rodata_addr = (uint32_t)bin->alloc[ALLOC_DATA];
+		bin_info->data_addr = (uint32_t)bin->datastart;
+		bin_info->bss_addr = (uint32_t)bin->bssstart;
+
+		binfo("[%s] text_addr : %x, rodata_addr : %x, data_addr : %x, bss_addr : %x\n", bin_info->bin_name, bin_info->text_addr, bin_info->rodata_addr, bin_info->data_addr, bin_info->bss_addr);
+
+		sq_addlast((sq_entry_t *)bin_info, &g_bin_addr_list);
+	} else {
+		berr("ERROR : Failed to allocate for bin symbol.\n");
+	}
+}
+
+void elf_delete_bin_section_addr(struct binary_s *bin)
+{
+	bin_addr_info_t *info;
+	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
+	while (info) {
+		if (strncmp(info->bin_name, bin->bin_name, BIN_NAME_MAX) == 0) {
+			sq_rem((sq_entry_t *)info, &g_bin_addr_list);
+			kmm_free(info);
+			break;
+		}
+		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
+	}
+}
+#endif
 
 /****************************************************************************
  * Name: elf_loadshdrs

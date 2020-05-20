@@ -35,6 +35,10 @@
 #include <tinyara/binary_manager.h>
 #include <tinyara/mpu.h>
 
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+#include "libelf/libelf.h"
+#endif
+
 #include "binfmt.h"
 #include "binary_manager/binary_manager.h"
 
@@ -188,28 +192,29 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
 		g_umm_app_id = bin->alloc[ALLOC_DATA];
-	} else {
-		/* If we support common binary, then we need to place a pointer to the app's heap object
-		 * into the heap table which is present at the start of the common library data section
-		 */
-		uint32_t *heap_table = (uint32_t *)g_lib_binp->alloc[ALLOC_DATA] + 4;
-		heap_table[binary_idx] = bin->heapstart;
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+		elf_save_bin_section_addr(bin);
 #endif
-
-		/* Start the module */
-		pid = exec_module(bin);
-		if (pid < 0) {
-			errcode = pid;
-			berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
-			goto errout_with_unload;
-		}
-
-		return pid;
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		return OK;
 	}
-
-	return OK;
+	/* If we support common binary, then we need to place a pointer to the app's heap object
+	 * into the heap table which is present at the start of the common library data section
+	 */
+	uint32_t *heap_table = (uint32_t *)g_lib_binp->alloc[ALLOC_DATA] + 4;
+	heap_table[binary_idx] = bin->heapstart;
 #endif
+
+	/* Start the module */
+	pid = exec_module(bin);
+	if (pid < 0) {
+		errcode = pid;
+		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
+		goto errout_with_unload;
+	}
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+	elf_save_bin_section_addr(bin);
+#endif
+	return pid;
 
 errout_with_unload:
 	(void)unload_module(bin);
