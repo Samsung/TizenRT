@@ -40,13 +40,9 @@ choice
 
 config NULL_VIDEO_FORMAT_MJPEG
 	bool "MJPEG Video Format"
-	depends on !NULL_VIDEO_FORMAT_YUY2
-	default n
 
 config NULL_VIDEO_FORMAT_YUY2
 	bool "YUY2 Video Format"
-	depends on !NULL_VIDEO_FORMAT_MJPEG
-	default n
 
 endchoice
 
@@ -55,34 +51,27 @@ choice
 
 config NULL_QVGA
 	bool "(0)QVGA (320x240)"
-	default n
 
 config NULL_VGA
 	bool "(1)VGA (640x480)"
-	default n
 
 config NULL_QUADVGA
 	bool "(2)QUADVGA (1280x960)"
-	default n
 
 config NULL_HD
 	bool "(3)HD (1280x720)"
-	default n
 
 comment "Higher frame resolutions may not be supported"
-comment " due to device memory restrictions"
+comment "due to device memory restrictions"
 
 config NULL_FHD
 	bool "(4)FHD (1920x1080)"
-	default n
 
 config NULL_5M
 	bool "(5)5M (2560x1920)"
-	default n
 
 config NULL_3M
 	bool "(6)3M (2048x1536)"
-	default n
 
 endchoice
 
@@ -91,19 +80,15 @@ choice
 
 config NULL_FR_30
 	bool "(0)1/30"
-	default n
 
 config NULL_FR_20
 	bool "(1)1/20"
-	default n
 
 config NULL_FR_15
 	bool "(2)1/15"
-	default n
 
 config NULL_FR_10
 	bool "(3)1/10"
-	default n
 
 endchoice
 
