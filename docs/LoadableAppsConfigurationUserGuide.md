@@ -35,6 +35,14 @@ The document [Protected Build Guide](ProtectedBuildGuide.md) provides the instru
 2. Flash and ram memory needs to be available to accomodate the applications.
 3. The total ram requirement of an application needs to be fixed at build time.
 4. Currently TizenRT supports only elf binary format.
+5. Code in kernel space such as drivers are not allowed to use some APIs, which need to access memory in user space, as below:
+
+ User APIs                      | Kernel APIs
+--------------------------------|------------------------------------------
+ Xalloc() (ex:malloc, calloc)   | kmm_Xalloc() (ex:kmm_malloc, kmm_calloc)
+ free()                         | kmm_free()
+ pthread_create()               | kernel_thread()
+ task_create()                  | kernel_thread()
 
 ## Steps to enable existing loadable apps configuration
 
