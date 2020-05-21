@@ -262,7 +262,7 @@ choice
 	default SELECT_PRPPIETARY_SUPPLICANT
 
 ...
-config SELECT_PROPIETARY_SUPPLICANT
+config SELECT_PROPRIETARY_SUPPLICANT
 	depends on !SELECT_SCSC_WLAN && !SELECT_NO_DRIVER
 	bool "Enable vendor-specific supplicant"
 	---help---

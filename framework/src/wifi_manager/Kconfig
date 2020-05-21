@@ -26,16 +26,16 @@ config SELECT_SCSC_WLAN
 	select SCSC_WLAN
 
 config SELECT_RTK_WLAN
-	bool "Enable RTKWireless Module"
+	bool "Enable RTK Wireless Module"
 	select RTK_WLAN
 
-config SELECT_PROPIETARY_WLAN
+config SELECT_PROPRIETARY_WLAN
 	bool "Enable vendor-specific Wireless Module"
 endchoice # WiFi driver choice
 
 choice
 	prompt "WiFi library"
-	default SELECT_PROPIETARY_SUPPLICANT
+	default SELECT_PROPRIETARY_SUPPLICANT
 
 config SLSI_WPA_SUPPLICANT
 	bool "Enable wpa_supplicant"
@@ -44,7 +44,7 @@ config SLSI_WPA_SUPPLICANT
 	---help---
 		Select the wpa_supplicant
 
-config SELECT_PROPIETARY_SUPPLICANT
+config SELECT_PROPRIETARY_SUPPLICANT
 	depends on !SELECT_SCSC_WLAN && !SELECT_NO_DRIVER
 	bool "Enable vendor-specific supplicant"
 	---help---
@@ -63,7 +63,7 @@ source "$EXTERNALDIR/wpa_supplicant/Kconfig"
 endif #SLSI_WPA_SUPPLICANT
 
 config WIFI_MANAGER_SAVE_CONFIG
-	bool "Store the Wi-Fi Profile to permanant storage"
+	bool "Store the Wi-Fi Profile to permanent storage"
 	default n
 
 if WIFI_MANAGER_SAVE_CONFIG
