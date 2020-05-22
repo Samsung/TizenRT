@@ -408,13 +408,27 @@ static int imxrt_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd,
 			ret = (int)imxrt_gpt_getclockdivider(priv->gpt->base);
 		}
 		break;
-	case TCIOC_SETFREERUN:
-		if ((bool)arg == true) {
+	case TCIOC_SETMODE:
+		if ((timer_mode_t)arg == MODE_FREERUN) {
 			imxrt_gpt_setfreerunmode(priv->gpt->base);
-		} else {
+			ret = OK;
+		} else if ((timer_mode_t)arg == MODE_ALARM) {
 			imxrt_gpt_unsetfreerunmode(priv->gpt->base);
+			ret = OK;
+		} else {
+			ret = -EINVAL;
 		}
-		ret = OK;
+		break;
+	case TCIOC_SETRESOLUTION:
+		if ((timer_resolution_t)arg == TIME_RESOLUTION_US) {
+			// TO-DO develop
+			ret = OK;
+		} else if ((timer_resolution_t)arg == TIME_RESOLUTION_MS) {
+			// TO-DO develop
+			ret = OK;
+		} else {
+			ret = -EINVAL;
+		}
 		break;
 #ifdef CONFIG_ARCH_IRQPRIO
 	case TCIOC_SETIRQPRIO:
