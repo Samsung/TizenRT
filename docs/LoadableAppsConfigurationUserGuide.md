@@ -39,7 +39,11 @@ The document [Protected Build Guide](ProtectedBuildGuide.md) provides the instru
 
  User APIs                      | Kernel APIs
 --------------------------------|------------------------------------------
- Xalloc() (ex:malloc, calloc)   | kmm_Xalloc() (ex:kmm_malloc, kmm_calloc)
+ malloc()                       | kmm_malloc()
+ calloc()                       | kmm_calloc()
+ zalloc()                       | kmm_zalloc()
+ realloc()                      | kmm_realloc()
+ memalign()                     | kmm_memalign()
  free()                         | kmm_free()
  pthread_create()               | kernel_thread()
  task_create()                  | kernel_thread()
