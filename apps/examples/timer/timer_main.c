@@ -178,7 +178,7 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 		fprintf(stderr, "ERROR: Failed to open Free Run Timer: %d\n", errno);
 		goto error;
 	}
-	if (ioctl(frt_fd, TCIOC_SETFREERUN, TRUE) < 0) {
+	if (ioctl(frt_fd, TCIOC_SETMODE, MODE_FREERUN) < 0) {
 		fprintf(stderr, "ERROR: Failed to set Free Run Timer: %d\n", errno);
 		goto error;
 	}
