@@ -286,6 +286,15 @@ FAR struct mtd_dev_s *m25p_initialize(FAR struct spi_dev_s *dev);
 
 FAR struct mtd_dev_s *w25_initialize(FAR struct spi_dev_s *dev);
 
+/****************************************************************************
+ * Name: jedec_initialize
+ *
+ * Description:
+ *   Initializes the driver which uses jedec interface for SPI-based.
+ *
+ ****************************************************************************/
+FAR struct mtd_dev_s *jedec_initialize(FAR struct spi_dev_s *dev);
+
 /* MTD Support **************************************************************/
 
 /****************************************************************************
