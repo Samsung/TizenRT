@@ -278,4 +278,22 @@ config W25_SLOWREAD
 	default n
 
 endif # MTD_W25
+
+config MTD_JEDEC
+        bool "MTD driver for SPI-based JEDEC FLASH"
+        default n
+        select SPI
+        ---help---
+                Build support for generic MTD for jedec flash driver
+
+if MTD_JEDEC
+config JEDEC_SPI_MODE
+	int "SPI Mode"
+	default 0
+
+config JEDEC_SPI_FREQUENCY
+	int "SPI Frequency"
+	default 20000000
+endif
+
 endif # MTD
