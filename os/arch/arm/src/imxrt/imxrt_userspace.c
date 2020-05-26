@@ -70,6 +70,10 @@
  * Public Functions
  ****************************************************************************/
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+struct userspace_s *USERSPACE;
+#endif
+
 /****************************************************************************
  * Name: imxrt_userspace
  *

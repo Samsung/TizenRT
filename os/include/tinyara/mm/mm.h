@@ -432,8 +432,9 @@ extern "C" {
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/sched.h>
+extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
+#define USR_HEAP_CFG       g_mmheap
 #define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->uheap)
-#define USR_HEAP_CFG ((struct mm_heap_s *)(*(uint32_t *)(((struct userspace_s *)USERSPACE)->us_textstart)))
 #define USR_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
 #else
 #define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(((struct userspace_s *)USERSPACE)->us_textstart)))

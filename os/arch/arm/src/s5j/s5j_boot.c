@@ -223,8 +223,10 @@ void arm_boot(void)
 #endif
 
 #ifdef CONFIG_BUILD_PROTECTED
+#ifndef CONFIG_SUPPORT_COMMON_BINARY
 	/* Initialize userspace .data and .bss section */
 	up_userspace();
+#endif
 #endif
 
 #ifdef CONFIG_ARMV7M_MPU
