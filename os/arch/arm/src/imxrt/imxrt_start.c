@@ -443,8 +443,9 @@ void __start(void)
 	 * Normally this just means initializing the user space .data and .bss
 	 * segments.
 	 */
-
+#ifndef CONFIG_SUPPORT_COMMON_BINARY
 	imxrt_userspace();
+#endif
 #endif
 
 #ifdef  CONFIG_ARMV7M_MPU
