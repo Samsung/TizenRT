@@ -200,7 +200,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	/* If we support common binary, then we need to place a pointer to the app's heap object
 	 * into the heap table which is present at the start of the common library data section
 	 */
-	uint32_t *heap_table = (uint32_t *)g_lib_binp->alloc[ALLOC_DATA] + 4;
+	uint32_t *heap_table = (uint32_t *)(g_lib_binp->alloc[ALLOC_DATA] + 4);
 	heap_table[binary_idx] = bin->heapstart;
 #endif
 
