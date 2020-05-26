@@ -46,6 +46,7 @@ if [[ "${CONFIG_AUTOGEN_MEMORY_LDSCRIPT}" == "y" ]]; then
 	SIZES=($CONFIG_FLASH_PART_SIZE)
 
 	# Get the flash partition sizes.
+	UFLASH_SZ=0
 	for i in "${!NAMES[@]}"; do
 		if [ "${NAMES[$i]}" = "kernel" ]; then
 			let KFLASH_SZ=${SIZES[$i]}

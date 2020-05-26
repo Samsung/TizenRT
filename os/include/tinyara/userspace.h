@@ -70,23 +70,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Configuration ************************************************************/
-/* If CONFIG_BUILD_PROTECTED, then linker variable __uflash_segment_start__  must be defined to
- * provide the address where the user-space header can be found in memory.
- */
-extern uint32_t __uflash_segment_start__[];
-
-/* Helper Macros ************************************************************/
-/* This macro is used to access the struct userpace_s header that can be
- * found at the beginning of the user-space blob.
- */
-
-#define USERSPACE ((FAR struct userspace_s *)__uflash_segment_start__)
-
-/* In user space, these functions are directly callable.  In kernel space,
- * they can be called through the userspace structure.
- */
-
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/
@@ -127,6 +110,13 @@ struct userspace_s {
 	preapp_main_t preapp_start;
 #endif
 };
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern struct userspace_s *USERSPACE;
+#else
+extern uint32_t __uflash_segment_start__[];
+#define USERSPACE ((FAR struct userspace_s *)__uflash_segment_start__)
+#endif
 
 /****************************************************************************
  * Public Data

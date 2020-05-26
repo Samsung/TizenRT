@@ -311,8 +311,10 @@ void __start(void)
 	 */
 
 #ifdef CONFIG_BUILD_PROTECTED
+#ifndef CONFIG_SUPPORT_COMMON_BINARY
 	stm32_userspace();
 	showprogress('E');
+#endif
 #endif
 
 	/* Initialize onboard resources */

@@ -166,8 +166,10 @@ void __start(void)
 	 */
 
 #ifdef CONFIG_BUILD_PROTECTED
+#ifndef CONFIG_SUPPORT_COMMON_BINARY
 	tiva_userspace();
 	showprogress('E');
+#endif
 #endif
 
 	/* Initialize onboard resources */
