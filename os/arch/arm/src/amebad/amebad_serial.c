@@ -167,36 +167,28 @@
  * UART2_DEV: KM0 log uart
  * UART3_DEV: KM0 luart
  */
+int txint_enable = 0;
+int rxint_enable = 0;
 static serial_t* sdrv[MAX_UART_INDEX + 1] = {NULL, NULL, NULL, NULL, NULL}; //uart 0~3, uart2 is configured as log uart
 
-/* UART configuration */
-static UART_InitTypeDef UART_INIT = {
-				.Parity			= RUART_PARITY_ENABLE,
-				.ParityType		= RUART_ODD_PARITY,
-				.StickParity		= RUART_STICK_PARITY_DISABLE,
-				.StopBit		= RUART_STOP_BIT_1,
-				.WordLen		= RUART_WLS_8BITS,
-				.RxFifoTrigLevel	= 1,
-				.DmaModeCtrl		= 1,
-				.FlowControl		= 0,
-				.RxTimeOutCnt		= 64,
-};
-
 struct rtl8721d_up_dev_s {
-	uint32_t DmaModeCtrl;
-	uint32_t WordLen;
-        uint32_t StopBit;                       /* true: Configure with 2 stop bits instead of 1 */
-        uint32_t Parity;                        /* 0=disable, 1=enable */
-        uint32_t ParityType;                    /* 0=none, 1=odd, 2=even */
-        uint32_t StickParity;
-	uint32_t FlowControl;
-	uint32_t RxFifoTrigLevel;
-	uint32_t RxErReportCtrl;
-	uint32_t RxTimeOutCnt;
-	uint32_t baud;                          /* Configured baud rate */
-	uint32_t irq;                           /* IRQ associated with this UART */
-	PinName Tx;				/* TX UART pin number */
-	PinName Rx;				/* RX UART pin number */
+
+	uint8_t parity;				/* 0=none, 1=odd, 2=even */
+	uint8_t bits;				/* Number of bits (7 or 8) */
+	uint8_t stopbit;			/* Number of StopBit (1 or 2) */
+	uint32_t baud;				/* Configured baud rate */
+	uint32_t irq;				/* IRQ associated with this UART */
+	PinName tx;					/* TX UART pin number */
+	PinName rx;					/* RX UART pin number */
+	PinName rts;				/* UART RTS pin number */
+	PinName cts;				/* UART CTS pin number */
+	uint8_t FlowControl;
+#ifdef CONFIG_SERIAL_IFLOWCONTROL
+	uint8_t iflow: 1;			/* input flow control (RTS) enabled */
+#endif
+#ifdef CONFIG_SERIAL_OFLOWCONTROL
+	uint8_t oflow: 1;			/* output flow control (CTS) enabled */
+#endif
 };
 
 /****************************************************************************
@@ -260,16 +252,21 @@ static char g_uart2txbuffer[CONFIG_UART2_TXBUFSIZE];
 
 #ifdef CONFIG_RTL8721D_UART0
 static struct rtl8721d_up_dev_s g_uart0priv = {
-	.Parity = CONFIG_UART0_PARITY,
-	.ParityType = RUART_ODD_PARITY,
-	.StickParity = RUART_STICK_PARITY_DISABLE,
-	.StopBit = CONFIG_UART0_2STOP,
-	.WordLen = CONFIG_UART0_BITS,
-	.FlowControl = FlowControlNone,
-	.irq = RTL8721D_UART0_IRQ,
+
+	.parity = CONFIG_UART0_PARITY,
+	.bits = CONFIG_UART0_BITS,
+#if (CONFIG_UART0_2STOP)
+	.stopbit = 2,
+#else
+	.stopbit = 1,
+#endif
 	.baud = CONFIG_UART0_BAUD,
-	.Tx = PA_21,
-	.Rx = PA_22,
+	.irq = RTL8721D_UART0_IRQ,
+	.tx = PA_21,
+	.rx = PA_22,
+	.rts = PA_16,
+	.cts = PA_17,
+	.FlowControl = FlowControlNone,
 };
 
 static uart_dev_t g_uart0port = {
@@ -289,16 +286,19 @@ static uart_dev_t g_uart0port = {
 
 #ifdef CONFIG_RTL8721D_UART1
 static struct rtl8721d_up_dev_s g_uart1priv = {
-	.Parity = CONFIG_UART1_PARITY,
-	.ParityType = RUART_ODD_PARITY,
-	.StickParity = RUART_STICK_PARITY_DISABLE,
-	.StopBit = CONFIG_UART1_2STOP,
-	.WordLen = CONFIG_UART1_BITS,
-	.FlowControl = FlowControlNone,
-	.irq = RTL8721D_UART1_IRQ,
+
+	.parity = CONFIG_UART1_PARITY,
+	.bits = CONFIG_UART1_BITS,
+#if (CONFIG_UART1_2STOP)
+	.stopbit = 2,
+#else
+	.stopbit = 1,
+#endif
 	.baud = CONFIG_UART1_BAUD,
-	.Tx = PA_12,
-	.Rx = PA_13,
+	.irq = RTL8721D_UART1_IRQ,
+	.tx = PA_12,
+	.rx = PA_13,
+	.FlowControl = FlowControlNone,
 };
 
 static uart_dev_t g_uart1port = {
@@ -318,16 +318,19 @@ static uart_dev_t g_uart1port = {
 
 #ifdef CONFIG_RTL8721D_UART2
 static struct rtl8721d_up_dev_s g_uart2priv = {
-	.Parity = CONFIG_UART2_PARITY,
-	.ParityType = RUART_ODD_PARITY,
-	.StickParity = RUART_STICK_PARITY_DISABLE,
-	.StopBit = CONFIG_UART2_2STOP,
-	.FlowControl = FlowControlNone,
-	.WordLen = CONFIG_UART2_BITS,
-	.irq = RTL8721D_UART_LOG_IRQ,
+
+	.parity = CONFIG_UART2_PARITY,
+	.bits = CONFIG_UART2_BITS,
+#if (CONFIG_UART2_2STOP)
+	.stopbit = 2,
+#else
+	.stopbit = 1,
+#endif
 	.baud = CONFIG_UART2_BAUD,
-	.Tx = PA_7,
-	.Rx = PA_8,
+	.irq = RTL8721D_UART_LOG_IRQ,
+	.tx = PA_7,
+	.rx = PA_8,
+	.FlowControl = FlowControlNone,
 };
 
 static uart_dev_t g_uart2port = {
@@ -376,15 +379,14 @@ static int rtl8721d_up_setup(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	DEBUGASSERT(!sdrv[uart_index_get(priv->Tx)]);
-
-	sdrv[uart_index_get(priv->Tx)] = (serial_t *)kmm_malloc(sizeof(serial_t));
-	DEBUGASSERT(sdrv[uart_index_get(priv->Tx)]);
-	serial_init((serial_t*)sdrv[uart_index_get(priv->Tx)], priv->Tx, priv->Rx);
-	serial_baud(sdrv[uart_index_get(priv->Tx)], priv->baud);
-	serial_format(sdrv[uart_index_get(priv->Tx)], priv->WordLen, priv->Parity, priv->StopBit);
-	serial_set_flow_control(sdrv[uart_index_get(priv->Tx)], priv->FlowControl, priv->Tx, priv->Rx);
-	serial_enable(sdrv[uart_index_get(priv->Tx)]);
+	DEBUGASSERT(!sdrv[uart_index_get(priv->tx)]);
+	sdrv[uart_index_get(priv->tx)] = (serial_t *)kmm_malloc(sizeof(serial_t));
+	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
+	serial_init((serial_t *) sdrv[uart_index_get(priv->tx)], priv->tx, priv->rx);
+	serial_baud(sdrv[uart_index_get(priv->tx)], priv->baud);
+	serial_format(sdrv[uart_index_get(priv->tx)], priv->bits, priv->parity, priv->stopbit);
+	serial_set_flow_control(sdrv[uart_index_get(priv->tx)], priv->FlowControl, priv->rts, priv->cts);
+	serial_enable(sdrv[uart_index_get(priv->tx)]);
 
 	return OK;
 }
@@ -402,10 +404,10 @@ static void rtl8721d_up_shutdown(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	DEBUGASSERT(sdrv[uart_index_get(priv->Tx)]);
-	serial_free(sdrv[uart_index_get(priv->Tx)]);
-	free(sdrv[uart_index_get(priv->Tx)]);
-	sdrv[uart_index_get(priv->Tx)] = NULL;
+	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
+	serial_free(sdrv[uart_index_get(priv->tx)]);
+	free(sdrv[uart_index_get(priv->tx)]);
+	sdrv[uart_index_get(priv->tx)] = NULL;
 }
 
 /****************************************************************************
@@ -440,19 +442,7 @@ static int rtl8721d_up_attach(struct uart_dev_s *dev)
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	int ret = 0;
 	DEBUGASSERT(priv);
-#if 0
-	/* Attach and enable the IRQ */
-	ret = irq_attach(priv->irq, rtl8721d_up_interrupt, NULL);		//UART_LOG_IRQ(19)
-	if (ret == OK) {
-		/* Enable the interrupt (RX and TX interrupts are still disabled
-		 * in the UART
-		 */
-
-		up_enable_irq(priv->irq);
-	}
-#else
-	serial_irq_handler(sdrv[uart_index_get(priv->Tx)], rtl8721d_uart_irq, (uint32_t)dev);
-#endif
+	serial_irq_handler(sdrv[uart_index_get(priv->tx)], rtl8721d_uart_irq, (uint32_t) dev);
 	return ret;
 }
 
@@ -470,85 +460,9 @@ static void rtl8721d_up_detach(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-#if 0
-	up_disable_irq(priv->irq);
-	irq_detach(priv->irq);
-#else
-	serial_irq_handler(sdrv[uart_index_get(priv->Tx)], NULL, 0);
-#endif
+	serial_irq_handler(sdrv[uart_index_get(priv->tx)], NULL, 0);
 }
 
-/****************************************************************************
- * Name: rtl8721d_up_interrupt
- *
- * Description:
- *   This is the UART interrupt handler.  It will be invoked
- *   when an interrupt received on the 'irq'  It should call
- *   uart_transmitchars or uart_receivechar to perform the
- *   appropriate data transfers.  The interrupt handling logic\
- *   must be able to map the 'irq' number into the approprite
- *   uart_dev_s structure in order to call these functions.
- *
- ****************************************************************************/
-#if 0
-static int rtl8721d_up_interrupt(int irq, void *context, FAR void *arg)
-{
-        struct uart_dev_s *dev = NULL;
-        uint8_t IntId;
-
-        switch (irq) {
-#ifdef CONFIG_RTL8721D_UART0
-        case RTL8721D_UART0_IRQ:
-		dev = &g_uart0port;
-		break;
-#endif
-#ifdef CONFIG_RTL8721D_UART1
-        case RTL8721D_UART1_IRQ:
-		dev = &g_uart1port;
-		break;
-#endif
-#ifdef CONFIG_RTL8721D_UART2
-        case RTL8721D_UART_LOG_IRQ:
-		dev = &g_uart2port;
-		break;
-#endif
-        default:
-		PANIC();
-		break;
-        }
-
-	IntId = uart_get_interrupt_id(sdrv);
-
-        switch (IntId) {
-        case RUART_LP_RX_MONITOR_DONE:
-		uart_irqhandler(IntId);
-        break;
-
-        case RUART_MODEM_STATUS:
-		uart_irqhandler(IntId);
-        break;
-
-        case RUART_RECEIVE_LINE_STATUS:
-		uart_irqhandler(IntId);
-        break;
-
-        case RUART_TX_FIFO_EMPTY:
-		uart_xmitchars(dev);
-        break;
-
-        case RUART_RECEIVER_DATA_AVAILABLE:
-        case RUART_TIME_OUT_INDICATION:
-		uart_recvchars(dev);
-        break;
-
-        default:
-		DEBUGASSERT("Unknown Interrupt !!\n");
-        break;
-        }
-
-        return OK;
-}
-#endif
 /****************************************************************************
  * Name: up_ioctl
  *
@@ -559,6 +473,7 @@ static int rtl8721d_up_interrupt(int irq, void *context, FAR void *arg)
 
 static int rtl8721d_up_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
+#if defined(CONFIG_SERIAL_TERMIOS)
 	struct inode *inode = filep->f_inode;
 	struct uart_dev_s *dev = inode->i_private;
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
@@ -576,18 +491,18 @@ static int rtl8721d_up_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 		termiosp->c_cflag = 0;
 
-		if (priv->Parity) {
+		if (priv->parity) {
 			termiosp->c_cflag |= PARENB;
-			if (priv->Parity == RUART_ODD_PARITY) {
+			if (priv->parity == RUART_ODD_PARITY) {
 				termiosp->c_cflag |= PARODD;
 			}
 		}
 
-		if (priv->StopBit) {
+		if (priv->stopbit == 2) {
 			termiosp->c_cflag |= CSTOPB;
 		}
 
-		termiosp->c_cflag |= CS5 + (8 - 5);
+		termiosp->c_cflag |= CS5 + ((priv->bits) - 5);
 		break;
 
 	case TCSETS:
@@ -595,28 +510,39 @@ static int rtl8721d_up_ioctl(struct file *filep, int cmd, unsigned long arg)
 			return -EINVAL;
 		}
 
-		priv->WordLen = 5 + (termiosp->c_cflag & CSIZE);
+		priv->bits = 5 + (termiosp->c_cflag & CSIZE);
 
-		priv->Parity = 0;
+		priv->parity = 0;		//ParityNoon
 		if (termiosp->c_cflag & PARENB) {
 			if (termiosp->c_cflag & PARODD) {
-				priv->Parity = RUART_ODD_PARITY;
+				priv->parity = ParityOdd;
 			} else {
-				priv->Parity = RUART_EVEN_PARITY;
+				priv->parity = ParityEven;
 			}
 		}
-		priv->StopBit = !!(termiosp->c_cflag & CSTOPB);
+		if (! !(termiosp->c_cflag & CSTOPB)) {
+			priv->stopbit = 2;
+		} else {
+			priv->stopbit = 1;
+		}
 
 		priv->baud = cfgetispeed(termiosp);
-		if(sdrv[uart_index_get(priv->Tx)])
+		if (sdrv[uart_index_get(priv->tx)]) {
 			rtl8721d_up_shutdown(dev);
+		}
 		rtl8721d_up_setup(dev);
+		rtl8721d_up_attach(dev);
+		rtl8721d_up_rxint(dev, txint_enable);
+		rtl8721d_up_rxint(dev, rxint_enable);
 		break;
 
 	default:
 		ret = -ENOTTY;
 		break;
 	}
+#else
+	int ret = -ENOTTY;
+#endif
 	return ret;
 }
 
@@ -636,7 +562,7 @@ static int rtl8721d_up_receive(struct uart_dev_s *dev, uint8_t *status)
 	uint32_t rxd;
 
 	DEBUGASSERT(priv);
-	rxd = serial_getc(sdrv[uart_index_get(priv->Tx)]);
+	rxd = serial_getc(sdrv[uart_index_get(priv->tx)]);
 	*status = rxd;
 
 	return rxd & 0xff;
@@ -651,9 +577,10 @@ static int rtl8721d_up_receive(struct uart_dev_s *dev, uint8_t *status)
  ****************************************************************************/
 static void rtl8721d_up_rxint(struct uart_dev_s *dev, bool enable)
 {
+	rxint_enable = enable;
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	serial_irq_set(sdrv[uart_index_get(priv->Tx)], RxIrq, enable); // 1= ENABLE
+	serial_irq_set(sdrv[uart_index_get(priv->tx)], RxIrq, enable);	// 1= ENABLE
 }
 
 /****************************************************************************
@@ -668,7 +595,7 @@ static bool rtl8721d_up_rxavailable(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	return(serial_readable(sdrv[uart_index_get(priv->Tx)]));
+	return (serial_readable(sdrv[uart_index_get(priv->tx)]));
 }
 
 /****************************************************************************
@@ -684,7 +611,7 @@ static void rtl8721d_up_send(struct uart_dev_s *dev, int ch)
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 	/*write one byte to tx fifo*/
-	serial_putc(sdrv[uart_index_get(priv->Tx)], ch);
+	serial_putc(sdrv[uart_index_get(priv->tx)], ch);
 }
 
 /****************************************************************************
@@ -697,11 +624,12 @@ static void rtl8721d_up_send(struct uart_dev_s *dev, int ch)
 
 static void rtl8721d_up_txint(struct uart_dev_s *dev, bool enable)
 {
+	txint_enable = enable;
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	serial_irq_set(sdrv[uart_index_get(priv->Tx)], TxIrq, enable);
+	serial_irq_set(sdrv[uart_index_get(priv->tx)], TxIrq, enable);
 	if(enable)
-		UART_INTConfig(UART_DEV_TABLE[uart_index_get(priv->Tx)].UARTx, RUART_IER_ETBEI, ENABLE);
+		UART_INTConfig(UART_DEV_TABLE[uart_index_get(priv->tx)].UARTx, RUART_IER_ETBEI, ENABLE);
 }
 
 /****************************************************************************
@@ -716,7 +644,7 @@ static bool rtl8721d_up_txready(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	while (!serial_writable(sdrv[uart_index_get(priv->Tx)]));
+	while (!serial_writable(sdrv[uart_index_get(priv->tx)])) ;
 	return true;
 }
 
@@ -732,7 +660,7 @@ static bool rtl8721d_up_txempty(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	while (!serial_writable(sdrv[uart_index_get(priv->Tx)]));
+	while (!serial_writable(sdrv[uart_index_get(priv->tx)])) ;
 	return true;
 }
 
@@ -766,10 +694,10 @@ void up_serialinit(void)
 #ifdef TTYS0_DEV
 	uart_register("/dev/ttyS0", &TTYS0_DEV);
 #endif
-#if 0//def TTYS1_DEV
+#ifdef TTYS1_DEV
 	uart_register("/dev/ttyS1", &TTYS1_DEV);
 #endif
-#if 0//def TTYS2_DEV
+#ifdef TTYS2_DEV
 	uart_register("/dev/ttyS2", &TTYS2_DEV);
 #endif
 
