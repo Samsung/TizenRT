@@ -193,7 +193,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
 		g_umm_app_id = bin->alloc[ALLOC_DATA];
-		USERSPACE = (struct userspace_s *)(bin->alloc[ALLOC_TEXT] + 1);
+		USERSPACE = (struct userspace_s *)(bin->alloc[ALLOC_TEXT] + 4);
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 		elf_save_bin_section_addr(bin);
 #endif
