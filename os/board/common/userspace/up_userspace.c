@@ -55,12 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
-#include <stdlib.h>
-
 #include <tinyara/userspace.h>
-#include <tinyara/wqueue.h>
-#include <tinyara/mm/mm.h>
 #include <tinyara/init.h>
 
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
@@ -95,7 +90,7 @@ extern uint32_t _ebss;			/* End+1 of .bss */
 const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	/* General memory map */
 #ifndef __APP_BUILD__
-#ifdef CONFIG_USER_ENTRYPOINT
+#if defined(CONFIG_USER_ENTRYPOINT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	.us_entrypoint = (main_t)CONFIG_USER_ENTRYPOINT,
 #else
 	.us_entrypoint = (main_t)NULL,
@@ -110,7 +105,7 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 
 	/* pre-application entry points (declared in include/tinyara/init.h) */
 
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
+#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	.preapp_start    = preapp_start,
 #endif
 #endif
