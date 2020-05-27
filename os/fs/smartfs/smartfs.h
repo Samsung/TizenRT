@@ -155,7 +155,8 @@
  * 2. Garbage collection can occur when a new sector is allocated or when
  *    existing sector data is overwritten with new data. Thus, occasionally,
  *    file writing may take longer than other times.
- * 3. The implementation curently does not track bad blocks on the device.
+ * 3. The implementation curently has bad sector management code removed.
+ *    BSM logic remains to be improved and put in again.
  * 4. There is no true wear-leveling implemented yet, though provesion have
  *    been made to reserve logical sectors to allow it to be added using
  *    a "sector aging" tracking mechanism.
@@ -234,9 +235,6 @@
 #define SMARTFS_USED(h)                 (UINT8_TO_UINT16(h->used))
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 #define CONFIG_SMARTFS_USE_SECTOR_BUFFER
-#endif
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-#define SMARTFS_BSM_LOG_SECTOR_NUMBER   11
 #endif
 
 #define USED_ARRAY_SIZE                 2
