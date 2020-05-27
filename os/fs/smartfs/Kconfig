@@ -67,13 +67,6 @@ config SMARTFS_ALIGNED_ACCESS
 		Endian instances of SmartFS exist that already have
 		directories with data stored in big endian mode.
 
-config SMARTFS_BAD_SECTOR
-bool "Bad Sector Management"
-	default n
-	---help---
-		Enables Bad Sector Management for SMART FS to ensure data
-                consistency of the persistant storage (Flash).
-
 config SMARTFS_DYNAMIC_HEADER
 bool "Dynamic Header"
 	default n

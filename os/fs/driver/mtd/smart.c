@@ -138,7 +138,6 @@
  */
 #define SMART_FIRST_ALLOC_SECTOR    12
 
-#define SMART_BAD_SECTOR_NUMBER         11
 #define SMART_GOOD_SECTOR_RETRY     8
 
 #if defined(CONFIG_MTD_SMART_READAHEAD) || (defined(CONFIG_DRVR_WRITABLE) && \
@@ -325,10 +324,6 @@ struct smart_struct_s {
 	uint8_t namesize;			/* Length of filenames on this device */
 	uint8_t debuglevel;			/* Debug reporting level */
 	uint8_t availSectPerBlk;	/* Number of usable sectors per erase block */
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-	FAR bool *badSectorList;
-	uint8_t *bad_sector_rwbuffer;
-#endif
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	uint8_t rootdirentries;		/* Number of root directory entries */
 	uint8_t minor;				/* Minor number of the block entry */
@@ -996,9 +991,6 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	uint32_t totalsectors;
 	uint32_t allocsize;
 
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-	int sector;
-#endif
 	/* Validate the size isn't zero so we don't divide by zero below. */
 
 	if (size == 0) {
@@ -1071,18 +1063,6 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	}
 #endif
 
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-
-	if (dev->bad_sector_rwbuffer != NULL) {
-		smart_free(dev, dev->bad_sector_rwbuffer);
-		dev->bad_sector_rwbuffer = NULL;
-	}
-
-	if (dev->badSectorList != NULL) {
-		smart_free(dev, dev->badSectorList);
-		dev->badSectorList = NULL;
-	}
-#endif
 	/* Allocate a virtual to physical sector map buffer.  Also allocate
 	 * the storage space for releasecount and freecounts.
 	 */
@@ -1103,24 +1083,6 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	}
 
 	dev->totalsectors = (uint16_t)totalsectors;
-
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-
-	dev->bad_sector_rwbuffer = (uint8_t *)smart_malloc(dev, dev->sectorsize * sizeof(uint8_t), "Bad sector rwbuffer");
-	if (!dev->bad_sector_rwbuffer) {
-		goto errexit;
-	}
-
-	dev->badSectorList = (FAR bool *)smart_malloc(dev, totalsectors * sizeof(bool), "Bad sector map");
-	if (!dev->badSectorList) {
-		goto errexit;
-	}
-	/* Initialize bad sector list. */
-	for (sector = 0; sector < totalsectors; sector++) {
-		dev->badSectorList[sector] = FALSE;
-	}
-
-#endif
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 	allocsize = dev->neraseblocks << 1;
@@ -1232,15 +1194,6 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	 */
 
 errexit:
-
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-	if (dev->bad_sector_rwbuffer) {
-		smart_free(dev, dev->bad_sector_rwbuffer);
-	}
-	if (dev->badSectorList) {
-		smart_free(dev, dev->badSectorList);
-	}
-#endif
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 	if (dev->sMap) {
@@ -1914,42 +1867,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 				sector_seq_log[logicalsector] = header.seq;
 				fvdbg("logicalsector : physicalsector -> %d : %d\n", logicalsector, sector);
 
-				/* Generate bad sector information from start. */
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-				if (logicalsector == SMART_BAD_SECTOR_NUMBER) {
-					int bad_physical_sector_no = -1, bsm_ret;
-					int sect_header_size = sizeof(struct smart_sect_header_s);	// sector header size
-					int i, j, found_bad_physical_sector;
-
-					if (dev->bad_sector_rwbuffer != NULL) {
-						bad_physical_sector_no = (uint16_t)(dev->sMap[SMART_BAD_SECTOR_NUMBER]);
-
-						if (bad_physical_sector_no == ERROR) {
-							fdbg("bad_physical_sector_no not found\n");
-						} else {
-							bsm_ret = MTD_BREAD(dev->mtd, bad_physical_sector_no * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->bad_sector_rwbuffer);
-
-							if (bsm_ret < 0) {
-								fdbg("error in sector read %d\n", bad_physical_sector_no);
-							} else {
-								int bad_sector_info = dev->totalsectors / dev->sectorsPerBlk;
-								for (i = sect_header_size; i < bad_sector_info + sect_header_size; i++) {
-									for (j = 7; j >= 0; j--) {
-										if (((dev->bad_sector_rwbuffer[i] >> j) & 1) == 0) {
-											/* byte = 8 bit; left shift 3 byte = 8 */
-											found_bad_physical_sector = ((i << 3) + j) - (sect_header_size << 3);
-											fvdbg("After reboot: Found bad physical sector #%d\n", found_bad_physical_sector);
-											dev->badSectorList[found_bad_physical_sector] = TRUE;
-										}
-									}
-								}
-							}
-						}
-					} else {
-						fdbg("Error: dev->bad_sector_rwbuffer is NULL\n");
-					}
-				}				//if(logicalsector == SMART_BAD_SECTOR_NUMBER)
-#endif							/*CONFIG_SMARTFS_BAD_SECTOR */
 			} else {
 				fvdbg("logicalsector : physicalsector -> %d : %d; status_released: %d, status_committed: %d\n", logicalsector, sector, status_released, status_committed);
 			}
@@ -2792,83 +2709,6 @@ static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev)
 	return crc;
 }
 
-
-/*Name: smart_write_bad_sector_info
- *
- *
- */
-
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-static int smart_write_bad_sector_info(FAR struct smart_struct_s *dev, int physicalSector)
-{
-	ssize_t ret;
-	uint16_t bad_physical_sector_info;
-	int physical_byte_postion;
-	int bit_to_shift;
-	int fs_header_size = 0;		// fs header + sector header size
-	FAR struct smart_read_write_s read_req;
-	FAR struct smart_read_write_s write_req;
-	uint8_t *temp_rwbuffer = (uint8_t *)kmm_malloc(dev->sectorsize);
-	if (temp_rwbuffer == NULL) {
-		return -1;
-	}
-
-	bad_physical_sector_info = (uint16_t)(dev->sMap[SMART_BAD_SECTOR_NUMBER]);
-
-	if (bad_physical_sector_info == (uint16_t)-1) {
-		kmm_free(temp_rwbuffer);
-		return -1;				// bad management sector not allocated
-	}
-#ifdef CONFIG_MTD_SMART_ENABLE_CRC
-	read_req.logsector = SMART_BAD_SECTOR_NUMBER;
-	read_req.offset = sizeof(struct smart_sect_header_s);
-	read_req.buffer = temp_rwbuffer;
-	read_req.count = dev->sectorsize - sizeof(struct smart_sect_header_s);
-#else
-	read_req.logsector = SMART_BAD_SECTOR_NUMBER;
-	read_req.offset = 0;		//sizeof(struct smart_sect_header_s);
-	read_req.buffer = temp_rwbuffer;
-	read_req.count = dev->sectorsize - sizeof(struct smart_sect_header_s);
-#endif
-
-	ret = smart_readsector(dev, (unsigned long)&read_req);
-
-	if (ret != read_req.count) {
-		fdbg("ret = %d, error in sector read %d\n", ret, bad_physical_sector_info);
-		kmm_free(temp_rwbuffer);
-		return -1;
-	}
-
-	physical_byte_postion = physicalSector / dev->sectorsPerBlk;
-	bit_to_shift = physicalSector % dev->sectorsPerBlk;
-
-	temp_rwbuffer[physical_byte_postion + fs_header_size] &= ~(1 << bit_to_shift);
-
-#ifdef CONFIG_MTD_SMART_ENABLE_CRC
-	write_req.logsector = SMART_BAD_SECTOR_NUMBER;
-	write_req.offset = sizeof(struct smart_sect_header_s);;
-	write_req.buffer = temp_rwbuffer;
-	write_req.count = dev->sectorsize - sizeof(struct smart_sect_header_s);
-#else
-	write_req.logsector = SMART_BAD_SECTOR_NUMBER;
-	write_req.offset = 0;		//sizeof(struct smart_sect_header_s);;
-	write_req.buffer = temp_rwbuffer;
-	write_req.count = dev->sectorsize - sizeof(struct smart_sect_header_s);
-#endif
-
-	ret = smart_writesector(dev, (unsigned long)&write_req);
-	if (ret != OK) {
-		kmm_free(temp_rwbuffer);
-		fdbg("bad sector info: Write failed..!! ret = %d\n", ret);
-		return -1;
-	}
-
-	kmm_free(temp_rwbuffer);
-	return OK;
-}
-
-#endif
-
 /****************************************************************************
  * Name: smart_llformat
  *
@@ -3285,38 +3125,21 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 		 */
 
 		if (allocsector) {
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-			int good_sector_tries_index;
-			int no_of_good_sector_tries = SMART_GOOD_SECTOR_RETRY;
+			newsector = smart_findfreephyssector(dev, FALSE);
+			if (newsector == 0xFFFF) {
+				/* Unable to find a free sector!!! */
 
-			for (good_sector_tries_index = 0; good_sector_tries_index < no_of_good_sector_tries; good_sector_tries_index++) {
-#endif
-				newsector = smart_findfreephyssector(dev, FALSE);
-				if (newsector == 0xFFFF) {
-					/* Unable to find a free sector!!! */
-
-					//fdbg("Can't find a free sector for relocation\n");
-					ret = -ENOSPC;
-					goto errout;
-				}
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-				else if (dev->badSectorList[physsector] == FALSE) {
-					break;
-				}
-			}
-			if (good_sector_tries_index == no_of_good_sector_tries) {
+				//fdbg("Can't find a free sector for relocation\n");
 				ret = -ENOSPC;
 				goto errout;
 			}
-#endif
 
 			/* Update the temporary allocation's physical sector. */
 
 			allocsector->physical = newsector;
 			*((FAR uint16_t *)header->logicalsector) = allocsector->logical;
-		} else
+		} else {
 #endif
-		{
 			if (((header->status & SMART_STATUS_COMMITTED) == (CONFIG_SMARTFS_ERASEDSTATE & SMART_STATUS_COMMITTED)) || ((header->status & SMART_STATUS_RELEASED) != (CONFIG_SMARTFS_ERASEDSTATE & SMART_STATUS_RELEASED))) {
 				/* This sector doesn't have live data (free or released).
 				 * just continue to the next sector and don't move it.
@@ -3341,7 +3164,9 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 			if ((ret = smart_relocate_sector(dev, x, newsector)) < 0) {
 				goto errout;
 			}
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
 		}
+#endif
 
 		/* Update the variables. */
 
@@ -3668,9 +3493,6 @@ retry:
 			(header.seq == CONFIG_SMARTFS_ERASEDSTATE) &&
 #endif
 			(!(SECTOR_IS_COMMITTED(header)))) {
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-			if (dev->badSectorList[x] == FALSE) {
-#endif
 				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
 				if (ret != dev->mtdBlksPerSector * dev->geo.blocksize) {
 					fdbg("Error in reading physical sector %d\n", physicalsector);
@@ -3717,9 +3539,6 @@ retry:
 						fvdbg("Block %d freecount[%d] = %d\n", allocblock, x / dev->sectorsPerBlk, dev->freecount[x / dev->sectorsPerBlk]);
 					}
 				}
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-			}
-#endif
 		} else {
 			fdbg("line %d, block %d, sector %d status: %d committed %d and skipped...\n", __LINE__, allocblock, x, header.status, SECTOR_IS_COMMITTED(header));
 		}
@@ -4280,17 +4099,6 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 	FAR struct smart_allocsector_s *allocsector;
 #endif
 
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-
-	bool bad_sector_found = false;
-	int good_sector_relocate_try = 0;
-
-relocate_good_sector:
-	good_sector_relocate_try++;
-	bad_sector_found = false;
-
-#endif							/*CONFIG_SMARTFS_BAD_SECTOR */
-
 	fvdbg("Entry\n");
 	req = (FAR struct smart_read_write_s *)arg;
 	DEBUGASSERT(req->offset <= dev->sectorsize);
@@ -4300,9 +4108,7 @@ relocate_good_sector:
 
 	if (req->logsector >= dev->totalsectors) {
 		fdbg("Logical sector %d too large\n", req->logsector);
-
-		ret = -EINVAL;
-		goto errout;
+		return -EINVAL;
 	}
 	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
 
@@ -4335,8 +4141,7 @@ relocate_good_sector:
 #endif
 	if (physsector == 0xFFFF) {
 		fdbg("Logical sector %d not allocated\n", req->logsector);
-		ret = -EINVAL;
-		goto errout;
+		return -EINVAL;
 	}
 
 	/* Read the sector data into our buffer. */
@@ -4346,8 +4151,7 @@ relocate_good_sector:
 					dev->rwbuffer);
 	if (ret != dev->mtdBlksPerSector) {
 		fdbg("Error reading phys sector %d\n", physsector);
-		ret = -EIO;
-		goto errout;
+		return -EIO;
 	}
 
 	/* Test if we need to relocate the sector to perform the write */
@@ -4378,9 +4182,6 @@ relocate_good_sector:
 	 * Test if there is a conflict in the data.
 	 */
 
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-	if (!needsrelocate)
-#endif
 		for (x = 0; x < req->count; x++) {
 			/* Test if the next byte can be written to the flash. */
 			byte = dev->rwbuffer[sizeof(struct smart_sect_header_s) + req->offset + x];
@@ -4411,8 +4212,7 @@ relocate_good_sector:
 		physsector = smart_findfreephyssector(dev, FALSE);
 		if (physsector == 0xFFFF) {
 			fdbg("Error relocating sector %d\n", req->logsector);
-			ret = -EIO;
-			goto errout;
+			return -EIO;
 		}
 
 		/* Update the sequence number to indicate the sector was moved. */
@@ -4520,32 +4320,10 @@ relocate_good_sector:
 		ret = MTD_BWRITE(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 		if (ret != dev->mtdBlksPerSector) {
 			fdbg("Error writing to physical sector %d\n", physsector);
-			ret = -EIO;
-			goto errout;
+			return -EIO;
 		}
 
-		/* Check BAD Sector or not. */
 		fdbg("Physical sector %d is newly written by relocation!\n", physsector);
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-
-		int bsm_ret = MTD_BREAD(dev->mtd, physsector * dev->mtdBlksPerSector,
-								dev->mtdBlksPerSector, (FAR uint8_t *)dev->bad_sector_rwbuffer);
-		if (bsm_ret < 0) {
-			fdbg("read %d phy sector data for BSM failed, bsm_ret = %d\n", physsector, bsm_ret);
-		}
-		int i;
-
-		for (i = 0; i < req->count; i++) {
-			uint8_t read_byte = dev->bad_sector_rwbuffer[sizeof(struct smart_sect_header_s)
-								+ req->offset + i];
-			if (req->buffer[i] != read_byte) {
-				bad_sector_found = true;
-				fwdbg("Sorry! %d sector is bad.\n", physsector);
-				break;
-			}
-		}
-
-#endif							/* END OF CONFIG_SMARTFS_BAD_SECTOR */
 		/* Commit the new physical sector. */
 
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
@@ -4559,8 +4337,7 @@ relocate_good_sector:
 		ret = smart_bytewrite(dev, offset, 1, &byte);
 		if (ret != 1) {
 			fvdbg("Error committing physical sector %d\n", physsector);
-			ret = -EIO;
-			goto errout;
+			return -EIO;
 		}
 #endif
 		/* Release the old physical sector. */
@@ -4574,8 +4351,7 @@ relocate_good_sector:
 		ret = smart_bytewrite(dev, offset, 1, &byte);
 		if (ret != 1) {
 			fdbg("Error committing physical sector %d\n", physsector);
-			ret = -EIO;
-			goto errout;
+			return -EIO;
 		}
 		/* Update releasecount for the released sector and freecount for the
 		 * newly allocated physical sector. */
@@ -4626,8 +4402,7 @@ relocate_good_sector:
 		ret = MTD_BWRITE(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 		if (ret != dev->mtdBlksPerSector) {
 			fdbg("Error writing to physical sector %d\n", physsector);
-			ret = -EIO;
-			goto errout;
+			return -EIO;
 		}
 
 		/* Read the sector back and validate the CRC. */
@@ -4640,11 +4415,8 @@ relocate_good_sector:
 		}
 
 		if (ret != OK) {
-			/* TODO: Mark this as a bad block! */
-
 			fdbg("Error validating physical sector %d\n", physsector);
-			ret = -EIO;
-			goto errout;
+			return -EIO;
 		}
 #else
 		/* Not relocated.  Just write the portion of the sector that needs
@@ -4654,107 +4426,12 @@ relocate_good_sector:
 		ret = smart_bytewrite(dev, offset, req->count, req->buffer);
 		if (ret != req->count) {
 			fdbg("Error committing physical sector %d\n", physsector);
-			ret = -EIO;
-			goto errout;
+			return -EIO;
 		}
-		/* check BAD Sector or not. */
-
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-
-		int bsm_ret = MTD_BREAD(dev->mtd, physsector * dev->mtdBlksPerSector,
-								dev->mtdBlksPerSector, (FAR uint8_t *)dev->bad_sector_rwbuffer);
-		if (bsm_ret < 0) {
-			fdbg("read %d phy sector data for BSM failed, bsm_ret = %d\n", physsector, bsm_ret);
-		}
-		int i;
-
-		for (i = 0; i < req->count; i++) {
-			uint8_t read_byte = dev->bad_sector_rwbuffer[sizeof(struct smart_sect_header_s)
-								+ req->offset + i];
-			if (req->buffer[i] != read_byte) {
-				bad_sector_found = true;
-				fwdbg("Sorry! %d sector is bad.\n", physsector);
-				break;
-			}
-		}
-#endif							/* END OF CONFIG_SMARTFS_BAD_SECTOR */
 #endif
 	}
 
 	ret = OK;
-
-errout:
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-
-	if (bad_sector_found) {
-		needsrelocate = TRUE;
-		dev->badSectorList[physsector] = TRUE;
-
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-		byte = header->status & ~(SMART_STATUS_RELEASED | SMART_STATUS_COMMITTED);
-#else
-		byte = header->status | SMART_STATUS_RELEASED | SMART_STATUS_COMMITTED;
-#endif
-		offset = physsector * dev->geo.blocksize + offsetof(struct smart_sect_header_s, status);
-		ret = smart_bytewrite(dev, offset, 1, &byte);
-		if (ret != 1) {
-			fdbg("Error committing physical sector %d\n", physsector);
-			ret = -EIO;
-			goto errout;
-		}
-		/* Update releasecount for bad sector and freecount for the
-		 * newly allocated but bad physical sector. */
-
-		block = physsector / dev->sectorsPerBlk;
-#ifdef CONFIG_MTD_SMART_PACK_COUNTS
-		smart_add_count(dev, dev->releasecount, block, 1);
-		smart_add_count(dev, dev->freecount, physsector / dev->sectorsPerBlk, -1);
-#else
-		dev->releasecount[block]++;
-		dev->freecount[physsector / dev->sectorsPerBlk]--;
-#endif
-		dev->freesectors--;
-		dev->releasesectors++;
-
-#ifdef CONFIG_SMART_LOCAL_CHECKFREE
-		/* Perform debug free count checking enabled. */
-
-		smart_checkfree(dev, __LINE__);
-#endif
-
-		/* Update the sector map. */
-
-#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		dev->sMap[req->logsector] = physsector;
-#else
-		smart_update_cache(dev, req->logsector, physsector);
-#endif
-
-		/* Test if releasing the sector created an empty erase block. */
-
-		smart_erase_block_if_empty(dev, block, FALSE);
-
-		/* Since we performed a relocation, do garbage collection to
-		 * ensure we don't fill up our flash with released blocks.
-		 */
-
-		int garbage_ret = smart_garbagecollect(dev);
-		if (garbage_ret != OK) {
-			fdbg("garbage collection failed: ret is %d\n", ret);
-		}
-
-		int bsm_write_ret = smart_write_bad_sector_info(dev, physsector);
-		if (bsm_write_ret != OK) {
-			fdbg("smart_write_bad_sector_info failed, bsm_write_ret = %d\n", bsm_write_ret);
-		}
-
-		if (good_sector_relocate_try < 5) {
-			goto relocate_good_sector;
-		} else {
-			ret = -EIO;
-		}
-	}
-#endif							/*CONFIG_SMARTFS_BAD_SECTOR */
 	return ret;
 }
 #endif							/* CONFIG_FS_WRITABLE */
@@ -4812,8 +4489,6 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 
 	ret = MTD_BREAD(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 	if (ret != dev->mtdBlksPerSector) {
-		/* TODO:  Mark the block bad. */
-
 		fdbg("Error reading phys sector %d\n", physsector);
 		ret = -EIO;
 		goto errout;
@@ -4834,8 +4509,6 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 
 		ret = smart_validate_crc(dev);
 		if (ret != OK) {
-			/* TODO: Mark the block bad. */
-
 			fdbg("Error validating sector %d CRC during read\n", physsector);
 			ret = -EIO;
 			goto errout;
@@ -5450,11 +5123,6 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 		}
 
 		/* Set the sector size to the default for now. */
-
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-		dev->bad_sector_rwbuffer = NULL;
-		dev->badSectorList = NULL;
-#endif
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 		dev->sMap = NULL;

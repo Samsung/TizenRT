@@ -2497,7 +2497,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_SMARTFS_MAXNAMLEN">1.10.9.2 <code>CONFIG_SMARTFS_MAXNAMLEN</code>: Maximum file name length</a></li>
 <li><a href="#CONFIG_SMARTFS_MULTI_ROOT_DIRS">1.10.9.3 <code>CONFIG_SMARTFS_MULTI_ROOT_DIRS</code>: Support multiple Root Directories / Mount Points</a></li>
 <li><a href="#CONFIG_SMARTFS_ALIGNED_ACCESS">1.10.9.4 <code>CONFIG_SMARTFS_ALIGNED_ACCESS</code>: Ensure 16 and 32 bit accesses are alined</a></li>
-<li><a href="#CONFIG_SMARTFS_BAD_SECTOR">1.10.9.5 <code>CONFIG_SMARTFS_BAD_SECTOR</code>: Bad Sector Management</a></li>
 <li><a href="#CONFIG_SMARTFS_DYNAMIC_HEADER">1.10.9.6 <code>CONFIG_SMARTFS_DYNAMIC_HEADER</code>: Dynamic Header</a></li>
 <li><a href="#CONFIG_SMARTFS_JOURNALING">1.10.9.7 <code>CONFIG_SMARTFS_JOURNALING</code>: Enable filesystem journaling for smartfs</a></li>
 <li><a href="#CONFIG_SMARTFS_JOURNAL_VERIFY">1.10.9.8 <code>CONFIG_SMARTFS_JOURNAL_VERIFY</code>: Verify Journal logging</a></li>
@@ -31933,20 +31932,6 @@ Supporting curves :
   <li><i>Kconfig file</i>: <code>./fs/smartfs/Kconfig</code>
 <p>
   Performs little endian byte accesses to 16 and 32 values  within the directory list to ensure processors that can&apos;t  handle un-aligned accesses don&apos;t bomb out.  Default should  probably by &apos;Y&apos;, but set to &apos;N&apos; in case any existing Big  Endian instances of SmartFS exist that already have  directories with data stored in big endian mode.</p>
-</ul>
-<h3><a name="CONFIG_SMARTFS_BAD_SECTOR">1.10.9.5 <code>CONFIG_SMARTFS_BAD_SECTOR</code>: Bad Sector Management</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_FS_SMARTFS"><code>CONFIG_FS_SMARTFS</code></a></li>
-  <li><i>Kconfig file</i>: <code>./fs/smartfs/Kconfig</code>
-<p>
-  Enables Bad Sector Management for SMART FS to ensure data  <ul><pre>
-consistency of the persistant storage (Flash).
-</pre></ul>
-</p>
 </ul>
 <h3><a name="CONFIG_SMARTFS_DYNAMIC_HEADER">1.10.9.6 <code>CONFIG_SMARTFS_DYNAMIC_HEADER</code>: Dynamic Header</a></h3>
 <ul>
