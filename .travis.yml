@@ -12,7 +12,7 @@ services:
 branches:
   only:
   - master
-  - protection
+  - fs_journal
 
 env:
   global:
