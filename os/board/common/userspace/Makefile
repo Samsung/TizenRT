@@ -90,7 +90,11 @@ endif
   USER_BINFILE += "$(USER_BINPATH)$(DELIM)tinyara_user.bin"
 endif
 
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+USER_LDFLAGS = $(USER_LDSCRIPT)
+else
 USER_LDFLAGS = --undefined=$(ENTRYPT) --entry=$(ENTRYPT) $(USER_LDSCRIPT)
+endif
 USER_LDLIBS = $(patsubst lib%,-l%,$(basename $(notdir $(USERLIBS))))
 USER_LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 
