@@ -167,12 +167,10 @@
  * UART2_DEV: KM0 log uart
  * UART3_DEV: KM0 luart
  */
-int txint_enable = 0;
-int rxint_enable = 0;
+
 static serial_t* sdrv[MAX_UART_INDEX + 1] = {NULL, NULL, NULL, NULL, NULL}; //uart 0~3, uart2 is configured as log uart
 
 struct rtl8721d_up_dev_s {
-
 	uint8_t parity;				/* 0=none, 1=odd, 2=even */
 	uint8_t bits;				/* Number of bits (7 or 8) */
 	uint8_t stopbit;			/* Number of StopBit (1 or 2) */
@@ -183,11 +181,13 @@ struct rtl8721d_up_dev_s {
 	PinName rts;				/* UART RTS pin number */
 	PinName cts;				/* UART CTS pin number */
 	uint8_t FlowControl;
+	bool txint_enable;
+	bool rxint_enable;
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-	uint8_t iflow: 1;			/* input flow control (RTS) enabled */
+	uint8_t iflow:1;			/* input flow control (RTS) enabled */
 #endif
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-	uint8_t oflow: 1;			/* output flow control (CTS) enabled */
+	uint8_t oflow:1;			/* output flow control (CTS) enabled */
 #endif
 };
 
@@ -216,21 +216,21 @@ static bool rtl8721d_up_txempty(struct uart_dev_s *dev);
 /* Serial driver UART operations */
 
 static const struct uart_ops_s g_uart_ops = {
-        .setup = rtl8721d_up_setup,
-        .shutdown = rtl8721d_up_shutdown,
-        .attach = rtl8721d_up_attach,
-        .detach = rtl8721d_up_detach,
-        .ioctl = rtl8721d_up_ioctl,
-        .receive = rtl8721d_up_receive,
-        .rxint = rtl8721d_up_rxint,
-        .rxavailable = rtl8721d_up_rxavailable,
+	.setup = rtl8721d_up_setup,
+	.shutdown = rtl8721d_up_shutdown,
+	.attach = rtl8721d_up_attach,
+	.detach = rtl8721d_up_detach,
+	.ioctl = rtl8721d_up_ioctl,
+	.receive = rtl8721d_up_receive,
+	.rxint = rtl8721d_up_rxint,
+	.rxavailable = rtl8721d_up_rxavailable,
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-        .rxflowcontrol = NULL,
+	.rxflowcontrol = NULL,
 #endif
-        .send = rtl8721d_up_send,
-        .txint = rtl8721d_up_txint,
-        .txready = rtl8721d_up_txready,
-        .txempty = rtl8721d_up_txempty,
+	.send = rtl8721d_up_send,
+	.txint = rtl8721d_up_txint,
+	.txready = rtl8721d_up_txready,
+	.txempty = rtl8721d_up_txempty,
 };
 
 #ifdef CONFIG_RTL8721D_UART0
@@ -267,6 +267,8 @@ static struct rtl8721d_up_dev_s g_uart0priv = {
 	.rts = PA_16,
 	.cts = PA_17,
 	.FlowControl = FlowControlNone,
+	.txint_enable = false,
+	.rxint_enable = false,
 };
 
 static uart_dev_t g_uart0port = {
@@ -299,6 +301,8 @@ static struct rtl8721d_up_dev_s g_uart1priv = {
 	.tx = PA_12,
 	.rx = PA_13,
 	.FlowControl = FlowControlNone,
+	.txint_enable = false,
+	.rxint_enable = false,
 };
 
 static uart_dev_t g_uart1port = {
@@ -331,6 +335,8 @@ static struct rtl8721d_up_dev_s g_uart2priv = {
 	.tx = PA_7,
 	.rx = PA_8,
 	.FlowControl = FlowControlNone,
+	.txint_enable = false,
+	.rxint_enable = false,
 };
 
 static uart_dev_t g_uart2port = {
@@ -354,16 +360,16 @@ static uart_dev_t g_uart2port = {
 
 static u32 uart_index_get(PinName tx)
 {
-	if ((tx == _PA_12) ||(tx == _PB_1)|| (tx == _PA_26)) {
+	if ((tx == _PA_12) || (tx == _PB_1) || (tx == _PA_26)) {
 		return 3;
-	} else if ((tx == _PA_18) || (tx == _PA_21)||(tx == _PB_9)||(tx == _PB_19)) {
+	} else if ((tx == _PA_18) || (tx == _PA_21) || (tx == _PB_9) || (tx == _PB_19)) {
 		return 0;
-	}else if (tx == _PA_7){
+	} else if (tx == _PA_7) {
 		return 2;
 	} else {
 		assert_param(0);
 	}
-        return 3;
+	return 3;
 }
 
 /****************************************************************************
@@ -430,10 +436,10 @@ void rtl8721d_uart_irq(uint32_t id, SerialIrq event)
 {
 	struct uart_dev_s *dev = (struct uart_dev_s *)id;
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
-	if(event == RxIrq) {
+	if (event == RxIrq) {
 		uart_recvchars(dev);
 	}
-	if(event == TxIrq){
+	if (event == TxIrq) {
 		uart_xmitchars(dev);
 	}
 }
@@ -520,7 +526,7 @@ static int rtl8721d_up_ioctl(struct file *filep, int cmd, unsigned long arg)
 				priv->parity = ParityEven;
 			}
 		}
-		if (! !(termiosp->c_cflag & CSTOPB)) {
+		if (!!(termiosp->c_cflag & CSTOPB)) {
 			priv->stopbit = 2;
 		} else {
 			priv->stopbit = 1;
@@ -532,8 +538,8 @@ static int rtl8721d_up_ioctl(struct file *filep, int cmd, unsigned long arg)
 		}
 		rtl8721d_up_setup(dev);
 		rtl8721d_up_attach(dev);
-		rtl8721d_up_rxint(dev, txint_enable);
-		rtl8721d_up_rxint(dev, rxint_enable);
+		rtl8721d_up_txint(dev, priv->txint_enable);
+		rtl8721d_up_rxint(dev, priv->rxint_enable);
 		break;
 
 	default:
@@ -577,9 +583,9 @@ static int rtl8721d_up_receive(struct uart_dev_s *dev, uint8_t *status)
  ****************************************************************************/
 static void rtl8721d_up_rxint(struct uart_dev_s *dev, bool enable)
 {
-	rxint_enable = enable;
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
+	priv->rxint_enable = enable;
 	serial_irq_set(sdrv[uart_index_get(priv->tx)], RxIrq, enable);	// 1= ENABLE
 }
 
@@ -624,11 +630,11 @@ static void rtl8721d_up_send(struct uart_dev_s *dev, int ch)
 
 static void rtl8721d_up_txint(struct uart_dev_s *dev, bool enable)
 {
-	txint_enable = enable;
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
+	priv->txint_enable = enable;
 	serial_irq_set(sdrv[uart_index_get(priv->tx)], TxIrq, enable);
-	if(enable)
+	if (enable)
 		UART_INTConfig(UART_DEV_TABLE[uart_index_get(priv->tx)].UARTx, RUART_IER_ETBEI, ENABLE);
 }
 
