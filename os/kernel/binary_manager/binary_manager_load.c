@@ -557,7 +557,6 @@ int binary_manager_read_header(char *path, binary_header_t *header_data)
 	int read_size;
 	int file_size;
 	bool need_unlink;
-	uint32_t crc_hash = 0;
 	uint32_t check_crc = 0;
 	uint8_t crc_buffer[CRC_BUFFER_SIZE];
 

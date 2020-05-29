@@ -97,9 +97,7 @@ void binary_manager_scan_ubin(void)
 	int ret;
 	DIR *dirp;
 	binary_header_t header_data;
-	char filename[NAME_MAX];
 	char filepath[CONFIG_PATH_MAX];
-	char new_filepath[CONFIG_PATH_MAX];
 
 	/* Open a directory for user binaries, BINARY_DIR_PATH */
 	dirp = opendir(BINARY_DIR_PATH);
