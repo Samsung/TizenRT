@@ -112,8 +112,11 @@ struct binary_s {
 	uint32_t ramsize;		/* Size of the RAM paritition */
 	uint32_t heapstart;		/* Start address of app heap area */
 #endif
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+
+#if defined(CONFIG_SUPPORT_COMMON_BINARY) || defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME)
 	size_t textsize;		/* Size of text section */
+#endif
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	size_t rosize;			/* Size of ro section */
 	size_t datasize;		/* Size of data section */
 	uint32_t reload;		/* Indicate whether this binary will be reloaded */

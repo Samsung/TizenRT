@@ -295,6 +295,9 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	up_addrenv_clone(&loadinfo.addrenv, &binp->addrenv);
 #else
 	binp->alloc[ALLOC_TEXT] = (FAR void *)loadinfo.textalloc;
+#if defined(CONFIG_SUPPORT_COMMON_BINARY) || defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME)
+	binp->textsize = loadinfo.textsize;
+#endif
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	binp->alloc[ALLOC_CTOR] = loadinfo.ctoralloc;
 	binp->alloc[ALLOC_DTOR] = loadinfo.dtoralloc;
@@ -304,7 +307,6 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	binp->alloc[ALLOC_RO] = (FAR void *)loadinfo.roalloc;
 	binp->alloc[ALLOC_DATA] = (FAR void *)loadinfo.dataalloc;
-	binp->textsize = loadinfo.textsize;
 	binp->rosize = loadinfo.rosize;
 	/* loadinfo.datasize includes the size of data and bss sections.
 	 * But, binp->datasize is used to backup the data section as
