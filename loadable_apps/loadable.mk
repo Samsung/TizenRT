@@ -16,7 +16,6 @@
 #
 ###########################################################################
 include $(TOPDIR)/.config
-include $(TOPDIR)/Make.defs
 
 LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
 LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
