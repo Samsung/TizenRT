@@ -100,8 +100,6 @@
 
 #define DEV_NEW_NULL_PATH "/dev/NULL"
 
-#define DEVNAME_LEN 32
-
 #define VFS_LOOP_COUNT 5
 
 #define LONG_FILE_PATH MOUNT_DIR"long"
@@ -139,7 +137,6 @@
 #define INV_FD -3
 
 #define MTD_CONFIG_PATH "/dev/config"
-#define BUF_SIZE 4096
 #define DEV_PATH "/dev"
 #define DEV_INVALID_DIR "/dev/invalid"
 #define DEV_EMPTY_FOLDER_PATH "/dev/folder"
@@ -2941,61 +2938,6 @@ static void tc_driver_mtd_config_ops(void)
 	TC_ASSERT_EQ("close", ret, OK);
 
 	TC_SUCCESS_RESULT();
-}
-#endif
-#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
-/**
- * @testcase         tc_driver_mtd_ftl_ops
- * @brief            ftl block operations
- * @scenario         opens the ftl device and perforsm operations
- * @apicovered       ftl block operations
- * @precondition     NA
- * @postcondition    NA
- */
-static void tc_driver_mtd_ftl_ops(void)
-{
-	int fd;
-	int ret;
-	char *buf;
-	char *types = CONFIG_FLASH_PART_TYPE;
-	char MTD_FTL_PATH[DEVNAME_LEN];
-	int partno = 0;
-
-	buf = (char *)malloc(BUF_SIZE);
-	if (!buf) {
-		printf("Memory not allocated \n");
-		return;
-	}
-
-	memset(MTD_FTL_PATH, 0, DEVNAME_LEN);
-	while (*types) {
-		if (!strncmp(types, "ftl,", 4)) {
-			snprintf(MTD_FTL_PATH, sizeof(MTD_FTL_PATH), "/dev/mtdblock%d", partno);
-			break;
-		} else {
-			while (*types++ != ',');
-			partno++;
-		}
-	}
-
-	fd = open(MTD_FTL_PATH, O_RDWR);
-	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, free(buf));
-
-	ret = read(fd, buf, BUF_SIZE);
-	TC_ASSERT_EQ_CLEANUP("read", ret, BUF_SIZE, goto cleanup);
-#ifdef CONFIG_FS_WRITABLE
-	ret = write(fd, buf, BUF_SIZE);
-	TC_ASSERT_EQ_CLEANUP("write", ret, BUF_SIZE, goto cleanup);
-#endif
-	free(buf);
-	buf = NULL;
-	ret = close(fd);
-	TC_ASSERT_EQ("close", ret, OK);
-	TC_SUCCESS_RESULT();
-	return;
-cleanup:
-	free(buf);
-	close(fd);
 }
 #endif
 
@@ -6144,10 +6086,6 @@ int tc_filesystem_main(int argc, char *argv[])
 #endif
 #if defined(CONFIG_MTD_CONFIG)
 	tc_driver_mtd_config_ops();
-#endif
-
-#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH) && defined(CONFIG_FLASH_PARTITION)
-	tc_driver_mtd_ftl_ops();
 #endif
 	tc_libc_dirent_readdir_r_p();
 	tc_libc_dirent_readdir_r_invalid_path_n();
