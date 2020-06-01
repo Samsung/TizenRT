@@ -235,6 +235,12 @@
 #define REGION_END (REGION_START + REGION_SIZE)
 #define INVALID_HEAP_IDX -1
 
+#ifdef CONFIG_MM_KERNEL_HEAP
+#define KREGION_START (size_t)kregionx_start[0]
+#define KREGION_SIZE  kregionx_size[0]
+#define KREGION_END (KREGION_START + KREGION_SIZE)
+#endif
+
 /* Determines the size of the chunk size/offset type */
 
 #ifdef CONFIG_MM_SMALL

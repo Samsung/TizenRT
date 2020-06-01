@@ -301,46 +301,34 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 #endif
 {
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-#ifdef CONFIG_IMXRT_SEMC_SDRAM
-	*heap_start = regionx_start[0];
-	*heap_size = regionx_size[0];
-
-	DEBUGASSERT(*heap_start != 0);
-	DEBUGASSERT(*heap_size != 0);
-#else
-	/* Get the unaligned size and position of the user-space heap.
-	 * This heap begins after the user-space .bss section at an offset
-	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	/* When common binary is enabled, we will not have user data and bss.
+	 * So, the heap will start at the beginning of the RAM
 	 */
-
-	uintptr_t user_end = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
-	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend;
-	size_t usize = (uint32_t)user_end - ubase;
-
-
-	DEBUGASSERT(ubase < (uintptr_t)user_end);
-
-	/* Return the user-space heap settings */
-
-	board_led_on(LED_HEAPALLOCATE);
-	*heap_start = (FAR void *)ubase;
-	*heap_size = usize;
-#endif
+	*heap_start = (void *)REGION_START;
+#elif CONFIG_BUILD_PROTECTED
+	/* In protected build, first part of RAM is used for user data and bss.
+	 * Heap will start after user bss.
+	 */
+	*heap_start = (void *)USERSPACE->us_bssend;
 #else
-
-	/* Return the heap settings */
-
-	board_led_on(LED_HEAPALLOCATE);
-
-	if (g_idle_topstack >= PRIMARY_RAM_START && g_idle_topstack <= PRIMARY_RAM_END) {
-		*heap_start = (FAR void *)g_idle_topstack;
-		*heap_size  = PRIMARY_RAM_END - g_idle_topstack;
-	} else {
-		*heap_start = (FAR void *)PRIMARY_RAM_START;
-		*heap_size  = PRIMARY_RAM_SIZE;
-	}
+	/* In flat build, first part of RAM is used for data and bss followed
+	 * by kernel stack. Heap will start after the stack.
+	 */
+	*heap_start = (void *)g_idle_topstack;
 #endif
+
+	/* There may be a special scenraio where we might configure a different region
+	 * for heap. In such case, if end of bss falls outside of the region address range,
+	 * then we use the whole region for heap.
+	 */
+	if (*heap_start < (void *)REGION_START || *heap_start > (void *)REGION_END) {
+		*heap_start = REGION_START;
+	}
+
+	*heap_size = (void *)REGION_END - *heap_start;
+
+	DEBUGASSERT(*heap_size != 0);
 }
 
 /****************************************************************************
@@ -357,16 +345,17 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 {
-#ifdef CONFIG_IMXRT_SEMC_SDRAM
-	*heap_start = kregionx_start[0];
-	*heap_size = kregionx_size[0];
-
-	DEBUGASSERT(*heap_start != 0);
-	DEBUGASSERT(*heap_size != 0);
-#else
 	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
-	*heap_size = (uint32_t)((uintptr_t)__usram_segment_start__) - (uint32_t)(*heap_start);
-#endif
+
+	/* There may be a special scenraio where we might configure a different region
+	 * for heap. In such case, if end of bss falls outside of the region address range,
+	 * then we use the whole region for heap.
+	 */
+	if (*heap_start < (void *)KREGION_START || *heap_start > (void *)KREGION_END) {
+		*heap_start = KREGION_START;
+	}
+
+	*heap_size = (void *)KREGION_END - *heap_start;
 }
 #endif
 
