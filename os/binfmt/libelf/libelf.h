@@ -465,9 +465,11 @@ struct bin_addr_info_s {
 	struct bin_addr_info_s *flink;
 	char bin_name[BIN_NAME_MAX];
 	uint32_t text_addr;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	uint32_t rodata_addr;
 	uint32_t data_addr;
 	uint32_t bss_addr;
+#endif
 };
 typedef struct bin_addr_info_s bin_addr_info_t;
 
