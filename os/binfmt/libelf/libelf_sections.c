@@ -194,12 +194,17 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 	if (bin_info != NULL) {
 		strncpy(bin_info->bin_name, bin->bin_name, BIN_NAME_MAX);
 		bin_info->text_addr = (uint32_t)bin->alloc[ALLOC_TEXT];
+
+		binfo("[%s] text_addr : %x\n", bin_info->bin_name, bin_info->text_addr);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		bin_info->rodata_addr = (uint32_t)bin->alloc[ALLOC_DATA];
 		bin_info->data_addr = (uint32_t)bin->datastart;
 		bin_info->bss_addr = (uint32_t)bin->bssstart;
 
-		binfo("[%s] text_addr : %x, rodata_addr : %x, data_addr : %x, bss_addr : %x\n", bin_info->bin_name, bin_info->text_addr, bin_info->rodata_addr, bin_info->data_addr, bin_info->bss_addr);
-
+		binfo("   rodata_addr : %x\n", bin_info->rodata_addr);
+		binfo("   data_addr   : %x\n", bin_info->data_addr);
+		binfo("   bss_addr    : %x\n", bin_info->bss_addr);
+#endif
 		sq_addlast((sq_entry_t *)bin_info, &g_bin_addr_list);
 	} else {
 		berr("ERROR : Failed to allocate for bin symbol.\n");
