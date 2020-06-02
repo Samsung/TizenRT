@@ -1681,7 +1681,15 @@ static int smart_set_wear_level(FAR struct smart_struct_s *dev, uint16_t block, 
 }
 #endif
 
-static bool smart_validate_erase_block(FAR struct smart_struct_s *dev)
+/****************************************************************************
+ * Name: smart_validate_sector
+ *
+ * Description: Check CRC for the sector and determine if sector
+ *		contents are OK in case CRC does not match.
+ *
+ ****************************************************************************/
+
+static bool smart_validate_sector(FAR struct smart_struct_s *dev)
 {
 	FAR struct smart_sect_header_s header;
 	bool corrupted = false;
@@ -1833,7 +1841,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		memcpy(&header, dev->rwbuffer, sizeof(struct smart_sect_header_s));
 
 		/* If current sector is corrupted because of erase fail, restore it */
-		if (smart_validate_erase_block(dev)) {
+		if (smart_validate_sector(dev)) {
 			fdbg("It seems that erase failed, release current sector. block : %d sector : %d\n", sector / dev->sectorsPerBlk, sector);
 			/* Erase current block forcely */
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
@@ -1859,7 +1867,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		status_released = SECTOR_IS_RELEASED(header);
 		status_committed = SECTOR_IS_COMMITTED(header);
 		fvdbg("released : %d committed : %d logical : %d physical : %d crc : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, header.crc8, header.status, header.seq);
-		if (logicalsector > 0 && header.status != CONFIG_SMARTFS_ERASEDSTATE && !status_released && status_committed) {
+		if (logicalsector > 0 && logicalsector < dev->totalsectors && header.status != CONFIG_SMARTFS_ERASEDSTATE && !status_released && status_committed) {
 
 			/* Map the sector and update the free sector counts. */
 			if (header.seq >= sector_seq_log[logicalsector]) {
@@ -1875,9 +1883,9 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		/* Test if this sector has been committed. */
 
 		if (!status_committed) {
-			/* Confirm that this sector is truly blank. */
+			/* Confirm that this sector is truly blank.*/
 			if (logicalsector < dev->totalsectors) {
-				/* This sector might have been corrupted. committ and release this. */
+				/* This sector if not erased and not committed, might have been corrupted. Commit and release this. */
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 				header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
 #else
@@ -1895,9 +1903,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 			}
 		}
 
-		/* This block is commited, therefore not free.  Update the
-		 * erase block's freecount.
-		 */
+		/* This block is now commited, therefore not free. Update the erase block's freecount.*/
 
 #ifdef CONFIG_MTD_SMART_PACK_COUNTS
 		smart_add_count(dev, dev->freecount, sector / dev->sectorsPerBlk, -1);
