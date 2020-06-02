@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/kmalloc.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <debug.h>
