@@ -40,7 +40,10 @@ extern wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg);
 
 static int _process_msg(int argc, char *argv[])
 {
-	wifimgr_create_msgqueue(&g_wifi_message_queue);
+	if (wifimgr_create_msgqueue(&g_wifi_message_queue) < 0) {
+		return -1;
+	}
+
 	while (1) {
 		handler_msg hmsg;
 		wifimgr_message_out(&hmsg, &g_wifi_message_queue);
