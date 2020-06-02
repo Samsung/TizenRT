@@ -89,12 +89,6 @@ extern uint32_t _ebss;			/* End+1 of .bss */
 
 const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	/* General memory map */
-#ifndef __APP_BUILD__
-#if defined(CONFIG_USER_ENTRYPOINT) && !defined(CONFIG_APP_BINARY_SEPARATION)
-	.us_entrypoint = (main_t)CONFIG_USER_ENTRYPOINT,
-#else
-	.us_entrypoint = (main_t)NULL,
-#endif
 	.us_textstart = (uintptr_t)&_stext,
 	.us_textend = (uintptr_t)&_etext,
 	.us_datasource = (uintptr_t)&_eronly,
@@ -103,6 +97,12 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	.us_bssstart = (uintptr_t)&_sbss,
 	.us_bssend = (uintptr_t)&_ebss,
 
+#ifndef __APP_BUILD__
+#if defined(CONFIG_USER_ENTRYPOINT) && !defined(CONFIG_APP_BINARY_SEPARATION)
+	.us_entrypoint = (main_t)CONFIG_USER_ENTRYPOINT,
+#else
+	.us_entrypoint = (main_t)NULL,
+#endif
 	/* pre-application entry points (declared in include/tinyara/init.h) */
 
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
