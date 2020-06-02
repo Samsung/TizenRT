@@ -135,6 +135,7 @@
 #endif
 
 #define INV_FD -3
+#define INVALID_DESCRIPTOR -1
 
 #define MTD_CONFIG_PATH "/dev/config"
 #define DEV_PATH "/dev"
@@ -591,7 +592,7 @@ static void tc_fs_vfs_write_invalid_fd_n(void)
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 
 	/* Testcase */
-	ret = write(CONFIG_NFILE_DESCRIPTORS, buf, strlen(buf));
+	ret = write(INVALID_DESCRIPTOR, buf, strlen(buf));
 	TC_ASSERT_EQ("write", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -674,7 +675,7 @@ static void tc_fs_vfs_read_invalid_fd_n(void)
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 
 	/* Testcase */
-	ret = read(CONFIG_NFILE_DESCRIPTORS, buf, sizeof(buf));
+	ret = read(INVALID_DESCRIPTOR, buf, sizeof(buf));
 	TC_ASSERT_EQ("read", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -804,7 +805,7 @@ static void tc_fs_vfs_dup_invalid_fd_n(void)
 
 	/* Testcase */
 #if CONFIG_NFILE_DESCRIPTORS > 0
-	fd = dup(CONFIG_NFILE_DESCRIPTORS);
+	fd = dup(INVALID_DESCRIPTOR);
 	TC_ASSERT_LT_CLEANUP("dup", fd, 0, close(fd));
 #endif
 
@@ -977,7 +978,7 @@ static void tc_fs_vfs_fsync_invalid_fd_n(void)
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 
 	/* Testcase */
-	ret = fsync(CONFIG_NFILE_DESCRIPTORS);
+	ret = fsync(INVALID_DESCRIPTOR);
 	TC_ASSERT_EQ("fsync", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -1064,7 +1065,7 @@ static void tc_fs_vfs_lseek_invalid_fd_n(void)
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 
 	/* Testcase */
-	ret = lseek(CONFIG_NFILE_DESCRIPTORS, 5, SEEK_SET);
+	ret = lseek(INVALID_DESCRIPTOR, 5, SEEK_SET);
 	TC_ASSERT_EQ("lseek", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -1116,7 +1117,7 @@ static void tc_fs_vfs_pwrite_invalid_fd_n(void)
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 
 	/* Testcase */
-	ret = pwrite(CONFIG_NFILE_DESCRIPTORS, str, strlen(str), 10);
+	ret = pwrite(INVALID_DESCRIPTOR, str, strlen(str), 10);
 	TC_ASSERT_EQ("pwrite", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -1172,7 +1173,7 @@ static void tc_fs_vfs_pread_invalid_fd_n(void)
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 
 	/* Testcase */
-	ret = pread(CONFIG_NFILE_DESCRIPTORS, buf, 20, 10);
+	ret = pread(INVALID_DESCRIPTOR, buf, 20, 10);
 	TC_ASSERT_EQ("pread", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -2200,7 +2201,7 @@ static void tc_fs_vfs_fstatfs_invalid_fd_n(void)
 	int ret;
 
 	/* Testcase */
-	ret = fstatfs(CONFIG_NFILE_DESCRIPTORS, &fs);
+	ret = fstatfs(INVALID_DESCRIPTOR, &fs);
 	TC_ASSERT_NEQ("fstatfs", ret, OK);
 
 	TC_SUCCESS_RESULT();
@@ -2546,7 +2547,7 @@ static void tc_fs_vfs_fcntl_invalid_fd_n(void)
 	int ret;
 
 	/* Testcase */
-	ret = fcntl(CONFIG_NFILE_DESCRIPTORS, F_GETFL, 0);
+	ret = fcntl(INVALID_DESCRIPTOR, F_GETFL, 0);
 	TC_ASSERT_EQ("fcntl", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -2986,7 +2987,7 @@ static void tc_libc_stdio_dprintf_invalid_fd_n(void)
 	int ret;
 
 	/* Testcase */
-	ret = dprintf(CONFIG_NFILE_DESCRIPTORS, "%s", str);
+	ret = dprintf(INVALID_DESCRIPTOR, "%s", str);
 	TC_ASSERT_EQ("dprintf", ret, ERROR);
 	TC_ASSERT_EQ("dprintf", errno, EBADF);
 
