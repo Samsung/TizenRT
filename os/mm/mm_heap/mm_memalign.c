@@ -18,7 +18,7 @@
 /****************************************************************************
  * mm/mm_heap/mm_memalign.c
  *
- *   Copyright (C) 2007, 2009, 2011, 2013-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2013-2014  Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,12 +56,29 @@
 
 #include <tinyara/config.h>
 
-#include <assert.h>
+#include <debug.h>
 
 #include <tinyara/mm/mm.h>
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include  <tinyara/sched.h>
+#endif
+#include "mm_node.h"
+
 /****************************************************************************
  * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Type Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
  ****************************************************************************/
 
 /****************************************************************************
@@ -71,7 +88,6 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
 /****************************************************************************
  * Name: mm_memalign
  *
@@ -90,11 +106,13 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size,
 FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 #endif
 {
-	FAR struct mm_allocnode_s *node;
-	size_t rawchunk;
-	size_t alignedchunk;
+	FAR struct mm_freenode_s *node;
+	void *ret = NULL;
+	int ndx;
+	size_t newsize;
+	FAR struct mm_allocnode_s *alignchunk = NULL;
+	bool found_align = false;
 	size_t mask = (size_t)(alignment - 1);
-	size_t allocsize;
 
 	/* If this requested alinement's less than or equal to the natural alignment
 	 * of malloc, then just let malloc do the work.
@@ -108,137 +126,146 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 #endif
 	}
 
-	/* Adjust the size to account for (1) the size of the allocated node, (2)
-	 * to make sure that it is an even multiple of our granule size, and to
-	 * include the alignment amount.
-	 *
-	 * Notice that we increase the allocation size by twice the requested
-	 * alignment.  We do this so that there will be at least two valid
-	 * alignment points within the allocated memory.
-	 *
-	 * NOTE:  These are sizes given to malloc and not chunk sizes. They do
-	 * not include SIZEOF_MM_ALLOCNODE.
-	 */
-
-	size = MM_ALIGN_UP(size);	/* Make multiples of our granule size */
-	allocsize = size + 2 * alignment;	/* Add double full alignment size */
-
-	/* Then malloc that size */
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/*Passing Zero as caller addr to avoid adding memalloc info in malloc function,
-	   alloc info will be added in this functiona after memory aligment . */
-	rawchunk = (size_t)mm_malloc(heap, allocsize, caller_retaddr);
-#else
-	rawchunk = (size_t)mm_malloc(heap, allocsize);
-#endif
-	if (rawchunk == 0) {
+	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {
+		mdbg("Because of mm_allocnode, %u cannot be allocated. The maximum \
+			 allocable size is (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) \
+			 : %u\n.", size, (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE));
 		return NULL;
 	}
 
-	/* We need to hold the MM semaphore while we muck with the chunks and
-	 * nodelist.
+	/* Adjust the size to account for (1) the size of the allocated node and
+	 * (2) to make sure that it is an even multiple of our granule size.
 	 */
+
+	newsize = MM_ALIGN_UP(size + SIZEOF_MM_ALLOCNODE);
+
+	/* We need to hold the MM semaphore while we muck with the nodelist. */
 
 	mm_takesemaphore(heap);
 
-	/* Get the node associated with the allocation and the next node after
-	 * the allocation.
+	/* Get the location in the node list to start the search
+	 * by converting the request size into a nodelist index.
 	 */
 
-	node = (FAR struct mm_allocnode_s *)(rawchunk - SIZEOF_MM_ALLOCNODE);
+	ndx = mm_size2ndx(newsize);
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_subtract_size(heap, node->pid, node->size);
-		heapinfo_update_total_size(heap, ((-1) * (node->size)), node->pid);
-#endif
-	/* Find the aligned subregion */
-
-	alignedchunk = (rawchunk + mask) & ~mask;
-
-	/* Check if there is free space at the beginning of the aligned chunk */
-
-	if (alignedchunk != rawchunk) {
-		FAR struct mm_allocnode_s *newnode;
-		FAR struct mm_allocnode_s *next;
-		size_t precedingsize;
-
-		/* Get the node the next node after the allocation. */
-
-		next = (FAR struct mm_allocnode_s *)((char *)node + node->size);
-
-		/* Make sure that there is space to convert the preceding mm_allocnode_s
-		 * into an mm_freenode_s.  I think that this should always be true
-		 */
-
-		DEBUGASSERT(alignedchunk >= rawchunk + 8);
-
-		newnode = (FAR struct mm_allocnode_s *)(alignedchunk - SIZEOF_MM_ALLOCNODE);
-
-		/* Preceding size is full size of the new 'node,' including
-		 * SIZEOF_MM_ALLOCNODE
-		 */
-
-		precedingsize = (size_t)newnode - (size_t)node;
-
-		/* If we were unlucky, then the alignedchunk can lie in such a position
-		 * that precedingsize < SIZEOF_NODE_FREENODE.  We can't let that happen
-		 * because we are going to cast 'node' to struct mm_freenode_s below.
-		 * This is why we allocated memory large enough to support two
-		 * alignment points.  In this case, we will simply use the second
-		 * alignment point.
-		 */
-
-		if (precedingsize < SIZEOF_MM_FREENODE) {
-			alignedchunk += alignment;
-			newnode = (FAR struct mm_allocnode_s *)(alignedchunk - SIZEOF_MM_ALLOCNODE);
-			precedingsize = (size_t)newnode - (size_t)node;
+	/* Search for a large enough chunk in the list of nodes.
+	 * mm_nodelist is an array of lists. The array is arranged in ascending order of size.
+	 * Each list is ordered by size in a descending order.
+	 * If this list does not have free nodes whose size is large enough
+	 * to accomodate the requested size, it will fail due to no more space.
+	 */
+	for (; ndx < MM_NNODES; ndx++) {
+		node = heap->mm_nodelist[ndx].flink;
+		if (!(node && node->size >= newsize)) {
+			/* If the list at this index is empty or if the size of first node
+			 * in the list is less than the required size, then go to next index.
+			 */
+			continue;
 		}
 
-		/* Set up the size of the new node */
+		FAR struct mm_freenode_s *prev = &heap->mm_nodelist[ndx];
 
-		newnode->size = (size_t)next - (size_t)newnode;
-		newnode->preceding = precedingsize | MM_ALLOC_BIT;
+		/* Traverse the list until the end or until the node size is less than required size */
+		for ( ; node && node->size >= newsize; prev = node, node = node->flink);
 
-		/* Reduce the size of the original chunk and mark it not allocated, */
+		/* If you hit the end of list, then set the node to prev */
+		if (!node) {
+			node = prev;
+		}
 
-		node->size = precedingsize;
-		node->preceding &= ~MM_ALLOC_BIT;
+		/* Now, traverse the list in reverse direction, towards bigger size nodes */
+		for ( ; node; node = node->blink) {
+			alignchunk = (FAR struct mm_allocnode_s *)(((size_t)node + SIZEOF_MM_ALLOCNODE + mask) & ~mask);
+			size_t alignsize = (size_t)alignchunk - (size_t)node + size;
+			size_t remainsize = (size_t)alignchunk - SIZEOF_MM_ALLOCNODE - (size_t)node;
 
-		/* Fix the preceding size of the next node */
+			/* We found a suitable node if node size is more than required size after alignment and
+			 * if the remaining bytes before the alignment point is either zero or bigger than freenode.
+			 */
+			if (node->size >= alignsize && (remainsize == 0 || remainsize >= SIZEOF_MM_FREENODE)) {
+				found_align = true;
+				break;
+			}
+		}
 
-		next->preceding = newnode->size | (next->preceding & MM_ALLOC_BIT);
-
-		/* Convert the newnode chunk size back into malloc-compatible size by
-		 * subtracting the header size SIZEOF_MM_ALLOCNODE.
-		 */
-
-		allocsize = newnode->size - SIZEOF_MM_ALLOCNODE;
-
-		/* Add the original, newly freed node to the free nodelist */
-
-		mm_addfreechunk(heap, (FAR struct mm_freenode_s *)node);
-
-		/* Replace the original node with the newlay realloaced,
-		 * aligned node
-		 */
-		node = newnode;
+		if (found_align) {
+			break;
+		}
 	}
 
-	/* Check if there is free space at the end of the aligned chunk */
+	if (found_align) {
+		FAR struct mm_allocnode_s *newnode = (FAR struct mm_allocnode_s *)((size_t)alignchunk - SIZEOF_MM_ALLOCNODE);
+		/* Get the next node after the allocation. */
+		FAR struct mm_allocnode_s *next = (FAR struct mm_allocnode_s *)((char *)node + node->size);
 
-	if (allocsize > size) {
-		/* Shrink the chunk by that much -- remember, mm_shrinkchunk wants
-		 * internal chunk sizes that include SIZEOF_MM_ALLOCNODE, and not the
-		 * malloc-compatible sizes that we have.
+		/* Remove the node.  There must be a predecessor, but there may not be
+		 * a successor node.
 		 */
-		mm_shrinkchunk(heap, node, size + SIZEOF_MM_ALLOCNODE);
-	}
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heapinfo_update_node(node, caller_retaddr);
 
-	heapinfo_add_size(heap, node->pid, node->size);
-	heapinfo_update_total_size(heap, node->size, node->pid);
-#endif
+		REMOVE_NODE_FROM_LIST(node);
+
+		/* Check if there is free space at the beginning of the aligned chunk */
+		if ((size_t)newnode - (size_t)node >= SIZEOF_MM_FREENODE) {
+			size_t precedingsize;
+
+			/* Preceding size is full size of the new 'node,' including
+			 * SIZEOF_MM_ALLOCNODE
+			 */
+			precedingsize = (size_t)newnode - (size_t)node;
+
+			/* Set up the size of the new node */
+			newnode->size = (size_t)next - (size_t)newnode;
+			newnode->preceding = precedingsize | MM_ALLOC_BIT;
+
+			/* Reduce the size of the original chunk and mark it not allocated, */
+			node->size = precedingsize;
+			node->preceding &= ~MM_ALLOC_BIT;
+
+			/* Fix the preceding size of the next node */
+			next->preceding = newnode->size | (next->preceding & MM_ALLOC_BIT);
+
+			/* Add the original, newly freed node to the free nodelist */
+			mm_addfreechunk(heap, (FAR struct mm_freenode_s *)node);
+
+			/* Replace the original node with the newly reallocated,
+			 * aligned node
+			 */
+			node = (FAR struct mm_freenode_s *)newnode;
+		} else {
+			node->size = (size_t)next - (size_t)node;
+			node->preceding |= MM_ALLOC_BIT;
+		}
+
+		/* Check if there is free space at the end of the aligned chunk */
+
+		if (node->size > size + SIZEOF_MM_ALLOCNODE) {
+			/* Shrink the chunk by that much -- remember, mm_shrinkchunk wants
+			 * internal chunk sizes that include SIZEOF_MM_ALLOCNODE, and not the
+			 * malloc-compatible sizes that we have.
+			 */
+			mm_shrinkchunk(heap, (FAR struct mm_allocnode_s *)node, size + SIZEOF_MM_ALLOCNODE);
+		}
+
+		ret = (void *)alignchunk;
+	}
+
 	mm_givesemaphore(heap);
-	return (FAR void *)alignedchunk;
+
+	/* If CONFIG_DEBUG_MM is defined, then output the result of the allocation
+	 * to the SYSLOG.
+	 */
+
+#ifdef CONFIG_DEBUG_MM
+	if (!ret) {
+		mdbg("Allocation failed, size %u\n", size);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		heapinfo_parse(heap, HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
+#endif
+	} else {
+		mvdbg("Allocated %p, size %u\n", ret, size);
+	}
+#endif
+
+	return ret;
 }
