@@ -9,6 +9,7 @@
 	- [Userspace Initialization](#userspace-initialization)
 	- [MPU Initialization](#mpu-initialization)
 	- [Allocation of kernel and user heaps](#allocation-of-kernel-and-user-heaps)
+- [Available APIs](#available-apis)
 
 
 ## Overview of Flat Build
@@ -139,3 +140,14 @@ The following sections give detailed explanation regarding some of the steps / c
 - The user heap starts at the end of the user bss section and spans the entire remaining space in the user ram region.
 - However, if the chipset has a memory configuration that is different from the default one or if the vendor would like to initialize the kernel and user heaps at different locations or sizes, then the vendor can implement new versions of the APIs in a chipset specific file such as CHIPSET_allocateheap.c and build this new file instead of up_allocate.c file.
 - The vendor needs to take care that the prototypes of the APIs are not changed in their new implementation.
+
+## Available APIs
+Because the main purpose of Protected build is kernel protection from user by separation, user application can't use some Kernel APIs which manage kernel internal operation like sched_gettcb API.
+The platform APIs user can use with protected build are defined in syscall, libc, framework and external folders.  
+Please find the lists to check whether API is available or not on Protected build.
+
+- [List of libc APIs](https://github.com/Samsung/TizenRT/blob/master/lib/libc/libc.csv)
+- [List of Math APIs](https://github.com/Samsung/TizenRT/blob/master/lib/libc/math.csv)
+- [List of syscall APIs](https://github.com/Samsung/TizenRT/blob/master/os/syscall/syscall.csv)
+- [Headers of framework](https://github.com/Samsung/TizenRT/tree/master/framework/include)
+- [Headers of external](https://github.com/Samsung/TizenRT/tree/master/external/include)
