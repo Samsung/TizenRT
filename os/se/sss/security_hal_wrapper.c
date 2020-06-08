@@ -1007,7 +1007,7 @@ int sss_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx,
 	case HAL_ECDSA_SEC_P384R1:
 		ecc_sign.sign_type |= OID_ECC_P384;
 		break;
-	case HAL_ECDSA_SEC_P512R1:
+	case HAL_ECDSA_SEC_P521R1:
 		ecc_sign.sign_type |= OID_ECC_P521;
 		break;
 	case HAL_ECDSA_BRAINPOOL_P256R1:
@@ -1129,7 +1129,7 @@ int sss_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign,
 	case HAL_ECDSA_SEC_P384R1:
 		ecc_sign.sign_type |= OID_ECC_P384;
 		break;
-	case HAL_ECDSA_SEC_P512R1:
+	case HAL_ECDSA_SEC_P521R1:
 		ecc_sign.sign_type |= OID_ECC_P521;
 		break;
 	case HAL_ECDSA_BRAINPOOL_P256R1:
@@ -1280,7 +1280,7 @@ int sss_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_i
 	case HAL_ECDSA_SEC_P384R1:
 		ecc_pub.curve |= OID_ECC_P384;
 		break;
-	case HAL_ECDSA_SEC_P512R1:
+	case HAL_ECDSA_SEC_P521R1:
 		ecc_pub.curve |= OID_ECC_P521;
 		break;
 	case HAL_ECDSA_UNKNOWN:
@@ -1373,7 +1373,7 @@ int sss_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 		}
 	} else {
 		return HAL_NOT_SUPPORTED;
-}
+	}
 
 	return HAL_SUCCESS;
 }

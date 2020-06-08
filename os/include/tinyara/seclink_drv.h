@@ -8,6 +8,7 @@ struct sec_upperhalf_s {
 	struct sec_lowerhalf_s *lower;
 	char *path;
 	int32_t refcnt;
+	sem_t su_lock;
 };
 
 struct sec_ops_s;

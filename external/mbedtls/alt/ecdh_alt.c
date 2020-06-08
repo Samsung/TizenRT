@@ -45,6 +45,8 @@
  */
 
 #include <tinyara/config.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>
 
@@ -100,25 +102,38 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
 		goto cleanup;
 	}
-
 	ret = sl_init(&shnd);
 	if (ret != SECLINK_OK) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup;
 	}
 
-	ret = sl_generate_key(shnd, key_type, grp->key_index, &hres);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
-		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-		sl_deinit(shnd);
-		goto cleanup;
+	while (1) {
+		ret = sl_generate_key(shnd, key_type, grp->key_index, &hres);
+		if (ret != SECLINK_OK) {
+			ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+			sl_deinit(shnd);
+			goto cleanup;
+		}
+
+		if (hres != HAL_SUCCESS) {
+			if (hres == HAL_KEY_IN_USE) {
+				grp->key_index++;
+				continue;
+			}
+			ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+			sl_deinit(shnd);
+			goto cleanup;
+		}
+		break;
 	}
 
 	/* Get Public value from sss */
 	ret = sl_get_key(shnd, key_type, grp->key_index, &key, &hres);
 	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-		sl_deinit(shnd);
+		(void)sl_remove_key(shnd, key_type, grp->key_index, &hres);
+		(void)sl_deinit(shnd);
 		goto cleanup;
 	}
 
@@ -127,7 +142,7 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Q->Y, key.priv, key.priv_len));
 	MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&Q->Z, 1));
 
-	sl_deinit(shnd);
+	(void)sl_deinit(shnd);
 	ret = 0;
 
 cleanup:
@@ -145,17 +160,27 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 	hal_data shared_secret = {shared_secret_data, MBEDTLS_MAX_KEY_SIZE_ALT, NULL, 0};
 	sl_ctx shnd;
 	hal_result_e hres = HAL_FAIL;
+	hal_key_type key_type = HAL_KEY_UNKNOWN;
+
+	/* compute ECC shared secret with stored key (permanent) */
+	ret = sl_init(&shnd);
+	if (ret != SECLINK_OK) {
+		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		goto cleanup;
+	}
 
 	memset(&ecc_pub, 0, sizeof(hal_ecdh_data));
 
 	ecc_pub.pubkey_x = (hal_data *)malloc(sizeof(hal_data));
 	if (!ecc_pub.pubkey_x) {
-		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		goto cleanup;
 	}
 	ecc_pub.pubkey_y = (hal_data *)malloc(sizeof(hal_data));
 	if (!ecc_pub.pubkey_y) {
 		free(ecc_pub.pubkey_x);
-		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		goto cleanup;
 	}
 
 	ecc_pub.pubkey_x->data_len = mbedtls_mpi_size(&Q->X);
@@ -163,12 +188,12 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 
 	if (!(ecc_pub.pubkey_x->data = (unsigned char *)malloc(ecc_pub.pubkey_x->data_len))) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
-		goto cleanup;
+		goto cleanup_with_mem;
 	}
 
 	if (!(ecc_pub.pubkey_y->data = (unsigned char *)malloc(ecc_pub.pubkey_y->data_len))) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
-		goto cleanup;
+		goto cleanup_with_mem;
 	}
 
 	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->X, ecc_pub.pubkey_x->data, ecc_pub.pubkey_x->data_len));
@@ -188,38 +213,27 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 		ecc_pub.curve = HAL_ECDSA_SEC_P384R1;
 		break;
 	case MBEDTLS_ECP_DP_SECP521R1:
-		ecc_pub.curve = HAL_ECDSA_SEC_P512R1;
+		ecc_pub.curve = HAL_ECDSA_SEC_P521R1;
 		break;
 	case MBEDTLS_ECP_DP_BP256R1:
 		ecc_pub.curve = HAL_ECDSA_BRAINPOOL_P256R1;
 		break;
 	default:
 		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-		goto cleanup;
-	}
-
-	/* compute ECC shared secret with stored key (permanent) */
-	ret = sl_init(&shnd);
-	if (ret != SECLINK_OK) {
-		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
-		goto cleanup;
+		goto cleanup_with_mem;
 	}
 
 	ret = sl_ecdh_compute_shared_secret(shnd, &ecc_pub, grp->key_index, &shared_secret, &hres);
-
 	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-		sl_deinit(shnd);
-		goto cleanup;
+		goto cleanup_with_mem;
 	}
 
 	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(z, shared_secret.data, shared_secret.data_len));
 
-	sl_deinit(shnd);
 	ret = 0;
 
-cleanup:
-
+cleanup_with_mem:
 	if (ecc_pub.pubkey_x) {
 		if (ecc_pub.pubkey_x->data) {
 			free(ecc_pub.pubkey_x->data);
@@ -233,6 +247,40 @@ cleanup:
 		}
 		free(ecc_pub.pubkey_y);
 	}
+
+cleanup:
+	
+	switch (grp->id) {
+	case MBEDTLS_ECP_DP_SECP192R1:
+		key_type = HAL_KEY_ECC_SEC_P192R1;
+		break;
+	case MBEDTLS_ECP_DP_SECP224R1:
+		key_type = HAL_KEY_ECC_SEC_P224R1;
+		break;
+	case MBEDTLS_ECP_DP_SECP256R1:
+		key_type = HAL_KEY_ECC_SEC_P256R1;
+		break;
+	case MBEDTLS_ECP_DP_SECP384R1:
+		key_type = HAL_KEY_ECC_SEC_P384R1;
+		break;
+	case MBEDTLS_ECP_DP_SECP521R1:
+		key_type = HAL_KEY_ECC_SEC_P512R1;
+		break;
+	case MBEDTLS_ECP_DP_BP256R1:
+		key_type = HAL_KEY_ECC_BRAINPOOL_P256R1;
+		break;
+	case MBEDTLS_ECP_DP_BP384R1:
+		key_type = HAL_KEY_ECC_BRAINPOOL_P384R1;
+		break;
+	case MBEDTLS_ECP_DP_BP512R1:
+		key_type = HAL_KEY_ECC_BRAINPOOL_P512R1;
+		break;
+	default:
+		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+	}
+	sl_remove_key(shnd, key_type, grp->key_index, &hres);
+
+	sl_deinit(shnd);
 
 	return ret;
 }
