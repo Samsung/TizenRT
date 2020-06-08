@@ -18,83 +18,100 @@
 ###########################################################################
 
 THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
-TOP_PATH=${THIS_PATH}/../../../
-OS_PATH=${TOP_PATH}/os
-CONFIG=${OS_PATH}/.config
+TOP_PATH=${THIS_PATH}/../../..
+CONFIG=${TOP_PATH}/os/.config
+BUILDDIR=${TOP_PATH}/build
+BINDIR=${BUILDDIR}/output/bin
+GNUUTL=${BUILDDIR}/tools/amebad/gnu_utility
 
 echo "Realtek Postbuild Actions"
-export TOPDIR=/root/tizenrt/build/
-echo $TOPDIR	
+export TOPDIR=$BUILDDIR/
 
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libc.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libc.a
 #arm-none-eabi-readelf -A /root/tizenrt/os/board/rtl8721csm/src/libboard.a 
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libapps.a
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libapps.a
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libexternal.a
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libframework.a
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libfs.a
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libkernel.a
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libmm.a
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libfs.a
-#arm-none-eabi-readelf -A /root/tizenrt/build/output/libraries/libwque.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libapps.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libapps.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libexternal.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libframework.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libfs.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libkernel.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libmm.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libfs.a
+#arm-none-eabi-readelf -A $BUILDDIR/output/libraries/libwque.a
 
 
 #if [ 1 -eq 0 ]; then
-#arm-none-eabi-gcc -T/root/tizenrt/build/configs/rtl8721csm/scripts/rlx8721d_img2_is.ld -O2 -march=armv8-m.main+dsp -mthumb -mcmse -mfloat-abi=hard -mfpu=fpv5-sp-d16 -nostartfiles -nostdlib -specs nosys.specs -Wl,--gc-sections -Wl,--warn-section-align -Wl,-Map=/root/tizenrt/build/output/text.map  -Wl,--cref -Wl,--build-id=none -save-temps  -Wl,--no-enum-size-warning  -Wl,--warn-common -o /root/tizenrt/build/output/target_img2.axf  -Wl,--start-group \
-#/root/tizenrt/build/output/libraries/libc.a \
+#arm-none-eabi-gcc -T$BUILDDIR/configs/rtl8721csm/scripts/rlx8721d_img2_is.ld -O2 -march=armv8-m.main+dsp -mthumb -mcmse -mfloat-abi=hard -mfpu=fpv5-sp-d16 -nostartfiles -nostdlib -specs nosys.specs -Wl,--gc-sections -Wl,--warn-section-align -Wl,-Map=$BUILDDIR/output/text.map  -Wl,--cref -Wl,--build-id=none -save-temps  -Wl,--no-enum-size-warning  -Wl,--warn-common -o $BUILDDIR/output/target_img2.axf  -Wl,--start-group \
+#$BUILDDIR/output/libraries/libc.a \
 #/root/tizenrt/os/board/rtl8721csm/src/libboard.a \
-#/root/tizenrt/build/output/libraries/libapps.a \
-#/root/tizenrt/build/output/libraries/libfs.a \
-#/root/tizenrt/build/output/libraries/libarch.a \
-#/root/tizenrt/build/output/libraries/libdrivers.a \
-#/root/tizenrt/build/output/libraries/libexternal.a \
-#/root/tizenrt/build/output/libraries/libframework.a \
-#/root/tizenrt/build/output/libraries/libmm.a \
-#/root/tizenrt/build/output/libraries/libwque.a \
-#/root/tizenrt/build/output/libraries/libkernel.a -Wl,--end-group -lm -lstdc++
+#$BUILDDIR/output/libraries/libapps.a \
+#$BUILDDIR/output/libraries/libfs.a \
+#$BUILDDIR/output/libraries/libarch.a \
+#$BUILDDIR/output/libraries/libdrivers.a \
+#$BUILDDIR/output/libraries/libexternal.a \
+#$BUILDDIR/output/libraries/libframework.a \
+#$BUILDDIR/output/libraries/libmm.a \
+#$BUILDDIR/output/libraries/libwque.a \
+#$BUILDDIR/output/libraries/libkernel.a -Wl,--end-group -lm -lstdc++
 
 
 #if [ 1 -eq 0 ]; then
-#mv /root/tizenrt/build/output/text.map /root/tizenrt/build/output/text_image2_ns.map
+#mv $BUILDDIR/output/text.map $BUILDDIR/output/text_image2_ns.map
 
-cp /root/tizenrt/build/output/bin/tinyara.axf /root/tizenrt/build/output/bin/target_img2.axf
+cp $BINDIR/tinyara.axf $BINDIR/target_img2.axf
 
-arm-none-eabi-nm /root/tizenrt/build/output/bin/target_img2.axf | sort > /root/tizenrt/build/output/bin/target_img2.map
+arm-none-eabi-nm $BINDIR/target_img2.axf | sort > $BINDIR/target_img2.map
 
-arm-none-eabi-objdump -d /root/tizenrt/build/output/bin/target_img2.axf > /root/tizenrt/build/output/bin/target_img2.asm
+arm-none-eabi-objdump -d $BINDIR/target_img2.axf > $BINDIR/target_img2.asm
 
-#arm-none-eabi-objdump -h -S --disassemble-all /root/tizenrt/build/output/bin/target_img2.axf > /root/tizenrt/build/output/bin/target_img2.txt
+#arm-none-eabi-objdump -h -S --disassemble-all $BINDIR/target_img2.axf > $BINDIR/target_img2.txt
 
-cp /root/tizenrt/build/output/bin/target_img2.axf /root/tizenrt/build/output/bin/target_pure_img2.axf
+cp $BINDIR/target_img2.axf $BINDIR/target_pure_img2.axf
 
-arm-none-eabi-strip /root/tizenrt/build/output/bin/target_pure_img2.axf
+arm-none-eabi-strip $BINDIR/target_pure_img2.axf
 
-arm-none-eabi-nm /root/tizenrt/build/output/bin/target_pure_img2.axf | sort > /root/tizenrt/build/output/bin/target_pure_img2.map
+arm-none-eabi-nm $BINDIR/target_pure_img2.axf | sort > $BINDIR/target_pure_img2.map
 
-arm-none-eabi-objcopy -Obinary /root/tizenrt/build/output/bin/target_pure_img2.axf /root/tizenrt/build/output/bin/target_img2.bin
+arm-none-eabi-objcopy -Obinary $BINDIR/target_pure_img2.axf $BINDIR/target_img2.bin
 
 arm-none-eabi-objcopy -j .ram_image2.entry -j .ram_image2.text -j .ram_image2.data \
--Obinary /root/tizenrt/build/output/bin/target_pure_img2.axf /root/tizenrt/build/output/bin/ram_2.bin
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/ram_2.bin
 
 arm-none-eabi-objcopy -j .xip_image2.text \
--Obinary /root/tizenrt/build/output/bin/target_pure_img2.axf /root/tizenrt/build/output/bin/xip_image2.bin
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/xip_image2.bin
 
 arm-none-eabi-objcopy -j .psram_image2.text -j .psram_image2.data \
--Obinary /root/tizenrt/build/output/bin/target_pure_img2.axf /root/tizenrt/build/output/bin/psram_2.bin
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/psram_2.bin
 
-arm-none-eabi-size -A --radix=16 /root/tizenrt/build/output/bin/target_img2.axf
+arm-none-eabi-size -A --radix=16 $BINDIR/target_img2.axf
 
-arm-none-eabi-size -t --radix=16 /root/tizenrt/build/output/bin/target_img2.axf
+arm-none-eabi-size -t --radix=16 $BINDIR/target_img2.axf
 
 echo "========== Image manipulating start =========="
-/root/tizenrt/build/tools/amebad/gnu_utility/prepend_header.sh /root/tizenrt/build/output/bin/ram_2.bin  __ram_image2_text_start__  /root/tizenrt/build/output/bin/target_img2.map
-/root/tizenrt/build/tools/amebad/gnu_utility/prepend_header.sh /root/tizenrt/build/output/bin/xip_image2.bin  __flash_text_start__  /root/tizenrt/build/output/bin/target_img2.map
-/root/tizenrt/build/tools/amebad/gnu_utility/prepend_header.sh /root/tizenrt/build/output/bin/psram_2.bin  __psram_image2_text_start__  /root/tizenrt/build/output/bin/target_img2.map
-python /root/tizenrt/build/tools/amebad/gnu_utility/code_analyze.py
+$GNUUTL/prepend_header.sh $BINDIR/ram_2.bin  __ram_image2_text_start__  $BINDIR/target_img2.map
+$GNUUTL/prepend_header.sh $BINDIR/xip_image2.bin  __flash_text_start__  $BINDIR/target_img2.map
+$GNUUTL/prepend_header.sh $BINDIR/psram_2.bin  __psram_image2_text_start__  $BINDIR/target_img2.map
+python $GNUUTL/code_analyze.py
 
-cat /root/tizenrt/build/output/bin/xip_image2_prepend.bin /root/tizenrt/build/output/bin/ram_2_prepend.bin /root/tizenrt/build/output/bin/psram_2_prepend.bin  > /root/tizenrt/build/output/bin/km4_image2_all.bin
+cat $BINDIR/xip_image2_prepend.bin $BINDIR/ram_2_prepend.bin $BINDIR/psram_2_prepend.bin  > $BINDIR/km4_image2_all.bin
 
-/root/tizenrt/build/tools/amebad/gnu_utility/pad.sh /root/tizenrt/build/output/bin/km4_image2_all.bin
+$GNUUTL/pad.sh $BINDIR/km4_image2_all.bin
+
+function image_encryption()
+{
+	if [ ! -f ${CONFIG} ];then
+		echo "No .config file"
+		exit 1
+	fi
+
+	source ${CONFIG}
+
+	if [ "${CONFIG_AMEBAD_TRUSTZONE}" == "y" ];then
+		RDP_KEY="${CONFIG_AMEBAD_RDP_KEY:2}"
+		$GNUUTL/imagetool.sh ${CONFIG_AMEBAD_RDP} ${RDP_KEY}
+	fi
+}
+image_encryption;
 
 function concatenate_binary()
 {
@@ -107,14 +124,11 @@ function concatenate_binary()
 
 	if [ "${CONFIG_AMEBAD_TRUSTZONE}" != "y" ];then
 		echo "========== Concatenate_binary for TZ disabled =========="
-		cat /root/tizenrt/build/output/bin/xip_image2_prepend.bin /root/tizenrt/build/output/bin/ram_2_prepend.bin /root/tizenrt/build/output/bin/psram_2_prepend.bin  > /root/tizenrt/build/output/bin/km4_image2_all.bin
-		cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin  > /root/tizenrt/build/output/bin/km0_km4_image2.bin
+		cat $BINDIR/xip_image2_prepend.bin $BINDIR/ram_2_prepend.bin $BINDIR/psram_2_prepend.bin  > $BINDIR/km4_image2_all.bin
+		cat $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin  > $BINDIR/km0_km4_image2.bin
 	else
 		echo "========== Concatenate_binary for TZ enabled =========="
-		RDP_KEY="${CONFIG_AMEBAD_RDP_KEY:2}"
-		/root/tizenrt/build/tools/amebad/gnu_utility/imagetool.sh ${CONFIG_AMEBAD_RDP} ${RDP_KEY}
-
-		cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin /root/tizenrt/build/output/bin/km4_image3_all-en.bin /root/tizenrt/build/output/bin/km4_image3_psram-en.bin > /root/tizenrt/build/output/bin/km0_km4_image2.bin
+		cat $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all-en.bin $BINDIR/km4_image3_psram-en.bin > $BINDIR/km0_km4_image2.bin
 	fi
 }
 concatenate_binary;

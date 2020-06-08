@@ -76,6 +76,7 @@ config AMEBAD_RDP
 config AMEBAD_RDP_KEY
 	prompt "Amebad RDP Key"
 	hex "Amebad RDP Key"
+	default 2473040ab47c48655a15aa431c4bbb8a
 	range 00000000000000000000000000000000 ffffffffffffffffffffffffffffffff
 	depends on AMEBAD_RDP
 
