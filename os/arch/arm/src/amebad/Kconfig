@@ -67,4 +67,16 @@ config AMEBAD_TRUSTZONE
 	default n
 	select ARMV8M_TRUSTZONE
 
+config AMEBAD_RDP
+	bool "Enable Amebad RDP"
+	default n
+	select AMEBAD_RDP_ENABLE
+	depends on AMEBAD_TRUSTZONE
+
+config AMEBAD_RDP_KEY
+	prompt "Amebad RDP Key"
+	hex "Amebad RDP Key"
+	range 00000000000000000000000000000000 ffffffffffffffffffffffffffffffff
+	depends on AMEBAD_RDP
+
 endmenu

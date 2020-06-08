@@ -111,7 +111,10 @@ function concatenate_binary()
 		cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin  > /root/tizenrt/build/output/bin/km0_km4_image2.bin
 	else
 		echo "========== Concatenate_binary for TZ enabled =========="
-		cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin /root/tizenrt/build/tools/amebad/gnu_utility/km4_image3_all-en.bin /root/tizenrt/build/tools/amebad/gnu_utility/km4_image3_psram-en.bin > /root/tizenrt/build/output/bin/km0_km4_image2.bin
+		RDP_KEY="${CONFIG_AMEBAD_RDP_KEY:2}"
+		/root/tizenrt/build/tools/amebad/gnu_utility/imagetool.sh ${CONFIG_AMEBAD_RDP} ${RDP_KEY}
+
+		cat /root/tizenrt/build/tools/amebad/gnu_utility/km0_image2_all.bin /root/tizenrt/build/output/bin/km4_image2_all.bin /root/tizenrt/build/output/bin/km4_image3_all-en.bin /root/tizenrt/build/output/bin/km4_image3_psram-en.bin > /root/tizenrt/build/output/bin/km0_km4_image2.bin
 	fi
 }
 concatenate_binary;
