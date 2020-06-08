@@ -3,7 +3,7 @@
 ## Contents
 - [Overview of Flat Build](#overview-of-flat-build)
 - [Overview of Protected Build](#overview-of-protected-build)
-- [Steps for suporting protected build in a new chipset](#steps-for-supporting-protected-build-in-a-new-chipset)
+- [Steps for supporting protected build in a new chipset](#steps-for-supporting-protected-build-in-a-new-chipset)
 	- [Make.defs](#makedefs)
 	- [Linker scripts](#linker-scripts)
 	- [Userspace Initialization](#userspace-initialization)
@@ -92,7 +92,7 @@ The following sections give detailed explanation regarding some of the steps / c
 
 ```
 
-- It is mandatory to define __uflash_segment_start__ linker variable. This will be used in the code to obtain the address of the uerspace object.
+- It is mandatory to define __uflash_segment_start__ linker variable. This will be used in the code to obtain the address of the userspace object.
 - The user can also enable the CONFIG_AUTOGEN_MEMORY_LDSCRIPT config, which will auto-generate the memory.ld file based on the Flash partition information in CONFIG_FLASH_PART_XXXX configs.
 
 #### user-space.ld
@@ -118,7 +118,7 @@ The following sections give detailed explanation regarding some of the steps / c
 
 ### Userspace Initialization
 - Userspace initialization is performed during the boot up stage to initialize the  user space data and bss memory regions.
-- The userpsace data section is copied from the flash memory to the designated RAM memory region.
+- The userspace data section is copied from the flash memory to the designated RAM memory region.
 - The bss section is initialized with zeros.
 - If the flash does not support XIP, then the code section also needs to be copied from the flash to the designated area of RAM.
 - The start address and sizes of the code, data and bss sections can be found either in the USERSPACE object.
