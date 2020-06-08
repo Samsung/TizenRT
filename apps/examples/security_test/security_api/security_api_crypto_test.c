@@ -75,7 +75,7 @@ test_crypto(void)
 	aes_param.iv = iv.data;
 	aes_param.iv_len = iv.length;
 
-	if (0 != crypto_aes_encryption(hnd, aes_param, AES128_KEY, &input, &aes_enc_data)) {
+	if (0 != crypto_aes_encryption(hnd, &aes_param, AES128_KEY, &input, &aes_enc_data)) {
 		printf("Fail\n	! crypto_aes_encryption\n");
 		goto exit;
 	}
@@ -85,7 +85,7 @@ test_crypto(void)
 
 	printf("  . SEC AES Decryption ...\n");
 	fflush(stdout);
-	if (0 != crypto_aes_decryption(hnd, aes_param, AES128_KEY, &aes_enc_data, &aes_dec_data)) {
+	if (0 != crypto_aes_decryption(hnd, &aes_param, AES128_KEY, &aes_enc_data, &aes_dec_data)) {
 		printf("Fail\n	! security_aes_decryption\n");
 		goto exit;
 	}
@@ -117,7 +117,7 @@ test_crypto(void)
 	rsa_param.mgf = 0;
 	rsa_param.salt_byte_len = 0;
 
-	if (0 != crypto_rsa_encryption(hnd, rsa_param, RSA1024_KEY, &input, &rsa_enc_data)) {
+	if (0 != crypto_rsa_encryption(hnd, &rsa_param, RSA1024_KEY, &input, &rsa_enc_data)) {
 		printf("Fail\n	! crypto_rsa_encryption\n");
 		goto exit;
 	}
@@ -127,7 +127,7 @@ test_crypto(void)
 
 	printf("  . SEC RSA Decryption ...\n");
 	fflush(stdout);
-	if (0 != crypto_rsa_decryption(hnd, rsa_param, RSA1024_KEY, &rsa_enc_data, &rsa_dec_data)) {
+	if (0 != crypto_rsa_decryption(hnd, &rsa_param, RSA1024_KEY, &rsa_enc_data, &rsa_dec_data)) {
 		printf("Fail\n	! crypto_rsa_decryption\n");
 		goto exit;
 	}

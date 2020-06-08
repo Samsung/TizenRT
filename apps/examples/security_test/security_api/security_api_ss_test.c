@@ -30,10 +30,7 @@
 void
 test_securestorage(void)
 {
-	int i;
 	unsigned int storage_size;
-	unsigned int count;
-	security_storage_list list;
 	security_handle hnd;
 	security_data input = {NULL, 0};
 	security_data output = {NULL, 0};
@@ -75,18 +72,6 @@ test_securestorage(void)
 	printf("ok\n");
 	PrintBuffer(TEST_SS_PATH, output.data, output.length);
 
-	printf("  . SEC Get Secure Storage List ...\n");
-
-	if (0 != ss_get_list_secure_storage(hnd, &count, &list)) {
-		printf("Fail\n	! ss_get_list_secure_storage\n");
-		goto exit;
-	}
-	printf("ok\n");
-	printf("[%20s] [%8s]\n", "FILE NAME", "FILE ATTR");
-	for (i = 0; i < count; i++) {
-		printf("[%20s] [%08x]\n", list[i].name, list[i].attr);
-	}
-
 	printf("  . SEC Delete secure storage ...\n");
 
 	if (0 != ss_delete_secure_storage(hnd, TEST_SS_PATH)) {
@@ -97,8 +82,6 @@ test_securestorage(void)
 
 exit:
 	free_security_data(&output);
-	if (count > 0)
-		free(list);
 
 	printf("  . SEC Deinitialize ...\n");
 	security_deinit(hnd);

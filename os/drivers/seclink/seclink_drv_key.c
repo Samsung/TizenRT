@@ -29,6 +29,47 @@
 #endif
 #define SLDRV_TAG "[SECLINK_DRV_KEY]"
 
+#define NKEY_SLOT 4
+static uint8_t g_key_inuse[NKEY_SLOT] = {0,};
+
+static int _set_key_slot(uint8_t num)
+{
+	if (num >= NKEY_SLOT) {
+		return -1;
+	}
+	g_key_inuse[num] = 1;
+	return 0;
+}
+
+
+static int _unset_key_slot(uint8_t num)
+{
+	if (num >= NKEY_SLOT) {
+		return -1;
+	}
+	g_key_inuse[num] = 0;
+	return 0;
+}
+
+
+static int _is_empty_key_slot(uint8_t num)
+{
+	if (num >= NKEY_SLOT) {
+		return -1;
+	}
+
+	return g_key_inuse[num] == 0 ? 1 : 0;
+}
+
+
+void hd_initialize_key_slot(void)
+{
+	for (int i = 0; i < NKEY_SLOT; i++) {
+		g_key_inuse[i] = 0;
+	}
+}
+
+
 int hd_handle_key_request(int cmd, unsigned long arg, void *lower)
 {
 	SLDRV_ENTER;
@@ -48,19 +89,60 @@ int hd_handle_key_request(int cmd, unsigned long arg, void *lower)
 		return -EINVAL;
 	}
 
-	SLDRV_LOG("keymgr request cmd(%x) (%d)\n", cmd, info->mode);
+	int res = _is_empty_key_slot(info->key_idx);
+	SLDRV_LOG("keymgr request cmd(%x) (%d) isempty(%d)\n", cmd, info->mode, res);
 	switch (cmd) {
 	case SECLINKIOC_SETKEY:
-		req->res = se->ops->set_key(info->mode, info->key_idx, info->key, info->prikey);
+		if (!res) {
+			req->res = HAL_KEY_IN_USE;
+		} else {
+			if (_set_key_slot(info->key_idx) == -1) {
+				req->res = HAL_INVALID_SLOT_RANGE;
+			} else {
+				req->res = se->ops->set_key(info->mode, info->key_idx, info->key, info->prikey);
+				if (req->res != HAL_SUCCESS) {
+					_unset_key_slot(info->key_idx);
+				}
+			}
+			printf("[pkbuild] res(%d)\n", req->res);
+		}
 		break;
 	case SECLINKIOC_GETKEY:
-		req->res = se->ops->get_key(info->mode, info->key_idx, info->key);
+		if (!res) {
+			req->res = se->ops->get_key(info->mode, info->key_idx, info->key);
+		} else {
+			if (res == -1) {
+				req->res = HAL_INVALID_SLOT_RANGE;
+			} else {
+				req->res = HAL_EMPTY_SLOT;
+			}
+		}
 		break;
 	case SECLINKIOC_REMOVEKEY:
-		req->res = se->ops->remove_key(info->mode, info->key_idx);
+		if (!res) {
+			if (res == -1) {
+				req->res = HAL_INVALID_SLOT_RANGE;
+			} else {
+				_unset_key_slot(info->key_idx);
+				req->res = se->ops->remove_key(info->mode, info->key_idx);
+			}
+		} else {
+			req->res = HAL_EMPTY_SLOT;
+		}
 		break;
 	case SECLINKIOC_GENERATEKEY:
-		req->res = se->ops->generate_key(info->mode, info->key_idx);
+		if (!res) {
+			req->res = HAL_KEY_IN_USE;
+		} else {
+			if (res == -1) {
+				req->res = HAL_INVALID_SLOT_RANGE;
+			} else {
+				req->res = se->ops->generate_key(info->mode, info->key_idx);
+				if (req->res == HAL_SUCCESS) {
+					_set_key_slot(info->key_idx);
+				}
+			}
+		}
 		break;
 	}
 

@@ -42,6 +42,22 @@
 #define SL_IS_SS_REQ(cmd)      ((cmd & 0xf0) & (SECLINKIOC_SS & 0xf0))
 #define SL_IS_KEYMGR_REQ(cmd)  ((cmd & 0xf0) & (SECLINKIOC_KEYMGR & 0xf0))
 
+#define SL_LOCK(lock)										\
+	do {													\
+		int sl_res = sem_wait(lock);						\
+		if (sl_res < 0) {									\
+			SLDRV_LOG(SLDRV_TAG" lock fail(%d)\n", errno);	\
+		}													\
+	} while (0)
+
+#define SL_UNLOCK(lock)										\
+	do {													\
+		int sl_res = sem_post(lock);						\
+		if (sl_res < 0) {									\
+			SLDRV_LOG(SLDRV_TAG" lock fail(%d)\n", errno);	\
+		}													\
+	} while (0)
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -52,6 +68,8 @@ static ssize_t seclink_read(FAR struct file *filep, FAR char *buffer, size_t len
 static ssize_t seclink_write(FAR struct file *filep, FAR const char *buffer, size_t len);
 static int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 
+/*  Key slot */
+extern void hd_initialize_key_slot(void);
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -108,7 +126,7 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	SLDRV_ENTER;
 
-	SLDRV_LOG("-->%s (%d)(%x)\n", __FUNCTION__, cmd, arg);
+	SLDRV_LOG("-->%s (%x)(%x)\n", __FUNCTION__, cmd, arg);
 
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct sec_upperhalf_s *upper = inode->i_private;
@@ -118,10 +136,9 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	 * current design consider that only one task that is seclink can
 	 * request to HAL
 	 */
+	SL_LOCK(&upper->su_lock);
 	int res = 0;
-	if (SL_IS_COMMON_REQ(cmd)) {
-		res = hd_handle_common_request(cmd, arg, (void *)upper->lower);
-	} else if (SL_IS_AUTH_REQ(cmd)) {
+	if (SL_IS_AUTH_REQ(cmd)) {
 		res = hd_handle_auth_request(cmd, arg, (void *)upper->lower);
 	} else if (SL_IS_KEYMGR_REQ(cmd)) {
 		res = hd_handle_key_request(cmd, arg, (void *)upper->lower);
@@ -130,6 +147,7 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	} else if (SL_IS_CRYPTO_REQ(cmd)) {
 		res = hd_handle_crypto_request(cmd, arg, (void *)upper->lower);
 	}
+	SL_UNLOCK(&upper->su_lock);
 
 	return res;
 }
@@ -165,8 +183,21 @@ int se_register(const char *path, struct sec_lowerhalf_s *lower)
 	upper->path = drv_path;
 	upper->refcnt = 0;
 
+	sem_init(&upper->su_lock, 0, 1);
+
 	upper->lower = lower;
 	lower->parent = upper;
+
+	/*  initialize key slot */
+	hd_initialize_key_slot();
+
+	hal_init_param hp = {0, 0};
+	int res = lower->ops->init(&hp);
+	if (res < 0) {
+		dbg("Register SE fail(%d)\n", res);
+		free(upper);
+		return -1;
+	}
 
 	return register_driver(path, &g_seclink_fops, 0666, upper);
 }
@@ -200,6 +231,11 @@ int se_unregister(FAR struct sec_lowerhalf_s *lower)
 	int res = unregister_driver(upper->path);
 	if (res != 0) {
 		dbg("unregister driver path fail\n");
+	}
+
+	res = lower->ops->deinit();
+	if (res < 0) {
+		dbg("Unregister SE fail(%d)\n", res);
 	}
 
 	free(upper->path);
