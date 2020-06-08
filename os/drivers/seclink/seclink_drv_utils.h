@@ -5,7 +5,7 @@
 #endif
 
 #ifndef LINUX
-#define SLDRV_LOG vdbg
+#define SLDRV_LOG printf
 #else
 #define SLDRV_LOG printf
 #endif
