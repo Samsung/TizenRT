@@ -70,8 +70,14 @@ config AMEBAD_TRUSTZONE
 config AMEBAD_RDP
 	bool "Enable Amebad RDP"
 	default n
-	select AMEBAD_RDP_ENABLE
+	select AMEBAD_RDP
 	depends on AMEBAD_TRUSTZONE
+	---help---
+		Enable RDP Encryption for binary.
+		RDP key once written, cannot be reprogrammed.
+		Can disable this for testing only TrustZone without writing RDP key.
+		However, should be enabled along with TrustZone to provide binary security.
+		If unsure, do not enable this.
 
 config AMEBAD_RDP_KEY
 	prompt "Amebad RDP Key"
