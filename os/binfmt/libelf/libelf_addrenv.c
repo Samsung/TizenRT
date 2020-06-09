@@ -64,6 +64,9 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/mm/mm.h>
 #endif
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+#include <tinyara/mpu.h>
+#endif
 #include "libelf.h"
 
 /****************************************************************************
@@ -77,6 +80,36 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+static void allocateregions(FAR struct elf_loadinfo_s *loadinfo)
+{
+	size_t sizes[MPU_NUM_REGIONS] = {loadinfo->textsize, loadinfo->rosize, loadinfo->binp->ramsize};
+	uintptr_t *allocs[MPU_NUM_REGIONS] = {&loadinfo->textalloc, &loadinfo->roalloc, &loadinfo->dataalloc};
+	uint32_t totalsize = sizes[0] + sizes[1] + sizes[2];
+	size_t tmpsz;
+	uintptr_t *tmpalloc;
+	uint8_t i;
+	uint8_t j;
+
+	for (i = 0; i < MPU_NUM_REGIONS; i++) {
+		for (j = 0; j < MPU_NUM_REGIONS - (i + 1); j++) {
+			if (sizes[j] < sizes[j + 1]) {
+				tmpsz = sizes[j];
+				sizes[j] = sizes[j + 1];
+				sizes[j + 1] = tmpsz;
+
+				tmpalloc = allocs[j];
+				allocs[j] = allocs[j + 1];
+				allocs[j + 1] = tmpalloc;
+			}
+		}
+	}
+
+	loadinfo->binp->ramstart = *allocs[0] = (uintptr_t)kumm_memalign(sizes[0], totalsize);
+	*allocs[1] = *allocs[0] + sizes[0];
+	*allocs[2] = *allocs[1] + sizes[1];
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -153,24 +186,20 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	uint32_t datamemsize = loadinfo->datasize + loadinfo->binp->ramsize;
 	uint32_t rosize = loadinfo->rosize;
+
 	/* loadinfo->datasize contains the size of both data and bss sections.
 	 * But we need to backup only the data section in the RO region. So,
 	 * we need to extend the rosize by just the data section size only. Hence,
 	 * we are subtracting bsssize from loadinfo->datasize.
 	 */
 	loadinfo->rosize += loadinfo->datasize - loadinfo->binp->bsssize;
-#ifdef CONFIG_ARM_MPU
+
 	loadinfo->textsize = 1 << mpu_log2regionceil(0, loadinfo->textsize);
 	loadinfo->rosize = 1 << mpu_log2regionceil(0, loadinfo->rosize);
 	datamemsize = 1 << mpu_log2regionceil(0, datamemsize);
 	loadinfo->binp->ramsize = datamemsize;
-#endif
-#endif
 
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	loadinfo->textalloc = (uintptr_t)kumm_memalign(loadinfo->textsize, loadinfo->textsize);
-	loadinfo->roalloc = (uintptr_t)kumm_memalign(loadinfo->rosize, loadinfo->rosize);
-	loadinfo->dataalloc = (uintptr_t)kumm_memalign(datamemsize, datamemsize);
+	allocateregions(loadinfo);
 
 	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
 	loadinfo->binp->uheap_size = datamemsize - loadinfo->datasize - sizeof(struct mm_heap_s);

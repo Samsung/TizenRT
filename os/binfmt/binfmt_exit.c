@@ -136,10 +136,8 @@ int binfmt_exit(FAR struct binary_s *bin)
 		}
 		address = (FAR void *)sq_next((FAR sq_entry_t *)address);
 	}
-#ifndef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Free the RAM partition into which this app was loaded */
 	kumm_free((void *)bin->ramstart);
-#endif
 #endif
 	/* Free the load structure */
 
