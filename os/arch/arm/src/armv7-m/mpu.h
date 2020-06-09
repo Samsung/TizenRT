@@ -660,60 +660,6 @@ static inline void mpu_peripheral(uint32_t region, uintptr_t base, size_t size)
 	putreg32(regval, MPU_RASR);
 }
 
-#if defined(CONFIG_APP_BINARY_SEPARATION)
-static inline void up_set_mpu_app_configuration(struct tcb_s *rtcb)
-{
-	/* We update the MPU registers only if:
-	 * This is not a kernel thread AND
-	 * It has a non zero value of base address (This ensures valid MPU setting)
-	 */
-	int i = 0;
-	if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_KERNEL) {
-		return;
-	}
-
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	for (i = 0; i < 3 * MPU_NUM_REGIONS; i += 3)
-#endif
-	{
-		if (rtcb->mpu_regs[i + REG_RBAR]) {
-			putreg32(rtcb->mpu_regs[i + REG_RNR], MPU_RNR);
-			putreg32(rtcb->mpu_regs[i + REG_RBAR], MPU_RBAR);
-			putreg32(rtcb->mpu_regs[i + REG_RASR], MPU_RASR);
-		}
-	}
-}
-#else
-#define up_set_mpu_app_configuration(x)
-#endif
-
-/****************************************************************************
- * Name: up_set_mpu_stack_guard
- *
- * Description:
- *   Configure task's stack guard region
- *
- ****************************************************************************/
-
-#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
-static inline void up_set_mpu_stack_guard(struct tcb_s *rtcb)
-{
-	/* We update the MPU registers only if:
-	 * This is not a kernel thread AND
-	 * It has a non zero value of base address (This ensures valid MPU setting)
-	 */
-	if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_KERNEL) {
-		return;
-	}
-
-	if (rtcb->stack_mpu_regs[REG_RBAR]) {
-		putreg32(rtcb->stack_mpu_regs[REG_RNR], MPU_RNR);
-		putreg32(rtcb->stack_mpu_regs[REG_RBAR], MPU_RBAR);
-		putreg32(rtcb->stack_mpu_regs[REG_RASR], MPU_RASR);
-	}
-}
-#endif
-
 #undef EXTERN
 #if defined(__cplusplus)
 }

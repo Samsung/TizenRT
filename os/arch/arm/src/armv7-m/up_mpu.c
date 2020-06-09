@@ -306,14 +306,13 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
 }
 
 /****************************************************************************
- * Name: mpu_get_register_value
+ * Name: mpu_get_register_config_value
  *
  * Description:
  *   Configure the user application SRAM mpu settings into the tcb variables
  *
  * Params:
  *  regs     : pointer to array in which to store the configured values
- *             If regs is NULL, then configure the mpu registers directly
  *  region   : number of the region to be configured
  *  base     : start address for the region
  *  size     : size of the region in bytes
@@ -321,7 +320,7 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
  *  execute  : true indicates that the region has execute permission
  ****************************************************************************/
 
-void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute)
+void mpu_get_register_config_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute)
 {
 	uint32_t regval;
 	uint8_t l2size;
@@ -357,11 +356,24 @@ void mpu_get_register_value(uint32_t *regs, uint32_t region, uintptr_t base, siz
 		regs[0] = region;
 		regs[1] = (base & MPU_RBAR_ADDR_MASK) | region;
 		regs[2] = regval;
-	} else {
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-		putreg32(region, MPU_RNR);
-		putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-		putreg32(regval, MPU_RASR);
-#endif
+	}
+}
+
+/****************************************************************************
+ * Name: up_mpu_set_register
+ *
+ * Description:
+ *   Set MPU register values to real mpu h/w
+ *
+ ****************************************************************************/
+void up_mpu_set_register(uint32_t *mpu_regs)
+{
+	/* We update MPU registers only if there is non zero value of
+	 * base address (This ensures valid MPU settings)
+	 */
+	if (mpu_regs[REG_RBAR]) {
+		putreg32(mpu_regs[REG_RNR], MPU_RNR);
+		putreg32(mpu_regs[REG_RBAR], MPU_RBAR);
+		putreg32(mpu_regs[REG_RASR], MPU_RASR);
 	}
 }

@@ -64,6 +64,7 @@
 #include "up_internal.h"
 #ifdef CONFIG_ARMV7M_MPU
 #include "mpu.h"
+#include <tinyara/mpu.h>
 #endif
 
 #ifdef CONFIG_TASK_SCHED_HISTORY
@@ -134,11 +135,19 @@ void up_release_pending(void)
 
 			/* Restore the MPU registers in case we are switching to an application task */
 #ifdef CONFIG_ARMV7M_MPU
-			up_set_mpu_app_configuration(rtcb);
+			/* Condition check : Update MPU registers only if this is not a kernel thread. */
+			if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+#if defined(CONFIG_APP_BINARY_SEPARATION)
+				for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+					up_mpu_set_register(&rtcb->mpu_regs[i]);
+				}
+#endif
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-			up_set_mpu_stack_guard(rtcb);
+				up_mpu_set_register(&rtcb->stack_mpu_regs);
 #endif
+			}
 #endif
+
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 			if (g_umm_app_id) {
 				*g_umm_app_id = rtcb->app_id;
