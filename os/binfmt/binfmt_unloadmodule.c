@@ -153,7 +153,6 @@ static inline int exec_dtors(FAR struct binary_s *binp)
 int unload_module(FAR struct binary_s *binp)
 {
 	int ret;
-	int i;
 
 	if (binp) {
 		/* Perform any format-specific unload operations */
@@ -189,19 +188,11 @@ int unload_module(FAR struct binary_s *binp)
 
 		/* Free allocated address spaces */
 
-#if defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME) || !defined(CONFIG_APP_BINARY_SEPARATION)
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		if (!binp->reload) {
-#endif
-			for (i = 0; i < ALLOC_MAX; i++) {
-				if (binp->alloc[i]) {
-					binfo("Freeing alloc[%d]: %p\n", i, binp->alloc[i]);
-					kumm_free((FAR void *)binp->alloc[i]);
-				}
-			}
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+#ifndef CONFIG_APP_BINARY_SEPARATION
+		if (binp->alloc[i]) {
+			binfo("Freeing alloc[%d]: %p\n", i, binp->alloc[i]);
+			kumm_free((FAR void *)binp->alloc[i]);
 		}
-#endif
 #endif
 
 		/* Notice that the address environment is not destroyed.  This should
