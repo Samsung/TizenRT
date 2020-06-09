@@ -78,6 +78,7 @@
 #include "up_internal.h"
 #ifdef CONFIG_ARMV8M_MPU
 #include "mpu.h"
+#include <tinyara/mpu.h>
 #endif
 #define INDEX_ERROR (-1)
 /****************************************************************************
@@ -269,11 +270,17 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #endif
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
-		up_set_mpu_app_configuration(tcb);
+		/* Condition check : Update MPU registers only if this is not a kernel thread. */
+		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+			for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+				up_mpu_set_register(&tcb->mpu_regs[i]);
+			}
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		up_set_mpu_stack_guard(tcb);
+			up_mpu_set_register(&tcb->stack_mpu_regs);
 #endif
+		}
 #endif
+
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
 		tcb->is_active = true;
@@ -310,11 +317,17 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #endif
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
-		up_set_mpu_app_configuration(tcb);
+		/* Condition check : Update MPU registers only if this is not a kernel thread. */
+		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+			for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+				up_mpu_set_register(&tcb->mpu_regs[i]);
+			}
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		up_set_mpu_stack_guard(tcb);
+			up_mpu_set_register(&tcb->stack_mpu_regs);
 #endif
+		}
 #endif
+
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
 		tcb->is_active = true;
