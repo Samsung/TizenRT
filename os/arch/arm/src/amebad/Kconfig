@@ -67,4 +67,22 @@ config AMEBAD_TRUSTZONE
 	default n
 	select ARMV8M_TRUSTZONE
 
+config AMEBAD_RDP
+	bool "Enable Amebad RDP"
+	default n
+	depends on AMEBAD_TRUSTZONE
+	---help---
+		Enable RDP Encryption for binary.
+		RDP key once written, cannot be reprogrammed.
+		Can disable this for testing only TrustZone without writing RDP key.
+		However, should be enabled along with TrustZone to provide binary security.
+		If unsure, do not enable this.
+
+config AMEBAD_RDP_KEY
+	prompt "Amebad RDP Key"
+	hex "Amebad RDP Key"
+	default 2473040ab47c48655a15aa431c4bbb8a
+	range 00000000000000000000000000000000 ffffffffffffffffffffffffffffffff
+	depends on AMEBAD_RDP
+
 endmenu
