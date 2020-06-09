@@ -70,7 +70,6 @@ config AMEBAD_TRUSTZONE
 config AMEBAD_RDP
 	bool "Enable Amebad RDP"
 	default n
-	select AMEBAD_RDP
 	depends on AMEBAD_TRUSTZONE
 	---help---
 		Enable RDP Encryption for binary.
