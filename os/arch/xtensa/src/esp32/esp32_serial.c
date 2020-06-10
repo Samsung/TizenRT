@@ -202,7 +202,7 @@ static void esp32_shutdown(struct uart_dev_s *dev);
 static int esp32_attach(struct uart_dev_s *dev);
 static void esp32_detach(struct uart_dev_s *dev);
 static int esp32_interrupt(int cpuint, void *context, FAR void *arg);
-static int esp32_ioctl(struct file *filep, int cmd, unsigned long arg);
+static int esp32_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
 static int esp32_receive(struct uart_dev_s *dev, unsigned int *status);
 static void esp32_rxint(struct uart_dev_s *dev, bool enable);
 static bool esp32_rxavailable(struct uart_dev_s *dev);
@@ -775,12 +775,8 @@ static int esp32_interrupt(int cpuint, void *context, FAR void *arg)
  *
  ****************************************************************************/
 
-static int esp32_ioctl(struct file *filep, int cmd, unsigned long arg)
+static int esp32_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
 {
-#if defined(CONFIG_SERIAL_TERMIOS) || defined(CONFIG_SERIAL_TIOCSERGSTRUCT)
-	struct inode *inode = filep->f_inode;
-	struct uart_dev_s *dev = inode->i_private;
-#endif
 	int ret = OK;
 
 	switch (cmd) {

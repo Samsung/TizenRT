@@ -394,7 +394,7 @@ static void imxrt_shutdown(struct uart_dev_s *dev);
 static int imxrt_attach(struct uart_dev_s *dev);
 static void imxrt_detach(struct uart_dev_s *dev);
 static int imxrt_interrupt(int irq, void *context, FAR void *arg);
-static int imxrt_ioctl(struct file *filep, int cmd, unsigned long arg);
+static int imxrt_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
 static int imxrt_receive(struct uart_dev_s *dev, uint32_t *status);
 static void imxrt_rxint(struct uart_dev_s *dev, bool enable);
 static bool imxrt_rxavailable(struct uart_dev_s *dev);
@@ -991,12 +991,8 @@ static int imxrt_interrupt(int irq, void *context, FAR void *arg)
  *
  ****************************************************************************/
 
-static int imxrt_ioctl(struct file *filep, int cmd, unsigned long arg)
+static int imxrt_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
 {
-#if defined(CONFIG_SERIAL_TIOCSERGSTRUCT) || defined(CONFIG_SERIAL_TERMIOS)
-	struct inode *inode = filep->f_inode;
-	struct uart_dev_s *dev = inode->i_private;
-#endif
 	int ret = OK;
 
 	switch (cmd) {

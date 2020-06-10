@@ -278,6 +278,21 @@
 #define SIG_IOTBUS_UART_RECEIVED	CONFIG_SIG_IOTBUS_UART_RECEIVED
 #endif
 
+/** TODO These are added for UART Interrupt, but we can use only 32 types, 
+  * So this should be optimized.(for example use SIGPOLL or something..)
+  */
+#ifndef CONFIG_SIG_UART_RECEIVED
+#define SIG_UART_RECEIVED 26
+#else
+#define SIG_UART_RECEIVED	CONFIG_SIG_UART_RECEIVED
+#endif
+
+#ifndef CONFIG_SIG_UART_SENT
+#define SIG_UART_SENT 27
+#else
+#define SIG_UART_SENT	CONFIG_SIG_UART_SENT
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

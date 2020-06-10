@@ -246,6 +246,6 @@ void uart_recvchars(FAR uart_dev_t *dev)
 	 */
 
 	if (nbytes) {
-		uart_datareceived(dev);
+		dev->received(dev);
 	}
 }
