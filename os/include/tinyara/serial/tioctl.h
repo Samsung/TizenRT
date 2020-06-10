@@ -130,12 +130,13 @@
 
 #define TIOCPKT         _TIOC(0x001d)	/* Control packet mode: FAR const int */
 
-#define TIOCPKT_FLUSHREAD  (1 << 0)	/* The read queue for the terminal is flushed */
-#define TIOCPKT_FLUSHWRITE (1 << 1)	/* The write queue for the terminal is flushed */
-#define TIOCPKT_STOP       (1 << 2)	/* Output to the terminal is stopped */
-#define TIOCPKT_START      (1 << 3)	/* Output to the terminal is restarted */
-#define TIOCPKT_DOSTOP     (1 << 4)	/* t_stopc is '^S' and t_startc is '^Q' */
-#define TIOCPKT_NOSTOP     (1 << 5)	/* The start and stop characters are not '^S/^Q' */
+#define TIOCPKT_DATA            0x00		/* Data Packet */
+#define TIOCPKT_FLUSHREAD       0x01		/* The read queue for the terminal is flushed */
+#define TIOCPKT_FLUSHWRITE      0x02		/* The write queue for the terminal is flushed */
+#define TIOCPKT_STOP            0x04		/* Output to the terminal is stopped */
+#define TIOCPKT_START           0x08		/* Output to the terminal is restarted */
+#define TIOCPKT_NOSTOP          0x10		/* The start and stop characters are not '^S/^Q' */
+#define TIOCPKT_DOSTOP          0x20		/* t_stopc is '^S' and t_startc is '^Q' */
 
 /* Modem control */
 
@@ -195,9 +196,21 @@
 
 #define SER_SINGLEWIRE_ENABLED   (1 << 0)	/* Enable/disable single-wire support */
 
+/* Serial Control */
+
+#define TIOCSETSIG      _TIOC(0x002e)	/* Set signal to handle Interrupt */
+#define TIOCCLRSIG      _TIOC(0x002f)	/* Clear signal to handle Interrupt */
+#define TIOCTXSTATE     _TIOC(0x0030)	/* Get State of TX */
+#define TIOCRXSTATE     _TIOC(0x0031)	/* Get State of RX */
+
+#define TIOCS_NONE      0x00	/* Default State of Low Driver */
+#define TIOCS_EMPTY     0x01	/* Low Driver's buffer is Empty, same as uart_txempty for tx */
+#define TIOCS_AVAIL     0x02	/* Low Driver's buffer has some datas same as uart_rxavailable for rx */
+#define TIOCS_READY     0x04	/* Low Driver is ready, same as uart_txready for tx */
+
 /* Debugging */
 
-#define TIOCSERGSTRUCT  _TIOC(0x002e)	/* Get device TTY structure */
+#define TIOCSERGSTRUCT  _TIOC(0x00ff)	/* Get device TTY structure */
 
 /********************************************************************************************
  * Public Type Definitions
