@@ -299,7 +299,7 @@ static void stm32l4serial_shutdown(FAR struct uart_dev_s *dev);
 static int  stm32l4serial_attach(FAR struct uart_dev_s *dev);
 static void stm32l4serial_detach(FAR struct uart_dev_s *dev);
 static int  up_interrupt(int irq, FAR void *context, FAR void *arg);
-static int  stm32l4serial_ioctl(FAR struct file *filep, int cmd,
+static int  stm32l4serial_ioctl(FAR struct uart_dev_s *dev, int cmd,
                                 unsigned long arg);
 #ifndef SERIAL_HAVE_ONLY_DMA
 static int  stm32l4serial_receive(FAR struct uart_dev_s *dev,
@@ -1758,13 +1758,9 @@ static int up_interrupt(int irq, FAR void *context, FAR void *arg)
  *
  ****************************************************************************/
 
-static int stm32l4serial_ioctl(FAR struct file *filep, int cmd,
+static int stm32l4serial_ioctl(FAR struct uart_dev_s *dev, int cmd,
                                unsigned long arg)
 {
-#if defined(CONFIG_SERIAL_TERMIOS) || defined(CONFIG_SERIAL_TIOCSERGSTRUCT)
-  FAR struct inode      *inode = filep->f_inode;
-  FAR struct uart_dev_s *dev   = inode->i_private;
-#endif
 #if defined(CONFIG_SERIAL_TERMIOS)
   FAR struct stm32l4_serial_s   *priv  = (FAR struct stm32l4_serial_s *)dev->priv;
 #endif

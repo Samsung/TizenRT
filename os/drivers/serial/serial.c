@@ -187,6 +187,60 @@ static void uart_pollnotify(FAR uart_dev_t *dev, pollevent_t eventset)
 #define uart_pollnotify(dev, event)
 #endif
 
+
+/************************************************************************************
+ * Name: uart_datareceived
+ *
+ * Description:
+ *   This function is called from uart_recvchars when new serial data is place in
+ *   the driver's circular buffer.  This function will wake-up any stalled read()
+ *   operations that are waiting for incoming data.
+ *
+ ************************************************************************************/
+
+void uart_datareceived(FAR uart_dev_t *dev)
+{
+	/* Is there a thread waiting for read data?  */
+
+	if (dev->recvwaiting) {
+		/* Yes... wake it up */
+
+		dev->recvwaiting = false;
+		(void)sem_post(&dev->recvsem);
+	}
+
+	/* Notify all poll/select waiters that they can read from the recv buffer */
+
+	uart_pollnotify(dev, POLLIN);
+}
+
+/************************************************************************************
+ * Name: uart_datasent
+ *
+ * Description:
+ *   This function is called from uart_xmitchars after serial data has been sent,
+ *   freeing up some space in the driver's circular buffer. This function will
+ *   wake-up any stalled write() operations that was waiting for space to buffer
+ *   outgoing data.
+ *
+ ************************************************************************************/
+
+void uart_datasent(FAR uart_dev_t *dev)
+{
+	/* Is there a thread waiting for space in xmit.buffer?  */
+
+	if (dev->xmitwaiting) {
+		/* Yes... wake it up */
+
+		dev->xmitwaiting = false;
+		(void)sem_post(&dev->xmitsem);
+	}
+
+	/* Notify all poll/select waiters that they can write to xmit buffer */
+
+	uart_pollnotify(dev, POLLOUT);
+}
+
 /************************************************************************************
  * Name: uart_putxmitchar
  ************************************************************************************/
@@ -785,7 +839,7 @@ static int uart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	/* Handle TTY-level IOCTLs here */
 	/* Let low-level driver handle the call first */
 
-	int ret = dev->ops->ioctl(filep, cmd, arg);
+	int ret = dev->ops->ioctl(dev, cmd, arg);
 
 	/* The device ioctl() handler returns -ENOTTY when it doesn't know
 	 * how to handle the command. Check if we can handle it here.
@@ -1283,63 +1337,12 @@ int uart_register(FAR const char *path, FAR uart_dev_t *dev)
 	 */
 	sem_setprotocol(&dev->xmitsem, SEM_PRIO_NONE);
 	sem_setprotocol(&dev->recvsem, SEM_PRIO_NONE);
+	dev->sent = uart_datasent;
+	dev->received = uart_datareceived;
 
 	/* Register the serial driver */
 	dbg("Registering %s\n", path);
 	return register_driver(path, &g_serialops, 0666, dev);
-}
-
-/************************************************************************************
- * Name: uart_datareceived
- *
- * Description:
- *   This function is called from uart_recvchars when new serial data is place in
- *   the driver's circular buffer.  This function will wake-up any stalled read()
- *   operations that are waiting for incoming data.
- *
- ************************************************************************************/
-
-void uart_datareceived(FAR uart_dev_t *dev)
-{
-	/* Is there a thread waiting for read data?  */
-
-	if (dev->recvwaiting) {
-		/* Yes... wake it up */
-
-		dev->recvwaiting = false;
-		(void)sem_post(&dev->recvsem);
-	}
-
-	/* Notify all poll/select waiters that they can read from the recv buffer */
-
-	uart_pollnotify(dev, POLLIN);
-}
-
-/************************************************************************************
- * Name: uart_datasent
- *
- * Description:
- *   This function is called from uart_xmitchars after serial data has been sent,
- *   freeing up some space in the driver's circular buffer. This function will
- *   wake-up any stalled write() operations that was waiting for space to buffer
- *   outgoing data.
- *
- ************************************************************************************/
-
-void uart_datasent(FAR uart_dev_t *dev)
-{
-	/* Is there a thread waiting for space in xmit.buffer?  */
-
-	if (dev->xmitwaiting) {
-		/* Yes... wake it up */
-
-		dev->xmitwaiting = false;
-		(void)sem_post(&dev->xmitsem);
-	}
-
-	/* Notify all poll/select waiters that they can write to xmit buffer */
-
-	uart_pollnotify(dev, POLLOUT);
 }
 
 /************************************************************************************

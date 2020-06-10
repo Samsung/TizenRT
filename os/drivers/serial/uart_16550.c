@@ -112,7 +112,7 @@ static void u16550_detach(struct uart_dev_s *dev);
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
 static int u16550_interrupt(int irq, void *context, void *arg);
 #endif
-static int u16550_ioctl(struct file *filep, int cmd, unsigned long arg);
+static int u16550_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
 static int u16550_receive(struct uart_dev_s *dev, uint32_t *status);
 static void u16550_rxint(struct uart_dev_s *dev, bool enable);
 static bool u16550_rxavailable(struct uart_dev_s *dev);
@@ -832,10 +832,8 @@ static int u16550_interrupt(int irq, void *context, void *arg)
  *
  ****************************************************************************/
 
-static int u16550_ioctl(struct file *filep, int cmd, unsigned long arg)
+static int u16550_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
 {
-	struct inode *inode = filep->f_inode;
-	struct uart_dev_s *dev = inode->i_private;
 	struct u16550_s *priv = (struct u16550_s *)dev->priv;
 	int ret = OK;
 

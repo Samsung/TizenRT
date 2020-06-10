@@ -197,7 +197,7 @@ static int cdcuart_setup(FAR struct uart_dev_s *dev);
 static void cdcuart_shutdown(FAR struct uart_dev_s *dev);
 static int cdcuart_attach(FAR struct uart_dev_s *dev);
 static void cdcuart_detach(FAR struct uart_dev_s *dev);
-static int cdcuart_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static int cdcuart_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
 static void cdcuart_rxint(FAR struct uart_dev_s *dev, bool enable);
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
 static bool cdcuart_rxflowcontrol(FAR struct uart_dev_s *dev, unsigned int nbuffered, bool upper);
@@ -301,7 +301,7 @@ static uint16_t cdcacm_fillrequest(FAR struct cdcacm_dev_s *priv, uint8_t *reqbu
 	 */
 
 	if (nbytes) {
-		uart_datasent(serdev);
+		serdev->sent(serdev);
 	}
 
 	irqrestore(flags);
@@ -481,7 +481,7 @@ static inline int cdcacm_recvpacket(FAR struct cdcacm_dev_s *priv, uint8_t *reqb
 	 */
 
 	if (priv->rxenabled && nbytes > 0) {
-		uart_datareceived(serdev);
+		serdev->received(serdev);
 	}
 
 	/* Return an error if the entire packet could not be transferred */
@@ -1680,10 +1680,8 @@ static void cdcuart_detach(FAR struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static int cdcuart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
+static int cdcuart_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
 {
-	struct inode *inode = filep->f_inode;
-	struct cdcacm_dev_s *priv = inode->i_private;
 	FAR uart_dev_t *serdev = &priv->serdev;
 	int ret = OK;
 
@@ -1909,7 +1907,7 @@ static void cdcuart_rxint(FAR struct uart_dev_s *dev, bool enable)
 
 				/* Yes... signal the availability of new data */
 
-				uart_datareceived(serdev);
+				serdev->received(serdev);
 			}
 
 			/* RX "interrupts are no longer disabled */

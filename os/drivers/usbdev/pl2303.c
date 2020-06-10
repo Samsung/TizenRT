@@ -558,7 +558,7 @@ static uint16_t usbclass_fillrequest(FAR struct pl2303_dev_s *priv, uint8_t *req
 	 */
 
 	if (nbytes) {
-		uart_datasent(serdev);
+		serdev->sent(serdev);
 	}
 
 	irqrestore(flags);
@@ -728,7 +728,7 @@ static inline int usbclass_recvpacket(FAR struct pl2303_dev_s *priv, uint8_t *re
 	 */
 
 	if (priv->rxenabled && nbytes > 0) {
-		uart_datareceived(serdev);
+		serdev->received(serdev);
 	}
 
 	/* Return an error if the entire packet could not be transferred */
@@ -2005,7 +2005,7 @@ static void usbser_rxint(FAR struct uart_dev_s *dev, bool enable)
 
 				/* Yes... signal the availability of new data */
 
-				uart_datareceived(serdev);
+				serdev->received(serdev);
 			}
 
 			/* RX "interrupts are no longer disabled */
