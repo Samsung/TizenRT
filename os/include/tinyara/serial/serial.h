@@ -62,6 +62,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <semaphore.h>
+#include <signal.h>
+#include <queue.h>
 #ifdef CONFIG_SERIAL_TERMIOS
 #include <termios.h>
 #endif
@@ -188,7 +190,7 @@ struct uart_ops_s {
 
 	/* All ioctl calls will be routed through this method */
 
-	CODE int (*ioctl)(FAR struct file *filep, int cmd, unsigned long arg);
+	CODE int (*ioctl)(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
 
 	/* Called (usually) from the interrupt level to receive one character from
 	 * the UART.  Error bits associated with the receipt are provided in the
@@ -236,6 +238,9 @@ struct uart_ops_s {
 	CODE bool(*txempty)(FAR struct uart_dev_s *dev);
 };
 
+
+typedef CODE void (*uart_data_callback_t)(FAR struct uart_dev_s *dev);
+
 /* This is the device structure used by the driver.  The caller of
  * uart_register() must allocate and initialize this structure.  The
  * calling logic need only set all fields to zero except:
@@ -245,6 +250,11 @@ struct uart_ops_s {
  *
  * The common logic will initialize all semaphores.
  */
+struct uart_sig_queue_s {
+	struct uart_sig_queue_s *flink;
+	pid_t pid;
+	sigset_t sig;
+};
 
 struct uart_dev_s {
 	/* State data */
@@ -263,6 +273,7 @@ struct uart_dev_s {
 	tcflag_t tc_iflag;			/* Input modes */
 	tcflag_t tc_oflag;			/* Output modes */
 	tcflag_t tc_lflag;			/* Local modes */
+	tcflag_t tc_cflag;			/* Contol modes */
 #endif
 
 	/* Semaphores */
@@ -279,10 +290,14 @@ struct uart_dev_s {
 	struct uart_buffer_s xmit;	/* Describes transmit buffer */
 	struct uart_buffer_s recv;	/* Describes receive buffer */
 
+	FAR uart_data_callback_t received;
+	FAR uart_data_callback_t sent;
+
 	/* Driver interface */
 
 	FAR const struct uart_ops_s *ops;	/* Arch-specific operations */
 	FAR void *priv;				/* Used by the arch-specific logic */
+	struct sq_queue_s sigq;		/* Signal Queue for registered signal info from upper layer */
 
 	/* The following is a list if poll structures of threads waiting for
 	 * driver events. The 'struct pollfd' reference for each open is also
@@ -348,30 +363,6 @@ void uart_xmitchars(FAR uart_dev_t *dev);
 
 void uart_recvchars(FAR uart_dev_t *dev);
 
-/************************************************************************************
- * Name: uart_datareceived
- *
- * Description:
- *   This function is called from uart_recvchars when new serial data is place in
- *   the driver's circular buffer.  This function will wake-up any stalled read()
- *   operations that are waiting for incoming data.
- *
- ************************************************************************************/
-
-void uart_datareceived(FAR uart_dev_t *dev);
-
-/************************************************************************************
- * Name: uart_datasent
- *
- * Description:
- *   This function is called from uart_xmitchars after serial data has been sent,
- *   freeing up some space in the driver's circular buffer. This function will
- *   wake-up any stalled write() operations that was waiting for space to buffer
- *   outgoing data.
- *
- ************************************************************************************/
-
-void uart_datasent(FAR uart_dev_t *dev);
 
 /************************************************************************************
  * Name: uart_connected

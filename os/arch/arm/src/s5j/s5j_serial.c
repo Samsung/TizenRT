@@ -512,11 +512,9 @@ static void up_detach(struct uart_dev_s *dev)
  *   All ioctl calls will be routed through this method
  *
  ****************************************************************************/
-static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
+static int up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
 {
 #if defined(CONFIG_SERIAL_TERMIOS)
-	struct inode *inode = filep->f_inode;
-	struct uart_dev_s *dev = inode->i_private;
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 	int ret = OK;
 	struct termios *termiosp = (struct termios *)arg;
