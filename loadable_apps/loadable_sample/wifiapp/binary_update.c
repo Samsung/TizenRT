@@ -471,7 +471,6 @@ static void binary_update_invalid_binary_test(void)
 
 static void binary_update_new_binary_test(void)
 {
-	int ret;
 	char filepath[CONFIG_PATH_MAX];
 	binary_update_info_t bin_info;
 
