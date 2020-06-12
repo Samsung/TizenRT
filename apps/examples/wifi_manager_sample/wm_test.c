@@ -363,7 +363,7 @@ static void print_wifi_softap_profile(wifi_manager_softap_config_s *config, char
 static wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 {
 	char data[20];
-	strcpy(data, method);
+	strncpy(data, method, 20);
 
 	char *result[3];
 	char *next_ptr;
@@ -962,6 +962,9 @@ static wm_test_e _wm_get_opt(int argc, char *argv[])
 
 static int _wm_test_softap(struct options *opt, int argc, char *argv[])
 {
+	if (argc < 5) {
+		return -1;
+	}
 	/* wpa2 aes is a default security mode. */
 	opt->ssid = argv[3];
 	opt->password = argv[4];
