@@ -179,11 +179,6 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	const char *filename;
 	struct smartfs_ofile_s *sf;
 
-#ifdef CONFIG_SMARTFS_JOURNALING
-	int retj;
-	uint16_t t_sector, t_offset;
-#endif
-
 	/* Sanity checks */
 
 	DEBUGASSERT((filep->f_priv == NULL) && (filep->f_inode != NULL));
@@ -283,22 +278,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 		if (parentdirsector != 0xFFFF) {
 			/* We can create in the given parent directory */
 
-#ifdef CONFIG_SMARTFS_JOURNALING
-			ret = smartfs_create_journalentry(fs, T_CREATE, parentdirsector, 0, fs->fs_llformat.namesize, (uint16_t)mode, 0, (uint8_t *)filename, &t_sector, &t_offset);
-			if (ret != OK) {
-				fdbg("Journal entry creation failed.\n");
-				goto errout_with_buffer;
-			}
-#endif
 			ret = smartfs_createentry(fs, parentdirsector, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry, 0xFFFF, sf);
-#ifdef CONFIG_SMARTFS_JOURNALING
-			retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_CREATE);
-			if (retj != OK) {
-				fdbg("Error finishing transaction\n");
-				ret = retj;
-				goto errout_with_buffer;
-			}
-#endif
 			if (ret != OK) {
 				goto errout_with_buffer;
 			}
@@ -597,12 +577,6 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 	int used_value;
 #endif
 
-#if defined(CONFIG_SMARTFS_JOURNALING) && !defined(CONFIG_SMARTFS_USE_SECTOR_BUFFER)
-	int retj;
-	uint16_t used_bytes;
-	uint16_t t_sector, t_offset;
-#endif
-
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 	if (sf->bflags & SMARTFS_BFLAG_DIRTY) {
 		/* Update the header with the number of bytes written */
@@ -681,24 +655,8 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 		readwrite.offset = offsetof(struct smartfs_chain_header_s, used);
 		readwrite.count = sizeof(uint16_t);
 		readwrite.buffer = (uint8_t *)&fs->fs_rwbuffer[readwrite.offset];
-#ifdef CONFIG_SMARTFS_JOURNALING
-		used_bytes = ((header->used[0] & 0x00FF) | (header->used[1] & 0x00FF) << 8);
 
-		ret = smartfs_create_journalentry(fs, T_SYNC, readwrite.logsector, readwrite.offset, 0, used_bytes, 1, NULL, &t_sector, &t_offset);
-		if (ret != OK) {
-			fdbg("Journal entry creation failed.\n");
-			goto errout;
-		}
-#endif
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-#ifdef CONFIG_SMARTFS_JOURNALING
-		retj = smartfs_finish_journalentry(fs, readwrite.logsector, t_sector, t_offset, T_SYNC);
-		if (retj != OK) {
-			fdbg("Error finishing transaction\n");
-			ret = retj;
-			goto errout;
-		}
-#endif
 		if (ret < 0) {
 			fdbg("Error %d writing used bytes for sector %d\n", ret, sf->currsector);
 			goto errout;
@@ -726,10 +684,6 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 	size_t byteswritten;
 	int ret;
 
-#ifdef CONFIG_SMARTFS_JOURNALING
-	int retj;
-	uint16_t t_sector, t_offset;
-#endif
 	/* Sanity checks.  I have seen the following assertion misfire if
 	 * CONFIG_DEBUG_MM is enabled while re-directing output to a
 	 * file.  In this case, the debug output can get generated while
@@ -801,23 +755,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		/* Now perform the write. */
 
 		if (readwrite.count > 0) {
-#ifdef CONFIG_SMARTFS_JOURNALING
-			ret = smartfs_create_journalentry(fs, T_WRITE, readwrite.logsector, readwrite.offset, readwrite.count, 0, 0, readwrite.buffer, &t_sector, &t_offset);
-			if (ret != OK) {
-				fdbg("Journal entry creation failed.\n");
-				goto errout_with_semaphore;
-			}
-#endif
 			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-
-#ifdef CONFIG_SMARTFS_JOURNALING
-			retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_WRITE);
-			if (retj != OK) {
-				fdbg("Error finishing transaction\n");
-				ret = retj;
-				goto errout_with_semaphore;
-			}
-#endif
 			if (ret < 0) {
 				fdbg("Error %d writing sector %d data\n", ret, sf->currsector);
 				goto errout_with_semaphore;
@@ -885,14 +823,6 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		/* Perform the write */
 
 		if (readwrite.count > 0) {
-#ifdef CONFIG_SMARTFS_JOURNALING
-			ret = smartfs_create_journalentry(fs, T_WRITE, readwrite.logsector, readwrite.offset, readwrite.count, sf->curroffset + readwrite.count - sizeof(struct smartfs_chain_header_s), 1, readwrite.buffer, &t_sector, &t_offset);
-			if (ret != OK) {
-				fdbg("Journal entry creation failed.\n");
-				goto errout_with_semaphore;
-			}
-#endif
-
 			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 			if (ret < 0) {
 				fdbg("Error %d writing sector %d data\n", ret, sf->currsector);
@@ -980,23 +910,8 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 				readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
 				readwrite.buffer = (uint8_t *)header->nextsector;
 				readwrite.count = sizeof(uint16_t);
-#ifdef CONFIG_SMARTFS_JOURNALING
-				ret = smartfs_create_journalentry(fs, T_WRITE, readwrite.logsector,
-												  readwrite.offset, readwrite.count, 0, 0, readwrite.buffer, &t_sector, &t_offset);
-				if (ret != OK) {
-					fdbg("Journal entry creation failed.\n");
-					goto errout_with_semaphore;
-				}
-#endif
+
 				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-#ifdef CONFIG_SMARTFS_JOURNALING
-				retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_WRITE);
-				if (retj != OK) {
-					fdbg("Error finishing transaction\n");
-					ret = retj;
-					goto errout_with_semaphore;
-				}
-#endif
 				if (ret < 0) {
 					fdbg("Error %d writing next sector\n", ret);
 					goto errout_with_semaphore;
@@ -1575,13 +1490,6 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 	}
 
 	*handle = (void *)fs;
-#ifdef CONFIG_SMARTFS_JOURNALING
-	ret = smartfs_journal_init(fs);
-	if (ret != 0) {
-		fdbg("init failed!!\n");
-		goto error_with_semaphore;
-	}
-#endif
 
 #ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
 	ret = smartfs_recover(fs);
@@ -1629,11 +1537,6 @@ static int smartfs_unbind(void *handle, FAR struct inode **blkdriver)
 	}
 	/* Unmount ... close the block driver */
 	ret = smartfs_unmount(fs);
-#ifdef CONFIG_SMARTFS_JOURNALING
-	if (fs->journal) {
-		kmm_free(fs->journal);
-	}
-#endif
 	smartfs_semgive(fs);
 	kmm_free(fs);
 
@@ -1701,9 +1604,6 @@ static int smartfs_unlink(struct inode *mountpt, const char *relpath)
 	struct smartfs_entry_s entry;
 	const char *filename;
 	uint16_t parentdirsector;
-#ifdef CONFIG_SMARTFS_JOURNALING
-	uint16_t t_sector, t_offset;
-#endif
 
 	/* Sanity checks */
 
@@ -1732,22 +1632,7 @@ static int smartfs_unlink(struct inode *mountpt, const char *relpath)
 
 		/* Okay, we are clear to delete the file.  Use the deleteentry routine. */
 
-#ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_create_journalentry(fs, T_DELETE, entry.dsector, entry.doffset, entry.dfirst, entry.firstsector, 0, NULL, &t_sector, &t_offset);
-		if (ret != OK) {
-			fdbg("Journal entry creation failed.\n");
-			goto errout_with_semaphore;
-		}
-#endif
-
 		smartfs_deleteentry(fs, &entry);
-#ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_DELETE);
-		if (ret != OK) {
-			fdbg("Error finishing transaction\n");
-			goto errout_with_semaphore;
-		}
-#endif
 
 	} else {
 		/* Just report the error */
@@ -1779,10 +1664,6 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	struct smartfs_entry_s entry;
 	uint16_t parentdirsector;
 	const char *filename;
-#ifdef CONFIG_SMARTFS_JOURNALING
-	int retj;
-	uint16_t t_sector, t_offset;
-#endif
 
 	/* Sanity checks */
 
@@ -1823,24 +1704,8 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 
 		/* Create the directory */
 
-#ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_create_journalentry(fs, T_MKDIR, parentdirsector, 0, fs->fs_llformat.namesize, (uint16_t)mode, 0, (uint8_t *)filename, &t_sector, &t_offset);
-		if (ret != OK) {
-			fdbg("Journal entry creation failed.\n");
-			goto errout_with_semaphore;
-		}
-#endif
-
 		ret = smartfs_createentry(fs, parentdirsector, filename,
 								  SMARTFS_DIRENT_TYPE_DIR, mode, &entry, 0xFFFF, NULL);
-#ifdef CONFIG_SMARTFS_JOURNALING
-		retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_MKDIR);
-		if (retj != OK) {
-			fdbg("Error finishing transaction\n");
-			ret = retj;
-			goto errout_with_semaphore;
-		}
-#endif
 		if (ret != OK) {
 			goto errout_with_semaphore;
 		}
@@ -1874,10 +1739,6 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 	struct smartfs_entry_s entry;
 	const char *filename;
 	uint16_t parentdirsector;
-#ifdef CONFIG_SMARTFS_JOURNALING
-	int retj;
-	uint16_t t_sector, t_offset;
-#endif
 
 	/* Sanity checks */
 
@@ -1919,24 +1780,10 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 			ret = -ENOTEMPTY;
 			goto errout_with_semaphore;
 		}
-#ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_create_journalentry(fs, T_DELETE, entry.dsector, entry.doffset, entry.dfirst, 0, 0, NULL, &t_sector, &t_offset);
-		if (ret != OK) {
-			fdbg("Journal entry creation failed.\n");
-			goto errout_with_semaphore;
-		}
-#endif
+
 		/* Okay, we are clear to delete the directory.  Use the deleteentry routine. */
 
 		ret = smartfs_deleteentry(fs, &entry);
-#ifdef CONFIG_SMARTFS_JOURNALING
-		retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_DELETE);
-		if (retj != OK) {
-			fdbg("Error finishing transaction\n");
-			ret = retj;
-			goto errout_with_semaphore;
-		}
-#endif
 		if (ret < 0) {
 			goto errout_with_semaphore;
 		}
@@ -1980,11 +1827,6 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	uint16_t entrysize;
 	struct smartfs_entry_header_s *direntry;
 	struct smart_read_write_s readwrite;
-
-#ifdef CONFIG_SMARTFS_JOURNALING
-	int retj;
-	uint16_t t_sector, t_offset;
-#endif
 
 	uint8_t *tmp_pntr = NULL;
 	uint16_t tmp_flag = 0;
@@ -2087,13 +1929,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 
 		mode = oldentry.flags & SMARTFS_DIRENT_MODE;
 		type = oldentry.flags & SMARTFS_DIRENT_TYPE;
-#ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_create_journalentry(fs, T_RENAME, newparentdirsector, oldentry.doffset, fs->fs_llformat.namesize, oldentry.dsector, 0, (uint8_t *)newfilename, &t_sector, &t_offset);
-		if (ret != OK) {
-			fdbg("Journal entry creation failed.\n");
-			goto errout_with_semaphore;
-		}
-#endif
+
 		ret = smartfs_createentry(fs, newparentdirsector, newfilename, type, mode, &newentry, oldentry.firstsector, NULL);
 		if (ret != OK) {
 			goto errout_with_semaphore;
@@ -2128,15 +1964,8 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		readwrite.offset = oldentry.doffset;
 		readwrite.count = sizeof(uint16_t);
 		readwrite.buffer = (uint8_t *)tmp_pntr;
+
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-#ifdef CONFIG_SMARTFS_JOURNALING
-		retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_RENAME);
-		if (retj != OK) {
-			fdbg("Error finishing transaction\n");
-			ret = retj;
-			goto errout_with_semaphore;
-		}
-#endif
 		if (ret < 0) {
 			fdbg("Error %d writing flag bytes for sector %d\n", ret, readwrite.logsector);
 			goto errout_with_semaphore;

@@ -1774,12 +1774,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	totalsectors = dev->totalsectors;
 
 	dev->reservedsector = SMART_FIRST_ALLOC_SECTOR;
-#ifdef CONFIG_SMARTFS_JOURNALING
-	if (totalsectors > CONFIG_SMARTFS_JOURNALING_THRESHOLD) {
-		dev->reservedsector += 2 * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	}
-#endif
-
 	dev->formatstatus = SMART_FMT_STAT_NOFMT;
 	dev->freesectors = dev->availSectPerBlk * dev->geo.neraseblocks;
 	dev->releasesectors = 0;
