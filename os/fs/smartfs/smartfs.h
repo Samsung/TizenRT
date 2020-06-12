@@ -243,37 +243,6 @@
 #undef  CONFIG_SMARTFS_DYNAMIC_HEADER
 #endif
 
-#ifdef CONFIG_SMARTFS_JOURNALING
-
-/*
- * Journal entry info
- * 1st 4 bytes : Transaction Type
- * Last 4 bytes : Transaction status
- */
-
-#define SMARTFS_LOGGING_SECTOR   12
-
-#define TRANS_EXIST (1 << 0)
-#define TRANS_STARTED (1 << 1)
-#define TRANS_FINISHED (1 << 2)
-#define TRANS_NEED_SYNC (1 << 3)	/* Note: If true, it means that this transaction needs sync only if it is not finished */
-
-#define GET_TRANS_TYPE(t) ((t) >> 4)
-#define SET_TRANS_TYPE(t, v) ((t) = ((t) & 0x0f) | ((v) << 4))
-
-#define T_STATUS_RESET(t) ((t) = ((t) | (CONFIG_SMARTFS_ERASEDSTATE >> 4)))
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-#define T_SET_TRANSACTION(t, s) ((t) = ((t) & ~(s)))
-#else
-#define T_SET_TRANSACTION(t, s) ((t) = ((t) | (s)))
-#endif
-
-#define T_FINISH_CHECK(t)  (((t) & TRANS_FINISHED) != (TRANS_FINISHED & CONFIG_SMARTFS_ERASEDSTATE))
-#define T_START_CHECK(t)  (((t) & TRANS_STARTED) != (TRANS_STARTED & CONFIG_SMARTFS_ERASEDSTATE))
-#define T_EXIST_CHECK(t)  (((t) & TRANS_EXIST) != (TRANS_EXIST & CONFIG_SMARTFS_ERASEDSTATE))
-#define T_NEEDSYNC_CHECK(t) (((t) & TRANS_NEED_SYNC) != (TRANS_NEED_SYNC & CONFIG_SMARTFS_ERASEDSTATE))
-
-#endif							/* CONFIG_SMARTFS_JOURNALING */
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -377,109 +346,9 @@ struct smartfs_mountpt_s {
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
 	uint8_t *fs_chunk_buffer;
 #endif
-#ifdef CONFIG_SMARTFS_JOURNALING
-	struct journal_transaction_manager_s *journal;
-#endif
 	uint8_t fs_rootsector;		/* Root directory sector num */
 };
 
-#ifdef CONFIG_SMARTFS_JOURNALING
-
-enum logging_transaction_type_e {
-	T_WRITE = 0,				/* for smartfs_write */
-	T_CREATE,					/* Used when new entry for file is created */
-	T_RENAME,					/* for smartfs_rename */
-	T_MKDIR,					/* for smartfs_mkdir */
-	T_DELETE,					/* for smartfs_rmdir and smartfs_unlink */
-	T_SYNC						/* for smartfs_sync_internal */
-};
-
-/* This structure is a node in the list of currently
-   active (not yet finished) write transactions.
-*/
-struct active_write_node_s {
-	uint8_t trans_info;			/* Transaction type and status */
-	uint16_t sector;			/* Sector on which write has to be made */
-	uint16_t used_bytes;		/* Number of bytes used in the sector after finishing write */
-	uint8_t seq_no;				/* Sequence number of writes on same sector */
-	uint16_t journal_sector;	/* Sector in which transaction is written */
-	uint16_t journal_offset;	/* Offset in journal_sector where transaction is written */
-	struct active_write_node_s *next;	/* Next active write transaction */
-};
-
-/* This structure is the logging entry that is written in journal */
-
-struct smartfs_logging_entry_s {
-	uint8_t trans_info;			/*      First 4 bits reserved for transaction Type
-								 *      Last 4 bits reserved for transaction status.
-								 */
-
-	uint8_t seq_no;				/*      Sequence number of writes which need a sync on a sector.
-								 *      We are limiting sequence number only to 0 and 1. This is because
-								 *      if we receive a new write on a sector which has been written
-								 *      before, it means that previous write was complete. So we can finish
-								 *      the previous transaction. Thus, there can be at most 2 unfinished
-								 *      transactions for a sector in case of power failure.
-								 */
-
-	uint8_t crc16[2];			/*      For CRC value to check validation of journal entry
-								 *      First 8bits for entry, next 8bits for entry + data
-								 */
-
-	uint16_t curr_sector;		/*      Transaction type : Use
-								 *        1) T_WRITE  : sector number of sector to be written.
-								 *        2) T_CREATE : sector number of parent sector of new entry.
-								 *        3) T_RENAME : sector number of parent sector of new entry.
-								 *        4) T_MKDIR  : sector number of parent sector where entry has to be created.
-								 *        5) T_DELETE  : sector number of parent sector of entry to be deleted.
-								 *        6) T_SYNC   : sector number of sector to be synced
-								 */
-
-	uint16_t offset;			/*      Transaction type : Use
-								 *        1) T_WRITE  : offset in sector where data has to be written.
-								 *        2) T_CREATE : Unused
-								 *        3) T_RENAME : offset in parent sector of the old directory entry.
-								 *        4) T_MKDIR  : Unused.
-								 *        5) T_DELETE : offset in parent sector of the old directory entry.
-								 *        6) T_SYNC   : Unused
-								 */
-
-	uint16_t datalen;			/*     Transaction type : Use
-								 *       1) T_WRITE  : Length of data that has to be written.
-								 *       2) T_CREATE : Length of filename
-								 *       3) T_RENAME : Length of new name of file/directory.
-								 *       4) T_MKDIR  : Length of new directory name.
-								 *       5) T_DELETE : We are reusing this field to store the sector which is chaining
-								 *                     to the sector containing the entry to be deleted
-								 *       6) T_SYNC   : Unused
-								 */
-
-	uint16_t generic_1;			/*      Generic field. Different meaning in different transaction types.
-								 *      Transaction type : Use
-								 *        1) T_WRITE  : sector size needed to be updated after write to the sector.
-								 *        2) T_CREATE : Mode of file create.
-								 *        3) T_RENAME : sector number of parent sector of old entry.
-								 *        4) T_MKDIR  : Unused.
-								 *        5) T_DELETE : first sector pointed by the entry to delete
-								 *        6) T_SYNC   : Sector size that is needed to update.
-								 */
-
-};
-
-/*
-  This structure provides the transaction manager for all journaling operations
-*/
-struct journal_transaction_manager_s {
-	bool enabled;				/* State value to check whether journaling is enabled or not */
-	int8_t jarea;				/* 0 or 1. Specify which journal area is usable */
-	uint16_t sector;			/* Sector number where next logging entry has to be written */
-	uint16_t offset;			/* Offset in the sector above */
-	uint16_t availbytes;		/* Total space in a logging sector to write entries */
-	uint8_t *buffer;			/* Buffer to hold logging entry header and data */
-	uint8_t *active_sectors;	/* Map to mark sectors which are written but not yet synced */
-	struct active_write_node_s *list;	/* Linked list to hold information about writes which need sync */
-};
-#endif
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -542,11 +411,5 @@ struct inode;
 struct fs_dirent_s;
 struct statfs;
 struct stat;
-
-#ifdef CONFIG_SMARTFS_JOURNALING
-int smartfs_journal_init(struct smartfs_mountpt_s *fs);
-int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_transaction_type_e type, uint16_t curr_sector, uint16_t offset, uint16_t datalen, uint16_t genericdata, uint8_t needsync, const uint8_t *data, uint16_t *t_sector, uint16_t *t_offset);
-int smartfs_finish_journalentry(struct smartfs_mountpt_s *fs, uint16_t curr_sector, uint16_t sector, uint16_t offset, enum logging_transaction_type_e type);
-#endif
 
 #endif							/* __FS_SMARTFS_SMARTFS_H */

@@ -208,11 +208,7 @@ Below are the optional features configurations. Refer *os/fs/smartfs/Kconfig* fo
 	```
 	File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs
 	```
-4. CONFIG_SMARTFS_VERIFY_JOURNALING
-	```
-	File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs -> Verify Journal logging
-	```
-5. CONFIG_SMARTFS_SECTOR_RECOVERY
+4. CONFIG_SMARTFS_SECTOR_RECOVERY
 	```
 	File Systems -> SMART file system -> SMARTFS options -> Enable recovery of lost sectors in Filesystem
 	```
