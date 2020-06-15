@@ -1696,6 +1696,18 @@ int get_errno(void);
 #define vdbgdumpbuffer(m, b, n)
 #endif
 
+#ifdef CONFIG_DEBUG_ERROR
+#  define errdumpbuffer(m, b, n) lib_dumpbuffer(m, b, n)
+#  ifdef CONFIG_DEBUG_VERBOSE
+#    define infodumpbuffer(m, b, n) lib_dumpbuffer(m, b, n)
+#  else
+#   define infodumpbuffer(m, b, n)
+#  endif
+#else
+#  define errdumpbuffer(m, b, n)
+#  define infodumpbuffer(m, b, n)
+# endif
+
 /* Subsystem specific debug */
 
 #ifdef CONFIG_DEBUG_MM
@@ -1768,6 +1780,14 @@ int get_errno(void);
 #else
 #define gdbgdumpbuffer(m, b, n)
 #define gvdbgdumpbuffer(m, b, n)
+#endif
+
+#ifdef CONFIG_DEBUG_BINFMT
+#  define berrdumpbuffer(m, b, n)  errdumpbuffer(m, b, n)
+#  define binfodumpbuffer(m, b, n) infodumpbuffer(m, b, n)
+#else
+#  define berrdumpbuffer(m, b, n)
+#  define binfodumpbuffer(m, b, n)
 #endif
 
 #ifdef CONFIG_DEBUG_LIB

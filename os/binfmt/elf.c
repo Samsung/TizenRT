@@ -74,14 +74,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* CONFIG_DEBUG, CONFIG_DEBUG_INFO, and CONFIG_DEBUG_BINFMT have to be
- * defined or CONFIG_ELF_DUMPBUFFER does nothing.
- */
-
-#if !defined(CONFIG_DEBUG_INFO) || !defined(CONFIG_DEBUG_BINFMT)
-#undef CONFIG_ELF_DUMPBUFFER
-#endif
-
 #ifndef CONFIG_ELF_STACKSIZE
 #define CONFIG_ELF_STACKSIZE 2048
 #endif
