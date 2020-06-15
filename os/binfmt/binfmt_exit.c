@@ -66,6 +66,7 @@
 #endif
 #endif
 
+#include <tinyara/mm/mm.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
 
@@ -136,6 +137,7 @@ int binfmt_exit(FAR struct binary_s *bin)
 		}
 		address = (FAR void *)sq_next((FAR sq_entry_t *)address);
 	}
+	mm_remove_app_heap_list(bin->uheap);
 	/* Free the RAM partition into which this app was loaded */
 	kumm_free((void *)bin->ramstart);
 #endif
