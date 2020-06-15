@@ -68,10 +68,7 @@
 #include <tinyara/mm/shm.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/mpu.h>
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
-#endif
 
 #ifdef CONFIG_BINARY_MANAGER
 #include <string.h>
@@ -176,9 +173,7 @@ int exec_module(FAR struct binary_s *binp)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	binp->uheap = (struct mm_heap_s *)binp->heapstart;
 	mm_initialize(binp->uheap, (void *)binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
-#ifdef CONFIG_BINARY_MANAGER
 	mm_add_app_heap_list(binp->uheap, binp->bin_name);
-#endif
 
 	/* The first 4 bytes of the text section of the application must contain a
 	pointer to the application's mm_heap object. Here we will store the mm_heap
