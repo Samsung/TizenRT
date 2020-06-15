@@ -176,15 +176,24 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 
 		/* Now, traverse the list in reverse direction, towards bigger size nodes */
 		for ( ; node; node = node->blink) {
-			alignchunk = (FAR struct mm_allocnode_s *)(((size_t)node + SIZEOF_MM_ALLOCNODE + mask) & ~mask);
-			size_t alignsize = (size_t)alignchunk - (size_t)node + size;
-			size_t remainsize = (size_t)alignchunk - SIZEOF_MM_ALLOCNODE - (size_t)node;
+			/* Search the suitable aligned address in the same node. */
+			for (alignchunk = (FAR struct mm_allocnode_s *)(((size_t)node + SIZEOF_MM_ALLOCNODE + mask) & ~mask);
+				(uintptr_t)(alignchunk + alignment) < (uintptr_t)(node + node->size);
+				alignchunk = alignchunk + alignment) {
 
-			/* We found a suitable node if node size is more than required size after alignment and
-			 * if the remaining bytes before the alignment point is either zero or bigger than freenode.
-			 */
-			if (node->size >= alignsize && (remainsize == 0 || remainsize >= SIZEOF_MM_FREENODE)) {
-				found_align = true;
+				size_t alignsize = (size_t)alignchunk - (size_t)node + size;
+				size_t remainsize = (size_t)alignchunk - SIZEOF_MM_ALLOCNODE - (size_t)node;
+
+				/* We found a suitable node if node size is more than required size after alignment and
+				 * if the remaining bytes before the alignment point is either zero or bigger than freenode.
+				 */
+				if (node->size >= alignsize && (remainsize == 0 || remainsize >= SIZEOF_MM_FREENODE)) {
+					found_align = true;
+					break;
+				}
+			}
+
+			if (found_align) {
 				break;
 			}
 		}
