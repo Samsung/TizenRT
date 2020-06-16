@@ -231,7 +231,7 @@ hal_ecdsa_curve secutils_convert_ecdsamode_s2h(security_ecdsa_mode mode)
 	case ECDSA_SEC_P384R1:
 		return HAL_ECDSA_SEC_P384R1;
 	case ECDSA_SEC_P512R1:
-		return HAL_ECDSA_SEC_P512R1;
+		return HAL_ECDSA_SEC_P521R1;
 	default:
 		return HAL_ECDSA_UNKNOWN;
 	}
