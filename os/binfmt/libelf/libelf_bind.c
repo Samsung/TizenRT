@@ -271,8 +271,10 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 	}
 
 ret_err:
-	kmm_free((void *)loadinfo->reltab);
-	loadinfo->reltab = (uintptr_t)NULL;
+	if (loadinfo->reltab) {
+		kmm_free((void *)loadinfo->reltab);
+		loadinfo->reltab = (uintptr_t)NULL;
+	}
 	return ret;
 }
 
@@ -485,7 +487,9 @@ ret_err:
 		kmm_free((void *)loadinfo->strtab);
 		loadinfo->strtab = (uintptr_t)NULL;
 	}
-	kmm_free((void *)loadinfo->symtab);
-	loadinfo->symtab = (uintptr_t)NULL;
+	if (loadinfo->symtab) {
+		kmm_free((void *)loadinfo->symtab);
+		loadinfo->symtab = (uintptr_t)NULL;
+	}
 	return ret;
 }
