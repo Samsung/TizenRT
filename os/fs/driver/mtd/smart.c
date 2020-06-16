@@ -172,63 +172,11 @@
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 #define SECTOR_IS_RELEASED(h) ((h.status & SMART_STATUS_RELEASED) == 0 ? true : false)
 #define SECTOR_IS_COMMITTED(h) ((h.status & SMART_STATUS_COMMITTED) == 0 ? true : false)
-#define SECTOR_IS_VALID(h, t)   ((UINT8TOUINT16(h.logicalsector) < t || UINT8TOUINT16(h.logicalsector) == 0xffff) ? true : false)
 
-#if SMART_STATUS_VERSION == 1
-#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFF && h.seq == 0xFF && h.crc8 == 0xFF && h.status == 0xFF))
-#elif SMART_STATUS_VERSION == 2
-#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFF && h.seq == 0xFF && UINT8TOUINT16(h.crc16) == 0xFFFF && h.status == 0xFF))
-#elif SMART_STATUS_VERSION == 3
-#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFFFFFF && h.seq == 0xFF && h.crc32 == 0xFFFFFFFF && h.status == 0xFF))
-#endif
 #else
 #define SECTOR_IS_RELEASED(h) ((h.status & SMART_STATUS_RELEASED) == SMART_STATUS_RELEASED ? true : false)
 #define SECTOR_IS_COMMITTED(h) ((h.status & SMART_STATUS_COMMITTED) == SMART_STATUS_COMMITTED ? true : false)
-#define SECTOR_IS_VALID(h, t)   ((UINT8TOUINT16(h.logicalsector) < t || UINT8TOUINT16(h.logicalsector) == 0x0000) ? true : false)
 
-#if SMART_STATUS_VERSION == 1
-#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x0000 && h.seq == 0x00 && h.crc8 == 0x00 && h.status == 0x00))
-#elif SMART_STATUS_VERSION == 2
-#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x0000 && h.seq == 0x00 && UINT8TOUINT16(h.crc16) == 0x0000 && h.status == 0x00))
-#elif SMART_STATUS_VERSION == 3
-#define HEADER_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x00000000 && h.seq == 0x00 && h.crc32 == 0x00000000 && h.status == 0x00))
-#endif
-
-#endif
-
-/*The following are CRC8 and CRC16 generated values which are constant 
- *for a completely erased sector.These CRC values are indicative of the
- *fact that the sector is indeed completely erased.
- */
-
-#ifdef NXFUSE_HOST_BUILD
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF && SMART_STATUS_VERSION == 1
-#if CONFIG_MTD_SMART_SECTOR_SIZE == 256
-#define SMART_ERASEDSTATE_CRC  0
-#elif CONFIG_MTD_SMART_SECTOR_SIZE == 512
-#define SMART_ERASEDSTATE_CRC  255
-#elif CONFIG_MTD_SMART_SECTOR_SIZE == 1024
-#define SMART_ERASEDSTATE_CRC  99
-#elif CONFIG_MTD_SMART_SECTOR_SIZE == 2048
-#define SMART_ERASEDSTATE_CRC  242
-#else
-#define SMART_ERASEDSTATE_CRC  -1
-#endif
-#elif CONFIG_SMARTFS_ERASEDSTATE == 0xFF && SMART_STATUS_VERSION == 2
-#if CONFIG_MTD_SMART_SECTOR_SIZE == 256
-#define SMART_ERASEDSTATE_CRC  65021
-#elif CONFIG_MTD_SMART_SECTOR_SIZE == 512
-#define SMART_ERASEDSTATE_CRC  53981
-#elif CONFIG_MTD_SMART_SECTOR_SIZE == 1024
-#define SMART_ERASEDSTATE_CRC  6113
-#elif CONFIG_MTD_SMART_SECTOR_SIZE == 2048
-#define SMART_ERASEDSTATE_CRC  60280
-#else
-#define SMART_ERASEDSTATE_CRC  -1
-#endif
-#else
-#define SMART_ERASEDSTATE_CRC  -1
-#endif
 #endif
 
 #define SET_TO_TRUE(v, n) v[n/8] |= (1<<(7-(n%8)))
@@ -463,8 +411,10 @@ static int smart_relocate_static_data(FAR struct smart_struct_s *dev, uint16_t b
 #endif
 static void smart_erase_block_if_empty(FAR struct smart_struct_s *dev, uint16_t block, uint8_t forceerase);
 static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsector, uint16_t newsector);
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
 static int smart_validate_crc(FAR struct smart_struct_s *dev);
 static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev);
+#endif
 
 /****************************************************************************
  * Private Data
@@ -1682,51 +1632,6 @@ static int smart_set_wear_level(FAR struct smart_struct_s *dev, uint16_t block, 
 #endif
 
 /****************************************************************************
- * Name: smart_validate_sector
- *
- * Description: Check CRC for the sector and determine if sector
- *		contents are OK in case CRC does not match.
- *
- ****************************************************************************/
-
-static bool smart_validate_sector(FAR struct smart_struct_s *dev)
-{
-	FAR struct smart_sect_header_s header;
-	bool corrupted = false;
-	int i;
-	int ret;
-
-	memcpy(&header, dev->rwbuffer, sizeof(struct smart_sect_header_s));
-
-	/* Check the crc of header first. */
-	ret = smart_validate_crc(dev);
-	if (ret != OK) {
-		if (HEADER_IS_CLEAN(header)) {
-			/* If header is erased state, then check contents */
-			for (i = sizeof(struct smart_sect_header_s); i < dev->sectorsize; i++) {
-				if (dev->rwbuffer[i] != CONFIG_SMARTFS_ERASEDSTATE) {
-					fdbg("It is not Erased value offset %u, %x------------------\n", i, dev->rwbuffer[i]);
-					corrupted = true;
-					break;
-				}
-			}
-		} else {
-			/* If header is not clean & crc is not matched, then it is corrupted sector */
-			fdbg("Header is not clean but crc is not matched logical : %d crc : %d sta :%d seq :%d\n", UINT8TOUINT16(header.logicalsector), header.crc8, header.status, header.seq);
-			corrupted = true;
-		}
-	} else {
-		/* Very rarely, crc can be matched with abnormal header value, so we should check boundary */
-		if (!SECTOR_IS_VALID(header, dev->totalsectors)) {
-			fdbg("header is out of boundary, sector : %x\n", header.logicalsector);
-			corrupted = true;	
-		}
-	} 
-
-	return corrupted;
-}
-
-/****************************************************************************
  * Name: smart_scan
  *
  * Description: Perform a scan of the MTD device to search for format
@@ -1834,22 +1739,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		/* copy header data only, will be used below */
 		memcpy(&header, dev->rwbuffer, sizeof(struct smart_sect_header_s));
 
-		/* If current sector is corrupted because of erase fail, restore it */
-		if (smart_validate_sector(dev)) {
-			fdbg("It seems that erase failed, release current sector. block : %d sector : %d\n", sector / dev->sectorsPerBlk, sector);
-			/* Erase current block forcely */
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-			header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
-#else
-			header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
-#endif
-
-			ret = smart_bytewrite(dev, readaddress + offsetof(struct smart_sect_header_s, status), 1, &header.status);
-			if (ret < 0) {
-				goto err_out;
-			}
-		}
-
 		/* Get the logical sector number for this physical sector. */
 		logicalsector = UINT8TOUINT16(header.logicalsector);
 #if CONFIG_SMARTFS_ERASEDSTATE == 0x00
@@ -1860,7 +1749,17 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 		status_released = SECTOR_IS_RELEASED(header);
 		status_committed = SECTOR_IS_COMMITTED(header);
-		fvdbg("released : %d committed : %d logical : %d physical : %d crc : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, header.crc8, header.status, header.seq);
+		fvdbg("released : %d committed : %d logical : %d physical : %d crc : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, 
+#ifdef CONFIG_SMART_ENABLE_CRC
+#ifdef CONFIG_SMART_CRC_8
+		header.crc8,
+#elif defined(CONFIG_SMART_CRC_16)
+		header.crc16,
+#elif defined(CONFIG_SMART_CRC_32)
+		header.crc32,
+#endif
+#endif
+		header.status, header.seq);
 		if (logicalsector > 0 && logicalsector < dev->totalsectors && header.status != CONFIG_SMARTFS_ERASEDSTATE && !status_released && status_committed) {
 
 			/* Map the sector and update the free sector counts. */
@@ -1875,36 +1774,16 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		}
 
 		/* Test if this sector has been committed. */
-
-		if (!status_committed) {
-			/* Confirm that this sector is truly blank.*/
-			if (logicalsector < dev->totalsectors) {
-				/* This sector if not erased and not committed, might have been corrupted. Commit and release this. */
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-				header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
-#else
-				header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
-#endif
-				status_committed = true;
-				status_released = true;
-				ret = smart_bytewrite(dev, readaddress + offsetof(struct smart_sect_header_s, status), 1, &header.status);
-				if (ret < 0) {
-					fdbg("checkpoint line %d\n", __LINE__);
-					goto err_out;
-				}
-			} else {
-				continue;
-			}
-		}
-
-		/* This block is now commited, therefore not free. Update the erase block's freecount.*/
+		if (status_committed) {
+			/* This block is now commited, therefore not free. Update the erase block's freecount.*/
 
 #ifdef CONFIG_MTD_SMART_PACK_COUNTS
-		smart_add_count(dev, dev->freecount, sector / dev->sectorsPerBlk, -1);
+			smart_add_count(dev, dev->freecount, sector / dev->sectorsPerBlk, -1);
 #else
-		dev->freecount[sector / dev->sectorsPerBlk]--;
+			dev->freecount[sector / dev->sectorsPerBlk]--;
 #endif
-		dev->freesectors--;
+			dev->freesectors--;
+		}
 
 		/* Test if this sector has been release and if it has,
 		 * update the erase block's releasecount.
@@ -2660,6 +2539,7 @@ errout:
  *
  ****************************************************************************/
 
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
 static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev)
 {
 	crc_t crc = 0;
@@ -2699,15 +2579,12 @@ static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev)
 	/* Add logical sector number, status and seq to the CRC calculation. */
 
 	crc = crc32part((uint8_t *)dev->rwbuffer, 6, crc);
-#else
-	/* Add logical sector number and seq to the CRC calculation for basic crc. */
-
-	crc = crc8((uint8_t *)dev->rwbuffer, 3);
 
 #endif
 
 	return crc;
 }
+#endif
 
 /****************************************************************************
  * Name: smart_llformat
@@ -2808,14 +2685,14 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 
 	dev->rwbuffer[SMART_FMT_ROOTDIRS_POS] = (uint8_t) (arg & 0xff);
 
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
 #ifdef CONFIG_SMART_CRC_8
 	sectorheader->crc8 = smart_calc_sector_crc(dev);
 #elif defined(CONFIG_SMART_CRC_16)
 	*((uint16_t *)sectorheader->crc16) = smart_calc_sector_crc(dev);
 #elif defined(CONFIG_SMART_CRC_32)
 	*((uint32_t *)sectorheader->crc32) = smart_calc_sector_crc(dev);
-#else
-	sectorheader->crc8 = smart_calc_sector_crc(dev);
+#endif
 #endif
 
 	/* Write the sector to the flash. */
@@ -2980,7 +2857,6 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 #else
 	header->status &= ~SMART_STATUS_COMMITTED;
 #endif
-	header->crc8 = smart_calc_sector_crc(dev);
 
 	/* Write the data to the new physical sector location. */
 
@@ -3965,7 +3841,6 @@ static int smart_write_alloc_sector(FAR struct smart_struct_s *dev, uint16_t log
 	/* Write the header to the physical sector location. */
 
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
-	header->crc8 = smart_calc_sector_crc(dev);
 	fvdbg("Write MTD block ALLOCATION!!! Logical %d -> Physical %d\n", logical, physical);
 	ret = MTD_BWRITE(dev->mtd, physical * dev->mtdBlksPerSector, 1, (FAR uint8_t *)dev->rwbuffer);
 	if (ret != 1) {
@@ -3992,7 +3867,7 @@ static int smart_write_alloc_sector(FAR struct smart_struct_s *dev, uint16_t log
  *
  ****************************************************************************/
 
-#ifdef NXFUSE_HOST_BUILD
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
 static int smart_validate_crc(FAR struct smart_struct_s *dev)
 {
 	crc_t crc;
@@ -4002,63 +3877,23 @@ static int smart_validate_crc(FAR struct smart_struct_s *dev)
 	crc = smart_calc_sector_crc(dev);
 	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
 
-#ifdef CONFIG_SMART_CRC_16
-	/* Test 16-bit CRC. */
+#ifdef CONFIG_SMART_CRC_8
+	/*Test 8-bit CRC. */
 
-	if (crc != *((uint16_t *)header->crc16) && crc != SMART_ERASEDSTATE_CRC) {
-		return -EIO;
-	}
-#elif defined(CONFIG_SMART_CRC_32)
-	if (crc != *((uint32_t *)header->crc32)) {
-		return -EIO;
-	}
-#elif defined(CONFIG_SMART_CRC_8)
-	/* Test 8-bit CRC for CRC8. */
-
-	if (crc != header->crc8 && crc != SMART_ERASEDSTATE_CRC) {
-		return -EIO;
-	}
-#else
-	/*CONFIG_MTD_SMART_ENABLE_CRC not set, perform minimal CRC check
-	  (only for first three bytes i.e. logicalsector and sequence number). */
-
-	if (crc != header->crc8 && (header->logicalsector[0] != CONFIG_SMARTFS_ERASEDSTATE || header->logicalsector[1] != CONFIG_SMARTFS_ERASEDSTATE || header->seq != CONFIG_SMARTFS_ERASEDSTATE)) {
+	if (crc != header->crc8) {
 		return -EIO;
 	}
 
-#endif
-	/* CRC checkout out okay. */
-
-	return OK;
-}
-
-#else
-static int smart_validate_crc(FAR struct smart_struct_s *dev)
-{
-	crc_t crc;
-	FAR struct smart_sect_header_s *header;
-	/* Calculate CRC on data region of the sector. */
-
-	crc = smart_calc_sector_crc(dev);
-	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
-
-#ifdef CONFIG_SMART_CRC_16
+#elif defined(CONFIG_SMART_CRC_16)
 	/* Test 16-bit CRC. */
 
 	if (crc != *((uint16_t *)header->crc16)) {
 		return -EIO;
 	}
 #elif defined(CONFIG_SMART_CRC_32)
-	if (crc != *((uint32_t *)header->crc32)) {
-		return -EIO;
-	}
-#else
-	/* Test 8-bit CRC for CRC8 & basic case for smart_scan. */
+	/* Test 32-bit CRC. */
 
-	if (crc != header->crc8) {
-		if (header->crc8 != 0xff) {
-			fdbg("calculated crc %d != header crc %d\n", crc, header->crc8);
-		}
+	if (crc != *((uint32_t *)header->crc32)) {
 		return -EIO;
 	}
 #endif
@@ -4310,7 +4145,6 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 	/* Now copy the data to the sector buffer. */
 	memcpy(&dev->rwbuffer[sizeof(struct smart_sect_header_s) + req->offset],
 		   req->buffer, req->count);
-	header->crc8 = smart_calc_sector_crc(dev);
 #endif							/* CONFIG_MTD_SMART_ENABLE_CRC */
 
 	/* Now write the sector buffer to the device. */
