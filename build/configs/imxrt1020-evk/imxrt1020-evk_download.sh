@@ -189,6 +189,17 @@ function get_partition_sizes()
 }
 
 # Start here
+
+cmd_args=$@
+
+# Treat adding the USB rule first
+for i in ${cmd_args[@]};do
+	if [[ "${i}" == "USBrule" || "${i}" == "usbrule" ]];then
+		${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} || exit 1
+		exit 0
+	fi
+done
+
 imxrt1020_sanity_check;
 
 parts=$(get_configured_partitions)
@@ -219,7 +230,6 @@ if test $# -eq 0; then
 fi
 
 uniq_parts=($(printf "%s\n" "${parts[@]}" | sort -u));
-cmd_args=$@
 
 #Validate arguments
 for i in ${cmd_args[@]};do
@@ -277,9 +287,6 @@ erase)
 		done
 		shift
 	done
-	;;
-usbrule)
-	${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} || exit 1
 	;;
 #Download <list of partitions>
 *)
