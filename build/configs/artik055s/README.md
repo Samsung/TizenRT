@@ -101,6 +101,57 @@ Please set TizenRT common environment, [quick start](https://github.com/Samsung/
 This is an optional environment.  
 But as ARTIK is connected through USB, some operation like programming of binary can't be worked without this configuration.
 
+#### By dbuild.sh script
+
+The *dbuild.sh* script with the *menu* option supports the *u. USBrule* option to add it.
+
+1. Select the *d. Download* option after building TizenRT
+```sh
+======================================================
+  "Select build Option"
+======================================================
+  "1. Build with Current Configurations"
+  "2. Re-configure"
+  "3. Menuconfig"
+  "4. Build Clean"
+  "5. Build Dist-Clean"
+  "6. Build SmartFS Image"
+  "d. Download"
+  "x. Exit"
+======================================================
+d
+```
+2. Select the *u. USBrule* option
+```sh
+==================================================
+  "Select download option"
+==================================================
+  "1. ALL"
+  "2. OS"
+  "4. APPS"
+  "5. OTA"
+  "6. ROM"
+  "7. MICOM"
+  "8. WIFI"
+  "9. LOADPARAM"
+  "10. BL1"
+  "11. BL2"
+  "12. SSSFW"
+  "13. WLANFW"
+  "14. ERASE OTA"
+  "15. ERASE USERFS"
+  "16. ERASE ALL"
+  "u. USBrule"
+  "x. Exit"
+==================================================
+u
+```
+
+>**NOTE**
+>It requires root permission.
+
+#### By manually
+
 1. Make a file named 99-\<anyname\>.rules.
 2. Add below contents at above file.
 ```
