@@ -3193,15 +3193,13 @@ static uint16_t smart_findfreephyssector(FAR struct smart_struct_s *dev, uint8_t
 	uint32_t readaddr;
 	struct smart_sect_header_s header;
 	int ret;
-	uint8_t   *sector_buff;
-	int i;
-	bool bitflipped;
 	/* Determine which erase block we should allocate the new
 	 * sector from. This is based on the number of free sectors
 	 * available in each erase block. */
 
+#ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 retry:
-	bitflipped = FALSE;
+#endif
 	allocfreecount = 0;
 	allocblock = 0xFFFF;
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
@@ -3268,7 +3266,7 @@ retry:
 
 	if (allocblock == 0xFFFF) {
 		/* No un-worn blocks with free sectors. */
-		fdbg("\tline %d, No un-worn blocks with free sectors\n", __LINE__);
+		fdbg("No un-worn blocks with free sectors\n");
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 
 		/* If we are allowed to relocate unworn blocks then do so now. */
@@ -3291,7 +3289,6 @@ retry:
 			}
 			if (x > 0) {
 				/* Disable relocate for retry. */
-				fdbg("line %d, canrelocate = false, RETRY\n", __LINE__);
 				canrelocate = FALSE;
 				goto retry;
 			}
@@ -3321,11 +3318,6 @@ retry:
 
 	/* Now find a free physical sector within this selected
 	 * erase block to allocate. */
-	sector_buff = (uint8_t *)kmm_zalloc(dev->mtdBlksPerSector * dev->geo.blocksize);
-	if (sector_buff == NULL) {
-		fdbg("sector_buff allocation fail\n");
-		return physicalsector;
-	}
 
 	for (x = allocblock * dev->sectorsPerBlk; x < allocblock * dev->sectorsPerBlk + dev->availSectPerBlk; x++) {
 		/* Check if this physical sector is available. */
@@ -3359,7 +3351,6 @@ retry:
 		ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 		if (ret != sizeof(struct smart_sect_header_s)) {
 			fdbg("Error reading phys sector %d\n", physicalsector);
-			kmm_free(sector_buff);
 			return -1;
 		}
 		if ((UINT8TOUINT16(header.logicalsector) == 0xFFFF) &&
@@ -3369,82 +3360,19 @@ retry:
 			(header.seq == CONFIG_SMARTFS_ERASEDSTATE) &&
 #endif
 			(!(SECTOR_IS_COMMITTED(header)))) {
-				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
-				if (ret != dev->mtdBlksPerSector * dev->geo.blocksize) {
-					fdbg("Error in reading physical sector %d\n", physicalsector);
-					kmm_free(sector_buff);
-					return -1;
-				}
-				for (i = 0; i < dev->mtdBlksPerSector * dev->geo.blocksize; i++) {
-					if (sector_buff[i] != 0xff) {
-						break;
-					}
-				}
-
-				if (i == dev->mtdBlksPerSector * dev->geo.blocksize) {
-					physicalsector = x;
-					dev->lastallocblock = allocblock;
-					break;
-				} else {
-					bitflipped = TRUE;
-					fdbg("bit flip occur %d offset %d byte %x\n", x, i, sector_buff[i]);
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-					header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
-#else
-					header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
-#endif
-					ret = smart_bytewrite(dev, readaddr + offsetof(struct smart_sect_header_s, status), 1, &header.status);
-					if (ret < 0) {
-						fdbg("Error %d releasing corrupted sector\n", -ret);
-						goto error;
-					}
-
-					if (dev->freecount[allocblock] == 0) {
-						fdbg("WARNING!! Impossible to decrease freecount 0, Block %d freecount[%d] = %d\n",
-								allocblock, x / dev->sectorsPerBlk, dev->freecount[x / dev->sectorsPerBlk]);
-					} else {
-#ifdef CONFIG_MTD_SMART_PACK_COUNTS
-						smart_add_count(dev, dev->freecount, x / dev->sectorsPerBlk, -1);
-						smart_add_count(dev, dev->releasecount, allocblock, 1);
-#else
-						dev->freecount[allocblock]--;
-						dev->releasecount[allocblock]++;
-#endif
-						dev->freesectors--;
-						dev->releasesectors++;
-						fvdbg("Block %d freecount[%d] = %d\n", allocblock, x / dev->sectorsPerBlk, dev->freecount[x / dev->sectorsPerBlk]);
-					}
-				}
-		} else {
-			fdbg("line %d, block %d, sector %d status: %d committed %d and skipped...\n", __LINE__, allocblock, x, header.status, SECTOR_IS_COMMITTED(header));
+				physicalsector = x;
+				dev->lastallocblock = allocblock;
+				break;
 		}
 	}
 
-error:
-	if (physicalsector == 0xFFFF || physicalsector >= dev->totalsectors) {
-		if (bitflipped) {
-			fdbg("retry allocation \n");
-			canrelocate = FALSE;
-			kmm_free(sector_buff);
-			goto retry;
-		}
-		for (x = allocblock * dev->sectorsPerBlk; x < allocblock * dev->sectorsPerBlk + dev->availSectPerBlk; x++) {
-			readaddr = x * dev->mtdBlksPerSector * dev->geo.blocksize;
-			ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-			if (ret == sizeof(struct smart_sect_header_s)) {
-				fdbg("Error case block : %d sector : %d logicalsector : %d seq : %d crc :%d status : %d\n", allocblock,\
-					x, UINT8TOUINT16(header.logicalsector), header.seq, header.crc8, header.status);
-			}
-		}
-		if (physicalsector == 0xFFFF) {
-			fdbg("Program bug!  Expected a free sector %d\n", allocblock);
-			print_sector_headers(dev, allocblock);
-		} else if (physicalsector >= dev->totalsectors) {
-			fdbg("Program bug!  Selected sector too big!!!\n");
-		}
+	if (physicalsector == 0xFFFF) {
+		fdbg("Program bug!  Expected a free sector %d\n", allocblock);
+		print_sector_headers(dev, allocblock);
 	}
-
-	kmm_free(sector_buff);
+	if (physicalsector >= dev->totalsectors) {
+		fdbg("Program bug!  Selected sector too big!!!\n");
+	}
 
 	return physicalsector;
 }
