@@ -3307,7 +3307,7 @@ retry:
 			fdbg("Program bug!  Expected a free sector, free=%d\n", dev->freesectors);
 #ifdef CONFIG_DEBUG_FS
 			for (x = 0; x < dev->neraseblocks; x++) {
-				fsdbg("%d ", dev->freecount[x]);
+				fdbg("freecount %d ", dev->freecount[x]);
 			}
 #endif
 			/* No free sectors found!  Bug? */
