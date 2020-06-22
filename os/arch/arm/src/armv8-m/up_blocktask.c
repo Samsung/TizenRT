@@ -78,6 +78,10 @@
 #include <tinyara/mpu.h>
 #endif
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#include <tinyara/tz_context.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -155,6 +159,10 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			 */
 
 			up_savestate(rtcb->xcp.regs);
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+			/* Store the secure context and PSPLIM of OLD rtcb */
+			tz_store_context(rtcb->xcp.regs);
+#endif
 
 			/* Restore the exception context of the rtcb at the (new) head
 			 * of the g_readytorun task list.
@@ -190,6 +198,11 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			/* Then switch contexts */
 
 			up_restorestate(rtcb->xcp.regs);
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+			/* Load the secure context and PSPLIM of OLD rtcb */
+			tz_load_context(rtcb->xcp.regs);
+#endif
+
 		}
 
 		/* No, then we will need to perform the user context switch */
