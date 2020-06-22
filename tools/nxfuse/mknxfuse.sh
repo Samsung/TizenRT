@@ -44,11 +44,6 @@ ln -sf $SMARTFSDIR/smartfs_utils.c $SMARTFS_TMPDIR/smartfs_utils.c
 ln -sf $SMARTFSDIR/smartfs_smart.c $SMARTFS_TMPDIR/smartfs_smart.c
 ln -sf $SMARTFSDIR/../driver/mtd/smart.c $SMARTFS_TMPDIR/smart.c
 
-#libc queue source folder
-if [ $CONFIG_SMARTFS_SECTOR_RECOVERY ]; then
-ln -svf $BASE_DIR/lib/libc/queue $SRCDIR/
-fi
-
 #Header Files
 ln -sf $BASE_INCLUDE_DIR/crc16.h $DEST_INLCUDE_DIR/crc16.h
 ln -sf $BASE_INCLUDE_DIR/crc32.h $DEST_INLCUDE_DIR/crc32.h
@@ -104,9 +99,6 @@ rm -rf $DEST_INLCUDE_DIR/tinyara/fs/ioctl.h
 rm -rf $DEST_INLCUDE_DIR/sys
 rm -rf $DEST_INLCUDE_DIR/tinyara/fs
 rm -rf $SMARTFS_TMPDIR
-if [ $CONFIG_SMARTFS_SECTOR_RECOVERY ]; then
-rm -rf $SRCDIR/queue
-fi
 rm -rf $DEPDIR
 rm -rf $OBJDIR
 
