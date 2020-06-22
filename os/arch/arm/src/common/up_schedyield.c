@@ -23,6 +23,10 @@
 #include "sched/sched.h"
 #include "up_internal.h"
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#include <tinyara/tz_context.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -62,6 +66,10 @@ void up_schedyield(struct tcb_s *rtcb)
 		 * rtcb is the tcb of task which is yeilding the resource
 		 */
 		up_savestate(rtcb->xcp.regs);
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		/* Store the secure context and PSPLIM of OLD rtcb */
+		tz_store_context(tcb->xcp.regs);
+#endif
 
 		/* Restore the exception context of the new changed rtcb from the head
 		 * of the g_readytorun task list.
@@ -73,6 +81,11 @@ void up_schedyield(struct tcb_s *rtcb)
 		 */
 
 		up_restorestate(rtcb->xcp.regs);
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		/* Load the secure context and PSPLIM of OLD rtcb */
+		tz_load_context(rtcb->xcp.regs);
+#endif
+
 	}
 	/* Copy the exception context into the TCB at the (old) head of the
 	 * g_readytorun Task list. if up_saveusercontext returns a non-zero
