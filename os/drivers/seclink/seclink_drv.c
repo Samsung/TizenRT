@@ -138,7 +138,9 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	 */
 	SL_LOCK(&upper->su_lock);
 	int res = 0;
-	if (SL_IS_AUTH_REQ(cmd)) {
+	if (SL_IS_COMMON_REQ(cmd)) {
+		res = hd_handle_common_request(cmd, arg, (void *)upper->lower);
+	} else if (SL_IS_AUTH_REQ(cmd)) {
 		res = hd_handle_auth_request(cmd, arg, (void *)upper->lower);
 	} else if (SL_IS_KEYMGR_REQ(cmd)) {
 		res = hd_handle_key_request(cmd, arg, (void *)upper->lower);

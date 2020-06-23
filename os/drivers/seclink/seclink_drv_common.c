@@ -35,13 +35,18 @@ int hd_handle_common_request(int cmd, unsigned long arg, void *lower)
 {
 	SLDRV_ENTER;
 
-	struct seclink_req *req = (struct seclink_req *)arg;
 	hal_init_param *params = NULL;
-
+	struct seclink_req *req = (struct seclink_req *)arg;
 	if (!req) {
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_ARM_TRUSTZONE
+	struct seclink_comm_info *info = (struct seclink_comm_info *)req->req_type.comm;
+	if (!info && (cmd == SECLINKIOC_ALLOC || cmd == SECLINKIOC_FREE)) {
+		return -EINVAL;
+	}
+#endif
 	struct sec_lowerhalf_s *se = (struct sec_lowerhalf_s *)lower;
 	if (!se | !(se->ops)) {
 		return -EINVAL;
@@ -55,6 +60,22 @@ int hd_handle_common_request(int cmd, unsigned long arg, void *lower)
 	case SECLINKIOC_DEINIT:
 		req->res = se->ops->deinit();
 		break;
+#ifdef CONFIG_ARM_TRUSTZONE
+	case SECLINKIOC_ALLOC:
+		if (se->ops->allocate_scontext != NULL) {
+			req->res = se->ops->allocate_scontext(info->s_size);
+		} else {
+			req->res = -ENOSYS;
+		}
+		break;
+	case SECLINKIOC_FREE:
+		if (se->ops->free_scontext != NULL) {
+			req->res = se->ops->free_scontext(info->s_context);
+		} else {
+			req->res = -ENOSYS;
+		}
+		break;
+#endif
 	}
 
 	return 0;
