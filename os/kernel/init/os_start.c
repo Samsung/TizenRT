@@ -589,7 +589,7 @@ void os_start(void)
 	g_idletcb.cmn.group->tg_flags = GROUP_FLAG_NOCLDWAIT;
 #endif
 
-#ifdef CONFIG_ARMV8M_TRUSTZONE
+#ifdef CONFIG_ARM_TRUSTZONE
 	up_init_secure_context();
 #endif
 	/* Bring Up the System ****************************************************/

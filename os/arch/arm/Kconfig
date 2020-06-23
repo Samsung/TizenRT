@@ -172,6 +172,12 @@ config ARM_CMNVECTOR
 		the common vector logic.  Some can use either their own built-in vector
 		logic or the common vector logic.
 
+config ARM_TRUSTZONE
+	bool "Enable ARM TrustZone support"
+	default n
+	---help---
+		ARM TrustZone support enabled
+
 config ARCH_HAVE_FPU
 	bool
 	default n
