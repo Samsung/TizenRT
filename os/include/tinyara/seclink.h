@@ -15,6 +15,8 @@
 #define SECLINKIOC_COMMON                       _SECLINKIOC(0x00)
 #define SECLINKIOC_INIT                         _SECLINKIOC((SECLINKIOC_COMMON | 0x00))
 #define SECLINKIOC_DEINIT                       _SECLINKIOC((SECLINKIOC_COMMON | 0x01))
+#define SECLINKIOC_ALLOC                        _SECLINKIOC((SECLINKIOC_COMMON | 0x02))
+#define SECLINKIOC_FREE                         _SECLINKIOC((SECLINKIOC_COMMON | 0x03))
 
 /*  Crypto */
 #define SECLINKIOC_CRYPTO                       _SECLINKIOC(0x10)
@@ -107,7 +109,12 @@ struct seclink_ss_info {
 
 struct seclink_comm_info {
 	uint8_t *priv;
+#ifdef CONFIG_ARM_TRUSTZONE
+	uint32_t s_size;
+	uint32_t s_context;
+#endif
 };
+
 struct seclink_req {
 	union {
 		struct seclink_key_info *key;
@@ -124,6 +131,11 @@ struct seclink_req {
 int sl_init(sl_ctx *hnd);
 
 int sl_deinit(sl_ctx hnd);
+#ifdef CONFIG_ARM_TRUSTZONE
+int sl_allocate(sl_ctx hnd, uint32_t ssize);
+
+int sl_free(sl_ctx hnd, uint32_t tz_memory_id);
+#endif
 
 /*  key manager */
 int sl_set_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey, hal_result_e *hres);

@@ -256,6 +256,22 @@ typedef int (*hal_init)(_IN_ hal_init_param *params);
  */
 typedef int (*hal_deinit)(void);
 
+#ifdef CONFIG_ARM_TRUSTZONE
+/**
+ * @cond
+ * @internal
+ */
+typedef int (*hal_allocate_context)(_IN_ uint32_t ssize);
+
+/**
+ * @internal
+ */
+typedef int (*hal_free_context)(_IN_ uint32_t scontext);
+/**
+ * @endcond
+ */
+#endif
+
 /*
  * Reference
  * Desc: Free memory allocated within HAL 
@@ -492,6 +508,10 @@ typedef int (*hal_delete_storage)(_IN_ uint32_t ss_idx);
 struct sec_ops_s {
 	hal_init init;
 	hal_deinit deinit;
+#ifdef CONFIG_ARM_TRUSTZONE
+	hal_allocate_context allocate_scontext;
+	hal_free_context free_scontext;
+#endif
 	hal_free_data free_data;
 	hal_get_status get_status;
 	hal_set_key set_key;
