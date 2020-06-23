@@ -362,6 +362,22 @@ int ameba_hal_deinit(void)
 	return HAL_SUCCESS;
 }
 
+#ifdef CONFIG_ARM_TRUSTZONE
+void ameba_hal_allocate_scontext(uint32_t ssize)
+{
+	AWRAP_ENTER;
+	up_allocate_secure_context(ssize);
+	return HAL_SUCCESS;
+}
+
+void ameba_hal_free_scontext(uint32_t tz_memory_id)
+{
+	AWRAP_ENTER;
+	up_free_secure_context(tz_memory_id);
+	return HAL_SUCCESS;
+}
+#endif
+
 int ameba_hal_free_data(hal_data *data)
 {
 	AWRAP_ENTER;
@@ -1474,6 +1490,10 @@ int ameba_hal_delete_storage(uint32_t ss_idx)
 static struct sec_ops_s g_ameba_ops = {
 	ameba_hal_init,
 	ameba_hal_deinit,
+#ifdef CONFIG_ARM_TRUSTZONE
+	ameba_hal_allocate_scontext,
+	ameba_hal_free_scontext,
+#endif
 	ameba_hal_free_data,
 	ameba_hal_get_status,
 	ameba_hal_set_key,
