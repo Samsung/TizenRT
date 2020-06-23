@@ -62,6 +62,7 @@
 #include <tinyara/arch.h>
 #include <arch/chip/amebad_nsc.h>
 
+#include <security/security_api.h>
 /****************************************************************************
  * Macros
  ****************************************************************************/
@@ -81,16 +82,27 @@ uint32_t no_protection_func(uint32_t data)
 
 static int rdp_demo(int argc, FAR char *argv[])
 {
-	int i = 0;
 	uint32_t rdp_result;
 	uint32_t no_rdp_result;
+	security_handle hnd;
+	int i = 0;
+
+	int res = security_init(&hnd);
+	if (res != 0) {
+		printf("security_init fail\n");
+		return 0;
+	}
 
 	/*
 	 * Tasks are not created with a secure context.
 	 * Any task that is going to call secure functions must call up_allocate_secure_context()
 	 * to allocate itself a secure context before it calls any secure function
 	 */
-	up_allocate_secure_context(CONFIG_MIN_SECURE_STACKSIZE);
+	res = security_allocate(hnd, CONFIG_MIN_SECURE_STACKSIZE);
+	if (res != 0) {
+		printf("security_allocate fail\n");
+		goto errout;
+	}
 
 	for (i = 0; i < 32; i++){
 		rdp_result = rdp_protection_entry(i);
@@ -99,13 +111,22 @@ static int rdp_demo(int argc, FAR char *argv[])
 		if (rdp_result != no_rdp_result) {
 			printf("rdp call fail!\n");
 			printf("rdp_result = 0x%x, no_rdp_result=0x%x\n", rdp_result, no_rdp_result);
-			goto end;
+			goto errout_with_result;
 		}
 	}
 	printf("rdp demo call succeed!\n");
-end:
+errout_with_result:
 	/* Frees the given secure context */
-	up_free_secure_context(tz_memory);
+	res = security_free(hnd, tz_memory);
+	if (res != 0) {
+		printf("security_free fail\n");
+	}
+errout:
+	res = security_deinit(hnd);
+	if (res != 0) {
+		printf("deinit fail\n");
+	}
+
 	return 0;
 }
 

@@ -8,6 +8,7 @@ config EXAMPLES_RDP
 	default n
 	depends on ARCH_CHIP_AMEBAD
 	depends on AMEBAD_TRUSTZONE
+	depends on SECURITY_LINK
 	---help---
 		Enable the Read Protect example
 
