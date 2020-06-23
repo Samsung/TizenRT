@@ -78,7 +78,29 @@ security_error security_deinit(security_handle hnd)
 
 	SECAPI_RETURN(SECURITY_OK);
 }
+#ifdef CONFIG_ARM_TRUSTZONE
+security_error security_allocate(security_handle hnd, uint32_t ssize)
+{
+	SECAPI_ENTER;
+	SECAPI_ISHANDLE_VALID(hnd);
 
+	struct security_ctx *ctx = (struct security_ctx *)hnd;
+	SECAPI_CALL2(sl_allocate(ctx->sl_hnd, ssize), SECURITY_ERROR);
+
+	SECAPI_RETURN(SECURITY_OK);
+}
+
+security_error security_free(security_handle hnd, uint32_t tz_memory_id)
+{
+	SECAPI_ENTER;
+	SECAPI_ISHANDLE_VALID(hnd);
+
+	struct security_ctx *ctx = (struct security_ctx *)hnd;
+	SECAPI_CALL2(sl_free(ctx->sl_hnd, tz_memory_id), SECURITY_ERROR);
+
+	SECAPI_RETURN(SECURITY_OK);
+}
+#endif
 security_error security_free_data(security_data *data)
 {
 	if (data) {

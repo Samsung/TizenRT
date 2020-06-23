@@ -200,6 +200,10 @@ typedef struct _security_ecdh_param {
  */
 security_error security_init(security_handle *hnd);
 security_error security_deinit(security_handle hnd);
+#ifdef CONFIG_ARM_TRUSTZONE
+security_error security_allocate(security_handle hnd, uint32_t ssize);
+security_error security_free(security_handle hnd, uint32_t tz_memory_id);
+#endif
 security_error security_free_data(security_data *data);
 security_error security_get_status(int *status);
 

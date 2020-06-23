@@ -174,6 +174,42 @@ int sl_deinit(sl_ctx hnd)
 	return 0;
 }
 
+#ifdef CONFIG_ARM_TRUSTZONE
+int sl_allocate(sl_ctx hnd, uint32_t ssize)
+{
+	SL_ENTER;
+	if (!hnd || ((struct _seclink_s_ *)hnd)->fd <= 0) {
+		SL_ERR(-1);
+		return SECLINK_ERROR;
+	}
+
+	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
+	struct seclink_comm_info info = {.priv = NULL, .s_size = ssize, .s_context = NULL};
+	struct seclink_req req = {.req_type.comm = &info, 0};
+
+	SL_CALL(sl, SECLINKIOC_ALLOC, req);
+
+	return SECLINK_OK;
+}
+
+int sl_free(sl_ctx hnd, uint32_t tz_memory_id)
+{
+	SL_ENTER;
+	if (!hnd || ((struct _seclink_s_ *)hnd)->fd <= 0) {
+		SL_ERR(-1);
+		return SECLINK_ERROR;
+	}
+
+	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
+	struct seclink_comm_info info = {.priv = NULL, .s_size = 0, .s_context = tz_memory_id};
+	struct seclink_req req = {.req_type.comm = &info, 0};
+
+	SL_CALL(sl, SECLINKIOC_FREE, req);
+
+	return SECLINK_OK;
+}
+#endif
+
 /*  key manager */
 int sl_set_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey, hal_result_e *hres)
 {
