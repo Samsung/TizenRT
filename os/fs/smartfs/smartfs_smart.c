@@ -1491,14 +1491,6 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 
 	*handle = (void *)fs;
 
-#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
-	ret = smartfs_recover(fs);
-	if (ret != 0) {
-		fdbg("recovery failed!!\n");
-		goto error_with_semaphore;
-	}
-#endif
-
 	smartfs_semgive(fs);
 	return ret;
 

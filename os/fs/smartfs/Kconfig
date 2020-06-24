@@ -89,15 +89,4 @@ config SMARTFS_JOURNALING
                 minimize the area reserved for journaling, it is advised to keep
                 sector size small.
                 
-config SMARTFS_SECTOR_RECOVERY
-	bool "Enable recovery of lost sectors in Filesystem"
-	depends on MTD_SMART
-	default n
-	---help---
-		Enables recovery of lost sectors after power failure. Lost
-		sectors are the sectors which are allocated but not reachable
-		from root directory.
-
-endmenu
-
 endif
