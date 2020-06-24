@@ -400,12 +400,7 @@ uint16_t get_used_byte_count_from_end(uint8_t *buffer);
 int set_used_byte_count(uint8_t *used, uint16_t count);
 uint16_t get_used_byte_count(uint8_t *used);
 #endif
-#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
-int smartfs_recover(struct smartfs_mountpt_s *fs);
-int smart_validatesector(FAR struct inode *inode, uint16_t logsector, char *validsectors);
-int smart_recoversectors(FAR struct inode *inode, char *validsectors, int *nobsolete, int *nrecovered);
 
-#endif
 struct file;					/* Forward references */
 struct inode;
 struct fs_dirent_s;
