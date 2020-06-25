@@ -1131,6 +1131,19 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 				fdbg("Error chaining sector %d\n", nextsector);
 				goto errout;
 			}
+
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+			 /* TODO We will modify whole of create entry to integrity MTD operation soon.
+			  * We will always create sector first, and then update inside of sector. 
+			  * This will help to clear by fs_recover because all sector will become to isolated sector...
+			  * It is temp FIX, If we use sector buffer to support CRC, currently created new parent sector which is chained 
+			  * to previous parent sector is not committed yet. So Now we break loop to prevent read error 
+			  */
+			offset = sizeof(struct smartfs_chain_header_s);
+			entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
+			psector = nextsector;
+			break;
+#endif
 		}
 
 		/* Now update to the next sector */
