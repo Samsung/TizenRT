@@ -88,5 +88,7 @@ config SMARTFS_JOURNALING
                 of file descriptors allowed and sector size defined. Thus, to
                 minimize the area reserved for journaling, it is advised to keep
                 sector size small.
+
+endmenu
                 
 endif
