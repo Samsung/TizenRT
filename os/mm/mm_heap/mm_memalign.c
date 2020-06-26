@@ -153,7 +153,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	 * mm_nodelist is an array of lists. The array is arranged in ascending order of size.
 	 * Each list is ordered by size in a descending order.
 	 * If this list does not have free nodes whose size is large enough
-	 * to accomodate the requested size, it will fail due to no more space.
+	 * to accommodate the requested size, it will fail due to no more space.
 	 */
 	for (; ndx < MM_NNODES; ndx++) {
 		node = heap->mm_nodelist[ndx].flink;

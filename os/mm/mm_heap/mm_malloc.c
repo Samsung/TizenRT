@@ -145,7 +145,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	/* Search for a large enough chunk in the list of nodes.
 	 * This list is ordered by size in a descending order.
 	 * If this list does not have free nodes whose size is large enough
-	 * to accomodate the requested size, malloc() will fail due to no more space.
+	 * to accommodate the requested size, malloc() will fail due to no more space.
 	 */
 
 	node = heap->mm_nodelist[ndx].flink;
