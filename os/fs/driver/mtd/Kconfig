@@ -249,8 +249,8 @@ config MTD_SMART_JOURNALING_NSECTOR
 	---help---
 		Journal sector will be reserved right after smart MTD initialize,
 		It will divided to 2 area to toggle active area.
-		Journal has it's sequence to varify itself.
-		So 65535 is max number of both of journal area.
+		It always appends journal data and dev structure will point it.
+		It is uint16_t now, So 65535 is max number of both of journal area.
 		
 endif
                 
