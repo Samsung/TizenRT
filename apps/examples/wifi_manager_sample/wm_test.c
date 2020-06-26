@@ -30,38 +30,59 @@
 
 #define WM_TEST_COUNT  10
 
-#define USAGE															\
-	"\n usage: wm_test [options]\n"										\
-	"\n run Wi-Fi Manager:\n"											\
-	"	 wm_test start(default: station mode)\n"						\
-	"	 wm_test stop\n"												\
-	"	 wm_test stats\n"                                               \
-	"\n softap mode options:\n"											\
-	"	 wm_test softap [ssid] [password]\n"							\
-	"\n station mode options:\n"										\
-	"	 wm_test sta\n"													\
-	"	 wm_test join [ssid] [security mode] [password]\n"				\
-	"	    (1) [security mode] is optional if not open mode\n"			\
-	"	    (2) [password] is unnecessary in case of open mode\n"		\
-	"	 wm_test leave\n"												\
-	"	 wm_test cancel\n"												\
-	"\n run scan:\n"													\
-	"	 wm_test scan\n"												\
-	"\n get current state:\n"											\
-	"	 wm_test mode\n\n"												\
-	"\n set a profile:\n"											\
-	"	 wm_test set [ssid] [security mode] [password]\n"			\
-	"	 security mode examples : open, wep_shared \n"				\
-	"	               wpa_aes, wpa_tkip, wpa_mixed  \n"			\
-	"	               wpa2_aes, wpa2_tkip, wpa2_mixed  \n"			\
-	"	               wpa12_aes, wpa12_tkip, wpa12_mixed  \n"		\
-	"	               (*_ent for enterprise)  \n"					\
-	"\n get a profile:\n"											\
-	"	 wm_test get\n"												\
-	"\n remove a profile:\n"										\
-	"	 wm_test reset\n\n"											\
-	"\n repeat test of APIs:\n"										\
-	"	 wm_test auto [softap ssid] [softap password] [ssid] [security mode] [password]\n\n" \
+#define SOFTAP_USAGE							\
+	"\n softap mode options:\n"					\
+	"	 wm_test softap [ssid] [password]\n"
+
+#define STA_USAGE													\
+	"\n station mode options:\n"									\
+	"	 wm_test sta\n"												\
+	"	 wm_test join [ssid] [security mode] [password]\n"			\
+	"	    (1) [security mode] is optional if not open mode\n"		\
+	"	    (2) [password] is unnecessary in case of open mode\n"	\
+	"	 wm_test leave\n"											\
+	"	 wm_test cancel\n"
+
+#define SCAN_USAGE								\
+	"\n run scan:\n"							\
+	"	 wm_test scan\n"
+
+#define PROFILE_USAGE											\
+	"\n set a profile:\n"										\
+	"	 wm_test set [ssid] [security mode] [password]\n"		\
+	"	 security mode examples : open, wep_shared \n"			\
+	"	               wpa_aes, wpa_tkip, wpa_mixed  \n"		\
+	"	               wpa2_aes, wpa2_tkip, wpa2_mixed  \n"		\
+	"	               wpa12_aes, wpa12_tkip, wpa12_mixed  \n"	\
+	"	               (*_ent for enterprise)  \n"				\
+	"\n get a profile:\n"										\
+	"	 wm_test get\n"											\
+	"\n remove a profile:\n"									\
+	"	 wm_test reset\n\n"
+
+#define INFO_USAGE								\
+	"\n get current state:\n"					\
+	"	 wm_test mode\n"						\
+	"\n get connection info:\n"					\
+	"	 wm_test info\n"
+
+#define REPEATTC_USAGE													\
+	"\n repeat test of APIs:\n"											\
+	"	 wm_test auto [softap ssid] [softap password] [ssid] [security mode] [password]\n\n"
+
+#define USAGE										\
+	"\n usage: wm_test [options]\n"					\
+	"\n run Wi-Fi Manager:\n"						\
+	"	 wm_test start(default: station mode)\n"	\
+	"	 wm_test stop\n"							\
+	"	 wm_test stats\n"							\
+	SOFTAP_USAGE									\
+	STA_USAGE										\
+	SCAN_USAGE										\
+	PROFILE_USAGE									\
+	INFO_USAGE										\
+	REPEATTC_USAGE
+
 
 typedef void (*test_func)(void *arg);
 
@@ -118,6 +139,7 @@ void wm_reset_info(void *arg);
 void wm_scan(void *arg);
 void wm_display_state(void *arg);
 void wm_get_stats(void *arg);
+void wm_get_conn_info(void *arg);
 void wm_auto_test(void *arg); // it tests softap mode and stations mode repeatedly
 
 /*
@@ -152,39 +174,39 @@ static sem_t g_wm_func_sem = SEM_INITIALIZER(0);
 
 static int g_mode = 0; // check program is running
 
-#define WM_TEST_SIGNAL										\
-	do {													\
-		sem_post(&g_wm_sem);                                \
-		printf("[WT] T%d send signal\n", getpid());              \
+#define WM_TEST_SIGNAL								\
+	do {											\
+		sem_post(&g_wm_sem);						\
+		printf("[WT] T%d send signal\n", getpid());	\
 	} while (0)
 
 #define WM_TEST_WAIT								\
 	do {											\
-		printf("[WT] T%d wait signal\n", getpid());		\
+		printf("[WT] T%d wait signal\n", getpid());	\
 		sem_wait(&g_wm_sem);                        \
 	} while (0)
 
-#define WM_TEST_FUNC_SIGNAL								\
-	do {												\
-		sem_post(&g_wm_func_sem);                       \
+#define WM_TEST_FUNC_SIGNAL									\
+	do {													\
+		sem_post(&g_wm_func_sem);							\
 		printf("[WT]  T%d send func signal\n", getpid());	\
 	} while (0)
 
-#define WM_TEST_FUNC_WAIT										\
-	do {														\
-		printf("[WT]  T%d wait func signal\n", getpid());			\
-		sem_wait(&g_wm_func_sem);                               \
+#define WM_TEST_FUNC_WAIT									\
+	do {													\
+		printf("[WT]  T%d wait func signal\n", getpid());	\
+		sem_wait(&g_wm_func_sem);							\
 	} while (0)
 
 #define WM_TEST_LOG_START						\
 	do {										\
-		printf("[WT] -->%s\n", __FUNCTION__);		\
+		printf("[WT] -->%s\n", __FUNCTION__);	\
 	} while (0)
 
 
 #define WM_TEST_LOG_END							\
 	do {										\
-		printf("[WT] <--%s\n", __FUNCTION__);		\
+		printf("[WT] <--%s\n", __FUNCTION__);	\
 	} while (0)
 
 /*
@@ -260,6 +282,7 @@ typedef enum {
 	WM_TEST_SCAN,
 	WM_TEST_MODE,
 	WM_TEST_STATS,
+	WM_TEST_INFO,
 	WM_TEST_AUTO,
 	WM_TEST_STRESS,
 	WM_TEST_MAX,
@@ -279,6 +302,7 @@ test_func func_table[WM_TEST_MAX] = {
 	wm_scan,
 	wm_display_state,
 	wm_get_stats,
+	wm_get_conn_info,
 	wm_auto_test,
 #ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
 	wm_run_stress_test
@@ -301,6 +325,7 @@ exec_func exec_table[WM_TEST_MAX] = {
 	_wm_test_scan,                             /* WM_TEST_SCAN     */
 	NULL,                                      /* WM_TEST_MODE     */
 	NULL,                                      /* WM_TEST_STATS    */
+	NULL,                                      /* WM_TEST_INFO     */
 	_wm_test_auto,                             /* WM_TEST_AUTO     */
 	NULL                                       /* WM_TEST_STRESS   */
 };
@@ -319,6 +344,7 @@ char *func_name[WM_TEST_MAX] = {
 	"scan",
 	"mode",
 	"stats",
+	"info",
 	"auto",
 	"stress"
 };
@@ -773,6 +799,28 @@ void wm_get_stats(void *arg)
 		printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
 		printf("=======================================================================\n");
 	}
+	WM_TEST_LOG_END;
+}
+
+void wm_get_conn_info(void *arg)
+{
+	WM_TEST_LOG_START;
+	wifi_manager_info_s info;
+	wifi_manager_result_e res = wifi_manager_get_info(&info);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("[WM] fail to get connection info(%d)\n", res);
+		return;
+	}
+	printf("IP: %s\n", info.ip4_address);
+	printf("SSID: %s\n", info.ssid);
+	printf("MAC: %x:%x:%x:%x:%x:%x\n",
+		   info.mac_address[0], info.mac_address[1],
+		   info.mac_address[2], info.mac_address[3],
+		   info.mac_address[4], info.mac_address[5]);
+	printf("RSSI: %d\n", info.rssi);
+	printf("status:%d\n", info.status);
+	printf("MODE: %d\n", info.mode);
+
 	WM_TEST_LOG_END;
 }
 
