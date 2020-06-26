@@ -157,15 +157,14 @@ void _exit(int status)
 	/* Disable interrupts.  They will be restored when the next
 	 * task is started.
 	 */
-
-	(void)irqsave();
-
 	sllvdbg("TCB=%p exiting\n", this_task());
 
 #if defined(CONFIG_DUMP_ON_EXIT) && defined(CONFIG_DEBUG)
 	sllvdbg("Other tasks:\n");
 	sched_foreach(_up_dumponexit, NULL);
 #endif
+
+	(void)irqsave();
 
 	/* Destroy the task at the head of the ready to run list. */
 
