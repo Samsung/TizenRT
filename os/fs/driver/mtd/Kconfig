@@ -214,7 +214,7 @@ config MTD_SMART_ENABLE_CRC
 choice
 	prompt "CRC level selection"
 	depends on MTD_SMART_ENABLE_CRC
-	default SMART_CRC_8
+	default SMART_CRC_16
 	---help---
 		Select the level of CRC protection implemented in the SMART MTD layer.
 		Smaller CRC selection uses less overhead per logical sectors, but also has
@@ -229,6 +229,29 @@ config SMART_CRC_16
 
 endchoice
 
+config MTD_SMART_JOURNALING
+    bool "Enable filesystem journaling for smartfs"
+    default n
+   	select MTD_SMART_ENABLE_CRC
+    ---help---
+        Enables logging of write operations on filesystem, so that in
+        case of power failure the filesystem can be brought to a stable
+        state with minimal data loss.
+        Enabling journaling will increase the delay in filesystem
+        operations, because it write journal data before it commit sector.
+        It uses CRC-16 so please enable SMART_CRC_16
+
+if MTD_SMART_JOURNALING
+
+config MTD_SMART_JOURNALING_NSECTOR
+	int "Number of reserved logical sector for Journal"
+	default 16
+	---help---
+		Journal sector will be reserved right after smart MTD initialize,
+		It will divided to 2 area to toggle active area.
+		
+endif
+                
 config MTD_SMART_SECTOR_ERASE_DEBUG
 	bool "Track Erase Block erasure counts"
 	depends on MTD_SMART

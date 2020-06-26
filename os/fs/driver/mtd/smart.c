@@ -101,6 +101,12 @@
 #define SMART_STATUS_VERSION      0x01
 #endif
 
+#ifdef CONFIG_MTD_SMART_JOURNALING
+#if SMART_STATUS_VERSION != 2
+#error "CRC-16 is necessary for journaling"
+#endif
+#endif
+
 #define SMART_SECTSIZE_256        0x00
 #define SMART_SECTSIZE_512        0x04
 #define SMART_SECTSIZE_1024       0x08
