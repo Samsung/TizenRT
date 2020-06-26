@@ -867,6 +867,11 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 	case SIOCGIFCONF:
 		ret = ioctl_siocgifconf((FAR struct ifconf *)req);
 		break;
+	case SIOCGIFNAME: {
+		ret = netdev_getifname(req->ifr_name);
+	}
+	break;
+
 	default: {
 		ret = -ENOTTY;
 	}
@@ -1271,7 +1276,7 @@ int lwip_func_ioctl(int s, int cmd, void *arg)
 			ret = OK;
 		}
 		break;
-#endif
+#endif // LWIP_DNS
 #if defined(CONFIG_NET_LWIP_DHCP)
 #if defined(CONFIG_LWIP_DHCPC)
 	case DHCPCSTART:
@@ -1312,13 +1317,13 @@ int lwip_func_ioctl(int s, int cmd, void *arg)
 		in_arg->req_res = netdev_dhcp_server_status((char *)in_arg->intf);
 		if (in_arg->req_res != 0) {
 			ret = -EINVAL;
-			ndbg("stop dhcpd fail\n");
+			ndbg("stop dhcp fail\n");
 		} else {
 			ret = OK;
 		}
 		break;
 #endif
-#endif
+#endif // CONFIG_NET_LWIP_DHCP
 	default:
 		ndbg("Wrong request type: %d\n", in_arg->type);
 		break;

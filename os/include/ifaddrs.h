@@ -28,4 +28,6 @@ struct ifaddrs {
 	void *ifa_data;
 };
 
+int getifaddrs(struct ifaddrs **ifap);
+
 #endif
