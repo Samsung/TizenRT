@@ -154,7 +154,6 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 
 	/* Get a pointer to the message queue */
 
-	sched_lock();
 	msgq = mqdes->msgq;
 
 	/* Allocate a message structure:
@@ -182,6 +181,8 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 
 		irqrestore(saved_state);
 	}
+
+	sched_lock();
 
 	/* Check if we were able to get a message structure -- this can fail
 	 * either because we cannot send the message (and didn't bother trying

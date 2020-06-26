@@ -309,12 +309,12 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 	 * - The wait was interrupted by a signal
 	 * - The watchdog timeout expired
 	 */
+	sched_unlock();
 
 	if (mqmsg) {
 		ret = mq_doreceive(mqdes, mqmsg, msg, prio);
 	}
 
-	sched_unlock();
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
 	leave_cancellation_point();
