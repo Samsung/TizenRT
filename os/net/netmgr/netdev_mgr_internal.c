@@ -97,6 +97,7 @@ int nm_foreach(tr_netdev_callback_t callback, void *arg)
 	return ret;
 }
 
+
 int _nm_register_loop(struct netdev *dev, struct netdev_config *config)
 {
 	struct nic_config nconfig;
@@ -232,10 +233,18 @@ int nm_ifdown(struct netdev *dev)
 		return -1;
 	}
 
-	ret = dev->t_ops.wl->deinit(dev);
-	if (ret < 0) {
-		ndbg("fail to down driver interface\n");
-		return -2;
+	if (dev->type == NM_WIFI) {
+		ret = dev->t_ops.wl->deinit(dev);
+		if (ret < 0) {
+			ndbg("fail to down driver interface\n");
+			return -2;
+		}
+	} else if (dev->type == NM_ETHERNET) {
+		ret = dev->t_ops.eth->deinit(dev);
+		if (ret < 0) {
+			ndbg("fail to deinit etherent driver\n");
+			return -1;
+		}
 	}
 
 	return 0;

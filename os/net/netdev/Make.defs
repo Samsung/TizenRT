@@ -58,6 +58,7 @@ NETDEV_CSRCS += netdev_count.c
 NETDEV_CSRCS += netdev_foreach.c
 NETDEV_CSRCS += netdev_sem.c
 NETDEV_CSRCS += netdev_getstats.c
+NETDEV_CSRCS += netdev_ifname.c
 ifeq ($(CONFIG_NET_LWIP_DHCP),y)
 ifeq ($(CONFIG_LWIP_DHCPC),y)
 NETDEV_CSRCS += netdev_dhcpc.c

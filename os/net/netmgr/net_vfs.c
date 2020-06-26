@@ -401,7 +401,9 @@ errout:
 void net_initlist(FAR struct socketlist *list)
 {
 	struct netstack *stk = get_netstack(TR_UDS);
-	stk->ops->initlist(list);
+	if (stk) {
+		stk->ops->initlist(list);
+	}
 }
 
 /****************************************************************************
@@ -421,5 +423,7 @@ void net_initlist(FAR struct socketlist *list)
 void net_releaselist(FAR struct socketlist *list)
 {
 	struct netstack *stk = get_netstack(TR_UDS);
-	stk->ops->releaselist((void *)list);
+	if (stk) {
+		stk->ops->releaselist((void *)list);
+	}
 }
