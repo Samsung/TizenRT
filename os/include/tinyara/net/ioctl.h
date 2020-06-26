@@ -204,6 +204,10 @@
 /* lwip *********************************************************************/
 #define SIOCLWIP	     _SIOC(0x0055)  /* Call lwip API */
 
+/* Get active NIC name it's similar to Linux but it's not exactly same
+ * it's provided to running iotivity app on binary protection env */
+#define SIOCGIFNAME      _SIOC(0x0056)  /* get active NIC name. */
+
 /****************************************************************************
  * Type Definitions
  ****************************************************************************/

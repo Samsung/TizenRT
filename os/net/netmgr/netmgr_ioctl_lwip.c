@@ -37,6 +37,7 @@
 
 #if defined(CONFIG_NET_LWIP_DHCP)
 #define GET_NETIF_FROM_NETDEV(dev) (struct netif *)(((struct netdev_ops *)(dev)->ops)->nic)
+
 static struct netif *_netdev_dhcp_dev(FAR const char *intf)
 {
 	struct netif *cnif;

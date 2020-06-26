@@ -125,7 +125,6 @@ struct servent_data {
 
 #if CONFIG_NET_LWIP
 
-//#ifndef CONFIG_NET_NETMGR
 typedef enum {
 	GETADDRINFO,
 	FREEADDRINFO,
@@ -158,7 +157,7 @@ struct req_lwip_data {
 	u8_t num_dns;
 	ip_addr_t *dns_server;
 };
-//#endif // CONFIG_NET_NETMGR
+
 #endif
 
 /****************************************************************************

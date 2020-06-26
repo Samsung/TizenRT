@@ -79,6 +79,25 @@ static int ioctl_siocgifconf(FAR struct ifconf *ifc)
 }
 
 
+static int _netdev_getname(struct netdev *dev, void *arg)
+{
+	uint8_t flag;
+	struct ifreq *req = (struct ifreq *)arg;
+	ND_NETOPS(dev, get_flag)(dev, &flag);
+	if ((flag & IFF_RUNNING) && req->ifr_name[0] == 0) {
+		strncpy(req->ifr_name, dev->ifname, IFNAMSIZ);
+	}
+	return 0;
+}
+
+
+static int ioctl_siocgifname(FAR struct ifreq *req)
+{
+	int ret = nm_foreach(_netdev_getname, (void *)req);
+
+	return ret;
+}
+
 /****************************************************************************
  * Name: netdev_ifrioctl
  *
@@ -317,6 +336,9 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 #endif							/* CONFIG_NETDEV_PHY_IOCTL */
 	case SIOCGIFCONF:
 		ret = ioctl_siocgifconf((FAR struct ifconf *)req);
+		break;
+	case SIOCGIFNAME:
+		ret = ioctl_siocgifname(req);
 		break;
 	default: {
 		ret = -ENOTTY;
