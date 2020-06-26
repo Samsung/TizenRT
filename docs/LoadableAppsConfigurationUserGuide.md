@@ -32,7 +32,7 @@
 
 1. Protected build is enabled in the configuration (CONFIG_BUILD_PROTECTED=y).
 The document [Protected Build Guide](ProtectedBuildGuide.md) provides the instructions for porting TizenRT protected build for a new chipset.
-2. Flash and ram memory needs to be available to accomodate the applications.
+2. Flash and ram memory needs to be available to accommodate the applications.
 3. The total ram requirement of an application needs to be fixed at build time.
 4. Currently TizenRT supports only elf binary format.
 5. Code in kernel space such as drivers are not allowed to use some APIs, which need to access memory in user space, as below:
@@ -89,7 +89,7 @@ The document [Protected Build Guide](ProtectedBuildGuide.md) provides the instru
 #### Optional configurations
 
 These are not a part of the core loadable apps but can be optionally enabled to test some of the features.
-Make sure that the maximum task size is increased to accomodate the extra tests enabled.
+Make sure that the maximum task size is increased to accommodate the extra tests enabled.
 
 1. If MPU is enabled, MPU test can also be enabled as below:
 
@@ -131,7 +131,7 @@ both RAM & FLASH memories.
 #### Flash Partition Settings
 
 - Add a new flash partition for each application using the 3 configurations given below.
-	1. The 'size' should be large enough to accomodate the binary size (CONFIG_FLASH_PART_SIZE).
+	1. The 'size' should be large enough to accommodate the binary size (CONFIG_FLASH_PART_SIZE).
 	2. The 'type' should be of the type "bin" (CONFIG_FLASH_PART_TYPE).
 	3. The 'name' can be the name of the application (CONFIG_FLASH_PART_NAME).
 

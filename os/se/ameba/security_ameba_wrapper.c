@@ -633,7 +633,7 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 
 	if ((HAL_KEY_ECC_BRAINPOOL_P256R1 <= mode)
 	&& (HAL_KEY_ECC_SEC_P512R1 >= mode)) {
-		/* ECDH and ECDASA share same curve ID, but use diffrent struct to store key info */
+		/* ECDH and ECDASA share same curve ID, but use different struct to store key info */
 		/* ECDSA operation */
 		if ((rtl_ecdsa_genkey(&(key_storage[key_idx].ecdsa_ctx), ecp_curve_id, hal_rand, NULL) != HAL_SUCCESS)
 		/* ECDH operation */
