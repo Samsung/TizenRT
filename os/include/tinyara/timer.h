@@ -179,7 +179,6 @@ struct timer_status_s {
 struct timer_notify_s {
 	FAR void *arg;   /* An argument to pass with the signal */
 	pid_t     pid;   /* The ID of the task/thread to receive the signal */
-	uint8_t   signo; /* The signal number to use in the notification */
 };
 
 /* This structure provides the "lower-half" driver operations available to
