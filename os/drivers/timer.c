@@ -63,7 +63,6 @@
 #include <string.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
@@ -87,7 +86,6 @@
 
 struct timer_upperhalf_s {
 	uint8_t   crefs; /* The number of times the device has been opened */
-	uint8_t   signo; /* The signal number to use in the notification */
 	pid_t     pid;   /* The ID of the task/thread to receive the signal */
 	FAR void *arg;   /* An argument to pass with the signal */
 	FAR char *path;  /* Registration path */
@@ -147,20 +145,10 @@ static const struct file_operations g_timerops = {
 static bool timer_notifier(FAR uint32_t *next_interval_us, FAR void *arg)
 {
 	FAR struct timer_upperhalf_s *upper = (FAR struct timer_upperhalf_s *)arg;
-#ifdef CONFIG_CAN_PASS_STRUCTS
-	union sigval value;
-#endif
-
 	DEBUGASSERT(upper != NULL);
 
-	/* Signal the waiter.. if there is one */
-
-#ifdef CONFIG_CAN_PASS_STRUCTS
-	value.sival_ptr = upper->arg;
-	(void)sigqueue(upper->pid, upper->signo, value);
-#else
-	(void)sigqueue(upper->pid, upper->signo, upper->arg);
-#endif
+	/* Send notification to the waiter.. */
+	fin_notify(upper->pid, (int)upper->arg);
 
 	return true;
 }
@@ -378,7 +366,6 @@ static int timer_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			(FAR struct timer_notify_s *)((uintptr_t)arg);
 
 		if (notify != NULL) {
-			upper->signo = notify->signo;
 			upper->pid   = notify->pid;
 			upper->arg   = notify->arg;
 
