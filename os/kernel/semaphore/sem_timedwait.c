@@ -222,8 +222,6 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	 * enabled while we are blocked waiting for the semaphore.
 	 */
 
-	flags = irqsave();
-
 	/* Try to take the semaphore without waiting. */
 
 	ret = sem_trywait(sem);
@@ -268,6 +266,9 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	/* Start the watchdog */
 
 	errcode = OK;
+
+	flags = irqsave();
+
 	wd_start(rtcb->waitdog, ticks, (wdentry_t)sem_timeout, 1, getpid());
 
 	/* Now perform the blocking wait */

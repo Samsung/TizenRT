@@ -177,11 +177,12 @@ ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio)
 	 * - The wait was interrupted by a signal
 	 */
 
+	sched_unlock();
+
 	if (mqmsg) {
 		ret = mq_doreceive(mqdes, mqmsg, msg, prio);
 	}
 
-	sched_unlock();
 	leave_cancellation_point();
 	return ret;
 }
