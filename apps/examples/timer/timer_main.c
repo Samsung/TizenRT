@@ -60,13 +60,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <errno.h>
 #include <semaphore.h>
 #include <pthread.h>
 
 #include <tinyara/timer.h>
 #include <tinyara/clock.h>
+#include <tinyara/irq.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -81,10 +81,6 @@
 
 #ifndef EXAMPLE_TIMER_NSAMPLES
 #  define EXAMPLE_TIMER_NSAMPLES 10
-#endif
-
-#ifndef EXAMPLE_TIMER_SIGNO
-#  define EXAMPLE_TIMER_SIGNO    17
 #endif
 
 #define TIMER_THEAD_SIZE                2048
@@ -123,12 +119,6 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 	uint32_t expected_time;
 #endif
 
-	sigset_t sig_set;
-	sigemptyset(&sig_set);
-	sigaddset(&sig_set, EXAMPLE_TIMER_SIGNO);
-
-	pthread_sigmask(SIG_BLOCK, &sig_set, NULL);
-
 	/*
 	 * Register a callback for notifications using the configured signal.
 	 * NOTE: If no callback is attached, the timer stop at the first interrupt.
@@ -137,7 +127,6 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 
 	notify.arg   = NULL;
 	notify.pid   = (pid_t)getpid();
-	notify.signo = EXAMPLE_TIMER_SIGNO;
 
 	if (ioctl(fd, TCIOC_NOTIFICATION,
 			(unsigned long)((uintptr_t)&notify)) < 0) {
@@ -194,7 +183,7 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 
 #endif
 	while (count--) {
-		sigwaitinfo(&sig_set, NULL);
+		fin_wait();
 	}
 #ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
 	if (ioctl(frt_fd, TCIOC_GETSTATUS, (unsigned long)(uintptr_t)&after) < 0) {
@@ -226,7 +215,6 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 	}
 #endif
 error:
-	pthread_sigmask(SIG_UNBLOCK, &sig_set, NULL);
 	pthread_exit(NULL);
 #ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
 	close(frt_fd);
