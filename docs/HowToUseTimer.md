@@ -66,9 +66,8 @@ int fd = open(<TIMER_DEVICE_PATH>, O_RDONLY);
 2. Set the notification to get time expiration
 ```
 struct timer_notify_s notify;
-notify.arg   = NULL;                  /* An argument to pass with the signal */
-notify.pid   = (pid_t)getpid();       /* The ID of the task/thread to receive the signal */
-notify.signo = EXAMPLE_TIMER_SIGNO;   /* The signal number to use in the notification */
+notify.arg   = NULL;                  /* An argument to pass with the FIN */
+notify.pid   = (pid_t)getpid();       /* The ID of the task/thread to receive the FIN */
 
 ioctl(fd, TCIOC_NOTIFICATION, &notify);
 ```
@@ -80,14 +79,9 @@ ioctl(fd, TCIOC_SETTIMEOUT, time);
 ```
 ioctl(fd, TCIOC_START, 0);
 ```
-5. Wait the signal using *sigwaitinfo* or *sigaction*
+5. Wait the notification using *fin_wait*
 ```
-sigset_t sig_set;
-sigemptyset(&sig_set);
-sigaddset(&sig_set, EXAMPLE_TIMER_SIGNO);
-pthread_sigmask(SIG_BLOCK, &sig_set, NULL);
-
-sigwaitinfo(&sig_set, NULL);
+fin_wait();
 ```
 6. Stop the timer
 ```
