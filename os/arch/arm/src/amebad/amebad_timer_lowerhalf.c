@@ -142,6 +142,8 @@ static struct amebad_gpt_lowerhalf_s g_gpt3_lowerhalf = {
 static void amebad_timout_handler(uint32_t data)
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)data;
+	DEBUGASSERT(priv);
+
 	uint32_t next_interval_us = 0;
 
 	if (priv->callback(&next_interval_us, priv->arg)) {
@@ -179,7 +181,7 @@ static int amebad_gpt_start(struct timer_lowerhalf_s *lower)
 		}
 		gtimer_start_periodical(&priv->obj, priv->gpt_timeout, (void *)amebad_timout_handler, priv);
 		priv->started = true;
-		gtimer_reload(&priv->obj, 1000000);
+
 		tmrvdbg("Timer %d is started, callback %s\n", priv->obj.timer_id, priv->callback == NULL ? "none" : "set");
 		return OK;
 	}
@@ -206,6 +208,7 @@ static int amebad_gpt_start(struct timer_lowerhalf_s *lower)
 static int amebad_gpt_stop(struct timer_lowerhalf_s *lower)
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
+	DEBUGASSERT(priv);
 
 	if (priv->started) {
 		gtimer_deinit(&priv->obj);
@@ -238,6 +241,7 @@ static int amebad_gpt_stop(struct timer_lowerhalf_s *lower)
 static int amebad_gpt_settimeout(struct timer_lowerhalf_s *lower, uint32_t timeout)
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
+	DEBUGASSERT(priv);
 
 	if (priv->started) {
 		return -EPERM;
@@ -253,7 +257,7 @@ static int amebad_gpt_settimeout(struct timer_lowerhalf_s *lower, uint32_t timeo
  * Name: amebad_gpt_setcallback
  *
  * Description:
- *   Call this user provided timeout callback.
+ *   Set the user provided timeout callback.
  *
  * Input Parameters:
  *   lower    - A pointer the publicly visible representation of the
@@ -271,6 +275,8 @@ static int amebad_gpt_settimeout(struct timer_lowerhalf_s *lower, uint32_t timeo
 static void amebad_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t callback, void *arg)
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
+	DEBUGASSERT(priv);
+
 	irqstate_t flags = irqsave();
 
 	/* Save the new callback */
@@ -307,15 +313,17 @@ int amebad_timer_initialize(const char *devpath, int timer)
 		break;
 
 	case TIMER2:
-		printf("Timer2\n");
 		priv = &g_gpt2_lowerhalf;
 		priv->obj.timer_id = TIMER2;
 		break;
 
 	case TIMER3:
-		printf("Timer3\n");
 		priv = &g_gpt3_lowerhalf;
 		priv->obj.timer_id = TIMER3;
+		break;
+
+	default: 
+		priv = NULL;
 		break;
 	}
 
