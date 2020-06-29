@@ -137,33 +137,29 @@ static void binary_manager_recover_tcb(struct tcb_s *tcb)
  *	 This function excludes all active threads in a same binary from scheduling.
  *
  ****************************************************************************/
-static int binary_manager_deactivate_binary(pid_t binid)
+static int binary_manager_deactivate_binary(int bin_idx)
 {
 	irqstate_t flags;
-	struct tcb_s *tcb;
+	struct tcb_s *ptr;
 
-	tcb = sched_gettcb(binid);
-	if (tcb == NULL) {
-		return ERROR;
-	}
-
-	/* A main task which has 'binid' is a head of binary list */
-	while (tcb) {
-		if (tcb->task_state != TSTATE_TASK_INACTIVE) {
+	if (bin_idx > 0) {
+		/* Get a tcb of main task */
+		ptr = BIN_NRTLIST(bin_idx);
+		while (ptr) {
 			flags = irqsave();
 			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			binary_manager_recover_tcb(tcb);
-
+			binary_manager_recover_tcb(ptr);
 			/* Remove the TCB from the task list associated with the state */
-			BM_DEACTIVATE_TASK(tcb);
+			BM_DEACTIVATE_TASK(ptr);
+			ptr = ptr->bin_flink;
 			irqrestore(flags);
 		}
-		tcb = tcb->bin_flink;
+		/* Release all kernel semaphores held by the threads in binary */
+		binary_manager_release_binary_sem(bin_idx);
+		return OK;
 	}
-	/* Release all kernel semaphores held by the threads in binary */
-	binary_manager_release_binary_sem(binid);
 
-	return OK;
+	return ERROR;
 }
 
 /****************************************************************************
@@ -176,43 +172,22 @@ static int binary_manager_deactivate_binary(pid_t binid)
  *	 This function excludes real-time threads in a same binary from scheduling.
  *
  ****************************************************************************/
-void binary_manager_deactivate_rtthreads(struct tcb_s *tcb)
+void binary_manager_deactivate_rtthreads(int bin_idx)
 {
-	struct tcb_s *prev;
-	struct tcb_s *next;
+	struct tcb_s *ptr;
 
-	prev = tcb->bin_blink;
-	next = tcb->bin_flink;
-
-	if (tcb->sched_priority > BM_PRIORITY_MAX) {
-		if (tcb->waitdog) {
-			(void)wd_delete(tcb->waitdog);
-			tcb->waitdog = NULL;
-		}
-		/* Remove the TCB from the task list associated with the state */
-		BM_DEACTIVATE_TASK(tcb);
-	}
-
-	while (prev) {
-		if (prev->sched_priority > BM_PRIORITY_MAX) {
+	if (bin_idx > 0) {
+		ptr = BIN_RTLIST(bin_idx);
+		while (ptr) {
 			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			binary_manager_recover_tcb(prev);
+			binary_manager_recover_tcb(ptr);
 			/* Remove the TCB from the task list associated with the state */
-			BM_DEACTIVATE_TASK(prev);
+			BM_DEACTIVATE_TASK(ptr);
+			ptr = ptr->bin_flink;
 		}
-		prev = prev->bin_blink;
-	}
-
-	while (next) {
-		if (next->sched_priority > BM_PRIORITY_MAX) {
-			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			binary_manager_recover_tcb(next);
-			/* Remove the TCB from the task list associated with the state */
-			BM_DEACTIVATE_TASK(next);
-		}
-		next = next->bin_flink;
 	}
 }
+	
 
 /****************************************************************************
  * Name: binary_manager_recover_userfault
@@ -223,7 +198,6 @@ void binary_manager_deactivate_rtthreads(struct tcb_s *tcb)
  ****************************************************************************/
 void binary_manager_recover_userfault(uint32_t assert_pc)
 {
-	int binid;
 	int bin_idx;
 	struct tcb_s *tcb;
 	struct faultmsg_s *msg;
@@ -231,25 +205,22 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 	tcb = this_task();
 	if (tcb != NULL && tcb->group != NULL) {
 		tcb->lockcount = 0;
-		binid = tcb->group->tg_binid;
-		bin_idx = binary_manager_get_index_with_binid(binid);
-		if (BIN_RTTYPE(bin_idx) == BINARY_TYPE_REALTIME) {
-			/* Exclude realtime task/pthreads from scheduling */
-			binary_manager_deactivate_rtthreads(tcb);
-		}
+		bin_idx = tcb->group->tg_binidx;
+		/* Exclude realtime task/pthreads from scheduling */
+		binary_manager_deactivate_rtthreads(bin_idx);
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 		if (g_lib_binp) {
 			uint32_t start = (uint32_t)g_lib_binp->alloc[ALLOC_TEXT];
 			uint32_t end = start + g_lib_binp->textsize;
 			if (assert_pc >= start && assert_pc <= end) {
-				binid = BM_BINID_LIBRARY;
+				bin_idx = BM_BINID_LIBRARY;
 			}
 		}
 #endif
 		/* Add fault message and Unblock Fault message Sender */
 		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
-			msg->binid = binid;
+			msg->binidx = bin_idx;
 			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
 
 			/* Unblock fault message sender */
@@ -263,6 +234,7 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 	/* Board reset on failure of recovery */
 	binary_manager_reset_board();
 }
+
 
 /****************************************************************************
  * Name: binary_manager_set_faultmsg_sender
@@ -304,7 +276,7 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 		while (!sq_empty(&g_faultmsg_list)) {
 			msg = (struct faultmsg_s *)sq_remfirst(&g_faultmsg_list);
 			request_msg.cmd = BINMGR_FAULT;
-			request_msg.requester_pid = msg->binid;
+			request_msg.requester_pid = msg->binidx;
 			bmllvdbg("Send fault message, bin id %d\n", request_msg.requester_pid);
 			ret = mq_send(binary_manager_get_mqfd(), (const char *)&request_msg, sizeof(binmgr_request_t), BINMGR_FAULT_PRIO);
 			ASSERT(ret == OK);
@@ -325,59 +297,52 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
  *   Otherwise, board will be rebooted.
  *
  ****************************************************************************/
-void binary_manager_recovery(int binid)
+void binary_manager_recovery(int bin_idx)
 {
 	int ret;
-	int bin_idx;
 	char type_str[1];
 	char data_str[1];
 	char *loading_data[LOADTHD_ARGC + 1];
 
-	bmllvdbg("Try to recover fault with binid %d\n", binid);
+	bmllvdbg("Try to recover fault with binid %d\n", bin_idx);
+
+	if (bin_idx < 0) {
+		goto reboot_board;
+	}
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	/* binid is zero means a crash happened in common library
 	 * We need to reload the library and all the apps
 	 */
-	if (binid == BM_BINID_LIBRARY) {
+	int bidx;
+	if (bin_idx == BM_BINID_LIBRARY) {
 		int bin_count = binary_manager_get_ucount();
-		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
-			binid = BIN_ID(bin_idx);
+		for (bidx = 1; bidx <= bin_count; bidx++) {
 			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-			ret = binary_manager_deactivate_binary(binid);
-
+			ret = binary_manager_deactivate_binary(bidx);
 			if (ret != OK) {
 				bmlldbg("Failure during recovery excluding binary pid = %d\n", binid);
 				goto reboot_board;
 			}
 
-			BIN_STATE(bin_idx) = BINARY_FAULT;
+			BIN_STATE(bidx) = BINARY_FAULT;
 		}
-
-		binid = BM_BINID_LIBRARY;
-	}
+	} else
 #endif
-
-	if (binid > 0) {
-		/* Get binary id of fault task and check it is registered in binary manager */
-		bin_idx = binary_manager_get_index_with_binid(binid);
-		if (bin_idx < 0) {
-			bmlldbg("binary pid %d is not registered to binary manager\n", binid);
-			goto reboot_board;
-		}
-
+	{
 		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-		ret = binary_manager_deactivate_binary(binid);
+		ret = binary_manager_deactivate_binary(bin_idx);
 		if (ret != OK) {
-			bmlldbg("Failure during recovery excluding binary pid = %d\n", binid);
+			bmlldbg("Failed to deactivate binary\n");
 			goto reboot_board;
 		}
-		BIN_STATE(bin_idx) = BINARY_FAULT;
 	}
 
+	/* Create loader to reload binary */
+	BIN_STATE(bin_idx) = BINARY_FAULT;
 	memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
+	loading_data[1] = itoa(bin_idx, data_str, 10);
 	loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-	loading_data[1] = itoa(binid, data_str, 10);
 	loading_data[2] = NULL;
 	ret = binary_manager_loading(loading_data);
 	if (ret > 0) {
