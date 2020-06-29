@@ -220,19 +220,9 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 #ifdef CONFIG_BINARY_MANAGER
 	FAR struct tcb_s *rtcb = this_task();
-	int binid = rtcb->group->tg_binid;
-	if (binid > 0) {
-		/* Set main task id of a binary for recovery */
-		tcb->cmn.group->tg_binid = binid;
-		if (tcb->cmn.sched_priority > BM_PRIORITY_MAX) {
-			int bin_idx = binary_manager_get_index_with_binid(binid);
-			BIN_RTTYPE(bin_idx) = BINARY_TYPE_REALTIME;
-			BIN_RTCOUNT(bin_idx)++;
-		}
-
-		/* Link it to parent tcb for binary list management */
-		binary_manager_add_binlist(&tcb->cmn);
-	}
+	tcb->cmn.group->tg_binidx = rtcb->group->tg_binidx;
+	/* Add tcb to binary thread list */
+	binary_manager_add_binlist(&tcb->cmn);
 #endif
 
 #ifdef CONFIG_HEAPINFO_USER_GROUP

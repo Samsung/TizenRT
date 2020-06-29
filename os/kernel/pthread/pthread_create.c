@@ -473,16 +473,8 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 
 #ifdef CONFIG_BINARY_MANAGER
 		FAR struct tcb_s *rtcb = this_task();
-		int binid = rtcb->group->tg_binid;
-		if (binid > 0) {
-			if (ptcb->cmn.sched_priority > BM_PRIORITY_MAX) {
-				int bin_idx = binary_manager_get_index_with_binid(binid);
-				BIN_RTTYPE(bin_idx) = BINARY_TYPE_REALTIME;
-				BIN_RTCOUNT(bin_idx)++;
-			}
-			/* Link it to parent tcb for binary list management */
-			binary_manager_add_binlist(&ptcb->cmn);
-		}
+		/* Add tcb to binary thread list */
+		binary_manager_add_binlist(&ptcb->cmn);
 #endif
 		sched_unlock();
 		(void)sem_destroy(&pjoin->data_sem);
