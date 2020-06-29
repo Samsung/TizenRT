@@ -124,7 +124,8 @@ int binary_manager_register_ubin(char *name)
 	/* If partition is not registered, Register it as a new user partition */
 	g_bin_count++;
 	BIN_ID(g_bin_count) = -1;
-	BIN_RTCOUNT(g_bin_count) = 0;
+	BIN_RTLIST(g_bin_count) = NULL;
+	BIN_NRTLIST(g_bin_count) = NULL;
 	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
 	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 	sq_init(&BIN_CBLIST(g_bin_count));
@@ -173,23 +174,17 @@ void binary_manager_register_kpart(int part_num, int part_size)
 void binary_manager_update_running_state(int bin_id)
 {
 	int bin_idx;
+	struct tcb_s *tcb;
 
-	if (bin_id <= 0) {
-		bmdbg("Invalid parameter: bin id %d\n", bin_id);
-		return;
+	tcb = sched_gettcb(bin_id);
+	if (tcb && tcb->group && tcb->group->tg_binidx > 0) {
+		bin_idx = tcb->group->tg_binidx;
+		BIN_STATE(bin_idx) = BINARY_RUNNING;
+		bmvdbg("binary '%s' state is changed, state = %d.\n", BIN_NAME(bin_idx), BIN_STATE(bin_idx));
+
+		/* Notify that binary is started. */
+		binary_manager_notify_state_changed(bin_idx, BINARY_STARTED);
 	}
-
-	bin_idx = binary_manager_get_index_with_binid(bin_id);
-	if (bin_idx < 0) {
-		bmdbg("Failed to get index of binary %d\n", bin_id);
-		return;
-	}
-
-	BIN_STATE(bin_idx) = BINARY_RUNNING;
-	bmvdbg("binary '%s' state is changed, state = %d.\n", BIN_NAME(bin_idx), BIN_STATE(bin_idx));
-
-	/* Notify that binary is started. */
-	binary_manager_notify_state_changed(bin_idx, BINARY_STARTED);
 }
 
 /****************************************************************************
@@ -201,15 +196,22 @@ void binary_manager_update_running_state(int bin_id)
  ****************************************************************************/
 void binary_manager_add_binlist(FAR struct tcb_s *tcb)
 {
-	struct tcb_s *rtcb;
-	struct tcb_s *next;
+	int bin_idx;
 
-	rtcb = this_task();
-	next = rtcb->bin_flink;
-	tcb->bin_blink = rtcb;
-	tcb->bin_flink = next;
-	if (next) next->bin_blink = tcb;
-	rtcb->bin_flink = tcb;
+	if (tcb->group) {
+		bin_idx = tcb->group->tg_binidx;
+		if (bin_idx > 0) {
+			/* Add a tcb to a head of list */
+			tcb->bin_blink = NULL;
+			if (tcb->sched_priority > BM_PRIORITY_MAX) {
+				tcb->bin_flink = BIN_RTLIST(bin_idx);
+				BIN_RTLIST(bin_idx) = tcb;
+			} else {
+				tcb->bin_flink = BIN_NRTLIST(bin_idx);
+				BIN_NRTLIST(bin_idx) = tcb;
+			}
+		}
+	}
 }
 
 /****************************************************************************
@@ -221,11 +223,26 @@ void binary_manager_add_binlist(FAR struct tcb_s *tcb)
  ****************************************************************************/
 void binary_manager_remove_binlist(FAR struct tcb_s *tcb)
 {
+	int bin_idx;
 	struct tcb_s *prev;
 	struct tcb_s *next;
 
-	prev = tcb->bin_blink;
-	next = tcb->bin_flink;
-	if (prev) prev->bin_flink = next;
-	if (next) next->bin_blink = prev;
+	if (tcb->group) {
+		bin_idx = tcb->group->tg_binidx;
+		if (bin_idx > 0) {
+			/* Remove a tcb from the thread list of binary */
+			prev = tcb->bin_blink;
+			next = tcb->bin_flink;
+			if (!prev) {
+				if (tcb->sched_priority > BM_PRIORITY_MAX) {
+					BIN_RTLIST(bin_idx) = next;
+				} else {
+					BIN_NRTLIST(bin_idx) = next;
+				}
+			} else {
+				prev->bin_flink = next;
+			}
+			if (next) next->bin_blink = prev;
+		}
+	}
 }

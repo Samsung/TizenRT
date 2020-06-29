@@ -115,7 +115,7 @@ enum binary_type_e {
 #ifdef CONFIG_BINMGR_RECOVERY
 struct faultmsg_s {
 	struct faultmsg_s *flink;	/* Implements singly linked list */
-	int binid;
+	int binidx;
 };
 typedef struct faultmsg_s faultmsg_t;
 #endif
@@ -124,11 +124,11 @@ typedef struct faultmsg_s faultmsg_t;
 struct binmgr_uinfo_s {
 	pid_t bin_id;
 	uint8_t state;
-	uint8_t rttype;
-	uint8_t rtcount;
 	load_attr_t load_attr;
 	char bin_ver[BIN_VER_MAX];
 	char kernel_ver[KERNEL_VER_MAX];
+	struct tcb_s *rt_list;
+	struct tcb_s *nrt_list;
 	sq_queue_t cb_list; // list node type : statecb_node_t
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp;
@@ -156,8 +156,8 @@ typedef struct statecb_node_s statecb_node_t;
 binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_ID(bin_idx)                                 binary_manager_get_udata(bin_idx)->bin_id
 #define BIN_STATE(bin_idx)                              binary_manager_get_udata(bin_idx)->state
-#define BIN_RTTYPE(bin_idx)                             binary_manager_get_udata(bin_idx)->rttype
-#define BIN_RTCOUNT(bin_idx)                            binary_manager_get_udata(bin_idx)->rtcount
+#define BIN_RTLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->rt_list
+#define BIN_NRTLIST(bin_idx)                            binary_manager_get_udata(bin_idx)->nrt_list
 
 #define BIN_VER(bin_idx)                                binary_manager_get_udata(bin_idx)->bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->kernel_ver
@@ -197,7 +197,7 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
  *
  ****************************************************************************/
 void binary_manager_recovery(int pid);
-void binary_manager_deactivate_rtthreads(struct tcb_s *tcb);
+void binary_manager_deactivate_rtthreads(int bin_idx);
 void binary_manager_set_faultmsg_sender(pid_t pid);
 int binary_manager_faultmsg_sender(int argc, char *argv[]);
 mqd_t binary_manager_get_mqfd(void);
@@ -215,7 +215,6 @@ int binary_manager_loading(char *loading_data[]);
 uint32_t binary_manager_get_ucount(void);
 uint32_t binary_manager_get_kcount(void);
 binmgr_kinfo_t *binary_manager_get_kdata(void);
-int binary_manager_get_index_with_binid(int bin_id);
 void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
@@ -223,7 +222,7 @@ int binary_manager_register_ubin(char *name);
 void binary_manager_scan_ubin(void);
 int binary_manager_read_header(char *path, binary_header_t *header_data);
 int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
-void binary_manager_release_binary_sem(int binid);
+void binary_manager_release_binary_sem(int bin_idx);
 
 /****************************************************************************
  * Binary Manager Main Thread
