@@ -620,17 +620,9 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 		task_flushstreams(tcb);
 	}
 
-
 #ifdef CONFIG_BINARY_MANAGER
-	if (tcb->sched_priority > BM_PRIORITY_MAX) {
-		int binid = tcb->group->tg_binid;
-		if (binid > 0) {
-			int bin_idx = binary_manager_get_index_with_binid(binid);
-			if (--(BIN_RTCOUNT(bin_idx)) == 0) {
-				BIN_RTTYPE(bin_idx) = BINARY_TYPE_NONREALTIME;
-			}
-		}
-	}
+	/* Remove a tcb from binary list */
+	binary_manager_remove_binlist(tcb);
 #endif
 
 #ifdef HAVE_TASK_GROUP

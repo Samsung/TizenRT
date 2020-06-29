@@ -46,35 +46,6 @@
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: binary_manager_get_index_with_binid
- *
- * Description:
- *	 This function gets index in binary table with binary id.
- *
- ****************************************************************************/
-int binary_manager_get_index_with_binid(int bin_id)
-{
-	int bin_idx;
-	uint32_t bin_count;
-
-	if (bin_id <= 0) {
-		bmdbg("Invalid bin_id %d\n", bin_id);
-		return ERROR;
-	}
-
-	bin_count = binary_manager_get_ucount();
-
-	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
-		if (BIN_ID(bin_idx) == bin_id) {
-			bmvdbg("FIND binary %d idx = %d\n", bin_id, bin_idx);
-			return bin_idx;
-		}
-	}
-
-	return ERROR;
-}
-
-/****************************************************************************
  * Name: binary_manager_get_index_with_name
  *
  * Description:

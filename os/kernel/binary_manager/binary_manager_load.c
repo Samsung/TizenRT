@@ -306,20 +306,37 @@ static int binary_manager_terminate_binary(int bin_idx)
 			return ERROR;
 		}
 		/* Release all kernel semaphores held by the threads in binary */
-		binary_manager_release_binary_sem(binid);
+		binary_manager_release_binary_sem(bin_idx);
 		BIN_STATE(bin_idx) = BINARY_RUNNING;
 	}
 
 	/* Terminate all children created by a binary */
-	ntcb = tcb = btcb->bin_flink;
+	ntcb = tcb = BIN_RTLIST(bin_idx);
 	while (tcb) {
 		ntcb = tcb->bin_flink;
 		if (need_recovery) {
 			task_recover(tcb);
 		}
-		ret = task_terminate_unloaded(tcb);
-		if (ret < 0) {
-			bmdbg("Failed to terminate task of binary %d\n", binid);
+		if (tcb != btcb) {
+			ret = task_terminate_unloaded(tcb);
+			if (ret < 0) {
+				bmdbg("Failed to terminate task of binary %d\n", binid);
+			}
+		}
+		tcb = ntcb;
+	}
+
+	ntcb = tcb = BIN_NRTLIST(bin_idx);
+	while (tcb) {
+		ntcb = tcb->bin_flink;
+		if (need_recovery) {
+			task_recover(tcb);
+		}
+		if (tcb != btcb) {
+			ret = task_terminate_unloaded(tcb);
+			if (ret < 0) {
+				bmdbg("Failed to terminate task of binary %d\n", binid);
+			}
 		}
 		tcb = ntcb;
 	}
@@ -338,6 +355,9 @@ static int binary_manager_terminate_binary(int bin_idx)
 		return ERROR;
 	}
 	bmvdbg("Unload binary %s\n", BIN_NAME(bin_idx));
+
+	BIN_RTLIST(bin_idx) = NULL;
+	BIN_NRTLIST(bin_idx) = NULL;
 
 	/* Notify 'Unloaded' state to other binaries */
 	binary_manager_notify_state_changed(bin_idx, BINARY_UNLOADED);
@@ -362,17 +382,9 @@ static int binary_manager_terminate_binary(int bin_idx)
  *   None
  *
  ****************************************************************************/
-static int binary_manager_reload(int binid)
+static int binary_manager_reload(int bin_idx)
 {
 	int ret;
-	int bin_idx;
-
-	/* Check whether it is registered in binary manager */
-	bin_idx = binary_manager_get_index_with_binid(binid);
-	if (bin_idx < 0) {
-		bmdbg("binary %s is not registered\n", binid);
-		return BINMGR_NOT_FOUND;
-	}
 
 	/* Terminate binary */
 	ret = binary_manager_terminate_binary(bin_idx);
@@ -482,9 +494,9 @@ static int loading_thread(int argc, char *argv[])
 			break;
 		}
 		/* [2] binary id for reloading */
-		int binid = (int)atoi(argv[2]);
+		int bin_idx = (int)atoi(argv[2]);
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (binid == BM_BINID_LIBRARY) {
+		if (bin_idx == BM_BINID_LIBRARY) {
 			/* Reload common library and all binaries */
 			char libname[CONFIG_NAME_MAX];
 			snprintf(libname, CONFIG_NAME_MAX, "%s%s", CONFIG_COMMON_BINARY_PATH, CONFIG_COMMON_BINARY_NAME);
@@ -493,19 +505,18 @@ static int loading_thread(int argc, char *argv[])
 				return BINMGR_OPERATION_FAIL;
 			}
 
-			int bin_idx;
+			int bidx;
 			int bin_count = binary_manager_get_ucount();
 
-			for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
-				ret = binary_manager_reload(BIN_ID(bin_idx));
-
+			for (bidx = 1; bidx <= bin_count; bidx++) {
+				ret = binary_manager_reload(bidx);
 				if (ret < 0) {
 					return ret;
 				}
 			}
 		} else
 #endif
-			ret = binary_manager_reload(binid);
+			ret = binary_manager_reload(bin_idx);
 		break;
 #endif
 	default:
@@ -526,7 +537,7 @@ static int loading_thread(int argc, char *argv[])
  *	 This function releases all kernel semaphores held by the threads in binary.
  *
  ****************************************************************************/
-void binary_manager_release_binary_sem(int binid)
+void binary_manager_release_binary_sem(int bin_idx)
 {
 	sem_t *sem;
 	irqstate_t flags;
@@ -542,7 +553,7 @@ void binary_manager_release_binary_sem(int binid)
 		holder = &sem->holder;
 #endif
 		{
-			if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_binid == binid) {
+			if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_binidx == bin_idx) {
 				/* Increase semcount and release itself from holder */
 				sem->semcount++;
 				sem_releaseholder(sem, holder->htcb);

@@ -237,11 +237,6 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		group_leave(tcb);
 #endif
 
-
-#ifdef CONFIG_BINARY_MANAGER
-		binary_manager_remove_binlist(tcb);
-#endif
-
 		/* And, finally, release the TCB itself */
 
 		sched_kfree(tcb);

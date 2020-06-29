@@ -294,10 +294,12 @@ static inline void group_release(FAR struct task_group_s *group)
 
 	if (IS_LOADED_MODULE(group)) {
 #ifdef CONFIG_BINARY_MANAGER
-		int bin_idx = binary_manager_get_index_with_binid(group->tg_binid);
+		int bin_idx = group->tg_binidx;
 		/* Update binary state */
 		BIN_STATE(bin_idx) = BINARY_INACTIVE;
 		BIN_ID(bin_idx) = -1;
+		BIN_RTLIST(bin_idx) = NULL;
+		BIN_NRTLIST(bin_idx) = NULL;
 		/* Clean callbacks of binary */
 		binary_manager_clear_bin_statecb(bin_idx);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
