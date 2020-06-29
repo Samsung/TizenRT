@@ -480,6 +480,31 @@ void up_unblock_task(FAR struct tcb_s *tcb);
 
 void up_block_task(FAR struct tcb_s *tcb, tstate_t task_state);
 
+#if CONFIG_BINMGR_RECOVERY
+/****************************************************************************
+ * Name: up_recovery_unblock_task
+ *
+ * Description:
+ *   Move the TCB to the ready-to-run list and Switch context to the context
+ *   of the task at the head of the ready to run list.
+ *
+ *   This function is called by up_assert when fault happens.
+ *   A head of ready-to-run list is always changed because a fault handler
+ *   deactivates all RT threads of faulty binary before calling this function.
+ *   So if it is in interrupt context, it doesn't copy the current_regs into the OLD tcb.
+ *   If not, it calls up_fullcontextrestore to perform the user context switch.
+ *
+ * Inputs:
+ *   tcb: Refers to the tcb to be unblocked.  This tcb is
+ *     in one of the waiting tasks lists.  It must be moved to
+ *     the ready-to-run list and, if it is the highest priority
+ *     ready to run taks, executed.
+ *
+ ****************************************************************************/
+
+void up_recovery_unblock_task(struct tcb_s *tcb);
+
+#endif
 /****************************************************************************
  * Name: up_release_pending
  *
