@@ -240,19 +240,6 @@ config MTD_SMART_JOURNALING
 		Enabling journaling will increase the delay in filesystem
 		operations, because it write journal data before it commit sector.
 		It uses CRC-16 so please enable SMART_CRC_16
-
-if MTD_SMART_JOURNALING
-
-config MTD_SMART_JOURNALING_NSECTOR
-	int "Number of reserved logical sector for Journal"
-	default 16
-	---help---
-		Journal sector will be reserved right after smart MTD initialize,
-		It will divided to 2 area to toggle active area.
-		It always appends journal data and dev structure will point it.
-		It is uint16_t now, So 65535 is max number of both of journal area.
-		
-endif
                 
 config MTD_SMART_SECTOR_ERASE_DEBUG
 	bool "Track Erase Block erasure counts"
