@@ -69,16 +69,6 @@
 /************************************************************************
  * Public Data
  ************************************************************************/
-#if !defined(CONFIG_ARCH_ADDRENV) || !defined(CONFIG_BUILD_KERNEL)
-/* Otherwise, the user heap data structures are in common .bss */
-struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
-#endif
-
-
-#if defined(CONFIG_BUILD_PROTECTED)
-struct mm_heap_s *g_mmheap_p __attribute__((section(".usrheapptr"))) = g_mmheap;
-#endif
-
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 /* g_cur_app will contain the id of the currently executing application.
  * It will be used to index into the app_heap_table to get the heap pointer
@@ -151,5 +141,5 @@ struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1] __attribute__((section("
 
 void umm_initialize(FAR void *heap_start, size_t heap_size)
 {
-	mm_initialize(USR_HEAP, heap_start, heap_size);
+	mm_initialize(BASE_HEAP, heap_start, heap_size);
 }

@@ -92,9 +92,9 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_memalign(&USR_HEAP[heap_index], alignment, size, retaddr);
+	return mm_memalign(&BASE_HEAP[heap_index], alignment, size, retaddr);
 #else
-	return mm_memalign(&USR_HEAP[heap_index], alignment, size);
+	return mm_memalign(&BASE_HEAP[heap_index], alignment, size);
 #endif
 }
 #endif
@@ -120,9 +120,9 @@ FAR void *memalign(size_t alignment, size_t size)
 #endif
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_memalign(&USR_HEAP[heap_idx], alignment, size, retaddr);
+		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size, retaddr);
 #else
-		ret = mm_memalign(&USR_HEAP[heap_idx], alignment, size);
+		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size);
 #endif
 		if (ret != NULL) {
 			return ret;

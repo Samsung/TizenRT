@@ -187,10 +187,7 @@ volatile dq_queue_t g_inactivetasks;
 
 volatile sq_queue_t g_delayed_kufree;
 
-#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
-	 defined(CONFIG_MM_KERNEL_HEAP)
 volatile sq_queue_t g_delayed_kfree;
-#endif
 
 /* This gives number of alive tasks at any point of time in the system.
  * If the system is already running CONFIG_MAX_TASKS, Creating new
@@ -388,20 +385,12 @@ void os_start(void)
 	sem_initialize();
 
 
-#if defined(MM_KERNEL_USRHEAP_INIT) || defined(CONFIG_MM_KERNEL_HEAP) || defined(CONFIG_MM_PGALLOC)
+#if defined(CONFIG_MM_KERNEL_HEAP) || defined(CONFIG_MM_PGALLOC)
 	/* Initialize the memory manager */
 
 	{
 		FAR void *heap_start;
 		size_t heap_size;
-
-#ifdef MM_KERNEL_USRHEAP_INIT
-		/* Get the user-mode heap from the platform specific code and configure
-		 * the user-mode memory allocator.
-		 */
-		up_allocate_heap(&heap_start, &heap_size);
-		kumm_initialize(heap_start, heap_size);
-#endif
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 		/* Get the kernel-mode heap from the platform specific code and configure
@@ -424,7 +413,7 @@ void os_start(void)
 	}
 #endif
 
-	up_addregion();
+	up_add_kregion();
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 	/* Initialize tasking data structures */
