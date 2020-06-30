@@ -3782,7 +3782,6 @@ static int smart_write_alloc_sector(FAR struct smart_struct_s *dev, uint16_t log
 	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
 	header->logicalsector[0] = (uint8_t)(logical & 0x00FF);
 	header->logicalsector[1] = (uint8_t)(logical >> 8);
-	//*((FAR uint16_t *)header->logicalsector) = logical;
 
 	header->seq = 0;
 
