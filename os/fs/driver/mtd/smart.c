@@ -251,7 +251,6 @@ struct smart_struct_s {
 	uint32_t unusedsectors;	/* Count of unused sectors (i.e. free when erased) */
 	uint32_t blockerases;		/* Count of unused sectors (i.e. free when erased) */
 #endif
-	uint16_t reservedsector;    /* Number of reserved sector (i.e. logging sectors of journal) */
 	uint16_t neraseblocks;		/* Number of erase blocks or sub-sectors */
 	uint16_t lastallocblock;	/* Last  block we allocated a sector from */
 	uint16_t freesectors;		/* Total number of free sectors */
@@ -305,9 +304,12 @@ struct smart_struct_s {
 #endif
 #ifdef CONFIG_MTD_SMART_JOURNALING
 	size_t journal_seq;				/* Current Sequence of Journal */
-	uint8_t journalPerSector;		/* Number of journal data per Sector */
-	uint16_t total_journalsector;	/* Total Number of Journal Sector */
+	uint16_t njournalsectors;		/* Total Number of Journal Sector */
+	uint16_t njournaleraseblocks;	/* Total Number of Journal Erase block */
+	uint32_t njournaldata;			/* Total Number of Journal Data */
 	FAR uint16_t *sSeqLogMap;		/* Keep duplicated sector until journaling determine winner */
+	int area;						/* Current Active area */
+	int journal_area_state[2];		/* State of each of Journal Area */
 #endif
 };
 
@@ -393,19 +395,33 @@ typedef uint32_t crc_t;
 #error "CRC-16 is necessary for journaling"
 #endif
 
-/* State of Journal Log Low 4 bits */
-#define SMART_JOURNAL_STATE_COMMIT   0x01
-#define SMART_JOURNAL_STATE_CHECKED  0x02
+/* State of first byte of each journal Area */
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+#define AREA_UNUSED 0xFF
+#define AREA_USED   0xF0
+#define AREA_OLD_UNERASED 0x00
+#else
+#define AREA_UNUSED 0x00
+#define AREA_USED   0x0F
+#define AREA_OLD_UNERASED 0xFF
+#endif
 
-/* Type of Journal Data High 4 bits */
-#define SMART_JOURNAL_TYPE_COMMIT    0x10
-#define SMART_JOURNAL_TYPE_RELEASE   0x20
-#define SMART_JOURNAL_TYPE_ERASE     0x40
+/* State of Journal Log Low 2 bits */
+#define SMART_JOURNAL_STATE_CHECKIN  0x01
+#define SMART_JOURNAL_STATE_CHECKOUT 0x02
+
+/* Type of Journal Data next 6 bits Low 2bits for journal area */
+#define SMART_JOURNAL_TYPE_USED      0x04
+#define SMART_JOURNAL_TYPE_UNERASED  0x08
+#define SMART_JOURNAL_TYPE_ALLOC     0x10
+#define SMART_JOURNAL_TYPE_COMMIT    0x20
+#define SMART_JOURNAL_TYPE_RELEASE   0x40
+#define SMART_JOURNAL_TYPE_ERASE     0x80
 
 struct smart_journal_logging_data_s {
 	struct smart_sect_header_s mtd_header;	/* MTD Header to checkpoint */
-	uint8_t psector[2];						/* Target Physical Sector */
 	uint8_t crc16[2];						/* CRC-16 for current journal data */
+	uint8_t psector[2];						/* Target Physical Sector */
 	uint8_t seq[2];							/* Sequence number of Journal for validation check */
 	uint8_t status;							/* Journal Staus low 4bits for state, high 4bits for type */
 };
@@ -445,7 +461,19 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 static int smart_validate_crc(FAR struct smart_struct_s *dev);
 static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev);
 #endif
+#ifdef CONFIG_MTD_SMART_JOURNALING
+static int smart_journal_init(FAR struct smart_struct_s *dev);
+static int smart_journal_get_active_area(FAR struct smart_struct_s *dev);
+static int smart_journal_get_area_state(FAR struct smart_struct_s *dev, int area);
+static int smart_journal_alloc_area(FAR struct smart_struct_s *dev, int area);
+static int smart_journal_release_area(FAR struct smart_struct_s *dev, int area);
+static int smart_journal_toggle_active_area(FAR struct smart_struct_s *dev);
+static int smart_joutnal_set_area_state(FAR struct smart_struct_s *dev, int area, uint8_t id_bits);
+static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsector, FAR uint8_t *buffer);
+static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t offset, int nbytes, FAR const uint8_t *buffer);
+static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t physsector);
 
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -588,9 +616,9 @@ static void smart_set_count(FAR struct smart_struct_s *dev, FAR uint8_t *pCount,
 
 		if (dev->sectorsPerBlk == 16) {
 			if (count == 16) {
-				pCount[(dev->geo.neraseblocks >> 1) + (block >> 3)] |= 1 << (block & 0x07);
+				pCount[(dev->neraseblocks >> 1) + (block >> 3)] |= 1 << (block & 0x07);
 			} else {
-				pCount[(dev->geo.neraseblocks >> 1) + (block >> 3)] &= ~(1 << (block & 0x07));
+				pCount[(dev->neraseblocks >> 1) + (block >> 3)] &= ~(1 << (block & 0x07));
 			}
 		}
 	}
@@ -626,7 +654,7 @@ static uint8_t smart_get_count(FAR struct smart_struct_s *dev, FAR uint8_t *pCou
 		 */
 
 		if (dev->sectorsPerBlk == 16) {
-			if (pCount[(dev->geo.neraseblocks >> 1) + (block >> 3)] & (1 << (block & 0x07))) {
+			if (pCount[(dev->neraseblocks >> 1) + (block >> 3)] & (1 << (block & 0x07))) {
 				count |= 0x10;
 			}
 		}
@@ -1005,6 +1033,48 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 			dev->availSectPerBlk = dev->sectorsPerBlk;
 		}
 	}
+	
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	/** Journal Sector is reserved at the last of smartfs partition, it doesn't use MTD Header.
+	  * Journal sectors divided to 2 area, this will be toggled if anyone is filled with data,
+	  * erase previous one. So total number of journal sector must be N*Eraseblock
+	  * We will use it as a contigous memory space...
+	  */
+	size_t log_size = sizeof(struct smart_journal_logging_data_s);
+	/** First get ideal size of journal sector. Formula is Below (x : data sectors y : journal sectors)
+	  * 1. dev->sectorsize : dev->njournalsectors = x : y  
+	  * 2. x + y = dev->geo.eraseblocks * dev->sectorsPerBlk;
+	  */
+	dev->njournalsectors = (dev->geo.neraseblocks * dev->sectorsPerBlk * log_size) / (dev->sectorsize + log_size);
+
+	/* Now we have number of journalsector, so calculate number of journal block */
+	dev->njournaleraseblocks = dev->njournalsectors / dev->sectorsPerBlk;
+
+	/* If number of sector is greater than n * eraseblock, adjust it */
+	if (dev->njournalsectors % dev->sectorsPerBlk != 0) {
+		dev->njournaleraseblocks++;
+	}
+
+	/* We have to use 2N of eraseblock for journal, adjust it */
+	if (dev->njournaleraseblocks % 2 != 0) {
+		dev->njournaleraseblocks++;
+	}
+
+	dev->njournalsectors = dev->njournaleraseblocks * dev->sectorsPerBlk;
+
+	/* Now reduce number of eraseblock */
+	dev->neraseblocks -= dev->njournaleraseblocks;
+
+	/* Now get Total Journal data of both of 2 area */
+	dev->njournaldata = (((dev->njournaleraseblocks / 2) * dev->sectorsPerBlk * dev->sectorsize) - 1) / log_size * 2;
+	
+	if (dev->sSeqLogMap != NULL) {
+		smart_free(dev, dev->sSeqLogMap);
+		dev->sSeqLogMap = NULL;
+	}
+
+#endif
+
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
 	dev->unusedsectors = 0;
 	dev->blockerases = 0;
@@ -1128,7 +1198,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	/* Allocate a buffer to hold the erase counts. */
 
 	if (dev->erasecounts == NULL) {
-		dev->erasecounts = (FAR uint8_t *)smart_malloc(dev, dev->neraseblocks, "Erase counts");
+		dev->erasecounts = (FAR uint8_t *)smart_malloc(dev, dev->geo.neraseblocks, "Erase counts");
 	}
 
 	if (!dev->erasecounts) {
@@ -1136,7 +1206,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 		goto errexit;
 	}
 
-	memset(dev->erasecounts, 0, dev->neraseblocks);
+	memset(dev->erasecounts, 0, dev->geo.neraseblocks);
 #endif
 
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
@@ -1297,7 +1367,7 @@ static int smart_add_sector_to_cache(FAR struct smart_struct_s *dev, uint16_t lo
 		for (x = 0; x < CONFIG_MTD_SMART_SECTOR_CACHE_SIZE; x++) {
 			/* Never replace cache entries for system sectors. */
 
-			if (dev->sCache[x].logical < dev->reservedsector) {
+			if (dev->sCache[x].logical < SMART_FIRST_ALLOC_SECTOR) {
 				continue;
 			}
 
@@ -1389,7 +1459,7 @@ static uint16_t smart_cache_lookup(FAR struct smart_struct_s *dev, uint16_t logi
 		for (sector = 0; sector < dev->sectorsPerBlk && physical == 0xFFFF; sector++) {
 			/* Now scan across each erase block. */
 
-			for (block = 0; block < dev->geo.neraseblocks; block++) {
+			for (block = 0; block < dev->neraseblocks; block++) {
 				/* Calculate the read address for this sector. */
 
 				readaddress = block * dev->erasesize + sector * CONFIG_MTD_SMART_SECTOR_SIZE;
@@ -1548,7 +1618,7 @@ static void smart_find_wear_minmax(FAR struct smart_struct_s *dev)
 
 	/* Loop through all erase blocks and find min / max level. */
 
-	for (x = 0; x < dev->geo.neraseblocks; x++) {
+	for (x = 0; x < dev->neraseblocks; x++) {
 		/* Find wear level of the minimum worn block. */
 
 		level = smart_get_wear_level(dev, x);
@@ -1680,7 +1750,9 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	uint16_t loser;
 	uint16_t winner;
 	uint32_t readaddress;
+#ifndef CONFIG_MTD_SMART_JOURNALING
 	uint32_t offset;
+#endif
 	uint16_t seq1;
 	uint16_t seq2;
 	struct smart_sect_header_s header;
@@ -1708,7 +1780,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	totalsectors = dev->totalsectors;
 
 	dev->formatstatus = SMART_FMT_STAT_NOFMT;
-	dev->freesectors = dev->availSectPerBlk * dev->geo.neraseblocks;
+	dev->freesectors = dev->availSectPerBlk * dev->neraseblocks;
 	dev->releasesectors = 0;
 
 	/* Initialize the freecount and releasecount arrays. */
@@ -1783,17 +1855,9 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 		status_released = SECTOR_IS_RELEASED(header);
 		status_committed = SECTOR_IS_COMMITTED(header);
-		fvdbg("released : %d committed : %d logical : %d physical : %d crc : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, 
-#ifdef CONFIG_SMART_ENABLE_CRC
-#ifdef CONFIG_SMART_CRC_8
-		header.crc8,
-#elif defined(CONFIG_SMART_CRC_16)
-		header.crc16,
-#elif defined(CONFIG_SMART_CRC_32)
-		header.crc32,
+#ifdef CONFIG_MTD_SMART_JOURNALING
+		fdbg("released : %d committed : %d logical : %d physical : %d crc : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, UINT8TOUINT16(header.crc16), header.status, header.seq);
 #endif
-#endif
-		header.status, header.seq);
 
 		/* Test if this sector has been committed. */
 		if (status_committed) {
@@ -1866,7 +1930,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 			}
 
 			/* Mark the volume as formatted and set the sector size */
-
 			dev->formatstatus = SMART_FMT_STAT_FORMATTED;
 			dev->namesize = dev->rwbuffer[SMART_FMT_NAMESIZE_POS];
 			dev->formatversion = dev->rwbuffer[SMART_FMT_VERSION_POS];
@@ -2024,6 +2087,12 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #endif
 			}
 
+#ifdef CONFIG_MTD_SMART_JOURNALING
+			/* If Journaling is enabled, we will keep loser in sequence log map
+			 * It will checked again if it related to committed journal log
+			 */
+			dev->sSeqLogMap[logicalsector] = loser;
+#else
 			/* Now release the loser sector. */
 
 			readaddress = loser * dev->mtdBlksPerSector * dev->geo.blocksize;
@@ -2042,6 +2111,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 				fdbg("Error %d releasing duplicate sector\n", -ret);
 				goto err_out;
 			}
+#endif
 		}
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 		/* Update the logical to physical sector map. */
@@ -2051,7 +2121,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		/* Mark the logical sector as used in the bitmap */
 		dev->sBitMap[logicalsector >> 3] |= 1 << (logicalsector & 0x07);
 
-		if (logicalsector < dev->reservedsector) {
+		if (logicalsector < SMART_FIRST_ALLOC_SECTOR) {
 			smart_add_sector_to_cache(dev, logicalsector, winner, __LINE__);
 		}
 #endif
@@ -2129,16 +2199,17 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 	fdbg("SMART Scan\n");
 	fdbg("   Erase size:           %10d\n", dev->sectorsPerBlk * dev->sectorsize);
-	fdbg("   Erase count:          %10d\n", dev->neraseblocks);
+	fdbg("   Erase block:          %10d\n", dev->geo.neraseblocks);
 	fdbg("   Sect/block:           %10d\n", dev->sectorsPerBlk);
 	fdbg("   MTD Blk/Sect:         %10d\n", dev->mtdBlksPerSector);
 	fdbg("   avail sect/block:     %10d\n", dev->availSectPerBlk);
 #ifdef CONFIG_MTD_SMART_JOURNALING
-	fdbg("   Total Journal Sector: %10d\n", dev->total_journalsector);
-	fdbg("   Journal Data/Sector:  %10d\n", dev->journalPerSector);
+	fdbg("   Data Erase block:     %10d\n", dev->neraseblocks);
+	fdbg("   Journal Erase block:  %10d\n", dev->njournaleraseblocks);
+	fdbg("   Journal Sector:       %10d\n", dev->njournalsectors);
 #endif
 #ifdef CONFIG_MTD_SMART_ALLOC_DEBUG
-	fdbg("   Allocations:\n");
+	fdbg("   Allocations:\n");     
 	for (sector = 0; sector < SMART_MAX_ALLOCS; sector++) {
 		if (dev->alloc[sector].ptr != NULL) {
 			fdbg("       %s: %d\n", dev->alloc[sector].name, dev->alloc[sector].size);
@@ -2146,6 +2217,15 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	}
 #endif
 
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	if (dev->formatstatus == SMART_FMT_STAT_FORMATTED) {
+		ret = smart_journal_init(dev);
+		if (ret < 0) {
+			fdbg("journal init failed ret : %d\n", ret);
+			goto err_out;
+		}
+	}
+#endif
 	ret = OK;
 
 err_out:
@@ -2180,10 +2260,8 @@ static inline int smart_getformat(FAR struct smart_struct_s *dev, FAR struct sma
 	 * status, then we must perform a scan of the device to search
 	 * for the format marker.
 	 */
-
 	if (dev->formatstatus != SMART_FMT_STAT_FORMATTED) {
 		/* Perform the scan. */
-		fvdbg("not formatted, scan start status : %d\n", dev->formatstatus);
 		ret = smart_scan(dev);
 
 		if (ret != OK) {
@@ -2205,7 +2283,7 @@ static inline int smart_getformat(FAR struct smart_struct_s *dev, FAR struct sma
 
 	fmt->nfreesectors = dev->freesectors;
 	fmt->namesize = dev->namesize;
-	fdbg("namesize : %d\n", dev->namesize);
+
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	fmt->nrootdirentries = dev->rootdirentries;
 	fmt->rootdirnum = rootdirnum;
@@ -2307,7 +2385,7 @@ static void smart_erase_block_if_empty(FAR struct smart_struct_s *dev, uint16_t 
 		 * physical sector if this is the last erase block on the device.
 		 */
 
-		if (block == dev->geo.neraseblocks - 1 && dev->totalsectors == 65534) {
+		if (block == dev->neraseblocks - 1 && dev->totalsectors == 65534) {
 			prerelease = 2;
 		} else {
 			prerelease = 0;
@@ -2393,9 +2471,9 @@ static int smart_relocate_static_data(FAR struct smart_struct_s *dev, uint16_t b
 		 */
 
 		freecount = dev->sectorsPerBlk + 1;
-		minblock = dev->geo.neraseblocks;
+		minblock = dev->neraseblocks;
 		mincount = 0;
-		for (x = 0; x < dev->geo.neraseblocks; x++) {
+		for (x = 0; x < dev->neraseblocks; x++) {
 			if (smart_get_wear_level(dev, x) == dev->minwearlevel) {
 				/* Don't allow the format sector or directory sector to
 				 * be moved into a worn block.  First get the format and
@@ -2724,7 +2802,6 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 #endif
 
 	/* Write the sector to the flash. */
-
 	wrcount = MTD_BWRITE(dev->mtd, 0, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 	if (wrcount != dev->mtdBlksPerSector) {
 		/* The block is not empty!!  What to do? */
@@ -2744,7 +2821,7 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 	}
 
 	dev->formatstatus = SMART_FMT_STAT_UNKNOWN;
-	dev->freesectors = dev->availSectPerBlk * dev->geo.neraseblocks - 1;
+	dev->freesectors = dev->availSectPerBlk * dev->neraseblocks - 1;
 	dev->releasesectors = 0;
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 	dev->uneven_wearcount = 0;
@@ -2789,6 +2866,16 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 		dev->sMap[x] = -1;
 	}
 #endif
+
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	dev->area = 0;
+	ret = smart_joutnal_set_area_state(dev, 0, AREA_USED);
+	if (ret != OK) {
+		fdbg("Alloc Journal Area failed at first time ret : %d\n", ret);
+		return -ret;
+	}
+#endif
+
 
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 
@@ -3176,30 +3263,6 @@ errout:
 	return ret;
 }
 
-static void print_sector_headers(FAR struct smart_struct_s *dev, int targetblock)
-{
-	int ret;
-	int block;
-	int sector;
-	uint32_t readaddr;
-	struct smart_sect_header_s header;
-	for (block = 0; block < dev->neraseblocks; block++) {
-		if (targetblock < 0 || (targetblock >= 0 && block == targetblock)) {
-			printf("block (%d), freecount = %d\t", block, dev->freecount[block]);
-			for (sector = block * dev->sectorsPerBlk; sector < block * dev->sectorsPerBlk + dev->availSectPerBlk; sector++) {
-				readaddr = sector * dev->mtdBlksPerSector * dev->geo.blocksize;
-				ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-				if (ret != sizeof(struct smart_sect_header_s)) {
-					fdbg("Error reading phys sector %d\n", sector);
-					return;
-				}
-				printf("%d status : %d (%d, %d)\t", sector, header.status, SECTOR_IS_COMMITTED(header), SECTOR_IS_RELEASED(header));
-			}
-			printf("\n");
-		}
-	}
-}
-
 /****************************************************************************
  * Name: smart_findfreephyssector
  *
@@ -3396,7 +3459,6 @@ retry:
 
 	if (physicalsector == 0xFFFF) {
 		fdbg("Program bug!  Expected a free sector %d\n", allocblock);
-		print_sector_headers(dev, allocblock);
 	}
 	if (physicalsector >= dev->totalsectors) {
 		fdbg("Program bug!  Selected sector too big!!!\n");
@@ -3534,7 +3596,7 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 	uint8_t buffer[8], write_buffer = 0;
 
 	sector = 0;
-	remaining = dev->geo.neraseblocks >> 1;
+	remaining = dev->neraseblocks >> 1;
 	memset(buffer, 0xFF, sizeof(buffer));
 
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
@@ -3586,7 +3648,7 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 		req.logsector = sector;
 		req.offset = SMARTFS_FMT_WEAR_POS;
 		req.count = towrite;
-		req.buffer = &dev->wearstatus[(dev->geo.neraseblocks >> SMART_WEAR_BIT_DIVIDE) - remaining];
+		req.buffer = &dev->wearstatus[(dev->neraseblocks >> SMART_WEAR_BIT_DIVIDE) - remaining];
 
 		/* Write the sector. */
 
@@ -3677,7 +3739,7 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 
 	/* Read all wear level bits from the flash. */
 
-	remaining = dev->geo.neraseblocks >> 1;
+	remaining = dev->neraseblocks >> 1;
 	while (remaining) {
 		/* Calculate number of bytes to read from this sector. */
 
@@ -3691,7 +3753,7 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 		req.logsector = sector;
 		req.offset = SMARTFS_FMT_WEAR_POS;
 		req.count = toread;
-		req.buffer = &dev->wearstatus[(dev->geo.neraseblocks >> SMART_WEAR_BIT_DIVIDE) - remaining];
+		req.buffer = &dev->wearstatus[(dev->neraseblocks >> SMART_WEAR_BIT_DIVIDE) - remaining];
 
       /* Validate wear status sector has been allocated */
 
@@ -3844,6 +3906,7 @@ static int smart_validate_crc(FAR struct smart_struct_s *dev)
 	/* Test 16-bit CRC. */
 
 	if (crc != *((uint16_t *)header->crc16)) {
+		fdbg("crc : %d header->crc : %d\n", crc, *((uint16_t *)header->crc16));
 		return -EIO;
 	}
 #elif defined(CONFIG_SMART_CRC_32)
@@ -3909,7 +3972,7 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 
 		offset = dev->minwearlevel;
 		fvdbg("Reducing wear level bits by %d\n", offset);
-		for (x = 0; x < dev->geo.neraseblocks; x++) {
+		for (x = 0; x < dev->neraseblocks; x++) {
 			smart_set_wear_level(dev, x, smart_get_wear_level(dev, x) - offset);
 		}
 
@@ -4110,6 +4173,8 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 			fdbg("Error writing to physical sector logical %d physical : %d\n", UINT8TOUINT16(header->logicalsector), physsector);
 			return -EIO;
 		}
+
+		fvdbg("Logical sector : %d Physical sector %d is newly written by relocation to %d!\n", UINT8TOUINT16(header->logicalsector), oldphyssector, physsector);
 
 		/* Commit the new physical sector. */
 
@@ -4424,7 +4489,7 @@ static int smart_allocsector(FAR struct smart_struct_s *dev, unsigned long reque
 
 	if (logsector == 0xFFFF) {
 		/* Loop through all sectors and find one to allocate. */
-		for (x = dev->reservedsector; x < dev->totalsectors; x++) {
+		for (x = SMART_FIRST_ALLOC_SECTOR; x < dev->totalsectors; x++) {
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 			if (dev->sMap[x] == (uint16_t)-1)
 #else
@@ -4544,7 +4609,7 @@ static int smart_allocsector(FAR struct smart_struct_s *dev, unsigned long reque
 	dev->freesectors--;
 
 	/* Return the logical sector number. */
-
+	fvdbg("allocsector, physicalsector : %d logicalsector : %d\n", physicalsector, logsector);
 	return logsector;
 }
 #endif							/* CONFIG_FS_WRITABLE */
@@ -4832,6 +4897,277 @@ ok_out:
 	return ret;
 }
 
+#ifdef CONFIG_MTD_SMART_JOURNALING
+/****************************************************************************
+ * Name: smart_journal_init
+ *
+ * Description:
+ *   Initialize to journal structure & sector to recover previous transaction.
+ *
+ ****************************************************************************/
+
+static int smart_journal_init(FAR struct smart_struct_s *dev)
+{
+	int next_area;
+
+	dev->area = smart_journal_get_active_area(dev);
+	if (dev->area == -1) {
+		fdbg("There's no active area...\n");
+		return -EIO;
+	}
+
+	if (dev->area == 0) {
+		dev->journal_seq = 0;
+		next_area = 1;
+	} else {
+		/* We Divide to 2 Journal areas, also each area has state bits(1byte) */
+		dev->journal_seq = (((dev->njournaleraseblocks / 2) * dev->erasesize) - 1) / sizeof(struct smart_journal_logging_data_s);
+		next_area = 0;
+	}
+
+	/* TODO Here we will start recovery */
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: smart_journal_get_active_area
+ *
+ * Description:
+ *   Get active journal Area.
+ *
+ ****************************************************************************/
+
+static int smart_journal_get_active_area(FAR struct smart_struct_s *dev)
+{
+	int i;
+	uint8_t index[2];
+	int ret_a, ret_b;
+	/* Result to be returned for different combination of status
+	 * bits of 2 areas.
+	 *
+	 * Row: index of status of area 0
+	 * Column: index of status of area 1
+	 *
+	 * index for status AREA_UNUSED is 0, for AREA_USED is 1,
+	 * AREA_OLD_UNERASED is 2, undefined is 3
+	 * e.g if area 0 has status AREA_USED (index[0]=1) and area 1 has
+	 * status AREA_UNUSED (index[1]=0), we return
+	 * result[index[0]][index[1]] = result[1][0] = 0
+	 * The function returns area 0.
+	 */
+	int8_t result[][4] = { { -1, 1, 1, -1},
+		{0, 0, 0, 0},
+		{0, 1, 0, 0},
+		{ -1, 1, 1, -1}
+	};
+	
+	/* check exist journal sector */
+	ret_a = smart_journal_get_area_state(dev, 0);
+	ret_b = smart_journal_get_area_state(dev, 1);
+
+	if (ret_a != 1 && ret_b != 1) { // result must 1 byte
+		return -1;
+	} else if (ret_a != 1 && (dev->journal_area_state[1] == AREA_USED || dev->journal_area_state[1] == AREA_OLD_UNERASED)) {
+		return 1;
+	} else if (ret_b != 1 && (dev->journal_area_state[0] == AREA_USED || dev->journal_area_state[0] == AREA_OLD_UNERASED)) {
+		return 0;
+	}
+
+	for (i = 0; i <= 1; i++) {
+		if (dev->journal_area_state[i] == AREA_UNUSED) {
+			index[i] = 0;
+		} else if (dev->journal_area_state[i] == AREA_USED) {
+			index[i] = 1;
+		} else if (dev->journal_area_state[i] == AREA_OLD_UNERASED) {
+			index[i] = 2;
+		} else {
+			index[i] = 3;
+		}
+	}
+
+	return result[index[0]][index[1]];
+
+}
+
+static int smart_journal_get_area_state(FAR struct smart_struct_s *dev, int area)
+{
+	uint16_t psector;
+	uint32_t readaddr;
+	uint8_t id_bits;
+	int ret;
+	if (area == 0) {
+		psector = dev->neraseblocks * dev->sectorsPerBlk;
+	} else {
+		psector = dev->neraseblocks * dev->sectorsPerBlk + (dev->njournalsectors / 2);
+	}
+
+	readaddr = psector * dev->mtdBlksPerSector * dev->geo.blocksize;
+	
+	ret = MTD_READ(dev->mtd, readaddr, 1, &id_bits);
+	if (ret < 0) {
+		fdbg("read failed! ret : %d\n");
+		return -EIO;
+	}
+
+	dev->journal_area_state[area] = id_bits;
+
+	return ret;
+	
+}
+
+/****************************************************************************
+ * Name: smart_journal_alloc_area
+ *
+ * Description:
+ *   Alloc journal area if it is necessary to alloc new area.
+ *
+ ****************************************************************************/
+
+static int smart_journal_alloc_area(FAR struct smart_struct_s *dev, int area)
+{
+	uint16_t lsector, psector;
+	int ret = OK;
+	/* TODO alloc new sectors of area here. */
+
+	/* Should we add this to another area (active area) as a journal log?? */
+	
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smart_journal_release_area
+ *
+ * Description:
+ *   Release journal area.
+ *
+ ****************************************************************************/
+
+static int smart_journal_release_area(FAR struct smart_struct_s *dev, int area)
+{
+	int ret = OK;
+	/* TODO release old sectors of area here. */
+
+	/* Should we add this to another area (active area) as a journal log?? */
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smart_journal_toggle_active_area
+ *
+ * Description:
+ *   Toggle journal Area.
+ *
+ ****************************************************************************/
+
+static int smart_journal_toggle_active_area(FAR struct smart_struct_s *dev)
+{
+	int ret = OK;
+	int nextarea;
+	if (dev->area == 0) {
+		nextarea = 1;
+	} else {
+		nextarea = 0;
+	}
+	/* Now alloc Next Area */
+	ret = smart_journal_alloc_area(dev, nextarea);
+
+	if (ret != OK) {
+		return -EIO;
+	}
+
+	ret = smart_journal_release_area(dev, dev->area);
+	if (ret != OK) {
+		return -EIO;
+	}	
+
+	ret = smart_joutnal_set_area_state(dev, dev->area, AREA_OLD_UNERASED);
+}
+
+/****************************************************************************
+ * Name: smart_joutnal_set_area_state
+ *
+ * Description:
+ *   Set status of area.
+ *
+ ****************************************************************************/
+
+static int smart_joutnal_set_area_state(FAR struct smart_struct_s *dev, int area, uint8_t id_bits)
+{
+	uint32_t readaddress;
+	int psector;
+	int ret;
+	
+	if (area == 0) {
+		psector = dev->neraseblocks * dev->sectorsPerBlk;
+	} else {
+		psector = dev->neraseblocks * dev->sectorsPerBlk + (dev->njournalsectors / 2);
+	}
+
+	readaddress = psector * dev->mtdBlksPerSector * dev->geo.blocksize;
+	/* TODO Below operation will be added to current journal, but do not logging during formatting */
+	ret = MTD_WRITE(dev->mtd, readaddress, 1, &id_bits);
+	if (ret != 1) {
+		fdbg("Error updating physical sector %d status\n", psector);
+		return -EIO;
+	}
+
+	dev->journal_area_state[area] = id_bits;
+	return OK;
+}
+
+/****************************************************************************
+ * Name: smart_journal_bwrite
+ *
+ * Description:
+ *   Block Write function instead of MTD_BWRITE
+ *   This will write journal data first, then write requested data except
+ *   mtd header, finally write header from journal data.
+ *
+ ****************************************************************************/
+
+static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsector, FAR uint8_t *buffer)
+{
+	int ret = OK;
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smart_journal_bytewrite
+ *
+ * Description:
+ *   Byte Write function instead of MTD_WRITE
+ *   It is called when smartfs release or alloc target sector, it means no data.
+ *   This will not write data on physical sector.
+ *   Sequence is journal write -> write header
+ *
+ ****************************************************************************/
+
+static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t offset, int nbytes, FAR const uint8_t *buffer)
+{
+	int ret = OK;
+	/* TODO we will add logic to handle bytewrite case */
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smart_journal_erase
+ *
+ * Description:
+ *   Erase function instead of MTD_ERASE
+ *   This will write journal data first, then ERASE.
+ *
+ ****************************************************************************/
+
+static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t physsector)
+{
+	int ret = OK;
+	/* TODO we will add logic to handle erase case */
+	return ret;
+}
+
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -4938,18 +5274,9 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 		}
 
 		dev->totalsectors = (uint16_t)totalsectors;
-		dev->freesectors = (uint16_t)dev->availSectPerBlk * dev->geo.neraseblocks;
+		dev->freesectors = (uint16_t)dev->availSectPerBlk * dev->neraseblocks;
 		dev->lastallocblock = 0;
 		dev->debuglevel = 0;
-
-		dev->reservedsector = SMART_FIRST_ALLOC_SECTOR;
-#ifdef CONFIG_MTD_SMART_JOURNALING
-		dev->total_journalsector = CONFIG_MTD_SMART_JOURNALING_NSECTOR;
-		dev->journalPerSector = (dev->sectorsize - sizeof(struct smart_sect_header_s)) \
-			/ sizeof(struct smart_journal_logging_data_s);
-		dev->reservedsector += dev->total_journalsector;
-		dev->sSeqLogMap = NULL;
-#endif
 
 		/* Mark the device format status an unknown. */
 
@@ -5010,7 +5337,6 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 		}
 
 		/* Do a scan of the device. */
-		fdbg("smart_initialize, scan start\n");
 		smart_scan(dev);
 	}
 
@@ -5049,4 +5375,3 @@ errout:
 	kmm_free(dev);
 	return ret;
 }
-
