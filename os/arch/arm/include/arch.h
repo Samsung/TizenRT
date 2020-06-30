@@ -114,7 +114,7 @@
 static inline uint32_t get_PSPLIM(void)
 {
 	uint32_t result;
-	__asm volatile ("MRS %0, psplim"  : "=r" (result) );
+	__asm volatile ("MRS %0, psplim"  : "=r" (result));
 	return result;
 }
 static inline void set_PSPLIM(uint32_t PSP_limit)
