@@ -124,10 +124,10 @@ static inline void sched_kucleanup(void)
 		 * 'while' condition above.
 		 */
 
-		if (address) {
+		if (heap && address) {
 			/* Return the memory to the user heap */
 
-			kumm_free(address);
+			mm_free(heap, address);
 		}
 	}
 }

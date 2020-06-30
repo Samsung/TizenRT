@@ -101,11 +101,11 @@
  *
  ************************************************************************/
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 void *malloc_at(int heap_index, size_t size)
 {
-	if (heap_index >= CONFIG_MM_NHEAPS || heap_index < 0) {
-		mdbg("malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_MM_NHEAPS);
+	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
+		mdbg("malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -210,7 +210,7 @@ FAR void *malloc(size_t size)
 	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
 
-	ret = heap_malloc(size, heap_idx, CONFIG_MM_NHEAPS, retaddr);
+	ret = heap_malloc(size, heap_idx, CONFIG_KMM_NHEAPS, retaddr);
 	if (ret != NULL) {
 		return ret;
 	}

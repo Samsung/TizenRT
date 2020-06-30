@@ -102,8 +102,7 @@ void env_release(FAR struct task_group_s *group)
 
 	if (group->tg_envp) {
 		/* Free the environment */
-
-		sched_ufree(group->tg_envp);
+		sched_kfree(group->tg_envp);
 	}
 
 	/* In any event, make sure that all environment-related varialbles in the

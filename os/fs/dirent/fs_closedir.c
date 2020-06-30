@@ -63,6 +63,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/dirent.h>
+#include <tinyara/sched.h>
 
 #include "inode/inode.h"
 
@@ -158,13 +159,25 @@ int closedir(FAR DIR *dirp)
 	/* Then release the container */
 
 	memset(idir, 0, sizeof(struct fs_dirent_s));
-	kumm_free(idir);
+	if (kmm_heapmember(idir)) {
+		/* If uheap is null, then its a kernel task / thread. */
+		kmm_free(idir);
+	} else {
+		kumm_free(idir);
+	}
+
 	return OK;
 
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 errout_with_inode:
 	inode_release(inode);
-	kumm_free(idir);
+	if (kmm_heapmember(idir)) {
+		/* If uheap is null, then its a kernel task / thread. */
+		kmm_free(idir);
+	} else {
+		kumm_free(idir);
+	}
+
 #endif
 
 errout:

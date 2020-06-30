@@ -107,15 +107,15 @@ FAR void *group_malloc(FAR struct task_group_s *group, size_t nbytes)
 {
 	/* A NULL group pointer means the current group */
 
+	FAR struct tcb_s *tcb = this_task();
 	if (!group) {
-		FAR struct tcb_s *tcb = this_task();
 		DEBUGASSERT(tcb && tcb->group);
 		group = tcb->group;
 	}
 
 	/* Check the group type */
 
-	if ((group->tg_flags & GROUP_FLAG_PRIVILEGED) != 0) {
+	if (!tcb->uheap) {
 		/* It is a privileged group... use the kernel mode memory allocator */
 
 		return kmm_malloc(nbytes);

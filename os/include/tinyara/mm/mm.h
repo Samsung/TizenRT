@@ -371,7 +371,7 @@ struct mm_heap_s {
 	FAR struct mm_allocnode_s *mm_heapstart[CONFIG_KMM_REGIONS];
 	FAR struct mm_allocnode_s *mm_heapend[CONFIG_KMM_REGIONS];
 
-#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
+#if CONFIG_KMM_REGIONS > 1
 	int mm_nregions;
 #endif
 
@@ -578,7 +578,7 @@ FAR void *kmm_memalign(size_t alignment, size_t size);
 
 /* Functions contained in kmm_heapmember.c **********************************/
 
-#if defined(CONFIG_MM_KERNEL_HEAP) && defined(CONFIG_DEBUG)
+#if defined(CONFIG_MM_KERNEL_HEAP)
 bool kmm_heapmember(FAR void *mem);
 #endif
 
@@ -691,7 +691,7 @@ struct mm_heap_s *mm_get_app_heap_with_name(char *app_name);
 char *mm_get_app_heap_name(void *address);
 #endif
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 struct heapinfo_total_info_s {
 	int total_heap_size;
 	int cur_free;

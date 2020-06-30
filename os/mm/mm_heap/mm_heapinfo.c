@@ -76,7 +76,7 @@ struct heapinfo_group_s heapinfo_group[HEAPINFO_USER_GROUP_NUM];
 struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 #endif
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 heapinfo_total_info_t total_info;
 #endif
 
@@ -108,7 +108,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	pid_t nonsched_list[CONFIG_MAX_TASKS];
 	size_t nonsched_size[CONFIG_MAX_TASKS];
 
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 	int region;
 #else
 #define region 0
@@ -132,7 +132,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 
 	/* Visit each region */
 
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 	for (region = 0; region < heap->mm_nregions; region++)
 #endif
 	{
@@ -201,7 +201,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	}
 #undef region
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 	total_info.total_heap_size += heap->mm_heapsize;
 	total_info.cur_free += fordblks;
 	if (total_info.largest_free_size < mxordblk) {
@@ -360,7 +360,7 @@ void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid
 	if (heap->total_alloc_size > heap->peak_alloc_size) {
 		heap->peak_alloc_size = heap->total_alloc_size;
 	}
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 	total_info.cur_alloc_size += size;
 	if (total_info.cur_alloc_size > total_info.peak_alloc_size) {
 		total_info.peak_alloc_size = total_info.cur_alloc_size;
@@ -521,7 +521,7 @@ void heapinfo_peak_init(struct mm_heap_s *heap)
 	int tcb_idx;
 	int heap_idx;
 
-	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
+	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
 		for (tcb_idx = 0; tcb_idx < CONFIG_MAX_TASKS; tcb_idx++) {
 			heap[heap_idx].alloc_list[tcb_idx].peak_alloc_size = 0;
 		}

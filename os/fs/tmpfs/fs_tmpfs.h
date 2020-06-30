@@ -77,7 +77,7 @@
 
 /* Redefine memory alloc function when using multi heap */
 
-#if CONFIG_MM_NHEAPS > 1 && CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_NHEAPS > 1 && CONFIG_KMM_REGIONS > 1
 #undef  kmm_malloc
 #undef  kmm_zalloc
 #undef  kmm_realloc
