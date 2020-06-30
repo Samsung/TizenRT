@@ -177,7 +177,7 @@ struct mm_heap_s *mm_get_heap(void *address)
 		return NULL;
 	}
 
-	return &USR_HEAP[heap_idx];
+	return &BASE_HEAP[heap_idx];
 }
 
 
@@ -190,7 +190,7 @@ struct mm_heap_s *mm_get_heap_with_index(int index)
 		mdbg("heap index is out of range.\n");
 		return NULL;
 	}
-	return &USR_HEAP[index];
+	return &BASE_HEAP[index];
 }
 
 /****************************************************************************
@@ -205,13 +205,13 @@ int mm_get_heapindex(void *mem)
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
 		int region = 0;
 #if CONFIG_MM_REGIONS > 1
-		for (; region < USR_HEAP[heap_idx].mm_nregions; region++)
+		for (; region < BASE_HEAP[heap_idx].mm_nregions; region++)
 #endif
 		{
 			/* A valid address from the user heap for this region would have to lie
 			 * between the region's two guard nodes.
 			 */
-			if ((mem > (void *)USR_HEAP[heap_idx].mm_heapstart[region]) && (mem < (void *)USR_HEAP[heap_idx].mm_heapend[region])) {
+			if ((mem > (void *)BASE_HEAP[heap_idx].mm_heapstart[region]) && (mem < (void *)BASE_HEAP[heap_idx].mm_heapend[region])) {
 				return heap_idx;
 			}
 		}

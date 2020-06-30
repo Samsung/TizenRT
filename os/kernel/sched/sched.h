@@ -206,10 +206,7 @@ extern volatile uint8_t g_alive_taskcount;
 
 extern volatile sq_queue_t g_delayed_kufree;
 
-#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
-	 defined(CONFIG_MM_KERNEL_HEAP)
 extern volatile sq_queue_t g_delayed_kfree;
-#endif
 
 /* This is the value of the last process ID assigned to a task */
 

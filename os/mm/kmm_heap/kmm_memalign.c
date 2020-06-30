@@ -127,7 +127,8 @@ FAR void *kmm_memalign(size_t alignment, size_t size)
 	struct mm_heap_s *kheap = kmm_get_heap();
 	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_memalign(&kheap[kheap_idx], alignment, size, __builtin_return_address(0));
+		ARCH_GET_RET_ADDRESS
+		ret = mm_memalign(&kheap[kheap_idx], alignment, size, retaddr);
 #else
 		ret = mm_memalign(&kheap[kheap_idx], alignment, size);
 #endif

@@ -93,7 +93,7 @@ struct mallinfo mallinfo(void)
 	memset(&info, 0, sizeof(struct mallinfo));
 #endif
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
-		mm_mallinfo(&USR_HEAP[heap_idx], &info);
+		mm_mallinfo(&BASE_HEAP[heap_idx], &info);
 	}
 	return info;
 }
@@ -104,7 +104,7 @@ int mallinfo(struct mallinfo *info)
 {
 	int heap_idx;
 	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
-		mm_mallinfo(&USR_HEAP[heap_idx], info);
+		mm_mallinfo(&BASE_HEAP[heap_idx], info);
 	}
 	return OK;
 }
