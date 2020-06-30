@@ -378,13 +378,23 @@ int smartfs_unmount(struct smartfs_mountpt_s *fs);
 
 int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath, uint16_t *parentdirsector, const char **filename);
 
-int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, uint16_t sectorno, FAR struct smartfs_ofile_s *sf);
+int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry);
+
+int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry);
+
+int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, bool newchain);
+
+int smartfs_alloc_firstsector(struct smartfs_mountpt_s *fs, uint16_t *sector, uint16_t type, FAR struct smartfs_ofile_s *sf);
+
+int smartfs_invalidateentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, uint16_t offset);
 
 int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry);
 
 int smartfs_countdirentries(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry);
 
 int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry, FAR struct smartfs_ofile_s *sf);
+
+void smartfs_setbuffer(struct smart_read_write_s *rw, uint16_t logsector, uint16_t offset, uint16_t count, uint8_t *buffer);
 
 uint16_t smartfs_rdle16(FAR const void *val);
 
