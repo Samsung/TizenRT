@@ -376,6 +376,12 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 
 int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, uint16_t sectorno, FAR struct smartfs_ofile_s *sf);
 
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+int smartfs_find_firstinvalidentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *invalidentry);
+
+int smartfs_replaceentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s oldentry, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, FAR struct smartfs_ofile_s *sf);
+#endif
+
 int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry);
 
 int smartfs_countdirentries(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry);

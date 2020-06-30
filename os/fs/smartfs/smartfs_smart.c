@@ -178,6 +178,9 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	uint16_t parentdirsector;
 	const char *filename;
 	struct smartfs_ofile_s *sf;
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	struct smartfs_entry_s invalidentry;
+#endif
 
 	/* Sanity checks */
 
@@ -278,10 +281,28 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 		if (parentdirsector != 0xFFFF) {
 			/* We can create in the given parent directory */
 
-			ret = smartfs_createentry(fs, parentdirsector, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry, 0xFFFF, sf);
-			if (ret != OK) {
-				goto errout_with_buffer;
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+			ret = smartfs_find_firstinvalidentry(fs, parentdirsector, &invalidentry);
+			if (ret == OK) {
+				invalidentry.firstsector = SMARTFS_ERASEDSTATE_16BIT;
+				ret = smartfs_replaceentry(fs, invalidentry, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry, sf);
+				if (ret != OK) {
+					goto errout_with_buffer;
+				}
+			} else {
+				if (ret != -ENOENT) {
+					goto errout_with_buffer;
+				} else
+#endif
+				{
+					ret = smartfs_createentry(fs, parentdirsector, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry, 0xFFFF, sf);
+					if (ret != OK) {
+						goto errout_with_buffer;
+					}
+				}
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 			}
+#endif
 		} else {
 			/* Trying to create in a directory that doesn't exist */
 
@@ -1656,6 +1677,9 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	struct smartfs_entry_s entry;
 	uint16_t parentdirsector;
 	const char *filename;
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	struct smartfs_entry_s invalidentry;
+#endif
 
 	/* Sanity checks */
 
@@ -1696,13 +1720,29 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 
 		/* Create the directory */
 
-		ret = smartfs_createentry(fs, parentdirsector, filename,
-								  SMARTFS_DIRENT_TYPE_DIR, mode, &entry, 0xFFFF, NULL);
-		if (ret != OK) {
-			goto errout_with_semaphore;
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+		ret = smartfs_find_firstinvalidentry(fs, parentdirsector, &invalidentry);
+		if (ret == OK) {
+			invalidentry.firstsector = SMARTFS_ERASEDSTATE_16BIT;
+			ret = smartfs_replaceentry(fs, invalidentry, filename, SMARTFS_DIRENT_TYPE_DIR, mode, &entry, NULL);
+			if (ret != OK) {
+				goto errout_with_semaphore;
+			}
+		} else {
+			if (ret != -ENOENT) {
+				goto errout_with_semaphore;
+			} else
+#endif
+			{
+				ret = smartfs_createentry(fs, parentdirsector, filename, SMARTFS_DIRENT_TYPE_DIR, mode, &entry, 0xFFFF, NULL);
+				if (ret != OK) {
+					goto errout_with_semaphore;
+				}
+				ret = OK;
+			}
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 		}
-
-		ret = OK;
+#endif
 	}
 
 errout_with_semaphore:
@@ -1819,7 +1859,9 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	uint16_t entrysize;
 	struct smartfs_entry_header_s *direntry;
 	struct smart_read_write_s readwrite;
-
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	struct smartfs_entry_s invalidentry;
+#endif
 	uint8_t *tmp_pntr = NULL;
 	uint16_t tmp_flag = 0;
 
@@ -1922,46 +1964,72 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		mode = oldentry.flags & SMARTFS_DIRENT_MODE;
 		type = oldentry.flags & SMARTFS_DIRENT_TYPE;
 
-		ret = smartfs_createentry(fs, newparentdirsector, newfilename, type, mode, &newentry, oldentry.firstsector, NULL);
-		if (ret != OK) {
-			goto errout_with_semaphore;
-		}
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+		if (oldparentdirsector == newparentdirsector) {
+			ret = smartfs_replaceentry(fs, oldentry, newfilename, type, mode, &newentry, NULL);
+			if (ret != OK) {
+				goto errout_with_semaphore;
+			}
+		} else {
+			ret = smartfs_find_firstinvalidentry(fs, newparentdirsector, &invalidentry);
+			if (ret == OK) {
+				invalidentry.firstsector = SMARTFS_ERASEDSTATE_16BIT;
+				ret = smartfs_replaceentry(fs, invalidentry, newfilename, SMARTFS_DIRENT_TYPE_FILE, mode, &newentry, NULL);
+				if (ret != OK) {
+					goto errout_with_semaphore;
+				}
+			} else {
+				if (ret != -ENOENT) {
+					goto errout_with_semaphore;
+				} else
+#endif
+				{
+					ret = smartfs_createentry(fs, newparentdirsector, newfilename, type, mode, &newentry, oldentry.firstsector, NULL);
+					if (ret != OK) {
+						goto errout_with_semaphore;
+					}
+					/* Now mark the old entry as inactive */
+					readwrite.logsector = oldentry.dsector;
+					readwrite.offset = 0;
+					readwrite.count = fs->fs_llformat.availbytes;
+					readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
 
-		/* Now mark the old entry as inactive */
+					ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+					if (ret < 0) {
+						fdbg("Error %d reading sector %d data\n", ret, oldentry.dsector);
+						goto errout_with_semaphore;
+					}
 
-		readwrite.logsector = oldentry.dsector;
-		readwrite.offset = 0;
-		readwrite.count = fs->fs_llformat.availbytes;
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-		if (ret < 0) {
-			fdbg("Error %d reading sector %d data\n", ret, oldentry.dsector);
-			goto errout_with_semaphore;
-		}
-		// bug fix for rename
-		tmp_pntr = (uint8_t *)&fs->fs_rwbuffer[oldentry.doffset];
-		tmp_flag = tmp_pntr[0];
-		tmp_flag |= (tmp_pntr[1] << 8);
+					// bug fix for rename
+					tmp_pntr = (uint8_t *)&fs->fs_rwbuffer[oldentry.doffset];
+					tmp_flag = tmp_pntr[0];
+					tmp_flag |= (tmp_pntr[1] << 8);
 
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-		tmp_flag &= ~SMARTFS_DIRENT_ACTIVE;
+					tmp_flag &= ~SMARTFS_DIRENT_ACTIVE;
 #else
-		tmp_flag |= SMARTFS_DIRENT_ACTIVE;
+					tmp_flag |= SMARTFS_DIRENT_ACTIVE;
 #endif
-		tmp_pntr[0] = (uint8_t)(tmp_flag & 0x00FF);
-		tmp_pntr[1] = (uint8_t)((tmp_flag >> 8) & 0x00FF);
+					tmp_pntr[0] = (uint8_t)(tmp_flag & 0x00FF);
+					tmp_pntr[1] = (uint8_t)((tmp_flag >> 8) & 0x00FF);
 
-		/* Now write the updated flags back to the device */
+					/* Now write the updated flags back to the device */
 
-		readwrite.offset = oldentry.doffset;
-		readwrite.count = sizeof(uint16_t);
-		readwrite.buffer = (uint8_t *)tmp_pntr;
+					readwrite.offset = oldentry.doffset;
+					readwrite.count = sizeof(uint16_t);
+					readwrite.buffer = (uint8_t *)tmp_pntr;
 
-		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-		if (ret < 0) {
-			fdbg("Error %d writing flag bytes for sector %d\n", ret, readwrite.logsector);
-			goto errout_with_semaphore;
+					ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+					if (ret < 0) {
+						fdbg("Error %d writing flag bytes for sector %d\n", ret, readwrite.logsector);
+						goto errout_with_semaphore;
+					}
+				}
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+			}
 		}
+#endif
+
 	} else {
 		/* Trying to create in a directory that doesn't exist */
 
