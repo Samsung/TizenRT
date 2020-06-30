@@ -65,6 +65,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/dirent.h>
+#include <tinyara/sched.h>
 #include <sys/stat.h>
 
 #include "inode/inode.h"
@@ -244,6 +245,7 @@ FAR DIR *opendir(FAR const char *path)
 	struct stat st;
 	bool isroot = false;
 	int ret;
+	struct tcb_s *rtcb = sched_self();
 
 	/* If we are given 'nothing' then we will interpret this as
 	 * request for the root inode.
@@ -285,7 +287,13 @@ FAR DIR *opendir(FAR const char *path)
 	 * container.
 	 */
 
-	dir = (FAR struct fs_dirent_s *)kumm_zalloc(sizeof(struct fs_dirent_s));
+	if (!rtcb->uheap) {
+		/* If uheap is null, then its a kernel side task / thread. */
+		dir = (FAR struct fs_dirent_s *)kmm_zalloc(sizeof(struct fs_dirent_s));
+	} else {
+		dir = (FAR struct fs_dirent_s *)kumm_zalloc(sizeof(struct fs_dirent_s));
+	}
+
 	if (!dir) {
 		/* Insufficient memory to complete the operation. */
 
@@ -381,7 +389,12 @@ FAR DIR *opendir(FAR const char *path)
 	/* Nasty goto's make error handling simpler */
 
 errout_with_direntry:
-	kumm_free(dir);
+	if (!rtcb->uheap) {
+		/* If uheap is null, then its a kernel side task / thread. */
+		kmm_free(dir);
+	} else {
+		kumm_free(dir);
+	}
 
 errout_with_semaphore:
 	inode_semgive();

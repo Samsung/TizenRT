@@ -71,7 +71,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #endif
 
 //manually redefined this size config
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 #define CONFIG_SPIRAM_SIZE regionx_size[1]
 #else
 #define CONFIG_SPIRAM_SIZE 4194304

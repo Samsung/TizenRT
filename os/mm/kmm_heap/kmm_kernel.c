@@ -99,7 +99,6 @@
  *
  ************************************************************************/
 
-#ifdef CONFIG_DEBUG
 bool kmm_heapmember(FAR void *mem)
 {
 	int kheap_idx;
@@ -122,6 +121,5 @@ bool kmm_heapmember(FAR void *mem)
 
 	return false;
 }
-#endif
 
 #endif							/* ((CONFIG_BUILD_PROTECTED && __KERNEL__) || CONFIG_BUILD_KERNEL)  && CONFIG_MM_KERNEL_HEAP */

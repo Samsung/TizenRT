@@ -83,11 +83,11 @@
  *
  ************************************************************************/
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 void *memalign_at(int heap_index, size_t alignment, size_t size)
 {
-	if (heap_index >= CONFIG_MM_NHEAPS || heap_index < 0) {
-		mdbg("memalign_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_MM_NHEAPS);
+	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
+		mdbg("memalign_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -118,7 +118,7 @@ FAR void *memalign(size_t alignment, size_t size)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 #endif
-	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
+	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size, retaddr);
 #else

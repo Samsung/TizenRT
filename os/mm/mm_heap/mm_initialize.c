@@ -101,7 +101,7 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	FAR struct mm_freenode_s *node;
 	uintptr_t heapbase;
 	uintptr_t heapend;
-#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
+#if (CONFIG_KMM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
 	int IDX = heap->mm_nregions;
 #else
 #define IDX 0
@@ -164,7 +164,7 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 
 #undef IDX
 
-#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
+#if (CONFIG_KMM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
 	heap->mm_nregions++;
 #endif
 
@@ -214,7 +214,7 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 
 	heap->mm_heapsize = 0;
 
-#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
+#if (CONFIG_KMM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
 	heap->mm_nregions = 0;
 #endif
 

@@ -80,11 +80,11 @@
  *
  ************************************************************************/
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 void *zalloc_at(int heap_index, size_t size)
 {
-	if (heap_index >= CONFIG_MM_NHEAPS || heap_index < 0) {
-		mdbg("zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_MM_NHEAPS);
+	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
+		mdbg("zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -173,7 +173,7 @@ FAR void *zalloc(size_t size)
 	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
 
-	ret = heap_zalloc(size, heap_idx, CONFIG_MM_NHEAPS, retaddr);
+	ret = heap_zalloc(size, heap_idx, CONFIG_KMM_NHEAPS, retaddr);
 	if (ret != NULL) {
 		return ret;
 	}

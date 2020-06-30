@@ -45,6 +45,7 @@ typedef struct app_heap_s {
 	struct app_heap_s *blink;
 	char app_name[BIN_NAME_MAX];
 	struct mm_heap_s *heap;
+	bool is_active;
 } app_heap_s;
 
 static dq_queue_t app_heap_q;
@@ -62,7 +63,20 @@ void mm_initialize_app_heap()
 
 void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name)
 {
-	app_heap_s *node = (app_heap_s *)kmm_malloc(sizeof(app_heap_s));
+	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
+
+	/* Search the heap node in the list */
+	while (node) {
+		if (node->heap == heap) {
+			/* Remove and free the matching node */
+			node->is_active = true;
+			return;
+		}
+
+		node = dq_next(node);
+	}
+
+	node = (app_heap_s *)kmm_malloc(sizeof(app_heap_s));
 	if (!node) {
 		mdbg("Error allocating heap node\n");
 		return;
@@ -83,8 +97,7 @@ void mm_remove_app_heap_list(struct mm_heap_s *heap)
 	while (node) {
 		if (node->heap == heap) {
 			/* Remove and free the matching node */
-			dq_rem((dq_entry_t *)node, &app_heap_q);
-			kmm_free(node);
+			node->is_active = false;
 			return;
 		}
 
@@ -92,14 +105,14 @@ void mm_remove_app_heap_list(struct mm_heap_s *heap)
 	}
 }
 
-static struct mm_heap_s *mm_get_app_heap(void *address)
+static struct mm_heap_s *mm_get_app_heap_node(void *address)
 {
 	/* First, search the address in list of app heaps */
 	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
 
 	while (node) {
 		if ((address > (void *)node->heap->mm_heapstart[0]) && (address < (void *)node->heap->mm_heapend[0])) {
-			return node->heap;
+			return node;
 		}
 		node = dq_next(node);
 	}
@@ -112,7 +125,7 @@ struct mm_heap_s *mm_get_app_heap_with_name(char *app_name)
 	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
 
 	/* Search the heap */
-	while (node) {
+	while (node && node->is_active) {
 		if (strncmp(node->app_name, app_name, BIN_NAME_MAX) == 0) {
 			return node->heap;
 		}
@@ -129,7 +142,7 @@ char *mm_get_app_heap_name(void *address)
 	/* First, search the address in list of app heaps */
 	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
 
-	while (node) {
+	while (node && node->is_active) {
 		if ((address > (void *)node->heap->mm_heapstart[0]) && (address < (void *)node->heap->mm_heapend[0])) {
 			return node->app_name;
 		}
@@ -152,9 +165,13 @@ struct mm_heap_s *mm_get_heap(void *address)
 {
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
 	/* If address was not found in kernel or user heap, search for it in app heaps */
-	struct mm_heap_s *heap =  mm_get_app_heap(address);
-	if (heap) {
-		return heap;
+	app_heap_s *node =  mm_get_app_heap_node(address);
+	if (node) {
+		if (node->is_active) {
+			return node->heap;
+		} else {
+			return NULL;
+		}
 	}
 #endif
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -186,7 +203,7 @@ struct mm_heap_s *mm_get_heap(void *address)
  ****************************************************************************/
 struct mm_heap_s *mm_get_heap_with_index(int index)
 {
-	if (index >= CONFIG_MM_NHEAPS) {
+	if (index >= CONFIG_KMM_NHEAPS) {
 		mdbg("heap index is out of range.\n");
 		return NULL;
 	}
@@ -202,9 +219,9 @@ int mm_get_heapindex(void *mem)
 	if (mem == NULL) {
 		return 0;
 	}
-	for (heap_idx = 0; heap_idx < CONFIG_MM_NHEAPS; heap_idx++) {
+	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
 		int region = 0;
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 		for (; region < BASE_HEAP[heap_idx].mm_nregions; region++)
 #endif
 		{

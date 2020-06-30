@@ -138,15 +138,18 @@ int binfmt_exit(FAR struct binary_s *bin)
 		address = (FAR void *)sq_next((FAR sq_entry_t *)address);
 	}
 	mm_remove_app_heap_list(bin->uheap);
-	/* Free the RAM partition into which this app was loaded */
-	kumm_free((void *)bin->ramstart);
 #endif
 	/* Free the load structure */
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	if (!bin->reload)
+	if (!bin->reload) {
 #endif
+		/* Free the RAM partition into which this app was loaded */
+		kmm_free((void *)bin->ramstart);
 		kmm_free(bin);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	}
+#endif
 
 	return ret;
 }

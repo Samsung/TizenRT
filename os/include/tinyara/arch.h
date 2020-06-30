@@ -746,7 +746,7 @@ void up_signal_handler(_sa_sigaction_t sighand, int signo, FAR siginfo_t *info, 
 
 /* Memory management ********************************************************/
 
-#if (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
+#if CONFIG_KMM_REGIONS > 1
 void up_add_kregion(void);
 #else
 #define up_add_kregion()
@@ -764,23 +764,6 @@ void up_add_kregion(void);
  ****************************************************************************/
 
 void up_userspace(void);
-
-/****************************************************************************
- * Name: up_allocate_heap
- *
- * Description:
- *   This function will be called to dynamically set aside the heap region.
- *
- *   For the kernel build (CONFIG_BUILD_PROTECTED=y) with both kernel- and
- *   user-space heaps (CONFIG_MM_KERNEL_HEAP=y), this function provides the
- *   size of the unprotected, user-space heap.
- *
- *   If a protected kernel-space heap is provided, the kernel heap must be
- *   allocated (and protected) by an analogous up_allocate_kheap().
- *
- ****************************************************************************/
-
-void up_allocate_heap(FAR void **heap_start, size_t *heap_size);
 
 /****************************************************************************
  * Name: up_allocate_kheap
