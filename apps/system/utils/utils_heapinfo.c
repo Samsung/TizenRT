@@ -54,13 +54,13 @@ const static char *end_list = CONFIG_HEAPINFO_USER_GROUP_LIST + sizeof(CONFIG_HE
 #define HEAPINFO_DISPLAY_GROUP          2
 #define HEAPINFO_DISPLAY_SUMMARY        3
 
-#if CONFIG_MM_REGIONS > 1
-extern void *regionx_start[CONFIG_MM_REGIONS];
-extern size_t regionx_size[CONFIG_MM_REGIONS];
-extern int regionx_heap_idx[CONFIG_MM_REGIONS];
+#if CONFIG_KMM_REGIONS > 1
+extern void *kregionx_start[CONFIG_KMM_REGIONS];
+extern size_t kregionx_size[CONFIG_KMM_REGIONS];
+extern int kregionx_heap_idx[CONFIG_KMM_REGIONS];
 #endif
 
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 static void heapinfo_print_regions(void)
 {
 	int region_idx;
@@ -69,8 +69,8 @@ static void heapinfo_print_regions(void)
 	printf("****************************************************************\n");
 	printf(" Region # | Start Addr |  End Addr  |  SIZE   | Heap Idx \n");
 	printf("----------------------------------------------------------\n");
-	for (region_idx = 0; region_idx < CONFIG_MM_REGIONS; region_idx++) {
-		printf("    %2d    | 0x%8x | 0x%8x |%8d |    %2d    \n", region_idx, regionx_start[region_idx], regionx_start[region_idx] + regionx_size[region_idx], regionx_size[region_idx], regionx_heap_idx[region_idx]);
+	for (region_idx = 0; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
+		printf("    %2d    | 0x%8x | 0x%8x |%8d |    %2d    \n", region_idx, kregionx_start[region_idx], kregionx_start[region_idx] + kregionx_size[region_idx], kregionx_size[region_idx], kregionx_heap_idx[region_idx]);
 	}
 }
 #endif
@@ -215,21 +215,16 @@ int utils_heapinfo(int argc, char **args)
 		goto usage;
 	}
 
-	while ((opt = getopt(argc, args, "ikub:ap:fgr")) != ERROR) {
+	while ((opt = getopt(argc, args, "ikb:ap:fgr")) != ERROR) {
 		switch (opt) {
 		/* i : initialize the peak allocated memory size. */
 		case 'i':
 			options.mode = HEAPINFO_INIT_PEAK;
 			init_flag = true;
 			break;
-		/* k, u, b : select the heap type about kernel, user, binary. */
+		/* k, b : select the heap type about kernel, binary. */
 		case 'k':
 			options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
-			break;
-#ifdef CONFIG_BUILD_PROTECTED
-		case 'u':
-			options.heap_type = HEAPINFO_HEAP_TYPE_USER;
-			heap_name = "USER";
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case 'b':
@@ -237,7 +232,6 @@ int utils_heapinfo(int argc, char **args)
 			strncpy(options.app_name, optarg, BIN_NAME_MAX);
 			heap_name = options.app_name;
 			break;
-#endif
 #endif
 		/* a, p, f, g, e : select heapinfo display options */
 		case 'a':
@@ -263,7 +257,7 @@ int utils_heapinfo(int argc, char **args)
 			heapinfo_display_flag = HEAPINFO_DISPLAY_GROUP;
 			break;
 		case 'r':
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 			heapinfo_print_regions();
 #else
 			goto usage;
@@ -323,7 +317,6 @@ usage:
 #ifdef CONFIG_BUILD_PROTECTED
 	printf("\nTargets:\n");
 	printf(" -k             Kernel Heap\n");
-	printf(" -u             User Heap\n");
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	printf(" -b BIN_NAME    Heap for BIN_NAME binary\n");
 #endif
@@ -335,7 +328,7 @@ usage:
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	printf(" -g             Show the User defined group allocation details \n");
 #endif
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 	printf(" -r             Show the all region information\n");
 #endif
 	printf(" -i             Initialize the peak allocated size\n");

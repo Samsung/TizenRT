@@ -105,7 +105,7 @@ static void allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 		}
 	}
 
-	loadinfo->binp->ramstart = *allocs[0] = (uintptr_t)kumm_memalign(sizes[0], totalsize);
+	loadinfo->binp->ramstart = *allocs[0] = (uintptr_t)kmm_memalign(sizes[0], totalsize);
 	*allocs[1] = *allocs[0] + sizes[0];
 	*allocs[2] = *allocs[1] + sizes[1];
 }
@@ -210,7 +210,7 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	}
 
 	/* Allocate the RAM partition to load the app into */
-	loadinfo->binp->ramstart = kumm_memalign(loadinfo->binp->ramsize, loadinfo->binp->ramsize);
+	loadinfo->binp->ramstart = kmm_memalign(loadinfo->binp->ramsize, loadinfo->binp->ramsize);
 	if (!loadinfo->binp->ramstart) {
 		berr("ERROR: Failed to allocate RAM partition\n");
 		return -ENOMEM;

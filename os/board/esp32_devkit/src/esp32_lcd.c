@@ -110,7 +110,7 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define SWAPBYTES(i) ((i >> 8) | (i << 8))
 //when enabling spiram and use 80M VSPI, it's conflict to use spiram for LCD transmit buffer
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 #define LCD_MALLOC(size) malloc_at(0, (size))
 #else
 #define LCD_MALLOC(size) malloc(size)

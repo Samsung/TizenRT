@@ -256,6 +256,12 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 			mm_shrinkchunk(heap, (FAR struct mm_allocnode_s *)node, size + SIZEOF_MM_ALLOCNODE);
 		}
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+                heapinfo_update_node((struct mm_allocnode_s *)node, caller_retaddr);
+                heapinfo_add_size(heap, ((struct mm_allocnode_s *)node)->pid, node->size);
+                heapinfo_update_total_size(heap, node->size, ((struct mm_allocnode_s *)node)->pid);
+#endif
+
 		ret = (void *)alignchunk;
 	}
 

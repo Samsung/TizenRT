@@ -126,7 +126,12 @@ int env_dup(FAR struct task_group_s *group)
 		if (envlen > 0) {
 			/* There is an environment, duplicate it */
 
-			envp = (FAR char *)kumm_malloc(envlen);
+			if (!ptcb->uheap) {
+				envp = (FAR char *)kmm_malloc(envlen);
+			} else {
+				envp = (FAR char *)kumm_malloc(envlen);
+			}
+
 			if (envp == NULL) {
 				/* The parent's environment can not be inherited due to a
 				 * failure in the allocation of the child environment.

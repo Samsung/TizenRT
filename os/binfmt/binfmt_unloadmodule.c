@@ -191,7 +191,7 @@ int unload_module(FAR struct binary_s *binp)
 #ifndef CONFIG_APP_BINARY_SEPARATION
 		if (binp->alloc[i]) {
 			binfo("Freeing alloc[%d]: %p\n", i, binp->alloc[i]);
-			kumm_free((FAR void *)binp->alloc[i]);
+			kmm_free((FAR void *)binp->alloc[i]);
 		}
 #endif
 

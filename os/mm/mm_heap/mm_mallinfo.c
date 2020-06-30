@@ -91,7 +91,7 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 	int    ordblks  = 0;		/* Number of non-inuse chunks */
 	size_t uordblks = 0;		/* Total allocated space */
 	size_t fordblks = 0;		/* Total non-inuse space */
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 	int region;
 #else
 #define region 0
@@ -101,7 +101,7 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 
 	/* Visit each region */
 
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 	for (region = 0; region < heap->mm_nregions; region++)
 #endif
 	{
@@ -137,7 +137,7 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 
 	DEBUGASSERT(uordblks + fordblks == heap->mm_heapsize);
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 	info->arena    += heap->mm_heapsize;
 	info->ordblks  += ordblks;
 	info->mxordblk += mxordblk;
