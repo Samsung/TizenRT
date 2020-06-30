@@ -111,7 +111,7 @@
 
 FAR void *sbrk(intptr_t incr)
 {
-	return mm_sbrk(USR_HEAP, incr, CONFIG_ARCH_HEAP_NPAGES << MM_PGSHIFT);
+	return mm_sbrk(BASE_HEAP, incr, CONFIG_ARCH_HEAP_NPAGES << MM_PGSHIFT);
 }
 
 #endif							/* CONFIG_BUILD_KERNEL */

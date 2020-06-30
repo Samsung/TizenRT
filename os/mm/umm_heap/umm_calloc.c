@@ -88,9 +88,9 @@ void *calloc_at(int heap_index, size_t n, size_t elem_size)
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_calloc(&USR_HEAP[heap_index], n, elem_size, retaddr);
+	return mm_calloc(&BASE_HEAP[heap_index], n, elem_size, retaddr);
 #else
-	return mm_calloc(&USR_HEAP[heap_index], n, elem_size);
+	return mm_calloc(&BASE_HEAP[heap_index], n, elem_size);
 #endif
 }
 #endif
@@ -118,9 +118,9 @@ static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t retadd
 
 	for (heap_idx = s; heap_idx < e; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_calloc(&USR_HEAP[heap_idx], n, elem_size, retaddr);
+		ret = mm_calloc(&BASE_HEAP[heap_idx], n, elem_size, retaddr);
 #else
-		ret = mm_calloc(&USR_HEAP[heap_idx], n, elem_size);
+		ret = mm_calloc(&BASE_HEAP[heap_idx], n, elem_size);
 #endif
 		if (ret != NULL) {
 			return ret;

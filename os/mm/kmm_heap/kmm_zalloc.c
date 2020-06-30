@@ -121,7 +121,8 @@ FAR void *kmm_zalloc(size_t size)
 
 	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_zalloc(&kheap[kheap_idx], size, __builtin_return_address(0));
+		ARCH_GET_RET_ADDRESS
+		ret = mm_zalloc(&kheap[kheap_idx], size, retaddr);
 #else
 		ret = mm_zalloc(&kheap[kheap_idx], size);
 #endif
