@@ -102,7 +102,7 @@ CMN_CSRCS += arm_mpu.c
 endif
 
 ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
-CMN_CSRCS += up_schedyield.c
+CMN_CSRCS += arm_schedyield.c
 endif
 
 ifeq ($(CONFIG_BUILD_KERNEL),y)

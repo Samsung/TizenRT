@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,22 +63,20 @@ void up_schedyield(struct tcb_s *rtcb)
 	if (current_regs) {
 		/* Yes, then we have to do things differently.
 		 * Just copy the current_regs into the OLD rtcb.
-		 * rtcb is the tcb of task which is yeilding the resource
 		 */
+
 		up_savestate(rtcb->xcp.regs);
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 		/* Store the secure context and PSPLIM of OLD rtcb */
 		tz_store_context(tcb->xcp.regs);
 #endif
 
-		/* Restore the exception context of the new changed rtcb from the head
+		/* Restore the exception context of the rtcb at the (new) head
 		 * of the g_readytorun task list.
 		 */
 
 		rtcb = this_task();
-		/* Then switch contexts.  Any necessary address environment
-		 * changes will be made when the interrupt returns.
-		 */
+		/* Then switch contexts */
 
 		up_restorestate(rtcb->xcp.regs);
 #ifdef CONFIG_ARMV8M_TRUSTZONE
@@ -87,20 +85,20 @@ void up_schedyield(struct tcb_s *rtcb)
 #endif
 
 	}
-	/* Copy the exception context into the TCB at the (old) head of the
-	 * g_readytorun Task list. if up_saveusercontext returns a non-zero
-	 * value, then this is really the previously running task restarting!
-	 * here, rtcb is the tcb of task which is yeilding the resource
-	 */
+	/* No, then we will need to perform the user context switch */
 
-	else if (!up_saveusercontext(rtcb->xcp.regs)) {
-		/* Restore the exception context of the (new) changed rtcb from the head
-		 * of the g_readytorun task list.
+	else {
+		/* Switch context to the context of the task at the head of the
+		 * ready to run list.
 		 */
 
-		rtcb = this_task();
-		/* Then switch contexts */
+		struct tcb_s *nexttcb = this_task();
+		up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
 
-		up_fullcontextrestore(rtcb->xcp.regs);
+		/* up_switchcontext forces a context switch to the task at the
+		 * head of the ready-to-run list.  It does not 'return' in the
+		 * normal sense.  When it does return, it is because the blocked
+		 * task is again ready to run and has execution priority.
+		 */
 	}
 }
