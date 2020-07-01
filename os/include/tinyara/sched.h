@@ -610,11 +610,11 @@ struct tcb_s {
 
 	struct xcptcontext xcp;		/* Interrupt register save area        */
 
+	uint32_t uheap;			/* User heap object pointer */
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	uint32_t ram_start;		/* Start address of RAM partition for this app */
 	uint32_t ram_size;		/* Size of RAM partition for this app */
 	uint32_t uspace;		/* User space object for app binary */
-	uint32_t uheap;			/* User heap object pointer */
 
 #ifdef CONFIG_ARM_MPU
 	uint32_t mpu_regs[3 * MPU_NUM_REGIONS];	/* We need 3 register values to configure each MPU region */

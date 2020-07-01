@@ -173,19 +173,16 @@ config BUILD_FLAT
 		the blob.  There are no special privileges, protections, or
 		restraints.
 
-config BUILD_PROTECTED
-	bool "TinyAra protected build"
-	depends on ARCH_USE_MPU
-	select LIB_SYSCALL
-	select BUILD_2PASS
+config APP_BINARY_SEPARATION
+	bool "Application binary separation build"
+	select BUILD_PROTECTED
+	default n
 	---help---
-		Builds TinyAra and selected applications as two "blobs":  A protected,
-		privileged kernel blob and a separate unprivileged, user blob. This
-		require sue of the two pass build with each blob being build on each pass.
-
-		NOTE:  This build configuration requires that the platform support
-		a memory protection unit (MPU).  Support, however, may not be
-		implemented on all platforms.
+		Enables application binary separation.
+		This config is tightly coupled to CONFIG_BUILD_PROTECTED. When protected
+		build is selected, then selecting this config generates separate binary for
+		each user space application, apart from a separate kernel binary. Selecting
+		config also applies MPU based memory isolation and protection for each app.
 
 config BUILD_KERNEL
 	bool "TinyAra kernel build"
@@ -201,56 +198,6 @@ config BUILD_KERNEL
 		however, may not be implemented on all platforms.
 
 endchoice # Build configuration
-
-config FLASH_START_ADDR
-	hex "Flash memory start address"
-	default 0x0
-	---help---
-		Start address of Flash memory
-
-if BUILD_PROTECTED
-
-config SRAM_START_ADDR
-	hex "RAM memory start address"
-	default 0x0
-	---help---
-		Start address of RAM memory to be used by the linker script. If multiple RAM are available,
-		then this config gives the start address of the RAM region for which the kernel and user
-		binaries need to be linked during the build process.
-
-config KSRAM_SIZE
-	int "Kernel RAM size in KB"
-	default 0
-	---help---
-		Size of kernel RAM region in KB. This value will be used in the linker scripts as the total size
-		of the kernel ram area in the SRAM region. This size will accomodate the kernel data and bss. 
-
-config USRAM_SIZE
-	int "User RAM size in KB"
-	default 0
-	---help---
-		Size of user RAM region in KB. This value will be used in the linker scripts as the total size
-                of the user ram area in the SRAM region. This size will accomodate the user data, bss and heap.
-
-config AUTOGEN_MEMORY_LDSCRIPT
-	bool "Auto generate memory.ld linker script"
-	default n
-	---help---
-		Auto generate the board specific memory.ld linker script using values
-		from the configuration file
-
-endif # BUILD_PROTECTED
-
-config APP_BINARY_SEPARATION
-	bool "Application binary separation build"
-	depends on BUILD_PROTECTED
-	default n
-	---help---
-		Enables application binary separation.
-		This config is tightly coupled to CONFIG_BUILD_PROTECTED. When protected
-		build is selected, then selecting this config generates separate binary for
-		each user space application, apart from a separate kernel binary. Selecting
-		config also applies MPU based memory isolation and protection for each app.
 
 if APP_BINARY_SEPARATION
 
@@ -299,40 +246,27 @@ endif # SUPPORT_COMMON_BINARY
 endif # APP_BINARY_SEPARATION
 
 
-config BUILD_2PASS
-	bool "Two pass build"
-	default n
-	depends on !BUILD_KERNEL
-	---help---
-		Enables the two pass build options.
+config BUILD_PROTECTED
+	bool
+	depends on ARCH_USE_MPU
+	select LIB_SYSCALL
+	select BUILD_2PASS
 
-		Two-pass build options.  If the 2 pass build option is selected, then these
-		options configure the make system build a extra link object. This link object
-		is assumed to be an incremental (relative) link object, but could be a static
-		library (archive) (some modification to this Makefile would be required if
-		PASS1_TARGET generates an archive). Pass 1 1ncremental (relative) link
-		objects should be put into the processor-specific source directory (where other
-		link objects will be created).  If the pass1 object is an archive, it could
-		go anywhere.
+config BUILD_2PASS
+	bool
+	default n
+	select PASS1_TARGET
+	depends on !BUILD_KERNEL
 
 if BUILD_2PASS
 
 config PASS1_TARGET
-	string "Pass one target"
+	string
 	default "all"
-	---help---
-		The name of the first pass build target.  This
-		can be specific build target, a special build target (all, default, etc.)
-		or may just be left undefined.
 
 config PASS1_OBJECT
-	string "Pass one object"
+	string
 	default ""
-	---help---
-		May be used to include an extra, pass1 object
-		into the final link.  This would probably be the object generated
-		from the PASS1_TARGET.  It may be available at link time
-		in the arch/<architecture>/src directory.
 
 endif # Build 2-pass
 endmenu # Build Setup

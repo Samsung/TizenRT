@@ -262,17 +262,6 @@ EXTERN uint32_t _sdata;			/* Start of .data */
 EXTERN uint32_t _edata;			/* End+1 of .data */
 EXTERN uint32_t _sbss;			/* Start of .bss */
 EXTERN uint32_t _ebss;			/* End+1 of .bss */
-EXTERN uint32_t __ksram_segment_start__[];
-EXTERN uint32_t __ksram_segment_size__[];
-
-EXTERN uint32_t __usram_segment_start__[];
-EXTERN uint32_t __usram_segment_size__[];
-
-EXTERN uint32_t __uflash_segment_start__[];
-EXTERN uint32_t __uflash_segment_size__[];
-
-EXTERN uint32_t __kflash_segment_start__[];
-EXTERN uint32_t __kflash_segment_size__[];
 
 /* Sometimes, functions must be executed from RAM.  In this case, the following
  * macro may be used (with GCC!) to specify a function that will execute from
