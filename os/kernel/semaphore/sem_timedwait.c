@@ -227,8 +227,6 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	ret = sem_trywait(sem);
 	if (ret == OK) {
 		/* We got it! */
-
-		irqrestore(flags);
 		wd_delete(rtcb->waitdog);
 		rtcb->waitdog = NULL;
 		leave_cancellation_point();
@@ -311,7 +309,6 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	/* Error exits */
 
 errout_disabled:
-	irqrestore(flags);
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
 
