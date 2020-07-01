@@ -183,9 +183,12 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 */
 
 #ifdef HAVE_KERNEL_HEAP
-		/* Use the kernel allocator if this is a kernel thread */
-
-		if (ttype == TCB_FLAG_TTYPE_KERNEL) {
+		/* Use the kernel allocator if this is a task / pthread being created
+		 * to run only on kernel side. We verify this by checking the uheap
+		 * object in the tcb of current running task. uheap is always non-null
+		 * in user threads and null for kernel threads.
+		 */
+		if (!sched_self()->uheap) {
 			tcb->stack_alloc_ptr = (uint32_t *)kmm_malloc(stack_alloc_size);
 		} else
 #endif

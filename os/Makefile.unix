@@ -389,7 +389,6 @@ context: check_context include/tinyara/config.h include/tinyara/version.h includ
 	$(Q) for dir in $(CONTEXTDIRS) ; do \
 		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" context; \
 	done
-	$(Q) ./tools/mkldscript.sh
 
 # clean_context
 #
@@ -478,8 +477,6 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	fi
 	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files/
 	$(Q) $(MAKE) smartfs
-else
-	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" LINKLIBS="$(LINKLIBS)" USERLIBS="$(USERLIBS)" "$(CONFIG_PASS1_TARGET)"
 endif
 endif
 

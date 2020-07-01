@@ -70,9 +70,6 @@ enum MPU_REG_NUM {
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 	MPU_REG_NUM_STK,		/* Stack */
 #endif
-#else
-	MPU_REG_NUM_UFLASH,
-	MPU_REG_NUM_URAM,
 #endif
 	MPU_REG_NUM_MAX
 };

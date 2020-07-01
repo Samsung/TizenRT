@@ -111,13 +111,6 @@ struct userspace_s {
 #endif
 };
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-extern struct userspace_s *USERSPACE;
-#else
-extern uint32_t __uflash_segment_start__[];
-#define USERSPACE ((FAR struct userspace_s *)__uflash_segment_start__)
-#endif
-
 /****************************************************************************
  * Public Data
  ****************************************************************************/
