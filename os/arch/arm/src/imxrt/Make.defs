@@ -168,10 +168,6 @@ CHIP_CSRCS += imxrt_timer_lowerhalf.c
 endif
 endif # CONFIG_IMXRT_TIMER
 
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CHIP_CSRCS += imxrt_userspace.c
-endif
-
 ifeq ($(CONFIG_ARMV7M_MPU),y)
 CHIP_CSRCS += imxrt_mpuinit.c
 endif

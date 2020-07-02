@@ -44,6 +44,7 @@ TINYARA_BIN=${OUTBIN_PATH}/tinyara.bin
 CONFIG=${OS_PATH}/.config
 ZONEINFO=${OUTBIN_PATH}/zoneinfo.img
 SUDO=sudo
+FLASH_START_ADDR=0x60000000
 
 ##Utility function for sanity check##
 function imxrt1020_sanity_check()
@@ -101,7 +102,6 @@ function get_executable_name()
 {
 	case $1 in
 		kernel) echo "tinyara.bin";;
-		app) echo "tinyara_user.bin";;
 		micom) echo "micom";;
 		wifi) echo "wifi";;
 		zoneinfo) echo "zoneinfo.img";;
@@ -116,9 +116,8 @@ function get_partition_index()
 {
 	case $1 in
 		kernel | Kernel | KERNEL) echo "0";;
-		app | App | APP) echo "1";;
-		micom | Micom | MICOM) echo "2";;
-		wifi | Wifi | WIFI) echo "4";;
+		micom | Micom | MICOM) echo "1";;
+		wifi | Wifi | WIFI) echo "3";;
 		zoneinfo)
 		for i in "${!parts[@]}"
 		do
@@ -152,8 +151,7 @@ function imxrt1020_dwld_help()
 
 	For examples:
 		make download ALL
-	        make download kernel app
-	        make download app
+	        make download kernel
 		make download ERASE kernel
 EOF
 }
@@ -210,7 +208,7 @@ IFS=',' read -ra sizes <<< "$sizes"
 
 #Calculate Flash Offset
 num=${#sizes[@]}
-offsets[0]=`printf "0x%X" ${CONFIG_FLASH_START_ADDR}`
+offsets[0]=`printf "0x%X" ${FLASH_START_ADDR}`
 
 for (( i=1; i<=$num-1; i++ ))
 do
