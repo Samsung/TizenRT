@@ -132,6 +132,7 @@ const struct mountpt_operations romfs_operations = {
 	NULL,						/* sync */
 	romfs_dup,					/* dup */
 	romfs_fstat,					/* fstat */
+	NULL,						/* truncate */
 
 	romfs_opendir,				/* opendir */
 	NULL,						/* closedir */

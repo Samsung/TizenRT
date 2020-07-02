@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/include/sys/mount.h
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2012, 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,110 +48,91 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/**
- * @defgroup MOUNT_KERNEL MOUNT
- * @brief Provides APIs for Mount
- * @ingroup KERNEL
- *
- * @{
- */
 
-/// @file sys/mount.h
-/// @brief mount APIs
-
-#ifndef __INCLUDE_SYS_MOUNT_H
-#define __INCLUDE_SYS_MOUNT_H
+#ifndef __INCLUDE_FS_FAT_H
+#define __INCLUDE_FS_FAT_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-/****************************************************************************
- * Pre-Processor Definitions
- ****************************************************************************/
-
-/* Mount flags */
-
-#define MS_RDONLY 1				/* Mount file system read-only */
-
-/* Un-mount flags
- *
- * These flags control the behavior of umount2() when there are open file
- * references through the mountpoint.  umount2() with no flag bits set is
- * equivalent to umount(), i.e., the umount() will fail with EBUSY if there
- * are open references on the file.
- *
- *   MNT_FORCE - Force unmount even if busy. This can cause data loss.
- *   MNT_DETACH - Perform a lazy unmount: make the mount point unavailable
- *     for new accesses, and actually perform the unmount when the mount
- *     point ceases to be busy.
- *   MNT_EXPIRE - Mark the mount point as expired. If a mount point is not
- *     currently in use, then an initial call to umount2() with this flag
- *     fails with the error EAGAIN, but marks the mount point as expired. The
- *     mount point remains expired as long as it isn't accessed by any
- *     process. A second umount2() call specifying MNT_EXPIRE unmounts an
- *     expired mount point. This flag cannot be specified with either
- *     MNT_FORCE or MNT_DETACH.
- *  UMOUNT_NOFOLLOW (- Don't dereference target if it is a symbolic link.
- *     For Linux, this flag allows security problems to be avoided in
- *     set-user-ID-root programs that allow unprivileged users to unmount
- *     file systems.  For NuttX, it is provided only for compatibility
- *
- * Not all options are supported on all file systems.
- */
-
-#define MNT_FORCE       (1 << 0)
-#define MNT_DETACH      (1 << 1)
-#define MNT_EXPIRE      (1 << 2)
-#define UMOUNT_NOFOLLOW (0)
+#include <tinyara/config.h>
+#include <stdint.h>
 
 /****************************************************************************
- * Public Type Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
+
+/* File attribute bits in FAT directory entry */
+
+#define FATATTR_READONLY  0x01
+#define FATATTR_HIDDEN    0x02
+#define FATATTR_SYSTEM    0x04
+#define FATATTR_VOLUMEID  0x08
+#define FATATTR_DIRECTORY 0x10
+#define FATATTR_ARCHIVE   0x20
+
+#define FATATTR_LONGNAME \
+  (FATATTR_READONLY | FATATTR_HIDDEN | FATATTR_SYSTEM | FATATTR_VOLUMEID)
+
+/****************************************************************************
+ * Type Definitions
+ ****************************************************************************/
+
+typedef uint8_t fat_attrib_t;
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
-#undef EXTERN
-#if defined(__cplusplus)
+#ifdef __cplusplus
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
 #endif
 
-/**
- * @ingroup MOUNT_KERNEL
- * @brief attaches filesystem to the root filesystem at the target path
- * @details @b #include <sys/mount.h> \n
- * SYSTEM CALL API \n
- * @param[in] source the name of block device to be attached
- * @param[in] target the root path of filesystem
- * @param[in] filesystemtype the type of filesystem
- * @param[in] mountflags the flags for mount
- * @param[in] data mountpoint private data
- * @return On success, Zero is returned. On failure, -1 is returned and errno is set appropriately.
- * @since TizenRT v1.0
- */
-int mount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data);
-/**
- * @ingroup MOUNT_KERNEL
- * @brief detaches the filesystem mounted at the target path
- * @details @b #include <sys/mount.h> \n
- * SYSTEM CALL API \n
- * @param[in] target the root path of filesystem to be detached
- * @return On success, Zero is returned. On failure, -1 is returned and errno is set appropriately.
- * @since TizenRT v1.0
- */
-int umount(const char *target);
+/****************************************************************************
+ * Name: fat_getattrib and fat_setattrib
+ *
+ * Description:
+ *   Non-standard functions to get and set FAT file/directory attributes
+ *
+ ****************************************************************************/
+
+int fat_getattrib(FAR const char *path, FAR fat_attrib_t *attrib);
+int fat_setattrib(FAR const char *path, fat_attrib_t setbits, fat_attrib_t clearbits);
+
+/****************************************************************************
+ * Name: fat_dma_alloc and fat_dma_free
+ *
+ * Description:
+ *   The FAT file system allocates two I/O buffers for data transfer, each
+ *   are the size of one device sector.  One of the buffers is allocated
+ *   once for each FAT volume that is mounted; the other buffers are
+ *   allocated each time a FAT file is opened.
+ *
+ *   Some hardware, however, may require special DMA-capable memory in
+ *   order to perform the transfers.  If CONFIG_FAT_DMAMEMORY is defined
+ *   then the architecture-specific hardware must provide the funtions
+ *   fat_dma_alloc() and fat_dma_free() as prototyped below:  fat_dma_alloc()
+ *   will allocate DMA-capable memory of the specified size; fat_dma_free()
+ *   is the corresponding function that will be called to free the DMA-
+ *   capable memory.
+ *
+ *   This functions may be simple wrappers around gran_alloc() and gran_free()
+ *   (See nuttx/mm/gran.h).
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_FAT_DMAMEMORY
+FAR void *fat_dma_alloc(size_t size);
+void fat_dma_free(FAR void *memory, size_t size);
+#endif
 
 #undef EXTERN
-#if defined(__cplusplus)
+#ifdef __cplusplus
 }
 #endif
 
-#endif							/* __INCLUDE_SYS_MOUNT_H */
-/**
- * @}
- */
+#endif							/* __INCLUDE_FS_FAT_H */

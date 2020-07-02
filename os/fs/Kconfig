@@ -30,6 +30,7 @@ source fs/aio/Kconfig
 source fs/semaphore/Kconfig
 source fs/mqueue/Kconfig
 source fs/smartfs/Kconfig
+source fs/fat/Kconfig
 source fs/procfs/Kconfig
 source fs/romfs/Kconfig
 source fs/tmpfs/Kconfig
