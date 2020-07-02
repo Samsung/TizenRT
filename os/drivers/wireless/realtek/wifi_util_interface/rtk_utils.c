@@ -73,13 +73,13 @@ static int callback_handler(void *arg)
 	} else if (*type == 5 && g_cbk.softap_sta_left) {
 		g_cbk.softap_sta_left(NULL);
 	}
-	free(type);
+	kmm_free(type);
 	return 0;
 }
 
 static void linkup_handler(rtk_reason_t *reason)
 {
-	int *type = (int *)malloc(sizeof(int));
+	int *type = (int *)kmm_malloc(sizeof(int));
 	if (type == NULL) {
 		ndbg("[RTK] malloc error\n");
 		return;
@@ -98,7 +98,7 @@ static void linkup_handler(rtk_reason_t *reason)
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)callback_handler, (void *)type);
 	if (ret != 0) {
 		ndbg("[RTK] pthread create fail(%d)\n", errno);
-		free(type);
+		kmm_free(type);
 		return;
 	}
 	pthread_setname_np(tid, "wifi_utils_cbk_handler");
@@ -107,7 +107,7 @@ static void linkup_handler(rtk_reason_t *reason)
 
 static void linkdown_handler(rtk_reason_t *reason)
 {
-	int *type = (int *)malloc(sizeof(int));
+	int *type = (int *)kmm_malloc(sizeof(int));
 	if (type == NULL) {
 		ndbg("[RTK] malloc error linkdown\n");
 		return;
@@ -122,7 +122,7 @@ static void linkdown_handler(rtk_reason_t *reason)
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)callback_handler, (void *)type);
 	if (ret != 0) {
 		ndbg("[RTK] pthread create fail(%d)\n", errno);
-		free(type);
+		kmm_free(type);
 		return;
 	}
 	pthread_setname_np(tid, "wifi_utils_cbk_handler");
