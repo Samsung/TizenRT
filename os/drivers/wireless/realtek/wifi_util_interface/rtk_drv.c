@@ -416,7 +416,7 @@ int rtk_drv_initialize(void)
 {
 	RTKDRV_ENTER;
 	struct netdev *dev = NULL;
-	dev = (struct netdev *)malloc(sizeof(struct netdev));
+	dev = (struct netdev *)kmm_malloc(sizeof(struct netdev));
 	if (!dev) {
 		return -1;
 	}
@@ -430,7 +430,7 @@ int rtk_drv_initialize(void)
 	int res = lwnl_register_dev(dev);
 	if (res < 0) {
 		vddbg("register dev to lwnl fail\n");
-		free(dev);
+		kmm_free(dev);
 		return -1;
 	}
 	return 0;

@@ -2659,7 +2659,7 @@ static int8_t slsi_set_country_code(const char *country_code, bool write_to_nvra
 	}
 	if (write_to_nvram) {
 		if (nvram == NULL) {
-			nvram = malloc(4 * 1024);	// flash block size of 4k
+			nvram = kmm_malloc(4 * 1024);	// flash block size of 4k
 		}
 		// set the country code in NV ram for next time
 		//start by reading the existing values form NVRAM and Erase to be ready for writing
@@ -2686,7 +2686,7 @@ static int8_t slsi_set_country_code(const char *country_code, bool write_to_nvra
 	if (g_state == SLSI_WIFIAPI_STATE_NOT_STARTED) {
 		// we need to cleanup nvram as it will only get cleaned on wifistop
 		if (nvram != NULL) {
-			free(nvram);
+			kmm_free(nvram);
 			nvram = NULL;
 		}
 	}
@@ -2714,7 +2714,7 @@ static int8_t slsi_get_tx_power(uint8_t *dbm)
 	} else {
 		DPRINT("Could not get tx_power from supplicant, trying from NVRAM\n");
 		if (nvram == NULL) {
-			nvram = malloc(4 * 1024);	// flash block size of 4k
+			nvram = kmm_malloc(4 * 1024);	// flash block size of 4k
 		}
 		if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
 			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)nvram;
@@ -2724,7 +2724,7 @@ static int8_t slsi_get_tx_power(uint8_t *dbm)
 		}
 	}
 	if (nvram) {
-		free(nvram);
+		kmm_free(nvram);
 		nvram = NULL;
 	}
 
