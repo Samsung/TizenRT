@@ -96,6 +96,7 @@
 #ifdef CONFIG_KERNEL_TEST_DRV
 #include <tinyara/testcase_drv.h>
 #endif
+#include  "debug/memdbg.h"
 
 extern const uint32_t g_idle_topstack;
 #include <tinyara/mm/heap_regioninfo.h>
@@ -599,6 +600,9 @@ void os_start(void)
 	/* We cannot enter low power state until boot complete */
 	pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
 #endif
+
+	display_memory_information();
+
 	DEBUGVERIFY(os_bringup());
 
 	/* The IDLE Loop **********************************************************/

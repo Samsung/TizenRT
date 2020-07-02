@@ -224,6 +224,14 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 	elf_save_bin_section_addr(bin);
 #endif
+
+	/* Print Binary section address & size details */
+
+	binfo("[%s] text    start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->alloc[ALLOC_TEXT], bin->textsize);
+	binfo("[%s] rodata  start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->alloc[ALLOC_DATA], bin->rosize);
+	binfo("[%s] data    start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->datastart, bin->datasize);
+	binfo("[%s] bss     start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->bssstart, bin->bsssize);
+
 	return pid;
 
 errout_with_unload:

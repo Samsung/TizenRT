@@ -175,6 +175,9 @@ int exec_module(FAR struct binary_s *binp)
 	mm_initialize(binp->uheap, (void *)binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
 	mm_add_app_heap_list(binp->uheap, binp->bin_name);
 
+	binfo("------------------------%s Binary Heap Information------------------------\n", binp->bin_name);
+	binfo("Start addr = 0x%x, size = %u \n", (void *)binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
+
 	/* The first 4 bytes of the text section of the application must contain a
 	pointer to the application's mm_heap object. Here we will store the mm_heap
 	pointer to the start of the text section */
