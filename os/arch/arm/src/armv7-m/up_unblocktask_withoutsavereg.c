@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  arch/arm/src/armv7-m/up_recovery_unblocktask.c
+ *  arch/arm/src/armv7-m/up_unblock_task_without_savereg.c
  *
  *   Copyright (C) 2007-2009, 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -90,16 +90,12 @@ extern uint32_t *g_umm_app_id;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_recovery_unblock_task
+ * Name: up_unblock_task_without_savereg
  *
  * Description:
  *   Move the TCB to the ready-to-run list and Switch context to the context
- *   of the task at the head of the ready to run list.
- *
- *   This function is called by up_assert when fault happens.
- *   A head of ready-to-run list is always changed because a fault handler
- *   deactivates all RT threads of faulty binary before calling this function.
- *   So if it is in interrupt context, it doesn't copy the current_regs into the OLD tcb.
+ *   of the task at the head of the ready to run list without saving old context.
+ *   If it is in interrupt context, it doesn't copy the current_regs into the OLD tcb.
  *   If not, it calls up_fullcontextrestore to perform the user context switch.
  *
  * Inputs:
@@ -109,7 +105,7 @@ extern uint32_t *g_umm_app_id;
  *     ready to run taks, executed.
  *
  ****************************************************************************/
-void up_recovery_unblock_task(struct tcb_s *tcb)
+void up_unblock_task_without_savereg(struct tcb_s *tcb)
 {
 	struct tcb_s *rtcb;
 

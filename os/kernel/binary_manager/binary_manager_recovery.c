@@ -225,7 +225,7 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 
 			/* Unblock fault message sender */
 			if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
-				up_recovery_unblock_task(g_faultmsg_sender);
+				up_unblock_task_without_savereg(g_faultmsg_sender);
 			}
 			return;
 		}
