@@ -204,7 +204,6 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 
 	tcb = this_task();
 	if (tcb != NULL && tcb->group != NULL) {
-		tcb->lockcount = 0;
 		bin_idx = tcb->group->tg_binidx;
 		/* Exclude realtime task/pthreads from scheduling */
 		binary_manager_deactivate_rtthreads(bin_idx);
