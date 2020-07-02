@@ -82,19 +82,6 @@
 #define MIN(a, b) a < b ? a : b
 #endif
 
-#if defined(CONFIG_BUILD_PROTECTED)
-const struct mpu_region_info regions_info[] = {
-#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
-	{
-		&mpu_userflash, (uintptr_t)__uflash_segment_start__, (uintptr_t)__uflash_segment_size__, MPU_REG_NUM_UFLASH,
-	},
-	{
-		&mpu_userintsram, (uintptr_t)__usram_segment_start__, (uintptr_t)__usram_segment_size__, MPU_REG_NUM_URAM,
-	},
-#endif
-};
-#endif
-
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -129,15 +116,6 @@ void imxrt_mpu_initialize(void)
 	mpu_priv_stronglyordered(IMXRT_QSPIMEM_BASE, IMXRT_QSPIMEM_SIZE);
 
 #endif
-#endif
-
-#ifdef CONFIG_BUILD_PROTECTED
-	int i;
-
-	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
-		lldbg("Region = %u base = 0x%x size = %u\n", regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
-		regions_info[i].call(regions_info[i].rgno, regions_info[i].base, regions_info[i].size);
-	}
 #endif
 	/* Then enable the MPU */
 

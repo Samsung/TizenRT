@@ -95,147 +95,7 @@
  * group.  However, in this case, we need only be concerned about
  * initializing the single kernel heap here.
  *
- * Primary RAM:  The Linker script positions the system BLOB's .data and
- * .bss in some RAM.  We refer to that RAM as the primary RAM.  It also
- * holds the IDLE threads stack and any remaining portion of the primary
- * RAM is automatically added to the heap.  The start and size of the
- * primary RAM are provided by CONFIG_RAM_START and CONFIG_RAM_SIZE.  The
- * linker provided address, ... .sbss, .ebss, .sdat, etc. ...  are expected
- * to lie in the the region defined by those configuration settings.
- *
- * Other RAM regions must be selected use configuration options and the
- * start and end of those RAM regions must also be provided in the
- * configuration.  CONFIG_MM_REGIONS must also be set to determined the
- * number of regions to be added to the heap.
- *
- * REVISIT:  The i.MX RT SEMC will support up to 8 512Mbit memory regions.
- * So it is possible that there could be multiple external SDRAM or SRAM
- * banks.  This logic assumes that there is at most one of each (or at least
- * only one contiguous block of addresses for each).  This would need to
- * be exceed considerably to support multiple SDRAM or SRAM memory regions.
- *
- * SOC with 512KiB
- *
- *     IMXRT_DTCM_BASE           0x20000000     512KB DTCM
- *                               0x20080000     512KB DTCM Reserved
- *                               0x20100000     1MB Reserved
- *    IMXRT_OCRAM_BASE           0x20200000     512KB OCRAM
- *
- * SOC with 1MiB
- *    IMXRT_OCRAM2_BASE          0x20200000     512KB OCRAM2
- *    IMXRT_OCRAM_BASE           0x20280000     512KB OCRAM FlexRAM
  */
-
-/* There there then several memory configurations with a one primary memory
- * region and up to two additional memory regions which may be OCRAM,
- * external SDRAM, or external SRAM.
- */
-
-#undef IMXRT_OCRAM_ASSIGNED
-#undef IMXRT_SDRAM_ASSIGNED
-#undef IMXRT_SRAM_ASSIGNED
-
-/* REVISIT: Assume that if OCRAM is the primary RAM, then DTCM and ITCM are
- * not being used.
- * When configured DTCM and ITCM consume OCRAM from the address space
- * labeled IMXRT_OCRAM_BASE that uses the FlexRAM controller to allocate
- * the function of OCRAM.
- *
- * The 1 MB version of the SOC have a second 512Kib of OCRAM that can not
- * be consumed by the DTCM or ITCM.
- */
-
-#if defined(IMXRT_OCRAM2_BASE)
-#define _IMXRT_OCRAM_BASE IMXRT_OCRAM2_BASE
-#else
-#define _IMXRT_OCRAM_BASE IMXRT_OCRAM_BASE
-#endif
-#if defined(CONFIG_IMXRT_OCRAM_PRIMARY)
-#define PRIMARY_RAM_START    _IMXRT_OCRAM_BASE	/* CONFIG_RAM_START */
-#define PRIMARY_RAM_SIZE     IMXRT_OCRAM_SIZE	/* CONFIG_RAM_SIZE */
-#define IMXRT_OCRAM_ASSIGNED 1
-#elif defined(CONFIG_IMXRT_SDRAM_PRIMARY)
-#define PRIMARY_RAM_START    CONFIG_IMXRT_SDRAM_START	/* CONFIG_RAM_START */
-#define PRIMARY_RAM_SIZE     CONFIG_IMXRT_SDRAM_SIZE	/* CONFIG_RAM_SIZE */
-#define IMXRT_SDRAM_ASSIGNED 1
-#elif defined(CONFIG_IMXRT_SRAM_PRIMARY)
-#define PRIMARY_RAM_START    CONFIG_IMXRT_SRAM_START	/* CONFIG_RAM_START */
-#define PRIMARY_RAM_SIZE     CONFIG_IMXRT_SRAM_SIZE	/* CONFIG_RAM_SIZE */
-#define IMXRT_SRAM_ASSIGNED  1
-#else
-#error No primary RAM defined
-#endif
-
-#define PRIMARY_RAM_END        (PRIMARY_RAM_START + PRIMARY_RAM_SIZE)
-
-/* REVISIT:  I am not sure how this works.  But I am assuming that if DTCM
- * is enabled, then ITCM is not and we can just use the DTCM base address to
- * access OCRAM.
- *
- * The FlexRAM controller manages the allocation of DTCM and ITCM from the
- * OCRAM. The amount allocated it 2^n KiB where n is 2-9 and is configured in
- * the GPR register space.
- */
-
-#ifdef CONFIG_IMXRT_DTCM
-#define IMXRT_OCRAM_START    IMXRT_DTCM_BASE
-#else
-#define IMXRT_OCRAM_START    _IMXRT_OCRAM_BASE
-#endif
-
-#if CONFIG_MM_REGIONS > 1
-/* Pick the first region to add to the heap could be any one of OCRAM,
- * SDRAM, or SRAM depending upon which are enabled and which has not
- * already been assigned as the primary RAM.
- */
-
-#if defined(CONFIG_IMXRT_OCRAM_HEAP) && !defined(IMXRT_OCRAM_ASSIGNED)
-#define REGION1_RAM_START    IMXRT_OCRAM_START
-#define REGION1_RAM_SIZE     IMXRT_OCRAM_SIZE
-#define IMXRT_OCRAM_ASSIGNED 1
-#elif defined(CONFIG_IMXRT_SDRAM_HEAP) && !defined(IMXRT_SDRAM_ASSIGNED)
-#define REGION1_RAM_START    (CONFIG_IMXRT_SDRAM_START + CONFIG_IMXRT_SDRAM_HEAPOFFSET)
-#define REGION1_RAM_SIZE     (CONFIG_IMXRT_SDRAM_SIZE  - CONFIG_IMXRT_SDRAM_HEAPOFFSET)
-#define IMXRT_SDRAM_ASSIGNED 1
-#elif defined(CONFIG_IMXRT_SRAM_HEAP) && !defined(IMXRT_SRAM_ASSIGNED)
-#define REGION1_RAM_START    (CONFIG_IMXRT_SRAM_START  + CONFIG_IMXRT_SRAM_HEAPOFFSET)
-#define REGION1_RAM_SIZE     (CONFIG_IMXRT_SRAM_SIZE   - CONFIG_IMXRT_SRAM_HEAPOFFSET)
-#define IMXRT_SRAM_ASSIGNED 1
-#else
-#warning CONFIG_MM_REGIONS > 1 but no available memory region
-#endif
-
-#define REGION1_RAM_END        (REGION1_RAM_START + REGION1_RAM_SIZE)
-#endif
-
-#if CONFIG_MM_REGIONS > 2
-/* Pick the first region to add to the heap could be any one of OCRAM,
- * SDRAM, or SRAM depending upon which are enabled and which has not
- * already been assigned as the primary RAM.
- */
-
-#if defined(CONFIG_IMXRT_OCRAM_HEAP) && !defined(IMXRT_OCRAM_ASSIGNED)
-#define REGION2_RAM_START    IMXRT_OCRAM_START
-#define REGION2_RAM_SIZE     IMXRT_OCRAM_SIZE
-#define IMXRT_OCRAM_ASSIGNED 1
-#elif defined(CONFIG_IMXRT_SDRAM_HEAP) && !defined(IMXRT_SDRAM_ASSIGNED)
-#define REGION2_RAM_START    (CONFIG_IMXRT_SDRAM_START + CONFIG_IMXRT_SDRAM_HEAPOFFSET)
-#define REGION2_RAM_SIZE     (CONFIG_IMXRT_SDRAM_SIZE  - CONFIG_IMXRT_SDRAM_HEAPOFFSET)
-#define IMXRT_SDRAM_ASSIGNED 1
-#elif defined(CONFIG_IMXRT_SRAM_HEAP) && !defined(IMXRT_SRAM_ASSIGNED)
-#define REGION2_RAM_START    (CONFIG_IMXRT_SRAM_START  + CONFIG_IMXRT_SRAM_HEAPOFFSET)
-#define REGION2_RAM_SIZE     (CONFIG_IMXRT_SRAM_SIZE   - CONFIG_IMXRT_SRAM_HEAPOFFSET)
-#define IMXRT_SRAM_ASSIGNED 1
-#else
-#warning CONFIG_MM_REGIONS > 2 but no available memory region
-#endif
-
-#define REGION2_RAM_END        (REGION2_RAM_START + REGION2_RAM_SIZE)
-#endif
-
-#if CONFIG_MM_REGIONS > 3
-#warning CONFIG_MM_REGIONS > 3 but no available memory region
-#endif
 
 /****************************************************************************
  * Public Data
@@ -256,80 +116,6 @@ const uintptr_t g_idle_topstack = (uintptr_t)&_ebss + CONFIG_IDLETHREAD_STACKSIZ
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: up_allocate_heap/up_allocate_kheap
- *
- * Description:
- *   This function will be called to dynamically set aside the heap region.
- *
- *   - For the normal "flat" build, this function returns the size of the
- *     single heap.
- *   - For the protected build (CONFIG_BUILD_PROTECTED=y) with both kernel-
- *     and user-space heaps (CONFIG_MM_KERNEL_HEAP=y), this function
- *     provides the size of the unprotected, user-space heap.
- *   - For the kernel build (CONFIG_BUILD_KERNEL=y), this function provides
- *     the size of the protected, kernel-space heap.
- *
- *   If a protected kernel-space heap is provided, the kernel heap must be
- *   allocated by an analogous up_allocate_kheap(). A custom version of this
- *   file is needed if memory protection of the kernel heap is required.
- *
- *   The following memory map is assumed for the flat build:
- *
- *     .data region.  Size determined at link time.
- *     .bss  region  Size determined at link time.
- *     IDLE thread stack.  Size determined by CONFIG_IDLETHREAD_STACKSIZE.
- *     Heap.  Extends to the end of SRAM.
- *
- *   The following memory map is assumed for the kernel build:
- *
- *     Kernel .data region.  Size determined at link time.
- *     Kernel .bss  region  Size determined at link time.
- *     Kernel IDLE thread stack.  Size determined by CONFIG_IDLETHREAD_STACKSIZE.
- *     Padding for alignment
- *     User .data region.  Size determined at link time.
- *     User .bss region  Size determined at link time.
- *     Kernel heap.  Size determined by CONFIG_MM_KERNEL_HEAPSIZE.
- *     User heap.  Extends to the end of SRAM.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BUILD_KERNEL
-void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
-#else
-void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
-#endif
-{
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-	/* When common binary is enabled, we will not have user data and bss.
-	 * So, the heap will start at the beginning of the RAM
-	 */
-	*heap_start = (void *)REGION_START;
-#elif CONFIG_BUILD_PROTECTED
-	/* In protected build, first part of RAM is used for user data and bss.
-	 * Heap will start after user bss.
-	 */
-	*heap_start = (void *)USERSPACE->us_bssend;
-#else
-	/* In flat build, first part of RAM is used for data and bss followed
-	 * by kernel stack. Heap will start after the stack.
-	 */
-	*heap_start = (void *)g_idle_topstack;
-#endif
-
-	/* There may be a special scenraio where we might configure a different region
-	 * for heap. In such case, if end of bss falls outside of the region address range,
-	 * then we use the whole region for heap.
-	 */
-	if (*heap_start < (void *)REGION_START || *heap_start > (void *)REGION_END) {
-		*heap_start = REGION_START;
-	}
-
-	*heap_size = (void *)REGION_END - *heap_start;
-
-	DEBUGASSERT(*heap_size != 0);
-}
 
 /****************************************************************************
  * Name: up_allocate_kheap
@@ -356,6 +142,8 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 	}
 
 	*heap_size = (void *)KREGION_END - *heap_start;
+
+	dbg("start = 0x%x size = %d\n", *heap_start, *heap_size);
 }
 #endif
 
@@ -375,27 +163,5 @@ static void up_add_kregion(void)
 		}
 		mm_addregion(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
 	}
-}
-#endif
-
-/****************************************************************************
- * Name: up_addregion
- ****************************************************************************/
-#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
-void up_addregion(void)
-{
-	int region_cnt;
-
-	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
-		if (USR_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
-			mm_initialize(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
-			continue;
-		}
-		mm_addregion(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
-	}
-
-#if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
-	up_add_kregion();
-#endif
 }
 #endif

@@ -73,7 +73,6 @@
 
 #include "imxrt_clockconfig.h"
 #include "imxrt_mpuinit.h"
-#include "imxrt_userspace.h"
 #include "imxrt_start.h"
 #include "imxrt_gpio.h"
 #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
@@ -436,17 +435,6 @@ void __start(void)
 	/* Initialize onboard resources */
 
 	imxrt_boardinitialize();
-
-#ifdef CONFIG_BUILD_PROTECTED
-	/* For the case of the separate user-/kernel-space build, perform whatever
-	 * platform specific initialization of the user memory is required.
-	 * Normally this just means initializing the user space .data and .bss
-	 * segments.
-	 */
-#ifndef CONFIG_SUPPORT_COMMON_BINARY
-	imxrt_userspace();
-#endif
-#endif
 
 #ifdef  CONFIG_ARMV7M_MPU
 	/* Configure the MPU to permit user-space access to its FLASH and RAM (for
