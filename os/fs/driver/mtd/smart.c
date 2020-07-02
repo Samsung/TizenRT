@@ -406,26 +406,43 @@ typedef uint32_t crc_t;
 #define AREA_OLD_UNERASED 0xFF
 #endif
 
-/* State of Journal Log Low 2 bits */
-#define SMART_JOURNAL_STATE_CHECKIN  0x01
-#define SMART_JOURNAL_STATE_CHECKOUT 0x02
+/* State of Journal Log Low 4 bits */
+#define SMART_JOURNAL_STATE_CHECKIN  (1 << 1)
+#define SMART_JOURNAL_STATE_CHECKOUT (1 << 2)
 
-/* Type of Journal Data next 6 bits Low 2bits for journal area */
-#define SMART_JOURNAL_TYPE_USED      0x04
-#define SMART_JOURNAL_TYPE_UNERASED  0x08
-#define SMART_JOURNAL_TYPE_ALLOC     0x10
-#define SMART_JOURNAL_TYPE_COMMIT    0x20
-#define SMART_JOURNAL_TYPE_RELEASE   0x40
-#define SMART_JOURNAL_TYPE_ERASE     0x80
+/* Type of Journal Data high 4 bits */
+#define SMART_JOURNAL_TYPE_AREA      1		/* Write state bits to toggle to Next Area */
+#define SMART_JOURNAL_TYPE_ALLOC     2		/* If we need to MTD header first which we allocated */
+#define SMART_JOURNAL_TYPE_COMMIT    3		/* Common Type, When write data on entire of sector */
+#define SMART_JOURNAL_TYPE_RELEASE   4		/* Release Sector */
+#define SMART_JOURNAL_TYPE_ERASE     5		/* MTD Erase (c.f smart_erase_block_if_empty..) */
+
+/* MACRO For Journal Type */
+#define SET_JOURNAL_TYPE(t, v) ((t) = ((t) & 0x0f) | ((v) << 4))
+#define GET_JOURNAL_TYPE(t) ((t) >> 4)
+
+/* MACRO For Journal Status, Consider erase state, it should be called before set type & state */
+#define JOURNAL_STATUS_RESET(t) ((t) = ((t) | (CONFIG_SMARTFS_ERASEDSTATE >> 4)))
+
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+#define SET_JOURNAL_STATE(t, s) ((t) = ((t) & ~(s)))
+#else
+#define SET_JOURNAL_STATE(t, s) ((t) = ((t) | (s)))
+#endif
+
+#define CHECK_JOURNAL_CHECKIN(t)   (((t) & SMART_JOURNAL_STATE_CHECKIN) != (SMART_JOURNAL_STATE_CHECKIN & CONFIG_SMARTFS_ERASEDSTATE))
+#define CHECK_JOURNAL_CHECKOUT(t)  (((t) & SMART_JOURNAL_STATE_CHECKOUT) != (SMART_JOURNAL_STATE_CHECKOUT & CONFIG_SMARTFS_ERASEDSTATE))
+
 
 struct smart_journal_logging_data_s {
 	struct smart_sect_header_s mtd_header;	/* MTD Header to checkpoint */
 	uint8_t crc16[2];						/* CRC-16 for current journal data */
-	uint8_t psector[2];						/* Target Physical Sector */
+	uint8_t psector[2];						/* Target Physical Sector, For MTD_ERASE, Target Physical Block */
 	uint8_t seq[2];							/* Sequence number of Journal for validation check */
 	uint8_t status;							/* Journal Staus low 4bits for state, high 4bits for type */
 };
 
+typedef struct smart_journal_logging_data_s journal_log_t;
 #endif
 
 /****************************************************************************
@@ -469,9 +486,12 @@ static int smart_journal_alloc_area(FAR struct smart_struct_s *dev, int area);
 static int smart_journal_release_area(FAR struct smart_struct_s *dev, int area);
 static int smart_journal_toggle_active_area(FAR struct smart_struct_s *dev);
 static int smart_joutnal_set_area_state(FAR struct smart_struct_s *dev, int area, uint8_t id_bits);
-static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsector, FAR uint8_t *buffer);
+static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address);
+static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address);
+static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsector);
 static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t offset, int nbytes, FAR const uint8_t *buffer);
 static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t physsector);
+static void smart_journal_dump_log(FAR struct smart_struct_s *dev);
 
 #endif
 /****************************************************************************
@@ -1040,7 +1060,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	  * erase previous one. So total number of journal sector must be N*Eraseblock
 	  * We will use it as a contigous memory space...
 	  */
-	size_t log_size = sizeof(struct smart_journal_logging_data_s);
+	size_t log_size = sizeof(journal_log_t);
 	/** First get ideal size of journal sector. Formula is Below (x : data sectors y : journal sectors)
 	  * 1. dev->sectorsize : dev->njournalsectors = x : y  
 	  * 2. x + y = dev->geo.eraseblocks * dev->sectorsPerBlk;
@@ -1066,7 +1086,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	dev->neraseblocks -= dev->njournaleraseblocks;
 
 	/* Now get Total Journal data of both of 2 area */
-	dev->njournaldata = (((dev->njournaleraseblocks / 2) * dev->sectorsPerBlk * dev->sectorsize) - 1) / log_size * 2;
+	dev->njournaldata = (((dev->njournaleraseblocks >> 1) * dev->sectorsPerBlk * dev->sectorsize) - 1) / log_size * 2;
 	
 	if (dev->sSeqLogMap != NULL) {
 		smart_free(dev, dev->sSeqLogMap);
@@ -2692,6 +2712,18 @@ static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev)
 }
 #endif
 
+#ifdef CONFIG_MTD_SMART_JOURNALING
+static crc_t smart_calc_journal_crc(journal_log_t *log)
+{
+	crc_t crc = 0;
+	uint16_t offset = offsetof(journal_log_t, crc16) + sizeof(log->crc16);
+	int size = sizeof(journal_log_t) - offset;
+	crc = crc16((uint8_t *)log, sizeof(FAR struct smart_sect_header_s));
+	crc = crc16part((uint8_t *)&log->psector, size, crc);
+	return crc;
+}
+#endif
+
 /****************************************************************************
  * Name: smart_llformat
  *
@@ -2870,7 +2902,7 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 #ifdef CONFIG_MTD_SMART_JOURNALING
 	dev->area = 0;
 	ret = smart_joutnal_set_area_state(dev, 0, AREA_USED);
-	if (ret != OK) {
+	if (ret != 1) {
 		fdbg("Alloc Journal Area failed at first time ret : %d\n", ret);
 		return -ret;
 	}
@@ -4167,8 +4199,12 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 	/* Now write the sector buffer to the device. */
 	if (needsrelocate) {
 		/* Write the entire sector to the new physical location, uncommitted. */
-
+#ifdef CONFIG_MTD_SMART_JOURNALING
+		/* TODO Everywhere using MTD_BWRITE should follow this logic... */
+		ret = smart_journal_bwrite(dev, physsector);
+#else
 		ret = MTD_BWRITE(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+#endif
 		if (ret != dev->mtdBlksPerSector) {
 			fdbg("Error writing to physical sector logical %d physical : %d\n", UINT8TOUINT16(header->logicalsector), physsector);
 			return -EIO;
@@ -4913,19 +4949,21 @@ static int smart_journal_init(FAR struct smart_struct_s *dev)
 	dev->area = smart_journal_get_active_area(dev);
 	if (dev->area == -1) {
 		fdbg("There's no active area...\n");
-		return -EIO;
+		return -ENXIO;
 	}
 
+	fvdbg("Active Area : %d\n", dev->area);
 	if (dev->area == 0) {
 		dev->journal_seq = 0;
 		next_area = 1;
 	} else {
 		/* We Divide to 2 Journal areas, also each area has state bits(1byte) */
-		dev->journal_seq = (((dev->njournaleraseblocks / 2) * dev->erasesize) - 1) / sizeof(struct smart_journal_logging_data_s);
+		dev->journal_seq = (((dev->njournaleraseblocks >> 1) * dev->erasesize) - 1) / sizeof(journal_log_t);
 		next_area = 0;
 	}
 
 	/* TODO Here we will start recovery */
+	smart_journal_dump_log(dev);
 
 	return OK;
 }
@@ -4999,7 +5037,7 @@ static int smart_journal_get_area_state(FAR struct smart_struct_s *dev, int area
 	if (area == 0) {
 		psector = dev->neraseblocks * dev->sectorsPerBlk;
 	} else {
-		psector = dev->neraseblocks * dev->sectorsPerBlk + (dev->njournalsectors / 2);
+		psector = dev->neraseblocks * dev->sectorsPerBlk + (dev->njournalsectors >> 1);
 	}
 
 	readaddr = psector * dev->mtdBlksPerSector * dev->geo.blocksize;
@@ -5007,7 +5045,7 @@ static int smart_journal_get_area_state(FAR struct smart_struct_s *dev, int area
 	ret = MTD_READ(dev->mtd, readaddr, 1, &id_bits);
 	if (ret < 0) {
 		fdbg("read failed! ret : %d\n");
-		return -EIO;
+		return ret;
 	}
 
 	dev->journal_area_state[area] = id_bits;
@@ -5095,13 +5133,13 @@ static int smart_journal_toggle_active_area(FAR struct smart_struct_s *dev)
 static int smart_joutnal_set_area_state(FAR struct smart_struct_s *dev, int area, uint8_t id_bits)
 {
 	uint32_t readaddress;
-	int psector;
+	uint16_t psector;
 	int ret;
 	
 	if (area == 0) {
 		psector = dev->neraseblocks * dev->sectorsPerBlk;
 	} else {
-		psector = dev->neraseblocks * dev->sectorsPerBlk + (dev->njournalsectors / 2);
+		psector = dev->neraseblocks * dev->sectorsPerBlk + (dev->njournalsectors >> 1);
 	}
 
 	readaddress = psector * dev->mtdBlksPerSector * dev->geo.blocksize;
@@ -5109,12 +5147,168 @@ static int smart_joutnal_set_area_state(FAR struct smart_struct_s *dev, int area
 	ret = MTD_WRITE(dev->mtd, readaddress, 1, &id_bits);
 	if (ret != 1) {
 		fdbg("Error updating physical sector %d status\n", psector);
-		return -EIO;
+		return ret;
 	}
 
 	dev->journal_area_state[area] = id_bits;
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smart_journal_get_writeaddress
+ *
+ * Description:
+ *   Get address to write next journal data
+ *
+ ****************************************************************************/
+
+static int smart_journal_get_writeaddress(FAR struct smart_struct_s *dev, uint32_t *address)
+{
+	uint16_t psector;
+	size_t seq;
+	uint32_t *offset = address;
+
+	psector = dev->neraseblocks * dev->sectorsPerBlk;
+
+	/* Get Physical sector & sequence of each area First */
+	if (dev->area == 0) {
+		if (dev->journal_seq >= dev->njournaldata >> 1) {
+			fdbg("journal sequence & area bug!! sequence : %d\n", dev->journal_seq);
+			return -EFAULT;
+		}
+		psector = dev->neraseblocks * dev->sectorsPerBlk;
+		seq = dev->journal_seq;
+	} else {
+		if (dev->journal_seq < dev->njournaldata >> 1) {
+			fdbg("journal sequence & area bug!! sequence : %d\n", dev->journal_seq);
+			return -EFAULT;
+		}
+		psector = dev->neraseblocks * dev->sectorsPerBlk + (dev->njournalsectors >> 1);
+		seq = dev->journal_seq - (dev->njournaldata >> 1);
+	}
+
+	*offset = (psector * dev->sectorsize) + (seq * sizeof(journal_log_t) + 1);
+	fvdbg("address : %d psector : %d seq : %d dev seq : %d\n", offset, psector, seq, dev->journal_seq);
 	return OK;
 }
+
+/****************************************************************************
+ * Name: smart_journal_checkin
+ *
+ * Description:
+ *   Check in journal data, that is save log in journal area
+ *
+ ****************************************************************************/
+
+static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address)
+{
+	int ret;
+	journal_log_t buf;
+	size_t log_size = sizeof(journal_log_t);
+
+	/* First write Journal log with Checkin state */
+	ret = MTD_WRITE(dev->mtd, address, log_size, (FAR uint8_t *)log);
+	if (ret != log_size) {
+		fdbg("Checkin Error, write log data... physical address %u ret : %d\n", address, ret);
+		return ret;
+	}
+
+	/* Verify written data */
+	ret = MTD_READ(dev->mtd, address, log_size, (FAR uint8_t *)&buf);
+	if (ret != log_size) {
+		fdbg("Checkin Error, read log data... physical address %u ret : %d\n", address, ret);
+		return ret;
+	}
+
+	if (UINT8TOUINT16(buf.crc16) != smart_calc_journal_crc(&buf)) {
+		fdbg("Checkin Error, verify crc failed buf crc16 : %d calc crc : %d\n", UINT8TOUINT16(buf.crc16), smart_calc_journal_crc(&buf));
+		return -EIO;
+	}
+
+	/* Increase sequence here, journal_seq is always less than total number of journal data */
+	if (dev->journal_seq == dev->njournaldata - 1) {
+		dev->journal_seq = 0;
+	} else {
+		dev->journal_seq++;
+	}
+	return OK;
+}
+
+/****************************************************************************
+ * Name: smart_journal_checkout
+ *
+ * Description:
+ *   Check out journal data, checkpoint to mtd header from journal data
+ *
+ ****************************************************************************/
+
+static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address)
+{
+	int ret;
+	uint16_t psector;
+	size_t mtd_size = sizeof(FAR struct smart_sect_header_s);
+	psector = UINT8TOUINT16(log->psector);
+	int type = GET_JOURNAL_TYPE(log->status);
+	fvdbg("type : %d\n", type);
+	
+	/* Update MTD Header on target physical sector First, But Erase doesn't do that */
+	if (type != SMART_JOURNAL_TYPE_ERASE) {
+		ret = MTD_WRITE(dev->mtd, psector * dev->sectorsize, mtd_size, (FAR uint8_t *)&log->mtd_header);
+		if (ret != mtd_size) {
+			fdbg("Checkout error, write mtd header.. ret : %d\n", ret);
+			return ret;
+		}
+	}
+	
+	switch (type) {
+	/* If type is commit, we will check validation of entire sector */
+	case SMART_JOURNAL_TYPE_COMMIT: 
+		ret = MTD_BREAD(dev->mtd, psector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+		if (ret == dev->mtdBlksPerSector) {
+			/* Validate the CRC of the read-back data. */
+			ret = smart_validate_crc(dev);
+		}
+
+		if (ret != OK) {
+			/* TODO: Mark this as a bad block! */
+
+			fdbg("Check Error validating physical sector %d\n", psector);
+			return ret;
+		}
+		break;
+
+	/* Erase Target Physical Sector */			
+	case SMART_JOURNAL_TYPE_ERASE:
+		/** NOTICE* If erase need to be check in future, verify logic should added.
+		  * But I think It had better done by MTD Driver itself to reduce delay..
+		  */
+		ret = MTD_ERASE(dev->mtd, log->psector, 1);
+		if (ret < 0) {
+			fdbg("Erase block=%d failed: %d\n", log->psector, ret);
+			/* Unlock the mutex if we add one. */
+			return ret;
+		}
+		break;
+
+	/* Below type, we don't have to nothing for now, but if it needed, we can check written data of mtd header */
+	case SMART_JOURNAL_TYPE_AREA:
+	case SMART_JOURNAL_TYPE_ALLOC:
+	case SMART_JOURNAL_TYPE_RELEASE:
+		break;
+	}
+
+	/* Finally we checked out from journal, so change state to checkout */
+	SET_JOURNAL_STATE(log->status, SMART_JOURNAL_STATE_CHECKOUT);
+	ret = MTD_WRITE(dev->mtd, address + offsetof(journal_log_t, status), 1, (FAR uint8_t *)&log->status);
+	if (ret != 1) {
+		fdbg("Checkout error, change log state to checkout.. ret : %d\n", ret);
+		return ret;
+	}
+
+	/* TODO We will check remain size of current journal AREA here, and it will toggle if remain size is 1 */
+	return OK;
+}
+
 
 /****************************************************************************
  * Name: smart_journal_bwrite
@@ -5126,10 +5320,58 @@ static int smart_joutnal_set_area_state(FAR struct smart_struct_s *dev, int area
  *
  ****************************************************************************/
 
-static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsector, FAR uint8_t *buffer)
+static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsector)
 {
 	int ret = OK;
-	return ret;
+	journal_log_t log;
+	struct smart_sect_header_s *header;
+	crc_t crc;
+	uint32_t address = 0;
+	size_t mtd_size = sizeof(FAR struct smart_sect_header_s);
+
+	/* Initialize Journal log */
+	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
+	log.mtd_header = *header;
+	
+	log.psector[0] = (uint8_t)(physsector & 0x00FF);
+	log.psector[1] = (uint8_t)(physsector >> 8);
+	
+	log.seq[0] = (uint8_t)(dev->journal_seq & 0x00FF);
+	log.seq[1] = (uint8_t)(dev->journal_seq >> 8);
+
+	JOURNAL_STATUS_RESET(log.status);
+	SET_JOURNAL_TYPE(log.status, SMART_JOURNAL_TYPE_COMMIT);
+	SET_JOURNAL_STATE(log.status, SMART_JOURNAL_STATE_CHECKIN);
+	
+	crc = smart_calc_journal_crc(&log);
+	log.crc16[0] = (uint8_t)(crc & 0x00FF);
+	log.crc16[1] = (uint8_t)(crc >> 8);
+
+	/* Get Current Journal Address */
+	ret = smart_journal_get_writeaddress(dev, &address);
+	if (ret != OK) {
+		return ret;
+	}
+
+	/* Block write follows this step, checkin -> write only data -> checkout */
+	ret = smart_journal_checkin(dev, &log, address);
+	if (ret != OK) {
+		return ret;
+	}
+
+	ret = MTD_WRITE(dev->mtd, physsector * dev->sectorsize + mtd_size, dev->sectorsize - mtd_size, (FAR uint8_t *)&dev->rwbuffer[mtd_size]);
+	if (ret != dev->sectorsize - mtd_size) {
+		fdbg("write data failed ret : %d\n", ret);
+		return ret;
+	}
+
+	ret = smart_journal_checkout(dev, &log, address);
+	if (ret != OK) {
+		return ret;
+	}
+	
+	/* It is Block write & everything worked properly, so return number of mtd block per sector */
+	return dev->mtdBlksPerSector;
 }
 
 /****************************************************************************
@@ -5164,6 +5406,92 @@ static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t physsect
 	int ret = OK;
 	/* TODO we will add logic to handle erase case */
 	return ret;
+}
+
+/****************************************************************************
+ * Name: smart_journal_check_log_empty
+ *
+ * Description:
+ *   Return false if log is not empty, return true if all log datas are empty.
+ *
+ ****************************************************************************/
+
+static bool smart_journal_check_log_empty(journal_log_t *log)
+{
+	size_t log_size = sizeof(journal_log_t);
+	uint8_t *buf = (uint8_t *)log;
+
+	for (int i = 0; i < log_size; i++) {
+		if (buf[i] != CONFIG_SMARTFS_ERASEDSTATE) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/****************************************************************************
+ * Name: smart_journal_dump_log
+ *
+ * Description:
+ *   Dump all log of journal
+ *
+ ****************************************************************************/
+
+static void smart_journal_dump_log(FAR struct smart_struct_s *dev)
+{
+	uint32_t addr;
+	uint32_t count = 0;
+	uint32_t area0 = dev->neraseblocks * dev->sectorsPerBlk * dev->sectorsize;
+	uint32_t area1 = area0 + (dev->njournaleraseblocks >> 1) * dev->sectorsPerBlk * dev->sectorsize;
+	uint32_t last = dev->geo.neraseblocks * dev->sectorsPerBlk * dev->sectorsize;
+	journal_log_t log;
+	int ret;
+
+	/* TODO All dump log will be hide Later, Now enable it to develop journaling */
+	addr = area0;
+
+	while (addr < last) {
+		if (addr == area0 || addr == area1) {
+			uint8_t id_bits;
+			ret = MTD_READ(dev->mtd, addr, 1, &id_bits);
+			if (ret < 0) {
+				fdbg("read failed! ret : %d addr : %u\n", ret, addr);
+				break;
+			}
+			fdbg("area #%d status : 0x%x\n", (count == 0) ? 0 : 1, id_bits);
+			addr++;
+		} else {
+			ret = MTD_READ(dev->mtd, addr, sizeof(journal_log_t), (FAR uint8_t *)&log);
+			if (ret < 0) {
+				fdbg("read failed! ret : %d addr : %u\n", ret, addr);
+				break;
+			}
+			
+			if (smart_journal_check_log_empty(&log)) {
+				fdbg("end of journal\n");
+				break;
+			}
+
+			fdbg("Journal data #%d\n", count);
+			fdbg("Journal Type : %u\n", GET_JOURNAL_TYPE(log.status));
+			fdbg("Journal CRC : %d\n", UINT8TOUINT16(log.crc16));
+			fdbg("Target Physical Sector : %d\n", UINT8TOUINT16(log.psector));
+			fdbg("Journal Sequence Number : %d\n", UINT8TOUINT16(log.seq));
+			fdbg("Journal CheckIn : %s\n", CHECK_JOURNAL_CHECKIN(log.status) ? "yes" : "no");
+			fdbg("Journal CheckOut: %s\n", CHECK_JOURNAL_CHECKOUT(log.status) ? "yes" : "no");
+			fdbg("MTD Logical : %d\n", UINT8TOUINT16(log.mtd_header.logicalsector));
+			fdbg("MTD CRC : %d\n", UINT8TOUINT16(log.mtd_header.crc16));
+			fdbg("MTD status : %d\n", log.mtd_header.status);
+			fdbg("MTD sequence : %d\n", log.mtd_header.seq);
+			
+			count++;
+			if (count == dev->njournaldata >> 1) {
+				addr = area1;
+			} else {
+				addr += sizeof(journal_log_t);
+			}
+		}
+	}
 }
 
 #endif
