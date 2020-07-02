@@ -908,11 +908,8 @@ void sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *rtcb)
 		 */
 		pholder->counts--;
 
-#ifndef CONFIG_PRIORITY_INHERITANCE
-		if (pholder->counts <= 0) {
-			sem_freeholder(sem, pholder);
-		}
-#endif
+		/* Remove the holder from the holder list */
+		sem_freeholder(sem, pholder);
 	}
 }
 
