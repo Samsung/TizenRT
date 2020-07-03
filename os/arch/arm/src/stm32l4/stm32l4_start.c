@@ -52,7 +52,6 @@
 
 #include "stm32l4.h"
 #include "stm32l4_gpio.h"
-#include "stm32l4_userspace.h"
 #include "stm32l4_start.h"
 #include "hal/stm32l4xx_hal_interface.h"
 
@@ -344,24 +343,12 @@ void __start(void)
 	showprogress('C');
 	showprogress('D');
 
-	/* For the case of the separate user-/kernel-space build, perform whatever
-	 * platform specific initialization of the user memory is required.
-	 * Normally this just means initializing the user space .data and .bss
-	 * segments.
-	 */
-
-#ifdef CONFIG_BUILD_PROTECTED
-#ifndef CONFIG_SUPPORT_COMMON_BINARY
-	stm32l4_userspace();
-	showprogress('E');
-#endif
-#endif
 	/* For Systick enable */
 	//up_sys_timer_initialize();
 
 	/* Initialize onboard resources */
 	//board_initialize();
-	showprogress('F');
+	showprogress('E');
 
 	/* Then start NuttX */
 	showprogress('\r');

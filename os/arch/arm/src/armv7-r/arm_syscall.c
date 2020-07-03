@@ -184,6 +184,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 #ifdef CONFIG_BUILD_PROTECTED
 	uint32_t cpsr;
 #endif
+	FAR struct tcb_s *rtcb = sched_self();
 
 	/* Nested interrupts are not supported */
 
@@ -218,7 +219,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 	 */
 
 	case SYS_syscall_return: {
-		FAR struct tcb_s *rtcb = sched_self();
 		int index = (int)rtcb->xcp.nsyscalls - 1;
 
 		/* Make sure that there is a saved SYSCALL return address. */
@@ -302,7 +302,8 @@ uint32_t *arm_syscall(uint32_t *regs)
 		 *   CSPR = user mode
 		 */
 
-		regs[REG_PC] = (uint32_t)USERSPACE->task_startup;
+		DEBUGASSERT(rtcb->uspace);
+		regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->task_startup;
 		regs[REG_R0] = regs[REG_R1];
 		regs[REG_R1] = regs[REG_R2];
 		regs[REG_R2] = regs[REG_R3];
@@ -334,7 +335,8 @@ uint32_t *arm_syscall(uint32_t *regs)
 		 *   CSPR = user mode
 		 */
 
-		regs[REG_PC] = (uint32_t)USERSPACE->pthread_startup;
+		DEBUGASSERT(rtcb->uspace);
+		regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->pthread_startup;
 		regs[REG_R0] = regs[REG_R1];
 		regs[REG_R1] = regs[REG_R2];
 
@@ -360,17 +362,18 @@ uint32_t *arm_syscall(uint32_t *regs)
 	 */
 
 	case SYS_signal_handler: {
-		FAR struct tcb_s *rtcb = sched_self();
 		/* Remember the caller's return address */
 
 		DEBUGASSERT(rtcb->xcp.sigreturn == 0);
+		DEBUGASSERT(rtcb->uspace);
+
 		rtcb->xcp.sigreturn = regs[REG_PC];
 
 		/* Set up to return to the user-space pthread start-up function in
 		 * unprivileged mode.
 		 */
 
-		regs[REG_PC] = (uint32_t)USERSPACE->signal_handler;
+		regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->signal_handler;
 		cpsr = regs[REG_CPSR] & ~PSR_MODE_MASK;
 		regs[REG_CPSR] = cpsr | PSR_MODE_USR;
 
@@ -418,7 +421,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 	 */
 
 	case SYS_signal_handler_return: {
-		FAR struct tcb_s *rtcb = sched_self();
 
 		/* Set up to return to the kernel-mode signal dispatching logic. */
 
@@ -453,7 +455,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 
 	default: {
 #ifdef CONFIG_LIB_SYSCALL
-		FAR struct tcb_s *rtcb = sched_self();
 		int index = rtcb->xcp.nsyscalls;
 
 		/* Verify that the SYS call number is within range */
