@@ -69,7 +69,6 @@
 
 #include "stm32.h"
 #include "stm32_gpio.h"
-#include "stm32_userspace.h"
 
 #ifdef CONFIG_ARCH_FPU
 #include "nvic.h"
@@ -304,23 +303,10 @@ void __start(void)
 #endif
 	showprogress('D');
 
-	/* For the case of the separate user-/kernel-space build, perform whatever
-	 * platform specific initialization of the user memory is required.
-	 * Normally this just means initializing the user space .data and .bss
-	 * segments.
-	 */
-
-#ifdef CONFIG_BUILD_PROTECTED
-#ifndef CONFIG_SUPPORT_COMMON_BINARY
-	stm32_userspace();
-	showprogress('E');
-#endif
-#endif
-
 	/* Initialize onboard resources */
 
 	stm32_boardinitialize();
-	showprogress('F');
+	showprogress('E');
 
 	/* Then start TinyAra */
 

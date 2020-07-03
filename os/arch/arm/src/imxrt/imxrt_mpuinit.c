@@ -58,7 +58,6 @@
 
 #include <assert.h>
 
-#include <tinyara/userspace.h>
 #include <tinyara/mpu.h>
 
 #include "mpu.h"

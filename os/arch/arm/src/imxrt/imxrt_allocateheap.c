@@ -64,7 +64,6 @@
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
 #include <tinyara/kmalloc.h>
-#include <tinyara/userspace.h>
 
 #include <arch/imxrt/chip.h>
 
@@ -128,30 +127,28 @@ const uintptr_t g_idle_topstack = (uintptr_t)&_ebss + CONFIG_IDLETHREAD_STACKSIZ
  *
  ****************************************************************************/
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 {
 	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
 
-	/* There may be a special scenraio where we might configure a different region
+	/* There may be a special scenario where we might configure a different region
 	 * for heap. In such case, if end of bss falls outside of the region address range,
 	 * then we use the whole region for heap.
 	 */
 	if (*heap_start < (void *)KREGION_START || *heap_start > (void *)KREGION_END) {
-		*heap_start = KREGION_START;
+		*heap_start = (void *)KREGION_START;
 	}
 
 	*heap_size = (void *)KREGION_END - *heap_start;
 
 	dbg("start = 0x%x size = %d\n", *heap_start, *heap_size);
 }
-#endif
 
 /****************************************************************************
  * Name: up_add_kregion
  ****************************************************************************/
 #if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
-static void up_add_kregion(void)
+void up_add_kregion(void)
 {
 	int region_cnt;
 	struct mm_heap_s *kheap;

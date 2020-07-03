@@ -100,45 +100,6 @@ const uintptr_t g_idle_topstack = HEAP_BASE;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_allocate_heap
- *
- * Description:
- *   This function will be called to dynamically set aside the heap region.
- *
- *   For the kernel build (CONFIG_BUILD_PROTECTED=y) with both kernel- and
- *   user-space heaps (CONFIG_MM_KERNEL_HEAP=y), this function provides the
- *   size of the unprotected, user-space heap.
- *
- *   If a protected kernel-space heap is provided, the kernel heap must be
- *   allocated (and protected) by an analogous up_allocate_kheap().
- *
- *   The following memory map is assumed for the flat build:
- *
- *     .data region.  Size determined at link time.
- *     .bss  region  Size determined at link time.
- *     IDLE thread stack.  Size determined by CONFIG_IDLETHREAD_STACKSIZE.
- *     Heap.  Extends to the end of SRAM.
- *
- *   The following memory map is assumed for the kernel build:
- *
- *     Kernel .data region.  Size determined at link time.
- *     Kernel .bss  region  Size determined at link time.
- *     Kernel IDLE thread stack.  Size determined by CONFIG_IDLETHREAD_STACKSIZE.
- *     Padding for alignment
- *     User .data region.  Size determined at link time.
- *     User .bss region  Size determined at link time.
- *     Kernel heap.  Size determined by CONFIG_MM_KERNEL_HEAPSIZE.
- *     User heap.  Extends to the end of SRAM.
- *
- ****************************************************************************/
-
-void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
-{
-	*heap_start = (FAR void *)g_idle_topstack;
-	*heap_size = (HEAP_LIMIT - HEAP_BASE);
-}
-
-/****************************************************************************
  * Name: up_allocate_kheap
  *
  * Description:
@@ -148,36 +109,38 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
  *
  ****************************************************************************/
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 {
+	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
 
+	/* There may be a special scenario where we might configure a different region
+	 * for heap. In such case, if end of bss falls outside of the region address range,
+	 * then we use the whole region for heap.
+	 */
+	if (*heap_start < (void *)KREGION_START || *heap_start > (void *)KREGION_END) {
+		*heap_start = (void *)KREGION_START;
+	}
+
+	*heap_size = (void *)KREGION_END - *heap_start;
+
+	dbg("start = 0x%x size = %d\n", *heap_start, *heap_size);
 }
-#endif
 
 /****************************************************************************
- * Name: up_addregion
- *
- * Description:
- *   Memory may be added in non-contiguous chunks.  Additional chunks are
- *   added by calling this function.
- *
+ * Name: up_add_kregion
  ****************************************************************************/
-
-#if CONFIG_MM_REGIONS > 1
-/****************************************************************************
- * Name: up_addregion
- ****************************************************************************/
-void up_addregion(void)
+#if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
+void up_add_kregion(void)
 {
 	int region_cnt;
-	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
-		if (USR_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
-			mm_initialize(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+	struct mm_heap_s *kheap;
+	kheap = kmm_get_heap();
+	for (region_cnt = 1; region_cnt < CONFIG_KMM_REGIONS; region_cnt++) {
+		if (kheap[regionx_kheap_idx[region_cnt]].mm_heapsize == 0) {
+			mm_initialize(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
 			continue;
 		}
-		mm_addregion(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
+		mm_addregion(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
 	}
 }
 #endif
-

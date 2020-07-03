@@ -54,7 +54,6 @@
 #include <tinyara/rtc.h>
 #include "stm32l4.h"
 #include "stm32l4_gpio.h"
-#include "stm32l4_userspace.h"
 #include "stm32l4_start.h"
 #include "stm32l4xx_hal_interface.h"
 

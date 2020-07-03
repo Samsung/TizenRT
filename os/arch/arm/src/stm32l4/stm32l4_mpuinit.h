@@ -61,18 +61,4 @@ void stm32l4_mpuinitialize(void);
 #  define stm32l4_mpuinitialize()
 #endif
 
-/****************************************************************************
- * Name: stm32l4_mpu_uheap
- *
- * Description:
- *  Map the user heap region.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BUILD_PROTECTED
-void stm32l4_mpu_uheap(uintptr_t start, size_t size);
-#else
-#  define stm32l4_mpu_uheap(start,size)
-#endif
-
 #endif /* __ARCH_ARM_SRC_STM32L4_STM32L4_MPUINIT_H */
