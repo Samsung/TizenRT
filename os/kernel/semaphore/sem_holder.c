@@ -190,7 +190,7 @@ static inline FAR struct semholder_s *sem_findorallocateholder(sem_t *sem, FAR s
  * Name: sem_freeholder
  ****************************************************************************/
 
-static inline void sem_freeholder(sem_t *sem, FAR struct semholder_s *pholder)
+void sem_freeholder(sem_t *sem, FAR struct semholder_s *pholder)
 {
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 	FAR struct semholder_s *curr;
@@ -662,9 +662,8 @@ static inline void sem_restorebaseprio_irq(FAR struct tcb_s *stcb, FAR sem_t *se
  *
  ****************************************************************************/
 
-static inline void sem_restorebaseprio_task(FAR struct tcb_s *stcb, FAR sem_t *sem)
+static inline void sem_restorebaseprio_task(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem_t *sem)
 {
-	FAR struct tcb_s *rtcb = this_task();
 	FAR struct semholder_s *pholder;
 
 	/* Perform the following actions only if a new thread was given a count.
@@ -706,7 +705,7 @@ static inline void sem_restorebaseprio_task(FAR struct tcb_s *stcb, FAR sem_t *s
 	 * counts, then we need to remove it from the list of holders.
 	 */
 
-	pholder = sem_findholder(sem, rtcb);
+	pholder = sem_findholder(sem, htcb);
 	if (pholder) {
 		/* When no more counts are held, remove the holder from the list.  The
 		 * count was decremented in sem_releaseholder.
@@ -907,12 +906,6 @@ void sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *rtcb)
 		 * later in sem_restorebaseprio.
 		 */
 		pholder->counts--;
-
-#ifndef CONFIG_PRIORITY_INHERITANCE
-		if (pholder->counts <= 0) {
-			sem_freeholder(sem, pholder);
-		}
-#endif
 	}
 }
 
@@ -961,6 +954,7 @@ void sem_boostpriority(FAR sem_t *sem)
  *     is the TCB that received the count.  Note, just because stcb received
  *     the count, it does not mean that it it is higher priority than other
  *     threads.
+ *   htcb - The TCB of the task which already holds the semaphore.
  *   sem - A reference to the semaphore being posted.
  *     - If the semaphore count is <0 then there are still threads waiting
  *       for a count.  stcb should be non-null and will be higher priority
@@ -978,7 +972,7 @@ void sem_boostpriority(FAR sem_t *sem)
  *
  ****************************************************************************/
 
-void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR sem_t *sem)
+void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem_t *sem)
 {
 	/* Check our assumptions */
 
@@ -995,7 +989,7 @@ void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR sem_t *sem)
 	if (up_interrupt_context()) {
 		sem_restorebaseprio_irq(stcb, sem);
 	} else {
-		sem_restorebaseprio_task(stcb, sem);
+		sem_restorebaseprio_task(stcb, htcb, sem);
 	}
 }
 #endif
