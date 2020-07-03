@@ -93,6 +93,64 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
+{
+	struct tcb_s *stcb = NULL;
+#ifdef CONFIG_SEMAPHORE_HISTORY
+	save_semaphore_history(sem, (void *)this_task(), SEM_RELEASE);
+#endif
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	/* Don't let any unblocked tasks run until we complete any priority
+	 * restoration steps.  Interrupts are disabled, but we do not want
+	 * the head of the read-to-run list to be modified yet.
+	 *
+	 * NOTE: If this sched_lock is called from an interrupt handler, it
+	 * will do nothing.
+	 */
+
+	sched_lock();
+#endif
+	/* If the result of of semaphore unlock is non-positive, then
+	 * there must be some task waiting for the semaphore.
+	 */
+
+	if (sem->semcount <= 0) {
+		/* Check if there are any tasks in the waiting for semaphore
+		 * task list that are waiting for this semaphore. This is a
+		 * prioritized list so the first one we encounter is the one
+		 * that we want.
+		 */
+
+		for (stcb = (FAR struct tcb_s *)g_waitingforsemaphore.head; (stcb && stcb->waitsem != sem); stcb = stcb->flink) ;
+
+		if (stcb) {
+			sem_addholder_tcb(stcb, sem);
+
+			/* It is, let the task take the semaphore */
+
+			stcb->waitsem = NULL;
+
+#ifdef CONFIG_SEMAPHORE_HISTORY
+			save_semaphore_history(sem, (void *)stcb, SEM_AQUIRE);
+#endif
+			/* Restart the waiting task. */
+
+			up_unblock_task(stcb);
+		}
+	}
+
+	/* Check if we need to drop the priority of any threads holding
+	 * this semaphore.  The priority could have been boosted while they
+	 * held the semaphore.
+	 */
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+		sem_restorebaseprio(stcb, htcb, sem);
+	}
+	sched_unlock();
+#endif
+}
 
 /****************************************************************************
  * Name: sem_post
@@ -123,8 +181,6 @@
 
 int sem_post(FAR sem_t *sem)
 {
-	FAR struct tcb_s *stcb = NULL;
-
 	irqstate_t saved_state;
 	int ret = ERROR;
 
@@ -142,61 +198,8 @@ int sem_post(FAR sem_t *sem)
 		ASSERT(sem->semcount < SEM_VALUE_MAX);
 		sem_releaseholder(sem, this_task());
 		sem->semcount++;
-#ifdef CONFIG_SEMAPHORE_HISTORY
-		save_semaphore_history(sem, (void *)this_task(), SEM_RELEASE);
-#endif
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
-		/* Don't let any unblocked tasks run until we complete any priority
-		 * restoration steps.  Interrupts are disabled, but we do not want
-		 * the head of the read-to-run list to be modified yet.
-		 *
-		 * NOTE: If this sched_lock is called from an interrupt handler, it
-		 * will do nothing.
-		 */
-
-		sched_lock();
-#endif
-		/* If the result of of semaphore unlock is non-positive, then
-		 * there must be some task waiting for the semaphore.
-		 */
-
-		if (sem->semcount <= 0) {
-			/* Check if there are any tasks in the waiting for semaphore
-			 * task list that are waiting for this semaphore. This is a
-			 * prioritized list so the first one we encounter is the one
-			 * that we want.
-			 */
-
-			for (stcb = (FAR struct tcb_s *)g_waitingforsemaphore.head; (stcb && stcb->waitsem != sem); stcb = stcb->flink) ;
-
-			if (stcb) {
-				sem_addholder_tcb(stcb, sem);
-
-				/* It is, let the task take the semaphore */
-
-				stcb->waitsem = NULL;
-
-#ifdef CONFIG_SEMAPHORE_HISTORY
-				save_semaphore_history(sem, (void *)stcb, SEM_AQUIRE);
-#endif
-				/* Restart the waiting task. */
-
-				up_unblock_task(stcb);
-			}
-		}
-
-		/* Check if we need to drop the priority of any threads holding
-		 * this semaphore.  The priority could have been boosted while they
-		 * held the semaphore.
-		 */
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
-		if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
-			sem_restorebaseprio(stcb, sem);
-		}
-		sched_unlock();
-#endif
+		sem_unblock_task(sem, this_task());
 		ret = OK;
 
 		/* Interrupts may now be enabled. */
