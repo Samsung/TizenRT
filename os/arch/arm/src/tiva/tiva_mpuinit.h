@@ -90,18 +90,4 @@ void tiva_mpuinitialize(void);
 #define tiva_mpuinitialize()
 #endif
 
-/****************************************************************************
- * Name: tiva_mpu_uheap
- *
- * Description:
- *  Map the user heap region.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BUILD_PROTECTED
-void tiva_mpu_uheap(uintptr_t start, size_t size);
-#else
-#define tiva_mpu_uheap(start, size)
-#endif
-
 #endif							/* __ARCH_ARM_SRC_TIVA_TIVA_MPUINIT_H */

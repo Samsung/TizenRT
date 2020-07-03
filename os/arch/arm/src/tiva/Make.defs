@@ -106,7 +106,7 @@ CHIP_CSRCS += tiva_timerisr.c
 endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CHIP_CSRCS += tiva_userspace.c tiva_mpuinit.c
+CHIP_CSRCS += tiva_mpuinit.c
 endif
 
 ifeq ($(CONFIG_TIVA_I2C),y)

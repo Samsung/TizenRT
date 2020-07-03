@@ -41,14 +41,14 @@ extern unsigned int __PsramStackLimit;
 #define PSRAM_HEAP_BASE ((uintptr_t)&__psram_bss_end__[0])
 #define PSRAM_HEAP_LIMIT ((uintptr_t)&__PsramStackLimit)
 void os_heap_init(void){
-	regionx_start[0] = (void *)HEAP_BASE;
-	regionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
+	kregionx_start[0] = (void *)HEAP_BASE;
+	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
 	if(TRUE == psram_dev_config.psram_dev_enable) {
-		regionx_start[1] = (void *)PSRAM_HEAP_BASE;
-		regionx_size[1] = (size_t)(PSRAM_HEAP_LIMIT - PSRAM_HEAP_BASE);
+		kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
+		kregionx_size[1] = (size_t)(PSRAM_HEAP_LIMIT - PSRAM_HEAP_BASE);
 	} else {
-		regionx_start[1] = NULL;
-		regionx_size[1] = 0;
+		kregionx_start[1] = NULL;
+		kregionx_size[1] = 0;
 	}
 }
 #define dbg_printf DiagPrintf

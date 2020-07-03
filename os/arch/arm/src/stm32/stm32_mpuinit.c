@@ -58,8 +58,6 @@
 
 #include <assert.h>
 
-#include <tinyara/userspace.h>
-
 #include "mpu.h"
 #include "stm32_mpuinit.h"
 #include "up_internal.h"
@@ -101,45 +99,13 @@
 
 void stm32_mpuinitialize(void)
 {
-	uintptr_t datastart = MIN(USERSPACE->us_datastart, USERSPACE->us_bssstart);
-	uintptr_t dataend = MAX(USERSPACE->us_dataend, USERSPACE->us_bssend);
-
-	uintptr_t kflash = (uintptr_t)__kflash_segment_start__;
-	size_t kfsize = (size_t)__kflash_segment_size__;
-	size_t ufsize = (size_t)__uflash_segment_size__;
-	uintptr_t ksram = (uintptr_t)__ksram_segment_start__;
-	size_t krsize = (size_t)__ksram_segment_size__;
-
-	DEBUGASSERT(USERSPACE->us_textend >= USERSPACE->us_textstart && dataend >= datastart);
-
 	/* Show MPU information */
 
 	mpu_showtype();
 
-	/* Configure user flash and SRAM space */
-	mpu_userflash(kflash, kfsize + ufsize, MPU_REG_KERN_PERI);
-	mpu_privflash(kflash, kfsize, MPU_REG_KERN_FLASH);
-	mpu_userintsram(ksram, CONFIG_RAM_SIZE, MPU_REG_USER_RAM);
-	mpu_privintsram(ksram, krsize, MPU_REG_KERN_DATA);
-
 	/* Then enable the MPU */
 
 	mpu_control(true, false, true);
-}
-
-/****************************************************************************
- * Name: stm32_mpu_uheap
- *
- * Description:
- *  Map the user-heap region.
- *
- *  This logic may need an extension to handle external SDRAM).
- *
- ****************************************************************************/
-
-void stm32_mpu_uheap(uintptr_t start, size_t size)
-{
-//  mpu_userintsram(start, size, 0);
 }
 
 #endif							/* CONFIG_BUILD_PROTECTED && CONFIG_ARMV7M_MPU */
