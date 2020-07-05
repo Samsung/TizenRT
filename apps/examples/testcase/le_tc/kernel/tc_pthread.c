@@ -611,6 +611,16 @@ static void tc_pthread_pthread_barrier_init_destroy_wait(void)
 	TC_SUCCESS_RESULT();
 }
 
+static int infinite_sleep(int argc, char *argv[])
+{
+	while (1) {
+		/* This task will be terminated by task_delete from main tc task. */
+		sleep(10);
+	}
+
+	return 0;
+}
+
 /**
 * @fn                   :tc_pthread_pthread_create_exit_join
 * @brief                :creates a new thread with a specified attributes and \
@@ -626,6 +636,7 @@ static void tc_pthread_pthread_create_exit_join(void)
 {
 	int ret_chk;
 	pthread_t pthread;
+	int task_pid;
 	void *p_value = 0;
 
 	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
@@ -635,11 +646,22 @@ static void tc_pthread_pthread_create_exit_join(void)
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
 	TC_ASSERT_EQ("pthread_exit", p_value, (void *)EDEADLK);
 
+	/* Wait to release the above pthread resource */
+	sleep(1);
+
 	ret_chk = pthread_join(pthread, NULL);
-	TC_ASSERT_EQ("pthread_join", ret_chk, EINVAL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, ESRCH);
 
 	ret_chk = pthread_join(INVALID_PID, NULL);
 	TC_ASSERT_EQ("pthread_join", ret_chk, ESRCH);
+
+	task_pid = task_create("inval_test_task", 100, 1024, infinite_sleep, NULL);
+	TC_ASSERT_GT("task_create", task_pid, 0);
+
+	ret_chk = pthread_join(task_pid, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, EINVAL);
+	ret_chk = task_delete(task_pid);
+	TC_ASSERT_EQ("task_delete", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
 }
