@@ -75,15 +75,15 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-
 struct amebad_gpt_lowerhalf_s {
 	const struct timer_ops_s *ops;	/* Lowerhalf operations */
 	gtimer_t obj;
-	uint8_t irq_id;
 	bool started;				/* True: Timer is started */
 	tccb_t callback;
 	void *arg;					/* Argument passed to upper half callback */
 	uint32_t gpt_timeout;
+	bool freerunmode;			/* True: Free Run Mode. False: Alarm Mode */
+	uint32_t freeruncount;
 };
 
 /****************************************************************************
@@ -102,10 +102,10 @@ static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned l
 static const struct timer_ops_s g_timer_ops = {
 	.start = amebad_gpt_start,
 	.stop = amebad_gpt_stop,
-	.getstatus = NULL,
+	.getstatus = amebad_gpt_getstatus,
 	.settimeout = amebad_gpt_settimeout,
 	.setcallback = amebad_gpt_setcallback,
-	.ioctl = NULL,
+	.ioctl = amebad_gpt_ioctl,
 };
 
 static struct amebad_gpt_lowerhalf_s g_gpt0_lowerhalf = {
@@ -138,21 +138,23 @@ static struct amebad_gpt_lowerhalf_s g_gpt3_lowerhalf = {
  * Returned Values:
  *
  ****************************************************************************/
-
-static void amebad_timout_handler(uint32_t data)
+static void amebad_gpt_handler(uint32_t data)
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)data;
 	DEBUGASSERT(priv);
-
 	uint32_t next_interval_us = 0;
 
-	if (priv->callback(&next_interval_us, priv->arg)) {
-		if (next_interval_us > 0) {
-			priv->gpt_timeout = next_interval_us;
-			gtimer_reload(&priv->obj, priv->gpt_timeout);
+	if (priv->freerunmode) {	/* Free Run Mode */
+		priv->freeruncount++;
+	} else {					/* Alarm Mode */
+		if (priv->callback(&next_interval_us, priv->arg)) {
+			if (next_interval_us > 0) {
+				priv->gpt_timeout = next_interval_us;
+				gtimer_reload(&priv->obj, priv->gpt_timeout);
+			}
+		} else {
+			amebad_gpt_stop((struct timer_lowerhalf_s *)priv);
 		}
-	} else {
-		amebad_gpt_stop((struct timer_lowerhalf_s *)priv);
 	}
 }
 
@@ -176,10 +178,19 @@ static int amebad_gpt_start(struct timer_lowerhalf_s *lower)
 	DEBUGASSERT(priv);
 
 	if (!priv->started) {
-		if (priv->callback != NULL) {
-			gtimer_init(&priv->obj, priv->obj.timer_id);
+		if (priv->freerunmode) {	/* Free Run Mode */
+			priv->obj.handler = (void *)amebad_gpt_handler;
+			priv->obj.hid = priv;
+			gtimer_start_periodical(&priv->obj, 0xFFFFFFFF, (void *)amebad_gpt_handler, priv->obj.hid);
+		} else {				/* Alarm Mode */
+			if (priv->callback != NULL) {
+				priv->obj.handler = (void *)amebad_gpt_handler;
+				priv->obj.hid = priv;
+				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, (void *)amebad_gpt_handler, priv->obj.hid);
+			} else {
+				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, NULL, NULL);
+			}
 		}
-		gtimer_start_periodical(&priv->obj, priv->gpt_timeout, (void *)amebad_timout_handler, priv);
 		priv->started = true;
 
 		tmrvdbg("Timer %d is started, callback %s\n", priv->obj.timer_id, priv->callback == NULL ? "none" : "set");
@@ -221,6 +232,51 @@ static int amebad_gpt_stop(struct timer_lowerhalf_s *lower)
 	/* Return ENODEV to indicate that the timer was not running */
 	tmrdbg("Error!! Timer %d is not running\n", priv->obj.timer_id);
 	return -ENODEV;
+}
+
+/****************************************************************************
+ * Name: amebad_gpt_getstatus
+ *
+ * Description:
+ *   get GPT status
+ *
+ * Input Parameters:
+ *   lower   - A pointer the publicly visible representation of the
+ *             "lower-half" driver state structure.
+ *   status  - A pointer saved current GPT status
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+static int amebad_gpt_getstatus(struct timer_lowerhalf_s *lower, struct timer_status_s *status)
+{
+	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
+	uint32_t ticks;
+
+	/* Return the status bit */
+	status->flags = 0;
+	if (priv->started) {
+		status->flags |= TCFLAGS_ACTIVE;
+	}
+
+	if (priv->callback) {
+		status->flags |= TCFLAGS_HANDLER;
+	}
+
+	/* Return the actual timeout in microseconds */
+	status->timeout = priv->gpt_timeout;
+
+	/* Get the time remaining until the timer expires (in microseconds). */
+	ticks = gtimer_read_tick(&priv->obj);
+
+	if (priv->freerunmode) {	/* Free Run Mode */
+		status->timeleft = (uint64_t)((float)ticks * (1000000 / 32768) + (priv->freeruncount * 0xFFFFFFFF));
+	} else {					/* Alarm Mode */
+		status->timeleft = status->timeout - ticks * (1000000 / 32768);
+	}
+
+	return OK;
 }
 
 /****************************************************************************
@@ -285,13 +341,84 @@ static void amebad_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t callb
 
 	/* If no callback is attached, the timer stop at the first interrupt */
 	if (callback != NULL && priv->started) {
-		priv->obj.handler = (void *)amebad_timout_handler;
-		gtimer_init(&priv->obj, priv->obj.timer_id);
+		priv->obj.handler = (void *)amebad_gpt_handler;
+		priv->obj.hid = priv;
 	} else {
-		gtimer_deinit(&priv->obj);
+		priv->obj.handler = NULL;
+		priv->obj.hid = NULL;
 	}
 
 	irqrestore(flags);
+}
+
+/****************************************************************************
+ * Name: amebad_gpt_ioctl
+ *
+ * Description:
+ *   Any ioctl commands that are not recognized by the "upper-half" driver
+ *   are forwarded to the lower half driver through this method.
+ *
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the "lower-half"
+ *           driver state structure.
+ *   cmd   - The ioctl command value
+ *   arg   - The optional argument that accompanies the 'cmd'.  The
+ *           interpretation of this argument depends on the particular
+ *           command.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned long arg)
+{
+	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
+	DEBUGASSERT(priv);
+
+	int ret = -EINVAL;
+
+	tmrvdbg("GPT IOCTL cmd: %d, arg: %ld\n", cmd, arg);
+
+	switch (cmd) {
+	case TCIOC_SETDIV:
+		ret = OK;
+		break;
+	case TCIOC_GETDIV:
+		ret = OK;
+		break;
+	case TCIOC_SETMODE:
+		if ((timer_mode_t) arg == MODE_FREERUN) {
+			priv->freerunmode = true;
+			priv->freeruncount = 0;
+			ret = OK;
+		} else if ((timer_mode_t) arg == MODE_ALARM) {
+			priv->freerunmode = false;
+			priv->freeruncount = 0;
+			ret = OK;
+		} else {
+			ret = -EINVAL;
+		}
+		break;
+	case TCIOC_SETRESOLUTION:
+		if ((timer_resolution_t) arg == TIME_RESOLUTION_MS) {
+			// TO-DO develop
+			ret = OK;
+		} else {
+			ret = -EINVAL;
+		}
+		break;
+	case TCIOC_SETIRQPRIO:
+		ret = up_prioritize_irq(TIM_x[priv->obj.timer_id], arg);
+		break;
+	case TCIOC_SETCLKSRC:
+		ret = OK;
+		break;
+	default:
+		tmrdbg("Invalid cmd %d\n", cmd);
+		break;
+	}
+
+	return ret;
 }
 
 /****************************************************************************
@@ -322,7 +449,7 @@ int amebad_timer_initialize(const char *devpath, int timer)
 		priv->obj.timer_id = TIMER3;
 		break;
 
-	default: 
+	default:
 		priv = NULL;
 		break;
 	}
@@ -335,12 +462,14 @@ int amebad_timer_initialize(const char *devpath, int timer)
 	priv->started = false;
 	priv->callback = NULL;
 
+	/* Initializes the timer device, include timer registers and interrupt */
+	gtimer_init(&priv->obj, priv->obj.timer_id);
+
 	/*
 	 * Register the timer driver as /dev/timerX.  The returned value from
 	 * timer_register is a handle that could be used with timer_unregister().
 	 * REVISIT: The returned handle is discard here.
 	 */
-
 	if (!timer_register(devpath, (struct timer_lowerhalf_s *)priv)) {
 		/*
 		 * The actual cause of the failure may have been a failure to allocate
