@@ -25,6 +25,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +34,12 @@
 #include <sys/types.h>
 #include "tc_internal.h"
 
-#define BUFF_SIZE 128
+#define BUFF_SIZE    128
+#define NOT_USED     -1
+#define OCT_CHAR     "01234567"
+#define TEST_VAL     "01:23:45:67"
+#define NUM_TEST_VAL_IN_CHAR  4
+#define NUM_TEST_VAL_IN_SHORT 2
 
 static const char printable_chars[] = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
@@ -208,15 +214,19 @@ static void tc_libc_stdio_sprintf(void)
 */
 static void tc_libc_stdio_sscanf(void)
 {
-	const char oct_chars[] = "01234567";
 	char val_str[BUFF_SIZE];
-	char val_char;
-	int val_int;
-	long val_long;
+	char    val_char[2]          = {NOT_USED, NOT_USED};
+	uint8_t val_uint8[NUM_TEST_VAL_IN_CHAR + 1]  = {NOT_USED, NOT_USED, NOT_USED, NOT_USED, NOT_USED};
+	short   val_short[NUM_TEST_VAL_IN_SHORT + 1] = {NOT_USED, NOT_USED, NOT_USED};
+	int     val_int[2]           = {NOT_USED, NOT_USED};
+	long    val_long[2]          = {NOT_USED, NOT_USED};
+#ifdef CONFIG_LIBC_LONG_LONG
+	long long    val_longlong[2] = {NOT_USED, NOT_USED};
+#endif
 #ifdef CONFIG_LIBC_FLOATINGPOINT
-	float val_float;
+	float   val_float[2]         = {NOT_USED, NOT_USED};
 #ifdef CONFIG_HAVE_DOUBLE
-	double val_double;
+	double  val_double[2]        = {NOT_USED, NOT_USED};
 #endif
 #endif
 	int ret_chk;
@@ -248,97 +258,165 @@ static void tc_libc_stdio_sscanf(void)
 
 	/* %c */
 
-	ret_chk = sscanf(printable_chars, "%c", &val_char);
+	ret_chk = sscanf(printable_chars, "%c", &val_char[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_char, printable_chars[0]);
+	TC_ASSERT_EQ("sscanf", val_char[0], printable_chars[0]);
+	TC_ASSERT_EQ("sscanf", val_char[1], (char)NOT_USED);
 
 	/* noassign */
 
-	ret_chk = sscanf(printable_chars, "%*c", &val_char);
+	ret_chk = sscanf(printable_chars, "%*c", &val_char[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, EOF);
 
 	/* %duxob */
 
-	ret_chk = sscanf(oct_chars, "%d", &val_int);
+	ret_chk = sscanf(TEST_VAL, "%hhd", &val_uint8[0]); // %hhd with char buff
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_int, 1234567);
+	TC_ASSERT_EQ("sscanf", val_uint8[0], 1);
+	TC_ASSERT_EQ("sscanf", val_uint8[1], (uint8_t)NOT_USED);
+	TC_ASSERT_EQ("sscanf", val_uint8[2], (uint8_t)NOT_USED);
+	TC_ASSERT_EQ("sscanf", val_uint8[3], (uint8_t)NOT_USED);
+	TC_ASSERT_EQ("sscanf", val_uint8[4], (uint8_t)NOT_USED);
 
-	ret_chk = sscanf(oct_chars, "%u", &val_int);
+	ret_chk = sscanf(TEST_VAL, "%hd", &val_uint8[0]); // %hd with char buff
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_int, 1234567);
+	TC_ASSERT_EQ("sscanf", val_uint8[0], 1);
+	TC_ASSERT_EQ("sscanf", val_uint8[1], 0);
+	TC_ASSERT_EQ("sscanf", val_uint8[2], (uint8_t)NOT_USED);
+	TC_ASSERT_EQ("sscanf", val_uint8[3], (uint8_t)NOT_USED);
+	TC_ASSERT_EQ("sscanf", val_uint8[4], (uint8_t)NOT_USED);
 
-	ret_chk = sscanf(oct_chars, "%x", &val_int);
+	ret_chk = sscanf(TEST_VAL, "%d", &val_uint8[0]); // %d with char buff
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_int, 0x1234567);
+	TC_ASSERT_EQ("sscanf", val_uint8[0], 1);
+	TC_ASSERT_EQ("sscanf", val_uint8[1], 0);
+	TC_ASSERT_EQ("sscanf", val_uint8[2], 0);
+	TC_ASSERT_EQ("sscanf", val_uint8[3], 0);
+	TC_ASSERT_EQ("sscanf", val_uint8[4], (uint8_t)NOT_USED);
 
-	ret_chk = sscanf(oct_chars, "%o", &val_int);
-	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_int, 01234567);
+	ret_chk = sscanf(TEST_VAL, "%hhd:%hhd:%hhd:%hhd", &val_uint8[0], &val_uint8[1], &val_uint8[2], &val_uint8[3]); // %hhd with char buff
+	TC_ASSERT_EQ("sscanf", ret_chk, NUM_TEST_VAL_IN_CHAR);
+	TC_ASSERT_EQ("sscanf", val_uint8[0], 1);
+	TC_ASSERT_EQ("sscanf", val_uint8[1], 23);
+	TC_ASSERT_EQ("sscanf", val_uint8[2], 45);
+	TC_ASSERT_EQ("sscanf", val_uint8[3], 67);
+	TC_ASSERT_EQ("sscanf", val_uint8[4], (uint8_t)NOT_USED);
 
-	ret_chk = sscanf("1010", "%b", &val_int);
+	ret_chk = sscanf(TEST_VAL, "%hd", &val_short[0]); // %hd with short buff
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_int, 10);
+	TC_ASSERT_EQ("sscanf", val_short[0], 1);
+	TC_ASSERT_EQ("sscanf", val_short[1], (short)NOT_USED);
+	TC_ASSERT_EQ("sscanf", val_short[2], (short)NOT_USED);
+
+	ret_chk = sscanf(TEST_VAL, "%d", &val_short[0]); // %d with short buff
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", val_short[0], 1);
+	TC_ASSERT_EQ("sscanf", val_short[1], 0);
+	TC_ASSERT_EQ("sscanf", val_short[2], (short)NOT_USED);
+
+	ret_chk = sscanf(TEST_VAL, "%hd:%hd", &val_short[0], &val_short[1]); // %hd with short buff
+	TC_ASSERT_EQ("sscanf", ret_chk, NUM_TEST_VAL_IN_SHORT);
+	TC_ASSERT_EQ("sscanf", val_short[0], 1);
+	TC_ASSERT_EQ("sscanf", val_short[1], 23);
+	TC_ASSERT_EQ("sscanf", val_short[2], (short)NOT_USED);
+
+	ret_chk = sscanf(OCT_CHAR, "%d", &val_int[0]);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", val_int[0], 1234567);
+	TC_ASSERT_EQ("sscanf", val_int[1], (int)NOT_USED);
+
+	ret_chk = sscanf(OCT_CHAR, "%u", &val_int[0]);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", val_int[0], 1234567);
+	TC_ASSERT_EQ("sscanf", val_int[1], (int)NOT_USED);
+
+	ret_chk = sscanf(OCT_CHAR, "%x", &val_int[0]);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", val_int[0], 0x1234567);
+	TC_ASSERT_EQ("sscanf", val_int[1], (int)NOT_USED);
+
+	ret_chk = sscanf(OCT_CHAR, "%o", &val_int[0]);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", val_int[0], 01234567);
+	TC_ASSERT_EQ("sscanf", val_int[1], (int)NOT_USED);
+
+	ret_chk = sscanf("1010", "%b", &val_int[0]);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", val_int[0], 10);
+	TC_ASSERT_EQ("sscanf", val_int[1], (int)NOT_USED);
+
+	ret_chk = sscanf(OCT_CHAR, "%ld", &val_long[0]);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", val_long[0], 1234567);
+	TC_ASSERT_EQ("sscanf", val_long[1], (long)NOT_USED);
+
+#ifdef CONFIG_LIBC_LONG_LONG
+	ret_chk = sscanf(OCT_CHAR, "%lld", &val_longlong[0]);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", val_longlong[0], 1234567);
+	TC_ASSERT_EQ("sscanf", val_longlong[1], (long long)NOT_USED);
+#endif
 
 	/* noassign */
 
-	ret_chk = sscanf(oct_chars, "%*d", &val_int);
+	ret_chk = sscanf(OCT_CHAR, "%*d", &val_int[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, EOF);
 
 	/* width */
 
-	ret_chk = sscanf(oct_chars, "%5d", &val_int);
+	ret_chk = sscanf(OCT_CHAR, "%5d", &val_int[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_int, 1234);
+	TC_ASSERT_EQ("sscanf", val_int[0], 1234);
+	TC_ASSERT_EQ("sscanf", val_int[1], (int)NOT_USED);
 
 #ifdef CONFIG_LIBC_FLOATINGPOINT
 	/* %f */
 
-	ret_chk = sscanf("0.5", "%f", &val_float);
+	ret_chk = sscanf("0.5", "%f", &val_float[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_float, 0.5);
+	TC_ASSERT_EQ("sscanf", val_float[0], 0.5);
+	TC_ASSERT_EQ("sscanf", val_float[1], (float)NOT_USED);
 
 	/* noassign */
 
-	ret_chk = sscanf("0.5", "%*f", &val_float);
+	ret_chk = sscanf("0.5", "%*f", &val_float[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, EOF);
 
 	/* width */
 
-	ret_chk = sscanf("0.5", "%1f", &val_float);
+	ret_chk = sscanf("0.5", "%1f", &val_float[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_float, 0.0);
+	TC_ASSERT_EQ("sscanf", val_float[0], 0.0);
+	TC_ASSERT_EQ("sscanf", val_float[1], (float)NOT_USED);
 
 #ifdef CONFIG_HAVE_DOUBLE
 	/* lflag */
 
-	ret_chk = sscanf("0.5", "%lf", &val_double);
+	ret_chk = sscanf("0.5", "%lf", &val_double[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_double, 0.5);
+	TC_ASSERT_EQ("sscanf", val_double[0], 0.5);
+	TC_ASSERT_EQ("sscanf", val_double[1], (double)NOT_USED);
 #endif
 #endif
 
 	/* %n */
 
-	ret_chk = sscanf("1234 5678", "%*d %n", &val_int);
+	ret_chk = sscanf("1234 5678", "%*d %n", &val_int[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, EOF);
-	TC_ASSERT_EQ("sscanf", val_int, strlen("1234"));
+	TC_ASSERT_EQ("sscanf", val_int[0], strlen("1234"));
+	TC_ASSERT_EQ("sscanf", val_int[1], (int)NOT_USED);
 
 	/* noassign */
 
-	ret_chk = sscanf("1234 5678", "%*n", &val_int);
+	ret_chk = sscanf("1234 5678", "%*n", &val_int[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, EOF);
-
-	/* lflag */
-
-	ret_chk = sscanf("1234 5678", "%*d %ln", &val_long);
-	TC_ASSERT_EQ("sscanf", ret_chk, EOF);
-	TC_ASSERT_EQ("sscanf", val_long, strlen("1234"));
 
 	/* not a conversion specifier */
 
-	ret_chk = sscanf(" \t\n\r\f\v0123456789", " \t\n\r\f\v01234%d", &val_int);
+	ret_chk = sscanf(" \t\n\r\f\v0123456789", " \t\n\r\f\v01234%d", &val_int[0]);
 	TC_ASSERT_EQ("sscanf", ret_chk, 1);
-	TC_ASSERT_EQ("sscanf", val_int, 56789);
+	TC_ASSERT_EQ("sscanf", val_int[0], 56789);
+	TC_ASSERT_EQ("sscanf", val_int[1], (int)NOT_USED);
 
 	TC_SUCCESS_RESULT();
 }
