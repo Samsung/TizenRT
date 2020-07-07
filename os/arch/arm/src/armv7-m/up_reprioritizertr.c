@@ -194,7 +194,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 					}
 #endif
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-					up_mpu_set_register(&rtcb->stack_mpu_regs);
+					up_mpu_set_register(rtcb->stack_mpu_regs);
 #endif
 				}
 #endif

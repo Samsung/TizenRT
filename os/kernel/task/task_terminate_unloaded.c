@@ -73,6 +73,9 @@
 #ifdef CONFIG_PREFERENCE
 #include "preference/preference.h"
 #endif
+#ifdef HAVE_TASK_GROUP
+#include "group/group.h"
+#endif
 
 /************************************************************************
  * Public Functions

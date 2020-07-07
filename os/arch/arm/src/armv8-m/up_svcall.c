@@ -276,7 +276,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 				up_mpu_set_register(&tcb->mpu_regs[i]);
 			}
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-			up_mpu_set_register(&tcb->stack_mpu_regs);
+			up_mpu_set_register(tcb->stack_mpu_regs);
 #endif
 		}
 #endif
@@ -323,7 +323,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 				up_mpu_set_register(&tcb->mpu_regs[i]);
 			}
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-			up_mpu_set_register(&tcb->stack_mpu_regs);
+			up_mpu_set_register(tcb->stack_mpu_regs);
 #endif
 		}
 #endif

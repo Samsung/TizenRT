@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <debug.h>
 #include <stdlib.h>
+#include <string.h>
 #include <queue.h>
 #include <errno.h>
 #include <semaphore.h>
@@ -39,9 +40,11 @@
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 #include <tinyara/binfmt/binfmt.h>
 #endif
+#include <tinyara/wdog.h>
 
 #include "task/task.h"
 #include "sched/sched.h"
+#include "semaphore/semaphore.h"
 #include "binary_manager.h"
 
 /****************************************************************************

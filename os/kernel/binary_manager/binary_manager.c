@@ -30,6 +30,9 @@
 #include <stdlib.h>
 
 #include <tinyara/binary_manager.h>
+#ifdef CONFIG_BINMGR_RECOVERY
+#include <tinyara/kthread.h>
+#endif
 
 #include "sched/sched.h"
 #include "binary_manager.h"
