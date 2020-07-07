@@ -85,7 +85,7 @@ struct mm_heap_s g_kmmheap[CONFIG_KMM_NHEAPS];
  ************************************************************************/
 struct mm_heap_s *kmm_get_heap(void)
 {
-	return &g_kmmheap;
+	return g_kmmheap;
 }
 /************************************************************************
  * Name: kmm_initialize

@@ -170,7 +170,7 @@ void up_unblock_task(struct tcb_s *tcb)
 				}
 #endif
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-				up_mpu_set_register(&rtcb->stack_mpu_regs);
+				up_mpu_set_register(rtcb->stack_mpu_regs);
 #endif
 			}
 #endif
