@@ -84,7 +84,7 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 			usleep(1000);
 		}
 		retry_count++;
-		bmdbg("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
+		lldbg("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
 	}
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp = load_attr->binp;
