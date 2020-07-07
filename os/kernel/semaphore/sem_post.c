@@ -131,7 +131,7 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 			stcb->waitsem = NULL;
 
 #ifdef CONFIG_SEMAPHORE_HISTORY
-			save_semaphore_history(sem, (void *)stcb, SEM_AQUIRE);
+			save_semaphore_history(sem, (void *)stcb, SEM_ACQUIRE);
 #endif
 			/* Restart the waiting task. */
 

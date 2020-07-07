@@ -154,7 +154,7 @@ void sem_waitirq(FAR struct tcb_s *wtcb, int errcode)
 		wtcb->waitsem = NULL;
 
 #ifdef CONFIG_SEMAPHORE_HISTORY
-		save_semaphore_history(sem, (void *)wtcb, SEM_AQUIRE);
+		save_semaphore_history(sem, (void *)wtcb, SEM_ACQUIRE);
 #endif
 
 		/* Mark the errno value for the thread. */
