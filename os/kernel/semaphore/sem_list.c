@@ -26,6 +26,7 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
+#define is_kernel_sem(a) is_kernel_space((void *)a)
 
 /****************************************************************************
  * Private Type Declarations
@@ -47,7 +48,6 @@ sq_queue_t g_sem_list;
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
 /****************************************************************************
  * Name: sem_register
  *
@@ -69,18 +69,24 @@ void sem_register(FAR sem_t *sem)
 	sem_t *sem_ptr;
 	irqstate_t flags;
 
-	flags = irqsave();
-	sem_ptr = (sem_t *)sq_peek(&g_sem_list);
-	while (sem_ptr) {
-		if (sem_ptr == sem) {
-			/* Already registered */
-			irqrestore(flags);
-			return;
-		}
-		sem_ptr = sq_next(sem_ptr);
+	if (!sem) {
+		return;
 	}
-	/* Add semaphore to a list of kernel semaphore, g_sem_list */
-	sq_addlast((FAR sq_entry_t *)sem, &g_sem_list);
+
+	if (is_kernel_sem(sem)) {
+		flags = irqsave();
+		sem_ptr = (sem_t *)sq_peek(&g_sem_list);
+		while (sem_ptr) {
+			if (sem_ptr == sem) {
+				/* Already registered */
+				irqrestore(flags);
+				return;
+			}
+			sem_ptr = sq_next(sem_ptr);
+		}
+		sq_addlast((FAR sq_entry_t *)sem, g_sem_list);
+	}
+
 	irqrestore(flags);
 }
 
@@ -104,10 +110,15 @@ void sem_unregister(FAR sem_t *sem)
 {
 	irqstate_t flags;
 
+	if (!sem) {
+		return;
+	}
+
 	flags = irqsave();
 
-	/* Remove semaphore from a list of kernel semaphore */
-	sq_rem((FAR sq_entry_t *)sem, &g_sem_list);
-
+	if (is_kernel_sem(sem)) {
+		/* A list of kernel semaphores */
+		sq_rem((FAR sq_entry_t *)sem, (sq_queue_t *)&g_sem_list);
+	}
 	irqrestore(flags);
 }

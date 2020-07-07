@@ -52,7 +52,7 @@
 
 # Add the semaphore C files to the build
 
-CSRCS += sem_init.c sem_getprotocol.c sem_getvalue.c
+CSRCS += sem_getprotocol.c sem_getvalue.c
 
 ifneq ($(CONFIG_PRIORITY_INHERITANCE),y)
 CSRCS += sem_setprotocol.c

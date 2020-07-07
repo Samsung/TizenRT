@@ -106,12 +106,13 @@
 #define SYS_sem_timedwait              (CONFIG_SYS_RESERVED + 16)
 #define SYS_sem_trywait                (CONFIG_SYS_RESERVED + 17)
 #define SYS_sem_wait                   (CONFIG_SYS_RESERVED + 18)
+#define SYS_sem_init                   (CONFIG_SYS_RESERVED + 19)
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
-#define SYS_sem_setprotocol            (CONFIG_SYS_RESERVED + 19)
-#define __SYS_named_sem                (CONFIG_SYS_RESERVED + 20)
+#define SYS_sem_setprotocol            (CONFIG_SYS_RESERVED + 20)
+#define __SYS_named_sem                (CONFIG_SYS_RESERVED + 21)
 #else
-#define __SYS_named_sem                (CONFIG_SYS_RESERVED + 19)
+#define __SYS_named_sem                (CONFIG_SYS_RESERVED + 20)
 #endif
 
 /* Named semaphores */
