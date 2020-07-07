@@ -903,6 +903,7 @@ static ssize_t smart_write(FAR struct inode *inode, FAR const unsigned char *buf
 			/* Erase the erase block. */
 
 			eraseblock = alignedblock / mtdBlksPerErase;
+			/* TODO we don't have to add this transaction to journal but we'll see */
 			ret = MTD_ERASE(dev->mtd, eraseblock, 1);
 			if (ret < 0) {
 				fdbg("Erase block=%d failed: %d\n", eraseblock, ret);
@@ -1301,7 +1302,11 @@ static ssize_t smart_bytewrite(FAR struct smart_struct_s *dev, size_t offset, in
 	/* Check if the underlying MTD device supports write. */
 
 	if (dev->mtd->write != NULL) {
+#ifdef CONFIG_MTD_SMART_JOURNALING
+		ret = smart_journal_bytewrite(dev, offset, nbytes, buffer);
+#else
 		ret = MTD_WRITE(dev->mtd, offset, nbytes, buffer);
+#endif
 		goto errout;
 	} else
 #endif
@@ -2369,7 +2374,12 @@ static void smart_erase_block_if_empty(FAR struct smart_struct_s *dev, uint16_t 
 		dev->unusedsectors += freecount;
 		dev->blockerases++;
 #endif
+
+#ifdef CONFIG_MTD_SMART_JOURNALING
+		ret = smart_journal_erase(dev, block);
+#else
 		ret = MTD_ERASE(dev->mtd, block, 1);
+#endif
 		if (ret < 0) {
 			fdbg("MTD_ERASE failed!!\n");
 			dev->freecount[block] = 0;
@@ -2847,7 +2857,7 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 #endif
 #endif
 
-	/* Write the sector to the flash. */
+	/* Write the sector to the flash. it is format, so we do not use journaling */
 	wrcount = MTD_BWRITE(dev->mtd, 0, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 	if (wrcount != dev->mtdBlksPerSector) {
 		/* The block is not empty!!  What to do? */
@@ -2998,8 +3008,11 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 #endif
 
 	/* Write the data to the new physical sector location. */
-
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	ret = smart_journal_bwrite(dev, newsector);
+#else
 	ret = MTD_BWRITE(dev->mtd, newsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+#endif
 
 #else							/* CONFIG_MTD_SMART_ENABLE_CRC */
 
@@ -3218,8 +3231,11 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 	}
 
 	/* Now erase the erase block. */
-
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	ret = smart_journal_erase(dev, block);
+#else
 	ret = MTD_ERASE(dev->mtd, block, 1);
+#endif
 	if (ret < 0) {
 		fdbg("MTD_ERASE failed!!\n");
 		dev->freecount[block] = 0;
@@ -4204,7 +4220,6 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 	if (needsrelocate) {
 		/* Write the entire sector to the new physical location, uncommitted. */
 #ifdef CONFIG_MTD_SMART_JOURNALING
-		/* TODO Everywhere using MTD_BWRITE should follow this logic... */
 		ret = smart_journal_bwrite(dev, physsector);
 #else
 		ret = MTD_BWRITE(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
@@ -4953,6 +4968,7 @@ static int smart_journal_init(FAR struct smart_struct_s *dev)
 {
 	int ret = OK;
 	dev->journal_seq = 0;
+
 	ret = smart_journal_scan(dev, true);
 	if (ret != OK) {
 		return -EIO;
@@ -5145,24 +5161,13 @@ static int smart_journal_checkout_process(FAR struct smart_struct_s *dev, journa
 
 	/* Release type, we don't have to do anything for now, but if it needed, we can check written data of mtd header */
 	case SMART_JOURNAL_TYPE_RELEASE:
-		/* just update status bit only */
-		ret = smart_bytewrite(dev, psector * dev->sectorsize + offsetof(struct smart_sect_header_s, status), 1, &log->mtd_header.status);
-		if (ret != 1) {
-			fdbg("Error updating physical sector %d\n", psector);
-			return -EIO;
-		}
-
 		break;
+		
+	default:
+		return -EINVAL;
 	}
 
-	/* Finally we checked out from journal, so change state to checkout */
-	SET_JOURNAL_STATE(log->status, SMART_JOURNAL_STATE_CHECKOUT);
-	ret = MTD_WRITE(dev->mtd, address + offsetof(journal_log_t, status), 1, (FAR uint8_t *)&log->status);
-	if (ret != 1) {
-		fdbg("Checkout error, change log state to checkout.. ret : %d\n", ret);
-		return -EIO;
-	}
-
+	/* Now checkout journal data */
 	return smart_journal_checkout(dev, log, address);
 }
 
@@ -5195,34 +5200,44 @@ static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsec
 	/* Block write follows this step, checkin -> write only data -> checkout */
 	ret = smart_journal_checkin(dev, &log, address, physsector, SMART_JOURNAL_TYPE_COMMIT);
 	if (ret != OK) {
+		/* If checkin failed, change state journal to checkout */
 		return ret;
 	}
 
+	/* Write given data in rwbuffer from users, except mtd header */
 	ret = MTD_WRITE(dev->mtd, physsector * dev->sectorsize + mtd_size, dev->sectorsize - mtd_size, (FAR uint8_t *)&dev->rwbuffer[mtd_size]);
 	if (ret != dev->sectorsize - mtd_size) {
 		fdbg("write data failed ret : %d\n", ret);
-		return ret;
+		goto error_with_commit;
 	}
 
-	ret = smart_journal_checkout(dev, &log, address);
+	ret = smart_journal_checkout_process(dev, &log, address);
 	if (ret != OK) {
-		return ret;
+		/* If checkout failed, we release data & change state journal to checkout to remove all data */
+
+		/* TODO Should we make journal for journal to handle This?? */
+		goto error_with_commit;
 	}
 
 	ret = smart_journal_move_to_next(dev);
 	if (ret != OK) {
+		/* TODO So what we should do here?? */
 		return ret;
 	}
 	/* It is Block write & everything worked properly, so return number of mtd block per sector */
 	return dev->mtdBlksPerSector;
+
+error_with_commit:
+	/* TODO If any of error comes, We will release commit data & checkout journal data */
+	return ret;
 }
 
 /****************************************************************************
  * Name: smart_journal_bytewrite
  *
  * Description:
- *   Byte Write function instead of MTD_WRITE, return is size of written bytes.
- *   It is called when smartfs release or alloc target sector, it means no data.
+ *   Byte Write function instead of smart_bytewrite, return is size of written bytes.
+ *   It is called when smartfs release target sector only, it means no data.
  *   This will not write data on physical sector.
  *   Sequence is journal write -> write header
  *
@@ -5231,13 +5246,49 @@ static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsec
 static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t offset, int nbytes, FAR const uint8_t *buffer)
 {
 	int ret = OK;
-	/* TODO we will add logic to handle bytewrite case */
+	uint16_t psector = offset / dev->sectorsize;
+	journal_log_t log;
+	uint32_t address = 0;
+	size_t mtd_size = sizeof(FAR struct smart_sect_header_s);
+
+	address = smart_journal_get_writeaddress(dev);
+	
+	/* Initialize Journal log, read target sector to make mtd header */
+	ret = MTD_READ(dev->mtd, psector * dev->sectorsize, mtd_size, (FAR uint8_t *)&log.mtd_header);	
+	if (ret != mtd_size) {
+		fdbg("Get MTD Header failed..\n");
+		return -EIO;
+	}
+	
+	ret = smart_journal_checkin(dev, &log, address, psector, SMART_JOURNAL_TYPE_RELEASE);
+	if (ret != OK) {
+		/* If checkin failed, change state journal to checkout */
+		return ret;
+	}
+	
+	/* just update status bit only */
+	ret = MTD_WRITE(dev->mtd, offset, nbytes, buffer);
+	if (ret != nbytes) {
+		fdbg("Error updating physical sector %d\n", psector);
+		ret = -EIO;
+		goto error_with_release;
+	}
+
+	ret = smart_journal_checkout_process(dev, &log, address);
+	if (ret != OK) {
+		goto error_with_release;
+	}
+	
 	ret = smart_journal_move_to_next(dev);
 	if (ret != OK) {
 		return ret;
 	}
 
+	/* This being called instead of smart_bytewrite, so return nbytes */
 	return nbytes;
+error_with_release:
+	/* TODO If any of error comes, We will release commit data & checkout journal data once again */
+	return ret;
 }
 
 /****************************************************************************
@@ -5252,24 +5303,19 @@ static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t of
 static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t block)
 {
 	int ret = OK;
-
-	fvdbg("journal seq : %d block : %d\n", dev->journal_seq, block);
-
+	uint16_t psector = block / dev->sectorsPerBlk;
 	journal_log_t log;
 	uint32_t address = 0;
+	size_t mtd_size = sizeof(FAR struct smart_sect_header_s);
+	
+	fvdbg("journal seq : %d block : %d\n", dev->journal_seq, block);
 
-	/** Optimize MTD Header for Erase, We will Follow Below Policy. 
-	  * This is necessary to check validation of journal data.
-	  * logicalsector : target block
-	  * seq : # of journal block
-	  * status : Type of journal (SMART_JOURNAL_TYPE_ERASE)
-	  * 
-	  */
-	log.mtd_header.logicalsector[0] = (uint8_t)(block & 0x00FF);
-	log.mtd_header.logicalsector[1] = (uint8_t)(block >> 8);
-	log.mtd_header.status = SMART_JOURNAL_TYPE_ERASE;
-	log.mtd_header.seq = block % dev->neraseblocks;
-
+	/* Initialize Journal log, read First sector of target block to make mtd header */
+	ret = MTD_READ(dev->mtd, psector * dev->sectorsize, mtd_size, (FAR uint8_t *)&log.mtd_header);	
+	if (ret != mtd_size) {
+		fdbg("Get MTD Header failed..\n");
+		return -EIO;
+	}
 	
 	/* Get Current Journal Address */
 	address = smart_journal_get_writeaddress(dev);
@@ -5283,12 +5329,13 @@ static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t block)
 	ret = MTD_ERASE(dev->mtd, block, 1);
 	if (ret != OK) {
 		fdbg("Erase failed ret : %d\n", ret);
-		return -EIO;
+		ret = -EIO;
+		goto error_with_erase;
 	}
 
-	ret = smart_journal_checkout(dev, &log, address);
+	ret = smart_journal_checkout_process(dev, &log, address);
 	if (ret != OK) {
-		return ret;
+		goto error_with_erase;
 	}
 	
 	ret = smart_journal_move_to_next(dev);
@@ -5298,7 +5345,9 @@ static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t block)
 
 	/* Now it is ok, so return OK, align with MTD_ERASE */
 	return OK;
-
+error_with_erase:
+	/* TODO If any of error comes, We will Erase target block & checkout journal data once again */
+	return ret;
 }
 
 /****************************************************************************
@@ -5468,17 +5517,34 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 	type = GET_JOURNAL_TYPE(log->status);
 	/* TODO Recovery Logic Will be added, after recovery we should update dev structure too(cf.freecount) */
 	switch (type) {
-	case SMART_JOURNAL_TYPE_COMMIT: 
+	case SMART_JOURNAL_TYPE_COMMIT:
 		break;
+		
 	case SMART_JOURNAL_TYPE_RELEASE:
 		break;
+		
 	case SMART_JOURNAL_TYPE_ERASE:
+		/** TODO if erase takes very short time, we can get benefit if we verify erase block first.
+		  * So put verify logic here, and if it is not necessary, remove it.
+		  */
+		ret = MTD_ERASE(dev->mtd, UINT8TOUINT16(log->psector), 1);
+		if (ret != OK) {
+			fdbg("Erase failed ret : %d block : %d\n", ret, UINT8TOUINT16(log->psector));
+			return -EIO;
+		}
 		break;
+		
 	default:
 		break;
 	}
+	
+	ret = smart_journal_checkout(dev, log, address);
+	if (ret != OK) {
+		return ret;
+	}
 
 	return OK;
+
 }
 
 #endif
