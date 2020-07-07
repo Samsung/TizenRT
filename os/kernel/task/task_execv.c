@@ -56,12 +56,16 @@
 
 #include <tinyara/config.h>
 
+#ifdef CONFIG_LIBC_EXECFUNCS
+#include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <debug.h>
 
-#ifdef CONFIG_LIBC_EXECFUNCS
+#include <tinyara/symtab.h>
+#include <tinyara/binfmt/symtab.h>
+#include <tinyara/binfmt/binfmt.h>
 
 /****************************************************************************
  * Pre-processor Definitions

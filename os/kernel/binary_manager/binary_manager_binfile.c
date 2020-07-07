@@ -31,7 +31,7 @@
 #include <sys/stat.h>
 #include <tinyara/binary_manager.h>
 
-#include "binary_manager/binary_manager.h"
+#include "binary_manager.h"
 
 /****************************************************************************
  * Private Functions
