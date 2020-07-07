@@ -395,17 +395,6 @@ typedef uint32_t crc_t;
 #error "CRC-16 is necessary for journaling"
 #endif
 
-/* State of first byte of each journal Area */
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-#define AREA_UNUSED 0xFF
-#define AREA_USED   0xF0
-#define AREA_OLD_UNERASED 0x00
-#else
-#define AREA_UNUSED 0x00
-#define AREA_USED   0x0F
-#define AREA_OLD_UNERASED 0xFF
-#endif
-
 /* State of Journal Log Low 4 bits */
 #define SMART_JOURNAL_STATE_CHECKIN  (1 << 1)
 #define SMART_JOURNAL_STATE_CHECKOUT (1 << 2)
@@ -479,6 +468,7 @@ static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev);
 static int smart_journal_init(FAR struct smart_struct_s *dev);
 static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address, uint16_t psector, int type);
 static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address);
+static int smart_journal_checkout_process(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address);
 static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsector);
 static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t offset, int nbytes, FAR const uint8_t *buffer);
 static int smart_journal_read_journal_log(FAR struct smart_struct_s *dev, journal_log_t *log);
@@ -487,6 +477,8 @@ static uint32_t smart_journal_get_writeaddress(FAR struct smart_struct_s *dev);
 static void smart_journal_print_log(FAR struct smart_struct_s *dev, journal_log_t *log);
 static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump);
 static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t *log);
+static int smart_validate_journal_crc(journal_log_t *log);
+static crc_t smart_calc_journal_crc(journal_log_t *log);
 
 #endif
 /****************************************************************************
@@ -2709,6 +2701,32 @@ static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev)
 #endif
 
 #ifdef CONFIG_MTD_SMART_JOURNALING
+/****************************************************************************
+ * Name: smart_validate_journal_crc
+ *
+ * Description:  Validate the CRC16 data in the journal data against the
+ *               crc16 variable in journal data.
+ *
+ ****************************************************************************/
+
+static int smart_validate_journal_crc(journal_log_t *log)
+{
+	crc_t crc;
+	crc = smart_calc_journal_crc(log);
+	if (UINT8TOUINT16(log->crc16) != crc) {
+		return -EIO;
+	}
+	return OK;
+}
+
+/****************************************************************************
+ * Name: smart_calc_journal_crc
+ *
+ * Description:  Calculate the CRC value for the journal data in the structure
+ *               smart_journal_logging_data_s based on the CRC16 size.
+ *
+ ****************************************************************************/
+
 static crc_t smart_calc_journal_crc(journal_log_t *log)
 {
 	crc_t crc = 0;
@@ -5048,7 +5066,7 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
 		return -EIO;
 	}
 
-	if (UINT8TOUINT16(buf.crc16) != smart_calc_journal_crc(&buf)) {
+	if (smart_validate_journal_crc(&buf) != OK) {
 		fdbg("Checkin Error, verify crc failed buf crc16 : %d calc crc : %d\n", UINT8TOUINT16(buf.crc16), smart_calc_journal_crc(&buf));
 		return -EIO;
 	}
@@ -5060,11 +5078,33 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
  * Name: smart_journal_checkout
  *
  * Description:
- *   Check out journal data, checkpoint to mtd header from journal data
+ *   Check out journal data, change state of current journal to checkout
  *
  ****************************************************************************/
 
 static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address)
+{
+	int ret;
+	JOURNAL_STATUS_RESET(log->status);
+	SET_JOURNAL_STATE(log->status, SMART_JOURNAL_STATE_CHECKOUT);
+	ret = MTD_WRITE(dev->mtd, address + offsetof(journal_log_t, status), 1, (FAR uint8_t *)&log->status);
+	if (ret != 1) {
+		fdbg("Checkout error, change log state to checkout.. ret : %d\n", ret);
+		return -EIO;
+	}
+	return OK;
+}
+
+
+/****************************************************************************
+ * Name: smart_journal_checkout_process
+ *
+ * Description:
+ *   Check out journal data, checkpoint to mtd header from journal data
+ *
+ ****************************************************************************/
+
+static int smart_journal_checkout_process(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address)
 {
 	int ret;
 	uint16_t psector;
@@ -5123,7 +5163,7 @@ static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t 
 		return -EIO;
 	}
 
-	return OK;
+	return smart_journal_checkout(dev, log, address);
 }
 
 
@@ -5408,16 +5448,20 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t *log)
 {
 	int ret;
-	crc_t crc; //journal crc
 	int type;
+	uint32_t address = smart_journal_get_writeaddress(dev);
 	
 	fvdbg("Printf recovery data journal_seq : %d!!\n", dev->journal_seq);
 	smart_journal_print_log(dev, log);
 
-	crc = smart_calc_journal_crc(log);
-
-	if (crc != UINT8TOUINT16(log->crc16)) {
-		fdbg("Invalid CRC %d calculated crc : %d written crc : %d\n", crc, log->crc16);
+	/* Recovery step is Check crc -> Check something more based on type -> checkout -> verify based on type */
+	if (smart_validate_journal_crc(log) != OK) {
+		fdbg("Invalid CRC calculated crc : %d written crc : %d\n", smart_calc_journal_crc(log), UINT8TOUINT16(log->crc16));
+		/* Invalid one, so make it checkout */
+		ret = smart_journal_checkout(dev, log, address);
+		if (ret != OK) {
+			return ret;
+		}
 		return -EINVAL;
 	}
 	
