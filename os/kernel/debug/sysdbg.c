@@ -518,7 +518,7 @@ void save_semaphore_history(FAR sem_t *sem, void *addr, sem_status_t status)
 	case SEM_INIT:
 		strncpy(sysdbg_struct->sem_log[index].status, "IN", 2);
 		break;
-	case SEM_AQUIRE:
+	case SEM_ACQUIRE:
 		strncpy(sysdbg_struct->sem_log[index].status, "AQ", 2);
 		break;
 	case SEM_RELEASE:

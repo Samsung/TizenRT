@@ -91,7 +91,7 @@ typedef struct sem_history_s sem_history_t;
 
 enum sem_status_s {
 	SEM_INIT = 0,
-	SEM_AQUIRE,
+	SEM_ACQUIRE,
 	SEM_RELEASE,
 	SEM_WAITING,
 	SEM_DESTROY,
