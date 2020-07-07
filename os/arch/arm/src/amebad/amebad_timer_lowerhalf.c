@@ -61,7 +61,6 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/kmalloc.h>
 #include <tinyara/timer.h>
 #include <tinyara/irq.h>
 #include "timer_api.h"
@@ -83,7 +82,7 @@ struct amebad_gpt_lowerhalf_s {
 	void *arg;					/* Argument passed to upper half callback */
 	uint32_t gpt_timeout;
 	bool freerunmode;			/* True: Free Run Mode. False: Alarm Mode */
-	uint32_t freeruncount;
+	uint32_t num_of_4294967ms_elapse;	/* Used to calculate total time elapse in Free Run Mode */
 };
 
 /****************************************************************************
@@ -141,11 +140,14 @@ static struct amebad_gpt_lowerhalf_s g_gpt3_lowerhalf = {
 static void amebad_gpt_handler(uint32_t data)
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)data;
-	DEBUGASSERT(priv);
 	uint32_t next_interval_us = 0;
+	DEBUGASSERT(priv);
+	if (!priv) {
+		return -ENODEV;
+	}
 
 	if (priv->freerunmode) {	/* Free Run Mode */
-		priv->freeruncount++;
+		priv->num_of_4294967ms_elapse++;
 	} else {					/* Alarm Mode */
 		if (priv->callback(&next_interval_us, priv->arg)) {
 			if (next_interval_us > 0) {
@@ -176,17 +178,20 @@ static int amebad_gpt_start(struct timer_lowerhalf_s *lower)
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
 	DEBUGASSERT(priv);
+	if (!priv) {
+		return -ENODEV;
+	}
 
 	if (!priv->started) {
 		if (priv->freerunmode) {	/* Free Run Mode */
 			priv->obj.handler = (void *)amebad_gpt_handler;
 			priv->obj.hid = priv;
-			gtimer_start_periodical(&priv->obj, 0xFFFFFFFF, (void *)amebad_gpt_handler, priv->obj.hid);
+			gtimer_start_periodical(&priv->obj, 0xFFFFFFFF, priv->obj.handler, priv->obj.hid);
 		} else {				/* Alarm Mode */
 			if (priv->callback != NULL) {
 				priv->obj.handler = (void *)amebad_gpt_handler;
 				priv->obj.hid = priv;
-				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, (void *)amebad_gpt_handler, priv->obj.hid);
+				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, priv->obj.handler, priv->obj.hid);
 			} else {
 				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, NULL, NULL);
 			}
@@ -220,6 +225,9 @@ static int amebad_gpt_stop(struct timer_lowerhalf_s *lower)
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
 	DEBUGASSERT(priv);
+	if (!priv) {
+		return -ENODEV;
+	}
 
 	if (priv->started) {
 		gtimer_deinit(&priv->obj);
@@ -253,6 +261,10 @@ static int amebad_gpt_getstatus(struct timer_lowerhalf_s *lower, struct timer_st
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
 	uint32_t ticks;
+	DEBUGASSERT(priv);
+	if (!priv) {
+		return -ENODEV;
+	}
 
 	/* Return the status bit */
 	status->flags = 0;
@@ -271,7 +283,7 @@ static int amebad_gpt_getstatus(struct timer_lowerhalf_s *lower, struct timer_st
 	ticks = gtimer_read_tick(&priv->obj);
 
 	if (priv->freerunmode) {	/* Free Run Mode */
-		status->timeleft = (uint64_t)((float)ticks * (1000000 / 32768) + (priv->freeruncount * 0xFFFFFFFF));
+		status->timeleft = (uint64_t)((float)ticks * (1000000 / 32768) + (priv->num_of_4294967ms_elapse * 0xFFFFFFFF));
 	} else {					/* Alarm Mode */
 		status->timeleft = status->timeout - ticks * (1000000 / 32768);
 	}
@@ -298,6 +310,9 @@ static int amebad_gpt_settimeout(struct timer_lowerhalf_s *lower, uint32_t timeo
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
 	DEBUGASSERT(priv);
+	if (!priv) {
+		return -ENODEV;
+	}
 
 	if (priv->started) {
 		return -EPERM;
@@ -332,23 +347,24 @@ static void amebad_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t callb
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
 	DEBUGASSERT(priv);
+	if (priv) {
+		irqstate_t flags = irqsave();
 
-	irqstate_t flags = irqsave();
+		/* Save the new callback */
+		priv->callback = callback;
+		priv->arg = arg;
 
-	/* Save the new callback */
-	priv->callback = callback;
-	priv->arg = arg;
+		/* If no callback is attached, the timer stops at the first interrupt */
+		if (callback != NULL && priv->started) {
+			priv->obj.handler = (void *)amebad_gpt_handler;
+			priv->obj.hid = priv;
+		} else {
+			priv->obj.handler = NULL;
+			priv->obj.hid = NULL;
+		}
 
-	/* If no callback is attached, the timer stop at the first interrupt */
-	if (callback != NULL && priv->started) {
-		priv->obj.handler = (void *)amebad_gpt_handler;
-		priv->obj.hid = priv;
-	} else {
-		priv->obj.handler = NULL;
-		priv->obj.hid = NULL;
+		irqrestore(flags);
 	}
-
-	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -374,6 +390,9 @@ static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned l
 {
 	struct amebad_gpt_lowerhalf_s *priv = (struct amebad_gpt_lowerhalf_s *)lower;
 	DEBUGASSERT(priv);
+	if (!priv) {
+		return -ENODEV;
+	}
 
 	int ret = -EINVAL;
 
@@ -381,27 +400,26 @@ static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned l
 
 	switch (cmd) {
 	case TCIOC_SETDIV:
-		ret = OK;
+		ret = -EINVAL;
 		break;
 	case TCIOC_GETDIV:
-		ret = OK;
+		ret = -EINVAL;
 		break;
 	case TCIOC_SETMODE:
-		if ((timer_mode_t) arg == MODE_FREERUN) {
+		if ((timer_mode_t)arg == MODE_FREERUN) {
 			priv->freerunmode = true;
-			priv->freeruncount = 0;
+			priv->num_of_4294967ms_elapse = 0;
 			ret = OK;
-		} else if ((timer_mode_t) arg == MODE_ALARM) {
+		} else if ((timer_mode_t)arg == MODE_ALARM) {
 			priv->freerunmode = false;
-			priv->freeruncount = 0;
 			ret = OK;
 		} else {
 			ret = -EINVAL;
 		}
 		break;
 	case TCIOC_SETRESOLUTION:
-		if ((timer_resolution_t) arg == TIME_RESOLUTION_MS) {
-			// TO-DO develop
+		if ((timer_resolution_t)arg == TIME_RESOLUTION_MS) {
+			// TBD
 			ret = OK;
 		} else {
 			ret = -EINVAL;
@@ -411,7 +429,7 @@ static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned l
 		ret = up_prioritize_irq(TIM_x[priv->obj.timer_id], arg);
 		break;
 	case TCIOC_SETCLKSRC:
-		ret = OK;
+		ret = -EINVAL;
 		break;
 	default:
 		tmrdbg("Invalid cmd %d\n", cmd);
@@ -451,10 +469,6 @@ int amebad_timer_initialize(const char *devpath, int timer)
 
 	default:
 		priv = NULL;
-		break;
-	}
-
-	if (!priv) {
 		return -ENODEV;
 	}
 
