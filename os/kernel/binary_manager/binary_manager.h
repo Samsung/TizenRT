@@ -130,6 +130,9 @@ struct binmgr_uinfo_s {
 	struct tcb_s *rt_list;
 	struct tcb_s *nrt_list;
 	sq_queue_t cb_list; // list node type : statecb_node_t
+#ifdef CONFIG_BINMGR_RECOVERY
+	sq_queue_t sem_list;
+#endif
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp;
 #endif
@@ -162,6 +165,9 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_VER(bin_idx)                                binary_manager_get_udata(bin_idx)->bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->kernel_ver
 #define BIN_CBLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->cb_list
+#ifdef CONFIG_BINMGR_RECOVERY
+#define BIN_SEMLIST(bin_idx)                            binary_manager_get_udata(bin_idx)->sem_list
+#endif
 
 #define BIN_LOAD_ATTR(bin_idx)                          binary_manager_get_udata(bin_idx)->load_attr
 #define BIN_NAME(bin_idx)                               binary_manager_get_udata(bin_idx)->load_attr.bin_name

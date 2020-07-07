@@ -23,6 +23,9 @@
 
 #include <tinyara/arch.h>
 
+#include "sched/sched.h"
+#include "binary_manager/binary_manager.h"
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -44,6 +47,26 @@ sq_queue_t g_sem_list;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static void sem_addlist(FAR sem_t *sem, sq_queue_t *list)
+{
+	sem_t *sem_ptr;
+	irqstate_t flags;
+
+	flags = irqsave();
+
+	sem_ptr = (sem_t *)sq_peek(list);
+	while (sem_ptr) {
+		if (sem_ptr == sem) {
+			/* Already registered */
+			irqrestore(flags);
+			return;
+		}
+		sem_ptr = sq_next(sem_ptr);
+	}
+	sq_addlast((FAR sq_entry_t *)sem, list);
+
+	irqrestore(flags);
+}
 
 /****************************************************************************
  * Public Functions
@@ -52,7 +75,7 @@ sq_queue_t g_sem_list;
  * Name: sem_register
  *
  * Description:
- *   Register semaphore to a list of kernel semaphores.
+ *   Register semaphore to a list of kernel and user semaphores.
  *
  * Parameters:
  *   sem - Semaphore descriptor
@@ -61,40 +84,31 @@ sq_queue_t g_sem_list;
  *   None
  *
  * Assumptions:
- *   This function may be called when semaphore in kernel region is initialized.
+ *   This function may be called when semaphore is initialized.
  *
  ****************************************************************************/
 void sem_register(FAR sem_t *sem)
 {
-	sem_t *sem_ptr;
-	irqstate_t flags;
-
-	if (!sem) {
-		return;
-	}
+	int binidx;
+	struct tcb_s *tcb;
 
 	if (is_kernel_sem(sem)) {
-		flags = irqsave();
-		sem_ptr = (sem_t *)sq_peek(&g_sem_list);
-		while (sem_ptr) {
-			if (sem_ptr == sem) {
-				/* Already registered */
-				irqrestore(flags);
-				return;
-			}
-			sem_ptr = sq_next(sem_ptr);
+		/* A list of kernel semaphores */
+		sem_addlist(sem, &g_sem_list);
+	} else {
+		tcb = this_task();
+		if (tcb && tcb->group && tcb->group->tg_binidx > 0) {
+			/* A list of user binary semaphores */
+			sem_addlist(sem, &BIN_SEMLIST(tcb->group->tg_binidx));
 		}
-		sq_addlast((FAR sq_entry_t *)sem, g_sem_list);
 	}
-
-	irqrestore(flags);
 }
 
 /****************************************************************************
  * Name: sem_unregister
  *
  * Description:
- *   Unegister semaphore from a list of kernel semaphores.
+ *   Unegister semaphore from a list of kernel and user semaphores.
  *
  * Parameters:
  *   sem - Semaphore descriptor
@@ -103,22 +117,27 @@ void sem_register(FAR sem_t *sem)
  *   None
  *
  * Assumptions:
- *   This function may be called when semaphore in kernel region is destroyed.
+ *   This function may be called when semaphore is destroyed.
  *
  ****************************************************************************/
 void sem_unregister(FAR sem_t *sem)
 {
+	int binidx;
+	struct tcb_s *tcb;
 	irqstate_t flags;
-
-	if (!sem) {
-		return;
-	}
 
 	flags = irqsave();
 
 	if (is_kernel_sem(sem)) {
 		/* A list of kernel semaphores */
 		sq_rem((FAR sq_entry_t *)sem, (sq_queue_t *)&g_sem_list);
+	} else {
+		tcb = this_task();
+		if (tcb && tcb->group && tcb->group->tg_binidx > 0) {
+			/* A list of user binary semaphores */
+			binidx = tcb->group->tg_binidx;
+			sq_rem((FAR sq_entry_t *)sem, (sq_queue_t *)&BIN_SEMLIST(binidx));
+		}
 	}
 	irqrestore(flags);
 }

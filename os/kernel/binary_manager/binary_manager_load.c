@@ -534,7 +534,7 @@ static int loading_thread(int argc, char *argv[])
  * Name: binary_manager_release_binary_sem
  *
  * Description:
- *	 This function releases all kernel semaphores held by the threads in binary.
+ *	 This function releases all semaphores held by the threads in binary.
  *
  ****************************************************************************/
 void binary_manager_release_binary_sem(int bin_idx)
@@ -545,6 +545,7 @@ void binary_manager_release_binary_sem(int bin_idx)
 
 	flags = irqsave();
 
+	/* Release kernel semaphores held by the threads and all holders of them */
 	sem = (sem_t *)sq_peek(&g_sem_list);
 	while (sem) {
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
@@ -563,6 +564,25 @@ void binary_manager_release_binary_sem(int bin_idx)
 		}
 		sem = sq_next(sem);
 	}
+
+	/* Release all holders for user sempahores */
+	sem = (sem_t *)sq_peek(&BIN_SEMLIST(bin_idx));
+	while (sem) {
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+		for (holder = sem->hhead; holder; holder = holder->flink)
+#else
+		holder = &sem->holder;
+#endif
+		{
+			if (holder) {
+				/* Free a holder of semaphore */
+				sem_freeholder(sem, holder);
+			}
+		}
+		sem = sq_next(sem);
+	}
+	sq_init(&BIN_SEMLIST(bin_idx));
+
 	irqrestore(flags);
 }
 

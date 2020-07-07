@@ -129,6 +129,9 @@ int binary_manager_register_ubin(char *name)
 	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
 	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 	sq_init(&BIN_CBLIST(g_bin_count));
+#ifdef CONFIG_BINMGR_RECOVERY
+	sq_init(&BIN_SEMLIST(g_bin_count));
+#endif
 
 	bmvdbg("[USER %d] %s\n", g_bin_count, BIN_NAME(g_bin_count));
 
