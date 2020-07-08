@@ -20,6 +20,16 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
+
+#include <sys/types.h>
+
+#include <tinyara/sched.h>
+#include <tinyara/ttrace.h>
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
+
 #include "sched/sched.h"
 #include "up_internal.h"
 
@@ -68,6 +78,13 @@ void up_schedyield(struct tcb_s *rtcb)
 		 */
 
 		rtcb = this_task();
+		trace_sched(NULL, rtcb);
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+		/* Save the task name which will be scheduled */
+
+		save_task_scheduling_status(rtcb);
+#endif
 		/* Then switch contexts.  Any necessary address environment
 		 * changes will be made when the interrupt returns.
 		 */
@@ -86,6 +103,13 @@ void up_schedyield(struct tcb_s *rtcb)
 		 */
 
 		rtcb = this_task();
+		trace_sched(NULL, rtcb);
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+		/* Save the task name which will be scheduled */
+
+		save_task_scheduling_status(rtcb);
+#endif
 		/* Then switch contexts */
 
 		up_fullcontextrestore(rtcb->xcp.regs);
