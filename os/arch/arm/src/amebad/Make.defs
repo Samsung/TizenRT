@@ -113,6 +113,10 @@ CMN_ASRCS += up_fpu.S
 CMN_CSRCS += up_copyarmstate.c
 endif
 
+ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
+CMN_CSRCS += up_schedyield.c
+endif
+
 ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
 
 CFLAGS+= -mcmse
