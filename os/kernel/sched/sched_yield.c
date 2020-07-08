@@ -103,58 +103,60 @@ int sched_yield(void)
 
 #else
 
-	FAR struct tcb_s *rtcb = this_task();
-	FAR struct tcb_s *ntcb = (FAR struct tcb_s *)rtcb->flink;
+	struct tcb_s *rtcb = this_task();
 
-	/* 1) Make sure only current task can execute sched_yield API to yield it's
-	 * CPU resources to other tasks
-	 * 2) There must always be at least one task in readytorun list (the idle task)
-	 * 3) Make sure preemption is not disabled while calling sched_yield
-	 */
-
-	DEBUGASSERT(rtcb->blink == NULL || ntcb != NULL || rtcb->lockcount <= 0);
+	if (rtcb->flink == NULL) {
+		sdbg("Fail to yield, there is no next tcb. Current task : %d\n", rtcb->pid);
+		return ERROR;
+	}
 
 	/* Yielding the CPU resource to other tasks is possible only if other tasks
 	 * priority is either equal or greater than currently running task.
 	 * It's achieved by rescheduling the current task behind any other tasks at
 	 * same priority
 	 */
-	if (rtcb->sched_priority <= ntcb->sched_priority) {
-		bool switch_needed;
+
+	if (rtcb->sched_priority <= rtcb->flink->sched_priority) {
 		irqstate_t saved_state;
 
 		saved_state = irqsave();
 
-		/* A context switch will occur. */
-		ntcb->task_state = TSTATE_TASK_RUNNING;
-		switch_needed = true;
-
 		/* Remove the TCB from the ready-to-run list */
+
 		dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
 
-		/* Since the current TCB is not in any list, it is now invalid */
-		rtcb->task_state = TSTATE_TASK_INVALID;
-
-		/* Return the task to the specified blocked task list.
-		 * sched_addreadytorun will return true if the task was
-		 * added to the new list.  We will need to perform a context
-		 * switch only if the EXCLUSIVE or of the two calls is non-zero
-		 * (i.e., one and only one of the calls changes the head of the
-		 * ready-to-run list).
+		/* Add the task in the correct location in the prioritized
+		 * g_readytorun task list
 		 */
-		switch_needed ^= sched_addreadytorun(rtcb);
 
-		if (switch_needed) {
-			/* we are going to do a context switch, then now it's the right
-			 * time to add any pending tasks back into the ready-to-run task
-			 * list now
-			 */
-			if (g_pendingtasks.head) {
-				sched_mergepending();
-			}
+		sched_addprioritized(rtcb, (FAR dq_queue_t *)&g_readytorun);
 
-			up_schedyield(rtcb);
+		/* The current tcb was added in the middle of the ready-to-run list */
+
+		rtcb->task_state = TSTATE_TASK_READYTORUN;
+
+		/* we are going to do a context switch, then now it's the right
+		 * time to add any pending tasks back into the ready-to-run task
+		 * list now
+		 */
+
+		if (g_pendingtasks.head) {
+			sched_mergepending();
 		}
+
+		/* Get new head of the list */
+
+		rtcb = this_task();
+
+#if CONFIG_RR_INTERVAL > 0
+		rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
+#endif
+
+		/* A context switch will occur. */
+
+		rtcb->task_state = TSTATE_TASK_RUNNING;
+
+		up_schedyield(rtcb);
 
 		irqrestore(saved_state);
 	}
