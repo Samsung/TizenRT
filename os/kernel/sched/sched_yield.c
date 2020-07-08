@@ -39,9 +39,13 @@
 
 #include <tinyara/config.h>
 
-#include <tinyara/arch.h>
+#ifndef CONFIG_SCHED_YIELD_OPTIMIZATION
+#include <sys/types.h>
 
 #include "sched/sched.h"
+#else
+#include <tinyara/arch.h>
+#endif
 
 /****************************************************************************
  * Definitions
@@ -102,65 +106,12 @@ int sched_yield(void)
 	return sched_setpriority(rtcb, rtcb->sched_priority);
 
 #else
+	irqstate_t saved_state;
 
-	struct tcb_s *rtcb = this_task();
+	saved_state = irqsave();
+	up_schedyield();
+	irqrestore(saved_state);
 
-	if (rtcb->flink == NULL) {
-		sdbg("Fail to yield, there is no next tcb. Current task : %d\n", rtcb->pid);
-		return ERROR;
-	}
-
-	/* Yielding the CPU resource to other tasks is possible only if other tasks
-	 * priority is either equal or greater than currently running task.
-	 * It's achieved by rescheduling the current task behind any other tasks at
-	 * same priority
-	 */
-
-	if (rtcb->sched_priority <= rtcb->flink->sched_priority) {
-		irqstate_t saved_state;
-
-		saved_state = irqsave();
-
-		/* Remove the TCB from the ready-to-run list */
-
-		dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
-
-		/* Add the task in the correct location in the prioritized
-		 * g_readytorun task list
-		 */
-
-		sched_addprioritized(rtcb, (FAR dq_queue_t *)&g_readytorun);
-
-		/* The current tcb was added in the middle of the ready-to-run list */
-
-		rtcb->task_state = TSTATE_TASK_READYTORUN;
-
-		/* we are going to do a context switch, then now it's the right
-		 * time to add any pending tasks back into the ready-to-run task
-		 * list now
-		 */
-
-		if (g_pendingtasks.head) {
-			sched_mergepending();
-		}
-
-		/* Get new head of the list */
-
-		rtcb = this_task();
-
-#if CONFIG_RR_INTERVAL > 0
-		rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
-#endif
-
-		/* A context switch will occur. */
-
-		rtcb->task_state = TSTATE_TASK_RUNNING;
-
-		up_schedyield(rtcb);
-
-		irqrestore(saved_state);
-	}
 	return OK;
-
 #endif							/* End of CONFIG_SCHED_YIELD_OPTIMIZATION */
 }
