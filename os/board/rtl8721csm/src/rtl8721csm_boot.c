@@ -65,6 +65,7 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 #include "gpio_api.h"
+#include "timer_api.h"
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -90,70 +91,77 @@ void board_gpio_initialize(void)
 		u32 pinmode;
 		u32 pinpull;
 	} pins[] = {
-		{PA_0, PIN_OUTPUT, PullNone}, 
-		{PA_1, PIN_OUTPUT, PullNone},
-		{PA_2, PIN_OUTPUT, PullNone},
-		{PA_3, PIN_OUTPUT, PullNone}, 
-		{PB_5, PIN_OUTPUT, PullNone},
-		{PA_12, PIN_INPUT, PullDown},
-/*		{PA_6, PIN_OUTPUT, PullNone}, 
-		{PA_7, PIN_OUTPUT, PullNone},
-		{PA_8, PIN_OUTPUT, PullNone},
-		{PA_9, PIN_OUTPUT, PullNone}, 
-		{PA_10, PIN_OUTPUT, PullNone},
-		{PA_11, PIN_OUTPUT, PullNone},
-		{PA_12, PIN_OUTPUT, PullNone}, 
-		{PA_13, PIN_OUTPUT, PullNone},
-		{PA_14, PIN_OUTPUT, PullNone},
-		{PA_15, PIN_OUTPUT, PullNone}, 
-		{PA_16, PIN_OUTPUT, PullNone},
-		{PA_17, PIN_OUTPUT, PullNone},
-		{PA_18, PIN_OUTPUT, PullNone}, 
-		{PA_19, PIN_OUTPUT, PullNone},
-		{PA_20, PIN_OUTPUT, PullNone},
-		{PA_21, PIN_OUTPUT, PullNone}, 
-		{PA_22, PIN_OUTPUT, PullNone},
-		{PA_23, PIN_OUTPUT, PullNone},
-		{PA_24, PIN_OUTPUT, PullNone}, 
-		{PA_25, PIN_OUTPUT, PullNone},
-		{PA_26, PIN_OUTPUT, PullNone},
-		{PB_27, PIN_OUTPUT, PullNone}, 
-		{PA_28, PIN_OUTPUT, PullNone},
-		{PA_29, PIN_OUTPUT, PullNone},
-		{PA_30, PIN_OUTPUT, PullNone}, 
-		{PA_31, PIN_OUTPUT, PullNone},
-		{PB_0, PIN_OUTPUT, PullNone}, 
-		{PB_1, PIN_OUTPUT, PullNone},
-		{PB_2, PIN_OUTPUT, PullNone},
-		{PB_3, PIN_OUTPUT, PullNone}, 
-		{PB_4, PIN_OUTPUT, PullNone},
-		{PB_5, PIN_OUTPUT, PullNone},
-		{PB_6, PIN_OUTPUT, PullNone}, 
-		{PB_7, PIN_OUTPUT, PullNone},
-		{PB_8, PIN_OUTPUT, PullNone},
-		{PB_9, PIN_OUTPUT, PullNone}, 
-		{PB_10, PIN_OUTPUT, PullNone},
-		{PB_11, PIN_OUTPUT, PullNone},
-		{PB_12, PIN_OUTPUT, PullNone}, 
-		{PB_13, PIN_OUTPUT, PullNone},
-		{PB_14, PIN_OUTPUT, PullNone},
-		{PB_15, PIN_OUTPUT, PullNone}, 
-		{PB_16, PIN_OUTPUT, PullNone},
-		{PB_17, PIN_OUTPUT, PullNone},
-		{PB_18, PIN_OUTPUT, PullNone}, 
-		{PB_19, PIN_OUTPUT, PullNone},
-		{PB_20, PIN_OUTPUT, PullNone},
-		{PB_21, PIN_OUTPUT, PullNone}, 
-		{PB_22, PIN_OUTPUT, PullNone},
-		{PB_23, PIN_OUTPUT, PullNone},
-		{PB_24, PIN_OUTPUT, PullNone}, 
-		{PB_25, PIN_OUTPUT, PullNone},
-		{PB_26, PIN_OUTPUT, PullNone},
-		{PB_27, PIN_OUTPUT, PullNone}, 
-		{PB_28, PIN_OUTPUT, PullNone},
-		{PB_29, PIN_OUTPUT, PullNone},
-		{PB_30, PIN_OUTPUT, PullNone}, 
-		{PB_31, PIN_OUTPUT, PullNone}, */
+		{
+			PA_0, PIN_OUTPUT, PullNone
+		}, {
+			PA_1, PIN_OUTPUT, PullNone
+		}, {
+			PA_2, PIN_OUTPUT, PullNone
+		}, {
+			PA_3, PIN_OUTPUT, PullNone
+		}, {
+			PB_5, PIN_OUTPUT, PullNone
+		}, {
+			PA_12, PIN_INPUT, PullDown
+		},
+		/*		{PA_6, PIN_OUTPUT, PullNone},
+				{PA_7, PIN_OUTPUT, PullNone},
+				{PA_8, PIN_OUTPUT, PullNone},
+				{PA_9, PIN_OUTPUT, PullNone},
+				{PA_10, PIN_OUTPUT, PullNone},
+				{PA_11, PIN_OUTPUT, PullNone},
+				{PA_12, PIN_OUTPUT, PullNone},
+				{PA_13, PIN_OUTPUT, PullNone},
+				{PA_14, PIN_OUTPUT, PullNone},
+				{PA_15, PIN_OUTPUT, PullNone},
+				{PA_16, PIN_OUTPUT, PullNone},
+				{PA_17, PIN_OUTPUT, PullNone},
+				{PA_18, PIN_OUTPUT, PullNone},
+				{PA_19, PIN_OUTPUT, PullNone},
+				{PA_20, PIN_OUTPUT, PullNone},
+				{PA_21, PIN_OUTPUT, PullNone},
+				{PA_22, PIN_OUTPUT, PullNone},
+				{PA_23, PIN_OUTPUT, PullNone},
+				{PA_24, PIN_OUTPUT, PullNone},
+				{PA_25, PIN_OUTPUT, PullNone},
+				{PA_26, PIN_OUTPUT, PullNone},
+				{PB_27, PIN_OUTPUT, PullNone},
+				{PA_28, PIN_OUTPUT, PullNone},
+				{PA_29, PIN_OUTPUT, PullNone},
+				{PA_30, PIN_OUTPUT, PullNone},
+				{PA_31, PIN_OUTPUT, PullNone},
+				{PB_0, PIN_OUTPUT, PullNone},
+				{PB_1, PIN_OUTPUT, PullNone},
+				{PB_2, PIN_OUTPUT, PullNone},
+				{PB_3, PIN_OUTPUT, PullNone},
+				{PB_4, PIN_OUTPUT, PullNone},
+				{PB_5, PIN_OUTPUT, PullNone},
+				{PB_6, PIN_OUTPUT, PullNone},
+				{PB_7, PIN_OUTPUT, PullNone},
+				{PB_8, PIN_OUTPUT, PullNone},
+				{PB_9, PIN_OUTPUT, PullNone},
+				{PB_10, PIN_OUTPUT, PullNone},
+				{PB_11, PIN_OUTPUT, PullNone},
+				{PB_12, PIN_OUTPUT, PullNone},
+				{PB_13, PIN_OUTPUT, PullNone},
+				{PB_14, PIN_OUTPUT, PullNone},
+				{PB_15, PIN_OUTPUT, PullNone},
+				{PB_16, PIN_OUTPUT, PullNone},
+				{PB_17, PIN_OUTPUT, PullNone},
+				{PB_18, PIN_OUTPUT, PullNone},
+				{PB_19, PIN_OUTPUT, PullNone},
+				{PB_20, PIN_OUTPUT, PullNone},
+				{PB_21, PIN_OUTPUT, PullNone},
+				{PB_22, PIN_OUTPUT, PullNone},
+				{PB_23, PIN_OUTPUT, PullNone},
+				{PB_24, PIN_OUTPUT, PullNone},
+				{PB_25, PIN_OUTPUT, PullNone},
+				{PB_26, PIN_OUTPUT, PullNone},
+				{PB_27, PIN_OUTPUT, PullNone},
+				{PB_28, PIN_OUTPUT, PullNone},
+				{PB_29, PIN_OUTPUT, PullNone},
+				{PB_30, PIN_OUTPUT, PullNone},
+				{PB_31, PIN_OUTPUT, PullNone}, */
 	};
 
 	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
@@ -190,7 +198,6 @@ void amebad_mount_partions(void)
 #endif
 }
 
-
 /****************************************************************************
  * Name: board_initialize
  *
@@ -210,5 +217,13 @@ void board_initialize(void)
 	configure_partitions();
 	amebad_mount_partions();
 	board_gpio_initialize();
+#ifdef CONFIG_TIMER
+	int i;
+	char path[CONFIG_PATH_MAX];
+	for (i = 0; i < GTIMER_MAX; i++) {
+		snprintf(path, sizeof(path), "/dev/timer%d", i);
+		amebad_timer_initialize(path, i);
+	}
+#endif
 }
 #endif
