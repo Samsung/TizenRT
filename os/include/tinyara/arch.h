@@ -558,13 +558,10 @@ void up_reprioritize_rtr(FAR struct tcb_s *tcb, uint8_t priority);
  *   logic.  Interrupts will always be disabled when this
  *   function is called.
  *
- * Inputs:
- *   tcb: The TCB of the task that is yielding the resource
- *
  ****************************************************************************/
 
 #ifdef CONFIG_SCHED_YIELD_OPTIMIZATION
-void up_schedyield(FAR struct tcb_s *rtcb);
+void up_schedyield(void);
 #endif
 
 /****************************************************************************
