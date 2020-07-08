@@ -89,6 +89,10 @@ ifeq ($(CONFIG_STACK_COLORATION),y)
 CMN_CSRCS += up_checkstack.c
 endif
 
+ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
+CMN_CSRCS += up_schedyield.c
+endif
+
 # Required STM32L4 files
 
 CHIP_ASRCS  =
