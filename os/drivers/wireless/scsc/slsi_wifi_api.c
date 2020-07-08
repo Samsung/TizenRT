@@ -1682,6 +1682,7 @@ errout:
 	return result;
 }
 
+
 static int8_t slsi_check_status(uint8_t *ssid, int8_t *ssid_len, char *bssid)
 {
 	int8_t result = SLSI_STATUS_ERROR;
@@ -2807,6 +2808,11 @@ static int8_t slsi_get_rssi(int8_t *rssi_value)
 		result = SLSI_STATUS_SUCCESS;
 	}
 errout:
+	if (pbuf) {
+		free(pbuf);
+		pbuf = NULL;
+	}
+
 	return result;
 }
 
