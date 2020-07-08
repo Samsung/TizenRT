@@ -32,8 +32,6 @@ int rr_send_result(char *str, char *url)
 		return -1;
 	}
 
-	printf("url: %s str:%s \n", url, str);
-
 	CURLcode ret = curl_easy_setopt(ctx, CURLOPT_URL, url);
 	if (ret != CURLE_OK) {
 		RR_ERR;
