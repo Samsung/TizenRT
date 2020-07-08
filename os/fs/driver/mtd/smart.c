@@ -3697,7 +3697,7 @@ errout:
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 {
-	uint16_t sector, physsector;
+	uint16_t sector;
 	uint16_t remaining, toread;
 	struct smart_read_write_s req;
 	int ret;
@@ -3757,26 +3757,6 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 		req.count = toread;
 		req.buffer = &dev->wearstatus[(dev->neraseblocks >> SMART_WEAR_BIT_DIVIDE) - remaining];
 
-      /* Validate wear status sector has been allocated */
-
-#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		physsector = dev->sMap[req.logsector];
-#else
-		physsector = smart_cache_lookup(dev, req.logsector);
-#endif
-		if ((sector != 0) && (physsector == 0xffff)) {
-#ifdef CONFIG_FS_WRITABLE
-
-		/* This logical sector does not exist yet.  We must allocate it */
-
-		ret = smart_allocsector(dev, sector);
-		if (ret != sector) {
-			fdbg("ERROR: Unable to allocate wear level status sector %d\n", sector);
-			ret = -EINVAL;
-			goto errout;
-		}
-#endif
-		}
 		/* Read the sector. */
 
 		ret = smart_readsector(dev, (unsigned long)&req);
