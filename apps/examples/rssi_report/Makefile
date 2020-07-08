@@ -15,7 +15,6 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-############################################################################
 
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
@@ -27,10 +26,8 @@ APPNAME = rreport
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
-# transport layer (TCP / UDP) / IP multicast functionality test example
-
 ASRCS =
-CSRCS = rreport_utils.c rreport_http.c rreport_message.c rreport_wifi.c
+CSRCS = rreport_utils.c rreport_http.c rreport_message.c rreport_wifi.c rreport_config.c
 MAINSRC = rreport.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
