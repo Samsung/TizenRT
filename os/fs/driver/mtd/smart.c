@@ -1051,7 +1051,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	size_t log_size = sizeof(journal_log_t);
 
 	/** First get ideal size of journal sector. Formula is Below (x : data sectors y : journal sectors)
-	  * 1. dev->sectorsize : dev->njournalsectors = x : y  
+	  * 1. dev->sectorsize : log_size = x : y  
 	  * 2. x + y = dev->geo.eraseblocks * dev->sectorsPerBlk;
 	  */
 	uint16_t nsector = (dev->geo.neraseblocks * dev->sectorsPerBlk * log_size) / (dev->sectorsize + log_size);
@@ -2317,37 +2317,6 @@ err_out:
 }
 
 /****************************************************************************
- * Name: verify_erased_block
- *
- * Description:  Verify all physical sectors in the erased block and adjust
- *               the freecount of the block if needed due to ERASE FAILURE.
- *
- ****************************************************************************/
-
-static void verify_erased_block(FAR struct smart_struct_s *dev, uint16_t block)
-{
-	int ret;
-	int sector;
-	uint32_t readaddr;
-	struct smart_sect_header_s header;
-
-	for (sector = block * dev->sectorsPerBlk; sector < block * dev->sectorsPerBlk + dev->availSectPerBlk; sector++) {
-		readaddr = sector * dev->mtdBlksPerSector * dev->geo.blocksize;
-		ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
-		if (ret != sizeof(struct smart_sect_header_s)) {
-			fdbg("line %d, Error reading phys sector %d\n", __LINE__, sector);
-			return;
-		}
-		if (SECTOR_IS_COMMITTED(header) || SECTOR_IS_RELEASED(header)) {
-			dev->freecount[block]--;
-			fdbg("SECTOR %d ERASE FAIL!! status : %d (%d, %d)\n", sector, header.status, SECTOR_IS_COMMITTED(header), SECTOR_IS_RELEASED(header));
-		}
-	}
-
-	fvdbg("\t\t\tCLEAR freecount[%d] = %d\n", block, dev->freecount[block]);
-}
-
-/****************************************************************************
  * Name: smart_erase_block_if_empty
  *
  * Description:  Tests the specified erase block if it contains all free or
@@ -2419,8 +2388,6 @@ static void smart_erase_block_if_empty(FAR struct smart_struct_s *dev, uint16_t 
 		dev->releasecount[block] = prerelease;
 		dev->freecount[block] = dev->availSectPerBlk - prerelease;
 #endif							/* CONFIG_MTD_SMART_PACK_COUNTS */
-
-		verify_erased_block(dev, block);
 
 		/* Now that we have erased this block and updated the release / free counts,
 		 * if we are in WEAR LEVELING enabled mode, we must check if this erase block's
@@ -2615,23 +2582,17 @@ static int smart_relocate_static_data(FAR struct smart_struct_s *dev, uint16_t b
 			}
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-			//dev->sMap[*((FAR uint16_t *)header->logicalsector)] = newsector;
 			dev->sMap[UINT8TOUINT16(header->logicalsector)] = newsector;
 #else
 			smart_update_cache(dev, *((FAR uint16_t *)header->logicalsector), newsector);
 #endif
 
-			if (dev->freecount[block] == 0) {
-				fdbg("WARNING!! Impossible to decrease freecount 0, Block %d freecount = %d\n",	block, dev->freecount[block]);
-			} else {
 #ifdef CONFIG_MTD_SMART_PACK_COUNTS
-				smart_add_count(dev, dev->freecount, block, -1);
+			smart_add_count(dev, dev->freecount, block, -1);
 #else
-				dev->freecount[block]--;
+			dev->freecount[block]--;
 #endif							/* CONFIG_MTD_SMART_PACK_COUNTS */
-				dev->freesectors--;
-				fvdbg("Decrease freecount %d (Block %d)\n", dev->freecount[block], block);
-			}
+			dev->freesectors--;
 		}
 
 #ifdef CONFIG_SMART_LOCAL_CHECKFREE
@@ -3076,7 +3037,6 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 	uint16_t newsector, oldrelease;
 	int x;
 	int ret;
-	int allocblock = -1;
 	FAR struct smart_sect_header_s *header;
 	uint8_t prerelease;
 	uint16_t freecount;
@@ -3178,8 +3138,9 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 
 			allocsector->physical = newsector;
 			*((FAR uint16_t *)header->logicalsector) = allocsector->logical;
-		} else {
+		} else
 #endif
+		{
 			if (((header->status & SMART_STATUS_COMMITTED) == (CONFIG_SMARTFS_ERASEDSTATE & SMART_STATUS_COMMITTED)) || ((header->status & SMART_STATUS_RELEASED) != (CONFIG_SMARTFS_ERASEDSTATE & SMART_STATUS_RELEASED))) {
 				/* This sector doesn't have live data (free or released).
 				 * just continue to the next sector and don't move it.
@@ -3204,30 +3165,22 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 			if ((ret = smart_relocate_sector(dev, x, newsector)) < 0) {
 				goto errout;
 			}
-#ifdef CONFIG_MTD_SMART_ENABLE_CRC
 		}
-#endif
 
 		/* Update the variables. */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 		dev->sMap[UINT8TOUINT16(header->logicalsector)] = newsector;
-		//dev->sMap[*((FAR uint16_t *)header->logicalsector)] = newsector;
 #else
 		smart_update_cache(dev, *((FAR uint16_t *)header->logicalsector), newsector);
 #endif
-		allocblock = newsector / dev->sectorsPerBlk;
-		if (dev->freecount[allocblock] == 0) {
-			fdbg("WARNING!! Impossible to decrease freecount 0, Block %d freecount = %d\n",
-					allocblock, dev->freecount[allocblock]);
-		} else {
+
 #ifdef CONFIG_MTD_SMART_PACK_COUNTS
-			smart_add_count(dev, dev->freecount, newsector / dev->sectorsPerBlk, -1);
+		smart_add_count(dev, dev->freecount, newsector / dev->sectorsPerBlk, -1);
 #else
-			dev->freecount[newsector / dev->sectorsPerBlk]--;
+		dev->freecount[newsector / dev->sectorsPerBlk]--;
 #endif
-			fvdbg("\tBlock %d freecount = %d\n", allocblock, dev->freecount[allocblock]);
-		}
+
 	}
 
 	/* Now erase the erase block. */
@@ -3285,8 +3238,6 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 	dev->releasecount[block] = prerelease;
 #endif
 
-	verify_erased_block(dev, block);
-
 #ifdef CONFIG_SMART_LOCAL_CHECKFREE
 	if (smart_checkfree(dev, __LINE__) != OK) {
 		fdbg("   ...while relocating block %d, free=%d, release=%d, oldrelease=%d\n", block, freecount, releasecount, oldrelease);
@@ -3310,7 +3261,6 @@ errout:
 	smart_set_count(dev, dev->freecount, block, freecount);
 #else
 	dev->freecount[block] = freecount;
-	fdbg("Freecount is RESTORED!! to %d\n", freecount);
 #endif
 	return ret;
 }
