@@ -5195,7 +5195,7 @@ static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t of
 		/* If checkin failed, change state journal to checkout */
 		return ret;
 	}
-	
+
 	/* just update status bit only */
 	ret = MTD_WRITE(dev->mtd, offset, nbytes, buffer);
 	if (ret != nbytes) {
@@ -5428,6 +5428,8 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 {
 	int ret;
 	int type;
+	uint8_t status;
+	size_t offset;
 	uint32_t address = smart_journal_get_writeaddress(dev);
 	
 	fvdbg("Printf recovery data journal_seq : %d!!\n", dev->journal_seq);
@@ -5443,14 +5445,27 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		}
 		return -EINVAL;
 	}
-	
+
+	fvdbg("address : %u\n", address);
 	type = GET_JOURNAL_TYPE(log->status);
 	/* TODO Recovery Logic Will be added, after recovery we should update dev structure too(cf.freecount) */
 	switch (type) {
 	case SMART_JOURNAL_TYPE_COMMIT:
+		
 		break;
 		
 	case SMART_JOURNAL_TYPE_RELEASE:
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+		status &= ~SMART_STATUS_RELEASED;
+#else
+		status |= SMART_STATUS_RELEASED;
+#endif
+		offset = UINT8TOUINT16(log->psector) * dev->sectorsize + offsetof(struct smart_sect_header_s, status);
+		ret = MTD_WRITE(dev->mtd, offset, 1, &status);
+		if (ret < 0) {
+			fdbg("Error %d releasing duplicate sector\n", -ret);
+			return -EIO;
+		}
 		break;
 		
 	case SMART_JOURNAL_TYPE_ERASE:
