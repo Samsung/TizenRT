@@ -273,10 +273,14 @@ static int wdog_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	wdvdbg("cmd: %d arg: %ld\n", cmd, arg);
 	DEBUGASSERT(upper && lower);
 
-	/* Get exclusive access to the device structures */
+	if (cmd < 0) {
+		return -EINVAL;
+	}
 
+	/* Get exclusive access to the device structures */
 	ret = sem_wait(&upper->exclsem);
 	if (ret < 0) {
+		ret = -get_errno();
 		return ret;
 	}
 

@@ -147,7 +147,7 @@ static void tc_driver_watchdog_ioctl(void)
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, OK, close(fd));
 
 	ret = ioctl(fd, -1, 0UL);
-	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, OK, close(fd));
+	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, -EINVAL, close(fd));
 
 	close(fd);
 
