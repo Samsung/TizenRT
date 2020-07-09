@@ -5065,7 +5065,8 @@ static int smart_journal_checkout_process(FAR struct smart_struct_s *dev, journa
 
 	/* After update mtd header, verify sector if it is necessary */
 	switch (type) {
-	case SMART_JOURNAL_TYPE_COMMIT: 
+
+	case SMART_JOURNAL_TYPE_COMMIT: {
 		/* Update MTD Header on target physical sector */
 		ret = MTD_WRITE(dev->mtd, psector * dev->sectorsize, mtd_size, (FAR uint8_t *)&log->mtd_header);
 		if (ret != mtd_size) {
@@ -5086,18 +5087,29 @@ static int smart_journal_checkout_process(FAR struct smart_struct_s *dev, journa
 			return -EIO;
 		}
 		break;
+	}
 
 	/* TODO There's chance that add verify code for below cases. If it is not necessary later, Please Remove them! */			
-	case SMART_JOURNAL_TYPE_ERASE:
-		/** If erase need to be check in future, verify logic should added.
-		  * But I think It had better done by MTD Driver itself to reduce delay..
-		  */
+	case SMART_JOURNAL_TYPE_ERASE: {
+		/* Instead of copy header from journal, Erase block(psector) */
+		ret = MTD_ERASE(dev->mtd, psector, 1);
+		if (ret != OK) {
+			fdbg("Erase failed ret : %d\n", ret);
+			return -EIO;
+		}
 		break;
-
-	/* Release type, we don't have to do anything for now, but if it needed, we can check written data of mtd header */
-	case SMART_JOURNAL_TYPE_RELEASE:
+	}
+	
+	case SMART_JOURNAL_TYPE_RELEASE: {
+		/* just update status bit only */
+		size_t offset = psector * dev->sectorsize + offsetof(FAR struct smart_sect_header_s, status);
+		ret = MTD_WRITE(dev->mtd, offset, 1, (FAR uint8_t *)&log->mtd_header.status);
+		if (ret != 1) {
+			fdbg("Error updating physical sector %d\n", psector);
+			return -EIO;
+		}
 		break;
-		
+	}
 	default:
 		return -EINVAL;
 	}
@@ -5201,14 +5213,6 @@ static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t of
 		return ret;
 	}
 
-	/* just update status bit only */
-	ret = MTD_WRITE(dev->mtd, offset, nbytes, buffer);
-	if (ret != nbytes) {
-		fdbg("Error updating physical sector %d\n", psector);
-		ret = -EIO;
-		goto error_with_release;
-	}
-
 	ret = smart_journal_checkout_process(dev, &log, address);
 	if (ret != OK) {
 		goto error_with_release;
@@ -5259,13 +5263,6 @@ static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t block)
 	ret = smart_journal_checkin(dev, &log, address, block, SMART_JOURNAL_TYPE_ERASE);
 	if (ret != OK) {
 		return ret;
-	}
-
-	ret = MTD_ERASE(dev->mtd, block, 1);
-	if (ret != OK) {
-		fdbg("Erase failed ret : %d\n", ret);
-		ret = -EIO;
-		goto error_with_erase;
 	}
 
 	ret = smart_journal_checkout_process(dev, &log, address);
@@ -5388,7 +5385,7 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 
 			/* If another case means that it is finished or power off during writing journal */
 			if (CHECK_JOURNAL_CHECKIN(log.status) && !CHECK_JOURNAL_CHECKOUT(log.status)) {
-				fdbg("none checkout data found... seq : %d\n", dev->journal_seq);
+				fdbg("Active Journal data found... seq : %d\n", dev->journal_seq);
 				ret = smart_journal_recovery(dev, &log);
 				/* -EINVAL means journal log is not written properly, we skip it. */
 				if ((ret != OK) && (ret != -EINVAL)) {
@@ -5435,10 +5432,11 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 	int type;
 	uint8_t status;
 	size_t offset;
+	size_t mtd_size = sizeof(struct smart_sect_header_s);
 	uint32_t address = smart_journal_get_writeaddress(dev);
+	uint16_t psector = UINT8TOUINT16(log->psector);
 	
 	fvdbg("Printf recovery data journal_seq : %d!!\n", dev->journal_seq);
-	smart_journal_print_log(dev, log);
 
 	/* Recovery step is Check crc -> Check something more based on type -> checkout -> verify based on type */
 	if (smart_validate_journal_crc(log) != OK) {
@@ -5453,48 +5451,49 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 
 	fvdbg("address : %u\n", address);
 	type = GET_JOURNAL_TYPE(log->status);
-	/* TODO Recovery Logic Will be added, after recovery we should update dev structure too(cf.freecount) */
+	
 	switch (type) {
+		
 	case SMART_JOURNAL_TYPE_COMMIT:
-		
-		break;
-		
-	case SMART_JOURNAL_TYPE_RELEASE:
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-		status &= ~SMART_STATUS_RELEASED;
-#else
-		status |= SMART_STATUS_RELEASED;
-#endif
-		offset = UINT8TOUINT16(log->psector) * dev->sectorsize + offsetof(struct smart_sect_header_s, status);
-		ret = MTD_WRITE(dev->mtd, offset, 1, &status);
-		if (ret < 0) {
-			fdbg("Error %d releasing duplicate sector\n", -ret);
+		/* Journal is valid, so we will verify written data on data sector with crc of MTD header in journal */
+		memcpy(dev->rwbuffer, &log->mtd_header, mtd_size);
+		ret = MTD_READ(dev->mtd, psector * dev->sectorsize + mtd_size, dev->sectorsize - mtd_size, (FAR uint8_t *)&dev->rwbuffer[mtd_size]);
+		if (ret != dev->sectorsize - mtd_size) {
+			fdbg("Read from data sector error : %d\n", ret);
 			return -EIO;
 		}
-		break;
 		
-	case SMART_JOURNAL_TYPE_ERASE:
-		/** TODO if erase takes very short time, we can get benefit if we verify erase block first.
-		  * So put verify logic here, and if it is not necessary, remove it.
-		  */
-		ret = MTD_ERASE(dev->mtd, UINT8TOUINT16(log->psector), 1);
+		ret = smart_validate_crc(dev);
+		/* If CRC is not same, data sector is invalid, so release data sector First */
 		if (ret != OK) {
-			fdbg("Erase failed ret : %d block : %d\n", ret, UINT8TOUINT16(log->psector));
-			return -EIO;
-		}
+			fdbg("Invalid data, release dada sector & journal!\n");
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+			status &= ~SMART_STATUS_RELEASED;
+#else
+			status |= SMART_STATUS_RELEASED;
+#endif
+			offset = psector * dev->sectorsize + offsetof(struct smart_sect_header_s, status);
+			ret = MTD_WRITE(dev->mtd, offset, 1, &status);
+			if (ret != 1) {
+				fdbg("Release Invalid data sector Error ret : %d target sector : %d\n", ret, psector);
+				return -EIO;
+			}
+			
+			/* Data sector is released, checkout journal data */
+			return smart_journal_checkout(dev, log, address);
+		} 
+		break;
+
+	/* For Release & Erase, Nothing for now, Retry Checkout */
+	case SMART_JOURNAL_TYPE_RELEASE:
+	case SMART_JOURNAL_TYPE_ERASE:
 		break;
 		
 	default:
-		break;
-	}
-	
-	ret = smart_journal_checkout(dev, log, address);
-	if (ret != OK) {
-		return ret;
+		return -EIO;
 	}
 
-	return OK;
-
+	return smart_journal_checkout_process(dev, log, address);
 }
 
 #endif
