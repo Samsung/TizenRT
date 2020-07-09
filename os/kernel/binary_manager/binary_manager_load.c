@@ -547,22 +547,26 @@ void binary_manager_release_binary_sem(int bin_idx)
 	flags = irqsave();
 
 	sem = (sem_t *)sq_peek(&g_sem_list);
-	while (sem) {
+	if (sem == NULL) {
+		bmdbg("g_sem_list is empty.\n");
+	} else {
+		do {
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
-		for (holder = sem->hhead; holder; holder = holder->flink)
+			for (holder = sem->hhead; holder; holder = holder->flink)
 #else
-		holder = &sem->holder;
+			holder = &sem->holder;
 #endif
-		{
-			if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_binidx == bin_idx) {
-				/* Increase semcount and release itself from holder */
-				sem->semcount++;
-				sem_freeholder(sem, holder);
-				/* And after releasing the kernel sem, there can be a task which waits that sem. So unblock the waiting task. */
-				sem_unblock_task(sem, holder->htcb);
+			{
+				if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_binidx == bin_idx) {
+					/* Increase semcount and release itself from holder */
+					sem->semcount++;
+					sem_freeholder(sem, holder);
+					/* And after releasing the kernel sem, there can be a task which waits that sem. So unblock the waiting task. */
+					sem_unblock_task(sem, holder->htcb);
+				}
 			}
-		}
-		sem = sq_next(sem);
+			sem = sq_next(sem);
+		} while (sem);
 	}
 	irqrestore(flags);
 }
