@@ -217,6 +217,9 @@ void board_initialize(void)
 	configure_partitions();
 	amebad_mount_partions();
 	board_gpio_initialize();
+#ifdef CONFIG_WATCHDOG
+	amebad_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
+#endif
 #ifdef CONFIG_TIMER
 	int i;
 	char path[CONFIG_PATH_MAX];
