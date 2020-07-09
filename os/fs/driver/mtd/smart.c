@@ -1069,6 +1069,11 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 		dev->njournaleraseblocks++;
 	}
 
+	/** We can change specific sector's state to commit, release, erase. In this case we need 3 journals,
+	  * but it uses only 1 data sector. Hence Multiply it by 3, Ideally.
+	  */
+	dev->njournaleraseblocks *= 3;
+	
 	dev->njournalPerBlk = dev->erasesize / log_size;
 
 	/* Now reduce number of eraseblock */
