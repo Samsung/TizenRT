@@ -307,7 +307,6 @@ struct smart_struct_s {
 	uint16_t njournalPerBlk;		/* Total Number of Journal data per Erase block */
 	uint16_t njournaleraseblocks;	/* Total Number of Journal Erase block */
 	uint32_t njournaldata;			/* Total Number of Journal Data */
-	FAR uint16_t *sSeqLogMap;		/* Keep duplicated sector until journaling determine winner */
 #endif
 };
 
@@ -1766,9 +1765,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	uint16_t loser;
 	uint16_t winner;
 	uint32_t readaddress;
-#ifndef CONFIG_MTD_SMART_JOURNALING
 	uint32_t offset;
-#endif
 	uint16_t seq1;
 	uint16_t seq2;
 	struct smart_sect_header_s header;
@@ -1827,18 +1824,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	/* Clear all logical sector used bits. */
 
 	memset(dev->sBitMap, 0, (dev->totalsectors + 7) >> 3);
-#endif
-
-#ifdef CONFIG_MTD_SMART_JOURNALING
-	dev->sSeqLogMap = (uint16_t *)kmm_zalloc(sizeof(uint16_t) * totalsectors);
-	if (dev->sSeqLogMap == NULL) {
-		ret = -ENOMEM;
-		goto err_out;
-	}
-	for (sector = 0; sector < totalsectors; sector++) {
-		dev->sMap[sector] = -1;
-	}
-
 #endif
 
 	/* Now scan the MTD device. */
@@ -2103,12 +2088,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #endif
 			}
 
-#ifdef CONFIG_MTD_SMART_JOURNALING
-			/* If Journaling is enabled, we will keep loser in sequence log map
-			 * It will checked again if it related to committed journal log
-			 */
-			dev->sSeqLogMap[logicalsector] = loser;
-#else
 			/* Now release the loser sector. */
 
 			readaddress = loser * dev->mtdBlksPerSector * dev->geo.blocksize;
@@ -2127,7 +2106,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 				fdbg("Error %d releasing duplicate sector\n", -ret);
 				goto err_out;
 			}
-#endif
 		}
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 		/* Update the logical to physical sector map. */
@@ -2232,24 +2210,10 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		}
 	}
 #endif
-
-#ifdef CONFIG_MTD_SMART_JOURNALING
-	if (dev->formatstatus == SMART_FMT_STAT_FORMATTED) {
-		ret = smart_journal_init(dev);
-		if (ret < 0) {
-			fdbg("journal init failed ret : %d\n", ret);
-			goto err_out;
-		}
-	}
-#endif
 	ret = OK;
 
 err_out:
-#ifdef CONFIG_MTD_SMART_JOURNALING
-	if (dev->sSeqLogMap != NULL) {
-		kmm_free(dev->sSeqLogMap);
-	}
-#endif
+
 	return ret;
 }
 
@@ -5484,14 +5448,17 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 
 	/* For Release & Erase, Nothing for now, Retry Checkout */
 	case SMART_JOURNAL_TYPE_RELEASE:
+		return smart_journal_checkout_process(dev, log, address);
 	case SMART_JOURNAL_TYPE_ERASE:
-		break;
+		ret = smart_journal_checkout_process(dev, log, address);
+		if (ret == OK) {
+			ret = smart_garbagecollect(dev);
+		}
+		return ret;
 		
 	default:
 		return -EIO;
 	}
-
-	return smart_journal_checkout_process(dev, log, address);
 }
 
 #endif
@@ -5664,6 +5631,14 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 			goto errout;
 		}
 
+#ifdef CONFIG_MTD_SMART_JOURNALING
+		/* Now ready to init journal here */
+		ret = smart_journal_init(dev);
+		if (ret < 0) {
+			fdbg("journal init failed ret : %d\n", ret);
+			goto errout;
+		}
+#endif
 		/* Do a scan of the device. */
 		smart_scan(dev);
 	}
