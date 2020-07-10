@@ -308,8 +308,6 @@ struct smart_struct_s {
 	uint16_t njournaleraseblocks;	/* Total Number of Journal Erase block */
 	uint32_t njournaldata;			/* Total Number of Journal Data */
 	FAR uint16_t *sSeqLogMap;		/* Keep duplicated sector until journaling determine winner */
-	int area;						/* Current Active area */
-	int journal_area_state[2];		/* State of each of Journal Area */
 #endif
 };
 
@@ -5206,7 +5204,7 @@ static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t of
 		fdbg("Get MTD Header failed..\n");
 		return -EIO;
 	}
-	
+	log.mtd_header.status = *buffer;
 	ret = smart_journal_checkin(dev, &log, address, psector, SMART_JOURNAL_TYPE_RELEASE);
 	if (ret != OK) {
 		/* If checkin failed, change state journal to checkout */
