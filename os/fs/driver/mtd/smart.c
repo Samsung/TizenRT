@@ -4777,6 +4777,15 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 		goto ok_out;
 #endif							/* CONFIG_FS_WRITABLE */
 
+	case BIOC_FIBMAP:
+
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+		ret = (int)dev->sMap[(uint16_t)arg];
+#else
+		ret = (int)smart_cache_lookup(dev, (uint16_t)arg);
+#endif
+		goto ok_out;
+
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
 	case BIOC_GETPROCFSD:
 

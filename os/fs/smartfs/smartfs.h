@@ -400,6 +400,7 @@ uint16_t get_used_byte_count_from_end(uint8_t *buffer);
 int set_used_byte_count(uint8_t *used, uint16_t count);
 uint16_t get_used_byte_count(uint8_t *used);
 #endif
+int smartfs_sector_recovery(struct smartfs_mountpt_s *fs);
 
 struct file;					/* Forward references */
 struct inode;
