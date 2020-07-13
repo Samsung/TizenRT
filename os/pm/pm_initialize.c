@@ -78,7 +78,7 @@
  * data structure here.
  */
 
-struct pm_global_s g_pmglobals = { SEM_INITIALIZER(1) };
+struct pm_global_s g_pmglobals;
 
 /****************************************************************************
  * Public Functions
@@ -106,6 +106,8 @@ void pm_initialize(void)
 {
 	FAR struct pm_domain_s *pdom;
 	int i;
+
+	sem_init(&g_pmglobals.regsem, 0, 1);
 
 	for (i = 0; i < CONFIG_PM_NDOMAINS; i++) {
 		pdom = &g_pmglobals.domain[i];

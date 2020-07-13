@@ -359,6 +359,8 @@ extern void stm32_touch_printf_coord(void);
 
 extern void stm32_dsi_refresh(void);
 extern void up_hal_timer_initialize(void);
+
+extern void stm32l4_flash_initialize(void);
 /**
   * @}
   */

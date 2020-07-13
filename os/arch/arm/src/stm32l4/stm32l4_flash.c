@@ -112,7 +112,7 @@
  * Private Data
  ************************************************************************************/
 
-static sem_t g_sem = SEM_INITIALIZER(1);
+static sem_t g_sem;
 static uint32_t g_page_buffer[FLASH_PAGE_WORDS];
 
 /************************************************************************************
@@ -205,6 +205,11 @@ static inline void flash_erase(size_t page)
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+void stm32l4_flash_initialize(void)
+{
+	/* Initialize a semaphore to access flash */
+	sem_init(&g_sem, 0, 1);
+}
 
 void stm32l4_flash_unlock(void)
 {
