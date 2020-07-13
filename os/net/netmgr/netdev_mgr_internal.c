@@ -46,7 +46,7 @@ static int g_eth_idx = 0;
  * and application doesn't require write operation to netdev
  * so if there is no write operation then protection wouldn't be required
  */
-sem_t g_netdev_lock = SEM_INITIALIZER(1);
+static sem_t g_netdev_lock;
 
 #define NETDEV_LOCK								\
 	do {										\
@@ -259,4 +259,6 @@ void nm_init(void)
 		g_netdev[i].ops = NULL;
 		g_netdev[i].type = NM_UNKNOWN;
 	}
+
+	sem_init(&g_netdev_lock, 0, 1);
 }

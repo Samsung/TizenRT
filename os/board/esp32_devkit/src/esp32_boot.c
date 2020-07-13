@@ -76,6 +76,9 @@
 #include "esp32_adc.h"
 #include <tinyara/analog/adc.h>
 #endif
+#if defined(CONFIG_ESP32_SPIFLASH)
+extern void esp_partition_initialize();
+#endif
 #ifdef CONFIG_SPIRAM_SUPPORT
 extern void esp_spiram_init_cache();
 extern int esp_spiram_init();
@@ -234,6 +237,9 @@ void board_initialize(void)
 {
 	/* Perform board-specific initialization */
 	(void)esp32_bringup();
+#ifdef CONFIG_ESP32_SPIFLASH
+	esp_partition_initialize();
+#endif
 	configure_partitions();
 	esp32_devKit_mount_partions();
 	board_gpio_initialize();

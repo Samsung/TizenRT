@@ -75,6 +75,8 @@
 #include <stdio.h>
 #include <pthread.h>
 
+#include <tinyara/sched.h>
+
 #include "esp_flash_partitions.h"
 #include "esp_attr.h"
 #include "esp_flash_data_types.h"
@@ -105,7 +107,7 @@ static esp_partition_iterator_opaque_t *iterator_create(esp_partition_type_t typ
 static esp_err_t load_partitions(void);
 
 static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list = SLIST_HEAD_INITIALIZER(s_partition_list);
-static pthread_mutex_t s_partition_list_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t s_partition_list_lock;
 
 esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_partition_subtype_t subtype, const char *label)
 {
@@ -232,6 +234,13 @@ static esp_err_t load_partitions(void)
 	}
 	spi_flash_munmap(handle);
 	return ESP_OK;
+}
+
+void esp_partition_initialize(void)
+{
+	/* Initialize a mutex for partition access */
+	sem_init(&s_partition_list_lock.sem, 0, 1);
+	s_partition_list_lock.pid = INVALID_PROCESS_ID;
 }
 
 void esp_partition_iterator_release(esp_partition_iterator_t iterator)
