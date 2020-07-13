@@ -1665,4 +1665,58 @@ struct smartfs_mountpt_s *smartfs_get_first_mount(void)
 {
 	return g_mounthead;
 }
+
+/****************************************************************************
+ * Name: smartfs_sector_recovery
+ *
+ * Description: Recover Isolated sector that is not able to access in smartfs.
+ *              Because of power off, Isolated sector can be exist.
+ *
+ ****************************************************************************/
+
+int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
+{
+	int ret;
+	long sector;
+	/* Alloc Logical Map */
+	uint8_t *map = (uint8_t*)kmm_malloc(sizeof(uint8_t*) * fs->fs_llformat.nsectors);
+
+	if (map == NULL) {
+		return -ENOMEM;
+	}
+	memset(map, 0, fs->fs_llformat.nsectors);
+
+	/* If any of logical sector is mapped to physical block it means active block, Mark it */
+	for (sector = SMARTFS_ROOT_DIR_SECTOR; sector < fs->fs_llformat.nsectors; sector++) {
+		ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)sector);
+		if (ret < 0) {
+			fdbg("Get Bitmap Error %d\n", ret);
+			goto error_with_map;
+		}
+
+		if (ret != 0xFFFF) {
+			map[sector / 8] |= (1 << (7 - (sector % 8)));
+		} else {
+			/* TODO Root sector(/mnt) is gone.. what should we do ? */
+			if (sector == SMARTFS_ROOT_DIR_SECTOR) {
+				fdbg("Critical Bug!! Root sector has gone!!\n");
+				ret = -EIO;
+				goto error_with_map;
+			}
+		}
+	}
+
+	/* TODO Find all active Logical sectors from root sector and unmark for exist sector */
+
+	/* TODO Remain physical sectors are isolated sectors, so we recovery it */
+
+	return OK;
+	
+error_with_map:
+	if (map) {
+		kmm_free(map);
+	}
+	return ret;
+}
+
 #endif
