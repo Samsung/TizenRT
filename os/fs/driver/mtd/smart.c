@@ -1078,11 +1078,6 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 
 	/* Now get Total Journal data of both of 2 area */
 	dev->njournaldata = dev->njournalPerBlk * dev->njournaleraseblocks;
-	
-	if (dev->sSeqLogMap != NULL) {
-		smart_free(dev, dev->sSeqLogMap);
-		dev->sSeqLogMap = NULL;
-	}
 
 #endif
 
@@ -5459,6 +5454,7 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 	default:
 		return -EIO;
 	}
+	return OK;
 }
 
 #endif
