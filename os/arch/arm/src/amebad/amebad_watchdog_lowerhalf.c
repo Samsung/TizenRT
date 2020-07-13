@@ -64,7 +64,7 @@
 
 #define WDT_STOP	0
 #define WDT_START	1
-#define ON_PAUSE	2
+#define WDT_PAUSE	2
 
 /****************************************************************************
  * Private Types
@@ -78,7 +78,7 @@ struct amebad_wdg_lowerhalf_s {
 	xcpt_t handler;
 	uint32_t timeout_ms;
 	uint32_t timeout_left;		/* Record remaining timeout for PAUSE and RESUME */
-	uint32_t wdt_status;		/* 0: WDT_STOP; 1: WDT_START; 2: ON_PAUSE */
+	uint32_t wdt_status;		/* 0: WDT_STOP; 1: WDT_START; 2: WDT_PAUSE */
 	uint32_t start_tick;		/* Use to calculate timeleft before timeout */
 	uint32_t on_pause_duration;	/* Record the duration of watchdog timer on pause */
 	bool int_mode;				/* True for timeout interrupt mode on */
@@ -138,9 +138,10 @@ static int amebad_wdg_start(FAR struct watchdog_lowerhalf_s *lower)
 		priv->wdt_status = WDT_START;
 		priv->start_tick = SYSTIMER_TickGet();	// Record time right after wdt start
 		priv->on_pause_duration = 0;	// Reset on_pause_duration
+		return OK;
 	}
 
-	return OK;
+	return -EBUSY;
 }
 
 /****************************************************************************
@@ -202,9 +203,10 @@ static int amebad_wdg_keepalive(FAR struct watchdog_lowerhalf_s *lower)
 		/* Update start time and reset on_pause_duration */
 		priv->start_tick = SYSTIMER_TickGet();
 		priv->on_pause_duration = 0;
+		return OK;
 	}
 
-	return OK;
+	return -EPERM;
 }
 
 /****************************************************************************
@@ -233,32 +235,31 @@ static int amebad_wdg_getstatus(FAR struct watchdog_lowerhalf_s *lower, FAR stru
 	/* Reture watchdog flag */
 	status->flags = WDFLAGS_RESET;
 
-	/* Return ACTIVE if watchdog timer is started */
-	if (priv->wdt_status == WDT_START) {
-		status->flags |= WDFLAGS_ACTIVE;
-	}
-
 	/* Return CAPTURE if interrupt mode is enabled */
 	if (priv->int_mode) {
 		status->flags |= WDFLAGS_CAPTURE;
 	}
 
-	/* Return WAIT if watchdog timer is on pause */
-	if (priv->wdt_status == ON_PAUSE) {
-		status->flags |= WDFLAGS_WAIT;
-	}
-
 	/* Reture timeout in ms */
 	status->timeout = priv->timeout_ms;
 
-	/* Reture the timeleft before watchdog timeout in ms */
-	if (priv->wdt_status == ON_PAUSE) {
+	/* Return WAIT if watchdog timer is on pause */
+	if (priv->wdt_status == WDT_PAUSE) {
+		status->flags |= WDFLAGS_WAIT;
 		status->timeleft = priv->timeout_left;
 	} else {
 		uint32_t time_elapse;
 		time_elapse = ((SYSTIMER_TickGet() - priv->start_tick - priv->on_pause_duration) * 31) / 1000;	// Get time elapse in ms
 		status->timeleft = status->timeout - time_elapse;
+
+		/* Return ACTIVE if watchdog timer is started */
+		if (priv->wdt_status == WDT_START) {
+			status->flags |= WDFLAGS_ACTIVE;
+		}
 	}
+
+
+
 
 	return OK;
 }
@@ -338,7 +339,7 @@ static xcpt_t amebad_wdg_capture(FAR struct watchdog_lowerhalf_s *lower, xcpt_t 
 	priv->handler = handler;
 
 	/* Set to default RESET_MODE first */
-	if (priv->wdt_status == WDT_START) {	// Skip the timeout_left calculation if the status is ON_PAUSE
+	if (priv->wdt_status == WDT_START) {	// Skip the timeout_left calculation if the status is WDT_PAUSE
 		priv->timeout_left = priv->timeout_ms - ((SYSTIMER_TickGet() - priv->start_tick - priv->on_pause_duration) * 31) / 1000;
 	}
 	watchdog_init(priv->timeout_left);	// Re-init watchdog with remaining timeout
@@ -393,13 +394,13 @@ static int amebad_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd, uns
 		amebad_wdg_stop((struct watchdog_lowerhalf_s *)priv);
 		priv->on_pause_duration = SYSTIMER_TickGet();	// Record PAUSE start time
 		priv->timeout_left = priv->timeout_ms - time_elapse;	// Record remaining timeout
-		priv->wdt_status = ON_PAUSE;
+		priv->wdt_status = WDT_PAUSE;
 	}
 	break;
 
 	case WDIOC_RESUME: {
 		/* Pre-assumption: the WDIOC_PAUSE can only be resumed by WDIOC_RESUME */
-		if (priv->wdt_status == ON_PAUSE) {
+		if (priv->wdt_status == WDT_PAUSE) {
 			/* Resume watchdog and init watchdog with remaining timeout */
 			priv->on_pause_duration = SYSTIMER_TickGet() - priv->on_pause_duration;
 			watchdog_init(priv->timeout_left);
