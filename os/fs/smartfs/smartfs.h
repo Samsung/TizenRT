@@ -347,6 +347,9 @@ struct smartfs_mountpt_s {
 	uint8_t *fs_chunk_buffer;
 #endif
 	uint8_t fs_rootsector;		/* Root directory sector num */
+#ifndef CONFIG_UTC
+	uint32_t entry_seq;
+#endif
 };
 
 /****************************************************************************

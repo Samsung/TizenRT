@@ -87,9 +87,58 @@
 #define SET8BITSFROMMSB 255		//Binary: 0b11111111
 #define NEG8BIT(A) ((uint8_t)(~A & 0x000000FF))
 #endif
+
+/****************************************************************************
+ * Private Definitions
+ ****************************************************************************/
+ 
+#if defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) || \
+		(defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS))
+	static struct smartfs_mountpt_s *g_mounthead = NULL;
+#endif
+	
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+	extern uint16_t chunk_shift;
+	extern uint16_t used_block_divident;
+	extern size_t smart_sect_header_size;
+#define CHUNK_SIZE                              (CONFIG_MTD_SMART_SECTOR_SIZE / (USED_ARRAY_SIZE * (1 << 3)))
+#endif
+	
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+#define ENTRY_VALID(e) ((smartfs_rdle16(&(e)->flags) & SMARTFS_DIRENT_EMPTY) != \
+						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
+						((smartfs_rdle16(&(e)->flags) & SMARTFS_DIRENT_ACTIVE) == \
+						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
+	
+#else
+#define ENTRY_VALID(e) (((e)->flags & SMARTFS_DIRENT_EMPTY) != \
+						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
+						(((e)->flags & SMARTFS_DIRENT_ACTIVE) == \
+						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
+	
+#endif
+
+#define SET_TO_REMAIN(v, n)		v[n / 8] |= (1 << (7 - (n % 8)))
+#define SET_TO_USED(v, n)		v[n / 8] &= ~(1 << (7 - (n % 8)))
+#define IS_SECTOR_REMAIN(v, n)	v[n / 8] & (1 << (7 - (n % 8)))
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
+struct sector_entry_queue_s {
+	struct sector_entry_queue_s *flink;
+	uint8_t type;				/* File or Directory */
+	uint16_t logsector;			/* Logical sector number */
+	uint16_t parentsector;		/* Logical sector which is chain with this */
+	uint16_t parentoffset;		/* Offset of parent entry in parent sector */
+};
+
+struct sector_recover_info_s {
+	uint16_t totalsector;
+	uint16_t isolatedsector;
+	uint16_t recoveredsector;
+};
 
 /****************************************************************************
  * Private Function Prototypes
@@ -98,32 +147,6 @@
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
-
-#if defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) || \
-	(defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS))
-static struct smartfs_mountpt_s *g_mounthead = NULL;
-#endif
-
-#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-extern uint16_t chunk_shift;
-extern uint16_t used_block_divident;
-extern size_t smart_sect_header_size;
-#define CHUNK_SIZE                              (CONFIG_MTD_SMART_SECTOR_SIZE / (USED_ARRAY_SIZE * (1 << 3)))
-#endif
-
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-#define ENTRY_VALID(e) ((smartfs_rdle16(&(e)->flags) & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((smartfs_rdle16(&(e)->flags) & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
-#else
-#define ENTRY_VALID(e) (((e)->flags & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						(((e)->flags & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
-#endif
 
 /****************************************************************************
  * Public Variables
@@ -549,6 +572,9 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 	/* We did it! */
 
 	fs->fs_mounted = TRUE;
+#ifndef CONFIG_UTC
+	fs->entry_seq = 0;
+#endif
 
 	fdbg("SMARTFS:\n");
 	fdbg("\t    Sector size:     %d\n", fs->fs_llformat.sectorsize);
@@ -1217,11 +1243,19 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 	/* Create the directory entry to be written in the parent's sector */
 
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	smartfs_wrle16(&entry->firstsector, nextsector);
-	smartfs_wrle16(&entry->utc, time(NULL));
+	smartfs_wrle32(&entry->firstsector, nextsector);
+#ifdef CONFIG_UTC
+	smartfs_wrle32(&entry->utc, time(NULL));
+#else
+	smartfs_wrle32(&entry->utc, fs->entry_seq++);
+#endif
 #else
 	entry->firstsector = nextsector;
+#ifdef CONFIG_UTC
 	entry->utc = time(NULL);
+#else
+	entry->utc = fs->entry_seq++;
+#endif
 #endif
 	memset(entry->name, 0, fs->fs_llformat.namesize);
 	strncpy(entry->name, filename, fs->fs_llformat.namesize);
@@ -1666,11 +1700,177 @@ struct smartfs_mountpt_s *smartfs_get_first_mount(void)
 	return g_mounthead;
 }
 
+int smartfs_scan_entry(struct smartfs_mountpt_s *fs, uint8_t *map, struct sector_recover_info_s *info)
+{
+	int ret = OK;
+	struct sector_entry_queue_s *node;
+	sq_queue_t entry_queue;
+	struct smart_read_write_s readwrite;
+	struct smartfs_entry_header_s *entry;
+	struct smartfs_chain_header_s *header;
+	uint16_t logsector;
+	uint16_t nextsector;
+	uint16_t firstsector;
+	uint16_t offset;
+	uint8_t type;
+	uint8_t entrytype;
+	uint16_t entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
+	
+	sq_init(&entry_queue);
+	node = (struct sector_entry_queue_s *)kmm_malloc(sizeof(struct sector_entry_queue_s));
+	if (!node) {
+		ret = -ENOMEM;
+		goto errout;
+	}
+
+	/* Fill Node for Rootsector and add to queue */
+	node->logsector = fs->fs_rootsector;
+	node->parentsector = 0;
+	node->parentoffset = 0;
+	node->type = SMARTFS_SECTOR_TYPE_DIR;
+
+	sq_addlast((FAR sq_entry_t *)node, &entry_queue);
+	
+	for (node = (struct sector_entry_queue_s *)sq_peek(&entry_queue); node; node = (struct sector_entry_queue_s *)sq_next(node)) {
+		logsector = node->logsector;
+		type = node->type;
+		fdbg("Current logsector : %d type : %d\n", logsector, type);
+		/* Actually This Must not happened, But skip recovery process to clean later */
+		if (type != SMARTFS_SECTOR_TYPE_DIR && type != SMARTFS_SECTOR_TYPE_FILE) {
+			fdbg("Critical Bug.. type : %d\n", type);
+			continue;
+		}
+
+
+		
+		/* Now set to used */
+		if (IS_SECTOR_REMAIN(map, logsector)) {
+			SET_TO_USED(map, logsector);
+			info->totalsector++;
+		} else {
+			/* This never be happened but return error here */
+			ret = -EIO;
+			goto errout;
+		}
+		
+		while (logsector != SMARTFS_ERASEDSTATE_16BIT) {
+			/* Read all of entries in current sector */
+			readwrite.logsector = logsector;
+			readwrite.offset = 0;
+			readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+			readwrite.count = fs->fs_llformat.availbytes;
+			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+			if (ret < 0) {
+				fdbg("Error %d reading sector %d data\n", ret, logsector);
+				goto errout;
+			}
+
+			/* Point header to the read data to get used byte count */
+			header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+			nextsector = SMARTFS_NEXTSECTOR(header);
+			
+			if (type == SMARTFS_SECTOR_TYPE_DIR) {
+				offset = sizeof(struct smartfs_chain_header_s);
+				/* Test if this entry is valid and active */
+				while (offset < readwrite.count) {
+					entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
+					if (!(ENTRY_VALID(entry))) {
+						/* This entry isn't valid, skip it */
+						offset += entrysize;
+						continue;
+					}
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+					firstsector = smartfs_rdle16(&entry->firstsector);
+					if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE)
+#else
+					firstsector = entry->firstsector;
+					if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE)
+#endif
+					{
+						entrytype = SMARTFS_SECTOR_TYPE_FILE;
+					} else {
+						entrytype = SMARTFS_SECTOR_TYPE_DIR;
+					}
+
+					/* Make New Node for Entry's first sector */
+					node = (struct sector_entry_queue_s *)kmm_malloc(sizeof(struct sector_entry_queue_s));
+					if (!node) {
+						ret = -ENOMEM;
+						goto errout;
+					}
+
+					/* Check last sector is already marked or not */
+					if (!IS_SECTOR_REMAIN(map, firstsector)) {
+						struct sector_entry_queue_s *childnode;
+						struct sector_entry_queue_s *tmp;
+						struct smartfs_entry_header_s *parent_entry;
+
+						for (tmp = (struct sector_entry_queue_s *)sq_peek(&entry_queue); tmp; \
+							tmp = (struct sector_entry_queue_s *)sq_next(node)) {
+							/* OK, we found node which already added in queue */
+							if (tmp->logsector == firstsector) {
+								childnode = tmp;
+								fdbg("target firstsector : %d first parent : %d current parent : %d\n", firstsector, \
+									tmp->parentsector, logsector);
+								break;
+							}
+						}
+
+						/* This must not be happened with journaling */
+						if (childnode == NULL) {
+							fdbg("This is ciritical bug..\n");
+							ret = -EIO;
+							goto errout;
+						}
+
+						/* Now read old parent's entry */
+						readwrite.logsector = childnode->parentsector;
+						readwrite.offset = childnode->parentoffset;
+						readwrite.buffer = (uint8_t *)parent_entry;
+						readwrite.count = entrysize;
+						ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+						if (ret < 0) {
+							fdbg("Error %d reading parent sector %d data\n", ret, childnode->parentsector);
+							goto errout;
+						}
+						fdbg("current utc : %u old parent utc : %u\n", entry->utc, parent_entry->utc);
+						/* Invalidate an old parent entry */
+						if (entry->utc >= parent_entry->utc) {
+								
+						} else {
+						
+						}
+			
+					}
+					node->logsector = firstsector;
+					node->type = entrytype;
+					node->parentsector = logsector;
+					node->parentoffset = offset;
+					sq_addlast((FAR sq_entry_t *)node, &entry_queue);
+					offset += entrysize;
+				}
+			} else if (type == SMARTFS_SECTOR_TYPE_FILE) {
+			
+			} else {
+				fdbg("wrong type : %d\n", node->type);
+				/* This situation Must not happned, Should we stop? */
+			}
+			logsector = nextsector;
+		}
+
+	}
+	ret = OK;
+errout :
+	/* TODO Free everything */
+	return ret;
+}
+
 /****************************************************************************
  * Name: smartfs_sector_recovery
  *
  * Description: Recover Isolated sector that is not able to access in smartfs.
  *              Because of power off, Isolated sector can be exist.
+ *              This works stand alone, but it works properly with journaling
  *
  ****************************************************************************/
 
@@ -1678,6 +1878,8 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 {
 	int ret;
 	long sector;
+	struct sector_recover_info_s info = {0,};
+
 	/* Alloc Logical Map */
 	uint8_t *map = (uint8_t*)kmm_malloc(sizeof(uint8_t*) * fs->fs_llformat.nsectors);
 
@@ -1695,7 +1897,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 		}
 
 		if (ret != 0xFFFF) {
-			map[sector / 8] |= (1 << (7 - (sector % 8)));
+			SET_TO_REMAIN(map, sector);
 		} else {
 			/* TODO Root sector(/mnt) is gone.. what should we do ? */
 			if (sector == SMARTFS_ROOT_DIR_SECTOR) {
@@ -1704,13 +1906,15 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 				goto error_with_map;
 			}
 		}
+
+		if (IS_SECTOR_REMAIN(map, sector)) {
+			fdbg("active sector : %d\n", sector);
+		}
 	}
 
+
 	/* TODO Find all active Logical sectors from root sector and unmark for exist sector */
-
-	/* TODO Remain physical sectors are isolated sectors, so we recovery it */
-
-	return OK;
+	ret = smartfs_scan_entry(fs, map, &info);
 	
 error_with_map:
 	if (map) {
