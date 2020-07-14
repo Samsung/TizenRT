@@ -239,6 +239,37 @@ uint32_t rtl_read_factory_cert_wrapper(hal_data *data)
 	return ret;
 }
 
+uint32_t rtl_write_factory_cert_wrapper(hal_data *data)
+{
+	uint32_t ret;
+	uint8_t buf_length[4];
+	flash_t flash;
+	uint32_t data_len = data->data_len;
+
+	uint8_t	*buf_flash = (uint8_t *) malloc(data_len + 4);
+
+	if (buf_flash) {
+		itoa(data_len, buf_length, 10);
+		memcpy(buf_flash, buf_length, 4);
+		memcpy(buf_flash + 4, data->data, data->data_len);
+
+		device_mutex_lock(RT_DEV_LOCK_FLASH);
+		flash_erase_sector(&flash, FACTORY_CERT_ADDR);
+		flash_stream_write(&flash, FACTORY_CERT_ADDR, data_len + 4, buf_flash);
+		device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
+		ret = RTL_HAL_SUCCESS;
+	} else {
+		ret = RTL_HAL_FAIL;
+	}
+
+	if (buf_flash != NULL) {
+		free(buf_flash);
+	}
+
+	return ret;
+}
+
 uint32_t rtl_read_factory_key_wrapper(hal_data *data)
 {
 	uint32_t ret;
