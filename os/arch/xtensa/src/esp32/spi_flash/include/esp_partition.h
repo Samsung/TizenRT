@@ -175,7 +175,7 @@ const esp_partition_t *esp_partition_get(esp_partition_iterator_t iterator);
 esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t iterator);
 
 /**
- * @brief Initialize a mutex for partition access
+ * @brief Initialize a semaphore for partition access
  */
 void esp_partition_initialize(void);
 
