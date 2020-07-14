@@ -1587,7 +1587,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 #endif
 
 		/* Initialize a semaphore for spi dma */
-		sem_init(&g_spi_dma.dma_lock, 0, 1);
+		sem_init((sem_t *)&g_spi_dma.dma_lock, 0, 1);
 		priv->initiallized = true;
 	}
 
