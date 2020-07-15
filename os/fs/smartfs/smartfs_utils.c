@@ -1039,6 +1039,9 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 	uint16_t entrysize;
 	struct smartfs_entry_header_s *entry;
 	struct smartfs_chain_header_s *chainheader;
+	int update_chain = 0;
+	struct smart_read_write_s update_readwrite;
+	struct smartfs_chain_header_s update_header;
 
 	/* Start at the 1st sector in the parent directory */
 
@@ -1118,19 +1121,18 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 
 			nextsector = (uint16_t)ret;
 
-			/* Chain the next sector into this sector sector */
+			/* Chain the next sector into this sector */
 
-			chainheader->nextsector[0] = (uint8_t)(nextsector & 0x00FF);
-			chainheader->nextsector[1] = (uint8_t)(nextsector >> 8);
-			//*((uint16_t *)chainheader->nextsector) = nextsector;
-			readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
-			readwrite.count = sizeof(uint16_t);
-			readwrite.buffer = chainheader->nextsector;
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-			if (ret < 0) {
-				fdbg("Error chaining sector %d\n", nextsector);
-				goto errout;
-			}
+			update_header.nextsector[0] = (uint8_t)(nextsector & 0x00FF);
+			update_header.nextsector[1] = (uint8_t)(nextsector >> 8);
+			update_readwrite.logsector = psector;
+			update_readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
+			update_readwrite.count = sizeof(uint16_t);
+			update_readwrite.buffer = update_header.nextsector;
+
+			fvdbg("chain with next sector.. current : %d next : %d\n", psector, nextsector);
+			update_chain = 1;
+
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 			 /* TODO We will modify whole of create entry to integrity MTD operation soon.
@@ -1139,8 +1141,8 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 			  * It is temp FIX, If we use sector buffer to support CRC, currently created new parent sector which is chained 
 			  * to previous parent sector is not committed yet. So Now we break loop to prevent read error 
 			  */
-			offset = sizeof(struct smartfs_chain_header_s);
-			entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
+			offset = 0; // We have to write chain header
+			entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[sizeof(struct smartfs_chain_header_s)];
 			psector = nextsector;
 			break;
 #endif
@@ -1229,13 +1231,30 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 	/* Now write the new entry to the parent directory sector */
 
 	readwrite.logsector = psector;
+	/* If it chained right before, we should update chainheader */
+	if (update_chain) {
+		memset(fs->fs_rwbuffer, CONFIG_SMARTFS_ERASEDSTATE, sizeof(struct smartfs_chain_header_s));
+		chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+		chainheader->type = SMARTFS_SECTOR_TYPE_DIR;
+		readwrite.count = entrysize + sizeof(struct smartfs_chain_header_s);
+	} else {
+		readwrite.count = entrysize;
+	}
 	readwrite.offset = offset;
-	readwrite.count = entrysize;
 	readwrite.buffer = (uint8_t *)&fs->fs_rwbuffer[offset];
 	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long) &readwrite);
 	if (ret < 0) {
 		fdbg("failed to write new entry to parent directory psector : %d\n", psector);
 		goto errout;
+	}
+	
+	if (update_chain) {
+		/* Update chain header after the next sector was written */
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long) &update_readwrite);
+		if (ret < 0) {
+			fdbg("ERROR: Error chaining sector %d\n", update_readwrite.logsector);
+			goto errout;
+		}
 	}
 
 	/* Now fill in the entry */
