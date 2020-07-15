@@ -20,6 +20,7 @@
 #include <semaphore.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
+#include <tinyara/kmalloc.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -244,7 +245,6 @@ extern uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigne
 extern uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
 extern uint32_t rtl_read_factory_key_wrapper(hal_data *data);
 extern uint32_t rtl_read_factory_cert_wrapper(hal_data *data);
-extern uint32_t rtl_write_factory_cert_wrapper(hal_data *data);
 
 /**
  * Helper function
@@ -264,12 +264,17 @@ static void* my_calloc(size_t nelements, size_t elementSize)
 	void *ptr = NULL;
 
 	size = nelements * elementSize;
-	ptr = malloc(size);
+	ptr = kmm_malloc(size);
 
 	if (ptr)
 		memset(ptr, 0, size);
 
 	return ptr;
+}
+
+static void my_free(void* ptr)
+{
+	kmm_free(ptr);
 }
 
 static uint32_t rtl_index_convt(uint32_t key_idx)
@@ -278,14 +283,14 @@ static uint32_t rtl_index_convt(uint32_t key_idx)
 
 	/* Because Ameba SE storing Key in array, array start from Zero */
 	if (key_idx != 0) {	/* Index not Zero */
-		/* Valid  Inded are 0 - 31, Total 32 Index slot */
+		/* Valid  Index are 0 - 31, Total 32 Index slot */
 		ret_key_idx = key_idx - 1;	/* Index minus One */
 	}
 	return ret_key_idx;
 }
 
 /* Set prime modulus and generator */
-int rtl_dhm_set_group(rtl_dhm_context *ctx, const rtl_mpi *P, const rtl_mpi *G)
+static int rtl_dhm_set_group(rtl_dhm_context *ctx, const rtl_mpi *P, const rtl_mpi *G)
 {
 	int ret;
 
@@ -310,6 +315,7 @@ static int hal_rand(void *rng_state, unsigned char *output, size_t len)
 /**
  * Common
  */
+
 int ameba_hal_init(hal_init_param *params)
 {
 	AWRAP_ENTER;
@@ -337,7 +343,7 @@ int ameba_hal_init(hal_init_param *params)
 	/* Realtek added to initialize ROM code calloc & free function handler */
 	p_rom_ssl_ram_map = (struct _rom_mbedtls_ram_map*)&rom_ssl_ram_map;
 	p_rom_ssl_ram_map->ssl_calloc = my_calloc;
-	p_rom_ssl_ram_map->ssl_free = free;
+	p_rom_ssl_ram_map->ssl_free = my_free;
 
 	ret = rtl_cryptoEngine_init_wrapper();	/* init crypto engine */
 	if (ret == RTL_HAL_SUCCESS) {
@@ -374,7 +380,7 @@ int ameba_hal_deinit(void)
 
 		memset(key_storage[i].hmac_key, 0, sizeof(key_storage[i].hmac_key));
 		if (key_storage[i].cert_data != NULL) {
-			free(key_storage[i].cert_data);
+			kmm_free(key_storage[i].cert_data);
 		}
 	}
 	init_stat = HAL_NOT_INITIALIZED;
@@ -387,10 +393,10 @@ int ameba_hal_free_data(hal_data *data)
 	AWRAP_ENTER;
 	if (data) {
 		if (data->data) {
-			free(data->data);
+			kmm_free(data->data);
 		}
 		if (data->priv) {
-			free(data->priv);
+			kmm_free(data->priv);
 		}
 	}
 	return HAL_SUCCESS;
@@ -516,8 +522,8 @@ int ameba_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 	if ((mode <= HAL_KEY_ECC_SEC_P512R1) && (mode >= HAL_KEY_ECC_BRAINPOOL_P256R1)) {
 		puk_x_len = rtl_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.X));	/* Get length */
 		puk_y_len = rtl_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Y));	/* Get length */
-		puk_x = (unsigned char *)malloc(puk_x_len);	/* Allocate memory */
-		puk_y = (unsigned char *)malloc(puk_y_len);	/* Allocate memory */
+		puk_x = (unsigned char *)kmm_malloc(puk_x_len);	/* Allocate memory */
+		puk_y = (unsigned char *)kmm_malloc(puk_y_len);	/* Allocate memory */
 
 		if ((puk_x == NULL) || (puk_y == NULL)) {
 			ret = HAL_NOT_ENOUGH_MEMORY;	/* Memory not enough */
@@ -537,10 +543,10 @@ int ameba_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 	}
 
 	if (puk_x != NULL) {
-		free(puk_x);	/* free memory */
+		kmm_free(puk_x);	/* free memory */
 	}
 	if (puk_y != NULL) {
-		free(puk_y);	/* free memory */
+		kmm_free(puk_y);	/* free memory */
 	}
 
 exit:
@@ -722,7 +728,7 @@ int ameba_hal_generate_random(uint32_t len, hal_data *random)
 int ameba_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 {
 	AWRAP_ENTER;
-	
+
 	uint32_t len;
 	unsigned char output[64];
 
@@ -753,7 +759,7 @@ int ameba_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 		return HAL_NOT_SUPPORTED;
 	}
 
-	len = strlen((char*) output);
+	len = strlen((char *)output);
 	if (len != 0) {
 		HAL_COPY_DATA(hash, output, len);
 		return HAL_SUCCESS;
@@ -779,6 +785,10 @@ int ameba_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, ha
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
+	if (ret != HAL_SUCCESS) {
+		sedbg("RTL SE failed (%zu)\n", ret);
+		return HAL_FAIL;
+	}
 	return HAL_NOT_SUPPORTED;
 }
 
@@ -1034,7 +1044,7 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 		goto exit;
 	}
 
-	output = (unsigned char *)malloc(HAL_MAX_BUF_SIZE);
+	output = (unsigned char *)kmm_malloc(HAL_MAX_BUF_SIZE);
 	if (output == NULL) {
 		ret = HAL_NOT_ENOUGH_MEMORY;
 		goto exit;
@@ -1042,11 +1052,11 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	/* Sets up and writes the ServerKeyExchange parameters */
 	p_size = rtl_mpi_size(&key_storage[dh_idx].dhm_ctx.P);
 	ret = rtl_dhm_make_params(&(key_storage[dh_idx].dhm_ctx), (int)p_size, output, &output_len, hal_rand, NULL);
-	free(output);	/* Output is not needed to exports, Output is Param */
+	kmm_free(output);	/* Output is not needed to exports, Output is Param */
 
 	if (ret == HAL_SUCCESS) {
 		output_len = key_storage[dh_idx].dhm_ctx.len;
-		output = (unsigned char *)malloc(output_len);
+		output = (unsigned char *)kmm_malloc(output_len);
 		if (output == NULL) {
 			ret = HAL_NOT_ENOUGH_MEMORY;
 			goto exit;
@@ -1065,7 +1075,7 @@ exit:
 	rtl_mpi_free(&mpi_P);
 	rtl_mpi_free(&mpi_G);
 	if (output != NULL) {
-		free(output);
+		kmm_free(output);
 	}
 
 	if (ret != HAL_SUCCESS) {
@@ -1118,7 +1128,7 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 	}
 
 	buf_size = key_storage[dh_idx].dhm_ctx.len;
-	output = (unsigned char *)malloc(buf_size);
+	output = (unsigned char *)kmm_malloc(buf_size);
 	if (output == NULL) {
 		ret = HAL_NOT_ENOUGH_MEMORY;
 		goto exit;
@@ -1133,7 +1143,7 @@ exit:
 	rtl_mpi_free(&mpi_P);
 	rtl_mpi_free(&mpi_G);
 	if (output != NULL) {
-		free(output);
+		kmm_free(output);
 	}
 
 	if (ret != HAL_SUCCESS) {
@@ -1176,7 +1186,7 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 
 	/* Set Z key */
 	Qp_z_len = rtl_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Z));	/* Get Key size */
-	Qp_z = (unsigned char *)malloc(Qp_z_len);	/* Allocate memory */
+	Qp_z = (unsigned char *)kmm_malloc(Qp_z_len);	/* Allocate memory */
 	if (Qp_z == NULL) {
 		ret = HAL_NOT_ENOUGH_MEMORY;	/* Memory not enough */
 		goto exit;
@@ -1204,7 +1214,7 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 
 exit:
 	if (Qp_z != NULL) {
-		free(Qp_z);
+		kmm_free(Qp_z);
 	}
 
 	if (ret != HAL_SUCCESS) {
@@ -1232,9 +1242,9 @@ int ameba_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 
 	/* If cert exist */
 	if (key_storage[cert_idx].cert_data != NULL) {
-		free(key_storage[cert_idx].cert_data);	/* Free existing Cert memory */
+		kmm_free(key_storage[cert_idx].cert_data);	/* Free existing Cert memory */
 	}
-	key_storage[cert_idx].cert_data = malloc(cert_in->data_len);	/* malloc for new cert */
+	key_storage[cert_idx].cert_data = kmm_malloc(cert_in->data_len);	/* malloc for new cert */
 
 	/* Copy cert data and length into local storage */
 	memcpy(key_storage[cert_idx].cert_data, cert_in->data, cert_in->data_len);
