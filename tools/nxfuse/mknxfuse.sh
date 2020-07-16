@@ -68,6 +68,10 @@ ln -sf $BASE_INCLUDE_DIR/tinyara/fs/fs.h $DEST_INLCUDE_DIR/tinyara/fs/fs.h
 ln -sf $BASE_DIR/lib/libc/misc/lib_crc16.c $SRCDIR/lib_crc16.c
 ln -sf $BASE_DIR/lib/libc/misc/lib_crc32.c $SRCDIR/lib_crc32.c
 ln -sf $BASE_DIR/lib/libc/misc/lib_crc8.c $SRCDIR/lib_crc8.c
+ln -sf $BASE_DIR/lib/libc/queue/sq_rem.c $SRCDIR/sq_rem.c
+ln -sf $BASE_DIR/lib/libc/queue/sq_addlast.c $SRCDIR/sq_addlast.c
+ln -sf $BASE_DIR/lib/libc/queue/sq_remfirst.c $SRCDIR/sq_remfirst.c
+ln -sf $BASE_DIR/lib/libc/queue/sq_remafter.c $SRCDIR/sq_remafter.c
 
 echo "Copying Done"
 
