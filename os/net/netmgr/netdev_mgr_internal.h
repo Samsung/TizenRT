@@ -67,8 +67,8 @@ struct netdev_ops {
 	int (*joingroup)(struct netdev *dev, struct in_addr *addr);
 	int (*leavegroup)(struct netdev *dev, struct in_addr *addr);
 
-	int (*input)(struct netdev *dev, uint8_t *data, uint16_t len);
-	int (*linkoutput)(struct netdev *dev, uint8_t *data, uint16_t len);
+	int (*input)(struct netdev *dev, void *data, uint16_t len);
+	int (*linkoutput)(struct netdev *dev, void *data, uint16_t len);
 	int (*igmp_mac_filter)(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
 
 	/* statistics
