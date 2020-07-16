@@ -73,14 +73,11 @@ bool "Dynamic Header"
 	---help---
 		Using Modified Used Byte Method to Reduce Sector Relocation 
 
-config SMARTFS_SECTOR_RECOVERY
-	bool "Enable recovery of lost sectors in Filesystem"
-	depends on MTD_SMART
+config SMARTFS_ENTRY_TIMESTAMP
+	bool "Enable Timestamp for Smartfs Entry"
 	default n
 	---help---
-		Enables recovery of lost sectors after power failure. Lost
-		sectors are the sectors which are allocated but not reachable
-		from root directory.
+		Instead of RTC, Use Time stamp for UTC value of entry.
 endmenu
-                
+           
 endif
