@@ -5446,24 +5446,24 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 			}
 			
 			/* Data sector is released, checkout journal data */
-			return smart_journal_checkout(dev, log, address);
+			ret = smart_journal_checkout(dev, log, address);
 		} 
 		break;
 
 	/* For Release & Erase, Nothing for now, Retry Checkout */
 	case SMART_JOURNAL_TYPE_RELEASE:
-		return smart_journal_checkout_process(dev, log, address);
+		ret = smart_journal_checkout_process(dev, log, address);
+		break;
+		
 	case SMART_JOURNAL_TYPE_ERASE:
 		ret = smart_journal_checkout_process(dev, log, address);
-		if (ret == OK) {
-			ret = smart_garbagecollect(dev);
-		}
-		return ret;
+		break;
 		
 	default:
 		return -EIO;
 	}
-	return OK;
+
+	return ret;
 }
 
 #endif
