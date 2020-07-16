@@ -560,7 +560,7 @@ void binary_manager_release_binary_sem(int bin_idx)
 				if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_binidx == bin_idx) {
 					/* Increase semcount and release itself from holder */
 					sem->semcount++;
-					sem_freeholder(sem, holder);
+
 					/* And after releasing the kernel sem, there can be a task which waits that sem. So unblock the waiting task. */
 					sem_unblock_task(sem, holder->htcb);
 				}
