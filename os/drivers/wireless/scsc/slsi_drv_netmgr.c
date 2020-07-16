@@ -116,7 +116,7 @@ void slsi_ethernetif_input(struct netdev *dev, u8_t *frame_ptr, u16_t len)
 	SLSI_MUTEX_LOCK(sdev->rx_data_mutex);
 
 	SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_packets_given_to_lwip);
-	netdev_input(dev, frame_ptr, len);
+	netdev_input(dev, (void *)frame_ptr, len);
 
 	SLSI_MUTEX_UNLOCK(sdev->rx_data_mutex);
 }
@@ -819,7 +819,7 @@ trwifi_result_e slsidrv_set_autoconnect(struct netdev *dev, uint8_t check)
 	return result;
 }
 extern int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
-extern int slsi_linkoutput(struct netdev *dev, uint8_t *data, uint16_t dlen);
+extern int slsi_linkoutput(struct netdev *dev, void *data, uint16_t dlen);
 
 struct netdev* slsidrv_register_dev(int sizeof_priv)
 {
