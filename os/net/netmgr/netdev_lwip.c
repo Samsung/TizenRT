@@ -49,10 +49,15 @@
 #define AF_INETX AF_INET
 #endif							/* CONFIG_NET_IPv6 */
 
+#define LW_GETND(nic) (struct netdev *)(*(struct netdev **)(&((char *)nic)[sizeof(struct netif)]))
+#define GET_NETIF_FROM_NETDEV(dev) (struct netif *)(((struct netdev_ops *)(dev)->ops)->nic)
+
 // Temporary impl
 static int g_num = 0;
 
-
+/**
+ * Private Function
+ */
 static inline int _netif_down(struct netif *ni)
 {
 	/* Is the interface already down? */
@@ -70,9 +75,58 @@ static inline int _netif_down(struct netif *ni)
 	return 0;
 }
 
-#define LW_GETND(nic) (struct netdev *)(*(struct netdev **)(&((char *)nic)[sizeof(struct netif)]))
+
+#ifdef CONFIG_NET_NETMGR_ZEROCOPY
+static err_t _lwip_linkoutput(struct netif *nic, struct pbuf *buf)
+{
+	struct netdev *dev = LW_GETND(nic);
+
+	int res = ND_NETOPS(dev, linkoutput)(dev, (void *)buf, 0);
+	if (res < 0) {
+		return ERR_IF;
+	}
+
+	return ERR_OK;
+}
 
 
+static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
+{
+	(void)len;
+	if (!dev || !frame_ptr) {
+		return -1;
+	}
+
+	struct pbuf *p = (struct pbuf *)frame_ptr;
+	struct eth_hdr *ethhdr = p->payload;
+
+	switch (htons(ethhdr->type)) {
+	case ETHTYPE_IP:
+#if LWIP_IPV6
+	case ETHTYPE_IPV6:
+#endif
+	case ETHTYPE_ARP:
+#if PPPOE_SUPPORT
+	case ETHTYPE_PPPOEDISC:
+	case ETHTYPE_PPPOE:
+#endif
+	{
+		/* full packet send to tcpip_thread to process */
+		if (netif->input(p, netif) != ERR_OK) {
+			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
+			LINK_STATS_INC(link.err);
+		} else {
+			LINK_STATS_INC(link.recv);
+		}
+	}
+	break;
+	default:
+		LWIP_DEBUGF(NETIF_DEBUG, ("not supported ethernet type error\n"));
+		break;
+	}
+	return 0;
+}
+#else /*  CONFIG_NET_NETMGR_ZEROCOPY */
 static err_t _lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 {
 	struct netdev *dev = LW_GETND(nic);
@@ -84,16 +138,73 @@ static err_t _lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 		tbuf = tbuf->next;
 	}
 
-	//int res = ND_NETOPS(dev, linkoutput)(dev, data->payload, data->tot_len);
 	int res = ND_NETOPS(dev, linkoutput)(dev, dev->tx_buf, offset);
 	if (res < 0) {
 		return ERR_IF;
 	}
 
-	//pbuf_free(data);
-
 	return ERR_OK;
 }
+
+
+static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
+{
+	LWIP_DEBUGF(NETIF_DEBUG, ("passing to LWIP layer, packet len %d \n", len));
+	struct pbuf *p, *q;
+	/* Receive the complete packet */
+	/* Obtain the size of the packet and put it into the "len" variable. */
+	if (0 == len) {
+		return 0;
+	}
+	struct netif *netif = GET_NETIF_FROM_NETDEV(dev);
+	/* We allocate a pbuf chain of pbufs from the pool. */
+	p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+
+	if (!p) {
+		LWIP_DEBUGF(NETIF_DEBUG, ("mem error\n"));
+		LINK_STATS_INC(link.memerr);
+		LINK_STATS_INC(link.drop);
+		return -1;
+	}
+	LWIP_DEBUGF(NETIF_DEBUG, ("processing pbufs\n"));
+
+	/* We iterate over the pbuf chain until we have read the entire packet into the pbuf. */
+	for (q = p; q != NULL; q = q->next) {
+		memcpy(q->payload, frame_ptr, q->len);
+		frame_ptr += q->len;
+	}
+
+	struct eth_hdr *ethhdr = p->payload;
+	switch (htons(ethhdr->type)) {
+	case ETHTYPE_IP:
+#if LWIP_IPV6
+	case ETHTYPE_IPV6:
+#endif
+	case ETHTYPE_ARP:
+#if PPPOE_SUPPORT
+	case ETHTYPE_PPPOEDISC:
+	case ETHTYPE_PPPOE:
+#endif
+	{
+		/* full packet send to tcpip_thread to process */
+		if (netif->input(p, netif) != ERR_OK) {
+			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
+			LINK_STATS_INC(link.err);
+			pbuf_free(p);
+		} else {
+			LINK_STATS_INC(link.recv);
+		}
+	}
+	break;
+	default:
+		pbuf_free(p);
+		p = NULL;
+		break;
+	}
+
+	return 0;
+}
+#endif /*  CONFIG_NET_NETMGR_ZEROCOPY */
 
 
 static err_t _lwip_set_multicast_list(struct netif *nic, const ip4_addr_t *group, enum netif_mac_filter_action action)
@@ -213,9 +324,6 @@ static void _netif_soft_ifdown(FAR struct netif *dev)
 }
 
 
-#define GET_NETIF_FROM_NETDEV(dev) (struct netif *)(((struct netdev_ops *)(dev)->ops)->nic)
-
-
 #ifdef CONFIG_NET_IPv4
 static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
@@ -269,7 +377,7 @@ static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 
 	return 0;
 }
-#else
+#else /*  CONFIG_NET_IPv4 */
 static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
 	return -ENOTTY;
@@ -280,7 +388,7 @@ static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
 	return -ENOTTY;
 }
-#endif
+#endif /*  CONFIG_NET_IPv4 */
 
 
 #ifdef CONFIG_NET_IPv6
@@ -317,7 +425,7 @@ static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, i
 	}
 	return 0;
 }
-#else // CONFIG_NET_IPv6
+#else /* CONFIG_NET_IPv6 */
 static int lwip_get_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, int type)
 {
 	return -ENOTTY;
@@ -328,7 +436,7 @@ static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, i
 {
 	return -ENOTTY;
 }
-#endif
+#endif /* CONFIG_NET_IPv6 */
 
 
 static int lwip_delete_ipaddr(struct netdev *dev)
@@ -582,7 +690,9 @@ static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 #endif /* LWIP_IPV6 */
 	nic->output = etharp_output;
 	nic->linkoutput = _lwip_linkoutput;
+#if LWIP_IPV4 && LWIP_IGMP
 	nic->igmp_mac_filter = _lwip_set_multicast_list;
+#endif
 	nic->num = g_num++;
 
 	/*
@@ -626,44 +736,7 @@ static int lwip_deinit_nic(struct netdev *dev)
 	return 0;
 }
 
-static int lwip_input(struct netdev *dev, uint8_t *frame_ptr, uint16_t len)
-{
-	LWIP_DEBUGF(NETIF_DEBUG, ("passing to LWIP layer, packet len %d \n", len));
-	struct pbuf *p, *q;
-	/* Receive the complete packet */
-	/* Obtain the size of the packet and put it into the "len" variable. */
-	if (0 == len) {
-		return 0;
-	}
-	struct netif *netif = GET_NETIF_FROM_NETDEV(dev);
-	/* We allocate a pbuf chain of pbufs from the pool. */
-	p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
 
-	LWIP_DEBUGF(NETIF_DEBUG, ("processing pbufs\n"));
-	/* We iterate over the pbuf chain until we have read the entire packet into the pbuf. */
-	if (p != NULL) {
-		for (q = p; q != NULL; q = q->next) {
-			memcpy(q->payload, frame_ptr, q->len);
-			frame_ptr += q->len;
-		}
-		/* full packet send to tcpip_thread to process */
-		if (netif->input(p, netif) != ERR_OK) {
-			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
-			LINK_STATS_INC(link.err);
-			pbuf_free(p);
-			/* Don't reference the packet any more! */
-			p = NULL;
-		} else {
-			LINK_STATS_INC(link.recv);
-		}
-	} else {
-		LWIP_DEBUGF(NETIF_DEBUG, ("mem error\n"));
-		LINK_STATS_INC(link.memerr);
-		LINK_STATS_INC(link.drop);
-		return -1;
-	}
-	return 0;
-}
 #ifdef CONFIG_NET_NETMON
 static int lwip_get_stats(struct netdev *dev, struct netmon_netdev_stats *stats)
 {
