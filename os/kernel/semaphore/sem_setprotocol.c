@@ -116,9 +116,12 @@ int sem_setprotocol(FAR sem_t *sem, int protocol)
 
 			sem->flags |= PRIOINHERIT_FLAGS_DISABLE;
 
-			/* Remove any current holders */
+#ifndef CONFIG_BINMGR_RECOVERY
+			/* Remove any current holders if only fault recovery is disabled
+			 * because it is necessasary to keep a list of holders for fault recovery. */
 
 			sem_destroyholder(sem);
+#endif
 			return OK;
 
 		case SEM_PRIO_INHERIT:
