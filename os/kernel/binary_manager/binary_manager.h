@@ -220,7 +220,7 @@ void binary_manager_get_info_all(int request_pid);
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
 int binary_manager_register_ubin(char *name);
 void binary_manager_scan_ubin(void);
-int binary_manager_read_header(char *path, binary_header_t *header_data);
+int binary_manager_read_header(char *path, binary_header_t *header_data, bool crc_check);
 int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
 void binary_manager_release_binary_sem(int bin_idx);
 void binary_manager_update_running_state(int bin_id);

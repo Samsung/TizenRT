@@ -112,7 +112,7 @@ void binary_manager_scan_ubin(void)
 			/* Remove binary file which is not running */
 			if (DIRENT_ISFILE(entryp->d_type)) {
 				snprintf(filepath, CONFIG_PATH_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
-				ret = binary_manager_read_header(filepath, &header_data);
+				ret = binary_manager_read_header(filepath, &header_data, false);
 				if (ret < 0) {
 					continue;
 				}
