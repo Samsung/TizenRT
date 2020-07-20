@@ -114,7 +114,7 @@ struct netdev_config {
 struct netdev *netdev_register(struct netdev_config *config);
 /*
  * DESC:
- * NIC driver should call following fuction to pass the incoming data to network stack.
+ * NIC driver should call following function to pass the incoming data to network stack.
  * if NET_NETMGR_ZEROCOPY is enabled then data is lwIP pbuf not to do memory copy.
  * On NET_NETMGR_ZEROCOPY if netdev_input return error then the caller should free data by itself.
  * PARAMETER
