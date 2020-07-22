@@ -86,12 +86,16 @@ ifneq ($(CONFIG_DISABLE_SIGNALS),y)
 CMN_CSRCS += up_signal_dispatch.c
 CMN_UASRCS += up_signal_handler.S
 endif
-else
+endif
+
 CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
 endif
 
 CHIP_ASRCS  =
-CHIP_CSRCS  = tiva_allocateheap.c tiva_start.c tiva_irq.c tiva_gpio.c
+CHIP_CSRCS  = tiva_start.c tiva_irq.c tiva_gpio.c
 CHIP_CSRCS += tiva_gpioirq.c tiva_lowputc.c tiva_serial.c tiva_ssi.c
 CHIP_CSRCS += tiva_dumpgpio.c
 
@@ -103,10 +107,6 @@ endif
 
 ifneq ($(CONFIG_SCHED_TICKLESS),y)
 CHIP_CSRCS += tiva_timerisr.c
-endif
-
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CHIP_CSRCS += tiva_mpuinit.c
 endif
 
 ifeq ($(CONFIG_TIVA_I2C),y)

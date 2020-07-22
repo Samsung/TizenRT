@@ -62,7 +62,7 @@ CMN_UCSRCS =
 CMN_ASRCS  = up_saveusercontext.S up_fullcontextrestore.S up_switchcontext.S
 CMN_ASRCS += vfork.S
 
-CMN_CSRCS  = up_allocateheap.c up_assert.c up_blocktask.c up_copyfullstate.c
+CMN_CSRCS  = up_assert.c up_blocktask.c up_copyfullstate.c
 CMN_CSRCS += up_createstack.c up_mdelay.c up_udelay.c up_exit.c
 CMN_CSRCS += up_initialize.c up_initialstate.c up_interruptcontext.c
 CMN_CSRCS += up_memfault.c up_modifyreg8.c up_modifyreg16.c up_modifyreg32.c
@@ -119,6 +119,12 @@ CMN_CSRCS += up_copyarmstate.c
 endif
 endif
 
+CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
+endif
+
 CHIP_ASRCS  =
 
 CHIP_CSRCS  = stm32_start.c stm32_rcc.c stm32_lse.c
@@ -132,10 +138,6 @@ endif
 
 ifeq ($(CONFIG_ARM_CMNVECTOR),y)
 CHIP_ASRCS += stm32_vectors.S
-endif
-
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CHIP_CSRCS += stm32_mpuinit.c
 endif
 
 ifeq ($(CONFIG_STM32_CCM_PROCFS),y)
