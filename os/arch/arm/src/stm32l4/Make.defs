@@ -93,10 +93,16 @@ ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
 CMN_CSRCS += up_schedyield.c
 endif
 
+CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
+endif
+
 # Required STM32L4 files
 
 CHIP_ASRCS  =
-CHIP_CSRCS  = stm32l4_allocateheap.c stm32l4_exti_gpio.c stm32l4_gpio.c
+CHIP_CSRCS  = stm32l4_exti_gpio.c stm32l4_gpio.c
 CHIP_CSRCS += stm32l4_irq.c stm32l4_lowputc.c
 CHIP_CSRCS += stm32l4_rcc.c
 CHIP_CSRCS += stm32l4_serial.c stm32l4_start.c stm32l4_waste.c stm32l4_uid.c
@@ -207,10 +213,6 @@ endif
 
 ifeq ($(CONFIG_STM32L4_FREERUN),y)
 CHIP_CSRCS += stm32l4_freerun.c
-endif
-
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CHIP_CSRCS += stm32l4_mpuinit.c
 endif
 
 ifeq ($(CONFIG_STM32L4_HAVE_HSI48),y)

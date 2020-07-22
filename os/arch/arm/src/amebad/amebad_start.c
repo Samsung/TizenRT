@@ -69,6 +69,7 @@
 #include "nvic.h"
 #endif
 
+const uintptr_t g_idle_topstack = (uintptr_t)&_ebss + CONFIG_IDLETHREAD_STACKSIZE;
 
 /****************************************************************************
  * Name: _start

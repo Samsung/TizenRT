@@ -1,5 +1,5 @@
 /************************************************************************************
- * arch/arm/src/stm32l4/stm32l4_mpuinit.h
+ * arch/arm/src/common/up_mpuinit.h
  *
  *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -33,8 +33,8 @@
  *
  ************************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_STM32L4_STM32L4_MPUINIT_H
-#define __ARCH_ARM_SRC_STM32L4_STM32L4_MPUINIT_H
+#ifndef __ARCH_ARM_SRC_UP_MPUINIT_H
+#define __ARCH_ARM_SRC_UP_MPUINIT_H
 
 /************************************************************************************
  * Included Files
@@ -47,7 +47,7 @@
  ************************************************************************************/
 
 /****************************************************************************
- * Name: stm32l4_mpuinitialize
+ * Name: up_mpuinitialize
  *
  * Description:
  *   Configure the MPU to permit user-space access to only unrestricted MCU
@@ -56,9 +56,9 @@
  ****************************************************************************/
 
 #ifdef CONFIG_BUILD_PROTECTED
-void stm32l4_mpuinitialize(void);
+void up_mpuinitialize(void);
 #else
-#  define stm32l4_mpuinitialize()
+#  define up_mpuinitialize()
 #endif
 
-#endif /* __ARCH_ARM_SRC_STM32L4_STM32L4_MPUINIT_H */
+#endif /* __ARCH_ARM_SRC_UP_MPUINIT_H */

@@ -117,6 +117,8 @@ ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
 CMN_CSRCS += up_schedyield.c
 endif
 
+CMN_CSRCS += up_allocateheap.c
+
 ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
 
 CFLAGS+= -mcmse
@@ -142,7 +144,6 @@ CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/ameba
 
 CHIP_ASRCS  =
 CHIP_CSRCS = amebad_start.c
-CHIP_CSRCS += amebad_allocateheap.c
 CHIP_CSRCS += amebad_flash.c
 CHIP_CSRCS += amebad_idle.c
 CHIP_CSRCS += amebad_irq.c

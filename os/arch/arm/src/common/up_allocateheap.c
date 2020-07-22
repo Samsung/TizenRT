@@ -98,7 +98,10 @@
  * kernel heap here.
  */
 
+extern const uint32_t g_idle_topstack;
+
 /****************************************************************************
+ *
  * Private Data
  ****************************************************************************/
 
@@ -139,7 +142,7 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 
 	*heap_size = (void *)KREGION_END - *heap_start;
 
-	dbg("start = 0x%x size = %d\n", *heap_start, *heap_size);
+	lldbg("start = 0x%x size = %d\n", *heap_start, *heap_size);
 }
 
 /****************************************************************************
@@ -156,6 +159,7 @@ void up_add_kregion(void)
 			mm_initialize(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
 			continue;
 		}
+		lldbg("start = 0x%x size = %d\n", kregionx_start[region_cnt], kregionx_size[region_cnt]);
 		mm_addregion(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
 	}
 }
