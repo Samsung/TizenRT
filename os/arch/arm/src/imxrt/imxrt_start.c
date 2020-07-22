@@ -72,7 +72,7 @@
 #endif
 
 #include "imxrt_clockconfig.h"
-#include "imxrt_mpuinit.h"
+#include "up_mpuinit.h"
 #include "imxrt_start.h"
 #include "imxrt_gpio.h"
 #if defined(CONFIG_ARCH_CHIP_FAMILY_IMXRT102x)
@@ -106,6 +106,12 @@
 
 #define IDLE_STACK ((uintptr_t)&_ebss + CONFIG_IDLETHREAD_STACKSIZE - 4)
 #define HEAP_BASE  ((uintptr_t)&_ebss + CONFIG_IDLETHREAD_STACKSIZE)
+
+/****************************************************************************
+ * Public data
+ ****************************************************************************/
+
+const uintptr_t g_idle_topstack = (uintptr_t)&_ebss + CONFIG_IDLETHREAD_STACKSIZE;
 
 /****************************************************************************
  * Private Function prototypes
@@ -442,7 +448,7 @@ void __start(void)
 	 * memory regions.
 	 */
 
-	imxrt_mpu_initialize();
+	up_mpuinitialize();
 #endif
 
 	/* Enable I- and D-Caches */

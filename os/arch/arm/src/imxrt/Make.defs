@@ -115,10 +115,16 @@ ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
 CMN_CSRCS += up_schedyield.c
 endif
 
+CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
+endif
+
 # Required i.MX RT files
 
 CHIP_ASRCS  =
-CHIP_CSRCS  = imxrt_allocateheap.c imxrt_start.c imxrt_clockconfig.c
+CHIP_CSRCS  = imxrt_start.c imxrt_clockconfig.c
 CHIP_CSRCS += imxrt_periphclks.c imxrt_irq.c imxrt_clrpend.c imxrt_gpio.c
 CHIP_CSRCS += imxrt_daisy.c imxrt_wdog.c imxrt_iomuxc.c imxrt_serial.c imxrt_wdog_lowerhalf.c
 CHIP_CSRCS += imxrt_lowputc.c imxrt_flexspi.c imxrt_clock.c imxrt_log.c
@@ -167,10 +173,6 @@ ifeq ($(CONFIG_IMXRT_TIMER_INTERFACE),y)
 CHIP_CSRCS += imxrt_timer_lowerhalf.c
 endif
 endif # CONFIG_IMXRT_TIMER
-
-ifeq ($(CONFIG_ARMV7M_MPU),y)
-CHIP_CSRCS += imxrt_mpuinit.c
-endif
 
 ifeq ($(CONFIG_IMXRT_EDMA),y)
 CHIP_CSRCS += imxrt_edma.c

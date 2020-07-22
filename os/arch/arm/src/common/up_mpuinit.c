@@ -1,24 +1,7 @@
 /****************************************************************************
+ * arch/arm/src/common/up_mpuinit.c
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-/****************************************************************************
- * os/arch/arm/src/imxrt/imxrt_mpuinit.c
- *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,31 +41,14 @@
 
 #include <assert.h>
 
-#include <tinyara/mpu.h>
-
 #include "mpu.h"
+#include "up_mpuinit.h"
 #include "cache.h"
-#include "chip/imxrt_memorymap.h"
-#include "up_internal.h"
 
-#include "imxrt_mpuinit.h"
-
-#ifdef CONFIG_ARMV7M_MPU
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ARM_MPU)
 
 /****************************************************************************
  * Pre-processor Definitions
- ****************************************************************************/
-
-#ifndef MAX
-#define MAX(a, b) a > b ? a : b
-#endif
-
-#ifndef MIN
-#define MIN(a, b) a < b ? a : b
-#endif
-
-/****************************************************************************
- * Public Variables
  ****************************************************************************/
 
 /****************************************************************************
@@ -90,35 +56,32 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: imxrt_mpu_initialize
+ * Name: up_mpuinitialize
  *
  * Description:
- *   Configure the MPU to permit user-space access to only restricted i.MXRT
+ *   Configure the MPU to permit user-space access to only restricted
  *   resources.
  *
  ****************************************************************************/
 
-void imxrt_mpu_initialize(void)
+void up_mpuinitialize(void)
 {
 	/* Show MPU information */
-
 	mpu_showtype();
 
 #ifdef CONFIG_ARMV7M_DCACHE
 	/* Memory barrier */
-
 	ARM_DMB();
 
 #ifdef CONFIG_IMXFT_QSPI
 	/* Make QSPI memory region strongly ordered */
-
 	mpu_priv_stronglyordered(IMXRT_QSPIMEM_BASE, IMXRT_QSPIMEM_SIZE);
+#endif
+#endif
 
-#endif
-#endif
 	/* Then enable the MPU */
-
 	mpu_control(true, false, true);
 }
 
-#endif							/* CONFIG_ARMV7M_MPU */
+#endif /* CONFIG_BUILD_PROTECTED && CONFIG_ARM_MPU */
+
