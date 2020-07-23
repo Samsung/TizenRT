@@ -198,18 +198,25 @@ void binary_manager_add_binlist(FAR struct tcb_s *tcb)
 {
 	int bin_idx;
 
-	if (tcb->group) {
-		bin_idx = tcb->group->tg_binidx;
-		if (bin_idx > 0) {
-			/* Add a tcb to a head of list */
-			tcb->bin_blink = NULL;
-			if (tcb->sched_priority > BM_PRIORITY_MAX) {
+	bin_idx = tcb->group->tg_binidx;
+
+	/* A binary index, bin_idx is greater than 0 only if tcb is a thread of user binary.
+	 * Add tcb to the binary list for fault recovery in case of threads of user binary.
+	 * Otherwise, it is unnecessary for idle or kernel threads. */
+	if (bin_idx > 0) {
+		/* Add a tcb to a head of list */
+		if (tcb->sched_priority > BM_PRIORITY_MAX) {
+			if (BIN_RTLIST(bin_idx)) {
 				tcb->bin_flink = BIN_RTLIST(bin_idx);
-				BIN_RTLIST(bin_idx) = tcb;
-			} else {
-				tcb->bin_flink = BIN_NRTLIST(bin_idx);
-				BIN_NRTLIST(bin_idx) = tcb;
+				BIN_RTLIST(bin_idx)->bin_blink = tcb;
 			}
+			BIN_RTLIST(bin_idx) = tcb;
+		} else {
+			if (BIN_NRTLIST(bin_idx)) {
+				tcb->bin_flink = BIN_NRTLIST(bin_idx);
+				BIN_NRTLIST(bin_idx)->bin_blink = tcb;
+			}
+			BIN_NRTLIST(bin_idx) = tcb;
 		}
 	}
 }
@@ -227,22 +234,20 @@ void binary_manager_remove_binlist(FAR struct tcb_s *tcb)
 	struct tcb_s *prev;
 	struct tcb_s *next;
 
-	if (tcb->group) {
-		bin_idx = tcb->group->tg_binidx;
-		if (bin_idx > 0) {
-			/* Remove a tcb from the thread list of binary */
-			prev = tcb->bin_blink;
-			next = tcb->bin_flink;
-			if (!prev) {
-				if (tcb->sched_priority > BM_PRIORITY_MAX) {
-					BIN_RTLIST(bin_idx) = next;
-				} else {
-					BIN_NRTLIST(bin_idx) = next;
-				}
+	bin_idx = tcb->group->tg_binidx;
+	if (bin_idx > 0) {
+		/* Remove a tcb from the thread list of binary */
+		prev = tcb->bin_blink;
+		next = tcb->bin_flink;
+		if (!prev) {
+			if (tcb->sched_priority > BM_PRIORITY_MAX) {
+				BIN_RTLIST(bin_idx) = next;
 			} else {
-				prev->bin_flink = next;
+				BIN_NRTLIST(bin_idx) = next;
 			}
-			if (next) next->bin_blink = prev;
+		} else {
+			prev->bin_flink = next;
 		}
+		if (next) next->bin_blink = prev;
 	}
 }
