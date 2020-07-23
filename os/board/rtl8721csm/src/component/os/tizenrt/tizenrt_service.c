@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2020, Realtek Semiconductor Corp.
+ * Copyright (c) 2013-2016, Realtek Semiconductor Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -707,9 +707,9 @@ err_exit:
 #else
 	int func_addr, ctx_addr;
 	pid_t pid;
-	char str_func_addr[8+1];
-	char str_ctx_addr[8+1];
-	char *task_info[2 + 1];
+	char str_func_addr[9];
+	char str_ctx_addr[9];
+	char *task_info[3];
 	priority = SCHED_PRIORITY_DEFAULT + priority;
 	priority = (priority > SCHED_PRIORITY_MAX || priority < SCHED_PRIORITY_MIN)?SCHED_PRIORITY_DEFAULT:priority;
 	stack_size *= sizeof(uint32_t);
@@ -741,7 +741,7 @@ static void _tizenrt_delete_task(struct task_struct *ptask)
 	}
 	status = pthread_cancel(*tid);
 	if (status != OK) {
-		DBG_ERR("delete the task failed!", ptask->task_name);
+		DBG_ERR("delete the task failed, status=%d!\n", status);
 		return;
 	}
 	_tizenrt_mfree(tid, sizeof(*tid));
@@ -752,7 +752,7 @@ static void _tizenrt_delete_task(struct task_struct *ptask)
 	pid = (pid_t) ptask->task;
 	status = task_delete(pid);
 	if (status != OK) {
-		DBG_ERR("delete the task failed!", ptask->task_name);
+		DBG_ERR("delete the task failed, status=%d!\n", status);
 	}
 	ptask->task = NULL;
 #endif
@@ -763,6 +763,12 @@ static void _tizenrt_set_priority_task(void* task, u32 NewPriority)
 {
 	FAR struct tcb_s *rtcb = sched_gettcb((pid_t)task);
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+
+	if (rtcb == NULL) {
+		prefdbg("Failed to get main task %d!\n", (pid_t)task)
+		return;
+	}
+
 	sched_setpriority(rtcb, NewPriority + SCHED_PRIORITY_DEFAULT);
 	return;
 }
@@ -771,6 +777,12 @@ static int _tizenrt_get_priority_task(void *task)
 {
 	FAR struct tcb_s *rtcb = sched_gettcb((pid_t)task);
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+
+	if (rtcb == NULL) {
+		prefdbg("Failed to get main task %d!\n", (pid_t)task)
+		return _FAIL;
+	}
+
 	return rtcb->sched_priority - SCHED_PRIORITY_DEFAULT;
 }
 
@@ -778,6 +790,12 @@ static void _tizenrt_suspend_task(void *task)
 {
 	FAR struct tcb_s *rtcb = sched_gettcb((pid_t)task);
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+
+	if (rtcb == NULL) {
+		prefdbg("Failed to get main task %d!\n", (pid_t)task)
+		return;
+	}
+
 	return;
 }
 
@@ -785,6 +803,12 @@ static void _tizenrt_resume_task(void *task)
 {
 	FAR struct tcb_s *rtcb = sched_gettcb((pid_t)task);
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+
+	if (rtcb == NULL) {
+		prefdbg("Failed to get main task %d!\n", (pid_t)task)
+		return;
+	}
+
 	return;
 }
 
