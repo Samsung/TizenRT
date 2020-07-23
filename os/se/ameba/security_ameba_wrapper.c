@@ -16,24 +16,22 @@
 *
 ***************************************************************************************************/
 
+#include <sys/types.h>
+#include <string.h>
+#include <stdint.h>
+
 #include <tinyara/config.h>
 #include <semaphore.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
 #include <tinyara/kmalloc.h>
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <rom_ssl_ram_map.h>
 
 #define AWRAP_TAG "[AMEBA_WRAPPER]"
-
-#define AWRAP_ENTER                                                                 \
-	do {                                                                             \
-		sedbg(AWRAP_TAG"[INFO] %s %s:%d\n", __FUNCTION__, __FILE__, __LINE__);       \
+#define AWRAP_ENTER                                     \
+	do {                                                \
+		sedbg(AWRAP_TAG"%s:%d\n", __FILE__, __LINE__);  \
 	} while (0)
 
 #define HAL_COPY_DATA(in, out, len)                     \
@@ -240,9 +238,9 @@ extern uint32_t rtl_cryptoEngine_init_wrapper(void);
 extern uint32_t rtl_write_storage_wrapper(uint32_t ss_idx, hal_data *data);
 extern uint32_t rtl_read_storage_wrapper(uint32_t ss_idx, hal_data *data);
 extern uint32_t rtl_delete_storage_wrapper(uint32_t ss_idx);
-extern uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
-extern uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
-extern uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
+extern uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode);
+extern uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode);
+extern uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode);
 extern uint32_t rtl_read_factory_key_wrapper(hal_data *data);
 extern uint32_t rtl_read_factory_cert_wrapper(hal_data *data);
 
@@ -258,7 +256,7 @@ static int rtl_chk_stat(void)
 	return HAL_SUCCESS;
 }
 
-static void* my_calloc(size_t nelements, size_t elementSize)
+static void *my_calloc(size_t nelements, size_t elementSize)
 {
 	size_t size;
 	void *ptr = NULL;
@@ -272,7 +270,7 @@ static void* my_calloc(size_t nelements, size_t elementSize)
 	return ptr;
 }
 
-static void my_free(void* ptr)
+static void my_free(void *ptr)
 {
 	kmm_free(ptr);
 }

@@ -16,10 +16,10 @@
 *
 ***************************************************************************************************/
 
-#include <stdint.h>
-#include <stdio.h>
+#include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <tinyara/kmalloc.h>
 
 #include "flash_api.h"
@@ -79,7 +79,7 @@ static uint8_t crypto_inited = 0;
 /**
  * Read secure efuse
  */
-static void rtl_ReadEfuse(u32 addr, u8 size, u8* key)
+static void rtl_ReadEfuse(uint32_t addr, uint8_t size, uint8_t *key)
 {
 	uint32_t Idx = 0;
 	uint32_t CtrlSetting = HAL_READ32(SYSTEM_CTRL_BASE, REG_HS_EFUSE_CTRL1_S);
@@ -119,7 +119,7 @@ uint32_t rtl_cryptoEngine_init_wrapper(void)
 /**
  * AES Crpyto Wrapper
  */
-uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode)
+uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode)
 {
 	uint32_t ret = RTL_HAL_SUCCESS;
 
@@ -145,7 +145,7 @@ uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t* key, uint32_t keylen, unsigned char*
 	return ret;
 }
 
-uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode)
+uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode)
 {
 	uint32_t ret = RTL_HAL_SUCCESS;
 	unsigned char iv[16];
@@ -172,7 +172,7 @@ uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigned char*
 	return ret;
 }
 
-uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode)
+uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode)
 {
 	uint32_t ret = RTL_HAL_SUCCESS;
 	unsigned char iv[16];
