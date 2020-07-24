@@ -2067,7 +2067,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 					
 					/* Update timestamp as Lastest*/
 #ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
-					if (fs->entry_seq < timestamp) {
+					if (fs->entry_seq <= timestamp) {
 						fs->entry_seq = timestamp + 1;
 					}
 #endif	
