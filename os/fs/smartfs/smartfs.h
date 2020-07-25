@@ -380,7 +380,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 
 int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry);
 
-int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry);
+int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry, bool *new_chain);
 
 int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, bool newchain);
 
