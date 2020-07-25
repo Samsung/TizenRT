@@ -289,26 +289,11 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			}
 
 			/* First try to find an invalid or empty entry available in one of the chained parent sectors */
-			ret = smartfs_find_availableentry(fs, parentdirsector, &newentry);
+			ret = smartfs_find_availableentry(fs, parentdirsector, &newentry, &new_chain);
 			if (ret != OK) {
-				if (ret == -ENOENT) {
-
-					/* If no available entry was found, we have to chain anew sector and allocate an entry.
-					   In this case, new entry will return with the details of the last chained sector,
-					   so, we will just chain a new sector after this.
-					 */
-					parentdirsector = newentry.dsector;
-					new_chain = TRUE;
-					ret = smartfs_createentry(fs, parentdirsector, &newentry);
-					if (ret != OK) {
-						fdbg("smartfs_createentry failed\n");
-						goto errout_with_buffer;
-					}
-				} else {
-					/* find_availableentry encountered a problem with lower layer operations, return error */
-					fdbg("smartfs_find_availableentry() encountered a problem, unable to find entry for writing\n");
-					goto errout_with_buffer;
-				}
+				/* find_availableentry encountered a problem with lower layer operations, return error */
+				fdbg("smartfs_find_availableentry() encountered a problem, unable to find entry for writing\n");
+				goto errout_with_buffer;
 			}
 
 			/* At this point, either an available entry was found or a new one has been created */
@@ -1728,17 +1713,8 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 			goto errout_with_semaphore;
 		}
 		/* Try to find empty/invalid entry available in one of he chained parent sectors */
-		ret = smartfs_find_availableentry(fs, parentdirsector, &newentry);
-		if (ret == -ENOENT) {
-			parentdirsector = newentry.dsector;
-			new_chain = TRUE;
-			/* No available entry, add new sector to parent chain and allocate entry */
-			ret = smartfs_createentry(fs, parentdirsector, &newentry);
-			if (ret != OK) {
-				fdbg("Createentry failed, cannot create new entry for writing\n");
-				goto errout_with_semaphore;
-			}
-		} else if (ret != OK) {
+		ret = smartfs_find_availableentry(fs, parentdirsector, &newentry, &new_chain);
+		if (ret != OK) {
 			fdbg("find_availableentry failed, cannot find entry for writing\n");
 			goto errout_with_semaphore;
 		}
@@ -1977,20 +1953,10 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		}
 #endif
 		/* Find an available invalid/empty entry to write the new entry */
-		ret = smartfs_find_availableentry(fs, newparentdirsector, &f_newentry);
+		ret = smartfs_find_availableentry(fs, newparentdirsector, &f_newentry, &new_chain);
 		if (ret != OK) {
-			if (ret == -ENOENT) {
-				newparentdirsector = f_newentry.dsector;
-				new_chain = TRUE;
-				ret = smartfs_createentry(fs, newparentdirsector, &f_newentry);
-				if (ret != OK) {
-					fdbg("create entry failed, couldn't allocate new entry\n");
-					goto errout_with_semaphore;
-				}
-			} else {
-				fdbg("find_availableentry encountered a problem, cannot find entry for writing\n");
-				goto errout_with_semaphore;
-			}
+			fdbg("find_availableentry encountered a problem, cannot find entry for writing\n");
+			goto errout_with_semaphore;
 		}
 
 		f_newentry.firstsector = oldentry.firstsector;

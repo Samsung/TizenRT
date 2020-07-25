@@ -1197,6 +1197,8 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
  *     of the available entry found.
  *     If no available entry is found, it returns with the logical sector
  *     number of the last sector chained to parentdirsector.
+ *   new_chain - pointer to boolean object to return whether a new sector
+ *     was chained to the parent for the new entry or not.
  *
  * Returned Value:
  *   OK - on finding an available entry.
@@ -1205,7 +1207,7 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
  *
  ****************************************************************************/
 
-int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry)
+int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry, bool *new_chain)
 {
 	int ret = -ENOENT;
 	struct smart_read_write_s readwrite;
@@ -1255,10 +1257,15 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t parentdir
 	}
 
 	if (ret != OK) {
-		return -ENOENT;
+		/* No available entry was found, so we create one */
+		*new_chain = TRUE;
+		ret = smartfs_createentry(fs, direntry->dsector, direntry);
+		if (ret != OK) {
+			fdbg("Createentry unable to create space for writing\n");
+		}
 	}
 
-	return OK;
+	return ret;
 }
 
 /****************************************************************************
