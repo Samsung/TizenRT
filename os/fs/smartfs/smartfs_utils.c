@@ -1579,6 +1579,10 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 			if (ENTRY_VALID(direntry)) {
 				/* Count this entry */
 				count++;
+				if (count == 2) {
+					/* If valid entry count exceeds 1, we know we cannot release the sector */
+					break;
+				}
 			}
 
 			/* Advance to next entry */
