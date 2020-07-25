@@ -248,7 +248,7 @@ struct smart_struct_s {
 	FAR struct mtd_dev_s *mtd;	/* Contained MTD interface */
 	struct mtd_geometry_s geo;	/* Device geometry */
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
-	uint32_t unusedsectors;	/* Count of unused sectors (i.e. free when erased) */
+	uint32_t unusedsectors;		/* Count of unused sectors (i.e. free when erased) */
 	uint32_t blockerases;		/* Count of unused sectors (i.e. free when erased) */
 #endif
 	uint16_t neraseblocks;		/* Number of erase blocks or sub-sectors */
@@ -259,24 +259,24 @@ struct smart_struct_s {
 	uint16_t sectorsPerBlk;		/* Number of sectors per erase block */
 	uint16_t sectorsize;		/* Sector size on device */
 	uint16_t totalsectors;		/* Total number of sectors on device */
-	uint32_t erasesize;			/* Size of an erase block */
+	uint32_t erasesize;		/* Size of an erase block */
 	FAR uint8_t *releasecount;	/* Count of released sectors per erase block */
-	FAR uint8_t *freecount;	/* Count of free sectors per erase block */
-	FAR char *rwbuffer;			/* Our sector read/write buffer */
+	FAR uint8_t *freecount;		/* Count of free sectors per erase block */
+	FAR char *rwbuffer;		/* Our sector read/write buffer */
 	FAR uint8_t *bytebuffer;	/* Array of bytes to be used in smart_bytewrite */
 	char
 	partname[SMART_PARTNAME_SIZE];	/* Optional partition name */
 	uint8_t formatversion;		/* Format version on the device */
 	uint8_t formatstatus;		/* Indicates the status of the device format */
-	uint8_t namesize;			/* Length of filenames on this device */
-	uint8_t debuglevel;			/* Debug reporting level */
+	uint8_t namesize;		/* Length of filenames on this device */
+	uint8_t debuglevel;		/* Debug reporting level */
 	uint8_t availSectPerBlk;	/* Number of usable sectors per erase block */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	uint8_t rootdirentries;		/* Number of root directory entries */
-	uint8_t minor;				/* Minor number of the block entry */
+	uint8_t minor;			/* Minor number of the block entry */
 #endif
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
-	uint8_t wearflags;			/* Indicates force erase of static blocks needed */
+	uint8_t wearflags;		/* Indicates force erase of static blocks needed */
 	uint8_t minwearlevel;		/* Min level in the wear level bits */
 	uint8_t maxwearlevel;		/* Max level in the wear level bits */
 	uint8_t *wearstatus;		/* Array of wear leveling bits */
@@ -286,14 +286,14 @@ struct smart_struct_s {
 	FAR struct smart_allocsector_s *allocsector;	/* Pointer to first alloc sector */
 #endif
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-	FAR uint16_t *sMap;			/* Virtual to physical sector map */
+	FAR uint16_t *sMap;		/* Virtual to physical sector map */
 #else
-	FAR uint8_t *sBitMap;		/* Virtual sector used bit-map */
+	FAR uint8_t *sBitMap;			/* Virtual sector used bit-map */
 	FAR struct smart_cache_s *sCache;	/* Sector cache */
-	uint16_t cache_entries;	/* Number of valid entries in the cache */
-	uint16_t cache_lastlog;	/* Keep track of the last sector accessed */
-	uint16_t cache_lastphys;	/* Keep the physical sector number also */
-	uint16_t cache_nextbirth;	/* Sector cache aging value */
+	uint16_t cache_entries;			/* Number of valid entries in the cache */
+	uint16_t cache_lastlog;			/* Keep track of the last sector accessed */
+	uint16_t cache_lastphys;		/* Keep the physical sector number also */
+	uint16_t cache_nextbirth;		/* Sector cache aging value */
 #endif
 #ifdef CONFIG_MTD_SMART_SECTOR_ERASE_DEBUG
 	FAR uint8_t *erasecounts;	/* Number of erases for each erase block */
@@ -303,10 +303,10 @@ struct smart_struct_s {
 	struct smart_alloc_s alloc[SMART_MAX_ALLOCS];	/* Array of memory allocations */
 #endif
 #ifdef CONFIG_MTD_SMART_JOURNALING
-	size_t journal_seq;				/* Current Sequence of Journal */
-	uint16_t njournalPerBlk;		/* Total Number of Journal data per Erase block */
-	uint16_t njournaleraseblocks;	/* Total Number of Journal Erase block */
-	uint32_t njournaldata;			/* Total Number of Journal Data */
+	size_t journal_seq;			/* Current Sequence of Journal */
+	uint16_t njournalPerBlk;		/* Total Number of Journal entries per Erase block */
+	uint16_t njournaleraseblocks;		/* Total Number of Journal Erase block */
+	uint32_t njournalentries;		/* Total Number of Journal Entries */
 #endif
 };
 
@@ -417,15 +417,15 @@ typedef uint32_t crc_t;
 #define CHECK_JOURNAL_CHECKIN(t)   (((t) & SMART_JOURNAL_STATE_CHECKIN) != (SMART_JOURNAL_STATE_CHECKIN & CONFIG_SMARTFS_ERASEDSTATE))
 #define CHECK_JOURNAL_CHECKOUT(t)  (((t) & SMART_JOURNAL_STATE_CHECKOUT) != (SMART_JOURNAL_STATE_CHECKOUT & CONFIG_SMARTFS_ERASEDSTATE))
 
-struct smart_journal_logging_data_s {
+struct smart_journal_entry_s {
 	struct smart_sect_header_s mtd_header;	/* MTD Header to checkpoint */
-	uint8_t crc16[2];						/* CRC-16 for current journal data */
-	uint8_t psector[2];						/* Target Physical Sector, For MTD_ERASE, Target Physical Block */
-	uint8_t seq[2];							/* Sequence number of Journal for validation check */
-	uint8_t status;							/* Journal Staus low 4bits for state, high 4bits for type */
+	uint8_t crc16[2];			/* CRC-16 for current journal data */
+	uint8_t psector[2];			/* Target Physical Sector, For MTD_ERASE, Target Physical Block */
+	uint8_t seq[2];				/* Sequence number of Journal for validation check */
+	uint8_t status;				/* Journal Staus low 4bits for state, high 4bits for type */
 };
 
-typedef struct smart_journal_logging_data_s journal_log_t;
+typedef struct smart_journal_entry_s journal_log_t;
 #endif
 
 /****************************************************************************
@@ -1041,8 +1041,6 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	
 #ifdef CONFIG_MTD_SMART_JOURNALING
 	/** Journal Sector is reserved at the last of smartfs partition, it doesn't use MTD Header.
-	  * Journal sectors divided to 2 area, this will be toggled if anyone is filled with data,
-	  * erase previous one. So total number of journal sector must be N*Eraseblock
 	  * We will use it as a contigous memory space...
 	  */
 	size_t log_size = sizeof(journal_log_t);
@@ -1076,8 +1074,8 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	/* Now reduce number of eraseblock */
 	dev->neraseblocks -= dev->njournaleraseblocks;
 
-	/* Now get Total Journal data of both of 2 area */
-	dev->njournaldata = dev->njournalPerBlk * dev->njournaleraseblocks;
+	/* Now get total journal entries of both of 2 area */
+	dev->njournalentries = dev->njournalPerBlk * dev->njournaleraseblocks;
 
 #endif
 
@@ -2637,8 +2635,8 @@ static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev)
 /****************************************************************************
  * Name: smart_validate_journal_crc
  *
- * Description:  Validate the CRC16 data in the journal data against the
- *               crc16 variable in journal data.
+ * Description:  Validate CRC16 on the data in the journal entry against the
+ *               crc16 variable in journal entry.
  *
  ****************************************************************************/
 
@@ -2656,7 +2654,7 @@ static int smart_validate_journal_crc(journal_log_t *log)
  * Name: smart_calc_journal_crc
  *
  * Description:  Calculate the CRC value for the journal data in the structure
- *               smart_journal_logging_data_s based on the CRC16 size.
+ *               smart_journal_entry_s based on the CRC16 size.
  *
  ****************************************************************************/
 
@@ -4903,7 +4901,7 @@ static uint32_t smart_journal_get_writeaddress(FAR struct smart_struct_s *dev)
  *
  * Description:
  *   Increase journal sequence.
- *   If current erase block is filled with journal data, erase it.
+ *   If current erase block is filled with journal entries, erase it.
  *
  ****************************************************************************/
 
@@ -4912,11 +4910,11 @@ static int smart_journal_move_to_next(FAR struct smart_struct_s *dev)
 	int ret = OK;
 	uint32_t old_seq = dev->journal_seq;
 	uint16_t old_block;
-	/* Increase sequence here, journal_seq is always less than total number of journal data */
+	/* Increase sequence here, journal_seq is always less than total number of journal entries */
 	dev->journal_seq++;
 
 	/* Now it reaches end of last block, so move to first of first block */
-	if (dev->journal_seq == dev->njournaldata) {
+	if (dev->journal_seq == dev->njournalentries) {
 		dev->journal_seq = 0;
 	}
 
@@ -4939,7 +4937,7 @@ static int smart_journal_move_to_next(FAR struct smart_struct_s *dev)
  * Name: smart_journal_checkin
  *
  * Description:
- *   Check in journal data, that is save log in journal area
+ *   Check in the journal entry, that is save log in journal area
  *
  ****************************************************************************/
 
@@ -4994,7 +4992,7 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
  * Name: smart_journal_checkout
  *
  * Description:
- *   Check out journal data, change state of current journal to checkout
+ *   Check out journal entry, change state of current journal to checkout
  *
  ****************************************************************************/
 
@@ -5016,7 +5014,7 @@ static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t 
  * Name: smart_journal_checkout_process
  *
  * Description:
- *   Check out journal data, checkpoint to mtd header from journal data
+ *   Check out journal entry, checkpoint to mtd header from journal data
  *
  ****************************************************************************/
 
@@ -5079,7 +5077,7 @@ static int smart_journal_checkout_process(FAR struct smart_struct_s *dev, journa
 		return -EINVAL;
 	}
 
-	/* Now checkout journal data */
+	/* Now checkout journal entry */
 	return smart_journal_checkout(dev, log, address);
 }
 
@@ -5089,8 +5087,8 @@ static int smart_journal_checkout_process(FAR struct smart_struct_s *dev, journa
  *
  * Description:
  *   Block Write function instead of MTD_BWRITE, return is size of written page.
- *   This will write journal data first, then write requested data except
- *   mtd header, finally write header from journal data.
+ *   This will write journal entry first, then write requested data except
+ *   mtd header, finally write header from journal entry.
  *
  ****************************************************************************/
 
@@ -5140,7 +5138,7 @@ static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsec
 	return dev->mtdBlksPerSector;
 
 error_with_commit:
-	/* TODO If any of error comes, We will release commit data & checkout journal data */
+	/* TODO If any of error comes, We will release commit data & checkout journal entry */
 	return ret;
 }
 
@@ -5191,7 +5189,7 @@ static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t of
 	/* This being called instead of smart_bytewrite, so return nbytes */
 	return nbytes;
 error_with_release:
-	/* TODO If any of error comes, We will release commit data & checkout journal data once again */
+	/* TODO If any of error comes, We will release commit data & checkout journal entry once again */
 	return ret;
 }
 
@@ -5200,7 +5198,7 @@ error_with_release:
  *
  * Description:
  *   Erase function instead of MTD_ERASE, OK is success otherwise fail.
- *   This will write journal data first, then ERASE.
+ *   This will write journal entry first, then ERASE.
  *
  ****************************************************************************/
 
@@ -5243,7 +5241,7 @@ static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t block)
 	/* Now it is ok, so return OK, align with MTD_ERASE */
 	return OK;
 error_with_erase:
-	/* TODO If any of error comes, We will Erase target block & checkout journal data once again */
+	/* TODO If any of error comes, We will Erase target block & checkout journal entry once again */
 	return ret;
 }
 
@@ -5251,7 +5249,7 @@ error_with_erase:
  * Name: smart_journal_read_journal_log
  *
  * Description:
- *   Read Journal data from specific address.
+ *   Read Journal entry from specific address.
  *
  ****************************************************************************/
 static int smart_journal_read_journal_log(FAR struct smart_struct_s *dev, journal_log_t *log)
@@ -5322,7 +5320,7 @@ static void smart_journal_print_log(FAR struct smart_struct_s *dev, journal_log_
  * Description:
  *   Scan Entire of journal blocks and set dev->journal_seq.
  *   Recovery which has checkin state, but not checkout state.
- *   And return sequence number to write next journal data.
+ *   And return sequence number to write next journal entry.
  *
  ****************************************************************************/
 
@@ -5336,7 +5334,7 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 		fdbg("Dump Start !!\n");
 	}
 	dev->journal_seq = 0;
-	for (dev->journal_seq = 0; dev->journal_seq < dev->njournaldata; dev->journal_seq++) {
+	for (dev->journal_seq = 0; dev->journal_seq < dev->njournalentries; dev->journal_seq++) {
 		ret = smart_journal_read_journal_log(dev, &log);
 		if (ret < 0) {
 			fdbg("read failed! ret : %d journal_seq : %d\n", ret, dev->journal_seq);
@@ -5350,7 +5348,7 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 
 			/* If another case means that it is finished or power off during writing journal */
 			if (CHECK_JOURNAL_CHECKIN(log.status) && !CHECK_JOURNAL_CHECKOUT(log.status)) {
-				fdbg("Active Journal data found... seq : %d\n", dev->journal_seq);
+				fdbg("Active Journal entry found... seq : %d\n", dev->journal_seq);
 				ret = smart_journal_recovery(dev, &log);
 				/* -EINVAL means journal log is not written properly, we skip it. */
 				if ((ret != OK) && (ret != -EINVAL)) {
@@ -5431,7 +5429,7 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		ret = smart_validate_crc(dev);
 		/* If CRC is not same, data sector is invalid, so release data sector First */
 		if (ret != OK) {
-			fdbg("Invalid data, release dada sector & journal!\n");
+			fdbg("Invalid data, release data sector & journal!\n");
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 			status &= ~SMART_STATUS_RELEASED;
 #else
@@ -5444,7 +5442,7 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 				return -EIO;
 			}
 			
-			/* Data sector is released, checkout journal data */
+			/* Data sector is released, checkout journal entry */
 			ret = smart_journal_checkout(dev, log, address);
 		} 
 		break;
