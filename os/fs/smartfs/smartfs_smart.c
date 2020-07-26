@@ -184,7 +184,6 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 #endif
 	struct smartfs_entry_s newentry;
 	uint16_t data_sector;
-	bool new_chain = FALSE;
 
 	/* Sanity checks */
 
@@ -290,7 +289,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			}
 
 			/* First try to find an invalid or empty entry available in one of the chained parent sectors */
-			ret = smartfs_find_availableentry(fs, parentdirsector, &newentry, &new_chain);
+			ret = smartfs_find_availableentry(fs, &parentdirsector, &newentry);
 			if (ret != OK) {
 				/* find_availableentry encountered a problem with lower layer operations, return error */
 				fdbg("smartfs_find_availableentry() encountered a problem, unable to find entry for writing\n");
@@ -300,7 +299,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			/* At this point, either an available entry was found or a new one has been created */
 			newentry.firstsector = data_sector;
 
-			ret = smartfs_writeentry(fs, newentry, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry, new_chain);
+			ret = smartfs_writeentry(fs, newentry, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry, parentdirsector);
 			if (ret != OK) {
 				fdbg("Write entry failed\n");
 				goto errout_with_buffer;
@@ -1737,7 +1736,6 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	const char *filename;
 	struct smartfs_entry_s newentry;
 	uint16_t data_sector;
-	bool new_chain = FALSE;
 
 	/* Sanity checks */
 
@@ -1781,7 +1779,7 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 			goto errout_with_semaphore;
 		}
 		/* Try to find empty/invalid entry available in one of he chained parent sectors */
-		ret = smartfs_find_availableentry(fs, parentdirsector, &newentry, &new_chain);
+		ret = smartfs_find_availableentry(fs, &parentdirsector, &newentry);
 		if (ret != OK) {
 			fdbg("find_availableentry failed, cannot find entry for writing\n");
 			goto errout_with_semaphore;
@@ -1789,7 +1787,7 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 		/* Now we have an entry allocated for writing */
 		newentry.firstsector = data_sector;
 		/* Write new entry to sector */
-		ret = smartfs_writeentry(fs, newentry, filename, SMARTFS_DIRENT_TYPE_DIR, mode, &entry, new_chain);
+		ret = smartfs_writeentry(fs, newentry, filename, SMARTFS_DIRENT_TYPE_DIR, mode, &entry, parentdirsector);
 		if (ret != OK) {
 			fdbg("Failed to write new entry to sector\n");
 			goto errout_with_semaphore;
@@ -1911,7 +1909,6 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	struct smartfs_entry_header_s *direntry;
 	struct smart_read_write_s readwrite;
 	struct smartfs_entry_s f_newentry;
-	bool new_chain = FALSE;
 
 	/* Sanity checks */
 
@@ -2012,7 +2009,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 		if (oldparentdirsector == newparentdirsector) {
 			/* We will not use any new entry found, we will overwrite the existing entry */
-			ret = smartfs_writeentry(fs, oldentry, newfilename, type, mode, &newentry, new_chain);
+			ret = smartfs_writeentry(fs, oldentry, newfilename, type, mode, &newentry, oldparentdirsector);
 			if (ret != OK) {
 				fdbg("Error writing new entry\n");
 			}
@@ -2021,14 +2018,14 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		}
 #endif
 		/* Find an available invalid/empty entry to write the new entry */
-		ret = smartfs_find_availableentry(fs, newparentdirsector, &f_newentry, &new_chain);
+		ret = smartfs_find_availableentry(fs, &newparentdirsector, &f_newentry);
 		if (ret != OK) {
 			fdbg("find_availableentry encountered a problem, cannot find entry for writing\n");
 			goto errout_with_semaphore;
 		}
 
 		f_newentry.firstsector = oldentry.firstsector;
-		ret = smartfs_writeentry(fs, f_newentry, newfilename, type, mode, &newentry, new_chain);
+		ret = smartfs_writeentry(fs, f_newentry, newfilename, type, mode, &newentry, newparentdirsector);
 		if (ret != OK) {
 			fdbg("Error writing new entry\n");
 			goto errout_with_semaphore;
