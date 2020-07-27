@@ -1891,6 +1891,34 @@ int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *e
 }
 
 /****************************************************************************
+ * Name: smartfs_shrinkfile
+ *
+ * Description:
+ *   Shrink the size of an existing file to the specified length
+ *
+ ****************************************************************************/
+
+int smartfs_shrinkfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, off_t length)
+{
+	/* TODO This will be added later */
+	return OK;
+}
+
+/****************************************************************************
+ * Name: smartfs_extendfile
+ *
+ * Description:
+ *   Zero-extend the length of a regular file to 'length'.
+ *
+ ****************************************************************************/
+
+int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, off_t length)
+{
+	/* TODO This will be added later */
+	return OK;
+}
+
+/****************************************************************************
  * Name: smartfs_get_first_mount
  *
  * Description: Returns a pointer to the first mounted smartfs volume.
