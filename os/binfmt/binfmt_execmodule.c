@@ -357,7 +357,7 @@ int exec_module(FAR struct binary_s *binp)
 	/* Update id and state in binary table */
 	BIN_ID(binary_idx) = pid;
 	BIN_STATE(binary_idx) = BINARY_LOADING_DONE;
-	BIN_VER(binary_idx) = binp->bin_ver;
+	BIN_LOADVER(binary_idx) = binp->bin_ver;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	BIN_LOADINFO(binary_idx) = binp;
 #endif
@@ -399,7 +399,7 @@ errout_with_tcbinit:
 #ifdef CONFIG_BINARY_MANAGER
 	BIN_ID(binary_idx) = -1;
 	BIN_STATE(binary_idx) = BINARY_INACTIVE;
-	BIN_VER(binary_idx) = 0;
+	BIN_LOADVER(binary_idx) = 0;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	BIN_LOADINFO(binary_idx) = NULL;
 #endif

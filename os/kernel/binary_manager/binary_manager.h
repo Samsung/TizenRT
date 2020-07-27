@@ -25,6 +25,7 @@
 
 #include <tinyara/config.h>
 #include <queue.h>
+#include <stdint.h>
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <mqueue.h>
 #endif
@@ -132,8 +133,10 @@ typedef struct faultmsg_s faultmsg_t;
 struct binmgr_uinfo_s {
 	pid_t bin_id;
 	uint8_t state;
+	uint8_t useidx;
+	int file_cnt;
 	load_attr_t load_attr;
-	uint32_t bin_ver;
+	uint32_t bin_ver[FILES_PER_BIN];
 	char kernel_ver[KERNEL_VER_MAX];
 	struct tcb_s *rt_list;
 	struct tcb_s *nrt_list;
@@ -164,12 +167,15 @@ typedef struct statecb_node_s statecb_node_t;
 binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_ID(bin_idx)                                 binary_manager_get_udata(bin_idx)->bin_id
 #define BIN_STATE(bin_idx)                              binary_manager_get_udata(bin_idx)->state
+#define BIN_USEIDX(bin_idx)                             binary_manager_get_udata(bin_idx)->useidx
 #define BIN_RTLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->rt_list
 #define BIN_NRTLIST(bin_idx)                            binary_manager_get_udata(bin_idx)->nrt_list
 
-#define BIN_VER(bin_idx)                                binary_manager_get_udata(bin_idx)->bin_ver
+#define BIN_LOADVER(bin_idx)                            binary_manager_get_udata(bin_idx)->load_attr.bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->kernel_ver
 #define BIN_CBLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->cb_list
+#define BIN_FILECNT(bin_idx)                            binary_manager_get_udata(bin_idx)->file_cnt
+#define BIN_VER(bin_idx, file_idx)                      binary_manager_get_udata(bin_idx)->bin_ver[file_idx]
 
 #define BIN_LOAD_ATTR(bin_idx)                          binary_manager_get_udata(bin_idx)->load_attr
 #define BIN_NAME(bin_idx)                               binary_manager_get_udata(bin_idx)->load_attr.bin_name
@@ -226,8 +232,9 @@ binmgr_kinfo_t *binary_manager_get_kdata(void);
 void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
-int binary_manager_register_ubin(char *name);
-void binary_manager_scan_ubin(void);
+int binary_manager_register_ubin(char *name, uint32_t version, uint8_t priority);
+void binary_manager_scan_ubinfs(void);
+int binary_manager_scan_ubin(int bin_idx);
 int binary_manager_read_header(char *path, binary_header_t *header_data, bool crc_check);
 int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
 void binary_manager_release_binary_sem(int bin_idx);

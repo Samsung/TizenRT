@@ -85,7 +85,7 @@ int binary_manager_get_available_size(int bin_idx)
 	char filepath[CONFIG_PATH_MAX];
 	char running_file[NAME_MAX];
 
-	snprintf(running_file, NAME_MAX, "%s_%d", BIN_NAME(bin_idx), BIN_VER(bin_idx));
+	snprintf(running_file, NAME_MAX, "%s_%d", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx));
 	bin_name = BIN_NAME(bin_idx);
 	name_len = strlen(bin_name);
 	size = 0;
@@ -169,7 +169,7 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 				response_msg.result = BINMGR_OK;
 				response_msg.data.available_size = size;
 				strncpy(response_msg.data.name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-				response_msg.data.version = BIN_VER(bin_idx);
+				response_msg.data.version = BIN_LOADVER(bin_idx);
 			}
 			break;
 		}
@@ -227,7 +227,7 @@ void binary_manager_get_info_all(int requester_pid)
 			response_msg.result = BINMGR_OK;
 			response_msg.data.bin_info[result_idx].available_size = size;
 			strncpy(response_msg.data.bin_info[result_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-			response_msg.data.bin_info[result_idx].version = BIN_VER(bin_idx);
+			response_msg.data.bin_info[result_idx].version = BIN_LOADVER(bin_idx);
 			result_idx++;
 		}
 	}

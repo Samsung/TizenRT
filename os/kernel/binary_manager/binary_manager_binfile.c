@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <tinyara/binary_manager.h>
 
 #include "binary_manager.h"
@@ -51,7 +52,7 @@ static int binary_manager_clear_binfile(int bin_idx)
 	char filepath[CONFIG_PATH_MAX];
 	char running_file[NAME_MAX];
 
-	snprintf(running_file, NAME_MAX, "%s_%d", BIN_NAME(bin_idx), BIN_VER(bin_idx));
+	snprintf(running_file, NAME_MAX, "%s_%d", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx));
 	bin_name = BIN_NAME(bin_idx);
 	name_len = strlen(bin_name);
 
@@ -86,16 +87,18 @@ static int binary_manager_clear_binfile(int bin_idx)
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: binary_manager_scan_ubin
+ * Name: binary_manager_scan_ubinfs
  *
  * Description:
- *	 This function scans user binary files.
+ *	 This function scans all binary files in a directory for user binaries.
+ *   And it registers them to binary table.
  *
  ****************************************************************************/
-void binary_manager_scan_ubin(void)
+void binary_manager_scan_ubinfs(void)
 {
 	int ret;
 	DIR *dirp;
+	int bin_idx;
 	binary_header_t header_data;
 	char filepath[CONFIG_PATH_MAX];
 
@@ -116,14 +119,97 @@ void binary_manager_scan_ubin(void)
 				if (ret < 0) {
 					continue;
 				}
-				/* If binary is not registered, register it */
-				(void)binary_manager_register_ubin(header_data.bin_name);
+				bin_idx = binary_manager_get_index_with_name(header_data.bin_name);
+				if (bin_idx < 0) {
+					/* If binary is not registered, register it */
+					(void)binary_manager_register_ubin(header_data.bin_name, header_data.bin_ver, header_data.bin_priority);
+				} else {
+					/* Already registered */
+					BIN_FILECNT(bin_idx)++;
+					BIN_VER(bin_idx, 1) = header_data.bin_ver;
+					if (header_data.bin_ver > BIN_VER(bin_idx, 0)) {
+						BIN_PRIORITY(bin_idx) = header_data.bin_priority;
+						BIN_USEIDX(bin_idx) = 1;
+					}
+				}
 			}
 		}
 		closedir(dirp);
 	} else if (errno != ENOENT) {
 		bmdbg("Failed to open a directory, %s\n", BINARY_DIR_PATH);
 	}
+}
+
+/****************************************************************************
+ * Name: binary_manager_scan_ubin
+ *
+ * Description:
+ *	 This function scans binary files of binary with specific index.
+ *
+ ****************************************************************************/
+int binary_manager_scan_ubin(int bin_idx)
+{
+	int ret;
+	DIR *dirp;
+	int file_idx;
+	int name_len;
+	int latest_ver;
+	int latest_idx;
+	char *bin_name;
+	binary_header_t header_data;
+	char filepath[FILES_PER_BIN][CONFIG_PATH_MAX];
+
+	bmvdbg("Open a directory, %s\n", BINARY_DIR_PATH);
+
+	/* Open a directory for user binaries, BINARY_DIR_PATH */
+	dirp = opendir(BINARY_DIR_PATH);
+	if (!dirp) {
+		bmdbg("Failed to open a directory, %s\n", BINARY_DIR_PATH);
+		return ERROR;
+	}
+
+	file_idx = 0;
+	latest_ver = 0;
+	latest_idx = -1;
+	bin_name = BIN_NAME(bin_idx);
+	name_len = strlen(bin_name);
+
+	BIN_FILECNT(bin_idx) = 0;
+
+	/* Read each directory entry */
+	for (;;) {
+		struct dirent *entryp = readdir(dirp);
+		if (!entryp) {
+			/* Finished with this directory */
+			break;
+		}
+		/* Read and Verify a binary file */
+		if (DIRENT_ISFILE(entryp->d_type) \
+			&& !strncmp(entryp->d_name, bin_name, name_len) && entryp->d_name[name_len] == '_') {
+			snprintf(filepath, CONFIG_PATH_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
+			ret = binary_manager_read_header(filepath, &header_data, false);
+			if (ret == OK) {
+				BIN_FILECNT(bin_idx)++;
+				BIN_VER(bin_idx, file_idx) = header_data.bin_ver;
+				bmvdbg("Found valid header with version %d\n", header_data.bin_ver);
+				if (header_data.bin_ver > latest_ver) {
+					latest_ver = header_data.bin_ver;
+					latest_idx = file_idx;
+					BIN_USEIDX(bin_idx) = latest_idx;
+					bmvdbg("Latest version %d, idx %d\n", latest_ver, latest_idx);
+				}
+			}
+			file_idx++;
+		}
+	}
+	closedir(dirp);
+
+	if (BIN_FILECNT(bin_idx) <= 0) {
+		bmdbg("Failed to find valid binary file, %s\n", BIN_NAME(bin_idx));
+		return ERROR;
+	}
+
+	return OK;
 }
 
 /****************************************************************************
@@ -165,7 +251,7 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx >= 0) {
 		/* Check version */
-		if (BIN_VER(bin_idx) == version) {
+		if (BIN_LOADVER(bin_idx) == version) {
 			bmvdbg("Already existing version %d\n", version);
 			response_msg.result = BINMGR_ALREADY_UPDATED;
 			goto send_result;
@@ -177,8 +263,8 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 			goto send_result;
 		}
 	} else {
-		/* If it it not registered, register it */
-		ret = binary_manager_register_ubin(bin_name);
+		/* If it is not registered, register it */
+		ret = binary_manager_register_ubin(bin_name, version, SCHED_PRIORITY_MIN);
 		if (ret < 0) {
 			response_msg.result = BINMGR_OPERATION_FAIL;
 			goto send_result;

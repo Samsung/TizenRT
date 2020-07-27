@@ -22,6 +22,7 @@
 #include <debug.h>
 #include <string.h>
 #include <queue.h>
+#include <stdint.h>
 #include <tinyara/sched.h>
 #include <tinyara/binary_manager.h>
 
@@ -104,29 +105,22 @@ binmgr_kinfo_t *binary_manager_get_kdata(void)
  *	 This function registers user binaries.
  *
  ****************************************************************************/
-int binary_manager_register_ubin(char *name)
+int binary_manager_register_ubin(char *name, uint32_t version, uint8_t priority)
 {
-	int bin_idx;
-
 	if (name == NULL || g_bin_count >= USER_BIN_COUNT) {
 		bmdbg("ERROR: Invalid parameter\n");
 		return ERROR;
 	}
 
-	for (bin_idx = 1; bin_idx <= g_bin_count; bin_idx++) {
-		/* Already Registered */
-		if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
-			bmdbg("Already registered for binary %s\n", BIN_NAME(bin_idx));
-			return ERROR;
-		}
-	}
-
-	/* If partition is not registered, Register it as a new user partition */
+	/* Initialize binary table and register binary name, version and priority */
 	g_bin_count++;
 	BIN_ID(g_bin_count) = -1;
+	BIN_FILECNT(g_bin_count) = 1;
 	BIN_RTLIST(g_bin_count) = NULL;
 	BIN_NRTLIST(g_bin_count) = NULL;
+	BIN_PRIORITY(g_bin_count) = priority;
 	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
+	BIN_VER(g_bin_count, 0) = version;
 	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 	sq_init(&BIN_CBLIST(g_bin_count));
 
