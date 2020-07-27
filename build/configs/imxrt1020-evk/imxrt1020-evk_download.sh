@@ -36,6 +36,8 @@ USBRULE_PATH=${CURDIR_PATH}/../usbrule.sh
 USBRULE_BOARD="imxrt"
 USBRULE_IDVENDOR="0d28"
 USBRULE_IDPRODUCT="0204"
+USBRULE_IDVENDOR2="0403"
+USBRULE_IDPRODUCT2="6010"
 
 OS_PATH=${TOP_PATH}/os
 OUTBIN_PATH=${TOP_PATH}/build/output/bin
@@ -193,7 +195,7 @@ cmd_args=$@
 # Treat adding the USB rule first
 for i in ${cmd_args[@]};do
 	if [[ "${i}" == "USBrule" || "${i}" == "usbrule" ]];then
-		${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} || exit 1
+		${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} ${USBRULE_IDVENDOR2} ${USBRULE_IDPRODUCT2} || exit 1
 		exit 0
 	fi
 done
