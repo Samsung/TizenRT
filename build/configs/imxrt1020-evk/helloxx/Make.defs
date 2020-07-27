@@ -155,9 +155,9 @@ CXXELFFLAGS = $(CXXFLAGS) -mlong-calls # --target1-abs
 LDELFFLAGS = -r -e main
 
 ifeq ($(WINTOOL),y)
-	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/binfmt/libelf/gnu-elf.ld}"
+	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/userspace/userspace_apps.ld}"
 else
-	LDELFFLAGS += -T $(TOPDIR)/binfmt/libelf/gnu-elf.ld
+	LDELFFLAGS += -T $(TOPDIR)/userspace/userspace_apps.ld
 endif
 
 ASMEXT = .S

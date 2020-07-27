@@ -440,7 +440,6 @@ include LibTargets.mk
 # is an archive.  Exactly what is performed during pass1 or what it generates
 # is unknown to this makefile unless CONFIG_PASS1_OBJECT is defined.
 
-PASS1_BUILDIR = board/common/userspace
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
 COMMONLIBS = -luarch -luc -lumm -lproxies
@@ -450,18 +449,9 @@ pass1deps: pass1dep $(USERLIBS)
 
 pass1: pass1deps
 ifeq ($(CONFIG_BUILD_2PASS),y)
-	$(Q) if [ ! -d "$(PASS1_BUILDIR)" ]; then \
-		echo "ERROR: PASS1_BUILDIR does not exist"; \
-		exit 1; \
-	fi
-	$(Q) if [ ! -f "$(PASS1_BUILDIR)/Makefile" ]; then \
-		echo "ERROR: No Makefile in PASS1_BUILDIR"; \
-		exit 1; \
-	fi
-	$(call DELFILE, $(PASS1_BUILDIR)/up_userspace.o)
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
-	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/binfmt/libelf/gnu-elf.ld -L $(LIBRARIES_DIR) --start-group $(COMMONLIBS) $(LIBGCC) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
+	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld -L $(LIBRARIES_DIR) --start-group $(COMMONLIBS) $(LIBGCC) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
 	$(Q) if [ "`nm -u $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) | wc -l`" != "0" ]; then \
 		echo "Undefined Symbols in Common binary"; \
 		nm -u -l $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME); \
@@ -624,9 +614,6 @@ subdir_clean:
 		fi \
 	done
 	$(Q) $(MAKE) -C tools -f Makefile.host TOPDIR="$(TOPDIR)" clean
-ifeq ($(CONFIG_BUILD_2PASS),y)
-	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" clean
-endif
 
 clean: subdir_clean
 	$(call DELFILE, $(OUTBIN_DIR)/*)
@@ -650,9 +637,6 @@ ifneq ($(MEMSTATS),)
 endif
 
 distclean: clean subdir_distclean clean_context
-ifeq ($(CONFIG_BUILD_2PASS),y)
-	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" distclean
-endif
 	$(call DELFILE, Make.defs)
 	$(call DELFILE, setenv.sh)
 	$(call DELFILE, setenv.bat)

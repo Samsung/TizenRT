@@ -79,17 +79,6 @@
  */
 
 struct userspace_s {
-	/* General memory map */
-
-	main_t us_entrypoint;
-	uintptr_t us_textstart;
-	uintptr_t us_textend;
-	uintptr_t us_datasource;
-	uintptr_t us_datastart;
-	uintptr_t us_dataend;
-	uintptr_t us_bssstart;
-	uintptr_t us_bssend;
-
 	/* Task/thread startup routines */
 
 	void (*task_startup)(main_t entrypt, int argc, FAR char *argv[])
@@ -102,12 +91,6 @@ struct userspace_s {
 
 #ifndef CONFIG_DISABLE_SIGNALS
 	void (*signal_handler)(_sa_sigaction_t sighand, int signo, FAR siginfo_t *info, FAR void *ucontext);
-#endif
-
-	/* Pre - Application Start */
-
-#ifdef CONFIG_SYSTEM_PREAPP_INIT
-	preapp_main_t preapp_start;
 #endif
 };
 

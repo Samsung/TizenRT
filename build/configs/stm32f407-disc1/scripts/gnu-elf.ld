@@ -16,7 +16,6 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * build/configs/stm32f407-disc1/scripts/gnu-elf.ld
  *
  *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
