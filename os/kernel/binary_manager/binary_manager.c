@@ -81,7 +81,7 @@ int binary_manager(int argc, char *argv[])
 	binmgr_request_t request_msg;
 
 	/* Scan user binary files and Register them */
-	binary_manager_scan_ubin();
+	binary_manager_scan_ubinfs();
 
 	ASSERT(binary_manager_get_kcount() > 0 && binary_manager_get_ucount() > 0);
 
