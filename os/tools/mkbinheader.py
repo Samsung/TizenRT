@@ -37,6 +37,17 @@ def roundup_power_two(size):
 
     return size
 
+def get_config_value(file_name, config):
+    with open(file_name, 'r+') as f:
+        lines = f.readlines()
+	found = False
+	value = -1
+	for line in lines:
+		if config in line:
+			value = int(line.split("=")[1])
+			break		
+	return value;
+
 def check_optimize_config(file_name):
     with open(file_name, 'r+') as f:
         lines = f.readlines()
@@ -164,6 +175,14 @@ COMP_LZMA = 1
 COMP_MINIZ = 2
 COMP_MAX = COMP_MINIZ
 
+# Scheduling priority MAX/MIN
+SCHED_PRIORITY_MIN = 1
+SCHED_PRIORITY_MAX = 255
+
+# BM priority MAX/MIN
+BM_PRIORITY_MAX = 205
+BM_PRIORITY_MIN = 200
+
 # In size command on linux, 4th value is the summation of text, data and bss.
 # We will use this value for elf.
 SIZE_CMD_SUMMATION_INDEX = 3
@@ -172,6 +191,14 @@ if int(main_stack_size) >= int(dynamic_ram_size) :
     print("Error : Dynamic ram size should be bigger than Main stack size.")
     print("Dynamic ram size : %d, Main stack size : %d" %(int(dynamic_ram_size), int(main_stack_size)))
     sys.exit(1)
+
+config_path = os.getenv('TOPDIR') + '/.config'
+priority = get_config_value(config_path, "CONFIG_BM_PRIORITY_MAX=")
+if priority > 0 :
+	BM_PRIORITY_MAX = priority
+priority = get_config_value(config_path, "CONFIG_BM_PRIORITY_MIN=")
+if priority > 0 :
+	BM_PRIORITY_MIN = priority
 
 with open(file_path, 'rb') as fp:
     # binary data copy to 'data'
@@ -199,10 +226,9 @@ with open(file_path, 'rb') as fp:
         print("Error : Not supported Binary Type")
         sys.exit(1)
 
-    if 0 < int(main_priority) <= 255 :
-        main_priority = int(main_priority)
-    else :
-        print("Error : This binary priority is not valid")
+    main_priority = int(main_priority)
+    if (main_priority < SCHED_PRIORITY_MIN) or (main_priority > SCHED_PRIORITY_MAX) or (BM_PRIORITY_MIN <= main_priority and main_priority <= BM_PRIORITY_MAX) :
+        print("Error : This binary priority ", main_priority, " is not valid")
         sys.exit(1)
 
     static_ram_size = get_static_ram_size(bin_type)

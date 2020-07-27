@@ -38,8 +38,16 @@
  * Pre-Processor Definitions
  ****************************************************************************/
 /* Priority Range of Binary Manager Modules */
+#ifdef CONFIG_BM_PRIORITY_MAX
+#define BM_PRIORITY_MAX            CONFIG_BM_PRIORITY_MAX     /* The maximum priority of BM module */
+#else
 #define BM_PRIORITY_MAX            205                        /* The maximum priority of BM module */
+#endif
+#ifdef CONFIG_BM_PRIORITY_MIN
+#define BM_PRIORITY_MIN            CONFIG_BM_PRIORITY_MIN     /* The minimum priority of BM module */
+#else
 #define BM_PRIORITY_MIN            200                        /* The minimum priority of BM module */
+#endif
 
 /* Fault Message Sender Thread information */
 #define FAULTMSGSENDER_NAME        "bm_faultmsgsender"        /* Fault Message Sender thread name */
