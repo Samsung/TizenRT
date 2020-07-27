@@ -23,6 +23,8 @@ CONFIG=${TOP_PATH}/os/.config
 BUILDDIR=${TOP_PATH}/build
 BINDIR=${BUILDDIR}/output/bin
 GNUUTL=${BUILDDIR}/tools/amebad/gnu_utility
+TOOL_PATH=${THIS_PATH}/../../tools/amebad
+BOOT_PATH=${TOOL_PATH}/bootloader
 
 echo "Realtek Postbuild Actions"
 export TOPDIR=$BUILDDIR/
@@ -124,10 +126,14 @@ function concatenate_binary()
 
 	if [ "${CONFIG_AMEBAD_TRUSTZONE}" != "y" ];then
 		echo "========== Concatenate_binary for TZ disabled =========="
-		cat $BINDIR/xip_image2_prepend.bin $BINDIR/ram_2_prepend.bin $BINDIR/psram_2_prepend.bin  > $BINDIR/km4_image2_all.bin
-		cat $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin  > $BINDIR/km0_km4_image2.bin
+		cp $BOOT_PATH/km0_boot_all.bin $BINDIR/km0_boot_all.bin
+		cp $BOOT_PATH/km4_boot_all.bin $BINDIR/km4_boot_all.bin
+		cat $BINDIR/xip_image2_prepend.bin $BINDIR/ram_2_prepend.bin $BINDIR/psram_2_prepend.bin > $BINDIR/km4_image2_all.bin
+		cat $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin > $BINDIR/km0_km4_image2.bin
 	else
 		echo "========== Concatenate_binary for TZ enabled =========="
+		cp $BOOT_PATH/km0_boot_all.bin $BINDIR/km0_boot_all.bin
+		cp $BOOT_PATH/km4_boot_all_tz.bin $BINDIR/km4_boot_all.bin
 		cat $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all-en.bin $BINDIR/km4_image3_psram-en.bin > $BINDIR/km0_km4_image2.bin
 	fi
 }

@@ -78,6 +78,8 @@ function FIND_BINFILE()
 		BINFILE="${BINDIR}/tinyara_head${EXTNAME}"
 	elif [[ "${CONFIG_ARCH_BOARD}" == "cy4390x" ]]; then
 		BINFILE="${BINDIR}/tinyara_master_strip"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "rtl8721csm" ]]; then
+		BINFILE="${BINDIR}/km0_km4_image2${EXTNAME}"
 	else
 		BINFILE="${BINDIR}/tinyara${EXTNAME}"
 	fi
