@@ -1682,7 +1682,9 @@ static void cdcuart_detach(FAR struct uart_dev_s *dev)
 
 static int cdcuart_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
 {
+	struct cdcacm_dev_s *priv = (FAR struct cdcacm_dev_s *)dev->priv;
 	FAR uart_dev_t *serdev = &priv->serdev;
+
 	int ret = OK;
 
 	switch (cmd) {
