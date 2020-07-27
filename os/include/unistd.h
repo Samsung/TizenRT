@@ -324,6 +324,14 @@ ssize_t pread(int fd, FAR void *buf, size_t nbytes, off_t offset);
  * @since TizenRT v1.0
  */
 ssize_t pwrite(int fd, FAR const void *buf, size_t nbytes, off_t offset);
+/**
+ * @brief adjust size of file
+ * @details @b #include <unistd.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v3.1 PRE
+ */
+int ftruncate(int fd, off_t length);
 
 /**
  * @}

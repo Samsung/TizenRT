@@ -100,7 +100,7 @@ static int smartfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static int smartfs_sync(FAR struct file *filep);
 static int smartfs_dup(FAR const struct file *oldp, FAR struct file *newp);
 static int smartfs_fstat(FAR const struct file *filep, FAR struct stat *buf);
-
+static int smartfs_truncate(FAR struct file *filep, off_t length);
 static int smartfs_opendir(struct inode *mountpt, const char *relpath, struct fs_dirent_s *dir);
 static int smartfs_readdir(struct inode *mountpt, struct fs_dirent_s *dir);
 static int smartfs_rewinddir(struct inode *mountpt, struct fs_dirent_s *dir);
@@ -145,6 +145,7 @@ const struct mountpt_operations smartfs_operations = {
 	smartfs_sync,				/* sync */
 	smartfs_dup,				/* dup */
 	smartfs_fstat,				/* fstat */
+	smartfs_truncate,			/* truncate */
 
 	smartfs_opendir,			/* opendir */
 	NULL,						/* closedir */
@@ -155,7 +156,7 @@ const struct mountpt_operations smartfs_operations = {
 	smartfs_unbind,				/* unbind */
 	smartfs_statfs,				/* statfs */
 
-	smartfs_unlink,				/* unlinke */
+	smartfs_unlink,				/* unlink */
 	smartfs_mkdir,				/* mkdir */
 	smartfs_rmdir,				/* rmdir */
 	smartfs_rename,				/* rename */
@@ -1258,6 +1259,73 @@ static int smartfs_fstat(FAR const struct file *filep, FAR struct stat *buf)
 	smartfs_stat_common(fs, &sf->entry, buf);
 	smartfs_semgive(fs);
 	return OK;
+}
+
+/****************************************************************************
+ * Name: smartfs_truncate
+ *
+ * Description:
+ *   Set the length of the open, regular file associated with the file
+ *   structure 'filep' to 'length'.
+ *
+ ****************************************************************************/
+
+static int smartfs_truncate(FAR struct file *filep, off_t length)
+{
+
+	FAR struct inode *inode;
+	FAR struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_ofile_s *sf;
+	off_t oldsize;
+	int ret;
+
+	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
+
+	/* Recover our private data from the struct file instance */
+
+	sf    = filep->f_priv;
+	inode = filep->f_inode;
+	fs    = inode->i_private;
+
+	DEBUGASSERT(fs != NULL);
+
+	/* Take the semaphore */
+
+	smartfs_semtake(fs);
+
+	/* Test the permissions.  Only allow truncation if the file was opened with
+	 * write flags.
+	 */
+
+	if ((sf->oflags & O_WROK) == 0) {
+		ret = -EACCES;
+		goto errout_with_semaphore;
+	}
+
+	/* Are we shrinking the file?  Or extending it? */
+
+	oldsize = sf->entry.datlen;
+	if (oldsize == length) {
+		/* Let's not and say we did */
+		ret = OK;
+	} else if (oldsize > length) {
+		/* We are shrinking the file */
+		
+		ret = smartfs_extendfile(fs, sf, length);
+	} else {
+		/* Otherwise we are extending the file.  This is essentially the same
+		 * as a write except that (1) we write zeros and (2) we don't update
+		 * the file position.
+		 */
+
+		ret = smartfs_shrinkfile(fs, sf, length);
+	}
+
+errout_with_semaphore:
+
+	/* Relinquish exclusive access */
+	smartfs_semgive(fs);
+	return ret;
 }
 
 /****************************************************************************
