@@ -14,6 +14,18 @@ config BINARY_MANAGER
 
 if BINARY_MANAGER
 
+config BM_PRIORITY_MAX
+	int
+	default 205
+	---help---
+		This is a maximum priority of kernel threads which are in charge of binary management.
+
+config BM_PRIORITY_MIN
+	int
+	default 200
+	---help---
+		This is a minimum priority of kernel threads which are in charge of binary management.
+
 config BINMGR_RECOVERY
 	bool "Enable Recovery Management"
 	default y
