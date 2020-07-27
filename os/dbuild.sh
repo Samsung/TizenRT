@@ -65,25 +65,21 @@ function FIND_BINFILE()
 		EXTNAME=""
 	fi
 
-	if [[ "${CONFIG_BUILD_PROTECTED}" == "y" ]]; then
-		BINFILE="${BINDIR}/tinyara_user${EXTNAME}"
-	else
-		if [[ "${CONFIG_ARCH_BOARD}" == "esp32"* ]]; then
-			BINFILE="${BINDIR}/tinyara.elf${EXTNAME}"
-		elif [[ "${CONFIG_ARCH_BOARD}" == "imxrt"* ]]; then
-			# This must be same as imxrt10x0-evk_download.sh in build/configs/imxrt
-			if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]; then
-				BINFILE="${BINDIR}/wifi"
-			else
-				BINFILE="${BINDIR}/tinyara${EXTNAME}"
-			fi
-		elif [[ "${CONFIG_ARCH_BOARD}" == "artik05x" ]]; then
-			BINFILE="${BINDIR}/tinyara_head${EXTNAME}"
-		elif [[ "${CONFIG_ARCH_BOARD}" == "cy4390x" ]]; then
-			BINFILE="${BINDIR}/tinyara_master_strip"
+	if [[ "${CONFIG_ARCH_BOARD}" == "esp32"* ]]; then
+		BINFILE="${BINDIR}/tinyara.elf${EXTNAME}"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "imxrt"* ]]; then
+		# This must be same as imxrt10x0-evk_download.sh in build/configs/imxrt
+		if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]; then
+			BINFILE="${BINDIR}/wifi"
 		else
 			BINFILE="${BINDIR}/tinyara${EXTNAME}"
 		fi
+	elif [[ "${CONFIG_ARCH_BOARD}" == "artik05x" ]]; then
+		BINFILE="${BINDIR}/tinyara_head${EXTNAME}"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "cy4390x" ]]; then
+		BINFILE="${BINDIR}/tinyara_master_strip"
+	else
+		BINFILE="${BINDIR}/tinyara${EXTNAME}"
 	fi
 }
 

@@ -21,7 +21,7 @@ LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
 LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
 
 TINYARALIB = "$(TOPDIR)/../build/output/libraries"
-USERSPACE = $(TOPDIR)/board/common/userspace/up_userspace
+USERSPACE = $(TOPDIR)/userspace/up_userspace
 
 LDELFFLAGS += -Bstatic
 LDLIBPATH += -L $(TINYARALIB)
