@@ -4,7 +4,7 @@
 #
 
 config EXAMPLES_RSSI_REPORT
-	bool "Sample App for reporting RSSI to server""
+	bool "Sample App for reporting RSSI to server"
 	default n
 	---help---
 		Enable the network test API's
