@@ -4,22 +4,8 @@
 #
 
 config MM_KERNEL_HEAP
-	bool "Support a protected, kernel heap"
+	bool
 	default y
-	depends on BUILD_PROTECTED || BUILD_KERNEL
-	---help---
-		Partition heap memory into two parts:  (1) a protected, kernel-mode
-		heap accessible only by the TinyAra kernel, and (2) an unprotected
-		user-mode heap for use by applications.  If you are only interested
-		in protected the kernel from read access, then this option is not
-		necessary.  If you wish to secure the kernel data as well, then
-		this option should be selected.
-
-		The kernel heap size that is used is provided a a platform-specific
-		up_allocate_kheap() interface.  This configuration setting is made
-		available to that platform specific code.  However, the
-		up_allocate_kheap() interface may chose to ignore this setting if it
-		has a more appropriate heap allocation strategy.
 
 config REALLOC_DISABLE_NEIGHBOR_EXTENSION
 	bool "Disable Realloc Neighbor Extension"
