@@ -413,8 +413,6 @@ Options:
 [-TARGET]
  -k             Kernel Heap
                 (-k target is available when CONFIG_BUILD_PROTECTED is enabled)
- -u             User Heap
-                (-u target is available when CONFIG_BUILD_PROTECTED is enabled)
  -b BIN_NAME    Heap for BIN_NAME binary
                 (-b target is available when CONFIG_APP_BINARY_SEPARATION is enabled)
 [-OPTION]
@@ -424,9 +422,9 @@ Options:
  -g             Show the User defined group allocation details
                 (for -g option, CONFIG_HEAPINFO_GROUP is needed)
  -e HEAP_IDX    Show the heap[HEAP_IDX] allocation details
-                (-e option is available when CONFIG_MM_NHEAPS is greater than 1)
+                (-e option is available when CONFIG_KMM_NHEAPS is greater than 1)
  -r             Show the all region information
-                (-r option is available when CONFIG_MM_REGIONS is greater than 1)
+                (-r option is available when CONFIG_KMM_REGIONS is greater than 1)
 
 TASH>>heapinfo
 
