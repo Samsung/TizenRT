@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ###########################################################################
 #
 # Copyright 2020 Samsung Electronics All Rights Reserved.
@@ -18,7 +18,12 @@
 ###########################################################################
 # rtl8721csm_download.sh
 
-if [ -n "$2" ];then
+if [ "$1" != "ALL" ]; then
+	echo -e "\nWarning: Unsupported download option \""$1"\" is detected !!!\n\nSuggested option: \"ALL\"\n";
+	exit 0
+fi
+
+if [ -n "$2" ]; then
 	PORT="$2"
 else
 	PORT="ttyUSB1"
@@ -53,4 +58,3 @@ $SUDO ./amebad_image_tool /dev/$PORT
 $SUDO [ -e km0_boot_all.bin ] && rm km0_boot_all.bin
 $SUDO [ -e km4_boot_all.bin ] && rm km4_boot_all.bin
 $SUDO [ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
-
