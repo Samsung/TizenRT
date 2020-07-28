@@ -1572,7 +1572,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 	if (ret < 0) {
 		fdbg("Error reading directory info at sector %d\n", entry->dsector);
-		goto errout;
+		return ret;
 	}
 
 	if ((entry->dsector != fs->fs_rootsector) && (entry->dsector != entry->dfirst)) {
@@ -1618,7 +1618,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 				if (ret < 0) {
 					fdbg("Error reading sector %d\n", nextsector);
-					goto errout;
+					return ret;
 				}
 
 				/* Test if this sector "points" to us */
@@ -1633,14 +1633,14 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 					ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 					if (ret < 0) {
 						fdbg("Error unchaining sector (%d)\n", nextsector);
-						goto errout;
+						return ret;
 					}
 
 					/* Now release our sector */
 					ret = FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)entry->dsector);
 					if (ret < 0) {
 						fdbg("Error freeing sector %d\n", entry->dsector);
-						goto errout;
+						return ret;
 					}
 
 					/* Break out of the loop, we are done! */
@@ -1657,16 +1657,11 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 
 	if (inactive_entry == TRUE) {
 		/* OK, another entry exist, inactive current one */
-		smartfs_setbuffer(&readwrite, entry->dsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
-		/* TODO We read again here to mark that entry as inactive, let's find a way to avoid read 2 times */
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-		if (ret < 0) {
-			fdbg("Error reading directory info at sector %d\n", entry->dsector);
-			goto errout;
-		}
+		/* If inactive_entry = TRUE, then count > 1, i.e. last BIOC IOCTL operation was to read entry->dsector.
+		   Hence, entry->dsector still present in fs->fs_rwbuffer. No need to read again.
+		 */
 
-		/* Mark this entry as inactive */
-
+		/* Mark the entry as inactive */
 		direntry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[entry->doffset];
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
@@ -1683,16 +1678,15 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 #endif							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
 
 		/* Write the updated flags back to the sector */
-
 		smartfs_setbuffer(&readwrite, entry->dsector, entry->doffset, sizeof(uint16_t), (uint8_t *)&direntry->flags);
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 		if (ret < 0) {
 			fdbg("Error marking entry inactive at sector %d\n", entry->dsector);
-			goto errout;
+			return ret;
 		}
 	}
-	/* Now Free Chained sector from target entry */
 
+	/* Now Free Chained sector from target entry */
 	nextsector = entry->firstsector;
 	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 	while (nextsector != SMARTFS_ERASEDSTATE_16BIT) {
@@ -1703,7 +1697,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
 			fdbg("Error reading sector %d\n", nextsector);
-			goto errout;
+			return ret;
 		}
 
 		/* Release this sector */
@@ -1712,12 +1706,11 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 		ret = FS_IOCTL(fs, BIOC_FREESECT, sector);
 		if (ret < 0) {
 			fdbg("Error freeing sector %d\n", nextsector);
-			goto errout;
+			return ret;
 		}
 	}
 
-errout:
-	return ret;
+	return OK;
 }
 
 /****************************************************************************
