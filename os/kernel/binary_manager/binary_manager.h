@@ -133,7 +133,7 @@ struct binmgr_uinfo_s {
 	pid_t bin_id;
 	uint8_t state;
 	load_attr_t load_attr;
-	char bin_ver[BIN_VER_MAX];
+	uint32_t bin_ver;
 	char kernel_ver[KERNEL_VER_MAX];
 	struct tcb_s *rt_list;
 	struct tcb_s *nrt_list;

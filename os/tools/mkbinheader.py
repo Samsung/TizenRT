@@ -107,14 +107,14 @@ def get_static_ram_size(bin_type):
 #
 # header information :
 #
-# total header size is 61bytes.
+# total header size is 49bytes.
 # +--------------------------------------------------------------------------
 # | Header size | Binary type | Compression  | Binary priority | Binary size|
 # |   (2bytes)  |   (1byte)   |   (1byte)    |     (1byte)     |  (4bytes)  |
 # +--------------------------------------------------------------------------
 # ----------------------------------------------------------------------
 # | Binary name | Binary version | Binary ram size | Binary stack size |
-# |  (16bytes)  |   (16bytes)    |    (4bytes)     |     (4bytes)      |
+# |  (16bytes)  |    (4bytes)    |    (4bytes)     |     (4bytes)      |
 # ----------------------------------------------------------------------
 # ------------------------------ +
 # | Kernel Version |Jump address |
@@ -159,7 +159,7 @@ SIZE_OF_COMFLAG = 1
 SIZE_OF_MAINPRIORITY = 1
 SIZE_OF_BINSIZE = 4
 SIZE_OF_BINNAME = 16
-SIZE_OF_BINVER = 16
+SIZE_OF_BINVER = 4
 SIZE_OF_BINRAMSIZE = 4
 SIZE_OF_MAINSTACKSIZE = 4
 SIZE_OF_KERNELVER = 8
@@ -268,7 +268,7 @@ with open(file_path, 'rb') as fp:
     fp.write(struct.pack('B', main_priority))
     fp.write(struct.pack('I', file_size))
     fp.write('{:{}{}.{}}'.format(binary_name, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0'))
-    fp.write('{:{}{}.{}}'.format(binary_ver, '<', SIZE_OF_BINVER, SIZE_OF_BINVER - 1).replace(' ','\0'))
+    fp.write(struct.pack('I', int(binary_ver)))
     fp.write(struct.pack('I', binary_ram_size))
     fp.write(struct.pack('I', int(main_stack_size)))
     fp.write('{:{}{}.{}}'.format(kernel_ver, '<', SIZE_OF_KERNELVER, SIZE_OF_KERNELVER - 1).replace(' ','\0'))
