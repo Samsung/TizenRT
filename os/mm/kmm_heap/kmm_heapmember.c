@@ -106,8 +106,15 @@ bool kmm_heapmember(FAR void *mem)
 	 * or app heap (if app is loaded and running) or NULL (if app heap is
 	 * de-activated and app is reloading)
 	 */
+	int kheap_idx;
 
-	return (kheap == pheap);
+	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
+		if (&kheap[kheap_idx] == pheap) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP && CONFIG_DEBUG */

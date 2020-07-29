@@ -62,7 +62,7 @@ done
 printf '%s\n' "};">> ${REGION_INFO_C_FILE_PATH}
 
 # KREGIONx_HEAP_IDX
-printf '%s' "int regionx_kheap_idx[CONFIG_KMM_REGIONS] = {">> ${REGION_INFO_C_FILE_PATH}
+printf '%s' "int kregionx_heap_idx[CONFIG_KMM_REGIONS] = {">> ${REGION_INFO_C_FILE_PATH}
 if [ ${KHEAP_NUM} -eq 1 ];then
 	printf '%d%s\n\n' 0 "};">> ${REGION_INFO_C_FILE_PATH}
 else

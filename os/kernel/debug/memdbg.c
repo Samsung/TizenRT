@@ -82,15 +82,7 @@ void display_memory_information(void)
 	/* Print RAM configuration */
 
 	mllvdbg("-------------------RAM Configuration--------------------\n");
-#ifdef CONFIG_SRAM_START_ADDR
-	mllvdbg("Internal RAM   : start addr = 0x%x size = %u\n", CONFIG_SRAM_START_ADDR, (CONFIG_KSRAM_SIZE + CONFIG_USRAM_SIZE));
-#if (defined(CONFIG_KSRAM_SIZE) && defined(CONFIG_RAM_KREGIONx_START))
-	mllvdbg("Kernel   RAM   : start addr = 0x%x size = %u\n", kregionx_start[0], CONFIG_KSRAM_SIZE);
-#endif
-#if (defined(CONFIG_USRAM_SIZE) && defined(CONFIG_RAM_REGIONx_START))
-	mllvdbg("User     RAM   : start addr = 0x%x size = %u\n", regionx_start[0], CONFIG_USRAM_SIZE);
-#endif
-#endif
+	mllvdbg("Kernel   RAM  [0] : start addr = 0x%x size = %u\n", kregionx_start[0], kregionx_size[0]);
 
 	/* Print Idle Stack configuration */
 
