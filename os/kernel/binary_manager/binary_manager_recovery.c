@@ -302,9 +302,6 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 void binary_manager_recovery(int bin_idx)
 {
 	int ret;
-	char type_str[1];
-	char data_str[1];
-	char *loading_data[LOADTHD_ARGC + 1];
 
 	bmllvdbg("Try to recover fault with binid %d\n", bin_idx);
 
@@ -342,11 +339,7 @@ void binary_manager_recovery(int bin_idx)
 
 	/* Create loader to reload binary */
 	BIN_STATE(bin_idx) = BINARY_FAULT;
-	memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
-	loading_data[1] = itoa(bin_idx, data_str, 10);
-	loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-	loading_data[2] = NULL;
-	ret = binary_manager_loading(loading_data);
+	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);
 	if (ret > 0) {
 		abort_mode = false;
 		bmllvdbg("Loading thread with pid %d will reload binaries!\n", ret);

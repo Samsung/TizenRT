@@ -87,14 +87,14 @@ static int binary_manager_clear_binfile(int bin_idx)
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: binary_manager_scan_ubinfs
+ * Name: binary_manager_scan_ubin_all
  *
  * Description:
  *	 This function scans all binary files in a directory for user binaries.
  *   And it registers them to binary table.
  *
  ****************************************************************************/
-void binary_manager_scan_ubinfs(void)
+void binary_manager_scan_ubin_all(void)
 {
 	int ret;
 	DIR *dirp;
@@ -122,13 +122,13 @@ void binary_manager_scan_ubinfs(void)
 				bin_idx = binary_manager_get_index_with_name(header_data.bin_name);
 				if (bin_idx < 0) {
 					/* If binary is not registered, register it */
-					(void)binary_manager_register_ubin(header_data.bin_name, header_data.bin_ver, header_data.bin_priority);
+					(void)binary_manager_register_ubin(header_data.bin_name, header_data.bin_ver, header_data.loading_priority);
 				} else {
 					/* Already registered */
 					BIN_FILECNT(bin_idx)++;
 					BIN_VER(bin_idx, 1) = header_data.bin_ver;
+					BIN_LOAD_PRIORITY(bin_idx, 1) = header_data.loading_priority;
 					if (header_data.bin_ver > BIN_VER(bin_idx, 0)) {
-						BIN_PRIORITY(bin_idx) = header_data.bin_priority;
 						BIN_USEIDX(bin_idx) = 1;
 					}
 				}
@@ -191,6 +191,7 @@ int binary_manager_scan_ubin(int bin_idx)
 			if (ret == OK) {
 				BIN_FILECNT(bin_idx)++;
 				BIN_VER(bin_idx, file_idx) = header_data.bin_ver;
+				BIN_LOAD_PRIORITY(bin_idx, file_idx) = header_data.loading_priority;
 				bmvdbg("Found valid header with version %d\n", header_data.bin_ver);
 				if (header_data.bin_ver > latest_ver) {
 					latest_ver = header_data.bin_ver;

@@ -116,6 +116,7 @@ struct binary_header_s {
 	uint8_t bin_type;
 	uint8_t compression_type;
 	uint8_t bin_priority;
+	uint8_t loading_priority;
 	uint32_t bin_size;
 	char bin_name[BIN_NAME_MAX];
 	uint32_t bin_ver;

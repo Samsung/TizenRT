@@ -107,15 +107,15 @@ def get_static_ram_size(bin_type):
 #
 # header information :
 #
-# total header size is 49bytes.
-# +--------------------------------------------------------------------------
-# | Header size | Binary type | Compression  | Binary priority | Binary size|
-# |   (2bytes)  |   (1byte)   |   (1byte)    |     (1byte)     |  (4bytes)  |
-# +--------------------------------------------------------------------------
-# ----------------------------------------------------------------------
-# | Binary name | Binary version | Binary ram size | Binary stack size |
-# |  (16bytes)  |    (4bytes)    |    (4bytes)     |     (4bytes)      |
-# ----------------------------------------------------------------------
+# total header size is 50bytes.
+# +--------------------------------------------------------------------------------
+# | Header size | Binary type | Compression  | Binary priority | Loading priority |
+# |   (2bytes)  |   (1byte)   |   (1byte)    |     (1byte)     |      (1bytes)    |
+# +--------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------
+# | Binary size |  Binary name | Binary version | Binary ram size | Binary stack size |
+# |  (4bytes)   |   (16bytes)  |    (4bytes)    |    (4bytes)     |     (4bytes)      |
+# -------------------------------------------------------------------------------------
 # ------------------------------ +
 # | Kernel Version |Jump address |
 # |  (8bytes)      |  (4bytes)   |
@@ -133,6 +133,7 @@ def get_static_ram_size(bin_type):
 # argv[8] is main task priority.
 # argv[9] is compression type
 # argv[10] is block size for compression
+# argv[11] is a loading priority.
 #
 ############################################################################
 
@@ -146,6 +147,7 @@ main_stack_size = sys.argv[7]
 main_priority = sys.argv[8]
 comp_enabled = sys.argv[9]
 comp_blk_size = sys.argv[10]
+loading_priority = sys.argv[11]
 
 # This path is only for dbuild.
 elf_path_for_bin_type = 'root/tizenrt/build/output/bin/tinyara'
@@ -157,6 +159,7 @@ SIZE_OF_HEADERSIZE = 2
 SIZE_OF_BINTYPE = 1
 SIZE_OF_COMFLAG = 1
 SIZE_OF_MAINPRIORITY = 1
+SIZE_OF_LOADINGPRIORITY = 1
 SIZE_OF_BINSIZE = 4
 SIZE_OF_BINNAME = 16
 SIZE_OF_BINVER = 4
@@ -165,7 +168,7 @@ SIZE_OF_MAINSTACKSIZE = 4
 SIZE_OF_KERNELVER = 8
 SIZE_OF_JUMPADDR = 4
 
-header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_COMFLAG + SIZE_OF_MAINPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER + SIZE_OF_JUMPADDR
+header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_COMFLAG + SIZE_OF_MAINPRIORITY + SIZE_OF_LOADINGPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER + SIZE_OF_JUMPADDR
 
 ELF = 1
 BIN = 2
@@ -174,6 +177,11 @@ COMP_NONE = 0
 COMP_LZMA = 1
 COMP_MINIZ = 2
 COMP_MAX = COMP_MINIZ
+
+# Loading priority
+LOADING_LOW = 1
+LOADING_MID = 2
+LOADING_HIGH = 3
 
 # Scheduling priority MAX/MIN
 SCHED_PRIORITY_MIN = 1
@@ -231,6 +239,17 @@ with open(file_path, 'rb') as fp:
         print("Error : This binary priority ", main_priority, " is not valid")
         sys.exit(1)
 
+    # Loading priority
+    if loading_priority == 'H' or loading_priority == 'HIGH' :
+	loading_priority = LOADING_HIGH
+    elif loading_priority == 'M' or loading_priority == 'MID' :
+        loading_priority = LOADING_MID
+    elif loading_priority == 'L' or loading_priority == 'LOW' :
+        loading_priority = LOADING_LOW
+    else : #Not supported.
+        print("Error : Not supported Binary loading priority")
+        sys.exit(1)
+
     static_ram_size = get_static_ram_size(bin_type)
     cfg_path = os.getenv('TOPDIR') + '/.config'
     if check_optimize_config(cfg_path) == True:
@@ -266,6 +285,7 @@ with open(file_path, 'rb') as fp:
     fp.write(struct.pack('B', bin_type))
     fp.write(struct.pack('B', bin_comp))
     fp.write(struct.pack('B', main_priority))
+    fp.write(struct.pack('B', loading_priority))
     fp.write(struct.pack('I', file_size))
     fp.write('{:{}{}.{}}'.format(binary_name, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0'))
     fp.write(struct.pack('I', int(binary_ver)))

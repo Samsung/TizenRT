@@ -105,7 +105,7 @@ binmgr_kinfo_t *binary_manager_get_kdata(void)
  *	 This function registers user binaries.
  *
  ****************************************************************************/
-int binary_manager_register_ubin(char *name, uint32_t version, uint8_t priority)
+int binary_manager_register_ubin(char *name, uint32_t version, uint8_t load_priority)
 {
 	if (name == NULL || g_bin_count >= USER_BIN_COUNT) {
 		bmdbg("ERROR: Invalid parameter\n");
@@ -118,9 +118,9 @@ int binary_manager_register_ubin(char *name, uint32_t version, uint8_t priority)
 	BIN_FILECNT(g_bin_count) = 1;
 	BIN_RTLIST(g_bin_count) = NULL;
 	BIN_NRTLIST(g_bin_count) = NULL;
-	BIN_PRIORITY(g_bin_count) = priority;
 	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
 	BIN_VER(g_bin_count, 0) = version;
+	BIN_LOAD_PRIORITY(g_bin_count, 0) = load_priority;
 	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
 	sq_init(&BIN_CBLIST(g_bin_count));
 
