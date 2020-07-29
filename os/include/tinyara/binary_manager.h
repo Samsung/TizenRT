@@ -52,9 +52,6 @@
 /* The maximum length of binary name */
 #define BIN_NAME_MAX                     16
 
-/* The maximum length of binary version */
-#define BIN_VER_MAX                      16
-
 /* The maximum length of kernel version */
 #define KERNEL_VER_MAX                   8
 
@@ -121,7 +118,7 @@ struct binary_header_s {
 	uint8_t bin_priority;
 	uint32_t bin_size;
 	char bin_name[BIN_NAME_MAX];
-	char bin_ver[BIN_VER_MAX];
+	uint32_t bin_ver;
 	uint32_t bin_ramsize;
 	uint32_t bin_stacksize;
 	char kernel_ver[KERNEL_VER_MAX];
@@ -133,7 +130,7 @@ typedef struct binary_header_s binary_header_t;
 struct binary_update_info_s {
 	int available_size;
 	char name[BIN_NAME_MAX];
-	char version[BIN_VER_MAX];
+	uint32_t version;
 #if KERNEL_BIN_COUNT > 1
 	char inactive_dev[BINMGR_DEVNAME_LEN];
 #endif
@@ -156,7 +153,7 @@ struct load_attr_s {
 	uint16_t offset;			/* The offset from which ELF binary has to be read in MTD partition */
 	uint8_t priority;			/* Priority of the binary */
 	uint8_t compression_type;	/* Binary compression type */
-	char bin_ver[BIN_VER_MAX];	/* version of binary */
+	uint32_t bin_ver;			/* version of binary */
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	void *binp;			/* Binary info pointer */
 #endif
@@ -175,7 +172,7 @@ typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
 struct binmgr_update_bin_s {
 	char bin_name[NAME_MAX];
 	int type;
-	int version;
+	uint32_t version;
 };
 typedef struct binmgr_update_bin_s binmgr_update_bin_t;
 

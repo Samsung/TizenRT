@@ -51,7 +51,7 @@ static int binary_manager_clear_binfile(int bin_idx)
 	char filepath[CONFIG_PATH_MAX];
 	char running_file[NAME_MAX];
 
-	snprintf(running_file, NAME_MAX, "%s_%s", BIN_NAME(bin_idx), BIN_VER(bin_idx));
+	snprintf(running_file, NAME_MAX, "%s_%d", BIN_NAME(bin_idx), BIN_VER(bin_idx));
 	bin_name = BIN_NAME(bin_idx);
 	name_len = strlen(bin_name);
 
@@ -165,7 +165,7 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx >= 0) {
 		/* Check version */
-		if (atoi(BIN_VER(bin_idx)) == version) {
+		if (BIN_VER(bin_idx) == version) {
 			bmvdbg("Already existing version %d\n", version);
 			response_msg.result = BINMGR_ALREADY_UPDATED;
 			goto send_result;
