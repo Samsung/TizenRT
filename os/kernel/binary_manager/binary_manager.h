@@ -61,9 +61,12 @@
 #define BINARY_MANAGER_PRIORITY    203                        /* Binary manager thread priority */
 
 /* Loading Thread information */
-#define LOADINGTHD_NAME            "bm_loader"                 /* Loading thread name */
-#define LOADINGTHD_STACKSIZE       4096                        /* Loading thread stack size */
-#define LOADINGTHD_PRIORITY        200                         /* Loading thread priority */
+#define LOADER_NAME                "bm_loader"                 /* Loading thread name */
+#define LOADER_STACKSIZE           4096                        /* Loading thread stack size */
+
+#define LOADER_PRIORITY_HIGH       200                         /* Loading thread priority for binary with high priority */
+#define LOADER_PRIORITY_MID        150                         /* Loading thread priority for binary with middle priority */
+#define LOADER_PRIORITY_LOW        90                          /* Loading thread priority for binary with low priority */
 
 /* Supported binary types */
 #define BIN_TYPE_BIN               0                          /* 'bin' type for kernel binary */
@@ -82,8 +85,8 @@
 /* Index of 'Common Library' data in binary table. */
 #define COMMLIB_IDX                0
 
-/* The number of arguments for loading thread */
-#define LOADTHD_ARGC               2
+/* The number of arguments for loader */
+#define LOADER_ARGC               1
 
 #define BINMGR_DEVNAME_FMT         "/dev/mtdblock%d"
 
@@ -121,6 +124,14 @@ enum binary_type_e {
 	BINARY_TYPE_MAX,
 };
 
+/* Binary loading priority */
+enum binary_loading_priority_e {
+	BINARY_LOADPRIO_LOW = 1,
+	BINARY_LOADPRIO_MID = 2,
+	BINARY_LOADPRIO_HIGH = 3,
+	BINARY_LOADPRIO_MAX,
+};
+
 #ifdef CONFIG_BINMGR_RECOVERY
 struct faultmsg_s {
 	struct faultmsg_s *flink;	/* Implements singly linked list */
@@ -136,6 +147,7 @@ struct binmgr_uinfo_s {
 	uint8_t useidx;
 	int file_cnt;
 	load_attr_t load_attr;
+	uint8_t load_priority[FILES_PER_BIN];
 	uint32_t bin_ver[FILES_PER_BIN];
 	char kernel_ver[KERNEL_VER_MAX];
 	struct tcb_s *rt_list;
@@ -175,6 +187,7 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->kernel_ver
 #define BIN_CBLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->cb_list
 #define BIN_FILECNT(bin_idx)                            binary_manager_get_udata(bin_idx)->file_cnt
+#define BIN_LOAD_PRIORITY(bin_idx, file_idx)            binary_manager_get_udata(bin_idx)->load_priority[file_idx]
 #define BIN_VER(bin_idx, file_idx)                      binary_manager_get_udata(bin_idx)->bin_ver[file_idx]
 
 #define BIN_LOAD_ATTR(bin_idx)                          binary_manager_get_udata(bin_idx)->load_attr
@@ -225,15 +238,15 @@ void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);
 int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t state, bool need_response);
 void binary_manager_notify_state_changed(int bin_idx, uint8_t state);
-int binary_manager_loading(char *loading_data[]);
+int binary_manager_execute_loader(int cmd, int bin_idx);
 uint32_t binary_manager_get_ucount(void);
 uint32_t binary_manager_get_kcount(void);
 binmgr_kinfo_t *binary_manager_get_kdata(void);
 void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
-int binary_manager_register_ubin(char *name, uint32_t version, uint8_t priority);
-void binary_manager_scan_ubinfs(void);
+int binary_manager_register_ubin(char *name, uint32_t version, uint8_t load_priority);
+void binary_manager_scan_ubin_all(void);
 int binary_manager_scan_ubin(int bin_idx);
 int binary_manager_read_header(char *path, binary_header_t *header_data, bool crc_check);
 int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
