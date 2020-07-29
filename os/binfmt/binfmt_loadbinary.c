@@ -145,7 +145,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			bin->priority = load_attr->priority;
 			bin->compression_type = load_attr->compression_type;
 			bin->binary_idx = binary_idx;
-			strncpy(bin->bin_ver, load_attr->bin_ver, BIN_VER_MAX);
+			bin->bin_ver = load_attr->bin_ver;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 			strncpy(bin->bin_name, load_attr->bin_name, BIN_NAME_MAX);
 #else
