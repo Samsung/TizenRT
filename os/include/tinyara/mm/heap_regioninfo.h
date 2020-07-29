@@ -24,7 +24,7 @@
 #ifdef CONFIG_MM_KERNEL_HEAP
 extern void *kregionx_start[CONFIG_KMM_REGIONS];
 extern size_t kregionx_size[CONFIG_KMM_REGIONS];
-extern int regionx_kheap_idx[CONFIG_KMM_REGIONS];
+extern int kregionx_heap_idx[CONFIG_KMM_REGIONS];
 #endif
 
 #endif
