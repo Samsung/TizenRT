@@ -60,11 +60,11 @@ we add more types of external RAM memory, this can be made into a more intellige
 #ifdef CONFIG_SPIRAM_SUPPORT
 
 
-#if CONFIG_SPIRAM_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_40M
+#if defined(CONFIG_SPIRAM_SPEED_40M) && defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M)
 #define PSRAM_SPEED PSRAM_CACHE_F40M_S40M
-#elif CONFIG_SPIRAM_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#elif defined(CONFIG_SPIRAM_SPEED_40M) && defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M)
 #define PSRAM_SPEED PSRAM_CACHE_F80M_S40M
-#elif CONFIG_SPIRAM_SPEED_80M && CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#elif defined(CONFIG_SPIRAM_SPEED_80M) && defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M)
 #define PSRAM_SPEED PSRAM_CACHE_F80M_S80M
 #else
 #error "FLASH speed can only be equal to or higher than SRAM speed while SRAM is enabled!"
@@ -72,7 +72,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 
 //manually redefined this size config
 #if CONFIG_KMM_REGIONS > 1
-#define CONFIG_SPIRAM_SIZE regionx_size[1]
+#define CONFIG_SPIRAM_SIZE kregionx_size[1]
 #else
 #define CONFIG_SPIRAM_SIZE 4194304
 #endif
