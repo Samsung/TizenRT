@@ -1302,7 +1302,7 @@ static ssize_t smart_bytewrite(FAR struct smart_struct_s *dev, size_t offset, in
 #else
 		ret = MTD_WRITE(dev->mtd, offset, nbytes, buffer);
 #endif
-		goto errout;
+		return ret;
 	} else
 #endif
 	{
@@ -1323,7 +1323,7 @@ static ssize_t smart_bytewrite(FAR struct smart_struct_s *dev, size_t offset, in
 		ret = MTD_BREAD(dev->mtd, startblock, nblocks, (FAR uint8_t *)dev->bytebuffer);
 		if (ret < 0) {
 			fdbg("Error %d reading from device\n", -ret);
-			goto errout;
+			return ret;
 		}
 
 		/* Modify the data. */
@@ -1335,12 +1335,11 @@ static ssize_t smart_bytewrite(FAR struct smart_struct_s *dev, size_t offset, in
 		ret = MTD_BWRITE(dev->mtd, startblock, nblocks, (FAR uint8_t *)dev->bytebuffer);
 		if (ret < 0) {
 			fdbg("Error %d writing to device\n", -ret);
-			goto errout;
+			return ret;
 		}
 		ret = nbytes;
 	}
 
-errout:
 	return ret;
 }
 
@@ -1476,7 +1475,7 @@ static uint16_t smart_cache_lookup(FAR struct smart_struct_s *dev, uint16_t logi
 
 				ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 				if (ret != sizeof(struct smart_sect_header_s)) {
-					goto err_out;
+					return physical;
 				}
 
 				/* Get the logical sector number for this physical sector. */
@@ -1522,7 +1521,6 @@ static uint16_t smart_cache_lookup(FAR struct smart_struct_s *dev, uint16_t logi
 	dev->cache_lastlog = logical;
 	dev->cache_lastphys = physical;
 
-err_out:
 	return physical;
 }
 #endif
@@ -2238,7 +2236,7 @@ static inline int smart_getformat(FAR struct smart_struct_s *dev, FAR struct sma
 		ret = smart_scan(dev);
 
 		if (ret != OK) {
-			goto err_out;
+			return ret;
 		}
 	}
 
@@ -2270,10 +2268,7 @@ static inline int smart_getformat(FAR struct smart_struct_s *dev, FAR struct sma
 
 	fmt->nfreesectors -= dev->sectorsPerBlk + 4;
 
-	ret = OK;
-
-err_out:
-	return ret;
+	return OK;
 }
 
 /****************************************************************************
@@ -3502,7 +3497,7 @@ static int smart_garbagecollect(FAR struct smart_struct_s *dev)
 				/* Need to collect, but no sectors with released blocks! */
 
 				ret = -ENOSPC;
-				goto errout;
+				return ret;
 			}
 #ifdef CONFIG_SMART_LOCAL_CHECKFREE
 			if (smart_checkfree(dev, __LINE__) != OK) {
@@ -3527,15 +3522,12 @@ static int smart_garbagecollect(FAR struct smart_struct_s *dev)
 #endif
 
 			if (ret != OK) {
-				goto errout;
+				return ret;
 			}
 		}
 	}
 
 	return OK;
-
-errout:
-	return ret;
 }
 #endif							/* CONFIG_FS_WRITABLE */
 
@@ -3591,7 +3583,7 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 		req.buffer = buffer;
 		ret = smart_writesector(dev, (unsigned long)&req);
 		if (ret != OK) {
-			goto errout;
+			return ret;
 		}
 	}
 
@@ -3616,7 +3608,7 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 
 		ret = smart_writesector(dev, (unsigned long)&req);
 		if (ret != OK) {
-			goto errout;
+			return ret;
 		}
 
 		/* Decrement the remaining count. */
@@ -3630,7 +3622,7 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 				/* Error, wear status bit too large! */
 				fdbg("Invalid geometry - wear level status too large\n");
 				ret = -EINVAL;
-				goto errout;
+				return ret;
 			}
 		}
 	}
@@ -3638,10 +3630,8 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 	/* Now clear the NEEDS_WRITE wear status bit. */
 
 	dev->wearflags &= ~SMART_WEARFLAGS_WRITE_NEEDED;
-	ret = OK;
 
-errout:
-	return ret;
+	return OK;
 }
 #endif
 
@@ -3672,7 +3662,7 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 	req.buffer = buffer;
 	ret = smart_readsector(dev, (unsigned long)&req);
 	if (ret != sizeof(buffer)) {
-		goto errout;
+		return ret;
 	}
 
 	/* Get the uneven wearcount value. */
@@ -3721,7 +3711,7 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 
 		ret = smart_readsector(dev, (unsigned long)&req);
 		if (ret != toread) {
-			goto errout;
+			return ret;
 		}
 
 		/* Decrement the remaining count. */
@@ -3736,7 +3726,7 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 
 				fdbg("Invalid geometry - wear level status too large\n");
 				ret = -EINVAL;
-				goto errout;
+				return ret;
 			}
 		}
 	}
@@ -3753,10 +3743,7 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 	}
 #endif
 
-	ret = OK;
-
-errout:
-	return ret;
+	return OK;
 }
 #endif							/* CONFIG_MTD_SMART_WEAR_LEVEL */
 
@@ -4225,8 +4212,7 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 #endif
 	}
 
-	ret = OK;
-	return ret;
+	return OK;
 }
 #endif							/* CONFIG_FS_WRITABLE */
 
@@ -4262,8 +4248,7 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 	if (req->logsector >= dev->totalsectors) {
 		fdbg("Logical sector %d too large\n", req->logsector);
 
-		ret = -EINVAL;
-		goto errout;
+		return -EINVAL;
 	}
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 	physsector = dev->sMap[req->logsector];
@@ -4272,8 +4257,7 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 #endif
 	if (physsector == 0xFFFF) {
 		fdbg("Logical sector %d not allocated\n", req->logsector);
-		ret = -EINVAL;
-		goto errout;
+		return -EINVAL;
 	}
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 
@@ -4284,8 +4268,7 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 	ret = MTD_BREAD(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 	if (ret != dev->mtdBlksPerSector) {
 		fdbg("Error reading phys sector %d\n", physsector);
-		ret = -EIO;
-		goto errout;
+		return -EIO;
 	}
 #if SMART_STATUS_VERSION == 1
 	/* Test if this sector has CRC enabled or not. */
@@ -4304,8 +4287,7 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 		ret = smart_validate_crc(dev);
 		if (ret != OK) {
 			fdbg("Error validating physical sector %d logical sector %d CRC during read\n", physsector, req->logsector);
-			ret = -EIO;
-			goto errout;
+			return -EIO;
 		}
 	}
 
@@ -4321,8 +4303,7 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 	ret = MTD_READ(dev->mtd, physsector * dev->mtdBlksPerSector * dev->geo.blocksize, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 	if (ret != sizeof(struct smart_sect_header_s)) {
 		fvdbg("Error reading sector %d header\n", physsector);
-		ret = -EIO;
-		goto errout;
+		return -EIO;
 	}
 
 	/* Do a sanity check on the header data. */
@@ -4332,8 +4313,7 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 		/* Error in sector header! How do we handle this? */
 
 		fdbg("Error in logical sector %d header, phys=%d read sector : %d expected sector : %d\n", req->logsector, physsector, UINT8TOUINT16(header.logicalsector), req->logsector);
-		ret = -EIO;
-		goto errout;
+		return -EIO;
 	}
 
 	/* Read the sector data into the buffer. */
@@ -4344,12 +4324,9 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 				   req->buffer);
 	if (ret != req->count) {
 		fdbg("Error reading phys sector %d\n", physsector);
-		ret = -EIO;
-		goto errout;
+		return -EIO;
 	}
 #endif
-
-errout:
 	return ret;
 }
 
@@ -4592,8 +4569,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 #endif
 		{
 			fdbg("Invalid release - sector %d not allocated\n", logicalsector);
-			ret = -EINVAL;
-			goto errout;
+			return -EINVAL;
 		}
 	}
 
@@ -4607,7 +4583,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 	readaddr = physsector * dev->mtdBlksPerSector * dev->geo.blocksize;
 	ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 	if (ret != sizeof(struct smart_sect_header_s)) {
-		goto errout;
+		return ret;
 	}
 
 	/* Do a sanity check on the logical sector number. */
@@ -4616,8 +4592,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 		/* Hmmm... something is wrong.  This should always match!  Bug in our code? */
 
 		fdbg("Sector %d logical sector in header doesn't match\n", logicalsector);
-		ret = -EINVAL;
-		goto errout;
+		return -EINVAL;
 	}
 
 	/* Mark the sector as released. */
@@ -4634,7 +4609,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 	ret = smart_bytewrite(dev, offset, 1, &header.status);
 	if (ret != 1) {
 		fdbg("Error updating physical sector %d status\n", physsector);
-		goto errout;
+		return ret;
 	}
 
 	/* Update the erase block's release count. */
@@ -4659,10 +4634,8 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 	/* If this block has only released blocks, then erase it. */
 
 	smart_erase_block_if_empty(dev, block, FALSE);
-	ret = OK;
 
-errout:
-	return ret;
+	return OK;
 }
 #endif							/* CONFIG_FS_WRITABLE */
 
