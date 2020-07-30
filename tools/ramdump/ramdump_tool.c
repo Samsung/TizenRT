@@ -41,8 +41,6 @@ typedef unsigned char uint8_t;
 
 /* Ramdump initialization data */
 uint32_t  number_of_regions;
-uint32_t  umm_regions = 0;
-uint32_t  kmm_regions = 0;
 typedef struct {
 	int rd_regionx_idx;
 	uint32_t rd_regionx_start;
@@ -100,49 +98,18 @@ static int b_read(int fd, uint8_t *buf, int size)
 int ramdump_info_init(int dev_fd)
 {
 	char c;
-	char kmm_heap;
 	int i;
 	int ret;
 	uint32_t mem_address;
 	uint32_t mem_size;
 
-	/* Receive number of user memory regions from TARGET */
+	/* Receive number of memory regions from TARGET */
 	ret = read(dev_fd, &c, 1);
 	if (ret != 1) {
 		printf("Receiving number of regions failed, ret = %d\n", ret);
 		return -1;
 	}
-	umm_regions = c;
-
-	/* Receive '1' from TARGET if kernel heap exists*/
-	ret = read(dev_fd, &c, 1);
-	if (ret != 1) {
-		printf("Receiving number of regions failed, ret = %d\n", ret);
-		return -1;
-	}
-	kmm_heap = c;
-
-	/* If kernel heap exists, receive memory region information from TARGET */
-	if (kmm_heap == '1') {
-		/* Receive number of kernel memory regions from TARGET */
-		ret = read(dev_fd, &c, 1);
-		if (ret != 1) {
-			printf("Receiving number of regions failed, ret = %d\n", ret);
-			return -1;
-		}
-		kmm_regions = c;
-
-		/* Receive total number of memory regions from TARGET */
-		ret = read(dev_fd, &c, 1);
-		if (ret != 1) {
-			printf("Receiving number of regions failed, ret = %d\n", ret);
-			return -1;
-		}
-		number_of_regions = c;
-	} else {
-		/* Total number of memory regions is equal to user heap regions */
-		number_of_regions = umm_regions;
-	}
+	number_of_regions = c;
 
 	/* Allocate memory to ramdump info structure */
 	mem_info = (rd_regionx *)malloc((number_of_regions + 2) * sizeof(rd_regionx));
@@ -212,17 +179,12 @@ static int ramdump_recv(int dev_fd)
 		printf("\t( Address: %08x, Size: %d )\n", mem_info[2].rd_regionx_start, mem_info[2].rd_regionx_size);
 	} else {
 		for (index = 2; index <= number_of_regions + 1; index++) {
-			if (index <= umm_regions + 1)
-				printf("\n\n<<<<<<<<<<<<<<<<<<<<<<<<<<<< User MM Regions >>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-			else
-				printf("\n\n<<<<<<<<<<<<<<<<<<<<<<<<<<< Kernel MM Regions >>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
 			printf("\n%d. Region %d:\t( Address: 0x%08x, Size: %d )\t [Heap index = %d]", \
 				index, index - 2, mem_info[index].rd_regionx_start, \
 					mem_info[index].rd_regionx_size, mem_info[index].rd_regionx_idx);
 		}
 	}
-	printf("\n\n=========================================================================\n");
+	printf("\n=========================================================================\n");
 	printf("\nPlease enter desired ramdump option as below:\n \t1 for ALL\n");
 	if (number_of_regions > 1) {
 	printf(" \t2 for Region 0\n \t25 for Region 0 & 3 ...\n");
