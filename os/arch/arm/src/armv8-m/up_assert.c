@@ -486,7 +486,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	/* Extract the PC value of instruction which caused the abort/assert */
 
 	if (current_regs) {
-		assert_pc = current_regs[REG_R14];
+		assert_pc = current_regs[REG_R15];
 	} else {
 		assert_pc = (uint32_t)g_assertpc;
 	}
