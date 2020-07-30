@@ -119,7 +119,7 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	g_assertpc = regs[REG_R14];
+	g_assertpc = regs[REG_R15];
 #endif
 	/* Get the value of the program counter where the fault occurred */
 
