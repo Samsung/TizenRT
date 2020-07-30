@@ -2103,6 +2103,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 							fdbg("Error marking entry inactive at sector %d\n", firstsector);
 							goto errout;
 						}
+						info->cleanentries++;
 
 					} else {
 						/* Make New node of Entry's first sector and put it to queue */
@@ -2145,7 +2146,8 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 					fdbg("Error unchaining sector (%d)\n", nextsector);
 					goto errout;
 				}
-
+				
+				info->cleanentries++;
 				break;
 			}
 
