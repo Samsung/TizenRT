@@ -4972,7 +4972,7 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
 static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address)
 {
 	int ret;
-	JOURNAL_STATUS_RESET(log->status);
+
 	SET_JOURNAL_STATE(log->status, SMART_JOURNAL_STATE_CHECKOUT);
 	ret = MTD_WRITE(dev->mtd, address + offsetof(journal_log_t, status), 1, (FAR uint8_t *)&log->status);
 	if (ret != 1) {
@@ -5300,8 +5300,8 @@ static void smart_journal_print_log(FAR struct smart_struct_s *dev, journal_log_
 static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 {
 	int ret;
-	uint32_t last_checkout_seq = 0;
-	uint32_t last_recovery_seq = 0;
+	uint32_t last_checkout_seq = dev->njournalentries;
+	uint32_t last_recovery_seq = dev->njournalentries;
 	journal_log_t log;
 	if (print_dump) {
 		fdbg("Dump Start !!\n");
@@ -5340,10 +5340,10 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 	}
 
 	/* Adjust sequence of journal. */ 
-	if (last_recovery_seq != 0) { // Logically, there should be only one log data which has to be checkedout
+	if (last_recovery_seq != dev->njournalentries) { // Logically, there should be only one log data which has to be checkedout
 		dev->journal_seq = last_recovery_seq;
 		smart_journal_move_to_next(dev);
-	} else if (last_checkout_seq != 0) {
+	} else if (last_checkout_seq != dev->njournalentries) {
 		dev->journal_seq = last_checkout_seq;
 		smart_journal_move_to_next(dev);
 	} else {

@@ -75,6 +75,7 @@ SOURCES		=  $(wildcard $(SRCDIR)/*.c)
 
 ifeq ($(CONFIG_FS_SMARTFS),y)
 SOURCES		+= $(wildcard $(SRCDIR)/smartfs/*.c)
+SOURCES 	+= $(wildcard $(SRCDIR)/queue/*.c)
 endif
 
 SRCTMP		=  $(patsubst $(SRCDIR)/%,%,$(SOURCES))
@@ -90,6 +91,8 @@ all: init $(APPNAME)
 init:
 	@mkdir -p $(OBJDIR)/smartfs
 	@mkdir -p $(DEPDIR)/smartfs
+	@mkdir -p $(OBJDIR)/queue
+	@mkdir -p $(DEPDIR)/queue
 
 #Include our built dependencies
 -include $(DEPS)

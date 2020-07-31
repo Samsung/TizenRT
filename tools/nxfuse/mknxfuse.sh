@@ -43,6 +43,7 @@ ln -sf $SMARTFSDIR/smartfs.h $SMARTFS_TMPDIR/smartfs.h
 ln -sf $SMARTFSDIR/smartfs_utils.c $SMARTFS_TMPDIR/smartfs_utils.c
 ln -sf $SMARTFSDIR/smartfs_smart.c $SMARTFS_TMPDIR/smartfs_smart.c
 ln -sf $SMARTFSDIR/../driver/mtd/smart.c $SMARTFS_TMPDIR/smart.c
+ln -svf $BASE_DIR/lib/libc/queue $SRCDIR/
 
 #Header Files
 ln -sf $BASE_INCLUDE_DIR/crc16.h $DEST_INLCUDE_DIR/crc16.h
@@ -68,10 +69,6 @@ ln -sf $BASE_INCLUDE_DIR/tinyara/fs/fs.h $DEST_INLCUDE_DIR/tinyara/fs/fs.h
 ln -sf $BASE_DIR/lib/libc/misc/lib_crc16.c $SRCDIR/lib_crc16.c
 ln -sf $BASE_DIR/lib/libc/misc/lib_crc32.c $SRCDIR/lib_crc32.c
 ln -sf $BASE_DIR/lib/libc/misc/lib_crc8.c $SRCDIR/lib_crc8.c
-ln -sf $BASE_DIR/lib/libc/queue/sq_rem.c $SRCDIR/sq_rem.c
-ln -sf $BASE_DIR/lib/libc/queue/sq_addlast.c $SRCDIR/sq_addlast.c
-ln -sf $BASE_DIR/lib/libc/queue/sq_remfirst.c $SRCDIR/sq_remfirst.c
-ln -sf $BASE_DIR/lib/libc/queue/sq_remafter.c $SRCDIR/sq_remafter.c
 
 echo "Copying Done"
 
@@ -103,6 +100,7 @@ rm -rf $DEST_INLCUDE_DIR/tinyara/fs/ioctl.h
 rm -rf $DEST_INLCUDE_DIR/sys
 rm -rf $DEST_INLCUDE_DIR/tinyara/fs
 rm -rf $SMARTFS_TMPDIR
+rm -rf $SRCDIR/queue
 rm -rf $DEPDIR
 rm -rf $OBJDIR
 
