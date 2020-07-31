@@ -67,22 +67,32 @@ mkdir $CONTENTSDIR/$BOARDNAME/mnt/bins
 fi
 fi
 
+echo "make a dummy"
 #Make a dummy .bin file
 touch $BINDIR/$BINNAME
 
+echo "make image file"
 # Making image file
-dd if=/dev/zero of=$BINDIR/$BINNAME bs=$blksize count=$blkcount
+if [ "${CONFIG_SMARTFS_ERASEDSTATE}" == 0xff ]; then
+	dd if=/dev/zero bs=$blksize count=$blkcount | tr "\000" "\377" > $BINDIR/$BINNAME
+else
+	dd if=/dev/zero of=$BINDIR/$BINNAME bs=$blksize count=$blkcount
+fi
 
+echo "copy the nxfuse"
 #Copying the nxfuse
 cp $NXFUSEDIR/nxfuse .
 
 
+echo "Now format image"
 # Formatting
 ./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m $BINDIR/$BINNAME || exit 1
 
+echo "mount binary"
 # Mounting mnt
 ./nxfuse -o nonempty -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt $BINDIR/$BINNAME || exit 1
 
+echo "Copy files"
 # Copying files to smartfs file system
 cp -rf $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
 
