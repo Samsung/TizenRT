@@ -28,6 +28,19 @@
 #include <tinyara/sched.h>
 #include "signal/signal.h"
 #include "kernel_test_proto.h"
+#ifdef CONFIG_EXAMPLES_MPU_TEST
+#include "binary_manager/binary_manager.h"
+#include <tinyara/binfmt/binfmt.h>
+#include <tinyara/mpu_test.h>
+#endif
+
+/****************************************************************************
+ * Public variables
+ ****************************************************************************/
+#ifdef CONFIG_EXAMPLES_MPU_TEST
+extern uint32_t _stext;
+extern uint32_t _sdata;
+#endif
 
 /****************************************************************************
  * Private Function Prototypes
@@ -120,6 +133,44 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		break;
 #endif
 
+#ifdef CONFIG_EXAMPLES_MPU_TEST
+	case TESTIOC_MPUTEST:
+		ret = OK;
+		struct mputest_arg_s *obj = (struct mputest_arg_s*)arg;
+		
+		if (!obj) {
+			return -EINVAL;
+		}
+
+		switch (obj->type) {
+			case MPUTEST_KERNEL_CODE:
+				obj->addr = &_stext;
+				break;
+			case MPUTEST_KERNEL_DATA:
+				obj->addr = &_sdata;
+				break;
+			case MPUTEST_APP_ADDR:
+				{
+					/* Find the current executing app and return an address
+				 	* which belongs to any other app in the system. Here,
+			 		* we choose to return the address of the app heap
+					*/
+					uint32_t binid = sched_self()->group->tg_binidx;
+					binid = (binid + 1) % (binary_manager_get_ucount() + 1);
+					if (binid == 0) {
+						binid++;
+					}
+					obj->addr = BIN_LOADINFO(binid)->uheap;
+				}
+				break;
+			default:
+				ret = -EINVAL;
+				break;
+		}
+
+		break;
+#endif
+
 	default:
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;
@@ -153,5 +204,5 @@ static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buf
 
 void kernel_test_drv_register(void)
 {
-	(void)register_driver(KERNEL_TC_DRVPATH, &kernel_test_drv_fops, 0666, NULL);
+	(void)register_driver(TESTCASE_DRVPATH, &kernel_test_drv_fops, 0666, NULL);
 }
