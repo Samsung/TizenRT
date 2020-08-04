@@ -26,15 +26,22 @@
 #include <errno.h>
 #include <sched.h>
 #include <pthread.h>
-
-#if !defined(CONFIG_MPU_TEST_KERNEL_CODE_ADDR) || !defined(CONFIG_MPU_TEST_APP_ADDR)
-#error "Address not defined for MPU test"
-#endif
+#include <fcntl.h>
+#include <tinyara/testcase_drv.h>
+#include <tinyara/mpu_test.h>
 
 static void *assert_thread(void *index)
 {
 	int type;
 	volatile uint32_t *addr;
+	int tc_fd = open(TESTCASE_DRVPATH, O_WRONLY);
+	struct mputest_arg_s obj;
+	int ret;
+
+	if (tc_fd < 0) {
+		printf("\nFAILED to open testcase driver %s\n", TESTCASE_DRVPATH);
+		return ERROR;
+	}
 
 	type = getpid() % 3;
 	if (type == 0) {
@@ -44,18 +51,33 @@ static void *assert_thread(void *index)
 		PANIC();
 	} else if (type == 1) {
 		/* Access kernel code */
-		addr = (uint32_t *)CONFIG_MPU_TEST_KERNEL_CODE_ADDR;
-		printf("[%d] %dth thread, Write kernel code space 0x%x\n", getpid(), (int)index, addr);
+		obj.type = MPUTEST_KERNEL_CODE;
+		ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+		if (ret < 0) {
+			printf("ERROR: Failed to obtain address from kernel\n");
+			close(tc_fd);
+			return ERROR;
+		}
+
+		printf("[%d] %dth thread, Write kernel code space 0x%x\n", getpid(), (int)index, obj.addr);
 		sleep(1);
-		*addr = 0xdeadbeef;
+		*(obj.addr) = 0xdeadbeef;
 	} else {
 		/* Access another binary 'micom' address */
-		addr = (uint32_t *)CONFIG_MPU_TEST_APP_ADDR;
-		printf("[%d] %dth thread, Write another app space 0x%x\n", getpid(), (int)index, addr);
+		obj.type = MPUTEST_APP_ADDR;
+		ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+		if (ret < 0) {
+			printf("ERROR: Failed to obtain address from kernel\n");
+			close(tc_fd);
+			return ERROR;
+		}
+
+		printf("[%d] %dth thread, Write another app space 0x%x\n", getpid(), (int)index, obj.addr);
 		sleep(1);
-		*addr = 0xdeadbeef;
+		*(obj.addr) = 0xdeadbeef;
 	}
 
+	close(tc_fd);
 	return 0;
 }
 

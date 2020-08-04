@@ -75,8 +75,11 @@
 #endif
 #define TESTIOC_TASK_INIT_TEST                 _TESTIOC(18)
 #define TESTIOC_COMPRESSION_TEST	        _TESTIOC(19)
+#ifdef CONFIG_EXAMPLES_MPU_TEST
+#define TESTIOC_MPUTEST				_TESTIOC(20)
+#endif
 
-#define KERNEL_TC_DRVPATH                       "/dev/testcase"
+#define TESTCASE_DRVPATH                       "/dev/testcase"
 
 /****************************************************************************
  * Public Data
