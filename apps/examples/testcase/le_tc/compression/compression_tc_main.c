@@ -40,7 +40,7 @@ int main(int argc, FAR char *argv[])
 int tc_compression_main(int argc, char *argv[])
 #endif
 {
-	g_tc_fd = open(KERNEL_TC_DRVPATH, O_WRONLY);
+	g_tc_fd = open(TESTCASE_DRVPATH, O_WRONLY);
 
 	/*If FAIL : Failed to open testcase driver*/
 	TC_ASSERT_GEQ("open", g_tc_fd, 0);
