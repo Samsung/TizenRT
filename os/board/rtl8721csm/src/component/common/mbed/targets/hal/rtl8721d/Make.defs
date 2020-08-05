@@ -35,7 +35,6 @@ CSRCS += serial_api.c \
 	 sleep.c \
 	 wdt_api.c \
 	 us_ticker_api.c \
-	 wait_api.c \
 	 captouch_api.c \
 	 keyscan_api.c \
 	 lcdc_api.c \
