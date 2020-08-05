@@ -75,7 +75,7 @@
  * regions. The code gets a little smaller. Only use this if you know that
  * overlapping won't occur on your network! */
 #ifndef IP_REASS_CHECK_OVERLAP
-#define IP_REASS_CHECK_OVERLAP 1
+#define IP_REASS_CHECK_OVERLAP 0 // [pkbuild] TAHI test send overlapped fragment packets
 #endif							/* IP_REASS_CHECK_OVERLAP */
 
 /** Set to 0 to prevent freeing the oldest datagram when the reassembly buffer is
@@ -280,6 +280,7 @@ struct pbuf *ip6_reass(struct pbuf *p)
 		/* ip6_frag_hdr must be in the first pbuf, not chained */
 		IP6_FRAG_STATS_INC(ip6_frag.proterr);
 		IP6_FRAG_STATS_INC(ip6_frag.drop);
+		LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 		goto nullreturn;
 	}
 
@@ -302,7 +303,9 @@ struct pbuf *ip6_reass(struct pbuf *p)
 		/* Check if the incoming fragment matches the one currently present
 		   in the reassembly buffer. If so, we proceed with copying the
 		   fragment into the buffer. */
-		if ((frag_hdr->_identification == ipr->identification) && ip6_addr_cmp(ip6_current_src_addr(), &(IPV6_FRAG_HDRREF(ipr->iphdr)->src)) && ip6_addr_cmp(ip6_current_dest_addr(), &(IPV6_FRAG_HDRREF(ipr->iphdr)->dest))) {
+		if ((frag_hdr->_identification == ipr->identification) &&
+			ip6_addr_cmp(ip6_current_src_addr(), &(IPV6_FRAG_HDRREF(ipr->iphdr)->src)) &&
+			ip6_addr_cmp(ip6_current_dest_addr(), &(IPV6_FRAG_HDRREF(ipr->iphdr)->dest))) {
 			IP6_FRAG_STATS_INC(ip6_frag.cachehit);
 			break;
 		}
@@ -329,6 +332,7 @@ struct pbuf *ip6_reass(struct pbuf *p)
 			{
 				IP6_FRAG_STATS_INC(ip6_frag.memerr);
 				IP6_FRAG_STATS_INC(ip6_frag.drop);
+				LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 				goto nullreturn;
 			}
 		}
@@ -375,6 +379,7 @@ struct pbuf *ip6_reass(struct pbuf *p)
 			/* drop this pbuf */
 			IP6_FRAG_STATS_INC(ip6_frag.memerr);
 			IP6_FRAG_STATS_INC(ip6_frag.drop);
+			LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 			goto nullreturn;
 		}
 	}
@@ -389,7 +394,8 @@ struct pbuf *ip6_reass(struct pbuf *p)
 		LWIP_ASSERT("no room for struct ip6_reass_helper", hdrerr == 0);
 	}
 #else							/* IPV6_FRAG_COPYHEADER */
-	LWIP_ASSERT("sizeof(struct ip6_reass_helper) <= IP6_FRAG_HLEN, set IPV6_FRAG_COPYHEADER to 1", sizeof(struct ip6_reass_helper) <= IP6_FRAG_HLEN);
+	LWIP_ASSERT("sizeof(struct ip6_reass_helper) <= IP6_FRAG_HLEN, set IPV6_FRAG_COPYHEADER to 1",
+				sizeof(struct ip6_reass_helper) <= IP6_FRAG_HLEN);
 #endif							/* IPV6_FRAG_COPYHEADER */
 	iprh = (struct ip6_reass_helper *)p->payload;
 	iprh->next_pbuf = NULL;
@@ -407,6 +413,7 @@ struct pbuf *ip6_reass(struct pbuf *p)
 				/* fragment overlaps with following, throw away */
 				IP6_FRAG_STATS_INC(ip6_frag.proterr);
 				IP6_FRAG_STATS_INC(ip6_frag.drop);
+				LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 				goto nullreturn;
 			}
 			if (iprh_prev != NULL) {
@@ -414,6 +421,7 @@ struct pbuf *ip6_reass(struct pbuf *p)
 					/* fragment overlaps with previous, throw away */
 					IP6_FRAG_STATS_INC(ip6_frag.proterr);
 					IP6_FRAG_STATS_INC(ip6_frag.drop);
+					LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 					goto nullreturn;
 				}
 			}
@@ -431,12 +439,14 @@ struct pbuf *ip6_reass(struct pbuf *p)
 		} else if (iprh->start == iprh_tmp->start) {
 			/* received the same datagram twice: no need to keep the datagram */
 			IP6_FRAG_STATS_INC(ip6_frag.drop);
+			LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 			goto nullreturn;
 #if IP_REASS_CHECK_OVERLAP
 		} else if (iprh->start < iprh_tmp->end) {
 			/* overlap: no need to keep the new datagram */
 			IP6_FRAG_STATS_INC(ip6_frag.proterr);
 			IP6_FRAG_STATS_INC(ip6_frag.drop);
+			LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 			goto nullreturn;
 #endif							/* IP_REASS_CHECK_OVERLAP */
 		} else {
@@ -445,6 +455,7 @@ struct pbuf *ip6_reass(struct pbuf *p)
 				if (iprh_prev->end != iprh_tmp->start) {
 					/* There is a fragment missing between the current
 					 * and the previous fragment */
+					LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 					valid = 0;
 				}
 			}
@@ -463,7 +474,9 @@ struct pbuf *ip6_reass(struct pbuf *p)
 #endif							/* IP_REASS_CHECK_OVERLAP */
 			iprh_prev->next_pbuf = p;
 			if (iprh_prev->end != iprh->start) {
-				valid = 0;
+				LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] end(%d) start(%d)\t%d\n", iprh_prev->end, iprh->start, __LINE__));
+				// pkbuild: if fragment packet overlap then end of previous packet can be bigger than current offset.
+				// valid = 0; // pkbuild_check
 			}
 		} else {
 #if IP_REASS_CHECK_OVERLAP
@@ -498,18 +511,30 @@ struct pbuf *ip6_reass(struct pbuf *p)
 	/* Additional validity tests: we have received first and last fragment. */
 	iprh_tmp = (struct ip6_reass_helper *)ipr->p->payload;
 	if (iprh_tmp->start != 0) {
+		LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 		valid = 0;
 	}
 	if (ipr->datagram_len == 0) {
+		LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 		valid = 0;
 	}
 
+
 	/* Final validity test: no gaps between current and last fragment. */
+	// [TAHI spec#45] patch
+	// if there is gap between first packet and second fragmented packet
+	// Above logic can't detect gap. so check gap from first packet.
+	iprh = (struct ip6_reass_helper *)ipr->p->payload;
+
 	iprh_prev = iprh;
 	q = iprh->next_pbuf;
 	while ((q != NULL) && valid) {
 		iprh = (struct ip6_reass_helper *)q->payload;
-		if (iprh_prev->end != iprh->start) {
+		LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] prev(%d, %d) cur(%d, %d)\n",
+								iprh_prev->start, iprh_prev->end, iprh->start, iprh->end));
+		// [TAHI spec#56] support overlapped fragmeneted packet. 
+		if (iprh_prev->end < iprh->start) {
+			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] set invalid %d\n", __LINE__));
 			valid = 0;
 			break;
 		}
@@ -518,19 +543,35 @@ struct pbuf *ip6_reass(struct pbuf *p)
 	}
 
 	if (valid) {
+		LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] valid %d\n", __LINE__));
 		/* All fragments have been received */
 		struct ip6_hdr *iphdr_ptr;
 
 		/* chain together the pbufs contained within the ip6_reassdata list. */
 		iprh = (struct ip6_reass_helper *)ipr->p->payload;
+
 		while (iprh != NULL) {
 			struct pbuf *next_pbuf = iprh->next_pbuf;
 			if (next_pbuf != NULL) {
 				/* Save next helper struct (will be hidden in next step). */
 				iprh_tmp = (struct ip6_reass_helper *)next_pbuf->payload;
 
+				// [TAHI spec#56] support overlaped fragmented packet
+				// TODO: this patch assume that overlapped area between 2 packets are same.
+				// if they aren't same then this should be fixed.
+				if (iprh->end > iprh_tmp->start) {
+					pbuf_header(next_pbuf, -(iprh->end - iprh_tmp->start));
+				}
+
+				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild][reass] (%d, %d) start(%d), end(%d)\n",
+										iprh->start, iprh->end, iprh_tmp->start, iprh_tmp->end));
+				// ~pkbuild
+
+
 				/* hide the fragment header for every succeeding fragment */
 				pbuf_header(next_pbuf, -IP6_FRAG_HLEN);
+				// pkbuild_check: if prev offset end is behind to cur start offset then hide it
+
 #if IPV6_FRAG_COPYHEADER
 				if (IPV6_FRAG_REQROOM > 0) {
 					/* hide the extra bytes borrowed from ip6_hdr for struct ip6_reass_helper */
@@ -601,9 +642,11 @@ struct pbuf *ip6_reass(struct pbuf *p)
 		}
 
 		/* Return the pbuf chain */
+		LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 		return p;
 	}
 	/* the datagram is not (yet?) reassembled completely */
+	LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 	return NULL;
 
 nullreturn:

@@ -2351,7 +2351,8 @@
  * May be updated by router advertisement messages.
  */
 #ifndef LWIP_ND6_REACHABLE_TIME
-#define LWIP_ND6_REACHABLE_TIME         30000
+//#define LWIP_ND6_REACHABLE_TIME         30000
+#define LWIP_ND6_REACHABLE_TIME         5000 // TAHI test 56
 #endif
 
 /**
