@@ -786,7 +786,7 @@ netif_found:
 		case IP6_NEXTH_FRAGMENT: {
 			struct ip6_frag_hdr *frag_hdr;
 			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Fragment header\n"));
-
+			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] ip6_input: packet with Fragment header\n"));
 			frag_hdr = (struct ip6_frag_hdr *)p->payload;
 
 			/* Get next header type. */
@@ -820,14 +820,43 @@ netif_found:
 			if ((frag_hdr->_fragment_offset & PP_HTONS(IP6_FRAG_OFFSET_MASK | IP6_FRAG_MORE_FLAG)) == 0) {
 				/* This is a 1-fragment packet, usually a packet that we have
 				 * already reassembled. Skip this header anc continue. */
+				LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] skip header anc continue %d\n", __LINE__));
 				pbuf_header(p, -(s16_t) hlen);
+
+				// [TAHI spec 64~67]
+				// if first fragment doesn't contains all headers, then
+				// it should send icmpv6 param problem message to sender.
+				if (*nexth == IP6_NEXTH_ICMP6) {
+					struct icmp6_hdr *icmp6hdr = (struct icmp6_hdr *)(p->payload);
+					switch (icmp6hdr->type) {
+					case ICMP6_TYPE_NA:		/* Neighbor advertisement */
+					case ICMP6_TYPE_NS:		/* Neighbor solicitation */
+					case ICMP6_TYPE_RA:		/* Router advertisement */
+					case ICMP6_TYPE_RD:		/* Redirect */
+					case ICMP6_TYPE_PTB:	/* Packet too big */
+					case ICMP6_TYPE_RS:
+					case ICMP6_TYPE_MLQ:
+					case ICMP6_TYPE_MLR:
+					case ICMP6_TYPE_MLD:
+					case ICMP6_TYPE_EREQ:
+						break;
+					default:
+						LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] send param problem\n"));
+						// code 3(IPv6 First Fragment has incomplete IPv6 Header chain)
+						icmp6_param_problem(p, 3, (u32_t)NULL);
+						pbuf_free(p);
+						IP6_STATS_INC(ip6.drop);
+						goto ip6_input_cleanup;
+					}
+				}
 			} else {
 #if LWIP_IPV6_REASS
-
+				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] reassemble packet\n"));
 				/* reassemble the packet */
 				p = ip6_reass(p);
 				/* packet not fully reassembled yet? */
 				if (p == NULL) {
+					LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] not fully reassemble %d\n", __LINE__));
 					goto ip6_input_cleanup;
 				}
 
@@ -837,6 +866,11 @@ netif_found:
 				nexth = &IP6H_NEXTH(ip6hdr);
 				hlen = ip_data.current_ip_header_tot_len = IP6_HLEN;
 				pbuf_header(p, -IP6_HLEN);
+
+				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] next hdr (%d) length(%d) totlen(%d) header len(%d)\n",
+										*nexth, IP6H_PLEN(ip6hdr), p->tot_len, ip_data.current_ip_header_tot_len));
+
+
 
 #else							/* LWIP_IPV6_REASS */
 				/* free (drop) packet pbufs */
@@ -857,7 +891,8 @@ netif_found:
 		if (*nexth == IP6_NEXTH_HOPBYHOP) {
 			/* Hop-by-Hop header comes only as a first option */
 			icmp6_param_problem(p, ICMP6_PP_HEADER, (u32_t)nexth - (u32_t)ip6_current_header());
-			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Hop-by-Hop options header dropped (this option comes only as a first option)\n"));
+			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Hop-by-Hop options header dropped"\
+									"(this option comes only as a first option)\n"));
 			pbuf_free(p);
 			IP6_STATS_INC(ip6.drop);
 			goto ip6_input_cleanup;
@@ -1021,6 +1056,33 @@ err_t ip6_output_if_src(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t 
 	IP6_STATS_INC(ip6.xmit);
 
 	LWIP_DEBUGF(IP6_DEBUG, ("ip6_output_if: %c%c%" U16_F "\n", netif->name[0], netif->name[1], (u16_t) netif->num));
+
+	// pkbuild
+	if (IP6H_NEXTH(ip6hdr) == 58) {
+		struct icmp6_hdr *icmp6hdr = (struct icmp6_hdr *)&(p->payload[40]);
+		struct ip6_hdr *tip6hdr = (struct ip6_hdr *)p->payload;
+		LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] send icmp type(%d)\n", ICMP6H_TYPE(icmp6hdr)));
+		LWIP_DEBUGF(ND6_DEBUG, ("(src) |  %4" X32_F " |  %4" X32_F " |  %4" X32_F " |  %4" X32_F\
+								"|  %4" X32_F " |  %4" X32_F " |  %4" X32_F " |  %4" X32_F " |\n",
+								IP6_ADDR_BLOCK1(&(tip6hdr->src)),
+								IP6_ADDR_BLOCK2(&(tip6hdr->src)),
+								IP6_ADDR_BLOCK3(&(tip6hdr->src)),
+								IP6_ADDR_BLOCK4(&(tip6hdr->src)),
+								IP6_ADDR_BLOCK5(&(tip6hdr->src)),
+								IP6_ADDR_BLOCK6(&(tip6hdr->src)),
+								IP6_ADDR_BLOCK7(&(tip6hdr->src)),
+								IP6_ADDR_BLOCK8(&(tip6hdr->src))));
+		LWIP_DEBUGF(ND6_DEBUG, ("(dest)|  %4" X32_F " |  %4" X32_F " |  %4" X32_F " |  %4" X32_F\
+								"|  %4" X32_F " |  %4" X32_F " |  %4" X32_F " |  %4" X32_F " |\n",
+								IP6_ADDR_BLOCK1(&(tip6hdr->dest)),
+								IP6_ADDR_BLOCK2(&(tip6hdr->dest)),
+								IP6_ADDR_BLOCK3(&(tip6hdr->dest)),
+								IP6_ADDR_BLOCK4(&(tip6hdr->dest)),
+								IP6_ADDR_BLOCK5(&(tip6hdr->dest)),
+								IP6_ADDR_BLOCK6(&(tip6hdr->dest)),
+								IP6_ADDR_BLOCK7(&(tip6hdr->dest)),
+								IP6_ADDR_BLOCK8(&(tip6hdr->dest))));
+	}
 	ip6_debug_print(p);
 
 #if ENABLE_LOOPBACK
