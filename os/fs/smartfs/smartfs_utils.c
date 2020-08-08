@@ -1284,12 +1284,12 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 		   Chainheader is written along with the 1st entry.
 		   So currently, smart_readsector will fail to invalidate CRC on empty sector
 		 */
-		tmp_buf = (char *)kmm_malloc(entrysize + sizeof(struct smartfs_entry_header_s));
+		tmp_buf = (char *)kmm_malloc(entrysize + sizeof(struct smartfs_chain_header_s));
 		if (tmp_buf == NULL) {
 			fdbg("Unable to allocate memory\n");
 			return -ENOMEM;
 		}
-		memset(tmp_buf, CONFIG_SMARTFS_ERASEDSTATE, entrysize + sizeof(struct smartfs_entry_header_s));
+		memset(tmp_buf, CONFIG_SMARTFS_ERASEDSTATE, entrysize + sizeof(struct smartfs_chain_header_s));
 		entry = (struct smartfs_entry_header_s *)&tmp_buf[sizeof(struct smartfs_chain_header_s)];
 		chainheader = (struct smartfs_chain_header_s *)&tmp_buf[0];
 		chainheader->type = SMARTFS_SECTOR_TYPE_DIR;
@@ -1483,7 +1483,7 @@ int smartfs_invalidateentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsect
 
 	entry_flags = (uint8_t *)&fs->fs_rwbuffer[0];
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-#if CONFIG_SMARTFS_ALIGNED_ACCESS
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
 	smartfs_wrle16(entry_flags, smartfs_rdle16(entry_flags) & ~SMARTFS_DIRENT_ACTIVE);
 #else
 	*entry_flags &= ~SMARTFS_DIRENT_ACTIVE;
