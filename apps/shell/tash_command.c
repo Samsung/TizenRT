@@ -94,6 +94,7 @@ struct tash_cmd_info_s {
  ********************************************************************************/
 
 static int tash_help(int argc, char **args);
+static int tash_clear(int argc, char **args);
 static int tash_exit(int argc, char **args);
 #if defined(CONFIG_BOARDCTL_RESET)
 static int tash_reboot(int argc, char **argv);
@@ -112,6 +113,7 @@ static struct tash_cmd_info_s tash_cmds_info = {PTHREAD_MUTEX_INITIALIZER};
 const static tash_cmdlist_t tash_basic_cmds[] = {
 	{"exit",  tash_exit,   TASH_EXECMD_SYNC},
 	{"help",  tash_help,   TASH_EXECMD_SYNC},
+	{"clear",  tash_clear,   TASH_EXECMD_SYNC},
 #ifdef CONFIG_TASH_SCRIPT
 	{"sh",    tash_script, TASH_EXECMD_SYNC},
 #endif
@@ -188,6 +190,15 @@ static int tash_help(int argc, char **args)
 	}
 	printf("\n");
 
+	return 0;
+}
+
+/** @brief Clear the terminal screen and move cursor to top
+ *  @ingroup tash
+ */
+static int tash_clear(int argc, char **args)
+{
+	printf("\x1b[1;1H\x1b[2J\n");
 	return 0;
 }
 
