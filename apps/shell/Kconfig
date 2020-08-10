@@ -37,7 +37,8 @@ config TASH_COMMAND_INTERFACE
 
 config TASH_CMDTASK_STACKSIZE
 	int "TASH task stack size to run command with ASYNC type"
-	default 4096
+	default 4096 if !SYSTEM_VI
+	default 16384 if SYSTEM_VI
 	---help---
 		The stack size allocated for TASH command task
 

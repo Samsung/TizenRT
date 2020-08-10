@@ -26,6 +26,9 @@ config SYSTEM_VI
 		about 8.5 to 10.5KB, depending upon the efficiency of the
 		underlying architecture.
 
+		VI uses TASH stack and its size is 16384 bytes by default.
+		If needed, please increase TASH_CMDTASK_STACKSIZE.
+
 if SYSTEM_VI
 
 config SYSTEM_VI_COLS
