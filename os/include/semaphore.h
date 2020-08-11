@@ -73,8 +73,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Save semaphore holder data when priority inheritance or binary manager recovery is enabled. */
-#if defined(CONFIG_PRIORITY_INHERITANCE) || defined(CONFIG_BINMGR_RECOVERY)
+/* Save semaphore holder data when priority inheritance or binary manager is enabled. */
+#if defined(CONFIG_PRIORITY_INHERITANCE) || defined(CONFIG_BINARY_MANAGER)
 #define SAVE_SEM_HOLDER 1
 #endif
 
@@ -119,7 +119,7 @@ struct semholder_s {
  * @brief Structure of generic semaphore
  */
 struct sem_s {
-#ifdef CONFIG_BINMGR_RECOVERY
+#ifdef CONFIG_BINARY_MANAGER
 	struct sem_s *flink;		/* Support for singly linked lists. */
 #endif
 	int16_t semcount;			/* >0 -> Num counts available */
@@ -151,13 +151,13 @@ typedef struct sem_s sem_t;
  * @brief Sem initializer
  */
 #ifdef SAVE_SEM_HOLDER
-#ifdef CONFIG_BINMGR_RECOVERY
+#ifdef CONFIG_BINARY_MANAGER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, NULL} /* flink, semcount, flags, hhead */
 #else
 #define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
 #endif
-#else // CONFIG_BINMGR_RECOVERY
+#else // CONFIG_BINARY_MANAGER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, NULL} /* semcount, flags, hhead */
 #else
