@@ -36,14 +36,14 @@ NXFUSEDIR=$NXFUSE_TOOL_PATH
 # For the below values check partition sizes in .config
 parts=${CONFIG_FLASH_PART_NAME}
 IFS=',' read -ra parts <<< "$parts"
-smartidx=0
+smartidx=-1
 for i in "${!parts[@]}"
 do
 	if [[ "${parts[$i]}" = "userfs" ]]; then
 		smartidx=$i
 	fi
 done
-if [[ ${smartidx} = 0 ]]; then
+if [[ ${smartidx} = -1 ]]; then
 	echo "ERROR: Failed to find userfs partition in config file!!!"
 	exit
 fi
