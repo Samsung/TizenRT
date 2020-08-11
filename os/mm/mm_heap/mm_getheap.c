@@ -219,6 +219,11 @@ int mm_get_heapindex(void *mem)
 	if (mem == NULL) {
 		return 0;
 	}
+	if (BASE_HEAP == NULL) {
+		lldbg("BASE_HEAP NULL\n");
+		return 0;
+	}
+
 	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
 		int region = 0;
 #if CONFIG_KMM_REGIONS > 1
