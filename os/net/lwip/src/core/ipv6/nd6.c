@@ -313,7 +313,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 			if (nd6_sflag) {
 				neighbor_cache[i].state = ND6_REACHABLE;
-				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] set reachable %s:%d\n", __FUNCTION__, __LINE__));
+				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] set reachable time (%d) %d\n", reachable_time, __LINE__));
 				neighbor_cache[i].counter.reachable_time = reachable_time;
 			} else {
 				neighbor_cache[i].state = ND6_STALE;
@@ -414,7 +414,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			ND6_STATS_INC(nd6.lenerr);
 			ND6_STATS_INC(nd6.drop);
 			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %s:%d)\n", __FUNCTION__, __LINE__));
-return;
+			return;
 		}
 
 		ns_hdr = (struct ns_header *)p->payload;
@@ -428,7 +428,7 @@ return;
 			ND6_STATS_INC(nd6.proterr);
 			ND6_STATS_INC(nd6.drop);
 			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %s:%d)\n", __FUNCTION__, __LINE__));
-return;
+			return;
 		}
 
 		/* Check if there is a link-layer address provided. Only point to it if in this buffer. */
@@ -444,7 +444,7 @@ return;
 					ND6_STATS_INC(nd6.lenerr);
 					ND6_STATS_INC(nd6.drop);
 					LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %s:%d)\n", __FUNCTION__, __LINE__));
-return;
+					return;
 				}
 
 				if (ND6H_LLADDR_OPT_TYPE(lladdr_opt) != ND6_OPTION_TYPE_SOURCE_LLADDR) {
@@ -468,7 +468,7 @@ return;
 		if (!accepted) {
 			pbuf_free(p);
 			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %s:%d)\n", __FUNCTION__, __LINE__));
-return;
+			return;
 		}
 
 		/* Check for ANY address in src (DAD algorithm). */
@@ -481,7 +481,7 @@ return;
 				ND6_STATS_INC(nd6.proterr);
 				ND6_STATS_INC(nd6.drop);
 				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %s:%d)\n", __FUNCTION__, __LINE__));
-return;
+				return;
 			}
 
 			if (ip6_addr_issolicitednode(ip6_current_dest_addr())) {
@@ -512,7 +512,7 @@ return;
 				ND6_STATS_INC(nd6.proterr);
 				ND6_STATS_INC(nd6.drop);
 				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %s:%d)\n", __FUNCTION__, __LINE__));
-return;
+				return;
 			}
 		} else {
 			ip6_addr_t target_address;
@@ -524,7 +524,7 @@ return;
 				ND6_STATS_INC(nd6.lenerr);
 				ND6_STATS_INC(nd6.drop);
 				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %s:%d)\n", __FUNCTION__, __LINE__));
-return;
+				return;
 			}
 
 			i = nd6_find_neighbor_cache_entry(ip6_current_src_addr());
@@ -708,7 +708,9 @@ return;
 					return;
 				}
 
-				if ((ND6H_PF_OPT_FLAG(prefix_opt) & ND6_PREFIX_FLAG_ON_LINK) && (ND6H_PF_OPT_PF_LEN(prefix_opt) <= 128) && !ip6_addr_islinklocal(&(ND6H_PF_OPT_PF(prefix_opt)))) {
+				if ((ND6H_PF_OPT_FLAG(prefix_opt) & ND6_PREFIX_FLAG_ON_LINK)
+					&& (ND6H_PF_OPT_PF_LEN(prefix_opt) <= 128)
+					&& !ip6_addr_islinklocal(&(ND6H_PF_OPT_PF(prefix_opt)))) {
 					/* Add to on-link prefix list. */
 					s8_t prefix;
 					ip6_addr_t prefix_addr;
@@ -736,7 +738,9 @@ return;
 						} else {
 							if (prefix_list[prefix].invalidation_timer > TIME_HOUR_TO_MS(2)) {
 								/* Otherwise, reset the valid lifetime of the corresponding address to 2 hours. */
-								LWIP_DEBUGF(ND6_DEBUG, ("prefix lifetime reset to 2 hours (current invalidation_timer %lu ms, lifetime %lu ms)\n", prefix_list[prefix].invalidation_timer, lifetime_ms));
+								LWIP_DEBUGF(ND6_DEBUG, ("prefix lifetime reset to 2 hours "\
+														"(current invalidation_timer %lu ms, lifetime %lu ms)\n",
+														prefix_list[prefix].invalidation_timer, lifetime_ms));
 								prefix_list[prefix].invalidation_timer = TIME_HOUR_TO_MS(2);
 							}
 						}
@@ -773,22 +777,28 @@ return;
 				struct rdnss_option *rdnss_opt;
 
 				rdnss_opt = (struct rdnss_option *)buffer;
-				num = (rdnss_opt->length - 1) / 2;
+				num = (rdnss_opt->_length - 1) / 2;
+				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] DNS option num(%d) %d\n", num, __LINE__));
 				for (n = 0; (rdnss_server_idx < DNS_MAX_SERVERS) && (n < num); n++) {
 					ip_addr_t rdnss_address;
 
 					/* Get a memory-aligned copy of the prefix. */
 					ip_addr_copy_from_ip6(rdnss_address, ND6H_RDNSS_OPT_ADDR(rdnss_opt)[n]);
 
-					if (htonl(rdnss_opt->lifetime) > 0) {
+					LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] life time is %d %d\n",
+											htonl(rdnss_opt->_lifetime), __LINE__));
+					if (htonl(rdnss_opt->_lifetime) > 0) {
 						/* TODO implement Lifetime > 0 */
+						LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] lifetime is not 0 %d\n", __LINE__));
 						dns_setserver(rdnss_server_idx++, &rdnss_address);
 					} else {
 						/* TODO implement DNS removal in dns.c */
 						u8_t s;
 						for (s = 0; s < DNS_MAX_SERVERS; s++) {
 							const ip_addr_t *addr = dns_getserver(s);
+							LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild]  %d\n", __LINE__));
 							if (ip_addr_cmp(addr, &rdnss_address)) {
+								LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild]  %d\n", __LINE__));
 								dns_setserver(s, NULL);
 							}
 						}
@@ -856,8 +866,8 @@ return;
 			retrans_timer = lwip_htonl(ND6H_RA_RETRANS_TMR(ra_hdr));
 		}
 		if (ND6H_RA_REACH_TIME(ra_hdr) > 0) {
-			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] set reachable %s:%d\n", __FUNCTION__, __LINE__));
 			reachable_time = lwip_htonl(ND6H_RA_REACH_TIME(ra_hdr));
+			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] RA set reachable (%d) %d\n", reachable_time, __LINE__));
 		}
 #endif							/* LWIP_ND6_ALLOW_RA_UPDATES */
 
@@ -1967,7 +1977,10 @@ static s8_t nd6_select_router(const ip6_addr_t *ip6addr, struct netif *netif)
 		if (++last_router >= LWIP_ND6_NUM_ROUTERS) {
 			last_router = 0;
 		}
-		if ((default_router_list[i].neighbor_entry != NULL) && (netif != NULL ? netif == default_router_list[i].neighbor_entry->netif : 1) && (default_router_list[i].invalidation_timer > 0) && (default_router_list[i].neighbor_entry->state == ND6_REACHABLE)) {
+		if ((default_router_list[i].neighbor_entry != NULL)
+			&& (netif != NULL ? netif == default_router_list[i].neighbor_entry->netif : 1)
+			&& (default_router_list[i].invalidation_timer > 0)
+			&& (default_router_list[i].neighbor_entry->state == ND6_REACHABLE)) {
 			return i;
 		}
 	}
@@ -1977,7 +1990,9 @@ static s8_t nd6_select_router(const ip6_addr_t *ip6addr, struct netif *netif)
 		if (++last_router >= LWIP_ND6_NUM_ROUTERS) {
 			last_router = 0;
 		}
-		if ((default_router_list[i].neighbor_entry != NULL) && (netif != NULL ? netif == default_router_list[i].neighbor_entry->netif : 1) && (default_router_list[i].invalidation_timer > 0)) {
+		if ((default_router_list[i].neighbor_entry != NULL)
+			&& (netif != NULL ? netif == default_router_list[i].neighbor_entry->netif : 1)
+			&& (default_router_list[i].invalidation_timer > 0)) {
 			return i;
 		}
 	}
@@ -1987,7 +2002,8 @@ static s8_t nd6_select_router(const ip6_addr_t *ip6addr, struct netif *netif)
 		if (++last_router >= LWIP_ND6_NUM_ROUTERS) {
 			last_router = 0;
 		}
-		if (default_router_list[i].neighbor_entry != NULL && (netif != NULL ? netif == default_router_list[i].neighbor_entry->netif : 1)) {
+		if (default_router_list[i].neighbor_entry != NULL
+			&& (netif != NULL ? netif == default_router_list[i].neighbor_entry->netif : 1)) {
 			return i;
 		}
 	}
