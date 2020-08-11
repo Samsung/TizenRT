@@ -3314,7 +3314,7 @@ retry:
 
 	if (allocblock == 0xFFFF) {
 		/* No un-worn blocks with free sectors. */
-		fdbg("No un-worn blocks with free sectors\n");
+		fvdbg("No un-worn blocks with free sectors\n");
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 
 		/* If we are allowed to relocate unworn blocks then do so now. */
