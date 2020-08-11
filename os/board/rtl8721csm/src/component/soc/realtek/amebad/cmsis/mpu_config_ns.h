@@ -30,7 +30,7 @@
 #ifndef _MPU_CONFIG_S_H_
 #define _MPU_CONFIG_S_H_
 
-#include "mpu.h"
+#include "cmsis_mpu.h"
 
 /** @defgroup mpu_config_define
   * @{
