@@ -486,6 +486,9 @@ const static tash_cmdlist_t net_utilcmds[] = {
 #endif
 #ifdef CONFIG_NET_PING_CMD
 	{"ping", cmd_ping, TASH_EXECMD_ASYNC},
+#ifdef CONFIG_NET_IPv6
+	{"ping6", cmd_ping6, TASH_EXECMD_ASYNC},
+#endif
 #endif
 #ifdef CONFIG_NETUTILS_TFTPC
 	{"tftpc", cmd_tftpc, TASH_EXECMD_SYNC},
