@@ -109,7 +109,8 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 
 	icmp6hdr = (struct icmp6_hdr *)p->payload;
 
-	LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] type(%d) checksum(%04x) len(%d)\n", icmp6hdr->type, icmp6hdr->chksum, p->tot_len));
+	LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] type(%d) code(%d) checksum(%04x) len(%d)\n",
+							icmp6hdr->type, icmp6hdr->code, icmp6hdr->chksum, p->tot_len));
 
 #if CHECKSUM_CHECK_ICMP6
 	IF__NETIF_CHECKSUM_ENABLED(inp, NETIF_CHECKSUM_CHECK_ICMP6) {

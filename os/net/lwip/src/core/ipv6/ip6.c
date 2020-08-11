@@ -382,6 +382,9 @@ err_t ip6_input(struct pbuf *p, struct netif *inp)
 
 	IP6_STATS_INC(ip6.recv);
 
+	// [TAHI ND#127]
+	ip_data.is_atomic_frag = 1;
+
 	/* identify the IP header */
 	ip6hdr = (struct ip6_hdr *)p->payload;
 	if (IP6H_V(ip6hdr) != 6) {
@@ -818,6 +821,12 @@ netif_found:
 
 			/* Offset == 0 and more_fragments == 0? */
 			if ((frag_hdr->_fragment_offset & PP_HTONS(IP6_FRAG_OFFSET_MASK | IP6_FRAG_MORE_FLAG)) == 0) {
+				// [TAHI ND#127]
+				if (ip_data.is_atomic_frag == 1) {
+					pbuf_free(p);
+					IP6_STATS_INC(ip6.drop);
+					goto ip6_input_cleanup;
+				}
 				/* This is a 1-fragment packet, usually a packet that we have
 				 * already reassembled. Skip this header anc continue. */
 				LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] skip header anc continue %d\n", __LINE__));
@@ -854,6 +863,8 @@ netif_found:
 				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] reassemble packet\n"));
 				/* reassemble the packet */
 				p = ip6_reass(p);
+				// [TAHI ND#127]
+				ip_data.is_atomic_frag = 0;
 				/* packet not fully reassembled yet? */
 				if (p == NULL) {
 					LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] not fully reassemble %d\n", __LINE__));
@@ -963,7 +974,8 @@ ip6_input_cleanup:
 	ip_data.current_ip_header_tot_len = 0;
 	ip6_addr_set_zero(ip6_current_src_addr());
 	ip6_addr_set_zero(ip6_current_dest_addr());
-
+	// [TAHI ND#127]
+	ip_data.is_atomic_frag = 1;
 	return ERR_OK;
 }
 
