@@ -81,7 +81,7 @@
  * Private Functions
  ****************************************************************************/
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-static void allocateregions(FAR struct elf_loadinfo_s *loadinfo)
+static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 {
 	size_t sizes[MPU_NUM_REGIONS] = {loadinfo->textsize, loadinfo->rosize, loadinfo->binp->ramsize};
 	uintptr_t *allocs[MPU_NUM_REGIONS] = {&loadinfo->textalloc, &loadinfo->roalloc, &loadinfo->dataalloc};
@@ -106,8 +106,13 @@ static void allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 	}
 
 	loadinfo->binp->ramstart = *allocs[0] = (uintptr_t)kmm_memalign(sizes[0], totalsize);
+	if (loadinfo->binp->ramstart == NULL) {
+		return -ENOMEM;
+	}
 	*allocs[1] = *allocs[0] + sizes[0];
 	*allocs[2] = *allocs[1] + sizes[1];
+
+	return 0;
 }
 #endif
 
@@ -199,7 +204,10 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	datamemsize = 1 << mpu_log2regionceil(0, datamemsize);
 	loadinfo->binp->ramsize = datamemsize;
 
-	allocateregions(loadinfo);
+	if (allocateregions(loadinfo)) {
+		berr("ERROR: failed to allocate memory\n");
+		return -ENOMEM;
+	}
 
 	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
 	loadinfo->binp->uheap_size = datamemsize - loadinfo->datasize - sizeof(struct mm_heap_s);
