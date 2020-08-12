@@ -103,6 +103,9 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 extern uint32_t g_assertpc;
 #endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t *g_umm_app_id;
+#endif
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 /* By default, a task is created without a secure context */
@@ -283,6 +286,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #endif
 		}
 #endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			if (g_umm_app_id) {
+				*g_umm_app_id = rtcb->app_id;
+			}
+#endif
 
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
@@ -329,6 +337,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 			up_mpu_set_register(tcb->stack_mpu_regs);
 #endif
 		}
+#endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			if (g_umm_app_id) {
+				*g_umm_app_id = rtcb->app_id;
+			}
 #endif
 
 #ifdef CONFIG_TASK_MONITOR

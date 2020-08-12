@@ -89,6 +89,9 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t *g_umm_app_id;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -190,6 +193,11 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			}
 #endif
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			if (g_umm_app_id) {
+				*g_umm_app_id = rtcb->app_id;
+			}
+#endif
 #ifdef CONFIG_TASK_MONITOR
 			/* Update rtcb active flag for monitoring. */
 			rtcb->is_active = true;

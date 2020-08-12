@@ -516,6 +516,7 @@ source Kconfig.debug
 endmenu
 
 menu "System Call"
+	depends on BUILD_PROTECTED || BUILD_KERNEL
 source syscall/Kconfig
 endmenu
 

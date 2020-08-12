@@ -411,7 +411,7 @@ extern struct mm_heap_s g_kmmheap[CONFIG_KMM_NHEAPS];
 #define BASE_HEAP ((struct mm_heap_s *)((struct tcb_s*)sched_self())->uheap)
 
 #elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
-extern uint32_t _stext;
+extern uint32_t _sdata;
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 extern struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1];
@@ -419,7 +419,7 @@ extern uint32_t g_cur_app;
 #define BASE_HEAP (g_app_heap_table[g_cur_app])
 
 #else
-#define BASE_HEAP ((struct mm_heap_s *)_stext)
+#define BASE_HEAP ((struct mm_heap_s *)_sdata)
 #endif
 
 #else
