@@ -778,10 +778,22 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		/* Now perform the write. */
 
 		if (readwrite.count > 0) {
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-			if (ret < 0) {
-				fdbg("Error %d writing sector %d data\n", ret, sf->currsector);
-				goto errout_with_semaphore;
+
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+			/* If sector buffer enabled and it is not last sector, then overwrite it.
+			 * Otherwise, it will be written by sync_internal
+			 */
+			if (readwrite.count == sf->entry.datlen - sf->filepos) {
+				memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
+				sf->bflags |= SMARTFS_BFLAG_DIRTY;
+			} else
+#endif				
+			{
+				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+				if (ret < 0) {
+					fdbg("Error %d writing sector %d data\n", ret, fs->fs_llformat.availbytes - sf->curroffset);
+					goto errout_with_semaphore;
+				}
 			}
 
 			/* Update our control variables */
@@ -807,10 +819,16 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 				goto errout_with_semaphore;
 			}
 
-			/* Now get the chained sector info and reset the offset */
-
-			sf->curroffset = sizeof(struct smartfs_chain_header_s);
-			sf->currsector = SMARTFS_NEXTSECTOR(header);
+			/* If file is modified and more data remains to be appended to file, but no next sector is available,
+			 * do not update sf->currsector and curroffset,
+			 * Will be handled when buffer data is synced.
+			 */
+			if (SMARTFS_NEXTSECTOR(header) != 0xFFFF) {
+				sf->currsector = SMARTFS_NEXTSECTOR(header);
+				
+				/* Now get the chained sector info and reset the offset */
+				sf->curroffset = sizeof(struct smartfs_chain_header_s);
+			}
 		}
 	}
 
