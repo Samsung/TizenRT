@@ -4840,7 +4840,7 @@ static int smart_journal_init(FAR struct smart_struct_s *dev)
 	int ret = OK;
 	dev->journal_seq = 0;
 
-	ret = smart_journal_scan(dev, true);
+	ret = smart_journal_scan(dev, false);
 	if (ret != OK) {
 		return -EIO;
 	}
@@ -5322,6 +5322,9 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 			/* If another case means that it is finished or power off during writing journal */
 			if (CHECK_JOURNAL_CHECKIN(log.status) && !CHECK_JOURNAL_CHECKOUT(log.status)) {
 				fdbg("Active Journal entry found... seq : %d\n", dev->journal_seq);
+				if (!print_dump) {
+					smart_journal_print_log(dev, &log);
+				}
 				ret = smart_journal_recovery(dev, &log);
 				/* -EINVAL means journal log is not written properly, we skip it. */
 				if ((ret != OK) && (ret != -EINVAL)) {
