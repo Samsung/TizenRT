@@ -17,6 +17,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdint.h>
 #include "rreport_config.h"
 
 static char *g_interval = NULL;
@@ -27,7 +28,7 @@ static char *g_password = NULL;
 static char *g_location = NULL;
 static char *g_count = NULL;
 static int g_ntp = 0;
-
+static uint32_t g_duration = 0;
 
 int rr_set_interval(char *interval)
 {
@@ -130,5 +131,17 @@ int rr_set_counts(char *count)
 int rr_get_counts(char **count)
 {
 	*count = g_count;
+	return 0;
+}
+
+int rr_set_duration(uint32_t duration)
+{
+	g_duration = duration;
+	return 0;
+}
+
+int rr_get_duration(uint32_t *duration)
+{
+	*duration = g_duration;
 	return 0;
 }
