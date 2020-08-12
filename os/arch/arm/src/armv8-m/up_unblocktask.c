@@ -83,7 +83,9 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t *g_umm_app_id;
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -172,6 +174,11 @@ void up_unblock_task(struct tcb_s *tcb)
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 				up_mpu_set_register(rtcb->stack_mpu_regs);
 #endif
+			}
+#endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			if (g_umm_app_id) {
+				*g_umm_app_id = rtcb->app_id;
 			}
 #endif
 

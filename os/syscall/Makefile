@@ -56,7 +56,7 @@ DELIM ?= $(strip /)
 include proxies$(DELIM)Make.defs
 include stubs$(DELIM)Make.defs
 
-MKSYSCALL = "$(TOPDIR)$(DELIM)tools$(DELIM)mksyscall$(EXEEXT)"
+MKSYSCALL = "$(TOPDIR)$(DELIM)tools$(DELIM)mksyscall"
 CSVFILE = "$(TOPDIR)$(DELIM)syscall$(DELIM)syscall.csv"
 
 STUB_SRCS += syscall_funclookup.c syscall_stublookup.c syscall_nparms.c

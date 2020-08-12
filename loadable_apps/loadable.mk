@@ -34,7 +34,7 @@ LDLIBS := $(patsubst %-lumm,%,$(LDLIBS))
 LDLIBS := $(patsubst %-lproxies,%,$(LDLIBS))
 else
 
-LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
+LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
 endif
 

@@ -10,6 +10,9 @@
 #include "ameba_soc.h"
 #include "rtl8721d_system.h"
 #include "psram_reserve.h"
+#ifdef CONFIG_ARMV8M_MPU
+#include "up_mpuinit.h"
+#endif
 #if defined ( __ICCARM__ )
 #pragma section=".ram_image2.bss"
 #pragma section=".ram_image2.nocache.data"
@@ -1312,14 +1315,20 @@ extern void __libc_init_array(void);
 		"mov sp, r0\n"
 	);
 
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	mpu_init();
 	app_mpu_nocache_init();
+#endif
 	app_vdd1833_detect();
 	memcpy_gdma_init();
 	//retention Ram space should not exceed 0xB0
 	assert_param(sizeof(RRAM_TypeDef) <= 0xB0);
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
+#ifdef CONFIG_ARMV8M_MPU
+	up_mpuinitialize();
+#endif
+
 #ifdef CONFIG_STACK_COLORATION
 	/* Set the IDLE stack to the coloration value and jump into os_start() */
 
