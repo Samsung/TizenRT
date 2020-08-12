@@ -93,10 +93,16 @@ void rr_monitor_rssi(void)
 	(void)rr_get_host(&host);
 
 	while (1) {
+		struct timeval start, end;
+		gettimeofday(&start, NULL);
 		for (int i = 0; i < count; i++) {
 			rssi[i] = rr_get_rssi();
 			usleep(interval * 1000);
 		}
+		gettimeofday(&end, NULL);
+		uint32_t duration = (end.tv_sec - start.tv_sec)*1000 +
+			(end.tv_usec - start.tv_usec)/1000;
+		rr_set_duration(duration);
 
 		char *msg = rr_generate_message(rssi, count);
 		if (!msg) {

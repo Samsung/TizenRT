@@ -62,6 +62,12 @@ char *rr_generate_message(int *data, int size)
 	}
 	cJSON_AddItemToObject(rssi, "period", period);
 
+	/*  create duration */
+	uint32_t duration = 0;
+	rr_get_duration(&duration);
+	cJSON *jduration = cJSON_CreateNumber((double)duration);
+	cJSON_AddItemToObject(rssi, "duration", jduration);
+
 	/*  create location */
 	char *str_location = NULL;
 	(void)rr_get_location(&str_location);
