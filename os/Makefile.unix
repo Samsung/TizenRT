@@ -441,7 +441,7 @@ include LibTargets.mk
 # is unknown to this makefile unless CONFIG_PASS1_OBJECT is defined.
 
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
-LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
+LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 COMMONLIBS = -luarch -luc -lumm -lproxies
 endif
 

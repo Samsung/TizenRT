@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/binfmt/libelf/gnu-elf.ld
+ * os/userspace/userspace_apps.ld
  *
  *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -101,6 +101,7 @@ SECTIONS
   .data 0x00000000 :
     {
       _sdata = . ;
+      LONG(0);
       *(.curapp)
       *(.appheaptable)
       *(.data)

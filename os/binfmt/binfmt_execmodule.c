@@ -181,7 +181,7 @@ int exec_module(FAR struct binary_s *binp)
 	/* The first 4 bytes of the text section of the application must contain a
 	pointer to the application's mm_heap object. Here we will store the mm_heap
 	pointer to the start of the text section */
-	*(uint32_t *)(binp->alloc[ALLOC_TEXT]) = (uint32_t)binp->uheap;
+	*(uint32_t *)(binp->alloc[ALLOC_DATA]) = (uint32_t)binp->uheap;
 	rtcb = (struct tcb_s *)sched_self();
 	rtcb->uheap = (uint32_t)binp->uheap;
 

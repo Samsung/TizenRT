@@ -169,7 +169,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 		if (bin->islibrary) {
-#ifdef CONFIG_ARMV7M_MPU
+#if (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU))
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 			/* Get MPU register values for MPU regions */
 			mpu_get_register_config_value(&com_bin_mpu_regs[0], MPU_REG_NUM_COM_LIB_TXT,  (uintptr_t)bin->alloc[ALLOC_TEXT], bin->textsize, true,  true);
@@ -199,7 +199,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
-		g_umm_app_id = bin->alloc[ALLOC_DATA];
+		g_umm_app_id = bin->alloc[ALLOC_DATA] + 4;
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 		elf_save_bin_section_addr(bin);
 #endif
@@ -208,7 +208,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	/* If we support common binary, then we need to place a pointer to the app's heap object
 	 * into the heap table which is present at the start of the common library data section
 	 */
-	uint32_t *heap_table = (uint32_t *)(g_lib_binp->alloc[ALLOC_DATA] + 4);
+	uint32_t *heap_table = (uint32_t *)(g_lib_binp->alloc[ALLOC_DATA] + 8);
 	heap_table[binary_idx] = bin->heapstart;
 #endif
 

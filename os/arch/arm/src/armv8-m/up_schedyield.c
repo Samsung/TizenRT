@@ -25,6 +25,9 @@
 #include <sys/types.h>
 #include <debug.h>
 #include <queue.h>
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+#include <stdint.h>
+#endif
 
 #include <tinyara/sched.h>
 #if CONFIG_RR_INTERVAL > 0
@@ -50,7 +53,9 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t *g_umm_app_id;
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -161,6 +166,11 @@ void up_schedyield(void)
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 				up_mpu_set_register(ntcb->stack_mpu_regs);
 #endif
+			}
+#endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			if (g_umm_app_id) {
+				*g_umm_app_id = rtcb->app_id;
 			}
 #endif
 

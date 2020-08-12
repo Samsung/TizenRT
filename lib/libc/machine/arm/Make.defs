@@ -60,4 +60,6 @@ else ifeq ($(CONFIG_ARCH_CORTEXM4),y)   # Cortex-M4 is ARMv7E-M
 include ${TOPDIR}/../lib/libc/machine/arm/armv7-m/Make.defs
 else ifeq ($(CONFIG_ARCH_CORTEXM7),y)   # Cortex-M7 is ARMv7E-M
 include ${TOPDIR}/../lib/libc/machine/arm/armv7-m/Make.defs
+else ifeq ($(CONFIG_ARCH_CORTEXM33),y)   # Cortex-M33 is ARMv7E-M
+include ${TOPDIR}/../lib/libc/machine/arm/armv7-m/Make.defs
 endif
