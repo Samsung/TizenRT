@@ -331,11 +331,14 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 		 */
 
 		if (sf->currsector != SMARTFS_ERASEDSTATE_16BIT) {
-			smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
-			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long) &readwrite);
-			if (ret < 0) {
-				fdbg("ERROR: Error %d reading sector %d header\n", ret, sf->currsector);
-				goto errout_with_buffer;
+			/* For truncate, we already read header and set data in sf->buffer */
+			if (((oflags & (O_CREAT | O_TRUNC)) == 0) || (oflags & O_APPEND)) {
+				smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
+				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long) &readwrite);
+				if (ret < 0) {
+					fdbg("ERROR: Error %d reading sector %d header\n", ret, sf->currsector);
+					goto errout_with_buffer;
+				}
 			}
 		}
 	}
