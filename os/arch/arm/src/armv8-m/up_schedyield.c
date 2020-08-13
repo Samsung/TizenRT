@@ -33,7 +33,7 @@
 #if CONFIG_RR_INTERVAL > 0
 #include <tinyara/clock.h>
 #endif
-#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_ARMV8M_MPU
 #include <tinyara/mpu.h>
 #endif
 #ifdef CONFIG_TASK_SCHED_HISTORY

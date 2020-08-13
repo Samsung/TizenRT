@@ -65,6 +65,7 @@ CMN_CSRCS += up_releasepending.c up_releasestack.c up_reprioritizertr.c
 CMN_CSRCS += up_schedulesigaction.c up_sigdeliver.c up_stackframe.c
 CMN_CSRCS += up_unblocktask.c up_usestack.c up_doirq.c up_hardfault.c
 CMN_CSRCS += up_svcall.c up_vfork.c up_trigger_irq.c up_systemreset.c
+CMN_CSRCS += up_unblocktask_withoutsavereg.c
 
 ifeq ($(CONFIG_ARMV8M_STACKCHECK),y)
 CMN_CSRCS += up_stackcheck.c
@@ -118,6 +119,10 @@ CMN_CSRCS += up_schedyield.c
 endif
 
 CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
+endif
 
 ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
 

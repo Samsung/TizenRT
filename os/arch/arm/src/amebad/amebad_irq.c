@@ -332,7 +332,7 @@ void up_irqinitialize(void)
 
 #ifdef CONFIG_DEBUG
   irq_attach(AMEBAD_IRQ_NMI, amebad_nmi, NULL);
-#ifndef CONFIG_ARMV8M_MPU
+#ifdef CONFIG_ARMV8M_MPU
   irq_attach(AMEBAD_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
   irq_attach(AMEBAD_IRQ_BUSFAULT, amebad_busfault, NULL);
