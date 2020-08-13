@@ -323,7 +323,7 @@ void binary_manager_recovery(int bin_idx)
 			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
 			ret = binary_manager_deactivate_binary(bidx);
 			if (ret != OK) {
-				bmlldbg("Failure during recovery excluding binary pid = %d\n", binid);
+				bmlldbg("Failure during recovery excluding binary pid = %d\n", bidx);
 				goto reboot_board;
 			}
 
