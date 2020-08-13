@@ -1,9 +1,5 @@
 # AmebaD Jlink Debug Function
 
-### Requirements
-- Latest bash
-- Generally, Ubuntu linux has the latest bash
-
 ### How to use?
 
 1. Build TizenRT first and make sure 'tinyara.axf' is generated.
