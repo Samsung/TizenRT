@@ -22,11 +22,6 @@
 #include <tinyara/config.h>
 #include <dirent.h>
 
-#if defined(CONFIG_ENABLE_IRQINFO) || defined(CONFIG_ENABLE_IRQINFO) || defined(CONFIG_ENABLE_PS) || defined(CONFIG_ENABLE_STACKMONITOR) || defined(CONFIG_ENABLE_HEAPINFO)
-#define ENABLE_PROC_UTILS
-#endif
-
-#if defined(ENABLE_PROC_UTILS)
 enum proc_stat_data_e {
 	PROC_STAT_PID = 0,
 	PROC_STAT_PPID,
@@ -61,7 +56,5 @@ typedef void (*utils_print_t)(char *buf);
 
 int utils_proc_pid_foreach(procentry_handler_t handler);
 int utils_readfile(FAR const char *filepath, char *buf, int buflen, utils_print_t print_func);
-
-#endif
 
 #endif							/* __APPS_SYSTEM_UTILS_UTILS_PROC_H */
