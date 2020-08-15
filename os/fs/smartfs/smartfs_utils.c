@@ -791,14 +791,14 @@ int smartfs_unmount(struct smartfs_mountpt_s *fs)
  *
  *              If the final directory segment of relpath just before the
  *              last segment (the target file/dir) is valid, then the
- *              parentdirsector will indicate the logical sector number of
- *              the parent directory where a new entry should be created,
+ *              direntry->prev_parent will indicate the logical sector number
+ *              of the parent directory where a new entry should be created,
  *              and the filename pointer will point to the final segment
  *              (i.e. the "filename").
  *
  ****************************************************************************/
 
-int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath, uint16_t *parentdirsector, const char **filename)
+int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath, const char **filename)
 {
 	int ret = -ENOENT;
 	const char *segment;
@@ -817,7 +817,9 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 #endif
 
 	/* Initialize directory level zero as the root sector */
-
+	*filename = NULL;
+	direntry->dsector = 0xFFFF;
+	direntry->prev_parent = 0xFFFF;
 	dirstack[0] = fs->fs_rootsector;
 	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
 
@@ -827,13 +829,11 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 		direntry->firstsector = fs->fs_rootsector;
 		direntry->flags = SMARTFS_DIRENT_TYPE_DIR | 0777;
 		direntry->utc = 0;
-		direntry->dsector = 0;
+		direntry->dsector = 0; /* Our parent sector is the root I guess */
 		direntry->doffset = 0;
 		direntry->dfirst = fs->fs_rootsector;
 		direntry->name = NULL;
 		direntry->datlen = 0;
-
-		*parentdirsector = 0;	/* Our parent is the format sector I guess */
 		return OK;
 	}
 
@@ -849,7 +849,11 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 			seglen++;
 			ptr++;
 		}
-
+		/* Perform a check to avoid bufer overflow */
+		if (seglen >= SMARTFS_MAX_WORKBUFFER_LEN) {
+			ret = -ENAMETOOLONG;
+			goto errout;
+		}
 		strncpy(fs->fs_workbuffer, segment, seglen);
 		fs->fs_workbuffer[seglen] = '\0';
 
@@ -1012,7 +1016,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 								}
 							}
 
-							*parentdirsector = dirstack[depth];
+							direntry->prev_parent = dirstack[depth];
 							*filename = segment;
 							ret = OK;
 							goto errout;
@@ -1081,10 +1085,10 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 			 */
 
 			if (*ptr == '\0') {
-				*parentdirsector = dirstack[depth];
+				direntry->dsector = dirstack[depth];
 				*filename = segment;
 			} else {
-				*parentdirsector = 0xFFFF;
+				direntry->dsector = 0xFFFF;
 				*filename = NULL;
 			}
 
@@ -1098,7 +1102,7 @@ errout:
 		kmm_free(direntry->name);
 		direntry->name = NULL;
 	}
-	if ((filename != NULL) && (strlen(*filename) > fs->fs_llformat.namesize)) {
+	if ((*filename != NULL) && (strlen(*filename) > fs->fs_llformat.namesize)) {
 		fdbg("File name too long\n");
 		return -ENAMETOOLONG;
 	}
@@ -1106,7 +1110,7 @@ errout:
 }
 
 /****************************************************************************
- * Name: smartfs_createentry
+ * Name: smartfs_createdirentry
  *
  * Description: Chains a new sector to the parent directory sector if
  *   no empty or invalidated entries were found and there is no space to
@@ -1114,8 +1118,6 @@ errout:
  *
  * Input Parameters:
  *   fs - pointer to smartfs mountpoint structure.
- *   parentdirsector - logical sector to which a new sector needs to be
- *     chained to allocate a new entry.
  *   direntry - pointer to smartfs entry to return details of allocated
  *     entry.
  *
@@ -1125,14 +1127,11 @@ errout:
  *
  ****************************************************************************/
 
-int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry)
+int smartfs_createdirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry)
 {
 	int ret;
-	uint16_t nextsector;
 
-	/* If we are in the context of smartfs_createentry, then smartfs_find_availableentry did not find an available entry.
-	   Createentry has to chain a new nextsector to parentdirsector, and allocate the first entry.
-	 */
+	/* If we are in the context of smartfs_createdirentry, then smartfs_find_availableentry did not find an available entry. */
 
 	/* Allocate a new sector and chain it to the last one */
 	ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
@@ -1140,11 +1139,9 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 		return ret;
 	}
 
-	nextsector = (uint16_t)ret;
-
 	/* Automatically selecting first entry of new chained sector */
 	direntry->doffset = sizeof(struct smartfs_chain_header_s);
-	direntry->dsector = nextsector;
+	direntry->dsector = (uint16_t)ret;
 	direntry->flags = SMARTFS_ERASEDSTATE_16BIT;
 
 	return OK;
@@ -1159,8 +1156,6 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
  *
  * Input Parameters:
  *   fs - pointer to smartfs mountpoint structure.
- *   parentdirsetor - pointer to integer to keep track of new sector
- *     allocation and chaining.
  *   direntry - pointer to smartfs entry structure for returning details
  *     of the available entry found.
  *     If no available entry is found, it returns with the logical sector
@@ -1173,7 +1168,7 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
  *
  ****************************************************************************/
 
-int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t *parentdirsector, struct smartfs_entry_s *direntry)
+int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry)
 {
 	int ret = -ENOENT;
 	struct smart_read_write_s readwrite;
@@ -1184,7 +1179,7 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t *parentdi
 	struct smartfs_entry_header_s *entry;
 	struct smartfs_chain_header_s *chainheader;
 
-	psector = *parentdirsector;
+	psector = direntry->dsector;
 	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
 
 	/* Scan through the entire parent sector chain to find an available entry */
@@ -1211,7 +1206,7 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t *parentdi
 				direntry->dsector = psector;
 				direntry->doffset = offset;
 				direntry->flags = entry->flags;
-				*parentdirsector = direntry->dsector;
+				direntry->prev_parent = direntry->dsector;
 				return OK;
 			}
 
@@ -1223,13 +1218,11 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t *parentdi
 		psector = nextsector;
 	}
 
-	*parentdirsector = direntry->dsector;
+	direntry->prev_parent = direntry->dsector;
+	/* No available entry was found, so we create one */
+	ret = smartfs_createdirentry(fs, direntry);
 	if (ret != OK) {
-		/* No available entry was found, so we create one */
-		ret = smartfs_createentry(fs, *parentdirsector, direntry);
-		if (ret != OK) {
-			fdbg("Createentry unable to create space for writing\n");
-		}
+		fdbg("Createentry unable to create space for writing\n");
 	}
 
 	return ret;
@@ -1250,7 +1243,6 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t *parentdi
  *   mode - mode of creation of new entry.
  *   direntry - pointer to smartfs entry object to return details of newly
  *     written entry.
- *   parentdirsector - keeps track of new sector chaining for writing entry
  *
  * Returned Values:
  *   OK - on successfully writing new entry to MTD.
@@ -1258,14 +1250,10 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t *parentdi
  *
  ****************************************************************************/
 
-int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, uint16_t parentdirsector)
+int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry)
 {
-	/* TODO: Need to check sf buffer and hold data until write buffer is full.
-		Then perform filesystem sync.
-	 */
 	int ret;
 	struct smart_read_write_s readwrite;
-	uint16_t psector;
 	uint16_t offset;
 	uint16_t entrysize;
 	struct smartfs_entry_header_s *entry;
@@ -1274,7 +1262,6 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 	uint16_t nextsector;
 
 	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
-	psector = new_entry.dsector;
 	offset = new_entry.doffset;
 
 	/* If we are working with an invalidated/empty entry, the flags need to be set for the new entry. */
@@ -1290,8 +1277,8 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 		SET_ENTRY_FLAGS(new_entry.flags, mode, type);
 	}
 
-	/* If passed parameter parentdirsector != new_entry.dsector, it means it is a new chain sector that we will write to */
-	if (parentdirsector != psector) {
+	/* If passed new_entry.prev_parent != new_entry.dsector, it means it is a new chain sector that we will write to */
+	if (new_entry.prev_parent != new_entry.dsector) {
 		/* We cannot read the new sector into fs->fs_rwbuffer as it is totally empty.
 		   MTD header will be written when MTD_WRITE is called for the sector 1st time.
 		   Chainheader is written along with the 1st entry.
@@ -1307,10 +1294,10 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 		chainheader = (struct smartfs_chain_header_s *)&tmp_buf[0];
 		chainheader->type = SMARTFS_SECTOR_TYPE_DIR;
 	} else {
-		smartfs_setbuffer(&readwrite, psector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
+		smartfs_setbuffer(&readwrite, new_entry.dsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Unable to read sector %d for writing the new entry\n", psector);
+			fdbg("Unable to read sector %d for writing the new entry\n", new_entry.dsector);
 			return ret;
 		}
 		entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
@@ -1320,6 +1307,7 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
 	smartfs_wrle16(&entry->firstsector, new_entry.firstsector);
+	entry->flags = smartfs_rdle16(&new_entry.flags);
 #ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
 	smartfs_wrle32((uint8_t*)&entry->utc, fs->entry_seq++);
 #else
@@ -1327,6 +1315,7 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 #endif
 #else
 	entry->firstsector = new_entry.firstsector;
+	entry->flags = new_entry.flags;
 #ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
 	entry->utc = fs->entry_seq++;
 #else
@@ -1336,44 +1325,42 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 
 	memset(entry->name, 0, fs->fs_llformat.namesize);
 	strncpy(entry->name, filename, fs->fs_llformat.namesize);
-	entry->flags = new_entry.flags;
-
 	/* Now write the new entry to the parent directory sector */
-	if (parentdirsector != psector) {
+	if (new_entry.prev_parent != new_entry.dsector) {
 		/* If this is a newly chained sector, write new entry and chain header both */
-		smartfs_setbuffer(&readwrite, psector, 0, entrysize + sizeof(struct smartfs_chain_header_s), (uint8_t *)&tmp_buf[0]);
+		smartfs_setbuffer(&readwrite, new_entry.dsector, 0, entrysize + sizeof(struct smartfs_chain_header_s), (uint8_t *)&tmp_buf[0]);
 	} else {
 		/* Otherwise, we only have to write the new entry */
-		smartfs_setbuffer(&readwrite, psector, offset, entrysize, (uint8_t *)&fs->fs_rwbuffer[offset]);
+		smartfs_setbuffer(&readwrite, new_entry.dsector, offset, entrysize, (uint8_t *)&fs->fs_rwbuffer[offset]);
 	}
 	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long) &readwrite);
 	if (ret < 0) {
-		fdbg("failed to write new entry to parent directory psector : %d\n", new_entry.dsector);
+		fdbg("failed to write new entry to parent directory sector : %d\n", new_entry.dsector);
 		goto errout;
 	}
 
-	if (parentdirsector != psector) {
+	if (new_entry.prev_parent != new_entry.dsector) {
 
 		/* Chain the next sector into this sector sector */
-		nextsector = psector;
+		nextsector = new_entry.dsector;
 
-		smartfs_setbuffer(&readwrite, parentdirsector, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), (uint8_t *)&nextsector);
+		smartfs_setbuffer(&readwrite, new_entry.prev_parent, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), (uint8_t *)&nextsector);
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error chaining new sector %d\n", psector);
+			fdbg("Error chaining to current parent chain at %d\n", new_entry.prev_parent);
 			goto errout;
 		}
 	}
 
 	/* Now fill in the entry */
 	direntry->firstsector = new_entry.firstsector;
-	direntry->dsector = psector;
+	direntry->dsector = new_entry.dsector;
 	direntry->doffset = offset;
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	direntry->flags = smartfs_rdle16(&entry->flags);
+	direntry->flags = smartfs_rdle16(&new_entry.flags);
 	direntry->utc = smartfs_rdle32(&entry->utc);
 #else
-	direntry->flags = entry->flags;
+	direntry->flags = new_entry.flags;
 	direntry->utc = entry->utc;
 #endif
 	direntry->datlen = 0;

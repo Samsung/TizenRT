@@ -175,6 +175,10 @@
 #define INODE_STATE_FILE          (CONFIG_NXFFS_ERASEDSTATE ^ 0x22)
 #define INODE_STATE_DELETED       (CONFIG_NXFFS_ERASEDSTATE ^ 0xaa)
 
+/* Smartfs worbuffer maxuimum length */
+
+#define SMARTFS_MAX_WORKBUFFER_LEN 256
+
 /* Directory entry flag definitions */
 
 #define SMARTFS_DIRENT_EMPTY      0x8000	/* Set to non-erase state when entry used */
@@ -262,6 +266,7 @@ struct smartfs_entry_s {
 	FAR char *name;				/* inode name */
 	uint32_t utc;				/* Time stamp */
 	uint32_t datlen;			/* Length of inode data */
+	uint16_t prev_parent;		/* To track the processed directory sector to find parent for entry. Holds last sctive sector in parent chain if new sector has tobe chained */
 };
 
 /* This is an on-device representation of the SMART inode which exists on
@@ -376,13 +381,13 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable);
 
 int smartfs_unmount(struct smartfs_mountpt_s *fs);
 
-int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath, uint16_t *parentdirsector, const char **filename);
+int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath, const char **filename);
 
-int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, struct smartfs_entry_s *direntry);
+int smartfs_createdirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry);
 
-int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, uint16_t *parentdirsector, struct smartfs_entry_s *direntry);
+int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry);
 
-int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, uint16_t parentdirsector);
+int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry);
 
 int smartfs_alloc_firstsector(struct smartfs_mountpt_s *fs, uint16_t *sector, uint16_t type, FAR struct smartfs_ofile_s *sf);
 
