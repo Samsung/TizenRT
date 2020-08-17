@@ -28,7 +28,7 @@
 #include <tinyara/sched.h>
 #include <clock/clock.h>
 #include <tinyara/testcase_drv.h>
-#include "kernel_test_proto.h"
+#include "testcase_proto.h"
 
 /****************************************************************************
  * Private Function

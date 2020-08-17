@@ -35,7 +35,7 @@ config EXAMPLES_RECOVERY_TEST
 	bool "Binary Manager Recovery example"
 	default y
 	depends on BINMGR_RECOVERY
-	select KERNEL_TEST_DRV
+	select TESTCASE_DRV
 	---help---
 		Enable the Binary Manager Recovery test
 

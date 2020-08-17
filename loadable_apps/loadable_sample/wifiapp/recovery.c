@@ -40,7 +40,7 @@ static void *assert_thread(void *index)
 
 	if (tc_fd < 0) {
 		printf("\nFAILED to open testcase driver %s\n", TESTCASE_DRVPATH);
-		return ERROR;
+		return NULL;
 	}
 
 	type = getpid() % 3;
@@ -56,7 +56,7 @@ static void *assert_thread(void *index)
 		if (ret < 0) {
 			printf("ERROR: Failed to obtain address from kernel\n");
 			close(tc_fd);
-			return ERROR;
+			return NULL;
 		}
 
 		printf("[%d] %dth thread, Write kernel code space 0x%x\n", getpid(), (int)index, obj.addr);
@@ -69,7 +69,7 @@ static void *assert_thread(void *index)
 		if (ret < 0) {
 			printf("ERROR: Failed to obtain address from kernel\n");
 			close(tc_fd);
-			return ERROR;
+			return NULL;
 		}
 
 		printf("[%d] %dth thread, Write another app space 0x%x\n", getpid(), (int)index, obj.addr);

@@ -3,8 +3,8 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config KERNEL_TEST_DRV
+config TESTCASE_DRV
 	bool
 	default n
 	---help---
-		Enables overall support for Kernel testcase driver library.
+		Enables overall support for testcase driver library.

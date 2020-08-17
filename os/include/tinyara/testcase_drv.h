@@ -30,14 +30,14 @@
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
 
-#ifdef CONFIG_KERNEL_TEST_DRV
+#ifdef CONFIG_TESTCASE_DRV
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 /* Configuration
  *
- * CONFIG_KERNEL_TEST_DRV - Enables testcase driver support
+ * CONFIG_TESTCASE_DRV - Enables testcase driver support
  */
 
 /* IOCTL Commands */
@@ -97,7 +97,7 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Name: kernel_test_drv_register
+ * Name: testcase_drv_register
  *
  * Description:
  *   This function creates a device node like "/dev/testcase" which will be used
@@ -106,12 +106,12 @@ extern "C" {
  *
  ****************************************************************************/
 
-void kernel_test_drv_register(void);
+void testcase_drv_register(void);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif							/* CONFIG_KERNEL_TEST_DRV */
+#endif							/* CONFIG_TESTCASE_DRV */
 #endif							/* __INCLUDE_TINYARA_TEST_FW_H */

@@ -27,7 +27,7 @@
 #include <tinyara/testcase_drv.h>
 #include <tinyara/sched.h>
 #include "signal/signal.h"
-#include "kernel_test_proto.h"
+#include "testcase_proto.h"
 #ifdef CONFIG_EXAMPLES_MPU_TEST
 #include "binary_manager/binary_manager.h"
 #include <tinyara/binfmt/binfmt.h>
@@ -46,23 +46,23 @@ extern uint32_t _sdata;
  * Private Function Prototypes
  ****************************************************************************/
 
-static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
-static ssize_t kernel_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len);
-static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
+static int testcase_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static ssize_t testcase_drv_read(FAR struct file *filep, FAR char *buffer, size_t len);
+static ssize_t testcase_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations kernel_test_drv_fops = {
-	0,                                                   /* open */
-	0,                                                   /* close */
-	kernel_test_drv_read,                                /* read */
-	kernel_test_drv_write,                               /* write */
-	0,                                                   /* seek */
-	kernel_test_drv_ioctl                                /* ioctl */
+static const struct file_operations testcase_drv_fops = {
+	0,						/* open */
+	0,						/* close */
+	testcase_drv_read,				/* read */
+	testcase_drv_write,				/* write */
+	0,						/* seek */
+	testcase_drv_ioctl				/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	, 0                                                  /* poll */
+	, 0						/* poll */
 #endif
 };
 
@@ -71,13 +71,13 @@ static const struct file_operations kernel_test_drv_fops = {
  ****************************************************************************/
 
 /************************************************************************************
- * Name: kernel_test_drv_ioctl
+ * Name: testcase_drv_ioctl
  *
  * Description:  The standard ioctl method.
  *
  ************************************************************************************/
 
-static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
+static int testcase_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;
 	/* Handle built-in ioctl commands */
@@ -143,29 +143,29 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		}
 
 		switch (obj->type) {
-			case MPUTEST_KERNEL_CODE:
-				obj->addr = &_stext;
-				break;
-			case MPUTEST_KERNEL_DATA:
-				obj->addr = &_sdata;
-				break;
-			case MPUTEST_APP_ADDR:
-				{
-					/* Find the current executing app and return an address
-				 	* which belongs to any other app in the system. Here,
-			 		* we choose to return the address of the app heap
-					*/
-					uint32_t binid = sched_self()->group->tg_binidx;
-					binid = (binid + 1) % (binary_manager_get_ucount() + 1);
-					if (binid == 0) {
-						binid++;
-					}
-					obj->addr = BIN_LOADINFO(binid)->uheap;
-				}
-				break;
-			default:
-				ret = -EINVAL;
-				break;
+		case MPUTEST_KERNEL_CODE:
+			obj->addr = &_stext;
+			break;
+		case MPUTEST_KERNEL_DATA:
+			obj->addr = &_sdata;
+			break;
+		case MPUTEST_APP_ADDR:
+		{
+			/* Find the current executing app and return an address
+			* which belongs to any other app in the system. Here,
+			* we choose to return the address of the app heap
+			*/
+			uint32_t binid = sched_self()->group->tg_binidx;
+			binid = (binid + 1) % (binary_manager_get_ucount() + 1);
+			if (binid == 0) {
+				binid++;
+			}
+			obj->addr = BIN_LOADINFO(binid)->uheap;
+			break;
+		}
+		default:
+			ret = -EINVAL;
+			break;
 		}
 
 		break;
@@ -180,12 +180,12 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 }
 
 
-static ssize_t kernel_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len)
+static ssize_t testcase_drv_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
 	return 0;                                       /* Return EOF */
 }
 
-static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+static ssize_t testcase_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len)
 {
 	return len;                                     /* Say that everything was written */
 }
@@ -195,14 +195,14 @@ static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buf
  ****************************************************************************/
 
 /****************************************************************************
- * Name: kernel_test_drv_register
+ * Name: testcase_drv_register
  *
  * Description:
  *   Register /dev/testcase
  *
  ****************************************************************************/
 
-void kernel_test_drv_register(void)
+void testcase_drv_register(void)
 {
-	(void)register_driver(TESTCASE_DRVPATH, &kernel_test_drv_fops, 0666, NULL);
+	(void)register_driver(TESTCASE_DRVPATH, &testcase_drv_fops, 0666, NULL);
 }

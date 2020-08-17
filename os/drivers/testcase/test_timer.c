@@ -28,7 +28,7 @@
 #include <tinyara/testcase_drv.h>
 #include <signal/signal.h>
 #include <timer/timer.h>
-#include "kernel_test_proto.h"
+#include "testcase_proto.h"
 
 /****************************************************************************
  * Private Function
