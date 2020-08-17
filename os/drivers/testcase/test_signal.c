@@ -27,7 +27,7 @@
 #include <tinyara/testcase_drv.h>
 #include <tinyara/sched.h>
 #include <signal/signal.h>
-#include "kernel_test_proto.h"
+#include "testcase_proto.h"
 
 /****************************************************************************
  * Private Functions
