@@ -27,7 +27,7 @@
 #include <sys/types.h>
 #include <tinyara/testcase_drv.h>
 #include <clock/clock.h>
-#include "kernel_test_proto.h"
+#include "testcase_proto.h"
 
 /****************************************************************************
  * Private Function

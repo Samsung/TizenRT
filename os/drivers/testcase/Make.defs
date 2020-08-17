@@ -17,9 +17,9 @@
 ############################################################################
 # Include kernel testcase drivers
 
-ifeq ($(CONFIG_KERNEL_TEST_DRV),y)
+ifeq ($(CONFIG_TESTCASE_DRV),y)
 
-CSRCS += kernel_testcase_drv.c
+CSRCS += testcase_drv.c
 CSRCS += test_task.c
 CSRCS += test_sched.c
 CSRCS += test_clock.c

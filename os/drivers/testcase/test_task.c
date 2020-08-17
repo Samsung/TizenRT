@@ -34,7 +34,7 @@
 #ifdef CONFIG_SCHED_HAVE_PARENT
 #include <group/group.h>
 #endif
-#include "kernel_test_proto.h"
+#include "testcase_proto.h"
 
 /****************************************************************************
  * Pre-processor Definitions

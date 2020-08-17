@@ -93,7 +93,7 @@
 #ifdef CONFIG_DEBUG_SYSTEM
 #include <tinyara/debug/sysdbg.h>
 #endif
-#ifdef CONFIG_KERNEL_TEST_DRV
+#ifdef CONFIG_TESTCASE_DRV
 #include <tinyara/testcase_drv.h>
 #endif
 #include  "debug/memdbg.h"
@@ -525,8 +525,8 @@ void os_start(void)
 
 	fs_auto_mount();
 
-#ifdef CONFIG_KERNEL_TEST_DRV
-	kernel_test_drv_register();
+#ifdef CONFIG_TESTCASE_DRV
+	testcase_drv_register();
 #endif
 
 #if defined(CONFIG_DEBUG_SYSTEM)

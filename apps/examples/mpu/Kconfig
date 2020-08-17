@@ -6,7 +6,7 @@
 menuconfig EXAMPLES_MPU_TEST
 	bool "MPU TestCase Example"
 	depends on BUILD_PROTECTED
-	select KERNEL_TEST_DRV
+	select TESTCASE_DRV
 	---help---
 		Enable the MPU TestCase Example
 

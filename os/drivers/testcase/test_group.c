@@ -34,7 +34,7 @@
 #include <task/task.h>
 #endif
 #endif
-#include "kernel_test_proto.h"
+#include "testcase_proto.h"
 
 /****************************************************************************
  * Private Data
