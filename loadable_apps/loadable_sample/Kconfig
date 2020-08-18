@@ -35,6 +35,7 @@ config EXAMPLES_RECOVERY_TEST
 	bool "Binary Manager Recovery example"
 	default y
 	depends on BINMGR_RECOVERY
+	select EXAMPLES_MPU_TEST
 	select TESTCASE_DRV
 	---help---
 		Enable the Binary Manager Recovery test
