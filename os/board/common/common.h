@@ -23,6 +23,7 @@
  * Included Files
  ****************************************************************************/
 
- void configure_partitions(void);
+void configure_partitions(void);
+void configure_second_partitions(void);
 
  #endif /*__BOARD_COMMON_H__ */
