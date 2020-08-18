@@ -54,3 +54,54 @@ config FLASH_PART_NAME
 
 endif # FLASH_PARTITION
 endif # ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)
+
+config ARCH_USE_SECOND_FLASH
+	bool
+	default n
+	---help---
+		This enables Second FLASH to use.
+		It is selected by chip config.
+
+if ARCH_USE_SECOND_FLASH && (NFILE_DESCRIPTORS != 0)
+comment "Second Flash Partition Options"
+
+config SECOND_FLASH_PARTITION
+	bool "Enable partition support on Second FLASH"
+	default n
+	select MTD
+	select MTD_PARTITION
+	---help---
+		Enables creation of partitions on the Second FLASH
+
+if SECOND_FLASH_PARTITION
+
+config SECOND_FLASH_MINOR
+	int "Minor number for the FLASH device"
+	default 1
+	---help---
+		Sets the minor number for /dev node of the second flash
+		device.
+
+config SECOND_FLASH_PART_SIZE
+	string "Flash partition size list (in KBytes)"
+	default "512,2048,"
+	---help---
+		Comma separated list of partition sizes in KB.
+
+config SECOND_FLASH_PART_TYPE
+	string "Flash partition type list"
+	default "kernel,smartfs," if APP_BINARY_SEPARATION
+	default "none,smartfs," if !APP_BINARY_SEPARATION
+	---help---
+		Comma separated list of partition types that can be one of
+		followings: none, kernel, smartfs, romfs, ftl, config
+
+config SECOND_FLASH_PART_NAME
+	string "Flash partition name list"
+	default "kernel,userfs,"
+	depends on MTD_PARTITION_NAMES
+	---help---
+		Comma separated list of partition names.
+
+endif # SECOND_FLASH_PARTITION
+endif # ARCH_USE_SECOND_FLASH && (NFILE_DESCRIPTORS != 0)

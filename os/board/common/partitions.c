@@ -34,7 +34,7 @@
 #include <tinyara/binary_manager.h>
 #endif
 
-#ifdef CONFIG_FLASH_PARTITION
+#if defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_SECOND_FLASH_PARTITION)
 static FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s *geo)
 {
 	FAR struct mtd_dev_s *mtd;
@@ -64,7 +64,7 @@ static FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s *geo)
 	return mtd;
 }
 
-static void type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, const char *types)
+static void type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, int partno, const char *types)
 {
 #ifdef CONFIG_MTD_FTL
 		if (!strncmp(types, "ftl,", 4)
@@ -92,7 +92,7 @@ static void type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno,
 			char partref[4];
 
 			snprintf(partref, sizeof(partref), "p%d", partno);
-			smart_initialize(CONFIG_FLASH_MINOR, mtd_part, partref);
+			smart_initialize(minor, mtd_part, partref);
 		} else
 #endif
 		{
@@ -132,35 +132,34 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 	}
 }
 #endif
-#endif /* CONFIG_FLASH_PARTITION */
 
-void configure_partitions(void)
+#ifdef CONFIG_MTD_PARTITION_NAMES
+static void configure_mtd_partitions(const char *types, const char *sizes, int minor, const char *names)
+#else
+static void configure_mtd_partitions(const char *types, const char *sizes, int minor)
+#endif
 {
-#ifdef CONFIG_FLASH_PARTITION
 	int partno;
 	int partoffset;
-	const char *parts = CONFIG_FLASH_PART_SIZE;
-	const char *types = CONFIG_FLASH_PART_TYPE;
 #ifdef CONFIG_MTD_PARTITION_NAMES
-	const char *names = CONFIG_FLASH_PART_NAME;
 	char part_name[MTD_PARTNAME_LEN + 1];
 	int index = 0;
 #endif
 	FAR struct mtd_dev_s *mtd;
 	FAR struct mtd_geometry_s geo;
 
-	mtd = mtd_initialize(&geo);
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize(&geo);
 	if (mtd == NULL) {
 		return;
 	}
 	partno = 0;
 	partoffset = 0;
 
-	while (*parts) {
+	while (*sizes) {
 		FAR struct mtd_dev_s *mtd_part;
 		int partsize;
 
-		partsize = strtoul(parts, NULL, 0) << 10;
+		partsize = strtoul(sizes, NULL, 0) << 10;
 
 		if (partsize < geo.erasesize) {
 			lldbg("ERROR: Partition size is lesser than erasesize\n");
@@ -180,7 +179,7 @@ void configure_partitions(void)
 			return;
 		}
 
-		type_specific_initialize(mtd_part, partno, types);
+		type_specific_initialize(minor, mtd_part, partno, types);
 
 #ifdef CONFIG_MTD_PARTITION_NAMES
 		configure_partition_name(mtd_part, &names, &index, part_name);
@@ -190,9 +189,31 @@ void configure_partitions(void)
 		}
 #endif
 #endif
-		move_to_next_part(&parts);
+		move_to_next_part(&sizes);
 		move_to_next_part(&types);
 		partno++;
 	}
+}
+#endif // defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_SECOND_FLASH_PARTITION)
+
+void configure_partitions(void)
+{
+#ifdef CONFIG_FLASH_PARTITION
+#ifdef CONFIG_MTD_PARTITION_NAMES
+	configure_mtd_partitions(CONFIG_FLASH_PART_TYPE, CONFIG_FLASH_PART_SIZE, CONFIG_FLASH_MINOR, CONFIG_FLASH_PART_NAME);
+#else
+	configure_mtd_partitions(CONFIG_FLASH_PART_TYPE, CONFIG_FLASH_PART_SIZE, CONFIG_FLASH_MINOR);
+#endif
 #endif /* CONFIG_FLASH_PARTITION */
+}
+
+void configure_second_partitions(void)
+{
+#ifdef CONFIG_SECOND_FLASH_PARTITION
+#ifdef CONFIG_MTD_PARTITION_NAMES
+	configure_mtd_partitions(CONFIG_SECOND_FLASH_PART_TYPE, CONFIG_SECOND_FLASH_PART_SIZE, CONFIG_SECOND_FLASH_MINOR, CONFIG_SECOND_FLASH_PART_NAME);
+#else
+	configure_mtd_partitions(CONFIG_SECOND_FLASH_PART_TYPE, CONFIG_SECOND_FLASH_PART_SIZE, CONFIG_SECOND_FLASH_MINOR);
+#endif
+#endif
 }
