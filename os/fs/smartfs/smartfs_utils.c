@@ -116,12 +116,6 @@ extern size_t smart_sect_header_size;
 						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
 #endif
 
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-#define RESET_ENTRY_FLAGS(e) (smartfs_wrle16(&(e)->flags, SMARTFS_ERASEDSTATE_16BIT))
-#else
-#define RESET_ENTRY_FLAGS(e) ((e)->flags = SMARTFS_ERASEDSTATE_16BIT)
-#endif
-
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
@@ -332,6 +326,21 @@ void smartfs_setbuffer(struct smart_read_write_s *rw, uint16_t logsector, uint16
 	rw->count = count;
 	rw->buffer = buffer;
 	return;
+}
+
+/****************************************************************************
+ * Name: smartfs_set_entry_flags
+ *
+ * Description: This function sets the flags for a new entry before writing
+ *   to MTD. If the entry is an invalidated one, the flags are first reset
+ *   to erasedstate value.
+ *
+ ****************************************************************************/
+
+void smartfs_set_entry_flags(struct smartfs_entry_s *new_entry, mode_t mode, uint16_t type)
+{
+	new_entry->flags = SMARTFS_ERASEDSTATE_16BIT;
+	SET_ENTRY_FLAGS(new_entry->flags, mode, type);
 }
 
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
@@ -1264,19 +1273,6 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
 	offset = new_entry.doffset;
 
-	/* If we are working with an invalidated/empty entry, the flags need to be set for the new entry. */
-	if (IS_AVAILABLE_ENTRY(&new_entry)) {
-		/* If it is an invalidated entry, flags need to be reset first. */
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-		if (smartfs_rdle16(&new_entry.flags) != SMARTFS_ERASEDSTATE_16BIT) {
-#else
-		if (new_entry.flags != SMARTFS_ERASEDSTATE_16BIT) {
-#endif
-			RESET_ENTRY_FLAGS(&new_entry);
-		}
-		SET_ENTRY_FLAGS(new_entry.flags, mode, type);
-	}
-
 	/* If passed new_entry.prev_parent != new_entry.dsector, it means it is a new chain sector that we will write to */
 	if (new_entry.prev_parent != new_entry.dsector) {
 		/* We cannot read the new sector into fs->fs_rwbuffer as it is totally empty.
@@ -1307,7 +1303,6 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
 	smartfs_wrle16(&entry->firstsector, new_entry.firstsector);
-	entry->flags = smartfs_rdle16(&new_entry.flags);
 #ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
 	smartfs_wrle32((uint8_t*)&entry->utc, fs->entry_seq++);
 #else
@@ -1315,13 +1310,14 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 #endif
 #else
 	entry->firstsector = new_entry.firstsector;
-	entry->flags = new_entry.flags;
 #ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
 	entry->utc = fs->entry_seq++;
 #else
 	entry->utc = time(NULL);
 #endif
 #endif
+	smartfs_set_entry_flags(&new_entry, mode, type);
+	entry->flags = new_entry.flags;
 
 	memset(entry->name, 0, fs->fs_llformat.namesize);
 	strncpy(entry->name, filename, fs->fs_llformat.namesize);
