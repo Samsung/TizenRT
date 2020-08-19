@@ -2029,9 +2029,10 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 			/* Read all of entries in current sector */
 			smartfs_setbuffer(&readwrite, logsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+			/* If current sector is not valid, move to next sector */
 			if (ret < 0) {
 				fdbg("Error %d reading sector %d data\n", ret, logsector);
-				goto errout;
+				break;
 			}
 			
 			/* Check it is already marked */
@@ -2217,6 +2218,10 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 
 	/* TODO Find all active Logical sectors from root sector and unmark for exist sector */
 	ret = smartfs_scan_entry(fs, map, &info);
+	if (ret != OK) {
+		fdbg("BUG!! scan entry failed...\n");
+		goto error_with_map;
+	}
 	for (sector = SMARTFS_ROOT_DIR_SECTOR; sector < fs->fs_llformat.nsectors; sector++) {
 		if (IS_SECTOR_REMAIN(map, sector)) {
 			fdbg("Recover sector : %d\n", sector);
