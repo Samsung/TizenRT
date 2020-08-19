@@ -225,8 +225,10 @@
 
 /* Buffer flags (when CRC enabled) */
 
+#define SMARTFS_BFLAG_UNMOD       0x00	/* Set if there are no unsynced changes in sf->buffer */
 #define SMARTFS_BFLAG_DIRTY       0x01	/* Set if data changed in the sector */
 #define SMARTFS_BFLAG_NEWALLOC    0x02	/* Set if sector not written since alloc */
+#define SMARTFS_BFLAG_NEW_ENTRY   0x04	/* Set if the open file structure object corresponds to a new file entry yet to be written to MTD */
 
 #define SMARTFS_ERASEDSTATE_16BIT (uint16_t)((CONFIG_SMARTFS_ERASEDSTATE << 8) | \
 								  CONFIG_SMARTFS_ERASEDSTATE)
@@ -398,9 +400,14 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 int smartfs_countdirentries(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry);
 
 int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry, FAR struct smartfs_ofile_s *sf);
+
 int smartfs_shrinkfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, off_t length);
+
 int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, off_t length);
+
 void smartfs_setbuffer(struct smart_read_write_s *rw, uint16_t logsector, uint16_t offset, uint16_t count, uint8_t *buffer);
+
+void smartfs_set_entry_flags(struct smartfs_entry_s *new_entry, mode_t mode, uint16_t type);
 
 uint16_t smartfs_rdle16(FAR const void *val);
 

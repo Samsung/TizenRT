@@ -201,7 +201,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 
 	/* Locate the directory entry for this path */
 
-	sf = (struct smartfs_ofile_s *)kmm_malloc(sizeof * sf);
+	sf = (struct smartfs_ofile_s *)kmm_zalloc(sizeof(struct smartfs_ofile_s));
 	if (sf == NULL) {
 		ret = -ENOMEM;
 		goto errout_with_semaphore;
@@ -219,7 +219,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 		goto errout_with_semaphore;
 	}
 
-	sf->bflags = 0;
+	sf->bflags = SMARTFS_BFLAG_UNMOD;
 #endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 
 	sf->entry.name = NULL;
@@ -292,12 +292,37 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 				goto errout_with_buffer;
 			}
 
+#if defined(CONFIG_SMARTFS_USE_SECTOR_BUFFER) && !defined(NXFUSE_HOST_BUILD)
+			/* If CRC is enabled, hold the entry for writing later */
+			/* Mark flags to indicate that the entry will be written to a new sector in the parent directory.
+			 * This sector will then be chained in the end.
+			 */
+			sf->bflags |= SMARTFS_BFLAG_NEW_ENTRY;
+			/* Save entry mode to write to MTD later */
+			sf->entry.flags = SMARTFS_ERASEDSTATE_16BIT;
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+			smartfs_wrle16(&sf->entry.flags, (uint16_t)(mode & SMARTFS_DIRENT_MODE));
+#else
+			sf->entry.flags = (uint16_t)(mode & SMARTFS_DIRENT_MODE);
+#endif
+			if (sf->entry.name == NULL) {
+				sf->entry.name = (FAR char *)kmm_malloc(fs->fs_llformat.namesize + 1);
+				if (sf->entry.name == NULL) {
+					ret = -ENOMEM;
+					goto errout_with_buffer;
+				}
+			}
+			memset(sf->entry.name, 0, fs->fs_llformat.namesize + 1);
+			strncpy(sf->entry.name, filename, fs->fs_llformat.namesize);
+#else
+			/* If CRC is disabled, write the new file entry */
 			/* At this point, either an available entry was found or a new one has been created */
 			ret = smartfs_writeentry(fs, sf->entry, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry);
 			if (ret != OK) {
 				fdbg("Write entry failed\n");
 				goto errout_with_buffer;
 			}
+#endif
 		} else {
 			/* Trying to create in a directory that doesn't exist */
 
@@ -639,7 +664,16 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 		}
 
 		sf->byteswritten = 0;
-		sf->bflags = 0;
+		/* File's data sector has been synced with MTD, now check if this is a new file entry and write the entry */
+		if (sf->bflags & SMARTFS_BFLAG_NEW_ENTRY) {
+			/* Flags for this entry have already been set and stored, so mode will not be used */
+			ret = smartfs_writeentry(fs, sf->entry, sf->entry.name, SMARTFS_DIRENT_TYPE_FILE, (sf->entry.flags & SMARTFS_DIRENT_MODE), &sf->entry);
+			if (ret < 0) {
+				fdbg("Failed to write new file entry ot MTD\n");
+				goto errout;
+			}
+		}
+		sf->bflags = SMARTFS_BFLAG_UNMOD;
 	}
 #else							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 
