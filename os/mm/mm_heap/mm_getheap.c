@@ -105,7 +105,7 @@ void mm_remove_app_heap_list(struct mm_heap_s *heap)
 	}
 }
 
-static struct mm_heap_s *mm_get_app_heap_node(void *address)
+static app_heap_s *mm_get_app_heap_node(void *address)
 {
 	/* First, search the address in list of app heaps */
 	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
