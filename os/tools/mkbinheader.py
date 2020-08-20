@@ -107,7 +107,7 @@ def get_static_ram_size(bin_type):
 #
 # header information :
 #
-# total header size is 50bytes.
+# total header size is 46bytes.
 # +--------------------------------------------------------------------------------
 # | Header size | Binary type | Compression  | Binary priority | Loading priority |
 # |   (2bytes)  |   (1byte)   |   (1byte)    |     (1byte)     |      (1bytes)    |
@@ -118,7 +118,7 @@ def get_static_ram_size(bin_type):
 # -------------------------------------------------------------------------------------
 # ------------------------------ +
 # | Kernel Version |Jump address |
-# |  (8bytes)      |  (4bytes)   |
+# |  (4bytes)      |  (4bytes)   |
 # -------------------------------+
 #
 # parameter information :
@@ -165,7 +165,7 @@ SIZE_OF_BINNAME = 16
 SIZE_OF_BINVER = 4
 SIZE_OF_BINRAMSIZE = 4
 SIZE_OF_MAINSTACKSIZE = 4
-SIZE_OF_KERNELVER = 8
+SIZE_OF_KERNELVER = 4
 SIZE_OF_JUMPADDR = 4
 
 header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_COMFLAG + SIZE_OF_MAINPRIORITY + SIZE_OF_LOADINGPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER + SIZE_OF_JUMPADDR
@@ -258,6 +258,11 @@ with open(file_path, 'rb') as fp:
         binary_ram_size = int(static_ram_size) + int(dynamic_ram_size)
         binary_ram_size = roundup_power_two(binary_ram_size)
 
+    if float(kernel_ver) <= 0.0 :
+        kernel_ver = 3.0
+    else :
+        kernel_ver = float(kernel_ver)
+
     # based on comp_enabled, check if we need to compress binary.
     # If yes, assign to bin_comp value for compression algorithm to use.
     # Else, assign 0 to bin_comp to represent no compression
@@ -291,7 +296,7 @@ with open(file_path, 'rb') as fp:
     fp.write(struct.pack('I', int(binary_ver)))
     fp.write(struct.pack('I', binary_ram_size))
     fp.write(struct.pack('I', int(main_stack_size)))
-    fp.write('{:{}{}.{}}'.format(kernel_ver, '<', SIZE_OF_KERNELVER, SIZE_OF_KERNELVER - 1).replace(' ','\0'))
+    fp.write(struct.pack('f', kernel_ver))
 
     # parsing _vector_start address from elf information.
     # _vector_start is only for ARM architecture. so it

@@ -52,9 +52,6 @@
 /* The maximum length of binary name */
 #define BIN_NAME_MAX                     16
 
-/* The maximum length of kernel version */
-#define KERNEL_VER_MAX                   8
-
 /* The length of dev name */
 #define BINMGR_DEVNAME_LEN               16
 
@@ -122,16 +119,17 @@ struct binary_header_s {
 	uint32_t bin_ver;
 	uint32_t bin_ramsize;
 	uint32_t bin_stacksize;
-	char kernel_ver[KERNEL_VER_MAX];
+	float kernel_ver;
 	uint32_t jump_addr;
 } __attribute__((__packed__));
 typedef struct binary_header_s binary_header_t;
 
-/* The structure of binary update information */
+/* The structure of binary update information for kernel or user binaries */
 struct binary_update_info_s {
 	int available_size;
 	char name[BIN_NAME_MAX];
-	uint32_t version;
+	/* A double type to cover kernel version as float type and user binary version as uint32_t type */
+	double version;
 #if KERNEL_BIN_COUNT > 1
 	char inactive_dev[BINMGR_DEVNAME_LEN];
 #endif

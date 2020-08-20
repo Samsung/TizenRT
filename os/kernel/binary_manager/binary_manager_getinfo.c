@@ -169,7 +169,7 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 				response_msg.result = BINMGR_OK;
 				response_msg.data.available_size = size;
 				strncpy(response_msg.data.name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-				response_msg.data.version = BIN_LOADVER(bin_idx);
+				response_msg.data.version = (double)BIN_LOADVER(bin_idx);
 			}
 			break;
 		}
@@ -208,7 +208,7 @@ void binary_manager_get_info_all(int requester_pid)
 	/* Kernel data */
 	kerinfo = binary_manager_get_kdata();
 	strncpy(response_msg.data.bin_info[result_idx].name, kerinfo->name , BIN_NAME_MAX);
-	strncpy(response_msg.data.bin_info[result_idx].version, kerinfo->version, KERNEL_VER_MAX);
+	response_msg.data.bin_info[result_idx].version = kerinfo->version;
 	if (kerinfo->part_count > 1) {
 		response_msg.data.bin_info[result_idx].available_size = kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_size;
 		snprintf(response_msg.data.bin_info[result_idx].inactive_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_num);
@@ -227,7 +227,7 @@ void binary_manager_get_info_all(int requester_pid)
 			response_msg.result = BINMGR_OK;
 			response_msg.data.bin_info[result_idx].available_size = size;
 			strncpy(response_msg.data.bin_info[result_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-			response_msg.data.bin_info[result_idx].version = BIN_LOADVER(bin_idx);
+			response_msg.data.bin_info[result_idx].version = (double)BIN_LOADVER(bin_idx);
 			result_idx++;
 		}
 	}
