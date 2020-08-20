@@ -23,6 +23,9 @@
 #include <string.h>
 #include <queue.h>
 #include <stdint.h>
+#ifdef CONFIG_VERSION_STRING
+#include <stdlib.h>
+#endif
 #include <tinyara/sched.h>
 #include <tinyara/binary_manager.h>
 
@@ -34,9 +37,9 @@
  ****************************************************************************/
 /* Kernel version (not implemented, it will be modified) */
 #ifdef CONFIG_VERSION_STRING
-#define KERNEL_VER               CONFIG_VERSION_STRING
+#define KERNEL_VER               atof(CONFIG_VERSION_STRING)
 #else
-#define KERNEL_VER               "2.0"
+#define KERNEL_VER               3.0
 #endif
 
 /* Table for User binaries */
@@ -148,7 +151,7 @@ void binary_manager_register_kpart(int part_num, int part_size)
 	part_count = kernel_info.part_count;
 	if (part_count == 0) {
 		strncpy(kernel_info.name, "kernel", BIN_NAME_MAX);
-		strncpy(kernel_info.version, KERNEL_VER, KERNEL_VER_MAX);
+		kernel_info.version = KERNEL_VER;
 	}
 	kernel_info.part_info[part_count].part_size = part_size;
 	kernel_info.part_info[part_count].part_num = part_num;
