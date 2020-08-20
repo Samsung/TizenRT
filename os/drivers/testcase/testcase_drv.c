@@ -160,7 +160,7 @@ static int testcase_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg
 			if (binid == 0) {
 				binid++;
 			}
-			obj->addr = BIN_LOADINFO(binid)->uheap;
+			obj->addr = (volatile uint32_t *)BIN_LOADINFO(binid)->uheap;
 			break;
 		}
 		default:

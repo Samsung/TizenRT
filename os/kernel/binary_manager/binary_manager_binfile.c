@@ -157,7 +157,7 @@ int binary_manager_scan_ubin(int bin_idx)
 	int latest_idx;
 	char *bin_name;
 	binary_header_t header_data;
-	char filepath[FILES_PER_BIN][CONFIG_PATH_MAX];
+	char filepath[CONFIG_PATH_MAX];
 
 	bmvdbg("Open a directory, %s\n", BINARY_DIR_PATH);
 
