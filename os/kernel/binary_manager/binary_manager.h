@@ -149,7 +149,7 @@ struct binmgr_uinfo_s {
 	load_attr_t load_attr;
 	uint8_t load_priority[FILES_PER_BIN];
 	uint32_t bin_ver[FILES_PER_BIN];
-	char kernel_ver[KERNEL_VER_MAX];
+	float kernel_ver;
 	struct tcb_s *rt_list;
 	struct tcb_s *nrt_list;
 	sq_queue_t cb_list; // list node type : statecb_node_t
@@ -165,7 +165,7 @@ struct binmgr_kinfo_s {
 	uint8_t inuse_idx;
 	uint32_t part_count;
 	part_info_t part_info[KERNEL_BIN_COUNT];
-	char version[KERNEL_VER_MAX];
+	float version;
 };
 typedef struct binmgr_kinfo_s binmgr_kinfo_t;
 

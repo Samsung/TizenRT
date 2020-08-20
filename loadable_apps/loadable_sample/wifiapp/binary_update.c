@@ -73,7 +73,7 @@ static void binary_update_download_binary(binary_update_info_t *binary_info, int
 	binary_header_t header_data;
 	char filepath[CONFIG_PATH_MAX];
 
-	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%d", BINARY_DIR_PATH, APP_NAME, binary_info->version);
+	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)binary_info->version);
 	read_fd = open(filepath, O_RDONLY);
 	if (read_fd < 0) {
 		fail_cnt++;
@@ -179,7 +179,7 @@ static void binary_update_download_new_binary(void)
 	/* Get 'micom' binary info */
 	binary_manager_get_update_info(APP_NAME, &bin_info);
 
-	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%d", BINARY_DIR_PATH, APP_NAME, bin_info.version);
+	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)bin_info.version);
 
 	/* Get 'micom' binary file size */
 	fp = fopen(filepath, "r");
@@ -280,9 +280,9 @@ errout_with_close_fds:
 static void print_binary_info(binary_update_info_t *binary_info)
 {
 	printf(" =========== binary [%s] info ============ \n", binary_info->name);
-	printf(" %8s | %8s\n", "Version", "Available size");
+	printf(" %10s | %8s\n", "Version", "Available size");
 	printf(" -------------------------------------------- \n");
-	printf(" %8d | %8d\n", binary_info->version, binary_info->available_size);
+	printf(" %8.1lf | %8d\n", binary_info->version, binary_info->available_size);
 	printf(" ============================================ \n");
 }
 
@@ -291,10 +291,10 @@ static void print_binary_info_list(binary_update_info_list_t *binary_info_list)
 	int bin_idx;
 
 	printf(" ============== ALL binary info : %d count ================ \n", binary_info_list->bin_count);
-	printf(" %4s | %6s | %8s | %8s\n", "Idx", "Name", "Version", "Available size");
+	printf(" %4s | %6s | %10s | %8s\n", "Idx", "Name", "Version", "Available size");
 	printf(" -------------------------------------------------------- \n");
 	for (bin_idx = 0; bin_idx < binary_info_list->bin_count; bin_idx++) {
-		printf(" %4d | %6s | %8d | %8d\n", bin_idx, \
+		printf(" %4d | %6s | %8.1lf | %8d\n", bin_idx, \
 		binary_info_list->bin_info[bin_idx].name, binary_info_list->bin_info[bin_idx].version, \
 		binary_info_list->bin_info[bin_idx].available_size);
 	}
@@ -306,10 +306,10 @@ static int binary_update_check_test_result(binary_update_info_t *pre_bin_info, b
 	int ret = ERROR;
 
 	printf(" ========== [%5s] Update info =========== \n", cur_bin_info->name);
-	printf(" %4s | %8s \n", "Con", "Version");
+	printf(" %4s | %10s \n", "Con", "Version");
 	printf(" ----------------------------------------- \n");
-	printf(" %4s | %8d \n", "Pre", pre_bin_info->version);
-	printf(" %4s | %8d \n", "Cur", cur_bin_info->version);
+	printf(" %4s | %8.1lf \n", "Pre", pre_bin_info->version);
+	printf(" %4s | %8.1lf \n", "Cur", cur_bin_info->version);
 	printf(" ========================================== \n");
 
 	if (condition == DOWNLOAD_VALID_BIN) {
@@ -412,7 +412,7 @@ static void binary_update_same_version_test(void)
 	binary_update_getinfo(APP_NAME, &bin_info);
 
 	/* Try to create binary file with old version */
-	ret = binary_manager_open_new_entry(APP_NAME, bin_info.version);
+	ret = binary_manager_open_new_entry(APP_NAME, (uint32_t)bin_info.version);
 	if (ret == OK) {
 		fail_cnt++;
 		printf("Get binary info FAIL, ret %d\n", ret);
@@ -441,7 +441,7 @@ static void binary_update_new_version_test(void)
 	ret = binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_VALID_BIN);
 	if (ret == OK) {
 		/* Unlink binary file with old version */
-		snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%d", BINARY_DIR_PATH, APP_NAME, pre_bin_info.version);
+		snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)pre_bin_info.version);
 		unlink(filepath);
 	}
 }
@@ -483,7 +483,7 @@ static void binary_update_new_binary_test(void)
 	binary_update_getinfo_all();
 
 	/* Unlink binary file */
-	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%d", BINARY_DIR_PATH, NEW_APP_NAME, NEW_APP_VERSION);
+	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, NEW_APP_NAME, NEW_APP_VERSION);
 	unlink(filepath);
 }
 
