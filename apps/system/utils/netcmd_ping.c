@@ -404,7 +404,7 @@ static int ping_send(int s, struct sockaddr *to, int size)
 
 static int _set_icmp6_config(struct addrinfo *hints)
 {
-	memset(hints, 0, sizeof(hints));
+	memset(hints, 0, sizeof(struct addrinfo));
 	hints->ai_family = AF_UNSPEC;
 	hints->ai_socktype = SOCK_RAW;
 	hints->ai_protocol = IPPROTO_ICMPV6;
@@ -413,7 +413,7 @@ static int _set_icmp6_config(struct addrinfo *hints)
 
 static int _set_icmp4_config(struct addrinfo *hints)
 {
-	memset(hints, 0, sizeof(hints));
+	memset(hints, 0, sizeof(struct addrinfo));
 	hints->ai_family = AF_UNSPEC;
 	hints->ai_socktype = SOCK_RAW;
 	hints->ai_protocol = IPPROTO_ICMP;
