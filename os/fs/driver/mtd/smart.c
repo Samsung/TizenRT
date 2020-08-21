@@ -4991,12 +4991,15 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
 		goto errout;
 	}
 
+	return OK;
+	
 errout:
+	/* Checkout current journal only, anyway we return -EIO here. */
+	ret = smart_journal_checkout(dev, log, address);
 	if (ret != OK) {
-		/* Checkout current journal only, anyway we return -EIO here. */
-		smart_journal_checkout(dev, log, address);
+		fdbg("Checkin Error, checkout current journal failed\n");
 	}
-	return ret;
+	return -EIO;
 }
 
 /****************************************************************************
@@ -5009,17 +5012,17 @@ errout:
 
 static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t *log, uint32_t address)
 {
-	int ret = OK;
+	int ret;
 
 	SET_JOURNAL_STATE(log->status, SMART_JOURNAL_STATE_CHECKOUT);
 	ret = MTD_WRITE(dev->mtd, address + offsetof(journal_log_t, status), 1, (FAR uint8_t *)&log->status);
 	if (ret != 1) {
 		fdbg("Checkout error, change log state to checkout.. ret : %d\n", ret);
-		ret = -EIO;
 		smart_journal_print_log(dev, log);
+		return -EIO;
 	}
 
-	return ret;
+	return OK;
 }
 
 
@@ -5100,7 +5103,7 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 		return -EINVAL;
 	}
 
-	return ret;
+	return OK;
 }
 
 
