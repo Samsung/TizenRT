@@ -33,7 +33,6 @@
 static void *assert_thread(void *index)
 {
 	int type;
-	volatile uint32_t *addr;
 	int tc_fd = open(TESTCASE_DRVPATH, O_WRONLY);
 	struct mputest_arg_s obj;
 	int ret;
