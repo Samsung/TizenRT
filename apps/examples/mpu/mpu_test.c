@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <tinyara/testcase_drv.h>
 #include <tinyara/mpu_test.h>
 
