@@ -131,10 +131,7 @@ install: $(BIN_DIR)$(DELIM)$(PROGNAME)
 
 else
 install:
-ifeq ($(CONFIG_MPUTEST_USE_PREBUILT_BINS),y)
-	$(Q) install $(APP1_BIN) $(OUTPUT_DIR)$(DELIM)$(APP1_BIN)
-	$(Q) install $(APP2_BIN) $(OUTPUT_DIR)$(DELIM)$(APP2_BIN)
-endif
+
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_MPU_TEST),yy)
