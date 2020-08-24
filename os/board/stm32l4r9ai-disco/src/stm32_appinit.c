@@ -69,8 +69,7 @@
  * stm32l4r9ai-disco.
  */
 
-#ifdef HAVE_RTC_DRIVER
-#  include <nuttx/timers/rtc.h>
+#ifdef CONFIG_RTC_DRIVER
 #  include "stm32l4_rtc.h"
 #endif
 
@@ -119,9 +118,6 @@ static struct i2c_master_s* g_i2c3;
 #ifdef CONFIG_LIB_BOARDCTL
 int board_app_initialize(uintptr_t arg)
 {
-#ifdef HAVE_RTC_DRIVER
-  FAR struct rtc_lowerhalf_s *rtclower;
-#endif
   int ret;
 
   (void)ret;
@@ -141,28 +137,8 @@ int board_app_initialize(uintptr_t arg)
     }
 #endif
 
-#ifdef HAVE_RTC_DRIVER
-  /* Instantiate the STM32 lower-half RTC driver */
-
-  rtclower = stm32l4_rtc_lowerhalf();
-  if (!rtclower)
-    {
-      serr("ERROR: Failed to instantiate the RTC lower-half driver\n");
-      return -ENOMEM;
-    }
-  else
-    {
-      /* Bind the lower half driver and register the combined RTC driver
-       * as /dev/rtc0
-       */
-
-      ret = rtc_initialize(0, rtclower);
-      if (ret < 0)
-        {
-          serr("ERROR: Failed to bind/register the RTC driver: %d\n", ret);
-          return ret;
-        }
-    }
+#ifdef CONFIG_RTC_DRIVER
+  stm32l4_rtc_initialize();
 #endif
 
 #ifdef CONFIG_I2C

@@ -87,29 +87,20 @@ typedef void (*alarmcb_t)(void);
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: s5j_rtc_lowerhalf
+ * Name: s5j_rtc_initialize
  *
  * Description:
- *   Instantiate the RTC lower half driver for the S5J.
- *   General usage:
- *
- *     #include <tinyara/rtc.h>
- *     #include "s5j_rtc.h"
- *
- *     struct rtc_lowerhalf_s *lower;
- *     lower = s5j_rtc_lowerhalf();
- *     rtc_initialize(0, lower);
+ *   Register the RTC driver to provide RTC functionality
  *
  * Input Parameters:
  *   None
  *
  * Returned Value:
- *   On success, a non-NULL RTC lower interface is returned. NULL is
- *   returned on any failure.
+ *   None
  *
  ****************************************************************************/
 #ifdef CONFIG_RTC_DRIVER
-FAR struct rtc_lowerhalf_s *s5j_rtc_lowerhalf(void);
+void s5j_rtc_initialize(void);
 #endif /* CONFIG_RTC_DRIVER */
 
 #undef EXTERN

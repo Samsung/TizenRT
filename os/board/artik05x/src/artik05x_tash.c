@@ -68,7 +68,6 @@
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mksmartfs.h>
-#include <tinyara/rtc.h>
 #include <tinyara/analog/adc.h>
 #include <tinyara/configdata.h>
 #include <chip.h>
@@ -276,19 +275,9 @@ int board_app_initialize(void)
 #endif /* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif /* CONFIG_ARTIK05X_AUTOMOUNT */
 
-#if defined(CONFIG_RTC_DRIVER)
-	{
-		struct rtc_lowerhalf_s *rtclower;
-
-		rtclower = s5j_rtc_lowerhalf();
-		if (rtclower) {
-			ret = rtc_initialize(0, rtclower);
-			if (ret < 0) {
-				lldbg("Failed to register the RTC driver: %d\n", ret);
-			}
-		}
-	}
-#endif /* CONFIG_RTC_DRIVER */
+#ifdef CONFIG_RTC_DRIVER
+	s5j_rtc_initialize();
+#endif
 
 #ifdef CONFIG_TIMER
 	{

@@ -44,9 +44,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/timers/rtc.h>
+#include <tinyara/rtc.h>
 
 #include "chip.h"
 #include "stm32l4_rtc.h"
@@ -697,32 +698,30 @@ static int stm32l4_cancelperiodic(FAR struct rtc_lowerhalf_s *lower, int id)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: stm32l4_rtc_lowerhalf
+ * Name: stm32l4_rtc_initialize
  *
  * Description:
- *   Instantiate the RTC lower half driver for the STM32.  General usage:
- *
- *     #include <tinyara/timers/rtc.h>
- *     #include "stm32l4_rtc.h>
- *
- *     struct rtc_lowerhalf_s *lower;
- *     lower = stm32l4_rtc_lowerhalf();
- *     rtc_initialize(0, lower);
+ *   Register the RTC driver to provide RTC functionality
  *
  * Input Parameters:
  *   None
  *
  * Returned Value:
- *   On success, a non-NULL RTC lower interface is returned.  NULL is
- *   returned on any failure.
+ *   None
  *
  ****************************************************************************/
 
-FAR struct rtc_lowerhalf_s *stm32l4_rtc_lowerhalf(void)
+void stm32l4_rtc_initialize(void)
 {
-  nxsem_init(&g_rtc_lowerhalf.devsem, 0, 1);
+	struct rtc_lowerhalf_s *lower = (struct rtc_lowerhalf_s *)&g_rtc_lowerhalf;
+	int ret;
 
-  return (FAR struct rtc_lowerhalf_s *)&g_rtc_lowerhalf;
+	/* Bind the lower half driver and register the combined RTC driver as /dev/rtc0 */
+
+	ret = rtc_initialize(0, lower);
+	if (ret < 0) {
+		lldbg("Failed to register the RTC driver: %d\n", ret);
+	}
 }
 
 #endif /* CONFIG_RTC_DRIVER */

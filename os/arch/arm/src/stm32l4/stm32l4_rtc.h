@@ -296,30 +296,21 @@ int stm32l4_rtc_cancelperiodic(void);
 #endif /* CONFIG_RTC_PERIODIC */
 
 /****************************************************************************
- * Name: stm32l4_rtc_lowerhalf
+ * Name: stm32l4_rtc_initialize
  *
  * Description:
- *   Instantiate the RTC lower half driver for the STM32L4.  General usage:
- *
- *     #include <tinyara/timers/rtc.h>
- *     #include "stm32l4_rtc.h>
- *
- *     struct rtc_lowerhalf_s *lower;
- *     lower = stm32l4_rtc_lowerhalf();
- *     rtc_initialize(0, lower);
+ *   Register the RTC driver to provide RTC functionality
  *
  * Input Parameters:
  *   None
  *
  * Returned Value:
- *   On success, a non-NULL RTC lower interface is returned.  NULL is
- *   returned on any failure.
+ *   None
  *
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_DRIVER
-struct rtc_lowerhalf_s;
-FAR struct rtc_lowerhalf_s *stm32l4_rtc_lowerhalf(void);
+void stm32l4_rtc_initialize(void);
 #endif
 
 #undef EXTERN

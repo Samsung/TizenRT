@@ -59,6 +59,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <debug.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/rtc.h>
@@ -290,29 +291,29 @@ static struct s5j_lowerhalf_s g_rtc_lowerhalf = {
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
- * Name: s5j_rtc_lowerhalf
+ * Name: s5j_rtc_initialize
  *
  * Description:
- *   Instantiate the RTC lower half driver for the S5J.
- *   General usage:
- *
- *     #include <tinyara/rtc.h>
- *     #include "s5j_rtc.h"
- *
- *     struct rtc_lowerhalf_s *lower;
- *     lower = s5j_rtc_lowerhalf();
- *     rtc_initialize(0, lower);
+ *   Register the RTC driver to provide RTC functionality
  *
  * Input Parameters:
  *   None
  *
  * Returned Value:
- *   On success, a non-NULL RTC lower interface is returned. NULL is
- *   returned on any failure.
+ *   None
  *
  ****************************************************************************/
-FAR struct rtc_lowerhalf_s *s5j_rtc_lowerhalf(void)
+
+void s5j_rtc_initialize(void)
 {
-	return (FAR struct rtc_lowerhalf_s *)&g_rtc_lowerhalf;
+	struct rtc_lowerhalf_s *lower = (struct rtc_lowerhalf_s *)&g_rtc_lowerhalf;
+	int ret;
+
+	/* Bind the lower half driver and register the combined RTC driver as /dev/rtc0 */
+
+	ret = rtc_initialize(0, lower);
+	if (ret < 0) {
+		lldbg("Failed to register the RTC driver: %d\n", ret);
+	}
 }
 #endif /* CONFIG_RTC_DRIVER */

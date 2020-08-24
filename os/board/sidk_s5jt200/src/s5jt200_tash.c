@@ -61,7 +61,6 @@
 #include <errno.h>
 
 #include <tinyara/board.h>
-#include <tinyara/rtc.h>
 #include <time.h>
 #include <chip.h>
 
@@ -404,20 +403,9 @@ int board_app_initialize(void)
 		lldbg("Version Info :\n");
 		lldbg("tinyARA %s\n", __TIMESTAMP__);
 	}
-#if defined(CONFIG_RTC_DRIVER)
-	{
-		struct rtc_lowerhalf_s *rtclower;
-
-		rtclower = s5j_rtc_lowerhalf();
-		if (rtclower) {
-			ret = rtc_initialize(0, rtclower);
-			if (ret < 0) {
-				lldbg("Failed to register the RTC driver: %d\n",
-						ret);
-			}
-		}
-	}
-#endif /* CONFIG_RTC_DRIVER */
+#ifdef CONFIG_RTC_DRIVER
+	s5j_rtc_initialize();
+#endif
 #endif /* CONFIG_RTC */
 
 	sidk_s5jt200_adc_setup();
