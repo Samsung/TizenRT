@@ -3,30 +3,12 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-menuconfig EXAMPLES_MPU_TEST
+config EXAMPLES_MPU_TEST
 	bool "MPU TestCase Example"
 	depends on BUILD_PROTECTED
 	select TESTCASE_DRV
 	---help---
 		Enable the MPU TestCase Example
-
-if EXAMPLES_MPU_TEST
-
-config MPUTEST_USE_PREBUILT_BINS
-	bool "Use pre-built application binaries"
-	default n
-	depends on APP_BINARY_SEPARATION
-	depends on ARCH_BOARD_IMXRT1050_EVK || ARCH_BOARD_IMXRT1020_EVK
-	depends on !EXAMPLES_ELF
-	---help---
-		To test different application access, two application binaries
-		should be flashed. This config makes using pre-built application binaries.
-		Note! 1. Initial binaries are built with NXP imxrt1050-evk. To use this
-		        with another board, pre-built binaries should be replaced.
-		      2. ELF example makes application binaries itself so that
-		         when it is enabled, this should be turned off.
-
-endif #EXAMPLES_MPU_TEST
 
 config USER_ENTRYPOINT
 	string
