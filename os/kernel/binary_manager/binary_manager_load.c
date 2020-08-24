@@ -436,8 +436,6 @@ static int loadingall_thread(int argc, char *argv[])
  ****************************************************************************/
 static int reloading_thread(int argc, char *argv[])
 {
-	int ret;
-
 	if (argc <= 1) {
 		bmdbg("Invalid arguments for reloading, argc %d\n", argc);
 		return ERROR;
@@ -447,6 +445,8 @@ static int reloading_thread(int argc, char *argv[])
 	int bin_idx = (int)atoi(argv[1]);
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin_idx == BM_BINID_LIBRARY) {
+		int ret;
+
 		/* Reload common library and all binaries */
 		char libname[CONFIG_NAME_MAX];
 		snprintf(libname, CONFIG_NAME_MAX, "%s%s", CONFIG_COMMON_BINARY_PATH, CONFIG_COMMON_BINARY_NAME);

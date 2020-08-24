@@ -27,6 +27,7 @@
 #include <sched.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <tinyara/testcase_drv.h>
 #include <tinyara/mpu_test.h>
 
