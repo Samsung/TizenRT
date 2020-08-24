@@ -4915,8 +4915,8 @@ static int smart_journal_release_sector(FAR struct smart_struct_s *dev, uint16_t
 	offset = psector * dev->sectorsize;
 	ret = MTD_READ(dev->mtd, offset, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 	if (ret != sizeof(struct smart_sect_header_s)) {
-		fdbg("read failed, so we will make header forcely..ret : %d\n", ret);
-		header.status = CONFIG_SMARTFS_ERASEDSTATE;
+		fdbg("Read header failed psector : %d offset : %d\n", psector, offset);
+		return -EIO;
 	}
 	
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
@@ -5470,32 +5470,30 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		 * so only checkout is necessary.. But Should we check written mtd header with journal log's ?
 		 */
 		ret = smart_validate_crc(dev);
-		if (ret != OK) {
-			fvdbg("Entire of sector is invalid\n");
-		} else {
-			fvdbg("Entire of sector is valid!!!!\n");
+		if (ret == OK) {
+			fvdbg("Entire of sector is valid, so checkout last journal!!!!\n");
 			ret = smart_journal_checkout(dev, log, address);
 			if (ret != OK) {
-				/* If checkout failed, keep last journal */
-				return ret;
+				fdbg("Sector was valid but checkout failed\n");
 			}
+			return ret;
+
 		}
 
+		fvdbg("Entire of sector is invalid, we will check data area\n");
 		/* Unfortunately, entire of sector is not valid...so we will check data's validation */
 		memcpy(dev->rwbuffer, &log->mtd_header, mtd_size);
 		ret = smart_validate_crc(dev);
 		/* If CRC is not same, data sector is invalid, so release data sector First */
 		if (ret != OK) {
 			fdbg("Invalid data, release data sector & journal!\n");
-
-			/* Data sector is released, checkout journal entry */
 			ret = smart_journal_release_sector(dev, psector);
 			if (ret != OK) {
 				fdbg("release committed sector : %d failed\n", psector);
-				break;
+				return -EIO;
 			}
 		} else {
-			/* If crc is same, then checkout need to be done */
+			/* If crc is same, then update mtd header */
 			fvdbg("valid data, update header here..\n");
 			ret = MTD_WRITE(dev->mtd, psector * dev->sectorsize, mtd_size, (FAR uint8_t *)&log->mtd_header);
 			if (ret != mtd_size) {
@@ -5505,16 +5503,12 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		}
 		break;
 
-	/* For Release, Retry Transaction & Checkout to undo it*/
+	/* For Release & Erase, Retry Transaction & Checkout to undo it */
 	case SMART_JOURNAL_TYPE_RELEASE:
-		ret = smart_journal_process_transaction(dev, log);
-		break;
-		
-	/* For erase, if erase transaction failed then keep everything */
 	case SMART_JOURNAL_TYPE_ERASE:
 		ret = smart_journal_process_transaction(dev, log);
 		if (ret != OK) {
-			return ret;
+			return -EIO;
 		}
 		break;
 		
@@ -5522,17 +5516,11 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		return -EIO;
 	}
 
-	if (ret != OK) {
-		result = ret;
-	}
-	
 	ret = smart_journal_checkout(dev, log, address);
 	if (ret != OK) {
-		/* If checkout failed, keep last journal */
-		return ret;
+		fdbg("checkout failed sector\n");
 	}	
-
-	return result;
+	return ret;
 }
 
 #endif
