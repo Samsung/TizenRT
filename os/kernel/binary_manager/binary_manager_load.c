@@ -464,6 +464,8 @@ static int reloading_thread(int argc, char *argv[])
 				return ret;
 			}
 		}
+
+		return ret;
 	} else
 #endif
 	return binary_manager_reload(bin_idx);
