@@ -147,9 +147,9 @@ extern size_t smart_sect_header_size;
 					(~SMARTFS_ERASEDSTATE_16BIT & (SMARTFS_DIRENT_EMPTY | SMARTFS_DIRENT_ACTIVE))))
 #endif
 
-#define SET_TO_REMAIN(v, n)		v[n / 8] |= (1 << (7 - (n % 8)))
-#define SET_TO_USED(v, n)		v[n / 8] &= ~(1 << (7 - (n % 8)))
-#define IS_SECTOR_REMAIN(v, n)	v[n / 8] & (1 << (7 - (n % 8)))
+#define SET_TO_REMAIN(v, n)		v[n >> 3] |= (1 << (7 - (n % 8)))
+#define SET_TO_USED(v, n)		v[n >> 3] &= ~(1 << (7 - (n % 8)))
+#define IS_SECTOR_REMAIN(v, n)	v[n >> 3] & (1 << (7 - (n % 8)))
 
 /****************************************************************************
  * Private Types
@@ -2167,7 +2167,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 	int ret;
 	long sector;
 	struct sector_recover_info_s info = {0,};
-	size_t size = (fs->fs_llformat.nsectors / 8) + 1;
+	size_t size = (fs->fs_llformat.nsectors >> 3) + 1;
 	
 	/* Alloc Logical Map */
 	char *map = (char *)kmm_malloc(sizeof(uint8_t *) * size);
