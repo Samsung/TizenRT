@@ -1242,8 +1242,6 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_ent
  *     written.
  *   type - type of new entry (file/dir).
  *   mode - mode of creation of new entry.
- *   direntry - pointer to smartfs entry object to return details of newly
- *     written entry.
  *
  * Returned Values:
  *   OK - on successfully writing new entry to MTD.
@@ -1251,7 +1249,7 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_ent
  *
  ****************************************************************************/
 
-int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry)
+int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, uint16_t type, mode_t mode)
 {
 	int ret;
 	struct smart_read_write_s readwrite;
@@ -1339,27 +1337,6 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 			goto errout;
 		}
 	}
-
-	/* Now fill in the entry */
-	direntry->firstsector = new_entry.firstsector;
-	direntry->dsector = new_entry.dsector;
-	direntry->doffset = offset;
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	direntry->flags = smartfs_rdle16(&new_entry.flags);
-	direntry->utc = smartfs_rdle32(&entry->utc);
-#else
-	direntry->flags = new_entry.flags;
-	direntry->utc = entry->utc;
-#endif
-	direntry->datlen = 0;
-	if (direntry->name == NULL) {
-		direntry->name = (FAR char *)kmm_zalloc(fs->fs_llformat.namesize + 1);
-		if (direntry->name == NULL) {
-			ret = ERROR;
-			goto errout;
-		}
-	}
-	strncpy(direntry->name, new_entry.name, fs->fs_llformat.namesize);
 
 	ret = OK;
 
