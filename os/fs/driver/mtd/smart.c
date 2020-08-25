@@ -5505,11 +5505,22 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 
 	/* For Release & Erase, Retry Transaction & Checkout to undo it */
 	case SMART_JOURNAL_TYPE_RELEASE:
+		ret = smart_journal_process_transaction(dev, log);
+		if (ret != OK) {
+			return -EIO;
+		}
+		break;
+		
 	case SMART_JOURNAL_TYPE_ERASE:
 		ret = smart_journal_process_transaction(dev, log);
 		if (ret != OK) {
 			return -EIO;
 		}
+		
+#ifdef CONFIG_MTD_SMART_WEAR_LEVEL
+		/* Update the new wear level count. */
+		smart_set_wear_level(dev, psector, smart_get_wear_level(dev, psector) + 1);
+#endif
 		break;
 		
 	default:
