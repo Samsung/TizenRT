@@ -176,7 +176,6 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	struct inode *inode;
 	struct smartfs_mountpt_s *fs;
 	int ret;
-	const char *filename;
 	struct smartfs_ofile_s *sf;
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 	struct smart_read_write_s readwrite;
@@ -223,7 +222,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 #endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 
 	sf->entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &sf->entry, relpath, &filename);
+	ret = smartfs_finddirentry(fs, &sf->entry, relpath);
 	/* Three possibilities: (1) a node exists for the relpath and
 	 * dirinfo describes the directory entry of the entity, (2) the
 	 * node does not exist, or (3) some error occurred.
@@ -305,19 +304,10 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 #else
 			sf->entry.flags = (uint16_t)(mode & SMARTFS_DIRENT_MODE);
 #endif
-			if (sf->entry.name == NULL) {
-				sf->entry.name = (FAR char *)kmm_malloc(fs->fs_llformat.namesize + 1);
-				if (sf->entry.name == NULL) {
-					ret = -ENOMEM;
-					goto errout_with_buffer;
-				}
-			}
-			memset(sf->entry.name, 0, fs->fs_llformat.namesize + 1);
-			strncpy(sf->entry.name, filename, fs->fs_llformat.namesize);
 #else
 			/* If CRC is disabled, write the new file entry */
 			/* At this point, either an available entry was found or a new one has been created */
-			ret = smartfs_writeentry(fs, sf->entry, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry);
+			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry);
 			if (ret != OK) {
 				fdbg("Write entry failed\n");
 				goto errout_with_buffer;
@@ -670,7 +660,7 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 		/* File's data sector has been synced with MTD, now check if this is a new file entry and write the entry */
 		if (sf->bflags & SMARTFS_BFLAG_NEW_ENTRY) {
 			/* Flags for this entry have already been set and stored, so mode will not be used */
-			ret = smartfs_writeentry(fs, sf->entry, sf->entry.name, SMARTFS_DIRENT_TYPE_FILE, (sf->entry.flags & SMARTFS_DIRENT_MODE), &sf->entry);
+			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, (sf->entry.flags & SMARTFS_DIRENT_MODE), &sf->entry);
 			if (ret < 0) {
 				fdbg("Failed to write new file entry ot MTD\n");
 				goto errout;
@@ -1373,7 +1363,6 @@ static int smartfs_opendir(struct inode *mountpt, const char *relpath, struct fs
 	struct smartfs_mountpt_s *fs;
 	int ret;
 	struct smartfs_entry_s entry;
-	const char *filename;
 
 	/* Sanity checks */
 
@@ -1390,7 +1379,7 @@ static int smartfs_opendir(struct inode *mountpt, const char *relpath, struct fs
 	/* Search for the path on the volume */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath, &filename);
+	ret = smartfs_finddirentry(fs, &entry, relpath);
 	if (ret < 0) {
 		goto errout_with_semaphore;
 	}
@@ -1720,7 +1709,6 @@ static int smartfs_unlink(struct inode *mountpt, const char *relpath)
 	struct smartfs_mountpt_s *fs;
 	int ret;
 	struct smartfs_entry_s entry;
-	const char *filename;
 
 	/* Sanity checks */
 
@@ -1735,7 +1723,7 @@ static int smartfs_unlink(struct inode *mountpt, const char *relpath)
 	/* Locate the directory entry for this path */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath, &filename);
+	ret = smartfs_finddirentry(fs, &entry, relpath);
 	if (ret == OK) {
 		/* The name exists -- validate it is a file, not a dir */
 
@@ -1779,7 +1767,6 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	int ret;
 	struct smartfs_entry_s entry;
 	struct smartfs_entry_s newentry;	//Details of newly written entry are returned with this variable
-	const char *filename;
 
 	/* Sanity checks */
 
@@ -1795,7 +1782,7 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 
 	entry.name = NULL;
 	newentry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath, &filename);
+	ret = smartfs_finddirentry(fs, &entry, relpath);
 	/* Three possibililities: (1) a node exists for the relpath and
 	 * dirinfo describes the directory entry of the entity, (2) the
 	 * node does not exist, or (3) some error occurred.
@@ -1830,7 +1817,7 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 			goto errout_with_semaphore;
 		}
 		/* Now we have an entry allocated for writing, write new entry to sector */
-		ret = smartfs_writeentry(fs, entry, filename, SMARTFS_DIRENT_TYPE_DIR, mode, &newentry);
+		ret = smartfs_writeentry(fs, entry, SMARTFS_DIRENT_TYPE_DIR, mode, &newentry);
 		if (ret != OK) {
 			fdbg("Failed to write new entry to sector\n");
 			goto errout_with_semaphore;
@@ -1839,7 +1826,7 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 
 errout_with_semaphore:
 	if (newentry.name != NULL) {
-		/* Free the filename space allocation */
+		/* Free the entry name space allocation */
 
 		kmm_free(newentry.name);
 		newentry.name = NULL;
@@ -1861,7 +1848,6 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 	struct smartfs_mountpt_s *fs;
 	int ret;
 	struct smartfs_entry_s entry;
-	const char *filename;
 
 	/* Sanity checks */
 
@@ -1878,7 +1864,7 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 	/* Locate the directory entry for this path */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath, &filename);
+	ret = smartfs_finddirentry(fs, &entry, relpath);
 	if (ret == OK) {
 		/* The name exists -- validate it is a dir, not a file */
 
@@ -1937,9 +1923,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	int ret;
 	struct smartfs_mountpt_s *fs;
 	struct smartfs_entry_s oldentry;
-	const char *oldfilename;
 	struct smartfs_entry_s newentry;
-	const char *newfilename;
 	mode_t mode;
 	uint16_t type;
 	uint16_t sector;
@@ -1962,14 +1946,14 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 
 	oldentry.name = NULL;
 	newentry.name = NULL;
-	ret = smartfs_finddirentry(fs, &oldentry, oldrelpath, &oldfilename);
+	ret = smartfs_finddirentry(fs, &oldentry, oldrelpath);
 	if (ret < 0) {
 		fdbg("Old entry doesn't exist\n");
 		goto errout_with_semaphore;
 	}
 
 	/* Search for the new entry and validate it DOESN'T exist, unless we
-	 * are copying to a directory and keeping the same filename, such as:
+	 * are copying to a directory and keeping the same file name, such as:
 	 *
 	 *    mv /mntpoint/somefile.txt /mntpoint/somedir
 	 *
@@ -1977,7 +1961,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	 * doens't exsit.
 	 */
 
-	ret = smartfs_finddirentry(fs, &newentry, newrelpath, &newfilename);
+	ret = smartfs_finddirentry(fs, &newentry, newrelpath);
 	if (ret == OK) {
 		/* Test if it's a file.  If it is, then it's an error */
 
@@ -1986,9 +1970,8 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 			goto errout_with_semaphore;
 		}
 
-		/* Nope, it's a directory.  Now search the directory for oldfilename */
+		/* Nope, it's a directory.  Now search the directory for old file name */
 
-		newfilename = oldfilename;
 		sector = newentry.firstsector;
 		while (sector != SMARTFS_ERASEDSTATE_16BIT) {
 			/* Read the next sector of diretory entries */
@@ -1999,8 +1982,6 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 				fdbg("Error %d reading sector %d data\n", ret, oldentry.dsector);
 				goto errout_with_semaphore;
 			}
-
-			/* Search for newfilename in this sector */
 
 			offset = sizeof(struct smartfs_chain_header_s);
 			entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
@@ -2016,9 +1997,9 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 					continue;
 				}
 
-				/* Test if this entry matches newfilename */
+				/* Test if this entry matches the filename */
 
-				if (strcmp(newfilename, entry->name) == 0) {
+				if (strcmp(oldentry.name, entry->name) == 0) {
 					/* Uh-oh, looks like the entry already exists */
 
 					ret = -EEXIST;
@@ -2033,7 +2014,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 			sector = SMARTFS_NEXTSECTOR(((struct smartfs_chain_header_s *)fs->fs_rwbuffer));
 		}
 
-		/* Okay, we will create newfilename in the newentry directory */
+		/* Okay, we will create new file in the newentry directory */
 		newentry.dsector = newentry.firstsector;
 	}
 
@@ -2047,7 +2028,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 		if (oldentry.dsector == newentry.dsector) {
 			/* We will not use any new entry found, we will overwrite the existing entry */
-			ret = smartfs_writeentry(fs, oldentry, newfilename, type, mode, &newentry);
+			ret = smartfs_writeentry(fs, oldentry, type, mode, &newentry);
 			if (ret != OK) {
 				fdbg("Error writing new entry\n");
 			}
@@ -2063,7 +2044,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		}
 
 		newentry.firstsector = oldentry.firstsector;
-		ret = smartfs_writeentry(fs, newentry, newfilename, type, mode, &newentry);
+		ret = smartfs_writeentry(fs, newentry, type, mode, &newentry);
 		if (ret != OK) {
 			fdbg("Error writing new entry\n");
 			goto errout_with_semaphore;
@@ -2144,7 +2125,6 @@ static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat 
 	struct smartfs_mountpt_s *fs;
 	struct smartfs_entry_s entry;
 	int ret;
-	const char *filename;
 
 	/* Sanity checks */
 
@@ -2160,7 +2140,7 @@ static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat 
 	/* Find the directory entry corresponding to relpath */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath, &filename);
+	ret = smartfs_finddirentry(fs, &entry, relpath);
 	if (ret < 0) {
 		goto errout_with_semaphore;
 	}
