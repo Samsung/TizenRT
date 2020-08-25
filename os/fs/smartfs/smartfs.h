@@ -389,7 +389,7 @@ int smartfs_createdirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s 
 
 int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry);
 
-int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry);
+int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, uint16_t type, mode_t mode);
 
 int smartfs_alloc_firstsector(struct smartfs_mountpt_s *fs, uint16_t *sector, uint16_t type, FAR struct smartfs_ofile_s *sf);
 

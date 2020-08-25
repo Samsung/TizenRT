@@ -307,7 +307,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 #else
 			/* If CRC is disabled, write the new file entry */
 			/* At this point, either an available entry was found or a new one has been created */
-			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry);
+			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, mode);
 			if (ret != OK) {
 				fdbg("Write entry failed\n");
 				goto errout_with_buffer;
@@ -660,7 +660,7 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 		/* File's data sector has been synced with MTD, now check if this is a new file entry and write the entry */
 		if (sf->bflags & SMARTFS_BFLAG_NEW_ENTRY) {
 			/* Flags for this entry have already been set and stored, so mode will not be used */
-			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, (sf->entry.flags & SMARTFS_DIRENT_MODE), &sf->entry);
+			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, (sf->entry.flags & SMARTFS_DIRENT_MODE));
 			if (ret < 0) {
 				fdbg("Failed to write new file entry ot MTD\n");
 				goto errout;
@@ -1766,7 +1766,6 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	struct smartfs_mountpt_s *fs;
 	int ret;
 	struct smartfs_entry_s entry;
-	struct smartfs_entry_s newentry;	//Details of newly written entry are returned with this variable
 
 	/* Sanity checks */
 
@@ -1781,7 +1780,6 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	/* Locate the directory entry for this path */
 
 	entry.name = NULL;
-	newentry.name = NULL;
 	ret = smartfs_finddirentry(fs, &entry, relpath);
 	/* Three possibililities: (1) a node exists for the relpath and
 	 * dirinfo describes the directory entry of the entity, (2) the
@@ -1817,7 +1815,7 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 			goto errout_with_semaphore;
 		}
 		/* Now we have an entry allocated for writing, write new entry to sector */
-		ret = smartfs_writeentry(fs, entry, SMARTFS_DIRENT_TYPE_DIR, mode, &newentry);
+		ret = smartfs_writeentry(fs, entry, SMARTFS_DIRENT_TYPE_DIR, mode);
 		if (ret != OK) {
 			fdbg("Failed to write new entry to sector\n");
 			goto errout_with_semaphore;
@@ -1825,13 +1823,6 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	}
 
 errout_with_semaphore:
-	if (newentry.name != NULL) {
-		/* Free the entry name space allocation */
-
-		kmm_free(newentry.name);
-		newentry.name = NULL;
-	}
-
 	smartfs_semgive(fs);
 	return ret;
 }
@@ -1979,7 +1970,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 			smartfs_setbuffer(&readwrite, sector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 			if (ret < 0) {
-				fdbg("Error %d reading sector %d data\n", ret, oldentry.dsector);
+				fdbg("Error %d reading sector %d data\n", ret, sector);
 				goto errout_with_semaphore;
 			}
 
@@ -1999,8 +1990,8 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 
 				/* Test if this entry matches the filename */
 
-				if (strcmp(oldentry.name, entry->name) == 0) {
-					/* Uh-oh, looks like the entry already exists */
+				if (strcmp(newentry.name, entry->name) == 0) {
+					/* Uh-oh, looks like the new entry name already exists */
 
 					ret = -EEXIST;
 					goto errout_with_semaphore;
@@ -2027,8 +2018,9 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 		if (oldentry.dsector == newentry.dsector) {
-			/* We will not use any new entry found, we will overwrite the existing entry */
-			ret = smartfs_writeentry(fs, oldentry, type, mode, &newentry);
+			/* We will not use any new entry found, we will overwrite the existing entry but with a new name */
+			strncpy(oldentry.name, newentry.name, fs->fs_llformat.namesize);
+			ret = smartfs_writeentry(fs, oldentry, type, mode);
 			if (ret != OK) {
 				fdbg("Error writing new entry\n");
 			}
@@ -2044,7 +2036,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		}
 
 		newentry.firstsector = oldentry.firstsector;
-		ret = smartfs_writeentry(fs, newentry, type, mode, &newentry);
+		ret = smartfs_writeentry(fs, newentry, type, mode);
 		if (ret != OK) {
 			fdbg("Error writing new entry\n");
 			goto errout_with_semaphore;
