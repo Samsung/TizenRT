@@ -149,7 +149,7 @@ struct binmgr_uinfo_s {
 	load_attr_t load_attr;
 	uint8_t load_priority[FILES_PER_BIN];
 	uint32_t bin_ver[FILES_PER_BIN];
-	float kernel_ver;
+	float available_kernel_ver;
 	struct tcb_s *rt_list;
 	struct tcb_s *nrt_list;
 	sq_queue_t cb_list; // list node type : statecb_node_t
@@ -184,7 +184,7 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_NRTLIST(bin_idx)                            binary_manager_get_udata(bin_idx)->nrt_list
 
 #define BIN_LOADVER(bin_idx)                            binary_manager_get_udata(bin_idx)->load_attr.bin_ver
-#define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->kernel_ver
+#define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->available_kernel_ver
 #define BIN_CBLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->cb_list
 #define BIN_FILECNT(bin_idx)                            binary_manager_get_udata(bin_idx)->file_cnt
 #define BIN_LOAD_PRIORITY(bin_idx, file_idx)            binary_manager_get_udata(bin_idx)->load_priority[file_idx]
