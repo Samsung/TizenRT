@@ -127,7 +127,7 @@ int binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_li
 	return response_msg.result;
 }
 
-int binary_manager_open_new_entry(char *binary_name, int version)
+int binary_manager_open_new_entry(char *binary_name, uint32_t version)
 {
 	int fd;
 	int ret;
@@ -135,7 +135,7 @@ int binary_manager_open_new_entry(char *binary_name, int version)
 	binmgr_request_t request_msg;
 	binmgr_createbin_response_t response_msg;
 
-	if (binary_name == NULL || version < 0) {
+	if (binary_name == NULL || version == 0) {
 		bmdbg("Invalid parameter\n");
 		return BINMGR_INVALID_PARAM;
 	}

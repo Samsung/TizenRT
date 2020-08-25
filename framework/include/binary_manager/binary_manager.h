@@ -112,7 +112,7 @@ int binary_manager_unregister_state_changed_callback(void);
  *         fd of a created file on success. On failure, negative value is returned.
  * @since TizenRT v3.1 PRE
  */
-int binary_manager_open_new_entry(char *binary_name, int version);
+int binary_manager_open_new_entry(char *binary_name, uint32_t version);
 
 #endif
 /**
