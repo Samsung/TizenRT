@@ -216,3 +216,6 @@ HOSTLDFLAGS =
 define MAKE_BOARD_SPECIFIC_BIN
   $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_make_bin.sh
 endef
+define DOWNLOAD
+  $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
+endef
