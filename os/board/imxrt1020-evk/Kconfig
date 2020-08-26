@@ -8,7 +8,6 @@ if ARCH_BOARD_IMXRT1020_EVK
 config IMXRT_NORFLASH
 	bool "Enable Norflash"
 	default y
-	select ARCH_USE_FLASH
 	---help---
 		Enables Norflash
 
