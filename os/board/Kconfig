@@ -16,6 +16,7 @@ config ARCH_BOARD_ARTIK053
 	bool "Samsung ARTIK-053 Starter Kit"
 	depends on ARCH_CHIP_S5JT200
 	select ARCH_BOARD_ARTIK05X_FAMILY
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Samsung ARTIK-053 Starter Kit based on S5JT200 IoT WiFi MCU
 
@@ -23,6 +24,7 @@ config ARCH_BOARD_ARTIK053S
 	bool "Samsung ARTIK-053S Starter Kit"
 	depends on ARCH_CHIP_S5JT200
 	select ARCH_BOARD_ARTIK05X_FAMILY
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Samsung ARTIK-053S Starter Kit based on S5JT200 IoT WiFi MCU
 
@@ -30,6 +32,7 @@ config ARCH_BOARD_ARTIK055S
 	bool "Samsung ARTIK-055S Starter Kit"
 	depends on ARCH_CHIP_S5JT200
 	select ARCH_BOARD_ARTIK05X_FAMILY
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Samsung ARTIK-055S Starter Kit based on S5JT200 IoT WiFi MCU
 
@@ -46,6 +49,7 @@ config ARCH_BOARD_SIDK_S5JT200
 	depends on ARCH_CHIP_S5JT200
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Samsung S5JT200 IoT wifi MCU
 
@@ -77,6 +81,7 @@ config ARCH_BOARD_ESP32_DEVKITC
 	bool "Espressif ESP32-DevKitC board"
 	depends on ARCH_CHIP_ESP32
 	select ARCH_BOARD_ESP32_FAMILY
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Espressif esp32 WIFI/BLE MCU
 
@@ -84,6 +89,7 @@ config ARCH_BOARD_ESP_WROVER_KIT
 	bool "Espressif ESP-WROVER-KIT board"
 	depends on ARCH_CHIP_ESP32
 	select ARCH_BOARD_ESP32_FAMILY
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Espressif esp32 WIFI/BLE LCDs MCU
 		
@@ -94,6 +100,7 @@ config ARCH_BOARD_IMXRT1020_EVK
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
 	select AUTOGEN_MEMORY_LDSCRIPT if BUILD_PROTECTED
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		This is the board configuration for the port of TinyARA to the NXP i.MXRT
 		evaluation kit, MIMXRT1020-EVKB.  This board features the MIMXRT1021CAF4A MCU.
@@ -105,6 +112,7 @@ config ARCH_BOARD_IMXRT1050_EVK
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
 	select AUTOGEN_MEMORY_LDSCRIPT if BUILD_PROTECTED
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		This is the board configuration for the port of TinyARA to the NXP i.MXRT
 		evaluation kit, MIMXRT1050-EVKB.  This board features the MIMXRT1052DVL6A MCU.
@@ -115,6 +123,7 @@ config ARCH_BOARD_STM32L4R9AI_DISCO
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		STMicro STM32L4R9AI-Discovery board based on the STMicro STM32L4R9AI MCU.
 
@@ -123,6 +132,7 @@ config ARCH_BOARD_RTL8721CSM
 	depends on ARCH_CHIP_RTL8721CSM
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
+	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Realtek RTL8721CSM-Discovery board based on the Realtek RTL8721CSM MCU.		
 endchoice

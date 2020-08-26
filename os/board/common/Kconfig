@@ -3,13 +3,14 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config ARCH_USE_FLASH
-	bool "Enable/Disable FLASH usage for user"
+config ARCH_BOARD_HAVE_FLASH
+	bool
 	default n
 	---help---
-		This shows that user enables FLASH to use.
+		This shows the board has the flash and enables to use.
+		This is enabled by board config.
 
-if ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)
+if ARCH_BOARD_HAVE_FLASH && (NFILE_DESCRIPTORS != 0)
 comment "Board-Partition Options"
 
 config FLASH_PARTITION
@@ -53,16 +54,16 @@ config FLASH_PART_NAME
 		Comma separated list of partition names.
 
 endif # FLASH_PARTITION
-endif # ARCH_USE_FLASH && (NFILE_DESCRIPTORS != 0)
+endif # ARCH_BOARD_HAVE_FLASH && (NFILE_DESCRIPTORS != 0)
 
-config ARCH_USE_SECOND_FLASH
+config ARCH_BOARD_HAVE_SECOND_FLASH
 	bool
 	default n
 	---help---
-		This enables Second FLASH to use.
-		It is selected by chip config.
+		This shows the board has the second flash and enables to use.
+		This is enabled by board config.
 
-if ARCH_USE_SECOND_FLASH && (NFILE_DESCRIPTORS != 0)
+if ARCH_BOARD_HAVE_SECOND_FLASH && (NFILE_DESCRIPTORS != 0)
 comment "Second Flash Partition Options"
 
 config SECOND_FLASH_PARTITION
@@ -104,4 +105,4 @@ config SECOND_FLASH_PART_NAME
 		Comma separated list of partition names.
 
 endif # SECOND_FLASH_PARTITION
-endif # ARCH_USE_SECOND_FLASH && (NFILE_DESCRIPTORS != 0)
+endif # ARCH_BOARD_HAVE_SECOND_FLASH && (NFILE_DESCRIPTORS != 0)
