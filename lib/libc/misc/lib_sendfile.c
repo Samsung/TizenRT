@@ -61,6 +61,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "lib_internal.h"
 
@@ -136,6 +137,7 @@ ssize_t sendfile(int outfd, int infd, off_t *offset, size_t count)
 	FAR uint8_t *wrbuffer;
 	off_t startpos = 0;
 	ssize_t nbytesread;
+	size_t read_buf_size;
 	ssize_t nbyteswritten;
 	ssize_t ntransferred;
 	bool endxfr;
@@ -165,15 +167,19 @@ ssize_t sendfile(int outfd, int infd, off_t *offset, size_t count)
 		return ERROR;
 	}
 
+	/* Set read request size to maximum buffer size (CONFIG_LIB_SENDFILE_BUFSIZE) */
+
+	read_buf_size = CONFIG_LIB_SENDFILE_BUFSIZE;
+
 	/* Now transfer 'count' bytes from the infd to the outfd */
 
-	for (ntransferred = 0, endxfr = false; ntransferred < count && !endxfr;) {
+	for (ntransferred = 0, endxfr = false; ntransferred < count && !endxfr && ntransferred != SSIZE_MAX;) {
 		/* Loop until the read side of the transfer comes to some conclusion */
 
 		do {
 			/* Read a buffer of data from the infd */
 
-			nbytesread = read(infd, iobuffer, CONFIG_LIB_SENDFILE_BUFSIZE);
+			nbytesread = read(infd, iobuffer, read_buf_size);
 
 			/* Check for end of file */
 
@@ -261,6 +267,15 @@ ssize_t sendfile(int outfd, int infd, off_t *offset, size_t count)
 					}
 				}
 			} while (nbytesread > 0);
+
+			/* Check the limitation of ntransferred (SSIZE_MAX) */
+
+			if (!endxfr && ((size_t)ntransferred + read_buf_size > SSIZE_MAX)) {
+
+				/* Adjust read request size to remain */
+
+				read_buf_size = SSIZE_MAX - ntransferred;
+			}
 		}
 	}
 
