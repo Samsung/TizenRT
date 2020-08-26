@@ -154,61 +154,56 @@ int unlink(FAR const char *pathname)
 			 * then rmdir should remove the node.
 			 */
 
-			if (inode->u.i_ops) {
-				inode_semtake();
+			inode_semtake();
 
-				/* Refuse to unlink the inode if it has children.  I.e., if it is
-				 * functioning as a directory and the directory is not empty.
-				 */
+			/* Refuse to unlink the inode if it has children.  I.e., if it is
+			 * functioning as a directory and the directory is not empty.
+			 */
 
-				if (inode->i_child != NULL) {
-					errcode = ENOTEMPTY;
-					inode_semgive();
-					goto errout_with_inode;
-				}
-
-				/* Notify the driver that it has been unlinked.  If there are no
-				 * open references to the driver instance, then the driver should
-				 * release all resources because it is no longer accessible.
-				 */
-
-				if (INODE_IS_DRIVER(inode) && inode->u.i_ops->unlink) {
-					/* Notify the character driver that it has been unlinked */
-
-					ret = inode->u.i_ops->unlink(inode);
-					if (ret < 0) {
-						errcode = -ret;
-						goto errout_with_inode;
-					}
-				}
-#ifndef CONFIG_DISABLE_MOUNTPOINT
-				else if (INODE_IS_BLOCK(inode) && inode->u.i_bops->unlink) {
-					/* Notify the block driver that it has been unlinked */
-
-					ret = inode->u.i_bops->unlink(inode);
-					if (ret < 0) {
-						errcode = -ret;
-						goto errout_with_inode;
-					}
-				}
-#endif
-
-				/* Remove the old inode.  Because we hold a reference count on the
-				 * inode, it will not be deleted now.  It will be deleted when all
-				 * of the references to to the inode have been released (perhaps
-				 * when inode_release() is called below).  inode_remove() will
-				 * return -EBUSY to indicate that the inode was not deleted now.
-				 */
-
-				ret = inode_remove(pathname);
+			if (inode->i_child != NULL) {
+				errcode = ENOTEMPTY;
 				inode_semgive();
+				goto errout_with_inode;
+			}
 
-				if (ret < 0 && ret != -EBUSY) {
+			/* Notify the driver that it has been unlinked.  If there are no
+			 * open references to the driver instance, then the driver should
+			 * release all resources because it is no longer accessible.
+			 */
+
+			if (INODE_IS_DRIVER(inode) && inode->u.i_ops->unlink) {
+				/* Notify the character driver that it has been unlinked */
+
+				ret = inode->u.i_ops->unlink(inode);
+				if (ret < 0) {
 					errcode = -ret;
 					goto errout_with_inode;
 				}
-			} else {
-				errcode = EISDIR;
+			}
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+			else if (INODE_IS_BLOCK(inode) && inode->u.i_bops->unlink) {
+				/* Notify the block driver that it has been unlinked */
+
+				ret = inode->u.i_bops->unlink(inode);
+				if (ret < 0) {
+					errcode = -ret;
+					goto errout_with_inode;
+				}
+			}
+#endif
+
+			/* Remove the old inode.  Because we hold a reference count on the
+			 * inode, it will not be deleted now.  It will be deleted when all
+			 * of the references to to the inode have been released (perhaps
+			 * when inode_release() is called below).  inode_remove() will
+			 * return -EBUSY to indicate that the inode was not deleted now.
+			 */
+
+			ret = inode_remove(pathname);
+			inode_semgive();
+
+			if (ret < 0 && ret != -EBUSY) {
+				errcode = -ret;
 				goto errout_with_inode;
 			}
 		} else
