@@ -1527,10 +1527,6 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 			frames = avail;
 		}
 
-		if (!frames) {
-			break;
-		}
-
 		/* copy frames to/from buffer */
 		frames = pcm_mmap_transfer_areas(pcm, (void *)buffer, offset, frames);
 		if (frames < 0) {
