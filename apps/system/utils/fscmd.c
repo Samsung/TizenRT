@@ -159,6 +159,10 @@ static int tash_echo(int argc, char **args)
 	int n_opt = 1;
 	int ret = ERROR;
 
+	if (argc == 1) {
+		FSCMD_OUTPUT("\n");
+		return OK;
+	}
 	if (!strncmp(args[1], "--help", strlen("--help") + 1)) {
 		FSCMD_OUTPUT(FSCMD_ECHO_USAGE);
 		return OK;
