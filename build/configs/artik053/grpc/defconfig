@@ -252,7 +252,7 @@ CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT="/mnt"
 #
 # Board-Partition Options
 #
-CONFIG_ARCH_USE_FLASH=y
+CONFIG_ARCH_BOARD_HAVE_FLASH=y
 
 #
 # Board-Partition Options
