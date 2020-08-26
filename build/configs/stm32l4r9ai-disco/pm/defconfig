@@ -531,7 +531,7 @@ CONFIG_BOARD_ASSERT_SYSTEM_HALT=y
 #
 # Board-Partition Options
 #
-CONFIG_ARCH_USE_FLASH=y
+CONFIG_ARCH_BOARD_HAVE_FLASH=y
 
 #
 # Board-Partition Options
