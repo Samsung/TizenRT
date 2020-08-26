@@ -321,7 +321,7 @@ CONFIG_PROD_HEADER="prod/fac.h"
 #
 # Board-Partition Options
 #
-CONFIG_ARCH_USE_FLASH=y
+CONFIG_ARCH_BOARD_HAVE_FLASH=y
 
 #
 # Board-Partition Options

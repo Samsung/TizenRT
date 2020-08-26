@@ -296,7 +296,7 @@ CONFIG_QEMU_NONE=y
 #
 # Board-Partition Options
 #
-# CONFIG_ARCH_USE_FLASH is not set
+# CONFIG_ARCH_BOARD_HAVE_FLASH is not set
 
 #
 # SE Selection
