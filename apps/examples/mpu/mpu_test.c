@@ -56,7 +56,7 @@ int mpu_tc_main(int argc, char *argv[])
 
 		if (ch == 'A' || ch == 'a') {
 			obj.type = MPUTEST_APP_ADDR;
-			ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+			ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
 			if (ret < 0) {
 				printf("ERROR: Failed to fetch test address from kernel\n");
 				close(tc_fd);
@@ -86,7 +86,7 @@ int mpu_tc_main(int argc, char *argv[])
 			ch = getchar();
 			if (ch == 'C' || ch == 'c') {
 				obj.type = MPUTEST_KERNEL_CODE;
-				ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
 				if (ret < 0) {
 					printf("ERROR: Failed to fetch test address from kernel\n");
 					close(tc_fd);
@@ -108,7 +108,7 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("ERROR: User Task made invalid access to Kernel code space\n");
 			} else if (ch == 'D' || ch == 'd') {
 				obj.type = MPUTEST_KERNEL_DATA;
-				ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
 				if (ret < 0) {
 					printf("ERROR: Failed to fetch test address from kernel\n");
 					close(tc_fd);
@@ -139,7 +139,7 @@ int mpu_tc_main(int argc, char *argv[])
 
 		if (ch == 'A' || ch == 'a') {
 			obj.type = MPUTEST_APP_ADDR;
-			ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+			ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
 			if (ret < 0) {
 				printf("ERROR: Failed to fetch test address from kernel\n");
 				close(tc_fd);
@@ -169,7 +169,7 @@ int mpu_tc_main(int argc, char *argv[])
 			ch = getchar();
 			if (ch == 'C' || ch == 'c') {
 				obj.type = MPUTEST_KERNEL_CODE;
-				ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
 				if (ret < 0) {
 					printf("ERROR: Failed to fetch test address from kernel\n");
 					close(tc_fd);
@@ -191,7 +191,7 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("ERROR: User Task made invalid access to Kernel code space\n");
 			} else if (ch == 'D' || ch == 'd') {
 				obj.type = MPUTEST_KERNEL_DATA;
-				ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
 				if (ret < 0) {
 					printf("ERROR: Failed to fetch test address from kernel\n");
 					close(tc_fd);
