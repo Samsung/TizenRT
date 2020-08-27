@@ -52,7 +52,7 @@ static void *assert_thread(void *index)
 	} else if (type == 1) {
 		/* Access kernel code */
 		obj.type = MPUTEST_KERNEL_CODE;
-		ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+		ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
 		if (ret < 0) {
 			printf("ERROR: Failed to obtain address from kernel\n");
 			close(tc_fd);
@@ -65,7 +65,7 @@ static void *assert_thread(void *index)
 	} else {
 		/* Access another binary 'micom' address */
 		obj.type = MPUTEST_APP_ADDR;
-		ret = ioctl(tc_fd, TESTIOC_MPUTEST, &obj);
+		ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
 		if (ret < 0) {
 			printf("ERROR: Failed to obtain address from kernel\n");
 			close(tc_fd);
