@@ -211,7 +211,7 @@ static int tash_echo(int argc, char **args)
 		return ret;
 	 }
 
-	for (i = n_opt; i < direction.index; i++) {
+	for (i = n_opt; i < direction.index && len < FSCMD_BUFFER_LEN; i++) {
 		if (i != n_opt) {
 			memcpy(fscmd_buffer + len, " ", 1);
 			len += 1;
