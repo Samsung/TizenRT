@@ -273,7 +273,9 @@ static int tash_cat(int argc, char **args)
 	int destfd;
 	int i;
 	int flags;
-	ssize_t ret = 0;
+	ssize_t read_size;
+	ssize_t written_size = 0;
+	int ret;
 
 	direction.mode = FSCMD_NONE;
 	direction.index = -1;
@@ -312,19 +314,19 @@ static int tash_cat(int argc, char **args)
 		fd = open(src_fullpath, O_RDONLY);
 		if (fd < 0) {
 			FSCMD_OUTPUT(CMD_FAILED, "open", src_fullpath);
-			goto error;
+			ret = ERROR;
+			goto out_free;
 		}
 		do {
 			memset(fscmd_buffer, 0, FSCMD_BUFFER_LEN);
-			ret = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN - 1);
-			if (ret > 0) {
-				fscmd_buffer[ret] = '\0';
+			read_size = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN - 1);
+			if (read_size > 0) {
+				fscmd_buffer[read_size] = '\0';
 				FSCMD_OUTPUT("%s", fscmd_buffer);
 			}
-		} while (ret > 0);
+		} while (read_size > 0);
 
 		FSCMD_OUTPUT("\n");
-		close(fd);
 	} else if (argc == 4) {
 		/* Below is redirection case */
 		flags = O_WRONLY | O_CREAT;
@@ -351,31 +353,35 @@ static int tash_cat(int argc, char **args)
 			fd = open(src_fullpath, O_RDONLY);
 			if (fd < 0) {
 				FSCMD_OUTPUT(CMD_FAILED, "open", src_fullpath);
-				goto error;
+				ret = ERROR;
+				goto out_free;
 			}
 
 			dest_fullpath = get_fullpath(args[3]);
 			if (!dest_fullpath) {
 				FSCMD_OUTPUT(OUT_OF_MEMORY, args[3]);
-				close(fd);
-				goto error;
+				ret = ERROR;
+				goto out_close;
 			}
 
 			destfd = open(dest_fullpath, flags);
 			if (destfd < 0) {
 				FSCMD_OUTPUT(CMD_FAILED, "open", dest_fullpath);
-				close(fd);
-				goto error;
+				ret = ERROR;
+				goto out_close;
 			}
+
 			do {
 				memset(fscmd_buffer, 0, FSCMD_BUFFER_LEN);
-				ret = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN);
-				if (ret > 0) {
-					ret = write(destfd, fscmd_buffer, ret);
+				read_size = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN);
+				while (read_size > 0) {
+					written_size = write(destfd, fscmd_buffer + written_size, read_size);
+					if (written_size != read_size) {
+						read_size -= written_size;
+					}
 				}
-			} while (ret > 0);
+			} while (read_size > 0);
 
-			close(fd);
 			close(destfd);
 		} else {
 			FSCMD_OUTPUT(INVALID_ARGS " : [> or >>] [file] [contents]\n", args[0]);
@@ -387,13 +393,14 @@ static int tash_cat(int argc, char **args)
 		return ERROR;
 	}
 
+	ret = OK;
+
+out_close:
+	close(fd);
+out_free:
 	fscmd_free(src_fullpath);
 	fscmd_free(dest_fullpath);
-	return OK;
-error:
-	fscmd_free(src_fullpath);
-	fscmd_free(dest_fullpath);
-	return ERROR;
+	return ret;
 }
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
