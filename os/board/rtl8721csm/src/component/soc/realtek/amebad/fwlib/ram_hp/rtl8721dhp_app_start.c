@@ -1257,6 +1257,22 @@ static void app_driver_call_os_func_init(void)
 	driver_call_os_func_map.driver_exit_critical = vPortExitCritical;
 }
 
+IMAGE2_RAM_TEXT_SECTION
+void app_RAM_data_copy(void)
+{
+	IMAGE_HEADER *img2_hdr = NULL;
+	IMAGE_HEADER *FlashImage2DataHdr = NULL;
+
+	img2_hdr = (IMAGE_HEADER *)((__flash_text_start__) - IMAGE_HEADER_LEN);
+
+	FlashImage2DataHdr = (IMAGE_HEADER *)(__flash_text_start__ + img2_hdr->image_size);
+	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO,"IMG2 DATA[0x%x:%d:0x%x]\n", (u32)(FlashImage2DataHdr + 1),
+		FlashImage2DataHdr->image_size, FlashImage2DataHdr->image_addr);
+
+	/* load image2 data into RAM */
+	_memcpy((void*)FlashImage2DataHdr->image_addr, (void*)(FlashImage2DataHdr + 1), FlashImage2DataHdr->image_size);
+}
+
 // The Main App entry point
 void app_start(void)
 {
@@ -1266,6 +1282,7 @@ void app_start(void)
 	VectorTableOverride();
 
 	app_section_init();
+	app_RAM_data_copy();
 	_memset((void *) __bss_start__, 0, (__bss_end__ - __bss_start__));
 
 #ifdef CONFIG_AMEBAD_TRUSTZONE
