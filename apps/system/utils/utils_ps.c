@@ -65,7 +65,7 @@
 
 #include "utils_proc.h"
 
-#define STATENAMES_ARRARY_SIZE (sizeof(utils_statenames) / sizeof(utils_statenames[0]))
+#define STATENAMES_ARRAY_SIZE (sizeof(utils_statenames) / sizeof(utils_statenames[0]))
 #define PS_BUFLEN 128
 
 static const char *utils_statenames[] = {
@@ -111,7 +111,7 @@ static void ps_print_values(char *buf)
 	}
 
 	state = atoi(stat_info[PROC_STAT_STATE]);
-	if (state <= 0 || STATENAMES_ARRARY_SIZE <= state) {
+	if (state <= 0 || STATENAMES_ARRAY_SIZE <= state) {
 		return;
 	}
 
