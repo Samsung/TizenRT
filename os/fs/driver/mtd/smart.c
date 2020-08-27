@@ -1642,14 +1642,22 @@ static void smart_find_wear_minmax(FAR struct smart_struct_s *dev)
 #ifdef CONFIG_MTD_SMART_SECTOR_ERASE_DEBUG
 	/* Also adjust the erase counts. */
 	level = 255;
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	for (x = 0; x < dev->neraseblocks; x++) {
+#else
 	for (x = 0; x < dev->geo.neraseblocks; x++) {
+#endif
 		if (dev->erasecounts[x] < level) {
 			level = dev->erasecounts[x];
 		}
 	}
 
 	if (level != 0) {
+#ifdef CONFIG_MTD_SMART_JOURNALING
+		for (x = 0; x < dev->neraseblocks; x++) {
+#else
 		for (x = 0; x < dev->geo.neraseblocks; x++) {
+#endif
 			dev->erasecounts[x] -= level;
 		}
 	}
@@ -3737,8 +3745,11 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 
 #ifdef CONFIG_MTD_SMART_SECTOR_ERASE_DEBUG
 	/* Set the erase counts equal to the wear levels. */
-
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	for (sector = 0; sector < dev->neraseblocks; sector++) {
+#else
 	for (sector = 0; sector < dev->geo.neraseblocks; sector++) {
+#endif
 		dev->erasecounts[sector] = smart_get_wear_level(dev, sector);
 	}
 #endif
@@ -4894,11 +4905,23 @@ static int smart_journal_move_to_next(FAR struct smart_struct_s *dev)
 	/* Check we have to move to next block, delete current block if it is full */
 	if (((old_seq + 1) % dev->njournalPerBlk) == 0) {
 		old_block = old_seq / dev->njournalPerBlk;
-		ret = smart_journal_erase(dev, old_block + dev->neraseblocks);
+		old_block += dev->neraseblocks;
+		ret = smart_journal_erase(dev, old_block);
 		if (ret != OK) {
 			fdbg("Journal Erase failed ret : %d journal sequence : %d old block : %d\n", ret, dev->journal_seq, old_block);
 			return -EIO;
 		}
+	
+#ifdef CONFIG_MTD_SMART_SECTOR_ERASE_DEBUG
+		if (dev->erasecounts) {
+			/* For Journal block, we reset it roughly but we can compare them enoughly */
+			if (dev->erasecounts[old_block] == SMART_WEAR_FULL_RELOCATE_THRESHOLD) {
+				dev->erasecounts[old_block] = 0;
+			} else {
+				dev->erasecounts[old_block]++;
+			}
+		}
+#endif
 		fvdbg("block : %d erased\n", old_block);
 	}
 	
@@ -5521,6 +5544,13 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		/* Update the new wear level count. */
 		smart_set_wear_level(dev, psector, smart_get_wear_level(dev, psector) + 1);
 #endif
+
+#ifdef CONFIG_MTD_SMART_SECTOR_ERASE_DEBUG
+		if (dev->erasecounts) {
+			dev->erasecounts[psector]++;
+		}
+#endif
+
 		break;
 		
 	default:
