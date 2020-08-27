@@ -1315,7 +1315,7 @@ extern void __libc_init_array(void);
 		"mov sp, r0\n"
 	);
 
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 	mpu_init();
 	app_mpu_nocache_init();
 #endif
