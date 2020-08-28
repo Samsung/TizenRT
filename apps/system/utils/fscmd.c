@@ -86,6 +86,8 @@
 
 #define FSCMD_ECHO_USAGE "Usage:  echo [OPTIONS] [input_text] [> or >>] > [target_file_path]\n\tOPTIONS: '-n' - do not output the trailing newline.\n\t\t '--help' - displays usage.\n"
 #define FSCMD_CAT_USAGE "Usage:  cat [OPTIONS] [source_file_path] [> or >>] [target_file_path]\n\tOPTIONS: '--help' - displays usage.\n"
+#define FSCMD_MV_USAGE "Usage:  mv [source_file_path] [target_file_path]\n"
+
 
 /** Wrapper to prevent remove information by users **/
 #define FSCMD_OUTPUT(...) printf(__VA_ARGS__)
@@ -1124,6 +1126,54 @@ static int tash_rmdir(int argc, char **args)
 	return ret;
 }
 #endif
+
+#ifndef CONFIG_DISABLE_ENVIRON
+/****************************************************************************
+ * Name: tash_mv
+ *
+ * Description:
+ *   rename or move source file and data to subfolder to target folder
+ *
+ * Usage:
+ *   mv [source_file_path] [target_file_path]
+ *
+ ****************************************************************************/
+static int tash_mv(int argc, char **args)
+{
+	char *src_fullpath = NULL;
+	char *dest_fullpath = NULL;
+	int ret;
+
+	if (argc != 3) {
+		FSCMD_OUTPUT(FSCMD_MV_USAGE, args[0]);
+		return ERROR;
+	}
+	
+	src_fullpath = get_fullpath(args[1]);
+	if (!src_fullpath) {
+		FSCMD_OUTPUT(OUT_OF_MEMORY, args[1]);
+		return ERROR;
+	}
+
+	dest_fullpath = get_fullpath(args[2]);
+	if (!dest_fullpath) {
+		FSCMD_OUTPUT(OUT_OF_MEMORY, args[2]);
+		ret = ERROR;
+		goto err_with_src;
+	}
+
+	ret = rename(src_fullpath, dest_fullpath);
+	if (ret == ERROR) {
+		FSCMD_OUTPUT(CMD_FAILED_ERRNO, "mv", "rename", errno);
+	}
+
+	free(dest_fullpath);
+err_with_src:
+	free(src_fullpath);
+	return ret;
+}
+#endif
+
 static int df_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
 	printf("%6u %8d %8d  %8d %s\n", statbuf->f_bsize, statbuf->f_blocks, statbuf->f_blocks - statbuf->f_bavail, statbuf->f_bavail, mountpoint);
@@ -1279,38 +1329,53 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"cat",       tash_cat,       TASH_EXECMD_SYNC},
 #endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"cd",        tash_cd,        TASH_EXECMD_SYNC},
 #endif
+
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+	{"df",        tash_df,        TASH_EXECMD_SYNC},
+#endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"echo",      tash_echo,      TASH_EXECMD_SYNC},
 #endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"ls",        tash_ls,        TASH_EXECMD_SYNC},
 #endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"mkdir",     tash_mkdir,     TASH_EXECMD_SYNC},
 #endif
+
+#ifndef CONFIG_DISABLE_ENVIRON
+	{"mv",        tash_mv,        TASH_EXECMD_SYNC},
+#endif
+
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"mount",     tash_mount,     TASH_EXECMD_SYNC},
 #endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"umount",    tash_umount,    TASH_EXECMD_SYNC},
 #endif
 #endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"pwd",       tash_pwd,       TASH_EXECMD_SYNC},
 #endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"rm",        tash_rm,        TASH_EXECMD_SYNC},
 #endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"rmdir",     tash_rmdir,     TASH_EXECMD_SYNC},
 #endif
-#ifndef CONFIG_DISABLE_MOUNTPOINT
-	{"df",        tash_df,        TASH_EXECMD_SYNC},
-#endif
+
 	{NULL,        NULL,           0}
 };
 
