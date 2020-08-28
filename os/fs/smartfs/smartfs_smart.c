@@ -1917,11 +1917,6 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	struct smartfs_entry_s newentry;
 	mode_t mode;
 	uint16_t type;
-	uint16_t sector;
-	uint16_t offset;
-	uint16_t entrysize;
-	struct smartfs_entry_header_s *entry;
-	struct smart_read_write_s readwrite;
 
 	/* Sanity checks */
 
@@ -1938,75 +1933,21 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	oldentry.name = NULL;
 	newentry.name = NULL;
 	ret = smartfs_finddirentry(fs, &oldentry, oldrelpath);
-	if (ret < 0) {
+	if (ret != OK) {
 		fdbg("Old entry doesn't exist\n");
 		goto errout_with_semaphore;
 	}
 
-	/* Search for the new entry and validate it DOESN'T exist, unless we
-	 * are copying to a directory and keeping the same file name, such as:
-	 *
-	 *    mv /mntpoint/somefile.txt /mntpoint/somedir
-	 *
-	 * in which case, we need to validate the /mntpoint/somedir/somefile.txt
-	 * doens't exsit.
-	 */
-
+	/* Search for the new entry and validate it DOESN'T exist */
 	ret = smartfs_finddirentry(fs, &newentry, newrelpath);
 	if (ret == OK) {
-		/* Test if it's a file.  If it is, then it's an error */
-
-		if ((newentry.flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
-			ret = -EEXIST;
-			goto errout_with_semaphore;
-		}
-
-		/* Nope, it's a directory.  Now search the directory for old file name */
-
-		sector = newentry.firstsector;
-		while (sector != SMARTFS_ERASEDSTATE_16BIT) {
-			/* Read the next sector of diretory entries */
-
-			smartfs_setbuffer(&readwrite, sector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
-			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-			if (ret < 0) {
-				fdbg("Error %d reading sector %d data\n", ret, sector);
-				goto errout_with_semaphore;
-			}
-
-			offset = sizeof(struct smartfs_chain_header_s);
-			entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
-			while (offset + entrysize < fs->fs_llformat.availbytes) {
-				/* Test the next entry */
-
-				entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
-				/* Check if entry flags are erased OR empty OR inactive and skip the entry */
-				if ((entry->flags == SMARTFS_ERASEDSTATE_16BIT) || ((entry->flags & SMARTFS_DIRENT_EMPTY) == (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) || ((entry->flags & SMARTFS_DIRENT_ACTIVE) != (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))) {
-					/* This entry isn't valid, skip it */
-
-					offset += entrysize;
-					continue;
-				}
-
-				/* Test if this entry matches the filename */
-
-				if (strcmp(newentry.name, entry->name) == 0) {
-					/* Uh-oh, looks like the new entry name already exists */
-
-					ret = -EEXIST;
-					goto errout_with_semaphore;
-				}
-
-				offset += entrysize;
-			}
-
-			/* Chain to next sector */
-
-			sector = SMARTFS_NEXTSECTOR(((struct smartfs_chain_header_s *)fs->fs_rwbuffer));
-		}
-
-		/* Okay, we will create new file in the newentry directory */
-		newentry.dsector = newentry.firstsector;
+		/* The entry to be created after rename already exists, cannot complete rename request */
+		ret = -EEXIST;
+		goto errout_with_semaphore;
+	}
+	if (ret != -ENOENT) {
+		fdbg("Cannot rename entry, error = %d\n", ret);
+		goto errout_with_semaphore;
 	}
 
 	/* Test if the new parent directory is valid */
@@ -2017,9 +1958,10 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		type = oldentry.flags & SMARTFS_DIRENT_TYPE;
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-		if (oldentry.dsector == newentry.dsector) {
+		if (oldentry.dfirst == newentry.dsector) {
 			/* We will not use any new entry found, we will overwrite the existing entry but with a new name */
 			strncpy(oldentry.name, newentry.name, fs->fs_llformat.namesize);
+			oldentry.prev_parent = oldentry.dsector;
 			ret = smartfs_writeentry(fs, oldentry, type, mode);
 			if (ret != OK) {
 				fdbg("Error writing new entry\n");
