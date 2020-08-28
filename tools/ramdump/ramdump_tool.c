@@ -200,9 +200,11 @@ static int ramdump_recv(int dev_fd)
 	int count = 0;
 	int regions_to_dump = 0;
 	uint32_t ramdump_size;
+	uint32_t config_info_size;
+	uint8_t config_info_cnt;
 	char ramdump_region[2] = { '\0' };
 	char bin_file[BINFILE_NAME_SIZE] = { '\0' };
-	FILE *bin_fp;
+	int bin_fd;
 
 	/* Display memory region options for user to dump */
 	printf("\n=========================================================================\n");
@@ -293,8 +295,8 @@ scan_input:
 			}
 			printf("=========================================================================\n");
 
-			bin_fp = fopen(bin_file, "w");
-			if (bin_fp == NULL) {
+			bin_fd = open(bin_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXO);
+			if (bin_fd == -1) {
 				printf("%s create failed\n", bin_file);
 				return -1;
 			}
@@ -308,14 +310,14 @@ scan_input:
 				ret = read(dev_fd, &buf, 1);
 				if (ret != 1) {
 					printf("Receiving ramdump %dTH byte failed, ret = %d\n", count, ret);
-					fclose(bin_fp);
+					close(bin_fd);
 					return -1;
 				}
 
-				ret = fwrite(&buf, 1, 1, bin_fp);
+				ret = write(bin_fd, &buf, 1);
 				if (ret != 1) {
 					printf("Writing ramdump %dTH byte failed, ret = %d\n", count, ret);
-					fclose(bin_fp);
+					close(bin_fd);
 					return -1;
 				}
 
@@ -328,11 +330,42 @@ scan_input:
 				}
 			}
 			printf("]\n");
-			fclose(bin_fp);
+
+			ret = read(dev_fd, &buf, 1);
+			if (ret != 1) {
+				printf("Receiving config information count failed, ret = %d\n", ret);
+				close(bin_fd);
+				return -1;
+			}
+			ret = write(bin_fd, &buf, 1);
+			if (ret != 1) {
+				printf("Writing config information count failed, ret = %d\n", ret);
+				close(bin_fd);
+				return -1;
+			}
+
+			config_info_cnt = (uint8_t)buf;
+			config_info_size = sizeof(uint32_t);
+			char config_info_buffer[4];
+			while (config_info_cnt) {
+				ret = read(dev_fd, config_info_buffer, config_info_size);
+				if (ret != config_info_size) {
+					printf("Receiving config information failed, ret = %d\n", ret);
+					close(bin_fd);
+					return -1;
+				}
+				ret = write(bin_fd, config_info_buffer, config_info_size);
+				if (ret != config_info_size) {
+					printf("Writing config information failed, ret = %d\n", ret);
+					close(bin_fd);
+					return -1;
+				}
+				config_info_cnt--;
+			}
+			close(bin_fd);
 		}
 	}
 	return 0;
-
 }
 
 static int configure_tty(int tty_fd)
