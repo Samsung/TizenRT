@@ -289,7 +289,7 @@ error_with_fd1:
 	return ret;
 }
 
-int init_test_file()
+int init_test_file(void)
 {
 	struct stat st;
 	int ret;

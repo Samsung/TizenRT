@@ -290,7 +290,7 @@ int dbg(const char *fmt, ...)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_DEBUG_VERBOSE
 int vdbg(const char *fmt, ...)
 {
 	va_list args;
