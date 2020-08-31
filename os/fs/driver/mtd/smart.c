@@ -2200,6 +2200,8 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	fdbg("   Data Erase block:     %10d\n", dev->neraseblocks);
 	fdbg("   Journal Erase block:  %10d\n", dev->njournaleraseblocks);
 	fdbg("   Journal Data/Block:   %10d\n", dev->njournalPerBlk);
+	fdbg("   Journal total:        %10d\n", dev->njournalentries);
+	fdbg("   Journal usage:        %10d\n", dev->journal_seq);
 #endif
 #ifdef CONFIG_MTD_SMART_ALLOC_DEBUG
 	fdbg("   Allocations:\n");     
@@ -5360,10 +5362,8 @@ static bool smart_journal_check_log_empty(journal_log_t *log)
 static void smart_journal_print_log(FAR struct smart_struct_s *dev, journal_log_t *log)
 {
 	/* First calculate Address from current block */
-	uint32_t addr = smart_journal_get_writeaddress(dev);
-
 	fsdbg("Journal data sequence #%d\n", dev->journal_seq);
-	fsdbg("Journal addr : %u\n", addr);
+	fsdbg("Journal addr : %u\n", smart_journal_get_writeaddress(dev));
 	fsdbg("Journal Type : %u\n", GET_JOURNAL_TYPE(log->status));
 	fsdbg("Journal CRC : %d\n", UINT8TOUINT16(log->crc16));
 	fsdbg("Target Physical Sector : %d\n", UINT8TOUINT16(log->psector));
@@ -5457,7 +5457,6 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t *log)
 {
 	int ret = OK;
-	int result = OK;
 	int type;
 	size_t mtd_size = sizeof(struct smart_sect_header_s);
 	uint32_t address = smart_journal_get_writeaddress(dev);
