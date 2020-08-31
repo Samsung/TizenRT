@@ -378,9 +378,11 @@ int get_errno(void);
 #ifdef CONFIG_DEBUG_FS_ERROR
 #define fdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define flldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#define fsdbg(format, ...)   dbg_noarg(format, ##__VA_ARGS__)
 #else
 #define fdbg(...)
 #define flldbg(...)
+#define fsdbg(format, ...)
 #endif
 
 #ifdef CONFIG_DEBUG_FS_WARN
@@ -1152,9 +1154,11 @@ int get_errno(void);
 #ifdef CONFIG_DEBUG_FS_ERROR
 #define fdbg        dbg
 #define flldbg      lldbg
+#define fsdbg       dbg_noarg
 #else
 #define fdbg        (void)
 #define flldbg      (void)
+#define fsdbg       (void)
 #endif
 
 #ifdef CONFIG_DEBUG_FS_WARN
