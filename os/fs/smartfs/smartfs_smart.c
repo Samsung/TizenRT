@@ -1917,6 +1917,9 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	struct smartfs_entry_s newentry;
 	mode_t mode;
 	uint16_t type;
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	struct smart_read_write_s readwrite;
+#endif
 
 	/* Sanity checks */
 
@@ -1960,11 +1963,10 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 		if (oldentry.dfirst == newentry.dsector) {
 			/* We will not use any new entry found, we will overwrite the existing entry but with a new name */
-			strncpy(oldentry.name, newentry.name, fs->fs_llformat.namesize);
-			oldentry.prev_parent = oldentry.dsector;
-			ret = smartfs_writeentry(fs, oldentry, type, mode);
+			smartfs_setbuffer(&readwrite, oldentry.dsector, oldentry.doffset + offsetof(struct smartfs_entry_header_s, name), fs->fs_llformat.namesize, (uint8_t *)newentry.name);
+			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 			if (ret != OK) {
-				fdbg("Error writing new entry\n");
+				fdbg("Unable to write new entry to MTD, logical sector = %d, error = %d\n", oldentry.dsector, ret);
 			}
 			/* Old entry doesn't have to be invalidated, directly go to end */
 			goto errout_with_semaphore;
