@@ -2666,16 +2666,15 @@ static void tc_fs_vfs_rename_p(void)
 
 	fd = open(VFS_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC);
 	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	close(fd);
 
 	snprintf(new_file, 12, "%s_re", old_file);
 	unlink(new_file);
 
 	/* Testcase */
 	ret = rename(old_file, new_file);
-	TC_ASSERT_EQ_CLEANUP("rename", ret, OK, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("rename", ret, OK, vfs_unmount());
 
-	/* Deinit */
-	close(fd);
 	vfs_unmount();
 
 	TC_SUCCESS_RESULT();
@@ -2726,13 +2725,14 @@ static void tc_fs_vfs_rename_exist_path_n(void)
 
 	fd = open(VFS_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC);
 	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	close(fd);
 
 	snprintf(old_file, 12, "%s_re", exist_file);
 	unlink(old_file);
 
 	/* Testcase */
 	ret = rename(exist_file, old_file);
-	close(fd);
+
 	TC_ASSERT_EQ_CLEANUP("rename", ret, OK, vfs_unmount());
 
 	/* Nagative case with invalid argument, already existing new pathname. It will return ERROR */
