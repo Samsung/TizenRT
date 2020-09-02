@@ -72,6 +72,7 @@ static void binary_update_download_binary(binary_update_info_t *binary_info, int
 	uint8_t buffer[BUFFER_SIZE];
 	binary_header_t header_data;
 	char filepath[CONFIG_PATH_MAX];
+	char new_filepath[CONFIG_PATH_MAX];
 
 	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)binary_info->version);
 	read_fd = open(filepath, O_RDONLY);
@@ -92,11 +93,17 @@ static void binary_update_download_binary(binary_update_info_t *binary_info, int
 
 	new_version = header_data.bin_ver + 1;
 
-	write_fd = binary_manager_open_new_entry(APP_NAME, new_version);
+	ret = binary_manager_get_download_path(APP_NAME, new_version, new_filepath);
+	if (ret < 0) {
+		fail_cnt++;
+		printf("binary_manager_get_download_path FAIL %d,\n", ret);
+		return;
+	}
+
+	write_fd = open(new_filepath, O_WRONLY);
 	if (write_fd < 0) {
 		fail_cnt++;
-		printf("Failed to create: version %d, ret %d, errno %d\n", new_version, write_fd, get_errno());
-		close(read_fd);
+		printf("Failed to open file %s: errno %d\n", new_filepath, get_errno());
 		return;
 	}
 
@@ -173,6 +180,7 @@ static void binary_update_download_new_binary(void)
 	binary_header_t header_data;
 	binary_update_info_t bin_info;
 	char filepath[CONFIG_PATH_MAX];
+	char new_filepath[CONFIG_PATH_MAX];
 	int filesize;
 	FILE *fp;
 
@@ -210,11 +218,17 @@ static void binary_update_download_new_binary(void)
 		return;
 	}
 
-	write_fd = binary_manager_open_new_entry(NEW_APP_NAME, NEW_APP_VERSION);
+	ret = binary_manager_get_download_path(NEW_APP_NAME, NEW_APP_VERSION, new_filepath);
+	if (ret < 0) {
+		fail_cnt++;
+		printf("binary_manager_get_download_path FAIL %d,\n", ret);
+		return;
+	}
+
+	write_fd = open(new_filepath, O_WRONLY);
 	if (write_fd < 0) {
 		fail_cnt++;
-		printf("Failed to create: version %d, ret %d, errno %d\n", NEW_APP_VERSION, write_fd, get_errno());
-		close(read_fd);
+		printf("Failed to open file %s: errno %d\n", new_filepath, get_errno());
 		return;
 	}
 
@@ -406,13 +420,14 @@ static void binary_update_unregister_state_changed_callback(void)
 
 static void binary_update_same_version_test(void)
 {
-	int ret;
+	int ret;	
+	char filepath[CONFIG_PATH_MAX];
 	binary_update_info_t bin_info;
 
 	binary_update_getinfo(APP_NAME, &bin_info);
 
 	/* Try to create binary file with old version */
-	ret = binary_manager_open_new_entry(APP_NAME, (uint32_t)bin_info.version);
+	ret = binary_manager_get_download_path(APP_NAME, (uint32_t)bin_info.version, filepath);
 	if (ret == OK) {
 		fail_cnt++;
 		printf("Get binary info FAIL, ret %d\n", ret);

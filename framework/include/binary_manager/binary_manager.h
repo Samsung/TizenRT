@@ -104,15 +104,19 @@ int binary_manager_register_state_changed_callback(binmgr_statecb_t handler, voi
 int binary_manager_unregister_state_changed_callback(void);
 
 /**
- * @brief Create a empty file where to be downloaded with version.
+ * @brief Get the path to download binary with version.
  * @details @b #include <binary_manager/binary_manager.h>\n
- *  It creates and opens a empty file where to be downloaded binary with version.
- *  User can perform file operations with returned fd : read, write, lseek, close.
+ *  User can perform file operations with returned filepath : open, read, write, lseek, close.
+ *  In case of kernel binary, it returns a path of inactive kernel partition.
+ *  Otherwise, it creates empty file with version and returns a path of the file.
+ * @param[in] binary_name The binary name to update
+ * @param[in] version The binary version to update
+ * @param[out] download_path The path to the download binary. The maximum length is CONFIG_PATH_MAX.
  * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
- *         fd of a created file on success. On failure, negative value is returned.
+ *         0 (BINMGR_OK) on success. On failure, negative value is returned.
  * @since TizenRT v3.1 PRE
  */
-int binary_manager_open_new_entry(char *binary_name, uint32_t version);
+int binary_manager_get_download_path(char *binary_name, uint32_t version, char *download_path);
 
 #endif
 /**
