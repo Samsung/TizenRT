@@ -1155,6 +1155,7 @@ int get_errno(void);
 #ifdef CONFIG_DEBUG_FS_ERROR
 #define fdbg        dbg
 #define flldbg      lldbg
+#define fsdbg       dbg
 #else
 #define fdbg        (void)
 #define flldbg      (void)
@@ -1170,7 +1171,7 @@ int get_errno(void);
 
 #ifdef CONFIG_DEBUG_FS_INFO
 #define fvdbg       vdbg
-#define fsdbg       dbg_noarg
+#define fsdbg       dbg
 #define fllvdbg     llvdbg
 #else
 #define fvdbg       (void)

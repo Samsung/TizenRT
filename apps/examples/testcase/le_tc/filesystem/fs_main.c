@@ -5052,9 +5052,11 @@ static void tc_libc_stdio_stdinstream_invalid_permission_n(void)
 	vfs_mount();
 	stream = fopen(VFS_FILE_PATH, "w+");
 	TC_ASSERT_NEQ_CLEANUP("fopen", stream, NULL, vfs_unmount());
+	fclose(stream);
 
 	/* Testcase */
 	/* Negative case, file opened with inappropriate permission */
+	stream = fopen(VFS_FILE_PATH, "w+");
 	lib_stdinstream((FAR struct lib_stdinstream_s *)&stdinstream, stream);
 	TC_ASSERT_EQ_CLEANUP("lib_stdinstream", stdinstream.stream, stream, fclose(stream); vfs_unmount());
 
@@ -5222,9 +5224,11 @@ static void tc_libc_stdio_stdsistream_invalid_permission_n(void)
 	vfs_mount();
 	stream = fopen(VFS_FILE_PATH, "w+");
 	TC_ASSERT_NEQ_CLEANUP("fopen", stream, NULL, vfs_unmount());
+	fclose(stream);
 
 	/* Testcase */
 	/* Negative case, file opened with inappropriate permission */
+	stream = fopen(VFS_FILE_PATH, "w+");
 	lib_stdsistream((FAR struct lib_stdsistream_s *)&stdsistream, stream);
 	TC_ASSERT_EQ_CLEANUP("lib_stdsistream", stdsistream.stream, stream, fclose(stream); vfs_unmount());
 

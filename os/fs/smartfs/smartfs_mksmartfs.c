@@ -174,15 +174,6 @@ int mksmartfs(FAR const char *pathname, bool force)
 	for (; x < nrootdirs; x++)
 #endif
 	{
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-		int allocated_sector = inode->u.i_bops->ioctl(inode, BIOC_ALLOCSECT,
-							   SMARTFS_BSM_LOG_SECTOR_NUMBER);
-		if (allocated_sector != SMARTFS_BSM_LOG_SECTOR_NUMBER) {
-			allocated_sector = -EIO;
-			goto errout_with_driver;
-		}
-#endif							// CONFIG_SMARTFS_BAD_SECTOR
-
 		ret = inode->u.i_bops->ioctl(inode, BIOC_ALLOCSECT, SMARTFS_ROOT_DIR_SECTOR + x);
 		if (ret != SMARTFS_ROOT_DIR_SECTOR + x) {
 			ret = -EIO;
