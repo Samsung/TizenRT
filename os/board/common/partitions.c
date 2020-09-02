@@ -33,9 +33,32 @@
 #ifdef CONFIG_BINARY_MANAGER
 #include <tinyara/binary_manager.h>
 #endif
+#include "common.h"
+
+#ifdef CONFIG_FLASH_PARTITION
+struct partition_data_s g_flash_part_data = {
+	CONFIG_FLASH_PART_TYPE,
+	CONFIG_FLASH_PART_SIZE,
+	CONFIG_FLASH_MINOR,
+#ifdef CONFIG_MTD_PARTITION_NAMES
+	CONFIG_FLASH_PART_NAME
+#endif
+};
+#endif
+
+#ifdef CONFIG_SECOND_FLASH_PARTITION
+struct partition_data_s g_second_flash_part_data = {
+	CONFIG_SECOND_FLASH_PART_TYPE,
+	CONFIG_SECOND_FLASH_PART_SIZE,
+	CONFIG_SECOND_FLASH_MINOR,
+#ifdef CONFIG_MTD_PARTITION_NAMES
+	CONFIG_SECOND_FLASH_PART_NAME
+#endif
+};
+#endif
 
 #if defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_SECOND_FLASH_PARTITION)
-static FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s *geo)
+FAR struct mtd_dev_s *mtd_initialize(void)
 {
 	FAR struct mtd_dev_s *mtd;
 #ifdef CONFIG_MTD_PROGMEM
@@ -44,20 +67,10 @@ static FAR struct mtd_dev_s *mtd_initialize(FAR struct mtd_geometry_s *geo)
 		lldbg("ERROR: progmem_initialize failed\n");
 		return NULL;
 	}
-
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)geo) < 0) {
-		lldbg("ERROR: mtd->ioctl failed\n");
-		return NULL;
-	}
 #else
 	mtd = up_flashinitialize();
 	if (!mtd) {
 		lldbg("ERROR : up_flashinitializ failed\n");
-		return NULL;
-	}
-
-	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)geo) < 0) {
-		lldbg("ERROR: mtd->ioctl failed\n");
 		return NULL;
 	}
 #endif
@@ -133,27 +146,44 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 }
 #endif
 
-#ifdef CONFIG_MTD_PARTITION_NAMES
-static void configure_mtd_partitions(const char *types, const char *sizes, int minor, const char *names)
-#else
-static void configure_mtd_partitions(const char *types, const char *sizes, int minor)
-#endif
+int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *part_data)
 {
 	int partno;
 	int partoffset;
+	char *types;
+	char *sizes;
+	int minor;
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	char part_name[MTD_PARTNAME_LEN + 1];
 	int index = 0;
+	char *names;
 #endif
-	FAR struct mtd_dev_s *mtd;
 	FAR struct mtd_geometry_s geo;
 
-	mtd = (FAR struct mtd_dev_s *)mtd_initialize(&geo);
-	if (mtd == NULL) {
-		return;
+	if (!mtd || !part_data || !part_data->types || !part_data->sizes) {
+		lldbg("ERROR: Invalid partition data is NULL\n");
+		return ERROR;
 	}
+#ifdef CONFIG_MTD_PARTITION_NAMES
+	else if (!part_data->names) {
+		lldbg("ERROR: Invalid partition data is NULL\n");
+		return ERROR;
+	}
+#endif
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return ERROR;
+	}
+
 	partno = 0;
 	partoffset = 0;
+	types = part_data->types;
+	sizes = part_data->sizes;
+	minor = part_data->minor;
+#ifdef CONFIG_MTD_PARTITION_NAMES
+	names = part_data->names;
+#endif
 
 	while (*sizes) {
 		FAR struct mtd_dev_s *mtd_part;
@@ -163,12 +193,12 @@ static void configure_mtd_partitions(const char *types, const char *sizes, int m
 
 		if (partsize < geo.erasesize) {
 			lldbg("ERROR: Partition size is lesser than erasesize\n");
-			return;
+			return ERROR;
 		}
 
 		if (partsize % geo.erasesize != 0) {
 			lldbg("ERROR: Partition size is not multiple of erasesize\n");
-			return;
+			return ERROR;
 		}
 
 		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.blocksize, partno);
@@ -176,44 +206,24 @@ static void configure_mtd_partitions(const char *types, const char *sizes, int m
 
 		if (!mtd_part) {
 			lldbg("ERROR: failed to create partition.\n");
-			return;
+			return ERROR;
 		}
 
 		type_specific_initialize(minor, mtd_part, partno, types);
 
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		configure_partition_name(mtd_part, &names, &index, part_name);
+		configure_partition_name(mtd_part, (const char **)&names, &index, part_name);
 #ifdef CONFIG_BINARY_MANAGER
 		if (!strncmp(types, "kernel,", 7)) {
 			binary_manager_register_kpart(partno, partsize);
 		}
 #endif
 #endif
-		move_to_next_part(&sizes);
-		move_to_next_part(&types);
+		move_to_next_part((const char **)&sizes);
+		move_to_next_part((const char **)&types);
 		partno++;
 	}
+
+	return OK;
 }
 #endif // defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_SECOND_FLASH_PARTITION)
-
-void configure_partitions(void)
-{
-#ifdef CONFIG_FLASH_PARTITION
-#ifdef CONFIG_MTD_PARTITION_NAMES
-	configure_mtd_partitions(CONFIG_FLASH_PART_TYPE, CONFIG_FLASH_PART_SIZE, CONFIG_FLASH_MINOR, CONFIG_FLASH_PART_NAME);
-#else
-	configure_mtd_partitions(CONFIG_FLASH_PART_TYPE, CONFIG_FLASH_PART_SIZE, CONFIG_FLASH_MINOR);
-#endif
-#endif /* CONFIG_FLASH_PARTITION */
-}
-
-void configure_second_partitions(void)
-{
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-#ifdef CONFIG_MTD_PARTITION_NAMES
-	configure_mtd_partitions(CONFIG_SECOND_FLASH_PART_TYPE, CONFIG_SECOND_FLASH_PART_SIZE, CONFIG_SECOND_FLASH_MINOR, CONFIG_SECOND_FLASH_PART_NAME);
-#else
-	configure_mtd_partitions(CONFIG_SECOND_FLASH_PART_TYPE, CONFIG_SECOND_FLASH_PART_SIZE, CONFIG_SECOND_FLASH_MINOR);
-#endif
-#endif
-}
