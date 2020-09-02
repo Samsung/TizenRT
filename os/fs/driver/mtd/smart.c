@@ -2204,7 +2204,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	fdbg("   Journal usage:        %10d\n", dev->journal_seq);
 #endif
 #ifdef CONFIG_MTD_SMART_ALLOC_DEBUG
-	fdbg("   Allocations:\n");     
+	fdbg("   Allocations:\n");
 	for (sector = 0; sector < SMART_MAX_ALLOCS; sector++) {
 		if (dev->alloc[sector].ptr != NULL) {
 			fdbg("       %s: %d\n", dev->alloc[sector].name, dev->alloc[sector].size);
