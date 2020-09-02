@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2020 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# fs/vfs/Make.defs
+# apps/examples/smartfs_powercut/Makefile
 #
-#   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,56 +50,111 @@
 #
 ############################################################################
 
-# If there are no file descriptors configured, then a small part of the
-# logic in this directory may still apply to socket descriptors
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
-ifeq ($(CONFIG_NFILE_DESCRIPTORS),0)
-ifeq ($(CONFIG_NET),y)
+# smartfs powercut Test built-in application info
 
-# Socket descriptor support
+APPNAME = smartfs_powercut
+FUNCNAME = $(APPNAME)_main
+PRIORITY = SCHED_PRIORITY_DEFAULT
+STACKSIZE = 4096
+THREADEXEC = TASH_EXECMD_ASYNC
 
-CSRCS += fs_close.c fs_read.c fs_write.c fs_ioctl.c fs_poll.c fs_select.c
+# smartfs powercut Test Example
 
-# Support for network access using streams
+ASRCS =
+CSRCS =
+MAINSRC = smartfs_powercut_main.c
 
-ifneq ($(CONFIG_NFILE_STREAMS),0)
-CSRCS += fs_fdopen.c
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
+MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
+
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS = $(AOBJS) $(COBJS)
+
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  OBJS += $(MAINOBJ)
 endif
 
-
-# Include vfs build support
-
-DEPPATH += --dep-path vfs
-VPATH += :vfs
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN = ..\..\libapps$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN = ..\\..\\libapps$(LIBEXT)
+else
+  BIN = ../../libapps$(LIBEXT)
 endif
+endif
+
+ifeq ($(WINTOOL),y)
+  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
+else
+  INSTALL_DIR = $(BIN_DIR)
+endif
+
+CONFIG_EXAMPLES_SMARTFS_POWERCUT_PROGNAME ?= smartfs_powercut(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_SMARTFS_POWERCUT_PROGNAME)
+
+ROOTDEPPATH = --dep-path .
+
+# Common build
+
+VPATH =
+
+all: .built
+.PHONY: clean depend distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
 
 else
+install:
 
-# Common file/socket descriptor support
-
-CSRCS += fs_close.c fs_dup.c fs_dup2.c fs_fcntl.c fs_dupfd.c fs_dupfd2.c
-CSRCS += fs_fstat.c fs_fstatfs.c fs_getfilep.c fs_ioctl.c fs_lseek.c
-CSRCS += fs_mkdir.c fs_open.c fs_poll.c fs_read.c fs_rename.c fs_rmdir.c
-CSRCS += fs_stat.c fs_statfs.c fs_select.c fs_unlink.c fs_write.c
-
-# Certain interfaces are not available if there is no mountpoint support
-
-ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
-CSRCS += fs_fsync.c fs_truncate.c
 endif
 
-# Support for positional file access
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SMARTFS_POWERCUT),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
-CSRCS += fs_pread.c fs_pwrite.c
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 
-# Stream support
+else
+context:
 
-ifneq ($(CONFIG_NFILE_STREAMS),0)
-CSRCS += fs_fdopen.c
 endif
 
-# Include vfs build support
+.depend: Makefile $(SRCS)
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	@touch $@
 
-DEPPATH += --dep-path vfs
-VPATH += :vfs
-endif
+depend: .depend
+
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
+.PHONY: preconfig
+preconfig:

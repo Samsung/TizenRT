@@ -200,23 +200,15 @@ Below are the optional features configurations. Refer *os/fs/smartfs/Kconfig* fo
 	```
 	File Systems -> SMART file system -> SMARTFS options -> Support multiple Root Directories/Mount points
 	```
-2. CONFIG_SMARTFS_BAD_SECTOR
-	```
-	File Systems -> SMART file system -> SMARTFS options -> Bad Sector Management
-	```
-3. CONFIG_SMARTFS_DYNAMIC_HEADER
+2. CONFIG_SMARTFS_DYNAMIC_HEADER
 	```
 	File Systems -> SMART file system -> SMARTFS options -> Dynamic Header
 	```
-4. CONFIG_SMARTFS_JOURNALING
+3. CONFIG_SMARTFS_JOURNALING
 	```
 	File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs
 	```
-5. CONFIG_SMARTFS_VERIFY_JOURNALING
-	```
-	File Systems -> SMART file system -> SMARTFS options -> Enable filesystem journaling for smartfs -> Verify Journal logging
-	```
-6. CONFIG_SMARTFS_SECTOR_RECOVERY
+4. CONFIG_SMARTFS_SECTOR_RECOVERY
 	```
 	File Systems -> SMART file system -> SMARTFS options -> Enable recovery of lost sectors in Filesystem
 	```

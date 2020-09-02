@@ -75,10 +75,7 @@ SOURCES		=  $(wildcard $(SRCDIR)/*.c)
 
 ifeq ($(CONFIG_FS_SMARTFS),y)
 SOURCES		+= $(wildcard $(SRCDIR)/smartfs/*.c)
-endif
-
-ifeq ($(CONFIG_SMARTFS_SECTOR_RECOVERY),y)
-SOURCES         += $(wildcard $(SRCDIR)/queue/*.c)
+SOURCES 	+= $(wildcard $(SRCDIR)/queue/*.c)
 endif
 
 SRCTMP		=  $(patsubst $(SRCDIR)/%,%,$(SOURCES))
@@ -94,10 +91,8 @@ all: init $(APPNAME)
 init:
 	@mkdir -p $(OBJDIR)/smartfs
 	@mkdir -p $(DEPDIR)/smartfs
-ifeq ($(CONFIG_SMARTFS_SECTOR_RECOVERY),y)
 	@mkdir -p $(OBJDIR)/queue
 	@mkdir -p $(DEPDIR)/queue
-endif
 
 #Include our built dependencies
 -include $(DEPS)
