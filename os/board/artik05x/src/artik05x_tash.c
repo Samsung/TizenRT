@@ -81,6 +81,7 @@
 #include <apps/shell/tash.h>
 
 #include "artik05x.h"
+#include "common.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -168,15 +169,16 @@ static void scsc_wpa_ctrl_iface_init(void)
 int board_app_initialize(void)
 {
 	int ret;
-#if defined(CONFIG_ARTIK05X_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
-	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK05X_RAMMTD_NEBLOCKS;
-	static uint8_t *rambuf;
+#ifdef CONFIG_FLASH_PARTITION
 	struct mtd_dev_s *mtd;
+#if defined(CONFIG_ARTIK05X_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	int bufsize;
+	static uint8_t *rambuf;
 #endif /* CONFIG_RAMMTD */
 
-#if defined(CONFIG_FLASH_PARTITION)
-	configure_partitions();
-#endif
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+	/* Configure mtd partitions */
+	configure_mtd_partitions(mtd, &g_flash_part_data);
 
 #ifdef CONFIG_ARTIK05X_AUTOMOUNT
 #ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
@@ -232,6 +234,7 @@ int board_app_initialize(void)
 #endif
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK05X_RAMMTD_NEBLOCKS;
 	rambuf = (uint8_t *)malloc(bufsize);
 	if (!rambuf) {
 		lldbg("ERROR: FAILED TO allocate RAMMTD\n");
@@ -275,6 +278,7 @@ int board_app_initialize(void)
 
 #endif /* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif /* CONFIG_ARTIK05X_AUTOMOUNT */
+#endif /* CONFIG_FLASH_PARTITION */
 
 #if defined(CONFIG_RTC_DRIVER)
 	{

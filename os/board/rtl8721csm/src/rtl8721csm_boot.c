@@ -63,9 +63,15 @@
 
 #include <tinyara/fs/mksmartfs.h>
 #include <tinyara/board.h>
+#ifdef CONFIG_FLASH_PARTITION
+#include <tinyara/fs/mtd.h>
+#endif
 #include <arch/board/board.h>
 #include "gpio_api.h"
 #include "timer_api.h"
+#ifdef CONFIG_FLASH_PARTITION
+#include "common.h"
+#endif
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -175,7 +181,15 @@ void amebad_mount_partions(void)
 {
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
+	struct mtd_dev_s *mtd;
 
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+	/* Configure mtd partitions */
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	if (ret != OK) {
+		lldbg("ERROR: configure_mtd_partitions failed");
+		return;
+	}
 #ifdef CONFIG_AMEBAD_AUTOMOUNT
 #ifdef CONFIG_AMEBAD_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
@@ -216,7 +230,6 @@ void amebad_mount_partions(void)
 #ifdef CONFIG_BOARD_INITIALIZE
 void board_initialize(void)
 {
-	configure_partitions();
 	amebad_mount_partions();
 	board_gpio_initialize();
 #ifdef CONFIG_WATCHDOG

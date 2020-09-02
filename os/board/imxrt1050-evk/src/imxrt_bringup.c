@@ -117,17 +117,20 @@ static void imxrt_i2c_register(int bus)
 void imxrt_filesystem_initialize(void)
 {
 	int ret;
-
-#if defined(CONFIG_IMXRT_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
-	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
-	static uint8_t *rambuf;
+#ifdef CONFIG_FLASH_PARTITION
 	struct mtd_dev_s *mtd;
+#if defined(CONFIG_IMXRT_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	int bufsize;
+	static uint8_t *rambuf;
 #endif /* CONFIG_RAMMTD */
+#endif /* CONFIG_FLASH_PARTITION */
 
 	IMXLOG("imxrt_bringup");
 
-#if defined(CONFIG_FLASH_PARTITION)
-	configure_partitions();
+#ifdef CONFIG_FLASH_PARTITION
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+	/* Configure mtd partitions */
+	configure_mtd_partitions(mtd, &g_flash_part_data);
 #endif
 
 #ifdef CONFIG_IMXRT_AUTOMOUNT
@@ -180,6 +183,7 @@ void imxrt_filesystem_initialize(void)
 #endif
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
 	rambuf = (uint8_t *)malloc(bufsize);
 	if (!rambuf) {
 		IMXLOG("SMARTFS ERROR: malloc failed");

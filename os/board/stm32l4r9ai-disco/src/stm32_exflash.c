@@ -125,8 +125,14 @@ void stm32_exflash_initialize(void)
 
 #if defined(CONFIG_FLASH_PARTITION)
     int ret;
+    struct mtd_dev_s *mtd;
 
-    configure_partitions();
+    mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+    ret = configure_partitions(mtd, &g_flash_part_data);
+    if (ret != OK) {
+        lldbg("ERROR: configure_mtd_partitions failed");
+        return;
+    }
 
     ret = mksmartfs("/dev/smart0p0", false);
 

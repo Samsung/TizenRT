@@ -152,19 +152,24 @@ static void imxrt_pwm_register(int ch)
 
 void imxrt_filesystem_initialize(void)
 {
+#ifdef CONFIG_FLASH_PARTITION
 	int ret;
-
-#if defined(CONFIG_IMXRT_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
-	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
-	static uint8_t *rambuf;
 	struct mtd_dev_s *mtd;
+#if defined(CONFIG_IMXRT_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	int bufsize;
+	static uint8_t *rambuf;
 #endif /* CONFIG_RAMMTD */
 
 	IMXLOG("imxrt_bringup");
 
-#if defined(CONFIG_FLASH_PARTITION)
-	configure_partitions();
-#endif
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+	/* Configure mtd partitions */
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	if (ret != OK) {
+		IMXLOG("configure_mtd_partitions failed");
+	} else {
+		IMXLOG("SUCCESS: configure_mtd_partitions");
+	}
 
 #ifdef CONFIG_IMXRT_AUTOMOUNT
 #ifdef CONFIG_IMXRT_AUTOMOUNT_USERFS
@@ -216,6 +221,8 @@ void imxrt_filesystem_initialize(void)
 #endif
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
+
 	rambuf = (uint8_t *)malloc(bufsize);
 	if (!rambuf) {
 		IMXLOG("SMARTFS ERROR: malloc failed");
@@ -259,6 +266,7 @@ void imxrt_filesystem_initialize(void)
 
 #endif /* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif /* CONFIG_IMXRT_AUTOMOUNT */
+#endif /* CONFIG_FLASH_PARTITION */
 }
 
 /************************************************************************************

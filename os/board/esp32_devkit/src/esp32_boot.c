@@ -70,6 +70,9 @@
 #include "esp32_i2c.h"
 #include "common.h"
 #include <tinyara/gpio.h>
+#ifdef CONFIG_FLASH_PARTITION
+#include <tinyara/fs/mtd.h>
+#endif
 #include <../xtensa/xtensa.h>
 
 #if defined(CONFIG_ADC)
@@ -111,7 +114,15 @@ void esp32_devKit_mount_partions(void)
 {
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
+	struct mtd_dev_s *mtd;
 
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+	/* Configure mtd partitions */
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	if (ret != OK) {
+		lldbg("ERROR: configure_mtd_partitions failed");
+		return;
+	}
 #ifdef CONFIG_ESP32_AUTOMOUNT
 #ifdef CONFIG_ESP32_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
@@ -242,7 +253,6 @@ void board_initialize(void)
 #ifdef CONFIG_ESP32_SPIFLASH
 	esp_partition_initialize();
 #endif
-	configure_partitions();
 	esp32_devKit_mount_partions();
 	board_gpio_initialize();
 	board_i2c_initialize();
