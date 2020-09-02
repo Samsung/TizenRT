@@ -127,9 +127,8 @@ int binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_li
 	return response_msg.result;
 }
 
-int binary_manager_open_new_entry(char *binary_name, uint32_t version)
+int binary_manager_get_download_path(char *binary_name, uint32_t version, char *download_path)
 {
-	int fd;
 	int ret;
 	binmgr_update_bin_t data;
 	binmgr_request_t request_msg;
@@ -161,12 +160,8 @@ int binary_manager_open_new_entry(char *binary_name, uint32_t version)
 	}
 
 	if (response_msg.result == BINMGR_OK) {
-		fd = open(response_msg.binpath, O_RDWR | O_CREAT, 0666);
-		if (fd < 0) {
-			bmdbg("Failed to open file %s : %d\n", response_msg.binpath, errno);
-			return BINMGR_OPERATION_FAIL;
-		}
-		return fd;
+		bmvdbg("Create file path : %s\n", response_msg.binpath);
+		strncpy(download_path, response_msg.binpath, strlen(response_msg.binpath) + 1);
 	}
 
 	return response_msg.result;

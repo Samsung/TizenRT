@@ -211,7 +211,6 @@ void binary_manager_get_info_all(int requester_pid)
 	response_msg.data.bin_info[result_idx].version = kerinfo->version;
 	if (kerinfo->part_count > 1) {
 		response_msg.data.bin_info[result_idx].available_size = kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_size;
-		snprintf(response_msg.data.bin_info[result_idx].inactive_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_num);
 	}
 	result_idx++;
 

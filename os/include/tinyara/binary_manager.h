@@ -130,9 +130,6 @@ struct binary_update_info_s {
 	char name[BIN_NAME_MAX];
 	/* A double type to cover kernel version as float type and user binary version as uint32_t type */
 	double version;
-#if KERNEL_BIN_COUNT > 1
-	char inactive_dev[BINMGR_DEVNAME_LEN];
-#endif
 };
 typedef struct binary_update_info_s binary_update_info_t;
 
