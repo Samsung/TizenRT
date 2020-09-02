@@ -79,5 +79,5 @@ config SMARTFS_ENTRY_TIMESTAMP
 	---help---
 		Instead of RTC, Use Time stamp for UTC value of entry.
 endmenu
-           
+
 endif
