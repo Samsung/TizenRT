@@ -409,6 +409,10 @@ void smartfs_setbuffer(struct smart_read_write_s *rw, uint16_t logsector, uint16
 
 void smartfs_set_entry_flags(struct smartfs_entry_s *new_entry, mode_t mode, uint16_t type);
 
+int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *sf);
+
+off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *sf, off_t offset, int whence);
+
 uint16_t smartfs_rdle16(FAR const void *val);
 
 void smartfs_wrle16(void *dest, uint16_t val);
