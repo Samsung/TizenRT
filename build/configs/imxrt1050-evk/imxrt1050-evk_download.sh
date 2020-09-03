@@ -60,7 +60,6 @@ USBRULE_IDPRODUCT2="6010"
 OS_PATH=${TOP_PATH}/os
 OUTBIN_PATH=${TOP_PATH}/build/output/bin
 TTYDEV="/dev/ttyACM0"
-SUDO=sudo
 
 # Following to read partition information
 PARTITION_KCONFIG=${OS_PATH}/board/common/Kconfig
@@ -100,8 +99,8 @@ function bootstrap()
 {
 	source ${BOOTSTRAP_SCRIPT}
 
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- fill-memory 0x2000 0x04 0xc0233007
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- configure-memory 0x09 0x2000
+	${BLHOST} -p ${TTYDEV} -- fill-memory 0x2000 0x04 0xc0233007
+	${BLHOST} -p ${TTYDEV} -- configure-memory 0x09 0x2000
 }
 
 #Utility function to erase a part of flash
@@ -110,7 +109,7 @@ function flash_erase()
 {
 	echo -e "\nFLASH_ERASE: ADDR:$1 LENGTH:$2 KB"
 	size_in_bytes=$(($2 * 1024))
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- flash-erase-region $1 $size_in_bytes
+	${BLHOST} -p ${TTYDEV} -- flash-erase-region $1 $size_in_bytes
 }
 
 
@@ -119,7 +118,7 @@ function flash_erase()
 function flash_write()
 {
 	echo -e "\nFLASH_WRITE ADDR:$1 \nFILEPATH:$2 "
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- write-memory $1 $2
+	${BLHOST} -p ${TTYDEV} -- write-memory $1 $2
 	sleep 2
 }
 
