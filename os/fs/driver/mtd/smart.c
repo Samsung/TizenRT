@@ -1861,7 +1861,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 		/* Test if this sector has been committed. */
 		if (status_committed) {
-			/* This block is now commited, therefore not free. Update the erase block's freecount.*/
+			/* This block is now committed, therefore not free. Update the erase block's freecount.*/
 
 #ifdef CONFIG_MTD_SMART_PACK_COUNTS
 			smart_add_count(dev, dev->freecount, sector / dev->sectorsPerBlk, -1);
@@ -4877,7 +4877,7 @@ static uint32_t smart_journal_get_writeaddress(FAR struct smart_struct_s *dev)
 	/* First calculate Address from current block */
 	uint32_t addr = (dev->journal_seq % dev->njournalPerBlk) * sizeof(journal_log_t);
 
-	/* Calulate start address of Current Block */
+	/* Calculate start address of Current Block */
 	uint16_t block = dev->neraseblocks + (dev->journal_seq / dev->njournalPerBlk);
 
 	/* Now Merge it */

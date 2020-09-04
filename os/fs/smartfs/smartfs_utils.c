@@ -1425,7 +1425,7 @@ int smartfs_alloc_firstsector(struct smartfs_mountpt_s *fs, uint16_t *sector, ui
  *  offset - offset of entry in parent directory sector
  *
  * Returned Values:
- *  OK - on sucessfully invalidating the entry.
+ *  OK - on successfully invalidating the entry.
  *  ERROR - appropriate error code otherwise
  *
  ****************************************************************************/

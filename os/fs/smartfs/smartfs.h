@@ -155,7 +155,7 @@
  * 2. Garbage collection can occur when a new sector is allocated or when
  *    existing sector data is overwritten with new data. Thus, occasionally,
  *    file writing may take longer than other times.
- * 3. The implementation curently has bad sector management code removed.
+ * 3. The implementation currently has bad sector management code removed.
  *    BSM logic remains to be improved and put in again.
  * 4. There is no true wear-leveling implemented yet, though provesion have
  *    been made to reserve logical sectors to allow it to be added using
