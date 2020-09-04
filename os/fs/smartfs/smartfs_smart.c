@@ -669,6 +669,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		 * the current end-of-file and then break, allowing the next while
 		 * loop below to write the additional data to the end of the file.
 		 */
+		fvdbg("Datalen : %d, sector : %d, offset : %d\nFilepos : %d, bytes written : %d, buflen : %d\n", sf->entry.datalen, sf->currsector, sf->curroffset, sf->filepos, byteswritten, buflen);
 
 		smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset, fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&buffer[byteswritten]);
 		/* Limit the write based on available data to write */
@@ -743,140 +744,9 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 	}
 
 	/* Now append data to end of the file. */
-
-	while (buflen > 0) {
-		/* We will fill up the current sector. Write data to
-		 * the current sector first.
-		 */
-
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-		readwrite.count = fs->fs_llformat.availbytes - sf->curroffset;
-		if (readwrite.count > buflen) {
-			readwrite.count = buflen;
-		}
-
-		memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
-		sf->bflags |= SMARTFS_BFLAG_DIRTY;
-
-#else							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
-		smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset, fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&buffer[byteswritten]);
-		if (readwrite.count > buflen) {
-			/* Limit the write base on remaining bytes to write */
-
-			readwrite.count = buflen;
-		}
-
-		/* Perform the write */
-
-		if (readwrite.count > 0) {
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-			if (ret < 0) {
-				fdbg("Error writing sector %d data, ret : %d\n", readwrite.logsector, ret);
-				goto errout_with_semaphore;
-			}
-		}
-#endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
-
-		/* Update our control variables */
-
-		sf->entry.datalen += readwrite.count;
-		sf->byteswritten += readwrite.count;
-		sf->filepos += readwrite.count;
-		sf->curroffset += readwrite.count;
-		buflen -= readwrite.count;
-		byteswritten += readwrite.count;
-
-		/* Test if we wrote a full sector of data */
-
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-		if (sf->curroffset == fs->fs_llformat.availbytes && buflen) {
-			/* First get a new chained sector */
-
-			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
-			if (ret < 0) {
-				fdbg("Error allocating new sector, ret : %d\n", ret);
-				goto errout_with_semaphore;
-			}
-
-			/* Copy the new sector to the old one and chain it */
-
-			header = (struct smartfs_chain_header_s *)sf->buffer;
-			*((uint16_t *)header->nextsector) = (uint16_t)ret;
-
-			/* Now sync the file to write this sector out */
-
-			ret = smartfs_sync_internal(fs, sf);
-			if (ret != OK) {
-				goto errout_with_semaphore;
-			}
-
-			/* Record the new sector in our tracking variables and
-			 * reset the offset to "zero".
-			 */
-
-			if (sf->currsector == SMARTFS_NEXTSECTOR(header)) {
-				/* Error allocating logical sector! */
-
-				fdbg("Error - duplicate logical sector %d\n", sf->currsector);
-			}
-
-			sf->bflags = SMARTFS_BFLAG_DIRTY;
-			sf->currsector = SMARTFS_NEXTSECTOR(header);
-			sf->curroffset = sizeof(struct smartfs_chain_header_s);
-			memset(sf->buffer, CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes);
-			header->type = SMARTFS_DIRENT_TYPE_FILE;
-		}
-#else							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
-
-		if (sf->curroffset == fs->fs_llformat.availbytes) {
-			/* Sync the file to write this sector out */
-
-			ret = smartfs_sync_internal(fs, sf);
-			if (ret != OK) {
-				goto errout_with_semaphore;
-			}
-
-			/* Allocate a new sector if needed */
-
-			if (buflen > 0) {
-				/* Allocate a new sector */
-
-				ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
-				if (ret < 0) {
-					fdbg("Error allocating new sector, ret : %d\n", ret);
-					goto errout_with_semaphore;
-				}
-
-				/* Copy the new sector to the old one and chain it */
-
-				header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-				header->nextsector[0] = (uint8_t)(ret & 0x00FF);
-				header->nextsector[1] = (uint8_t)((ret >> 8) & 0x00FF);
-
-				smartfs_setbuffer(&readwrite, sf->currsector, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), (uint8_t *)header->nextsector);
-				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-				if (ret < 0) {
-					fdbg("Error writing next sector to sector %d, ret : %d\n", readwrite.logsector, ret);
-					goto errout_with_semaphore;
-				}
-
-				/* Record the new sector in our tracking variables and
-				 * reset the offset to "zero".
-				 */
-
-				if (sf->currsector == SMARTFS_NEXTSECTOR(header)) {
-					/* Error allocating logical sector! */
-
-					fdbg("Error - duplicate logical sector %d\n", sf->currsector);
-				}
-
-				sf->currsector = SMARTFS_NEXTSECTOR(header);
-				sf->curroffset = sizeof(struct smartfs_chain_header_s);
-			}
-		}
-#endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+	if (buflen > 0) {
+		byteswritten = smartfs_append_data(fs, sf, &buffer[byteswritten], byteswritten, buflen);
 	}
-
 	ret = byteswritten;
 
 errout_with_semaphore:
