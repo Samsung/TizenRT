@@ -141,6 +141,8 @@ uint8_t mpu_log2regionfloor(uintptr_t base, size_t size)
 void mpu_get_register_config_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute)
 {
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 	regs[0] = region & MPU_RNR_MASK;

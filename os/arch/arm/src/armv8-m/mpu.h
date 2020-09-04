@@ -304,7 +304,7 @@ static inline void mpu_show_regioninfo(void)
 	temp = getreg32(MPU_RNR);
 
 	lldbg("*****************************************************************************\n");
-	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t   \tSTATUS\t ACCESS\t   NO_EXECUTE*\n");
+	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t   STATUS\t ACCESS\t   \tNO_EXECUTE*\n");
 	lldbg("*****************************************************************************\n");
 	for (idx = 0; idx < 8; idx++) {
 		putreg32(idx, MPU_RNR);
@@ -377,6 +377,8 @@ static inline void mpu_priv_stronglyordered(uint32_t region, uintptr_t base, siz
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 
@@ -409,6 +411,8 @@ static inline void mpu_userflash(uint32_t region, uintptr_t base, size_t size)
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 
@@ -440,6 +444,8 @@ static inline void mpu_privflash(uint32_t region, uintptr_t base, size_t size)
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 
@@ -471,6 +477,8 @@ static inline void mpu_userintsram(uint32_t region, uintptr_t base, size_t size)
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 
@@ -502,6 +510,8 @@ static inline void mpu_userintsram_wb(uint32_t region, uintptr_t base, size_t si
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 
@@ -533,6 +543,8 @@ static inline void mpu_privintsram(uint32_t region, uintptr_t base, size_t size)
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 
@@ -564,6 +576,8 @@ static inline void mpu_userextsram(uint32_t region, uintptr_t base, size_t size)
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 
@@ -595,6 +609,8 @@ static inline void mpu_privextsram(uint32_t region, uintptr_t base, size_t size)
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 	putreg32(region, MPU_RNR);
@@ -625,6 +641,8 @@ static inline void mpu_peripheral(uint32_t region, uintptr_t base, size_t size)
 	uint32_t regval;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
 	/* Select the region */
 	putreg32(region, MPU_RNR);
