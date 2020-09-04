@@ -4195,7 +4195,7 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 		ret = MTD_BWRITE(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 #endif
 		if (ret != dev->mtdBlksPerSector) {
-			fdbg("Error writing to physical sector %d\n", physsector);
+			fdbg("Error writing to physical sector %d ret : %d\n", physsector, ret);
 			return -EIO;
 		}
 
@@ -4852,8 +4852,11 @@ static int smart_journal_init(FAR struct smart_struct_s *dev)
 {
 	int ret = OK;
 	dev->journal_seq = 0;
-
+#ifdef CONFIG_DEBUG_FS_INFO
+	ret = smart_journal_scan(dev, true);
+#else
 	ret = smart_journal_scan(dev, false);
+#endif
 	if (ret != OK) {
 		return -EIO;
 	}
