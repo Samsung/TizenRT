@@ -116,9 +116,9 @@ function get_executable_name()
 function get_partition_index()
 {
 	case $1 in
-		kernel | Kernel | KERNEL) echo "0";;
-		micom | Micom | MICOM) echo "1";;
-		wifi | Wifi | WIFI) echo "3";;
+		kernel) echo "0";;
+		micom) echo "1";;
+		wifi) echo "3";;
 		zoneinfo)
 		for i in "${!parts[@]}"
 		do
@@ -127,7 +127,7 @@ function get_partition_index()
 		   fi
 		done
 		;;
-		userfs | Userfs | USERFS)
+		userfs)
 		for i in "${!parts[@]}"
 		do
 		   if [[ "${parts[$i]}" = "userfs" ]]; then
@@ -189,11 +189,11 @@ function get_partition_sizes()
 
 # Start here
 
-cmd_args=$@
+cmd_args=$(echo $@ | tr '[:upper:]' '[:lower:]')
 
 # Treat adding the USB rule first
 for i in ${cmd_args[@]};do
-	if [[ "${i}" == "USBrule" || "${i}" == "usbrule" ]];then
+	if [[ "${i}" == "usbrule" ]];then
 		${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} ${USBRULE_IDVENDOR2} ${USBRULE_IDPRODUCT2} || exit 1
 		exit 0
 	fi
@@ -233,7 +233,7 @@ uniq_parts=($(printf "%s\n" "${parts[@]}" | sort -u));
 #Validate arguments
 for i in ${cmd_args[@]};do
 
-	if [[ "${i}" == "ERASE" || "${i}" == "ALL" ]];then
+	if [[ "${i}" == "erase" || "${i}" == "all" ]];then
 		continue;
 	fi
 
