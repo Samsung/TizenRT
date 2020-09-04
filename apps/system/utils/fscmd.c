@@ -380,6 +380,8 @@ static int tash_cat(int argc, char **args)
 					written_size = write(destfd, fscmd_buffer + written_size, read_size);
 					if (written_size != read_size) {
 						read_size -= written_size;
+					} else {
+						break;
 					}
 				}
 			} while (read_size > 0);
