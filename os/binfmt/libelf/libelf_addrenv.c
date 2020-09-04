@@ -105,6 +105,12 @@ static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 		}
 	}
 
+	/* ARMV7M requires addresses to be aligned to the size of the region.
+	 * In this case, we align the first region to the size of first region.
+	 * Since the regions are arranged in descending order of sizes and each
+	 * region size is a power of two, the remaining regions will also be
+	 * aligned to their size.
+	 */
 	*allocs[0] = (uintptr_t)kmm_memalign(sizes[0], totalsize);
 	if (*allocs[0] == (uintptr_t)NULL) {
 		return -ENOMEM;
@@ -200,15 +206,28 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	 */
 	loadinfo->rosize += loadinfo->datasize - loadinfo->binp->bsssize;
 
+#ifdef CONFIG_ARMV7M_MPU
+	/* ARMV7M requires MPU region size to be a power of two */
 	loadinfo->textsize = 1 << mpu_log2regionceil(0, loadinfo->textsize);
 	loadinfo->rosize = 1 << mpu_log2regionceil(0, loadinfo->rosize);
 	datamemsize = 1 << mpu_log2regionceil(0, datamemsize);
 	loadinfo->binp->ramsize = datamemsize;
-
 	if (allocateregions(loadinfo)) {
 		berr("ERROR: failed to allocate memory\n");
 		return -ENOMEM;
 	}
+#elif CONFIG_ARMV8M_MPU
+	/* ARMV8M requires MPU region size to be aligned to 32 bytes */
+	loadinfo->textsize = MPU_ALIGN_UP(loadinfo->textsize);
+	loadinfo->rosize = MPU_ALIGN_UP(loadinfo->rosize);
+	datamemsize = MPU_ALIGN_UP(datamemsize);
+	loadinfo->binp->ramsize = datamemsize;
+	loadinfo->textalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->textsize);
+	loadinfo->roalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->rosize);
+	loadinfo->dataalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, datamemsize);
+#else
+#error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
+#endif
 
 	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
 	loadinfo->binp->uheap_size = datamemsize - loadinfo->datasize - sizeof(struct mm_heap_s);
@@ -219,7 +238,15 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	}
 
 	/* Allocate the RAM partition to load the app into */
+#ifdef CONFIG_ARMV7M_MPU
 	loadinfo->binp->ramstart = kmm_memalign(loadinfo->binp->ramsize, loadinfo->binp->ramsize);
+#elif CONFIG_ARMV8M_MPU
+	loadinfo->binp->ramsize = MPU_ALIGN_UP(loadinfo->binp->ramsize);
+	loadinfo->binp->ramstart = kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->binp->ramsize);
+#else
+#error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
+#endif
+
 	if (!loadinfo->binp->ramstart) {
 		berr("ERROR: Failed to allocate RAM partition\n");
 		return -ENOMEM;
