@@ -413,6 +413,8 @@ int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *
 
 off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *sf, off_t offset, int whence);
 
+ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, const char *buffer, size_t byteswritten, size_t buflen);
+
 uint16_t smartfs_rdle16(FAR const void *val);
 
 void smartfs_wrle16(void *dest, uint16_t val);
