@@ -403,7 +403,7 @@ int smartfs_powercut_main(int argc, char *argv[])
 	sleep(3);
 	while (1) {
 		/* Small test use same as size of data area of mtd sector, so there should not be error
-		 * during the verify for small file test becuase it protected by journal.
+		 * during the verify for small file test because it protected by journal.
 		 */
 		ret = do_test(TEST_SMALL, TEST_SMALL_BACKUP, TEST_SMALL_BACKUP_DIR, TEST_SMALL_BUFSIZE);
 		if (ret != OK) {
