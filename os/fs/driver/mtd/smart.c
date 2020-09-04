@@ -1856,7 +1856,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		status_released = SECTOR_IS_RELEASED(header);
 		status_committed = SECTOR_IS_COMMITTED(header);
 #ifdef CONFIG_MTD_SMART_JOURNALING
-		fdbg("released : %d committed : %d logical : %d physical : %d crc : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, UINT8TOUINT16(header.crc16), header.status, header.seq);
+		fvdbg("released : %d committed : %d logical : %d physical : %d crc : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, UINT8TOUINT16(header.crc16), header.status, header.seq);
 #endif
 
 		/* Test if this sector has been committed. */
