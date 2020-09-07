@@ -131,6 +131,14 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 	case ICMP6_TYPE_RA:		/* Router advertisement */
 	case ICMP6_TYPE_RD:		/* Redirect */
 	case ICMP6_TYPE_PTB:		/* Packet too big */
+		// [TAHI ND#127]
+		if (ip_data.is_atomic_frag == 2) {
+			/* drop */
+			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] drop atomic packet in ND series %d\n", __LINE__));
+			pbuf_free(p);
+			ICMP6_STATS_INC(icmp6.drop);
+			return;
+		}
 		nd6_input(p, inp);
 		return;
 	case ICMP6_TYPE_RS:
