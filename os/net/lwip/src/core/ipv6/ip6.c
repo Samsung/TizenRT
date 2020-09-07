@@ -829,35 +829,10 @@ netif_found:
 
 				/* This is a 1-fragment packet, usually a packet that we have
 				 * already reassembled. Skip this header anc continue. */
-				LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] skip header anc continue %d\n", __LINE__));
+				LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] skip header anc continue %d %d\n", *nexth, __LINE__));
 				pbuf_header(p, -(s16_t) hlen);
 
-				// [TAHI spec 64~67]
-				// if first fragment doesn't contains all headers, then
-				// it should send icmpv6 param problem message to sender.
-				if (*nexth == IP6_NEXTH_ICMP6) {
-					struct icmp6_hdr *icmp6hdr = (struct icmp6_hdr *)(p->payload);
-					switch (icmp6hdr->type) {
-					case ICMP6_TYPE_NA:		/* Neighbor advertisement */
-					case ICMP6_TYPE_NS:		/* Neighbor solicitation */
-					case ICMP6_TYPE_RA:		/* Router advertisement */
-					case ICMP6_TYPE_RD:		/* Redirect */
-					case ICMP6_TYPE_PTB:	/* Packet too big */
-					case ICMP6_TYPE_RS:
-					case ICMP6_TYPE_MLQ:
-					case ICMP6_TYPE_MLR:
-					case ICMP6_TYPE_MLD:
-					case ICMP6_TYPE_EREQ:
-						break;
-					default:
-						LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] send param problem\n"));
-						// code 3(IPv6 First Fragment has incomplete IPv6 Header chain)
-						icmp6_param_problem(p, 3, (u32_t)NULL);
-						pbuf_free(p);
-						IP6_STATS_INC(ip6.drop);
-						goto ip6_input_cleanup;
-					}
-				}
+
 			} else {
 #if LWIP_IPV6_REASS
 				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] reassemble packet\n"));
@@ -949,6 +924,32 @@ options_done:
 		case IP6_NEXTH_ICMP6:
 			/* Point to payload. */
 			pbuf_header(p, -(s16_t) ip_data.current_ip_header_tot_len);
+			// [TAHI spec 64~67]
+			// if first fragment doesn't contains all headers, then
+			// it should send icmpv6 param problem message to sender.
+			struct icmp6_hdr *icmp6hdr = (struct icmp6_hdr *)(p->payload);
+			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] type(%d) %d\n", icmp6hdr->type, __LINE__));
+			switch (icmp6hdr->type) {
+			case ICMP6_TYPE_NA:		/* Neighbor advertisement */
+			case ICMP6_TYPE_NS:		/* Neighbor solicitation */
+			case ICMP6_TYPE_RA:		/* Router advertisement */
+			case ICMP6_TYPE_RD:		/* Redirect */
+			case ICMP6_TYPE_PTB:	/* Packet too big */
+			case ICMP6_TYPE_RS:
+			case ICMP6_TYPE_MLQ:
+			case ICMP6_TYPE_MLR:
+			case ICMP6_TYPE_MLD:
+			case ICMP6_TYPE_EREQ:
+				break;
+			default:
+				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] send param problem\n"));
+				// code 3(IPv6 First Fragment has incomplete IPv6 Header chain)
+				icmp6_param_problem(p, 3, (u32_t)NULL);
+				pbuf_free(p);
+				IP6_STATS_INC(ip6.drop);
+				goto ip6_input_cleanup;
+			}
+
 			icmp6_input(p, inp);
 			break;
 #endif							/* LWIP_ICMP */

@@ -98,8 +98,8 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 	ICMP6_STATS_INC(icmp6.recv);
 
 	/* Check that ICMPv6 header fits in payload */
-	if (p->len < sizeof(struct icmp6_hdr)) {
-		LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %d\n", __LINE__));
+	if (p->tot_len < sizeof(struct icmp6_hdr)) {
+		LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] drop packet %u %u %u %d\n", p->len, p->tot_len, sizeof(struct icmp6_hdr), __LINE__));
 		/* drop short packets */
 		pbuf_free(p);
 		ICMP6_STATS_INC(icmp6.lenerr);
