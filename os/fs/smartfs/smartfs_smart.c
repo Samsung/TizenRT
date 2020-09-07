@@ -254,9 +254,8 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			/* Don't truncate if open for APPEND */
 
 			if (!(oflags & O_APPEND)) {
-				/* Truncate the file as part of the open */
-
-				ret = smartfs_truncatefile(fs, &sf->entry, sf);
+				/* Truncate the file to length 0 as part of the open */
+				ret = smartfs_shrinkfile(fs, sf, 0);
 				if (ret < 0) {
 					goto errout_with_buffer;
 				}
@@ -913,6 +912,15 @@ static int smartfs_fstat(FAR const struct file *filep, FAR struct stat *buf)
  *   Set the length of the open, regular file associated with the file
  *   structure 'filep' to 'length'.
  *
+ * NOTE:- This function deviates slightly from the POSIX standard as implemented in Linux.
+ *        The file position pointer in Linux is not reset to the new data length. If a write
+ *        operation is requested after truncate, new data is written starting at the old file
+ *        position pointer. The extra space in between gets filled up with '0's.
+ *        Our smartfs_shrinkfile function will reset the file pointer to the position of 'length'
+ *        as requested in the truncate operation. New data is written starting at this position.
+ *        Smartfs_extendfile will simply restore the file position pointer to its old location.
+ *        Any conflicts/issues arising due to this deviation will be taken care of.
+ *
  ****************************************************************************/
 
 static int smartfs_truncate(FAR struct file *filep, off_t length)
@@ -923,6 +931,7 @@ static int smartfs_truncate(FAR struct file *filep, off_t length)
 	FAR struct smartfs_ofile_s *sf;
 	off_t oldsize;
 	int ret;
+	uint16_t oldfilepos = 0;
 
 	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
 
@@ -947,26 +956,40 @@ static int smartfs_truncate(FAR struct file *filep, off_t length)
 		goto errout_with_semaphore;
 	}
 
-	/* Are we shrinking the file?  Or extending it? */
+	/* Save old file position here */
+	oldfilepos = sf->filepos;
 
+	/* Are we shrinking the file?  Or extending it? */
+	/* Seek till point 'length' of the file, file pointer lies at position of requested 'length' now */
 	oldsize = sf->entry.datalen;
 	if (oldsize == length) {
 		/* Let's not and say we did */
 		ret = OK;
 	} else if (oldsize > length) {
 		/* We are shrinking the file */
-		
-		ret = smartfs_extendfile(fs, sf, length);
+		ret = smartfs_shrinkfile(fs, sf, length);
+		if (ret != OK) {
+			goto errout_with_semaphore;
+		}
 	} else {
 		/* Otherwise we are extending the file.  This is essentially the same
-		 * as a write except that (1) we write zeros and (2) we don't update
-		 * the file position.
+		 * as a write except that (1) we write NULL characters and (2) we don't
+		 * update the file position.
 		 */
-
-		ret = smartfs_shrinkfile(fs, sf, length);
+		ret = smartfs_extendfile(fs, sf, length);
+		if (ret != OK) {
+			goto errout_with_semaphore;
+		}
 	}
 
+	ret = OK;
 errout_with_semaphore:
+	/* TODO As we commented, this is violdation of POSIX, we'll see it..but fail case? */
+	if (sf->entry.datalen < oldfilepos) {
+		smartfs_seek_internal(fs, sf, 0, SEEK_END);
+	} else {
+		smartfs_seek_internal(fs, sf, oldfilepos, SEEK_SET);
+	}
 
 	/* Relinquish exclusive access */
 	smartfs_semgive(fs);
