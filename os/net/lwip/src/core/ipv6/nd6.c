@@ -586,7 +586,6 @@ return;
 		struct ra_header *ra_hdr;
 		struct lladdr_option *lladdr_opt = NULL;
 		u8_t nce_flag = 0;
-
 		u8_t *buffer;		/* Used to copy options. */
 		u16_t offset;
 #if LWIP_ND6_RDNSS_MAX_DNS_SERVERS

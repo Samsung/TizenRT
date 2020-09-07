@@ -823,10 +823,10 @@ netif_found:
 			if ((frag_hdr->_fragment_offset & PP_HTONS(IP6_FRAG_OFFSET_MASK | IP6_FRAG_MORE_FLAG)) == 0) {
 				// [TAHI ND#127]
 				if (ip_data.is_atomic_frag == 1) {
-					pbuf_free(p);
-					IP6_STATS_INC(ip6.drop);
-					goto ip6_input_cleanup;
+					// let nd6 know it's atomic fragment packet
+					ip_data.is_atomic_frag = 2;
 				}
+
 				/* This is a 1-fragment packet, usually a packet that we have
 				 * already reassembled. Skip this header anc continue. */
 				LWIP_DEBUGF(IP6_DEBUG, ("[pkbuild] skip header anc continue %d\n", __LINE__));
