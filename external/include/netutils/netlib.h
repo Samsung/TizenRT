@@ -137,6 +137,7 @@ int netlib_set_ipv4netmask(FAR const char *ifname, FAR const struct in_addr *add
 #endif
 
 #ifdef CONFIG_NET_IPv6
+int netlib_set_ipv6type(FAR const char *ifname, uint8_t type);
 int netlib_get_ipv6addr(FAR const char *ifname, FAR struct in6_addr *addr);
 int netlib_set_ipv6addr(FAR const char *ifname, FAR const struct in6_addr *addr);
 int netlib_set_dripv6addr(FAR const char *ifname, FAR const struct in6_addr *addr);

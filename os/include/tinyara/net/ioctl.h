@@ -208,6 +208,7 @@
  * it's provided to running iotivity app on binary protection env */
 #define SIOCGIFNAME      _SIOC(0x0056)  /* get active NIC name. */
 
+#define SIOCSLIPTYPE     _SIOC(0x0057)	/* Set IPv6 Address type */
 /****************************************************************************
  * Type Definitions
  ****************************************************************************/

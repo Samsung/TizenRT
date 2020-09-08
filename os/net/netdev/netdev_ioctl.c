@@ -344,7 +344,7 @@ static void ioctl_getipv4addr(FAR struct sockaddr *outaddr, in_addr_t inaddr)
 #ifdef CONFIG_NET_LWIP
 static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, ip6_addr_t * inaddr)
 #else							/* CONFIG_NET_LWIP */
-static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, FAR const net_ipv6addr_t inaddr)
+	static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, FAR const net_ipv6addr_t inaddr)
 #endif							/* CONFIG_NET_LWIP */
 {
 	FAR struct sockaddr_in6 *dest = (FAR struct sockaddr_in6 *)outaddr;
@@ -543,35 +543,115 @@ static FAR struct netif *netdev_ifrdev(FAR struct ifreq *req)
 	return netdev_findbyname(req->ifr_name);
 }
 
-/****************************************************************************
- * Name: netdev_ifrioctl
- *
- * Description:
- *   Perform network device specific operations.
- *
- * Parameters:
- *   psock    Socket structure
- *   dev      Ethernet driver device structure
- *   cmd      The ioctl command
- *   req      The argument of the ioctl cmd
- *
- * Return:
- *   >=0 on success (positive non-zero values are cmd-specific)
- *   Negated errno returned on failure.
- *
- ****************************************************************************/
 
-static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
+#ifdef CONFIG_NET_IPv6
+static int _handle_ipv6_cmd(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 {
-	FAR struct netif *dev;
+	FAR struct netif *dev = NULL;
 	int ret = -EINVAL;
 
-	//nvdbg("cmd: %d\n", cmd);
+	switch (cmd) {
+		/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
+	case SIOCSLIPTYPE: {		/* Set IPv6 Address type */
+		dev = netdev_ifrdev(req);
+		if (dev) {
+			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+			dev->ip6_addr_type = lreq->lifr_addr_type;
+			ret = OK;
+		}
+	}
+		break;
+	case SIOCGLIFADDR: {		/* Get IP address */
+		dev = netdev_ifrdev(req);
+		if (dev) {
+			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_getipv6addr(&lreq->lifr_addr, ip_2_ip6(&dev->ip_addr));
+			ret = OK;
+#endif
+		}
+	}
+		break;
 
-	/* Execute the command */
+	case SIOCSLIFADDR: {		/* Set IP address */
+		dev = netdev_ifrdev(req);
+		if (dev) {
+			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+			netdev_soft_ifdown(dev);
+			netdev_setipv6addr(dev, &lreq->lifr_addr);
+			netdev_soft_ifup(dev);
+			ret = OK;
+		}
+	}
+		break;
+
+	case SIOCGLIFDSTADDR: {		/* Get P-to-P address */
+		dev = netdev_ifrdev(req);
+		if (dev) {
+			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_getipv6addr(&lreq->lifr_dstaddr, ip_2_ip6(&dev->gw));
+#endif							/* CONFIG_NET_LWIP */
+			ret = OK;
+		}
+	}
+		break;
+
+	case SIOCSLIFDSTADDR: {		/* Set P-to-P address */
+		dev = netdev_ifrdev(req);
+		if (dev) {
+			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_setipv6addr(ip_2_ip6(&dev->gw), &lreq->lifr_dstaddr);
+#endif							/* CONFIG_NET_LWIP */
+			ret = OK;
+		}
+	}
+		break;
+
+	case SIOCGLIFBRDADDR:		/* Get broadcast IP address */
+	case SIOCSLIFBRDADDR: {		/* Set broadcast IP address */
+		ret = -ENOSYS;
+	}
+		break;
+
+	case SIOCGLIFNETMASK: {		/* Get network mask */
+		dev = netdev_ifrdev(req);
+		if (dev) {
+			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_getipv6addr(&lreq->lifr_addr, ip_2_ip6(&dev->netmask));
+#endif							/* CONFIG_NET_LWIP */
+			ret = OK;
+		}
+	}
+		break;
+
+	case SIOCSLIFNETMASK: {		/* Set network mask */
+		dev = netdev_ifrdev(req);
+		if (dev) {
+			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_setipv6addr(ip_2_ip6(&dev->netmask), &lreq->lifr_addr);
+#endif							/* CONFIG_NET_LWIP */
+			ret = OK;
+		}
+	}
+		break;
+	}
+
+	return ret;
+}
+#endif							/* CONFIG_NET_IPv6 */
+
+
+#ifdef CONFIG_NET_IPv4
+static int _handle_ipv4_cmd(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
+{
+	FAR struct netif *dev = NULL;
+	int ret = -EINVAL;
 
 	switch (cmd) {
-#ifdef CONFIG_NET_IPv4
 	case SIOCGIFADDR: {			/* Get IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
@@ -579,7 +659,8 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = OK;
 		}
 	}
-	break;
+		break;
+
 	case SIOCSIFADDR: {			/* Set IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
@@ -595,7 +676,7 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = OK;
 		}
 	}
-	break;
+		break;
 
 	case SIOCGIFDSTADDR: {		/* Get P-to-P address */
 		dev = netdev_ifrdev(req);
@@ -604,7 +685,7 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = OK;
 		}
 	}
-	break;
+		break;
 
 	case SIOCSIFDSTADDR: {		/* Set P-to-P address */
 		dev = netdev_ifrdev(req);
@@ -622,13 +703,13 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 #endif							/* CONFIG_NET_LWIP */
 		}
 	}
-	break;
+		break;
 
 	case SIOCGIFBRDADDR:		/* Get broadcast IP address */
 	case SIOCSIFBRDADDR: {		/* Set broadcast IP address */
 		ret = -ENOSYS;
 	}
-	break;
+		break;
 
 	case SIOCGIFNETMASK: {		/* Get network mask */
 		dev = netdev_ifrdev(req);
@@ -637,7 +718,7 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = OK;
 		}
 	}
-	break;
+		break;
 
 	case SIOCSIFNETMASK: {		/* Set network mask */
 		dev = netdev_ifrdev(req);
@@ -655,98 +736,58 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 #endif							/* CONFIG_NET_LWIP */
 		}
 	}
-	break;
+		break;
+
+	default: {
+		ret = -ENOTTY;
+	}
+	}
+
+	return ret;
+}
+#endif // CONFIG_NET_IPv4
+
+
+static int _handle_ip_cmd(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
+{
+	FAR struct netif *dev = NULL;
+	int ret = -EINVAL;
+
+	switch (cmd) {
+	case SIOCDIFADDR: {			/* Delete IP address */
+		dev = netdev_ifrdev(req);
+		if (dev) {
+#ifdef CONFIG_NET_LWIP
+			netif_set_down(dev);
+#endif
+#ifdef CONFIG_NET_IPv4
+			dev->d_ipaddr = 0;
 #endif							/* CONFIG_NET_IPV4 */
-
-	/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
 #ifdef CONFIG_NET_IPv6
-	case SIOCGLIFADDR: {		/* Get IP address */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
 #ifdef CONFIG_NET_LWIP
-			ioctl_getipv6addr(&lreq->lifr_addr, ip_2_ip6(&dev->ip_addr));
-#else							/* CONFIG_NET_LWIP */
-			ioctl_getipv6addr(&lreq->lifr_addr, dev->d_ipv6addr);
+			memset(ip_2_ip6(&dev->ip_addr), 0, sizeof(net_ipv6addr_t));
+#else
+			memset(&dev->d_ipv6addr, 0, sizeof(net_ipv6addr_t));
 #endif							/* CONFIG_NET_LWIP */
+#endif							/* CONFIG_NET_IPV6 */
 			ret = OK;
 		}
 	}
-	break;
-	case SIOCSLIFADDR: {		/* Set IP address */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-			netdev_soft_ifdown(dev);
-			netdev_setipv6addr(dev, &lreq->lifr_addr);
-			netdev_soft_ifup(dev);
-			ret = OK;
-		}
+		break;
+	default: {
+		ret = -ENOTTY;
 	}
-	break;
-	case SIOCGLIFDSTADDR: {		/* Get P-to-P address */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_getipv6addr(&lreq->lifr_dstaddr, ip_2_ip6(&dev->gw));
-#else							/* CONFIG_NET_LWIP */
-			ioctl_getipv6addr(&lreq->lifr_dstaddr, dev->d_ipv6draddr);
-#endif							/* CONFIG_NET_LWIP */
-			ret = OK;
-		}
 	}
-	break;
 
-	case SIOCSLIFDSTADDR: {		/* Set P-to-P address */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_setipv6addr(ip_2_ip6(&dev->gw), &lreq->lifr_dstaddr);
-#else							/* CONFIG_NET_LWIP */
-			ioctl_setipv6addr(dev->d_ipv6draddr, &lreq->lifr_dstaddr);
-#endif							/* CONFIG_NET_LWIP */
-			ret = OK;
-		}
-	}
-	break;
+	return ret;
+}
 
-	case SIOCGLIFBRDADDR:		/* Get broadcast IP address */
+static int _handle_netdev_cmd(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
+{
+	FAR struct netif *dev = NULL;
 
-	case SIOCSLIFBRDADDR: {		/* Set broadcast IP address */
-		ret = -ENOSYS;
-	}
-	break;
-
-	case SIOCGLIFNETMASK: {		/* Get network mask */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_getipv6addr(&lreq->lifr_addr, ip_2_ip6(&dev->netmask));
-#else							/* CONFIG_NET_LWIP */
-			ioctl_getipv6addr(&lreq->lifr_addr, dev->d_ipv6netmask);
-#endif							/* CONFIG_NET_LWIP */
-			ret = OK;
-		}
-	}
-	break;
-
-	case SIOCSLIFNETMASK: {		/* Set network mask */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_setipv6addr(ip_2_ip6(&dev->netmask), &lreq->lifr_addr);
-#else							/* CONFIG_NET_LWIP */
-			ioctl_setipv6addr(dev->d_ipv6netmask, &lreq->lifr_addr);
-#endif							/* CONFIG_NET_LWIP */
-			ret = OK;
-		}
-	}
-	break;
-#endif							/* CONFIG_NET_IPv6 */
+	int ret = -EINVAL;
+	switch (cmd) {
 
 	case SIOCGLIFMTU:			/* Get MTU size */
 	case SIOCGIFMTU: {			/* Get MTU size */
@@ -756,7 +797,7 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = OK;
 		}
 	}
-	break;
+		break;
 
 	case SIOCSIFFLAGS: {		/* Sets the interface flags */
 		/* Is this a request to bring the interface up? */
@@ -779,7 +820,7 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 
 		ret = OK;
 	}
-	break;
+		break;
 
 	case SIOCGIFFLAGS: {		/* Gets the interface flags */
 		dev = netdev_ifrdev(req);
@@ -789,9 +830,9 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 
 		ret = OK;
 	}
-	break;
+		break;
 
-	/* MAC address operations only make sense if Ethernet is supported */
+		/* MAC address operations only make sense if Ethernet is supported */
 #ifdef CONFIG_NET_ETHERNET
 	case SIOCGIFHWADDR: {		/* Get hardware address */
 		dev = netdev_ifrdev(req);
@@ -801,7 +842,7 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = OK;
 		}
 	}
-	break;
+		break;
 
 	case SIOCSIFHWADDR: {		/* Set hardware address -- will not take effect until ifup */
 		dev = netdev_ifrdev(req);
@@ -810,35 +851,14 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = OK;
 		}
 	}
-	break;
+		break;
 #endif							/* CONFIG_NET_EHTERNET */
-
-	case SIOCDIFADDR: {			/* Delete IP address */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-#ifdef CONFIG_NET_LWIP
-			netif_set_down(dev);
-#endif
-#ifdef CONFIG_NET_IPv4
-			dev->d_ipaddr = 0;
-#endif							/* CONFIG_NET_IPV4 */
-#ifdef CONFIG_NET_IPv6
-#ifdef CONFIG_NET_LWIP
-			memset(ip_2_ip6(&dev->ip_addr), 0, sizeof(net_ipv6addr_t));
-#else
-			memset(&dev->d_ipv6addr, 0, sizeof(net_ipv6addr_t));
-#endif							/* CONFIG_NET_LWIP */
-#endif							/* CONFIG_NET_IPV6 */
-			ret = OK;
-		}
-	}
-	break;
 
 	case SIOCGIFCOUNT: {		/* Get number of devices */
 		req->ifr_count = netdev_count();
 		ret = -ENOSYS;
 	}
-	break;
+		break;
 
 #ifdef CONFIG_NET_ARPIOCTLS
 	case SIOCSARP:				/* Set a ARP mapping */
@@ -856,7 +876,7 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = dev->d_ioctl(dev, cmd, ((long)(uintptr_t)notify));
 		}
 	}
-	break;
+		break;
 #endif							/* CONFIG_ARCH_PHY_INTERRUPT */
 
 	case SIOCGMIIPHY:			/* Get address of MII PHY in use */
@@ -868,21 +888,63 @@ static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
 			ret = dev->d_ioctl(dev, cmd, ((long)(uintptr_t)mii_data));
 		}
 	}
-	break;
+		break;
 #endif							/* CONFIG_NETDEV_PHY_IOCTL */
 	case SIOCGIFCONF:
 		ret = ioctl_siocgifconf((FAR struct ifconf *)req);
 		break;
-	case SIOCGIFNAME: {
-		ret = netdev_getifname(req->ifr_name);
-	}
-	break;
 
 	default: {
 		ret = -ENOTTY;
 	}
-	break;;
+		break;
 	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: netdev_ifrioctl
+ *
+ * Description:
+ *   Perform network device specific operations.
+ *
+ * Parameters:
+ *   psock    Socket structure
+ *   dev      Ethernet driver device structure
+ *   cmd      The ioctl command
+ *   req      The argument of the ioctl cmd
+ *
+ * Return:
+ *   >=0 on success (positive non-zero values are cmd-specific)
+ *   Negated errno returned on failure.
+ *
+ ****************************************************************************/
+
+static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
+{
+	int ret = -EINVAL;
+
+	//nvdbg("cmd: %d\n", cmd);
+
+	/* Execute the command */
+	ret = _handle_netdev_cmd(sock, cmd, req);
+
+	if (ret != OK) {
+		ret = _handle_ip_cmd(sock, cmd, req);
+	}
+
+#ifdef CONFIG_NET_IPv4
+	if (ret != OK) {
+		ret = _handle_ipv4_cmd(sock, cmd, req);
+	}
+#endif							/* CONFIG_NET_IPV4 */
+
+#ifdef CONFIG_NET_IPv6
+	if (ret != OK) {
+		ret = _handle_ipv6_cmd(sock, cmd, req);
+	}
+#endif
 
 	return ret;
 }
@@ -934,14 +996,19 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
  ****************************************************************************/
 
 #ifdef CONFIG_NET_NETMON
-static int netdev_nmioctl(int cmd, void  *arg)
+static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 {
 	int ret = -EINVAL;
+	int num_copy;
 	switch (cmd) {
 	case SIOCGETSOCK:          /* Get socket info. */
-		// monitoring socket is not supported without network manager
-		// please turn on CONFIG_NETMON
-		ret = -EINVAL;
+		num_copy = copy_socket(arg);
+		/* num_copy shoud be larger than 0 (this socket) */
+		if (num_copy > 0) {
+			ret = OK;
+		} else {
+			ret = -EINVAL;
+		}
 		break;
 #ifdef CONFIG_NET_STATS
 	case SIOCGDSTATS:          /* Get netdev info. */
@@ -977,7 +1044,7 @@ static int netdev_nmioctl(int cmd, void  *arg)
  ****************************************************************************/
 
 #ifdef CONFIG_NET_IGMP
-static int netdev_imsfioctl(int cmd, FAR struct ip_msfilter *imsf)
+static int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *imsf)
 {
 	FAR struct netif *dev;
 	int ret = -EINVAL;
@@ -998,7 +1065,7 @@ static int netdev_imsfioctl(int cmd, FAR struct ip_msfilter *imsf)
 			}
 		}
 	}
-	break;
+		break;
 
 	case SIOCGIPMSFILTER:		/* Retrieve source filter addresses */
 	default:
@@ -1029,7 +1096,7 @@ static int netdev_imsfioctl(int cmd, FAR struct ip_msfilter *imsf)
  ****************************************************************************/
 
 #ifdef CONFIG_NET_ROUTE
-static int netdev_rtioctl(int cmd, FAR struct rtentry *rtentry)
+static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *rtentry)
 {
 	int ret = -EAFNOSUPPORT;
 
@@ -1060,7 +1127,7 @@ static int netdev_rtioctl(int cmd, FAR struct rtentry *rtentry)
 		}
 #endif							/* CONFIG_NET_IPv6 */
 	}
-	break;
+		break;
 
 	case SIOCDELRT: {			/* Delete an entry from the routing table */
 		/* The target address and the netmask are required values */
@@ -1086,7 +1153,7 @@ static int netdev_rtioctl(int cmd, FAR struct rtentry *rtentry)
 		}
 #endif							/* CONFIG_NET_IPv6 */
 	}
-	break;
+		break;
 
 	default:
 		ret = -ENOTTY;
@@ -1098,112 +1165,6 @@ static int netdev_rtioctl(int cmd, FAR struct rtentry *rtentry)
 #endif							/* CONFIG_NET_ROUTE */
 
 #if CONFIG_NET_LWIP
-static struct addrinfo *copy_addrinfo(struct addrinfo *src)
-{
-	struct addrinfo *tmp = src;
-	struct addrinfo *prev = NULL;
-	struct addrinfo *root = NULL;
-	int canonname_len = 0;
-	while (tmp) {
-		struct addrinfo *dst = NULL;
-		dst = (struct addrinfo *)kumm_malloc(sizeof(struct addrinfo));
-		if (!dst) {
-			ndbg("copy_addrinfo() kumm_malloc failed\n");
-			break;
-		}
-		dst->ai_flags = tmp->ai_flags;
-		dst->ai_family = tmp->ai_family;
-		dst->ai_socktype = tmp->ai_socktype;
-		dst->ai_protocol = tmp->ai_protocol;
-		dst->ai_addrlen = tmp->ai_addrlen;
-
-		dst->ai_addr = (struct sockaddr *)kumm_malloc(sizeof(struct sockaddr));
-		if (!dst->ai_addr) {
-			ndbg("copy_addrinfo() kumm_malloc failed\n");
-			kumm_free(dst);
-			break;
-		}
-
-		memcpy(dst->ai_addr, tmp->ai_addr, sizeof(struct sockaddr));
-
-		if (tmp->ai_canonname) {
-			canonname_len = strlen(tmp->ai_canonname) + 1;
-			dst->ai_canonname = (char *)kumm_malloc(canonname_len);
-			if (!dst->ai_canonname) {
-				ndbg("copy_addrinfo() kumm_malloc failed\n");
-				kumm_free(dst->ai_addr);
-				kumm_free(dst);
-				break;
-			}
-			memcpy(dst->ai_canonname, tmp->ai_canonname, canonname_len);
-		} else {
-			dst->ai_canonname = NULL;
-		}
-
-		dst->ai_next = NULL;
-		if (prev) {
-			prev->ai_next = dst;
-		} else {
-			root = dst;
-		}
-		tmp = tmp->ai_next;
-		prev = dst;
-	}
-
-	return root;
-}
-
-static int free_addrinfo(struct addrinfo *ai)
-{
-	struct addrinfo *next;
-
-	while (ai != NULL) {
-		next = ai->ai_next;
-		kumm_free(ai);
-		ai = next;
-	}
-	return 0;
-}
-
-#if defined(CONFIG_NET_LWIP_DHCP)
-#define DHCPD_MQ_NAME "dhcpd_queue"
-#define DHCPD_MQ_LEN 11
-#define DHCPD_MQ_MAX_LEN 20
-
-static void _dhcpd_join(dhcp_evt_type_e type, void *data)
-{
-	ndbg("dhcpd joined");
-
-	struct mq_attr attr;
-	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
-	attr.mq_msgsize = DHCPD_MQ_LEN;
-	attr.mq_flags = 0;
-	attr.mq_curmsgs = 0;
-
-	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
-	if (!md) {
-		ndbg("mq open fail (errno %d)\n", errno);
-		mq_close(md);
-		return;
-	}
-
-	char msg[DHCPD_MQ_LEN];
-	dhcp_node_s *node = (dhcp_node_s *)data;
-	msg[0] = 1;
-	memcpy(&msg[1], &node->ipaddr, 4);
-	memcpy(&msg[5], &node->macaddr, 6);
-	int mq_ret = mq_send(md, msg, DHCPD_MQ_LEN, 100);
-	if (mq_ret < 0) {
-		ndbg("send mq fail (errno %d)\n", errno);
-	}
-
-	mq_close(md);
-
-	return;
-}
-
-#endif
-
 /****************************************************************************
  * Function: lwip_func_ioctl
  *
@@ -1211,7 +1172,6 @@ static void _dhcpd_join(dhcp_evt_type_e type, void *data)
  *   Call lwip API
  *
  * Parameters:
- *   s        Descriptor of device
  *   cmd      The ioctl command
  *   arg      Type of the information to get
  *
@@ -1219,119 +1179,39 @@ static void _dhcpd_join(dhcp_evt_type_e type, void *data)
  *   0 on success, negated errno on failure.
  *
  ****************************************************************************/
-int lwip_func_ioctl(int s, int cmd, void *arg)
+
+int lwip_func_ioctl(int cmd, void *arg)
 {
 	int ret = -EINVAL;
-	struct lwip_sock *sock = get_socket(s, getpid());
-	if (!sock) {
-		ret = -EBADF;
-		return ret;
-	}
 	struct req_lwip_data *in_arg = (struct req_lwip_data *)arg;
 	if (!in_arg) {
 		return ret;
 	}
 
 	struct addrinfo *res = NULL;
-	struct hostent *host_ent = NULL;
-	struct hostent *user_ent = NULL;
 
 	switch (in_arg->type) {
 #if LWIP_DNS
 	case GETADDRINFO:
-		in_arg->req_res = lwip_getaddrinfo(in_arg->host_name, in_arg->serv_name, in_arg->ai_hint, &res);
-		if (in_arg->req_res != 0) {
-			ndbg("lwip_getaddrinfo() returned with the error code: %d\n", ret);
-			in_arg->ai_res = NULL;
-			ret = -EINVAL;
-		} else {
-			in_arg->ai_res = copy_addrinfo(res);
-			ret = OK;
+		ret = lwip_getaddrinfo(in_arg->host_name, in_arg->serv_name, in_arg->ai_hint, &res);
+		if (ret != 0) {
+			printf("lwip_getaddrinfo() returned with the error code: %d\n", ret);
+			in_arg->req_res = ret;
+			return -EINVAL;
 		}
+		in_arg->ai_res = res;
 		break;
 	case FREEADDRINFO:
-		in_arg->req_res = free_addrinfo(in_arg->ai);
-		ret = OK;
+		lwip_freeaddrinfo(in_arg->ai);
+		ret = 0;
 		break;
 	case DNSSETSERVER:
 		dns_setserver(in_arg->num_dns, in_arg->dns_server);
-		ret = OK;
-		break;
-	case GETHOSTBYNAME:
-		host_ent = lwip_gethostbyname(in_arg->host_name);
-		if (!host_ent) {
-			ndbg("lwip_gethostbyname() returned with the error code: %d\n", HOST_NOT_FOUND);
-			ret = -EINVAL;
-		} else {
-			user_ent = in_arg->host_entry;
-			strncpy(user_ent->h_name, host_ent->h_name, DNS_MAX_NAME_LENGTH);
-			user_ent->h_name[DNS_MAX_NAME_LENGTH] = 0;
-			memcpy(user_ent->h_addr_list[0], host_ent->h_addr_list[0], sizeof(struct in_addr));
-			user_ent->h_addrtype = host_ent->h_addrtype;
-			user_ent->h_length = host_ent->h_length;
-
-			ret	= OK;
-		}
-		break;
-	case GETNAMEINFO:
-		in_arg->req_res = lwip_getnameinfo(in_arg->sa, in_arg->sa_len, (char *)in_arg->host_name, in_arg->host_len, (char *)in_arg->serv_name, in_arg->serv_len, in_arg->flags);
-		if (in_arg->req_res != 0) {
-			ndbg("lwip_getnameinfo() returned with the error code: %d\n", ret);
-			ret = -EINVAL;
-		} else {
-			ret = OK;
-		}
-		break;
-#endif // LWIP_DNS
-#if defined(CONFIG_NET_LWIP_DHCP)
-#if defined(CONFIG_LWIP_DHCPC)
-	case DHCPCSTART:
-		in_arg->req_res = netdev_dhcp_client_start((const char *)in_arg->intf);
-		if (in_arg->req_res != 0) {
-			ret = -EINVAL;
-			ndbg("start dhcp fail\n");
-		} else {
-			ret = OK;
-		}
-		break;
-	case DHCPCSTOP:
-		netdev_dhcp_client_stop((const char *)in_arg->intf);
-		in_arg->req_res = 0;
-		ret = OK;
+		ret = 0;
 		break;
 #endif
-#if defined(CONFIG_LWIP_DHCPS)
-	case DHCPDSTART:
-		in_arg->req_res = netdev_dhcp_server_start((char *)in_arg->intf, _dhcpd_join);
-		if (in_arg->req_res != 0) {
-			ret = -EINVAL;
-			ndbg("start dhcpd fail\n");
-		} else {
-			ret = OK;
-		}
-		break;
-	case DHCPDSTOP:
-		in_arg->req_res = netdev_dhcp_server_stop((char *)in_arg->intf);
-		if (in_arg->req_res != 0) {
-			ret = -EINVAL;
-			ndbg("stop dhcpd fail\n");
-		} else {
-			ret = OK;
-		}
-		break;
-	case DHCPDSTATUS:
-		in_arg->req_res = netdev_dhcp_server_status((char *)in_arg->intf);
-		if (in_arg->req_res != 0) {
-			ret = -EINVAL;
-			ndbg("stop dhcp fail\n");
-		} else {
-			ret = OK;
-		}
-		break;
-#endif
-#endif // CONFIG_NET_LWIP_DHCP
 	default:
-		ndbg("Wrong request type: %d\n", in_arg->type);
+		printf("Wrong request type: %d\n", in_arg->type);
 		break;
 	}
 
@@ -1365,7 +1245,7 @@ int lwipioctl(int sockfd, int cmd, void *arg)
 			return -get_errno();
 		}
 	} else if (cmd == SIOCLWIP) {
-		return lwip_func_ioctl(sockfd, cmd, arg);
+		return lwip_func_ioctl(cmd, arg);
 	}
 
 	return ret;
@@ -1407,9 +1287,9 @@ int lwipioctl(int sockfd, int cmd, void *arg)
  *
  ****************************************************************************/
 
-int net_ioctl(int sockfd, int cmd, unsigned long arg)
+int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 {
-	/* FAR struct lwip_sock *sock = NULL; */
+	FAR struct socket *sock = NULL;
 	int ret = -ENOTTY;
 
 	/* Check if this is a valid command.  In all cases, arg is a pointer that has
@@ -1423,37 +1303,34 @@ int net_ioctl(int sockfd, int cmd, unsigned long arg)
 	}
 
 	/* Verify that the sockfd corresponds to valid, allocated socket */
-    /*  I am confused if sockfd were invalid then the request couldn't be reach here */
-	/*  So checking validation of socket would be unneccessary */
-	/* sock = get_socket(sockfd); */
 
-	/*
+	sock = get_socket(sockfd);
+
 	if (NULL == sock) {
 		ret = -EBADF;
 		goto errout;
 	}
-	*/
 
 	/* Execute the command */
 #ifdef CONFIG_NET_LWIP
 	ret = lwipioctl(sockfd, cmd, (void *)((uintptr_t)arg));
 #endif
 	if (ret == -ENOTTY) {
-		ret = netdev_ifrioctl(cmd, (FAR struct ifreq *)((uintptr_t)arg));
+		ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
 	}
 #ifdef CONFIG_NET_NETMON
 	if (ret == -ENOTTY) {
-		ret = netdev_nmioctl(cmd, (void *)((uintptr_t)arg));
+		ret = netdev_nmioctl(sock, cmd, (void *)((uintptr_t)arg));
 	}
 #endif                          /* CONFIG_NET_NETMON */
 #ifdef CONFIG_NET_IGMP
 	if (ret == -ENOTTY) {
-		ret = netdev_imsfioctl(cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
+		ret = netdev_imsfioctl(sock, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
 	}
 #endif							/* CONFIG_NET_IGMP */
 #ifdef CONFIG_NET_ROUTE
 	if (ret == -ENOTTY) {
-		ret = netdev_rtioctl(cmd, (FAR struct rtentry *)((uintptr_t)arg));
+		ret = netdev_rtioctl(sock, cmd, (FAR struct rtentry *)((uintptr_t)arg));
 	}
 #endif							/* CONFIG_NET_ROUTE */
 
@@ -1528,7 +1405,7 @@ void netdev_ifup(FAR struct netif *dev)
 	netif_set_ip6_autoconfig_enabled(dev, 1);
 #endif /* CONFIG_NET_IPv6_AUTOCONFIG */
 	/* To auto-config linklocal address, dev should have mac address already */
-	netif_create_ip6_linklocal_address(dev, 1);
+	netif_create_ip6_linklocal_address(dev);
 	ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n",
 		 PP_HTONL(ip_2_ip6(&dev->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&dev->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&dev->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&dev->ip6_addr[0])->addr[3]));
 #ifdef CONFIG_NET_IPv6_MLD

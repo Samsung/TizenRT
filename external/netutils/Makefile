@@ -80,7 +80,8 @@ CSRCS += netlib_setipv6addr.c \
 	netlib_setdripv6addr.c \
 	netlib_setipv6netmask.c \
 	netlib_prefix2ipv6netmask.c \
-	netlib_ipv6netmask2prefix.c
+	netlib_ipv6netmask2prefix.c \
+	netlib_setipv6type.c
 endif
 
 # No MAC address support for SLIP (Ethernet only)

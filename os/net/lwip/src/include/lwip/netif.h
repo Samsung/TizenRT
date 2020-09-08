@@ -247,6 +247,14 @@ typedef err_t (*netif_mld_mac_filter_fn)(struct netif * netif, const ip6_addr_t 
 #define netif_get_client_data(netif, id)       (netif)->client_data[(id)]
 #endif							/* LWIP_DHCP || LWIP_AUTOIP || (LWIP_NUM_NETIF_CLIENT_DATA > 0) */
 
+#if LWIP_IPV6
+enum ip6_addr_type {
+	IP6_EUI64,
+	IP6_STABLE_PRIVACY,
+	IP6_MAC_DIRECT,
+};
+#endif
+
 /** Generic data structure used for all lwIP network interfaces.
  *  The following fields should be filled in by the initialization
  *  function for the device driver: hwaddr_len, hwaddr[], mtu, flags */
@@ -265,6 +273,8 @@ struct netif {
 	/** The state of each IPv6 address (Tentative, Preferred, etc).
 	 * @see ip6_addr.h */
 	u8_t ip6_addr_state[LWIP_IPV6_NUM_ADDRESSES];
+	u8_t ip6_dad_cnt[LWIP_IPV6_NUM_ADDRESSES];
+	enum ip6_addr_type ip6_addr_type;
 #endif /* LWIP_IPV6 */
 	/** This function is called by the network device driver
 	 *  to pass a packet up the TCP/IP stack. */
@@ -513,7 +523,8 @@ void netif_ip6_addr_set_parts(struct netif *netif, s8_t addr_idx, u32_t i0, u32_
 #define netif_ip6_addr_state(netif, i)  ((netif)->ip6_addr_state[i])
 void netif_ip6_addr_set_state(struct netif *netif, s8_t addr_idx, u8_t state);
 s8_t netif_get_ip6_addr_match(struct netif *netif, const ip6_addr_t * ip6addr);
-void netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit);
+void netif_create_ip6_linklocal_address(struct netif *netif);
+err_t netif_gen_stable_private_id(struct netif *netif, s8_t addr_idx, ip6_addr_t *addr);
 err_t netif_add_ip6_address(struct netif *netif, const ip6_addr_t * ip6addr, s8_t * chosen_idx);
 #define netif_set_ip6_autoconfig_enabled(netif, action) do { if (netif) { (netif)->ip6_autoconfig_enabled = (action); } } while (0)
 #endif							/* LWIP_IPV6 */
