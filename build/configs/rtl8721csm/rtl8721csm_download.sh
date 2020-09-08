@@ -41,7 +41,6 @@ IMG_TOOL_PATH=${TOOL_PATH}/image_tool
 BIN_PATH=${CUR_PATH}/../../output/bin
 TOP_PATH=${CUR_PATH}/../../..
 OS_PATH=${TOP_PATH}/os
-SUDO=sudo
 FLASH_START_ADDR=0x08000000
 
 CONFIG=${OS_PATH}/.config
@@ -88,7 +87,7 @@ download_km0_bl()
 		fi
 	done
 
-	$SUDO ./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
+	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KM0_BL Download DONE"
 }
@@ -110,7 +109,7 @@ download_km4_bl()
 		fi
 	done
 
-	$SUDO ./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
+	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KM4_BL Download DONE"
 }
@@ -132,7 +131,7 @@ download_kernel()
 		fi
 	done
 
-	$SUDO ./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
+	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KERNEL Download DONE"
 }
@@ -154,7 +153,7 @@ download_smartfs()
 		fi
 	done
 
-	$SUDO ./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
+	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "SMARTFS Download DONE"
 }
@@ -326,17 +325,17 @@ download_all()
 		gidx=$(get_partition_index $part)
 		exe_name=$(get_executable_name ${parts[$gidx]})
 
-		$SUDO ./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$gidx]} ${exe_name}
+		./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$gidx]} ${exe_name}
 
 	done
 	echo ""
 	echo "Download COMPLETE!"
 
-	$SUDO [ -e km0_boot_all.bin ] && rm km0_boot_all.bin
-	$SUDO [ -e km4_boot_all.bin ] && rm km4_boot_all.bin
-	$SUDO [ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
+	[ -e km0_boot_all.bin ] && rm km0_boot_all.bin
+	[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
+	[ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
 	if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]];then
-		$SUDO [ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
+		[ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
 	fi
 }
 
