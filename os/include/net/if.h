@@ -174,6 +174,7 @@ struct lifreq {
 		uint8_t lifru_flags;	/* Interface flags */
 		struct mii_iotcl_notify_s llfru_mii_notify;	/* PHY event notification */
 		struct mii_ioctl_data_s lifru_mii_data;	/* MII request data */
+		uint8_t lifru_addr_type; /*  IPv6 Address type */
 	} lifr_ifru;
 };
 
@@ -192,6 +193,7 @@ struct lifreq {
 #define lifr_mii_reg_num      lifr_ifru.lifru_mii_data.reg_num	/* PHY register address */
 #define lifr_mii_val_in       lifr_ifru.lifru_mii_data.val_in	/* PHY input data */
 #define lifr_mii_val_out      lifr_ifru.lifru_mii_data.val_out	/* PHY output data */
+#define lifr_addr_type        lifr_ifru.lifru_addr_type	/* IPv6 Address type */
 
 #endif
 

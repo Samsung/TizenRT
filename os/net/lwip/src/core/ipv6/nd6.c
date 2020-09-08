@@ -1151,7 +1151,13 @@ return;
 		ip6hdr = (struct ip6_hdr *)((u8_t *) p->payload + sizeof(struct icmp6_hdr));
 
 		/* Copy original destination address to current source address, to have an aligned copy. */
-		ip6_addr_set(&tmp, &(ip6hdr->dest));
+		/* [TAHI PMTU#17] patch
+		   According to RFC 4443 Section 3.2, The invoking packet info should be included in PTB payload.
+		   But in the testcase #17, the payload is invalid
+		   'ip6hdr->dest' is based on the payload of PTB */
+		// ip6_addr_set(&tmp, &(ip6hdr->dest));
+		ip6_addr_set(&tmp, ip6_current_src_addr());
+		//ip6_addr_set(&tmp, &(ip6hdr->dest));
 
 		/* Look for entry in destination cache. */
 		i = nd6_find_destination_cache_entry(&tmp);
@@ -1195,6 +1201,11 @@ return;
 		}
 
 		/* Change the Path MTU. */
+		ip6_addr_set(&tmp, &(ip6hdr->dest));
+
+		/* Look for entry in destination cache. */
+		i = nd6_find_destination_cache_entry(&tmp);
+
 		pmtu = lwip_htonl(icmp6hdr->data);
 		if ((pmtu <= destination_cache[i].pmtu) || (destination_cache[i].pmtu_timer <= 0)) {
 			/* PMTU will be updated when one of the following conditions is true.
@@ -1362,14 +1373,34 @@ void nd6_tmr(void)
 
 #if LWIP_IPV6_AUTOCONFIG
 				/* Initiate address autoconfiguration for this prefix, if conditions are met. */
-				if (prefix_list[i].netif->ip6_autoconfig_enabled && (prefix_list[i].flags & ND6_PREFIX_AUTOCONFIG_AUTONOMOUS) && !(prefix_list[i].flags & ND6_PREFIX_AUTOCONFIG_ADDRESS_GENERATED)) {
+				if (prefix_list[i].netif->ip6_autoconfig_enabled
+					&& (prefix_list[i].flags & ND6_PREFIX_AUTOCONFIG_AUTONOMOUS)
+					&& !(prefix_list[i].flags & ND6_PREFIX_AUTOCONFIG_ADDRESS_GENERATED)) {
 					s8_t j;
 					/* Try to get an address on this netif that is invalid.
 					 * Skip 0 index (link-local address) */
 					for (j = 1; j < LWIP_IPV6_NUM_ADDRESSES; j++) {
 						if (netif_ip6_addr_state(prefix_list[i].netif, j) == IP6_ADDR_INVALID) {
-							/* Generate an address using this prefix and interface ID from link-local address. */
-							netif_ip6_addr_set_parts(prefix_list[i].netif, j, prefix_list[i].prefix.addr[0], prefix_list[i].prefix.addr[1], netif_ip6_addr(prefix_list[i].netif, 0)->addr[2], netif_ip6_addr(prefix_list[i].netif, 0)->addr[3]);
+							if (prefix_list[i].netif->ip6_addr_type == IP6_EUI64) {
+								netif_ip6_addr_set_parts(prefix_list[i].netif, j,
+														 prefix_list[i].prefix.addr[0],
+														 prefix_list[i].prefix.addr[1],
+														 netif_ip6_addr(prefix_list[i].netif, 0)->addr[2],
+														 netif_ip6_addr(prefix_list[i].netif, 0)->addr[3]);
+								/* Generate an address using this prefix and interface ID from link-local address. */
+								netif_ip6_addr_set_parts(prefix_list[i].netif, j, prefix_list[i].prefix.addr[0],
+														 prefix_list[i].prefix.addr[1],
+														 netif_ip6_addr(prefix_list[i].netif, 0)->addr[2],
+														 netif_ip6_addr(prefix_list[i].netif, 0)->addr[3]);
+							} else if (prefix_list[i].netif->ip6_addr_type == IP6_STABLE_PRIVACY) {
+								/* Generate an address using this prefix and interface ID as stable privacy. */
+								ip6_addr_t temp;
+								netif_gen_stable_private_id(prefix_list[i].netif, j, &temp);
+								netif_ip6_addr_set_parts(prefix_list[i].netif, j,
+														 prefix_list[i].prefix.addr[0],
+														 prefix_list[i].prefix.addr[1],
+														 temp.addr[2], temp.addr[3]);
+							}
 
 							/* Mark it as tentative (DAD will be performed if configured). */
 							netif_ip6_addr_set_state(prefix_list[i].netif, j, IP6_ADDR_TENTATIVE);
