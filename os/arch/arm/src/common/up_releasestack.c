@@ -61,6 +61,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/mpu.h>
 
 #include "up_internal.h"
 
@@ -123,6 +124,17 @@ void up_release_stack(FAR struct tcb_s *dtcb, uint8_t ttype)
 	/* Is there a stack allocated? */
 
 	if (dtcb->stack_alloc_ptr) {
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		/* Check if user thread */
+		if (dtcb->uheap) {
+			/* If this was the active thread when user fault happened,
+			 * disable it's mpu region for stack protection
+			 */
+			if (up_mpu_check_active(dtcb->stack_mpu_regs)) {
+				up_mpu_disable_region(dtcb->stack_mpu_regs);
+			}
+		}
+#endif
 		/* Use the kernel allocator if this is a kernel thread */
 		sched_kfree(dtcb->stack_alloc_ptr);
 
