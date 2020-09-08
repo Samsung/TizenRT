@@ -97,4 +97,8 @@ void mpu_get_register_config_value(uint32_t *regs, uint32_t region, uintptr_t ba
 
 void up_mpu_set_register(uint32_t *mpu_regs);
 
+bool up_mpu_check_active(uint32_t *mpu_regs);
+
+void up_mpu_disable_region(uint32_t *mpu_regs);
+
 #endif
