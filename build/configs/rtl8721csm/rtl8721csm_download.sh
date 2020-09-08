@@ -41,6 +41,7 @@ IMG_TOOL_PATH=${TOOL_PATH}/image_tool
 BIN_PATH=${CUR_PATH}/../../output/bin
 TOP_PATH=${CUR_PATH}/../../..
 OS_PATH=${TOP_PATH}/os
+SMARTFS_BIN_PATH=${BIN_PATH}/rtl8721csm_smartfs.bin
 FLASH_START_ADDR=0x08000000
 
 CONFIG=${OS_PATH}/.config
@@ -90,6 +91,8 @@ download_km0_bl()
 	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KM0_BL Download DONE"
+
+	[ -e km0_boot_all.bin ] && rm km0_boot_all.bin
 }
 
 download_km4_bl()
@@ -112,6 +115,8 @@ download_km4_bl()
 	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KM4_BL Download DONE"
+
+	[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
 }
 
 download_kernel()
@@ -134,10 +139,24 @@ download_kernel()
 	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KERNEL Download DONE"
+
+	[ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
 }
 
 download_smartfs()
 {
+	if [ ! -f ${SMARTFS_BIN_PATH} ]; then
+cat <<EOF
+
+Warning!! missing file ${SMARTFS_BIN_PATH}
+
+HELP:
+	make download smartfs
+
+EOF
+		exit 1
+	fi
+
 	cd ${IMG_TOOL_PATH}
 	echo ""
 	echo "=========================="
@@ -156,6 +175,7 @@ download_smartfs()
 	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "SMARTFS Download DONE"
+	[ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
 }
 
 ##Utility function to match partition name to binary name##
@@ -243,7 +263,7 @@ function get_partition_sizes()
 cp -p ${BIN_PATH}/km0_boot_all.bin ${IMG_TOOL_PATH}/km0_boot_all.bin
 cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
 cp -p ${BIN_PATH}/km0_km4_image2.bin ${IMG_TOOL_PATH}/km0_km4_image2.bin
-if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]];then
+if test -f "${SMARTFS_BIN_PATH}"; then
 	cp -p ${BIN_PATH}/rtl8721csm_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
 fi
 
@@ -334,7 +354,7 @@ download_all()
 	[ -e km0_boot_all.bin ] && rm km0_boot_all.bin
 	[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
 	[ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
-	if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]];then
+	if test -f "${SMARTFS_BIN_PATH}"; then
 		[ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
 	fi
 }
