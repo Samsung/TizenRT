@@ -566,7 +566,7 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 
 	ret = FS_IOCTL(fs, BIOC_GETFORMAT, (unsigned long)&fs->fs_llformat);
 	if (ret != OK) {
-		fdbg("Error getting device low level format: %d\n", ret);
+		fdbg("Error in getting device low-level format, ret : %d\n", ret);
 		goto errout;
 	}
 
@@ -649,7 +649,7 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 	fs->entry_seq = 0;
 #endif
 
-	fdbg("SMARTFS:\n");
+	fdbg("\t    SMARTFS:\n");
 	fdbg("\t    Sector size:     %d\n", fs->fs_llformat.sectorsize);
 	fdbg("\t    Bytes/sector     %d\n", fs->fs_llformat.availbytes);
 	fdbg("\t    Num sectors:     %d\n", fs->fs_llformat.nsectors);
@@ -992,7 +992,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 									smartfs_setbuffer(&readwrite, dirsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
 									ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 									if (ret < 0) {
-										fdbg("Error in sector chain at %d!\n", dirsector);
+										fdbg("Error in sector chain at %d, ret : %d\n", readwrite.logsector, ret);
 										break;
 									}
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
@@ -1003,7 +1003,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 
 										ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 										if (ret < 0) {
-											fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
+											fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
 											break;
 										}
 										used_value = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
@@ -1224,7 +1224,7 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_ent
 	/* No available entry was found, so we create one */
 	ret = smartfs_createdirentry(fs, direntry);
 	if (ret != OK) {
-		fdbg("Createentry unable to create space for writing\n");
+		fdbg("Unable to chain new sector for writing new entry, ret : %d\n", ret);
 	}
 
 	return ret;
@@ -1283,7 +1283,7 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 		smartfs_setbuffer(&readwrite, new_entry.dsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Unable to read sector %d for writing the new entry\n", new_entry.dsector);
+			fdbg("Error in reading sector %d, ret : %d\n", readwrite.logsector, ret);
 			return ret;
 		}
 		entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
@@ -1321,7 +1321,7 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 	}
 	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long) &readwrite);
 	if (ret < 0) {
-		fdbg("failed to write new entry to parent directory sector : %d\n", new_entry.dsector);
+		fdbg("Error in writing to sector %d, ret : %d\n", readwrite.logsector, ret);
 		goto errout;
 	}
 
@@ -1333,7 +1333,7 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 		smartfs_setbuffer(&readwrite, new_entry.prev_parent, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), (uint8_t *)&nextsector);
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error chaining to current parent chain at %d\n", new_entry.prev_parent);
+			fdbg("Error chaining to current parent chain at %d, ret : %d\n", readwrite.logsector, ret);
 			goto errout;
 		}
 	}
@@ -1405,7 +1405,7 @@ int smartfs_alloc_firstsector(struct smartfs_mountpt_s *fs, uint16_t *sector, ui
 		smartfs_setbuffer(&readwrite, alloc_sector, offsetof(struct smartfs_chain_header_s, type), 1, (uint8_t *)&chainheader_type);
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error %d setting new sector type for sector %d\n", ret, alloc_sector);
+			fdbg("Error setting new sector type for sector %d, ret : %d\n", readwrite.logsector, ret);
 			return ret;
 		}
 	}
@@ -1440,7 +1440,7 @@ int smartfs_invalidateentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsect
 	smartfs_setbuffer(&readwrite, parentdirsector, offset, sizeof(uint16_t), (uint8_t *)fs->fs_rwbuffer);
 	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 	if (ret < 0) {
-		fdbg("Error %d reading sector %d\n", ret, parentdirsector);
+		fdbg("Error reading sector %d, ret : %d\n", readwrite.logsector, ret);
 		return ret;
 	}
 
@@ -1463,7 +1463,7 @@ int smartfs_invalidateentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsect
 	smartfs_setbuffer(&readwrite, parentdirsector, offset, sizeof(uint16_t), (uint8_t *)&fs->fs_rwbuffer[0]);
 	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 	if (ret < 0) {
-		fdbg("Error %d writing flag bytes for sector %d\n", ret, readwrite.logsector);
+		fdbg("Error writing flag bytes for sector %d, ret : %d\n", readwrite.logsector, ret);
 		return ret;
 	}
 
@@ -1504,7 +1504,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 	smartfs_setbuffer(&readwrite, entry->dsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 	if (ret < 0) {
-		fdbg("Error reading directory info at sector %d\n", entry->dsector);
+		fdbg("Error reading directory info at sector %d, ret : %d\n", readwrite.logsector, ret);
 		return ret;
 	}
 
@@ -1550,7 +1550,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 				smartfs_setbuffer(&readwrite, sector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
 				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 				if (ret < 0) {
-					fdbg("Error reading sector %d\n", nextsector);
+					fdbg("Error reading sector %d, ret : %d\n", readwrite.logsector, ret);
 					return ret;
 				}
 
@@ -1565,14 +1565,14 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 					smartfs_setbuffer(&readwrite, sector, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), header->nextsector);
 					ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 					if (ret < 0) {
-						fdbg("Error unchaining sector (%d)\n", nextsector);
+						fdbg("Error unchaining sector %d, ret : %d\n", readwrite.logsector, ret);
 						return ret;
 					}
 
 					/* Now release our sector */
 					ret = FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)entry->dsector);
 					if (ret < 0) {
-						fdbg("Error freeing sector %d\n", entry->dsector);
+						fdbg("Error freeing sector %d, ret : %d\n", readwrite.logsector, ret);
 						return ret;
 					}
 
@@ -1614,7 +1614,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 		smartfs_setbuffer(&readwrite, entry->dsector, entry->doffset, sizeof(uint16_t), (uint8_t *)&direntry->flags);
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error marking entry inactive at sector %d\n", entry->dsector);
+			fdbg("Error marking entry inactive at sector %d, ret : %d\n", readwrite.logsector, ret);
 			return ret;
 		}
 	}
@@ -1629,7 +1629,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 		smartfs_setbuffer(&readwrite, sector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error reading sector %d\n", nextsector);
+			fdbg("Error reading sector %d, ret : %d\n", readwrite.logsector, ret);
 			return ret;
 		}
 
@@ -1638,7 +1638,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 		nextsector = SMARTFS_NEXTSECTOR(header);
 		ret = FS_IOCTL(fs, BIOC_FREESECT, sector);
 		if (ret < 0) {
-			fdbg("Error freeing sector %d\n", nextsector);
+			fdbg("Error freeing sector %d, ret : %d\n", readwrite.logsector, ret);
 			return ret;
 		}
 	}
@@ -1677,7 +1677,7 @@ int smartfs_countdirentries(struct smartfs_mountpt_s *fs, struct smartfs_entry_s
 		smartfs_setbuffer(&readwrite, nextsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error reading sector %d\n", nextsector);
+			fdbg("Error reading sector %d, ret : %d\n", readwrite.logsector, ret);
 			break;
 		}
 
@@ -1742,7 +1742,7 @@ int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *e
 		smartfs_setbuffer(&readwrite, nextsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error reading sector %d header\n", nextsector);
+			fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
 			return ret;
 		}
 
@@ -1776,7 +1776,7 @@ int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *e
 			readwrite.count = fs->fs_llformat.availbytes;
 			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 			if (ret < 0) {
-				fdbg("Error blanking 1st sector (%d) of file\n", nextsector);
+				fdbg("Error blanking 1st sector %d of file, ret : %d\n", readwrite.logsector, ret);
 				return ret;
 			}
 
@@ -1789,7 +1789,7 @@ int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *e
 
 			ret = FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)nextsector);
 			if (ret < 0) {
-				fdbg("Error freeing sector %d\n", nextsector);
+				fdbg("Error freeing sector %d, ret : %d\n", readwrite.logsector, ret);
 				return ret;
 			}
 		}
@@ -1971,7 +1971,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 
 		/* Actually This Must not happened, But skip recovery process to clean later */
 		if (type != SMARTFS_SECTOR_TYPE_DIR && type != SMARTFS_SECTOR_TYPE_FILE) {
-			fdbg("Critical Bug..What should we do? type : %d\n", type);
+			fdbg("Error, node is neither of type 'directory', nor 'file', type : %d\n", type);
 			continue;
 		}
 
@@ -1981,7 +1981,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 			/* If current sector is not valid, move to next sector */
 			if (ret < 0) {
-				fdbg("Error %d reading sector %d data\n", ret, logsector);
+				fdbg("Error reading sector %d data, ret : %d\n", readwrite.logsector, ret);
 				break;
 			}
 			
@@ -2042,7 +2042,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 					  */
 					ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)firstsector);
 					if (ret < 0) {
-						fdbg("Get Bitmap Error ret : %d sector : %d\n", ret, firstsector);
+						fdbg("Error in getting bitmap for sector : %d, ret : %d\n", firstsector, ret);
 						goto errout;
 					}
 
@@ -2051,7 +2051,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 						fdbg("Invalid entry, firstsector is not exist sector : %d firstsector : %d\n", logsector, firstsector);
 						ret = smartfs_invalidateentry(fs, logsector, offset);
 						if (ret < 0) {
-							fdbg("Error marking entry inactive at sector %d\n", firstsector);
+							fdbg("Unable to mark entry inactive at sector %d, ret : %d\n", logsector, ret);
 							goto errout;
 						}
 						info->cleanentries++;
@@ -2080,7 +2080,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 			/* Check next sector is valid or Not */
 			ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)nextsector);
 			if (ret < 0) {
-				fdbg("Get Bitmap Error ret : %d sector : %d\n", ret, nextsector);
+				fdbg("Error in getting bitmap for sector : %d, ret : %d\n", nextsector, ret);
 				goto errout;
 			}
 			fvdbg("Nextsector : %d ret : 0x%x\n", nextsector, ret);
@@ -2094,7 +2094,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 				nextsector = SMARTFS_ERASEDSTATE_16BIT;
 				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 				if (ret < 0) {
-					fdbg("Error unchaining sector (%d)\n", nextsector);
+					fdbg("Error unchaining sector %d, ret : %d\n", readwrite.logsector, ret);
 					goto errout;
 				}
 				
@@ -2148,7 +2148,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 	for (sector = SMARTFS_ROOT_DIR_SECTOR; sector < fs->fs_llformat.nsectors; sector++) {
 		ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)sector);
 		if (ret < 0) {
-			fdbg("Get Bitmap Error %d\n", ret);
+			fdbg("Error in getting bitmap for sector: %d, ret : %d\n", sector, ret);
 			goto error_with_map;
 		}
 
@@ -2159,7 +2159,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 		} else {
 			/* TODO Root sector(/mnt) is gone.. what should we do alloc again?? */
 			if (sector == SMARTFS_ROOT_DIR_SECTOR) {
-				fdbg("Critical Bug!! Root sector has gone!!\n");
+				fdbg("CRITICAL BUG!! Root sector is gone!!\n");
 				ret = -EIO;
 				goto error_with_map;
 			}
@@ -2169,7 +2169,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 	/* TODO Find all active Logical sectors from root sector and unmark for exist sector */
 	ret = smartfs_scan_entry(fs, map, &info);
 	if (ret != OK) {
-		fdbg("BUG!! scan entry failed...\n");
+		fdbg("Unable to scan entries, smartfs_scan_entry failed, ret : %d\n", ret);
 		goto error_with_map;
 	}
 	for (sector = SMARTFS_ROOT_DIR_SECTOR; sector < fs->fs_llformat.nsectors; sector++) {
@@ -2178,7 +2178,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 			info.isolatedsector++;
 			ret = FS_IOCTL(fs, BIOC_FREESECT, sector);
 			if (ret < 0) {
-				fdbg("Error freeing sector %d\n", sector);
+				fdbg("Error freeing sector %d, ret : %d\n", sector, ret);
 				goto error_with_map;
 			}
 		}
