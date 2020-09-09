@@ -1158,13 +1158,7 @@ return;
 		ip6hdr = (struct ip6_hdr *)((u8_t *) p->payload + sizeof(struct icmp6_hdr));
 
 		/* Copy original destination address to current source address, to have an aligned copy. */
-		/* [TAHI PMTU#17] patch
-		   According to RFC 4443 Section 3.2, The invoking packet info should be included in PTB payload.
-		   But in the testcase #17, the payload is invalid
-		   'ip6hdr->dest' is based on the payload of PTB */
-		// ip6_addr_set(&tmp, &(ip6hdr->dest));
-		ip6_addr_set(&tmp, ip6_current_src_addr());
-		//ip6_addr_set(&tmp, &(ip6hdr->dest));
+		ip6_addr_set(&tmp, &(ip6hdr->dest));
 
 		/* Look for entry in destination cache. */
 		i = nd6_find_destination_cache_entry(&tmp);
@@ -1207,14 +1201,28 @@ return;
 			}
 		}
 
-		/* Change the Path MTU. */
-		ip6_addr_set(&tmp, &(ip6hdr->dest));
+		if (IP6H_NEXTH(ip6hdr) == IP6_NEXTH_ICMP6) {
+			struct icmp6_hdr *icmp6_prev_hdr = icmp6_get_prev_hdr();
+			struct icmp6_hdr *icmp6_recv_hdr = (struct icmp6_hdr *)((u8_t *)ip6hdr + IP6_HLEN);
+			if (icmp6_prev_hdr->type == ICMP6_TYPE_EREQ || icmp6_prev_hdr->type == ICMP6_TYPE_EREP) {
+				u16_t recv_id = lwip_htons(*(u16_t *)&(icmp6_recv_hdr->data));
+				u16_t prev_id = lwip_htons(*(u16_t *)&(icmp6_prev_hdr->data));
 
-		/* Look for entry in destination cache. */
-		i = nd6_find_destination_cache_entry(&tmp);
+				if (recv_id != prev_id) {
+					LWIP_DEBUGF(ND6_DEBUG, ("The identifier of PTB is invalid value.\n"));
+					break;
+				}
+			}
+		}
 
 		pmtu = lwip_htonl(icmp6hdr->data);
 		if ((pmtu <= destination_cache[i].pmtu) || (destination_cache[i].pmtu_timer <= 0)) {
+			/* [TAHI PMTU#9,10] patch
+				Do not process a Packet Too Big with an MTU less than 1280. (RFC 8201) */
+			if (pmtu < 1280) {
+				LWIP_DEBUGF(ND6_DEBUG, ("The PMTU should be greater than 1280.\n"));
+				break;
+			}
 			/* PMTU will be updated when one of the following conditions is true.
 				1. pmtu is changed for the 1st time
 				2. pmtu size is equal or decreased

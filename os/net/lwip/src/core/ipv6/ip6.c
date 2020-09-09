@@ -80,6 +80,17 @@
 #include LWIP_HOOK_FILENAME
 #endif
 
+static struct icmp6_hdr icmp6_prev_hdr[1] = { 0, };
+/**
+ * To save previous ICMP6 Packet, icmp6_prev_hdr is needed.
+ *
+ * @return The pointer of icmp6_prev_hdr.
+ */
+struct icmp6_hdr *icmp6_get_prev_hdr()
+{
+	return icmp6_prev_hdr;
+}
+
 /**
  * Finds the appropriate network interface for a given IPv6 address. It tries to select
  * a netif following a sequence of heuristics:
@@ -1064,6 +1075,14 @@ err_t ip6_output_if_src(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t 
 		ip6hdr = (struct ip6_hdr *)p->payload;
 		ip6_addr_copy(dest_addr, ip6hdr->dest);
 		dest = &dest_addr;
+	}
+
+	if (IP6H_NEXTH(ip6hdr) == IP6_NEXTH_ICMP6) {
+		struct icmp6_hdr *icmp6hdr = (struct icmp6_hdr *)((u8_t *)(ip6hdr) + IP6_HLEN);
+		if (icmp6hdr->type == ICMP6_TYPE_EREQ || icmp6hdr->type == ICMP6_TYPE_EREP) {
+			memset(icmp6_prev_hdr, 0, sizeof(struct icmp6_hdr));
+			memcpy(icmp6_prev_hdr, icmp6hdr, sizeof(struct icmp6_hdr));
+		}
 	}
 
 	IP6_STATS_INC(ip6.xmit);
