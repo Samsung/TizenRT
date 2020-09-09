@@ -33,7 +33,7 @@ Furthermore, we introduce __Wi-Fi Manager__,
 a management framework for controlling Wi-Fi connections
 at the user-domain higher layer,
 and provide how to define a light-weight netlink 802.11 (*lwnl80211*)
-which is an driver interface between Network Manager and Wi-Fi Manager, across the kernel and user space, respectively.
+which is a driver interface between Network Manager and Wi-Fi Manager, across the kernel and user space, respectively.
 
 ### Network stack bring-up
 Network manager encapsulates its own network stack,
@@ -80,11 +80,11 @@ please refer to the below [netdev_mgr.h](../os/include/tinyara/netmgr/netdev_mgr
 
 ```
 - *struct nic_io_ops ops*: Driver-specific function pointer structure of *linkoutput* and *igmp_mac_filter*. The former is used for the vendor-specific linkoutput ops and the latter is optionally set to IGMP MAC filter allowing the IGMP messages at the MAC level. This ops then will be registered to the network stack in order to be used for packet transmissions and IGMP details.
-- *flag*: Interface configuration flags such as NM_FLAG_BRAODCAST, NM_FLAG_ETHARP, NM_FLAG_EHTERNET, NM_FLAG_IGMP, and NM_FLAG_MLD6 defined in [netdev_mgr.h](../os/include/tinyara/netmgr/netdev_mgr.h).
+- *flag*: Interface configuration flags such as NM_FLAG_BROADCAST, NM_FLAG_ETHARP, NM_FLAG_ETHERNET, NM_FLAG_IGMP, and NM_FLAG_MLD6 defined in [netdev_mgr.h](../os/include/tinyara/netmgr/netdev_mgr.h).
 - *mtu*: MTU size supported by the vendor's driver.
 - *hwaddr_len*: MAC addr byte length (6 bytes in general).
 - *is_default*: Specification of the default interface in the network stack.
-- *t_ops*: Set of control-domain vendor-specific driver's ops linked to [lwnl80211](#light-weight-netlink-802-11-driver).
+- *t_ops*: Set of control-domain vendor-specific driver's ops linked to [lwnl80211](#light-weight-netlink-80211-driver).
 - *netdev_type type*: NM_LOOPBACK, NM_WIFI, NM_ETHERNET, or NM_UNKNOWN.
 - *d_ioctl*: Vendor-specific ioctl command to communicate with PHY layer (called by SIOCSMIIREG).
 - *priv*: Vendor-specific network device structure
@@ -95,7 +95,7 @@ when the driver is ready to be used:
 ```
 struct netdev *netdev_register(struct netdev_config *config)
 ```
-Following the netev configuration [guide](#network-manager-configuration) above,
+Following the netdev configuration [guide](#2-network-manager-configuration) above,
 we provide a simple example for Samsung LSI Wi-Fi driver how to use it.
 We recommend the below code to be implemented in the location of *os/drivers/wireless/<DRV_NAME>/<DRV_PREFIX>_drv_netmgr.c*.
 Please refer to the code, *[slsi_drv_netmgr.c](../os/drivers/wireless/scsc/slsi_drv_netmgr.c)*.
@@ -105,7 +105,7 @@ Please refer to the code, *[slsi_drv_netmgr.c](../os/drivers/wireless/scsc/slsi_
 		struct nic_io_ops nops = {slsi_linkoutput, slsi_set_multicast_list};
 		struct netdev_config nconfig;
 		nconfig.ops = &nops;
-		nconfie.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
+		nconfig.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
 		nconfig.mtu = CONFIG_NET_ETH_MTU; // is it right that vendor decides MTU size??
 		nconfig.hwaddr_len = IFHWADDRLEN;
 		nconfig.is_default = 1;
@@ -133,7 +133,7 @@ connect and disconnect to the wireless access point (AP),
 scan the neighbor APs,
 and get and set the framework specific information such as IP address and AP configurations.
 Two header files of *[wifi_utils.h](../os/include/tinyara/wifi/wifi_utils.h)* and
-*[wifi_manager.h](../framework/include/wifi_manager/)* describe the list of internally used and public APIs of Wi-Fi Manager, respectively.
+*[wifi_manager.h](../framework/include/wifi_manager/wifi_manager.h)* describe the list of internally used and public APIs of Wi-Fi Manager, respectively.
 The vendors do not need to directly modify or add the existing or new WiFi Manager APIs,
 but these can be referred to as what the vendors should implement in the lower layer Wi-Fi driver.
 
@@ -146,7 +146,7 @@ It defines a set of commands between Wi-Fi driver and Wi-Fi utilities in TizenRT
 Wi-Fi Manager API, then, invokes system calls to send the command to the driver,
 using a standard API used by the user-domain higher layer.
 Please refer to a Wi-Fi utility file named
-*[wifi_utils_lwnl80211.c](../framework/src/wifi_manager/wifi_utils_lwnl80211.c)* is provided as in Wi-Fi Manager framework.
+*[wifi_manager_lwnl.c](../framework/src/wifi_manager/wifi_manager_lwnl.c)* is provided as in Wi-Fi Manager framework.
 
 To make a link of Wi-Fi drivers ops with the upper layer API,
 the developer needs to create the corresponding driver interfaces in *os/drivers/wireless/<DRV_NAME>/<DRV_PREFIX>_drv_netmgr.c*.
@@ -259,7 +259,7 @@ without an additional modification in the Wi-Fi Manager's Kconfig.
 ```
 choice
 	prompt "Wi-Fi library"
-	default SELECT_PRPPIETARY_SUPPLICANT
+	default SELECT_PROPRIETARY_SUPPLICANT
 
 ...
 config SELECT_PROPRIETARY_SUPPLICANT
@@ -276,7 +276,7 @@ now Samsung LSI driver adopts it as a default supplicant base.
 
 To use TizenRT's *wpa_supplicant*, please follow the instructions below:
 
-1. Define *CONFIG_DRIVER_<DRVER_NAME>* in *external/wpa_supplicant/Kconfig*.
+1. Define *CONFIG_DRIVER_<DRV_NAME>* in *external/wpa_supplicant/Kconfig*.
 Refer to the example below for *CONFIG_DRIVER_T20*,
 which is subject to the condition that *CONFIG_SCSC_WLAN* is enabled already.
 ```
@@ -293,7 +293,7 @@ depending on the Kconfig defined for the new Wi-Fi driver.
 An example is shown for System LSI Wi-Fi:
 ```
 	ifeq ($(CONFIG_DRIVER_T20), y)
-	CSCRS += driver_t20.c
+	CSRCS += driver_t20.c
 	endif
 ```
 Inside *driver_<DRV_NAME>.c*, declare a driver structure variable named *wpa_driver_<DRV_NAME>_ops*.
@@ -327,6 +327,6 @@ in *external/wpa_supplicant/src/drivers/drivers.c*, as shown below:
 	#endif
 	    ...
 	}
-	```
+```
 This links the supplicant to the relevant Wi-Fi driver.  
 
