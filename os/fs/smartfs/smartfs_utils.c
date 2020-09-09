@@ -839,7 +839,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 		direntry->doffset = 0;
 		direntry->dfirst = fs->fs_rootsector;
 		direntry->name = NULL;
-		direntry->datlen = 0;
+		direntry->datalen = 0;
 		return OK;
 	}
 
@@ -973,7 +973,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 							direntry->dfirst = dirstack[depth];
 
 							strncpy(direntry->name, entry->name, fs->fs_llformat.namesize);
-							direntry->datlen = 0;
+							direntry->datalen = 0;
 
 							/* Scan the file's sectors to calculate the length and perform
 							 * a rudimentary check.
@@ -1007,15 +1007,15 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 											break;
 										}
 										used_value = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
-										direntry->datlen += used_value;
+										direntry->datalen += used_value;
 									} else {
-										direntry->datlen += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
+										direntry->datalen += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
 									}
 									readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
 #else
 									/* Add used bytes to the total and point to next sector */
 									if (SMARTFS_USED(header) != SMARTFS_ERASEDSTATE_16BIT) {
-										direntry->datlen += SMARTFS_USED(header);
+										direntry->datalen += SMARTFS_USED(header);
 									}
 #endif
 									dirsector = SMARTFS_NEXTSECTOR(header);
@@ -1782,7 +1782,7 @@ int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *e
 
 			/* Set the entry's data length to zero ... we just truncated */
 
-			entry->datlen = 0;
+			entry->datalen = 0;
 #endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 		} else {
 			/* Not the 1st sector -- release it */
@@ -1816,7 +1816,7 @@ int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *e
 		header = (struct smartfs_chain_header_s *)sf->buffer;
 		header->type = SMARTFS_SECTOR_TYPE_FILE;
 		sf->bflags = SMARTFS_BFLAG_DIRTY;
-		entry->datlen = 0;
+		entry->datalen = 0;
 	}
 #endif
 

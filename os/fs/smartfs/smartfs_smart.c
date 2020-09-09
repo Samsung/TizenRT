@@ -686,8 +686,8 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 			goto errout;
 		}
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-		used_value = sf->entry.datlen % (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
-		if (sf->entry.datlen > 0 && used_value == 0) {
+		used_value = sf->entry.datalen % (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
+		if (sf->entry.datalen > 0 && used_value == 0) {
 			used_value = fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s);
 		}
 
@@ -773,7 +773,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 	byteswritten = 0;
-	while ((sf->filepos < sf->entry.datlen) && (buflen > 0)) {
+	while ((sf->filepos < sf->entry.datalen) && (buflen > 0)) {
 		/* Overwriting data caused by a seek, etc.  In this case, we need
 		 * to check if the write causes the file length to be extended
 		 * or not and update it accordingly.  We will write data up to
@@ -790,10 +790,10 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 		/* Limit the write based on current file length */
 
-		if (readwrite.count > sf->entry.datlen - sf->filepos) {
+		if (readwrite.count > sf->entry.datalen - sf->filepos) {
 			/* Limit the write length so we write to the current EOF. */
 
-			readwrite.count = sf->entry.datlen - sf->filepos;
+			readwrite.count = sf->entry.datalen - sf->filepos;
 		}
 
 		/* Now perform the write. */
@@ -804,7 +804,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 			/* If sector buffer enabled and it is not last sector, then overwrite it.
 			 * Otherwise, it will be written by sync_internal
 			 */
-			if (readwrite.count == sf->entry.datlen - sf->filepos) {
+			if (readwrite.count == sf->entry.datalen - sf->filepos) {
 				memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
 				sf->bflags |= SMARTFS_BFLAG_DIRTY;
 			} else
@@ -890,7 +890,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 		/* Update our control variables */
 
-		sf->entry.datlen += readwrite.count;
+		sf->entry.datalen += readwrite.count;
 		sf->byteswritten += readwrite.count;
 		sf->filepos += readwrite.count;
 		sf->curroffset += readwrite.count;
@@ -1041,7 +1041,7 @@ static off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_
 		break;
 
 	case SEEK_END:
-		newpos = sf->entry.datlen + offset;
+		newpos = sf->entry.datalen + offset;
 		break;
 	default:
 		return -EINVAL;
@@ -1053,8 +1053,8 @@ static off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_
 		newpos = 0;
 	}
 
-	if (newpos > sf->entry.datlen) {
-		newpos = sf->entry.datlen;
+	if (newpos > sf->entry.datalen) {
+		newpos = sf->entry.datalen;
 	}
 
 	/* Now perform the seek.  Test if we are seeking within the current
@@ -1095,7 +1095,7 @@ static off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_
 		}
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
 		if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
-			sf->filepos += (sf->entry.datlen - (sector_used * (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s))));
+			sf->filepos += (sf->entry.datalen - (sector_used * (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s))));
 		} else {
 			sf->filepos += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
 		}
@@ -1327,7 +1327,7 @@ static int smartfs_truncate(FAR struct file *filep, off_t length)
 
 	/* Are we shrinking the file?  Or extending it? */
 
-	oldsize = sf->entry.datlen;
+	oldsize = sf->entry.datalen;
 	if (oldsize == length) {
 		/* Let's not and say we did */
 		ret = OK;
@@ -2042,7 +2042,7 @@ static void smartfs_stat_common(FAR struct smartfs_mountpt_s *fs,
 			buf->st_mode |= S_IFREG;
 		}
 	}
-	buf->st_size = entry->datlen;
+	buf->st_size = entry->datalen;
 	buf->st_blksize = fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s);
 	buf->st_blocks = (buf->st_size + buf->st_blksize - 1) / buf->st_blksize;
 	buf->st_atime = 0;

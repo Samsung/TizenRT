@@ -267,8 +267,8 @@ struct smartfs_entry_s {
 	uint16_t flags;				/* Flags, including mode */
 	FAR char *name;				/* inode name */
 	uint32_t utc;				/* Time stamp */
-	uint32_t datlen;			/* Length of inode data */
-	uint16_t prev_parent;		/* To track the processed directory sector to find parent for entry. Holds last sctive sector in parent chain if new sector has tobe chained */
+	uint32_t datalen;			/* Length of inode data */
+	uint16_t prev_parent;		/* To track the processed directory sector to find parent for entry. Holds last active sector in parent chain if new sector has tobe chained */
 };
 
 /* This is an on-device representation of the SMART inode which exists on
