@@ -93,6 +93,15 @@
 #define SMART_STATUS_SIZEBITS     0x1C
 #define SMART_STATUS_VERBITS      0x03
 
+#define SMART_JOURNAL_DISABLE     0x01
+#define SMART_JOURNAL_ENABLE      0x02
+
+#ifdef CONFIG_MTD_SMART_JOURNALING
+#define SMART_FMT_JOURNAL         SMART_JOURNAL_ENABLE
+#else
+#define SMART_FMT_JOURNAL         SMART_JOURNAL_DISABLE
+#endif
+
 #if defined(CONFIG_SMART_CRC_16)
 #define SMART_STATUS_VERSION      0x02
 #elif defined(CONFIG_SMART_CRC_32)
@@ -124,8 +133,9 @@
 #define SMART_FMT_SIG4            'T'
 
 #define SMART_FMT_VERSION_POS     (SMART_FMT_POS1 + 4)
-#define SMART_FMT_NAMESIZE_POS    (SMART_FMT_POS1 + 5)
-#define SMART_FMT_ROOTDIRS_POS    (SMART_FMT_POS1 + 6)
+#define SMART_FMT_JOURNAL_POS     (SMART_FMT_POS1 + 5)
+#define SMART_FMT_NAMESIZE_POS    (SMART_FMT_POS1 + 6)
+#define SMART_FMT_ROOTDIRS_POS    (SMART_FMT_POS1 + 7)
 #define SMARTFS_FMT_WEAR_POS      36
 #define SMART_WEAR_LEVEL_FORMAT_SIG 32
 #define SMART_PARTNAME_SIZE         4
@@ -1929,6 +1939,11 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 				continue;
 			}
 
+			/* Validate journal format */
+			if (dev->rwbuffer[SMART_FMT_JOURNAL_POS] != SMART_FMT_JOURNAL) {
+				continue;
+			}
+
 			/* Mark the volume as formatted and set the sector size */
 			dev->formatstatus = SMART_FMT_STAT_FORMATTED;
 			dev->namesize = dev->rwbuffer[SMART_FMT_NAMESIZE_POS];
@@ -2767,6 +2782,7 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 	dev->rwbuffer[SMART_FMT_POS4] = SMART_FMT_SIG4;
 
 	dev->rwbuffer[SMART_FMT_VERSION_POS] = SMART_FMT_VERSION;
+	dev->rwbuffer[SMART_FMT_JOURNAL_POS] = SMART_FMT_JOURNAL;
 	dev->rwbuffer[SMART_FMT_NAMESIZE_POS] = CONFIG_SMARTFS_MAXNAMLEN;
 
 	/* Record the number of root directory entries we have. */
