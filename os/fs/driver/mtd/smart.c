@@ -504,6 +504,36 @@ static const struct block_operations g_bops = {
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: smart_dumpsector
+ *
+ * Description:  Dump specific sector. 
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_DEBUG_FS
+static int smart_dumpsector(FAR struct smart_struct_s *dev, uint16_t physsector)
+{
+	/* TODO this function can be moved to procfs to get sector data...*/
+	int ret = OK;
+	ret = MTD_BREAD(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+	if (ret != dev->mtdBlksPerSector) {
+		fdbg("Error reading phys sector %d\n", physsector);
+		return -EIO;
+	}
+
+	fsdbg("Sector dump physical sector : %d sector size : %d\n", physsector, dev->sectorsize);
+	for (int i = 0; i < dev->sectorsize; i++) {
+		fsdbg("[%02x]", (FAR uint8_t)dev->rwbuffer[i]);
+		if ((i + 1) % 20 == 0) {
+			fsdbg("[offset %d]\n", i);
+		}
+	}
+	fsdbg("\nSector dump end\n");
+	return OK;
+}
+#endif
+
+/****************************************************************************
  * Name: smart_malloc
  *
  * Description:  Perform allocations and keep track of amount of allocated
@@ -4662,7 +4692,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 {
 	FAR struct smart_struct_s *dev;
-	int ret;
+	int ret = OK;
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
 	FAR struct mtd_smart_procfs_data_s *procfs_data;
 	FAR struct mtd_smart_debug_data_s *debug_data;
@@ -4818,7 +4848,25 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 
 			ret = OK;
 			goto ok_out;
+
+#ifdef CONFIG_DEBUG_FS
+		case SMART_DEBUG_CMD_DUMP_SECTOR:
+			if ((uint16_t)debug_data->debugdata == SMART_DEBUG_DUMP_ALL) {
+				for (int i = 0; i < dev->totalsectors; i++) {
+					ret = smart_dumpsector(dev, i);
+					if (ret != OK) {
+						break;
+					}
+				}
+			} else {
+				ret = smart_dumpsector(dev, (uint16_t)debug_data->debugdata);
+				
+			}
+
+			goto ok_out;
+#endif
 		}
+			
 #endif
 
 		break;
