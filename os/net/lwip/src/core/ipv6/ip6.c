@@ -667,7 +667,7 @@ netif_found:
 			/* Get the header length. */
 			hlen = 8 * (1 + dest_hdr->_hlen);
 			ip_data.current_ip_header_tot_len += hlen;
-
+			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] header (%u) %d\n", hlen, __LINE__));
 			/* Skip over this header. */
 			if (hlen > p->len) {
 				LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("IPv6 options header (hlen %" U16_F ") does not fit in first pbuf (len %" U16_F "), IPv6 packet dropped.\n", hlen, p->len));
@@ -830,6 +830,51 @@ netif_found:
 				goto ip6_input_cleanup;
 			}
 
+			// [TAHI spec 64~67]
+			// if first fragment doesn't contains all headers, then
+			// it should send icmpv6 param problem message to sender.
+			/* Is the packet the first of fragmentation? */
+			if ((frag_hdr->_fragment_offset & PP_HTONS(IP6_FRAG_OFFSET_MASK)) == 0) {
+				u8_t temp_nexth = IP6_FRAG_NEXTH(frag_hdr);
+				u16_t temp_hlen = IP6_FRAG_HLEN;
+
+				while(temp_nexth) {
+					switch (temp_nexth) {
+					case IP6_NEXTH_DESTOPTS:
+					{
+						struct ip6_dest_hdr *hdr = (struct ip6_dest_hdr *)((u8_t *)frag_hdr + temp_hlen);
+						temp_hlen += 8 * (1 + hdr->_hlen);
+						temp_nexth = hdr->_nexth;
+						break;
+					}
+					case IP6_NEXTH_ROUTING:
+					{
+						struct ip6_rout_hdr *hdr = (struct ip6_rout_hdr *)((u8_t *)frag_hdr + temp_hlen);
+						temp_hlen += 8 * (1 + hdr->_hlen);
+						temp_nexth = hdr->_nexth;
+						break;
+					}
+					/* Upper-Layer Header */
+					case IP6_NEXTH_ICMP6:
+						temp_hlen += sizeof(struct icmp6_hdr);
+						temp_nexth = 0;
+						break;
+					default:
+						temp_nexth = 0;
+						break;
+					}
+				}
+
+				if (temp_hlen > IP6H_PLEN(ip6hdr)) {
+					/* Could not check all headers in the first frag packet */
+					icmp6_param_problem(p, 3, (u32_t)NULL);
+					LWIP_DEBUGF(IP6_DEBUG, ("Could not check all headers in the first frag packet.\n"));
+					pbuf_free(p);
+					IP6_STATS_INC(ip6.drop);
+					goto ip6_input_cleanup;
+				}
+			}
+
 			/* Offset == 0 and more_fragments == 0? */
 			if ((frag_hdr->_fragment_offset & PP_HTONS(IP6_FRAG_OFFSET_MASK | IP6_FRAG_MORE_FLAG)) == 0) {
 				// [TAHI ND#127]
@@ -935,32 +980,6 @@ options_done:
 		case IP6_NEXTH_ICMP6:
 			/* Point to payload. */
 			pbuf_header(p, -(s16_t) ip_data.current_ip_header_tot_len);
-			// [TAHI spec 64~67]
-			// if first fragment doesn't contains all headers, then
-			// it should send icmpv6 param problem message to sender.
-			struct icmp6_hdr *icmp6hdr = (struct icmp6_hdr *)(p->payload);
-			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] type(%d) %d\n", icmp6hdr->type, __LINE__));
-			switch (icmp6hdr->type) {
-			case ICMP6_TYPE_NA:		/* Neighbor advertisement */
-			case ICMP6_TYPE_NS:		/* Neighbor solicitation */
-			case ICMP6_TYPE_RA:		/* Router advertisement */
-			case ICMP6_TYPE_RD:		/* Redirect */
-			case ICMP6_TYPE_PTB:	/* Packet too big */
-			case ICMP6_TYPE_RS:
-			case ICMP6_TYPE_MLQ:
-			case ICMP6_TYPE_MLR:
-			case ICMP6_TYPE_MLD:
-			case ICMP6_TYPE_EREQ:
-				break;
-			default:
-				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] send param problem\n"));
-				// code 3(IPv6 First Fragment has incomplete IPv6 Header chain)
-				icmp6_param_problem(p, 3, (u32_t)NULL);
-				pbuf_free(p);
-				IP6_STATS_INC(ip6.drop);
-				goto ip6_input_cleanup;
-			}
-
 			icmp6_input(p, inp);
 			break;
 #endif							/* LWIP_ICMP */
@@ -1280,7 +1299,7 @@ err_t ip6_options_add_hbh_ra(struct pbuf *p, u8_t nexth, u8_t value)
 	hbh_hdr = (struct ip6_hbh_hdr *)p->payload;
 	IP6_HBH_NEXTH(hbh_hdr) = nexth;
 	hbh_hdr->_hlen = 0;
-	offset = IP6_HBH_HLEN; 
+	offset = IP6_HBH_HLEN;
 
 	/* Set router alert options to Hop-by-Hop extended option header */
 	opt_hdr = (struct ip6_opt_hdr *)((u8_t *)hbh_hdr + offset);
@@ -1292,7 +1311,7 @@ err_t ip6_options_add_hbh_ra(struct pbuf *p, u8_t nexth, u8_t value)
 	opt_data = (u8_t *)hbh_hdr + offset;
 	opt_data[0] = value;
 	opt_data[1] = 0;
-	offset += IP6_OPT_DLEN(opt_hdr); 
+	offset += IP6_OPT_DLEN(opt_hdr);
 
 	/* add 2 bytes padding to make 8 bytes Hop-by-Hop header length */
 	opt_hdr = (struct ip6_opt_hdr *)((u8_t *)hbh_hdr + offset);
