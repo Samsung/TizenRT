@@ -251,6 +251,7 @@ SYSCALL_LOOKUP(rename,                  2, STUB_rename)
 SYSCALL_LOOKUP(rmdir,                   1, STUB_rmdir)
 SYSCALL_LOOKUP(umount,                  1, STUB_umount)
 SYSCALL_LOOKUP(unlink,                  1, STUB_unlink)
+SYSCALL_LOOKUP(ftruncate,               2, STUB_ftruncate)
 #  endif
 #endif
 
