@@ -408,6 +408,8 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		struct lladdr_option *lladdr_opt = NULL;
 		u8_t accepted;
 
+		LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] Recv ICMP6_TYPE_NS %ld\n", time(NULL)));
+
 		/* Check that ns header fits in packet. */
 		if (p->len < sizeof(struct ns_header)) {
 			/* @todo debug message */
@@ -1362,6 +1364,7 @@ void nd6_tmr(void)
 		if (prefix_list[i].netif != NULL) {
 			if (prefix_list[i].invalidation_timer < ND6_TMR_INTERVAL) {
 				/* Entry timed out, remove it */
+				LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] Prefix entries timed out %ld\n", time(NULL)));
 				prefix_list[i].invalidation_timer = 0;
 
 #if LWIP_IPV6_AUTOCONFIG
