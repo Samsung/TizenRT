@@ -164,6 +164,15 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 {
 	size_t stack_alloc_size = stack_size;
 
+	/* new thread does not have the uheap value yet, It's added in the task_
+	 * schedsetup function.
+	 * Parent and child threads must have the same uheap value, so we are
+	 * using the parent thread uheap
+	 */
+#if defined(HAVE_KERNEL_HEAP) || defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+	uint32_t uheap = sched_self()->uheap;	/* User heap pointer */
+#endif
+
 	/* Is there already a stack allocated of a different size?  Because of
 	 * alignment issues, stack_size might erroneously appear to be of a
 	 * different size.  Fortunately, this is not a critical operation.
@@ -188,7 +197,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 * object in the tcb of current running task. uheap is always non-null
 		 * in user threads and null for kernel threads.
 		 */
-		if (!sched_self()->uheap) {
+		if (!uheap) {
 			tcb->stack_alloc_ptr = (uint32_t *)kmm_malloc(stack_alloc_size);
 		} else
 #endif
@@ -242,8 +251,10 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		size_of_stack = top_of_stack - (uint32_t)tcb->stack_alloc_ptr + 4;
 
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		/* Adjust stack size after guard_size calculationn */
-		size_of_stack = size_of_stack - CONFIG_MPU_STACK_GUARD_SIZE;
+		if (uheap) {
+			/* Adjust stack size after guard_size calculation */
+			size_of_stack = size_of_stack - CONFIG_MPU_STACK_GUARD_SIZE;
+		}
 #endif
 		/* Save the adjusted stack values in the struct tcb_s */
 
@@ -263,9 +274,11 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 #endif
 		board_led_on(LED_STACKCREATED);
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		/* The smallest size that can be programmed for an MPU region is 32 bytes */
-		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], MPU_REG_NUM_STK,
-			(uint32_t)tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
+		if (uheap) {
+			/* The smallest size that can be programmed for an MPU region is 32 bytes */
+			mpu_get_register_config_value(&tcb->stack_mpu_regs[0], MPU_REG_NUM_STK,
+				(uint32_t)tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
+		}
 #endif
 
 		return OK;
