@@ -823,6 +823,18 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 			sf->curroffset += readwrite.count;
 			buflen -= readwrite.count;
 			byteswritten += readwrite.count;
+			
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+			/* Now filepos reached end of file, but chainheader in sf->buffer can be old data, so read it */
+			if (sf->filepos == sf->entry.datalen) {
+				smartfs_setbuffer(&readwrite, sf->currsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)sf->buffer);
+				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+				if (ret < 0) {
+					fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
+					goto errout_with_semaphore;
+				}
+			}
+#endif
 		}
 
 		/* Test if we wrote to the end of the current sector */
