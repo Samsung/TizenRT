@@ -69,6 +69,8 @@
 #include <tinyara/config.h>
 
 /* Below paths are for test file which use small size of buffer(same as st_blksize) of stat */
+
+/* TODO More names for text based file */
 #define TEST_SMALL              "/mnt/test_small"
 #define TEST_SMALL_BACKUP       "/mnt/backup_small/test_small"
 #define TEST_SMALL_BACKUP_DIR   "/mnt/backup_small"
@@ -82,12 +84,21 @@
 int TEST_SMALL_BUFSIZE;
 
 /* Write Time for each file */
-#define TEST_WRITECOUNT         30
+#define TEST_WRITECOUNT         10
+
+/* File is not exist, so no verify & recovery needed, we can rollback backup file */
+#define FILE_CHUNK_NO_INDEX     -1
 
 struct buffer_data_s {
 	uint16_t crc;
 	char data[TEST_LARGE_BUFSIZE];
 };
+
+enum file_type_e {
+	FILE_TYPE_RANDOM = 0,
+	FILE_TYPE_TEXT = 1
+};
+typedef enum file_type_e file_type_t;
 
 static struct buffer_data_s g_buf;
 
@@ -99,7 +110,7 @@ void make_random_chars(char *buf, size_t len)
 	buf[len - 1] = '\0';
 }
 
-static int write_file(int fd, size_t bufsize)
+static int write_random_data_file(int fd, size_t bufsize)
 {
 	int ret;
 	int data_len = bufsize - sizeof(g_buf.crc);
@@ -111,94 +122,162 @@ static int write_file(int fd, size_t bufsize)
 
 	ret = write(fd, (void *)&g_buf, bufsize);
 	if (ret != bufsize) {
-		printf("write_file error ret : %d errno : %d\n", ret, errno);
+		printf("write_random_data_file error ret : %d errno : %d\n", ret, errno);
 		return ERROR;
 	}
 
-	return ret;
+	return OK;
 }
 
 /* small file uses buffer size same as stat.st_blksize */
-int create_file(char *path, ssize_t bufsize)
+static int create_file(char *path, ssize_t bufsize, file_type_t type)
 {
 	int fd;
-	int len;
-	int total_len = 0;
+	int ret;
 	struct stat st;
+
+	/* If file is already exist and written fully, just return OK */
 	if (stat(path, &st) == OK) {
-		printf("path %s already exist size : %d\n", path, st.st_size);
+		printf("File already exist path : %s size : %d\n", path, st.st_size);
 		return OK;
+
 	}
-			
-	fd = open(path, O_CREAT | O_EXCL | O_WROK);
+	
+	fd = open(path, O_CREAT | O_WROK);
 	if (fd < 0) {
 		printf("create file %s error errno : %d\n", path, errno);
 		return ERROR;
 	}
 	
 	for (int i = 0; i < TEST_WRITECOUNT; i++) {
-		len = write_file(fd, bufsize);
-		if (len != bufsize) {
-			printf("write failed len : %d bufsize : %d\n", len, bufsize);
-			break;
+		/* write data based on type */
+		if (type == FILE_TYPE_RANDOM) {
+			ret = write_random_data_file(fd, bufsize);
+		} else {
+			/* TODO proper text will be added here */
 		}
-		total_len += len;
+		
+		if (ret != OK) {
+			printf("write failed path : %s ret : %d bufsize : %d\n", path, ret, bufsize);
+			goto error_with_fd;
+		}
 	}
-	
-	close(fd);
 
-	if (total_len == bufsize * TEST_WRITECOUNT) {
-		return OK;
-	}
+	ret = OK;
 	
-	printf("create file %s failed... total_len : %d\n", path, total_len);
-	return ERROR;
+error_with_fd:
+	close(fd);
+	printf("create file path : %s ret : %d\n", path, ret);
+	return ret;
 }
 
-int verify_file(char *path, int bufsize)
+static int verify_random_file(char *path, int bufsize, int *index)
 {
 	int fd;
 	int ret;
+	ssize_t len;
+	off_t size;
 	int i;
 	uint16_t crc;
+	struct stat st;
 	int data_len = bufsize - sizeof(g_buf.crc);
 	
-	fd = open(path, O_RDONLY);
+	fd = open(path, O_RDWR);
 	if (fd < 0) {
+		if (errno == ENOENT) {
+			printf("Verify_file File is not exist, no need to verify!! path : %s\n", path);
+			*index = FILE_CHUNK_NO_INDEX;
+			return OK;
+		}
+		
 		printf("verify_file %s open error... errno : %d\n", path, errno);
 		return ERROR;
 	}
 
 	for (i = 0; i < TEST_WRITECOUNT; i++) {
-		ret = read(fd, (void *)&g_buf, bufsize);
-		if (ret != bufsize) {
-			printf("verify_file %s data is not written properly.. ret : %d current read count : %d\n", path, ret, i);
+		len = read(fd, (void *)&g_buf, bufsize);
+		if (len != bufsize) {
+			/* If write is not finished properly */
+			printf("verify_file datachunk is not written fully..  path : %s ret : %d index : %d\n", path, len, i);
 			break;
 		} else {
+			/* Maybe this won't be happened but check crc for double check */
 			crc = crc16((const uint8_t *)g_buf.data, data_len);
 			if (crc != g_buf.crc) {
-				printf("verify_file %s crc mismatch!! calulcated crc : %d written crc : %d read count : %d\n", path, crc, g_buf.crc, i);
+				printf("verify_file crc mismatch!! path : %s calulcated crc : %d written crc : %d index : %d\n", path, crc, g_buf.crc, i);
 				break;
 			}
 		}
 	}
-	close(fd);
 
-	printf("%s last valid write count : %d\n", path, i);
-	return i;
+	*index = i;
+
+	/* shrink to last valid index here, it is necessary to bury invalid data chunk */
+	if ((i > 0) && (i < TEST_WRITECOUNT)) {
+		/* truncate current file to include valid data only */
+		size = i * bufsize;
+		
+		ret = lseek(fd, 0, SEEK_SET);
+		if (ret != OK) {
+			printf("verify_file, seek to 0 failed\n");
+			ret = ERROR;
+			goto error_with_fd;
+		}
+
+		ret = ftruncate(fd, size);
+		if (ret != OK) {
+			printf("Shrink failed filename : %s target size : %d errno : %d\n", path, size, errno);
+			ret = ERROR;
+			goto error_with_fd;
+		}
+
+		ret = stat(path, &st);
+		if (ret == OK) {
+			if (st.st_size != size) {
+				printf("Shrunk size is wrong. filename : %s target size : %d file size : %d\n", path, size, st.st_size);
+				ret = ERROR;
+				goto error_with_fd;
+			}
+			printf("shrink works properly, target size : %d current size : %d\n", size, st.st_size);
+		} else {
+			printf("stat error. path : %d errno : %d\n", path, errno);
+			ret = ERROR;
+			goto error_with_fd;
+		}
+	}
+
+	ret = OK;
+
+error_with_fd:
+	close(fd);
+	return ret;
 }
 
-int recovery_file(char *src, char* backup, char* backup_dir, int bufsize, int idx)
+static int verify_file(char *path, int bufsize, int *idx, file_type_t type)
+{
+	if (type == FILE_TYPE_RANDOM) {
+		return verify_random_file(path, bufsize, idx);
+	}
+	/* TODO verify proper text type */
+	return OK;
+}
+
+static int recovery_random_file(char *src, char* backup, char* backup_dir, int bufsize, int idx)
 {
 	int fd1;
 	int fd2;
 	int ret;
+	struct stat st;
 	off_t offset;
 	off_t start_offset;
+	int filesize;
 	
-	/* If idx is ERROR, it means it didn't create src file so bring backup file */
 	printf("recovery_file src : %s idx : %d\n", src, idx);
-	if (idx == ERROR || idx == 0 || idx == TEST_WRITECOUNT) {
+	/* If index is FILE_CHUNK_NO_INDEX, There is no tested file, so just rollback backup file
+	 * If index is 0, we should recovery whole of data from back up file, so just rollback it.
+	 * If idnex is same as _TEST_WRITECOUNT, totally written, so no recovery necessary.
+	 */
+	if (idx == FILE_CHUNK_NO_INDEX || idx == 0 || idx == TEST_WRITECOUNT) {
 		if (idx == 0 || idx == TEST_WRITECOUNT) {
 			/* This means that file has created but there's nothing valid data or finished properly..
 			 * so unlink src and then rename 
@@ -222,24 +301,52 @@ int recovery_file(char *src, char* backup, char* backup_dir, int bufsize, int id
 			return ERROR;
 		}
 
+		/* To test append, do not extend as a MAX size of file */
+		if (idx < (TEST_WRITECOUNT - 2)) {
+			filesize = (TEST_WRITECOUNT - 2) * bufsize;
+		} else {
+			filesize = idx * bufsize;
+		}
+		
+		/* Extend last file, it's not common usage but add it to test ftruncate(extend) */
+		ret = ftruncate(fd1, filesize);
+		if (ret != OK) {
+			printf("ftruncate(extend)error filename : %s target size : %d errno : %d\n", src, filesize, errno);
+			ret = ERROR;
+			goto error_with_fd1;
+		}
+		
+		if (stat(src, &st) == OK) {
+			if (st.st_size != filesize) {
+				printf("size is wrong. filename : %s target size : %d file size : %d\n", src, filesize, st.st_size);
+				ret = ERROR;
+				goto error_with_fd1;
+			}
+			printf("extend works properly, target size : %d current size : %d\n", filesize, st.st_size);
+		} else {
+			printf("stat error. path : %d errno : %d\n", src, errno);
+			ret = ERROR;
+			goto error_with_fd1;
+		}
+
 		fd2 = open(backup, O_RDOK);
 		if (fd2 < 0) {
 			printf("%s open error... errno : %d\n", backup, errno);
 			ret = ERROR;
 			goto error_with_fd1;
 		}
+		
 		start_offset = idx * bufsize;
 		offset = lseek(fd1, start_offset, SEEK_SET);
-		printf("recovery, start offset : %d\n", start_offset);
 		if (offset != start_offset) {
-			printf("lseek file %s error offset : %d errno : %d\n", src, offset, errno);
+			printf("lseek error file : %s offset : %d errno : %d\n", src, offset, errno);
 			ret = ERROR;
 			goto error_with_fd2;
 		}
-		
+
 		offset = lseek(fd2, start_offset, SEEK_SET);
 		if (offset != start_offset) {
-			printf("lseek file %s error offset : %d errno : %d\n", backup, offset, errno);
+			printf("lseek error file : %s offset : %d errno : %d\n", backup, offset, errno);
 			ret = ERROR;
 			goto error_with_fd2;
 		}
@@ -259,34 +366,41 @@ int recovery_file(char *src, char* backup, char* backup_dir, int bufsize, int id
 				goto error_with_fd2;
 			}
 		}
+
 		close(fd1);
 		close(fd2);
 		
 		/* Now unlink & remove dir of backup */
-		printf("unlink backup : %s\n", backup);
 		ret = unlink(backup);
 		if (ret != OK) {
 			printf("unlink %s failed errno : %d\n", backup, errno);
-			ret = ERROR;
+			return ret;
 		
 		}
 	}
 	
-	printf("remove backup dir : %s\n", backup_dir); 
 	ret = rmdir(backup_dir);
 	if (ret != OK) {
 		printf("rmdir %s failed errno : %d\n", backup_dir, errno);
-		ret = ERROR;
+		return ret;
 	}
 
 	return OK;
 		
 error_with_fd2:
 	close(fd2);
-	
 error_with_fd1:
 	close(fd1);
 	return ret;
+}
+
+static int recovery_file(char *src, char* backup, char* backup_dir, int bufsize, int idx, file_type_t type)
+{
+	if (type == FILE_TYPE_RANDOM) {
+		return recovery_random_file(src, backup, backup_dir, bufsize, idx);
+	}
+	/* TODO recovery proper text type..maybe it will memcpy from text. */
+	return OK;
 }
 
 int init_test_file(void)
@@ -307,12 +421,12 @@ int init_test_file(void)
 		return ERROR;
 	}
 
-	ret = create_file(TEST_SMALL, TEST_SMALL_BUFSIZE);
+	ret = create_file(TEST_SMALL, TEST_SMALL_BUFSIZE, FILE_TYPE_RANDOM);
 	if (ret != OK && errno != EEXIST) {
 		return ERROR;
 	}
 
-	ret = create_file(TEST_SMALL_BACKUP, TEST_SMALL_BUFSIZE);
+	ret = create_file(TEST_SMALL_BACKUP, TEST_SMALL_BUFSIZE, FILE_TYPE_RANDOM);
 	if (ret != OK && errno != EEXIST) {
 		return ERROR;
 	}
@@ -323,12 +437,12 @@ int init_test_file(void)
 		return ERROR;
 	}
 
-	ret = create_file(TEST_LARGE, TEST_LARGE_BUFSIZE);
+	ret = create_file(TEST_LARGE, TEST_LARGE_BUFSIZE, FILE_TYPE_RANDOM);
 	if (ret != OK && errno != EEXIST) {
 		return ERROR;
 	}
 
-	ret = create_file(TEST_LARGE_BACKUP, TEST_LARGE_BUFSIZE);
+	ret = create_file(TEST_LARGE_BACKUP, TEST_LARGE_BUFSIZE, FILE_TYPE_RANDOM);
 	if (ret != OK && errno != EEXIST) {
 		return ERROR;
 	}
@@ -336,52 +450,44 @@ int init_test_file(void)
 	return OK;
 }
 
-static int do_test(char *src, char *backup, char *backupdir, int bufsize)
+static int do_test(char *src, char *backup, char *backupdir, int bufsize, file_type_t type)
 {
 	int ret;
+	int index;
+	struct stat st;
 	
-	ret = verify_file(src, bufsize);
-	if (ret != TEST_WRITECOUNT) {
-		ret = recovery_file(src, backup, backupdir, bufsize, ret);
-		if (ret != OK) {
-			printf("recovery_file %s failed\n", src);
-			return ERROR;
-		}
-	} else {
-		printf("verify file %s success!! clean backup files\n", src);
-		ret = unlink(backup);
-		if (ret != OK) {
-			printf("unlink %s failed errno : %d\n", backup, errno);
-			ret = ERROR;
-		}
-
-		ret = rmdir(backupdir);
-		if (ret != OK) {
-			printf("rmdir %s failed errno : %d\n", backupdir, errno);
-			ret = ERROR;
-		}
+	ret = verify_file(src, bufsize, &index, type);
+	if (ret == ERROR) {
+		return ret;
 	}
+
+	ret = recovery_file(src, backup, backupdir, bufsize, index, type);
+	if (ret != OK) {
+		printf("recovery_file failed file : %s\n", src);
+		return ERROR;
+	} 
 
 	printf("do_test create backupdir : %s\n", backupdir);
 	ret = mkdir(backupdir, 0777);
 	if (ret != OK) {
-		printf("Test loop, create backup dir for file %s failed errno : %d\n", src, errno);
+		printf("Test loop, create backup dir for file failed dir : %s errno : %d\n", backupdir, errno);
 		return ERROR;
 	}
-	struct stat st;
+
 	stat(src, &st);
 	printf("make backup.. origin file : %s size : %d\n", src, st.st_size);
 	ret = rename(src, backup);
 	if (ret != OK) {
-		printf("make back up file %s failed errno : %d\n", src, errno);
+		printf("make back up file failed src : %s backup : %s errno : %d\n", src, backup, errno);
 		return ERROR;
 	}
+	
 	printf("make backup ended, crate new file : %s\n", src);
-	ret = create_file(src, bufsize);
+	ret = create_file(src, bufsize, type);
 	if (ret != OK) {
 		return ERROR;
 	}
-	printf("do_test file : %s success!!\n", src);
+	printf("do_test Success!! file : %s\n", src);
 	return OK;
 }
 
@@ -405,18 +511,18 @@ int smartfs_powercut_main(int argc, char *argv[])
 		/* Small test use same as size of data area of mtd sector, so there should not be error
 		 * during the verify for small file test because it protected by journal.
 		 */
-		ret = do_test(TEST_SMALL, TEST_SMALL_BACKUP, TEST_SMALL_BACKUP_DIR, TEST_SMALL_BUFSIZE);
+		ret = do_test(TEST_SMALL, TEST_SMALL_BACKUP, TEST_SMALL_BACKUP_DIR, TEST_SMALL_BUFSIZE, FILE_TYPE_RANDOM);
 		if (ret != OK) {
 			printf("test small file failed\n");
-			break;
+			return ret;
 		}
 
-		ret = do_test(TEST_LARGE, TEST_LARGE_BACKUP, TEST_LARGE_BACKUP_DIR, TEST_LARGE_BUFSIZE);
+		ret = do_test(TEST_LARGE, TEST_LARGE_BACKUP, TEST_LARGE_BACKUP_DIR, TEST_LARGE_BUFSIZE, FILE_TYPE_RANDOM);
 		if (ret != OK) {
 			printf("test large file failed\n");
-			break;
+			return ret;
 		}
 	}
 	
-	return ret;
+	return OK;
 }
