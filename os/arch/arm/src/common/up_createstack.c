@@ -256,7 +256,11 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 */
 
 #ifdef CONFIG_STACK_COLORATION
-		up_stack_color(tcb->stack_alloc_ptr, tcb->adj_stack_size);
+		/* If CONFIG_MPU_STACK_OVERFLOW_PROTECTION is enabled, stack is created with requested size + CONFIG_MPU_STACK_GUARD_SIZE.
+		 * In this case, we should make coloration from stack_alloc_ptr to adj_stack_ptr.
+		 * So we should re-calculate the coloration size with CONFIG_MPU_STACK_GUARD_SIZE.
+		 */
+		up_stack_color(tcb->stack_alloc_ptr, tcb->adj_stack_size + CONFIG_MPU_STACK_GUARD_SIZE);
 #endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		heapinfo_exclude_stacksize(tcb->stack_alloc_ptr);

@@ -310,6 +310,10 @@ EXTERN uint32_t _eramfuncs;		/* Copy destination end address in RAM */
 
 #ifndef __ASSEMBLY__
 
+#ifndef CONFIG_MPU_STACK_GUARD_SIZE
+#define CONFIG_MPU_STACK_GUARD_SIZE 0
+#endif
+
 /* Low level initialization provided by board-level logic ******************/
 
 void up_boot(void);
