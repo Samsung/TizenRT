@@ -738,10 +738,12 @@ void up_lowputc(char ch)
  *   int value, -1 if error, 0~255 if byte successfully read
  *
  ****************************************************************************/
-char up_lowgetc(void)
+int up_lowgetc(void)
 {
 	uint8_t rxd;
+	LOGUART_SetIMR(0);
 	rxd = LOGUART_GetChar(_TRUE);
+	LOGUART_SetIMR(1);
 	return rxd & 0xff;
 }
 
