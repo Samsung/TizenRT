@@ -181,7 +181,7 @@ int exec_module(FAR struct binary_s *binp)
 	/* The first 4 bytes of the text section of the application must contain a
 	pointer to the application's mm_heap object. Here we will store the mm_heap
 	pointer to the start of the text section */
-	*(uint32_t *)(binp->alloc[ALLOC_DATA]) = (uint32_t)binp->uheap;
+	*(uint32_t *)(binp->datastart) = (uint32_t)binp->uheap;
 	rtcb = (struct tcb_s *)sched_self();
 	rtcb->uheap = (uint32_t)binp->uheap;
 
@@ -189,11 +189,11 @@ int exec_module(FAR struct binary_s *binp)
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[3], MPU_REG_NUM_APP_TXT, (uintptr_t)binp->alloc[ALLOC_TEXT], binp->textsize, true, true);
+	mpu_get_register_config_value(&rtcb->mpu_regs[0], MPU_REG_NUM_APP_TXT, (uintptr_t)binp->alloc[ALLOC_TEXT], binp->textsize, true, true);
 	/* Configure ro section as RO and non-executable region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[6], MPU_REG_NUM_APP_RO, (uintptr_t)binp->alloc[ALLOC_RO], binp->rosize, true, false);
+	mpu_get_register_config_value(&rtcb->mpu_regs[3], MPU_REG_NUM_APP_RO, (uintptr_t)binp->alloc[ALLOC_RO], binp->rosize, true, false);
 	/* Complete RAM partition will be configured as RW region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[0], MPU_REG_NUM_APP_DATA, (uintptr_t)binp->alloc[ALLOC_DATA], binp->ramsize, false, false);
+	mpu_get_register_config_value(&rtcb->mpu_regs[6], MPU_REG_NUM_APP_DATA, (uintptr_t)binp->alloc[ALLOC_DATA], binp->ramsize, false, false);
 #else
 	/* Complete RAM partition will be configured as RW region */
 	mpu_get_register_config_value(&rtcb->mpu_regs[0], MPU_REG_NUM_APP, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
