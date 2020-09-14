@@ -55,10 +55,15 @@ DEPPATH = --dep-path .
 VPATH = .
 ASRCS =
 
-ifeq ($(CONFIG_FLASH_PARTITION),y)
 DEPPATH += --dep-path $(TOPDIR)/board/common
 VPATH += :$(TOPDIR)/board/common
+
+ifeq ($(CONFIG_FLASH_PARTITION),y)
 CSRCS += partitions.c
+endif
+
+ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
+CSRCS += crashdump.c
 endif
 
 include Make.defs
