@@ -357,6 +357,8 @@ int main(int argc, char *argv[])
 	/* Get the tty type  */
 	if (!strcmp(dev_file, "/dev/ttyUSB1")) {
 		strncpy(tty_type, "ttyUSB1", TTYTYPE_LEN);
+	} else if (!strcmp(dev_file, "/dev/ttyUSB0")) {
+		strncpy(tty_type, "ttyUSB0", TTYTYPE_LEN);
 	} else if (!strcmp(dev_file, "/dev/ttyACM0")) {
 		strncpy(tty_type, "ttyACM0", TTYTYPE_LEN);
 	} else {
