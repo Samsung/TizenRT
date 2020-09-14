@@ -160,8 +160,9 @@ int task_init(FAR struct tcb_s *tcb, const char *name, int priority, FAR uint32_
 #endif
 
 	/* Configure the user provided stack region */
-
-	up_use_stack(tcb, stack, stack_size);
+	if (stack != NULL) {
+		up_use_stack(tcb, stack, stack_size);
+	}
 
 	/* Initialize the task control block */
 

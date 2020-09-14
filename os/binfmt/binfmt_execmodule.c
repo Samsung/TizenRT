@@ -217,24 +217,16 @@ int exec_module(FAR struct binary_s *binp)
 	}
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	stack = (FAR uint32_t *)mm_malloc(binp->uheap, binp->stacksize, retaddr);
-#else
-	stack = (FAR uint32_t *)mm_malloc(binp->uheap, binp->stacksize);
-#endif
-#else
-	stack = (FAR uint32_t *)kumm_malloc(binp->stacksize);
-#endif
-	if (!stack) {
-		ret = -ENOMEM;
+	ret = up_create_stack((FAR struct tcb_s *)tcb, binp->stacksize, TCB_FLAG_TTYPE_TASK);
+	if (ret < 0) {
+		berr("ERROR: up_create_stack() failed.\n");
 		goto errout_with_addrenv;
 	}
+	stack = tcb->cmn.stack_alloc_ptr;
 
 	/* Initialize the task */
 
-	ret = task_init((FAR struct tcb_s *)tcb, binp->filename, binp->priority, stack, binp->stacksize, binp->entrypt, binp->argv);
+	ret = task_init((FAR struct tcb_s *)tcb, binp->filename, binp->priority, NULL, binp->stacksize, binp->entrypt, binp->argv);
 	if (ret < 0) {
 		ret = -get_errno();
 		berr("task_init() failed: %d\n", ret);
