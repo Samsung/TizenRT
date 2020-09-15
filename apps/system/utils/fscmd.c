@@ -376,14 +376,16 @@ static int tash_cat(int argc, char **args)
 			do {
 				memset(fscmd_buffer, 0, FSCMD_BUFFER_LEN);
 				read_size = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN);
-				while (read_size > 0) {
-					written_size = write(destfd, fscmd_buffer + written_size, read_size);
+				if (read_size > 0) {
+					written_size = write(destfd, fscmd_buffer, read_size);
 					if (written_size != read_size) {
-						read_size -= written_size;
-					} else {
-						break;
+						FSCMD_OUTPUT(CMD_FAILED, "write", dest_fullpath);
+						ret = ERROR;
+						close(destfd);
+						goto out_close;
 					}
 				}
+				
 			} while (read_size > 0);
 
 			close(destfd);
