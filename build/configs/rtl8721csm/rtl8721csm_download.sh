@@ -19,17 +19,17 @@
 # rtl8721csm_download.sh
 
 if [ -n "$2" ]; then
-	TTYDEV="$2"
+	PORT="$2"
 else
-	TTYDEV="ttyUSB1"
+	PORT="ttyUSB1"
 fi
 
-WARNING="\n Port $TTYDEV is selected\n\n
+WARNING="\n Port $PORT is selected\n\n
 	############################################\n
 	WARNINGS:\n
 	1. Make sure the board is in DOWNLOAD MODE.\n
 	2. Make sure NO other application like putty,\n
-	is occupying $TTYDEV.\n
+	is occupying $PORT.\n
 	############################################\n"
 
 echo -e $WARNING
@@ -44,6 +44,7 @@ OS_PATH=${TOP_PATH}/os
 SMARTFS_BIN_PATH=${BIN_PATH}/rtl8721csm_smartfs.bin
 FLASH_START_ADDR=0x08000000
 
+TTYDEV="/dev/${PORT}"
 CONFIG=${OS_PATH}/.config
 source ${CONFIG}
 
@@ -57,11 +58,6 @@ function rtl8721csm_sanity_check()
 
 	if [[ "${CONFIG_ARCH_BOARD_RTL8721CSM}" != "y" ]];then
 		echo "Target is NOT RTL8721CSM"
-		exit 1
-	fi
-
-	if [ ! -f ${TINYARA_BIN} ]; then
-		echo "missing file ${TINYARA_BIN}"
 		exit 1
 	fi
 
@@ -88,7 +84,7 @@ download_km0_bl()
 		fi
 	done
 
-	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
+	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KM0_BL Download DONE"
 
@@ -112,7 +108,7 @@ download_km4_bl()
 		fi
 	done
 
-	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
+	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KM4_BL Download DONE"
 
@@ -136,7 +132,7 @@ download_kernel()
 		fi
 	done
 
-	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
+	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "KERNEL Download DONE"
 
@@ -172,7 +168,7 @@ EOF
 		fi
 	done
 
-	./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$idx]} ${exe_name}
+	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
 	echo "SMARTFS Download DONE"
 	[ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
@@ -345,7 +341,7 @@ download_all()
 		gidx=$(get_partition_index $part)
 		exe_name=$(get_executable_name ${parts[$gidx]})
 
-		./amebad_image_tool /dev/$TTYDEV 1 ${offsets[$gidx]} ${exe_name}
+		./amebad_image_tool $TTYDEV 1 ${offsets[$gidx]} ${exe_name}
 
 	done
 	echo ""
