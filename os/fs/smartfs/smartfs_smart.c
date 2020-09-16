@@ -756,7 +756,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 	/* Now append data to end of the file. */
 	if (buflen > 0) {
-		byteswritten = smartfs_append_data(fs, sf, &buffer[byteswritten], byteswritten, buflen);
+		byteswritten = smartfs_append_data(fs, sf, buffer, byteswritten, buflen);
 	}
 	ret = byteswritten;
 
