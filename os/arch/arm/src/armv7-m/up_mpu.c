@@ -343,7 +343,7 @@ void mpu_get_register_config_value(uint32_t *regs, uint32_t region, uintptr_t ba
 #endif
 			MPU_RASR_C;                 /* Cacheable     */
 	if (readonly) {
-		regval |= MPU_RASR_AP_RWRO;     /* P:RW   U:RO   */
+		regval |= MPU_RASR_AP_RORO;     /* P:RO   U:RO   */
 	} else {
 		regval |= MPU_RASR_AP_RWRW;     /* P:RW   U:RW   */
 	}
