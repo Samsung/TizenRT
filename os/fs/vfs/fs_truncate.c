@@ -180,8 +180,12 @@ int ftruncate(int fd, off_t length)
 	FAR struct file *filep;
 	int ret;
 
-	/* Get the file structure corresponding to the file descriptor. */
+	if (length < 0) {
+		ret = -EINVAL;
+		goto errout;
+	}
 
+	/* Get the file structure corresponding to the file descriptor. */	
 	ret = fs_getfilep(fd, &filep);
 	if (ret < 0) {
 		goto errout;
