@@ -82,6 +82,7 @@ void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name)
 		return;
 	}
 
+	node->is_active = true;
 	node->heap = heap;
 	strncpy(node->app_name, app_name, BIN_NAME_MAX);
 
