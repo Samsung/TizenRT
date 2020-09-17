@@ -104,7 +104,6 @@ int hd_handle_key_request(int cmd, unsigned long arg, void *lower)
 					_unset_key_slot(info->key_idx);
 				}
 			}
-			printf("[pkbuild] res(%d)\n", req->res);
 		}
 		break;
 	case SECLINKIOC_GETKEY:

@@ -90,7 +90,6 @@ static void icmp6_send_response(struct pbuf *p, u8_t code, u32_t data, u8_t type
  */
 void icmp6_input(struct pbuf *p, struct netif *inp)
 {
-	LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] %d\n", __LINE__));
 	struct icmp6_hdr *icmp6hdr;
 	struct pbuf *r;
 	const ip6_addr_t *reply_src;
@@ -99,7 +98,6 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 
 	/* Check that ICMPv6 header fits in payload */
 	if (p->tot_len < sizeof(struct icmp6_hdr)) {
-		LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] drop packet %u %u %u %d\n", p->len, p->tot_len, sizeof(struct icmp6_hdr), __LINE__));
 		/* drop short packets */
 		pbuf_free(p);
 		ICMP6_STATS_INC(icmp6.lenerr);
@@ -109,14 +107,10 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 
 	icmp6hdr = (struct icmp6_hdr *)p->payload;
 
-	LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] type(%d) code(%d) checksum(%04x) len(%d)\n",
-							icmp6hdr->type, icmp6hdr->code, icmp6hdr->chksum, p->tot_len));
-
 #if CHECKSUM_CHECK_ICMP6
 	IF__NETIF_CHECKSUM_ENABLED(inp, NETIF_CHECKSUM_CHECK_ICMP6) {
 		if (ip6_chksum_pseudo(p, IP6_NEXTH_ICMP6, p->tot_len, ip6_current_src_addr(), ip6_current_dest_addr()) != 0) {
 			/* Checksum failed */
-			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] check sum failed \n"));
 			pbuf_free(p);
 			ICMP6_STATS_INC(icmp6.chkerr);
 			ICMP6_STATS_INC(icmp6.drop);
@@ -134,7 +128,6 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 		// [TAHI ND#127]
 		if (ip_data.is_atomic_frag == 2) {
 			/* drop */
-			LWIP_DEBUGF(ND6_DEBUG, ("[pkbuild] drop atomic packet in ND series %d\n", __LINE__));
 			pbuf_free(p);
 			ICMP6_STATS_INC(icmp6.drop);
 			return;
