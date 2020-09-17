@@ -120,7 +120,7 @@ int mm_trysemaphore(FAR struct mm_heap_s *heap)
 		/* Try to take the semaphore (perhaps waiting) */
 
 		if (sem_trywait(&heap->mm_semaphore) != 0) {
-			return ERROR;
+			return -get_errno();
 		}
 
 		/* We have it.  Claim the stak and return */
