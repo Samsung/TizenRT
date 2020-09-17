@@ -114,9 +114,6 @@ int kmm_trysemaphore(void *dummy_addr)
  * Parameters:
  *   None
  *
- * Return Value:
- *   OK on success; a negated errno on failure
- *
  ************************************************************************/
 void kmm_givesemaphore(void *dummy_addr)
 {
