@@ -55,6 +55,7 @@
  ************************************************************************/
 
 #include <tinyara/config.h>
+#include <debug.h>
 #include <errno.h>
 #include <tinyara/mm/mm.h>
 
@@ -101,8 +102,8 @@ int umm_trysemaphore(void *address)
 	if (heap) {
 		return mm_trysemaphore(heap);
 	}
-	set_errno(EFAULT);
-	return EFAULT;
+	mdbg("Invalid Heap address given, Fail to try to take sem.\n");
+	return -EFAULT;
 }
 
 /************************************************************************
@@ -116,9 +117,6 @@ int umm_trysemaphore(void *address)
  * Parameters:
  *   None
  *
- * Return Value:
- *   OK on success; a negated errno on failure
- *
  ************************************************************************/
 
 void umm_givesemaphore(void *address)
@@ -126,7 +124,7 @@ void umm_givesemaphore(void *address)
 	struct mm_heap_s *heap;
 	heap = mm_get_heap(address);
 	if (!heap) {
-		set_errno(EFAULT);
+		mdbg("Invalid Heap address given, Fail to give sem.\n");
 		return;
 	}
 	mm_givesemaphore(heap);
