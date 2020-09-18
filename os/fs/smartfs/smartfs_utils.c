@@ -2180,7 +2180,7 @@ ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs
 			sf->currsector = SMARTFS_NEXTSECTOR(chainheader);
 			sf->curroffset = sizeof(struct smartfs_chain_header_s);
 			memset(sf->buffer, CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes);
-			chainheader->type = SMARTFS_DIRENT_TYPE_FILE;
+			chainheader->type = SMARTFS_SECTOR_TYPE_FILE;
 		}
 #else                                                   /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 		if (sf->curroffset == fs->fs_llformat.availbytes) {
