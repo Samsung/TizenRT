@@ -71,10 +71,10 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 	uint32_t crc_hash = 0;
 	uint8_t buffer[BUFFER_SIZE];
 	binary_header_t header_data;
-	char filepath[CONFIG_PATH_MAX];
-	char new_filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
+	char new_filepath[BINARY_PATH_LEN];
 
-	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)binary_info->version);
+	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)binary_info->version);
 	read_fd = open(filepath, O_RDONLY);
 	if (read_fd < 0) {
 		fail_cnt++;
@@ -181,15 +181,15 @@ static int binary_update_download_new_binary(void)
 	uint8_t buffer[BUFFER_SIZE];
 	binary_header_t header_data;
 	binary_update_info_t bin_info;
-	char filepath[CONFIG_PATH_MAX];
-	char new_filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
+	char new_filepath[BINARY_PATH_LEN];
 	int filesize;
 	FILE *fp;
 
 	/* Get 'micom' binary info */
 	binary_manager_get_update_info(APP_NAME, &bin_info);
 
-	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)bin_info.version);
+	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)bin_info.version);
 
 	/* Get 'micom' binary file size */
 	fp = fopen(filepath, "r");
@@ -435,7 +435,7 @@ static int binary_update_unregister_state_changed_callback(void)
 static void binary_update_same_version_test(void)
 {
 	int ret;	
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 	binary_update_info_t bin_info;
 
 	ret = binary_update_getinfo(APP_NAME, &bin_info);
@@ -455,7 +455,7 @@ static void binary_update_same_version_test(void)
 static void binary_update_new_version_test(void)
 {
 	int ret;
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
 
@@ -485,7 +485,7 @@ static void binary_update_new_version_test(void)
 	ret = binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_VALID_BIN);
 	if (ret == OK) {
 		/* Unlink binary file with old version */
-		snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)pre_bin_info.version);
+		snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)pre_bin_info.version);
 		unlink(filepath);
 	}
 }
@@ -525,7 +525,7 @@ static void binary_update_invalid_binary_test(void)
 static void binary_update_new_binary_test(void)
 {
 	int ret;
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 	binary_update_info_t bin_info;
 
 	/* Copy current binary and update version. */
@@ -553,7 +553,7 @@ static void binary_update_new_binary_test(void)
 	}
 
 	/* Unlink binary file */
-	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%u", BINARY_DIR_PATH, NEW_APP_NAME, NEW_APP_VERSION);
+	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, NEW_APP_NAME, NEW_APP_VERSION);
 	unlink(filepath);
 }
 

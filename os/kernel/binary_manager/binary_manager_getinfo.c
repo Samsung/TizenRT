@@ -82,7 +82,7 @@ int binary_manager_get_available_size(int bin_idx)
 	char *bin_name;
 	struct stat file_buf;
 	struct statfs fs_buf;
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 	char running_file[NAME_MAX];
 
 	snprintf(running_file, NAME_MAX, "%s_%d", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx));
@@ -118,7 +118,7 @@ int binary_manager_get_available_size(int bin_idx)
 			/* Calculate size of old binary files to be removed when creating new file */
 			if (DIRENT_ISFILE(entryp->d_type) && !strncmp(entryp->d_name, bin_name, name_len) \
 				&& entryp->d_name[name_len] == '_' && strncmp(entryp->d_name, running_file, strlen(running_file))) {
-				snprintf(filepath, CONFIG_PATH_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
+				snprintf(filepath, BINARY_PATH_LEN, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
 				if (stat(filepath, &file_buf) == OK) {
 					bmvdbg("filepath %s size %d\n", filepath, file_buf.st_size);
 					size += file_buf.st_size;

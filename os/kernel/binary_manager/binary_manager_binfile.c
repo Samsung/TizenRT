@@ -49,7 +49,7 @@ static int binary_manager_clear_binfile(int bin_idx)
 	DIR *dirp;
 	int name_len;
 	char *bin_name;
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 	char running_file[NAME_MAX];
 
 	snprintf(running_file, NAME_MAX, "%s_%d", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx));
@@ -100,7 +100,7 @@ void binary_manager_scan_ubin_all(void)
 	DIR *dirp;
 	int bin_idx;
 	binary_header_t header_data;
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 
 	/* Open a directory for user binaries, BINARY_DIR_PATH */
 	dirp = opendir(BINARY_DIR_PATH);
@@ -114,7 +114,7 @@ void binary_manager_scan_ubin_all(void)
 			}
 			/* Remove binary file which is not running */
 			if (DIRENT_ISFILE(entryp->d_type)) {
-				snprintf(filepath, CONFIG_PATH_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
+				snprintf(filepath, BINARY_PATH_LEN, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
 				ret = binary_manager_read_header(filepath, &header_data, false);
 				if (ret < 0) {
 					continue;
@@ -157,7 +157,7 @@ int binary_manager_scan_ubin(int bin_idx)
 	int latest_idx;
 	char *bin_name;
 	binary_header_t header_data;
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 
 	bmvdbg("Open a directory, %s\n", BINARY_DIR_PATH);
 
@@ -186,7 +186,7 @@ int binary_manager_scan_ubin(int bin_idx)
 		/* Read and Verify a binary file */
 		if (DIRENT_ISFILE(entryp->d_type) \
 			&& !strncmp(entryp->d_name, bin_name, name_len) && entryp->d_name[name_len] == '_') {
-			snprintf(filepath, CONFIG_PATH_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
+			snprintf(filepath, BINARY_PATH_LEN, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
 			ret = binary_manager_read_header(filepath, &header_data, false);
 			if (ret == OK) {
 				BIN_FILECNT(bin_idx)++;
@@ -227,7 +227,7 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 	int bin_idx;
 	binmgr_kinfo_t *kerinfo;
 	char q_name[BIN_PRIVMQ_LEN];
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 	binmgr_createbin_response_t response_msg;
 
 	if (requester_pid < 0 || bin_name == NULL || version < 0) {
@@ -241,7 +241,7 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 		kerinfo = binary_manager_get_kdata();
 		if (kerinfo->part_count > 1) {
 			response_msg.result = BINMGR_OK;
-			snprintf(response_msg.binpath, CONFIG_PATH_MAX, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_num, CONFIG_PATH_MAX);
+			snprintf(response_msg.binpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_num, BINARY_PATH_LEN);
 		} else {
 			response_msg.result = BINMGR_NOT_FOUND;
 		}
@@ -274,11 +274,11 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 	response_msg.result = BINMGR_OPERATION_FAIL;
 
 	/* Create a new file */
-	snprintf(filepath, CONFIG_PATH_MAX, "%s/%s_%d", BINARY_DIR_PATH, bin_name, version);
+	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%d", BINARY_DIR_PATH, bin_name, version);
 	fd = open(filepath, O_RDWR | O_CREAT, 0666);
 	if (fd > 0) {
 		bmvdbg("Created file '%s' for binary %s\n", filepath, bin_name);
-		strncpy(response_msg.binpath, filepath, CONFIG_PATH_MAX);
+		strncpy(response_msg.binpath, filepath, strlen(filepath) + 1);
 		response_msg.result = BINMGR_OK;
 		close(fd);
 	} else if (errno == ENOENT) {
@@ -288,7 +288,7 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 			fd = open(filepath, O_RDWR | O_CREAT, 0666);
 			if (fd > 0) {
 				bmvdbg("Created file '%s' for binary %s\n", filepath, bin_name);
-				strncpy(response_msg.binpath, filepath, CONFIG_PATH_MAX);
+				strncpy(response_msg.binpath, filepath, strlen(filepath) + 1);
 				response_msg.result = BINMGR_OK;
 				close(fd);
 			}
