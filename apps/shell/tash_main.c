@@ -303,9 +303,21 @@ int tash_execute_cmdline(char *buff)
 	int ret = OK;
 
 #if TASH_MAX_STORE > 0
+	int hist_idx;
+	char *stored_cmd_ptr;
+	int stored_cmd_size;
+
 	if (buff[0] == '!') {
-		int cmd_number = atoi(buff + 1);
-		tash_get_cmd_from_history(cmd_number, buff);
+		hist_idx = atoi(buff + 1);
+		stored_cmd_ptr = tash_get_cmd_from_history(hist_idx);
+		if (!stored_cmd_ptr) {
+			ret = ERROR;
+			*buff = ASCII_NUL;
+		}
+
+		stored_cmd_size = strlen(stored_cmd_ptr);
+		strncpy(buff, stored_cmd_ptr, stored_cmd_size);
+		buff[stored_cmd_size] = ASCII_NUL;
 	}
 
 	tash_store_cmd(buff);
