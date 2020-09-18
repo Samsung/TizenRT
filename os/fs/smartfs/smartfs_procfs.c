@@ -158,8 +158,8 @@ static size_t smartfs_files_read(FAR struct file *filep, FAR char *buffer, size_
 #endif
 
 #ifdef CONFIG_DEBUG_FS
-static size_t smartfs_dump_all_sector(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static ssize_t smartfs_dump_sector(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+static ssize_t smartfs_dump_lsector(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+static ssize_t smartfs_dump_psector(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 
 #endif
 /****************************************************************************
@@ -175,8 +175,8 @@ static const struct smartfs_procfs_entry_s g_direntry[] = {
 	{"mem", smartfs_mem_read, NULL, DTYPE_FILE},
 #endif
 #ifdef CONFIG_DEBUG_FS
-	{"dump_all", smartfs_dump_all_sector, NULL, DTYPE_FILE},
-	{"dump", NULL, smartfs_dump_sector, DTYPE_FILE},
+	{"dump_lsector", NULL, smartfs_dump_lsector, DTYPE_FILE},
+	{"dump_psector", NULL, smartfs_dump_psector, DTYPE_FILE},
 #endif
 	{"status", smartfs_status_read, NULL, DTYPE_FILE}
 };
@@ -938,13 +938,14 @@ static size_t smartfs_erasemap_read(FAR struct file *filep, FAR char *buffer, si
 #endif
 
 /****************************************************************************
- * Name: smartfs_dump_all_sector
+ * Name: smartfs_dump_Lsector
  *
- * Description: Performs the dump of all sector data
+ * Description: Performs the dump of specific Logical sector data
  *
  ****************************************************************************/
 #ifdef CONFIG_DEBUG_FS
-static size_t smartfs_dump_all_sector(FAR struct file *filep, FAR char *buffer, size_t buflen)
+static ssize_t smartfs_dump_lsector(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+
 {
 	struct mtd_smart_debug_data_s debug_data;
 	FAR struct smartfs_file_s *priv;
@@ -953,23 +954,24 @@ static size_t smartfs_dump_all_sector(FAR struct file *filep, FAR char *buffer, 
 
 	/* Populate the debug_data structure */
 
-	debug_data.debugcmd = SMART_DEBUG_CMD_DUMP_SECTOR;
-	debug_data.debugdata = (uint32_t)SMART_DEBUG_DUMP_ALL;
+	debug_data.debugcmd = SMART_DEBUG_CMD_DUMP_LSECTOR;
+	debug_data.debugdata = atoi(buffer);
 
 	priv->level1.mount->fs_blkdriver->u.i_bops->ioctl(priv->level1.mount->fs_blkdriver, BIOC_DEBUGCMD, (unsigned long)&debug_data);
 
 	/* Return 0 this doesn't bring any data */
 	return 0;
+
 }
 
 /****************************************************************************
- * Name: smartfs_dump_sector
+ * Name: smartfs_dump_psector
  *
- * Description: Performs the dump of specific sector data
+ * Description: Performs the dump of specific physical sector data
  *
  ****************************************************************************/
 
-static ssize_t smartfs_dump_sector(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+static ssize_t smartfs_dump_psector(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	struct mtd_smart_debug_data_s debug_data;
 	FAR struct smartfs_file_s *priv;
@@ -978,7 +980,7 @@ static ssize_t smartfs_dump_sector(FAR struct file *filep, FAR const char *buffe
 
 	/* Populate the debug_data structure */
 
-	debug_data.debugcmd = SMART_DEBUG_CMD_DUMP_SECTOR;
+	debug_data.debugcmd = SMART_DEBUG_CMD_DUMP_PSECTOR;
 	debug_data.debugdata = atoi(buffer);
 
 	priv->level1.mount->fs_blkdriver->u.i_bops->ioctl(priv->level1.mount->fs_blkdriver, BIOC_DEBUGCMD, (unsigned long)&debug_data);

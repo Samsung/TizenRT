@@ -521,17 +521,39 @@ static const struct block_operations g_bops = {
  ****************************************************************************/
 
 #ifdef CONFIG_DEBUG_FS
-static int smart_dumpsector(FAR struct smart_struct_s *dev, uint16_t physsector)
+static int smart_dumpsector(FAR struct smart_struct_s *dev, uint16_t sector, uint8_t command)
 {
 	/* TODO this function can be moved to procfs to get sector data...*/
 	int ret = OK;
-	ret = MTD_BREAD(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+	uint16_t lsector;
+	uint16_t psector;
+
+	if (command == SMART_DEBUG_CMD_DUMP_LSECTOR) {
+		lsector = sector;
+		psector = dev->sMap[sector];
+	} else {
+		psector = sector;
+		lsector = (uint16_t)-1;
+		for (int i = 0; i < dev->totalsectors; i++) {
+			if (dev->sMap[i] == psector) {
+				lsector = i;
+				break;
+			}
+		}
+	}
+
+	if (psector >= dev->totalsectors) {
+		fdbg("Invalid sector, Skip it. Logical : %d physical : %d\n", lsector, psector);
+		return -EINVAL;
+	}
+	
+	ret = MTD_BREAD(dev->mtd, psector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 	if (ret != dev->mtdBlksPerSector) {
-		fdbg("Error reading phys sector %d\n", physsector);
+		fdbg("Error reading phys sector %d\n", psector);
 		return -EIO;
 	}
 
-	fsdbg("Sector dump physical sector : %d sector size : %d\n", physsector, dev->sectorsize);
+	fsdbg("Sector dump Logical : %d physical : %d sector size : %d\n", lsector, psector, dev->sectorsize);
 	for (int i = 0; i < dev->sectorsize; i++) {
 		fsdbg("[%02x]", (FAR uint8_t)dev->rwbuffer[i]);
 		if ((i + 1) % 20 == 0) {
@@ -4869,19 +4891,9 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 			goto ok_out;
 
 #ifdef CONFIG_DEBUG_FS
-		case SMART_DEBUG_CMD_DUMP_SECTOR:
-			if ((uint16_t)debug_data->debugdata == SMART_DEBUG_DUMP_ALL) {
-				for (int i = 0; i < dev->totalsectors; i++) {
-					ret = smart_dumpsector(dev, i);
-					if (ret != OK) {
-						break;
-					}
-				}
-			} else {
-				ret = smart_dumpsector(dev, (uint16_t)debug_data->debugdata);
-				
-			}
-
+		case SMART_DEBUG_CMD_DUMP_LSECTOR:
+		case SMART_DEBUG_CMD_DUMP_PSECTOR:
+			ret = smart_dumpsector(dev, (uint16_t)debug_data->debugdata, debug_data->debugcmd);
 			goto ok_out;
 #endif
 		}

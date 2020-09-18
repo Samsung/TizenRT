@@ -68,7 +68,8 @@
 
 #define SMART_DEBUG_CMD_SET_DEBUG_LEVEL   1
 #define SMART_DEBUG_CMD_SHOW_LOGMAP       2
-#define SMART_DEBUG_CMD_DUMP_SECTOR       3
+#define SMART_DEBUG_CMD_DUMP_PSECTOR      3
+#define SMART_DEBUG_CMD_DUMP_LSECTOR      4
 #define SMART_DEBUG_DUMP_ALL              0xFFFF
 /****************************************************************************
  * Public Types
