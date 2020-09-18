@@ -21,7 +21,6 @@ env:
 matrix:
   include:
     - env: BUILD_CONFIG=artik055s/audio
-    - env: BUILD_CONFIG=artik053/grpc
     - env: BUILD_CONFIG=artik053/st_things
     - env: BUILD_CONFIG=artik053/tc
     - env: BUILD_CONFIG=artik053/iotjs
@@ -30,6 +29,7 @@ matrix:
     - env: BUILD_CONFIG=qemu/build_test
     - env: BUILD_CONFIG=esp_wrover_kit/hello_with_tash
     - env: BUILD_CONFIG=imxrt1020-evk/loadable_elf_apps
+    - env: BUILD_CONFIG=rtl8721csm/loadable_apps
       
 before_install:
 - docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}
