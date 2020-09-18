@@ -233,28 +233,36 @@ static int tash_history(int argc, char **args)
 	return 0;
 }
 
-void tash_get_cmd_from_history(int num, char *cmd)
+/* Return the address of command buffer which is selected by the number in history list */
+char *tash_get_cmd_from_history(int history_num)
 {
-	if (num < 1 || num >= TASH_MAX_STORE) {
-		return;
+	int cmd_idx;
+
+	if (history_num < 1 || history_num >= TASH_MAX_STORE) {
+		printf("!%d: invalid event\n", history_num);
+		return NULL;
 	}
 
-	int head_idx = cmd_head;
-	int pos = 0;
+	/* Get the command index by adding given number from first command index in ring buffer */
 
-	head_idx += (num - 1);
+	cmd_idx = cmd_head + (history_num - 1);
 
-	if (head_idx >= TASH_MAX_STORE) {
-		head_idx -= TASH_MAX_STORE;
-	}
-	if (head_idx >= cmd_tail) {
-		return;
+	/* Check overflow of buffer size */
+
+	if (cmd_idx >= TASH_MAX_STORE) {
+		cmd_idx -= TASH_MAX_STORE;
 	}
 
-	while (cmd_store[head_idx][pos] != 0) {
-		cmd[pos] = cmd_store[head_idx][pos];
-		pos++;
+	/* Check whether given number has a command or not */
+
+	if (cmd_idx >= cmd_tail) {
+		printf("!%d: event not found\n", history_num);
+		return NULL;
 	}
+
+	/* Return the address of command buffer indexed */
+
+	return cmd_store[cmd_idx];
 }
 
 void tash_store_cmd(char *cmd)

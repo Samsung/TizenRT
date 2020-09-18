@@ -305,7 +305,7 @@ int tash_execute_cmdline(char *buff)
 #if TASH_MAX_STORE > 0
 	if (buff[0] == '!') {
 		int cmd_number = atoi(buff + 1);
-		tash_get_cmd_from_history(cmd_number, buff);
+		buff = tash_get_cmd_from_history(cmd_number);
 	}
 
 	tash_store_cmd(buff);
