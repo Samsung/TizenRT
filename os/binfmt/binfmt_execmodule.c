@@ -205,7 +205,8 @@ int exec_module(FAR struct binary_s *binp)
 
 	tcb = (FAR struct task_tcb_s *)kmm_zalloc(sizeof(struct task_tcb_s));
 	if (!tcb) {
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto errout_with_appheap;
 	}
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
 	/* Instantiate the address environment containing the user heap */
@@ -387,6 +388,10 @@ int exec_module(FAR struct binary_s *binp)
 
 	return (int)pid;
 
+errout_with_appheap:
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_remove_app_heap_list(binp->uheap);
+#endif
 errout_with_tcbinit:
 #ifdef CONFIG_BINARY_MANAGER
 	BIN_ID(binary_idx) = -1;
