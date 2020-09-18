@@ -56,7 +56,7 @@ static dq_queue_t app_heap_q;
  * Public Functions
  ****************************************************************************/
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
-void mm_initialize_app_heap()
+void mm_initialize_app_heap_q()
 {
 	dq_init(&app_heap_q);
 }
@@ -98,6 +98,23 @@ void mm_remove_app_heap_list(struct mm_heap_s *heap)
 	while (node) {
 		if (node->heap == heap) {
 			/* Remove and free the matching node */
+			dq_rem((dq_entry_t *)node, &app_heap_q);
+			kmm_free(node);
+			return;
+		}
+
+		node = dq_next(node);
+	}
+}
+
+void mm_disable_app_heap_list(struct mm_heap_s *heap)
+{
+	app_heap_s *node = (app_heap_s *)dq_peek(&app_heap_q);
+
+	/* Search the heap node in the list */
+	while (node) {
+		if (node->heap == heap) {
+			/* Disable the matching node */
 			node->is_active = false;
 			return;
 		}

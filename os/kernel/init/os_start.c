@@ -415,6 +415,10 @@ void os_start(void)
 
 	up_add_kregion();
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_initialize_app_heap_q();
+#endif
+
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 	/* Initialize tasking data structures */
 
