@@ -233,28 +233,45 @@ static int tash_history(int argc, char **args)
 	return 0;
 }
 
-void tash_get_cmd_from_history(int num, char *cmd)
+/**
+ * @brief      Get the command in the history list
+ * @details    Return the address of command buffer which is selected by the index in history list
+ * @param[in]  hist_idx The index in the history list
+ * @return     The address of command buffer selected on success, null on failure
+ */
+
+char *tash_get_cmd_from_history(int hist_idx)
 {
-	if (num < 1 || num >= TASH_MAX_STORE) {
-		return;
+	int cmd_idx;
+
+	if (hist_idx < 0) {
+		printf("Not supported\n");
+		return NULL;
+	} else if (hist_idx == 0 || hist_idx >= TASH_MAX_STORE) {
+		printf("!%d: event not found\n", hist_idx);
+		return NULL;
 	}
 
-	int head_idx = cmd_head;
-	int pos = 0;
+	/* Get the command index by adding given number from first command index in ring buffer */
 
-	head_idx += (num - 1);
+	cmd_idx = cmd_head + (hist_idx - 1);
 
-	if (head_idx >= TASH_MAX_STORE) {
-		head_idx -= TASH_MAX_STORE;
-	}
-	if (head_idx >= cmd_tail) {
-		return;
+	/* Check overflow of buffer size */
+
+	if (cmd_idx >= TASH_MAX_STORE) {
+		cmd_idx -= TASH_MAX_STORE;
 	}
 
-	while (cmd_store[head_idx][pos] != 0) {
-		cmd[pos] = cmd_store[head_idx][pos];
-		pos++;
+	/* Check the given number is in a valid range */
+
+	if ((cmd_idx >= cmd_tail) && (cmd_head < cmd_tail)) {
+		printf("!%d: event not found\n", hist_idx);
+		return NULL;
 	}
+
+	/* Return the address of command buffer indexed */
+
+	return cmd_store[cmd_idx];
 }
 
 void tash_store_cmd(char *cmd)
