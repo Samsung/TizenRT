@@ -2425,7 +2425,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 					}
 
 					/* It wasn't written, so clean current entry */
-					if ((ret == SMARTFS_ERASEDSTATE_16BIT) || (ret >= fs->fs_llformat.nsectors)) {
+					if (ret >= fs->fs_llformat.nsectors) {
 						fdbg("Invalid entry, firstsector is not exist sector : %d firstsector : %d\n", logsector, firstsector);
 						ret = smartfs_invalidateentry(fs, logsector, offset);
 						if (ret < 0) {
@@ -2455,31 +2455,33 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 				}
 			} 
 
-			/* Check next sector is valid or Not */
-			ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)nextsector);
-			if (ret < 0) {
-				fdbg("Error in getting bitmap for sector : %d, ret : %d\n", nextsector, ret);
-				goto errout;
-			}
-			fvdbg("Nextsector : %d ret : 0x%x\n", nextsector, ret);
-
-			/* Previous Header was updated but Next sector wasn't written, clean chain */
-			if ((nextsector != SMARTFS_ERASEDSTATE_16BIT) && ((ret == SMARTFS_ERASEDSTATE_16BIT) || (ret >= fs->fs_llformat.nsectors))) {
-				fvdbg("next sector [%d] is not exist, reset sector [%d] header is_remain : %d\n", nextsector, logsector, IS_SECTOR_REMAIN(map, nextsector));
-				header->nextsector[0] = CONFIG_SMARTFS_ERASEDSTATE;
-				header->nextsector[1] = CONFIG_SMARTFS_ERASEDSTATE;
-				smartfs_setbuffer(&readwrite, logsector, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), header->nextsector);
-				nextsector = SMARTFS_ERASEDSTATE_16BIT;
-				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+			if (nextsector < fs->fs_llformat.nsectors) {
+				/* Check next sector is valid or Not */
+				ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)nextsector);
 				if (ret < 0) {
-					fdbg("Error unchaining sector %d, ret : %d\n", readwrite.logsector, ret);
+					fdbg("Error in getting bitmap for sector : %d, ret : %d\n", nextsector, ret);
 					goto errout;
 				}
-				
-				info->cleanentries++;
-				break;
-			}
+				fvdbg("Nextsector : %d ret : 0x%x\n", nextsector, ret);
 
+				/* Previous Header was updated but Next sector wasn't written, clean chain */
+				if (ret >= fs->fs_llformat.nsectors) {
+					fvdbg("next sector [%d] / type : [%d] is not exist, reset sector [%d] header is_remain : %d\n", nextsector, type, \
+						logsector, IS_SECTOR_REMAIN(map, nextsector));
+					header->nextsector[0] = CONFIG_SMARTFS_ERASEDSTATE;
+					header->nextsector[1] = CONFIG_SMARTFS_ERASEDSTATE;
+					smartfs_setbuffer(&readwrite, logsector, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), header->nextsector);
+					nextsector = SMARTFS_ERASEDSTATE_16BIT;
+					ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+					if (ret < 0) {
+						fdbg("Error unchaining sector %d, ret : %d\n", readwrite.logsector, ret);
+						goto errout;
+					}
+					
+					info->cleanentries++;
+					break;
+				}
+			}
 			logsector = nextsector;
 		}
 		
@@ -2530,7 +2532,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 			goto error_with_map;
 		}
 
-		if ((ret != SMARTFS_ERASEDSTATE_16BIT) && (ret < fs->fs_llformat.nsectors)) {
+		if (ret < fs->fs_llformat.nsectors) {
 			SET_TO_REMAIN(map, sector);
 			fvdbg("sector : %d ret : 0x%x\n", sector, ret);
 			info.totalsector++;
