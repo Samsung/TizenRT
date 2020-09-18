@@ -2284,15 +2284,11 @@ int smartfs_invalidate_old_entry(struct smartfs_mountpt_s *fs, uint16_t logsecto
 		if (firstparent->time > secondparent->time) {
 			ret = smartfs_invalidateentry(fs, secondparent->parentsector, secondparent->parentoffset);
 			if (ret == OK) {
-				sq_rem((FAR sq_entry_t *)secondparent, entry_queue);
-				free(secondparent);
 				info->cleanentries++;
 			}
 		} else {
 			ret = smartfs_invalidateentry(fs, firstparent->parentsector, firstparent->parentoffset); 
 			if (ret == OK) {
-				sq_rem((FAR sq_entry_t *)firstparent, entry_queue);
-				free(firstparent);
 				info->cleanentries++;
 			}
 		}
@@ -2369,6 +2365,13 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 				/* Already marked by other sector, we will find them & release it */
 				fvdbg("Already Marked. ret : %d logsector : %d\n", ret, logsector);
 				ret = smartfs_invalidate_old_entry(fs, logsector, &entry_queue, info);
+				if (ret != OK) {
+					/* TODO if failed, what should we do ? */
+					fdbg("Invalidate failed sector : %d, offset : %d\n", logsector, offset);
+				} else {
+					/* Already checked previously so we will check next node */
+					break;
+				}
 			} else if (ret != SMARTFS_ERASEDSTATE_16BIT) {
 				/* Otherwise, mark it */
 				fvdbg("Set to Used!! logsector : %d ret : %d\n", logsector, ret);
