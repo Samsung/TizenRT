@@ -129,14 +129,16 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 	/* Return the kernel heap settings (i.e., the part of the heap region
 	 * that was not dedicated to the user heap).
 	 */
+	void *stack_end = (void *)(g_idle_topstack & ~(0x7));
 
-	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
-
-	/* There may be a special scenario where we might configure a different region
-	 * for heap. In such case, if end of bss falls outside of the region address range,
-	 * then we use the whole region for heap.
-	 */
-	if (*heap_start < (void *)KREGION_START || *heap_start > (void *)KREGION_END) {
+	if ((void *)&_sdata <= (void *)KREGION_END && stack_end >= (void *)KREGION_END) {
+		lldbg("ERROR: Failed to allocate kheap for ram region configuration\n");
+		lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n",
+				KREGION_START, KREGION_END, &_sdata, stack_end);
+		PANIC();
+	} else if (stack_end >= (void *)KREGION_START && stack_end < (void *)KREGION_END) {
+		*heap_start = stack_end;
+	} else {
 		*heap_start = (void *)KREGION_START;
 	}
 
@@ -153,14 +155,32 @@ void up_add_kregion(void)
 {
 	int region_cnt;
 	struct mm_heap_s *kheap;
+	void *heap_start;
+	size_t heap_size;
+	void *stack_end = (void *)(g_idle_topstack & ~(0x7));
 	kheap = kmm_get_heap();
 	for (region_cnt = 1; region_cnt < CONFIG_KMM_REGIONS; region_cnt++) {
 		if (kheap[kregionx_heap_idx[region_cnt]].mm_heapsize == 0) {
 			mm_initialize(&kheap[kregionx_heap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
 			continue;
 		}
-		lldbg("start = 0x%x size = %d\n", kregionx_start[region_cnt], kregionx_size[region_cnt]);
-		mm_addregion(&kheap[kregionx_heap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
+
+		void *kregionx_end = (void *)(((uint32_t)kregionx_start[region_cnt]) + kregionx_size[region_cnt]);
+		if ((void *)&_sdata <= (void *)kregionx_end && stack_end >= (void *)kregionx_end) {
+			lldbg("ERROR: Failed to allocate kheap for ram region configuration\n");
+			lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n",
+					kregionx_start[region_cnt], kregionx_end, &_sdata, stack_end);
+			PANIC();
+		} else if (stack_end >= (void *)kregionx_start[region_cnt] && stack_end < (void *)kregionx_end) {
+			heap_start = stack_end;
+		} else {
+			heap_start = (void *)kregionx_start[region_cnt];
+		}
+
+		heap_size = kregionx_end - heap_start;
+
+		lldbg("start = 0x%x size = %d\n", heap_start, heap_size);
+		mm_addregion(&kheap[kregionx_heap_idx[region_cnt]], heap_start, heap_size);
 	}
 }
 #endif
