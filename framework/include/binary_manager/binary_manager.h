@@ -111,7 +111,7 @@ int binary_manager_unregister_state_changed_callback(void);
  *  Otherwise, it creates empty file with version and returns a path of the file.
  * @param[in] binary_name The binary name to update
  * @param[in] version The binary version to update
- * @param[out] download_path The path to the download binary. The maximum length is CONFIG_PATH_MAX.
+ * @param[out] download_path The path to the download binary. The maximum length is BINARY_PATH_LEN.
  * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
  *         0 (BINMGR_OK) on success. On failure, negative value is returned.
  * @since TizenRT v3.1 PRE

@@ -70,6 +70,15 @@
 /* Mount point for User binaries */
 #define BINARY_DIR_PATH                  CONFIG_MOUNT_POINT"bins"
 
+/* The length of binary file or kernel partition path.
+ * A path is same like below:
+ *  - User filepath : "/<mount_path>/<binary_name>_<binary_version>"
+ *         length : CONFIG_NAME_MAX + BIN_NAME_MAX + binary_version (32) + /,_(3) + '\0'(1)
+ *  - Kernel partpath : "/dev/mtdblock#" defined as BINMGR_DEVNAME_FMT
+ * So define binary path length as (CONFIG_NAME_MAX + BIN_NAME_MAX + 40) with some extra.
+ */
+#define BINARY_PATH_LEN                  (CONFIG_NAME_MAX + BIN_NAME_MAX + 40)
+
 /* Binary states used in state callback */
 enum binary_statecb_state_e {
 	BINARY_STARTED = 0,           /* Binary is started */
@@ -199,7 +208,7 @@ typedef struct binmgr_request_s binmgr_request_t;
 
 struct binmgr_createbin_response_s {
 	int result;
-	char binpath[CONFIG_PATH_MAX];
+	char binpath[BINARY_PATH_LEN];
 };
 typedef struct binmgr_createbin_response_s binmgr_createbin_response_t;
 
