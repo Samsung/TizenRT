@@ -739,7 +739,6 @@ int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *
 		if (sf->entry.datalen > 0 && used_value == 0) {
 			used_value = fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s);
 		}
-
 		set_used_byte_count((uint8_t *)header->used, used_value);
 #else
 		if (SMARTFS_USED(header) == SMARTFS_ERASEDSTATE_16BIT) {
@@ -751,8 +750,12 @@ int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *
 			header->used[0] = (uint8_t)(tmp & 0x00FF);
 			header->used[1] = (uint8_t)(tmp >> 8);
 		}
+
+		if (header->type == CONFIG_SMARTFS_ERASEDSTATE) {
+			header->type = SMARTFS_SECTOR_TYPE_FILE;
+		}
 #endif
-		smartfs_setbuffer(&readwrite, sf->currsector, offsetof(struct smartfs_chain_header_s, used), sizeof(uint16_t), (uint8_t *)&fs->fs_rwbuffer[offsetof(struct smartfs_chain_header_s, used)]);
+		smartfs_setbuffer(&readwrite, sf->currsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 		if (ret < 0) {
 			fdbg("Error %d writing used bytes for sector %d\n", ret, sf->currsector);
