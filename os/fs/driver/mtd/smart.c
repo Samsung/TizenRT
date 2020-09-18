@@ -4808,6 +4808,9 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 
 	case BIOC_FIBMAP:
 
+		if ((uint16_t)arg >= dev->totalsectors) {
+			return -EINVAL;
+		}
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 		ret = (int)dev->sMap[(uint16_t)arg];
 #else
