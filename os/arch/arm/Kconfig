@@ -288,15 +288,33 @@ config ARCH_DABORTSTACK
 		will be used during data abort handling. Recommended data abort stack
 		size is 1K.
 
+
+choice
+	prompt "Stack Protection feature options"
+	default MPU_STACK_OVERFLOW_PROTECTION_DISABLE
+
+config REG_STACK_OVERFLOW_PROTECTION
+	bool "REG Stack Overflow Protection"
+	depends on ARCH_ARMV8M_FAMILY
+	---help---
+		Enables stack overflow protection with limit registers.
+		It protects each user task's stack overflow outside its max allocated stack memory.
+
 config MPU_STACK_OVERFLOW_PROTECTION
 	bool "MPU Stack Overflow Protection"
 	depends on BUILD_PROTECTED
 	depends on ARM_MPU
-	default n
 	---help---
 		Enables stack overflow protection.
 		It protects each task's stack overflow outside its max allocated stack memory.
 		This is applicable to user mode tasks created in protected build.
+
+config MPU_STACK_OVERFLOW_PROTECTION_DISABLE
+	bool "MPU Stack Overflow Protection Disable"
+	---help---
+		Disable Stack Overflow Protection.
+
+endchoice
 
 if MPU_STACK_OVERFLOW_PROTECTION
 
