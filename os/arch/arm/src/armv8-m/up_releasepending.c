@@ -150,8 +150,10 @@ void up_release_pending(void)
 					up_mpu_set_register(&rtcb->mpu_regs[i]);
 				}
 #endif
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
 				up_mpu_set_register(rtcb->stack_mpu_regs);
+#elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
+				set_PSPLIM((uint32_t) rtcb->stack_alloc_ptr);
 #endif
 			}
 #endif
