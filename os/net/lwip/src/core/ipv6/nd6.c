@@ -892,7 +892,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 										__LINE__));
 				default_router_list[i].neighbor_entry = nce_update;
 				// [tahi spec tc56] is reachable time in configured neighbor cache updated by RA
-				// default_router_list[i].neighbor_entry->counter.reachable_time = reachable_time;
+				default_router_list[i].neighbor_entry->counter.reachable_time = reachable_time;
 				ip6_addr_copy(default_router_list[i].router_ip6addr, default_router_list[i].neighbor_entry->next_hop_address);
 			} else {
 
@@ -1964,7 +1964,8 @@ static s8_t nd6_select_unreachable_default_router(void)
 }
 
 /* find out the default router based on preference. */
-static void nd6_select_router_based_on_preference(s8_t prefer, s8_t *ret, s8_t *prev_prefer, s8_t router_index) {
+static void nd6_select_router_based_on_preference(s8_t prefer, s8_t *ret, s8_t *prev_prefer, s8_t router_index)
+{
 
 	if (prefer == ND6_RA_PREFERENCE_RESERVED) {
 		prefer = ND6_RA_PREFERENCE_MEDIUM;
