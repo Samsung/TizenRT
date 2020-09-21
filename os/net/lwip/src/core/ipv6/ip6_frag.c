@@ -519,7 +519,7 @@ struct pbuf *ip6_reass(struct pbuf *p)
 	q = iprh->next_pbuf;
 	while ((q != NULL) && valid) {
 		iprh = (struct ip6_reass_helper *)q->payload;
-		// [TAHI spec#56] support overlapped fragmeneted packet. 
+		// [TAHI spec#56] support overlapped fragmeneted packet.
 		if (iprh_prev->end < iprh->start) {
 			valid = 0;
 			break;
@@ -550,8 +550,6 @@ struct pbuf *ip6_reass(struct pbuf *p)
 
 				/* hide the fragment header for every succeeding fragment */
 				pbuf_header(next_pbuf, -IP6_FRAG_HLEN);
-				// pkbuild_check: if prev offset end is behind to cur start offset then hide it
-
 #if IPV6_FRAG_COPYHEADER
 				if (IPV6_FRAG_REQROOM > 0) {
 					/* hide the extra bytes borrowed from ip6_hdr for struct ip6_reass_helper */

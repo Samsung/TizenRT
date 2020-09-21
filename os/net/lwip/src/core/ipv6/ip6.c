@@ -836,7 +836,7 @@ netif_found:
 				u8_t temp_nexth = IP6_FRAG_NEXTH(frag_hdr);
 				u16_t temp_hlen = IP6_FRAG_HLEN;
 
-				while(temp_nexth) {
+				while (temp_nexth) {
 					switch (temp_nexth) {
 					case IP6_NEXTH_DESTOPTS:
 					{
