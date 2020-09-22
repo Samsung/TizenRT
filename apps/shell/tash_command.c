@@ -240,7 +240,7 @@ static int tash_history(int argc, char **args)
  * @return     The address of command buffer selected on success, null on failure
  */
 
-char *tash_get_cmd_from_history(int hist_idx)
+static char *tash_get_cmd_from_history(int hist_idx)
 {
 	int cmd_idx;
 
@@ -346,6 +346,50 @@ bool tash_search_cmd(char *cmd, int *pos, char status)
 		}
 	}
 	return true;
+}
+
+/**
+ * @brief     treat exclamation command
+ * @details   Find the exclamation command and replace it to real command into buffer
+ * @param[in] buff The pointer of user input string
+ * @return    OK on success, ERROR on failure
+ */
+
+int check_exclam_cmd(char *buff)
+{
+	int hist_idx;
+	int histcmd_size;
+	char *histcmd_ptr;
+	char *exclam_ptr;
+	int ret = OK;
+
+	/* Find the '!' in the input character */
+
+	while ((exclam_ptr = strchr(buff, ASCII_EXCLAM)) != NULL) {
+		/* Get the command from history according to the given index */
+
+		hist_idx = strtol(exclam_ptr + 1, &buff, 10);
+		histcmd_ptr = tash_get_cmd_from_history(hist_idx);
+		if (!histcmd_ptr) {
+			/* No command, Let's finish */
+
+			ret = ERROR;
+			break;
+		} else {
+			histcmd_size = strlen(histcmd_ptr);
+			if (histcmd_size != (int)(buff - exclam_ptr)) {
+				/* "!number" does not have the same size as the command from the history list.
+				 * Let's adjust the location of next string to replace "!number" to real command string.
+				 */
+
+				memmove(exclam_ptr + histcmd_size, buff, strlen(buff));
+			}
+			/* Replace "!number" to real command string in buff */
+
+			strncpy(exclam_ptr, histcmd_ptr, histcmd_size);
+		}
+	}
+	return ret;
 }
 #endif
 
