@@ -303,22 +303,14 @@ int tash_execute_cmdline(char *buff)
 	int ret = OK;
 
 #if TASH_MAX_STORE > 0
-	int hist_idx;
-	char *stored_cmd_ptr;
-	int stored_cmd_size;
+	/* Find, verify the exclamation command and replace it to real command */
 
-	if (buff[0] == '!') {
-		hist_idx = atoi(buff + 1);
-		stored_cmd_ptr = tash_get_cmd_from_history(hist_idx);
-		if (!stored_cmd_ptr) {
-			ret = ERROR;
-			*buff = ASCII_NUL;
-		}
-
-		stored_cmd_size = strlen(stored_cmd_ptr);
-		strncpy(buff, stored_cmd_ptr, stored_cmd_size);
-		buff[stored_cmd_size] = ASCII_NUL;
+	if (check_exclam_cmd(buff) == ERROR) {
+		*buff = ASCII_NUL;
+		return ERROR;
 	}
+
+	/* Save the input command into history command buffer */
 
 	tash_store_cmd(buff);
 #endif
