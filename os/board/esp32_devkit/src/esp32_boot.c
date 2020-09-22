@@ -109,11 +109,11 @@ extern int board_ledc_setup(void);
 
 void esp32_devKit_mount_partions(void)
 {
-#if defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_FS_ROMFS)
-	int ret;
-#endif
-
 #ifdef CONFIG_FLASH_PARTITION
+	int ret;
+
+#ifdef CONFIG_ESP32_AUTOMOUNT
+#ifdef CONFIG_ESP32_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
@@ -124,14 +124,16 @@ void esp32_devKit_mount_partions(void)
 			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif
+#endif /* CONFIG_ESP32_AUTOMOUNT_USERFS */
 
-#ifdef CONFIG_FS_ROMFS
+#ifdef CONFIG_ESP32_AUTOMOUNT_ROMFS
 	ret = mount(CONFIG_ESP32_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_ESP32_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
 	if (ret != OK) {
 		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", CONFIG_ESP32_AUTOMOUNT_ROMFS_DEVNAME);
 	}
-#endif
+#endif /* CONFIG_ESP32_AUTOMOUNT_ROMFS */
+#endif /* CONFIG_ESP32_AUTOMOUNT */
+#endif /* CONFIG_FLASH_PARTITION */
 }
 
 void esp32_board_initialize(void)
