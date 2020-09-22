@@ -299,7 +299,7 @@ int tash_execute_cmdline(char *buff)
 	int argc;
 	char *argv[TASH_TOKEN_MAX];
 	enum tash_input_state_e state;
-	bool is_nextcmd = false;
+	bool has_nextcmd = false;
 	int ret = OK;
 
 #if TASH_MAX_STORE > 0
@@ -324,7 +324,7 @@ int tash_execute_cmdline(char *buff)
 #endif
 
 	do {
-		for (argc = 0, argv[argc] = NULL, is_nextcmd = false, state = IN_VOID; *buff && argc < TASH_TOKEN_MAX - 1 && is_nextcmd == false; buff++) {
+		for (argc = 0, argv[argc] = NULL, has_nextcmd = false, state = IN_VOID; *buff && argc < TASH_TOKEN_MAX - 1 && has_nextcmd == false; buff++) {
 			switch (state) {
 
 			case IN_VOID:
@@ -338,7 +338,7 @@ int tash_execute_cmdline(char *buff)
 				case ASCII_HASH:
 					/* following string is a comment, let's quit parsing */
 
-					is_nextcmd = false;
+					has_nextcmd = false;
 					*buff = ASCII_NUL;
 					*(buff + 1) = ASCII_NUL;
 					break;
@@ -350,11 +350,26 @@ int tash_execute_cmdline(char *buff)
 					argv[argc++] = buff + 1;
 					break;
 
-				case ASCII_LF:
 				case ASCII_SEMICOLON:
+					if (argc) {
+						/* Even semicolon comes in IN_VOID state, (argc != 0) means there is saved commands already.
+						 * Let's set the has_nextcmd true to check continuous command at next loop
+						 * and execute current as ASCII_LF.
+						 */
+
+						has_nextcmd = true;
+					} else {
+						/* Only semicolon comes without command.
+						 * Let's feedback the failure.
+						 */
+
+						printf("syntax error near unexpected token ';'\n");
+						return ERROR;
+					}
+
+				case ASCII_LF:
 					/* Command is finished, excute it */
 
-					is_nextcmd = true;
 					*buff = ASCII_NUL;
 					break;
 
@@ -405,11 +420,14 @@ int tash_execute_cmdline(char *buff)
 					buff--;
 					break;
 
-				case ASCII_LF:
 				case ASCII_SEMICOLON:
+					/* Set the has_nextcmd true to check contiuouse command and execute current as ASCII_LF */
+
+					has_nextcmd = true;
+
+				case ASCII_LF:
 					/* Command is finished, excute it */
 
-					is_nextcmd = true;
 					*buff = ASCII_NUL;
 					break;
 
@@ -438,7 +456,7 @@ int tash_execute_cmdline(char *buff)
 		if (argc > 0) {
 			ret = tash_execute_cmd(argv, argc);
 		}
-	} while (is_nextcmd == true);
+	} while (has_nextcmd == true);
 
 	return ret;
 }
