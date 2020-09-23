@@ -231,6 +231,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 {
 	int ret;
 	int binid;
+	int state;
 	bool need_recovery;
 	struct tcb_s *btcb;
 	struct tcb_s *tcb;
@@ -248,17 +249,22 @@ static int binary_manager_terminate_binary(int bin_idx)
 		return BINMGR_OPERATION_FAIL;
 	}
 
-	if (BIN_STATE(bin_idx) == BINARY_RUNNING) {
+	/* Save a current state and change a state to BINARY_UNLOADING to avoid duplicated function call */
+	state = BIN_STATE(bin_idx);
+	BIN_STATE(bin_idx) = BINARY_UNLOADING;
+
+	if (state == BINARY_RUNNING) {
 		need_recovery = true;
 		/* Waits until some callbacks for cleanup are done if registered callbacks exist */
-		BIN_STATE(bin_idx) = BINARY_WAITUNLOAD;
 		ret = binary_manager_send_statecb_msg(bin_idx, BIN_NAME(bin_idx), BINARY_READYTOUNLOAD, true);
 		if (ret != OK) {
+			bmdbg("Failed to execute callbacks for unloading %s\n", BIN_NAME(bin_idx));
+			/* Recover binary state on failure */
+			BIN_STATE(bin_idx) = state;
 			return ERROR;
 		}
 		/* Release all kernel semaphores held by the threads in binary */
 		binary_manager_release_binary_sem(bin_idx);
-		BIN_STATE(bin_idx) = BINARY_RUNNING;
 	}
 
 	/* Terminate all children created by a binary */
@@ -293,7 +299,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	}
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	if (BIN_STATE(bin_idx) == BINARY_FAULT) {
+	if (state == BINARY_FAULT) {
 		binp = BIN_LOADINFO(bin_idx);
 		binp->reload = true;
 	}
@@ -303,6 +309,8 @@ static int binary_manager_terminate_binary(int bin_idx)
 	ret = task_terminate_unloaded(btcb);
 	if (ret < 0) {
 		bmdbg("Failed to unload binary %s\n", BIN_NAME(bin_idx));
+		/* Recover binary state on failure */
+		BIN_STATE(bin_idx) = state;
 		return ERROR;
 	}
 	bmvdbg("Unload binary %s\n", BIN_NAME(bin_idx));
@@ -510,7 +518,7 @@ static int update_thread(int argc, char *argv[])
 	}
 
 	/* Terminate binary if binary is already loaded */
-	if (BIN_STATE(bin_idx) == BINARY_LOADING_DONE || BIN_STATE(bin_idx) == BINARY_RUNNING) {
+	if (BIN_STATE(bin_idx) == BINARY_LOADED || BIN_STATE(bin_idx) == BINARY_RUNNING) {
 		ret = binary_manager_terminate_binary(bin_idx);
 		if (ret != OK) {
 			bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));

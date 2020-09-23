@@ -38,6 +38,7 @@ int binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg
 	}
 
 	switch (cmd) {
+	case BINMGR_GET_STATE:
 	case BINMGR_GET_INFO:
 	case BINMGR_NOTIFY_STARTED:
 	case BINMGR_UPDATE:

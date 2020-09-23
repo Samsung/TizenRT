@@ -106,17 +106,6 @@ enum loading_thread_cmd {
 	LOADCMD_LOAD_MAX,
 };
 
-/* Binary states */
-enum binary_state_e {
-	BINARY_UNREGISTERED = 0,     /* Partition is unregistered */
-	BINARY_INACTIVE = 1,         /* Partition is registered, but binary is not loaded yet */
-	BINARY_LOADING_DONE = 2,     /* Loading binary is done */
-	BINARY_RUNNING = 3,          /* Loaded binary gets scheduling */
-	BINARY_WAITUNLOAD = 4,       /* Loaded binary would be unloaded */
-	BINARY_FAULT = 5,            /* Binary is excluded from scheduling and would be reloaded */
-	BINARY_STATE_MAX,
-};
-
 /* Binary types */
 enum binary_type_e {
 	BINARY_TYPE_REALTIME = 0,
@@ -244,6 +233,7 @@ uint32_t binary_manager_get_kcount(void);
 binmgr_kinfo_t *binary_manager_get_kdata(void);
 void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);
+void binary_manager_get_state_with_name(int request_pid, char *bin_name);
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
 int binary_manager_register_ubin(char *name, uint32_t version, uint8_t load_priority);
 void binary_manager_scan_ubin_all(void);

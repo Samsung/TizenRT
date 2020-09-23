@@ -349,7 +349,7 @@ int exec_module(FAR struct binary_s *binp)
 
 	/* Update id and state in binary table */
 	BIN_ID(binary_idx) = pid;
-	BIN_STATE(binary_idx) = BINARY_LOADING_DONE;
+	BIN_STATE(binary_idx) = BINARY_LOADED;
 	BIN_LOADVER(binary_idx) = binp->bin_ver;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	BIN_LOADINFO(binary_idx) = binp;

@@ -86,11 +86,24 @@ enum binary_statecb_state_e {
 	BINARY_READYTOUNLOAD = 2,     /* Binary will be unloaded */
 };
 
+/* States for user binary */
+enum binary_state {
+	BINARY_UNREGISTERED = 0,     /* File is not existing */
+	BINARY_INACTIVE = 1,         /* File is existing but binary is not loaded yet */
+	BINARY_LOADED = 2,           /* Loading binary is done */
+	BINARY_RUNNING = 3,          /* Loaded binary gets scheduling */
+	BINARY_UNLOADING = 4,        /* Loaded binary would be unloaded */
+	BINARY_FAULT = 5,            /* Binary is excluded from scheduling and would be reloaded */
+	BINARY_STATE_MAX,
+};
+typedef enum binary_state binary_state_e;
+
 /* Message type for binary manager */
 enum binmgr_request_msg_type {
 	BINMGR_GET_INFO,
 	BINMGR_GET_INFO_ALL,
 	BINMGR_UPDATE,
+	BINMGR_GET_STATE,
 	BINMGR_CREATE_BIN,
 	BINMGR_NOTIFY_STARTED,
 	BINMGR_REGISTER_STATECB,
@@ -211,6 +224,12 @@ struct binmgr_createbin_response_s {
 	char binpath[BINARY_PATH_LEN];
 };
 typedef struct binmgr_createbin_response_s binmgr_createbin_response_t;
+
+struct binmgr_getstate_response_s {
+	int result;
+	binary_state_e state;
+};
+typedef struct binmgr_getstate_response_s binmgr_getstate_response_t;
 
 struct binmgr_statecb_response_s {
 	int result;

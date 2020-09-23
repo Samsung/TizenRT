@@ -138,6 +138,9 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_GET_INFO_ALL:
 			binary_manager_get_info_all(request_msg.requester_pid);
 			break;
+		case BINMGR_GET_STATE:
+			binary_manager_get_state_with_name(request_msg.requester_pid, (char *)request_msg.data.bin_name);
+			break;
 		case BINMGR_UPDATE:
 			binary_manager_execute_loader(LOADCMD_UPDATE, binary_manager_get_index_with_name(request_msg.data.bin_name));
 			break;
