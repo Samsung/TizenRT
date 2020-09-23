@@ -17,7 +17,7 @@
 ###########################################################################
 
 ifeq ($(CONFIG_BINARY_MANAGER),y)
-CSRCS += binary_manager_interface.c binary_manager_notify.c binary_manager_register_callback.c
+CSRCS += binary_manager_interface.c binary_manager_notify.c binary_manager_register_callback.c binary_manager_get_state.c
 
 ifeq ($(CONFIG_BINMGR_UPDATE),y)
 CSRCS += binary_manager_update.c

@@ -118,6 +118,18 @@ int binary_manager_unregister_state_changed_callback(void);
  */
 int binary_manager_get_download_path(char *binary_name, uint32_t version, char *download_path);
 
+/**
+ * @brief Get a state of binary
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It sends a message the binary manager to get a state of binary with binary name.
+ * @param[in] binary_name The binary name to get state
+ * @param[out] state The state of binary with binary_name
+ * @return A defined value of binmgr_response_result_type in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) on success. On failure, negative value is returned.
+ * @since TizenRT v3.1 PRE
+ */
+int binary_manager_get_state(char *binary_name, int *state);
+
 #endif
 /**
  * @}
