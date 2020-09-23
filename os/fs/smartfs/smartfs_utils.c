@@ -2012,7 +2012,7 @@ int smartfs_shrinkfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofil
 	chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 	nextsector = SMARTFS_NEXTSECTOR(chainheader);
 	*(uint16_t *)chainheader->nextsector = SMARTFS_ERASEDSTATE_16BIT;
-	*(uint16_t *)chainheader->used = last_data;
+	*(uint16_t *)chainheader->used = SMARTFS_ERASEDSTATE_16BIT;
 
 	sf->byteswritten = last_data;
 	sf->entry.datalen = length;
