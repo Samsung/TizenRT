@@ -5080,33 +5080,22 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
 	ret = MTD_WRITE(dev->mtd, address, log_size, (FAR uint8_t *)log);
 	if (ret != log_size) {
 		fdbg("Checkin Error, write log data... physical address %u ret : %d\n", address, ret);
-		ret = -EIO;
-		goto errout;
+		return -EIO;
 	}
 
 	/* Verify written journal data */
 	ret = MTD_READ(dev->mtd, address, log_size, (FAR uint8_t *)&buf);
 	if (ret != log_size) {
 		fdbg("Checkin Error, read log data... physical address %u ret : %d\n", address, ret);
-		ret = -EIO;
-		goto errout;
+		return -EIO;
 	}
 
 	if (smart_validate_journal_crc(&buf) != OK) {
 		fdbg("Checkin Error, verify crc failed buf crc16 : %d calc crc : %d\n", UINT8TOUINT16(buf.crc16), smart_calc_journal_crc(&buf));
-		ret = -EIO;
-		goto errout;
+		return -EIO;
 	}
 
 	return OK;
-	
-errout:
-	/* Checkout current journal only, anyway we return -EIO here. */
-	ret = smart_journal_checkout(dev, log, address);
-	if (ret != OK) {
-		fdbg("Checkin Error, checkout current journal failed\n");
-	}
-	return -EIO;
 }
 
 /****************************************************************************
@@ -5185,7 +5174,7 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 		break;
 	}
 
-	/* TODO There's chance that add verify code for below cases. If it is not necessary later, Please Remove them! */			
+	/* For erase, mtd driver will verify erase block is cleaned or Not */			
 	case SMART_JOURNAL_TYPE_ERASE: {
 		/* Instead of copy header from journal, Erase block(psector) */
 		ret = MTD_ERASE(dev->mtd, psector, 1);
@@ -5240,7 +5229,8 @@ static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsec
 
 	ret = smart_journal_checkin(dev, &log, address, physsector, SMART_JOURNAL_TYPE_COMMIT);
 	if (ret != OK) {
-		return ret;
+		result = ret;
+		goto errout_with_journal;
 	}
 
 	/* If block write transaction failed, we should release last sector to undo current transaction, and then checkout journal */
@@ -5251,13 +5241,17 @@ static int smart_journal_bwrite(FAR struct smart_struct_s *dev, uint16_t physsec
 		ret = smart_journal_release_sector(dev, psector);
 		if (ret != OK) {
 			fdbg("release committed sector : %d failed\n", psector);
+			/* TODO If release failed, keep last journal then try how we should do? try again? */
 			return ret;
 		}
 	}
+
+
+errout_with_journal:
 	
 	ret = smart_journal_checkout(dev, &log, address);
 	if (ret != OK) {
-		/* If checkout failed, keep last journal */
+		/* TODO If checkout failed, keep last journal then try how we should do? try again? */
 		return ret;
 	}	
 	
@@ -5306,14 +5300,18 @@ static ssize_t smart_journal_bytewrite(FAR struct smart_struct_s *dev, size_t of
 	log.mtd_header.status = *buffer;
 	ret = smart_journal_checkin(dev, &log, address, psector, SMART_JOURNAL_TYPE_RELEASE);
 	if (ret != OK) {
-		return ret;
+		result = ret;
+		goto errout_with_journal;
 	}
 
 	/* If bytewrite transaction failed, it just simple operation, so checkout journal to undo transaction */
 	ret = smart_journal_process_transaction(dev, &log);
 	if (ret != OK) {
-		result = ret;
+		/* TODO Same as smart_journal_bwrite, we will just return now */
+		return ret;
 	}
+
+errout_with_journal:
 	
 	ret = smart_journal_checkout(dev, &log, address);
 	if (ret != OK) {
@@ -5366,7 +5364,7 @@ static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t block)
 
 	ret = smart_journal_checkin(dev, &log, address, block, SMART_JOURNAL_TYPE_ERASE);
 	if (ret != OK) {
-		return ret;
+		goto errout_with_journal;
 	}
 
 	/* If erase transaction failed, keep target block as none-erase state, and keep last journal to restore next time */
@@ -5375,6 +5373,8 @@ static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t block)
 		/* TODO if erase failed, we should do something more??? keep last journal, return error */
 		return ret;
 	}
+
+errout_with_journal:	
 
 	ret = smart_journal_checkout(dev, &log, address);
 	if (ret != OK) {
@@ -5388,7 +5388,7 @@ static int smart_journal_erase(FAR struct smart_struct_s *dev, uint16_t block)
 	}
 
 	/* Now it is ok, so return OK, align with MTD_ERASE */
-	return OK;
+	return ret;
 }
 
 /****************************************************************************
