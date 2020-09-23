@@ -55,11 +55,10 @@ include ${TOPDIR}/tools/Config.mk
 ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
 include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
-LDSCRIPT = rlx8721d_img2_ns.ld
-
 ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
-EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/cmse_implib.a
-LINKLIBS=$(EXTRA_LIBS)
+LDSCRIPT = rlx8721d_img2_ns.ld
+else
+LDSCRIPT = rlx8721d_img2_is.ld
 endif
 
 ifeq ($(WINTOOL),y)
@@ -187,7 +186,6 @@ CFLAGS += -DDM_ODM_SUPPORT_TYPE=32
 CFLAGS += -DSTD_PRINTF
 CFLAGS += -DCONFIG_PLATFORM_TIZENRT_OS=1
 CFLAGS += -DARM_CORE_CM4
-CFLAGS += -DCONFIG_ARMV8M_CMNVECTOR
 
 #LDFLAGS += --wrap=printf
 

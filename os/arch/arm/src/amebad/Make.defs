@@ -161,4 +161,7 @@ CHIP_CSRCS += amebad_watchdog_lowerhalf.c
 
 ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
 CHIP_CSRCS += amebad_nsc.c
+
+# trustzone library
+EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/cmse_implib.a
 endif
