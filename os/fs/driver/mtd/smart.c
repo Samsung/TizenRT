@@ -5036,10 +5036,25 @@ static int smart_journal_release_sector(FAR struct smart_struct_s *dev, uint16_t
 	offset += offsetof(struct smart_sect_header_s, status);
 	ret = MTD_WRITE(dev->mtd, offset, 1, &header.status);
 	if (ret != 1) {
-		fdbg("Release Invalid data sector Error ret : %d target sector : %d\n", ret, psector);
+		fdbg("Release sector Error ret : %d target sector : %d\n", ret, psector);
 		return -EIO;
 	}
 	
+	/* TODO Now verify release here but it just 1 byte, I guess fail never happened as per my experience...
+	 * If it never happened, remove below code.
+	 */
+
+	ret = MTD_READ(dev->mtd, offset, 1, (FAR uint8_t *)&header.status);
+	if (ret != 1) {
+		fdbg("Error verify release physical sector : %d, status : %02x\n", psector, header.status);
+		return -EIO;
+	}
+	
+	if (!SECTOR_IS_RELEASED(header)) {
+		fdbg("Verify release physical sector failed sector : %d status : %02x\n", psector, header.status); 
+		return -EIO;
+	}
+
 	return OK;
 }
 
@@ -5185,7 +5200,7 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 		break;
 	}
 
-	/* TODO There's chance that add verify code for below cases. If it is not necessary later, Please Remove them! */			
+	/* For erase, mtd driver will verify erase block is cleaned or Not */			
 	case SMART_JOURNAL_TYPE_ERASE: {
 		/* Instead of copy header from journal, Erase block(psector) */
 		ret = MTD_ERASE(dev->mtd, psector, 1);
@@ -5197,11 +5212,9 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 	}
 	
 	case SMART_JOURNAL_TYPE_RELEASE: {
-		/* just update status bit only */
-		size_t offset = psector * dev->sectorsize + offsetof(FAR struct smart_sect_header_s, status);
-		ret = MTD_WRITE(dev->mtd, offset, 1, (FAR uint8_t *)&log->mtd_header.status);
-		if (ret != 1) {
-			fdbg("Error updating physical sector %d\n", psector);
+		ret = smart_journal_release_sector(dev, psector);
+		if (ret != OK) {
+			fdbg("release sector failed sector : %d ret : %d\n", psector, ret);
 			return -EIO;
 		}
 		break;
