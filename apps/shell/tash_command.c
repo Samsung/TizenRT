@@ -276,8 +276,12 @@ static char *tash_get_cmd_from_history(int hist_idx)
 
 void tash_store_cmd(char *cmd)
 {
+	/* Clear temporary buffer */
+
+	cmd_line[0] = ASCII_NUL;
+
 	/* If there is no command, it is not saved. */
-	if (cmd == NULL || cmd[0] == '\0') {
+	if (cmd == NULL || cmd[0] == ASCII_NUL) {
 		return;
 	}
 
@@ -287,6 +291,7 @@ void tash_store_cmd(char *cmd)
 		CMD_INDEX_DOWN(prev);
 
 		if (strncmp(cmd_store[prev], cmd, TASH_LINEBUFLEN) == 0) {
+			cmd_pos = cmd_tail;
 			return;
 		}
 	}
@@ -302,49 +307,93 @@ void tash_store_cmd(char *cmd)
 	cmd_pos = cmd_tail;
 }
 
-bool tash_search_cmd(char *cmd, int *pos, char status)
+bool tash_search_cmd(char *cmd, int *cmd_char_ptr, char direction)
 {
-	int idx = 0;
-	if (cmd_pos == cmd_tail) {
-		if (status == ASCII_A) {
-			strncpy(cmd_line, cmd, TASH_LINEBUFLEN);
-		} else {
+	#define UP_KEY_PRESSED      (direction == ASCII_A)
+	#define DOWN_KEY_PRESSED    (direction == ASCII_B)
+	#define IS_HIST_NOCMD       (cmd_head == cmd_tail)
+	#define IS_HIST_AT_TOP      (cmd_pos == cmd_head)
+	#define IS_HIST_AT_BOT      (cmd_pos == cmd_tail)
+	#define HAS_USER_INPUT      (cmd_line[0] != ASCII_NUL)
+	#define COPY_CMD(dest, src, len) \
+		do { \
+			(len) = 0; \
+			while (((len) < TASH_LINEBUFLEN) && (src[(len)] != ASCII_NUL)) { \
+				dest[(len)] = src[(len)]; \
+				(len)++; \
+			} \
+			dest[(len) + 1] = ASCII_NUL; \
+		} while (0)
+	#define GET_HIST_CMD      COPY_CMD(cmd, cmd_store[cmd_pos], *cmd_char_ptr)
+	#define GET_USER_TEMPCMD  COPY_CMD(cmd, cmd_line, *cmd_char_ptr)
+	#define SAVE_USER_TEMPCMD \
+		do { \
+			cmd_line[(*cmd_char_ptr) + 1] = ASCII_NUL; \
+			while (*cmd_char_ptr >= 0) { \
+				cmd_line[*cmd_char_ptr] = cmd[*cmd_char_ptr]; \
+				(*cmd_char_ptr)--; \
+			} \
+		} while (0)
+
+	if (IS_HIST_NOCMD) {
+		/* There is no command executed, let's ignore. */
+
+		return false;
+	}
+
+	if (UP_KEY_PRESSED) {
+		/* UP key Pressed */
+
+		if (IS_HIST_AT_TOP) {
+			/* Already reached the top of history list (no more command at up direction), let's ignore. */
+
+			return false;
+		} else if (IS_HIST_AT_BOT && !HAS_USER_INPUT) {
+			/* First UP key, Save current user input command in temporary buffer */
+
+			SAVE_USER_TEMPCMD;
+		}
+		/* Get previous command index */
+
+		CMD_INDEX_DOWN(cmd_pos);
+		/* Copy it into cmd buffer */
+
+		GET_HIST_CMD;
+
+	} else if (DOWN_KEY_PRESSED) {
+		/* DOWN key Pressed */
+
+		if (IS_HIST_AT_BOT) {
+			/* Already reached the bottom of history list (no more command at down direction), let's ignore. */
+
 			return false;
 		}
-	} else if (cmd_pos == cmd_head && status == ASCII_A) {
-		return false;
-	} else {
-		/* Save current command. */
-		while (idx < TASH_LINEBUFLEN && cmd[idx] != 0) {
-			cmd_store[cmd_pos][idx] = cmd[idx];
-			idx++;
-		}
-		cmd_store[cmd_pos][idx] = 0;
-	}
 
-	if (status == ASCII_A) { // up
-		CMD_INDEX_DOWN(cmd_pos);
-		*pos = 0;
+		/* Get next command index */
 
-		while (*pos < TASH_LINEBUFLEN && cmd_store[cmd_pos][*pos] != 0) {
-			cmd[*pos] = cmd_store[cmd_pos][*pos];
-			(*pos)++;
-		}
-	} else if (status == ASCII_B) { // down
 		CMD_INDEX_UP(cmd_pos);
-		*pos = 0;
-		if (cmd_pos == cmd_tail) {
-			while (*pos < TASH_LINEBUFLEN && cmd_line[*pos] != 0) {
-				cmd[*pos] = cmd_line[*pos];
-				(*pos)++;
+		if (IS_HIST_AT_BOT) {
+			if (HAS_USER_INPUT) {
+				/* There is the user input command in temporary buffer, take it. */
+
+				GET_USER_TEMPCMD;
+			} else {
+				/* No command in temporary buffer, let's give empty */
+
+				cmd[0] = ASCII_NUL;
+				*cmd_char_ptr = 0;
 			}
 		} else {
-			while (*pos < TASH_LINEBUFLEN && cmd_store[cmd_pos][*pos] != 0) {
-				cmd[*pos] = cmd_store[cmd_pos][*pos];
-				(*pos)++;
-			}
+			/* Copy stored command into cmd buffer. */
+
+			GET_HIST_CMD;
 		}
+
+	} else {
+		shdbg("Not supported\n");
+		return false;
 	}
+
 	return true;
 }
 

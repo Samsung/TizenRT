@@ -122,6 +122,7 @@ static char *tash_read_input_line(int fd)
 	bool prepare_direction_key = false;
 	bool is_direction_pressed = false;
 	char direction;
+	int prev_cmd_len = 0;
 #endif
 #if !defined(CONFIG_DISABLE_POLL)
 	fd_set tfd;
@@ -171,11 +172,13 @@ static char *tash_read_input_line(int fd)
 					}
 					is_tab_pressed = false;
 					is_esc_pressed = false;
+					prev_cmd_len = pos;
 				} else if (CURR_CHAR == ASCII_TAB) {
 					/* TAB key - Auto-complete the command functionality */
 
 					if (pos > 0 && tash_do_autocomplete(buffer, &pos, is_tab_pressed) == true) {
 						tash_print_cmd(fd, buffer, pos);
+						prev_cmd_len = pos;
 					}
 					is_tab_pressed = true;
 					is_esc_pressed = false;
@@ -254,15 +257,17 @@ static char *tash_read_input_line(int fd)
 					}
 					is_tab_pressed = false;
 					is_esc_pressed = false;
+					prev_cmd_len = pos;
 				}
 			}
 
 #if TASH_MAX_STORE > 0
 			if (is_direction_pressed) {
 				if (tash_search_cmd(buffer, &pos, direction) == true) {
-					tash_clear_line(fd, sizeof(TASH_PROMPT) + pos);
+					tash_clear_line(fd, sizeof(TASH_PROMPT) + prev_cmd_len);
 
 					tash_print_cmd(fd, buffer, pos);
+					prev_cmd_len = pos;
 				}
 				is_direction_pressed = false;
 			}
