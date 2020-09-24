@@ -5552,13 +5552,31 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t *log)
 {
 	int ret = OK;
-	int type;
+	uint8_t type;
 	size_t mtd_size = sizeof(struct smart_sect_header_s);
 	uint32_t address = smart_journal_get_writeaddress(dev);
 	uint16_t psector = UINT8TOUINT16(log->psector);
 	
-	fvdbg("Printf recovery data journal_seq : %d!!\n", dev->journal_seq);
+	fvdbg("recovery data journal_seq : %d!!\n", dev->journal_seq);
 
+	/* Before calculate journal, check the journal contents first */
+	if (psector >= (dev->geo.neraseblocks * dev->sectorsPerBlk)) {
+		fdbg("invalid psector : %d\n", psector);
+		return -EINVAL;
+	}
+
+	if (UINT8TOUINT16(log->seq) != dev->journal_seq) {
+		fdbg("journal sequence is not match log->seq : %d dev->journal_seq : %d\n", UINT8TOUINT16(log->seq), dev->journal_seq);
+		return -EINVAL;
+	}
+
+	type = GET_JOURNAL_TYPE(log->status);
+
+	if ((type == 0) || (type > SMART_JOURNAL_TYPE_ERASE)) {
+		fdbg("invalid type : %d\n", type);
+		return -EINVAL;
+	}
+	
 	/* Recovery step is Check crc -> Check something more based on type -> checkout -> verify based on type */
 	if (smart_validate_journal_crc(log) != OK) {
 		fdbg("Invalid CRC calculated crc : %d written crc : %d\n", smart_calc_journal_crc(log), UINT8TOUINT16(log->crc16));
@@ -5571,7 +5589,6 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 	}
 
 	fvdbg("address : %u\n", address);
-	type = GET_JOURNAL_TYPE(log->status);
 	
 	switch (type) {
 	/* Check committed data and redo if crc is valid, otherwise release it */
@@ -5644,11 +5661,7 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 			dev->erasecounts[psector]++;
 		}
 #endif
-
 		break;
-		
-	default:
-		return -EIO;
 	}
 
 	ret = smart_journal_checkout(dev, log, address);
