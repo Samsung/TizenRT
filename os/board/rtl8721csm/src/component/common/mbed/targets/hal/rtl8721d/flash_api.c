@@ -358,7 +358,7 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 * data)
 	u32 addr_end = (page_cnt == 1) ? (address + len) : (page_begin + 0x100);
 	u32 size = addr_end - addr_begin;
 	u8 *buffer = data;
-	u8 write_data[12];
+	u8 write_data[256];
 	
 	u32 offset_to_align;
 	u32 read_word;
@@ -384,6 +384,16 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 * data)
 		}
 
 		addr_begin = (((addr_begin-1) >> 2) + 1) << 2;
+		for(;size >= 256 ;size -= 256){
+			_memcpy(write_data, buffer, 256);
+			FLASH_TxData256B(addr_begin, 256, write_data);
+#ifdef MICRON_N25Q00AA
+			FLASH_ReadFlagStatusReg();
+#endif
+			buffer += 256;
+			addr_begin += 256;
+		}
+
 		for(;size >= 12 ;size -= 12){
 			_memcpy(write_data, buffer, 12);
 			FLASH_TxData12B(addr_begin, 12, write_data);
@@ -415,7 +425,6 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 * data)
 			FLASH_ReadFlagStatusReg();
 #endif
 		}
-
 		page_cnt--;
 		addr_begin = addr_end;
 		addr_end = (page_cnt == 1) ? (address + len) : (((addr_begin>>8) + 1)<<8);

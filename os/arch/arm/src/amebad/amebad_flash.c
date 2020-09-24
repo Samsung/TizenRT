@@ -119,22 +119,15 @@ static ssize_t amebad_erase_page(size_t page)
 {
     flash_t flash;
     uint32_t address;
-    irqstate_t irqs;
-
     if (page > (AMEBAD_START_SECOTR + AMEBAD_NSECTORS)) {
         printf("Invalid page number\n");
         return -EFAULT;
     }
-    /* Disable IRQs while erasing sector */
-    irqs = irqsave();
 
     /* do erase */
-
     address = page * CONFIG_AMEBAD_FLASH_BLOCK_SIZE;
     flash_erase_sector(&flash, address); 
 
-    /* Restore IRQs */
-    irqrestore(irqs);
     return OK;
 }
 
@@ -159,35 +152,12 @@ static ssize_t amebad_flash_write(size_t addr, const void *buf, size_t length)
     flash_t flash;
     int32_t result = 0;
     ssize_t ret = 0;
-    irqstate_t irqs;
-
-    /* Disable IRQs while erasing sector */
-    irqs = irqsave();
-    if ((addr & 0xff) != 0) {
-        //! value should be 256 byte alignment
-        ret = -EFAULT;
-    } else if ((length & 0x3) != 0) {
-        ret = -EINVAL;
+    result = flash_stream_write(&flash, addr, length, buf);
+    if (result < 0) {
+        ret = -EIO;
     } else {
-        char *adpt_buf = (char *)kmm_malloc(length);
-        if (adpt_buf == NULL) {
-            ret = -EPERM;
-        } else {
-            memcpy(adpt_buf, buf, length);
-            result = flash_stream_write(&flash, addr, length, adpt_buf);
-
-            if (result < 0) {
-                ret = -EIO;
-            } else {
-                ret = length;
-            }
-            kmm_free(adpt_buf);
-            adpt_buf = NULL;
-        }
+        ret = length;
     }
-
-    /* Restore IRQs */
-    irqrestore(irqs);
     return ret;
 }
 
@@ -196,41 +166,13 @@ ssize_t amebad_flash_read(size_t addr, void *buf, size_t length)
     flash_t flash;
     int32_t result = 0;
     ssize_t ret = 0;
-    irqstate_t irqs;
 
-    /* Disable IRQs while erasing sector */
-    irqs = irqsave();
-        
-    if ((addr & 0x3) == 0) {
-            //! if addr is 4 bytes aligned
-
-            result = flash_stream_read(&flash, addr, length, buf);
-            if (result < 0) {
-                ret = -EIO;
-            } else {
-                ret = length;
-            }
-        } else {
-            //! if addr is not 4 bytes aligned
-            uint32_t offset = addr & 0x3;
-            int8_t *aligned_read_buf = (int8_t *)kmm_malloc(length + offset);
-            if (aligned_read_buf == NULL) {
-                ret = -EPERM;
-            } else {
-                result = flash_stream_read(&flash, (addr & 0xfffffffc), length + offset, (char *)aligned_read_buf);
-                if (result < 0) {
-                    ret = -EIO;
-                } else {
-                    ret = length;
-                }
-                memcpy(buf, aligned_read_buf + offset, length);
-                kmm_free(aligned_read_buf);
-                aligned_read_buf = NULL;
-            }
-        }
-    /* Restore IRQs */
-    irqrestore(irqs);
-
+    result = flash_stream_read(&flash, addr, length, buf);
+    if (result < 0) {
+        ret = -EIO;
+    } else {
+        ret = length;
+    }
     return ret;
 }
 
@@ -240,7 +182,6 @@ ssize_t amebad_flash_read(size_t addr, void *buf, size_t length)
 static ssize_t amebad_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buffer)
 {
     ssize_t result;
-
     result = amebad_flash_read(CONFIG_AMEBAD_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
     return result < 0 ? result : nblocks;
 }
@@ -253,7 +194,6 @@ static ssize_t amebad_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t
     ssize_t result;
     result = amebad_flash_write( CONFIG_AMEBAD_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
     return result < 0 ? result : nblocks;
-
 }
 
 /************************************************************************************
