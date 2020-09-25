@@ -505,7 +505,8 @@ Heap Allocation Information per User defined Group
 
 
 ## history
-This command shows the history you executed, and you can re-execute it by calling the number with `!`.
+This command shows the history you executed.  
+Using this functionality, you can re-execute the command by calling the number with `!` or by up and down keys.
 ```bash
 TASH>>history
          TASH command history
@@ -537,6 +538,10 @@ tm_sample_itc    tm_utc           umount           unsetenv
 uptime           wm_test
 TASH>>
 ```
+
+>**NOTE**
+>We provide the configuration, *CONFIG_TASH_MAX_STORE_COMMANDS*, to set the maximum number of commands due to memory limitations.
+>When the history has maximum number of commands stored, the oldest command will be removed to store the last command.
 
 ### How to Enable
 Set *CONFIG_TASH_MAX_STORE_COMMANDS* value to use this command on menuconfig as shown below:
