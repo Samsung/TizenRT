@@ -1977,29 +1977,21 @@ int smartfs_shrinkfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofil
 	struct smart_read_write_s readwrite;
 	struct smartfs_chain_header_s *chainheader;
 	uint16_t nextsector;
-	uint16_t data_len;
-	uint16_t offset;
-	uint16_t last_data;
-
-	/* 'data_len' represents length of DATA in a sector, the chainheader is not counted in file data */
-	data_len = fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s);
-	/* 'last_data' represents number of bytes to be retained in the last sector after shrinking file */
-	last_data = (length % data_len);
 
 	/* Seek till point 'length' of the file, file pointer lies at position of requested 'length' now */
 	smartfs_seek_internal(fs, sf, length, SEEK_SET);
-	offset = sizeof(struct smartfs_chain_header_s) + last_data;
+	sf->byteswritten = sf->curroffset - sizeof(struct smartfs_chain_header_s);
+	sf->entry.datalen = length;
+
 	/* Keep as many sectors as needed and replace extra bytes in the last needed sector with ERASEDSTATE */
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	memset(&sf->buffer[offset], CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes - offset);
+	memset(&sf->buffer[sf->curroffset], CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes - sf->curroffset);
 	chainheader = (struct smartfs_chain_header_s *)sf->buffer;
 	nextsector = SMARTFS_NEXTSECTOR(chainheader);
 	*(uint16_t *)chainheader->nextsector = SMARTFS_ERASEDSTATE_16BIT;
 	*(uint16_t *)chainheader->used = SMARTFS_ERASEDSTATE_16BIT;
-	sf->byteswritten = last_data;
 
 	sf->bflags |= SMARTFS_BFLAG_DIRTY;
-	sf->entry.datalen = length;
 	smartfs_sync_internal(fs, sf);
 #else
 	smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (FAR uint8_t *)fs->fs_rwbuffer);
@@ -2008,14 +2000,11 @@ int smartfs_shrinkfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofil
 		fdbg("Failed to read file sector no. %d, error = %d\n", nextsector, ret);
 		return ret;
 	}
-	memset(&fs->fs_rwbuffer[offset], CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes - offset);
+	memset(&fs->fs_rwbuffer[sf->curroffset], CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes - sf->curroffset);
 	chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 	nextsector = SMARTFS_NEXTSECTOR(chainheader);
 	*(uint16_t *)chainheader->nextsector = SMARTFS_ERASEDSTATE_16BIT;
 	*(uint16_t *)chainheader->used = SMARTFS_ERASEDSTATE_16BIT;
-
-	sf->byteswritten = last_data;
-	sf->entry.datalen = length;
 
 	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 	if (ret < 0) {
