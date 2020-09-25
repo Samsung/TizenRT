@@ -276,35 +276,51 @@ static char *tash_get_cmd_from_history(int hist_idx)
 
 void tash_store_cmd(char *cmd)
 {
+	#define HISTPTR_TO_LAST  (cmd_pos = cmd_tail)
+
 	/* Clear temporary buffer */
 
 	cmd_line[0] = ASCII_NUL;
 
-	/* If there is no command, it is not saved. */
 	if (cmd == NULL || cmd[0] == ASCII_NUL) {
+		/* No valid command */
+
 		return;
 	}
 
 	if (cmd_head != cmd_tail) {
-		/* If it is the same as the previous command, it is not saved. */
+		/* When there are saved commands in the history,
+		 * need to check whether this command is the same with the last command
+		 * to avoid duplicated saving.
+		 */
+
+		/* Get the last command index in the history  */
+
 		int prev = cmd_tail;
 		CMD_INDEX_DOWN(prev);
 
 		if (strncmp(cmd_store[prev], cmd, TASH_LINEBUFLEN) == 0) {
-			cmd_pos = cmd_tail;
+			/* This is the same with the last!! Let's move the history command pointer to the last and exit. */
+
+			HISTPTR_TO_LAST;
 			return;
 		}
 	}
 
-	/* Save current command. */
+	/* Save current command into the history list. */
+
 	strncpy(cmd_store[cmd_tail], cmd, TASH_LINEBUFLEN);
 	CMD_INDEX_UP(cmd_tail);
 
 	/* Move the head when the storage space is full. */
+
 	if (cmd_tail == cmd_head) {
 		CMD_INDEX_UP(cmd_head);
 	}
-	cmd_pos = cmd_tail;
+
+	/* Move the history command pointer to the last. */
+
+	HISTPTR_TO_LAST;
 }
 
 bool tash_search_cmd(char *cmd, int *cmd_char_ptr, char direction)
