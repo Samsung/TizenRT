@@ -329,8 +329,5 @@ endif
 if ARCH_BOARD_RTL8721CSM
 source board/rtl8721csm/Kconfig
 endif
-comment "Board-Partition Options"
 
 source board/common/Kconfig
-
-
