@@ -184,19 +184,19 @@ void imxrt_filesystem_initialize(void)
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
-	rambuf = (uint8_t *)malloc(bufsize);
+	rambuf = (uint8_t *)kmm_malloc(bufsize);
 	if (!rambuf) {
-		IMXLOG("SMARTFS ERROR: malloc failed");
+		IMXLOG("SMARTFS ERROR: kmm_malloc failed");
 	} else {
 		mtd = rammtd_initialize(rambuf, bufsize);
 		if (!mtd) {
 			IMXLOG("SMARTFS ERROR: FAILED TO CREATE RAM MTD INSTANCE");
-			free(rambuf);
+			kmm_free(rambuf);
 		} else {
 			ret = smart_initialize(CONFIG_IMXRT_RAMMTD_DEV_NUMBER, mtd, NULL);
 			if (ret < 0) {
 				IMXLOG("SMARTFS ERROR: smart_initialize failed");
-				free(rambuf);
+				kmm_free(rambuf);
 			} else {
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 				ret = mksmartfs(CONFIG_IMXRT_RAMMTD_DEV_POINT, 1, false);
@@ -205,12 +205,12 @@ void imxrt_filesystem_initialize(void)
 #endif
 				if (ret != OK) {
 					IMXLOG("SMARTFS ERROR: mksmartfs failed");
-					free(rambuf);
+					kmm_free(rambuf);
 				} else {
 					ret = mount(CONFIG_IMXRT_RAMMTD_DEV_POINT, CONFIG_IMXRT_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
 					if (ret < 0) {
 						IMXLOG("SMARTFS ERROR: mount the SMART volume failed");
-						free(rambuf);
+						kmm_free(rambuf);
 					}
 				}
 			}
