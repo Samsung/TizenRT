@@ -187,7 +187,7 @@ void amebad_mount_partions(void)
 	/* Configure mtd partitions */
 	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
 	if (ret != OK) {
-		lldbg("ERROR: configure_mtd_partitions failed");
+		lldbg("ERROR: configure_mtd_partitions failed\n");
 		return;
 	}
 #ifdef CONFIG_AMEBAD_AUTOMOUNT
@@ -195,7 +195,7 @@ void amebad_mount_partions(void)
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
+		lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
 		ret = mount(CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME, CONFIG_AMEBAD_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
 		if (ret != OK) {
