@@ -125,8 +125,9 @@ ssize_t file_pread(FAR struct file *filep, FAR void *buf, size_t nbytes, off_t o
 
 		return ERROR;
 	}
-
-	set_errno(errcode);
+	if (ret == ERROR) {
+		set_errno(errcode);
+	}
 	return ret;
 }
 

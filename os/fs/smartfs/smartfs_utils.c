@@ -2370,7 +2370,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 				ret = smartfs_invalidate_old_entry(fs, logsector, &entry_queue, info);
 				if (ret != OK) {
 					/* TODO if failed, what should we do ? */
-					fdbg("Invalidate failed sector : %d, offset : %d\n", logsector, offset);
+					fdbg("Invalidate failed sector : %d\n", logsector);
 				} else {
 					/* Already checked previously so we will check next node */
 					break;
@@ -2443,7 +2443,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 					} else {
 						/* Make New node of Entry's first sector and put it to queue */
 						nodeitem = (struct sector_entry_queue_s *)kmm_malloc(sizeof(struct sector_entry_queue_s));
-						if (!node) {
+						if (!nodeitem) {
 							fdbg("failed to alloc node.\n");
 							ret = -ENOMEM;
 							goto errout;
