@@ -543,6 +543,8 @@ void up_rnginitialize(void);
 /* Debug ********************************************************************/
 #ifdef CONFIG_STACK_COLORATION
 void up_stack_color(FAR void *stackbase, size_t nbytes);
+void go_os_start(void *pv, unsigned int nbytes)
+	__attribute__ ((naked, no_instrument_function, noreturn));
 #endif
 
 /* Clock ********************************************************************/
