@@ -57,6 +57,10 @@ CMN_CSRCS += up_svcall.c up_systemreset.c up_trigger_irq.c up_udelay.c
 CMN_CSRCS += up_unblocktask.c up_usestack.c up_vfork.c
 CMN_CSRCS += up_puts.c
 
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += go_os_start.c
+endif
+
 # Configuration-dependent common files
 
 ifeq ($(CONFIG_ARMV7M_STACKCHECK),y)

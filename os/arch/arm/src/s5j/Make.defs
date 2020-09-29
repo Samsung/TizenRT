@@ -96,6 +96,10 @@ CMN_CSRCS += arm_unblocktask.c arm_undefinedinsn.c
 CMN_CSRCS += arm_copyarmstate.c
 CMN_CSRCS += up_checkstack.c
 
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += go_os_start.c
+endif
+
 # Configuration dependent C files
 ifeq ($(CONFIG_ARMV7M_MPU),y)
 CMN_CSRCS += arm_mpu.c

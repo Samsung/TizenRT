@@ -13,6 +13,9 @@
 #ifdef CONFIG_ARMV8M_MPU
 #include "up_mpuinit.h"
 #endif
+#ifdef CONFIG_STACK_COLORATION
+#include "up_internal.h"
+#endif
 #if defined ( __ICCARM__ )
 #pragma section=".ram_image2.bss"
 #pragma section=".ram_image2.nocache.data"
