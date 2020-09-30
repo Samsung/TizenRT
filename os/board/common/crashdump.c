@@ -29,6 +29,7 @@
 #include <arch/board/board.h>
 #include "up_internal.h"
 #include "up_watchdog.h"
+#include <sys/boardctl.h>
 
 #include <tinyara/mm/heap_regioninfo.h>
 #include <tinyara/mm/mm.h>
@@ -36,10 +37,16 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#if defined(CONFIG_BOARD_RAMDUMP_UART)
-#define HANDSHAKE_STRING                "RAMDUMP"
-#define HANDSHAKE_STR_LEN_MAX           (7)
+#if defined(CONFIG_BOARD_DUMP_UART)
+#define RAMDUMP_HANDSHAKE_STRING	"TIZENRTRMDUMP"
+#define FSDUMP_HANDSHAKE_STRING	"TIZENRTFSDUMP"
+#define TARGET_REBOOT_STRING		"TIZENRTREBOOT"
+#define HANDSHAKE_STR_LEN_MAX		(13)
 #endif
+
+//TODO: Extract userfs start address based on vendor and config chosen, CURRENTLY - HARDCODED FOR ARTIK053/TC, Kindly Ignore
+#define CONFIG_FLASH_USERFS_START_ADDR	0X04620000
+#define CONFIG_FLASH_USERFS_SIZE	1024000
 
 /****************************************************************************
  * Public Function Prototypes
@@ -58,7 +65,7 @@
  ****************************************************************************/
 
 #if defined(CONFIG_BOARD_RAMDUMP_UART)
-static int ramdump_via_uart(void)
+static int send_ramdump(void)
 {
 	int i;
 	int x;
@@ -68,39 +75,9 @@ static int ramdump_via_uart(void)
 	size_t size;
 	uint8_t *ptr;
 	char host_reg[1] = "";
-	char *target_str = HANDSHAKE_STRING;
-	char host_buf[HANDSHAKE_STR_LEN_MAX] = "";
 
-#if !defined(CONFIG_ARCH_LOWPUTC)
-	/* If lowlevel serial is not available, ramdump is not possible */
-	return -1;
-#endif
-
-	/* Inform the terminal user */
-	up_puts("\n************************************************************************************************\n");
-	up_puts("\t\tDisconnect this serial terminal and Run Ramdump Tool\n");
-	up_puts("************************************************************************************************\n");
-
-	/* Receive hanshake string from HOST */
-	do {
-		host_buf[0] = up_getc();
-	} while (host_buf[0] != target_str[0]);
-
-	for (i = 1; i < strlen(target_str);) {
-		if ((ch = up_getc()) != -1) {
-			host_buf[i] = ch;
-			i++;
-		}
-	}
-
-	if (strncmp(host_buf, target_str, strlen(target_str)) != 0) {
-		/* Send NAK */
-		up_lowputc('N');
-	}
-
-	/* Send ACK */
+	/* Send acknowledgement for RAMDUMP Handshake */
 	up_lowputc('A');
-
 	/* Send number of memory regions to HOST */
 	up_lowputc(CONFIG_KMM_REGIONS);
 
@@ -135,7 +112,6 @@ static int ramdump_via_uart(void)
 	regions_to_dump = host_reg[0] - '0';
 
 	/* Dump data region wise */
-
 	for (x = 0; x < regions_to_dump; x++) {
 		/* Receive region index from HOST */
 		do {
@@ -154,6 +130,114 @@ static int ramdump_via_uart(void)
 			ptr++;
 			size--;
 		}
+	}
+
+	return 0;
+}
+
+static int send_fsdump(void)
+{
+	int i;
+	uint8_t *ptr;
+	uint32_t userfs_start;
+	size_t size;
+
+	/* Send ACK for FSDUMP Handshake */
+	up_lowputc('A');
+
+	userfs_start = CONFIG_FLASH_USERFS_START_ADDR;
+	size = CONFIG_FLASH_USERFS_SIZE;
+
+	/* Send address of userfs partition in flash to host */
+	ptr = (uint8_t *)&userfs_start;
+	for (i = 0; i < sizeof(userfs_start); i++) {
+		up_lowputc((uint8_t)*ptr);
+		ptr++;
+	}
+
+	/* Send size of userfs partition in flash to host */
+	ptr = (uint8_t *)&size;
+	for (i = 0; i < sizeof(userfs_start); i++) {
+		up_lowputc((uint8_t)*ptr);
+		ptr++;
+	}
+
+	/* Send contents of userfs partition in flash to host */
+	ptr = (uint8_t *)userfs_start;
+	while (size) {
+		up_lowputc((uint8_t)*ptr);
+		ptr++;
+		size--;
+	}
+	return 0;
+}
+
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+static int do_reboot(void)
+{
+	/* Invoke the BOARDIOC_RESET board control to reset the board. If
+	 * the board_reset() function returns, then it was not possible to
+	 * reset the board due to some constraints.
+	 */
+	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+	/* boarctl() will not return in this case. It if does, it means that
+	 * there was a problem with the reset operaion.
+	 */
+	return ERROR;
+}
+#endif
+
+static int dump_via_uart(void)
+{
+	int i;
+	int ch;
+	char *target_str = RAMDUMP_HANDSHAKE_STRING;
+	char host_buf[HANDSHAKE_STR_LEN_MAX] = "";
+
+#if !defined(CONFIG_ARCH_LOWPUTC)
+	/* If lowlevel serial is not available, ramdump is not possible */
+	up_puts("\nLow level serial APIs not available, getting dump from TARGET not possible\n");
+	return -1;
+#endif
+
+	/* Inform the terminal user */
+	up_puts("\n************************************************************************************************\n");
+	up_puts("\t\tDisconnect this serial terminal and run Dump Tool\n");
+	up_puts("************************************************************************************************\n");
+
+	while (1) {
+		/* Receive handshake string from HOST */
+		do {
+			host_buf[0] = up_getc();
+		} while (host_buf[0] != target_str[0]);
+
+		for (i = 1; i < HANDSHAKE_STR_LEN_MAX; ) {
+			if ((ch = up_getc()) != -1) {
+				host_buf[i] = ch;
+				i++;
+			}
+		}
+
+		/* Check handshake string against RAMDUMP HANDSHAKE string */
+		if (strncmp(host_buf, RAMDUMP_HANDSHAKE_STRING, strlen(RAMDUMP_HANDSHAKE_STRING)) == 0) {
+			send_ramdump();
+		/* Check handshake string against FSDUMP HANDSHAKE string */
+		} else if (strncmp(host_buf, FSDUMP_HANDSHAKE_STRING, strlen(FSDUMP_HANDSHAKE_STRING)) == 0) {
+			send_fsdump();
+		/* Check handshake string for TARGET REBOOT signal */
+		} else if (strncmp(host_buf, TARGET_REBOOT_STRING, strlen(TARGET_REBOOT_STRING)) == 0) {
+			/* Acknowledge the reboot signal, then reboot device if CONFIG is enabled, otherwise simply exit the function */
+			up_lowputc('A');
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+			ch = do_reboot();
+			lldbg("Unable to reset device\n");
+#endif
+			break;
+		} else {
+			/* Send NAK */
+			up_lowputc('N');
+		}
+
 	}
 
 	lldbg(" Successfull\n");
@@ -203,10 +287,10 @@ void board_crashdump(uint32_t cur_sp, void *tcb, uint8_t *filename, int lineno)
 	up_watchdog_disable();
 #endif
 
-#if defined(CONFIG_BOARD_RAMDUMP_UART)
-	ret = ramdump_via_uart();
+#if defined(CONFIG_BOARD_DUMP_UART)
+	ret = dump_via_uart();
 	if (ret != OK) {
-		lldbg("ramdump via uart failed, ret = %d\n", ret);
+		lldbg("Dumping contents via uart failed, ret = %d\n", ret);
 	}
 #endif
 
