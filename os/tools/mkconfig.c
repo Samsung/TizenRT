@@ -174,7 +174,7 @@ int main(int argc, char **argv, char **envp)
 	printf("/* If no board crashdump mechanism's are enabled,\n");
 	printf(" * then let's disable the board crashdump itself\n");
 	printf(" */\n\n");
-	printf("#if !defined(CONFIG_BOARD_RAMDUMP_UART) && \\\n");
+	printf("#if !defined(CONFIG_BOARD_DUMP_UART) && \\\n");
 	printf("    !defined(CONFIG_BOARD_RAMDUMP_FLASH) && \\\n");
 	printf("    !defined(CONFIG_BOARD_COREDUMP_FLASH)\n");
 	printf("# undef CONFIG_BOARD_CRASHDUMP\n");
