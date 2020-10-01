@@ -97,9 +97,6 @@ static int testcase_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg
 		ret = test_signal(cmd, arg);
 		break;
 #endif
-#ifdef CONFIG_TC_KERNEL_ROUNDROBIN
-	case TESTIOC_GET_TCB_TIMESLICE:
-#endif
 	case TESTIOC_GET_SELF_PID:
 	case TESTIOC_IS_ALIVE_THREAD:
 	case TESTIOC_GET_TCB_ADJ_STACK_SIZE:
