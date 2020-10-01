@@ -137,9 +137,6 @@ endif
 ifeq ($(CONFIG_TC_KERNEL_TIMER),y)
   CSRCS += tc_timer.c
 endif
-ifeq ($(CONFIG_TC_KERNEL_ROUNDROBIN),y)
-  CSRCS += tc_roundrobin.c
-endif
 ifeq ($(CONFIG_TC_KERNEL_UMM_HEAP),y)
   CSRCS += tc_umm_heap.c
 endif

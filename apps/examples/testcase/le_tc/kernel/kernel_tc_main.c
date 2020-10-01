@@ -179,10 +179,6 @@ int tc_kernel_main(int argc, char *argv[])
 	timer_tc_main();
 #endif
 
-#ifdef CONFIG_TC_KERNEL_ROUNDROBIN
-	roundrobin_main();
-#endif
-
 #ifdef CONFIG_TC_KERNEL_UMM_HEAP
 	umm_heap_main();
 #endif

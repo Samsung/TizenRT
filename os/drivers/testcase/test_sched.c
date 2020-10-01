@@ -66,18 +66,6 @@ static int test_get_tcb_adj_stack_size(unsigned long arg)
 	return tcb->adj_stack_size;
 }
 
-#ifdef CONFIG_TC_KERNEL_ROUNDROBIN
-static int test_get_tcb_timeslice(unsigned long arg)
-{
-	tcb = sched_gettcb((pid_t)arg);
-	if (tcb == NULL) {
-		dbg("sched_gettcb failed. errno : %d\n", get_errno());
-		return ERROR;
-	}
-	return tcb->timeslice;
-}
-#endif
-
 static void test_sched_foreach(unsigned long arg)
 {
 	sched_foreach((void *)arg, NULL);
@@ -100,11 +88,6 @@ int test_sched(int cmd, unsigned long arg)
 	case TESTIOC_GET_TCB_ADJ_STACK_SIZE:
 		ret = test_get_tcb_adj_stack_size(arg);
 		break;
-#ifdef CONFIG_TC_KERNEL_ROUNDROBIN
-	case TESTIOC_GET_TCB_TIMESLICE:
-		ret = test_get_tcb_timeslice(arg);
-		break;
-#endif
 	case TESTIOC_SCHED_FOREACH:
 		test_sched_foreach(arg);
 		break;
