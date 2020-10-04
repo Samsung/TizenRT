@@ -418,9 +418,9 @@ int main(int argc, char *argv[])
 	ret = 1;
 
 	if (argc < 2) {
-		printf("Usage: ./ramdump <device>\n");
-		printf("Ex   : ./ramdump /dev/ttyUSB1   or\n");
-		printf("       ./ramdump /dev/ttyACM0\n");
+		printf("Usage: ./dump_tool.sh <device>\n");
+		printf("Ex   : ./dump_tool.sh /dev/ttyUSB1   or\n");
+		printf("       ./dump_tool.sh /dev/ttyACM0\n");
 		return -1;
 	}
 

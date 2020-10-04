@@ -16,10 +16,10 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# File : gui_dumpParser.py
+# File : gui_ramdumpParser.py
 # Description:
-# graphical user interface of dumpParser.
-# Real parsing is operated at dumpParser.py
+# graphical user interface of ramdumpParser.
+# Real parsing is operated at ramdumpParser.py
 
 from __future__ import print_function
 from tkinter import *
@@ -215,7 +215,7 @@ class DumpParser(Tk):
 			try:
 				with os.fdopen(fd, 'w') as tmp:
 					tmp.write(self.logtext.get("1.0",END))
-				with os.popen("python dumpParser.py" + 
+				with os.popen("python ramdumpParser.py" + 
 							  " -e " + self.elfpath.path.get() +
 							  " -t " + path) as fd:
 					output = fd.read()
@@ -223,13 +223,13 @@ class DumpParser(Tk):
 			finally:
 				os.remove(path)
 		elif self.modevar.get() == 2:
-			with os.popen("python dumpParser.py"
+			with os.popen("python ramdumpParser.py"
 						  " -e " + self.elfpath.path.get()+
 						  " -t " + self.logpath.path.get()) as fd:
 				output = fd.read()
 				resText.insert(INSERT, output)
 		elif self.modevar.get() == 3:
-			with os.popen("python dumpParser.py"
+			with os.popen("python ramdumpParser.py"
 						  " -e " + self.elfpath.path.get()+
 						  " -r " + self.ramdumppath.path.get()) as fd:
 				output = fd.read()
@@ -254,5 +254,5 @@ class DumpParser(Tk):
 if __name__ == "__main__":
 	os.chdir(os.path.dirname(os.path.realpath(__file__)))
 	app = DumpParser()
-	app.title("Dump Parser")
+	app.title("Ramdump Parser")
 	app.mainloop()
