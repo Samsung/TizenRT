@@ -155,7 +155,7 @@ void up_add_kregion(void)
 {
 	int region_cnt;
 	struct mm_heap_s *kheap;
-	void *heap_start;
+	void *heap_start = NULL;
 	size_t heap_size;
 	void *stack_end = (void *)(g_idle_topstack & ~(0x7));
 	kheap = kmm_get_heap();
