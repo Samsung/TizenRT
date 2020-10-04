@@ -16,18 +16,20 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# File 	 : ramdump.sh
-# Description : ramdump extract util
+# File 	 : dump_tool.sh
+# Description : RAM and USerfs extraction util
 
 # Output PATH
 BUILD_BIN_PATH=../../build/output/bin
 
-# Compile ramdump application
-gcc ramdump_tool.c -o ramdump
+# Compile dump_tool application
+gcc dump_tool.c -o dump
 
-# Run Ramdump Tool
+# Run Dump Tool
 RAMDUMP_FILE=./ramdump_0x*.bin
 rm -f ${RAMDUMP_FILE}
+FSDUMP_FILE=./fsdump_0x*.bin
+rm -f ${FSDUMP_FILE}
 ok=true
 
 # Take user input for device port
@@ -38,7 +40,7 @@ while [ $ok = true ]
 do
 echo Enter:
 read dev_port
-if sudo ./ramdump $dev_port;
+if sudo ./dump $dev_port;
 	then
 		ok=false
 	else
@@ -54,5 +56,5 @@ cp ${RAMDUMP_FILE} ${BUILD_BIN_PATH}
 fi
 
 # clean up
-rm -f ramdump
+rm -f dump
 #end
