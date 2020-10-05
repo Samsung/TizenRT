@@ -41,7 +41,7 @@
 #include "utils_proc.h"
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
-extern int max_group;
+extern int heapinfo_max_group;
 extern struct heapinfo_group_s heapinfo_group[HEAPINFO_USER_GROUP_NUM];
 extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 static char *ptr = CONFIG_HEAPINFO_USER_GROUP_LIST;
@@ -141,7 +141,7 @@ static void heapinfo_show_group(void)
 	printf(" PEAK | HEAP_ON_PEAK | STACK_ON_PEAK | THREADS_IN_GROUP \n");
 	printf("----------------------------------------------------------------\n");
 
-	for (group_idx = 0; group_idx <= max_group; group_idx++) {
+	for (group_idx = 0; group_idx <= heapinfo_max_group; group_idx++) {
 		printf(" %4d | %12d | %13d | ", heapinfo_group[group_idx].peak_size, heapinfo_group[group_idx].heap_size, heapinfo_group[group_idx].stack_size);
 		heapinfo_print_group_threadlist();
 	}

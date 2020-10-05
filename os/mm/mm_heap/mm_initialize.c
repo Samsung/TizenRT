@@ -60,6 +60,7 @@
 #include <assert.h>
 #include <debug.h>
 
+#include <tinyara/sched.h>
 #include <tinyara/mm/mm.h>
 
 /****************************************************************************
@@ -237,7 +238,7 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 	}
 	heap->total_alloc_size = heap->peak_alloc_size = 0;
 #ifdef CONFIG_HEAPINFO_USER_GROUP
-	heapinfo_update_group_info(-1, -1, HEAPINFO_INIT_INFO);
+	heapinfo_update_group_info(INVALID_PROCESS_ID, HEAPINFO_INVALID_GROUPID, HEAPINFO_INIT_INFO);
 #endif
 #endif
 }
