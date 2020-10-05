@@ -62,7 +62,10 @@ CSRCS += mm_sbrk.c
 endif
 
 ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
-CSRCS += mm_heapinfo.c
+CSRCS += mm_heapinfo_parse.c mm_heapinfo_utils.c
+ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)
+CSRCS += mm_heapinfo_group.c
+endif
 endif
 
 # Add the core heap directory to the build

@@ -341,6 +341,16 @@ struct heapinfo_group_s {
 	int heap_size;
 };
 #endif
+
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+extern int max_group;
+extern struct heapinfo_group_s heapinfo_group[HEAPINFO_USER_GROUP_NUM];
+extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
+#endif
+
+#if CONFIG_KMM_NHEAPS > 1
+extern heapinfo_total_info_t total_info;
+#endif
 #endif
 /* This describes one heap (possibly with multiple regions) */
 
@@ -670,7 +680,9 @@ void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
 void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid);
 void heapinfo_exclude_stacksize(void *stack_ptr);
 void heapinfo_peak_init(struct mm_heap_s *heap);
+void heapinfo_dealloc_tcbinfo(void *address, pid_t pid);
 #ifdef CONFIG_HEAPINFO_USER_GROUP
+void heapinfo_update_group(mmsize_t size, pid_t pid);
 void heapinfo_update_group_info(pid_t pid, int group, int type);
 void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
