@@ -110,6 +110,7 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 			bmvdbg("Load '%s' success! pid = %d\n", path, ret);
 			/* Set the data in table from header */
 			BIN_LOAD_ATTR(bin_idx) = *load_attr;
+			strncpy(BIN_NAME(bin_idx), load_attr->bin_name, BIN_NAME_MAX);
 			bmvdbg("BIN TABLE[%d] %d %d %d %.1f %s\n", bin_idx, BIN_SIZE(bin_idx), BIN_RAMSIZE(bin_idx), BIN_LOADVER(bin_idx), BIN_KERNEL_VER(bin_idx), BIN_NAME(bin_idx));
 			return OK;
 		} else if (errno == ENOMEM) {
@@ -207,7 +208,6 @@ static int binary_manager_load(int bin_idx)
 		ret = binary_manager_load_binary(bin_idx, filepath, &load_attr);
 		if (ret == OK) {
 			BIN_KERNEL_VER(bin_idx) = header_data.kernel_ver;
-			strncpy(BIN_NAME(bin_idx), header_data.bin_name, BIN_NAME_MAX);
 			return BINMGR_OK;
 		}
 		if (--bin_count > 0) {
