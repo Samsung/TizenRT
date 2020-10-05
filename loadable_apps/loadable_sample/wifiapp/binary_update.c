@@ -184,30 +184,32 @@ static int binary_update_download_new_binary(void)
 	char filepath[BINARY_PATH_LEN];
 	char new_filepath[BINARY_PATH_LEN];
 	int filesize;
-	FILE *fp;
 
 	/* Get 'micom' binary info */
 	binary_manager_get_update_info(APP_NAME, &bin_info);
 
 	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)bin_info.version);
 
-	/* Get 'micom' binary file size */
-	fp = fopen(filepath, "r");
-	fseek(fp, 0, SEEK_END);
-	filesize = ftell(fp);
-	fclose(fp);
+	read_fd = open(filepath, O_RDONLY);
+	if (read_fd < 0) {
+		fail_cnt++;
+		printf("Failed to open %s: %d, errno: %d\n", filepath, read_fd, get_errno());
+		return ERROR;
+	}
 
-	/* Check file size with available size */
+	/* Get 'micom' binary file size and check it with available size */
+	filesize = lseek(read_fd, 0, SEEK_END);
 	if (filesize <= 0 || bin_info.available_size <= 0 || filesize >= bin_info.available_size) {
 		fail_cnt++;
 		printf("Can't copy file, size %d, available size %d in fs\n", filesize, bin_info.available_size);
 		return ERROR;
 	}
 
-	read_fd = open(filepath, O_RDONLY);
-	if (read_fd < 0) {
+	/* Set file offset to the start of file */
+	ret = lseek(read_fd, 0, SEEK_SET);
+	if (ret < 0) {
 		fail_cnt++;
-		printf("Failed to open %s: %d, errno: %d\n", filepath, read_fd, get_errno());
+		printf("Failed to set fileoffset %s: %d\n", filepath, get_errno());
 		return ERROR;
 	}
 
