@@ -150,40 +150,39 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 	int ret = OK;
 
 	if (tcb) {
+		/* Release the some of task's resources if PID was assigned.
+		 * PID zero is reserved for the IDLE task.  The TCB of the IDLE
+		 * task is never release so a value of zero simply means that
+		 * the process ID was never allocated to this TCB.
+		 */
+		if (tcb->pid) {
 #if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
-		sched_save_terminated_stackinfo(tcb);
+			sched_save_terminated_stackinfo(tcb);
 #endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		/* Deallocate heapinfo tcb infos in heap */
-		heapinfo_dealloc_tcbinfo(tcb->stack_alloc_ptr, tcb->pid);
+			/* Deallocate heapinfo tcb infos in heap */
+			heapinfo_dealloc_tcbinfo(tcb->stack_alloc_ptr, tcb->pid);
 #ifdef CONFIG_HEAPINFO_USER_GROUP
-		heapinfo_update_group_info(tcb->pid, -1, HEAPINFO_DEL_INFO);
+			heapinfo_update_group_info(tcb->pid, -1, HEAPINFO_DEL_INFO);
 #endif
 #endif
 
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
-		/* Release any timers that the task might hold.  We do this
-		 * before release the PID because it may still be trying to
-		 * deliver signals (although interrupts are should be
-		 * disabled here).
-		 */
+			/* Release any timers that the task might hold.  We do this
+			 * before release the PID because it may still be trying to
+			 * deliver signals (although interrupts are should be
+			 * disabled here).
+			 */
 
 #ifdef CONFIG_HAVE_WEAKFUNCTIONS
-		if (timer_deleteall != NULL)
+			if (timer_deleteall != NULL)
 #endif
-		{
-			timer_deleteall(tcb->pid);
-		}
+			{
+				timer_deleteall(tcb->pid);
+			}
 #endif
 
-		/* Release the task's process ID if one was assigned.  PID
-		 * zero is reserved for the IDLE task.  The TCB of the IDLE
-		 * task is never release so a value of zero simply means that
-		 * the process ID was never allocated to this TCB.
-		 */
-
-		if (tcb->pid) {
 			sched_releasepid(tcb->pid);
 		}
 
