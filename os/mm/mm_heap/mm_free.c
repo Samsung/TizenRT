@@ -91,9 +91,6 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	FAR struct mm_freenode_s *node;
 	FAR struct mm_freenode_s *prev;
 	FAR struct mm_freenode_s *next;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	struct mm_allocnode_s *alloc_node;
-#endif
 
 	mvdbg("Freeing %p\n", mem);
 
@@ -135,9 +132,8 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		return;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	alloc_node = (struct mm_allocnode_s *)node;
-	heapinfo_subtract_size(heap, alloc_node->pid, alloc_node->size);
-	heapinfo_update_total_size(heap, ((-1) * alloc_node->size), alloc_node->pid);
+	heapinfo_subtract_size(heap, ((struct mm_allocnode_s *)node)->pid, ((struct mm_allocnode_s *)node)->size);
+	heapinfo_update_total_size(heap, ((-1) * ((struct mm_allocnode_s *)node)->size), ((struct mm_allocnode_s *)node)->pid);
 #endif
 	node->preceding &= ~MM_ALLOC_BIT;
 
