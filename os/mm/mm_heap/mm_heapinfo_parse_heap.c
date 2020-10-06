@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * mm/mm_heap/mm_heapinfo.c
+ * mm/mm_heap/mm_heapinfo_parse_heap.c
  *
  *   Copyright (C) 2007, 2009, 2013-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -79,7 +79,7 @@ heapinfo_total_info_t total_info;
  * Description:
  *   This function walk through heap and displays alloc info.
  ****************************************************************************/
-void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
+void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 {
 	struct mm_allocnode_s *node;
 	size_t mxordblk = 0;
