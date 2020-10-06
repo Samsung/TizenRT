@@ -30,9 +30,9 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
-int binary_manager_update_binary(char *binary_name)
+binmgr_result_type_e binary_manager_update_binary(char *binary_name)
 {
-	int ret;
+	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 
 	if (binary_name == NULL || strlen(binary_name) > BIN_NAME_MAX - 1) {
@@ -41,22 +41,21 @@ int binary_manager_update_binary(char *binary_name)
 	}
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_UPDATE, binary_name);
-	if (ret < 0) {
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	ret = binary_manager_send_request(&request_msg);
-	if (ret < 0) {
-		bmdbg("Failed to send request msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	return BINMGR_OK;
 }
 
-int binary_manager_get_update_info(char *binary_name, binary_update_info_t *binary_info)
+binmgr_result_type_e binary_manager_get_update_info(char *binary_name, binary_update_info_t *binary_info)
 {
-	int ret;
+	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 	binmgr_getinfo_response_t response_msg;
 
@@ -66,20 +65,18 @@ int binary_manager_get_update_info(char *binary_name, binary_update_info_t *bina
 	}
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_GET_INFO, binary_name);
-	if (ret < 0) {
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	ret = binary_manager_send_request(&request_msg);
-	if (ret < 0) {
-		bmdbg("Failed to send request msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getinfo_response_t));
-	if (ret < 0) {
-		bmdbg("Failed to receive response msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	if (response_msg.result == BINMGR_OK) {
@@ -93,27 +90,25 @@ int binary_manager_get_update_info(char *binary_name, binary_update_info_t *bina
 	return response_msg.result;
 }
 
-int binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_list)
+binmgr_result_type_e binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_list)
 {
-	int ret;
+	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 	binmgr_getinfo_all_response_t response_msg;
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_GET_INFO_ALL, NULL);
-	if (ret < 0) {
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	ret = binary_manager_send_request(&request_msg);
-	if (ret < 0) {
-		bmdbg("Failed to send request msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getinfo_all_response_t));
-	if (ret < 0) {
-		bmdbg("Failed to receive response msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	if (response_msg.result == BINMGR_OK) {
@@ -127,9 +122,9 @@ int binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_li
 	return response_msg.result;
 }
 
-int binary_manager_get_download_path(char *binary_name, uint32_t version, char *download_path)
+binmgr_result_type_e binary_manager_get_download_path(char *binary_name, uint32_t version, char *download_path)
 {
-	int ret;
+	binmgr_result_type_e ret;
 	binmgr_update_bin_t data;
 	binmgr_request_t request_msg;
 	binmgr_createbin_response_t response_msg;
@@ -143,20 +138,18 @@ int binary_manager_get_download_path(char *binary_name, uint32_t version, char *
 	data.version = version;
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_CREATE_BIN, &data);
-	if (ret < 0) {
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
-		
+
 	ret = binary_manager_send_request(&request_msg);
-	if (ret < 0) {
-		bmdbg("Failed to send request msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_createbin_response_t));
-	if (ret < 0) {
-		bmdbg("Failed to receive response msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	if (response_msg.result == BINMGR_OK) {

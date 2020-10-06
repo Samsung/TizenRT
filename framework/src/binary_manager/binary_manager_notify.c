@@ -27,20 +27,20 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
-int binary_manager_notify_binary_started(void)
+binmgr_result_type_e binary_manager_notify_binary_started(void)
 {
-	int ret;
+	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_NOTIFY_STARTED, BINMGR_REQUEST_MQ);
-	if (ret < 0) {
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	ret = binary_manager_send_request(&request_msg);
-	if (ret < 0) {
+	if (ret != BINMGR_OK) {
 		bmdbg("Failed to send request msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+		return ret;
 	}
 
 	return BINMGR_OK;
