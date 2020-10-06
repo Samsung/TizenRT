@@ -198,7 +198,7 @@ static void rtc_dumptime(FAR const struct tm *tp, FAR const char *msg)
   rtcinfo(" tm_year: %08x\n", tp->tm_year);
 #else
   rtcinfo("  tm: %04d-%02d-%02d %02d:%02d:%02d\n",
-          tp->tm_year+1900, tp->tm_mon+1, tp->tm_mday,
+          tp->tm_year+1970, tp->tm_mon+1, tp->tm_mday,
           tp->tm_hour, tp->tm_min, tp->tm_sec);
 #endif
 }
@@ -1075,7 +1075,7 @@ int stm32l4_rtc_getdatetime_with_subseconds(FAR struct tm *tp, FAR long *nsec)
   /* Now convert the RTC date to fields in struct tm format:
    * Days: 1-31 match in both cases.
    * Month: STM32 is 1-12, struct tm is 0-11.
-   * Years: STM32 is 00-99, struct tm is years since 1900.
+   * Years: STM32 is 00-99, struct tm is years since 1970.
    * WeekDay: STM32 is 1 = Mon - 7 = Sun
    *
    * Issue:  I am not sure what the STM32 years mean.  Are these the
@@ -1094,7 +1094,7 @@ int stm32l4_rtc_getdatetime_with_subseconds(FAR struct tm *tp, FAR long *nsec)
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
   tmp = (dr & RTC_DR_WDU_MASK) >> RTC_DR_WDU_SHIFT;
   tp->tm_wday = tmp % 7;
-  tp->tm_yday = tp->tm_mday + clock_daysbeforemonth(tp->tm_mon, clock_isleapyear(tp->tm_year + 1900));
+  tp->tm_yday = tp->tm_mday + clock_daysbeforemonth(tp->tm_mon, clock_isleapyear(tp->tm_year + 1970));
   tp->tm_isdst = 0;
 #endif
 
@@ -1229,7 +1229,7 @@ int stm32l4_rtc_setdatetime(FAR const struct tm *tp)
   /* Now convert the fields in struct tm format to the RTC date register fields:
    * Days: 1-31 match in both cases.
    * Month: STM32 is 1-12, struct tm is 0-11.
-   * Years: STM32 is 00-99, struct tm is years since 1900.
+   * Years: STM32 is 00-99, struct tm is years since 1970.
    * WeekDay: STM32 is 1 = Mon - 7 = Sun
    * Issue:  I am not sure what the STM32 years mean.  Are these the
    * years 2000-2099?  I'll assume so.

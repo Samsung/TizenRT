@@ -420,7 +420,7 @@ literal:
 			if (cr->relyear <= 68) {
 				tm->tm_year = cr->relyear + 2000 - TM_YEAR_BASE;
 			} else {
-				tm->tm_year = cr->relyear + 1900 - TM_YEAR_BASE;
+				tm->tm_year = cr->relyear + 1970 - TM_YEAR_BASE;
 			}
 		} else {
 			tm->tm_year = cr->relyear + cr->century - TM_YEAR_BASE;

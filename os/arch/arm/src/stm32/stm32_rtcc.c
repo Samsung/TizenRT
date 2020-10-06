@@ -796,7 +796,7 @@ int up_rtc_getdatetime(FAR struct tm *tp)
 	/* Now convert the RTC date to fields in struct tm format:
 	 * Days: 1-31 match in both cases.
 	 * Month: STM32 is 1-12, struct tm is 0-11.
-	 * Years: STM32 is 00-99, struct tm is years since 1900.
+	 * Years: STM32 is 00-99, struct tm is years since 1970.
 	 *
 	 * Issue:  I am not sure what the STM32 years mean.  Are these the
 	 * years 2000-2099?  I'll assume so.
@@ -814,7 +814,7 @@ int up_rtc_getdatetime(FAR struct tm *tp)
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	tmp = (dr & RTC_DR_WDU_MASK) >> RTC_DR_WDU_SHIFT;
 	tp->tm_wday = tmp % 7;
-	tp->tm_yday = tp->tm_mday + clock_daysbeforemonth(tp->tm_mon, clock_isleapyear(tp->tm_year + 1900));
+	tp->tm_yday = tp->tm_mday + clock_daysbeforemonth(tp->tm_mon, clock_isleapyear(tp->tm_year + 1970));
 	tp->tm_isdst = 0
 #endif
 	rtc_dumptime(tp, "Returning");
@@ -861,7 +861,7 @@ int up_rtc_settime(FAR const struct timespec *tp)
 	/* Now convert the fields in struct tm format to the RTC date register fields:
 	 * Days: 1-31 match in both cases.
 	 * Month: STM32 is 1-12, struct tm is 0-11.
-	 * Years: STM32 is 00-99, struct tm is years since 1900.
+	 * Years: STM32 is 00-99, struct tm is years since 1970.
 	 *
 	 * Issue:  I am not sure what the STM32 years mean.  Are these the
 	 * years 2000-2099?  I'll assume so.

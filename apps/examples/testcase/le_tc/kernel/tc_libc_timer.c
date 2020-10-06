@@ -561,7 +561,7 @@ static void tc_libc_timer_strptime(void)
 	/* %Y or %y - The year, including century (2018 = 2000(century) + 18(year)). */
 	ret = strptime("80", "%y", &sp_tm);
 	TC_ASSERT_NEQ("strptime", ret, NULL);
-	TC_ASSERT_EQ("strptime", sp_tm.tm_year, 80 + 1900 - TM_YEAR_BASE);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, 80 + 1970 - TM_YEAR_BASE);
 
 	/* %C - The century number (0-99).
 	 * %C does not modify tm structure, so just validating the return value..

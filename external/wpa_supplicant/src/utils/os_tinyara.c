@@ -98,7 +98,7 @@ int os_mktime(int year, int month, int day, int hour, int min, int sec, os_time_
 	}
 
 	memset(&tm, 0, sizeof(tm));
-	tm.tm_year = year - 1900;
+	tm.tm_year = year - 1970;
 	tm.tm_mon = month - 1;
 	tm.tm_mday = day;
 	tm.tm_hour = hour;
@@ -139,7 +139,7 @@ int os_gmtime(os_time_t t, struct os_tm *tm)
 	tm->hour = tm2->tm_hour;
 	tm->day = tm2->tm_mday;
 	tm->month = tm2->tm_mon + 1;
-	tm->year = tm2->tm_year + 1900;
+	tm->year = tm2->tm_year + 1970;
 	return 0;
 }
 

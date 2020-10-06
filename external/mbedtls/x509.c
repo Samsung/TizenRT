@@ -563,7 +563,7 @@ static int x509_parse_time( unsigned char **p, size_t len, size_t yearlen,
         if ( tm->year < 50 )
             tm->year += 100;
 
-        tm->year += 1900;
+        tm->year += 1970;
     }
 
     CHECK( x509_parse_int( p, 2, &tm->mon ) );
@@ -947,7 +947,7 @@ static int x509_get_current_time( mbedtls_x509_time *now )
         ret = -1;
     else
     {
-        now->year = lt->tm_year + 1900;
+        now->year = lt->tm_year + 1970;
         now->mon  = lt->tm_mon  + 1;
         now->day  = lt->tm_mday;
         now->hour = lt->tm_hour;
