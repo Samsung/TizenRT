@@ -239,7 +239,7 @@ void *disconnector_thread(void *arg)
 #if PRINT_HEAPINFO
 	disconnect_count++;
 	if (disconnect_count == 10) {
-		heapinfo_parse(BASE_HEAP, HEAPINFO_SIMPLE, HEAPINFO_PID_ALL);
+		heapinfo_parse_heap(BASE_HEAP, HEAPINFO_SIMPLE, HEAPINFO_PID_ALL);
 		disconnect_count = 0;
 	}
 #endif
