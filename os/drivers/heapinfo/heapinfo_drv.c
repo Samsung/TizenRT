@@ -104,7 +104,7 @@ static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			heap->peak_alloc_size = 0;
 			return OK;
 		}
-		heapinfo_parse(heap, option->mode, option->pid);
+		heapinfo_parse_heap(heap, option->mode, option->pid);
 		ret = OK;
 		break;
 	default:

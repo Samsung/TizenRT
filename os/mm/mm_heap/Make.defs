@@ -62,7 +62,7 @@ CSRCS += mm_sbrk.c
 endif
 
 ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
-CSRCS += mm_heapinfo_parse.c mm_heapinfo_utils.c
+CSRCS += mm_heapinfo_parse_heap.c mm_heapinfo_utils.c
 ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)
 CSRCS += mm_heapinfo_group.c
 endif
