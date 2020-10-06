@@ -28,8 +28,8 @@
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-int binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg);
-int binary_manager_send_request(binmgr_request_t *request_msg);
-int binary_manager_receive_response(void *response_msg, int msg_size);
+binmgr_result_type_e binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg);
+binmgr_result_type_e binary_manager_send_request(binmgr_request_t *request_msg);
+binmgr_result_type_e binary_manager_receive_response(void *response_msg, int msg_size);
 
 #endif							/* __BINARY_MANAGER_INTERNAL_H */

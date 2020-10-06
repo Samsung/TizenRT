@@ -114,7 +114,7 @@ enum binmgr_request_msg_type {
 };
 
 /* Result values of returned from binary manager. */
-enum binmgr_response_result_type {
+enum binmgr_result_type {
 	BINMGR_OK = 0,
 	BINMGR_COMMUNICATION_FAIL = -1,
 	BINMGR_OPERATION_FAIL = -2,
@@ -124,6 +124,7 @@ enum binmgr_response_result_type {
 	BINMGR_ALREADY_REGISTERED = -6,
 	BINMGR_ALREADY_UPDATED = -7,
 };
+typedef enum binmgr_result_type binmgr_result_type_e;
 
 /****************************************************************************
  * Public Data
@@ -226,25 +227,25 @@ struct binmgr_createbin_response_s {
 typedef struct binmgr_createbin_response_s binmgr_createbin_response_t;
 
 struct binmgr_getstate_response_s {
-	int result;
+	binmgr_result_type_e result;
 	binary_state_e state;
 };
 typedef struct binmgr_getstate_response_s binmgr_getstate_response_t;
 
 struct binmgr_statecb_response_s {
-	int result;
+	binmgr_result_type_e result;
 	binmgr_cb_t *cb_info;
 };
 typedef struct binmgr_statecb_response_s binmgr_statecb_response_t;
 
 struct binmgr_getinfo_response_s {
-	int result;
+	binmgr_result_type_e result;
 	binary_update_info_t data;
 };
 typedef struct binmgr_getinfo_response_s binmgr_getinfo_response_t;
 
 struct binmgr_getinfo_all_response_s {
-	int result;
+	binmgr_result_type_e result;
 	binary_update_info_list_t data;
 };
 typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;

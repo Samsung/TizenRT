@@ -26,9 +26,9 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
-int binary_manager_get_state(char *binary_name, int *state)
+binmgr_result_type_e binary_manager_get_state(char *binary_name, int *state)
 {
-	int ret;
+	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 	binmgr_getstate_response_t response_msg;
 
@@ -38,20 +38,20 @@ int binary_manager_get_state(char *binary_name, int *state)
 	}
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_GET_STATE, binary_name);
-	if (ret < 0) {
-		return BINMGR_COMMUNICATION_FAIL;
+	if (ret != BINMGR_OK) {
+		return ret;
 	}
 
 	ret = binary_manager_send_request(&request_msg);
-	if (ret < 0) {
+	if (ret != BINMGR_OK) {
 		bmdbg("Failed to send request msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+		return ret;
 	}
 
 	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getstate_response_t));
-	if (ret < 0) {
+	if (ret != BINMGR_OK) {
 		bmdbg("Failed to receive response msg %d\n", ret);
-		return BINMGR_COMMUNICATION_FAIL;
+		return ret;
 	}
 
 	if (response_msg.result == BINMGR_OK) {
