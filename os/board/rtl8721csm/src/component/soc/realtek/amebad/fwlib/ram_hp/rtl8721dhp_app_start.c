@@ -41,22 +41,7 @@ extern void vPortExitCritical(void);
 extern unsigned int _ebss;
 extern unsigned int __StackLimit;
 extern unsigned int __PsramStackLimit;
-#define IDLE_STACK ((uintptr_t)&_ebss+CONFIG_IDLETHREAD_STACKSIZE-4)
-#define HEAP_BASE  ((uintptr_t)&_ebss+CONFIG_IDLETHREAD_STACKSIZE)
-#define HEAP_LIMIT ((uintptr_t)&__StackLimit)
-#define PSRAM_HEAP_BASE ((uintptr_t)&__psram_bss_end__[0])
-#define PSRAM_HEAP_LIMIT ((uintptr_t)&__PsramStackLimit)
-void os_heap_init(void){
-	kregionx_start[0] = (void *)HEAP_BASE;
-	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
-	if(TRUE == psram_dev_config.psram_dev_enable) {
-		kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
-		kregionx_size[1] = (size_t)(PSRAM_HEAP_LIMIT - PSRAM_HEAP_BASE);
-	} else {
-		kregionx_start[1] = NULL;
-		kregionx_size[1] = 0;
-	}
-}
+
 #define dbg_printf DiagPrintf
 typedef struct fault_handler_back_trace_s {
     uint32_t msp_top;         /*!< the Top address of the MSP */
@@ -1288,8 +1273,6 @@ void app_start(void)
 	if(TRUE == psram_dev_config.psram_dev_enable) {
 		app_init_psram();
 	}
-
-	os_heap_init();
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	/* configure FreeRTOS interrupt and heap region */
