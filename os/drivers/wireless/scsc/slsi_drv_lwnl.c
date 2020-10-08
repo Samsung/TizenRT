@@ -156,7 +156,7 @@ free_scan_results(trwifi_scan_list_s *scan_list)
 	while (cur) {
 		prev = cur;
 		cur = cur->next;
-		free(prev);
+		kmm_free(prev);
 	}
 	scan_list = NULL;
 }
@@ -194,7 +194,7 @@ fetch_scan_results(trwifi_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_
 				continue;
 			}
 
-			cur = (trwifi_scan_list_s *)malloc(sizeof(trwifi_scan_list_s));
+			cur = (trwifi_scan_list_s *)kmm_malloc(sizeof(trwifi_scan_list_s));
 			if (!cur) {
 				free_scan_results(*scan_list);
 				return result;
@@ -262,14 +262,14 @@ static int slsi_drv_callback_handler(void *arg)
 		break;
 	}
 
-	free(type);
+	kmm_free(type);
 
 	return 0;
 }
 
 static void linkup_handler(slsi_reason_t *reason)
 {
-	int *type = (int *)malloc(sizeof(int));
+	int *type = (int *)kmm_malloc(sizeof(int));
 	if (type == NULL) {
 		vddbg("malloc error\n");
 		return;
@@ -290,7 +290,7 @@ static void linkup_handler(slsi_reason_t *reason)
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
 	if (ret != 0) {
 		vddbg("pthread create fail(%d)\n", errno);
-		free(type);
+		kmm_free(type);
 		return;
 	}
 	pthread_setname_np(tid, "trwifi_cbk_handler");
@@ -300,7 +300,7 @@ static void linkup_handler(slsi_reason_t *reason)
 
 static void linkdown_handler(slsi_reason_t *reason)
 {
-	int *type = (int *)malloc(sizeof(int));
+	int *type = (int *)kmm_malloc(sizeof(int));
 	if (type == NULL) {
 		vddbg("malloc error linkdown\n");
 		return;
@@ -315,7 +315,7 @@ static void linkdown_handler(slsi_reason_t *reason)
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
 	if (ret != 0) {
 		vddbg("pthread create fail(%d)\n", errno);
-		free(type);
+		kmm_free(type);
 		return;
 	}
 	pthread_setname_np(tid, "trwifi_cbk_handler");
@@ -515,7 +515,7 @@ trwifi_result_e slsidrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_co
 			}
 		}
 
-		config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
+		config = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (!config) {
 			vddbg("Memory allocation failed!\n");
 			goto connect_ap_fail;
@@ -586,7 +586,7 @@ trwifi_result_e slsidrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_co
 
 connect_ap_fail:
 	if (config) {
-		free(config);
+		kmm_free(config);
 		config = NULL;
 	}
 
@@ -654,7 +654,7 @@ trwifi_result_e slsidrv_start_softap(struct netdev *dev, trwifi_softap_config_s 
 	slsi_ap_config_t *ap_config = NULL;
 	slsi_security_config_t *security_config = NULL;
 
-	ap_config = (slsi_ap_config_t *)zalloc(sizeof(slsi_ap_config_t));
+	ap_config = (slsi_ap_config_t *)kmm_zalloc(sizeof(slsi_ap_config_t));
 	if (!ap_config) {
 		vddbg("Memory allocation failed!\n");
 		return TRWIFI_FAIL;
@@ -682,7 +682,7 @@ trwifi_result_e slsidrv_start_softap(struct netdev *dev, trwifi_softap_config_s 
 	if (softap_config->passphrase_length < 1) {
 		goto start_soft_ap_fail;
 	} else {
-		security_config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
+		security_config = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (!security_config) {
 			vddbg("Memory allocation failed!\n");
 			goto start_soft_ap_fail;
@@ -731,11 +731,11 @@ trwifi_result_e slsidrv_start_softap(struct netdev *dev, trwifi_softap_config_s 
 
 start_soft_ap_fail:
 	if (ap_config) {
-		free(ap_config);
+		kmm_free(ap_config);
 		ap_config = NULL;
 	}
 	if (security_config) {
-		free(security_config);
+		kmm_free(security_config);
 		security_config = NULL;
 	}
 	return ret;
@@ -805,7 +805,7 @@ int slsi_drv_initialize(void)
 {
 	SLSIDRV_ENTER;
 	struct netdev *dev = NULL;
-	dev = (struct netdev *)malloc(sizeof(struct netdev));
+	dev = (struct netdev *)kmm_malloc(sizeof(struct netdev));
 	if (!dev) {
 		return -1;
 	}
@@ -819,7 +819,7 @@ int slsi_drv_initialize(void)
 	int res = lwnl_register_dev(dev);
 	if (res < 0) {
 		vddbg("register dev to lwnl fail\n");
-		free(dev);
+		kmm_free(dev);
 		return -1;
 	}
 	return 0;
