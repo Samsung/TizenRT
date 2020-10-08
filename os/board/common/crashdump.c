@@ -42,11 +42,9 @@
 #define FSDUMP_HANDSHAKE_STRING	"TIZENRTFSDUMP"
 #define TARGET_REBOOT_STRING		"TIZENRTREBOOT"
 #define HANDSHAKE_STR_LEN_MAX		(13)
+#define USERFS_PART_NAME		"user"
+#define USERFS_PART_NAME_LEN		(4)
 #endif
-
-//TODO: Extract userfs start address based on vendor and config chosen, CURRENTLY - HARDCODED FOR ARTIK053/TC, Kindly Ignore
-#define CONFIG_FLASH_USERFS_START_ADDR	0X04620000
-#define CONFIG_FLASH_USERFS_SIZE	1024000
 
 /****************************************************************************
  * Public Function Prototypes
@@ -64,7 +62,73 @@
  * Private Functions
  ****************************************************************************/
 
-#if defined(CONFIG_BOARD_RAMDUMP_UART)
+#if defined(CONFIG_BOARD_DUMP_UART)
+static int get_userfs_address_size(uint32_t *userfs_start, size_t *userfs_size)
+{
+	char flash_list[] = CONFIG_FLASH_PART_NAME;
+	char flash_sizes[] = CONFIG_FLASH_PART_SIZE;
+	char tmp_part_name[USERFS_PART_NAME_LEN + 1] = { '\0' };
+	size_t tmp_part_size = 0;
+	int i = 0;
+	int x = 0;
+	int c = 0;
+	*userfs_start = CONFIG_FLASH_START_ADDR;
+
+	while (flash_list[i] != '\0') {
+		if (flash_list[i] != 'u') {
+			while (flash_list[i] != ',') {
+				i++;
+			}
+			c++;
+		} else {
+			while ((x < USERFS_PART_NAME_LEN) && (flash_list[i] != ',')) {
+				tmp_part_name[x] = flash_list[i];
+				x++;
+				i++;
+			}
+			tmp_part_name[x] = '\0';
+			if ((x == USERFS_PART_NAME_LEN) && (strncmp(tmp_part_name, USERFS_PART_NAME, USERFS_PART_NAME_LEN) == 0)) {
+				break;
+			}
+			if (flash_list[i] == ',') {
+				c++;
+			}
+		}
+		x = 0;
+		i++;
+	}
+
+	if (flash_list[i] == '\0') {
+		return -1;
+	}
+
+	i = 0;
+	while (flash_sizes[i] != '\0' && c) {
+		while (flash_sizes[i] != ',') {
+			tmp_part_size *= 10;
+			tmp_part_size += (flash_sizes[i] - 48);
+			i++;
+		}
+		*userfs_start += (tmp_part_size * 1024);
+		tmp_part_size = 0;
+		c--;
+		i++;
+	}
+
+	if (flash_sizes[i] == '\0') {
+		return -1;
+	}
+
+	*userfs_size = 0;
+	while (flash_sizes[i] != ',' && flash_sizes[i] != '\0') {
+		*userfs_size *= 10;
+		*userfs_size += (flash_sizes[i] - 48);
+		i++;
+	}
+	*userfs_size *= 1024;
+	return 0;
+}
+
 static int send_ramdump(void)
 {
 	int i;
@@ -145,8 +209,10 @@ static int send_fsdump(void)
 	/* Send ACK for FSDUMP Handshake */
 	up_lowputc('A');
 
-	userfs_start = CONFIG_FLASH_USERFS_START_ADDR;
-	size = CONFIG_FLASH_USERFS_SIZE;
+	i = get_userfs_address_size(&userfs_start, &size);
+	if (i < 0) {
+		return -1;
+	}
 
 	/* Send address of userfs partition in flash to host */
 	ptr = (uint8_t *)&userfs_start;
@@ -205,6 +271,10 @@ static int dump_via_uart(void)
 	up_puts("\t\tDisconnect this serial terminal and run Dump Tool\n");
 	up_puts("************************************************************************************************\n");
 
+	if (CONFIG_FLASH_START_ADDR == 0xFFFFFFFF) {
+		up_puts("\nFLASH start address is incorrect, Userfs Dump will not work. Please check CONFIG_FLASH_START_ADDR\n");
+	}
+
 	while (1) {
 		/* Receive handshake string from HOST */
 		do {
@@ -223,7 +293,10 @@ static int dump_via_uart(void)
 			send_ramdump();
 		/* Check handshake string against FSDUMP HANDSHAKE string */
 		} else if (strncmp(host_buf, FSDUMP_HANDSHAKE_STRING, strlen(FSDUMP_HANDSHAKE_STRING)) == 0) {
-			send_fsdump();
+			i = send_fsdump();
+			if (i != 0) {
+				break;
+			}
 		/* Check handshake string for TARGET REBOOT signal */
 		} else if (strncmp(host_buf, TARGET_REBOOT_STRING, strlen(TARGET_REBOOT_STRING)) == 0) {
 			/* Acknowledge the reboot signal, then reboot device if CONFIG is enabled, otherwise simply exit the function */
