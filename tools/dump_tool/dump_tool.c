@@ -2,8 +2,8 @@
 *
 * Copyright 2016 Samsung Electronics All Rights Reserved.
 *
-* File Name : ramdump_tool.c
-* Description: Receive Ramdump using UART
+* File Name : dump_tool.c
+* Description: Receive RAM and/or Userfs dump using UART
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
