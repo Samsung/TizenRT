@@ -115,6 +115,9 @@ void up_initial_state(struct tcb_s *tcb)
 
 	xcp->regs[REG_R10] = (uint32_t)tcb->stack_alloc_ptr + 64;
 #endif
+#ifdef CONFIG_REG_STACK_OVERFLOW_PROTECTION
+	xcp->regs[REG_SPLIM]   = (uint32_t)tcb->stack_alloc_ptr;
+#endif
 	/* Save the task entry point (stripping off the thumb bit) */
 
 	xcp->regs[REG_PC] = (uint32_t)tcb->start & ~1;
