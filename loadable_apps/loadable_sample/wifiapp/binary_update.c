@@ -157,7 +157,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 	}
 	printf("Download binary %s version %d Done!\n", APP_NAME, new_version);
 
-	return OK;
+	ret = OK;
 errout_with_close_fd2:
 	close(write_fd);
 errout_with_close_fd1:
@@ -166,7 +166,7 @@ errout_with_close_fd1:
 		fail_cnt++;
 	}
 
-	return ERROR;
+	return ret;
 }
 
 static int binary_update_download_new_binary(void)
@@ -202,7 +202,7 @@ static int binary_update_download_new_binary(void)
 	if (filesize <= 0 || bin_info.available_size <= 0 || filesize >= bin_info.available_size) {
 		fail_cnt++;
 		printf("Can't copy file, size %d, available size %d in fs\n", filesize, bin_info.available_size);
-		return ERROR;
+		goto errout_with_close_fd1;
 	}
 
 	/* Set file offset to the start of file */
@@ -210,7 +210,7 @@ static int binary_update_download_new_binary(void)
 	if (ret < 0) {
 		fail_cnt++;
 		printf("Failed to set fileoffset %s: %d\n", filepath, get_errno());
-		return ERROR;
+		goto errout_with_close_fd1;
 	}
 
 	/* Read the binary header. */
@@ -243,7 +243,7 @@ static int binary_update_download_new_binary(void)
 	ret = write(write_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
 	if (ret != sizeof(binary_header_t)) {
 		printf("Failed to write header: %d\n", ret);
-		goto errout_with_close_fd1;
+		goto errout_with_close_fd2;
 	}
 
 	crc_hash = crc32part((uint8_t *)&header_data + CHECKSUM_SIZE, header_data.header_size, crc_hash);
@@ -285,7 +285,7 @@ static int binary_update_download_new_binary(void)
 	}
 	printf("Download binary %s Done!\n", NEW_APP_NAME);
 
-	return OK;
+	ret = OK;
 errout_with_close_fd2:
 	close(write_fd);
 errout_with_close_fd1:
@@ -294,7 +294,7 @@ errout_with_close_fd1:
 		fail_cnt++;
 	}
 
-	return ERROR;
+	return ret;
 }
 
 static void print_binary_info(binary_update_info_t *binary_info)
