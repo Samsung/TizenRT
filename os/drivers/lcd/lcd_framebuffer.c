@@ -252,7 +252,7 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 			bytespl = (width * pinfo->bpp + 7) >> 3;
 			height = endy - starty + 1;
 			
-			dmabuff = (uint8_t *)malloc(height * bytespl);
+			dmabuff = (uint8_t *)kmm_malloc(height * bytespl);
 			if (dmabuff == NULL) {
 				gdbg("ERROR: out of memory \n");
 				return -ENOMEM;
@@ -280,7 +280,7 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 			}
 
 			ret = pinfo->putdma(starty, startx, endy, endx, dmabuff);
-			free(dmabuff);
+			kmm_free(dmabuff);
 		}
 
 		if (ret < 0) {
@@ -608,7 +608,7 @@ int up_fbinitialize(int display)
 	priv->stride = ((size_t)priv->xres * priv->pinfo.bpp + 7) >> 3;
 	priv->fblen  = priv->stride * priv->yres;
 
-	priv->fbmem  = (FAR uint8_t *)zalloc(priv->fblen);
+	priv->fbmem  = (FAR uint8_t *)kmm_zalloc(priv->fblen);
 	if (priv->fbmem == NULL) {
 		gdbg("ERROR: Failed to allocate frame buffer memory\n");
 		ret = -ENOMEM;

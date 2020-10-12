@@ -26,6 +26,7 @@
 #include <string.h>
 #include <tinyara/testcase_drv.h>
 #include <tinyara/binfmt/compression/compress_read.h>
+#include <tinyara/kmalloc.h>
 #include <debug.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -70,7 +71,7 @@ static int test_compress_decompress_function(unsigned long arg)
 
 	compression_header = get_compression_header();
 
-	dst_buffer = (uint8_t *)malloc(2048 * sizeof(uint8_t));
+	dst_buffer = (uint8_t *)kmm_malloc(2048 * sizeof(uint8_t));
 
 	if (dst_buffer == NULL) {
 		berr("Allocation of memory failed\n");
@@ -87,7 +88,7 @@ static int test_compress_decompress_function(unsigned long arg)
 	}
 
 	compress_uninit();
-	free(dst_buffer);
+	kmm_free(dst_buffer);
 
 	return OK;
 }

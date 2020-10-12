@@ -23,6 +23,7 @@
 #include <arch/irq.h>
 #include <tinyara/logm.h>
 #include <tinyara/config.h>
+#include <tinyara/kmalloc.h>
 #include "logm.h"
 #ifdef CONFIG_LOGM_TEST
 #include "logm_test.h"
@@ -42,7 +43,7 @@ static int logm_change_bufsize(int buflen)
 	}
 
 	/* Realloc new buffer with new length */
-	char *new_g_logm_rsvbuf = (char *)realloc(g_logm_rsvbuf, buflen);
+	char *new_g_logm_rsvbuf = (char *)kmm_realloc(g_logm_rsvbuf, buflen);
 	if (new_g_logm_rsvbuf == NULL) {
 		wdbg("Realloc Fail\n");
 		return ERROR;
@@ -66,7 +67,7 @@ int logm_task(int argc, char *argv[])
 {
 	irqstate_t flags;
 
-	g_logm_rsvbuf = (char *)malloc(logm_bufsize);
+	g_logm_rsvbuf = (char *)kmm_malloc(logm_bufsize);
 	memset(g_logm_rsvbuf, 0, logm_bufsize);
 
 	/* Now logm is ready */
@@ -98,5 +99,7 @@ int logm_task(int argc, char *argv[])
 		}
 		usleep(logm_print_interval);
 	}
+
+	kmm_free(g_logm_rsvbuf);
 	return 0;					// Just to make compiler happy
 }

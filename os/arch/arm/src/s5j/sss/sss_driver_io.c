@@ -80,7 +80,7 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 	}
 
 	/* Allocate temporary read buffer */
-	read_buf = (unsigned char *)malloc(nsector * geo.blocksize);
+	read_buf = (unsigned char *)kmm_malloc(nsector * geo.blocksize);
 	if (read_buf == NULL) {
 		fdbg("Fail to allocate memory\n");
 		ret = ERROR_SSTORAGE_SFS_FREAD;
@@ -104,7 +104,7 @@ read_out:
 	}
 
 	if (read_buf) {
-		free(read_buf);
+		kmm_free(read_buf);
 	}
 #endif
 	return ret;
