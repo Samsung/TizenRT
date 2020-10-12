@@ -44,6 +44,7 @@
 #include <tinyara/config.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
+#include <tinyara/kmalloc.h>
 
 #include <stdio.h>
 #include <stdlib.h>
