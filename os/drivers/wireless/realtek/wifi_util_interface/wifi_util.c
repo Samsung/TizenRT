@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <tinyara/kmalloc.h>
 
 #include "wireless.h"
 #include "wlan_intf.h"

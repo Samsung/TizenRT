@@ -23,6 +23,7 @@
 #include <string.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
+#include <tinyara/kmalloc.h>
 
 #define _IN_
 #define _OUT_

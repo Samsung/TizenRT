@@ -19,6 +19,7 @@
 #include "mib.h"
 #include "debug_scsc.h"
 #include <sys/types.h>
+#include <tinyara/kmalloc.h>
 
 #define SLSI_MIB_MORE_MASK   0x80
 #define SLSI_MIB_SIGN_MASK   0x40

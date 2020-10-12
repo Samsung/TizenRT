@@ -24,6 +24,7 @@
 #include <string.h>
 #include <errno.h>
 #include <tinyara/wifi/slsi/slsi_wifi_api.h>
+#include <tinyara/kmalloc.h>
 
 #include <tinyara/wifi/wifi_utils.h>
 
