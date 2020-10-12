@@ -298,7 +298,7 @@ static inline void adc1_hall_enable(bool enable);
 
 SemaphoreHandle_t xSemaphoreCreateMutex(void)
 {
-	SemaphoreHandle_t x = malloc(sizeof(sem_t));
+	SemaphoreHandle_t x = kmm_malloc(sizeof(sem_t));
 	if (x != NULL) {
 		sem_init(x, 0, 1);
 		sem_setprotocol(x, SEM_PRIO_NONE);
@@ -1227,7 +1227,7 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
 	esp_err_t ret = ESP_OK;
 	xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
 	if (s_touch_pad_filter == NULL) {
-		s_touch_pad_filter = (touch_pad_filter_t *) calloc(1, sizeof(touch_pad_filter_t));
+		s_touch_pad_filter = (touch_pad_filter_t *)kmm_calloc(1, sizeof(touch_pad_filter_t));
 		if (s_touch_pad_filter == NULL) {
 			ret = ESP_ERR_NO_MEM;
 		}
@@ -1271,7 +1271,7 @@ esp_err_t touch_pad_filter_delete()
 			xTimerDelete(s_touch_pad_filter->timer, portMAX_DELAY);
 			s_touch_pad_filter->timer = NULL;
 		}
-		free(s_touch_pad_filter);
+		kmm_free(s_touch_pad_filter);
 		s_touch_pad_filter = NULL;
 	}
 	xSemaphoreGive(rtc_touch_mux);
@@ -2261,7 +2261,7 @@ esp_err_t rtc_isr_register(intr_handler_t handler, void *handler_arg, uint32_t r
 		return err;
 	}
 
-	rtc_isr_handler_t *item = malloc(sizeof(rtc_isr_handler_t));
+	rtc_isr_handler_t *item = kmm_malloc(sizeof(rtc_isr_handler_t));
 	if (item == NULL) {
 		return ESP_ERR_NO_MEM;
 	}
@@ -2296,7 +2296,7 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void *handler_arg)
 				it->next = NULL;
 			}
 			found = true;
-			free(it);
+			kmm_free(it);
 			break;
 		}
 		prev = it;

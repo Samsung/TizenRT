@@ -145,7 +145,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
 #ifdef CONFIG_SPIRAM_SUPPORT
 	int *pages = heap_caps_malloc(sizeof(int) * page_count, MALLOC_CAP_INTERNAL);
 #else
-	int *pages = (int *)malloc(sizeof(int) * page_count);
+	int *pages = (int *)kmm_malloc(sizeof(int) * page_count);
 #endif
 	if (pages == NULL) {
 		return ESP_ERR_NO_MEM;
@@ -154,7 +154,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
 		pages[i] = phys_page + i;
 	}
 	ret = spi_flash_mmap_pages(pages, page_count, memory, out_ptr, out_handle);
-	free(pages);
+	kmm_free(pages);
 	return ret;
 }
 
@@ -174,9 +174,9 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
 		}
 	}
 #ifdef CONFIG_SPIRAM_SUPPORT
-	mmap_entry_t *new_entry = (mmap_entry_t *) heap_caps_malloc(sizeof(mmap_entry_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+	mmap_entry_t *new_entry = (mmap_entry_t *)heap_caps_malloc(sizeof(mmap_entry_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 #else
-	mmap_entry_t *new_entry = (mmap_entry_t *)malloc(sizeof(mmap_entry_t));
+	mmap_entry_t *new_entry = (mmap_entry_t *)kmm_malloc(sizeof(mmap_entry_t));
 #endif
 	if (new_entry == 0) {
 		return ESP_ERR_NO_MEM;
@@ -272,7 +272,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
 
 	spi_flash_enable_interrupts_caches_and_other_cpu();
 	if (*out_ptr == NULL) {
-		free(new_entry);
+		kmm_free(new_entry);
 	}
 	return ret;
 }
@@ -302,7 +302,7 @@ void IRAM_ATTR spi_flash_munmap(spi_flash_mmap_handle_t handle)
 	if (it == NULL) {
 		assert(0 && "invalid handle, or handle already unmapped");
 	}
-	free(it);
+	kmm_free(it);
 }
 
 void spi_flash_mmap_dump(void)

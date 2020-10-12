@@ -176,7 +176,7 @@ const esp_partition_t *esp_partition_find_first(esp_partition_type_t type, esp_p
 
 static esp_partition_iterator_opaque_t *iterator_create(esp_partition_type_t type, esp_partition_subtype_t subtype, const char *label)
 {
-	esp_partition_iterator_opaque_t *it = (esp_partition_iterator_opaque_t *)malloc(sizeof(esp_partition_iterator_opaque_t));
+	esp_partition_iterator_opaque_t *it = (esp_partition_iterator_opaque_t *)kmm_malloc(sizeof(esp_partition_iterator_opaque_t));
 	it->type = type;
 	it->subtype = subtype;
 	it->label = label;
@@ -208,7 +208,7 @@ static esp_err_t load_partitions(void)
 			break;
 		}
 		// allocate new linked list item and populate it with data from partition table
-		partition_list_item_t *item = (partition_list_item_t *)malloc(sizeof(partition_list_item_t));
+		partition_list_item_t *item = (partition_list_item_t *)kmm_malloc(sizeof(partition_list_item_t));
 		item->info.address = it->pos.offset;
 		item->info.size = it->pos.size;
 		item->info.type = it->type;
@@ -243,7 +243,7 @@ void esp_partition_initialize(void)
 void esp_partition_iterator_release(esp_partition_iterator_t iterator)
 {
 	// iterator == NULL is okay
-	free(iterator);
+	kmm_free(iterator);
 }
 
 const esp_partition_t *esp_partition_get(esp_partition_iterator_t iterator)

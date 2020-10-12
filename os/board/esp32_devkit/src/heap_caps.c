@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/kmalloc.h>
 
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
@@ -69,7 +70,7 @@ IRAM_ATTR void *heap_caps_malloc(size_t size, uint32_t caps)
 		index = 0;
 	}
 
-	return malloc_at(index, size);;
+	return kmm_malloc_at(index, size);;
 }
 
 IRAM_ATTR void heap_caps_free(void *ptr)
@@ -78,7 +79,7 @@ IRAM_ATTR void heap_caps_free(void *ptr)
 		return;
 	}
 
-	free(ptr);
+	kmm_free(ptr);
 }
 
 IRAM_ATTR void *heap_caps_realloc(void *ptr, size_t size, int caps)
@@ -92,7 +93,7 @@ IRAM_ATTR void *heap_caps_realloc(void *ptr, size_t size, int caps)
 		return NULL;
 	}
 
-	return realloc(ptr, size);
+	return kmm_realloc(ptr, size);
 }
 
 IRAM_ATTR void *heap_caps_calloc(size_t n, size_t size, uint32_t caps)
