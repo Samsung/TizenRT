@@ -791,11 +791,11 @@ static int tzload(FAR const char *name, FAR struct state_s *const sp, const int 
 	}
 
 	sp->defaulttype = i;
-	free(up);
+	lib_free(up);
 	return 0;
 
 oops:
-	free(up);
+	lib_free(up);
 	return -1;
 }
 
