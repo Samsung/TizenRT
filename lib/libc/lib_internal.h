@@ -104,6 +104,7 @@
 /* Domain-specific allocations */
 
 #define lib_malloc(s)      kmm_malloc(s)
+#define lib_calloc(p, s)   kmm_calloc(p, s)
 #define lib_zalloc(s)      kmm_zalloc(s)
 #define lib_realloc(p, s)  kmm_realloc(p, s)
 #define lib_memalign(p, s) kmm_memalign(p, s)
@@ -122,6 +123,7 @@
 /* Domain-specific allocations */
 
 #define lib_malloc(s)      malloc(s)
+#define lib_calloc(p, s)   calloc(p, s)
 #define lib_zalloc(s)      zalloc(s)
 #define lib_realloc(p, s)  realloc(p, s)
 #define lib_free(p)        free(p)
