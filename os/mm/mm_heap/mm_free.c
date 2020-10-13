@@ -129,6 +129,7 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		 * 3rd scenario: ptr = malloc(100); free(ptr); if(ptr) { free(ptr); }
 		 */
 		mdbg("Attempt for double freeing a pointer or releasing an unallocated pointer\n");
+		mm_givesemaphore(heap);
 		return;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
