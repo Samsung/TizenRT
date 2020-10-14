@@ -34,7 +34,7 @@
 #if CONFIG_COMPRESSION_TYPE == LZMA
 #include <tinyara/lzma/LzmaLib.h>
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
-#include <tinyara/miniz/miniz.h>
+#include <miniz/miniz.h>
 #endif
 
 /****************************************************************************
