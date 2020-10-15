@@ -125,14 +125,13 @@ void up_release_stack(FAR struct tcb_s *dtcb, uint8_t ttype)
 
 	if (dtcb->stack_alloc_ptr) {
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		/* Check if user thread */
-		if (dtcb->uheap) {
-			/* If this was the active thread when user fault happened,
-			 * disable it's mpu region for stack protection
-			 */
-			if (up_mpu_check_active(dtcb->stack_mpu_regs)) {
-				up_mpu_disable_region(dtcb->stack_mpu_regs);
-			}
+		/* If this dtcb belongs to running thread, then it's stack
+		 * guard region would have been set as RO. In this case, in
+		 * order to avoid memfault, disable it's MPU region for stack
+		 * overflow protection before freeing allocated stack.
+		 */
+		if (up_mpu_check_active(dtcb->stack_mpu_regs)) {
+			up_mpu_disable_region(dtcb->stack_mpu_regs);
 		}
 #endif
 		/* Use the kernel allocator if this is a kernel thread */

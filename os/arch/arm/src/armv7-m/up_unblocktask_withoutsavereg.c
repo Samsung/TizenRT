@@ -164,10 +164,10 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
 #endif
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-			up_mpu_set_register(rtcb->stack_mpu_regs);
-#endif
 		}
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		up_mpu_set_register(rtcb->stack_mpu_regs);
+#endif
 #endif
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
