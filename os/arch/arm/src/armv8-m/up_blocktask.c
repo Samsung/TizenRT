@@ -188,12 +188,12 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 					up_mpu_set_register(&rtcb->mpu_regs[i]);
 				}
 #endif
-#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
-				up_mpu_set_register(rtcb->stack_mpu_regs);
-#elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
-				set_PSPLIM((uint32_t)rtcb->stack_alloc_ptr);
-#endif
 			}
+#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+			up_mpu_set_register(rtcb->stack_mpu_regs);
+#elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
+			set_PSPLIM((uint32_t)rtcb->stack_alloc_ptr);
+#endif
 #endif
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY

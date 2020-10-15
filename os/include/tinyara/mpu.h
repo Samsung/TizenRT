@@ -67,9 +67,9 @@ enum MPU_REG_NUM {
 #else
 	MPU_REG_NUM_APP,
 #endif
+#endif
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 	MPU_REG_NUM_STK,		/* Stack */
-#endif
 #endif
 	MPU_REG_NUM_MAX
 };
