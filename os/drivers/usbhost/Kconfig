@@ -311,3 +311,4 @@ config USBHOST_TRACE_VERBOSE
 
 endif
 
+source drivers/usbhost/uvc/Kconfig
