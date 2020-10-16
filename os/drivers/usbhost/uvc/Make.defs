@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2020 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+
 ############################################################################
-# drivers/usbhost/Make.defs
+# drivers/usbhost/uvc/Make.defs
 #
-#   Copyright (C) 2010-2015 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2018 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,54 +51,16 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_USBHOST),y)
-
-# Include built-in USB host driver logic
-
-CSRCS += usbhost_registry.c usbhost_registerclass.c usbhost_findclass.c
-CSRCS += usbhost_enumerate.c usbhost_devaddr.c
-
-ifeq ($(CONFIG_USBHOST_HUB),y)
-CSRCS += usbhost_hub.c
-endif
-
-ifeq ($(CONFIG_USBHOST_MSC),y)
-CSRCS += usbhost_storage.c
-endif
-
-ifeq ($(CONFIG_USBHOST_CDCACM),y)
-CSRCS += usbhost_cdcacm.c
-endif
-
-# HCD debug/trace logic
-
-ifeq ($(CONFIG_USBHOST_TRACE),y)
-CSRCS += usbhost_trace.c
-else
-ifeq ($(CONFIG_DEBUG_USB),y)
-CSRCS += usbhost_trace.c
-endif
-endif
-
+# Include USB UVC drivers into the build
 ifeq ($(CONFIG_USBHOST_UVC),y)
-include usbhost$(DELIM)uvc$(DELIM)Make.defs
-endif
-# Include add-on USB host driver logic if present and selected (availabel in
-# the TinyAra drivers GIT repository)
-
-ifeq ($(CONFIG_USBHOST_RTL8187),y)
-  RTL8187_CSRC := ${shell if [ -f usbhost$(DELIM)rtl8187x.c ]; then echo "rtl8187x.c"; fi}
-  CSRCS += $(RTL8187_CSRC)
+CSRCS += usbhost_uvc_ctrl.c
+CSRCS += usbhost_uvc_v4l2.c
+CSRCS += usbhost_uvc_driver.c
+CSRCS += usbhost_uvc_video.c
 endif
 
-ifeq ($(CONFIG_USBHOST_RTL8723D),y)
-  RTL8723D_CSRC := ${shell if [ -f usbhost$(DELIM)rtl8723d.c ]; then echo "rtl8723d.c"; fi}
-  CSRCS += $(RTL8723D_CSRC)
-endif
-endif
+# Include uvc driver build support
 
-# Include USB host driver build logic
-
-DEPPATH += --dep-path usbhost
-VPATH += :usbhost
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)usbhost}
+DEPPATH += --dep-path usbhost$(DELIM)uvc
+VPATH += :usbhost$(DELIM)uvc
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)usbhost$(DELIM)uvc}
