@@ -15,11 +15,8 @@
  ****************************************************************************** 
  */
 
-
-
 #include "objects.h"
 #include "PinNames.h"
-
 
 #include "pinmap.h"
 
@@ -214,7 +211,6 @@ int  flash_read_word(flash_t *obj, u32 address, u32 * data)
 	}else{
 		* data = HAL_READ32(SPI_FLASH_BASE, address);
 	}
-	
 	return 1;
 }
 
@@ -261,7 +257,6 @@ int  flash_write_word(flash_t *obj, u32 address, u32 data)
 	// flash_lock();
 	return 1;
 }
-
 
 /**
   * @brief  Read a stream of data from specified address
@@ -332,8 +327,7 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 * data)
 			pbuf++;
 		}        
 	}
-
-	return 1;
+	return len;
 }
 
 /**
@@ -434,7 +428,7 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 * data)
 	DCache_Invalidate(SPI_FLASH_BASE + address, len);
 	FLASH_Write_Unlock();
 
-	return 1;
+	return size;
 }
 
 /**
@@ -464,7 +458,6 @@ int  flash_burst_read(flash_t *obj, u32 address, u32 Length, u8 * data)
 	flash_stream_read(obj, address, Length, data);
 	return 1;
 }
-
 
 /**
   * @brief   This function is only for Micron 128MB flash to access beyond 16MB by switching between eight 16MB-area(segment).
