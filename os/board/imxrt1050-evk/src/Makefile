@@ -62,6 +62,9 @@ endif
 
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
 CSRCS += imxrt_appinit.c imxrt_bringup.c
+ifeq ($(CONFIG_IMXRT_USB),y)
+CFLAGS += -DIMXRT_USB
+endif
 else ifeq ($(CONFIG_BOARD_INITIALIZE),y)
 CSRCS += imxrt_bringup.c
 endif
@@ -115,6 +118,11 @@ else
   CFLAGS += -I$(ARCH_SRCDIR)/common
   CFLAGS += -I$(ARCH_SRCDIR)/armv7-m
   CFLAGS += -I$(BOARD_SRCDIR)/common
+  CFLAGS += -DUSB_TIZEN_RT
+  CFLAGS += -I$(ARCH_SRCDIR)/chip/usb/include
+  CFLAGS += -I$(ARCH_SRCDIR)/chip/usb/phy
+  CFLAGS += -I$(ARCH_SRCDIR)/chip/usb/host/class
+  CFLAGS += -I$(ARCH_SRCDIR)/chip/usb/host
 endif
 
 all: libboard$(LIBEXT)

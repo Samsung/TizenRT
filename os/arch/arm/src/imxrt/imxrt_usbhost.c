@@ -101,8 +101,6 @@
  ************************************************************************************/
 /* Retained device driver handle */
 
-static struct usbhost_connection_s *g_ehciconn;
-
 /* Overcurrent interrupt handler */
 
 #if 0							/* Not yet implemented */
@@ -120,29 +118,29 @@ static xcpt_t g_ochandler;
  *   Wait for USB devices to be connected to the EHCI root hub.
  *
  ************************************************************************************/
-
+extern int imxrt_wait(FAR struct usbhost_hubport_s **hport);
+extern int imxrt_enumerate(FAR struct usbhost_hubport_s *hport);
 static int ehci_waiter(int argc, char *argv[])
 {
 	FAR struct usbhost_hubport_s *hport;
+	pid_t pid;
 
-	udbg("ehci_waiter:  Running\n");
 	for (;;) {
 		/* Wait for the device to change state */
 
-		DEBUGVERIFY(CONN_WAIT(g_ehciconn, &hport));
-		udbg("ehci_waiter: %s\n", hport->connected ? "connected" : "disconnected");
+		imxrt_wait(&hport);
 
 		/* Did we just become connected? */
 
 		if (hport->connected) {
 			/* Yes.. enumerate the newly connected device */
-
-			(void)CONN_ENUMERATE(g_ehciconn, hport);
+#ifdef HAVE_USBHOST_TRACE_VERBOSE
+			usbhost_vtrace1(EHCI_VTRACE1_CLASSENUM, hport->port);
+#endif
+			imxrt_enumerate(hport);
 		}
 	}
-
 	/* Keep the compiler from complaining */
-
 	return 0;
 }
 
@@ -190,20 +188,40 @@ void weak_function imxrt_usbhost_bootinitialize(void)
 
 int imxrt_usbhost_initialize(void)
 {
+	int ret;
 	pid_t pid;
 
 	/* Then get an instance of the USB EHCI interface. */
 
-	g_ehciconn = imxrt_ehci_initialize(0);
-	if (!g_ehciconn) {
-		IMXLOG("ERROR: imxrt_ehci_initialize failed\n");
+#ifdef CONFIG_USBHOST_HUB
+	/* Initialize USB hub class support */
+	ret = usbhost_hub_initialize();
+	if (ret != OK) {
+		udbg("ERROR: Failed to register the hub class: %d\n", ret);
+	}
+#endif
+#ifdef CONFIG_USBHOST_MSC
+	ret = usbhost_msc_initialize();
+	if (ret != OK) {
+		udbg("ERROR: Failed to register the mass storage class: %d\n", ret);
+	}
+#endif
+#ifdef CONFIG_USBHOST_UVC
+	ret = usbhost_uvc_init();
+	if (ret != OK) {
+		udbg("ERROR: Failed to register video class: %d\n", ret);
+	}
+#endif
+	ret = imxrt_ehci_initialize(0);
+	if (ret != OK) {
+		udbg("ERROR: Failed to initialize USB ehci driver: %d\n", ret);
 		return -ENODEV;
 	}
 
 	/* Start a thread to handle device connection. */
 	pid = kernel_thread("EHCI Monitor", CONFIG_USBHOST_DEFPRIO, CONFIG_USBHOST_STACKSIZE, (main_t)ehci_waiter, (FAR char *const *)NULL);
 	if (pid < 0) {
-		IMXLOG("ERROR: Failed to create ehci_waiter task\n");
+		udbg("ERROR: Failed to create ehci_waiter task :%d\n", pid);
 		return pid;
 	}
 
