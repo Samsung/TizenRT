@@ -92,7 +92,7 @@ static int rdp_demo(int argc, FAR char *argv[])
 	 */
 	up_allocate_secure_context(CONFIG_MIN_SECURE_STACKSIZE);
 
-	for (i = 0; i < 32; i++){
+	for (i = 0; i < 32; i++) {
 		rdp_result = rdp_protection_entry(i);
 		no_rdp_result = rdp_no_protection_call(no_protection_func, i);
 
@@ -105,7 +105,7 @@ static int rdp_demo(int argc, FAR char *argv[])
 	printf("rdp demo call succeed!\n");
 end:
 	/* Frees the given secure context */
-	up_free_secure_context(tz_memory);
+	up_free_secure_context();
 	return 0;
 }
 
