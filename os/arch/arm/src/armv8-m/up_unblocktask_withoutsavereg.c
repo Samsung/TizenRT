@@ -71,6 +71,9 @@
 #include <tinyara/debug/sysdbg.h>
 #endif
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#include <tinyara/tz_context.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -133,6 +136,11 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 		tcb->task_state = TSTATE_TASK_RUNNING;
 		tcb->flink->task_state = TSTATE_TASK_READYTORUN;
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		if (tcb->tz_context) {
+			TZ_StoreContext_S(tcb->tz_context);
+		}
+#endif
 	} else {
 		/* The new btcb was added in the middle of the ready-to-run list */
 
@@ -182,6 +190,11 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 		rtcb->is_active = true;
 #endif
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		if (rtcb->tz_context) {
+			TZ_LoadContext_S(rtcb->tz_context);
+		}
+#endif
 		/* Then switch contexts */
 
 		up_restorestate(rtcb->xcp.regs);

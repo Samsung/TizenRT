@@ -114,7 +114,6 @@ up_allocate_secure_context:
 	.type up_free_secure_context, function
 
 up_free_secure_context:
-	mov	r1, r0				/* R1: Secure Handle */
 	mov	r0, # SYS_free_securecontext	/* R0: free secure context */
 	svc	0				/* Force synchronous SVCall (or Hard Fault) */
 

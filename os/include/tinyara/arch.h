@@ -429,7 +429,7 @@ void up_allocate_secure_context(TZ_ModuleId_t size);
  *
  ****************************************************************************/
 
-void up_free_secure_context(TZ_MemoryId_t handle);
+void up_free_secure_context();
 #endif
 
 /****************************************************************************

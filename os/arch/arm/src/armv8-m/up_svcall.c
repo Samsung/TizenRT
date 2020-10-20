@@ -107,10 +107,6 @@ extern uint32_t g_assertpc;
 extern uint32_t *g_umm_app_id;
 #endif
 
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-/* By default, a task is created without a secure context */
-volatile TZ_ModuleId_t tz_memory = 0x0;
-#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -191,9 +187,7 @@ static void dispatch_syscall(void)
 int up_svcall(int irq, FAR void *context, FAR void *arg)
 {
 	uint32_t *regs = (uint32_t *)context;
-#if defined(CONFIG_BUILD_PROTECTED)
 	struct tcb_s *rtcb = sched_self();
-#endif
 	uint32_t cmd;
 
 	DEBUGASSERT(regs && regs == current_regs);
@@ -271,18 +265,15 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
 
-#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_TASK_MONITOR)
-		struct tcb_s *tcb = sched_self();
-#endif
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
-		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
 			for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
-				up_mpu_set_register(&tcb->mpu_regs[i]);
+				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
 #if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
-			up_mpu_set_register(tcb->stack_mpu_regs);
+			up_mpu_set_register(rtcb->stack_mpu_regs);
 #elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
 			set_PSPLIM((uint32_t) rtcb->stack_alloc_ptr);
 #endif
@@ -296,7 +287,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
-		tcb->is_active = true;
+		rtcb->is_active = true;
 #endif
 	}
 	break;
@@ -325,18 +316,15 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
 
-#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_TASK_MONITOR)
-		struct tcb_s *tcb = sched_self();
-#endif
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
-		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
 			for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
-				up_mpu_set_register(&tcb->mpu_regs[i]);
+				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
 #if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
-			up_mpu_set_register(tcb->stack_mpu_regs);
+			up_mpu_set_register(rtcb->stack_mpu_regs);
 #elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
 			set_PSPLIM((uint32_t) rtcb->stack_alloc_ptr);
 #endif
@@ -350,7 +338,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
-		tcb->is_active = true;
+		rtcb->is_active = true;
+#endif
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		if (rtcb->tz_context)
+			TZ_LoadContext_S(rtcb->tz_context);
 #endif
 	}
 	break;
@@ -566,20 +558,16 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		ulR1 = regs[REG_R1];
 
 		/* Allocate and load a context for the secure task. */
-		tz_memory = TZ_AllocModuleContext_S(ulR1);
-		regs[REG_R8] = tz_memory;
+		rtcb->tz_context = TZ_AllocModuleContext_S(ulR1);
 
-		ASSERT(tz_memory != 0);
-		TZ_LoadContext_S(tz_memory);
+		ASSERT(rtcb->tz_context != 0);
+		TZ_LoadContext_S(rtcb->tz_context);
 	}
 	break;
 
 	case SYS_free_securecontext: {
-		uint32_t ulR1;
-		ulR1 = regs[REG_R1];
-
 		/* Free the secure context. */
-		TZ_FreeModuleContext_S((TZ_MemoryId_t) ulR1);
+		TZ_FreeModuleContext_S(rtcb->tz_context);
 	}
 	break;
 #endif

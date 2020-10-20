@@ -81,8 +81,10 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
 #include <tinyara/mpu.h>
-
 #include <arch/arch.h>
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#include <tinyara/tz_context.h>
+#endif
 
 /* Configuration ****************************************************************/
 /* Task groups currently only supported for retention of child status */
@@ -626,6 +628,10 @@ uint32_t stack_mpu_regs[REG_MAX]; /* need 3 MPU registers to configure a region 
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	uint32_t app_id;			/* Indicates app id of the task and used to index into umm_heap_table */
+#endif
+
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+	volatile TZ_ModuleId_t tz_context;
 #endif
 
 #if CONFIG_TASK_NAME_SIZE > 0

@@ -78,7 +78,24 @@
 
 /* EXC_RETURN_BASE: Bits that are always set in an EXC_RETURN value. */
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+/* In case of ARMv8 with TZ, following bits have special meaning. 
+ * BIT 6 :	Set if secure stack is used, else reset
+ * BIT 5 : 	Set if default rules used for stacking callee registers
+ * BIT 4 :	Set if space for FP registers is not allocated
+ * BIT 3 :	Set for Thread mode, reset for Handler mode
+ * BIT 2 : 	Set for using PSP, reset for using MSP
+ * BIT 0 :	Set for secure state, reset for non-secure state
+ *
+ * Here we are setting the default values assuming non secure state of
+ * execution. Bits 6, 5 and 0 are especially important, because they
+ * differ from the ARMv7 implementation
+ */
+
+#define EXC_RETURN_BASE          0xffffffa0
+#else
 #define EXC_RETURN_BASE          0xffffffe1
+#endif
 
 /* EXC_RETURN_PROCESS_STACK: The exception saved (and will restore) the hardware
  * context using the process stack pointer (if not set, the context was saved

@@ -71,8 +71,6 @@ typedef uint32_t TZ_ModuleId_t;
 /* Details TZ Memory ID identifies an allocated memory slot. */
 typedef uint32_t TZ_MemoryId_t;
 
-extern volatile TZ_MemoryId_t tz_memory;
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -111,40 +109,4 @@ uint32_t TZ_LoadContext_S(TZ_MemoryId_t id);
  */
 uint32_t TZ_StoreContext_S(TZ_MemoryId_t id);
 
-/****************************************************************************
- * Inline Functions
- ****************************************************************************/
-
-/**
-/* Load the secure context and PSPLIM of OLD rtcb
-*/
-static inline void tz_load_context(uint32_t *reg)
-{
-	reg += REG_R8;
-	tz_memory = *reg;
-	uint32_t result = *(++reg);
-	set_PSPLIM(result);
-
-	/* If there is associated secure context
-	 * with the current active task, then load the secure context
-	 */
-	if (tz_memory) {
-		TZ_LoadContext_S(tz_memory);
-	}
-}
-
-/**
- * Store the secure context and PSPLIM of OLD rtcb
- */
-static inline void tz_store_context(uint32_t *reg)
-{
-	if (tz_memory) {
-		TZ_StoreContext_S(tz_memory);
-	}
-
-	reg += REG_R8;
-	*reg = tz_memory;
-	*(++reg) = get_PSPLIM();
-	tz_memory = 0;
-}
 #endif						/* TZ_CONTEXT_H */

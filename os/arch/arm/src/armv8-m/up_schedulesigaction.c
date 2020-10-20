@@ -195,10 +195,6 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 				 */
 
 				up_savestate(tcb->xcp.regs);
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-				/* Store the secure context and PSPLIM of OLD rtcb */
-				tz_store_context(tcb->xcp.regs);
-#endif
 
 			}
 		}

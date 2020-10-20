@@ -154,6 +154,11 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 	/* Now, perform the context switch if one is needed */
 
 	if (switch_needed) {
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		if (tcb->tz_context) {
+			TZ_StoreContext_S(tcb->tz_context);
+		}
+#endif
 		/* Are we in an interrupt handler? */
 
 		if (current_regs) {
@@ -162,10 +167,6 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			 */
 
 			up_savestate(rtcb->xcp.regs);
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-			/* Store the secure context and PSPLIM of OLD rtcb */
-			tz_store_context(rtcb->xcp.regs);
-#endif
 
 			/* Restore the exception context of the rtcb at the (new) head
 			 * of the g_readytorun task list.
@@ -205,13 +206,14 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			rtcb->is_active = true;
 #endif
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+			if (rtcb->tz_context) {
+				TZ_LoadContext_S(rtcb->tz_context);
+			}
+#endif
 			/* Then switch contexts */
 
 			up_restorestate(rtcb->xcp.regs);
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-			/* Load the secure context and PSPLIM of OLD rtcb */
-			tz_load_context(rtcb->xcp.regs);
-#endif
 
 		}
 

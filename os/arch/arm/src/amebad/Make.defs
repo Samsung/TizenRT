@@ -89,7 +89,7 @@ CMN_CSRCS += up_ramvec_initialize.c up_ramvec_attach.c
 endif
 
 ifeq ($(CONFIG_ARMV8M_TRUSTZONE),y)
-CMN_ASRCS += up_secure_context.S up_exception_svc.S
+CMN_ASRCS += up_secure_context.S 
 endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
