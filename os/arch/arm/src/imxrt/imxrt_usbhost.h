@@ -131,6 +131,9 @@ void weak_function imxrt_usbhost_bootinitialize(void);
 
 #ifdef HAVE_USBHOST
 int imxrt_usbhost_initialize(void);
+#ifdef IMXRT_USB
+void imxrt_usbhost_service_initialize(void);
+#endif
 #endif
 
 #undef EXTERN

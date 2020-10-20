@@ -227,5 +227,20 @@ CHIP_CSRCS += imxrt_norflash.c
 endif
 
 ifeq ($(CONFIG_USBHOST),y)
+ifeq ($(CONFIG_IMXRT_USB),y)
+VPATH += chip/usb/host
+VPATH += chip/usb/phy
+CFLAGS += -DUSB_TIZEN_RT
+CFLAGS += -Ichip/usb/include
+CFLAGS += -Ichip/usb/phy
+CFLAGS += -Ichip/usb/host
+CHIP_CSRCS += usb_porting.c
+CHIP_CSRCS += usb_host_ehci.c
+CHIP_CSRCS += usb_host_hci.c
+CHIP_CSRCS += usb_host_devices.c
+#phy directory
+CHIP_CSRCS += usb_phy.c
+else
 CHIP_CSRCS += imxrt_usbhost.c imxrt_ehci.c
+endif
 endif

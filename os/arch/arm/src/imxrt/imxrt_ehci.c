@@ -206,8 +206,8 @@
 
 /* Port numbers */
 
-#define RHPNDX(rh)            ((rh)->hport.hport.port)
-#define RHPORT(rh)            (RHPNDX(rh) + 1)
+#define RHPNDX(rh)            g_USBHOST_ROOT_HUB_PORT.hport.port
+#define RHPORT(rh)            (g_USBHOST_ROOT_HUB_PORT.hport.port + 1)
 
 /****************************************************************************
  * Private Types
@@ -261,17 +261,17 @@ struct imxrt_epinfo_s {
 	uint8_t interval;			/* Polling interval */
 #endif
 	uint8_t status;				/* Retained token status bits (for debug purposes) */
-	volatile bool iocwait;		/* TRUE: Thread is waiting for transfer completion */
-	uint16_t maxpacket:11;		/* Maximum packet size */
+	volatile bool iocwait;			/* TRUE: Thread is waiting for transfer completion */
+	uint16_t maxpacket:11;			/* Maximum packet size */
 	uint16_t xfrtype:2;			/* See USB_EP_ATTR_XFER_* definitions in usb.h */
 	uint16_t speed:2;			/* See USB_*_SPEED definitions in ehci.h */
-	int result;					/* The result of the transfer */
+	int result;				/* The result of the transfer */
 	uint32_t xfrd;				/* On completion, will hold the number of bytes transferred */
-	sem_t appsem;               /* Semaphore used to protect epinfo */
+	sem_t appsem;				/* Semaphore used to protect epinfo */
 	sem_t iocsem;				/* Semaphore used to wait for transfer completion */
 #ifdef CONFIG_USBHOST_ASYNCH
-	usbhost_asynch_t callback;	/* Transfer complete callback */
-	void *arg;					/* Argument that accompanies the callback */
+	usbhost_asynch_t callback;		/* Transfer complete callback */
+	void *arg;				/* Argument that accompanies the callback */
 #endif
 };
 
@@ -283,8 +283,6 @@ struct imxrt_rhport_s {
 	 * to struct imxrt_rhport_s.
 	 */
 
-	struct usbhost_driver_s drvr;
-
 	/* Root hub port status */
 
 	volatile bool connected;	/* Connected to device */
@@ -293,31 +291,32 @@ struct imxrt_rhport_s {
 
 	/* This is the hub port description understood by class drivers */
 
-	struct usbhost_roothubport_s hport;
 };
+struct usbhost_roothubport_s g_USBHOST_ROOT_HUB_PORT;
+struct usbhost_driver_s g_USBHOST_DRIVER;
 
 /* This structure retains the overall state of the USB host controller */
 
 struct imxrt_ehci_s {
 	volatile bool pscwait;		/* TRUE: Thread is waiting for port status change event */
 
-	sem_t exclsem;				/* Support mutually exclusive access */
-	sem_t pscsem;				/* Semaphore to wait for port status change events */
+	sem_t exclsem;			/* Support mutually exclusive access */
+	sem_t pscsem;			/* Semaphore to wait for port status change events */
 
 	struct imxrt_epinfo_s ep0;	/* Endpoint 0 */
 	struct imxrt_list_s *qhfree;	/* List of free Queue Head (QH) structures */
 	struct imxrt_list_s *qtdfree;	/* List of free Queue Element Transfer Descriptor (qTD) */
-	struct work_s work;			/* Supports interrupt bottom half */
+	struct work_s work;		/* Supports interrupt bottom half */
 
 #ifdef CONFIG_USBHOST_HUB
 	/* Used to pass external hub port events */
 
-	volatile struct usbhost_hubport_s *hport;
+	volatile struct usbhost_hubport_s *g_USBHOST_HUBPORT;
 #endif
 
 	/* Root hub ports */
 
-	struct imxrt_rhport_s rhport[IMXRT_EHCI_NRHPORT];
+	struct imxrt_rhport_s m_rhport;
 };
 
 #ifdef HAVE_USBHOST_TRACE
@@ -356,8 +355,8 @@ enum usbhost_trace1codes_e {
 
 #ifdef HAVE_USBHOST_TRACE_VERBOSE
 	EHCI_VTRACE1_PORTSC_CSC,	/* EHCI Connect Status Change */
-	EHCI_VTRACE1_PORTSC_CONNALREADY,	/* EHCI Already connected */
-	EHCI_VTRACE1_PORTSC_DISCALREADY,	/* EHCI Already disconnected */
+	EHCI_VTRACE1_PORTSC_CONNALREADY,/* EHCI Already connected */
+	EHCI_VTRACE1_PORTSC_DISCALREADY,/* EHCI Already disconnected */
 	EHCI_VTRACE1_TOPHALF,		/* EHCI Interrupt top half */
 	EHCI_VTRACE1_AAINTR,		/* EHCI Async Advance Interrupt */
 
@@ -369,7 +368,7 @@ enum usbhost_trace1codes_e {
 	EHCI_VTRACE1_INIITIALIZED,	/* EHCI USB EHCI Initialized */
 #endif
 
-	__TRACE1_NSTRINGS,			/* Separates the format 1 from the format 2 strings */
+	__TRACE1_NSTRINGS,		/* Separates the format 1 from the format 2 strings */
 
 	EHCI_TRACE2_EPSTALLED,		/* EHCI EP Stalled */
 	EHCI_TRACE2_EPIOERROR,		/* EHCI ERROR: EP TOKEN */
@@ -390,7 +389,7 @@ enum usbhost_trace1codes_e {
 	EHCI_VTRACE2_HCSPARAMS,		/* EHCI HCSPARAMS */
 #endif
 
-	__TRACE2_NSTRINGS			/* Total number of enumeration values */
+	__TRACE2_NSTRINGS		/* Total number of enumeration values */
 };
 
 /* USB trace data structure */
@@ -515,9 +514,9 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg);
 
 /* USB Host Controller Operations **********************************************/
 
-static int imxrt_wait(FAR struct usbhost_connection_s *conn, FAR struct usbhost_hubport_s **hport);
-static int imxrt_rh_enumerate(FAR struct usbhost_connection_s *conn, FAR struct usbhost_hubport_s *hport);
-static int imxrt_enumerate(FAR struct usbhost_connection_s *conn, FAR struct usbhost_hubport_s *hport);
+int imxrt_wait(FAR struct usbhost_hubport_s **hport);
+static int imxrt_rh_enumerate(FAR struct usbhost_hubport_s *hport);
+int imxrt_enumerate(FAR struct usbhost_hubport_s *hport);
 
 static int imxrt_ep0configure(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep0, uint8_t funcaddr, uint8_t speed, uint16_t maxpacketsize);
 static int imxrt_epalloc(FAR struct usbhost_driver_s *drvr, const FAR struct usbhost_epdesc_s *epdesc, usbhost_ep_t *ep);
@@ -553,8 +552,6 @@ static int imxrt_reset(void);
 static struct imxrt_ehci_s g_ehci;
 
 /* This is the connection/enumeration interface */
-
-static struct usbhost_connection_s g_ehciconn;
 
 /* Maps USB chapter 9 speed to EHCI speed */
 
@@ -803,7 +800,7 @@ static uint32_t imxrt_swap32(uint32_t value)
 #ifdef CONFIG_IMXRT_EHCI_REGDEBUG
 static void imxrt_printreg(volatile uint32_t *regaddr, uint32_t regval, bool iswrite)
 {
-	udbg("%08x%s%08x\n", (uintptr_t)regaddr, iswrite ? "<-" : "->", regval);
+	udbg("%08x%s%08x\n", (uintptr_t) regaddr, iswrite ? "<-" : "->", regval);
 }
 #endif
 
@@ -1597,8 +1594,7 @@ static void imxrt_qh_enqueue(struct imxrt_qh_s *qhead, struct imxrt_qh_s *qh)
 
 	physaddr = (uintptr_t) imxrt_physramaddr((uintptr_t) qh);
 	qhead->hw.hlp = imxrt_swap32(physaddr | QH_HLP_TYP_QH);
-	arch_flush_dcache((uintptr_t)&qhead->hw,
-		(uintptr_t)&qhead->hw + sizeof(struct ehci_qh_s));
+	arch_flush_dcache((uintptr_t) & qhead->hw, (uintptr_t) & qhead->hw + sizeof(struct ehci_qh_s));
 }
 
 /****************************************************************************
@@ -1670,7 +1666,7 @@ static struct imxrt_qh_s *imxrt_qh_create(struct imxrt_rhport_s *rhport, struct 
 	 * MULT     High band width multiplier      1
 	 */
 
-	rhpndx = RHPNDX(rhport);
+	rhpndx = g_USBHOST_ROOT_HUB_PORT.hport.port;
 
 #ifdef CONFIG_USBHOST_HUB
 	/* REVISIT:  Future HUB support will require the HUB port number
@@ -2754,7 +2750,7 @@ static int imxrt_qtd_cancel(struct imxrt_qtd_s *qtd, uint32_t **bp, void *arg)
 
 	/* Make sure we reload the QH from memory */
 
-	arch_invalidate_dcache((uintptr_t) & qtd->hw, (uintptr_t) & qtd->hw + sizeof(struct ehci_qtd_s));
+	arch_invalidate_dcache((uintptr_t) &qtd->hw, (uintptr_t) &qtd->hw + sizeof(struct ehci_qtd_s));
 	imxrt_qtd_print(qtd);
 
 	/* Remove the qTD from the list
@@ -2798,7 +2794,7 @@ static int imxrt_qh_cancel(struct imxrt_qh_s *qh, uint32_t **bp, void *arg)
 
 	/* Make sure we reload the QH from memory */
 
-	arch_invalidate_dcache((uintptr_t) & qh->hw, (uintptr_t) & qh->hw + sizeof(struct ehci_qh_s));
+	arch_invalidate_dcache((uintptr_t) &qh->hw, (uintptr_t) &qh->hw + sizeof(struct ehci_qh_s));
 	imxrt_qh_print(qh);
 
 	/* Check if this is the QH that we are looking for */
@@ -2874,7 +2870,7 @@ static inline void imxrt_ioc_bottomhalf(void)
 	/* Check the Asynchronous Queue */
 	/* Make sure that the head of the asynchronous queue is invalidated */
 
-	arch_invalidate_dcache((uintptr_t) & g_asynchead.hw, (uintptr_t) & g_asynchead.hw + sizeof(struct ehci_qh_s));
+	arch_invalidate_dcache((uintptr_t) &g_asynchead.hw, (uintptr_t) &g_asynchead.hw + sizeof(struct ehci_qh_s));
 
 	/* Set the back pointer to the forward QH pointer of the asynchronous
 	 * queue head.
@@ -2901,7 +2897,7 @@ static inline void imxrt_ioc_bottomhalf(void)
 	/* Check the Interrupt Queue */
 	/* Make sure that the head of the interrupt queue is invalidated */
 
-	arch_invalidate_dcache((uintptr_t) & g_intrhead.hw, (uintptr_t) & g_intrhead.hw + sizeof(struct ehci_qh_s));
+	arch_invalidate_dcache((uintptr_t) &g_intrhead.hw, (uintptr_t) &g_intrhead.hw + sizeof(struct ehci_qh_s));
 
 	/* Set the back pointer to the forward qTD pointer of the asynchronous
 	 * queue head.
@@ -2953,80 +2949,78 @@ static inline void imxrt_portsc_bottomhalf(void)
 
 	/* Handle root hub status change on each root port */
 
-	for (rhpndx = 0; rhpndx < IMXRT_EHCI_NRHPORT; rhpndx++) {
-		rhport = &g_ehci.rhport[rhpndx];
-		portsc = imxrt_getreg(&HCOR->portsc[rhpndx]);
+	rhport = &g_ehci.m_rhport;
+	portsc = imxrt_getreg(&HCOR->portsc[0]);
 
-		usbhost_vtrace2(EHCI_VTRACE2_PORTSC, rhpndx + 1, portsc);
+	usbhost_vtrace2(EHCI_VTRACE2_PORTSC, 0 + 1, portsc);
 
-		/* Handle port connection status change (CSC) events */
+	/* Handle port connection status change (CSC) events */
 
-		if ((portsc & EHCI_PORTSC_CSC) != 0) {
-			usbhost_vtrace1(EHCI_VTRACE1_PORTSC_CSC, portsc);
+	if ((portsc & EHCI_PORTSC_CSC) != 0) {
+		usbhost_vtrace1(EHCI_VTRACE1_PORTSC_CSC, portsc);
 
-			/* Check current connect status */
+		/* Check current connect status */
 
-			if ((portsc & EHCI_PORTSC_CCS) != 0) {
-				/* Connected ... Did we just become connected? */
+		if ((portsc & EHCI_PORTSC_CCS) != 0) {
+			/* Connected ... Did we just become connected? */
 
-				if (!rhport->connected) {
-					/* Yes.. connected. */
+			if (!rhport->connected) {
+				/* Yes.. connected. */
 
-					rhport->connected = true;
+				rhport->connected = true;
 
-					usbhost_vtrace2(EHCI_VTRACE2_PORTSC_CONNECTED, rhpndx + 1, g_ehci.pscwait);
+				usbhost_vtrace2(EHCI_VTRACE2_PORTSC_CONNECTED, 0 + 1, g_ehci.pscwait);
 
-					/* Notify any waiters */
+				/* Notify any waiters */
 
-					if (g_ehci.pscwait) {
-						g_ehci.pscwait = false;
-						imxrt_givesem(&g_ehci.pscsem);
-					}
-				} else {
-					usbhost_vtrace1(EHCI_VTRACE1_PORTSC_CONNALREADY, portsc);
+				if (g_ehci.pscwait) {
+					g_ehci.pscwait = false;
+					imxrt_givesem(&g_ehci.pscsem);
 				}
 			} else {
-				/* Disconnected... Did we just become disconnected? */
+				usbhost_vtrace1(EHCI_VTRACE1_PORTSC_CONNALREADY, portsc);
+			}
+		} else {
+			/* Disconnected... Did we just become disconnected? */
 
-				if (rhport->connected) {
-					/* Yes.. disconnect the device */
+			if (rhport->connected) {
+				/* Yes.. disconnect the device */
 
-					usbhost_vtrace2(EHCI_VTRACE2_PORTSC_DISCONND, rhpndx + 1, g_ehci.pscwait);
+				usbhost_vtrace2(EHCI_VTRACE2_PORTSC_DISCONND, 0 + 1, g_ehci.pscwait);
 
-					rhport->connected = false;
-					rhport->lowspeed = false;
+				rhport->connected = false;
+				rhport->lowspeed = false;
 
-					/* Are we bound to a class instance? */
+				/* Are we bound to a class instance? */
 
-					hport = &rhport->hport.hport;
-					if (hport->devclass) {
-						/* Yes.. Disconnect the class */
+				hport = &g_USBHOST_ROOT_HUB_PORT.hport;
+				if (hport->devclass) {
+					/* Yes.. Disconnect the class */
 
-						CLASS_DISCONNECTED(hport->devclass);
-						hport->devclass = NULL;
-					}
-
-					/* Notify any waiters for the Root Hub Status change
-					 * event.
-					 */
-
-					if (g_ehci.pscwait) {
-						g_ehci.pscwait = false;
-						imxrt_givesem(&g_ehci.pscsem);
-					}
-				} else {
-					usbhost_vtrace1(EHCI_VTRACE1_PORTSC_DISCALREADY, portsc);
+					CLASS_DISCONNECTED(hport->devclass);
+					hport->devclass = NULL;
 				}
+
+				/* Notify any waiters for the Root Hub Status change
+				 * event.
+				 */
+
+				if (g_ehci.pscwait) {
+					g_ehci.pscwait = false;
+					imxrt_givesem(&g_ehci.pscsem);
+				}
+			} else {
+				usbhost_vtrace1(EHCI_VTRACE1_PORTSC_DISCALREADY, portsc);
 			}
 		}
-
-		/* Clear all pending port interrupt sources by writing a '1' to the
-		 * corresponding bit in the PORTSC register.  In addition, we need
-		 * to preserve the values of all R/W bits (RO bits don't matter)
-		 */
-
-		imxrt_putreg(portsc, &HCOR->portsc[rhpndx]);
 	}
+
+	/* Clear all pending port interrupt sources by writing a '1' to the
+	 * corresponding bit in the PORTSC register.  In addition, we need
+	 * to preserve the values of all R/W bits (RO bits don't matter)
+	 */
+
+	imxrt_putreg(portsc, &HCOR->portsc[0]);
 }
 
 /****************************************************************************
@@ -3280,7 +3274,7 @@ static int imxrt_ehci_interrupt(int irq, FAR void *context, FAR void *arg)
  *
  ****************************************************************************/
 
-static int imxrt_wait(FAR struct usbhost_connection_s *conn, FAR struct usbhost_hubport_s **hport)
+int imxrt_wait(FAR struct usbhost_hubport_s **hport)
 {
 	irqstate_t flags;
 	int rhpndx;
@@ -3293,39 +3287,37 @@ static int imxrt_wait(FAR struct usbhost_connection_s *conn, FAR struct usbhost_
 	for (;;) {
 		/* Check for a change in the connection state on any root hub port */
 
-		for (rhpndx = 0; rhpndx < IMXRT_EHCI_NRHPORT; rhpndx++) {
-			struct imxrt_rhport_s *rhport;
-			struct usbhost_hubport_s *connport;
+		struct imxrt_rhport_s *rhport;
+		struct usbhost_hubport_s *connport;
 
-			/* Has the connection state changed on the RH port? */
+		/* Has the connection state changed on the RH port? */
 
-			rhport = &g_ehci.rhport[rhpndx];
-			connport = &rhport->hport.hport;
+		rhport = &g_ehci.m_rhport;
+		connport = &g_USBHOST_ROOT_HUB_PORT.hport;
 
-			if (rhport->connected != connport->connected) {
-				/* Yes.. Return the RH port to inform the caller which
-				 * port has the connection change.
-				 */
+		if (rhport->connected != g_USBHOST_ROOT_HUB_PORT.hport.connected) {
+			/* Yes.. Return the RH port to inform the caller which
+			 * port has the connection change.
+			 */
 
-				connport->connected = rhport->connected;
-				*hport = connport;
-				irqrestore(flags);
+			g_USBHOST_ROOT_HUB_PORT.hport.connected = rhport->connected;
+			*hport = &g_USBHOST_ROOT_HUB_PORT.hport;
+			irqrestore(flags);
 
-				usbhost_vtrace2(EHCI_VTRACE2_MONWAKEUP, rhpndx + 1, rhport->connected);
-				return OK;
-			}
+			usbhost_vtrace2(EHCI_VTRACE2_MONWAKEUP, 0 + 1, rhport->connected);
+			return OK;
 		}
-
 #ifdef CONFIG_USBHOST_HUB
 		/* Is a device connected to an external hub? */
 
-		if (g_ehci.hport) {
+		// g_USBHOST_HUBPORT IS SET BY CONNECT() FUNCTION FROM usb STACK
+		if (g_ehci.g_USBHOST_HUBPORT) {	// has_hub
 			volatile struct usbhost_hubport_s *connport;
 
 			/* Yes.. return the external hub port */
 
-			connport = g_ehci.hport;
-			g_ehci.hport = NULL;
+			connport = g_ehci.g_USBHOST_HUBPORT;
+			g_ehci.g_USBHOST_HUBPORT = NULL;
 
 			*hport = (struct usbhost_hubport_s *)connport;
 			irqrestore(flags);
@@ -3372,18 +3364,20 @@ static int imxrt_wait(FAR struct usbhost_connection_s *conn, FAR struct usbhost_
  *
  ****************************************************************************/
 
-static int imxrt_rh_enumerate(FAR struct usbhost_connection_s *conn, FAR struct usbhost_hubport_s *hport)
+static int imxrt_rh_enumerate(FAR struct usbhost_hubport_s *hport)
 {
 	struct imxrt_rhport_s *rhport;
 	volatile uint32_t *regaddr;
 	uint32_t regval;
 	int rhpndx;
 
-	DEBUGASSERT(conn != NULL && hport != NULL);
+//  DEBUGASSERT(conn != NULL && hport != NULL);
+	if (hport == NULL) {
+		return -EINVAL;
+	}
 	rhpndx = hport->port;
 
-	DEBUGASSERT(rhpndx >= 0 && rhpndx < IMXRT_EHCI_NRHPORT);
-	rhport = &g_ehci.rhport[rhpndx];
+	rhport = &g_ehci.m_rhport;
 
 	/* Are we connected to a device?  The caller should have called the wait()
 	 * method first to be assured that a device is connected.
@@ -3609,7 +3603,7 @@ static int imxrt_rh_enumerate(FAR struct usbhost_connection_s *conn, FAR struct 
 	return OK;
 }
 
-static int imxrt_enumerate(FAR struct usbhost_connection_s *conn, FAR struct usbhost_hubport_s *hport)
+int imxrt_enumerate(FAR struct usbhost_hubport_s *hport)
 {
 	int ret;
 
@@ -3623,7 +3617,7 @@ static int imxrt_enumerate(FAR struct usbhost_connection_s *conn, FAR struct usb
 	if (ROOTHUB(hport))
 #endif
 	{
-		ret = imxrt_rh_enumerate(conn, hport);
+		ret = imxrt_rh_enumerate(hport);
 		if (ret < 0) {
 			return ret;
 		}
@@ -3690,6 +3684,7 @@ static int imxrt_ep0configure(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep
 	epinfo->devaddr = funcaddr;
 	epinfo->speed = speed;
 	epinfo->maxpacket = maxpacketsize;
+	dbg("imxrt_ep0configure() , funcaddr = %d, speed = %d, maxpacketsize = %d\n", funcaddr, speed, maxpacketsize);
 
 	imxrt_givesem(&g_ehci.exclsem);
 	return OK;
@@ -4032,7 +4027,6 @@ static int imxrt_ctrlin(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep0, FAR
 	imxrt_takesem(&ep0info->appsem);
 	imxrt_takesem(&g_ehci.exclsem);
 
-
 	/* Set the request for the IOC event well BEFORE initiating the transfer. */
 	ret = imxrt_ioc_setup(rhport, ep0info);
 	if (ret != OK) {
@@ -4227,7 +4221,7 @@ static int imxrt_asynch(FAR struct usbhost_driver_s *drvr, usbhost_ep_t ep, FAR 
 	imxrt_takesem(&g_ehci.exclsem);
 
 	//if (buflen >= 512 * 3) {
-		//buflen = 512 * 3;
+	//buflen = 512 * 3;
 	//}
 
 	/* Set the request for the callback well BEFORE initiating the transfer. */
@@ -4508,9 +4502,9 @@ static int imxrt_connect(FAR struct usbhost_driver_s *drvr, FAR struct usbhost_h
 	/* Report the connection event */
 
 	flags = irqsave();
-	DEBUGASSERT(g_ehci.hport == NULL);	/* REVISIT */
+	DEBUGASSERT(g_ehci.g_USBHOST_HUBPORT == NULL);	/* REVISIT */
 
-	g_ehci.hport = hport;
+	g_ehci.g_USBHOST_HUBPORT = hport;	// imxrt_connect set g_ehci.g_USBHOST_HUBPORT
 	if (g_ehci.pscwait) {
 		g_ehci.pscwait = false;
 		imxrt_givesem(&g_ehci.pscsem);
@@ -4692,9 +4686,8 @@ static int imxrt_reset(void)
  *
  ****************************************************************************/
 
-FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
+int imxrt_ehci_initialize(int controller)
 {
-	FAR struct usbhost_hubport_s *hport;
 	uint32_t regval;
 #if defined(CONFIG_DEBUG_USB) && defined(CONFIG_DEBUG_ASSERTIONS)
 	uint16_t regval16;
@@ -4743,74 +4736,69 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 	sem_init(&g_ehci.ep0.appsem, 0, 1);
 	sem_init(&g_ehci.ep0.iocsem, 0, 1);
 
-
 	/* Initialize the root hub port structures */
 
-	for (i = 0; i < IMXRT_EHCI_NRHPORT; i++) {
-		struct imxrt_rhport_s *rhport = &g_ehci.rhport[i];
+	struct imxrt_rhport_s *rhport = &g_ehci.m_rhport;
 
-		/* Initialize the device operations */
+	/* Initialize the device operations */
 
-		rhport->drvr.ep0configure = imxrt_ep0configure;
-		rhport->drvr.epalloc = imxrt_epalloc;
-		rhport->drvr.epfree = imxrt_epfree;
-		rhport->drvr.alloc = imxrt_alloc;
-		rhport->drvr.free = imxrt_free;
-		rhport->drvr.ioalloc = imxrt_ioalloc;
-		rhport->drvr.iofree = imxrt_iofree;
-		rhport->drvr.ctrlin = imxrt_ctrlin;
-		rhport->drvr.ctrlout = imxrt_ctrlout;
-		rhport->drvr.transfer = imxrt_transfer;
+	g_USBHOST_DRIVER.ep0configure = imxrt_ep0configure;
+	g_USBHOST_DRIVER.epalloc = imxrt_epalloc;
+	g_USBHOST_DRIVER.epfree = imxrt_epfree;
+	g_USBHOST_DRIVER.alloc = imxrt_alloc;
+	g_USBHOST_DRIVER.free = imxrt_free;
+	g_USBHOST_DRIVER.ioalloc = imxrt_ioalloc;
+	g_USBHOST_DRIVER.iofree = imxrt_iofree;
+	g_USBHOST_DRIVER.ctrlin = imxrt_ctrlin;
+	g_USBHOST_DRIVER.ctrlout = imxrt_ctrlout;
+	g_USBHOST_DRIVER.transfer = imxrt_transfer;
 #ifdef CONFIG_USBHOST_ASYNCH
-		rhport->drvr.asynch = imxrt_asynch;
+	g_USBHOST_DRIVER.asynch = imxrt_asynch;
 #endif
-		rhport->drvr.cancel = imxrt_cancel;
+	g_USBHOST_DRIVER.cancel = imxrt_cancel;
 #ifdef CONFIG_USBHOST_HUB
-		rhport->drvr.connect = imxrt_connect;
+	g_USBHOST_DRIVER.connect = imxrt_connect;
 #endif
-		rhport->drvr.disconnect = imxrt_disconnect;
+	g_USBHOST_DRIVER.disconnect = imxrt_disconnect;
 
-		/* Initialize EP0 */
+	/* Initialize EP0 */
 
-		rhport->ep0.xfrtype = USB_EP_ATTR_XFER_CONTROL;
-		rhport->ep0.speed = USB_SPEED_FULL;
-		rhport->ep0.maxpacket = 8;
+	rhport->ep0.xfrtype = USB_EP_ATTR_XFER_CONTROL;
+	rhport->ep0.speed = USB_SPEED_FULL;
+	rhport->ep0.maxpacket = 8;
 
-		/* The port iocsem semaphore is used for signaling and, hence,
-		 * should not have priority inheritance enabled.
-		 */
+	/* The port iocsem semaphore is used for signaling and, hence,
+	 * should not have priority inheritance enabled.
+	 */
 
-		sem_init(&rhport->ep0.appsem, 0, 1);
-		sem_init(&rhport->ep0.iocsem, 0, 0);
+	sem_init(&rhport->ep0.appsem, 0, 1);
+	sem_init(&rhport->ep0.iocsem, 0, 0);
 
-		sem_setprotocol(&rhport->ep0.appsem, SEM_PRIO_NONE);
-		sem_setprotocol(&rhport->ep0.iocsem, SEM_PRIO_NONE);
+	sem_setprotocol(&rhport->ep0.appsem, SEM_PRIO_NONE);
+	sem_setprotocol(&rhport->ep0.iocsem, SEM_PRIO_NONE);
 
+	/* Initialize the public port representation */
 
-		/* Initialize the public port representation */
-
-		hport = &rhport->hport.hport;
-		hport->drvr = &rhport->drvr;
+	g_USBHOST_ROOT_HUB_PORT.hport.drvr = &g_USBHOST_DRIVER;
 #ifdef CONFIG_USBHOST_HUB
-		hport->parent = NULL;
+	g_USBHOST_ROOT_HUB_PORT.hport.parent = NULL;
+	udbg("g_USBHOST_ROOT_HUB_PORT.hport.parent = [0x%x]\n", (uint32_t) g_USBHOST_ROOT_HUB_PORT.hport.parent);
 #endif
-		hport->ep0 = &rhport->ep0;
-		hport->port = i;
-		hport->speed = USB_SPEED_FULL;
+	g_USBHOST_ROOT_HUB_PORT.hport.ep0 = &rhport->ep0;	// struct imxrt_epinfo_s ep0;   /* EP0 endpoint info */, hport.ep0 => usbhost_ep_t ep0; => void* => pointer to control point
+	g_USBHOST_ROOT_HUB_PORT.hport.port = 0;
+	g_USBHOST_ROOT_HUB_PORT.hport.speed = USB_SPEED_FULL;
+	
+	/* Initialize function address generation logic */
 
-		/* Initialize function address generation logic */
-
-		usbhost_devaddr_initialize(&rhport->hport);
-	}
+	usbhost_devaddr_initialize(&g_USBHOST_ROOT_HUB_PORT);
 
 #ifndef CONFIG_IMXRT_EHCI_PREALLOCATE
 	/* Allocate a pool of free Queue Head (QH) structures */
 
-	g_qhpool = (struct imxrt_qh_s *)
-			   kmm_memalign(32, CONFIG_IMXRT_EHCI_NQHS * sizeof(struct imxrt_qh_s));
+	g_qhpool = (struct imxrt_qh_s *)kmm_memalign(32, CONFIG_IMXRT_EHCI_NQHS * sizeof(struct imxrt_qh_s));
 	if (!g_qhpool) {
 		usbhost_trace1(EHCI_TRACE1_QHPOOLALLOC_FAILED, 0);
-		return NULL;
+		return -ENOMEM;
 	}
 #endif
 
@@ -4825,12 +4813,11 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 #ifndef CONFIG_IMXRT_EHCI_PREALLOCATE
 	/* Allocate a pool of free  Transfer Descriptor (qTD) structures */
 
-	g_qtdpool = (struct imxrt_qtd_s *)
-				kmm_memalign(32, CONFIG_IMXRT_EHCI_NQTDS * sizeof(struct imxrt_qtd_s));
+	g_qtdpool = (struct imxrt_qtd_s *)kmm_memalign(32, CONFIG_IMXRT_EHCI_NQTDS * sizeof(struct imxrt_qtd_s));
 	if (!g_qtdpool) {
 		usbhost_trace1(EHCI_TRACE1_QTDPOOLALLOC_FAILED, 0);
 		kmm_free(g_qhpool);
-		return NULL;
+		return -ENOMEM;
 	}
 #endif
 
@@ -4843,7 +4830,7 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 		usbhost_trace1(EHCI_TRACE1_PERFLALLOC_FAILED, 0);
 		kmm_free(g_qhpool);
 		kmm_free(g_qtdpool);
-		return NULL;
+		return -ENOMEM;
 	}
 #endif
 
@@ -4911,7 +4898,7 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 	ret = imxrt_reset();
 	if (ret < 0) {
 		usbhost_trace1(EHCI_TRACE1_RESET_FAILED, -ret);
-		return NULL;
+		return -EPERM;
 	}
 
 	/* Re-program the USB host controller.  As implemented, imxrt_reset()
@@ -4999,8 +4986,7 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 	g_asynchead.hw.overlay.token = imxrt_swap32(QH_TOKEN_HALTED);
 	g_asynchead.fqp = imxrt_swap32(QTD_NQP_T);
 
-	arch_flush_dcache((uintptr_t)&g_asynchead.hw,
-		(uintptr_t)&g_asynchead.hw + sizeof(struct ehci_qh_s));
+	arch_flush_dcache((uintptr_t) & g_asynchead.hw, (uintptr_t) & g_asynchead.hw + sizeof(struct ehci_qh_s));
 
 	/* Set the Current Asynchronous List Address. */
 
@@ -5078,7 +5064,7 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 	ret = ehci_wait_usbsts(EHCI_USBSTS_HALTED, 0, 100 * 1000);
 	if (ret < 0) {
 		usbhost_trace1(EHCI_TRACE1_RUN_FAILED, imxrt_getreg(&HCOR->usbsts));
-		return NULL;
+		return -EPERM;
 	}
 
 	/* Interrupt Configuration ************************************************** */
@@ -5086,7 +5072,7 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 	ret = irq_attach(IMXRT_IRQ_USBOTG1, imxrt_ehci_interrupt, NULL);
 	if (ret != 0) {
 		usbhost_trace1(EHCI_TRACE1_IRQATTACH_FAILED, IMXRT_IRQ_USBOTG1);
-		return NULL;
+		return -EPERM;
 	}
 
 	/* Enable EHCI interrupts.  Interrupts are still disabled at the level of
@@ -5108,30 +5094,26 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 
 	/* Handle root hub status change on each root port */
 
-	for (i = 0; i < IMXRT_EHCI_NRHPORT; i++) {
-		/* Enable VBUS power for the port */
+	/* Enable VBUS power for the port */
 
-		imxrt_usbhost_vbusdrive(i, true);
-		up_mdelay(25);
+	imxrt_usbhost_vbusdrive(0, true);
+	up_mdelay(25);
 
-		/* Power up the power.  REVISIT:  Is this necessary?  The PP bit never
-		 * gets set unless I explicitly set it here.
-		 */
+	/* Power up the power.  REVISIT:  Is this necessary?  The PP bit never
+	 * gets set unless I explicitly set it here.
+	 */
 
-		regval = imxrt_getreg(&HCOR->portsc[i]);
-		regval |= EHCI_PORTSC_PP;
-		imxrt_putreg(regval, &HCOR->portsc[i]);
-		up_mdelay(25);
-	}
+	regval = imxrt_getreg(&HCOR->portsc[0]);
+	regval |= EHCI_PORTSC_PP;
+	imxrt_putreg(regval, &HCOR->portsc[0]);
+	up_mdelay(25);
 
 	/* If there is a USB device in the slot at power up, then we will not
 	 * get the status change interrupt to signal us that the device is
 	 * connected.  We need to set the initial connected state accordingly.
 	 */
 
-	for (i = 0; i < IMXRT_EHCI_NRHPORT; i++) {
-		g_ehci.rhport[i].connected = ((imxrt_getreg(&HCOR->portsc[i]) & EHCI_PORTSC_CCS) != 0);
-	}
+	g_ehci.m_rhport.connected = ((imxrt_getreg(&HCOR->portsc[0]) & EHCI_PORTSC_CCS) != 0);
 
 	/* Enable interrupts at the interrupt controller */
 
@@ -5140,15 +5122,12 @@ FAR struct usbhost_connection_s *imxrt_ehci_initialize(int controller)
 
 	/* Initialize and return the connection interface */
 
-	g_ehciconn.wait = imxrt_wait;
-	g_ehciconn.enumerate = imxrt_enumerate;
-
 	//Disable IOC delay
 	regval = imxrt_getreg(&HCOR->usbcmd);
 	regval &= ~EHCI_USBCMD_ITHRE_MASK;
 	//imxrt_putreg(regval, &HCOR->usbcmd);
 
-	return &g_ehciconn;
+	return OK;
 }
 
 /********************************************************************************************
@@ -5189,4 +5168,3 @@ FAR const char *usbhost_trformat2(uint16_t id)
 #endif							/* HAVE_USBHOST_TRACE */
 
 #endif							/* CONFIG_IMXRT_USBOTG && CONFIG_USBHOST */
-
