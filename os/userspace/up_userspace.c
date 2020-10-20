@@ -40,6 +40,7 @@
 #include <tinyara/config.h>
 #include <tinyara/userspace.h>
 #include <tinyara/init.h>
+#include <tinyara/arch.h>
 
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
 
