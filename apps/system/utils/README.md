@@ -334,7 +334,7 @@ Kernel Features -> Disable TinyAra interfaces -> [ ] Disable environment variabl
 - Set a value which is greater than zero on CONFIG_NFILE_DESCRIPTORS.
 ```
 Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
-
+```
 
 ## free
 This command shows heap information.
