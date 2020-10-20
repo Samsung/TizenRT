@@ -164,7 +164,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 #endif
 
 		/* Restore the MPU registers in case we are switching to an application task */
-#ifdef CONFIG_ARMV8_MPU
+#ifdef CONFIG_ARMV8M_MPU
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
 		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
 #if defined(CONFIG_APP_BINARY_SEPARATION)
