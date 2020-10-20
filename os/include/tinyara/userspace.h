@@ -63,8 +63,6 @@
 #include <signal.h>
 #include <pthread.h>
 
-#include <tinyara/arch.h>
-
 #ifdef CONFIG_BUILD_PROTECTED
 
 /****************************************************************************
