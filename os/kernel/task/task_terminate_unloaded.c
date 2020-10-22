@@ -63,6 +63,9 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
+#include <tinyara/mpu.h>
+#endif
 
 #include "task/task.h"
 #include "sched/sched.h"
@@ -100,6 +103,19 @@
 int task_terminate_unloaded(FAR struct tcb_s *tcb)
 {
 	irqstate_t saved_state;
+
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
+	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
+	if (IS_BINARY_MAINTASK(tcb) && up_mpu_check_active(&tcb->mpu_regs[0])) {
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+			up_mpu_disable_region(&tcb->mpu_regs[i]);
+		}
+#else
+		up_mpu_disable_region(&tcb->mpu_regs[0]);
+#endif
+	}
+#endif
 
 #if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
 	task_atexit(tcb);

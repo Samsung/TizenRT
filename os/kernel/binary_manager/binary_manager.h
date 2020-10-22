@@ -222,6 +222,7 @@ void binary_manager_recover_userfault(uint32_t assert_pc);
 
 void binary_manager_add_binlist(FAR struct tcb_s *tcb);
 void binary_manager_remove_binlist(FAR struct tcb_s *tcb);
+void binary_manager_clear_bindata(int bin_idx);
 void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info);
 void binary_manager_unregister_statecb(int pid);
 void binary_manager_clear_bin_statecb(int bin_idx);

@@ -27,6 +27,9 @@
 #include <stdlib.h>
 #endif
 #include <tinyara/sched.h>
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+#include <tinyara/binfmt/binfmt.h>
+#endif
 #include <tinyara/binary_manager.h>
 
 #include "sched/sched.h"
@@ -247,4 +250,36 @@ void binary_manager_remove_binlist(FAR struct tcb_s *tcb)
 		}
 		if (next) next->bin_blink = prev;
 	}
+}
+
+/****************************************************************************
+ * Name: binary_manager_clear_bindata
+ *
+ * Description:
+ *	 This function clears data of binary with bin_idx in a binary table.
+ *
+ ****************************************************************************/
+void binary_manager_clear_bindata(int bin_idx)
+{
+	struct tcb_s *tcb;
+
+	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
+		return;
+	}
+
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	tcb = sched_gettcb(BIN_ID(bin_idx));
+	/* If 'reload' flag is true, a binary manager uses loading data 'bininfo' when loading the binary later.
+	 * So clear BIN_LOADINFO which points loading data if flag is false.
+	 */
+	if (tcb && ((struct task_tcb_s *)tcb)->bininfo && !((struct task_tcb_s *)tcb)->bininfo->reload) {
+		BIN_LOADINFO(bin_idx) = NULL;
+	}
+#endif /* CONFIG_OPTIMIZE_APP_RELOAD_TIME */
+	BIN_STATE(bin_idx) = BINARY_INACTIVE;
+	BIN_ID(bin_idx) = -1;
+	BIN_RTLIST(bin_idx) = NULL;
+	BIN_NRTLIST(bin_idx) = NULL;
+	/* Clear registered callbacks of binary */
+	binary_manager_clear_bin_statecb(bin_idx);
 }
