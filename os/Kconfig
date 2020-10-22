@@ -176,6 +176,7 @@ config BUILD_FLAT
 config APP_BINARY_SEPARATION
 	bool "Application binary separation build"
 	select BUILD_PROTECTED
+	select BINFMT_LOADABLE
 	---help---
 		Enables application binary separation.
 		This config is tightly coupled to CONFIG_BUILD_PROTECTED. When protected

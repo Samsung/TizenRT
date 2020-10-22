@@ -390,12 +390,6 @@ struct task_group_s {
 	sq_queue_t tg_onexitfunc;
 #endif
 
-#ifdef CONFIG_BINFMT_LOADABLE
-	/* Loadable module support *************************************************** */
-
-	FAR struct binary_s *tg_bininfo;	/* Describes resources used by program      */
-#endif
-
 #ifdef CONFIG_SCHED_HAVE_PARENT
 	/* Child exit status ********************************************************* */
 
@@ -500,7 +494,11 @@ struct task_group_s {
 #endif
 
 #ifdef CONFIG_BINFMT_LOADABLE
-#define IS_LOADED_MODULE(group)    (group->tg_bininfo != NULL)   /* Points loading data if it is loaded */
+/* This macro verifies whether the tcb is for a main task of the binary.
+ * It checks if the tcb is for a task and if it has non NULL loading data i.e. 'bininfo'
+ */
+#define IS_BINARY_MAINTASK(tcb)    (((tcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_TASK) \
+					&& (((struct task_tcb_s *)tcb)->bininfo != NULL))
 #endif
 
 /* struct tcb_s ******************************************************************/
@@ -664,6 +662,11 @@ struct task_tcb_s {
 #ifdef CONFIG_SCHED_STARTHOOK
 	starthook_t starthook;		/* Task startup function               */
 	FAR void *starthookarg;		/* The argument passed to the function */
+#endif
+#ifdef CONFIG_BINFMT_LOADABLE
+	/* Loadable module support *************************************************** */
+
+	FAR struct binary_s *bininfo;	/* Describes resources used by program	*/
 #endif
 
 	/* Values needed to restart a task ******************************************* */
