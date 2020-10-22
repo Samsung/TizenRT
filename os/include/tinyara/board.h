@@ -63,7 +63,7 @@
  *    definitions provide the common interface between TinyAra and the
  *    architecture-specific implementation in arch/
  *
- *    These definitions are retained in the the header file tinyara/include/arch.h
+ *    These definitions are retained in the header file tinyara/include/arch.h
  *
  *    NOTE: up_ is supposed to stand for microprocessor; the u is like the
  *    Greek letter micron: µ. So it would be µP which is a common shortening

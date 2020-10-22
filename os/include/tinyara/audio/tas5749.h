@@ -83,7 +83,7 @@
  *   thread.
  * CONFIG_TAS5749_BUFFER_SIZE - Preferred buffer size
  * CONFIG_TAS5749_NUM_BUFFERS - Preferred number of buffers
- * CONFIG_TAS5749_WORKER_STACKSIZE - Stack size to use when creating the the
+ * CONFIG_TAS5749_WORKER_STACKSIZE - Stack size to use when creating the
  *   TAS5749 worker thread.
  * CONFIG_TAS5749_REGDUMP - Enable logic to dump all TAS5749 registers to
  *   the SYSLOG device.

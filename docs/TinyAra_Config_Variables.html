@@ -12313,7 +12313,7 @@ expected, however.
 </li>
   <li><i>Kconfig file</i>: <code>./arch/arm/src/stm32/Kconfig</code>
 <p>
-  If you are using the the LTDC, then you must provide the address  of the start of the framebuffer.  This address will typically  be in the SRAM or SDRAM memory region of the FSMC.</p>
+  If you are using the LTDC, then you must provide the address  of the start of the framebuffer.  This address will typically  be in the SRAM or SDRAM memory region of the FSMC.</p>
 </ul>
 <h3><a name="CONFIG_STM32_LTDC_FB_SIZE">1.2.156.10 <code>CONFIG_STM32_LTDC_FB_SIZE</code>: Framebuffer memory size (bytes)</a></h3>
 <ul>
@@ -15427,7 +15427,7 @@ int up_prioritize_irq(int irq, int priority)
 <p>
   NOTE: ARCH_INTERRUPTSTACK must be set in kernel mode (BUILD_KERNEL).  In kernel mode without an interrupt stack, the interrupt handler  will set the MSP to the stack pointer of the interrupted thread.  If  the interrupted thread was a privileged thread, that will be the MSP  otherwise it will be the PSP.  If the PSP is used, then the value of  the MSP will be invalid when the interrupt handler returns because  it will be a pointer to an old position in the unprivileged stack.  Then when the high priority interrupt occurs and uses this stale MSP,  there will most likely be a system failure.</p>
 <p>
-  If the interrupt stack is selected, on the other hand, then the  interrupt handler will always set the the MSP to the interrupt  stack.  So when the high priority interrupt occurs, it will either  use the MSP of the last privileged thread to run or, in the case of  the nested interrupt, the interrupt stack if no privileged task has  run</p>
+  If the interrupt stack is selected, on the other hand, then the  interrupt handler will always set the MSP to the interrupt  stack.  So when the high priority interrupt occurs, it will either  use the MSP of the last privileged thread to run or, in the case of  the nested interrupt, the interrupt stack if no privileged task has  run</p>
 </ul>
 <h3><a name="CONFIG_ARCH_INT_DISABLEALL">1.2.242 <code>CONFIG_ARCH_INT_DISABLEALL</code>: Disable high priority interrupts</a></h3>
 <ul>
@@ -17420,9 +17420,9 @@ int up_prioritize_irq(int irq, int priority)
   </li>
   <li><i>Kconfig file</i>: <code>./kernel/Kconfig</code>
 <p>
-  In the &quot;normal&quot; configuration where system time is provided by a  periodic timer interrupt, the default system timer is expected to  run at 100Hz or USEC_PER_TICK=10000.  This setting must be defined  to inform of TinyAra the interval that the the processor hardware is  providing system timer interrupts to the OS.</p>
+  In the &quot;normal&quot; configuration where system time is provided by a  periodic timer interrupt, the default system timer is expected to  run at 100Hz or USEC_PER_TICK=10000.  This setting must be defined  to inform of TinyAra the interval that the processor hardware is  providing system timer interrupts to the OS.</p>
 <p>
-  If SCHED_TICKLESS is selected, then there are no system timer  interrupts.  In this case, USEC_PER_TICK does not control any timer  rates.  Rather, it only determines the resolution of time reported  by clock_systimer() and the resolution of times that can be set for  certain delays including watchdog timers and delayed work.  In this  case there is a trade-off:  It is better to have the USEC_PER_TICK as  low as possible for higher timing resolution.  However, the the time  is currently held in &apos;unsigned int&apos; on some systems, this may be  16-bits but on most contemporary systems it will be 32-bits.  In  either case, smaller values of USEC_PER_TICK will reduce the range  of values that delays that can be represented.  So the trade-off is  between range and resolution (you could also modify the code to use  a 64-bit value if you really want both).</p>
+  If SCHED_TICKLESS is selected, then there are no system timer  interrupts.  In this case, USEC_PER_TICK does not control any timer  rates.  Rather, it only determines the resolution of time reported  by clock_systimer() and the resolution of times that can be set for  certain delays including watchdog timers and delayed work.  In this  case there is a trade-off:  It is better to have the USEC_PER_TICK as  low as possible for higher timing resolution.  However, the time  is currently held in &apos;unsigned int&apos; on some systems, this may be  16-bits but on most contemporary systems it will be 32-bits.  In  either case, smaller values of USEC_PER_TICK will reduce the range  of values that delays that can be represented.  So the trade-off is  between range and resolution (you could also modify the code to use  a 64-bit value if you really want both).</p>
 <p>
   The default, 100 microseconds, will provide for a range of delays  up to 120 hours.</p>
 <p>
@@ -37301,7 +37301,7 @@ sizeof(FAR void *) == sizeof(unsigned long));
 </li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/i2schar/Kconfig</code>
 <p>
-  Define if architecture-specific I2S device initialize is available.  If defined, the the platform specific code must provide a function  i2schar_devinit() that will be called each time that this test  executes.  Not available in the kernel build mode.</p>
+  Define if architecture-specific I2S device initialize is available.  If defined, the platform specific code must provide a function  i2schar_devinit() that will be called each time that this test  executes.  Not available in the kernel build mode.</p>
 </ul>
 <h3><a name="CONFIG_EXAMPLES_IOTBUS_TEST">1.18.4.55 <code>CONFIG_EXAMPLES_IOTBUS_TEST</code>: Iotbus example</a></h3>
 <ul>
@@ -41488,7 +41488,7 @@ RAMMTD_ERASESIZE * EXAMPLES_SMART_NEBLOCKS
   <li><i>Dependencies</i>: <a href="#CONFIG_ENABLE_CPULOAD_MONITOR"><code>CONFIG_ENABLE_CPULOAD_MONITOR</code></a></li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/system/utils/Kconfig</code>
 <p>
-  The priority to use the the CPU load monitor daemon.  Default: 100</p>
+  The priority to use the CPU load monitor daemon.  Default: 100</p>
 </ul>
 <h3><a name="CONFIG_CPULOADMONITOR_INTERVAL">1.18.7.47 <code>CONFIG_CPULOADMONITOR_INTERVAL</code>: CPU load monitor frequency</a></h3>
 <ul>
@@ -41665,7 +41665,7 @@ RAMMTD_ERASESIZE * EXAMPLES_SMART_NEBLOCKS
   <li><i>Dependencies</i>: <a href="#CONFIG_ENABLE_STACKMONITOR_CMD"><code>CONFIG_ENABLE_STACKMONITOR_CMD</code></a></li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/system/utils/Kconfig</code>
 <p>
-  The priority to use the the stack monitor daemon.  Default: 100</p>
+  The priority to use the stack monitor daemon.  Default: 100</p>
 </ul>
 <h3><a name="CONFIG_STACKMONITOR_INTERVAL">1.18.7.63 <code>CONFIG_STACKMONITOR_INTERVAL</code>: Stack monitor dump frequency</a></h3>
 <ul>

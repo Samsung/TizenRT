@@ -387,7 +387,7 @@ void mqueue_test(void)
 		printf("             ERROR Instead exited with nerrors=%d\n", (int)result);
 	}
 
-	/* Message queues are global resources and persist for the life the the
+	/* Message queues are global resources and persist for the life of the
 	 * task group.  The message queue opened by the sender_thread must be closed
 	 * since the sender pthread may have been canceled and may have left the
 	 * message queue open.

@@ -155,7 +155,7 @@ struct net_driver_s {
 #endif
 
 	/* d_appdata points to the location where application data can be read from
-	 * or written to in the the packet buffer.
+	 * or written to in the packet buffer.
 	 */
 
 	uint8_t *d_appdata;

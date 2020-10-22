@@ -990,7 +990,7 @@ static int hci_tx_kthread(int argc, FAR char *argv[])
  * Name: hci_rx_work
  *
  * Description:
- *   This work function may operate on either the the high priority work
+ *   This work function may operate on either the high priority work
  *   thread (using the high priority buffer queue), or on the low priority
  *   work queue (using the low priority buffer queue), depending upon the
  *   type of the incoming message

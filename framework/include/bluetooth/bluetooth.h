@@ -1318,7 +1318,7 @@ int bt_adapter_le_add_advertising_service_data(bt_advertiser_h advertiser,
 /**
  * @ingroup CAPI_NETWORK_BLUETOOTH_ADAPTER_LE_MODULE
  * @brief Sets the external appearance of this device to advertise or scan response data.
- *        Please refer to the adopted Bluetooth specification for the the appearance.
+ *        Please refer to the adopted Bluetooth specification for the appearance.
  * @since_tizen 2.3.1
  *
  * @param[in] advertiser The handle of advertiser
@@ -3516,7 +3516,7 @@ int bt_avrcp_control_set_equalizer_state(bt_avrcp_equalizer_state_e state);
 
 /**
  * @ingroup CAPI_NETWORK_BLUETOOTH_AVRCP_CONTROL_MODULE
- * @brief  Gets the the equalizer state of the remote device.
+ * @brief  Gets the equalizer state of the remote device.
  * @since_tizen 3.0
  * @param[out] state The equalizer state, one of: ON, OFF
  * @return  0 on success, otherwise a negative error value.
