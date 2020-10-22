@@ -364,7 +364,7 @@ int exec_module(FAR struct binary_s *binp)
 
 	/* Set up to unload the module when the task exists. */
 
-	tcb->cmn.group->tg_bininfo = binp;
+	tcb->bininfo = binp;
 
 	/* Then activate the task at the provided priority */
 
