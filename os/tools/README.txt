@@ -400,7 +400,7 @@ refresh.sh
   The steps to refresh the file are:
 
   1. Make tools/cmpconfig if it is not already built.
-  2. Copy the the defconfig file to the top-level TinyAra
+  2. Copy the defconfig file to the top-level TinyAra
      directory as .config (being careful to save any previous
      .config file that you might want to keep!).
   3. Execute 'make oldconfig' to update the configuration.

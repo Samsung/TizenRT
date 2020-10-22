@@ -270,7 +270,7 @@ static int mtdconfig_writebytes(FAR struct mtdconfig_struct_s *dev, int offset, 
 		off_t bytes_written = 0;
 
 		while (writelen) {
-			/* Read existing data from the the block into the buffer */
+			/* Read existing data from the block into the buffer */
 
 			block = offset / dev->blocksize;
 			ret = MTD_BREAD(dev->mtd, block, 1, dev->buffer);

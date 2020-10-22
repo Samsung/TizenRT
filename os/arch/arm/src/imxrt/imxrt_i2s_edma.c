@@ -1503,7 +1503,7 @@ void i2s_tx_init(I2S_Type *base, const sai_config_t *config)
 }
 
 /*!
- * @brief Initializes the the SAI Rx peripheral.
+ * @brief Initializes the SAI Rx peripheral.
  *
  * Ungates the SAI clock, resets the module, and configures the SAI Rx with a configuration structure.
  * The configuration structure can be custom filled or set with default values by

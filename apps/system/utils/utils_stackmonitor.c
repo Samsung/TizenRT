@@ -288,7 +288,7 @@ static void stackmonitor_stop(void)
 
 	if (stkmon_started) {
 		/* Stop the stack monitor.  The next time the monitor wakes up,
-		 * it will see the the stop indication and will exist.
+		 * it will see the stop indication and will exist.
 		 */
 		printf(STKMON_PREFIX "Stopping, not stopped yet\n");
 		stkmon_started = FALSE;

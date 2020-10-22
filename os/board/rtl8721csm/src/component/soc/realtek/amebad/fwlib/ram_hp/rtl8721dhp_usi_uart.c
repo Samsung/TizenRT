@@ -1154,7 +1154,7 @@ void USI_UARTLPRxStructInit(USI_LPUARTInitTypeDef* USI_LPUARTInitStruct)
 }
 
 /**
-  * @brief    Initializes the the UART Low Power RX path peripheral according to the specified
+  * @brief    Initializes the UART Low Power RX path peripheral according to the specified
   *              parameters in the USI_LPUARTInitStruct.
   * @param  USIx: where x can be 0.
   * @param  USI_LPUARTInitStruct: pointer to an USI_LPUARTInitTypeDef structure which has been configured.

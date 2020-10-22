@@ -942,7 +942,7 @@ void i2s_tx_init(I2S_Type *base, const sai_config_t *config)
 }
 
 /*!
- * @brief Initializes the the SAI Rx peripheral.
+ * @brief Initializes the SAI Rx peripheral.
  *
  * Ungates the SAI clock, resets the module, and configures the SAI Rx with a configuration structure.
  * The configuration structure can be custom filled or set with default values by
@@ -1600,7 +1600,7 @@ void i2s_transfer_abortsend(I2S_Type *base, sai_handle_t *handle)
 }
 
 /*!
- * @brief Aborts the the current IRQ receive.
+ * @brief Aborts the current IRQ receive.
  *
  * @note This API can be called when an interrupt non-blocking transfer initiates
  * to abort the transfer early.

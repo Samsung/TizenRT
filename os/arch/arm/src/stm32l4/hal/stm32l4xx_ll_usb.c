@@ -1856,7 +1856,7 @@ HAL_StatusTypeDef USB_DisableGlobalInt(USB_TypeDef *USBx)
   * @brief  USB_SetCurrentMode : Set functional mode
   * @param  USBx : Selected device
   * @param  mode :  current core mode
-  *          This parameter can be one of the these values:
+  *          This parameter can be one of these values:
   *            @arg USB_DEVICE_MODE: Peripheral mode mode
   * @retval HAL status
   */

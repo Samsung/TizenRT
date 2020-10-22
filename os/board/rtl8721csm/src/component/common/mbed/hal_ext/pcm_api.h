@@ -375,7 +375,7 @@ u8 pcm_irq_get_channel(pcm_t *obj);
 u32 pcm_irq_get_buffer_size(pcm_t *obj);
 
 /**
-  * @brief  Get the the page number of the processing channel in the interrupt handler.
+  * @brief  Get the page number of the processing channel in the interrupt handler.
   *          This function needs in the interrupt handler.
   * @param  obj: PCM object define in application software.
   * @retval none

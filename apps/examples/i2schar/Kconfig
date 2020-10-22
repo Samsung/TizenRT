@@ -81,7 +81,7 @@ config EXAMPLES_I2SCHAR_DEVINIT
 	depends on !BUILD_PROTECTED && !BUILD_KERNEL
 	---help---
 		Define if architecture-specific I2S device initialize is available.
-		If defined, the the platform specific code must provide a function
+		If defined, the platform specific code must provide a function
 		i2schar_devinit() that will be called each time that this test
 		executes.  Not available in the kernel build mode.
 

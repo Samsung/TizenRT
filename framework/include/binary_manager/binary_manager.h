@@ -84,7 +84,7 @@ binmgr_result_type_e binary_manager_get_update_info_all(binary_update_info_list_
 binmgr_result_type_e binary_manager_notify_binary_started(void);
 
 /**
- * @brief Set the callback which will be called when the the states of binaries are changed
+ * @brief Set the callback which will be called when the states of binaries are changed
  * @details @b #include <binary_manager/binary_manager.h>\n
  *  It sets callback for the changes of binary state.
  * @return A defined value of binmgr_result_type_e in <tinyara/binary_manager.h>
