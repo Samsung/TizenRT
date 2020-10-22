@@ -167,7 +167,7 @@ struct sector_entry_queue_s {
 struct sector_recover_info_s {
 	uint16_t totalsector;
 	uint16_t isolatedsector;
-	uint16_t cleanentries;
+	uint16_t cleanedentries;
 };
 
 /****************************************************************************
@@ -2276,12 +2276,12 @@ int smartfs_invalidate_old_entry(struct smartfs_mountpt_s *fs, uint16_t logsecto
 		if (firstparent->time > secondparent->time) {
 			ret = smartfs_invalidateentry(fs, secondparent->parentsector, secondparent->parentoffset);
 			if (ret == OK) {
-				info->cleanentries++;
+				info->cleanedentries++;
 			}
 		} else {
 			ret = smartfs_invalidateentry(fs, firstparent->parentsector, firstparent->parentoffset); 
 			if (ret == OK) {
-				info->cleanentries++;
+				info->cleanedentries++;
 			}
 		}
 	}
@@ -2427,7 +2427,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 							fdbg("Unable to mark entry inactive at sector %d, ret : %d\n", logsector, ret);
 							goto errout;
 						}
-						info->cleanentries++;
+						info->cleanedentries++;
 
 					} else {
 						/* Make New node of Entry's first sector and put it to queue */
@@ -2473,7 +2473,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 						goto errout;
 					}
 					
-					info->cleanentries++;
+					info->cleanedentries++;
 					break;
 				}
 			}
@@ -2564,7 +2564,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 	fdbg("###############################\n");
 	fdbg("Total of active sectors : %d\n", info.totalsector);
 	fdbg("Recovered Isolated Sectors : %d\n", info.isolatedsector);
-	fdbg("Cleaned Entries : %d\n\n", info.cleanentries);
+	fdbg("Cleaned Entries : %d\n\n", info.cleanedentries);
 
 error_with_map:
 	if (map) {
