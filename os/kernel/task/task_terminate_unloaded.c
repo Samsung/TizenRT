@@ -123,6 +123,12 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 #endif
 	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
 
+	/* No need to release the unloading thread's stack,
+	 * because whole heap memory will be released at one go.
+	 * So marking alloc pointer to NULL for skipping to release.
+	 */
+	tcb->stack_alloc_ptr = NULL;
+
 	/* Deallocate its TCB */
 
 	return sched_releasetcb(tcb, tcb->flags & TCB_FLAG_TTYPE_MASK);
