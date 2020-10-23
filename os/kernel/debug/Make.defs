@@ -20,7 +20,11 @@ ifeq ($(CONFIG_DEBUG_SYSTEM),y)
 CSRCS += sysdbg.c
 endif
 
-CSRCS += memdbg.c
+CSRCS += memdbg.c dbg_termination_info.c
+
+ifeq ($(CONFIG_ENABLE_STACKMONITOR)$(CONFIG_DEBUG),yy)
+CSRCS += stackinfo_save_terminated.c
+endif
 
 DEPPATH += --dep-path debug
 VPATH += :debug

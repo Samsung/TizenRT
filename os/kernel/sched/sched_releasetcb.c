@@ -138,18 +138,6 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		 * the process ID was never allocated to this TCB.
 		 */
 		if (tcb->pid) {
-#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
-			sched_save_terminated_stackinfo(tcb);
-#endif
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			/* Deallocate heapinfo tcb infos in heap */
-			heapinfo_dealloc_tcbinfo(tcb->stack_alloc_ptr, tcb->pid);
-#ifdef CONFIG_HEAPINFO_USER_GROUP
-			heapinfo_update_group_info(tcb->pid, -1, HEAPINFO_DEL_INFO);
-#endif
-#endif
-
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 			/* Release any timers that the task might hold.  We do this
 			 * before release the PID because it may still be trying to
