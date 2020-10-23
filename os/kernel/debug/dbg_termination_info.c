@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/sched/sched_stkmon_logging.c
+ * kernel/debug/dbg_termination_info.c
  *
  *   Copyright (C) 2007, 2009 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -55,15 +55,14 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <time.h>
 #include <sys/types.h>
 
-#include <tinyara/clock.h>
 #include <tinyara/sched.h>
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
 #endif
 
+#include "debug/debug.h"
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -79,8 +78,6 @@
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
-static struct stkmon_save_s terminated_thread_stkinfo[CONFIG_MAX_TASKS * 2];
-static int stkmon_chk_idx;
 
 /****************************************************************************
  * Private Function Prototypes
@@ -93,60 +90,27 @@ static int stkmon_chk_idx;
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-/****************************************************************************
- * Name: stkmon_copy_log
- *
- * Description:
- *   This function copies the terminated task/pthread's information to
- *  user buffer.
- *
- ****************************************************************************/
-void stkmon_copy_log(struct stkmon_save_s *dest_arr)
-{
-	int thread_idx;
-
-	for (thread_idx = 0; thread_idx < STKMON_MAX_LOGS; thread_idx++) {
-		if (terminated_thread_stkinfo[thread_idx].timestamp != 0) {
-			memcpy(&dest_arr[thread_idx], &terminated_thread_stkinfo[thread_idx], sizeof(struct stkmon_save_s));
-		}
-	}
-}
 
 /****************************************************************************
- * Name: sched_save_terminated_stackinfo
+ * Name: dbg_save_termination_info
  *
  * Description:
  *   This function saves the terminated task/pthread's information for
- *  stack monitor.
+ *  stack monitor and heapinfo.
  *
  ****************************************************************************/
-void sched_save_terminated_stackinfo(struct tcb_s *tcb)
+void dbg_save_termination_info(struct tcb_s *tcb)
 {
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	int name_idx;
+#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
+	stackinfo_save_terminated(tcb);
 #endif
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	struct mm_heap_s *heap;
+	/* Deallocate heapinfo tcb infos in heap */
+	heapinfo_dealloc_tcbinfo(tcb->stack_alloc_ptr, tcb->pid);
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+	heapinfo_update_group_info(tcb->pid, -1, HEAPINFO_DEL_INFO);
 #endif
-	terminated_thread_stkinfo[stkmon_chk_idx % STKMON_MAX_LOGS].timestamp = clock();
-	terminated_thread_stkinfo[stkmon_chk_idx % STKMON_MAX_LOGS].chk_pid = tcb->pid;
-	terminated_thread_stkinfo[stkmon_chk_idx % STKMON_MAX_LOGS].chk_stksize = tcb->adj_stack_size;
-#ifdef CONFIG_STACK_COLORATION
-	terminated_thread_stkinfo[stkmon_chk_idx % STKMON_MAX_LOGS].chk_peaksize = up_check_tcbstack(tcb);
 #endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heap = mm_get_heap(tcb->stack_alloc_ptr);
-	if (heap == NULL) {
-		return;
-	}
-	terminated_thread_stkinfo[stkmon_chk_idx % STKMON_MAX_LOGS].chk_peakheap = heap->alloc_list[PIDHASH(tcb->pid)].peak_alloc_size;
-#endif
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	for (name_idx = 0; name_idx < CONFIG_TASK_NAME_SIZE + 1; name_idx++) {
-		terminated_thread_stkinfo[stkmon_chk_idx % STKMON_MAX_LOGS].chk_name[name_idx] = tcb->name[name_idx];
-	}
-#endif
-	stkmon_chk_idx %= STKMON_MAX_LOGS;
-	stkmon_chk_idx++;
 }
 
