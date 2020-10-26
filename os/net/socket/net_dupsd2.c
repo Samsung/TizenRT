@@ -99,8 +99,8 @@ int dup2(int sockfd1, int sockfd2)
 
 	/* Get the socket structures underly both descriptors */
 
-	sock1 = (struct lwip_sock *)get_socket(sockfd1);
-	sock2 = (struct lwip_sock *)get_socket(sockfd2);
+	sock1 = (struct lwip_sock *)get_socket(sockfd1, getpid());
+	sock2 = (struct lwip_sock *)get_socket(sockfd2, getpid());
 
 	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
 	 * descriptors and that sockfd1 has valid allocated conn

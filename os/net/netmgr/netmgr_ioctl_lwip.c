@@ -277,7 +277,8 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 {
 	int ret = -EINVAL;
 	ndbg("Enter %d\n");
-	struct lwip_sock *sock = get_socket(s);
+
+	struct lwip_sock *sock = get_socket(s, getpid());
 	if (!sock) {
 		ret = -EBADF;
 		return ret;

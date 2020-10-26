@@ -157,6 +157,8 @@ struct lwip_setgetsockopt_data {
 	err_t err;
 	/** semaphore to wake up the calling task */
 	void *completed_sem;
+	/** pid of current task */
+	pid_t pid;
 };
 #endif							/* !LWIP_TCPIP_CORE_LOCKING */
 
@@ -499,7 +501,7 @@ struct lwip_sock {
 void lwip_socket_thread_init(void);	/* LWIP_NETCONN_SEM_PER_THREAD==1: initialize thread-local semaphore */
 void lwip_socket_thread_cleanup(void);	/* LWIP_NETCONN_SEM_PER_THREAD==1: destroy thread-local semaphore */
 
-struct lwip_sock *get_socket(int sd);
+struct lwip_sock *get_socket(int sd, pid_t pid);
 //int alloc_socket(struct netconn *newconn, int accepted);
 int lwip_accept(int s, struct sockaddr *addr, socklen_t * addrlen);
 int lwip_bind(int s, const struct sockaddr *name, socklen_t namelen);
