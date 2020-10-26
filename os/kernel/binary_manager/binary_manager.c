@@ -125,7 +125,7 @@ int binary_manager(int argc, char *argv[])
 			continue;
 		}
 
-		bmvdbg("Recevied Request msg : cmd = %d\n", request_msg);
+		bmvdbg("Received Request msg : cmd = %d\n", request_msg);
 		switch (request_msg.cmd) {
 #ifdef CONFIG_BINMGR_RECOVERY
 		case BINMGR_FAULT:

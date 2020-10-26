@@ -249,7 +249,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 	}
 
 	if (need_response) {
-		bmvdbg("Wait repsonse count %d !\n", send_count);
+		bmvdbg("Wait response count %d !\n", send_count);
 		while (send_count > 0) {
 			ret = mq_receive(recv_mq, (char *)&response_msg, sizeof(binmgr_statecb_response_t), NULL);
 			if (ret == sizeof(binmgr_statecb_response_t)) {
