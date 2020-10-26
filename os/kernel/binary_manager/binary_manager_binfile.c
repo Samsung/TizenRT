@@ -236,7 +236,7 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 		goto send_result;
 	}
 
-	/* If it is kernel, Return the devname of inacive kernel partition */
+	/* If it is kernel, Return the devname of inactive kernel partition */
 	if (!strncmp("kernel", bin_name, BIN_NAME_MAX)) {
 		kerinfo = binary_manager_get_kdata();
 		if (kerinfo->part_count > 1) {
