@@ -15,11 +15,8 @@
  ****************************************************************************** 
  */
 
-
-
 #include "objects.h"
 #include "PinNames.h"
-
 
 #include "pinmap.h"
 
@@ -214,7 +211,6 @@ int  flash_read_word(flash_t *obj, u32 address, u32 * data)
 	}else{
 		* data = HAL_READ32(SPI_FLASH_BASE, address);
 	}
-	
 	return 1;
 }
 
@@ -262,7 +258,6 @@ int  flash_write_word(flash_t *obj, u32 address, u32 data)
 	return 1;
 }
 
-
 /**
   * @brief  Read a stream of data from specified address
   * @param obj: Flash object define in application software.
@@ -283,18 +278,17 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 * data)
 	u32 i;
 	u32 read_word;
 	u8 *ptr;
-	u8 *pbuf;
 
 	offset_to_align = address & 0x03;
-	pbuf = data;
+
 	if (offset_to_align != 0) {
 		/* the start address is not 4-bytes aligned */
 		read_word = HAL_READ32(SPI_FLASH_BASE, (address - offset_to_align));
 		ptr = (u8*)&read_word + offset_to_align;
 		offset_to_align = 4 - offset_to_align;
 		for (i=0;i<offset_to_align;i++) {
-			*pbuf = *(ptr+i);
-			pbuf++;
+			*data = *(ptr+i);
+			data++;
 			len--;
 			if (len == 0) {
 				break;
@@ -306,20 +300,20 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 * data)
 	address = (((address-1) >> 2) + 1) << 2;
 
 	ptr = (u8*)&read_word;
-	if ((u32)pbuf & 0x03) {
+	if ((u32)data & 0x03) {
 		while (len >= 4) {
 			read_word = HAL_READ32(SPI_FLASH_BASE, address);
 			for (i=0;i<4;i++) {
-				*pbuf = *(ptr+i);
-				pbuf++;
+				*data = *(ptr+i);
+				data++;
 			}
 			address += 4;
 			len -= 4;
 		}
 	} else {
 		while (len >= 4) {
-			*((u32 *)pbuf) = HAL_READ32(SPI_FLASH_BASE, address);
-			pbuf += 4;
+			*((u32 *)data) = HAL_READ32(SPI_FLASH_BASE, address);
+			data += 4;
 			address += 4;
 			len -= 4;
 		}
@@ -328,12 +322,11 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 * data)
 	if (len > 0) {
 		read_word = HAL_READ32(SPI_FLASH_BASE, address);
 		for (i=0;i<len;i++) {
-			*pbuf = *(ptr+i);
-			pbuf++;
+			*data = *(ptr+i);
+			data++;
 		}        
 	}
-
-	return 1;
+	return len;
 }
 
 /**
@@ -357,23 +350,21 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 * data)
 	u32 addr_begin = address;
 	u32 addr_end = (page_cnt == 1) ? (address + len) : (page_begin + 0x100);
 	u32 size = addr_end - addr_begin;
-	u8 *buffer = data;
-	u8 write_data[12];
-	
+
 	u32 offset_to_align;
 	u32 read_word;
 	u32 i;
 
 	FLASH_Write_Lock();
-	while(page_cnt){	
+	while(page_cnt){
 		offset_to_align = addr_begin & 0x3;
-		
+
 		if(offset_to_align != 0){
 			read_word = HAL_READ32(SPI_FLASH_BASE, addr_begin - offset_to_align);
 			for(i = offset_to_align;i < 4;i++){
-				read_word = (read_word &  (~(0xff << (8*i)))) |( (*buffer) <<(8*i));
+				read_word = (read_word &  (~(0xff << (8*i)))) |( (*data) <<(8*i));
 				size--;
-				buffer++;
+				data++;
 				if(size == 0)
 					break;
 			}
@@ -384,38 +375,44 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 * data)
 		}
 
 		addr_begin = (((addr_begin-1) >> 2) + 1) << 2;
-		for(;size >= 12 ;size -= 12){
-			_memcpy(write_data, buffer, 12);
-			FLASH_TxData12B(addr_begin, 12, write_data);
+		for(;size >= 256 ;size -= 256){
+			FLASH_TxData256B(addr_begin, 256, data);
 #ifdef MICRON_N25Q00AA
 			FLASH_ReadFlagStatusReg();
 #endif
-			buffer += 12;
+			data += 256;
+			addr_begin += 256;
+		}
+
+		for(;size >= 12 ;size -= 12){
+			FLASH_TxData12B(addr_begin, 12, data);
+#ifdef MICRON_N25Q00AA
+			FLASH_ReadFlagStatusReg();
+#endif
+			data += 12;
 			addr_begin += 12;
 		}
 
 		for(;size >= 4; size -=4){
-			_memcpy(write_data, buffer, 4);			
-			FLASH_TxData12B(addr_begin, 4, write_data);
+			FLASH_TxData12B(addr_begin, 4, data);
 #ifdef MICRON_N25Q00AA
 			FLASH_ReadFlagStatusReg();
 #endif
-			buffer += 4;
+			data += 4;
 			addr_begin += 4;
 		}
 
 		if(size > 0){
 			read_word = HAL_READ32(SPI_FLASH_BASE, addr_begin);
 			for( i = 0;i < size;i++){
-				read_word = (read_word & (~(0xff << (8*i)))) | ((*buffer) <<(8*i));
-				buffer++;
+				read_word = (read_word & (~(0xff << (8*i)))) | ((*data) <<(8*i));
+				data++;
 			}
 			FLASH_TxData12B(addr_begin, 4, (u8*)&read_word); 
 #ifdef MICRON_N25Q00AA
 			FLASH_ReadFlagStatusReg();
 #endif
 		}
-
 		page_cnt--;
 		addr_begin = addr_end;
 		addr_end = (page_cnt == 1) ? (address + len) : (((addr_begin>>8) + 1)<<8);
@@ -425,7 +422,7 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 * data)
 	DCache_Invalidate(SPI_FLASH_BASE + address, len);
 	FLASH_Write_Unlock();
 
-	return 1;
+	return size;
 }
 
 /**
@@ -455,7 +452,6 @@ int  flash_burst_read(flash_t *obj, u32 address, u32 Length, u8 * data)
 	flash_stream_read(obj, address, Length, data);
 	return 1;
 }
-
 
 /**
   * @brief   This function is only for Micron 128MB flash to access beyond 16MB by switching between eight 16MB-area(segment).

@@ -54,9 +54,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
 #include <sys/types.h>
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -65,11 +63,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
-
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mtd.h>
-
 #include "up_arch.h"
 #include "chip.h"
 #include "flash_api.h"
@@ -92,7 +88,7 @@
  */
 struct amebad_dev_s {
 	struct mtd_dev_s mtd;		/* MTD interface */
-	int nsectors; /* number of erase sectors */
+	int nsectors;				/* number of erase sectors */
 };
 
 /************************************************************************************
@@ -105,6 +101,7 @@ static ssize_t amebad_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 static ssize_t amebad_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf);
 static ssize_t amebad_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer);
 static int amebad_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg);
+
 #if defined(CONFIG_MTD_BYTE_WRITE)
 static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR const uint8_t *buffer);
 #endif
@@ -117,144 +114,142 @@ static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
  ************************************************************************************/
 static ssize_t amebad_erase_page(size_t page)
 {
-    flash_t flash;
-    uint32_t address;
-    irqstate_t irqs;
+	uint32_t address;
+	irqstate_t irqs;
 
-    if (page > (AMEBAD_START_SECOTR + AMEBAD_NSECTORS)) {
-        printf("Invalid page number\n");
-        return -EFAULT;
-    }
-    /* Disable IRQs while erasing sector */
-    irqs = irqsave();
+	if (page > (AMEBAD_START_SECOTR + AMEBAD_NSECTORS)) {
+		printf("Invalid page number\n");
+		return -EFAULT;
+	}
 
-    /* do erase */
+	/* Disable IRQs while erasing sector */
+	irqs = irqsave();
 
-    address = page * CONFIG_AMEBAD_FLASH_BLOCK_SIZE;
-    flash_erase_sector(&flash, address); 
+	/* do erase */
+	address = page * CONFIG_AMEBAD_FLASH_BLOCK_SIZE;
+	flash_erase_sector(NULL, address);
 
-    /* Restore IRQs */
-    irqrestore(irqs);
-    return OK;
+	/* Restore IRQs */
+	irqrestore(irqs);
+
+	return OK;
 }
 
 static int amebad_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
-    ssize_t result;
-    startblock += AMEBAD_START_SECOTR;
-    /* Erase the specified blocks and return status (OK or a negated errno) */
-    while (nblocks > 0) {
-        result = amebad_erase_page(startblock);
-        if (result < 0) {
-            return (int)result;
-        }
-        startblock++;
-        nblocks--;
-    }
-    return OK;
+	ssize_t result;
+	startblock += AMEBAD_START_SECOTR;
+
+	/* Erase the specified blocks and return status (OK or a negated errno) */
+	while (nblocks > 0) {
+		result = amebad_erase_page(startblock);
+		if (result < 0) {
+			return (int)result;
+		}
+		startblock++;
+		nblocks--;
+	}
+	return OK;
 }
 
 static ssize_t amebad_flash_write(size_t addr, const void *buf, size_t length)
 {
-    flash_t flash;
-    int32_t result = 0;
-    ssize_t ret = 0;
-    irqstate_t irqs;
+	int32_t result = 0;
+	irqstate_t irqs;
 
-    /* Disable IRQs while erasing sector */
-    irqs = irqsave();
-    if ((addr & 0xff) != 0) {
-        //! value should be 256 byte alignment
-        ret = -EFAULT;
-    } else if ((length & 0x3) != 0) {
-        ret = -EINVAL;
-    } else {
-        char *adpt_buf = (char *)kmm_malloc(length);
-        if (adpt_buf == NULL) {
-            ret = -EPERM;
-        } else {
-            memcpy(adpt_buf, buf, length);
-            result = flash_stream_write(&flash, addr, length, adpt_buf);
+	if (buf == NULL) {
+		return -EINVAL;
+	}
 
-            if (result < 0) {
-                ret = -EIO;
-            } else {
-                ret = length;
-            }
-            kmm_free(adpt_buf);
-            adpt_buf = NULL;
-        }
-    }
+	if (addr > CONFIG_AMEBAD_FLASH_BASE + CONFIG_AMEBAD_FLASH_CAPACITY) {
+		return -EFAULT;
+	}
 
-    /* Restore IRQs */
-    irqrestore(irqs);
-    return ret;
+	/* Disable IRQs while erasing sector */
+	irqs = irqsave();
+	result = flash_stream_write(NULL, addr, length, buf);
+
+	/* Restore IRQs */
+	irqrestore(irqs);
+
+	if (result < 0) {
+		return -EIO;
+	} else {
+		return result;
+	}
 }
 
 ssize_t amebad_flash_read(size_t addr, void *buf, size_t length)
 {
-    flash_t flash;
-    int32_t result = 0;
-    ssize_t ret = 0;
-    irqstate_t irqs;
+	int32_t result = 0;
+	ssize_t ret = 0;
+	irqstate_t irqs;
 
-    /* Disable IRQs while erasing sector */
-    irqs = irqsave();
-        
-    if ((addr & 0x3) == 0) {
-            //! if addr is 4 bytes aligned
+	if (buf == NULL) {
+		return -EINVAL;
+	}
 
-            result = flash_stream_read(&flash, addr, length, buf);
-            if (result < 0) {
-                ret = -EIO;
-            } else {
-                ret = length;
-            }
-        } else {
-            //! if addr is not 4 bytes aligned
-            uint32_t offset = addr & 0x3;
-            int8_t *aligned_read_buf = (int8_t *)kmm_malloc(length + offset);
-            if (aligned_read_buf == NULL) {
-                ret = -EPERM;
-            } else {
-                result = flash_stream_read(&flash, (addr & 0xfffffffc), length + offset, (char *)aligned_read_buf);
-                if (result < 0) {
-                    ret = -EIO;
-                } else {
-                    ret = length;
-                }
-                memcpy(buf, aligned_read_buf + offset, length);
-                kmm_free(aligned_read_buf);
-                aligned_read_buf = NULL;
-            }
-        }
-    /* Restore IRQs */
-    irqrestore(irqs);
+	if (addr > CONFIG_AMEBAD_FLASH_BASE + CONFIG_AMEBAD_FLASH_CAPACITY) {
+		return -EFAULT;
+	}
 
-    return ret;
+	/* Disable IRQs while erasing sector */
+	irqs = irqsave();
+	if ((addr & 0x3) == 0) {
+		//! if addr is 4 bytes aligned
+		result = flash_stream_read(NULL, addr, length, buf);
+		if (result < 0) {
+			ret = -EIO;
+		} else {
+			ret = result;
+		}
+	} else {
+		//! if addr is not 4 bytes aligned
+		uint32_t offset = addr & 0x3;
+		int8_t *aligned_read_buf = (int8_t *)kmm_malloc(length + offset);
+		if (aligned_read_buf == NULL) {
+			ret = -EPERM;
+		} else {
+			result = flash_stream_read(NULL, (addr & 0xfffffffc), length + offset, (char *)aligned_read_buf);
+
+			if (result < 0) {
+				ret = -EIO;
+			} else {
+				ret = result;
+			}
+			memcpy(buf, aligned_read_buf + offset, length);
+			kmm_free(aligned_read_buf);
+			aligned_read_buf = NULL;
+		}
+	}
+
+	/* Restore IRQs */
+	irqrestore(irqs);
+	return ret;
 }
+
 
 /************************************************************************************
  * Name: amebad_bread
  ************************************************************************************/
 static ssize_t amebad_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buffer)
 {
-    ssize_t result;
-
-    result = amebad_flash_read(CONFIG_AMEBAD_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
-    return result < 0 ? result : nblocks;
+	ssize_t result;
+	result = amebad_flash_read(CONFIG_AMEBAD_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
+	return result < 0 ? result : nblocks;
 }
+
 
 /************************************************************************************
  * Name: amebad_bwrite
  ************************************************************************************/
 static ssize_t amebad_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buffer)
 {
-    ssize_t result;
-    result = amebad_flash_write( CONFIG_AMEBAD_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
-    return result < 0 ? result : nblocks;
-
+	ssize_t result;
+	result = amebad_flash_write(CONFIG_AMEBAD_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
+	return result < 0 ? result : nblocks;
 }
+
 
 /************************************************************************************
  * Name: amebad_read
@@ -262,10 +257,11 @@ static ssize_t amebad_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t
 
 static ssize_t amebad_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer)
 {
-    ssize_t result;
-    result = amebad_flash_read(CONFIG_AMEBAD_FLASH_BASE + offset, buffer, nbytes);
-    return result < 0 ? result : nbytes;
+	ssize_t result;
+	result = amebad_flash_read(CONFIG_AMEBAD_FLASH_BASE + offset, buffer, nbytes);
+	return result < 0 ? result : nbytes;
 }
+
 
 /************************************************************************************
  * Name: amebad_write
@@ -285,15 +281,15 @@ static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
 static int amebad_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;			/* Assume good command with bad parameters */
-    FAR struct amebad_dev_s *priv = (FAR struct mtd_dev_s *)dev;
+	FAR struct amebad_dev_s *priv = (FAR struct mtd_dev_s *)dev;
 
 	switch (cmd) {
 	case MTDIOC_GEOMETRY: {
 		FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)((uintptr_t) arg);
 		if (geo) {
-		    geo->blocksize = CONFIG_AMEBAD_FLASH_PAGE_SIZE;
+			geo->blocksize = CONFIG_AMEBAD_FLASH_PAGE_SIZE;
 			geo->erasesize = CONFIG_AMEBAD_FLASH_BLOCK_SIZE;
-		    geo->neraseblocks = priv->nsectors;
+			geo->neraseblocks = priv->nsectors;
 			ret = OK;
 		}
 	}
@@ -301,7 +297,7 @@ static int amebad_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 
 	case MTDIOC_BULKERASE: {
 		/* Erase the entire device */
-        ret = amebad_erase(dev, 0, priv->nsectors);
+		ret = amebad_erase(dev, 0, priv->nsectors);
 	}
 	break;
 
@@ -310,7 +306,7 @@ static int amebad_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 		ret = -ENOTTY;			/* Bad command */
 		break;
 	}
-    return ret;
+	return ret;
 }
 
 /************************************************************************************
@@ -330,8 +326,9 @@ static int amebad_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 FAR struct mtd_dev_s *up_flashinitialize(void)
 {
 	FAR struct amebad_dev_s *priv;
-    priv = (FAR struct amebad_dev_s *)kmm_zalloc(sizeof(struct amebad_dev_s));
-    if (priv) {
+	priv = (FAR struct amebad_dev_s *)kmm_zalloc(sizeof(struct amebad_dev_s));
+
+	if (priv) {
 		/* Initialize the allocated structure (unsupported methods were
 		 * nullified by kmm_zalloc).
 		 */
@@ -339,12 +336,14 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 		priv->mtd.bread = amebad_bread;
 		priv->mtd.bwrite = amebad_bwrite;
 		priv->mtd.read = amebad_read;
-		priv->mtd.ioctl =amebad_ioctl;
+		priv->mtd.ioctl = amebad_ioctl;
+
 #if defined(CONFIG_MTD_BYTE_WRITE)
 		priv->mtd.write = amebad_write;
 #endif
 		priv->nsectors = AMEBAD_NSECTORS;
 		return (FAR struct mtd_dev_s *)priv;
-    }
-    return NULL;
+	}
+	return NULL;
 }
+
