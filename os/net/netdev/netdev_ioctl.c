@@ -67,6 +67,7 @@
 #include <debug.h>
 
 #include <netdb.h>
+#include <unistd.h>
 
 #include <tinyara/net/net.h>
 #include <tinyara/net/ip.h>
@@ -1216,7 +1217,7 @@ static void _dhcpd_join(dhcp_evt_type_e type, void *data)
 int lwip_func_ioctl(int s, int cmd, void *arg)
 {
 	int ret = -EINVAL;
-	struct lwip_sock *sock = get_socket(s);
+	struct lwip_sock *sock = get_socket(s, getpid());
 	if (!sock) {
 		ret = -EBADF;
 		return ret;

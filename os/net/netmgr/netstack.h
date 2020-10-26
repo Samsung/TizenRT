@@ -92,8 +92,8 @@ struct netstack_ops {
 	int (*getstats)(int fd, struct netmon_sock **sock);
 #endif
 
-	void (*initlist)(void *list);
-	void (*releaselist)(void *list);
+	void (*initlist)(struct socketlist *list);
+	void (*releaselist)(struct socketlist *list);
 };
 
 struct netstack {

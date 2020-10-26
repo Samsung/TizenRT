@@ -85,7 +85,7 @@
 int net_checksd(int sd, int oflags)
 {
 
-	struct socket *sock = (struct socket *)get_socket(sd);
+	struct socket *sock = (struct socket *)get_socket(sd, getpid());
 
 	/* Verify that the sockfd corresponds to valid, allocated socket */
 
