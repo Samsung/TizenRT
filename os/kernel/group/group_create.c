@@ -60,6 +60,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+#if defined(CONFIG_PREFERENCE) && CONFIG_TASK_NAME_SIZE > 0
+#include <string.h>
+#endif
 
 #include <tinyara/kmalloc.h>
 
@@ -321,7 +324,13 @@ int group_initialize(FAR struct task_tcb_s *tcb)
 	irqrestore(flags);
 
 #endif
+#if defined(CONFIG_PREFERENCE) && CONFIG_TASK_NAME_SIZE > 0
+	/* The values of private preference are managed by task group.
+	 * Set a name of task group, tg_name for private preference. */
 
+	strncpy(group->tg_name, tcb->cmn.name, strlen(tcb->cmn.name) + 1);
+
+#endif
 	/* Save the ID of the main task within the group of threads.  This needed
 	 * for things like SIGCHILD.  It ID is also saved in the TCB of the main
 	 * task but is also retained in the group which may persist after the main

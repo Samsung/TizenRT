@@ -490,6 +490,14 @@ struct task_group_s {
 
 	struct group_shm_s tg_shm;	/* Task shared memory logic                 */
 #endif
+
+#if defined(CONFIG_PREFERENCE) && CONFIG_TASK_NAME_SIZE > 0
+	/* Preference **************************************************************** */
+	/* The values of private preference are managed by task group.
+	 * Each 'value' is saved in a file named 'key' and they are located in a directory /mnt/private/<tg_name>.
+	 */
+	char tg_name[CONFIG_TASK_NAME_SIZE + 1]; /* Group name (with NULL terminator)  */
+#endif
 };
 #endif
 
