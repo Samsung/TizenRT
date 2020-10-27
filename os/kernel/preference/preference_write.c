@@ -28,33 +28,30 @@
 #include <crc32.h>
 #include <sys/stat.h>
 #include <tinyara/preference.h>
+#if CONFIG_TASK_NAME_SIZE > 0
+#include <tinyara/sched.h>
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
 #include "sched/sched.h"
 #endif
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#ifdef CONFIG_APP_BINARY_SEPARATION
+#if CONFIG_TASK_NAME_SIZE > 0
 static int preference_private_setup(void)
 {
 	int ret;
-	pid_t pid;
 	char *path;
 	struct tcb_s *tcb;
 
 	tcb = this_task();
-	pid = tcb->group->tg_binid;
-	if (pid > 0) {
-		tcb = sched_gettcb(pid);
-		if (tcb == NULL) {
-			prefdbg("Failed to get main task %d\n", pid);
-			return PREFERENCE_OPERATION_FAIL;
-		}
+	if (!tcb->group) {
+		prefdbg("Failed to get group\n");
+		return PREFERENCE_OPERATION_FAIL;
 	}
+
 	/* Assign full path for app preference directory */
-	ret = PREFERENCE_ASPRINTF(&path, "%s/%s", PREF_PRIVATE_PATH, tcb->name);
+	ret = PREFERENCE_ASPRINTF(&path, "%s/%s", PREF_PRIVATE_PATH, tcb->group->tg_name);
 
 	/* Make app preference directory */
 	ret = mkdir(path, 0777);
@@ -67,7 +64,6 @@ static int preference_private_setup(void)
 	return OK;
 }
 #endif
-
 static int preference_shared_setup(char *key_path)
 {
 	int ret;
@@ -168,18 +164,21 @@ int preference_write_key(preference_data_t *data)
 	}
 
 	if (data->type == PRIVATE_PREFERENCE) {
-#ifdef CONFIG_APP_BINARY_SEPARATION
+#if CONFIG_TASK_NAME_SIZE > 0
 		ret = preference_private_setup();
 		if (ret < 0) {
 			prefdbg("Failed to set up preference\n");
 			return ret;
 		}
-#endif
 		ret = preference_get_private_keypath(data->key, &path);
 		if (ret < 0) {
 			prefdbg("Failed to get preference path\n");
 			return ret;
 		}
+#else
+		prefdbg("Not supported private preference\n");
+		return PREFERENCE_NOT_SUPPORTED;
+#endif
 	} else {
 		ret = preference_shared_setup(data->key);
 		if (ret < 0) {

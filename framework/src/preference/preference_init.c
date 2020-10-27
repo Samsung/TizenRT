@@ -36,6 +36,7 @@ int preference_init(void)
 		prefdbg("mkdir fail, %d\n", errno);
 		return PREFERENCE_IO_ERROR;
 	}
+#if CONFIG_TASK_NAME_SIZE > 0
 
 	/* Make private preference directory */
 	ret = mkdir(PREF_PRIVATE_PATH, 0777);
@@ -43,6 +44,7 @@ int preference_init(void)
 		prefdbg("mkdir fail, %d\n", errno);
 		return PREFERENCE_IO_ERROR;
 	}
+#endif
 
 	/* Make shared preference directory */
 	ret = mkdir(PREF_SHARED_PATH, 0777);

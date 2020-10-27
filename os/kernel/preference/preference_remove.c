@@ -25,7 +25,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <tinyara/preference.h>
-#if CONFIG_APP_BINARY_SEPARATION
+#if CONFIG_TASK_NAME_SIZE > 0
 #include <sys/types.h>
 #include <tinyara/sched.h>
 
@@ -100,8 +100,7 @@ int preference_remove_all_key(int type, const char *path)
 	char *dir_path;
 	char *key_path;
 	struct dirent *entry;
-#if CONFIG_APP_BINARY_SEPARATION
-	pid_t pid;
+#if CONFIG_TASK_NAME_SIZE > 0
 	struct tcb_s *tcb;
 #endif
 
@@ -111,22 +110,19 @@ int preference_remove_all_key(int type, const char *path)
 	}
 
 	if (type == PRIVATE_PREFERENCE) {
-#if CONFIG_APP_BINARY_SEPARATION
+#if CONFIG_TASK_NAME_SIZE > 0
 		tcb = this_task();
-		pid = tcb->group->tg_binid;
-		if (pid > 0) {
-			tcb = sched_gettcb(pid);
-			if (tcb == NULL) {
-				prefdbg("Failed to get main task %d\n", pid);
-				return PREFERENCE_OPERATION_FAIL;
-			}
+		if (!tcb->group) {
+			prefdbg("Failed to get group\n");
+			return PREFERENCE_OPERATION_FAIL;
 		}
-		/* Assign full path for app preference*/
-		ret = PREFERENCE_ASPRINTF(&dir_path, "%s/%s", PREF_PRIVATE_PATH, tcb->name);
+
+		/* Assign full path for app preference directory */
+		ret = PREFERENCE_ASPRINTF(&dir_path, "%s/%s", PREF_PRIVATE_PATH, tcb->group->tg_name);
 #else
-		ret = PREFERENCE_ASPRINTF(&dir_path, "%s", PREF_PRIVATE_PATH);
+		prefdbg("Not supported private preference\n");
+		return PREFERENCE_NOT_SUPPORTED;
 #endif
-		
 	} else {
 		/* Get path for shared preference */
 		ret = PREFERENCE_ASPRINTF(&dir_path, "%s/%s", PREF_SHARED_PATH, path);
@@ -172,17 +168,6 @@ int preference_remove_all_key(int type, const char *path)
 	if (ret < 0) {
 		goto errout_with_free;
 	}
-
-#ifndef CONFIG_APP_BINARY_SEPARATION
-	/* Remove a directory of key path */
-	prefvdbg("Remove preference dir %s\n", dir_path);
-	ret = rmdir(dir_path);
-	if (ret < 0) {
-		prefdbg("Failed to remove dir %s, %d\n", dir_path, errno);
-		ret = PREFERENCE_IO_ERROR;
-		goto errout_with_free;
-	}
-#endif
 
 	ret = OK;
 

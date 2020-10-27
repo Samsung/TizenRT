@@ -56,6 +56,7 @@ enum preference_result_error_e {
 	PREFERENCE_OPERATION_FAIL = -6,
 	PREFERENCE_NOT_REGISTERED = -7,
 	PREFERENCE_INVALID_DATA = -8,
+	PREFERENCE_NOT_SUPPORTED = -9,
 };
 
 #define PRIVATE_PREFERENCE     0
@@ -79,7 +80,7 @@ struct value_attr_s {
 typedef struct value_attr_s value_attr_t;
 
 struct preference_data_s {
-	char *key;
+	const char *key;
 	int type;
 	value_attr_t attr;
 	void *value;
