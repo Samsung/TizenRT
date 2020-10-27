@@ -78,9 +78,11 @@ int stack_prot_main(int argc, char *argv[])
 #endif
 {
 	char ch;
-	char *ptr;
 	int i = 0;
+#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+	char *ptr;
 	char array_normal[STACK_NORMAL_SIZE];
+#endif
 
 	printf("Stack Overflow Protection testcase!!\n");
 
