@@ -1700,7 +1700,7 @@ static void smartfs_stat_common(FAR struct smartfs_mountpt_s *fs,
 		}
 	}
 	buf->st_size = entry->datalen;
-	buf->st_blksize = fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s);
+	buf->st_blksize = SMARTFS_AVAIL_DATABYTES(fs);
 	buf->st_blocks = (buf->st_size + buf->st_blksize - 1) / buf->st_blksize;
 	buf->st_atime = 0;
 	buf->st_ctime = 0;
