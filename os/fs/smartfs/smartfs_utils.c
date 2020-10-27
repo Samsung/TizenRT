@@ -588,7 +588,7 @@ off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s
 	 */
 
 	sectorstartpos = sf->filepos - (sf->curroffset - sizeof(struct smartfs_chain_header_s));
-	if (newpos >= sectorstartpos && newpos < sectorstartpos + fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s)) {
+	if ((newpos >= sectorstartpos) && (newpos < sectorstartpos + SMARTFS_AVAIL_DATABYTES(fs))) {
 		/* Seeking within the current sector.  Just update the offset */
 
 		sf->curroffset = sizeof(struct smartfs_chain_header_s) + newpos - sectorstartpos;
@@ -610,7 +610,7 @@ off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s
 	}
 
 	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-	while ((sf->currsector != SMARTFS_ERASEDSTATE_16BIT) && (sf->filepos + fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s) < newpos)) {
+	while ((sf->currsector != SMARTFS_ERASEDSTATE_16BIT) && (sf->filepos + SMARTFS_AVAIL_DATABYTES(fs) < newpos)) {
 		/* Read the sector's header */
 
 		smartfs_setbuffer(&readwrite, sf->currsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
@@ -621,9 +621,9 @@ off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s
 		}
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
 		if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
-			sf->filepos += (sf->entry.datalen - (sector_used * (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s))));
+			sf->filepos += (sf->entry.datalen - (sector_used * SMARTFS_AVAIL_DATABYTES(fs)));
 		} else {
-			sf->filepos += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
+			sf->filepos += SMARTFS_AVAIL_DATABYTES(fs);
 		}
 		sector_used++;
 #else
@@ -735,9 +735,9 @@ int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *
 			goto errout;
 		}
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-		used_value = sf->entry.datalen % (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
+		used_value = sf->entry.datalen % SMARTFS_AVAIL_DATABYTES(fs);
 		if (sf->entry.datalen > 0 && used_value == 0) {
-			used_value = fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s);
+			used_value = SMARTFS_AVAIL_DATABYTES(fs);
 		}
 		set_used_byte_count((uint8_t *)header->used, used_value);
 #else
@@ -1258,7 +1258,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 										used_value = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
 										direntry->datalen += used_value;
 									} else {
-										direntry->datalen += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
+										direntry->datalen += SMARTFS_AVAIL_DATABYTES(fs);
 									}
 									readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
 #else
@@ -2053,7 +2053,7 @@ int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofil
 
 	smartfs_seek_internal(fs, sf, 0, SEEK_END);
 	length -= sf->entry.datalen;
-	data_len = fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s);
+	data_len = SMARTFS_AVAIL_DATABYTES(fs);
 	buf = (char *)kmm_malloc(data_len);
 	if (!buf) {
 		fdbg("Error allocating space for buffer\n");

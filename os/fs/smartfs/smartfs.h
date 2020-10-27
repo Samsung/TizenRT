@@ -249,6 +249,8 @@
 #undef  CONFIG_SMARTFS_DYNAMIC_HEADER
 #endif
 
+#define SMARTFS_AVAIL_DATABYTES(f) f->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s)
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
