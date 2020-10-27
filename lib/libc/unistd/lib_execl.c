@@ -61,6 +61,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "lib_internal.h"
+
 #ifdef CONFIG_LIBC_EXECFUNCS
 
 /****************************************************************************
@@ -178,7 +180,7 @@ int execl(FAR const char *path, ...)
 	/* Allocate a temporary argv[] array */
 
 	if (nargs > 0) {
-		argv = (FAR char **)malloc((nargs + 1) * sizeof(FAR char *));
+		argv = (FAR char **)lib_malloc((nargs + 1) * sizeof(FAR char *));
 		if (argv == (FAR char **)NULL) {
 			set_errno(ENOMEM);
 			return ERROR;
@@ -202,7 +204,7 @@ int execl(FAR const char *path, ...)
 	/* Free the allocated argv[] list */
 
 	if (argv) {
-		free(argv);
+		lib_free(argv);
 	}
 
 	return ret;
