@@ -295,12 +295,6 @@ struct smartfs_chain_header_s {
 	uint8_t used[4];			/* Number of bytes used in this sector */
 	uint8_t type;				/* Type of sector entry (file or dir) */
 };
-#elif defined(CONFIG_MTD_SMART_ENABLE_CRC) && defined(CONFIG_SMART_CRC_16)
-struct smartfs_chain_header_s {
-	uint8_t type;				/* Type of sector entry (file or dir) */
-	uint8_t nextsector[2];		/* Next logical sector in the chain */
-	uint8_t used[2];			/* Number of bytes used in this sector */
-};
 #else
 struct smartfs_chain_header_s {
 	uint8_t type;				/* Type of sector entry (file or dir) */
