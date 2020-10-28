@@ -61,7 +61,6 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/arch.h>
 #include <arch/irq.h>
 
 #include "clock/clock.h"
@@ -153,13 +152,6 @@ int clock_settime(clockid_t clock_id, FAR const struct timespec *tp)
 		g_basetime.tv_nsec -= bias.tv_nsec;
 		g_basetime.tv_sec  -= bias.tv_sec;
 
-		/* Setup the RTC (lo- or high-res) */
-
-#ifdef CONFIG_RTC
-		if (g_rtc_enabled) {
-			up_rtc_settime(tp);
-		}
-#endif
 		irqrestore(flags);
 
 		svdbg("basetime=(%ld,%lu) bias=(%ld,%lu)\n", (long)g_basetime.tv_sec, (unsigned long)g_basetime.tv_nsec, (long)bias.tv_sec, (unsigned long)bias.tv_nsec);
