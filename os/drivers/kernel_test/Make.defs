@@ -39,6 +39,10 @@ ifeq ($(CONFIG_ARMV8M_TRUSTZONE),y)
 CSRCS += test_tz.c
 endif
 
+ifeq ($(CONFIG_EXAMPLES_STACK_PROTECTION),y)
+CSRCS += test_kthread_stack_protection.c
+endif
+
 CFLAGS += -I$(TOPDIR)/kernel
 
 # Include kernel test driver support

@@ -78,6 +78,9 @@
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 #define TESTIOC_TZ				_TESTIOC(21)
 #endif
+#ifdef CONFIG_EXAMPLES_STACK_PROTECTION
+#define TESTIOC_KTHREAD_STACK_PROTECTION_TEST	_TESTIOC(22)
+#endif
 
 #define KERNEL_TEST_DRVPATH                       "/dev/kernel_test"
 
