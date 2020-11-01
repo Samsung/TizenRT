@@ -184,6 +184,7 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 #endif
 			} else {
 				berr("No support for decompression of compression format %d of this binary\n", loadinfo->compression_type);
+				return ERROR;
 			}
 #else
 			berr("No support for reading compressed binaries\n");
