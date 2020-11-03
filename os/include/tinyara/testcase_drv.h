@@ -75,6 +75,9 @@
 #ifdef CONFIG_EXAMPLES_MPU_TEST
 #define TESTIOC_MPUTEST				_TESTIOC(20)
 #endif
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#define TESTIOC_TZ				_TESTIOC(21)
+#endif
 
 #define TESTCASE_DRVPATH                       "/dev/testcase"
 
