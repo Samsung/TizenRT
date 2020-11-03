@@ -157,6 +157,7 @@ static int testcase_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg
 			if (binid == 0) {
 				binid++;
 			}
+
 			obj->addr = (volatile uint32_t *)BIN_LOADINFO(binid)->uheap;
 			break;
 		}
@@ -165,6 +166,12 @@ static int testcase_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg
 			break;
 		}
 
+		break;
+#endif
+
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+	case TESTIOC_TZ:
+		ret = test_tz();
 		break;
 #endif
 
