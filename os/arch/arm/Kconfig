@@ -126,6 +126,7 @@ config ARCH_CORTEXM7
 config ARCH_CORTEXM33
 	bool
 	default n
+	select ARCH_HAVE_FPU
 	select ARCH_HAVE_IRQPRIO
 	select ARCH_HAVE_CMNVECTOR
 	select ARCH_HAVE_RAMVECTORS
