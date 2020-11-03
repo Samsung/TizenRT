@@ -28,4 +28,7 @@ int test_sched(int cmd, unsigned long arg);
 int test_signal(int cmd, unsigned long arg);
 #endif
 int test_compress_decompress(int cmd, unsigned long arg);
+#ifdef CONFIG_AMEBAD_TRUSTZONE
+int test_rdp(void);
+#endif
 #endif

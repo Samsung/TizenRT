@@ -35,6 +35,10 @@ ifeq ($(CONFIG_TC_COMPRESS_READ),y)
 CSRCS += test_compress_decompress.c
 endif
 
+ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
+CSRCS += test_rdp.c
+endif
+
 CFLAGS += -I$(TOPDIR)/kernel
 
 # Include kernel testcase driver support

@@ -27,6 +27,9 @@
 #ifdef CONFIG_BINARY_MANAGER
 #include <binary_manager/binary_manager.h>
 #endif
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <tinyara/testcase_drv.h>
 
 #include "wifiapp_internal.h"
 /****************************************************************************
@@ -43,6 +46,9 @@ static void display_test_scenario(void)
 #endif
 #ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
 	printf("\t-Press U or u : Binary Update Test\n");
+#endif
+#ifdef CONFIG_AMEBAD_TRUSTZONE
+	printf("\t-Press Z or z : TZ RDP Test\n");
 #endif
 	printf("\t-Press X or x : Terminate Tests.\n");
 }
@@ -103,6 +109,16 @@ int wifiapp_main(int argc, char **argv)
 		case 'u':
 			binary_update_test();
 			break;
+#endif
+#ifdef CONFIG_AMEBAD_TRUSTZONE
+		case 'Z':
+		case 'z':
+			{
+				int tc_fd = open(TESTCASE_DRVPATH, O_WRONLY);
+				ioctl(tc_fd, TESTIOC_RDP, 0);
+				close(tc_fd);
+				break;
+			}
 #endif
 		case 'X':
 		case 'x':
