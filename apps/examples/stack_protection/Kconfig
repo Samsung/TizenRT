@@ -6,6 +6,7 @@
 config EXAMPLES_STACK_PROTECTION
 	bool "Stack Protection Test Example"
 	depends on (MPU_STACK_OVERFLOW_PROTECTION || REG_STACK_OVERFLOW_PROTECTION)
+	select DRIVERS_KERNEL_TEST
 	---help---
 		Enable the Stack Overflow Protection Test Example
 
