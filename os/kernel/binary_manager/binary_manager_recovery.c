@@ -340,7 +340,7 @@ void binary_manager_recovery(int bin_idx)
 	/* Create loader to reload binary */
 	BIN_STATE(bin_idx) = BINARY_FAULT;
 	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);
-	if (ret > 0) {
+	if (ret == OK) {
 		abort_mode = false;
 		bmllvdbg("Loading thread with pid %d will reload binaries!\n", ret);
 		return;

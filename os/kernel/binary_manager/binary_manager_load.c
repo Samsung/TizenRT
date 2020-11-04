@@ -421,7 +421,7 @@ static int loadingall_thread(int argc, char *argv[])
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		if (BIN_LOAD_PRIORITY(bin_idx, BIN_USEIDX(bin_idx)) < BINARY_LOADPRIO_HIGH) {
 			ret = binary_manager_execute_loader(LOADCMD_LOAD, bin_idx);
-			if (ret > 0) {
+			if (ret == OK) {
 				load_cnt++;
 			}
 		}
@@ -707,8 +707,9 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 	ret = kernel_thread(LOADER_NAME, loader_priority, LOADER_STACKSIZE, loader_func, (char * const *)loading_data);
 	if (ret > 0) {
 		bmvdbg("Execute loading thread with pid %d\n", ret);
+		ret = OK;
 	} else {
-		bmdbg("Loading Fail\n");
+		bmdbg("Loading Fail, errno %d\n", errno);
 	}
 
 	return ret;

@@ -112,7 +112,7 @@ int binary_manager(int argc, char *argv[])
 
 	/* Execute loading thread for load all binaries */
 	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, 0);
-	if (ret <= 0) {
+	if (ret != OK) {
 		bmdbg("Failed to create loading thread\n");
 		goto binary_manager_exit;
 	}
