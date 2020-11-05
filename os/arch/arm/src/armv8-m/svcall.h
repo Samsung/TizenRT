@@ -71,20 +71,32 @@
 /* This logic uses three system calls {0,1,2} for context switching and one for the
  * syscall return.  So a minimum of four syscall values must be reserved.  If
  * CONFIG_BUILD_PROTECTED is defined, then four more syscall values must be reserved.
+ * If TRUSTZONE is enabled, then three more syscall values must be reserved.
  */
 
 #ifdef CONFIG_LIB_SYSCALL
-#ifdef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_SYS_RESERVED
-#error "CONFIG_SYS_RESERVED must be defined to have the value 8"
-#elif CONFIG_SYS_RESERVED != 8
-#error "CONFIG_SYS_RESERVED must have the value 8"
+#error "CONFIG_SYS_RESERVED must be defined to have the value"
+#endif
+#ifdef CONFIG_BUILD_PROTECTED
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#if CONFIG_SYS_RESERVED != 11
+#error "CONFIG_SYS_RESERVED must have the value 11"
 #endif
 #else
-#ifndef CONFIG_SYS_RESERVED
-#error "CONFIG_SYS_RESERVED must be defined to have the value 4"
-#elif CONFIG_SYS_RESERVED != 4
+#if CONFIG_SYS_RESERVED != 8
+#error "CONFIG_SYS_RESERVED must have the value 8"
+#endif
+#endif
+#else
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+#if CONFIG_SYS_RESERVED != 7
+#error "CONFIG_SYS_RESERVED must have the value 7"
+#endif
+#else
+#if CONFIG_SYS_RESERVED != 4
 #error "CONFIG_SYS_RESERVED must have the value 4"
+#endif
 #endif
 #endif
 #endif
