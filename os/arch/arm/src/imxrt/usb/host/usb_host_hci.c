@@ -898,7 +898,7 @@ usb_status_t USB_HostDeinit()
 		USB_HostDetachDeviceInternal(deviceInstance);
 	}
 
-	status = USB_HostEhciDestory();
+	status = USB_HostEhciDestroy();
 	if (status != kStatus_USB_Success) {
 		udbg("host controller destroy fail\r\n");
 	}

@@ -89,7 +89,7 @@
 /*! @brief if 1, class driver clear stall automatically; if 0, class driver don't clear stall. */
 #define USB_HOST_CONFIG_CLASS_AUTO_CLEAR_STALL (0U)
 
-/*! @brief if 1, enable the low power; if 0, disbale the low power. */
+/*! @brief if 1, enable the low power; if 0, disable the low power. */
 #define USB_HOST_CONFIG_LOW_POWER_MODE (1U)
 
 /* EHCI configuration */

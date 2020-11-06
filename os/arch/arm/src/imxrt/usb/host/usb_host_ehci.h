@@ -3842,7 +3842,7 @@ extern usb_status_t USB_HostEhciCreate();
  *
  * @retval kStatus_USB_Success              The host is initialized successfully.
  */
-extern usb_status_t USB_HostEhciDestory();
+extern usb_status_t USB_HostEhciDestroy();
 
 /*!
  * @brief Opens the USB host pipe.
