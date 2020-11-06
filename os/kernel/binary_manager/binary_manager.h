@@ -77,13 +77,8 @@
 #define CHECKSUM_SIZE              4
 #define CRC_BUFFER_SIZE            512
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-/* bin id value of zero will indicate the library */
-#define BM_BINID_LIBRARY	0
-#endif
-
 /* Index of 'Common Library' data in binary table. */
-#define COMMLIB_IDX                0
+#define BM_CMNLIB_IDX              0
 
 /* The number of arguments for loader */
 #define LOADER_ARGC               1
