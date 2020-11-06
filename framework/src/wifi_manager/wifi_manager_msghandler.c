@@ -47,7 +47,6 @@ static int _process_msg(int argc, char *argv[])
 	while (1) {
 		handler_msg hmsg;
 		wifimgr_message_out(&hmsg, &g_wifi_message_queue);
-		WM_LOG_VERBOSE("%d %p %p\n", hmsg.fd, hmsg.signal, hmsg.msg);
 		wifimgr_msg_s *wmsg = hmsg.msg;
 
 		wifimgr_handle_request(wmsg);
@@ -85,7 +84,6 @@ int wifimgr_post_message(wifimgr_msg_s *msg)
 	hmsg.signal = &sem;
 	hmsg.msg = (void *)msg;
 	hmsg.fd = 1;
-	WM_LOG_VERBOSE("%d %p %p\n", hmsg.fd, hmsg.signal, hmsg.msg);
 
 	res = wifimgr_message_in(&hmsg, &g_wifi_message_queue);
 	if (res < 0) {

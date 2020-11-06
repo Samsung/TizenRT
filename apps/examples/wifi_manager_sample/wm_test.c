@@ -217,6 +217,7 @@ static const char *wifi_test_auth_method[] = {
 	"wep_shared",
 	"wpa",
 	"wpa2",
+	"wpa3",
 	"wpa12",
 	"wpa",
 	"wpa2",
@@ -242,6 +243,7 @@ static const wifi_manager_ap_auth_type_e auth_type_table[] = {
 	WIFI_MANAGER_AUTH_WEP_SHARED,              /**<  use shared key (wep key)                  */
 	WIFI_MANAGER_AUTH_WPA_PSK,                 /**<  WPA_PSK mode                              */
 	WIFI_MANAGER_AUTH_WPA2_PSK,                /**<  WPA2_PSK mode                             */
+	WIFI_MANAGER_AUTH_WPA3_PSK,                /**<  WPA3_PSK mode                             */
 	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,        /**<  WPA_PSK and WPA_PSK mixed mode            */
 	WIFI_MANAGER_AUTH_WPA_PSK_ENT,             /**<  Enterprise WPA_PSK mode                   */
 	WIFI_MANAGER_AUTH_WPA2_PSK_ENT,            /**<  Enterprise WPA2_PSK mode                  */
