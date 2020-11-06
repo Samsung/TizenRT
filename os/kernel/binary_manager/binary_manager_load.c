@@ -397,7 +397,7 @@ static int loadingall_thread(int argc, char *argv[])
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	char libname[CONFIG_NAME_MAX];
 	snprintf(libname, CONFIG_NAME_MAX, "%s%s", CONFIG_COMMON_BINARY_PATH, CONFIG_COMMON_BINARY_NAME);
-	ret = load_binary(COMMLIB_IDX, libname, NULL);
+	ret = load_binary(BM_CMNLIB_IDX, libname, NULL);
 	if (ret < 0) {
 		return BINMGR_OPERATION_FAIL;
 	}
@@ -452,13 +452,13 @@ static int reloading_thread(int argc, char *argv[])
 	/* argv[1] binary index for reloading */
 	int bin_idx = (int)atoi(argv[1]);
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	if (bin_idx == BM_BINID_LIBRARY) {
+	if (bin_idx == BM_CMNLIB_IDX) {
 		int ret;
 
 		/* Reload common library and all binaries */
 		char libname[CONFIG_NAME_MAX];
 		snprintf(libname, CONFIG_NAME_MAX, "%s%s", CONFIG_COMMON_BINARY_PATH, CONFIG_COMMON_BINARY_NAME);
-		ret = load_binary(COMMLIB_IDX, libname, NULL);
+		ret = load_binary(BM_CMNLIB_IDX, libname, NULL);
 		if (ret < 0) {
 			return BINMGR_OPERATION_FAIL;
 		}

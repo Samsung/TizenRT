@@ -166,6 +166,34 @@ static int binary_manager_deactivate_binary(int bin_idx)
 }
 
 /****************************************************************************
+ * Name: binary_manager_unblock_fault_message_sender
+ *
+ * Description:
+ *	 This function adds a fault message to the fault message list
+ *   and unblocks fault message sender.
+ *
+ ****************************************************************************/
+static void binary_manager_unblock_fault_message_sender(int bin_idx)
+{
+	struct faultmsg_s *msg;
+
+	/* Check there are a fault message sender and available fault message */
+	if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
+		msg->binidx = bin_idx;
+		sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
+
+		/* Unblock fault message sender */
+		if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
+			up_unblock_task_without_savereg(g_faultmsg_sender);
+		}
+		return;
+	}
+
+	/* Board reset on failure of recovery */
+	binary_manager_reset_board();
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
@@ -190,7 +218,7 @@ void binary_manager_deactivate_rtthreads(int bin_idx)
 		}
 	}
 }
-	
+
 
 /****************************************************************************
  * Name: binary_manager_recover_userfault
@@ -203,34 +231,33 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 {
 	int bin_idx;
 	struct tcb_s *tcb;
-	struct faultmsg_s *msg;
-
-	tcb = this_task();
-	if (tcb != NULL && tcb->group != NULL) {
-		bin_idx = tcb->group->tg_binidx;
-		/* Exclude realtime task/pthreads from scheduling */
-		binary_manager_deactivate_rtthreads(bin_idx);
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (g_lib_binp) {
-			uint32_t start = (uint32_t)g_lib_binp->alloc[ALLOC_TEXT];
-			uint32_t end = start + g_lib_binp->textsize;
-			if (assert_pc >= start && assert_pc <= end) {
-				bin_idx = BM_BINID_LIBRARY;
+	if (g_lib_binp) {
+		uint32_t start = (uint32_t)g_lib_binp->alloc[ALLOC_TEXT];
+		uint32_t end = start + g_lib_binp->textsize;
+		if (assert_pc >= start && assert_pc <= end) {
+			/* If a fault happens in common library, it needs to reload all user binaries */
+			int bin_count = binary_manager_get_ucount();
+			for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+				/* Exclude its all children from scheduling if the binary is registered with the binary manager */
+				binary_manager_deactivate_rtthreads(bin_idx);
 			}
+			/* Send fault message and Unblock fault message sender */
+			return binary_manager_unblock_fault_message_sender(BM_CMNLIB_IDX);
 		}
+	}
 #endif
-		/* Add fault message and Unblock Fault message Sender */
-		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
-			msg->binidx = bin_idx;
-			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
 
-			/* Unblock fault message sender */
-			if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
-				up_unblock_task_without_savereg(g_faultmsg_sender);
-			}
-			return;
-		}
+	/* Get a tcb of fault thread for fault handling */
+	tcb = this_task();
+	if (tcb != NULL && tcb->group != NULL) {
+		/* Exclude realtime task/pthreads from scheduling */
+		bin_idx = tcb->group->tg_binidx;
+		binary_manager_deactivate_rtthreads(bin_idx);
+
+		/* Send fault message and Unblock fault message sender */
+		return binary_manager_unblock_fault_message_sender(bin_idx);
 	}
 
 	/* Board reset on failure of recovery */
@@ -310,11 +337,9 @@ void binary_manager_recovery(int bin_idx)
 	}
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	/* binid is zero means a crash happened in common library
-	 * We need to reload the library and all the apps
-	 */
+	/* If a fault happens in common library, we need to reload the library and all user binaries */
 	int bidx;
-	if (bin_idx == BM_BINID_LIBRARY) {
+	if (bin_idx == BM_CMNLIB_IDX) {
 		int bin_count = binary_manager_get_ucount();
 		for (bidx = 1; bidx <= bin_count; bidx++) {
 			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
