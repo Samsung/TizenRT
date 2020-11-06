@@ -49,7 +49,7 @@ typedef enum _usb_host_event {
 	 * kStatus_USB_TransferFailed - the transfer failed.
 	 * kStatus_USB_TransferCancel - transfer is canceled by application.
 	 * kStatus_USB_Error - parsing descriptor failed, the power cannot satisfy device's requirement,
-	 *                     device addresss allocation failed, transfer is not enough
+	 *                     device address allocation failed, transfer is not enough
 	 *                     or the transfer API failed.
 	 * kStatus_USB_AllocFail - malloc failed.
 	 */
@@ -60,7 +60,7 @@ typedef enum _usb_host_event {
 	kUSB_HostEventNotResumed, /*!< Resume failed */
 	kUSB_HostEventDetectResume, /*!< Detect resume signal */
 	kUSB_HostEventResumed, /*!< Resume successful */
-	kUSB_HostEventL1Sleeped, /*!< L1 Sleep successful,state transition was successful (ACK) */
+	kUSB_HostEventL1Slept, /*!< L1 Sleep successful,state transition was successful (ACK) */
 	kUSB_HostEventL1SleepNYET, /*!< Device was unable to enter the L1 state at this time (NYET)  */
 	kUSB_HostEventL1SleepNotSupport, /*!< Device does not support the L1 state (STALL)  */
 	kUSB_HostEventL1SleepError, /*!< Device failed to respond or an error occurred  */

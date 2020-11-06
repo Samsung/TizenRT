@@ -2688,7 +2688,7 @@ static void USB_HostEhciTimer0()
 		case USB_ENDPOINT_CONTROL:
 			vltQhPointer = (volatile usb_host_ehci_qh_t *)ehciPipePointer->ehciQh;	/* pipe's qh */
 			transfer = vltQhPointer->ehciTransferHead;	/* qh's transfer */
-			if ((transfer != NULL)) {	/* there is transfering data */
+			if ((transfer != NULL)) {	/* there is transferring data */
 				timeoutLabel = 0;
 				if (gIMXRT1020_USB_HOST.deviceAttached != kEHCIDeviceAttached) {
 					vltQtdPointer = (volatile usb_host_ehci_qtd_t *)transfer->union2.unitTail;
@@ -3069,7 +3069,7 @@ usb_status_t USB_HostEhciCreate()
 	return kStatus_USB_Success;
 }
 
-usb_status_t USB_HostEhciDestory()
+usb_status_t USB_HostEhciDestroy()
 {
 	/* disable all interrupts */
 	gIMXRT1020_USB_HOST.usb->USBINTR = 0;
@@ -3123,7 +3123,7 @@ usb_status_t USB_HostEhciOpenPipe(usb_host_pipe_handle *pipeHandle, usb_host_pip
 
 	uvdbg("endpointaddress : 0x%x direction : %d interval : %d maxPacketSize : %d pipeType  : %d numberPerUframe : %d\r\n", pipeInit->endpointAddress, pipeInit->direction, pipeInit->interval, pipeInit->maxPacketSize, pipeInit->pipeType, pipeInit->numberPerUframe);
 
-	/* initialize pipe informations */
+	/* initialize pipe information */
 	USB_HostEhciZeroMem((uint32_t *) ehciPipePointer, sizeof(usb_host_ehci_pipe_t) / 4);
 	ehciPipePointer->pipeCommon.deviceAddress = pipeInit->deviceAddress;
 	ehciPipePointer->pipeCommon.endpointAddress = pipeInit->endpointAddress;
