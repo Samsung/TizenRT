@@ -210,6 +210,11 @@ struct binfmt_s {
  * Public Data
  ****************************************************************************/
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+/* A binary data of common library */
+extern struct binary_s *g_lib_binp;
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
