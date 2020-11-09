@@ -37,9 +37,6 @@
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 #include <tinyara/board.h>
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-#include <tinyara/binfmt/binfmt.h>
-#endif
 #include <tinyara/wdog.h>
 
 #include "task/task.h"
@@ -70,10 +67,6 @@ struct tcb_s *g_faultmsg_sender;
 sq_queue_t g_faultmsg_list;
 sq_queue_t g_freemsg_list;
 static faultmsg_t g_prealloc_faultmsg[FAULTMSG_COUNT];
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-extern struct binary_s *g_lib_binp;
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -233,19 +226,15 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 	struct tcb_s *tcb;
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	if (g_lib_binp) {
-		uint32_t start = (uint32_t)g_lib_binp->alloc[ALLOC_TEXT];
-		uint32_t end = start + g_lib_binp->textsize;
-		if (assert_pc >= start && assert_pc <= end) {
-			/* If a fault happens in common library, it needs to reload all user binaries */
-			int bin_count = binary_manager_get_ucount();
-			for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
-				/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-				binary_manager_deactivate_rtthreads(bin_idx);
-			}
-			/* Send fault message and Unblock fault message sender */
-			return binary_manager_unblock_fault_message_sender(BM_CMNLIB_IDX);
+	if (is_common_library_space((void *)assert_pc)) {
+		/* If a fault happens in common library, it needs to reload all user binaries */
+		int bin_count = binary_manager_get_ucount();
+		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
+			binary_manager_deactivate_rtthreads(bin_idx);
 		}
+		/* Send fault message and Unblock fault message sender */
+		return binary_manager_unblock_fault_message_sender(BM_CMNLIB_IDX);
 	}
 #endif
 

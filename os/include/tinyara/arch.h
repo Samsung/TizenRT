@@ -2188,6 +2188,18 @@ void up_wdog_keepalive(void);
  *
  ****************************************************************************/
 bool is_kernel_space(void *addr);
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+/****************************************************************************
+ * Name: is_common_library_space
+ *
+ * Description:
+ *   Check the address is in common library space or not
+ *
+ ****************************************************************************/
+bool is_common_library_space(void *addr);
+
+#endif
 #endif
 
 #undef EXTERN
