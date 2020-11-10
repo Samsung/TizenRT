@@ -1181,10 +1181,18 @@ u32  rtw_timerReset( _timerHandle xTimer,
 #define LIST_CONTAINOR(ptr, type, member) \
 	((type *)((char *)(ptr)-(SIZE_T)((char *)&((type *)ptr)->member - (char *)ptr)))
 
+#ifndef time_after
 #define time_after(a,b)	((long)(b) - (long)(a) < 0)
+#endif
+#ifndef time_before
 #define time_before(a,b)	time_after(b,a)
+#endif
+#ifndef time_after_eq
 #define time_after_eq(a,b)	((long)(a) - (long)(b) >= 0)
+#endif
+#ifndef time_before_eq
 #define time_before_eq(a,b)	time_after_eq(b,a)
+#endif
 	
 #define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))
 #define RND4(x)	(((x >> 2) + (((x & 3) == 0) ?  0: 1)) << 2)

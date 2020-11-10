@@ -288,6 +288,9 @@ endif
 ifeq ($(CONFIG_AMEBAD_WIFI),y)
 $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan$(LIBEXT)
 	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
 endif
 
 # External esp32 wifi static Lib builds

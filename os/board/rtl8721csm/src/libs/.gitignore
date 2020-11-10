@@ -1,2 +1,3 @@
 !./lib_wlan.a
+!./lib_wps.a
 !./cmse_implib.a
