@@ -273,10 +273,8 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
 		}
-#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
-		up_mpu_set_register(rtcb->stack_mpu_regs);
-#elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
-		set_PSPLIM((uint32_t) rtcb->stack_alloc_ptr);
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		up_mpu_set_register(tcb->stack_mpu_regs);
 #endif
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
@@ -324,10 +322,8 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
 		}
-#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 		up_mpu_set_register(rtcb->stack_mpu_regs);
-#elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
-		set_PSPLIM((uint32_t) rtcb->stack_alloc_ptr);
 #endif
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
