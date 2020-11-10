@@ -22,7 +22,6 @@ extern "C" {
 #endif
 
 #include "platform_opts.h"
-#include <wireless.h>
 #include <skbuff.h>
 
 struct netif;
@@ -70,13 +69,6 @@ unsigned char *netif_get_hwaddr(int idx_wlan);
 void netif_rx(int idx, unsigned int len);
 void netif_post_sleep_processing(void);
 void netif_pre_sleep_processing(void);
-#if (CONFIG_LWIP_LAYER == 1)
-#if !defined(CONFIG_MBED_ENABLED)
-extern void ethernetif_recv(struct netif *netif, int total_len);
-#endif
-extern void lwip_PRE_SLEEP_PROCESSING(void);
-extern void lwip_POST_SLEEP_PROCESSING(void);
-#endif //CONFIG_LWIP_LAYER == 1
 
 #ifdef CONFIG_WOWLAN
 extern unsigned char *rltk_wlan_get_ip(int idx);

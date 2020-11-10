@@ -14,20 +14,45 @@
  * limitations under the License.
  ******************************************************************************/
 
-
-#define CONFIG_LWIP_LAYER 1
-
 #include <lwip_intf_tizenrt.h>
 #include <lwip/init.h>
 #include <lwip/netif.h>
 #include <osdep_service.h>
 #include "autoconf.h"
+
+#include <tinyara/netmgr/netdev_mgr.h>
+#include <sys/socket.h>
+#include <netdev_mgr_internal.h>
+#include "wifi_constants.h"
+#include <net/if.h>
+
+#ifndef WLAN0_NAME
+#define WLAN0_NAME "wlan0"
+#endif
+#ifndef WLAN1_NAME
+#define WLAN1_NAME "wlan1"
+#endif
+
+#ifndef GET_NETIF_FROM_NETDEV
+#define GET_NETIF_FROM_NETDEV(dev) (struct netif *)(((struct netdev_ops *)(dev)->ops)->nic)
+#endif
+
+extern struct netdev *ameba_nm_dev_wlan0;
+extern struct netdev *ameba_nm_dev_wlan1;
+
 //----- ------------------------------------------------------------------
 // External Reference
 //----- ------------------------------------------------------------------
-#if (CONFIG_LWIP_LAYER == 1)
-extern struct netif xnetif[]; //LWIP netif
-#endif
+
+extern rtw_mode_t wifi_mode;
+
+static struct netdev *rtk_get_netdev(int idx)
+{
+	if (wifi_mode == RTW_MODE_STA_AP && idx == 1)
+	    return ameba_nm_dev_wlan1;
+	else
+	    return ameba_nm_dev_wlan0;
+}
 
 /**
  *      rltk_wlan_set_netif_info - set netif hw address and register dev pointer to netif device
@@ -39,26 +64,17 @@ extern struct netif xnetif[]; //LWIP netif
  *
  *      Return Value: None
  */
-#include <net/if.h>
-extern struct netif *netdev_findbyname(FAR const char *ifname);
-static void _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
-{
-	struct netif *dev = netdev_findbyname(ifname);
-	if (dev) {
-		memcpy(dev->d_mac.ether_addr_octet, macaddr, IFHWADDRLEN);
-	}
-}
 
 void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-#if defined(CONFIG_MBED_ENABLED)
-#else
-	_netlib_setmacaddr(xnetif[idx_wlan].name, dev_addr);
-	rtw_memcpy(xnetif[idx_wlan].hwaddr, dev_addr, 6);
-	xnetif[idx_wlan].state = dev;
-#endif
-#endif
+	struct netdev *dev_tmp = NULL;
+
+	dev_tmp = rtk_get_netdev(idx_wlan);
+
+	if (!dev_tmp) {
+		DiagPrintf("[rltk_wlan_set_netif_info] get dev fail\n");
+	}
+	netdev_set_hwaddr(dev_tmp, dev_addr, IFHWADDRLEN);
 }
 
 /**
@@ -72,7 +88,7 @@ void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
  */
 int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#ifdef CONFIG_NET_NETMGR
 	struct eth_drv_sg *last_sg;
 	struct sk_buff *skb = NULL;
 	int ret = 0;
@@ -160,7 +176,7 @@ exit:
  */
 void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#ifdef CONFIG_NET_NETMGR
 	struct eth_drv_sg *last_sg;
 	struct sk_buff *skb;
 
@@ -183,81 +199,46 @@ void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len)
 
 int netif_is_valid_IP(int idx, unsigned char *ip_dest)
 {
-#if defined(CONFIG_MBED_ENABLED)
-	return 1;
-#else
-#if CONFIG_LWIP_LAYER == 1
-	struct netif *pnetif = &xnetif[idx];
-
-	ip_addr_t addr = {0};
-
-#ifdef CONFIG_MEMORY_ACCESS_ALIGNED
-	unsigned int temp;
-	memcpy(&temp, ip_dest, sizeof(unsigned int));
-	u32_t *ip_dest_addr = &temp;
-#else
-	u32_t *ip_dest_addr = (u32_t *)ip_dest;
-#endif
-
-#if LWIP_VERSION_MAJOR >= 2
-	ip_addr_set_ip4_u32(&addr, *ip_dest_addr);
-#else
-	addr.addr = *ip_dest_addr;
-#endif
-
-#if (LWIP_VERSION_MAJOR >= 2)
-	if ((ip_addr_get_ip4_u32(netif_ip_addr4(pnetif))) == 0)
-		return 1;
-#else
-
-	if (pnetif->ip_addr.addr == 0)
-		return 1;
-#endif
-
-	if (ip_addr_ismulticast(&addr) || ip_addr_isbroadcast(&addr, pnetif)) {
-		return 1;
-	}
-
-	if (ip_addr_cmp(&(pnetif->ip_addr), &addr))
-		return 1;
-
-	DBG_TRACE("invalid IP: %d.%d.%d.%d ", ip_dest[0], ip_dest[1], ip_dest[2], ip_dest[3]);
-#endif
-#ifdef CONFIG_DONT_CARE_TP
-	if (pnetif->flags & NETIF_FLAG_IPSWITCH)
-		return 1;
-	else
-#endif
-		return 0;
-#endif
+	return 1;//For net manager, always Valid
 }
 
+#ifdef CONFIG_NET_NETMGR
+int get_idx_from_dev(struct netdev *dev)
+{
+	switch (wifi_mode) {
+	case RTW_MODE_STA_AP:
+		if (!strcmp(WLAN0_NAME, dev->ifname))
+			return 0;
+		else if(!strcmp(WLAN1_NAME, dev->ifname))
+			return 1;
+		else
+			return -1;
+	default:
+		if (!strcmp(WLAN0_NAME, dev->ifname))
+			return 0;
+		else
+			return -1;
+	}
+}
+#endif
 #if !defined(CONFIG_MBED_ENABLED)
 int netif_get_idx(struct netif *pnetif)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-	int idx = pnetif - xnetif;
-
-	switch (idx) {
-	case 0:
-		return 0;
-	case 1:
-		return 1;
-	default:
-		return -1;
-	}
-#else
 	return -1;
-#endif
 }
 
 unsigned char *netif_get_hwaddr(int idx_wlan)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-	return xnetif[idx_wlan].hwaddr;
-#else
-	return NULL;
-#endif
+	struct netdev *dev_tmp = NULL;
+	unsigned char *dev_addr;
+
+	dev_tmp = rtk_get_netdev(idx_wlan);
+
+	if (!dev_tmp) {
+		DiagPrintf("[netif_get_hwaddr] get dev fail\n");
+	}
+	netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN);
+	return dev_addr;
 }
 #endif
 
@@ -273,13 +254,15 @@ void set_callback_func(emac_callback p, void *data)
 
 void netif_rx(int idx, unsigned int len)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-#if defined(CONFIG_MBED_ENABLED)
-	emac_callback_func(emac_callback_data, NULL, len);
-#else
-	ethernetif_recv(&xnetif[idx], len);
-#endif
-#endif
+	struct sk_buff *skb;
+	skb = rltk_wlan_get_recv_skb(idx);
+
+	struct netdev *dev_tmp = NULL;
+
+	dev_tmp = rtk_get_netdev(idx);
+
+	netdev_input(dev_tmp, skb->data, skb->len);
+
 #if (CONFIG_INIC_EN == 1)
 	inic_netif_rx(idx, len);
 #endif
@@ -296,27 +279,43 @@ void netif_pre_sleep_processing(void)
 #ifdef CONFIG_WOWLAN
 unsigned char *rltk_wlan_get_ip(int idx)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-	return LwIP_GetIP(&xnetif[idx]);
-#else
-	return NULL;
-#endif
+	struct netdev *dev_tmp = NULL;
+
+	dev_tmp = rtk_get_netdev(idx);
+	
+	if (!dev_tmp) {
+		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+	}
+
+	struct netif *ni = (struct netif *)(((struct netdev_ops *)(dev_tmp)->ops)->nic);
+
+	return (uint8_t *) &(ni->ip_addr);
 }
 unsigned char *rltk_wlan_get_gw(int idx)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-	return LwIP_GetGW(&xnetif[idx]);
-#else
-	return NULL;
-#endif
+	struct netdev *dev_tmp = NULL;
+
+	dev_tmp = rtk_get_netdev(idx);
+	
+	if (!dev_tmp) {
+		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+	}
+
+	struct netif *ni = (struct netif *)(((struct netdev_ops *)(dev_tmp)->ops)->nic);
+	return (uint8_t *) &(ni->gw);
 }
 
 unsigned char *rltk_wlan_get_gwmask(int idx)
 {
-#if (CONFIG_LWIP_LAYER == 1)
-	return LwIP_GetMASK(&xnetif[idx]);
-#else
-	return NULL;
-#endif
+	struct netdev *dev_tmp = NULL;
+
+	dev_tmp = rtk_get_netdev(idx);
+	
+	if (!dev_tmp) {
+		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+	}
+
+	struct netif *ni = (struct netif *)(((struct netdev_ops *)(dev_tmp)->ops)->nic);
+	return (uint8_t *) &(ni->netmask);
 }
 #endif

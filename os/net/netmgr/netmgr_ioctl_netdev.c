@@ -52,6 +52,7 @@ static int _netdev_getconf(struct netdev *dev, void *arg)
 	}
 
 	strncpy(ifr->ifr_name, dev->ifname, IFNAMSIZ - 1);
+	ifr->ifr_name[IFNAMSIZ - 1] = '\0';
 	ND_NETOPS(dev, get_ip4addr)(dev, &ifr->ifr_addr, NETDEV_IP);
 
 	//struct sockaddr_in *sin = (struct sockaddr_in *)&ifr->ifr_addr;

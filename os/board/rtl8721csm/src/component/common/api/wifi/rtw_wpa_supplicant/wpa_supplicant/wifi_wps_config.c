@@ -6,7 +6,6 @@
 #include "main.h"
 #include "queue.h"
 #include "utils/os.h"
-#include <lwip_netconf.h>
 #include <lwip/netif.h>
 #include "wifi/wifi_conf.h"
 #include "wps/wps_defs.h"
@@ -288,10 +287,7 @@ static unsigned char wps_stop_notified = 0;
 void wps_check_and_show_connection_info(void)
 {
 	rtw_wifi_setting_t setting;	
-#if CONFIG_LWIP_LAYER 
-	/* Start DHCP Client */
-	LwIP_DHCP(0, DHCP_START);		
-#endif	
+
 	wifi_get_setting(WLAN0_NAME, &setting);
 	wifi_show_setting(WLAN0_NAME, &setting);
 

@@ -70,7 +70,6 @@
 #include "platform_opts.h"
 #include "ethernetif_tizenrt.h"
 #include "queue.h"
-#include "rtk_lwip_netconf.h"
 
 #include "lwip/ethip6.h" //Add for ipv6
 
@@ -145,6 +144,41 @@ static void low_level_init(struct netif *netif)
  *       dropped because of memory failure (except for the TCP timers).
  */
 
+#ifdef CONFIG_NET_NETMGR
+
+err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
+{
+	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
+	int sg_len = 0;
+
+#if CONFIG_WLAN
+	if (!rltk_wlan_running(get_idx_from_dev(dev)))
+		return ERR_IF;
+#endif
+	if (data != NULL && sg_len < MAX_ETH_DRV_SG)
+		{
+		sg_list[sg_len].buf = (unsigned int)data;
+		sg_list[sg_len++].len = dlen;
+		}
+	if (sg_len) {
+#if CONFIG_WLAN
+		if (rltk_wlan_send(get_idx_from_dev(dev), sg_list, sg_len, dlen) == 0)
+#elif defined(CONFIG_INIC_HOST) && (CONFIG_INIC_HOST)
+		if (rltk_inic_send(sg_list, sg_len, dlen) == 0)
+#else
+		if (1)
+#endif
+{
+			return ERR_OK;}
+		else
+			return ERR_BUF; // return a non-fatal error
+	}
+
+	return ERR_OK;
+}
+
+#else
+
 static err_t low_level_output(struct netif *netif, struct pbuf *p)
 {
 	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
@@ -175,6 +209,8 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 
 	return ERR_OK;
 }
+
+#endif
 
 /**
  * Should allocate a pbuf and transfer the bytes of the incoming

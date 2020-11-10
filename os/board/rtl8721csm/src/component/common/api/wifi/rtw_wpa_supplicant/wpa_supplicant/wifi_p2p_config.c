@@ -67,72 +67,9 @@ int hwaddr_aton(const char *txt, u8 *addr)
 	return 0;
 }
 
-int wifi_start_p2p_go(char *ssid, char *passphrase, u8 channel)
-{
-	extern struct netif xnetif[NET_IF_NUM];
-	struct netif * pnetif = &xnetif[0];
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
-
-#if LWIP_VERSION_MAJOR >= 2
-	IP4_ADDR(ip_2_ip4(&ipaddr), P2P_GW_ADDR0, P2P_GW_ADDR1, P2P_GW_ADDR2, P2P_GW_ADDR3);
-	IP4_ADDR(ip_2_ip4(&netmask), P2P_NETMASK_ADDR0, P2P_NETMASK_ADDR1 , P2P_NETMASK_ADDR2, P2P_NETMASK_ADDR3);
-	IP4_ADDR(ip_2_ip4(&gw), P2P_GW_ADDR0, P2P_GW_ADDR1, P2P_GW_ADDR2, P2P_GW_ADDR3);
-	netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask),ip_2_ip4(&gw));
-#else
-	IP4_ADDR(&ipaddr, P2P_GW_ADDR0, P2P_GW_ADDR1, P2P_GW_ADDR2, P2P_GW_ADDR3);
-	IP4_ADDR(&netmask, P2P_NETMASK_ADDR0, P2P_NETMASK_ADDR1 , P2P_NETMASK_ADDR2, P2P_NETMASK_ADDR3);
-	IP4_ADDR(&gw, P2P_GW_ADDR0, P2P_GW_ADDR1, P2P_GW_ADDR2, P2P_GW_ADDR3);
-	netif_set_addr(pnetif, &ipaddr, &netmask,&gw);
-#endif
-	
-	// start ap
-	if(wifi_start_ap(ssid,
-						 RTW_SECURITY_WPA2_AES_PSK,
-						 passphrase,
-						 strlen(ssid),
-						 strlen(passphrase),
-						 channel
-						 ) != RTW_SUCCESS) {
-		printf("\n\rERROR: Operation failed!");
-		return -1;
-	}
-
-	netif_set_default(pnetif);
-	
-	// start dhcp server
-	dhcps_init(pnetif);
-
-	return 0;
-}
-
 void app_callback(char *msg)
 {
 	//From Application
-}
-
-void cmd_wifi_p2p_start(int argc, char **argv)
-{
-	extern struct netif xnetif[NET_IF_NUM];
-	int listen_ch = 1;
-	int op_ch = 5;
-	int go_intent = 1;
-#if 1	
-	u32 r = 0;
-	os_get_random((u8 *) &r, sizeof(r));
-	go_intent = r%15+1; /*1-15*/
-	
-	os_get_random((u8 *) &r, sizeof(r));
-	listen_ch = 1 + (r % 3) * 5;
-	
-	os_get_random((u8 *) &r, sizeof(r));
-	op_ch = 1 + (r % 3) * 5;
-#endif	
-	wifi_off();
-	os_sleep(0, 20000);
-	wifi_on(RTW_MODE_P2P);
-	wifi_p2p_init(xnetif[0].hwaddr, go_intent, listen_ch, op_ch);	
 }
 
 int cmd_wifi_p2p_auto_go_start(int argc, char **argv)

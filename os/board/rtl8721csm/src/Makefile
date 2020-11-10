@@ -78,7 +78,6 @@ include component/common/api/wifi/Make.defs
 include component/common/api/wifi/rtw_wpa_supplicant/wpa_supplicant/Make.defs
 include component/common/api/Make.defs
 include component/common/api/network/src/Make.defs
-include component/common/network/dhcp/Make.defs 
 include component/os/os_dep/Make.defs
 include component/os/tizenrt/Make.defs
 include component/soc/realtek/amebad/misc/Make.defs
@@ -139,6 +138,8 @@ CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/wpa_supplicant
 CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/misc
 CFALGS += -I$(DIR_CRYPTO)/../include/
 CFLAGS += -I$(DIR_FW)/../include/
+CFLAGS += -I$(TOPDIR)/net/netmgr/
+CFLAGS += -I$(TOPDIR)/include/net/if
 
 ifeq ($(CONFIG_USBD_MSC),y)
 CFLAGS += -I$(BASEDIR)/component/common/drivers/sdio/realtek/sdio_host/inc

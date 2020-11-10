@@ -1055,19 +1055,6 @@ int mailbox_to_wifi(u8 *data, u8 len);
 #define mailbox_to_wifi(data, len)
 #endif
 
-#ifdef CONFIG_WOWLAN_TCP_KEEP_ALIVE
-/**
- * @brief  construct a tcp packet that offload to wlan. wlan would keep sending this packet to tcp server.
- *
- * @param[in]  socket_fd : tcp socket
- * @param[in]  content : tcp payload
- * @param[in]  len : tcp payload size
- * @param[in]  interval_ms : send this packeter every interval_ms milliseconds
- * @return  RTW_SUCCESS
- */
-int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len, uint32_t interval_ms);
-#endif
-
 // WoWlan related
 //-------------------------------------------------------------//
 #ifdef CONFIG_WOWLAN

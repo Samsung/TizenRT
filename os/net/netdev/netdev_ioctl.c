@@ -416,6 +416,7 @@ static int netdev_getconf(FAR struct netif *dev, void *arg)
 	}
 
 	strncpy(ifr->ifr_name, dev->d_ifname, IFNAMSIZ - 1);
+	ifr->ifr_name[IFNAMSIZ - 1] = '\0';
 	struct sockaddr_in *sin = (struct sockaddr_in *)&ifr->ifr_addr;
 	sin->sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4(&dev->ip_addr));
 	ifenum->pos += sizeof(struct ifreq);
