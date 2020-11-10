@@ -381,6 +381,12 @@ void ipmcast_sender_thread(int num_packets, uint32_t sleep_time, const char *int
 	groupSock.sin_addr.s_addr = inet_addr(g_app_target_addr);
 	groupSock.sin_port = htons(g_app_target_port);
 
+	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) < 0) {
+		printf("[MCASTCLIENT] [ERR] Failed setting local interface");
+		goto out_with_socket;
+	}
+	printf("[MCASTCLIENT] setsockopt IP_MULTICAST_IF success\n");
+
 	/*
 	 * Set local interface for outbound multicast datagrams.
 	 * The IP address specified must be associated with a local,
@@ -394,12 +400,6 @@ void ipmcast_sender_thread(int num_packets, uint32_t sleep_time, const char *int
 	printf("[MCASTCLIENT] bind interface(%s)\n", intf);
 	printf("[MCASTCLIENT] group address(%s)\n", g_app_target_addr);
 	printf("[MCASTCLIENT] port(%d)\n", g_app_target_port);
-
-	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) < 0) {
-		printf("[MCASTCLIENT] [ERR] Failed setting local interface");
-		goto out_with_socket;
-	}
-	printf("[MCASTCLIENT] setsockopt IP_MULTICAST_IF success\n");
 
 	/*
 	 * Send a message to the multicast group specified by the
@@ -471,6 +471,13 @@ void ipmcast_receiver_thread(int num_packets, const char *intf)
 	localSock.sin_port = htons(g_app_target_port);
 	localSock.sin_addr.s_addr = INADDR_ANY;
 
+	group.imr_interface.s_addr = INADDR_ANY;
+	group.imr_multiaddr.s_addr = inet_addr(g_app_target_addr);
+	if (setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0) {
+		printf("[MCASTSERV] fail: adding multicast group %d\n", errno);
+		goto out_with_socket;
+	}
+		
 	if (bind(sd, (struct sockaddr *)&localSock, sizeof(localSock))) {
 		printf("[MCASTSERV] ERR: binding datagram socket\n");
 		goto out_with_socket;
@@ -493,12 +500,6 @@ void ipmcast_receiver_thread(int num_packets, const char *intf)
 	printf("[MCASTSERV] bind interface(%s)\n", intf);
 	printf("[MCASTSERV] group address(%s)\n", g_app_target_addr);
 	printf("[MCASTSERV] port(%d)\n", g_app_target_port);
-
-	group.imr_multiaddr.s_addr = inet_addr(g_app_target_addr);
-	if (setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0) {
-		printf("[MCASTSERV] fail: adding multicast group %d\n", errno);
-		goto out_with_socket;
-	}
 
 	printf("[MCASTSERV] join multicast success\n");
 	/*
@@ -929,3 +930,4 @@ err_with_input:
 	show_usage();
 	return -1;
 }
+
