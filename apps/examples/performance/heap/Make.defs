@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_SYSCALL_PERFORMANCE),y)
-CONFIGURED_APPS += examples/syscall_performance
+ifeq ($(CONFIG_EXAMPLES_HEAP_PERFORMANCE_TEST),y)
+CONFIGURED_APPS += examples/performance/heap
 endif

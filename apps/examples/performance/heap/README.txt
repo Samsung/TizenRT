@@ -1,5 +1,5 @@
-examples/heap_performance_test
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+examples/performance/heap
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
   This is an example to measure the elapsed time while simply repeating memory allocation and release.
   
