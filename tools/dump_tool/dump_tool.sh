@@ -23,7 +23,7 @@
 BUILD_BIN_PATH=../../build/output/bin
 
 # Compile dump_tool application
-gcc dump_tool.c -o dump
+gcc dump_tool_utils.c dump_tool.c -o dump_tool
 
 # Run Dump Tool
 RAMDUMP_FILE=./ramdump_0x*.bin
@@ -40,7 +40,7 @@ while [ $ok = true ]
 do
 echo Enter:
 read dev_port
-if sudo ./dump $dev_port;
+if sudo ./dump_tool $dev_port;
 	then
 		ok=false
 	else
