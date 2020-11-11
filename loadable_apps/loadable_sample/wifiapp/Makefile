@@ -62,6 +62,9 @@ endif
 ifneq ($(filter y,$(CONFIG_EXAMPLES_BINARY_UPDATE_TEST) $(CONFIG_EXAMPLES_UPDATE_AGING_TEST)),)
 SRCS += binary_update.c
 endif
+ifeq ($(CONFIG_WIFI_PLATFORM_LIB),y)
+LIBSRCS += wifi_pf.c
+endif
 #########################################
 # Case of Loadable separated binary build
 # Make separated ELF type binary
@@ -77,6 +80,35 @@ KERNEL_VER = 2.0
 STACKSIZE = 8192
 PRIORITY = 180
 LOADING_PRIORITY = MID
+
+ifeq ($(CONFIG_WIFI_PLATFORM_LIB),y)
+OUTPUT_LIB_DIR = $(TOPDIR)/../build/output/libraries
+LIBOBJS = $(LIBSRCS:.c=$(OBJEXT))
+
+WIFILIB = libwifipf$(LIBEXT)
+
+all: .built install_lib
+.PHONY: clean_lib depend distclean
+
+$(LIBOBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+.built: $(LIBOBJS)
+	$(call ARCHIVE, $(WIFILIB), $(LIBOBJS))
+	@touch .built
+
+install_lib:
+	$(Q) cp $(WIFILIB) $(OUTPUT_LIB_DIR)/$(WIFILIB)
+
+clean_lib:
+	$(call DELFILE, .built)
+	$(call DELFILE, $(OUTPUT_LIB_DIR)/$(WIFILIB))
+	$(call CLEAN)
+
+distclean: clean_lib
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+endif
 
 include $(TOPDIR)/$(LOADABLEDIR)/loadable.mk
 
