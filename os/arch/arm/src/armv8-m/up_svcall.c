@@ -568,7 +568,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	case SYS_free_securecontext: {
 		/* Free the secure context. */
 		TZ_FreeModuleContext_S(rtcb->tz_context);
-		rtcb->tz_context = NULL;
+		rtcb->tz_context = 0;
 	}
 	break;
 #endif
