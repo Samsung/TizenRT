@@ -16,10 +16,11 @@
 *
 ***************************************************************************************************/
 
-#include <stdint.h>
-#include <stdio.h>
+#include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <tinyara/kmalloc.h>
 
 #include "flash_api.h"
 #include "device_lock.h"
@@ -78,7 +79,7 @@ static uint8_t crypto_inited = 0;
 /**
  * Read secure efuse
  */
-static void rtl_ReadEfuse(u32 addr, u8 size, u8* key)
+static void rtl_ReadEfuse(uint32_t addr, uint8_t size, uint8_t *key)
 {
 	uint32_t Idx = 0;
 	uint32_t CtrlSetting = HAL_READ32(SYSTEM_CTRL_BASE, REG_HS_EFUSE_CTRL1_S);
@@ -118,7 +119,7 @@ uint32_t rtl_cryptoEngine_init_wrapper(void)
 /**
  * AES Crpyto Wrapper
  */
-uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode)
+uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode)
 {
 	uint32_t ret = RTL_HAL_SUCCESS;
 
@@ -144,7 +145,7 @@ uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t* key, uint32_t keylen, unsigned char*
 	return ret;
 }
 
-uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode)
+uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode)
 {
 	uint32_t ret = RTL_HAL_SUCCESS;
 	unsigned char iv[16];
@@ -171,7 +172,7 @@ uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigned char*
 	return ret;
 }
 
-uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode)
+uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode)
 {
 	uint32_t ret = RTL_HAL_SUCCESS;
 	unsigned char iv[16];
@@ -215,7 +216,7 @@ uint32_t rtl_read_factory_cert_wrapper(hal_data *data)
 
 	data_len = atoi(buf_length);	/* Cert Length */
 
-	buf_flash = (uint8_t *) malloc(data_len + 4);	/* Allocate buff */
+	buf_flash = (uint8_t *)kmm_malloc(data_len + 4);	/* Allocate buff */
 
 	if (buf_flash) {
 		memset(buf_flash, 0, data_len + 4);
@@ -233,7 +234,35 @@ uint32_t rtl_read_factory_cert_wrapper(hal_data *data)
 	}
 
 	if (buf_flash != NULL) {
-		free(buf_flash);
+		kmm_free(buf_flash);
+	}
+
+	return ret;
+}
+
+uint32_t rtl_write_factory_cert_wrapper(hal_data *data)
+{
+	uint32_t ret;
+	uint8_t buf_length[4];
+	flash_t flash;
+	uint32_t data_len = data->data_len;
+
+	uint8_t	*buf_flash = (uint8_t *)kmm_malloc(data_len + 4);
+
+	if (buf_flash) {
+		itoa(data_len, buf_length, 10);
+		memcpy(buf_flash, buf_length, 4);
+		memcpy(buf_flash + 4, data->data, data->data_len);
+
+		device_mutex_lock(RT_DEV_LOCK_FLASH);
+		flash_erase_sector(&flash, FACTORY_CERT_ADDR);
+		flash_stream_write(&flash, FACTORY_CERT_ADDR, data_len + 4, buf_flash);
+		device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
+		ret = RTL_HAL_SUCCESS;
+		kmm_free(buf_flash);
+	} else {
+		ret = RTL_HAL_FAIL;
 	}
 
 	return ret;
@@ -257,9 +286,9 @@ uint32_t rtl_read_factory_key_wrapper(hal_data *data)
 	data_len = atoi(buf_length);	/* Key Length */
 
 	/* Allocate buff */
-	buf_flash = (uint8_t *) malloc(data_len + 4);
-	buf_crypt = (uint8_t *) malloc(data_len);
-	buf_plain = (uint8_t *) malloc(data_len);
+	buf_flash = (uint8_t *)kmm_malloc(data_len + 4);
+	buf_crypt = (uint8_t *)kmm_malloc(data_len);
+	buf_plain = (uint8_t *)kmm_malloc(data_len);
 
 	if (buf_plain && buf_crypt && buf_flash) {
 		memset(buf_flash, 0, data_len + 4);
@@ -283,13 +312,70 @@ uint32_t rtl_read_factory_key_wrapper(hal_data *data)
 	}
 
 	if (buf_flash != NULL) {
-		free(buf_flash);
+		kmm_free(buf_flash);
 	}
 	if (buf_plain != NULL) {
-		free(buf_plain);
+		kmm_free(buf_plain);
 	}
 	if (buf_crypt != NULL) {
-		free(buf_crypt);
+		kmm_free(buf_crypt);
+	}
+
+	return ret;
+}
+
+uint32_t rtl_write_factory_key_wrapper(hal_data *data)
+{
+	uint32_t ret;
+	uint8_t buf_length[4];
+	uint8_t	*buf_crypt = NULL;
+	uint8_t	*buf_flash = NULL;
+	uint8_t	*buf_plain = NULL;
+	unsigned char aes_key[32] __attribute__((aligned(4)));
+	flash_t flash;
+	uint32_t data_len = (data->data_len + 15) / 16 * 16;	/* AES blocks */
+
+	buf_crypt = (uint8_t *)kmm_malloc(data_len);
+	buf_flash = (uint8_t *)kmm_malloc(data_len + 4);
+	buf_plain = (uint8_t *)kmm_malloc(data_len);
+
+	if (buf_crypt && buf_flash && buf_plain) {
+		memset(buf_crypt, 0, data_len);
+		memset(buf_flash, 0, data_len + 4);
+		memset(buf_plain, 0, data_len);
+		memcpy(buf_plain, data->data, data->data_len);
+
+		memset(aes_key, 0, SAMSUNG_KEY_SIZE);
+		memcpy(aes_key, samsung_key, SAMSUNG_KEY_SIZE);
+
+		ret = rtl_cryptoAES_ecb_wrapper(aes_key, SAMSUNG_KEY_SIZE, buf_crypt, data_len, buf_plain, RTL_ENCRYPT);
+
+		if (ret != 0) {
+			goto exit;
+		}
+		itoa(data_len, buf_length, 10);
+		memcpy(buf_flash, buf_length, 4);
+		memcpy(buf_flash + 4, buf_crypt, data_len);
+
+		device_mutex_lock(RT_DEV_LOCK_FLASH);
+		flash_erase_sector(&flash, FACTORY_KEY_ADDR);
+		flash_stream_write(&flash, FACTORY_KEY_ADDR, data_len + 4, buf_flash);
+		device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
+		ret = RTL_HAL_SUCCESS;
+	} else {
+		ret = RTL_HAL_FAIL;
+	}
+
+exit:
+	if (buf_crypt != NULL) {
+		kmm_free(buf_crypt);
+	}
+	if (buf_flash != NULL) {
+		kmm_free(buf_flash);
+	}
+	if (buf_plain != NULL) {
+		kmm_free(buf_plain);
 	}
 
 	return ret;
@@ -303,15 +389,15 @@ uint32_t rtl_write_storage_wrapper(uint32_t ss_idx, hal_data *data)
 	uint32_t ret;
 	uint8_t tmpbuf[64];
 	uint8_t buf_length[4];
-	uint8_t *key = (uint8_t*)(((uint32_t) tmpbuf + 31) & (~31));	/* align to 32byte */
+	uint8_t *key = (uint8_t*)(((uint32_t)tmpbuf + 31) & (~31));	/* align to 32byte */
 	flash_t flash;
 	uint32_t data_len = (data->data_len + 15) / 16 * 16;	/* AES blocks */
 	const uint8_t aes_gcm_iv[12];
 	const uint8_t aes_gcm_aad[20];
 
-	uint8_t	*buf = (uint8_t *) malloc(data_len + TAG_LENGTH);
-	uint8_t	*buf_flash = (uint8_t *) malloc(data_len + TAG_LENGTH + 4);
-	uint8_t	*data_plain = (uint8_t *) malloc(data_len);
+	uint8_t	*buf = (uint8_t *)kmm_malloc(data_len + TAG_LENGTH);
+	uint8_t	*buf_flash = (uint8_t *)kmm_malloc(data_len + TAG_LENGTH + 4);
+	uint8_t	*data_plain = (uint8_t *)kmm_malloc(data_len);
 	uint8_t	*tag = buf + data_len;
 
 	memcpy(aes_gcm_iv, aes_test_iv_gcm, sizeof(aes_test_iv_gcm));
@@ -369,13 +455,13 @@ uint32_t rtl_write_storage_wrapper(uint32_t ss_idx, hal_data *data)
 
 exit:
 	if (buf != NULL) {
-		free(buf);
+		kmm_free(buf);
 	}
 	if (buf_flash != NULL) {
-		free(buf_flash);
+		kmm_free(buf_flash);
 	}
 	if (data_plain != NULL) {
-		free(data_plain);
+		kmm_free(data_plain);
 	}
 
 	return ret;
@@ -388,7 +474,7 @@ uint32_t rtl_read_storage_wrapper(uint32_t ss_idx, hal_data *data)
 	uint8_t dec_tag[16];
 	uint8_t tmpbuf[64];
 	uint8_t buf_length[4];
-	uint8_t *key = (uint8_t*)(((uint32_t) tmpbuf + 31) & (~31));	/* align to 32byte */
+	uint8_t *key = (uint8_t*)(((uint32_t)tmpbuf + 31) & (~31));	/* align to 32byte */
 	flash_t flash;
 	const uint8_t aes_gcm_iv[12];
 	const uint8_t aes_gcm_aad[20];
@@ -399,9 +485,9 @@ uint32_t rtl_read_storage_wrapper(uint32_t ss_idx, hal_data *data)
 
 	data_len = atoi(buf_length);
 
-	uint8_t *buf = (uint8_t *) malloc(data_len + TAG_LENGTH);
-	uint8_t *buf_flash = (uint8_t *) malloc(data_len + TAG_LENGTH + 4);
-	uint8_t *data_plain = (uint8_t *) malloc(data_len);
+	uint8_t *buf = (uint8_t *)kmm_malloc(data_len + TAG_LENGTH);
+	uint8_t *buf_flash = (uint8_t *)kmm_malloc(data_len + TAG_LENGTH + 4);
+	uint8_t *data_plain = (uint8_t *)kmm_malloc(data_len);
 	uint8_t *tag = buf + data_len;
 
 	memcpy(aes_gcm_iv, aes_test_iv_gcm, sizeof(aes_test_iv_gcm));
@@ -463,13 +549,13 @@ uint32_t rtl_read_storage_wrapper(uint32_t ss_idx, hal_data *data)
 
 exit:
 	if (buf != NULL) {
-		free(buf);
+		kmm_free(buf);
 	}
 	if (buf_flash != NULL) {
-		free(buf_flash);
+		kmm_free(buf_flash);
 	}
 	if (data_plain != NULL) {
-		free(data_plain);
+		kmm_free(data_plain);
 	}
 
 	return ret;
