@@ -17,6 +17,6 @@
 ###########################################################################
 
 ifeq ($(CONFIG_EXAMPLES_TLS_BENCHMARK),y)
-CONFIGURED_APPS += examples/tls_benchmark
+CONFIGURED_APPS += examples/performance/tls_benchmark
 endif
 

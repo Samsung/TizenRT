@@ -16,10 +16,8 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/context_switching_performance/Make.defs
-# Adds selected applications to apps/ build
 #
-#   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2011-2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,6 +49,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_EXAMPLES_CTX_SWITCH_PERFORMANCE),y)
-CONFIGURED_APPS += examples/context_switching_performance
-endif
+MENUDESC = "Performance"
+
+include $(APPDIR)/Directory.mk
