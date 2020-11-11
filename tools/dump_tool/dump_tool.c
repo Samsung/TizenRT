@@ -19,92 +19,21 @@
 *
 ******************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <unistd.h>
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
-#define RAMDUMP_HANDSHAKE_STRING        "TIZENRTRMDUMP"
-#define FSDUMP_HANDSHAKE_STRING         "TIZENRTFSDUMP"
-#define TARGET_REBOOT_STRING            "TIZENRTREBOOT"
-#define HANDSHAKE_STR_LEN_MAX           (13)
-#define BINFILE_NAME_SIZE               (40)
-#define KB_CHECK_COUNT                  (16 * 1024)
+#include "dump_tool.h"
 
-#define TTYPATH_LEN		25
-#define TTYTYPE_LEN		7
+/****************************************************************************
+ * Private Variables
+ ****************************************************************************/
 
-#define CLEAR_DUMP_FLAGS        0
-#define RAMDUMP_FLAG            1
-#define USERFSDUMP_FLAG         2
-#define REBOOT_DEVICE_FLAG      4
-#define EXIT_TOOL_FLAG          8
-
-typedef unsigned int uint32_t;
-typedef unsigned char uint8_t;
-
-/* Ramdump initialization data */
-uint32_t  number_of_regions;
-typedef struct {
-	int rd_regionx_idx;
-	uint32_t rd_regionx_start;
-	uint32_t rd_regionx_size;
-	int rd_regionx_mark;
-} rd_regionx;
 rd_regionx *mem_info = NULL;
 
-static int do_handshake(int dev_fd, char *handshake_string)
-{
-	int ret;
-	char ack;
-	char host_handshake[HANDSHAKE_STR_LEN_MAX + 1] = { '\0' };
-
-	/* Prepare the handshake string */
-	strncpy(host_handshake, handshake_string, HANDSHAKE_STR_LEN_MAX);
-
-	/* Send handshake command to TARGET */
-	ret = write(dev_fd, host_handshake, HANDSHAKE_STR_LEN_MAX);
-	if (ret != HANDSHAKE_STR_LEN_MAX) {
-		printf("Sending handshake failed, ret = %d\n", ret);
-		return -1;
-	}
-
-	/* Read ACK from TARGET */
-	ret = read(dev_fd, &ack, sizeof(ack));
-	if (ret != 1) {
-		printf("Receiving handshake failed, ret = %d\n", ret);
-		return -1;
-	}
-
-	/* Check ACK */
-	if (ack != 'A') {
-		printf("Wrong Target Handshake, ack = %c\n", ack);
-		return -1;
-	}
-
-	printf("%s: Target Handshake successful\n", __func__);
-
-	return 0;
-}
-
-static int b_read(int fd, uint8_t *buf, int size)
-{
-	int i;
-	int ret;
-
-	for (i = 0; i < size; i++) {
-		ret = read(fd, buf + i, 1);
-		if (ret != 1) {
-			return i;
-		}
-	}
-
-	return i;
-}
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 int ramdump_info_init(int dev_fd)
 {
@@ -151,56 +80,6 @@ int ramdump_info_init(int dev_fd)
 		}
 		mem_info[i].rd_regionx_idx = c;
 	}
-
-	return 0;
-}
-
-static int send_region_info(int dev_fd, char *host_region)
-{
-	int ret;
-
-	/* Send region info to TARGET */
-	ret = write(dev_fd, host_region, 1);
-	if (ret != 1) {
-		printf("Sending region info failed, ret = %d\n", ret);
-		return -1;
-	}
-
-	return 0;
-}
-
-static int get_dump(int dev_fd, FILE* fp, uint32_t size)
-{
-	int ret;
-	int count = 0;
-	char buf;
-
-	printf("[>");
-	fflush(stdout);
-
-	while (size) {
-		ret = read(dev_fd, &buf, 1);
-		if (ret != 1) {
-			printf("Receiving ramdump %dTH byte failed, ret = %d\n", count, ret);
-			return -1;
-		}
-
-		ret = fwrite(&buf, 1, 1, fp);
-		if (ret != 1) {
-			printf("Writing ramdump %dTH byte failed, ret = %d\n", count, ret);
-			return -1;
-		}
-
-		count++;
-		size--;
-
-		if ((count % (KB_CHECK_COUNT)) == 0) {
-			printf("\b=>");
-			fflush(stdout);
-		}
-	}
-	printf("]\n");
-	fflush(stdout);
 
 	return 0;
 }
@@ -362,43 +241,6 @@ static int fsdump_recv(int dev_fd)
 		return -1;
 	}
 
-	return 0;
-}
-
-static int configure_tty(int tty_fd)
-{
-	struct termios ttyio;
-	memset(&ttyio, 0, sizeof(ttyio));
-
-	fcntl(tty_fd, F_SETFL, 0);
-	tcgetattr(tty_fd, &ttyio);
-
-	/* set baudrate */
-	cfsetispeed(&ttyio, B115200);
-	cfsetospeed(&ttyio, B115200);
-	ttyio.c_cflag |= (CLOCAL | CREAD);
-
-	cfmakeraw(&ttyio);
-
-	ttyio.c_cflag &= ~CSTOPB;
-	ttyio.c_cflag &= ~(PARENB | PARODD);
-	ttyio.c_cflag &= ~CSIZE;
-	ttyio.c_cflag &= ~CRTSCTS;
-	ttyio.c_cflag |= CS8;
-
-	ttyio.c_iflag &= ~ICRNL;
-	ttyio.c_iflag &= ~INLCR;
-	ttyio.c_oflag &= ~OCRNL;
-	ttyio.c_oflag &= ~ONLCR;
-	ttyio.c_lflag &= ~ICANON;
-	ttyio.c_lflag &= ~ECHO;
-
-	ttyio.c_cc[VMIN] = 1;
-	ttyio.c_cc[VTIME] = 5;
-
-	tcflush(tty_fd, TCIOFLUSH);
-
-	tcsetattr(tty_fd, TCSANOW, &ttyio);
 	return 0;
 }
 
