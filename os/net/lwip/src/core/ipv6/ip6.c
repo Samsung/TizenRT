@@ -1135,8 +1135,12 @@ err_t ip6_output_hinted(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t 
 		netif = ip6_route(&src_addr, &dest_addr);
 	}
 
-	if (netif == NULL) {
-		LWIP_DEBUGF(IP6_DEBUG, ("ip6_output: no route for %" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F "\n", IP6_ADDR_BLOCK1(dest), IP6_ADDR_BLOCK2(dest), IP6_ADDR_BLOCK3(dest), IP6_ADDR_BLOCK4(dest), IP6_ADDR_BLOCK5(dest), IP6_ADDR_BLOCK6(dest), IP6_ADDR_BLOCK7(dest), IP6_ADDR_BLOCK8(dest)));
+	if (netif == NULL && dest != NULL) {
+		LWIP_DEBUGF(IP6_DEBUG, ("ip6_output: no route for %" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F "\n",
+								IP6_ADDR_BLOCK1(dest), IP6_ADDR_BLOCK2(dest),
+								IP6_ADDR_BLOCK3(dest), IP6_ADDR_BLOCK4(dest),
+								IP6_ADDR_BLOCK5(dest), IP6_ADDR_BLOCK6(dest),
+								IP6_ADDR_BLOCK7(dest), IP6_ADDR_BLOCK8(dest)));
 		IP6_STATS_INC(ip6.rterr);
 		return ERR_RTE;
 	}

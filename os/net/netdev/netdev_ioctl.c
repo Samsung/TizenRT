@@ -490,7 +490,11 @@ static void netdev_setipv6addr(struct netif *dev, FAR const struct sockaddr_stor
 #endif /* CONFIG_NET_IPv6_AUTOCONFIG */
 
 	/* add static ipv6 address */
-	(void)netif_add_ip6_address(dev, &temp, &idx);
+	err_t res = netif_add_ip6_address(dev, &temp, &idx);
+	if (res != ERR_OK) {
+		ndbg("fail to add ipv6 address\n");
+		return;
+	}
 
 #ifdef CONFIG_NET_IPv6_MLD
 	ip6_addr_t solicit_addr;
