@@ -87,7 +87,7 @@ static void binary_manager_reset_board(void)
 	sched_lock();
 	for (;;) {
 		lldbg("\nASSERT!! Push the reset button!\n");
-		up_mdelay(10000);
+		up_mdelay(300000);  // Print the message every 5 min
 	}
 #endif
 }
