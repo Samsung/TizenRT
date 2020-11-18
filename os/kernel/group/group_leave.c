@@ -418,13 +418,13 @@ void group_leave(FAR struct tcb_s *tcb)
 				binfmt_exit(((struct task_tcb_s *)tcb)->bininfo);
 			}
 #endif
-
-			/* In any event, we can detach the group from the TCB so that we won't
-			 * do this again.
-			 */
-
-			tcb->group = NULL;
 		}
+
+		/* In any event, we can detach the group from the TCB so that we won't
+		 * do this again.
+		 */
+
+		tcb->group = NULL;
 	}
 }
 
@@ -483,13 +483,13 @@ void group_leave(FAR struct tcb_s *tcb)
 				binfmt_exit(((struct task_tcb_s *)tcb)->bininfo);
 			}
 #endif
-
-			/* In any event, we can detach the group from the TCB so we won't do
-			 * this again.
-			 */
-
-			tcb->group = NULL;
 		}
+
+		/* In any event, we can detach the group from the TCB so we won't do
+		 * this again.
+		 */
+
+		tcb->group = NULL;
 	}
 }
 
