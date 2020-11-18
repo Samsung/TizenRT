@@ -120,7 +120,7 @@ int wifiapp_main(int argc, char **argv)
 
 #endif /* CONFIG_EXAMPLES_MICOM_TIMER_TEST */
 	while (1) {
-		sleep(10);
+		sleep(300);
 		printf("[%d] WIFI ALIVE\n", getpid());
 	}
 	return 0;
