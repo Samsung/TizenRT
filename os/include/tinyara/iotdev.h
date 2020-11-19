@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_TEST_DRV_H
-#define __INCLUDE_TINYARA_TEST_DRV_H
+#ifndef __INCLUDE_TINYARA_IOTDEV_H
+#define __INCLUDE_TINYARA_IOTDEV_H
 
 /* This file will be used to provide definitions to support
  * kernel test case framework
@@ -85,5 +85,5 @@ int id_post_evt(id_evt_type evt);
 }
 #endif
 
-#endif							/* CONFIG_KERNEL_TEST_DRV */
-#endif							/* __INCLUDE_TINYARA_TEST_FW_H */
+#endif							/* CONFIG_IOTDEV */
+#endif							/* __INCLUDE_TINYARA_IOTDEV_H */
