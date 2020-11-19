@@ -7,7 +7,7 @@ config EXAMPLES_RDP
 	bool "Read Protect example"
 	default n
 	depends on ARMV8M_TRUSTZONE
-	select TESTCASE_DRV
+	select DRIVERS_KERNEL_TEST
 	---help---
 		Enable the Read Protect example
 

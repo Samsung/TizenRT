@@ -15,11 +15,11 @@
 # language governing permissions and limitations under the License.
 #
 ############################################################################
-# Include kernel testcase drivers
+# Include kernel test drivers
 
-ifeq ($(CONFIG_TESTCASE_DRV),y)
+ifeq ($(CONFIG_DRIVERS_KERNEL_TEST),y)
 
-CSRCS += testcase_drv.c
+CSRCS += kernel_test_drv.c
 CSRCS += test_task.c
 CSRCS += test_sched.c
 CSRCS += test_clock.c
@@ -41,9 +41,9 @@ endif
 
 CFLAGS += -I$(TOPDIR)/kernel
 
-# Include kernel testcase driver support
+# Include kernel test driver support
 
-DEPPATH += --dep-path testcase
-VPATH += :testcase
+DEPPATH += --dep-path kernel_test
+VPATH += :kernel_test
 
 endif

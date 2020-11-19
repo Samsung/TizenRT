@@ -24,12 +24,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <tinyara/testcase_drv.h>
-#include <tinyara/binfmt/compression/compress_read.h>
-#include <tinyara/kmalloc.h>
 #include <debug.h>
 #include <errno.h>
 #include <fcntl.h>
+
+#include <tinyara/kernel_test_drv.h>
+#include <tinyara/binfmt/compression/compress_read.h>
+#include <tinyara/kmalloc.h>
 
 /****************************************************************************
  * Private Declarations

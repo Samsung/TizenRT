@@ -36,7 +36,7 @@ config EXAMPLES_RECOVERY_TEST
 	default y
 	depends on BINMGR_RECOVERY
 	select EXAMPLES_MPU_TEST
-	select TESTCASE_DRV
+	select DRIVERS_KERNEL_TEST
 	---help---
 		Enable the Binary Manager Recovery test
 

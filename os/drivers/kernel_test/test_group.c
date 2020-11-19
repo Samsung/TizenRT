@@ -21,20 +21,20 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <sys/types.h>
 #include <debug.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sched.h>
-#include <sys/types.h>
-#include <tinyara/testcase_drv.h>
+
+#include <tinyara/kernel_test_drv.h>
 #include <tinyara/sched.h>
 #ifdef CONFIG_SCHED_HAVE_PARENT
-#include <group/group.h>
+#include "group/group.h"
 #ifdef CONFIG_SCHED_CHILD_STATUS
-#include <task/task.h>
+#include "task/task.h"
 #endif
 #endif
-#include "testcase_proto.h"
 
 /****************************************************************************
  * Private Data

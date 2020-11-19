@@ -30,7 +30,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <tinyara/testcase_drv.h>
+#include <tinyara/kernel_test_drv.h>
 #include "../../os/kernel/signal/signal.h"
 #include "tc_internal.h"
 

@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __DRIVERS_TESTCASE_KERNEL_TEST_PROTO_H
-#define __DRIVERS_TESTCASE_KERNEL_TEST_PROTO_H
+#ifndef __DRIVERS_KERNEL_TEST_KERNEL_TEST_PROTO_H
+#define __DRIVERS_KERNEL_TEST_KERNEL_TEST_PROTO_H
 int test_task(int cmd, unsigned long arg);
 int test_sem(int cmd, unsigned long arg);
 int test_group(int cmd, unsigned long arg);

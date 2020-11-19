@@ -72,16 +72,23 @@
 #include  <tinyara/kmalloc.h>
 #include  <tinyara/init.h>
 #include  <tinyara/pm/pm.h>
+#include  <tinyara/mm/heap_regioninfo.h>
+#ifdef CONFIG_DEBUG_SYSTEM
+#include  <tinyara/debug/sysdbg.h>
+#endif
+#ifdef CONFIG_DRIVERS_KERNEL_TEST
+#include  <tinyara/kernel_test_drv.h>
+#endif
 
 #include  "sched/sched.h"
 #include  "signal/signal.h"
 #include  "wdog/wdog.h"
 #include  "semaphore/semaphore.h"
 #ifndef CONFIG_DISABLE_MQUEUE
-#include "mqueue/mqueue.h"
+#include  "mqueue/mqueue.h"
 #endif
 #ifndef CONFIG_DISABLE_PTHREAD
-#include "pthread/pthread.h"
+#include  "pthread/pthread.h"
 #endif
 #include  "clock/clock.h"
 #include  "timer/timer.h"
@@ -90,16 +97,9 @@
 #include  "group/group.h"
 #endif
 #include  "init/init.h"
-#ifdef CONFIG_DEBUG_SYSTEM
-#include <tinyara/debug/sysdbg.h>
-#endif
-#ifdef CONFIG_TESTCASE_DRV
-#include <tinyara/testcase_drv.h>
-#endif
 #include  "debug/memdbg.h"
 
 extern const uint32_t g_idle_topstack;
-#include <tinyara/mm/heap_regioninfo.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -529,8 +529,8 @@ void os_start(void)
 
 	fs_auto_mount();
 
-#ifdef CONFIG_TESTCASE_DRV
-	testcase_drv_register();
+#ifdef CONFIG_DRIVERS_KERNEL_TEST
+	kernel_test_drv_register();
 #endif
 
 #if defined(CONFIG_DEBUG_SYSTEM)

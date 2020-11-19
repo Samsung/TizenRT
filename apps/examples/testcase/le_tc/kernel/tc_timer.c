@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/ioctl.h>
-#include <tinyara/testcase_drv.h>
+#include <tinyara/kernel_test_drv.h>
 #include "../../os/kernel/timer/timer.h"
 #include "tc_internal.h"
 

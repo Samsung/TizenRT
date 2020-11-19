@@ -32,7 +32,7 @@
 #include <sys/wait.h>
 #include <sched.h>
 #include <sys/ioctl.h>
-#include <tinyara/testcase_drv.h>
+#include <tinyara/kernel_test_drv.h>
 #include "tc_internal.h"
 
 #define WAIT_TIME 1

@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_TEST_DRV_H
-#define __INCLUDE_TINYARA_TEST_DRV_H
+#ifndef __INCLUDE_TINYARA_KERNEL_TEST_DRV_H
+#define __INCLUDE_TINYARA_KERNEL_TEST_DRV_H
 
 /* This file will be used to provide definitions to support
  * kernel test case framework
@@ -30,18 +30,18 @@
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
 
-#ifdef CONFIG_TESTCASE_DRV
+#ifdef CONFIG_DRIVERS_KERNEL_TEST
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 /* Configuration
  *
- * CONFIG_TESTCASE_DRV - Enables testcase driver support
+ * CONFIG_DRIVERS_KERNEL_TEST - Enables kernel_test driver support
  */
 
 /* IOCTL Commands */
-/* The testcase_drv module uses ioctl commands to identify the kernel module for which
+/* The kernel_test_drv module uses ioctl commands to identify the kernel module for which
  * test cases are to be run. The ioctl command may be accompanied by and arguement to
  * indicate which particular API  in the module is to be tested or which particular
  * test scenario is to be run
@@ -79,7 +79,7 @@
 #define TESTIOC_TZ				_TESTIOC(21)
 #endif
 
-#define TESTCASE_DRVPATH                       "/dev/testcase"
+#define KERNEL_TEST_DRVPATH                       "/dev/kernel_test"
 
 /****************************************************************************
  * Public Data
@@ -97,21 +97,21 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Name: testcase_drv_register
+ * Name: kernel_test_drv_register
  *
  * Description:
- *   This function creates a device node like "/dev/testcase" which will be used
- *   by the testcases that execute kernel side APIs
+ *   This function creates a device node like "/dev/kernel_test" which will be used
+ *   by the tests that execute kernel side APIs
  *
  *
  ****************************************************************************/
 
-void testcase_drv_register(void);
+void kernel_test_drv_register(void);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif							/* CONFIG_TESTCASE_DRV */
-#endif							/* __INCLUDE_TINYARA_TEST_FW_H */
+#endif							/* CONFIG_DRIVERS_KERNEL_TEST */
+#endif							/* __INCLUDE_TINYARA_KERNEL_TEST_DRV_H */

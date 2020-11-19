@@ -25,10 +25,11 @@
 #include <debug.h>
 #include <time.h>
 #include <semaphore.h>
+
 #include <tinyara/sched.h>
-#include <clock/clock.h>
-#include <tinyara/testcase_drv.h>
-#include "testcase_proto.h"
+#include <tinyara/kernel_test_drv.h>
+
+#include "clock/clock.h"
 
 /****************************************************************************
  * Private Function

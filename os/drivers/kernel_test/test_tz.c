@@ -22,11 +22,11 @@
 
 #include <tinyara/config.h>
 #include <errno.h>
+
 #include <tinyara/arch.h>
 #ifdef CONFIG_AMEBAD_TRUSTZONE
 #include <arch/chip/amebad_nsc.h>
 #endif
-#include "testcase_proto.h"
 
 /****************************************************************************
  * Private Function
