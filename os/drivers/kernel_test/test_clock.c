@@ -21,75 +21,70 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <errno.h>
+#include <sys/types.h>
 #include <debug.h>
-#include <tinyara/testcase_drv.h>
-#include <tinyara/sched.h>
-#include "testcase_proto.h"
+#include <errno.h>
+#include <time.h>
+
+#include <tinyara/kernel_test_drv.h>
+
+#include "clock/clock.h"
 
 /****************************************************************************
- * Private Data
+ * Private Function
  ****************************************************************************/
 
-static struct tcb_s *tcb;
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-static int test_get_self_pid(unsigned long arg)
+static int test_clock_abstime2ticks(unsigned long arg)
 {
-	tcb = sched_self();
-	if (tcb == NULL) {
+	int ret_chk;
+	int base_tick;
+	int comparison_tick;
+	struct timespec cur_time;
+	struct timespec base_time;
+	struct timespec comparison_time;
+	struct timespec result_time;
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &cur_time);
+	if (ret_chk != OK) {
+		dbg("clock_gettime failed. errno : %d\n", get_errno());
 		return ERROR;
 	}
-	return tcb->pid;
-}
 
-static int test_is_alive_thread(unsigned long arg)
-{
-	tcb = sched_gettcb((pid_t)arg);
-	if (tcb == NULL) {
-		dbg("sched_gettcb failed. errno : %d\n", get_errno());
+	base_time.tv_sec = cur_time.tv_sec + 101;
+	base_time.tv_nsec = cur_time.tv_nsec;
+
+	comparison_time.tv_sec = cur_time.tv_sec + 102;
+	comparison_time.tv_nsec = cur_time.tv_nsec;
+	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &base_time, &base_tick);
+	if (ret_chk == ERROR) {
+		dbg("clock_abstime2ticks failed. ret : %d\n", ret_chk);
+		return ERROR;
+	}
+
+	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &comparison_time, &comparison_tick);
+	if (ret_chk != OK) {
+		dbg("clock_abstime2ticks failed. ret : %d\n", ret_chk);
+		return ERROR;
+	}
+
+	clock_ticks2time(comparison_tick - base_tick, &result_time);
+	if (result_time.tv_sec != 1) {
+		dbg("clock_abstime2ticks failed. %d.%ld sec is not 1 sec.\n", result_time.tv_sec, result_time.tv_nsec);
 		return ERROR;
 	}
 	return OK;
-}
-
-static int test_get_tcb_adj_stack_size(unsigned long arg)
-{
-	tcb = sched_gettcb((pid_t)arg);
-	if (tcb == NULL) {
-		dbg("sched_gettcb failed. errno : %d\n", get_errno());
-		return ERROR;
-	}
-	return tcb->adj_stack_size;
-}
-
-static void test_sched_foreach(unsigned long arg)
-{
-	sched_foreach((void *)arg, NULL);
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-int test_sched(int cmd, unsigned long arg)
+int test_clock(int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;
 	switch (cmd) {
-	case TESTIOC_GET_SELF_PID:
-		ret = test_get_self_pid(arg);
-		break;
-	case TESTIOC_IS_ALIVE_THREAD:
-		ret = test_is_alive_thread(arg);
-		break;
-	case TESTIOC_GET_TCB_ADJ_STACK_SIZE:
-		ret = test_get_tcb_adj_stack_size(arg);
-		break;
-	case TESTIOC_SCHED_FOREACH:
-		test_sched_foreach(arg);
+	case TESTIOC_CLOCK_ABSTIME2TICKS_TEST:
+		ret = test_clock_abstime2ticks(arg);
 		break;
 	}
 	return ret;

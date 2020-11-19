@@ -25,10 +25,11 @@
 #include <debug.h>
 #include <time.h>
 #include <signal.h>
-#include <tinyara/testcase_drv.h>
-#include <signal/signal.h>
-#include <timer/timer.h>
-#include "testcase_proto.h"
+
+#include <tinyara/kernel_test_drv.h>
+
+#include "signal/signal.h"
+#include "timer/timer.h"
 
 /****************************************************************************
  * Private Function

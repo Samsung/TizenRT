@@ -23,60 +23,73 @@
 #include <tinyara/config.h>
 #include <errno.h>
 #include <debug.h>
-#include <unistd.h>
-#include <tinyara/testcase_drv.h>
+
+#include <tinyara/kernel_test_drv.h>
 #include <tinyara/sched.h>
-#include <signal/signal.h>
-#include "testcase_proto.h"
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+static struct tcb_s *tcb;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-static int test_get_sig_findaction_add(unsigned long arg)
+static int test_get_self_pid(unsigned long arg)
 {
-	FAR sigactq_t *sigact;
-	sigact = sig_findaction(sched_self(), (int)arg);
-	return (int)sigact;
-}
-
-static int test_signal_pause(unsigned long arg)
-{
-	int ret;
-	ret = pause();              /* pause() always return -1 */
-	if (ret == ERROR && get_errno() == EINTR) {
-		return OK;
+	tcb = sched_self();
+	if (tcb == NULL) {
+		return ERROR;
 	}
-	return ERROR;
+	return tcb->pid;
 }
 
-static int test_get_tcb_sigprocmask(unsigned long arg)
+static int test_is_alive_thread(unsigned long arg)
 {
-	struct tcb_s *tcb;
 	tcb = sched_gettcb((pid_t)arg);
 	if (tcb == NULL) {
 		dbg("sched_gettcb failed. errno : %d\n", get_errno());
 		return ERROR;
 	}
-	return tcb->sigprocmask;
+	return OK;
+}
+
+static int test_get_tcb_adj_stack_size(unsigned long arg)
+{
+	tcb = sched_gettcb((pid_t)arg);
+	if (tcb == NULL) {
+		dbg("sched_gettcb failed. errno : %d\n", get_errno());
+		return ERROR;
+	}
+	return tcb->adj_stack_size;
+}
+
+static void test_sched_foreach(unsigned long arg)
+{
+	sched_foreach((void *)arg, NULL);
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-int test_signal(int cmd, unsigned long arg)
+int test_sched(int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;
 	switch (cmd) {
-	case TESTIOC_GET_SIG_FINDACTION_ADD:
-		ret = test_get_sig_findaction_add(arg);
+	case TESTIOC_GET_SELF_PID:
+		ret = test_get_self_pid(arg);
 		break;
-	case TESTIOC_SIGNAL_PAUSE:
-		ret = test_signal_pause(arg);
+	case TESTIOC_IS_ALIVE_THREAD:
+		ret = test_is_alive_thread(arg);
 		break;
-	case TESTIOC_GET_TCB_SIGPROCMASK:
-		ret = test_get_tcb_sigprocmask(arg);
+	case TESTIOC_GET_TCB_ADJ_STACK_SIZE:
+		ret = test_get_tcb_adj_stack_size(arg);
+		break;
+	case TESTIOC_SCHED_FOREACH:
+		test_sched_foreach(arg);
 		break;
 	}
 	return ret;

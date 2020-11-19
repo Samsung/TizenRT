@@ -21,20 +21,21 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <sys/types.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 #include <debug.h>
 #include <sched.h>
+
 #include <tinyara/sched.h>
-#include <tinyara/testcase_drv.h>
-#include <sched/sched.h>
+#include <tinyara/kernel_test_drv.h>
+
+#include "sched/sched.h"
 #ifdef CONFIG_SCHED_HAVE_PARENT
-#include <group/group.h>
+#include "group/group.h"
 #endif
-#include "testcase_proto.h"
 
 /****************************************************************************
  * Pre-processor Definitions
