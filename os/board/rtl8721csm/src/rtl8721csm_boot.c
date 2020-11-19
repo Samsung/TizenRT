@@ -69,6 +69,7 @@
 #include <arch/board/board.h>
 #include "gpio_api.h"
 #include "timer_api.h"
+#include "amebad_i2c.h"
 #ifdef CONFIG_FLASH_PARTITION
 #include "common.h"
 #endif
@@ -85,6 +86,26 @@ extern FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmo
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+
+void board_i2c_initialize(void)
+{
+#ifdef CONFIG_I2C
+	//FAR struct i2c_master_s *i2c;
+	FAR struct i2c_dev_s *i2c;
+	int bus = 0;
+	int ret;
+	char path[16];
+
+	snprintf(path, sizeof(path), "/dev/i2c-%d", bus);
+	i2c = up_i2cinitialize(bus);
+	if (i2c) {
+		ret = i2c_uioregister(path, i2c);
+		if (ret < 0) {
+			up_i2cuninitialize(i2c);
+		}
+	}
+#endif
+}
 
 void board_gpio_initialize(void)
 {
@@ -232,6 +253,7 @@ void board_initialize(void)
 {
 	amebad_mount_partions();
 	board_gpio_initialize();
+	board_i2c_initialize();
 #ifdef CONFIG_WATCHDOG
 	amebad_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif
