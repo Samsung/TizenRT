@@ -184,7 +184,7 @@ config ARCH_HAVE_LAZYFPU
 
 config ARCH_FPU
 	bool "FPU support"
-	default y
+	default n
 	depends on ARCH_HAVE_FPU
 	---help---
 		Build in support for the ARM Cortex-M4 Floating Point Unit (FPU).
