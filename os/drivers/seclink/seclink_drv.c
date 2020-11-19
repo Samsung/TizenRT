@@ -29,7 +29,6 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/testcase_drv.h>
 #include <tinyara/sched.h>
 #include <tinyara/seclink.h>
 #include <tinyara/seclink_drv.h>
