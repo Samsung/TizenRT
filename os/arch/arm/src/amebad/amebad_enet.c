@@ -193,7 +193,6 @@ struct netdev* amebad_register_dev(int sizeof_priv)
 
 void up_netinitialize(void)
 {
-#ifndef CONFIG_APP_BINARY_SEPARATION
 	int alloc_size;
 	//struct netdev *dev = NULL;
 
@@ -209,5 +208,4 @@ void up_netinitialize(void)
 		DiagPrintf("Failed to register amebad netdev\n");
 	}
 #endif	
-#endif
 }
