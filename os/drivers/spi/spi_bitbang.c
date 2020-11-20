@@ -535,7 +535,7 @@ FAR struct spi_dev_s *spi_create_bitbang(FAR const struct spi_bitbang_ops_s *low
 
 	/* Allocate an instance of the SPI bit bang structure */
 
-	priv = (FAR struct spi_bitbang_s *)zalloc(sizeof(struct spi_bitbang_s));
+	priv = (FAR struct spi_bitbang_s *)kmm_zalloc(sizeof(struct spi_bitbang_s));
 	if (!priv) {
 		spidbg("Failed to allocate the device structure\n");
 		return NULL;

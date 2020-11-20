@@ -2081,7 +2081,7 @@ int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofil
 	ret = OK;
 
 error_with_buf:
-	free(buf);
+	kmm_free(buf);
 	return ret;
 }
 

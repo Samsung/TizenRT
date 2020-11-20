@@ -150,16 +150,16 @@ dma_task *dma_task_m2p_sb_4B_x256_alloc(DMA_REQ_MAP d_ph_ch)
 	void *loop_offs1;
 	void *loop_offs2;
 
-	task = zalloc(sizeof(t_dma_task_priv));
+	task = kmm_zalloc(sizeof(t_dma_task_priv));
 	if (task == NULL) {
 		dmadbg("ERROR: Failed to allocate microcode memory\n");
 		return NULL;
 	}
 
-	task->microcode = zalloc(128);
+	task->microcode = kmm_zalloc(128);
 	if (task->microcode == NULL) {
 		dmadbg("ERROR: Failed to allocate microcode memory\n");
-		free(task);
+		kmm_free(task);
 		return NULL;
 	}
 
