@@ -617,11 +617,13 @@ static err_t _netif_loopif_init(struct netif *netif)
 
 	netif->name[0] = 'l';
 	netif->name[1] = 'o';
+#if LWIP_HAVE_LOOPIF
 #if LWIP_IPV4
 	netif->output = _netif_loop_output_ipv4;
 #endif
 #if LWIP_IPV6
 	netif->output_ip6 = _netif_loop_output_ipv6;
+#endif
 #endif
 #if LWIP_LOOPIF_MULTICAST
 	netif->flags |= NETIF_FLAG_IGMP;
