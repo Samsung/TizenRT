@@ -218,7 +218,7 @@ int wext_set_key_ext(const char *ifname, __u16 alg, const __u8 *addr, int key_id
 		RTW_API_INFO("\n\rioctl[SIOCSIWENCODEEXT] set key fail");
 	}
 
-	free(ext);
+	rtw_free(ext);
 
 	return ret;
 }
@@ -251,7 +251,7 @@ int wext_get_enc_ext(const char *ifname, __u16 *alg, __u8 *key_idx, __u8 *passph
 	}
 
 	if(ext != NULL)
-		free(ext);
+		rtw_free(ext);
 	
 	return ret;
 }
@@ -1496,12 +1496,12 @@ int wext_deinit_mac_filter(void)
 	list_for_each(iterator, mf_list_head) {
 		item = list_entry(iterator, rtw_mac_filter_list_t, node);
 		list_del(iterator);
-		free(item);
+		rtw_free(item);
 		item = NULL;
 		iterator = mf_list_head;
 	}
 
-	free(mf_list_head);
+	rtw_free(mf_list_head);
 	mf_list_head = NULL;
 	return 0;
 }
@@ -1536,7 +1536,7 @@ int wext_del_mac_filter(unsigned char* hwaddr)
 		item = list_entry(iterator, rtw_mac_filter_list_t, node);
 		if(memcmp(item->mac_addr,hwaddr,6) == 0){
 			list_del(iterator);
-			free(item);
+			rtw_free(item);
 			item = NULL;
 			return 0;
 		}
