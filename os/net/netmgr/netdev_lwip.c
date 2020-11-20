@@ -25,6 +25,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <net/if.h>
+#include <tinyara/kmalloc.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
@@ -668,7 +669,7 @@ static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 		return -1;
 	}
 
-	char *rnetif = (char *)malloc(sizeof(struct netif) + sizeof(struct netdev *));
+	char *rnetif = (char *)kmm_malloc(sizeof(struct netif) + sizeof(struct netdev *));
 	if (!rnetif) {
 		return -1;
 	}
@@ -728,7 +729,7 @@ static int lwip_deinit_nic(struct netdev *dev)
 
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	if (ni) {
-		free(ni);
+		kmm_free((void *)ni);
 	}
 	ND_NETOPS(dev, nic) = NULL;
 	//((struct netdev_ops *)(dev->ops))->nic = NULL;
@@ -761,7 +762,7 @@ static int lwip_get_stats(struct netdev *dev, struct netmon_netdev_stats *stats)
 
 struct netdev_ops *get_netdev_ops_lwip(void)
 {
-	struct netdev_ops *netdev_ops = (struct netdev_ops *)malloc(sizeof(struct netdev_ops));
+	struct netdev_ops *netdev_ops = (struct netdev_ops *)kmm_malloc(sizeof(struct netdev_ops));
 	if (!netdev_ops) {
 		return NULL;
 	}

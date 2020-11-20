@@ -80,6 +80,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
 #include <tinyara/net/telnet.h>
+#include <tinyara/kmalloc.h>
 
 #ifdef CONFIG_NETDEV_TELNET
 
@@ -538,7 +539,7 @@ static int telnet_close(FAR struct file *filep)
 				}
 			}
 
-			free(devpath);
+			kmm_free(devpath);
 		}
 
 		/* Close the socket */
@@ -555,7 +556,7 @@ static int telnet_close(FAR struct file *filep)
 
 		DEBUGASSERT(priv->td_exclsem.semcount == 0);
 		sem_destroy(&priv->td_exclsem);
-		free(priv);
+		kmm_free(priv);
 		sched_unlock();
 	}
 
@@ -719,7 +720,7 @@ static int telnet_session(FAR struct telnet_session_s *session)
 
 	/* Allocate instance data for this driver */
 
-	priv = (FAR struct telnet_dev_s *)malloc(sizeof(struct telnet_dev_s));
+	priv = (FAR struct telnet_dev_s *)kmm_malloc(sizeof(struct telnet_dev_s));
 	if (!priv) {
 		nlldbg("Failed to allocate the driver data structure\n");
 		return -ENOMEM;
@@ -813,7 +814,7 @@ errout_with_clone:
 #if 0
 errout_with_dev:
 #endif
-	free(priv);
+	kmm_free(priv);
 	return ret;
 }
 

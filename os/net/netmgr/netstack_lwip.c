@@ -23,6 +23,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <net/route.h>
+#include <tinyara/kmalloc.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
 #include "lwip/opt.h"
@@ -445,7 +446,7 @@ static int lwip_ns_getstats(int fd, struct netmon_sock **sock_info)
 		return -2;
 	}
 
-	struct netmon_sock *sinfo = (struct netmon_sock *)malloc(sizeof(struct netmon_sock));
+	struct netmon_sock *sinfo = (struct netmon_sock *)kmm_malloc(sizeof(struct netmon_sock));
 	if (!sinfo) {
 		ndbg("alloc sinfo memory fail\n");
 		return -3;
