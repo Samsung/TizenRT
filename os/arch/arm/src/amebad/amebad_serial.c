@@ -85,6 +85,8 @@
 #include "mbed/targets/hal/rtl8721d/objects.h"
 #include "rtl8721d_uart.h"
 #include "tinyara/kmalloc.h"
+#include "osdep_service.h"
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
