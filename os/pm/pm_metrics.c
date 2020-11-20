@@ -50,7 +50,7 @@ void pm_prune_history(sq_queue_t *q)
 			sc = (struct pm_statechange_s *)head->flink;
 			if (sc->timestamp < (cur_time - CONFIG_PM_METRICS_DURATION)) {
 				sq_rem(head, queue);
-				free(head);
+				kmm_free(head);
 				head = sq_peek(queue);
 			} else {
 				break;

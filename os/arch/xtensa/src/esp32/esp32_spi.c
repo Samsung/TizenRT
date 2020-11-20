@@ -722,7 +722,7 @@ int spicommon_free_dma_desc_links(lldesc_chain_t *desc_chain)
 	for (lldesc_t *cdesc = desc_chain->head; cdesc != NULL;) {
 		lldesc_t *prvdesc = cdesc;
 		cdesc = prvdesc->qe;
-		free(prvdesc);
+		kmm_free(prvdesc);
 	}
 	desc_chain->head = NULL;
 	desc_chain->tail = NULL;

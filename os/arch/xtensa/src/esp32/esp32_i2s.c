@@ -857,7 +857,7 @@ int free_dma_desc_links(lldesc_chain_t *desc_chain)
 	for (lldesc_t *cdesc = desc_chain->head; cdesc != NULL;) {
 		lldesc_t *prvdesc = cdesc;
 		cdesc = prvdesc->qe;
-		free(prvdesc);
+		kmm_free(prvdesc);
 	}
 	desc_chain->head = NULL;
 	desc_chain->tail = NULL;
@@ -876,7 +876,7 @@ int setup_dma_desc_links(lldesc_chain_t *desc_chain, int len, const uint8_t *dat
 	desc_chain->tail = NULL;
 	int n = 0;
 	while (n < len) {
-		lldesc_t *cdesc = (lldesc_t *)zalloc(sizeof(lldesc_t));
+		lldesc_t *cdesc = (lldesc_t *)kmm_zalloc(sizeof(lldesc_t));
 		if (cdesc == NULL) {
 			ret = -ENOMEM;
 			i2serr("[I2S] setup dma links alloc mem fails!\n");
@@ -2795,7 +2795,7 @@ struct i2s_dev_s *esp32_i2s_initialize(uint16_t port)
 	 * is no protection if the same chip select is used in two different
 	 * chip select structures.
 	 */
-	priv = (struct esp32_i2s_s *)zalloc(sizeof(struct esp32_i2s_s));
+	priv = (struct esp32_i2s_s *)kmm_zalloc(sizeof(struct esp32_i2s_s));
 	if (!priv) {
 		i2serr("ERROR: Failed to allocate a chip select structure\n");
 		return NULL;

@@ -991,7 +991,7 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 			ret = mkdir(path, 0644);
 			if (ret < 0) {
 				auddbg("ERROR: mkdir failed\n");
-				free(upper);
+				kmm_free(upper);
 				return ret;
 			}
 
@@ -1032,7 +1032,7 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 		ret = mkdir(devname, 0644);
 		if (ret < 0) {
 			auddbg("ERROR: mkdir failed\n");
-			free(upper);
+			kmm_free(upper);
 			return ret;
 		}
 		dev_audio_created = true;
