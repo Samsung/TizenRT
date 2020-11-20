@@ -1000,6 +1000,7 @@ u32 app_mpu_nocache_init(void)
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 #endif
 
+#if 0 //fix me!
 	/* set PSRAM Memory Write-Back */
 	/* To prevent data confusion issue in PSRAM */
 	mpu_entry = mpu_entry_alloc();
@@ -1010,6 +1011,7 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
+#endif
 
 	g_mpu_nregion_allocated = mpu_entry + 1;
 	return 0;
