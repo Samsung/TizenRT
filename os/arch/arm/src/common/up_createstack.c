@@ -300,8 +300,9 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 #endif
 		board_led_on(LED_STACKCREATED);
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_STACKOVF);
 		/* The smallest size that can be programmed for an MPU region is 32 bytes */
-		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], MPU_REG_NUM_STK,
+		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], nregion - 1,
 			(uint32_t)tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
 #endif
 

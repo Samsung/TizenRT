@@ -34,11 +34,30 @@
  * Pre-processor Definitions
  ********************************************************************************/
 
+/* Structure for MPU region numbers */
+
+struct mpu_usages_s {
+	uint8_t nregion_board_specific;
+	uint8_t nregion_common_bin;
+	uint8_t nregion_app_bin;
+	uint8_t nregion_stackovf;
+	uint8_t max_nregion;
+};
+
 enum {
 	REG_RNR,
 	REG_RBAR,
 	REG_RASR,
 	REG_MAX
+};
+
+/* Enum to to get MPU region number info for MPU usages */
+enum mpu_region_usages_e {
+	MPU_REGION_BOARD_SPECIFIC,
+	MPU_REGION_COMMON_BIN,
+	MPU_REGION_APP_BIN,
+	MPU_REGION_STACKOVF,
+	MPU_REGION_MAX
 };
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -47,47 +66,10 @@ enum {
 #define MPU_NUM_REGIONS		1
 #endif
 
-/* Enum for MPU region numbers */
-
-enum MPU_REG_NUM {
-#ifdef CONFIG_APP_BINARY_SEPARATION
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	MPU_REG_NUM_COM_LIB_TXT,	/* Common Binary */
-	MPU_REG_NUM_COM_LIB_RO,
-	MPU_REG_NUM_COM_LIB_DATA,
-#else
-	MPU_REG_NUM_COM_LIB,
+#ifdef CONFIG_ARMV8M_MPU
+#define MPU_ALIGNMENT_BYTES    32
+#define MPU_ALIGN_UP(a)                (((a) + MPU_ALIGNMENT_BYTES - 1) & ~(MPU_ALIGNMENT_BYTES - 1))
 #endif
-#endif
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	MPU_REG_NUM_APP_TXT,		/* Apps */
-	MPU_REG_NUM_APP_RO,
-	MPU_REG_NUM_APP_DATA,
-#else
-	MPU_REG_NUM_APP,
-#endif
-#endif
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-	MPU_REG_NUM_STK,		/* Stack */
-#endif
-	MPU_REG_NUM_MAX
-};
-
-#ifdef CONFIG_ARMV7M_MPU
-#define CUR_MPU_REG_NUM		CONFIG_ARMV7M_MPU_NREGIONS
-#elif defined(CONFIG_ARMV8M_MPU)
-#define CUR_MPU_REG_NUM		CONFIG_ARMV8M_MPU_NREGIONS
-#define MPU_ALIGNMENT_BYTES	32
-#define MPU_ALIGN_UP(a)		(((a) + MPU_ALIGNMENT_BYTES - 1) & ~(MPU_ALIGNMENT_BYTES - 1))
-#endif
-
-#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU)
-#if (MPU_REG_NUM_MAX >= CUR_MPU_REG_NUM)
-#error "MPU region numbers exceeded !!"
-#endif
-#endif
-
 
 /********************************************************************************
  * Public Function Prototypes
@@ -100,5 +82,11 @@ void up_mpu_set_register(uint32_t *mpu_regs);
 bool up_mpu_check_active(uint32_t *mpu_regs);
 
 void up_mpu_disable_region(uint32_t *mpu_regs);
+
+void mpu_region_initialize(struct mpu_usages_s *mpu);
+
+void mpu_set_nregion_board_specific(uint8_t num);
+
+uint8_t mpu_get_nregion_info(enum mpu_region_usages_e usages);
 
 #endif
