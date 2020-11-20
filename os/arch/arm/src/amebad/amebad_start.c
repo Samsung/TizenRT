@@ -69,7 +69,8 @@
 #include "nvic.h"
 #endif
 
-const uintptr_t g_idle_topstack = (uintptr_t)&_ebss + CONFIG_IDLETHREAD_STACKSIZE;
+#define MSP_RAM_HP_NS		0x10004FFC
+const uintptr_t g_idle_topstack = MSP_RAM_HP_NS;
 
 /****************************************************************************
  * Name: _start
