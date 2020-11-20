@@ -54,7 +54,7 @@ static int g_connected = 0;
 /*
  * private
  */
-int _lwnl_add_event(struct lwnl_event *event)
+static int _lwnl_add_event(struct lwnl_event *event)
 {
 	LWQ_ENTRY;
 	event->flink = NULL;
@@ -78,7 +78,7 @@ int _lwnl_add_event(struct lwnl_event *event)
 }
 
 // this function is protected by LWQ_LOCK;
-int _lwnl_remove_event(struct lwnl_event *evt)
+static int _lwnl_remove_event(struct lwnl_event *evt)
 {
 	LWQ_ENTRY;
 	evt->refs--;
@@ -89,10 +89,10 @@ int _lwnl_remove_event(struct lwnl_event *evt)
 
 	// it's not refered.
 	if (evt->data.data) {
-		free(evt->data.data);
+		kmm_free(evt->data.data);
 		evt->data.data = NULL;
 	}
-	free(evt);
+	kmm_free(evt);
 
 	return 0;
 }
@@ -145,7 +145,7 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 }
 
 
-int _lwnl_copy_scan_info(char **buffer, trwifi_scan_list_s *scan_list)
+static int _lwnl_copy_scan_info(char **buffer, trwifi_scan_list_s *scan_list)
 {
 	trwifi_scan_list_s *item = scan_list;
 	int cnt = 0, total = 0;
@@ -155,7 +155,7 @@ int _lwnl_copy_scan_info(char **buffer, trwifi_scan_list_s *scan_list)
 	}
 	total = cnt;
 	ndbg("total size(%d) (%d)\n", sizeof(trwifi_ap_scan_info_s), sizeof(trwifi_ap_scan_info_s) * total);
-	*buffer = (char *)malloc(sizeof(trwifi_ap_scan_info_s) * total);
+	*buffer = (char *)kmm_malloc(sizeof(trwifi_ap_scan_info_s) * total);
 	if (!(*buffer)) {
 		return -1;
 	}
@@ -173,7 +173,7 @@ int _lwnl_copy_scan_info(char **buffer, trwifi_scan_list_s *scan_list)
 int lwnl_add_event(lwnl_cb_status type, void *buffer)
 {
 	LWQ_ENTRY;
-	struct lwnl_event *evt = (struct lwnl_event *)malloc(sizeof(struct lwnl_event));
+	struct lwnl_event *evt = (struct lwnl_event *)kmm_malloc(sizeof(struct lwnl_event));
 	if (!evt) {
 		return -1;
 	}
@@ -217,7 +217,7 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer)
 
 	int res = _lwnl_add_event(evt);
 	if (res < 0) {
-		free(evt);
+		kmm_free(evt);
 		return -2;
 	}
 	return 0;
