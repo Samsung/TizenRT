@@ -101,4 +101,4 @@ FAR struct i2c_master_s *amebad_i2cbus_initialize(int port);
 
 int amebad_i2cbus_uninitialize(FAR struct i2c_master_s *dev);
 
-#endif							/* __ARCH_ARM_SRC_AMEBAD_IMX_LPI2C_H */
+#endif							/* __ARCH_ARM_SRC_AMEBAD_I2C_H */
