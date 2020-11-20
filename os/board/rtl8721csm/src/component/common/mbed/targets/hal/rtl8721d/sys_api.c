@@ -133,7 +133,7 @@ void sys_recover_ota_signature(void)
 	}
 
 	/* Backup first 4KB of the old firmware */
-	buf = malloc(4096);
+	buf = rtw_malloc(4096);
 	ota_readstream_user(DstAddr, 4096, buf);
 
 	/* Modify signature */
