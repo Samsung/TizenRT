@@ -377,17 +377,17 @@ TEST_SETUP(dh_generate_param)
 	ST_START_TEST;
 
 	g_dh_data.mode = HAL_DH_1024;
-	g_dh_data.G = (hal_data *)malloc(sizeof(hal_data));
+	g_dh_data.G = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, g_dh_data.G);
 	g_dh_data.G->data = g_buf_1024;
 	g_dh_data.G->data_len = sizeof(g_buf_1024);
 
-	g_dh_data.P = (hal_data *)malloc(sizeof(hal_data));
+	g_dh_data.P = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, g_dh_data.P);
 	g_dh_data.P->data = p_buf_1024;
 	g_dh_data.P->data_len = sizeof(p_buf_1024);
 
-	g_dh_data.pubkey = (hal_data *)malloc(sizeof(hal_data));
+	g_dh_data.pubkey = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, g_dh_data.pubkey);
 	ST_EXPECT_EQ(0, hal_test_malloc_buffer(g_dh_data.pubkey, HAL_AUTH_TEST_MEM_SIZE));
 
@@ -426,17 +426,17 @@ TEST_SETUP(dh_compute_shared_secret)
 
 	g_dh_data.mode = HAL_DH_1024;
 
-	g_dh_data.G = (hal_data *)malloc(sizeof(hal_data));
+	g_dh_data.G = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, g_dh_data.G);
 	g_dh_data.G->data = g_buf_1024;
 	g_dh_data.G->data_len = sizeof(g_buf_1024);
 
-	g_dh_data.P = (hal_data *)malloc(sizeof(hal_data));
+	g_dh_data.P = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, g_dh_data.P);
 	g_dh_data.P->data = p_buf_1024;
 	g_dh_data.P->data_len = sizeof(p_buf_1024);
 
-	g_dh_data.pubkey = (hal_data *)malloc(sizeof(hal_data));
+	g_dh_data.pubkey = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, g_dh_data.pubkey);
 	ST_EXPECT_EQ(0, hal_test_malloc_buffer(g_dh_data.pubkey, HAL_AUTH_TEST_MEM_SIZE));
 
@@ -498,13 +498,13 @@ TEST_SETUP(ecdh_compute_shared_secret)
 	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->get_key(HAL_KEY_ECC_SEC_P256R1, HAL_TEST_ECDH_KEY_SLOT_A, &key_a));
 	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->get_key(HAL_KEY_ECC_SEC_P256R1, HAL_TEST_ECDH_KEY_SLOT_B, &key_b));
 
-	ecdh_a.pubkey_x = (hal_data *)malloc(sizeof(hal_data));
+	ecdh_a.pubkey_x = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, ecdh_a.pubkey_x);
-	ecdh_a.pubkey_y = (hal_data *)malloc(sizeof(hal_data));
+	ecdh_a.pubkey_y = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, ecdh_a.pubkey_y);
-	ecdh_b.pubkey_x = (hal_data *)malloc(sizeof(hal_data));
+	ecdh_b.pubkey_x = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, ecdh_b.pubkey_x);
-	ecdh_b.pubkey_y = (hal_data *)malloc(sizeof(hal_data));
+	ecdh_b.pubkey_y = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, ecdh_b.pubkey_y);
 
 	//data: pubkey_x, priv: pubkey_y
