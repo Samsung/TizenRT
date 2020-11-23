@@ -42,7 +42,7 @@ void hal_test_free_buffer(hal_data *data)
 
 int hal_test_malloc_buffer(hal_data *data, int buf_len)
 {
-	data->data = (unsigned char *)malloc(buf_len);
+	data->data = (unsigned char *)zalloc(buf_len);
 	if (!data->data) {
 		return -1;
 	}
@@ -51,7 +51,7 @@ int hal_test_malloc_buffer(hal_data *data, int buf_len)
 
 int hal_test_malloc_buffer_priv(hal_data *data, int buf_len)
 {
-	data->priv = (unsigned char *)malloc(buf_len);
+	data->priv = (unsigned char *)zalloc(buf_len);
 	if (!data->priv) {
 		return -1;
 	}
