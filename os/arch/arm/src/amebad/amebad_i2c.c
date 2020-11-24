@@ -829,57 +829,59 @@ static int amebad_i2c_isr_process(struct amebad_i2c_priv_s *priv)
 {
 	int ret = 0;
 
-        priv->ptr = priv->msgv->buffer;
-        priv->dcnt = priv->msgv->length;
-        priv->flags = priv->msgv->flags;
+	priv->ptr = priv->msgv->buffer;
+	priv->dcnt = priv->msgv->length;
+	priv->flags = priv->msgv->flags;
 
 #ifdef CONFIG_I2C_WRITEREAD
 
-        if ((priv->flags & I2C_M_READ) == 0) {
+	if ((priv->flags & I2C_M_READ) == 0) {
 #ifdef CONFIG_I2C_SLAVE
 
-        	i2c_slave_read(priv->i2c_object, (++priv->msgv)->buffer, 1);
-        	i2c_slave_set_for_rd_req(priv->i2c_object, 1);
-        	ret = i2c_slave_write(priv->i2c_object, priv->msgv->buffer, priv->msgv->length);
+		i2c_slave_read(priv->i2c_object, (++priv->msgv)->buffer, 1);
+		i2c_slave_set_for_rd_req(priv->i2c_object, 1);
+		ret = i2c_slave_write(priv->i2c_object, priv->msgv->buffer, priv->msgv->length);
 #else
-        	ret = rtk_i2c_write(priv->i2c_object, priv->msgv->addr, priv->msgv->buffer, 1, 0);
+		ret = rtk_i2c_write(priv->i2c_object, priv->msgv->addr, priv->msgv->buffer, 1, 0);
 		int len = priv->msgv->length-1;
 		if (len > 0)
-        		ret = rtk_i2c_write(priv->i2c_object, priv->msgv->addr, priv->msgv->buffer+1, priv->msgv->length-1, 1);
+			ret = rtk_i2c_write(priv->i2c_object, priv->msgv->addr, priv->msgv->buffer+1, priv->msgv->length-1, 1);
 #endif
-        }
-        else if ((priv->flags & I2C_M_READ) != 0) {
+	}
+	else if ((priv->flags & I2C_M_READ) != 0) {
 
 #ifdef CONFIG_I2C_SLAVE
 
-        	ret = i2c_slave_read(priv->i2c_object, (++priv->msgv)->buffer, (++priv->msgv)->length);
+		ret = i2c_slave_read(priv->i2c_object, (++priv->msgv)->buffer, (++priv->msgv)->length);
 #else
-        	rtk_i2c_write(priv->i2c_object, (++priv->msgv)->addr, priv->msgv->buffer, 1, 0);
-        	ret = rtk_i2c_read(priv->i2c_object, (++priv->msgv)->addr, (++priv->msgv)->buffer, (++priv->msgv)->length, 1);
+		rtk_i2c_write(priv->i2c_object, (++priv->msgv)->addr, priv->msgv->buffer, 1, 0);
+		ret = rtk_i2c_read(priv->i2c_object, (++priv->msgv)->addr, (++priv->msgv)->buffer, (++priv->msgv)->length, 1);
 #endif
 	}
 
 #else /* CONFIG_I2C_WRITEREAD */
 
-        if ((priv->flags & I2C_M_READ) == 0) {
+	if ((priv->flags & I2C_M_READ) == 0) {
 #ifdef CONFIG_I2C_SLAVE
-                i2c_slave_set_for_rd_req(priv->i2c_object, 1);
-                ret = i2c_slave_write(priv->i2c_object, priv->msgv->buffer, priv->msgv->length);
+
+		i2c_slave_set_for_rd_req(priv->i2c_object, 1);
+		ret = i2c_slave_write(priv->i2c_object, priv->msgv->buffer, priv->msgv->length);
 #else
-                ret = rtk_i2c_write(priv->i2c_object, priv->msgv->addr, priv->msgv->buffer, priv->msgv->length, 1);
+		ret = rtk_i2c_write(priv->i2c_object, priv->msgv->addr, priv->msgv->buffer, priv->msgv->length, 1);
 #endif
-        }
-        else if ((priv->flags & I2C_M_READ) != 0) {
+	}
+	else if ((priv->flags & I2C_M_READ) != 0) {
 #ifdef CONFIG_I2C_SLAVE
-                ret = i2c_slave_read(priv->i2c_object, priv->msgv->buffer, priv->msgv->length);
+
+		ret = i2c_slave_read(priv->i2c_object, priv->msgv->buffer, priv->msgv->length);
 #else
-                ret = rtk_i2c_read(priv->i2c_object, priv->msgv->addr, priv->msgv->buffer, priv->msgv->length, 1);
+		ret = rtk_i2c_read(priv->i2c_object, priv->msgv->addr, priv->msgv->buffer, priv->msgv->length, 1);
 #endif
-        }
+	}
 #endif  /* #ifdef CONFIG_I2C_WRITEREAD */
 	priv->intstate = INTSTATE_DONE;
 
-        return ret;
+	return ret;
 
 }
 
