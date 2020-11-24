@@ -169,7 +169,11 @@ void mpu_get_register_config_value(uint32_t *regs, uint32_t region, uintptr_t ba
 	}
 
 	regs[2] = (base + size - 1) & MPU_RLAR_LIMIT_MASK;
+#ifdef CONFIG_ARMV8M_DCACHE
+	regs[2] |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WB_T_RWA);
+#else
 	regs[2] |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_NC);
+#endif
 	regs[2] |= MPU_RLAR_ENABLE;
 }
 
