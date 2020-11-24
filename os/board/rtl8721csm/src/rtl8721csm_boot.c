@@ -70,6 +70,7 @@
 #include "gpio_api.h"
 #include "timer_api.h"
 #include "amebad_i2c.h"
+#include "amebad_spi.h"
 #ifdef CONFIG_FLASH_PARTITION
 #include "common.h"
 #endif
@@ -86,6 +87,19 @@ extern FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmo
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+void board_spi_initialize(void)
+{
+#ifdef CONFIG_SPI
+        struct spi_dev_s *spi;
+        spi = up_spiinitialize(1);
+
+#ifdef CONFIG_SPI_USERIO
+        if (spi_uioregister(1, spi) < 0) {
+                lldbg("Failed to register SPI%d\n", 1);
+        }
+#endif
+#endif
+}
 
 void board_i2c_initialize(void)
 {
@@ -254,6 +268,7 @@ void board_initialize(void)
 	amebad_mount_partions();
 	board_gpio_initialize();
 	board_i2c_initialize();
+	board_spi_initialize();
 #ifdef CONFIG_WATCHDOG
 	amebad_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif
