@@ -879,6 +879,7 @@ static int amebad_i2c_isr_process(struct amebad_i2c_priv_s *priv)
 #endif
 	}
 #endif  /* #ifdef CONFIG_I2C_WRITEREAD */
+
 	priv->intstate = INTSTATE_DONE;
 
 	return ret;

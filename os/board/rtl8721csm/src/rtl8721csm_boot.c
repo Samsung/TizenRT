@@ -90,13 +90,13 @@ extern FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmo
 void board_spi_initialize(void)
 {
 #ifdef CONFIG_SPI
-        struct spi_dev_s *spi;
-        spi = up_spiinitialize(1);
+	struct spi_dev_s *spi;
+	spi = up_spiinitialize(1);
 
 #ifdef CONFIG_SPI_USERIO
-        if (spi_uioregister(1, spi) < 0) {
-                lldbg("Failed to register SPI%d\n", 1);
-        }
+	if (spi_uioregister(1, spi) < 0) {
+		lldbg("Failed to register SPI%d\n", 1);
+	}
 #endif
 #endif
 }
@@ -104,7 +104,6 @@ void board_spi_initialize(void)
 void board_i2c_initialize(void)
 {
 #ifdef CONFIG_I2C
-	//FAR struct i2c_master_s *i2c;
 	FAR struct i2c_dev_s *i2c;
 	int bus = 0;
 	int ret;
