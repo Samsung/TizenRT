@@ -64,13 +64,13 @@
 #define APLL_MAX_FREQ (500000000)
 #define APLL_I2S_MIN_RATE (10675)	//in Hz, I2S Clock rate limited by hardware
 
-#ifndef CONFIG_SCHED_WORKQUEUE
-#error Work queue support is required (CONFIG_SCHED_WORKQUEUE)
-#endif
+//#ifndef CONFIG_SCHED_WORKQUEUE
+//#error Work queue support is required (CONFIG_SCHED_WORKQUEUE)
+//#endif
 
-#ifndef CONFIG_AUDIO
-#error CONFIG_AUDIO required by this driver
-#endif
+//#ifndef CONFIG_AUDIO
+//#error CONFIG_AUDIO required by this driver
+//#endif
 
 #ifndef CONFIG_AMEBAD_I2S_MAXINFLIGHT
 #define CONFIG_AMEBAD_I2S_MAXINFLIGHT 32
