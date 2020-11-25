@@ -135,8 +135,8 @@ void up_unblock_task(struct tcb_s *tcb)
 
 	if (sched_addreadytorun(tcb)) {
 #ifdef CONFIG_ARMV8M_TRUSTZONE
-		if (tcb->tz_context) {
-			TZ_StoreContext_S(tcb->tz_context);
+		if (rtcb->tz_context) {
+			TZ_StoreContext_S(rtcb->tz_context);
 		}
 #endif
 		/* The currently active task has changed! We need to do
