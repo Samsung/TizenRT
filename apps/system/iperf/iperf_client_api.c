@@ -413,6 +413,8 @@ int iperf_run_client(struct iperf_test *test)
 					return -1;
 				}
 				FD_CLR(test->ctrl_sck, &read_set);
+			} else if (test->state != TEST_RUNNING) {
+				usleep(5000);
 			}
 		}
 
