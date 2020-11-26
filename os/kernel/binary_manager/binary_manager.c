@@ -37,6 +37,11 @@
 #include "sched/sched.h"
 #include "binary_manager.h"
 
+#if CONFIG_MQ_MAXMSGSIZE < (CONFIG_NAME_MAX + 64)
+/* The largest size of messages is (CONFIG_NAME_MAX + 64) for communication with binary manager */
+#error "CONFIG_MQ_MAXMSGSIZE should be greater than (CONFIG_NAME_MAX + 64)"
+#endif
+
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
