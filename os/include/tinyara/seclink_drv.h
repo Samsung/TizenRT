@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <semaphore.h>
 
+#define SECLINK_PATH "/dev/seclink"
+
 struct sec_lowerhalf_s;
 struct sec_upperhalf_s {
 	struct sec_lowerhalf_s *lower;
