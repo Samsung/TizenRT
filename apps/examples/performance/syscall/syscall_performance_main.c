@@ -35,7 +35,7 @@
 #define TEST_TIMEDSEND_NMSGS	3
 #define SIGEV_SIGNAL	1		/* Notify via signal */
 
-int sig_no = SIGRTMIN;
+static int sig_no = SIGRTMIN;
 
 /*
  * measure_performance : variadic macro for time measurements for function calls

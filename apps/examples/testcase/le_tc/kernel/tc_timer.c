@@ -28,7 +28,7 @@
 
 #define USECINT 10000000
 
-int sig_no = SIGRTMIN;
+static int sig_no = SIGRTMIN;
 
 #ifndef CONFIG_BUILD_PROTECTED
 /**
