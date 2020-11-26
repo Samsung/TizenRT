@@ -42,6 +42,7 @@ CPU_PWR_SEQ SYSPLL_OFF_SEQ[] = {
 };
 
 CPU_PWR_SEQ HSPWR_ON_SEQ[] = {
+	{0x4800021C, CPU_PWRSEQ_CMD_WRITE,		(0x011 << 0),			0x00000000}, /* reset 21c[0]&[4]for WDG reset */
 	{0x00000000, CPU_PWRSEQ_CMD_LOGE,		0x00000000,			0x00000000/* or 1 */}, /* Enable LOG or not */
 
 	/* 1. Enable SWR */ //PMC
@@ -331,12 +332,12 @@ void km4_wake_event_update(void)
 	}
 
 	/*when keyScan is used as a wake up source,*/
-	if ((ps_config.km0_enable_key_touch & BIT_KEY_ENABLE)
+	if ((ps_config.km0_enable_key_touch  | BIT_KEY_ENABLE)
 		&& KeyScan_GetINT(KEYSCAN_DEV))
 		km4_wake_event |=BIT_HP_WEVT_KEYSCAN_STS;
 
 	/*when CAPTOUCH is used as a wake up source,*/
-	if ((ps_config.km0_enable_key_touch & BIT_CAPTOUCH_ENABLE)
+	if ((ps_config.km0_enable_key_touch  | BIT_CAPTOUCH_ENABLE)
 		&& CapTouch_GetISR(CAPTOUCH_DEV))
 		km4_wake_event |=BIT_HP_WEVT_CAPTOUCH_STS;
 

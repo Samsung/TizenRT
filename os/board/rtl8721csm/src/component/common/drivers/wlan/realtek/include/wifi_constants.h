@@ -45,6 +45,7 @@ extern "C" {
 #define AES_ENABLED        0x0004
 #define WSEC_SWFLAG        0x0008
 #define AES_CMAC_ENABLED        0x0010
+#define ENTERPRISE_ENABLED			0x0020
 
 #define SHARED_ENABLED  0x00008000
 #define WPA_SECURITY    0x00200000
@@ -138,6 +139,8 @@ enum {
     RTW_SECURITY_WPA2_MIXED_PSK = ( WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED ),   /**< WPA2 Security with AES & TKIP           */
     RTW_SECURITY_WPA_WPA2_MIXED = ( WPA_SECURITY  | WPA2_SECURITY ),                /**< WPA/WPA2 Security                       */
     RTW_SECURITY_WPA2_AES_CMAC = ( WPA2_SECURITY | AES_CMAC_ENABLED),                /**< WPA2 Security with AES and Management Frame Protection                 */
+    RTW_SECURITY_WPA2_ENTERPRISE = ( WPA2_SECURITY | ENTERPRISE_ENABLED ),				/**< WPA2 Security with 802.1X authentication>*/
+    RTW_SECURITY_WPA_WPA2_ENTERPRISE = ( WPA_SECURITY | WPA2_SECURITY | ENTERPRISE_ENABLED),	/**<WPA/WPA2 Security with 802.1X authentication>*/
 
     RTW_SECURITY_WPS_OPEN       = WPS_ENABLED,                                      /**< WPS with open security                  */
     RTW_SECURITY_WPS_SECURE     = (WPS_ENABLED | AES_ENABLED),                      /**< WPS with AES security                   */
