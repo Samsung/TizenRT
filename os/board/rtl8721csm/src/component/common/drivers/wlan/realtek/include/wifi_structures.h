@@ -225,17 +225,19 @@ typedef struct ieee80211_frame_info{
 
 #if defined(CONFIG_UNSUPPORT_PLCPHDR_RPT) && CONFIG_UNSUPPORT_PLCPHDR_RPT
 typedef struct rtw_rx_info {
-	uint16_t length;	//length without FCS
-	uint8_t filter;		// 2: 2T rate pkt; 3: LDPC pkt
+	unsigned short length;	// length without FCS
+	unsigned char filter;		// 1: HT-20 2T and not LDPC pkt; 2: HT-40 2T and not LDPC pkt; 3: LDPC pkt
 	signed char rssi;	//-128~-1
+	unsigned short channel;	// channel which this pkt in
+	unsigned char agg:1;		// aggregation pkt or not. If an AMPDU contains only one MPDU then above 'length' is the antual pkt length without FCS, buuut if it contains multiple MPDUs then above 'length' is useless because it cannot tell how many MPDUs are contained and how long is each MPDU.
+	unsigned char mcs:7;		// mcs index
 }rtw_rx_info_t;
 
 struct rtw_plcp_info {
 	struct rtw_plcp_info *prev;
 	struct rtw_plcp_info *next;
-	uint16_t length;	//length without FCS
-	uint8_t filter;		// 1: HT-20 pkt; 2: HT-40 and not LDPC pkt; 3: LDPC pkt
-	signed char rssi;	//-128~-1
+	rtw_rx_info_t rtw_plcp_info;
+
 };
 
 struct rtw_rx_buffer {

@@ -230,6 +230,19 @@ void amebad_mount_partions(void)
 #ifdef CONFIG_BOARD_INITIALIZE
 void board_initialize(void)
 {
+	SOCPS_InitSYSIRQ_HP();
+	memcpy_gdma_init();
+	if (wifi_config.wifi_ultra_low_power &&
+		wifi_config.wifi_app_ctrl_tdma == FALSE) {
+		SystemSetCpuClk(CLK_KM4_100M);
+	}
+	InterruptRegister(IPC_INTHandler, IPC_IRQ, (u32)IPCM0_DEV, 5);
+	InterruptEn(IPC_IRQ, 5);
+	/* init console */
+	shell_recv_all_data_onetime = 1;
+	shell_init_rom(0, 0);
+	//shell_init_ram();
+	ipc_table_init();
 	amebad_mount_partions();
 	board_gpio_initialize();
 #ifdef CONFIG_WATCHDOG
@@ -244,4 +257,6 @@ void board_initialize(void)
 	}
 #endif
 }
+#else
+#error "CONFIG_BOARD_INITIALIZE MUST ENABLE"
 #endif

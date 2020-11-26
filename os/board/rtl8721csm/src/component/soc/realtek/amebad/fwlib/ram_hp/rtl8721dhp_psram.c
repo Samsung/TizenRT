@@ -82,6 +82,10 @@ void PSRAM_CTRL_Init(PCTL_InitTypeDef *PCTL_InitStruct)
 	PCTL_TypeDef *psram_ctrl = PSRAM_DEV;
 	u32 temp;
 
+	/* enter sleep mode before power on to avoid current crush */
+	temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_LDO_CTRL1);
+	temp |= BIT_LDO_PSRAM_SLEEP_EN;
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_LDO_CTRL1, temp);
 	/*Open PSRAM 1.8V power */
 	/* 0111: 1.800V  */
 	/* 1000: 1.815V  */
@@ -94,6 +98,13 @@ void PSRAM_CTRL_Init(PCTL_InitTypeDef *PCTL_InitStruct)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_LDO_CTRL1, temp);	
 
 	RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, ENABLE);
+
+	/* 300us for a stable voltage */
+	/* exit sleep mode before access psram for a stable current */
+	DelayUs(300);
+	temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_LDO_CTRL1);
+	temp &= ~BIT_LDO_PSRAM_SLEEP_EN;
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_LDO_CTRL1, temp);
 
 	/* Check the parameters */
 	assert_param(IS_PSRAM_ALL_PERIPH(psram_ctrl));
@@ -373,7 +384,7 @@ BOOL PSRAM_calibration(VOID)
 		HAL_WRITE32(PSRAM_BASE, 0x200000, tempdatawr[4]);
 		HAL_WRITE32(PSRAM_BASE, 0x250000, tempdatawr[5]);
 
-		DCache_Invalidate(PSRAM_BASE, 0x400000);
+		DCache_CleanInvalidate(PSRAM_BASE, 0x400000);
 
 		tempdatard[0] = HAL_READ32(PSRAM_BASE, 0x0);
 		tempdatard[1] = HAL_READ32(PSRAM_BASE, 0x50000);

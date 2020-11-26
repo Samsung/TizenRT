@@ -235,6 +235,21 @@ VOID SOCPS_SWRLDO_Suspend(u32 new_status)
 		Temp &= ~BIT_AON_LDO_SLP_EN;
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_LDO_CTRL0,Temp);
 	}
+
+	/*During mass production period, some ICs fail to wake up , TYTsai Suggest to set ZCDC settings.
+	   However, This advise should verify the whole RF again, so we only set ZCDC before sleep and restore after wakes up.
+	*/
+
+	Temp=HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_SYS_EFUSE_SYSCFG1);
+	if(new_status == ENABLE) {
+		Temp &= ~BIT_MASK_SWR_REG_ZCDC_H;
+		Temp |=	0x2 << BIT_SHIFT_SWR_REG_ZCDC_H;
+	} else {
+		Temp &= ~BIT_MASK_SWR_REG_ZCDC_H;
+	}
+
+	//DiagPrintf("setting ZCD to %x in %s\n",Temp,new_status? "suspend": "resume");
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_SYS_EFUSE_SYSCFG1,Temp);
 }
 
 /**
