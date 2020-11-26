@@ -41,6 +41,7 @@
 #else
 	#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 	#define PLATFORM_CUSTOMER_RTOS 1
+	#define CONFIG_LWIP_LAYER 0
 	#else
 	#define PLATFORM_FREERTOS	1
 	#endif
@@ -67,6 +68,10 @@
 
 #ifndef CONFIG_INIC_EN
 #define CONFIG_INIC_EN 0 //For iNIC project
+#endif
+
+#if CONFIG_INIC_EN
+#define CONFIG_LWIP_LAYER    0
 #endif
 
 #ifndef CONFIG_WIFI_CRITICAL_CODE_SECTION
@@ -108,7 +113,11 @@
 //#define CONFIG_HIGH_TP
 //#define CONFIG_MEMORY_ACCESS_ALIGNED
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#undef CONFIG_POWER_SAVING
+#else
 #define CONFIG_POWER_SAVING
+#endif
 #ifdef CONFIG_POWER_SAVING
 	#define CONFIG_IPS
 	#define CONFIG_LPS
@@ -227,7 +236,7 @@
 #define PSK_SUPPORT_TKIP	1
 #endif
 
-//#define CONFIG_PMKSA_CACHING
+#define CONFIG_PMKSA_CACHING
 
 /* For WPA3 */
 #define CONFIG_IEEE80211W
@@ -250,7 +259,11 @@
 #endif
 
 // for probe request with custom vendor specific IE
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#undef CONFIG_CUSTOM_IE
+#else
 #define CONFIG_CUSTOM_IE
+#endif
 
 #if (CONFIG_PLATFORM_AMEBA_X == 0)
 /* For multicast */
@@ -258,22 +271,30 @@
 #endif
 
 /* For STA+AP Concurrent MODE */
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#undef CONFIG_CONCURRENT_MODE
+#else
 #define CONFIG_CONCURRENT_MODE
+#endif
 #ifdef CONFIG_CONCURRENT_MODE
 //#define CONFIG_MCC_MODE
   #if defined(CONFIG_PLATFORM_8195A) || defined(CONFIG_PLATFORM_8195BHP) || defined(CONFIG_PLATFORM_8710C)
     #define CONFIG_RUNTIME_PORT_SWITCH
   #endif
-  #define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_WLAN) + 1)
+  #ifdef CONFIG_BRIDGE
+    #define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_BRIDGE) + (CONFIG_WLAN) + 1)
+  #else
+    #define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_WLAN) + 1)
+  #endif
 #else
   #define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_WLAN))
 #endif
 
 
 /****************** For EAP auth configurations *******************/
-#define CONFIG_TLS	0
-#define CONFIG_PEAP	0
-#define CONFIG_TTLS	0
+#define CONFIG_TLS	1
+#define CONFIG_PEAP	1
+#define CONFIG_TTLS	1
 
 // DO NOT change the below config of EAP
 #ifdef PRE_CONFIG_EAP
@@ -309,7 +330,11 @@
 /****************** End of EAP configurations *******************/
 
 /* For WPS and P2P */
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#undef CONFIG_WPS
+#else
 #define CONFIG_WPS
+#endif
 #if 0
 #define CONFIG_WPS_AP
 #define CONFIG_P2P_NEW
@@ -410,7 +435,11 @@ extern unsigned int g_ap_sta_num;
 		//#define CONFIG_BT_COEXIST
 		//#define CONFIG_SW_MAILBOX_EN
 		//#define NEW_BT_COEX
+		#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		#undef CONFIG_BT_COEXIST_SOC
+		#else
 		#define CONFIG_BT_COEXIST_SOC
+		#endif
 	#endif
 	#if defined(CONFIG_PLATFORM_8710C)
 		//#define CONFIG_ANTENNA_DIVERSITY
@@ -491,11 +520,21 @@ extern unsigned int g_ap_sta_num;
 		#ifndef CONFIG_RTL8721D 
 			#define CONFIG_RTL8721D
 		#endif
+		#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		#undef RX_AGGREGATION
+		#define RX_AGGREGATION 1
+		#undef NOT_SUPPORT_40M
+		#define RX_SHORTCUT 1
+		#endif
 		#undef NOT_SUPPORT_5G
 		#undef CONFIG_ADAPTOR_INFO_CACHING_FLASH
 		#define CONFIG_ADAPTOR_INFO_CACHING_FLASH 0
 		#define CONFIG_EFUSE_SEPARATE
+		#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		#undef CONFIG_WOWLAN
+		#else
 		#define CONFIG_WOWLAN
+		#endif
 		//#define CONFIG_TRAFFIC_PROTECT
 		#undef SUPPORT_5G_CHANNEL
 		#define SUPPORT_5G_CHANNEL	1
@@ -521,6 +560,8 @@ extern unsigned int g_ap_sta_num;
 			#undef CONFIG_CONCURRENT_MODE
 			#undef CONFIG_AUTO_RECONNECT
 		#endif
+	#define CONFIG_WLAN_SWITCH_MODE         //save memory while switching mode without driver re-init
+	//#define LOW_POWER_WIFI_CONNECT
 	#endif
 	#if defined(CONFIG_PLATFORM_8195BHP)
 		#define CONFIG_RTL8195B
@@ -633,6 +674,7 @@ extern unsigned int g_ap_sta_num;
 		#if defined(CONFIG_MAC_LOOPBACK_DRIVER_RTL8710C) && (CONFIG_MAC_LOOPBACK_DRIVER_RTL8710C == 3)
 		#define CONFIG_MAC_LOOPBACK_DRIVER_AMEBA
 		#endif
+		#define CONFIG_WLAN_SWITCH_MODE         //save memory while switching mode without driver re-init
 	#endif
 #elif defined(CONFIG_HARDWARE_8188F)
 #define CONFIG_RTL8188F
@@ -743,7 +785,11 @@ extern unsigned int g_ap_sta_num;
 #ifdef CONFIG_HIGH_TP_TEST
 	#define SKB_PRE_ALLOCATE_RX	1
 #else
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	#define SKB_PRE_ALLOCATE_RX 1
+#else
 	#define SKB_PRE_ALLOCATE_RX	0
+#endif
 #endif
 
 #if (!defined(CONFIG_PLATFORM_8721D))
@@ -756,7 +802,11 @@ extern unsigned int g_ap_sta_num;
 	#ifdef CONFIG_HIGH_TP_TEST
 		#define EXCHANGE_LXBUS_RX_SKB 1
 	#else
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		#define EXCHANGE_LXBUS_RX_SKB 1
+#else
 		#define EXCHANGE_LXBUS_RX_SKB 0
+#endif
 	#endif
 #endif
 #if (defined(CONFIG_FPGA) && !defined(CONFIG_PLATFORM_8710C))\
@@ -774,6 +824,12 @@ extern unsigned int g_ap_sta_num;
 #ifdef ENABLE_MAC_LB_FOR_TEST_MODE
 	#define CONFIG_SUDO_PHY_SETTING
 	#define INT_HANDLE_IN_ISR 1
+#ifdef CONFIG_LWIP_LAYER
+        #undef CONFIG_LWIP_LAYER
+	#define CONFIG_LWIP_LAYER 0
+#else
+        #define CONFIG_LWIP_LAYER 0
+#endif
 	#define CONFIG_WLAN_HAL_TEST
 	#define CONFIG_WLAN_HAL_RX_TASK
 	#define CONFIG_MAC_LOOPBACK_DRIVER_AMEBA 1
@@ -805,6 +861,9 @@ extern unsigned int g_ap_sta_num;
 #endif
 #endif // CONFIG_PLATFORM_AMEBA_X
 
+#ifndef CONFIG_LWIP_LAYER
+#define CONFIG_LWIP_LAYER 1
+#endif
 #define CONFIG_MAC_ADDRESS 0
 //fast reconnection
 //#define CONFIG_FAST_RECONNECTION 1
