@@ -17,7 +17,7 @@
   #include <basic_types.h>
 
 /* Mask this macro can save 7.2k flash size if you only use C cut, default support both C cut and B cut */
-#define		SUPPORT_B_CUT	
+//#define		SUPPORT_B_CUT	
 
 /* Mask this macro can save 2.4k flash size if you only use 3.3v, default support both 1.8v and 3.3v */
 #define		SUPPORT_18V	
@@ -109,12 +109,12 @@ enum odm_pw_lmt_rfpath_type {
  ******************************************************************************/
 #ifndef SUPPORT_B_CUT
 const u32 array_mp_8721d_radioa[] = {
-		0x00E, 0x0000001F,
+		0x00E, 0x00000021,
 		0x00F, 0x00000029,
 		0x057, 0x0009F522,
 		0x078, 0x000015D5,
 		0x082, 0x000115A8,
-		0x0C0, 0x00039540,
+		0x0C0, 0x00038144,
 		0x0AF, 0x00000004,
 		0x0A5, 0x000E700C,
 		0x0A1, 0x00005604,
@@ -1002,4 +1002,14 @@ const u8 array_mp_8721d_txpwr_lmt_type1[] = {
 
 u32 arraylength_8721d_txpwr_lmt_type1 = sizeof(array_mp_8721d_txpwr_lmt_type1)  / sizeof(u8);
 u32 arraylength_8721d_txpwr_lmt_type0 = sizeof(array_mp_8721d_txpwr_lmt_type0)  / sizeof(u8);
+
+#if 1
+const s8 delta_swing_xtal_mp_n_txxtaltrack_8721d[]    = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const s8 delta_swing_xtal_mp_p_txxtaltrack_8721d[]    = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -6, -6, -10, -10,
+	 -12, -18, -24, -30, -35, -40, -45, -50, -50, -50, -50};
+#endif
+
 

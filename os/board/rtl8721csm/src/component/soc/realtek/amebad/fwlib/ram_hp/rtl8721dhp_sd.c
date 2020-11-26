@@ -1565,8 +1565,10 @@ SD_RESULT SD_Init(void)
 	u32 ret;
 	u8 voltage_mismatch = 0;
 
-	_memset(&card_info, 0, sizeof(SD_CardInfo));
-	card_info.sd_status = SD_NODISK;
+	if(card_info.sd_status != SD_INSERT){
+		_memset(&card_info, 0, sizeof(SD_CardInfo));
+		card_info.sd_status = SD_NODISK;
+	}
 
 	/* Configure pinmux */
 	SDIOH_Pinmux();

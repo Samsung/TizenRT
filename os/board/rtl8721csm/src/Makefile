@@ -109,6 +109,7 @@ CFGDIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/
 DIR_OTG = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/fwlib/usb_otg/device
 
 CFLAGS += -I$(DIR)/../include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/swlib/include/
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/swlib/string/
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/monitor/include/
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/xmodem/

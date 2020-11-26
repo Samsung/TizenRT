@@ -4,10 +4,11 @@
 
 static struct Psram_Heap g_Psram_heap;
 
-static int g_Psram_heap_inited=0;
+int g_Psram_heap_inited = 0;
 static	_lock	Psram_heap_lock;
 
 #define configTOTAL_PSRAM_HEAP_SIZE		(0x200000)
+#define configBYTE_PSRAM_ALIGNMENT			32
 
 PSRAM_HEAP_SECTION 
 static unsigned char psRAMHeap[configTOTAL_PSRAM_HEAP_SIZE];
@@ -40,7 +41,7 @@ void *Psram_heap_allocmem(int size)
 	if(!g_Psram_heap_inited)	Psram_heap_init();
 
 	/* Round size up to the allocation granularity */
-	size = Psram_ROUND_UP2(size, sizeof(PsramMemChunk));
+	size = Psram_ROUND_UP2(size, configBYTE_PSRAM_ALIGNMENT);
 
 	/* Handle allocations of 0 bytes */
 	if (!size)
@@ -100,7 +101,7 @@ void Psram_reserved_heap_freemem(void *mem, int size)
 	if(!g_Psram_heap_inited)	Psram_heap_init();
 
 	/* Round size up to the allocation granularity */
-	size = Psram_ROUND_UP2(size, sizeof(PsramMemChunk));
+	size = Psram_ROUND_UP2(size, configBYTE_PSRAM_ALIGNMENT);
 
 	/* Handle allocations of 0 bytes */
 	if (!size)
