@@ -28,16 +28,11 @@
 #endif
 #include <sys/ioctl.h>
 #include <tinyara/seclink.h>
-
-#ifdef SECLINK_PATH
-#undef SECLINK_PATH
-#endif
+#include <tinyara/seclink_drv.h>
 
 #ifndef LINUX
-#define SECLINK_PATH "/dev/seclink"
 #define SL_LOG sedbg
 #else
-#define SECLINK_PATH "./seclink"
 #define SL_LOG printf
 #endif
 

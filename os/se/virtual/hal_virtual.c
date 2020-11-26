@@ -44,8 +44,6 @@
 			   VH_TAG, __FUNCTION__, __FILE__, __LINE__, fd);	\
 	} while (0)
 
-#define SECLINK_PATH "/dev/seclink"
-
 #define V_DEFINE_DATA(name, text)							\
 	hal_data name##_data = {text, sizeof(text), NULL, 0};	\
 	hal_data *name = &name##_data

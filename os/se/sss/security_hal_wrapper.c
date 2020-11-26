@@ -1623,8 +1623,6 @@ static struct sec_ops_s g_sss_ops = {
 
 static struct sec_lowerhalf_s g_sss_lower = {&g_sss_ops, NULL};
 
-#define SECLINK_PATH "/dev/seclink"
-
 int se_initialize(void)
 {
 	int res = se_register(SECLINK_PATH, &g_sss_lower);
