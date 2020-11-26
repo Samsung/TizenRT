@@ -27,10 +27,9 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 
 ASRCS =
-#CSRCS += security_api_auth_test.c  security_api_keymgr_test.c security_api_ss_test.c
 CSRCS += security_api_utils.c
 CSRCS += security_api_keymgr_test.c security_api_crypto_test.c security_api_ss_test.c
-CSRCS += seclink_keymgr_test.c
+CSRCS += security_api_auth_test.c
 MAINSRC = security_api_test.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

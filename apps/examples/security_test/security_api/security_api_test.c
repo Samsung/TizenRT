@@ -33,7 +33,6 @@ extern void test_authenticate(void);
 extern void test_crypto(void);
 extern void test_keymgr(void);
 extern void test_securestorage(void);
-extern void test_seclink_key(void);
 
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -59,8 +58,6 @@ int security_api_test_main(int argc, char *argv[])
 	test_crypto();
 	test_keymgr();
 	test_securestorage();
-
-	test_seclink_key();
 
 	return 0;
 }
