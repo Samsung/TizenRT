@@ -41,6 +41,7 @@
 #include <tinyara/wqueue.h>
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/i2s.h>
+#include <tinyara/mm/mm.h>
 
 #include "irq/irq.h"
 
@@ -922,7 +923,6 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 
 static void i2s_exclsem_take(struct amebad_i2s_s *priv)
 {
-	return;
 	int ret;
 
 	/* Wait until we successfully get the semaphore.  EINTR is the only

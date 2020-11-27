@@ -69,6 +69,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/i2c.h>
+#include <tinyara/mm/mm.h>
 
 #include "mbed/targets/hal/rtl8721d/PinNames.h"
 
@@ -283,7 +284,6 @@ static int amebad_i2c_isr_process(struct amebad_i2c_priv_s *priv);
 static int amebad_i2c_isr(int irq, void *context, FAR void *arg);
 #endif							/* !CONFIG_I2C_POLLED */
 
-void amebad_i2c_clock_enable(uint32_t base);
 static int amebad_i2c_init(FAR struct amebad_i2c_priv_s *priv);
 static int amebad_i2c_deinit(FAR struct amebad_i2c_priv_s *priv);
 #ifdef CONFIG_I2C_TRANSFER
@@ -437,8 +437,8 @@ static inline void amebad_i2c_sem_wait(FAR struct amebad_i2c_priv_s *priv)
 		 * awakened by a signal.
 		 */
 
-		DEBUGASSERT(ret == OK || ret == -EINTR);
-	} while (ret == -EINTR);
+		DEBUGASSERT(ret == OK || errno == EINTR);
+	} while (errno == EINTR);
 }
 
 /************************************************************************************
@@ -903,18 +903,6 @@ static int amebad_i2c_isr(int irq, void *context, FAR void *arg)
 	return amebad_i2c_isr_process(priv);
 }
 #endif
-
-/************************************************************************************
- * Name: amebad_i2c_clock_enable
- *
- * Description:
- *   Ungate I2C clock
- *
- ************************************************************************************/
-
-void amebad_i2c_clock_enable(uint32_t base)
-{
-}
 
 /************************************************************************************
  * Name: amebad_i2c_init

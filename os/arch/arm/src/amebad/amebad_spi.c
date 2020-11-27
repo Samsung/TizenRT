@@ -69,6 +69,7 @@
 #include <tinyara/semaphore.h>
 #include <tinyara/spi/spi.h>
 #include <tinyara/pm/pm.h>
+#include <tinyara/mm/mm.h>
 
 #include <arch/board/board.h>
 
@@ -615,8 +616,8 @@ static int amebad_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 			 * awakened by a signal.
 			 */
 
-			DEBUGASSERT(ret == OK || ret == -EINTR);
-		} while (ret == -EINTR);
+			DEBUGASSERT(ret == OK || errno == EINTR);
+		} while (errno == EINTR);
 	} else {
 		(void)sem_post(&priv->exclsem);
 		ret = OK;
