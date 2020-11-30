@@ -931,7 +931,7 @@ CONFIG_NET_NETMON=y
 #
 # Network Manager
 #
-# CONFIG_NET_NETMGR is not set
+CONFIG_NET_NETMGR=y
 
 #
 # Network Device Operations
