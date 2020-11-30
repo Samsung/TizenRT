@@ -158,7 +158,11 @@ static void stkmon_print_inactive_list(void)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			printf(" | %10d", terminated_infos[inactive_idx].chk_peakheap);
 #endif
-			printf(" | %7lld", (uint64_t)((clock_t)terminated_infos[inactive_idx].timestamp));
+#ifdef CONFIG_SYSTEM_TIME64
+			printf(" | %7llu", (uint64_t)terminated_infos[inactive_idx].timestamp);
+#else
+			printf(" | %7lu", (uint32_t)terminated_infos[inactive_idx].timestamp);
+#endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
 			printf(" | %s", terminated_infos[inactive_idx].chk_name);
 #endif
@@ -187,7 +191,11 @@ static void stkmon_print_active_values(char *buf)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	printf(" | %10s", stat_info[PROC_STAT_PEAKHEAP]);
 #endif
-	printf(" | %7lld", (uint64_t)((clock_t)clock()));
+#ifdef CONFIG_SYSTEM_TIME64
+	printf(" | %7llu", (uint64_t)clock());
+#else
+	printf(" | %7lu", (uint32_t)clock());
+#endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" | %s", stat_info[PROC_STAT_NAME]);
 #endif
