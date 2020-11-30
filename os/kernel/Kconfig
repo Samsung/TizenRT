@@ -153,6 +153,7 @@ endif # !SCHED_TICKLESS
 
 config SYSTEM_TIME64
 	bool "64-bit system clock"
+	select LIBC_LONG_LONG
 	default n
 	---help---
 		The system timer is incremented at the rate determined by
