@@ -169,6 +169,7 @@ enum amebad_intstate_e {
 
 /* Trace events */
 
+#ifdef CONFIG_I2C_TRACE
 enum amebad_trace_e {
 	I2CEVENT_NONE = 0,			/* No events have occurred with this status */
 	I2CEVENT_SENDADDR,			/* Start/Master bit set and address sent, param = msgc */
@@ -189,6 +190,7 @@ struct amebad_trace_s {
 	uint32_t parm;				/* Parameter associated with the event */
 	clock_t time;				/* First of event or first status */
 };
+#endif
 
 /* I2C Device hardware configuration */
 

@@ -877,9 +877,8 @@ static int amebad_spi_hwfeatures(FAR struct spi_dev_s *dev,
 	/* Other H/W features are not supported */
 
 	return -ENOSYS;
-#else
-	return -ENOSYS;
 #endif
+	return -ENOSYS;
 }
 #endif
 
@@ -912,6 +911,7 @@ static uint16_t amebad_spi_send(FAR struct spi_dev_s *dev, uint16_t wd)
 	} else if (priv->spi_idx == MBED_SPI0) {
 
 		spi_slave_write(priv->spi_object, wd);
+		ret = wd;
 	}
 
 	/* Check and clear any error flags (Reading from the SR clears the error

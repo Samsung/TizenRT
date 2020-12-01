@@ -47,6 +47,15 @@ extern "C" {
  * Public Data
  ************************************************************************************/
 /**
+* @brief I2S Peripheral, 0 & 1.
+*
+*/
+typedef enum {
+	I2S_NUM_0 = 0x0,			/*!< I2S 0 */
+	//I2S_NUM_1 = 0x1,			/*!< I2S 1 */
+	I2S_NUM_MAX,
+} i2s_port_t;
+/**
 * @brief I2S bit width per sample.
 *
 */
