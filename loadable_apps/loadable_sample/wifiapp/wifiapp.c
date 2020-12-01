@@ -68,8 +68,7 @@ int wifiapp_main(int argc, char **argv)
 
 	printf("This is WIFI App\n");
 
-#ifndef CONFIG_EXAMPLES_MICOM_TIMER_TEST
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && !defined(CONFIG_EXAMPLES_MICOM_TIMER_TEST)
 	int ret;
 	ret = binary_manager_notify_binary_started();
 	if (ret < 0) {
@@ -80,7 +79,8 @@ int wifiapp_main(int argc, char **argv)
 #ifdef CONFIG_EXAMPLES_SMARTFS_POWERCUT
 	smartfs_powercut_main(0, NULL);
 #endif
-#ifndef CONFIG_ENABLE_RECOVERY_AGING_TEST
+
+#ifdef CONFIG_EXAMPLES_LOADABLE_MANUAL_TEST
 	while (is_testing) {
 		display_test_scenario();
 		ch = getchar();
@@ -114,11 +114,13 @@ int wifiapp_main(int argc, char **argv)
 			break;
 		}
 	}
-#else
+#elif CONFIG_EXAMPLES_LOADABLE_AUTOMATIC_TEST
+#ifdef CONFIG_EXAMPLES_RECOVERY_AGING_TEST
 	recovery_test();
+#elif CONFIG_EXAMPLES_UPDATE_AGING_TEST
+	binary_update_aging_test();
 #endif
-
-#endif /* CONFIG_EXAMPLES_MICOM_TIMER_TEST */
+#endif
 	while (1) {
 		sleep(300);
 		printf("[%d] WIFI ALIVE\n", getpid());
