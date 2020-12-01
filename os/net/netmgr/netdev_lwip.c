@@ -538,7 +538,7 @@ static int lwip_ifup(struct netdev *dev)
 	netif_set_ip6_autoconfig_enabled(ni, 1);
 #endif /* CONFIG_NET_IPv6_AUTOCONFIG */
 	/* To auto-config linklocal address, ni should have mac address already */
-	netif_create_ip6_linklocal_address(ni, 1);
+	netif_create_ip6_linklocal_address(ni);
 	ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n",
 		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[0]),
 		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[1]),

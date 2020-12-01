@@ -22,6 +22,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
@@ -91,7 +92,7 @@ int nm_foreach(tr_netdev_callback_t callback, void *arg)
 	for (int i = 0; i < g_netdev_idx; i++) {
 		dev = &g_netdev[i];
 		if (callback(dev, arg) != 0) {
-			ret = 1;
+			ret = -1;
 			break;
 		}
 	}

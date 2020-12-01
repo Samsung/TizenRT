@@ -86,7 +86,7 @@ static struct icmp6_hdr icmp6_prev_hdr[1] = { 0, };
  *
  * @return The pointer of icmp6_prev_hdr.
  */
-struct icmp6_hdr *icmp6_get_prev_hdr()
+struct icmp6_hdr *icmp6_get_prev_hdr(void)
 {
 	return icmp6_prev_hdr;
 }

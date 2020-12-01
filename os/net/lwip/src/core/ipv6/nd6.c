@@ -349,19 +349,16 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				/* O flag is clear and lladdr is different between TLLA and cache entry */
 				if (neighbor_cache[i].state == ND6_REACHABLE) {
 					/* State is REACHABLE */
-
 					neighbor_cache[i].state = ND6_STALE;
 				}
 			} else {
 				if (lladdr_diff != 0) {
-
 					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					neighbor_cache[i].state = ND6_STALE; // pkbuild to fix
+					neighbor_cache[i].state = ND6_STALE;
 				}
 
 				if (nd6_sflag) {
 					neighbor_cache[i].state = ND6_REACHABLE;
-
 					neighbor_cache[i].counter.reachable_time = reachable_time;
 				}
 
@@ -763,9 +760,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 					/* Get a memory-aligned copy of the prefix. */
 					ip_addr_copy_from_ip6(rdnss_address, ND6H_RDNSS_OPT_ADDR(rdnss_opt)[n]);
-
-
-											htonl(rdnss_opt->_lifetime), __LINE__));
 					if (htonl(rdnss_opt->_lifetime) > 0) {
 						/* TODO implement Lifetime > 0 */
 
@@ -802,7 +796,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 
 		if (nce_flag && j < 0) {
-			j = nd6_new_neighbor_cache_entry(); // pkbuild_log
+			j = nd6_new_neighbor_cache_entry();
 
 			if (j < 0) {
 				pbuf_free(p);
@@ -887,9 +881,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			default_router_list[i].flags = flag;
 
 			if (nce_update) {
-
-
-										__LINE__));
 				default_router_list[i].neighbor_entry = nce_update;
 				// [tahi spec tc56] is reachable time in configured neighbor cache updated by RA
 				default_router_list[i].neighbor_entry->counter.reachable_time = reachable_time;
@@ -936,7 +927,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		} else {
 			LWIP_DEBUGF(ND6_DEBUG, ("Never happen\n"));
 		}
-		// [TAHI nd178] pkbuild
+		// [TAHI nd178]
 		nd6_update_dest_cache(inp);
 
 		break;				/* ICMP6_TYPE_RA */
@@ -1165,7 +1156,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		}
 
 		if (IP6H_NEXTH(ip6hdr) == IP6_NEXTH_ICMP6) {
-			struct icmp6_hdr *icmp6_prev_hdr = icmp6_get_prev_hdr();
+			struct icmp6_hdr *icmp6_prev_hdr = (struct icmp6_hdr *)icmp6_get_prev_hdr();
 			struct icmp6_hdr *icmp6_recv_hdr = (struct icmp6_hdr *)((u8_t *)ip6hdr + IP6_HLEN);
 			if (icmp6_prev_hdr->type == ICMP6_TYPE_EREQ || icmp6_prev_hdr->type == ICMP6_TYPE_EREP) {
 				u16_t recv_id = lwip_htons(*(u16_t *)&(icmp6_recv_hdr->data));
@@ -2600,7 +2591,6 @@ err_t nd6_get_next_hop_addr_or_queue(struct netif *netif, struct pbuf *q, const 
 
 		return i;
 	}
-	nd6_cache_debug_print_idx(i); // pkbuild
 	/* Now that we have a destination record, send or queue the packet. */
 	if (neighbor_cache[i].state == ND6_STALE) {
 		/* RFC 7.3.3.
@@ -2745,7 +2735,6 @@ static void nd6_cleanup_all_caches(ip6_addr_t *invalid_ip6addr)
 	if (ip6_addr_isany(invalid_ip6addr)) {
 		return;
 	}
-	// pkbuild
 	LWIP_DEBUGF(ND6_DEBUG, ("\n\n------------------------------------------------\n"\
 							"Clean-up caches including %4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x (invalid addr)\n"\
 							"------------------------------------------------\n\n\n",
@@ -2757,7 +2746,6 @@ static void nd6_cleanup_all_caches(ip6_addr_t *invalid_ip6addr)
 							IP6_ADDR_BLOCK6(invalid_ip6addr),
 							IP6_ADDR_BLOCK7(invalid_ip6addr),
 							IP6_ADDR_BLOCK8(invalid_ip6addr)));
-	// ~pkbuild
 
 	/* Clean-up destination cache */
 	nd6_free_expired_router_in_destination_cache(invalid_ip6addr);
