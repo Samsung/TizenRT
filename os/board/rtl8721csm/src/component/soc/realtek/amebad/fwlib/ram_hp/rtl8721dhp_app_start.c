@@ -1338,6 +1338,9 @@ extern void __libc_init_array(void);
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 	mpu_init();
 	app_mpu_nocache_init();
+
+	/* Initialize number of mpu regions for board specific purpose */
+	mpu_set_nregion_board_specific(1);
 #endif
 	app_vdd1833_detect();
 	memcpy_gdma_init();
