@@ -35,6 +35,7 @@
 
 /* App binary information for update test */
 #define APP_NAME                   "micom"
+#define MYAPP_NAME                 "wifi"
 
 #define NEW_APP_NAME               "newapp"
 #define NEW_APP_VERSION            20200421
@@ -74,7 +75,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 	char filepath[BINARY_PATH_LEN];
 	char new_filepath[BINARY_PATH_LEN] = {0,};
 
-	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)binary_info->version);
+	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, binary_info->name, (uint32_t)binary_info->version);
 	read_fd = open(filepath, O_RDONLY);
 	if (read_fd < 0) {
 		fail_cnt++;
@@ -92,7 +93,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 
 	new_version = header_data.bin_ver + 1;
 
-	ret = binary_manager_get_download_path(APP_NAME, new_version, new_filepath);
+	ret = binary_manager_get_download_path(binary_info->name, new_version, new_filepath);
 	if (ret < 0) {
 		printf("binary_manager_get_download_path FAIL %d,\n", ret);
 		ret = ERROR;
@@ -138,7 +139,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 		}
 		crc_hash = crc32part(buffer, read_size, crc_hash);
 		copy_size += read_size;
-		printf("Copy %s binary, %s [%d%%]\r", APP_NAME, filepath, copy_size * 100 / total_size);
+		printf("Copy %s binary, %s [%d%%]\r", binary_info->name, filepath, copy_size * 100 / total_size);
 	}
 	printf("\nCopy SUCCESS\n");
 
@@ -160,7 +161,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 		ret = ERROR;
 		goto errout_with_close_fd2;
 	}
-	printf("Download binary %s version %d Done!\n", APP_NAME, new_version);
+	printf("Download binary %s version %d Done!\n", binary_info->name, new_version);
 
 	ret = OK;
 errout_with_close_fd2:
@@ -571,10 +572,32 @@ static void binary_update_new_binary_test(void)
 	unlink(filepath);
 }
 
-static void binary_update_run_tests(int repetition_num)
+static void binary_update_myself_test(void)
 {
-	printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
+	int ret;
+	binary_update_info_t bin_info;
 
+	ret = binary_update_getinfo(MYAPP_NAME, &bin_info);
+	if (ret != OK) {
+		return;
+	}
+
+	/* Copy current binary with a higher version and valid crc. */
+	ret = binary_update_download_binary(&bin_info, DOWNLOAD_VALID_BIN);
+	if (ret != OK) {
+		return;
+	}
+
+	sleep(2);
+
+	ret = binary_update_reload(MYAPP_NAME);
+	if (ret != OK) {
+		return;
+	}
+}
+
+static void binary_update_run_tests(void)
+{
 	/* 1. Reload test with same version. */
 	binary_update_same_version_test();
 
@@ -610,7 +633,8 @@ static void binary_update_execute_infinitely(void)
 	is_running = true;
 	while (inf_flag) {
 		repetition_num++;
-		binary_update_run_tests(repetition_num);
+		printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
+		binary_update_run_tests();
 	}
 	binary_update_show_success_ratio(repetition_num);
 	is_running = false;
@@ -623,16 +647,28 @@ static void binary_update_execute_ntimes(int repetition_num)
 	/* binary_update example executes multiple-times. */
 	printf("\n** Binary Update example : executes %d-times.\n", repetition_num);
 	for (loop_idx = 1; loop_idx <= repetition_num; loop_idx++) {
-		binary_update_run_tests(loop_idx);
+		binary_update_run_tests();
 	}
 	binary_update_show_success_ratio(repetition_num);
 	is_running = false;
 }
+
+#ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
 /****************************************************************************
  * binary_update_test
  ****************************************************************************/
-
 void binary_update_test(void)
 {
 	binary_update_execute_ntimes(1);
 }
+#endif
+
+#ifdef CONFIG_EXAMPLES_UPDATE_AGING_TEST
+/****************************************************************************
+ * binary_update_aging_test
+ ****************************************************************************/
+void binary_update_aging_test(void)
+{
+	binary_update_myself_test();
+}
+#endif

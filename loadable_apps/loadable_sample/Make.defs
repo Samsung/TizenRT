@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-ifneq ($(CONFIG_EXAMPLES_ELF),)
+ifneq ($(CONFIG_EXAMPLES_LOADABLE),)
 include $(wildcard loadable_sample/*/Make.defs)
 endif
 
