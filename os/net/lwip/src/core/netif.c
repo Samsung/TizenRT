@@ -1218,7 +1218,7 @@ err_t netif_gen_stable_private_id(struct netif *netif, s8_t addr_idx, ip6_addr_t
 	param.prefix[0] = ip_2_ip6(&netif->ip6_addr[addr_idx])->addr[0];
 	param.prefix[1] = ip_2_ip6(&netif->ip6_addr[addr_idx])->addr[1];
 
-	param.dad_cnt = netif->ip6_dad_cnt;
+	param.dad_cnt = netif->ip6_dad_cnt[addr_idx];
 
 	for (i = 0; i < netif->hwaddr_len; i++) {
 		param.mac[i] = netif->hwaddr[i];
