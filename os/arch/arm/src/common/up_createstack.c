@@ -67,6 +67,7 @@
 #endif
 #include <tinyara/kmalloc.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 #include <arch/board/board.h>
 
 #include "up_arch.h"
@@ -206,7 +207,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 * object in the tcb of current running task. uheap is always non-null
 		 * in user threads and null for kernel threads.
 		 */
-		if (!uheap) {
+		if (!uheap || ttype == TCB_FLAG_TTYPE_KERNEL) {
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 			stack_alloc_size = stack_alloc_size + CONFIG_MPU_STACK_GUARD_SIZE;
 			tcb->stack_alloc_ptr = (uint32_t *)kmm_memalign(STACK_PROTECTION_MPU_ALIGNMENT, stack_alloc_size);
