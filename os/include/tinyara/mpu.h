@@ -66,7 +66,7 @@ enum mpu_region_usages_e {
 #define MPU_NUM_REGIONS		1
 #endif
 
-#ifdef CONFIG_ARMV8M_MPU
+#ifdef CONFIG_APP_BINARY_SEPARATION
 #define MPU_ALIGNMENT_BYTES    32
 #define MPU_ALIGN_UP(a)                (((a) + MPU_ALIGNMENT_BYTES - 1) & ~(MPU_ALIGNMENT_BYTES - 1))
 #endif

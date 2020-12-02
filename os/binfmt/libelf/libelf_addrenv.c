@@ -64,9 +64,7 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/mm/mm.h>
 #endif
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/mpu.h>
-#endif
 #include "libelf.h"
 
 /****************************************************************************
@@ -206,8 +204,10 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	 */
 	loadinfo->rosize += loadinfo->datasize - loadinfo->binp->bsssize;
 
-#ifdef CONFIG_ARMV7M_MPU
-	/* ARMV7M requires MPU region size to be a power of two */
+#ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
+	/* If there are size and address alignment restrictions like ARMV7M,
+	 * it is better to allocate one big memory chunk enough to contains each loading sections like text, ro, data.
+	 */
 	loadinfo->textsize = 1 << mpu_log2regionceil(0, loadinfo->textsize);
 	loadinfo->rosize = 1 << mpu_log2regionceil(0, loadinfo->rosize);
 	datamemsize = 1 << mpu_log2regionceil(0, datamemsize);
@@ -216,8 +216,10 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 		berr("ERROR: failed to allocate memory\n");
 		return -ENOMEM;
 	}
-#elif CONFIG_ARMV8M_MPU
-	/* ARMV8M requires MPU region size to be aligned to 32 bytes */
+#else
+	/* There is no restriction about address alignment in MPU,
+	 * Allocate each loading section respectively.
+	 */
 	loadinfo->textsize = MPU_ALIGN_UP(loadinfo->textsize);
 	loadinfo->rosize = MPU_ALIGN_UP(loadinfo->rosize);
 	datamemsize = MPU_ALIGN_UP(datamemsize);
@@ -225,8 +227,6 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	loadinfo->textalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->textsize);
 	loadinfo->roalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->rosize);
 	loadinfo->dataalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, datamemsize);
-#else
-#error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
 #endif
 
 	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
