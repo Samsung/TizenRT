@@ -44,11 +44,11 @@ struct mpu_usages_s {
 	uint8_t max_nregion;
 };
 
-enum {
-	REG_RNR,
-	REG_RBAR,
-	REG_RASR,
-	REG_MAX
+enum mpu_register_type_e {
+	MPU_REG_RNR,
+	MPU_REG_RBAR,
+	MPU_REG_RASR,
+	MPU_REG_NUMBER
 };
 
 /* Enum to to get MPU region number info for MPU usages */
@@ -61,9 +61,11 @@ enum mpu_region_usages_e {
 };
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-#define MPU_NUM_REGIONS		3
+/* Separate three MPU regions (text, ro and rw) to optimize reloading time */
+#define MPU_NUM_REGIONS     3
 #else
-#define MPU_NUM_REGIONS		1
+/* Just a MPU region for all of section data */
+#define MPU_NUM_REGIONS     1
 #endif
 
 #ifdef CONFIG_ARMV8M_MPU

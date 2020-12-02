@@ -269,7 +269,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
 		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-			for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
 				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
 		}
@@ -318,7 +318,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
 		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-			for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
 				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
 		}
