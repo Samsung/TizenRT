@@ -38,6 +38,8 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
+#ifdef CONFIG_ARM_MPU
 #include <tinyara/mpu.h>
 
 #include <assert.h>
@@ -45,8 +47,6 @@
 #include "mpu.h"
 #include "up_mpuinit.h"
 #include "cache.h"
-
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ARM_MPU)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -175,5 +175,4 @@ void up_mpuinitialize(void)
 	mpu_control(true, false, true);
 }
 
-#endif /* CONFIG_BUILD_PROTECTED && CONFIG_ARM_MPU */
-
+#endif // CONFIG_ARM_MPU
