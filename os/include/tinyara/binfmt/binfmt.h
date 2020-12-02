@@ -76,9 +76,11 @@
  ****************************************************************************/
 enum {
 	ALLOC_TEXT,
+#ifdef CONFIG_BINFMT_CONSTRUCTORS
 	ALLOC_CTOR,
 	ALLOC_DTOR,
-#ifdef CONFIG_APP_BINARY_SEPARATION
+#endif
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	ALLOC_RO,
 	ALLOC_DATA,
 #endif

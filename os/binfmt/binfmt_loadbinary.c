@@ -224,9 +224,11 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	/* Print Binary section address & size details */
 
 	binfo("[%s] text    start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->alloc[ALLOC_TEXT], bin->textsize);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	binfo("[%s] rodata  start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->alloc[ALLOC_RO], bin->rosize);
 	binfo("[%s] data    start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->datastart, bin->datasize);
 	binfo("[%s] bss     start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->bssstart, bin->bsssize);
+#endif
 
 	return pid;
 
