@@ -158,7 +158,7 @@ typedef struct {
 struct amebad_i2s_s {
 	struct i2s_dev_s dev;           /* Externally visible I2S interface, must the first element!! */
 
-	i2s_t* i2s_object;
+	i2s_t i2s_object;
 	uint32_t i2s_sclk_pin;
 	uint32_t i2s_ws_pin;
 	uint32_t i2s_sd_tx_pin;
@@ -184,9 +184,6 @@ struct amebad_i2s_s {
 	int sample_rate;                /*!< I2S sample rate */
 	int channel_num;                /*!< Number of channels */
 	int bits_per_sample;            /*!< Bits per sample */
-
-	bool use_apll;                  /*!< I2S use APLL clock */
-	int fixed_mclk;                 /*!< I2S fixed MLCK clock */
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	struct amebad_transport_s rx;		/* RX transport state */
@@ -372,7 +369,7 @@ static int i2s_txdma_prep(struct amebad_i2s_s *priv, struct amebad_buffer_s *bfc
 	apb = bfcontainer->apb;
 
 	priv->i2s_tx_buf = (void *)&(apb->samp[apb->curbyte]);
-	i2s_set_dma_buffer(priv->i2s_object, (char*)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
+	i2s_set_dma_buffer(&priv->i2s_object, (char*)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
 
 	return 0;
 }
@@ -405,9 +402,9 @@ static int i2s_tx_start(struct amebad_i2s_s *priv)
 		/* Add the container to the list of active DMAs */
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->tx.act);
 
-		i2s_set_direction(priv->i2s_object, I2S_DIR_TX);
-		ptx_buf = i2s_get_tx_page(priv->i2s_object);
-		i2s_send_page(priv->i2s_object, (uint32_t*)ptx_buf);
+		i2s_set_direction(&priv->i2s_object, I2S_DIR_TX);
+		ptx_buf = i2s_get_tx_page(&priv->i2s_object);
+		i2s_send_page(&priv->i2s_object, (uint32_t*)ptx_buf);
 	}
 
 	irqrestore(flags);
@@ -563,9 +560,9 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 	priv->bits_per_sample = bits;
 
 	/* amebad 16, 24, 32, bits setting */
-	if (bits == I2S_BITS_PER_SAMPLE_16BIT) priv->i2s_object->word_length = WL_16b;
-	else if (bits == I2S_BITS_PER_SAMPLE_24BIT) priv->i2s_object->word_length = WL_24b;
-	else if (bits == I2S_BITS_PER_SAMPLE_32BIT) priv->i2s_object->word_length = WL_32b;
+	if (bits == I2S_BITS_PER_SAMPLE_16BIT) priv->i2s_object.word_length = WL_16b;
+	else if (bits == I2S_BITS_PER_SAMPLE_24BIT) priv->i2s_object.word_length = WL_24b;
+	else if (bits == I2S_BITS_PER_SAMPLE_32BIT) priv->i2s_object.word_length = WL_32b;
 
 	return priv->bits_per_sample * priv->sample_rate;
 #endif
@@ -674,7 +671,7 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 {
 	struct amebad_i2s_s *priv = (struct amebad_i2s_s *)data;
-	i2s_t *obj = priv->i2s_object;
+	i2s_t *obj = &priv->i2s_object;
 
 	priv->i2s_tx_buf = i2s_get_tx_page(obj);
 	i2s_send_page(obj, (uint32_t*)priv->i2s_tx_buf);
@@ -735,7 +732,7 @@ static int i2s_rxdma_prep(struct amebad_i2s_s *priv, struct amebad_buffer_s *bfc
 	apb->curbyte = 0;
 
 	priv->i2s_rx_buf = apb->samp;
-	i2s_set_dma_buffer(priv->i2s_object, NULL, (char*)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
+	i2s_set_dma_buffer(&priv->i2s_object, NULL, (char*)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
 
 	return 0;
 }
@@ -767,8 +764,8 @@ static int i2s_rx_start(struct amebad_i2s_s *priv)
 		/* Add the container to the list of active DMAs */
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.act);
 
-		i2s_set_direction(priv->i2s_object, I2S_DIR_RX);
-		i2s_recv_page(priv->i2s_object);
+		i2s_set_direction(&priv->i2s_object, I2S_DIR_RX);
+		i2s_recv_page(&priv->i2s_object);
 
 	}
 	irqrestore(flags);
@@ -832,11 +829,9 @@ static void i2s_rx_worker(void *arg)
 		 * the audio buffer.
 		 */
 
-		/*
 		if (bfcontainer->result == OK) {
 			apb->nbytes = apb->nmaxbytes;
 		}
-		*/
 
 		i2s_dump_buffer("Received", apb->samp, apb->nbytes);
 
@@ -938,9 +933,9 @@ static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits)
 	priv->bits_per_sample = bits;
 
 	/* amebad 16, 24, 32, bits setting */
-	if (bits == I2S_BITS_PER_SAMPLE_16BIT) priv->i2s_object->word_length = WL_16b;
-	else if (bits == I2S_BITS_PER_SAMPLE_24BIT) priv->i2s_object->word_length = WL_24b;
-	else if (bits == I2S_BITS_PER_SAMPLE_32BIT) priv->i2s_object->word_length = WL_32b;
+	if (bits == I2S_BITS_PER_SAMPLE_16BIT) priv->i2s_object.word_length = WL_16b;
+	else if (bits == I2S_BITS_PER_SAMPLE_24BIT) priv->i2s_object.word_length = WL_24b;
+	else if (bits == I2S_BITS_PER_SAMPLE_32BIT) priv->i2s_object.word_length = WL_32b;
 
 	return priv->bits_per_sample * priv->sample_rate;
 #endif
@@ -1049,7 +1044,7 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 {
 	struct amebad_i2s_s *priv = (struct amebad_i2s_s *)data;
-	i2s_t *obj = priv->i2s_object;
+	i2s_t *obj = &priv->i2s_object;
 
 	i2s_recv_page(obj);
 
@@ -1380,13 +1375,13 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX && priv->txenab) {
-		i2s_disable(priv->i2s_object);
+		i2s_disable(&priv->i2s_object);
 	}
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX && priv->rxenab) {
-		i2s_disable(priv->i2s_object);
+		i2s_disable(&priv->i2s_object);
 	}
 #endif
 
@@ -1414,13 +1409,13 @@ static int i2s_resume(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX && priv->txenab) {
-		i2s_enable(priv->i2s_object);
+		i2s_enable(&priv->i2s_object);
 	}
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX && priv->rxenab) {
-		i2s_enable(priv->i2s_object);
+		i2s_enable(&priv->i2s_object);
 	}
 #endif
 
@@ -1448,13 +1443,13 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX) {
-		i2s_disable(priv->i2s_object);
+		i2s_disable(&priv->i2s_object);
 	}
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX) {
-		i2s_disable(priv->i2s_object);
+		i2s_disable(&priv->i2s_object);
 	}
 #endif
 
@@ -1470,13 +1465,13 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX) {
-		i2s_disable(priv->i2s_object);
+		i2s_disable(&priv->i2s_object);
 	}
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX) {
-		i2s_disable(priv->i2s_object);
+		i2s_disable(&priv->i2s_object);
 	}
 #endif
 
@@ -1531,10 +1526,10 @@ int amebad_i2s_isr_initialize(struct amebad_i2s_s *priv)
 
 	/* Attach the GPIO peripheral to the allocated CPU interrupt */
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
-	i2s_tx_irq_handler(priv->i2s_object, (i2s_irq_handler)priv->tx_isr_handler, (uint32_t)priv);
+	i2s_tx_irq_handler(&priv->i2s_object, (i2s_irq_handler)priv->tx_isr_handler, (uint32_t)priv);
 #endif
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-	i2s_rx_irq_handler(priv->i2s_object, (i2s_irq_handler)priv->rx_isr_handler, (uint32_t)priv);
+	i2s_rx_irq_handler(&priv->i2s_object, (i2s_irq_handler)priv->rx_isr_handler, (uint32_t)priv);
 #endif
 
 	return 0;
@@ -1560,10 +1555,10 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 	struct amebad_i2s_s *priv = (struct amebad_i2s_s *)dev;
 	DEBUGASSERT(priv && rate > 0);
 
-	priv->i2s_object->sampling_rate = rate;
+	priv->i2s_object.sampling_rate = rate;
 	priv->sample_rate = rate;
 
-	return priv->i2s_object->sampling_rate;
+	return priv->i2s_object.sampling_rate;
 }
 
 /****************************************************************************
@@ -1660,17 +1655,17 @@ static void amebad_i2s_deinit_buffer(struct amebad_i2s_s *priv)
 static void i2s_getdefaultconfig(struct amebad_i2s_s *priv)
 {
 	priv->channel_num = (&i2s_default_config)->channel_num;
-	priv->i2s_object->channel_num = (&i2s_default_config)->channel_num;
+	priv->i2s_object.channel_num = (&i2s_default_config)->channel_num;
 
 	priv->sample_rate = (&i2s_default_config)->sample_rate;
-	priv->i2s_object->sampling_rate = (&i2s_default_config)->sample_rate;
+	priv->i2s_object.sampling_rate = (&i2s_default_config)->sample_rate;
 
-	priv->i2s_object->direction = (&i2s_default_config)->direction;
+	priv->i2s_object.direction = (&i2s_default_config)->direction;
 
 	priv->bits_per_sample = (&i2s_default_config)->bits_per_sample;
-	if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_16BIT) priv->i2s_object->word_length = WL_16b;
-	else if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_24BIT) priv->i2s_object->word_length = WL_24b;
-	else if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_32BIT) priv->i2s_object->word_length = WL_32b;
+	if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_16BIT) priv->i2s_object.word_length = WL_16b;
+	else if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_24BIT) priv->i2s_object.word_length = WL_24b;
+	else if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_32BIT) priv->i2s_object.word_length = WL_32b;
 
 }
 
@@ -1771,14 +1766,20 @@ struct i2s_dev_s *amebad_i2s_initialize(uint16_t port)
 	amebad_i2s_initpins(priv);
 
 	/* Initialize buffering */
+#if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	i2s_buf_rx_initialize(priv);
+	priv->rxenab = 1;
+#endif
+#if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	i2s_buf_tx_initialize(priv);
+	priv->txenab = 1;
+#endif
 
 	/* I2s object initialization */
-	i2s_init(priv->i2s_object, priv->i2s_sclk_pin, priv->i2s_ws_pin, priv->i2s_sd_tx_pin, priv->i2s_sd_rx_pin, priv->i2s_mck_pin);
+	i2s_init(&priv->i2s_object, priv->i2s_sclk_pin, priv->i2s_ws_pin, priv->i2s_sd_tx_pin, priv->i2s_sd_rx_pin, priv->i2s_mck_pin);
 
 	/* Initialize buffering */
-	i2s_set_dma_buffer(priv->i2s_object, priv->i2s_tx_buf, priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
+	//i2s_set_dma_buffer(&priv->i2s_object, priv->i2s_tx_buf, priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
 
 	/* configures IRQ */
 	priv->rx_isr_handler = &i2s_transfer_rx_handleirq;
@@ -1800,11 +1801,11 @@ struct i2s_dev_s *amebad_i2s_initialize(uint16_t port)
 	}
 
 	/* Basic settings */
-	priv->i2s_num = priv->i2s_object->i2s_idx;
+	priv->i2s_num = priv->i2s_object.i2s_idx;
 
 	g_i2sdevice[port] = priv;
 
-	i2s_disable(priv->i2s_object);
+	i2s_disable(&priv->i2s_object);
 
 	/* Success exit */
 	return &priv->dev;

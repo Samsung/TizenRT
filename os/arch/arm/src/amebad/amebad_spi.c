@@ -132,15 +132,15 @@ struct amebad_spidev_s {
 	sem_t exclsem;              /* Held while chip is selected for mutual exclusion */
 	uint32_t frequency;         /* Requested clock frequency */
 	uint32_t actual;            /* Actual clock frequency */
-	int8_t nbits;               /* Width of word in bits */
-	uint8_t mode;               /* Mode 0,1,2,3 */
 
-	spi_t* spi_object;
+	spi_t spi_object;
 	uint32_t spi_idx;
 	PinName spi_mosi;
 	PinName spi_miso;
 	PinName spi_sclk;
 	PinName spi_cs;
+	int8_t nbits;               /* Width of word in bits */
+	uint8_t mode;               /* Mode 0,1,2,3 */
 	int role;
 };
 
@@ -244,11 +244,16 @@ static struct amebad_spidev_s g_spi0dev = {
 	.txch         = DMAMAP_SPI1_TX,
 #endif
 */
+
+	.spi_object = {0},
+
 	.spi_idx = MBED_SPI0,
 	.spi_mosi = PA_16,
 	.spi_miso = PA_17,
 	.spi_sclk = PA_18,
 	.spi_cs = PA_19,
+	.nbits = 8,
+	.mode = SPIDEV_MODE0,
 	.role = AMEBAD_SPI_SLAVE,
 };
 
@@ -293,11 +298,16 @@ static struct amebad_spidev_s g_spi1dev = {
 	.txch         = DMAMAP_SPI1_TX,
 #endif
 */
+
+	.spi_object = {0},
+
 	.spi_idx = MBED_SPI1,
 	.spi_mosi = PB_4,
 	.spi_miso = PB_5,
 	.spi_sclk = PB_6,
 	.spi_cs = PB_7,
+	.nbits = 8,
+	.mode = SPIDEV_MODE0,
 	.role = AMEBAD_SPI_MASTER
 };
 /************************************************************************************
@@ -322,7 +332,7 @@ static struct amebad_spidev_s g_spi1dev = {
 static inline uint8_t amebad_spi_getreg8(FAR struct amebad_spidev_s *priv,
 					uint8_t offset)
 {
-	return 0; //getreg8(priv->spibase + offset);
+	return 0;
 }
 
 /************************************************************************************
@@ -362,7 +372,7 @@ static inline void amebad_spi_putreg8(FAR struct amebad_spidev_s *priv,
 static inline uint32_t amebad_spi_getreg32(FAR struct amebad_spidev_s *priv,
 					uint8_t offset)
 {
-	return 0; //getreg32(priv->spibase + offset);
+	return 0;
 }
 
 /************************************************************************************
@@ -483,8 +493,8 @@ static inline bool amebad_spi_9to16bitmode(FAR struct amebad_spidev_s *priv)
 {
 	bool ret;
 
-	if (priv->nbits > 8) ret = true;
-	else ret = false;
+	if (priv->nbits < 9) ret = false;
+	else ret = true;
 
 	return ret;
 }
@@ -510,7 +520,6 @@ static void amebad_spi_modifyreg32(FAR struct amebad_spidev_s *priv,
 				uint8_t offset, uint32_t clrbits,
 				uint32_t setbits)
 {
-	//modifyreg32(priv->spibase + offset, clrbits, setbits);
 }
 
 /************************************************************************************
@@ -775,8 +784,8 @@ static uint32_t amebad_spi_setfrequency(FAR struct spi_dev_s *dev,
 
 		priv->frequency = frequency;
 
-		if (priv->spi_idx == MBED_SPI0) 
-			spi_frequency(priv->spi_object, priv->frequency);
+		if (priv->role == AMEBAD_SPI_MASTER)
+			spi_frequency(&priv->spi_object, priv->frequency);
 	}
 
 	return priv->frequency;
@@ -809,6 +818,7 @@ static void amebad_spi_setmode(FAR struct spi_dev_s *dev, enum spi_mode_e mode)
 		/* Disable SPI if it is enabled */
 
 		priv->mode = mode;
+		spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 
 	}
 }
@@ -845,6 +855,7 @@ static void amebad_spi_setbits(FAR struct spi_dev_s *dev, int nbits)
 		/* Save the selection so the subsequence re-configurations will be faster */
 
 		priv->nbits = nbits;
+		spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 
 	}
 }
@@ -905,12 +916,12 @@ static uint16_t amebad_spi_send(FAR struct spi_dev_s *dev, uint16_t wd)
 	uint16_t ret;
 	DEBUGASSERT(priv);
 
-	if (priv->spi_idx == MBED_SPI1) {
+	if (priv->role == AMEBAD_SPI_MASTER) {
 
-		ret = spi_master_write(priv->spi_object, wd);
-	} else if (priv->spi_idx == MBED_SPI0) {
+		ret = spi_master_write(&priv->spi_object, wd);
+	} else if (priv->role == AMEBAD_SPI_SLAVE) {
 
-		spi_slave_write(priv->spi_object, wd);
+		spi_slave_write(&priv->spi_object, wd);
 		ret = wd;
 	}
 
@@ -1117,14 +1128,12 @@ static void amebad_spi_bus_initialize(struct amebad_spidev_s *priv)
 {
 
 	DEBUGASSERT(priv);
-	DEBUGASSERT(!priv->spi_object);
-	priv->spi_object = (spi_t *)kmm_malloc(sizeof(spi_t));
 	DEBUGASSERT(priv->spi_object);
 
-	priv->spi_object->spi_idx = priv->spi_idx;
-	spi_init(priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs);
+	priv->spi_object.spi_idx = priv->spi_idx;
+	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs);
 
-	spi_format(priv->spi_object, priv->nbits, priv->mode, priv->role);
+	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 
 }
 
