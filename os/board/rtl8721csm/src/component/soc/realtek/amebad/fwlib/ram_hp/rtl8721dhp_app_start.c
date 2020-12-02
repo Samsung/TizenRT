@@ -7,6 +7,9 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 
+#include <tinyara/config.h>
+#include <tinyara/mpu.h>
+
 #include "ameba_soc.h"
 #include "rtl8721d_system.h"
 #include "psram_reserve.h"
@@ -1338,9 +1341,6 @@ extern void __libc_init_array(void);
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 	mpu_init();
 	app_mpu_nocache_init();
-
-	/* Initialize number of mpu regions for board specific purpose */
-	mpu_set_nregion_board_specific(1);
 #endif
 	app_vdd1833_detect();
 	memcpy_gdma_init();
@@ -1349,6 +1349,9 @@ extern void __libc_init_array(void);
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 #ifdef CONFIG_ARMV8M_MPU
+	/* Initialize number of mpu regions for board specific purpose */
+	mpu_set_nregion_board_specific(1);
+
 	up_mpuinitialize();
 #endif
 
