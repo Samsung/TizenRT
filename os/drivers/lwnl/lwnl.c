@@ -144,19 +144,39 @@ errout:
 	return ret;
 }
 
-
 static int lwnl_close(struct file *filep)
 {
 	LWNL_ENTER;
 	struct inode *inode = filep->f_inode;
 	struct lwnl_upperhalf_s *upper = inode->i_private;
 	int ret = OK;
+#ifndef CONFIG_DISABLE_POLL
+	FAR struct lwnl_open_s *opriv = &upper->ln_open;
+	int waiter_idx;
+#endif
 
 	if (upper->crefs > 0) {
 		upper->crefs--;
 	} else {
 		ret = -ENOSYS;
 	}
+
+#ifndef CONFIG_DISABLE_POLL
+	LWNLDEV_LOCK(upper);
+
+	/*
+	 * Check if this file is registered in a list of waiters for polling.
+	 * If it is, the used slot should be cleared.
+	 * Otherwise, an invalid pollfd remains in a list and this slot is not available forever.
+	 */
+	for (waiter_idx = 0; waiter_idx < LWNL_NPOLLWAITERS; waiter_idx++) {
+		struct pollfd *fds = opriv->io_fds[waiter_idx];
+		if (fds && fds->priv == (FAR void *)&opriv->io_fds[waiter_idx]) {
+			opriv->io_fds[waiter_idx] = NULL;
+		}
+	}
+	LWNLDEV_UNLOCK(upper);
+#endif
 
 	int res = lwnl_remove_listener(filep);
 	if (res < 0) {
