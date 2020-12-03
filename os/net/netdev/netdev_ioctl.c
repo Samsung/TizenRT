@@ -561,17 +561,6 @@ static int _handle_ipv6_cmd(FAR struct socket *sock, int cmd, FAR struct ifreq *
 		}
 	}
 		break;
-	case SIOCGLIFADDR: {		/* Get IP address */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_getipv6addr(&lreq->lifr_addr, ip_2_ip6(&dev->ip_addr));
-			ret = OK;
-#endif
-		}
-	}
-		break;
 
 	case SIOCSLIFADDR: {		/* Set IP address */
 		dev = netdev_ifrdev(req);
@@ -580,60 +569,6 @@ static int _handle_ipv6_cmd(FAR struct socket *sock, int cmd, FAR struct ifreq *
 			netdev_soft_ifdown(dev);
 			netdev_setipv6addr(dev, &lreq->lifr_addr);
 			netdev_soft_ifup(dev);
-			ret = OK;
-		}
-	}
-		break;
-
-	case SIOCGLIFDSTADDR: {		/* Get P-to-P address */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_getipv6addr(&lreq->lifr_dstaddr, ip_2_ip6(&dev->gw));
-#endif							/* CONFIG_NET_LWIP */
-			ret = OK;
-		}
-	}
-		break;
-
-	case SIOCSLIFDSTADDR: {		/* Set P-to-P address */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_setipv6addr(ip_2_ip6(&dev->gw), &lreq->lifr_dstaddr);
-#endif							/* CONFIG_NET_LWIP */
-			ret = OK;
-		}
-	}
-		break;
-
-	case SIOCGLIFBRDADDR:		/* Get broadcast IP address */
-	case SIOCSLIFBRDADDR: {		/* Set broadcast IP address */
-		ret = -ENOSYS;
-	}
-		break;
-
-	case SIOCGLIFNETMASK: {		/* Get network mask */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_getipv6addr(&lreq->lifr_addr, ip_2_ip6(&dev->netmask));
-#endif							/* CONFIG_NET_LWIP */
-			ret = OK;
-		}
-	}
-		break;
-
-	case SIOCSLIFNETMASK: {		/* Set network mask */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
-#ifdef CONFIG_NET_LWIP
-			ioctl_setipv6addr(ip_2_ip6(&dev->netmask), &lreq->lifr_addr);
-#endif							/* CONFIG_NET_LWIP */
 			ret = OK;
 		}
 	}
@@ -921,17 +856,17 @@ static int _handle_netdev_cmd(FAR struct socket *sock, int cmd, FAR struct ifreq
  *
  ****************************************************************************/
 
-static int netdev_ifrioctl(int cmd, FAR struct ifreq *req)
+static int netdev_ifrioctl(struct socket *sock, int cmd, FAR struct ifreq *req)
 {
 	int ret = -EINVAL;
 
 	//nvdbg("cmd: %d\n", cmd);
 
 	/* Execute the command */
-	ret = _handle_netdev_cmd(sock, cmd, req);
+	ret = _handle_netdev_cmd(NULL, cmd, req);
 
 	if (ret != OK) {
-		ret = _handle_ip_cmd(sock, cmd, req);
+		ret = _handle_ip_cmd(NULL, cmd, req);
 	}
 
 #ifdef CONFIG_NET_IPv4
@@ -996,13 +931,15 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
  ****************************************************************************/
 
 #ifdef CONFIG_NET_NETMON
+/*  This function is not supported anymore.
+    However network manager provides same feature. */
 static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 {
 	int ret = -EINVAL;
-	int num_copy;
+	int num_copy = 0;
 	switch (cmd) {
 	case SIOCGETSOCK:          /* Get socket info. */
-		num_copy = copy_socket(arg);
+		//num_copy = copy_socket(arg);
 		/* num_copy shoud be larger than 0 (this socket) */
 		if (num_copy > 0) {
 			ret = OK;
@@ -1287,7 +1224,7 @@ int lwipioctl(int sockfd, int cmd, void *arg)
  *
  ****************************************************************************/
 
-int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
+int net_ioctl(int sockfd, int cmd, unsigned long arg)
 {
 	FAR struct socket *sock = NULL;
 	int ret = -ENOTTY;
@@ -1303,13 +1240,6 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 	}
 
 	/* Verify that the sockfd corresponds to valid, allocated socket */
-
-	sock = get_socket(sockfd);
-
-	if (NULL == sock) {
-		ret = -EBADF;
-		goto errout;
-	}
 
 	/* Execute the command */
 #ifdef CONFIG_NET_LWIP
