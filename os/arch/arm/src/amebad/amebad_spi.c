@@ -1128,7 +1128,7 @@ static void amebad_spi_bus_initialize(struct amebad_spidev_s *priv)
 {
 
 	DEBUGASSERT(priv);
-	DEBUGASSERT(priv->spi_object);
+	DEBUGASSERT(&priv->spi_object);
 
 	priv->spi_object.spi_idx = priv->spi_idx;
 	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs);

@@ -79,6 +79,9 @@
  * Pre-processor Definitions
  ************************************************************************************/
 extern FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmode, u32 pinpull);
+#if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_AMEBAD_I2S)
+extern int i2schar_devinit(void);
+#endif
 
 /************************************************************************************
  * Private Functions
@@ -87,6 +90,13 @@ extern FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmo
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+void board_i2s_initialize(void)
+{
+#if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_AMEBAD_I2S)
+	i2schar_devinit();
+#endif
+}
+
 void board_spi_initialize(void)
 {
 #ifdef CONFIG_SPI
@@ -268,6 +278,7 @@ void board_initialize(void)
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_spi_initialize();
+	board_i2s_initialize();
 #ifdef CONFIG_WATCHDOG
 	amebad_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif

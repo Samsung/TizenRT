@@ -380,6 +380,10 @@ static int i2s_tx_start(struct amebad_i2s_s *priv)
 	int ret;
 	irqstate_t flags;
 	int* ptx_buf;
+	int pg_idx;
+
+	struct ap_buffer_s *apb;
+	apb = bfcontainer->apb;
 
 	/* Check if the DMA is IDLE */
 	if (!sq_empty(&priv->tx.act)) {
@@ -403,8 +407,16 @@ static int i2s_tx_start(struct amebad_i2s_s *priv)
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->tx.act);
 
 		i2s_set_direction(&priv->i2s_object, I2S_DIR_TX);
-		ptx_buf = i2s_get_tx_page(&priv->i2s_object);
-		i2s_send_page(&priv->i2s_object, (uint32_t*)ptx_buf);
+
+		/* send I2S_DMA_PAGE_NUM page, after that the txdma callback will be called in the tx irq handler */
+		for (pg_idx = 0; pg_idx < I2S_DMA_PAGE_NUM; ++pg_idx) {
+
+			ptx_buf = i2s_get_tx_page(&priv->i2s_object);
+			i2s_send_page(&priv->i2s_object, (uint32_t*)ptx_buf);
+			apb->curbyte += (I2S_DMA_PAGE_SIZE/sizeof(short));
+			if(apb->curbyte >= apb->nmaxbytes*(priv->i2s_object.channel_num == CH_MONO?1:2))
+				apb->curbyte = 0;
+		}
 	}
 
 	irqrestore(flags);
@@ -672,9 +684,6 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 {
 	struct amebad_i2s_s *priv = (struct amebad_i2s_s *)data;
 	i2s_t *obj = &priv->i2s_object;
-
-	priv->i2s_tx_buf = i2s_get_tx_page(obj);
-	i2s_send_page(obj, (uint32_t*)priv->i2s_tx_buf);
 
 	int result = OK;
 	i2s_txdma_callback(priv, result);
@@ -1046,6 +1055,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 	struct amebad_i2s_s *priv = (struct amebad_i2s_s *)data;
 	i2s_t *obj = &priv->i2s_object;
 
+	/* submit a new page for receive */
 	i2s_recv_page(obj);
 
 	int result = OK;
@@ -1583,62 +1593,6 @@ static void amebad_i2s_initpins(struct amebad_i2s_s *priv)
 	priv->i2s_sd_tx_pin = PB_26;
 	priv->i2s_sd_rx_pin = PA_0;
 	priv->i2s_mck_pin = PA_12;
-}
-
-/****************************************************************************
-* Name: amebad_i2s_init_buffer
-*
-* Description:
-*   Initialize serial buffers.
-*
-* Input Parameters:
-*   dev  - Device-specific state data
-*
-****************************************************************************/
-
-static void amebad_i2s_init_buffer(struct amebad_i2s_s *priv)
-{
-#if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-	uint8_t* rx_buffer = (uint8_t *)kmm_malloc(I2S_DMA_PAGE_SIZE*I2S_DMA_PAGE_NUM);
-	priv->i2s_rx_buf = rx_buffer;
-	priv->rxenab = 1;
-#endif
-
-#if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
-	uint8_t* tx_buffer = (uint8_t *)kmm_malloc(I2S_DMA_PAGE_SIZE*I2S_DMA_PAGE_NUM);
-	priv->i2s_tx_buf = tx_buffer;
-	priv->txenab = 1;
-#endif
-}
-
-/****************************************************************************
-* Name: amebad_i2s_deinit_buffer
-*
-* Description:
-*   Deinitialize serial buffers.
-*
-* Input Parameters:
-*   dev  - Device-specific state data
-*
-****************************************************************************/
-
-static void amebad_i2s_deinit_buffer(struct amebad_i2s_s *priv)
-{
-#if defined(i2s_have_rx) && (0 < i2s_have_rx)
-	if (priv->rxenab && priv->i2s_rx_buf){
-		kmm_free(priv->i2s_rx_buf);
-		priv->i2s_rx_buf = NULL;
-		priv->rxenab = 0;
-	}
-#endif
-
-#if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
-	if (priv->txenab && priv->i2s_tx_buf){
-		kmm_free(priv->i2s_tx_buf);
-		priv->i2s_tx_buf = NULL;
-		priv->txenab = 0;
-	}
-#endif
 }
 
 /****************************************************************************
