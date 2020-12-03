@@ -96,7 +96,11 @@ download_km4_bl()
 	cd ${IMG_TOOL_PATH}
 	echo ""
 	echo "=========================="
-	echo "Downloading KM4_BL IMAGE"
+	if [[ "${CONFIG_AMEBAD_TRUSTZONE}" == "y" ]];then
+		echo "Downloading KM4_BL_TZ IMAGE"
+	else
+		echo "Downloading KM4_BL IMAGE"
+	fi
 	echo "=========================="
 
 	for part in ${parts[@]}; do
@@ -110,9 +114,13 @@ download_km4_bl()
 
 	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
 
-	echo "KM4_BL Download DONE"
-
-	[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
+	if [[ "${CONFIG_AMEBAD_TRUSTZONE}" == "y" ]];then
+		echo "KM4_BL_TZ Download DONE"
+		[ -e km4_boot_all_tz.bin ] && rm km4_boot_all_tz.bin
+	else
+		echo "KM4_BL Download DONE"
+		[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
+	fi
 }
 
 download_kernel()
@@ -179,7 +187,13 @@ function get_executable_name()
 {
 	case $1 in
 		km0_bl) echo "km0_boot_all.bin";;
-		km4_bl) echo "km4_boot_all.bin";;
+		km4_bl)
+			if [[ "${CONFIG_AMEBAD_TRUSTZONE}" == "y" ]];then
+				echo "km4_boot_all_tz.bin"
+			else
+				echo "km4_boot_all.bin"
+			fi
+			;;
 		kernel) echo "km0_km4_image2.bin";;
 		userfs) echo "rtl8721csm_smartfs.bin";;
 		*) echo "No Binary Match"
@@ -257,7 +271,11 @@ function get_partition_sizes()
 # Start here
 
 cp -p ${BIN_PATH}/km0_boot_all.bin ${IMG_TOOL_PATH}/km0_boot_all.bin
-cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
+if [[ "${CONFIG_AMEBAD_TRUSTZONE}" == "y" ]];then
+	cp -p ${TOOL_PATH}/bootloader/km4_boot_all_tz.bin ${IMG_TOOL_PATH}/km4_boot_all_tz.bin
+else 
+	cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
+fi
 cp -p ${BIN_PATH}/km0_km4_image2.bin ${IMG_TOOL_PATH}/km0_km4_image2.bin
 if test -f "${SMARTFS_BIN_PATH}"; then
 	cp -p ${BIN_PATH}/rtl8721csm_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
@@ -348,7 +366,11 @@ download_all()
 	echo "Download COMPLETE!"
 
 	[ -e km0_boot_all.bin ] && rm km0_boot_all.bin
-	[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
+	if [[ "${CONFIG_AMEBAD_TRUSTZONE}" == "y" ]];then
+		[ -e km4_boot_all_tz.bin ] && rm km4_boot_all_tz.bin
+	else
+		[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
+	fi
 	[ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
 	if test -f "${SMARTFS_BIN_PATH}"; then
 		[ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
