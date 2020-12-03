@@ -23,6 +23,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
+#include <ifaddrs.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <net/if.h>

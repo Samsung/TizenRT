@@ -210,12 +210,14 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 		fromlen = sizeof(struct sockaddr_in6);
 	} else
 #endif
+	{
 		if (family == AF_INET) {
 			fromlen = sizeof(struct sockaddr_in);
 		} else {
 			printf("ping_recv: invalid family\n");
 			return;
 		}
+	}
 
 	/* allocate memory due to difference of size between ipv4/v6 socket structure */
 	from = malloc(fromlen);
@@ -375,6 +377,7 @@ static int ping_send(int s, struct sockaddr *to, int size)
 		icmplen = sizeof(struct icmp6_echo_hdr) + size;
 	} else
 #endif
+	{
 		if (to->sa_family == AF_INET) {
 			addrlen = sizeof(struct sockaddr_in);
 			icmplen = sizeof(struct icmp_echo_hdr) + size;
@@ -382,6 +385,7 @@ static int ping_send(int s, struct sockaddr *to, int size)
 			printf("ping_send: invalid family\n");
 			return ERROR;
 		}
+	}
 
 	iecho = (struct icmp_echo_hdr *)malloc(icmplen);
 	if (!iecho) {
@@ -497,9 +501,10 @@ static int ping_process(int count, const char *taddr, int size, set_icmp_config 
 	close(s);
 
 	printf("--- %s ping statistics ---\n", taddr);
-	printf("%d packets transmitted, %d received, %f%% packet loss\n", ping_send_counter,
-		   g_ping_recv_counter,
-		   (100.0f * (float)(ping_send_counter - g_ping_recv_counter) / (float)ping_send_counter));
+	printf("%d packets transmitted, %d received, %f%% packet loss\n",
+			ping_send_counter,
+			g_ping_recv_counter,
+			(100.0f * (float)(ping_send_counter - g_ping_recv_counter) / (float)ping_send_counter));
 
 	return OK;
 

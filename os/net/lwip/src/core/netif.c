@@ -1223,8 +1223,8 @@ err_t netif_gen_stable_private_id(struct netif *netif, s8_t addr_idx, ip6_addr_t
 	for (i = 0; i < netif->hwaddr_len; i++) {
 		param.mac[i] = netif->hwaddr[i];
 	}
-
-	mbedtls_sha256(param.data, sizeof(param.data), rid.val, 0);
+	// ToDo : mbedTLS is in userspace. so mbedtls_sha256 can't be called.
+	//mbedtls_sha256(param.data, sizeof(param.data), rid.val, 0);
 
 	addr->addr[0] = addr->addr[1] = 0;
 	addr->addr[2] = rid.addr[0];

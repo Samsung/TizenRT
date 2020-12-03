@@ -84,14 +84,7 @@
 
 /* IPv6 interface control operations */
 
-#define SIOCGLIFADDR     _SIOC(0x000a)	/* Get IP address */
 #define SIOCSLIFADDR     _SIOC(0x000b)	/* Set IP address */
-#define SIOCGLIFDSTADDR  _SIOC(0x000c)	/* Get P-to-P address */
-#define SIOCSLIFDSTADDR  _SIOC(0x000d)	/* Set P-to-P address */
-#define SIOCGLIFBRDADDR  _SIOC(0x000e)	/* Get broadcast IP address */
-#define SIOCSLIFBRDADDR  _SIOC(0x000f)	/* Set broadcast IP address */
-#define SIOCGLIFNETMASK  _SIOC(0x0010)	/* Get network mask */
-#define SIOCSLIFNETMASK  _SIOC(0x0011)	/* Set network mask */
 #define SIOCGLIFMTU      _SIOC(0x0012)	/* Get MTU size */
 #define SIOCIFAUTOCONF   _SIOC(0x0013)	/* Perform ICMPv6 auto-configuration */
 
