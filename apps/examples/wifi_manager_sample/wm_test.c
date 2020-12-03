@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <wifi_manager/wifi_manager.h>
+#include "wm_test.h"
 
 #define WM_TEST_COUNT  10
 
@@ -83,25 +84,6 @@
 	INFO_USAGE										\
 	REPEATTC_USAGE
 
-
-typedef void (*test_func)(void *arg);
-
-struct options {
-	test_func func;
-	uint16_t channel;
-	char *ssid;
-	char *bad_ssid;
-	char *password;
-	char *bad_password;
-	wifi_manager_ap_auth_type_e    auth_type;
-	wifi_manager_ap_crypto_type_e  crypto_type;
-	char *softap_ssid;
-	char *softap_password;
-	int scan_specific;
-};
-
-typedef int (*exec_func)(struct options *opt, int argc, char *argv[]);
-
 /**
  * Internal functions
  */
@@ -157,6 +139,7 @@ static int wm_parse_commands(struct options *opt, int argc, char *argv[]);
 #ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
 extern void wm_run_stress_test(void *arg);
 #endif
+extern void wm_test_on_off(void *arg);
 
 /*
  * Global
@@ -286,6 +269,7 @@ typedef enum {
 	WM_TEST_STATS,
 	WM_TEST_INFO,
 	WM_TEST_AUTO,
+	WM_TEST_ONOFF,
 	WM_TEST_STRESS,
 	WM_TEST_MAX,
 } wm_test_e;
@@ -306,6 +290,7 @@ test_func func_table[WM_TEST_MAX] = {
 	wm_get_stats,
 	wm_get_conn_info,
 	wm_auto_test,
+	wm_test_on_off,
 #ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
 	wm_run_stress_test
 #else
@@ -329,6 +314,7 @@ exec_func exec_table[WM_TEST_MAX] = {
 	NULL,                                      /* WM_TEST_STATS    */
 	NULL,                                      /* WM_TEST_INFO     */
 	_wm_test_auto,                             /* WM_TEST_AUTO     */
+	_wm_test_join,
 	NULL                                       /* WM_TEST_STRESS   */
 };
 
@@ -348,6 +334,7 @@ char *func_name[WM_TEST_MAX] = {
 	"stats",
 	"info",
 	"auto",
+	"on_off",
 	"stress"
 };
 

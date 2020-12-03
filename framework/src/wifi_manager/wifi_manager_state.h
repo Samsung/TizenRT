@@ -27,8 +27,6 @@ enum _wifimgr_state {
 	WIFIMGR_STA_CONNECTING,
 	WIFIMGR_STA_CONNECTED,
 	WIFIMGR_STA_RECONNECT, // 5
-	WIFIMGR_STA_RECONNECTING,
-	WIFIMGR_STA_CONNECT_CANCEL,
 	WIFIMGR_SOFTAP,
 	WIFIMGR_SCANNING,
 	WIFIMGR_NONE, // it is used for prev state only
@@ -36,5 +34,13 @@ enum _wifimgr_state {
 };
 typedef enum _wifimgr_state wifimgr_state_e;
 
+enum _wifimgr_disconn_substate {
+	WIFIMGR_DISCONN_NONE = -1,
+	WIFIMGR_DISCONN_DEINIT, // turn off wi-fi manager while station connected to AP
+	WIFIMGR_DISCONN_SOFTAP, // set softap mode while station connected to AP
+	WIFIMGR_DISCONN_INTERNAL_ERROR, // internal error ex) dhcp fails
+	WIFIMGR_DISCONN_MAX,
+};
+typedef enum _wifimgr_disconn_substate _wifimgr_disconn_substate_e;
 
 #endif // _WIFI_MANAGER_STATE_H__

@@ -78,14 +78,6 @@ static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn
 		*conn = AP_RECONNECTING;
 		*mode = STA_MODE;
 		break;
-	case WIFIMGR_STA_RECONNECTING:
-		*conn = AP_RECONNECTING;
-		*mode = STA_MODE;
-		break;
-	case WIFIMGR_STA_CONNECT_CANCEL:
-		*conn = AP_DISCONNECTED;
-		*mode = STA_MODE;
-		break;
 	case WIFIMGR_SOFTAP:
 		// Todo: wifi manager doesn't provide join info in softap *mode
 		// so set unknown state to *conn;
