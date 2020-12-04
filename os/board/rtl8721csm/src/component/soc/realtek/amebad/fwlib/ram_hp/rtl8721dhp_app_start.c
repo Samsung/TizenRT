@@ -31,6 +31,7 @@ SECTION(".data") u8* __ram_nocache_end__ = 0;
 SECTION(".data") u8* __psram_bss_start__ = 0;
 SECTION(".data") u8* __psram_bss_end__ = 0;
 #endif
+static u32 g_mpu_nregion_allocated;
 extern int main(void);
 extern u32 GlobalDebugEnable;
 struct _driver_call_os_func_map driver_call_os_func_map;
@@ -945,7 +946,6 @@ u32 app_mpu_nocache_init(void)
 	/* It is for wifi related buffer area, to prevent non-sync from happening.
 	*  Because DMA is involved, so it cannot be used together with cache.
 	*/
-	mpu_entry = mpu_entry_alloc();
 	if (wifi_config.km4_cache_enable) {
 		mpu_cfg.region_base = (uint32_t)__ram_nocache_start__;
 		mpu_cfg.region_size = __ram_nocache_end__-__ram_nocache_start__;
@@ -958,6 +958,7 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	if (mpu_cfg.region_size >= 32) {
+		mpu_entry = mpu_entry_alloc();
 		mpu_region_cfg(mpu_entry, &mpu_cfg);
 	}
 
@@ -1010,6 +1011,7 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
+	g_mpu_nregion_allocated = mpu_entry + 1;
 	return 0;
 }
 
@@ -1350,7 +1352,7 @@ extern void __libc_init_array(void);
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 #ifdef CONFIG_ARMV8M_MPU
 	/* Initialize number of mpu regions for board specific purpose */
-	mpu_set_nregion_board_specific(1);
+	mpu_set_nregion_board_specific(g_mpu_nregion_allocated);
 
 	up_mpuinitialize();
 #endif
