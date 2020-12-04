@@ -66,7 +66,7 @@ void _wifi_dhcps_event(dhcp_evt_type_e type, void *data)
 {
 	WM_ENTER;
 	if (type == DHCP_ACK_EVT) {
-		wifimgr_msg_s msg = {EVT_DHCPS_ASSIGN_IP, data, NULL};
+		wifimgr_msg_s msg = {EVT_DHCPS_ASSIGN_IP, WIFI_MANAGER_FAIL, data, NULL};
 		WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), "[WM] handle dhcpd event fail\n");
 	}
 	return;
@@ -76,7 +76,7 @@ void _wifi_dhcps_event(dhcp_evt_type_e type, void *data)
 void _wifi_utils_connect_event(wifi_utils_result_e result, void *arg)
 {
 	WM_ENTER;
-	wifimgr_msg_s msg = {EVT_STA_CONNECTED, NULL, NULL};
+	wifimgr_msg_s msg = {EVT_STA_CONNECTED, WIFI_MANAGER_FAIL, NULL, NULL};
 	if (result == WIFI_UTILS_FAIL) {
 		msg.event = EVT_STA_CONNECT_FAILED;
 	}
@@ -87,7 +87,7 @@ void _wifi_utils_connect_event(wifi_utils_result_e result, void *arg)
 void _wifi_utils_disconnect_event(void *arg)
 {
 	WM_ENTER;
-	wifimgr_msg_s msg = {EVT_STA_DISCONNECTED, NULL, NULL};
+	wifimgr_msg_s msg = {EVT_STA_DISCONNECTED, WIFI_MANAGER_FAIL, NULL, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), "[WM] handle disconnect event fail\n");
 }
 
@@ -96,7 +96,7 @@ void _wifi_utils_join_event(void *arg)
 {
 #ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
 	WM_ENTER;
-	wifimgr_msg_s msg = {EVT_JOINED, NULL, NULL};
+	wifimgr_msg_s msg = {EVT_JOINED, WIFI_MANAGER_FAIL, NULL, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), "[WM] handle join event fail\n");
 #endif
 	return;
@@ -106,7 +106,7 @@ void _wifi_utils_join_event(void *arg)
 void _wifi_utils_leave_event(void *arg)
 {
 	WM_ENTER;
-	wifimgr_msg_s msg = {EVT_LEFT, NULL, NULL};
+	wifimgr_msg_s msg = {EVT_LEFT, WIFI_MANAGER_FAIL, NULL, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), "[WM] handle leave event fail\n");
 }
 
@@ -114,7 +114,7 @@ void _wifi_utils_leave_event(void *arg)
 void _wifi_utils_scan_done(wifi_utils_result_e result, wifi_utils_scan_list_s *slist, void *arg)
 {
 	WM_ENTER;
-	wifimgr_msg_s msg = {EVT_SCAN_DONE, (void *)slist, NULL};
+	wifimgr_msg_s msg = {EVT_SCAN_DONE, WIFI_MANAGER_FAIL, (void *)slist, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), "[WM] handle scan done event fail\n");
 }
 
