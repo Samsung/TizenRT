@@ -267,12 +267,18 @@ static ssize_t amebad_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyte
  * Name: amebad_write
  ************************************************************************************/
 
-#if defined(CONFIG_MTD_BYTE_WRITE)
+#ifdef CONFIG_MTD_BYTE_WRITE
 static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR const uint8_t *buffer)
 {
 	FAR struct amebad_dev_s *priv = (FAR struct mtd_dev_s *)dev;
+	size_t addr;
+	ssize_t result;
+	addr = CONFIG_AMEBAD_FLASH_BASE + offset;
+	result = amebad_flash_write(addr, buffer, nbytes);
+	return result < 0 ? result : nbytes;
 }
 #endif
+
 
 /************************************************************************************
  * Name: amebad_ioctl
