@@ -254,7 +254,7 @@ wifi_manager_result_e _wifimgr_run_sta(void)
 {
 	WM_ENTER;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_sta(), "[WM] Starting STA failed.", WIFI_MANAGER_FAIL);
-#if CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
+#ifdef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
 #else
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
@@ -430,7 +430,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 	}
 	WIFIMGR_SET_MACADDR((char *)info.mac_address);
 
-#if CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
+#ifdef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
 #else
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
