@@ -692,9 +692,11 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 	case LOADCMD_LOAD_ALL:
 		loader_func = loadingall_thread;
 		break;
+#ifdef CONFIG_BINMGR_RECOVERY
 	case LOADCMD_RELOAD:
 		loader_func = reloading_thread;
 		break;
+#endif
 	case LOADCMD_UPDATE:
 		loader_func = update_thread;
 		break;
