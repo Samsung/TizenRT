@@ -127,6 +127,20 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 
 	heapbase = MM_ALIGN_UP((uintptr_t)heapstart);
 	heapend  = MM_ALIGN_DOWN((uintptr_t)heapstart + (uintptr_t)heapsize);
+	if ((heapbase < (uintptr_t)heapstart)) {
+		/* heapbase cannot be smaller than heapstart.
+		 * If this happens, heapbase can be overflowed from alignment.
+		 */
+		return;
+	}
+
+	if (heapbase >= (uintptr_t)heapend) {
+		/* heapbase is aligned up from heapstart,
+		 * and heapend is the summation of heapstart and heapsize.
+		 * If heapsize is very small, align-up address can be equal to or greater than heapend.
+		 */
+		return;
+	}
 	heapsize = heapend - heapbase;
 
 	mlldbg("Region %d: base=%p size=%u\n", IDX + 1, heapstart, heapsize);
