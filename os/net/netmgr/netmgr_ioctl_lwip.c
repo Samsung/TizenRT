@@ -252,6 +252,14 @@ static int _netdev_free_addrinfo(struct addrinfo *ai)
 
 	while (ai != NULL) {
 		next = ai->ai_next;
+		if (ai->ai_addr) {
+			kumm_free(ai->ai_addr);
+			ai->ai_addr = NULL;
+		}
+		if (ai->ai_canonname) {
+			kumm_free(ai->ai_canonname);
+			ai->ai_canonname = NULL;
+		}
 		kumm_free(ai);
 		ai = next;
 	}
@@ -305,6 +313,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 			ret = -EINVAL;
 		} else {
 			req->ai_res = _netdev_copy_addrinfo(res);
+			lwip_freeaddrinfo(res);
 			ret = OK;
 		}
 		break;
