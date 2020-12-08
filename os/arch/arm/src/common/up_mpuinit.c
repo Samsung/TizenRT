@@ -73,7 +73,7 @@ static struct mpu_usages_s g_mpu_region_usages;
 
 void mpu_region_initialize(struct mpu_usages_s *mpu)
 {
-	uint8_t offset = (struct mpu_usages_s *)mpu->nregion_board_specific;
+	uint8_t offset = mpu->nregion_board_specific;
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	offset += MPU_NUM_REGIONS;
@@ -149,7 +149,6 @@ void mpu_set_nregion_board_specific(uint8_t num)
  *   resources.
  *
  ****************************************************************************/
-
 void up_mpuinitialize(void)
 {
 	/* Initialize MPU register numbers information */
