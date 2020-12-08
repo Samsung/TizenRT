@@ -185,7 +185,7 @@ static void run_init(void *arg)
 		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
-	} else{
+	} else {
 		apconfig.passphrase[0] = '\0';
 		apconfig.passphrase_length = 0;
 		apconfig.ap_crypto_type = ap_info->crypto_type;
@@ -220,7 +220,7 @@ static void wm_get_info(wifi_manager_ap_config_s *arg)
 		printf("Get AP configuration failed\n");
 		return;
 	}
-	print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Infomation");
+	print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Information");
 }
 
 static int run_connecting(wifi_manager_ap_config_s *ap_config)
