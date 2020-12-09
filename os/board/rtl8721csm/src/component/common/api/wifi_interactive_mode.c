@@ -445,7 +445,7 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
-		key_id = 1; //Foucus
+		key_id = 0;
 		if ((password_len != 5) && (password_len != 13)) {
 			ndbg("\n\rWrong WEP key length. Must be 5 or 13 ASCII characters.");
 			return -1;
