@@ -35,6 +35,14 @@ NOTE: - For devices that use ARM Cortex M, backtracking of frame pointer is not 
 Hence, it is not possible to obtain exact call stack for the crash.
 Ramdump may not produce results as expected in such cases.
 ```
+6. Enable CONFIG_BOARD_ASSERT_AUTORESET to enable resetting of TARGET device after extracting dumps
+```
+Hardware Configuration > Board Selection -> Reset a board on assert status automatically
+```
+7. Enable CONFIG_BCH to enable Block-to-Character driver support for extracting External Userfs Partition Dump
+```
+Device Drivers -> Block-to-character(BCH) Support
+```
 
 ## How to upload RAMDUMP-or-UserfsDUMP
 ### In Linux
@@ -69,9 +77,10 @@ Target device locked and ready to DUMP!!!
 Choose from the following options:-
 1. RAM Dump
 2. Userfs Dump
-3. Both RAM and Userfs Dump
-4. Exit Dump Tool
-5. Reboot TARGET Device
+3. Both RAM and Userfs dumps
+4. External Userfs Partition Dump
+5. Exit Dump Tool
+6. Reboot TARGET Device
 1 (-> RAM Dump option chosen)
 ```
 5. If RAM Dump option is chosen, tool will prompt the user for the regions to be dumped on successful handshake
@@ -108,9 +117,10 @@ Ramdump received successfully..!
 Choose from the following options:-
 1. RAM Dump
 2. Userfs Dump
-3. Both RAM and Userfs Dump
-4. Exit Dump Tool
-5. Reboot TARGET Device
+3. Both RAM and Userfs dumps
+4. External Userfs Partition Dump
+5. Exit Dump Tool
+6. Reboot TARGET Device
 2 (-> Userfs Dump option chosen)
 ```
 8. If Userfs Dump option is chosen, tool will dump the region on successful handshake
@@ -132,22 +142,50 @@ Filesystem Dump received successfully
 Choose from the following options:-
 1. RAM Dump
 2. Userfs Dump
-3. Both RAM and Userfs Dump
-4. Exit Dump Tool
-5. Reboot TARGET Device
-5 (-> Reboot TARGET Device option chosen)
+3. Both RAM and Userfs dumps
+4. External Userfs Partition Dump
+5. Exit Dump Tool
+6. Reboot TARGET Device
+4 (-> External Userfs Partition dump option chosen)
 ```
-10. If Reboot TARGET Device option is chosen, tool will send a Reboot signal string to the TARGET device and exit
+10. If External Userfs Partition dump option is chosen, tool will dump the Userfs partition on the External Flash on successful handshake..
+```
+DUMPING EXTERNAL USERFS DUMP PARTITION
+do_handshake: Target Handshake successful
+
+=========================================================================
+External filesystem size = 03145728
+=========================================================================
+
+Receiving external file system dump.....
+[===================-========================================================================================
+=============================================================================================================
+=================>]
+
+External Userfs partition dump received successfully
+```
+11. The dump tool will again provide a list of options for the user to choose from
+```
+Choose from the following options:-
+1. RAM Dump
+2. Userfs Dump
+3. Both RAM and Userfs dumps
+4. External Userfs Partition Dump
+5. Exit Dump Tool
+6. Reboot TARGET Device
+6 (-> Reboot TARGET Device option chosen)
+```
+12. If Reboot TARGET Device option is chosen, tool will send a Reboot signal string to the TARGET device and exit
 ```
 CONFIG_BOARD_ASSERT_AUTORESET needs to be enabled to reboot TARGET Device after a crash
 do_handshake: Target Handshake successful
 Dump tool exits after successful operation
 ```
-11. The dump tool exits if user chooses Option 4.
+13. The dump tool exits if user chooses Option 5.
 ```
 Dump tool exits after successful operation
 ```
-12. NOTE: The device stays in a loop, waiting for the next handshake/reboot signal till the user sends the Reboot signal.
+14. NOTE: The device stays in a loop, waiting for the next handshake/reboot signal till the user sends the Reboot signal.
 
 ### In Windows
 With the RAMDUMP configured above, whenever the target board crashes because an assert condition, it enters PANIC mode, and displays the following message:  
