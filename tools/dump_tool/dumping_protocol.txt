@@ -30,7 +30,8 @@ HOST  <------------ TARGET
 4.  TARGET compares the handshake string against the following: -
 	RAMDUMP_HANDSHAKE_STRING, if matched, go to step 5
 	FSDUMP_HANDSHAKE_STRING, if matched, go to step 19
-	TARGET_REBOOT_STRING, if matched, go to step 27
+	EXTFSDUMP_HANDSHAKE_STRING, if matched, go to step 27
+	TARGET_REBOOT_STRING, if matched, go to step 33
 	else, send Negative Acknowledgement 'N', go to step 1
 5.  TARGET sends Acknowledgement 'A' to HOST.
 6.  TARGET will send 1 byte holding number of memory regions.
@@ -54,12 +55,19 @@ HOST  <------------ TARGET
 24. TARGET will send FSDUMP size bytes to the HOST.
 25. HOST will receive FSDUMP size bytes from the TARGET.
 26. goto step 1.
-27. TARGET sends Acknowledgement 'A' to HOST.
-28. If CONFIG_BOARD_ASSERT_AUTORESET is enabled, the device is reset.
-29. The dump function on the TARGET side exits.
+27. TARGET sends Acknowledgement 'A' to HOST
+28. TARGET will send 4 bytes holding the size of the Userfs partition in the External Flash.
+29. HOST will receive 4 bytes holding the siZe of the Userfs partition in the External Flash.
+30. TARGET will send EXTFSDUMP size bytes to the HOST.
+31. HOST will receive EXTFSDUMP size bytes from the TARGET.
+32. goto step 1.
+33. TARGET sends Acknowledgement 'A' to HOST.
+34. If CONFIG_BOARD_ASSERT_AUTORESET is enabled, the device is reset.
+35. The dump function on the HOST side exits.
 
 Note :
 Handshake string for dumping RAM contents is "TIZENRTRMDUMP".
 Handshake string for dumping Userfs contents is "TIZENRTFSDUMP".
-String for TARGET Reboot is "TIZENRTREBOOT".
+Handshake string for dumping External Userfs partition is "TIZENRTEXTFSD"
+Handshake string for TARGET Reboot is "TIZENRTREBOOT".
 
