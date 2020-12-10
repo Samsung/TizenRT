@@ -401,14 +401,14 @@ static void slsi_free_netdev(struct netdev *dev)
 	kmm_free(dev);
 }
 
-int slsi_linkoutput(struct netdev *dev, uint8_t *data, uint16_t dlen)
+int slsi_linkoutput(struct netdev *dev, void *buf, uint16_t dlen)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
 	struct max_buff *mbuf = NULL;
 	int ret = ERR_OK;
 	u8 *mbuf_data;
-
+	uint8_t *data = (uint8_t *)buf;
 	SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_linkoutput_packets);
 
 	if (!ndev_vif->is_available) {

@@ -24,7 +24,7 @@ TOPDIR="${OSDIR}/.."
 BUILDDIR="${TOPDIR}/build"
 BINDIR="${BUILDDIR}/output/bin"
 CONFIGDIR="${BUILDDIR}/configs"
-DOCKER_VERSION="1.5.2"
+DOCKER_VERSION="1.5.5"
 
 STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD"
 BUILD_CMD=make
@@ -65,25 +65,23 @@ function FIND_BINFILE()
 		EXTNAME=""
 	fi
 
-	if [[ "${CONFIG_BUILD_PROTECTED}" == "y" ]]; then
-		BINFILE="${BINDIR}/tinyara_user${EXTNAME}"
-	else
-		if [[ "${CONFIG_ARCH_BOARD}" == "esp32"* ]]; then
-			BINFILE="${BINDIR}/tinyara.elf${EXTNAME}"
-		elif [[ "${CONFIG_ARCH_BOARD}" == "imxrt"* ]]; then
-			# This must be same as imxrt10x0-evk_download.sh in build/configs/imxrt
-			if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]; then
-				BINFILE="${BINDIR}/wifi"
-			else
-				BINFILE="${BINDIR}/tinyara${EXTNAME}"
-			fi
-		elif [[ "${CONFIG_ARCH_BOARD}" == "artik05x" ]]; then
-			BINFILE="${BINDIR}/tinyara_head${EXTNAME}"
-		elif [[ "${CONFIG_ARCH_BOARD}" == "cy4390x" ]]; then
-			BINFILE="${BINDIR}/tinyara_master_strip"
+	if [[ "${CONFIG_ARCH_BOARD}" == "esp32"* ]]; then
+		BINFILE="${BINDIR}/tinyara.elf${EXTNAME}"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "imxrt"* ]]; then
+		# This must be same as imxrt10x0-evk_download.sh in build/configs/imxrt
+		if [[ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]]; then
+			BINFILE="${BINDIR}/wifi"
 		else
 			BINFILE="${BINDIR}/tinyara${EXTNAME}"
 		fi
+	elif [[ "${CONFIG_ARCH_BOARD}" == "artik05x" ]]; then
+		BINFILE="${BINDIR}/tinyara_head${EXTNAME}"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "cy4390x" ]]; then
+		BINFILE="${BINDIR}/tinyara_master_strip"
+	elif [[ "${CONFIG_ARCH_BOARD}" == "rtl8721csm" ]]; then
+		BINFILE="${BINDIR}/km0_km4_image2${EXTNAME}"
+	else
+		BINFILE="${BINDIR}/tinyara${EXTNAME}"
 	fi
 }
 
@@ -383,7 +381,7 @@ function DOWNLOAD()
 {
 	# Currently supports ALL only, later this will have a menu
 	pushd ${OSDIR} > /dev/null
-	${BUILD_CMD} download $1 $2 $3 $4 $5
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} ${BUILD_CMD} download $1 $2 $3 $4 $5 $6
 	popd > /dev/null
 
 	exit 0

@@ -1,2 +1,6 @@
 !./lib_wlan.a
+!./lib_wps.a
+!./lib_wlan_fpu.a
+!./lib_wps_fpu.a
 !./cmse_implib.a
+!./cmse_implib_fpu.a

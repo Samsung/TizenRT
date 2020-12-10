@@ -37,6 +37,17 @@ def roundup_power_two(size):
 
     return size
 
+def get_config_value(file_name, config):
+    with open(file_name, 'r+') as f:
+        lines = f.readlines()
+	found = False
+	value = -1
+	for line in lines:
+		if config in line:
+			value = int(line.split("=")[1])
+			break		
+	return value;
+
 def check_optimize_config(file_name):
     with open(file_name, 'r+') as f:
         lines = f.readlines()
@@ -96,18 +107,18 @@ def get_static_ram_size(bin_type):
 #
 # header information :
 #
-# total header size is 61bytes.
-# +--------------------------------------------------------------------------
-# | Header size | Binary type | Compression  | Binary priority | Binary size|
-# |   (2bytes)  |   (1byte)   |   (1byte)    |     (1byte)     |  (4bytes)  |
-# +--------------------------------------------------------------------------
-# ----------------------------------------------------------------------
-# | Binary name | Binary version | Binary ram size | Binary stack size |
-# |  (16bytes)  |   (16bytes)    |    (4bytes)     |     (4bytes)      |
-# ----------------------------------------------------------------------
+# total header size is 46bytes.
+# +--------------------------------------------------------------------------------
+# | Header size | Binary type | Compression  | Binary priority | Loading priority |
+# |   (2bytes)  |   (1byte)   |   (1byte)    |     (1byte)     |      (1bytes)    |
+# +--------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------
+# | Binary size |  Binary name | Binary version | Binary ram size | Binary stack size |
+# |  (4bytes)   |   (16bytes)  |    (4bytes)    |    (4bytes)     |     (4bytes)      |
+# -------------------------------------------------------------------------------------
 # ------------------------------ +
 # | Kernel Version |Jump address |
-# |  (8bytes)      |  (4bytes)   |
+# |  (4bytes)      |  (4bytes)   |
 # -------------------------------+
 #
 # parameter information :
@@ -122,6 +133,7 @@ def get_static_ram_size(bin_type):
 # argv[8] is main task priority.
 # argv[9] is compression type
 # argv[10] is block size for compression
+# argv[11] is a loading priority.
 #
 ############################################################################
 
@@ -135,6 +147,7 @@ main_stack_size = sys.argv[7]
 main_priority = sys.argv[8]
 comp_enabled = sys.argv[9]
 comp_blk_size = sys.argv[10]
+loading_priority = sys.argv[11]
 
 # This path is only for dbuild.
 elf_path_for_bin_type = 'root/tizenrt/build/output/bin/tinyara'
@@ -146,15 +159,16 @@ SIZE_OF_HEADERSIZE = 2
 SIZE_OF_BINTYPE = 1
 SIZE_OF_COMFLAG = 1
 SIZE_OF_MAINPRIORITY = 1
+SIZE_OF_LOADINGPRIORITY = 1
 SIZE_OF_BINSIZE = 4
 SIZE_OF_BINNAME = 16
-SIZE_OF_BINVER = 16
+SIZE_OF_BINVER = 4
 SIZE_OF_BINRAMSIZE = 4
 SIZE_OF_MAINSTACKSIZE = 4
-SIZE_OF_KERNELVER = 8
+SIZE_OF_KERNELVER = 4
 SIZE_OF_JUMPADDR = 4
 
-header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_COMFLAG + SIZE_OF_MAINPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER + SIZE_OF_JUMPADDR
+header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_COMFLAG + SIZE_OF_MAINPRIORITY + SIZE_OF_LOADINGPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER + SIZE_OF_JUMPADDR
 
 ELF = 1
 BIN = 2
@@ -164,6 +178,19 @@ COMP_LZMA = 1
 COMP_MINIZ = 2
 COMP_MAX = COMP_MINIZ
 
+# Loading priority
+LOADING_LOW = 1
+LOADING_MID = 2
+LOADING_HIGH = 3
+
+# Scheduling priority MAX/MIN
+SCHED_PRIORITY_MIN = 1
+SCHED_PRIORITY_MAX = 255
+
+# BM priority MAX/MIN
+BM_PRIORITY_MAX = 205
+BM_PRIORITY_MIN = 200
+
 # In size command on linux, 4th value is the summation of text, data and bss.
 # We will use this value for elf.
 SIZE_CMD_SUMMATION_INDEX = 3
@@ -172,6 +199,14 @@ if int(main_stack_size) >= int(dynamic_ram_size) :
     print("Error : Dynamic ram size should be bigger than Main stack size.")
     print("Dynamic ram size : %d, Main stack size : %d" %(int(dynamic_ram_size), int(main_stack_size)))
     sys.exit(1)
+
+config_path = os.getenv('TOPDIR') + '/.config'
+priority = get_config_value(config_path, "CONFIG_BM_PRIORITY_MAX=")
+if priority > 0 :
+	BM_PRIORITY_MAX = priority
+priority = get_config_value(config_path, "CONFIG_BM_PRIORITY_MIN=")
+if priority > 0 :
+	BM_PRIORITY_MIN = priority
 
 with open(file_path, 'rb') as fp:
     # binary data copy to 'data'
@@ -199,10 +234,20 @@ with open(file_path, 'rb') as fp:
         print("Error : Not supported Binary Type")
         sys.exit(1)
 
-    if 0 < int(main_priority) <= 255 :
-        main_priority = int(main_priority)
-    else :
-        print("Error : This binary priority is not valid")
+    main_priority = int(main_priority)
+    if (main_priority < SCHED_PRIORITY_MIN) or (main_priority > SCHED_PRIORITY_MAX) or (BM_PRIORITY_MIN <= main_priority and main_priority <= BM_PRIORITY_MAX) :
+        print("Error : This binary priority ", main_priority, " is not valid")
+        sys.exit(1)
+
+    # Loading priority
+    if loading_priority == 'H' or loading_priority == 'HIGH' :
+	loading_priority = LOADING_HIGH
+    elif loading_priority == 'M' or loading_priority == 'MID' :
+        loading_priority = LOADING_MID
+    elif loading_priority == 'L' or loading_priority == 'LOW' :
+        loading_priority = LOADING_LOW
+    else : #Not supported.
+        print("Error : Not supported Binary loading priority")
         sys.exit(1)
 
     static_ram_size = get_static_ram_size(bin_type)
@@ -212,6 +257,11 @@ with open(file_path, 'rb') as fp:
     else:
         binary_ram_size = int(static_ram_size) + int(dynamic_ram_size)
         binary_ram_size = roundup_power_two(binary_ram_size)
+
+    if float(kernel_ver) <= 0.0 :
+        kernel_ver = 3.0
+    else :
+        kernel_ver = float(kernel_ver)
 
     # based on comp_enabled, check if we need to compress binary.
     # If yes, assign to bin_comp value for compression algorithm to use.
@@ -240,12 +290,13 @@ with open(file_path, 'rb') as fp:
     fp.write(struct.pack('B', bin_type))
     fp.write(struct.pack('B', bin_comp))
     fp.write(struct.pack('B', main_priority))
+    fp.write(struct.pack('B', loading_priority))
     fp.write(struct.pack('I', file_size))
     fp.write('{:{}{}.{}}'.format(binary_name, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0'))
-    fp.write('{:{}{}.{}}'.format(binary_ver, '<', SIZE_OF_BINVER, SIZE_OF_BINVER - 1).replace(' ','\0'))
+    fp.write(struct.pack('I', int(binary_ver)))
     fp.write(struct.pack('I', binary_ram_size))
     fp.write(struct.pack('I', int(main_stack_size)))
-    fp.write('{:{}{}.{}}'.format(kernel_ver, '<', SIZE_OF_KERNELVER, SIZE_OF_KERNELVER - 1).replace(' ','\0'))
+    fp.write(struct.pack('f', kernel_ver))
 
     # parsing _vector_start address from elf information.
     # _vector_start is only for ARM architecture. so it

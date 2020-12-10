@@ -101,18 +101,18 @@
  *
  ************************************************************************/
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 void *malloc_at(int heap_index, size_t size)
 {
-	if (heap_index >= CONFIG_MM_NHEAPS || heap_index < 0) {
-		mdbg("malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_MM_NHEAPS);
+	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
+		mdbg("malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_malloc(&USR_HEAP[heap_index], size, retaddr);
+	return mm_malloc(&BASE_HEAP[heap_index], size, retaddr);
 #else
-	return mm_malloc(&USR_HEAP[heap_index], size);
+	return mm_malloc(&BASE_HEAP[heap_index], size);
 #endif
 }
 #endif
@@ -140,9 +140,9 @@ static void *heap_malloc(size_t size, int s, int e, size_t retaddr)
 
 	for (heap_idx = s; heap_idx < e; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&USR_HEAP[heap_idx], size, retaddr);
+		ret = mm_malloc(&BASE_HEAP[heap_idx], size, retaddr);
 #else
-		ret = mm_malloc(&USR_HEAP[heap_idx], size);
+		ret = mm_malloc(&BASE_HEAP[heap_idx], size);
 #endif
 		if (ret != NULL) {
 			return ret;
@@ -185,7 +185,7 @@ FAR void *malloc(size_t size)
 	 */
 
 	do {
-		mem = mm_malloc(USR_HEAP, size);
+		mem = mm_malloc(BASE_HEAP, size);
 		if (!mem) {
 			brkaddr = sbrk(size);
 			if (brkaddr == (FAR void *)-1) {
@@ -210,7 +210,7 @@ FAR void *malloc(size_t size)
 	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
 
-	ret = heap_malloc(size, heap_idx, CONFIG_MM_NHEAPS, retaddr);
+	ret = heap_malloc(size, heap_idx, CONFIG_KMM_NHEAPS, retaddr);
 	if (ret != NULL) {
 		return ret;
 	}

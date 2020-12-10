@@ -87,16 +87,9 @@
 #define SET8BITSFROMMSB 255		//Binary: 0b11111111
 #define NEG8BIT(A) ((uint8_t)(~A & 0x000000FF))
 #endif
-/****************************************************************************
- * Private Types
- ****************************************************************************/
 
 /****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
+ * Private Definitions
  ****************************************************************************/
 
 #if defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) || \
@@ -116,73 +109,75 @@ extern size_t smart_sect_header_size;
 						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
 						((smartfs_rdle16(&(e)->flags) & SMARTFS_DIRENT_ACTIVE) == \
 						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
 #else
 #define ENTRY_VALID(e) (((e)->flags & SMARTFS_DIRENT_EMPTY) != \
 						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
 						(((e)->flags & SMARTFS_DIRENT_ACTIVE) == \
 						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
 #endif
 
-#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
-sq_queue_t g_recovery_queue;
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 
-struct sector_queue_s {
-	struct sector_queue_s *flink;
-	uint8_t type;
-	uint16_t sector;
-};
-#endif
-
-#ifdef CONFIG_SMARTFS_JOURNALING
-
-#if (CONFIG_SMARTFS_ERASEDSTATE == 0xFF)
-#define AREA_UNUSED 0xFF
-#define AREA_USED   0xF0
-#define AREA_OLD_UNERASED 0x00
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+#define SET_ENTRY_FLAGS(f, m, t) (smartfs_wrle16(&f, (uint16_t)(SMARTFS_DIRENT_ACTIVE | SMARTFS_DIRENT_DELETING | SMARTFS_DIRENT_RESERVED | t | (m & SMARTFS_DIRENT_MODE))));
 #else
-#define AREA_UNUSED 0x00
-#define AREA_USED   0x0F
-#define AREA_OLD_UNERASED 0xFF
+#define SET_ENTRY_FLAGS(f, m, t) (f = (uint16_t)(SMARTFS_DIRENT_ACTIVE | SMARTFS_DIRENT_DELETING | SMARTFS_DIRENT_RESERVED | t | (m & SMARTFS_DIRENT_MODE)));
 #endif
 
-#define NO_CHANGE 0
-#define NEXT_SECTOR 1
-#define MOVE_AREA 2
+#else                                                   /* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
 
-#define SZ_UINT8 (sizeof(uint8_t)*8)
-#define IS_ACTIVE(x, s) ((x)[(s)/SZ_UINT8] & (1<<(SZ_UINT8-((s)%SZ_UINT8)-1)))
-#define SET_ACTIVE(x, s) ((x)[(s)/SZ_UINT8] |= (1<<(SZ_UINT8-((s)%SZ_UINT8)-1)))
-#define SET_INACTIVE(x, s) ((x)[(s)/SZ_UINT8] &= ~(1<<(SZ_UINT8-((s)%SZ_UINT8)-1)))
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+#define SET_ENTRY_FLAGS(f, m, t) (smartfs_wrle16(&f, (uint16_t)(SMARTFS_DIRENT_EMPTY | t | (m & SMARTFS_DIRENT_MODE))));
+#else
+#define SET_ENTRY_FLAGS(f, m, t) (f = (uint16_t)(SMARTFS_DIRENT_EMPTY | t | (m & SMARTFS_DIRENT_MODE)));
+#endif
 
+#endif
 
-enum journal_action_e {
-	JOURNAL_LOG,
-	JOURNAL_RESTORE,
-	JOURNAL_MODIFY_LOG
+/* This macro determines whether an entry is invalid/empty or not,
+   i.e. whether it is available for writing a new entry.
+ */
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+#define IS_AVAILABLE_ENTRY(e) ((smartfs_rdle16(&(e)->flags) == SMARTFS_ERASEDSTATE_16BIT) ||\
+				((smartfs_rdle16(&(e)->flags) & (SMARTFS_DIRENT_EMPTY | SMARTFS_DIRENT_ACTIVE)) ==\
+					(~SMARTFS_ERASEDSTATE_16BIT & (SMARTFS_DIRENT_EMPTY | SMARTFS_DIRENT_ACTIVE))))
+#else
+#define IS_AVAILABLE_ENTRY(e) (((e)->flags == SMARTFS_ERASEDSTATE_16BIT) ||\
+				(((e)->flags & (SMARTFS_DIRENT_EMPTY | SMARTFS_DIRENT_ACTIVE)) ==\
+					(~SMARTFS_ERASEDSTATE_16BIT & (SMARTFS_DIRENT_EMPTY | SMARTFS_DIRENT_ACTIVE))))
+#endif
+
+#define SET_TO_REMAIN(v, n)		v[n >> 3] |= (1 << (7 - (n % 8)))
+#define SET_TO_USED(v, n)		v[n >> 3] &= ~(1 << (7 - (n % 8)))
+#define IS_SECTOR_REMAIN(v, n)	v[n >> 3] & (1 << (7 - (n % 8)))
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct sector_entry_queue_s {
+	struct sector_entry_queue_s *flink;
+	uint8_t type;				/* File or Directory */
+	uint16_t logsector;			/* Logical sector number */
+	uint16_t parentsector;		/* Logical sector which is chain with this */
+	uint16_t parentoffset;		/* Offset of parent entry in parent sector */
+	uint16_t time;				/* Timestamp of entry */
 };
 
-static int smartfs_get_journal_area(struct smartfs_mountpt_s *fs);
-static int read_logging_entry(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr, uint16_t *sector, uint16_t *offset);
-static int read_logging_data(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr, uint16_t *sector, uint16_t *offset);
-static int smartfs_set_transaction(struct smartfs_mountpt_s *fs, uint16_t sect, uint16_t offt, uint8_t action);
-static int smartfs_redo_create(struct smartfs_mountpt_s *fs, uint16_t type, uint16_t firstsector);
-static int smartfs_redo_sync(struct smartfs_mountpt_s *fs, uint16_t used);
-static int process_transaction(struct smartfs_mountpt_s *fs);
-static int restore_write_transactions(struct smartfs_mountpt_s *fs);
-static int add_to_list(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr, uint16_t j_sector, uint16_t j_offset, enum journal_action_e);
-static int remove_from_list(struct journal_transaction_manager_s *j_mgr, uint16_t sector);
-int clear_journal_sectors(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr);
-static int set_area_id_bits(struct smartfs_mountpt_s *fs, uint8_t id_bits);
-static int smartfs_write_transaction(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s
-									 *j_mgr, uint16_t *sector, uint16_t *offset);
-#ifdef CONFIG_SMARTFS_JOURNAL_VERIFY
-static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sector, uint16_t offset);
-#endif
-static uint8_t smartfs_calc_crc_entry(struct journal_transaction_manager_s *j_mgr);
-static uint8_t smartfs_calc_crc_data(struct journal_transaction_manager_s *j_mgr);
-#endif
+struct sector_recover_info_s {
+	uint16_t totalsector;
+	uint16_t isolatedsector;
+	uint16_t cleanedentries;
+};
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Variables
+ ****************************************************************************/
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -303,6 +298,49 @@ void smartfs_wrle32(uint8_t *dest, uint32_t val)
 
 	smartfs_wrle16(dest, (uint16_t)(val & 0xffff));
 	smartfs_wrle16(dest + 2, (uint16_t)(val >> 16));
+}
+
+/****************************************************************************
+ * Name: smartfs_setbuffer
+ *
+ * Description:
+ *   Set the attributes of the smart_read_write_s structure objects for
+ *   BIOC_READSECT and BIOC_WRITESECT requests.
+ *
+ * Input Parameters:
+ *   rw - pointer to read_write object to be set.
+ *   logsector - logicalsector to read from/write to.
+ *   offset - offset to read from/write to.
+ *   count - number of btes to be read/written.
+ *   buffer - data to buffer to read to/write from.
+ *
+ * Returned Value:
+ *   None
+ *
+ ***************************************************************************/
+
+void smartfs_setbuffer(struct smart_read_write_s *rw, uint16_t logsector, uint16_t offset, uint16_t count, uint8_t *buffer)
+{
+	rw->logsector = logsector;
+	rw->offset = offset;
+	rw->count = count;
+	rw->buffer = buffer;
+	return;
+}
+
+/****************************************************************************
+ * Name: smartfs_set_entry_flags
+ *
+ * Description: This function sets the flags for a new entry before writing
+ *   to MTD. If the entry is an invalidated one, the flags are first reset
+ *   to erasedstate value.
+ *
+ ****************************************************************************/
+
+void smartfs_set_entry_flags(struct smartfs_entry_s *new_entry, mode_t mode, uint16_t type)
+{
+	new_entry->flags = SMARTFS_ERASEDSTATE_16BIT;
+	SET_ENTRY_FLAGS(new_entry->flags, mode, type);
 }
 
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
@@ -483,6 +521,255 @@ out:
 	return OK;
 }
 #endif
+
+/****************************************************************************
+ * Name: smartfs_seek_internal
+ *
+ * Description: Performs the logic of the seek function.  This is an internal
+ *              function because it does not provide semaphore protection and
+ *              therefore must be called from one of the other public
+ *              interface routines (open, seek, etc.).
+ *
+ ****************************************************************************/
+
+off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *sf, off_t offset, int whence)
+{
+	struct smart_read_write_s readwrite;
+	struct smartfs_chain_header_s *header;
+	int ret;
+	off_t newpos;
+	off_t sectorstartpos;
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+	int sector_used = 0;
+#endif
+	/* Test if this is a seek to get the current file pos */
+
+	if ((whence == SEEK_CUR) && (offset == 0)) {
+		return sf->filepos;
+	}
+
+	/* Test if we need to sync the file */
+
+	if (sf->byteswritten > 0) {
+		/* Perform a sync */
+		smartfs_sync_internal(fs, sf);
+	}
+
+	/* Calculate the file position to seek to based on current position */
+
+	switch (whence) {
+	case SEEK_SET:
+		newpos = offset;
+		break;
+
+	case SEEK_CUR:
+		newpos = sf->filepos + offset;
+		break;
+
+	case SEEK_END:
+		newpos = sf->entry.datalen + offset;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* Ensure newpos is in range */
+
+	if (newpos < 0) {
+		newpos = 0;
+	}
+
+	if (newpos > sf->entry.datalen) {
+		newpos = sf->entry.datalen;
+	}
+
+	/* Now perform the seek.  Test if we are seeking within the current
+	 * sector and can skip the search to save time.
+	 */
+
+	sectorstartpos = sf->filepos - (sf->curroffset - sizeof(struct smartfs_chain_header_s));
+	if ((newpos >= sectorstartpos) && (newpos < sectorstartpos + SMARTFS_AVAIL_DATABYTES(fs))) {
+		/* Seeking within the current sector.  Just update the offset */
+
+		sf->curroffset = sizeof(struct smartfs_chain_header_s) + newpos - sectorstartpos;
+		sf->filepos = newpos;
+
+		return newpos;
+	}
+
+	/* Nope, we have to search for the sector and offset.  If the new pos is greater
+	 * than the current pos, then we can start from the beginning of the current
+	 * sector, otherwise we have to start from the beginning of the file.
+	 */
+
+	if (newpos > sf->filepos) {
+		sf->filepos = sectorstartpos;
+	} else {
+		sf->currsector = sf->entry.firstsector;
+		sf->filepos = 0;
+	}
+
+	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+	while ((sf->currsector != SMARTFS_ERASEDSTATE_16BIT) && (sf->filepos + SMARTFS_AVAIL_DATABYTES(fs) < newpos)) {
+		/* Read the sector's header */
+
+		smartfs_setbuffer(&readwrite, sf->currsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
+			goto errout;
+		}
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+		if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
+			sf->filepos += (sf->entry.datalen - (sector_used * SMARTFS_AVAIL_DATABYTES(fs)));
+		} else {
+			sf->filepos += SMARTFS_AVAIL_DATABYTES(fs);
+		}
+		sector_used++;
+#else
+		sf->filepos += SMARTFS_USED(header);
+#endif
+		sf->currsector = SMARTFS_NEXTSECTOR(header);
+	}
+
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+
+	/* When using sector buffering, we must read in the last buffer to our
+	 * sf->buffer in case any changes are made.
+	 */
+
+	if (sf->currsector != SMARTFS_ERASEDSTATE_16BIT) {
+		smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
+			goto errout;
+		}
+	}
+#endif
+
+	/* Now calculate the offset */
+
+	sf->curroffset = sizeof(struct smartfs_chain_header_s) + newpos - sf->filepos;
+	sf->filepos = newpos;
+	return newpos;
+
+errout:
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smartfs_sync_internal
+ *
+ * Description: Synchronize the file state on disk to match internal, in-
+ *   memory state.
+ *
+ ****************************************************************************/
+
+int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *sf)
+{
+	struct smart_read_write_s readwrite;
+	struct smartfs_chain_header_s *header;
+	int ret = OK;
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+	int used_value;
+#endif
+
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	if (sf->bflags & SMARTFS_BFLAG_DIRTY) {
+		/* Update the header with the number of bytes written */
+
+		header = (struct smartfs_chain_header_s *)sf->buffer;
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+		used_value = get_leftover_used_byte_count((uint8_t *)sf.buffer, get_used_byte_count((uint8_t *)header->used));
+		if (used_value == 0) {
+			set_used_byte_count((uint8_t *)header->used, sf->byteswritten);
+#else
+		if (header->used[0] == CONFIG_SMARTFS_ERASEDSTATE) {
+			*((uint16_t *)header->used) = sf->byteswritten;
+#endif
+		} else {
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+			set_used_byte_count((uint8_t *)header->used, used_value + sf->byteswritten);
+#else
+			*((uint16_t *)header->used) += sf->byteswritten;
+#endif
+		}
+
+		/* Write the entire sector to FLASH */
+
+		smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error %d writing used bytes for sector %d\n", ret, sf->currsector);
+			goto errout;
+		}
+
+		sf->byteswritten = 0;
+		/* File's data sector has been synced with MTD, now check if this is a new file entry and write the entry */
+		if (sf->bflags & SMARTFS_BFLAG_NEW_ENTRY) {
+			/* Flags for this entry have already been set and stored, so mode will not be used */
+			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, (sf->entry.flags & SMARTFS_DIRENT_MODE));
+			if (ret < 0) {
+				fdbg("Failed to write new file entry ot MTD\n");
+				goto errout;
+			}
+		}
+		sf->bflags = SMARTFS_BFLAG_UNMOD;
+	}
+#else							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+
+	/* Test if we have written bytes to the current sector that
+	 * need to be recorded in the chain header's used bytes field. */
+
+	if (sf->byteswritten > 0) {
+		fvdbg("Syncing sector %d\n", sf->currsector);
+
+		/* Read the existing sector used bytes value */
+
+		header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+		smartfs_setbuffer(&readwrite, sf->currsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error %d reading sector %d data\n", ret, sf->currsector);
+			goto errout;
+		}
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+		used_value = sf->entry.datalen % SMARTFS_AVAIL_DATABYTES(fs);
+		if (sf->entry.datalen > 0 && used_value == 0) {
+			used_value = SMARTFS_AVAIL_DATABYTES(fs);
+		}
+		set_used_byte_count((uint8_t *)header->used, used_value);
+#else
+		if (SMARTFS_USED(header) == SMARTFS_ERASEDSTATE_16BIT) {
+			header->used[0] = (uint8_t)(sf->byteswritten & 0x00FF);
+			header->used[1] = (uint8_t)(sf->byteswritten >> 8);
+		} else {
+			uint16_t tmp = SMARTFS_USED(header);
+			tmp += sf->byteswritten;
+			header->used[0] = (uint8_t)(tmp & 0x00FF);
+			header->used[1] = (uint8_t)(tmp >> 8);
+		}
+
+		if (header->type == CONFIG_SMARTFS_ERASEDSTATE) {
+			header->type = SMARTFS_SECTOR_TYPE_FILE;
+		}
+#endif
+		smartfs_setbuffer(&readwrite, sf->currsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error %d writing used bytes for sector %d\n", ret, sf->currsector);
+			goto errout;
+		}
+
+		sf->byteswritten = 0;
+	}
+#endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+
+errout:
+	return ret;
+}
+
 /****************************************************************************
  * Name: smartfs_mount
  *
@@ -528,7 +815,7 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 
 	ret = FS_IOCTL(fs, BIOC_GETFORMAT, (unsigned long)&fs->fs_llformat);
 	if (ret != OK) {
-		fdbg("Error getting device low level format: %d\n", ret);
+		fdbg("Error in getting device low-level format, ret : %d\n", ret);
 		goto errout;
 	}
 
@@ -607,8 +894,11 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 	/* We did it! */
 
 	fs->fs_mounted = TRUE;
+#ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
+	fs->entry_seq = 0;
+#endif
 
-	fdbg("SMARTFS:\n");
+	fdbg("\t    SMARTFS:\n");
 	fdbg("\t    Sector size:     %d\n", fs->fs_llformat.sectorsize);
 	fdbg("\t    Bytes/sector     %d\n", fs->fs_llformat.availbytes);
 	fdbg("\t    Num sectors:     %d\n", fs->fs_llformat.nsectors);
@@ -759,14 +1049,12 @@ int smartfs_unmount(struct smartfs_mountpt_s *fs)
  *
  *              If the final directory segment of relpath just before the
  *              last segment (the target file/dir) is valid, then the
- *              parentdirsector will indicate the logical sector number of
- *              the parent directory where a new entry should be created,
- *              and the filename pointer will point to the final segment
- *              (i.e. the "filename").
+ *              direntry->prev_parent will indicate the logical sector number
+ *              of the parent directory where a new entry should be created.
  *
  ****************************************************************************/
 
-int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath, uint16_t *parentdirsector, const char **filename)
+int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath)
 {
 	int ret = -ENOENT;
 	const char *segment;
@@ -785,7 +1073,8 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 #endif
 
 	/* Initialize directory level zero as the root sector */
-
+	direntry->dsector = 0xFFFF;
+	direntry->prev_parent = 0xFFFF;
 	dirstack[0] = fs->fs_rootsector;
 	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
 
@@ -795,17 +1084,23 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 		direntry->firstsector = fs->fs_rootsector;
 		direntry->flags = SMARTFS_DIRENT_TYPE_DIR | 0777;
 		direntry->utc = 0;
-		direntry->dsector = 0;
+		direntry->dsector = 0; /* Our parent sector is the root I guess */
 		direntry->doffset = 0;
 		direntry->dfirst = fs->fs_rootsector;
 		direntry->name = NULL;
-		direntry->datlen = 0;
-
-		*parentdirsector = 0;	/* Our parent is the format sector I guess */
+		direntry->datalen = 0;
 		return OK;
 	}
 
 	/* Parse through each segment of relpath */
+
+	if (direntry->name == NULL) {
+		direntry->name = (char *)kmm_zalloc(fs->fs_llformat.namesize + 1);
+		if (direntry->name == NULL) {
+			ret = -ENOMEM;
+			goto errout;
+		}
+	}
 
 	segment = relpath;
 	while (segment != NULL && *segment != '\0') {
@@ -817,7 +1112,11 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 			seglen++;
 			ptr++;
 		}
-
+		/* Perform a check to avoid bufer overflow */
+		if (seglen >= SMARTFS_MAX_WORKBUFFER_LEN) {
+			ret = -ENAMETOOLONG;
+			goto errout;
+		}
 		strncpy(fs->fs_workbuffer, segment, seglen);
 		fs->fs_workbuffer[seglen] = '\0';
 
@@ -837,7 +1136,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 
 			if (depth == 0) {
 				/* We went up one level past our mount point! */
-
+				ret = -EINVAL;
 				goto errout;
 			}
 
@@ -867,10 +1166,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 			{
 				/* Read the next directory in the chain */
 
-				readwrite.logsector = dirsector;
-				readwrite.count = fs->fs_llformat.availbytes;
-				readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-				readwrite.offset = 0;
+				smartfs_setbuffer(&readwrite, dirsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 				if (ret < 0) {
 					goto errout;
@@ -924,17 +1220,9 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 							direntry->dsector = readwrite.logsector;
 							direntry->doffset = offset;
 							direntry->dfirst = dirstack[depth];
-							if (direntry->name == NULL) {
-								direntry->name = (char *)kmm_malloc(fs->fs_llformat.namesize + 1);
-								if (direntry->name == NULL) {
-									ret = ERROR;
-									goto errout;
-								}
-							}
 
-							memset(direntry->name, 0, fs->fs_llformat.namesize + 1);
 							strncpy(direntry->name, entry->name, fs->fs_llformat.namesize);
-							direntry->datlen = 0;
+							direntry->datalen = 0;
 
 							/* Scan the file's sectors to calculate the length and perform
 							 * a rudimentary check.
@@ -947,17 +1235,13 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 							if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
 								dirsector = entry->firstsector;
 #endif
-								readwrite.count = sizeof(struct smartfs_chain_header_s);
-								readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-								readwrite.offset = 0;
-
 								while (dirsector != SMARTFS_ERASEDSTATE_16BIT) {
 									/* Read the next sector of the file */
 
-									readwrite.logsector = dirsector;
+									smartfs_setbuffer(&readwrite, dirsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
 									ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 									if (ret < 0) {
-										fdbg("Error in sector chain at %d!\n", dirsector);
+										fdbg("Error in sector chain at %d, ret : %d\n", readwrite.logsector, ret);
 										break;
 									}
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
@@ -968,27 +1252,26 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 
 										ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 										if (ret < 0) {
-											fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
+											fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
 											break;
 										}
 										used_value = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
-										direntry->datlen += used_value;
+										direntry->datalen += used_value;
 									} else {
-										direntry->datlen += (fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
+										direntry->datalen += SMARTFS_AVAIL_DATABYTES(fs);
 									}
 									readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
 #else
 									/* Add used bytes to the total and point to next sector */
 									if (SMARTFS_USED(header) != SMARTFS_ERASEDSTATE_16BIT) {
-										direntry->datlen += SMARTFS_USED(header);
+										direntry->datalen += SMARTFS_USED(header);
 									}
 #endif
 									dirsector = SMARTFS_NEXTSECTOR(header);
 								}
 							}
 
-							*parentdirsector = dirstack[depth];
-							*filename = segment;
+							direntry->prev_parent = dirstack[depth];
 							ret = OK;
 							goto errout;
 						} else {
@@ -1056,11 +1339,12 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 			 */
 
 			if (*ptr == '\0') {
-				*parentdirsector = dirstack[depth];
-				*filename = segment;
+				direntry->dsector = dirstack[depth];
+				strncpy(direntry->name, segment, seglen);
 			} else {
-				*parentdirsector = 0xFFFF;
-				*filename = NULL;
+				direntry->dsector = 0xFFFF;
+				kmm_free(direntry->name);
+				direntry->name = NULL;
 			}
 
 			ret = -ENOENT;
@@ -1069,247 +1353,369 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 	}
 
 errout:
-	if (direntry->name != NULL) {
-		kmm_free(direntry->name);
-		direntry->name = NULL;
+	if ((direntry->name != NULL) && (strlen(direntry->name) > fs->fs_llformat.namesize)) {
+		fdbg("File name too long\n");
+		return -ENAMETOOLONG;
 	}
 	return ret;
 }
 
 /****************************************************************************
- * Name: smartfs_createentry
+ * Name: smartfs_createdirentry
  *
- * Description: Creates a new entry in the specified parent directory, using
- *              the specified type and name.  If the given sectorno is
- *              0xFFFF, then a new sector is allocated for the new entry,
- *              otherwise the supplied sectorno is used.
+ * Description: Chains a new sector to the parent directory sector if
+ *   no empty or invalidated entries were found and there is no space to
+ *   allocate a new entry. Then returns the 1st entry of the new sector.
+ *
+ * Input Parameters:
+ *   fs - pointer to smartfs mountpoint structure.
+ *   direntry - pointer to smartfs entry to return details of allocated
+ *     entry.
+ *
+ * Returned Values:
+ *   OK - on successfully chaining a new sector and allocating an entry.
+ *   ERROR - appropriate error code otherwise.
  *
  ****************************************************************************/
 
-int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, uint16_t sectorno, FAR struct smartfs_ofile_s *sf)
+int smartfs_createdirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry)
 {
-	struct smart_read_write_s readwrite;
 	int ret;
+
+	/* If we are in the context of smartfs_createdirentry, then smartfs_find_availableentry did not find an available entry. */
+
+	/* Allocate a new sector and chain it to the last one */
+	ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Automatically selecting first entry of new chained sector */
+	direntry->doffset = sizeof(struct smartfs_chain_header_s);
+	direntry->dsector = (uint16_t)ret;
+	direntry->flags = SMARTFS_ERASEDSTATE_16BIT;
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: smartfs_find_availableentry
+ *
+ * Description: Finds an invalid or empty entry in the parent directory that
+ *   can be used to create a new file entry without allocating a new sector.
+ *   The first one to be found is used.
+ *
+ * Input Parameters:
+ *   fs - pointer to smartfs mountpoint structure.
+ *   direntry - pointer to smartfs entry structure for returning details
+ *     of the available entry found.
+ *     If no available entry is found, it returns with the logical sector
+ *     number of the last sector chained to parentdirsector.
+ *
+ * Returned Value:
+ *   OK - on finding an available entry.
+ *   -ENOENT - if no available entry is found
+ *   ERROR code - otherwise
+ *
+ ****************************************************************************/
+
+int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry)
+{
+	int ret = -ENOENT;
+	struct smart_read_write_s readwrite;
 	uint16_t psector;
 	uint16_t nextsector;
 	uint16_t offset;
-	uint16_t found;
 	uint16_t entrysize;
 	struct smartfs_entry_header_s *entry;
 	struct smartfs_chain_header_s *chainheader;
 
-	/* Start at the 1st sector in the parent directory */
-
-	psector = parentdirsector;
-	found = FALSE;
+	psector = direntry->dsector;
 	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
 
-	/* Validate the name isn't too long */
-
-	if (strlen(filename) > fs->fs_llformat.namesize) {
-		return -ENAMETOOLONG;
-	}
-
-	/* Read the parent directory sector and find a place to insert
-	 * the new entry.
-	 */
-
-	while (1) {
+	/* Scan through the entire parent sector chain to find an available entry */
+	while (psector != SMARTFS_ERASEDSTATE_16BIT) {
 		/* Read the next sector */
 
-		readwrite.logsector = psector;
-		readwrite.count = fs->fs_llformat.availbytes;
-		readwrite.offset = 0;
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+		smartfs_setbuffer(&readwrite, psector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			goto errout;
+			return ret;
 		}
 
 		/* Get the next chained sector */
-
 		chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 		nextsector = SMARTFS_NEXTSECTOR(chainheader);
 
-		/* Search for an empty entry in this sector */
-
+		/* Search for an available entry in this sector */
 		offset = sizeof(struct smartfs_chain_header_s);
 		entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
-		while (offset + entrysize < readwrite.count) {
+
+		while ((offset + entrysize) < readwrite.count) {
 			/* Check if this entry is available */
-
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-			if ((smartfs_rdle16(&entry->flags) == SMARTFS_ERASEDSTATE_16BIT) || ((smartfs_rdle16(&entry->flags) &
-#else
-			if ((entry->flags == SMARTFS_ERASEDSTATE_16BIT) || ((entry->flags &
-#endif
-					(SMARTFS_DIRENT_EMPTY | SMARTFS_DIRENT_ACTIVE)) == (~SMARTFS_ERASEDSTATE_16BIT & (SMARTFS_DIRENT_EMPTY | SMARTFS_DIRENT_ACTIVE)))) {
-				/* We found an empty entry.  Use it. */
-
-				found = TRUE;
-				break;
+			if (IS_AVAILABLE_ENTRY(entry)) {
+				direntry->dsector = psector;
+				direntry->doffset = offset;
+				direntry->flags = entry->flags;
+				direntry->prev_parent = direntry->dsector;
+				return OK;
 			}
 
-			/* Not available.  Skip to next entry */
-
+			/* Not an available entry, check the next one */
 			offset += entrysize;
 			entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
 		}
-
-		/* If we found an entry, stop the search */
-
-		if (found) {
-			break;
-		}
-
-		/* If there are no more sectors, then we need to add one to make
-		 * room for the new entry.
-		 */
-
-		if (nextsector == SMARTFS_ERASEDSTATE_16BIT) {
-			/* Allocate a new sector and chain it to the last one */
-
-			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
-			if (ret < 0) {
-				goto errout;
-			}
-
-			nextsector = (uint16_t)ret;
-
-			/* Chain the next sector into this sector sector */
-
-			chainheader->nextsector[0] = (uint8_t)(nextsector & 0x00FF);
-			chainheader->nextsector[1] = (uint8_t)(nextsector >> 8);
-			//*((uint16_t *)chainheader->nextsector) = nextsector;
-			readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
-			readwrite.count = sizeof(uint16_t);
-			readwrite.buffer = chainheader->nextsector;
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-			if (ret < 0) {
-				fdbg("Error chaining sector %d\n", nextsector);
-				goto errout;
-			}
-		}
-
-		/* Now update to the next sector */
-
+		direntry->dsector = psector;
 		psector = nextsector;
 	}
 
-	/* We found an insertion point.  Create the entry at sector,offset */
-
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	smartfs_wrle16(&entry->flags, (uint16_t)(SMARTFS_DIRENT_ACTIVE | SMARTFS_DIRENT_DELETING | SMARTFS_DIRENT_RESERVED | type | (mode & SMARTFS_DIRENT_MODE)));
-#else
-	entry->flags = (uint16_t)(SMARTFS_DIRENT_ACTIVE | SMARTFS_DIRENT_DELETING | SMARTFS_DIRENT_RESERVED | type | (mode & SMARTFS_DIRENT_MODE));
-#endif
-#else							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	smartfs_wrle16(&entry->flags, (uint16_t)(SMARTFS_DIRENT_EMPTY | type | (mode & SMARTFS_DIRENT_MODE)));
-#else
-	entry->flags = (uint16_t)(SMARTFS_DIRENT_EMPTY | type | (mode & SMARTFS_DIRENT_MODE));
-#endif
-#endif							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
-
-	if (sectorno == 0xFFFF) {
-		/* Allocate a new sector for the file / dir */
-
-		ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
-		if (ret < 0) {
-			goto errout;
-		}
-
-		nextsector = (uint16_t)ret;
-
-		/* Set the newly allocated sector's type (file or dir) */
-
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-		if (sf) {
-			/* Using sector buffer and we have an open file context.  Just update
-			 * the sector buffer in the open file context.
-			 */
-
-			memset(sf->buffer, CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes);
-			chainheader = (struct smartfs_chain_header_s *)sf->buffer;
-			chainheader->type = SMARTFS_SECTOR_TYPE_FILE;
-			sf->bflags = SMARTFS_BFLAG_DIRTY | SMARTFS_BFLAG_NEWALLOC;
-		} else
-#endif
-		{
-			if ((type & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_DIR) {
-				chainheader->type = SMARTFS_SECTOR_TYPE_DIR;
-			} else {
-				chainheader->type = SMARTFS_SECTOR_TYPE_FILE;
-			}
-
-			readwrite.count = 1;
-			readwrite.offset = offsetof(struct smartfs_chain_header_s, type);
-			readwrite.buffer = (uint8_t *)&chainheader->type;
-			readwrite.logsector = nextsector;
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-			if (ret < 0) {
-				fdbg("Error %d setting new sector type for sector %d\n", ret, nextsector);
-				goto errout;
-			}
-		}
-	} else {
-		/* Use the provided sector number */
-
-		nextsector = sectorno;
+	direntry->prev_parent = direntry->dsector;
+	/* No available entry was found, so we create one */
+	ret = smartfs_createdirentry(fs, direntry);
+	if (ret != OK) {
+		fdbg("Unable to chain new sector for writing new entry, ret : %d\n", ret);
 	}
 
-	/* Create the directory entry to be written in the parent's sector */
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smartfs_writeentry
+ *
+ * Description: Writes the new entry to the entry allocated by
+ *   find_availableentry or createentry.
+ *
+ * Input Parameters:
+ *   fs - pointer to smartfs mountpoint structure.
+ *   new_entry - the details of the entry in MTD where new entry is to be
+ *     written.
+ *   type - type of new entry (file/dir).
+ *   mode - mode of creation of new entry.
+ *
+ * Returned Values:
+ *   OK - on successfully writing new entry to MTD.
+ *   ERROR - appropriate error code returned otherwise.
+ *
+ ****************************************************************************/
+
+int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, uint16_t type, mode_t mode)
+{
+	int ret;
+	struct smart_read_write_s readwrite;
+	uint16_t offset;
+	uint16_t entrysize;
+	struct smartfs_entry_header_s *entry;
+	struct smartfs_chain_header_s *chainheader;
+	char *tmp_buf = NULL;
+	uint16_t nextsector;
+
+	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
+	offset = new_entry.doffset;
+
+	/* If passed new_entry.prev_parent != new_entry.dsector, it means it is a new chain sector that we will write to */
+	if (new_entry.prev_parent != new_entry.dsector) {
+		/* We cannot read the new sector into fs->fs_rwbuffer as it is totally empty.
+		   MTD header will be written when MTD_WRITE is called for the sector 1st time.
+		   Chainheader is written along with the 1st entry.
+		   So currently, smart_readsector will fail to invalidate CRC on empty sector
+		 */
+		tmp_buf = (char *)kmm_malloc(entrysize + sizeof(struct smartfs_chain_header_s));
+		if (tmp_buf == NULL) {
+			fdbg("Unable to allocate memory\n");
+			return -ENOMEM;
+		}
+		memset(tmp_buf, CONFIG_SMARTFS_ERASEDSTATE, entrysize + sizeof(struct smartfs_chain_header_s));
+		entry = (struct smartfs_entry_header_s *)&tmp_buf[sizeof(struct smartfs_chain_header_s)];
+		chainheader = (struct smartfs_chain_header_s *)&tmp_buf[0];
+		chainheader->type = SMARTFS_SECTOR_TYPE_DIR;
+	} else {
+		smartfs_setbuffer(&readwrite, new_entry.dsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error in reading sector %d, ret : %d\n", readwrite.logsector, ret);
+			return ret;
+		}
+		entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
+	}
+
+	/* Populate the directory entry to be written in the parent's sector */
 
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	smartfs_wrle16(&entry->firstsector, nextsector);
-	smartfs_wrle16(&entry->utc, time(NULL));
+	smartfs_wrle16(&entry->firstsector, new_entry.firstsector);
+#ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
+	smartfs_wrle32((uint8_t*)&entry->utc, fs->entry_seq++);
 #else
-	entry->firstsector = nextsector;
+	smartfs_wrle32((uint8_t*)&entry->utc, time(NULL));
+#endif
+#else
+	entry->firstsector = new_entry.firstsector;
+#ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
+	entry->utc = fs->entry_seq++;
+#else
 	entry->utc = time(NULL);
 #endif
+#endif
+	smartfs_set_entry_flags(&new_entry, mode, type);
+	entry->flags = new_entry.flags;
+
 	memset(entry->name, 0, fs->fs_llformat.namesize);
-	strncpy(entry->name, filename, fs->fs_llformat.namesize);
-
+	strncpy(entry->name, new_entry.name, fs->fs_llformat.namesize);
 	/* Now write the new entry to the parent directory sector */
-
-	readwrite.logsector = psector;
-	readwrite.offset = offset;
-	readwrite.count = entrysize;
-	readwrite.buffer = (uint8_t *)&fs->fs_rwbuffer[offset];
+	if (new_entry.prev_parent != new_entry.dsector) {
+		/* If this is a newly chained sector, write new entry and chain header both */
+		smartfs_setbuffer(&readwrite, new_entry.dsector, 0, entrysize + sizeof(struct smartfs_chain_header_s), (uint8_t *)&tmp_buf[0]);
+	} else {
+		/* Otherwise, we only have to write the new entry */
+		smartfs_setbuffer(&readwrite, new_entry.dsector, offset, entrysize, (uint8_t *)&fs->fs_rwbuffer[offset]);
+	}
 	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long) &readwrite);
 	if (ret < 0) {
-		fdbg("failed to write new entry to parent directory psector : %d\n", psector);
+		fdbg("Error in writing to sector %d, ret : %d\n", readwrite.logsector, ret);
 		goto errout;
 	}
 
-	/* Now fill in the entry */
+	if (new_entry.prev_parent != new_entry.dsector) {
 
-	direntry->firstsector = nextsector;
-	direntry->dsector = psector;
-	direntry->doffset = offset;
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	direntry->flags = smartfs_rdle16(&entry->flags);
-	direntry->utc = smartfs_rdle32(&entry->utc);
-#else
-	direntry->flags = entry->flags;
-	direntry->utc = entry->utc;
-#endif
-	direntry->datlen = 0;
-	if (direntry->name == NULL) {
-		direntry->name = (FAR char *)kmm_malloc(fs->fs_llformat.namesize + 1);
-		if (direntry->name == NULL) {
-			ret = ERROR;
+		/* Chain the next sector into this sector sector */
+		nextsector = new_entry.dsector;
+
+		smartfs_setbuffer(&readwrite, new_entry.prev_parent, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), (uint8_t *)&nextsector);
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error chaining to current parent chain at %d, ret : %d\n", readwrite.logsector, ret);
 			goto errout;
 		}
 	}
-
-	memset(direntry->name, 0, fs->fs_llformat.namesize + 1);
-	strncpy(direntry->name, filename, fs->fs_llformat.namesize);
 
 	ret = OK;
 
 errout:
+	if (tmp_buf) {
+		kmm_free(tmp_buf);
+	}
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smartfs_alloc_firstsecttor
+ *
+ * Description: Allocate new data sector for a new file/directory entry.
+ *
+ * Input Parameters:
+ *   fs - ponter to smartfs mountpoint structure.
+ *   sector - pointer to return the sector number allocated.
+ *   type - to set the type(file/dir) of the new sector allocated.
+ *   sf - pointer to smartfs ofile structure in case a new file is being
+ *     opened.
+ *
+ * Returned Values:
+ *   OK - on successful allocation of a new sector.
+ *   ERROR - apprpriate error code otherwise.
+ *
+ ****************************************************************************/
+
+int smartfs_alloc_firstsector(struct smartfs_mountpt_s *fs, uint16_t *sector, uint16_t type, struct smartfs_ofile_s *sf)
+{
+	int ret;
+	struct smart_read_write_s readwrite;
+	uint16_t alloc_sector;
+	uint8_t chainheader_type;
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	struct smartfs_chain_header_s *chainheader;
+#endif
+
+	ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
+	if (ret < 0) {
+		return ret;
+	}
+
+	alloc_sector = (uint16_t)ret;
+
+	/* Set the newly allocated sector's type (file or dir) */
+
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	if (sf) {
+		/* Using sector buffer and we have an open file context. Just update
+		 * the sector buffer in the open file context.
+		 */
+		memset(sf->buffer, CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes);
+		chainheader = (struct smartfs_chain_header_s *)sf->buffer;
+		chainheader->type = SMARTFS_SECTOR_TYPE_FILE;
+		sf->bflags = SMARTFS_BFLAG_DIRTY | SMARTFS_BFLAG_NEWALLOC;
+	} else
+#endif
+	{
+		if ((type & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_DIR) {
+			chainheader_type = SMARTFS_SECTOR_TYPE_DIR;
+		} else {
+			chainheader_type = SMARTFS_SECTOR_TYPE_FILE;
+		}
+
+		smartfs_setbuffer(&readwrite, alloc_sector, offsetof(struct smartfs_chain_header_s, type), 1, (uint8_t *)&chainheader_type);
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error setting new sector type for sector %d, ret : %d\n", readwrite.logsector, ret);
+			return ret;
+		}
+	}
+
+	*sector = alloc_sector;
+	return OK;
+}
+
+/****************************************************************************
+ * Name: smartfs_invalidateentry
+ *
+ * Description: Invalidates the smartfs entry passed as a parameter.
+ *
+ * Input Parameters:
+ *  fs - pointer to smartfs mountpoint structure.
+ *  parentdirsector - parent sector of entry to be marked invalid.
+ *  offset - offset of entry in parent directory sector
+ *
+ * Returned Values:
+ *  OK - on successfully invalidating the entry.
+ *  ERROR - appropriate error code otherwise
+ *
+ ****************************************************************************/
+
+/* TODO IF entry is empty after invalid, we'd better release it. To do this entry needed as a parameter...*/
+int smartfs_invalidateentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, uint16_t offset)
+{
+	int ret;
+	struct smart_read_write_s readwrite;
+	uint8_t *entry_flags;
+
+	smartfs_setbuffer(&readwrite, parentdirsector, offset, sizeof(uint16_t), (uint8_t *)fs->fs_rwbuffer);
+	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+	if (ret < 0) {
+		fdbg("Error reading sector %d, ret : %d\n", readwrite.logsector, ret);
+		return ret;
+	}
+
+	entry_flags = (uint8_t *)&fs->fs_rwbuffer[0];
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+	smartfs_wrle16(entry_flags, smartfs_rdle16(entry_flags) & ~SMARTFS_DIRENT_ACTIVE);
+#else
+	*entry_flags &= ~SMARTFS_DIRENT_ACTIVE;
+#endif
+#else
+#if CONFIG_SMARTFS_ALIGNED_ACCESS
+	smartfs_wrle16(entry_flags, smartfs_rdle16(entry_flags) | SMARTFS_DIRENT_ACTIVE);
+#else
+	*entry_flags |= SMARTFS_DIRENT_ACTIVE;
+#endif
+#endif
+	/* Now write the updated flags back to the device */
+
+	smartfs_setbuffer(&readwrite, parentdirsector, offset, sizeof(uint16_t), (uint8_t *)&fs->fs_rwbuffer[0]);
+	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+	if (ret < 0) {
+		fdbg("Error writing flag bytes for sector %d, ret : %d\n", readwrite.logsector, ret);
+		return ret;
+	}
+
 	return ret;
 }
 
@@ -1335,114 +1741,51 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 	struct smartfs_entry_header_s *direntry;
 	struct smartfs_chain_header_s *header;
 	struct smart_read_write_s readwrite;
-
-	/* Okay, delete the file.  Loop through each sector and release them
-
-	 * TODO:  We really should walk the list backward to avoid lost
-	 *        sectors in the event we lose power. However this requires
-	 *        allocating a buffer to build the sector list since we don't
-	 *        store a doubly-linked list of sectors on the device.  We
-	 *        could test if the sector data buffer is big enough and
-	 *        just use that, and only allocate a new buffer if the
-	 *        sector buffer isn't big enough.  Do do this, however, we
-	 *        need to change the code below as it is using the a few
-	 *        bytes of the buffer to read in header info.
+	bool inactive_entry = TRUE;
+	/* Our policy is that integrity entry & chaining.
+	 * If Isolated sector created but entry or chain is safe, we can handle it through the fs_recover.
+	 * So We will always process regarding entry & chain first when delete entry.
 	 */
 
-	nextsector = entry->firstsector;
+	/* First Find current directory has only one item which is target entry */
+	ret = OK;
 	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-	readwrite.offset = 0;
-	readwrite.count = sizeof(struct smartfs_chain_header_s);
-	readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-	while (nextsector != SMARTFS_ERASEDSTATE_16BIT) {
-		/* Read the next sector into our buffer */
-
-		sector = nextsector;
-		readwrite.logsector = sector;
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-		if (ret < 0) {
-			fdbg("Error reading sector %d\n", nextsector);
-			break;
-		}
-
-		/* Release this sector */
-
-		nextsector = SMARTFS_NEXTSECTOR(header);
-		ret = FS_IOCTL(fs, BIOC_FREESECT, sector);
-		if (ret < 0) {
-			fdbg("Error freeing sector %d\n", nextsector);
-			break;
-		}
-	}
-
-	/* Remove the entry from the directory tree */
-
-	readwrite.logsector = entry->dsector;
-	readwrite.offset = 0;
-	readwrite.count = fs->fs_llformat.availbytes;
-	readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+	smartfs_setbuffer(&readwrite, entry->dsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 	if (ret < 0) {
-		fdbg("Error reading directory info at sector %d\n", entry->dsector);
-		goto errout;
+		fdbg("Error reading directory info at sector %d, ret : %d\n", readwrite.logsector, ret);
+		return ret;
 	}
-
-	/* Mark this entry as inactive */
-
-	direntry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[entry->doffset];
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	smartfs_wrle16(&direntry->flags, smartfs_rdle16(&direntry->flags) & ~SMARTFS_DIRENT_ACTIVE);
-#else
-	direntry->flags &= ~SMARTFS_DIRENT_ACTIVE;
-#endif
-#else							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	smartfs_wrle16(&direntry->flags, smartfs_rdle16(&direntry->flags) | SMARTFS_DIRENT_ACTIVE);
-#else
-	direntry->flags |= SMARTFS_DIRENT_ACTIVE;
-#endif
-#endif							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
-
-	/* Write the updated flags back to the sector */
-
-	readwrite.offset = entry->doffset;
-	readwrite.count = sizeof(uint16_t);
-	readwrite.buffer = (uint8_t *)&direntry->flags;
-	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-	if (ret < 0) {
-		fdbg("Error marking entry inactive at sector %d\n", entry->dsector);
-		goto errout;
-	}
-
-	/* Test if any entries in this sector are being used */
 
 	if ((entry->dsector != fs->fs_rootsector) && (entry->dsector != entry->dfirst)) {
-		/* Scan the sector and count used entries */
-
 		count = 0;
+		/* Scan the sector and count used entries */
 		offset = sizeof(struct smartfs_chain_header_s);
 		entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
 		while (offset + entrysize < fs->fs_llformat.availbytes) {
 			/* Test the next entry */
-
 			direntry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
 			if (ENTRY_VALID(direntry)) {
 				/* Count this entry */
 				count++;
+				if (count == 2) {
+					/* If valid entry count exceeds 1, we know we cannot release the sector */
+					break;
+				}
 			}
 
 			/* Advance to next entry */
-
 			offset += entrysize;
 		}
 
-		/* Test if the count it zero.  If it is, then we will release the sector */
+		/* Test if the count is one.  If it is, then we will release the sector */
+		if (count == 1) {
+			/* We don't have to inactive entry, we will release entire of sector */
+			inactive_entry = FALSE;
 
-		if (count == 0) {
 			/* Okay, to release the sector, we must find the sector that we
-			 * are chained to and remove ourselves from the chain.  First
-			 * save our nextsector value so we can "unchain" ourselves.
+			 * are chained to and remove ourselves from the chain.
+			 * First save our nextsector value so we can "unchain" ourselves.
 			 */
 
 			nextsector = SMARTFS_NEXTSECTOR(header);
@@ -1450,17 +1793,14 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 			/* Now loop through the dir sectors to find ourselves in the chain */
 
 			sector = entry->dfirst;
-			readwrite.offset = 0;
-			readwrite.count = sizeof(struct smartfs_chain_header_s);
-			readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
 			while (sector != SMARTFS_ERASEDSTATE_16BIT) {
 				/* Read the header for the next sector */
 
-				readwrite.logsector = sector;
+				smartfs_setbuffer(&readwrite, sector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
 				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 				if (ret < 0) {
-					fdbg("Error reading sector %d\n", nextsector);
-					break;
+					fdbg("Error reading sector %d, ret : %d\n", readwrite.logsector, ret);
+					return ret;
 				}
 
 				/* Test if this sector "points" to us */
@@ -1471,21 +1811,18 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 					header->nextsector[0] = (uint8_t)(nextsector & 0x00FF);
 					header->nextsector[1] = (uint8_t)(nextsector >> 8);
 
-					readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
-					readwrite.count = sizeof(uint16_t);
-					readwrite.buffer = header->nextsector;
+					smartfs_setbuffer(&readwrite, sector, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), header->nextsector);
 					ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 					if (ret < 0) {
-						fdbg("Error unchaining sector (%d)\n", nextsector);
-						goto errout;
+						fdbg("Error unchaining sector %d, ret : %d\n", readwrite.logsector, ret);
+						return ret;
 					}
 
 					/* Now release our sector */
-
 					ret = FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)entry->dsector);
 					if (ret < 0) {
-						fdbg("Error freeing sector %d\n", entry->dsector);
-						goto errout;
+						fdbg("Error freeing sector %d, ret : %d\n", readwrite.logsector, ret);
+						return ret;
 					}
 
 					/* Break out of the loop, we are done! */
@@ -1497,13 +1834,65 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 
 				sector = SMARTFS_NEXTSECTOR(header);
 			}
+		} 
+	}
+
+	if (inactive_entry == TRUE) {
+		/* OK, another entry exist, inactive current one */
+		/* If inactive_entry = TRUE, then count > 1, i.e. last BIOC IOCTL operation was to read entry->dsector.
+		   Hence, entry->dsector still present in fs->fs_rwbuffer. No need to read again.
+		 */
+
+		/* Mark the entry as inactive */
+		direntry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[entry->doffset];
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+		smartfs_wrle16(&direntry->flags, smartfs_rdle16(&direntry->flags) & ~SMARTFS_DIRENT_ACTIVE);
+#else
+		direntry->flags &= ~SMARTFS_DIRENT_ACTIVE;
+#endif
+#else							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+		smartfs_wrle16(&direntry->flags, smartfs_rdle16(&direntry->flags) | SMARTFS_DIRENT_ACTIVE);
+#else
+		direntry->flags |= SMARTFS_DIRENT_ACTIVE;
+#endif
+#endif							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
+
+		/* Write the updated flags back to the sector */
+		smartfs_setbuffer(&readwrite, entry->dsector, entry->doffset, sizeof(uint16_t), (uint8_t *)&direntry->flags);
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error marking entry inactive at sector %d, ret : %d\n", readwrite.logsector, ret);
+			return ret;
 		}
 	}
 
-	ret = OK;
+	/* Now Free Chained sector from target entry */
+	nextsector = entry->firstsector;
+	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+	while (nextsector != SMARTFS_ERASEDSTATE_16BIT) {
+		/* Read the next sector into our buffer */
 
-errout:
-	return ret;
+		sector = nextsector;
+		smartfs_setbuffer(&readwrite, sector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error reading sector %d, ret : %d\n", readwrite.logsector, ret);
+			return ret;
+		}
+
+		/* Release this sector */
+
+		nextsector = SMARTFS_NEXTSECTOR(header);
+		ret = FS_IOCTL(fs, BIOC_FREESECT, sector);
+		if (ret < 0) {
+			fdbg("Error freeing sector %d, ret : %d\n", readwrite.logsector, ret);
+			return ret;
+		}
+	}
+
+	return OK;
 }
 
 /****************************************************************************
@@ -1534,13 +1923,10 @@ int smartfs_countdirentries(struct smartfs_mountpt_s *fs, struct smartfs_entry_s
 	while (nextsector != SMARTFS_ERASEDSTATE_16BIT) {
 		/* Read the next sector into our buffer */
 
-		readwrite.logsector = nextsector;
-		readwrite.offset = 0;
-		readwrite.count = fs->fs_llformat.availbytes;
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+		smartfs_setbuffer(&readwrite, nextsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error reading sector %d\n", nextsector);
+			fdbg("Error reading sector %d, ret : %d\n", readwrite.logsector, ret);
 			break;
 		}
 
@@ -1579,120 +1965,260 @@ errout:
 }
 
 /****************************************************************************
- * Name: smartfs_truncatefile
+ * Name: smartfs_shrinkfile
  *
- * Description: Truncates an existing file on the device so that it occupies
- *              zero bytes and can be completely re-written.
+ * Description:
+ *   Shrink the size of an existing file to the specified length
+ *
+ *****************************************************************************/
+int smartfs_shrinkfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, off_t length)
+{
+	int ret = OK;
+	struct smart_read_write_s readwrite;
+	struct smartfs_chain_header_s *chainheader;
+	uint16_t nextsector;
+
+	/* Seek till point 'length' of the file, file pointer lies at position of requested 'length' now */
+	smartfs_seek_internal(fs, sf, length, SEEK_SET);
+	sf->byteswritten = sf->curroffset - sizeof(struct smartfs_chain_header_s);
+	sf->entry.datalen = length;
+
+	/* Keep as many sectors as needed and replace extra bytes in the last needed sector with ERASEDSTATE */
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	memset(&sf->buffer[sf->curroffset], CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes - sf->curroffset);
+	chainheader = (struct smartfs_chain_header_s *)sf->buffer;
+	nextsector = SMARTFS_NEXTSECTOR(chainheader);
+	*(uint16_t *)chainheader->nextsector = SMARTFS_ERASEDSTATE_16BIT;
+	*(uint16_t *)chainheader->used = SMARTFS_ERASEDSTATE_16BIT;
+
+	sf->bflags |= SMARTFS_BFLAG_DIRTY;
+	smartfs_sync_internal(fs, sf);
+#else
+	smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (FAR uint8_t *)fs->fs_rwbuffer);
+	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+	if (ret < 0) {
+		fdbg("Failed to read file sector no. %d, error = %d\n", nextsector, ret);
+		return ret;
+	}
+	memset(&fs->fs_rwbuffer[sf->curroffset], CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes - sf->curroffset);
+	chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+	nextsector = SMARTFS_NEXTSECTOR(chainheader);
+	*(uint16_t *)chainheader->nextsector = SMARTFS_ERASEDSTATE_16BIT;
+	*(uint16_t *)chainheader->used = SMARTFS_ERASEDSTATE_16BIT;
+
+	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+	if (ret < 0) {
+		fdbg("Unable to write to sector %d while shrinking file, error = %d\n", readwrite.logsector, ret);
+		return ret;
+	}
+#endif
+	chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+
+	while (nextsector != SMARTFS_ERASEDSTATE_16BIT) {
+		smartfs_setbuffer(&readwrite, nextsector, 0, sizeof(struct smartfs_chain_header_s), (FAR uint8_t *)fs->fs_rwbuffer);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Unable to read sector %d, error = %d\n", readwrite.logsector, ret);
+			break;
+		}
+		nextsector = SMARTFS_NEXTSECTOR(chainheader);
+		ret = FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)readwrite.logsector);
+		if (ret < 0) {
+			fdbg("Unable to free sector %d to shrink file, error = %d\n", readwrite.logsector, ret);
+			break;
+		}
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smartfs_extendfile
+ *
+ * Description:
+ *   Zero-extend the length of a regular file to 'length'.
  *
  ****************************************************************************/
 
-int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry, FAR struct smartfs_ofile_s *sf)
+int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, off_t length)
 {
 	int ret;
-	uint16_t nextsector;
-	uint16_t sector;
-	struct smartfs_chain_header_s *header;
-	struct smart_read_write_s readwrite;
+	ssize_t writelen;
+	uint16_t data_len;
+	char *buf = NULL;
 
-	/* Walk through the directory's sectors and count entries */
-
-	nextsector = entry->firstsector;
-	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-
-	while (nextsector != SMARTFS_ERASEDSTATE_16BIT) {
-		/* Read the next sector's header into our buffer */
-
-		readwrite.logsector = nextsector;
-		readwrite.offset = 0;
-		readwrite.count = sizeof(struct smartfs_chain_header_s);
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-		if (ret < 0) {
-			fdbg("Error reading sector %d header\n", nextsector);
-			goto errout;
-		}
-
-		/* Get the next chained sector */
-
-		sector = SMARTFS_NEXTSECTOR(header);
-
-		/* If this is the 1st sector of the file, then just overwrite
-		 * the sector data with the erased state value.  The underlying
-		 * SMART block driver will detect this and release the old
-		 * sector and create a new one with the new (blank) data.
-		 */
-
-		if (nextsector == entry->firstsector) {
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-
-			/* When we have a sector buffer in use, simply skip the first sector */
-
-			nextsector = sector;
-			continue;
-
-#else
-
-			/* Fill our buffer with erased data */
-
-			memset(fs->fs_rwbuffer, CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes);
-			header->type = SMARTFS_SECTOR_TYPE_FILE;
-
-			/* Now write the new sector data */
-
-			readwrite.count = fs->fs_llformat.availbytes;
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-			if (ret < 0) {
-				fdbg("Error blanking 1st sector (%d) of file\n", nextsector);
-				goto errout;
-			}
-
-			/* Set the entry's data length to zero ... we just truncated */
-
-			entry->datlen = 0;
-#endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
-		} else {
-			/* Not the 1st sector -- release it */
-
-			ret = FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)nextsector);
-			if (ret < 0) {
-				fdbg("Error freeing sector %d\n", nextsector);
-				goto errout;
-			}
-		}
-
-		/* Now move on to the next sector */
-
-		nextsector = sector;
+	if (length == 0) {
+		return OK;
 	}
 
-	/* Now deal with the first sector in the event we are using a sector buffer
-	   like we would be if CRC is enabled.
-	 */
-
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	if (sf) {
-		/* Using sector buffer and we have an open file context.  Just update
-		 * the sector buffer in the open file context.
-		 */
-
-		readwrite.logsector = entry->firstsector;
-		readwrite.offset = 0;
-		readwrite.count = sizeof(struct smartfs_chain_header_s);
-		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-
-		memset(sf->buffer, CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes);
-		header = (struct smartfs_chain_header_s *)sf->buffer;
-		header->type = SMARTFS_SECTOR_TYPE_FILE;
-		sf->bflags = SMARTFS_BFLAG_DIRTY;
-		entry->datlen = 0;
+	smartfs_seek_internal(fs, sf, 0, SEEK_END);
+	length -= sf->entry.datalen;
+	data_len = SMARTFS_AVAIL_DATABYTES(fs);
+	buf = (char *)kmm_malloc(data_len);
+	if (!buf) {
+		fdbg("Error allocating space for buffer\n");
+		return -ENOMEM;
 	}
-#endif
+	memset(buf, '\0', data_len);
 
+	while (length > 0) {
+		writelen = data_len;
+		if (writelen > length) {
+			writelen = length;
+		}
+		if ((fs->fs_llformat.availbytes != sf->curroffset) && (writelen > (fs->fs_llformat.availbytes - sf->curroffset))) {
+			writelen = (fs->fs_llformat.availbytes - sf->curroffset);
+		}
+
+		ret = smartfs_append_data(fs, sf, buf, 0,  writelen);
+		if (ret != writelen) {
+			fdbg("Unable to append data to file, ret : %d, write length : %d\n", ret, writelen);
+			ret = -EIO;
+			goto error_with_buf;
+		}
+		length -= ret;
+	}
 	ret = OK;
 
-errout:
+error_with_buf:
+	kmm_free(buf);
 	return ret;
+}
+
+/****************************************************************************
+ * Name: smartfs_append_data
+ *
+ * Description:
+ *   Append data to the end of file, consisting of all NULL,('\0') characters
+ *
+ ****************************************************************************/
+
+ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, const char *buffer, size_t byteswritten, size_t buflen)
+{
+	int ret;
+	struct smart_read_write_s readwrite;
+	struct smartfs_chain_header_s *chainheader;
+
+	while (buflen > 0) {
+		/* We will fill up the current sector. Write data to
+		 * the current sector first.
+		 */
+		fvdbg("Datalen : %d, sector : %d, offset : %d\nFilepos : %d, bytes written : %d, buflen : %d\n", sf->entry.datalen, sf->currsector, sf->curroffset, sf->filepos, byteswritten, buflen);
+
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+		readwrite.count = fs->fs_llformat.availbytes - sf->curroffset;
+		if (readwrite.count > buflen) {
+			readwrite.count = buflen;
+		}
+
+		memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
+		sf->bflags |= SMARTFS_BFLAG_DIRTY;
+
+#else                                                   /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+		smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset, fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&buffer[byteswritten]);
+		if (readwrite.count > buflen) {
+			/* Limit the write base on remaining bytes to write */
+			readwrite.count = buflen;
+		}
+
+		/* Perform the write */
+		if (readwrite.count > 0) {
+			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+			if (ret < 0) {
+				fdbg("Error writing sector %d data, ret : %d\n", readwrite.logsector, ret);
+				return ret;
+			}
+		}
+#endif                                                  /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+
+		/* Update our control variables */
+		sf->entry.datalen += readwrite.count;
+		sf->byteswritten += readwrite.count;
+		sf->filepos += readwrite.count;
+		sf->curroffset += readwrite.count;
+		buflen -= readwrite.count;
+		byteswritten += readwrite.count;
+
+		/* Test if we wrote a full sector of data */
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+		if (sf->curroffset == fs->fs_llformat.availbytes && buflen) {
+
+			/* First get a new chained sector */
+			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
+			if (ret < 0) {
+				fdbg("Error allocating new sector, ret : %d\n", ret);
+				return ret;
+			}
+
+			/* Copy the new sector to the old one and chain it */
+			chainheader = (struct smartfs_chain_header_s *)sf->buffer;
+			*((uint16_t *)chainheader->nextsector) = (uint16_t)ret;
+
+			/* Now sync the file to write this sector out */
+			ret = smartfs_sync_internal(fs, sf);
+			if (ret != OK) {
+				return ret;
+			}
+
+			/* Record the new sector in our tracking variables and
+			 * reset the offset to "zero".
+			 */
+			if (sf->currsector == SMARTFS_NEXTSECTOR(chainheader)) {
+				/* Error allocating logical sector! */
+				fdbg("Error - duplicate logical sector %d\n", sf->currsector);
+			}
+
+			sf->bflags = SMARTFS_BFLAG_DIRTY;
+			sf->currsector = SMARTFS_NEXTSECTOR(chainheader);
+			sf->curroffset = sizeof(struct smartfs_chain_header_s);
+			memset(sf->buffer, CONFIG_SMARTFS_ERASEDSTATE, fs->fs_llformat.availbytes);
+			chainheader->type = SMARTFS_SECTOR_TYPE_FILE;
+		}
+#else                                                   /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+		if (sf->curroffset == fs->fs_llformat.availbytes) {
+
+			/* Sync the file to write this sector out */
+			ret = smartfs_sync_internal(fs, sf);
+			if (ret != OK) {
+				return ret;
+			}
+
+			/* Allocate a new sector if needed */
+			if (buflen > 0) {
+				/* Allocate a new sector */
+				ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
+				if (ret < 0) {
+					fdbg("Error allocating new sector, ret : %d\n", ret);
+					return ret;
+				}
+
+				/* Copy the new sector to the old one and chain it */
+				chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+				*((uint16_t *)chainheader->nextsector) = (uint16_t)ret;
+
+				smartfs_setbuffer(&readwrite, sf->currsector, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), (uint8_t *)chainheader->nextsector);
+				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+				if (ret < 0) {
+					fdbg("Error writing next sector to sector %d, ret : %d\n", readwrite.logsector, ret);
+					return ret;
+				}
+
+				/* Record the new sector in our tracking variables and
+				 * reset the offset to "zero".
+				 */
+				if (sf->currsector == SMARTFS_NEXTSECTOR(chainheader)) {
+					/* Error allocating logical sector! */
+					fdbg("Error - duplicate logical sector %d\n", sf->currsector);
+				}
+
+				sf->currsector = SMARTFS_NEXTSECTOR(chainheader);
+				sf->curroffset = sizeof(struct smartfs_chain_header_s);
+			}
+		}
+#endif                                                  /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+	}
+
+	return byteswritten;
 }
 
 /****************************************************************************
@@ -1707,82 +2233,155 @@ struct smartfs_mountpt_s *smartfs_get_first_mount(void)
 {
 	return g_mounthead;
 }
-#endif
 
-#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
 /****************************************************************************
- * Name: smartfs_examine_sector
+ * Name: smartfs_invalidate_old_entry
  *
- * Description: Recursively read sectors, find out its children and mark the
- *              sectors valid.
+ * Description: If we found 2 entry that is point to same sector,
+ *              we compare timestamp, and release old one.
  *
  ****************************************************************************/
-int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int *nusedsectors)
+
+int smartfs_invalidate_old_entry(struct smartfs_mountpt_s *fs, uint16_t logsector, sq_queue_t *entry_queue, struct sector_recover_info_s *info)
 {
-	int ret;
-	uint16_t offset;
-	uint16_t entrysize;
-	uint16_t logsector;
-	uint16_t nextsector;
-	uint16_t firstsector;
-	uint8_t *sectordata;
-	uint8_t type;
-	uint8_t entrytype;
-	struct sector_queue_s *node;
+	struct sector_entry_queue_s *tmp;
+	struct sector_entry_queue_s *firstparent = NULL;
+	struct sector_entry_queue_s *secondparent = NULL;
+	int ret = OK;
+	int count = 0;
+
+	/* Find same parent sector that is point to us */
+	tmp = (struct sector_entry_queue_s *)sq_peek(entry_queue);
+	while (tmp != NULL) {
+		if (tmp->logsector == logsector) {
+			fvdbg("found logsector : %d parent : %d\n", logsector, tmp->parentsector);
+			if (count == 0) {
+				firstparent = tmp;
+				count++;
+			} else if (count == 1) {
+				secondparent = tmp;
+				count++;
+				break;
+			}
+		}
+		tmp = (struct sector_entry_queue_s *)sq_next(tmp);
+	}
+
+	/* OK, we found 2 parents, now release old one, that is probably source path of rename */
+	if (count == 2) {
+		fvdbg("firstparent logsector : %d parentsector : %d parentoffset : %d time : %d\n", firstparent->logsector,\
+			firstparent->parentsector, firstparent->parentoffset, firstparent->time);
+		fvdbg("secondparent logsector : %d parentsector : %d parentoffset : %d time : %d\n", secondparent->logsector,\
+			secondparent->parentsector, secondparent->parentoffset, secondparent->time);
+		if (firstparent->time > secondparent->time) {
+			ret = smartfs_invalidateentry(fs, secondparent->parentsector, secondparent->parentoffset);
+			if (ret == OK) {
+				info->cleanedentries++;
+			}
+		} else {
+			ret = smartfs_invalidateentry(fs, firstparent->parentsector, firstparent->parentoffset); 
+			if (ret == OK) {
+				info->cleanedentries++;
+			}
+		}
+	}
+	return ret;
+}
+
+/****************************************************************************
+ * Name: smartfs_scan_entry
+ *
+ * Description: Scan all active logical sectors.
+ *              Compare with physical sector Map from blockdriver, mark sector
+ *              which is aligned with logical sector.
+ *              If current sector has invalid child or next sector, clean it.
+ *
+ ****************************************************************************/
+
+int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_recover_info_s *info)
+{
+	int ret = OK;
+	struct sector_entry_queue_s *nodeitem;
+	struct sector_entry_queue_s *node;
+	sq_queue_t entry_queue;
 	struct smart_read_write_s readwrite;
 	struct smartfs_entry_header_s *entry;
 	struct smartfs_chain_header_s *header;
+	uint32_t timestamp;
+	uint16_t logsector;
+	uint16_t nextsector;
+	uint16_t firstsector;
+	uint16_t offset;
+	uint8_t type;
+	uint8_t entrytype;
+	uint16_t entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
+	
+	sq_init(&entry_queue);
 
-	ret = OK;
-
-	DEBUGASSERT(fs != NULL);
-
-	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
-	sectordata = (uint8_t *)kmm_malloc(fs->fs_llformat.availbytes);
-	if (!sectordata) {
-		ret = -ENOMEM;
-		goto errout;
+	/* Fill Node for Rootsector and add to queue */
+	nodeitem = (struct sector_entry_queue_s *)kmm_malloc(sizeof(struct sector_entry_queue_s));
+	if (!nodeitem) {
+		return -ENOMEM;
 	}
-
-	while (!sq_empty(&g_recovery_queue)) {
-		node = (struct sector_queue_s *)sq_remfirst(&g_recovery_queue);
-		if (!node) {
-			ret = ERROR;
-			goto errout;
-		}
-		logsector = node->sector;
+	nodeitem->logsector = fs->fs_rootsector;
+	nodeitem->parentsector = 0;
+	nodeitem->parentoffset = 0;
+	nodeitem->type = SMARTFS_SECTOR_TYPE_DIR;
+	nodeitem->time = 0;
+	sq_addlast((FAR sq_entry_t *)nodeitem, &entry_queue);
+	
+	node = (struct sector_entry_queue_s *)sq_peek(&entry_queue);
+	while (node != NULL) {
+		logsector = node->logsector;
 		type = node->type;
-		kmm_free(node);
-		while (logsector != SMARTFS_ERASEDSTATE_16BIT) {
 
-			/* Read the curent sector into our buffer */
-			readwrite.logsector = logsector;
-			readwrite.offset = 0;
-			readwrite.buffer = sectordata;
-			readwrite.count = fs->fs_llformat.availbytes;
+		/* Actually This Must not happened, But skip recovery process to clean later */
+		if (type != SMARTFS_SECTOR_TYPE_DIR && type != SMARTFS_SECTOR_TYPE_FILE) {
+			fdbg("Error, node is neither of type 'directory', nor 'file', type : %d\n", type);
+			continue;
+		}
+
+		while ((logsector != SMARTFS_ERASEDSTATE_16BIT) && (logsector < fs->fs_llformat.nsectors)) {
+			/* Read all of entries in current sector */
+			smartfs_setbuffer(&readwrite, logsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
 			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+			/* If current sector is not valid, move to next sector */
 			if (ret < 0) {
-				fdbg("Error %d reading sector %d data\n", ret, logsector);
-				goto errout;
+				fdbg("Error reading sector %d data, ret : %d\n", readwrite.logsector, ret);
+				break;
 			}
-
+			
+			/* Check it is already marked */
+			ret = IS_SECTOR_REMAIN(map, logsector);
+			if (ret == 0) {
+				/* Already marked by other sector, we will find them & release it */
+				fvdbg("Already Marked. ret : %d logsector : %d\n", ret, logsector);
+				ret = smartfs_invalidate_old_entry(fs, logsector, &entry_queue, info);
+				if (ret != OK) {
+					/* TODO if failed, what should we do ? */
+					fdbg("Invalidate failed sector : %d\n", logsector);
+				} else {
+					/* Already checked previously so we will check next node */
+					break;
+				}
+			} else if (ret != SMARTFS_ERASEDSTATE_16BIT) {
+				/* Otherwise, mark it */
+				fvdbg("Set to Used!! logsector : %d ret : %d\n", logsector, ret);
+				SET_TO_USED(map, logsector);
+			}
+			
 			/* Point header to the read data to get used byte count */
-			header = (struct smartfs_chain_header_s *)sectordata;
+			header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 			nextsector = SMARTFS_NEXTSECTOR(header);
 
+			/* If it is directory, we will check saved entry in current sector and put each entry to queue */
 			if (type == SMARTFS_SECTOR_TYPE_DIR) {
-				if (smart_validatesector(fs->fs_blkdriver, logsector, validsectors) == OK) {
-					(*nusedsectors)++;
-				}
-
 				offset = sizeof(struct smartfs_chain_header_s);
-
 				/* Test if this entry is valid and active */
 				while (offset < readwrite.count) {
-					entry = (struct smartfs_entry_header_s *)&sectordata[offset];
+					entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[offset];
 					if (!(ENTRY_VALID(entry))) {
 						/* This entry isn't valid, skip it */
-
 						offset += entrysize;
 						continue;
 					}
@@ -1798,1763 +2397,180 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 					} else {
 						entrytype = SMARTFS_SECTOR_TYPE_DIR;
 					}
-						/* If entry item is not valid, then remove from entry */
-					if (smart_validatesector(fs->fs_blkdriver, firstsector, validsectors) != OK) {
-						fdbg("It is not valid child sector, parent : %d parent offset: %d child : %d\n", logsector, offset, firstsector);
 
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-						smartfs_wrle16(&entry->flags, smartfs_rdle16(&entry->flags) & ~SMARTFS_DIRENT_ACTIVE);
+					timestamp = smartfs_rdle32(&entry->utc);
 #else
-						entry->flags &= ~SMARTFS_DIRENT_ACTIVE;
+					timestamp = entry->utc;
 #endif
-#else							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-						smartfs_wrle16(&entry->flags, smartfs_rdle16(&entry->flags) | SMARTFS_DIRENT_ACTIVE);
-#else
-						entry->flags |= SMARTFS_DIRENT_ACTIVE;
-#endif
-#endif	
-						readwrite.logsector = logsector;
-						readwrite.offset = offset;
-						readwrite.count = sizeof(uint16_t);
-						readwrite.buffer = (uint8_t *)&entry->flags;
-						
-						ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-						if (ret < 0) {
-							fdbg("Error marking entry inactive at sector %d\n", firstsector);
-							goto errout;
-						}
-						offset += entrysize;
-						continue;
+					
+					/* Update timestamp as Lastest*/
+#ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
+					if (fs->entry_seq <= timestamp) {
+						fs->entry_seq = timestamp + 1;
 					}
-
-					node = (struct sector_queue_s *)kmm_malloc(sizeof(struct sector_queue_s));
-					if (!node) {
-						ret = -ENOMEM;
+#endif	
+					/** Check validation of Logical sector of first sector to block driver.
+					  * Use IOCTL instead of IS_SECTOR_REMAIN to find entries point to same sector.
+					  */
+					ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)firstsector);
+					if (ret < 0) {
+						fdbg("Error in getting bitmap for sector : %d, ret : %d\n", firstsector, ret);
 						goto errout;
 					}
-					node->sector = firstsector;
-					node->type = entrytype;
-					sq_addlast((FAR sq_entry_t *)node, &g_recovery_queue);
+
+					/* It wasn't written, so clean current entry */
+					if (ret >= fs->fs_llformat.nsectors) {
+						fdbg("Invalid entry, firstsector is not exist sector : %d firstsector : %d\n", logsector, firstsector);
+						ret = smartfs_invalidateentry(fs, logsector, offset);
+						if (ret < 0) {
+							fdbg("Unable to mark entry inactive at sector %d, ret : %d\n", logsector, ret);
+							goto errout;
+						}
+						info->cleanedentries++;
+
+					} else {
+						/* Make New node of Entry's first sector and put it to queue */
+						nodeitem = (struct sector_entry_queue_s *)kmm_malloc(sizeof(struct sector_entry_queue_s));
+						if (!nodeitem) {
+							fdbg("failed to alloc node.\n");
+							ret = -ENOMEM;
+							goto errout;
+						}
+						nodeitem->logsector = firstsector;
+						nodeitem->type = entrytype;
+						nodeitem->parentsector = logsector;
+						nodeitem->parentoffset = offset;
+						nodeitem->time = timestamp;
+						sq_addlast((FAR sq_entry_t *)nodeitem, &entry_queue);
+						fvdbg("new node added for currentsector : %d firsector : %d offset : %d\n", logsector, firstsector, offset);
+					}
 					offset += entrysize;
+
 				}
-			} else if (type == SMARTFS_SECTOR_TYPE_FILE) {
-				if (smart_validatesector(fs->fs_blkdriver, logsector, validsectors) == OK) {
-					(*nusedsectors)++;
+			} 
+
+			if (nextsector < fs->fs_llformat.nsectors) {
+				/* Check next sector is valid or Not */
+				ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)nextsector);
+				if (ret < 0) {
+					fdbg("Error in getting bitmap for sector : %d, ret : %d\n", nextsector, ret);
+					goto errout;
+				}
+				fvdbg("Nextsector : %d ret : 0x%x\n", nextsector, ret);
+
+				/* Previous Header was updated but Next sector wasn't written, clean chain */
+				if (ret >= fs->fs_llformat.nsectors) {
+					fvdbg("next sector [%d] / type : [%d] is not exist, reset sector [%d] header is_remain : %d\n", nextsector, type, \
+						logsector, IS_SECTOR_REMAIN(map, nextsector));
+					header->nextsector[0] = CONFIG_SMARTFS_ERASEDSTATE;
+					header->nextsector[1] = CONFIG_SMARTFS_ERASEDSTATE;
+					smartfs_setbuffer(&readwrite, logsector, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), header->nextsector);
+					nextsector = SMARTFS_ERASEDSTATE_16BIT;
+					ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+					if (ret < 0) {
+						fdbg("Error unchaining sector %d, ret : %d\n", readwrite.logsector, ret);
+						goto errout;
+					}
+					
+					info->cleanedentries++;
+					break;
 				}
 			}
 			logsector = nextsector;
 		}
+		
+		node = (struct sector_entry_queue_s *)sq_next(node);
+
 	}
 	ret = OK;
 errout:
-	if (sectordata) {
-		kmm_free(sectordata);
+	while (!sq_empty(&entry_queue)) {
+		node = (struct sector_entry_queue_s *)sq_remfirst(&entry_queue);
+		if (node) {
+			fdbg("free node's sector : %d\n", node->logsector);
+			kmm_free(node);
+		}
 	}
 	return ret;
 }
 
 /****************************************************************************
- * Name: smartfs_recover
+ * Name: smartfs_sector_recovery
  *
- * Description: Recover sector which has broken link after a power failure
+ * Description: Recover Isolated sector that is not able to access in smartfs.
+ *              Because of power off, Isolated sector can be exist.
+ *              This works stand alone, but it works properly with journaling
  *
  ****************************************************************************/
-int smartfs_recover(struct smartfs_mountpt_s *fs)
+
+int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 {
-	int i, ret;
-	uint8_t rootsector;
-	uint16_t nsectors;
-	char *validsectors;
-	int nusedsectors;
-	int nobsolete;
-	int nrecovered;
-	struct sector_queue_s *node;
-
-	nsectors = fs->fs_llformat.nsectors;
-	rootsector = fs->fs_rootsector;
-
-	validsectors = (char *)kmm_malloc(nsectors / 8 + 1);
-	if (!validsectors) {
-		ret = -ENOMEM;
-		goto errout_with_semaphore;
+	int ret;
+	long sector;
+	struct sector_recover_info_s info = {0,};
+	size_t size = (fs->fs_llformat.nsectors >> 3) + 1;
+	
+	/* Alloc Logical Map */
+	char *map = (char *)kmm_malloc(sizeof(uint8_t *) * size);
+	if (map == NULL) {
+		return -ENOMEM;
 	}
-	for (i = 0; i < (nsectors / 8 + 1); i++) {
-		validsectors[i] = 0;
+	fvdbg("sector recover start\n");
+	memset(map, 0, size);
+
+	/* If any of logical sector is mapped to physical block it means active block, Mark it */
+	for (sector = SMARTFS_ROOT_DIR_SECTOR; sector < fs->fs_llformat.nsectors; sector++) {
+		ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)sector);
+		if (ret < 0) {
+			fdbg("Error in getting bitmap for sector: %d, ret : %d\n", sector, ret);
+			goto error_with_map;
+		}
+
+		if (ret < fs->fs_llformat.nsectors) {
+			SET_TO_REMAIN(map, sector);
+			fvdbg("sector : %d ret : 0x%x\n", sector, ret);
+			info.totalsector++;
+		} else {
+			/* TODO Root sector(/mnt) is gone.. what should we do alloc again?? */
+			if (sector == SMARTFS_ROOT_DIR_SECTOR) {
+				fdbg("CRITICAL BUG!! Root sector is gone!!\n");
+				ret = -EIO;
+				goto error_with_map;
+			}
+		}
 	}
 
-	sq_init(&g_recovery_queue);
-	node = (struct sector_queue_s *)kmm_malloc(sizeof(struct sector_queue_s));
-	if (!node) {
-		ret = -ENOMEM;
-		goto errout_with_semaphore;
-	}
-	node->sector = rootsector;
-	node->type = SMARTFS_SECTOR_TYPE_DIR;
-	sq_addlast((FAR sq_entry_t *)node, &g_recovery_queue);
-
-	nusedsectors = 0;
-	ret = smartfs_examine_sector(fs, validsectors, &nusedsectors);
+	/* TODO Find all active Logical sectors from root sector and unmark for exist sector */
+	ret = smartfs_scan_entry(fs, map, &info);
 	if (ret != OK) {
-		goto errout_with_semaphore;
+		fdbg("Unable to scan entries, smartfs_scan_entry failed, ret : %d\n", ret);
+		goto error_with_map;
 	}
+	for (sector = SMARTFS_ROOT_DIR_SECTOR; sector < fs->fs_llformat.nsectors; sector++) {
+		if (IS_SECTOR_REMAIN(map, sector)) {
+			fdbg("Recover sector : %d\n", sector);
+			info.isolatedsector++;
+			ret = FS_IOCTL(fs, BIOC_FREESECT, sector);
+			if (ret < 0) {
+				fdbg("Error freeing sector %d, ret : %d\n", sector, ret);
+				goto error_with_map;
+			}
+		}
 
-	nobsolete = 0;
-	nrecovered = 0;
-	ret = smart_recoversectors(fs->fs_blkdriver, validsectors, &nobsolete, &nrecovered);
-	if (ret != OK) {
-		goto errout_with_semaphore;
 	}
 	fdbg("###############################\n");
 	fdbg("#      FS Recovery Report     #\n");
 	fdbg("###############################\n");
-	fdbg("Total sectors : %d\n", fs->fs_llformat.nsectors);
-	fdbg("Bytes in each sector : %d\n", fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s));
-	fdbg("Used Sectors : %d\n", nusedsectors);
-	fdbg("Obsoleted Sectors : %d\n", nobsolete);
-	fdbg("Recovered Sectors : %d\n\n", nrecovered);
+	fdbg("Total of active sectors : %d\n", info.totalsector);
+	fdbg("Recovered Isolated Sectors : %d\n", info.isolatedsector);
+	fdbg("Cleaned Entries : %d\n\n", info.cleanedentries);
 
-errout_with_semaphore:
-	if (validsectors) {
-		kmm_free(validsectors);
-	}
-	return ret;
-}
-#endif
-
-#ifdef CONFIG_SMARTFS_JOURNALING
-/****************************************************************************
- * Name: smartfs_journal_init
- *
- * Description: Initialize jornal manager
- *              Read logs to restore any previously failed transaction
- *
- ****************************************************************************/
-int smartfs_journal_init(struct smartfs_mountpt_s *fs)
-{
-	int ret;
-	uint16_t mapsize;
-	uint16_t readoffset;
-	uint16_t readsect;
-	uint16_t startsector;
-	struct smart_format_s fmt;
-	struct smartfs_logging_entry_s *entry;
-	struct journal_transaction_manager_s *journal;
-
-	journal = (struct journal_transaction_manager_s *)kmm_malloc(sizeof(struct journal_transaction_manager_s));
-	if (!journal) {
-		ret = -ENOMEM;
-		goto err_out;
-	}
-
-	fs->journal = journal;
-	journal->jarea = smartfs_get_journal_area(fs);
-	journal->list = NULL;
-
-	ret = FS_IOCTL(fs, BIOC_GETFORMAT, (unsigned long)&fmt);
-	if (ret != OK) {
-		goto err_out;
-	}
-
-	if (fmt.nsectors < CONFIG_SMARTFS_JOURNALING_THRESHOLD) {
-		journal->enabled = false;
-		fdbg("Journal Manager Not enabled due to size constraints. %d %d\n", fmt.nsectors, CONFIG_SMARTFS_JOURNALING_THRESHOLD);
-		return 0;
-	}
-
-	journal->enabled = true;
-	journal->availbytes = fmt.availbytes;
-
-	journal->buffer = (uint8_t *)kmm_malloc(sizeof(struct smartfs_logging_entry_s) + journal->availbytes);
-	if (!(journal->buffer)) {
-		ret = ENOMEM;
-		goto err_out;
-	}
-
-	/* Allocate a bitmap to mark currently active sectors (sectors which are
-	 * written and need sync) */
-	mapsize = fmt.nsectors / SZ_UINT8 + 1;
-	journal->active_sectors = (uint8_t *)kmm_malloc(mapsize);
-	if (!(journal->active_sectors)) {
-		ret = ENOMEM;
-		goto err_out;
-	}
-	memset(journal->active_sectors, 0, mapsize);
-
-	if (journal->jarea != -1) {
-#ifdef CONFIG_DEBUG_FS
-		print_journal_sectors(fs);
-#endif
-		startsector = SMARTFS_LOGGING_SECTOR + journal->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-		journal->sector = startsector;
-		readsect = startsector;
-		readoffset = 1;
-
-		while (readsect < startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-			/* Read transactions in journal sector */
-			fvdbg("readsector : %d offset : %d\n", readsect, readoffset);
-			ret = read_logging_entry(fs, journal, &readsect, &readoffset);
-			if (ret != OK) {
-				break;
-			}
-			entry = (struct smartfs_logging_entry_s *)journal->buffer;
-			if (entry->crc16[0] != smartfs_calc_crc_entry(journal)) {
-				fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_calc_crc_entry(journal));
-				if (!T_FINISH_CHECK(entry->trans_info)) {
-					ret = smartfs_set_transaction(fs, readsect, readoffset, TRANS_FINISHED);
-					if (ret != OK) {
-						fdbg("set transaction failed sector : %d, offset : %d\n", readsect, readoffset);
-					} else {
-						fvdbg("Journal finished sector : %d offset : %d\n", readsect, readoffset);
-					}
-					break;
-				}
-			}
-			/* Check whether this transaction exists, and logging of transaction has been completed */
-			if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
-				journal->sector = readsect;
-				journal->offset = readoffset - sizeof(struct smartfs_logging_entry_s);
-
-				/* If this entry has additional data, read additional data
-				   Skip reading additional data if transaction os of type DELETE, where we have reused datalen field
-				 */
-				if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
-					/* We skip reading additional data if transaction needs sync,
-					 * because these type of transactions are restored from list later.
-					 * So, we only increment the offset here */
-					/* If not a T_WRITE transaction which needs sync, read the additional data */
-					ret = read_logging_data(fs, journal, &readsect, &readoffset);
-					if (ret != OK) {
-						fdbg("Cannot read entry data.\n");
-						break;
-					}
-					if (entry->crc16[1] != smartfs_calc_crc_data(journal)) {
-						fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_calc_crc_data(journal));
-						if (!T_FINISH_CHECK(entry->trans_info)) {
-							ret = smartfs_set_transaction(fs, readsect, readoffset, TRANS_FINISHED);
-							if (ret != OK) {
-								fdbg("set transaction failed sector : %d, offset : %d\n", readsect, readoffset);
-							} else {
-								fvdbg("Journal finished sector : %d offset : %d\n", readsect, readoffset);
-							}
-							break;
-						}
-
-					}
-				}
-				/* Restore the transaction. (T_WRITE with sync type transaction will not be
-				 * restored yet */
-				ret = process_transaction(fs);
-				if (ret != OK) {
-					fdbg("process_transaction failed, but clean journal area\n");
-					break;
-				}
-			} else {
-				/* If a valid transaction does not exist here, stop checking further */
-				break;
-			}
-		}
-
-		if (journal->list) {
-			/* Now restore write transactions from the list */
-			ret = restore_write_transactions(fs);
-			if (ret != OK) {
-				fdbg("restore_write_transactions failed, but clean journal area\n");
-			}
-		}
-	}
-
-	/* Clear all the logging sectors */
-	journal->jarea = 1;
-	ret = clear_journal_sectors(fs, journal);
-	if (ret != OK) {
-		goto err_out;
-	}
-	journal->jarea = 0;
-	ret = clear_journal_sectors(fs, journal);
-	if (ret != OK) {
-		goto err_out;
-	}
-	journal->sector = SMARTFS_LOGGING_SECTOR;
-	journal->offset = 1;
-	ret = set_area_id_bits(fs, AREA_USED);
-	if (ret != OK) {
-		fdbg("set_area_id_bits failed... bits : %d\n", AREA_USED);
-	}
-	return ret;
-
-err_out:
-	/* Free in case of failure */
-	if (journal) {
-		if (journal->active_sectors) {
-			kmm_free(journal->active_sectors);
-		}
-		if (journal->buffer) {
-			kmm_free(journal->buffer);
-		}
-		kmm_free(journal);
-		journal = NULL;
+error_with_map:
+	if (map) {
+		kmm_free(map);
 	}
 	return ret;
 }
 
-static int set_area_id_bits(struct smartfs_mountpt_s *fs, uint8_t id_bits)
-{
-	struct smart_read_write_s req;
-
-	req.logsector = SMARTFS_LOGGING_SECTOR + fs->journal->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	req.offset = 0;
-	req.count = 1;
-	req.buffer = &id_bits;
-	return FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-}
-
-/****************************************************************************
- * Name: smartfs_get_journal_area
- *
- * Description: Reads identification bits of two journal areas and chooses
- *              which journal area has to be used for restoration.
- *              Return value: 0: area 0 has to be used for restore
- *                            1: area 1 has to be used for restore
- *                           -1: no area is fit to use without erase.
- *
- ****************************************************************************/
-static int smartfs_get_journal_area(struct smartfs_mountpt_s *fs)
-{
-	int i, read_from_A, read_from_B;
-	uint8_t area[2], index[2];
-	struct smart_read_write_s req;
-
-	/* Result to be returned for different combination of status
-	 * bits of 2 areas.
-	 *
-	 * Row: index of status of area 0
-	 * Column: index of status of area 1
-	 *
-	 * index for status AREA_UNUSED is 0, for AREA_USED is 1,
-	 * AREA_OLD_UNERASED is 2, undefined is 3
-	 * e.g if area 0 has status AREA_USED (index[0]=1) and area 1 has
-	 * status AREA_UNUSED (index[1]=0), we return
-	 * result[index[0]][index[1]] = result[1][0] = 0
-	 * The function returns area 0.
-	 */
-	int8_t result[][4] = { { -1, 1, 1, -1},
-		{0, 0, 0, 0},
-		{0, 1, 0, 0},
-		{ -1, 1, 1, -1}
-	};
-
-	req.logsector = SMARTFS_LOGGING_SECTOR;
-	req.offset = 0;
-	req.count = 1;
-	req.buffer = &area[0];
-
-	read_from_A = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-
-	req.logsector += CONFIG_SMARTFS_NLOGGING_SECTORS;
-	req.buffer = &area[1];
-
-	read_from_B = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-
-	if (read_from_A != req.count && read_from_B != req.count) {
-		return -1;
-	} else if (read_from_A != req.count && (area[1] == AREA_USED || area[1] == AREA_OLD_UNERASED)) {
-		return 1;
-	} else if (read_from_B != req.count && (area[0] == AREA_USED || area[0] == AREA_OLD_UNERASED)) {
-		return 0;
-	}
-
-	for (i = 0; i <= 1; i++) {
-		if (area[i] == AREA_UNUSED) {
-			index[i] = 0;
-		} else if (area[i] == AREA_USED) {
-			index[i] = 1;
-		} else if (area[i] == AREA_OLD_UNERASED) {
-			index[i] = 2;
-		} else {
-			index[i] = 3;
-		}
-	}
-
-	return result[index[0]][index[1]];
-}
-
-#ifdef CONFIG_DEBUG_FS
-int print_journal_sectors(struct smartfs_mountpt_s *fs)
-{
-	int ret;
-	uint16_t i;
-	uint16_t readsect;
-	uint16_t readoffset;
-	uint16_t startsector;
-	struct journal_transaction_manager_s *j_mgr;
-	struct smartfs_logging_entry_s *entry;
-
-	fdbg("Print all Journal sectors\n");
-	j_mgr = fs->journal;
-
-	if (!(j_mgr->enabled)) {
-		fdbg("Journal Manager Not enabled due to size constraints.\n");
-		return OK;
-	}
-
-	if (j_mgr->jarea != -1) {
-		startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-		readsect = startsector;
-		readoffset = 1;
-		while (readsect < startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-			ret = read_logging_entry(fs, j_mgr, &readsect, &readoffset);
-			if (ret != OK) {
-				break;
-			}
-			entry = (struct smartfs_logging_entry_s *)j_mgr->buffer;
-			if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
-				if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
-					ret = read_logging_data(fs, j_mgr, &readsect, &readoffset);
-					if (ret != OK) {
-						fdbg("Cannot read entry data.\n");
-						break;
-					}
-				}
-				if (!T_FINISH_CHECK(entry->trans_info)) {
-					fdbg("*****Entry*****\n");
-					fdbg("Transaction Type: %u\n", GET_TRANS_TYPE(entry->trans_info));
-					fdbg("Transaction Started: %s\n", T_START_CHECK(entry->trans_info) ? "yes" : "no");
-					fdbg("Transaction Finished: %s\n", T_FINISH_CHECK(entry->trans_info) ? "yes" : "no");
-					fdbg("Transaction required a sync: %s\n", T_NEEDSYNC_CHECK(entry->trans_info) ? "yes" : "no");
-					fdbg("sector: %u\n", entry->curr_sector);
-					fdbg("offset: %u\n", entry->offset);
-					fdbg("seq_no: %u\n", entry->seq_no);
-					fdbg("datalen: %u\n", entry->datalen);
-					fdbg("generic_1 %u\n", entry->generic_1);
-#ifdef CONFIG_DEBUG_FS
-#ifndef DEBUG_VERBOSE
-					if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE)
 #endif
-					{
-						fdbg("Data: ");
-						for (i = 0; i < entry->datalen; i++) {
-							fsdbg("%02x ", j_mgr->buffer[sizeof(struct smartfs_logging_entry_s) + i]);
-						}
-						fsdbg("\n");
-					}
-#endif
-				}
-			} else {
-				break;
-			}
-		}
-	}
-	return OK;
-}
-#endif
-
-/****************************************************************************
- * Name: clear_journal_sectors
- *
- * Description: clean all the journal sectors
- *              if any journal logical sector is unallocated, allocate it
- *
- ****************************************************************************/
-int clear_journal_sectors(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr)
-{
-	int ret;
-	bool allocate;
-	uint16_t i;
-	uint16_t j;
-	uint16_t readsect;
-	struct smart_read_write_s req;
-
-	if (!(j_mgr->enabled)) {
-		fdbg("Journal Manager Not enabled due to size constraints.\n");
-		return OK;
-	}
-
-	/* Clear all the journal sectors */
-	for (i = 0; i < CONFIG_SMARTFS_NLOGGING_SECTORS; i++) {
-		allocate = false;
-		readsect = SMARTFS_LOGGING_SECTOR + (j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS) + i;
-
-		req.logsector = readsect;
-		req.count = j_mgr->availbytes;
-		req.buffer = j_mgr->buffer;
-		req.offset = 0;
-
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-		if (ret < 0) {
-			if (ret != -EINVAL) {
-				/* Read failed due to reason other than log sector not allocated */
-				fdbg("sector is not allocated ret : %d sector : %d\n", ret, readsect);
-				return ret;
-			}
-			/* need to allocate this logical sector */
-			allocate = true;
-		} else {
-			/* Check whether the sector needs relocation */
-			for (j = 0; j < req.count; j++) {
-				if (req.buffer[j] != CONFIG_SMARTFS_ERASEDSTATE) {
-					/* Free sector and set to allocate */
-					ret = FS_IOCTL(fs, BIOC_FREESECT, (unsigned long)req.logsector);
-					if (ret < 0) {
-						fdbg("free failed!! sector : %d\n", readsect);
-					}
-					allocate = true;
-					break;
-				}
-			}
-		}
-		if (allocate) {
-			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, (unsigned long)readsect);
-			if (ret < 0) {
-				fdbg("alloc failed!! sector : %d\n", readsect);
-				break;
-			}
-		}
-		/* if returned logical sector is bigger than 0, change ret to OK */
-		if (ret > OK) {
-			ret = OK;
-		}
-	}
-	return ret;
-}
-
-/****************************************************************************
- * Name: read_logging_entry
- *
- * Description: read the entry located in sector 'sector' and offset 'offset'
- *              It also updates the offset and sector for next read.
- *
- ****************************************************************************/
-static int read_logging_entry(struct smartfs_mountpt_s *fs, struct
-							  journal_transaction_manager_s *j_mgr, uint16_t *sector, uint16_t *offset)
-{
-	int ret;
-	struct smart_read_write_s req;
-	uint16_t startsector;
-
-	startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	if (*offset + sizeof(struct smartfs_logging_entry_s) > j_mgr->availbytes) {
-		/* If this sector doesnt have enough space for the entry, we would not have
-		 * written the entry here. Skip to the next sector. */
-		(*sector)++;
-		*offset = 0;
-		if (*sector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-			/* If no more sectors exist, do not try to read anything and return */
-			return ERROR;
-		}
-	}
-
-	req.logsector = *sector;
-	req.offset = *offset;
-	req.count = sizeof(struct smartfs_logging_entry_s);
-	req.buffer = (uint8_t *)j_mgr->buffer;
-
-	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-	if (ret < 0) {
-		fdbg("Reading failed\n");
-		return ERROR;
-	}
-	*offset += req.count;
-	return OK;
-}
-
-/****************************************************************************
- * Name: read_logging_data
- *
- * Description: read the additional data at sector and offset after an entry
- *              It also updates the offset and sector for next read.
- *
- ****************************************************************************/
-static int read_logging_data(struct smartfs_mountpt_s *fs, struct
-							 journal_transaction_manager_s *j_mgr, uint16_t *sector, uint16_t *offset)
-{
-	int ret;
-	uint16_t startsector;
-	struct smart_read_write_s req;
-	struct smartfs_logging_entry_s *entry;
-
-	startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	entry = (struct smartfs_logging_entry_s *)j_mgr->buffer;
-
-	req.buffer = (uint8_t *)j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
-	req.logsector = *sector;
-	req.offset = *offset;
-	req.count = entry->datalen;
-
-	if (req.offset + entry->datalen > j_mgr->availbytes) {
-		/* If entire data is not in current sector, read only what is present */
-		req.count = j_mgr->availbytes - req.offset;
-	}
-
-	if (req.count > 0) {
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-		if (ret < 0) {
-			return ERROR;
-		}
-		req.buffer += req.count;
-		*offset += req.count;
-	}
-	if (req.count < entry->datalen) {
-		/* Read next sector if more data is present to read.  */
-		(*sector)++;
-		if (*sector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-			return ERROR;
-		}
-		*offset = 0;
-		req.logsector = *sector;
-		req.offset = *offset;
-		req.count = entry->datalen - req.count;
-		if (req.offset + req.count > j_mgr->availbytes) {
-			fdbg("Data should never be more than available bytes in a sector offset : %d count : %d availbytes : %d\n", req.offset, req.count, j_mgr->availbytes);
-			return ERROR;
-		}
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-		if (ret < 0) {
-			return ERROR;
-		}
-		*offset += req.count;
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: restore_write_transactions
- *
- * Description: restore write and sync transactions from the list
- *
- ****************************************************************************/
-static int restore_write_transactions(struct smartfs_mountpt_s *fs)
-{
-	int ret;
-	uint16_t readsect;
-	uint16_t readoffset;
-	struct smart_read_write_s req;
-	struct active_write_node_s *curr;
-	struct smartfs_logging_entry_s *entry;
-	struct journal_transaction_manager_s *j_mgr;
-
-	j_mgr = fs->journal;
-	curr = j_mgr->list;
-	/* Loop through the list */
-	while (curr) {
-		/* read the logging entry in the list */
-		readsect = curr->journal_sector;
-		readoffset = curr->journal_offset;
-		ret = read_logging_entry(fs, j_mgr, &readsect, &readoffset);
-		if (ret != OK) {
-			fdbg("Error reading entry\n");
-			return ERROR;
-		}
-		entry = (struct smartfs_logging_entry_s *)j_mgr->buffer;
-		if (entry->datalen > 0) {
-			/* Read logging data from journal here */
-			ret = read_logging_data(fs, j_mgr, &readsect, &readoffset);
-			if (ret != OK) {
-				fdbg("Cannot read entry data.\n");
-				return ERROR;
-			}
-
-			req.logsector = entry->curr_sector;
-			req.offset = entry->offset;
-			req.count = entry->datalen;
-			req.buffer = (uint8_t *)j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
-
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-			if (ret != OK) {
-				return ERROR;
-			}
-		}
-
-		/* write the sector size from used_bytes */
-		ret = smartfs_redo_sync(fs, curr->used_bytes);
-		if (ret != OK) {
-			return ERROR;
-		}
-		/* Transaction restored. Now set its status to Finished */
-		ret = smartfs_set_transaction(fs, curr->journal_sector, curr->journal_offset, TRANS_FINISHED);
-		if (ret != OK) {
-			return ERROR;
-		}
-		/* unmark the sector from map of sectors needing sync */
-		SET_INACTIVE(j_mgr->active_sectors, entry->curr_sector);
-		curr = curr->next;
-	}
-
-	/* now clear the list */
-	while (j_mgr->list) {
-		curr = j_mgr->list->next;
-		kmm_free(j_mgr->list);
-		j_mgr->list = curr;
-	}
-
-	return OK;
-}
-
-/****************************************************************************
- * Name: smartfs_redo_sync
- *
- * Description: redo the sync to update used bytes filed in chainheader
- *
- ****************************************************************************/
-static int smartfs_redo_sync(struct smartfs_mountpt_s *fs, uint16_t used_val)
-{
-	struct smart_read_write_s req;
-	struct smartfs_logging_entry_s *entry;
-	struct smartfs_chain_header_s *header;
-
-	entry = (struct smartfs_logging_entry_s *)fs->journal->buffer;
-	header = (struct smartfs_chain_header_s *)(fs->journal->buffer + sizeof(struct smartfs_logging_entry_s));
-
-#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-	set_used_byte_count((uint8_t *)header->used_val, used);
-#else
-	header->used[0] = (uint8_t)(used_val & 0x00FF);
-	header->used[1] = (uint8_t)(used_val >> 8);
-#endif
-	req.logsector = entry->curr_sector;
-	req.offset = offsetof(struct smartfs_chain_header_s, used);
-
-	req.buffer = (uint8_t *)header + req.offset;
-	req.count = sizeof(uint16_t);
-	if (FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req) != OK) {
-		return ERROR;
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: smartfs_redo_rename
- *
- * Description: redo the file rename operation
- *
- ****************************************************************************/
-static int smartfs_redo_rename(struct smartfs_mountpt_s *fs)
-{
-	int ret;
-	char *filename;
-	uint16_t oldflags;
-	uint16_t oldoffset;
-	uint16_t firstsector;
-	mode_t mode;
-	uint16_t type;
-	struct smart_read_write_s req;
-	struct smartfs_logging_entry_s *entry;
-	struct smartfs_entry_header_s *direntry;
-	struct journal_transaction_manager_s *j_mgr;
-
-	j_mgr = fs->journal;
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-	/* Allocate a buffer to temporarily store the filename */
-	filename = (char *)kmm_malloc(fs->fs_llformat.namesize);
-	if (!filename) {
-		ret = -ENOMEM;
-		goto errout;
-	}
-	oldoffset = entry->offset;
-	memcpy(filename, j_mgr->buffer + sizeof(struct smartfs_logging_entry_s), entry->datalen);
-
-	/* Read the old entry to exract mode, type and firstsector */
-	req.logsector = entry->generic_1;
-	req.offset = 0;
-	req.count = j_mgr->availbytes;
-	req.buffer = j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
-	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-	if (ret < 0) {
-		goto errout;
-	}
-	direntry = (struct smartfs_entry_header_s *)&req.buffer[oldoffset];
-
-	if (ENTRY_VALID(direntry)) {
-		oldflags = direntry->flags;
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-		type = (smartfs_rdle16(&oldflags) & SMARTFS_DIRENT_TYPE);
-		mode = (smartfs_rdle16(&oldflags) & SMARTFS_DIRENT_MODE);
-#else
-		type = oldflags & SMARTFS_DIRENT_TYPE;
-		mode = oldflags & SMARTFS_DIRENT_MODE;
-#endif
-
-		firstsector = (uint16_t)direntry->firstsector;
-		/* Now create new entry at new location */
-		entry->generic_1 = (uint16_t)mode;
-		memcpy(j_mgr->buffer + sizeof(struct smartfs_logging_entry_s), filename, entry->datalen);
-		ret = smartfs_redo_create(fs, type, firstsector);
-		if (ret != OK) {
-			goto errout;
-		}
-
-		/* Set old entry to inactive */
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-		oldflags &= ~SMARTFS_DIRENT_ACTIVE;
-#else
-		oldflags |= SMARTFS_DIRENT_ACTIVE;
-#endif
-		direntry->flags = oldflags;
-
-		req.offset = oldoffset + offsetof(struct smartfs_entry_header_s, flags);
-		req.count = sizeof(direntry->flags);
-		req.buffer = (uint8_t *)&direntry->flags;
-		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-		if (ret != OK) {
-			fdbg("Inactive old entry failed... offset : %d\n", req.offset);
-		}
-	} else {
-		ret = OK;
-	}
-errout:
-	if (filename) {
-		kmm_free(filename);
-	}
-	return ret;
-}
-
-/****************************************************************************
- * Name: smartfs_redo_create
- *
- * Description: redo file/directory create
- *              type: file or directory
- *              firstsector: first sector of the new entry
- *
- ****************************************************************************/
-static int smartfs_redo_create(struct smartfs_mountpt_s *fs, uint16_t type, uint16_t firstsector)
-{
-	int ret;
-	char *name;
-	uint16_t nextsector;
-	uint16_t offset;
-	uint16_t direntrysize;
-	mode_t mode;
-	struct smart_read_write_s req;
-	struct smartfs_logging_entry_s *entry;
-	struct smartfs_chain_header_s *chainheader;
-	struct smartfs_entry_header_s *direntry;
-	struct smartfs_entry_s dummyentry;
-	struct journal_transaction_manager_s *j_mgr;
-
-	ret = OK;
-	j_mgr = fs->journal;
-
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-	/* Get the name from data followint the entry header in buffer */
-	name = (char *)entry + sizeof(struct smartfs_logging_entry_s);
-
-	nextsector = entry->curr_sector;
-	mode = (mode_t)entry->generic_1;
-	direntrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
-	dummyentry.name = (FAR char *)kmm_malloc(fs->fs_llformat.namesize + 1);
-	if (!dummyentry.name) {
-		ret = -ENOSPC;
-		goto err_out;
-	}
-
-	/* Search the parentsector for already written entry with the same name
-	 * and deactivate it.
-	 * It might have been created just before power failure.
-	 */
-	while (nextsector != SMARTFS_ERASEDSTATE_16BIT) {
-		req.logsector = nextsector;
-		req.count = fs->fs_llformat.availbytes;
-		req.offset = 0;
-		req.buffer = (uint8_t *)fs->fs_rwbuffer;
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-		if (ret < 0) {
-			goto err_out;
-		}
-		chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-		nextsector = SMARTFS_NEXTSECTOR(chainheader);
-		offset = sizeof(struct smartfs_chain_header_s);
-		direntry = (struct smartfs_entry_header_s *)&(req.buffer[offset]);
-
-		while (offset + direntrysize < fs->fs_llformat.availbytes) {
-			if (ENTRY_VALID(direntry) && strncmp(direntry->name, name, fs->fs_llformat.namesize) == 0) {
-				/* Entry found, Deactivate it */
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-				smartfs_wrle16(&direntry->flags, smartfs_rdle16(&direntry->flags) & ~SMARTFS_DIRENT_ACTIVE);
-#else
-				direntry->flags &= ~SMARTFS_DIRENT_ACTIVE;
-#endif
-#else							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-				smartfs_wrle16(&direntry->flags, smartfs_rdle16(&direntry->flags) | SMARTFS_DIRENT_ACTIVE);
-#else
-				direntry->flags |= SMARTFS_DIRENT_ACTIVE;
-#endif
-#endif							/* CONFIG_SMARTFS_ERASEDSTATE == 0xFF */
-				req.offset = offset;
-				req.count = sizeof(uint16_t);
-				req.buffer = (uint8_t *)&direntry->flags;
-				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-				if (ret < 0) {
-					fdbg("Error marking entry inactive at sector %d\n", req.logsector);
-					goto err_out;
-				}
-				break;
-			}
-			offset += direntrysize;
-			direntry = (struct smartfs_entry_header_s *)&(fs->fs_rwbuffer[offset]);
-		}
-	}
-	/* Now create a fresh entry in the parent sector */
-	ret = smartfs_createentry(fs, entry->curr_sector, name, type, mode, &dummyentry, firstsector, NULL);
-err_out:
-	if (dummyentry.name) {
-		kmm_free(dummyentry.name);
-	}
-	if (ret != OK) {
-		return ERROR;
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: smartfs_redo_write
- *
- * Description: redo the file write
- *
- ****************************************************************************/
-static int smartfs_redo_write(struct smartfs_mountpt_s *fs)
-{
-	int ret;
-	struct smart_read_write_s req;
-	struct smartfs_logging_entry_s *entry;
-	struct journal_transaction_manager_s *j_mgr;
-
-	j_mgr = fs->journal;
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-
-	if (entry->datalen > 0) {
-		req.logsector = entry->curr_sector;
-		req.offset = entry->offset;
-		req.count = entry->datalen;
-		req.buffer = (uint8_t *)j_mgr->buffer + sizeof(struct smartfs_logging_entry_s);
-		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-		if (ret != OK) {
-			return ERROR;
-		}
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: smartfs_redo_delete
- *
- * Description: redo the delete operation for file/directory
- *
- ****************************************************************************/
-static int smartfs_redo_delete(struct smartfs_mountpt_s *fs)
-{
-	int ret;
-	struct smartfs_entry_s direntry;
-	struct smartfs_logging_entry_s *entry;
-	struct smart_read_write_s readwrite;
-	struct smartfs_entry_header_s entryread;
-
-	entry = (struct smartfs_logging_entry_s *)(fs->journal->buffer);
-
-	readwrite.logsector = entry->curr_sector;
-	readwrite.offset = entry->offset;
-	readwrite.count = sizeof(struct smartfs_entry_header_s);
-	readwrite.buffer = (uint8_t *)&entryread;
-	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-	if (ret < 0) {
-		return OK;
-	}
-	if (ENTRY_VALID(&entryread)) {
-		direntry.dsector = entry->curr_sector;
-		direntry.doffset = entry->offset;
-		direntry.dfirst = entry->datalen;
-		direntry.firstsector = entry->generic_1;
-
-		smartfs_deleteentry(fs, &direntry);
-	} else {
-		fdbg("No redo delete required\n");
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: process_transactions
- *
- * Description: process the transactions which started but didnt finish.
- *              processing is done based on transaction type.
- *
- ****************************************************************************/
-static int process_transaction(struct smartfs_mountpt_s *fs)
-{
-	int ret;
-	struct smartfs_logging_entry_s *entry;
-	struct journal_transaction_manager_s *j_mgr;
-
-	ret = OK;
-	j_mgr = fs->journal;
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-
-	/* Check whether the transaction qualifies for redo */
-	if (T_START_CHECK(entry->trans_info) && !T_FINISH_CHECK(entry->trans_info)) {
-		/* Choose redo routine based on transaction type */
-		fdbg("type : %d sector : %d generic_1 : %d\n", GET_TRANS_TYPE(entry->trans_info), entry->curr_sector, entry->generic_1);
-		switch (GET_TRANS_TYPE(entry->trans_info)) {
-		case T_SYNC:
-		case T_WRITE:
-			if (!T_NEEDSYNC_CHECK(entry->trans_info)) {
-				/* If write doesnt need a sync, redo it immediately */
-				ret = smartfs_redo_write(fs);
-				break;
-			}
-			/* If write needs sync, add this information to the list containing info
-			 * of sectors which need sync. These will be restored later
-			 */
-			return add_to_list(fs, j_mgr, j_mgr->sector, j_mgr->offset, JOURNAL_RESTORE);
-		case T_CREATE:
-			/* Redo create transactions for files so that a new sector is allocated as firstsector */
-			ret = smartfs_redo_create(fs, SMARTFS_DIRENT_TYPE_FILE, 0xFFFF);
-			break;
-		case T_RENAME:
-			ret = smartfs_redo_rename(fs);
-			break;
-		case T_DELETE:
-			ret = smartfs_redo_delete(fs);
-			break;
-		case T_MKDIR:
-			/* Redo create transactions for directory so that a new sector is allocated as firstsector */
-			ret = smartfs_redo_create(fs, SMARTFS_DIRENT_TYPE_DIR, 0xFFFF);
-			break;
-		default:
-			ret = ERROR;
-		}
-		if (ret != OK) {
-			return ret;
-		}
-		/* Then set the transaction as finished */
-		ret = smartfs_set_transaction(fs, j_mgr->sector, j_mgr->offset, TRANS_FINISHED);
-	}
-	return ret;
-}
-
-/****************************************************************************
- * Name: move_journal_area
- *
- * Description: When one journal area is filled, move the unfinished transac-
- *              tions to other journal area.
- *
- ****************************************************************************/
-static int move_journal_area(struct smartfs_mountpt_s *fs)
-{
-	int ret;
-	uint8_t read_area;
-	uint8_t write_area;
-	uint16_t readsect;
-	uint16_t startsector;
-	uint16_t readoffset;
-	uint16_t newsector, newoffset;
-	struct smartfs_logging_entry_s *entry;
-	struct journal_transaction_manager_s *j_mgr;
-	struct journal_transaction_manager_s temp_mgr;
-
-	ret = OK;
-	j_mgr = fs->journal;
-	read_area = j_mgr->jarea;
-	write_area = (read_area == 0) ? 1 : 0;
-
-	temp_mgr.enabled = j_mgr->enabled;
-	temp_mgr.jarea = read_area;
-	temp_mgr.sector = SMARTFS_LOGGING_SECTOR + write_area * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	temp_mgr.offset = 1;
-	temp_mgr.availbytes = j_mgr->availbytes;
-	temp_mgr.active_sectors = j_mgr->active_sectors;
-	temp_mgr.list = j_mgr->list;
-	temp_mgr.buffer = (uint8_t *)kmm_malloc(sizeof(struct smartfs_logging_entry_s) + j_mgr->availbytes);
-	if (!(temp_mgr.buffer)) {
-		fdbg("out of memory\n");
-		return -ENOMEM;
-	}
-
-	ret = set_area_id_bits(fs, AREA_OLD_UNERASED);
-	if (ret != OK) {
-		fdbg("set_area_id_bits failed bits : %d\n", AREA_OLD_UNERASED);
-		goto errout;
-	}
-	entry = (struct smartfs_logging_entry_s *)temp_mgr.buffer;
-	startsector = SMARTFS_LOGGING_SECTOR + read_area * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	readsect = startsector;
-	readoffset = 1;
-
-	while (readsect < startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-		/* Read transactions in journal sector */
-
-		if (read_logging_entry(fs, &temp_mgr, &readsect, &readoffset) != OK) {
-			/* Failure here means no more entries exist/readable */
-			ret = OK;
-			break;
-		}
-		/* Check whether this transaction exists, and logging of transaction has been completed */
-		if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
-			/* If this entry has additional data, read additional data
-			   Skip reading additional data if transaction os of type DELETE, as we have reused datalen field
-			 */
-			if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
-				/* If not a T_WRITE transaction which needs sync, read the additional data */
-				ret = read_logging_data(fs, &temp_mgr, &readsect, &readoffset);
-				if (ret != OK) {
-					fdbg("Cannot read entry data.\n");
-					goto errout;
-				}
-			}
-			/* If not finished, copy this transaction */
-			if (!T_FINISH_CHECK(entry->trans_info)) {
-				/* Change the area to write */
-				temp_mgr.jarea = write_area;
-				ret = smartfs_write_transaction(fs, &temp_mgr, &newsector, &newoffset);
-				if (ret != OK) {
-					goto errout;
-				}
-				if (IS_ACTIVE(temp_mgr.active_sectors, entry->curr_sector)) {
-					/* change the journal address of this transaction in the list */
-					ret = add_to_list(fs, &temp_mgr, newsector, newoffset, JOURNAL_MODIFY_LOG);
-					if (ret != OK) {
-						goto errout;
-					}
-				}
-				/* Change back the area to read */
-				temp_mgr.jarea = read_area;
-			}
-		} else {
-			break;
-		}
-	}
-
-	j_mgr->jarea = write_area;
-	ret = set_area_id_bits(fs, AREA_USED);
-	if (ret != OK) {
-		fdbg("set_area_id_bits failed bits : %d\n", AREA_USED);
-		goto errout;
-	}
-
-	temp_mgr.jarea = read_area;
-	ret = clear_journal_sectors(fs, &temp_mgr);
-	if (ret != OK) {
-		fdbg("clear_journal_sectors failed... ret : %d\n", ret);
-		goto errout;
-	}
-	j_mgr->sector = temp_mgr.sector;
-	j_mgr->offset = temp_mgr.offset;
-
-errout:
-	if (temp_mgr.buffer) {
-		kmm_free(temp_mgr.buffer);
-	}
-	return ret;
-}
-
-/****************************************************************************
- * Name: smartfs_set_transaction
- *
- * Description: Mark a transaction located at offset 'offset' in logging sector
- *              'sector' to 'action'.
- *
- ****************************************************************************/
-static int smartfs_set_transaction(struct smartfs_mountpt_s *fs, uint16_t sector, uint16_t offset, uint8_t action)
-{
-	int ret;
-	struct smart_read_write_s req;
-	struct smartfs_logging_entry_s *entry;
-	struct journal_transaction_manager_s *j_mgr;
-
-	j_mgr = fs->journal;
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-
-	req.logsector = sector;
-	req.offset = offset + offsetof(struct smartfs_logging_entry_s, trans_info);
-
-	req.count = sizeof(entry->trans_info);
-	req.buffer = (uint8_t *)&(entry->trans_info);
-	if (req.offset + req.count <= j_mgr->availbytes) {
-		/* Read current current transaction info */
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-		if (ret < 0) {
-			return ret;
-		}
-
-		T_SET_TRANSACTION(entry->trans_info, action);
-
-		/* Write back the transaction info */
-		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-		if (ret != OK) {
-			fdbg("Writing failed %u %u\n", req.logsector, req.offset);
-			return ret;
-		}
-	} else {
-		/* Should never happen. Entry header should never be broken in 2 sectors. */
-		fdbg("Entry header should never be broken in 2 sectors. offset : %d count : %d availbytes : %d\n", req.offset, req.count, j_mgr->availbytes);
-		return ENFILE;
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: get_next_sector_info
- *
- * Description: Calculate next sector and offset from given condition.
- *              If current area filled with data, it returns value to change area.
- *
- ****************************************************************************/
-static int get_next_sector_info(struct journal_transaction_manager_s *j_mgr)
-{
-	int ret;
-	uint16_t startsector;
-	uint16_t newoffset, newsector;
-	struct smartfs_logging_entry_s *entry;
-
-	ret = NO_CHANGE;
-	newsector = j_mgr->sector;
-	newoffset = j_mgr->offset;
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-	startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	if ((j_mgr->offset + sizeof(struct smartfs_logging_entry_s)) > j_mgr->availbytes) {
-		newsector++;
-		newoffset = 0;
-		ret = NEXT_SECTOR;
-	}
-	if (newsector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-		return MOVE_AREA;
-	}
-
-	newoffset += sizeof(struct smartfs_logging_entry_s) + (GET_TRANS_TYPE(entry->trans_info) != T_DELETE ? entry->datalen : 0);
-
-	if (newoffset > j_mgr->availbytes) {
-		newsector++;
-	}
-	if (newsector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-		ret = MOVE_AREA;
-	}
-	return ret;
-}
-/****************************************************************************
- * Name: smartfs_write_transaction
- *
- * Description: Write a transaction entry to Journal log at position 'sector'
- *              and 'offset' of journal manager. Updates the 'sector'
- *              and 'offset' of journal manager to logging sector and offset
- *              where next transaction can be written.
- *
- ****************************************************************************/
-
-static int smartfs_write_transaction(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr,
-									 uint16_t *sector, uint16_t *offset)
-{
-	int ret;
-	int info;
-	uint16_t startsector;
-	struct smart_read_write_s req;
-	struct smartfs_logging_entry_s *entry;
-
-	startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-
-	info = get_next_sector_info(j_mgr);
-	if (info == NEXT_SECTOR) {
-		j_mgr->sector++;
-		j_mgr->offset = 0;
-	} else if (info == MOVE_AREA) {
-		fvdbg("entry : %d\n", entry->datalen);
-		ret = move_journal_area(fs);
-		if (ret != OK) {
-			fdbg("move_journal_area failed ret : %d\n", ret);
-			return ret;
-		}
-		/* change startsector again here because area changed */
-		startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
-	}
-
-	*sector = j_mgr->sector;
-	*offset = j_mgr->offset;
-	req.logsector = *sector;
-	req.offset = *offset;
-	req.count = sizeof(struct smartfs_logging_entry_s);
-	req.buffer = j_mgr->buffer;
-	/* Write the entry */
-	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-	if (ret != OK) {
-		fdbg("write entry failed ret : %d\n", ret);
-		return ret;
-	}
-	/* Increment the journal manager offset */
-	j_mgr->offset += req.count;
-	req.offset += req.count;
-	req.buffer += req.count;
-	if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
-		/* Write data if present. We also check transaction type because we are
-		 * reusing datalen field of logging entry in case of T_DELETE
-		 */
-		req.count = entry->datalen;
-
-		if (req.offset + entry->datalen > j_mgr->availbytes) {
-			/* Not enough space to write full data in the same sector.
-			 * Write only what can be accomodated
-			 */
-			req.count = j_mgr->availbytes - req.offset;
-		}
-
-		if (req.count > 0) {
-			/* Write the data */
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-			if (ret != OK) {
-				fdbg("write data failed ret : %d\n", ret);
-				return ret;
-			}
-			req.buffer += req.count;
-			j_mgr->offset += req.count;
-		}
-		if (req.count < entry->datalen) {
-			/* If any data is left to write, go to next sector */
-			req.logsector++;
-			if (req.logsector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-				/* This case should have been handled above. */
-				fdbg("logical sector is too big!! %d\n", req.logsector);
-				return -ENOSPC;
-			}
-			req.offset = 0;
-			req.count = entry->datalen - req.count;
-
-			/* Write remaining data */
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-			if (ret != OK) {
-				fdbg("write remained data failed ret : %d\n", ret);
-				return ret;
-			}
-			/* Update journal manager sector and offset */
-			j_mgr->sector = req.logsector;
-			j_mgr->offset = req.count;
-		}
-	}
-
-	/* Mark the transaction as STARTED */
-	ret = smartfs_set_transaction(fs, *sector, *offset, TRANS_STARTED);
-	if (ret != OK) {
-		fdbg("setting status failed : %d\n", ret);
-	}
-
-	return ret;
-}
-
-/****************************************************************************
- * Name: smartfs_set_sequence
- *
- * Description: Set the sequence number of a logged write/sync transaction to seq.
- *
- ****************************************************************************/
-static int smartfs_set_sequence(struct smartfs_mountpt_s *fs, uint16_t sector, uint16_t offset, uint8_t seq)
-{
-	struct smart_read_write_s req;
-	struct smartfs_logging_entry_s *entry;
-	struct journal_transaction_manager_s *j_mgr;
-	int ret;
-
-	j_mgr = fs->journal;
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-	entry->seq_no = seq;
-
-	req.logsector = sector;
-	req.offset = offset + offsetof(struct smartfs_logging_entry_s, seq_no);
-
-	req.count = sizeof(entry->seq_no);
-	req.buffer = (uint8_t *)&(entry->seq_no);
-	if (req.offset + req.count <= j_mgr->availbytes)  {
-		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
-		if (ret != OK) {
-			fdbg("set sequence failed.. seq no : %d logicsector : %d\n", seq, sector);
-		}
-		return ret;
-	}
-	return ERROR;
-}
-
-/****************************************************************************
- * Name: add_to_list
- *
- * Description: Add a T_WRITE transaction located at (j_sector, j_offset)
- *              to journal_transaction_manager_s's write transactions list.
- *              If a transaction for same sector is already present,
- *              finish that transaction and remove it from the list.
- *
- ****************************************************************************/
-static int add_to_list(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s *j_mgr,
-					   uint16_t j_sector, uint16_t j_offset, enum journal_action_e action)
-{
-	int ret;
-	struct active_write_node_s *node;
-	struct smartfs_logging_entry_s *entry;
-
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-
-	/* If another write transaction for same sector which needs sync
-	   does not exist, create a new list node */
-	if (!IS_ACTIVE(j_mgr->active_sectors, entry->curr_sector)) {
-		node = (struct active_write_node_s *)kmm_malloc(sizeof(struct active_write_node_s));
-		if (!node) {
-			return -ENOSPC;
-		}
-		node->next = j_mgr->list;
-		j_mgr->list = node;
-	} else {
-		/* If it exists, search the old node for this sector */
-		for (node = j_mgr->list; node != NULL; node = node->next) {
-			if (node->sector == entry->curr_sector) {
-				if (action == JOURNAL_LOG || action == JOURNAL_MODIFY_LOG) {
-					/* if it is a logging operation, break */
-					break;
-				}
-				if (action == JOURNAL_RESTORE) {
-					/* if it is a restore operation, break only if previous transaction os older */
-					if (node->seq_no < entry->seq_no) {
-						break;
-					}
-					/* Existing transaction in the list is newer than the newly read
-					 * transaction. No need to add this transaction to list, because
-					 * only the sector size after the newer write transaction will be synced
-					 */
-					return OK;
-
-				}
-			}
-		}
-	}
-
-	/* Now update the transaction info on the node */
-	if (!node) {
-		return ERROR;
-	}
-	node->trans_info = entry->trans_info;
-	node->sector = entry->curr_sector;
-	node->used_bytes = entry->generic_1;
-	node->seq_no = entry->seq_no;
-
-	/* If transaction for this sector already existed, finish the previous transaction.
-	   Skip if action is to modify existing log */
-
-	if (IS_ACTIVE(j_mgr->active_sectors, node->sector) && action != JOURNAL_MODIFY_LOG) {
-		ret = smartfs_set_transaction(fs, node->journal_sector, node->journal_offset, TRANS_FINISHED);
-		if (ret != OK) {
-			return ERROR;
-		}
-
-		if (action == JOURNAL_LOG) {
-			/* As the older transaction for same sector has been marked finished, set the
-			 * sequence number of new transaction to 0. There is no need to do this during
-			 * restore, because more than 2 transactions for same sector cannot exist.
-			 */
-			ret = smartfs_set_sequence(fs, j_sector, j_offset, 0);
-			if (ret != OK) {
-				return ERROR;
-			}
-		}
-	}
-
-	node->journal_sector = j_sector;
-	node->journal_offset = j_offset;
-	/* mark the sector as active */
-	SET_ACTIVE(j_mgr->active_sectors, node->sector);
-
-	return OK;
-}
-
-/****************************************************************************
- * Name: remove_from_list
- *
- * Description: remove a transaction from the active transactions list
- *
- ****************************************************************************/
-static int remove_from_list(struct journal_transaction_manager_s *j_mgr, uint16_t sector)
-{
-	int ret;
-	struct active_write_node_s *temp;
-	struct active_write_node_s *prev;
-
-	ret = ERROR;
-	if (!(j_mgr->list)) {
-		/* List doesnt exist or Sector doesnt exist in the list */
-		goto errout;
-	}
-	temp = j_mgr->list;
-	if (temp->sector == sector) {
-		j_mgr->list = temp->next;
-		kmm_free(temp);
-		ret = OK;
-		SET_INACTIVE(j_mgr->active_sectors, sector);
-		goto errout;
-	}
-	prev = temp;
-	temp = temp->next;
-	while (temp != NULL) {
-		if (temp->sector == sector) {
-			prev->next = temp->next;
-			kmm_free(temp);
-			ret = OK;
-			break;
-		}
-		prev = temp;
-		temp = temp->next;
-	}
-	SET_INACTIVE(j_mgr->active_sectors, sector);
-errout:
-	return ret;
-}
-
-/****************************************************************************
- * Name: smartfs_create_journalentry
- *
- * Description: creates a journal entry based on transaction type.
- *
- ****************************************************************************/
-int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_transaction_type_e type, uint16_t curr_sector, uint16_t offset, uint16_t datalen, uint16_t genericdata, uint8_t needsync, const uint8_t *data, uint16_t *t_sector, uint16_t *t_offset)
-{
-	int ret;
-	struct smartfs_logging_entry_s *entry;
-	struct journal_transaction_manager_s *j_mgr;
-
-	j_mgr = fs->journal;
-	if (!j_mgr) {
-		fdbg("Journal manager not available\n");
-		return ERROR;
-	}
-	if (!(j_mgr->enabled)) {
-		fdbg("Journal Manager Not enabled due to size constraints.\n");
-		return OK;
-	}
-
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-
-	T_STATUS_RESET(entry->trans_info);
-	SET_TRANS_TYPE(entry->trans_info, type);
-	T_SET_TRANSACTION(entry->trans_info, TRANS_EXIST);
-
-	if (needsync) {
-		T_SET_TRANSACTION(entry->trans_info, TRANS_NEED_SYNC);
-	}
-	entry->curr_sector = curr_sector;
-	entry->offset = offset;
-	entry->datalen = datalen;
-	entry->generic_1 = genericdata;
-	entry->seq_no = 0;
-	entry->crc16[0] = smartfs_calc_crc_entry(j_mgr);
-	if (datalen && type != T_DELETE) {
-		memcpy(j_mgr->buffer + sizeof(struct smartfs_logging_entry_s), data, datalen);
-		entry->crc16[1] = smartfs_calc_crc_data(j_mgr);
-	} else {
-		entry->crc16[1] = CONFIG_SMARTFS_ERASEDSTATE;
-	}
-
-	switch (type) {
-	case T_SYNC:
-	case T_WRITE:
-		/* Store the position of writing new transaction, as journal manager
-		 * will be updated. */
-		if (IS_ACTIVE(j_mgr->active_sectors, entry->curr_sector)) {
-			/* If another write transaction with sync exists for this sector,
-			   set the sequence numbre to 1 */
-			entry->seq_no = 1;
-		} else {
-			entry->seq_no = 0;
-		}
-		/* Now write the transaction on disk */
-		ret = smartfs_write_transaction(fs, j_mgr, t_sector, t_offset);
-		if (ret != OK) {
-			fdbg("smartfs_write_transaction failed type : %d ret : %d\n", type, ret);
-			return ret;
-		}
-
-		if (T_NEEDSYNC_CHECK(entry->trans_info)) {
-			/* If the write requires a sync (when written data is appended), we add
-			* it to list */
-			ret = add_to_list(fs, j_mgr, *t_sector, *t_offset, JOURNAL_LOG);
-			if (ret != OK) {
-				fdbg("add_to_list failed ret : %d\n", ret);
-				return ret;
-			}
-		}
-		break;
-
-	default:
-		ret = smartfs_write_transaction(fs, j_mgr, t_sector, t_offset);
-		if (ret != OK) {
-			fdbg("smartfs_write_transaction failed type : %d ret : %d\n", type, ret);
-			return ret;
-		}
-#ifdef CONFIG_SMARTFS_JOURNAL_VERIFY
-		if (type != T_DELETE) {
-			fdbg("write transaction %d %d %d \n", type, *t_sector, *t_offset);
-			ret = smartfs_verify_transaction(fs, *t_sector, *t_offset);
-			if (ret != OK) {
-				fdbg("smartfs_verify_transaction failed: %d ret : %d\n", type, ret);
-				return ret;
-			}
-		}
-#endif
-		break;
-	}
-
-	fvdbg("Create journalentry : %d %d\n", *t_sector, *t_offset);
-	return OK;
-}
-
-#ifdef CONFIG_SMARTFS_JOURNAL_VERIFY
-/****************************************************************************
- * Name: smartfs_verify_transaction
- *
- * Description: verify after write transaction
- *
- ****************************************************************************/
-static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sector, uint16_t offset)
-{
-	struct smart_read_write_s req;
-	struct journal_transaction_manager_s *j_mgr;
-	struct smartfs_logging_entry_s *entry;
-	uint8_t *buff;
-	int i;
-	int ret;
-
-	j_mgr = fs->journal;
-	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-
-	buff = (uint8_t *)malloc(entry->datalen + sizeof(struct smartfs_logging_entry_s));
-
-	if (!buff) {
-		fdbg("mem alloc fail\n");
-		return ERROR;
-	}
-
-	req.logsector = sector;
-	req.offset = offset;
-	req.count = sizeof(struct smartfs_logging_entry_s);
-	req.buffer = buff;
-	/* read entry first */
-	fvdbg("read entry :: sector : %d offset :%d cnt: %d\n", req.logsector, req.offset, req.count);
-	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-	if (ret < 0) {
-		fdbg("read fail %d\n", ret);
-		goto error_with_ret;
-	}
-
-
-	req.buffer += req.count;
-	req.offset += req.count;
-	req.count = entry->datalen;
-	if (req.offset + entry->datalen > j_mgr->availbytes) {
-		req.count = j_mgr->availbytes - req.offset;
-	}
-	if (req.count > 0) {
-		fvdbg("read data sector :: %d offset :%d cnt: %d\n", req.logsector, req.offset, req.count);
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-		if (ret < 0) {
-			fdbg("read fail %d\n", ret);
-			goto error_with_ret;
-		}
-		req.buffer += req.count;
-		req.offset += req.count;
-	}
-
-	if (req.count < entry->datalen) {
-		req.logsector++;
-		req.offset = 0;
-		req.count = entry->datalen - req.count;
-		fvdbg("read remain data:: sector : %d offset :%d cnt: %d\n", req.logsector, req.offset, req.count);
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
-		if (ret < 0) {
-			fdbg("read fail %d\n", ret);
-			goto error_with_ret;
-		}
-	}
-
-	for (i = 0; i < entry->datalen + sizeof(struct smartfs_logging_entry_s); i++) {
-		if (buff[i] != j_mgr->buffer[i]) {
-			fdbg("journal data write fail :: offset : %d write : 0x%x read : 0x%x\n", i, j_mgr->buffer[i], buff[i]);
-			goto error_with_dumpret;
-		}
-	}
-
-	free(buff);
-	return OK;
-
-
-error_with_dumpret:
-	for (i = 0; i < entry->datalen + sizeof(struct smartfs_logging_entry_s); i++) {
-		fdbg("offset : %d write : 0x%x read : 0x%x\n", i, j_mgr->buffer[i], buff[i]);
-	}
-error_with_ret:
-	free(buff);
-	return ERROR;
-}
-#endif
-
-/****************************************************************************
- * Name: smartfs_calc_crc_entry
- *
- * Description: Calculates crc value for journal entry
- *
- ****************************************************************************/
-static uint8_t smartfs_calc_crc_entry(struct journal_transaction_manager_s *j_mgr)
-{
-	uint8_t crc = 0;
-	uint16_t offset;
-	struct smartfs_logging_entry_s *entry;
-
-	offset = offsetof(struct smartfs_logging_entry_s, crc16) + sizeof(entry->crc16);
-	entry = (struct smartfs_logging_entry_s *)j_mgr->buffer;
-
-	crc = crc8((uint8_t *)&j_mgr->buffer[offset], sizeof(struct smartfs_logging_entry_s) - offset);
-	return crc;
-}
-
-/****************************************************************************
- * Name: smartfs_calc_crc_data
- *
- * Description: Calculates crc value for journal entry data
- *
- ****************************************************************************/
-static uint8_t smartfs_calc_crc_data(struct journal_transaction_manager_s *j_mgr)
-{
-	uint8_t crc = 0;
-	uint16_t offset;
-	struct smartfs_logging_entry_s *entry;
-
-	offset = offsetof(struct smartfs_logging_entry_s, crc16) + sizeof(entry->crc16);
-	entry = (struct smartfs_logging_entry_s *)j_mgr->buffer;
-
-	crc = crc8((uint8_t *)&j_mgr->buffer[offset], entry->datalen + sizeof(struct smartfs_logging_entry_s) - offset);
-	return crc;
-}
-
-
-
-
-/****************************************************************************
- * Name: smartfs_finish_journalentry
- *
- * Description: sets a journal entry state to finish.
- *              curr_sector : sector for which the entry belongs
- *              sector: journal sector of location of entry
- *              offset: journal sector offset of entry
- *
- ****************************************************************************/
-int smartfs_finish_journalentry(struct smartfs_mountpt_s *fs, uint16_t curr_sector, uint16_t sector, uint16_t offset, enum logging_transaction_type_e type)
-{
-	struct journal_transaction_manager_s *j_mgr;
-
-	j_mgr = fs->journal;
-	if (!j_mgr) {
-		fdbg("Journal manager not available\n");
-		return ERROR;
-	}
-	if (!(j_mgr->enabled)) {
-		fdbg("Journal Manager Not enabled due to size constraints.\n");
-		return OK;
-	}
-	/* If sector is in the list and action is FINISH, remove sector from list */
-	if (IS_ACTIVE(j_mgr->active_sectors, curr_sector) && type == T_SYNC) {
-		remove_from_list(j_mgr, curr_sector);
-	}
-	return smartfs_set_transaction(fs, sector, offset, TRANS_FINISHED);
-}
-#endif /* END OF CONFIG_SMARTFS_JOURNALING */

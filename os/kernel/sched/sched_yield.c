@@ -39,9 +39,13 @@
 
 #include <tinyara/config.h>
 
-#include <tinyara/arch.h>
+#ifndef CONFIG_SCHED_YIELD_OPTIMIZATION
+#include <sys/types.h>
 
 #include "sched/sched.h"
+#else
+#include <tinyara/arch.h>
+#endif
 
 /****************************************************************************
  * Definitions
@@ -102,63 +106,12 @@ int sched_yield(void)
 	return sched_setpriority(rtcb, rtcb->sched_priority);
 
 #else
+	irqstate_t saved_state;
 
-	FAR struct tcb_s *rtcb = this_task();
-	FAR struct tcb_s *ntcb = (FAR struct tcb_s *)rtcb->flink;
+	saved_state = irqsave();
+	up_schedyield();
+	irqrestore(saved_state);
 
-	/* 1) Make sure only current task can execute sched_yield API to yield it's
-	 * CPU resources to other tasks
-	 * 2) There must always be at least one task in readytorun list (the idle task)
-	 * 3) Make sure preemption is not disabled while calling sched_yield
-	 */
-
-	DEBUGASSERT(rtcb->blink == NULL || ntcb != NULL || rtcb->lockcount <= 0);
-
-	/* Yielding the CPU resource to other tasks is possible only if other tasks
-	 * priority is either equal or greater than currently running task.
-	 * It's achieved by rescheduling the current task behind any other tasks at
-	 * same priority
-	 */
-	if (rtcb->sched_priority <= ntcb->sched_priority) {
-		bool switch_needed;
-		irqstate_t saved_state;
-
-		saved_state = irqsave();
-
-		/* A context switch will occur. */
-		ntcb->task_state = TSTATE_TASK_RUNNING;
-		switch_needed = true;
-
-		/* Remove the TCB from the ready-to-run list */
-		dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
-
-		/* Since the current TCB is not in any list, it is now invalid */
-		rtcb->task_state = TSTATE_TASK_INVALID;
-
-		/* Return the task to the specified blocked task list.
-		 * sched_addreadytorun will return true if the task was
-		 * added to the new list.  We will need to perform a context
-		 * switch only if the EXCLUSIVE or of the two calls is non-zero
-		 * (i.e., one and only one of the calls changes the head of the
-		 * ready-to-run list).
-		 */
-		switch_needed ^= sched_addreadytorun(rtcb);
-
-		if (switch_needed) {
-			/* we are going to do a context switch, then now it's the right
-			 * time to add any pending tasks back into the ready-to-run task
-			 * list now
-			 */
-			if (g_pendingtasks.head) {
-				sched_mergepending();
-			}
-
-			up_schedyield(rtcb);
-		}
-
-		irqrestore(saved_state);
-	}
 	return OK;
-
 #endif							/* End of CONFIG_SCHED_YIELD_OPTIMIZATION */
 }

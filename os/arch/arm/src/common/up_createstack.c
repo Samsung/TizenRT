@@ -67,6 +67,7 @@
 #endif
 #include <tinyara/kmalloc.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 #include <arch/board/board.h>
 
 #include "up_arch.h"
@@ -109,6 +110,15 @@
 #define STACK_ALIGN_MASK    (CONFIG_STACK_ALIGNMENT-1)
 #define STACK_ALIGN_DOWN(a) ((a) & ~STACK_ALIGN_MASK)
 #define STACK_ALIGN_UP(a)   (((a) + STACK_ALIGN_MASK) & ~STACK_ALIGN_MASK)
+
+/* Alignment value for stack allocation when mpu stack overflow protection is enabled */
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+#ifdef CONFIG_ARMV8M_MPU
+#define STACK_PROTECTION_MPU_ALIGNMENT (32)	/* Fixed alignment size of 32 bytes as per ARMv8-M spec*/
+#else /* CONFIG_ARMV7M_MPU */
+#define STACK_PROTECTION_MPU_ALIGNMENT CONFIG_MPU_STACK_GUARD_SIZE /* In ARMv7-M, MPU requires alignment to region size */
+#endif
+#endif
 
 /****************************************************************************
  * Private Types
@@ -164,6 +174,15 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 {
 	size_t stack_alloc_size = stack_size;
 
+	/* new thread does not have the uheap value yet, It's added in the task_
+	 * schedsetup function.
+	 * Parent and child threads must have the same uheap value, so we are
+	 * using the parent thread uheap
+	 */
+#if defined(HAVE_KERNEL_HEAP) || defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+	uint32_t uheap = sched_self()->uheap;	/* User heap pointer */
+#endif
+
 	/* Is there already a stack allocated of a different size?  Because of
 	 * alignment issues, stack_size might erroneously appear to be of a
 	 * different size.  Fortunately, this is not a critical operation.
@@ -183,17 +202,25 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 */
 
 #ifdef HAVE_KERNEL_HEAP
-		/* Use the kernel allocator if this is a kernel thread */
-
-		if (ttype == TCB_FLAG_TTYPE_KERNEL) {
+		/* Use the kernel allocator if this is a task / pthread being created
+		 * to run only on kernel side. We verify this by checking the uheap
+		 * object in the tcb of current running task. uheap is always non-null
+		 * in user threads and null for kernel threads.
+		 */
+		if (!uheap || ttype == TCB_FLAG_TTYPE_KERNEL) {
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+			stack_alloc_size = stack_alloc_size + CONFIG_MPU_STACK_GUARD_SIZE;
+			tcb->stack_alloc_ptr = (uint32_t *)kmm_memalign(STACK_PROTECTION_MPU_ALIGNMENT, stack_alloc_size);
+#else
 			tcb->stack_alloc_ptr = (uint32_t *)kmm_malloc(stack_alloc_size);
+#endif
 		} else
 #endif
 		{
 			/* Use the user-space allocator if this is a task or pthread */
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION	/* address must be aligned to 32 byte for MPU region */
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 			stack_alloc_size = stack_alloc_size + CONFIG_MPU_STACK_GUARD_SIZE;
-			tcb->stack_alloc_ptr = (uint32_t *)kumm_memalign(CONFIG_MPU_STACK_GUARD_SIZE, stack_alloc_size);
+			tcb->stack_alloc_ptr = (uint32_t *)kumm_memalign(STACK_PROTECTION_MPU_ALIGNMENT, stack_alloc_size);
 #else
 			tcb->stack_alloc_ptr = (uint32_t *)kumm_malloc(stack_size);
 #endif
@@ -239,7 +266,8 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		size_of_stack = top_of_stack - (uint32_t)tcb->stack_alloc_ptr + 4;
 
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		/* Adjust stack size after guard_size calculationn */
+
+		/* Adjust stack size after guard_size calculation */
 		size_of_stack = size_of_stack - CONFIG_MPU_STACK_GUARD_SIZE;
 #endif
 		/* Save the adjusted stack values in the struct tcb_s */
@@ -253,15 +281,28 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 */
 
 #ifdef CONFIG_STACK_COLORATION
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		/* If CONFIG_MPU_STACK_OVERFLOW_PROTECTION is enabled, stack is created with requested size + CONFIG_MPU_STACK_GUARD_SIZE.
+		 * In this case, we should make coloration from stack_alloc_ptr to adj_stack_ptr.
+		 * So we should re-calculate the coloration size with CONFIG_MPU_STACK_GUARD_SIZE.
+		 */
+		up_stack_color(tcb->stack_alloc_ptr, tcb->adj_stack_size + CONFIG_MPU_STACK_GUARD_SIZE);
+#else
+		/* If CONFIG_MPU_STACK_OVERFLOW_PROTECTION is not enabled, kernel/user thread
+		 * does not have a stack guard at front of stack so that the size of coloration
+		 * should be the tcb->adj_stack_size.
+		 */
 		up_stack_color(tcb->stack_alloc_ptr, tcb->adj_stack_size);
+#endif
 #endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		heapinfo_exclude_stacksize(tcb->stack_alloc_ptr);
 #endif
 		board_led_on(LED_STACKCREATED);
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_STACKOVF);
 		/* The smallest size that can be programmed for an MPU region is 32 bytes */
-		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], MPU_REG_NUM_STK,
+		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], nregion - 1,
 			(uint32_t)tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
 #endif
 

@@ -63,6 +63,9 @@
 
 #include <tinyara/sched.h>
 #include <tinyara/ttrace.h>
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
+#include <tinyara/mpu.h>
+#endif
 
 #ifndef CONFIG_DISABLE_SIGNALS
 #ifndef CONFIG_DISABLE_PTHREAD
@@ -181,6 +184,19 @@ int task_terminate(pid_t pid, bool nonblocking)
 		sched_unlock();
 		PANIC();
 	}
+
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
+	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
+	if (IS_BINARY_MAINTASK(dtcb) && up_mpu_check_active(&dtcb->mpu_regs[0])) {
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+			up_mpu_disable_region(&dtcb->mpu_regs[i]);
+		}
+#else
+		up_mpu_disable_region(&dtcb->mpu_regs[0]);
+#endif
+	}
+#endif
 
 	/* Perform common task termination logic (flushing streams, calling
 	 * functions registered by at_exit/on_exit, etc.).  We need to do

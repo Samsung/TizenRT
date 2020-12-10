@@ -49,8 +49,8 @@ struct netdev_ops {
 	/*  Address */
 	int (*get_ip4addr)(struct netdev *dev, struct sockaddr *addr, int type);
 	int (*set_ip4addr)(struct netdev *dev, struct sockaddr *addr, int type);
-	int (*get_ip6addr)(struct netdev *dev, struct sockaddr_storage *addr, int type);
 	int (*set_ip6addr)(struct netdev *dev, struct sockaddr_storage *addr, int type);
+	int (*get_ifaddrs)(struct netdev *dev, struct ifaddrs **addrs);
 	int (*delete_ipaddr)(struct netdev *dev);
 
 	int (*get_hwaddr)(struct netdev *dev, struct sockaddr *hwaddr);
@@ -67,8 +67,8 @@ struct netdev_ops {
 	int (*joingroup)(struct netdev *dev, struct in_addr *addr);
 	int (*leavegroup)(struct netdev *dev, struct in_addr *addr);
 
-	int (*input)(struct netdev *dev, uint8_t *data, uint16_t len);
-	int (*linkoutput)(struct netdev *dev, uint8_t *data, uint16_t len);
+	int (*input)(struct netdev *dev, void *data, uint16_t len);
+	int (*linkoutput)(struct netdev *dev, void *data, uint16_t len);
 	int (*igmp_mac_filter)(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
 
 	/* statistics

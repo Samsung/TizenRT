@@ -25,8 +25,6 @@
 
 #include <arch/chip/amebad_nsc.h>
 
-extern volatile TZ_MemoryId_t tz_memory;
-
 /****************************************************************************
  * Context Management for RTL8721D AmebaD TrustZone
  ****************************************************************************/

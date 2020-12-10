@@ -77,7 +77,7 @@ int read_sssro_check(unsigned char *buf, unsigned int byte_size)
 		goto read_out;
 	}
 
-	read_buf = (unsigned char *)malloc(geo.blocksize);
+	read_buf = (unsigned char *)kmm_malloc(geo.blocksize);
 	if (read_buf == NULL) {
 		fdbg("Fail to allocate memory\n");
 		ret = SSSRO_CHK_FAIL;
@@ -102,7 +102,7 @@ read_out:
 	}
 
 	if (read_buf) {
-		free(read_buf);
+		kmm_free(read_buf);
 	}
 
 	return ret;

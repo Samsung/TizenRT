@@ -175,6 +175,11 @@ const esp_partition_t *esp_partition_get(esp_partition_iterator_t iterator);
 esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t iterator);
 
 /**
+ * @brief Initialize a semaphore for partition access
+ */
+void esp_partition_initialize(void);
+
+/**
  * @brief Release partition iterator
  *
  * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.

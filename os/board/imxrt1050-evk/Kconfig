@@ -22,14 +22,12 @@ endchoice # Boot Flash
 config IMXRT_HYPERFLASH
 	bool "Enable Hyperflash"
 	default n
-	select ARCH_USE_FLASH
 	---help---
 		Enables Hyperflash
 
 config IMXRT_NORFLASH
 	bool "Enable Norflash"
 	default n
-	select ARCH_USE_FLASH
 	---help---
 		Enables Norflash
 

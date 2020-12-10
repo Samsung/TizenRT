@@ -138,14 +138,14 @@ void up_release_pending(void)
 			/* Condition check : Update MPU registers only if this is not a kernel thread. */
 			if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
 #if defined(CONFIG_APP_BINARY_SEPARATION)
-				for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+				for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
 					up_mpu_set_register(&rtcb->mpu_regs[i]);
 				}
 #endif
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-				up_mpu_set_register(&rtcb->stack_mpu_regs);
-#endif
 			}
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+			up_mpu_set_register(rtcb->stack_mpu_regs);
+#endif
 #endif
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY

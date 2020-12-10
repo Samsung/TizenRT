@@ -63,6 +63,9 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
+#include <tinyara/mpu.h>
+#endif
 
 #include "task/task.h"
 #include "sched/sched.h"
@@ -72,6 +75,9 @@
 #endif
 #ifdef CONFIG_PREFERENCE
 #include "preference/preference.h"
+#endif
+#ifdef HAVE_TASK_GROUP
+#include "group/group.h"
 #endif
 
 /************************************************************************
@@ -98,6 +104,19 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 {
 	irqstate_t saved_state;
 
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
+	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
+	if (IS_BINARY_MAINTASK(tcb) && up_mpu_check_active(&tcb->mpu_regs[0])) {
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+			up_mpu_disable_region(&tcb->mpu_regs[i]);
+		}
+#else
+		up_mpu_disable_region(&tcb->mpu_regs[0]);
+#endif
+	}
+#endif
+
 #if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
 	task_atexit(tcb);
 	task_onexit(tcb, EXIT_SUCCESS);
@@ -119,6 +138,12 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 	preference_clear_callbacks(tcb->pid);
 #endif
 	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
+
+	/* No need to release the unloading thread's stack,
+	 * because whole heap memory will be released at one go.
+	 * So marking alloc pointer to NULL for skipping to release.
+	 */
+	tcb->stack_alloc_ptr = NULL;
 
 	/* Deallocate its TCB */
 

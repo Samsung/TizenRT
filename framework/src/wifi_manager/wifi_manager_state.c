@@ -37,30 +37,6 @@
 #include "wifi_manager_info.h"
 
 
-enum _wifimgr_disconn_substate {
-	WIFIMGR_DISCONN_NONE = -1,
-	WIFIMGR_DISCONN_DEINIT, // turn off wi-fi manager while station connected to AP
-	WIFIMGR_DISCONN_SOFTAP, // set softap mode while station connected to AP
-	WIFIMGR_DISCONN_INTERNAL_ERROR, // internal error ex) dhcp fails
-	WIFIMGR_DISCONN_MAX,
-};
-typedef enum _wifimgr_disconn_substate _wifimgr_disconn_substate_e;
-
-static char *wifimgr_state_str[] = {
-	"WIFIMGR_UNINITIALIZED",
-	"WIFIMGR_STA_DISCONNECTED",
-	"WIFIMGR_STA_DISCONNECTING",
-	"WIFIMGR_STA_CONNECTING",
-	"WIFIMGR_STA_CONNECTED",
-	"WIFIMGR_STA_RECONNECT",
-	"WIFIMGR_STA_RECONNECTING",
-	"WIFIMGR_STA_CONNECT_CANCEL",
-	"WIFIMGR_SOFTAP",
-	"WIFIMGR_SCANNING",
-	"WIFIMGR_NONE",
-	"WIFIMGR_STATE_MAX",
-};
-
 /*  Setting MACRO */
 static inline void WIFIMGR_SET_SSID(char *s)
 {
@@ -114,14 +90,6 @@ static inline void WIFIMGR_SET_MACADDR(char *s)
 		(dest).max_interval = (src).max_interval;	\
 	} while (0)
 
-/*  Auto connect MACRO */
-/* Check if external wifi driver supports auto(re)connect */
-#ifndef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
-#define WIFIDRIVER_SUPPORT_AUTOCONNECT 1
-#else
-#define WIFIDRIVER_SUPPORT_AUTOCONNECT 0
-#endif
-
 #define WIFIMGR_IPC_PORT 9098
 
 /*  Initialize MACRO */
@@ -167,41 +135,6 @@ static _wifimgr_state_handle_s g_manager_info = {
 										 WM_RECONN_INITIALIZER,
 										 0, 0, 10};
 
-/*  Auto connect variable */
-#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
-static pthread_mutex_t g_reconn_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t g_reconn_signal = PTHREAD_COND_INITIALIZER;
-#define LOCK_RECONN pthread_mutex_lock(&g_reconn_mutex);
-#define UNLOCK_RECONN pthread_mutex_unlock(&g_reconn_mutex);
-#define WIFIMGR_TRIGGER_RECONNECT_WORKER		\
-	do {										\
-		g_manager_info.conn_tries++;			\
-		pthread_mutex_lock(&g_reconn_mutex);	\
-		pthread_cond_signal(&g_reconn_signal);	\
-		pthread_mutex_unlock(&g_reconn_mutex);	\
-	} while (0)
-
-#define WIFIMGR_WAIT_RECONNECT_EVENT							\
-	do {														\
-		pthread_mutex_lock(&g_reconn_mutex);					\
-		pthread_cond_wait(&g_reconn_signal, &g_reconn_mutex);	\
-		pthread_mutex_unlock(&g_reconn_mutex);					\
-		WM_LOG_VERBOSE("[WM] T%d wake up\n", getpid());					\
-	} while (0)
-
-#define WIFIMGR_TERMINATE_RECONN_WORKER									\
-	do {																\
-		WM_LOG_VERBOSE("[WM] send terminate signal to worker(%d/%d)\n", g_manager_info.conn_tries, g_manager_info.max_tries); \
-		pthread_mutex_lock(&g_reconn_mutex);							\
-		g_manager_info.terminate = true;								\
-		pthread_cond_signal(&g_reconn_signal);							\
-		pthread_mutex_unlock(&g_reconn_mutex);							\
-		WM_LOG_VERBOSE("[WM] wait worker to terminate\n");						\
-		pthread_join(g_manager_info.reconn_id, NULL);					\
-	} while (0)
-#endif
-
-
 /**
  * Internal functions
  */
@@ -223,9 +156,7 @@ static wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg);
-static wifi_manager_result_e _handler_on_reconnecting_state(wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg);
-static wifi_manager_result_e _handler_on_connect_cancel_state(wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg);
 
@@ -241,10 +172,21 @@ static const wifimgr_handler g_handler[] = {
 	_handler_on_connecting_state,
 	_handler_on_connected_state,
 	_handler_on_reconnect_state,
-	_handler_on_reconnecting_state,
-	_handler_on_connect_cancel_state,
 	_handler_on_softap_state,
 	_handler_on_scanning_state,
+};
+
+static char *wifimgr_state_str[] = {
+	"WIFIMGR_UNINITIALIZED",
+	"WIFIMGR_STA_DISCONNECTED",
+	"WIFIMGR_STA_DISCONNECTING",
+	"WIFIMGR_STA_CONNECTING",
+	"WIFIMGR_STA_CONNECTED",
+	"WIFIMGR_STA_RECONNECT",
+	"WIFIMGR_SOFTAP",
+	"WIFIMGR_SCANNING",
+	"WIFIMGR_NONE",
+	"WIFIMGR_STATE_MAX",
 };
 
 /*  State MACRO */
@@ -312,10 +254,10 @@ wifi_manager_result_e _wifimgr_run_sta(void)
 {
 	WM_ENTER;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_sta(), "[WM] Starting STA failed.", WIFI_MANAGER_FAIL);
-#if WIFIDRIVER_SUPPORT_AUTOCONNECT
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
-#else
+#ifdef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
+#else
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
 #endif
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -461,11 +403,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 	}
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_init(), "[WM] wifi_utils_init fail\n", WIFI_MANAGER_FAIL);
-#if WIFIDRIVER_SUPPORT_AUTOCONNECT
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
-#else
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
-#endif
+
 #ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
 	WIFIMGR_CHECK_UTILRESULT(wifi_profile_init(), "[WM] wifi_profile init fail\n", WIFI_MANAGER_FAIL);
 #endif
@@ -490,8 +428,13 @@ wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 		WM_LOG_ERROR("[WM] T%d wifi_utils_get_info fail\n", getpid());
 		WIFIMGR_CHECK_UTILRESULT(wifi_utils_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 	}
-
 	WIFIMGR_SET_MACADDR((char *)info.mac_address);
+
+#ifdef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
+#else
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
+#endif
 
 	WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 
@@ -610,50 +553,14 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_DISCONNECTED) {
-#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
-		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
-			wifimgr_call_cb(CB_STA_DISCONNECTED, NULL);
-			dhcpc_close_ipaddr();
-			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
-		} else {
-			wifimgr_call_cb(CB_STA_RECONNECTED, NULL);
-			_wifimgr_conn_info_msg_s *rmsg = (_wifimgr_conn_info_msg_s *)malloc(sizeof(_wifimgr_conn_info_msg_s));
-			if (!rmsg) {				// critical error
-				WM_LOG_ERROR("[WM] allocate memory for reconn msg fail\n");
-				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
-				return WIFI_MANAGER_FAIL;
-			}
-			rmsg->config = (wifi_manager_ap_config_s *)malloc(sizeof(wifi_manager_ap_config_s));
-			if (!rmsg->config) {				// critical error
-				free(rmsg);
-				WM_LOG_ERROR("[WM] allocate memory for reconnmsg apconfig is fail\n");
-				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
-				return WIFI_MANAGER_FAIL;
-			}
-
-			rmsg->conn_config = (wifi_manager_reconnect_config_s *)malloc(sizeof(wifi_manager_reconnect_config_s));
-			if (!rmsg->conn_config) {				// critical error
-				free(rmsg->config);
-				free(rmsg);
-				WM_LOG_ERROR("[WM] allocate memory for reonnmsg conn_config is fail\n");
-				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
-				return WIFI_MANAGER_FAIL;
-			}
-			WIFIMGR_COPY_AP_INFO(*(rmsg->config), g_manager_info.connected_ap);
-			WIFIMGR_COPY_RECONN_INFO(*(rmsg->conn_config), g_manager_info.conn_config);
-
-			g_manager_info.conn_tries = 0;
-			g_manager_info.terminate = false;
-
-			// todo : post message to reconnect
-
-			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
-		}
-#else /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
+#ifndef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 		WM_LOG_VERBOSE("[WM] External AUTOCONNECT: go to RECONNECT state\n");
 		wifimgr_call_cb(CB_STA_RECONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
-#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
+#else
+		wifimgr_call_cb(CB_STA_DISCONNECTED, NULL);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+#endif /* CONFIG_DISABLE_EXTERNAL_AUTOCONNECT */
 	} else if (msg->event == EVT_SET_SOFTAP_CMD) {
 		dhcpc_close_ipaddr();
 		WIFIMGR_COPY_SOFTAP_CONFIG(g_manager_info.softap_config, (wifi_manager_softap_config_s *)msg->param);
@@ -683,61 +590,13 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
-#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
-	WM_LOG_VERBOSE("[WM] INTERNAL AUTOCONNECT event status : %d\n", msg->event);
-	if (msg->event == EVT_DISCONNECT_CMD) {
-		pthread_mutex_lock(&g_reconn_mutex);
-		g_manager_info.terminate = true;
-		pthread_mutex_unlock(&g_reconn_mutex);
-
-		struct sockaddr_in serveraddr;
-		int sd = socket(PF_INET, SOCK_DGRAM, 0);
-		DEBUGASSERT(sd >= 0);
-
-		bzero(&serveraddr, sizeof(serveraddr));
-		serveraddr.sin_family = AF_INET;
-		serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-		serveraddr.sin_port = htons(WIFIMGR_IPC_PORT);
-
-		int res = sendto(sd, "term", 5, 0, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-		if (res < 0) { // critical error
-			WM_LOG_ERROR("send signal result(%d) (%d)\n", res, errno);
-		}
-		close(sd);
-		pthread_join(g_manager_info.reconn_id, NULL);
-		dhcpc_close_ipaddr();
-		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
-	} else if (msg->event == EVT_RECONNECT_CMD) {
-		wifi_manager_ap_config_s *apinfo = (wifi_manager_ap_config_s *)msg->param;
-		wifi_manager_result_e wres = _wifimgr_connect_ap(apinfo);
-		if (wres == WIFI_MANAGER_ALREADY_CONNECTED) {
-			/* some wifi drivers try to reconnect by itself.*/
-			WM_LOG_VERBOSE("[WM] reconnect state already connected\n");
-			wifimgr_call_cb(CB_STA_CONNECTED, NULL);
-			WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
-			return WIFI_MANAGER_ALREADY_CONNECTED;
-		}
-		if (wres != WIFI_MANAGER_SUCCESS) {
-			WM_LOG_ERROR("[WM] Reconnect AP fail disconnect AP for initializing it(%d)\n", wres);
-			_wifimgr_disconnect_ap();
-			return wres;
-		}
-		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECTING);
-	} else if (msg->event == EVT_DEINIT_CMD) {
-		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
-		WIFIMGR_SEND_API_SIGNAL(msg->signal);
-		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
-	} else {
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
-		return WIFI_MANAGER_FAIL;
-	}
-#else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
+#ifndef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 	WM_LOG_VERBOSE("[WM] EXTERNAL AUTOCONNECT event status : %d\n", msg->event);
 	if (msg->event == EVT_DISCONNECT_CMD) {
 		dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
-		//nothing to do but to wait
+		// nothing to do but to wait
 	} else if (msg->event == EVT_STA_CONNECTED) {
 		wifimgr_call_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
@@ -749,53 +608,7 @@ wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg)
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
-#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
-	return WIFI_MANAGER_SUCCESS;
-}
-
-
-wifi_manager_result_e _handler_on_reconnecting_state(wifimgr_msg_s *msg)
-{
-	WM_LOG_HANDLER_START;
-#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
-	if (msg->event == EVT_STA_CONNECT_FAILED) {
-		WM_LOG_VERBOSE("[WM] reconnect fail\n");
-		if (g_manager_info.conn_tries == g_manager_info.max_tries) {
-			WM_LOG_ERROR("[WM] Stop to reconnect because of reaching to max tries\n");
-			WIFIMGR_TERMINATE_RECONN_WORKER;
-		} else {
-			WIFIMGR_TRIGGER_RECONNECT_WORKER;
-		}
-		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
-	} else if (msg->event == EVT_DISCONNECT_CMD) {
-		WM_LOG_VERBOSE("[WM] disconnect\n");
-		WIFIMGR_TERMINATE_RECONN_WORKER;
-		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECT_CANCEL);
-	} else if (msg->event == EVT_STA_CONNECTED) {
-		WIFIMGR_TERMINATE_RECONN_WORKER;
-		wifimgr_call_cb(CB_STA_CONNECTED, NULL);
-		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
-	} else {
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
-		return WIFI_MANAGER_FAIL;
-	}
-#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
-	return WIFI_MANAGER_SUCCESS;
-}
-
-
-wifi_manager_result_e _handler_on_connect_cancel_state(wifimgr_msg_s *msg)
-{
-	WM_LOG_HANDLER_START;
-#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
-	if (msg->event == EVT_STA_CONNECTED) {
-		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
-		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
-	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
-		dhcpc_close_ipaddr();
-		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
-	}
-#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
+#endif /* CONFIG_DISABLE_EXTERNAL_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
 }
 

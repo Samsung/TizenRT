@@ -14,13 +14,12 @@ Most of the commands support *--help* option to show how to use.
 | [sh](#sh)          | [free](#free)                                   | [echo](#echo)           |
 | [sleep](#sleep)    | [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [ls](#ls)               |
 |                    | [heapinfo](#heapinfo)                           | [mkdir](#mkdir)         |
-|                    | [irqinfo](#irqinfo)                             | [mkrd](#mkrd)           |
-|                    | [kill/killall](#killkillall)                    | [mksmartfs](#mksmartfs) |
-|                    | [ps](#ps)                                       | [mount](#mount)         |
+|                    | [irqinfo](#irqinfo)                             | [mv](#mv)               |
+|                    | [kill/killall](#killkillall)                    | [mount](#mount)         |
+|                    | [ps](#ps)                                       | [umount](#umount)       |
 |                    | [reboot](#reboot)                               | [pwd](#pwd)             |
 |                    | [stkmon](#stkmon)                               | [rm](#rm)               |
 |                    | [uptime](#uptime)                               | [rmdir](#rmdir)         |
-|                    |                                                 | [umount](#umount)       |
 
 
 ## exit
@@ -335,7 +334,7 @@ Kernel Features -> Disable TinyAra interfaces -> [ ] Disable environment variabl
 - Set a value which is greater than zero on CONFIG_NFILE_DESCRIPTORS.
 ```
 Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
-
+```
 
 ## free
 This command shows heap information.
@@ -413,8 +412,6 @@ Options:
 [-TARGET]
  -k             Kernel Heap
                 (-k target is available when CONFIG_BUILD_PROTECTED is enabled)
- -u             User Heap
-                (-u target is available when CONFIG_BUILD_PROTECTED is enabled)
  -b BIN_NAME    Heap for BIN_NAME binary
                 (-b target is available when CONFIG_APP_BINARY_SEPARATION is enabled)
 [-OPTION]
@@ -424,9 +421,9 @@ Options:
  -g             Show the User defined group allocation details
                 (for -g option, CONFIG_HEAPINFO_GROUP is needed)
  -e HEAP_IDX    Show the heap[HEAP_IDX] allocation details
-                (-e option is available when CONFIG_MM_NHEAPS is greater than 1)
+                (-e option is available when CONFIG_KMM_NHEAPS is greater than 1)
  -r             Show the all region information
-                (-r option is available when CONFIG_MM_REGIONS is greater than 1)
+                (-r option is available when CONFIG_KMM_REGIONS is greater than 1)
 
 TASH>>heapinfo
 
@@ -507,7 +504,8 @@ Heap Allocation Information per User defined Group
 
 
 ## history
-This command shows the history you executed, and you can re-execute it by calling the number with `!`.
+This command shows the history you executed.  
+Using this functionality, you can re-execute the command by calling the number with `!` or by up and down keys.
 ```bash
 TASH>>history
          TASH command history
@@ -539,6 +537,10 @@ tm_sample_itc    tm_utc           umount           unsetenv
 uptime           wm_test
 TASH>>
 ```
+
+>**NOTE**
+>We provide the configuration, *CONFIG_TASH_MAX_STORE_COMMANDS*, to set the maximum number of commands due to memory limitations.
+>When the history has maximum number of commands stored, the oldest command will be removed to store the last command.
 
 ### How to Enable
 Set *CONFIG_TASH_MAX_STORE_COMMANDS* value to use this command on menuconfig as shown below:
@@ -678,11 +680,20 @@ Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 ```
 
 
-## mkrd
-This makes RAM or ROM.
+## mv
+Replaces source path entry with target entry, given that the target path entry does not exist.
 ```
 Usage:
-   mkrd [-m <minor>] [-s <sector-size>] <nsectors> or mkrd <nsectors>
+   Usage:  mv [source_file_path] [target_file_path]
+```
+```bash
+TASH>>ls
+/mnt:
+ test/
+TASH>>mv /mnt/test /mnt/test1
+TASH>>ls
+/mnt:
+ test1/
 ```
 ### How to Enable
 Enable *CONFIG_FS_CMDS* on menuconfig.
@@ -690,39 +701,9 @@ Enable *CONFIG_FS_CMDS* on menuconfig.
 Application Configuration -> System Libraries and Add-Ons -> [*] FS shell commands
 ```
 #### Dependancy
-- Disable CONFIG_DISABLE_MOUNTPOINT.
-```
-File Systems -> [ ] Disable support for mount points
-```
 - Disable CONFIG_DISABLE_ENVIRON.
 ```
 Kernel Features -> Disable TinyAra interfaces -> [ ] Disable environment variable support
-```
-- Set a value which is greater than zero on CONFIG_NFILE_DESCRIPTORS.
-```
-Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
-```
-
-
-## mksmartfs
-This makes SmartFS File System on the specified block device.
-```
-Usage:
-   mksmartfs <source directory> [-f] <target directory>
-```
-### How to Enable
-Enable *CONFIG_FS_CMDS* on menuconfig.
-```
-Application Configuration -> System Libraries and Add-Ons -> [*] FS shell commands
-```
-#### Dependancy
-- Disable CONFIG_DISABLE_MOUNTPOINT.
-```
-File Systems -> [ ] Disable support for mount points
-```
-- Enable CONFIG_FS_SMARTFS.
-```
-File Systems -> [*] SMART File System
 ```
 - Set a value which is greater than zero on CONFIG_NFILE_DESCRIPTORS.
 ```

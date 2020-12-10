@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 #include <debug.h>
 #include <sched.h>
@@ -29,27 +30,28 @@
 #include <mqueue.h>
 #include <tinyara/binary_manager.h>
 
-int binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg)
+binmgr_result_type_e binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg)
 {
 	if (request_msg == NULL) {
 		bmdbg("Invalid param\n");
-		return ERROR;
+		return BINMGR_INVALID_PARAM;
 	}
 
 	switch (cmd) {
+	case BINMGR_GET_STATE:
 	case BINMGR_GET_INFO:
 	case BINMGR_NOTIFY_STARTED:
 	case BINMGR_UPDATE:
 		if (arg == NULL) {
 			bmdbg("Invalid param, cmd : %d\n", cmd);
-			return ERROR;
+			return BINMGR_INVALID_PARAM;
 		}
 		snprintf(request_msg->data.bin_name, BIN_NAME_MAX, "%s", (char *)arg);
 		break;
 	case BINMGR_CREATE_BIN:
 		if (arg == NULL) {
 			bmdbg("Invalid param, cmd : %d\n", cmd);
-			return ERROR;
+			return BINMGR_INVALID_PARAM;
 		}
 		binmgr_update_bin_t *data = (binmgr_update_bin_t *)arg;
 		strncpy(request_msg->data.update_bin.bin_name, data->bin_name, BIN_NAME_MAX);
@@ -58,7 +60,7 @@ int binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg
 	case BINMGR_REGISTER_STATECB:
 		if (arg == NULL) {
 			bmdbg("Invalid param, cmd : %d\n", cmd);
-			return ERROR;
+			return BINMGR_INVALID_PARAM;
 		}
 		request_msg->data.cb_info = (binmgr_cb_t *)arg;
 		break;
@@ -69,10 +71,10 @@ int binary_manager_set_request(binmgr_request_t *request_msg, int cmd, void *arg
 	request_msg->cmd = cmd;
 	request_msg->requester_pid = getpid();
 
-	return OK;
+	return BINMGR_OK;
 }
 
-int binary_manager_send_request(binmgr_request_t *request_msg)
+binmgr_result_type_e binary_manager_send_request(binmgr_request_t *request_msg)
 {
 	int ret;
 	mqd_t binmgr_mq;
@@ -85,22 +87,22 @@ int binary_manager_send_request(binmgr_request_t *request_msg)
 	binmgr_mq = mq_open(BINMGR_REQUEST_MQ, O_WRONLY, 0666, 0);
 	if (binmgr_mq == (mqd_t)ERROR) {
 		bmdbg("mq open ERROR failed, errno %d\n", errno);
-		return ERROR;
+		return BINMGR_COMMUNICATION_FAIL;
 	}
 
 	ret = mq_send(binmgr_mq, (const char *)request_msg, sizeof(binmgr_request_t), BINMGR_NORMAL_PRIO);
 	if (ret < 0) {
 		bmdbg("send ERROR %d, errno %d\n", errno);
 		mq_close(binmgr_mq);
-		return ERROR;
+		return BINMGR_COMMUNICATION_FAIL;
 	}
 
 	mq_close(binmgr_mq);
 
-	return OK;
+	return BINMGR_OK;
 }
 
-int binary_manager_receive_response(void *response_msg, int msg_size)
+binmgr_result_type_e binary_manager_receive_response(void *response_msg, int msg_size)
 {
 	int nbytes;
 	struct mq_attr attr;
@@ -109,7 +111,7 @@ int binary_manager_receive_response(void *response_msg, int msg_size)
 
 	if (response_msg == NULL || msg_size < 0) {
 		bmdbg("Invalid param\n");
-		return ERROR;
+		return BINMGR_INVALID_PARAM;
 	}
 
 	attr.mq_maxmsg = BINMGR_MAX_MSG;
@@ -121,7 +123,7 @@ int binary_manager_receive_response(void *response_msg, int msg_size)
 	private_mq = mq_open(q_name, O_RDONLY | O_CREAT, 0666, &attr);
 	if (private_mq == (mqd_t)ERROR) {
 		bmdbg("mq open ERROR failed, errno %d\n", errno);
-		return ERROR;
+		return BINMGR_COMMUNICATION_FAIL;
 	}
 
 	nbytes = mq_receive(private_mq, (char *)response_msg, msg_size, NULL);
@@ -129,11 +131,11 @@ int binary_manager_receive_response(void *response_msg, int msg_size)
 		bmdbg("receive ERROR %d, errno %d\n", nbytes, errno);
 		mq_close(private_mq);
 		mq_unlink(q_name);
-		return ERROR;
+		return BINMGR_COMMUNICATION_FAIL;
 	}
 
 	mq_close(private_mq);
 	mq_unlink(q_name);
 
-	return OK;
+	return BINMGR_OK;
 }

@@ -25,7 +25,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <tc_common.h>
-#include <tinyara/testcase_drv.h>
+#include <tinyara/kernel_test_drv.h>
 #include "tc_internal.h"
 
 /****************************************************************************

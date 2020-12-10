@@ -82,10 +82,10 @@ int binary_manager_get_available_size(int bin_idx)
 	char *bin_name;
 	struct stat file_buf;
 	struct statfs fs_buf;
-	char filepath[CONFIG_PATH_MAX];
+	char filepath[BINARY_PATH_LEN];
 	char running_file[NAME_MAX];
 
-	snprintf(running_file, NAME_MAX, "%s_%s", BIN_NAME(bin_idx), BIN_VER(bin_idx));
+	snprintf(running_file, NAME_MAX, "%s_%d", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx));
 	bin_name = BIN_NAME(bin_idx);
 	name_len = strlen(bin_name);
 	size = 0;
@@ -118,7 +118,7 @@ int binary_manager_get_available_size(int bin_idx)
 			/* Calculate size of old binary files to be removed when creating new file */
 			if (DIRENT_ISFILE(entryp->d_type) && !strncmp(entryp->d_name, bin_name, name_len) \
 				&& entryp->d_name[name_len] == '_' && strncmp(entryp->d_name, running_file, strlen(running_file))) {
-				snprintf(filepath, CONFIG_PATH_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
+				snprintf(filepath, BINARY_PATH_LEN, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
 				if (stat(filepath, &file_buf) == OK) {
 					bmvdbg("filepath %s size %d\n", filepath, file_buf.st_size);
 					size += file_buf.st_size;
@@ -133,6 +133,41 @@ int binary_manager_get_available_size(int bin_idx)
 	bmvdbg("Available size %d in fs \n", size);
 
 	return size;
+}
+
+/****************************************************************************
+ * Name: binary_manager_get_state_with_name
+ *
+ * Description:
+ *	 This function gets binary state with binary name.
+ *
+ ****************************************************************************/
+void binary_manager_get_state_with_name(int requester_pid, char *bin_name)
+{
+	int bin_idx;
+	uint32_t bin_count;
+	char q_name[BIN_PRIVMQ_LEN];
+	binmgr_getstate_response_t response_msg;
+
+	if (requester_pid < 0 || bin_name == NULL) {
+		bmdbg("Invalid data pid %d name %s\n", requester_pid, bin_name);
+		return;
+	}
+	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
+
+	memset((void *)&response_msg, 0, sizeof(binmgr_getstate_response_t));
+	response_msg.result = BINMGR_NOT_FOUND;
+
+	bin_count = binary_manager_get_ucount();
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+		if (!strncmp(BIN_NAME(bin_idx), bin_name, strlen(bin_name) + 1)) {
+			response_msg.result = BINMGR_OK;
+			response_msg.state = BIN_STATE(bin_idx);
+			break;
+		}
+	}
+
+	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getstate_response_t));
 }
 
 /****************************************************************************
@@ -169,7 +204,7 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 				response_msg.result = BINMGR_OK;
 				response_msg.data.available_size = size;
 				strncpy(response_msg.data.name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-				strncpy(response_msg.data.version, BIN_VER(bin_idx), BIN_VER_MAX);
+				response_msg.data.version = (double)BIN_LOADVER(bin_idx);
 			}
 			break;
 		}
@@ -208,10 +243,9 @@ void binary_manager_get_info_all(int requester_pid)
 	/* Kernel data */
 	kerinfo = binary_manager_get_kdata();
 	strncpy(response_msg.data.bin_info[result_idx].name, kerinfo->name , BIN_NAME_MAX);
-	strncpy(response_msg.data.bin_info[result_idx].version, kerinfo->version, KERNEL_VER_MAX);
+	response_msg.data.bin_info[result_idx].version = kerinfo->version;
 	if (kerinfo->part_count > 1) {
 		response_msg.data.bin_info[result_idx].available_size = kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_size;
-		snprintf(response_msg.data.bin_info[result_idx].inactive_dev, BINMGR_DEVNAME_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_num);
 	}
 	result_idx++;
 
@@ -227,7 +261,7 @@ void binary_manager_get_info_all(int requester_pid)
 			response_msg.result = BINMGR_OK;
 			response_msg.data.bin_info[result_idx].available_size = size;
 			strncpy(response_msg.data.bin_info[result_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-			strncpy(response_msg.data.bin_info[result_idx].version, BIN_VER(bin_idx), BIN_VER_MAX);
+			response_msg.data.bin_info[result_idx].version = (double)BIN_LOADVER(bin_idx);
 			result_idx++;
 		}
 	}

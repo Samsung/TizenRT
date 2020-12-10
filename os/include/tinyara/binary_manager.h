@@ -52,12 +52,6 @@
 /* The maximum length of binary name */
 #define BIN_NAME_MAX                     16
 
-/* The maximum length of binary version */
-#define BIN_VER_MAX                      16
-
-/* The maximum length of kernel version */
-#define KERNEL_VER_MAX                   8
-
 /* The length of dev name */
 #define BINMGR_DEVNAME_LEN               16
 
@@ -76,6 +70,15 @@
 /* Mount point for User binaries */
 #define BINARY_DIR_PATH                  CONFIG_MOUNT_POINT"bins"
 
+/* The length of binary file or kernel partition path.
+ * A path is same like below:
+ *  - User filepath : "/<mount_path>/<binary_name>_<binary_version>"
+ *         length : CONFIG_NAME_MAX + BIN_NAME_MAX + binary_version (32) + /,_(3) + '\0'(1)
+ *  - Kernel partpath : "/dev/mtdblock#" defined as BINMGR_DEVNAME_FMT
+ * So define binary path length as (CONFIG_NAME_MAX + BIN_NAME_MAX + 40) with some extra.
+ */
+#define BINARY_PATH_LEN                  (CONFIG_NAME_MAX + BIN_NAME_MAX + 40)
+
 /* Binary states used in state callback */
 enum binary_statecb_state_e {
 	BINARY_STARTED = 0,           /* Binary is started */
@@ -83,11 +86,24 @@ enum binary_statecb_state_e {
 	BINARY_READYTOUNLOAD = 2,     /* Binary will be unloaded */
 };
 
+/* States for user binary */
+enum binary_state {
+	BINARY_UNREGISTERED = 0,     /* File is not existing */
+	BINARY_INACTIVE = 1,         /* File is existing but binary is not loaded yet */
+	BINARY_LOADED = 2,           /* Loading binary is done */
+	BINARY_RUNNING = 3,          /* Loaded binary gets scheduling */
+	BINARY_UNLOADING = 4,        /* Loaded binary would be unloaded */
+	BINARY_FAULT = 5,            /* Binary is excluded from scheduling and would be reloaded */
+	BINARY_STATE_MAX,
+};
+typedef enum binary_state binary_state_e;
+
 /* Message type for binary manager */
 enum binmgr_request_msg_type {
 	BINMGR_GET_INFO,
 	BINMGR_GET_INFO_ALL,
 	BINMGR_UPDATE,
+	BINMGR_GET_STATE,
 	BINMGR_CREATE_BIN,
 	BINMGR_NOTIFY_STARTED,
 	BINMGR_REGISTER_STATECB,
@@ -98,7 +114,7 @@ enum binmgr_request_msg_type {
 };
 
 /* Result values of returned from binary manager. */
-enum binmgr_response_result_type {
+enum binmgr_result_type {
 	BINMGR_OK = 0,
 	BINMGR_COMMUNICATION_FAIL = -1,
 	BINMGR_OPERATION_FAIL = -2,
@@ -108,6 +124,7 @@ enum binmgr_response_result_type {
 	BINMGR_ALREADY_REGISTERED = -6,
 	BINMGR_ALREADY_UPDATED = -7,
 };
+typedef enum binmgr_result_type binmgr_result_type_e;
 
 /****************************************************************************
  * Public Data
@@ -119,24 +136,23 @@ struct binary_header_s {
 	uint8_t bin_type;
 	uint8_t compression_type;
 	uint8_t bin_priority;
+	uint8_t loading_priority;
 	uint32_t bin_size;
 	char bin_name[BIN_NAME_MAX];
-	char bin_ver[BIN_VER_MAX];
+	uint32_t bin_ver;
 	uint32_t bin_ramsize;
 	uint32_t bin_stacksize;
-	char kernel_ver[KERNEL_VER_MAX];
+	float kernel_ver;
 	uint32_t jump_addr;
 } __attribute__((__packed__));
 typedef struct binary_header_s binary_header_t;
 
-/* The structure of binary update information */
+/* The structure of binary update information for kernel or user binaries */
 struct binary_update_info_s {
 	int available_size;
 	char name[BIN_NAME_MAX];
-	char version[BIN_VER_MAX];
-#if KERNEL_BIN_COUNT > 1
-	char inactive_dev[BINMGR_DEVNAME_LEN];
-#endif
+	/* A double type to cover kernel version as float type and user binary version as uint32_t type */
+	double version;
 };
 typedef struct binary_update_info_s binary_update_info_t;
 
@@ -156,7 +172,7 @@ struct load_attr_s {
 	uint16_t offset;			/* The offset from which ELF binary has to be read in MTD partition */
 	uint8_t priority;			/* Priority of the binary */
 	uint8_t compression_type;	/* Binary compression type */
-	char bin_ver[BIN_VER_MAX];	/* version of binary */
+	uint32_t bin_ver;			/* version of binary */
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	void *binp;			/* Binary info pointer */
 #endif
@@ -173,9 +189,9 @@ typedef struct binary_update_info_list_s binary_update_info_list_t;
 typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
 
 struct binmgr_update_bin_s {
-	char bin_name[NAME_MAX];
+	char bin_name[BIN_NAME_MAX];
 	int type;
-	int version;
+	uint32_t version;
 };
 typedef struct binmgr_update_bin_s binmgr_update_bin_t;
 
@@ -206,24 +222,30 @@ typedef struct binmgr_request_s binmgr_request_t;
 
 struct binmgr_createbin_response_s {
 	int result;
-	char binpath[CONFIG_PATH_MAX];
+	char binpath[BINARY_PATH_LEN];
 };
 typedef struct binmgr_createbin_response_s binmgr_createbin_response_t;
 
+struct binmgr_getstate_response_s {
+	binmgr_result_type_e result;
+	binary_state_e state;
+};
+typedef struct binmgr_getstate_response_s binmgr_getstate_response_t;
+
 struct binmgr_statecb_response_s {
-	int result;
+	binmgr_result_type_e result;
 	binmgr_cb_t *cb_info;
 };
 typedef struct binmgr_statecb_response_s binmgr_statecb_response_t;
 
 struct binmgr_getinfo_response_s {
-	int result;
+	binmgr_result_type_e result;
 	binary_update_info_t data;
 };
 typedef struct binmgr_getinfo_response_s binmgr_getinfo_response_t;
 
 struct binmgr_getinfo_all_response_s {
-	int result;
+	binmgr_result_type_e result;
 	binary_update_info_list_t data;
 };
 typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;

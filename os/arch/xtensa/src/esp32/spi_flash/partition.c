@@ -73,7 +73,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include <pthread.h>
+#include <semaphore.h>
 
 #include "esp_flash_partitions.h"
 #include "esp_attr.h"
@@ -105,18 +105,18 @@ static esp_partition_iterator_opaque_t *iterator_create(esp_partition_type_t typ
 static esp_err_t load_partitions(void);
 
 static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list = SLIST_HEAD_INITIALIZER(s_partition_list);
-static pthread_mutex_t s_partition_list_lock = PTHREAD_MUTEX_INITIALIZER;
+static sem_t s_partition_list_lock;
 
 esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_partition_subtype_t subtype, const char *label)
 {
 	if (SLIST_EMPTY(&s_partition_list)) {
 		// only lock if list is empty (and check again after acquiring lock)
-		pthread_mutex_lock(&s_partition_list_lock);
+		sem_wait(&s_partition_list_lock);
 		esp_err_t err = ESP_OK;
 		if (SLIST_EMPTY(&s_partition_list)) {
 			err = load_partitions();
 		}
-		pthread_mutex_unlock(&s_partition_list_lock);
+		sem_post(&s_partition_list_lock);
 		if (err != ESP_OK) {
 			return NULL;
 		}
@@ -138,7 +138,7 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
 		esp_partition_iterator_release(it);
 		return NULL;
 	}
-	pthread_mutex_lock(&s_partition_list_lock);
+	sem_wait(&s_partition_list_lock);
 	for (; it->next_item != NULL; it->next_item = SLIST_NEXT(it->next_item, next)) {
 		esp_partition_t *p = &it->next_item->info;
 		if (it->type != p->type) {
@@ -153,7 +153,7 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
 		// all constraints match, bail out
 		break;
 	}
-	pthread_mutex_unlock(&s_partition_list_lock);
+	sem_post(&s_partition_list_lock);
 	if (it->next_item == NULL) {
 		esp_partition_iterator_release(it);
 		return NULL;
@@ -176,7 +176,7 @@ const esp_partition_t *esp_partition_find_first(esp_partition_type_t type, esp_p
 
 static esp_partition_iterator_opaque_t *iterator_create(esp_partition_type_t type, esp_partition_subtype_t subtype, const char *label)
 {
-	esp_partition_iterator_opaque_t *it = (esp_partition_iterator_opaque_t *)malloc(sizeof(esp_partition_iterator_opaque_t));
+	esp_partition_iterator_opaque_t *it = (esp_partition_iterator_opaque_t *)kmm_malloc(sizeof(esp_partition_iterator_opaque_t));
 	it->type = type;
 	it->subtype = subtype;
 	it->label = label;
@@ -208,7 +208,7 @@ static esp_err_t load_partitions(void)
 			break;
 		}
 		// allocate new linked list item and populate it with data from partition table
-		partition_list_item_t *item = (partition_list_item_t *)malloc(sizeof(partition_list_item_t));
+		partition_list_item_t *item = (partition_list_item_t *)kmm_malloc(sizeof(partition_list_item_t));
 		item->info.address = it->pos.offset;
 		item->info.size = it->pos.size;
 		item->info.type = it->type;
@@ -234,10 +234,16 @@ static esp_err_t load_partitions(void)
 	return ESP_OK;
 }
 
+void esp_partition_initialize(void)
+{
+	/* Initialize a semaphore for partition access */
+	sem_init(&s_partition_list_lock, 0, 1);
+}
+
 void esp_partition_iterator_release(esp_partition_iterator_t iterator)
 {
 	// iterator == NULL is okay
-	free(iterator);
+	kmm_free(iterator);
 }
 
 const esp_partition_t *esp_partition_get(esp_partition_iterator_t iterator)

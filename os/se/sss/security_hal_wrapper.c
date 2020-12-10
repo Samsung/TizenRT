@@ -44,6 +44,7 @@
 #include <tinyara/config.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
+#include <tinyara/kmalloc.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -140,7 +141,7 @@ static void hal_mpi_free(hal_mpi *X)
 
 	if (X->p != NULL) {
 		hal_mpi_zeroize(X->p, X->n);
-		free(X->p);
+		kmm_free(X->p);
 	}
 
 	X->s = 1;
@@ -157,14 +158,14 @@ static int hal_mpi_grow(hal_mpi *X, uint32_t nblimbs)
 	}
 
 	if (X->n < nblimbs)	{
-		if ((p = (uint64_t *)calloc(nblimbs, ciL)) == NULL) {
+		if ((p = (uint64_t *)kmm_calloc(nblimbs, ciL)) == NULL) {
 			return HAL_ALLOC_FAIL;
 		}
 
 		if (X->p != NULL) {
 			memcpy(p, X->p, X->n * ciL);
 			hal_mpi_zeroize(X->p, X->n);
-			free(X->p);
+			kmm_free(X->p);
 		}
 
 		X->n = nblimbs;
@@ -494,10 +495,10 @@ int sss_hal_free_data(hal_data *data)
 	HWRAP_ENTER;
 	if (data) {
 		if (data->data) {
-			free(data->data);
+			kmm_free(data->data);
 		}
 		if (data->priv) {
-			free(data->priv);
+			kmm_free(data->priv);
 		}
 	}
 	return HAL_SUCCESS;
@@ -1090,12 +1091,12 @@ int sss_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign,
 	ecc_sign.r_byte_len = hal_mpi_size(&r);
 	ecc_sign.s_byte_len = hal_mpi_size(&s);
 
-	ecc_sign.r = (unsigned char *)malloc(ecc_sign.r_byte_len);
+	ecc_sign.r = (unsigned char *)kmm_malloc(ecc_sign.r_byte_len);
 	if (ecc_sign.r == NULL) {
 		ret = HAL_ALLOC_FAIL;
 		goto cleanup;
 	}
-	ecc_sign.s = (unsigned char *)malloc(ecc_sign.s_byte_len);
+	ecc_sign.s = (unsigned char *)kmm_malloc(ecc_sign.s_byte_len);
 	if (ecc_sign.s == NULL) {
 		ret = HAL_ALLOC_FAIL;
 		goto cleanup;
@@ -1156,10 +1157,10 @@ cleanup:
 	hal_mpi_free(&s);
 
 	if (ecc_sign.r) {
-		free(ecc_sign.r);
+		kmm_free(ecc_sign.r);
 	}
 	if (ecc_sign.s) {
-		free(ecc_sign.s);
+		kmm_free(ecc_sign.s);
 	}
 
 	return ret;
@@ -1189,7 +1190,7 @@ int sss_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	d_param.generator_g_byte_len = dh_param->G->data_len;;
 	d_param.generator_g = dh_param->G->data;
 	//set output pubkey
-	d_param.publickey = (unsigned char *)malloc(pubkey_len);
+	d_param.publickey = (unsigned char *)kmm_malloc(pubkey_len);
 	if (d_param.publickey == NULL) {
 		return HAL_NOT_ENOUGH_MEMORY;
 	}
@@ -1205,13 +1206,13 @@ int sss_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	}
 
 	if (!dh_param->pubkey->data) {
-		free(d_param.publickey);
+		kmm_free(d_param.publickey);
 		return HAL_INVALID_ARGS;
 	}
 	memcpy(dh_param->pubkey->data, d_param.publickey, d_param.publickey_byte_len);
 	dh_param->pubkey->data_len = d_param.publickey_byte_len;
 
-	free(d_param.publickey);
+	kmm_free(d_param.publickey);
 
 	return HAL_SUCCESS;
 }
@@ -1621,8 +1622,6 @@ static struct sec_ops_s g_sss_ops = {
 };
 
 static struct sec_lowerhalf_s g_sss_lower = {&g_sss_ops, NULL};
-
-#define SECLINK_PATH "/dev/seclink"
 
 int se_initialize(void)
 {

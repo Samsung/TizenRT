@@ -439,42 +439,6 @@ static void _up_assert(int errorcode)
 #endif /* CONFIG_BOARD_ASSERT_AUTORESET */
 }
 
-#ifdef CONFIG_BINMGR_RECOVERY
-/****************************************************************************
- * Name: recovery_user_assert : recovery user assert through binary manager
- ****************************************************************************/
-static void recovery_user_assert(void)
-{
-	int binid;
-	int bin_idx;
-	struct tcb_s *tcb;
-	struct faultmsg_s *msg;
-
-	tcb = this_task();
-	if (tcb != NULL && tcb->group != NULL) {
-		tcb->sched_priority = SCHED_PRIORITY_MIN;
-		tcb->lockcount = 0;
-		binid = tcb->group->tg_binid;
-		bin_idx = binary_manager_get_index_with_binid(binid);
-		if (BIN_RTTYPE(bin_idx) == BINARY_TYPE_REALTIME) {
-			/* Exclude realtime task/pthreads from scheduling */
-			binary_manager_exclude_rtthreads(tcb);
-		}
-
-		/* Add fault message and Unblock Fault message Sender */
-		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
-			msg->binid = binid;
-			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
-			up_unblock_task(g_faultmsg_sender);
-			return;
-		}
-	}
-
-	/* Failed to request for recovery to binary manager */
-	_up_assert(EXIT_FAILURE);
-}
-#endif
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -517,19 +481,19 @@ void up_assert(const uint8_t *filename, int lineno)
 
 #ifdef CONFIG_BINMGR_RECOVERY
 	uint32_t assert_pc;
-	bool is_kernel_assert;
+	bool is_kernel_fault;
 
 	/* Extract the PC value of instruction which caused the abort/assert */
 
 	if (current_regs) {
-		assert_pc = current_regs[REG_R14];
+		assert_pc = current_regs[REG_R15];
 	} else {
 		assert_pc = (uint32_t)g_assertpc;
 	}
 
-	/* Is the assert in Kernel? */
+	/* Is the fault in Kernel? */
 
-	is_kernel_assert = is_kernel_space((void *)assert_pc);
+	is_kernel_fault = is_kernel_space((void *)assert_pc);
 
 #endif  /* CONFIG_BINMGR_RECOVERY */
 
@@ -540,14 +504,13 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	if (is_kernel_assert == false) {
-		/* recovery user assert through binary manager */
-
-		recovery_user_assert();
+	if (is_kernel_fault == false) {
+		/* Recover user fault through binary manager */
+		binary_manager_recover_userfault(assert_pc);
 	} else
 #endif
 	{
-		/* treat kernel assert */
+		/* treat kernel fault */
 
 		_up_assert(EXIT_FAILURE);
 	}

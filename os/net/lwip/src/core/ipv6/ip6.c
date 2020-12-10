@@ -80,6 +80,17 @@
 #include LWIP_HOOK_FILENAME
 #endif
 
+static struct icmp6_hdr icmp6_prev_hdr[1] = { 0, };
+/**
+ * To save previous ICMP6 Packet, icmp6_prev_hdr is needed.
+ *
+ * @return The pointer of icmp6_prev_hdr.
+ */
+struct icmp6_hdr *icmp6_get_prev_hdr(void)
+{
+	return icmp6_prev_hdr;
+}
+
 /**
  * Finds the appropriate network interface for a given IPv6 address. It tries to select
  * a netif following a sequence of heuristics:
@@ -382,6 +393,9 @@ err_t ip6_input(struct pbuf *p, struct netif *inp)
 
 	IP6_STATS_INC(ip6.recv);
 
+	// [TAHI ND#127]
+	ip_data.is_atomic_frag = 1;
+
 	/* identify the IP header */
 	ip6hdr = (struct ip6_hdr *)p->payload;
 	if (IP6H_V(ip6hdr) != 6) {
@@ -653,7 +667,6 @@ netif_found:
 			/* Get the header length. */
 			hlen = 8 * (1 + dest_hdr->_hlen);
 			ip_data.current_ip_header_tot_len += hlen;
-
 			/* Skip over this header. */
 			if (hlen > p->len) {
 				LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("IPv6 options header (hlen %" U16_F ") does not fit in first pbuf (len %" U16_F "), IPv6 packet dropped.\n", hlen, p->len));
@@ -786,7 +799,6 @@ netif_found:
 		case IP6_NEXTH_FRAGMENT: {
 			struct ip6_frag_hdr *frag_hdr;
 			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Fragment header\n"));
-
 			frag_hdr = (struct ip6_frag_hdr *)p->payload;
 
 			/* Get next header type. */
@@ -816,16 +828,68 @@ netif_found:
 				goto ip6_input_cleanup;
 			}
 
+			// [TAHI spec 64~67]
+			// if first fragment doesn't contains all headers, then
+			// it should send icmpv6 param problem message to sender.
+			/* Is the packet the first of fragmentation? */
+			if ((frag_hdr->_fragment_offset & PP_HTONS(IP6_FRAG_OFFSET_MASK)) == 0) {
+				u8_t temp_nexth = IP6_FRAG_NEXTH(frag_hdr);
+				u16_t temp_hlen = IP6_FRAG_HLEN;
+
+				while (temp_nexth) {
+					switch (temp_nexth) {
+					case IP6_NEXTH_DESTOPTS:
+					{
+						struct ip6_dest_hdr *hdr = (struct ip6_dest_hdr *)((u8_t *)frag_hdr + temp_hlen);
+						temp_hlen += 8 * (1 + hdr->_hlen);
+						temp_nexth = hdr->_nexth;
+						break;
+					}
+					case IP6_NEXTH_ROUTING:
+					{
+						struct ip6_rout_hdr *hdr = (struct ip6_rout_hdr *)((u8_t *)frag_hdr + temp_hlen);
+						temp_hlen += 8 * (1 + hdr->_hlen);
+						temp_nexth = hdr->_nexth;
+						break;
+					}
+					/* Upper-Layer Header */
+					case IP6_NEXTH_ICMP6:
+						temp_hlen += sizeof(struct icmp6_hdr);
+						temp_nexth = 0;
+						break;
+					default:
+						temp_nexth = 0;
+						break;
+					}
+				}
+
+				if (temp_hlen > IP6H_PLEN(ip6hdr)) {
+					/* Could not check all headers in the first frag packet */
+					icmp6_param_problem(p, 3, (u32_t)NULL);
+					LWIP_DEBUGF(IP6_DEBUG, ("Could not check all headers in the first frag packet.\n"));
+					pbuf_free(p);
+					IP6_STATS_INC(ip6.drop);
+					goto ip6_input_cleanup;
+				}
+			}
+
 			/* Offset == 0 and more_fragments == 0? */
 			if ((frag_hdr->_fragment_offset & PP_HTONS(IP6_FRAG_OFFSET_MASK | IP6_FRAG_MORE_FLAG)) == 0) {
+				// [TAHI ND#127]
+				if (ip_data.is_atomic_frag == 1) {
+					// let nd6 know it's atomic fragment packet
+					ip_data.is_atomic_frag = 2;
+				}
+
 				/* This is a 1-fragment packet, usually a packet that we have
 				 * already reassembled. Skip this header anc continue. */
 				pbuf_header(p, -(s16_t) hlen);
 			} else {
 #if LWIP_IPV6_REASS
-
 				/* reassemble the packet */
 				p = ip6_reass(p);
+				// [TAHI ND#127]
+				ip_data.is_atomic_frag = 0;
 				/* packet not fully reassembled yet? */
 				if (p == NULL) {
 					goto ip6_input_cleanup;
@@ -857,7 +921,8 @@ netif_found:
 		if (*nexth == IP6_NEXTH_HOPBYHOP) {
 			/* Hop-by-Hop header comes only as a first option */
 			icmp6_param_problem(p, ICMP6_PP_HEADER, (u32_t)nexth - (u32_t)ip6_current_header());
-			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Hop-by-Hop options header dropped (this option comes only as a first option)\n"));
+			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Hop-by-Hop options header dropped"\
+									"(this option comes only as a first option)\n"));
 			pbuf_free(p);
 			IP6_STATS_INC(ip6.drop);
 			goto ip6_input_cleanup;
@@ -928,7 +993,8 @@ ip6_input_cleanup:
 	ip_data.current_ip_header_tot_len = 0;
 	ip6_addr_set_zero(ip6_current_src_addr());
 	ip6_addr_set_zero(ip6_current_dest_addr());
-
+	// [TAHI ND#127]
+	ip_data.is_atomic_frag = 1;
 	return ERR_OK;
 }
 
@@ -1018,9 +1084,18 @@ err_t ip6_output_if_src(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t 
 		dest = &dest_addr;
 	}
 
+	if (IP6H_NEXTH(ip6hdr) == IP6_NEXTH_ICMP6) {
+		struct icmp6_hdr *icmp6hdr = (struct icmp6_hdr *)((u8_t *)(ip6hdr) + IP6_HLEN);
+		if (icmp6hdr->type == ICMP6_TYPE_EREQ || icmp6hdr->type == ICMP6_TYPE_EREP) {
+			memset(icmp6_prev_hdr, 0, sizeof(struct icmp6_hdr));
+			memcpy(icmp6_prev_hdr, icmp6hdr, sizeof(struct icmp6_hdr));
+		}
+	}
+
 	IP6_STATS_INC(ip6.xmit);
 
 	LWIP_DEBUGF(IP6_DEBUG, ("ip6_output_if: %c%c%" U16_F "\n", netif->name[0], netif->name[1], (u16_t) netif->num));
+
 	ip6_debug_print(p);
 
 #if ENABLE_LOOPBACK
@@ -1135,8 +1210,12 @@ err_t ip6_output_hinted(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t 
 		netif = ip6_route(&src_addr, &dest_addr);
 	}
 
-	if (netif == NULL) {
-		LWIP_DEBUGF(IP6_DEBUG, ("ip6_output: no route for %" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F "\n", IP6_ADDR_BLOCK1(dest), IP6_ADDR_BLOCK2(dest), IP6_ADDR_BLOCK3(dest), IP6_ADDR_BLOCK4(dest), IP6_ADDR_BLOCK5(dest), IP6_ADDR_BLOCK6(dest), IP6_ADDR_BLOCK7(dest), IP6_ADDR_BLOCK8(dest)));
+	if (netif == NULL && dest != NULL) {
+		LWIP_DEBUGF(IP6_DEBUG, ("ip6_output: no route for %" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F "\n",
+								IP6_ADDR_BLOCK1(dest), IP6_ADDR_BLOCK2(dest),
+								IP6_ADDR_BLOCK3(dest), IP6_ADDR_BLOCK4(dest),
+								IP6_ADDR_BLOCK5(dest), IP6_ADDR_BLOCK6(dest),
+								IP6_ADDR_BLOCK7(dest), IP6_ADDR_BLOCK8(dest)));
 		IP6_STATS_INC(ip6.rterr);
 		return ERR_RTE;
 	}
@@ -1182,7 +1261,7 @@ err_t ip6_options_add_hbh_ra(struct pbuf *p, u8_t nexth, u8_t value)
 	hbh_hdr = (struct ip6_hbh_hdr *)p->payload;
 	IP6_HBH_NEXTH(hbh_hdr) = nexth;
 	hbh_hdr->_hlen = 0;
-	offset = IP6_HBH_HLEN; 
+	offset = IP6_HBH_HLEN;
 
 	/* Set router alert options to Hop-by-Hop extended option header */
 	opt_hdr = (struct ip6_opt_hdr *)((u8_t *)hbh_hdr + offset);
@@ -1194,7 +1273,7 @@ err_t ip6_options_add_hbh_ra(struct pbuf *p, u8_t nexth, u8_t value)
 	opt_data = (u8_t *)hbh_hdr + offset;
 	opt_data[0] = value;
 	opt_data[1] = 0;
-	offset += IP6_OPT_DLEN(opt_hdr); 
+	offset += IP6_OPT_DLEN(opt_hdr);
 
 	/* add 2 bytes padding to make 8 bytes Hop-by-Hop header length */
 	opt_hdr = (struct ip6_opt_hdr *)((u8_t *)hbh_hdr + offset);

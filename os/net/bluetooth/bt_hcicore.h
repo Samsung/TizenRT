@@ -102,7 +102,7 @@ struct bt_dev_le {
 	/* Controller buffer information */
 	uint16_t mtu;
 
-	/* Size of the the controller resolving list */
+	/* Size of the controller resolving list */
 	uint8_t rl_size;
 	/* Number of entries in the resolving list. rl_entries > rl_size
 	 * means that host-side resolving is used.

@@ -119,31 +119,7 @@ extern "C" {
 
 /* This family of allocators is used to manage kernel protected memory */
 
-#if !defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_MM_KERNEL_HEAP)
-/* If this is not a kernel build, then these map to the same interfaces
- * as were used for the user-mode function.
- */
-
-#define kmm_initialize(h, s)		/* Initialization done by kumm_initialize */
-#define kmm_addregion(h, s)      umm_addregion(h, s)
-#define kmm_trysemaphore(a)      umm_trysemaphore(a)
-#define kmm_givesemaphore(a)     umm_givesemaphore(a)
-
-#ifdef CONFIG_KMM_FORCE_ALLOC_AT
-#define kmm_malloc(s)          malloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
-#define kmm_zalloc(s)          zalloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, s)
-#define kmm_realloc(p, s)      realloc_at(CONFIG_KMM_FORCE_ALLOC_IDX, p, s)
-#else
-#define kmm_malloc(s)          malloc(s)
-#define kmm_zalloc(s)          zalloc(s)
-#define kmm_realloc(p, s)      realloc(p, s)
-#endif
-
-#define kmm_memalign(a, s)     memalign(a, s)
-#define kmm_free(p)            free(p)
-#define kmm_mallinfo()         mallinfo()
-
-#elif !defined(CONFIG_MM_KERNEL_HEAP)
+#if !defined(CONFIG_MM_KERNEL_HEAP)
 /* If this the kernel phase of a kernel build, and there are only user-space
  * allocators, then the following are defined in userspace.h as macros that
  * call into user-space via a header at the beginning of the user-space blob.

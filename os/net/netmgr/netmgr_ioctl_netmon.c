@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include "netstack.h"
 #include "netdev_mgr_internal.h"

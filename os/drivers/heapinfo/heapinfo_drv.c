@@ -26,7 +26,7 @@
 #include <tinyara/fs/ioctl.h>
 
 #ifdef CONFIG_MM_KERNEL_HEAP
-extern struct mm_heap_s g_kmmheap;
+extern struct mm_heap_s g_kmmheap[CONFIG_KMM_NHEAPS];
 #endif
 /****************************************************************************
  * Private Function Prototypes
@@ -86,25 +86,13 @@ static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case HEAPINFOIOC_PARSE:
 		option = (heapinfo_option_t *)arg;
 		switch (option->heap_type) {
-#ifndef CONFIG_BUILD_PROTECTED
 		case HEAPINFO_HEAP_TYPE_KERNEL:
-			/* When we are in flat build, there is a single heap for the whole system,
-			 * and it is handled using the USR_HEAP object by the umm code.
-			 */
-			heap = &USR_HEAP[regionx_heap_idx[0]];
-			break;
-#else /* CONFIG_BUILD_PROTECTED */
-		case HEAPINFO_HEAP_TYPE_KERNEL:
-			heap = &g_kmmheap;
-			break;
-		case HEAPINFO_HEAP_TYPE_USER:
-			heap = &USR_HEAP[regionx_heap_idx[0]];
+			heap = g_kmmheap;
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case HEAPINFO_HEAP_TYPE_BINARY:
 			heap = mm_get_app_heap_with_name(option->app_name);
 			break;
-#endif
 #endif
 		default:
 			break;
@@ -116,7 +104,7 @@ static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			heap->peak_alloc_size = 0;
 			return OK;
 		}
-		heapinfo_parse(heap, option->mode, option->pid);
+		heapinfo_parse_heap(heap, option->mode, option->pid);
 		ret = OK;
 		break;
 	default:

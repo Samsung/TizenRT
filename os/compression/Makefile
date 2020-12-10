@@ -74,7 +74,6 @@ else
 ifeq ($(CONFIG_COMPRESSION_TYPE),$(MINIZ))
 	@mkdir -p $(MINIZ_SRCDIR)$(DELIM)
 	@cp $(MINIZ_PATH)$(DELIM)*.c $(MINIZ_SRCDIR)$(DELIM)
-	@cp $(MINIZ_PATH)$(DELIM)*.h $(MINIZ_SRCDIR)$(DELIM)
 endif
 endif
 endif

@@ -79,6 +79,7 @@ include gpio$(DELIM)Make.defs
 include heapinfo$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs
 include iotdev$(DELIM)Make.defs
+include kernel_test$(DELIM)Make.defs
 include lcd$(DELIM)Make.defs
 include lwnl${DELIM}Make.defs
 include net$(DELIM)Make.defs
@@ -91,7 +92,6 @@ include serial$(DELIM)Make.defs
 include spi$(DELIM)Make.defs
 include syslog$(DELIM)Make.defs
 include task_manager$(DELIM)Make.defs
-include testcase$(DELIM)Make.defs
 include ttrace$(DELIM)Make.defs
 include usbdev$(DELIM)Make.defs
 include usbhost$(DELIM)Make.defs

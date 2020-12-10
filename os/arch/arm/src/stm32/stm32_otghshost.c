@@ -1422,7 +1422,7 @@ static int stm32_in_transfer(FAR struct stm32_usbhost_s *priv, int chidx, FAR ui
 			/* Check for a special case:  If (1) the transfer was NAKed and (2)
 			 * no Tx FIFO empty or Rx FIFO not-empty event occurred, then we
 			 * should be able to just flush the Rx and Tx FIFOs and try again.
-			 * We can detect this latter case becasue the then the transfer
+			 * We can detect this latter case because then the transfer
 			 * buffer pointer and buffer size will be unaltered.
 			 */
 
@@ -1542,7 +1542,7 @@ static int stm32_out_transfer(FAR struct stm32_usbhost_s *priv, int chidx, FAR u
 			/* Check for a special case:  If (1) the transfer was NAKed and (2)
 			 * no Tx FIFO empty or Rx FIFO not-empty event occurred, then we
 			 * should be able to just flush the Rx and Tx FIFOs and try again.
-			 * We can detect this latter case becasue the then the transfer
+			 * We can detect this latter case because then the transfer
 			 * buffer pointer and buffer size will be unaltered.
 			 */
 

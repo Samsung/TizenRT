@@ -140,6 +140,7 @@ endif
 
 ifeq ($(CONFIG_AMEBAD_WIFI),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
 endif
 
 # Add library for wifi driver

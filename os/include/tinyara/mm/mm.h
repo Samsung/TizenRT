@@ -95,12 +95,6 @@
  *   single heap access with the standard allocations (malloc/free).  This
  *   heap is referred to as the user heap.  The kernel logic must
  *   initialize this single heap at boot time.
- * - Protected build: In the protected build (CONFIG_BUILD_PROTECTED=y)
- *   where an MPU is used to protect a region of otherwise flat memory,
- *   there will be two allocators:  One that allocates protected (kernel)
- *   memory and one that allocates unprotected (user) memory.  These are
- *   referred to as the kernel and user heaps, respectively.  Both must be
- *   initialized by the kernel logic at boot time.
  * - Kernel Build: If the architecture has an MMU, then it may support the
  *   kernel build (CONFIG_BUILD_KERNEL=y).  In this configuration, there
  *   is one kernel heap but multiple user heaps:  One per task group.
@@ -108,26 +102,11 @@
  *   initializing the single kernel heap here.  User heaps will be created
  *   as tasks are created.
  *
- * These special definitions are provided:
- *
- *   MM_KERNEL_USRHEAP_INIT
- *     Special kernel interfaces to the kernel user-heap are required
- *     for heap initialization.
- *   CONFIG_MM_KERNEL_HEAP
- *     The configuration requires a kernel heap that must initialized
- *     at boot-up.
  */
-
-#undef MM_KERNEL_USRHEAP_INIT
-#if defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
-#define MM_KERNEL_USRHEAP_INIT 1
-#elif !defined(CONFIG_BUILD_KERNEL)
-#define MM_KERNEL_USRHEAP_INIT 1
-#endif
 
 /* The kernel heap is never accessible from user code */
 
-#ifndef __KERNEL__
+#if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
 #undef CONFIG_MM_KERNEL_HEAP
 #endif
 
@@ -222,17 +201,13 @@
 #define HEAPINFO_ADD_INFO 1
 #define HEAPINFO_DEL_INFO 2
 
+#define HEAPINFO_INVALID_GROUPID -1
+
 #define HEAPINFO_HEAP_TYPE_KERNEL 1
-#ifdef CONFIG_BUILD_PROTECTED
-#define HEAPINFO_HEAP_TYPE_USER   2
 #ifdef CONFIG_APP_BINARY_SEPARATION
-#define HEAPINFO_HEAP_TYPE_BINARY    3
-#endif
+#define HEAPINFO_HEAP_TYPE_BINARY    2
 #endif
 
-#define REGION_START (size_t)regionx_start[0]
-#define REGION_SIZE  regionx_size[0]
-#define REGION_END (REGION_START + REGION_SIZE)
 #define INVALID_HEAP_IDX -1
 
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -368,6 +343,16 @@ struct heapinfo_group_s {
 	int heap_size;
 };
 #endif
+
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+extern int heapinfo_max_group;
+extern struct heapinfo_group_s heapinfo_group[HEAPINFO_USER_GROUP_NUM];
+extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
+#endif
+
+#if CONFIG_KMM_NHEAPS > 1
+extern heapinfo_total_info_t total_info;
+#endif
 #endif
 /* This describes one heap (possibly with multiple regions) */
 
@@ -395,10 +380,10 @@ struct mm_heap_s {
 #endif
 
 	/* This is the first and last nodes of the heap */
-	FAR struct mm_allocnode_s *mm_heapstart[CONFIG_MM_REGION_NUM];
-	FAR struct mm_allocnode_s *mm_heapend[CONFIG_MM_REGION_NUM];
+	FAR struct mm_allocnode_s *mm_heapstart[CONFIG_KMM_REGIONS];
+	FAR struct mm_allocnode_s *mm_heapend[CONFIG_KMM_REGIONS];
 
-#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
+#if CONFIG_KMM_REGIONS > 1
 	int mm_nregions;
 #endif
 
@@ -422,6 +407,7 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+extern struct mm_heap_s g_kmmheap[CONFIG_KMM_NHEAPS];
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
 /* In the kernel build, there are multiple user heaps; one for each task
  * group.  In this build configuration, the user heap structure lies
@@ -430,37 +416,26 @@ extern "C" {
  * ARCH_DATA_RESERVE_SIZE
  */
 #include <tinyara/addrenv.h>
-#define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
+#define BASE_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
 
 #elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
-
-#include <tinyara/userspace.h>
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/sched.h>
-extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
-#define USR_HEAP_CFG       g_mmheap
-#define USR_HEAP_TCB ((struct mm_heap_s *)((struct tcb_s*)sched_self())->uheap)
-#define USR_HEAP (USR_HEAP_TCB == NULL ? USR_HEAP_CFG : USR_HEAP_TCB)
-#else
-#define USR_HEAP ((struct mm_heap_s *)(*(uint32_t *)(((struct userspace_s *)USERSPACE)->us_textstart)))
-#endif
+#define BASE_HEAP ((struct mm_heap_s *)((struct tcb_s*)sched_self())->uheap)
 
 #elif defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
-extern uint32_t _stext;
+extern uint32_t _sdata;
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 extern struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1];
 extern uint32_t g_cur_app;
-#define USR_HEAP (g_app_heap_table[g_cur_app])
+#define BASE_HEAP (g_app_heap_table[g_cur_app])
 
 #else
-#define USR_HEAP ((struct mm_heap_s *)_stext)
+#define BASE_HEAP ((struct mm_heap_s *)_sdata)
 #endif
 
 #else
-extern struct mm_heap_s g_mmheap[CONFIG_MM_NHEAPS];
-#define USR_HEAP       g_mmheap
+#define BASE_HEAP       g_kmmheap
 #endif
 
 /****************************************************************************
@@ -615,7 +590,7 @@ FAR void *kmm_memalign(size_t alignment, size_t size);
 
 /* Functions contained in kmm_heapmember.c **********************************/
 
-#if defined(CONFIG_MM_KERNEL_HEAP) && defined(CONFIG_DEBUG)
+#if defined(CONFIG_MM_KERNEL_HEAP)
 bool kmm_heapmember(FAR void *mem);
 #endif
 
@@ -698,7 +673,7 @@ int mm_size2ndx(size_t size);
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
-void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid);
+void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid);
 /* Funciton to add memory allocation info */
 void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_retaddr);
 
@@ -707,7 +682,9 @@ void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
 void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid);
 void heapinfo_exclude_stacksize(void *stack_ptr);
 void heapinfo_peak_init(struct mm_heap_s *heap);
+void heapinfo_dealloc_tcbinfo(void *address, pid_t pid);
 #ifdef CONFIG_HEAPINFO_USER_GROUP
+void heapinfo_update_group(mmsize_t size, pid_t pid);
 void heapinfo_update_group_info(pid_t pid, int group, int type);
 void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
@@ -721,14 +698,15 @@ struct mm_heap_s *mm_get_heap_with_index(int index);
 int mm_get_heapindex(void *mem);
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
-void mm_initialize_app_heap(void);
+void mm_initialize_app_heap_q(void);
 void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name);
 void mm_remove_app_heap_list(struct mm_heap_s *heap);
+void mm_disable_app_heap_list(struct mm_heap_s *heap);
 struct mm_heap_s *mm_get_app_heap_with_name(char *app_name);
 char *mm_get_app_heap_name(void *address);
 #endif
 
-#if CONFIG_MM_NHEAPS > 1
+#if CONFIG_KMM_NHEAPS > 1
 struct heapinfo_total_info_s {
 	int total_heap_size;
 	int cur_free;

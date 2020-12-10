@@ -82,7 +82,9 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t *g_umm_app_id;
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -116,16 +118,17 @@ void up_release_pending(void)
 		 * contexts.  First check if we are operating in interrupt context.
 		 */
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		if (rtcb->tz_context) {
+			TZ_StoreContext_S(rtcb->tz_context);
+		}
+#endif
 		if (current_regs) {
 			/* Yes, then we have to do things differently. Just copy the
 			 * current_regs into the OLD rtcb.
 			 */
 
 			up_savestate(rtcb->xcp.regs);
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-			/* Store the secure context and PSPLIM of OLD rtcb */
-			tz_store_context(rtcb->xcp.regs);
-#endif
 
 			/* Restore the exception context of the rtcb at the (new) head
 			 * of the g_readytorun task list.
@@ -144,27 +147,33 @@ void up_release_pending(void)
 			/* Condition check : Update MPU registers only if this is not a kernel thread. */
 			if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
 #if defined(CONFIG_APP_BINARY_SEPARATION)
-				for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+				for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
 					up_mpu_set_register(&rtcb->mpu_regs[i]);
 				}
 #endif
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-				up_mpu_set_register(&rtcb->stack_mpu_regs);
-#endif
 			}
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+			up_mpu_set_register(rtcb->stack_mpu_regs);
+#endif
 #endif
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			if (g_umm_app_id) {
+				*g_umm_app_id = rtcb->app_id;
+			}
+#endif
 #ifdef CONFIG_TASK_MONITOR
 			/* Update rtcb active flag for monitoring. */
 			rtcb->is_active = true;
 #endif
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+			if (rtcb->tz_context) {
+				TZ_LoadContext_S(rtcb->tz_context);
+			}
+#endif
 			/* Then switch contexts */
 			up_restorestate(rtcb->xcp.regs);
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-			/* Load the secure context and PSPLIM of OLD rtcb */
-			tz_load_context(rtcb->xcp.regs);
-#endif
 
 		}
 

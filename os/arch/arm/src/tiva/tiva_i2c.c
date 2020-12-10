@@ -1316,7 +1316,7 @@ static int tiva_i2c_interrupt(struct tiva_i2c_priv_s *priv, uint32_t status)
 						if ((priv->msgv->flags & I2C_M_NORESTART) != 0) {
 							/* Just continue transferring data.  In this case,
 							 * no STOP was sent at the end of the last message
-							 * and the there is no new address.
+							 * and there is no new address.
 							 *
 							 * REVISIT: In this case, the address or the
 							 * direction of the transfer cannot be permitted to
@@ -1710,7 +1710,7 @@ static int tiva_i2c_initialize(struct tiva_i2c_priv_s *priv, uint32_t frequency)
 #endif
 #endif
 
-	/* Configure the the initial I2C clock frequency. */
+	/* Configure the initial I2C clock frequency. */
 
 	(void)tiva_i2c_setclock(priv, frequency);
 

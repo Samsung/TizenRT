@@ -143,36 +143,6 @@ static inline FAR struct semholder_s *sem_allocholder(sem_t *sem)
 }
 
 /****************************************************************************
- * Name: sem_findholder
- ****************************************************************************/
-
-static FAR struct semholder_s *sem_findholder(sem_t *sem, FAR struct tcb_s *htcb)
-{
-	FAR struct semholder_s *pholder;
-
-	/* Try to find the holder in the list of holders associated with this
-	 * semaphore
-	 */
-
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-	for (pholder = sem->hhead; pholder; pholder = pholder->flink)
-#else
-	pholder = &sem->holder;
-#endif
-	{
-		if (pholder->htcb == htcb) {
-			/* Got it! */
-
-			return pholder;
-		}
-	}
-
-	/* The holder does not appear in the list */
-
-	return NULL;
-}
-
-/****************************************************************************
  * Name: sem_findorallocateholder
  ****************************************************************************/
 
@@ -796,6 +766,36 @@ void sem_destroyholder(FAR sem_t *sem)
 
 	sem->holder.htcb = NULL;
 #endif
+}
+
+/****************************************************************************
+ * Name: sem_findholder
+ ****************************************************************************/
+
+struct semholder_s *sem_findholder(sem_t *sem, FAR struct tcb_s *htcb)
+{
+	FAR struct semholder_s *pholder;
+
+	/* Try to find the holder in the list of holders associated with this
+	 * semaphore
+	 */
+
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+	for (pholder = sem->hhead; pholder; pholder = pholder->flink)
+#else
+	pholder = &sem->holder;
+#endif
+	{
+		if (pholder->htcb == htcb) {
+			/* Got it! */
+
+			return pholder;
+		}
+	}
+
+	/* The holder does not appear in the list */
+
+	return NULL;
 }
 
 /****************************************************************************

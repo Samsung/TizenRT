@@ -65,7 +65,6 @@
  */
 #define CONFIG_WLAN	1
 #if CONFIG_WLAN
-#define CONFIG_LWIP_LAYER	1
 #define CONFIG_INIT_NET		0 //init lwip layer when start up
 #define CONFIG_WIFI_IND_USE_THREAD	0	// wifi indicate worker thread
 
@@ -138,7 +137,6 @@
 #define CONFIG_ETHERNET 0
 #if CONFIG_ETHERNET
 
-#define CONFIG_LWIP_LAYER	1
 #define CONFIG_INIT_NET         1 //init lwip layer when start up
 
 //on/off relative commands in log service
@@ -158,9 +156,6 @@
  */
 //#define CONFIG_INIC_EN 0//enable iNIC mode
 #if defined(CONFIG_INIC_EN) && CONFIG_INIC_EN
-#ifndef CONFIG_LWIP_LAYER
-#define CONFIG_LWIP_LAYER	0
-#endif
 #ifndef CONFIG_INIC_SDIO_HCI
 #define CONFIG_INIC_SDIO_HCI	0 //for SDIO or USB iNIC
 #endif
@@ -444,8 +439,6 @@
 #define CONFIG_INCLUDE_SIMPLE_CONFIG	0
 #undef	CONFIG_EXAMPLE_WLAN_FAST_CONNECT
 #define CONFIG_EXAMPLE_WLAN_FAST_CONNECT	0
-#undef CONFIG_LWIP_LAYER
-#define CONFIG_LWIP_LAYER	1
 #undef	CONFIG_BSD_TCP
 #define CONFIG_BSD_TCP		1
 

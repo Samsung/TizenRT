@@ -978,7 +978,7 @@ function toggle(id, link) {
 <li><a href="#CONFIG_BOARD_FOTA_SUPPORT">1.3.12 <code>CONFIG_BOARD_FOTA_SUPPORT</code>: Enable board support for FOTA</a></li>
 <li><a href="#CONFIG_BOARD_COREDUMP_FLASH">1.3.13 <code>CONFIG_BOARD_COREDUMP_FLASH</code>: Enable crashlog dump to flash</a></li>
 <li><a href="#CONFIG_BOARD_RAMDUMP_FLASH">1.3.14 <code>CONFIG_BOARD_RAMDUMP_FLASH</code>: Enable ramdump to flash</a></li>
-<li><a href="#CONFIG_BOARD_RAMDUMP_UART">1.3.15 <code>CONFIG_BOARD_RAMDUMP_UART</code>: Enable ramdump via UART</a></li>
+<li><a href="#CONFIG_BOARD_DUMP_UART">1.3.15 <code>CONFIG_BOARD_DUMP_UART</code>: Enable dumping of RAM and FS contents via UART</a></li>
 <li><a href="#CONFIG_ARTIK05X_BOOT_FAILURE_DETECTION">1.3.16 <code>CONFIG_ARTIK05X_BOOT_FAILURE_DETECTION</code>: Clear bootcount when boot completes</a></li>
 <li><a href="#CONFIG_ARTIK05X_BOOT_COUNTS_ADDR">1.3.17 <code>CONFIG_ARTIK05X_BOOT_COUNTS_ADDR</code>: Address of scratch pad register to store the bootcount</a></li>
 <li><a href="#CONFIG_ARTIK05X_FLASH_CAPACITY">1.3.18 <code>CONFIG_ARTIK05X_FLASH_CAPACITY</code>: Size of external flash memory (in bytes)</a></li>
@@ -2497,10 +2497,8 @@ function toggle(id, link) {
 <li><a href="#CONFIG_SMARTFS_MAXNAMLEN">1.10.9.2 <code>CONFIG_SMARTFS_MAXNAMLEN</code>: Maximum file name length</a></li>
 <li><a href="#CONFIG_SMARTFS_MULTI_ROOT_DIRS">1.10.9.3 <code>CONFIG_SMARTFS_MULTI_ROOT_DIRS</code>: Support multiple Root Directories / Mount Points</a></li>
 <li><a href="#CONFIG_SMARTFS_ALIGNED_ACCESS">1.10.9.4 <code>CONFIG_SMARTFS_ALIGNED_ACCESS</code>: Ensure 16 and 32 bit accesses are alined</a></li>
-<li><a href="#CONFIG_SMARTFS_BAD_SECTOR">1.10.9.5 <code>CONFIG_SMARTFS_BAD_SECTOR</code>: Bad Sector Management</a></li>
 <li><a href="#CONFIG_SMARTFS_DYNAMIC_HEADER">1.10.9.6 <code>CONFIG_SMARTFS_DYNAMIC_HEADER</code>: Dynamic Header</a></li>
 <li><a href="#CONFIG_SMARTFS_JOURNALING">1.10.9.7 <code>CONFIG_SMARTFS_JOURNALING</code>: Enable filesystem journaling for smartfs</a></li>
-<li><a href="#CONFIG_SMARTFS_JOURNAL_VERIFY">1.10.9.8 <code>CONFIG_SMARTFS_JOURNAL_VERIFY</code>: Verify Journal logging</a></li>
 <li><a href="#CONFIG_SMARTFS_SECTOR_RECOVERY">1.10.9.9 <code>CONFIG_SMARTFS_SECTOR_RECOVERY</code>: Enable recovery of lost sectors in Filesystem</a></li>
 </ul>
 <li><a href="#CONFIG_FS_PROCFS">1.10.10 <code>CONFIG_FS_PROCFS</code>: PROCFS File System</a></li>
@@ -12315,7 +12313,7 @@ expected, however.
 </li>
   <li><i>Kconfig file</i>: <code>./arch/arm/src/stm32/Kconfig</code>
 <p>
-  If you are using the the LTDC, then you must provide the address  of the start of the framebuffer.  This address will typically  be in the SRAM or SDRAM memory region of the FSMC.</p>
+  If you are using the LTDC, then you must provide the address  of the start of the framebuffer.  This address will typically  be in the SRAM or SDRAM memory region of the FSMC.</p>
 </ul>
 <h3><a name="CONFIG_STM32_LTDC_FB_SIZE">1.2.156.10 <code>CONFIG_STM32_LTDC_FB_SIZE</code>: Framebuffer memory size (bytes)</a></h3>
 <ul>
@@ -15429,7 +15427,7 @@ int up_prioritize_irq(int irq, int priority)
 <p>
   NOTE: ARCH_INTERRUPTSTACK must be set in kernel mode (BUILD_KERNEL).  In kernel mode without an interrupt stack, the interrupt handler  will set the MSP to the stack pointer of the interrupted thread.  If  the interrupted thread was a privileged thread, that will be the MSP  otherwise it will be the PSP.  If the PSP is used, then the value of  the MSP will be invalid when the interrupt handler returns because  it will be a pointer to an old position in the unprivileged stack.  Then when the high priority interrupt occurs and uses this stale MSP,  there will most likely be a system failure.</p>
 <p>
-  If the interrupt stack is selected, on the other hand, then the  interrupt handler will always set the the MSP to the interrupt  stack.  So when the high priority interrupt occurs, it will either  use the MSP of the last privileged thread to run or, in the case of  the nested interrupt, the interrupt stack if no privileged task has  run</p>
+  If the interrupt stack is selected, on the other hand, then the  interrupt handler will always set the MSP to the interrupt  stack.  So when the high priority interrupt occurs, it will either  use the MSP of the last privileged thread to run or, in the case of  the nested interrupt, the interrupt stack if no privileged task has  run</p>
 </ul>
 <h3><a name="CONFIG_ARCH_INT_DISABLEALL">1.2.242 <code>CONFIG_ARCH_INT_DISABLEALL</code>: Disable high priority interrupts</a></h3>
 <ul>
@@ -15899,7 +15897,7 @@ int up_prioritize_irq(int irq, int priority)
 <p>
   If selected it will dump the RAM contents to flash.</p>
 </ul>
-<h3><a name="CONFIG_BOARD_RAMDUMP_UART">1.3.15 <code>CONFIG_BOARD_RAMDUMP_UART</code>: Enable ramdump via UART</a></h3>
+<h3><a name="CONFIG_BOARD_DUMP_UART">1.3.15 <code>CONFIG_BOARD_DUMP_UART</code>: Enable dumping of RAM and FS contents via UART</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
   <li>
@@ -17422,9 +17420,9 @@ int up_prioritize_irq(int irq, int priority)
   </li>
   <li><i>Kconfig file</i>: <code>./kernel/Kconfig</code>
 <p>
-  In the &quot;normal&quot; configuration where system time is provided by a  periodic timer interrupt, the default system timer is expected to  run at 100Hz or USEC_PER_TICK=10000.  This setting must be defined  to inform of TinyAra the interval that the the processor hardware is  providing system timer interrupts to the OS.</p>
+  In the &quot;normal&quot; configuration where system time is provided by a  periodic timer interrupt, the default system timer is expected to  run at 100Hz or USEC_PER_TICK=10000.  This setting must be defined  to inform of TinyAra the interval that the processor hardware is  providing system timer interrupts to the OS.</p>
 <p>
-  If SCHED_TICKLESS is selected, then there are no system timer  interrupts.  In this case, USEC_PER_TICK does not control any timer  rates.  Rather, it only determines the resolution of time reported  by clock_systimer() and the resolution of times that can be set for  certain delays including watchdog timers and delayed work.  In this  case there is a trade-off:  It is better to have the USEC_PER_TICK as  low as possible for higher timing resolution.  However, the the time  is currently held in &apos;unsigned int&apos; on some systems, this may be  16-bits but on most contemporary systems it will be 32-bits.  In  either case, smaller values of USEC_PER_TICK will reduce the range  of values that delays that can be represented.  So the trade-off is  between range and resolution (you could also modify the code to use  a 64-bit value if you really want both).</p>
+  If SCHED_TICKLESS is selected, then there are no system timer  interrupts.  In this case, USEC_PER_TICK does not control any timer  rates.  Rather, it only determines the resolution of time reported  by clock_systimer() and the resolution of times that can be set for  certain delays including watchdog timers and delayed work.  In this  case there is a trade-off:  It is better to have the USEC_PER_TICK as  low as possible for higher timing resolution.  However, the time  is currently held in &apos;unsigned int&apos; on some systems, this may be  16-bits but on most contemporary systems it will be 32-bits.  In  either case, smaller values of USEC_PER_TICK will reduce the range  of values that delays that can be represented.  So the trade-off is  between range and resolution (you could also modify the code to use  a 64-bit value if you really want both).</p>
 <p>
   The default, 100 microseconds, will provide for a range of delays  up to 120 hours.</p>
 <p>
@@ -31934,20 +31932,6 @@ Supporting curves :
 <p>
   Performs little endian byte accesses to 16 and 32 values  within the directory list to ensure processors that can&apos;t  handle un-aligned accesses don&apos;t bomb out.  Default should  probably by &apos;Y&apos;, but set to &apos;N&apos; in case any existing Big  Endian instances of SmartFS exist that already have  directories with data stored in big endian mode.</p>
 </ul>
-<h3><a name="CONFIG_SMARTFS_BAD_SECTOR">1.10.9.5 <code>CONFIG_SMARTFS_BAD_SECTOR</code>: Bad Sector Management</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_FS_SMARTFS"><code>CONFIG_FS_SMARTFS</code></a></li>
-  <li><i>Kconfig file</i>: <code>./fs/smartfs/Kconfig</code>
-<p>
-  Enables Bad Sector Management for SMART FS to ensure data  <ul><pre>
-consistency of the persistant storage (Flash).
-</pre></ul>
-</p>
-</ul>
 <h3><a name="CONFIG_SMARTFS_DYNAMIC_HEADER">1.10.9.6 <code>CONFIG_SMARTFS_DYNAMIC_HEADER</code>: Dynamic Header</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
@@ -31969,19 +31953,6 @@ consistency of the persistant storage (Flash).
   <li><i>Kconfig file</i>: <code>./fs/smartfs/Kconfig</code>
 <p>
   Enables logging of write operations on filesystem, so that in  case of power failure the filesystem can be brought to a stable  state with minimal data loss.  Enabling journaling will increase the delay in filesystem  operations, because before doing any fs operation, journaling  will first log it in journal area. The journal area will also  take up space in the flash, leaving lesser space for filesystem.  The space reserved for journal area is proportional to max number  of file descriptors allowed and sector size defined. Thus, to  minimize the area reserved for journaling, it is advised to keep  sector size small.</p>
-</ul>
-<h3><a name="CONFIG_SMARTFS_JOURNAL_VERIFY">1.10.9.8 <code>CONFIG_SMARTFS_JOURNAL_VERIFY</code>: Verify Journal logging</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_FS_SMARTFS"><code>CONFIG_FS_SMARTFS</code></a>, <a href="#CONFIG_SMARTFS_JOURNALING"><code>CONFIG_SMARTFS_JOURNALING</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./fs/smartfs/Kconfig</code>
-<p>
-  The read &amp; verify joural value after right  Sometimes electronic power grow up after power off, in this case  FS decide write finished properly, but it doesn&apos;t finished properly.  To prevent this, verifying needed.  On the other hands, it takes more time for most of file operation that  using journal Logging.
-</p>
 </ul>
 <h3><a name="CONFIG_SMARTFS_SECTOR_RECOVERY">1.10.9.9 <code>CONFIG_SMARTFS_SECTOR_RECOVERY</code>: Enable recovery of lost sectors in Filesystem</a></h3>
 <ul>
@@ -37330,7 +37301,7 @@ sizeof(FAR void *) == sizeof(unsigned long));
 </li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/i2schar/Kconfig</code>
 <p>
-  Define if architecture-specific I2S device initialize is available.  If defined, the the platform specific code must provide a function  i2schar_devinit() that will be called each time that this test  executes.  Not available in the kernel build mode.</p>
+  Define if architecture-specific I2S device initialize is available.  If defined, the platform specific code must provide a function  i2schar_devinit() that will be called each time that this test  executes.  Not available in the kernel build mode.</p>
 </ul>
 <h3><a name="CONFIG_EXAMPLES_IOTBUS_TEST">1.18.4.55 <code>CONFIG_EXAMPLES_IOTBUS_TEST</code>: Iotbus example</a></h3>
 <ul>
@@ -41517,7 +41488,7 @@ RAMMTD_ERASESIZE * EXAMPLES_SMART_NEBLOCKS
   <li><i>Dependencies</i>: <a href="#CONFIG_ENABLE_CPULOAD_MONITOR"><code>CONFIG_ENABLE_CPULOAD_MONITOR</code></a></li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/system/utils/Kconfig</code>
 <p>
-  The priority to use the the CPU load monitor daemon.  Default: 100</p>
+  The priority to use the CPU load monitor daemon.  Default: 100</p>
 </ul>
 <h3><a name="CONFIG_CPULOADMONITOR_INTERVAL">1.18.7.47 <code>CONFIG_CPULOADMONITOR_INTERVAL</code>: CPU load monitor frequency</a></h3>
 <ul>
@@ -41694,7 +41665,7 @@ RAMMTD_ERASESIZE * EXAMPLES_SMART_NEBLOCKS
   <li><i>Dependencies</i>: <a href="#CONFIG_ENABLE_STACKMONITOR_CMD"><code>CONFIG_ENABLE_STACKMONITOR_CMD</code></a></li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/system/utils/Kconfig</code>
 <p>
-  The priority to use the the stack monitor daemon.  Default: 100</p>
+  The priority to use the stack monitor daemon.  Default: 100</p>
 </ul>
 <h3><a name="CONFIG_STACKMONITOR_INTERVAL">1.18.7.63 <code>CONFIG_STACKMONITOR_INTERVAL</code>: Stack monitor dump frequency</a></h3>
 <ul>

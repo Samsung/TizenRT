@@ -227,7 +227,9 @@ static int i2c_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
 	int32_t freq;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct i2c_dev_s *dev = inode->i_private;
+#ifdef CONFIG_I2C_TRANSFER
 	FAR struct i2c_rdwr_ioctl_data_s *rdwr;
+#endif
 
 	switch (cmd) {
 	case I2C_SLAVE:

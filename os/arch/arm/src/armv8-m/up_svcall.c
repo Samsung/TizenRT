@@ -103,11 +103,10 @@
 #ifdef CONFIG_BINMGR_RECOVERY
 extern uint32_t g_assertpc;
 #endif
-
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-/* By default, a task is created without a secure context */
-volatile TZ_ModuleId_t tz_memory = 0x0;
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t *g_umm_app_id;
 #endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -188,6 +187,7 @@ static void dispatch_syscall(void)
 int up_svcall(int irq, FAR void *context, FAR void *arg)
 {
 	uint32_t *regs = (uint32_t *)context;
+	struct tcb_s *rtcb = sched_self();
 	uint32_t cmd;
 
 	DEBUGASSERT(regs && regs == current_regs);
@@ -265,25 +265,27 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
 
-#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_TASK_MONITOR)
-		struct tcb_s *tcb = sched_self();
-#endif
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
-		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-			for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
-				up_mpu_set_register(&tcb->mpu_regs[i]);
+		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-			up_mpu_set_register(&tcb->stack_mpu_regs);
-#endif
 		}
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		up_mpu_set_register(tcb->stack_mpu_regs);
+#endif
+#endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			if (g_umm_app_id) {
+				*g_umm_app_id = rtcb->app_id;
+			}
 #endif
 
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
-		tcb->is_active = true;
+		rtcb->is_active = true;
 #endif
 	}
 	break;
@@ -312,25 +314,31 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
 
-#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION)) || defined(CONFIG_TASK_MONITOR)
-		struct tcb_s *tcb = sched_self();
-#endif
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
-		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-			for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
-				up_mpu_set_register(&tcb->mpu_regs[i]);
+		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+				up_mpu_set_register(&rtcb->mpu_regs[i]);
 			}
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-			up_mpu_set_register(&tcb->stack_mpu_regs);
-#endif
 		}
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		up_mpu_set_register(rtcb->stack_mpu_regs);
+#endif
+#endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+			if (g_umm_app_id) {
+				*g_umm_app_id = rtcb->app_id;
+			}
 #endif
 
 #ifdef CONFIG_TASK_MONITOR
 		/* Update tcb active flag for monitoring. */
-		tcb->is_active = true;
+		rtcb->is_active = true;
+#endif
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		if (rtcb->tz_context)
+			TZ_LoadContext_S(rtcb->tz_context);
 #endif
 	}
 	break;
@@ -349,7 +357,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 #ifdef CONFIG_LIB_SYSCALL
 	case SYS_syscall_return: {
-		struct tcb_s *rtcb = sched_self();
 		int index = (int)rtcb->xcp.nsyscalls - 1;
 
 		/* Make sure that there is a saved syscall return address. */
@@ -396,22 +403,15 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		/* Set up to return to the user-space task start-up function in
 		 * unprivileged mode.
 		 */
+		DEBUGASSERT(rtcb->uspace);
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
 		/* While starting loadable apps, we cannot go through the
 		* USERSPACE->task_startup method. Instead we pick the PC value
 		* from the app's userspace object stored in its tcb.
 		*
 		* Here, we check if this task is a loadable app (non-zero uspace)
 		*/
-		if (((struct tcb_s *)sched_self())->uspace) {
-			regs[REG_PC] = (uint32_t)((struct userspace_s *)(((struct tcb_s *)sched_self())->uspace))->task_startup;
-		} else
-		/* If its a normal non-loadable user app, then follow the default method */
-#endif
-		{
-			regs[REG_PC] = (uint32_t)USERSPACE->task_startup;
-		}
+		regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->task_startup;
 
 		regs[REG_EXC_RETURN] = EXC_RETURN_UNPRIVTHR;
 
@@ -443,22 +443,15 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		/* Set up to return to the user-space pthread start-up function in
 		 * unprivileged mode.
 		 */
+		DEBUGASSERT(rtcb->uspace);
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
 		/* While starting loadable apps, we cannot go through the
 		* USERSPACE->task_startup method. Instead we pick the PC value
 		* from the app's userspace object stored in its tcb.
 		*
 		* Here, we check if this task is a loadable app (non-zero uspace)
 		*/
-		if (((struct tcb_s *)sched_self())->uspace) {
-			regs[REG_PC] = (uint32_t)((struct userspace_s *)(((struct tcb_s *)sched_self())->uspace))->pthread_startup;
-		} else
-		/* If its a normal non-loadable user app, then follow the default method */
-#endif
-		{
-			regs[REG_PC] = (uint32_t)USERSPACE->pthread_startup;
-		}
+		regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->pthread_startup;
 
 		regs[REG_EXC_RETURN] = EXC_RETURN_UNPRIVTHR;
 
@@ -488,32 +481,24 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_DISABLE_SIGNALS)
 	case SYS_signal_handler: {
-		struct tcb_s *rtcb = sched_self();
 
 		/* Remember the caller's return address */
 
 		DEBUGASSERT(rtcb->xcp.sigreturn == 0);
+		DEBUGASSERT(rtcb->uspace);
 		rtcb->xcp.sigreturn = regs[REG_PC];
 
 		/* Set up to return to the user-space pthread start-up function in
 		 * unprivileged mode.
 		 */
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
 		/* While starting loadable apps, we cannot go through the
 		* USERSPACE->task_startup method. Instead we pick the PC value
 		* from the app's userspace object stored in its tcb.
 		*
 		* Here, we check if this task is a loadable app (non-zero uspace)
 		*/
-		if (rtcb->uspace) {
-			regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->signal_handler;
-		} else
-		/* If its a normal non-loadable user app, then follow the default method */
-#endif
-		{
-			regs[REG_PC] = (uint32_t)USERSPACE->signal_handler;
-		}
+		regs[REG_PC] = (uint32_t)((struct userspace_s *)(rtcb->uspace))->signal_handler;
 
 		regs[REG_EXC_RETURN] = EXC_RETURN_UNPRIVTHR;
 
@@ -545,7 +530,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_DISABLE_SIGNALS)
 	case SYS_signal_handler_return: {
-		struct tcb_s *rtcb = sched_self();
 
 		/* Set up to return to the kernel-mode signal dispatching logic. */
 
@@ -570,20 +554,17 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		ulR1 = regs[REG_R1];
 
 		/* Allocate and load a context for the secure task. */
-		tz_memory = TZ_AllocModuleContext_S(ulR1);
-		regs[REG_R8] = tz_memory;
+		rtcb->tz_context = TZ_AllocModuleContext_S(ulR1);
 
-		ASSERT(tz_memory != 0);
-		TZ_LoadContext_S(tz_memory);
+		ASSERT(rtcb->tz_context != 0);
+		TZ_LoadContext_S(rtcb->tz_context);
 	}
 	break;
 
 	case SYS_free_securecontext: {
-		uint32_t ulR1;
-		ulR1 = regs[REG_R1];
-
 		/* Free the secure context. */
-		TZ_FreeModuleContext_S((TZ_MemoryId_t) ulR1);
+		TZ_FreeModuleContext_S(rtcb->tz_context);
+		rtcb->tz_context = 0;
 	}
 	break;
 #endif
@@ -594,7 +575,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 	default: {
 #ifdef CONFIG_LIB_SYSCALL
-		FAR struct tcb_s *rtcb = sched_self();
 		int index = rtcb->xcp.nsyscalls;
 
 		/* Verify that the SYS call number is within range */

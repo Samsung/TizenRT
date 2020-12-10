@@ -30,9 +30,17 @@
 #include <stdlib.h>
 
 #include <tinyara/binary_manager.h>
+#ifdef CONFIG_BINMGR_RECOVERY
+#include <tinyara/kthread.h>
+#endif
 
 #include "sched/sched.h"
 #include "binary_manager.h"
+
+#if CONFIG_MQ_MAXMSGSIZE < (CONFIG_NAME_MAX + 64)
+/* The largest size of messages is (CONFIG_NAME_MAX + 64) for communication with binary manager */
+#error "CONFIG_MQ_MAXMSGSIZE should be greater than (CONFIG_NAME_MAX + 64)"
+#endif
 
 /****************************************************************************
  * Private Definitions
@@ -71,14 +79,11 @@ int binary_manager(int argc, char *argv[])
 #if !defined(CONFIG_DISABLE_SIGNALS)
 	sigset_t sigset;
 #endif
-	char type_str[1];
-	char data_str[1];
 	struct mq_attr attr;
-	char *loading_data[LOADTHD_ARGC + 1];
 	binmgr_request_t request_msg;
 
 	/* Scan user binary files and Register them */
-	binary_manager_scan_ubin();
+	binary_manager_scan_ubin_all();
 
 	ASSERT(binary_manager_get_kcount() > 0 && binary_manager_get_ucount() > 0);
 
@@ -111,15 +116,10 @@ int binary_manager(int argc, char *argv[])
 	}
 
 	/* Execute loading thread for load all binaries */
-	loading_data[0] = itoa(LOADCMD_LOAD_ALL, type_str, 10);
-	loading_data[1] = NULL;
-
-	ret = binary_manager_loading(loading_data);
-	if (ret <= 0) {
+	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, 0);
+	if (ret != OK) {
 		bmdbg("Failed to create loading thread\n");
 		goto binary_manager_exit;
-	} else {
-		bmvdbg("Loading thread with pid %d will load binaries!\n", ret);
 	}
 
 	while (1) {
@@ -130,7 +130,7 @@ int binary_manager(int argc, char *argv[])
 			continue;
 		}
 
-		bmvdbg("Recevied Request msg : cmd = %d\n", request_msg);
+		bmvdbg("Received Request msg : cmd = %d\n", request_msg);
 		switch (request_msg.cmd) {
 #ifdef CONFIG_BINMGR_RECOVERY
 		case BINMGR_FAULT:
@@ -143,13 +143,11 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_GET_INFO_ALL:
 			binary_manager_get_info_all(request_msg.requester_pid);
 			break;
+		case BINMGR_GET_STATE:
+			binary_manager_get_state_with_name(request_msg.requester_pid, (char *)request_msg.data.bin_name);
+			break;
 		case BINMGR_UPDATE:
-			memset(type_str, 0, 1);
-			memset(data_str, 0, 1);
-			loading_data[0] = itoa(LOADCMD_UPDATE, type_str, 10);
-			loading_data[1] = (char *)request_msg.data.bin_name;
-			loading_data[2] = NULL;
-			binary_manager_loading(loading_data);
+			binary_manager_execute_loader(LOADCMD_UPDATE, binary_manager_get_index_with_name(request_msg.data.bin_name));
 			break;
 		case BINMGR_CREATE_BIN:
 			binary_manager_create_entry(request_msg.requester_pid, request_msg.data.update_bin.bin_name, request_msg.data.update_bin.version);
@@ -169,7 +167,7 @@ int binary_manager(int argc, char *argv[])
 	}
 
 binary_manager_exit:
-	bmvdbg("Recovery Manager EXITED\n");
+	bmvdbg("Binary Manager EXITED\n");
 
 	mq_close(g_binmgr_mq_fd);
 	mq_unlink(BINMGR_REQUEST_MQ);

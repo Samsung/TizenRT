@@ -15,7 +15,7 @@
 # language governing permissions and limitations under the License.
 #
 ############################################################################
-# Include kernel testcase drivers
+# Include iotbus signal drivers
 
 ifeq ($(CONFIG_IOTDEV),y)
 
@@ -23,7 +23,7 @@ CSRCS += iotbus_sig.c
 
 #CFLAGS += -I$(TOPDIR)/kernel
 
-# Include kernel testcase driver support
+# Include iotbus signal driver support
 
 DEPPATH += --dep-path iotdev
 VPATH += :iotdev

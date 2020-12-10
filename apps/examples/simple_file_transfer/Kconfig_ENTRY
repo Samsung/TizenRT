@@ -1,0 +1,3 @@
+config ENTRY_SIMPLE_FILE_TRANSFER
+	bool "\"Simple File Transfer!\" example"
+	depends on EXAMPLES_SIMPLE_FILE_TRANSFER

@@ -68,7 +68,18 @@ struct netdev {
 };
 
 struct nic_io_ops {
-	int (*linkoutput)(struct netdev *dev, uint8_t *data, uint16_t len);
+	/* DESC:
+	 * it is called when network stack has data to pass to wi-fi driver
+	 * if NET_NETMGR_ZEROCOPY is enabled then data is lwIP pbuf not to do memory copy.
+	 * PARAMETER
+	 * dev: network device which sends data.
+	 * data: data to send, if NET_NETMGR_ZEROCOPY is enabled then it's pbuf.
+	 * len: length of data, if NET_NETMGR_ZEROCOPY is enabled then it's 0.
+	 * RETURN
+	 * On success: return 0;
+	 * On error: return -1;
+	 */
+	int (*linkoutput)(struct netdev *dev, void *data, uint16_t len);
 	int (*igmp_mac_filter)(struct netdev *netif, const struct in_addr *group, netdev_mac_filter_action action);
 };
 
@@ -102,9 +113,19 @@ struct netdev_config {
  */
 struct netdev *netdev_register(struct netdev_config *config);
 /*
- * desc: NIC driver should call following fuction to pass the incoming data to network stack.
+ * DESC:
+ * NIC driver should call following function to pass the incoming data to network stack.
+ * if NET_NETMGR_ZEROCOPY is enabled then data is lwIP pbuf not to do memory copy.
+ * On NET_NETMGR_ZEROCOPY if netdev_input return error then the caller should free data by itself.
+ * PARAMETER
+ * dev: network device which send data to network stack
+ * data: data received, if NET_NETMGR_ZEROCOPY is enabled then it's pbuf.
+ * len: length of received data, if NET_NETMGR_ZEROCOPY is enabled then it's 0.
+ * RETURN
+ * On success: return 0
+ * On error: return -1;
  */
-int netdev_input(struct netdev *dev, uint8_t *data, uint16_t len);
+int netdev_input(struct netdev *dev, void *data, uint16_t len);
 /**
  * Configuration
  */
@@ -115,7 +136,7 @@ int netdev_get_mtu(struct netdev *dev, int *mtu);
 /*
  * Deprecate
  * return address of hwaddr
- * this function is provided to support slsi driver which is implemented before netmgr is appear.
+ * this function is provided to support slsi driver which is implemented before netmgr is implemented.
  * this function should not be used to new devices
  */
 uint8_t *netdev_get_hwaddr_ptr(struct netdev *dev);

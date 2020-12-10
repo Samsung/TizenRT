@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
@@ -52,10 +53,8 @@ static int _netdev_getconf(struct netdev *dev, void *arg)
 	}
 
 	strncpy(ifr->ifr_name, dev->ifname, IFNAMSIZ - 1);
+	ifr->ifr_name[IFNAMSIZ - 1] = '\0';
 	ND_NETOPS(dev, get_ip4addr)(dev, &ifr->ifr_addr, NETDEV_IP);
-
-	//struct sockaddr_in *sin = (struct sockaddr_in *)&ifr->ifr_addr;
-	//sin->sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4(&dev->ip_addr));
 	ifenum->pos += sizeof(struct ifreq);
 
 	return 0;
@@ -188,15 +187,6 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 
 		/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
 #ifdef CONFIG_NET_IPv6
-	case SIOCGLIFADDR: {		/* Get IP address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
-	}
-		break;
-
 	case SIOCSLIFADDR: {		/* Set IP address */
 		dev = _netdev_ifrdev(req);
 		if (!dev) {
@@ -206,46 +196,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 	}
 		break;
 
-	case SIOCGLIFDSTADDR: {		/* Get P-to-P address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_GW);
-	}
-		break;
-
-	case SIOCSLIFDSTADDR: {		/* Set P-to-P address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_GW);
-	}
-		break;
-	case SIOCGLIFNETMASK: {		/* Get network mask */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
-	}
-		break;
-
-	case SIOCSLIFNETMASK: {		/* Set network mask */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_NETMASK);
-	}
-		break;
 #endif
-	case SIOCGLIFBRDADDR:		/* Get broadcast IP address */
-	case SIOCSLIFBRDADDR: {		/* Set broadcast IP address */
-		ret = -ENOSYS;
-	}
-		break;
 	case SIOCGLIFMTU:			/* Get MTU size */
 	case SIOCGIFMTU: {			/* Get MTU size */
 		dev = _netdev_ifrdev(req);

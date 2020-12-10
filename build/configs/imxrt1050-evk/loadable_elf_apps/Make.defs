@@ -54,20 +54,11 @@ include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
 include ${TOPDIR}/arch/arm/src/armv7-m/Toolchain.defs
 
-MEM_LDSCRIPT = memory.ld
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-  ifeq ($(CONFIG_ARMV7M_DTCM),y)
-    KSPACE_LDSCRIPT = kernel-space-dtcm.ld
-  else
-    KSPACE_LDSCRIPT = kernel-space.ld
-  endif
-else # !BUILD_PROTECTED
-  ifeq ($(CONFIG_ARMV7M_DTCM),y)
+ifeq ($(CONFIG_ARMV7M_DTCM),y)
     KSPACE_LDSCRIPT = flash-dtcm.ld
-  else
+else
     KSPACE_LDSCRIPT = flash-ocram.ld
-  endif
-endif # BUILD_PROTECTED
+endif
 
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
@@ -78,7 +69,7 @@ ifeq ($(WINTOOL),y)
   ARCHINCLUDES += -isystem "${shell cygpath -w $(TOPDIR)/net/lwip/src/include}"
   ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/include/cxx}"
   ARCHXXINCLUDES += -isystem "${shell cygpath -w $(TOPDIR)/net/lwip/src/include}"
-  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT1)}"
+  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(KSPACE_LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
@@ -87,9 +78,6 @@ else
   ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/include/cxx -isystem $(TOPDIR)/../external/include
   ARCHXXINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
   ARCHSCRIPT = -L$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts
-ifeq ($(CONFIG_AUTOGEN_MEMORY_LDSCRIPT),y)
-  ARCHSCRIPT += -T$(MEM_LDSCRIPT)
-endif
   ARCHSCRIPT += -T$(KSPACE_LDSCRIPT)
 
 endif
@@ -158,9 +146,9 @@ CXXELFFLAGS = $(CXXFLAGS) -mlong-calls # --target1-abs
 LDELFFLAGS = -r -e main
 
 ifeq ($(WINTOOL),y)
-	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/binfmt/libelf/gnu-elf.ld}"
+	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/userspace/userspace_apps.ld}"
 else
-	LDELFFLAGS += -T $(TOPDIR)/binfmt/libelf/gnu-elf.ld
+	LDELFFLAGS += -T $(TOPDIR)/userspace/userspace_apps.ld
 endif
 
 ASMEXT = .S

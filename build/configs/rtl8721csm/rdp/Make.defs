@@ -55,11 +55,10 @@ include ${TOPDIR}/tools/Config.mk
 ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
 include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
-LDSCRIPT = rlx8721d_img2_ns.ld
-
 ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
-EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/cmse_implib.a
-LINKLIBS=$(EXTRA_LIBS)
+LDSCRIPT = rlx8721d_img2_ns.ld
+else
+LDSCRIPT = rlx8721d_img2_is.ld
 endif
 
 ifeq ($(WINTOOL),y)
@@ -146,7 +145,7 @@ endif
 ARCHDEFINES =
 ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 
-CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
+CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe -ffunction-sections -fdata-sections
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
 CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
@@ -187,7 +186,6 @@ CFLAGS += -DDM_ODM_SUPPORT_TYPE=32
 CFLAGS += -DSTD_PRINTF
 CFLAGS += -DCONFIG_PLATFORM_TIZENRT_OS=1
 CFLAGS += -DARM_CORE_CM4
-CFLAGS += -DCONFIG_ARMV8M_CMNVECTOR
 
 #LDFLAGS += --wrap=printf
 
@@ -202,6 +200,8 @@ ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
 endif
 
+LDFLAGS += --gc-sections
+
 HOSTCC = gcc
 HOSTINCLUDES = -I.
 HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
@@ -209,4 +209,8 @@ HOSTLDFLAGS =
 
 define MAKE_BOARD_SPECIFIC_BIN
   $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_make_bin.sh
+endef
+
+define DOWNLOAD
+  $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef

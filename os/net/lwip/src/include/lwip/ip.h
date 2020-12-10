@@ -138,6 +138,8 @@ struct ip_globals {
 	ip_addr_t current_iphdr_src;
 	/** Destination IP address of current_header */
 	ip_addr_t current_iphdr_dest;
+	// [TAHI ND#127]
+	u16_t is_atomic_frag;
 };
 extern struct ip_globals ip_data;
 

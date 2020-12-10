@@ -104,7 +104,6 @@ int hd_handle_key_request(int cmd, unsigned long arg, void *lower)
 					_unset_key_slot(info->key_idx);
 				}
 			}
-			printf("[pkbuild] res(%d)\n", req->res);
 		}
 		break;
 	case SECLINKIOC_GETKEY:
@@ -120,12 +119,8 @@ int hd_handle_key_request(int cmd, unsigned long arg, void *lower)
 		break;
 	case SECLINKIOC_REMOVEKEY:
 		if (!res) {
-			if (res == -1) {
-				req->res = HAL_INVALID_SLOT_RANGE;
-			} else {
-				_unset_key_slot(info->key_idx);
-				req->res = se->ops->remove_key(info->mode, info->key_idx);
-			}
+			_unset_key_slot(info->key_idx);
+			req->res = se->ops->remove_key(info->mode, info->key_idx);
 		} else {
 			req->res = HAL_EMPTY_SLOT;
 		}

@@ -289,12 +289,7 @@ static inline void os_do_appstart(void)
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	svdbg("Starting application init task\n");
 
-#ifdef CONFIG_BUILD_PROTECTED
-	DEBUGASSERT(USERSPACE->preapp_start != NULL);
-	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, USERSPACE->preapp_start, (FAR char *const *)NULL);
-#else
 	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
-#endif
 	if (pid < 0) {
 		svdbg("Failed to create application init thread\n");
 	}
@@ -322,11 +317,7 @@ static inline void os_do_appstart(void)
 
 	svdbg("Starting application main task\n");
 
-#ifdef CONFIG_BUILD_PROTECTED
-	if (USERSPACE->us_entrypoint != NULL) {
-		pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, USERSPACE->us_entrypoint, (FAR char *const *)NULL);
-	}
-#elif defined(CONFIG_USER_ENTRYPOINT)
+#if defined(CONFIG_USER_ENTRYPOINT)
 	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
 #endif
 #endif // !CONFIG_BINARY_MANAGER

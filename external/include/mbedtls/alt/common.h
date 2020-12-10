@@ -25,8 +25,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define SECLINK_PATH "/dev/seclink"
-
 #define ECP_KEY_INDEX (1)
 #define RSA_KEY_INDEX (2)
 

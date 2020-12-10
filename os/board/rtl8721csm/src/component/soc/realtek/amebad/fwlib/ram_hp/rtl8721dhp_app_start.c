@@ -7,9 +7,18 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 
+#include <tinyara/config.h>
+#include <tinyara/mpu.h>
+
 #include "ameba_soc.h"
 #include "rtl8721d_system.h"
 #include "psram_reserve.h"
+#ifdef CONFIG_ARMV8M_MPU
+#include "up_mpuinit.h"
+#endif
+#ifdef CONFIG_STACK_COLORATION
+#include "up_internal.h"
+#endif
 #if defined ( __ICCARM__ )
 #pragma section=".ram_image2.bss"
 #pragma section=".ram_image2.nocache.data"
@@ -22,6 +31,7 @@ SECTION(".data") u8* __ram_nocache_end__ = 0;
 SECTION(".data") u8* __psram_bss_start__ = 0;
 SECTION(".data") u8* __psram_bss_end__ = 0;
 #endif
+static u32 g_mpu_nregion_allocated;
 extern int main(void);
 extern u32 GlobalDebugEnable;
 struct _driver_call_os_func_map driver_call_os_func_map;
@@ -41,14 +51,14 @@ extern unsigned int __PsramStackLimit;
 #define PSRAM_HEAP_BASE ((uintptr_t)&__psram_bss_end__[0])
 #define PSRAM_HEAP_LIMIT ((uintptr_t)&__PsramStackLimit)
 void os_heap_init(void){
-	regionx_start[0] = (void *)HEAP_BASE;
-	regionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
+	kregionx_start[0] = (void *)HEAP_BASE;
+	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
 	if(TRUE == psram_dev_config.psram_dev_enable) {
-		regionx_start[1] = (void *)PSRAM_HEAP_BASE;
-		regionx_size[1] = (size_t)(PSRAM_HEAP_LIMIT - PSRAM_HEAP_BASE);
+		kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
+		kregionx_size[1] = (size_t)(PSRAM_HEAP_LIMIT - PSRAM_HEAP_BASE);
 	} else {
-		regionx_start[1] = NULL;
-		regionx_size[1] = 0;
+		kregionx_start[1] = NULL;
+		kregionx_size[1] = 0;
 	}
 }
 #define dbg_printf DiagPrintf
@@ -932,7 +942,10 @@ u32 app_mpu_nocache_init(void)
 	mpu_region_config mpu_cfg;
 	u32 mpu_entry = 0;
 
-	mpu_entry = mpu_entry_alloc();
+	/* No cache init */
+	/* It is for wifi related buffer area, to prevent non-sync from happening.
+	*  Because DMA is involved, so it cannot be used together with cache.
+	*/
 	if (wifi_config.km4_cache_enable) {
 		mpu_cfg.region_base = (uint32_t)__ram_nocache_start__;
 		mpu_cfg.region_size = __ram_nocache_end__-__ram_nocache_start__;
@@ -945,8 +958,16 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	if (mpu_cfg.region_size >= 32) {
+		mpu_entry = mpu_entry_alloc();
 		mpu_region_cfg(mpu_entry, &mpu_cfg);
 	}
+
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+	/* The following 3 MPU settings are not in use for TizenRT
+	*  "close 216K irom_ns cache" and "close 80K drom_ns cache" are added to prevent ROM code accessing data through the Cache.
+	*  "set 1KB retention ram no-cache" is for Deep Sleep
+	*  There is no performance drop after removing these 3 MPU setting, Verified.
+	*/
 
 	/* close 216K irom_ns cache */
 	mpu_entry = mpu_entry_alloc();
@@ -977,7 +998,22 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
+#endif
 
+#if 0 //fix me!
+	/* set PSRAM Memory Write-Back */
+	/* To prevent data confusion issue in PSRAM */
+	mpu_entry = mpu_entry_alloc();
+	mpu_cfg.region_base = 0x02000000;
+	mpu_cfg.region_size = 0x400000;
+	mpu_cfg.xn = MPU_EXEC_ALLOW;
+	mpu_cfg.ap = MPU_UN_PRIV_RW;
+	mpu_cfg.sh = MPU_NON_SHAREABLE;
+	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
+	mpu_region_cfg(mpu_entry, &mpu_cfg);
+#endif
+
+	g_mpu_nregion_allocated = mpu_entry + 1;
 	return 0;
 }
 
@@ -1094,9 +1130,6 @@ INT_MemFault_Patch(void)
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 void exception_common(void);
-#ifdef CONFIG_AMEBAD_TRUSTZONE
-void exception_common_svc(void);
-#endif
 #endif
 VOID VectorTableOverride(VOID)
 {
@@ -1115,9 +1148,6 @@ VOID VectorTableOverride(VOID)
 	//NewVectorTable[AMEBAD_IRQ_BUSFAULT] = (HAL_VECTOR_FUN)BusFault_Handler_ram;
 	//NewVectorTable[AMEBAD_IRQ_USAGEFAULT] = (HAL_VECTOR_FUN)UsageFault_Handler_ram;
 	NewVectorTable[7] = (HAL_VECTOR_FUN)SecureFault_Handler_ram;
-#ifdef CONFIG_AMEBAD_TRUSTZONE
-	NewVectorTable[AMEBAD_IRQ_SVCALL] = (HAL_VECTOR_FUN)exception_common_svc;
-#endif
 #endif
 }
 
@@ -1312,14 +1342,23 @@ extern void __libc_init_array(void);
 		"mov sp, r0\n"
 	);
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 	mpu_init();
 	app_mpu_nocache_init();
+#endif
 	app_vdd1833_detect();
 	memcpy_gdma_init();
 	//retention Ram space should not exceed 0xB0
 	assert_param(sizeof(RRAM_TypeDef) <= 0xB0);
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
+#ifdef CONFIG_ARMV8M_MPU
+	/* Initialize number of mpu regions for board specific purpose */
+	mpu_set_nregion_board_specific(g_mpu_nregion_allocated);
+
+	up_mpuinitialize();
+#endif
+
 #ifdef CONFIG_STACK_COLORATION
 	/* Set the IDLE stack to the coloration value and jump into os_start() */
 

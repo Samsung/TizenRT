@@ -153,6 +153,7 @@ static inline int exec_dtors(FAR struct binary_s *binp)
 int unload_module(FAR struct binary_s *binp)
 {
 	int ret;
+	int section_idx;
 
 	if (binp) {
 		/* Perform any format-specific unload operations */
@@ -188,13 +189,38 @@ int unload_module(FAR struct binary_s *binp)
 
 		/* Free allocated address spaces */
 
-#ifndef CONFIG_APP_BINARY_SEPARATION
-		if (binp->alloc[i]) {
-			binfo("Freeing alloc[%d]: %p\n", i, binp->alloc[i]);
-			kumm_free((FAR void *)binp->alloc[i]);
-		}
-#endif
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		if (binp->reload != true) {
+		/* If reload is true, reserved loading section information is used for reloading, so there is no need to free each loading section's memory.
+		 * If reload is false, it means normal termination, then free to each section's memory.
+		 */
 
+#ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
+			/* For MPU restrictions, binary loader allocates one big memory block enough to contains each loading sections
+			 * and assigns each sections start address based on the size.
+			 * For free the each section, find the start address of big memory block.
+			 */
+			void *start_addr = elf_find_start_section_addr(binp);
+			binfo("Freeing section memory: %p\n", start_addr);
+			kmm_free(start_addr);
+#else
+			/* Each loading section is allocated respectively.
+			 * They need to be freed each.
+			 */
+			for (section_idx = 0; section_idx < ALLOC_MAX; section_idx++) {
+				if (binp->alloc[section_idx]) {
+					binfo("Freeing alloc[%d]: %p\n", section_idx, binp->alloc[section_idx]);
+					kmm_free((FAR void *)binp->alloc[section_idx]);
+				}
+			}
+
+#endif
+		}
+#else
+		/* Whole loading sections are in one memory block, so free the first allocated memory is enough. */
+		binfo("Freeing : %p\n", binp->alloc[0]);
+		kmm_free((FAR void *)binp->alloc[0]);
+#endif
 		/* Notice that the address environment is not destroyed.  This should
 		 * happen automatically when the task exits.
 		 */

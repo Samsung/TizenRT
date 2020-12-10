@@ -29,7 +29,6 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/testcase_drv.h>
 #include <tinyara/sched.h>
 #include <tinyara/seclink.h>
 #include <tinyara/seclink_drv.h>
@@ -168,15 +167,15 @@ int se_register(const char *path, struct sec_lowerhalf_s *lower)
 		return -1;
 	}
 
-	struct sec_upperhalf_s *upper = (struct sec_upperhalf_s *)malloc(sizeof(struct sec_upperhalf_s));
+	struct sec_upperhalf_s *upper = (struct sec_upperhalf_s *)kmm_malloc(sizeof(struct sec_upperhalf_s));
 	if (!upper) {
 		return -1;
 	}
 
 	/*  initialize upper */
-	char *drv_path = (char *)malloc(strlen(path) + 1);
+	char *drv_path = (char *)kmm_malloc(strlen(path) + 1);
 	if (!drv_path) {
-		free(upper);
+		kmm_free(upper);
 		return -1;
 	}
 	memcpy(drv_path, path, strlen(path) + 1);
@@ -195,7 +194,7 @@ int se_register(const char *path, struct sec_lowerhalf_s *lower)
 	int res = lower->ops->init(&hp);
 	if (res < 0) {
 		dbg("Register SE fail(%d)\n", res);
-		free(upper);
+		kmm_free(upper);
 		return -1;
 	}
 
@@ -238,8 +237,8 @@ int se_unregister(FAR struct sec_lowerhalf_s *lower)
 		dbg("Unregister SE fail(%d)\n", res);
 	}
 
-	free(upper->path);
-	free(upper);
+	kmm_free(upper->path);
+	kmm_free(upper);
 
 	return res;
 }

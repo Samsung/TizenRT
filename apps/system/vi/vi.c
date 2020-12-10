@@ -380,8 +380,8 @@ static void vi_cmd_mode(FAR struct vi_s *vi);
 static void vi_cmdch(FAR struct vi_s *vi, char ch);
 static void vi_cmdbackspace(FAR struct vi_s *vi);
 
-static void vi_parsecolon(FAR struct vi_s *vi);
-static void vi_cmd_submode(FAR struct vi_s *vi);
+static int vi_parsecolon(FAR struct vi_s *vi);
+static int vi_cmd_submode(FAR struct vi_s *vi);
 
 static bool vi_findstring(FAR struct vi_s *vi);
 static void vi_parsefind(FAR struct vi_s *vi);
@@ -1462,7 +1462,7 @@ static void vi_scrollcheck(FAR struct vi_s *vi)
 		vi->hscroll -= TABSIZE;
 	}
 
-	/* If the the cursor column lies to the right of the display, then adjust
+	/* If the cursor column lies to the right of the display, then adjust
 	 * the horizontal scrolling position so that the cursor position does
 	 * lie on the display.
 	 */
@@ -2010,7 +2010,7 @@ static void vi_paste(FAR struct vi_s *vi)
  * Name: vi_gotoline
  *
  * Description:
- *   Position the the cursor at the line specified by vi->value.  If
+ *   Position the cursor at the line specified by vi->value.  If
  *   vi->value is zero, then the cursor is position at the end of the text
  *   buffer.
  *
@@ -2393,7 +2393,7 @@ static void vi_cmdbackspace(FAR struct vi_s *vi)
  *
  ****************************************************************************/
 
-static void vi_parsecolon(FAR struct vi_s *vi)
+static int vi_parsecolon(FAR struct vi_s *vi)
 {
 	FAR const char *filename = NULL;
 	uint8_t cmd = CMD_NONE;
@@ -2635,19 +2635,20 @@ static void vi_parsecolon(FAR struct vi_s *vi)
 		/* Yes... free resources and exit */
 
 		vi_release(vi);
-		exit(EXIT_SUCCESS);
+		return -1;
 	}
 
 	/* Otherwise, revert to command mode */
 
 	vi_exitsubmode(vi, MODE_COMMAND);
-	return;
+	return 0;
 
 errout_bad_command:
 	vi_error(vi, g_fmtnotcmd, vi->scratch);
 
 errout:
 	vi_exitsubmode(vi, MODE_COMMAND);
+	return 0;
 }
 
 /****************************************************************************
@@ -2658,7 +2659,7 @@ errout:
  *
  ****************************************************************************/
 
-static void vi_cmd_submode(FAR struct vi_s *vi)
+static int vi_cmd_submode(FAR struct vi_s *vi)
 {
 	int ch;
 
@@ -2695,7 +2696,9 @@ static void vi_cmd_submode(FAR struct vi_s *vi)
 
 #if defined(CONFIG_EOL_IS_CR)
 		case '\r': {			/* CR terminates line */
-			vi_parsecolon(vi);
+			if (vi_parsecolon(vi) != 0) {
+				return -1;
+			}
 		}
 		break;
 
@@ -2706,7 +2709,9 @@ static void vi_cmd_submode(FAR struct vi_s *vi)
 
 #if defined(CONFIG_EOL_IS_LF) || defined(CONFIG_EOL_IS_BOTH_CRLF)
 		case '\n': {			/* LF terminates line */
-			vi_parsecolon(vi);
+			if (vi_parsecolon(vi) != 0) {
+				return -1;
+			}
 		}
 		break;
 #endif
@@ -2714,7 +2719,9 @@ static void vi_cmd_submode(FAR struct vi_s *vi)
 #ifdef CONFIG_EOL_IS_EITHER_CRLF
 		case '\r':				/* Either CR or LF terminates line */
 		case '\n': {
-			vi_parsecolon(vi);
+			if (vi_parsecolon(vi) != 0) {
+				return -1;
+			}
 		}
 		break;
 #endif
@@ -2733,6 +2740,8 @@ static void vi_cmd_submode(FAR struct vi_s *vi)
 		break;
 		}
 	}
+
+	return 0;
 }
 
 /****************************************************************************
@@ -2743,7 +2752,7 @@ static void vi_cmd_submode(FAR struct vi_s *vi)
  * Name: vi_findstring
  *
  * Description:
- *   Find the the string in the findstr buffer by searching for a matching
+ *   Find the string in the findstr buffer by searching for a matching
  *   sub-string in the text buffer, starting at the current cursor position.
  *
  ****************************************************************************/
@@ -3447,7 +3456,9 @@ int vi_main(int argc, char **argv)
 			break;
 
 		case SUBMODE_COLON:	/* Colon data entry in command mode */
-			vi_cmd_submode(vi);
+			if (vi_cmd_submode(vi) != 0) {
+				return 0;
+			}
 			break;
 
 		case SUBMODE_FIND:		/* Find data entry in command mode */

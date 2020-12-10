@@ -115,11 +115,8 @@ void up_initial_state(struct tcb_s *tcb)
 
 	xcp->regs[REG_R10] = (uint32_t)tcb->stack_alloc_ptr + 64;
 #endif
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-	/* By default, a task is created without a secure context */
-	xcp->regs[REG_R8] = 0;
-	/* for stack limit register */
-	xcp->regs[REG_R9] = (uint32_t)tcb->stack_alloc_ptr;
+#ifdef CONFIG_REG_STACK_OVERFLOW_PROTECTION
+	xcp->regs[REG_SPLIM]   = (uint32_t)tcb->stack_alloc_ptr;
 #endif
 	/* Save the task entry point (stripping off the thumb bit) */
 
@@ -159,11 +156,7 @@ void up_initial_state(struct tcb_s *tcb)
 	 * mode before transferring control to the user task.
 	 */
 
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-	xcp->regs[REG_EXC_RETURN] = 0xFFFFFFB8;
-#else
 	xcp->regs[REG_EXC_RETURN] = EXC_RETURN_PRIVTHR;
-#endif
 #endif							/* CONFIG_ARM_CMNVECTOR || CONFIG_BUILD_PROTECTED */
 
 #if defined(CONFIG_ARM_CMNVECTOR) && defined(CONFIG_ARCH_FPU)

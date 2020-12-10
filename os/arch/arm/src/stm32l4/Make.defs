@@ -57,6 +57,10 @@ CMN_CSRCS += up_svcall.c up_systemreset.c up_trigger_irq.c up_udelay.c
 CMN_CSRCS += up_unblocktask.c up_usestack.c up_vfork.c
 CMN_CSRCS += up_puts.c
 
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += go_os_start.c
+endif
+
 # Configuration-dependent common files
 
 ifeq ($(CONFIG_ARMV7M_STACKCHECK),y)
@@ -89,10 +93,20 @@ ifeq ($(CONFIG_STACK_COLORATION),y)
 CMN_CSRCS += up_checkstack.c
 endif
 
+ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
+CMN_CSRCS += up_schedyield.c
+endif
+
+CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
+endif
+
 # Required STM32L4 files
 
 CHIP_ASRCS  =
-CHIP_CSRCS  = stm32l4_allocateheap.c stm32l4_exti_gpio.c stm32l4_gpio.c
+CHIP_CSRCS  = stm32l4_exti_gpio.c stm32l4_gpio.c
 CHIP_CSRCS += stm32l4_irq.c stm32l4_lowputc.c
 CHIP_CSRCS += stm32l4_rcc.c
 CHIP_CSRCS += stm32l4_serial.c stm32l4_start.c stm32l4_waste.c stm32l4_uid.c
@@ -203,10 +217,6 @@ endif
 
 ifeq ($(CONFIG_STM32L4_FREERUN),y)
 CHIP_CSRCS += stm32l4_freerun.c
-endif
-
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CHIP_CSRCS += stm32l4_userspace.c stm32l4_mpuinit.c
 endif
 
 ifeq ($(CONFIG_STM32L4_HAVE_HSI48),y)

@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <debug.h>
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
@@ -65,24 +65,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-/* Define the following to enable semaphore state monitoring */
-//#define MONITOR_MM_SEMAPHORE 1
-
-#ifdef MONITOR_MM_SEMAPHORE
-#ifdef CONFIG_DEBUG
-#include <debug.h>
-#define msemdbg dbg
-#else
-#define msemdbg printf
-#endif
-#else
-#ifdef CONFIG_CPP_HAVE_VARARGS
-#define msemdbg(...)
-#else
-#define msemdbg (void)
-#endif
-#endif
 
 /****************************************************************************
  * Private Data
@@ -138,7 +120,7 @@ int mm_trysemaphore(FAR struct mm_heap_s *heap)
 		/* Try to take the semaphore (perhaps waiting) */
 
 		if (sem_trywait(&heap->mm_semaphore) != 0) {
-			return ERROR;
+			return -get_errno();
 		}
 
 		/* We have it.  Claim the stak and return */
@@ -171,7 +153,7 @@ void mm_takesemaphore(FAR struct mm_heap_s *heap)
 	} else {
 		/* Take the semaphore (perhaps waiting) */
 
-		msemdbg("PID=%d taking\n", my_pid);
+		mvdbg("PID=%d taking\n", my_pid);
 		while (sem_wait(&heap->mm_semaphore) != 0) {
 			/* The only case that an error should occur here is if
 			 * the wait was awakened by a signal.
@@ -186,7 +168,7 @@ void mm_takesemaphore(FAR struct mm_heap_s *heap)
 		heap->mm_counts_held = 1;
 	}
 
-	msemdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
+	mvdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
 }
 
 /****************************************************************************
@@ -213,12 +195,12 @@ void mm_givesemaphore(FAR struct mm_heap_s *heap)
 		/* Yes, just release one count and return */
 
 		heap->mm_counts_held--;
-		msemdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
+		mvdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
 	} else {
 		/* Nope, this is the last reference I have */
 
 #ifdef CONFIG_DEBUG
-		msemdbg("PID=%d giving\n", my_pid);
+		mvdbg("PID=%d giving\n", my_pid);
 #endif
 
 		heap->mm_holder      = -1;
@@ -240,7 +222,7 @@ void mm_is_sem_available(void *address)
 
 	heap = mm_get_heap(address);
 	if (heap == NULL) {
-		msemdbg("Fail to get heap.\n");
+		mdbg("Invalid Heap address given, Fail to check sem availability.\n");
 		return;
 	}
 	mm_takesemaphore(heap);

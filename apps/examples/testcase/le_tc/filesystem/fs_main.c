@@ -548,14 +548,14 @@ static void tc_fs_vfs_write_p(void)
 }
 
 /**
- * @testcase         tc_fs_vfs_write_invalid_len_n
+ * @testcase         tc_fs_vfs_write_invalid_flags_n
  * @brief            Write data into specific file
- * @scenario         Open file and then invalid lengh write data
+ * @scenario         Open file with invalid flags then write data
  * @apicovered       write
  * @precondition     NA
  * @postcondition    NA
  */
-static void tc_fs_vfs_write_invalid_len_n(void)
+static void tc_fs_vfs_write_invalid_flags_n(void)
 {
 	int fd, ret;
 	char *buf = VFS_TEST_CONTENTS_1;
@@ -594,6 +594,120 @@ static void tc_fs_vfs_write_invalid_fd_n(void)
 	/* Testcase */
 	ret = write(INVALID_DESCRIPTOR, buf, strlen(buf));
 	TC_ASSERT_EQ("write", ret, ERROR);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         tc_fs_vfs_ftruncate_p
+ * @brief            Shrink or extend specific file
+ * @scenario         Open file and change file size
+ * @apicovered       open, ftruncate
+ * @precondition     NA
+ * @postcondition    NA
+ */
+static void tc_fs_vfs_ftruncate_p(void)
+{
+	int fd, ret;
+	struct stat st;
+	size_t len;
+
+	/* Init */
+	vfs_mount();
+	fd = open(VFS_FILE_PATH, O_RDWR);
+	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	len = strlen(VFS_TEST_CONTENTS_1);
+
+	ret = ftruncate(fd, (len + 5));
+	TC_ASSERT_EQ_CLEANUP("ftruncate", ret, OK, close(fd); vfs_unmount());
+	ret = stat(VFS_FILE_PATH, &st);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, (len + 5), close(fd); vfs_unmount());	
+	
+	ret = ftruncate(fd, len);
+	TC_ASSERT_EQ_CLEANUP("ftruncate", ret, OK, close(fd); vfs_unmount());
+	ret = stat(VFS_FILE_PATH, &st);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, len, close(fd); vfs_unmount());	
+
+	close(fd);
+	vfs_unmount();
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         tc_fs_vfs_ftruncate_invalid_fd_n
+ * @brief            Shrink or extend specific file
+ * @scenario         change length of file with invalid fd
+ * @apicovered       open, ftruncate
+ * @precondition     NA
+ * @postcondition    NA
+ */
+static void tc_fs_vfs_ftruncate_invalid_fd_n(void)
+{
+	int ret;
+
+	/* Init */
+	vfs_mount();
+
+	ret = ftruncate(INVALID_DESCRIPTOR, 0);
+	TC_ASSERT_EQ_CLEANUP("ftruncate", ret, ERROR, vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("ftruncate", errno, EBADF, vfs_unmount());
+
+	vfs_unmount();
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         tc_fs_vfs_ftruncate_invalid_length_n
+ * @brief            Shrink or extend specific file
+ * @scenario         Open file and change file size to negative length
+ * @apicovered       open, ftruncate
+ * @precondition     NA
+ * @postcondition    NA
+ */
+static void tc_fs_vfs_ftruncate_invalid_length_n(void)
+{
+	int fd, ret;
+
+	/* Init */
+	vfs_mount();
+	fd = open(VFS_FILE_PATH, O_WROK);
+	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+
+	ret = ftruncate(fd, -1);
+	TC_ASSERT_EQ_CLEANUP("ftruncate", ret, ERROR, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("ftruncate", errno, EINVAL, close(fd); vfs_unmount());
+
+	close(fd);
+	vfs_unmount();
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         tc_fs_vfs_ftruncate_invalid_flags_n
+ * @brief            Shrink or extend specific file
+ * @scenario         Open file with read only permission and change file size
+ * @apicovered       open, ftruncate
+ * @precondition     NA
+ * @postcondition    NA
+ */
+static void tc_fs_vfs_ftruncate_invalid_flags_n(void)
+{
+	int fd, ret;
+
+	/* Init */
+	vfs_mount();
+	fd = open(VFS_FILE_PATH, O_RDONLY);
+	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+
+	ret = ftruncate(fd, 0);
+	TC_ASSERT_EQ_CLEANUP("ftruncate", ret, ERROR, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("ftruncate", errno, EBADF, close(fd); vfs_unmount());
+
+	close(fd);
+	vfs_unmount();
 
 	TC_SUCCESS_RESULT();
 }
@@ -2666,16 +2780,15 @@ static void tc_fs_vfs_rename_p(void)
 
 	fd = open(VFS_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC);
 	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	close(fd);
 
 	snprintf(new_file, 12, "%s_re", old_file);
 	unlink(new_file);
 
 	/* Testcase */
 	ret = rename(old_file, new_file);
-	TC_ASSERT_EQ_CLEANUP("rename", ret, OK, close(fd); vfs_unmount());
+	TC_ASSERT_EQ_CLEANUP("rename", ret, OK, vfs_unmount());
 
-	/* Deinit */
-	close(fd);
 	vfs_unmount();
 
 	TC_SUCCESS_RESULT();
@@ -2726,13 +2839,14 @@ static void tc_fs_vfs_rename_exist_path_n(void)
 
 	fd = open(VFS_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC);
 	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, vfs_unmount());
+	close(fd);
 
 	snprintf(old_file, 12, "%s_re", exist_file);
 	unlink(old_file);
 
 	/* Testcase */
 	ret = rename(exist_file, old_file);
-	close(fd);
+
 	TC_ASSERT_EQ_CLEANUP("rename", ret, OK, vfs_unmount());
 
 	/* Nagative case with invalid argument, already existing new pathname. It will return ERROR */
@@ -5052,9 +5166,11 @@ static void tc_libc_stdio_stdinstream_invalid_permission_n(void)
 	vfs_mount();
 	stream = fopen(VFS_FILE_PATH, "w+");
 	TC_ASSERT_NEQ_CLEANUP("fopen", stream, NULL, vfs_unmount());
+	fclose(stream);
 
 	/* Testcase */
 	/* Negative case, file opened with inappropriate permission */
+	stream = fopen(VFS_FILE_PATH, "w+");
 	lib_stdinstream((FAR struct lib_stdinstream_s *)&stdinstream, stream);
 	TC_ASSERT_EQ_CLEANUP("lib_stdinstream", stdinstream.stream, stream, fclose(stream); vfs_unmount());
 
@@ -5222,9 +5338,11 @@ static void tc_libc_stdio_stdsistream_invalid_permission_n(void)
 	vfs_mount();
 	stream = fopen(VFS_FILE_PATH, "w+");
 	TC_ASSERT_NEQ_CLEANUP("fopen", stream, NULL, vfs_unmount());
+	fclose(stream);
 
 	/* Testcase */
 	/* Negative case, file opened with inappropriate permission */
+	stream = fopen(VFS_FILE_PATH, "w+");
 	lib_stdsistream((FAR struct lib_stdsistream_s *)&stdsistream, stream);
 	TC_ASSERT_EQ_CLEANUP("lib_stdsistream", stdsistream.stream, stream, fclose(stream); vfs_unmount());
 
@@ -6002,8 +6120,12 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_fs_vfs_open_p();
 	tc_fs_vfs_open_invalid_path_n();
 	tc_fs_vfs_write_p();
-	tc_fs_vfs_write_invalid_len_n();
+	tc_fs_vfs_write_invalid_flags_n();
 	tc_fs_vfs_write_invalid_fd_n();
+	tc_fs_vfs_ftruncate_p();
+	tc_fs_vfs_ftruncate_invalid_fd_n();
+	tc_fs_vfs_ftruncate_invalid_length_n();
+	tc_fs_vfs_ftruncate_invalid_flags_n();
 	tc_fs_vfs_read_p();
 	tc_fs_vfs_read_invalid_flags_n();
 	tc_fs_vfs_read_invalid_fd_n();

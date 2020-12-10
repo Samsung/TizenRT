@@ -95,7 +95,7 @@ typedef struct msg_callback_info_s msg_callback_info_t;
  *		  [in] buflen        : A message size for reply message\n
  *		  [out] sender_pid   : The pid who replies this message
  * @return On success, OK is returned. On failure, ERROR is returned.
- * @since TizenRT v3.0 PRE
+ * @since TizenRT v3.0
  */
 int messaging_send_sync(const char *port_name, msg_send_data_t *send_data, msg_recv_buf_t *reply_buf);
 /**
@@ -115,7 +115,7 @@ int messaging_send_sync(const char *port_name, msg_send_data_t *send_data, msg_r
  *		  cb_func : A user callback function for receiving reply message\n
  *		  cb_data : A user data which passed to callback function\n
  * @return On success, OK is returned. On failure, ERROR is returned.
- * @since TizenRT v3.0 PRE
+ * @since TizenRT v3.0
  */
 int messaging_send_async(const char *port_name, msg_send_data_t *send_data, msg_recv_buf_t *reply_buf, msg_callback_info_t *cb_info);
 /**
@@ -132,7 +132,7 @@ int messaging_send_async(const char *port_name, msg_send_data_t *send_data, msg_
  *		  [in] buflen        : A message size for reply message\n
  *		  [out] sender_pid   : The pid who replies this message
  * @return On success, OK is returned. On failure, ERROR is returned.
- * @since TizenRT v3.0 PRE
+ * @since TizenRT v3.0
  */
 int messaging_send(const char *port_name, msg_send_data_t *send_data);
 /**
@@ -146,7 +146,7 @@ int messaging_send(const char *port_name, msg_send_data_t *send_data);
  *		  msglen   : The length of message to be sent\n
  *		  priority : For replying, priority is set to default.
  * @return On success, OK is returned. On failure, ERROR is returned.
- * @since TizenRT v3.0 PRE
+ * @since TizenRT v3.0
  */
 int messaging_reply(const char *port_name, pid_t sender_pid, msg_send_data_t *reply_data);
 
@@ -160,7 +160,7 @@ int messaging_reply(const char *port_name, pid_t sender_pid, msg_send_data_t *re
  *		  msglen       : The length of message to be sent.\n
  *		  priority     : A non-negative integer that specifies the priority of this message.
  * @return On success, the number of receivers who received the message is returned. On failure, ERROR is returned.
- * @since TizenRT v3.0 PRE
+ * @since TizenRT v3.0
  */
 int messaging_multicast(const char *port_name, msg_send_data_t *send_data);
 
@@ -173,7 +173,7 @@ int messaging_multicast(const char *port_name, msg_send_data_t *send_data);
  *		[in] buflen       : The length of message to receive\n
  *		[out] sender_pid  : The pid who sends this message\n
  * @return On success, Received message Type is returned. On failure, Error is returned.
- * @since TizenRT v3.0 PRE
+ * @since TizenRT v3.0
  */
 int messaging_recv_block(const char *port_name, msg_recv_buf_t *recv_buf);
 /**
@@ -188,7 +188,7 @@ int messaging_recv_block(const char *port_name, msg_recv_buf_t *recv_buf);
  *		  cb_func : A user callback function for receiving message\n
  *		  cb_data : A user data which passed to callback function\n
  * @return On success, OK is returned. On failure, Error is returned.
- * @since TizenRT v3.0 PRE
+ * @since TizenRT v3.0
  */
 int messaging_recv_nonblock(const char *port_name, msg_recv_buf_t *recv_buf, msg_callback_info_t *cb_info);
 /**
@@ -199,7 +199,7 @@ int messaging_recv_nonblock(const char *port_name, msg_recv_buf_t *recv_buf, msg
  *		messaging_recv_nonblock or messaging_unicast_send_async.\n
  *		If this API is not called, memory leak can happen.
  * @return On success, OK is returned. On failure, Error is returned.
- * @since TizenRT v3.0 PRE
+ * @since TizenRT v3.0
  */
 int messaging_cleanup(const char *port_name);
 

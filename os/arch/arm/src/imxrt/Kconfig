@@ -1153,5 +1153,10 @@ config IMXRT_RTC_MAGIC
 		Value used as Magic to determine if the RTC is already setup
 
 endmenu
+config IMXRT_USB
+	bool "IMXRT USB Host Support"
+	default n
+	---help---
+		USB Host driver for IMXRT.
 endif # ARCH_CHIP_IMXRT
 

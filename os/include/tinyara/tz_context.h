@@ -46,9 +46,9 @@
  * @ingroup KERNEL
  */
 
-#if   defined ( __ICCARM__ )
+#if defined(__ICCARM__)
   #pragma system_include         /* treat file as system include file for MISRA check */
-#elif defined (__clang__)
+#elif defined(__clang__)
   #pragma clang system_header   /* treat file as system include file */
 #endif
 
@@ -71,8 +71,6 @@ typedef uint32_t TZ_ModuleId_t;
 /* Details TZ Memory ID identifies an allocated memory slot. */
 typedef uint32_t TZ_MemoryId_t;
 
-extern volatile TZ_MemoryId_t tz_memory;
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -80,7 +78,7 @@ extern volatile TZ_MemoryId_t tz_memory;
  * Initialize secure context memory system
  * return execution status (1: success, 0: error)
  */
-uint32_t TZ_InitContextSystem_S (void);
+uint32_t TZ_InitContextSystem_S(void);
 
 /**
  * Allocate context memory for calling secure software modules in TrustZone
@@ -88,63 +86,27 @@ uint32_t TZ_InitContextSystem_S (void);
  * return value != 0 id TrustZone memory slot identifier
  * return value 0    no memory available or internal error
  */
-TZ_MemoryId_t TZ_AllocModuleContext_S (TZ_ModuleId_t module);
+TZ_MemoryId_t TZ_AllocModuleContext_S(TZ_ModuleId_t module);
 
 /**
  * Free context memory that was previously allocated with \ref TZ_AllocModuleContext_S
  * param[in]  id  TrustZone memory slot identifier
  * return execution status (1: success, 0: error)
  */
-uint32_t TZ_FreeModuleContext_S (TZ_MemoryId_t id);
+uint32_t TZ_FreeModuleContext_S(TZ_MemoryId_t id);
 
 /**
  * Load secure context (called on RTOS thread context switch)
  * param[in]  id  TrustZone memory slot identifier
  * return execution status (1: success, 0: error)
  */
-uint32_t TZ_LoadContext_S (TZ_MemoryId_t id);
+uint32_t TZ_LoadContext_S(TZ_MemoryId_t id);
 
 /**
  * Store secure context (called on RTOS thread context switch)
  * param[in]  id  TrustZone memory slot identifier
  * return execution status (1: success, 0: error)
  */
-uint32_t TZ_StoreContext_S (TZ_MemoryId_t id);
+uint32_t TZ_StoreContext_S(TZ_MemoryId_t id);
 
-/****************************************************************************
- * Inline Functions
- ****************************************************************************/
-
-/**
-/* Load the secure context and PSPLIM of OLD rtcb
-*/
-static inline void tz_load_context(uint32_t *reg)
-{
-	reg += REG_R8;
-	tz_memory = *reg;
-	uint32_t result = *(++reg);
-	set_PSPLIM(result);
-
-	/* If there is associated secure context
-	 * with the current active task, then load the secure context
-	 */
-	if (tz_memory) {
-		TZ_LoadContext_S(tz_memory);
-	}
-}
-
-/**
- * Store the secure context and PSPLIM of OLD rtcb
- */
-static inline void tz_store_context(uint32_t *reg)
-{
-	if (tz_memory) {
-		TZ_StoreContext_S(tz_memory);
-	}
-
-	reg += REG_R8;
-	*reg = tz_memory;
-	*(++reg) = get_PSPLIM();
-	tz_memory = 0;
-}
 #endif						/* TZ_CONTEXT_H */

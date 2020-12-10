@@ -21,7 +21,7 @@ LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
 LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
 
 TINYARALIB = "$(TOPDIR)/../build/output/libraries"
-USERSPACE = $(TOPDIR)/board/common/userspace/up_userspace
+USERSPACE = $(TOPDIR)/userspace/up_userspace
 
 LDELFFLAGS += -Bstatic
 LDLIBPATH += -L $(TINYARALIB)
@@ -34,7 +34,7 @@ LDLIBS := $(patsubst %-lumm,%,$(LDLIBS))
 LDLIBS := $(patsubst %-lproxies,%,$(LDLIBS))
 else
 
-LIBGCC = "${shell "$(CC)" $(ARCHCFLAGS) -print-libgcc-file-name}"
+LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
 endif
 
@@ -88,7 +88,7 @@ ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
 	$(Q) $(OBJCOPY) --remove-section .comment $(USER_BIN_DIR)/$(BIN)
 	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
 endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE)
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE) $(LOADING_PRIORITY)
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
 	$(Q) mkdir -p $(TOPDIR)/../tools/fs/contents-smartfs/$(BOARDNAME)/base-files/bins
 	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(TOPDIR)/../tools/fs/contents-smartfs/$(BOARDNAME)/base-files/bins/$(BIN)_$(BIN_VER)

@@ -474,7 +474,9 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 
 #endif
 
+#if defined(CONFIG_ARCH_ADDRENV) || defined(CONFIG_SUPPORT_COMMON_BINARY)
 ret_err:
+#endif
 	if (loadinfo->strtab) {
 		kmm_free((void *)loadinfo->strtab);
 		loadinfo->strtab = (uintptr_t)NULL;

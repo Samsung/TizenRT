@@ -74,6 +74,9 @@ typedef struct {
 } lwnl_data;
 
 typedef enum {
+	// common
+	LWNL_GET_ADDR_INFO,
+	// wifi
 	LWNL_INIT,
 	LWNL_DEINIT,
 	LWNL_SCAN_AP,

@@ -1071,13 +1071,6 @@ int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 
 		struct pollfd **slot = (struct pollfd **)fds->priv;
 
-#ifdef CONFIG_DEBUG
-		if (!slot) {
-			ret = -EIO;
-			goto errout;
-		}
-#endif
-
 		/* Remove all memory of the poll setup */
 
 		*slot = NULL;

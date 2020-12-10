@@ -173,7 +173,8 @@ struct socket {
 
 	/** sockets currently are built on netconns, each socket has one netconn */
 	void *conn;
-	sock_type type; // lwip_sock, uds, ...
+	sock_type type; // socket, uds, ...
+	void *sock;	// lwip_sock
 };
 
 /* This defines a list of sockets indexed by the socket descriptor */

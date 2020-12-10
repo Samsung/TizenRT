@@ -60,6 +60,7 @@ CSRCS += netlib.c
 CSRCS += netlib_parsehttpurl.c
 CSRCS += netlib_setifstatus.c \
 	netlib_getifstatus.c
+CSRCS += netlib_getifaddrs.c
 
 ifeq ($(CONFIG_NET_NETMON),y)
 CSRCS += netlib_netmon.c
@@ -75,12 +76,9 @@ endif
 
 ifeq ($(CONFIG_NET_IPv6),y)
 CSRCS += netlib_setipv6addr.c \
-	netlib_getipv6addr.c \
-	netlib_getdripv6addr.c \
-	netlib_setdripv6addr.c \
-	netlib_setipv6netmask.c \
 	netlib_prefix2ipv6netmask.c \
-	netlib_ipv6netmask2prefix.c
+	netlib_ipv6netmask2prefix.c \
+	netlib_setipv6type.c
 endif
 
 # No MAC address support for SLIP (Ethernet only)

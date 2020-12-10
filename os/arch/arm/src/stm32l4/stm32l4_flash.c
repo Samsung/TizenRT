@@ -52,6 +52,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/progmem.h>
 
+#include <debug.h>
 #include <semaphore.h>
 #include <assert.h>
 #include <errno.h>
@@ -111,7 +112,7 @@
  * Private Data
  ************************************************************************************/
 
-static sem_t g_sem = SEM_INITIALIZER(1);
+static sem_t g_sem;
 static uint32_t g_page_buffer[FLASH_PAGE_WORDS];
 
 /************************************************************************************
@@ -126,7 +127,7 @@ static inline void sem_lock(void)
     {
       /* Take the semaphore (perhaps waiting) */
 
-      ret = nxsem_wait(&g_sem);
+      ret = sem_wait(&g_sem);
 
       /* The only case that an error should occur here is if the wait was
        * awakened by a signal.
@@ -139,7 +140,7 @@ static inline void sem_lock(void)
 
 static inline void sem_unlock(void)
 {
-  nxsem_post(&g_sem);
+  sem_post(&g_sem);
 }
 
 static void flash_unlock(void)
@@ -187,7 +188,7 @@ static inline void flash_optbytes_lock(void)
 
 static inline void flash_erase(size_t page)
 {
-  finfo("erase page %u\n", page);
+  fvdbg("erase page %u\n", page);
 
   modifyreg32(STM32L4_FLASH_CR, 0, FLASH_CR_PAGE_ERASE);
   modifyreg32(STM32L4_FLASH_CR, FLASH_CR_PNB_MASK, FLASH_CR_PNB(page));
@@ -204,6 +205,11 @@ static inline void flash_erase(size_t page)
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+void stm32l4_flash_initialize(void)
+{
+	/* Initialize a semaphore to access flash */
+	sem_init(&g_sem, 0, 1);
+}
 
 void stm32l4_flash_unlock(void)
 {
@@ -255,12 +261,12 @@ uint32_t stm32l4_flash_user_optbytes(uint32_t clrbits, uint32_t setbits)
 
   regval = getreg32(STM32L4_FLASH_OPTR);
 
-  finfo("Flash option bytes before: 0x%x\n", regval);
+  fvdbg("Flash option bytes before: 0x%x\n", regval);
 
   regval = (regval & ~clrbits) | setbits;
   putreg32(regval, STM32L4_FLASH_OPTR);
 
-  finfo("Flash option bytes after:  0x%x\n", regval);
+  fvdbg("Flash option bytes after:  0x%x\n", regval);
 
   /* Start Option Bytes programming and wait for completion. */
 
@@ -510,7 +516,7 @@ out:
 
   if (ret != OK)
     {
-      ferr("flash write error: %d, status: 0x%x\n", ret, getreg32(STM32L4_FLASH_SR));
+      fdbg("flash write error: %d, status: 0x%x\n", ret, getreg32(STM32L4_FLASH_SR));
       modifyreg32(STM32L4_FLASH_SR, 0, FLASH_SR_ALLERRS);
     }
 

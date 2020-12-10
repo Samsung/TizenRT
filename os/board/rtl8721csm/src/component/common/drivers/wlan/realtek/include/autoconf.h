@@ -41,7 +41,6 @@
 #else
 	#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 	#define PLATFORM_CUSTOMER_RTOS 1
-	#define CONFIG_LWIP_LAYER 0
 	#else
 	#define PLATFORM_FREERTOS	1
 	#endif
@@ -68,10 +67,6 @@
 
 #ifndef CONFIG_INIC_EN
 #define CONFIG_INIC_EN 0 //For iNIC project
-#endif
-
-#if CONFIG_INIC_EN
-#define CONFIG_LWIP_LAYER    0
 #endif
 
 #ifndef CONFIG_WIFI_CRITICAL_CODE_SECTION
@@ -235,11 +230,11 @@
 //#define CONFIG_PMKSA_CACHING
 
 /* For WPA3 */
-//#define CONFIG_IEEE80211W
-//#define CONFIG_SAE_SUPPORT
+#define CONFIG_IEEE80211W
+#define CONFIG_SAE_SUPPORT
 #ifdef CONFIG_SAE_SUPPORT
 #define CONFIG_SAE_DH_SUPPORT 1
-//#define ALL_DH_GROUPS
+#define ALL_DH_GROUPS
 #endif
 
 
@@ -779,12 +774,6 @@ extern unsigned int g_ap_sta_num;
 #ifdef ENABLE_MAC_LB_FOR_TEST_MODE
 	#define CONFIG_SUDO_PHY_SETTING
 	#define INT_HANDLE_IN_ISR 1
-#ifdef CONFIG_LWIP_LAYER
-        #undef CONFIG_LWIP_LAYER
-	#define CONFIG_LWIP_LAYER 0
-#else
-        #define CONFIG_LWIP_LAYER 0
-#endif
 	#define CONFIG_WLAN_HAL_TEST
 	#define CONFIG_WLAN_HAL_RX_TASK
 	#define CONFIG_MAC_LOOPBACK_DRIVER_AMEBA 1
@@ -816,9 +805,6 @@ extern unsigned int g_ap_sta_num;
 #endif
 #endif // CONFIG_PLATFORM_AMEBA_X
 
-#ifndef CONFIG_LWIP_LAYER
-#define CONFIG_LWIP_LAYER 1
-#endif
 #define CONFIG_MAC_ADDRESS 0
 //fast reconnection
 //#define CONFIG_FAST_RECONNECTION 1

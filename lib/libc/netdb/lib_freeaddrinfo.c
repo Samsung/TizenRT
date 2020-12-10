@@ -50,7 +50,10 @@
 #ifdef CONFIG_NET_LWIP_NETDB
 void freeaddrinfo(FAR struct addrinfo *ai)
 {
-	DEBUGASSERT(ai != NULL);
+	if (!ai) {
+		printf("ai is null\n");
+		return;
+	}
 
 	int ret = -1;
 	struct req_lwip_data req;

@@ -152,19 +152,24 @@ static void imxrt_pwm_register(int ch)
 
 void imxrt_filesystem_initialize(void)
 {
+#ifdef CONFIG_FLASH_PARTITION
 	int ret;
-
-#if defined(CONFIG_IMXRT_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
-	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
-	static uint8_t *rambuf;
 	struct mtd_dev_s *mtd;
-#endif /* CONFIG_RAMMTD */
+#if defined(CONFIG_IMXRT_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	int bufsize;
+	static uint8_t *rambuf;
+#endif							/* CONFIG_RAMMTD */
 
 	IMXLOG("imxrt_bringup");
 
-#if defined(CONFIG_FLASH_PARTITION)
-	configure_partitions();
-#endif
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+	/* Configure mtd partitions */
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	if (ret != OK) {
+		IMXLOG("configure_mtd_partitions failed");
+	} else {
+		IMXLOG("SUCCESS: configure_mtd_partitions");
+	}
 
 #ifdef CONFIG_IMXRT_AUTOMOUNT
 #ifdef CONFIG_IMXRT_AUTOMOUNT_USERFS
@@ -178,14 +183,12 @@ void imxrt_filesystem_initialize(void)
 		IMXLOG("USERFS ERROR: mksmartfs failed");
 	} else {
 		IMXLOG("SUCCESS: mksmartfs");
-		ret = mount(IMXRT_AUTOMOUNT_USERFS_DEVNAME,
-				CONFIG_IMXRT_AUTOMOUNT_USERFS_MOUNTPOINT,
-				"smartfs", 0, NULL);
+		ret = mount(IMXRT_AUTOMOUNT_USERFS_DEVNAME, CONFIG_IMXRT_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
 		if (ret != OK) {
 			IMXLOG("USERFS ERROR: mounting failed");
 		}
 	}
-#endif /* CONFIG_IMXRT_AUTOMOUNT_USERFS */
+#endif							/* CONFIG_IMXRT_AUTOMOUNT_USERFS */
 
 #ifdef CONFIG_IMXRT_AUTOMOUNT_SSSRW
 	/* Initialize and mount secure storage partition (if we have) */
@@ -197,18 +200,15 @@ void imxrt_filesystem_initialize(void)
 	if (ret != OK) {
 		IMXLOG("SSSRW ERROR: mksmartfs failed");
 	} else {
-		ret = mount(CONFIG_IMXRT_AUTOMOUNT_SSSRW_DEVNAME,
-				CONFIG_IMXRT_AUTOMOUNT_SSSRW_MOUNTPOINT,
-				"smartfs", 0, NULL);
+		ret = mount(CONFIG_IMXRT_AUTOMOUNT_SSSRW_DEVNAME, CONFIG_IMXRT_AUTOMOUNT_SSSRW_MOUNTPOINT, "smartfs", 0, NULL);
 		if (ret != OK) {
 			IMXLOG("SSSRW ERROR: mounting failed");
 		}
 	}
-#endif /* CONFIG_IMXRT_AUTOMOUNT_SSSRW */
+#endif							/* CONFIG_IMXRT_AUTOMOUNT_SSSRW */
 
 #ifdef CONFIG_IMXRT_AUTOMOUNT_ROMFS
-	ret = mount(CONFIG_IMXRT_AUTOMOUNT_ROMFS_DEVNAME,
-			CONFIG_IMXRT_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
+	ret = mount(CONFIG_IMXRT_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_IMXRT_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
 
 	if (ret != OK) {
 		IMXLOG("ROMFS ERROR: mounting failed");
@@ -216,19 +216,21 @@ void imxrt_filesystem_initialize(void)
 #endif
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
-	rambuf = (uint8_t *)malloc(bufsize);
+	bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
+
+	rambuf = (uint8_t *)kmm_malloc(bufsize);
 	if (!rambuf) {
-		IMXLOG("SMARTFS ERROR: malloc failed");
+		IMXLOG("SMARTFS ERROR: kmm_malloc failed");
 	} else {
 		mtd = rammtd_initialize(rambuf, bufsize);
 		if (!mtd) {
 			IMXLOG("SMARTFS ERROR: FAILED TO CREATE RAM MTD INSTANCE");
-			free(rambuf);
+			kmm_free(rambuf);
 		} else {
 			ret = smart_initialize(CONFIG_IMXRT_RAMMTD_DEV_NUMBER, mtd, NULL);
 			if (ret < 0) {
 				IMXLOG("SMARTFS ERROR: smart_initialize failed");
-				free(rambuf);
+				kmm_free(rambuf);
 			} else {
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 				ret = mksmartfs(CONFIG_IMXRT_RAMMTD_DEV_POINT, 1, false);
@@ -237,28 +239,27 @@ void imxrt_filesystem_initialize(void)
 #endif
 				if (ret != OK) {
 					IMXLOG("SMARTFS ERROR: mksmartfs failed");
-					free(rambuf);
+					kmm_free(rambuf);
 				} else {
 					ret = mount(CONFIG_IMXRT_RAMMTD_DEV_POINT, CONFIG_IMXRT_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
 					if (ret < 0) {
 						IMXLOG("SMARTFS ERROR: mount the SMART volume failed");
-						free(rambuf);
+						kmm_free(rambuf);
 					}
 				}
 			}
 		}
 	}
-#endif /* CONFIG_RAMMTD */
+#endif							/* CONFIG_RAMMTD */
 #ifdef CONFIG_LIBC_ZONEINFO_ROMFS
-	ret = mount(CONFIG_IMXRT_AUTOMOUNT_TZDEVNAME,
-		CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
+	ret = mount(CONFIG_IMXRT_AUTOMOUNT_TZDEVNAME, CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
 
 	if (ret != OK) {
 		IMXLOG("ROMFS ERROR: mounting failed");
 	}
-
-#endif /* CONFIG_LIBC_ZONEINFO_ROMFS */
-#endif /* CONFIG_IMXRT_AUTOMOUNT */
+#endif							/* CONFIG_LIBC_ZONEINFO_ROMFS */
+#endif							/* CONFIG_IMXRT_AUTOMOUNT */
+#endif							/* CONFIG_FLASH_PARTITION */
 }
 
 /************************************************************************************
@@ -271,13 +272,13 @@ void imxrt_filesystem_initialize(void)
 
 void weak_function imxrt_spidev_initialize(void)
 {
-#if 0 //TO-DO
+#if 0							//TO-DO
 #ifdef CONFIG_IMXRT_LPSPI1
-	(void)imxrt_config_gpio(GPIO_LPSPI1_CS); /* LPSPI1 chip select */
+	(void)imxrt_config_gpio(GPIO_LPSPI1_CS);	/* LPSPI1 chip select */
 	(void)imxrt_config_gpio(GPIO_MMCSD_EN);
 #endif
 #ifdef CONFIG_IMXRT_LPSPI3
-	(void)imxrt_config_gpio(GPIO_LPSPI3_CS); /* LPSPI3 chip select */
+	(void)imxrt_config_gpio(GPIO_LPSPI3_CS);	/* LPSPI3 chip select */
 #endif
 #endif
 }
@@ -293,7 +294,6 @@ void weak_function imxrt_spidev_initialize(void)
  *   Bring up board features
  *
  ****************************************************************************/
-
 int imxrt_bringup(void)
 {
 	int ret;
@@ -380,9 +380,12 @@ int imxrt_bringup(void)
 
 #ifdef CONFIG_USBHOST
 	/* Initialize USB host operation.  imxrt_usbhost_initialize() starts a thread
-	* will monitor for USB connection and disconnection events.
-	*/
-
+	 * will monitor for USB connection and disconnection events.
+	 */
+#ifdef IMXRT_USB
+	uvdbg("IMXRT USB host initialized!\n");
+	imxrt_usbhost_service_initialize();
+#else
 	IMXLOG("Start USB host services\n");
 	ret = imxrt_usbhost_initialize();
 	if (ret != OK) {
@@ -390,18 +393,19 @@ int imxrt_bringup(void)
 		return ret;
 	}
 #endif
+#endif
 
 #ifdef CONFIG_MMCSD_SPI
 	/* Initialize SPI-based MMC/SD card support */
 
 	imxrt_spidev_initialize();
 
-	#if 0 //TO-DO
+#if 0							//TO-DO
 	ret = imxrt_mmcsd_spi_initialize(MMCSD_MINOR);
 	if (ret < 0) {
 		syslog(LOG_ERR, "ERROR: Failed to initialize SD slot %d: %d\n", ret);
 	}
-	#endif
+#endif
 #endif
 
 	UNUSED(ret);

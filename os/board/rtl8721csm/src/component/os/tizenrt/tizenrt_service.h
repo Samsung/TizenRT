@@ -45,7 +45,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "wireless.h"
 #include "../include/debug.h"
 
 #ifdef CONFIG_USB_HCI
@@ -53,7 +52,7 @@ typedef struct urb *PURB;
 #endif
 
 // --------------------------------------------
-//	Platform dependent include file
+//  Platform dependent include file
 // --------------------------------------------
 #if defined(CONFIG_PLATFORM_8195A) || defined(CONFIG_PLATFORM_8195BHP) || defined(CONFIG_PLATFORM_8710C)
 #include "platform/platform_stdlib.h"
@@ -74,69 +73,67 @@ extern VOID RtlUdelayOS(u32 us);
 #elif defined(CONFIG_HARDWARE_8188E)
 #include "platform/platform_stdlib.h"
 #else
-// other MCU may use standard library 
+// other MCU may use standard library
 #include <string.h>
 #endif
-
 
 #if (defined CONFIG_GSPI_HCI || defined CONFIG_SDIO_HCI) || defined(CONFIG_LX_HCI)
 /* For SPI interface transfer and us delay implementation */
 #if !defined(CONFIG_PLATFORM_8195A) && !defined(CONFIG_PLATFORM_8711B) && !defined(CONFIG_PLATFORM_8721D)  && !defined(CONFIG_PLATFORM_8195BHP) && !defined(CONFIG_PLATFORM_8710C)
-#include <rtwlan_bsp.h>	
+#include <rtwlan_bsp.h>
 #endif
 #endif
-
 
 // --------------------------------------------
-//	Platform dependent type define
+//  Platform dependent type define
 // --------------------------------------------
 #ifndef FIELD_OFFSET
-#define FIELD_OFFSET(s,field)	((SSIZE_T)&((s*)(0))->field)
+#define FIELD_OFFSET(s, field)	((SSIZE_T)&((s*)(0))->field)
 #endif
 
 // os types
-typedef char			    osdepCHAR;
-typedef float			    osdepFLOAT;
-typedef double			    osdepDOUBLE;
-typedef long			    osdepLONG;
-typedef short			    osdepSHORT;
-typedef unsigned long	    osdepSTACK_TYPE;
-typedef long			    osdepBASE_TYPE;
-typedef unsigned long	    osdepTickType;
+typedef char osdepCHAR;
+typedef float osdepFLOAT;
+typedef double osdepDOUBLE;
+typedef long osdepLONG;
+typedef short osdepSHORT;
+typedef unsigned long osdepSTACK_TYPE;
+typedef long osdepBASE_TYPE;
+typedef unsigned long osdepTickType;
 
-typedef void*	            _timerHandle;
-typedef void*	            _sema;
-typedef void*	            _mutex;
-typedef void*	            _lock;
-typedef void*	            _queueHandle;
-typedef void*	            _xqueue;
-typedef struct timer_list	_timer;
+typedef void *_timerHandle;
+typedef void *_sema;
+typedef void *_mutex;
+typedef void *_lock;
+typedef void *_queueHandle;
+typedef void *_xqueue;
+typedef struct timer_list _timer;
 
 #define rtw_timer_list timer_list
 
-typedef	struct sk_buff		_pkt;
-typedef unsigned char		_buffer;
-typedef unsigned int        systime;
+typedef struct sk_buff _pkt;
+typedef unsigned char _buffer;
+typedef unsigned int systime;
 
-#if !defined(__LIST_H) && !defined(__LIST_H__) 
+#if !defined(__LIST_H) && !defined(__LIST_H__)
 #warning "DLIST_NOT_DEFINE!!!!!!"
 struct list_head {
 	struct list_head *next, *prev;
 };
 #endif
 
-struct	__queue	{
-	struct	list_head	queue;
-	_lock			lock;
+struct __queue {
+	struct list_head queue;
+	_lock lock;
 };
 
-typedef struct	__queue		_queue;
-typedef struct	list_head	_list;
-typedef unsigned long		_irqL;
+typedef struct __queue _queue;
+typedef struct list_head _list;
+typedef unsigned long _irqL;
 
-typedef void*			    _thread_hdl_;
-typedef void			    thread_return;
-typedef void*			    thread_context;
+typedef void *_thread_hdl_;
+typedef void thread_return;
+typedef void *thread_context;
 
 #if !defined(CONFIG_PLATFORM_8710C)
 typedef struct {
@@ -149,27 +146,27 @@ typedef struct {
 
 #define TMR_NAME_SIZE 16
 struct timer_list_priv {
-        struct timer_list *prev, *next;
-        _timerHandle timer_hdl;
-        struct work_s *work_hdl;
-        int timer_id;
-        unsigned char timer_name[TMR_NAME_SIZE];
-        int live;
-        long timevalue;
-        void *data;
-        void (*function)(void *args);
+	struct timer_list *prev, *next;
+	_timerHandle timer_hdl;
+	struct work_s *work_hdl;
+	int timer_id;
+	unsigned char timer_name[TMR_NAME_SIZE];
+	int live;
+	long timevalue;
+	void *data;
+	void (*function)(void *args);
 };
 
-#define   KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
+#define   KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 /* emulate a modern version */
 #define LINUX_VERSION_CODE KERNEL_VERSION(2, 6, 17)
 
-static __inline _list *get_next(_list	*list)
+static __inline _list *get_next(_list *list)
 {
 	return list->next;
-}	
+}
 
-static __inline _list	*get_list_head(_queue	*queue)
+static __inline _list *get_list_head(_queue *queue)
 {
 	return (&(queue->queue));
 }
@@ -179,12 +176,12 @@ static __inline _list	*get_list_head(_queue	*queue)
 //#define container_of(p,t,n) (t*)((p)-&(((t*)0)->n))
 #define container_of(ptr, type, member) \
 			((type *)((char *)(ptr)-(SIZE_T)(&((type *)0)->member)))
-#define TASK_PRORITY_LOW  				1
-#define TASK_PRORITY_MIDDLE   			2
-#define TASK_PRORITY_HIGH    			3
-#define TASK_PRORITY_SUPER    			4
+#define TASK_PRORITY_LOW			1
+#define TASK_PRORITY_MIDDLE			2
+#define TASK_PRORITY_HIGH			3
+#define TASK_PRORITY_SUPER			4
 
-#define TIMER_MAX_DELAY    				0xFFFFFFFF
+#define TIMER_MAX_DELAY				0xFFFFFFFF
 
 void save_and_cli(void);
 void restore_flags(void);
@@ -286,33 +283,32 @@ void cli(void);
  * useful range of an atomic_t is only 24 bits.
  */
 #undef atomic_set
-#define atomic_set(v,i) ((v)->counter = (i))
+#define atomic_set(v, i) ((v)->counter = (i))
 
- /*
-  *      These inlines deal with timer wrapping correctly. You are 
-  *      strongly encouraged to use them
-  *      1. Because people otherwise forget
-  *      2. Because if the timer wrap changes in future you wont have to
-  *         alter your driver code.
-  *
-  * time_after(a,b) returns true if the time a is after time b.
-  *
-  * Do this with "<0" and ">=0" to only test the sign of the result. A
-  * good compiler would generate better code (and a really good compiler
-  * wouldn't care). Gcc is currently neither.
-  */
- #define time_after(a,b)	((long)(b) - (long)(a) < 0)
- #define time_before(a,b)	time_after(b,a)
-  
- #define time_after_eq(a,b)	((long)(a) - (long)(b) >= 0)
- #define time_before_eq(a,b)	time_after_eq(b,a)
+/*
+ *      These inlines deal with timer wrapping correctly. You are
+ *      strongly encouraged to use them
+ *      1. Because people otherwise forget
+ *      2. Because if the timer wrap changes in future you wont have to
+ *         alter your driver code.
+ *
+ * time_after(a,b) returns true if the time a is after time b.
+ *
+ * Do this with "<0" and ">=0" to only test the sign of the result. A
+ * good compiler would generate better code (and a really good compiler
+ * wouldn't care). Gcc is currently neither.
+ */
+#define time_after(a, b)	((long)(b) - (long)(a) < 0)
+#define time_before(a, b)	time_after(b, a)
 
+#define time_after_eq(a, b)	((long)(a) - (long)(b) >= 0)
+#define time_before_eq(a, b)	time_after_eq(b, a)
 
-extern void	rtw_init_listhead(_list *list);
-extern u32	rtw_is_list_empty(_list *phead);
-extern void	rtw_list_insert_head(_list *plist, _list *phead);
-extern void	rtw_list_insert_tail(_list *plist, _list *phead);
-extern void	rtw_list_delete(_list *plist);
+extern void rtw_init_listhead(_list *list);
+extern u32 rtw_is_list_empty(_list *phead);
+extern void rtw_list_insert_head(_list *plist, _list *phead);
+extern void rtw_list_insert_tail(_list *plist, _list *phead);
+extern void rtw_list_delete(_list *plist);
 
 extern int rtw_if_wifi_thread(char *name);
 
@@ -320,4 +316,4 @@ extern int rtw_if_wifi_thread(char *name);
 extern u32 random_seed;
 #endif
 
-#endif /* _CUSTOMER_RTOS_SERVICE_H_ */
+#endif							/* _CUSTOMER_RTOS_SERVICE_H_ */

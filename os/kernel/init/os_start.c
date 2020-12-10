@@ -72,16 +72,23 @@
 #include  <tinyara/kmalloc.h>
 #include  <tinyara/init.h>
 #include  <tinyara/pm/pm.h>
+#include  <tinyara/mm/heap_regioninfo.h>
+#ifdef CONFIG_DEBUG_SYSTEM
+#include  <tinyara/debug/sysdbg.h>
+#endif
+#ifdef CONFIG_DRIVERS_KERNEL_TEST
+#include  <tinyara/kernel_test_drv.h>
+#endif
 
 #include  "sched/sched.h"
 #include  "signal/signal.h"
 #include  "wdog/wdog.h"
 #include  "semaphore/semaphore.h"
 #ifndef CONFIG_DISABLE_MQUEUE
-#include "mqueue/mqueue.h"
+#include  "mqueue/mqueue.h"
 #endif
 #ifndef CONFIG_DISABLE_PTHREAD
-#include "pthread/pthread.h"
+#include  "pthread/pthread.h"
 #endif
 #include  "clock/clock.h"
 #include  "timer/timer.h"
@@ -90,16 +97,9 @@
 #include  "group/group.h"
 #endif
 #include  "init/init.h"
-#ifdef CONFIG_DEBUG_SYSTEM
-#include <tinyara/debug/sysdbg.h>
-#endif
-#ifdef CONFIG_KERNEL_TEST_DRV
-#include <tinyara/testcase_drv.h>
-#endif
 #include  "debug/memdbg.h"
 
 extern const uint32_t g_idle_topstack;
-#include <tinyara/mm/heap_regioninfo.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -187,10 +187,7 @@ volatile dq_queue_t g_inactivetasks;
 
 volatile sq_queue_t g_delayed_kufree;
 
-#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
-	 defined(CONFIG_MM_KERNEL_HEAP)
 volatile sq_queue_t g_delayed_kfree;
-#endif
 
 /* This gives number of alive tasks at any point of time in the system.
  * If the system is already running CONFIG_MAX_TASKS, Creating new
@@ -388,20 +385,12 @@ void os_start(void)
 	sem_initialize();
 
 
-#if defined(MM_KERNEL_USRHEAP_INIT) || defined(CONFIG_MM_KERNEL_HEAP) || defined(CONFIG_MM_PGALLOC)
+#if defined(CONFIG_MM_KERNEL_HEAP) || defined(CONFIG_MM_PGALLOC)
 	/* Initialize the memory manager */
 
 	{
 		FAR void *heap_start;
 		size_t heap_size;
-
-#ifdef MM_KERNEL_USRHEAP_INIT
-		/* Get the user-mode heap from the platform specific code and configure
-		 * the user-mode memory allocator.
-		 */
-		up_allocate_heap(&heap_start, &heap_size);
-		kumm_initialize(heap_start, heap_size);
-#endif
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 		/* Get the kernel-mode heap from the platform specific code and configure
@@ -424,7 +413,11 @@ void os_start(void)
 	}
 #endif
 
-	up_addregion();
+	up_add_kregion();
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_initialize_app_heap_q();
+#endif
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 	/* Initialize tasking data structures */
@@ -536,7 +529,7 @@ void os_start(void)
 
 	fs_auto_mount();
 
-#ifdef CONFIG_KERNEL_TEST_DRV
+#ifdef CONFIG_DRIVERS_KERNEL_TEST
 	kernel_test_drv_register();
 #endif
 

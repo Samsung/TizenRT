@@ -21,51 +21,76 @@
 # Description : usb rule script for ARTIK 05X
 
 args=("$@")
+BOARD=${args[0]}
+idVendor=${args[1]}
+idProduct=${args[2]}
+idVendor2=
+idProduct2=
+CMD=
+NEW_RULE=
 
 function CHECK_RULE()
 {
+	NEW_RULE=yes
+
 	for filelist in `ls /etc/udev/rules.d`; do
 		content=`cat /etc/udev/rules.d/${filelist}`
-		flag=true
-		for ((i=1; i<${#args[@]}; i++)); do
-			if [[ "${content}" == *"${args[$i]}"* ]]; then
-				continue
-			else
-				flag=false
-				break
-			fi
-		done
-		if [ $flag == true ]; then
-			echo ".rules file already exist"
-			exit 1
+
+		if [[ "${content}" == *"${CMD}"* ]]; then
+			echo "USB rules already exists in ${filelist}"
+			NEW_RULE=no
+			break
 		fi
 	done
+}
+
+function ADD_NEW_RULE()
+{
+	echo ${CMD} >> /etc/udev/rules.d/99-${BOARD}.rules
 }
 
 function REGISTER_RULE()
 {
 	if [ $(id -u) -ne 0 ]; then
-		echo "Please run as root."
+		echo "Please run with root permission."
 		exit 1
 	fi
 
-	CHECK_RULE
-
-	if [ ${args[0]} == "stm32" ]; then
-		echo SUBSYSTEMS==\"usb\", ATTRS{idVendor}==\"${args[1]}\", ATTRS{idProduct}==\"${args[2]}\", MODE:=\"0666\",\
-			SYMLINK+=\"stlinkv2_%n\" > /etc/udev/rules.d/99-${args[0]}.rules
+	if [ ${BOARD} == "stm32" ]; then
+		CMD="SUBSYSTEMS==\"usb\", ATTRS{idVendor}==\"${idVendor}\", ATTRS{idProduct}==\"${idProduct}\", MODE:=\"0666\", SYMLINK+=\"stlinkv2_%n\""
+		CHECK_RULE
+		if [ "${NEW_RULE}" == "yes" ]; then
+			ADD_NEW_RULE
+		fi
 		for ((i=3; i<${#args[@]}; i++)); do
-			echo SUBSYSTEMS==\"usb\", ATTRS{idVendor}==\"${args[1]}\", ATTRS{idProduct}==\"${args[$i]}\", \
-				MODE:=\"0666\", SYMLINK+=\"stlinkv3_%n\" >> /etc/udev/rules.d/99-${args[0]}.rules
+			CMD="SUBSYSTEMS==\"usb\", ATTRS{idVendor}==\"${idVendor}\", ATTRS{idProduct}==\"${args[$i]}\", MODE:=\"0666\", SYMLINK+=\"stlinkv3_%n\""
+			CHECK_RULE
+			if [ "${NEW_RULE}" == "yes" ]; then
+				ADD_NEW_RULE
+			fi
 		done
 	else
-		echo SUBSYSTEMS==\"usb\",ATTRS{idVendor}==\"${args[1]}\",ATTRS{idProduct}==\"${args[2]}\",MODE=\"0666\" \
-			RUN+=\"/sbin/modprobe ftdi_sio\" RUN+=\"/bin/sh -c "'echo ${args[1]} ${args[2]} > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"\" \
-			> /etc/udev/rules.d/99-${args[0]}.rules
+		if [ "${args[3]}" == "" ]; then
+			idVendor2=${idVendor}
+			idProduct2=${idProduct}
+		else
+			idVendor2=${args[3]}
+			idProduct2=${args[4]}
+		fi
+
+		CMD="SUBSYSTEMS==\"usb\",ATTRS{idVendor}==\"${idVendor}\",ATTRS{idProduct}==\"${idProduct}\",MODE=\"0666\" RUN+=\"/sbin/modprobe ftdi_sio\" RUN+=\"/bin/sh -c 'echo ${idVendor2} ${idProduct2} > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'\""
+		CHECK_RULE
+		if [ "${NEW_RULE}" == "yes" ]; then
+			ADD_NEW_RULE
+		fi
 	fi
 
-	`udevadm control --reload-rules && udevadm trigger`
-	echo "USB rule creation succeeded."
-	exit 0
+	if [ "${NEW_RULE}" == "yes" ]; then
+		`udevadm control --reload-rules && udevadm trigger`
+		echo "USB rule creation succeeded."
+		exit 0
+	else
+		exit 1
+	fi
 }
 REGISTER_RULE

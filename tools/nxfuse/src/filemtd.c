@@ -104,6 +104,8 @@
 #error "CONFIG_FILEMTD_ERASESIZE must be an even multiple of CONFIG_FILEMTD_BLOCKSIZE"
 #endif
 
+#define FILEMTD_BUFFER_SIZE 128
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -155,23 +157,30 @@ static ssize_t filemtd_write(FAR struct file_dev_s *priv, size_t offset, FAR con
 {
 	FAR const uint8_t *pin = (FAR const uint8_t *)src;
 	FAR uint8_t *pout;
-	char buf[128];
+	char buf[FILEMTD_BUFFER_SIZE];
 	int buflen = 0;
 	uint8_t oldvalue;
 	uint8_t srcvalue;
 	uint8_t newvalue;
 	size_t seekpos;
-
+	size_t readsize = 0;
+	
 	/* Set the starting location in the file */
-
 	seekpos = priv->offset + offset;
-
-	while (len-- > 0) {
+	while (len > 0) {
 		if (buflen == 0) {
 			/* Read more data from the file */
 
 			lseek(priv->fd, seekpos, SEEK_SET);
-			buflen = read(priv->fd, buf, sizeof(buf));
+			if (len < FILEMTD_BUFFER_SIZE) {
+				buflen = len;
+			} else {
+				buflen = FILEMTD_BUFFER_SIZE;
+			}
+			readsize = read(priv->fd, buf, buflen);
+			if (readsize != buflen) {
+				return ERROR;
+			}
 			pout = (FAR uint8_t *)buf;
 		}
 
@@ -196,7 +205,8 @@ static ssize_t filemtd_write(FAR struct file_dev_s *priv, size_t offset, FAR con
 
 #ifdef CONFIG_DEBUG
 		if (newvalue != srcvalue) {
-			dbg("ERROR: Bad write: source=%02x dest=%02x result=%02x\n", srcvalue, oldvalue, newvalue);
+			dbg("ERROR: Bad write: source=%02x dest=%02x result=%02x offset : %d priv->offset : %d len : %d\n",\
+				srcvalue, oldvalue, newvalue, offset, priv->offset, len);
 		}
 #endif
 
@@ -211,18 +221,13 @@ static ssize_t filemtd_write(FAR struct file_dev_s *priv, size_t offset, FAR con
 
 		if (buflen == 0) {
 			lseek(priv->fd, seekpos, SEEK_SET);
-			write(priv->fd, buf, sizeof(buf));
-			seekpos += sizeof(buf);
+			if (write(priv->fd, buf, readsize) != readsize) {
+				return ERROR;
+			}
+			seekpos += readsize;
 		}
+		len--;
 	}
-
-	/* Write remaining bytes */
-
-	if (buflen != 0) {
-		lseek(priv->fd, seekpos, SEEK_SET);
-		write(priv->fd, buf, sizeof(buf));
-	}
-
 	return len;
 }
 
@@ -248,7 +253,7 @@ static int file_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 	FAR struct file_dev_s *priv = (FAR struct file_dev_s *)dev;
 	size_t nbytes;
 	size_t offset;
-	char buffer[128];
+	char buffer[FILEMTD_BUFFER_SIZE];
 
 	DEBUGASSERT(dev);
 
@@ -279,10 +284,10 @@ static int file_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 	/* Then erase the data in the file */
 
 	lseek(priv->fd, priv->offset + offset, SEEK_SET);
-	memset(buffer, CONFIG_FILEMTD_ERASESTATE, sizeof(buffer));
+	memset(buffer, CONFIG_FILEMTD_ERASESTATE, FILEMTD_BUFFER_SIZE);
 	while (nbytes) {
-		write(priv->fd, buffer, sizeof(buffer));
-		nbytes -= sizeof(buffer);
+		write(priv->fd, buffer, FILEMTD_BUFFER_SIZE);
+		nbytes -= FILEMTD_BUFFER_SIZE;
 	}
 
 	return OK;

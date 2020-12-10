@@ -19,6 +19,7 @@
 #include "mib.h"
 #include "debug_scsc.h"
 #include <sys/types.h>
+#include <tinyara/kmalloc.h>
 
 #define SLSI_MIB_MORE_MASK   0x80
 #define SLSI_MIB_SIGN_MASK   0x40
@@ -482,7 +483,7 @@ u8 *slsi_mib_find(struct slsi_mib_data *buffer, const struct slsi_mib_get_entry 
 
 struct slsi_mib_value *slsi_mib_decode_get_list(struct slsi_mib_data *buffer, u16 psidsLength, const struct slsi_mib_get_entry *psids)
 {
-	struct slsi_mib_value *results = calloc((size_t)psidsLength, sizeof(struct slsi_mib_value));
+	struct slsi_mib_value *results = kmm_calloc((size_t)psidsLength, sizeof(struct slsi_mib_value));
 	size_t i;
 	int len;
 
@@ -502,7 +503,7 @@ struct slsi_mib_value *slsi_mib_decode_get_list(struct slsi_mib_data *buffer, u1
 			memcpy(value.index, psids[i].index, sizeof(value.index));
 			len = slsi_mib_decode(&data, &value);
 			if (len == 0) {
-				free(results);
+				kmm_free(results);
 				return NULL;
 			}
 

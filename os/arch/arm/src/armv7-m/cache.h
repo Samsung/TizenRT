@@ -340,7 +340,7 @@ void arch_disable_dcache(void);
 #ifdef CONFIG_ARMV7M_DCACHE
 void arch_invalidate_dcache(uintptr_t start, uintptr_t end);
 #else
-#define arch_invalidate_dcache(s,e)
+#define arch_invalidate_dcache(s, e)
 #endif
 
 /****************************************************************************
@@ -390,7 +390,7 @@ void arch_invalidate_dcache_all(void);
 #if defined(CONFIG_ARMV7M_DCACHE) && !defined(CONFIG_ARMV7M_DCACHE_WRITETHROUGH)
 void arch_clean_dcache(uintptr_t start, uintptr_t end);
 #else
-#define arch_clean_dcache(s,e)
+#define arch_clean_dcache(s, e)
 #endif
 
 /****************************************************************************
@@ -448,12 +448,12 @@ void arch_clean_dcache_all(void);
 
 #ifdef CONFIG_ARMV7M_DCACHE
 #ifdef CONFIG_ARMV7M_DCACHE_WRITETHROUGH
-#define arch_flush_dcache(s,e) arch_invalidate_dcache(s,e)
+#define arch_flush_dcache(s, e) arch_invalidate_dcache(s, e)
 #else
 void arch_flush_dcache(uintptr_t start, uintptr_t end);
 #endif
 #else
-#define arch_flush_dcache(s,e)
+#define arch_flush_dcache(s, e)
 #endif
 
 /****************************************************************************
@@ -486,6 +486,24 @@ void arch_flush_dcache_all(void);
 #endif
 #else
 #define arch_flush_dcache_all()
+#endif
+
+#if defined(CONFIG_ARMV7M_DCACHE)
+
+#ifdef CONFIG_ARMV7M_DCACHE_WRITETHROUGH
+	#define arch_clean_invalidate_dcache_by_range_to_poc(s, e) arch_invalidate_dcache(s, e)
+#else
+	void arch_clean_invalidate_dcache_by_range_to_poc(uintptr_t start, uintptr_t end);
+#endif
+
+#else
+	#define arch_clean_invalidate_dcache_by_range_to_poc(s, e)
+#endif
+
+#if defined(CONFIG_ARMV7M_DCACHE) && !defined(CONFIG_ARMV7M_DCACHE_WRITETHROUGH)
+	void arch_clean_dcache_by_range_to_poc(uintptr_t start, uintptr_t end);
+#else
+	#define arch_clean_dcache_by_range_to_poc(s, e)
 #endif
 
 #undef EXTERN

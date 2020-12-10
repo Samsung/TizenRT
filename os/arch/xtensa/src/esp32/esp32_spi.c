@@ -722,7 +722,7 @@ int spicommon_free_dma_desc_links(lldesc_chain_t *desc_chain)
 	for (lldesc_t *cdesc = desc_chain->head; cdesc != NULL;) {
 		lldesc_t *prvdesc = cdesc;
 		cdesc = prvdesc->qe;
-		free(prvdesc);
+		kmm_free(prvdesc);
 	}
 	desc_chain->head = NULL;
 	desc_chain->tail = NULL;
@@ -1587,7 +1587,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 #endif
 
 		/* Initialize a semaphore for spi dma */
-		sem_init(&g_spi_dma.dma_lock, 0, 1);
+		sem_init((sem_t *)&g_spi_dma.dma_lock, 0, 1);
 		priv->initiallized = true;
 	}
 

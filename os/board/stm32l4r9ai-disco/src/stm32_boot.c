@@ -81,6 +81,9 @@ void board_initialize(void)
     stm32_spiinitialize();
 #endif
 
+	/* Initialize for flash access */
+	stm32l4_flash_initialize();
+
 #ifdef CONFIG_STM32L4_OTGFS
   /* Initialize USB if the 1) OTG FS controller is in the configuration and 2)
    * disabled, and 3) the weak function stm32_usbinitialize() has been brought

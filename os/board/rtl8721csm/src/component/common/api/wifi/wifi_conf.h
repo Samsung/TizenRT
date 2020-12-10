@@ -743,7 +743,7 @@ int wifi_get_network_mode(rtw_network_mode_t *pmode);
  *                    - 4 means enable the promisc special for Broadcast/Multicast 802.11 frames.
  * @param[in]  callback: the callback function which will 
  *  			  receive and process the netowork data.
- * @param[in]  len_used: specify if the the promisc data length is used.
+ * @param[in]  len_used: specify if the promisc data length is used.
  *				If len_used set to 1, packet(frame data) length will be saved and transferred to callback function.
  *
  * @return  RTW_SUCCESS or RTW_ERROR
@@ -1053,19 +1053,6 @@ void wifi_set_ap_polling_sta(__u8 enabled);
 int mailbox_to_wifi(u8 *data, u8 len);
 #else
 #define mailbox_to_wifi(data, len)
-#endif
-
-#ifdef CONFIG_WOWLAN_TCP_KEEP_ALIVE
-/**
- * @brief  construct a tcp packet that offload to wlan. wlan would keep sending this packet to tcp server.
- *
- * @param[in]  socket_fd : tcp socket
- * @param[in]  content : tcp payload
- * @param[in]  len : tcp payload size
- * @param[in]  interval_ms : send this packeter every interval_ms milliseconds
- * @return  RTW_SUCCESS
- */
-int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len, uint32_t interval_ms);
 #endif
 
 // WoWlan related

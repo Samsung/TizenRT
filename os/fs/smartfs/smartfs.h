@@ -155,7 +155,8 @@
  * 2. Garbage collection can occur when a new sector is allocated or when
  *    existing sector data is overwritten with new data. Thus, occasionally,
  *    file writing may take longer than other times.
- * 3. The implementation curently does not track bad blocks on the device.
+ * 3. The implementation currently has bad sector management code removed.
+ *    BSM logic remains to be improved and put in again.
  * 4. There is no true wear-leveling implemented yet, though provesion have
  *    been made to reserve logical sectors to allow it to be added using
  *    a "sector aging" tracking mechanism.
@@ -173,6 +174,10 @@
 
 #define INODE_STATE_FILE          (CONFIG_NXFFS_ERASEDSTATE ^ 0x22)
 #define INODE_STATE_DELETED       (CONFIG_NXFFS_ERASEDSTATE ^ 0xaa)
+
+/* Smartfs worbuffer maxuimum length */
+
+#define SMARTFS_MAX_WORKBUFFER_LEN 256
 
 /* Directory entry flag definitions */
 
@@ -220,8 +225,10 @@
 
 /* Buffer flags (when CRC enabled) */
 
+#define SMARTFS_BFLAG_UNMOD       0x00	/* Set if there are no unsynced changes in sf->buffer */
 #define SMARTFS_BFLAG_DIRTY       0x01	/* Set if data changed in the sector */
 #define SMARTFS_BFLAG_NEWALLOC    0x02	/* Set if sector not written since alloc */
+#define SMARTFS_BFLAG_NEW_ENTRY   0x04	/* Set if the open file structure object corresponds to a new file entry yet to be written to MTD */
 
 #define SMARTFS_ERASEDSTATE_16BIT (uint16_t)((CONFIG_SMARTFS_ERASEDSTATE << 8) | \
 								  CONFIG_SMARTFS_ERASEDSTATE)
@@ -235,9 +242,6 @@
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 #define CONFIG_SMARTFS_USE_SECTOR_BUFFER
 #endif
-#ifdef CONFIG_SMARTFS_BAD_SECTOR
-#define SMARTFS_BSM_LOG_SECTOR_NUMBER   11
-#endif
 
 #define USED_ARRAY_SIZE                 2
 
@@ -245,37 +249,8 @@
 #undef  CONFIG_SMARTFS_DYNAMIC_HEADER
 #endif
 
-#ifdef CONFIG_SMARTFS_JOURNALING
+#define SMARTFS_AVAIL_DATABYTES(f) f->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s)
 
-/*
- * Journal entry info
- * 1st 4 bytes : Transaction Type
- * Last 4 bytes : Transaction status
- */
-
-#define SMARTFS_LOGGING_SECTOR   12
-
-#define TRANS_EXIST (1 << 0)
-#define TRANS_STARTED (1 << 1)
-#define TRANS_FINISHED (1 << 2)
-#define TRANS_NEED_SYNC (1 << 3)	/* Note: If true, it means that this transaction needs sync only if it is not finished */
-
-#define GET_TRANS_TYPE(t) ((t) >> 4)
-#define SET_TRANS_TYPE(t, v) ((t) = ((t) & 0x0f) | ((v) << 4))
-
-#define T_STATUS_RESET(t) ((t) = ((t) | (CONFIG_SMARTFS_ERASEDSTATE >> 4)))
-#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-#define T_SET_TRANSACTION(t, s) ((t) = ((t) & ~(s)))
-#else
-#define T_SET_TRANSACTION(t, s) ((t) = ((t) | (s)))
-#endif
-
-#define T_FINISH_CHECK(t)  (((t) & TRANS_FINISHED) != (TRANS_FINISHED & CONFIG_SMARTFS_ERASEDSTATE))
-#define T_START_CHECK(t)  (((t) & TRANS_STARTED) != (TRANS_STARTED & CONFIG_SMARTFS_ERASEDSTATE))
-#define T_EXIST_CHECK(t)  (((t) & TRANS_EXIST) != (TRANS_EXIST & CONFIG_SMARTFS_ERASEDSTATE))
-#define T_NEEDSYNC_CHECK(t) (((t) & TRANS_NEED_SYNC) != (TRANS_NEED_SYNC & CONFIG_SMARTFS_ERASEDSTATE))
-
-#endif							/* CONFIG_SMARTFS_JOURNALING */
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -294,7 +269,8 @@ struct smartfs_entry_s {
 	uint16_t flags;				/* Flags, including mode */
 	FAR char *name;				/* inode name */
 	uint32_t utc;				/* Time stamp */
-	uint32_t datlen;			/* Length of inode data */
+	uint32_t datalen;			/* Length of inode data */
+	uint16_t prev_parent;		/* To track the processed directory sector to find parent for entry. Holds last active sector in parent chain if new sector has tobe chained */
 };
 
 /* This is an on-device representation of the SMART inode which exists on
@@ -320,12 +296,6 @@ struct smartfs_chain_header_s {
 	uint8_t nextsector[4];		/* Next logical sector in the chain */
 	uint8_t used[4];			/* Number of bytes used in this sector */
 	uint8_t type;				/* Type of sector entry (file or dir) */
-};
-#elif defined(CONFIG_MTD_SMART_ENABLE_CRC) && defined(CONFIG_SMART_CRC_16)
-struct smartfs_chain_header_s {
-	uint8_t type;				/* Type of sector entry (file or dir) */
-	uint8_t nextsector[2];		/* Next logical sector in the chain */
-	uint8_t used[2];			/* Number of bytes used in this sector */
 };
 #else
 struct smartfs_chain_header_s {
@@ -379,109 +349,13 @@ struct smartfs_mountpt_s {
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
 	uint8_t *fs_chunk_buffer;
 #endif
-#ifdef CONFIG_SMARTFS_JOURNALING
-	struct journal_transaction_manager_s *journal;
-#endif
 	uint8_t fs_rootsector;		/* Root directory sector num */
-};
-
-#ifdef CONFIG_SMARTFS_JOURNALING
-
-enum logging_transaction_type_e {
-	T_WRITE = 0,				/* for smartfs_write */
-	T_CREATE,					/* Used when new entry for file is created */
-	T_RENAME,					/* for smartfs_rename */
-	T_MKDIR,					/* for smartfs_mkdir */
-	T_DELETE,					/* for smartfs_rmdir and smartfs_unlink */
-	T_SYNC						/* for smartfs_sync_internal */
-};
-
-/* This structure is a node in the list of currently
-   active (not yet finished) write transactions.
-*/
-struct active_write_node_s {
-	uint8_t trans_info;			/* Transaction type and status */
-	uint16_t sector;			/* Sector on which write has to be made */
-	uint16_t used_bytes;		/* Number of bytes used in the sector after finishing write */
-	uint8_t seq_no;				/* Sequence number of writes on same sector */
-	uint16_t journal_sector;	/* Sector in which transaction is written */
-	uint16_t journal_offset;	/* Offset in journal_sector where transaction is written */
-	struct active_write_node_s *next;	/* Next active write transaction */
-};
-
-/* This structure is the logging entry that is written in journal */
-
-struct smartfs_logging_entry_s {
-	uint8_t trans_info;			/*      First 4 bits reserved for transaction Type
-								 *      Last 4 bits reserved for transaction status.
-								 */
-
-	uint8_t seq_no;				/*      Sequence number of writes which need a sync on a sector.
-								 *      We are limiting sequence number only to 0 and 1. This is because
-								 *      if we receive a new write on a sector which has been written
-								 *      before, it means that previous write was complete. So we can finish
-								 *      the previous transaction. Thus, there can be at most 2 unfinished
-								 *      transactions for a sector in case of power failure.
-								 */
-
-	uint8_t crc16[2];			/*      For CRC value to check validation of journal entry
-								 *      First 8bits for entry, next 8bits for entry + data
-								 */
-
-	uint16_t curr_sector;		/*      Transaction type : Use
-								 *        1) T_WRITE  : sector number of sector to be written.
-								 *        2) T_CREATE : sector number of parent sector of new entry.
-								 *        3) T_RENAME : sector number of parent sector of new entry.
-								 *        4) T_MKDIR  : sector number of parent sector where entry has to be created.
-								 *        5) T_DELETE  : sector number of parent sector of entry to be deleted.
-								 *        6) T_SYNC   : sector number of sector to be synced
-								 */
-
-	uint16_t offset;			/*      Transaction type : Use
-								 *        1) T_WRITE  : offset in sector where data has to be written.
-								 *        2) T_CREATE : Unused
-								 *        3) T_RENAME : offset in parent sector of the old directory entry.
-								 *        4) T_MKDIR  : Unused.
-								 *        5) T_DELETE : offset in parent sector of the old directory entry.
-								 *        6) T_SYNC   : Unused
-								 */
-
-	uint16_t datalen;			/*     Transaction type : Use
-								 *       1) T_WRITE  : Length of data that has to be written.
-								 *       2) T_CREATE : Length of filename
-								 *       3) T_RENAME : Length of new name of file/directory.
-								 *       4) T_MKDIR  : Length of new directory name.
-								 *       5) T_DELETE : We are reusing this field to store the sector which is chaining
-								 *                     to the sector containing the entry to be deleted
-								 *       6) T_SYNC   : Unused
-								 */
-
-	uint16_t generic_1;			/*      Generic field. Different meaning in different transaction types.
-								 *      Transaction type : Use
-								 *        1) T_WRITE  : sector size needed to be updated after write to the sector.
-								 *        2) T_CREATE : Mode of file create.
-								 *        3) T_RENAME : sector number of parent sector of old entry.
-								 *        4) T_MKDIR  : Unused.
-								 *        5) T_DELETE : first sector pointed by the entry to delete
-								 *        6) T_SYNC   : Sector size that is needed to update.
-								 */
-
-};
-
-/*
-  This structure provides the transaction manager for all journaling operations
-*/
-struct journal_transaction_manager_s {
-	bool enabled;				/* State value to check whether journaling is enabled or not */
-	int8_t jarea;				/* 0 or 1. Specify which journal area is usable */
-	uint16_t sector;			/* Sector number where next logging entry has to be written */
-	uint16_t offset;			/* Offset in the sector above */
-	uint16_t availbytes;		/* Total space in a logging sector to write entries */
-	uint8_t *buffer;			/* Buffer to hold logging entry header and data */
-	uint8_t *active_sectors;	/* Map to mark sectors which are written but not yet synced */
-	struct active_write_node_s *list;	/* Linked list to hold information about writes which need sync */
-};
+#ifdef CONFIG_SMARTFS_ENTRY_TIMESTAMP
+	uint32_t entry_seq;
 #endif
+};
+
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -505,15 +379,35 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable);
 
 int smartfs_unmount(struct smartfs_mountpt_s *fs);
 
-int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath, uint16_t *parentdirsector, const char **filename);
+int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath);
 
-int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, const char *filename, uint16_t type, mode_t mode, struct smartfs_entry_s *direntry, uint16_t sectorno, FAR struct smartfs_ofile_s *sf);
+int smartfs_createdirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry);
+
+int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry);
+
+int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_entry, uint16_t type, mode_t mode);
+
+int smartfs_alloc_firstsector(struct smartfs_mountpt_s *fs, uint16_t *sector, uint16_t type, FAR struct smartfs_ofile_s *sf);
+
+int smartfs_invalidateentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, uint16_t offset);
 
 int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry);
 
 int smartfs_countdirentries(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry);
 
-int smartfs_truncatefile(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *entry, FAR struct smartfs_ofile_s *sf);
+int smartfs_shrinkfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, off_t length);
+
+int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, off_t length);
+
+void smartfs_setbuffer(struct smart_read_write_s *rw, uint16_t logsector, uint16_t offset, uint16_t count, uint8_t *buffer);
+
+void smartfs_set_entry_flags(struct smartfs_entry_s *new_entry, mode_t mode, uint16_t type);
+
+int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *sf);
+
+off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *sf, off_t offset, int whence);
+
+ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofile_s *sf, const char *buffer, size_t byteswritten, size_t buflen);
 
 uint16_t smartfs_rdle16(FAR const void *val);
 
@@ -533,22 +427,12 @@ uint16_t get_used_byte_count_from_end(uint8_t *buffer);
 int set_used_byte_count(uint8_t *used, uint16_t count);
 uint16_t get_used_byte_count(uint8_t *used);
 #endif
-#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
-int smartfs_recover(struct smartfs_mountpt_s *fs);
-int smart_validatesector(FAR struct inode *inode, uint16_t logsector, char *validsectors);
-int smart_recoversectors(FAR struct inode *inode, char *validsectors, int *nobsolete, int *nrecovered);
+int smartfs_sector_recovery(struct smartfs_mountpt_s *fs);
 
-#endif
 struct file;					/* Forward references */
 struct inode;
 struct fs_dirent_s;
 struct statfs;
 struct stat;
-
-#ifdef CONFIG_SMARTFS_JOURNALING
-int smartfs_journal_init(struct smartfs_mountpt_s *fs);
-int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_transaction_type_e type, uint16_t curr_sector, uint16_t offset, uint16_t datalen, uint16_t genericdata, uint8_t needsync, const uint8_t *data, uint16_t *t_sector, uint16_t *t_offset);
-int smartfs_finish_journalentry(struct smartfs_mountpt_s *fs, uint16_t curr_sector, uint16_t sector, uint16_t offset, enum logging_transaction_type_e type);
-#endif
 
 #endif							/* __FS_SMARTFS_SMARTFS_H */

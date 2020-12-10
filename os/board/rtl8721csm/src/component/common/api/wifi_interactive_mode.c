@@ -23,16 +23,15 @@
 #include <stdint.h>
 #include <debug.h>
 #include <lwip/netif.h>
-#include <rtk_lwip_netconf.h>
 
 #include "osdep_service.h"
 #include "wifi_conf.h"
 #include "wifi_util.h"
-#include "rtk_lwip_netconf.h"
 #include "lwip/ip_addr.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/tcpip.h"
 #include "rtk_wifi_utils.h"
+#include <tinyara/net/if/wifi.h>
 
 #define vTaskDelay(t) usleep(t*1000)
 
@@ -45,11 +44,6 @@
 
 #ifndef CONFIG_GOOGLENEST
 #define CONFIG_GOOGLENEST 0
-#endif
-#if CONFIG_LWIP_LAYER
-#ifndef CONFIG_WEBSERVER
-#define CONFIG_WEBSERVER 0
-#endif
 #endif
 #ifndef CONFIG_OTA_UPDATE
 #define CONFIG_OTA_UPDATE 0
@@ -188,18 +182,10 @@ extern void cmd_p2p_connect(int argc, char **argv);
 extern u32 CmdDumpWord(IN u16 argc, IN u8 *argv[]);
 extern u32 CmdWriteWord(IN u16 argc, IN u8 *argv[]);
 #endif
-#if CONFIG_LWIP_LAYER
-extern struct netif xnetif[NET_IF_NUM];
-#endif
 #ifdef CONFIG_CONCURRENT_MODE
 static void cmd_wifi_sta_and_ap(int argc, char **argv)
 {
 	int timeout = 20; //, mode;
-#if CONFIG_LWIP_LAYER
-#if !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-	struct netif * pnetiff = (struct netif *)&xnetif[1];
-#endif
-#endif
 	int channel;
 
 	if ((argc != 3) && (argc != 4)) {
@@ -211,13 +197,6 @@ static void cmd_wifi_sta_and_ap(int argc, char **argv)
 		ndbg("\n\r bad channel!Usage: wifi_ap SSID CHANNEL [PASSWORD]");
 		return;
 	}
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-	//TODO
-#else
-	dhcps_deinit();
-#endif
-#endif
         
 #if 0
 	//Check mode
@@ -298,17 +277,6 @@ static void cmd_wifi_sta_and_ap(int argc, char **argv)
 #endif
 		timeout--;
 	}
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-	//TODO
-#else
-	LwIP_UseStaticIP(&xnetif[1]);
-#ifdef CONFIG_DONT_CARE_TP
-	pnetiff->flags |= NETIF_FLAG_IPSWITCH;
-#endif
-	dhcps_init(pnetiff);
-#endif
-#endif
 }
 #endif
 
@@ -372,35 +340,11 @@ void dhcpd_event(void)
 	return;
 }
 
-int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config)
+int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 {
 	int ret = 0;
-	int timeout = 20;
 	rtw_security_t security_type;
 	char *password;
-	int ssid_len;
-	int password_len;
-
-#if CONFIG_LWIP_LAYER
-	ip_addr_t ipaddr;
-	ip_addr_t netmask;
-	ip_addr_t gw;
-	struct netif *pnetif = &xnetif[0];
-#if LWIP_VERSION_MAJOR >= 2
-	IP4_ADDR(ip_2_ip4(&ipaddr), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-#else
-	IP4_ADDR(&ipaddr, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netif_set_addr(pnetif, &ipaddr, &netmask, &gw);
-#endif
-#ifdef CONFIG_DONT_CARE_TP
-	pnetif->flags |= NETIF_FLAG_IPSWITCH;
-#endif
-#endif
 
 	wifi_off();
 #if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
@@ -426,6 +370,10 @@ int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config)
 		security_type = RTW_SECURITY_WPA2_AES_PSK;
 		password = softap_config->passphrase;
 		break;
+	case WIFI_UTILS_AUTH_WPA3_PSK:
+		security_type = RTW_SECURITY_WPA3_AES_PSK;
+		password = softap_config->passphrase;
+		break;
 	case WIFI_UTILS_AUTH_UNKNOWN:
 	default:
 		ndbg("\r\nAP AUTH type is unknown %d;\n", softap_config->ap_auth_type);
@@ -442,7 +390,7 @@ int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config)
 		return WIFI_UTILS_INVALID_ARGS;
 	}
 
-	if (softap_config->ap_auth_type != WIFI_UTILS_AUTH_OPEN && softap_config->passphrase_length < 1) {
+	if (softap_config->ap_auth_type != TRWIFI_AUTH_OPEN && softap_config->passphrase_length < 1) {
 		ndbg("\r\nAP passphrase_length is wrong: %s,  %d;\n", softap_config->passphrase, softap_config->passphrase_length);
 		return WIFI_UTILS_INVALID_ARGS;
 	}
@@ -457,21 +405,12 @@ int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config)
 		return -1;
 	}
 
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-	//TODO
-#else
-	//LwIP_UseStaticIP(pnetif);
-	dhcps_init(pnetif);
-#endif
-#endif
-
 	nvdbg("\r\nap start");
 
 	return ret;
 }
 
-int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
+int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 {
 	int ret;
 
@@ -487,12 +426,11 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 	wifi_utils_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
 	wifi_utils_ap_crypto_type_e crypto = ap_connect_config->ap_crypto_type;
 	/* WIFI_MANAGER_CRYPTO_AES: 3 */
-	if (crypto == 3 && auth != WIFI_UTILS_AUTH_WPA2_PSK) {
+	if (crypto == 3 && ((auth != WIFI_UTILS_AUTH_WPA2_PSK) && (auth != WIFI_UTILS_AUTH_WPA3_PSK))) {
 		ndbg("\r\nInvalid crypto/auth match\n");
 		return -1;
 	}
 	ssid = ap_connect_config->ssid;
-
 	switch (auth) {
 	case WIFI_UTILS_AUTH_OPEN:
 		security_type = RTW_SECURITY_OPEN;
@@ -516,6 +454,14 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 		break;
 	case WIFI_UTILS_AUTH_WPA2_PSK:
 		security_type = RTW_SECURITY_WPA2_AES_PSK;
+		password = ap_connect_config->passphrase;
+		ssid_len = strlen((const char *)ssid);
+		password_len = ap_connect_config->passphrase_length;
+		key_id = 0;
+		semaphore = NULL;
+		break;
+	case WIFI_UTILS_AUTH_WPA3_PSK:
+		security_type = RTW_SECURITY_WPA3_AES_PSK;
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
@@ -560,15 +506,6 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 		return -1;
 	}
 
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-		//TODO
-#else
-		/* Start DHCPClient */
-		LwIP_DHCP(0, DHCP_START);
-#endif
-#endif
-
 	return 0;
 }
 
@@ -600,14 +537,6 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 	wext_get_mode(WLAN0_NAME, &mode);
 
 	if (mode == IW_MODE_MASTER) {
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-		//TODO
-#else
-
-        dhcps_deinit();
-#endif
-#endif
 		wifi_off();
 		vTaskDelay(20);
 		if (wifi_on(RTW_MODE_STA) < 0) {
@@ -675,15 +604,6 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 		return -1;
 	} else {
 		ndbg("\r\nConnected\n");
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-		//TODO
-#else
-
-		/* Start DHCPClient */
-		LwIP_DHCP(0, DHCP_START);
-#endif
-#endif
 	}
 
 	return 0;
@@ -730,14 +650,7 @@ int8_t cmd_wifi_disconnect(void)
 void cmd_wifi_info(int argc, char **argv)
 {
 	int i = 0;
-#if CONFIG_LWIP_LAYER
-#if !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-	u8 *mac = LwIP_GetMAC(&xnetif[0]);
-	u8 *ip = LwIP_GetIP(&xnetif[0]);
-	u8 *gw = LwIP_GetGW(&xnetif[0]);
-#endif
-#endif
-	u8 *ifname[2] = {WLAN0_NAME, WLAN1_NAME};
+	u8 *ifname[2] = {(unsigned char*)WLAN0_NAME, (unsigned char*)WLAN1_NAME};
 #ifdef CONFIG_MEM_MONITOR
 	extern int min_free_heap_size;
 #endif
@@ -745,15 +658,6 @@ void cmd_wifi_info(int argc, char **argv)
 	rtw_wifi_setting_t setting;
 	for (i = 0; i < NET_IF_NUM; i++) {
 		if (rltk_wlan_running(i)) {
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-			//TODO
-#else
-			mac = LwIP_GetMAC(&xnetif[i]);
-			ip = LwIP_GetIP(&xnetif[i]);
-			gw = LwIP_GetGW(&xnetif[i]);
-#endif			
-#endif
 			nvdbg("\n\r\nWIFI %s Status: Running", ifname[i]);
 			nvdbg("\n\r==============================");
 
@@ -761,17 +665,7 @@ void cmd_wifi_info(int argc, char **argv)
 
 			wifi_get_setting((const char *)ifname[i], &setting);
 			wifi_show_setting((const char *)ifname[i], &setting);
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-			//TODO
-#else
-			printf("\n\rInterface (%s)", ifname[i]);
-			printf("\n\r==============================");
-			printf("\n\r\tMAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]) ;
-			printf("\n\r\tIP  => %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-			printf("\n\r\tGW  => %d.%d.%d.%d\n\r", gw[0], gw[1], gw[2], gw[3]);
-#endif
-#endif
+
 			if (setting.mode == RTW_MODE_AP || i == 1) {
 				int client_number;
 				struct {
@@ -840,20 +734,6 @@ void cmd_wifi_info(int argc, char **argv)
 #endif
 }
 
-/*
- * Wi-Fi driver doesn't need to set mac address because
- * Wi-Fi manager does it.
- */
-#include <net/if.h>
-extern struct netif *netdev_findbyname(FAR const char *ifname);
-static void _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
-{
-	struct netif *dev = netdev_findbyname(ifname);
-	if (dev) {
-		memcpy(dev->d_mac.ether_addr_octet, macaddr, IFHWADDRLEN);
-	}
-}
-
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
 	int ret;
@@ -874,19 +754,9 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 	{
 		rtw_wifi_setting_t setting;
 
-#if CONFIG_LWIP_LAYER
-		uint8_t *mac = LwIP_GetMAC(&xnetif[0]);
-		uint8_t *ip = LwIP_GetIP(&xnetif[0]);
-#endif
-
 		wifi_get_setting(WLAN0_NAME, &setting);
 		wifi_show_setting(WLAN0_NAME, &setting);
 
-#if CONFIG_LWIP_LAYER
-		nvdbg("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-		nvdbg("\n\r  IP  => %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-		_netlib_setmacaddr(CONFIG_WIFIMGR_STA_IFNAME, mac);
-#endif
 	}
 
 	nvdbg("\r\n===============>>Finish wifi_on!!\r\n");
@@ -928,7 +798,7 @@ static void _free_scanlist(void)
 	while (g_scan_list) {
 		wifi_utils_scan_list_s *cur = g_scan_list;
 		g_scan_list = g_scan_list->next;
-		rtw_mfree(cur, sizeof(wifi_utils_scan_list_s));
+		rtw_mfree((unsigned char *)cur, sizeof(wifi_utils_scan_list_s));
 	}
 	g_scan_num = 0;
 }
@@ -1070,7 +940,7 @@ static void cmd_ping(int argc, char **argv)
 {
 	ndbg("\n\r NOT SUPPORTED");
 }
-#if (CONFIG_GENERATE_RUN_TIME_STATS == 1)
+#ifdef CONFIG_GENERATE_RUN_TIME_STATS
 static char cBuffer[512];
 static void cmd_cpustat(int argc, char **argv)
 {
@@ -1091,7 +961,7 @@ static void cmd_edit_reg(int argc, char **argv)
 static void cmd_exit(int argc, char **argv)
 {
 	nvdbg("\n\rLeave INTERACTIVE MODE");
-	task_delete(NULL);
+	task_delete(0);
 }
 
 static void cmd_debug(int argc, char **argv)
@@ -1137,11 +1007,11 @@ static void cmd_debug(int argc, char **argv)
 		rtw_bss_info_t ap_info;
 		rtw_security_t sec;
 		if (wifi_get_ap_info(&ap_info, &sec) == RTW_SUCCESS) {
-			RTW_API_INFO(("\r\nSSID  : %s\r\n", (char *)ap_info.SSID));
+			RTW_API_INFO("\r\nSSID  : %s\r\n", (char *)ap_info.SSID);
 			RTW_API_INFO("BSSID : " MAC_FMT "\r\n", MAC_ARG(ap_info.BSSID.octet));
 			RTW_API_INFO("RSSI  : %d\r\n", ap_info.RSSI);
 			RTW_API_INFO("Beacon period : %d\r\n", ap_info.beacon_period);
-			RTW_API_INFO(("Security : %s\r\n", (sec == RTW_SECURITY_OPEN) ? "Open" : (sec == RTW_SECURITY_WEP_PSK) ? "WEP" : (sec == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" : (sec == RTW_SECURITY_WPA_AES_PSK) ? "WPA AES" : (sec == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" : (sec == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" : (sec == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" : "Unknown"));
+			RTW_API_INFO("Security : %s\r\n", (sec == RTW_SECURITY_OPEN) ? "Open" : (sec == RTW_SECURITY_WEP_PSK) ? "WEP" : (sec == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" : (sec == RTW_SECURITY_WPA_AES_PSK) ? "WPA AES" : (sec == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" : (sec == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" : (sec == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" : "Unknown");
 		}
 	} else if (strcmp(argv[1], "reg_mc") == 0) {
 		rtw_mac_t mac;

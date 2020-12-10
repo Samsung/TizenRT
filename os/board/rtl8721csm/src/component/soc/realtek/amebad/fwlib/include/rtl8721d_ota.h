@@ -79,7 +79,7 @@ typedef struct
 	u32	Checksum;	/*!< Specifies the OTA image checksum.
 	                         	This parameter is used to judge whether the image received is correct. */
 	u32  ImgLen;		/*!< Specifies the OTA image length. */
-	u32  Offset;		/*!< Specifies the the location in the total firmware file. */
+	u32  Offset;		/*!< Specifies the location in the total firmware file. */
 	u32  FlashAddr;    /*!< Specifies the flash offset address of the corresponding image. */
 }update_file_img_hdr;
 

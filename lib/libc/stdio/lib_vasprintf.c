@@ -158,7 +158,7 @@ int vasprintf(FAR char **ptr, const char *fmt, va_list ap)
 	 * for the null terminator.
 	 */
 
-	buf = (FAR char *)malloc(nulloutstream.nput + 1);
+	buf = (FAR char *)lib_malloc(nulloutstream.nput + 1);
 	if (!buf) {
 		return ERROR;
 	}

@@ -21,14 +21,10 @@
 #include <tinyara/config.h>
 #include <sys/types.h>
 
-extern void *regionx_start[CONFIG_MM_REGIONS];
-extern size_t regionx_size[CONFIG_MM_REGIONS];
-extern int regionx_heap_idx[CONFIG_MM_REGIONS];
-
 #ifdef CONFIG_MM_KERNEL_HEAP
 extern void *kregionx_start[CONFIG_KMM_REGIONS];
 extern size_t kregionx_size[CONFIG_KMM_REGIONS];
-extern int regionx_kheap_idx[CONFIG_KMM_REGIONS];
+extern int kregionx_heap_idx[CONFIG_KMM_REGIONS];
 #endif
 
 #endif

@@ -97,7 +97,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 	ICMP6_STATS_INC(icmp6.recv);
 
 	/* Check that ICMPv6 header fits in payload */
-	if (p->len < sizeof(struct icmp6_hdr)) {
+	if (p->tot_len < sizeof(struct icmp6_hdr)) {
 		/* drop short packets */
 		pbuf_free(p);
 		ICMP6_STATS_INC(icmp6.lenerr);
@@ -125,6 +125,13 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 	case ICMP6_TYPE_RA:		/* Router advertisement */
 	case ICMP6_TYPE_RD:		/* Redirect */
 	case ICMP6_TYPE_PTB:		/* Packet too big */
+		// [TAHI ND#127]
+		if (ip_data.is_atomic_frag == 2) {
+			/* drop */
+			pbuf_free(p);
+			ICMP6_STATS_INC(icmp6.drop);
+			return;
+		}
 		nd6_input(p, inp);
 		return;
 	case ICMP6_TYPE_RS:

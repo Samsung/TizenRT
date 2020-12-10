@@ -63,8 +63,15 @@
 
 #include <tinyara/fs/mksmartfs.h>
 #include <tinyara/board.h>
+#ifdef CONFIG_FLASH_PARTITION
+#include <tinyara/fs/mtd.h>
+#endif
 #include <arch/board/board.h>
 #include "gpio_api.h"
+#include "timer_api.h"
+#ifdef CONFIG_FLASH_PARTITION
+#include "common.h"
+#endif
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -90,70 +97,77 @@ void board_gpio_initialize(void)
 		u32 pinmode;
 		u32 pinpull;
 	} pins[] = {
-		{PA_0, PIN_OUTPUT, PullNone}, 
-		{PA_1, PIN_OUTPUT, PullNone},
-		{PA_2, PIN_OUTPUT, PullNone},
-		{PA_3, PIN_OUTPUT, PullNone}, 
-		{PB_5, PIN_OUTPUT, PullNone},
-		{PA_12, PIN_INPUT, PullDown},
-/*		{PA_6, PIN_OUTPUT, PullNone}, 
-		{PA_7, PIN_OUTPUT, PullNone},
-		{PA_8, PIN_OUTPUT, PullNone},
-		{PA_9, PIN_OUTPUT, PullNone}, 
-		{PA_10, PIN_OUTPUT, PullNone},
-		{PA_11, PIN_OUTPUT, PullNone},
-		{PA_12, PIN_OUTPUT, PullNone}, 
-		{PA_13, PIN_OUTPUT, PullNone},
-		{PA_14, PIN_OUTPUT, PullNone},
-		{PA_15, PIN_OUTPUT, PullNone}, 
-		{PA_16, PIN_OUTPUT, PullNone},
-		{PA_17, PIN_OUTPUT, PullNone},
-		{PA_18, PIN_OUTPUT, PullNone}, 
-		{PA_19, PIN_OUTPUT, PullNone},
-		{PA_20, PIN_OUTPUT, PullNone},
-		{PA_21, PIN_OUTPUT, PullNone}, 
-		{PA_22, PIN_OUTPUT, PullNone},
-		{PA_23, PIN_OUTPUT, PullNone},
-		{PA_24, PIN_OUTPUT, PullNone}, 
-		{PA_25, PIN_OUTPUT, PullNone},
-		{PA_26, PIN_OUTPUT, PullNone},
-		{PB_27, PIN_OUTPUT, PullNone}, 
-		{PA_28, PIN_OUTPUT, PullNone},
-		{PA_29, PIN_OUTPUT, PullNone},
-		{PA_30, PIN_OUTPUT, PullNone}, 
-		{PA_31, PIN_OUTPUT, PullNone},
-		{PB_0, PIN_OUTPUT, PullNone}, 
-		{PB_1, PIN_OUTPUT, PullNone},
-		{PB_2, PIN_OUTPUT, PullNone},
-		{PB_3, PIN_OUTPUT, PullNone}, 
-		{PB_4, PIN_OUTPUT, PullNone},
-		{PB_5, PIN_OUTPUT, PullNone},
-		{PB_6, PIN_OUTPUT, PullNone}, 
-		{PB_7, PIN_OUTPUT, PullNone},
-		{PB_8, PIN_OUTPUT, PullNone},
-		{PB_9, PIN_OUTPUT, PullNone}, 
-		{PB_10, PIN_OUTPUT, PullNone},
-		{PB_11, PIN_OUTPUT, PullNone},
-		{PB_12, PIN_OUTPUT, PullNone}, 
-		{PB_13, PIN_OUTPUT, PullNone},
-		{PB_14, PIN_OUTPUT, PullNone},
-		{PB_15, PIN_OUTPUT, PullNone}, 
-		{PB_16, PIN_OUTPUT, PullNone},
-		{PB_17, PIN_OUTPUT, PullNone},
-		{PB_18, PIN_OUTPUT, PullNone}, 
-		{PB_19, PIN_OUTPUT, PullNone},
-		{PB_20, PIN_OUTPUT, PullNone},
-		{PB_21, PIN_OUTPUT, PullNone}, 
-		{PB_22, PIN_OUTPUT, PullNone},
-		{PB_23, PIN_OUTPUT, PullNone},
-		{PB_24, PIN_OUTPUT, PullNone}, 
-		{PB_25, PIN_OUTPUT, PullNone},
-		{PB_26, PIN_OUTPUT, PullNone},
-		{PB_27, PIN_OUTPUT, PullNone}, 
-		{PB_28, PIN_OUTPUT, PullNone},
-		{PB_29, PIN_OUTPUT, PullNone},
-		{PB_30, PIN_OUTPUT, PullNone}, 
-		{PB_31, PIN_OUTPUT, PullNone}, */
+		{
+			PA_0, PIN_OUTPUT, PullNone
+		}, {
+			PA_1, PIN_OUTPUT, PullNone
+		}, {
+			PA_2, PIN_OUTPUT, PullNone
+		}, {
+			PA_3, PIN_OUTPUT, PullNone
+		}, {
+			PB_5, PIN_OUTPUT, PullNone
+		}, {
+			PA_12, PIN_INPUT, PullDown
+		},
+		/*		{PA_6, PIN_OUTPUT, PullNone},
+				{PA_7, PIN_OUTPUT, PullNone},
+				{PA_8, PIN_OUTPUT, PullNone},
+				{PA_9, PIN_OUTPUT, PullNone},
+				{PA_10, PIN_OUTPUT, PullNone},
+				{PA_11, PIN_OUTPUT, PullNone},
+				{PA_12, PIN_OUTPUT, PullNone},
+				{PA_13, PIN_OUTPUT, PullNone},
+				{PA_14, PIN_OUTPUT, PullNone},
+				{PA_15, PIN_OUTPUT, PullNone},
+				{PA_16, PIN_OUTPUT, PullNone},
+				{PA_17, PIN_OUTPUT, PullNone},
+				{PA_18, PIN_OUTPUT, PullNone},
+				{PA_19, PIN_OUTPUT, PullNone},
+				{PA_20, PIN_OUTPUT, PullNone},
+				{PA_21, PIN_OUTPUT, PullNone},
+				{PA_22, PIN_OUTPUT, PullNone},
+				{PA_23, PIN_OUTPUT, PullNone},
+				{PA_24, PIN_OUTPUT, PullNone},
+				{PA_25, PIN_OUTPUT, PullNone},
+				{PA_26, PIN_OUTPUT, PullNone},
+				{PB_27, PIN_OUTPUT, PullNone},
+				{PA_28, PIN_OUTPUT, PullNone},
+				{PA_29, PIN_OUTPUT, PullNone},
+				{PA_30, PIN_OUTPUT, PullNone},
+				{PA_31, PIN_OUTPUT, PullNone},
+				{PB_0, PIN_OUTPUT, PullNone},
+				{PB_1, PIN_OUTPUT, PullNone},
+				{PB_2, PIN_OUTPUT, PullNone},
+				{PB_3, PIN_OUTPUT, PullNone},
+				{PB_4, PIN_OUTPUT, PullNone},
+				{PB_5, PIN_OUTPUT, PullNone},
+				{PB_6, PIN_OUTPUT, PullNone},
+				{PB_7, PIN_OUTPUT, PullNone},
+				{PB_8, PIN_OUTPUT, PullNone},
+				{PB_9, PIN_OUTPUT, PullNone},
+				{PB_10, PIN_OUTPUT, PullNone},
+				{PB_11, PIN_OUTPUT, PullNone},
+				{PB_12, PIN_OUTPUT, PullNone},
+				{PB_13, PIN_OUTPUT, PullNone},
+				{PB_14, PIN_OUTPUT, PullNone},
+				{PB_15, PIN_OUTPUT, PullNone},
+				{PB_16, PIN_OUTPUT, PullNone},
+				{PB_17, PIN_OUTPUT, PullNone},
+				{PB_18, PIN_OUTPUT, PullNone},
+				{PB_19, PIN_OUTPUT, PullNone},
+				{PB_20, PIN_OUTPUT, PullNone},
+				{PB_21, PIN_OUTPUT, PullNone},
+				{PB_22, PIN_OUTPUT, PullNone},
+				{PB_23, PIN_OUTPUT, PullNone},
+				{PB_24, PIN_OUTPUT, PullNone},
+				{PB_25, PIN_OUTPUT, PullNone},
+				{PB_26, PIN_OUTPUT, PullNone},
+				{PB_27, PIN_OUTPUT, PullNone},
+				{PB_28, PIN_OUTPUT, PullNone},
+				{PB_29, PIN_OUTPUT, PullNone},
+				{PB_30, PIN_OUTPUT, PullNone},
+				{PB_31, PIN_OUTPUT, PullNone}, */
 	};
 
 	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
@@ -165,31 +179,40 @@ void board_gpio_initialize(void)
 
 void amebad_mount_partions(void)
 {
-#if defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_FS_ROMFS)
-	int ret;
-#endif
-
 #ifdef CONFIG_FLASH_PARTITION
+	int ret;
+	struct mtd_dev_s *mtd;
+
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+	/* Configure mtd partitions */
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	if (ret != OK) {
+		lldbg("ERROR: configure_mtd_partitions failed\n");
+		return;
+	}
+#ifdef CONFIG_AMEBAD_AUTOMOUNT
+#ifdef CONFIG_AMEBAD_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
+		lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
 		ret = mount(CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME, CONFIG_AMEBAD_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed\n", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif
+#endif /* CONFIG_AMEBAD_AUTOMOUNT_USERFS */
 
-#ifdef CONFIG_FS_ROMFS
+#ifdef CONFIG_AMEBAD_AUTOMOUNT_ROMFS
 	ret = mount(CONFIG_AMEBAD_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_AMEBAD_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
 	if (ret != OK) {
 		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", CONFIG_AMEBAD_AUTOMOUNT_ROMFS_DEVNAME);
 	}
-#endif
+#endif /* CONFIG_AMEBAD_AUTOMOUNT_ROMFS */
+#endif /* CONFIG_AMEBAD_AUTOMOUNT */
+#endif /* CONFIG_FLASH_PARTITION */
 }
-
 
 /****************************************************************************
  * Name: board_initialize
@@ -207,8 +230,18 @@ void amebad_mount_partions(void)
 #ifdef CONFIG_BOARD_INITIALIZE
 void board_initialize(void)
 {
-	configure_partitions();
 	amebad_mount_partions();
 	board_gpio_initialize();
+#ifdef CONFIG_WATCHDOG
+	amebad_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
+#endif
+#ifdef CONFIG_TIMER
+	int i;
+	char path[CONFIG_PATH_MAX];
+	for (i = 0; i < GTIMER_MAX; i++) {
+		snprintf(path, sizeof(path), "/dev/timer%d", i);
+		amebad_timer_initialize(path, i);
+	}
+#endif
 }
 #endif

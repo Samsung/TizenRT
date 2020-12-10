@@ -60,7 +60,7 @@
 
 #include <tinyara/mm/mm.h>
 
-#if defined(CONFIG_MM_KERNEL_HEAP) && defined(CONFIG_DEBUG)
+#if defined(CONFIG_MM_KERNEL_HEAP)
 
 /************************************************************************
  * Pre-processor definition
@@ -99,23 +99,20 @@
  ************************************************************************/
 bool kmm_heapmember(FAR void *mem)
 {
-	int kheap_idx;
-	int region_idx;
 	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *pheap = mm_get_heap(mem);
 
-	/* A valid address from the kernel heap for this region would have to lie
-	 * between the region's two guard nodes.
+	/* mm_get_heap will return either the kernel heap (if no app loaded)
+	 * or app heap (if app is loaded and running) or NULL (if app heap is
+	 * de-activated and app is reloading)
 	 */
+	int kheap_idx;
 
 	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
-		for (region_idx = 0; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
-			if (mem >= (FAR void *)kheap[kheap_idx].mm_heapstart[region_idx] && mem < (FAR void *)kheap[kheap_idx].mm_heapend[region_idx]) {
-				return true;
-			}
+		if (&kheap[kheap_idx] == pheap) {
+			return true;
 		}
 	}
-
-	/* The address does not like any any region assigned to kernel heap */
 
 	return false;
 }

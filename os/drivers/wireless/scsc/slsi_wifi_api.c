@@ -408,7 +408,7 @@ static char *slsi_send_request(char *cmd, int8_t *success)
 		return NULL;
 	}
 
-	char *buf = (char *)zalloc(WPA_BUFFER_SIZE);
+	char *buf = (char *)kmm_zalloc(WPA_BUFFER_SIZE);
 	if (buf == NULL) {
 		return buf;
 	}
@@ -459,7 +459,7 @@ static void slsi_send_command_str_digit(char *string, int digit)
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%d", string, digit);
 	pbuf = slsi_send_request(command, NULL);
 	if (pbuf) {
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 	}
 }
@@ -481,7 +481,7 @@ static void slsi_send_command_str_upto_4(char *one, char *two, char *three, char
 		pbuf = slsi_send_request(command, result);
 	}
 	if (pbuf) {
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 	}
 }
@@ -492,7 +492,7 @@ static int8_t slsi_save_config(void)
 	char *pbuf = NULL;
 	pbuf = slsi_send_request(WPA_COMMAND_SAVE_CONFIG, &result);
 	if (pbuf) {
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 	}
 	return result;
@@ -574,7 +574,7 @@ static bool slsi_get_security_from_flags(const char *flag_str, slsi_security_con
 		} else {
 			ret = TRUE;
 			*sec_count = mode_count;
-			*sec = zalloc(sizeof(slsi_security_config_t) * mode_count);
+			*sec = kmm_zalloc(sizeof(slsi_security_config_t) * mode_count);
 			if (*sec == NULL) {
 				EPRINT("could not allocate memory for security mode block\n");
 				ret = FALSE;
@@ -668,7 +668,7 @@ static uint8_t *slsi_hexstr_2_bytearray(char *str, size_t str_size, size_t *arra
 		return NULL;
 	}
 	array_len = str_len / 2;
-	byte_array = (uint8_t *)zalloc(array_len + 1);
+	byte_array = (uint8_t *)kmm_zalloc(array_len + 1);
 	if (byte_array) {
 		char a, b;
 		VPRINT("length=%d, bytes= ", array_len);
@@ -695,7 +695,7 @@ static uint8_t *slsi_hexstr_2_bytearray(char *str, size_t str_size, size_t *arra
 static uint8_t *slsi_bytearray_2_hexstr(const uint8_t *bytes, size_t size, size_t *stringlen)
 {
 
-	uint8_t *hexstr = zalloc((size * 2) + 1);	//need room for null termination
+	uint8_t *hexstr = kmm_zalloc((size * 2) + 1);	//need room for null termination
 	if (hexstr != NULL) {
 		uint8_t *ptr = hexstr;
 		size_t i = 0;
@@ -896,7 +896,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 					}
 				}
 				if (bytes) {
-					free(bytes);
+					kmm_free(bytes);
 					bytes = NULL;
 				}
 			}
@@ -913,14 +913,14 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 			goto errout;
 		}
 		*end = '\0';
-		char *tmpflags = zalloc(end - pos + 1);
+		char *tmpflags = kmm_zalloc(end - pos + 1);
 		if (tmpflags == NULL) {
 			goto errout;
 		}
 		strlcpy(tmpflags, pos, end - pos + 1);
 		bool device_supported = slsi_get_security_from_flags(tmpflags, &info->sec_modes, &info->num_sec_modes);
 		if (tmpflags) {
-			free(tmpflags);
+			kmm_free(tmpflags);
 			tmpflags = NULL;
 		}
 		if (!device_supported) {
@@ -943,13 +943,13 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 
 	}
 	if (pbuf) {
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 		return TRUE;
 	}
 errout:
 	if (pbuf) {
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 	}
 	return FALSE;
@@ -1049,22 +1049,22 @@ static void slsi_clean_recover(void)
 	sem_post(&g_sem_recover);
 	// Free join_config security
 	if (g_recovery_data.security) {
-		free(g_recovery_data.security);
+		kmm_free(g_recovery_data.security);
 		g_recovery_data.security = NULL;
 	}
 	// Free ap_config security
 	slsi_ap_config_t *t_ap_config = &g_recovery_data.ap_config;
 	if (t_ap_config->security) {
-		free(t_ap_config->security);
+		kmm_free(t_ap_config->security);
 		t_ap_config->security = NULL;
 	}
 	// Free ap_config vsie
 	if (t_ap_config->vsie) {
 		if (t_ap_config->vsie->content) {
-			free(t_ap_config->vsie->content);
+			kmm_free(t_ap_config->vsie->content);
 			t_ap_config->vsie->content = NULL;
 		}
-		free(t_ap_config->vsie);
+		kmm_free(t_ap_config->vsie);
 		t_ap_config->vsie = NULL;
 	}
 	// Clean g_recovery_data
@@ -1171,7 +1171,7 @@ static void slsi_reinitiate_state(void)
 		/* Setup mode */
 		slsi_ap_config_t *pl_ap_config = slsi_get_ap_config();
 		res_api = slsi_api_start(g_recovery_data.old_interface_type, pl_ap_config);
-		free(pl_ap_config);
+		kmm_free(pl_ap_config);
 		DPRINT("WiFiStart 2 returned result=%d \n", res_api);
 		if (res_api != SLSI_STATUS_SUCCESS) {
 			EPRINT("Not able to start Wi-Fi 2! \n");
@@ -1271,7 +1271,7 @@ void slsi_monitor_thread_handler(void *param)
 			result = strchr(result, '>');
 			if (result == NULL) {
 				if (tmp) {
-					free(tmp);
+					kmm_free(tmp);
 					tmp = NULL;
 				}
 				continue;
@@ -1394,7 +1394,7 @@ void slsi_monitor_thread_handler(void *param)
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 							if (g_network_id) {
 								slsi_remove_network(g_network_id);
-								free(g_network_id);
+								kmm_free(g_network_id);
 								g_network_id = NULL;
 							}
 						}
@@ -1430,7 +1430,7 @@ void slsi_monitor_thread_handler(void *param)
 						}
 						if (g_network_id) {
 							slsi_remove_network(g_network_id);
-							free(g_network_id);
+							kmm_free(g_network_id);
 							g_network_id = NULL;
 						}
 						if (g_link_down) {
@@ -1494,7 +1494,7 @@ void slsi_monitor_thread_handler(void *param)
 				}
 			}
 			if (tmp) {
-				free(tmp);
+				kmm_free(tmp);
 				tmp = NULL;
 			}
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
@@ -1517,7 +1517,7 @@ static int8_t slsi_recv_pending(char **result)
 	}
 	while (wpa_ctrl_pending(g_ctrl_conn) > 0) {
 		size_t len = WPA_BUFFER_SIZE - 1;
-		char *buf = zalloc(len + 1);
+		char *buf = kmm_zalloc(len + 1);
 		if (buf == NULL) {
 			return 0;
 		} else {
@@ -1530,7 +1530,7 @@ static int8_t slsi_recv_pending(char **result)
 				EPRINT("SLSI_API Could not read pending message.\n");
 				UNUSED(buf);	//prevent lint warning
 				if (buf) {
-					free(buf);
+					kmm_free(buf);
 					// prevent lint warning so no buf = NULL;
 				}
 			}
@@ -1669,14 +1669,14 @@ static int8_t slsi_get_network(uint8_t *ssid, uint8_t ssid_len, char **network_i
 		}
 		result = SLSI_STATUS_SUCCESS;
 		if (pbuf) {
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 		}
 	}
 	return result;
 errout:
 	if (pbuf) {
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 	}
 	return result;
@@ -1736,7 +1736,7 @@ static int8_t slsi_check_status(uint8_t *ssid, int8_t *ssid_len, char *bssid)
 		}
 		result = SLSI_STATUS_SUCCESS;
 		if (pbuf) {
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 		}
 	}
@@ -1744,7 +1744,7 @@ static int8_t slsi_check_status(uint8_t *ssid, int8_t *ssid_len, char *bssid)
 
 errout:
 	if (pbuf) {
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 	}
 	return result;
@@ -1881,7 +1881,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 			}
 			char *pbuf = slsi_send_request(command, &result);
 			if (pbuf) {
-				free(pbuf);
+				kmm_free(pbuf);
 				pbuf = NULL;
 				if (result != SLSI_STATUS_SUCCESS) {
 					goto errout;
@@ -1901,7 +1901,7 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 {
 
 	// Clean up structure
-	slsi_ap_config_t *p_ap_config = zalloc(sizeof(slsi_ap_config_t));
+	slsi_ap_config_t *p_ap_config = kmm_zalloc(sizeof(slsi_ap_config_t));
 
 	if (p_ap_config == NULL) {
 		EPRINT("Memory allocation failed \n");
@@ -1910,7 +1910,7 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 		memcpy(p_ap_config, tmp_ap_config, sizeof(slsi_ap_config_t));
 
 		if (tmp_ap_config->security) {
-			p_ap_config->security = zalloc(sizeof(slsi_security_config_t));
+			p_ap_config->security = kmm_zalloc(sizeof(slsi_security_config_t));
 			if (p_ap_config->security == NULL) {
 				EPRINT("Memory allocation failed \n");
 			} else {
@@ -1918,13 +1918,13 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 			}
 		}
 		if (tmp_ap_config->vsie) {
-			p_ap_config->vsie = zalloc(sizeof(slsi_vendor_ie_t));
+			p_ap_config->vsie = kmm_zalloc(sizeof(slsi_vendor_ie_t));
 			if (p_ap_config->vsie == NULL) {
 				EPRINT("Memory allocation failed \n");
 			} else {
 				memcpy(p_ap_config->vsie, tmp_ap_config->vsie, sizeof(slsi_vendor_ie_t));
 			}
-			p_ap_config->vsie->content = zalloc(tmp_ap_config->vsie->content_length);
+			p_ap_config->vsie->content = kmm_zalloc(tmp_ap_config->vsie->content_length);
 			if (p_ap_config->vsie->content == NULL) {
 				EPRINT("Memory allocation failed \n");
 			} else {
@@ -1941,15 +1941,15 @@ static void slsi_save_ap_config(slsi_ap_config_t *ap_config)
 	// Clean up structure
 	slsi_ap_config_t *t_ap_config = &g_recovery_data.ap_config;
 	if (t_ap_config->security) {
-		free(t_ap_config->security);
+		kmm_free(t_ap_config->security);
 		t_ap_config->security = NULL;
 	}
 	if (t_ap_config->vsie) {
 		if (t_ap_config->vsie->content) {
-			free(t_ap_config->vsie->content);
+			kmm_free(t_ap_config->vsie->content);
 			t_ap_config->vsie->content = NULL;
 		}
-		free(t_ap_config->vsie);
+		kmm_free(t_ap_config->vsie);
 		t_ap_config->vsie = NULL;
 	}
 	memset(&g_recovery_data.ap_config, 0, sizeof(slsi_ap_config_t));
@@ -1957,7 +1957,7 @@ static void slsi_save_ap_config(slsi_ap_config_t *ap_config)
 	// Save new config
 	memcpy(&g_recovery_data.ap_config, ap_config, sizeof(slsi_ap_config_t));
 	if (ap_config->security) {
-		t_ap_config->security = zalloc(sizeof(slsi_security_config_t));
+		t_ap_config->security = kmm_zalloc(sizeof(slsi_security_config_t));
 		if (t_ap_config->security == NULL) {
 			EPRINT("Memory allocation failed \n");
 		} else {
@@ -1965,7 +1965,7 @@ static void slsi_save_ap_config(slsi_ap_config_t *ap_config)
 		}
 	}
 	if (ap_config->vsie) {
-		t_ap_config->vsie = zalloc(sizeof(slsi_vendor_ie_t));
+		t_ap_config->vsie = kmm_zalloc(sizeof(slsi_vendor_ie_t));
 		if (t_ap_config->vsie == NULL) {
 			EPRINT("Memory allocation failed \n");
 		} else {
@@ -1973,7 +1973,7 @@ static void slsi_save_ap_config(slsi_ap_config_t *ap_config)
 		}
 
 		if (ap_config->vsie->content) {
-			t_ap_config->vsie->content = zalloc(ap_config->vsie->content_length);
+			t_ap_config->vsie->content = kmm_zalloc(ap_config->vsie->content_length);
 			if (t_ap_config->vsie->content == NULL) {
 				EPRINT("Memory allocation failed \n");
 			} else {
@@ -1987,7 +1987,7 @@ static void slsi_save_join(uint8_t *ssid, int ssid_len, uint8_t *bssid, const sl
 {
 	// Clean up structure
 	if (g_recovery_data.security) {
-		free(g_recovery_data.security);
+		kmm_free(g_recovery_data.security);
 		g_recovery_data.security = NULL;
 	}
 	memset(&(g_recovery_data.ssid), 0, sizeof(g_recovery_data.ssid));
@@ -2006,7 +2006,7 @@ static void slsi_save_join(uint8_t *ssid, int ssid_len, uint8_t *bssid, const sl
 
 	if (sec_config) {
 		// TODO: security not saved!!!
-		g_recovery_data.security = zalloc(sizeof(slsi_security_config_t));
+		g_recovery_data.security = kmm_zalloc(sizeof(slsi_security_config_t));
 		if (g_recovery_data.security == NULL) {
 			EPRINT("Memory allocation failed \n");
 		} else {
@@ -2038,7 +2038,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 		if (pbuf) {
 			pbuf[strcspn(pbuf, "\r\n")] = '\0';
 			network_id = strdup(pbuf);
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 		} else {
 			goto errout;
@@ -2050,7 +2050,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %sP\"%s\"", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SSID, ssid_formatted);
 		pbuf = slsi_send_request(command, &result);
 		if (pbuf) {
-			free(pbuf);
+			kmm_free(pbuf);
 			// removed to prevent lint warning pbuf = NULL;
 			if (result != SLSI_STATUS_SUCCESS) {
 				goto errout;
@@ -2061,7 +2061,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SCAN_SSID, 1);
 		pbuf = slsi_send_request(command, &result);
 		if (pbuf) {
-			free(pbuf);
+			kmm_free(pbuf);
 			// removed to prevent lint warning pbuf = NULL;
 			if (result != SLSI_STATUS_SUCCESS) {
 				goto errout;
@@ -2090,7 +2090,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 			goto errout;
 		}
 		if (g_network_id) {
-			free(g_network_id);
+			kmm_free(g_network_id);
 			g_network_id = NULL;
 		}
 		g_network_id = strdup(network_id);
@@ -2098,7 +2098,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 
 errout:
 	if (network_id) {
-		free(network_id);
+		kmm_free(network_id);
 		network_id = NULL;
 	}
 
@@ -2195,7 +2195,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 			pbuf[strcspn(pbuf, "\r\n")] = '\0';
 			network_id = strdup(pbuf);
 			if (pbuf) {
-				free(pbuf);
+				kmm_free(pbuf);
 				//removed to prevent lint warning pbuf = NULL;
 			}
 		}
@@ -2220,7 +2220,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 			snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %sP\"%s\"", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SSID, ssid_formated);
 			pbuf = slsi_send_request(command, &result);
 			if (pbuf) {
-				free(pbuf);
+				kmm_free(pbuf);
 				//removed to prevent lint warning pbuf = NULL;
 				if (result != SLSI_STATUS_SUCCESS) {
 					goto errout;
@@ -2270,7 +2270,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 					snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_FREQUENCY, localFreq);
 					pbuf = slsi_send_request(command, &result);
 					if (pbuf) {
-						free(pbuf);
+						kmm_free(pbuf);
 						// removed to prevent lint error pbuf = NULL;
 						if (result != SLSI_STATUS_SUCCESS) {
 							goto errout;
@@ -2292,7 +2292,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_BEACON_INT, ap_config->beacon_period);
 				pbuf = slsi_send_request(command, &result);
 				if (pbuf) {
-					free(pbuf);
+					kmm_free(pbuf);
 					// removed to prevent lint warning pbuf = NULL;
 					if (result != SLSI_STATUS_SUCCESS) {
 						goto errout;
@@ -2305,7 +2305,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_DTIM_PERIOD, ap_config->DTIM);
 				pbuf = slsi_send_request(command, &result);
 				if (pbuf) {
-					free(pbuf);
+					kmm_free(pbuf);
 					// removed to prevent lint warning pbuf = NULL;
 					if (result != SLSI_STATUS_SUCCESS) {
 						goto errout;
@@ -2316,14 +2316,14 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 			if (ap_config->vsie != NULL) {
 				DPRINT("OUI: %02X%02X%02X\n", ap_config->vsie->oui[0], ap_config->vsie->oui[1], ap_config->vsie->oui[2]);
 				uint32_t cmdsize = ap_config->vsie->content_length * 3 + 30;
-				char *tcommand = zalloc(cmdsize);
+				char *tcommand = kmm_zalloc(cmdsize);
 				size_t slen = 0;
 
 				if (tcommand == NULL) {
 					goto errout;
 				}
 				if (ap_config->vsie->content_length > 253) {
-					free(tcommand);
+					kmm_free(tcommand);
 					result = SLSI_STATUS_PARAM_FAILED;
 					goto errout;
 				}
@@ -2334,13 +2334,13 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				snprintf(tcommand, cmdsize, "%s%s%02X%02X%02X %s", WPA_COMMAND_SET, WPA_PARAM_VSIE, ap_config->vsie->oui[0], ap_config->vsie->oui[1], ap_config->vsie->oui[2], iehex);
 				pbuf = slsi_send_request(tcommand, &result);
 				if (iehex != NULL) {
-					free(iehex);
+					kmm_free(iehex);
 				}
 				if (tcommand) {
-					free(tcommand);
+					kmm_free(tcommand);
 				}
 				if (pbuf) {
-					free(pbuf);
+					kmm_free(pbuf);
 					// removed to prevent lint warning pbuf = NULL;
 					if (result != SLSI_STATUS_SUCCESS) {
 						goto errout;
@@ -2397,7 +2397,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 					snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%x", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_HT_MCS, ap_config->ht_mode.mcs_index);
 					pbuf = slsi_send_request(command, &result);
 					if (pbuf) {
-						free(pbuf);
+						kmm_free(pbuf);
 						pbuf = NULL;
 						if (result != SLSI_STATUS_SUCCESS) {
 							goto errout;
@@ -2427,7 +2427,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 					goto errout;
 				}
 				if (g_network_id) {
-					free(g_network_id);
+					kmm_free(g_network_id);
 					g_network_id = NULL;
 				}
 				g_network_id = strdup(network_id);
@@ -2447,7 +2447,7 @@ errout:
 			slsi_demo_app_sleep(1, "AP setup");
 		}
 		if (network_id) {
-			free(network_id);
+			kmm_free(network_id);
 			network_id = NULL;
 		}
 	}
@@ -2501,7 +2501,7 @@ slsi_scan_info_t *slsi_parse_scan_results(char *sr)
 		return results;
 	}
 
-	slsi_scan_info_t *local_scan_result = (slsi_scan_info_t *)zalloc((size_t)sizeof(slsi_scan_info_t));
+	slsi_scan_info_t *local_scan_result = (slsi_scan_info_t *)kmm_zalloc((size_t)sizeof(slsi_scan_info_t));
 	if (local_scan_result == NULL) {
 		return results;
 	}
@@ -2538,7 +2538,7 @@ slsi_scan_info_t *slsi_parse_scan_results(char *sr)
 			pos = end + 1;
 			if (*pos != '\0') {
 				local_prev = local_scan_result;
-				local_scan_result->next = zalloc(sizeof(slsi_scan_info_t));
+				local_scan_result->next = kmm_zalloc(sizeof(slsi_scan_info_t));
 				local_scan_result = local_scan_result->next;
 			} else {
 				local_scan_result->next = NULL;
@@ -2552,7 +2552,7 @@ slsi_scan_info_t *slsi_parse_scan_results(char *sr)
 	if (discarted) {
 		if (local_scan_result) {
 			VPRINT("Allocated one to many - set previous next to NULL\n");
-			free(local_scan_result);
+			kmm_free(local_scan_result);
 			local_scan_result = NULL;
 			if (local_prev) {
 				local_prev->next = NULL;
@@ -2572,7 +2572,7 @@ static int8_t slsi_get_api_scan_results(slsi_scan_info_t **result_handler)
 	pbuf = slsi_send_request(command, NULL);
 	if (pbuf) {
 		*result_handler = slsi_parse_scan_results(pbuf);
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 		result = SLSI_STATUS_SUCCESS;
 	}
@@ -2599,7 +2599,7 @@ static int8_t slsi_get_bssid(char **bssid)
 		pos = strstr(pbuf, WPA_VALUE_BSSID);
 		if (pos == NULL) {
 			VPRINT("SLSI_API get bssid FAILED");
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 			goto errout;
 		}
@@ -2607,14 +2607,14 @@ static int8_t slsi_get_bssid(char **bssid)
 		end = strchr(pos, '\n');
 		if (end == NULL) {
 			VPRINT("SLSI_API get bssid FAILED");
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 			goto errout;
 		}
 		*end = '\0';
 		VPRINT("SLSI_API get_bssid bssid %s\n", pos);
 		memcpy(*bssid, pos, 18);
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 		result = SLSI_STATUS_SUCCESS;
 	}
@@ -2634,7 +2634,7 @@ static int8_t slsi_get_country_code(char *country_code)
 		result = SLSI_STATUS_SUCCESS;
 	}
 	if (nvram) {
-		free(nvram);
+		kmm_free(nvram);
 		nvram = NULL;
 	}
 
@@ -2660,7 +2660,7 @@ static int8_t slsi_set_country_code(const char *country_code, bool write_to_nvra
 	}
 	if (write_to_nvram) {
 		if (nvram == NULL) {
-			nvram = malloc(4 * 1024);	// flash block size of 4k
+			nvram = kmm_malloc(4 * 1024);	// flash block size of 4k
 		}
 		// set the country code in NV ram for next time
 		//start by reading the existing values form NVRAM and Erase to be ready for writing
@@ -2687,7 +2687,7 @@ static int8_t slsi_set_country_code(const char *country_code, bool write_to_nvra
 	if (g_state == SLSI_WIFIAPI_STATE_NOT_STARTED) {
 		// we need to cleanup nvram as it will only get cleaned on wifistop
 		if (nvram != NULL) {
-			free(nvram);
+			kmm_free(nvram);
 			nvram = NULL;
 		}
 	}
@@ -2709,13 +2709,13 @@ static int8_t slsi_get_tx_power(uint8_t *dbm)
 		*dbm = strtol(pbuf, &end, 10);
 		VPRINT("dbm = %d\n", *dbm);
 		pos = end + 1;
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 		result = SLSI_STATUS_SUCCESS;
 	} else {
 		DPRINT("Could not get tx_power from supplicant, trying from NVRAM\n");
 		if (nvram == NULL) {
-			nvram = malloc(4 * 1024);	// flash block size of 4k
+			nvram = kmm_malloc(4 * 1024);	// flash block size of 4k
 		}
 		if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
 			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)nvram;
@@ -2725,7 +2725,7 @@ static int8_t slsi_get_tx_power(uint8_t *dbm)
 		}
 	}
 	if (nvram) {
-		free(nvram);
+		kmm_free(nvram);
 		nvram = NULL;
 	}
 
@@ -2765,7 +2765,7 @@ static int8_t slsi_set_tx_power(uint8_t *dbm, bool write_to_nvram, bool write_to
 	if (g_state == SLSI_WIFIAPI_STATE_NOT_STARTED) {
 		// we need to cleanup nvram as it will only get cleaned on wifistop
 		if (nvram != NULL) {
-			free(nvram);
+			kmm_free(nvram);
 			nvram = NULL;
 		}
 	}
@@ -2790,7 +2790,7 @@ static int8_t slsi_get_rssi(int8_t *rssi_value)
 		pos = strstr(pbuf, WPA_VALUE_RSSI);
 		if (pos == NULL) {
 			VPRINT("SLSI_API get_rssi cannot find: %s\n", WPA_VALUE_RSSI);
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 			goto errout;
 		}
@@ -2798,7 +2798,7 @@ static int8_t slsi_get_rssi(int8_t *rssi_value)
 		end = strchr(pos, '\n');
 		if (end == NULL) {
 			VPRINT("SLSI_API get_rssi failed \n");
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 			goto errout;
 		}
@@ -2837,7 +2837,7 @@ static int8_t slsi_get_mac(uint8_t *mac)
 		}
 		if (pos == NULL) {
 			VPRINT("SLSI_API get_mac parameter missing WPA_VALUE_ADDRESS\n");
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 			goto errout;
 		}
@@ -2845,7 +2845,7 @@ static int8_t slsi_get_mac(uint8_t *mac)
 		end = strchr(pos, '\n');
 		if (end == NULL) {
 			VPRINT("SLSI_API get_mac command 2 FAILED\n");
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 			goto errout;
 		}
@@ -2855,7 +2855,7 @@ static int8_t slsi_get_mac(uint8_t *mac)
 			VPRINT("SLSI_API get_mac select: %02x\n", mac[i]);
 			pos += 3;
 		}
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 		result = SLSI_STATUS_SUCCESS;
 	}
@@ -2877,14 +2877,14 @@ static int8_t slsi_get_channel(int8_t *channel)
 		pos = strstr(pbuf, WPA_VALUE_FREQ);
 		if (pos == NULL) {
 			VPRINT("SLSI_API get: %s FAILED \n", WPA_VALUE_FREQ);
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 			goto errout;
 		}
 		pos += 5;
 		end = strchr(pos, '\n');
 		if (end == NULL) {
-			free(pbuf);
+			kmm_free(pbuf);
 			pbuf = NULL;
 			goto errout;
 		}
@@ -2893,7 +2893,7 @@ static int8_t slsi_get_channel(int8_t *channel)
 		VPRINT("SLSI_API channel: %d\n", *channel);
 		result = SLSI_STATUS_SUCCESS;
 		pos = end + 1;
-		free(pbuf);
+		kmm_free(pbuf);
 		pbuf = NULL;
 	}
 errout:
@@ -3057,7 +3057,7 @@ static void slsi_init_nvram(void)
 {
 
 	if (nvram == NULL) {
-		nvram = zalloc(4 * 1024);	// flash block size of 4k
+		nvram = kmm_zalloc(4 * 1024);	// flash block size of 4k
 		if (!nvram) {
 			return;
 		}
@@ -3112,28 +3112,28 @@ static int8_t slsi_init(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t
 		VPRINT("start ap_config available\n");
 		if (g_ap_config != NULL) {
 			if (g_ap_config->security) {
-				free(g_ap_config->security);	// We might have a sec. config to free
+				kmm_free(g_ap_config->security);	// We might have a sec. config to free
 				g_ap_config->security = NULL;
 			}
 			if (g_ap_config->vsie) {
 				if (g_ap_config->vsie->content) {
-					free(g_ap_config->vsie->content);
+					kmm_free(g_ap_config->vsie->content);
 					g_ap_config->vsie->content = NULL;
 				}
-				free(g_ap_config->vsie);	// We might have a vsie config to free
+				kmm_free(g_ap_config->vsie);	// We might have a vsie config to free
 				g_ap_config->vsie = NULL;
 			}
-			free(g_ap_config);	// Free app_config of needed
+			kmm_free(g_ap_config);	// Free app_config of needed
 			g_ap_config = NULL;
 		}
-		g_ap_config = zalloc(sizeof(slsi_ap_config_t));
+		g_ap_config = kmm_zalloc(sizeof(slsi_ap_config_t));
 		if (g_ap_config == NULL) {
 			goto errout;
 		}
 
 		*g_ap_config = *ap_config;
 		if (ap_config->security) {
-			g_ap_config->security = zalloc(sizeof(slsi_security_config_t));
+			g_ap_config->security = kmm_zalloc(sizeof(slsi_security_config_t));
 			if (g_ap_config->security == NULL) {
 				goto errout;
 			}
@@ -3142,12 +3142,12 @@ static int8_t slsi_init(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t
 			g_ap_config->security = NULL;
 		}
 		if (ap_config->vsie) {
-			g_ap_config->vsie = zalloc(sizeof(slsi_vendor_ie_t));
+			g_ap_config->vsie = kmm_zalloc(sizeof(slsi_vendor_ie_t));
 			if (g_ap_config->vsie == NULL) {
 				goto errout;
 			}
 			*(g_ap_config->vsie) = *(ap_config->vsie);
-			g_ap_config->vsie->content = zalloc(ap_config->vsie->content_length);
+			g_ap_config->vsie->content = kmm_zalloc(ap_config->vsie->content_length);
 			if (g_ap_config->vsie->content == NULL) {
 				goto errout;
 			}
@@ -3219,28 +3219,28 @@ static void slsi_deinit(void)
 	sem_destroy(&g_sem_api_block);
 
 	if (nvram != NULL) {
-		free(nvram);
+		kmm_free(nvram);
 		nvram = NULL;
 	}
 	if (g_ap_config != NULL) {
 		if (g_ap_config->security) {
-			free(g_ap_config->security);	// We might have a sec. config to free
+			kmm_free(g_ap_config->security);	// We might have a sec. config to free
 			g_ap_config->security = NULL;
 		}
 		if (g_ap_config->vsie) {
 			if (g_ap_config->vsie->content) {
-				free(g_ap_config->vsie->content);	// We might have a vsie config to free
+				kmm_free(g_ap_config->vsie->content);	// We might have a vsie config to free
 				g_ap_config->vsie->content = NULL;
 			}
-			free(g_ap_config->vsie);	// We might have a vsie config to free
+			kmm_free(g_ap_config->vsie);	// We might have a vsie config to free
 			g_ap_config->vsie = NULL;
 		}
 		// Free app_config of needed
-		free(g_ap_config);
+		kmm_free(g_ap_config);
 		g_ap_config = NULL;
 	}
 	if (g_network_id) {
-		free(g_network_id);
+		kmm_free(g_network_id);
 		g_network_id = NULL;
 	}
 }
@@ -3276,7 +3276,7 @@ static int8_t slsi_api_start(WiFi_InterFace_ID_t interface_id, const slsi_ap_con
 				// remove network
 				if (g_network_id) {
 					slsi_remove_network(g_network_id);
-					free(g_network_id);
+					kmm_free(g_network_id);
 					g_network_id = NULL;
 				}
 			}
@@ -3322,7 +3322,7 @@ static int8_t slsi_api_start(WiFi_InterFace_ID_t interface_id, const slsi_ap_con
 #endif
 		if (result != SLSI_STATUS_SUCCESS && (slsi_get_op_mode() == SLSI_WIFI_SOFT_AP_IF)) {
 			if (g_network_id) {
-				free(g_network_id);
+				kmm_free(g_network_id);
 				g_network_id = NULL;
 			}
 		}
@@ -3404,7 +3404,7 @@ int8_t WiFiStop(void)
 		// remove network
 		if (g_network_id) {
 			slsi_remove_network(g_network_id);
-			free(g_network_id);
+			kmm_free(g_network_id);
 			g_network_id = NULL;
 		}
 	} else {
@@ -3462,9 +3462,9 @@ int8_t WiFiFreeScanResults(slsi_scan_info_t **scan_results)
 	while (tmp_bss_list != NULL) {
 		tmp = tmp_bss_list;
 		tmp_bss_list = tmp_bss_list->next;
-		free(tmp->sec_modes);
+		kmm_free(tmp->sec_modes);
 		tmp->sec_modes = NULL;
-		free(tmp);
+		kmm_free(tmp);
 	}
 	tmp = NULL;
 	*scan_results = NULL;
@@ -3779,7 +3779,7 @@ slsi_security_config_t *getSecurityConfig(char *sec_type, char *psk, WiFi_InterF
 {
 	slsi_security_config_t *ret = NULL;
 	if (strncmp(SLSI_WIFI_SECURITY_OPEN, sec_type, sizeof(SLSI_WIFI_SECURITY_OPEN)) != 0) {
-		ret = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
+		ret = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (ret) {
 			if (strncmp(SLSI_WIFI_SECURITY_WEP_OPEN, sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_OPEN)) == 0) {
 				ret->secmode = SLSI_SEC_MODE_WEP;
@@ -3804,7 +3804,7 @@ slsi_security_config_t *getSecurityConfig(char *sec_type, char *psk, WiFi_InterF
 			memcpy(ret->passphrase, psk, strlen(psk));
 		} else {
 			if (ret) {
-				free(ret);
+				kmm_free(ret);
 				ret = NULL;
 			}
 		}

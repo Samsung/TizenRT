@@ -4,9 +4,7 @@
 #if !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 #include "main.h"
 #endif
-#include <lwip_netconf.h>
 #include <lwip/sockets.h>
-#include <dhcp/dhcps.h>
 #include "lwip/tcpip.h"
 #endif
 #include <platform/platform_stdlib.h>
@@ -59,10 +57,6 @@ extern u8 rtw_get_band_type(void);
 /******************************************************
  *               Variables Declarations
  ******************************************************/
-
-#if !defined(CONFIG_MBED_ENABLED)
-extern struct netif xnetif[NET_IF_NUM];
-#endif
 
 /******************************************************
  *               Variables Definitions
@@ -393,14 +387,6 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 			error_flag = RTW_UNKNOWN;
 	}
 	
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	dhcp_stop(&xnetif[0]);
-#endif
-#endif
-
 	if(join_user_data != NULL) {
 		rtw_up_sema(&join_user_data->join_sema);
 	} else {
@@ -740,13 +726,6 @@ int wifi_connect(
 	}
 
 	result = RTW_SUCCESS;
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	netif_set_link_up(&xnetif[0]);
-#endif
-#endif
 
 #if CONFIG_EXAMPLE_WLAN_FAST_CONNECT || (defined(CONFIG_JD_SMART) && CONFIG_JD_SMART)
 	restore_wifi_info_to_flash();
@@ -873,14 +852,6 @@ int wifi_connect_bssid(
 	}
 
 	result = RTW_SUCCESS;
-	
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	netif_set_link_up(&xnetif[0]);
-#endif
-#endif
 
 #if CONFIG_EXAMPLE_WLAN_FAST_CONNECT || (defined(CONFIG_JD_SMART) && CONFIG_JD_SMART)
 	restore_wifi_info_to_flash();
@@ -1307,20 +1278,6 @@ int wifi_on(rtw_mode_t mode)
 		rtw_msleep_os(1000);
 		timeout --;
 	}
-
-	#if CONFIG_LWIP_LAYER
-	#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-	#else
-	netif_set_up(&xnetif[0]);
-	if(mode == RTW_MODE_AP) 
-		netif_set_link_up(&xnetif[0]);
-	else	 if(mode == RTW_MODE_STA_AP) {
-		netif_set_up(&xnetif[1]);		
-		netif_set_link_up(&xnetif[1]);
-	}
-	#endif
-	#endif
 	
 #if CONFIG_INIC_EN
 	inic_start();
@@ -1339,16 +1296,7 @@ int wifi_off(void)
 		RTW_API_INFO("\n\rWIFI is not running");
 		return 0;
 	}
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	dhcps_deinit();
-	LwIP_DHCP(0, DHCP_STOP);
-	netif_set_down(&xnetif[0]);
-	netif_set_down(&xnetif[1]);
-#endif
-#endif
+
 #if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
 	if((wifi_mode ==  RTW_MODE_AP) || (wifi_mode == RTW_MODE_STA_AP))
 		wpas_wps_deinit();
@@ -1389,14 +1337,6 @@ int wifi_off(void)
 
 int wifi_off_fastly(void)
 {
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	dhcps_deinit();
-	LwIP_DHCP(0, DHCP_STOP);
-#endif	
-#endif	
 	//RTW_API_INFO("\n\rDeinitializing WIFI ...");
 	device_mutex_lock(RT_DEV_LOCK_WLAN);
 	rltk_wlan_deinit_fastly();
@@ -1422,10 +1362,6 @@ int wifi_set_mode(rtw_mode_t mode)
 		//must add this delay, because this API may have higher priority, wifi_disconnect will rely RTW_CMD task, may not be excuted immediately.	
 		rtw_mdelay_os(50);	
 
-#if CONFIG_LWIP_LAYER	
-		netif_set_link_up(&xnetif[0]);	
-#endif	
-
 		wifi_mode = mode;
 	}else if((wifi_mode == RTW_MODE_AP) && (mode ==RTW_MODE_STA)){
 		RTW_API_INFO("\n\r[%s] WIFI Mode Change: AP-->STA",__FUNCTION__);
@@ -1434,10 +1370,6 @@ int wifi_set_mode(rtw_mode_t mode)
 		if(ret < 0) return -1;
 
 		rtw_mdelay_os(50);	
-		
-#if CONFIG_LWIP_LAYER			
-		netif_set_link_down(&xnetif[0]);	
-#endif	
 
 		wifi_mode = mode;
 
@@ -1460,9 +1392,6 @@ int wifi_set_mode(rtw_mode_t mode)
 		ret = wext_set_mode(WLAN0_NAME, IW_MODE_INFRA);
 		if(ret < 0) return -1;
 		rtw_mdelay_os(50);	
-#if CONFIG_LWIP_LAYER			
-		netif_set_link_down(&xnetif[0]);	
-#endif	
 		wifi_mode = mode;
 	}else{
 		RTW_API_INFO("\n\rWIFI Mode Change: not support");
@@ -1645,16 +1574,6 @@ int wifi_start_ap(
 #if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
 	wpas_wps_init(ifname);
 #endif	
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	if(wifi_mode == RTW_MODE_STA_AP)
-		netif_set_link_up(&xnetif[1]);
-	else
-		netif_set_link_up(&xnetif[0]);
-#endif
-#endif
 exit:
 #endif
 	return ret;
@@ -2222,16 +2141,7 @@ int wifi_restart_ap(
 {
 #if defined (CONFIG_AP_MODE) && defined (CONFIG_NATIVEAP_MLME)
 	unsigned char idx = 0;
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	ip_addr_t ipaddr;
-	ip_addr_t netmask;
-	ip_addr_t gw;
-	struct netif * pnetif = &xnetif[0];
-#endif
-#endif
+
 #ifdef  CONFIG_CONCURRENT_MODE
 	rtw_wifi_setting_t setting;
 	int sta_linked = 0;
@@ -2240,15 +2150,6 @@ int wifi_restart_ap(
 	if(rltk_wlan_running(WLAN1_IDX)){
 		idx = 1;
 	}
-
-	// stop dhcp server
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	dhcps_deinit();
-#endif
-#endif
 
 #ifdef  CONFIG_CONCURRENT_MODE
 	if(idx > 0){
@@ -2260,23 +2161,6 @@ int wifi_restart_ap(
 	else
 #endif
 	{
-#if CONFIG_LWIP_LAYER	
-#if defined(CONFIG_MBED_ENABLED)
-		//TODO
-#else
-#if LWIP_VERSION_MAJOR >= 2
-		IP4_ADDR(ip_2_ip4(&ipaddr), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-		IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1 , NETMASK_ADDR2, NETMASK_ADDR3);
-		IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-		netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask),ip_2_ip4(&gw));
-#else
-		IP4_ADDR(&ipaddr, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-		IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1 , NETMASK_ADDR2, NETMASK_ADDR3);
-		IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-		netif_set_addr(pnetif, &ipaddr, &netmask,&gw);
-#endif
-#endif
-#endif
 		wifi_off();
 		rtw_msleep_os(20);
 		wifi_on(RTW_MODE_AP);			
@@ -2322,14 +2206,6 @@ int wifi_restart_ap(
 	RTW_API_INFO("\r\nWebServer Thread: High Water Mark is %ld\n", uxTaskGetStackHighWaterMark(NULL));
 #endif
 #endif
-#if CONFIG_LWIP_LAYER
-#if defined(CONFIG_MBED_ENABLED)
-	//TODO
-#else
-	// start dhcp server
-	dhcps_init(&xnetif[idx]);
-#endif
-#endif
 #endif
 	return 0;
 }
@@ -2365,28 +2241,6 @@ static void wifi_autoreconnect_thread(void *param)
 	RTW_API_INFO("\n\rauto reconnect ...\n");
 	ret = wifi_connect(reconnect_param->ssid, reconnect_param->security_type, reconnect_param->password,
 	                   reconnect_param->ssid_len, reconnect_param->password_len, reconnect_param->key_id, NULL);
-#if CONFIG_LWIP_LAYER
-	if(ret == RTW_SUCCESS) {
-#if ATCMD_VER == ATVER_2
-		if (dhcp_mode_sta == 2){
-			struct netif * pnetif = &xnetif[0];
-			LwIP_UseStaticIP(pnetif);
-			dhcps_init(pnetif);
-		}
-		else
-#endif
-		{
-			LwIP_DHCP(0, DHCP_START);
-#if LWIP_AUTOIP
-			uint8_t *ip = LwIP_GetIP(&xnetif[0]);
-			if((ip[0] == 0) && (ip[1] == 0) && (ip[2] == 0) && (ip[3] == 0)) {
-				RTW_API_INFO("\n\nIPv4 AUTOIP ...");
-				LwIP_AUTOIP(&xnetif[0]);
-			}
-#endif
-		}
-	}
-#endif //#if CONFIG_LWIP_LAYER
 	vTaskDelete(NULL);
 }
 
@@ -2618,151 +2472,6 @@ static uint16_t _checksum32to16(uint32_t checksum32)
 }
 #endif
 
-int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len, uint32_t interval_ms)
-{
-	/* To avoid gcc warnings */
-	( void ) socket_fd;
-	( void ) content;
-	( void ) len;
-	( void ) interval_ms;
-	
-#ifdef CONFIG_WOWLAN_TCP_KEEP_ALIVE
-	struct sockaddr_in peer_addr, sock_addr;
-	socklen_t peer_addr_len = sizeof(peer_addr);
-	socklen_t sock_addr_len = sizeof(sock_addr);
-	getpeername(socket_fd, (struct sockaddr *) &peer_addr, &peer_addr_len);
-	getsockname(socket_fd, (struct sockaddr *) &sock_addr, &sock_addr_len);
-	uint8_t *peer_ip = (uint8_t *) &peer_addr.sin_addr;
-	uint16_t peer_port = ntohs(peer_addr.sin_port);
-	uint8_t *sock_ip = (uint8_t *) &sock_addr.sin_addr;
-	uint16_t sock_port = ntohs(sock_addr.sin_port);
-
-	// ip header
-	uint8_t ip_header[IP_HDR_LEN] = {0x45, 0x00, /*len*/ 0x00, 0x00 /*len*/, /*id*/ 0x00, 0x00 /*id*/, 0x00, 0x00, 0xff, /*protocol*/ 0x00 /*protocol*/,
-		/*chksum*/ 0x00, 0x00 /*chksum*/, /*srcip*/ 0x00, 0x00, 0x00, 0x00 /*srcip*/, /*dstip*/ 0x00, 0x00, 0x00, 0x00 /*dstip*/};
-	// len
-	uint16_t ip_len = IP_HDR_LEN + TCP_HDR_LEN + len;
-	ip_header[2] = (uint8_t) (ip_len >> 8);
-	ip_header[3] = (uint8_t) (ip_len & 0xff);
-	// id
-	extern u16_t ip4_getipid(void);
-	uint16_t ip_id = ip4_getipid();
-	ip_header[4] = (uint8_t) (ip_id >> 8);
-	ip_header[5] = (uint8_t) (ip_id & 0xff);
-	// protocol
-	ip_header[9] = 0x06;
-	// src ip
-	ip_header[12] = sock_ip[0];
-	ip_header[13] = sock_ip[1];
-	ip_header[14] = sock_ip[2];
-	ip_header[15] = sock_ip[3];
-	// dst ip
-	ip_header[16] = peer_ip[0];
-	ip_header[17] = peer_ip[1];
-	ip_header[18] = peer_ip[2];
-	ip_header[19] = peer_ip[3];
-	// checksum
-	uint32_t ip_checksum32 = 0;
-	uint16_t ip_checksum16 = 0;
-	ip_checksum32 = _checksum32(ip_checksum32, ip_header, sizeof(ip_header));
-	ip_checksum16 = _checksum32to16(ip_checksum32);
-	ip_header[10] = (uint8_t) (ip_checksum16 >> 8);
-	ip_header[11] = (uint8_t) (ip_checksum16 & 0xff);
-
-	// pseudo header
-	uint8_t pseudo_header[12] = {/*srcip*/ 0x00, 0x00, 0x00, 0x00 /*srcip*/, /*dstip*/ 0x00, 0x00, 0x00, 0x00 /*dstip*/,
-		0x00, /*protocol*/ 0x00 /*protocol*/, /*l4len*/ 0x00, 0x00 /*l4len*/};
-	// src ip
-	pseudo_header[0] = sock_ip[0];
-	pseudo_header[1] = sock_ip[1];
-	pseudo_header[2] = sock_ip[2];
-	pseudo_header[3] = sock_ip[3];
-	// dst ip
-	pseudo_header[4] = peer_ip[0];
-	pseudo_header[5] = peer_ip[1];
-	pseudo_header[6] = peer_ip[2];
-	pseudo_header[7] = peer_ip[3];
-	// protocol
-	pseudo_header[9] = 0x06;
-	// layer 4 len
-	uint16_t l4_len = TCP_HDR_LEN + len;
-	pseudo_header[10] = (uint8_t) (l4_len >> 8);
-	pseudo_header[11] = (uint8_t) (l4_len & 0xff);
-
-	// tcp header
-	uint8_t tcp_header[TCP_HDR_LEN] = {/*srcport*/ 0x00, 0x00 /*srcport*/, /*dstport*/ 0x00, 0x00 /*dstport*/, /*seqno*/ 0x00, 0x00, 0x00, 0x00 /*seqno*/,
-		/*ackno*/ 0x00, 0x00, 0x00, 0x00 /*ackno*/, 0x50, 0x18, /*window*/ 0x00, 0x00 /*window*/, /*checksum*/ 0x00, 0x00 /*checksum*/, 0x00, 0x00};
-	// src port
-	tcp_header[0] = (uint8_t) (sock_port >> 8);
-	tcp_header[1] = (uint8_t) (sock_port & 0xff);
-	// dst port
-	tcp_header[2] = (uint8_t) (peer_port >> 8);
-	tcp_header[3] = (uint8_t) (peer_port & 0xff);
-
-	uint32_t seqno = 0;
-	uint32_t ackno = 0;
-	uint16_t wnd = 0;
-	extern int lwip_gettcpstatus(int s, uint32_t *seqno, uint32_t *ackno, uint16_t *wnd);
-	lwip_gettcpstatus(socket_fd, &seqno, &ackno, &wnd);
-	// seqno
-	tcp_header[4] = (uint8_t) (seqno >> 24);
-	tcp_header[5] = (uint8_t) ((seqno & 0x00ff0000) >> 16);
-	tcp_header[6] = (uint8_t) ((seqno & 0x0000ff00) >> 8);
-	tcp_header[7] = (uint8_t) (seqno & 0x000000ff);
-	// ackno
-	tcp_header[8] = (uint8_t) (ackno >> 24);
-	tcp_header[9] = (uint8_t) ((ackno & 0x00ff0000) >> 16);
-	tcp_header[10] = (uint8_t) ((ackno & 0x0000ff00) >> 8);
-	tcp_header[11] = (uint8_t) (ackno & 0x000000ff);
-	// window
-	tcp_header[14] = (uint8_t) (wnd >> 8);
-	tcp_header[15] = (uint8_t) (wnd & 0xff);
-	// checksum
-	uint32_t tcp_checksum32 = 0;
-	uint16_t tcp_checksum16 = 0;
-	tcp_checksum32 = _checksum32(tcp_checksum32, pseudo_header, sizeof(pseudo_header));
-	tcp_checksum32 = _checksum32(tcp_checksum32, tcp_header, sizeof(tcp_header));
-	tcp_checksum32 = _checksum32(tcp_checksum32, content, len);
-	tcp_checksum16 = _checksum32to16(tcp_checksum32);
-	tcp_header[16] = (uint8_t) (tcp_checksum16 >> 8);
-	tcp_header[17] = (uint8_t) (tcp_checksum16 & 0xff);
-
-	// eth header
-	uint8_t eth_header[ETH_HDR_LEN] = {/*dstaddr*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /*dstaddr*/,
-		/*srcaddr*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /*srcaddr*/, 0x08, 0x00};
-	struct eth_addr *dst_eth_ret = NULL;
-	ip4_addr_t *dst_ip, *dst_ip_ret = NULL;
-	dst_ip = (ip4_addr_t *) peer_ip;
-	if(!ip4_addr_netcmp(dst_ip, netif_ip4_addr(&xnetif[0]), netif_ip4_netmask(&xnetif[0]))) {
-		//outside local network
-		dst_ip = (ip4_addr_t *) netif_ip4_gw(&xnetif[0]);
-	}
-	// dst addr
-	if(etharp_find_addr(&xnetif[0], dst_ip, &dst_eth_ret, &dst_ip_ret) >= 0) {
-		memcpy(eth_header, dst_eth_ret->addr, ETH_ALEN);
-	}
-	// src addr
-	memcpy(eth_header + ETH_ALEN, LwIP_GetMAC(&xnetif[0]), ETH_ALEN);
-
-	// eth frame without FCS
-	uint32_t frame_len = sizeof(eth_header) + sizeof(ip_header) + sizeof(tcp_header) + len;
-	uint8_t *eth_frame = (uint8_t *) malloc(frame_len);
-	memcpy(eth_frame, eth_header, sizeof(eth_header));
-	memcpy(eth_frame + sizeof(eth_header), ip_header, sizeof(ip_header));
-	memcpy(eth_frame + sizeof(eth_header) + sizeof(ip_header), tcp_header, sizeof(tcp_header));
-	memcpy(eth_frame + sizeof(eth_header) + sizeof(ip_header) + sizeof(tcp_header), content, len);
-
-	//extern void rtw_set_keepalive_offload(uint8_t *eth_frame, uint32_t frame_len, uint32_t interval_ms);
-	rtw_set_keepalive_offload(eth_frame, frame_len, interval_ms);
-
-	free(eth_frame);
-
-	return 0;
-#else
-	return -1;
-#endif
-}
-
 //----------------------------------------------------------------------------//
 #ifdef CONFIG_WOWLAN
 int wifi_wlan_redl_fw(void)
@@ -2847,13 +2556,4 @@ WL_BAND_TYPE wifi_get_band_type(void)
 	}
 }
 
-int wifi_set_tx_pause_data(unsigned int NewState)
-{
-	static u8 txpause_value;
-	if(NewState == ENABLE) {
-		rltk_get_tx_pause(&txpause_value);
-		return rltk_set_tx_pause(0xF);
-	}else
-		return rltk_set_tx_pause(txpause_value);
-}
 #endif	//#if CONFIG_WLAN

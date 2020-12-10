@@ -23,24 +23,38 @@
 #include <tinyara/config.h>
 #include <stdbool.h>
 #include <stdint.h>
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+#include <tinyara/binfmt/binfmt.h>
+#endif
 
 #include "up_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+extern uint32_t _stext;
+extern uint32_t _etext;
+extern uint32_t _sdata;
+extern uint32_t _edata;
+extern uint32_t _sbss;
+extern uint32_t _ebss;
 
 #ifdef CONFIG_BUILD_PROTECTED
-
 bool is_kernel_space(void *addr)
 {
-	uint32_t ksram_segment_end  = (uint32_t)__ksram_segment_start__  + (uint32_t)__ksram_segment_size__;
-	uint32_t kflash_segment_end = (uint32_t)__kflash_segment_start__ + (uint32_t)__kflash_segment_size__;
-
-	if ((addr >= (void *)__ksram_segment_start__ && addr <= (void *)ksram_segment_end) || (addr >= (void *)__kflash_segment_start__ && addr < (void *)kflash_segment_end)) {
+	if ((addr >= (void *)&_stext && addr <= (void *)&_etext) || (addr >= (void *)&_sdata && addr <= (void *)&_ebss)) {
 		return true;
 	}
 	return false;
 }
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+bool is_common_library_space(void *addr)
+{
+	if (g_lib_binp && addr >= (void *)g_lib_binp->alloc[ALLOC_TEXT] && addr <= (void *)(g_lib_binp->alloc[ALLOC_TEXT] + g_lib_binp->textsize)) {
+		return true;
+	}
+	return false;
+}
+#endif							/* CONFIG_SUPPORT_COMMON_BINARY */
 #endif							/* CONFIG_BUILD_PROTECTED */

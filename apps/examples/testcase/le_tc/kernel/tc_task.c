@@ -34,8 +34,9 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <tinyara/sched.h>
-#include <tinyara/testcase_drv.h>
+#include <tinyara/kernel_test_drv.h>
 #include "tc_internal.h"
+#include <semaphore.h>
 
 #define TEST_STRING     "test"
 #ifdef CONFIG_SCHED_ONEXIT
@@ -57,6 +58,7 @@ static volatile int task_cnt;
 static volatile pid_t ppid;
 #endif
 static bool task_init_flag;
+static sem_t task_sem;
 
 /**
 * @fn                   :create_task
@@ -187,6 +189,7 @@ static int test_task_entry(int argc, char *argv[])
 {
 	printf("test task entry\n");
 	task_init_flag = true;
+	(void)sem_post(&task_sem);
 
 	return OK;
 }
@@ -499,13 +502,20 @@ static void tc_task_task_reparent(void)
 */
 static void tc_task_task_init(void)
 {
+	int ret = 0;
+
 	task_init_flag = false;
+
+	sem_init(&task_sem, 0, 0);
 
 	TC_ASSERT_EQ("task_init", ioctl(tc_get_drvfd(), TESTIOC_TASK_INIT_TEST, (unsigned long)test_task_entry), OK);
 
-	usleep(1);
+	ret = sem_wait(&task_sem);
+	TC_ASSERT_EQ_CLEANUP("sem_wait", ret, OK, sem_destroy(&task_sem));
+	TC_ASSERT_EQ_CLEANUP("task_init", task_init_flag, true, sem_destroy(&task_sem));
 
-	TC_ASSERT_EQ("task_init", task_init_flag, true);
+	sem_destroy(&task_sem);
+
 
 	TC_SUCCESS_RESULT();
 }

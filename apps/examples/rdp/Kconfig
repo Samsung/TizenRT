@@ -6,8 +6,8 @@
 config EXAMPLES_RDP
 	bool "Read Protect example"
 	default n
-	depends on ARCH_CHIP_AMEBAD
-	depends on AMEBAD_TRUSTZONE
+	depends on ARMV8M_TRUSTZONE
+	select DRIVERS_KERNEL_TEST
 	---help---
 		Enable the Read Protect example
 

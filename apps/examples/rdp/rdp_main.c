@@ -57,57 +57,17 @@
 #include <sched.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <errno.h>
 
 #include <tinyara/config.h>
 #include <tinyara/arch.h>
-#include <arch/chip/amebad_nsc.h>
+#include <tinyara/kernel_test_drv.h>
 
 /****************************************************************************
  * Macros
  ****************************************************************************/
-
-#define CONFIG_MIN_SECURE_STACKSIZE				(1024)
-
-uint32_t no_protection_func(uint32_t data)
-{
-	uint32_t result;
-
-	result = data / 5 + 3;
-	result *= 2;
-	result += 8;
-
-	return result;
-}
-
-static int rdp_demo(int argc, FAR char *argv[])
-{
-	int i = 0;
-	uint32_t rdp_result;
-	uint32_t no_rdp_result;
-
-	/*
-	 * Tasks are not created with a secure context.
-	 * Any task that is going to call secure functions must call up_allocate_secure_context()
-	 * to allocate itself a secure context before it calls any secure function
-	 */
-	up_allocate_secure_context(CONFIG_MIN_SECURE_STACKSIZE);
-
-	for (i = 0; i < 32; i++){
-		rdp_result = rdp_protection_entry(i);
-		no_rdp_result = rdp_no_protection_call(no_protection_func, i);
-
-		if (rdp_result != no_rdp_result) {
-			printf("rdp call fail!\n");
-			printf("rdp_result = 0x%x, no_rdp_result=0x%x\n", rdp_result, no_rdp_result);
-			goto end;
-		}
-	}
-	printf("rdp demo call succeed!\n");
-end:
-	/* Frees the given secure context */
-	up_free_secure_context(tz_memory);
-	return 0;
-}
 
 /****************************************************************************
  * rdp_main
@@ -119,16 +79,24 @@ int main(int argc, FAR char *argv[])
 int rdp_main(int argc, char *argv[])
 #endif
 {
-	int pid;
+	int ret = 0;
+	int tc_fd = 0;
 
 	printf("rdp main!!\n");
+	tc_fd = open(KERNEL_TEST_DRVPATH, O_WRONLY);
 
-	/* Currently TZ support is on flat build only */
-#ifndef CONFIG_BUILD_KERNEL
-	pid = task_create("RDP DEMO", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)rdp_demo, (FAR char *const *)NULL);
-	if (pid < 0) {
-		printf("Failed to create rdp demo thread\n");
+	if (tc_fd < 0) {
+		printf("FAILED to open kernel test driver %s\n", KERNEL_TEST_DRVPATH);
+		return 0;
 	}
-#endif
+
+	ret = ioctl(tc_fd, TESTIOC_TZ, 0);
+
+	if (ret	< 0) {
+		printf("ERROR executing RDP test ioctl ERROR = %d\n", errno);
+	}
+
+	close(tc_fd);
+
 	return 0;
 }

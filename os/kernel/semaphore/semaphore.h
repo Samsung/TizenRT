@@ -112,6 +112,7 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb);
 void sem_freeholder(sem_t *sem, FAR struct semholder_s *pholder);
 void sem_initholders(void);
 void sem_destroyholder(FAR sem_t *sem);
+struct semholder_s *sem_findholder(sem_t *sem, FAR struct tcb_s *htcb);
 void sem_addholder(FAR sem_t *sem);
 void sem_addholder_tcb(FAR struct tcb_s *tcb, FAR sem_t *sem);
 void sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *htcb);

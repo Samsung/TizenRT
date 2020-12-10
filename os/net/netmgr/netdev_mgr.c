@@ -21,6 +21,7 @@
 #include <semaphore.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
@@ -67,7 +68,7 @@ int netdev_get_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t *hwaddr_len)
 }
 
 
-int netdev_input(struct netdev *dev, uint8_t *data, uint16_t len)
+int netdev_input(struct netdev *dev, void *data, uint16_t len)
 {
 	return ND_NETOPS(dev, input)(dev, data, len);
 }

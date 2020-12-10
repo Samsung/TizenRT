@@ -256,6 +256,12 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 			mm_shrinkchunk(heap, (FAR struct mm_allocnode_s *)node, size + SIZEOF_MM_ALLOCNODE);
 		}
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		heapinfo_update_node((struct mm_allocnode_s *)node, caller_retaddr);
+		heapinfo_add_size(heap, ((struct mm_allocnode_s *)node)->pid, node->size);
+		heapinfo_update_total_size(heap, node->size, ((struct mm_allocnode_s *)node)->pid);
+#endif
+
 		ret = (void *)alignchunk;
 	}
 
@@ -269,7 +275,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	if (!ret) {
 		mdbg("Allocation failed, size %u\n", size);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_parse(heap, HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
+		heapinfo_parse_heap(heap, HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
 #endif
 	} else {
 		mvdbg("Allocated %p, size %u\n", ret, size);

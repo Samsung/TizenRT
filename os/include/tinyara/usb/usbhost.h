@@ -648,7 +648,7 @@ struct usbhost_id_s {
 	uint16_t pid;				/* Product ID (for vendor/product specific devices) */
 };
 
-/* The struct usbhost_registry_s type describes information that is kept in the the
+/* The struct usbhost_registry_s type describes information that is kept in the
  * USB host registry.  USB host class implementations register this information so
  * that USB host drivers can later find the class that matches the device that is
  * connected to the USB port.

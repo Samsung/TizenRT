@@ -187,8 +187,9 @@ static int is_text_address(unsigned long programCounter)
 
 	if (((uintptr_t)programCounter >= (uintptr_t)&_stext &&
 		 (uintptr_t)programCounter < (uintptr_t)&_etext) ||
-		((uintptr_t)programCounter >= (uintptr_t)USERSPACE->us_textstart &&
-		 (uintptr_t)programCounter < (uintptr_t)USERSPACE->us_textend)) {
+		(sched_self()->uspace &&
+		 (uintptr_t)programCounter >= (uintptr_t)sched_self()->uspace->us_textstart &&
+		 (uintptr_t)programCounter < (uintptr_t)sched_self()->uspace->us_textend)) {
 		return 1;
 	}
 #else

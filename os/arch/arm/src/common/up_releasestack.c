@@ -61,6 +61,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/mpu.h>
 
 #include "up_internal.h"
 
@@ -123,18 +124,18 @@ void up_release_stack(FAR struct tcb_s *dtcb, uint8_t ttype)
 	/* Is there a stack allocated? */
 
 	if (dtcb->stack_alloc_ptr) {
-#ifdef HAVE_KERNEL_HEAP
-		/* Use the kernel allocator if this is a kernel thread */
-
-		if (ttype == TCB_FLAG_TTYPE_KERNEL) {
-			sched_kfree(dtcb->stack_alloc_ptr);
-		} else
-#endif
-		{
-			/* Use the user-space allocator if this is a task or pthread */
-
-			sched_ufree(dtcb->stack_alloc_ptr);
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		/* If this dtcb belongs to running thread, then it's stack
+		 * guard region would have been set as RO. In this case, in
+		 * order to avoid memfault, disable it's MPU region for stack
+		 * overflow protection before freeing allocated stack.
+		 */
+		if (up_mpu_check_active(dtcb->stack_mpu_regs)) {
+			up_mpu_disable_region(dtcb->stack_mpu_regs);
 		}
+#endif
+		/* Use the kernel allocator if this is a kernel thread */
+		sched_kfree(dtcb->stack_alloc_ptr);
 
 		/* Mark the stack freed */
 

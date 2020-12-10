@@ -80,7 +80,7 @@
 FAR void *mm_brkaddr(FAR struct mm_heap_s *heap, int region)
 {
 	uintptr_t brkaddr;
-#if CONFIG_MM_REGIONS > 1
+#if CONFIG_KMM_REGIONS > 1
 	DEBUGASSERT(heap && region < heap->mm_nregions);
 #else
 	DEBUGASSERT(heap && region == 0);

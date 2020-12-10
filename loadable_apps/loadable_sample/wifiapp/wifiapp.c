@@ -49,6 +49,10 @@ static void display_test_scenario(void)
 
 extern int preapp_start(int argc, char **argv);
 
+#ifdef CONFIG_EXAMPLES_SMARTFS_POWERCUT
+extern int smartfs_powercut_main(int argc, char *argv[]);
+#endif
+
 #ifdef CONFIG_APP_BINARY_SEPARATION
 int main(int argc, char **argv)
 #else
@@ -73,6 +77,9 @@ int wifiapp_main(int argc, char **argv)
 	}
 #endif
 
+#ifdef CONFIG_EXAMPLES_SMARTFS_POWERCUT
+	smartfs_powercut_main(0, NULL);
+#endif
 #ifndef CONFIG_ENABLE_RECOVERY_AGING_TEST
 	while (is_testing) {
 		display_test_scenario();
@@ -113,7 +120,7 @@ int wifiapp_main(int argc, char **argv)
 
 #endif /* CONFIG_EXAMPLES_MICOM_TIMER_TEST */
 	while (1) {
-		sleep(10);
+		sleep(300);
 		printf("[%d] WIFI ALIVE\n", getpid());
 	}
 	return 0;

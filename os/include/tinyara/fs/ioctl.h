@@ -236,7 +236,13 @@
 										 *      ProcFS data.
 										 * OUT: None (ioctl return value provides
 										 *      success/failure indication). */
-#define BIOC_DEBUGCMD   _BIOC(0x000B)	/* Send driver specific debug command /
+#define BIOC_FIBMAP     _BIOC(0x000B)	/* Reveal Physical sector number from bitmap
+										 * of block device.
+										 * IN:	Logical sector number which need
+										 *		to reveal physical sector.
+										 * OUT: Physical sector number align with
+										 *		logical sector number */
+#define BIOC_DEBUGCMD   _BIOC(0x00FF)	/* Send driver specific debug command /
 										 * data to the block device.
 										 * IN:  Pointer to a struct defined for
 										 *      the block with specific debug
@@ -383,7 +389,7 @@
 #define _IOTBUSIOC(nr)       _IOC(_IOTBUSBASE, nr)
 
 /* Kernel_tc driver ioctl definitions *************************************/
-/* (see tinyara/testcase_drv.h) */
+/* (see tinyara/kernel_test_drv.h) */
 
 #define _TESTIOCVALID(c) (_IOC_TYPE(c) == _TESTIOCBASE)
 #define _TESTIOC(nr)     _IOC(_TESTIOCBASE, nr)

@@ -50,7 +50,8 @@ ifeq ($(CONFIG_COMPRESSION_TYPE),$(LZMA))
 SOURCES		+= $(wildcard $(SRCDIR)/lzma/*.c)
 else
 ifeq ($(CONFIG_COMPRESSION_TYPE),$(MINIZ))
-SOURCES         += $(wildcard $(SRCDIR)/miniz/*.c)
+SOURCES		+= $(wildcard $(SRCDIR)/miniz/*.c)
+CFLAGS		+= -I$(TINYARADIR)/../external/include
 endif
 endif
 

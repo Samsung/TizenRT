@@ -142,6 +142,11 @@ void sched_kfree(FAR void *address)
 {
 	irqstate_t flags;
 
+	if (!kmm_heapmember(address)) {
+		sched_ufree(address);
+		return;
+	}
+
 	/* Check if this is an attempt to deallocate memory from an exception
 	 * handler.  If this function is called from the IDLE task, then we
 	 * must have exclusive access to the memory manager to do this.

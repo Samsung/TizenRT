@@ -112,7 +112,7 @@ void group_free(FAR struct task_group_s *group, FAR void *mem)
 
 	/* Check the group is privileged */
 
-	if ((group->tg_flags & GROUP_FLAG_PRIVILEGED) != 0) {
+	if (kmm_heapmember(mem)) {
 		/* It is a privileged group... use the kernel mode memory allocator */
 
 		return kmm_free(mem);

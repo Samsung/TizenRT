@@ -54,11 +54,12 @@ USBRULE_PATH=${THIS_PATH}/../usbrule.sh
 USBRULE_BOARD="imxrt"
 USBRULE_IDVENDOR="0d28"
 USBRULE_IDPRODUCT="0204"
+USBRULE_IDVENDOR2="0403"
+USBRULE_IDPRODUCT2="6010"
 
 OS_PATH=${TOP_PATH}/os
 OUTBIN_PATH=${TOP_PATH}/build/output/bin
 TTYDEV="/dev/ttyACM0"
-SUDO=sudo
 
 # Following to read partition information
 PARTITION_KCONFIG=${OS_PATH}/board/common/Kconfig
@@ -98,8 +99,8 @@ function bootstrap()
 {
 	source ${BOOTSTRAP_SCRIPT}
 
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- fill-memory 0x2000 0x04 0xc0233007
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- configure-memory 0x09 0x2000
+	${BLHOST} -p ${TTYDEV} -- fill-memory 0x2000 0x04 0xc0233007
+	${BLHOST} -p ${TTYDEV} -- configure-memory 0x09 0x2000
 }
 
 #Utility function to erase a part of flash
@@ -108,7 +109,7 @@ function flash_erase()
 {
 	echo -e "\nFLASH_ERASE: ADDR:$1 LENGTH:$2 KB"
 	size_in_bytes=$(($2 * 1024))
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- flash-erase-region $1 $size_in_bytes
+	${BLHOST} -p ${TTYDEV} -- flash-erase-region $1 $size_in_bytes
 }
 
 
@@ -117,7 +118,7 @@ function flash_erase()
 function flash_write()
 {
 	echo -e "\nFLASH_WRITE ADDR:$1 \nFILEPATH:$2 "
-	${SUDO} ${BLHOST} -p ${TTYDEV} -- write-memory $1 $2
+	${BLHOST} -p ${TTYDEV} -- write-memory $1 $2
 	sleep 2
 }
 
@@ -141,10 +142,10 @@ function get_executable_name()
 function get_partition_index()
 {
         case $1 in
-                kernel | Kernel | KERNEL) echo "0";;
-                app | App | APP) echo "1";;
-                micom | Micom | MICOM) echo "2";;
-                wifi | Wifi | WIFI) echo "4";;
+                kernel) echo "0";;
+                app) echo "1";;
+                micom) echo "2";;
+                wifi) echo "4";;
                 zoneinfo)
                 for i in "${!parts[@]}"
                 do
@@ -153,7 +154,7 @@ function get_partition_index()
                 fi
                 done
                 ;;
-                userfs | Userfs | USERFS)
+                userfs)
                 for i in "${!parts[@]}"
                 do
                    if [[ "${parts[$i]}" = "userfs" ]]; then
@@ -217,12 +218,12 @@ function get_partition_sizes()
 
 # Start here
 
-cmd_args=$@
+cmd_args=$(echo $@ | tr '[:upper:]' '[:lower:]')
 
 # Treat adding the USB rule first
 for i in ${cmd_args[@]};do
-	if [[ "${i}" == "USBrule" || "${i}" == "usbrule" ]];then
-		${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} || exit 1
+	if [[ "${i}" == "usbrule" ]];then
+		${USBRULE_PATH} ${USBRULE_BOARD} ${USBRULE_IDVENDOR} ${USBRULE_IDPRODUCT} ${USBRULE_IDVENDOR2} ${USBRULE_IDPRODUCT2} || exit 1
 		exit 0
 	fi
 done
@@ -264,7 +265,7 @@ uniq_parts=($(printf "%s\n" "${parts[@]}" | sort -u));
 #Validate arguments
 for i in ${cmd_args[@]};do
 
-	if [[ "${i}" == "ERASE" || "${i}" == "ALL" ]];then
+	if [[ "${i}" == "erase" || "${i}" == "all" ]];then
 		continue;
 	fi
 

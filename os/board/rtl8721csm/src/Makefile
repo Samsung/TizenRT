@@ -55,10 +55,15 @@ DEPPATH = --dep-path .
 VPATH = .
 ASRCS =
 
-ifeq ($(CONFIG_FLASH_PARTITION),y)
 DEPPATH += --dep-path $(TOPDIR)/board/common
 VPATH += :$(TOPDIR)/board/common
+
+ifeq ($(CONFIG_FLASH_PARTITION),y)
 CSRCS += partitions.c
+endif
+
+ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
+CSRCS += crashdump.c
 endif
 
 include Make.defs
@@ -73,7 +78,6 @@ include component/common/api/wifi/Make.defs
 include component/common/api/wifi/rtw_wpa_supplicant/wpa_supplicant/Make.defs
 include component/common/api/Make.defs
 include component/common/api/network/src/Make.defs
-include component/common/network/dhcp/Make.defs 
 include component/os/os_dep/Make.defs
 include component/os/tizenrt/Make.defs
 include component/soc/realtek/amebad/misc/Make.defs
@@ -134,6 +138,8 @@ CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/wpa_supplicant
 CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/misc
 CFALGS += -I$(DIR_CRYPTO)/../include/
 CFLAGS += -I$(DIR_FW)/../include/
+CFLAGS += -I$(TOPDIR)/net/netmgr/
+CFLAGS += -I$(TOPDIR)/include/net/if
 
 ifeq ($(CONFIG_USBD_MSC),y)
 CFLAGS += -I$(BASEDIR)/component/common/drivers/sdio/realtek/sdio_host/inc
@@ -150,6 +156,7 @@ OBJS = $(AOBJS) $(COBJS)
 
 ifeq ($(WINTOOL),y)
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}"
+  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/armv8-m}"
   CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/common}"
   CFLAGS += -I "${shell cygpath -w $(COMPONENT_DIR)/soc/realtek/amebad/cmsis}"
   CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/common}"
@@ -159,6 +166,7 @@ else
   CFLAGS += -I$(ARCH_SRCDIR)/common
   CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/cmsis
   CFLAGS += -I$(BOARD_SRCDIR)/common
+  CFLAGS += -I$(ARCH_SRCDIR)/armv8-m
   CFLAGS += -I$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src
 endif
 

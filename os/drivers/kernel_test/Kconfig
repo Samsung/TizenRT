@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config DRIVERS_KERNEL_TEST
+	bool
+	default n
+	---help---
+		Enables overall support for kernel test driver library.

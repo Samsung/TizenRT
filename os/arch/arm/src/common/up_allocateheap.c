@@ -64,7 +64,6 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/userspace.h>
 
 #include <arch/board/board.h>
 
@@ -99,7 +98,10 @@
  * kernel heap here.
  */
 
+extern const uint32_t g_idle_topstack;
+
 /****************************************************************************
+ *
  * Private Data
  ****************************************************************************/
 
@@ -112,81 +114,6 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_allocate_heap/up_allocate_kheap
- *
- * Description:
- *   This function will be called to dynamically set aside the heap region.
- *
- *   - For the normal "flat" build, this function returns the size of the
- *     single heap.
- *   - For the protected build (CONFIG_BUILD_PROTECTED=y) with both kernel-
- *     and user-space heaps (CONFIG_MM_KERNEL_HEAP=y), this function
- *     provides the size of the unprotected, user-space heap.
- *   - For the kernel build (CONFIG_BUILD_KERNEL=y), this function provides
- *     the size of the protected, kernel-space heap.
- *
- *   If a protected kernel-space heap is provided, the kernel heap must be
- *   allocated by an analogous up_allocate_kheap(). A custom version of this
- *   file is needed if memory protection of the kernel heap is required.
- *
- *   The following memory map is assumed for the flat build:
- *
- *     .data region.  Size determined at link time.
- *     .bss  region  Size determined at link time.
- *     IDLE thread stack.  Size determined by CONFIG_IDLETHREAD_STACKSIZE.
- *     Heap.  Extends to the end of SRAM.
- *
- *   The following memory map is assumed for the kernel build:
- *
- *     Kernel .data region.  Size determined at link time.
- *     Kernel .bss  region  Size determined at link time.
- *     Kernel IDLE thread stack.  Size determined by CONFIG_IDLETHREAD_STACKSIZE.
- *     Padding for alignment
- *     User .data region.  Size determined at link time.
- *     User .bss region  Size determined at link time.
- *     Kernel heap.  Size determined by CONFIG_MM_KERNEL_HEAPSIZE.
- *     User heap.  Extends to the end of SRAM.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BUILD_KERNEL
-void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
-#else
-void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
-#endif
-{
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-	/* Get the unaligned size and position of the user-space heap.
-	 * This heap begins after the user-space .bss section at an offset
-	 * of CONFIG_MM_KERNEL_HEAPSIZE (subject to alignment).
-	 */
-
-	uintptr_t user_end = (uint32_t)__usram_segment_start__ + (uint32_t)__usram_segment_size__;
-	uintptr_t ubss_start = (uintptr_t)USERSPACE->us_bssstart;
-	uintptr_t ubase = (uintptr_t)USERSPACE->us_bssend;
-	size_t usize = (uint32_t)user_end - (uint32_t)ubase;
-
-	DEBUGASSERT(ubase < (uintptr_t)user_end);
-
-	/* zero initialize the user space bss section */
-	memset((void *)ubss_start, 0, (ubase - ubss_start));
-	/* Return the user-space heap settings */
-
-	board_led_on(LED_HEAPALLOCATE);
-	*heap_start = (FAR void *)ubase;
-	*heap_size = usize;
-#else
-
-	/* Return the heap settings */
-
-	board_led_on(LED_HEAPALLOCATE);
-	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
-	*heap_size =  REGION_END - (uint32_t)(*heap_start);
-
-#endif
-}
-
-/****************************************************************************
  * Name: up_allocate_kheap
  *
  * Description:
@@ -197,55 +124,63 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
  *
  ****************************************************************************/
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 {
 	/* Return the kernel heap settings (i.e., the part of the heap region
 	 * that was not dedicated to the user heap).
 	 */
+	void *stack_end = (void *)(g_idle_topstack & ~(0x7));
 
-	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
-	*heap_size = (uint32_t)((uintptr_t)__usram_segment_start__) - (uint32_t)(*heap_start);
+	if ((void *)&_sdata <= (void *)KREGION_END && stack_end >= (void *)KREGION_END) {
+		lldbg("ERROR: Failed to allocate kheap for ram region configuration\n");
+		lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n",
+				KREGION_START, KREGION_END, &_sdata, stack_end);
+		PANIC();
+	} else if (stack_end >= (void *)KREGION_START && stack_end < (void *)KREGION_END) {
+		*heap_start = stack_end;
+	} else {
+		*heap_start = (void *)KREGION_START;
+	}
+
+	*heap_size = (void *)KREGION_END - *heap_start;
+
+	lldbg("start = 0x%x size = %d\n", *heap_start, *heap_size);
 }
-#endif
 
 /****************************************************************************
  * Name: up_add_kregion
  ****************************************************************************/
 #if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
-static void up_add_kregion(void)
+void up_add_kregion(void)
 {
 	int region_cnt;
 	struct mm_heap_s *kheap;
+	void *heap_start = NULL;
+	size_t heap_size;
+	void *stack_end = (void *)(g_idle_topstack & ~(0x7));
 	kheap = kmm_get_heap();
 	for (region_cnt = 1; region_cnt < CONFIG_KMM_REGIONS; region_cnt++) {
-		if (kheap[regionx_kheap_idx[region_cnt]].mm_heapsize == 0) {
-			mm_initialize(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
+		if (kheap[kregionx_heap_idx[region_cnt]].mm_heapsize == 0) {
+			mm_initialize(&kheap[kregionx_heap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
 			continue;
 		}
-		mm_addregion(&kheap[regionx_kheap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
-	}
-}
-#endif
 
-/****************************************************************************
- * Name: up_addregion
- ****************************************************************************/
-#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
-void up_addregion(void)
-{
-	int region_cnt;
-
-	for (region_cnt = 1; region_cnt < CONFIG_MM_REGIONS; region_cnt++) {
-		if (USR_HEAP[regionx_heap_idx[region_cnt]].mm_heapsize == 0) {
-			mm_initialize(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
-			continue;
+		void *kregionx_end = (void *)(((uint32_t)kregionx_start[region_cnt]) + kregionx_size[region_cnt]);
+		if ((void *)&_sdata <= (void *)kregionx_end && stack_end >= (void *)kregionx_end) {
+			lldbg("ERROR: Failed to allocate kheap for ram region configuration\n");
+			lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n",
+					kregionx_start[region_cnt], kregionx_end, &_sdata, stack_end);
+			PANIC();
+		} else if (stack_end >= (void *)kregionx_start[region_cnt] && stack_end < (void *)kregionx_end) {
+			heap_start = stack_end;
+		} else {
+			heap_start = (void *)kregionx_start[region_cnt];
 		}
-		mm_addregion(&USR_HEAP[regionx_heap_idx[region_cnt]], regionx_start[region_cnt], regionx_size[region_cnt]);
-	}
 
-#if defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1)
-	up_add_kregion();
-#endif
+		heap_size = kregionx_end - heap_start;
+
+		lldbg("start = 0x%x size = %d\n", heap_start, heap_size);
+		mm_addregion(&kheap[kregionx_heap_idx[region_cnt]], heap_start, heap_size);
+	}
 }
 #endif

@@ -1503,7 +1503,7 @@ void i2s_tx_init(I2S_Type *base, const sai_config_t *config)
 }
 
 /*!
- * @brief Initializes the the SAI Rx peripheral.
+ * @brief Initializes the SAI Rx peripheral.
  *
  * Ungates the SAI clock, resets the module, and configures the SAI Rx with a configuration structure.
  * The configuration structure can be custom filled or set with default values by
@@ -2786,7 +2786,7 @@ struct i2s_dev_s *imxrt_i2s_initialize(uint16_t port)
 	 * is no protection if the same chip select is used in two different
 	 * chip select structures.
 	 */
-	priv = (struct imxrt_i2s_s *)zalloc(sizeof(struct imxrt_i2s_s));
+	priv = (struct imxrt_i2s_s *)kmm_zalloc(sizeof(struct imxrt_i2s_s));
 	if (!priv) {
 		i2serr("ERROR: Failed to allocate a chip select structure\n");
 		return NULL;

@@ -110,10 +110,10 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define SWAPBYTES(i) ((i >> 8) | (i << 8))
 //when enabling spiram and use 80M VSPI, it's conflict to use spiram for LCD transmit buffer
-#if CONFIG_MM_NHEAPS > 1
-#define LCD_MALLOC(size) malloc_at(0, (size))
+#if CONFIG_KMM_NHEAPS > 1
+#define LCD_MALLOC(size) kmm_malloc_at(0, (size))
 #else
-#define LCD_MALLOC(size) malloc(size)
+#define LCD_MALLOC(size) kmm_malloc(size)
 #endif
 
 /****************************************************************************
@@ -440,7 +440,7 @@ static int esp32_ili9341_sendgram(FAR struct ili9341_lcd_s *lcd, const uint16_t 
 			trans_word -= dmasize;
 			buffidx += dmasize;
 		}
-		free(data_buf);
+		kmm_free(data_buf);
 		data_buf = NULL;
 	} else {
 		for (i = 0; i < nwords; i++) {

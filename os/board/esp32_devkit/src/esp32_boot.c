@@ -70,11 +70,17 @@
 #include "esp32_i2c.h"
 #include "common.h"
 #include <tinyara/gpio.h>
+#ifdef CONFIG_FLASH_PARTITION
+#include <tinyara/fs/mtd.h>
+#endif
 #include <../xtensa/xtensa.h>
 
 #if defined(CONFIG_ADC)
 #include "esp32_adc.h"
 #include <tinyara/analog/adc.h>
+#endif
+#if defined(CONFIG_ESP32_SPIFLASH)
+extern void esp_partition_initialize();
 #endif
 #ifdef CONFIG_SPIRAM_SUPPORT
 extern void esp_spiram_init_cache();
@@ -106,11 +112,19 @@ extern int board_ledc_setup(void);
 
 void esp32_devKit_mount_partions(void)
 {
-#if defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_FS_ROMFS)
-	int ret;
-#endif
-
 #ifdef CONFIG_FLASH_PARTITION
+	int ret;
+	struct mtd_dev_s *mtd;
+
+	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
+	/* Configure mtd partitions */
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	if (ret != OK) {
+		lldbg("ERROR: configure_mtd_partitions failed");
+		return;
+	}
+#ifdef CONFIG_ESP32_AUTOMOUNT
+#ifdef CONFIG_ESP32_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
@@ -121,14 +135,16 @@ void esp32_devKit_mount_partions(void)
 			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif
+#endif /* CONFIG_ESP32_AUTOMOUNT_USERFS */
 
-#ifdef CONFIG_FS_ROMFS
+#ifdef CONFIG_ESP32_AUTOMOUNT_ROMFS
 	ret = mount(CONFIG_ESP32_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_ESP32_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
 	if (ret != OK) {
 		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", CONFIG_ESP32_AUTOMOUNT_ROMFS_DEVNAME);
 	}
-#endif
+#endif /* CONFIG_ESP32_AUTOMOUNT_ROMFS */
+#endif /* CONFIG_ESP32_AUTOMOUNT */
+#endif /* CONFIG_FLASH_PARTITION */
 }
 
 void esp32_board_initialize(void)
@@ -234,7 +250,9 @@ void board_initialize(void)
 {
 	/* Perform board-specific initialization */
 	(void)esp32_bringup();
-	configure_partitions();
+#ifdef CONFIG_ESP32_SPIFLASH
+	esp_partition_initialize();
+#endif
 	esp32_devKit_mount_partions();
 	board_gpio_initialize();
 	board_i2c_initialize();

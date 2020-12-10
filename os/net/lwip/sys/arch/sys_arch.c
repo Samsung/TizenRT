@@ -26,12 +26,13 @@
 #include <time.h>
 #include <assert.h>
 #include <errno.h>
+#include <sys/types.h>
 #include <tinyara/clock.h>
 #include <tinyara/arch.h>
 #include <tinyara/cancelpt.h>
 #include <tinyara/kthread.h>
 #include <tinyara/semaphore.h>
-#include <sys/types.h>
+#include <tinyara/kmalloc.h>
 
 /* lwIP includes. */
 #include "lwip/stats.h"
@@ -579,7 +580,7 @@ err_t sys_mutex_new(sys_mutex_t *mutex)
 	int status = 0;
 
 	if (NULL == mutex) {
-		mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+		mutex = (pthread_mutex_t *)kmm_malloc(sizeof(pthread_mutex_t));
 	}
 	if (mutex == NULL) {
 #if SYS_STATS

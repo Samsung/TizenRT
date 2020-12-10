@@ -23,6 +23,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <net/route.h>
+#include <tinyara/kmalloc.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
 #include "lwip/opt.h"
@@ -130,8 +131,8 @@ static int lwip_ns_dup2(int sockfd1, int sockfd2)
 
 	/* Get the socket structures underly both descriptors */
 
-	sock1 = (struct lwip_sock *)get_socket(sockfd1);
-	sock2 = (struct lwip_sock *)get_socket(sockfd2);
+	sock1 = (struct lwip_sock *)get_socket(sockfd1, getpid());
+	sock2 = (struct lwip_sock *)get_socket(sockfd2, getpid());
 
 	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
 	 * descriptors and that sockfd1 has valid allocated conn
@@ -427,45 +428,44 @@ static void _get_raw_info(struct netmon_sock *sock_info, struct lwip_sock *lsock
 	sock_info->remote.ip.sin_port = 0;
 }
 
-extern struct lwip_sock *get_lwip_sock_info(void);
-
 /**
  * Copy the global socket contents to the input
  *
  * @param data is used to target
  */
-extern struct lwip_sock *get_lwip_sock_info(void);
 
 static int lwip_ns_getstats(int fd, struct netmon_sock **sock_info)
 {
-	struct lwip_sock *sockets = get_lwip_sock_info();
-	if (!sockets[fd].conn) {
+	struct socketlist *list = sched_getsockets();
+	DEBUGASSERT(list);
+	struct lwip_sock *sock = (struct lwip_sock *)list->sl_sockets[fd].sock;
+	if (!sock || !sock->conn) {
 		return -1;
 	}
-	if (!sockets[fd].conn->pcb.ip) {
+	if (!sock->conn->pcb.ip) {
 		return -2;
 	}
 
-	struct netmon_sock *sinfo = (struct netmon_sock *)malloc(sizeof(struct netmon_sock));
+	struct netmon_sock *sinfo = (struct netmon_sock *)kmm_malloc(sizeof(struct netmon_sock));
 	if (!sinfo) {
 		ndbg("alloc sinfo memory fail\n");
 		return -3;
 	}
 
-	sinfo->type = sockets[fd].conn->type;
-	sinfo->state = sockets[fd].conn->state;
-	sinfo->pid = sockets[fd].conn->pid;
+	sinfo->type = sock->conn->type;
+	sinfo->state = sock->conn->state;
+	sinfo->pid = sock->conn->pid;
 
-	if (sockets[fd].conn->type & NETCONN_TCP) {
-		_get_tcp_info(sinfo, &sockets[fd]);
-	} else if ((sockets[fd].conn->type & NETCONN_UDP) ||
-			   (sockets[fd].conn->type & NETCONN_UDPLITE) ||
-			   (sockets[fd].conn->type & NETCONN_UDPNOCHKSUM)) {
-		_get_udp_info(sinfo, &sockets[fd]);
+	if (sock->conn->type & NETCONN_TCP) {
+		_get_tcp_info(sinfo, sock);
+	} else if ((sock->conn->type & NETCONN_UDP) ||
+			   (sock->conn->type & NETCONN_UDPLITE) ||
+			   (sock->conn->type & NETCONN_UDPNOCHKSUM)) {
+		_get_udp_info(sinfo, sock);
 	} else {
-		_get_raw_info(sinfo, &sockets[fd]);
+		_get_raw_info(sinfo, sock);
 	}
-	if (pthread_getname_np(sockets[fd].conn->pid, sinfo->pid_name)) {
+	if (pthread_getname_np(sock->conn->pid, sinfo->pid_name)) {
 		strncpy(sinfo->pid_name, "NONE", 5);
 	}
 	*sock_info = sinfo;
@@ -473,6 +473,48 @@ static int lwip_ns_getstats(int fd, struct netmon_sock **sock_info)
 	return 0;
 }
 #endif
+
+static void lwip_ns_initlist(struct socketlist *list)
+{
+	for (int i = 0; i < CONFIG_NSOCKET_DESCRIPTORS; ++i) {
+		list->sl_sockets[i].sock = NULL;
+	}
+
+	/* Initialize the list access mutex */
+	sem_init(&list->sl_sem, 0, 1);
+}
+
+static void lwip_ns_releaselist(struct socketlist *list)
+{
+	int i;
+	int ret;
+	struct lwip_sock *psock;
+
+	for (i = 0; i < CONFIG_NSOCKET_DESCRIPTORS; ++i) {
+		if (list->sl_sockets[i].sock) {
+
+			psock = (struct lwip_sock *)list->sl_sockets[i].sock;
+
+			if (list->sl_sockets[i].s_crefs == 1) {
+				ret = lwip_sock_close(psock);
+				if (ret) {
+					ndbg("socket could not close properly\n");
+					list->sl_sockets[i].sock = NULL;
+					return;
+				}
+			}
+
+			else if (list->sl_sockets[i].s_crefs > 1) {
+				list->sl_sockets[i].s_crefs--;
+			}
+
+			else {
+				memset(&list->sl_sockets[i], 0, sizeof(struct socket));
+			}
+		}
+		list->sl_sockets[i].sock = NULL;
+	}
+}
 
 struct netstack_ops g_lwip_stack_ops = {
 	lwip_ns_init,
@@ -514,6 +556,8 @@ struct netstack_ops g_lwip_stack_ops = {
 #ifdef CONFIG_NET_NETMON
 	lwip_ns_getstats,
 #endif
+	lwip_ns_initlist,
+	lwip_ns_releaselist
 };
 
 

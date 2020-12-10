@@ -79,6 +79,9 @@ CSRCS += usbhost_trace.c
 endif
 endif
 
+ifeq ($(CONFIG_USBHOST_UVC),y)
+include usbhost$(DELIM)uvc$(DELIM)Make.defs
+endif
 # Include add-on USB host driver logic if present and selected (availabel in
 # the TinyAra drivers GIT repository)
 

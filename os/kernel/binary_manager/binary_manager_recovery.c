@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <debug.h>
 #include <stdlib.h>
+#include <string.h>
 #include <queue.h>
 #include <errno.h>
 #include <semaphore.h>
@@ -36,12 +37,11 @@
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 #include <tinyara/board.h>
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-#include <tinyara/binfmt/binfmt.h>
-#endif
+#include <tinyara/wdog.h>
 
 #include "task/task.h"
 #include "sched/sched.h"
+#include "semaphore/semaphore.h"
 #include "binary_manager.h"
 
 /****************************************************************************
@@ -68,10 +68,6 @@ sq_queue_t g_faultmsg_list;
 sq_queue_t g_freemsg_list;
 static faultmsg_t g_prealloc_faultmsg[FAULTMSG_COUNT];
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-extern struct binary_s *g_lib_binp;
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -91,7 +87,7 @@ static void binary_manager_reset_board(void)
 	sched_lock();
 	for (;;) {
 		lldbg("\nASSERT!! Push the reset button!\n");
-		up_mdelay(10000);
+		up_mdelay(300000);  // Print the message every 5 min
 	}
 #endif
 }
@@ -163,6 +159,34 @@ static int binary_manager_deactivate_binary(int bin_idx)
 }
 
 /****************************************************************************
+ * Name: binary_manager_unblock_fault_message_sender
+ *
+ * Description:
+ *	 This function adds a fault message to the fault message list
+ *   and unblocks fault message sender.
+ *
+ ****************************************************************************/
+static void binary_manager_unblock_fault_message_sender(int bin_idx)
+{
+	struct faultmsg_s *msg;
+
+	/* Check there are a fault message sender and available fault message */
+	if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
+		msg->binidx = bin_idx;
+		sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
+
+		/* Unblock fault message sender */
+		if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
+			up_unblock_task_without_savereg(g_faultmsg_sender);
+		}
+		return;
+	}
+
+	/* Board reset on failure of recovery */
+	binary_manager_reset_board();
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
@@ -187,7 +211,7 @@ void binary_manager_deactivate_rtthreads(int bin_idx)
 		}
 	}
 }
-	
+
 
 /****************************************************************************
  * Name: binary_manager_recover_userfault
@@ -200,34 +224,29 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 {
 	int bin_idx;
 	struct tcb_s *tcb;
-	struct faultmsg_s *msg;
-
-	tcb = this_task();
-	if (tcb != NULL && tcb->group != NULL) {
-		bin_idx = tcb->group->tg_binidx;
-		/* Exclude realtime task/pthreads from scheduling */
-		binary_manager_deactivate_rtthreads(bin_idx);
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (g_lib_binp) {
-			uint32_t start = (uint32_t)g_lib_binp->alloc[ALLOC_TEXT];
-			uint32_t end = start + g_lib_binp->textsize;
-			if (assert_pc >= start && assert_pc <= end) {
-				bin_idx = BM_BINID_LIBRARY;
-			}
+	if (is_common_library_space((void *)assert_pc)) {
+		/* If a fault happens in common library, it needs to reload all user binaries */
+		int bin_count = binary_manager_get_ucount();
+		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
+			binary_manager_deactivate_rtthreads(bin_idx);
 		}
+		/* Send fault message and Unblock fault message sender */
+		return binary_manager_unblock_fault_message_sender(BM_CMNLIB_IDX);
+	}
 #endif
-		/* Add fault message and Unblock Fault message Sender */
-		if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
-			msg->binidx = bin_idx;
-			sq_addlast((sq_entry_t *)msg, (sq_queue_t *)&g_faultmsg_list);
 
-			/* Unblock fault message sender */
-			if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
-				up_unblock_task_without_savereg(g_faultmsg_sender);
-			}
-			return;
-		}
+	/* Get a tcb of fault thread for fault handling */
+	tcb = this_task();
+	if (tcb != NULL && tcb->group != NULL) {
+		/* Exclude realtime task/pthreads from scheduling */
+		bin_idx = tcb->group->tg_binidx;
+		binary_manager_deactivate_rtthreads(bin_idx);
+
+		/* Send fault message and Unblock fault message sender */
+		return binary_manager_unblock_fault_message_sender(bin_idx);
 	}
 
 	/* Board reset on failure of recovery */
@@ -299,9 +318,6 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 void binary_manager_recovery(int bin_idx)
 {
 	int ret;
-	char type_str[1];
-	char data_str[1];
-	char *loading_data[LOADTHD_ARGC + 1];
 
 	bmllvdbg("Try to recover fault with binid %d\n", bin_idx);
 
@@ -310,17 +326,15 @@ void binary_manager_recovery(int bin_idx)
 	}
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	/* binid is zero means a crash happened in common library
-	 * We need to reload the library and all the apps
-	 */
+	/* If a fault happens in common library, we need to reload the library and all user binaries */
 	int bidx;
-	if (bin_idx == BM_BINID_LIBRARY) {
+	if (bin_idx == BM_CMNLIB_IDX) {
 		int bin_count = binary_manager_get_ucount();
 		for (bidx = 1; bidx <= bin_count; bidx++) {
 			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
 			ret = binary_manager_deactivate_binary(bidx);
 			if (ret != OK) {
-				bmlldbg("Failure during recovery excluding binary pid = %d\n", binid);
+				bmlldbg("Failure during recovery excluding binary pid = %d\n", bidx);
 				goto reboot_board;
 			}
 
@@ -339,12 +353,8 @@ void binary_manager_recovery(int bin_idx)
 
 	/* Create loader to reload binary */
 	BIN_STATE(bin_idx) = BINARY_FAULT;
-	memset(loading_data, 0, sizeof(char *) * (LOADTHD_ARGC + 1));
-	loading_data[1] = itoa(bin_idx, data_str, 10);
-	loading_data[0] = itoa(LOADCMD_RELOAD, type_str, 10);
-	loading_data[2] = NULL;
-	ret = binary_manager_loading(loading_data);
-	if (ret > 0) {
+	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);
+	if (ret == OK) {
 		abort_mode = false;
 		bmllvdbg("Loading thread with pid %d will reload binaries!\n", ret);
 		return;

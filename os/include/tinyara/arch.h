@@ -429,7 +429,7 @@ void up_allocate_secure_context(TZ_ModuleId_t size);
  *
  ****************************************************************************/
 
-void up_free_secure_context(TZ_MemoryId_t handle);
+void up_free_secure_context();
 #endif
 
 /****************************************************************************
@@ -558,13 +558,10 @@ void up_reprioritize_rtr(FAR struct tcb_s *tcb, uint8_t priority);
  *   logic.  Interrupts will always be disabled when this
  *   function is called.
  *
- * Inputs:
- *   tcb: The TCB of the task that is yielding the resource
- *
  ****************************************************************************/
 
 #ifdef CONFIG_SCHED_YIELD_OPTIMIZATION
-void up_schedyield(FAR struct tcb_s *rtcb);
+void up_schedyield(void);
 #endif
 
 /****************************************************************************
@@ -749,41 +746,11 @@ void up_signal_handler(_sa_sigaction_t sighand, int signo, FAR siginfo_t *info, 
 
 /* Memory management ********************************************************/
 
-#if (CONFIG_MM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
-void up_addregion(void);
+#if CONFIG_KMM_REGIONS > 1
+void up_add_kregion(void);
 #else
-#define up_addregion()
+#define up_add_kregion()
 #endif
-
-/****************************************************************************
- * Name: up_userspace
- *
- * Description:
- *   For the case of the separate user-/kernel-space build, perform whatever
- *   platform specific initialization of the user memory is required.
- *   Normally this just means initializing the user space .data and .bss
- *   segments.
- *
- ****************************************************************************/
-
-void up_userspace(void);
-
-/****************************************************************************
- * Name: up_allocate_heap
- *
- * Description:
- *   This function will be called to dynamically set aside the heap region.
- *
- *   For the kernel build (CONFIG_BUILD_PROTECTED=y) with both kernel- and
- *   user-space heaps (CONFIG_MM_KERNEL_HEAP=y), this function provides the
- *   size of the unprotected, user-space heap.
- *
- *   If a protected kernel-space heap is provided, the kernel heap must be
- *   allocated (and protected) by an analogous up_allocate_kheap().
- *
- ****************************************************************************/
-
-void up_allocate_heap(FAR void **heap_start, size_t *heap_size);
 
 /****************************************************************************
  * Name: up_allocate_kheap
@@ -1542,7 +1509,7 @@ void up_timer_initialize(void);
  *   any failure.
  *
  * Assumptions:
- *   Called from the the normal tasking context.  The implementation must
+ *   Called from the normal tasking context.  The implementation must
  *   provide whatever mutual exclusion is necessary for correct operation.
  *   This can include disabling interrupts in order to assure atomic register
  *   operations.
@@ -2103,7 +2070,7 @@ xcpt_t board_button_irq(int id, xcpt_t irqhandler);
  *      and SIOCSMIIREG ioctl calls** to communicate with the PHY,
  *      determine what network event took place (Link Up/Down?), and
  *      take the appropriate actions.
- *   d. It should then interact the the PHY to clear any pending
+ *   d. It should then interact the PHY to clear any pending
  *      interrupts, then re-enable the PHY interrupt.
  *
  *    * This is an OS internal interface and should not be used from
@@ -2221,6 +2188,18 @@ void up_wdog_keepalive(void);
  *
  ****************************************************************************/
 bool is_kernel_space(void *addr);
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+/****************************************************************************
+ * Name: is_common_library_space
+ *
+ * Description:
+ *   Check the address is in common library space or not
+ *
+ ****************************************************************************/
+bool is_common_library_space(void *addr);
+
+#endif
 #endif
 
 #undef EXTERN

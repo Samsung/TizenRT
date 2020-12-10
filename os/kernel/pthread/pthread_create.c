@@ -472,7 +472,6 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		}
 
 #ifdef CONFIG_BINARY_MANAGER
-		FAR struct tcb_s *rtcb = this_task();
 		/* Add tcb to binary thread list */
 		binary_manager_add_binlist(&ptcb->cmn);
 #endif

@@ -141,7 +141,7 @@ static rtw_result_t app_scan_result_handler( rtw_scan_handler_result_t* malloced
 #if defined(CONFIG_INIC_CMD_RSP) && CONFIG_INIC_CMD_RSP
 		inic_c2h_msg("ATWS", RTW_SUCCESS, (char *)malloced_scan_result->user_data, ApNum*sizeof(rtw_scan_result_t));
 		if(malloced_scan_result->user_data)
-			free(malloced_scan_result->user_data);
+			rtw_free(malloced_scan_result->user_data);
 		inic_c2h_msg("ATWS", RTW_SUCCESS, NULL, 0);
 #endif
 #if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)

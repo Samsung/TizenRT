@@ -164,7 +164,7 @@ int sem_wait(FAR sem_t *sem)
 			sem_addholder(sem);
 			rtcb->waitsem = NULL;
 #ifdef CONFIG_SEMAPHORE_HISTORY
-			save_semaphore_history(sem, (void *)rtcb, SEM_AQUIRE);
+			save_semaphore_history(sem, (void *)rtcb, SEM_ACQUIRE);
 #endif
 			ret = OK;
 		}

@@ -123,7 +123,7 @@ static ledc_fade_t *s_ledc_fade_rec[LEDC_SPEED_MODE_MAX][LEDC_CHANNEL_MAX];
 static int ledc_fade_channel_init(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
 	if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-		s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *)calloc(1, sizeof(ledc_fade_t));
+		s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *)kmm_calloc(1, sizeof(ledc_fade_t));
 	}
 	if (s_ledc_fade_rec[speed_mode][channel]) {
 
@@ -136,7 +136,7 @@ static int ledc_fade_channel_init(ledc_mode_t speed_mode, ledc_channel_t channel
 static int ledc_fade_channel_deinit(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
 	if (s_ledc_fade_rec[speed_mode][channel]) {
-		free(s_ledc_fade_rec[speed_mode][channel]);
+		kmm_free(s_ledc_fade_rec[speed_mode][channel]);
 		s_ledc_fade_rec[speed_mode][channel] = NULL;
 	}
 	return OK;

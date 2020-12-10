@@ -64,9 +64,7 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/mm/mm.h>
 #endif
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/mpu.h>
-#endif
 #include "libelf.h"
 
 /****************************************************************************
@@ -81,7 +79,7 @@
  * Private Functions
  ****************************************************************************/
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-static void allocateregions(FAR struct elf_loadinfo_s *loadinfo)
+static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 {
 	size_t sizes[MPU_NUM_REGIONS] = {loadinfo->textsize, loadinfo->rosize, loadinfo->binp->ramsize};
 	uintptr_t *allocs[MPU_NUM_REGIONS] = {&loadinfo->textalloc, &loadinfo->roalloc, &loadinfo->dataalloc};
@@ -105,9 +103,21 @@ static void allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 		}
 	}
 
-	loadinfo->binp->ramstart = *allocs[0] = (uintptr_t)kumm_memalign(sizes[0], totalsize);
+	/* ARMV7M requires addresses to be aligned to the size of the region.
+	 * In this case, we align the first region to the size of first region.
+	 * Since the regions are arranged in descending order of sizes and each
+	 * region size is a power of two, the remaining regions will also be
+	 * aligned to their size.
+	 */
+	*allocs[0] = (uintptr_t)kmm_memalign(sizes[0], totalsize);
+	if (*allocs[0] == (uintptr_t)NULL) {
+		return -ENOMEM;
+	}
+	loadinfo->binp->ramstart = (uint32_t)*allocs[0];
 	*allocs[1] = *allocs[0] + sizes[0];
 	*allocs[2] = *allocs[1] + sizes[1];
+
+	return 0;
 }
 #endif
 
@@ -194,12 +204,30 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	 */
 	loadinfo->rosize += loadinfo->datasize - loadinfo->binp->bsssize;
 
+#ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
+	/* If there are size and address alignment restrictions like ARMV7M,
+	 * it is better to allocate one big memory chunk enough to contains each loading sections like text, ro, data.
+	 */
 	loadinfo->textsize = 1 << mpu_log2regionceil(0, loadinfo->textsize);
 	loadinfo->rosize = 1 << mpu_log2regionceil(0, loadinfo->rosize);
 	datamemsize = 1 << mpu_log2regionceil(0, datamemsize);
 	loadinfo->binp->ramsize = datamemsize;
-
-	allocateregions(loadinfo);
+	if (allocateregions(loadinfo)) {
+		berr("ERROR: failed to allocate memory\n");
+		return -ENOMEM;
+	}
+#else
+	/* There is no restriction about address alignment in MPU,
+	 * Allocate each loading section respectively.
+	 */
+	loadinfo->textsize = MPU_ALIGN_UP(loadinfo->textsize);
+	loadinfo->rosize = MPU_ALIGN_UP(loadinfo->rosize);
+	datamemsize = MPU_ALIGN_UP(datamemsize);
+	loadinfo->binp->ramsize = datamemsize;
+	loadinfo->textalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->textsize);
+	loadinfo->roalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->rosize);
+	loadinfo->dataalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, datamemsize);
+#endif
 
 	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
 	loadinfo->binp->uheap_size = datamemsize - loadinfo->datasize - sizeof(struct mm_heap_s);
@@ -210,7 +238,15 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	}
 
 	/* Allocate the RAM partition to load the app into */
-	loadinfo->binp->ramstart = kumm_memalign(loadinfo->binp->ramsize, loadinfo->binp->ramsize);
+#ifdef CONFIG_ARMV7M_MPU
+	loadinfo->binp->ramstart = kmm_memalign(loadinfo->binp->ramsize, loadinfo->binp->ramsize);
+#elif CONFIG_ARMV8M_MPU
+	loadinfo->binp->ramsize = MPU_ALIGN_UP(loadinfo->binp->ramsize);
+	loadinfo->binp->ramstart = kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->binp->ramsize);
+#else
+#error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
+#endif
+
 	if (!loadinfo->binp->ramstart) {
 		berr("ERROR: Failed to allocate RAM partition\n");
 		return -ENOMEM;

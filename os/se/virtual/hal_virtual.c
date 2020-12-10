@@ -23,6 +23,7 @@
 #include <string.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
+#include <tinyara/kmalloc.h>
 
 #define _IN_
 #define _OUT_
@@ -42,8 +43,6 @@
 		VH_LOG("[ERR:%s] %s %s:%d ret(%d) code(%s)\n",			\
 			   VH_TAG, __FUNCTION__, __FILE__, __LINE__, fd);	\
 	} while (0)
-
-#define SECLINK_PATH "/dev/seclink"
 
 #define V_DEFINE_DATA(name, text)							\
 	hal_data name##_data = {text, sizeof(text), NULL, 0};	\
@@ -136,7 +135,7 @@ int virtual_hal_free_data(_IN_ hal_data *data)
 {
 	if (data) {
 		if (data->data) {
-			free(data->data);
+			kmm_free(data->data);
 		}
 	}
 	return 0;
@@ -313,7 +312,7 @@ int virtual_hal_get_certificate(_IN_ uint32_t cert_idx, _OUT_ hal_data *cert_out
 	cert_s.data = (void *)cert_data;
 	cert_s.data_len = sizeof(cert_data);
 
-	//cert_out->data = (unsigned char *)malloc(cert_s.data_len);
+	//cert_out->data = (unsigned char *)kmm_malloc(cert_s.data_len);
 	memcpy(cert_out->data, cert_s.data, cert_s.data_len);
 	cert_out->data_len = cert_s.data_len;
 
@@ -333,7 +332,7 @@ int virtual_hal_get_factory_key(_IN_ uint32_t key_idx, _IN_ hal_data *key)
 
 	hal_data factory_s = {"factory", 7, NULL};
 
-	key->data = (unsigned char *)malloc(7);
+	key->data = (unsigned char *)kmm_malloc(7);
 	memcpy(key->data, factory_s.data, 7);
 
 	return 0;
@@ -345,7 +344,7 @@ int virtual_hal_get_factory_cert(_IN_ uint32_t cert_idx, _IN_ hal_data *cert)
 
 	hal_data factory_s = {"factory", 7, NULL};
 
-	cert->data = (unsigned char *)malloc(7);
+	cert->data = (unsigned char *)kmm_malloc(7);
 	memcpy(cert->data, factory_s.data, 7);
 
 	return 0;
@@ -357,7 +356,7 @@ int virtual_hal_get_factory_data(_IN_ uint32_t data_idx, _IN_ hal_data *data)
 
 	hal_data factory_s = {"factory", 7, NULL};
 
-	data->data = (unsigned char *)malloc(7);
+	data->data = (unsigned char *)kmm_malloc(7);
 	memcpy(data->data, factory_s.data, 7);
 
 	return 0;
@@ -370,7 +369,7 @@ int virtual_hal_aes_encrypt(_IN_ hal_data *dec_data, _IN_ hal_aes_param *aes_par
 {
 	VH_ENTER;
 
-	enc_data->data = (unsigned char *)malloc(dec_data->data_len);
+	enc_data->data = (unsigned char *)kmm_malloc(dec_data->data_len);
 	memcpy(enc_data->data, dec_data->data, dec_data->data_len);
 	enc_data->data_len = dec_data->data_len;
 
@@ -381,7 +380,7 @@ int virtual_hal_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_par
 {
 	VH_ENTER;
 
-	dec_data->data = (unsigned char *)malloc(enc_data->data_len);
+	dec_data->data = (unsigned char *)kmm_malloc(enc_data->data_len);
 	memcpy(dec_data->data, enc_data->data, enc_data->data_len);
 	dec_data->data_len = enc_data->data_len;
 
@@ -392,7 +391,7 @@ int virtual_hal_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ hal_rsa_mode *mode, _I
 {
 	VH_ENTER;
 
-	enc_data->data = (unsigned char *)malloc(dec_data->data_len);
+	enc_data->data = (unsigned char *)kmm_malloc(dec_data->data_len);
 	memcpy(enc_data->data, dec_data->data, dec_data->data_len);
 	enc_data->data_len = dec_data->data_len;
 
@@ -403,7 +402,7 @@ int virtual_hal_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode, _I
 {
 	VH_ENTER;
 
-	dec_data->data = (unsigned char *)malloc(enc_data->data_len);
+	dec_data->data = (unsigned char *)kmm_malloc(enc_data->data_len);
 	memcpy(dec_data->data, enc_data->data, enc_data->data_len);
 	dec_data->data_len = enc_data->data_len;
 

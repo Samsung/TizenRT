@@ -120,7 +120,7 @@ WDOG_ID wd_create(void)
 	state = irqsave();
 
 	/* If we are in an interrupt handler -OR- if the number of pre-allocated
-	 * timer structures exceeds the reserve, then take the the next timer from
+	 * timer structures exceeds the reserve, then take the next timer from
 	 * the head of the free list.
 	 */
 

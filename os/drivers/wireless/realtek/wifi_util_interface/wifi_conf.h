@@ -845,7 +845,7 @@ int wifi_get_network_mode(rtw_network_mode_t *pmode);
  *Broadcast/Multicast 802.11 frames.
  * @param[in]  callback: the callback function which will
  *  			  receive and process the netowork data.
- * @param[in]  len_used: specify if the the promisc data length is used.
+ * @param[in]  len_used: specify if the promisc data length is used.
  *				If len_used set to 1, packet(frame data) length will
  *be saved and transferred to callback function.
  *

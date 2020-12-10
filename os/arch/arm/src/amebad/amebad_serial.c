@@ -85,6 +85,8 @@
 #include "mbed/targets/hal/rtl8721d/objects.h"
 #include "rtl8721d_uart.h"
 #include "tinyara/kmalloc.h"
+#include "osdep_service.h"
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
@@ -200,7 +202,7 @@ static void rtl8721d_up_shutdown(struct uart_dev_s *dev);
 static int rtl8721d_up_attach(struct uart_dev_s *dev);
 static void rtl8721d_up_detach(struct uart_dev_s *dev);
 static int rtl8721d_up_interrupt(int irq, void *context, FAR void *arg);
-static int rtl8721d_up_ioctl(struct file *filep, int cmd, unsigned long arg);
+static int rtl8721d_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
 static int rtl8721d_up_receive(struct uart_dev_s *dev, uint8_t *status);
 static void rtl8721d_up_rxint(struct uart_dev_s *dev, bool enable);
 static bool rtl8721d_up_rxavailable(struct uart_dev_s *dev);
@@ -412,7 +414,7 @@ static void rtl8721d_up_shutdown(struct uart_dev_s *dev)
 	DEBUGASSERT(priv);
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
 	serial_free(sdrv[uart_index_get(priv->tx)]);
-	free(sdrv[uart_index_get(priv->tx)]);
+	rtw_free(sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = NULL;
 }
 
@@ -477,11 +479,9 @@ static void rtl8721d_up_detach(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static int rtl8721d_up_ioctl(struct file *filep, int cmd, unsigned long arg)
+static int rtl8721d_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
 {
 #if defined(CONFIG_SERIAL_TERMIOS)
-	struct inode *inode = filep->f_inode;
-	struct uart_dev_s *dev = inode->i_private;
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	int ret = OK;
 	struct termios *termiosp = (struct termios *)arg;
@@ -740,10 +740,12 @@ void up_lowputc(char ch)
  *   int value, -1 if error, 0~255 if byte successfully read
  *
  ****************************************************************************/
-char up_lowgetc(void)
+int up_lowgetc(void)
 {
 	uint8_t rxd;
+	LOGUART_SetIMR(0);
 	rxd = LOGUART_GetChar(_TRUE);
+	LOGUART_SetIMR(1);
 	return rxd & 0xff;
 }
 

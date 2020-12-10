@@ -91,16 +91,12 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	FAR struct mm_freenode_s *node;
 	FAR struct mm_freenode_s *prev;
 	FAR struct mm_freenode_s *next;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	struct mm_allocnode_s *alloc_node;
-#endif
 
 	mvdbg("Freeing %p\n", mem);
 
 	/* Protect against attempts to free a NULL reference */
 
 	if (!mem) {
-#ifdef CONFIG_DEBUG_DOUBLE_FREE
 		/* Though it's permitted to attempt for releasing a NULL
 		 * reference in C, it would be good to catch those cases
 		 * atleast in DEBUG MODE as there is no logical reason to
@@ -108,8 +104,7 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		 * It can be a logical bug in sw to make an attempt of double free!
 		 * free(ptr); ptr = NULL; free(ptr);
 		 */
-		dbg("Attempt to release a null pointer\n");
-#endif
+		mdbg("Attempt to release a null pointer\n");
 		return;
 	}
 
@@ -122,29 +117,24 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	/* Map the memory chunk into a free node */
 
 	node = (FAR struct mm_freenode_s *)((char *)mem - SIZEOF_MM_ALLOCNODE);
-#ifdef CONFIG_DEBUG_DOUBLE_FREE
-	/* Assert on following logical error scenarios
-	 * 1) Attempt to free an unallocated memory or
-	 * 2) Attempt to release some arbitrary memory or
-	 * 3) Attempt to release already released memory ( double free )
-	 * Catch this bug and report to USER in debug mode
-	 * 1st scenario: int *ptr; free(ptr);
-	 * 2nd scenario: int *ptr = (int*)0x02069f50; free(ptr);
-	 * 3rd scenario: ptr = malloc(100); free(ptr); if(ptr) { free(ptr); }
-	 */
+	
 	if ((node->preceding & MM_ALLOC_BIT) != MM_ALLOC_BIT) {
-		dbg("Attempt for double freeing a pointer or releasing an unallocated pointer\n");
-		PANIC();
+		/* There are 3 cases of logical error scenarios
+		 * 1) Attempt to free an unallocated memory or
+		 * 2) Attempt to release some arbitrary memory or
+		 * 3) Attempt to release already released memory ( double free )
+		 * Catch this bug and report to USER in debug mode
+		 * 1st scenario: int *ptr; free(ptr);
+		 * 2nd scenario: int *ptr = (int*)0x02069f50; free(ptr);
+		 * 3rd scenario: ptr = malloc(100); free(ptr); if(ptr) { free(ptr); }
+		 */
+		mdbg("Attempt for double freeing a pointer or releasing an unallocated pointer\n");
+		mm_givesemaphore(heap);
+		return;
 	}
-
-#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	alloc_node = (struct mm_allocnode_s *)node;
-
-	if ((alloc_node->preceding & MM_ALLOC_BIT) != 0) {
-		heapinfo_subtract_size(heap, alloc_node->pid, alloc_node->size);
-		heapinfo_update_total_size(heap, ((-1) * alloc_node->size), alloc_node->pid);
-	}
+	heapinfo_subtract_size(heap, ((struct mm_allocnode_s *)node)->pid, ((struct mm_allocnode_s *)node)->size);
+	heapinfo_update_total_size(heap, ((-1) * ((struct mm_allocnode_s *)node)->size), ((struct mm_allocnode_s *)node)->pid);
 #endif
 	node->preceding &= ~MM_ALLOC_BIT;
 

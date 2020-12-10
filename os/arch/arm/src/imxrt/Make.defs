@@ -68,6 +68,10 @@ CMN_CSRCS += up_unblocktask.c up_usestack.c up_doirq.c up_hardfault.c
 CMN_CSRCS += up_svcall.c up_vfork.c up_trigger_irq.c up_systemreset.c
 CMN_CSRCS += up_unblocktask_withoutsavereg.c
 
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += go_os_start.c
+endif
+
 ifeq ($(CONFIG_ARMV7M_STACKCHECK),y)
 CMN_CSRCS += up_stackcheck.c
 endif
@@ -111,10 +115,20 @@ CMN_ASRCS += up_fpu.S
 CMN_CSRCS += up_copyarmstate.c
 endif
 
+ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
+CMN_CSRCS += up_schedyield.c
+endif
+
+CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
+endif
+
 # Required i.MX RT files
 
 CHIP_ASRCS  =
-CHIP_CSRCS  = imxrt_allocateheap.c imxrt_start.c imxrt_clockconfig.c
+CHIP_CSRCS  = imxrt_start.c imxrt_clockconfig.c
 CHIP_CSRCS += imxrt_periphclks.c imxrt_irq.c imxrt_clrpend.c imxrt_gpio.c
 CHIP_CSRCS += imxrt_daisy.c imxrt_wdog.c imxrt_iomuxc.c imxrt_serial.c imxrt_wdog_lowerhalf.c
 CHIP_CSRCS += imxrt_lowputc.c imxrt_flexspi.c imxrt_clock.c imxrt_log.c
@@ -163,14 +177,6 @@ ifeq ($(CONFIG_IMXRT_TIMER_INTERFACE),y)
 CHIP_CSRCS += imxrt_timer_lowerhalf.c
 endif
 endif # CONFIG_IMXRT_TIMER
-
-ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CHIP_CSRCS += imxrt_userspace.c
-endif
-
-ifeq ($(CONFIG_ARMV7M_MPU),y)
-CHIP_CSRCS += imxrt_mpuinit.c
-endif
 
 ifeq ($(CONFIG_IMXRT_EDMA),y)
 CHIP_CSRCS += imxrt_edma.c
@@ -221,5 +227,20 @@ CHIP_CSRCS += imxrt_norflash.c
 endif
 
 ifeq ($(CONFIG_USBHOST),y)
+ifeq ($(CONFIG_IMXRT_USB),y)
+VPATH += chip/usb/host
+VPATH += chip/usb/phy
+CFLAGS += -DUSB_TIZEN_RT
+CFLAGS += -Ichip/usb/include
+CFLAGS += -Ichip/usb/phy
+CFLAGS += -Ichip/usb/host
+CHIP_CSRCS += usb_porting.c
+CHIP_CSRCS += usb_host_ehci.c
+CHIP_CSRCS += usb_host_hci.c
+CHIP_CSRCS += usb_host_devices.c
+#phy directory
+CHIP_CSRCS += usb_phy.c
+else
 CHIP_CSRCS += imxrt_usbhost.c imxrt_ehci.c
+endif
 endif

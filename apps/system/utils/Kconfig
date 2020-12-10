@@ -67,7 +67,7 @@ config CPULOADMONITOR_PRIORITY
 	int "CPU load monitor daemon priority"
 	default 100
 	---help---
-		The priority to use the the CPU load monitor daemon.  Default: 100
+		The priority to use the CPU load monitor daemon.  Default: 100
 
 config CPULOADMONITOR_INTERVAL
 	int "CPU load monitor frequency"
@@ -198,7 +198,7 @@ config STACKMONITOR_PRIORITY
 	int "Stack monitor daemon priority"
 	default 100
 	---help---
-		The priority to use the the stack monitor daemon.  Default: 100
+		The priority to use the stack monitor daemon.  Default: 100
 
 config STACKMONITOR_INTERVAL
 	int "Stack monitor dump frequency"

@@ -22,13 +22,13 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/ioctl.h>
-#include <tinyara/testcase_drv.h>
+#include <tinyara/kernel_test_drv.h>
 #include "../../os/kernel/timer/timer.h"
 #include "tc_internal.h"
 
 #define USECINT 10000000
 
-int sig_no = SIGRTMIN;
+static int sig_no = SIGRTMIN;
 
 #ifndef CONFIG_BUILD_PROTECTED
 /**

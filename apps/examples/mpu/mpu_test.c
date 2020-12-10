@@ -22,11 +22,10 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <semaphore.h>
-
-#if !defined(CONFIG_MPUTEST_KERNEL_CODE_ADDR) || !defined(CONFIG_MPUTEST_KERNEL_DATA_ADDR) ||\
-	(!defined(CONFIG_MPUTEST_APP_ADDR) && defined(CONFIG_APP_BINARY_SEPARATION))
-#error "Address not defined for MPU TEST"
-#endif
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <tinyara/kernel_test_drv.h>
+#include <tinyara/mpu_test.h>
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -34,24 +33,35 @@ int main(int argc, FAR char *argv[])
 int mpu_tc_main(int argc, char *argv[])
 #endif
 {
-	volatile uint32_t *address;
 	char ch;
+	int tc_fd;
+	struct mputest_arg_s obj;
+	int ret;
+
+	tc_fd = open(KERNEL_TEST_DRVPATH, O_WRONLY);
+	if (tc_fd < 0) {
+		printf("\nFAILED to open kernel test driver %s\n", KERNEL_TEST_DRVPATH);
+		return ERROR;
+	}
 
 	printf("\nPress R - For Read Test\n");
 	printf("Press W - For Write Test\n");
 
 	ch = getchar();
 	if (ch == 'R' || ch == 'r') {
-#ifdef CONFIG_MPUTEST_APP_ADDR
 		printf("\nPress A for app MPU test\n");
-#endif
 		printf("Press K for kernel MPU test\n");
 
 		ch = getchar();
 
-#ifdef CONFIG_MPUTEST_APP_ADDR
 		if (ch == 'A' || ch == 'a') {
-			address = (uint32_t *)CONFIG_MPUTEST_APP_ADDR;
+			obj.type = MPUTEST_APP_ADDR;
+			ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+			if (ret < 0) {
+				printf("ERROR: Failed to fetch test address from kernel\n");
+				close(tc_fd);
+				return ERROR;
+			}
 
 			uint32_t dest;
 
@@ -63,21 +73,25 @@ int mpu_tc_main(int argc, char *argv[])
 			printf("**************************************************\n");
 			printf("**************************************************\n");
 
-			printf("INFO: Read another app space: 0x%x\n", address);
+			printf("INFO: Read another app space: 0x%x\n", obj.addr);
 			sleep(1);
-			dest = *address;
+			dest = *(obj.addr);
 
 			printf("ERROR: This Task made invalid access to another app space\n");
-		} else
-#endif
-		{
+		} else {
 
 			printf("\nPress C - For Read Code Test\n");
 			printf("Press D - For Read Data Test\n");
 
 			ch = getchar();
 			if (ch == 'C' || ch == 'c') {
-				address = (uint32_t *)CONFIG_MPUTEST_KERNEL_CODE_ADDR;
+				obj.type = MPUTEST_KERNEL_CODE;
+				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+				if (ret < 0) {
+					printf("ERROR: Failed to fetch test address from kernel\n");
+					close(tc_fd);
+					return ERROR;
+				}
 
 				uint32_t dest;
 
@@ -86,14 +100,20 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("* User Tasks should not be allowed to read     *\n");
 				printf("* kernel code space. MPU shall raise exception *\n");
 				printf("************************************************\n");
-				printf("INFO: Read Code: 0x%x\n", address);
+				printf("INFO: Read Code: 0x%x\n", obj.addr);
 
 				sleep(1);
-				dest = *address;
+				dest = *(obj.addr);
 
 				printf("ERROR: User Task made invalid access to Kernel code space\n");
 			} else if (ch == 'D' || ch == 'd') {
-			       address = (uint32_t *)CONFIG_MPUTEST_KERNEL_DATA_ADDR;
+				obj.type = MPUTEST_KERNEL_DATA;
+				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+				if (ret < 0) {
+					printf("ERROR: Failed to fetch test address from kernel\n");
+					close(tc_fd);
+					return ERROR;
+				}
 
 				uint32_t dest;
 
@@ -102,26 +122,29 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("* User Tasks should not be allowed to read     *\n");
 				printf("* kernel data space. MPU shall raise exception *\n");
 				printf("************************************************\n");
-				printf("INFO: Read Data: 0x%x\n", address);
+				printf("INFO: Read Data: 0x%x\n", obj.addr);
 
 				sleep(1);
-				dest = *address;
+				dest = *(obj.addr);
 
 
 				printf("ERROR: User Task made invalid access to Kernel data space\n");
 			}
 		}
 	} else if (ch == 'W' || ch == 'w') {
-#ifdef CONFIG_MPUTEST_APP_ADDR
 		printf("\nPress A for app MPU test\n");
-#endif
 		printf("Press K for kernel MPU test\n");
 
 		ch = getchar();
 
-#ifdef CONFIG_MPUTEST_APP_ADDR
 		if (ch == 'A' || ch == 'a') {
-			address = (uint32_t *)CONFIG_MPUTEST_APP_ADDR;
+			obj.type = MPUTEST_APP_ADDR;
+			ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+			if (ret < 0) {
+				printf("ERROR: Failed to fetch test address from kernel\n");
+				close(tc_fd);
+				return ERROR;
+			}
 
 			uint32_t dest = 0xdeadbeef;
 
@@ -132,22 +155,27 @@ int mpu_tc_main(int argc, char *argv[])
 			printf("**************************************************\n");
 			printf("**************************************************\n");
 			printf("**************************************************\n");
-			printf("INFO: Write another app space: 0x%x\n", address);
+			printf("INFO: Write another app space: 0x%x\n", obj.addr);
 
 			sleep(1);
-			*address = dest;
+			*(obj.addr) = dest;
 
 			printf("ERROR: This Task made invalid access to another app space\n");
-		} else
-#endif
-		{
+		} else {
 
 			printf("\nPress C - For Write Kernel Code Test\n");
 			printf("Press D - For Write Kernel Data Test\n");
 
 			ch = getchar();
 			if (ch == 'C' || ch == 'c') {
-				address = (uint32_t *)CONFIG_MPUTEST_KERNEL_CODE_ADDR;
+				obj.type = MPUTEST_KERNEL_CODE;
+				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+				if (ret < 0) {
+					printf("ERROR: Failed to fetch test address from kernel\n");
+					close(tc_fd);
+					return ERROR;
+				}
+
 				uint32_t dest = 0xdeadbeef;
 
 				printf("\n************************************************\n");
@@ -155,14 +183,21 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("* User Tasks should not be allowed to write    *\n");
 				printf("* kernel code space. MPU shall raise exception *\n");
 				printf("************************************************\n");
-				printf("INFO: Write kernel space: 0x%x\n", address);
+				printf("INFO: Write kernel space: 0x%x\n", obj.addr);
 
 				sleep(1);
-				*address = dest;
+				*(obj.addr) = dest;
 
 				printf("ERROR: User Task made invalid access to Kernel code space\n");
 			} else if (ch == 'D' || ch == 'd') {
-				address = (uint32_t *)CONFIG_MPUTEST_KERNEL_DATA_ADDR;
+				obj.type = MPUTEST_KERNEL_DATA;
+				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+				if (ret < 0) {
+					printf("ERROR: Failed to fetch test address from kernel\n");
+					close(tc_fd);
+					return ERROR;
+				}
+
 				uint32_t dest = 0xdeadbeef;
 
 				printf("\n************************************************\n");
@@ -170,15 +205,16 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("* User Tasks should not be allowed to write    *\n");
 				printf("* kernel data space. MPU shall raise exception *\n");
 				printf("************************************************\n");
-				printf("INFO: Write kernel space: 0x%x\n", address);
+				printf("INFO: Write kernel space: 0x%x\n", obj.addr);
 
 				sleep(1);
-				*address = dest;
+				*(obj.addr) = dest;
 
 				printf("ERROR: User Task made invalid access to Kernel data space\n");
 			}
 		}
 	}
 
+	close(tc_fd);
 	return OK;
 }

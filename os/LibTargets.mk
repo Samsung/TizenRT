@@ -286,8 +286,19 @@ $(LIBRARIES_DIR)$(DELIM)librtl$(LIBEXT): $(TOPDIR)$(DELIM)drivers$(DELIM)wireles
 endif
 
 ifeq ($(CONFIG_AMEBAD_WIFI),y)
+ifeq ($(CONFIG_ARCH_FPU),y)
+$(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan_fpu$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan_fpu$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps_fpu$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps_fpu$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+else
 $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan$(LIBEXT)
 	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+endif
 endif
 
 # External esp32 wifi static Lib builds

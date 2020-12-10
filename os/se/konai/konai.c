@@ -23,12 +23,11 @@
 #include <string.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
+#include <tinyara/kmalloc.h>
 
 #define _IN_
 #define _OUT_
 #define _INOUT_
-
-#define SECLINK_PATH "/dev/seclink"
 
 #define KN_LOG printf
 #define KN_TAG "KONAI"
@@ -42,7 +41,7 @@ int konai_free_data(_IN_ hal_data *data)
 {
 	if (data) {
 		if (data->data) {
-			free(data->data);
+			kmm_free(data->data);
 		}
 	}
 	return 0;
@@ -177,7 +176,7 @@ int konai_set_certificate(_IN_ uint32_t cert_idx, _IN_ hal_data *cert_in)
 {
 	KN_ENTER;
 
-	cert_s.data = (unsigned char *)malloc(cert_in->data_len);
+	cert_s.data = (unsigned char *)kmm_malloc(cert_in->data_len);
 	memcpy(cert_s.data, cert_in->data, cert_in->data_len);
 	cert_s.data_len = cert_in->data_len;
 
@@ -188,7 +187,7 @@ int konai_get_certificate(_IN_ uint32_t cert_idx, _OUT_ hal_data *cert_out)
 {
 	KN_ENTER;
 
-	cert_out->data = (unsigned char *)malloc(cert_s.data_len);
+	cert_out->data = (unsigned char *)kmm_malloc(cert_s.data_len);
 	memcpy(cert_out->data, cert_s.data, cert_s.data_len);
 	cert_out->data_len = cert_s.data_len;
 
@@ -199,7 +198,7 @@ int konai_remove_certificate(_IN_ uint32_t cert_idx)
 {
 	KN_ENTER;
 
-	free(cert_s.data);
+	kmm_free(cert_s.data);
 	cert_s.data_len = 0;
 
 	return 0;
@@ -209,7 +208,7 @@ static hal_data factory_s = {"factory", 7, NULL};
 
 int konai_get_factory_key(_IN_ uint32_t key_idx, _IN_ hal_data *key)
 {
-	key->data = (unsigned char *)malloc(7);
+	key->data = (unsigned char *)kmm_malloc(7);
 	memcpy(key->data, factory_s.data, 7);
 
 	return 0;
@@ -219,7 +218,7 @@ int konai_get_factory_cert(_IN_ uint32_t cert_idx, _IN_ hal_data *cert)
 {
 	KN_ENTER;
 
-	cert->data = (unsigned char *)malloc(7);
+	cert->data = (unsigned char *)kmm_malloc(7);
 	memcpy(cert->data, factory_s.data, 7);
 
 	return 0;
@@ -229,7 +228,7 @@ int konai_get_factory_data(_IN_ uint32_t data_idx, _IN_ hal_data *data)
 {
 	KN_ENTER;
 
-	data->data = (unsigned char *)malloc(7);
+	data->data = (unsigned char *)kmm_malloc(7);
 	memcpy(data->data, factory_s.data, 7);
 
 	return 0;
@@ -242,7 +241,7 @@ int konai_aes_encrypt(_IN_ hal_data *dec_data, _IN_ hal_aes_param *aes_param, _I
 {
 	KN_ENTER;
 
-	enc_data->data = (unsigned char *)malloc(dec_data->data_len);
+	enc_data->data = (unsigned char *)kmm_malloc(dec_data->data_len);
 	memcpy(enc_data->data, dec_data->data, dec_data->data_len);
 	enc_data->data_len = dec_data->data_len;
 
@@ -253,7 +252,7 @@ int konai_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_param, _I
 {
 	KN_ENTER;
 
-	dec_data->data = (unsigned char *)malloc(enc_data->data_len);
+	dec_data->data = (unsigned char *)kmm_malloc(enc_data->data_len);
 	memcpy(dec_data->data, enc_data->data, enc_data->data_len);
 	dec_data->data_len = enc_data->data_len;
 
@@ -264,7 +263,7 @@ int konai_rsa_encrypt(_IN_ hal_data *dec_data, _IN_ hal_rsa_mode *mode, _IN_ uin
 {
 	KN_ENTER;
 
-	enc_data->data = (unsigned char *)malloc(dec_data->data_len);
+	enc_data->data = (unsigned char *)kmm_malloc(dec_data->data_len);
 	memcpy(enc_data->data, dec_data->data, dec_data->data_len);
 	enc_data->data_len = dec_data->data_len;
 
@@ -274,7 +273,7 @@ int konai_rsa_decrypt(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode, _IN_ uin
 {
 	KN_ENTER;
 
-	dec_data->data = (unsigned char *)malloc(enc_data->data_len);
+	dec_data->data = (unsigned char *)kmm_malloc(enc_data->data_len);
 	memcpy(dec_data->data, enc_data->data, enc_data->data_len);
 	dec_data->data_len = enc_data->data_len;
 

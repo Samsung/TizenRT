@@ -643,7 +643,7 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	pthread_join(receiver, &result);
 	TC_ASSERT_EQ("pthread_join", result, expected);
 
-	/* Message queues are global resources and persist for the life the the
+	/* Message queues are global resources and persist for the life of the
 	 * task group.  The message queue opened by the sender_thread must be closed
 	 * since the sender pthread may have been canceled and may have left the
 	 * message queue open.

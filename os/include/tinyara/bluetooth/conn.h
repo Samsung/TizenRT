@@ -201,7 +201,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
 /** @brief Initiate an LE connection to a remote device.
  *
  *  Allows initiate new LE link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *  Returns a new reference that the caller is responsible for managing.
  *
  *  @param peer  Remote address.
  *  @param param Initial connection parameters.
@@ -240,7 +240,7 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr, const struct bt_le_conn_param 
  *
  *  The advertising may be canceled with bt_conn_disconnect().
  *
- *  Returns a new reference that the the caller is responsible for managing.
+ *  Returns a new reference that the caller is responsible for managing.
  *
  *  @param peer  Remote address.
  *  @param param Directed advertising parameters.
@@ -755,7 +755,7 @@ struct bt_br_conn_param {
 /** @brief Initiate an BR/EDR connection to a remote device.
  *
  *  Allows initiate new BR/EDR link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *  Returns a new reference that the caller is responsible for managing.
  *
  *  @param peer  Remote address.
  *  @param param Initial connection parameters.
@@ -767,7 +767,7 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer, const struct bt_br_conn
 /** @brief Initiate an SCO connection to a remote device.
  *
  *  Allows initiate new SCO link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
+ *  Returns a new reference that the caller is responsible for managing.
  *
  *  @param peer  Remote address.
  *

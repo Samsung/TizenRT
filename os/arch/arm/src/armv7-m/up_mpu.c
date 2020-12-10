@@ -58,9 +58,13 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <stdbool.h>
+
+#include <tinyara/mpu.h>
 
 #include "mpu.h"
 #include "up_internal.h"
+#include "up_arch.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -343,7 +347,7 @@ void mpu_get_register_config_value(uint32_t *regs, uint32_t region, uintptr_t ba
 #endif
 			MPU_RASR_C;                 /* Cacheable     */
 	if (readonly) {
-		regval |= MPU_RASR_AP_RWRO;     /* P:RW   U:RO   */
+		regval |= MPU_RASR_AP_RORO;     /* P:RO   U:RO   */
 	} else {
 		regval |= MPU_RASR_AP_RWRW;     /* P:RW   U:RW   */
 	}
@@ -371,9 +375,44 @@ void up_mpu_set_register(uint32_t *mpu_regs)
 	/* We update MPU registers only if there is non zero value of
 	 * base address (This ensures valid MPU settings)
 	 */
-	if (mpu_regs[REG_RBAR]) {
-		putreg32(mpu_regs[REG_RNR], MPU_RNR);
-		putreg32(mpu_regs[REG_RBAR], MPU_RBAR);
-		putreg32(mpu_regs[REG_RASR], MPU_RASR);
+	if (mpu_regs[MPU_REG_RBAR]) {
+		putreg32(mpu_regs[MPU_REG_RNR], MPU_RNR);
+		putreg32(mpu_regs[MPU_REG_RBAR], MPU_RBAR);
+		putreg32(mpu_regs[MPU_REG_RASR], MPU_RASR);
 	}
+}
+
+/****************************************************************************
+ * Name: up_mpu_check_active
+ *
+ * Description:
+ *   Checks if mpu registers passed as argument are the ones set in
+ *   mpu h/w
+ *
+ ****************************************************************************/
+bool up_mpu_check_active(uint32_t *mpu_regs)
+{
+	/* Set MPU_RNR register before getting corresponding
+	 * MPU_RBAR and MPU_RASR values
+	 */
+	putreg32(mpu_regs[MPU_REG_RNR], MPU_RNR);
+
+	return (getreg32(MPU_RBAR) == mpu_regs[MPU_REG_RBAR] && getreg32(MPU_RASR) == mpu_regs[MPU_REG_RASR]);
+}
+
+/****************************************************************************
+ * Name: up_mpu_disable_region
+ *
+ * Description:
+ *   Update tcb's mpu register values to disable a mpu region
+ *   and set these new register values to mpu h/w as well.
+ *
+ ****************************************************************************/
+void up_mpu_disable_region(uint32_t *mpu_regs)
+{
+	/* Disable region's Enable bit in mpu register settings */
+	mpu_regs[MPU_REG_RASR] &= ~MPU_RASR_ENABLE;
+
+	/* Set updated mpu register values to mpu h/w */
+	up_mpu_set_register(mpu_regs);
 }

@@ -181,22 +181,24 @@ int exec_module(FAR struct binary_s *binp)
 	/* The first 4 bytes of the text section of the application must contain a
 	pointer to the application's mm_heap object. Here we will store the mm_heap
 	pointer to the start of the text section */
-	*(uint32_t *)(binp->alloc[ALLOC_TEXT]) = (uint32_t)binp->uheap;
+	*(uint32_t *)(binp->datastart) = (uint32_t)binp->uheap;
 	rtcb = (struct tcb_s *)sched_self();
 	rtcb->uheap = (uint32_t)binp->uheap;
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	uint8_t nregion = mpu_get_nregion_info(MPU_REGION_APP_BIN);
+
 	/* Configure text section as RO and executable region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[3], MPU_REG_NUM_APP_TXT, (uintptr_t)binp->alloc[ALLOC_TEXT], binp->textsize, true, true);
+	mpu_get_register_config_value(&rtcb->mpu_regs[0], nregion - 3, (uintptr_t)binp->alloc[ALLOC_TEXT], binp->textsize, true, true);
 	/* Configure ro section as RO and non-executable region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[6], MPU_REG_NUM_APP_RO, (uintptr_t)binp->alloc[ALLOC_RO], binp->rosize, true, false);
+	mpu_get_register_config_value(&rtcb->mpu_regs[3], nregion - 2, (uintptr_t)binp->alloc[ALLOC_RO], binp->rosize, true, false);
 	/* Complete RAM partition will be configured as RW region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[0], MPU_REG_NUM_APP_DATA, (uintptr_t)binp->alloc[ALLOC_DATA], binp->ramsize, false, false);
+	mpu_get_register_config_value(&rtcb->mpu_regs[6], nregion - 1, (uintptr_t)binp->alloc[ALLOC_DATA], binp->ramsize, false, false);
 #else
 	/* Complete RAM partition will be configured as RW region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[0], MPU_REG_NUM_APP, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
+	mpu_get_register_config_value(&rtcb->mpu_regs[0], nregion - 1, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
 #endif
 #endif
 #endif /* CONFIG_APP_BINARY_SEPARATION */
@@ -205,7 +207,8 @@ int exec_module(FAR struct binary_s *binp)
 
 	tcb = (FAR struct task_tcb_s *)kmm_zalloc(sizeof(struct task_tcb_s));
 	if (!tcb) {
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto errout_with_appheap;
 	}
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
 	/* Instantiate the address environment containing the user heap */
@@ -217,24 +220,16 @@ int exec_module(FAR struct binary_s *binp)
 	}
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	stack = (FAR uint32_t *)mm_malloc(binp->uheap, binp->stacksize, retaddr);
-#else
-	stack = (FAR uint32_t *)mm_malloc(binp->uheap, binp->stacksize);
-#endif
-#else
-	stack = (FAR uint32_t *)kumm_malloc(binp->stacksize);
-#endif
-	if (!stack) {
-		ret = -ENOMEM;
+	ret = up_create_stack((FAR struct tcb_s *)tcb, binp->stacksize, TCB_FLAG_TTYPE_TASK);
+	if (ret < 0) {
+		berr("ERROR: up_create_stack() failed.\n");
 		goto errout_with_addrenv;
 	}
+	stack = tcb->cmn.stack_alloc_ptr;
 
 	/* Initialize the task */
 
-	ret = task_init((FAR struct tcb_s *)tcb, binp->filename, binp->priority, stack, binp->stacksize, binp->entrypt, binp->argv);
+	ret = task_init((FAR struct tcb_s *)tcb, binp->filename, binp->priority, NULL, binp->stacksize, binp->entrypt, binp->argv);
 	if (ret < 0) {
 		ret = -get_errno();
 		berr("task_init() failed: %d\n", ret);
@@ -356,8 +351,8 @@ int exec_module(FAR struct binary_s *binp)
 
 	/* Update id and state in binary table */
 	BIN_ID(binary_idx) = pid;
-	BIN_STATE(binary_idx) = BINARY_LOADING_DONE;
-	strncpy(BIN_VER(binary_idx), binp->bin_ver, BIN_VER_MAX);
+	BIN_STATE(binary_idx) = BINARY_LOADED;
+	BIN_LOADVER(binary_idx) = binp->bin_ver;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	BIN_LOADINFO(binary_idx) = binp;
 #endif
@@ -371,7 +366,7 @@ int exec_module(FAR struct binary_s *binp)
 
 	/* Set up to unload the module when the task exists. */
 
-	tcb->cmn.group->tg_bininfo = binp;
+	tcb->bininfo = binp;
 
 	/* Then activate the task at the provided priority */
 
@@ -395,11 +390,15 @@ int exec_module(FAR struct binary_s *binp)
 
 	return (int)pid;
 
+errout_with_appheap:
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_remove_app_heap_list(binp->uheap);
+#endif
 errout_with_tcbinit:
 #ifdef CONFIG_BINARY_MANAGER
 	BIN_ID(binary_idx) = -1;
 	BIN_STATE(binary_idx) = BINARY_INACTIVE;
-	memset(BIN_VER(binary_idx), 0, BIN_VER_MAX);
+	BIN_LOADVER(binary_idx) = 0;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	BIN_LOADINFO(binary_idx) = NULL;
 #endif

@@ -422,7 +422,7 @@ static FAR char *inifile_find_section_variable(FAR struct inifile_state_s *priv,
 
 		inivdbg("varinfo.variable=\"%s\"\n", varinfo.variable);
 
-		/* Does the the variable name match the one we are looking for? */
+		/* Does the variable name match the one we are looking for? */
 
 		if (strcasecmp(varinfo.variable, variable) == 0) {
 			/* Yes... then we have it! */

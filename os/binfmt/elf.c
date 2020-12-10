@@ -306,8 +306,8 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	 * to obtain the size of just the data backup.
 	 */
 	binp->datasize = loadinfo.datasize - binp->bsssize;
-	binp->datastart = loadinfo.dataalloc;
 #endif
+	binp->datastart = loadinfo.dataalloc;
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	/* Save information about constructors and destructors. */

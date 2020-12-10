@@ -76,9 +76,11 @@
  ****************************************************************************/
 enum {
 	ALLOC_TEXT,
+#ifdef CONFIG_BINFMT_CONSTRUCTORS
 	ALLOC_CTOR,
 	ALLOC_DTOR,
-#ifdef CONFIG_APP_BINARY_SEPARATION
+#endif
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	ALLOC_RO,
 	ALLOC_DATA,
 #endif
@@ -111,6 +113,7 @@ struct binary_s {
 	uint32_t ramstart;		/* Start address of ram partition */
 	uint32_t ramsize;		/* Size of the RAM paritition */
 	uint32_t heapstart;		/* Start address of app heap area */
+	uint32_t datastart;		/* Start address of data section */
 #endif
 
 #if defined(CONFIG_SUPPORT_COMMON_BINARY) || defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME)
@@ -120,7 +123,6 @@ struct binary_s {
 	size_t rosize;			/* Size of ro section */
 	size_t datasize;		/* Size of data section */
 	uint32_t reload;		/* Indicate whether this binary will be reloaded */
-	uint32_t datastart;		/* Start address of data section */
 	uint32_t bssstart;		/* Start address of bss section */
 	size_t bsssize;			/* Size of bss section */
 	uint32_t data_backup;		/* Start address of copy of data section */
@@ -177,7 +179,7 @@ struct binary_s {
 	uint8_t compression_type;		/* Binary Compression type */
 #ifdef CONFIG_BINARY_MANAGER
 	uint8_t binary_idx;             /* Index of binary in binary table */
-	char bin_ver[BIN_VER_MAX];      /* version of binary */
+	uint32_t bin_ver;               /* version of binary */
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	char bin_name[BIN_NAME_MAX];    /* Name of binary */
 #else
@@ -209,6 +211,11 @@ struct binfmt_s {
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+/* A binary data of common library */
+extern struct binary_s *g_lib_binp;
+#endif
 
 #if defined(__cplusplus)
 extern "C" {

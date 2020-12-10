@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <tinyara/kmalloc.h>
 
 #include "wireless.h"
 #include "wlan_intf.h"
@@ -205,7 +206,7 @@ int wext_set_key_ext(const char *ifname, __u16 alg, const __u8 *addr, int key_id
 		RTW_API_INFO("\n\rioctl[SIOCSIWENCODEEXT] set key fail");
 	}
 
-	free(ext);
+	kmm_free(ext);
 
 	return ret;
 }
@@ -1367,12 +1368,12 @@ int wext_deinit_mac_filter(void)
 	{
 		item = list_entry(iterator, rtw_mac_filter_list_t, node);
 		list_del(iterator);
-		free(item);
+		kmm_free(item);
 		item = NULL;
 		iterator = mf_list_head;
 	}
 
-	free(mf_list_head);
+	kmm_free(mf_list_head);
 	mf_list_head = NULL;
 	return 0;
 }
@@ -1408,7 +1409,7 @@ int wext_del_mac_filter(unsigned char *hwaddr)
 		item = list_entry(iterator, rtw_mac_filter_list_t, node);
 		if (memcmp(item->mac_addr, hwaddr, 6) == 0) {
 			list_del(iterator);
-			free(item);
+			kmm_free(item);
 			item = NULL;
 			return 0;
 		}

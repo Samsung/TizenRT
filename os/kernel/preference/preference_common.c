@@ -20,39 +20,31 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <debug.h>
+#if CONFIG_TASK_NAME_SIZE > 0
 #include <sys/types.h>
 #include <tinyara/sched.h>
 #include <tinyara/preference.h>
 
 #include "sched/sched.h"
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 int preference_get_private_keypath(const char *key, char **path)
 {
+#if CONFIG_TASK_NAME_SIZE > 0
 	int ret;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	pid_t pid;
 	struct tcb_s *tcb;
-#endif
 
 	/* Get path for app preference */
-#ifdef CONFIG_APP_BINARY_SEPARATION
 	tcb = this_task();
-	pid = tcb->group->tg_binid;
-	if (pid > 0) {
-		tcb = sched_gettcb(pid);
-		if (tcb == NULL) {
-			prefdbg("Failed to get main task %d\n", pid);
-			return PREFERENCE_OPERATION_FAIL;
-		}
+	if (!tcb->group) {
+		prefdbg("Failed to get group\n");
+		return PREFERENCE_OPERATION_FAIL;
 	}
-	/* Assign full path for app preference*/
-	ret = PREFERENCE_ASPRINTF(path, "%s/%s/%s", PREF_PRIVATE_PATH, tcb->name, key);
-#else
-	ret = PREFERENCE_ASPRINTF(path, "%s/%s", PREF_PRIVATE_PATH, key);
-#endif
+	/* Assign full path for app preference directory */
+	ret = PREFERENCE_ASPRINTF(path, "%s/%s/%s", PREF_PRIVATE_PATH, tcb->group->tg_name, key);
 	if (ret < 0) {
 		prefdbg("Failed to allocate path\n");
 		return PREFERENCE_OUT_OF_MEMORY;
@@ -60,4 +52,9 @@ int preference_get_private_keypath(const char *key, char **path)
 	prefvdbg("Preference key path = %s\n", *path);
 
 	return OK;
+#else
+	prefdbg("Not supported private preference\n");
+	return PREFERENCE_NOT_SUPPORTED;
+#endif
+
 }

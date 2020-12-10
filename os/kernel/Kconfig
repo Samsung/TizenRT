@@ -113,7 +113,7 @@ config USEC_PER_TICK
 		In the "normal" configuration where system time is provided by a
 		periodic timer interrupt, the default system timer is expected to
 		run at 100Hz or USEC_PER_TICK=10000.  This setting must be defined
-		to inform of TinyAra the interval that the the processor hardware is
+		to inform of TinyAra the interval that the processor hardware is
 		providing system timer interrupts to the OS.
 
 		If SCHED_TICKLESS is selected, then there are no system timer
@@ -122,7 +122,7 @@ config USEC_PER_TICK
 		by clock_systimer() and the resolution of times that can be set for
 		certain delays including watchdog timers and delayed work.  In this
 		case there is a trade-off:  It is better to have the USEC_PER_TICK as
-		low as possible for higher timing resolution.  However, the the time
+		low as possible for higher timing resolution.  However, the time
 		is currently held in 'unsigned int' on some systems, this may be
 		16-bits but on most contemporary systems it will be 32-bits.  In
 		either case, smaller values of USEC_PER_TICK will reduce the range
@@ -153,6 +153,7 @@ endif # !SCHED_TICKLESS
 
 config SYSTEM_TIME64
 	bool "64-bit system clock"
+	select LIBC_LONG_LONG
 	default n
 	---help---
 		The system timer is incremented at the rate determined by
@@ -266,7 +267,7 @@ config TASK_NAME_SIZE
 		Spcifies that maximum size of a task name to save in the TCB.
 		Useful if scheduler instrumentation is selected.  Set to zero to
 		disable.  Excludes the NUL terminator; the actual allocated size
-		willl be TASK_NAME_SIZE + 1.  The default of 31 then results in
+		will be TASK_NAME_SIZE + 1.  The default of 31 then results in
 		a align-able 32-byte allocation.::
 
 config MAX_TASKS
@@ -940,7 +941,7 @@ config MQ_MAXMSGSIZE
 	default 32
 	---help---
 		Message structures are allocated with a fixed payload size given by this
-		setting (does not include other message structure overhead.
+		setting (does not include other message structure overhead).
 
 endmenu # POSIX Message Queue Options
 
@@ -952,7 +953,7 @@ config IDLETHREAD_STACKSIZE
 	---help---
 		The size of the initial stack used by the IDLE thread.  The IDLE thread
 		is the thread that (1) performs the initial boot of the system up to the
-		point where start-up appliation is spawned, and (2) there after is the
+		point where start-up application is spawned, and (2) there after is the
 		IDLE thread that executes only when there is no other thread ready to run.
 
 config USERMAIN_STACKSIZE

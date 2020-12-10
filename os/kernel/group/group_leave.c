@@ -286,33 +286,6 @@ static inline void group_release(FAR struct task_group_s *group)
 #endif
 #endif
 
-#ifdef CONFIG_BINFMT_LOADABLE
-	/* If the exiting task was loaded into RAM from a file, then we need to
-	 * lease all of the memory resource when the last thread exits the task
-	 * group.
-	 */
-
-	if (IS_LOADED_MODULE(group)) {
-#ifdef CONFIG_BINARY_MANAGER
-		int bin_idx = group->tg_binidx;
-		/* Update binary state */
-		BIN_STATE(bin_idx) = BINARY_INACTIVE;
-		BIN_ID(bin_idx) = -1;
-		BIN_RTLIST(bin_idx) = NULL;
-		BIN_NRTLIST(bin_idx) = NULL;
-		/* Clean callbacks of binary */
-		binary_manager_clear_bin_statecb(bin_idx);
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		if (!group->tg_bininfo->reload) {
-			BIN_LOADINFO(bin_idx) = NULL;
-		}
-#endif
-#endif
-		binfmt_exit(group->tg_bininfo);
-		group->tg_bininfo = NULL;
-	}
-#endif
-
 	/* Release the group container itself */
 
 	sched_kfree(group);
@@ -414,19 +387,37 @@ void group_leave(FAR struct tcb_s *tcb)
 		/* Have all of the members left the group? */
 
 		if (group->tg_nmembers == 0) {
-#ifdef CONFIG_APP_BINARY_SEPARATION
-			if (IS_LOADED_MODULE(group)) {
+#ifdef CONFIG_BINFMT_LOADABLE
+			if (IS_BINARY_MAINTASK(tcb)) {
 				/* The region of stack is allocated in user RAM partition.
 				 * If it is loaded, whole RAM partition for binary is freed by unloading in group_release.
-				 * So the stack doesn't need to freed after unloading.
+				 * So the stack doesn't need to be freed after unloading.
 				 */
 
 				tcb->stack_alloc_ptr = NULL;
+#ifdef CONFIG_BINARY_MANAGER
+				/* Clear binary data and update binary state before group_release
+				 * because a group has a binary index to access binary table.
+				 */
+
+				binary_manager_clear_bindata(group->tg_binidx);
+#endif /* CONFIG_BINARY_MANAGER */
 			}
-#endif
-			/* Yes.. Release all of the resource held by the task group */
+#endif /* CONFIG_BINFMT_LOADABLE */
+
+			/* Release all of the resource held by the task group */
 
 			group_release(group);
+
+#ifdef CONFIG_BINFMT_LOADABLE
+			/* If the exiting task was loaded into RAM from a file, then we need to
+			 * release all of the memory resource.
+			 * It should be called after group_release because binfmt_exit releases whole heap memory.
+			 */
+			if (IS_BINARY_MAINTASK(tcb)) {
+				binfmt_exit(((struct task_tcb_s *)tcb)->bininfo);
+			}
+#endif
 		}
 
 		/* In any event, we can detach the group from the TCB so that we won't
@@ -460,19 +451,38 @@ void group_leave(FAR struct tcb_s *tcb)
 		/* Yes.. that was the last member remaining in the group */
 
 		else {
-#ifdef CONFIG_APP_BINARY_SEPARATION
-			if (IS_LOADED_MODULE(group)) {
+#ifdef CONFIG_BINFMT_LOADABLE
+			if (IS_BINARY_MAINTASK(tcb)) {
 				/* The region of stack is allocated in user RAM partition.
 				 * If it is loaded, whole RAM partition for binary is freed by unloading in group_release.
-				 * So the stack doesn't need to freed after unloading.
+				 * So the stack doesn't need to be freed after unloading.
 				 */
 
 				tcb->stack_alloc_ptr = NULL;
+#ifdef CONFIG_BINARY_MANAGER
+				/* Clear binary data and update binary state before group_release
+				 * because a group has a binary index to access binary table.
+				 */
+
+				binary_manager_clear_bindata(group->tg_binidx);
+#endif /* CONFIG_BINARY_MANAGER */
 			}
-#endif
+#endif /* CONFIG_BINFMT_LOADABLE */
+
 			/* Release all of the resource held by the task group */
 
 			group_release(group);
+
+#ifdef CONFIG_BINFMT_LOADABLE
+			/* If the exiting task was loaded into RAM from a file, then we need to
+			 * release all of the memory resource.
+			 * It should be called after group_release because binfmt_exit releases whole heap memory.
+			 */
+
+			if (IS_BINARY_MAINTASK(tcb)) {
+				binfmt_exit(((struct task_tcb_s *)tcb)->bininfo);
+			}
+#endif
 		}
 
 		/* In any event, we can detach the group from the TCB so we won't do

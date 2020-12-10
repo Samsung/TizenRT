@@ -16,22 +16,22 @@
 *
 ***************************************************************************************************/
 
+#include <sys/types.h>
+#include <string.h>
+#include <stdint.h>
+
 #include <tinyara/config.h>
+#include <semaphore.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/security_hal.h>
-
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <tinyara/kmalloc.h>
 
 #include <rom_ssl_ram_map.h>
 
 #define AWRAP_TAG "[AMEBA_WRAPPER]"
-
-#define AWRAP_ENTER                                                                 \
-	do {                                                                             \
-		sedbg(AWRAP_TAG"[INFO] %s %s:%d\n", __FUNCTION__, __FILE__, __LINE__);       \
+#define AWRAP_ENTER                                     \
+	do {                                                \
+		sedbg(AWRAP_TAG"%s:%d\n", __FILE__, __LINE__);  \
 	} while (0)
 
 #define HAL_COPY_DATA(in, out, len)                     \
@@ -238,9 +238,9 @@ extern uint32_t rtl_cryptoEngine_init_wrapper(void);
 extern uint32_t rtl_write_storage_wrapper(uint32_t ss_idx, hal_data *data);
 extern uint32_t rtl_read_storage_wrapper(uint32_t ss_idx, hal_data *data);
 extern uint32_t rtl_delete_storage_wrapper(uint32_t ss_idx);
-extern uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
-extern uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
-extern uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t* key, uint32_t keylen, unsigned char* message, uint32_t msglen, unsigned char* pResult, uint8_t mode);
+extern uint32_t rtl_cryptoAES_ecb_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode);
+extern uint32_t rtl_cryptoAES_cbc_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode);
+extern uint32_t rtl_cryptoAES_ctr_wrapper(uint8_t *key, uint32_t keylen, unsigned char *message, uint32_t msglen, unsigned char *pResult, uint8_t mode);
 extern uint32_t rtl_read_factory_key_wrapper(hal_data *data);
 extern uint32_t rtl_read_factory_cert_wrapper(hal_data *data);
 
@@ -256,13 +256,13 @@ static int rtl_chk_stat(void)
 	return HAL_SUCCESS;
 }
 
-static void* my_calloc(size_t nelements, size_t elementSize)
+static void *my_calloc(size_t nelements, size_t elementSize)
 {
 	size_t size;
 	void *ptr = NULL;
 
 	size = nelements * elementSize;
-	ptr = malloc(size);
+	ptr = kmm_malloc(size);
 
 	if (ptr)
 		memset(ptr, 0, size);
@@ -270,8 +270,25 @@ static void* my_calloc(size_t nelements, size_t elementSize)
 	return ptr;
 }
 
+static void my_free(void *ptr)
+{
+	kmm_free(ptr);
+}
+
+static uint32_t rtl_index_convt(uint32_t key_idx)
+{
+	uint32_t ret_key_idx = KEY_STORAGE_INDEX_MAX;
+
+	/* Because Ameba SE storing Key in array, array start from Zero */
+	if (key_idx != 0) {	/* Index not Zero */
+		/* Valid  Index are 0 - 31, Total 32 Index slot */
+		ret_key_idx = key_idx - 1;	/* Index minus One */
+	}
+	return ret_key_idx;
+}
+
 /* Set prime modulus and generator */
-int rtl_dhm_set_group(rtl_dhm_context *ctx, const rtl_mpi *P, const rtl_mpi *G)
+static int rtl_dhm_set_group(rtl_dhm_context *ctx, const rtl_mpi *P, const rtl_mpi *G)
 {
 	int ret;
 
@@ -296,6 +313,7 @@ static int hal_rand(void *rng_state, unsigned char *output, size_t len)
 /**
  * Common
  */
+
 int ameba_hal_init(hal_init_param *params)
 {
 	AWRAP_ENTER;
@@ -307,6 +325,7 @@ int ameba_hal_init(hal_init_param *params)
 	}
 
 	for (uint32_t i = 0; i < KEY_STORAGE_INDEX_MAX; i++) {
+		key_storage[i].key_type = HAL_KEY_UNKNOWN;
 		memset(key_storage[i].aes_key, 0, sizeof(key_storage[i].aes_key));
 		key_storage[i].aes_key_len = 0;
 
@@ -316,12 +335,13 @@ int ameba_hal_init(hal_init_param *params)
 		rtl_dhm_init(&(key_storage[i].dhm_ctx));
 
 		memset(key_storage[i].hmac_key, 0, sizeof(key_storage[i].hmac_key));
+		key_storage[i].cert_data = NULL;
 	}
 
 	/* Realtek added to initialize ROM code calloc & free function handler */
 	p_rom_ssl_ram_map = (struct _rom_mbedtls_ram_map*)&rom_ssl_ram_map;
 	p_rom_ssl_ram_map->ssl_calloc = my_calloc;
-	p_rom_ssl_ram_map->ssl_free = free;
+	p_rom_ssl_ram_map->ssl_free = my_free;
 
 	ret = rtl_cryptoEngine_init_wrapper();	/* init crypto engine */
 	if (ret == RTL_HAL_SUCCESS) {
@@ -347,6 +367,7 @@ int ameba_hal_deinit(void)
 	}
 
 	for (uint32_t i = 0; i < KEY_STORAGE_INDEX_MAX; i++) {
+		key_storage[i].key_type = HAL_KEY_UNKNOWN;
 		memset(key_storage[i].aes_key, 0, sizeof(key_storage[i].aes_key));
 		key_storage[i].aes_key_len = 0;
 
@@ -356,6 +377,9 @@ int ameba_hal_deinit(void)
 		rtl_dhm_free(&(key_storage[i].dhm_ctx));
 
 		memset(key_storage[i].hmac_key, 0, sizeof(key_storage[i].hmac_key));
+		if (key_storage[i].cert_data != NULL) {
+			kmm_free(key_storage[i].cert_data);
+		}
 	}
 	init_stat = HAL_NOT_INITIALIZED;
 
@@ -367,10 +391,10 @@ int ameba_hal_free_data(hal_data *data)
 	AWRAP_ENTER;
 	if (data) {
 		if (data->data) {
-			free(data->data);
+			kmm_free(data->data);
 		}
 		if (data->priv) {
-			free(data->priv);
+			kmm_free(data->priv);
 		}
 	}
 	return HAL_SUCCESS;
@@ -399,7 +423,8 @@ int ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_da
 	if (prikey != NULL) {	/* If private key is pass in */
 		return HAL_NOT_SUPPORTED;
 	}
-	if (key_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
@@ -482,15 +507,21 @@ int ameba_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 		return ret;
 	}
 
-	if (key_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+	if (key_idx == FACTORYKEY_RTL_DEVICE) {
+		ret = rtl_read_factory_key_wrapper(key);
+		goto exit;
+	}
+
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
 	if ((mode <= HAL_KEY_ECC_SEC_P512R1) && (mode >= HAL_KEY_ECC_BRAINPOOL_P256R1)) {
 		puk_x_len = rtl_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.X));	/* Get length */
 		puk_y_len = rtl_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Y));	/* Get length */
-		puk_x = (unsigned char *)malloc(puk_x_len);	/* Allocate memory */
-		puk_y = (unsigned char *)malloc(puk_y_len);	/* Allocate memory */
+		puk_x = (unsigned char *)kmm_malloc(puk_x_len);	/* Allocate memory */
+		puk_y = (unsigned char *)kmm_malloc(puk_y_len);	/* Allocate memory */
 
 		if ((puk_x == NULL) || (puk_y == NULL)) {
 			ret = HAL_NOT_ENOUGH_MEMORY;	/* Memory not enough */
@@ -510,12 +541,13 @@ int ameba_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 	}
 
 	if (puk_x != NULL) {
-		free(puk_x);	/* free memory */
+		kmm_free(puk_x);	/* free memory */
 	}
 	if (puk_y != NULL) {
-		free(puk_y);	/* free memory */
+		kmm_free(puk_y);	/* free memory */
 	}
 
+exit:
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -534,7 +566,8 @@ int ameba_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 		return ret;
 	}
 
-	if (key_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 	if (mode != key_storage[key_idx].key_type) {
@@ -545,6 +578,11 @@ int ameba_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 	memset(key_storage[key_idx].aes_key, 0, sizeof(key_storage[key_idx].aes_key));
 	key_storage[key_idx].aes_key_len = 0;
 
+
+	rtl_rsa_free(&(key_storage[key_idx].rsa_ctx));
+	rtl_ecdh_free(&(key_storage[key_idx].ecdh_ctx));
+	rtl_ecdsa_free(&(key_storage[key_idx].ecdsa_ctx));
+	rtl_dhm_free(&(key_storage[key_idx].dhm_ctx));
 	rtl_rsa_init(&(key_storage[key_idx].rsa_ctx), RTL_RSA_PKCS_V15, 0);
 	rtl_ecdh_init(&(key_storage[key_idx].ecdh_ctx));
 	rtl_ecdsa_init(&(key_storage[key_idx].ecdsa_ctx));
@@ -566,6 +604,11 @@ int ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 	ret = rtl_chk_stat();
 	if (HAL_SUCCESS != ret) {
 		return ret;
+	}
+
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
 	}
 
 	switch (mode) {
@@ -683,7 +726,7 @@ int ameba_hal_generate_random(uint32_t len, hal_data *random)
 int ameba_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 {
 	AWRAP_ENTER;
-	
+
 	uint32_t len;
 	unsigned char output[64];
 
@@ -714,7 +757,7 @@ int ameba_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 		return HAL_NOT_SUPPORTED;
 	}
 
-	len = strlen((char*) output);
+	len = strlen((char *)output);
 	if (len != 0) {
 		HAL_COPY_DATA(hash, output, len);
 		return HAL_SUCCESS;
@@ -735,6 +778,15 @@ int ameba_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, ha
 		return ret;
 	}
 
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
+
+	if (ret != HAL_SUCCESS) {
+		sedbg("RTL SE failed (%zu)\n", ret);
+		return HAL_FAIL;
+	}
 	return HAL_NOT_SUPPORTED;
 }
 
@@ -749,6 +801,11 @@ int ameba_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, h
 	ret = rtl_chk_stat();
 	if (HAL_SUCCESS != ret) {
 		return ret;
+	}
+
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
 	}
 
 	if ((HAL_KEY_RSA_1024 > key_storage[key_idx].key_type)
@@ -813,6 +870,11 @@ int ameba_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, u
 		return ret;
 	}
 
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
+
 	if ((HAL_KEY_RSA_1024 > key_storage[key_idx].key_type)
 	|| (HAL_KEY_RSA_4096 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
@@ -873,6 +935,11 @@ int ameba_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_id
 		return ret;
 	}
 
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
+
 	if ((HAL_KEY_ECC_BRAINPOOL_P256R1 > key_storage[key_idx].key_type)
 	|| (HAL_KEY_ECC_SEC_P512R1 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
@@ -917,6 +984,11 @@ int ameba_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sig
 		return ret;
 	}
 
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
+
 	if ((HAL_KEY_ECC_BRAINPOOL_P256R1 > key_storage[key_idx].key_type)
 	|| (HAL_KEY_ECC_SEC_P512R1 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
@@ -942,6 +1014,11 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 		return ret;
 	}
 
+	dh_idx = rtl_index_convt(dh_idx);
+	if (dh_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
+
 	if (!dh_param->pubkey->data) {
 		return HAL_INVALID_ARGS;
 	}
@@ -965,7 +1042,7 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 		goto exit;
 	}
 
-	output = (unsigned char *)malloc(HAL_MAX_BUF_SIZE);
+	output = (unsigned char *)kmm_malloc(HAL_MAX_BUF_SIZE);
 	if (output == NULL) {
 		ret = HAL_NOT_ENOUGH_MEMORY;
 		goto exit;
@@ -973,11 +1050,11 @@ int ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 	/* Sets up and writes the ServerKeyExchange parameters */
 	p_size = rtl_mpi_size(&key_storage[dh_idx].dhm_ctx.P);
 	ret = rtl_dhm_make_params(&(key_storage[dh_idx].dhm_ctx), (int)p_size, output, &output_len, hal_rand, NULL);
-	free(output);	/* Output is not needed to exports, Output is Param */
+	kmm_free(output);	/* Output is not needed to exports, Output is Param */
 
 	if (ret == HAL_SUCCESS) {
 		output_len = key_storage[dh_idx].dhm_ctx.len;
-		output = (unsigned char *)malloc(output_len);
+		output = (unsigned char *)kmm_malloc(output_len);
 		if (output == NULL) {
 			ret = HAL_NOT_ENOUGH_MEMORY;
 			goto exit;
@@ -996,7 +1073,7 @@ exit:
 	rtl_mpi_free(&mpi_P);
 	rtl_mpi_free(&mpi_G);
 	if (output != NULL) {
-		free(output);
+		kmm_free(output);
 	}
 
 	if (ret != HAL_SUCCESS) {
@@ -1019,6 +1096,11 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 	ret = rtl_chk_stat();
 	if (HAL_SUCCESS != ret) {
 		return ret;
+	}
+
+	dh_idx = rtl_index_convt(dh_idx);
+	if (dh_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
 	}
 
 	switch (dh_param->mode) {
@@ -1044,7 +1126,7 @@ int ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, h
 	}
 
 	buf_size = key_storage[dh_idx].dhm_ctx.len;
-	output = (unsigned char *)malloc(buf_size);
+	output = (unsigned char *)kmm_malloc(buf_size);
 	if (output == NULL) {
 		ret = HAL_NOT_ENOUGH_MEMORY;
 		goto exit;
@@ -1059,7 +1141,7 @@ exit:
 	rtl_mpi_free(&mpi_P);
 	rtl_mpi_free(&mpi_G);
 	if (output != NULL) {
-		free(output);
+		kmm_free(output);
 	}
 
 	if (ret != HAL_SUCCESS) {
@@ -1083,6 +1165,11 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 		return ret;
 	}
 
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
+
 	if ((HAL_KEY_ECC_BRAINPOOL_P256R1 > key_storage[key_idx].key_type)
 	&& (HAL_KEY_ECC_SEC_P512R1 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
@@ -1097,7 +1184,7 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 
 	/* Set Z key */
 	Qp_z_len = rtl_mpi_size(&(key_storage[key_idx].ecdh_ctx.Q.Z));	/* Get Key size */
-	Qp_z = (unsigned char *)malloc(Qp_z_len);	/* Allocate memory */
+	Qp_z = (unsigned char *)kmm_malloc(Qp_z_len);	/* Allocate memory */
 	if (Qp_z == NULL) {
 		ret = HAL_NOT_ENOUGH_MEMORY;	/* Memory not enough */
 		goto exit;
@@ -1125,7 +1212,7 @@ int ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key
 
 exit:
 	if (Qp_z != NULL) {
-		free(Qp_z);
+		kmm_free(Qp_z);
 	}
 
 	if (ret != HAL_SUCCESS) {
@@ -1146,15 +1233,16 @@ int ameba_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 		return ret;
 	}
 
-	if (cert_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+	cert_idx = rtl_index_convt(cert_idx);
+	if (cert_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
 	/* If cert exist */
 	if (key_storage[cert_idx].cert_data != NULL) {
-		free(key_storage[cert_idx].cert_data);	/* Free existing Cert memory */
+		kmm_free(key_storage[cert_idx].cert_data);	/* Free existing Cert memory */
 	}
-	key_storage[cert_idx].cert_data = malloc(cert_in->data_len);	/* malloc for new cert */
+	key_storage[cert_idx].cert_data = kmm_malloc(cert_in->data_len);	/* malloc for new cert */
 
 	/* Copy cert data and length into local storage */
 	memcpy(key_storage[cert_idx].cert_data, cert_in->data, cert_in->data_len);
@@ -1178,7 +1266,13 @@ int ameba_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 		return ret;
 	}
 
-	if (cert_idx > KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+	if (cert_idx == FACTORYKEY_RTL_CERT) {	/* If factory Cert */
+		ret = rtl_read_factory_cert_wrapper(cert_out);
+		goto exit;
+	}
+
+	cert_idx = rtl_index_convt(cert_idx);
+	if (cert_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
 	if (key_storage[cert_idx].cert_data == NULL) {
@@ -1187,6 +1281,7 @@ int ameba_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 
 	HAL_COPY_DATA(cert_out, key_storage[cert_idx].cert_data, key_storage[cert_idx].cert_len);
 
+exit:
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 		return HAL_FAIL;
@@ -1197,6 +1292,11 @@ int ameba_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 int ameba_hal_remove_certificate(uint32_t cert_idx)
 {
 	AWRAP_ENTER;
+
+	cert_idx = rtl_index_convt(cert_idx);
+	if (cert_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
 
 	return HAL_NOT_SUPPORTED;
 }
@@ -1271,6 +1371,11 @@ int ameba_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t
 		return ret;
 	}
 
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
+
 	if ((HAL_KEY_AES_128 != key_storage[key_idx].key_type)
 	&& (HAL_KEY_AES_192 != key_storage[key_idx].key_type)
 	&& (HAL_KEY_AES_256 != key_storage[key_idx].key_type)) {
@@ -1320,6 +1425,11 @@ int ameba_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t
 	ret = rtl_chk_stat();
 	if (HAL_SUCCESS != ret) {
 		return ret;
+	}
+
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
 	}
 
 	if ((HAL_KEY_AES_128 != key_storage[key_idx].key_type)
@@ -1374,6 +1484,11 @@ int ameba_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t k
 		return ret;
 	}
 
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
+	}
+
 	if ((HAL_KEY_RSA_1024 > key_storage[key_idx].key_type)
 	&& (HAL_KEY_RSA_4096 < key_storage[key_idx].key_type)) {
 		return HAL_INVALID_ARGS;
@@ -1407,6 +1522,11 @@ int ameba_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t k
 	ret = rtl_chk_stat();
 	if (HAL_SUCCESS != ret) {
 		return ret;
+	}
+
+	key_idx = rtl_index_convt(key_idx);
+	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
+		return HAL_INVALID_SLOT_RANGE;
 	}
 
 	if ((HAL_KEY_RSA_1024 > key_storage[key_idx].key_type)
@@ -1452,7 +1572,7 @@ int ameba_hal_read_storage(uint32_t ss_idx, hal_data *data)
 	AWRAP_ENTER;
 
 	uint32_t ret;
-	
+
 	ret = rtl_read_storage_wrapper(ss_idx, data);
 
 	if (ret != RTL_HAL_SUCCESS) {
@@ -1507,7 +1627,6 @@ static struct sec_ops_s g_ameba_ops = {
 
 static struct sec_lowerhalf_s g_ameba_lower = {&g_ameba_ops, NULL};
 
-#define SECLINK_PATH "/dev/seclink"
 
 #ifndef LINUX
 int se_initialize(void)

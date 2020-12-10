@@ -109,7 +109,7 @@ const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
 #define PSRAM_SET_BURST_LEN     0xC0
 #define PSRAM_DEVICE_ID         0x9F
 
-#if CONFIG_SPIRAM_TYPE_ESPPSRAM32
+#ifdef CONFIG_SPIRAM_TYPE_ESPPSRAM32
 
 #define PSRAM_MFG_ID_M          0xff
 #define PSRAM_MFG_ID_S             8
@@ -622,7 +622,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 		gpio_matrix_out(PSRAM_CLK_IO, SIG_IN_FUNC225_IDX, 0, 0);
 		break;
 	}
-#if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
+#ifdef CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
 	// For flash 80Mhz, we must update ldo voltage in case older version of bootloader didn't do this.
 	rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
 	if (cfg.enable == 1 && cfg.tieh == RTC_VDDSDIO_TIEH_1_8V) {    // VDDSDIO regulator is enabled @ 1.8V
@@ -642,7 +642,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 
 	uint32_t flash_id = g_rom_flashchip.device_id;
 	if (flash_id == FLASH_ID_GD25LQ32C) {
-#if CONFIG_SPIRAM_TYPE_ESPPSRAM32
+#ifdef CONFIG_SPIRAM_TYPE_ESPPSRAM32
 		// Set drive ability for 1.8v flash in 80Mhz.
 		SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA0_U, FUN_DRV, 3, FUN_DRV_S);
 		SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA1_U, FUN_DRV, 3, FUN_DRV_S);

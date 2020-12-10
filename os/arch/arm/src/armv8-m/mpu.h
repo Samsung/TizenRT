@@ -81,21 +81,25 @@
 #define MPU_CTRL                0xe000ed94	/* MPU Control Register */
 #define MPU_RNR                 0xe000ed98	/* MPU Region Number Register */
 #define MPU_RBAR                0xe000ed9c	/* MPU Region Base Address Register */
-#define MPU_RASR                0xe000eda0	/* MPU Region Attribute and Size Register */
+#define MPU_RLAR                0xe000eda0	/* MPU Region Attribute and Size Register */
 
 #define MPU_RBAR_A1             0xe000eda4	/* MPU alias registers */
-#define MPU_RASR_A1             0xe000eda8
+#define MPU_RLAR_A1             0xe000eda8
 #define MPU_RBAR_A2             0xe000edac
-#define MPU_RASR_A2             0xe000edb0
+#define MPU_RLAR_A2             0xe000edb0
 #define MPU_RBAR_A3             0xe000edb4
-#define MPU_RASR_A3             0xe000edb8
+#define MPU_RLAR_A3             0xe000edb8
+
+#define MPU_MAIR0		0xe000edc0	/* MPU attribute indirection registers */
+#define MPU_MAIR1		0xe000edc4
+
 
 /* MPU Type Register Bit Definitions */
 
 #define MPU_TYPE_SEPARATE       (1 << 0)	/* Bit 0: 0:unified or 1:separate memory maps */
-#define MPU_TYPE_DREGION_SHIFT  (8)	/* Bits 8-15: Number MPU data regions */
+#define MPU_TYPE_DREGION_SHIFT  (8)		/* Bits 8-15: Number MPU data regions */
 #define MPU_TYPE_DREGION_MASK   (0xff << MPU_TYPE_DREGION_SHIFT)
-#define MPU_TYPE_IREGION_SHIFT  (16)	/* Bits 16-23: Number MPU instruction regions */
+#define MPU_TYPE_IREGION_SHIFT  (16)		/* Bits 16-23: Number MPU instruction regions */
 #define MPU_TYPE_IREGION_MASK   (0xff << MPU_TYPE_IREGION_SHIFT)
 
 /* MPU Control Register Bit Definitions */
@@ -120,45 +124,105 @@
 
 /* MPU Region Base Address Register Bit Definitions */
 
-#define MPU_RBAR_REGION_SHIFT   (0)	/* Bits 0-3: MPU region */
-#define MPU_RBAR_REGION_MASK    (15 << MPU_RBAR_REGION_SHIFT)
-#define MPU_RBAR_VALID          (1 << 4)	/* Bit 4: MPU Region Number valid */
-#define MPU_RBAR_ADDR_MASK      0xffffffe0	/* Bits N-31:  Region base addrese */
+#define MPU_RBAR_XN		(1 << 0)			/* Bits 0: MPU region */
+#define MPU_RBAR_AP_SHIFT	(1)				/* Bits 1-2 */
+#define MPU_RBAR_AP_MASK	(3 << MPU_RBAR_AP_SHIFT)
+#define MPU_RBAR_SH_SHIFT	(3)
+#define MPU_RBAR_SH_MASK	(3 << MPU_RBAR_SH_SHIFT)
+#define MPU_RBAR_ADDR_MASK      0xffffffe0			/* Bits N-31:  Region base addrese */
 
-/* MPU Region Attributes and Size Register Bit Definitions */
+#define MPU_RBAR_SH_NON		(0 << MPU_RBAR_SH_SHIFT)
+#define MPU_RBAR_SH_OUT		(1 << MPU_RBAR_SH_SHIFT)
+#define MPU_RBAR_SH_IN		(2 << MPU_RBAR_SH_SHIFT)
 
-#define MPU_RASR_ENABLE         (1 << 0)	/* Bit 0: Region enable */
-#define MPU_RASR_SIZE_SHIFT     (1)	/* Bits 1-5: Size of the MPU protection region */
+#define MPU_RBAR_AP_RWNO	(0 << MPU_RBAR_AP_SHIFT)	/* P:RW   U:None */
+#define MPU_RBAR_AP_RWRW	(1 << MPU_RBAR_AP_SHIFT)	/* P:RW   U:RW   */
+#define MPU_RBAR_AP_RONO	(2 << MPU_RBAR_AP_SHIFT)	/* P:RO   U:None */
+#define MPU_RBAR_AP_RORO	(3 << MPU_RBAR_AP_SHIFT)	/* P:RO   U:RO   */
 
-#define MPU_RASR_SIZE_MASK      (31 << MPU_RASR_SIZE_SHIFT)
-#define MPU_RASR_SIZE_LOG2(n) ((n-1) << MPU_RASR_SIZE_SHIFT)
-#define MPU_RASR_SRD_SHIFT      (8)	/* Bits 8-15: Subregion disable */
-#define MPU_RASR_SRD_MASK       (0xff << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_SRD_0        (0x01 << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_SRD_1        (0x02 << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_SRD_2        (0x04 << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_SRD_3        (0x08 << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_SRD_4        (0x10 << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_SRD_5        (0x20 << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_SRD_6        (0x40 << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_SRD_7        (0x80 << MPU_RASR_SRD_SHIFT)
-#define MPU_RASR_ATTR_SHIFT     (16)	/* Bits 16-31: MPU Region Attribute field */
-#define MPU_RASR_ATTR_MASK      (0xffff << MPU_RASR_ATTR_SHIFT)
-#define MPU_RASR_B              (1 << 16)	/* Bit 16: Bufferable */
-#define MPU_RASR_C              (1 << 17)	/* Bit 17: Cacheable */
-#define MPU_RASR_S              (1 << 18)	/* Bit 18: Shareable */
-#define MPU_RASR_TEX_SHIFT    (19)	/* Bits 19-21: TEX Address Permisson */
-#define MPU_RASR_TEX_MASK     (7 << MPU_RASR_TEX_SHIFT)
-#define MPU_RASR_TEX(n)		((uint32_t)(n) << MPU_RASR_TEX_SHIFT)
-#define MPU_RASR_AP_SHIFT       (24)	/* Bits 24-26: Access permission */
-#define MPU_RASR_AP_MASK        (7 << MPU_RASR_AP_SHIFT)
-#define MPU_RASR_AP_NONO      (0 << MPU_RASR_AP_SHIFT)	/* P:None U:None */
-#define MPU_RASR_AP_RWNO      (1 << MPU_RASR_AP_SHIFT)	/* P:RW   U:None */
-#define MPU_RASR_AP_RWRO      (2 << MPU_RASR_AP_SHIFT)	/* P:RW   U:RO   */
-#define MPU_RASR_AP_RWRW      (3 << MPU_RASR_AP_SHIFT)	/* P:RW   U:RW   */
-#define MPU_RASR_AP_RONO      (5 << MPU_RASR_AP_SHIFT)	/* P:RO   U:None */
-#define MPU_RASR_AP_RORO      (6 << MPU_RASR_AP_SHIFT)	/* P:RO   U:RO   */
-#define MPU_RASR_XN             (1 << 28)	/* Bit 28: Instruction access disable */
+/* MPU Region Limit Address Register Bit Definitions */
+
+#define MPU_RLAR_ENABLE         (1 << 0)			/* Bit 0: Region enable */
+#define MPU_RLAR_ATTR_SHIFT	(1)
+#define MPU_RLAR_ATTR_MASK	(7 << MPU_RLAR_ATTR_SHIFT)
+#define MPU_RLAR_LIMIT_MASK	0xffffffe0
+
+/* MPU Memory Attribute Index Register Definitions */
+
+#define MPU_MAIR_SHIFT			(1)
+#define MPU_MAIR_IDX(idx)		((idx & 7) << MPU_MAIR_SHIFT)
+
+/* define memory attribute of Normal memory with  write-through transient,  write allocation */
+#define NORMAL_WT_T_WA			(0x01)
+
+/* define memory attribute of Normal memory with  write-through transient,  read allocation */
+#define NORMAL_WT_T_RA			(0x02)
+
+/* define memory attribute of Normal memory with  write-through transient,  read & write allocation */
+#define NORMAL_WT_T_RWA			(0x03)
+
+/* define memory attribute of Normal memory with  non-cacheable */
+#define NORMAL_NC			(0x04)
+
+/* define memory attribute of Normal memory with  write-back transient,  write allocation */
+#define NORMAL_WB_T_WA			(0x05)
+
+/* define memory attribute of Normal memory with  write-back transient,  read allocation */
+#define NORMAL_WB_T_RA			(0x06)
+
+/* define memory attribute of Normal memory with  write-back transient,  read and write allocation */
+#define NORMAL_WB_T_RWA			(0x07)
+
+/* define memory attribute of Normal memory with  write-through non-transient, no  allocation */
+#define NORMAL_WT_NT			(0x08)
+
+/* define memory attribute of Normal memory with  write-through non-transient,  write allocation */
+#define NORMAL_WT_NT_WA			(0x09)
+
+/* define memory attribute of Normal memory with  write-through non-transient,  read allocation */
+#define NORMAL_WT_NT_RA			(0x0A)
+
+/* define memory attribute of Normal memory with  write-through non-transient,  read and write allocation */
+#define NORMAL_WT_NT_RWA		(0x0B)
+
+/* define memory attribute of Normal memory with  write-back non-transient, no  allocation */
+#define NORMAL_WB_NT			(0x0C)
+
+/* define memory attribute of Normal memory with  write-back non-transient,  write allocation */
+#define NORMAL_WB_NT_WA			(0x0D)
+
+/* define memory attribute of Normal memory with  write-back non-transient,  read allocation */
+#define NORMAL_WB_NT_RA			(0x0E)
+
+/* define memory attribute of Normal memory with  write-back non-transient,  read and write allocation */
+#define NORMAL_WB_NT_RWA		(0x0F)
+
+/* define memory attribute of Device memory with non-gathering, non-reording, non-Early Write Acknowledge */
+#define DEVICE_NG_NR_NE			((0<<4)|(0<<2))
+
+/* define memory attribute of Device memory with non-gathering, non-reording, Early Write Acknowledge */
+#define DEVICE_NG_NR_E			((0<<4)|(1<<2))
+
+/* define memory attribute of Device memory with non-gathering, reording, Early Write Acknowledge */
+#define DEVICE_NG_R_E			((0<<4)|(2<<2))
+
+/* define memory attribute of Device memory with gathering, reording, Early Write Acknowledge */
+#define DEVICE_G_R_E			((0<<4)|(3<<2))
+
+#define MPU_MEM_ATTR0                   ((NORMAL_NC << 4) | NORMAL_NC)
+#define MPU_MEM_ATTR1                   ((NORMAL_WT_T_RA << 4)  | NORMAL_WT_T_RA)
+#define MPU_MEM_ATTR2                   ((NORMAL_WB_T_RWA << 4)  | NORMAL_WB_T_RWA)
+#define MPU_MEM_ATTR3                   (DEVICE_NG_NR_NE)
+#define MPU_MEM_ATTR4                   (DEVICE_NG_NR_NE)
+#define MPU_MEM_ATTR5                   (DEVICE_NG_NR_NE)
+#define MPU_MEM_ATTR6                   (DEVICE_NG_NR_NE)
+#define MPU_MEM_ATTR7                   (DEVICE_NG_NR_NE)
+
+#define MPU_MEM_ATTR_IDX_NC		0
+#define MPU_MEM_ATTR_IDX_WT_T_RA	1
+#define MPU_MEM_ATTR_IDX_WB_T_RWA	2
+#define MPU_MEM_ATTR_IDX_DEVICE		3
+
 
 /************************************************************************************
  * Global Function Prototypes
@@ -199,22 +263,6 @@ uint8_t mpu_log2regionceil(uintptr_t base, size_t size);
 
 uint8_t mpu_log2regionfloor(uintptr_t base, size_t size);
 
-/****************************************************************************
- * Name: mpu_subregion
- *
- * Description:
- *   Given (1) the offset to the beginning of valid data, (2) the size of the
- *   memory to be mapped and (2) the log2 size of the mapping to use, determine
- *   the minimal sub-region set to span that memory region.
- *
- * Assumption:
- *   l2size has the same properties as the return value from
- *   mpu_log2regionceil()
- *
- ****************************************************************************/
-
-uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size);
-
 /************************************************************************************
  * Inline Functions
  ************************************************************************************/
@@ -250,26 +298,25 @@ static inline void mpu_show_regioninfo(void)
 {
 #ifdef CONFIG_DEBUG
 	int idx, temp;
-	uint32_t base, size, attr;
+	uint32_t rbar, rlar;
 
 	/* save the current region before printing the information */
 	temp = getreg32(MPU_RNR);
 
 	lldbg("*****************************************************************************\n");
-	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t REG\t   \tSTATUS\tATTRIBUTES*\n");
+	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t   STATUS\t ACCESS\t   \tNO_EXECUTE*\n");
 	lldbg("*****************************************************************************\n");
 	for (idx = 0; idx < 8; idx++) {
 		putreg32(idx, MPU_RNR);
-		base = getreg32(MPU_RBAR);
-		size = getreg32(MPU_RASR);
-		attr = getreg32(MPU_RASR);
+		rbar = getreg32(MPU_RBAR);
+		rlar = getreg32(MPU_RLAR);
 		lldbg("%8d\t\t%8X\t%8X\t%8X\t%8X\t%8X\n",
-			(base & MPU_RBAR_REGION_MASK),
-			(base & MPU_RBAR_ADDR_MASK),
-			(size ? (1 << (((size & MPU_RASR_SIZE_MASK) >> MPU_RASR_SIZE_SHIFT) + 1)) : 0),
-			((size & MPU_RASR_SRD_MASK) >> MPU_RASR_SRD_SHIFT),
-			(size & MPU_RASR_ENABLE) ? 1 : 0,
-			((attr & MPU_RASR_ATTR_MASK) >> MPU_RASR_ATTR_SHIFT));
+			idx,
+			(rbar & MPU_RBAR_ADDR_MASK),
+			(((rlar & MPU_RLAR_LIMIT_MASK) - (rbar & MPU_RBAR_ADDR_MASK)) | 0x1f) + 1,
+			(rlar & MPU_RLAR_ENABLE) ? 1 : 0,
+			((rbar & MPU_RBAR_AP_MASK) >> MPU_RBAR_AP_SHIFT),
+			(rbar & MPU_RBAR_XN));
 	}
 	lldbg("*****************************************************************************\n");
 	/* restore the previous region */
@@ -302,6 +349,18 @@ static inline void mpu_control(bool enable, bool hfnmiena, bool privdefena)
 	}
 	/* restore the previous region */
 	putreg32(regval, MPU_CTRL);
+
+	/* Set attribute registers */
+	regval = MPU_MEM_ATTR0;
+	regval |= MPU_MEM_ATTR1 << 8;
+	regval |= MPU_MEM_ATTR2 << 16;
+	regval |= MPU_MEM_ATTR3 << 24;
+	putreg32(regval, MPU_MAIR0);
+	regval = MPU_MEM_ATTR4;
+	regval |= MPU_MEM_ATTR5 << 8;
+	regval |= MPU_MEM_ATTR6 << 16;
+	regval |= MPU_MEM_ATTR7 << 24;
+	putreg32(regval, MPU_MAIR1);
 }
 
 /****************************************************************************
@@ -316,33 +375,26 @@ static inline void mpu_control(bool enable, bool hfnmiena, bool privdefena)
 static inline void mpu_priv_stronglyordered(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
+
 	/* Select the region */
 
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region | MPU_RBAR_VALID, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_OUT;
+	regval |= MPU_RBAR_AP_RWNO;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region  */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size    */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions    */
-			 /* Not Cacheable  */
-			 /* Not Bufferable */
-			 MPU_RASR_S |			/* Shareable      */
-			 MPU_RASR_AP_RWNO;		/* P:RW   U:None  */
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 #endif
 
@@ -357,31 +409,26 @@ static inline void mpu_priv_stronglyordered(uint32_t region, uintptr_t base, siz
 static inline void mpu_userflash(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
+
 	/* Select the region */
 
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_NON;
+	regval |= MPU_RBAR_AP_RORO;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
-			 MPU_RASR_C |			/* Cacheable     */
-			 MPU_RASR_AP_RORO;		/* P:RO   U:RO   */
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 
 /****************************************************************************
@@ -395,31 +442,26 @@ static inline void mpu_userflash(uint32_t region, uintptr_t base, size_t size)
 static inline void mpu_privflash(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
+
 	/* Select the region */
 
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_NON;
+	regval |= MPU_RBAR_AP_RONO;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
-			 MPU_RASR_C |			/* Cacheable     */
-			 MPU_RASR_AP_RONO;		/* P:RO   U:None */
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 
 /****************************************************************************
@@ -433,32 +475,26 @@ static inline void mpu_privflash(uint32_t region, uintptr_t base, size_t size)
 static inline void mpu_userintsram(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
+
 	/* Select the region */
 
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_OUT;
+	regval |= MPU_RBAR_AP_RWRW;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
-			 MPU_RASR_S |			/* Shareable     */
-			 MPU_RASR_C |			/* Cacheable     */
-			 MPU_RASR_AP_RWRW;		/* P:RW   U:RW   */
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 
 /****************************************************************************
@@ -472,32 +508,26 @@ static inline void mpu_userintsram(uint32_t region, uintptr_t base, size_t size)
 static inline void mpu_userintsram_wb(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
+
 	/* Select the region */
 
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_NON;
+	regval |= MPU_RBAR_AP_RWRW;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
-			 MPU_RASR_B |			/* Shareable     */
-			 MPU_RASR_TEX(5) |			/* Cacheable     */
-			 MPU_RASR_AP_RWRW;		/* P:RW   U:RW   */
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_NC);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 
 /****************************************************************************
@@ -511,32 +541,26 @@ static inline void mpu_userintsram_wb(uint32_t region, uintptr_t base, size_t si
 static inline void mpu_privintsram(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
+
 	/* Select the region */
 
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_OUT;
+	regval |= MPU_RBAR_AP_RWNO;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
-			 MPU_RASR_S |			/* Shareable     */
-			 MPU_RASR_C |			/* Cacheable     */
-			 MPU_RASR_AP_RWNO;		/* P:RW   U:None */
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 
 /****************************************************************************
@@ -550,33 +574,26 @@ static inline void mpu_privintsram(uint32_t region, uintptr_t base, size_t size)
 static inline void mpu_userextsram(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
+
 	/* Select the region */
 
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_OUT;
+	regval |= MPU_RBAR_AP_RWRW;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
-			 MPU_RASR_S |			/* Shareable     */
-			 MPU_RASR_C |			/* Cacheable     */
-			 MPU_RASR_B |			/* Bufferable    */
-			 MPU_RASR_AP_RWRW;		/* P:RW   U:RW   */
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 
 /****************************************************************************
@@ -590,33 +607,25 @@ static inline void mpu_userextsram(uint32_t region, uintptr_t base, size_t size)
 static inline void mpu_privextsram(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	/* Select the region */
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
+	/* Select the region */
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_OUT;
+	regval |= MPU_RBAR_AP_RWNO;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
-			 MPU_RASR_S |			/* Shareable     */
-			 MPU_RASR_C |			/* Cacheable     */
-			 MPU_RASR_B |			/* Bufferable    */
-			 MPU_RASR_AP_RWNO;		/* P:RW   U:None */
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 
 /****************************************************************************
@@ -630,34 +639,26 @@ static inline void mpu_privextsram(uint32_t region, uintptr_t base, size_t size)
 static inline void mpu_peripheral(uint32_t region, uintptr_t base, size_t size)
 {
 	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
 
 	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	/* Select the region */
+	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
+	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
 
+	/* Select the region */
 	putreg32(region, MPU_RNR);
 
 	/* Select the region base address */
-
-	putreg32((base & MPU_RBAR_ADDR_MASK) | region, MPU_RBAR);
-
-	/* Select the region size and the sub-region map */
-
-	l2size = mpu_log2regionceil(base, size);
-	subregions = mpu_subregion(base, size, l2size);
+	regval = (base & MPU_RBAR_ADDR_MASK);
+	regval |= MPU_RBAR_SH_OUT;
+	regval |= MPU_RBAR_AP_RWNO;
+	regval |= MPU_RBAR_XN;
+	putreg32(regval, MPU_RBAR);
 
 	/* The configure the region */
-
-	regval = MPU_RASR_ENABLE |	/* Enable region */
-			 MPU_RASR_SIZE_LOG2((uint32_t)l2size) |	/* Region size   */
-			 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT) |	/* Sub-regions   */
-			 MPU_RASR_S |			/* Shareable     */
-			 MPU_RASR_B |			/* Bufferable    */
-			 MPU_RASR_AP_RWNO |		/* P:RW   U:None */
-			 MPU_RASR_XN;			/* Instruction access disable */
-
-	putreg32(regval, MPU_RASR);
+	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
+	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_DEVICE);
+	regval |= MPU_RLAR_ENABLE;
+	putreg32(regval, MPU_RLAR);
 }
 
 #undef EXTERN

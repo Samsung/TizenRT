@@ -24,6 +24,7 @@
 #include <string.h>
 #include <errno.h>
 #include <tinyara/wifi/slsi/slsi_wifi_api.h>
+#include <tinyara/kmalloc.h>
 
 #include <tinyara/wifi/wifi_utils.h>
 
@@ -96,7 +97,7 @@ free_scan_results(wifi_utils_scan_list_s *scan_list)
 	while (cur) {
 		prev = cur;
 		cur = cur->next;
-		free(prev);
+		kmm_free(prev);
 	}
 	scan_list = NULL;
 }
@@ -133,7 +134,7 @@ fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_s
 				wifi_scan_iter = wifi_scan_iter->next;
 				continue;
 			}
-			cur = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
+			cur = (wifi_utils_scan_list_s *)kmm_malloc(sizeof(wifi_utils_scan_list_s));
 			if (!cur) {
 				free_scan_results(*scan_list);
 				return wuret;
@@ -190,13 +191,13 @@ static int callback_handler(void *arg)
 	} else if (*type == 5 && g_cbk.softap_sta_left) {
 		g_cbk.softap_sta_left(NULL);
 	}
-	free(type);
+	kmm_free(type);
 	return 0;
 }
 
 static void linkup_handler(slsi_reason_t *reason)
 {
-	int *type = (int *)malloc(sizeof(int));
+	int *type = (int *)kmm_malloc(sizeof(int));
 	if (type == NULL) {
 		ndbg("[WU] malloc error\n");
 		return;
@@ -215,7 +216,7 @@ static void linkup_handler(slsi_reason_t *reason)
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)callback_handler, (void *)type);
 	if (ret != 0) {
 		ndbg("[WU] pthread create fail(%d)\n", errno);
-		free(type);
+		kmm_free(type);
 		return;
 	}
 	pthread_setname_np(tid, "wifi_utils_cbk_handler");
@@ -224,7 +225,7 @@ static void linkup_handler(slsi_reason_t *reason)
 
 static void linkdown_handler(slsi_reason_t *reason)
 {
-	int *type = (int *)malloc(sizeof(int));
+	int *type = (int *)kmm_malloc(sizeof(int));
 	if (type == NULL) {
 		ndbg("[WU] malloc error linkdown\n");
 		return;
@@ -239,7 +240,7 @@ static void linkdown_handler(slsi_reason_t *reason)
 	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)callback_handler, (void *)type);
 	if (ret != 0) {
 		ndbg("[WU] pthread create fail(%d)\n", errno);
-		free(type);
+		kmm_free(type);
 		return;
 	}
 	pthread_setname_np(tid, "wifi_utils_cbk_handler");
@@ -451,7 +452,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 			}
 		}
 
-		config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
+		config = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (!config) {
 			ndbg("[WU] Memory allocation failed!\n");
 			goto connect_ap_fail;
@@ -522,7 +523,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 
 connect_ap_fail:
 	if (config) {
-		free(config);
+		kmm_free(config);
 		config = NULL;
 	}
 
@@ -587,7 +588,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	slsi_ap_config_t *ap_config = NULL;
 	slsi_security_config_t *security_config = NULL;
 
-	ap_config = (slsi_ap_config_t *)zalloc(sizeof(slsi_ap_config_t));
+	ap_config = (slsi_ap_config_t *)kmm_zalloc(sizeof(slsi_ap_config_t));
 	if (!ap_config) {
 		ndbg("[WU] Memory allocation failed!\n");
 		return WIFI_UTILS_FAIL;
@@ -615,7 +616,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	if (softap_config->passphrase_length < 1) {
 		goto start_soft_ap_fail;
 	} else {
-		security_config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
+		security_config = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (!security_config) {
 			ndbg("[WU] Memory allocation failed!\n");
 			goto start_soft_ap_fail;
@@ -664,11 +665,11 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 
 start_soft_ap_fail:
 	if (ap_config) {
-		free(ap_config);
+		kmm_free(ap_config);
 		ap_config = NULL;
 	}
 	if (security_config) {
-		free(security_config);
+		kmm_free(security_config);
 		security_config = NULL;
 	}
 	return ret;

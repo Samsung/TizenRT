@@ -96,13 +96,17 @@ CMN_CSRCS += arm_unblocktask.c arm_undefinedinsn.c
 CMN_CSRCS += arm_copyarmstate.c
 CMN_CSRCS += up_checkstack.c
 
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += go_os_start.c
+endif
+
 # Configuration dependent C files
 ifeq ($(CONFIG_ARMV7M_MPU),y)
 CMN_CSRCS += arm_mpu.c
 endif
 
 ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
-CMN_CSRCS += up_schedyield.c
+CMN_CSRCS += arm_schedyield.c
 endif
 
 ifeq ($(CONFIG_BUILD_KERNEL),y)
@@ -110,7 +114,7 @@ CMN_CSRCS += up_task_start.c up_pthread_start.c arm_signal_dispatch.c
 endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
-CMN_CSRCS += up_task_start.c up_pthread_start.c up_userspace.c
+CMN_CSRCS += up_task_start.c up_pthread_start.c
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)
 CMN_CSRCS += arm_signal_dispatch.c
 CMN_UASRCS += arm_signal_handler.S

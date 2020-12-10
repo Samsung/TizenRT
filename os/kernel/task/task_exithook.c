@@ -69,6 +69,7 @@
 #include "group/group.h"
 #include "signal/signal.h"
 #include "task/task.h"
+#include "debug/debug.h"
 #ifdef CONFIG_BINARY_MANAGER
 #include "binary_manager/binary_manager.h"
 #endif
@@ -555,6 +556,11 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 	if ((tcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0) {
 		return;
 	}
+
+#ifdef CONFIG_DEBUG
+	/* Save the terminated task/pthread's information for stack monitor and heapinfo. */
+	dbg_save_termination_info(tcb);
+#endif
 
 #ifdef CONFIG_CANCELLATION_POINTS
 	/* Mark the task as non-cancelable to avoid additional calls to exit()
