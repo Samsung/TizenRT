@@ -501,10 +501,11 @@ int lwip_getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t
 				return EAI_FAMILY;
 			}
 
-			tmpserv[tmpservlen] = '\0';
 			if (tmpservlen == -1 || servlen < tmpservlen + 1) {
 				return EAI_MEMORY;
 			}
+			tmpserv[tmpservlen] = '\0';
+
 			strncpy(serv, tmpserv, tmpservlen + 1);
 		} else {
 			/* other flags are not supported */
