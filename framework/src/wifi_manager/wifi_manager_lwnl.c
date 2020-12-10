@@ -54,11 +54,11 @@ static inline wu_lwnl_status_e _send_msg(lwnl_msg *msg)
 	}
 
 	int res = write(fd, msg, sizeof(*msg));
+	close(fd);
+
 	if (res < 0) {
 		return -WIFI_UTILS_LWNL_WRITE_FAILED;
 	}
-
-	close(fd);
 
 	return WIFI_UTILS_LWNL_SUCCESS;
 }
