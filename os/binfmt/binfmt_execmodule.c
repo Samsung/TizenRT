@@ -187,9 +187,8 @@ int exec_module(FAR struct binary_s *binp)
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
 #ifdef CONFIG_ARM_MPU
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	uint8_t nregion = mpu_get_nregion_info(MPU_REGION_APP_BIN);
-
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
 	mpu_get_register_config_value(&rtcb->mpu_regs[0], nregion - 3, (uintptr_t)binp->alloc[ALLOC_TEXT], binp->textsize, true, true);
 	/* Configure ro section as RO and non-executable region */

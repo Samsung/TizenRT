@@ -153,7 +153,6 @@ static inline int exec_dtors(FAR struct binary_s *binp)
 int unload_module(FAR struct binary_s *binp)
 {
 	int ret;
-	int section_idx;
 
 	if (binp) {
 		/* Perform any format-specific unload operations */
@@ -207,6 +206,7 @@ int unload_module(FAR struct binary_s *binp)
 			/* Each loading section is allocated respectively.
 			 * They need to be freed each.
 			 */
+			int section_idx;
 			for (section_idx = 0; section_idx < ALLOC_MAX; section_idx++) {
 				if (binp->alloc[section_idx]) {
 					binfo("Freeing alloc[%d]: %p\n", section_idx, binp->alloc[section_idx]);
