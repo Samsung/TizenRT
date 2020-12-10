@@ -22,6 +22,7 @@
 #include <tinyara/config.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
@@ -43,6 +44,11 @@
 	"	    (2) [password] is unnecessary in case of open mode\n"	\
 	"	 wm_test leave\n"											\
 	"	 wm_test cancel\n"
+
+#define STRESS_USAGE													\
+	"\n stress test mode options:\n"									\
+	"	 wm_test stress 1 [ssid] [security mode] [password]\n"		\
+	"	 wm_test stress 2 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
 
 #define SCAN_USAGE								\
 	"\n run scan:\n"							\
@@ -82,6 +88,7 @@
 	SCAN_USAGE										\
 	PROFILE_USAGE									\
 	INFO_USAGE										\
+	STRESS_USAGE									\
 	REPEATTC_USAGE
 
 /**
@@ -132,6 +139,7 @@ static int _wm_test_join(struct options *opt, int argc, char *argv[]);
 static int _wm_test_set(struct options *opt, int argc, char *argv[]);
 static int _wm_test_auto(struct options *opt, int argc, char *argv[]);
 static int _wm_test_scan(struct options *opt, int argc, char *argv[]);
+static int _wm_test_stress(struct options *opt, int argc, char *argv[]);
 
 static void wm_process(int argc, char *argv[]);
 static int wm_parse_commands(struct options *opt, int argc, char *argv[]);
@@ -315,7 +323,7 @@ exec_func exec_table[WM_TEST_MAX] = {
 	NULL,                                      /* WM_TEST_INFO     */
 	_wm_test_auto,                             /* WM_TEST_AUTO     */
 	_wm_test_join,
-	NULL                                       /* WM_TEST_STRESS   */
+	_wm_test_stress,                                       /* WM_TEST_STRESS   */
 };
 
 char *func_name[WM_TEST_MAX] = {
@@ -1052,6 +1060,79 @@ static int _wm_test_join(struct options *opt, int argc, char *argv[])
 	opt->password = argv[5];
 	return 0;
 }
+
+static int _wm_test_stress(struct options *opt, int argc, char *argv[])
+{
+	if (argc < 4) {
+		return -1;
+	}
+
+	opt->stress_tc_idx = atoi(argv[3]);
+	if (opt->stress_tc_idx == 1) {
+		// TC index is 1
+		if (argc != 7 && argc != 6) {
+			return -1;
+		}
+	} else if (opt->stress_tc_idx == 2){
+		if (argc != 10 && argc != 9) {
+			return -1;
+		}
+	} else {
+		return -2;
+	}
+
+	opt->ssid = argv[4];
+	opt->auth_type = get_auth_type(argv[5]);
+	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+		// case: open mode
+		opt->password = "";
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+		return 0;
+	}
+
+	if (argc == 6) {
+		// case: unspecified security mode
+		opt->auth_type = WIFI_MANAGER_AUTH_UNKNOWN;
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
+		opt->password = argv[5];
+		return 0;
+	}
+
+	// case: security mode + password
+	if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
+		return -1;
+	}
+
+	if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+		if (strlen(argv[6]) == 13) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
+		} else if (strlen(argv[6]) == 5) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
+		} else {
+			return -1;
+		}
+	} else {
+		opt->crypto_type = get_crypto_type(argv[5]);
+		if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+			return -1;
+		}
+	}
+	opt->password = argv[6];
+
+	int softap_index = 7;
+	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN) {
+		softap_index = 6;
+	}
+	if (opt->stress_tc_idx == 2) {
+		/* wpa2 aes is a default security mode. */
+		opt->softap_ssid = argv[softap_index++];
+		opt->softap_password = argv[softap_index++];
+		opt->softap_channel = atoi(argv[softap_index]);
+	}
+
+	return 0;
+}
+
 
 static int _wm_test_set(struct options *opt, int argc, char *argv[])
 {

@@ -85,7 +85,7 @@ static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn
 		*mode = SOFTAP_MODE;
 		break;
 	default:
-		WM_LOG_ERROR("[err] invalid state\n");
+		WM_LOG_ERROR("[WM][err] invalid state\n");
 		break;
 	}
 }
@@ -124,6 +124,7 @@ wifi_manager_result_e wifi_manager_deinit(void)
 
 	int res = wifimgr_post_message(&msg);
 	if (res < 0 || msg.result != WIFI_MANAGER_SUCCESS) {
+		WM_LOG_ERROR("[WM] post message fail %d %d%s:%d\n", res, msg.result, __FUNCTION__, __LINE__);
 		sem_destroy(msg.signal);
 		if (res < 0) {
 			return WIFI_MANAGER_FAIL;

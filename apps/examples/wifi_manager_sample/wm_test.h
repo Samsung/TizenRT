@@ -34,7 +34,9 @@ struct options {
 	wifi_manager_ap_crypto_type_e  crypto_type;
 	char *softap_ssid;
 	char *softap_password;
+	int softap_channel;
 	int scan_specific;
+	uint32_t stress_tc_idx;
 };
 
 #endif // #define __WIFIMANAGER_TEST_H__
