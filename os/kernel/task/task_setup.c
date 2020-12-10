@@ -456,8 +456,6 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		/* Copy the parent task ram details to this task */
 		rtcb = this_task();
-		tcb->ram_start = rtcb->ram_start;
-		tcb->ram_size = rtcb->ram_size;
 		tcb->uspace = rtcb->uspace;
 		tcb->uheap = rtcb->uheap;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
