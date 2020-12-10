@@ -670,14 +670,9 @@ struct tcp_pcb *tcp_listen_with_backlog_and_err(struct tcp_pcb *pcb, u8_t backlo
 	err_t res;
 
 	LWIP_UNUSED_ARG(backlog);
+	LWIP_ERROR("tcp_listen_with_backlog_and_err: invalid pcb", pcb != NULL, res = ERR_ARG; goto done);
 	LWIP_ERROR("tcp_listen: pcb already connected", pcb->state == CLOSED, res = ERR_CLSD; goto done);
 
-	/* already listening? */
-	if (pcb->state == LISTEN) {
-		lpcb = (struct tcp_pcb_listen *)pcb;
-		res = ERR_ALREADY;
-		goto done;
-	}
 #if SO_REUSE
 	if (ip_get_option(pcb, SOF_REUSEADDR)) {
 		/* Since SOF_REUSEADDR allows reusing a local address before the pcb's usage
