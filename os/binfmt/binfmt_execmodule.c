@@ -332,8 +332,6 @@ int exec_module(FAR struct binary_s *binp)
 	/* The app's userspace object will be found at an offset of 4 bytes from the start of the binary */
 	tcb->cmn.uspace = (uint32_t)binp->alloc[ALLOC_TEXT] + 4;
 	tcb->cmn.uheap = (uint32_t)binp->uheap;
-	tcb->cmn.ram_start = (uint32_t)binp->ramstart;
-	tcb->cmn.ram_size = binp->ramsize;
 
 #ifdef CONFIG_BINARY_MANAGER
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
