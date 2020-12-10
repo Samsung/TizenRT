@@ -1044,9 +1044,9 @@ static int _wm_test_join(struct options *opt, int argc, char *argv[])
 	}
 
 	if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
-		if (strlen(argv[5]) == 13) {
+		if ((strlen(argv[5]) == 13) || (strlen(argv[5]) == 26)) {
 			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
-		} else if (strlen(argv[5]) == 5) {
+		} else if ((strlen(argv[5]) == 5) || (strlen(argv[5]) == 10)) {
 			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
 		} else {
 			return -1;
@@ -1151,9 +1151,9 @@ static int _wm_test_set(struct options *opt, int argc, char *argv[])
 	}
 
 	if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
-		if (strlen(argv[5]) == 13) {
+		if ((strlen(argv[5]) == 13) || (strlen(argv[5]) == 26)) {
 			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
-		} else if (strlen(argv[5]) == 5) {
+		} else if ((strlen(argv[5]) == 5) || (strlen(argv[5]) == 10)) {
 			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
 		} else {
 			return -1;
