@@ -1017,6 +1017,11 @@ u32 app_mpu_nocache_init(void)
 	return 0;
 }
 
+u32 app_mpu_s_nocache_init(void)
+{
+	mpu_s_no_cache_init();
+}
+
 VOID app_vdd1833_detect(VOID)
 {
 	u32 temp;
@@ -1345,6 +1350,7 @@ extern void __libc_init_array(void);
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 	mpu_init();
 	app_mpu_nocache_init();
+	app_mpu_s_nocache_init();
 #endif
 	app_vdd1833_detect();
 	memcpy_gdma_init();
