@@ -171,7 +171,7 @@ static int lwnl_close(struct file *filep)
 	 */
 	for (waiter_idx = 0; waiter_idx < LWNL_NPOLLWAITERS; waiter_idx++) {
 		struct pollfd *fds = ln_open->io_fds[waiter_idx];
-		if (fds && fds->priv == (FAR void *)&ln_open->io_fds[waiter_idx]) {
+		if (fds && (FAR struct file *)fds->filep == filep) {
 			ln_open->io_fds[waiter_idx] = NULL;
 		}
 	}
@@ -269,6 +269,7 @@ static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 				/* Bind the poll structure and this slot */
 				ln_open->io_fds[i] = fds;
 				fds->priv = &ln_open->io_fds[i];
+				fds->filep = (void *)filep;
 				break;
 			}
 		}

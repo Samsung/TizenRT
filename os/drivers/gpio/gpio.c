@@ -515,6 +515,7 @@ static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
 				/* Bind the poll structure and this slot */
 				opriv->go_fds[i] = fds;
 				fds->priv = &opriv->go_fds[i];
+				fds->filep = (void *)filep;
 				break;
 			}
 		}
@@ -594,7 +595,7 @@ static int gpio_close(FAR struct file *filep)
 	 */
 	for (waiter_idx = 0; waiter_idx < CONFIG_GPIO_NPOLLWAITERS; waiter_idx++) {
 		struct pollfd *fds = opriv->go_fds[waiter_idx];
-		if (fds && fds->priv == (FAR void *)&opriv->go_fds[waiter_idx]) {
+		if (fds && (FAR struct file *)fds->filep == filep) {
 			opriv->go_fds[waiter_idx] = NULL;
 		}
 	}
