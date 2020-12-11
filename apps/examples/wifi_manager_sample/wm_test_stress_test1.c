@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License\n");
  * you may not use this file except in compliance with the License.
@@ -157,7 +157,7 @@ TEST_SETUP(connect_done)
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
 	wm_get_apinfo(&apconfig);
-	
+
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WM_TEST_WAIT;
 
@@ -178,7 +178,7 @@ TEST_F(connect_done)
 }
 
 /**
- * Description: call deinit() after disconnect() is excuted
+ * Description: call deinit() after disconnect() is executed
  */
 TEST_SETUP(disconnect)
 {
@@ -208,7 +208,7 @@ TEST_F(disconnect)
 
 
 /**
- * Description: call deinit() after scan() is excuted
+ * Description: call deinit() after scan() is executed
  */
 TEST_SETUP(scan)
 {
