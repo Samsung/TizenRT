@@ -78,8 +78,8 @@ extern unsigned char dhcp_mode_sta;
 #endif
 /* The flag to check if wifi init is completed */
 static int _wifi_is_on = 0;
-void* param_indicator;
-struct task_struct wifi_autoreconnect_task;
+static void* param_indicator;
+static struct task_struct wifi_autoreconnect_task;
 /******************************************************
  *               Variables Definitions
  ******************************************************/
