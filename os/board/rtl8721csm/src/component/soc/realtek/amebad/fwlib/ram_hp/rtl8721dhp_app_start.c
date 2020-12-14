@@ -1019,7 +1019,9 @@ u32 app_mpu_nocache_init(void)
 
 u32 app_mpu_s_nocache_init(void)
 {
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 	mpu_s_no_cache_init();
+#endif
 }
 
 VOID app_vdd1833_detect(VOID)
