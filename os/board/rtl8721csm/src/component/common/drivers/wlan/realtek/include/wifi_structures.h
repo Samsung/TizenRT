@@ -229,7 +229,7 @@ typedef struct rtw_rx_info {
 	unsigned char filter;		// 1: HT-20 2T and not LDPC pkt; 2: HT-40 2T and not LDPC pkt; 3: LDPC pkt
 	signed char rssi;	//-128~-1
 	unsigned short channel;	// channel which this pkt in
-	unsigned char agg:1;		// aggregation pkt or not. If an AMPDU contains only one MPDU then above 'length' is the antual pkt length without FCS, buuut if it contains multiple MPDUs then above 'length' is useless because it cannot tell how many MPDUs are contained and how long is each MPDU.
+	unsigned char agg:1;		// aggregation pkt or not. If an AMPDU contains only one MPDU then above 'length' is the actual pkt length without FCS, but if it contains multiple MPDUs then above 'length' is useless because it cannot tell how many MPDUs are contained and how long is each MPDU.
 	unsigned char mcs:7;		// mcs index
 }rtw_rx_info_t;
 

@@ -232,8 +232,6 @@ SECTIONS
 		. = ALIGN (32);
 		*(.bfsram.data*)
 		end = .;
-		*(.heap.stdlib*)
-		. = . + 4096;
 		_ebss = ABSOLUTE(.);
 	} > BD_RAM_NS
 

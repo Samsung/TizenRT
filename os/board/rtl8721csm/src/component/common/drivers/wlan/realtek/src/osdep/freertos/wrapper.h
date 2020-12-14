@@ -402,6 +402,8 @@ struct net_device_stats {
 	unsigned long   rx_bytes;               /* total bytes received         */
 	unsigned long   tx_bytes;               /* total bytes transmitted      */
 	unsigned long   rx_overflow;            /* rx fifo overflow count       */
+	unsigned long   rx_reorder_drop_cnt;
+	unsigned long   rx_reorder_timeout_cnt;
 };
 
 struct net_device {
