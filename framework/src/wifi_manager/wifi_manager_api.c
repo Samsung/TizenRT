@@ -30,6 +30,7 @@
 #include "wifi_manager_state.h"
 #include "wifi_manager_cb.h"
 #include "wifi_manager_info.h"
+#include "wifi_manager_profile.h"
 
 #ifdef CONFIG_WIFIMGR_INTERNAL_AUTOCONNECT
 #define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_INTERVAL, 77, 128}

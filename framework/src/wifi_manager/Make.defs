@@ -30,7 +30,7 @@ wifi_manager_info.c
 CSRCS += wifi_manager_dhcpc.c
 CSRCS += wifi_manager_dhcps.c
 
-ifeq ($(WIFI_MANAGER_SAVE_CONFIG), y)
+ifeq ($(CONFIG_WIFI_MANAGER_SAVE_CONFIG), y)
 CSRCS += wifi_manager_profile.c
 endif
 
