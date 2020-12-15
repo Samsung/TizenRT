@@ -12,7 +12,6 @@ services:
 branches:
   only:
   - master
-  - fs_journal
 
 env:
   global:
