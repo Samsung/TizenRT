@@ -25,7 +25,7 @@
 struct otp_lowerhalf_s;
 struct otp_ops_s {
 	int (*write)(struct otp_lowerhalf_s *dev, uint32_t address, uint8_t *data, uint32_t length);
-	int (*read)(struct otp_lowerhalf_s *dev, uint32_t address, uint8_t *data, uint32_t *length);
+	int (*read)(struct otp_lowerhalf_s *dev, uint32_t address, uint8_t *data, uint32_t length);
 	int (*lock)(struct otp_lowerhalf_s *dev);
 };
 
