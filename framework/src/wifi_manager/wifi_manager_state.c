@@ -237,6 +237,16 @@ static inline void WIFIMGR_SEND_API_SIGNAL(sem_t *api_sig)
 	}
 }
 
+static void _free_scan_list(wifi_utils_scan_list_s *scan_list)
+{
+	wifi_utils_scan_list_s *iter = scan_list, *prev = NULL;
+	while (iter) {
+		prev = iter;
+		iter = iter->next;
+		free(prev);
+	}
+}
+
 /*
  * Internal functions
  */
@@ -494,6 +504,10 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 		return WIFI_MANAGER_BUSY;
 	}
 
+	if (msg->event == EVT_SCAN_DONE) {
+		_free_scan_list((wifi_utils_scan_list_s *)msg->param);
+	}
+
 	/* it handles disconnecting state differently by substate
 	 * for example, if it enters disconnecting state because dhcpc fails
 	 * then it should not call disconnect callback to applications */
@@ -670,12 +684,14 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 }
 
 
+
 wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	if (msg->event == EVT_SCAN_DONE) {
 		wifimgr_call_cb(CB_SCAN_DONE, msg->param);
+		_free_scan_list((wifi_utils_scan_list_s *)msg->param);
 		WIFIMGR_RESTORE_STATE;
 		wret = WIFI_MANAGER_SUCCESS;
 	} else if (msg->event == EVT_DEINIT_CMD) {
