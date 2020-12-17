@@ -138,8 +138,8 @@
 #define localtime_r(c, r)  gmtime_r(c, r)
 #endif
 
-/* tm_year of struct tm means years since 1900 */
-#define TM_YEAR_BASE       1900
+/* tm_year of struct tm means years since 1970 */
+#define TM_YEAR_BASE       1970
 
 /********************************************************************************
  * Public Types
@@ -184,7 +184,7 @@ struct tm {
 	int tm_hour;				/* hour (0-23) */
 	int tm_mday;				/* day of the month (1-31) */
 	int tm_mon;				/* month (0-11) */
-	int tm_year;				/* years since 1900, TM_YEAR_BASE */
+	int tm_year;				/* years since 1970, TM_YEAR_BASE */
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	int tm_wday;				/* day of the week (0-6) */
 	int tm_yday;				/* day of the year (0-365) */

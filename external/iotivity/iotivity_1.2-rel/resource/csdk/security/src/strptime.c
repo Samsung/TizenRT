@@ -5,7 +5,7 @@
 #include <memory.h>
 #include <stdbool.h>
 
-#define TM_BASE_YEAR   1900
+#define TM_BASE_YEAR   1970
 
 static const int ydays[] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
 

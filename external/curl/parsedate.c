@@ -295,7 +295,7 @@ static time_t my_timegm(struct my_tm *tm)
        to return a negative value */
     return -1;
 
-  year = tm->tm_year + 1900;
+  year = tm->tm_year + 1970;
   month = tm->tm_mon;
   if(month < 0) {
     year += (11 - month) / 12;
@@ -513,7 +513,7 @@ static int parsedate(const char *date, time_t *output)
   tm.tm_hour = hournum;
   tm.tm_mday = mdaynum;
   tm.tm_mon = monnum;
-  tm.tm_year = yearnum - 1900;
+  tm.tm_year = yearnum - 1970;
 
   /* my_timegm() returns a time_t. time_t is often 32 bits, even on many
      architectures that feature 64 bit 'long'.

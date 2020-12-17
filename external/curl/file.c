@@ -502,7 +502,7 @@ static CURLcode file_do(struct connectdata *conn, bool *done)
              Curl_wkday[tm->tm_wday?tm->tm_wday-1:6],
              tm->tm_mday,
              Curl_month[tm->tm_mon],
-             tm->tm_year + 1900,
+             tm->tm_year + 1970,
              tm->tm_hour,
              tm->tm_min,
              tm->tm_sec);

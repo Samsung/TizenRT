@@ -35,8 +35,8 @@ extern "C"
 
 #define FREQ_DAILY (1)
 #define MAX_BYDAY_SIZE (7)     //7 days of week
-#define TM_YEAR_OFFSET (1900)  //tm_year field of c-lang tm date-time struct
-                               //represents number of years since 1900.
+#define TM_YEAR_OFFSET (1970)  //tm_year field of c-lang tm date-time struct
+                               //represents number of years since 1970.
 #define TM_DST_OFFSET (1)      //c-lang tm struct Daylight Saving Time offset.
 #define TOTAL_HOURS (24)       //Total hours in a day.
 

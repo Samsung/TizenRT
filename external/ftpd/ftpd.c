@@ -1895,7 +1895,7 @@ static int ftpd_listbuffer(FAR struct ftpd_session_s *session, FAR char *path, F
 		offset += snprintf(&buffer[offset], buflen - offset, " %s %2u", g_monthtab[tm.tm_mon], tm.tm_mday);
 		now = time(0);
 		if ((now - st->st_mtime) > (time_t)(60 * 60 * 24 * 180)) {
-			offset += snprintf(&buffer[offset], buflen - offset, " %5u", tm.tm_year + 1900);
+			offset += snprintf(&buffer[offset], buflen - offset, " %5u", tm.tm_year + 1970);
 		} else {
 			offset += snprintf(&buffer[offset], buflen - offset, " %02u:%02u", tm.tm_hour, tm.tm_min);
 		}
@@ -3040,7 +3040,7 @@ static int ftpd_command_mdtm(FAR struct ftpd_session_s *session)
 	free(abspath);
 
 	memcpy(&tm, gmtime(&st.st_mtime), sizeof(tm));
-	return ftpd_response(session->cmd.sd, session->txtimeout, "%03u%c%04u%02u%02u%02u%02u%02u\r\n", 213, ' ', tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	return ftpd_response(session->cmd.sd, session->txtimeout, "%03u%c%04u%02u%02u%02u%02u%02u\r\n", 213, ' ', tm.tm_year + 1970, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
 /****************************************************************************

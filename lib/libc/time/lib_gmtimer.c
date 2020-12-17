@@ -351,7 +351,7 @@ FAR struct tm *gmtime_r(FAR const time_t *timer, FAR struct tm *result)
 
 	/* Then return the struct tm contents */
 
-	result->tm_year = (int)year - TM_YEAR_BASE;	/* Relative to 1900 */
+	result->tm_year = (int)year - TM_YEAR_BASE;	/* Relative to 1970 */
 	result->tm_mon = (int)month - 1;	/* zero-based */
 	result->tm_mday = (int)day;	/* one-based */
 	result->tm_hour = (int)hour;

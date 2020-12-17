@@ -138,7 +138,7 @@ time_t ftpc_filetime(SESSION handle, FAR const char *filename)
 	/* Time is Universal Coordinated Time */
 
 	sscanf(session->reply, "%*s %04d%02d%02d%02d%02d%02d", &timestamp.tm_year, &timestamp.tm_mon, &timestamp.tm_mday, &timestamp.tm_hour, &timestamp.tm_min, &timestamp.tm_sec);
-	timestamp.tm_year -= 1900;
+	timestamp.tm_year -= 1970;
 	timestamp.tm_mon--;
 	return mktime(&timestamp);
 }
