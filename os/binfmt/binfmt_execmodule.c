@@ -159,6 +159,9 @@ int exec_module(FAR struct binary_s *binp)
 	FAR uint32_t *stack;
 	pid_t pid;
 	int ret;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int binary_idx;
+#endif
 
 	/* Sanity checking */
 
@@ -171,6 +174,7 @@ int exec_module(FAR struct binary_s *binp)
 	binfo("Executing %s\n", binp->filename);
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+	binary_idx = binp->binary_idx;
 	binp->uheap = (struct mm_heap_s *)binp->heapstart;
 	mm_initialize(binp->uheap, (void *)binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
 	mm_add_app_heap_list(binp->uheap, binp->bin_name);
@@ -342,7 +346,6 @@ int exec_module(FAR struct binary_s *binp)
 	strncpy(tcb->cmn.name, binp->bin_name, CONFIG_TASK_NAME_SIZE);
 	tcb->cmn.name[CONFIG_TASK_NAME_SIZE] = '\0';
 
-	int binary_idx = binp->binary_idx;
 	tcb->cmn.group->tg_binidx = binary_idx;
 	binary_manager_add_binlist(&tcb->cmn);
 
@@ -392,16 +395,18 @@ errout_with_appheap:
 	mm_remove_app_heap_list(binp->uheap);
 #endif
 errout_with_tcbinit:
+	if (tcb != NULL) {
 #ifdef CONFIG_BINARY_MANAGER
-	BIN_ID(binary_idx) = -1;
-	BIN_STATE(binary_idx) = BINARY_INACTIVE;
-	BIN_LOADVER(binary_idx) = 0;
+		BIN_ID(binary_idx) = -1;
+		BIN_STATE(binary_idx) = BINARY_INACTIVE;
+		BIN_LOADVER(binary_idx) = 0;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	BIN_LOADINFO(binary_idx) = NULL;
+		BIN_LOADINFO(binary_idx) = NULL;
 #endif
-	binary_manager_remove_binlist(&tcb->cmn);
+		binary_manager_remove_binlist(&tcb->cmn);
 #endif
-	sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
+		sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
+	}
 	return ret;
 
 errout_with_stack:
