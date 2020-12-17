@@ -181,9 +181,9 @@ static int binary_update_download_new_binary(void)
 	int read_fd;
 	int write_fd;
 	int ret;
-	int total_size;
-	int copy_size;
-	int read_size;
+	uint32_t total_size;
+	uint32_t copy_size;
+	uint32_t read_size;
 	uint32_t crc_hash = 0;
 	uint8_t buffer[BUFFER_SIZE];
 	binary_header_t header_data;
