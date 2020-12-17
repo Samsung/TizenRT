@@ -1,11 +1,21 @@
 # Developer guide for Usage of MPU Regions in TizenRT
 
 ## CONTENTS
+- [Overview](#overview)
 - [How to enable MPU](#how-to-enable-mpu)
 - [How to control MPU](#how-to-control-mpu)
 - [MPU Usages of platform](#mpu-usages-of-platform)
 - [Sample memory layout of MPU regions](#sample-memory-layout-of-mpu-regions)
 - [Appendix](#appendix)
+
+## Overview
+- The main purpose of MPU is to protect memory regions by defining different access permissions, attributes, etc in privileged and unprivileged access levels.
+- TizenRT divides available MPU regions into below specific use cases:
+	- Board specific
+	- Application binary
+	- Common binary
+	- Stack overflow
+- Static region numbers are then allocated for each of the above MPU types which are then configured.
 
 ## How to enable MPU
 
@@ -30,41 +40,32 @@
 ```
 
 ## How to control MPU
-1. **How to add new MPU region**
-	- Logical mapping of MPU regions to their respective memory segments is done statically using below enumeration in common mpu.h header file (os/include/tinyara/mpu.h).
+1. **MPU usage overview**
+	- Logical mapping of MPU regions to their respective memory segments is done statically using below structure in common mpu.h header file (os/include/tinyara/mpu.h).
 	```c
-	enum MPU_REG_NUM {
-	#ifdef CONFIG_APP_BINARY_SEPARATION
-	#ifdef CONFIG_SUPPORT_COMMON_BINARY
-	#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		MPU_REG_NUM_COM_LIB_TXT,	/* Common Binary */
-		MPU_REG_NUM_COM_LIB_RO,
-		MPU_REG_NUM_COM_LIB_DATA,
-	#else
-		MPU_REG_NUM_COM_LIB,
-	#endif
-	#endif
-	#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		MPU_REG_NUM_APP_TXT,		/* Apps */
-		MPU_REG_NUM_APP_RO,
-		MPU_REG_NUM_APP_DATA,
-	#else
-		MPU_REG_NUM_APP,
-	#endif
-	#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		MPU_REG_NUM_STK,		/* Stack */
-	#endif
-	#else
-		MPU_REG_NUM_UFLASH,
-		MPU_REG_NUM_URAM,
-	#endif
-		MPU_REG_NUM_MAX
+	struct mpu_usages_s {
+	        uint8_t nregion_board_specific;
+	        uint8_t nregion_common_bin;
+	        uint8_t nregion_app_bin;
+	        uint8_t nregion_stackovf;
+	        uint8_t max_nregion;
 	};
 	```
-	- The ordering of MPU regions in this enum is kept as above taking into consideration below rule:
-		- For overlapping address range between MPU regions, attributes of higher MPU region number will override those set by lower numbered MPU region.
-	- Your new MPU region should be added in the enum above.
-2. **How to register MPU region to real MPU hardware**
+	- This structure holds the region number range used for each type of mpu region (board specific, application binary, common binary, etc) and these are initialized during system boot using below API:
+	```c
+	void mpu_region_initialize(struct mpu_usages_s *mpu)
+
+	offset += MPU_NUM_REGIONS;
+	mpu->nregion_xxx_xx = offset;
+	```
+2. **Board specific MPU region reservation**
+	- In order to support few regions for the board specific purpose, below API is provided to reserve the first *num* number of regions:
+	```c
+	void mpu_set_nregion_board_specific(uint8_t num);
+	```
+	Above function shall be called during board initialization after the board specific MPU regions have been configured. The TizenRT MPU regions are configured after *num* number of board MPU regions.
+
+3. **How to register TizenRT MPU region to real MPU hardware**
 	- Below list of functions is available in TizenRT for registering MPU region to MPU hardware.
 		- Several functions of mpu_xxxx format are available in architecture specific mpu.h file (eg. os/arch/arm/src/armv7-m/mpu.h) for one-time configuration of MPU regions.
 			- Example: For configuring MPU regions for User Flash and User Internal SRAM, below functions are available.
@@ -100,8 +101,22 @@
 				- [ARMv7-M MPU functions](../os/arch/arm/src/armv7-m/mpu.h)
 				- [ARMv7-R MPU functions](../os/arch/arm/src/armv7-r/mpu.h)
 				- [ARMv8-M MPU functions](../os/arch/arm/src/armv8-m/mpu.h)
-		- For repeated/customized configuration of a MPU region, a two-step process should be applied using below functions:
-			1. In the first step, we obtain the mpu register values and store them in an array using below function:
+		- For repeated/customized configuration of a MPU region, a three-step process should be applied using below functions:
+			1. In the first step, get the region number to be configured using the below API:
+			```c
+			uint8_t nregion = mpu_get_nregion_info(MPU_REGION_xx);
+			```
+			Following enum provides possible mpu types to use in above API:
+			```c
+			enum mpu_region_usages_e {
+			        MPU_REGION_BOARD_SPECIFIC,
+			        MPU_REGION_COMMON_BIN,
+			        MPU_REGION_APP_BIN,
+			        MPU_REGION_STACKOVF,
+			        MPU_REGION_MAX
+			};
+			```
+			2. In the second step, obtain the mpu register values and store them in an array using below function:
 			```c
 			/****************************************************************************
 			 * Name: mpu_get_register_config_value
@@ -120,7 +135,9 @@
 
 			void mpu_get_register_config_value(uint32_t *regs, uint32_t region, uintptr_t base, size_t size, uint8_t readonly, uint8_t execute);
 			```
-			2. In the second step, the values in the array are used to configure the mpu using below function.
+			where,  
+			The 2nd parameter (region) values are used from the one obtained in step 1 above. These span from (nregion - 1) to (nregion - x) based on three separate MPU regions (text, ro and rw) to optimize reloading time or just one MPU region for all of section data.  
+			3. In the third step, the values in the array are used to configure the mpu using below function.
 			```c
 			/****************************************************************************
 			 * Name: up_mpu_set_register
@@ -131,22 +148,63 @@
 			 ****************************************************************************/
 			void up_mpu_set_register(uint32_t *mpu_regs);
 			```
-3. **Example : Adding new MPU region, MPU_REG_NUM_MY_REGION, with RO setting**
-	1. Add your MPU region in enum MPU_REG_NUM in common mpu.h file.
+
+4. **How to add new MPU region**
+	- If a new type of MPU usage is to be added, then another entry has to be done in the below enum in common mpu.h header file (os/include/tinyara/mpu.h).
 	```c
-	enum MPU_REG_NUM {
-	 ....
-	 MPU_REG_NUM_MY_REGION,
-	 MPU_REG_NUM_MAX
+	enum mpu_region_usages_e {
+	        MPU_REGION_BOARD_SPECIFIC,
+	        MPU_REGION_COMMON_BIN,
+	        MPU_REGION_APP_BIN,
+	        MPU_REGION_STACKOVF,
+	        MPU_REGION_MAX
 	};
 	```
-	2. To configure this MPU region as RO:
+	- The ordering of MPU regions is kept as above taking into consideration below rule:
+		- In armv7-m, for overlapping address range between MPU regions, attributes of higher MPU region number will override those set by lower numbered MPU region.
+		- In armv8-m, since overlapping regions are not allowed, the ordering of MPU regions does not matter.
+	- The new MPU region(nregion_xx) other than the existing usages of board specific, common binary, app binary & stack overflow should be added in the structure above.
+
+5. **Example : Adding new MPU region, MPU_REGION_MYREGION, with RO setting**
+	1. Add the MPU region type MPU_REGION_MYREGION in enum mpu_region_usages_e in common mpu.h file.
+	```c
+	enum mpu_region_usages_e {
+	 ....
+	 MPU_REGION_STACKOVF,
+	 MPU_REGION_MYREGION,
+	 MPU_REGION_MAX
+	};
+	```
+	2. Add a variable nregion_myregion to store the MPU region value in struct mpu_usages_s in common mpu.h file.
+	```c
+	struct mpu_usages_s {
+	 ....
+	 uint8_t nregion_stackovf;
+	 uint8_t nregion_myregion;
+	 uint8_t max_nregion;
+	};
+	```
+	3. Initialized the MPU region to its respective number during MPU initialization in mpuinit.c file.
+	```c
+	void mpu_region_initialize(struct mpu_usages_s *mpu) {
+	...
+	 offset += 1;
+	 mpu->nregion_myregion = offset;
+	}
+	```
+	4. To get MPU region number use mpu_get_nregion_info(usages) API.
+	```c
+	uint8_t nregion = mpu_get_nregion_info(MPU_REGION_MYREGION);
+	```
+	5. To configure this MPU region as RO:
 		1. Use mpu_get_register_value function to obtain mpu register values.
 			- Declare a *regs* array variable (of size 3\*(uint32_t)) and pass it as first argument.
-			- Pass readonly argument as *True* and region as *MPU_REG_NUM_MY_REGION*.
+			- Pass region number obtained in the third step as second argument.
+			- Pass readonly argument as *True*.
 			- Pass proper values for MPU region base address, size and execute permissions.
 			```c
-			mpu_get_register_config_value(regs, MPU_REG_NUM_MY_REGION,  base_address, size, True,  execute);
+			uint8_t nregion = mpu_get_nregion_info(MPU_REGION_MYREGION);
+			mpu_get_register_config_value(regs, nregion - 1,  base_address, size, True,  execute);
 			```
 		2. Use up_mpu_set_register function to set obtained mpu register values to mpu h/w for configuring region.
 		```c

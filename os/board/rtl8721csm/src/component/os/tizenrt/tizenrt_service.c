@@ -34,16 +34,26 @@
  ******************************************************************************/
 extern void timer_wrapper(_timerHandle timer_hdl);
 
-static irqstate_t tizen_flags;
+static irqstate_t initial_tizen_flags, up_tizen_flag;
+static int flagcnt = 0;
 void save_and_cli()
 {
-	tizen_flags = 0;
-	tizen_flags = irqsave();
+       if(flagcnt){
+               up_tizen_flag = irqsave();
+       }else{
+               initial_tizen_flags = irqsave();
+       }
+       flagcnt++;
 }
 
 void restore_flags()
 {
-	irqrestore(tizen_flags);
+       flagcnt--;
+       if(flagcnt){
+               irqrestore(up_tizen_flag);
+       }else{
+               irqrestore(initial_tizen_flags);
+       }
 }
 
 void cli()
@@ -487,12 +497,12 @@ static void _tizenrt_usleep_os(int us)
 
 static void _tizenrt_mdelay_os(int ms)
 {
-	up_mdelay((unsigned long)ms);
+	usleep((unsigned long)ms * 1000);
 }
 
 static void _tizenrt_udelay_os(int us)
 {
-	up_udelay((unsigned long)us);
+	usleep((unsigned long)us);
 }
 
 static void _tizenrt_yield_os(void)
@@ -712,6 +722,11 @@ err_exit:
 	char *task_info[3];
 	priority = SCHED_PRIORITY_DEFAULT + priority;
 	priority = (priority > SCHED_PRIORITY_MAX || priority < SCHED_PRIORITY_MIN)?SCHED_PRIORITY_DEFAULT:priority;
+	if(strncmp(name, "rtw_interrupt_thread", strlen("rtw_interrupt_thread") + 1) == 0) priority = 106;
+	if(strncmp(name, "rtw_recv_tasklet", strlen("rtw_recv_tasklet") + 1) == 0) priority = 105;
+	if(strncmp(name, "rtw_xmit_tasklet", strlen("rtw_xmit_tasklet") + 1) == 0) priority = 105;
+	if(strncmp(name, "cmd_thread", strlen("cmd_thread") + 1) == 0) priority = 105;
+	if(strncmp(name, "tcp_server_handler", strlen("tcp_server_handler") + 1) == 0) priority = 105;
 	stack_size *= sizeof(uint32_t);
 	/* Execute loading thread for load all binaries */
 	func_addr = (int)func;

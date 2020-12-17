@@ -44,3 +44,9 @@ config HW_SE_STORAGE
 	---help---
 		SE supports Secure Stroage
 
+config SE_SECURE_CONTEXT_SIZE
+	int "Secure Context Size"
+	default 4096
+	---help---
+		Secure Context Size to be allocated for SE NSC
+

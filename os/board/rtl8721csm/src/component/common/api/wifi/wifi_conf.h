@@ -674,6 +674,20 @@ int wifi_scan(rtw_scan_type_t                    scan_type,
 int wifi_scan_networks(rtw_scan_result_handler_t results_handler, void* user_data);
 
 /**
+ * @brief  Initiate a scan to search for 802.11 networks, a higher level API based on wifi_scan
+ *			to simplify the scan operation. This API separate full scan channel to partial scan
+ *			each channel for concurrent mode. MCC means Multi-channel concurrent.
+ * @param[in]  results_handler: The callback function which will receive and process the result data.
+ * @param[in]  user_data: User specified data that will be passed directly to the callback function.
+ * @return  RTW_SUCCESS or RTW_ERROR
+ * @note  Callback must not use blocking functions, since it is called from the context of the RTW thread.
+ *			The callback, user_data variables will be referenced after the function returns.
+ *			Those variables must remain valid until the scan is completed.
+ *			The usage of this api can reference ATWS in atcmd_wifi.c.
+ */
+int wifi_scan_networks_mcc(rtw_scan_result_handler_t results_handler, void* user_data);
+
+/**
  * @brief  Initiate a scan to search for 802.11 networks with specified SSID.
  * @param[in]  results_handler: The callback function which will receive and process the result data.
  * @param[in]  user_data: User specified data that will be passed directly to the callback function.
@@ -743,7 +757,7 @@ int wifi_get_network_mode(rtw_network_mode_t *pmode);
  *                    - 4 means enable the promisc special for Broadcast/Multicast 802.11 frames.
  * @param[in]  callback: the callback function which will 
  *  			  receive and process the netowork data.
- * @param[in]  len_used: specify if the promisc data length is used.
+ * @param[in]  len_used: specify if the the promisc data length is used.
  *				If len_used set to 1, packet(frame data) length will be saved and transferred to callback function.
  *
  * @return  RTW_SUCCESS or RTW_ERROR
@@ -1086,6 +1100,11 @@ extern u32 rtw_get_tsf(u32 Port);
 WL_BAND_TYPE wifi_get_band_type(void);
 
 
+#if defined(LOW_POWER_WIFI_CONNECT) && LOW_POWER_WIFI_CONNECT
+int wifi_set_psk_eap_interval(uint16_t psk_interval, uint16_t eap_interval);
+int wifi_set_null1_param(uint8_t check_period, uint8_t limit, uint8_t interval);
+#endif
+
 #ifdef __cplusplus
   }
 #endif
@@ -1094,5 +1113,3 @@ WL_BAND_TYPE wifi_get_band_type(void);
 
 #endif // __WIFI_API_H
 
-//----------------------------------------------------------------------------//
-int wifi_set_tx_pause_data(unsigned int NewState);

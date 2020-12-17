@@ -620,8 +620,6 @@ struct tcb_s {
 
 	uint32_t uheap;			/* User heap object pointer */
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	uint32_t ram_start;		/* Start address of RAM partition for this app */
-	uint32_t ram_size;		/* Size of RAM partition for this app */
 	uint32_t uspace;		/* User space object for app binary */
 
 #ifdef CONFIG_ARM_MPU

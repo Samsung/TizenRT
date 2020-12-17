@@ -1073,7 +1073,7 @@ static int _wm_test_stress(struct options *opt, int argc, char *argv[])
 		if (argc != 7 && argc != 6) {
 			return -1;
 		}
-	} else if (opt->stress_tc_idx == 2){
+	} else if (opt->stress_tc_idx == 2) {
 		if (argc != 10 && argc != 9) {
 			return -1;
 		}

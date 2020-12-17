@@ -274,7 +274,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 			}
 		}
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		up_mpu_set_register(tcb->stack_mpu_regs);
+		up_mpu_set_register(rtcb->stack_mpu_regs);
 #endif
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY

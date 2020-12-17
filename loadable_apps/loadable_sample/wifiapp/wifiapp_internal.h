@@ -18,7 +18,7 @@
 #ifndef __EXAMPLES_ELF_WIFIAPP_INTERNAL_H
 #define __EXAMPLES_ELF_WIFIAPP_INTERNAL_H
 
-#ifdef CONFIG_EXAMPLES_RECOVERY_TEST
+#if defined(CONFIG_EXAMPLES_RECOVERY_TEST) || defined(CONFIG_EXAMPLES_RECOVERY_AGING_TEST)
 void recovery_test(void);
 #endif
 #ifdef CONFIG_EXAMPLES_MESSAGING_TEST
@@ -27,5 +27,7 @@ void messaging_test(void);
 #ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
 void binary_update_test(void);
 #endif
-
+#ifdef CONFIG_EXAMPLES_UPDATE_AGING_TEST
+void binary_update_aging_test(void);
+#endif
 #endif /* __EXAMPLES_ELF_WIFIAPP_INTERNAL_H */

@@ -3,17 +3,24 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-menuconfig EXAMPLES_ELF
-	bool "ELF Loader Example"
+menuconfig EXAMPLES_LOADABLE
+	bool "Enable Loadable Test Scenarios"
 	default n
-	select LIBC_EXECFUNCS
-	depends on ELF
+	depends on APP_BINARY_SEPARATION
 	---help---
-		Enable the ELF Loader Example
+		Enable Loadable Examples
 
-if EXAMPLES_ELF
+if EXAMPLES_LOADABLE
+config EXAMPLES_LOADABLE_MANUAL_TEST
+	bool "Manual Various Tests"
+	default y
+	depends on !EXAMPLES_LOADABLE_AUTOMATIC_TEST
+	---help---
+		Enable Manual Various Tests.
+		User can run various tests manually.
+		Test scenarios : Messaging Test / Binary Recovery Test / Binary Update Test
 
-menu "Enable Test Scenarios"
+if EXAMPLES_LOADABLE_MANUAL_TEST
 config EXAMPLES_MESSAGING_TEST
 	bool "Messaging Framework Test"
 	default y
@@ -28,7 +35,6 @@ config MESSAGING_TEST_REPETITION_NUM
 	---help---
 		Messaging F/W Test repetition number.
 		If set to 0(zero) or negative number, test runs infinitely.
-
 endif
 
 config EXAMPLES_RECOVERY_TEST
@@ -40,20 +46,43 @@ config EXAMPLES_RECOVERY_TEST
 	---help---
 		Enable the Binary Manager Recovery test
 
-if EXAMPLES_RECOVERY_TEST
-config ENABLE_RECOVERY_AGING_TEST
-	bool "Recovery Aging test"
-	default n
-	---help---
-		Enable Recovery Aging test. Another Test cannot run at the same time.
-endif
-
 config EXAMPLES_BINARY_UPDATE_TEST
 	bool "Binary Update example"
 	default n
 	depends on BINMGR_UPDATE
 	---help---
 		Enable Binary Update example
+
+endif #EXAMPLES_LOADABLE_MANUAL_TEST
+
+config EXAMPLES_LOADABLE_AUTOMATIC_TEST
+	bool "Automatic Various Tests"
+	default n
+	---help---
+		Enable Automatic Test.
+		Only One test can run at a time.
+		Test scenarios : Binary Recovery Aging Test / Binary Update Aging Test / Micom Timer Test
+
+if EXAMPLES_LOADABLE_AUTOMATIC_TEST
+choice
+	prompt "Automatic tests selection"
+	default ENABLE_RECOVERY_AGING_TEST
+
+config EXAMPLES_RECOVERY_AGING_TEST
+	bool "Recovery Aging test"
+	default n
+	depends on BINMGR_RECOVERY
+	select EXAMPLES_MPU_TEST
+	select DRIVERS_KERNEL_TEST
+	---help---
+		Enable Recovery Aging test. Another Test cannot run at the same time.
+
+config EXAMPLES_UPDATE_AGING_TEST
+	bool "Update Aging test"
+	default n
+	depends on BINMGR_UPDATE
+	---help---
+		Enable Update Aging test. Another Test cannot run at the same time.
 
 config EXAMPLES_MICOM_TIMER_TEST
 	bool "Micom Timer Test"
@@ -75,15 +104,7 @@ config EXAMPLES_MICOM_TIMER_INTERVAL
 	---help---
 		Time Interval for testing Timer.
 		Interval is based on microsecond.
-endif
-
-endmenu
-
-config EXAMPLES_ELF_FULLYLINKED
-	bool "Fully Linked ELF application support"
-	default n
-	depends on LIB_SYSCALL
-	---help---
-		Enable Fully Linked ELF application support
-
-endif
+endif #EXAMPLES_MICOM_TIMER_TEST
+endchoice
+endif #EXAMPLES_LOADABLE_AUTOMATIC_TEST
+endif #EXAMPLES_LOADABLE

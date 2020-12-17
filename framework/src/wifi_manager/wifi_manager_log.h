@@ -18,15 +18,13 @@
 
 #ifndef _WIFI_MANAGER_LOG_H__
 #define _WIFI_MANAGER_LOG_H__
-
+#include <tinyara/config.h>
 /**
  * Logging
  */
 #define WM_TAG "[WM]"
 
-#define WM_USE_PRINTF 1
-
-#if WM_USE_PRINTF == 1
+#if defined(CONFIG_WIFI_MANAGER_USE_PRINTF)
 #define WM_LOG_VERBOSE printf
 #define WM_LOG_DEBUG printf
 #define WM_LOG_ERROR printf

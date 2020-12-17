@@ -29,7 +29,7 @@ void wm_run_stress_test(void *arg)
 	struct options *opt = (struct options *)arg;
 	if (opt->stress_tc_idx == 1) {
 		wm_run_stress_test1(opt);
-	} else if (opt->stress_tc_idx == 2){
+	} else if (opt->stress_tc_idx == 2) {
 		wm_run_stress_test2(opt);
 	}
 }

@@ -180,6 +180,7 @@ wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *c
 {
 	if (!config || !conn_config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
 	WIFIMGR_CHECK_AP_CONFIG(config);
@@ -196,6 +197,7 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 {
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
 	wifi_manager_reconnect_config_s conn_config = WIFIMGR_DEFAULT_CONN_CONFIG;

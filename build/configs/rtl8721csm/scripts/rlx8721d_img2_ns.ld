@@ -71,8 +71,8 @@ MEMORY
 	MSP_RAM_S (rwx)  : 		ORIGIN = 0x1007F000, LENGTH = 0x10080000 - 0x1007F000	/* MSP_S RAM: 4k */
 	EXTENTION_SRAM (rwx)  : 		ORIGIN = 0x100E0000, LENGTH = 0x10100000 - 0x100E0000	/* EXTENTION SRAM: 128k */
 
-	PSRAM_NS (rwx)  : 		ORIGIN = 0x02000000, LENGTH = 0x02300000 - 0x02000000	/* PSRAM_NS: 3M */
-	PSRAM_S (rwx)	:		ORIGIN = 0x02300000, LENGTH = 0x02400000 - 0x02300000	/* PSRAM_S: 1M */
+	PSRAM_NS (rwx)  : 		ORIGIN = 0x02000000, LENGTH = 0x023C0000 - 0x02000000	/* PSRAM_NS: 3M 744K*/
+	PSRAM_S (rwx)	:		ORIGIN = 0x023C0000, LENGTH = 0x02400000 - 0x023C0000	/* PSRAM_S: 256K */
 
 	/* Flash */
 	KM0_BOOT (rx)  :		ORIGIN = 0x08000000+0x20, LENGTH = 0x02000-0x20	/* XIPBOOT: 8k, 32 Bytes resvd for header*/
@@ -109,11 +109,90 @@ SECTIONS
 
 	.ram_image2.text :
 	{
+		__ram_text_start__ = .;
 		_stext = ABSOLUTE(.);
 		*(.image2.ram.text*)
 		*(.image2.net.ram.text*)
+		/*os*/
+		*os_start.o (.text*)
+		*osdep_service.o (.text*)
+		*tizenrt_service.o (.text*)
+		/*irq(svcall)*/
+		/**irq_initialize.o (.text*)*/
+		*amebad_irq.o (.text*)
+		*up_exception.o (.text*)
+		*up_svcall.o (.text*)
+		*up_switchcontext.o (.text*)
+		*up_copyfullstate.o (.text*)
+		*up_fullcontextrestore.o (.text*)
+		*up_doirq.o (.text*)
+		*irq_dispatch.o (.text*)
+		/*scheduler(for semphr)*/
+		*sched_addreadytorun.o (.text*)
+		*sched_addblocked.o (.text*)
+		*sched_addprioritized.o (.text*)
+		*sched_removereadytorun.o (.text*)
+		*sched_removeblocked.o (.text*)
+		*sched_mergepending.o (.text*)
+		*up_blocktask.o (.text*)
+		*up_unblocktask.o (.text*)
+		/*semphr*/
+		*sem_wait.o (.text*)
+		*sem_waitirq.o (.text*)
+		*sem_trywait.o (.text*)
+		*sem_tickwait.o (.text*)
+		*sem_timedwait.o (.text*)
+		*sem_post.o (.text*)
+		/*lwip*/
+		*tcp_in.o (.text*)
+		*tcp_out.o (.text*)
+		*def.o (.text*)
+		*igmp.o (.text*)
+		*pbuf.o (.text*)
+		*inet_chksum.o (.text*)
+		*api_msg.o (.text*)
+		*netbuf.o (.text*)
+		*sys_arch.o (.text*)
+		*ethernetif_tizenrt.o (.text*)
+		*lwip_intf_tizenrt.o (.text*)
+		*timeout.o (.text*)
+		*raw.o (.text*)
+		*mem.o (.text*)
+		*memp.o (.text*)
+		*netif.o (.text*)
+		*ip.o (.text*)
+		*ip4.o (.text*)
+		*ip4_addr.o (.text*)
+		*ip4_frag.o (.text*)
+		*ip6.o (.text*)
+		*ip6_addr.o (.text*)
+		*ip6_frag.o (.text*)
+		*tcp.o (.text*)
+		*udp.o (.text*)
+		*socket.o (.text*)
+		*bsd_socket_api.o (.text*)
+		*tcpip.o (.text*)
+		*ethernet.o (.text*)
+		*etharp.o (.text*)
+		*ethip6.o (.text*)
+		*netdb.o (.text*)
+		*api_lib.o (.text*)
+		*netifapi.o (.text*)
+		/*iperf*/
+		*iperf_server_api.o (.text*)
+		*iperf_api.o (.text*)
+		*iperf_tcp.o (.text*)
+		*iperf_net.o (.text*)
+		/*fs*/
+		/**fs_read.o (.text*)
+		*fs_select.o (.text*)
+		*fs_poll.o (.text*)*/
+		/*others*/
+		*lib_vikmemcpy.o (.text*)
+		*dq_rem.o (.text*)
+		*dq_addlast.o (.text*)
 		_etext = ABSOLUTE(.);
-		__ram_image2_text_end__ = .;
+		__ram_text_end__ = .;
 	} > BD_RAM_NS
 
 	_eronly = ABSOLUTE(.);
@@ -129,6 +208,16 @@ SECTIONS
 		. = ALIGN(16);
 	} > BD_RAM_NS
 
+	.ram_image2.bss :
+	{
+		_sbss = ABSOLUTE(.);
+		__bss_start__ = .;
+		*(.bss*)
+		*(COMMON)
+		__bss_end__ = .;
+
+	} > BD_RAM_NS
+
 	.ram_image2.nocache.data :
 	{
 		. = ALIGN (32);
@@ -140,20 +229,9 @@ SECTIONS
 
 	.ram_heap.data :
 	{
+		. = ALIGN (32);
 		*(.bfsram.data*)
 		end = .;
-		*(.heap.stdlib*)
-		. = . + 4096;
-
-	} > BD_RAM_NS
-
-	.ram_image2.bss :
-	{
-		_sbss = ABSOLUTE(.);
-		__bss_start__ = .;
-		*(.bss*)
-		*(COMMON)
-		__bss_end__ = .;
 		_ebss = ABSOLUTE(.);
 	} > BD_RAM_NS
 
@@ -227,12 +305,15 @@ SECTIONS
 
 	.psram_image2.data :
 	{
+		. = ALIGN (32);
 		*(.psram.data*)
+		. = ALIGN (32);
 		*(.psram.rodata*)
 	} > PSRAM_NS
 
 	.psram_image2.bss :
 	{
+		. = ALIGN (32);
 		__psram_bss_start__ = .;
 		*(.psram.bss*)
 		__psram_bss_end__ = .;
@@ -240,6 +321,7 @@ SECTIONS
 
 	.psram_heap.data :
 	{
+		. = ALIGN (32);
 		*(.psram.heap*)
 	} > PSRAM_NS
 	__StackLimit = ABSOLUTE(ORIGIN(BD_RAM_NS) + LENGTH(BD_RAM_NS));

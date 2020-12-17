@@ -10,7 +10,7 @@ static int on_write(struct otp_lowerhalf_s *dev, uint32_t address, uint8_t *data
 	dbg("%s(%s:%d)\n", __FUNCTION__, __FILE__, __LINE__);
 	return 0;
 }
-static int on_read(struct otp_lowerhalf_s *dev, uint32_t address, uint8_t *data, uint32_t *length)
+static int on_read(struct otp_lowerhalf_s *dev, uint32_t address, uint8_t *data, uint32_t length)
 {
 	dbg("%s(%s:%d)\n", __FUNCTION__, __FILE__, __LINE__);
 	return 0;

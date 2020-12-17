@@ -83,6 +83,11 @@ static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 {
 	size_t sizes[MPU_NUM_REGIONS] = {loadinfo->textsize, loadinfo->rosize, loadinfo->binp->ramsize};
 	uintptr_t *allocs[MPU_NUM_REGIONS] = {&loadinfo->textalloc, &loadinfo->roalloc, &loadinfo->dataalloc};
+#ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
+	/* If there are size and address alignment restrictions like ARMV7M,
+	 * it is better to allocate one big memory chunk enough to contain each loading sections like text, ro, data.
+	 */
+
 	uint32_t totalsize = sizes[0] + sizes[1] + sizes[2];
 	size_t tmpsz;
 	uintptr_t *tmpalloc;
@@ -117,6 +122,24 @@ static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 	*allocs[1] = *allocs[0] + sizes[0];
 	*allocs[2] = *allocs[1] + sizes[1];
 
+#else
+	/* There is no restriction about address alignment in MPU,
+	 * Allocate each loading section respectively.
+	 */
+	int region_idx;
+	for (region_idx = 0; region_idx < MPU_NUM_REGIONS; region_idx++) {
+#ifdef CONFIG_ARMV7M_MPU
+		*allocs[region_idx] = (uintptr_t)kmm_memalign(sizes[region_idx], sizes[region_idx]);
+#elif CONFIG_ARMV8M_MPU
+		*allocs[region_idx] = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, sizes[region_idx]);
+#else
+#error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
+#endif
+		if (*allocs[region_idx] == (uintptr_t)NULL) {
+			return -ENOMEM;
+		}
+	}
+#endif
 	return 0;
 }
 #endif
@@ -204,30 +227,25 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 	 */
 	loadinfo->rosize += loadinfo->datasize - loadinfo->binp->bsssize;
 
-#ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
-	/* If there are size and address alignment restrictions like ARMV7M,
-	 * it is better to allocate one big memory chunk enough to contains each loading sections like text, ro, data.
-	 */
+#ifdef CONFIG_ARMV7M_MPU
+	/* ARMV7M requires MPU region size to be a power of two */
 	loadinfo->textsize = 1 << mpu_log2regionceil(0, loadinfo->textsize);
 	loadinfo->rosize = 1 << mpu_log2regionceil(0, loadinfo->rosize);
 	datamemsize = 1 << mpu_log2regionceil(0, datamemsize);
 	loadinfo->binp->ramsize = datamemsize;
-	if (allocateregions(loadinfo)) {
-		berr("ERROR: failed to allocate memory\n");
-		return -ENOMEM;
-	}
-#else
-	/* There is no restriction about address alignment in MPU,
-	 * Allocate each loading section respectively.
-	 */
+#elif CONFIG_ARMV8M_MPU
 	loadinfo->textsize = MPU_ALIGN_UP(loadinfo->textsize);
 	loadinfo->rosize = MPU_ALIGN_UP(loadinfo->rosize);
 	datamemsize = MPU_ALIGN_UP(datamemsize);
 	loadinfo->binp->ramsize = datamemsize;
-	loadinfo->textalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->textsize);
-	loadinfo->roalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, loadinfo->rosize);
-	loadinfo->dataalloc = (uintptr_t)kmm_memalign(MPU_ALIGNMENT_BYTES, datamemsize);
+#else
+#error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
 #endif
+
+	if (allocateregions(loadinfo)) {
+		berr("ERROR: failed to allocate memory\n");
+		return -ENOMEM;
+	}
 
 	loadinfo->binp->data_backup = loadinfo->roalloc + rosize;
 	loadinfo->binp->uheap_size = datamemsize - loadinfo->datasize - sizeof(struct mm_heap_s);

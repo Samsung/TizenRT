@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <stdlib.h>
 #include <json/cJSON.h>
 #include "rreport_config.h"
 
@@ -29,6 +29,8 @@ char *rr_generate_message(int *data, int size)
 		RR_ERR;
 		return NULL;
 	}
+
+	/*  create time */
 	char cur_time[64];
 
 	if (rr_get_time(cur_time, 64) < 0) {
@@ -44,17 +46,42 @@ char *rr_generate_message(int *data, int size)
 
 	cJSON_AddItemToObject(rssi, "time", time);
 
-	char str_interval[10] = {0};
-	snprintf(str_interval, sizeof(str_interval), "%d", RR_INTERVAL);
+	/*  create interval  */
+	cJSON *period = NULL;
+	char *str_interval = NULL;
+	int interval = RR_INTERVAL;
+	(void)rr_get_interval(&str_interval);
 
-	cJSON *period = cJSON_CreateString(str_interval);
+	if (str_interval) {
+		interval = atoi(str_interval);
+	}
+	period = cJSON_CreateNumber(interval);
 	if (!period) {
 		RR_ERR;
 		goto cleanup;
 	}
-
 	cJSON_AddItemToObject(rssi, "period", period);
 
+	/*  create duration */
+	uint32_t duration = 0;
+	rr_get_duration(&duration);
+	cJSON *jduration = cJSON_CreateNumber((double)duration);
+	cJSON_AddItemToObject(rssi, "duration", jduration);
+
+	/*  create location */
+	char *str_location = NULL;
+	(void)rr_get_location(&str_location);
+	if (!str_location) {
+		str_location = RR_LOCATION;
+	}
+	cJSON *location = cJSON_CreateString(str_location);
+	if (!location) {
+		RR_ERR;
+		goto cleanup;
+	}
+	cJSON_AddItemToObject(rssi, "loc", location);
+
+	/*  create rssi array */
 	cJSON *item = cJSON_CreateIntArray(data, size);;
 	if (!item) {
 		RR_ERR;
