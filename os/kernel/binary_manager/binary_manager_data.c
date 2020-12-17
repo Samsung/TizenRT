@@ -127,7 +127,8 @@ int binary_manager_register_ubin(char *name, uint32_t version, uint8_t load_prio
 	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
 	BIN_VER(g_bin_count, 0) = version;
 	BIN_LOAD_PRIORITY(g_bin_count, 0) = load_priority;
-	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX);
+	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX - 1);
+	BIN_NAME(g_bin_count)[BIN_NAME_MAX - 1] = '\0';
 	sq_init(&BIN_CBLIST(g_bin_count));
 
 	bmvdbg("[USER %d] %s\n", g_bin_count, BIN_NAME(g_bin_count));
