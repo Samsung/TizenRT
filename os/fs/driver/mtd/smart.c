@@ -5515,7 +5515,9 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 					fdbg("Recovery Failed : ret : %d\n", ret);
 					return ret;
 				}
-				last_recovery_seq = dev->journal_seq;
+				if (ret == OK) {
+					last_recovery_seq = dev->journal_seq;
+				}
 			} else {
 				last_checkout_seq = dev->journal_seq;
 			}
@@ -5562,30 +5564,27 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 	/* Before calculate journal, check the journal contents first */
 	if (psector >= (dev->geo.neraseblocks * dev->sectorsPerBlk)) {
 		fdbg("invalid psector : %d\n", psector);
-		return -EINVAL;
+		goto error_with_checkin;
 	}
 
 	if (UINT8TOUINT16(log->seq) != dev->journal_seq) {
 		fdbg("journal sequence is not match log->seq : %d dev->journal_seq : %d\n", UINT8TOUINT16(log->seq), dev->journal_seq);
-		return -EINVAL;
+		goto error_with_checkin;
 	}
 
 	type = GET_JOURNAL_TYPE(log->status);
 
 	if ((type == 0) || (type > SMART_JOURNAL_TYPE_ERASE)) {
 		fdbg("invalid type : %d\n", type);
-		return -EINVAL;
+		goto error_with_checkin;
+
 	}
 	
 	/* Recovery step is Check crc -> Check something more based on type -> checkout -> verify based on type */
 	if (smart_validate_journal_crc(log) != OK) {
 		fdbg("Invalid CRC calculated crc : %d written crc : %d\n", smart_calc_journal_crc(log), UINT8TOUINT16(log->crc16));
 		/* Invalid one, so make it checkout */
-		ret = smart_journal_checkout(dev, log, address);
-		if (ret != OK) {
-			return ret;
-		}
-		return -EINVAL;
+		goto error_with_checkin;
 	}
 
 	fvdbg("address : %u\n", address);
@@ -5669,6 +5668,13 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		fdbg("checkout failed sector\n");
 	}	
 	return ret;
+	
+error_with_checkin:
+	ret = smart_journal_checkout(dev, log, address);
+	if (ret != OK) {
+		return ret;
+	}
+	return -EINVAL;
 }
 
 #endif
