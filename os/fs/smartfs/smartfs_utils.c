@@ -2509,7 +2509,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 	int ret;
 	long sector;
 	struct sector_recover_info_s info = {0,};
-	size_t size = (fs->fs_llformat.nsectors >> 3) + 1;
+	size_t size = (size_t)(fs->fs_llformat.nsectors >> 3) + 1;
 	
 	/* Alloc Logical Map */
 	char *map = (char *)kmm_malloc(sizeof(uint8_t *) * size);
