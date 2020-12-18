@@ -122,15 +122,9 @@ static int lwnl_open(struct file *filep)
 	LWNL_ENTER;
 	struct inode *inode = filep->f_inode;
 	struct lwnl_upperhalf_s *upper = inode->i_private;
-	int tmp_crefs;
 	int ret = -EMFILE;
 
-	tmp_crefs = upper->crefs + 1;
-	if (tmp_crefs == 0) {
-		goto errout;
-	}
-
-	upper->crefs = tmp_crefs;
+	upper->crefs++;
 
 	int res = lwnl_add_listener(filep);
 	if (res < 0) {
