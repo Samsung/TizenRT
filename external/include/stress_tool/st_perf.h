@@ -104,6 +104,7 @@
  */
 #define ST_EXPECT_EQ(val, exp)					\
 	do {										\
+		printf("[ST] --> "#exp" %s:%d""\n", __FUNCTION__, __LINE__);	\
 		if (exp != val) {						\
 			ST_ERROR;							\
 			res = STRESS_TC_FAIL;				\
@@ -112,6 +113,7 @@
 
 #define ST_EXPECT_EQ2(val1, val2, exp)			\
 	do {										\
+	printf("--> "#exp"\n");\
 		if (exp != val1 && exp != val2) {		\
 			ST_ERROR;							\
 			res = STRESS_TC_FAIL;				\
@@ -120,6 +122,7 @@
 
 #define ST_EXPECT_NEQ(val, exp)					\
 	do {										\
+	printf("--> "#exp"\n");\
 		if ((exp) == val) {						\
 			ST_ERROR;							\
 			res = STRESS_TC_FAIL;				\
@@ -128,6 +131,7 @@
 
 #define ST_EXPECT_LT(val, exp)					\
 	do {										\
+	printf("--> "#exp"\n");\
 		if ((exp) >= val) {						\
 			ST_ERROR;							\
 			res = STRESS_TC_FAIL;				\

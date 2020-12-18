@@ -46,7 +46,13 @@ static int _process_msg(int argc, char *argv[])
 
 	while (1) {
 		handler_msg hmsg;
-		wifimgr_message_out(&hmsg, &g_wifi_message_queue);
+		int res = wifimgr_message_out(&hmsg, &g_wifi_message_queue);
+		if (res < 0) {
+			WM_ERR;
+			return -1;
+		} else if (res == 1) {
+			continue;
+		}
 		wifimgr_msg_s *wmsg = hmsg.msg;
 
 		wmsg->result = wifimgr_handle_request(wmsg);

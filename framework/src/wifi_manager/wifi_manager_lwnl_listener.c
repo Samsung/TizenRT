@@ -158,7 +158,7 @@ static int _wifi_utils_fetch_event(int fd)
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	WM_LOG_VERBOSE("%d %d\n", status, len);
+	WM_LOG_VERBOSE("scan state(%d) length(%d)\n", status, len);
 	(void)_wifi_utils_call_event(fd, status, len);
 
 	return 0;

@@ -237,6 +237,16 @@ static inline void WIFIMGR_SEND_API_SIGNAL(sem_t *api_sig)
 	}
 }
 
+static void _free_scan_list(wifi_utils_scan_list_s *scan_list)
+{
+	wifi_utils_scan_list_s *iter = scan_list, *prev = NULL;
+	while (iter) {
+		prev = iter;
+		iter = iter->next;
+		free(prev);
+	}
+}
+
 /*
  * Internal functions
  */
@@ -479,9 +489,23 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
-	if (msg->event != EVT_STA_DISCONNECTED) {
+
+	if (msg->event == EVT_DEINIT_CMD) {
+		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
+		return WIFI_MANAGER_SUCCESS;
+	}
+
+	if (msg->event != EVT_STA_DISCONNECTED
+		&& msg->event != EVT_STA_CONNECTED
+		&& msg->event != EVT_STA_CONNECT_FAILED
+		&& msg->event != EVT_SCAN_DONE) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+		WM_LOG_ERROR("[WM] invalid param\n");
 		return WIFI_MANAGER_BUSY;
+	}
+
+	if (msg->event == EVT_SCAN_DONE) {
+		_free_scan_list((wifi_utils_scan_list_s *)msg->param);
 	}
 
 	/* it handles disconnecting state differently by substate
@@ -489,6 +513,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 	 * then it should not call disconnect callback to applications */
 	switch (g_manager_info.disconn_substate) {
 	case WIFIMGR_DISCONN_DEINIT:
+		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SEND_API_SIGNAL(g_manager_info.api_sig);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 		break;
@@ -537,6 +562,9 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
 		wifimgr_call_cb(CB_STA_CONNECT_FAILED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+	} else if (msg->event == EVT_DEINIT_CMD) {
+		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_BUSY;
@@ -656,13 +684,19 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 }
 
 
+
 wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	if (msg->event == EVT_SCAN_DONE) {
 		wifimgr_call_cb(CB_SCAN_DONE, msg->param);
+		_free_scan_list((wifi_utils_scan_list_s *)msg->param);
 		WIFIMGR_RESTORE_STATE;
+		wret = WIFI_MANAGER_SUCCESS;
+	} else if (msg->event == EVT_DEINIT_CMD) {
+		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 		wret = WIFI_MANAGER_SUCCESS;
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
