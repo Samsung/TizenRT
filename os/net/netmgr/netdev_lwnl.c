@@ -91,6 +91,7 @@ int netdev_req_handle(const char *msg, size_t msg_len)
 	switch (dev->type) {
 	case NM_WIFI:
 		*res = netdev_handle_wifi(dev, lmsg->req_type, lmsg->data, lmsg->data_len);
+		break;
 	case NM_ETHERNET:
 		*res = netdev_handle_ethernet(dev, lmsg->req_type, lmsg->data, lmsg->data_len);
 		break;
