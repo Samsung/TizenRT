@@ -221,14 +221,14 @@ static struct addrinfo *_netdev_copy_addrinfo(struct addrinfo *src)
 		memcpy(dst->ai_addr, tmp->ai_addr, sizeof(struct sockaddr));
 
 		if (tmp->ai_canonname) {
-			dst->ai_canonname = (char *)kumm_malloc(sizeof(tmp->ai_canonname));
+			dst->ai_canonname = (char *)kumm_malloc(strlen(tmp->ai_canonname) + 1);
 			if (!dst->ai_canonname) {
 				ndbg("kumm_malloc failed\n");
 				kumm_free(dst->ai_addr);
 				kumm_free(dst);
 				break;
 			}
-			memcpy(dst->ai_canonname, tmp->ai_canonname, sizeof(tmp->ai_canonname));
+			memcpy(dst->ai_canonname, tmp->ai_canonname, strlen(tmp->ai_canonname) + 1);
 		} else {
 			dst->ai_canonname = NULL;
 		}
