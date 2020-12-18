@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 int wifiapp_main(int argc, char **argv)
 #endif
 {
-	char ch;
+	int ch;
 	bool is_testing = true;
 
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && defined(CONFIG_APP_BINARY_SEPARATION)
