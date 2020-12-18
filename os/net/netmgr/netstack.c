@@ -37,9 +37,13 @@ static sock_type _get_socktype(int fd)
 {
 	if (fd < CONFIG_NFILE_DESCRIPTORS) {
 		return TR_LWNL;
-	} else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NUDS_DESCRIPTORS) {
+	}
+#ifdef CONFIG_NET_LOCAL
+	else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NUDS_DESCRIPTORS) {
 		return TR_UDS;
-	} else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS) {
+	}
+#endif
+	else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS) {
 		return TR_SOCKET;
 	}
 	return TR_UNKNOWN;
