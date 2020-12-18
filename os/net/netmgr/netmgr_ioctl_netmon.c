@@ -94,8 +94,9 @@ int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 		struct netdev *dev = nm_get_netdev((uint8_t *)stats->devname);
 		if (!dev) {
 			ret = -ENOTTY;
+		} else {
+			ret = ((struct netdev_ops *)(dev->ops))->get_stats(dev, stats);
 		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_stats(dev, stats);
 	}
 #endif
 	else {
