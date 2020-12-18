@@ -44,6 +44,9 @@ static int _copy_socket(void *arg)
 	int num_copy = 0;
 	sq_queue_t *qsock = (sq_queue_t *) arg;
 	struct netstack *st = get_netstack(TR_SOCKET);
+	if (!st) {
+		return -1;
+	}
 	int res = 0;
 	for (int i = 0; i < CONFIG_NSOCKET_DESCRIPTORS; i++) {
 		struct netmon_sock *sock_info = NULL;
