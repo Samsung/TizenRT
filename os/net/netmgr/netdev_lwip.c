@@ -312,7 +312,7 @@ static inline void _free_ifaddrs(struct ifaddrs *addrs)
 			free(ifa->ifa_netmask);
 		}
 		if (ifa->ifa_dstaddr) {
-			free(ifa->ifa_netmask);
+			free(ifa->ifa_dstaddr);
 		}
 		prev = ifa;
 		ifa = prev->ifa_next;
