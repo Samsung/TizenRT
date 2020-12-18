@@ -941,9 +941,9 @@ static ssize_t smart_write(FAR struct inode *inode, FAR const unsigned char *buf
 
 	/* Convert SMART blocks into MTD blocks. */
 
-	mtdstartblock = start_sector * dev->mtdBlksPerSector;
-	mtdblockcount = nsectors * dev->mtdBlksPerSector;
-	mtdBlksPerErase = dev->mtdBlksPerSector * dev->sectorsPerBlk;
+	mtdstartblock = (off_t)start_sector * (off_t)dev->mtdBlksPerSector;
+	mtdblockcount = (off_t)nsectors * (off_t)dev->mtdBlksPerSector;
+	mtdBlksPerErase = (off_t)dev->mtdBlksPerSector * (off_t)dev->sectorsPerBlk;
 
 	fvdbg("mtdsector: %d mtdnsectors: %d\n", mtdstartblock, mtdblockcount);
 
@@ -1819,7 +1819,7 @@ static int smart_set_wear_level(FAR struct smart_struct_s *dev, uint16_t block, 
 static int smart_scan(FAR struct smart_struct_s *dev)
 {
 	int sector;
-	int ret;
+	int ret = OK;
 	uint16_t totalsectors;
 	uint16_t prerelease;
 	uint16_t logicalsector;
@@ -5019,7 +5019,7 @@ static int smart_journal_release_sector(FAR struct smart_struct_s *dev, uint16_t
 	struct smart_sect_header_s header;
 	size_t offset;
 
-	offset = psector * dev->sectorsize;
+	offset = (off_t)psector * (off_t)dev->sectorsize;
 	ret = MTD_READ(dev->mtd, offset, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 	if (ret != sizeof(struct smart_sect_header_s)) {
 		fdbg("Read header failed psector : %d offset : %d\n", psector, offset);
@@ -5159,7 +5159,7 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 	case SMART_JOURNAL_TYPE_COMMIT: {
 
 		/* Write given data in rwbuffer from users, except mtd header */
-		ret = MTD_WRITE(dev->mtd, psector * dev->sectorsize + mtd_size, dev->sectorsize - mtd_size, (FAR uint8_t *)&dev->rwbuffer[mtd_size]);
+		ret = MTD_WRITE(dev->mtd, ((off_t)psector * dev->sectorsize) + (off_t)mtd_size, dev->sectorsize - mtd_size, (FAR uint8_t *)&dev->rwbuffer[mtd_size]);
 		if (ret != dev->sectorsize - mtd_size) {
 			fdbg("write data failed ret : %d\n", ret);
 			return -EIO;
