@@ -31,6 +31,9 @@
 #ifdef CONFIG_TC_NET_SOCKET
 int net_socket_main(void);
 #endif
+#ifdef CONFIG_TC_NET_PBUF
+int net_pbuf_main(void);
+#endif
 #ifdef CONFIG_TC_NET_GETSOCKOPT
 void net_getsockopt_main(void);
 #endif
@@ -124,5 +127,5 @@ int itc_net_netdb_main(void);
 #ifdef CONFIG_ITC_NET_CONNECT
 int itc_net_connect_main(void);
 #endif
-
+int tc_get_fd(void);
 #endif /* __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H */

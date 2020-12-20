@@ -81,6 +81,9 @@
 #ifdef CONFIG_EXAMPLES_STACK_PROTECTION
 #define TESTIOC_KTHREAD_STACK_PROTECTION_TEST	_TESTIOC(22)
 #endif
+#ifdef CONFIG_TC_NET_PBUF
+#define TESTIOC_NET_PBUF			_TESTIOC(23)
+#endif
 
 #define KERNEL_TEST_DRVPATH                       "/dev/kernel_test"
 

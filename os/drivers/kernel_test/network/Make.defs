@@ -1,6 +1,6 @@
-###########################################################################
+##########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2020 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 # either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 #
-###########################################################################
+############################################################################
 
-include kernel_test$(DELIM)kernel$(DELIM)Make.defs
-include kernel_test$(DELIM)network$(DELIM)Make.defs
+ifeq ($(CONFIG_TC_NET_PBUF),y)
+CSRCS += test_net_pbuf.c
+endif
 
-CSRCS += kernel_test_drv.c
+# Include network test driver support
 
-DEPPATH += --dep-path kernel_test
-VPATH += :kernel_test
-
+DEPPATH += --dep-path kernel_test$(DELIM)network
+VPATH += :kernel_test$(DELIM)network

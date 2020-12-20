@@ -34,4 +34,7 @@ int test_tz(void);
 #ifdef CONFIG_EXAMPLES_STACK_PROTECTION
 int test_kthread_stack_overflow_protection(int cmd, unsigned long arg);
 #endif
+#ifdef CONFIG_TC_NET_PBUF
+int test_net_pbuf(int cmd, unsigned long arg);
+#endif
 #endif

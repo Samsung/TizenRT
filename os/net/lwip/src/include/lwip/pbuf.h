@@ -227,6 +227,13 @@ void pbuf_free_ooseq(void);
 #define PBUF_CHECK_FREE_OOSEQ()
 #endif							/* LWIP_TCP && TCP_QUEUE_OOSEQ && NO_SYS && PBUF_POOL_FREE_OOSEQ */
 
+/* use in pbuf testcases */
+struct pbuf_test_args {
+	pbuf_layer layer;
+	u16_t len;
+	pbuf_type type;
+};
+
 /* Initializes the pbuf module. This call is empty for now, but may not be in future. */
 #define pbuf_init()
 
