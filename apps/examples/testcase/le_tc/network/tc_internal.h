@@ -31,6 +31,9 @@
 #ifdef CONFIG_TC_NET_SOCKET
 int net_socket_main(void);
 #endif
+#ifdef CONFIG_TC_NET_PKT
+int net_pkt_main(void);
+#endif
 #ifdef CONFIG_TC_NET_GETSOCKOPT
 void net_getsockopt_main(void);
 #endif

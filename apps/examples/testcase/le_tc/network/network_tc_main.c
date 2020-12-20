@@ -40,6 +40,9 @@ int tc_network_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_SOCKET
 	net_socket_main();
 #endif
+#ifdef CONFIG_TC_NET_PKT
+	net_pkt_main();
+#endif
 #ifdef CONFIG_TC_NET_SETSOCKOPT
 	net_setsockopt_main();
 #endif
