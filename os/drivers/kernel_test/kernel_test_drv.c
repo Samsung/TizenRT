@@ -185,6 +185,13 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		ret = test_kthread_stack_overflow_protection(cmd, arg);
 		break;
 #endif
+
+#ifdef CONFIG_TC_NET_PBUF
+	/* Run the test case for pbuf   */
+	case TESTIOC_NET_PBUF:
+		ret = test_net_pbuf(cmd, arg);
+		break;
+#endif
 	default:
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;

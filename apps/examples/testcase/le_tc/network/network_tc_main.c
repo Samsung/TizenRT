@@ -21,8 +21,20 @@
 /// @brief Main Function for Network TestCase Example
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <tinyara/kernel_test_drv.h>
+#include <tinyara/fs/fs.h>
+#include <tinyara/fs/ioctl.h>
 #include "tc_common.h"
 #include "tc_internal.h"
+
+static int g_tc_fd;
+
+int tc_get_fd(void)
+{
+	return g_tc_fd;
+}
 
 /****************************************************************************
  * Name: network_tc_main
@@ -37,8 +49,17 @@ int tc_network_main(int argc, char *argv[])
 		return ERROR;
 	}
 
+	g_tc_fd = open(KERNEL_TEST_DRVPATH, O_WRONLY);
+	if (g_tc_fd < 0) {
+		lldbg("Failed to open kernel test driver %d\n", errno);
+		return ERROR;
+	}
+
 #ifdef CONFIG_TC_NET_SOCKET
 	net_socket_main();
+#endif
+#ifdef CONFIG_TC_NET_PBUF
+	net_pbuf_main();
 #endif
 #ifdef CONFIG_TC_NET_SETSOCKOPT
 	net_setsockopt_main();
@@ -133,6 +154,9 @@ int tc_network_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_NET_CONNECT
 	itc_net_connect_main();
 #endif
+	close(g_tc_fd);
+	g_tc_fd = -1;
+
 	(void)testcase_state_handler(TC_END, "Network TC");
 
 	return 0;
