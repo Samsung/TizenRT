@@ -1,0 +1,3 @@
+config ENTRY_SECLINK_TEST
+	bool "Security SECLINK test"
+	depends on EXAMPLES_SECLINK_TEST

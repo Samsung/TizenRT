@@ -4,7 +4,9 @@
 #
 
 source "$APPSDIR/examples/security_test/hal/Kconfig"
+source "$APPSDIR/examples/security_test/seclink/Kconfig"
 source "$APPSDIR/examples/security_test/security_api/Kconfig"
 source "$APPSDIR/examples/security_test/see_api/Kconfig"
 source "$APPSDIR/examples/security_test/mbedtls_self/Kconfig"
+
 
