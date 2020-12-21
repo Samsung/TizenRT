@@ -1320,9 +1320,8 @@ void app_start(void)
 		app_init_psram();
 	}
 
-	os_heap_init();
-
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
+	os_heap_init();
 	/* configure FreeRTOS interrupt and heap region */
 	__NVIC_SetVector(SVCall_IRQn, (u32)(VOID*)vPortSVCHandler);
 	__NVIC_SetVector(PendSV_IRQn, (u32)(VOID*)xPortPendSVHandler);
