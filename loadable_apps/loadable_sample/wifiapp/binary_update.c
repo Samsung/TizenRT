@@ -35,7 +35,6 @@
 
 /* App binary information for update test */
 #define APP_NAME                   "micom"
-#define MYAPP_NAME                 "wifi"
 
 #define NEW_APP_NAME               "newapp"
 #define NEW_APP_VERSION            20200421
@@ -572,30 +571,6 @@ static void binary_update_new_binary_test(void)
 	unlink(filepath);
 }
 
-static void binary_update_myself_test(void)
-{
-	int ret;
-	binary_update_info_t bin_info;
-
-	ret = binary_update_getinfo(MYAPP_NAME, &bin_info);
-	if (ret != OK) {
-		return;
-	}
-
-	/* Copy current binary with a higher version and valid crc. */
-	ret = binary_update_download_binary(&bin_info, DOWNLOAD_VALID_BIN);
-	if (ret != OK) {
-		return;
-	}
-
-	sleep(2);
-
-	ret = binary_update_reload(MYAPP_NAME);
-	if (ret != OK) {
-		return;
-	}
-}
-
 static void binary_update_run_tests(void)
 {
 	/* 1. Reload test with same version. */
@@ -669,6 +644,27 @@ void binary_update_test(void)
  ****************************************************************************/
 void binary_update_aging_test(void)
 {
-	binary_update_myself_test();
+	int ret;
+	binary_update_info_t bin_info;
+
+	while (1) {
+		ret = binary_update_getinfo(APP_NAME, &bin_info);
+		if (ret != OK) {
+			return;
+		}
+
+		/* Copy current binary with a higher version and valid crc. */
+		ret = binary_update_download_binary(&bin_info, DOWNLOAD_VALID_BIN);
+		if (ret != OK) {
+			return;
+		}
+
+		sleep(5);
+
+		ret = binary_update_reload(APP_NAME);
+		if (ret != OK) {
+			return;
+		}
+	}
 }
 #endif
