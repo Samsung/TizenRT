@@ -510,7 +510,6 @@ static int smartfs_mkfs(const char *datasource, uint32_t erasesize, uint16_t sec
 	struct inode *blkdriver;
 	uint8_t type;
 	struct smart_read_write_s request;
-	uint64_t sectorsize;
 
 	/* Try to mount the device to see if there is a format already */
 
@@ -544,11 +543,10 @@ static int smartfs_mkfs(const char *datasource, uint32_t erasesize, uint16_t sec
 
 	/* Perform a low-level SMART format */
 
-	sectorsize = (uint64_t)(sectsize << 16);
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = blkdriver->u.i_bops->ioctl(blkdriver, BIOC_LLFORMAT, sectorsize | atoi(generic));
+	ret = blkdriver->u.i_bops->ioctl(blkdriver, BIOC_LLFORMAT, ((uint64_t)sectsize << 16) | atoi(generic));
 #else
-	ret = blkdriver->u.i_bops->ioctl(blkdriver, BIOC_LLFORMAT, sectorsize);
+	ret = blkdriver->u.i_bops->ioctl(blkdriver, BIOC_LLFORMAT, ((uint64_t)sectsize << 16));
 #endif
 	if (ret != OK) {
 		close_blockdriver(blkdriver);
