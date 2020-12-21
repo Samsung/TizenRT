@@ -35,6 +35,8 @@
  * Test case Macro
  */
 #define TEST_SETUP(tc_name)								\
+	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};\
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};\
 	static st_tc_result tc_##tc_name##_setup(void *arg)
 
 #define TEST_TEARDOWN(tc_name)								\
@@ -75,7 +77,14 @@
 #define ST_SET_PACK(fixture, entry)							\
 	static st_pack g_pack_##fixture = {&g_smoke_##entry}
 
-#define ST_GET_PACK(fixture) g_pack_##fixture
+#define ST_SET_PACK2(fixture)							\
+	static st_pack g_pack_##fixture = {NULL}
+
+#define ST_SET_SMOKE2(fixture, repeat, expect, tc_desc, tc_name)		\
+	perf_add_item(&g_pack_##fixture, repeat,							\
+				  tc_desc, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
+				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
+
 
 #define ST_RUN_TEST(fixture) perf_run(&g_pack_##fixture)
 
@@ -257,13 +266,13 @@ typedef struct _st_smoke {
 	st_performance *performance;
 	st_stability *stability;
 	st_func *func;
-	struct _st_smoke *next;
+	//struct _st_smoke *next;
+	sq_entry_t entry;
 } st_smoke;
 
 
 typedef struct _st_pack {
-	st_smoke *head;
-//	st_smoke *tail;
+	sq_queue_t queue;
 } st_pack;
 
 
@@ -274,4 +283,10 @@ void perf_run(st_pack *pack);
 void perf_print_result(st_pack *pack);
 void perf_add_expect_performance(st_smoke *smoke, unsigned int usec);
 
+void perf_initialize(st_pack *pack);
+void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
+				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func,
+				   unsigned int expect, st_performance *perf, st_stability *stab);
+
 #endif //__ST_PERF_H__
+
