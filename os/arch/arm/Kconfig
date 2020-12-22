@@ -291,7 +291,7 @@ config ARCH_DABORTSTACK
 
 choice
 	prompt "Stack Protection feature options"
-	default MPU_STACK_OVERFLOW_PROTECTION_DISABLE
+	default STACK_OVERFLOW_PROTECTION_DISABLE
 
 config REG_STACK_OVERFLOW_PROTECTION
 	bool "REG Stack Overflow Protection"
@@ -309,8 +309,8 @@ config MPU_STACK_OVERFLOW_PROTECTION
 		It protects each task's stack overflow outside its max allocated stack memory.
 		This is applicable to user mode tasks created in protected build.
 
-config MPU_STACK_OVERFLOW_PROTECTION_DISABLE
-	bool "MPU Stack Overflow Protection Disable"
+config STACK_OVERFLOW_PROTECTION_DISABLE
+	bool "Stack Overflow Protection Disable"
 	---help---
 		Disable Stack Overflow Protection.
 
