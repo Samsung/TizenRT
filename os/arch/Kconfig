@@ -799,18 +799,18 @@ config RAM_KREGIONx_HEAP_INDEX
 		Index can be from 0 to (KMM_NHEAPS-1).
 
 config RAM_MALLOC_PRIOR_INDEX
-	int "prior region index(0 MM_NHEAPS-1) of RAM used in malloc"
+	int "prior region index(0 KMM_NHEAPS-1) of RAM used in malloc"
 	default 0
-	depends on MM_NHEAPS != 1
+	depends on KMM_NHEAPS != 1
 	---help---
 		The prior region index of RAM used in malloc.
 		It means alloc memory from the index-th region with priority.
-		Index can be from 0 to (MM_NHEAPS-1).
+		Index can be from 0 to (KMM_NHEAPS-1).
 
 config FS_TMPFS_HEAP_INDEX
 	int "TMPFS Heap index"
 	default 1
-	depends on FS_TMPFS && MM_NHEAPS != 1
+	depends on FS_TMPFS && KMM_NHEAPS != 1
 	---help---
 		when tmpfs uses an independent memory region.
 		Specifies the index of the heap to allocate.
