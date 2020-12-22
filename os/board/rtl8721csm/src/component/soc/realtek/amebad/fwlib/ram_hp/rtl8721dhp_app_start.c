@@ -1017,7 +1017,7 @@ u32 app_mpu_nocache_init(void)
 	return 0;
 }
 
-u32 app_mpu_s_nocache_init(void)
+void app_mpu_s_nocache_init(void)
 {
 #ifdef CONFIG_AMEBAD_TRUSTZONE
 	mpu_s_no_cache_init();

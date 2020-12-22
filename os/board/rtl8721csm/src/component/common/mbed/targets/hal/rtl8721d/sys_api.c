@@ -99,7 +99,6 @@ void sys_recover_ota_signature(void)
 	u8 Ota2Use = _FALSE;
 	u32 DstAddr, CurAddr;
 	u32 sig[2]={0x35393138,0x31313738};
-	u8 *buf;
 
 	RSIP_REG_TypeDef* RSIP = ((RSIP_REG_TypeDef *) RSIP_REG_BASE);
 	u32 CtrlTemp = RSIP->FLASH_MMU[0].MMU_ENTRYx_CTRL;

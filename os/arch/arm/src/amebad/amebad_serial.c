@@ -437,7 +437,6 @@ static void rtl8721d_up_shutdown(struct uart_dev_s *dev)
 void rtl8721d_uart_irq(uint32_t id, SerialIrq event)
 {
 	struct uart_dev_s *dev = (struct uart_dev_s *)id;
-	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	if (event == RxIrq) {
 		uart_recvchars(dev);
 	}

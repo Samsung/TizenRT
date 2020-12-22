@@ -354,7 +354,7 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 	( void ) flags;
 	( void ) userdata;
 #define REASON_4WAY_HNDSHK_TIMEOUT 15
-	u16 disconn_reason;
+	u16 disconn_reason = 0;
 	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
 	if (buf != NULL){
 		/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
@@ -2200,9 +2200,6 @@ int wifi_get_setting(const char *ifname, rtw_wifi_setting_t *pSetting)
 	int ret = 0;
 	int mode = 0;
 	unsigned short security = 0;
-#ifdef CONFIG_SAE_SUPPORT
-	unsigned short auth_alg = 0;
-#endif
 
 	memset(pSetting, 0, sizeof(rtw_wifi_setting_t));
 	if(wext_get_mode(ifname, &mode) < 0)
@@ -2615,7 +2612,7 @@ extern int promisc_add_packet_filter(u8 filter_id, rtw_packet_filter_pattern_t *
 extern int promisc_enable_packet_filter(u8 filter_id);
 extern int promisc_disable_packet_filter(u8 filter_id);
 extern int promisc_remove_packet_filter(u8 filter_id);
-void wifi_init_packet_filter()
+void wifi_init_packet_filter(void)
 {
 	promisc_init_packet_filter();
 }
