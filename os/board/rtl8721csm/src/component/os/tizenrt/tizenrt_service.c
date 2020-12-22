@@ -646,7 +646,7 @@ static u32 _tizenrt_GetFreeHeapSize(void)
 
 static int wrapper_thread(int argc, char *argv[])
 {
-	int ret, func_addr, ctx_addr;
+	int func_addr, ctx_addr;
 	thread_func_t func;
 	void *thctx;
 	if (argc != 3) {

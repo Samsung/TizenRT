@@ -141,6 +141,7 @@ CFALGS += -I$(DIR_CRYPTO)/../include/
 CFLAGS += -I$(DIR_FW)/../include/
 CFLAGS += -I$(TOPDIR)/net/netmgr/
 CFLAGS += -I$(TOPDIR)/include/net/if
+CFLAGS += -I$(TOPDIR)/include/tinyara/netmgr	
 
 ifeq ($(CONFIG_USBD_MSC),y)
 CFLAGS += -I$(BASEDIR)/component/common/drivers/sdio/realtek/sdio_host/inc

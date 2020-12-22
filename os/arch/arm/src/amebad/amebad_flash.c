@@ -167,7 +167,7 @@ static ssize_t amebad_flash_write(size_t addr, const void *buf, size_t length)
 
 	/* Disable IRQs while erasing sector */
 	irqs = irqsave();
-	result = flash_stream_write(NULL, addr, length, buf);
+	result = flash_stream_write(NULL, addr, length, (u8 *)buf);
 
 	/* Restore IRQs */
 	irqrestore(irqs);
@@ -210,7 +210,7 @@ ssize_t amebad_flash_read(size_t addr, void *buf, size_t length)
 		if (aligned_read_buf == NULL) {
 			ret = -EPERM;
 		} else {
-			result = flash_stream_read(NULL, (addr & 0xfffffffc), length + offset, (char *)aligned_read_buf);
+			result = flash_stream_read(NULL, (addr & 0xfffffffc), length + offset, (u8 *)aligned_read_buf);
 
 			if (result < 0) {
 				ret = -EIO;
@@ -270,7 +270,6 @@ static ssize_t amebad_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyte
 #ifdef CONFIG_MTD_BYTE_WRITE
 static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR const uint8_t *buffer)
 {
-	FAR struct amebad_dev_s *priv = (FAR struct mtd_dev_s *)dev;
 	size_t addr;
 	ssize_t result;
 	addr = CONFIG_AMEBAD_FLASH_BASE + offset;

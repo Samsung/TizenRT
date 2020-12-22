@@ -80,7 +80,11 @@
 #if defined(CONFIG_INIC_HOST) && CONFIG_INIC_HOST
 #include "freertos/inic_intf.h"
 #endif
-	
+
+#ifdef CONFIG_NET_NETMGR
+#include "netdev_mgr.h"
+#endif
+
 #define netifMTU (1500)
 #define netifINTERFACE_TASK_STACK_SIZE (350)
 #define netifINTERFACE_TASK_PRIORITY (configMAX_PRIORITIES - 1)

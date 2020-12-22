@@ -289,10 +289,6 @@ static int amebad_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit,
 
 void up_irqinitialize(void)
 {
-  uint32_t regaddr;
-  int num_priority_registers;
-  int i;
-
 
 #ifdef CONFIG_ARCH_RAMVECTORS
   /* If CONFIG_ARCH_RAMVECTORS is defined, then we are using a RAM-based
