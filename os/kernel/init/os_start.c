@@ -79,6 +79,7 @@
 #ifdef CONFIG_DRIVERS_KERNEL_TEST
 #include  <tinyara/kernel_test_drv.h>
 #endif
+#include  <tinyara/mpu.h>
 
 #include  "sched/sched.h"
 #include  "signal/signal.h"
@@ -364,10 +365,29 @@ void os_start(void)
 	g_idleargv[1]  = NULL;
 	g_idletcb.argv = g_idleargv;
 
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+
+	g_idletcb.cmn.stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
+
+	if(g_idletcb.cmn.stack_alloc_ptr) {
+		size_t size_of_stack;
+		size_t top_of_stack = (size_t)g_idletcb.cmn.stack_alloc_ptr;
+
+		top_of_stack = MPU_ALIGN_UP(top_of_stack);
+		size_of_stack = CONFIG_IDLETHREAD_STACKSIZE - CONFIG_MPU_STACK_GUARD_SIZE;
+		g_idletcb.cmn.adj_stack_ptr = (void *)top_of_stack;
+		g_idletcb.cmn.adj_stack_size = size_of_stack;
+	}
+	uint8_t nregion = mpu_get_nregion_info(MPU_REGION_STACKOVF);
+	/* The smallest size that can be programmed for an MPU region is 32 bytes */
+	mpu_get_register_config_value(&g_idletcb.cmn.stack_mpu_regs[0], nregion - 1, \
+		(uint32_t)g_idletcb.cmn.adj_stack_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, true);
+#else
 	/* Fill the stack information to Idle task's tcb */
 	g_idletcb.cmn.adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
 	g_idletcb.cmn.stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
 	g_idletcb.cmn.adj_stack_ptr = (void *)(g_idle_topstack - 4);
+#endif
 
 	/* Then add the idle task's TCB to the head of the ready to run list */
 
