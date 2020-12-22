@@ -70,7 +70,6 @@ choice
 
 config EXAMPLES_RECOVERY_AGING_TEST
 	bool "Recovery Aging test"
-	default n
 	depends on BINMGR_RECOVERY
 	select EXAMPLES_MPU_TEST
 	select DRIVERS_KERNEL_TEST
@@ -79,17 +78,16 @@ config EXAMPLES_RECOVERY_AGING_TEST
 
 config EXAMPLES_UPDATE_AGING_TEST
 	bool "Update Aging test"
-	default n
 	depends on BINMGR_UPDATE
 	---help---
 		Enable Update Aging test. Another Test cannot run at the same time.
 
 config EXAMPLES_MICOM_TIMER_TEST
 	bool "Micom Timer Test"
-	default n
 	---help---
 		Enable Timer test in micom app.
 		If this test is enabled, another test will not run.
+endchoice
 
 if EXAMPLES_MICOM_TIMER_TEST
 config EXAMPLES_MICOM_TIMER_REPEAT
@@ -105,6 +103,6 @@ config EXAMPLES_MICOM_TIMER_INTERVAL
 		Time Interval for testing Timer.
 		Interval is based on microsecond.
 endif #EXAMPLES_MICOM_TIMER_TEST
-endchoice
+
 endif #EXAMPLES_LOADABLE_AUTOMATIC_TEST
 endif #EXAMPLES_LOADABLE
