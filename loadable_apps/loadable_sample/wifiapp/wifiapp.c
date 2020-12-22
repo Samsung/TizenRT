@@ -59,8 +59,10 @@ int main(int argc, char **argv)
 int wifiapp_main(int argc, char **argv)
 #endif
 {
+#ifdef CONFIG_EXAMPLES_LOADABLE_MANUAL_TEST
 	int ch;
 	bool is_testing = true;
+#endif
 
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && defined(CONFIG_APP_BINARY_SEPARATION)
 	preapp_start(argc, argv);
@@ -114,13 +116,15 @@ int wifiapp_main(int argc, char **argv)
 			break;
 		}
 	}
-#elif CONFIG_EXAMPLES_LOADABLE_AUTOMATIC_TEST
+
+#elif defined(CONFIG_EXAMPLES_LOADABLE_AUTOMATIC_TEST)
 #ifdef CONFIG_EXAMPLES_RECOVERY_AGING_TEST
 	recovery_test();
-#elif CONFIG_EXAMPLES_UPDATE_AGING_TEST
+#elif defined(CONFIG_EXAMPLES_UPDATE_AGING_TEST)
 	binary_update_aging_test();
 #endif
 #endif
+
 	while (1) {
 		sleep(300);
 		printf("[%d] WIFI ALIVE\n", getpid());
