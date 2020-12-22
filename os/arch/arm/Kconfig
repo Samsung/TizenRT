@@ -304,6 +304,7 @@ config MPU_STACK_OVERFLOW_PROTECTION
 	bool "MPU Stack Overflow Protection"
 	depends on BUILD_PROTECTED
 	depends on ARM_MPU
+	depends on !ARMV8M_MPU
 	---help---
 		Enables stack overflow protection.
 		It protects each task's stack overflow outside its max allocated stack memory.
