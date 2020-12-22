@@ -31,6 +31,7 @@ typedef enum {
 	TRWIFI_AUTH_WEP_SHARED,				 /**<  use shared key (wep key)					 */
 	TRWIFI_AUTH_WPA_PSK,					 /**<  WPA_PSK mode								 */
 	TRWIFI_AUTH_WPA2_PSK,				 /**<  WPA2_PSK mode							 */
+	TRWIFI_AUTH_WPA3_PSK,				 /**<  WPA3_PSK mode							 */
 	TRWIFI_AUTH_WPA_AND_WPA2_PSK,		 /**<  WPA_PSK and WPA_PSK mixed mode			 */
 	TRWIFI_AUTH_WPA_PSK_ENT,				 /**<  Enterprise WPA_PSK mode					 */
 	TRWIFI_AUTH_WPA2_PSK_ENT,			 /**<  Enterprise WPA2_PSK mode					 */
