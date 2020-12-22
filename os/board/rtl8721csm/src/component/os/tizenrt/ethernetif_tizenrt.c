@@ -82,7 +82,7 @@
 #endif
 
 #ifdef CONFIG_NET_NETMGR
-#include "netdev_mgr.h"
+#include <tinyara/netmgr/netdev_mgr.h>
 #endif
 
 #define netifMTU (1500)
