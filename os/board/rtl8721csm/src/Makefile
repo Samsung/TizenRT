@@ -131,7 +131,6 @@ CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/src/osdep
 CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/wlan_ram_map/rom
 CFLAGS += -I$(COMPONENT_DIR)/os/os_dep/include
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
-CFLAGS += -I$(TOPDIR)/include/net
 CFLAGS += -I$(TOPDIR)/net/lwip
 CFLAGS += -I$(TOPDIR)/net/lwip/src/include/
 CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/src
@@ -140,8 +139,6 @@ CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/misc
 CFALGS += -I$(DIR_CRYPTO)/../include/
 CFLAGS += -I$(DIR_FW)/../include/
 CFLAGS += -I$(TOPDIR)/net/netmgr/
-CFLAGS += -I$(TOPDIR)/include/net/if
-CFLAGS += -I$(TOPDIR)/include/tinyara/netmgr	
 
 ifeq ($(CONFIG_USBD_MSC),y)
 CFLAGS += -I$(BASEDIR)/component/common/drivers/sdio/realtek/sdio_host/inc
