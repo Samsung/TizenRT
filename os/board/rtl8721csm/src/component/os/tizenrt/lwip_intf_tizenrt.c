@@ -233,11 +233,15 @@ unsigned char *netif_get_hwaddr(int idx_wlan)
 	struct netdev *dev_tmp = NULL;
 	unsigned char *dev_addr;
 	dev_addr = (unsigned char *)malloc(sizeof(unsigned char) * (IFHWADDRLEN));
-
+	if (!dev_addr) {
+		DiagPrintf("[netif_get_hwaddr] malloc dev addr fail\n");
+		return NULL;
+	}
 	dev_tmp = rtk_get_netdev(idx_wlan);
 
 	if (!dev_tmp) {
 		DiagPrintf("[netif_get_hwaddr] get dev fail\n");
+		free(dev_addr);
 		return NULL;
 	}
 	netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN);
