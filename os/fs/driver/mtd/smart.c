@@ -1829,6 +1829,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	uint32_t offset;
 	uint16_t seq1;
 	uint16_t seq2;
+	uint16_t seqwrap;
 	struct smart_sect_header_s header;
 	bool status_released, status_committed;
 #ifdef CONFIG_MTD_SMART_MINIMIZE_RAM
@@ -2124,16 +2125,19 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #if SMART_STATUS_VERSION == 1
 			if (header.status & SMART_STATUS_CRC) {
 				seq1 = header.seq;
+				seqwrap = 0xf0;
 			} else {
 				seq1 = (uint16_t)(((header.crc8 << 8) & 0xFF00) | header.seq);
+				seqwrap = 0xfff0;
 			}
 #else
 			seq1 = header.seq;
+			seqwrap = 0xf0;
 #endif
 
 			/* Now determine who wins. */
 
-			if ((seq1 > 0xFFF0 && seq2 < 10) || seq2 > seq1) {
+			if ((seq1 > seqwrap && seq2 < 10) || seq2 > seq1) {
 				/* Seq 2 is the winner ... bigger or it wrapped. */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
