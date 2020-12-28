@@ -30,6 +30,11 @@ Debug Options -> Enable Debug Output Features to y
 ```
 Debug Options -> Enable backtracking using Frame pointer register  to y
 ```
+```
+NOTE: - For devices that use ARM Cortex M, backtracking of frame pointer is not supported.
+Hence, it is not possible to obtain exact call stack for the crash.
+Ramdump may not produce results as expected in such cases.
+```
 
 ## How to upload RAMDUMP-or-UserfsDUMP
 ### In Linux

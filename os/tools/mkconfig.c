@@ -188,7 +188,7 @@ int main(int argc, char **argv, char **envp)
 	printf("# elif CONFIG_ARCH_BOARD_ESP32_FAMILY == 1\n");
 	printf("#  define CONFIG_FLASH_START_ADDR 0x300000\n");
 	printf("# elif CONFIG_ARCH_BOARD_RTL8721CSM == 1\n");
-	printf("#  define CONFIG_FLASH_START_ADDR 0x0\n");
+	printf("#  define CONFIG_FLASH_START_ADDR 0x8000000\n");
 	printf("# elif CONFIG_ARCH_BOARD_SIDK_S5JT200 == 1\n");
 	printf("#  define CONFIG_FLASH_START_ADDR 0x040C8000\n");
 	printf("# elif (CONFIG_ARCH_BOARD_STM32F407_DISC1 == 1 || CONFIG_ARCH_BOARD_STM32F429I_DISCO == 1 || CONFIG_ARCH_BOARD_STM32L4R9AI_DISCO == 1)\n");
