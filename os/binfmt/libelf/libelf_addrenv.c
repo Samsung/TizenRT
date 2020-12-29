@@ -92,7 +92,7 @@ static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 	uintptr_t *allocs[MPU_NUM_REGIONS] = {&loadinfo->textalloc, &loadinfo->roalloc, &loadinfo->dataalloc};
 	int count = 0;
 	int i;
-	for (i = 0; i < CONFIG_KMM_NHEAPS; i++) {
+	for (i = 0; i < CONFIG_KMM_REGIONS; i++) {
 		if (kregionx_heap_idx[i] == CONFIG_HEAP_INDEX_LOADED_APP) {
 			count++;
 		}
