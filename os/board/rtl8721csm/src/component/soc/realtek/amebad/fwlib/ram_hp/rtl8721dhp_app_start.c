@@ -9,6 +9,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/mpu.h>
+#include <tinyara/mm/heap_regioninfo.h>
 
 #include "ameba_soc.h"
 #include "rtl8721d_system.h"
@@ -53,13 +54,28 @@ extern unsigned int __PsramStackLimit;
 void os_heap_init(void){
 	kregionx_start[0] = (void *)HEAP_BASE;
 	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
+#if CONFIG_KMM_REGIONS >= 2
+	int region_idx;
 	if(TRUE == psram_dev_config.psram_dev_enable) {
+#if CONFIG_KMM_REGIONS == 3
+		kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
+		kregionx_size[1] = (size_t)kregionx_start[1] + kregionx_size[1] - PSRAM_HEAP_BASE;
+
+		kregionx_start[2] = (void *)kregionx_start[2];
+		kregionx_size[2] = (size_t)PSRAM_HEAP_LIMIT - (size_t)kregionx_start[2];
+#elif CONFIG_KMM_REGIONS > 3
+#error "Need to check here for heap."
+#else
 		kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
 		kregionx_size[1] = (size_t)(PSRAM_HEAP_LIMIT - PSRAM_HEAP_BASE);
+#endif
 	} else {
-		kregionx_start[1] = NULL;
-		kregionx_size[1] = 0;
+		for (region_idx = 1; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
+			kregionx_start[region_idx] = NULL;
+			kregionx_size[region_idx] = 0;
+		}
 	}
+#endif
 }
 #define dbg_printf DiagPrintf
 typedef struct fault_handler_back_trace_s {
@@ -1000,18 +1016,25 @@ u32 app_mpu_nocache_init(void)
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 #endif
 
-#if 0 //fix me!
 	/* set PSRAM Memory Write-Back */
 	/* To prevent data confusion issue in PSRAM */
 	mpu_entry = mpu_entry_alloc();
+	/* The index of kregionx_start and kregionx_size should be matched with
+	 * PSRAM index in CONFIG_RAM_KREGIONx_START and CONFIG_RAM_KREGIONx_SIZE.
+	 * Note that, for loadable_apps, PSRAM_S region will not be set to wb.
+	 */
 	mpu_cfg.region_base = 0x02000000;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* For covering text, bss and data in PSRAM, add the size of (kregionx_start[1] - 0x02000000). */
+	mpu_cfg.region_size = kregionx_size[1] + (size_t)(kregionx_start[1] - 0x02000000);
+#else
 	mpu_cfg.region_size = 0x400000;
+#endif
 	mpu_cfg.xn = MPU_EXEC_ALLOW;
 	mpu_cfg.ap = MPU_UN_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
-#endif
 
 	g_mpu_nregion_allocated = mpu_entry + 1;
 	return 0;
