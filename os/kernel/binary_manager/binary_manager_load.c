@@ -591,8 +591,8 @@ int binary_manager_read_header(char *path, binary_header_t *header_data, bool cr
 {
 	int fd;
 	int ret;
-	int read_size;
-	int file_size;
+	uint32_t read_size;
+	uint32_t file_size;
 	bool need_unlink;
 	uint32_t crc_value = 0;
 	uint8_t *crc_buffer;
@@ -619,7 +619,7 @@ int binary_manager_read_header(char *path, binary_header_t *header_data, bool cr
 	/* Verify header data */
 	if (header_data->bin_type != BIN_TYPE_ELF || header_data->bin_ver == 0 \
 		|| header_data->loading_priority == 0 || header_data->loading_priority >= BINARY_LOADPRIO_MAX \
-		|| header_data->bin_ramsize == 0) {
+		|| header_data->bin_ramsize == 0 || header_data->bin_size == 0) {
 		need_unlink = true;
 		bmdbg("Invalid header data : headersize %u, binsize %u, ramsize %u, bintype %u\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
 		goto errout_with_fd;
