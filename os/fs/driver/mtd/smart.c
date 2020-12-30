@@ -3049,7 +3049,7 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 	offset = oldsector * dev->mtdBlksPerSector * dev->geo.blocksize + offsetof(struct smart_sect_header_s, status);
 	ret = smart_bytewrite(dev, offset, 1, &newstatus);
 	if (ret < 0) {
-		fdbg("Error %d releasing old sector %d\n" - ret, oldsector);
+		fdbg("Error %d releasing old sector %d\n", ret, oldsector);
 	}
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
 
