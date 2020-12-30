@@ -16,22 +16,20 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_HEAPINFO_DRV_H
-#define __INCLUDE_TINYARA_HEAPINFO_DRV_H
+#ifndef __INCLUDE_TINYARA_MMINFO_H
+#define __INCLUDE_TINYARA_MMINFO_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#ifdef CONFIG_APP_BINARY_SEPARATION
-#include <tinyara/binary_manager.h>
-#endif
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define HEAPINFO_DRVPATH     "/dev/heapinfo"
+#define MMINFO_DRVPATH     "/dev/mminfo"
 
+#if defined(CONFIG_DEBUG_MM_HEAPINFO)
 struct heapinfo_option_s {
 	int heap_type;
 	int mode;
@@ -41,8 +39,9 @@ struct heapinfo_option_s {
 #endif
 };
 typedef struct heapinfo_option_s heapinfo_option_t;
+#endif
 
-void heapinfo_drv_register(void);
+void mminfo_register(void);
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
@@ -56,4 +55,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __INCLUDE_TINYARA_HEAPINFO_DRV_H */
+#endif /* __INCLUDE_TINYARA_MMINFO_H */

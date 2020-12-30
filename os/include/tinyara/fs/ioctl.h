@@ -94,7 +94,7 @@
 #define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
 #define _TMBASE         (0x2100)	/* Task Management ioctl commands */
-#define _HEAPINFOBASE   (0x2200)	/* Heapinfo ioctl commands */
+#define _MMINFOBASE     (0x2200)	/* Mminfo ioctl commands */
 #define _SPIBASE        (0x2300)	/* SPI ioctl commands */
 #define _LWNLIOCBASE    (0x2400)	/* LWNL ioctl commands */
 #define _SECLINKBASE    (0x2500)	/* seclink ioctl commands */
@@ -416,15 +416,12 @@
 #define TMIOC_PTHREAD_PARENT       _TMIOC(0x0009)
 #endif
 
-/* Heapinfo driver ioctl definitions ******************************************/
-#define _HEAPINFOIOCVALID(c)   (_IOC_TYPE(c) == _HEAPINFOBASE)
-#define _HEAPINFOIOC(nr)       _IOC(_HEAPINFOBASE, nr)
+/* Mminfo driver ioctl definitions ******************************************/
+#define _MMINFOIOCVALID(c)   (_IOC_TYPE(c) == _MMINFOBASE)
+#define _MMINFOIOC(nr)       _IOC(_MMINFOBASE, nr)
 
-#define HEAPINFOIOC_PARSE             _HEAPINFOIOC(0x0001)
-#define HEAPINFOIOC_NREGION           _HEAPINFOIOC(0x0002)
-#define HEAPINFOIOC_PPID              _HEAPINFOIOC(0x0003)
-#define HEAPINFOIOC_STKSIZE           _HEAPINFOIOC(0x0004)
-#define HEAPINFOIOC_TASKNAME          _HEAPINFOIOC(0x0005)
+#define MMINFOIOC_HEAP              _MMINFOIOC(0x0001)
+#define MMINFOIOC_PARSE             _MMINFOIOC(0x0002)
 
 /* Cpuload driver ioctl definitions ************************/
 

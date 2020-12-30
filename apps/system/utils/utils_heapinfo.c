@@ -32,7 +32,7 @@
 #include <tinyara/mm/mm.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
-#include <tinyara/heapinfo_drv.h>
+#include <tinyara/mminfo.h>
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/binary_manager.h>
@@ -277,12 +277,12 @@ int utils_heapinfo(int argc, char **args)
 		printf("****************************************************************\n");
 	}
 #endif
-	heapinfo_fd = open(HEAPINFO_DRVPATH, O_RDWR);
+	heapinfo_fd = open(MMINFO_DRVPATH, O_RDWR);
 	if (heapinfo_fd < 0) {
 		printf("Heapinfo Fail, %d.\n", get_errno());
 		return ERROR;
 	}
-	ret = ioctl(heapinfo_fd, HEAPINFOIOC_PARSE, (int)&options);
+	ret = ioctl(heapinfo_fd, MMINFOIOC_PARSE, (int)&options);
 	if (ret == ERROR) {
 		printf("Heapinfo Fail, %d.\n", get_errno());
 		close(heapinfo_fd);
