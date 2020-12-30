@@ -113,6 +113,7 @@ endif #!DISABLE_ENVIRON
 config ENABLE_FREE
 	bool "free"
 	default y
+	select MMINFO if BUILD_PROTECTED
 	---help---
 		Show information about memory status
 
@@ -120,6 +121,7 @@ config ENABLE_HEAPINFO
 	bool "heapinfo"
 	default y
 	depends on DEBUG_MM_HEAPINFO && FS_PROCFS
+	select MMINFO
 	---help---
 		Show information about memory status per thread
 
