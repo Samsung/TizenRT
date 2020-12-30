@@ -60,11 +60,20 @@
 #define FACTORYKEY_RTL_DEVICE (0x00010120)
 #define FACTORYKEY_RTL_CERT (0x00010122)
 
-/* SE Base, 1K for Cert, 1K for Key, 280K for SS, 4K reserve */
-#define SE_BASE CONFIG_AMEBAD_FLASH_CAPACITY - (292 * 1024)
-#define CONFIG_SE_FACTORY_CERT_ADDRESS SE_BASE
-#define CONFIG_SE_FACTORY_KEY_ADDRESS SE_BASE + 0x1000
-#define CONFIG_SE_SSTORAGE_ADDRESS SE_BASE + 0x2000
+/* Secure Storage Base Address, After Bootloader before Kernel */
+/* Fix Address, should not be changed, once change previous data will be lost */
+#define SS_BASE_ADDRESS 0xA000
+
+/* 8 Slots for Cert, 8 Slots for Key, 1 Slot is 4KB */
+#define SE_FACTORY_KEY_SIZE 0x8000
+#define SE_FACTORY_CERT_SIZE 0x8000
+#define SE_FACTORY_SIZE SE_FACTORY_KEY_SIZE + SE_FACTORY_CERT_SIZE
+
+#define CONFIG_SE_FACTORY_CERT_ADDRESS SS_BASE_ADDRESS
+#define CONFIG_SE_FACTORY_KEY_ADDRESS SS_BASE_ADDRESS + SE_FACTORY_CERT_SIZE
+
+/* Secure Storage base address locate after Factory Key and Cert */
+#define CONFIG_SE_SSTORAGE_ADDRESS SS_BASE_ADDRESS + SE_FACTORY_SIZE
 
 /* Factory Cert Key */
 #define FACTORY_CERT_ADDR CONFIG_SE_FACTORY_CERT_ADDRESS
@@ -202,9 +211,6 @@ int se_ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal
 	int ret;
 	inout_struc pub_prikey;
 
-	if (prikey != NULL) {	/* If private key is pass in */
-		return HAL_NOT_SUPPORTED;
-	}
 	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
 	}
