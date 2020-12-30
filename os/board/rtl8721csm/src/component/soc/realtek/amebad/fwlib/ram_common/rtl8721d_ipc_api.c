@@ -55,6 +55,8 @@ void ipc_send_message(u8 IPC_ChNum, u32 Message)
 		IPC_DEV = IPCM4_DEV;
 	else if(CpuId == 0) 
 		IPC_DEV = IPCM0_DEV;
+	else
+		return;//invalid CPU ID
 	if(IPC_USER_POINT == ipc_init_config[IPC_ChNum].USER_MSG_TYPE) {
 		/*message is shared between two cpu ,so it can't store in stack
 		 * assume stack down growth, and 0x100 is an estimated value
@@ -89,6 +91,8 @@ u32 ipc_get_message(u8 IPC_ChNum)
 		IPC_DEV = IPCM0_DEV;
 	else if(CpuId == 0) 
 		IPC_DEV = IPCM4_DEV;
+	else
+		return NULL;//invalid CPU ID
 	if(IPC_ChNum > 10){
 		u32 Messages_address = IPC_DEV -> IPCx_USR[11];
 		DCache_Invalidate((u32)&(((u32*)Messages_address)[IPC_ChNum]), sizeof(u32));

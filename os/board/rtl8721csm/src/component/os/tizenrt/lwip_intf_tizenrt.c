@@ -228,20 +228,20 @@ int netif_get_idx(struct netif *pnetif)
 	return -1;
 }
 
-unsigned char *netif_get_hwaddr(int idx_wlan)
+int netif_get_hwaddr(int idx_wlan, uint8_t *dev_addr)
 {
 	struct netdev *dev_tmp = NULL;
-	unsigned char *dev_addr;
-	dev_addr = (unsigned char *)malloc(sizeof(unsigned char) * (IFHWADDRLEN));
 
 	dev_tmp = rtk_get_netdev(idx_wlan);
 
 	if (!dev_tmp) {
 		DiagPrintf("[netif_get_hwaddr] get dev fail\n");
-		return NULL;
+		return -1;
 	}
-	netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN);
-	return dev_addr;
+	if (netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN) == 0)
+		return 0;
+	else
+		return -1;
 }
 #endif
 

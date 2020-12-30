@@ -123,12 +123,11 @@ int up_timerisr(int irq, uint32_t *regs)
 
 void up_timer_initialize(void)
 {
-  uint32_t regval;
-
   /* Set the SysTick interrupt to the min priority */ 
 #ifdef CONFIG_ARCH_IRQPRIO
   up_prioritize_irq(AMEBAD_IRQ_SYSTICK, NVIC_SYSH_PRIORITY_DEFAULT);
 #else
+  uint32_t regval;
   regval = getreg32(NVIC_SYSH12_15_PRIORITY);
   regval &= ~NVIC_SYSH_PRIORITY_PR15_MASK;
   regval |= (NVIC_SYSH_PRIORITY_MIN << NVIC_SYSH_PRIORITY_PR15_SHIFT);

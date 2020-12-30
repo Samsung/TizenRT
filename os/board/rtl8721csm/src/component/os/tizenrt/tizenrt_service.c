@@ -668,11 +668,7 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name, u32
 	struct sched_param sparam;
 	int res = 0;
 
-	pthread_t *tid = _tizenrt_zmalloc(sizeof(pthread_t));
-	if (tid == NULL) {
-		DBG_ERR("Failed to malloc for tid\n");
-		goto err_exit;
-	}
+	pthread_t tid;
 
 	res = pthread_attr_init(&attr);
 	if (res != OK) {
@@ -695,12 +691,12 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name, u32
 		goto err_exit;
 	}
 
-	res = pthread_create(tid, &attr, (pthread_startroutine_t) func, thctx);
+	res = pthread_create(&tid, &attr, (pthread_startroutine_t) func, thctx);
 	if (res != OK) {
 		DBG_ERR("Failed to pthread_create\n");
 		goto err_exit;
 	}
-	if (*tid == 0) {
+	if (tid == 0) {
 		DBG_ERR("create the task %s failed!", name);
 		goto err_exit;
 	}
@@ -708,10 +704,7 @@ static int _tizenrt_create_task(struct task_struct *ptask, const char *name, u32
 	ptask->task_name = name;
 	return _SUCCESS;
 err_exit:
-	if (tid) {
-		_tizenrt_mfree(tid, sizeof(*tid));
-	}
-	ptask->task = NULL;
+	ptask->task = -1;
 	ptask->task_name = NULL;
 	return _FAIL;
 #else
@@ -749,18 +742,17 @@ static void _tizenrt_delete_task(struct task_struct *ptask)
 {
 #if USE_PTHREAD_MUTEX
 	int status = 0;
-	pthread_t *tid = (pthread_t *) ptask->task;
-	if (!ptask->task || *tid == 0) {
+	pthread_t tid = (pthread_t) ptask->task;
+	if (!ptask->task || tid == 0) {
 		DBG_ERR("_tizenrt_delete_task(): ptask is NULL %s!\n", ptask->task_name);
 		return;
 	}
-	status = pthread_cancel(*tid);
+	status = pthread_cancel(tid);
 	if (status != OK) {
 		DBG_ERR("delete the task failed, status=%d!\n", status);
 		return;
 	}
-	_tizenrt_mfree(tid, sizeof(*tid));
-	ptask->task = NULL;
+	ptask->task = -1;
 #else
 	pid_t pid;
 	int status;
@@ -769,18 +761,18 @@ static void _tizenrt_delete_task(struct task_struct *ptask)
 	if (status != OK) {
 		DBG_ERR("delete the task failed, status=%d!\n", status);
 	}
-	ptask->task = NULL;
+	ptask->task = -1;
 #endif
 	return;
 }
 
 static void _tizenrt_set_priority_task(void* task, u32 NewPriority)
 {
-	FAR struct tcb_s *rtcb = sched_gettcb((pid_t)task);
+	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 
 	if (rtcb == NULL) {
-		prefdbg("Failed to get main task %d!\n", (pid_t)task)
+		prefdbg("Failed to get main task %d!\n", *(pid_t *)task)
 		return;
 	}
 
@@ -790,11 +782,11 @@ static void _tizenrt_set_priority_task(void* task, u32 NewPriority)
 
 static int _tizenrt_get_priority_task(void *task)
 {
-	FAR struct tcb_s *rtcb = sched_gettcb((pid_t)task);
+	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 
 	if (rtcb == NULL) {
-		prefdbg("Failed to get main task %d!\n", (pid_t)task)
+		prefdbg("Failed to get main task %d!\n", *(pid_t *)task)
 		return _FAIL;
 	}
 
@@ -803,11 +795,11 @@ static int _tizenrt_get_priority_task(void *task)
 
 static void _tizenrt_suspend_task(void *task)
 {
-	FAR struct tcb_s *rtcb = sched_gettcb((pid_t)task);
+	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 
 	if (rtcb == NULL) {
-		prefdbg("Failed to get main task %d!\n", (pid_t)task)
+		prefdbg("Failed to get main task %d!\n", *(pid_t *)task)
 		return;
 	}
 
@@ -816,11 +808,11 @@ static void _tizenrt_suspend_task(void *task)
 
 static void _tizenrt_resume_task(void *task)
 {
-	FAR struct tcb_s *rtcb = sched_gettcb((pid_t)task);
+	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
 	DiagPrintf("%s %d\r\n", __func__, __LINE__);
 
 	if (rtcb == NULL) {
-		prefdbg("Failed to get main task %d!\n", (pid_t)task)
+		prefdbg("Failed to get main task %d!\n", *(pid_t *)task)
 		return;
 	}
 

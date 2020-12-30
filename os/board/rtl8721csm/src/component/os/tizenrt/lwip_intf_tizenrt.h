@@ -65,7 +65,7 @@ void set_callback_func(emac_callback p, void *data);
 
 int netif_is_valid_IP(int idx, unsigned char *ip_dest);
 int netif_get_idx(struct netif *pnetif);
-unsigned char *netif_get_hwaddr(int idx_wlan);
+int netif_get_hwaddr(int idx_wlan, uint8_t *dev_addr);
 void netif_rx(int idx, unsigned int len);
 void netif_post_sleep_processing(void);
 void netif_pre_sleep_processing(void);
