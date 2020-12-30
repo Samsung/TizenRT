@@ -76,7 +76,7 @@ include bch$(DELIM)Make.defs
 include cpuload$(DELIM)Make.defs
 include fota$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
-include heapinfo$(DELIM)Make.defs
+include memory$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs
 include iotdev$(DELIM)Make.defs
 include kernel_test$(DELIM)Make.defs

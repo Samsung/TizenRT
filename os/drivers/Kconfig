@@ -411,6 +411,13 @@ config TIMER
 		driver. See include/tinyara/timer.h for further timer driver
 		information.
 
+config MMINFO
+	bool "Memory info Driver Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" mminfo
+		driver.
+
 menuconfig ANALOG
 	bool "Analog Device(ADC/DAC) Support"
 	default n

@@ -20,37 +20,36 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <debug.h>
-#include <tinyara/heapinfo_drv.h>
+#include <errno.h>
+#include <stdlib.h>
+
+#include <tinyara/kmalloc.h>
+#include <tinyara/mminfo.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 
-#ifdef CONFIG_MM_KERNEL_HEAP
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_MM_KERNEL_HEAP)
 extern struct mm_heap_s g_kmmheap[CONFIG_KMM_NHEAPS];
 #endif
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
-static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
-static ssize_t heapinfo_read(FAR struct file *filep, FAR char *buffer, size_t len);
-static ssize_t heapinfo_write(FAR struct file *filep, FAR const char *buffer, size_t len);
+static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static ssize_t mminfo_read(FAR struct file *filep, FAR char *buffer, size_t len);
+static ssize_t mminfo_write(FAR struct file *filep, FAR const char *buffer, size_t len);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
-struct heapinfo_dev_s {
-	mqd_t mqdes;	   /* A mqueue descriptor */
-};
-
-static const struct file_operations heapinfo_fops = {
+static const struct file_operations mminfo_fops = {
 	0,                          /* open */
 	0,                          /* close */
-	heapinfo_read,               /* read */
-	heapinfo_write,              /* write */
+	mminfo_read,               /* read */
+	mminfo_write,              /* write */
 	0,                          /* seek */
-	heapinfo_ioctl               /* ioctl */
+	mminfo_ioctl               /* ioctl */
 #ifndef CONFIG_DISABLE_POLL
 	, 0                         /* poll */
 #endif
@@ -58,32 +57,55 @@ static const struct file_operations heapinfo_fops = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static ssize_t heapinfo_read(FAR struct file *filep, FAR char *buffer, size_t len)
+static ssize_t mminfo_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
 	return 0;
 }
 
-static ssize_t heapinfo_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+static ssize_t mminfo_write(FAR struct file *filep, FAR const char *buffer, size_t len)
 {
 	return 0;
 }
 
 /************************************************************************************
- * Name: heapinfo_ioctl
+ * Name: mminfo_ioctl
  *
  * Description: The ioctl method for heapinfo.
  *
  ************************************************************************************/
-static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
+static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	int ret = ERROR;
-	struct mm_heap_s *heap = NULL;
+	int ret = -ENOSYS;
+	struct mallinfo mem;
+	struct mallinfo *retmem;
+#if defined(CONFIG_DEBUG_MM_HEAPINFO)
 	heapinfo_option_t *option;
+	struct mm_heap_s *heap = NULL;
+#endif
 
 	/* Handle built-in ioctl commands */
 
 	switch (cmd) {
-	case HEAPINFOIOC_PARSE:
+	case MMINFOIOC_HEAP:
+		retmem = (struct mallinfo *)arg;
+#ifdef CONFIG_MM_KERNEL_HEAP
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		mem = kmm_mallinfo();
+#else
+		(void)kmm_mallinfo(&mem);
+#endif
+#else
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		mem = kumm_mallinfo();
+#else
+		(void)kumm_mallinfo(&mem);
+#endif
+#endif
+		*retmem = mem;
+		ret = OK;
+		break;
+	case MMINFOIOC_PARSE:
+#if defined(CONFIG_DEBUG_MM_HEAPINFO)
 		option = (heapinfo_option_t *)arg;
 		switch (option->heap_type) {
 		case HEAPINFO_HEAP_TYPE_KERNEL:
@@ -92,13 +114,13 @@ static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case HEAPINFO_HEAP_TYPE_BINARY:
 			heap = mm_get_app_heap_with_name(option->app_name);
+			if (heap == NULL) {
+				return -EINVAL;
+			}
 			break;
 #endif
 		default:
 			break;
-		}
-		if (heap == NULL) {
-			return ERROR;
 		}
 		if (option->mode == HEAPINFO_INIT_PEAK) {
 			heap->peak_alloc_size = 0;
@@ -107,7 +129,9 @@ static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		heapinfo_parse_heap(heap, option->mode, option->pid);
 		ret = OK;
 		break;
+#endif
 	default:
+		mdbg("Not supported\n");
 		break;
 	}
 	return ret;
@@ -118,14 +142,14 @@ static int heapinfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: heapinfo_drv_register
+ * Name: mminfo_register
  *
  * Description:
- *   Register heapinfo driver path, HEAPINFO_DRVPATH
+ *   Register mminfo driver path, MMINFO_DRVPATH
  *
  ****************************************************************************/
 
-void heapinfo_drv_register(void)
+void mminfo_register(void)
 {
-	(void)register_driver(HEAPINFO_DRVPATH, &heapinfo_fops, 0666, NULL);
+	(void)register_driver(MMINFO_DRVPATH, &mminfo_fops, 0666, NULL);
 }
