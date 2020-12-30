@@ -805,7 +805,7 @@ config HEAP_INDEX_LOADED_APP
 	---help---
 		This heap index is used for allocating elf sections and heap area
 		for loadable apps. This value must be set to point to a heap which
-		has sufficient size of contiguous memory to accomodate all the
+		has sufficient size of contiguous memory to accommodate all the
 		app sections with their alignment requriements.
 
 config RAM_MALLOC_PRIOR_INDEX
