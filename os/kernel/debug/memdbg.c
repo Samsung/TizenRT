@@ -80,12 +80,15 @@ extern const uint32_t g_idle_topstack;
 void display_memory_information(void)
 {
 	/* Print RAM configuration */
+	int region_idx;
 
-	mllvdbg("-------------------RAM Configuration--------------------\n");
-	mllvdbg("Kernel   RAM  [0] : start addr = 0x%x size = %u\n", kregionx_start[0], kregionx_size[0]);
+	mllwdbg("-------------------RAM Configuration--------------------\n");
+	for (region_idx = 0; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
+		mllwdbg("Kernel   RAM  [%d] : start addr = 0x%x size = %u\n", region_idx, kregionx_start[region_idx], kregionx_size[region_idx]);
+	}
 
 	/* Print Idle Stack configuration */
 
-	mllvdbg("Idle stack     : base addr = 0x%x size = %u\n", g_idle_topstack, CONFIG_IDLETHREAD_STACKSIZE);
-	mllvdbg("-------------------RAM Configuration--------------------\n");
+	mllwdbg("Idle stack     : base addr = 0x%x size = %u\n", g_idle_topstack, CONFIG_IDLETHREAD_STACKSIZE);
+	mllwdbg("-------------------RAM Configuration--------------------\n");
 }
