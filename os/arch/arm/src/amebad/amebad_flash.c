@@ -286,7 +286,7 @@ static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
 static int amebad_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;			/* Assume good command with bad parameters */
-	FAR struct amebad_dev_s *priv = (FAR struct mtd_dev_s *)dev;
+	FAR struct amebad_dev_s *priv = (FAR struct amebad_dev_s *)dev;
 
 	switch (cmd) {
 	case MTDIOC_GEOMETRY: {

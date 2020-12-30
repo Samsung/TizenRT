@@ -302,7 +302,9 @@ err_t ethernetif_init_rtk(struct netif *netif)
 #if LWIP_IPV6
 	netif->output_ip6 = ethip6_output;
 #endif
-	netif->linkoutput = low_level_output;
+	netif->linkoutput = (netif_linkoutput_fn)low_level_output;
+
+//typedef err_t (*netif_linkoutput_fn)(struct netif * netif, struct pbuf * p);
 
 	/* initialize the hardware */
 	low_level_init(netif);

@@ -170,7 +170,7 @@ int rtk_set_multicast_list(struct netdev *dev, const struct in_addr *group, netd
 
 struct netdev* amebad_register_dev(int sizeof_priv)
 {
-	struct nic_io_ops nops = {(int)low_level_output, rtk_set_multicast_list};
+	struct nic_io_ops nops = { (int(*)(struct netdev *dev, void *data, uint16_t len))low_level_output, (int(*)(struct netdev *netif, const struct in_addr *group, netdev_mac_filter_action action))rtk_set_multicast_list};
 	struct netdev_config config;
 	config.ops = &nops;
 	config.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;

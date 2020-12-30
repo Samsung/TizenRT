@@ -185,7 +185,7 @@ static int amebad_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling,
 						   int rising, gpio_handler_t handler)
 {	
 	struct amebad_lowerhalf_s *priv = (struct amebad_lowerhalf_s *)lower;
-	gpio_irq_event event;
+	gpio_irq_event event = IRQ_NONE;
 	
 	if (falling && rising) {
 		event = IRQ_FALL_RISE;
