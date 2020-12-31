@@ -220,7 +220,7 @@ static int fsdump_recv(int dev_fd)
 	}
 
 	printf("\n=========================================================================\n");
-	printf("Filesystem start address = %x, filesystem size = %d\n", smartfs_addr, smartfs_size);
+	printf("Filesystem start address = %08x, filesystem size = %d\n", smartfs_addr, smartfs_size);
 	printf("=========================================================================\n");
 
 	/* Create filesystem dump binary file name */
