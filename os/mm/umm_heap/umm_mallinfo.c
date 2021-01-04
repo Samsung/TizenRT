@@ -89,7 +89,11 @@ struct mallinfo mallinfo(void)
 {
 	struct mallinfo info;
 #if CONFIG_KMM_NHEAPS > 1
-	memset(&info, 0, sizeof(struct mallinfo));
+	info.arena = 0;
+	info.fordblks = 0;
+	info.mxordblk = 0;
+	info.ordblks = 0;
+	info.uordblks = 0;
 #endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* When CONFIG_APP_BINARY_SEPARATION, user heap only can be single heap. */
@@ -112,6 +116,18 @@ int mallinfo(struct mallinfo *info)
 	mm_mallinfo(&BASE_HEAP[0], info);
 #else
 	int heap_idx;
+
+	if (!info) {
+		mdbg("info is NULL\n");
+		return ERROR;
+	}
+#if CONFIG_KMM_NHEAPS > 1
+	info->arena = 0;
+	info->fordblks = 0;
+	info->mxordblk = 0;
+	info->ordblks = 0;
+	info->uordblks = 0;
+#endif
 	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
 		mm_mallinfo(&BASE_HEAP[heap_idx], info);
 	}

@@ -94,6 +94,13 @@ struct mallinfo kmm_mallinfo(void)
 	struct mallinfo info;
 	int kheap_idx;
 	struct mm_heap_s *kheap = kmm_get_heap();
+#if CONFIG_KMM_NHEAPS > 1
+	info.arena = 0;
+	info.fordblks = 0;
+	info.mxordblk = 0;
+	info.ordblks = 0;
+	info.uordblks = 0;
+#endif
 	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
 		mm_mallinfo(&kheap[kheap_idx], &info);
 	}
@@ -106,6 +113,17 @@ int kmm_mallinfo(struct mallinfo *info)
 {
 	int kheap_idx;
 	struct mm_heap_s *kheap = kmm_get_heap();
+	if (!info) {
+		mdbg("info is NULL\n");
+		return ERROR;
+	}
+#if CONFIG_KMM_NHEAPS > 1
+	info->arena = 0;
+	info->fordblks = 0;
+	info->mxordblk = 0;
+	info->ordblks = 0;
+	info->uordblks = 0;
+#endif
 	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
 		return mm_mallinfo(&kheap[kheap_idx], info);
 	}
