@@ -74,7 +74,7 @@ config NET_TCP_SND_QUEUELEN
 		TCP sender buffer space (pbufs).
 		This must be at least as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work.
 
-if !NET_TCP_QUEUE_OOSEQ
+if NET_TCP_QUEUE_OOSEQ
 
 config NET_TCP_OOSEQ_MAX_BYTES
 	int "The maximum number of bytes queued on ooseq"

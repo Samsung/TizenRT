@@ -360,6 +360,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 		if (netif->input(p, netif) != ERR_OK) {
 			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
 			LINK_STATS_INC(link.err);
+			NETMGR_STATS_INC(g_link_recv_err);
 		} else {
 			LINK_STATS_INC(link.recv);
 		}

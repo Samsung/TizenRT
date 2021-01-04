@@ -28,6 +28,7 @@
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <net/if.h>
 #include "netdev_mgr_internal.h"
+#include "netdev_stats.h"
 #include "lwip/opt.h"
 #include "lwip/netif.h"
 #include "lwip/netdb.h"
@@ -431,6 +432,12 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 	}
 #endif // CONFIG_LWIP_DHCPS
 #endif // CONFIG_NET_LWIP_DHCP
+	case GETNETSTATS: {
+		stats_display();
+		netstats_display();
+		ret = OK;
+		break;
+	}
 	default:
 		ndbg("Wrong request type: %d\n", req->type);
 		break;

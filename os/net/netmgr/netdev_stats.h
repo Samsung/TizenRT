@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,26 @@
  *
  ****************************************************************************/
 
-#ifndef __APP_SYSTEM_UTILS_NETCMD_NETMON_H
-#define __APP_SYSTEM_UTILS_NETCMD_NETMON_H
+#ifndef __NETMGR_STATS_H__
+#define __NETMGR_STATS_H__
 
-#ifdef CONFIG_NET_NETMON
-int cmd_netmon(int argc, char **argv);
-int cmd_netstats(int argc, char **argv);
-#endif
+#if CONFIG_NET_STATS
+extern uint32_t g_link_recv_byte;
+extern uint32_t g_link_recv_cnt;
+extern uint32_t g_link_recv_err;
 
+extern uint32_t g_app_recv_byte;
+extern uint32_t g_app_recv_cnt;
+
+#define NETMGR_STATS_ADD(x, y) \
+	do {\
+		x += y;\
+	} while (0)
+
+#define NETMGR_STATS_INC(x) x++;
+void netstats_display(void);
+#else
+#define NETMGR_STATS_ADD(x, y)
+#define NETMGR_STATS_INC(x)
 #endif
+#endif // __NETMGR_STATS_H__
