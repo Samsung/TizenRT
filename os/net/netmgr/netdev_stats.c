@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,19 @@
  *
  ****************************************************************************/
 
-#ifndef __APP_SYSTEM_UTILS_NETCMD_NETMON_H
-#define __APP_SYSTEM_UTILS_NETCMD_NETMON_H
+#include <tinyara/config.h>
+#include <debug.h>
 
-#ifdef CONFIG_NET_NETMON
-int cmd_netmon(int argc, char **argv);
-int cmd_netstats(int argc, char **argv);
-#endif
+uint32_t g_link_recv_byte = 0;
+uint32_t g_link_recv_cnt = 0;
+uint32_t g_link_recv_err = 0;
 
-#endif
+uint32_t g_app_recv_byte = 0;
+uint32_t g_app_recv_cnt = 0;
+
+void netstats_display(void)
+{
+	nlldbg("[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
+	nlldbg("[driver] mbox err %u\n", g_link_recv_err);
+	nlldbg("[app] total recv %u\t%u\n", g_app_recv_byte, g_app_recv_cnt);
+}

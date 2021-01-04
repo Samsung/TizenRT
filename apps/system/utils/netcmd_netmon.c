@@ -401,3 +401,9 @@ int cmd_netmon(int argc, char **argv)
 	return OK;
 }
 
+
+int cmd_netstats(int argc, char **argv)
+{
+	(void)netlib_getstats();
+	return 0;
+}

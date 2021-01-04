@@ -494,8 +494,8 @@ const static tash_cmdlist_t net_utilcmds[] = {
 	{"ifconfig", cmd_ifconfig, TASH_EXECMD_SYNC},
 	{"ifdown", cmd_ifdown, TASH_EXECMD_SYNC},
 	{"ifup", cmd_ifup, TASH_EXECMD_SYNC},
-#ifdef NET_LWIP_STATS_DISPLAY
-	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
+#ifdef CONFIG_NETUTILS_STATS_DISPLAY_TOOL
+	{"net_stats", cmd_netstats, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_NET_NETMON
 	{"netmon", cmd_netmon, TASH_EXECMD_ASYNC},

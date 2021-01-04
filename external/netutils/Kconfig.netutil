@@ -15,4 +15,12 @@ config NET_NETMON
 	default y
 	---help---
 		Enable support for the network monitor.
+
+config NETUTILS_STATS_DISPLAY_TOOL
+	bool "Enable network statistics Tool"
+	select NET_STATS
+	default y
+	---help---
+		Enable support for the network statistics.
+
 endif

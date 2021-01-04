@@ -26,9 +26,8 @@
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
-
 #include "netdev_mgr_internal.h"
-
+#include "netdev_stats.h"
 
 struct netdev *netdev_register(struct netdev_config *config)
 {
@@ -70,6 +69,10 @@ int netdev_get_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t *hwaddr_len)
 
 int netdev_input(struct netdev *dev, void *data, uint16_t len)
 {
+	if (len > 0) {
+		NETMGR_STATS_ADD(g_link_recv_byte, len);
+		NETMGR_STATS_INC(g_link_recv_cnt);
+	}
 	return ND_NETOPS(dev, input)(dev, data, len);
 }
 
