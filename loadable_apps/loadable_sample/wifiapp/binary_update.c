@@ -30,6 +30,10 @@
 #include <crc32.h>
 
 #include <sys/types.h>
+#ifdef CONFIG_MMINFO
+#include <tinyara/fs/ioctl.h>
+#include <tinyara/mminfo.h>
+#endif
 
 #include <binary_manager/binary_manager.h>
 
@@ -646,25 +650,52 @@ void binary_update_aging_test(void)
 {
 	int ret;
 	binary_update_info_t bin_info;
+#ifdef CONFIG_MMINFO
+	int fd;
+	struct mallinfo data;
+
+	fd = open(MMINFO_DRVPATH, O_RDWR);
+	if (fd < 0) {
+		printf("Open %s Fail, %d errno %d\n", MMINFO_DRVPATH, fd, get_errno());
+	}
+#endif
 
 	while (1) {
+#ifdef CONFIG_MMINFO
+		if (fd >= 0) {
+			ret = ioctl(fd, MMINFOIOC_HEAP, (int)&data);
+			if (ret == OK) {
+				printf("=================== Memory Information ===================\n");
+				printf("              total       used       free    largest\n");
+				printf(" Mem:	%11d%11d%11d%11d\n", data.arena, data.uordblks, data.fordblks, data.mxordblk);
+				printf("===========================================================\n");
+			}
+		}
+#endif
 		ret = binary_update_getinfo(APP_NAME, &bin_info);
 		if (ret != OK) {
-			return;
+			break;
 		}
 
 		/* Copy current binary with a higher version and valid crc. */
 		ret = binary_update_download_binary(&bin_info, DOWNLOAD_VALID_BIN);
 		if (ret != OK) {
-			return;
+			break;
 		}
 
 		sleep(5);
 
 		ret = binary_update_reload(APP_NAME);
 		if (ret != OK) {
-			return;
+			break;
 		}
 	}
+
+	printf(" Binary update aging Test EXIT!! \n");
+#ifdef CONFIG_MMINFO
+	if (fd >= 0) {
+		close(fd);
+	}
+#endif
 }
 #endif
