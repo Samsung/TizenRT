@@ -116,7 +116,8 @@ static ssize_t amebad_erase_page(size_t page)
 {
 	uint32_t address;
 	irqstate_t irqs;
-
+	ssize_t ret;
+	
 	if (page > (AMEBAD_START_SECOTR + AMEBAD_NSECTORS)) {
 		printf("Invalid page number\n");
 		return -EFAULT;
@@ -128,11 +129,13 @@ static ssize_t amebad_erase_page(size_t page)
 	/* do erase */
 	address = page * CONFIG_AMEBAD_FLASH_BLOCK_SIZE;
 	flash_erase_sector(NULL, address);
-
+	ret = flash_erase_verify(address);
 	/* Restore IRQs */
 	irqrestore(irqs);
-
-	return OK;
+	if (ret != OK) {
+		ret = -EIO;
+	}
+	return ret;
 }
 
 static int amebad_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
