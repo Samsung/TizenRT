@@ -2443,7 +2443,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 						nodeitem->parentoffset = offset;
 						nodeitem->time = timestamp;
 						sq_addlast((FAR sq_entry_t *)nodeitem, &entry_queue);
-						fvdbg("new node added for currentsector : %d firsector : %d offset : %d\n", logsector, firstsector, offset);
+						fdbg("new node added for currentsector : %d firsector : %d offset : %d\n", logsector, firstsector, offset);
 					}
 					offset += entrysize;
 
@@ -2457,11 +2457,11 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 					fdbg("Error in getting bitmap for sector : %d, ret : %d\n", nextsector, ret);
 					goto errout;
 				}
-				fvdbg("Nextsector : %d ret : 0x%x\n", nextsector, ret);
+				fdbg("Nextsector : %d ret : 0x%x\n", nextsector, ret);
 
 				/* Previous Header was updated but Next sector wasn't written, clean chain */
 				if (ret >= fs->fs_llformat.nsectors) {
-					fvdbg("next sector [%d] / type : [%d] is not exist, reset sector [%d] header is_remain : %d\n", nextsector, type, \
+					fdbg("next sector [%d] / type : [%d] is not exist, reset sector [%d] header is_remain : %d\n", nextsector, type, \
 						logsector, IS_SECTOR_REMAIN(map, nextsector));
 					header->nextsector[0] = CONFIG_SMARTFS_ERASEDSTATE;
 					header->nextsector[1] = CONFIG_SMARTFS_ERASEDSTATE;

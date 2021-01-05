@@ -2157,6 +2157,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 				winner = smart_cache_lookup(dev, logicalsector);
 #endif
 			}
+			fdbg("seq1 : %d seq2 : %d winner : %d loser : %d\n", seq1, seq2, winner, loser);
 
 			/* Now release the loser sector. */
 
@@ -4938,7 +4939,7 @@ static int smart_journal_init(FAR struct smart_struct_s *dev)
 #ifdef CONFIG_DEBUG_FS_INFO
 	ret = smart_journal_scan(dev, true);
 #else
-	ret = smart_journal_scan(dev, false);
+	ret = smart_journal_scan(dev, true);
 #endif
 	if (ret != OK) {
 		return -EIO;
@@ -5111,6 +5112,7 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
 
 	if (smart_validate_journal_crc(&buf) != OK) {
 		fdbg("Checkin Error, verify crc failed buf crc16 : %d calc crc : %d\n", UINT8TOUINT16(buf.crc16), smart_calc_journal_crc(&buf));
+		smart_journal_print_log(dev, log);
 		return -EIO;
 	}
 
@@ -5546,7 +5548,7 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 		dev->journal_seq = 0;
 	}
 
-	fvdbg("seq : %d\n", dev->journal_seq);
+	fdbg("seq : %d\n", dev->journal_seq);
 	return OK;
 }
 
