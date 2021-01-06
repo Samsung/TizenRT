@@ -885,6 +885,10 @@ static void CAInitializeNetlink()
 		OIC_LOG_V(ERROR, TAG, "netlink socket failed: %s", strerror(errno));
 		return;
 	}
+	int r = bind(caglobals.ip.netlinkFd, NULL, 0);
+	if (r){
+        OIC_LOG_V(ERROR, TAG, "netlink bind failed\n");
+	}
 #endif
 }
 
