@@ -260,3 +260,8 @@ void board_initialize(void)
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"
 #endif
+
+int board_app_initialize(void)
+{
+	return OK;
+}

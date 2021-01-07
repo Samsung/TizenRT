@@ -162,6 +162,9 @@ CHIP_CSRCS += amebad_lowerhalf.c
 CHIP_CSRCS += amebad_enet.c
 CHIP_CSRCS += amebad_timer_lowerhalf.c
 CHIP_CSRCS += amebad_watchdog_lowerhalf.c
+ifeq ($(CONFIG_BOARDCTL_RESET),y)
+CHIP_CSRCS += amebad_systemreset.c
+endif
 
 ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
 CHIP_CSRCS += amebad_nsc.c

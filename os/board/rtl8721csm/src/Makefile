@@ -66,6 +66,13 @@ ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
 CSRCS += crashdump.c
 endif
 
+# boardctl support
+ifeq ($(CONFIG_LIB_BOARDCTL),y)
+DEPPATH += --dep-path $(TOPDIR)/arch
+VPATH += :$(TOPDIR)/arch
+CSRCS += boardctl.c
+endif
+
 include Make.defs
 include component/soc/realtek/amebad/app/monitor/ram/Make.defs
 include component/soc/realtek/amebad/app/monitor/rom/Make.defs
