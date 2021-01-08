@@ -81,6 +81,10 @@ fi
 
 if [ -z ${ELF} ]; then
 	ELF="${MEMTOOL_PATH}/../../build/output/bin/tinyara"
+	if [ ! -f ${ELF} ]; then
+		echo "Unavailable Default ELF \"${ELF}\""
+		exit 1
+	fi
 fi
 
 if [ -z ${OUTPUT_FILE} ]; then
