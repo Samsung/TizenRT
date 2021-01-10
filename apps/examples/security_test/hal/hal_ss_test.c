@@ -152,14 +152,15 @@ TEST_F(delete_storage)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(HAL_SS_TEST_TRIAL, HAL_SS_TEST_LIMIT_TIME, "Write data in secure storage", write_storage);
-ST_SET_SMOKE(HAL_SS_TEST_TRIAL, HAL_SS_TEST_LIMIT_TIME, "Read data from secure storage", read_storage, write_storage);
-ST_SET_SMOKE(HAL_SS_TEST_TRIAL, HAL_SS_TEST_LIMIT_TIME, "Delete data of secure storage", delete_storage, read_storage);
-ST_SET_PACK(hal_ss, delete_storage);
 
 pthread_addr_t hal_ss_test(void)
 {
 	g_se = se_get_device();
+
+	ST_SET_PACK(hal_ss);
+	ST_SET_SMOKE(hal_ss, HAL_SS_TEST_TRIAL, HAL_SS_TEST_LIMIT_TIME, "Write data in secure storage", write_storage);
+	ST_SET_SMOKE(hal_ss, HAL_SS_TEST_TRIAL, HAL_SS_TEST_LIMIT_TIME, "Read data from secure storage", read_storage);
+	ST_SET_SMOKE(hal_ss, HAL_SS_TEST_TRIAL, HAL_SS_TEST_LIMIT_TIME, "Delete data of secure storage", delete_storage);
 
 	ST_RUN_TEST(hal_ss);
 	ST_RESULT_TEST(hal_ss);

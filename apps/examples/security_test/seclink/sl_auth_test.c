@@ -339,7 +339,7 @@ TEST_TEARDOWN(ecdsa_sign)
 	ST_END_TEST;
 }
 
-TEST_F(ecdsa_sign)
+TEST_F(ecdsea_sign)
 {
 	ST_START_TEST;
 
@@ -875,26 +875,26 @@ TEST_F(get_factory)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Generate_random", generate_random);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get hash", get_hash, generate_random);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get hmac", get_hmac, get_hash);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "RSA signature", rsa_sign, get_hmac);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "RSA verification", rsa_verify, rsa_sign);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "ECDSA signature", ecdsa_sign, rsa_verify);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "ECDSA verification", ecdsa_verify, ecdsa_sign);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Generate DH parameters", dh_generate_param, ecdsa_verify);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Compute DH shared secret", dh_compute_shared_secret, dh_generate_param);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Compute ECDH shared secret", ecdh_compute_shared_secret, dh_compute_shared_secret);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Set certificate", set_certificate, ecdh_compute_shared_secret);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get certificate", get_certificate, set_certificate);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Remove certificate", remove_certificate, get_certificate);
-ST_SET_SMOKE(SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get factory key/cert/data", get_factory, remove_certificate);
-ST_SET_PACK(sl_auth, get_factory);
-
-
-
 void sl_auth_test(void)
 {
+	ST_SET_PACK(sl_auth);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Generate_random", generate_random);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get hash", get_hash);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get hmac", get_hmac);
+
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "RSA signature", rsa_sign);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "RSA verification", rsa_verify);
+
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "ECDSA signature", ecdsa_sign);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "ECDSA verification", ecdsa_verify);
+
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Generate DH parameters", dh_generate_param);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Compute DH shared secret", dh_compute_shared_secret);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Compute ECDH shared secret", ecdh_compute_shared_secret);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Set certificate", set_certificate);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get certificate", get_certificate);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Remove certificate", remove_certificate);
+
 	ST_RUN_TEST(sl_auth);
 	ST_RESULT_TEST(sl_auth);
 }

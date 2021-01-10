@@ -233,12 +233,6 @@ TEST_F(scan)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(WM_TEST_TRIAL, 10000000, "init", init);
-ST_SET_SMOKE(WM_TEST_TRIAL, 2000000, "connect", connect, init);
-ST_SET_SMOKE(WM_TEST_TRIAL, 10000000, "connect_done", connect_done, connect);
-ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "disconnect", disconnect, connect_done);
-ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "scan", scan, disconnect);
-ST_SET_PACK(wifi, scan);
 
 void wm_run_stress_test1(struct options *opt)
 {
@@ -246,6 +240,14 @@ void wm_run_stress_test1(struct options *opt)
 	WM_AP_PASSWORD = opt->password;
 	WM_AP_AUTH = opt->auth_type;
 	WM_AP_CRYPTO = opt->crypto_type;
+
+	ST_SET_PACK(wifi, scan);
+
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 10000000, "init", init);
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 2000000, "connect", connect);
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 10000000, "connect_done", connect_done);
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 5000000, "disconnect", disconnect);
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 5000000, "scan", scan);
 
 	ST_RUN_TEST(wifi);
 	ST_RESULT_TEST(wifi);

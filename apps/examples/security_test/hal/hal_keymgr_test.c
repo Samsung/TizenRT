@@ -164,16 +164,18 @@ TEST_F(generate_key)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Set key", set_key);
-ST_SET_SMOKE(HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Get key", get_key, set_key);
-ST_SET_SMOKE(HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Remove key", remove_key, get_key);
-ST_SET_SMOKE(HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Generate key", generate_key, remove_key);
-ST_SET_PACK(hal_keymgr, generate_key);
 
 
 pthread_addr_t hal_keymgr_test(void)
 {
 	g_se = se_get_device();
+
+	ST_SET_PACK(hal_keymgr, generate_key);
+
+	ST_SET_SMOKE(hal_keymgr, HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Set key", set_key);
+	ST_SET_SMOKE(hal_keymgr, HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Get key", get_key);
+	ST_SET_SMOKE(hal_keymgr, HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Remove key", remove_key);
+	ST_SET_SMOKE(hal_keymgr, HAL_KEYMGR_TEST_TRIAL, HAL_KEYMGR_TEST_LIMIT_TIME, "Generate key", generate_key);
 
 	ST_RUN_TEST(hal_keymgr);
 	ST_RESULT_TEST(hal_keymgr);

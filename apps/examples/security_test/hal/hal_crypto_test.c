@@ -234,15 +234,18 @@ TEST_F(rsa_decrypt)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(HAL_CRYPTO_TEST_TRIAL, HAL_CRYPTO_TEST_LIMIT_TIME, "Encrypt data using AES", aes_encrypt);
-ST_SET_SMOKE(HAL_CRYPTO_TEST_TRIAL, HAL_CRYPTO_TEST_LIMIT_TIME, "Decrypt data using AES", aes_decrypt, aes_encrypt);
-ST_SET_SMOKE(HAL_CRYPTO_TEST_TRIAL, HAL_CRYPTO_TEST_LIMIT_TIME, "Encrypt data using RSA", rsa_encrypt, aes_decrypt);
-ST_SET_SMOKE(HAL_CRYPTO_TEST_TRIAL, HAL_CRYPTO_TEST_LIMIT_TIME, "Decrypt data using RSA", rsa_decrypt, rsa_encrypt);
-ST_SET_PACK(hal_crypto, rsa_decrypt);
+
 
 pthread_addr_t hal_crypto_test(void)
 {
 	g_se = se_get_device();
+
+	ST_SET_PACK(hal_crypto, rsa_decrypt);
+
+	ST_SET_SMOKE(hal_crypto, HAL_CRYPTO_TEST_TRIAL, HAL_CRYPTO_TEST_LIMIT_TIME, "Encrypt data using AES", aes_encrypt);
+	ST_SET_SMOKE(hal_crypto, HAL_CRYPTO_TEST_TRIAL, HAL_CRYPTO_TEST_LIMIT_TIME, "Decrypt data using AES", aes_decrypt);
+	ST_SET_SMOKE(hal_crypto, HAL_CRYPTO_TEST_TRIAL, HAL_CRYPTO_TEST_LIMIT_TIME, "Encrypt data using RSA", rsa_encrypt);
+	ST_SET_SMOKE(hal_crypto, HAL_CRYPTO_TEST_TRIAL, HAL_CRYPTO_TEST_LIMIT_TIME, "Decrypt data using RSA", rsa_decrypt);
 
 	ST_RUN_TEST(hal_crypto);
 	ST_RESULT_TEST(hal_crypto);
