@@ -9,8 +9,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * software distributed under the License is distributed on an * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific
  * language governing permissions and limitations under the License.
  *
@@ -45,6 +44,7 @@ static sl_ctx g_hnd;
  */
 static hal_data g_aes_key_in;
 static hal_data g_aes_key_out;
+
 TEST_SETUP(set_sym_key)
 {
 	ST_START_TEST;
@@ -322,7 +322,6 @@ TEST_F(get_sym_key)
 /**
  * Description: Get public key
  */
-#define SL_TEST_PUBKEY_LEN 128
 
 TEST_SETUP(get_pub_key)
 {
@@ -356,6 +355,8 @@ TEST_TEARDOWN(get_pub_key)
 	ST_EXPECT_EQ(0, memcmp(g_pubkey_in.data, g_pubkey_out.data, g_pubkey_out.data_len));
 
 	sl_test_print_buffer(g_pubkey_out.data, g_pubkey_out.data_len, "Get public key");
+
+	hal_result_e hres = HAL_FAIL;
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, SL_TEST_KEY_SLOT, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
@@ -486,7 +487,7 @@ static int g_key_length[] = {SL_TEST_KEY_MEM_SIZE, SL_TEST_KEY_MEM_SIZE};
 static int g_key_index[] = {32, 33};
 static hal_key_type g_key_type[] = {HAL_KEY_AES_256, HAL_KEY_ECC_BRAINPOOL_P256R1};
 static hal_data g_key_out[] = {HAL_DATA_INITIALIZER, HAL_DATA_INITIALIZER};
-static g_key_arr_size = 0;
+static int g_key_arr_size = 0;
 
 TEST_SETUP(generate_key_p)
 {
@@ -509,7 +510,7 @@ TEST_TEARDOWN(generate_key_p)
 
 	hal_result_e hres = HAL_FAIL;
 
-	for (int i = 0; i < g_key_arr_size) {
+	for (int i = 0; i < g_key_arr_size; i++) {
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, g_key_type[i], g_key_index[i], &g_key_out[i], &hres));
 		ST_EXPECT_EQ(HAL_SUCCESS, hres);
 		ST_EXPECT_NEQ(0, g_key_out[i].data_len);
@@ -537,20 +538,58 @@ TEST_F(generate_key_p)
 
 	ST_END_TEST;
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+#define RO_SLOT_SIZE 32
+#define RW_SLOT_SIZE 32
+int g_ro_slot_index[RO_SLOT_SIZE] = {0,};
+int g_rw_slot_index[RW_SLOT_SIZE] = {0,};
 
-ST_SET_SMOKE_TAIL(SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set symmetric key", set_sym_key);
-ST_SET_SMOKE(SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set asymmetric public private key", set_asym_pubprikey, set_sym_key);
-ST_SET_SMOKE(SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set asymmetric public key", set_asym_pubkey, set_asym_pubprikey);
-ST_SET_SMOKE(SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set asymmetric private key", set_asym_prikey, set_asym_pubkey);
-ST_SET_SMOKE(SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get key", get_sym_key, set_asym_prikey);
-ST_SET_SMOKE(SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove key", remove_sym_key, get_sym_key);
-ST_SET_SMOKE(SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate key", generate_key_p, remove_sym_key);
-ST_SET_PACK(sl_keymgr, generate_key_p);
+int g_ro_expect[RO_SLOT_SIZE] = {0,};
+int g_rw_expect[RW_SLOT_SIZE] = {0,};
+
+static void _sl_init_keytest(void)
+{
+	for (int i; i < RO_SLOT_SIZE; ++i) {
+    sl_in
+	}
+
+}
 
 
 void sl_keymgr_test(void)
 {
+	ST_SET_PACK(sl_keymgr);
+
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set symmetric key in RO area", set_sym_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get symmetric key in RO area", get_sym_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove symmetric key in RO area", remove_sym_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate symmetric key in RO area", generate_sym_key_ro);
+
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set public key in RO area", set_public_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get public key in RO area", get_public_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove public key in RO area", remove_public_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate public key in RO area", generate_public_key_ro);
+
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set private key in RO area", set_private_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get private key in RO area", get_private_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove private key in RO area", remove_private_key_ro);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate private key in RO area", generate_private_key_ro);
+
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set symmetric key in RW area", set_sym_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get symmetric key in RW area", get_sym_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove symmetric key in RW area", remove_sym_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate symmetric key in RW area", generate_sym_key_rw);
+
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set public key in RW area", set_public_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get public key in RW area", get_public_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove public key in RW area", remove_public_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate public key in RW area", generate_public_key_rw);
+
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set private key in RW area", set_private_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get private key in RW area", get_private_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove private key in RW area", remove_private_key_rw);
+	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate private key in RW area", generate_private_key_rw);
+
 	ST_RUN_TEST(sl_keymgr);
 	ST_RESULT_TEST(sl_keymgr);
 }
-

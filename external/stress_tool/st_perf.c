@@ -18,24 +18,18 @@
 
 #include <stdio.h>
 #include <sys/time.h>
-
-#include <stress_tool/st_perf.h>
-
 #include <stddef.h>
-#include "queue.h"
+#include <stdlib.h>
 #ifdef __LINUX__
+#include "queue.h"
 #include "st_perf.h"
 #else
+#include <queue.h>
 #include <stress_tool/st_perf.h>
 #endif
 
 #define PERF_ERR(msg) \
 	printf("[perf error]"msg"\t%s%d\n", __FUNCTION__, __LINE__);
-
-#define pk_container_of(ptr, type, member) ({                          \
-            const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-            (type *)( (char *)__mptr - offsetof(type, member) );})
-
 
 #define CONTAINER_OF(ptr, type, member)							\
     ((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))
@@ -43,8 +37,10 @@
 #define PR_GET_SMOKE(ptr)\
 	CONTAINER_OF(ptr, st_smoke, entry)
 
-int
-_calc_performance(st_performance *p, st_elapsed_time *duration)
+/**
+ * Inner Function
+ */
+int _calc_performance(st_performance *p, st_elapsed_time *duration)
 {
 	st_performance_time *start = &duration->start;
 	st_performance_time *end = &duration->end;
@@ -86,8 +82,7 @@ _calc_performance(st_performance *p, st_elapsed_time *duration)
 	return 0;
 }
 
-void
-_calc_stability(st_stability *stab, st_tc_result r)
+void _calc_stability(st_stability *stab, st_tc_result r)
 {
 	st_stability_stat *s = &stab->stat;
 	s->count++;
@@ -110,16 +105,15 @@ _calc_stability(st_stability *stab, st_tc_result r)
 }
 
 
-void
-_run_smoke(st_smoke *smoke)
+void _run_smoke(st_smoke *smoke)
 {
 	if (!smoke) {
 		return;
 	}
 	int cnt = 0;
 	st_tc_result ret;
-	int perf_result;
 	st_func *unit = smoke->func;
+
 	printf(COLOR_RESULT);
 	printf("+--------------------------------------------------\n");
 	printf("|\tRun Stress test " "\n");
@@ -127,6 +121,7 @@ _run_smoke(st_smoke *smoke)
 	printf("+--------------------------------------------------\n");
 	printf(COLOR_WHITE);
 	for (; cnt < smoke->repeat_size; cnt++) {
+		int perf_result = 0;
 		if (unit->setup) {
 			ret = unit->setup(NULL);
 			// update rt performance, stability
@@ -155,8 +150,7 @@ _run_smoke(st_smoke *smoke)
 }
 
 
-void
-_print_stability(st_stability *stab)
+void _print_stability(st_stability *stab)
 {
 	st_stability_stat *s = &stab->stat;
 	if (s->result == STRESS_TC_PASS) {
@@ -166,9 +160,7 @@ _print_stability(st_stability *stab)
 	}
 }
 
-
-void
-_print_performance(st_performance *perf)
+void _print_performance(st_performance *perf)
 {
 	st_performance_stat *p = &perf->stat;
 	if (p->result == STRESS_TC_PASS) {
@@ -179,8 +171,7 @@ _print_performance(st_performance *perf)
 }
 
 
-void
-_print_smoke(st_smoke *smoke)
+void _print_smoke(st_smoke *smoke)
 {
 	printf("%p\n", smoke->func->tc_name);
 	//printf("TESTCASE: %s\n", smoke->func->tc_name);
@@ -189,9 +180,31 @@ _print_smoke(st_smoke *smoke)
 	printf("----------------------------------------------------------------------------\n");
 }
 
+void _perf_free_pack(st_pack *pack)
+{
+	if (!pack) {
+		return;
+	}
 
-void
-perf_run(st_pack *pack)
+	st_smoke *smoke = PR_GET_SMOKE(pack->queue.head);
+	while (smoke) {
+		if (smoke->func) {
+			free(smoke->func);
+		}
+		sq_entry_t *entry = smoke->entry.flink;
+		free(smoke);
+
+		if (!entry) {
+			break;
+		}
+		smoke = PR_GET_SMOKE(entry);
+	}
+}
+
+/*
+ * Public Function
+ */
+void perf_run(st_pack *pack)
 {
 	if (!pack) {
 		return;
@@ -209,40 +222,37 @@ perf_run(st_pack *pack)
 	}
 }
 
-void
-perf_print_result(st_pack *pack) {
+void perf_print_result(st_pack *pack)
+{
 	if (!pack) {
 		return;
 	}
-	st_smoke *smoke = PR_GET_SMOKE(pack->queue.head);
 
 	printf(COLOR_RESULT);
 	printf("============================================================================\n");
 	printf("PERFORMANCE: count\tmax\tmin\tsum\tfail\tresult\n");
 	printf("STABILITY  : count\tpass\tfail\tskip\t        result\n");
 	printf("----------------------------------------------------------------------------\n");
+
+	st_smoke *smoke = PR_GET_SMOKE(pack->queue.head);
 	while (smoke) {
-		printf("output sfunc %p\n", smoke->func);
 		_print_smoke(smoke);
 		if (!smoke->entry.flink) {
 			break;
 		}
 		smoke = PR_GET_SMOKE(smoke->entry.flink);
 	}
-	/* for (; smoke != NULL; smoke = smoke->next) { */
-	/* 	_print_smoke(smoke); */
-	/* } */
 	printf("============================================================================\n");
 	printf(COLOR_WHITE);
+
+	_perf_free_pack(pack);
 }
 
 void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
+				   st_unit_tc func_init, st_unit_tc func_deinit,
 				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func,
 				   unsigned int expect, st_performance *perf, st_stability *stab)
 {
-	printf("%p\n", tc_desc);
-	printf("%s\n", tc_desc);
-
 	st_func *sfunc = (st_func *)malloc(sizeof(st_func));
 	if (!sfunc) {
 		PERF_ERR("func alloc fail\n");
@@ -251,12 +261,9 @@ void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 	sfunc->tc_name = tc_desc;
 	sfunc->setup = func_setup;
 	sfunc->teardown = func_teardown;
+	sfunc->init = func_init;
+	sfunc->deinit = func_deinit;
 	sfunc->tc = func;
-
-	printf("ss %p\n", sfunc->tc_name);
-	printf("ss %s\n", sfunc->tc_name);
-
-	printf("insert sfunc %p\n", sfunc);
 
 	perf->expect = expect;
 
@@ -273,28 +280,4 @@ void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 	smoke->entry.flink = NULL;
 
 	sq_addlast(&smoke->entry, &pack->queue);
-
-#if 0
-	st_smoke *tmp = CONTAINER_OF(&smoke->entry, st_smoke, entry);
-
-	printf("%p %p\n", smoke, tmp);
-#endif
 }
-
-void perf_initialize(st_pack *pack)
-{
-	(void)pack;
-
-	return;
-}
-
-
-void perf_deinitialize(st_pack *pack)
-{
-	if (!pack) {
-		return;
-	}
-
-	//st_smoke *item = NULL;
-}
-

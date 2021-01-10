@@ -208,13 +208,16 @@ TEST_F(delete_storage)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Write data in secure storage", write_storage);
-ST_SET_SMOKE(SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Read data from secure storage", read_storage, write_storage);
-ST_SET_SMOKE(SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Delete data of secure storage", delete_storage, read_storage);
-ST_SET_PACK(sl_ss, delete_storage);
 
 void sl_ss_test(void)
 {
+	ST_SET_PACK(sl_ss);
+	int addrpk;
+
+	ST_SET_SMOKE(sl_ss, SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Write data in secure storage", write_storage);
+	ST_SET_SMOKE(sl_ss, SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Read data from secure storage", read_storage);
+	ST_SET_SMOKE(sl_ss, SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Delete data of secure storage", delete_storage);
+
 	ST_RUN_TEST(sl_ss);
 	ST_RESULT_TEST(sl_ss);
 }

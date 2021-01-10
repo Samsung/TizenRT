@@ -739,27 +739,27 @@ TEST_F(get_factory)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Generate_random", generate_random);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get hash", get_hash, generate_random);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get hmac", get_hmac, get_hash);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "RSA signature", rsa_sign, get_hmac);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "RSA verification", rsa_verify, rsa_sign);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "ECDSA signature", ecdsa_sign, rsa_verify);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "ECDSA verification", ecdsa_verify, ecdsa_sign);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Generate DH parameters", dh_generate_param, ecdsa_verify);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute DH shared secret", dh_compute_shared_secret, dh_generate_param);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute ECDH shared secret", ecdh_compute_shared_secret, dh_compute_shared_secret);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Set certificate", set_certificate, ecdh_compute_shared_secret);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get certificate", get_certificate, set_certificate);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Remove certificate", remove_certificate, get_certificate);
-ST_SET_SMOKE(HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get factory key/cert/data", get_factory, remove_certificate);
-ST_SET_PACK(hal_auth, get_factory);
-
-
 
 pthread_addr_t hal_auth_test(void)
 {
 	g_se = se_get_device();
+
+	ST_SET_PACK(hal_auth);
+
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Generate_random", generate_random);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get hash", get_hash);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get hmac", get_hmac);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "RSA signature", rsa_sign);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "RSA verification", rsa_verify);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "ECDSA signature", ecdsa_sign);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "ECDSA verification", ecdsa_verify);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Generate DH parameters", dh_generate_param);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute DH shared secret", dh_compute_shared_secret);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Compute ECDH shared secret", ecdh_compute_shared_secret);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Set certificate", set_certificate);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get certificate", get_certificate);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Remove certificate", remove_certificate);
+	ST_SET_SMOKE(hal_auth, HAL_AUTH_TEST_TRIAL, HAL_AUTH_TEST_LIMIT_TIME, "Get factory key/cert/data", get_factory);
 
 	ST_RUN_TEST(hal_auth);
 	ST_RESULT_TEST(hal_auth);

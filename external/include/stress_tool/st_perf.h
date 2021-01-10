@@ -35,14 +35,14 @@
  * Test case Macro
  */
 #define TEST_SETUP(tc_name)								\
-	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};\
-	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};\
 	static st_tc_result tc_##tc_name##_setup(void *arg)
 
 #define TEST_TEARDOWN(tc_name)								\
 	static st_tc_result tc_##tc_name##_teardown(void *arg)
 
-#define TEST_F(tc_name)							\
+#define TEST_F(tc_name)													\
+	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};	\
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};		\
 	static st_tc_result tc_##tc_name(void *arg)
 
 #define ST_SET_FUNC(tc_desc, tc_name)									\
@@ -62,29 +62,24 @@
 #define ST_SET_SMOKE_TAIL_UNIT(repeat, tc_name)							\
 	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
 
-#define ST_SET_SMOKE(repeat, expect, tc_desc, tc_name, tc_next)			\
-	ST_SET_FUNC(tc_desc, tc_name);										\
-	ST_SET_PERF(expect, tc_name);										\
-	ST_SET_STAB(tc_name);												\
-	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), &(g_smoke_##tc_next)}
-
-#define ST_SET_SMOKE_TAIL(repeat, expect, tc_desc, tc_name)				\
-	ST_SET_FUNC(tc_desc, tc_name);										\
-	ST_SET_PERF(expect, tc_name);										\
-	ST_SET_STAB(tc_name);												\
-	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
-
-#define ST_SET_PACK(fixture, entry)							\
-	static st_pack g_pack_##fixture = {&g_smoke_##entry}
-
-#define ST_SET_PACK2(fixture)							\
+#define ST_SET_PACK(fixture)							\
 	static st_pack g_pack_##fixture = {NULL}
 
-#define ST_SET_SMOKE2(fixture, repeat, expect, tc_desc, tc_name)		\
-	perf_add_item(&g_pack_##fixture, repeat,							\
-				  tc_desc, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
+#define ST_SET_SMOKE(fixture, repeat, expect, tc_desc, tc_name)		\
+	perf_add_item(&g_pack_##fixture, repeat, tc_desc, \
+				  NULL, NULL, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
+#define ST_SET_SMOKE1(fixture, repeat, expect, tc_desc, tc_name)		\
+	perf_add_item(&g_pack_##fixture, repeat, tc_desc, \
+				  NULL, NULL, NULL, NULL, tc_##tc_name, \
+				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
+
+#define ST_SET_SMOKE5(fixture, repeat, expect, tc_desc, tc_name)		\
+	perf_add_item(&g_pack_##fixture, repeat, tc_desc, \
+				  tc_##tc_name##_init, tc_##tc_name##_deinit, \
+				  tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
+				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
 #define ST_RUN_TEST(fixture) perf_run(&g_pack_##fixture)
 
@@ -256,6 +251,8 @@ typedef struct _st_func {
 	char *tc_name;
 	st_unit_tc setup;
 	st_unit_tc teardown;
+	st_unit_tc init;
+	st_unit_tc deinit;
 	st_unit_tc tc;
 	void *arg;
 } st_func;
@@ -285,8 +282,8 @@ void perf_add_expect_performance(st_smoke *smoke, unsigned int usec);
 
 void perf_initialize(st_pack *pack);
 void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
+				   st_unit_tc func_init, st_unit_tc func_deinit,
 				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func,
 				   unsigned int expect, st_performance *perf, st_stability *stab);
 
 #endif //__ST_PERF_H__
-

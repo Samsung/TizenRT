@@ -693,16 +693,18 @@ TEST_F(tls_recv)
 /*
  * tcp tls run
  */
-ST_SET_SMOKE_TAIL(TCP_TLS_TRIAL, 500000, "recv TCP-TLS", tls_recv);
-ST_SET_SMOKE(TCP_TLS_TRIAL, 50000, "send TCP-TLS", tls_send, tls_recv);
-ST_SET_SMOKE(TCP_TLS_TRIAL, 2000000, "connect TCP-TLS", tls_connect, tls_send);
-ST_SET_SMOKE(TCP_TLS_TRIAL, 50000, "destroy TCP-TLS", tls_destroy, tls_connect);
-ST_SET_SMOKE(TCP_TLS_TRIAL, 50000, "create TCP-TLS", tls_create, tls_destroy);
-ST_SET_PACK(tcp_tls, tls_create);
 
 
 void tcp_tls_stress_test(int argc, FAR char *argv[])
 {
+	ST_SET_PACK(tcp_tls, tls_create);
+
+	ST_SET_SMOKE(tcp_tls, TCP_TLS_TRIAL, 500000, "recv TCP-TLS", tls_recv);
+	ST_SET_SMOKE(tcp_tls, TCP_TLS_TRIAL, 50000, "send TCP-TLS", tls_send);
+	ST_SET_SMOKE(tcp_tls, TCP_TLS_TRIAL, 2000000, "connect TCP-TLS", tls_connect);
+	ST_SET_SMOKE(tcp_tls, TCP_TLS_TRIAL, 50000, "destroy TCP-TLS", tls_destroy);
+	ST_SET_SMOKE(tcp_tls, TCP_TLS_TRIAL, 50000, "create TCP-TLS", tls_create);
+
 	ST_RUN_TEST(tcp_tls);
 	ST_RESULT_TEST(tcp_tls);
 }

@@ -320,12 +320,7 @@ TEST_F(softap_stop)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(WM_TEST_TRIAL, 10000000, "station join", sta_join);
-ST_SET_SMOKE(WM_TEST_TRIAL, 2000000, "station leave", sta_leave, sta_join);
-ST_SET_SMOKE(WM_TEST_TRIAL, 10000000, "station scan", sta_scan, sta_leave);
-ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "softap start", softap_start, sta_scan);
-ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "softap stop", softap_stop, softap_start);
-ST_SET_PACK(wifi, softap_stop);
+
 
 void wm_run_stress_test2(struct options *opt)
 {
@@ -336,4 +331,12 @@ void wm_run_stress_test2(struct options *opt)
 	WM_SOFTAP_SSID = opt->ssid;
 	WM_SOFTAP_PASSWORD = opt->softap_password;
 	WM_SOFTAP_CHANNEL = opt->softap_channel;
+
+	ST_SET_PACK(wifi, softap_stop);
+
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 10000000, "station join", sta_join);
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 2000000, "station leave", sta_leave);
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 10000000, "station scan", sta_scan);
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 5000000, "softap start", softap_start);
+	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 5000000, "softap stop", softap_stop);
 }
