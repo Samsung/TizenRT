@@ -449,6 +449,7 @@ config ARCH_IRQPRIO
 config ARCH_STACKDUMP
 	bool "Dump stack on assertions"
 	default n
+	select DEBUG_SYMBOLS
 	---help---
 		Enable to do stack dumps after assertions.
 		To see symbols on call stack dump, please enable DEBUG_DISPLAY_SYMBOL.
