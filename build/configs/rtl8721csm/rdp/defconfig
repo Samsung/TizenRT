@@ -999,7 +999,7 @@ CONFIG_ARCH_HAVE_STACKCHECK=y
 #
 # Build Debug Options
 #
-# CONFIG_DEBUG_SYMBOLS is not set
+CONFIG_DEBUG_SYMBOLS=y
 # CONFIG_FRAME_POINTER is not set
 
 #
