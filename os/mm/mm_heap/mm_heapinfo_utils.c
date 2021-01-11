@@ -59,6 +59,22 @@
 #include <tinyara/sched.h>
 #include <tinyara/mm/mm.h>
 
+#if CONFIG_KMM_NHEAPS > 1
+struct heapinfo_total_info_s {
+	int total_heap_size;
+	int cur_free;
+	int largest_free_size;
+	int cur_dead_thread;
+	int sum_of_stacks;
+	int sum_of_heaps;
+	int cur_alloc_size;
+	int peak_alloc_size;
+};
+typedef struct heapinfo_total_info_s heapinfo_total_info_t;
+
+heapinfo_total_info_t total_info;
+#endif
+
 /****************************************************************************
  * Name: heapinfo_add_size
  *
@@ -120,6 +136,26 @@ void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid
 	heapinfo_update_group(size, pid);
 #endif
 }
+
+#if CONFIG_KMM_NHEAPS > 1
+/****************************************************************************
+ * Name: heapinfo_update_total_size
+ *
+ * Description:
+ * Calculate the total allocated size and update the peak allocated size for heap
+ ****************************************************************************/
+void heapinfo_update_total_summary(struct mm_heap_s *heap, size_t noused_size, size_t used_size, size_t nonsched_resource, size_t stack_resource, size_t heap_resource)
+{
+	total_info.total_heap_size += heap->mm_heapsize;
+	total_info.cur_free += noused_size;
+	if (total_info.largest_free_size < used_size) {
+		total_info.largest_free_size = used_size;
+	}
+	total_info.cur_dead_thread += nonsched_resource;
+	total_info.sum_of_stacks += stack_resource;
+	total_info.sum_of_heaps += heap_resource - (heap->mm_nregions * SIZEOF_MM_ALLOCNODE);
+}
+#endif
 /****************************************************************************
  * Name: heapinfo_update_node
  *

@@ -350,9 +350,6 @@ extern struct heapinfo_group_s heapinfo_group[HEAPINFO_USER_GROUP_NUM];
 extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 #endif
 
-#if CONFIG_KMM_NHEAPS > 1
-extern heapinfo_total_info_t total_info;
-#endif
 #endif
 /* This describes one heap (possibly with multiple regions) */
 
@@ -688,6 +685,9 @@ void heapinfo_update_group(mmsize_t size, pid_t pid);
 void heapinfo_update_group_info(pid_t pid, int group, int type);
 void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
+#if CONFIG_KMM_NHEAPS > 1
+void heapinfo_update_total_summary(struct mm_heap_s *heap, size_t noused_size, size_t used_size, size_t nonsched_resource, size_t stack_resource, size_t heap_resource);
+#endif
 #endif
 void mm_is_sem_available(void *address);
 
@@ -707,18 +707,6 @@ char *mm_get_app_heap_name(void *address);
 #endif
 
 #if CONFIG_KMM_NHEAPS > 1
-struct heapinfo_total_info_s {
-	int total_heap_size;
-	int cur_free;
-	int largest_free_size;
-	int cur_dead_thread;
-	int sum_of_stacks;
-	int sum_of_heaps;
-	int cur_alloc_size;
-	int peak_alloc_size;
-};
-typedef struct heapinfo_total_info_s heapinfo_total_info_t;
-
 /**
  * @cond
  * @internal
