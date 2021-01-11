@@ -374,6 +374,25 @@ static u32 uart_index_get(PinName tx)
 	return 3;
 }
 
+static void LOGUART_PutChar_RAM(u8 c)
+{
+	UART_TypeDef* LOGUART = UART2_DEV;
+	u32 CounterIndex = 0;
+
+	if (ConfigDebugClose == 1)
+		return;
+
+	while(1) {
+		CounterIndex++;
+		if (CounterIndex >=6540)
+			break;
+
+		if (LOGUART->LSR & RUART_LINE_STATUS_REG_THRE)
+			break;
+	}
+	LOGUART->RB_THR = c;
+}
+
 /****************************************************************************
  * Name: rtl8721d_up_setup
  *
@@ -723,7 +742,7 @@ void up_serialinit(void)
  ****************************************************************************/
 void up_lowputc(char ch)
 {
-	LOGUART_PutChar(ch);
+	LOGUART_PutChar_RAM(ch);
 }
 
 /****************************************************************************
