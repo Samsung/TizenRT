@@ -27,17 +27,121 @@
 #include <stress_tool/st_perf.h>
 #include "sl_test.h"
 
+/*
+ * Certificate
+ * Injected certificate slot range 0~31
+ * tp1x: 0~7
+ * RAM certificate slot range 32~63
+ * tp1x: 32~63
+ */
+
+/*  Common */
 #define SL_TEST_AUTH_MEM_SIZE 4096
 #define SL_TEST_AUTH_TRIAL 1
 #define SL_TEST_AUTH_LIMIT_TIME 1000000
+#define SL_TEST_CERT_RAMSLOT_START 32
+#define SL_TEST_KEY_RAMSLOT_START 32
+#define SL_TEST_KEY_INJSLOT_START 0
+
+#define SL_TEST_HASH_INPUT_SIZE 64
+#define SL_TEST_CERT_SLOT SL_TEST_CERT_RAMSLOT_START
+#define SL_TEST_RAND_LEN 128
+
+#define SL_TEST_INJECT_KEY_SLOT SL_TEST_KEY_INJSLOT_START
+#define SL_TEST_INJECT_CERT_SLOT (SL_TEST_KEY_INJSLOT_START + 1)
+#define SL_TEST_INJECT_DATA_SLOT (SL_TEST_KEY_INJSLOT_START + 2)
+
+#define SL_TEST_ECDH_KEY_SLOT_A SL_TEST_KEY_RAMSLOT_START
+#define SL_TEST_ECDH_KEY_SLOT_B (SL_TEST_KEY_RAMSLOT_START + 1)
+
+#define SL_TEST_RSA_HASH_LEN 32
+#define SL_TEST_RSA_KEY_SLOT SL_TEST_KEY_RAMSLOT_START
+
+#define SL_TEST_DH_X_SLOT SL_TEST_KEY_RAMSLOT_START
+#define SL_TEST_DH_Y_SLOT (SL_TEST_KEY_RAMSLOT_START + 1)
+
+#define SL_TEST_ECC_KEY_SLOT SL_TEST_KEY_RAMSLOT_START
+#define SL_TEST_ECC_HASH_LEN 32
+
+#define SL_TEST_HMAC_KEY_SLOT SL_TEST_KEY_RAMSLOT_START
+
+static sl_ctx g_hnd;
+
+static hal_data g_rsa_hash;
+static hal_data g_rsa_signature;
+static hal_rsa_mode g_rsa_mode;
+static hal_data g_ecdsa_hash;
+static hal_data g_ecdsa_signature;
+static hal_ecdsa_mode g_ecdsa_mode;
+
+static hal_data g_hmac;
+static hal_data g_plain_text;
+static hal_data g_hash;
+static hal_data g_rand;
+
+static hal_data g_cert_in;
+static hal_data g_cert_out;
+
+static hal_data g_shared_secret_a;
+static hal_data g_shared_secret_b;
+static hal_ecdh_data ecdh_a;
+static hal_ecdh_data ecdh_b;
+static hal_data key_a;
+static hal_data key_b;
+
+static hal_data g_dh_shared_secret;
+
+static hal_data g_inject_key;
+static hal_data g_inject_cert;
+
+static hal_dh_data g_dh_data;
+
+static const char test_crt[] =
+		"-----BEGIN CERTIFICATE-----\r\n"
+		"MIICaDCCAgygAwIBAgIBAjAMBggqhkjOPQQDAgUAMHAxLTArBgNVBAMTJFNhbXN1\r\n"
+		"bmcgRWxlY3Ryb25pY3MgT0NGIFJvb3QgQ0EgVEVTVDEUMBIGA1UECxMLT0NGIFJv\r\n"
+		"b3QgQ0ExHDAaBgNVBAoTE1NhbXN1bmcgRWxlY3Ryb25pY3MxCzAJBgNVBAYTAktS\r\n"
+		"MCAXDTE2MTEyNDAyNDcyN1oYDzIwNjkxMjMxMTQ1OTU5WjBwMS0wKwYDVQQDEyRT\r\n"
+		"YW1zdW5nIEVsZWN0cm9uaWNzIE9DRiBSb290IENBIFRFU1QxFDASBgNVBAsTC09D\r\n"
+		"RiBSb290IENBMRwwGgYDVQQKExNTYW1zdW5nIEVsZWN0cm9uaWNzMQswCQYDVQQG\r\n"
+		"EwJLUjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABBzzury7p8HANVn+v4CIa2h/\r\n"
+		"R/SAt3VVst+vTv4/kR+lgU1OEiT3t9+mOWE7J+oddpRofFW2DdeJkpfQUVOn4NOj\r\n"
+		"gZIwgY8wDgYDVR0PAQH/BAQDAgHGMC4GA1UdHwQnMCUwI6AhoB+GHWh0dHA6Ly9j\r\n"
+		"YS5zYW1zdW5naW90cy5jb20vY3JsMA8GA1UdEwEB/wQFMAMBAf8wPAYIKwYBBQUH\r\n"
+		"AQEEMDAuMCwGCCsGAQUFBzABhiBodHRwOi8vb2NzcC10ZXN0LnNhbXN1bmdpb3Rz\r\n"
+		"LmNvbTAMBggqhkjOPQQDAgUAA0gAMEUCIQCIsi3BcOQMXO/pCiUA+S75bYFWS27E\r\n"
+		"GAq9e2E3+hQ2TAIgWrTieFAZ5xRH3BnSHG+XEF2HPD99y/SYSa6T59YW+jE=\r\n"
+		"-----END CERTIFICATE-----\r\n\0";
+
+unsigned char p_buf_1024[] = {
+	0xb1, 0x0b, 0x8f, 0x96, 0xa0, 0x80, 0xe0, 0x1d, 0xde, 0x92, 0xde, 0x5e, 0xae,
+	0x5d, 0x54, 0xec, 0x52, 0xc9, 0x9f, 0xbc, 0xfb, 0x06, 0xa3, 0xc6, 0x9a, 0x6a,
+	0x9d, 0xca, 0x52, 0xd2, 0x3b, 0x61, 0x60, 0x73, 0xe2, 0x86, 0x75, 0xa2, 0x3d,
+	0x18, 0x98, 0x38, 0xef, 0x1e, 0x2e, 0xe6, 0x52, 0xc0, 0x13, 0xec, 0xb4, 0xae,
+	0xa9, 0x06, 0x11, 0x23, 0x24, 0x97, 0x5c, 0x3c, 0xd4, 0x9b, 0x83, 0xbf, 0xac,
+	0xcb, 0xdd, 0x7d, 0x90, 0xc4, 0xbd, 0x70, 0x98, 0x48, 0x8e, 0x9c, 0x21, 0x9a,
+	0x73, 0x72, 0x4e, 0xff, 0xd6, 0xfa, 0xe5, 0x64, 0x47, 0x38, 0xfa, 0xa3, 0x1a,
+	0x4f, 0xf5, 0x5b, 0xcc, 0xc0, 0xa1, 0x51, 0xaf, 0x5f, 0x0d, 0xc8, 0xb4, 0xbd,
+	0x45, 0xbf, 0x37, 0xdf, 0x36, 0x5c, 0x1a, 0x65, 0xe6, 0x8c, 0xfd, 0xa7, 0x6d,
+	0x4d, 0xa7, 0x08, 0xdf, 0x1f, 0xb2, 0xbc, 0x2e, 0x4a, 0x43, 0x71
+};
+unsigned char g_buf_1024[] = {
+	0xa4, 0xd1, 0xcb, 0xd5, 0xc3, 0xfd, 0x34, 0x12, 0x67, 0x65, 0xa4, 0x42, 0xef,
+	0xb9, 0x99, 0x05, 0xf8, 0x10, 0x4d, 0xd2, 0x58, 0xac, 0x50, 0x7f, 0xd6, 0x40,
+	0x6c, 0xff, 0x14, 0x26,	0x6d, 0x31, 0x26, 0x6f, 0xea, 0x1e, 0x5c, 0x41, 0x56,
+	0x4b, 0x77, 0x7e, 0x69, 0x0f, 0x55, 0x04, 0xf2, 0x13, 0x16, 0x02, 0x17, 0xb4,
+	0xb0, 0x1b, 0x88, 0x6a, 0x5e, 0x91, 0x54, 0x7f,	0x9e, 0x27, 0x49, 0xf4, 0xd7,
+	0xfb, 0xd7, 0xd3, 0xb9, 0xa9, 0x2e, 0xe1, 0x90, 0x9d, 0x0d, 0x22, 0x63, 0xf8,
+	0x0a, 0x76, 0xa6, 0xa2, 0x4c, 0x08, 0x7a, 0x09, 0x1f, 0x53, 0x1d, 0xbf,	0x0a,
+	0x01, 0x69, 0xb6, 0xa2, 0x8a, 0xd6, 0x62, 0xa4, 0xd1, 0x8e, 0x73, 0xaf, 0xa3,
+	0x2d, 0x77, 0x9d, 0x59, 0x18, 0xd0, 0x8b, 0xc8, 0x85, 0x8f, 0x4d, 0xce, 0xf9,
+	0x7c, 0x2a, 0x24, 0x85, 0x5e, 0x6e, 0xeb, 0x22, 0xb3, 0xb2, 0xe5
+};
+
 /*
  * Desc: Generate random
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-static hal_data g_rand;
-#define RAND_LEN 128
-static sl_ctx g_hnd;
-
 TEST_SETUP(generate_random)
 {
 	ST_START_TEST;
@@ -64,7 +168,7 @@ TEST_F(generate_random)
 	ST_START_TEST;
 
 	hal_result_e hres = HAL_FAIL;
-	ST_EXPECT_EQ(SECLINK_OK, sl_generate_random(g_hnd, RAND_LEN, &g_rand, &hres));
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_random(g_hnd, SL_TEST_RAND_LEN, &g_rand, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
 
 	ST_END_TEST;
@@ -74,9 +178,6 @@ TEST_F(generate_random)
  * Desc: Get hash
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-static hal_data g_plain_text;
-static hal_data g_hash;
-#define SL_TEST_HASH_INPUT_SIZE 64
 TEST_SETUP(get_hash)
 {
 	ST_START_TEST;
@@ -121,9 +222,6 @@ TEST_F(get_hash)
  * Desc: Get hmac
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define SL_TEST_HMAC_KEY_SLOT 3
-static hal_data g_hmac;
-
 TEST_SETUP(get_hmac)
 {
 	ST_START_TEST;
@@ -174,12 +272,6 @@ TEST_F(get_hmac)
  * Desc: Get RSA signagure
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-static hal_data g_rsa_hash;
-static hal_data g_rsa_signature;
-hal_rsa_mode g_rsa_mode;
-#define SL_TEST_RSA_HASH_LEN 32
-#define SL_TEST_RSA_KEY_SLOT 1
-
 TEST_SETUP(rsa_sign)
 {
 	ST_START_TEST;
@@ -295,12 +387,6 @@ TEST_F(rsa_verify)
  * Desc: Get ECDSA
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define SL_TEST_ECC_KEY_SLOT 1
-#define SL_TEST_ECC_HASH_LEN 32
-static hal_data g_ecdsa_hash;
-static hal_data g_ecdsa_signature;
-hal_ecdsa_mode g_ecdsa_mode;
-
 TEST_SETUP(ecdsa_sign)
 {
 	ST_START_TEST;
@@ -339,7 +425,7 @@ TEST_TEARDOWN(ecdsa_sign)
 	ST_END_TEST;
 }
 
-TEST_F(ecdsea_sign)
+TEST_F(ecdsa_sign)
 {
 	ST_START_TEST;
 
@@ -412,35 +498,6 @@ TEST_F(ecdsa_verify)
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 /* Generate G, P, GX (G^X mod P) */
-
-#define SL_TEST_DH_X_SLOT 1
-#define SL_TEST_DH_Y_SLOT 2
-static hal_dh_data g_dh_data;
-unsigned char p_buf_1024[] = {
-	0xb1, 0x0b, 0x8f, 0x96, 0xa0, 0x80, 0xe0, 0x1d, 0xde, 0x92, 0xde, 0x5e, 0xae,
-	0x5d, 0x54, 0xec, 0x52, 0xc9, 0x9f, 0xbc, 0xfb, 0x06, 0xa3, 0xc6, 0x9a, 0x6a,
-	0x9d, 0xca, 0x52, 0xd2, 0x3b, 0x61, 0x60, 0x73, 0xe2, 0x86, 0x75, 0xa2, 0x3d,
-	0x18, 0x98, 0x38, 0xef, 0x1e, 0x2e, 0xe6, 0x52, 0xc0, 0x13, 0xec, 0xb4, 0xae,
-	0xa9, 0x06, 0x11, 0x23, 0x24, 0x97, 0x5c, 0x3c, 0xd4, 0x9b, 0x83, 0xbf, 0xac,
-	0xcb, 0xdd, 0x7d, 0x90, 0xc4, 0xbd, 0x70, 0x98, 0x48, 0x8e, 0x9c, 0x21, 0x9a,
-	0x73, 0x72, 0x4e, 0xff, 0xd6, 0xfa, 0xe5, 0x64, 0x47, 0x38, 0xfa, 0xa3, 0x1a,
-	0x4f, 0xf5, 0x5b, 0xcc, 0xc0, 0xa1, 0x51, 0xaf, 0x5f, 0x0d, 0xc8, 0xb4, 0xbd,
-	0x45, 0xbf, 0x37, 0xdf, 0x36, 0x5c, 0x1a, 0x65, 0xe6, 0x8c, 0xfd, 0xa7, 0x6d,
-	0x4d, 0xa7, 0x08, 0xdf, 0x1f, 0xb2, 0xbc, 0x2e, 0x4a, 0x43, 0x71
-};
-unsigned char g_buf_1024[] = {
-	0xa4, 0xd1, 0xcb, 0xd5, 0xc3, 0xfd, 0x34, 0x12, 0x67, 0x65, 0xa4, 0x42, 0xef,
-	0xb9, 0x99, 0x05, 0xf8, 0x10, 0x4d, 0xd2, 0x58, 0xac, 0x50, 0x7f, 0xd6, 0x40,
-	0x6c, 0xff, 0x14, 0x26,	0x6d, 0x31, 0x26, 0x6f, 0xea, 0x1e, 0x5c, 0x41, 0x56,
-	0x4b, 0x77, 0x7e, 0x69, 0x0f, 0x55, 0x04, 0xf2, 0x13, 0x16, 0x02, 0x17, 0xb4,
-	0xb0, 0x1b, 0x88, 0x6a, 0x5e, 0x91, 0x54, 0x7f,	0x9e, 0x27, 0x49, 0xf4, 0xd7,
-	0xfb, 0xd7, 0xd3, 0xb9, 0xa9, 0x2e, 0xe1, 0x90, 0x9d, 0x0d, 0x22, 0x63, 0xf8,
-	0x0a, 0x76, 0xa6, 0xa2, 0x4c, 0x08, 0x7a, 0x09, 0x1f, 0x53, 0x1d, 0xbf,	0x0a,
-	0x01, 0x69, 0xb6, 0xa2, 0x8a, 0xd6, 0x62, 0xa4, 0xd1, 0x8e, 0x73, 0xaf, 0xa3,
-	0x2d, 0x77, 0x9d, 0x59, 0x18, 0xd0, 0x8b, 0xc8, 0x85, 0x8f, 0x4d, 0xce, 0xf9,
-	0x7c, 0x2a, 0x24, 0x85, 0x5e, 0x6e, 0xeb, 0x22, 0xb3, 0xb2, 0xe5
-};
-
 TEST_SETUP(dh_generate_param)
 {
 	ST_START_TEST;
@@ -494,8 +551,6 @@ TEST_F(dh_generate_param)
  * Desc: Compute DH shared secret
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-static hal_data g_dh_shared_secret;
-
 TEST_SETUP(dh_compute_shared_secret)
 {
 	ST_START_TEST;
@@ -558,15 +613,6 @@ TEST_F(dh_compute_shared_secret)
  * Desc: Compute ECDH shared secret
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define SL_TEST_ECDH_KEY_SLOT_A 1
-#define SL_TEST_ECDH_KEY_SLOT_B 2
-static hal_data g_shared_secret_a;
-static hal_data g_shared_secret_b;
-static hal_ecdh_data ecdh_a;
-static hal_ecdh_data ecdh_b;
-static hal_data key_a;
-static hal_data key_b;
-
 TEST_SETUP(ecdh_compute_shared_secret)
 {
 	ST_START_TEST;
@@ -665,26 +711,6 @@ TEST_F(ecdh_compute_shared_secret)
  * Desc: Save certificate in secure storage
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define SL_TEST_CERT_SLOT 2
-static const char test_crt[] =
-		"-----BEGIN CERTIFICATE-----\r\n"
-		"MIICaDCCAgygAwIBAgIBAjAMBggqhkjOPQQDAgUAMHAxLTArBgNVBAMTJFNhbXN1\r\n"
-		"bmcgRWxlY3Ryb25pY3MgT0NGIFJvb3QgQ0EgVEVTVDEUMBIGA1UECxMLT0NGIFJv\r\n"
-		"b3QgQ0ExHDAaBgNVBAoTE1NhbXN1bmcgRWxlY3Ryb25pY3MxCzAJBgNVBAYTAktS\r\n"
-		"MCAXDTE2MTEyNDAyNDcyN1oYDzIwNjkxMjMxMTQ1OTU5WjBwMS0wKwYDVQQDEyRT\r\n"
-		"YW1zdW5nIEVsZWN0cm9uaWNzIE9DRiBSb290IENBIFRFU1QxFDASBgNVBAsTC09D\r\n"
-		"RiBSb290IENBMRwwGgYDVQQKExNTYW1zdW5nIEVsZWN0cm9uaWNzMQswCQYDVQQG\r\n"
-		"EwJLUjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABBzzury7p8HANVn+v4CIa2h/\r\n"
-		"R/SAt3VVst+vTv4/kR+lgU1OEiT3t9+mOWE7J+oddpRofFW2DdeJkpfQUVOn4NOj\r\n"
-		"gZIwgY8wDgYDVR0PAQH/BAQDAgHGMC4GA1UdHwQnMCUwI6AhoB+GHWh0dHA6Ly9j\r\n"
-		"YS5zYW1zdW5naW90cy5jb20vY3JsMA8GA1UdEwEB/wQFMAMBAf8wPAYIKwYBBQUH\r\n"
-		"AQEEMDAuMCwGCCsGAQUFBzABhiBodHRwOi8vb2NzcC10ZXN0LnNhbXN1bmdpb3Rz\r\n"
-		"LmNvbTAMBggqhkjOPQQDAgUAA0gAMEUCIQCIsi3BcOQMXO/pCiUA+S75bYFWS27E\r\n"
-		"GAq9e2E3+hQ2TAIgWrTieFAZ5xRH3BnSHG+XEF2HPD99y/SYSa6T59YW+jE=\r\n"
-		"-----END CERTIFICATE-----\r\n\0";
-static hal_data g_cert_in;
-static hal_data g_cert_out;
-
 TEST_SETUP(set_certificate)
 {
 	ST_START_TEST;
@@ -826,50 +852,39 @@ TEST_F(remove_certificate)
  * Desc: Get factorykey data
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-static hal_data g_factory_key;
-static hal_data g_factory_cert;
-static hal_data g_factory_data;
-
-#define SL_TEST_FACTORY_KEY_SLOT 3
-#define SL_TEST_FACTORY_CERT_SLOT 4
-#define SL_TEST_FACTORY_DATA_SLOT 5
-
-TEST_SETUP(get_factory)
+TEST_SETUP(get_injected)
 {
 	ST_START_TEST;
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_init(&g_hnd));
 
-	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_factory_key, SL_TEST_AUTH_MEM_SIZE));
-	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_factory_cert, SL_TEST_AUTH_MEM_SIZE));
-	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_factory_data, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_inject_key, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_inject_cert, SL_TEST_AUTH_MEM_SIZE));
 
 	ST_END_TEST;
 }
 
-TEST_TEARDOWN(get_factory)
+TEST_TEARDOWN(get_injected)
 {
 	ST_START_TEST;
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
 
-	sl_test_free_buffer(&g_factory_key);
-	sl_test_free_buffer(&g_factory_cert);
-	sl_test_free_buffer(&g_factory_data);
+	sl_test_free_buffer(&g_inject_key);
+	sl_test_free_buffer(&g_inject_cert);
 
 	ST_END_TEST;
 }
 
-TEST_F(get_factory)
+TEST_F(get_injected)
 {
 	ST_START_TEST;
 
 	hal_result_e hres = HAL_FAIL;
-	ST_EXPECT_EQ(SECLINK_OK, sl_get_factory_key(g_hnd, SL_TEST_FACTORY_KEY_SLOT, &g_factory_key, &hres));
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, SL_TEST_INJECT_KEY_SLOT, &g_inject_key, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
-	ST_EXPECT_EQ(SECLINK_OK, sl_get_factory_cert(g_hnd, SL_TEST_FACTORY_CERT_SLOT, &g_factory_cert, &hres));
-	ST_EXPECT_EQ(HAL_SUCCESS, hres);
-	ST_EXPECT_EQ(SECLINK_OK, sl_get_factory_data(g_hnd, SL_TEST_FACTORY_DATA_SLOT, &g_factory_data, &hres));
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_certificate(g_hnd, SL_TEST_INJECT_CERT_SLOT, &g_inject_cert, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
 
 	ST_END_TEST;
@@ -894,6 +909,8 @@ void sl_auth_test(void)
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Set certificate", set_certificate);
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get certificate", get_certificate);
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Remove certificate", remove_certificate);
+
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get injected data", get_injected);
 
 	ST_RUN_TEST(sl_auth);
 	ST_RESULT_TEST(sl_auth);

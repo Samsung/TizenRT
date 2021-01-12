@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,13 @@ void sl_test_free_buffer(hal_data *data)
 
 int sl_test_malloc_buffer(hal_data *data, int buf_len)
 {
+	if (!data) {
+		return -1;
+	}
+
 	data->data = (unsigned char *)zalloc(buf_len);
 	if (!data->data) {
-		return -1;
+		return -2;
 	}
 	data->data_len = buf_len;
 	return 0;

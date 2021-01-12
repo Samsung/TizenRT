@@ -37,6 +37,7 @@ typedef enum {
 
 	HAL_NOT_INITIALIZED,
 	HAL_INVALID_ARGS,
+	HAL_INVALID_REQUEST,
 
 	HAL_INVALID_SLOT_RANGE,
 	HAL_INVALID_SLOT_TYPE, //ex. request to save key into cert slot
