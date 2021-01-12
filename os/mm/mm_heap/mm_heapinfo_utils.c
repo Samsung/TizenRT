@@ -110,12 +110,6 @@ void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid
 	if (heap->peak_alloc_size < heap->total_alloc_size) {
 		heap->peak_alloc_size = heap->total_alloc_size;
 	}
-#if CONFIG_KMM_NHEAPS > 1
-	total_info.cur_alloc_size += size;
-	if (total_info.peak_alloc_size < total_info.cur_alloc_size) {
-		total_info.peak_alloc_size = total_info.cur_alloc_size;
-	}
-#endif
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	heapinfo_update_group(size, pid);
 #endif
