@@ -21,12 +21,9 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <stdio.h>
-#include <pthread.h>
-
 
 /****************************************************************************
- * security_test_main
+ * sl_test_main
  ****************************************************************************/
 extern void sl_ss_test(void);
 extern void sl_auth_test(void);

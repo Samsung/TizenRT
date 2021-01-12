@@ -18,8 +18,6 @@
 #ifndef __SECURITY_SECLINK_TEST_H__
 #define __SECURITY_SECLINK_TEST_H__
 
-#include <pthread.h>
-
 /*
  * Definitions
  */
@@ -27,7 +25,7 @@
 #define SECLINK_TEST_LIMIT 1000000
 #define SECLINK_TEST_MEM_SIZE 4096
 
-
+#define SL_TEST_ERR(msg) printf(msg "\t%s:%d\n", __FUNCTION__, __LINE__)
 
 /*
  * Functions

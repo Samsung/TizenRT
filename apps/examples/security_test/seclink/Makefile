@@ -96,10 +96,10 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SECLINK_TEST),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_test_main.bdat: $(DEPCONFIG) Makefile
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_test_main.bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
 else
 context:
 endif
