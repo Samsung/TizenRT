@@ -597,7 +597,9 @@ void os_start(void)
 	pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
 #endif
 
+#ifdef CONFIG_DEBUG_MM_WARN
 	display_memory_information();
+#endif
 
 	DEBUGVERIFY(os_bringup());
 

@@ -20,7 +20,10 @@ ifeq ($(CONFIG_DEBUG_SYSTEM),y)
 CSRCS += sysdbg.c
 endif
 
-CSRCS += memdbg.c dbg_termination_info.c
+CSRCS += dbg_termination_info.c
+ifeq ($(CONFIG_DEBUG_MM_WARN),y)
+CSRCS += memdbg.c
+endif
 
 ifeq ($(CONFIG_ENABLE_STACKMONITOR)$(CONFIG_DEBUG),yy)
 CSRCS += stackinfo_save_terminated.c

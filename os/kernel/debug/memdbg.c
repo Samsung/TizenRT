@@ -96,7 +96,7 @@ void display_memory_information(void)
 
 	mllwdbg("------------------------------ Heap Settings ------------------------------\n");
 
-	/* Print RAM configuration */
+	/* Print HEAP configuration */
 
 	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
 		mllwdbg("Heap[%d] : size = %u, number of regions = %d\n", heap_idx, kheap[heap_idx].mm_heapsize, kheap[heap_idx].mm_nregions);
