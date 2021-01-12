@@ -75,7 +75,6 @@
 #define FILES_PER_BIN              2                          /* The number of files per binary */
 
 #define CHECKSUM_SIZE              4
-#define CRC_BUFFER_SIZE            512
 
 /* Index of 'Common Library' data in binary table. */
 #define BM_CMNLIB_IDX              0

@@ -21,6 +21,7 @@
 
 struct wifimgr_msg {
 	wifimgr_evt_e event;
+	wifi_manager_result_e result;
 	void *param;
 	sem_t *signal;
 };

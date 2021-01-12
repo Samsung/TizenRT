@@ -67,113 +67,6 @@ function rtl8721csm_sanity_check()
 	fi
 }
 
-download_km0_bl()
-{
-	cd ${IMG_TOOL_PATH}
-	echo ""
-	echo "=========================="
-	echo "Downloading KM0_BL IMAGE"
-	echo "=========================="
-
-	for part in ${parts[@]}; do
-
-		if [[ "$part" == "km0_bl" ]];then
-			idx=$(get_partition_index $part)
-			exe_name=$(get_executable_name ${parts[$idx]})
-			break
-		fi
-	done
-
-	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
-
-	echo "KM0_BL Download DONE"
-
-	[ -e km0_boot_all.bin ] && rm km0_boot_all.bin
-}
-
-download_km4_bl()
-{
-	cd ${IMG_TOOL_PATH}
-	echo ""
-	echo "=========================="
-	echo "Downloading KM4_BL IMAGE"
-	echo "=========================="
-
-	for part in ${parts[@]}; do
-
-		if [[ "$part" == "km4_bl" ]];then
-			idx=$(get_partition_index $part)
-			exe_name=$(get_executable_name ${parts[$idx]})
-			break
-		fi
-	done
-
-	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
-
-	echo "KM4_BL Download DONE"
-
-	[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
-}
-
-download_kernel()
-{
-	cd ${IMG_TOOL_PATH}
-	echo ""
-	echo "=========================="
-	echo "Downloading KERNEL IMAGE"
-	echo "=========================="
-
-	for part in ${parts[@]}; do
-
-		if [[ "$part" == "kernel" ]];then
-			idx=$(get_partition_index $part)
-			exe_name=$(get_executable_name ${parts[$idx]})
-			break
-		fi
-	done
-
-	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
-
-	echo "KERNEL Download DONE"
-
-	[ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
-}
-
-download_smartfs()
-{
-	if [ ! -f ${SMARTFS_BIN_PATH} ]; then
-cat <<EOF
-
-Warning!! missing file ${SMARTFS_BIN_PATH}
-
-HELP:
-	make download smartfs
-
-EOF
-		exit 1
-	fi
-
-	cd ${IMG_TOOL_PATH}
-	echo ""
-	echo "=========================="
-	echo "Downloading SMARTFS IMAGE"
-	echo "=========================="
-
-	for part in ${parts[@]}; do
-
-		if [[ "$part" == "userfs" ]];then
-			idx=$(get_partition_index $part)
-			exe_name=$(get_executable_name ${parts[$idx]})
-			break
-		fi
-	done
-
-	./amebad_image_tool $TTYDEV 1 ${offsets[$idx]} ${exe_name}
-
-	echo "SMARTFS Download DONE"
-	[ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
-}
-
 ##Utility function to match partition name to binary name##
 function get_executable_name()
 {
@@ -190,21 +83,13 @@ function get_executable_name()
 ##Utility function to get partition index ##
 function get_partition_index()
 {
-	case $1 in
-		km0_bl | Km0_bl | KM0_BL) echo "0";;
-		km4_bl | Km4_bl | KM4_BL) echo "1";;
-		kernel | Kernel | KERNEL) echo "2";;
-		userfs | Userfs | USERFS)
-		for i in "${!parts[@]}"
-		do
-		   if [[ "${parts[$i]}" = "userfs" ]]; then
-			echo $i
-		   fi
-		done
-		;;
-		*) echo "No Matching Partition"
-		exit 1
-	esac
+	for idx in ${!parts[@]}; do
+		if [[ ${parts[$idx],,} == ${1,,} ]]; then
+			echo $idx
+			exit 1
+		fi
+	done
+	echo -1
 }
 
 ##Help utility##
@@ -320,59 +205,72 @@ for i in ${cmd_args[@]};do
 	result=no
 done
 
+download_specific_partition()
+{
+	cd ${IMG_TOOL_PATH}
+	partidx=$(get_partition_index $1)
+	if [[ "${partidx}" < 0 ]];then
+		echo "Not supported"
+		rtl8721csm_dwld_help
+		exit 1
+	fi
+
+	# Get a filename and Download a file
+	echo ""
+	echo "=========================="
+	echo "Downloading ${parts[$partidx]} binary"
+	echo "=========================="
+
+	exe_name=$(get_executable_name ${parts[$partidx]})
+	./amebad_image_tool $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
+
+	echo ""
+	echo "Download $exe_name COMPLETE!"
+
+	[ -e ${exe_name} ] && rm ${exe_name}
+}
+
 download_all()
 {
 	cd ${IMG_TOOL_PATH}
 	echo "Starting Download..."
+	found_kernel=false
 
-	for part in ${parts[@]}; do
+	for partidx in ${!parts[@]}; do
 
 		if [[ "${CONFIG_APP_BINARY_SEPARATION}" != "y" ]];then
-			if [[ "$part" == "userfs" ]];then
+			if [[ "${parts[$partidx]}" == "userfs" ]];then
 				continue
 			fi
 		fi
 
+		if [[ "${parts[$partidx]}" == "kernel" ]];then
+			if [[ $found_kernel == true ]];then
+				continue
+			fi
+			found_kernel=true
+		fi
+
 		echo ""
 		echo "=========================="
-		echo "Downloading ${part} binary"
+		echo "Downloading ${parts[$partidx]} binary"
 		echo "=========================="
 
-		gidx=$(get_partition_index $part)
-		exe_name=$(get_executable_name ${parts[$gidx]})
+		exe_name=$(get_executable_name ${parts[$partidx]})
 
-		./amebad_image_tool $TTYDEV 1 ${offsets[$gidx]} ${exe_name}
+		./amebad_image_tool $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
+		[ -e ${exe_name} ] && rm ${exe_name}
 
 	done
 	echo ""
 	echo "Download COMPLETE!"
-
-	[ -e km0_boot_all.bin ] && rm km0_boot_all.bin
-	[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
-	[ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
-	if test -f "${SMARTFS_BIN_PATH}"; then
-		[ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
-	fi
 }
 
 case $1 in
-	km0_bl|KM0_BL)
-		download_km0_bl
-		;;
-	km4_bl|KM4_BL)
-		download_km4_bl
-		;;
-	kernel|KERNEL)
-		download_kernel
-		;;
-	smartfs|SMARTFS)
-		download_smartfs
-		;;
 	all|ALL)
 		download_all
 		;;
 	*)
-		echo "Not supported"
-		rtl8721csm_dwld_help
+		download_specific_partition $1
 		;;
 esac

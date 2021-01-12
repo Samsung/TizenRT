@@ -561,7 +561,7 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 #endif
 		/* Calculate the number of bytes to read into the buffer */
 
-		bytestoread = bytesinsector - (sf->curroffset - sizeof(struct smartfs_chain_header_s));
+		bytestoread = bytesinsector - (sf->curroffset - (uint16_t)sizeof(struct smartfs_chain_header_s));
 		if (bytestoread + bytesread > buflen) {
 			/* Truncate bytesto read based on buffer len */
 

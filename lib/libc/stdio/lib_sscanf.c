@@ -643,9 +643,9 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 				if (*buf) {
 					FAR char *endptr;
 					int errsave;
-					unsigned long tmplong;
+					unsigned long tmplong = 0;
 #ifdef CONFIG_LIBC_LONG_LONG
-					unsigned long long tmplonglong;
+					unsigned long long tmplonglong = 0;
 #endif
 
 					/* Skip over any white space before the integer string */

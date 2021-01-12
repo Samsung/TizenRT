@@ -79,6 +79,8 @@
 #define CONFIG_NET_PING_CMD_ICOUNT 5
 #endif
 
+typedef int (*set_icmp_config)(struct addrinfo *hints);
+
 static int g_ping_recv_counter;
 static uint16_t g_ping_seq_num;
 
@@ -208,11 +210,13 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 		fromlen = sizeof(struct sockaddr_in6);
 	} else
 #endif
-	if (family == AF_INET) {
-		fromlen = sizeof(struct sockaddr_in);
-	} else {
-		printf("ping_recv: invalid family\n");
-		return;
+	{
+		if (family == AF_INET) {
+			fromlen = sizeof(struct sockaddr_in);
+		} else {
+			printf("ping_recv: invalid family\n");
+			return;
+		}
 	}
 
 	/* allocate memory due to difference of size between ipv4/v6 socket structure */
@@ -373,12 +377,14 @@ static int ping_send(int s, struct sockaddr *to, int size)
 		icmplen = sizeof(struct icmp6_echo_hdr) + size;
 	} else
 #endif
-	if (to->sa_family == AF_INET) {
-		addrlen = sizeof(struct sockaddr_in);
-		icmplen = sizeof(struct icmp_echo_hdr) + size;
-	} else {
-		printf("ping_send: invalid family\n");
-		return ERROR;
+	{
+		if (to->sa_family == AF_INET) {
+			addrlen = sizeof(struct sockaddr_in);
+			icmplen = sizeof(struct icmp_echo_hdr) + size;
+		} else {
+			printf("ping_send: invalid family\n");
+			return ERROR;
+		}
 	}
 
 	iecho = (struct icmp_echo_hdr *)malloc(icmplen);
@@ -399,7 +405,26 @@ static int ping_send(int s, struct sockaddr *to, int size)
 	return 0;
 }
 
-int ping_process(int count, const char *taddr, int size)
+
+static int _set_icmp6_config(struct addrinfo *hints)
+{
+	memset(hints, 0, sizeof(struct addrinfo));
+	hints->ai_family = AF_INET6;
+	hints->ai_socktype = SOCK_RAW;
+	hints->ai_protocol = IPPROTO_ICMPV6;
+	return 0;
+}
+
+static int _set_icmp4_config(struct addrinfo *hints)
+{
+	memset(hints, 0, sizeof(struct addrinfo));
+	hints->ai_family = AF_INET;
+	hints->ai_socktype = SOCK_RAW;
+	hints->ai_protocol = IPPROTO_ICMP;
+	return 0;
+}
+
+static int ping_process(int count, const char *taddr, int size, set_icmp_config func)
 {
 	int s = -1;
 	int ping_send_counter = 0;
@@ -414,19 +439,9 @@ int ping_process(int count, const char *taddr, int size)
 	g_ping_recv_counter = 0;
 
 	/* write information for getaddrinfo() */
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_RAW;
-	if (strstr(taddr, ".") != NULL) {
-		hints.ai_protocol = IPPROTO_ICMP;
-	}
-#ifdef CONFIG_NET_IPv6
-	if (strstr(taddr, ":") != NULL) {
-		hints.ai_protocol = hints.ai_protocol ? 0 : IPPROTO_ICMPV6;
-	}
-#endif /* CONFIG_NET_IPv6 */
-	if (hints.ai_protocol == 0) {
-		printf("ping_process: invalid target ip address\n");
+	int res = func(&hints);
+	if (res < 0) {
+		printf("ping_process: invalid IP address\n");
 		return ERROR;
 	}
 
@@ -486,9 +501,10 @@ int ping_process(int count, const char *taddr, int size)
 	close(s);
 
 	printf("--- %s ping statistics ---\n", taddr);
-	printf("%d packets transmitted, %d received, %f%% packet loss\n", ping_send_counter,
-		g_ping_recv_counter,
-		(100.0f * (float)(ping_send_counter - g_ping_recv_counter) / (float)ping_send_counter));
+	printf("%d packets transmitted, %d received, %f%% packet loss\n",
+			ping_send_counter,
+			g_ping_recv_counter,
+			(100.0f * (float)(ping_send_counter - g_ping_recv_counter) / (float)ping_send_counter));
 
 	return OK;
 
@@ -502,7 +518,7 @@ err_out:
 	return ERROR;
 }
 
-int cmd_ping(int argc, char **argv)
+static int _ping_start(int argc, char **argv, set_icmp_config func)
 {
 	char *staddr;
 	int size = 0;
@@ -514,10 +530,23 @@ int cmd_ping(int argc, char **argv)
 	if (ret < 0) {
 		return ERROR;
 	}
-	ret = ping_process(count, staddr, size);
+	ret = ping_process(count, staddr, size, func);
 	if (ret < 0) {
 		return ERROR;
 	}
 
 	return OK;
 }
+
+int cmd_ping6(int argc, char **argv)
+{
+	set_icmp_config func = _set_icmp6_config;
+	return _ping_start(argc, argv, func);
+}
+
+int cmd_ping(int argc, char **argv)
+{
+	set_icmp_config func = _set_icmp4_config;
+	return _ping_start(argc, argv, func);
+}
+

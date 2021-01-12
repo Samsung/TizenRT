@@ -176,6 +176,11 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		break;
 #endif
 
+#ifdef CONFIG_EXAMPLES_STACK_PROTECTION
+	case TESTIOC_KTHREAD_STACK_PROTECTION_TEST:
+		ret = test_kthread_stack_overflow_protection(cmd, arg);
+		break;
+#endif
 	default:
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;

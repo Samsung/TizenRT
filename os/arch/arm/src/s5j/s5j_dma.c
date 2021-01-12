@@ -377,8 +377,8 @@ dma_task *s5j_dmastop(DMA_HANDLE handle)
  ****************************************************************************/
 int s5j_dmatask_free(dma_task *task)
 {
-	free(task->microcode);
-	free(task);
+	kmm_free(task->microcode);
+	kmm_free(task);
 	return OK;
 }
 

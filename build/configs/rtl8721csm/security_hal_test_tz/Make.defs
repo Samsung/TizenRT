@@ -88,7 +88,7 @@ ifneq ($(CONFIG_DEBUG_NOOPT),y)
 endif
 
 ifeq ($(CONFIG_FRAME_POINTER),y)
-  ARCHOPTIMIZATION += -fno-omit-frame-pointer -mapcs -mno-sched-prolog
+  ARCHOPTIMIZATION += -fomit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
 ARCHCFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
@@ -122,9 +122,6 @@ AFLAGS = $(CFLAGS) -D__ASSEMBLY__
 CFLAGS += -march=armv8-m.main+dsp 
 CFLAGS += -mthumb 
 CFLAGS += -mcmse 
-CFLAGS += -mfpu=fpv5-sp-d16
-
-CFLAGS += -D__FPU_PRESENT
 
 CFLAGS += -DCONFIG_PLATFORM_8721D
 CFLAGS += -DCONFIG_USE_MBEDTLS_ROM_ALG
@@ -148,7 +145,7 @@ LDFLAGS += --gc-sections
 HOSTCC = gcc
 HOSTINCLUDES = -I.
 HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
-HOSTLDFLAGS = 
+HOSTLDFLAGS =
 
 define MAKE_BOARD_SPECIFIC_BIN
   $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_make_bin.sh

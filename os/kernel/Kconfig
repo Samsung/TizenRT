@@ -153,6 +153,7 @@ endif # !SCHED_TICKLESS
 
 config SYSTEM_TIME64
 	bool "64-bit system clock"
+	select LIBC_LONG_LONG
 	default n
 	---help---
 		The system timer is incremented at the rate determined by
@@ -266,7 +267,7 @@ config TASK_NAME_SIZE
 		Spcifies that maximum size of a task name to save in the TCB.
 		Useful if scheduler instrumentation is selected.  Set to zero to
 		disable.  Excludes the NUL terminator; the actual allocated size
-		willl be TASK_NAME_SIZE + 1.  The default of 31 then results in
+		will be TASK_NAME_SIZE + 1.  The default of 31 then results in
 		a align-able 32-byte allocation.::
 
 config MAX_TASKS
@@ -940,7 +941,7 @@ config MQ_MAXMSGSIZE
 	default 32
 	---help---
 		Message structures are allocated with a fixed payload size given by this
-		setting (does not include other message structure overhead.
+		setting (does not include other message structure overhead).
 
 endmenu # POSIX Message Queue Options
 
@@ -952,7 +953,7 @@ config IDLETHREAD_STACKSIZE
 	---help---
 		The size of the initial stack used by the IDLE thread.  The IDLE thread
 		is the thread that (1) performs the initial boot of the system up to the
-		point where start-up appliation is spawned, and (2) there after is the
+		point where start-up application is spawned, and (2) there after is the
 		IDLE thread that executes only when there is no other thread ready to run.
 
 config USERMAIN_STACKSIZE

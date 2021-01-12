@@ -169,7 +169,11 @@ void mpu_get_register_config_value(uint32_t *regs, uint32_t region, uintptr_t ba
 	}
 
 	regs[2] = (base + size - 1) & MPU_RLAR_LIMIT_MASK;
+#ifdef CONFIG_ARMV8M_DCACHE
+	regs[2] |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WB_T_RWA);
+#else
 	regs[2] |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_NC);
+#endif
 	regs[2] |= MPU_RLAR_ENABLE;
 }
 
@@ -185,10 +189,10 @@ void up_mpu_set_register(uint32_t *mpu_regs)
 	/* We update MPU registers only if there is non zero value of
 	 * base address (This ensures valid MPU settings)
 	 */
-	if (mpu_regs[REG_RBAR]) {
-		putreg32(mpu_regs[REG_RNR], MPU_RNR);
-		putreg32(mpu_regs[REG_RBAR], MPU_RBAR);
-		putreg32(mpu_regs[REG_RASR], MPU_RLAR);
+	if (mpu_regs[MPU_REG_RBAR]) {
+		putreg32(mpu_regs[MPU_REG_RNR], MPU_RNR);
+		putreg32(mpu_regs[MPU_REG_RBAR], MPU_RBAR);
+		putreg32(mpu_regs[MPU_REG_RASR], MPU_RLAR);
 	}
 }
 
@@ -205,9 +209,9 @@ bool up_mpu_check_active(uint32_t *mpu_regs)
 	/* Set MPU_RNR register before getting corresponding
 	 * MPU_RBAR and MPU_RLAR values
 	 */
-	putreg32(mpu_regs[REG_RNR], MPU_RNR);
+	putreg32(mpu_regs[MPU_REG_RNR], MPU_RNR);
 
-	return (getreg32(MPU_RBAR) == mpu_regs[REG_RBAR] && getreg32(MPU_RLAR) == mpu_regs[REG_RASR]);
+	return (getreg32(MPU_RBAR) == mpu_regs[MPU_REG_RBAR] && getreg32(MPU_RLAR) == mpu_regs[MPU_REG_RASR]);
 }
 
 /****************************************************************************
@@ -221,7 +225,7 @@ bool up_mpu_check_active(uint32_t *mpu_regs)
 void up_mpu_disable_region(uint32_t *mpu_regs)
 {
 	/* Disable region's Enable bit in mpu register settings */
-	mpu_regs[REG_RASR] &= ~MPU_RLAR_ENABLE;
+	mpu_regs[MPU_REG_RASR] &= ~MPU_RLAR_ENABLE;
 
 	/* Set updated mpu register values to mpu h/w */
 	up_mpu_set_register(mpu_regs);

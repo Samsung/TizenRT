@@ -86,7 +86,6 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 static const char *const g_abbrev_wdayname[7] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
@@ -94,7 +93,6 @@ static const char *const g_abbrev_wdayname[7] = {
 static const char *const g_wdayname[7] = {
 	"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 };
-#endif
 
 static const char *const g_abbrevmonthname[12] = {
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -191,7 +189,6 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 		len = 0;
 
 		switch (*format++) {
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 		/* %a: A three-letter abbreviation for the day of the week. */
 
 		case 'a': {
@@ -210,16 +207,7 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 			}
 		}
 		break;
-#else
-		/* %a: A three-letter abbreviation for the day of the week. */
-		/* %A: The full name for the day of the week. */
 
-		case 'a':
-		case 'A': {
-			len = snprintf(dest, chleft, "Day");	/* Not supported */
-		}
-		break;
-#endif
 		/* %h: Equivalent to %b */
 
 		case 'h':

@@ -189,7 +189,7 @@ typedef struct binary_update_info_list_s binary_update_info_list_t;
 typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
 
 struct binmgr_update_bin_s {
-	char bin_name[NAME_MAX];
+	char bin_name[BIN_NAME_MAX];
 	int type;
 	uint32_t version;
 };

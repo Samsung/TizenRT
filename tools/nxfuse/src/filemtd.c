@@ -474,7 +474,7 @@ static int file_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
  *
  ****************************************************************************/
 
-FAR struct mtd_dev_s *filemtd_initialize(FAR const char *path, size_t offset, int16_t sectsize, int32_t erasesize)
+FAR struct mtd_dev_s *filemtd_initialize(FAR const char *path, size_t offset, uint16_t sectsize, uint32_t erasesize)
 {
 	FAR struct file_dev_s *priv;
 	struct stat sb;
@@ -543,6 +543,7 @@ FAR struct mtd_dev_s *filemtd_initialize(FAR const char *path, size_t offset, in
 	nblocks = (filelen - offset) / priv->erasesize;
 	if (nblocks < 3) {
 		fdbg("Need to provide at least three full erase block\n");
+		close(priv->fd);
 		kmm_free(priv);
 		return NULL;
 	}

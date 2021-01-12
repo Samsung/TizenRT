@@ -15,17 +15,15 @@
 # language governing permissions and limitations under the License.
 #
 ##########################################################################
-# Include heapinfo drivers
+ifeq ($(CONFIG_MMINFO),y)
 
-ifeq ($(CONFIG_ENABLE_HEAPINFO),y)
+# Include mminfo drivers
 
-ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
-CSRCS += heapinfo_drv.c
-endif
+CSRCS += mminfo.c
 
-# Include heapinfo driver support
+# Include mminfo driver support
 
-DEPPATH += --dep-path heapinfo
-VPATH += :heapinfo
+DEPPATH += --dep-path memory
+VPATH += :memory
 
 endif

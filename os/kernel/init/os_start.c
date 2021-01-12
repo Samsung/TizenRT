@@ -365,9 +365,12 @@ void os_start(void)
 	g_idletcb.argv = g_idleargv;
 
 	/* Fill the stack information to Idle task's tcb */
+
 	g_idletcb.cmn.adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
 	g_idletcb.cmn.stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
 	g_idletcb.cmn.adj_stack_ptr = (void *)(g_idle_topstack - 4);
+
+	DEBUGASSERT(up_getsp() >= (uint32_t)g_idletcb.cmn.stack_alloc_ptr && up_getsp() <= (uint32_t)g_idletcb.cmn.adj_stack_ptr);
 
 	/* Then add the idle task's TCB to the head of the ready to run list */
 

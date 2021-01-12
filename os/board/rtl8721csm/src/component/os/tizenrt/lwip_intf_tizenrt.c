@@ -73,6 +73,7 @@ void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
 
 	if (!dev_tmp) {
 		DiagPrintf("[rltk_wlan_set_netif_info] get dev fail\n");
+		return;
 	}
 	netdev_set_hwaddr(dev_tmp, dev_addr, IFHWADDRLEN);
 }
@@ -227,18 +228,20 @@ int netif_get_idx(struct netif *pnetif)
 	return -1;
 }
 
-unsigned char *netif_get_hwaddr(int idx_wlan)
+int netif_get_hwaddr(int idx_wlan, uint8_t *dev_addr)
 {
 	struct netdev *dev_tmp = NULL;
-	unsigned char *dev_addr;
 
 	dev_tmp = rtk_get_netdev(idx_wlan);
 
 	if (!dev_tmp) {
 		DiagPrintf("[netif_get_hwaddr] get dev fail\n");
+		return -1;
 	}
-	netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN);
-	return dev_addr;
+	if (netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN) == 0)
+		return 0;
+	else
+		return -1;
 }
 #endif
 
@@ -285,6 +288,7 @@ unsigned char *rltk_wlan_get_ip(int idx)
 	
 	if (!dev_tmp) {
 		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+		return NULL;
 	}
 
 	struct netif *ni = (struct netif *)(((struct netdev_ops *)(dev_tmp)->ops)->nic);
@@ -299,6 +303,7 @@ unsigned char *rltk_wlan_get_gw(int idx)
 	
 	if (!dev_tmp) {
 		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+		return NULL;
 	}
 
 	struct netif *ni = (struct netif *)(((struct netdev_ops *)(dev_tmp)->ops)->nic);
@@ -313,6 +318,7 @@ unsigned char *rltk_wlan_get_gwmask(int idx)
 	
 	if (!dev_tmp) {
 		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+		return NULL;
 	}
 
 	struct netif *ni = (struct netif *)(((struct netdev_ops *)(dev_tmp)->ops)->nic);

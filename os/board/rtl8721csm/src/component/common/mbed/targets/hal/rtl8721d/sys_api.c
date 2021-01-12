@@ -58,7 +58,7 @@ void sys_jtag_off(void)
 void sys_clear_ota_signature(void)
 {
 	u32 AddrStart, Offset, IsMinus, PhyAddr;
-	u32 FwAddr = 0;
+	u32 FwAddr = 0, DstAddr = 0;
 	u8 EmpSig = 0;
 
 	RSIP_REG_TypeDef* RSIP = ((RSIP_REG_TypeDef *) RSIP_REG_BASE);
@@ -74,13 +74,19 @@ void sys_clear_ota_signature(void)
 		else
 			PhyAddr = AddrStart + Offset;
 
-		if(PhyAddr == LS_IMG2_OTA1_ADDR)
+		if(PhyAddr == LS_IMG2_OTA1_ADDR){
 			FwAddr = LS_IMG2_OTA1_ADDR;
-		else
+			DstAddr = LS_IMG2_OTA2_ADDR;
+		}else{
 			FwAddr = LS_IMG2_OTA2_ADDR;
+			DstAddr = LS_IMG2_OTA1_ADDR;
+		}
 	}
-
-	FLASH_WriteStream(FwAddr - SPI_FLASH_BASE, 4, &EmpSig);
+	if(HAL_READ32(DstAddr, 0)==0x35393138&&HAL_READ32(DstAddr, 4)==0x31313738){
+		FLASH_WriteStream(FwAddr - SPI_FLASH_BASE, 8, &EmpSig);
+	}else{
+		printf("ERROR: ANOTHER IMAGE2 SIGNATURE IS NOT VALIDED, THIS CMD WILL NOT BE EXCUTED!!!\n");
+	}
 }
 
 /**
@@ -92,8 +98,7 @@ void sys_recover_ota_signature(void)
 	u32 AddrStart, Offset, IsMinus, PhyAddr;
 	u8 Ota2Use = _FALSE;
 	u32 DstAddr, CurAddr;
-	u8 OldSig, NewSig;
-	u8 *buf;
+	u32 sig[2]={0x35393138,0x31313738};
 
 	RSIP_REG_TypeDef* RSIP = ((RSIP_REG_TypeDef *) RSIP_REG_BASE);
 	u32 CtrlTemp = RSIP->FLASH_MMU[0].MMU_ENTRYx_CTRL;
@@ -122,30 +127,9 @@ void sys_recover_ota_signature(void)
 		CurAddr = LS_IMG2_OTA1_ADDR;
 		DstAddr = LS_IMG2_OTA2_ADDR;
 	}
-
-	/* Get signature of the two firmware */
-	ota_readstream_user(DstAddr, 4, &OldSig);
-	ota_readstream_user(CurAddr, 4, &NewSig);
-	DBG_8195A("old sig: %08x, new sig:%08x\n", OldSig, NewSig);
-
-	if(OldSig == NewSig) {
-		return;
-	}
-
-	/* Backup first 4KB of the old firmware */
-	buf = malloc(4096);
-	ota_readstream_user(DstAddr, 4096, buf);
-
-	/* Modify signature */
-	_memcpy(buf, &NewSig, 4);
-
-	/* Erase first sector */
-	flash_erase_sector(NULL, DstAddr);
-
-	/* Write back 4KB to first sector */
-	flash_stream_write(NULL, DstAddr, 4096, buf);
-
-	vPortFree(buf);
+	FLASH_EreaseDwordsXIP(DstAddr-SPI_FLASH_BASE, 2);
+	FLASH_EreaseDwordsXIP(DstAddr-SPI_FLASH_BASE, 2);
+	FLASH_TxData12BXIP(DstAddr-SPI_FLASH_BASE, 8, (u8*)sig);
 }
 
 /**
@@ -208,6 +192,8 @@ void sys_reset(void)
 	u32 DivFacProcess;
 
 	rtc_backup_timeinfo();
+	
+	BKUP_Set(BKUP_REG0, BIT_KM4SYS_RESET_HAPPEN);
 
 	WDG_Scalar(50, &CountProcess, &DivFacProcess);
 	WDG_InitStruct.CountProcess = CountProcess;

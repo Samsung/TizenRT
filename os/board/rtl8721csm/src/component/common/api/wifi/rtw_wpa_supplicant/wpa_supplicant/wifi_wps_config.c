@@ -545,7 +545,7 @@ static void clean_discovered_ssids(void)
 
 	for(i = 0; i < DISCOVERED_SSIDS_NUM; i ++) {
 		if(discovered_ssids[i]) {
-			free(discovered_ssids[i]);
+			rtw_free(discovered_ssids[i]);
 			discovered_ssids[i] = NULL;
 		}
 	}
@@ -562,7 +562,7 @@ static void update_discovered_ssids(char *ssid)
 		}
 		else {
 			if(strlen(discovery_ssid) == 0) {
-				discovered_ssids[i] = malloc(strlen(ssid) + 1);
+				discovered_ssids[i] = rtw_malloc(strlen(ssid) + 1);
 				strcpy(discovered_ssids[i], ssid);
 				strcpy(discovery_ssid, ssid);
 				break;
@@ -732,7 +732,7 @@ static u8 wps_scan_cred_ssid(struct dev_credential *dev_cred)
 	scan_buf_arg scan_buf;
 
 	scan_buf.buf_len = 1000;
-	scan_buf.buf = malloc(scan_buf.buf_len);
+	scan_buf.buf = rtw_malloc(scan_buf.buf_len);
 
 	if(scan_buf.buf) {
 		memset(scan_buf.buf, 0, scan_buf.buf_len);
@@ -763,7 +763,7 @@ static u8 wps_scan_cred_ssid(struct dev_credential *dev_cred)
 			}
 		}
 
-		free(scan_buf.buf);
+		rtw_free(scan_buf.buf);
 	}
 	else {
 		// if cannot scan, suppose it can be found
@@ -776,7 +776,7 @@ static u8 wps_scan_cred_ssid(struct dev_credential *dev_cred)
 static void wps_filter_cred_by_scan(struct dev_credential *dev_cred, int cred_cnt)
 {
 	u8 ssid_found_count = 0;
-	u8 *ssid_found_flags = (u8 *) malloc(cred_cnt);
+	u8 *ssid_found_flags = (u8 *) rtw_malloc(cred_cnt);
 
 	if(ssid_found_flags) {
 		int i, times;
@@ -801,7 +801,7 @@ static void wps_filter_cred_by_scan(struct dev_credential *dev_cred, int cred_cn
 				memset(&dev_cred[i], 0, sizeof(struct dev_credential));
 		}
 
-		free(ssid_found_flags);
+		rtw_free(ssid_found_flags);
 	}
 }
 

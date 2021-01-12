@@ -978,7 +978,7 @@ function toggle(id, link) {
 <li><a href="#CONFIG_BOARD_FOTA_SUPPORT">1.3.12 <code>CONFIG_BOARD_FOTA_SUPPORT</code>: Enable board support for FOTA</a></li>
 <li><a href="#CONFIG_BOARD_COREDUMP_FLASH">1.3.13 <code>CONFIG_BOARD_COREDUMP_FLASH</code>: Enable crashlog dump to flash</a></li>
 <li><a href="#CONFIG_BOARD_RAMDUMP_FLASH">1.3.14 <code>CONFIG_BOARD_RAMDUMP_FLASH</code>: Enable ramdump to flash</a></li>
-<li><a href="#CONFIG_BOARD_RAMDUMP_UART">1.3.15 <code>CONFIG_BOARD_RAMDUMP_UART</code>: Enable ramdump via UART</a></li>
+<li><a href="#CONFIG_BOARD_DUMP_UART">1.3.15 <code>CONFIG_BOARD_DUMP_UART</code>: Enable dumping of RAM and FS contents via UART</a></li>
 <li><a href="#CONFIG_ARTIK05X_BOOT_FAILURE_DETECTION">1.3.16 <code>CONFIG_ARTIK05X_BOOT_FAILURE_DETECTION</code>: Clear bootcount when boot completes</a></li>
 <li><a href="#CONFIG_ARTIK05X_BOOT_COUNTS_ADDR">1.3.17 <code>CONFIG_ARTIK05X_BOOT_COUNTS_ADDR</code>: Address of scratch pad register to store the bootcount</a></li>
 <li><a href="#CONFIG_ARTIK05X_FLASH_CAPACITY">1.3.18 <code>CONFIG_ARTIK05X_FLASH_CAPACITY</code>: Size of external flash memory (in bytes)</a></li>
@@ -15897,7 +15897,7 @@ int up_prioritize_irq(int irq, int priority)
 <p>
   If selected it will dump the RAM contents to flash.</p>
 </ul>
-<h3><a name="CONFIG_BOARD_RAMDUMP_UART">1.3.15 <code>CONFIG_BOARD_RAMDUMP_UART</code>: Enable ramdump via UART</a></h3>
+<h3><a name="CONFIG_BOARD_DUMP_UART">1.3.15 <code>CONFIG_BOARD_DUMP_UART</code>: Enable dumping of RAM and FS contents via UART</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
   <li>

@@ -51,6 +51,14 @@ void flash_erase_sector(flash_t *obj, uint32_t address);
   */
 void flash_erase_block(flash_t * obj, uint32_t address);
 
+
+/**
+  * @brief  Verify erased block
+  * @param address: address of target page
+  * @retval 0 : success or -1 : Failure.
+  */
+int flash_erase_verify(u32 address);
+
 /**
   * @brief  Read a word from specified address
   * @param  obj: Flash object define in application software.

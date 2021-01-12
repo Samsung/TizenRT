@@ -178,6 +178,25 @@ void flash_erase_chip(flash_t *obj)
 }
 
 /**
+  * @brief  Verify erased block
+  * @param address: address of target page
+  * @retval 0 : success or -1 : Failure.
+  */
+int flash_erase_verify(u32 address)
+{
+	int count = 0x1000; //4k, block size
+	while (count > 0) {
+		if (HAL_READ32(SPI_FLASH_BASE, address) != 0xffffffff) {
+			dbg("Not erased, address : %u value : %u\n", address, HAL_READ32(SPI_FLASH_BASE, address));
+			return -1;
+		}
+		address += sizeof(u32);
+		count -= sizeof(u32);
+	}
+	return 0;
+}
+
+/**
   * @brief  Read a word from specified address
   * @param  obj: Flash object define in application software.
   * @param  address: Specifies the address to read from.

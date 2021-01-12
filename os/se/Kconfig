@@ -44,6 +44,11 @@ config SE_VIRTUAL
 	bool "Virtual SE chip"
 	---help---
 		Enable Virtual SE chip for testing
+
+config SE_AMEBA
+	bool "Ameba Software SE"
+	---help---
+		Enable Ameba Software SE
 endchoice
 
 #
@@ -69,6 +74,10 @@ endif
 
 if SE_VIRTUAL
 source se/virtual/Kconfig
+endif
+
+if SE_AMEBA
+source se/ameba/Kconfig
 endif
 
 endif

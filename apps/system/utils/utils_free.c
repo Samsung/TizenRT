@@ -56,6 +56,13 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
+#include <fcntl.h>
+#include <errno.h>
+
+#include <tinyara/fs/ioctl.h>
+#include <tinyara/mminfo.h>
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -63,15 +70,31 @@
 int utils_free(int argc, char **args)
 {
 	struct mallinfo data;
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
+	int fd;
+	int ret;
 
+	fd = open(MMINFO_DRVPATH, O_RDWR);
+	if (fd < 0) {
+		printf("Open %s Fail, errno %d\n", MMINFO_DRVPATH, get_errno());
+		return ERROR;
+	}
+
+	ret = ioctl(fd, MMINFOIOC_HEAP, (int)&data);
+	close(fd);
+	if (ret != OK) {
+		printf("Mminfo ioctl Fail, ret %d\n", ret);
+		return ERROR;
+	}
+#else
 #ifdef CONFIG_CAN_PASS_STRUCTS
 	data = mallinfo();
 #else
 	(void)mallinfo(&data);
 #endif
-
+#endif
 	printf("              total       used       free    largest\n");
-	printf("Data:   %11d%11d%11d%11d\n", data.arena, data.uordblks, data.fordblks, data.mxordblk);
+	printf(" Mem:	%11d%11d%11d%11d\n", data.arena, data.uordblks, data.fordblks, data.mxordblk);
 
 	return OK;
 }

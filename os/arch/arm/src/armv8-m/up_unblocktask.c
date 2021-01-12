@@ -135,8 +135,8 @@ void up_unblock_task(struct tcb_s *tcb)
 
 	if (sched_addreadytorun(tcb)) {
 #ifdef CONFIG_ARMV8M_TRUSTZONE
-		if (tcb->tz_context) {
-			TZ_StoreContext_S(tcb->tz_context);
+		if (rtcb->tz_context) {
+			TZ_StoreContext_S(rtcb->tz_context);
 		}
 #endif
 		/* The currently active task has changed! We need to do
@@ -167,15 +167,13 @@ void up_unblock_task(struct tcb_s *tcb)
 			/* Condition check : Update MPU registers only if this is not a kernel thread. */
 			if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
 #if defined(CONFIG_APP_BINARY_SEPARATION)
-				for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+				for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
 					up_mpu_set_register(&rtcb->mpu_regs[i]);
 				}
 #endif
 			}
-#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
+#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 			up_mpu_set_register(rtcb->stack_mpu_regs);
-#elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
-			set_PSPLIM((uint32_t) rtcb->stack_alloc_ptr);
 #endif
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY

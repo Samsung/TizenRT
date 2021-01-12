@@ -75,22 +75,7 @@
 #endif
 #include <arm_cmse.h>   /* Use CMSE intrinsics */
 #include "core_armv8mml.h"
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-#include "cache.h"
-#define SCB_EnableICache arch_enable_icache
-#define SCB_EnableDCache arch_enable_dcache
-#define SCB_DisableICache arch_disable_icache
-#define SCB_DisableDCache arch_disable_dcache
-#define SCB_InvalidateICache arch_invalidate_icache_all
-#define SCB_InvalidateDCache arch_invalidate_dcache_all
-#define SCB_InvalidateDCache_by_Addr(addr, len) arch_invalidate_dcache((uintptr_t)addr, ((uintptr_t)addr + len))
-#define SCB_CleanDCache arch_clean_dcache_all
-#define SCB_CleanDCache_by_Addr(addr, len) arch_clean_dcache((uintptr_t)addr, ((uintptr_t)addr + len))
-#define SCB_CleanInvalidateDCache() do {arch_invalidate_dcache_all();arch_clean_dcache_all();} while(0)
-#define SCB_CleanInvalidateDCache_by_Addr(addr, len) do {arch_invalidate_dcache((uintptr_t)addr, ((uintptr_t)addr + len)); arch_clean_dcache((uintptr_t)addr, ((uintptr_t)addr + len));} while(0)
-#else
 #include "core_cache.h"
-#endif
 #elif defined (ARM_CORE_CM0)
 #define __ARMV8MBL_REV                 0x0000U  /*!< ARMV8MBL Core Revision                                                    */
 #define __NVIC_PRIO_BITS               2        /*!< Number of Bits used for Priority Levels                                   */

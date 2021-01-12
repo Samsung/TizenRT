@@ -620,17 +620,15 @@ struct tcb_s {
 
 	uint32_t uheap;			/* User heap object pointer */
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	uint32_t ram_start;		/* Start address of RAM partition for this app */
-	uint32_t ram_size;		/* Size of RAM partition for this app */
 	uint32_t uspace;		/* User space object for app binary */
 
 #ifdef CONFIG_ARM_MPU
-	uint32_t mpu_regs[3 * MPU_NUM_REGIONS];	/* We need 3 register values to configure each MPU region */
+	uint32_t mpu_regs[MPU_REG_NUMBER * MPU_NUM_REGIONS];	/* MPU register values for loading data */
 #endif
 #endif
 
 #if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
-uint32_t stack_mpu_regs[REG_MAX]; /* need 3 MPU registers to configure a region */
+uint32_t stack_mpu_regs[MPU_REG_NUMBER]; /* MPU register values for stack protection */
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	uint32_t app_id;			/* Indicates app id of the task and used to index into umm_heap_table */

@@ -75,7 +75,7 @@ struct netdev *ameba_nm_dev_wlan1 = NULL;
 extern err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen);
 extern struct trwifi_ops g_trwifi_drv_ops; 
 
-extern void wifi_init_packet_filter();
+extern void wifi_init_packet_filter(void);
 extern int wifi_add_packet_filter(unsigned char filter_id, rtw_packet_filter_pattern_t *patt, rtw_packet_filter_rule_t rule);
 extern int wifi_enable_packet_filter(unsigned char filter_id);
 extern int wifi_disable_packet_filter(unsigned char filter_id);
@@ -170,7 +170,7 @@ int rtk_set_multicast_list(struct netdev *dev, const struct in_addr *group, netd
 
 struct netdev* amebad_register_dev(int sizeof_priv)
 {
-	struct nic_io_ops nops = {low_level_output, rtk_set_multicast_list};
+	struct nic_io_ops nops = { (int(*)(struct netdev *dev, void *data, uint16_t len))low_level_output, (int(*)(struct netdev *netif, const struct in_addr *group, netdev_mac_filter_action action))rtk_set_multicast_list};
 	struct netdev_config config;
 	config.ops = &nops;
 	config.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
@@ -193,7 +193,6 @@ struct netdev* amebad_register_dev(int sizeof_priv)
 
 void up_netinitialize(void)
 {
-#ifndef CONFIG_APP_BINARY_SEPARATION
 	int alloc_size;
 	//struct netdev *dev = NULL;
 
@@ -209,5 +208,4 @@ void up_netinitialize(void)
 		DiagPrintf("Failed to register amebad netdev\n");
 	}
 #endif	
-#endif
 }

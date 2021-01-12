@@ -12,25 +12,11 @@ services:
 branches:
   only:
   - master
-  - fs_journal
 
 env:
   global:
     - TIZENRT_IMG_VERSION=latest
   
-matrix:
-  include:
-    - env: BUILD_CONFIG=artik055s/audio
-    - env: BUILD_CONFIG=artik053/st_things
-    - env: BUILD_CONFIG=artik053/tc
-    - env: BUILD_CONFIG=artik053/iotjs
-    - env: BUILD_CONFIG=artik053/minimal
-    - env: BUILD_CONFIG=qemu/tc_64k
-    - env: BUILD_CONFIG=qemu/build_test
-    - env: BUILD_CONFIG=esp_wrover_kit/hello_with_tash
-    - env: BUILD_CONFIG=imxrt1020-evk/loadable_elf_apps
-    - env: BUILD_CONFIG=rtl8721csm/loadable_apps
-      
 before_install:
 - docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}
 - echo "${TRAVIS_BUILD_DIR}"
@@ -38,7 +24,5 @@ before_install:
 script:
 - docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${TIZENRT_IMG_VERSION} /bin/bash
 - docker exec tizenrt_docker arm-none-eabi-gcc --version
-- docker exec tizenrt_docker make distclean
 
-- docker exec -it tizenrt_docker bash -c "cd tools; ./configure.sh ${BUILD_CONFIG}"
-- docker exec -it tizenrt_docker bash -c "make"
+- docker exec -it tizenrt_docker bash -c "./tools/build_test.sh"

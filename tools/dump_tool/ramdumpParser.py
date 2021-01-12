@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# File : dumpParce.py
+# File : ramdumpParser.py
 # Description:
 # Parser to parse the dump/log file using elf file and print CALL STACK.
 # Gdb and NM tools are used to read the symbols
@@ -497,11 +497,11 @@ def usage():
 	print('')
 	print('Below example if you give dump file as path: ')
 	print('--------------------------------------------')
-	print('python dumpParser.py -e build/output/bin/tinyara -r build/output/bin/ramdump_0x4a0000_0x6a0000.bin')
+	print('python ramdumpParser.py -e build/output/bin/tinyara -r build/output/bin/ramdump_0x4a0000_0x6a0000.bin')
 	print('')
 	print('Below example if you give simple assert log file as path: ')
 	print('---------------------------------------------------------')
-	print('python dumpParser.py -e build/output/bin/tinyara -r log.txt ')
+	print('python ramdumpParser.py -e build/output/bin/tinyara -r log.txt ')
 	print('')
 	print('')
 	print('Note:')
@@ -510,7 +510,7 @@ def usage():
 	print('')
 	print('If you do not have gdb and nm path set, please pass the path as below')
 	print('')
-	print('python dumpParser.py -r /build/bin/ramdump_0x4a0000_0x6a0000.bin -e build/bin/tinyara -G <your_gdb_path> -N <your_nm_path>')
+	print('python ramdumpParser.py -r /build/bin/ramdump_0x4a0000_0x6a0000.bin -e build/bin/tinyara -G <your_gdb_path> -N <your_nm_path>')
 	print('')
 	print('')
 	print('*************************************************************')

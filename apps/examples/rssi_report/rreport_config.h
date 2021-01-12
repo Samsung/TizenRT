@@ -21,6 +21,7 @@
 
 #define RR_NUM_OF_RSSI 5
 #define RR_INTERVAL 500 // milliseconds
+#define RR_LOCATION "unknown"
 
 /*NTPC*/
 #define RR_NTPC_SERVER "time.google.com"

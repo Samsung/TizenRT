@@ -19,15 +19,12 @@
 # File 	 : g_var_profiler.sh
 # Description : parse the global variable which size is greater than <SIZE>
 
-REF_SIZE=$1
-ELF=$2
-OUTPUT_FILE=$3
 MEMTOOL_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 BASE_PATH=`echo ${MEMTOOL_PATH%/*/*}`
 
-if [ "$1" == "--help" ]
-then
-	echo "Usage: $0 [SIZE] [ELF] [OUTPUT_FILENAME]"
+usage()
+{
+	echo "Usages: $0 [-s SIZE] [-e ELF] [-o OUTPUT_FILENAME]"
 	echo "This script parses the global variable which size is greater than [SIZE]"
 	echo -e "\tIf no input params are specified, below is assumed"
 	echo -e "\tSIZE : 256"
@@ -36,8 +33,46 @@ then
 	echo "Output file info"
 	echo -e "\tSIZE : variable size(bytes)"
 	echo -e "\tTYPE : you can refer to this site <https://sourceware.org/binutils/docs/binutils/nm.html>"
+}
 
-	exit
+while getopts ":hs:e:o:" arg; do
+	case ${arg} in
+		s)
+			REF_SIZE=`echo "${OPTARG}" | grep -E ^\-?[0-9]+$`
+			if [[ -z ${REF_SIZE} || ${REF_SIZE} -lt 1 ]]; then
+				echo "${OPTARG} is a wrong SIZE"
+				usage
+				exit 1
+			fi
+			;;
+		e)
+			if [ -f ${OPTARG} ]; then	
+				ELF=${OPTARG}
+			else
+				echo "${OPTARG} is a wrong ELF"
+				usage
+				exit 1
+			fi
+			;;
+		o)
+			OUTPUT_FILE=${OPTARG}
+			;;
+		h)
+			usage
+			exit 0
+			;;
+		*)
+			usage
+			exit 1
+			;;
+	esac
+done
+
+shift $(($OPTIND - 1))
+if [ ! -z "$*" ]; then
+	echo "$* are not supported"
+	usage
+	exit 1
 fi
 
 if [ -z ${REF_SIZE} ]; then
@@ -46,6 +81,10 @@ fi
 
 if [ -z ${ELF} ]; then
 	ELF="${MEMTOOL_PATH}/../../build/output/bin/tinyara"
+	if [ ! -f ${ELF} ]; then
+		echo "Unavailable Default ELF \"${ELF}\""
+		exit 1
+	fi
 fi
 
 if [ -z ${OUTPUT_FILE} ]; then
@@ -53,6 +92,10 @@ if [ -z ${OUTPUT_FILE} ]; then
 fi
 
 temp_output_file="temp_var_list.txt"
+
+echo "Size   : ${REF_SIZE}"
+echo "ELF    : ${ELF}"
+echo "Output : ${OUTPUT_FILE}"
 
 ## find over-size global variables through nm
 nm -S --size-sort -l $ELF > $temp_output_file
@@ -76,4 +119,4 @@ do
 done < $temp_output_file
 rm $temp_output_file
 
-echo "Output file(${OUTPUT_FILE}) is generated."
+echo "${OUTPUT_FILE} is generated."

@@ -941,9 +941,9 @@ static ssize_t smart_write(FAR struct inode *inode, FAR const unsigned char *buf
 
 	/* Convert SMART blocks into MTD blocks. */
 
-	mtdstartblock = start_sector * dev->mtdBlksPerSector;
-	mtdblockcount = nsectors * dev->mtdBlksPerSector;
-	mtdBlksPerErase = dev->mtdBlksPerSector * dev->sectorsPerBlk;
+	mtdstartblock = (off_t)start_sector * (off_t)dev->mtdBlksPerSector;
+	mtdblockcount = (off_t)nsectors * (off_t)dev->mtdBlksPerSector;
+	mtdBlksPerErase = (off_t)dev->mtdBlksPerSector * (off_t)dev->sectorsPerBlk;
 
 	fvdbg("mtdsector: %d mtdnsectors: %d\n", mtdstartblock, mtdblockcount);
 
@@ -1819,7 +1819,7 @@ static int smart_set_wear_level(FAR struct smart_struct_s *dev, uint16_t block, 
 static int smart_scan(FAR struct smart_struct_s *dev)
 {
 	int sector;
-	int ret;
+	int ret = OK;
 	uint16_t totalsectors;
 	uint16_t prerelease;
 	uint16_t logicalsector;
@@ -1829,6 +1829,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	uint32_t offset;
 	uint16_t seq1;
 	uint16_t seq2;
+	uint16_t seqwrap;
 	struct smart_sect_header_s header;
 	bool status_released, status_committed;
 #ifdef CONFIG_MTD_SMART_MINIMIZE_RAM
@@ -2124,16 +2125,19 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #if SMART_STATUS_VERSION == 1
 			if (header.status & SMART_STATUS_CRC) {
 				seq1 = header.seq;
+				seqwrap = 0xf0;
 			} else {
 				seq1 = (uint16_t)(((header.crc8 << 8) & 0xFF00) | header.seq);
+				seqwrap = 0xfff0;
 			}
 #else
 			seq1 = header.seq;
+			seqwrap = 0xf0;
 #endif
 
 			/* Now determine who wins. */
 
-			if ((seq1 > 0xFFF0 && seq2 < 10) || seq2 > seq1) {
+			if ((seq1 > seqwrap && seq2 < 10) || seq2 > seq1) {
 				/* Seq 2 is the winner ... bigger or it wrapped. */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
@@ -3045,7 +3049,7 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 	offset = oldsector * dev->mtdBlksPerSector * dev->geo.blocksize + offsetof(struct smart_sect_header_s, status);
 	ret = smart_bytewrite(dev, offset, 1, &newstatus);
 	if (ret < 0) {
-		fdbg("Error %d releasing old sector %d\n" - ret, oldsector);
+		fdbg("Error %d releasing old sector %d\n", ret, oldsector);
 	}
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
 
@@ -5019,7 +5023,7 @@ static int smart_journal_release_sector(FAR struct smart_struct_s *dev, uint16_t
 	struct smart_sect_header_s header;
 	size_t offset;
 
-	offset = psector * dev->sectorsize;
+	offset = (off_t)psector * (off_t)dev->sectorsize;
 	ret = MTD_READ(dev->mtd, offset, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 	if (ret != sizeof(struct smart_sect_header_s)) {
 		fdbg("Read header failed psector : %d offset : %d\n", psector, offset);
@@ -5159,7 +5163,7 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 	case SMART_JOURNAL_TYPE_COMMIT: {
 
 		/* Write given data in rwbuffer from users, except mtd header */
-		ret = MTD_WRITE(dev->mtd, psector * dev->sectorsize + mtd_size, dev->sectorsize - mtd_size, (FAR uint8_t *)&dev->rwbuffer[mtd_size]);
+		ret = MTD_WRITE(dev->mtd, ((off_t)psector * dev->sectorsize) + (off_t)mtd_size, dev->sectorsize - mtd_size, (FAR uint8_t *)&dev->rwbuffer[mtd_size]);
 		if (ret != dev->sectorsize - mtd_size) {
 			fdbg("write data failed ret : %d\n", ret);
 			return -EIO;
@@ -5515,7 +5519,12 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 					fdbg("Recovery Failed : ret : %d\n", ret);
 					return ret;
 				}
-				last_recovery_seq = dev->journal_seq;
+				/* If it was valid journal, update last_recovery_seq. Otherwise, update last_checkout_seq to use next journal */
+				if (ret == OK) {
+					last_recovery_seq = dev->journal_seq;
+				} else {
+					last_checkout_seq = dev->journal_seq;
+				}
 			} else {
 				last_checkout_seq = dev->journal_seq;
 			}
@@ -5562,30 +5571,27 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 	/* Before calculate journal, check the journal contents first */
 	if (psector >= (dev->geo.neraseblocks * dev->sectorsPerBlk)) {
 		fdbg("invalid psector : %d\n", psector);
-		return -EINVAL;
+		goto error_with_checkin;
 	}
 
 	if (UINT8TOUINT16(log->seq) != dev->journal_seq) {
 		fdbg("journal sequence is not match log->seq : %d dev->journal_seq : %d\n", UINT8TOUINT16(log->seq), dev->journal_seq);
-		return -EINVAL;
+		goto error_with_checkin;
 	}
 
 	type = GET_JOURNAL_TYPE(log->status);
 
 	if ((type == 0) || (type > SMART_JOURNAL_TYPE_ERASE)) {
 		fdbg("invalid type : %d\n", type);
-		return -EINVAL;
+		goto error_with_checkin;
+
 	}
 	
 	/* Recovery step is Check crc -> Check something more based on type -> checkout -> verify based on type */
 	if (smart_validate_journal_crc(log) != OK) {
 		fdbg("Invalid CRC calculated crc : %d written crc : %d\n", smart_calc_journal_crc(log), UINT8TOUINT16(log->crc16));
 		/* Invalid one, so make it checkout */
-		ret = smart_journal_checkout(dev, log, address);
-		if (ret != OK) {
-			return ret;
-		}
-		return -EINVAL;
+		goto error_with_checkin;
 	}
 
 	fvdbg("address : %u\n", address);
@@ -5669,6 +5675,13 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		fdbg("checkout failed sector\n");
 	}	
 	return ret;
+	
+error_with_checkin:
+	ret = smart_journal_checkout(dev, log, address);
+	if (ret != OK) {
+		return ret;
+	}
+	return -EINVAL;
 }
 
 #endif

@@ -64,7 +64,7 @@ extern const uint32_t g_idle_topstack;
  *
  * Description:
  *   This function prints the memory information for debug such as
- *   the RAM configuration, Idle stack configuration, Heap configuration.
+ *   the RAM configuration, Idle stack configuration, Heap settings.
  *
  * Inputs:
  *   None
@@ -76,16 +76,38 @@ extern const uint32_t g_idle_topstack;
  *   None
  *
  ****************************************************************************/
-
 void display_memory_information(void)
 {
+	int region_idx;
+	int heap_idx;
+	struct mm_heap_s *kheap = kmm_get_heap();
+
+	mllwdbg("--------------------RAM Configuration---------------------\n");
 	/* Print RAM configuration */
 
-	mllvdbg("-------------------RAM Configuration--------------------\n");
-	mllvdbg("Kernel   RAM  [0] : start addr = 0x%x size = %u\n", kregionx_start[0], kregionx_size[0]);
+	for (region_idx = 0; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
+		mllwdbg("Kernel   RAM  [%d] : start addr = 0x%x size = %u\n", region_idx, kregionx_start[region_idx], kregionx_size[region_idx]);
+	}
 
 	/* Print Idle Stack configuration */
 
-	mllvdbg("Idle stack     : base addr = 0x%x size = %u\n", g_idle_topstack, CONFIG_IDLETHREAD_STACKSIZE);
-	mllvdbg("-------------------RAM Configuration--------------------\n");
+	mllwdbg("Idle stack     : base addr = 0x%x size = %u\n", g_idle_topstack, CONFIG_IDLETHREAD_STACKSIZE);
+	mllwdbg("-----------------------------------------------------------\n");
+
+	mllwdbg("------------------------------ Heap Settings ------------------------------\n");
+
+	/* Print RAM configuration */
+
+	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
+		mllwdbg("Heap[%d] : size = %u, number of regions = %d\n", heap_idx, kheap[heap_idx].mm_heapsize, kheap[heap_idx].mm_nregions);
+		region_idx = 0;
+#if CONFIG_KMM_REGIONS > 1
+		for (; region_idx < kheap[heap_idx].mm_nregions; region_idx++)
+#endif
+		{
+			mllwdbg(" Region[%d] : start addr = %8p, end addr = %8p, size = %u\n", region_idx, kheap[heap_idx].mm_heapstart[region_idx], kheap[heap_idx].mm_heapend[region_idx], ((uint32_t)kheap[heap_idx].mm_heapend[region_idx] - (uint32_t)kheap[heap_idx].mm_heapstart[region_idx]));
+
+		}
+	}
+	mllwdbg("---------------------------------------------------------------------------\n");
 }

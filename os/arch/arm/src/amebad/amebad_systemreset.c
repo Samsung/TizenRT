@@ -1,24 +1,23 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  ****************************************************************************/
 /****************************************************************************
- * netutils/netlib/netlib_setdripv6addr.c
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2020 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,66 +54,55 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#if defined(CONFIG_NET_IPv6) && CONFIG_NSOCKET_DESCRIPTORS > 0
 
-#include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <stdint.h>
 
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
+#include <tinyara/board.h>
 
-#include <netinet/in.h>
-#include <net/if.h>
-
-#include <netutils/netlib.h>
+#include "up_arch.h"
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: netlib_set_dripv6addr
+ * Name: up_systemreset
  *
  * Description:
- *   Set the default router IP address
- *
- * Parameters:
- *   ifname   The name of the interface to use
- *   ipaddr   The address to set
- *
- * Return:
- *   0 on success; -1 on failure
+ *   Internal, reset logic.
  *
  ****************************************************************************/
-
-int netlib_get_dripv6addr(FAR const char *ifname, FAR const struct in6_addr *addr)
+static void up_systemreset(void)
 {
-	int ret = ERROR;
+	sys_reset();
 
-	if (ifname && addr) {
-		int sockfd = socket(PF_INET6, NETLIB_SOCK_IOCTL, 0);
-		if (sockfd >= 0) {
-			FAR struct sockaddr_in6 *inaddr;
-			struct lifreq req;
-
-			/* Add the device name to the request */
-
-			strncpy(req.lifr_name, ifname, IFNAMSIZ);
-
-			/* Add the INET address to the request */
-
-			inaddr = (FAR struct sockaddr_in6 *)&req.lifr_addr;
-			inaddr->sin6_family = AF_INET6;
-			inaddr->sin6_port = 0;
-			memcpy(&inaddr->sin6_addr, addr, sizeof(struct in6_addr));
-
-			ret = ioctl(sockfd, SIOCGLIFDSTADDR, (unsigned long)((uintptr_t)&req));
-			close(sockfd);
-		}
+	/* Wait for the reset */
+	for (;;) {
 	}
-
-	return ret;
 }
+/****************************************************************************
+ * Public functions
+ ****************************************************************************/
 
-#endif							/* CONFIG_NET_IPv6 && CONFIG_NSOCKET_DESCRIPTORS */
+/****************************************************************************
+ * Name: board_reset
+ *
+ * Description:
+ *   Reset board.  This function may or may not be supported by a
+ *   particular board architecture.
+ *
+ * Input Parameters:
+ *   status - Status information provided with the reset event.  This
+ *     meaning of this status information is board-specific.  If not used by
+ *     a board, the value zero may be provided in calls to board_reset.
+ *
+ * Returned Value:
+ *   If this function returns, then it was not possible to power-off the
+ *   board due to some constraints.  The return value int this case is a
+ *   board-specific reason for the failure to shutdown.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_BOARDCTL_RESET
+int board_reset(int status)
+{
+	up_systemreset();
+
+	return 0;
+}
+#endif

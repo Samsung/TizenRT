@@ -515,6 +515,7 @@ static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
 				/* Bind the poll structure and this slot */
 				opriv->go_fds[i] = fds;
 				fds->priv = &opriv->go_fds[i];
+				fds->filep = (void *)filep;
 				break;
 			}
 		}
@@ -559,6 +560,9 @@ static int gpio_close(FAR struct file *filep)
 	irqstate_t flags;
 	bool closing;
 	int ret;
+#ifndef CONFIG_DISABLE_POLL
+	int waiter_idx;
+#endif
 
 	DEBUGASSERT(filep && filep->f_priv && filep->f_inode);
 	opriv = filep->f_priv;
@@ -582,6 +586,20 @@ static int gpio_close(FAR struct file *filep)
 		lldbg("ERROR: gpio_takesem failed: %d\n", ret);
 		return ret;
 	}
+
+#ifndef CONFIG_DISABLE_POLL
+	/*
+	 * Check if this file is registered in a list of waiters for polling.
+	 * If it is, the used slot should be cleared.
+	 * Otherwise, an invalid pollfd remains in a list and this slot is not available forever.
+	 */
+	for (waiter_idx = 0; waiter_idx < CONFIG_GPIO_NPOLLWAITERS; waiter_idx++) {
+		struct pollfd *fds = opriv->go_fds[waiter_idx];
+		if (fds && (FAR struct file *)fds->filep == filep) {
+			opriv->go_fds[waiter_idx] = NULL;
+		}
+	}
+#endif
 
 	/* Find the open structure in the list of open structures for the device */
 	for (prev = NULL, curr = priv->gu_open; curr && curr != opriv;

@@ -247,7 +247,7 @@ static char *tash_get_cmd_from_history(int hist_idx)
 	if (hist_idx < 0) {
 		printf("Not supported\n");
 		return NULL;
-	} else if (hist_idx == 0 || hist_idx >= TASH_MAX_STORE) {
+	} else if (hist_idx >= TASH_MAX_STORE) {
 		printf("!%d: event not found\n", hist_idx);
 		return NULL;
 	}
@@ -426,20 +426,35 @@ int check_exclam_cmd(char *buff)
 	int histcmd_size;
 	char *histcmd_ptr;
 	char *exclam_ptr;
-	int ret = OK;
+	char *exclam_nextptr;
 
 	/* Find the '!' in the input character */
 
 	while ((exclam_ptr = strchr(buff, ASCII_EXCLAM)) != NULL) {
+
+		exclam_nextptr = exclam_ptr + 1;
+		if (*exclam_nextptr == (char)ASCII_SPACE || *exclam_nextptr == (char)ASCII_LF || *exclam_nextptr == (char)ASCII_SEMICOLON || *exclam_nextptr == (char)ASCII_NUL) {
+			/* If the last character in buff is '!', it will be handled as character, not history command. */
+
+			buff = exclam_nextptr + 1;
+			continue;
+		}
+
 		/* Get the command from history according to the given index */
 
-		hist_idx = strtol(exclam_ptr + 1, &buff, 10);
+		hist_idx = strtol(exclam_nextptr, &buff, 10);
+		if (hist_idx == 0) {
+			/* No number after '!'. */
+
+			printf("!%s: event not found\n", buff);
+			return ERROR;
+		}
+
 		histcmd_ptr = tash_get_cmd_from_history(hist_idx);
 		if (!histcmd_ptr) {
 			/* No command, Let's finish */
 
-			ret = ERROR;
-			break;
+			return ERROR;
 		} else {
 			histcmd_size = strlen(histcmd_ptr);
 			if (histcmd_size != (int)(buff - exclam_ptr)) {
@@ -448,13 +463,14 @@ int check_exclam_cmd(char *buff)
 				 */
 
 				memmove(exclam_ptr + histcmd_size, buff, strlen(buff));
+				buff = exclam_ptr + histcmd_size;
 			}
 			/* Replace "!number" to real command string in buff */
 
 			strncpy(exclam_ptr, histcmd_ptr, histcmd_size);
 		}
 	}
-	return ret;
+	return OK;
 }
 #endif
 

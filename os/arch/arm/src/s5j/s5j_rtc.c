@@ -96,9 +96,7 @@ struct rtc_regvals_s {
 	uint8_t bcdmin;
 	uint8_t bcdhour;
 	uint8_t bcdday;
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	uint8_t bcddayweek;
-#endif
 	uint8_t bcdmon;
 	uint16_t bcdyear;
 };
@@ -140,9 +138,7 @@ static void rtc_breakout(FAR const struct tm *tm,
 	regvals->bcdmin     = rtc_bin2bcd(tm->tm_min);
 	regvals->bcdhour    = rtc_bin2bcd(tm->tm_hour);
 	regvals->bcdday     = rtc_bin2bcd(tm->tm_mday);
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	regvals->bcddayweek = rtc_bin2bcd(tm->tm_wday + 1);
-#endif
 	regvals->bcdmon     = rtc_bin2bcd(tm->tm_mon + 1);
 	regvals->bcdyear    = rtc_bin2bcd(tm->tm_year);
 }
@@ -215,9 +211,7 @@ int up_rtc_getdatetime(FAR struct tm *tp)
 		regvals.bcdmin     = getreg32(S5J_RTC_BCDMIN);
 		regvals.bcdhour    = getreg32(S5J_RTC_BCDHOUR);
 		regvals.bcdday     = getreg32(S5J_RTC_BCDDAY);
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 		regvals.bcddayweek = getreg32(S5J_RTC_BCDDAYWEEK);
-#endif
 		regvals.bcdmon     = getreg32(S5J_RTC_BCDMON);
 		regvals.bcdyear    = getreg32(S5J_RTC_BCDYEAR);
 	} while (regvals.bcdsec != getreg32(S5J_RTC_BCDSEC));
@@ -228,9 +222,7 @@ int up_rtc_getdatetime(FAR struct tm *tp)
 	tp->tm_min  = rtc_bcd2bin(regvals.bcdmin);
 	tp->tm_hour = rtc_bcd2bin(regvals.bcdhour);
 	tp->tm_mday = rtc_bcd2bin(regvals.bcdday);
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	tp->tm_wday = rtc_bcd2bin(regvals.bcddayweek) - 1;
-#endif
 	tp->tm_mon  = rtc_bcd2bin(regvals.bcdmon) - 1;
 	tp->tm_year = rtc_bcd2bin(regvals.bcdyear);
 
@@ -268,9 +260,7 @@ int up_rtc_setdatetime(FAR struct tm *tm)
 	putreg32(regvals.bcdmin, S5J_RTC_BCDMIN);
 	putreg32(regvals.bcdhour, S5J_RTC_BCDHOUR);
 	putreg32(regvals.bcdday, S5J_RTC_BCDDAY);
-#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	putreg32(regvals.bcddayweek, S5J_RTC_BCDDAYWEEK);
-#endif
 	putreg32(regvals.bcdmon, S5J_RTC_BCDMON);
 	putreg32(regvals.bcdyear, S5J_RTC_BCDYEAR);
 

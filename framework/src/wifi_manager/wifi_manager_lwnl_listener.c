@@ -27,7 +27,6 @@
 #include "wifi_manager_log.h"
 
 static wifi_utils_cb_s g_cbk = {NULL, NULL, NULL, NULL, NULL};
-static sem_t g_lwnl_signal;
 
 static void _close_cb_handler(void)
 {
@@ -158,7 +157,7 @@ static int _wifi_utils_fetch_event(int fd)
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	WM_LOG_VERBOSE("%d %d\n", status, len);
+	WM_LOG_VERBOSE("scan state(%d) length(%d)\n", status, len);
 	(void)_wifi_utils_call_event(fd, status, len);
 
 	return 0;
@@ -176,38 +175,14 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 		return -1;
 	}
 
-	int sd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sd < 0) {
-		WM_ERR;
-		close(nd);
-		return -1;
-	}
-	struct sockaddr_in saddr;
-	memset(&saddr, 0, sizeof(struct sockaddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	saddr.sin_port = 9098;
-
-	int res = bind(sd, (struct sockaddr *)&saddr, sizeof(struct sockaddr));
-	if (res < 0) {
-		WM_ERR;
-		close(nd);
-		close(sd);
-		return -1;
-	}
-
 	FD_ZERO(&ofds);
 	FD_SET(nd, &ofds);
-	FD_SET(sd, &ofds);
 
-	int maxfd = (nd > sd) ? (nd + 1) : (sd + 1);
-
-	// notify initialization of receive handler is done
-	sem_post(&g_lwnl_signal);
+	int maxfd = nd + 1;
 
 	while (1) {
 		rfds = ofds;
-		res = select(maxfd, &rfds, NULL, NULL, NULL);
+		int res = select(maxfd, &rfds, NULL, NULL, NULL);
 		if (res < 0) {
 			WM_ERR;
 			break;
@@ -225,11 +200,6 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 				WM_LOG_ERROR("message currupted\n");
 				break;
 			}
-		} else if (FD_ISSET(sd, &rfds)) {
-			// get terminate event from application
-			WM_LOG_VERBOSE("get terminate message\n");
-			sem_post(&g_lwnl_signal);
-			break;
 		} else {
 			// unknown error
 			WM_ERR;
@@ -238,7 +208,6 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 	}
 
 	close(nd);
-	close(sd);
 	return 0;
 }
 

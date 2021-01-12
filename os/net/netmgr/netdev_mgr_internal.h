@@ -49,8 +49,8 @@ struct netdev_ops {
 	/*  Address */
 	int (*get_ip4addr)(struct netdev *dev, struct sockaddr *addr, int type);
 	int (*set_ip4addr)(struct netdev *dev, struct sockaddr *addr, int type);
-	int (*get_ip6addr)(struct netdev *dev, struct sockaddr_storage *addr, int type);
 	int (*set_ip6addr)(struct netdev *dev, struct sockaddr_storage *addr, int type);
+	int (*get_ifaddrs)(struct netdev *dev, struct ifaddrs **addrs);
 	int (*delete_ipaddr)(struct netdev *dev);
 
 	int (*get_hwaddr)(struct netdev *dev, struct sockaddr *hwaddr);

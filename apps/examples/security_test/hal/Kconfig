@@ -4,6 +4,8 @@
 #
 config EXAMPLES_SECURITY_HAL_TEST
 	bool "Security HAL Test"
+	depends on BUILD_FLAT
+	depends on SE
 	select STRESS_TOOL
 	default n
 

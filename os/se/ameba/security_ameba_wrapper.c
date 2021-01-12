@@ -1627,7 +1627,6 @@ static struct sec_ops_s g_ameba_ops = {
 
 static struct sec_lowerhalf_s g_ameba_lower = {&g_ameba_ops, NULL};
 
-#define SECLINK_PATH "/dev/seclink"
 
 #ifndef LINUX
 int se_initialize(void)

@@ -1,6 +1,7 @@
+
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +17,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * netutils/netlib/netlib_setdripv6addr.c
+ * netutils/netlib/netlib_setipv6type.c
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,42 +75,43 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: netlib_set_dripv6addr
+ * Name: netlib_set_ipv6type
  *
  * Description:
- *   Set the default router IP address
+ *   Set the network driver IPv6 address type
  *
  * Parameters:
  *   ifname   The name of the interface to use
- *   ipaddr   The address to set
+ *   type     The type of address
+ *              0 : EUI64
+ *              1 : Pseudo Random Function(RFC 7217)
+ *              2 : Use Mac address
  *
  * Return:
  *   0 on success; -1 on failure
  *
  ****************************************************************************/
 
-int netlib_set_dripv6addr(FAR const char *ifname, FAR const struct in6_addr *addr)
+int netlib_set_ipv6type(FAR const char *ifname, uint8_t type)
 {
 	int ret = ERROR;
 
-	if (ifname && addr) {
+	if (ifname) {
+		/* Get a socket (only so that we get access to the INET subsystem) */
+
 		int sockfd = socket(PF_INET6, NETLIB_SOCK_IOCTL, 0);
 		if (sockfd >= 0) {
-			FAR struct sockaddr_in6 *inaddr;
 			struct lifreq req;
+			memset(&req, 0, sizeof(struct lifreq));
 
-			/* Add the device name to the request */
+			/* Put the driver name into the request */
 
 			strncpy(req.lifr_name, ifname, IFNAMSIZ);
 
-			/* Add the INET address to the request */
+			/* Perform the ioctl to ipv6 ip type */
 
-			inaddr = (FAR struct sockaddr_in6 *)&req.lifr_addr;
-			inaddr->sin6_family = AF_INET6;
-			inaddr->sin6_port = 0;
-			memcpy(&inaddr->sin6_addr, addr, sizeof(struct in6_addr));
-
-			ret = ioctl(sockfd, SIOCSLIFDSTADDR, (unsigned long)((uintptr_t)&req));
+			req.lifr_addr_type = type;
+			ret = ioctl(sockfd, SIOCSLIPTYPE, (unsigned long)&req);
 			close(sockfd);
 		}
 	}
@@ -117,4 +119,4 @@ int netlib_set_dripv6addr(FAR const char *ifname, FAR const struct in6_addr *add
 	return ret;
 }
 
-#endif							/* CONFIG_NET_IPv6 && CONFIG_NSOCKET_DESCRIPTORS */
+#endif

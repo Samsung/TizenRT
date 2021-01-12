@@ -99,19 +99,19 @@ extern struct fuse_operations nxfuse_oper;
 int main(int argc, char *argv[])
 {
 	int opt, ret;
-	int erasesize = 0;
-	int sectsize = 0;
+	uint32_t erasesize = 0;
+	uint16_t sectsize = 0;
 	int pagesize = 0;
 	int fuse_argc;
 	int confirm = 0;
 	char *generic = "";
 	int opt_mkfs = 0;
 	int no_mount = 0;
-	char **fuse_argv;
+	char **fuse_argv = NULL;
 	const char *filename;
 	char *mount_point;
 	struct inode *pinode;
-	struct nxfuse_state *nxfuse_data;
+	struct nxfuse_state *nxfuse_data = NULL;
 	const char *fs_type = "smartfs";
 	char fsname[128];
 
@@ -121,6 +121,10 @@ int main(int argc, char *argv[])
 
 	fuse_argc = 1;
 	fuse_argv = malloc(sizeof(char *));
+	if (fuse_argv == NULL) {
+		printf("Unable to allocate memory for \'fuse_argv\' pointer\n");
+		return -1;
+	}
 	fuse_argv[0] = argv[0];
 
 	/* Parse the options.  This includes our own custom options as well
@@ -134,6 +138,10 @@ int main(int argc, char *argv[])
 
 			fuse_argc++;
 			fuse_argv = realloc(fuse_argv, sizeof(char *) * fuse_argc);
+			if (fuse_argv == NULL) {
+				printf("Unable to reallocate memory for \'fuse_argv\' pointer\n");
+				return -1;
+			}
 			fuse_argv[fuse_argc - 1] = "-d";
 			break;
 
@@ -143,6 +151,10 @@ int main(int argc, char *argv[])
 			no_mount = 1;
 			fuse_argc++;
 			fuse_argv = realloc(fuse_argv, sizeof(char *) * fuse_argc);
+			if (fuse_argv == NULL) {
+				printf("Unable to reallocate memory for \'fuse_argv\' pointer\n");
+				return -1;
+			}
 			fuse_argv[fuse_argc - 1] = "-h";
 			break;
 
@@ -152,6 +164,10 @@ int main(int argc, char *argv[])
 			no_mount = 1;
 			fuse_argc++;
 			fuse_argv = realloc(fuse_argv, sizeof(char *) * fuse_argc);
+			if (fuse_argv == NULL) {
+				printf("Unable to reallocate memory for \'fuse_argv\' pointer\n");
+				return -1;
+			}
 			fuse_argv[fuse_argc - 1] = "-V";
 			break;
 
@@ -160,6 +176,10 @@ int main(int argc, char *argv[])
 
 			fuse_argc++;
 			fuse_argv = realloc(fuse_argv, sizeof(char *) * fuse_argc);
+			if (fuse_argv == NULL) {
+				printf("Unable to reallocate memory for \'fuse_argv\' pointer\n");
+				return -1;
+			}
 			fuse_argv[fuse_argc - 1] = "-s";
 			break;
 
@@ -168,6 +188,10 @@ int main(int argc, char *argv[])
 
 			fuse_argc++;
 			fuse_argv = realloc(fuse_argv, sizeof(char *) * fuse_argc);
+			if (fuse_argv == NULL) {
+				printf("Unable to reallocate memory for \'fuse_argv\' pointer\n");
+				return -1;
+			}
 			fuse_argv[fuse_argc - 1] = "-f";
 			break;
 
@@ -176,6 +200,10 @@ int main(int argc, char *argv[])
 
 			fuse_argc += 2;
 			fuse_argv = realloc(fuse_argv, sizeof(char *) * fuse_argc);
+			if (fuse_argv == NULL) {
+				printf("Unable to reallocate memory for \'fuse_argv\' pointer\n");
+				return -1;
+			}
 			fuse_argv[fuse_argc - 2] = "-o";
 			fuse_argv[fuse_argc - 1] = optarg;
 			break;
@@ -285,6 +313,10 @@ int main(int argc, char *argv[])
 
 	fuse_argc += 2;
 	fuse_argv = realloc(fuse_argv, sizeof(char *) * fuse_argc);
+	if (fuse_argv == NULL) {
+		printf("Unable to reallocate memory for \'fuse_argv\' pointer\n");
+		return -1;
+	}
 	fuse_argv[fuse_argc - 2] = "-o";
 	sprintf(fsname, "subtype=%s", fs_type);
 	fuse_argv[fuse_argc - 1] = fsname;
@@ -293,6 +325,10 @@ int main(int argc, char *argv[])
 
 	fuse_argc++;
 	fuse_argv = realloc(fuse_argv, sizeof(char *) * fuse_argc);
+	if (fuse_argv == NULL) {
+		printf("Unable to reallocate memory for \'fuse_argv\' pointer\n");
+		return -1;
+	}
 	fuse_argv[fuse_argc - 1] = mount_point;
 
 	/* Call fuse_main to start the FS */

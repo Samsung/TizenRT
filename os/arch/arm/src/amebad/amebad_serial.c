@@ -85,6 +85,8 @@
 #include "mbed/targets/hal/rtl8721d/objects.h"
 #include "rtl8721d_uart.h"
 #include "tinyara/kmalloc.h"
+#include "osdep_service.h"
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
@@ -412,7 +414,7 @@ static void rtl8721d_up_shutdown(struct uart_dev_s *dev)
 	DEBUGASSERT(priv);
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
 	serial_free(sdrv[uart_index_get(priv->tx)]);
-	free(sdrv[uart_index_get(priv->tx)]);
+	rtw_free(sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = NULL;
 }
 
@@ -435,7 +437,6 @@ static void rtl8721d_up_shutdown(struct uart_dev_s *dev)
 void rtl8721d_uart_irq(uint32_t id, SerialIrq event)
 {
 	struct uart_dev_s *dev = (struct uart_dev_s *)id;
-	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	if (event == RxIrq) {
 		uart_recvchars(dev);
 	}

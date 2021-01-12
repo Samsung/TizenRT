@@ -190,7 +190,8 @@ static int binary_manager_load(int bin_idx)
 					break;
 				}
 			}
-			strncpy(load_attr.bin_name, header_data.bin_name, BIN_NAME_MAX);
+			strncpy(load_attr.bin_name, header_data.bin_name, BIN_NAME_MAX - 1);
+			load_attr.bin_name[BIN_NAME_MAX - 1] = '\0';
 			load_attr.bin_size = header_data.bin_size;
 			load_attr.compression_type = header_data.compression_type;
 			load_attr.ram_size = header_data.bin_ramsize;
@@ -590,13 +591,15 @@ int binary_manager_read_header(char *path, binary_header_t *header_data, bool cr
 {
 	int fd;
 	int ret;
-	int read_size;
-	int file_size;
+	uint32_t read_size;
+	uint32_t file_size;
 	bool need_unlink;
 	uint32_t crc_value = 0;
-	uint8_t crc_buffer[CRC_BUFFER_SIZE];
+	uint8_t *crc_buffer;
+	uint32_t crc_bufsize;
 
 	memset(header_data, 0, sizeof(binary_header_t));
+	crc_buffer = NULL;
 
 	need_unlink = false;
 
@@ -615,19 +618,26 @@ int binary_manager_read_header(char *path, binary_header_t *header_data, bool cr
 
 	/* Verify header data */
 	if (header_data->bin_type != BIN_TYPE_ELF || header_data->bin_ver == 0 \
-		|| header_data->loading_priority == 0 || header_data->loading_priority >= BINARY_LOADPRIO_MAX) {
+		|| header_data->loading_priority == 0 || header_data->loading_priority >= BINARY_LOADPRIO_MAX \
+		|| header_data->bin_ramsize == 0 || header_data->bin_size == 0) {
 		need_unlink = true;
-		bmdbg("Invalid header data : headersize %d, binsize %d, ramsize %d, bintype %d\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
+		bmdbg("Invalid header data : headersize %u, binsize %u, ramsize %u, bintype %u\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
 		goto errout_with_fd;
 	}
 
 	if (crc_check) {
+		crc_bufsize = header_data->bin_ramsize;
+		crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
+		if (!crc_buffer) {
+			bmdbg("Failed to allocate buffer for checking crc, size %u\n", crc_bufsize);
+			goto errout_with_fd;
+		}
 		/* Calculate checksum and Verify it */
 		crc_value = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_data->header_size, crc_value);
 		file_size = header_data->bin_size;
 		while (file_size > 0) {
-			read_size = file_size < CRC_BUFFER_SIZE ? file_size : CRC_BUFFER_SIZE;
-			ret = read(fd, (FAR uint8_t *)crc_buffer, read_size);
+			read_size = file_size < crc_bufsize ? file_size : crc_bufsize;
+			ret = read(fd, (void *)crc_buffer, read_size);
 			if (ret < 0 || ret != read_size) {
 				bmdbg("Failed to read : %d, errno %d\n", ret, errno);
 				goto errout_with_fd;
@@ -641,6 +651,7 @@ int binary_manager_read_header(char *path, binary_header_t *header_data, bool cr
 			bmdbg("Failed to crc check : %u != %u\n", crc_value, header_data->crc_hash);
 			goto errout_with_fd;
 		}
+		kmm_free(crc_buffer);
 	}
 	bmvdbg("Binary header : %d %d %d %d %s %d %d %.1f %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->loading_priority, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver, header_data->jump_addr);
 	close(fd);
@@ -651,6 +662,9 @@ errout_with_fd:
 	close(fd);
 	if (need_unlink) {
 		unlink(path);
+	}
+	if (crc_buffer) {
+		kmm_free(crc_buffer);
 	}
 	return ERROR;
 }
@@ -692,9 +706,11 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 	case LOADCMD_LOAD_ALL:
 		loader_func = loadingall_thread;
 		break;
+#ifdef CONFIG_BINMGR_RECOVERY
 	case LOADCMD_RELOAD:
 		loader_func = reloading_thread;
 		break;
+#endif
 	case LOADCMD_UPDATE:
 		loader_func = update_thread;
 		break;

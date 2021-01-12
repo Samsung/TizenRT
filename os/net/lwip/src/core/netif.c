@@ -70,6 +70,8 @@
 #include "lwip/sys.h"
 #include "lwip/ip.h"
 #include "lwip/netif/etharp.h"
+#include <mbedtls/sha256.h>
+
 #if ENABLE_LOOPBACK
 #if LWIP_NETIF_LOOPBACK_MULTITHREADING
 #include "lwip/tcpip.h"
@@ -1090,10 +1092,8 @@ s8_t netif_get_ip6_addr_match(struct netif *netif, const ip6_addr_t *ip6addr)
  * Create a link-local IPv6 address on a netif (stored in slot 0)
  *
  * @param netif the netif to create the address on
- * @param from_mac_48bit if != 0, assume hwadr is a 48-bit MAC address (std conversion)
- *                       if == 0, use hwaddr directly as interface ID
- */
-void netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit)
+  */
+void netif_create_ip6_linklocal_address(struct netif *netif)
 {
 	u8_t i, addr_index;
 
@@ -1102,7 +1102,7 @@ void netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit
 	ip_2_ip6(&netif->ip6_addr[0])->addr[1] = 0;
 
 	/* Generate interface ID. */
-	if (from_mac_48bit) {
+	if (netif->ip6_addr_type == IP6_EUI64) {
 		/* Assume hwaddr is a 48-bit IEEE 802 MAC. Convert to EUI-64 address. Complement Group bit. */
 		ip_2_ip6(&netif->ip6_addr[0])->addr[2] = lwip_htonl((((u32_t)(netif->hwaddr[0] ^ 0x02)) << 24) |
 			((u32_t)(netif->hwaddr[1]) << 16) |
@@ -1112,6 +1112,14 @@ void netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit
 			((u32_t)(netif->hwaddr[3]) << 16) |
 			((u32_t)(netif->hwaddr[4]) << 8) |
 			(netif->hwaddr[5]));
+	} else if (netif->ip6_addr_type == IP6_STABLE_PRIVACY) {
+
+		ip6_addr_t temp;
+		netif_gen_stable_private_id(netif, 0, &temp);
+
+		ip_2_ip6(&netif->ip6_addr[0])->addr[2] = temp.addr[2];
+		ip_2_ip6(&netif->ip6_addr[0])->addr[3] = temp.addr[3];
+
 	} else {
 		/* Use hwaddr directly as interface ID. */
 		ip_2_ip6(&netif->ip6_addr[0])->addr[2] = 0;
@@ -1185,5 +1193,43 @@ static err_t netif_null_output_ip6(struct netif *netif, struct pbuf *p, const ip
 	LWIP_UNUSED_ARG(ipaddr);
 
 	return ERR_IF;
+}
+
+err_t netif_gen_stable_private_id(struct netif *netif, s8_t addr_idx, ip6_addr_t *addr)
+{
+	int i;
+
+	union {
+		u8_t data[9 + NETIF_MAX_HWADDR_LEN];
+		struct {
+			u32_t prefix[2];
+			u8_t dad_cnt;
+			u8_t mac[NETIF_MAX_HWADDR_LEN];
+		};
+	} param = { 0, };
+
+	union {
+		u32_t addr[2];
+		u8_t val[32];
+	} rid = { 0 , };
+
+	memset(addr, 0, sizeof(ip6_addr_t));
+
+	param.prefix[0] = ip_2_ip6(&netif->ip6_addr[addr_idx])->addr[0];
+	param.prefix[1] = ip_2_ip6(&netif->ip6_addr[addr_idx])->addr[1];
+
+	param.dad_cnt = netif->ip6_dad_cnt[addr_idx];
+
+	for (i = 0; i < netif->hwaddr_len; i++) {
+		param.mac[i] = netif->hwaddr[i];
+	}
+	// ToDo : mbedTLS is in userspace. so mbedtls_sha256 can't be called.
+	//mbedtls_sha256(param.data, sizeof(param.data), rid.val, 0);
+
+	addr->addr[0] = addr->addr[1] = 0;
+	addr->addr[2] = rid.addr[0];
+	addr->addr[3] = rid.addr[1];
+
+	return ERR_OK;
 }
 #endif							/* LWIP_IPV6 */

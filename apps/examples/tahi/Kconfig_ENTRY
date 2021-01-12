@@ -1,0 +1,3 @@
+config ENTRY_TAHI
+	bool "TAHI Self Test App"
+	depends on EXAMPLES_TAHI

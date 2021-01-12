@@ -31,4 +31,7 @@ int test_compress_decompress(int cmd, unsigned long arg);
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 int test_tz(void);
 #endif
+#ifdef CONFIG_EXAMPLES_STACK_PROTECTION
+int test_kthread_stack_overflow_protection(int cmd, unsigned long arg);
+#endif
 #endif

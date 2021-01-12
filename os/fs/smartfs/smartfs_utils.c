@@ -2081,7 +2081,7 @@ int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofil
 	ret = OK;
 
 error_with_buf:
-	free(buf);
+	kmm_free(buf);
 	return ret;
 }
 
@@ -2269,9 +2269,9 @@ int smartfs_invalidate_old_entry(struct smartfs_mountpt_s *fs, uint16_t logsecto
 
 	/* OK, we found 2 parents, now release old one, that is probably source path of rename */
 	if (count == 2) {
-		fvdbg("firstparent logsector : %d parentsector : %d parentoffset : %d time : %d\n", firstparent->logsector,\
+		fdbg("firstparent logsector : %d parentsector : %d parentoffset : %d time : %d\n", firstparent->logsector,\
 			firstparent->parentsector, firstparent->parentoffset, firstparent->time);
-		fvdbg("secondparent logsector : %d parentsector : %d parentoffset : %d time : %d\n", secondparent->logsector,\
+		fdbg("secondparent logsector : %d parentsector : %d parentoffset : %d time : %d\n", secondparent->logsector,\
 			secondparent->parentsector, secondparent->parentoffset, secondparent->time);
 		if (firstparent->time > secondparent->time) {
 			ret = smartfs_invalidateentry(fs, secondparent->parentsector, secondparent->parentoffset);
@@ -2488,7 +2488,7 @@ errout:
 	while (!sq_empty(&entry_queue)) {
 		node = (struct sector_entry_queue_s *)sq_remfirst(&entry_queue);
 		if (node) {
-			fdbg("free node's sector : %d\n", node->logsector);
+			fvdbg("free node's sector : %d\n", node->logsector);
 			kmm_free(node);
 		}
 	}
@@ -2509,7 +2509,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 	int ret;
 	long sector;
 	struct sector_recover_info_s info = {0,};
-	size_t size = (fs->fs_llformat.nsectors >> 3) + 1;
+	size_t size = (size_t)(fs->fs_llformat.nsectors >> 3) + 1;
 	
 	/* Alloc Logical Map */
 	char *map = (char *)kmm_malloc(sizeof(uint8_t *) * size);

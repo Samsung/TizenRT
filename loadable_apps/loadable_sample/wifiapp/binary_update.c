@@ -30,11 +30,16 @@
 #include <crc32.h>
 
 #include <sys/types.h>
+#ifdef CONFIG_MMINFO
+#include <tinyara/fs/ioctl.h>
+#include <tinyara/mminfo.h>
+#endif
 
 #include <binary_manager/binary_manager.h>
 
 /* App binary information for update test */
-#define APP_NAME                   "micom"
+#define APP1_NAME                  "micom"
+#define APP2_NAME                  "wifi"
 
 #define NEW_APP_NAME               "newapp"
 #define NEW_APP_VERSION            20200421
@@ -55,7 +60,7 @@ static int fail_cnt = 0;
 static void binary_update_cb(void)
 {
 	printf(" ==========================================================================\n");
-	printf("   The state changed callback is executed in WIFI. %s state is changed. \n", APP_NAME);
+	printf("   The state changed callback is executed in WIFI. %s state is changed. \n", APP1_NAME);
 	printf(" ========================================================================= \n");
 }
 
@@ -74,7 +79,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 	char filepath[BINARY_PATH_LEN];
 	char new_filepath[BINARY_PATH_LEN] = {0,};
 
-	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)binary_info->version);
+	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, binary_info->name, (uint32_t)binary_info->version);
 	read_fd = open(filepath, O_RDONLY);
 	if (read_fd < 0) {
 		fail_cnt++;
@@ -92,7 +97,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 
 	new_version = header_data.bin_ver + 1;
 
-	ret = binary_manager_get_download_path(APP_NAME, new_version, new_filepath);
+	ret = binary_manager_get_download_path(binary_info->name, new_version, new_filepath);
 	if (ret < 0) {
 		printf("binary_manager_get_download_path FAIL %d,\n", ret);
 		ret = ERROR;
@@ -138,7 +143,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 		}
 		crc_hash = crc32part(buffer, read_size, crc_hash);
 		copy_size += read_size;
-		printf("Copy %s binary, %s [%d%%]\r", APP_NAME, filepath, copy_size * 100 / total_size);
+		printf("Copy %s binary, %s [%d%%]\r", binary_info->name, filepath, copy_size * 100 / total_size);
 	}
 	printf("\nCopy SUCCESS\n");
 
@@ -160,7 +165,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 		ret = ERROR;
 		goto errout_with_close_fd2;
 	}
-	printf("Download binary %s version %d Done!\n", APP_NAME, new_version);
+	printf("Download binary %s version %d Done!\n", binary_info->name, new_version);
 
 	ret = OK;
 errout_with_close_fd2:
@@ -180,9 +185,9 @@ static int binary_update_download_new_binary(void)
 	int read_fd;
 	int write_fd;
 	int ret;
-	int total_size;
-	int copy_size;
-	int read_size;
+	uint32_t total_size;
+	uint32_t copy_size;
+	uint32_t read_size;
 	uint32_t crc_hash = 0;
 	uint8_t buffer[BUFFER_SIZE];
 	binary_header_t header_data;
@@ -192,9 +197,9 @@ static int binary_update_download_new_binary(void)
 	int filesize;
 
 	/* Get 'micom' binary info */
-	binary_manager_get_update_info(APP_NAME, &bin_info);
+	binary_manager_get_update_info(APP1_NAME, &bin_info);
 
-	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)bin_info.version);
+	snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP1_NAME, (uint32_t)bin_info.version);
 
 	read_fd = open(filepath, O_RDONLY);
 	if (read_fd < 0) {
@@ -452,13 +457,13 @@ static void binary_update_same_version_test(void)
 	char filepath[BINARY_PATH_LEN];
 	binary_update_info_t bin_info;
 
-	ret = binary_update_getinfo(APP_NAME, &bin_info);
+	ret = binary_update_getinfo(APP1_NAME, &bin_info);
 	if (ret != OK) {
 		return;
 	}
 
 	/* Try to create binary file with old version */
-	ret = binary_manager_get_download_path(APP_NAME, (uint32_t)bin_info.version, filepath);
+	ret = binary_manager_get_download_path(APP1_NAME, (uint32_t)bin_info.version, filepath);
 	if (ret == OK) {
 		fail_cnt++;
 		printf("Get binary info FAIL, ret %d\n", ret);
@@ -466,42 +471,36 @@ static void binary_update_same_version_test(void)
 	}
 }
 
-static void binary_update_new_version_test(void)
+static int binary_update_new_version_test(char *bin_name)
 {
 	int ret;
-	char filepath[BINARY_PATH_LEN];
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
 
-	ret = binary_update_getinfo(APP_NAME, &pre_bin_info);
+	ret = binary_update_getinfo(bin_name, &pre_bin_info);
 	if (ret != OK) {
-		return;
+		return ret;
 	}
 
 	/* Copy current binary and update version. */
 	ret = binary_update_download_binary(&pre_bin_info, DOWNLOAD_VALID_BIN);
 	if (ret != OK) {
-		return;
+		return ret;
 	}
 
-	ret = binary_update_reload(APP_NAME);
+	ret = binary_update_reload(bin_name);
 	if (ret != OK) {
-		return;
+		return ret;
 	}
 
 	sleep(2);
 
-	ret = binary_update_getinfo(APP_NAME, &cur_bin_info);
+	ret = binary_update_getinfo(bin_name, &cur_bin_info);
 	if (ret != OK) {
-		return;
+		return ret;
 	}
 
-	ret = binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_VALID_BIN);
-	if (ret == OK) {
-		/* Unlink binary file with old version */
-		snprintf(filepath, BINARY_PATH_LEN, "%s/%s_%u", BINARY_DIR_PATH, APP_NAME, (uint32_t)pre_bin_info.version);
-		unlink(filepath);
-	}
+	return binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_VALID_BIN);
 }
 
 static void binary_update_invalid_binary_test(void)
@@ -510,7 +509,7 @@ static void binary_update_invalid_binary_test(void)
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
 
-	ret = binary_update_getinfo(APP_NAME, &pre_bin_info);
+	ret = binary_update_getinfo(APP1_NAME, &pre_bin_info);
 	if (ret != OK) {
 		return;
 	}
@@ -521,14 +520,14 @@ static void binary_update_invalid_binary_test(void)
 		return;
 	}
 
-	ret = binary_update_reload(APP_NAME);
+	ret = binary_update_reload(APP1_NAME);
 	if (ret != OK) {
 		return;
 	}
 
 	sleep(2);
 
-	ret = binary_update_getinfo(APP_NAME, &cur_bin_info);
+	ret = binary_update_getinfo(APP1_NAME, &cur_bin_info);
 	if (ret != OK) {
 		return;
 	}
@@ -571,10 +570,8 @@ static void binary_update_new_binary_test(void)
 	unlink(filepath);
 }
 
-static void binary_update_run_tests(int repetition_num)
+static void binary_update_run_tests(void)
 {
-	printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
-
 	/* 1. Reload test with same version. */
 	binary_update_same_version_test();
 
@@ -585,7 +582,7 @@ static void binary_update_run_tests(int repetition_num)
 	binary_update_register_state_changed_callback();
 
 	/* 4. Reload test with new version. */
-	binary_update_new_version_test();
+	binary_update_new_version_test(APP1_NAME);
 
 	/* 5. Unregister registered callback. */
 	binary_update_unregister_state_changed_callback();
@@ -610,7 +607,8 @@ static void binary_update_execute_infinitely(void)
 	is_running = true;
 	while (inf_flag) {
 		repetition_num++;
-		binary_update_run_tests(repetition_num);
+		printf("\n** Binary Update Example %d-th Iteration.\n", repetition_num);
+		binary_update_run_tests();
 	}
 	binary_update_show_success_ratio(repetition_num);
 	is_running = false;
@@ -623,16 +621,70 @@ static void binary_update_execute_ntimes(int repetition_num)
 	/* binary_update example executes multiple-times. */
 	printf("\n** Binary Update example : executes %d-times.\n", repetition_num);
 	for (loop_idx = 1; loop_idx <= repetition_num; loop_idx++) {
-		binary_update_run_tests(loop_idx);
+		binary_update_run_tests();
 	}
 	binary_update_show_success_ratio(repetition_num);
 	is_running = false;
 }
+
+#ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
 /****************************************************************************
  * binary_update_test
  ****************************************************************************/
-
 void binary_update_test(void)
 {
 	binary_update_execute_ntimes(1);
 }
+#endif
+
+#ifdef CONFIG_EXAMPLES_UPDATE_AGING_TEST
+/****************************************************************************
+ * binary_update_aging_test
+ ****************************************************************************/
+void binary_update_aging_test(void)
+{
+	int ret;
+	int randval;
+	binary_update_info_t bin_info;
+#ifdef CONFIG_MMINFO
+	int fd;
+	struct mallinfo data;
+
+	fd = open(MMINFO_DRVPATH, O_RDWR);
+	if (fd < 0) {
+		printf("Open %s Fail, %d errno %d\n", MMINFO_DRVPATH, fd, get_errno());
+	}
+#endif
+
+	while (1) {
+#ifdef CONFIG_MMINFO
+		if (fd >= 0) {
+			ret = ioctl(fd, MMINFOIOC_HEAP, (int)&data);
+			if (ret == OK) {
+				printf("=================== Memory Information ===================\n");
+				printf("              total       used       free    largest\n");
+				printf(" Mem:	%11d%11d%11d%11d\n", data.arena, data.uordblks, data.fordblks, data.mxordblk);
+				printf("===========================================================\n");
+			}
+		}
+#endif
+		/* Iterate update test with random binary */
+		randval = rand();
+		if (randval % 2 == 0) {
+			ret = binary_update_new_version_test(APP1_NAME);
+		} else {
+			ret = binary_update_new_version_test(APP2_NAME);
+		}
+		if (ret != OK) {
+			break;
+		}
+	}
+
+	printf(" Binary update aging Test EXIT!! \n");
+#ifdef CONFIG_MMINFO
+	if (fd >= 0) {
+		close(fd);
+	}
+#endif
+}
+#endif

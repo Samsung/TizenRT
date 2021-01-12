@@ -98,7 +98,7 @@ void amebad_gpio_interrupt(uint32_t arg, gpio_irq_event event)
 		DEBUGASSERT(lower->handler != NULL);
 		lower->handler(lower->parent);
 	}
-	return OK;
+	return;
 }
 #endif
 
@@ -185,7 +185,7 @@ static int amebad_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling,
 						   int rising, gpio_handler_t handler)
 {	
 	struct amebad_lowerhalf_s *priv = (struct amebad_lowerhalf_s *)lower;
-	gpio_irq_event event;
+	gpio_irq_event event = IRQ_NONE;
 	
 	if (falling && rising) {
 		event = IRQ_FALL_RISE;
@@ -199,13 +199,13 @@ static int amebad_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling,
 	priv->handler = handler;
 
 	if (handler) {
-		gpio_irq_init(&priv->obj, priv->obj.pin, amebad_gpio_interrupt,(uint32_t) priv);
-		gpio_irq_set(&priv->obj, event, 1);
-		gpio_irq_enable(&priv->obj);
+		gpio_irq_init((gpio_irq_t *)&priv->obj, priv->obj.pin, amebad_gpio_interrupt,(uint32_t) priv);
+		gpio_irq_set((gpio_irq_t *)&priv->obj, event, 1);
+		gpio_irq_enable((gpio_irq_t *)&priv->obj);
 	} else {
-		gpio_irq_disable(&priv->obj);
-		gpio_irq_set(&priv->obj, event, 0);
-		gpio_irq_deinit(&priv->obj);
+		gpio_irq_disable((gpio_irq_t *)&priv->obj);
+		gpio_irq_set((gpio_irq_t *)&priv->obj, event, 0);
+		gpio_irq_deinit((gpio_irq_t *)&priv->obj);
 	}
 
 	return OK;

@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include "netstack.h"
 #include "netdev_mgr_internal.h"
@@ -43,6 +44,9 @@ static int _copy_socket(void *arg)
 	int num_copy = 0;
 	sq_queue_t *qsock = (sq_queue_t *) arg;
 	struct netstack *st = get_netstack(TR_SOCKET);
+	if (!st) {
+		return -1;
+	}
 	int res = 0;
 	for (int i = 0; i < CONFIG_NSOCKET_DESCRIPTORS; i++) {
 		struct netmon_sock *sock_info = NULL;
@@ -93,8 +97,9 @@ int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 		struct netdev *dev = nm_get_netdev((uint8_t *)stats->devname);
 		if (!dev) {
 			ret = -ENOTTY;
+		} else {
+			ret = ((struct netdev_ops *)(dev->ops))->get_stats(dev, stats);
 		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_stats(dev, stats);
 	}
 #endif
 	else {

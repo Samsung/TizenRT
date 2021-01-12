@@ -154,7 +154,7 @@ void up_schedyield(void)
 
 			if ((ntcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
 #if defined(CONFIG_APP_BINARY_SEPARATION)
-				for (int i = 0; i < 3 * MPU_NUM_REGIONS; i += 3) {
+				for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
 					up_mpu_set_register(&ntcb->mpu_regs[i]);
 				}
 #endif

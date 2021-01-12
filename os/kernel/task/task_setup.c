@@ -456,8 +456,6 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		/* Copy the parent task ram details to this task */
 		rtcb = this_task();
-		tcb->ram_start = rtcb->ram_start;
-		tcb->ram_size = rtcb->ram_size;
 		tcb->uspace = rtcb->uspace;
 		tcb->uheap = rtcb->uheap;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
@@ -468,12 +466,12 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 #ifdef CONFIG_ARM_MPU
 		int i = 0;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		for (; i < 3 * MPU_NUM_REGIONS; i += 3)
+		for (; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER)
 #endif
 		{
-			tcb->mpu_regs[i + REG_RNR] = rtcb->mpu_regs[i + REG_RNR];
-			tcb->mpu_regs[i + REG_RBAR] = rtcb->mpu_regs[i + REG_RBAR];
-			tcb->mpu_regs[i + REG_RASR] = rtcb->mpu_regs[i + REG_RASR];
+			tcb->mpu_regs[i + MPU_REG_RNR] = rtcb->mpu_regs[i + MPU_REG_RNR];
+			tcb->mpu_regs[i + MPU_REG_RBAR] = rtcb->mpu_regs[i + MPU_REG_RBAR];
+			tcb->mpu_regs[i + MPU_REG_RASR] = rtcb->mpu_regs[i + MPU_REG_RASR];
 		}
 #endif
 

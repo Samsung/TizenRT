@@ -1,22 +1,22 @@
-# How to Use Ramdump
-Here we explain how to enable build support for RAMDUMP upload,  
+# How to Use Dump Tool
+Here we explain how to enable build support for DUMP upload,
 and how to actually upload and parse it in the event of a crash during runtime.
 
 ## Contents
-> [Build Steps](#how-to-enable-ramdump)  
-> [Upload Steps](#how-to-upload-ramdump)  
-> [Parsing Steps](#how-to-parse-ramdump)  
-> [Porting Guide](#how-to-port-ramdump)
+> [Build Steps](#how-to-enable-memory-dumps)  
+> [Upload Steps](#how-to-upload-RAMDUMP-or-UserfsDUMP)  
+> [Parsing Steps](#how-to-parse-RAMDUMP)  
+> [Porting Guide](#how-to-port-memory-dump-functionality)  
 
-## How to enable RAMDUMP
-Below configuration must be enabled to support ramdump upload  
+## How to enable memory dumps
+Below configuration must be enabled to support dump upload
 1. Enable crashdump support (CONFIG_BOARD_CRASHDUMP=y)
 ```
 Hardware Configuration > Board Selection -> Enable Board level logging of crash dumps to y
 ```
-2. Enable ramdump (CONFIG_BOARD_RAMDUMP_UART=y)
+2. Enable board dumps (CONFIG_BOARD_DUMP_UART=y)
 ```
-Hardware Configuration > Board Selection -> Enable ramdump via UART to y
+Hardware Configuration > Board Selection -> Enable dumping of contents via UART to y
 ```
 3. Enable Stack Dump (CONFIG_ARCH_STACKDUMP=y)
 ```
@@ -30,24 +30,29 @@ Debug Options -> Enable Debug Output Features to y
 ```
 Debug Options -> Enable backtracking using Frame pointer register  to y
 ```
+```
+NOTE: - For devices that use ARM Cortex M, backtracking of frame pointer is not supported.
+Hence, it is not possible to obtain exact call stack for the crash.
+Ramdump may not produce results as expected in such cases.
+```
 
-## How to upload RAMDUMP
+## How to upload RAMDUMP-or-UserfsDUMP
 ### In Linux
-With the RAMDUMP configured above, whenever the target board crashes because an assert condition, it enters PANIC mode, and displays the following message:  
+With the DUMP Tool configured above, whenever the target board crashes because of an assert condition, it enters into PANIC mode, and displays the following message:
 ```
 	****************************************************
-	Disconnect this serial terminal and Run Ramdump Tool
+	Disconnect this serial terminal and run Dump Tool
 	****************************************************
 ```
-After you see this message, you can upload the ramdump by following the step below:  
+After you see this message, you can upload the dumps by following the step below:  
 1. Disconnect/close your serial terminal (may be minicom)  
 
-2. Run ramdump tool
+2. Run dump tool
 ```
-cd $TIZENRT_BASEDIR/tools/ramdump/
-./ramdump.sh
+cd $TIZENRT_BASEDIR/tools/dump_tool/
+./dump_tool.sh
 ```
-3. Ramdump Tool will prompt for user's input for device adapter connected to the linux machine.
+3. Dump Tool will prompt for user's input for device adapter connected to the linux machine.
 ```
 Please enter serial port adapter:
 For example: /dev/ttyUSB0 or /dev/ttyACM0
@@ -56,13 +61,23 @@ Enter:
 /dev/ttyUSB0 open failed!!
 Please enter correct device port
 Enter:
-```
-4. After entering device adapter information, tool will prompt for regions to be dumped
-```
-Enter:
 /dev/ttyUSB1
-Target Handshake successful do_handshake
-Target entered to ramdump mode
+Target device locked and ready to DUMP!!!
+```
+4. After entering device adapter information, the tool will provide a list of options for the user to choose from
+```
+Choose from the following options:-
+1. RAM Dump
+2. Userfs Dump
+3. Both RAM and Userfs Dump
+4. Exit Dump Tool
+5. Reboot TARGET Device
+1 (-> RAM Dump option chosen)
+```
+5. If RAM Dump option is chosen, tool will prompt the user for the regions to be dumped on successful handshake
+```
+DUMPING RAM CONTENTS
+do_handshake: Target Handshake successful
 
 =========================================================================
 Ramdump Region Options:
@@ -71,18 +86,69 @@ Ramdump Region Options:
 =========================================================================
 Please enter desired ramdump option as below:
         1 for ALL
-Please enter your input: 
+Please enter your input: 1
+
+ramdump_recv: No. of Regions to be dumped received
+
 ```
-5. Ramdump Tool receives the ram contents from target.
+6. Dump Tool receives the RAM contents from target.
 ```
-Target Handshake successful do_handshake
-Target entered to ramdump mode
 Receiving ramdump......
-ramdump_recv: ramdump_address = 02020000, ramdump_size = 968704
-[===========================================================>]
-Ramdump received successfully
-copying ramdump_0x02020000_0x0210c800.bin to  $TIZENRT_BASEDIR/build/output/bin
+
+=========================================================================
 ```
+```
+Dumping data, Address: 0x02023800, Size: 968704bytes
+=========================================================================
+[===========================================================>]
+Ramdump received successfully..!
+```
+7. The dump tool will again provide a list of options for the user to choose from
+```
+Choose from the following options:-
+1. RAM Dump
+2. Userfs Dump
+3. Both RAM and Userfs Dump
+4. Exit Dump Tool
+5. Reboot TARGET Device
+2 (-> Userfs Dump option chosen)
+```
+8. If Userfs Dump option is chosen, tool will dump the region on successful handshake
+```
+DUMPING USERFS CONTENTS
+do_handshake: Target Handshake successful
+
+=========================================================================
+Filesystem start address = 4620000, filesystem size = 1024000
+=========================================================================
+
+Receiving file system dump.....
+[==============================================================>]
+
+Filesystem Dump received successfully
+```
+9. The dump tool will again provide a list of options for the user to choose from
+```
+Choose from the following options:-
+1. RAM Dump
+2. Userfs Dump
+3. Both RAM and Userfs Dump
+4. Exit Dump Tool
+5. Reboot TARGET Device
+5 (-> Reboot TARGET Device option chosen)
+```
+10. If Reboot TARGET Device option is chosen, tool will send a Reboot signal string to the TARGET device and exit
+```
+CONFIG_BOARD_ASSERT_AUTORESET needs to be enabled to reboot TARGET Device after a crash
+do_handshake: Target Handshake successful
+Dump tool exits after successful operation
+```
+11. The dump tool exits if user chooses Option 4.
+```
+Dump tool exits after successful operation
+```
+12. NOTE: The device stays in a loop, waiting for the next handshake/reboot signal till the user sends the Reboot signal.
+
 ### In Windows
 With the RAMDUMP configured above, whenever the target board crashes because an assert condition, it enters PANIC mode, and displays the following message:  
 ```
@@ -163,7 +229,7 @@ DumpParser Script provides two interfaces: CUI and GUI
 ### DumpParser using CUI
 1. Run Ramdump Parser Script
 ```
-cd $TIZENRT_BASEDIR/tools/ramdump/
+cd $TIZENRT_BASEDIR/tools/dump_tool/
 python dumpParser.py -r $TIZENRT_BASEDIR/build/output/bin/ramdump_0x02020000_0x0210c800.bin -e $TIZENRT_BASEDIR/build/output/bin/tinyara -g 0
 ```
 2. See the Output
@@ -182,7 +248,7 @@ The UI configuration of DumpParser is as follows
 
 1. Run GUI Ramdump Parser Script
 ```
-cd $TIZENRT_BASEDIR/tools/ramdump/
+cd $TIZENRT_BASEDIR/tools/dump_tool/
 python gui_dumpParser.py
 ```
 
@@ -207,8 +273,8 @@ Call Trace of Crashed Task :[appmain] with pid :2 and state :TSTATE_TASK_RUNNING
 [<40c9fec>] task_start+0x64         [Line 173 of \"task/task_start.c\"]
 ********************************************************************
 ```
-## How to port RAMDUMP
-To port ramdump for a new board, do the following steps:
+## How to port memory dump functionality
+To port dump tool for a new board, do the following steps:
 
 1. Add low level chip specific API's to receive and transfer characters through UART:
 
@@ -255,9 +321,9 @@ endif
        board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 ```
-5. In ramdump_tool.c, configure correct port parameters for the the board's tty serial device port n configure_tty function.
+5. In dump_tool.c, configure correct port parameters for the the board's tty serial device port n configure_tty function.
 Like BaudRate, StopBits, Parity, Databits, HardwareFlowControl.
-6. In ramdump_tool.c, add if the serial device port does not exist already.
+6. In dump_tool.c, add if the serial device port does not exist already.
 ```
         /* Get the tty type  */
         if (!strcmp(dev_file, "/dev/ttyUSB1")) {

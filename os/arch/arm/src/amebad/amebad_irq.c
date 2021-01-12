@@ -289,10 +289,6 @@ static int amebad_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit,
 
 void up_irqinitialize(void)
 {
-  uint32_t regaddr;
-  int num_priority_registers;
-  int i;
-
 
 #ifdef CONFIG_ARCH_RAMVECTORS
   /* If CONFIG_ARCH_RAMVECTORS is defined, then we are using a RAM-based
@@ -362,13 +358,13 @@ void up_irqinitialize(void)
 
 void up_disable_irq(int irq)
 {
-  uintptr_t regaddr;
-  uint32_t regval;
-  uint32_t bit;
 #if 1
 	  irq -= AMEBAD_IRQ_FIRST;
 	  __NVIC_DisableIRQ(irq);
 #else
+  uintptr_t regaddr;
+  uint32_t regval;
+  uint32_t bit;
   if (amebad_irqinfo(irq, &regaddr, &bit, NVIC_CLRENA_OFFSET) == 0)
     {
       /* Modify the appropriate bit in the register to disable the interrupt.
@@ -402,13 +398,13 @@ void up_disable_irq(int irq)
 
 void up_enable_irq(int irq)
 {
-	uintptr_t regaddr;
-	uint32_t regval;
-	uint32_t bit;
 #if 1
 	irq -= AMEBAD_IRQ_FIRST;
 	__NVIC_EnableIRQ(irq);
 #else
+	uintptr_t regaddr;
+	uint32_t regval;
+	uint32_t bit;
 	if (amebad_irqinfo(irq, &regaddr, &bit, NVIC_ENA_OFFSET) == 0)
 	{
 		/* Modify the appropriate bit in the register to enable the interrupt.
@@ -457,9 +453,6 @@ void up_ack_irq(int irq)
 #ifdef CONFIG_ARCH_IRQPRIO
 int up_prioritize_irq(int irq, int priority)
 {
-  uint32_t regaddr;
-  uint32_t regval;
-  int shift;
 
   DEBUGASSERT(irq >= AMEBAD_IRQ_MEMFAULT && irq < NR_IRQS &&
               (unsigned)priority <= NVIC_SYSH_PRIORITY_MIN);
@@ -468,6 +461,9 @@ int up_prioritize_irq(int irq, int priority)
   priority = priority >> (8U - __NVIC_PRIO_BITS);
   __NVIC_SetPriority(irq, priority); //use CMSIS for now
 #else
+  uint32_t regaddr;
+  uint32_t regval;
+  int shift;
   if (irq < AMEBAD_IRQ_FIRST)
     {
       /* NVIC_SYSH_PRIORITY() maps {0..15} to one of three priority

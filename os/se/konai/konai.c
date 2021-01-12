@@ -29,8 +29,6 @@
 #define _OUT_
 #define _INOUT_
 
-#define SECLINK_PATH "/dev/seclink"
-
 #define KN_LOG printf
 #define KN_TAG "KONAI"
 #define KN_ENTER														\

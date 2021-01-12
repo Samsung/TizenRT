@@ -22,6 +22,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <ifaddrs.h>
+#include <tinyara/kmalloc.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
@@ -90,7 +92,7 @@ int nm_foreach(tr_netdev_callback_t callback, void *arg)
 	for (int i = 0; i < g_netdev_idx; i++) {
 		dev = &g_netdev[i];
 		if (callback(dev, arg) != 0) {
-			ret = 1;
+			ret = -1;
 			break;
 		}
 	}
@@ -150,7 +152,7 @@ struct netdev *nm_register(struct netdev_config *config)
 	}
 
 	// to do calculate exact size of tx_buf
-	dev->tx_buf = (uint8_t *)malloc(config->mtu + 12); // 12 is padding.
+	dev->tx_buf = (uint8_t *)kmm_malloc(config->mtu + 12); // 12 is padding.
 	if (!dev->tx_buf) {
 		ndbg("create txbuf fail(%d)\n", config->mtu + 12);
 		return NULL;

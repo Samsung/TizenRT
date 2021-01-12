@@ -322,11 +322,6 @@ static size_t cm_ipaddr_read(FAR struct cm_file_s *connectivityfile, FAR char *b
 	netlib_get_ipv4addr(mac, &addr);
 	inet_ntop(AF_INET, &addr, ipaddr, INET_ADDRSTRLEN);
 #endif
-#ifdef CONFIG_NET_IPv6
-	struct in6_addr addr;
-	netlib_get_ipv6addr(mac, &addr);
-	inet_ntop(AF_INET6, &addr, ipaddr, INET6_ADDRSTRLEN);
-#endif
 
 	linesize = snprintf(connectivityfile->line, CM_LINELEN, "%s", ipaddr);
 	copysize = procfs_memcpy(connectivityfile->line, linesize, buffer, buflen, &offset);

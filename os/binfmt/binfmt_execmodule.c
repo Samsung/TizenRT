@@ -159,6 +159,9 @@ int exec_module(FAR struct binary_s *binp)
 	FAR uint32_t *stack;
 	pid_t pid;
 	int ret;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int binary_idx;
+#endif
 
 	/* Sanity checking */
 
@@ -171,6 +174,7 @@ int exec_module(FAR struct binary_s *binp)
 	binfo("Executing %s\n", binp->filename);
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+	binary_idx = binp->binary_idx;
 	binp->uheap = (struct mm_heap_s *)binp->heapstart;
 	mm_initialize(binp->uheap, (void *)binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
 	mm_add_app_heap_list(binp->uheap, binp->bin_name);
@@ -187,16 +191,17 @@ int exec_module(FAR struct binary_s *binp)
 
 	/* Initialize the MPU registers in tcb with suitable protection values */
 #ifdef CONFIG_ARM_MPU
+	uint8_t nregion = mpu_get_nregion_info(MPU_REGION_APP_BIN);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[0], MPU_REG_NUM_APP_TXT, (uintptr_t)binp->alloc[ALLOC_TEXT], binp->textsize, true, true);
+	mpu_get_register_config_value(&rtcb->mpu_regs[0], nregion - 3, (uintptr_t)binp->alloc[ALLOC_TEXT], binp->textsize, true, true);
 	/* Configure ro section as RO and non-executable region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[3], MPU_REG_NUM_APP_RO, (uintptr_t)binp->alloc[ALLOC_RO], binp->rosize, true, false);
+	mpu_get_register_config_value(&rtcb->mpu_regs[3], nregion - 2, (uintptr_t)binp->alloc[ALLOC_RO], binp->rosize, true, false);
 	/* Complete RAM partition will be configured as RW region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[6], MPU_REG_NUM_APP_DATA, (uintptr_t)binp->alloc[ALLOC_DATA], binp->ramsize, false, false);
+	mpu_get_register_config_value(&rtcb->mpu_regs[6], nregion - 1, (uintptr_t)binp->alloc[ALLOC_DATA], binp->ramsize, false, false);
 #else
 	/* Complete RAM partition will be configured as RW region */
-	mpu_get_register_config_value(&rtcb->mpu_regs[0], MPU_REG_NUM_APP, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
+	mpu_get_register_config_value(&rtcb->mpu_regs[0], nregion - 1, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
 #endif
 #endif
 #endif /* CONFIG_APP_BINARY_SEPARATION */
@@ -331,8 +336,6 @@ int exec_module(FAR struct binary_s *binp)
 	/* The app's userspace object will be found at an offset of 4 bytes from the start of the binary */
 	tcb->cmn.uspace = (uint32_t)binp->alloc[ALLOC_TEXT] + 4;
 	tcb->cmn.uheap = (uint32_t)binp->uheap;
-	tcb->cmn.ram_start = (uint32_t)binp->ramstart;
-	tcb->cmn.ram_size = binp->ramsize;
 
 #ifdef CONFIG_BINARY_MANAGER
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
@@ -343,7 +346,6 @@ int exec_module(FAR struct binary_s *binp)
 	strncpy(tcb->cmn.name, binp->bin_name, CONFIG_TASK_NAME_SIZE);
 	tcb->cmn.name[CONFIG_TASK_NAME_SIZE] = '\0';
 
-	int binary_idx = binp->binary_idx;
 	tcb->cmn.group->tg_binidx = binary_idx;
 	binary_manager_add_binlist(&tcb->cmn);
 
@@ -393,16 +395,18 @@ errout_with_appheap:
 	mm_remove_app_heap_list(binp->uheap);
 #endif
 errout_with_tcbinit:
+	if (tcb != NULL) {
 #ifdef CONFIG_BINARY_MANAGER
-	BIN_ID(binary_idx) = -1;
-	BIN_STATE(binary_idx) = BINARY_INACTIVE;
-	BIN_LOADVER(binary_idx) = 0;
+		BIN_ID(binary_idx) = -1;
+		BIN_STATE(binary_idx) = BINARY_INACTIVE;
+		BIN_LOADVER(binary_idx) = 0;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	BIN_LOADINFO(binary_idx) = NULL;
+		BIN_LOADINFO(binary_idx) = NULL;
 #endif
-	binary_manager_remove_binlist(&tcb->cmn);
+		binary_manager_remove_binlist(&tcb->cmn);
 #endif
-	sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
+		sched_releasetcb(&tcb->cmn, TCB_FLAG_TTYPE_TASK);
+	}
 	return ret;
 
 errout_with_stack:

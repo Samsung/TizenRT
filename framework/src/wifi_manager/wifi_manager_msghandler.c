@@ -46,10 +46,16 @@ static int _process_msg(int argc, char *argv[])
 
 	while (1) {
 		handler_msg hmsg;
-		wifimgr_message_out(&hmsg, &g_wifi_message_queue);
+		int res = wifimgr_message_out(&hmsg, &g_wifi_message_queue);
+		if (res < 0) {
+			WM_ERR;
+			return -1;
+		} else if (res == 1) {
+			continue;
+		}
 		wifimgr_msg_s *wmsg = hmsg.msg;
 
-		wifimgr_handle_request(wmsg);
+		wmsg->result = wifimgr_handle_request(wmsg);
 
 		sem_post(hmsg.signal);
 	}
@@ -94,10 +100,11 @@ int wifimgr_post_message(wifimgr_msg_s *msg)
 	res = sem_wait(hmsg.signal);
 	if (res < 0) {
 		WM_ERR;
-		return -1;
+		return -2;
 	}
 	sem_destroy(hmsg.signal);
 	WM_LOG_VERBOSE("<--%s done\n", __FUNCTION__);
+
 	return 0;
 }
 

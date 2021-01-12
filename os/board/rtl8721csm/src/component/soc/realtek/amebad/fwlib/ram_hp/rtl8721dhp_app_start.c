@@ -7,6 +7,10 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 
+#include <tinyara/config.h>
+#include <tinyara/mpu.h>
+#include <tinyara/mm/heap_regioninfo.h>
+
 #include "ameba_soc.h"
 #include "rtl8721d_system.h"
 #include "psram_reserve.h"
@@ -28,6 +32,7 @@ SECTION(".data") u8* __ram_nocache_end__ = 0;
 SECTION(".data") u8* __psram_bss_start__ = 0;
 SECTION(".data") u8* __psram_bss_end__ = 0;
 #endif
+static u32 g_mpu_nregion_allocated;
 extern int main(void);
 extern u32 GlobalDebugEnable;
 struct _driver_call_os_func_map driver_call_os_func_map;
@@ -49,13 +54,28 @@ extern unsigned int __PsramStackLimit;
 void os_heap_init(void){
 	kregionx_start[0] = (void *)HEAP_BASE;
 	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
+#if CONFIG_KMM_REGIONS >= 2
+	int region_idx;
 	if(TRUE == psram_dev_config.psram_dev_enable) {
+#if CONFIG_KMM_REGIONS == 3
+		kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
+		kregionx_size[1] = (size_t)kregionx_start[1] + kregionx_size[1] - PSRAM_HEAP_BASE;
+
+		kregionx_start[2] = (void *)kregionx_start[2];
+		kregionx_size[2] = (size_t)PSRAM_HEAP_LIMIT - (size_t)kregionx_start[2];
+#elif CONFIG_KMM_REGIONS > 3
+#error "Need to check here for heap."
+#else
 		kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
 		kregionx_size[1] = (size_t)(PSRAM_HEAP_LIMIT - PSRAM_HEAP_BASE);
+#endif
 	} else {
-		kregionx_start[1] = NULL;
-		kregionx_size[1] = 0;
+		for (region_idx = 1; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
+			kregionx_start[region_idx] = NULL;
+			kregionx_size[region_idx] = 0;
+		}
 	}
+#endif
 }
 #define dbg_printf DiagPrintf
 typedef struct fault_handler_back_trace_s {
@@ -942,7 +962,6 @@ u32 app_mpu_nocache_init(void)
 	/* It is for wifi related buffer area, to prevent non-sync from happening.
 	*  Because DMA is involved, so it cannot be used together with cache.
 	*/
-	mpu_entry = mpu_entry_alloc();
 	if (wifi_config.km4_cache_enable) {
 		mpu_cfg.region_base = (uint32_t)__ram_nocache_start__;
 		mpu_cfg.region_size = __ram_nocache_end__-__ram_nocache_start__;
@@ -955,6 +974,7 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	if (mpu_cfg.region_size >= 32) {
+		mpu_entry = mpu_entry_alloc();
 		mpu_region_cfg(mpu_entry, &mpu_cfg);
 	}
 
@@ -999,15 +1019,32 @@ u32 app_mpu_nocache_init(void)
 	/* set PSRAM Memory Write-Back */
 	/* To prevent data confusion issue in PSRAM */
 	mpu_entry = mpu_entry_alloc();
+	/* The index of kregionx_start and kregionx_size should be matched with
+	 * PSRAM index in CONFIG_RAM_KREGIONx_START and CONFIG_RAM_KREGIONx_SIZE.
+	 * Note that, for loadable_apps, PSRAM_S region will not be set to wb.
+	 */
 	mpu_cfg.region_base = 0x02000000;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* For covering text, bss and data in PSRAM, add the size of (kregionx_start[1] - 0x02000000). */
+	mpu_cfg.region_size = kregionx_size[1] + (size_t)(kregionx_start[1] - 0x02000000);
+#else
 	mpu_cfg.region_size = 0x400000;
+#endif
 	mpu_cfg.xn = MPU_EXEC_ALLOW;
 	mpu_cfg.ap = MPU_UN_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
+	g_mpu_nregion_allocated = mpu_entry + 1;
 	return 0;
+}
+
+void app_mpu_s_nocache_init(void)
+{
+#ifdef CONFIG_AMEBAD_TRUSTZONE
+	mpu_s_no_cache_init();
+#endif
 }
 
 VOID app_vdd1833_detect(VOID)
@@ -1338,6 +1375,7 @@ extern void __libc_init_array(void);
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 	mpu_init();
 	app_mpu_nocache_init();
+	app_mpu_s_nocache_init();
 #endif
 	app_vdd1833_detect();
 	memcpy_gdma_init();
@@ -1346,6 +1384,9 @@ extern void __libc_init_array(void);
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 #ifdef CONFIG_ARMV8M_MPU
+	/* Initialize number of mpu regions for board specific purpose */
+	mpu_set_nregion_board_specific(g_mpu_nregion_allocated);
+
 	up_mpuinitialize();
 #endif
 

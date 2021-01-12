@@ -67,6 +67,7 @@
 #endif
 #include <tinyara/kmalloc.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 #include <arch/board/board.h>
 
 #include "up_arch.h"
@@ -206,7 +207,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 * object in the tcb of current running task. uheap is always non-null
 		 * in user threads and null for kernel threads.
 		 */
-		if (!uheap) {
+		if (!uheap || ttype == TCB_FLAG_TTYPE_KERNEL) {
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 			stack_alloc_size = stack_alloc_size + CONFIG_MPU_STACK_GUARD_SIZE;
 			tcb->stack_alloc_ptr = (uint32_t *)kmm_memalign(STACK_PROTECTION_MPU_ALIGNMENT, stack_alloc_size);
@@ -299,8 +300,9 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 #endif
 		board_led_on(LED_STACKCREATED);
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
+		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_STACKOVF);
 		/* The smallest size that can be programmed for an MPU region is 32 bytes */
-		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], MPU_REG_NUM_STK,
+		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], nregion - 1,
 			(uint32_t)tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
 #endif
 

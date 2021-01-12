@@ -66,6 +66,13 @@ ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
 CSRCS += crashdump.c
 endif
 
+# boardctl support
+ifeq ($(CONFIG_LIB_BOARDCTL),y)
+DEPPATH += --dep-path $(TOPDIR)/arch
+VPATH += :$(TOPDIR)/arch
+CSRCS += boardctl.c
+endif
+
 include Make.defs
 include component/soc/realtek/amebad/app/monitor/ram/Make.defs
 include component/soc/realtek/amebad/app/monitor/rom/Make.defs
@@ -109,6 +116,7 @@ CFGDIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/
 DIR_OTG = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/fwlib/usb_otg/device
 
 CFLAGS += -I$(DIR)/../include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/swlib/include/
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/swlib/string/
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/monitor/include/
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/realtek/amebad/app/xmodem/
@@ -130,7 +138,6 @@ CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/src/osdep
 CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/wlan_ram_map/rom
 CFLAGS += -I$(COMPONENT_DIR)/os/os_dep/include
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
-CFLAGS += -I$(TOPDIR)/include/net
 CFLAGS += -I$(TOPDIR)/net/lwip
 CFLAGS += -I$(TOPDIR)/net/lwip/src/include/
 CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/src
@@ -139,7 +146,6 @@ CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/misc
 CFALGS += -I$(DIR_CRYPTO)/../include/
 CFLAGS += -I$(DIR_FW)/../include/
 CFLAGS += -I$(TOPDIR)/net/netmgr/
-CFLAGS += -I$(TOPDIR)/include/net/if
 
 ifeq ($(CONFIG_USBD_MSC),y)
 CFLAGS += -I$(BASEDIR)/component/common/drivers/sdio/realtek/sdio_host/inc

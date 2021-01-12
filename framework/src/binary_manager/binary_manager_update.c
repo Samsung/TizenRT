@@ -134,7 +134,8 @@ binmgr_result_type_e binary_manager_get_download_path(char *binary_name, uint32_
 		return BINMGR_INVALID_PARAM;
 	}
 
-	strncpy(data.bin_name, binary_name, BIN_NAME_MAX);
+	strncpy(data.bin_name, binary_name, BIN_NAME_MAX - 1);
+	data.bin_name[BIN_NAME_MAX - 1] = '\0';
 	data.version = version;
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_CREATE_BIN, &data);

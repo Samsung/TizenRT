@@ -18,11 +18,18 @@
 
 ifeq ($(CONFIG_SE_AMEBA),y)
 SE_PATH = ameba
+
+ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
+SE_CSRCS += security_ameba_wrapper_tz.c
+SE_CSRCS += rtl_security_api_wrapper_tz.c
+else
 SE_CSRCS += security_ameba_wrapper.c
 SE_CSRCS += rtl_security_api_wrapper.c
+endif
+
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/common/mbed/hal_ext/
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/common/mbed/targets/hal/rtl8721d
-CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/soc/realtek/amebad/cmsis	
+CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/soc/realtek/amebad/cmsis
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/soc/realtek/amebad/fwlib/include
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/project/realtek_amebaD_va0_example/inc/inc_hp
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/soc/realtek/amebad/swlib/string

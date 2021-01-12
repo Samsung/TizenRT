@@ -140,7 +140,7 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 #if CONFIG_KMM_NHEAPS > 1
 	info->arena    += heap->mm_heapsize;
 	info->ordblks  += ordblks;
-	info->mxordblk += mxordblk;
+	info->mxordblk = (info->mxordblk > mxordblk) ? info->mxordblk : mxordblk;
 	info->uordblks += uordblks;
 	info->fordblks += fordblks;
 #else

@@ -189,6 +189,63 @@ int SOCPS_WakePinCheck(void)
 }
 
 /**
+  * @brief  For some peripheral,Should switch it's clock to 32K or 131K before sleep.
+  * @param  NewStatus: ENABLE/DISABLE.
+  * @retval None
+  */
+IMAGE2_RAM_TEXT_SECTION
+VOID SOCPS_SetPeripheralClock(u32 NewStatus)
+{
+	u32 Rtemp = 0;
+	int i;
+
+	for (i = 0;;) {
+		/*  Check if search to end */
+		if (sleep_wevent_config[i].Module == 0xFFFFFFFF) {
+			break;
+		}
+		//switch GPIO reg/intr clock to 32k from SDM
+		if ((sleep_wevent_config[i].Status == ON) && \
+			(sleep_wevent_config[i].Module & BIT_LP_WEVT_GPIO_MSK)) {
+
+			Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LP_CLK_CTRL1);
+			if (NewStatus == ENABLE) {
+				Rtemp |= BIT_LSYS_GPIO0_CKSL;
+			} else {
+				Rtemp &= ~BIT_LSYS_GPIO0_CKSL;
+			}
+			HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LP_CLK_CTRL1, Rtemp);
+			break;
+		}
+
+		i++;
+	}
+#if 0
+	for (i = 0;;) {
+		/*  Check if search to end */
+		if (sleep_aon_wevent_config[i].Module == 0xFFFFFFFF) {
+			break;
+		}
+		// Switch captouch reg/intr clock to 131K clock
+		if ((sleep_aon_wevent_config[i].Status == ON) && \
+		    (sleep_aon_wevent_config[i].Module == BIT_CAPTOUCH_WAKE_STS )) {
+
+			Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_ISO_CTRL);
+			if (NewStatus == ENABLE) {
+				Rtemp &= ~BIT_AON_CTOUCH_CK_SEL;
+			} else {
+				Rtemp |= BIT_AON_CTOUCH_CK_SEL;
+			}
+
+			HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_ISO_CTRL, Rtemp);
+		}
+		i++;
+	}
+
+#endif
+}
+
+/**
   * @brief  set AON timer for wakeup.
   * @param  SDuration: sleep time, unit is ms
   * @note wakeup state:sleep PG & CG &deep standby & deep sleep
@@ -691,6 +748,8 @@ VOID SOCPS_SleepCG(VOID)
 	Rtemp &= ~BIT_AON_CTOUCH_CK_SEL;
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_ISO_CTRL, Rtemp);
 
+	SOCPS_SetPeripheralClock(ENABLE);
+
 	//Enable low power mode
 	SOCPS_SleepCG_RAM();
 
@@ -699,6 +758,7 @@ VOID SOCPS_SleepCG(VOID)
 	Rtemp |= BIT_AON_CTOUCH_CK_SEL;
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_ISO_CTRL, Rtemp);
 
+	SOCPS_SetPeripheralClock(DISABLE);
 	/*Get wake event*/
 	WakeEvent = HAL_READ32(SYSTEM_CTRL_BASE, REG_LP_SLP_WAKE_EVENT_STATUS0);
 	WakeEventAon = SOCPS_AONWakeReason();

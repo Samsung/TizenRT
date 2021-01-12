@@ -370,6 +370,10 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 		security_type = RTW_SECURITY_WPA2_AES_PSK;
 		password = softap_config->passphrase;
 		break;
+	case WIFI_UTILS_AUTH_WPA3_PSK:
+		security_type = RTW_SECURITY_WPA3_AES_PSK;
+		password = softap_config->passphrase;
+		break;
 	case WIFI_UTILS_AUTH_UNKNOWN:
 	default:
 		ndbg("\r\nAP AUTH type is unknown %d;\n", softap_config->ap_auth_type);
@@ -415,26 +419,24 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 	char *password;
 	int ssid_len;
 	int password_len;
-	int key_id;
+	int key_id = 0;
 	void *semaphore;
 	int security_retry_count = 0;
 
 	wifi_utils_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
 	wifi_utils_ap_crypto_type_e crypto = ap_connect_config->ap_crypto_type;
 	/* WIFI_MANAGER_CRYPTO_AES: 3 */
-	if (crypto == 3 && auth != WIFI_UTILS_AUTH_WPA2_PSK) {
+	if (crypto == 3 && ((auth != WIFI_UTILS_AUTH_WPA2_PSK) && (auth != WIFI_UTILS_AUTH_WPA3_PSK))) {
 		ndbg("\r\nInvalid crypto/auth match\n");
 		return -1;
 	}
 	ssid = ap_connect_config->ssid;
-
 	switch (auth) {
 	case WIFI_UTILS_AUTH_OPEN:
 		security_type = RTW_SECURITY_OPEN;
 		password = NULL;
 		ssid_len = strlen((const char *)ssid);
 		password_len = 0;
-		key_id = 0;
 		semaphore = NULL;
 		break;
 	case WIFI_UTILS_AUTH_WEP_SHARED:
@@ -442,7 +444,6 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
-		key_id = 1; //Foucus
 		if ((password_len != 5) && (password_len != 13)) {
 			ndbg("\n\rWrong WEP key length. Must be 5 or 13 ASCII characters.");
 			return -1;
@@ -454,7 +455,13 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
-		key_id = 0;
+		semaphore = NULL;
+		break;
+	case WIFI_UTILS_AUTH_WPA3_PSK:
+		security_type = RTW_SECURITY_WPA3_AES_PSK;
+		password = ap_connect_config->passphrase;
+		ssid_len = strlen((const char *)ssid);
+		password_len = ap_connect_config->passphrase_length;
 		semaphore = NULL;
 		break;
 	default:
@@ -472,7 +479,6 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
-		key_id = 0;
 		semaphore = NULL;
 		break;
 	}

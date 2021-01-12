@@ -129,6 +129,7 @@ config ARCH_CORTEXM33
 	select ARCH_HAVE_IRQPRIO
 	select ARCH_HAVE_CMNVECTOR
 	select ARCH_HAVE_RAMVECTORS
+	select ARCH_HAVE_RESET
 	select ARCH_HAVE_HIPRI_INTERRUPT
 	select ARCH_ARMV8M_FAMILY
 
@@ -291,7 +292,7 @@ config ARCH_DABORTSTACK
 
 choice
 	prompt "Stack Protection feature options"
-	default MPU_STACK_OVERFLOW_PROTECTION_DISABLE
+	default STACK_OVERFLOW_PROTECTION_DISABLE
 
 config REG_STACK_OVERFLOW_PROTECTION
 	bool "REG Stack Overflow Protection"
@@ -304,13 +305,14 @@ config MPU_STACK_OVERFLOW_PROTECTION
 	bool "MPU Stack Overflow Protection"
 	depends on BUILD_PROTECTED
 	depends on ARM_MPU
+	depends on !ARMV8M_MPU
 	---help---
 		Enables stack overflow protection.
 		It protects each task's stack overflow outside its max allocated stack memory.
 		This is applicable to user mode tasks created in protected build.
 
-config MPU_STACK_OVERFLOW_PROTECTION_DISABLE
-	bool "MPU Stack Overflow Protection Disable"
+config STACK_OVERFLOW_PROTECTION_DISABLE
+	bool "Stack Overflow Protection Disable"
 	---help---
 		Disable Stack Overflow Protection.
 

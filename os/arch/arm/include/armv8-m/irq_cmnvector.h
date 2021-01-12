@@ -114,7 +114,12 @@
 
 /* The total number of registers saved by software */
 
+#ifdef CONFIG_REG_STACK_OVERFLOW_PROTECTION
+#define REG_SPLIM           (SW_INT_REGS + SW_FPU_REGS + 0) /* REG_SPLIM */
+#define SW_XCPT_REGS        (SW_INT_REGS + SW_FPU_REGS + 1)
+#else
 #define SW_XCPT_REGS        (SW_INT_REGS + SW_FPU_REGS)
+#endif
 #define SW_XCPT_SIZE        (4 * SW_XCPT_REGS)
 
 /* On entry into an IRQ, the hardware automatically saves the following

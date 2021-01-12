@@ -33,7 +33,6 @@
 #define MBED_CMSIS_H
 
 #include "ameba_soc.h"
-#undef __CMSIS_GENERIC
 #include "cmsis_nvic.h"
 
 #endif

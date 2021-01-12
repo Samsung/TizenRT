@@ -69,7 +69,7 @@ static int binary_manager_clear_binfile(int bin_idx)
 			/* Remove binary file which is not running */
 			if (DIRENT_ISFILE(entryp->d_type) && !strncmp(entryp->d_name, bin_name, name_len) \
 				&& entryp->d_name[name_len] == '_' && strncmp(entryp->d_name, running_file, strlen(running_file))) { 
-				snprintf(filepath, NAME_MAX, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
+				snprintf(filepath, BINARY_PATH_LEN, "%s/%s", BINARY_DIR_PATH, entryp->d_name);
 				bmvdbg("unlink %s\n", entryp->d_name);
 				unlink(filepath);
 			}

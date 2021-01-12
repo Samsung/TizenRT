@@ -116,7 +116,8 @@ static ssize_t amebad_erase_page(size_t page)
 {
 	uint32_t address;
 	irqstate_t irqs;
-
+	ssize_t ret;
+	
 	if (page > (AMEBAD_START_SECOTR + AMEBAD_NSECTORS)) {
 		printf("Invalid page number\n");
 		return -EFAULT;
@@ -128,11 +129,13 @@ static ssize_t amebad_erase_page(size_t page)
 	/* do erase */
 	address = page * CONFIG_AMEBAD_FLASH_BLOCK_SIZE;
 	flash_erase_sector(NULL, address);
-
+	ret = flash_erase_verify(address);
 	/* Restore IRQs */
 	irqrestore(irqs);
-
-	return OK;
+	if (ret != OK) {
+		ret = -EIO;
+	}
+	return ret;
 }
 
 static int amebad_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
@@ -167,7 +170,7 @@ static ssize_t amebad_flash_write(size_t addr, const void *buf, size_t length)
 
 	/* Disable IRQs while erasing sector */
 	irqs = irqsave();
-	result = flash_stream_write(NULL, addr, length, buf);
+	result = flash_stream_write(NULL, addr, length, (u8 *)buf);
 
 	/* Restore IRQs */
 	irqrestore(irqs);
@@ -210,7 +213,7 @@ ssize_t amebad_flash_read(size_t addr, void *buf, size_t length)
 		if (aligned_read_buf == NULL) {
 			ret = -EPERM;
 		} else {
-			result = flash_stream_read(NULL, (addr & 0xfffffffc), length + offset, (char *)aligned_read_buf);
+			result = flash_stream_read(NULL, (addr & 0xfffffffc), length + offset, (u8 *)aligned_read_buf);
 
 			if (result < 0) {
 				ret = -EIO;
@@ -267,12 +270,17 @@ static ssize_t amebad_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyte
  * Name: amebad_write
  ************************************************************************************/
 
-#if defined(CONFIG_MTD_BYTE_WRITE)
+#ifdef CONFIG_MTD_BYTE_WRITE
 static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR const uint8_t *buffer)
 {
-	FAR struct amebad_dev_s *priv = (FAR struct mtd_dev_s *)dev;
+	size_t addr;
+	ssize_t result;
+	addr = CONFIG_AMEBAD_FLASH_BASE + offset;
+	result = amebad_flash_write(addr, buffer, nbytes);
+	return result < 0 ? result : nbytes;
 }
 #endif
+
 
 /************************************************************************************
  * Name: amebad_ioctl
@@ -281,7 +289,7 @@ static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
 static int amebad_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;			/* Assume good command with bad parameters */
-	FAR struct amebad_dev_s *priv = (FAR struct mtd_dev_s *)dev;
+	FAR struct amebad_dev_s *priv = (FAR struct amebad_dev_s *)dev;
 
 	switch (cmd) {
 	case MTDIOC_GEOMETRY: {

@@ -40,8 +40,9 @@ _calc_performance(st_performance *p, st_elapsed_time *duration)
 	stat->end.second = end->second;
 	stat->end.micro = end->micro;
 
-	printf("TEST#%d\tstart %u end %u, elapsed %u us\n", stat->count, start_time, end_time, elapsed);
-	
+	printf(COLOR_RESULT "TEST#%d\tstart %u end %u, elapsed %u us\n" COLOR_WHITE,
+		   stat->count, start_time, end_time, elapsed);
+
 	stat->sum += elapsed;
 	if (stat->count == 1) {
 		stat->max = elapsed;
@@ -97,7 +98,12 @@ _run_smoke(st_smoke *smoke)
 	st_tc_result ret;
 	int perf_result;
 	st_func *unit = smoke->func;
-	printf("Repeat size: %d\n", smoke->repeat_size);
+	printf(COLOR_RESULT);
+	printf("+--------------------------------------------------\n");
+	printf("|\tRun Stress test " "\n");
+	printf("|\tRepeat size: %d\n", smoke->repeat_size);
+	printf("+--------------------------------------------------\n");
+	printf(COLOR_WHITE);
 	for (; cnt < smoke->repeat_size; cnt++) {
 		if (unit->setup) {
 			ret = unit->setup(NULL);

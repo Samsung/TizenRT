@@ -2,8 +2,8 @@
 *
 * Copyright 2016 Samsung Electronics All Rights Reserved.
 *
-* File Name : ramdump_tool.c
-* Description: Receive Ramdump using UART
+* File Name : dump_tool.c
+* Description: Receive RAM and/or Userfs dump using UART
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,81 +19,21 @@
 *
 ******************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <unistd.h>
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
-#define HANDSHAKE_STRING	"RAMDUMP"
-#define HANDSHAKE_STR_LEN_MAX	(7)
-#define BINFILE_NAME_SIZE	(40)
-#define KB_CHECK_COUNT		(16 * 1024)
+#include "dump_tool.h"
 
-#define TTYPATH_LEN		25
-#define TTYTYPE_LEN		7
+/****************************************************************************
+ * Private Variables
+ ****************************************************************************/
 
-typedef unsigned int uint32_t;
-typedef unsigned char uint8_t;
+rd_regionx *mem_info = NULL;
 
-/* Ramdump initialization data */
-uint32_t  number_of_regions;
-typedef struct {
-	int rd_regionx_idx;
-	uint32_t rd_regionx_start;
-	uint32_t rd_regionx_size;
-	int rd_regionx_mark;
-} rd_regionx;
-rd_regionx *mem_info;
-
-static int do_handshake(int dev_fd)
-{
-	int ret;
-	char ack;
-	char host_handshake[] = HANDSHAKE_STRING;
-
-	/* Send handshake command to TARGET */
-	ret = write(dev_fd, host_handshake, strlen(host_handshake));
-	if (ret != strlen(host_handshake)) {
-		printf("Sending handshake failed, ret = %d\n", ret);
-		return -1;
-	}
-
-	/* Read ACK from TARGET */
-	ret = read(dev_fd, &ack, sizeof(ack));
-	if (ret != 1) {
-		printf("Receiving handshake failed, ret = %d\n", ret);
-		return -1;
-	}
-
-	/* Check ACK */
-	if (ack != 'A') {
-		printf("Wrong Target Handshake, ack = %c\n", ack);
-		return -1;
-	}
-
-	printf("Target Handshake successful %s\n", __func__);
-
-	return 0;
-}
-
-static int b_read(int fd, uint8_t *buf, int size)
-{
-	int i;
-	int ret;
-
-	for (i = 0; i < size; i++) {
-		ret = read(fd, buf + i, 1);
-		if (ret != 1) {
-			return i;
-		}
-	}
-
-	return i;
-}
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 int ramdump_info_init(int dev_fd)
 {
@@ -121,21 +61,21 @@ int ramdump_info_init(int dev_fd)
 	for (i = 2; i <= number_of_regions + 1; i++) {
 		ret = b_read(dev_fd, (uint8_t *)&mem_address, 4);
 		if (ret != 4) {
-			printf("Receiving address failed, ret = %d\n", ret);
+			printf("Receiving ram region address failed, ret = %d\n", ret);
 			return -1;
 		}
 		mem_info[i].rd_regionx_start = mem_address;
 
 		ret = b_read(dev_fd, (uint8_t *)&mem_size, 4);
 		if (ret != 4) {
-			printf("Receiving size failed, ret = %d\n", ret);
+			printf("Receiving ram region size failed, ret = %d\n", ret);
 			return -1;
 		}
 		mem_info[i].rd_regionx_size = mem_size;
 
 		ret = read(dev_fd, &c, 1);
 		if (ret != 1) {
-			printf("Receiving size failed, ret = %d\n", ret);
+			printf("Receiving ram region index failed, ret = %d\n", ret);
 			return -1;
 		}
 		mem_info[i].rd_regionx_idx = c;
@@ -144,27 +84,11 @@ int ramdump_info_init(int dev_fd)
 	return 0;
 }
 
-static int send_region_info(int dev_fd, char *host_region)
-{
-	int ret;
-
-	/* Send region info to TARGET */
-	ret = write(dev_fd, host_region, 1);
-	if (ret != 1) {
-		printf("Sending region info failed, ret = %d\n", ret);
-		return -1;
-	}
-
-	return 0;
-}
-
 static int ramdump_recv(int dev_fd)
 {
-	char buf;
 	int i;
 	int ret;
 	int index;
-	int count = 0;
 	int regions_to_dump = 0;
 	uint32_t ramdump_size;
 	char ramdump_region[2] = { '\0' };
@@ -228,7 +152,7 @@ scan_input:
 		printf("Receiving number of regions to be dumped failed, ret = %d\n", ret);
 		return -1;
 	}
-	printf("\nNo. of Regions to be dumped received: %s\n", __func__);
+	printf("\n%s: No. of Regions to be dumped received\n", __func__);
 	printf("\nReceiving ramdump......\n\n");
 
 	/* Dump data region wise */
@@ -261,76 +185,62 @@ scan_input:
 				return -1;
 			}
 
-			printf("[>");
-			fflush(stdout);
-
-			/* Dump data of Memory REGIONx  */
-			ramdump_size =  mem_info[index].rd_regionx_size;
-			while (ramdump_size) {
-				ret = read(dev_fd, &buf, 1);
-				if (ret != 1) {
-					printf("Receiving ramdump %dTH byte failed, ret = %d\n", count, ret);
-					fclose(bin_fp);
-					return -1;
-				}
-
-				ret = fwrite(&buf, 1, 1, bin_fp);
-				if (ret != 1) {
-					printf("Writing ramdump %dTH byte failed, ret = %d\n", count, ret);
-					fclose(bin_fp);
-					return -1;
-				}
-
-				count++;
-				ramdump_size--;
-
-				if ((count % (KB_CHECK_COUNT)) == 0) {
-					printf("\b=>");
-					fflush(stdout);
-				}
-			}
-			printf("]\n");
+			ramdump_size = mem_info[index].rd_regionx_size;
+			ret = get_dump(dev_fd, bin_fp, ramdump_size);
 			fclose(bin_fp);
+			if (ret != 0) {
+				printf("Unable to receive complete ramdump!!!\n");
+				return -1;
+			}
 		}
 	}
 	return 0;
 
 }
 
-static int configure_tty(int tty_fd)
+static int fsdump_recv(int dev_fd)
 {
-	struct termios ttyio;
-	memset(&ttyio, 0, sizeof(ttyio));
+	int ret;
+	uint32_t smartfs_addr;
+	uint32_t smartfs_size;
+	char fs_bin[BINFILE_NAME_SIZE] = { '\0' };
+	FILE *fs_fp;
 
-	fcntl(tty_fd, F_SETFL, 0);
-	tcgetattr(tty_fd, &ttyio);
+	/* Receive Userfs flash partition start address and size */
+	ret = b_read(dev_fd, (uint8_t *)&smartfs_addr, 4);
+	if (ret != 4) {
+		printf("Receiving Userfs start address failed, ret = %d\n", ret);
+		return -1;
+	}
 
-	/* set baudrate */
-	cfsetispeed(&ttyio, B115200);
-	cfsetospeed(&ttyio, B115200);
-	ttyio.c_cflag |= (CLOCAL | CREAD);
+	ret = b_read(dev_fd, (uint8_t *)&smartfs_size, 4);
+	if (ret != 4) {
+		printf("Receiving Userfs size failed, ret = %d\n", ret);
+		return -1;
+	}
 
-	cfmakeraw(&ttyio);
+	printf("\n=========================================================================\n");
+	printf("Filesystem start address = %08x, filesystem size = %d\n", smartfs_addr, smartfs_size);
+	printf("=========================================================================\n");
 
-	ttyio.c_cflag &= ~CSTOPB;
-	ttyio.c_cflag &= ~(PARENB | PARODD);
-	ttyio.c_cflag &= ~CSIZE;
-	ttyio.c_cflag &= ~CRTSCTS;
-	ttyio.c_cflag |= CS8;
+	/* Create filesystem dump binary file name */
+	snprintf(fs_bin, BINFILE_NAME_SIZE, "fsdump_0x%08x_0x%08x.bin", smartfs_addr, (smartfs_addr + smartfs_size));
 
-	ttyio.c_iflag &= ~ICRNL;
-	ttyio.c_iflag &= ~INLCR;
-	ttyio.c_oflag &= ~OCRNL;
-	ttyio.c_oflag &= ~ONLCR;
-	ttyio.c_lflag &= ~ICANON;
-	ttyio.c_lflag &= ~ECHO;
+	printf("\nReceiving file system dump.....\n");
 
-	ttyio.c_cc[VMIN] = 1;
-	ttyio.c_cc[VTIME] = 5;
+	fs_fp = fopen(fs_bin, "w");
+	if (fs_fp == NULL) {
+		printf("%s create failed\n", fs_bin);
+		return -1;
+	}
 
-	tcflush(tty_fd, TCIOFLUSH);
+	ret = get_dump(dev_fd, fs_fp, smartfs_size);
+	fclose(fs_fp);
+	if (ret != 0) {
+		printf("Unable to receive complete FS Dump!!!\n");
+		return -1;
+	}
 
-	tcsetattr(tty_fd, TCSANOW, &ttyio);
 	return 0;
 }
 
@@ -342,13 +252,17 @@ int main(int argc, char *argv[])
 	char *dev_file;
 	char tty_path[TTYPATH_LEN] = {0, };
 	char tty_type[TTYTYPE_LEN] = {0, };
+	int choice;
+	char c;
+	char handshake_string[HANDSHAKE_STR_LEN_MAX];
+	int DUMP_FLAGS;
 
 	ret = 1;
 
 	if (argc < 2) {
-		printf("Usage: ./ramdump <device>\n");
-		printf("Ex   : ./ramdump /dev/ttyUSB1   or\n");
-		printf("       ./ramdump /dev/ttyACM0\n");
+		printf("Usage: ./dump_tool.sh <device>\n");
+		printf("Ex   : ./dump_tool.sh /dev/ttyUSB1   or\n");
+		printf("       ./dump_tool.sh /dev/ttyACM0\n");
 		return -1;
 	}
 
@@ -389,30 +303,106 @@ int main(int argc, char *argv[])
 		goto tty_lock_err;
 	}
 
-	if (do_handshake(dev_fd) != 0) {
-		printf("Target Handshake Failed\n");
-		goto handshake_err;
+	printf("Target device locked and ready to DUMP!!!\n");
+
+	while (1) {
+		printf("Choose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. Exit Dump Tool\n5. Reboot TARGET Device\n");
+		fflush(stdout);
+		scanf("%d", &choice);
+		getchar();
+
+		DUMP_FLAGS = CLEAR_DUMP_FLAGS;
+
+		switch (choice) {
+		case 1:
+			DUMP_FLAGS |= RAMDUMP_FLAG;
+			break;
+		case 2:
+			DUMP_FLAGS |= USERFSDUMP_FLAG;
+			break;
+		case 3:
+			DUMP_FLAGS |= RAMDUMP_FLAG;
+			DUMP_FLAGS |= USERFSDUMP_FLAG;
+			break;
+		case 4:
+			DUMP_FLAGS |= EXIT_TOOL_FLAG;
+			break;
+		case 5:
+			DUMP_FLAGS |= REBOOT_DEVICE_FLAG;
+			break;
+		default:
+			printf("Invalid Input\n");
+			continue;
+		}
+
+		if (DUMP_FLAGS & REBOOT_DEVICE_FLAG) {
+			printf("NOTE: - CONFIG_BOARD_ASSERT_AUTORESET needs to be enabled to reboot TARGET Device after a crash\n");
+			printf("Handsake for rebooting device may fail since device reboots before sending acknowledgement\n");
+			/* Send handshake signal for rebooting TARGET device */
+			strncpy(handshake_string, TARGET_REBOOT_STRING, HANDSHAKE_STR_LEN_MAX);
+			if (do_handshake(dev_fd, handshake_string) != 0) {
+				printf("Target Handshake Failed\n");
+			}
+			break;
+		}
+
+		if (DUMP_FLAGS & EXIT_TOOL_FLAG) {
+			break;
+		}
+
+		if (DUMP_FLAGS & RAMDUMP_FLAG) {
+			printf("DUMPING RAM CONTENTS\n");
+			fflush(stdout);
+			/* Handshake for synchronization before RAMDUMP */
+			strncpy(handshake_string, RAMDUMP_HANDSHAKE_STRING, HANDSHAKE_STR_LEN_MAX);
+			if (do_handshake(dev_fd, handshake_string) != 0) {
+				printf("Target Handshake Failed\n");
+				goto handshake_err;
+			}
+
+			if (ramdump_info_init(dev_fd) != 0) {
+				printf("Ramdump initialization failed\n");
+				goto init_err;
+			}
+
+			if (ramdump_recv(dev_fd) != 0) {
+				printf("Ramdump receive failed\n");
+				goto dump_err;
+			}
+
+			printf("Ramdump received successfully..!\n");
+			fflush(stdout);
+		}
+
+		if (DUMP_FLAGS & USERFSDUMP_FLAG) {
+			printf("\nDUMPING USERFS CONTENTS\n");
+			fflush(stdout);
+			/* Handshake for synchronization before FS Dump */
+			strncpy(handshake_string, FSDUMP_HANDSHAKE_STRING, HANDSHAKE_STR_LEN_MAX);
+			if (do_handshake(dev_fd, handshake_string) != 0) {
+				printf("Target Handshake Failed\n");
+				goto handshake_err;
+			}
+
+			ret = fsdump_recv(dev_fd);
+			if (ret != 0) {
+				printf("Filesystem dump reception failed, ret: %d\n", ret);
+				goto dump_err;
+			}
+			printf("\nFilesystem Dump received successfully\n");
+			fflush(stdout);
+		}
 	}
 
-	printf("Target entered to ramdump mode\n");
-
-	if (ramdump_info_init(dev_fd) != 0) {
-		printf("Ramdump initialization failed\n");
-		goto init_err;
-	}
-
-	if (ramdump_recv(dev_fd) != 0) {
-		printf("Ramdump receive failed\n");
-		goto ramdump_err;
-	}
-
-	printf("Ramdump received successfully..!\n");
+	printf("Dump tool exits after successful operation\n");
 	ret = 0;
 
 init_err:
-	free(mem_info);
-ramdump_err:
+dump_err:
 handshake_err:
+	if (mem_info) {
+		free(mem_info);
+	}
 dl_mode_err:
 dl_cmd_err:
 	remove(tty_path);

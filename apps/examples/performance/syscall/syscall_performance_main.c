@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sched.h>
 #include <errno.h>
 #include <time.h>
 #include <tinyara/time.h>
@@ -34,7 +35,7 @@
 #define TEST_TIMEDSEND_NMSGS	3
 #define SIGEV_SIGNAL	1		/* Notify via signal */
 
-int sig_no = SIGRTMIN;
+static int sig_no = SIGRTMIN;
 
 /*
  * measure_performance : variadic macro for time measurements for function calls
@@ -178,25 +179,39 @@ static void syscall_perf_timer_settime(void)
 int syscall_performance_main(void)
 {
 	/* System Call 0 */
+	sched_lock();
 	syscall_perf_clearenv();
+	sched_unlock();
 
 	/* System Call 1 */
+	sched_lock();
 	syscall_perf_unsetenv();
+	sched_unlock();
 
 	/* System Call 2 */
+	sched_lock();
 	syscall_perf_clock_getres();
+	sched_unlock();
 
 	/* System Call 3 */
+	sched_lock();
 	syscall_perf_setenv();
+	sched_unlock();
 
 	/* System Call 4 */
+	sched_lock();
 	syscall_perf_timer_settime();
+	sched_unlock();
 
 	/* System Call 5 */
+	sched_lock();
 	syscall_perf_mq_timedsend();
+	sched_unlock();
 
 	/* System Call 6 */
+	sched_lock();
 	syscall_perf_mq_open();
+	sched_unlock();
 
 	return 0;
 }

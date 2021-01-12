@@ -30,6 +30,7 @@
 #include "wifi_manager_state.h"
 #include "wifi_manager_cb.h"
 #include "wifi_manager_info.h"
+#include "wifi_manager_profile.h"
 
 #ifdef CONFIG_WIFIMGR_INTERNAL_AUTOCONNECT
 #define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_INTERVAL, 77, 128}
@@ -78,14 +79,6 @@ static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn
 		*conn = AP_RECONNECTING;
 		*mode = STA_MODE;
 		break;
-	case WIFIMGR_STA_RECONNECTING:
-		*conn = AP_RECONNECTING;
-		*mode = STA_MODE;
-		break;
-	case WIFIMGR_STA_CONNECT_CANCEL:
-		*conn = AP_DISCONNECTED;
-		*mode = STA_MODE;
-		break;
 	case WIFIMGR_SOFTAP:
 		// Todo: wifi manager doesn't provide join info in softap *mode
 		// so set unknown state to *conn;
@@ -93,10 +86,19 @@ static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn
 		*mode = SOFTAP_MODE;
 		break;
 	default:
-		WM_LOG_ERROR("[err] invalid state\n");
+		WM_LOG_ERROR("[WM][err] invalid state\n");
 		break;
 	}
 }
+
+#define RETURN_RESULT(res, msg)					\
+	do {										\
+		if (res < 0) {							\
+			return WIFI_MANAGER_FAIL;			\
+		} else {								\
+			return msg.result;					\
+		}										\
+	} while (0)
 
 /**
  * public APIs
@@ -108,10 +110,10 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
-	wifimgr_msg_s msg = {EVT_INIT_CMD, (void *)wmcb, NULL};
-	wifi_manager_result_e res = wifimgr_post_message(&msg);
+	wifimgr_msg_s msg = {EVT_INIT_CMD, WIFI_MANAGER_FAIL, (void *)wmcb, NULL};
+	int res = wifimgr_post_message(&msg);
 
-	return res;
+	RETURN_RESULT(res, msg);
 }
 
 
@@ -119,13 +121,22 @@ wifi_manager_result_e wifi_manager_deinit(void)
 {
 	sem_t signal;
 	sem_init(&signal, 0, 0);
-	wifimgr_msg_s msg = {EVT_DEINIT_CMD, NULL, &signal};
+	wifimgr_msg_s msg = {EVT_DEINIT_CMD, WIFI_MANAGER_FAIL, NULL, &signal};
 
-	wifi_manager_result_e res = wifimgr_post_message(&msg);
+	int res = wifimgr_post_message(&msg);
+	if (res < 0 || msg.result != WIFI_MANAGER_SUCCESS) {
+		WM_LOG_ERROR("[WM] post message fail %d %d%s:%d\n", res, msg.result, __FUNCTION__, __LINE__);
+		sem_destroy(msg.signal);
+		if (res < 0) {
+			return WIFI_MANAGER_FAIL;
+		}
+		return msg.result;
+	}
 	// if wifi is connected state. then it should wait until it disconnects to AP
 	sem_wait(msg.signal);
 	sem_destroy(msg.signal);
-	return res;
+
+	return WIFI_MANAGER_SUCCESS;
 }
 
 
@@ -143,78 +154,82 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 	sem_t signal;
 	sem_init(&signal, 0, 0);
-	wifimgr_msg_s msg = {EVT_SET_STA_CMD, NULL, &signal};
+	wifimgr_msg_s msg = {EVT_SET_STA_CMD, WIFI_MANAGER_FAIL, NULL, &signal};
 	if (mode == SOFTAP_MODE) {
 		msg.event = EVT_SET_SOFTAP_CMD;
 		msg.param = (void *)config;
 	}
 
-	wifi_manager_result_e res = wifimgr_post_message(&msg);
+	int res = wifimgr_post_message(&msg);
+	if (res < 0 || msg.result != WIFI_MANAGER_SUCCESS) {
+		sem_destroy(msg.signal);
+		if (res < 0) {
+			return WIFI_MANAGER_FAIL;
+		}
+		return msg.result;
+	}
 	// if wifi is connected state. then it should wait until it disconnects to AP
 	sem_wait(msg.signal);
+	sem_destroy(msg.signal);
 
-	return res;
+	return WIFI_MANAGER_SUCCESS;
 }
 
 
 wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *config,
 													 wifi_manager_reconnect_config_s *conn_config)
 {
-	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
 	if (!config || !conn_config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
 	WIFIMGR_CHECK_AP_CONFIG(config);
 	_wifimgr_conn_info_msg_s conninfo = {config, conn_config};
-	wifimgr_msg_s msg = {EVT_CONNECT_CMD, &conninfo, NULL};
+	wifimgr_msg_s msg = {EVT_CONNECT_CMD, WIFI_MANAGER_FAIL, &conninfo, NULL};
 
-	wret = wifimgr_post_message(&msg);
+	int res = wifimgr_post_message(&msg);
 
-	return wret;
+	RETURN_RESULT(res, msg);
 }
 
 
 wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 {
-	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
 	wifi_manager_reconnect_config_s conn_config = WIFIMGR_DEFAULT_CONN_CONFIG;
-	wret = wifi_manager_connect_ap_config(config, &conn_config);
-
-	return wret;
+	return wifi_manager_connect_ap_config(config, &conn_config);
 }
 
 
 wifi_manager_result_e wifi_manager_disconnect_ap(void)
 {
-	wifimgr_msg_s msg = {EVT_DISCONNECT_CMD, NULL, NULL};
-	wifi_manager_result_e wret = wifimgr_post_message(&msg);
+	wifimgr_msg_s msg = {EVT_DISCONNECT_CMD, WIFI_MANAGER_FAIL, NULL, NULL};
+	int res = wifimgr_post_message(&msg);
 
-	return wret;
+	RETURN_RESULT(res, msg);
 }
 
 
 wifi_manager_result_e wifi_manager_scan_ap(void)
 {
-	wifimgr_msg_s msg = {EVT_SCAN_CMD, NULL, NULL};
-	wifi_manager_result_e wret = wifimgr_post_message(&msg);
+	wifimgr_msg_s msg = {EVT_SCAN_CMD, WIFI_MANAGER_FAIL, NULL, NULL};
+	int res = wifimgr_post_message(&msg);
 
-	return wret;
+	RETURN_RESULT(res, msg);
 }
 
 wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *config)
 {
-	wifimgr_msg_s msg = {EVT_SCAN_CMD, config, NULL};
-	wifi_manager_result_e wret = wifimgr_post_message(&msg);
+	wifimgr_msg_s msg = {EVT_SCAN_CMD, WIFI_MANAGER_FAIL, config, NULL};
+	int res = wifimgr_post_message(&msg);
 
-	return wret;
+	RETURN_RESULT(res, msg);
 }
-
-
 
 /**
  * Wi-Fi Stats
@@ -228,8 +243,8 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 
 	// get ip address
 	struct in_addr ip_ref;
-	wifi_manager_result_e wret = dhcpc_fetch_ipaddr(&ip_ref);
-	if (wret != WIFI_MANAGER_SUCCESS) {
+	wifi_manager_result_e res = dhcpc_fetch_ipaddr(&ip_ref);
+	if (res != WIFI_MANAGER_SUCCESS) {
 		WM_LOG_ERROR("[WM] T%d Failed to fetch ip4 address\n", getpid());
 		return WIFI_MANAGER_FAIL;
 	}
@@ -303,30 +318,26 @@ wifi_manager_result_e wifi_manager_unregister_cb(wifi_manager_cb_s *wmcb)
 #ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 {
-	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 
 	WIFIMGR_CHECK_AP_CONFIG(config);
 	WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config, 0), "wifimgr save config fail\n", WIFI_MANAGER_FAIL);
-	wret = WIFI_MANAGER_SUCCESS;
 
-	return wret;
+	return WIFI_MANAGER_SUCCESS;
 }
 
 
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
 {
-	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 0), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
-	wret = WIFI_MANAGER_SUCCESS;
 
-	return wret;
+	return WIFI_MANAGER_SUCCESS;
 }
 
 
@@ -339,14 +350,12 @@ wifi_manager_result_e wifi_manager_remove_config(void)
 
 wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config)
 {
-	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 	WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 1), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
-	wret = WIFI_MANAGER_SUCCESS;
 
-	return wret;
+	return WIFI_MANAGER_SUCCESS;
 }
 #else
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
@@ -372,5 +381,3 @@ wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s
 	return WIFI_MANAGER_NO_API;
 }
 #endif // CONFIG_WIFI_MANAGER_SAVE_CONFIG
-
-
