@@ -64,10 +64,6 @@
 #define HEAPINFO_INT INT16_MAX
 #define HEAPINFO_NONSCHED (INT16_MAX - 1)
 
-#if CONFIG_KMM_NHEAPS > 1
-heapinfo_total_info_t total_info;
-#endif
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -189,20 +185,6 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	}
 #undef region
 
-#if CONFIG_KMM_NHEAPS > 1
-	total_info.total_heap_size += heap->mm_heapsize;
-	total_info.cur_free += fordblks;
-	if (total_info.largest_free_size < mxordblk) {
-		total_info.largest_free_size = mxordblk;
-	}
-	total_info.cur_dead_thread += nonsched_resource;
-	total_info.sum_of_stacks += stack_resource;
-	total_info.sum_of_heaps += heap_resource - (heap->mm_nregions * SIZEOF_MM_ALLOCNODE);
-
-	if (mode == HEAPINFO_SIMPLE) {
-		return;
-	}
-#endif
 	printf("\n****************************************************************\n");
 	printf("     Summary of Heap Usages (Size in Bytes)\n");
 	printf("****************************************************************\n");
