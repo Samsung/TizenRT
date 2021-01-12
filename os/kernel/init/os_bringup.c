@@ -78,8 +78,8 @@
 #ifdef CONFIG_SCHED_CPULOAD
 #include <tinyara/cpuload.h>
 #endif
-#ifdef CONFIG_ENABLE_HEAPINFO
-#include <tinyara/heapinfo_drv.h>
+#ifdef CONFIG_MMINFO
+#include <tinyara/mminfo.h>
 #endif
 #ifdef CONFIG_TASK_MANAGER
 #include <tinyara/task_manager_drv.h>
