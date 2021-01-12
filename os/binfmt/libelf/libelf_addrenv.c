@@ -126,6 +126,7 @@ static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 		}
 	}
 
+#ifdef CONFIG_ARMV7M_MPU
 	/* ARMV7M requires addresses to be aligned to the size of the region.
 	 * In this case, we align the first region to the size of first region.
 	 * Since the regions are arranged in descending order of sizes and each
@@ -133,6 +134,12 @@ static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 	 * aligned to their size.
 	 */
 	*allocs[0] = (uintptr_t)kmm_memalign_at(CONFIG_HEAP_INDEX_LOADED_APP, sizes[0], totalsize);
+#elif CONFIG_ARMV8M_MPU
+	/* ARMV8M requires addresses to be aligned to the power of two. */
+	*allocs[0] = (uintptr_t)kmm_memalign_at(CONFIG_HEAP_INDEX_LOADED_APP, MPU_ALIGNMENT_BYTES, totalsize);
+#else
+#error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
+#endif
 	if (*allocs[0] == (uintptr_t)NULL) {
 		return -ENOMEM;
 	}
