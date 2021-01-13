@@ -134,8 +134,11 @@ endif
 CHIP_CSRCS += s5j_idle.c
 CHIP_CSRCS += s5j_boot.c s5j_irq.c
 CHIP_CSRCS += s5j_serial.c
-CHIP_CSRCS += s5j_mac.c
 CHIP_CSRCS += s5j_systemreset.c
+
+ifeq ($(CONFIG_SCSC_WLAN),y)
+CHIP_CSRCS += s5j_mac.c
+endif
 
 ifeq ($(CONFIG_S5J_WATCHDOG),y)
 CHIP_CSRCS += s5j_watchdog.c
