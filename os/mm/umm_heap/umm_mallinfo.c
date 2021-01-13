@@ -116,12 +116,12 @@ int mallinfo(struct mallinfo *info)
 	mm_mallinfo(&BASE_HEAP[0], info);
 #else
 	int heap_idx;
-
+#if CONFIG_KMM_NHEAPS > 1
 	if (!info) {
 		mdbg("info is NULL\n");
 		return ERROR;
 	}
-#if CONFIG_KMM_NHEAPS > 1
+
 	info->arena = 0;
 	info->fordblks = 0;
 	info->mxordblk = 0;

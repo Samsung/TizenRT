@@ -113,11 +113,12 @@ int kmm_mallinfo(struct mallinfo *info)
 {
 	int kheap_idx;
 	struct mm_heap_s *kheap = kmm_get_heap();
+#if CONFIG_KMM_NHEAPS > 1
 	if (!info) {
 		mdbg("info is NULL\n");
 		return ERROR;
 	}
-#if CONFIG_KMM_NHEAPS > 1
+
 	info->arena = 0;
 	info->fordblks = 0;
 	info->mxordblk = 0;
