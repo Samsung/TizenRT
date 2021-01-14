@@ -121,12 +121,14 @@ void board_i2c_initialize(void)
 
 	snprintf(path, sizeof(path), "/dev/i2c-%d", bus);
 	i2c = up_i2cinitialize(bus);
+#ifdef CONFIG_I2C_USERIO
 	if (i2c) {
 		ret = i2c_uioregister(path, i2c);
 		if (ret < 0) {
 			up_i2cuninitialize(i2c);
 		}
 	}
+#endif
 #endif
 }
 

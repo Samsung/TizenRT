@@ -615,7 +615,6 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout)
 {
 	struct amebad_i2s_s *priv = (struct amebad_i2s_s *)dev;
-	int* ptx_buf;
 
 	DEBUGASSERT(priv && apb);
 
@@ -683,7 +682,6 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 {
 	struct amebad_i2s_s *priv = (struct amebad_i2s_s *)data;
-	i2s_t *obj = &priv->i2s_object;
 
 	int result = OK;
 	i2s_txdma_callback(priv, result);
@@ -1469,6 +1467,8 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 {
 	struct amebad_i2s_s *priv = (struct amebad_i2s_s *)dev;
+	irqstate_t flags;
+	struct amebad_buffer_s *bfcontainer;
 	DEBUGASSERT(priv);
 
 	i2s_exclsem_take(priv);
@@ -1476,12 +1476,56 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX) {
 		i2s_disable(&priv->i2s_object);
+		while (sq_peek(&priv->tx.pend) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct amebad_buffer_s *)sq_remfirst(&priv->tx.pend);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_tx_free(priv, bfcontainer);
+		}
+
+		while (sq_peek(&priv->tx.act) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct amebad_buffer_s *)sq_remfirst(&priv->tx.act);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_tx_free(priv, bfcontainer);
+		}
+
+		while (sq_peek(&priv->tx.done) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct amebad_buffer_s *)sq_remfirst(&priv->tx.done);
+			irqrestore(flags);
+			i2s_buf_tx_free(priv, bfcontainer);
+		}
 	}
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX) {
 		i2s_disable(&priv->i2s_object);
+		while (sq_peek(&priv->rx.pend) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct amebad_buffer_s *)sq_remfirst(&priv->rx.pend);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_rx_free(priv, bfcontainer);
+		}
+
+		while (sq_peek(&priv->rx.act) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct amebad_buffer_s *)sq_remfirst(&priv->rx.act);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_rx_free(priv, bfcontainer);
+		}
+
+		while (sq_peek(&priv->rx.done) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct amebad_buffer_s *)sq_remfirst(&priv->rx.done);
+			irqrestore(flags);
+			i2s_buf_rx_free(priv, bfcontainer);
+		}
 	}
 #endif
 
@@ -1736,8 +1780,8 @@ struct i2s_dev_s *amebad_i2s_initialize(uint16_t port)
 	//i2s_set_dma_buffer(&priv->i2s_object, priv->i2s_tx_buf, priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
 
 	/* configures IRQ */
-	priv->rx_isr_handler = &i2s_transfer_rx_handleirq;
-	priv->tx_isr_handler = &i2s_transfer_tx_handleirq;
+	priv->rx_isr_handler = (i2s_irq_handler)&i2s_transfer_rx_handleirq;
+	priv->tx_isr_handler = (i2s_irq_handler)&i2s_transfer_tx_handleirq;
 	ret = amebad_i2s_isr_initialize(priv);
 	if (ret != OK) {
 		i2serr("I2S initialize: isr fails\n");
