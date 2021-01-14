@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2020 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
  ****************************************************************************/
 /****************************************************************************
  *
- *   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2021 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without

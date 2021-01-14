@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2020 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
  ****************************************************************************/
 /****************************************************************************
  *
- *   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2021 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,7 +97,72 @@ volatile bool g_rtc_enabled;
  * Public Functions
  ************************************************************************************/
 
-#ifdef CONFIG_RTC_DRIVER
+#if defined(CONFIG_RTC_DATETIME)
+/****************************************************************************
+ * Name: up_rtc_getdatetime
+ *
+ * Description:
+ *   Get the current date and time from the date/time RTC.  This interface
+ *   is only supported by the date/time RTC hardware implementation.
+ *   It is used to replace the system timer.  It is only used by the RTOS
+ *   during initialization to set up the system time when CONFIG_RTC and
+ *   CONFIG_RTC_DATETIME are selected (and CONFIG_RTC_HIRES is not).
+ *
+ *   NOTE: Some date/time RTC hardware is capability of sub-second accuracy.
+ *   That sub-second accuracy is lost in this interface.  However, since the
+ *   system time is reinitialized on each power-up/reset, there will be no
+ *   timing inaccuracy in the long run.
+ *
+ * Input Parameters:
+ *   tp - The location to return the high resolution time value.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int up_rtc_getdatetime(FAR struct tm *tp)
+{
+	time_t timer;
+	int ret;
+	timer = rtk_rtc_read();
+
+	ret = gmtime_r(&timer, tp);
+	if (ret == 0) return -EOVERFLOW;
+
+	return OK;
+}
+
+#elif defined(CONFIG_RTC_HIRES)
+/****************************************************************************
+ * Name: up_rtc_gettime
+ *
+ * Description:
+ *   Get the current time from the high resolution RTC clock/counter. This
+ *   interface is only supported by the high-resolution RTC/counter hardware
+ *   implementation. It is used to replace the system timer.
+ *
+ * Input Parameters:
+ *   tp - The location to return the high resolution time value.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int up_rtc_gettime(FAR struct timespec *tp)
+{
+	time_t timer;
+	int ret;
+	timer = rtk_rtc_read();
+
+	ret = gmtime_r(&timer, tp);
+	if (ret == 0) return -EOVERFLOW;
+
+	return OK;
+}
+
+#endif
 
 /************************************************************************************
  * Name: up_rtc_time
@@ -119,7 +184,7 @@ volatile bool g_rtc_enabled;
 
 time_t up_rtc_time(void)
 {
-	return rtc_read();
+	return rtk_rtc_read();
 }
 
 /************************************************************************************
@@ -139,12 +204,12 @@ time_t up_rtc_time(void)
 
 int up_rtc_settime(FAR const struct timespec *ts)
 {
-	rtc_write(ts->tv_sec);
+	if (ts) {
+		rtk_rtc_write(ts->tv_sec);
 
-	return OK;
+		return OK;
+	} else return ERROR;
 }
-
-#endif				/* CONFIG_RTC_DRIVER */
 
 /************************************************************************************
  * Logic Common to LPSRTC and HPRTC
@@ -161,7 +226,7 @@ int up_rtc_settime(FAR const struct timespec *ts)
  *   None
  *
  * Returned Value:
- *   Zero (OK) on success; a negated errno on failure
+ *   Zero (OK) on success;
  *
  ************************************************************************************/
 

@@ -218,7 +218,7 @@ int rtc_isenabled(void)
   *              which is to be set.
   * @retval  none
   */
-void rtc_write(time_t t)
+void rtk_rtc_write(time_t t)
 {	
 	/* Convert the time in to a tm*/
 	struct tm *timeinfo = localtime(&t);
@@ -242,7 +242,7 @@ void rtc_write(time_t t)
   * @param  none
   * @retval : The current timestamp in seconds which is calculated from 1970.1.1 00:00:00.
   */
-time_t rtc_read(void)
+time_t rtk_rtc_read(void)
 {
 	time_t t;
 	struct tm tm_temp;

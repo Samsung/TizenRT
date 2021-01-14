@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2020 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
  ****************************************************************************/
 /****************************************************************************
  *
- *   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2021 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -114,6 +114,7 @@ static int amebad_settime(FAR struct rtc_lowerhalf_s *lower, FAR const struct rt
 static int amebad_setalarm(FAR struct rtc_lowerhalf_s *lower, FAR const struct lower_setalarm_s *alarminfo);
 static int amebad_setrelative(FAR struct rtc_lowerhalf_s *lower, FAR const struct lower_setrelative_s *alarminfo);
 static int amebad_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid);
+static alarm_irq_handler amebad_alarm_callback(void);
 #endif
 
 /****************************************************************************
@@ -143,7 +144,7 @@ static struct amebad_lowerhalf_s g_rtc_lowerhalf = {
 	.ops = &g_rtc_ops,
 };
 
-alarm_t g_amebad_alarm;
+static alarm_t g_amebad_alarm;
 
 /****************************************************************************
  * Private Functions
@@ -165,7 +166,7 @@ alarm_t g_amebad_alarm;
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_ALARM
-alarm_irq_handler amebad_alarm_callback(void)
+static alarm_irq_handler amebad_alarm_callback(void)
 {
 	FAR struct amebad_lowerhalf_s *rtc = &g_rtc_lowerhalf;
 
@@ -205,20 +206,24 @@ alarm_irq_handler amebad_alarm_callback(void)
 
 static int amebad_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time *rtctime)
 {
+	FAR struct amebad_lowerhalf_s *rtc;
 	time_t timer;
+	int ret;
 
+	DEBUGASSERT(lower != NULL);
+	rtc = (FAR struct amebad_lowerhalf_s *)lower;
+	sem_wait(&rtc->devsem);
 	/* The resolution of time is only 1 second */
 
 	timer = up_rtc_time();
 
 	/* Convert the one second epoch time to a struct tm */
 
-	if (gmtime_r(&timer, (FAR struct tm *)rtctime) == 0) {
-		int errcode = get_errno();
-		DEBUGASSERT(errcode > 0);
+	ret = gmtime_r(&timer, (FAR struct tm *)rtctime);
 
-		return -errcode;
-	}
+	sem_post(&rtc->devsem);
+
+	if (ret == 0) return -EOVERFLOW;
 
 	return OK;
 }
@@ -360,7 +365,7 @@ static int amebad_setrelative(FAR struct rtc_lowerhalf_s *lower, FAR const struc
 		/* Get the current time in seconds */
 		/* The resolution of time is only 1 second */
 
-		ts.tv_sec = rtc_read(); //up_rtc_time();
+		ts.tv_sec = up_rtc_time();
 		ts.tv_nsec = 0;
 
 		/* Add the seconds offset.  Add one to the number of seconds because
@@ -375,7 +380,7 @@ static int amebad_setrelative(FAR struct rtc_lowerhalf_s *lower, FAR const struc
 		rtc->priv = alarminfo->priv;
 
 		struct rtc_time l_rtctime;
-		if (gmtime_r(&ts.tv_sec, (struct tm *)&l_rtctime) == 0) ret = get_errno();
+		if (gmtime_r(&ts.tv_sec, (struct tm *)&l_rtctime) == 0) ret = -EOVERFLOW;
 
 		/* And set the alarm */
 		g_amebad_alarm.hour = l_rtctime.tm_hour;
@@ -407,8 +412,7 @@ static int amebad_setrelative(FAR struct rtc_lowerhalf_s *lower, FAR const struc
  *   alarminfo - Provided information needed to set the alarm
  *
  * Returned Value:
- *   Zero (OK) is returned on success; a negated errno value is returned
- *   on any failure.
+ *   Zero (OK) is returned on success;
  *
  ****************************************************************************/
 
