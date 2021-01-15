@@ -356,7 +356,6 @@ static int amebad_setrelative(FAR struct rtc_lowerhalf_s *lower, FAR const struc
 
 	ret = sem_wait(&rtc->devsem);
 	if (ret < 0) {
-		printf("ERROR: sem_wait failed: %d\n", ret);
 		return ret;
 	}
 

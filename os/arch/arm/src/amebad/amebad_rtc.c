@@ -97,43 +97,7 @@ volatile bool g_rtc_enabled;
  * Public Functions
  ************************************************************************************/
 
-#if defined(CONFIG_RTC_DATETIME)
-/****************************************************************************
- * Name: up_rtc_getdatetime
- *
- * Description:
- *   Get the current date and time from the date/time RTC.  This interface
- *   is only supported by the date/time RTC hardware implementation.
- *   It is used to replace the system timer.  It is only used by the RTOS
- *   during initialization to set up the system time when CONFIG_RTC and
- *   CONFIG_RTC_DATETIME are selected (and CONFIG_RTC_HIRES is not).
- *
- *   NOTE: Some date/time RTC hardware is capability of sub-second accuracy.
- *   That sub-second accuracy is lost in this interface.  However, since the
- *   system time is reinitialized on each power-up/reset, there will be no
- *   timing inaccuracy in the long run.
- *
- * Input Parameters:
- *   tp - The location to return the high resolution time value.
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno value on failure.
- *
- ****************************************************************************/
-
-int up_rtc_getdatetime(FAR struct tm *tp)
-{
-	time_t timer;
-	int ret;
-	timer = rtk_rtc_read();
-
-	ret = gmtime_r(&timer, tp);
-	if (ret == 0) return -EOVERFLOW;
-
-	return OK;
-}
-
-#elif defined(CONFIG_RTC_HIRES)
+#if defined(CONFIG_RTC_HIRES)
 /****************************************************************************
  * Name: up_rtc_gettime
  *
@@ -157,7 +121,9 @@ int up_rtc_gettime(FAR struct timespec *tp)
 	timer = rtk_rtc_read();
 
 	ret = gmtime_r(&timer, tp);
-	if (ret == 0) return -EOVERFLOW;
+	if (ret == 0) {
+		return -EOVERFLOW;
+	}
 
 	return OK;
 }
@@ -208,7 +174,9 @@ int up_rtc_settime(FAR const struct timespec *ts)
 		rtk_rtc_write(ts->tv_sec);
 
 		return OK;
-	} else return ERROR;
+	} else {
+		return ERROR;
+	}
 }
 
 /************************************************************************************
@@ -236,7 +204,6 @@ int up_rtc_initialize(void)
 	/* Perform RTC initialization */
 
 	rtc_init();
-
 #endif
 
 	g_rtc_enabled = true;
