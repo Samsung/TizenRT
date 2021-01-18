@@ -70,7 +70,7 @@ static ssize_t mminfo_write(FAR struct file *filep, FAR const char *buffer, size
 /************************************************************************************
  * Name: mminfo_ioctl
  *
- * Description: The ioctl method for heapinfo.
+ * Description: The ioctl method for mminfo.
  *
  ************************************************************************************/
 static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
