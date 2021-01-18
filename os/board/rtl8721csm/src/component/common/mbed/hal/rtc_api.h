@@ -87,14 +87,14 @@ int rtc_isenabled(void);
   * @param  none
   * @retval : The current timestamp in seconds which is calculated from 1970.1.1 00:00:00.
   */
-time_t rtc_read(void);
+time_t rtk_rtc_read(void);
 
 /**
   * @brief  Set the specified timestamp in seconds to RTC.
   * @param  t: Seconds from 1970.1.1 00:00:00 to specified data and time which is to be set.
   * @retval  none
   */
-void rtc_write(time_t t);
+void rtk_rtc_write(time_t t);
 
 ///@}
 #if (defined(CONFIG_PLATFORM_8711B) && (CONFIG_PLATFORM_8711B == 1)) || \
