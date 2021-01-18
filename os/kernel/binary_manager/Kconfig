@@ -6,8 +6,8 @@
 config BINARY_MANAGER
 	bool "Enable Binary Manager"
 	default n
-	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE && !DISABLE_MQUEUE && !DISABLE_SIGNAL
-	depends on MTD_FTL && FLASH_PARTITION && MTD_PARTITION_NAMES
+	depends on !DISABLE_MQUEUE && !DISABLE_SIGNAL
+	depends on MTD_FTL && FLASH_PARTITION
 	---help---
 		This is kernel thread which manages binaries.
 		It loads/unloads binaries and recovers any fault occurs in a system.
@@ -29,6 +29,7 @@ config BM_PRIORITY_MIN
 config BINMGR_RECOVERY
 	bool "Enable Recovery Management"
 	default y
+	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE
 	---help---
 		Enable the recovery management.
 		If any fault occurs in a system, it will either restart binary or reboot the system
@@ -37,6 +38,9 @@ config BINMGR_RECOVERY
 config BINMGR_UPDATE
 	bool "Enable Binary Update"
 	default y
+	select BCH
+	select LIB_BOARDCTL
+	select BOARDCTL_RESET
 	---help---
 		Enables Binary Manager Update APIs.
 
