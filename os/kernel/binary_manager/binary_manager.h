@@ -80,7 +80,7 @@
 #define BM_CMNLIB_IDX              0
 
 /* The number of arguments for loader */
-#define LOADER_ARGC               1
+#define LOADER_ARGC                1
 
 #define BINMGR_DEVNAME_FMT         "/dev/mtdblock%d"
 
@@ -144,10 +144,10 @@ typedef struct binmgr_uinfo_s binmgr_uinfo_t;
 
 /* Kernel binary data type in kernel table */
 struct binmgr_kinfo_s {
-	char name[BIN_NAME_MAX];
 	uint8_t inuse_idx;
 	uint32_t part_count;
-	part_info_t part_info[KERNEL_BIN_COUNT];
+	uint32_t part_size[KERNEL_BIN_COUNT];
+	int8_t part_num[KERNEL_BIN_COUNT];
 	float version;
 };
 typedef struct binmgr_kinfo_s binmgr_kinfo_t;

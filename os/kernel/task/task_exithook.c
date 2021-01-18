@@ -70,7 +70,7 @@
 #include "signal/signal.h"
 #include "task/task.h"
 #include "debug/debug.h"
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 #include "binary_manager/binary_manager.h"
 #endif
 
@@ -626,7 +626,7 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 		task_flushstreams(tcb);
 	}
 
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	/* Remove a tcb from binary list */
 	binary_manager_remove_binlist(tcb);
 #endif

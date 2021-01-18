@@ -20,6 +20,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <debug.h>
+#ifdef CONFIG_APP_BINARY_SEPARATION
 #include <string.h>
 #include <queue.h>
 #include <stdint.h>
@@ -30,14 +31,18 @@
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/binfmt/binfmt.h>
 #endif
+#endif
 #include <tinyara/binary_manager.h>
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
 #include "sched/sched.h"
+#endif
 #include "binary_manager/binary_manager.h"
 
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
 /* Kernel version (not implemented, it will be modified) */
 #ifdef CONFIG_VERSION_STRING
 #define KERNEL_VER               atof(CONFIG_VERSION_STRING)
@@ -49,13 +54,52 @@
 /* Binary table, the first data [0] is for Common Library. */
 static binmgr_uinfo_t bin_table[USER_BIN_COUNT + 1];
 static uint32_t g_bin_count;
+#endif
 
 /* Data for Kernel partitions */
 static binmgr_kinfo_t kernel_info;
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/****************************************************************************
+ * Name: partitions_get_kcount
+ *
+ * Description:
+ *	 This function gets the number of registered partitions for kernel.
+ *
+ ****************************************************************************/
+uint32_t binary_manager_get_kcount(void)
+{
+	return kernel_info.part_count;
+}
+
+/****************************************************************************	
+ * Name: binary_manager_get_kdata	
+ *	
+ * Description:	
+ *	 This function gets a kernel data.	
+ *	
+ ****************************************************************************/	
+binmgr_kinfo_t *binary_manager_get_kdata(void)	
+{	
+	return &kernel_info;	
+}
+
+void binary_manager_register_kpart(int part_num, int part_size)
+{
+	if (part_num < 0 || part_size <= 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
+		bmdbg("ERROR: Invalid part info : num %d, size %d\n", part_num, part_size);
+		return;
+	}
+
+	kernel_info.part_size[kernel_info.part_count] = part_size;
+	kernel_info.part_num[kernel_info.part_count] = part_num;
+	kernel_info.part_count++;
+
+	bmvdbg("[KERNEL %d] part num %d size %d\n", kernel_info.part_count, part_num, part_size);
+}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
 /****************************************************************************
  * Name: binary_manager_get_ucount
  *
@@ -69,18 +113,6 @@ uint32_t binary_manager_get_ucount(void)
 }
 
 /****************************************************************************
- * Name: binary_manager_get_kcount
- *
- * Description:
- *	 This function gets the number of partitions for kernel.
- *
- ****************************************************************************/
-uint32_t binary_manager_get_kcount(void)
-{
-	return kernel_info.part_count;
-}
-
-/****************************************************************************
  * Name: binary_manager_get_udata
  *
  * Description:
@@ -90,18 +122,6 @@ uint32_t binary_manager_get_kcount(void)
 binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx)
 {
 	return &bin_table[bin_idx];
-}
-
-/****************************************************************************
- * Name: binary_manager_get_kdata
- *
- * Description:
- *	 This function gets a kernel data.
- *
- ****************************************************************************/
-binmgr_kinfo_t *binary_manager_get_kdata(void)
-{
-	return &kernel_info;
 }
 
 /****************************************************************************
@@ -134,34 +154,6 @@ int binary_manager_register_ubin(char *name, uint32_t version, uint8_t load_prio
 	bmvdbg("[USER %d] %s\n", g_bin_count, BIN_NAME(g_bin_count));
 
 	return g_bin_count;
-}
-
-/****************************************************************************
- * Name: binary_manager_register_kpart
- *
- * Description:
- *	 This function registers partitions of kernel binaries.
- *
- ****************************************************************************/
-void binary_manager_register_kpart(int part_num, int part_size)
-{
-	int part_count;
-
-	if (part_num < 0 || part_size <= 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
-		bmdbg("ERROR: Invalid part info : num %d, size %d\n", part_num, part_size);
-		return;
-	}
-
-	part_count = kernel_info.part_count;
-	if (part_count == 0) {
-		strncpy(kernel_info.name, "kernel", BIN_NAME_MAX);
-		kernel_info.version = KERNEL_VER;
-	}
-	kernel_info.part_info[part_count].part_size = part_size;
-	kernel_info.part_info[part_count].part_num = part_num;
-	kernel_info.part_count++;
-
-	bmvdbg("[KERNEL %d] part num %d size %d\n", part_count, part_num, part_size);
 }
 
 /****************************************************************************
@@ -284,3 +276,4 @@ void binary_manager_clear_bindata(int bin_idx)
 	/* Clear registered callbacks of binary */
 	binary_manager_clear_bin_statecb(bin_idx);
 }
+#endif

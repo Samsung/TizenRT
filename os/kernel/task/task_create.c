@@ -76,7 +76,7 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "task/task.h"
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 #include "binary_manager/binary_manager.h"
 #endif
 
@@ -218,7 +218,7 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	pid = (int)tcb->cmn.pid;
 
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	FAR struct tcb_s *rtcb = this_task();
 	tcb->cmn.group->tg_binidx = rtcb->group->tg_binidx;
 	/* Add tcb to binary thread list */
@@ -288,7 +288,7 @@ errout:
 #ifndef CONFIG_BUILD_KERNEL
 int task_create(FAR const char *name, int priority, int stack_size, main_t entry, FAR char *const argv[])
 {
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	if (BM_PRIORITY_MIN - 1 < priority && priority < BM_PRIORITY_MAX + 1) {
 		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
 		return EPERM;

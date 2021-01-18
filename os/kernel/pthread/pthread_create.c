@@ -80,7 +80,7 @@
 #include "group/group.h"
 #include "clock/clock.h"
 #include "pthread/pthread.h"
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 #include "binary_manager/binary_manager.h"
 #endif
 
@@ -274,7 +274,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		attr = &g_default_pthread_attr;
 	}
 
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	if (BM_PRIORITY_MIN - 1 < attr->priority && attr->priority < BM_PRIORITY_MAX + 1) {
 		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", attr->priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
 		return EPERM;
@@ -471,7 +471,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 			ret = EINVAL;
 		}
 
-#ifdef CONFIG_BINARY_MANAGER
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 		/* Add tcb to binary thread list */
 		binary_manager_add_binlist(&ptcb->cmn);
 #endif
