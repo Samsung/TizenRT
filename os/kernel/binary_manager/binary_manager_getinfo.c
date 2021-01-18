@@ -22,17 +22,18 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <debug.h>
+#include <string.h>
+#ifdef CONFIG_APP_BINARY_SEPARATION
 #include <errno.h>
-#include <debug.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <dirent.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
+#endif
 
 #include <tinyara/binary_manager.h>
 
@@ -45,6 +46,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
 /****************************************************************************
  * Name: binary_manager_get_index_with_name
  *
@@ -169,6 +171,7 @@ void binary_manager_get_state_with_name(int requester_pid, char *bin_name)
 
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getstate_response_t));
 }
+#endif
 
 /****************************************************************************
  * Name: binary_manager_get_info_with_name
@@ -179,9 +182,12 @@ void binary_manager_get_state_with_name(int requester_pid, char *bin_name)
  ****************************************************************************/
 void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 {
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	int size;
 	int bin_idx;
 	uint32_t bin_count;
+#endif
+	binmgr_kinfo_t *kerinfo;
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_getinfo_response_t response_msg;
 
@@ -194,22 +200,36 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 	memset((void *)&response_msg, 0, sizeof(binmgr_getinfo_response_t));
 	response_msg.result = BINMGR_NOT_FOUND;
 
-	bin_count = binary_manager_get_ucount();
-	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
-		if (!strncmp(BIN_NAME(bin_idx), bin_name, BIN_NAME_MAX)) {
-			size = binary_manager_get_available_size(bin_idx);
-			if (size < 0) {
-				response_msg.result = BINMGR_OPERATION_FAIL;
-			} else {
-				response_msg.result = BINMGR_OK;
-				response_msg.data.available_size = size;
-				strncpy(response_msg.data.name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-				response_msg.data.version = (double)BIN_LOADVER(bin_idx);
+	if (!strncmp("kernel", bin_name, BIN_NAME_MAX)) {
+		kerinfo = binary_manager_get_kdata();
+		strncpy(response_msg.data.name, "kernel", BIN_NAME_MAX);
+		response_msg.data.version = kerinfo->version;
+		if (kerinfo->part_count > 1) {
+			response_msg.data.available_size = kerinfo->part_size[kerinfo->inuse_idx ^ 1];
+		} else {
+			response_msg.data.available_size = -1;
+		}
+		response_msg.result = BINMGR_OK;
+	}
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	else {
+		bin_count = binary_manager_get_ucount();
+		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+			if (!strncmp(BIN_NAME(bin_idx), bin_name, BIN_NAME_MAX)) {
+				size = binary_manager_get_available_size(bin_idx);
+				if (size < 0) {
+					response_msg.result = BINMGR_OPERATION_FAIL;
+				} else {
+					response_msg.result = BINMGR_OK;
+					response_msg.data.available_size = size;
+					strncpy(response_msg.data.name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
+					response_msg.data.version = (double)BIN_LOADVER(bin_idx);
+				}
+				break;
 			}
-			break;
 		}
 	}
-
+#endif
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_response_t));
 }
 
@@ -222,10 +242,12 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
  ****************************************************************************/
 void binary_manager_get_info_all(int requester_pid)
 {
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	int size;
-	int bin_idx;
-	int result_idx;
+	int bin_idx;	
 	uint32_t bin_count;
+#endif
+	int result_idx;
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_kinfo_t *kerinfo;
 	binmgr_getinfo_all_response_t response_msg;
@@ -240,15 +262,18 @@ void binary_manager_get_info_all(int requester_pid)
 	memset((void *)&response_msg, 0, sizeof(binmgr_getinfo_all_response_t));
 	response_msg.result = BINMGR_OK;
 
-	/* Kernel data */
+	/* Get kernel data */
 	kerinfo = binary_manager_get_kdata();
-	strncpy(response_msg.data.bin_info[result_idx].name, kerinfo->name , BIN_NAME_MAX);
+	strncpy(response_msg.data.bin_info[result_idx].name, "kernel", BIN_NAME_MAX);
 	response_msg.data.bin_info[result_idx].version = kerinfo->version;
 	if (kerinfo->part_count > 1) {
-		response_msg.data.bin_info[result_idx].available_size = kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_size;
+		response_msg.data.bin_info[result_idx].available_size = kerinfo->part_size[kerinfo->inuse_idx ^ 1];
+	} else {
+		response_msg.data.bin_info[result_idx].available_size = -1;
 	}
 	result_idx++;
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	/* User binaries data */
 	bin_count = binary_manager_get_ucount();
 	if (bin_count > 0) {
@@ -269,6 +294,6 @@ void binary_manager_get_info_all(int requester_pid)
 	if (response_msg.result == BINMGR_OK) {
 		response_msg.data.bin_count = bin_count + 1;
 	}
-
+#endif
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_all_response_t));
 }

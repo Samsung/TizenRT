@@ -20,16 +20,19 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <debug.h>
-#include <dirent.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
+#ifdef CONFIG_APP_BINARY_SEPARATION
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <dirent.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#endif
+
 #include <tinyara/binary_manager.h>
 
 #include "binary_manager.h"
@@ -37,6 +40,7 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
 /****************************************************************************
  * Name: binary_manager_clear_binfile
  *
@@ -212,6 +216,7 @@ int binary_manager_scan_ubin(int bin_idx)
 
 	return OK;
 }
+#endif
 
 /****************************************************************************
  * Name: binary_manager_create_entry
@@ -222,12 +227,14 @@ int binary_manager_scan_ubin(int bin_idx)
  ****************************************************************************/
 int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 {
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	int fd;
 	int ret;
 	int bin_idx;
+	char filepath[BINARY_PATH_LEN];
+#endif
 	binmgr_kinfo_t *kerinfo;
 	char q_name[BIN_PRIVMQ_LEN];
-	char filepath[BINARY_PATH_LEN];
 	binmgr_createbin_response_t response_msg;
 
 	if (requester_pid < 0 || bin_name == NULL || version < 0) {
@@ -241,13 +248,14 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 		kerinfo = binary_manager_get_kdata();
 		if (kerinfo->part_count > 1) {
 			response_msg.result = BINMGR_OK;
-			snprintf(response_msg.binpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ 1].part_num, BINARY_PATH_LEN);
+			snprintf(response_msg.binpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_num[kerinfo->inuse_idx ^ 1]);
 		} else {
 			response_msg.result = BINMGR_NOT_FOUND;
 		}
 		goto send_result;
 	}
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	/* Else, Create a new file for user binary and Return filepath */
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx >= 0) {
@@ -294,6 +302,8 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version)
 			}
 		}
 	}
+#endif
+
 send_result:
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_createbin_response_t));

@@ -30,6 +30,7 @@
 
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
+
 #ifdef CONFIG_BINARY_MANAGER
 #include <tinyara/binary_manager.h>
 #endif
@@ -85,7 +86,7 @@ static void type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, 
 		|| !strncmp(types, "romfs,", 6)
 #endif
 #ifdef CONFIG_BINARY_MANAGER
-		|| !strncmp(types, "kernel,", 7) || !strncmp(types, "bin,", 4)
+		|| !strncmp(types, "kernel,", 7)
 #endif
 		) {
 			if (ftl_initialize(partno, mtd_part)) {
@@ -211,13 +212,13 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 
 		type_specific_initialize(minor, mtd_part, partno, types);
 
-#ifdef CONFIG_MTD_PARTITION_NAMES
-		configure_partition_name(mtd_part, (const char **)&names, &index, part_name);
 #ifdef CONFIG_BINARY_MANAGER
 		if (!strncmp(types, "kernel,", 7)) {
 			binary_manager_register_kpart(partno, partsize);
 		}
 #endif
+#ifdef CONFIG_MTD_PARTITION_NAMES
+		configure_partition_name(mtd_part, (const char **)&names, &index, part_name);
 #endif
 		move_to_next_part((const char **)&sizes);
 		move_to_next_part((const char **)&types);

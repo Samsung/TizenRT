@@ -156,13 +156,6 @@ struct binary_update_info_s {
 };
 typedef struct binary_update_info_s binary_update_info_t;
 
-/* The sturcture of partition information */
-struct part_info_s {
-	uint32_t part_size;         /* Partition size */
-	int8_t part_num;            /* Partition number */
-};
-typedef struct part_info_s part_info_t;
-
 /* The structure of load attr configuration */
 struct load_attr_s {
 	char bin_name[BIN_NAME_MAX];
