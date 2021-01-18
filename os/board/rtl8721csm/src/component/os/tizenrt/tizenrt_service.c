@@ -720,8 +720,8 @@ err_exit:
 	if(strncmp(name, "rtw_xmit_tasklet", strlen("rtw_xmit_tasklet") + 1) == 0) priority = 105;
 	if(strncmp(name, "cmd_thread", strlen("cmd_thread") + 1) == 0) priority = 105;
 	if(strncmp(name, "tcp_server_handler", strlen("tcp_server_handler") + 1) == 0) priority = 105;
+
 	stack_size *= sizeof(uint32_t);
-	/* Execute loading thread for load all binaries */
 	func_addr = (int)func;
 	ctx_addr = (int)thctx;
 	task_info[0] = itoa(func_addr, str_func_addr, 16);
