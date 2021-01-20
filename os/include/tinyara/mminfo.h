@@ -23,7 +23,9 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_APP_BINARY_SEPARATION)
+#include <tinyara/binary_manager.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
