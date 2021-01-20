@@ -267,7 +267,7 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size
 #error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
 #endif
 
-	if (allocateregions(loadinfo)) {
+	if (allocateregions(loadinfo) < 0) {
 		berr("ERROR: failed to allocate memory\n");
 		return -ENOMEM;
 	}
