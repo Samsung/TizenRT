@@ -238,6 +238,10 @@ download_all()
 
 	for partidx in ${!parts[@]}; do
 
+		if [[ "${parts[$partidx]}" == "none" ]];then
+			continue
+		fi
+
 		if [[ "${CONFIG_APP_BINARY_SEPARATION}" != "y" ]];then
 			if [[ "${parts[$partidx]}" == "userfs" ]];then
 				continue
