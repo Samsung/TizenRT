@@ -29,6 +29,9 @@
 /*
  * Macro
  */
+#define WO_ERROR(res) printf("[WO][ERR] code(%d), %s\t%s:%d\n",\
+							 res, __FUNCTION__, __FILE__, __LINE__)
+
 #define WM_AP_SSID         CONFIG_WIFIMANAGER_TEST_AP_SSID
 #define WM_AP_PASSWORD     CONFIG_WIFIMANAGER_TEST_AP_PASSPHRASE
 #define WM_AP_AUTH         CONFIG_WIFIMANAGER_TEST_AP_AUTHENTICATION
@@ -60,8 +63,8 @@ static sem_t g_wm_sem = SEM_INITIALIZER(0);
 
 #define WM_CONN_FAIL 1
 #define WM_CONN_SUCCESS 2
-#define WO_INTERVAL 30
-#define WO_WAIT_CONN_TIME 30
+#define WO_INTERVAL 10
+
 /*
  * callbacks
  */
@@ -74,11 +77,10 @@ static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_sc
 /*
  * State
  */
-//static int run_init(int argc, char *argv[]);
 static int run_init(void *arg);
 static int run_connecting(wifi_manager_ap_config_s *ap_config);
 static int run_connected(void);
-static int run_reconnecting(void);
+
 /*
  * Global
  */
@@ -160,16 +162,24 @@ static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	printf("====================================\n");
 }
 
-#define WM_ERROR(res) printf("[WMERR] code(%d), %s\t%s:%d\n",\
-							 res, __FUNCTION__, __FILE__, __LINE__)
+static void wm_get_info(wifi_manager_ap_config_s *arg)
+{
+	printf("[WO] T%d -->%s\n", getpid(), __FUNCTION__);
+	wifi_manager_ap_config_s apconfig;
+	wifi_manager_result_e res = wifi_manager_get_config(&apconfig);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("[WO] Get AP configuration failed\n");
+		return;
+	}
+	print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Information");
+}
 
 
-//static int run_init(int argc, char *argv[])
 static int run_init(void *arg)
 {
 	wifi_manager_result_e res = wifi_manager_init(&g_wifi_callbacks);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		WM_ERROR(res);
+		WO_ERROR(res);
 		return -1;
 	}
 
@@ -202,15 +212,14 @@ static int run_init(void *arg)
 			state = run_connecting(&apconfig);
 		} else if (state == 2) {
 			cnt_auto_connect++;
-			printf("\n\n\n");
-			printf("[WO] connection count %d\n", cnt_auto_connect);
-			printf("\n\n\n");
+			printf("\n\n\n[WO] connection count %d\n\n\n\n", cnt_auto_connect);
 			if (cnt_auto_connect > 100) {
 				break;
 			}
 			state = run_connected();
-		} else if (state == 3) {
-			state = run_reconnecting();
+		} else {
+			printf("[WO] Unknown state (%d)\n", state);
+			assert(0);
 		}
 	}
 
@@ -218,61 +227,17 @@ static int run_init(void *arg)
 	return 0;
 }
 
-
-static void wm_get_info(wifi_manager_ap_config_s *arg)
-{
-	printf("[WO] T%d -->%s\n", getpid(), __FUNCTION__);
-	wifi_manager_ap_config_s apconfig;
-	wifi_manager_result_e res = wifi_manager_get_config(&apconfig);
-	if (res != WIFI_MANAGER_SUCCESS) {
-		printf("[WO] Get AP configuration failed\n");
-		return;
-	}
-	print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Information");
-}
-
 static int run_connecting(wifi_manager_ap_config_s *ap_config)
 {
-	struct timespec before;
-	struct timespec abstime;
-
 	printf("[WO] -->%s\n", __FUNCTION__);
 
 	wifi_manager_result_e res = wifi_manager_connect_ap(ap_config);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		WM_ERROR(res);
+		WO_ERROR(res);
 		goto connect_fail;
 	}
 
-	//WM_TEST_WAIT;
-	(void)clock_gettime(CLOCK_REALTIME, &before);
-
-	abstime.tv_sec  = before.tv_sec + WO_WAIT_CONN_TIME;
-	abstime.tv_nsec = before.tv_nsec;
-	printf("[WO] wait connect time %d \n", WO_WAIT_CONN_TIME);
-	int ret = sem_timedwait(&g_wm_sem, &abstime);
-	printf("[WO] [pkbuild] %s:%d\n", __FUNCTION__, __LINE__);
-	if (ret < 0) {
-		if (errno == ETIMEDOUT) {
-			printf("[WO] [pkbuild] %s:%d\n", __FUNCTION__, __LINE__);
-			printf("[WO] timeout \n");
-			// wifi doens't respond. so initialize agina
-			res = wifi_manager_deinit();
-			if (res != WIFI_MANAGER_SUCCESS) {
-				WM_ERROR(res);
-				assert(0);
-			}
-
-			res = wifi_manager_init(&g_wifi_callbacks);
-			if (res != WIFI_MANAGER_SUCCESS) {
-				WM_ERROR(res);
-				assert(0);
-			}
-		} else {
-			printf("[WO] corrupted %d %s %d\n", errno, __FUNCTION__, __LINE__);
-		}
-		goto connect_fail;
-	}
+	WM_TEST_WAIT;
 
 	if (g_conn_res == WM_CONN_FAIL) {
 		// does it need to get info from wi-fi wm_get_info(ap_config);
@@ -296,17 +261,6 @@ static int run_connected(void)
 	printf("[WO] -->%s\n", __FUNCTION__);
 	WM_TEST_WAIT;
 	if (g_conn_res == WM_CONN_FAIL) {
-		/* wifi_manager_result_e res = wifi_manager_deinit(); */
-		/* if (res != WIFI_MANAGER_SUCCESS) { */
-		/* 	WM_ERROR(res); */
-		/* 	assert(0); */
-		/* } */
-
-		/* res = wifi_manager_init(&g_wifi_callbacks); */
-		/* if (res != WIFI_MANAGER_SUCCESS) { */
-		/* 	WM_ERROR(res); */
-		/* 	assert(0); */
-		/* } */
 		return 1;
 	} else {
 		printf("[WO] program is corrupted %s\n", __FUNCTION__);
@@ -315,48 +269,7 @@ static int run_connected(void)
 	return 0;
 }
 
-static int run_reconnecting(void)
-{
-	printf("[WO] -->%s\n", __FUNCTION__);
-	WM_TEST_WAIT;
-	if (g_conn_res == WM_CONN_SUCCESS) {
-		return 2;
-	} else {
-		printf("[WO] program is corrupted %s\n", __FUNCTION__);
-		assert(0);
-	}
-	return 0;
-}
-
-//static const char *g_argv[3];
-//static wifi_manager_ap_config_s g_apconfig;
-
 void wm_test_on_off(void *arg)
 {
-	/* struct options *ap_info = (struct options *)arg; */
-
-	/* strncpy(g_apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN); */
-	/* g_apconfig.ssid_length = strlen(ap_info->ssid); */
-	/* g_apconfig.ssid[WIFIMGR_SSID_LEN] = '\0'; */
-	/* g_apconfig.ap_auth_type = ap_info->auth_type; */
-	/* if (ap_info->auth_type != WIFI_MANAGER_AUTH_OPEN) { */
-	/* 	strncpy(g_apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN); */
-	/* 	g_apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0'; */
-	/* 	g_apconfig.passphrase_length = strlen(ap_info->password); */
-	/* 	g_apconfig.ap_crypto_type = ap_info->crypto_type; */
-	/* } else { */
-	/* 	g_apconfig.passphrase[0] = '\0'; */
-	/* 	g_apconfig.passphrase_length = 0; */
-	/* 	g_apconfig.ap_crypto_type = ap_info->crypto_type; */
-	/* } */
-
-	/* g_argv[0] = (char *)&g_apconfig; */
-	/* g_argv[1] = NULL; */
-
-	/* int result = task_create("wifi_on_off", 100, 4096, run_init, */
-	/* 					 (FAR char *const *)g_argv); */
-	/* if (result < 0) { */
-	/* 	printf("[WO]error %d %d\t%s:%d", result, errno, __FUNCTION__, __LINE__); */
-	/* } */
 	run_init(arg);
 }
