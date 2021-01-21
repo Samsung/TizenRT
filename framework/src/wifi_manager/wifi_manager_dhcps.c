@@ -64,7 +64,7 @@ void dhcps_inc_num(void)
 		WM_LOG_ERROR("num_sta overflowed\n");
 		return;
 	}
-	WM_LOG_VERBOSE("increase num_sta by 1\n");
+	WM_LOG_INFO("increase num_sta by 1\n");
 	num_sta++;
 }
 
@@ -74,13 +74,13 @@ void dhcps_dec_num(void)
 		WM_LOG_ERROR("num_sta underflowed\n");
 		return;
 	}
-	WM_LOG_VERBOSE("decrease num_sta by 1\n");
+	WM_LOG_INFO("decrease num_sta by 1\n");
 	num_sta--;
 }
 
 void dhcps_reset_num(void)
 {
-	WM_LOG_VERBOSE("reset num_sta to 0\n");
+	WM_LOG_INFO("reset num_sta to 0\n");
 	num_sta = 0;
 }
 
@@ -105,12 +105,12 @@ dhcp_status_e dhcps_add_node(void *msg)
 {
 	dhcp_node_s *node = (dhcp_node_s *)msg;
 	if (node != NULL) {
-		WM_LOG_VERBOSE("[DHCP] IP: %d:%d:%d:%d\n",
+		WM_LOG_INFO("[DHCP] IP: %d:%d:%d:%d\n",
 			  ((char *)&(node->ipaddr))[0],
 			  ((char *)&(node->ipaddr))[1],
 			  ((char *)&(node->ipaddr))[2],
 			  ((char *)&(node->ipaddr))[3]);
-		WM_LOG_VERBOSE("[DHCP] MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		WM_LOG_INFO("[DHCP] MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 			  node->macaddr[0], node->macaddr[1],
 			  node->macaddr[2], node->macaddr[3],
 			  node->macaddr[4], node->macaddr[5]);
@@ -157,7 +157,7 @@ wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined_cb cb)
 		WM_LOG_ERROR("[DHCP] DHCP Server - started fail\n");
 		return WIFI_MANAGER_FAIL;
 	}
-	WM_LOG_VERBOSE("[DHCP] DHCP Server - started successfully\n");
+	WM_LOG_INFO("[DHCP] DHCP Server - started successfully\n");
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -172,7 +172,7 @@ wifi_manager_result_e wm_dhcps_stop(void)
 		WM_LOG_ERROR("[DHCP] DHCP Server - stopped failed\n");
 		return WIFI_MANAGER_FAIL;
 	}
-	WM_LOG_VERBOSE("[DHCP] DHCP Server - stopped successfully\n");
+	WM_LOG_INFO("[DHCP] DHCP Server - stopped successfully\n");
 	return WIFI_MANAGER_SUCCESS;
 }
 
