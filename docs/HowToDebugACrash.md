@@ -3,7 +3,7 @@
 It converts the given address into file names and line numbers.  
 Developers can debug the TizenRT ELF/AXF output file through **addr2line**.
 It is especially helpful while debugging a crash and can be used to find the 
-exact line number where the crash occured and also the function callstack
+exact line number where the crash occurred and also the function callstack
 which resulted in the crash.
 
 ## Contents
@@ -36,7 +36,7 @@ Then, your PATH variable must include the toolchain bin folder as follows :
 ```
 
 3. Enable stackdump
-When a crash occurs in the system, it is useful to find out where exactly the crash occured and also
+When a crash occurs in the system, it is useful to find out where exactly the crash occurred and also
 the function callstack which resulted in the crash. In order to find these, we need to print the corresponding
 address values when the crash occurs. This can be done by enabling the following configs:
 
@@ -97,11 +97,11 @@ Then subtract 0x1000000 from 0x1200000 and pass this address for -a option's par
 
 ## How to debug a crash with addr2line
 When a crash occurs in the system, and if the above configs are enabled, then the system prints the stackdump for the currently
-running task in which the crash occured and also the register dump showing the contents of the CPU registers at the time of crash.
+running task in which the crash occurred and also the register dump showing the contents of the CPU registers at the time of crash.
 You can then use the addr2line command as stated above to convert the printed address values into source file line numbers and the
 following debug information can be obtained.
 
-1. Location where the crash occured
+1. Location where the crash occurred
 This can be found from the register dump. The register dump contains the values of R0 to R15 registers. The R15 register gives the
 PC (Program Counter) value. This address can be used with the addr2line command to find the exact line number in the source code
 which caused the crash.
@@ -110,7 +110,7 @@ which caused the crash.
 The callstack can be found from the address values printed in the stack dump. However, the stack dump contains both valid address and
 other HEX values. There is no way to determine the exact locations in the stack dump where the callstack function addresses are stored.
 So, we need to manually find out the probable address values from the stack dump. This can be done by knowing the address where the
-text sections are loaded in memory. This infomation is generally present in the linker scripts for the particular project or the app
+text sections are loaded in memory. This information is generally present in the linker scripts for the particular project or the app
 specific linker script.
 
 As an example, suppose you find from the linker script that the text section is loaded between addresses 0x80000000 to 0x84000000.
@@ -119,7 +119,7 @@ at the time of crash  and the last line represents the oldest function in the ca
 in the stackdump, use the addr2line tool to find the source code line number. Thus, you can reconstruct the call stack at the time of crash.
 
 ## Example debugging scenario
-Here you can see an example scenario when a crash has occured. Since the stackdump is enabled, the system will print the stack and
+Here you can see an example scenario when a crash has occurred. Since the stackdump is enabled, the system will print the stack and
 register values. It is seen from the linker script that the text section is loaded in the address range 0x0E000000 to 0x10000000. In the
 stack dump shown below, we will select all values that fall in this range and use the addr2line tool to obtain the callstack as shown.
 

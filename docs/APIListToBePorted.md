@@ -178,7 +178,7 @@ c. **up_watchdog_disable()** : Disable board specific watchdog
 ```c
  * Prototype: struct i2c_dev_s *up_i2cinitialize(int port)
  * Input Parameters:
- *   Port number (for hardware that has mutiple I2C interfaces)
+ *   Port number (for hardware that has multiple I2C interfaces)
  * Returned Value:
  *   Valid I2C device structure reference on success; a NULL on failure
 ```
@@ -188,7 +188,7 @@ c. **up_watchdog_disable()** : Disable board specific watchdog
 ```c
  * Prototype: struct spi_dev_s *up_spiinitialize(int port)
  * Input Parameters:
- *   Port number (for hardware that has mutiple SPI interfaces)
+ *   Port number (for hardware that has multiple SPI interfaces)
  * Returned Value:
  *   Valid SPI device structure reference on success; a NULL on failure
 ```
