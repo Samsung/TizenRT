@@ -582,7 +582,7 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_DISCONNECTED) {
 #ifndef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
-		WM_LOG_VERBOSE("[WM] External AUTOCONNECT: go to RECONNECT state\n");
+		WM_LOG_INFO("[WM] External AUTOCONNECT: go to RECONNECT state\n");
 		wifimgr_call_cb(CB_STA_RECONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 #else
@@ -619,7 +619,7 @@ wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
 #ifndef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
-	WM_LOG_VERBOSE("[WM] EXTERNAL AUTOCONNECT event status : %d\n", msg->event);
+	WM_LOG_INFO("[WM] EXTERNAL AUTOCONNECT event status : %d\n", msg->event);
 	if (msg->event == EVT_DISCONNECT_CMD) {
 		dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
@@ -717,6 +717,6 @@ wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT
 	_set_error_code(res);
 #endif
-	WM_LOG_VERBOSE("[WM] T%d <-- _handle_request\n", getpid());
+	WM_LOG_INFO("[WM] T%d <-- _handle_request\n", getpid());
 	return res;
 }

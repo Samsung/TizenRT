@@ -50,7 +50,7 @@ wifi_manager_result_e dhcpc_get_ipaddr(void)
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 		return wret;
 	}
-	WM_LOG_VERBOSE("[DHCPC] get IP address %s\n", inet_ntoa(ip));
+	WM_LOG_INFO("[DHCPC] get IP address %s\n", inet_ntoa(ip));
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -65,7 +65,7 @@ void dhcpc_close_ipaddr(void)
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 #endif
-	WM_LOG_VERBOSE("[DHCPC] %s - release IP address\n", __FUNCTION__);
+	WM_LOG_INFO("[DHCPC] %s - release IP address\n", __FUNCTION__);
 	return;
 }
 
