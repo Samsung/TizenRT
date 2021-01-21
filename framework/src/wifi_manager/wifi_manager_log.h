@@ -25,21 +25,23 @@
 #define WM_TAG "[WM]"
 
 #if defined(CONFIG_WIFI_MANAGER_USE_PRINTF)
-#define WM_LOG_VERBOSE printf
+#define WM_LOG_VERBOSE(...)
+#define WM_LOG_INFO printf
 #define WM_LOG_DEBUG printf
 #define WM_LOG_ERROR printf
 #else
 #define WM_LOG_VERBOSE nvdbg
+#define WM_LOG_INFO nwdbg
 #define WM_LOG_DEBUG ndbg
 #define WM_LOG_ERROR ndbg
 #endif
 
 
-#define WM_ENTER WM_LOG_VERBOSE(WM_TAG"T%d\t%s:%d\n", getpid(), __FUNCTION__, __LINE__);
+#define WM_ENTER WM_LOG_INFO(WM_TAG"T%d\t%s:%d\n", getpid(), __FUNCTION__, __LINE__);
 
 #define WM_LEAVE													\
 	do {															\
-		WM_LOG_VERBOSE(WM_TAG"<---%s:%d\n", __FILE__, __LINE__);	\
+		WM_LOG_INFO(WM_TAG"<---%s:%d\n", __FILE__, __LINE__);	\
 	} while (0)
 
 #define WM_ERR												\
@@ -48,7 +50,7 @@
 					 __FILE__, __LINE__, strerror(errno));	\
 	} while (0)
 
-#define WM_LOG_HANDLER_START WM_LOG_VERBOSE(WM_TAG "T%d %s:%d state(%s) evt(%s)\n", \
+#define WM_LOG_HANDLER_START WM_LOG_INFO(WM_TAG "T%d %s:%d state(%s) evt(%s)\n", \
 											getpid(), __FUNCTION__, __LINE__, \
 											wifimgr_get_state_str(g_manager_info.state), \
 											wifimgr_get_evt_str(msg->event));

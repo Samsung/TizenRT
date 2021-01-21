@@ -1593,7 +1593,6 @@ return_copy_fdsets:
 
 static int lwip_poll_scan(int fd, struct lwip_sock *sock, struct pollfd *fds)
 {
-
 	void *lastdata = NULL;
 	s16_t rcvevent = 0;
 	u16_t sendevent = 0;
