@@ -238,10 +238,6 @@ download_all()
 
 	for partidx in ${!parts[@]}; do
 
-		if [[ "${parts[$partidx]}" == "none" ]];then
-			continue
-		fi
-
 		if [[ "${CONFIG_APP_BINARY_SEPARATION}" != "y" ]];then
 			if [[ "${parts[$partidx]}" == "userfs" ]];then
 				continue
@@ -255,15 +251,16 @@ download_all()
 			found_kernel=true
 		fi
 
+		exe_name=$(get_executable_name ${parts[$partidx]})
+		[ "No Binary Match" = "${exe_name}" ] && continue
+
 		echo ""
 		echo "=========================="
 		echo "Downloading ${parts[$partidx]} binary"
 		echo "=========================="
 
-		exe_name=$(get_executable_name ${parts[$partidx]})
-
 		./amebad_image_tool $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
-		[ -e ${exe_name} ] && rm ${exe_name}
+		rm ${exe_name}
 
 	done
 	echo ""
