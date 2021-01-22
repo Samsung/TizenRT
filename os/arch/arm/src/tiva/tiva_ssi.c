@@ -1464,7 +1464,7 @@ static void ssi_recvblock(FAR struct spi_dev_s *dev, FAR void *buffer, size_t nw
  *   specific logic.
  *
  * Input Parameter:
- *   Port number (for hardware that has mutiple SSI interfaces)
+ *   Port number (for hardware that has multiple SSI interfaces)
  *
  * Returned Value:
  *   Valid SPI device structure reference on succcess; a NULL on failure

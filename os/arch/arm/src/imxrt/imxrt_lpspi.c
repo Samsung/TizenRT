@@ -1759,7 +1759,7 @@ static void imxrt_lpspi_bus_initialize(struct imxrt_lpspidev_s *priv)
  *   Initialize the selected SPI bus
  *
  * Input Parameters:
- *   Port number (for hardware that has mutiple SPI interfaces)
+ *   Port number (for hardware that has multiple SPI interfaces)
  *
  * Returned Value:
  *   Valid SPI device structure reference on success; a NULL on failure
@@ -1877,7 +1877,7 @@ FAR struct spi_dev_s *imxrt_lpspibus_initialize(int bus)
  *   Initialize the selected SPI bus
  *
  * Input Parameters:
- *   Port number (for hardware that has mutiple SPI interfaces)
+ *   Port number (for hardware that has multiple SPI interfaces)
  *
  * Returned Value:
  *   Valid SPI device structure reference on success; a NULL on failure

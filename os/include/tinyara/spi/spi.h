@@ -486,7 +486,7 @@ extern "C" {
  *   writing).
  *
  * Input Parameter:
- *   Port number (for hardware that has mutiple SPI interfaces)
+ *   Port number (for hardware that has multiple SPI interfaces)
  *
  * Returned Value:
  *   Valid SPI device structure reference on succcess; a NULL on failure
