@@ -123,7 +123,7 @@ extern "C"
  *   Initialize the selected CAN port
  *
  * Input Parameters:
- *   Port number (for hardware that has mutiple CAN interfaces)
+ *   Port number (for hardware that has multiple CAN interfaces)
  *
  * Returned Value:
  *   Valid CAN device structure reference on succcess; a NULL on failure

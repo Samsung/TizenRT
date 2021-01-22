@@ -1451,7 +1451,7 @@ static void spi_portinitialize(FAR struct stm32_spidev_s *priv)
  *   Initialize the selected SPI port
  *
  * Input Parameter:
- *   Port number (for hardware that has mutiple SPI interfaces)
+ *   Port number (for hardware that has multiple SPI interfaces)
  *
  * Returned Value:
  *   Valid SPI device structure reference on succcess; a NULL on failure
