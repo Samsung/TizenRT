@@ -256,6 +256,19 @@ void board_initialize(void)
 		amebad_timer_initialize(path, i);
 	}
 #endif
+
+#ifdef CONFIG_RTC_DRIVER
+	struct rtc_lowerhalf_s *rtclower;
+	int ret;
+
+	rtclower = amebad_rtc_lowerhalf();
+	if (rtclower) {
+		ret = rtc_initialize(0, rtclower);
+		if (ret < 0) {
+			lldbg("Failed to register the RTC driver: %d\n", ret);
+		}
+	}
+#endif
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"
