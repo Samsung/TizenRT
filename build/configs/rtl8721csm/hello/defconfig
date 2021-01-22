@@ -241,9 +241,9 @@ CONFIG_ARCH_BOARD_HAVE_FLASH=y
 #
 CONFIG_FLASH_PARTITION=y
 CONFIG_FLASH_MINOR=0
-CONFIG_FLASH_PART_SIZE="16,8,16,472,1512,1048,"
-CONFIG_FLASH_PART_TYPE="none,none,none,none,kernel,smartfs,"
-CONFIG_FLASH_PART_NAME="km0_bl,km4_bl,reserved,ss,kernel,userfs,"
+CONFIG_FLASH_PART_SIZE="16,8,16,472,1792,1792,1048,"
+CONFIG_FLASH_PART_TYPE="none,none,none,none,kernel,kernel,smartfs,"
+CONFIG_FLASH_PART_NAME="km0_bl,km4_bl,reserved,ss,kernel,kernel,userfs,"
 # CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH is not set
 
 #
