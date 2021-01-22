@@ -173,7 +173,7 @@
   *				SGPIO_CAPInitStruct.CapSrc_Sel = CAPSRC_MUL_COUNTER.
   *			set RX timer pre-scale if needed.(optional)
   *
-  *		 5. Select the RX trigger edge and capture trigger edge as well as mutiple counter edge.
+  *		 5. Select the RX trigger edge and capture trigger edge as well as multiple counter edge.
   *
   *		 6. Initialize hardware using the value configured above.
   *			 SGPIO_RX_Init(SGPIO_TypeDef *SGPIOx, SGPIO_RXInitTypeDef *SGPIO_RXInitStruct)
@@ -286,7 +286,7 @@
   *				SGPIO_CAPInitStruct.CapSrc_Sel = CAPSRC_MUL_COUNTER.
   *			set RX timer pre-scale and RX positon register if needed.(optional)
   *
-  *		 5. Select the RX trigger edge and capture trigger edge as well as mutiple counter edge.
+  *		 5. Select the RX trigger edge and capture trigger edge as well as multiple counter edge.
   *
   *		 6. Initialize hardware using the value configured above.
   *			 SGPIO_RX_Init(SGPIO_TypeDef *SGPIOx, SGPIO_RXInitTypeDef *SGPIO_RXInitStruct)
@@ -894,7 +894,7 @@ BOOL SGPIO_MULGDMA_Init(SGPIO_TypeDef *SGPIOx, GDMA_InitTypeDef *GDMA_InitStruct
  * @defgroup SGPIO_MULMC_CTRL
  * @{
  *****************************************************************************/
-#define BIT_SGPIO_MUL_DMA_START			((u32)0x00000001 << 13)		/*Bit[13], bit for trigger mutiple match FIFO load with data*/
+#define BIT_SGPIO_MUL_DMA_START			((u32)0x00000001 << 13)		/*Bit[13], bit for trigger multiple match FIFO load with data*/
 #define BIT_SGPIO_MUL_DMA_EN			((u32)0x00000001 << 12)		/*Bit[12], bit for DMA mode enable*/
 #define BIT_SGPIO_MUL_FMODE_EN			((u32)0x00000001 << 11)		/*Bit[11], bit for Multiple FIFO mode enable*/
 #define BIT_SGPIO_MUL_MCNT_CTRL			((u32)0x00000700)			/*Bit[10:8], bits for MULTC control mask when MUL_MCNT reaches zero*/
