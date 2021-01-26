@@ -80,6 +80,8 @@ include component/soc/realtek/amebad/fwlib/crypto/Make.defs
 include component/soc/realtek/amebad/fwlib/ram_hp/Make.defs
 include component/soc/realtek/amebad/fwlib/ram_common/Make.defs
 include component/soc/realtek/amebad/fwlib/usrcfg/Make.defs
+include component/common/drivers/wlan/realtek/src/core/option/Make.defs
+
 ifeq ($(CONFIG_AMEBAD_WIFI),y)
 include component/common/api/wifi/Make.defs
 include component/common/api/wifi/rtw_wpa_supplicant/wpa_supplicant/Make.defs
@@ -135,6 +137,7 @@ CFLAGS += -I$(COMPONENT_DIR)/common/api/wifi/rtw_wpa_supplicant/wpa_supplicant
 CFLAGS += -I$(COMPONENT_DIR)/common/network
 CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/include
 CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/src/osdep
+CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/src/core/option
 CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/wlan_ram_map/rom
 CFLAGS += -I$(COMPONENT_DIR)/os/os_dep/include
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
