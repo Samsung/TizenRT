@@ -51,6 +51,14 @@ int sl_test_malloc_buffer(hal_data *data, int buf_len)
 		return -2;
 	}
 	data->data_len = buf_len;
+	data->priv = (unsigned char *)zalloc(buf_len);
+	if (!data->priv) {
+		free(data->data);
+		data->data_len = 0;
+		return -3
+	}
+	data->priv_len = buf_len;
+
 	return 0;
 }
 
