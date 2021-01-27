@@ -153,13 +153,17 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 			* which belongs to any other app in the system. Here,
 			* we choose to return the address of the app heap
 			*/
-			uint32_t binid = sched_self()->group->tg_binidx;
-			binid = (binid + 1) % (binary_manager_get_ucount() + 1);
-			if (binid == 0) {
-				binid++;
+			uint32_t binidx = sched_self()->group->tg_binidx;
+			binidx = (binidx + 1) % (binary_manager_get_ucount() + 1);
+			if (binidx == 0) {
+				binidx++;
 			}
-
-			obj->addr = (volatile uint32_t *)BIN_LOADINFO(binid)->uheap;
+			struct tcb_s *tcb = (struct tcb_s *)sched_gettcb(BIN_ID(binidx));
+			if (tcb) {
+				obj->addr = (volatile uint32_t *)tcb->uheap;
+			} else {
+				ret = -ESRCH;
+			}
 			break;
 		}
 		default:
