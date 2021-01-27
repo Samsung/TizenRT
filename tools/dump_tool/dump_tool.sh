@@ -30,6 +30,8 @@ RAMDUMP_FILE=./ramdump_0x*.bin
 rm -f ${RAMDUMP_FILE}
 FSDUMP_FILE=./fsdump_0x*.bin
 rm -f ${FSDUMP_FILE}
+EXTFSDUMP_FILE=./ext_fsdump_*.bin
+rm -f ${EXTFSDUMP_FILE}
 ok=true
 
 # Take user input for device port

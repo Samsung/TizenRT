@@ -35,6 +35,7 @@
 
 #define RAMDUMP_HANDSHAKE_STRING        "TIZENRTRMDUMP"
 #define FSDUMP_HANDSHAKE_STRING         "TIZENRTFSDUMP"
+#define EXTFSDUMP_HANDSHAKE_STRING      "TIZENRTEXTFSD"
 #define TARGET_REBOOT_STRING            "TIZENRTREBOOT"
 #define HANDSHAKE_STR_LEN_MAX           (13)
 #define BINFILE_NAME_SIZE               (40)
@@ -47,7 +48,7 @@
 #define RAMDUMP_FLAG            1
 #define USERFSDUMP_FLAG         2
 #define REBOOT_DEVICE_FLAG      4
-#define EXIT_TOOL_FLAG          8
+#define EXTUSERFS_DUMP_FLAG     8
 
 /****************************************************************************
  * Public Types

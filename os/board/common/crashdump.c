@@ -25,11 +25,14 @@
 #include <tinyara/arch.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <string.h>
 #include <arch/board/board.h>
 #include "up_internal.h"
 #include "up_watchdog.h"
 #include <sys/boardctl.h>
+#include <limits.h>
 
 #include <tinyara/mm/heap_regioninfo.h>
 #include <tinyara/mm/mm.h>
@@ -40,6 +43,7 @@
 #if defined(CONFIG_BOARD_DUMP_UART)
 #define RAMDUMP_HANDSHAKE_STRING	"TIZENRTRMDUMP"
 #define FSDUMP_HANDSHAKE_STRING	"TIZENRTFSDUMP"
+#define EXTFSDUMP_HANDSHAKE_STRING	"TIZENRTEXTFSD"
 #define TARGET_REBOOT_STRING		"TIZENRTREBOOT"
 #define HANDSHAKE_STR_LEN_MAX		(13)
 #define USERFS_PART_NAME		"user"
@@ -129,6 +133,81 @@ static int get_userfs_address_size(uint32_t *userfs_start, size_t *userfs_size)
 	return 0;
 }
 
+static int get_ext_userfs_part(size_t *size, int *index)
+{
+#if defined(CONFIG_SECOND_FLASH_PART_NAME) && defined(CONFIG_SECOND_FLASH_PART_SIZE)
+	int i = 0;
+	int c = 0;
+	int x = 0;
+	size_t ext_userfs_size;
+	char second_flash_part_list[] = CONFIG_SECOND_FLASH_PART_NAME;
+	char second_flash_part_sizes[] = CONFIG_SECOND_FLASH_PART_SIZE;
+	char tmp_part_name[USERFS_PART_NAME_LEN + 1] = { '0' };
+
+	while (second_flash_part_list[i] != '\0') {
+		if (second_flash_part_list[i] != 'u') {
+			while (second_flash_part_list[i] != ',') {
+				i++;
+			}
+			c++;
+		} else {
+			while ((x < USERFS_PART_NAME_LEN) && (second_flash_part_list[i] != ',')) {
+				tmp_part_name[x] = second_flash_part_list[i];
+				x++;
+				i++;
+			}
+			tmp_part_name[x] = '\0';
+			if ((x == USERFS_PART_NAME_LEN) && (strncmp(tmp_part_name, USERFS_PART_NAME, USERFS_PART_NAME_LEN) == 0)) {
+				break;
+			}
+			if (second_flash_part_list[i] == ',') {
+				c++;
+			}
+		}
+
+		x = 0;
+		i++;
+	}
+
+	if (second_flash_part_list[i] == '\0') {
+		*size = 0;
+		*index = -1;
+		return ERROR;
+	}
+
+	*index = c;
+	i = 0;
+	while (second_flash_part_sizes[i] != '\0' && c) {
+		while (second_flash_part_sizes[i] != ',') {
+			i++;
+		}
+		c--;
+		i++;
+	}
+
+	if (second_flash_part_sizes[i] == '\0') {
+		*size = 0;
+		*index = -1;
+		return ERROR;
+	}
+
+	ext_userfs_size = 0;
+	while (second_flash_part_sizes[i] != ',' && second_flash_part_sizes[i] != '\0') {
+		ext_userfs_size *= 10;
+		ext_userfs_size += (second_flash_part_sizes[i] - 48);
+		i++;
+	}
+	ext_userfs_size *= 1024;
+	*size = ext_userfs_size;
+
+#else
+	*size = 0;
+	*index = -1;
+#endif
+
+	return 0;
+}
+
 static int send_ramdump(void)
 {
 	int i;
@@ -201,7 +280,7 @@ static int send_ramdump(void)
 
 static int send_fsdump(void)
 {
-	int i;
+	int i = 0;
 	uint8_t *ptr;
 	uint32_t userfs_start;
 	size_t size;
@@ -235,6 +314,66 @@ static int send_fsdump(void)
 		ptr++;
 		size--;
 	}
+	return 0;
+}
+
+static int send_extfsdump(void)
+{
+	int i = 0;
+	int fd;
+	int index;
+	uint8_t *ptr;
+	size_t size;
+	char ext_userfs_partition[CONFIG_PATH_MAX] = { '\0' };
+	char ext_fsdump_buf[CONFIG_MTD_SMART_SECTOR_SIZE + 1];
+
+	/*Send ACK for EXTERNAL FSDUMP Handshake */
+	up_lowputc('A');
+
+	i = get_ext_userfs_part(&size, &index);
+	if (i < 0) {
+		return ERROR;
+	}
+
+	/* Send external userfs partition size to host */
+	ptr = (uint8_t *)&size;
+	for (i = 0; i < sizeof(size); i++) {
+		up_lowputc((uint8_t)*ptr);
+		ptr++;
+	}
+
+	/* If extracted size is 0, it means there is no partition available to dump */
+	if (size == 0) {
+		return 0;
+	}
+
+	//TODO:- Currently using blockproxy to create a temporary BCH driver instance to
+	//access the block device. Should be changed to create a permanent BCH instance
+	//on device initialization which can also be used for other use cases.
+	snprintf(ext_userfs_partition, CONFIG_PATH_MAX, "/dev/smart1p%d", index);
+	fd = open(ext_userfs_partition, O_RDONLY);
+	if (fd < 0) {
+		return errno;
+	}
+
+	while (size) {
+		// ToDo: Revert to the flexible logic that searches sectors and
+		//       reads sector sizes stored in the sectors instead of
+		//               using CONFIG_MTD_SMART_SECTOR_SIZE.
+		memset(ext_fsdump_buf, 0, CONFIG_MTD_SMART_SECTOR_SIZE);
+		i = read(fd, ext_fsdump_buf, CONFIG_MTD_SMART_SECTOR_SIZE);
+		if (i < CONFIG_MTD_SMART_SECTOR_SIZE) {
+			return ERROR;
+		}
+
+		ptr = (uint8_t *)ext_fsdump_buf;
+		for (i = CONFIG_MTD_SMART_SECTOR_SIZE; i > 0; i--) {
+			up_lowputc((uint8_t)*ptr);
+			ptr++;
+		}
+		size -= CONFIG_MTD_SMART_SECTOR_SIZE;
+	}
+
 	return 0;
 }
 
@@ -298,6 +437,11 @@ static int dump_via_uart(void)
 				break;
 			}
 		/* Check handshake string for TARGET REBOOT signal */
+		} else if (strncmp(host_buf, EXTFSDUMP_HANDSHAKE_STRING, strlen(EXTFSDUMP_HANDSHAKE_STRING)) == 0) {
+			i = send_extfsdump();
+			if (i != 0) {
+				break;
+			}
 		} else if (strncmp(host_buf, TARGET_REBOOT_STRING, strlen(TARGET_REBOOT_STRING)) == 0) {
 			/* Acknowledge the reboot signal, then reboot device if CONFIG is enabled, otherwise simply exit the function */
 			up_lowputc('A');
