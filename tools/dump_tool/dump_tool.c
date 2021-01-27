@@ -244,6 +244,50 @@ static int fsdump_recv(int dev_fd)
 	return 0;
 }
 
+static int extfsdump_recv(int dev_fd)
+{
+        int ret;
+        uint32_t ext_smartfs_size;
+        char ext_fs_bin[BINFILE_NAME_SIZE] = { '\0' };
+        FILE *fs_fp;
+
+        /* Receive Userfs flash partition size */
+        ret = b_read(dev_fd, (uint8_t *)&ext_smartfs_size, 4);
+        if (ret != 4) {
+                printf("Receiving Userfs size failed, ret = %d\n", ret);
+                return -1;
+        }
+
+	if (ext_smartfs_size == 0) {
+		printf("No external userfs partition found. Please check config\n");
+		return 0;
+	}
+
+        printf("\n=========================================================================\n");
+        printf("External filesystem size = %u\n", ext_smartfs_size);
+        printf("=========================================================================\n");
+
+        /* Create filesystem dump binary file name */
+        snprintf(ext_fs_bin, BINFILE_NAME_SIZE, "ext_fsdump_%08u.bin", ext_smartfs_size);
+
+        printf("\nReceiving external file system dump.....\n");
+
+        fs_fp = fopen(ext_fs_bin, "w");
+        if (fs_fp == NULL) {
+                printf("%s create failed\n", ext_fs_bin);
+                return -1;
+        }
+
+        ret = get_dump(dev_fd, fs_fp, ext_smartfs_size);
+        fclose(fs_fp);
+        if (ret != 0) {
+                printf("Unable to receive complete FS Dump!!!\n");
+                return -1;
+        }
+
+        return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int ret;
@@ -306,7 +350,7 @@ int main(int argc, char *argv[])
 	printf("Target device locked and ready to DUMP!!!\n");
 
 	while (1) {
-		printf("Choose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. Exit Dump Tool\n5. Reboot TARGET Device\n");
+		printf("Choose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. External Userfs Partition Dump\n5. Exit Dump Tool\n6. Reboot TARGET Device\n");
 		fflush(stdout);
 		scanf("%d", &choice);
 		getchar();
@@ -325,9 +369,11 @@ int main(int argc, char *argv[])
 			DUMP_FLAGS |= USERFSDUMP_FLAG;
 			break;
 		case 4:
-			DUMP_FLAGS |= EXIT_TOOL_FLAG;
+			DUMP_FLAGS |= EXTUSERFS_DUMP_FLAG;
 			break;
 		case 5:
+			break;
+		case 6:
 			DUMP_FLAGS |= REBOOT_DEVICE_FLAG;
 			break;
 		default:
@@ -338,6 +384,7 @@ int main(int argc, char *argv[])
 		if (DUMP_FLAGS & REBOOT_DEVICE_FLAG) {
 			printf("NOTE: - CONFIG_BOARD_ASSERT_AUTORESET needs to be enabled to reboot TARGET Device after a crash\n");
 			printf("Handsake for rebooting device may fail since device reboots before sending acknowledgement\n");
+
 			/* Send handshake signal for rebooting TARGET device */
 			strncpy(handshake_string, TARGET_REBOOT_STRING, HANDSHAKE_STR_LEN_MAX);
 			if (do_handshake(dev_fd, handshake_string) != 0) {
@@ -346,13 +393,15 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		if (DUMP_FLAGS & EXIT_TOOL_FLAG) {
+		/* If no flag is set, then exit the dump tool */
+		if (DUMP_FLAGS == CLEAR_DUMP_FLAGS) {
 			break;
 		}
 
 		if (DUMP_FLAGS & RAMDUMP_FLAG) {
 			printf("DUMPING RAM CONTENTS\n");
 			fflush(stdout);
+
 			/* Handshake for synchronization before RAMDUMP */
 			strncpy(handshake_string, RAMDUMP_HANDSHAKE_STRING, HANDSHAKE_STR_LEN_MAX);
 			if (do_handshake(dev_fd, handshake_string) != 0) {
@@ -377,6 +426,7 @@ int main(int argc, char *argv[])
 		if (DUMP_FLAGS & USERFSDUMP_FLAG) {
 			printf("\nDUMPING USERFS CONTENTS\n");
 			fflush(stdout);
+
 			/* Handshake for synchronization before FS Dump */
 			strncpy(handshake_string, FSDUMP_HANDSHAKE_STRING, HANDSHAKE_STR_LEN_MAX);
 			if (do_handshake(dev_fd, handshake_string) != 0) {
@@ -390,6 +440,27 @@ int main(int argc, char *argv[])
 				goto dump_err;
 			}
 			printf("\nFilesystem Dump received successfully\n");
+			fflush(stdout);
+		}
+
+		if (DUMP_FLAGS & EXTUSERFS_DUMP_FLAG) {
+			printf("\nMake sure to enable BCH Driver for External UserFS Partition Dump\n");
+			printf("\nDUMPING EXTERNAL USERFS DUMP PARTITION\n");
+			fflush(stdout);
+
+			/* Handshake for synchronization before External Userfs Dump */
+			strncpy(handshake_string, EXTFSDUMP_HANDSHAKE_STRING, HANDSHAKE_STR_LEN_MAX);
+			if (do_handshake(dev_fd, handshake_string) != 0) {
+				printf("Target handshake failed\n");
+				goto handshake_err;
+			}
+
+			ret = extfsdump_recv(dev_fd);
+			if (ret != 0) {
+				printf("External Userfs partition dump reception failed, ret: %d\n", ret);
+				goto dump_err;
+			}
+			printf("\nExternal Userfs partition dump received successfully\n");
 			fflush(stdout);
 		}
 	}
