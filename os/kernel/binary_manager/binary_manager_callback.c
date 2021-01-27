@@ -212,7 +212,8 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 
 	state_data.need_response = need_response;
 	state_data.state = state;
-	strncpy(state_data.bin_name, bin_name, BIN_NAME_MAX);
+	strncpy(state_data.bin_name, bin_name, BIN_NAME_MAX - 1);
+	state_data.bin_name[BIN_NAME_MAX - 1] = '\0';
 
 	send_count = 0;
 	cb_node = (statecb_node_t *)sq_peek(&BIN_CBLIST(recv_binidx));

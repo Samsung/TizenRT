@@ -54,7 +54,8 @@ binmgr_result_type_e binary_manager_set_request(binmgr_request_t *request_msg, i
 			return BINMGR_INVALID_PARAM;
 		}
 		binmgr_update_bin_t *data = (binmgr_update_bin_t *)arg;
-		strncpy(request_msg->data.update_bin.bin_name, data->bin_name, BIN_NAME_MAX);
+		strncpy(request_msg->data.update_bin.bin_name, data->bin_name, BIN_NAME_MAX - 1);
+		request_msg->data.update_bin.bin_name[BIN_NAME_MAX - 1] = '\0';
 		request_msg->data.update_bin.version = data->version;
 		break;
 	case BINMGR_REGISTER_STATECB:

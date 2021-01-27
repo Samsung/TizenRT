@@ -213,7 +213,8 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 	bin_addr_info_t *bin_info;
 	bin_info = (bin_addr_info_t *)kmm_malloc(sizeof(bin_addr_info_t));
 	if (bin_info != NULL) {
-		strncpy(bin_info->bin_name, bin->bin_name, BIN_NAME_MAX);
+		strncpy(bin_info->bin_name, bin->bin_name, BIN_NAME_MAX - 1);
+		bin_info->bin_name[BIN_NAME_MAX - 1] = '\0';
 		bin_info->text_addr = (uint32_t)bin->alloc[ALLOC_TEXT];
 
 		binfo("[%s] text_addr : %x\n", bin_info->bin_name, bin_info->text_addr);
