@@ -217,7 +217,8 @@ int messaging_save_receiver(char *port_name, pid_t recv_pid, int recv_prio)
 	}
 
 	/* Fill the port node information except sender_pid. */
-	strncpy(port_node->port_name, port_name, strlen(port_name) + 1);
+	strncpy(port_node->port_name, port_name, MSG_MAX_PORT_NAME - 1);
+	port_node->port_name[MSG_MAX_PORT_NAME - 1] = '\0';
 	port_node->sender_pid = MSG_SENDER_UNDEFINED;
 	port_node->nreceiver = 1;
 	sem_init(&port_node->port_sem, 0, 1);
