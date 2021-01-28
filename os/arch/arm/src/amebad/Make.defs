@@ -168,6 +168,10 @@ ifeq ($(CONFIG_BOARDCTL_RESET),y)
 CHIP_CSRCS += amebad_systemreset.c
 endif
 
+ifeq ($(CONFIG_AMEBAD_BLE),y)
+EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/lib_btgap.a
+endif
+
 ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
 CHIP_CSRCS += amebad_nsc.c
 

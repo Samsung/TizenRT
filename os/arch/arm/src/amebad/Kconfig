@@ -61,6 +61,30 @@ config AMEBAD_WIFI
 
 endmenu
 
+menu "Realtek RTL8721D BLE Support"
+
+config AMEBAD_BLE
+	bool "Enable Amebad BLE"
+	default n
+	select FTL_ENABLED
+
+config FTL_ENABLED
+	bool "Enable FTL"
+	default n
+	depends on AMEBAD_BLE
+
+config AMEBAD_BLE_PERIPHERAL
+	bool "Enable Amebad BLE Peripheral"
+	default n
+	depends on AMEBAD_BLE
+
+config AMEBAD_BLE_CENTRAL
+	bool "Enable Amebad BLE Central"
+	default n
+	depends on AMEBAD_BLE
+
+endmenu
+
 menu "Realtek RTL8721D TrustZone Support"
 
 config AMEBAD_TRUSTZONE

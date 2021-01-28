@@ -214,6 +214,15 @@ void amebad_mount_partions(void)
 #endif /* CONFIG_FLASH_PARTITION */
 }
 
+#ifdef CONFIG_FTL_ENABLED
+extern const u8 ftl_phy_page_num;
+extern const u32 ftl_phy_page_start_addr;
+void app_ftl_init(void)
+{
+	ftl_init(ftl_phy_page_start_addr, ftl_phy_page_num);
+}
+#endif
+
 /****************************************************************************
  * Name: board_initialize
  *
@@ -268,6 +277,9 @@ void board_initialize(void)
 			lldbg("Failed to register the RTC driver: %d\n", ret);
 		}
 	}
+#endif
+#ifdef CONFIG_FTL_ENABLED
+	app_ftl_init();
 #endif
 }
 #else

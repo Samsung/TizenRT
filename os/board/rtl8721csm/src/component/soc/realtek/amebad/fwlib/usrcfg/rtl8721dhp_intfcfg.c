@@ -46,7 +46,7 @@ SDIOHCFG_TypeDef sdioh_config = {
 #error "You should allocate flash sectors to for FTL physical map as following, then set FTL_MEM_CUSTEM to 1. For more information, Please refer to Application Note, FTL chapter. "
 #else
 const u8 ftl_phy_page_num = 3;									/* The number of physical map pages, default is 3*/
-const u32 ftl_phy_page_start_addr = 0x00102000;					/* The start offset of flash pages which is allocated to FTL physical map.
+const u32 ftl_phy_page_start_addr = 0x78000;					/* The start offset of flash pages which is allocated to FTL physical map.
 																	Users should modify it according to their own memory layout!! */
 #endif
 #endif
