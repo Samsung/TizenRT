@@ -167,6 +167,9 @@ CHIP_CSRCS += amebad_watchdog_lowerhalf.c
 ifeq ($(CONFIG_BOARDCTL_RESET),y)
 CHIP_CSRCS += amebad_systemreset.c
 endif
+ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
+CHIP_CSRCS += amebad_reboot_reason.c
+endif
 
 ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
 CHIP_CSRCS += amebad_nsc.c
