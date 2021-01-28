@@ -8,7 +8,7 @@ choice LWNL80211_DRV
 
 config LWNL80211_VIRTUAL
 	bool "Virtual driver"
-	depends on !SELECT_SCSC_WLAN && !SELECT_RTK_WLAN
+	depends on SELECT_WLAN_VIRTUAL
 	---help---
 		Virtual WiFi driver
 
