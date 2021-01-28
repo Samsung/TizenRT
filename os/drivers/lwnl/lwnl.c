@@ -364,6 +364,7 @@ int lwnl_postmsg(lwnl_cb_status evttype, void *buffer)
 	LWNLDEV_LOCK(g_lwnl_upper);
 	int res = lwnl_add_event(evttype, buffer);
 	if (res < 0) {
+		LWNLDEV_UNLOCK(g_lwnl_upper);
 		return -1;
 	}
 
