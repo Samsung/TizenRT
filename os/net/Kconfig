@@ -101,13 +101,6 @@ config NET_LWIP_DHCP
 	depends on NET_LWIP
 endchoice #DHCP
 
-config LWIP_DHCP_TCPIP_THREAD
-	bool "Running over LwIP Thread"
-	depends on NET_LWIP_DHCP
-	default n
-	---help---
-		Enable netifapi of DHCP to run it over LwIP TCPIP main thread
-
 config LWIP_DHCP_HOSTNAME
 	bool "Enable Hostname Option"
 	depends on NET_LWIP_DHCP
