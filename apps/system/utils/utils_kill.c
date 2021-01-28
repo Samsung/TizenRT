@@ -293,6 +293,7 @@ int utils_killall(int argc, char **args)
 
 	arg.signo = signo;
 	strncpy(arg.name, ptr, CONFIG_TASK_NAME_SIZE);
+	arg.name[CONFIG_TASK_NAME_SIZE] = '\0';
 	arg.count = 0;
 	arg.ret = OK;
 
