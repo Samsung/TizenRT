@@ -330,6 +330,15 @@ config MPU_STACK_GUARD_SIZE
 		Setting large stack guard size will be a wastage of memory.
 endif
 
+config SYSTEM_REBOOT_REASON
+	bool "Enable System Reboot Reason Interfaces"
+	default n
+	---help---
+		If selected it will allow to use system reboot reason interfaces.
+		Supported interfaces are read, write and clear.
+		Interfaces can be used through prctl with
+		PR_REBOOT_REASON_READ, PR_REBOOT_REASON_WRITE and PR_REBOOT_REASON_CLEAR.
+
 if ARCH_ARMV7M_FAMILY
 source arch/arm/src/armv7-m/Kconfig
 endif

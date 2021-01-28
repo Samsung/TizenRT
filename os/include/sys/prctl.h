@@ -102,6 +102,9 @@ enum prctl_type_e {
 	PR_CHECK_PREFERENCE,
 	PR_SET_PREFERENCE_CB,
 	PR_UNSET_PREFERENCE_CB,
+	PR_REBOOT_REASON_READ,
+	PR_REBOOT_REASON_WRITE,
+	PR_REBOOT_REASON_CLEAR,
 };
 
 /****************************************************************************
