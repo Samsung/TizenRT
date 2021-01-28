@@ -229,7 +229,8 @@ int utils_heapinfo(int argc, char **args)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case 'b':
 			options.heap_type = HEAPINFO_HEAP_TYPE_BINARY;
-			strncpy(options.app_name, optarg, BIN_NAME_MAX);
+			strncpy(options.app_name, optarg, BIN_NAME_MAX - 1);
+			options.app_name[BIN_NAME_MAX - 1] = '\0';
 			heap_name = options.app_name;
 			break;
 #endif
