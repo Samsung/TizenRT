@@ -71,7 +71,6 @@ config AMEBAD_BLE
 config FTL_ENABLED
 	bool "Enable FTL"
 	default n
-	depends on AMEBAD_BLE
 
 config AMEBAD_BLE_PERIPHERAL
 	bool "Enable Amebad BLE Peripheral"
