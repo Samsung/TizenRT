@@ -140,7 +140,7 @@ unsigned char g_buf_1024[] = {
 
 /*
  * Desc: Generate random
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(generate_random)
 {
@@ -176,7 +176,7 @@ TEST_F(generate_random)
 
 /*
  * Desc: Get hash
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(get_hash)
 {
@@ -220,7 +220,7 @@ TEST_F(get_hash)
 
 /*
  * Desc: Get hmac
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(get_hmac)
 {
@@ -270,7 +270,7 @@ TEST_F(get_hmac)
 
 /*
  * Desc: Get RSA signagure
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(rsa_sign)
 {
@@ -326,7 +326,7 @@ TEST_F(rsa_sign)
 
 /*
  * Desc: Verify RSA signature
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(rsa_verify)
 {
@@ -385,7 +385,7 @@ TEST_F(rsa_verify)
 
 /*
  * Desc: Get ECDSA
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(ecdsa_sign)
 {
@@ -439,7 +439,7 @@ TEST_F(ecdsa_sign)
 
 /*
  * Desc: Verify ECDSA
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(ecdsa_verify)
 {
@@ -495,7 +495,7 @@ TEST_F(ecdsa_verify)
 
 /*
  * Desc: Generate DH parameters
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 /* Generate G, P, GX (G^X mod P) */
 TEST_SETUP(dh_generate_param)
@@ -549,7 +549,7 @@ TEST_F(dh_generate_param)
 
 /*
  * Desc: Compute DH shared secret
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(dh_compute_shared_secret)
 {
@@ -611,7 +611,7 @@ TEST_F(dh_compute_shared_secret)
 
 /*
  * Desc: Compute ECDH shared secret
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(ecdh_compute_shared_secret)
 {
@@ -709,7 +709,7 @@ TEST_F(ecdh_compute_shared_secret)
 
 /*
  * Desc: Save certificate in secure storage
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(set_certificate)
 {
@@ -755,7 +755,7 @@ TEST_F(set_certificate)
 
 /*
  * Desc: Load certificate in secure storage
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(get_certificate)
 {
@@ -807,7 +807,7 @@ TEST_F(get_certificate)
 
 /*
  * Desc: Delete certificate in secure storage
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(remove_certificate)
 {
@@ -850,7 +850,7 @@ TEST_F(remove_certificate)
 
 /*
  * Desc: Get factorykey data
- * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 TEST_SETUP(get_injected)
 {
