@@ -32,8 +32,8 @@ HOST  <------------ TARGET
 	FSDUMP_HANDSHAKE_STRING, if matched, go to step 19
 	EXTFSDUMP_HANDSHAKE_STRING, if matched, go to step 27
 	TARGET_REBOOT_STRING, if matched, go to step 33
-	else, send Negative Acknowledgement 'N', go to step 1
-5.  TARGET sends Acknowledgement 'A' to HOST.
+	else, send Negative Acknowledgment 'N', go to step 1
+5.  TARGET sends Acknowledgment 'A' to HOST.
 6.  TARGET will send 1 byte holding number of memory regions.
 7.  HOST will receive 1 byte holding number of memory regions.
 8.  TARGET will send 4 bytes holding RAMDUMP start address for all memory regions.
@@ -47,7 +47,7 @@ HOST  <------------ TARGET
 16. TARGET will send RAMDUMP size bytes in a loop for each memory region to be dumped.
 17. HOST will receive RAMDUMP size bytes in a loop until all "size" bytes received for each memory region to be dumped.
 18. goto step 1.
-19. TARGET sends Acknowledgement 'A' to HOST.
+19. TARGET sends Acknowledgment 'A' to HOST.
 20. TARGET will send 4 bytes holding starting address of the Userfs region in Flash.
 21. HOST will receive 4 bytes holding starting address of the Userfs region in Flash.
 22. TARGET will send 4 bytes holding the size of the Userfs partition in Flash.
@@ -55,13 +55,13 @@ HOST  <------------ TARGET
 24. TARGET will send FSDUMP size bytes to the HOST.
 25. HOST will receive FSDUMP size bytes from the TARGET.
 26. goto step 1.
-27. TARGET sends Acknowledgement 'A' to HOST
+27. TARGET sends Acknowledgment 'A' to HOST
 28. TARGET will send 4 bytes holding the size of the Userfs partition in the External Flash.
 29. HOST will receive 4 bytes holding the siZe of the Userfs partition in the External Flash.
 30. TARGET will send EXTFSDUMP size bytes to the HOST.
 31. HOST will receive EXTFSDUMP size bytes from the TARGET.
 32. goto step 1.
-33. TARGET sends Acknowledgement 'A' to HOST.
+33. TARGET sends Acknowledgment 'A' to HOST.
 34. If CONFIG_BOARD_ASSERT_AUTORESET is enabled, the device is reset.
 35. The dump function on the HOST side exits.
 
