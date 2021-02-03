@@ -51,7 +51,6 @@ static wifi_manager_ap_crypto_type_e WM_AP_CRYPTO;
 		pthread_mutex_unlock(&g_wm_mutex);			\
 	} while (0)
 
-
 /*
  * callbacks
  */
@@ -78,7 +77,6 @@ void wm_sta_connected(wifi_manager_result_e res)
 	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
 	WM_TEST_SIGNAL;
 }
-
 
 void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
@@ -206,7 +204,6 @@ TEST_F(disconnect)
 	ST_END_TEST;
 }
 
-
 /**
  * Description: call deinit() after scan() is executed
  */
@@ -233,7 +230,6 @@ TEST_F(scan)
 	ST_END_TEST;
 }
 
-
 void wm_run_stress_test1(struct options *opt)
 {
 	WM_AP_SSID = opt->ssid;
@@ -241,7 +237,7 @@ void wm_run_stress_test1(struct options *opt)
 	WM_AP_AUTH = opt->auth_type;
 	WM_AP_CRYPTO = opt->crypto_type;
 
-	ST_SET_PACK(wifi, scan);
+	ST_SET_PACK(wifi);
 
 	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 10000000, "init", init);
 	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 2000000, "connect", connect);
