@@ -56,26 +56,50 @@
 #include <tinyara/config.h>
 
 #include <tinyara/reboot_reason.h>
+#include "ameba_soc.h"
 /****************************************************************************
  * Public functions
  ****************************************************************************/
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
+
+static reboot_reason_code_t backup_reg;
+
 void up_reboot_reason_init(void)
 {
-	/* If chip vendor needs to initialize for using reboot reason
-	 * chip specific initialization code will be here.
-	 */
+	/* Read the same backup register for the boot reason */
+	backup_reg = BKUP_Read(BKUP_REG1);
+	BKUP_Write(BKUP_REG1, 0);
 
 }
 
 reboot_reason_code_t up_reboot_reason_read(void)
 {
-	return 0;
+	u32 boot_reason = 0;
+
+	if (backup_reg) {
+		return backup_reg;
+	} else {
+		/* Read AmebaD Boot Reason, WDT and HW reset supported */
+		boot_reason = BOOT_Reason();
+
+		/* HW reset */
+		if (boot_reason == 0) {
+			return REBOOT_SYSTEM_HW_RESET;
+		}
+
+		/* KM4 or KM0 WDT reset */
+		else if ((boot_reason & BIT_BOOT_KM4WDG_RESET_HAPPEN) || (boot_reason & BIT_BOOT_WDG_RESET_HAPPEN)) {
+			return REBOOT_SYSTEM_WATCHDOG;
+		}
+	}
+
+	return REBOOT_UNKNOWN;
 }
 
 void up_reboot_reason_write(reboot_reason_code_t reason)
 {
-
+	/* Set the specific bit in BKUP_REG1 */
+	BKUP_Write(BKUP_REG1, (u32)reason);
 }
 
 void up_reboot_reason_clear(void)
