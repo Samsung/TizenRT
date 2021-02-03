@@ -87,13 +87,11 @@ void wm_sta_connected(wifi_manager_result_e res)
 	WM_TEST_SIGNAL;
 }
 
-
 void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;
 }
-
 
 void wm_softap_sta_join(void)
 {
@@ -101,13 +99,11 @@ void wm_softap_sta_join(void)
 	WM_TEST_SIGNAL;
 }
 
-
 void wm_softap_sta_leave(void)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;
 }
-
 
 void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
@@ -147,6 +143,7 @@ static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
 	strncpy(ap_config->passphrase, WM_SOFTAP_PASSWORD, strlen(WM_SOFTAP_PASSWORD) + 1);
 	ap_config->channel = WM_SOFTAP_CHANNEL;
 }
+
 /*
  * station join test
  */
@@ -176,7 +173,6 @@ TEST_F(sta_join)
 
 	ST_END_TEST;
 }
-
 
 /*
  * station scan test
@@ -245,7 +241,6 @@ TEST_SETUP(softap_start)
 	ST_END_TEST;
 }
 
-
 TEST_TEARDOWN(softap_start)
 {
 	ST_START_TEST;
@@ -262,7 +257,6 @@ TEST_F(softap_start)
 	ST_END_TEST;
 }
 
-
 /*
  * SoftAP Scan
  */
@@ -275,7 +269,6 @@ TEST_SETUP(softap_scan)
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
 	ST_END_TEST;
 }
-
 
 TEST_TEARDOWN(softap_scan)
 {
@@ -292,7 +285,6 @@ TEST_F(softap_scan)
 	ST_END_TEST;
 }
 
-
 /*
  * SoftAP Stop
  */
@@ -305,7 +297,6 @@ TEST_SETUP(softap_stop)
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
 	ST_END_TEST;
 }
-
 
 TEST_TEARDOWN(softap_stop)
 {
@@ -320,8 +311,6 @@ TEST_F(softap_stop)
 	ST_END_TEST;
 }
 
-
-
 void wm_run_stress_test2(struct options *opt)
 {
 	WM_AP_SSID = opt->ssid;
@@ -332,7 +321,7 @@ void wm_run_stress_test2(struct options *opt)
 	WM_SOFTAP_PASSWORD = opt->softap_password;
 	WM_SOFTAP_CHANNEL = opt->softap_channel;
 
-	ST_SET_PACK(wifi, softap_stop);
+	ST_SET_PACK(wifi);
 
 	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 10000000, "station join", sta_join);
 	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 2000000, "station leave", sta_leave);
