@@ -67,6 +67,9 @@
 #include <tinyara/fs/mtd.h>
 #endif
 #include <arch/board/board.h>
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <arch/reboot_reason.h>
+#endif
 #include "gpio_api.h"
 #include "timer_api.h"
 #ifdef CONFIG_FLASH_PARTITION
@@ -236,6 +239,11 @@ void board_initialize(void)
 		wifi_config.wifi_app_ctrl_tdma == FALSE) {
 		SystemSetCpuClk(CLK_KM4_100M);
 	}
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_init();
+#endif
+
 	InterruptRegister(IPC_INTHandler, IPC_IRQ, (u32)IPCM0_DEV, 5);
 	InterruptEn(IPC_IRQ, 5);
 	/* init console */
