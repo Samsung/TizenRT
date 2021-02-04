@@ -64,6 +64,11 @@
 #include <tinyara/userspace.h>
 #include <arch/irq.h>
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
+#endif
+
 #include "up_arch.h"
 #include "nvic.h"
 #include "up_internal.h"
@@ -200,6 +205,9 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 
 	(void)irqsave();
 	lldbg("PANIC!!! Hard fault: %08x\n", getreg32(NVIC_HFAULTS));
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
 	PANIC();
 	return OK;
 }
