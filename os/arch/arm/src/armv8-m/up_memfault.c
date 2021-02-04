@@ -61,6 +61,11 @@
 
 #include <arch/irq.h>
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
+#endif
+
 #include "up_arch.h"
 #include "nvic.h"
 #include "up_internal.h"
@@ -140,6 +145,9 @@ int up_memfault(int irq, FAR void *context, FAR void *arg)
 #endif
 #endif
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	 up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
+#endif
 	PANIC();
 	return OK;					/* Won't get here */
 }
