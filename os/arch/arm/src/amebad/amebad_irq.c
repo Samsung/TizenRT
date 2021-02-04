@@ -62,6 +62,11 @@
 #include <tinyara/arch.h>
 #include <arch/irq.h>
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
+#endif
+
 #include "nvic.h"
 #include "ram_vectors.h"
 #include "up_arch.h"
@@ -155,6 +160,9 @@ static int amebad_nmi(int irq, FAR void *context, FAR void *arg)
 {
   (void)irqsave();
   dbg("PANIC!!! NMI received\n");
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
   PANIC();
   return 0;
 }
@@ -163,6 +171,9 @@ static int amebad_busfault(int irq, FAR void *context, FAR void *arg)
 {
   (void)irqsave();
   dbg("PANIC!!! Bus fault received: %08x\n", getreg32(NVIC_CFAULTS));
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
   PANIC();
   return 0;
 }
@@ -171,6 +182,9 @@ static int amebad_usagefault(int irq, FAR void *context, FAR void *arg)
 {
   (void)irqsave();
   dbg("PANIC!!! Usage fault received: %08x\n", getreg32(NVIC_CFAULTS));
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
   PANIC();
   return 0;
 }
@@ -179,6 +193,9 @@ static int amebad_pendsv(int irq, FAR void *context, FAR void *arg)
 {
   (void)irqsave();
   dbg("PANIC!!! PendSV received\n");
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
   PANIC();
   return 0;
 }
@@ -187,6 +204,9 @@ static int amebad_dbgmonitor(int irq, FAR void *context, FAR void *arg)
 {
   (void)irqsave();
   dbg("PANIC!!! Debug Monitor received\n");
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
   PANIC();
   return 0;
 }
@@ -195,6 +215,9 @@ static int amebad_reserved(int irq, FAR void *context, FAR void *arg)
 {
   (void)irqsave();
   dbg("PANIC!!! Reserved interrupt\n");
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
   PANIC();
   return 0;
 }
