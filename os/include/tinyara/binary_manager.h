@@ -142,8 +142,7 @@ struct binary_header_s {
 	uint32_t bin_ver;
 	uint32_t bin_ramsize;
 	uint32_t bin_stacksize;
-	float kernel_ver;
-	uint32_t jump_addr;
+	uint32_t kernel_ver;
 } __attribute__((__packed__));
 typedef struct binary_header_s binary_header_t;
 
@@ -151,8 +150,7 @@ typedef struct binary_header_s binary_header_t;
 struct binary_update_info_s {
 	int available_size;
 	char name[BIN_NAME_MAX];
-	/* A double type to cover kernel version as float type and user binary version as uint32_t type */
-	double version;
+	uint32_t version;
 };
 typedef struct binary_update_info_s binary_update_info_t;
 

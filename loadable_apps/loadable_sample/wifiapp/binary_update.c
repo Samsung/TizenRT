@@ -319,7 +319,7 @@ static void print_binary_info(binary_update_info_t *binary_info)
 	printf(" =========== binary [%s] info ============ \n", binary_info->name);
 	printf(" %10s | %8s\n", "Version", "Available size");
 	printf(" -------------------------------------------- \n");
-	printf(" %8.1lf | %8d\n", binary_info->version, binary_info->available_size);
+	printf(" %8.1u | %8d\n", binary_info->version, binary_info->available_size);
 	printf(" ============================================ \n");
 }
 
@@ -331,7 +331,7 @@ static void print_binary_info_list(binary_update_info_list_t *binary_info_list)
 	printf(" %4s | %6s | %10s | %8s\n", "Idx", "Name", "Version", "Available size");
 	printf(" -------------------------------------------------------- \n");
 	for (bin_idx = 0; bin_idx < binary_info_list->bin_count; bin_idx++) {
-		printf(" %4d | %6s | %8.1lf | %8d\n", bin_idx, \
+		printf(" %4d | %6s | %8.1u | %8d\n", bin_idx, \
 		binary_info_list->bin_info[bin_idx].name, binary_info_list->bin_info[bin_idx].version, \
 		binary_info_list->bin_info[bin_idx].available_size);
 	}
@@ -345,8 +345,8 @@ static int binary_update_check_test_result(binary_update_info_t *pre_bin_info, b
 	printf(" ========== [%5s] Update info =========== \n", cur_bin_info->name);
 	printf(" %4s | %10s \n", "Con", "Version");
 	printf(" ----------------------------------------- \n");
-	printf(" %4s | %8.1lf \n", "Pre", pre_bin_info->version);
-	printf(" %4s | %8.1lf \n", "Cur", cur_bin_info->version);
+	printf(" %4s | %8.1u \n", "Pre", pre_bin_info->version);
+	printf(" %4s | %8.1u \n", "Cur", cur_bin_info->version);
 	printf(" ========================================== \n");
 
 	if (condition == DOWNLOAD_VALID_BIN) {

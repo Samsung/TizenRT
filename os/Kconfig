@@ -197,7 +197,7 @@ config BUILD_KERNEL
 		a memory management unit (MMU) and address environments.  Support,
 		however, may not be implemented on all platforms.
 
-endchoice # Build configuration
+endchoice # Memory organization
 
 if APP_BINARY_SEPARATION
 
@@ -268,7 +268,16 @@ config PASS1_OBJECT
 	default ""
 
 endif # Build 2-pass
-endmenu # Build Setup
+
+config BINARY_VERSION
+	int "Binary Version(YYMMDD)"
+	default 200204
+	---help---
+	Binary version which has a "YYMMDD" format is included in binary header.
+	It is used by binary manager to check the latest binary version.
+	So it should be set to a higer value in the latest version.
+
+endmenu # Build Configuration
 
 menu "Binary Output Formats"
 
