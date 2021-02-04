@@ -86,7 +86,9 @@
 
 int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 {
-	struct mm_allocnode_s *node;
+	struct mm_freenode_s *node;
+	struct mm_freenode_s *prev;
+	struct mm_freenode_s *next;
 	size_t mxordblk = 0;
 	int    ordblks  = 0;		/* Number of non-inuse chunks */
 	size_t uordblks = 0;		/* Total allocated space */
@@ -111,8 +113,33 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 
 		mm_takesemaphore(heap);
 
-		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+		prev = NULL;
+		node = heap->mm_heapstart[region];
+		next = (struct mm_freenode_s *)((char *)node + node->size);
+
+		for (; node < heap->mm_heapend[region]; prev = node, node = next, next = (struct mm_freenode_s *)((char *)next + next->size)) {
 			mvdbg("region=%d node=%p size=%p preceding=%p (%c)\n", region, node, node->size, (node->preceding & ~MM_ALLOC_BIT), (node->preceding & MM_ALLOC_BIT) ? 'A' : 'F');
+
+			if ((prev && prev->size != node->preceding & ~MM_ALLOC_BIT) ||
+				(node->size != next->preceding & ~MM_ALLOC_BIT) ||
+				(!(node->preceding & MM_ALLOC_BIT) &&
+				((node->blink && node->blink->flink != node) ||
+				(node->flink && node->flink->blink != node)))
+			) {
+				mdbg("ERROR: Heap node corruption detected from one of following nodes\n");
+				if (prev) {
+					mdbg("Previous node addr = 0x%08x size = %u preceding size = %u\n", prev, prev->size, prev->preceding & ~MM_ALLOC_BIT);
+				}
+				mdbg("Current  node addr = 0x%08x size = %u preceding size = %u\n", node, node->size, node->preceding & ~MM_ALLOC_BIT);
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				if (prev) {
+					mdbg("Previous node owner pid = %u, alloc_call_addr = 0x%08x\n", prev->pid, prev->alloc_call_addr);
+				}
+				mdbg("Current  node owner pid = %u, alloc_call_addr = 0x%08x\n", node->pid, node->alloc_call_addr);
+#endif
+				ASSERT(0);
+			}
 
 			/* Check if the node corresponds to an allocated memory chunk */
 
@@ -130,7 +157,6 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 		mm_givesemaphore(heap);
 
 		mvdbg("region=%d node=%p heapend=%p\n", region, node, heap->mm_heapend[region]);
-		DEBUGASSERT(node == heap->mm_heapend[region]);
 		uordblks += SIZEOF_MM_ALLOCNODE;	/* account for the tail node */
 	}
 #undef region
