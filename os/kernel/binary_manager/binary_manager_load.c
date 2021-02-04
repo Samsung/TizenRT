@@ -653,7 +653,7 @@ int binary_manager_read_header(char *path, binary_header_t *header_data, bool cr
 		}
 		kmm_free(crc_buffer);
 	}
-	bmvdbg("Binary header : %d %d %d %d %s %d %d %.1f %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->loading_priority, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver, header_data->jump_addr);
+	bmvdbg("Binary header : %d %d %d %d %s %d %d %d\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->loading_priority, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver);
 	close(fd);
 
 	return OK;

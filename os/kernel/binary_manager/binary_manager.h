@@ -148,7 +148,7 @@ struct binmgr_kinfo_s {
 	uint32_t part_count;
 	uint32_t part_size[KERNEL_BIN_COUNT];
 	int8_t part_num[KERNEL_BIN_COUNT];
-	float version;
+	uint32_t version;
 };
 typedef struct binmgr_kinfo_s binmgr_kinfo_t;
 
