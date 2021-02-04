@@ -58,11 +58,15 @@
 
 #include <debug.h>
 
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+#include <assert.h>
+#endif
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
 #endif
+
 #include "mm_node.h"
 
 /****************************************************************************
@@ -228,16 +232,18 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	 * to the SYSLOG.
 	 */
 
-#ifdef CONFIG_DEBUG_MM
 	if (!ret) {
 		mdbg("Allocation failed, size %u\n", size);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		heapinfo_parse_heap(heap, HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
 #endif
+
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+		up_assert();
+#endif
 	} else {
 		mvdbg("Allocated %p, size %u\n", ret, size);
 	}
-#endif
 
 	return ret;
 }
