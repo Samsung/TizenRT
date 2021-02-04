@@ -146,3 +146,10 @@ config MM_SHM
 	---help---
 		Build in support for the shared memory interfaces shmget(), shmat(),
 		shmctl(), and shmdt().
+
+config MM_ASSERT_ON_FAIL
+	bool "Assertion when Memory allocation fail"
+	default n
+	---help---
+		When memory allocation fails, make assertion.
+		From the application binary with loadable build, it will be reloaded.
