@@ -1,0 +1,3 @@
+config ENTRY_TLS_SECLINK
+	bool "TLS Loopback Test with SECLINK"
+	depends on EXAMPLES_TLS_SECLINK
