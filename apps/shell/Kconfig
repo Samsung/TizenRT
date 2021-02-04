@@ -10,12 +10,6 @@ config TASH
 	depends on NFILE_DESCRIPTORS != 0
 
 if TASH
-config TASH_MAX_COMMANDS
-	int "Max number of TASH commands"
-	default 32
-	---help---
-		The maximum number of TASH commands to register.
-
 config TASH_MAX_STORE_COMMANDS
 	int "Max number of stored TASH commands"
 	default 10

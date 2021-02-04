@@ -18,13 +18,15 @@
 /// @file   tash_command.c
 /// @brief  functions to treate commands
 
-#include <pthread.h>
 #include <tinyara/config.h>
-#include <tinyara/ascii.h>
+
+#include <sys/types.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/types.h>
+#include <stdlib.h>
+#include <pthread.h>
 #include <sys/boardctl.h>
+#include <tinyara/ascii.h>
 #include <apps/shell/tash.h>
 #ifdef CONFIG_BUILTIN_APPS
 #include <apps/builtin.h>
@@ -37,11 +39,6 @@
 
 /* Following defines are fixed to avoid many configuration variables for TASH */
 #define TASH_CMD_MAXSTRLENGTH		(16) /* example: length of "ifconfig" command is 8 */
-#ifdef CONFIG_TASH_MAX_COMMANDS
-#define TASH_MAX_COMMANDS			CONFIG_TASH_MAX_COMMANDS
-#else
-#define TASH_MAX_COMMANDS			(32)
-#endif
 #ifdef CONFIG_TASH_CMDTASK_STACKSIZE
 #define TASH_CMDTASK_STACKSIZE		CONFIG_TASH_CMDTASK_STACKSIZE
 #else
@@ -85,7 +82,7 @@ struct tash_cmd_s {
 
 struct tash_cmd_info_s {
 	pthread_mutex_t tmutex;						/* Mutex for protection */
-	struct tash_cmd_s cmd[TASH_MAX_COMMANDS];
+	struct tash_cmd_s *cmd;
 	int count;									/* Number of TASH commands */
 };
 
@@ -209,6 +206,7 @@ static int tash_exit(int argc, char **args)
 {
 	printf("TASH: Good bye!!\n");
 	tash_stop();
+	free(tash_cmds_info.cmd);
 	exit(0);
 }
 
@@ -582,7 +580,12 @@ bool tash_do_autocomplete(char *cmd, int *pos, bool double_tab)
 	bool ret = false;
 	int found_cnt = 0;
 	int idx;
-	uint16_t matched[TASH_MAX_COMMANDS] = {0,};
+	uint16_t *matched;
+
+	matched = (uint16_t *)zalloc(tash_cmds_info.count);
+	if (!matched) {
+		return false;
+	}
 
 	/* lock mutex */
 	pthread_mutex_lock(&tash_cmds_info.tmutex);
@@ -617,6 +620,8 @@ bool tash_do_autocomplete(char *cmd, int *pos, bool double_tab)
 	}
 	/* unlock mutex */
 	pthread_mutex_unlock(&tash_cmds_info.tmutex);
+
+	free(matched);
 	return ret;
 }
 
@@ -638,24 +643,34 @@ bool tash_do_autocomplete(char *cmd, int *pos, bool double_tab)
 int tash_cmd_install(const char *str, TASH_CMD_CALLBACK cb, int thread_exec)
 {
 	int cmd_idx;
-	static int fail_cmd_count = 0;
-
-	if (TASH_MAX_COMMANDS == tash_cmds_info.count) {
-		printf("Allowed Max tash cmds: %d and Current tash cmd count: %d\n",
-				TASH_MAX_COMMANDS, tash_cmds_info.count + ++fail_cmd_count);
-		printf("Couldn't install cmd: (%s), Refer CONFIG_TASH_MAX_COMMANDS\n", str);
-		return -1;				/* MAX cmd count reached */
-	}
+	struct tash_cmd_s *new_cmd_buff;
 
 	/* Lock mutex */
 	pthread_mutex_lock(&tash_cmds_info.tmutex);
 
-	/* CHeck if cmd is already installed */
-	for (cmd_idx = 0; cmd_idx < tash_cmds_info.count; cmd_idx++) {
-		if (strncmp(str, tash_cmds_info.cmd[cmd_idx].str, TASH_CMD_MAXSTRLENGTH - 1) == 0) {
-			pthread_mutex_unlock(&tash_cmds_info.tmutex);
-			return -2;			/* CMD already installed */
+	/* allocate memory for new cmd */
+	if (tash_cmds_info.count == 0) {
+		new_cmd_buff = (struct tash_cmd_s *)malloc(sizeof(struct tash_cmd_s));
+	} else {
+		/* Is it new  */
+		for (cmd_idx = 0; cmd_idx < tash_cmds_info.count; cmd_idx++) {
+			if (strncmp(str, tash_cmds_info.cmd[cmd_idx].str, TASH_CMD_MAXSTRLENGTH - 1) == 0) {
+				/* Unlock mutex */
+				pthread_mutex_unlock(&tash_cmds_info.tmutex);
+				return -2;			/* CMD already installed */
+			}
 		}
+
+		new_cmd_buff = (struct tash_cmd_s *)realloc(tash_cmds_info.cmd, sizeof(struct tash_cmd_s) * (tash_cmds_info.count + 1));
+	}
+
+	if (new_cmd_buff) {
+		tash_cmds_info.cmd = new_cmd_buff;
+	} else {
+		printf("TASH: memory allocation fail to register (%s) command\n", str);
+		/* Unlock mutex */
+		pthread_mutex_unlock(&tash_cmds_info.tmutex);
+		return -1; /* Memory Allocation Fail for new command */
 	}
 
 	/* store command string - no need of explicit NULL termination */
@@ -666,6 +681,7 @@ int tash_cmd_install(const char *str, TASH_CMD_CALLBACK cb, int thread_exec)
 	tash_cmds_info.cmd[tash_cmds_info.count].exec_type = thread_exec;
 	/* Increment command count value */
 	tash_cmds_info.count++;
+	/* Unlock mutex */
 	pthread_mutex_unlock(&tash_cmds_info.tmutex);
 
 	is_sorted_list = FALSE;
