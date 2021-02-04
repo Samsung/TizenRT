@@ -71,11 +71,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#ifdef CONFIG_TASH_COMMAND_INTERFACE
-#define MAX_TELNET_CMDS CONFIG_TASH_MAX_COMMANDS
-#else
-#define MAX_TELNET_CMDS (4)
-#endif
 #define TELNET_TOKENLEN (32)
 #define MAX_NUMBER_OF_TOKENS (5)
 /****************************************************************************
@@ -97,7 +92,7 @@ static void telnetd_install_commands(void);
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-static struct ptentry_s g_parsetab[MAX_TELNET_CMDS];
+static struct ptentry_s *g_parsetab;
 
 /****************************************************************************
  * Name: telnetd_help
@@ -116,6 +111,7 @@ static void telnetd_help(int argc, char **argv)
  ****************************************************************************/
 static void telnetd_quit(int argc, char **argv)
 {
+	free(g_parsetab);
 	printf("Bye!\n");
 	exit(0);
 }
@@ -173,6 +169,8 @@ static void telnetd_install_commands(void)
 
 	printf("Tash cmd count is %d\n", count);
 
+	g_parsetab = (struct ptentry_s *)malloc(sizeof(struct ptentry_s) * count);
+
 	for (i = 0; i < count; i++) {
 		tash_get_cmdpair(g_parsetab[i].commandstr, (TASH_CMD_CALLBACK *)&g_parsetab[i].pfunc, i);
 		if (strncmp(g_parsetab[i].commandstr, "help", 4) == 0) {
@@ -182,10 +180,14 @@ static void telnetd_install_commands(void)
 		}
 	}
 #else
-	struct ptentry_s *entry = g_parsetab;
+	struct ptentry_s *entry;
 	const char str1[] = "help";
 	const char str2[] = "exit";
 	int len = 4;				//strlen of help & exit
+
+	g_parsetab = (struct ptentry_s *)malloc(sizeof(struct ptentry_s) * 4);
+	entry = g_parsetab;
+
 	strncpy(entry->commandstr, str1, len);
 	g_parsetab[0].pfunc = &telnetd_help;
 	entry++;
