@@ -190,9 +190,6 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 		rfds = ofds;
 		res = select(maxfd, &rfds, NULL, NULL, NULL);
 		if (res < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
 			WM_ERR;
 			break;
 		}
@@ -206,7 +203,7 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 			// get events from netlink driver
 			res = _wifi_utils_fetch_event(nd);
 			if (res < 0) {
-				WM_ERR;
+				WM_LOG_ERROR("message currupted\n");
 				break;
 			}
 		} else {
@@ -225,7 +222,7 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
  */
 void lwnl_start_monitor(void)
 {
-	int tid = task_create("lwnl cb handler", 110, 4096, (main_t)_wifi_utils_callback_handler, NULL);
+	int tid = task_create("lwnl8021 cb handler", 110, 4096, (main_t)_wifi_utils_callback_handler, NULL);
 	if (tid < 0) {
 		WM_ERR;
 	}

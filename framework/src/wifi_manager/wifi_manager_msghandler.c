@@ -110,6 +110,7 @@ int wifimgr_post_message(wifimgr_msg_s *msg)
 		return -2;
 	}
 	sem_destroy(hmsg.signal);
+	WM_LOG_VERBOSE("<--%s done\n", __FUNCTION__);
 
 	return 0;
 }
