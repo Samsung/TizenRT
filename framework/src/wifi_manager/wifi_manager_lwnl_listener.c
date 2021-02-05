@@ -24,17 +24,13 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/wifi/wifi_utils.h>
 #include "wifi_manager_lwnl_listener.h"
+#include "wifi_manager_dhcp.h"
+#include "wifi_manager_event.h"
+#include "wifi_manager_msghandler.h"
 #include "wifi_manager_log.h"
+#include "wifi_manager_message.h"
 
-static wifi_utils_cb_s g_cbk = {NULL, NULL, NULL, NULL, NULL};
-
-static void _close_cb_handler(void)
-{
-	// Todo
-	return;
-}
-
-static int _wifi_utils_convert_scan(wifi_utils_scan_list_s **scan_list, void *input, int len)
+static int _lwnl_convert_scan(wifi_utils_scan_list_s **scan_list, void *input, int len)
 {
 	WM_LOG_VERBOSE("[WU] T%d %s len(%d)\n", getpid(), __FUNCTION__, len);
 	int remain = len;
@@ -64,7 +60,7 @@ static int _wifi_utils_convert_scan(wifi_utils_scan_list_s **scan_list, void *in
 	return 0;
 }
 
-static wifi_utils_scan_list_s *_handle_scan(int fd, int len)
+static wifi_utils_scan_list_s *_lwnl_handle_scan(int fd, int len)
 {
 	char *buf = (char *)malloc(len);
 	if (!buf) {
@@ -79,7 +75,7 @@ static wifi_utils_scan_list_s *_handle_scan(int fd, int len)
 	}
 
 	wifi_utils_scan_list_s *scan_list = NULL;
-	res = _wifi_utils_convert_scan(&scan_list, buf, len);
+	res = _lwnl_convert_scan(&scan_list, buf, len);
 	free(buf);
 	if (res < 0) {
 		return NULL;
@@ -87,49 +83,48 @@ static wifi_utils_scan_list_s *_handle_scan(int fd, int len)
 	return scan_list;
 }
 
-static int _wifi_utils_call_event(int fd, lwnl_cb_status status, int len)
+/*  only wifi msg handler thread can use this variable */
+static wifimgr_msg_s g_msg = {EVT_NONE, WIFI_MANAGER_FAIL, NULL, NULL};
+
+static inline void LWNL_SET_MSG(wifimgr_msg_s *msg, wifimgr_evt_e event,
+								wifi_manager_result_e result, void *param, sem_t *signal)
+{
+	msg->event = event;
+	msg->result = result;
+	msg->param = param;
+	msg->signal = signal;
+}
+
+static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 {
 	switch (status) {
 	case LWNL_STA_CONNECTED:
-		if (g_cbk.sta_connected) {
-			g_cbk.sta_connected(WIFI_UTILS_SUCCESS, NULL);
-		}
+		LWNL_SET_MSG(&g_msg, EVT_STA_CONNECTED, WIFI_MANAGER_FAIL, NULL, NULL);
 		break;
 	case LWNL_STA_CONNECT_FAILED:
-		if (g_cbk.sta_connected) {
-			g_cbk.sta_connected(WIFI_UTILS_FAIL, NULL);
-		}
+		LWNL_SET_MSG(&g_msg, EVT_STA_CONNECT_FAILED, WIFI_MANAGER_FAIL, NULL, NULL);
 		break;
 	case LWNL_STA_DISCONNECTED:
-		if (g_cbk.sta_disconnected) {
-			g_cbk.sta_disconnected(NULL);
-		}
+		LWNL_SET_MSG(&g_msg, EVT_STA_DISCONNECTED, WIFI_MANAGER_FAIL, NULL, NULL);
 		break;
 	case LWNL_SOFTAP_STA_JOINED:
-		if (g_cbk.softap_sta_joined) {
-			g_cbk.softap_sta_joined(NULL);
-		}
+#ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
+		LWNL_SET_MSG(&g_msg, EVT_JOINED, WIFI_MANAGER_FAIL, NULL, NULL);
+#endif
 		break;
 	case LWNL_SOFTAP_STA_LEFT:
-		if (g_cbk.softap_sta_left) {
-			g_cbk.softap_sta_left(NULL);
-		}
+		LWNL_SET_MSG(&g_msg, EVT_LEFT, WIFI_MANAGER_FAIL, NULL, NULL);
 		break;
 	case LWNL_SCAN_FAILED:
-		if (g_cbk.scan_done) {
-			g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
-		}
+		LWNL_SET_MSG(&g_msg, EVT_SCAN_DONE, WIFI_MANAGER_FAIL, NULL, NULL);
 		break;
 	case LWNL_SCAN_DONE:
 	{
-		if (!g_cbk.scan_done) {
-			break;
-		}
-		wifi_utils_scan_list_s *scan_list = _handle_scan(fd, len);
+		wifi_utils_scan_list_s *scan_list = _lwnl_handle_scan(fd, len);
 		if (scan_list) {
-			g_cbk.scan_done(WIFI_UTILS_SUCCESS, scan_list, 0);
+			LWNL_SET_MSG(&g_msg, EVT_SCAN_DONE, WIFI_MANAGER_FAIL, scan_list, NULL);
 		} else {
-			g_cbk.scan_done(WIFI_UTILS_FAIL, NULL, NULL);
+			LWNL_SET_MSG(&g_msg, EVT_SCAN_DONE, WIFI_MANAGER_FAIL, NULL, NULL);
 		}
 		break;
 	}
@@ -141,13 +136,17 @@ static int _wifi_utils_call_event(int fd, lwnl_cb_status status, int len)
 	return 0;
 }
 
-static int _wifi_utils_fetch_event(int fd)
+/**
+ * Public
+ */
+int lwnl_fetch_event(int fd, void *buf, int buflen)
 {
 	lwnl_cb_status status;
 	uint32_t len;
 	char type_buf[8] = {0,};
-	int nbytes = read(fd, (char *)type_buf, 8);
+	handler_msg *hmsg = (handler_msg *)buf;
 
+	int nbytes = read(fd, (char *)type_buf, 8);
 	if (nbytes < 0) {
 		WM_LOG_ERROR("Failed to receive (nbytes=%d)\n", nbytes);
 		WM_ERR;
@@ -158,105 +157,10 @@ static int _wifi_utils_fetch_event(int fd)
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
 	WM_LOG_VERBOSE("scan state(%d) length(%d)\n", status, len);
-	(void)_wifi_utils_call_event(fd, status, len);
+	(void)_lwnl_call_event(fd, status, len);
+
+	hmsg->signal = NULL;
+	hmsg->msg = &g_msg;
 
 	return 0;
-}
-
-static int _wifi_utils_callback_handler(int argc, char *argv[])
-{
-	WM_ENTER;
-	WM_LOG_VERBOSE("run utils callback handler (should be moved to booting)\n");
-	fd_set rfds, ofds;
-
-	int nd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
-	if (nd < 0) {
-		WM_ERR;
-		return -1;
-	}
-
-	int res = bind(nd, NULL, 0);
-	if (res < 0) {
-		WM_ERR;
-		return -1;
-	}
-
-	FD_ZERO(&ofds);
-	FD_SET(nd, &ofds);
-
-	int maxfd = nd + 1;
-
-	while (1) {
-		rfds = ofds;
-		res = select(maxfd, &rfds, NULL, NULL, NULL);
-		if (res < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
-			WM_ERR;
-			break;
-		}
-
-		if (res == 0) {
-			WM_ERR;
-			break;
-		}
-
-		if (FD_ISSET(nd, &rfds)) {
-			// get events from netlink driver
-			res = _wifi_utils_fetch_event(nd);
-			if (res < 0) {
-				WM_ERR;
-				break;
-			}
-		} else {
-			// unknown error
-			WM_ERR;
-			break;
-		}
-	}
-
-	close(nd);
-	return 0;
-}
-
-/**
- * Public
- */
-void lwnl_start_monitor(void)
-{
-	int tid = task_create("lwnl cb handler", 110, 4096, (main_t)_wifi_utils_callback_handler, NULL);
-	if (tid < 0) {
-		WM_ERR;
-	}
-}
-
-void lwnl_stop_monitor(void)
-{
-	_close_cb_handler();
-}
-
-int lwnl_join_monitor(wifi_utils_cb_s *cbk)
-{
-	if (!cbk) {
-		return WIFI_UTILS_INVALID_ARGS;
-	}
-	g_cbk = *cbk;
-
-	return WIFI_UTILS_SUCCESS;
-}
-
-
-int lwnl_leave_monitor(wifi_utils_cb_s *cb)
-{
-	//TODO: g_cbk will support multiple callback from various applications.
-	//This 'cb' then can be used to find the proper set of callbacks to be removed from the list
-	(void)cb;
-	g_cbk.sta_connected = NULL;
-	g_cbk.sta_disconnected = NULL;
-	g_cbk.softap_sta_joined = NULL;
-	g_cbk.softap_sta_left = NULL;
-	g_cbk.scan_done = NULL;
-
-	return WIFI_UTILS_SUCCESS;
 }

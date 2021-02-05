@@ -30,8 +30,8 @@
 #define WM_LOG_DEBUG printf
 #define WM_LOG_ERROR printf
 #else
-#define WM_LOG_VERBOSE nvdbg
-#define WM_LOG_INFO nwdbg
+#define WM_LOG_VERBOSE nwdbg
+#define WM_LOG_INFO nvdbg
 #define WM_LOG_DEBUG ndbg
 #define WM_LOG_ERROR ndbg
 #endif
