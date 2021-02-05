@@ -745,14 +745,36 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                 {
                     debug_print("%x", *(p_cha_info->data + i));
                 }
-                /* call user defined callback */
-                if (p_cha_info->cb)
+                switch (p_tizenrt_cb_data->val)
                 {
-                    da_ble_server_cb_t p_func = p_cha_info->cb;
-                    p_func(DA_BLE_SERVER_ATTR_CB_WRITING, p_tizenrt_cb_data->conn_id,
-                                                            p_cha_info->abs_handle, p_cha_info->arg);
-                } else {
-                    debug_print("\r\n[%s] NULL write callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);
+                case WRITE_REQUEST:
+                    {
+                        /* call user defined callback */
+                        if (p_cha_info->cb)
+                        {
+                            da_ble_server_cb_t p_func = p_cha_info->cb;
+                            p_func(DA_BLE_SERVER_ATTR_CB_WRITING, p_tizenrt_cb_data->conn_id,
+                                                                    p_cha_info->abs_handle, p_cha_info->arg);
+                        } else {
+                            debug_print("\r\n[%s] NULL write callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);
+                        }
+                        break;
+                    }
+                case WRITE_WITHOUT_RESPONSE:
+                    {
+                        /* call user defined callback */
+                        if (p_cha_info->cb)
+                        {
+                            da_ble_server_cb_t p_func = p_cha_info->cb;
+                            p_func(DA_BLE_SERVER_ATTR_CB_WRITING_NO_RSP, p_tizenrt_cb_data->conn_id,
+                                                                    p_cha_info->abs_handle, p_cha_info->arg);
+                        } else {
+                            debug_print("\r\n[%s] NULL write callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);
+                        }
+                        break;
+                    }
+                default:
+                    break;
                 }
                 break;                                         
             }

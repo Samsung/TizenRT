@@ -65,6 +65,7 @@ extern uint16_t g_conn_req_num;
 T_TIZENRT_CLIENT_READ_RESULT tizenrt_read_results[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS] = {0};
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
+extern void *ble_tizenrt_write_no_rsp_sem;
 void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG callback_msg)
 {
     debug_print("\r\n[%s] msg type : 0x%x", __FUNCTION__, callback_msg.type);
@@ -275,6 +276,21 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
                                     param->length, param->data);
             if(ret)
                 printf("\r\n[%s] gcs_attr_write fail 0x%x ", __FUNCTION__, ret);
+        }
+            break;
+        case BLE_TIZENRT_WRITE_NO_RSP:
+        {
+            BLE_TIZENRT_WRITE_PARAM *param = pdata;
+            debug_print("\r\n[%s] write_id 0x%x handle 0x%x len 0x%x data ", __FUNCTION__, param->conn_id,
+                                       param->att_handle, param->length);
+            for (int i = 0; i < param->length; i++)
+            {
+                debug_print("0x%x", param->data[i]);
+            }
+            ret = gcs_attr_write(param->conn_id, GATT_WRITE_TYPE_CMD, param->att_handle,
+                                    param->length, param->data);
+            if(ret)
+                printf("\r\n[%s] 0x%x gcs_attr_write fail  ", __FUNCTION__, ret);
         }
             break;
         case BLE_TIZENRT_DELETE_BOND:
@@ -1224,6 +1240,7 @@ void ble_tizenrt_central_gcs_handle_discovery_result(uint8_t conn_id, T_GCS_DISC
  * @retval   result @ref T_APP_RESULT
  */
 T_GCS_WRITE_RESULT g_write_result = {0};
+T_GCS_WRITE_RESULT g_write_no_rsp_result = {0};
 T_APP_RESULT ble_tizenrt_central_gcs_client_callback(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data)
 {
     T_APP_RESULT  result = APP_RESULT_SUCCESS;
@@ -1279,14 +1296,32 @@ T_APP_RESULT ble_tizenrt_central_gcs_client_callback(T_CLIENT_ID client_id, uint
                             p_gcs_cb_data->cb_content.write_result.cause,
                             p_gcs_cb_data->cb_content.write_result.handle,
                             p_gcs_cb_data->cb_content.write_result.type);
-            g_write_result.cause = p_gcs_cb_data->cb_content.write_result.cause;
-            g_write_result.handle = p_gcs_cb_data->cb_content.write_result.handle;
-            g_write_result.type = p_gcs_cb_data->cb_content.write_result.type;
-            if(os_mutex_give(ble_tizenrt_write_sem))
+            switch (p_gcs_cb_data->cb_content.write_result.type)
             {
+            case GATT_WRITE_TYPE_REQ:
+                g_write_result.cause = p_gcs_cb_data->cb_content.write_result.cause;
+                g_write_result.handle = p_gcs_cb_data->cb_content.write_result.handle;
+                g_write_result.type = p_gcs_cb_data->cb_content.write_result.type;
+                if(os_mutex_give(ble_tizenrt_write_sem))
+                {
                 debug_print("\r\n[%s] recieve write response", __FUNCTION__);
-            } else {
+                } else {
                 debug_print("\r\n[%s] fail to give write semaphore", __FUNCTION__);
+                }
+                break;
+            case GATT_WRITE_TYPE_CMD:
+                g_write_no_rsp_result.cause = p_gcs_cb_data->cb_content.write_result.cause;
+                g_write_no_rsp_result.handle = p_gcs_cb_data->cb_content.write_result.handle;
+                g_write_no_rsp_result.type = p_gcs_cb_data->cb_content.write_result.type;
+                if(os_mutex_give(ble_tizenrt_write_no_rsp_sem))
+                {
+                    debug_print("\r\n[%s] send write cmd success", __FUNCTION__);
+                } else {
+                    debug_print("\r\n[%s] fail to send write cmd", __FUNCTION__);
+                }
+                break;
+            default:
+                break;
             }
             break;
         case GCS_CLIENT_CB_TYPE_NOTIF_IND:

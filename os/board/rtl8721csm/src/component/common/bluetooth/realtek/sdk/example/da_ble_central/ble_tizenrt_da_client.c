@@ -391,6 +391,56 @@ da_ble_result_type rtw_ble_client_operation_write(da_ble_client_operation_handle
     return DA_BLE_RESULT_TYPE_FAILURE; 
 }
 
+extern T_GCS_WRITE_RESULT g_write_no_rsp_result;
+void *ble_tizenrt_write_no_rsp_sem = NULL;
+da_ble_result_type rtw_ble_client_operation_write_no_response(da_ble_client_operation_handle_parm* handle, da_ble_client_data_info* in_data)
+{
+    if (handle == NULL || in_data == NULL || in_data->data == NULL)
+    {
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
+
+    if(ble_tizenrt_write_no_rsp_sem == NULL)
+    {
+        if(false == os_mutex_create(&ble_tizenrt_write_no_rsp_sem))
+        {
+            printf("\r\n[%s] creat write mutex fail!", __FUNCTION__);
+            return DA_BLE_RESULT_TYPE_FAILURE;
+        } else {
+            printf("\r\n[%s] creat ble_tizenrt_write_no_rsp_sem 0x%x success", __FUNCTION__, ble_tizenrt_write_no_rsp_sem);
+        }
+    }
+
+    BLE_TIZENRT_WRITE_PARAM param;
+    debug_print("\r\n[%s] att_handle 0x%x len 0x%x data",__FUNCTION__, handle->attr_handle, in_data->length);
+    param.data = in_data->data;
+    param.length = in_data->length;
+    param.conn_id = handle->conn_handle;
+    param.att_handle = handle->attr_handle;
+
+    ble_tizenrt_central_send_msg(BLE_TIZENRT_WRITE_NO_RSP, &param);
+    do {
+        if(os_mutex_take(ble_tizenrt_write_no_rsp_sem, 1000))
+        {
+            debug_print("\r\n[%s] take write mutex success",__FUNCTION__);
+            if(g_write_no_rsp_result.cause == GAP_SUCCESS)
+            {
+                debug_print("\r\n[%s] write success: conn_id %d attr_handle 0x%x!",__FUNCTION__,
+                                                            handle->conn_handle, handle->attr_handle);
+                printf("\r\n[%s] snd write cmd success",__FUNCTION__);
+                return DA_BLE_RESULT_TYPE_SUCCESS;
+            } else {
+                debug_print("\r\n[%s] write fail: conn_id %d attr_handle 0x%x!",__FUNCTION__,
+                                                            handle->conn_handle, handle->attr_handle);
+                return DA_BLE_RESULT_TYPE_FAILURE;
+            }
+            memset(&g_write_no_rsp_result, 0, sizeof(g_write_no_rsp_result));
+        }
+    } while(1);
+
+    return DA_BLE_RESULT_TYPE_FAILURE;
+}
+
 da_ble_result_type rtw_ble_client_operation_enable_notification(da_ble_client_operation_handle_parm* handle)
 { 
     if (handle == NULL)
