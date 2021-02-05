@@ -57,7 +57,6 @@ static trwifi_result_e vdev_set_autoconnect(struct netdev *dev, uint8_t check);
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
 static struct trwifi_ops g_trwifi_drv_ops = {
 	vdev_init,                   /* init */
 	vdev_deinit,                 /* deinit */
@@ -76,7 +75,7 @@ static struct netdev *g_vwifi_dev = NULL;
 static uint8_t g_hwaddr[IFHWADDRLEN] = {0x0e, 0x04, 0x96, 0x1d, 0xb3, 0xb0};
 
 extern void vwifi_handle_packet(uint8_t *buf, uint32_t len);
-
+extern void vwifi_initialize_scan(void);
 /*
  * Callback
  */
@@ -221,7 +220,7 @@ trwifi_result_e vdev_init(struct netdev *dev)
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_INIT, 0};
+	struct vwifi_req req = {VWIFI_MSG_INIT, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		VWIFI_ERROR(0);
@@ -234,7 +233,7 @@ trwifi_result_e vdev_deinit(struct netdev *dev)
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_DEINIT, 0};
+	struct vwifi_req req = {VWIFI_MSG_DEINIT, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -246,7 +245,7 @@ trwifi_result_e vdev_scan_ap(struct netdev *dev, trwifi_ap_config_s *config)
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_SCANAP, 0};
+	struct vwifi_req req = {VWIFI_MSG_SCANAP, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -258,7 +257,7 @@ trwifi_result_e vdev_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_conne
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_CONNECTAP, 0};
+	struct vwifi_req req = {VWIFI_MSG_CONNECTAP, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -270,7 +269,7 @@ trwifi_result_e vdev_disconnect_ap(struct netdev *dev, void *arg)
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_DISCONENCTAP, 0};
+	struct vwifi_req req = {VWIFI_MSG_DISCONENCTAP, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -282,11 +281,12 @@ trwifi_result_e vdev_get_info(struct netdev *dev, trwifi_info *wifi_info)
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_GETINFO, 0};
-	int res = _progress_message(&req);
-	if (res < 0) {
-		return TRWIFI_FAIL;
-	}
+	unsigned char vwifi_mac[6] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+	wifi_info->ip4_address = 0x01020304;
+	memcpy(wifi_info->mac_address, vwifi_mac, 6);
+	wifi_info->rssi = 30;
+	wifi_info->wifi_status = TRWIFI_DISCONNECTED;
+
 	return TRWIFI_SUCCESS;
 }
 
@@ -294,7 +294,13 @@ trwifi_result_e vdev_start_softap(struct netdev *dev, trwifi_softap_config_s *so
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_STARTSOFTAP, 0};
+	struct vwifi_req req = {VWIFI_MSG_STARTSOFTAP, NULL, 0};
+	uint8_t *ssid = (uint8_t *)kmm_zalloc(softap_config->ssid_length + 1);
+	if (!ssid) {
+		return TRWIFI_FAIL;
+	}
+	strncpy((char *)ssid, softap_config->ssid, softap_config->ssid_length);
+	req.arg = ssid;
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -306,7 +312,7 @@ trwifi_result_e vdev_start_sta(struct netdev *dev)
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_STARTSTA, 0};
+	struct vwifi_req req = {VWIFI_MSG_STARTSTA, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -318,7 +324,7 @@ trwifi_result_e vdev_stop_softap(struct netdev *dev)
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_STOPSOFTAP, 0};
+	struct vwifi_req req = {VWIFI_MSG_STOPSOFTAP, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -331,7 +337,7 @@ trwifi_result_e vdev_set_autoconnect(struct netdev *dev, uint8_t check)
 {
 	VWIFI_ENTRY;
 
-	struct vwifi_req req = {VWIFI_MSG_SETAUTOCONNECT, 0};
+	struct vwifi_req req = {VWIFI_MSG_SETAUTOCONNECT, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -340,7 +346,7 @@ trwifi_result_e vdev_set_autoconnect(struct netdev *dev, uint8_t check)
 	return TRWIFI_SUCCESS;
 }
 
-int vdev_linkoutput(struct netdev *devy, void *buf, uint16_t dlen)
+int vdev_linkoutput(struct netdev *dev, void *buf, uint16_t dlen)
 {
 	VWIFI_ENTRY;
 	vwifi_handle_packet(buf, dlen);
@@ -432,6 +438,7 @@ void vwifi_send_packet(uint8_t *buf, uint32_t len)
 
 void vwifi_start(void)
 {
+	vwifi_initialize_scan();
 	int new_thread = kernel_thread("virtual wifi", 100, 2048, (main_t)vdev_run, (char *const *)NULL);
 	if (new_thread < 0) {
 		VWIFI_ERROR(new_thread);

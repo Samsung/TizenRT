@@ -21,7 +21,10 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdint.h>
+#include <sys/types.h>
 #include <debug.h>
+#include <tinyara/net/if/wifi.h>
+#include <tinyara/lwnl/lwnl.h>
 #include "vdev_handler.h"
 
 #define VPACK_BEGIN

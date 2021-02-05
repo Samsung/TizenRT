@@ -934,7 +934,7 @@ void wm_auto_test(void *arg)
 		} else {
 			WM_TEST_WAIT; // wait dhcp
 		}
-
+#if 0
 		/* File system call */
 		printf("[WT] Save AP info.\n");
 		res = wifi_manager_save_config(&ap_config);
@@ -971,7 +971,7 @@ void wm_auto_test(void *arg)
 		} else {
 			WM_TEST_WAIT;
 		}
-
+#endif
 		/* Print current status */
 		wm_display_state(NULL);
 
