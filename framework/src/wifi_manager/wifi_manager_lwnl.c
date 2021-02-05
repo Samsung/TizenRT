@@ -96,15 +96,17 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 {
 	WM_ENTER;
 	wifi_utils_ap_config_s *config = NULL;
+	uint32_t config_len = 0;
 	if (arg) {
 		config = (wifi_utils_ap_config_s *)arg;
+		config_len = sizeof(wifi_utils_ap_config_s);
 	}
 
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_SCAN_AP, sizeof(wifi_utils_ap_config_s), (void *)config, 0};
 
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
-		return WIFI_UTILS_FAIL;
+		res = WIFI_UTILS_FAIL;
 	}
 	return WIFI_UTILS_SUCCESS;
 }
@@ -132,7 +134,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 						 sizeof(wifi_utils_ap_config_s), (void *)ap_connect_config, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
-		return WIFI_UTILS_FAIL;
+		res = WIFI_UTILS_FAIL;
 	}
 	return WIFI_UTILS_SUCCESS;
 }
@@ -145,7 +147,7 @@ wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_DISCONNECT_AP, 0, NULL, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
-		return WIFI_UTILS_FAIL;
+		res = WIFI_UTILS_FAIL;
 	}
 	return WIFI_UTILS_SUCCESS;
 }
@@ -159,7 +161,7 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 						 sizeof(wifi_utils_info_s), (void *)wifi_info, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
-		return WIFI_UTILS_FAIL;
+		res = WIFI_UTILS_FAIL;
 	}
 	return WIFI_UTILS_SUCCESS;
 }
@@ -173,7 +175,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 						 sizeof(wifi_utils_softap_config_s), (void *)softap_config, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
-		return WIFI_UTILS_FAIL;
+		res = WIFI_UTILS_FAIL;
 	}
 	return WIFI_UTILS_SUCCESS;
 }
@@ -187,7 +189,7 @@ wifi_utils_result_e wifi_utils_start_sta(void)
 
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
-		return WIFI_UTILS_FAIL;
+		res = WIFI_UTILS_FAIL;
 	}
 
 	return WIFI_UTILS_SUCCESS;
@@ -201,7 +203,7 @@ wifi_utils_result_e wifi_utils_stop_softap(void)
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_STOP_SOFTAP, 0, NULL, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
-		return WIFI_UTILS_FAIL;
+		res = WIFI_UTILS_FAIL;
 	}
 	return WIFI_UTILS_SUCCESS;
 }
@@ -216,7 +218,7 @@ wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
 						 sizeof(uint8_t), (void *)chk, 0};
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
-		return WIFI_UTILS_FAIL;
+		res = WIFI_UTILS_FAIL;
 	}
 
 	return WIFI_UTILS_SUCCESS;
