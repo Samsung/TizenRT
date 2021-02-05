@@ -124,7 +124,7 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
 			break;
 		case CB_STA_RECONNECTED:
-			WM_LOG_INFO("[WM] call sta disconnect event\n");
+			WM_LOG_INFO("[WM] call sta reconnect event\n");
 			cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
 			break;
 		case CB_STA_JOINED:
