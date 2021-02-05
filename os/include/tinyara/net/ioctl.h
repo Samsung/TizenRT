@@ -202,7 +202,6 @@
 #define SIOCGIFNAME      _SIOC(0x0056)  /* get active NIC name. */
 
 #define SIOCSLIPTYPE     _SIOC(0x0057)	/* Set IPv6 Address type */
-#define SIOCSLWNLEVT     _SIOC(0x0058)	/* Set lwnl option */
 /****************************************************************************
  * Type Definitions
  ****************************************************************************/
