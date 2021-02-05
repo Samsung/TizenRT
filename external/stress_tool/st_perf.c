@@ -173,8 +173,7 @@ void _print_performance(st_performance *perf)
 
 void _print_smoke(st_smoke *smoke)
 {
-	printf("%p\n", smoke->func->tc_name);
-	//printf("TESTCASE: %s\n", smoke->func->tc_name);
+	printf("TESTCASE: %s\n", smoke->func->tc_name);
 	_print_performance(smoke->performance);
 	_print_stability(smoke->stability);
 	printf("----------------------------------------------------------------------------\n");
