@@ -47,8 +47,12 @@
 
 #define STRESS_USAGE													\
 	"\n stress test mode options:\n"									\
-	"	 wm_test stress 1 [ssid] [security mode] [password]\n"		\
+	"	 wm_test stress 1 [ssid] [security mode] [password]\n"			\
 	"	 wm_test stress 2 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
+
+#define ONOFF_USAGE												\
+	"\n onoff test mode options:\n"								\
+	"	 wm_test on_off [ssid] [security mode] [password]\n"	\
 
 #define SCAN_USAGE								\
 	"\n run scan:\n"							\
@@ -89,6 +93,7 @@
 	PROFILE_USAGE									\
 	INFO_USAGE										\
 	STRESS_USAGE									\
+	ONOFF_USAGE										\
 	REPEATTC_USAGE
 
 /**
@@ -1235,7 +1240,7 @@ exit:
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int wm_test_main(int argc, char *argv[])
+	int wm_test_main(int argc, char *argv[])
 #endif
 {
 	printf("[WT] wifi manager test!!\n");
