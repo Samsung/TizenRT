@@ -29,46 +29,50 @@
 /*
  * Macro
  */
-#define WO_ERROR(res) printf("[WO][ERR] code(%d) (%d): %s\t%s:%d\n",		\
-							 res, errno, __FUNCTION__, __FILE__, __LINE__)
+#define WO_ERROR(res) printf("[WO][ERR] code(%d), %s\t%s:%d\n",\
+							 res, __FUNCTION__, __FILE__, __LINE__)
 
-#define WO_TEST_SIGNAL(conn)											\
-	do {																\
-		printf("[WO] T%d send signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
-		int ssres = _wo_add_queue(conn);								\
-		if (ssres != 0) {												\
-			assert(0);													\
-		}																\
-		sem_post(&g_wo_sem);											\
-	} while (0)
-
-#define WO_TEST_WAIT(conn)												\
-	do {																\
-		printf("[WO] T%d wait signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
-		sem_wait(&g_wo_sem);											\
-		int swres = _wo_dequeue(&conn);									\
-		if (swres != 0) {												\
-			assert(0);													\
-		}																\
-	} while (0)
+#define WM_AP_SSID         CONFIG_WIFIMANAGER_TEST_AP_SSID
+#define WM_AP_PASSWORD     CONFIG_WIFIMANAGER_TEST_AP_PASSPHRASE
+#define WM_AP_AUTH         CONFIG_WIFIMANAGER_TEST_AP_AUTHENTICATION
+#define WM_AP_CRYPTO       CONFIG_WIFIMANAGER_TEST_AP_CRYPTO
+#define WM_TEST_TRIAL	   CONFIG_WIFIMANAGER_TEST_TRIAL
+#define WM_SOFTAP_SSID     CONFIG_WIFIMANAGER_TEST_SOFTAP_SSID
+#define WM_SOFTAP_PASSWORD CONFIG_WIFIMANAGER_TEST_SOFTAP_PASSWORD
+#define WM_SOFTAP_CHANNEL  CONFIG_WIFIMANAGER_TEST_SOFTAP_CHANNEL
 
 #define WIFIMGR_SSID ""
 #define WIFIMGR_PWD ""
 #define WIFIMGR_AUTH WIFI_MANAGER_AUTH_WPA2_PSK
 #define WIFIMGR_CRYPTO WIFI_MANAGER_CRYPTO_AES
 
-#define WO_CONN_FAIL 1
-#define WO_CONN_SUCCESS 2
-#define WO_INTERVAL 10
-#define WO_GOAL_CNT 1000
+static sem_t g_wm_sem = SEM_INITIALIZER(0);
+#define WM_TEST_SIGNAL								\
+	do {											\
+		printf("[WO] T%d send signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
+		sem_post(&g_wm_sem);						\
+	} while (0)
 
-static sem_t g_wo_sem;
+#define WM_TEST_WAIT								\
+	do {											\
+		printf("[WO] T%d wait signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
+		sem_wait(&g_wm_sem);                        \
+	} while (0)
+
+
+
+#define WM_CONN_FAIL 1
+#define WM_CONN_SUCCESS 2
+#define WO_INTERVAL 10
 
 /*
  * callbacks
  */
 static void wm_sta_connected(wifi_manager_result_e);
 static void wm_sta_disconnected(wifi_manager_disconnect_e);
+static void wm_softap_sta_join(void);
+static void wm_softap_sta_leave(void);
+static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
 
 /*
  * State
@@ -83,90 +87,67 @@ static int run_connected(void);
 static wifi_manager_cb_s g_wifi_callbacks = {
 	wm_sta_connected,
 	wm_sta_disconnected,
-	NULL, NULL, NULL,
+	wm_softap_sta_join,
+	wm_softap_sta_leave,
+	wm_scan_done,
 };
 
-/*
- * queue
- */
-#define WO_QUEUE_SIZE 10
-#define WO_QUEUE_LOCK							\
-	do {										\
-		sem_wait(&g_wo_queue_sem);					\
-	} while (0)
-#define WO_QUEUE_UNLOCK							\
-	do {										\
-		sem_post(&g_wo_queue_sem);					\
-	} while (0)
-static sem_t g_wo_queue_sem;
-static int g_queue[WO_QUEUE_SIZE];
-static int g_queue_ridx = -1;
-static int g_queue_widx = -1;
-
-static int _wo_is_empty(void)
-{
-	if (g_queue_ridx == g_queue_widx) {
-		return 1;
-	}
-	return 0;
-}
-
-static int _wo_is_full(void)
-{
-	int tmp = (g_queue_widx + 1) % WO_QUEUE_SIZE;
-	if (tmp == g_queue_ridx) {
-		return 1;
-	}
-	return 0;
-}
-
-static int _wo_add_queue(int conn)
-{
-	WO_QUEUE_LOCK;
-	if (_wo_is_full()) {
-		WO_QUEUE_UNLOCK;
-		return -1;
-	}
-	g_queue_widx = (g_queue_widx + 1) % WO_QUEUE_SIZE;
-	g_queue[g_queue_widx] = conn;
-	WO_QUEUE_UNLOCK;
-
-	return 0;
-}
-
-static int _wo_dequeue(int *conn)
-{
-	WO_QUEUE_LOCK;
-	if (_wo_is_empty()) {
-		WO_QUEUE_UNLOCK;
-		return -1;
-	}
-	g_queue_ridx = (g_queue_ridx + 1) % WO_QUEUE_SIZE;
-	*conn = g_queue[g_queue_ridx];
-	WO_QUEUE_UNLOCK;
-
-	return 0;
-}
-
+static int g_conn_res = 0;
 /*
  * Callback
  */
 void wm_sta_connected(wifi_manager_result_e res)
 {
-	int conn = 0;
 	printf("[WO] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
 	if (WIFI_MANAGER_SUCCESS == res) {
-		conn = WO_CONN_SUCCESS;
+		g_conn_res = WM_CONN_SUCCESS;
 	} else {
-		conn = WO_CONN_FAIL;
+		g_conn_res = WM_CONN_FAIL;
 	}
-	WO_TEST_SIGNAL(conn);
+	WM_TEST_SIGNAL;
 }
+
 
 void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	printf("[WO] T%d --> %s %d\n", getpid(), __FUNCTION__, disconn);
-	WO_TEST_SIGNAL(WO_CONN_FAIL);
+	g_conn_res = WM_CONN_FAIL;
+	WM_TEST_SIGNAL;
+}
+
+
+void wm_softap_sta_join(void)
+{
+	printf("[WO] T%d --> %s\n", getpid(), __FUNCTION__);
+	WM_TEST_SIGNAL;
+}
+
+
+void wm_softap_sta_leave(void)
+{
+	printf("[WO] T%d --> %s\n", getpid(), __FUNCTION__);
+	WM_TEST_SIGNAL;
+}
+
+
+void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+{
+	printf("[WO] T%d --> %s\n", getpid(), __FUNCTION__);
+	/* Make sure you copy the scan results onto a local data structure.
+	 * It will be deleted soon eventually as you exit this function.
+	 */
+	if (scan_result == NULL) {
+		WM_TEST_SIGNAL;
+		return;
+	}
+	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
+	while (wifi_scan_iter != NULL) {
+		printf("[WO] WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d\n",
+			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
+			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
+		wifi_scan_iter = wifi_scan_iter->next;
+	}
+	WM_TEST_SIGNAL;
 }
 
 static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
@@ -193,17 +174,12 @@ static void wm_get_info(wifi_manager_ap_config_s *arg)
 	print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Information");
 }
 
+
 static int run_init(void *arg)
 {
-	int ret = sem_init(&g_wo_sem, 0, 0);
-	if (ret < 0) {
-		printf("[WO] initialize semaphore fail(%d)\n", errno);
-		return -1;
-	}
 	wifi_manager_result_e res = wifi_manager_init(&g_wifi_callbacks);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		WO_ERROR(res);
-		sem_destroy(&g_wo_sem);
 		return -1;
 	}
 
@@ -237,7 +213,7 @@ static int run_init(void *arg)
 		} else if (state == 2) {
 			cnt_auto_connect++;
 			printf("\n\n\n[WO] connection count %d\n\n\n\n", cnt_auto_connect);
-			if (cnt_auto_connect > WO_GOAL_CNT) {
+			if (cnt_auto_connect > 100) {
 				break;
 			}
 			state = run_connected();
@@ -248,8 +224,6 @@ static int run_init(void *arg)
 	}
 
 	printf("[WO] terminate program total (%d)\n", cnt_auto_connect);
-	sem_destroy(&g_wo_sem);
-
 	return 0;
 }
 
@@ -263,13 +237,12 @@ static int run_connecting(wifi_manager_ap_config_s *ap_config)
 		goto connect_fail;
 	}
 
-	int conn = WO_CONN_FAIL;
-	WO_TEST_WAIT(conn);
+	WM_TEST_WAIT;
 
-	if (conn == WO_CONN_FAIL) {
+	if (g_conn_res == WM_CONN_FAIL) {
 		// does it need to get info from wi-fi wm_get_info(ap_config);
 		goto connect_fail;
-	} else if (conn == WO_CONN_SUCCESS) {
+	} else if (g_conn_res == WM_CONN_SUCCESS) {
 		return 2; // connected, wait disconnect message
 	} else {
 		printf("[WO] program is corrupted %s\n", __FUNCTION__);
@@ -286,9 +259,8 @@ connect_fail:
 static int run_connected(void)
 {
 	printf("[WO] -->%s\n", __FUNCTION__);
-	int conn = WO_CONN_FAIL;
-	WO_TEST_WAIT(conn);
-	if (conn == WO_CONN_FAIL) {
+	WM_TEST_WAIT;
+	if (g_conn_res == WM_CONN_FAIL) {
 		return 1;
 	} else {
 		printf("[WO] program is corrupted %s\n", __FUNCTION__);
@@ -299,11 +271,5 @@ static int run_connected(void)
 
 void wm_test_on_off(void *arg)
 {
-	int res = sem_init(&g_wo_queue_sem, 0, 1);
-	if (res < 0) {
-		printf("[WO] fail to initialize semaphore %d\n", errno);
-		return;
-	}
 	run_init(arg);
-	sem_destroy(&g_wo_queue_sem);
 }
