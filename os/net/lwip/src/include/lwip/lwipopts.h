@@ -75,6 +75,12 @@
 #define LWIP_DHCP 0
 #endif /* CONFIG_LWIP_DHCP */
 
+#ifdef CONFIG_LWIP_DHCP_TCPIP_THREAD
+#define LWIP_DHCP_TCPIP_THREAD CONFIG_LWIP_DHCP_TCPIP_THREAD
+#else
+#define LWIP_DHCP_TCPIP_THREAD 0
+#endif
+
 #ifdef CONFIG_LWIP_DHCP_HOSTNAME
 #define LWIP_NETIF_HOSTNAME CONFIG_LWIP_DHCP_HOSTNAME
 #else
@@ -1180,6 +1186,4 @@
 #define LWIP_NETIF_TX_SINGLE_PBUF             1
 #endif
 
-/*  ---------------Mandatory ---------------- */
-#define LWIP_DHCP_TCPIP_THREAD 1
 #endif							/* __LWIP_LWIPOPTS_H__ */
