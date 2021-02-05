@@ -45,7 +45,6 @@ typedef enum {
 	WIFI_UTILS_LWNL_WRITE_FAILED,
 } wu_lwnl_status_e;
 
-
 static inline wu_lwnl_status_e _send_msg(lwnl_msg *msg)
 {
 	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
@@ -73,7 +72,6 @@ wifi_utils_result_e wifi_utils_init(void)
 	if (res < 0) {
 		return WIFI_UTILS_FAIL;
 	}
-
 	return WIFI_UTILS_SUCCESS;
 }
 
@@ -86,9 +84,6 @@ wifi_utils_result_e wifi_utils_deinit(void)
 	if (res < 0) {
 		wuret = WIFI_UTILS_FAIL;
 	}
-
-	(void)lwnl_leave_monitor(NULL);
-
 	return wuret;
 }
 
@@ -99,9 +94,7 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 	if (arg) {
 		config = (wifi_utils_ap_config_s *)arg;
 	}
-
 	lwnl_msg msg = {WU_INTF_NAME, LWNL_SCAN_AP, sizeof(wifi_utils_ap_config_s), (void *)config, 0};
-
 	wu_lwnl_status_e res = _send_msg(&msg);
 	if (res < 0) {
 		return WIFI_UTILS_FAIL;
@@ -109,20 +102,10 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 	return WIFI_UTILS_SUCCESS;
 }
 
-
 wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_INVALID_ARGS;
-
-	int res = lwnl_join_monitor(cbk);
-	if (res < 0) {
-		WM_LOG_ERROR("WiFi callback register failure (no callback)\n");
-	} else {
-		wuret = WIFI_UTILS_SUCCESS;
-	}
-	return wuret;
+	return WIFI_UTILS_SUCCESS;
 }
-
 
 wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 {
@@ -137,7 +120,6 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 	return WIFI_UTILS_SUCCESS;
 }
 
-
 wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 {
 	WM_ENTER;
@@ -149,7 +131,6 @@ wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 	}
 	return WIFI_UTILS_SUCCESS;
 }
-
 
 wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 {
@@ -164,7 +145,6 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 	return WIFI_UTILS_SUCCESS;
 }
 
-
 wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_config)
 {
 	WM_ENTER;
@@ -177,7 +157,6 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	}
 	return WIFI_UTILS_SUCCESS;
 }
-
 
 wifi_utils_result_e wifi_utils_start_sta(void)
 {
@@ -193,7 +172,6 @@ wifi_utils_result_e wifi_utils_start_sta(void)
 	return WIFI_UTILS_SUCCESS;
 }
 
-
 wifi_utils_result_e wifi_utils_stop_softap(void)
 {
 	WM_ENTER;
@@ -205,7 +183,6 @@ wifi_utils_result_e wifi_utils_stop_softap(void)
 	}
 	return WIFI_UTILS_SUCCESS;
 }
-
 
 wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
 {

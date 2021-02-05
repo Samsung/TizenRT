@@ -36,7 +36,6 @@
 #include "wifi_manager_state.h"
 #include "wifi_manager_info.h"
 
-
 /*  Setting MACRO */
 static inline void WIFIMGR_SET_SSID(char *s)
 {
@@ -45,14 +44,12 @@ static inline void WIFIMGR_SET_SSID(char *s)
 	wifimgr_set_info(WIFIMGR_SSID, &winfo);
 }
 
-
 static inline void WIFIMGR_SET_SOFTAP_SSID(char *s)
 {
 	wifimgr_info_msg_s winfo;
 	winfo.softap_ssid = s;
 	wifimgr_set_info(WIFIMGR_SOFTAP_SSID, &winfo);
 }
-
 
 static inline void WIFIMGR_SET_MACADDR(char *s)
 {
@@ -117,7 +114,6 @@ struct _wifimgr_state_handle {
 };
 typedef struct _wifimgr_state_handle _wifimgr_state_handle_s;
 
-
 /**
  * global variables
  */
@@ -147,9 +143,9 @@ static wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *c
 static wifi_manager_result_e _wifimgr_stop_softap(void);
 static wifi_manager_result_e _wifimgr_scan(wifi_manager_ap_config_s *config);
 
-//
-// functions managing a state machine
-//
+/*
+ * functions managing a state machine
+ */
 static wifi_manager_result_e _handle_request(wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg);
@@ -209,12 +205,10 @@ static inline void WIFIMGR_SET_STATE(wifimgr_state_e s)
 	wifimgr_set_info(WIFIMGR_STATE, &wmsg);
 }
 
-
 static inline char *wifimgr_get_state_str(int state)
 {
 	return wifimgr_state_str[state];
 }
-
 
 /*  Substate MACRO */
 static inline void WIFIMGR_SET_SUBSTATE(_wifimgr_disconn_substate_e state, sem_t *signal)
@@ -259,7 +253,6 @@ wifi_manager_result_e _wifimgr_deinit(void)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e _wifimgr_run_sta(void)
 {
 	WM_ENTER;
@@ -271,7 +264,6 @@ wifi_manager_result_e _wifimgr_run_sta(void)
 #endif
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e _wifimgr_save_connected_config(wifi_manager_ap_config_s *config)
 {
@@ -285,7 +277,6 @@ wifi_manager_result_e _wifimgr_save_connected_config(wifi_manager_ap_config_s *c
 #endif
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 {
@@ -317,14 +308,12 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e _wifimgr_disconnect_ap(void)
 {
 	WM_ENTER;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_disconnect_ap(NULL), "[WM] disconnect to ap fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 {
@@ -360,7 +349,6 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e _wifimgr_stop_softap(void)
 {
 	WM_ENTER;
@@ -370,7 +358,6 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 #endif
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e _wifimgr_scan(wifi_manager_ap_config_s *config)
 {
@@ -398,7 +385,6 @@ wifi_manager_result_e _wifimgr_scan(wifi_manager_ap_config_s *config)
 
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 /*
  * State Functions
@@ -451,7 +437,6 @@ wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
@@ -484,7 +469,6 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 	}
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 {
@@ -542,7 +526,6 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
@@ -572,7 +555,6 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 {
@@ -614,7 +596,6 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
@@ -639,7 +620,6 @@ wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg)
 #endif /* CONFIG_DISABLE_EXTERNAL_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 {
@@ -683,8 +663,6 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
-
 wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
@@ -703,7 +681,6 @@ wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 	}
 	return wret;
 }
-
 
 /*
  * public
