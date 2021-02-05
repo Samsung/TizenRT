@@ -48,7 +48,6 @@ static int netlink_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	(void)name;
 	(void)namelen;
-	printf("[pkbuild] T%d -->%s:%d \n", getpid(), __FUNCTION__, __LINE__);
 	int res = ioctl(s, SIOCSLWNLEVT, 0);
 	return res;
 }

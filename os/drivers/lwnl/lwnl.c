@@ -184,8 +184,8 @@ errout:
 static ssize_t lwnl_read(struct file *filep, char *buffer, size_t len)
 {
 	LWNL_ENTER;
-	struct inode *inode = filep->f_inode;
-	struct lwnl_upperhalf_s *upper = inode->i_private;
+	//struct inode *inode = filep->f_inode;
+	//struct lwnl_upperhalf_s *upper = inode->i_private;
 
 	//LWNLDEV_LOCK(upper);
 	int res = lwnl_get_event(filep, buffer, len);
@@ -206,16 +206,15 @@ extern int netdev_req_handle(const char *msg, size_t msg_len);
 static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 {
 	LWNL_ENTER;
-	int ret = -EINVAL;
-	struct inode *inode = filep->f_inode;
-	struct lwnl_upperhalf_s *upper = inode->i_private;
+	//struct inode *inode = filep->f_inode;
+	//struct lwnl_upperhalf_s *upper = inode->i_private;
 
 	//LWNLDEV_LOCK(upper);
 
 #ifdef CONFIG_NET_NETMGR
-	ret = netdev_req_handle(buffer, len);
+	int ret = netdev_req_handle(buffer, len);
 #else
-	ret = lwnl_message_handle(buffer, len);
+	int ret = lwnl_message_handle(buffer, len);
 #endif
 
 	//LWNLDEV_UNLOCK(upper);
@@ -230,8 +229,8 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
 	LWNL_ENTER;
-	struct inode *inode = filep->f_inode;
-	struct lwnl_upperhalf_s *upper = inode->i_private;
+	//struct inode *inode = filep->f_inode;
+	//struct lwnl_upperhalf_s *upper = inode->i_private;
 
 	//LWNLDEV_LOCK(upper);
 	printf("[pkbuild] T%d -->%s:%d \n", getpid(), __FUNCTION__, __LINE__);
