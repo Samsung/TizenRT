@@ -42,15 +42,17 @@
 
 #define LWNLDEV_LOCK(upper)						\
 	do {										\
-		ret = sem_wait(&upper->exclsem);		\
-		if (ret < 0) {							\
+		int lock_ret = sem_wait(&upper->exclsem);		\
+		lldbg("[lwnl] lock (%p)\n", &upper->exclsem);	\
+		if (lock_ret < 0) {							\
 			LWNL_ERR;						\
-			return ret;							\
+			return lock_ret;							\
 		}										\
 	} while (0)
 
 #define LWNLDEV_UNLOCK(upper)					\
 	do {										\
+		lldbg("[lwnl] unlock (%p)\n", &upper->exclsem);	\
 		sem_post(&upper->exclsem);				\
 	} while (0)
 
@@ -120,22 +122,17 @@ static const struct file_operations g_lwnl_fops = {
 static int lwnl_open(struct file *filep)
 {
 	LWNL_ENTER;
+	lldbg("[pkbuild] T%d -->lwnl_open (%p) \n", getpid(), __builtin_return_address(0));
 	struct inode *inode = filep->f_inode;
 	struct lwnl_upperhalf_s *upper = inode->i_private;
-	int ret = -EMFILE;
 
+	LWNLDEV_LOCK(upper);
 	upper->crefs++;
+	LWNLDEV_UNLOCK(upper);
 
-	int res = lwnl_add_listener(filep);
-	if (res < 0) {
-		goto errout;
-	}
-
-	ret = OK;
-
-errout:
 	LWNL_LEAVE;
-	return ret;
+
+	return OK;
 }
 
 static int lwnl_close(struct file *filep)
@@ -149,6 +146,7 @@ static int lwnl_close(struct file *filep)
 	int waiter_idx;
 #endif
 
+	LWNLDEV_LOCK(upper);
 	if (upper->crefs > 0) {
 		upper->crefs--;
 	} else {
@@ -156,7 +154,6 @@ static int lwnl_close(struct file *filep)
 	}
 
 #ifndef CONFIG_DISABLE_POLL
-	LWNLDEV_LOCK(upper);
 
 	/*
 	 * Check if this file is registered in a list of waiters for polling.
@@ -169,7 +166,6 @@ static int lwnl_close(struct file *filep)
 			ln_open->io_fds[waiter_idx] = NULL;
 		}
 	}
-	LWNLDEV_UNLOCK(upper);
 #endif
 
 	int res = lwnl_remove_listener(filep);
@@ -179,6 +175,7 @@ static int lwnl_close(struct file *filep)
 	}
 
 errout:
+	LWNLDEV_UNLOCK(upper);
 	LWNL_LEAVE;
 	return ret;
 }
@@ -187,7 +184,13 @@ errout:
 static ssize_t lwnl_read(struct file *filep, char *buffer, size_t len)
 {
 	LWNL_ENTER;
+	struct inode *inode = filep->f_inode;
+	struct lwnl_upperhalf_s *upper = inode->i_private;
+
+	//LWNLDEV_LOCK(upper);
 	int res = lwnl_get_event(filep, buffer, len);
+	//LWNLDEV_UNLOCK(upper);
+
 	// todo_net : convert res to vfs error style?
 	LWNL_LEAVE;
 	return res;
@@ -207,7 +210,7 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 	struct inode *inode = filep->f_inode;
 	struct lwnl_upperhalf_s *upper = inode->i_private;
 
-	LWNLDEV_LOCK(upper);
+	//LWNLDEV_LOCK(upper);
 
 #ifdef CONFIG_NET_NETMGR
 	ret = netdev_req_handle(buffer, len);
@@ -215,7 +218,7 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 	ret = lwnl_message_handle(buffer, len);
 #endif
 
-	LWNLDEV_UNLOCK(upper);
+	//LWNLDEV_UNLOCK(upper);
 	LWNL_LEAVE;
 	if (ret < 0) {
 		return -1;
@@ -227,6 +230,16 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
 	LWNL_ENTER;
+	struct inode *inode = filep->f_inode;
+	struct lwnl_upperhalf_s *upper = inode->i_private;
+
+	//LWNLDEV_LOCK(upper);
+	printf("[pkbuild] T%d -->%s:%d \n", getpid(), __FUNCTION__, __LINE__);
+	int res = lwnl_add_listener(filep);
+	if (res < 0) {
+		return -1;
+	}
+	//LWNLDEV_UNLOCK(upper);
 
 	return 0;
 }
@@ -349,6 +362,7 @@ int lwnl_postmsg(lwnl_cb_status evttype, void *buffer)
 		return -1;
 	}
 
+	LWNLDEV_LOCK(g_lwnl_upper);
 	int res = lwnl_add_event(evttype, buffer);
 	if (res < 0) {
 		return -1;
@@ -363,7 +377,7 @@ int lwnl_postmsg(lwnl_cb_status evttype, void *buffer)
 			}
 		}
 	}
-
+	LWNLDEV_UNLOCK(g_lwnl_upper);
 	return 0;
 }
 

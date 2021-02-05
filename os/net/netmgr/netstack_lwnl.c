@@ -18,6 +18,7 @@
 #include <tinyara/config.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
@@ -42,6 +43,16 @@ static int netlink_socket(int domain, int type, int protocol)
 	return _create_netlink(type, protocol);
 }
 
+// allocate network event listen
+static int netlink_bind(int s, const struct sockaddr *name, socklen_t namelen)
+{
+	(void)name;
+	(void)namelen;
+	printf("[pkbuild] T%d -->%s:%d \n", getpid(), __FUNCTION__, __LINE__);
+	int res = ioctl(s, SIOCSLWNLEVT, 0);
+	return res;
+}
+
 struct netstack_ops g_netlink_stack_ops = {
 	NULL,
 	NULL,
@@ -58,7 +69,7 @@ struct netstack_ops g_netlink_stack_ops = {
 	NULL,
 
 	netlink_socket,
-	NULL,
+	netlink_bind,
 	NULL,
 	NULL,
 	NULL,
