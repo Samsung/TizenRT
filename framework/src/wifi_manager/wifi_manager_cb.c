@@ -65,7 +65,6 @@ static void _free_scan_info(wifi_manager_scan_info_s *scan_list)
 	}
 }
 
-
 static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list,
 										 wifi_utils_scan_list_s *wu_scan_list)
 {
@@ -98,7 +97,6 @@ static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_sc
 	}
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 {
@@ -159,7 +157,6 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 	}
 	WIFIMGR_STATS_INC(evt);
 }
-
 
 /*
  * Public function

@@ -37,6 +37,9 @@ static handler_queue g_wifi_message_queue;
  * External functions
  */
 extern wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg);
+#ifdef CONFIG_VIRTUAL_WLAN
+extern void vwifi_start(void);
+#endif
 
 static int _process_msg(int argc, char *argv[])
 {
@@ -53,18 +56,9 @@ static int _process_msg(int argc, char *argv[])
 		} else if (res == 1) {
 			continue;
 		}
-		wifimgr_msg_s *wmsg = hmsg.msg;
-
-		wmsg->result = wifimgr_handle_request(wmsg);
-
-		sem_post(hmsg.signal);
 	}
 	return 0;
 }
-
-#ifdef CONFIG_VIRTUAL_WLAN
-extern void vwifi_start(void);
-#endif
 
 /**
  * Public
@@ -79,9 +73,7 @@ int wifimgr_run_msghandler(void)
 		WM_ERR;
 		return -1;
 	}
-#ifdef CONFIG_LWNL80211
-	lwnl_start_monitor();
-#endif
+
 	return 0;
 }
 
@@ -96,7 +88,6 @@ int wifimgr_post_message(wifimgr_msg_s *msg)
 	}
 	hmsg.signal = &sem;
 	hmsg.msg = (void *)msg;
-	hmsg.fd = 1;
 
 	res = wifimgr_message_in(&hmsg, &g_wifi_message_queue);
 	if (res < 0) {

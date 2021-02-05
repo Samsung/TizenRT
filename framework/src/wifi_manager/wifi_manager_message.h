@@ -20,10 +20,12 @@
 
 typedef struct {
 	int fd;
+	int nd;
+	int max;
+	fd_set rfds;
 } handler_queue;
 
 typedef struct {
-	int fd;
 	sem_t *signal;
 	void *msg;
 } handler_msg;

@@ -22,6 +22,8 @@
 #include <debug.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <net/if.h>
+#include <tinyara/lwnl/lwnl.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"
@@ -99,11 +101,8 @@ int wifimgr_message_in(handler_msg *msg, handler_queue *queue)
 // this function
 int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 {
-	fd_set rfds;
-	FD_ZERO(&rfds);
-	FD_SET(queue->fd, &rfds);
-
-	int res = select(queue->fd + 1, &rfds, NULL, NULL, NULL);
+	fd_set rfds = queue->rfds;
+	int res = select(queue->max + 1, &rfds, NULL, NULL, NULL);
 	if (res <= 0) {
 		WM_LOG_ERROR("select error(%d)\n", res);
 		MESSAGE_ERROR;
@@ -112,16 +111,38 @@ int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 		}
 		return -1;
 	}
-	res = _recv_message(queue->fd, (void *)msg, sizeof(handler_msg));
-	if (res < 0) {
-		MESSAGE_ERROR;
+	if (FD_ISSET(queue->fd, &rfds)) {
+		res = _recv_message(queue->fd, (void *)msg, sizeof(handler_msg));
+		if (res < 0) {
+			MESSAGE_ERROR;
+		}
+		wifimgr_msg_s *wmsg = msg->msg;
+		wmsg->result = wifimgr_handle_request(wmsg);
+		if (msg->signal) {
+			sem_post(msg->signal);
+		}
 	}
-
+#ifdef CONFIG_LWNL80211
+	if (FD_ISSET(queue->nd, &rfds)) {
+		res = lwnl_fetch_event(queue->nd, (void *)msg, sizeof(handler_msg));
+		if (res < 0) {
+			MESSAGE_ERROR;
+		}
+		wifimgr_msg_s *wmsg = msg->msg;
+		wmsg->result = wifimgr_handle_request(wmsg);
+		if (msg->signal) {
+			sem_post(msg->signal);
+		}
+	}
+#endif
 	return 0;
 }
 
 int wifimgr_create_msgqueue(handler_queue *queue)
 {
+	queue->fd = queue->nd = queue->max = 0;
+	FD_ZERO(&queue->rfds);
+
 	int res = mkfifo(WIFIMGR_MSG_QUEUE_NAME, 0666);
 	if (res < 0 && res != -EEXIST) {
 		MESSAGE_ERROR;
@@ -134,6 +155,26 @@ int wifimgr_create_msgqueue(handler_queue *queue)
 		unlink(WIFIMGR_MSG_QUEUE_NAME);
 		return -1;
 	}
+	FD_SET(queue->fd, &queue->rfds);
+
+#ifdef CONFIG_LWNL80211
+	queue->nd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
+	if (queue->nd < 0) {
+		close(queue->fd);
+		MESSAGE_ERROR;
+		return -1;
+	}
+
+	res = bind(queue->nd, NULL, 0);
+	if (res < 0) {
+		close(queue->fd);
+		close(queue->nd);
+		MESSAGE_ERROR;
+		return -1;
+	}
+	FD_SET(queue->nd, &queue->rfds);
+#endif
+	queue->max = queue->fd > queue->nd ? queue->fd : queue->nd;
 
 	return 0;
 }
