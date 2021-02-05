@@ -175,6 +175,12 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 		return -1;
 	}
 
+	int res = bind(nd, NULL, 0);
+	if (res < 0) {
+		WM_ERR;
+		return -1;
+	}
+
 	FD_ZERO(&ofds);
 	FD_SET(nd, &ofds);
 
@@ -182,7 +188,7 @@ static int _wifi_utils_callback_handler(int argc, char *argv[])
 
 	while (1) {
 		rfds = ofds;
-		int res = select(maxfd, &rfds, NULL, NULL, NULL);
+		res = select(maxfd, &rfds, NULL, NULL, NULL);
 		if (res < 0) {
 			if (errno == EINTR) {
 				continue;
