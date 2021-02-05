@@ -20,75 +20,55 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <debug.h>
+#include <tinyara/wifi/wifi_common.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <tinyara/net/if/wifi.h>
 #include "vdev_handler.h"
 
-typedef enum {
-	VWIFI_EVT_STA_CONNECTED,
-	VWIFI_EVT_STA_CONNECT_FAILED,
-	VWIFI_EVT_STA_DISCONNECTED,
-	VWIFI_EVT_SOFTAP_STA_JOINED,
-	VWIFI_EVT_SOFTAP_STA_LEFT,
-	VWIFI_EVT_SCAN_DONE,
-	VWIFI_EVT_SCAN_FAILED,
-	VWIFI_EVT_EXIT,
-	VWIFI_EVT_UNKNOWN,
-} vwifi_evt_e;
+extern wifi_utils_scan_list_s *vwifi_get_scan_list(void);
+extern struct vwifi_ops *get_vdev_onoff(void);
+extern struct vwifi_ops *get_vdev_auto(void);
 
-struct vwifi_evt {
-	main_t func;
-};
-
-static int vwifi_handle_init(struct vwifi_req *req);
-static int vwifi_handle_deinit(struct vwifi_req *req);
-static int vwifi_handle_scanap(struct vwifi_req *req);
-static int vwifi_handle_connectap(struct vwifi_req *req);
-static int vwifi_handle_disconnectap(struct vwifi_req *req);
-static int vwifi_handle_getinfo(struct vwifi_req *req);
-static int vwifi_handle_startsta(struct vwifi_req *req);
-static int vwifi_handle_startsoftap(struct vwifi_req *req);
-static int vwifi_handle_stopsoftap(struct vwifi_req *req);
-static int vwifi_handle_setautoconnect(struct vwifi_req *req);
-
-static int vwifi_create_event(struct vwifi_evt *event);
-
-
-static void vwifi_callback_handler(vwifi_evt_e evt)
+static void vwifi_callback_handler(lwnl_cb_status evt)
 {
-	switch (evt) {
-	case VWIFI_EVT_STA_CONNECTED:
-		lwnl_postmsg(LWNL_STA_CONNECTED, NULL);
-		break;
-	case VWIFI_EVT_STA_CONNECT_FAILED:
-		lwnl_postmsg(LWNL_STA_CONNECT_FAILED, NULL);
-		break;
-	case VWIFI_EVT_SOFTAP_STA_JOINED:
-		lwnl_postmsg(LWNL_SOFTAP_STA_JOINED, NULL);
-		break;
-	case VWIFI_EVT_STA_DISCONNECTED:
-		lwnl_postmsg(LWNL_STA_DISCONNECTED, NULL);
-		break;
-	case VWIFI_EVT_SOFTAP_STA_LEFT:
-		lwnl_postmsg(LWNL_SOFTAP_STA_LEFT, NULL);
-		break;
-	default:
-		lwnl_postmsg(LWNL_UNKNOWN, NULL);
-		break;
+	if (evt == LWNL_SCAN_DONE) {
+		wifi_utils_scan_list_s *scanlist = vwifi_get_scan_list();
+		lwnl_postmsg(evt, scanlist);
+	} else {
+		lwnl_postmsg(evt, NULL);
 	}
 }
 
-void _generate_disconnect(int argc, char *argv[])
+static void _generate_disconnect(int argc, char *argv[])
 {
-	sleep(3);
-	vwifi_callback_handler(VWIFI_EVT_STA_DISCONNECTED);
+	int sleep_time = atoi(argv[1]);
+	lwnl_cb_status event_type = (lwnl_cb_status)atoi(argv[2]);
+
+	printf("[pkbuild] sleep (%d) event type(%d)\n", sleep_time, event_type);
+	sleep(sleep_time);
+	vwifi_callback_handler(event_type);
 }
 
-int vwifi_create_event(struct vwifi_evt *event)
+int vwifi_create_event(struct vwifi_evt *vevent, int sleep, lwnl_cb_status event)
 {
-	int res = kernel_thread("vwifi_evt", 100, 1024, event->func, NULL);
+	(void)vevent;
+	char sleep_buf[16] = {0,};
+	char event_buf[16] = {0,};
+	memset(sleep_buf, 0, 16);
+	memset(event_buf, 0, 16);
+
+	snprintf(sleep_buf, 16, "%d", sleep);
+	snprintf(event_buf, 16, "%d", event);
+	char *argv[3] = {0,};
+	argv[0] = sleep_buf;
+	argv[1] = event_buf;
+	argv[2] = NULL;
+
+	int res = kernel_thread("vwifi_evt", 100, 1024, _generate_disconnect, argv);
 	if (res < 0) {
 		VWIFI_ERROR(0);
 		return -1;
@@ -96,110 +76,45 @@ int vwifi_create_event(struct vwifi_evt *event)
 	return 0;
 }
 
-int vwifi_handle_init(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	return 0;
-}
-
-int vwifi_handle_deinit(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	return 0;
-}
-
-int vwifi_handle_scanap(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	return 0;
-}
-
-int vwifi_handle_connectap(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	vwifi_callback_handler(VWIFI_EVT_STA_CONNECTED);
-
-	struct vwifi_evt event;
-	event.func = (main_t)_generate_disconnect;
-	vwifi_create_event(&event);
-
-	return 0;
-}
-
-int vwifi_handle_disconnectap(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-
-	struct vwifi_evt event;
-	event.func = (main_t)_generate_disconnect;
-	vwifi_create_event(&event);
-
-	return 0;
-}
-
-int vwifi_handle_getinfo(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	return 0;
-}
-
-int vwifi_handle_startsta(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	return 0;
-}
-
-int vwifi_handle_startsoftap(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	return 0;
-}
-
-int vwifi_handle_stopsoftap(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	return 0;
-}
-
-int vwifi_handle_setautoconnect(struct vwifi_req *req)
-{
-	VWIFI_ENTRY;
-	return 0;
-}
 
 int vwifi_handle_message(struct vwifi_req *req)
 {
+	#if 1
+	struct vwifi_ops *ops = get_vdev_auto();
+	#else
+	struct vwifi_ops *ops = get_vdev_onoff();
+	#endif
 	int res = 0;
 	switch(req->type) {
 	case VWIFI_MSG_INIT:
-		req->res = vwifi_handle_init(req);
+		req->res = ops->init(req);
 		break;
 	case VWIFI_MSG_DEINIT:
-		req->res = vwifi_handle_deinit(req);
+		req->res = ops->deinit(req);
 		break;
 	case VWIFI_MSG_SCANAP:
-		req->res = vwifi_handle_scanap(req);
+		req->res = ops->scan_ap(req);
 		break;
 	case VWIFI_MSG_CONNECTAP:
-		req->res = vwifi_handle_connectap(req);
+		req->res = ops->connect_ap(req);
 		break;
 	case VWIFI_MSG_DISCONENCTAP:
-		req->res = vwifi_handle_disconnectap(req);
+		req->res = ops->disconnect_ap(req);
 		break;
 	case VWIFI_MSG_GETINFO:
-		req->res = vwifi_handle_getinfo(req);
+		req->res = ops->get_info(req);
 		break;
 	case VWIFI_MSG_STARTSTA:
-		req->res = vwifi_handle_startsta(req);
+		req->res = ops->start_sta(req);
 		break;
 	case VWIFI_MSG_STARTSOFTAP:
-		req->res = vwifi_handle_stopsoftap(req);
+		req->res = ops->start_softap(req);
 		break;
 	case VWIFI_MSG_STOPSOFTAP:
-		req->res = vwifi_handle_stopsoftap(req);
+		req->res = ops->stop_softap(req);
 		break;
 	case VWIFI_MSG_SETAUTOCONNECT:
-		req->res = vwifi_handle_setautoconnect(req);
+		req->res = ops->set_autoconnect(req);
 		break;
 	default:
 		VWIFI_ERROR(0);
