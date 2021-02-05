@@ -25,33 +25,11 @@
 #include <errno.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wm_test.h"
+#include "wm_test_utils.h"
 
 /*
  * Macro
  */
-#define WO_ERROR(res) printf("[WO][ERR] code(%d) (%d): %s\t%s:%d\n",		\
-							 res, errno, __FUNCTION__, __FILE__, __LINE__)
-
-#define WO_TEST_SIGNAL(conn)											\
-	do {																\
-		printf("[WO] T%d send signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
-		int ssres = _wo_add_queue(conn);								\
-		if (ssres != 0) {												\
-			assert(0);													\
-		}																\
-		sem_post(&g_wo_sem);											\
-	} while (0)
-
-#define WO_TEST_WAIT(conn)												\
-	do {																\
-		printf("[WO] T%d wait signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
-		sem_wait(&g_wo_sem);											\
-		int swres = _wo_dequeue(&conn);									\
-		if (swres != 0) {												\
-			assert(0);													\
-		}																\
-	} while (0)
-
 #define WIFIMGR_SSID ""
 #define WIFIMGR_PWD ""
 #define WIFIMGR_AUTH WIFI_MANAGER_AUTH_WPA2_PSK
@@ -61,8 +39,6 @@
 #define WO_CONN_SUCCESS 2
 #define WO_INTERVAL 10
 #define WO_GOAL_CNT 1000
-
-static sem_t g_wo_sem;
 
 /*
  * callbacks
@@ -85,69 +61,7 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 	wm_sta_disconnected,
 	NULL, NULL, NULL,
 };
-
-/*
- * queue
- */
-#define WO_QUEUE_SIZE 10
-#define WO_QUEUE_LOCK							\
-	do {										\
-		sem_wait(&g_wo_queue_sem);					\
-	} while (0)
-#define WO_QUEUE_UNLOCK							\
-	do {										\
-		sem_post(&g_wo_queue_sem);					\
-	} while (0)
-static sem_t g_wo_queue_sem;
-static int g_queue[WO_QUEUE_SIZE];
-static int g_queue_ridx = -1;
-static int g_queue_widx = -1;
-
-static int _wo_is_empty(void)
-{
-	if (g_queue_ridx == g_queue_widx) {
-		return 1;
-	}
-	return 0;
-}
-
-static int _wo_is_full(void)
-{
-	int tmp = (g_queue_widx + 1) % WO_QUEUE_SIZE;
-	if (tmp == g_queue_ridx) {
-		return 1;
-	}
-	return 0;
-}
-
-static int _wo_add_queue(int conn)
-{
-	WO_QUEUE_LOCK;
-	if (_wo_is_full()) {
-		WO_QUEUE_UNLOCK;
-		return -1;
-	}
-	g_queue_widx = (g_queue_widx + 1) % WO_QUEUE_SIZE;
-	g_queue[g_queue_widx] = conn;
-	WO_QUEUE_UNLOCK;
-
-	return 0;
-}
-
-static int _wo_dequeue(int *conn)
-{
-	WO_QUEUE_LOCK;
-	if (_wo_is_empty()) {
-		WO_QUEUE_UNLOCK;
-		return -1;
-	}
-	g_queue_ridx = (g_queue_ridx + 1) % WO_QUEUE_SIZE;
-	*conn = g_queue[g_queue_ridx];
-	WO_QUEUE_UNLOCK;
-
-	return 0;
-}
-
+static struct wo_queue *g_wo_queue = NULL;
 /*
  * Callback
  */
@@ -160,13 +74,13 @@ void wm_sta_connected(wifi_manager_result_e res)
 	} else {
 		conn = WO_CONN_FAIL;
 	}
-	WO_TEST_SIGNAL(conn);
+	WO_TEST_SIGNAL(conn, g_wo_queue);
 }
 
 void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	printf("[WO] T%d --> %s %d\n", getpid(), __FUNCTION__, disconn);
-	WO_TEST_SIGNAL(WO_CONN_FAIL);
+	WO_TEST_SIGNAL(WO_CONN_FAIL, g_wo_queue);
 }
 
 static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
@@ -195,15 +109,9 @@ static void wm_get_info(wifi_manager_ap_config_s *arg)
 
 static int run_init(void *arg)
 {
-	int ret = sem_init(&g_wo_sem, 0, 0);
-	if (ret < 0) {
-		printf("[WO] initialize semaphore fail(%d)\n", errno);
-		return -1;
-	}
 	wifi_manager_result_e res = wifi_manager_init(&g_wifi_callbacks);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		WO_ERROR(res);
-		sem_destroy(&g_wo_sem);
 		return -1;
 	}
 
@@ -248,7 +156,6 @@ static int run_init(void *arg)
 	}
 
 	printf("[WO] terminate program total (%d)\n", cnt_auto_connect);
-	sem_destroy(&g_wo_sem);
 
 	return 0;
 }
@@ -264,7 +171,7 @@ static int run_connecting(wifi_manager_ap_config_s *ap_config)
 	}
 
 	int conn = WO_CONN_FAIL;
-	WO_TEST_WAIT(conn);
+	WO_TEST_WAIT(conn, g_wo_queue);
 
 	if (conn == WO_CONN_FAIL) {
 		// does it need to get info from wi-fi wm_get_info(ap_config);
@@ -287,7 +194,7 @@ static int run_connected(void)
 {
 	printf("[WO] -->%s\n", __FUNCTION__);
 	int conn = WO_CONN_FAIL;
-	WO_TEST_WAIT(conn);
+	WO_TEST_WAIT(conn, g_wo_queue);
 	if (conn == WO_CONN_FAIL) {
 		return 1;
 	} else {
@@ -299,11 +206,13 @@ static int run_connected(void)
 
 void wm_test_on_off(void *arg)
 {
-	int res = sem_init(&g_wo_queue_sem, 0, 1);
-	if (res < 0) {
-		printf("[WO] fail to initialize semaphore %d\n", errno);
+	g_wo_queue = wo_create_queue();
+	if (!g_wo_queue) {
+		printf("[WO] create queue fail\n");
 		return;
 	}
+
 	run_init(arg);
-	sem_destroy(&g_wo_queue_sem);
+
+	wo_destroy_queue(g_wo_queue);
 }
