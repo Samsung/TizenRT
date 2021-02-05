@@ -16,11 +16,10 @@ if WIFI_MANAGER
 
 choice
 	prompt "WiFi Driver"
-	default SELECT_WLAN_VIRTUAL
+	default SELECT_NO_DRIVER
 
-config SELECT_WLAN_VIRTUAL
+config SELECT_NO_DRIVER
 	bool "Virtual Driver"
-	select VIRTUAL_WLAN
 
 config SELECT_SCSC_WLAN
 	bool "Enable SCSC Wireless Module"
@@ -32,7 +31,6 @@ config SELECT_RTK_WLAN
 
 config SELECT_PROPRIETARY_WLAN
 	bool "Enable vendor-specific Wireless Module"
-
 endchoice # WiFi driver choice
 
 choice
@@ -47,14 +45,14 @@ config SLSI_WPA_SUPPLICANT
 		Select the wpa_supplicant
 
 config SELECT_PROPRIETARY_SUPPLICANT
-	depends on !SELECT_SCSC_WLAN && !SELECT_WLAN_VIRTUAL
+	depends on !SELECT_SCSC_WLAN && !SELECT_NO_DRIVER
 	bool "Enable vendor-specific supplicant"
 	---help---
 		Select the third party supplicant
 
 config SELECT_NO_SUPPLICANT
-	bool "No supplicant"
 	depends on SELECT_NO_DRIVER
+	bool "Enable virtual supplicant"
 	---help---
 		Select the virtual set of drivers
 

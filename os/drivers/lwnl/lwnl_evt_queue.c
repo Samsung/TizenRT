@@ -41,7 +41,7 @@
 					__FUNCTION__, __FILE__, __LINE__);			\
 		} while (0)
 
-//static pthread_mutex_t g_mutex;
+static pthread_mutex_t g_mutex;
 /* #define LWQ_LOCK								\ */
 /* 	do {										\ */
 /* 		pthread_mutex_lock(&g_mutex);\ */

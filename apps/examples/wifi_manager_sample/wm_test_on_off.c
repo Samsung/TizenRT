@@ -205,9 +205,6 @@ static int run_init(void *arg)
 			printf("\n\n\n");
 			printf("[WO] connection count %d\n", cnt_auto_connect);
 			printf("\n\n\n");
-			if (cnt_auto_connect > 100) {
-				break;
-			}
 			state = run_connected();
 		} else if (state == 3) {
 			state = run_reconnecting();
@@ -269,7 +266,7 @@ static int run_connecting(wifi_manager_ap_config_s *ap_config)
 				assert(0);
 			}
 		} else {
-			printf("[WO] corrupted %d %s %d\n", errno, __FUNCTION__, __LINE__);
+			printf("[WO] corrupted %d\n", errno, __FUNCTION__, __LINE__);
 		}
 		goto connect_fail;
 	}
@@ -328,8 +325,8 @@ static int run_reconnecting(void)
 	return 0;
 }
 
-//static const char *g_argv[3];
-//static wifi_manager_ap_config_s g_apconfig;
+static const char *g_argv[3];
+static wifi_manager_ap_config_s g_apconfig;
 
 void wm_test_on_off(void *arg)
 {

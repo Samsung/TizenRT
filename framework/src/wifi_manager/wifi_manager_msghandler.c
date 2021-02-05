@@ -62,18 +62,11 @@ static int _process_msg(int argc, char *argv[])
 	return 0;
 }
 
-#ifdef CONFIG_VIRTUAL_WLAN
-extern void vwifi_start(void);
-#endif
-
 /**
  * Public
  */
 int wifimgr_run_msghandler(void)
 {
-#ifdef CONFIG_VIRTUAL_WLAN
-	vwifi_start();
-#endif
 	int tid = task_create("wifi msg handler", 100, 4096, (main_t)_process_msg, NULL);
 	if (tid < 0) {
 		WM_ERR;
