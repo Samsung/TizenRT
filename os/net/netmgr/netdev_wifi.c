@@ -20,9 +20,8 @@
 #include <errno.h>
 #include <net/if.h>
 #include <ifaddrs.h>
-#include <netinet/in.h>
-#include <debug.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <netinet/in.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
@@ -31,7 +30,6 @@
 int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
 	lwnl_result_e res = LWNL_FAIL;
-	lldbg("T%d cmd(%d) (%p) (%d)\n", cmd, data, data_len);
 	switch (cmd) {
 	case LWNL_INIT:
 	{
@@ -57,6 +55,7 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 	break;
 	case LWNL_SET_AUTOCONNECT:
 	{
+
 		uint8_t *check = (uint8_t *)data;
 		res = dev->t_ops.wl->set_autoconnect(dev, *check);
 	}

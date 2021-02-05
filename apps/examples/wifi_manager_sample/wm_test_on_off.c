@@ -21,7 +21,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <semaphore.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wm_test.h"
 
@@ -42,23 +41,26 @@
 #define WIFIMGR_AUTH WIFI_MANAGER_AUTH_WPA2_PSK
 #define WIFIMGR_CRYPTO WIFI_MANAGER_CRYPTO_AES
 
-static sem_t g_wm_sem = SEM_INITIALIZER(0);
-#define WM_TEST_SIGNAL								\
-	do {											\
-		printf("[WO] T%d send signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
-		sem_post(&g_wm_sem);						\
+
+#define WM_TEST_SIGNAL										\
+	do {													\
+		pthread_mutex_lock(&g_wm_mutex);					\
+		printf("T%d send signal\n", getpid());	\
+		pthread_cond_signal(&g_wm_cond);					\
+		pthread_mutex_unlock(&g_wm_mutex);					\
 	} while (0)
 
 #define WM_TEST_WAIT								\
 	do {											\
-		printf("[WO] T%d wait signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
-		sem_wait(&g_wm_sem);                        \
+		pthread_mutex_lock(&g_wm_mutex);			\
+		printf(" T%d wait signal\n", getpid());		\
+		pthread_cond_wait(&g_wm_cond, &g_wm_mutex);	\
+		pthread_mutex_unlock(&g_wm_mutex);			\
 	} while (0)
-
 
 #define WM_CONN_FAIL 1
 #define WM_CONN_SUCCESS 2
-#define WO_INTERVAL 2
+
 /*
  * callbacks
  */
@@ -198,7 +200,6 @@ static void run_init(void *arg)
 			state = run_connecting(&apconfig);
 		} else if (state == 2) {
 			cnt_auto_connect++;
-			printf("[WO] connection count %d\n", cnt_auto_connect);
 			state = run_connected();
 		} else if (state == 3) {
 			state = run_reconnecting();
@@ -229,8 +230,8 @@ static int run_connecting(wifi_manager_ap_config_s *ap_config)
 	wifi_manager_result_e res = wifi_manager_connect_ap(ap_config);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		WM_ERROR(res);
-		printf("wait %d second\n", WO_INTERVAL);
-		sleep(WO_INTERVAL);
+		printf("wait 1 second\n");
+		sleep(1);
 		return 1;
 	}
 
