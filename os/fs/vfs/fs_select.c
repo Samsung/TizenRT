@@ -265,6 +265,10 @@ int select(int nfds, FAR fd_set *readfds, FAR fd_set *writefds, FAR fd_set *exce
 	int ndx = _init_desc_list(nfds, readfds, writefds, exceptfds, pollset);
 
 	DEBUGASSERT(ndx == npfds);
+	if (ndx != npfds) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* Then let poll do all of the real work. (timeout: unit of millisecond)*/
 	ret = poll(pollset, npfds, _set_timeout(timeout));
