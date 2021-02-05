@@ -32,4 +32,5 @@ void lwnl_queue_initialize(void);
 int lwnl_add_listener(struct file *filep);
 int lwnl_remove_listener(struct file *filep);
 int lwnl_get_event(struct file *filep, char *buf, int len);
+int lwnl_check_queue(struct file *filep);
 #endif // _LWNL_EVT_QUEUE_H__
