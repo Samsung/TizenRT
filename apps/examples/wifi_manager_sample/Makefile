@@ -30,7 +30,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 
-MAINSRC = wm_test.c wm_test_on_off.c
+MAINSRC = wm_test.c wm_test_on_off.c wm_test_utils.c
 ifeq ($(CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL),y)
 CSRCS = wm_test_stress.c\
 wm_test_stress_test1.c\
