@@ -23,6 +23,27 @@
  ****************************************************************************/
 #define LWNL_PATH "/dev/lwnl"
 
+#define LWNL_TAG "[LWNL]"
+
+#define LWNL_ERR										\
+	do {												\
+		lldbg(LWNL_TAG"[ERR] %s: %d line err(%s)\n",	\
+			  __FILE__, __LINE__, strerror(errno));		\
+	} while (0)
+
+#define LWNL_ENTER											\
+	do {													\
+		lldbg(LWNL_TAG"--->%s:%d\n", __FILE__, __LINE__);	\
+	} while (0)
+
+#define LWNL_LEAVE											\
+	do {													\
+		lldbg(LWNL_TAG"<---%s:%d\n", __FILE__, __LINE__);	\
+	} while (0)
+
+
+
+
 /* Light-weight netlink domain definition */
 #define AF_LWNL 3
 
