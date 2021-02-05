@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2020 Samsung Electronics All Rights Reserved.
+# Copyright 2021 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -155,39 +155,12 @@ AFLAGS = $(CFLAGS) -D__ASSEMBLY__
 CFLAGS += -march=armv8-m.main+dsp 
 CFLAGS += -mthumb 
 CFLAGS += -mcmse 
-#CFLAGS += -mfloat-abi=hard
-#CFLAGS += -mfpu=fpv5-sp-d16
-
-
-#CFLAGS += -g
-#CFLAGS += -gdwarf-3
-#CFLAGS += -nodefaultlibs
-#CFLAGS += -O2
-#CFLAGS += -D__FPU_PRESENT
-
-#CFLAGS += -fstack-usage
-#CFLAGS += -fdata-sections
-#CFLAGS += -nostartfiles
-#CFLAGS += -nostdlib
-#CFLAGS += -Wpointer-arith
-#CFLAGS += -Wno-write-strings
-#CFLAGS += -Wno-maybe-uninitialized
-#CFLAGS += --save-temps
-#CFLAGS += -c
-#CFLAGS += -MMD
-
-#CFLAGS += -Wextra
-
-#CFLAGS += $(IFLAGS)
 CFLAGS += -DCONFIG_PLATFORM_8721D
 CFLAGS += -DCONFIG_USE_MBEDTLS_ROM_ALG
 CFLAGS += -DDM_ODM_SUPPORT_TYPE=32
 CFLAGS += -DSTD_PRINTF
 CFLAGS += -DCONFIG_PLATFORM_TIZENRT_OS=1
 CFLAGS += -DARM_CORE_CM4
-
-#LDFLAGS += --wrap=printf
-
 ##########################################################################################################################################
 
 ASMEXT = .S
