@@ -5,3 +5,4 @@
 !./cmse_implib.a
 !./cmse_implib_fpu.a
 !./lib_btgap.a
+!./lib_btgap_fpu.a

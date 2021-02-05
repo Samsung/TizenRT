@@ -169,7 +169,11 @@ CHIP_CSRCS += amebad_systemreset.c
 endif
 
 ifeq ($(CONFIG_AMEBAD_BLE),y)
+ifeq ($(CONFIG_ARCH_FPU),y)
+EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/lib_btgap_fpu.a
+else
 EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/lib_btgap.a
+endif
 endif
 
 ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
