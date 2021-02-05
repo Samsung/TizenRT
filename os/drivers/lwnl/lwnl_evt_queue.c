@@ -22,50 +22,24 @@
 #include <errno.h>
 #include <debug.h>
 #include <net/if.h>
-#include <pthread.h>
 #include <tinyara/net/if/wifi.h>
 #include "lwnl_evt_queue.h"
 
+#define LWQ_LOCK
+#define LWQ_UNLOCK
 
-#define LWQ_LOG lldbg
+#define LWQ_LOG nvdbg
 
 #define LWQ_ENTRY										\
 	do {												\
-		LWQ_LOG("[LWQ][T%d] %s\t%s:%d \n", getpid(),	\
+		LWQ_LOG("[LWQ][T%d] %s\t%s:%d\n", getpid(),	\
 			 __FUNCTION__, __FILE__, __LINE__);			\
 	} while (0)
 
 #define LWQ_ERR												\
 		do {													\
-			LWQ_LOG("[LWQ][ERR][T%d] %s\t%s:%d \n", getpid(),	\
+			LWQ_LOG("[LWQ][ERR][T%d] %s\t%s:%d\n", getpid(),	\
 					__FUNCTION__, __FILE__, __LINE__);			\
-		} while (0)
-
-static pthread_mutex_t g_mutex;
-/* #define LWQ_LOCK								\ */
-/* 	do {										\ */
-/* 		pthread_mutex_lock(&g_mutex);\ */
-/* 		LWQ_LOG("[pklock] T%d \n", getpid());	\ */
-/* 	} while (0) */
-
-/* #define LWQ_UNLOCK								\ */
-/* 	do {										\ */
-/* 		LWQ_LOG("[pkunlock] T%d \n", getpid());	\ */
-/* 		pthread_mutex_unlock(&g_mutex);\ */
-/* 	} while (0) */
-
-static sem_t g_wm_sem = SEM_INITIALIZER(1);
-
-#define LWQ_LOCK									\
-		do {										\
-			sem_wait(&g_wm_sem);					\
-			LWQ_LOG("[pklock] T%d \n", getpid());	\
-		} while (0)
-
-#define LWQ_UNLOCK									\
-		do {										\
-			LWQ_LOG("[pkunlock] T%d \n", getpid());	\
-			sem_post(&g_wm_sem);					\
 		} while (0)
 
 struct lwnl_event {
@@ -87,22 +61,20 @@ struct lwnl_queue {
 static struct lwnl_queue g_queue[LWNL_NPOLLWAITERS];
 static int g_connected = 0;
 
-static int g_totalevt = 0; // debugging
 /*
  * private
  */
 static int _lwnl_add_event(struct lwnl_event *event)
 {
 	LWQ_ENTRY;
-	LWQ_LOG("[LWQ] _lwnl_add_event: %p\tg_connect %d %d \t%s \n",
-			event, g_connected, g_totalevt, __FUNCTION__);
+	LWQ_LOG("[LWQ] lwnl_add_event: %p\tg_connect %d\t%s\n", event, g_connected, __FUNCTION__);
 	event->flink = NULL;
 
 	LWQ_LOCK;
-	g_totalevt++;
+
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		if (g_queue[i].filep) {
-			LWQ_LOG("[LWQ] add event %p %d %p %p \n",
+			LWQ_LOG("[LWQ] add event %p %d %p %p\n",
 				   g_queue[i].filep, i, g_queue[i].front, event);
 			event->refs = g_connected;
 			if (g_queue[i].front == NULL) {
@@ -123,22 +95,71 @@ static int _lwnl_remove_event(struct lwnl_event *evt)
 {
 	LWQ_ENTRY;
 	evt->refs--;
-	LWQ_LOG("[LWQ] _remove_event refs(%d) (%p) (%p) \n",
-			evt->refs, evt, evt->data.data);
+	LWQ_LOG("[LWQ] _remove_event refs(%d)\n", evt->refs);
 	if (evt->refs > 0) {
 		return 0;
 	}
 
-	LWQ_LOG("[LWQ] _remove_event remove item \n");
+	LWQ_LOG("[LWQ] _remove_event remove item\n");
 	// it's not refered.
 	if (evt->data.data) {
 		kmm_free(evt->data.data);
 		evt->data.data = NULL;
 	}
 	kmm_free(evt);
-	g_totalevt--;
 
 	return 0;
+}
+
+
+int lwnl_get_event(struct file *filep, char *buf, int len)
+{
+	LWQ_ENTRY;
+	LWQ_LOCK;
+	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
+		if (g_queue[i].filep != filep) {
+			continue;
+		}
+
+		if (!g_queue[i].front) {
+			LWQ_ERR;
+			return 0;
+		}
+		struct lwnl_event *evt = g_queue[i].front;
+		int written = 0;
+
+		if (g_queue[i].check_header == 0) {
+			if (len < sizeof(lwnl_cb_status) + sizeof(uint32_t)) {
+				LWQ_ERR;
+				return -1;
+			}
+			memcpy(buf, &evt->data.status, sizeof(lwnl_cb_status));
+			buf += sizeof(lwnl_cb_status);
+			memcpy(buf, &evt->data.data_len, sizeof(uint32_t));
+			written = sizeof(lwnl_cb_status) + sizeof(uint32_t);
+			if (evt->data.data_len > 0) {
+				g_queue[i].check_header = 1;
+				LWQ_UNLOCK;
+				return written;
+			}
+		} else {
+			if (len < evt->data.data_len) {
+				LWQ_ERR;
+				return -1;
+			}
+			memcpy(buf, evt->data.data, evt->data.data_len);
+			g_queue[i].check_header = 0;
+			written = evt->data.data_len;
+		}
+
+		g_queue[i].front = evt->flink;
+		_lwnl_remove_event(evt);
+		LWQ_UNLOCK;
+		return written;
+	}
+	LWQ_UNLOCK;
+	LWQ_ERR;
+	return -1;
 }
 
 
@@ -151,7 +172,7 @@ static int _lwnl_copy_scan_info(char **buffer, trwifi_scan_list_s *scan_list)
 		cnt++;
 	}
 	total = cnt;
-	LWQ_LOG("[LWQ] total size(%d) (%d) \n", sizeof(trwifi_ap_scan_info_s), sizeof(trwifi_ap_scan_info_s) * total);
+	LWQ_LOG("[LWQ] total size(%d) (%d)\n", sizeof(trwifi_ap_scan_info_s), sizeof(trwifi_ap_scan_info_s) * total);
 	*buffer = (char *)kmm_malloc(sizeof(trwifi_ap_scan_info_s) * total);
 	if (!(*buffer)) {
 		LWQ_ERR;
@@ -165,29 +186,6 @@ static int _lwnl_copy_scan_info(char **buffer, trwifi_scan_list_s *scan_list)
 		cnt++;
 	}
 	return total * sizeof(trwifi_ap_scan_info_s);
-}
-
-
-/**
- * API
- */
-void lwnl_queue_initialize(void)
-{
-	LWQ_ENTRY;
-	LWQ_LOCK;
-	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
-		g_queue[i].filep = NULL;
-		g_queue[i].front = NULL;
-		g_queue[i].rear = NULL;
-		g_queue[i].check_header = 0;
-	}
-	g_connected = 0;
-
-	/* int ret = pthread_mutex_init(&g_mutex, NULL); */
-	/* if (ret) { */
-	/* 	LWQ_ERR; */
-	/* } */
-	LWQ_UNLOCK;
 }
 
 
@@ -239,11 +237,7 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer)
 
 	int res = _lwnl_add_event(evt);
 	if (res < 0) {
-		if (evt->data.data) {
-			kmm_free(evt->data.data);
-		}
 		kmm_free(evt);
-
 		LWQ_ERR;
 		return -2;
 	}
@@ -251,65 +245,27 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer)
 }
 
 
-int lwnl_get_event(struct file *filep, char *buf, int len)
+
+void lwnl_queue_initialize(void)
 {
-	LWQ_LOCK;
 	LWQ_ENTRY;
-
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
-		if (g_queue[i].filep != filep) {
-			continue;
-		}
-
-		if (!g_queue[i].front) {
-			LWQ_ERR;
-			return 0;
-		}
-		struct lwnl_event *evt = g_queue[i].front;
-		int written = 0;
-
-		if (g_queue[i].check_header == 0) {
-			if (len < sizeof(lwnl_cb_status) + sizeof(uint32_t)) {
-				LWQ_ERR;
-				return -1;
-			}
-			memcpy(buf, &evt->data.status, sizeof(lwnl_cb_status));
-			buf += sizeof(lwnl_cb_status);
-			memcpy(buf, &evt->data.data_len, sizeof(uint32_t));
-			written = sizeof(lwnl_cb_status) + sizeof(uint32_t);
-			if (evt->data.data_len > 0) {
-				g_queue[i].check_header = 1;
-				LWQ_UNLOCK;
-				return written;
-			}
-		} else {
-			if (len < evt->data.data_len) {
-				LWQ_ERR;
-				return -1;
-			}
-			memcpy(buf, evt->data.data, evt->data.data_len);
-			g_queue[i].check_header = 0;
-			written = evt->data.data_len;
-		}
-
-		g_queue[i].front = evt->flink;
-		_lwnl_remove_event(evt);
-		LWQ_UNLOCK;
-		return written;
+		g_queue[i].filep = NULL;
+		g_queue[i].front = NULL;
+		g_queue[i].rear = NULL;
+		g_queue[i].check_header = 0;
 	}
-	LWQ_UNLOCK;
-	LWQ_ERR;
-	return -1;
+	g_connected = 0;
 }
 
 
 int lwnl_add_listener(struct file *filep)
 {
-	LWQ_LOCK;
 	LWQ_ENTRY;
+	LWQ_LOCK;
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		if (!g_queue[i].filep) {
-			LWQ_LOG("[LWQ] %s %d\t add filep %d %p \n", __FUNCTION__, __LINE__, i, filep);
+			LWQ_LOG("[LWQ] %s %d\t add filep %d %p\n", __FUNCTION__, __LINE__, i, filep);
 			g_queue[i].filep = filep;
 			g_connected++;
 			LWQ_UNLOCK;
@@ -324,17 +280,16 @@ int lwnl_add_listener(struct file *filep)
 
 int lwnl_remove_listener(struct file *filep)
 {
-	LWQ_LOCK;
 	LWQ_ENTRY;
-	LWQ_LOG("[LWQ] T%d remove listener filep %p %d %d \n",
-			getpid(), filep, g_totalevt, LWNL_NPOLLWAITERS);
+	LWQ_LOCK;
+	LWQ_LOG("[LWQ] remove listener filep %p %d\n", filep, LWNL_NPOLLWAITERS);
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
-		LWQ_LOG("[LWQ] %s %d filep %p %p \n", __FUNCTION__, i, g_queue[i].filep, g_queue[i].front);
+		LWQ_LOG("[LWQ] %s %d filep %p\n", __FUNCTION__, i, g_queue[i].filep);
 		if (g_queue[i].filep == filep) {
 			g_queue[i].filep = NULL;
 			struct lwnl_event *evt;
 			while (g_queue[i].front) {
-				LWQ_LOG("[LWQ] call %d remove (%p) \n", i, g_queue[i].front);
+				LWQ_LOG("[LWQ] call %d remove (%p)\n", i, g_queue[i].front);
 				evt = g_queue[i].front;
 				g_queue[i].front = evt->flink;
 				_lwnl_remove_event(evt);
@@ -347,8 +302,7 @@ int lwnl_remove_listener(struct file *filep)
 			return 0;
 		}
 	}
-	// some socket doens't bind event listener.
-	// so it can cause overhead.
 	LWQ_UNLOCK;
-	return 0;
+	LWQ_ERR;
+	return -1;
 }

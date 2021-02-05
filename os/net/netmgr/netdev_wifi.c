@@ -31,7 +31,7 @@
 int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
 	lwnl_result_e res = LWNL_FAIL;
-	lldbg("T%d cmd(%d) (%p) (%d)\n", getpid(), cmd, data, data_len);
+	lldbg("T%d cmd(%d) (%p) (%d)\n", cmd, data, data_len);
 	switch (cmd) {
 	case LWNL_INIT:
 	{
