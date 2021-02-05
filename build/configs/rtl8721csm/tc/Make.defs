@@ -210,6 +210,13 @@ define MAKE_BOARD_SPECIFIC_BIN
   $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_make_bin.sh
 endef
 
+KERNEL_BINARY_PATH='$(TOPDIR)/../build/output/bin/km0_km4_image2.bin'
+SECURE_HEADER_SIZE=32
+
+define MAKE_SAMSUNG_HEADER
+  $(TOPDIR)/../os/tools/mksamsungheader.py ${KERNEL_BINARY_PATH} kernel ${SECURE_HEADER_SIZE}
+endef
+
 define DOWNLOAD
   $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef
