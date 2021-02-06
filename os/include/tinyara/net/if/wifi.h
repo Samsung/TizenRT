@@ -106,27 +106,204 @@ typedef struct {
 } trwifi_info;
 
 struct netdev;
-/*	block call */
+/**
+ * @brief   Initialize wi-fi library
+ *
+ * @param[in]   dev : struct netdev registered by netdev_register()
+ *
+ * @function_type  synchronous call
+ *
+ * @description    run STA mode when wi-fi library initialized.
+ *
+ * @return TRWIFI_SUCCESS : success
+ * @return TRWIFI_FAIL    : fail
+ */
 typedef trwifi_result_e (*trwifi_init)(struct netdev *dev);
-/*	block call */
+
+/**
+ * @brief   De-initialize wi-fi library
+ *
+ * @param[in]   dev : struct netdev registered by netdev_register()
+ *
+ * @function_type  synchronous call
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_deinit)(struct netdev *dev);
-/*	non-block */
+
+/**
+ * @brief   Scan access points
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[in]   config : an access point information to scan.
+ *
+ * @function_type  asynchronous call : Send event by lwnl_postmsg()
+ * @event LWNL_SCAN_DONE    : scan success
+ * @event LWNL_SCAN_FAILED  : scan fail
+ *
+ * @description If the call is successful, then it should generate
+ *              events(LWNL_SCAN_DONE or LWNL_SCAN_FAILED).
+ *              If the call fails then it shouldn't generate events.
+ *
+ * @return TRWIFI_SUCCESS      : success (should generate an event.)
+ * @return TRWIFI_FAIL         : fail (shouldn't generate an event.)
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_ap_config_s *config);
-/*	non-block */
+
+/**
+ * @brief   Connect to an access point
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[in]   config : an access point information to connect
+ * @param[in]   arg    : not used.
+ *
+ * @function_type  asynchronous call : Send event by lwnl_postmsg()
+ * @event LWNL_STA_CONNECTED      : connection success
+ * @event LWNL_STA_CONNECT_FAILED : connection fail
+ *
+ * @description if the call is successful, then it should generate
+ *              events(LWNL_STA_CONNECTED or LWNL_STA_CONNECT_FAILED).
+ *              if the call fails then it shouldn't generate events.
+ *              In STA mode and it's connected to an access point, wi-fi library can generates
+ *              LWNL_STA_DISCONNECTED event when it's disconnected to AP.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_connect_ap)(struct netdev *dev, trwifi_ap_config_s *config, void *arg);
-/*	non-block */
+
+/**
+ * @brief   Disconnect to an access point
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[in]   arg    : not used.
+ *
+ * @function_type  asynchronous call : Send event by lwnl_postmsg()
+ * @event LWNL_STA_DISCONNECTED : disconnected to an access point
+ *
+ * @description   If wi-fi library is in STA mode and it's connected to an access point,
+ *                it should generate LWNL_STA_DISCONNECTED event.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_disconnect_ap)(struct netdev *dev, void *arg);
-/*	block */
+
+/**
+ * @brief   Get wi-fi information
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[out]  info   : wi-fi information
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Refer trwifi_info. only rssi is required. Other members are not used.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_info)(struct netdev *dev, trwifi_info *info);
-/*	block */
+
+/**
+ * @brief   Change to STA mode
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ *
+ * @function_type  synchronous call
+ *
+ * @description    The call changes wi-fi to STA mode.
+ *                 If wi-fi is in STA mode this API is not called, because wi-fi manager manages
+ *                 Wi-Fi state.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_start_sta)(struct netdev *dev);
-/*	block */
+
+/**
+ * @brief   Start SoftAP mode
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[in]   config : SoftAP configuration @ref trwifi_softap_config_s
+ *
+ * @function_type  synchronous call
+ *
+ * @description    The call changes wi-fi to SoftAP mode.
+ *                 If wi-fi is in SoftAP mode this API is not called, because wi-fi manager manages Wi-Fi state.
+ *                 In this state, wi-fi library can generate LWNL_SOFTAP_STA_JOINED or LWNL_SOFTAP_STA_LEFT events.
+ *                 LWNL_SOFTAP_STA_JOINED is called when a wi-fi device is connected to softAP.
+ *                 LWNL_SOFTAP_STA_LEFT is called when a wi-fi device is left from softAP.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_start_softap)(struct netdev *dev, trwifi_softap_config_s *config);
-/*	block */
+
+/**
+ * @brief   Stop to SoftAP mode
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Stop softAP mode.
+ *                 @ref trwifi_start_sta or @ref trwifi_deinit can be called after this API
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_stop_softap)(struct netdev *dev);
-/*	block */
+
+/**
+ * @brief   Set auto-connection to wi-fi library
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[in]   chk    : 0: disable
+ *                       1: enable
+ *
+ * @function_type  synchronous call
+ *
+ * @description    enable auto-connection features in Wi-Fi library.
+ *                 If it's enabled and it connected to an access point then
+ *                 it should automatically connect to an access point when
+ *                 it is disconnected due to an exceptional situation(e.g power off on an access point,
+ *                 weak signal). when wi-fi is disconnected it should generate LWNL_STA_DISCONNECTED event.
+ *                 And it generate LWNL_STA_CONNECTED event when it succeeds to reconnect to an access point.
+ *                 During auto connect state, if @ref trwifi_disconnect_ap() is called then it stop the auto-connect.
+ *                 otherwise if it's disabled, it should generate LWNL_STA_DISCONNECTED event.
+ *                 exceptional situation means all cases except calling @ref trwifi_disconnect_ap()
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_set_autoconnect)(struct netdev *dev, uint8_t chk);
-/*	block */
+
+/**
+ * @brief   Set driver speicific operation
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[in]   cmd    : driver specific command
+ * @param[in]   arg    : driver specific argument for command
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Set driver specific operation. it's decided by vendor.
+ *                 If arg is not null arg is freed by upper layer.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_drv_ioctl)(struct netdev *dev, int cmd, unsigned long arg);
 
 struct trwifi_ops {
