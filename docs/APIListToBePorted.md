@@ -22,6 +22,10 @@
 15. up_i2cinitialize()
 16. up_spiinitialize()
 17. up_rtc_initialize()
+18. up_reboot_reason_init()
+19. up_reboot_reason_read()
+20. up_reboot_reason_write()
+21. up_reboot_reason_clear()
 
 ## API Description
 
@@ -226,3 +230,51 @@ c. **up_watchdog_disable()** : Disable board specific watchdog
 *File Location:*	"os/arch/arm/src/chip/chip_serial.c"
 
 *Prototype Location:*	"os/arch/arm/src/common/up_internal.h"
+
+- Add low level chip specific API **up_reboot_reason_init** to initialize the reboot reason register.
+```c
+ * Prototype: void up_reboot_reason_init(void)
+ * Input Parameters:
+ *   none
+ * Returned Value:
+ *   none
+```
+*File Location:*	"os/arch/arm/src/chip/chip_reboot_reason.c"
+
+*Prototype Location:*	"os/arch/arm/include/reboot_reason.h"
+
+- Add low level chip specific API **up_reboot_reason_read** to read the reboot reason from register.
+```c
+ * Prototype: void up_reboot_reason_read(void)
+ * Input Parameters:
+ *   none
+ * Returned Value:
+ *   reboot reason code
+```
+*File Location:*	"os/arch/arm/src/chip/chip_reboot_reason.c"
+
+*Prototype Location:*	"os/arch/arm/include/reboot_reason.h"
+
+- Add low level chip specific API **up_reboot_reason_write** to write the reboot reason to register
+```c
+ * Prototype: void up_reboot_reason_write(void)
+ * Input Parameters:
+ *   reboot reason code
+ * Returned Value:
+ *   none
+```
+*File Location:*	"os/arch/arm/src/chip/chip_reboot_reason.c"
+
+*Prototype Location:*	"os/arch/arm/include/reboot_reason.h"
+
+- Add low level chip specific API **up_reboot_reason_clear** to clear the reboot reason register.
+```c
+ * Prototype: void up_reboot_reason_clear(void)
+ * Input Parameters:
+ *   none
+ * Returned Value:
+ *   none
+```
+*File Location:*	"os/arch/arm/src/chip/chip_reboot_reason.c"
+
+*Prototype Location:*	"os/arch/arm/include/reboot_reason.h"
