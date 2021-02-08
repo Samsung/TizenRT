@@ -14,13 +14,14 @@
 7. up_putc()
 8. up_getc()
 9. up_puts()
-10. up_timer_initialize()
-11. up_wdog_init()
-12. up_wdog_keepalive()
-13. up_watchdog_disable()
-14. up_i2cinitialize()
-15. up_spiinitialize()
-16. up_rtc_initialize()
+10. up_lowputc()
+11. up_timer_initialize()
+12. up_wdog_init()
+13. up_wdog_keepalive()
+14. up_watchdog_disable()
+15. up_i2cinitialize()
+16. up_spiinitialize()
+17. up_rtc_initialize()
 
 ## API Description
 
@@ -111,7 +112,15 @@ a. **up_putc()** : Output one byte on the serial console
  * Returned Value:
  *   sent character
 ```
-b. **up_getc()** : Read one byte from the serial console
+b. **up_lowputc()** : Output one byte on the serial console.
+```c
+ * Prototype: void up_lowputc(void)
+ * Input Parameters:
+ *   character to output
+ * Returned Value:
+ *   none
+```
+c. **up_getc()** : Read one byte from the serial console
 ```c
  * Prototype: int up_getc(void)
  * Input Parameters:
@@ -119,7 +128,7 @@ b. **up_getc()** : Read one byte from the serial console
  * Returned Value:
  *   int value, -1 if error, 0~255 if byte successfully read
 ```
-c. **up_puts()** : Output string on the serial console
+d. **up_puts()** : Output string on the serial console
 ```c
  * Prototype: void up_puts(const char *str)
  * Input Parameters:
@@ -205,3 +214,15 @@ c. **up_watchdog_disable()** : Disable board specific watchdog
 *File Location:*	"os/arch/arm/src/chip/chip_rtc.c"
 
 *Prototype Location:*	"os/include/tinyara/arch.h"
+
+- Add low level chip specific API **up_lowputc()** to send one byte on the serial console.
+```c
+ * Prototype: void up_lowputc(void)
+ * Input Parameters:
+ *   character to output
+ * Returned Value:
+ *   none
+```
+*File Location:*	"os/arch/arm/src/chip/chip_serial.c"
+
+*Prototype Location:*	"os/arch/arm/src/common/up_internal.h"
