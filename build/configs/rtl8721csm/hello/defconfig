@@ -947,7 +947,50 @@ CONFIG_SCHED_LPWORKSTACKSIZE=2048
 #
 # Debug Options
 #
-# CONFIG_DEBUG is not set
+CONFIG_DEBUG=y
+CONFIG_DEBUG_ERROR=y
+# CONFIG_DEBUG_WARN is not set
+# CONFIG_DEBUG_VERBOSE is not set
+
+#
+# Subsystem Debug Options
+#
+# CONFIG_DEBUG_BINFMT is not set
+# CONFIG_DEBUG_BINMGR is not set
+# CONFIG_DEBUG_FS is not set
+# CONFIG_DEBUG_LIB is not set
+# CONFIG_DEBUG_MM is not set
+# CONFIG_DEBUG_NET is not set
+# CONFIG_DEBUG_PM is not set
+# CONFIG_DEBUG_SCHED is not set
+# CONFIG_DEBUG_SYSCALL is not set
+# CONFIG_DEBUG_TASH is not set
+
+#
+# Framework Debug Options
+#
+# CONFIG_DEBUG_IOTBUS is not set
+
+#
+# OS Function Debug Options
+#
+CONFIG_ARCH_HAVE_HEAPCHECK=y
+# CONFIG_DEBUG_HEAP is not set
+# CONFIG_DEBUG_MM_HEAPINFO is not set
+# CONFIG_DEBUG_IRQ is not set
+
+#
+# Driver Debug Options
+#
+# CONFIG_DEBUG_ANALOG is not set
+# CONFIG_DEBUG_I2S is not set
+# CONFIG_DEBUG_SPI is not set
+# CONFIG_DEBUG_WATCHDOG is not set
+
+#
+# System Debug Options
+#
+# CONFIG_DEBUG_SYSTEM is not set
 
 #
 # Stack Debug Options
