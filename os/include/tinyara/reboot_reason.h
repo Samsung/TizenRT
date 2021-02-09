@@ -23,14 +23,15 @@
  ********************************************************************************************/
 
 typedef enum {
-	REBOOT_SYSTEM_WATCHDOG		= 0,	/* watchdog timeout */        
+	REBOOT_REASON_INITIALIZED	= 0,
 	REBOOT_SYSTEM_DATAABORT		= 1,	/* Data abort */
 	REBOOT_SYSTEM_PREFETCHABORT	= 2,	/* Prefetch abort */
 	REBOOT_SYSTEM_MEMORYALLOCFAIL	= 3,	/* Memory allocation failure */
-	REBOOT_SYSTEM_HW_RESET		= 4,	/* HW power reset */
+	REBOOT_SYSTEM_WATCHDOG		= 4,	/* Watchdog timeout */
+	REBOOT_SYSTEM_HW_RESET		= 5,	/* HW power reset */
 	REBOOT_SYSTEM_WIFICORE_WATCHDOG = 11,	/* Wi-Fi Core Watchdog Reset */
 	REBOOT_SYSTEM_WIFICORE_PANIC    = 12,	/* Wi-Fi Core Panic */
-	REBOOT_UNKNOWN 	 		= 32
+	REBOOT_UNKNOWN 	 		= 99,
 } reboot_reason_code_t;
 
 #endif					/* __INCLUDEREBOOT_REASON_H */
