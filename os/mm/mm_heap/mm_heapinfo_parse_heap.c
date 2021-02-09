@@ -69,6 +69,7 @@
  ****************************************************************************/
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 /****************************************************************************
  * Name: heapinfo_parse
  *
@@ -104,6 +105,8 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	size_t nodelist_size[MM_NNODES] = {0, };
 	FAR struct mm_freenode_s *fnode;
 #endif
+
+	ASSERT(mm_check_heap_corruption(heap) == OK);
 
 	/* initialize the heap, stack and nonsched resource */
 	nonsched_resource = 0;
