@@ -1,0 +1,3 @@
+config ENTRY_REBOOT_REASON
+	bool "\"Reboot Reason\" example"
+	depends on EXAMPLES_REBOOT_REASON
