@@ -191,6 +191,13 @@ void binary_manager_add_binlist(FAR struct tcb_s *tcb)
 {
 	int bin_idx;
 
+	DEBUGASSERT(tcb);
+
+	if (!tcb->group) {
+		bmdbg("Failed to add pid %d to binlist. This task has already exited and group is NULL\n", tcb->pid);
+		return;
+	}
+
 	bin_idx = tcb->group->tg_binidx;
 
 	/* A binary index, bin_idx is greater than 0 only if tcb is a thread of user binary.
