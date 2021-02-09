@@ -191,6 +191,21 @@ void binary_manager_add_binlist(FAR struct tcb_s *tcb)
 {
 	int bin_idx;
 
+	if (!tcb) {
+		bmdbg("ERROR: tcb parameter is NULL\n");
+		return;
+	}
+
+	if (!tcb->group) {
+		/* It is possible that the task / pthread has already exited at the time of calling this function.
+		 * In this case, the group member will be NULL and will cause an exception if we try to dereference
+		 * the pointer. So, perform a null check here. If group is null, it is ok to not add the tcb to our
+		 * list because, task has already exited.
+		 */
+		bmdbg("Failed to add pid %d to binlist. This task has already exited and group is NULL\n", tcb->pid);
+		return;
+	}
+
 	bin_idx = tcb->group->tg_binidx;
 
 	/* A binary index, bin_idx is greater than 0 only if tcb is a thread of user binary.
