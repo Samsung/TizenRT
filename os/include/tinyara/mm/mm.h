@@ -703,6 +703,9 @@ struct mm_heap_s *mm_get_app_heap_with_name(char *app_name);
 char *mm_get_app_heap_name(void *address);
 #endif
 
+/* Function to check heap corruption */
+int mm_check_heap_corruption(struct mm_heap_s *heap);
+
 #if CONFIG_KMM_NHEAPS > 1
 /**
  * @cond

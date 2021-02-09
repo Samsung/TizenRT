@@ -91,6 +91,8 @@
 #include <sys/boardctl.h>
 #endif
 
+#include <tinyara/mm/mm.h>
+
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <stdbool.h>
 #include "binary_manager/binary_manager.h"
@@ -477,6 +479,19 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif  /* CONFIG_APP_BINARY_SEPARATION */
 
 	up_dumpstate();
+
+	lldbg("Checking kernel heap for corruption...\n");
+	if (mm_check_heap_corruption(g_kmmheap) == OK) {
+		lldbg("No heap corruption detected\n");
+	}
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	if (!is_kernel_fault) {
+		lldbg("Checking current app heap for corruption...\n");
+		if (mm_check_heap_corruption((struct mm_heap_s *)(this_task()->uheap)) == OK) {
+			lldbg("No heap corruption detected\n");
+		}
+	}
+#endif
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
