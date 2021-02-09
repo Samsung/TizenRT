@@ -114,14 +114,14 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 		mm_takesemaphore(heap);
 
 		prev = NULL;
-		node = heap->mm_heapstart[region];
+		node = (struct mm_freenode_s *)heap->mm_heapstart[region];
 		next = (struct mm_freenode_s *)((char *)node + node->size);
 
-		for (; node < heap->mm_heapend[region]; prev = node, node = next, next = (struct mm_freenode_s *)((char *)next + next->size)) {
-			mvdbg("region=%d node=%p size=%p preceding=%p (%c)\n", region, node, node->size, (node->preceding & ~MM_ALLOC_BIT), (node->preceding & MM_ALLOC_BIT) ? 'A' : 'F');
+		for (; node < (struct mm_freenode_s *)heap->mm_heapend[region]; prev = node, node = next, next = (struct mm_freenode_s *)((char *)next + next->size)) {
+			mvdbg("region=%d node=%p size=%u preceding=%u (%c)\n", region, node, node->size, (node->preceding & ~MM_ALLOC_BIT), (node->preceding & MM_ALLOC_BIT) ? 'A' : 'F');
 
-			if ((prev && prev->size != node->preceding & ~MM_ALLOC_BIT) ||
-				(node->size != next->preceding & ~MM_ALLOC_BIT) ||
+			if ((prev && prev->size != (node->preceding & ~MM_ALLOC_BIT)) ||
+				(node->size != (next->preceding & ~MM_ALLOC_BIT)) ||
 				(!(node->preceding & MM_ALLOC_BIT) &&
 				((node->blink && node->blink->flink != node) ||
 				(node->flink && node->flink->blink != node)))
