@@ -287,7 +287,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 #endif
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
-		up_assert();
+		PANIC();
 #endif
 	} else {
 		mvdbg("Allocated %p, size %u\n", ret, size);
