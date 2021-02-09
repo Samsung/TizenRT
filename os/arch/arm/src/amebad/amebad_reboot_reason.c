@@ -68,7 +68,7 @@ void up_reboot_reason_init(void)
 {
 	/* Read the same backup register for the boot reason */
 	backup_reg = BKUP_Read(BKUP_REG1);
-	BKUP_Write(BKUP_REG1, 0);
+	BKUP_Write(BKUP_REG1, REBOOT_REASON_INITIALIZED);
 
 }
 
@@ -76,7 +76,7 @@ reboot_reason_code_t up_reboot_reason_read(void)
 {
 	u32 boot_reason = 0;
 
-	if (backup_reg) {
+	if (backup_reg != REBOOT_REASON_INITIALIZED) {
 		return backup_reg;
 	} else {
 		/* Read AmebaD Boot Reason, WDT and HW reset supported */
@@ -104,9 +104,10 @@ void up_reboot_reason_write(reboot_reason_code_t reason)
 
 void up_reboot_reason_clear(void)
 {
-	/* Reboot Reason Clear API writes the REBOOT_UNKNOWN by default.
+	/* Reboot Reason Clear API writes the REBOOT_REASON_INITIALIZED by default.
 	 * If chip vendor needs another thing to do, please change the below.
 	 */
-	up_reboot_reason_write(REBOOT_UNKNOWN);
+	up_reboot_reason_write(REBOOT_REASON_INITIALIZED);
+	backup_reg = REBOOT_REASON_INITIALIZED;
 }
 #endif
