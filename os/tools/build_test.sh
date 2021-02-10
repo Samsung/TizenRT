@@ -49,7 +49,7 @@ for target in ${build_targets[@]}; do
 	echo "===================================="
 	echo "======== Build \"${target}\" ========"
 	echo "===================================="	
-	cd ${OSDIR}; ${BUILD_CMD}
+	cd ${OSDIR}; ${BUILD_CMD} || { echo "\"${target}\" ERROR!!!"; exit 1; }
 
 	echo "===================================="
 	echo "======== \"${target}\" Built ========"
