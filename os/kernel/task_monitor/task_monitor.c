@@ -27,6 +27,10 @@
 
 #include <sys/boardctl.h>
 #include <tinyara/sched.h>
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
+#endif
 
 #include "task_monitor_internal.h"
 
@@ -155,6 +159,9 @@ int task_monitor(int argc, char *argv[])
 						*  There is not alive task/pthread.
 						*  System will be reset.
 						*/
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+						up_reboot_reason_write(REBOOT_SYSTEM_WATCHDOG);
+#endif
 						boardctl(BOARDIOC_RESET, 0);
 					} else {
 						/* Reset the registered task's/pthread's active flag. */
