@@ -31,6 +31,10 @@
 #ifdef CONFIG_BUILTIN_APPS
 #include <apps/builtin.h>
 #endif
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <sys/prctl.h>
+#include <tinyara/reboot_reason.h>
+#endif
 #include "tash_internal.h"
 
 /****************************************************************************
@@ -480,6 +484,9 @@ static int tash_reboot(int argc, char **argv)
 	 * the board_reset() function returns, then it was not possible to
 	 * reset the board due to some constraints.
 	 */
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	prctl(PR_REBOOT_REASON_WRITE, REBOOT_SYSTEM_USER_INTENDED);
+#endif
 	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 
 	/*

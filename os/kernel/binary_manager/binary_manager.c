@@ -35,6 +35,11 @@
 #include <tinyara/kthread.h>
 #endif
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
+#endif
+
 #include "sched/sched.h"
 #include "binary_manager.h"
 
@@ -161,6 +166,9 @@ int binary_manager(int argc, char *argv[])
 			break;
 		case BINMGR_UPDATE:
 			if (!strncmp("kernel", request_msg.data.bin_name, BIN_NAME_MAX)) {
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+				up_reboot_reason_write(REBOOT_SYSTEM_BINARY_UPDATE);
+#endif
 				boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 				break;
 			}
