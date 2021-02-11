@@ -97,7 +97,7 @@
 #define svcdbg(...)
 #endif
 
-#ifdef CONFIG_BINMGR_RECOVERY
+#ifdef CONFIG_APP_BINARY_SEPARATION
 extern uint32_t g_assertpc;
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
@@ -194,7 +194,7 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	/* The SVCall software interrupt is called with R0 = system call command
 	 * and R1..R7 =  variable number of arguments depending on the system call.
 	 */
-#ifdef CONFIG_BINMGR_RECOVERY
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	g_assertpc = regs[REG_R14];
 #endif
 

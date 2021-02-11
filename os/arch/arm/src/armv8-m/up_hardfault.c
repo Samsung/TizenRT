@@ -89,7 +89,7 @@
 
 #define INSN_SVC0        0xdf00	/* insn: svc 0 */
 
-#ifdef CONFIG_BINMGR_RECOVERY
+#ifdef CONFIG_APP_BINARY_SEPARATION
 uint32_t g_assertpc;
 #endif
 /****************************************************************************
@@ -123,7 +123,7 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t *regs = (uint32_t *)context;
 #endif
 
-#ifdef CONFIG_BINMGR_RECOVERY
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	g_assertpc = regs[REG_R15];
 #endif
 	/* Get the value of the program counter where the fault occurred */

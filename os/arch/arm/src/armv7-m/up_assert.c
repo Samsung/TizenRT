@@ -104,6 +104,8 @@
 
 #ifdef CONFIG_BINMGR_RECOVERY
 bool abort_mode = false;
+#endif
+#ifdef CONFIG_APP_BINARY_SEPARATION
 extern uint32_t g_assertpc;
 #endif
 
@@ -456,7 +458,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
-#ifdef CONFIG_BINMGR_RECOVERY
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	uint32_t assert_pc;
 	bool is_kernel_fault;
 
@@ -472,7 +474,7 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	is_kernel_fault = is_kernel_space((void *)assert_pc);
 
-#endif  /* CONFIG_BINMGR_RECOVERY */
+#endif  /* CONFIG_APP_BINARY_SEPARATION */
 
 	up_dumpstate();
 

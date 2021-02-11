@@ -106,12 +106,14 @@
 
 #ifdef CONFIG_BINMGR_RECOVERY
 bool abort_mode = false;
-extern uint32_t g_assertpc;
 extern struct tcb_s *g_faultmsg_sender;
 extern sq_queue_t g_faultmsg_list;
 extern sq_queue_t g_freemsg_list;
 #endif
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+extern uint32_t g_assertpc;
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -386,6 +388,7 @@ static void up_dumpstate(void)
 
 	(void)usbtrace_enumerate(assert_tracecallback, NULL);
 #endif
+
 }
 #else
 #define up_dumpstate()
@@ -462,7 +465,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
-#ifdef CONFIG_BINMGR_RECOVERY
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	uint32_t assert_pc;
 	bool is_kernel_fault;
 
@@ -478,7 +481,7 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	is_kernel_fault = is_kernel_space((void *)assert_pc);
 
-#endif  /* CONFIG_BINMGR_RECOVERY */
+#endif  /* CONFIG_APP_BINARY_SEPARATION */
 
 	up_dumpstate();
 
