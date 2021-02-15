@@ -38,7 +38,7 @@
 #define RW_SLOT_SIZE 32
 #define RW_VALID_RANGE 32
 
-#define SL_TEST_KEY_MEM_SIZE 4096
+#define SL_TEST_KEY_MEM_SIZE 1024
 #define SL_TEST_KEY_TRIAL 1
 #define SL_TEST_KEY_LIMIT_TIME 1000000
 
@@ -252,8 +252,8 @@ TEST_F(get_public_key_ro)
 	// the result depends on what key type is stored in RO area. so modify return type latter
 	for (int i = 0; i < RO_VALID_RANGE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &g_pubkey_out, &hres));
-		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &g_pubkey_out, &hres));
+		ST_EXPECT_EQ(HAL_SUCCESS, hres);
 	}
 
 	for (int i = RO_VALID_RANGE; i < RO_SLOT_SIZE; ++i) {

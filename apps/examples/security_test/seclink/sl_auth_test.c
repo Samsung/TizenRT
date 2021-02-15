@@ -476,6 +476,18 @@ TEST_TEARDOWN(ecdsa_verify)
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
 
+	printf("ecdsa hash len(%d)\n", g_ecdsa_hash.data_len);
+	for(int i = 0; i < g_ecdsa_hash.data_len; i++) {
+		printf("%d ", ((char *)g_ecdsa_hash.data)[i]);
+	}
+	printf("\n");
+
+	printf("ecdsa signature len(%d)\n", g_ecdsa_signature.data_len);
+	for(int i = 0; i < g_ecdsa_signature.data_len; i++) {
+		printf("%d ", ((char *)g_ecdsa_signature.data)[i]);
+	}
+	printf("\n");
+
 	sl_test_free_buffer(&g_ecdsa_hash);
 	sl_test_free_buffer(&g_ecdsa_signature);
 

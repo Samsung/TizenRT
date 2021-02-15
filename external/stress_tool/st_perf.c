@@ -116,7 +116,7 @@ void _run_smoke(st_smoke *smoke)
 
 	printf(COLOR_RESULT);
 	printf("+--------------------------------------------------\n");
-	printf("|\tRun Stress test " "\n");
+	printf("|\tRun Stress test %s\n", unit->tc_name);
 	printf("|\tRepeat size: %d\n", smoke->repeat_size);
 	printf("+--------------------------------------------------\n");
 	printf(COLOR_WHITE);
@@ -173,8 +173,7 @@ void _print_performance(st_performance *perf)
 
 void _print_smoke(st_smoke *smoke)
 {
-	printf("%p\n", smoke->func->tc_name);
-	//printf("TESTCASE: %s\n", smoke->func->tc_name);
+	printf("TESTCASE: %s\n", smoke->func->tc_name);
 	_print_performance(smoke->performance);
 	_print_stability(smoke->stability);
 	printf("----------------------------------------------------------------------------\n");
