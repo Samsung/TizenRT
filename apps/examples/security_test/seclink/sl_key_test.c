@@ -99,6 +99,8 @@ static void _sl_init_keytest(void)
 		SL_TEST_ERR("memory alloc error");
 		return;
 	}
+	g_aes_key_out.data_len = 0;
+	g_aes_key_out.priv_len = 0;
 
 	/*  public key */
 	res = sl_test_malloc_buffer(&g_pubkey_in, SL_TEST_PUBKEY_LEN);
@@ -107,7 +109,8 @@ static void _sl_init_keytest(void)
 		return;
 	}
 	g_pubkey_in.data_len = SL_TEST_PUBKEY_LEN;
-	memset(g_pubkey_in.data, 0xa5, SL_TEST_PUBKEY_LEN);
+	memset(g_pubkey_in.data, 0xa5, SL_TEST_PUBKEY_LEN); // To Do: set valid key
+	g_pubkey_in.priv_len = 0;
 
 	res = sl_test_malloc_buffer(&g_pubkey_out, SL_TEST_PUBKEY_LEN);
 	if (res < 0) {
@@ -115,6 +118,7 @@ static void _sl_init_keytest(void)
 		return;
 	}
 	g_pubkey_out.data_len = SL_TEST_PUBKEY_LEN;
+	g_pubkey_out.priv_len = 0;
 
 	/*  Private key */
 	res = sl_test_malloc_buffer(&g_prikey_in, SL_TEST_PRIKEY_LEN);
@@ -123,14 +127,16 @@ static void _sl_init_keytest(void)
 		return;
 	}
 	g_prikey_in.data_len = SL_TEST_PRIKEY_LEN;
-	memset(g_prikey_in.data, 0xa6, SL_TEST_PRIKEY_LEN);
+	memset(g_prikey_in.data, 0xa6, SL_TEST_PRIKEY_LEN); // To Do: set valid key
+	g_prikey_in.priv_len = 0;
 
-	res = sl_test_malloc_buffer(&g_prikey_out, SL_TEST_PRIKEY_LEN);
+	res = sl_test_malloc_buffer_priv(&g_prikey_out, SL_TEST_PRIKEY_LEN);
 	if (res < 0) {
 		SL_TEST_ERR("memory alloc error");
 		return;
 	}
-	g_prikey_out.data_len = SL_TEST_PRIKEY_LEN;
+	g_prikey_out.priv_len = SL_TEST_PRIKEY_LEN;
+	g_prikey_out.data_len = 0;
 
 	res = sl_init(&g_hnd);
 	if (res != SECLINK_OK) {

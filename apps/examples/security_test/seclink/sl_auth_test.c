@@ -713,7 +713,7 @@ TEST_F(ecdh_compute_shared_secret)
 		ST_EXPECT_EQ(HAL_SUCCESS, hres);
 
 		ST_EXPECT_EQ(g_shared_secret_a.data_len, g_shared_secret_b.data_len);
-		ST_EXPECT_EQ(0, memcmp(&g_shared_secret_a.data, &g_shared_secret_b.data, g_shared_secret_a.data_len));
+		ST_EXPECT_EQ(0, memcmp(g_shared_secret_a.data, g_shared_secret_b.data, g_shared_secret_a.data_len));
 	}
 
 	ST_END_TEST;
