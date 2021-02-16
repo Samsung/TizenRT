@@ -31,7 +31,8 @@ Understanding the TizenRT code structure and adhering to the structure helps in 
 4. [How to configure memory](HowToConfigureMemory.md)
 5. [How to use MPU](HowToUseMPU.md)
 6. [How to support Protected Build](HowToSupportTizenRtProtectedBuild.md)
-7. [API List to be Ported](APIListToBePorted.md)
+7. [How to port TizenRT Binary Header](HowToPortTizenRTBinaryHeader.md)
+8. [API List to be Ported](APIListToBePorted.md)
 
 ## File System
 1. [How to use SmartFS](HowToUseSmartFS.md)
