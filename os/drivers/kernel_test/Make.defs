@@ -16,11 +16,10 @@
 #
 ###########################################################################
 
+ifeq ($(CONFIG_DRIVERS_KERNEL_TEST),y)
 include kernel_test$(DELIM)kernel$(DELIM)Make.defs
 include kernel_test$(DELIM)network$(DELIM)Make.defs
-
 CSRCS += kernel_test_drv.c
-
 DEPPATH += --dep-path kernel_test
 VPATH += :kernel_test
-
+endif
