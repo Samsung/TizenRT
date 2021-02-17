@@ -431,7 +431,7 @@ if ANALOG
 source drivers/analog/Kconfig
 endif # ANALOG
 
-source drivers/kernel_test/Kconfig
+source drivers/os_api_test/Kconfig
 
 menuconfig NETDEVICES
 	bool "Network Device/PHY Support"

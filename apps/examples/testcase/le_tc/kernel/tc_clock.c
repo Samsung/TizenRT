@@ -28,7 +28,7 @@
 #include <tinyara/time.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include "tc_internal.h"
 
 const long double l_day = 86400;

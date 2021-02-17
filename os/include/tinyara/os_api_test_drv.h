@@ -16,11 +16,11 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_KERNEL_TEST_DRV_H
-#define __INCLUDE_TINYARA_KERNEL_TEST_DRV_H
+#ifndef __INCLUDE_TINYARA_OS_API_TEST_DRV_H
+#define __INCLUDE_TINYARA_OS_API_TEST_DRV_H
 
 /* This file will be used to provide definitions to support
- * kernel test case framework
+ * OS API test case framework
  */
 
 /****************************************************************************
@@ -41,7 +41,7 @@
  */
 
 /* IOCTL Commands */
-/* The kernel_test_drv module uses ioctl commands to identify the kernel module for which
+/* The OS API test module uses ioctl commands to identify which
  * test cases are to be run. The ioctl command may be accompanied by and arguement to
  * indicate which particular API  in the module is to be tested or which particular
  * test scenario is to be run
@@ -85,7 +85,7 @@
 #define TESTIOC_NET_PBUF			_TESTIOC(23)
 #endif
 
-#define KERNEL_TEST_DRVPATH                       "/dev/kernel_test"
+#define OS_API_TEST_DRVPATH                       "/dev/os_api_test"
 
 /****************************************************************************
  * Public Data
@@ -103,16 +103,16 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Name: kernel_test_drv_register
+ * Name: os_api_test_drv_register
  *
  * Description:
- *   This function creates a device node like "/dev/kernel_test" which will be used
- *   by the tests that execute kernel side APIs
+ *   This function creates a device node like "/dev/os_api_test" which will be used
+ *   by the tests that execute OS(kernel, network and fs) side APIs
  *
  *
  ****************************************************************************/
 
-void kernel_test_drv_register(void);
+void os_api_test_drv_register(void);
 
 #undef EXTERN
 #ifdef __cplusplus
@@ -120,4 +120,4 @@ void kernel_test_drv_register(void);
 #endif
 
 #endif							/* CONFIG_DRIVERS_KERNEL_TEST */
-#endif							/* __INCLUDE_TINYARA_KERNEL_TEST_DRV_H */
+#endif							/* __INCLUDE_TINYARA_OS_API_TEST_DRV_H */

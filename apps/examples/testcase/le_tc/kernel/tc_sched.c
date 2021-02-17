@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <tinyara/sched.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 
 #include "tc_internal.h"
 

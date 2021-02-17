@@ -63,7 +63,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/arch.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 
 /****************************************************************************
  * Macros
@@ -83,10 +83,10 @@ int rdp_main(int argc, char *argv[])
 	int tc_fd = 0;
 
 	printf("rdp main!!\n");
-	tc_fd = open(KERNEL_TEST_DRVPATH, O_WRONLY);
+	tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
 
 	if (tc_fd < 0) {
-		printf("FAILED to open kernel test driver %s\n", KERNEL_TEST_DRVPATH);
+		printf("FAILED to open OS API test driver %s\n", OS_API_TEST_DRVPATH);
 		return 0;
 	}
 

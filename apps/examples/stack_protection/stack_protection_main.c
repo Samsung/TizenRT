@@ -26,7 +26,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <sys/ioctl.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -101,9 +101,9 @@ int stack_prot_main(int argc, char *argv[])
 	thread_type = getchar();
 
 	if (thread_type == 'K' || thread_type == 'k') {
-		tc_fd = open(KERNEL_TEST_DRVPATH, O_WRONLY);
+		tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
 		if (tc_fd < 0) {
-			printf("\nFailed to open testcase driver %s\n", KERNEL_TEST_DRVPATH);
+			printf("\nFailed to open testcase driver %s\n", OS_API_TEST_DRVPATH);
 			return ERROR;
 		}
 

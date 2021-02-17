@@ -28,7 +28,7 @@
 #include <netutils/netlib.h>
 #include <sys/socket.h>
 #include <lwip/pbuf.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include <sys/ioctl.h>
 #include "tc_internal.h"
 

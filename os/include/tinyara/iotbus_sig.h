@@ -20,7 +20,7 @@
 #define __INCLUDE_TINYARA_IOTBUS_SIG_H
 
 /* This file will be used to provide definitions to support
- * kernel test case framework
+ * OS API test case framework
  */
 
 /****************************************************************************

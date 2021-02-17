@@ -7,4 +7,4 @@ config DRIVERS_KERNEL_TEST
 	bool
 	default n
 	---help---
-		Enables overall support for kernel test driver library.
+		Enables overall support for OS API test driver library.

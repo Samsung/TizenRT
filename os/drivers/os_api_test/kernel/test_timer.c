@@ -26,7 +26,7 @@
 #include <time.h>
 #include <signal.h>
 
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 
 #include "signal/signal.h"
 #include "timer/timer.h"

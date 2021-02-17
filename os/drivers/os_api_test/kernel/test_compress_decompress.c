@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include <tinyara/binfmt/compression/compress_read.h>
 #include <tinyara/kmalloc.h>
 

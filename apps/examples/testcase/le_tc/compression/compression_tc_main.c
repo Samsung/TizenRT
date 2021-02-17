@@ -23,7 +23,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include "tc_common.h"
 #include "tc_internal.h"
 
@@ -40,7 +40,7 @@ int main(int argc, FAR char *argv[])
 int tc_compression_main(int argc, char *argv[])
 #endif
 {
-	g_tc_fd = open(KERNEL_TEST_DRVPATH, O_WRONLY);
+	g_tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
 
 	/*If FAIL : Failed to open testcase driver*/
 	TC_ASSERT_GEQ("open", g_tc_fd, 0);

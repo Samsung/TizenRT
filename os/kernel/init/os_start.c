@@ -77,7 +77,7 @@
 #include  <tinyara/debug/sysdbg.h>
 #endif
 #ifdef CONFIG_DRIVERS_KERNEL_TEST
-#include  <tinyara/kernel_test_drv.h>
+#include  <tinyara/os_api_test_drv.h>
 #endif
 
 #include  "sched/sched.h"
@@ -533,7 +533,7 @@ void os_start(void)
 	fs_auto_mount();
 
 #ifdef CONFIG_DRIVERS_KERNEL_TEST
-	kernel_test_drv_register();
+	os_api_test_drv_register();
 #endif
 
 #if defined(CONFIG_DEBUG_SYSTEM)
