@@ -235,7 +235,7 @@ TEST_SETUP(get_hmac)
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_hmac, SL_TEST_AUTH_MEM_SIZE));
 
 	hal_result_e hres = HAL_FAIL;
-	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_HMAC_SHA256, SL_TEST_HMAC_KEY_SLOT, &hres));
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_HMAC_SHA256, SL_TEST_HMAC_KEY_SLOT, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
 
 	ST_END_TEST;
@@ -246,7 +246,7 @@ TEST_TEARDOWN(get_hmac)
 	ST_START_TEST;
 
 	hal_result_e hres = HAL_FAIL;
-	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_HMAC_SHA256, SL_TEST_HMAC_KEY_SLOT, &hres));
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_HMAC_SHA256, SL_TEST_HMAC_KEY_SLOT, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
@@ -477,13 +477,13 @@ TEST_TEARDOWN(ecdsa_verify)
 	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
 
 	printf("ecdsa hash len(%d)\n", g_ecdsa_hash.data_len);
-	for(int i = 0; i < g_ecdsa_hash.data_len; i++) {
+	for (int i = 0; i < g_ecdsa_hash.data_len; i++) {
 		printf("%d ", ((char *)g_ecdsa_hash.data)[i]);
 	}
 	printf("\n");
 
 	printf("ecdsa signature len(%d)\n", g_ecdsa_signature.data_len);
-	for(int i = 0; i < g_ecdsa_signature.data_len; i++) {
+	for (int i = 0; i < g_ecdsa_signature.data_len; i++) {
 		printf("%d ", ((char *)g_ecdsa_signature.data)[i]);
 	}
 	printf("\n");
