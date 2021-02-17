@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,64 +20,45 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <errno.h>
 #include <debug.h>
-#include <unistd.h>
+#include <string.h>
+#include <tinyara/os_api_test_drv.h>
+#include <lwip/pbuf.h>
+#include <tinyara/kmalloc.h>
+#include <sys/types.h>
 
-#include <tinyara/kernel_test_drv.h>
-#include <tinyara/sched.h>
-
-#include "signal/signal.h"
+typedef struct pbuf_test_args pbuf_test_args_t;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-static int test_get_sig_findaction_add(unsigned long arg)
+static int test_pbuf(unsigned long arg)
 {
-	FAR sigactq_t *sigact;
-	sigact = sig_findaction(sched_self(), (int)arg);
-	return (int)sigact;
-}
+	int ret = 0;
+	struct pbuf* p = NULL;
+	pbuf_test_args_t *args = (pbuf_test_args_t *)arg;
 
-static int test_signal_pause(unsigned long arg)
-{
-	int ret;
-	ret = pause();              /* pause() always return -1 */
-	if (ret == ERROR && get_errno() == EINTR) {
-		return OK;
+	p = pbuf_alloc(args->layer, args->len, args->type);
+	if (p) {
+		ret = 1;
 	}
-	return ERROR;
-}
 
-static int test_get_tcb_sigprocmask(unsigned long arg)
-{
-	struct tcb_s *tcb;
-	tcb = sched_gettcb((pid_t)arg);
-	if (tcb == NULL) {
-		dbg("sched_gettcb failed. errno : %d\n", get_errno());
-		return ERROR;
-	}
-	return tcb->sigprocmask;
+	pbuf_free(p);
+	return ret;
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-int test_signal(int cmd, unsigned long arg)
+int test_net_pbuf(int cmd, unsigned long arg)
 {
-	int ret = -EINVAL;
-	switch (cmd) {
-	case TESTIOC_GET_SIG_FINDACTION_ADD:
-		ret = test_get_sig_findaction_add(arg);
-		break;
-	case TESTIOC_SIGNAL_PAUSE:
-		ret = test_signal_pause(arg);
-		break;
-	case TESTIOC_GET_TCB_SIGPROCMASK:
-		ret = test_get_tcb_sigprocmask(arg);
+	int ret = -1;
+
+	switch(cmd) {
+	case TESTIOC_NET_PBUF:
+		ret = test_pbuf(arg);
 		break;
 	}
 	return ret;

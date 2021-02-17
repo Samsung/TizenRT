@@ -28,18 +28,18 @@
 #include <pthread.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include <tinyara/mpu_test.h>
 
 static void *assert_thread(void *index)
 {
 	int type;
-	int tc_fd = open(KERNEL_TEST_DRVPATH, O_WRONLY);
+	int tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
 	struct mputest_arg_s obj;
 	int ret;
 
 	if (tc_fd < 0) {
-		printf("\nFAILED to open kernel test driver %s\n", KERNEL_TEST_DRVPATH);
+		printf("\nFAILED to open OS API test driver %s\n", OS_API_TEST_DRVPATH);
 		return NULL;
 	}
 

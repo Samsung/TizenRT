@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include <debug.h>
 #include <errno.h>
 #include <fcntl.h>

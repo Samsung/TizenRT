@@ -15,38 +15,12 @@
 # language governing permissions and limitations under the License.
 #
 ############################################################################
-# Include kernel test drivers
 
-ifeq ($(CONFIG_DRIVERS_KERNEL_TEST),y)
-
-CSRCS += test_task.c
-CSRCS += test_sched.c
-CSRCS += test_clock.c
-CSRCS += test_timer.c
-CSRCS += test_sem.c
-CSRCS += test_group.c
-
-ifneq ($(CONFIG_DISABLE_SIGNALS),y)
-CSRCS += test_signal.c
+ifeq ($(CONFIG_TC_NET_PBUF),y)
+CSRCS += test_net_pbuf.c
 endif
 
-ifeq ($(CONFIG_TC_COMPRESS_READ),y)
-CSRCS += test_compress_decompress.c
-endif
+# Include network test driver support
 
-ifeq ($(CONFIG_ARMV8M_TRUSTZONE),y)
-CSRCS += test_tz.c
-endif
-
-ifeq ($(CONFIG_EXAMPLES_STACK_PROTECTION),y)
-CSRCS += test_kthread_stack_protection.c
-endif
-
-CFLAGS += -I$(TOPDIR)/kernel
-
-# Include kernel test driver support
-
-DEPPATH += --dep-path kernel_test$(DELIM)kernel
-VPATH += :kernel_test$(DELIM)kernel
-
-endif
+DEPPATH += --dep-path os_api_test$(DELIM)network
+VPATH += :os_api_test$(DELIM)network

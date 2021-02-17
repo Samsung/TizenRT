@@ -25,10 +25,9 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include <tinyara/sched.h>
-#include "signal/signal.h"
-#include "kernel_test_proto.h"
+#include "os_api_test_proto.h"
 #ifdef CONFIG_EXAMPLES_MPU_TEST
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/mpu_test.h>
@@ -47,21 +46,21 @@ extern uint32_t _sdata;
  * Private Function Prototypes
  ****************************************************************************/
 
-static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
-static ssize_t kernel_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len);
-static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
+static int os_api_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static ssize_t os_api_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len);
+static ssize_t os_api_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations kernel_test_drv_fops = {
+static const struct file_operations os_api_test_drv_fops = {
 	0,						/* open */
 	0,						/* close */
-	kernel_test_drv_read,				/* read */
-	kernel_test_drv_write,				/* write */
+	os_api_test_drv_read,				/* read */
+	os_api_test_drv_write,				/* write */
 	0,						/* seek */
-	kernel_test_drv_ioctl				/* ioctl */
+	os_api_test_drv_ioctl				/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
 	, 0						/* poll */
 #endif
@@ -72,13 +71,13 @@ static const struct file_operations kernel_test_drv_fops = {
  ****************************************************************************/
 
 /************************************************************************************
- * Name: kernel_test_drv_ioctl
+ * Name: os_api_test_drv_ioctl
  *
  * Description:  The standard ioctl method.
  *
  ************************************************************************************/
 
-static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
+static int os_api_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;
 	/* Handle built-in ioctl commands */
@@ -201,12 +200,12 @@ static int kernel_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 }
 
 
-static ssize_t kernel_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len)
+static ssize_t os_api_test_drv_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
 	return 0;                                       /* Return EOF */
 }
 
-static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+static ssize_t os_api_test_drv_write(FAR struct file *filep, FAR const char *buffer, size_t len)
 {
 	return len;                                     /* Say that everything was written */
 }
@@ -216,14 +215,14 @@ static ssize_t kernel_test_drv_write(FAR struct file *filep, FAR const char *buf
  ****************************************************************************/
 
 /****************************************************************************
- * Name: kernel_test_drv_register
+ * Name: os_api_test_drv_register
  *
  * Description:
- *   Register /dev/kernel_test
+ *   Register /dev/os_api_test
  *
  ****************************************************************************/
 
-void kernel_test_drv_register(void)
+void os_api_test_drv_register(void)
 {
-	(void)register_driver(KERNEL_TEST_DRVPATH, &kernel_test_drv_fops, 0666, NULL);
+	(void)register_driver(OS_API_TEST_DRVPATH, &os_api_test_drv_fops, 0666, NULL);
 }

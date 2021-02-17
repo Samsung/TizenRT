@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <sched.h>
 
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include <tinyara/sched.h>
 #ifdef CONFIG_SCHED_HAVE_PARENT
 #include "group/group.h"

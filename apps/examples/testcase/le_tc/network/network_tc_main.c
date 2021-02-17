@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include "tc_common.h"
@@ -49,9 +49,9 @@ int tc_network_main(int argc, char *argv[])
 		return ERROR;
 	}
 
-	g_tc_fd = open(KERNEL_TEST_DRVPATH, O_WRONLY);
+	g_tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
 	if (g_tc_fd < 0) {
-		lldbg("Failed to open kernel test driver %d\n", errno);
+		lldbg("Failed to open OS API test driver %d\n", errno);
 		return ERROR;
 	}
 

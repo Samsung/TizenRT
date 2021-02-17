@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/kernel_test_drv.h>
+#include <tinyara/os_api_test_drv.h>
 #include <tinyara/sched.h>
 
 /****************************************************************************

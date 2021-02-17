@@ -393,8 +393,8 @@
 #define _IOTBUSIOCVALID(c)   (_IOC_TYPE(c) == _IOTBUSBASE)
 #define _IOTBUSIOC(nr)       _IOC(_IOTBUSBASE, nr)
 
-/* Kernel_tc driver ioctl definitions *************************************/
-/* (see tinyara/kernel_test_drv.h) */
+/* os_api_tc driver ioctl definitions *************************************/
+/* (see tinyara/os_api_test_drv.h) */
 
 #define _TESTIOCVALID(c) (_IOC_TYPE(c) == _TESTIOCBASE)
 #define _TESTIOC(nr)     _IOC(_TESTIOCBASE, nr)
