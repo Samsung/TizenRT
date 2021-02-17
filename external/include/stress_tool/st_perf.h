@@ -210,16 +210,15 @@
 		return res;								\
 	} while (0)
 
-
 /*
  * Structures
  */
-	typedef enum {
-		STRESS_TC_PASS,
-		STRESS_TC_FAIL,
-		STRESS_TC_SKIP,
-		STRESS_TC_PERF_FAIL
-	} st_tc_result;
+typedef enum {
+	STRESS_TC_PASS,
+	STRESS_TC_FAIL,
+	STRESS_TC_SKIP,
+	STRESS_TC_PERF_FAIL
+} st_tc_result;
 
 typedef st_tc_result(*st_unit_tc)(void *arg);
 
