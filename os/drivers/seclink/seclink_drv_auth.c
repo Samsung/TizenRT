@@ -34,7 +34,7 @@
 int hd_handle_auth_request(int cmd, unsigned long arg, void *lower)
 {
 	SLDRV_ENTER;
-
+	int res = 0;
 	struct seclink_req *req = (struct seclink_req *)arg;
 	if (!req) {
 		return -EINVAL;
@@ -52,46 +52,47 @@ int hd_handle_auth_request(int cmd, unsigned long arg, void *lower)
 
 	switch (cmd) {
 	case SECLINKIOC_GENERATERANDOM:
-		req->res = se->ops->generate_random(info->auth_type.random_len, info->data);
+		SLDRV_CALL(res, req->res, generate_random, (info->auth_type.random_len, info->data));
 		break;
 	case SECLINKIOC_GETHASH:
-		req->res = se->ops->get_hash(info->auth_type.hash_type, info->data, info->auth_data.data);
+		SLDRV_CALL(res, req->res, get_hash, (info->auth_type.hash_type, info->data, info->auth_data.data));
 		break;
 	case SECLINKIOC_GETHMAC:
-		req->res = se->ops->get_hmac(info->auth_type.hmac_type, info->data, info->key_idx, info->auth_data.data);
+		SLDRV_CALL(res, req->res, get_hmac, (info->auth_type.hmac_type, info->data, info->key_idx, info->auth_data.data));
 		break;
 	case SECLINKIOC_RSASIGNMD:
-		req->res = se->ops->rsa_sign_md(info->auth_type.rsa_type, info->data, info->key_idx, info->auth_data.data);
+		SLDRV_CALL(res, req->res, rsa_sign_md, (info->auth_type.rsa_type, info->data, info->key_idx, info->auth_data.data));
 		break;
 	case SECLINKIOC_RSAVERIFYMD:
-		req->res = se->ops->rsa_verify_md(info->auth_type.rsa_type, info->data, info->auth_data.data, info->key_idx);
+		SLDRV_CALL(res, req->res, rsa_verify_md, (info->auth_type.rsa_type, info->data, info->auth_data.data, info->key_idx));
 		break;
 	case SECLINKIOC_ECDSASIGNMD:
-		req->res = se->ops->ecdsa_sign_md(info->auth_type.ecdsa_type, info->data, info->key_idx, info->auth_data.data);
+		SLDRV_CALL(res, req->res, ecdsa_sign_md, (info->auth_type.ecdsa_type, info->data, info->key_idx, info->auth_data.data));
 		break;
 	case SECLINKIOC_ECDSAVERIFYMD:
-		req->res = se->ops->ecdsa_verify_md(info->auth_type.ecdsa_type, info->data, info->auth_data.data, info->key_idx);
+		SLDRV_CALL(res, req->res, ecdsa_verify_md, (info->auth_type.ecdsa_type, info->data, info->auth_data.data, info->key_idx));
 		break;
 	case SECLINKIOC_DHGENERATEPARAM:
-		req->res = se->ops->dh_generate_param(info->key_idx, info->auth_data.dh_param);
+		SLDRV_CALL(res, req->res, dh_generate_param, (info->key_idx, info->auth_data.dh_param));
 		break;
 	case SECLINKIOC_DHCOMPUTESHAREDSECRET:
-		req->res = se->ops->dh_compute_shared_secret(info->auth_data.dh_param, info->key_idx, info->data);
+		SLDRV_CALL(res, req->res, dh_compute_shared_secret, (info->auth_data.dh_param, info->key_idx, info->data));
 		break;
 	case SECLINKIOC_ECDHCOMPUTESHAREDSECRET:
-		req->res = se->ops->ecdh_compute_shared_secret(info->auth_data.ecdh_param, info->key_idx, info->data);
+		SLDRV_CALL(res, req->res, ecdh_compute_shared_secret, (info->auth_data.ecdh_param, info->key_idx, info->data));
 		break;
 	case SECLINKIOC_SETCERTIFICATE:
-		req->res = se->ops->set_certificate(info->key_idx, info->data);
+		SLDRV_CALL(res, req->res, set_certificate, (info->key_idx, info->data));
 		break;
 	case SECLINKIOC_GETCERTIFICATE:
-		req->res = se->ops->get_certificate(info->key_idx, info->data);
+		SLDRV_CALL(res, req->res, get_certificate, (info->key_idx, info->data));
 		break;
 	case SECLINKIOC_REMOVECERTIFICATE:
-		req->res = se->ops->remove_certificate(info->key_idx);
+		SLDRV_CALL(res, req->res, remove_certificate, (info->key_idx));
 		break;
 	default:
 		SLDRV_LOG("Invalid command error\n");
+		res = -ENOSYS;
 	}
-	return 0;
+	return res;
 }

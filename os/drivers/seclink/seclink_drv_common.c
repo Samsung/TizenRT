@@ -37,6 +37,7 @@ int hd_handle_common_request(int cmd, unsigned long arg, void *lower)
 
 	struct seclink_req *req = (struct seclink_req *)arg;
 	hal_init_param *params = NULL;
+	int res = 0;
 
 	if (!req) {
 		return -EINVAL;
@@ -50,12 +51,14 @@ int hd_handle_common_request(int cmd, unsigned long arg, void *lower)
 	switch (cmd) {
 	case SECLINKIOC_INIT:
 		params = (hal_init_param *)req->params;
-		req->res = se->ops->init(params);
+		SLDRV_CALL(res, req->res, init, (params));
 		break;
 	case SECLINKIOC_DEINIT:
-		req->res = se->ops->deinit();
+		SLDRV_CALL(res, req->res, deinit, ());
 		break;
+	default:
+		res = -ENOSYS;
 	}
 
-	return 0;
+	return res;
 }

@@ -40,7 +40,10 @@
 static uint8_t g_key_inuse[NKEY_SLOT] = {0,};
 #define KEYSLOT_USE 0
 #define KEYSLOT_NOTUSE 1
-
+#define KEYSLOT_INVALID_RANGE -1
+/*
+ * Description: Check that num is in rom area
+ */
 static inline int _is_rom_area(uint8_t num)
 {
 	if (num < KEY_RAM_ENTRY) {
@@ -49,7 +52,9 @@ static inline int _is_rom_area(uint8_t num)
 	return 0;
 }
 
-
+/*
+ * Description: Set the slot number 'num' key slot is in use.
+ */
 static inline int _set_key_slot(uint8_t num)
 {
 	if (num >= NKEY_SLOT) {
@@ -59,7 +64,9 @@ static inline int _set_key_slot(uint8_t num)
 	return 0;
 }
 
-
+/*
+ * Description: Unset the key slot of the slot number 'num'
+ */
 static inline int _unset_key_slot(uint8_t num)
 {
 	if (num >= NKEY_SLOT) {
@@ -69,46 +76,54 @@ static inline int _unset_key_slot(uint8_t num)
 	return 0;
 }
 
-
-static inline int _is_empty_key_slot(uint8_t num)
+/*
+ * Description: Check if slot number 'num' is in use.
+ */
+static inline int _get_key_slot_state(uint8_t num)
 {
 	if (num >= NKEY_SLOT) {
-		return -1;
+		return KEYSLOT_INVALID_RANGE;
 	}
 
 	return g_key_inuse[num];
 }
 
-
+/*
+ * Description: handle key which is in injected(rom) area
+ */
 static int hd_handle_rom_key(int cmd, struct seclink_req *req, struct seclink_key_info *info, struct sec_lowerhalf_s *se)
 {
+	int res = 0;
 	if (cmd != SECLINKIOC_GETKEY) {
 		req->res = HAL_INVALID_REQUEST;
 		return 0;
 	}
-	req->res = se->ops->get_key(info->mode, info->key_idx, info->key);
-	return 0;
+	SLDRV_CALL(res, req->res, get_key, (info->mode, info->key_idx, info->key));
+	return res;
 }
 
-
+/*
+ * Description: handle key which is in RAM area
+ */
 static int hd_handle_ram_key(int cmd, struct seclink_req *req, struct seclink_key_info *info, struct sec_lowerhalf_s *se)
 {
-	int res = _is_empty_key_slot(info->key_idx);
-	SLDRV_LOG("keymgr request cmd(%x) (%d) isempty(%d)\n", cmd, info->mode, res);
-	if (res == -1) {
+	int res = 0;
+	int key_state = _get_key_slot_state(info->key_idx);
+	SLDRV_LOG("keymgr request cmd(%x) (%d) isempty(%d)\n", cmd, info->mode, key_state);
+	if (key_state == KEYSLOT_INVALID_RANGE) {
 		req->res = HAL_INVALID_SLOT_RANGE;
 		return 0;
 	}
 
 	switch (cmd) {
 	case SECLINKIOC_SETKEY:
-		if (res == KEYSLOT_USE) {
+		if (key_state == KEYSLOT_USE) {
 			req->res = HAL_KEY_IN_USE;
 		} else {
 			if (_set_key_slot(info->key_idx) == -1) {
 				req->res = HAL_INVALID_SLOT_RANGE;
 			} else {
-				req->res = se->ops->set_key(info->mode, info->key_idx, info->key, info->prikey);
+				SLDRV_CALL(res, req->res, set_key, (info->mode, info->key_idx, info->key, info->prikey));
 				if (req->res != HAL_SUCCESS) {
 					_unset_key_slot(info->key_idx);
 				}
@@ -116,35 +131,37 @@ static int hd_handle_ram_key(int cmd, struct seclink_req *req, struct seclink_ke
 		}
 		break;
 	case SECLINKIOC_GETKEY:
-		if (res == KEYSLOT_USE) {
-			req->res = se->ops->get_key(info->mode, info->key_idx, info->key);
+		if (key_state == KEYSLOT_USE) {
+			SLDRV_CALL(res, req->res, get_key, (info->mode, info->key_idx, info->key));
 		} else {
 			req->res = HAL_EMPTY_SLOT;
 		}
 		break;
 	case SECLINKIOC_REMOVEKEY:
-		if (res == KEYSLOT_USE) {
+		if (key_state == KEYSLOT_USE) {
 			_unset_key_slot(info->key_idx);
-			req->res = se->ops->remove_key(info->mode, info->key_idx);
+			SLDRV_CALL(res, req->res, remove_key, (info->mode, info->key_idx));
 		} else {
 			req->res = HAL_EMPTY_SLOT;
 		}
 		break;
 	case SECLINKIOC_GENERATEKEY:
-		if (res == KEYSLOT_USE) {
+		if (key_state == KEYSLOT_USE) {
 			req->res = HAL_KEY_IN_USE;
 		} else {
-			req->res = se->ops->generate_key(info->mode, info->key_idx);
+			SLDRV_CALL(res, req->res, generate_key, (info->mode, info->key_idx));
 			if (req->res == HAL_SUCCESS) {
 				_set_key_slot(info->key_idx);
 			}
 		}
 		break;
 	}
-	return 0;
+	return;
 }
 
-
+/*
+ * Description: initialize key slot
+ */
 void hd_initialize_key_slot(void)
 {
 	for (int i = 0; i < NKEY_SLOT; i++) {
@@ -152,7 +169,9 @@ void hd_initialize_key_slot(void)
 	}
 }
 
-
+/*
+ * Description: handle key request from Application layer.
+ */
 int hd_handle_key_request(int cmd, unsigned long arg, void *lower)
 {
 	SLDRV_ENTER;

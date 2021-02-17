@@ -33,7 +33,7 @@
 int hd_handle_ss_request(int cmd, unsigned long arg, void *lower)
 {
 	SLDRV_ENTER;
-
+	int res = 0;
 	struct seclink_req *req = (struct seclink_req *)arg;
 	if (!req) {
 		return -EINVAL;
@@ -53,15 +53,15 @@ int hd_handle_ss_request(int cmd, unsigned long arg, void *lower)
 
 	switch (cmd) {
 	case SECLINKIOC_WRITESTORAGE:
-		req->res = se->ops->write_storage(info->key_idx, info->data);
+		SLDRV_CALL(res, req->res, write_storage, (info->key_idx, info->data));
 		break;
 	case SECLINKIOC_READSTORAGE:
-		req->res = se->ops->read_storage(info->key_idx, info->data);
+		SLDRV_CALL(res, req->res, read_storage, (info->key_idx, info->data));
 		break;
 	case SECLINKIOC_DELETESTORAGE:
-		req->res = se->ops->delete_storage(info->key_idx);
+		SLDRV_CALL(res, req->res, delete_storage, (info->key_idx));
 		break;
 	}
 
-	return 0;
+	return res;
 }

@@ -34,7 +34,7 @@
 int hd_handle_crypto_request(int cmd, unsigned long arg, void *lower)
 {
 	SLDRV_ENTER;
-
+	int res = 0;
 	struct seclink_req *req = (struct seclink_req *)arg;
 	if (!req) {
 		return -EINVAL;
@@ -52,18 +52,20 @@ int hd_handle_crypto_request(int cmd, unsigned long arg, void *lower)
 
 	switch (cmd) {
 	case SECLINKIOC_AESENCRYPT:
-		req->res = se->ops->aes_encrypt(info->input, info->aes_param, info->key_idx, info->output);
+		SLDRV_CALL(res, req->res, aes_encrypt, (info->input, info->aes_param, info->key_idx, info->output));
 		break;
 	case SECLINKIOC_AESDECRYPT:
-		req->res = se->ops->aes_decrypt(info->input, info->aes_param, info->key_idx, info->output);
+		SLDRV_CALL(res, req->res, aes_decrypt, (info->input, info->aes_param, info->key_idx, info->output));
 		break;
 	case SECLINKIOC_RSAENCRYPT:
-		req->res = se->ops->rsa_encrypt(info->input, info->rsa_mode, info->key_idx, info->output);
+		SLDRV_CALL(res, req->res, rsa_encrypt, (info->input, info->rsa_mode, info->key_idx, info->output));
 		break;
 	case SECLINKIOC_RSADECRYPT:
-		req->res = se->ops->rsa_decrypt(info->input, info->rsa_mode, info->key_idx, info->output);
+		SLDRV_CALL(res, req->res, rsa_decrypt, (info->input, info->rsa_mode, info->key_idx, info->output));
 		break;
+	default:
+		res = -ENOSYS;
 	}
 
-	return 0;
+	return res;
 }
