@@ -52,13 +52,14 @@
 		in->priv_len = len;                             \
 	} while (0)
 
-/* Max Key or Secure Storage Index */
-#define KEY_STORAGE_INDEX_MAX 32
-#define HAL_MAX_RANDOM_SIZE 256
+/* Max Factory Key and usable Key Index (Only allocate 8 slot) */
+#define FACTORY_KEY_INDEX_MAX 32
+#define USABLE_FACTORY_KEY_INDEX 8
 
-/* Factory Key and Cert define */
-#define FACTORYKEY_RTL_DEVICE (0x00010120)
-#define FACTORYKEY_RTL_CERT (0x00010122)
+/* Max RAM Key and Total Key Index */
+#define KEY_STORAGE_INDEX_MAX 32
+#define TOTAL_KEY_STORAGE_INDEX FACTORY_KEY_INDEX_MAX + KEY_STORAGE_INDEX_MAX
+#define HAL_MAX_RANDOM_SIZE 256
 
 /* Secure Storage Base Address, After Bootloader before Kernel */
 /* Fix Address, should not be changed, once change previous data will be lost */
@@ -104,24 +105,37 @@ typedef struct {
 } inout_struc;
 
 typedef struct {
-	uint32_t factorykey_device_idx;
-	uint32_t factorykey_cert_idx;
 	uint32_t factory_cert_addr;
 	uint32_t factory_key_addr;
 	uint32_t sstorage_addr;
 	uint32_t samsung_key_addr;
+	hal_key_type factory_slot_key_type[USABLE_FACTORY_KEY_INDEX];
 } factory_struc;
 
 static uint8_t *ns_buf = NULL;
-
 extern void *rtl_set_ns_func(void);
 
+/**
+ * Helper function
+ */
+static int se_ameba_index_chk(uint32_t key_idx)
+{
+	int ret = HAL_SUCCESS;
+
+	/* Check if in valid Factory range */
+	if ((key_idx >= USABLE_FACTORY_KEY_INDEX) && (key_idx < FACTORY_KEY_INDEX_MAX)) {
+		ret = HAL_INVALID_SLOT_RANGE;
+	}
+
+	return ret;
+}
 
 int se_ameba_hal_init(hal_init_param *params)
 {
 	AWRAP_ENTER;
 
-	int ret;
+	int ret = HAL_SUCCESS;
+	int count = 0;
 	factory_struc input_data;
 	ns_passin_struc ns_passin;
 
@@ -135,9 +149,13 @@ int se_ameba_hal_init(hal_init_param *params)
 	ns_passin.buf = ns_buf;
 	ns_passin.buf_len = NS_BUF_LEN;
 
-	/* Factory Key and Cert address (Flash) */
-	input_data.factorykey_device_idx = FACTORYKEY_RTL_DEVICE;
-	input_data.factorykey_cert_idx = FACTORYKEY_RTL_CERT;
+	/* Factory Slot Key type */
+	for (count = 3; count < USABLE_FACTORY_KEY_INDEX; count++) {
+		input_data.factory_slot_key_type[count] = HAL_KEY_UNKNOWN;
+	}
+	input_data.factory_slot_key_type[0] = HAL_KEY_UNKNOWN;
+	input_data.factory_slot_key_type[1] = HAL_KEY_ECC_SEC_P256R1;
+	input_data.factory_slot_key_type[2] = HAL_KEY_AES_128;
 
 	/* Factory Key and Cert address (Flash) */
 	input_data.factory_cert_addr = FACTORY_CERT_ADDR;
@@ -145,6 +163,8 @@ int se_ameba_hal_init(hal_init_param *params)
 
 	/* Secure Storage Base address (Flash) */
 	input_data.sstorage_addr = SEC_STORE_OFFSET;
+
+	/* Secure Storage Key Address (efuse) */
 	input_data.samsung_key_addr = SAMSUNG_KEY_ADDR;
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
@@ -161,7 +181,7 @@ exit:
 int se_ameba_hal_deinit(void)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_deinit();
@@ -181,7 +201,7 @@ int se_ameba_hal_deinit(void)
 int se_ameba_hal_free_data(hal_data *data)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_free_data(data);
@@ -196,7 +216,7 @@ int se_ameba_hal_free_data(hal_data *data)
 int se_ameba_hal_get_status(void)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_status();
@@ -208,11 +228,12 @@ int se_ameba_hal_get_status(void)
 int se_ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc pub_prikey;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	pub_prikey.input_data = key;
@@ -230,24 +251,17 @@ int se_ameba_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal
 int se_ameba_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (key_idx == FACTORYKEY_RTL_DEVICE) {	/* If factory Key */
-		up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
-		ret = ameba_hal_get_factory_key(key_idx, key);
-		up_free_secure_context();
-		goto exit;
-	}
-
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_key(mode, key_idx, key);
 	up_free_secure_context();
 
-exit:
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 	}
@@ -257,10 +271,11 @@ exit:
 int se_ameba_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
@@ -276,10 +291,11 @@ int se_ameba_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 int se_ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
@@ -295,7 +311,7 @@ int se_ameba_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 int se_ameba_hal_generate_random(uint32_t len, hal_data *random)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	if (len > HAL_MAX_RANDOM_SIZE) {
 		return HAL_INVALID_ARGS;
@@ -314,7 +330,7 @@ int se_ameba_hal_generate_random(uint32_t len, hal_data *random)
 int se_ameba_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_hash(mode, input, hash);
@@ -329,11 +345,12 @@ int se_ameba_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 int se_ameba_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, hal_data *hmac)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = input;
@@ -352,11 +369,12 @@ int se_ameba_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx,
 int se_ameba_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = hash;
@@ -375,11 +393,12 @@ int se_ameba_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx
 int se_ameba_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = hash;
@@ -398,11 +417,12 @@ int se_ameba_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign
 int se_ameba_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = hash;
@@ -421,11 +441,12 @@ int se_ameba_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key
 int se_ameba_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = hash;
@@ -444,10 +465,11 @@ int se_ameba_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *
 int se_ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (dh_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(dh_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
@@ -463,10 +485,11 @@ int se_ameba_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 int se_ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal_data *shared_secret)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (dh_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(dh_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
@@ -482,10 +505,11 @@ int se_ameba_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx
 int se_ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_idx, hal_data *shared_secret)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
@@ -501,10 +525,11 @@ int se_ameba_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t 
 int se_ameba_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (cert_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(cert_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
@@ -520,24 +545,17 @@ int se_ameba_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 int se_ameba_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (cert_idx == FACTORYKEY_RTL_CERT) {	/* If factory Cert */
-		up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
-		ret = ameba_hal_get_factory_cert(cert_idx, cert_out);
-		up_free_secure_context();
-		goto exit;
-	}
-
-	if (cert_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(cert_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_certificate(cert_idx, cert_out);
 	up_free_secure_context();
 
-exit:
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
 	}
@@ -547,10 +565,11 @@ exit:
 int se_ameba_hal_remove_certificate(uint32_t cert_idx)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
-	if (cert_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(cert_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
@@ -566,7 +585,7 @@ int se_ameba_hal_remove_certificate(uint32_t cert_idx)
 int se_ameba_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_factory_key(key_idx, key);
@@ -581,7 +600,7 @@ int se_ameba_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 int se_ameba_hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_factory_cert(cert_idx, cert);
@@ -596,7 +615,7 @@ int se_ameba_hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 int se_ameba_hal_get_factory_data(uint32_t data_idx, hal_data *data)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_factory_data(data_idx, data);
@@ -611,11 +630,12 @@ int se_ameba_hal_get_factory_data(uint32_t data_idx, hal_data *data)
 int se_ameba_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_idx, hal_data *enc_data)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = dec_data;
@@ -634,11 +654,12 @@ int se_ameba_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint3
 int se_ameba_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_idx, hal_data *dec_data)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = enc_data;
@@ -657,11 +678,12 @@ int se_ameba_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint3
 int se_ameba_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t key_idx, hal_data *enc_data)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = dec_data;
@@ -680,11 +702,12 @@ int se_ameba_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_
 int se_ameba_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t key_idx, hal_data *dec_data)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 	inout_struc in_output;
 
-	if (key_idx >= KEY_STORAGE_INDEX_MAX) {	/* Index Out of Range */
-		return HAL_INVALID_SLOT_RANGE;
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
 	}
 
 	in_output.input_data = enc_data;
@@ -703,7 +726,7 @@ int se_ameba_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_
 int se_ameba_hal_write_storage(uint32_t ss_idx, hal_data *data)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	if (ss_idx >= SEC_STORE_MAX_SLOT) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
@@ -713,8 +736,7 @@ int se_ameba_hal_write_storage(uint32_t ss_idx, hal_data *data)
 	if (data->data_len > (SECTOR_SIZE * 2)) {
 		/* If data len more than 2 Sector (8KB) */
 		return HAL_FAIL;
-	}
-	else {
+	} else {
 		/* Only Slot 1 can write 8KB, other is less then 4KB */
 		if (ss_idx != 1) {
 			/* If data len more Sector - Tag size and not Slot 1 */
@@ -737,7 +759,7 @@ int se_ameba_hal_write_storage(uint32_t ss_idx, hal_data *data)
 int se_ameba_hal_read_storage(uint32_t ss_idx, hal_data *data)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	if (ss_idx >= SEC_STORE_MAX_SLOT) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
@@ -757,7 +779,7 @@ int se_ameba_hal_read_storage(uint32_t ss_idx, hal_data *data)
 int se_ameba_hal_delete_storage(uint32_t ss_idx)
 {
 	AWRAP_ENTER;
-	int ret;
+	int ret = HAL_SUCCESS;
 
 	if (ss_idx >= SEC_STORE_MAX_SLOT) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
@@ -773,7 +795,6 @@ int se_ameba_hal_delete_storage(uint32_t ss_idx)
 	}
 	return ret;
 }
-
 
 static struct sec_ops_s g_ameba_ops_s = {
 	se_ameba_hal_init,

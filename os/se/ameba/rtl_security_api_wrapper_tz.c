@@ -27,6 +27,7 @@ typedef struct {
 	int (*flash_write)(uint32_t, uint32_t, uint8_t *);
 	void (*device_lock)(uint32_t);
 	void (*device_unlock)(uint32_t);
+	void (*setstatusbits)(uint32_t);
 	int (*get_random_bytes)(void *, uint32_t);
 } nsfunc_ops_s;
 
@@ -74,6 +75,7 @@ void *rtl_set_ns_func(void)
 	ns_func.flash_write = ns_flash_write;
 	ns_func.device_lock = device_mutex_lock;
 	ns_func.device_unlock = device_mutex_unlock;
+	ns_func.setstatusbits = NULL;	/* TODO: Add Set Status Bits API */
 	ns_func.get_random_bytes = rtw_get_random_bytes;
 
 	return (void *)&ns_func;
