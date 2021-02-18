@@ -75,7 +75,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 	int read_size;
 	uint32_t crc_hash = 0;
 	uint8_t buffer[BUFFER_SIZE];
-	binary_header_t header_data;
+	user_binary_header_t header_data;
 	char filepath[BINARY_PATH_LEN];
 	char new_filepath[BINARY_PATH_LEN] = {0,};
 
@@ -88,8 +88,8 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 	}
 
 	/* Read the binary header. */
-	ret = read(read_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
-	if (ret != sizeof(binary_header_t)) {
+	ret = read(read_fd, (FAR uint8_t *)&header_data, sizeof(user_binary_header_t));
+	if (ret != sizeof(user_binary_header_t)) {
 		printf("Failed to read header %s: %d\n", filepath, ret);
 		ret = ERROR;
 		goto errout_with_close_fd1;
@@ -115,8 +115,8 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, int 
 	header_data.bin_ver = new_version;
 
 	/* Write the binary header. */
-	ret = write(write_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
-	if (ret != sizeof(binary_header_t)) {
+	ret = write(write_fd, (FAR uint8_t *)&header_data, sizeof(user_binary_header_t));
+	if (ret != sizeof(user_binary_header_t)) {
 		printf("Failed to write header: %d\n", ret);
 		ret = ERROR;
 		goto errout_with_close_fd2;
@@ -190,7 +190,7 @@ static int binary_update_download_new_binary(void)
 	uint32_t read_size;
 	uint32_t crc_hash = 0;
 	uint8_t buffer[BUFFER_SIZE];
-	binary_header_t header_data;
+	user_binary_header_t header_data;
 	binary_update_info_t bin_info;
 	char filepath[BINARY_PATH_LEN];
 	char new_filepath[BINARY_PATH_LEN] = {0,};
@@ -225,8 +225,8 @@ static int binary_update_download_new_binary(void)
 	}
 
 	/* Read the binary header. */
-	ret = read(read_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
-	if (ret != sizeof(binary_header_t)) {
+	ret = read(read_fd, (FAR uint8_t *)&header_data, sizeof(user_binary_header_t));
+	if (ret != sizeof(user_binary_header_t)) {
 		printf("Failed to read header %s: %d\n", filepath, ret);
 		ret = ERROR;
 		goto errout_with_close_fd1;
@@ -251,8 +251,8 @@ static int binary_update_download_new_binary(void)
 	header_data.bin_ver = NEW_APP_VERSION;
 
 	/* Write the binary header. */
-	ret = write(write_fd, (FAR uint8_t *)&header_data, sizeof(binary_header_t));
-	if (ret != sizeof(binary_header_t)) {
+	ret = write(write_fd, (FAR uint8_t *)&header_data, sizeof(user_binary_header_t));
+	if (ret != sizeof(user_binary_header_t)) {
 		printf("Failed to write header: %d\n", ret);
 		ret = ERROR;
 		goto errout_with_close_fd2;

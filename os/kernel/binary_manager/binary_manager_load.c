@@ -145,7 +145,7 @@ static int binary_manager_load(int bin_idx)
 	int bin_count;
 	load_attr_t load_attr;
 	char filepath[CONFIG_PATH_MAX];
-	binary_header_t header_data;
+	user_binary_header_t header_data;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp;
 #endif
@@ -587,7 +587,7 @@ void binary_manager_release_binary_sem(int bin_idx)
  *	 This function reads header and checks whether it is valid or not.
  *
  ****************************************************************************/
-int binary_manager_read_header(char *path, binary_header_t *header_data, bool crc_check)
+int binary_manager_read_header(char *path, user_binary_header_t *header_data, bool crc_check)
 {
 	int fd;
 	int ret;
@@ -598,7 +598,7 @@ int binary_manager_read_header(char *path, binary_header_t *header_data, bool cr
 	uint8_t *crc_buffer;
 	uint32_t crc_bufsize;
 
-	memset(header_data, 0, sizeof(binary_header_t));
+	memset(header_data, 0, sizeof(user_binary_header_t));
 	crc_buffer = NULL;
 
 	need_unlink = false;
@@ -610,8 +610,8 @@ int binary_manager_read_header(char *path, binary_header_t *header_data, bool cr
 	}
 
 	/* Read the binary header */
-	ret = read(fd, (FAR uint8_t *)header_data, sizeof(binary_header_t));
-	if (ret != sizeof(binary_header_t)) {
+	ret = read(fd, (FAR uint8_t *)header_data, sizeof(user_binary_header_t));
+	if (ret != sizeof(user_binary_header_t)) {
 		bmdbg("Failed to read %s: %d, errno %d\n", path, ret, errno);
 		goto errout_with_fd;
 	}

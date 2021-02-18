@@ -103,7 +103,7 @@ void binary_manager_scan_ubin_all(void)
 	int ret;
 	DIR *dirp;
 	int bin_idx;
-	binary_header_t header_data;
+	user_binary_header_t header_data;
 	char filepath[BINARY_PATH_LEN];
 
 	/* Open a directory for user binaries, BINARY_DIR_PATH */
@@ -160,7 +160,7 @@ int binary_manager_scan_ubin(int bin_idx)
 	int latest_ver;
 	int latest_idx;
 	char *bin_name;
-	binary_header_t header_data;
+	user_binary_header_t header_data;
 	char filepath[BINARY_PATH_LEN];
 
 	bmvdbg("Open a directory, %s\n", BINARY_DIR_PATH);

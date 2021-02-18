@@ -94,7 +94,7 @@ int binary_manager(int argc, char *argv[])
 
 	ASSERT(binary_manager_get_ucount() > 0);
 #endif
-	ASSERT(binary_manager_get_kcount() > 0)
+	ASSERT(binary_manager_get_kcount() > 0 && binary_manager_scan_kbin());
 
 	bmvdbg("Binary Manager STARTED\n");
 

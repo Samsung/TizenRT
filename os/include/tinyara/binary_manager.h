@@ -70,6 +70,10 @@
 /* Mount point for User binaries */
 #define BINARY_DIR_PATH                  CONFIG_MOUNT_POINT"bins"
 
+/* Kernel version has "YYMMDD" format */
+#define KERNEL_BIN_VER_MIN               101      /* YYMMDD : 000101 */
+#define KERNEL_BIN_VER_MAX               991231   /* YYMMDD : 991231 */
+
 /* The length of binary file or kernel partition path.
  * A path is same like below:
  *  - User filepath : "/<mount_path>/<binary_name>_<binary_version>"
@@ -130,7 +134,7 @@ typedef enum binmgr_result_type binmgr_result_type_e;
  * Public Data
  ****************************************************************************/
 /* Binary header data */
-struct binary_header_s {
+struct user_binary_header_s {
 	uint32_t crc_hash;
 	uint16_t header_size;
 	uint8_t bin_type;
@@ -144,7 +148,16 @@ struct binary_header_s {
 	uint32_t bin_stacksize;
 	uint32_t kernel_ver;
 } __attribute__((__packed__));
-typedef struct binary_header_s binary_header_t;
+typedef struct user_binary_header_s user_binary_header_t;
+
+struct kernel_binary_header_s {
+	uint32_t crc_hash;
+	uint16_t header_size;
+	uint32_t version;
+	uint32_t binary_size;
+	uint16_t secure_header_size;
+} __attribute__((__packed__));
+typedef struct kernel_binary_header_s kernel_binary_header_t;
 
 /* The structure of binary update information for kernel or user binaries */
 struct binary_update_info_s {
