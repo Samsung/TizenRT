@@ -20,8 +20,11 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <debug.h>
-#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <fcntl.h>
+#include <errno.h>
 #include <string.h>
+#include <crc32.h>
+#ifdef CONFIG_APP_BINARY_SEPARATION
 #include <queue.h>
 #include <stdint.h>
 #ifdef CONFIG_VERSION_STRING
@@ -32,6 +35,7 @@
 #include <tinyara/binfmt/binfmt.h>
 #endif
 #endif
+#include <tinyara/mm/mm.h>
 #include <tinyara/binary_manager.h>
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -58,6 +62,75 @@ static uint32_t g_bin_count;
 
 /* Data for Kernel partitions */
 static binmgr_kinfo_t kernel_info;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_t *header_data)
+{
+	int fd;
+	int ret;
+	uint32_t crc_value = 0;
+	uint8_t *crc_buffer;
+	uint32_t crc_bufsize;
+
+	memset(header_data, 0, sizeof(kernel_binary_header_t));
+	crc_buffer = NULL;
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		bmdbg("Failed to open %s: %d, errno %d\n", path, ret, errno);
+		return ERROR;
+	}
+
+	/* Read the binary header */
+	ret = read(fd, (FAR uint8_t *)header_data, sizeof(kernel_binary_header_t));
+	if (ret != sizeof(kernel_binary_header_t)) {
+		bmdbg("Failed to read %s: %d, errno %d\n", path, ret, errno);
+		goto errout_with_fd;
+	}
+
+	/* Verify header data */
+	if (header_data->header_size == 0 || header_data->binary_size == 0 \
+		|| header_data->version < KERNEL_BIN_VER_MIN || header_data->version > KERNEL_BIN_VER_MAX) {
+		bmdbg("Invalid header data : headersize %u, version %u, binary size %u\n", header_data->header_size, header_data->version, header_data->binary_size);
+		goto errout_with_fd;
+	}
+
+	crc_bufsize = header_data->binary_size;
+	crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
+	if (!crc_buffer) {
+		bmdbg("Failed to allocate buffer for checking crc, size %u\n", crc_bufsize);
+		goto errout_with_fd;
+	}
+
+	/* Calculate checksum and Verify it */
+	crc_value = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_data->header_size, crc_value);
+	ret = read(fd, (void *)crc_buffer, crc_bufsize);
+	if (ret < 0 || ret != crc_bufsize) {
+		bmdbg("Failed to read : %d, errno %d\n", ret, errno);
+		goto errout_with_fd;
+	}
+	crc_value = crc32part(crc_buffer, crc_bufsize, crc_value);
+
+	if (crc_value != header_data->crc_hash) {
+		bmdbg("Failed to crc check : %u != %u\n", crc_value, header_data->crc_hash);
+		goto errout_with_fd;
+	}
+	kmm_free(crc_buffer);
+	bmvdbg("Binary header : %u %u %u %u \n", header_data->header_size, header_data->binary_size, header_data->version, header_data->secure_header_size);
+	close(fd);
+
+	return OK;
+
+errout_with_fd:
+	close(fd);
+	if (crc_buffer) {
+		kmm_free(crc_buffer);
+	}
+	return ERROR;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -94,9 +167,47 @@ void binary_manager_register_kpart(int part_num, int part_size)
 
 	kernel_info.part_size[kernel_info.part_count] = part_size;
 	kernel_info.part_num[kernel_info.part_count] = part_num;
-	kernel_info.part_count++;
 
 	bmvdbg("[KERNEL %d] part num %d size %d\n", kernel_info.part_count, part_num, part_size);
+
+	kernel_info.part_count++;
+}
+
+/****************************************************************************
+ * Name: binary_manager_scan_kbin
+ *
+ * Description:
+ *	 This function scans kernel binaries and update infomation.
+ *
+ ****************************************************************************/
+bool binary_manager_scan_kbin(void)
+{
+	int ret;
+	int part_idx;
+	uint32_t latest_ver;
+	kernel_binary_header_t header_data;
+	char filepath[BINARY_PATH_LEN];
+
+	latest_ver = 0;
+
+	/* Load the binaries with high priority directly */
+	for (part_idx = 0; part_idx < kernel_info.part_count; part_idx++) {
+		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_num[part_idx]);
+		ret = binary_manager_verify_kernel_binary(filepath, &header_data);
+		if (ret == OK && latest_ver < header_data.version) {
+			/* Update latest version and inuse index */
+			kernel_info.version = header_data.version;
+			kernel_info.inuse_idx = part_idx;
+			latest_ver = header_data.version;
+		}
+	}
+	bmvdbg("Latest version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
+
+	/* Found valid binary */
+	if (kernel_info.version != 0) {
+		return true;
+	}
+	return false;
 }
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
