@@ -51,6 +51,7 @@
 /*============================================================================*
  *                              Variables
  *============================================================================*/
+void print_no_server(const char* format, ...) {}
 
 /** @brief  GAP - scan response data (max size = 31 bytes) */
 static const uint8_t scan_rsp_data[] =

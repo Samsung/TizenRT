@@ -311,7 +311,7 @@ uint32_t switch_perm(uint8_t perm)
 {
     uint32_t read_perm = 0x0, write_perm = 0x0;
 
-    if(perm | DA_BLE_ATTR_PERM_R_PERMIT == 0x00)
+    if((perm | DA_BLE_ATTR_PERM_R_PERMIT) == 0x00)
         read_perm = GATT_PERM_READ;
     if(perm & DA_BLE_ATTR_PERM_R_AUTHOR)
         read_perm = GATT_PERM_READ_AUTHEN_REQ;
@@ -320,7 +320,7 @@ uint32_t switch_perm(uint8_t perm)
     if(perm & DA_BLE_ATTR_PERM_R_ENCRYPT)
         read_perm = GATT_PERM_READ_ENCRYPTED_REQ;
 
-    if(perm | DA_BLE_ATTR_PERM_W_PERMIT == 0x00)
+    if((perm | DA_BLE_ATTR_PERM_W_PERMIT) == 0x00)
         write_perm = GATT_PERM_WRITE;
     if(perm & DA_BLE_ATTR_PERM_W_AUTHEN)
         write_perm = GATT_PERM_WRITE_AUTHEN_REQ;

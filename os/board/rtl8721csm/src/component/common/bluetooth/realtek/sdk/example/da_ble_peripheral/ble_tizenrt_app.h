@@ -33,11 +33,12 @@ extern "C" {
 /*============================================================================*
  *                              Functions
  *============================================================================*/
+extern void print_no_server(const char* format, ...);
 #define RTK_DEBUG_ON 0
 #if RTK_DEBUG_ON
 #define debug_print printf
 #else
-#define debug_print
+#define debug_print print_no_server
 #endif
 
 typedef enum

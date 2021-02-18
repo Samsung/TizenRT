@@ -66,6 +66,8 @@ T_TIZENRT_CLIENT_READ_RESULT tizenrt_read_results[BLE_TIZENRT_CENTRAL_APP_MAX_LI
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
+void ble_tizenrt_central_send_msg(uint16_t sub_type, void *arg);
+
 void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG callback_msg)
 {
     debug_print("\r\n[%s] msg type : 0x%x", __FUNCTION__, callback_msg.type);
@@ -97,7 +99,8 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG c
                     if(ble_tizenrt_bond_req_table[i].is_secured_connect && (ble_tizenrt_central_app_link_table[i].auth_state != GAP_AUTHEN_STATE_COMPLETE))
                     {
                         debug_print("\r\n[%s] need to pair", __FUNCTION__);
-                        ble_tizenrt_central_send_msg(BLE_TIZENRT_BOND, connected_dev->conn_handle);
+                        uint32_t handle = (uint32_t) connected_dev->conn_handle;
+                        ble_tizenrt_central_send_msg(BLE_TIZENRT_BOND, (void *) handle);
                         os_mem_free(connected_dev);
                     } else {
                         debug_print("\r\n[%s] need not to pair", __FUNCTION__);
@@ -114,8 +117,8 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG c
         case BLE_TIZENRT_SCAN_STATE_MSG:
         {
             debug_print("\r\n[%s] Handle scan_state msg", __FUNCTION__);
-            da_ble_client_scan_state scan_state;
-            uint16_t new_state = callback_msg.u.buf;
+            da_ble_client_scan_state scan_state = 0;
+            uint16_t new_state = (uint32_t) callback_msg.u.buf;
             if(GAP_SCAN_STATE_IDLE == new_state)
             {
                 scan_state = DA_BLE_CLIENT_SCAN_STOPPED;
@@ -141,7 +144,7 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG c
         {
             debug_print("\r\n[%s] Handle disconnected msg", __FUNCTION__);
             da_ble_client_device_disconnected disconnected;
-            disconnected.conn_handle = callback_msg.u.buf;
+            disconnected.conn_handle = (uint32_t) callback_msg.u.buf;
             client_init_parm->da_ble_client_device_disconnected_cb(&disconnected);
         }
 			break;
@@ -242,14 +245,14 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
 			break;
 		case BLE_TIZENRT_DISCONNECT:
         {
-            uint8_t param = pdata;
+            uint8_t param = (uint32_t) pdata;
             debug_print("\r\n[%s] disconn_id 0x%x", __FUNCTION__, param);
             ret = le_disconnect(param);
         }
 			break;
         case BLE_TIZENRT_BOND:
         {
-            uint8_t param = pdata;
+            uint8_t param = (uint32_t) pdata;
             debug_print("\r\n[%s] bond_id 0x%x", __FUNCTION__, param);
             ret = le_bond_pair(param);
         }
@@ -433,7 +436,8 @@ void ble_tizenrt_central_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uin
         {
             APP_PRINT_INFO0("GAP scan start");
             printf("\r\n[BLE_TIZENRT] GAP scan start\r\n");
-            ble_tizenrt_central_send_callback_msg(BLE_TIZENRT_SCAN_STATE_MSG, GAP_SCAN_STATE_SCANNING);
+            uint32_t state = (uint32_t) new_state.gap_scan_state;
+            ble_tizenrt_central_send_callback_msg(BLE_TIZENRT_SCAN_STATE_MSG, (void *) state);
         }
         
     }
@@ -479,7 +483,8 @@ void ble_tizenrt_central_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_S
                 debug_print("\r\n[%s] Delete bond fail!!!", __FUNCTION__);
             }
             memset(&ble_tizenrt_central_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_APP_LINK));
-            ble_tizenrt_central_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, conn_id);
+            uint32_t connid = (uint32_t) conn_id;
+            ble_tizenrt_central_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid);
         }
         break;
 

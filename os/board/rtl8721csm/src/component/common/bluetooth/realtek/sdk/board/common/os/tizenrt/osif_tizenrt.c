@@ -642,7 +642,7 @@ void osif_timer_wrapper(void *timer)
 {
 	uint32_t lock;
 	_list *plist;
-	struct osif_timer_entry *timer_entry;
+	struct osif_timer_entry *timer_entry = NULL;
 
 	lock = osif_lock();
 

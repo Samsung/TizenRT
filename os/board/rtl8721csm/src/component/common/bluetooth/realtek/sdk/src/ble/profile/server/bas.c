@@ -182,10 +182,10 @@ bool bas_set_parameter(T_BAS_PARAM_TYPE param_type, uint8_t length, uint8_t *p_v
     }
  * \endcode
  */
-bool bas_battery_level_value_notify(uint8_t conn_id, uint8_t service_id, uint8_t battery_level)
+bool bas_battery_level_value_notify(uint8_t conn_id, uint8_t service_id, uint8_t battery_levl)
 {
-    return server_send_data(conn_id, service_id, GATT_SVC_BAS_BATTERY_LEVEL_INDEX, &battery_level,
-                            sizeof(battery_level), GATT_PDU_TYPE_ANY);
+    return server_send_data(conn_id, service_id, GATT_SVC_BAS_BATTERY_LEVEL_INDEX, &battery_levl,
+                            sizeof(battery_levl), GATT_PDU_TYPE_ANY);
 }
 
 /**
@@ -208,13 +208,13 @@ bool bas_battery_level_value_notify(uint8_t conn_id, uint8_t service_id, uint8_t
  * \endcode
  */
 bool bas_battery_level_value_read_confirm(uint8_t conn_id, uint8_t service_id,
-                                          uint8_t battery_level)
+                                          uint8_t battery_levl)
 {
     if (bas_read_battery_level_pending == true)
     {
         bas_read_battery_level_pending = false;
         return server_attr_read_confirm(conn_id, service_id, GATT_SVC_BAS_BATTERY_LEVEL_INDEX,
-                                        &battery_level, sizeof(battery_level), APP_RESULT_SUCCESS);
+                                        &battery_levl, sizeof(battery_levl), APP_RESULT_SUCCESS);
     }
     else
     {

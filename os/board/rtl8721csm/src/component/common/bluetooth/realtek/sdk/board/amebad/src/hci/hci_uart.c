@@ -109,18 +109,18 @@ extern void bt_uart_tx(uint8_t rc);
     bt_uart_tx(rc);
     return true;
 }
-uint8_t hci_rx_empty()
+uint8_t hci_rx_empty(void)
 {
     uint16_t tmpRead = hci_uart_obj->rx_read_idx;
     uint16_t tmpWrite = hci_uart_obj->rx_write_idx;
     return (tmpRead == tmpWrite);
 }
 
-uint16_t hci_rx_data_len()
+uint16_t hci_rx_data_len(void)
 {
     return (hci_uart_obj->rx_write_idx + HCI_UART_RX_BUF_SIZE - hci_uart_obj->rx_read_idx) % HCI_UART_RX_BUF_SIZE;
 }
-uint16_t hci_rx_space_len()
+uint16_t hci_rx_space_len(void)
 {
     return (hci_uart_obj->rx_read_idx + HCI_UART_RX_BUF_SIZE - hci_uart_obj->rx_write_idx - 1) % HCI_UART_RX_BUF_SIZE;
 }

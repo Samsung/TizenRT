@@ -32,11 +32,12 @@ extern "C" {
 #define UUID_128_FORMAT "0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X"
 #define UUID_128(x)  x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15]
 
+extern void print_no_client(const char* format, ...);
 #define RTK_DEBUG_ON 0
 #if RTK_DEBUG_ON
 #define debug_print printf
 #else
-#define debug_print
+#define debug_print print_no_client
 #endif
 
 typedef struct

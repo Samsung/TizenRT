@@ -142,7 +142,7 @@ uint8_t* rtw_ble_server_att_get_data_ptr(da_ble_attr_handle attr_handle)
 {
     if (is_init != true)
     {
-        return DA_BLE_RESULT_TYPE_INVALID_STATE;
+        return NULL;
     }
 
     for(int i = 0; i < tizenrt_ble_srv_count; i++)
@@ -246,7 +246,7 @@ da_ble_result_type rtw_ble_server_reject(da_ble_attr_handle attr_handle, uint8_t
     
 }
 
-uint8_t bd_addr[DA_BLE_BD_ADDR_MAX_LEN];
+static uint8_t bd_addr[DA_BLE_BD_ADDR_MAX_LEN];
 uint8_t* rtw_ble_server_get_mac_address_by_conn_handle(da_ble_conn_handle con_handle)
 {
     memset(bd_addr, 0, DA_BLE_BD_ADDR_MAX_LEN);
@@ -264,7 +264,8 @@ uint8_t* rtw_ble_server_get_mac_address_by_conn_handle(da_ble_conn_handle con_ha
 
 da_ble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
 {
-    da_ble_conn_handle conn_id = 0xffff;
+    //da_ble_conn_handle conn_id = 0xffff;
+    uint8_t conn_id = 0xff;
     if(le_get_conn_id(mac, GAP_REMOTE_ADDR_LE_PUBLIC, &conn_id))
     {
         debug_print("\r\n[%s] get public add handle", __FUNCTION__);
@@ -508,16 +509,16 @@ da_ble_result_type rtw_ble_server_stop_adv(void)
     return DA_BLE_RESULT_TYPE_SUCCESS;
 }
 
-da_ble_result_type rtw_ble_server_start_adv_directed(uint8_t bd_addr[DA_BLE_BD_ADDR_MAX_LEN])
+da_ble_result_type rtw_ble_server_start_adv_directed(uint8_t target_addr[DA_BLE_BD_ADDR_MAX_LEN])
 {
-    if(bd_addr == NULL)
+    if(target_addr == NULL)
     {
         printf("\r\n[%s] Invalid input", __FUNCTION__);
         return DA_BLE_RESULT_TYPE_FAILURE;
     }
 
     T_TIZENRT_DIRECT_ADV_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_DIRECT_ADV_PARAM));
-    memcpy(param->bd_addr, bd_addr, DA_BLE_BD_ADDR_MAX_LEN);
+    memcpy(param->bd_addr, target_addr, DA_BLE_BD_ADDR_MAX_LEN);
     if(ble_tizenrt_gap_dev_state.gap_adv_state != GAP_ADV_STATE_IDLE)
     {
         ble_tizenrt_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
@@ -569,9 +570,9 @@ da_ble_result_type rtw_ble_server_get_bonded_device(da_ble_server_bonded_device*
     return DA_BLE_RESULT_TYPE_SUCCESS;
 }
 
-da_ble_result_type rtw_ble_server_delete_bonded_device(uint8_t bd_addr[DA_BLE_BD_ADDR_MAX_LEN])
+da_ble_result_type rtw_ble_server_delete_bonded_device(uint8_t bond_addr[DA_BLE_BD_ADDR_MAX_LEN])
 {
-    if(bd_addr == NULL)
+    if(bond_addr == NULL)
     {
         printf("\r\n[%s] Invalid input", __FUNCTION__);
         return DA_BLE_RESULT_TYPE_FAILURE;
@@ -579,7 +580,7 @@ da_ble_result_type rtw_ble_server_delete_bonded_device(uint8_t bd_addr[DA_BLE_BD
 
     da_ble_result_type ret = DA_BLE_RESULT_TYPE_FAILURE;
     T_TIZENRT_DELETE_BOND_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_DELETE_BOND_PARAM));
-    memcpy(param->bd_addr, bd_addr, DA_BLE_BD_ADDR_MAX_LEN);
+    memcpy(param->bd_addr, bond_addr, DA_BLE_BD_ADDR_MAX_LEN);
     param->flag = false;
     ble_tizenrt_send_msg(BLE_TIZENRT_MSG_DELETE_BOND, param);
 

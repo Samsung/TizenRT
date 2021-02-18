@@ -44,7 +44,7 @@ extern bool bt_trace_uninit(void);
     * @brief Main file to initialize hardware and BT stack and start task scheduling
     * @{
     */
-
+void print_no_client(const char* format, ...) {}
 /*============================================================================*
  *                              Constants
  *============================================================================*/

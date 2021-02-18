@@ -319,7 +319,6 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
 {
     debug_print("\r\n[%s] conn_id %d old_state %d new_state %d, disc_cause 0x%x", __FUNCTION__,
                     conn_id, ble_tizenrt_gap_conn_state, new_state, disc_cause);
-    T_TIZENRT_SERVER_CALLBACK_MSG callback_msg;
     switch (new_state)
     {
     case GAP_CONN_STATE_DISCONNECTED:
@@ -346,7 +345,6 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
             uint16_t conn_interval;
             uint16_t conn_latency;
             uint16_t conn_supervision_timeout;
-            T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
 
             le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &conn_interval, conn_id);
             le_get_conn_param(GAP_PARAM_CONN_LATENCY, &conn_latency, conn_id);

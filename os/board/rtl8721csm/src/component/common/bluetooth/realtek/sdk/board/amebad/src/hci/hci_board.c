@@ -154,9 +154,9 @@ extern uint32_t bt_flatk_8721d(uint16_t txgain_flatk);
             {
                 if ((efuse_buf[0] != 0xff) && (efuse_buf[1] != 0xff))
                 {
-                    for(int i = 0 ;i <6;i ++)
+                    for(int j = 0 ;j <6;j ++)
                     { 
-                        p[i] = efuse_buf[5-i]; 
+                        p[j] = efuse_buf[5-j]; 
                     }
 
                     hci_board_debug("\nBT ADDRESS: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
@@ -573,7 +573,7 @@ void bt_reset(void)
 
 bool hci_board_init()
 {
-    bool ret=false;
+    //bool ret=false;
 	
     if(!(wifi_is_up(RTW_STA_INTERFACE) || wifi_is_up(RTW_AP_INTERFACE))) {
         hci_board_debug("\nWIFI is off !Please restart BT after WIFI on!\n");

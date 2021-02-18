@@ -18,9 +18,6 @@
 #include <gcs_client.h>
 
 da_ble_client_init_parm *client_init_parm = NULL;
-
-static bool is_init = false;
-
 uint16_t g_conn_req_num = 0;
 BLE_TIZENRT_BOND_REQ ble_tizenrt_bond_req_table[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS] = {0};
 
@@ -68,8 +65,8 @@ da_ble_result_type rtw_ble_client_start_scan(void)
     return DA_BLE_RESULT_TYPE_SUCCESS;
 }
 
-uint32_t *scan_filter_tmr_handle = NULL;
-void scan_stop_cb(void)
+void *scan_filter_tmr_handle = NULL;
+void scan_stop_cb(void *arg)
 {
     printf("\r\n[%s] scan duration exhausted", __FUNCTION__);
     ble_tizenrt_central_send_msg(BLE_TIZENRT_STOP_SCAN, NULL);

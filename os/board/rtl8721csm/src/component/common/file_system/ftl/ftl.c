@@ -108,7 +108,7 @@ struct Page_T
 };
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-_sema *ftl_sem = NULL;
+_sema ftl_sem = NULL;
 #elif
 QueueHandle_t ftl_sem = NULL;
 #endif
