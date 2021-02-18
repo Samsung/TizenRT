@@ -67,7 +67,7 @@ static int _process_msg(int argc, char *argv[])
  */
 int wifimgr_run_msghandler(void)
 {
-	int tid = task_create("wifi msg handler", 100, 4096, (main_t)_process_msg, NULL);
+	int tid = task_create("wifi msg handler", 101, 4096, (main_t)_process_msg, NULL);
 	if (tid < 0) {
 		WM_ERR;
 		return -1;
