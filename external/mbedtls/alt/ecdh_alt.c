@@ -108,6 +108,7 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 		goto cleanup;
 	}
 
+	grp->key_index = ECP_KEY_INDEX;
 	while (1) {
 		ret = sl_generate_key(shnd, key_type, grp->key_index, &hres);
 		if (ret != SECLINK_OK) {
