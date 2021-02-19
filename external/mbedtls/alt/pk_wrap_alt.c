@@ -712,7 +712,7 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 		return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 	}
 
-	key_idx = ((mbedtls_ecdsa_context *) ctx)->grp.key_index;
+	key_idx = ((mbedtls_ecdsa_context *) ctx)->key_index;
 
 	/*
 	 * 1. Encrypt publickey for using HW accelator.
