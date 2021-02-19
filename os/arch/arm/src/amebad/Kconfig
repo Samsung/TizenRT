@@ -76,12 +76,10 @@ config FTL_ENABLED
 config AMEBAD_BLE_PERIPHERAL
 	bool "Enable Amebad BLE Peripheral"
 	default n
-	depends on AMEBAD_BLE
 
 config AMEBAD_BLE_CENTRAL
 	bool "Enable Amebad BLE Central"
 	default n
-	depends on AMEBAD_BLE
 endif
 
 endmenu
