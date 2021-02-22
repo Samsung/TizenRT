@@ -216,6 +216,12 @@
 
 /* ---------- ND6 options ---------- */
 
+/* ---------- MLD options ---------- */
+#ifdef CONFIG_NET_IPv6_MLD
+#define LWIP_IPV6_MLD 1
+#else
+#define LWIP_IPV6_MLD 0
+#endif
 
 /* ---------- DHCP6 options ---------- */
 
