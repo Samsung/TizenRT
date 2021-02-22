@@ -31,6 +31,9 @@ typedef struct {
 	int (*get_random_bytes)(void *, uint32_t);
 } nsfunc_ops_s;
 
+/* Flash Status Bit */
+#define FLASH_STATUS_BITS 0x2c
+
 nsfunc_ops_s ns_func;
 
 /* Helper Function */
@@ -67,6 +70,15 @@ static int ns_flash_write(uint32_t address, uint32_t len, uint8_t *data)
 	return ret;
 }
 
+static void ns_setstatusbits(u32 NewState)
+{
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	FLASH_Write_Lock();
+	FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);
+	FLASH_Write_Unlock();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+}
+
 extern int rtw_get_random_bytes(void *dst, u32 size);
 void *rtl_set_ns_func(void)
 {
@@ -75,7 +87,7 @@ void *rtl_set_ns_func(void)
 	ns_func.flash_write = ns_flash_write;
 	ns_func.device_lock = device_mutex_lock;
 	ns_func.device_unlock = device_mutex_unlock;
-	ns_func.setstatusbits = NULL;	/* TODO: Add Set Status Bits API */
+	ns_func.setstatusbits = ns_setstatusbits;
 	ns_func.get_random_bytes = rtw_get_random_bytes;
 
 	return (void *)&ns_func;
