@@ -32,15 +32,6 @@ menuconfig NET_ARP
 
 source "net/lwip/configs/arp/Kconfig"
 
-menuconfig NET_IPv6_ND
-	bool "ND support"
-	depends on NET_IPv6
-	default y
-	---help---
-		Build in support for IPv6 Neighbor Discovery.
-
-source "net/lwip/configs/nd/Kconfig"
-
 menuconfig NET_UDP
 	bool "UDP Support"
 	depends on NET_IPv4 || NET_IPv6
@@ -73,16 +64,6 @@ if NET_ICMP
 source "net/lwip/configs/icmp/Kconfig"
 endif
 
-menuconfig NET_IPv6_ICMP
-	bool "ICMP6 support"
-	depends on NET_IPv6
-	default y
-	---help---
-		Build in support icmp for IPv6.
-
-source net/lwip/configs/icmp6/Kconfig
-
-
 menuconfig NET_LWIP_IGMP
 	bool "IGMP Support"
 	depends on NET_IPv4	
@@ -97,6 +78,11 @@ config NET_LWIP_MEMP_NUM_IGMP_GROUP
 		Number of multicast groups whose network interfaces
 		can be members at the same time
 endif #NET_LWIP_IGMP
+
+if NET_IPv6
+source "net/lwip/configs/nd/Kconfig"
+source "net/lwip/configs/icmp6/Kconfig""
+endif
 
 menuconfig NET_IPv6_MLD
 	bool "MLD Support"
@@ -138,8 +124,6 @@ config NET_LWIP_VLAN_CHECK_ID
 	int "VLAN ID for receiviing packet"
 	default 1
 	depends on NET_LWIP_VLAN_CHECK
-
-
 
 
 ################# SLIP #######################

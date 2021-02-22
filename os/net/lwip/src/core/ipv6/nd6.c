@@ -734,7 +734,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						{
 							/* @todo just add onlink prefix? */
 							LWIP_DEBUGF(ND6_DEBUG, ("created on-link prefix (not for stateless-autoconfig)\n"));
-							prefix_list[prefix].flags = 0;
+							// ToDo: prefix_list[prefix].flags = 0;
 
 						}
 					}
@@ -1334,10 +1334,9 @@ void nd6_tmr(void)
 						}
 					}
 				}
-#endif							/* LWIP_IPV6_AUTOCONFIG */
-
-				prefix_list[i].netif = NULL;
 				prefix_list[i].flags = 0;
+#endif							/* LWIP_IPV6_AUTOCONFIG */
+				prefix_list[i].netif = NULL;
 			} else {
 				prefix_list[i].invalidation_timer -= ND6_TMR_INTERVAL;
 
@@ -2704,7 +2703,9 @@ void nd6_cleanup_netif(struct netif *netif)
 	for (i = 0; i < LWIP_ND6_NUM_PREFIXES; i++) {
 		if (prefix_list[i].netif == netif) {
 			prefix_list[i].netif = NULL;
+#if LWIP_IPV6_AUTOCONFIG
 			prefix_list[i].flags = 0;
+#endif
 		}
 	}
 	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {

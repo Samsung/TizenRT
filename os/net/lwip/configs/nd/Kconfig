@@ -3,7 +3,13 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-if NET_IPv6_ND
+menu "ND Support"
+
+config NET_IPv6_ND
+	depends on NET_IPv6
+	default y
+	---help---
+		Built in support for IPv6 Neighbor Discovery.
 
 config NET_IPv6_ND_QUEUEING
 	bool "Enable queue outgoing IPv6 packets while MAC address"
@@ -104,5 +110,4 @@ config NET_IPv6_ND_RDNSS_MAX_DNS_SERVERS
 		(as per RFC 6106) to copy a defined maximum number of DNS
 		servers to the DNS module.
 
-
-endif
+endmenu

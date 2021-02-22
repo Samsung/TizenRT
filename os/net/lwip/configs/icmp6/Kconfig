@@ -3,7 +3,13 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-if NET_IPv6_ICMP
+menu "ICMP6 Support"
+
+config NET_IPv6_ICMP
+	depends on NET_IPv6
+	default y
+	---help---
+		Built in support for IPv6 icmpv6.
 
 config NET_IPv6_ICMP_DATASIZE
 	int "bytes from original packet to send back in ICMPv6 error messages"
@@ -24,4 +30,4 @@ config NET_MULTICAST_PING6
 	---help---
 		Respond to multicast pings (default is unicast only)
 
-endif
+endmenu
