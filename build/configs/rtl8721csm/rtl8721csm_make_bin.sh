@@ -85,6 +85,9 @@ arm-none-eabi-objcopy -j .xip_image2.text \
 arm-none-eabi-objcopy -j .psram_image2.text -j .psram_image2.data \
 -Obinary $BINDIR/target_pure_img2.axf $BINDIR/psram_2.bin
 
+arm-none-eabi-objcopy -j .bluetooth_trace.text \
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/APP.trace
+
 arm-none-eabi-size -A --radix=16 $BINDIR/target_img2.axf
 
 arm-none-eabi-size -t --radix=16 $BINDIR/target_img2.axf

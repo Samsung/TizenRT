@@ -431,11 +431,7 @@ extern unsigned int g_ap_sta_num;
 		//#define CONFIG_BT_COEXIST
 		//#define CONFIG_SW_MAILBOX_EN
 		//#define NEW_BT_COEX
-		#ifdef CONFIG_PLATFORM_TIZENRT_OS
-		#undef CONFIG_BT_COEXIST_SOC
-		#else
 		#define CONFIG_BT_COEXIST_SOC
-		#endif
 	#endif
 	#if defined(CONFIG_PLATFORM_8710C)
 		//#define CONFIG_ANTENNA_DIVERSITY
