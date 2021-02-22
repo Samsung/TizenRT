@@ -133,7 +133,7 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
  *
  ************************************************************************************/
 
-#if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG)
+#if defined(HAVE_LPUART_DEVICE)
 void imxrt_lowputc(char ch);
 uint8_t imxrt_lowgetc(void);
 #else

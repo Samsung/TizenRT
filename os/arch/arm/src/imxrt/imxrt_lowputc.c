@@ -502,7 +502,7 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 }
 #endif							/* HAVE_LPUART_DEVICE */
 
-#if defined(HAVE_LPUART_DEVICE) && defined(CONFIG_DEBUG)
+#if defined(HAVE_LPUART_DEVICE)
 /****************************************************************************
  * Name: up_lowputc
  *
