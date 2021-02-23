@@ -182,12 +182,12 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 /*
  * Callback
  */
-static int rtk_drv_callback_handler(int argc, char *argv[])
+static int rtk_drv_callback_handler(void *arg)
 {
-	//RTKDRV_ENTER;
-	int type = (int)(argv[1][0] - '0');
+	int *type = (int*)(arg);
 
-	switch (type) {
+	vddbg("Got callback from rtk drv (%d)\n", *type);
+	switch (*type) {
 	case 1:
 		lwnl_postmsg(LWNL_STA_CONNECTED, NULL);
 		break;
@@ -208,56 +208,67 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 		break;
 	}
 
+	kmm_free(type);
+
 	return 0;
 }
 
 static void linkup_handler(rtk_reason_t *reason)
 {
-	//RTKDRV_ENTER;
-	pid_t pid;
-	char *argv[2];
-	argv[1] = NULL;
-	char data[2] = {0, 0};
+	pthread_t tid;
+	int ret;
+	int *type = (int *)kmm_malloc(sizeof(int));
+
+	if (type == NULL) {
+		vddbg("malloc error\n");
+		return;
+	}
 
 	if (g_mode == RTK_WIFI_STATION_IF) {
 		if (reason->reason_code == RTK_STATUS_SUCCESS) {
-			data[0] = '1';
+			*type = 1;
 		} else {
-			data[0] = '2';
+			*type = 2;
 		}
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		data[0] = '3';
+		*type = 3;
 	}
-	argv[0] = data;
 
-	pid = kernel_thread("lwnl80211_cbk_handler", 100, 1024, (main_t)rtk_drv_callback_handler, argv);
-	if (pid < 0) {
+	ret = pthread_create(&tid, NULL, (pthread_startroutine_t)rtk_drv_callback_handler, (void *)type);
+	if (ret != 0) {
 		vddbg("pthread create fail(%d)\n", errno);
+		kmm_free(type);
 		return;
 	}
+	pthread_setname_np(tid, "trwifi_cbk_handler");
+	pthread_detach(tid);
 }
+
 
 static void linkdown_handler(rtk_reason_t *reason)
 {
-	//RTKDRV_ENTER;
-	pid_t pid;
-	char *argv[2];
-	argv[1] = NULL;
-	char data[2] = {0, 0};
-
-	data[0] = '4';
-	if (g_mode == RTK_WIFI_STATION_IF) {
-		data[0] = '4';
-	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		data[0] = '5';
-	}
-	argv[0] = data;
-
-	pid = kernel_thread("lwnl80211_cbk_handler", 100, 1024, (main_t)rtk_drv_callback_handler, argv);
-	if (pid < 0) {
-		vddbg("pthread create fail(%d)\n", errno);
+	pthread_t tid;
+	int ret;
+	int *type = (int *)kmm_malloc(sizeof(int));
+	if (type == NULL) {
+		vddbg("malloc error linkdown\n");
 		return;
 	}
+	*type = 4;
+	if (g_mode == RTK_WIFI_STATION_IF) {
+		*type = 4;
+	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
+		*type = 5;
+	}
+
+	ret = pthread_create(&tid, NULL, (pthread_startroutine_t)rtk_drv_callback_handler, (void *)type);
+	if (ret != 0) {
+		vddbg("pthread create fail(%d)\n", errno);
+		kmm_free(type);
+		return;
+	}
+	pthread_setname_np(tid, "trwifi_cbk_handler");
+	pthread_detach(tid);
 }
 
 
