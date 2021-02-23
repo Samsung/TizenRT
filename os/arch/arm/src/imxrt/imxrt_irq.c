@@ -192,19 +192,10 @@ static void imxrt_dumpnvic(const char *msg, int irq)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_DEBUG_FEATURES
-static int imxrt_nmi(int irq, FAR void *context, FAR void *arg)
-{
-	(void)irqsave();
-	_err("PANIC!!! NMI received\n");
-	PANIC();
-	return 0;
-}
-
 static int imxrt_busfault(int irq, FAR void *context, FAR void *arg)
 {
 	(void)irqsave();
-	_err("PANIC!!! Bus fault received: %08x\n", getreg32(NVIC_CFAULTS));
+	dbg("PANIC!!! Bus fault received: %08x\n", getreg32(NVIC_CFAULTS));
 	PANIC();
 	return 0;
 }
@@ -212,7 +203,16 @@ static int imxrt_busfault(int irq, FAR void *context, FAR void *arg)
 static int imxrt_usagefault(int irq, FAR void *context, FAR void *arg)
 {
 	(void)irqsave();
-	_err("PANIC!!! Usage fault received: %08x\n", getreg32(NVIC_CFAULTS));
+	dbg("PANIC!!! Usage fault received: %08x\n", getreg32(NVIC_CFAULTS));
+	PANIC();
+	return 0;
+}
+
+#ifdef CONFIG_DEBUG_FEATURES
+static int imxrt_nmi(int irq, FAR void *context, FAR void *arg)
+{
+	(void)irqsave();
+	_err("PANIC!!! NMI received\n");
 	PANIC();
 	return 0;
 }
@@ -437,17 +437,18 @@ void up_irqinitialize(void)
 #ifdef CONFIG_ARMV7M_MPU
 	irq_attach(IMXRT_IRQ_MEMFAULT, up_memfault, NULL);
 	up_enable_irq(IMXRT_IRQ_MEMFAULT);
+#else
+	irq_attach(IMXRT_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
+
+
+	irq_attach(IMXRT_IRQ_BUSFAULT, imxrt_busfault, NULL);
+	irq_attach(IMXRT_IRQ_USAGEFAULT, imxrt_usagefault, NULL);
 
 	/* Attach all other processor exceptions (except reset and sys tick) */
 
 #ifdef CONFIG_DEBUG_FEATURES
 	irq_attach(IMXRT_IRQ_NMI, imxrt_nmi, NULL);
-#ifndef CONFIG_ARMV7M_MPU
-	irq_attach(IMXRT_IRQ_MEMFAULT, up_memfault, NULL);
-#endif
-	irq_attach(IMXRT_IRQ_BUSFAULT, imxrt_busfault, NULL);
-	irq_attach(IMXRT_IRQ_USAGEFAULT, imxrt_usagefault, NULL);
 	irq_attach(IMXRT_IRQ_PENDSV, imxrt_pendsv, NULL);
 	irq_attach(IMXRT_IRQ_DBGMONITOR, imxrt_dbgmonitor, NULL);
 	irq_attach(IMXRT_IRQ_RESERVED, imxrt_reserved, NULL);

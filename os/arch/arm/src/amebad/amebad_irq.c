@@ -155,18 +155,6 @@ static void amebad_dumpnvic(const char *msg, int irq)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_DEBUG
-static int amebad_nmi(int irq, FAR void *context, FAR void *arg)
-{
-  (void)irqsave();
-  dbg("PANIC!!! NMI received\n");
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
-#endif
-  PANIC();
-  return 0;
-}
-
 static int amebad_busfault(int irq, FAR void *context, FAR void *arg)
 {
   (void)irqsave();
@@ -182,6 +170,18 @@ static int amebad_usagefault(int irq, FAR void *context, FAR void *arg)
 {
   (void)irqsave();
   dbg("PANIC!!! Usage fault received: %08x\n", getreg32(NVIC_CFAULTS));
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
+  PANIC();
+  return 0;
+}
+
+#ifdef CONFIG_DEBUG
+static int amebad_nmi(int irq, FAR void *context, FAR void *arg)
+{
+  (void)irqsave();
+  dbg("PANIC!!! NMI received\n");
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
   up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
 #endif
@@ -349,13 +349,14 @@ void up_irqinitialize(void)
 #endif
   /* Attach all other processor exceptions (except reset and sys tick) */
 
-#ifdef CONFIG_DEBUG
-  irq_attach(AMEBAD_IRQ_NMI, amebad_nmi, NULL);
 #ifdef CONFIG_ARMV8M_MPU
   irq_attach(AMEBAD_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
   irq_attach(AMEBAD_IRQ_BUSFAULT, amebad_busfault, NULL);
   irq_attach(AMEBAD_IRQ_USAGEFAULT, amebad_usagefault, NULL);
+
+#ifdef CONFIG_DEBUG
+  irq_attach(AMEBAD_IRQ_NMI, amebad_nmi, NULL);
   irq_attach(AMEBAD_IRQ_PENDSV, amebad_pendsv, NULL);
   irq_attach(AMEBAD_IRQ_DBGMONITOR, amebad_dbgmonitor, NULL);
   irq_attach(AMEBAD_IRQ_RESERVED, amebad_reserved, NULL);

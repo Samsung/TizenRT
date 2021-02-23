@@ -175,15 +175,6 @@ static void tiva_dumpnvic(const char *msg, int irq)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_DEBUG
-static int tiva_nmi(int irq, FAR void *context, FAR void *arg)
-{
-	(void)irqsave();
-	dbg("PANIC!!! NMI received\n");
-	PANIC();
-	return 0;
-}
-
 static int tiva_busfault(int irq, FAR void *context, FAR void *arg)
 {
 	(void)irqsave();
@@ -196,6 +187,15 @@ static int tiva_usagefault(int irq, FAR void *context, FAR void *arg)
 {
 	(void)irqsave();
 	dbg("PANIC!!! Usage fault received\n");
+	PANIC();
+	return 0;
+}
+
+#ifdef CONFIG_DEBUG
+static int tiva_nmi(int irq, FAR void *context, FAR void *arg)
+{
+	(void)irqsave();
+	dbg("PANIC!!! NMI received\n");
 	PANIC();
 	return 0;
 }
@@ -416,17 +416,16 @@ void up_irqinitialize(void)
 #ifdef CONFIG_ARMV7M_MPU
 	irq_attach(TIVA_IRQ_MEMFAULT, up_memfault, NULL);
 	up_enable_irq(TIVA_IRQ_MEMFAULT);
+#else
+	irq_attach(TIVA_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
+	irq_attach(TIVA_IRQ_BUSFAULT, tiva_busfault, NULL);
+	irq_attach(TIVA_IRQ_USAGEFAULT, tiva_usagefault, NULL);
 
 	/* Attach all other processor exceptions (except reset and sys tick) */
 
 #ifdef CONFIG_DEBUG
 	irq_attach(TIVA_IRQ_NMI, tiva_nmi, NULL);
-#ifndef CONFIG_ARMV7M_MPU
-	irq_attach(TIVA_IRQ_MEMFAULT, up_memfault, NULL);
-#endif
-	irq_attach(TIVA_IRQ_BUSFAULT, tiva_busfault, NULL);
-	irq_attach(TIVA_IRQ_USAGEFAULT, tiva_usagefault, NULL);
 	irq_attach(TIVA_IRQ_PENDSV, tiva_pendsv, NULL);
 	irq_attach(TIVA_IRQ_DBGMONITOR, tiva_dbgmonitor, NULL);
 	irq_attach(TIVA_IRQ_RESERVED, tiva_reserved, NULL);
