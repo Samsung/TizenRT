@@ -54,9 +54,9 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <debug.h>
+#include <tinyara/arch.h>
 #include <tinyara/mm/mm.h>
-
+#include <debug.h>
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -127,7 +127,12 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 		 * Retake the semaphore for each region to reduce latencies
 		 */
 
-		mm_takesemaphore(heap);
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+		if (!up_interrupt_context())
+#endif
+		{
+			mm_takesemaphore(heap);
+		}
 
 		prev = NULL;
 		node = heap->mm_heapstart[region];
@@ -140,7 +145,12 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				dump_node(prev, TYPE_OVERFLOWED);
 				dump_node(node, TYPE_CORRUPTED);
 				dbg("#########################################################################################\n");
-				mm_givesemaphore(heap);
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+				if (!up_interrupt_context())
+#endif
+				{
+					mm_givesemaphore(heap);
+				}
 				return -1;
 			} else if (node->size != MM_PREV_NODE_SIZE(next)) {
 				dbg("#########################################################################################\n");
@@ -156,7 +166,12 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				dump_node(node, TYPE_OVERFLOWED);
 				dump_node(next, TYPE_CORRUPTED);
 				dbg("#########################################################################################\n");
-				mm_givesemaphore(heap);
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+				if (!up_interrupt_context())
+#endif
+				{
+					mm_givesemaphore(heap);
+				}
 				return -1;
 			} else if (IS_FREE_NODE(node)) {
 				if ((((struct mm_freenode_s *)node)->blink && ((struct mm_freenode_s *)node)->blink->flink != ((struct mm_freenode_s *)node))) {
@@ -167,7 +182,12 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					dbg("Corrupted node blink(0x%08x) and prev node flink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->blink,
 							((struct mm_freenode_s *)node)->blink->flink);
 					dbg("#########################################################################################\n");
-					mm_givesemaphore(heap);
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+					if (!up_interrupt_context())
+#endif
+					{
+						mm_givesemaphore(heap);
+					}
 					return -1;
 				} else if (((struct mm_freenode_s *)node)->flink && ((struct mm_freenode_s *)node)->flink->blink != ((struct mm_freenode_s *)node)) {
 					dbg("#########################################################################################\n");
@@ -177,13 +197,24 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					dbg("Corrupted node flink(0x%08x) and next node blink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->flink,
 							((struct mm_freenode_s *)node)->flink->blink);
 					dbg("#########################################################################################\n");
-					mm_givesemaphore(heap);
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+					if (!up_interrupt_context())
+#endif
+					{
+						mm_givesemaphore(heap);
+					}
 					return -1;
 				}
 			}
 		}
 	}
 
-	mm_givesemaphore(heap);
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+	if (!up_interrupt_context())
+#endif
+	{
+		mm_givesemaphore(heap);
+	}
+
 	return 0;
 }
