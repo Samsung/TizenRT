@@ -15,19 +15,24 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef __ARCH_ARM_INCLUDE_REBOOT_REASON_H
-#define __ARCH_ARM_INCLUDE_REBOOT_REASON_H
 
+#include <tinyara/config.h>
+#include <arch/reboot_reason.h>
 #include <tinyara/reboot_reason.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void up_reboot_reason_init(void);
-reboot_reason_code_t up_reboot_reason_read(void);
-void up_reboot_reason_write(reboot_reason_code_t reason);
-void reboot_reason_write_user_intended(void);
-void up_reboot_reason_clear(void);
-
-#endif	/* __ARCH_ARM_INCLUDE_REBOOT_REASON_H */
+/****************************************************************************
+ * Name: reboot_reason_trywrite
+ ****************************************************************************/
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+void reboot_reason_write_user_intended(void)
+{
+	/* Write REBOOT_SYSTEM_USER_INTENDED only when there is no written reason before. */
+	if (up_reboot_reason_read() == REBOOT_REASON_INITIALIZED) {
+		up_reboot_reason_write(REBOOT_SYSTEM_USER_INTENDED);
+	}
+}
+#endif
