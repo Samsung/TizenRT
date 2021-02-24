@@ -116,7 +116,7 @@ do
 	elif [ "$pname" == "ota" ]; then
 		pname_text="OTA download"
 		ro=0
-	elif [ "$pname" == "user" ]; then
+	elif [ "$pname" == "userfs" ]; then
 		pname_text="USER R/W"
 		ro=0
 	elif [ "$pname" == "rom" ]; then
