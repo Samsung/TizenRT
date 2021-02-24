@@ -56,9 +56,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
 #include <stdlib.h>
-#endif
 #ifdef CONFIG_WATCHDOG
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -82,6 +80,7 @@ static void display_reboot_reason_option(void)
 #ifdef CONFIG_WATCHDOG
 	printf("\t-Press W or w : Watchdog Reset Test\n");
 #endif
+	printf("\t-Press P or p : Prefetch Abort Test\n");
 	printf("\t-Press V or v : Random Value Write-Read Test\n");
 	printf("\t-Press C or c : Clear reboot reason\n");
 	printf("\t-Press R or r : Check previous reboot reason\n");
@@ -141,6 +140,14 @@ static void memory_alloc_fail_test(void)
 }
 #endif
 
+static void prefetch_abort_test(void)
+{
+	/* The address allocated from heap can't be code. This will lead prefetch abort. */
+	int *ptr = (int *)malloc(1024);
+	int (*fp)(int, int) = ptr;
+	fp(3, 4);
+}
+
 static void reboot_board(void)
 {
 #ifdef CONFIG_LIB_BOARDCTL
@@ -193,6 +200,12 @@ int reboot_reason_main(int argc, char *argv[])
 			watchdog_test();
 			break;
 #endif
+		case 'P':
+		case 'p':
+			/* Test for Prefetch Abort */
+			printf("After Prefetch Abort, Expected Reboot reason is %d\n", REBOOT_SYSTEM_PREFETCHABORT);
+			prefetch_abort_test();
+			break;
 		case 'V':
 		case 'v':
 			/* Test for Temp value write-read */
