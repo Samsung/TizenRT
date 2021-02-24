@@ -88,6 +88,9 @@
 
 #include <tinyara/mm/mm.h>
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <arch/reboot_reason.h>
+#endif
 #include "sched/sched.h"
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
@@ -456,6 +459,10 @@ void dump_all_stack(void)
 void up_assert(const uint8_t *filename, int lineno)
 {
 	board_led_on(LED_ASSERTION);
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	reboot_reason_write_user_intended();
+#endif
 
 #if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
 	abort_mode = true;
