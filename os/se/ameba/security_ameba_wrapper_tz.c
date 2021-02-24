@@ -201,16 +201,18 @@ int se_ameba_hal_deinit(void)
 int se_ameba_hal_free_data(hal_data *data)
 {
 	AWRAP_ENTER;
-	int ret = HAL_SUCCESS;
 
-	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
-	ret = ameba_hal_free_data(data);
-	up_free_secure_context();
-
-	if (ret != HAL_SUCCESS) {
-		sedbg("RTL SE failed (%zu)\n", ret);
+	if (data) {
+		if (data->data) {
+			kmm_free(data->data);
+			data->data = NULL;
+		}
+		if (data->priv) {
+			kmm_free(data->priv);
+			data->priv = NULL;
+		}
 	}
-	return ret;
+	return HAL_SUCCESS;
 }
 
 int se_ameba_hal_get_status(void)
