@@ -373,7 +373,7 @@ void up_irqinitialize(void)
    * Fault handler.
    */
 
-#ifdef CONFIG_ARM_MPU
+#ifdef CONFIG_ARMV7M_MPU
   irq_attach(STM32L4_IRQ_MEMFAULT, up_memfault, NULL);
   up_enable_irq(STM32L4_IRQ_MEMFAULT);
 #endif
@@ -382,7 +382,7 @@ void up_irqinitialize(void)
 
 #ifdef CONFIG_DEBUG
   irq_attach(STM32L4_IRQ_NMI, stm32l4_nmi, NULL);
-#ifndef CONFIG_ARM_MPU
+#ifndef CONFIG_ARMV7M_MPU
   irq_attach(STM32L4_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
   irq_attach(STM32L4_IRQ_BUSFAULT, stm32l4_busfault, NULL);
