@@ -177,7 +177,7 @@ void binary_manager_register_kpart(int part_num, int part_size)
  * Name: binary_manager_scan_kbin
  *
  * Description:
- *	 This function scans kernel binaries and update infomation.
+ *	 This function scans kernel binaries and update information.
  *
  ****************************************************************************/
 bool binary_manager_scan_kbin(void)
