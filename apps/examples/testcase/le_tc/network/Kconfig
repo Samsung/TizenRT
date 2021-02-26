@@ -53,7 +53,7 @@ config TC_NET_SOCKET
 config TC_NET_PBUF
 	bool "pbuf() api "
 	default n
-	select DRIVERS_KERNEL_TEST
+	select DRIVERS_OS_API_TEST
 
 config TC_NET_SETSOCKOPT
 	bool "setsockopt() api"

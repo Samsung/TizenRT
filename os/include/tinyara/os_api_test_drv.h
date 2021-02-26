@@ -30,14 +30,14 @@
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
 
-#ifdef CONFIG_DRIVERS_KERNEL_TEST
+#ifdef CONFIG_DRIVERS_OS_API_TEST
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 /* Configuration
  *
- * CONFIG_DRIVERS_KERNEL_TEST - Enables kernel_test driver support
+ * CONFIG_DRIVERS_OS_API_TEST - Enables OS API test driver support
  */
 
 /* IOCTL Commands */
@@ -119,5 +119,5 @@ void os_api_test_drv_register(void);
 }
 #endif
 
-#endif							/* CONFIG_DRIVERS_KERNEL_TEST */
+#endif							/* CONFIG_DRIVERS_OS_API_TEST */
 #endif							/* __INCLUDE_TINYARA_OS_API_TEST_DRV_H */

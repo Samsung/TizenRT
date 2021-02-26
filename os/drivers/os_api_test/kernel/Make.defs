@@ -17,7 +17,7 @@
 ############################################################################
 # Include OS API test drivers
 
-ifeq ($(CONFIG_DRIVERS_KERNEL_TEST),y)
+ifeq ($(CONFIG_DRIVERS_OS_API_TEST),y)
 
 CSRCS += test_task.c
 CSRCS += test_sched.c

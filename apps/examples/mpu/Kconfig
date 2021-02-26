@@ -6,7 +6,7 @@
 config EXAMPLES_MPU_TEST
 	bool "MPU TestCase Example"
 	depends on BUILD_PROTECTED
-	select DRIVERS_KERNEL_TEST
+	select DRIVERS_OS_API_TEST
 	---help---
 		Enable the MPU TestCase Example
 

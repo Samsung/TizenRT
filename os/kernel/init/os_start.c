@@ -76,7 +76,7 @@
 #ifdef CONFIG_DEBUG_SYSTEM
 #include  <tinyara/debug/sysdbg.h>
 #endif
-#ifdef CONFIG_DRIVERS_KERNEL_TEST
+#ifdef CONFIG_DRIVERS_OS_API_TEST
 #include  <tinyara/os_api_test_drv.h>
 #endif
 
@@ -532,7 +532,7 @@ void os_start(void)
 
 	fs_auto_mount();
 
-#ifdef CONFIG_DRIVERS_KERNEL_TEST
+#ifdef CONFIG_DRIVERS_OS_API_TEST
 	os_api_test_drv_register();
 #endif
 

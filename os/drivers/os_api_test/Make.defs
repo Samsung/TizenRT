@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_DRIVERS_KERNEL_TEST),y)
+ifeq ($(CONFIG_DRIVERS_OS_API_TEST),y)
 include os_api_test$(DELIM)kernel$(DELIM)Make.defs
 include os_api_test$(DELIM)network$(DELIM)Make.defs
 CSRCS += os_api_test_drv.c
