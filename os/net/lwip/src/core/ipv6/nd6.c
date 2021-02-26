@@ -2242,9 +2242,6 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 					LWIP_DEBUGF(ND6_DEBUG, ("Failed to find router, need to NUD\n"));
 				}
 			}
-			else {
-
-			}
 		} else {
 			/* Not found. Create a new destination entry. */
 			i = nd6_new_destination_cache_entry();
