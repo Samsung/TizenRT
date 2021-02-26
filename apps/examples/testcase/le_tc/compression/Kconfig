@@ -19,7 +19,7 @@ config TC_LZMA
 config TC_COMPRESS_READ
 	bool "Testcase for Compression APIs"
 	default n
-	select DRIVERS_KERNEL_TEST
+	select DRIVERS_OS_API_TEST
 	select LIBLZMA
 	select COMPRESSED_BINARY
 

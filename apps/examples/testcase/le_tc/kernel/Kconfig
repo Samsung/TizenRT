@@ -6,7 +6,7 @@
 menuconfig EXAMPLES_TESTCASE_KERNEL
 	bool "Kernel TestCase Example"
 	default y
-	select DRIVERS_KERNEL_TEST
+	select DRIVERS_OS_API_TEST
 	---help---
 		Enable the Kernel TestCase Example
 
