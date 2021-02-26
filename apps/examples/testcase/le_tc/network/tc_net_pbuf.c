@@ -39,7 +39,7 @@
 * @brief		:check for the memory allocation for the pbuf by transport layer
 * @scenario		:
 * @apicovered		:pbuf_alloc()
-* @precondition 	:
+* @precondition	:
 * @postcondition	:
 */
 static void tc_net_pbuf_layer_transport_p(int fd)
@@ -61,7 +61,7 @@ static void tc_net_pbuf_layer_transport_p(int fd)
 * @brief		:check for the memory allocation for the pbuf by ip layer
 * @scenario		:
 * @apicovered		:pbuf_alloc()
-* @precondition 	:
+* @precondition	:
 * @postcondition	:
 */
 static void tc_net_pbuf_layer_ip_p(int fd)
@@ -83,7 +83,7 @@ static void tc_net_pbuf_layer_ip_p(int fd)
 * @brief		:check for the memory allocation for the pbuf by link layer
 * @scenario		:
 * @apicovered		:pbuf_alloc()
-* @precondition 	:
+* @precondition	:
 * @postcondition	:
 */
 static void tc_net_pbuf_layer_link_p(int fd)
@@ -105,7 +105,7 @@ static void tc_net_pbuf_layer_link_p(int fd)
 * @brief		:check for the memory allocation for the pbuf by encapsulating link layer headers (e.g. 802.11)
 * @scenario		:
 * @apicovered		:pbuf_alloc()
-* @precondition 	:
+* @precondition	:
 * @postcondition	:
 */
 static void tc_net_pbuf_layer_raw_tx_p(int fd)
@@ -118,7 +118,7 @@ static void tc_net_pbuf_layer_raw_tx_p(int fd)
 	args.type = PBUF_RAM;
 
 	ret = ioctl(fd, TESTIOC_NET_PBUF, &args);
-	TC_ASSERT_GEQ("pbuf",ret, 1);
+	TC_ASSERT_GEQ("pbuf", ret, 1);
 	TC_SUCCESS_RESULT();
 }
 
@@ -127,7 +127,7 @@ static void tc_net_pbuf_layer_raw_tx_p(int fd)
 * @brief		:check for the memory allocation for the pbuf by RX buffers
 * @scenario		:
 * @apicovered		:pbuf_alloc()
-* @precondition 	:
+* @precondition	:
 * @postcondition	:
 */
 static void tc_net_pbuf_layer_raw_p(int fd)
@@ -149,7 +149,7 @@ static void tc_net_pbuf_layer_raw_p(int fd)
 * @brief		:passed incorrect layer
 * @scenario		:
 * @apicovered		:pbuf_alloc()
-* @precondition 	:
+* @precondition	:
 * @postcondition	:
 */
 static void tc_net_pbuf_layer_n(int fd)
@@ -171,7 +171,7 @@ static void tc_net_pbuf_layer_n(int fd)
 * @brief		:passed incorrect type. type parameter decides how and where the pbuf should be allocated.
 * @scenario		:
 * @apicovered		:pbuf_alloc()
-* @precondition 	:
+* @precondition	:
 * @postcondition	:
 */
 static void tc_net_pbuf_type_n(int fd)

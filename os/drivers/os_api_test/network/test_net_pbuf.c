@@ -56,7 +56,7 @@ int test_net_pbuf(int cmd, unsigned long arg)
 {
 	int ret = -1;
 
-	switch(cmd) {
+	switch (cmd) {
 	case TESTIOC_NET_PBUF:
 		ret = test_pbuf(arg);
 		break;

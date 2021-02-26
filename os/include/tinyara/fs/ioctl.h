@@ -161,10 +161,9 @@
 										 * OUT: Bytes writable to this fd
 										 */
 
-#define FIONBIO         _FIOC(0x000b)     /* IN:  Boolean option takes an
-                                           *      int value.
-                                           * OUT: Origin option.
-                                           */
+#define FIONBIO         _FIOC(0x000b)     /* IN:  Boolean option takes an int value.
+										 * OUT: Origin option.
+										 */
 
 /* TinyAra file system ioctl definitions **************************************/
 
