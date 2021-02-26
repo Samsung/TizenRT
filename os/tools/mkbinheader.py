@@ -23,7 +23,7 @@ import sys
 import struct
 import string
 
-CONFIG_DIR = '/root/tizenrt/os'
+cfg_path = os.path.dirname(__file__) + '/../.config'
 
 # User Binary Format
 ELF = 1
@@ -90,7 +90,6 @@ def get_static_ram_size(bin_type):
         # If CONFIG_OPTIMIZE_APP_RELOAD_TIME is enabled, then we will make a copy
         # of the data section inside the ro section and it will be used in
         # reload time. So, we add datasize to rosize to make place for data section.
-        cfg_path = os.getenv('TOPDIR') + '/.config'
         if check_optimize_config(cfg_path) == True:
             rosize = rosize + datasize;
             rosize = roundup_power_two(rosize)
@@ -136,8 +135,7 @@ def make_kernel_binary_header():
     header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINVER + SIZE_OF_BINSIZE + SIZE_OF_SECURE_HEADER_SIZE
 
     # Get binary version
-    config_path = CONFIG_DIR + '/.config'
-    bin_ver = get_config_value(config_path, "CONFIG_BINARY_VERSION=")
+    bin_ver = get_config_value(cfg_path, "CONFIG_BINARY_VERSION=")
     if bin_ver < 0 :
         print("Error : Not Found config for version, CONFIG_BINARY_VERSION")
         sys.exit(1)
@@ -249,11 +247,10 @@ def make_user_binary_header():
         print("Dynamic ram size : %d, Main stack size : %d" %(int(dynamic_ram_size), int(main_stack_size)))
         sys.exit(1)
 
-    config_path = CONFIG_DIR + '/.config'
-    priority = get_config_value(config_path, "CONFIG_BM_PRIORITY_MAX=")
+    priority = get_config_value(cfg_path, "CONFIG_BM_PRIORITY_MAX=")
     if priority > 0 :
         BM_PRIORITY_MAX = priority
-    priority = get_config_value(config_path, "CONFIG_BM_PRIORITY_MIN=")
+    priority = get_config_value(cfg_path, "CONFIG_BM_PRIORITY_MIN=")
     if priority > 0 :
         BM_PRIORITY_MIN = priority
 
@@ -287,7 +284,6 @@ def make_user_binary_header():
             sys.exit(1)
 
         static_ram_size = get_static_ram_size(bin_type)
-        cfg_path = CONFIG_DIR + '/.config'
         if check_optimize_config(cfg_path) == True:
             binary_ram_size = int(dynamic_ram_size)
         else:
@@ -295,8 +291,7 @@ def make_user_binary_header():
             binary_ram_size = roundup_power_two(binary_ram_size)
 
         # Get kernel binary version
-        config_path = CONFIG_DIR + '/.config'
-        kernel_ver = get_config_value(config_path, "CONFIG_BINARY_VERSION=")
+        kernel_ver = get_config_value(cfg_path, "CONFIG_BINARY_VERSION=")
         if kernel_ver < 0 :
             print("Error : Not Found config for kernel version, CONFIG_BINARY_VERSION")
             sys.exit(1)
