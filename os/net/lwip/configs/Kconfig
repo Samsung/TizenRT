@@ -13,15 +13,31 @@ menuconfig NET_IPv4
 
 source "net/lwip/configs/ipv4/Kconfig"
 
-menuconfig NET_IPv6
-	bool "IPv6 support"
+menuconfig NET_ICMP
+	bool "ICMP Support"
+	depends on NET_IPv4
 	default n
 	---help---
-		Build in support for IPv6.
+		Enable minimal ICMP support. Includes built-in support
+		for sending replies to received ECHO (ping) requests.
 
-source "net/lwip/configs/ipv6/Kconfig"
+if NET_ICMP
+source "net/lwip/configs/icmp/Kconfig"
+endif
 
-source "net/lwip/configs/socket/Kconfig"
+menuconfig NET_LWIP_IGMP
+	bool "IGMP Support"
+	depends on NET_IPv4
+	default n
+
+if NET_LWIP_IGMP
+config NET_LWIP_MEMP_NUM_IGMP_GROUP
+	int "Maximum number of IGMP group"
+	default 8
+	---help---
+		Number of multicast groups whose network interfaces
+		can be members at the same time
+endif #NET_LWIP_IGMP
 
 menuconfig NET_ARP
 	bool "ARP Support"
@@ -41,7 +57,6 @@ menuconfig NET_UDP
 
 source "net/lwip/configs/udp/Kconfig"
 
-
 menuconfig NET_TCP
 	bool "TCP Support"
 	depends on NET_IPv4 || NET_IPv6
@@ -52,32 +67,13 @@ menuconfig NET_TCP
 source "net/lwip/configs/tcp/Kconfig"
 
 
-menuconfig NET_ICMP
-	bool "ICMP Support"
-	depends on NET_IPv4
+menuconfig NET_IPv6
+	bool "IPv6 support"
 	default n
 	---help---
-		Enable minimal ICMP support. Includes built-in support
-		for sending replies to received ECHO (ping) requests.
+		Build in support for IPv6.
 
-if NET_ICMP
-source "net/lwip/configs/icmp/Kconfig"
-endif
-
-menuconfig NET_LWIP_IGMP
-	bool "IGMP Support"
-	depends on NET_IPv4	
-	default n
-
-if NET_LWIP_IGMP
-
-config NET_LWIP_MEMP_NUM_IGMP_GROUP
-	int "Maximum number of IGMP group"
-	default 8
-	---help---
-		Number of multicast groups whose network interfaces
-		can be members at the same time
-endif #NET_LWIP_IGMP
+source "net/lwip/configs/ipv6/Kconfig"
 
 if NET_IPv6
 source "net/lwip/configs/nd/Kconfig"
@@ -100,7 +96,7 @@ config NET_IPv6_DHCP
 	---help---
 		Enable DHCPv6 stateful address autoconfiguration.
 
-
+source "net/lwip/configs/socket/Kconfig"
 source "net/lwip/configs/mbox/Kconfig"
 source "net/lwip/configs/mem/Kconfig"
 source "net/lwip/configs/sys/Kconfig"
@@ -125,9 +121,7 @@ config NET_LWIP_VLAN_CHECK_ID
 	default 1
 	depends on NET_LWIP_VLAN_CHECK
 
-
 ################# SLIP #######################
-
 menuconfig NET_LWIP_SLIP_INTERFACE
 	bool "Support serial line IP interface"
 	default n
@@ -148,9 +142,7 @@ config NET_LWIP_SLIPIF_THREAD_PRIO
 
 endif #NET_LWIP_SLIP_INTERFACE
 
-
 ################# PPP #######################
-
 menuconfig NET_LWIP_PPP_SUPPORT
 	bool "Enable PPP"
 	default n
@@ -195,9 +187,7 @@ config NET_LWIP_PPP_THREAD_PRIO
 
 endif #NET_LWIP_PPP_SUPPORT
 
-
 ################# SNMP #######################
-
 menuconfig NET_LWIP_SNMP
 	bool "Enable SNMP"
 	default n
