@@ -3,9 +3,10 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-menu "ICMP6 Support"
+menu "ICMPv6 (RFC 4443)"
 
 config NET_IPv6_ICMP
+	bool
 	depends on NET_IPv6
 	default y
 	---help---
