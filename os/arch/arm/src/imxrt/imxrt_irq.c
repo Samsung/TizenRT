@@ -182,8 +182,8 @@ static void imxrt_dumpnvic(const char *msg, int irq)
 #endif
 
 /****************************************************************************
- * Name: imxrt_nmi, imxrt_busfault, imxrt_usagefault, imxrt_pendsv,
- *       imxrt_dbgmonitor, imxrt_pendsv, imxrt_reserved
+ * Name: imxrt_nmi, imxrt_pendsv, imxrt_dbgmonitor,
+ *       imxrt_pendsv, imxrt_reserved
  *
  * Description:
  *   Handlers for various exceptions.  None are handled and all are fatal
@@ -191,22 +191,6 @@ static void imxrt_dumpnvic(const char *msg, int irq)
  *   unexpected interrupt handler is that they provide a diagnostic output.
  *
  ****************************************************************************/
-
-static int imxrt_busfault(int irq, FAR void *context, FAR void *arg)
-{
-	(void)irqsave();
-	dbg("PANIC!!! Bus fault received: %08x\n", getreg32(NVIC_CFAULTS));
-	PANIC();
-	return 0;
-}
-
-static int imxrt_usagefault(int irq, FAR void *context, FAR void *arg)
-{
-	(void)irqsave();
-	dbg("PANIC!!! Usage fault received: %08x\n", getreg32(NVIC_CFAULTS));
-	PANIC();
-	return 0;
-}
 
 #ifdef CONFIG_DEBUG_FEATURES
 static int imxrt_nmi(int irq, FAR void *context, FAR void *arg)
@@ -440,10 +424,8 @@ void up_irqinitialize(void)
 #else
 	irq_attach(IMXRT_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
-
-
-	irq_attach(IMXRT_IRQ_BUSFAULT, imxrt_busfault, NULL);
-	irq_attach(IMXRT_IRQ_USAGEFAULT, imxrt_usagefault, NULL);
+	irq_attach(IMXRT_IRQ_BUSFAULT, up_busfault, NULL);
+	irq_attach(IMXRT_IRQ_USAGEFAULT, up_usagefault, NULL);
 
 	/* Attach all other processor exceptions (except reset and sys tick) */
 
