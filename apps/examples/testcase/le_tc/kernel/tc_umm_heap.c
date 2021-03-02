@@ -29,6 +29,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sched.h>
+#include <sys/wait.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/sched.h>
 #include "tc_internal.h"
@@ -308,7 +309,6 @@ static int umm_task(int argc, char *argv[])
 	tc_umm_heap_mallinfo();
 	tc_umm_heap_zalloc();
 
-	task_delete(0);
 	return 0;
 }
 
@@ -318,8 +318,13 @@ static int umm_task(int argc, char *argv[])
 
 int umm_heap_main(void)
 {
-	task_create("umm_task", 150, 2048, umm_task, (char * const *)NULL);
-	sleep(1);
+	int pid;
+	int stat_loc;
+	pid = task_create("umm_task", 150, 2048, umm_task, (char * const *)NULL);
+	pid = waitpid(pid, &stat_loc, 0);
+	if (pid < 0) {
+		sleep(5);
+	}
 
 	return 0;
 }
