@@ -56,6 +56,11 @@
 
 #include <tinyara/config.h>
 
+#undef CONFIG_DEBUG
+#undef CONFIG_DEBUG_ERROR
+#define CONFIG_DEBUG 1
+#define CONFIG_DEBUG_ERROR 1
+
 #include <assert.h>
 #include <debug.h>
 
@@ -74,13 +79,12 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#undef DEBUG_MEMFAULTS			/* Define to debug memory management faults */
-
-#ifdef DEBUG_MEMFAULTS
-#define mfdbg(format, ...) lldbg(format, ##__VA_ARGS__)
-#else
-#define mfdbg(...)
-#endif
+#define MMARVALID	0x00000080
+#define MLSPERR	0x00000020
+#define MSTKERR	0x00000010
+#define MUNSTKERR	0x00000008
+#define DACCVIOL	0x00000002
+#define IACCVIOL	0x00000001
 
 /****************************************************************************
  * Private Data
@@ -114,39 +118,36 @@ int up_memfault(int irq, FAR void *context, FAR void *arg)
 	/* Dump some memory management fault info */
 
 	(void)irqsave();
-	lldbg("PANIC!!! Memory Management Fault:\n");
-	mfdbg("  IRQ: %d context: %p\n", irq, regs);
-	lldbg("  CFAULTS: %08x MMFAR: %08x\n",
-		  getreg32(NVIC_CFAULTS), getreg32(NVIC_MEMMANAGE_ADDR));
-	mfdbg("  BASEPRI: %08x PRIMASK: %08x IPSR: %08x CONTROL: %08x\n",
-		  getbasepri(), getprimask(), getipsr(), getcontrol());
-	mfdbg("  R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		  regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3],
-		  regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
-	mfdbg("  R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		  regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11],
-		  regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
+	uint32_t *regs = (uint32_t *)context;
+	uint32_t cfsr = getreg32(NVIC_CFAULTS);
+	uint32_t mmfar = getreg32(NVIC_MEMMANAGE_ADDR);
+	lldbg("PANIC!!! Memory Management Fault occured while executing instruction at address : 0x%08x\n", regs[REG_R15]);
+	lldbg("CFAULTS: 0x%08x MMFAR: 0x%08x\n", cfsr, mmfar);
 
-#ifdef CONFIG_ARMV8M_USEBASEPRI
-#ifdef REG_EXC_RETURN
-	mfdbg("  xPSR: %08x BASEPRI: %08x EXC_RETURN: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_BASEPRI], current_regs[REG_EXC_RETURN]);
-#else
-	mfdbg("  xPSR: %08x BASEPRI: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_BASEPRI]);
-#endif
-#else
-#ifdef REG_EXC_RETURN
-	mfdbg("  xPSR: %08x PRIMASK: %08x EXC_RETURN: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_PRIMASK], current_regs[REG_EXC_RETURN]);
-#else
-	mfdbg("  xPSR: %08x PRIMASK: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_PRIMASK]);
-#endif
-#endif
+	if (cfsr & MMARVALID) {
+		lldbg("Access violation occured at address (MMFAR) : 0x%08x\n", mmfar);
+	} else {
+		lldbg("Unable to determine access violation address.\n");
+	}
+
+	if (cfsr & DACCVIOL) {
+		lldbg("Data access violation occured.\n");
+	} else if (cfsr & IACCVIOL) {
+		lldbg("Instruction access violation occured while fetching instruction from an Execute Never (XN) region.\n");
+	} else if (cfsr & MSTKERR) {
+		lldbg("Error while stacking registers during exception entry.\n");
+	} else if (cfsr & MUNSTKERR) {
+		lldbg("Error while unstacking registers during exception return.\n");
+	} else if (cfsr & MLSPERR) {
+		lldbg("Error occurred during lazy state preservation of Floating Point unit registers.\n");
+	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	 up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
+	if (cfsr & IACCVIOL) {
+		up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+	} else {
+		up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
+	}
 #endif
 	PANIC();
 	return OK;					/* Won't get here */

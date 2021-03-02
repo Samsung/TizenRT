@@ -165,8 +165,8 @@ static void tiva_dumpnvic(const char *msg, int irq)
 #endif
 
 /****************************************************************************
- * Name: tiva_nmi, tiva_busfault, tiva_usagefault, tiva_pendsv,
- *       tiva_dbgmonitor, tiva_pendsv, tiva_reserved
+ * Name: tiva_nmi, tiva_pendsv, tiva_dbgmonitor,
+ *       tiva_pendsv, tiva_reserved
  *
  * Description:
  *   Handlers for various execptions.  None are handled and all are fatal
@@ -174,22 +174,6 @@ static void tiva_dumpnvic(const char *msg, int irq)
  *   unexpected interrupt handler is that they provide a diagnostic output.
  *
  ****************************************************************************/
-
-static int tiva_busfault(int irq, FAR void *context, FAR void *arg)
-{
-	(void)irqsave();
-	dbg("PANIC!!! Bus fault recived\n");
-	PANIC();
-	return 0;
-}
-
-static int tiva_usagefault(int irq, FAR void *context, FAR void *arg)
-{
-	(void)irqsave();
-	dbg("PANIC!!! Usage fault received\n");
-	PANIC();
-	return 0;
-}
 
 #ifdef CONFIG_DEBUG
 static int tiva_nmi(int irq, FAR void *context, FAR void *arg)
@@ -419,8 +403,8 @@ void up_irqinitialize(void)
 #else
 	irq_attach(TIVA_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
-	irq_attach(TIVA_IRQ_BUSFAULT, tiva_busfault, NULL);
-	irq_attach(TIVA_IRQ_USAGEFAULT, tiva_usagefault, NULL);
+	irq_attach(TIVA_IRQ_BUSFAULT, up_busfault, NULL);
+	irq_attach(TIVA_IRQ_USAGEFAULT, up_usagefault, NULL);
 
 	/* Attach all other processor exceptions (except reset and sys tick) */
 

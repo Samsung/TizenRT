@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-m/up_memfault.c
- *
- *   Copyright (C) 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
+ * arch/arm/src/armv8-m/up_busfault.c
  ****************************************************************************/
 
 /****************************************************************************
@@ -79,12 +48,13 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define MMARVALID	0x00000080
-#define MLSPERR	0x00000020
-#define MSTKERR	0x00000010
-#define MUNSTKERR	0x00000008
-#define DACCVIOL	0x00000002
-#define IACCVIOL	0x00000001
+#define BFARVALID	0x00008000
+#define LSPERR	0x00002000
+#define STKERR	0x00001000
+#define UNSTKERR	0x00000800
+#define IMPRECISERR	0x00000400
+#define PRECISERR	0x00000200
+#define IBUSERR	0x00000100
 
 /****************************************************************************
  * Private Data
@@ -103,47 +73,44 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_memfault
+ * Name: up_busfault
  *
  * Description:
- *   This is Memory Management Fault exception handler.  Normally we get here
- *   when the Cortex M3 MPU is enabled and an MPU fault is detected.  However,
- *   I understand that there are other error conditions that can also generate
- *   memory management faults.
+ *   This is Bus Fault exception handler.
  *
  ****************************************************************************/
 
-int up_memfault(int irq, FAR void *context, FAR void *arg)
+int up_busfault(int irq, FAR void *context, FAR void *arg)
 {
-	/* Dump some memory management fault info */
-
 	(void)irqsave();
 	uint32_t *regs = (uint32_t *)context;
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
-	uint32_t mmfar = getreg32(NVIC_MEMMANAGE_ADDR);
-	lldbg("PANIC!!! Memory Management Fault occured while executing instruction at address : 0x%08x\n", regs[REG_R15]);
+	uint32_t bfar = getreg32(NVIC_BFAULT_ADDR);
+	lldbg("PANIC!!! Bus fault occured while executing instruction at address : 0x%08x\n", regs[REG_R15]);
 	lldbg("CFAULTS: 0x%08x\n", cfsr);
 
-	if (cfsr & MMARVALID) {
-		lldbg("Access violation occured at address (MMFAR) : 0x%08x\n", mmfar);
+	if (cfsr & BFARVALID) {
+		lldbg("Fault occured while accessing address (BFAR) : 0x%08x\n", bfar);
 	} else {
-		lldbg("Unable to determine access violation address.\n");
+		lldbg("Unable to determine fault address.\n");
 	}
 
-	if (cfsr & DACCVIOL) {
-		lldbg("Data access violation occured.\n");
-	} else if (cfsr & IACCVIOL) {
-		lldbg("Instruction access violation occured while fetching instruction from an Execute Never (XN) region.\n");
-	} else if (cfsr & MSTKERR) {
+	if (cfsr & PRECISERR) {
+		lldbg("Precise data access error occured.\n");
+	} else if (cfsr & IMPRECISERR) {
+		lldbg("Imprecise data access error occured.\n");
+	} else if (cfsr & STKERR) {
 		lldbg("Error while stacking registers during exception entry.\n");
-	} else if (cfsr & MUNSTKERR) {
+	} else if (cfsr & UNSTKERR) {
 		lldbg("Error while unstacking registers during exception return.\n");
-	} else if (cfsr & MLSPERR) {
+	} else if (cfsr & LSPERR) {
 		lldbg("Error occurred during lazy state preservation of Floating Point unit registers.\n");
+	} else if (cfsr & IBUSERR) {
+		lldbg("Error on an instruction prefetch.\n");
 	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	if (cfsr & IACCVIOL) {
+	if (cfsr & IBUSERR) {
 		up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
 	} else {
 		up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
@@ -151,5 +118,5 @@ int up_memfault(int irq, FAR void *context, FAR void *arg)
 #endif
 
 	PANIC();
-	return OK;					/* Won't get here */
+	return 0;
 }

@@ -145,8 +145,8 @@ static void amebad_dumpnvic(const char *msg, int irq)
 #endif
 
 /****************************************************************************
- * Name: amebad_nmi, amebad_busfault, amebad_usagefault, amebad_pendsv,
- *       amebad_dbgmonitor, amebad_pendsv, amebad_reserved
+ * Name: amebad_nmi, amebad_pendsv, amebad_dbgmonitor,
+ *       amebad_pendsv, amebad_reserved
  *
  * Description:
  *   Handlers for various execptions.  None are handled and all are fatal
@@ -154,28 +154,6 @@ static void amebad_dumpnvic(const char *msg, int irq)
  *   unexpected interrupt handler is that they provide a diagnostic output.
  *
  ****************************************************************************/
-
-static int amebad_busfault(int irq, FAR void *context, FAR void *arg)
-{
-  (void)irqsave();
-  dbg("PANIC!!! Bus fault received: %08x\n", getreg32(NVIC_CFAULTS));
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
-#endif
-  PANIC();
-  return 0;
-}
-
-static int amebad_usagefault(int irq, FAR void *context, FAR void *arg)
-{
-  (void)irqsave();
-  dbg("PANIC!!! Usage fault received: %08x\n", getreg32(NVIC_CFAULTS));
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
-#endif
-  PANIC();
-  return 0;
-}
 
 #ifdef CONFIG_DEBUG
 static int amebad_nmi(int irq, FAR void *context, FAR void *arg)
@@ -352,8 +330,8 @@ void up_irqinitialize(void)
 #ifdef CONFIG_ARMV8M_MPU
   irq_attach(AMEBAD_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
-  irq_attach(AMEBAD_IRQ_BUSFAULT, amebad_busfault, NULL);
-  irq_attach(AMEBAD_IRQ_USAGEFAULT, amebad_usagefault, NULL);
+  irq_attach(AMEBAD_IRQ_BUSFAULT, up_busfault, NULL);
+  irq_attach(AMEBAD_IRQ_USAGEFAULT, up_usagefault, NULL);
 
 #ifdef CONFIG_DEBUG
   irq_attach(AMEBAD_IRQ_NMI, amebad_nmi, NULL);
