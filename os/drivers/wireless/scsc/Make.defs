@@ -66,7 +66,7 @@ CSRCS += \
 ifeq ($(CONFIG_LWNL80211_SLSI),y)
 ifeq ($(CONFIG_NET_NETMGR), y)
 CSRCS += slsi_drv_netmgr.c
- else
+else
 CSRCS += slsi_drv_lwnl.c
 # CSRCS += slsi_drv.c
 endif
@@ -80,5 +80,9 @@ DEPPATH += --dep-path wireless$(DELIM)scsc
 VPATH += :wireless$(DELIM)scsc
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)..$(DELIM)external$(DELIM)wpa_supplicant$(DELIM)src}
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)scsc}
+
+ifeq ($(CONFIG_SCSC_CORE),y)
+include wireless$(DELIM)scsc$(DELIM)misc$(DELIM)Make.defs
+endif
 
 endif
