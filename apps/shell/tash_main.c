@@ -28,6 +28,9 @@
 #if !defined(CONFIG_DISABLE_POLL)
 #include <sys/select.h>
 #endif
+#ifdef CONFIG_SECURED_TASH
+#include <mbedtls/sha256.h>
+#endif
 #include <tinyara/ascii.h>
 #include "tash_internal.h"
 
@@ -104,7 +107,7 @@ static void tash_remove_char(char *char_pos)
 /** @brief Read the input command
  *  @ingroup tash
  */
-static char *tash_read_input_line(int fd)
+char *tash_read_input_line(int fd)
 {
 	#define SKIP_NEXT_CHAR(n)    char_idx += (n)
 	#define PREV_CHAR            buffer[pos - 1]
@@ -244,10 +247,18 @@ static char *tash_read_input_line(int fd)
 						CURR_CHAR = ASCII_LF;
 					}
 
-					/* echo */
-					if (write(fd, &CURR_CHAR, 1) <= 0) {
+#ifdef CONFIG_SECURED_TASH
+					if (tash_running || CURR_CHAR == ASCII_LF) {
+#endif
+						/* echo */
+						if (write(fd, &CURR_CHAR, 1) <= 0) {
+							shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+						}
+#ifdef CONFIG_SECURED_TASH
+					} else if (write(fd, "*", 1) <= 0) {
 						shdbg("TASH: echo failed (errno = %d)\n", get_errno());
 					}
+#endif
 
 					pos++;
 					if (pos >= TASH_LINEBUFLEN) {
@@ -322,6 +333,10 @@ static int tash_main(int argc, char *argv[])
 	if (fd < 0) {
 		exit(EXIT_FAILURE);
 	}
+
+#ifdef CONFIG_SECURED_TASH
+	tash_check_security(fd);
+#endif
 
 	tash_running = TRUE;
 
