@@ -264,6 +264,7 @@ static void linkdown_handler(rtk_reason_t *reason)
 //
 // Interface API
 //
+extern unsigned char wifi_monitor_on;
 trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
@@ -284,6 +285,8 @@ g_mode = RTK_WIFI_NONE;
 			ndbg("[RTK] Failed to start STA mode\n");
 			return wuret;
 		}
+		wifi_monitor_on = 1;
+		wifi_monitor_start();
 		g_mode = RTK_WIFI_STATION_IF;
 		wuret = TRWIFI_SUCCESS;
 	} else {
@@ -300,6 +303,7 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_NONE;
 		wuret = TRWIFI_SUCCESS;
+		wifi_monitor_on = 0;
 	} else {
 		ndbg("[RTK] Failed to stop STA mode\n");
 	}

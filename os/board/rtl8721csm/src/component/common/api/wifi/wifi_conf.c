@@ -175,6 +175,10 @@ extern int wext_close_lps_rf(const char *ifname);
 extern int rltk_wlan_reinit_drv_sw(const char *ifname, rtw_mode_t mode);
 extern int rltk_set_mode_prehandle(rtw_mode_t curr_mode, rtw_mode_t next_mode, const char *ifname);
 extern int rltk_set_mode_posthandle(rtw_mode_t curr_mode, rtw_mode_t next_mode, const char *ifname);	
+
+#define WIFI_MONITOR_TIMER 300000	/*val is in ms(5 mins)*/
+#define WIFI_MONITOR_STACKSIZE	1024
+#define WIFI_MONITOR_PRIORITY 100
 //----------------------------------------------------------------------------//
 static int wifi_connect_local(rtw_network_info_t *pWifi)
 {
@@ -2826,5 +2830,120 @@ int wifi_set_null1_param(uint8_t check_period, uint8_t limit, uint8_t interval)
 	return rltk_set_null1_param(check_period, limit, interval);
 }
 #endif
+
+#include "freertos/wrapper.h"
+extern Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
+unsigned char wifi_monitor_on = 0;
+static pthread_t wifimoninfo;
+
+typedef struct WIFI_MONITOR{
+	/*RX related*/
+	unsigned long rx_success_pkt_count;
+	unsigned long rx_success_bytes_count;
+	unsigned long rx_dropped_pkt_count;
+	int rx_rssi;
+	u32 rxd_beacon_count;
+
+	/*TX related*/
+	unsigned long tx_success_pkt_count;
+	unsigned long tx_success_bytes_count;
+	unsigned long tx_dropped_pkt_count;
+}wifi_monitor;
+
+static wifi_monitor wifi_monitor_info = {0};
+static wifi_monitor wifi_monitor_prev = {0};
+
+void wifi_get_monitor_info()
+{
+	struct net_device *dev = NULL;
+	struct net_device_stats *stats;
+	int rssi = 0;
+	int idx = 0;
+	u32 total_beacon_count = 0;
+	u32 rxd_beacon_count = 0;
+	u32 tmp_rxd_beacon_count = 0;
+	u32 missed_beacon_count = 0;
+
+	save_and_cli();
+
+	if(rltk_wlan_info[idx].enable) {
+		/*to get TX & RX packets status*/
+		dev = rltk_wlan_info[idx].dev;
+		stats = dev->get_stats(dev);
+		wifi_monitor_info.rx_success_pkt_count = stats->rx_packets;
+		wifi_monitor_info.rx_success_bytes_count = stats->rx_bytes;
+		wifi_monitor_info.rx_dropped_pkt_count = stats->rx_dropped;
+
+		wifi_monitor_info.tx_success_pkt_count = stats->tx_packets;
+		wifi_monitor_info.tx_success_bytes_count = stats->tx_bytes;
+		wifi_monitor_info.tx_dropped_pkt_count = stats->tx_dropped;
+
+		/*to get average rssi*/
+		wifi_get_rssi(&rssi);
+		wifi_monitor_info.rx_rssi = rssi;
+
+		/*to get beacon miss count*/
+		if (wifi_is_connected_to_ap() == RTW_SUCCESS)
+			total_beacon_count = WIFI_MONITOR_TIMER/100;		/*beacon interval: 100 ms*/
+		rltk_wlan_get_rxd_bcn_count(&rxd_beacon_count);
+		wifi_monitor_info.rxd_beacon_count = rxd_beacon_count;
+		tmp_rxd_beacon_count = wifi_monitor_info.rxd_beacon_count - wifi_monitor_prev.rxd_beacon_count;
+		missed_beacon_count = total_beacon_count - tmp_rxd_beacon_count;
+
+		RTW_API_INFO("\nWifi Monitor Information\r\n");
+
+		RTW_API_INFO("\nRX status\r\n");
+		RTW_API_INFO("successful_packets = %d\r\n", (wifi_monitor_info.rx_success_pkt_count - wifi_monitor_prev.rx_success_pkt_count));
+		RTW_API_INFO("successful_bytes = %d\r\n", (wifi_monitor_info.rx_success_bytes_count - wifi_monitor_prev.rx_success_bytes_count));
+		RTW_API_INFO("dropped_packets = %d\r\n", (wifi_monitor_info.rx_dropped_pkt_count - wifi_monitor_prev.rx_dropped_pkt_count));
+		RTW_API_INFO("average_RSSI = %d\r\n", wifi_monitor_info.rx_rssi);
+		RTW_API_INFO("missed_beacon = %d\r\n", missed_beacon_count);
+
+		RTW_API_INFO("\nTX status\r\n");
+		RTW_API_INFO("successful_packets = %d\r\n", (wifi_monitor_info.tx_success_pkt_count - wifi_monitor_prev.tx_success_pkt_count));
+		RTW_API_INFO("successful_bytes = %d\r\n", (wifi_monitor_info.tx_success_bytes_count - wifi_monitor_prev.tx_success_bytes_count));
+		RTW_API_INFO("dropped_packets = %d\r\n", (wifi_monitor_info.tx_dropped_pkt_count - wifi_monitor_prev.tx_dropped_pkt_count));
+	}
+
+	restore_flags();
+}
+
+void wifi_info_monitor()
+{
+	RTW_API_INFO("\nStart wifi monitor with interval: %d min\n", WIFI_MONITOR_TIMER/(60*1000));
+	rtw_memset(&wifi_monitor_info, 0, sizeof(wifi_monitor_info));
+	rtw_memset(&wifi_monitor_prev, 0, sizeof(wifi_monitor_prev));
+
+	while(wifi_monitor_on) {
+		rltk_wlan_monitor_info_enable(1);	/*1:enable, 0:disable*/
+		wifi_get_monitor_info();
+		memcpy(&wifi_monitor_prev, &wifi_monitor_info, sizeof(wifi_monitor_info));
+		rtw_msleep_os(WIFI_MONITOR_TIMER);
+	}
+}
+
+void wifi_monitor_start()
+{
+	int ret;
+	pthread_attr_t attr;
+	RTW_API_INFO("\nWifi Monitor Info thread\n");
+
+	/* Create wifi info monitor thread */
+	pthread_attr_init(&attr);
+	attr.stacksize = WIFI_MONITOR_STACKSIZE;
+	attr.priority = WIFI_MONITOR_PRIORITY;
+
+	ret = pthread_create(&wifimoninfo, &attr, wifi_info_monitor, NULL);
+	if (ret != OK) {
+		RTW_API_INFO("Failed to start the wifi monitor info: %d\n", ret);
+	}
+	ret = pthread_detach(wifimoninfo);
+	rltk_wlan_monitor_info_enable(0);	/*1:enable, 0:disable*/
+	if (ret != OK) {
+		RTW_API_INFO("Failed to detach the wifi monitor info: %d\n", ret);
+		pthread_cancel(wifimoninfo);
+	}
+	pthread_setname_np(wifimoninfo, "WifiMonitorInfo");
+}
 
 #endif	//#if CONFIG_WLAN
