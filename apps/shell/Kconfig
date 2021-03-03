@@ -23,6 +23,13 @@ config TASH_USLEEP
 	---help---
 		Enable 'usleep' command in TASH.
 
+config TASH_REBOOT
+	bool "Enable 'reboot' command in TASH"
+	default n
+	depends on BOARDCTL_RESET
+	---help---
+		Enable 'reboot' command in TASH.
+
 config TASH_COMMAND_INTERFACE
 	bool "enable command interface to TASH"
 	default n
