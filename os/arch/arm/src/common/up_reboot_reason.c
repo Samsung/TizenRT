@@ -31,7 +31,7 @@
 void reboot_reason_write_user_intended(void)
 {
 	/* Write REBOOT_SYSTEM_USER_INTENDED only when there is no written reason before. */
-	if (up_reboot_reason_read() == REBOOT_REASON_INITIALIZED) {
+	if (!up_reboot_reason_is_written()) {
 		up_reboot_reason_write(REBOOT_SYSTEM_USER_INTENDED);
 	}
 }
