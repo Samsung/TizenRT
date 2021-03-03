@@ -55,6 +55,7 @@
 
 #include <tinyara/config.h>
 
+#include <stdbool.h>
 #include <tinyara/reboot_reason.h>
 #include "ameba_soc.h"
 /****************************************************************************
@@ -109,5 +110,14 @@ void up_reboot_reason_clear(void)
 	 */
 	up_reboot_reason_write(REBOOT_REASON_INITIALIZED);
 	backup_reg = REBOOT_REASON_INITIALIZED;
+}
+
+bool up_reboot_reason_is_written(void)
+{
+	if (BKUP_Read(BKUP_REG1) != REBOOT_REASON_INITIALIZED) {
+		return true;
+	}
+
+	return false;
 }
 #endif
