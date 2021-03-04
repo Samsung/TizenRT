@@ -400,7 +400,7 @@ static wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 		if ((strcmp(method, wifi_test_auth_method[i]) == 0) || (result[0] && (strcmp(result[0], wifi_test_auth_method[i]) == 0))) {
 			if (result[2] != NULL) {
 				if (strcmp(result[2], "ent") == 0) {
-					return auth_type_table[i + 3];
+					return WIFI_MANAGER_AUTH_UNKNOWN;
 				}
 			}
 			return auth_type_table[i];
