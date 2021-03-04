@@ -357,14 +357,14 @@ static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN || config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
 		printf("[WT] SECURITY: unknown\n");
 	} else {
-		char security_type[20] = {0,};
+		char security_type[21] = {0,};
 		strncat(security_type, wifi_test_auth_method[config->ap_auth_type], 20);
 		wifi_manager_ap_auth_type_e tmp_type = config->ap_auth_type;
 		if (tmp_type == WIFI_MANAGER_AUTH_OPEN || tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN || tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
 			printf("[WT] SECURITY: %s\n", security_type);
 		} else {
-			strcat(security_type, "_");
-			strcat(security_type, wifi_test_crypto_method[config->ap_crypto_type]);
+			strncat(security_type, "_", strlen("_"));
+			strncat(security_type, wifi_test_crypto_method[config->ap_crypto_type], strlen(wifi_test_crypto_method[config->ap_crypto_type]));
 			printf("[WT] SECURITY: %s\n", security_type);
 		}
 	}
@@ -395,7 +395,7 @@ static wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 	result[2] = strtok_r(NULL, "_", &next_ptr);
 
 	int i = 0;
-	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
+	int list_size = sizeof(wifi_test_auth_method) / sizeof(wifi_test_auth_method[0]);
 	for (; i < list_size; i++) {
 		if ((strcmp(method, wifi_test_auth_method[i]) == 0) || (result[0] && (strcmp(result[0], wifi_test_auth_method[i]) == 0))) {
 			if (result[2] != NULL) {
@@ -420,7 +420,7 @@ static wifi_manager_ap_crypto_type_e get_crypto_type(const char *method)
 	result[1] = next_ptr;
 
 	int i = 0;
-	int list_size = sizeof(wifi_test_crypto_method)/sizeof(wifi_test_crypto_method[0]);
+	int list_size = sizeof(wifi_test_crypto_method) / sizeof(wifi_test_crypto_method[0]);
 	for (; i < list_size; i++) {
 		if (strcmp(result[1], wifi_test_crypto_method[i]) == 0) {
 			return crypto_type_table[i];
@@ -984,6 +984,8 @@ void wm_auto_test(void *arg)
 
 		printf("[WT] Cycle finished [Round %d]\n", cnt);
 	}
+	printf("[WT] Exit WiFi Manager Stress Test..\n");
+
 }
 
 static wm_test_e _wm_get_opt(int argc, char *argv[])
