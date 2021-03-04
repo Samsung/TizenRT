@@ -132,8 +132,8 @@
 #define FW_INFO_RSV4        (0x00)          // the firmware information reserved
 
 #define FLASH_HS_BOOT_ADDR				(SPI_FLASH_BASE + 0x4000)
-#define FLASH_RESERVED_DATA_BASE		0x2000  // reserve 8K for Image1
-#define FLASH_SYSTEM_DATA_ADDR		0x3000  // reserve 8K+4K for Image1 + Reserved data
+#define FLASH_RESERVED_DATA_BASE		0x80000  // Move to the place after write protection
+#define FLASH_SYSTEM_DATA_ADDR		0x81000  // Followed after reserved data
 #define FLASH_OTA1_CODE_ADDR			0x6020
 #define FLASH_SECTOR_SIZE				0x1000
 //BT calibration Data
