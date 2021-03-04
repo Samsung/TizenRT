@@ -38,19 +38,20 @@
 
 static inline int _send_msg(lwnl_msg *msg)
 {
+	int ret = 0;
+
 	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (fd < 0) {
-		return -1;
+		ret = -1;
+	} else {
+		if (write(fd, msg, sizeof(*msg)) < 0) {
+			ret = -2;
+		}
+
+		close(fd);
 	}
 
-	int res = write(fd, msg, sizeof(*msg));
-	if (res < 0) {
-		return -2;
-	}
-
-	close(fd);
-
-	return 0;
+	return ret;
 }
 
 int netlib_getifaddrs(struct ifaddrs **ifap)
