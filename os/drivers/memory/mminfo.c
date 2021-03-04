@@ -114,13 +114,13 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case HEAPINFO_HEAP_TYPE_BINARY:
 			heap = mm_get_app_heap_with_name(option->app_name);
-			if (heap == NULL) {
-				return -EINVAL;
-			}
 			break;
 #endif
 		default:
 			break;
+		}
+		if (heap == NULL) {
+			return -EINVAL;
 		}
 		if (option->mode == HEAPINFO_INIT_PEAK) {
 			heap->peak_alloc_size = 0;
