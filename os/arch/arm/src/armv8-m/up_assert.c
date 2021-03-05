@@ -75,6 +75,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 #include <debug.h>
 
@@ -133,6 +134,129 @@ extern sq_queue_t g_freemsg_list;
  * Private Functions
  ****************************************************************************/
 
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+/****************************************************************************
+ * Name: print_dumpstack_symbol
+ * Below API works if there is existance of System.map file in smart fs
+ ****************************************************************************/
+void print_dumpstack_symbol(unsigned long search_addr)
+{
+	FILE *pFile;
+	unsigned long addr;
+	unsigned long next_addr;
+	int first = 0;
+	int last;
+	int mid;
+	char line[128] = { '\0' };
+	char data[6][128] = { {'\0', '\0'} };
+	char c;
+	int word;
+	int ch_in_word;
+	int read_line;
+	int ch_in_line;
+
+	pFile = fopen("/mnt/System.map", "r");
+
+	/* Check if file System.map exists */
+	if (pFile == NULL) {
+		lldbg("Could not open file: /rom/System.map\n");
+		return;
+	}
+
+	// Obtain System.map file size
+	fseek(pFile, 0, SEEK_END);
+	last = ftell(pFile);
+
+	rewind(pFile);
+	mid = (first + last) / 2;
+	while (first <= last) {
+		fseek(pFile, mid, SEEK_SET);
+
+		/* If the file pointer is in the mid of the line, make sure
+		 * it's been properly moved to start of next line
+		 */
+		for (c = getc(pFile); c != '\n'; c = getc(pFile)) {
+			if (c == EOF) {
+				lldbg("Reached end of file and couldn't find symbol\n");
+				fclose(pFile);
+				return;
+			}
+		}
+		word = 0;
+		// Read 2 lines and split the string as words
+		for (read_line = 0; read_line < 2; read_line++) {
+			fgets(line, 128, pFile);
+			ch_in_line = 0;
+			ch_in_word = 0;
+			while (line[ch_in_line] != '\0') {
+				if (line[ch_in_line] != ' ') {
+					data[word][ch_in_word++] = line[ch_in_line];
+				} else {
+					data[word][ch_in_word] = '\0';
+					word++;
+					ch_in_word = 0;
+				}
+				ch_in_line++;
+				if (line[ch_in_line] == '\0') {
+					data[word][ch_in_word] = '\0';
+					word++;
+					ch_in_word = 0;
+				}
+			}
+		}
+		/* Convert the string data to hexadecimal */
+		addr = strtoul(data[0], NULL, 16);
+		next_addr = strtoul(data[3], NULL, 16);
+
+		if (search_addr >= addr && search_addr < next_addr) {
+			lldbg("Symbol:\t%35.*s\tAddress:\t0x%08x\n", strlen(data[2]) - 1, data[2], addr);
+			break;
+		}
+		if (search_addr < addr) {
+			last = mid - 1;
+		} else {
+			first = mid + 1;
+		}
+
+		mid = (first + last) / 2;
+	}
+	if (first > last) {
+		lldbg("symbol is not found in system map\n");
+	}
+
+	/* Close the file */
+	fclose(pFile);
+
+	return;
+}
+
+/****************************************************************************
+ * Name: up_kernel_dump
+ ****************************************************************************/
+
+static void up_text_dump(uint32_t sp, uint32_t stack_base)
+{
+	uint32_t stack;
+
+	for (stack = sp & ~0x1f; stack < stack_base; stack += 32) {
+		int i;
+		uint32_t *ptr = (uint32_t *)stack;
+
+		for(i = 0; i < 8; i++) {
+
+			/* Does the current stack pointer lie within the
+			 * kernel text section ?
+			 */
+			if(is_kernel_text_space((void *)ptr[i])) {
+
+				/* Print symbol lying within the kernel text section */
+				print_dumpstack_symbol(ptr[i]);
+			}
+		}
+	}
+}
+#endif	/* CONFIG_DEBUG_DISPLAY_SYMBOL */
+
 /****************************************************************************
  * Name: up_stackdump
  ****************************************************************************/
@@ -143,6 +267,7 @@ static void up_stackdump(uint32_t sp, uint32_t stack_base)
 	uint32_t stack;
 
 	for (stack = sp & ~0x1f; stack < stack_base; stack += 32) {
+		int i;
 		uint32_t *ptr = (uint32_t *)stack;
 		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
 			   stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
@@ -318,6 +443,9 @@ static void up_dumpstate(void)
 		/* Yes.. dump the interrupt stack */
 
 		up_stackdump(sp, istackbase);
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+		up_text_dump(sp, istackbase);
+#endif
 	}
 
 	/* Extract the user stack pointer if we are in an interrupt handler.
@@ -343,6 +471,9 @@ static void up_dumpstate(void)
 
 	if (sp <= ustackbase && sp > ustackbase - ustacksize) {
 		up_stackdump(sp, ustackbase);
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+		up_text_dump(sp, ustackbase);
+#endif
 	}
 #else
 
@@ -363,6 +494,9 @@ static void up_dumpstate(void)
 		lldbg("ERROR: Stack pointer is not within the allocated stack\n");
 	} else {
 		up_stackdump(sp, ustackbase);
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+		up_text_dump(sp, ustackbase);
+#endif
 	}
 
 #endif

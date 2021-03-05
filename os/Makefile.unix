@@ -503,8 +503,10 @@ ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	fi
 endif
 ifeq ($(CONFIG_DEBUG_DISPLAY_SYMBOL),y)
+	cp ${OUTBIN_DIR}/System.map ${TOOLSDIR}/fs/contents-smartfs/rtl8721csm/base-files/System.map
 	cp ${OUTBIN_DIR}/System.map ${TOOLSDIR}/fs/contents-romfs/System.map
 else
+	$(call DELFILE, ${TOOLSDIR}/fs/contents-smartfs/rtl8721csm/base-files/System.map)
 	$(call DELFILE, ${TOOLSDIR}/fs/contents-romfs/System.map)
 endif
 

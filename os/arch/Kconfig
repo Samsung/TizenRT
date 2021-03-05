@@ -462,7 +462,7 @@ config DEBUG_DISPLAY_SYMBOL
 	select DEBUG_SYMBOLS
 	select FRAME_POINTER
 	depends on ARCH_STACKDUMP
-	depends on FS_ROMFS
+	depends on FS_ROMFS || FS_SMARTFS
 	---help---
 		Enable to show symbol on call stack dump
 
