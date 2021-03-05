@@ -79,7 +79,13 @@ void sysinfo(void)
 
 	/* Print OS version and Build information */
 	/* just get values defined in version.h */
+#ifdef CONFIG_BINARY_VERSION
+	printf("\tVersion:\n");
+	printf("\t\tPlatform: " CONFIG_VERSION_STRING "\tBinary: %d\n", CONFIG_BINARY_VERSION);
+	printf("\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
+#else
 	printf("\tVersion: " CONFIG_VERSION_STRING "\n\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
+#endif
 	printf("\tBuild User: " CONFIG_VERSION_BUILD_USER "\n\tBuild Time: %s\n", CONFIG_VERSION_BUILD_TIME);
 
 	/* Get the current time as specific format in the buffer */
