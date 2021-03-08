@@ -73,18 +73,23 @@ function get_executable_name()
 	case $1 in
 		km0_bl) echo "km0_boot_all.bin";;
 		km4_bl) echo "km4_boot_all.bin";;
-		kernel) echo "km0_km4_image2.bin";;
+		kernel|ota) echo "km0_km4_image2.bin";;
 		userfs) echo "rtl8721csm_smartfs.bin";;
 		*) echo "No Binary Match"
 		exit 1
 	esac
 }
-
+flash_ota=false
 ##Utility function to get partition index ##
 function get_partition_index()
 {
 	for idx in ${!parts[@]}; do
 		if [[ ${parts[$idx],,} == ${1,,} ]]; then
+			if [[ $flash_ota == true ]]; then
+				## In this case, try to find 2nd kernel partition for OTA
+				flash_ota=false
+				continue;
+			fi
 			echo $idx
 			exit 1
 		fi
@@ -103,8 +108,8 @@ function rtl8721csm_dwld_help()
 
 	For examples:
 		make download ALL
-	        make download km0_bl km4_bl
 	        make download kernel
+		make download ota
 	        make download smartfs
 EOF
 }
@@ -208,7 +213,12 @@ done
 download_specific_partition()
 {
 	cd ${IMG_TOOL_PATH}
-	partidx=$(get_partition_index $1)
+	TARGET=$1
+	if [[ ${TARGET} == "ota" || ${TARGET} == "OTA" ]];then
+		TARGET="kernel"
+		flash_ota=true
+	fi
+	partidx=$(get_partition_index ${TARGET})
 	if [[ "${partidx}" < 0 ]];then
 		echo "Not supported"
 		rtl8721csm_dwld_help
@@ -217,10 +227,13 @@ download_specific_partition()
 
 	# Get a filename and Download a file
 	echo ""
-	echo "=========================="
-	echo "Downloading ${parts[$partidx]} binary"
-	echo "=========================="
-
+	echo "============================="
+	if [[ $1 == "ota" || $1 == "OTA" ]];then
+		echo "Downloading Kernel OTA binary"
+	else
+		echo "Downloading ${parts[$partidx]} binary"
+	fi
+	echo "============================="
 	exe_name=$(get_executable_name ${parts[$partidx]})
 	./amebad_image_tool $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
 
