@@ -121,7 +121,7 @@ ifneq ($(CONFIG_DEBUG_NOOPT),y)
 endif
 
 ifeq ($(CONFIG_FRAME_POINTER),y)
-  ARCHOPTIMIZATION += -fno-omit-frame-pointer -mapcs -mno-sched-prolog
+  ARCHOPTIMIZATION += -fomit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
 ARCHCFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
@@ -177,10 +177,17 @@ LDFLAGS += --gc-sections
 HOSTCC = gcc
 HOSTINCLUDES = -I.
 HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
-HOSTLDFLAGS = 
+HOSTLDFLAGS =
 
 define MAKE_BOARD_SPECIFIC_BIN
   $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_make_bin.sh
+endef
+
+KERNEL_BINARY_PATH='$(TOPDIR)/../build/output/bin/km0_km4_image2.bin'
+SECURE_HEADER_SIZE=32
+
+define MAKE_SAMSUNG_HEADER
+  $(TOPDIR)/../os/tools/mksamsungheader.py ${KERNEL_BINARY_PATH} kernel ${SECURE_HEADER_SIZE}
 endef
 
 define DOWNLOAD
