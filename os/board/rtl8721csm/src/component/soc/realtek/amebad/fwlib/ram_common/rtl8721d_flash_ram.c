@@ -541,4 +541,83 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 	}
 #endif
 }
+
+/**
+* @brief  This function is used to write data to flash in OneBitMode and User Mode.
+* @param  StartAddr: Start address in flash from which SPIC writes.
+* @param  DataPhaseLen: the number of bytes that SPIC sends in Data Phase.
+* @param  pData: pointer to a byte array that is to be sent.
+* @note
+*		- page program(256B) time typical is 0.7ms: BaudRate=2.9Mbps, so one bit mode is enough.
+*		- use FLASH_SW_CS_Control to protect flash write
+*		- flow control is added to prevent fifo from overflow
+* @retval none
+*/
+IMAGE2_RAM_TEXT_SECTION
+void FLASH_TxData256B_RAM(u32 StartAddr, u32 DataPhaseLen, u8* pData)
+{
+	SPIC_TypeDef *spi_flash = SPIC;
+	u32 tx_num= 0;
+	u32 ctrl0 = spi_flash->ctrlr0;
+	u8 addrbyte[4];
+	u8 fifo_alarm_level = 28;
+
+	assert_param(DataPhaseLen <= 256); /* max len is 256 */
+	assert_param((DataPhaseLen % 4) == 0); /* len should be 4 byte aligned */
+	assert_param((StartAddr & 0x03) == 0); /* addr should be 4 byte aligned */
+	assert_param(((StartAddr & 0xFF) + DataPhaseLen) <= 0x100); /* addr should be page(256) aligned */
+
+	/* write enable cmd */
+	FLASH_WriteEn();
+
+	/* disable SPI_FLASH user mode */
+	spi_flash->ssienr = 0;
+
+	/* set with TX mode and one bit mode */
+	spi_flash->ctrlr0 &= ~(BIT_TMOD(3) | BIT_CMD_CH(3) | BIT_ADDR_CH(3) | BIT_DATA_CH(3));
+	spi_flash->addr_length = flash_init_para.FLASH_addr_phase_len;
+
+	/* set write cmd & address to fifo */
+	addrbyte[3] = (StartAddr & 0xFF000000) >>24;
+	addrbyte[2] = (StartAddr & 0xFF0000) >>16;
+	addrbyte[1] = (StartAddr & 0xFF00)>>8;
+	addrbyte[0] = StartAddr & 0xFF;
+
+	if(flash_init_para.FLASH_addr_phase_len == ADDR_3_BYTE)
+		spi_flash->dr[0].word = FLASH_CMD_PP | (addrbyte[2] << 8) |(addrbyte[1] << 16) |(addrbyte[0] << 24);
+	else if(flash_init_para.FLASH_addr_phase_len == ADDR_4_BYTE){
+		spi_flash->dr[0].byte = FLASH_CMD_PP;
+		spi_flash->dr[0].word = (addrbyte[3]) | (addrbyte[2] << 8) |(addrbyte[1] << 16) |(addrbyte[0] << 24);
+	}
+
+	FLASH_SW_CS_Control(0);
+	/* enable SPI_FLASH user mode */
+	spi_flash->ssienr = 1;
+
+	tx_num = 0;
+	while (tx_num < DataPhaseLen) {
+		/* flow control*/
+		if ((spi_flash->txflr & 0x1F) <= fifo_alarm_level)
+		{
+			spi_flash->dr[0].word = *(u32*)(pData + tx_num);
+			tx_num += 4;
+		} else {
+			while((spi_flash->sr & 0x3) == 0x3);
+		}
+	}
+	FLASH_SW_CS_Control(1);
+
+	/* wait spic busy done */
+	FLASH_WaitBusy(WAIT_SPIC_BUSY);
+
+	/* disable SPI_FLASH user mode */
+	spi_flash->ssienr = 0;
+
+	/* wait write busy done */
+	FLASH_WaitBusy(WAIT_WRITE_DONE);
+
+	/* backup bitmode */
+	spi_flash->ctrlr0 = ctrl0;
+}
+
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
