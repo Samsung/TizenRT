@@ -110,6 +110,7 @@ SECTIONS
 	.ram_image2.text :
 	{
 		__ram_text_start__ = .;
+		_ram_kernel_text_start = ABSOLUTE(.);
 		_stext = ABSOLUTE(.);
 		*(.image2.ram.text*)
 		*(.image2.net.ram.text*)
@@ -191,12 +192,14 @@ SECTIONS
 		*lib_vikmemcpy.o (.text*)
 		*dq_rem.o (.text*)
 		*dq_addlast.o (.text*)
-		_etext = ABSOLUTE(.);
+		_ram_kernel_text_end = ABSOLUTE(.);
 		__ram_text_end__ = .;
 	} > BD_RAM_NS
 
 	_eronly = ABSOLUTE(.);
 
+		_stext = ABSOLUTE(.);
+		_etext = ABSOLUTE(.);
 	.ram_image2.data :
 	{
 		_sdata = ABSOLUTE(.);
@@ -239,6 +242,7 @@ SECTIONS
 	.xip_image2.text :
 	{
 		__flash_text_start__ = .;
+		_stext = ABSOLUTE(.);
 
 		*(.img2_custom_signature*)
 
@@ -268,6 +272,7 @@ SECTIONS
 		KEEP(*(.cmd.table.data*))
 		__cmd_table_end__ = .;
 
+		_etext = ABSOLUTE(.);
 		__flash_text_end__ = .;
 
 		. = ALIGN (16);

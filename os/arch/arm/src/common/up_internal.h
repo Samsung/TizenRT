@@ -255,13 +255,15 @@ EXTERN uint32_t g_dabtstackbase;	/* Initial top of data abort stack */
  *    of _data.  like:  uint32_t *pdata = &_sdata;
  */
 
-EXTERN uint32_t _stext;			/* Start of .text */
-EXTERN uint32_t _etext;			/* End_1 of .text + .rodata */
+EXTERN uint32_t _stext;			/* Start of .text in Flash region */
+EXTERN uint32_t _etext;			/* End_1 of .text + .rodata in Flash region */
 EXTERN const uint32_t _eronly;	/* End+1 of read only section (.text + .rodata) */
 EXTERN uint32_t _sdata;			/* Start of .data */
 EXTERN uint32_t _edata;			/* End+1 of .data */
 EXTERN uint32_t _sbss;			/* Start of .bss */
 EXTERN uint32_t _ebss;			/* End+1 of .bss */
+EXTERN uint32_t _ram_kernel_text_start;	/* Start of .text in RAM region */
+EXTERN uint32_t _ram_kernel_text_end;	/* End of .text in RAM region  */
 
 /* Sometimes, functions must be executed from RAM.  In this case, the following
  * macro may be used (with GCC!) to specify a function that will execute from
