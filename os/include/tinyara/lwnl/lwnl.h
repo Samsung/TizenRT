@@ -67,6 +67,7 @@ typedef enum {
 	LWNL_DISCONNECT_AP,
 	LWNL_START_SOFTAP,
 	LWNL_STOP_SOFTAP,
+	LWNL_IOCTL,
 	LWNL_REQ_UNKNOWN,
 } lwnl_req;
 
@@ -75,7 +76,7 @@ typedef struct {
 	lwnl_req req_type;
 	uint32_t data_len;
 	void *data;
-	lwnl_result_e res;
+	void *result;
 } lwnl_msg;
 
 // Todo lwnl return status need to be specified by interface type.

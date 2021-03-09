@@ -30,10 +30,11 @@ enum _wifimgr_evt {
 	EVT_DISCONNECT_CMD,			// Command to Disconnect from a connected WiFi AP
 	EVT_SCAN_CMD,				// Command to perform WiFi Scanning over WLAN channels
 	EVT_GETINFO_CMD,			// Command to get WiFi Manager information
+	EVT_GETSTATS_CMD,			// Command to get WiFi driver stats
 	EVT_RECONNECT_CMD,			// Command to reconnect to WiFi AP. If we use EVT_CONNECT_CMD, then we can't distinguish it's from application request
-	EVT_STA_CONNECTED,		// Event that STA is connected
+	EVT_STA_CONNECTED,			// Event that STA is connected
 	EVT_STA_CONNECT_FAILED, // Event that STA connect failed
-	EVT_STA_DISCONNECTED,   // Event that external STA disconnected from WiFi AP
+	EVT_STA_DISCONNECTED,	// Event that external STA disconnected from WiFi AP
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 	EVT_DHCPS_ASSIGN_IP,	// Event that SoftAP got IP address
 #else

@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <time.h>
 #include <tinyara/wifi/wifi_common.h>
 
 wifi_utils_ap_scan_info_s g_ap_info[5] = {

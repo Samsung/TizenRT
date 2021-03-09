@@ -28,73 +28,78 @@
 #include <tinyara/netmgr/netdev_mgr.h>
 #include "netdev_mgr_internal.h"
 
+#define TRDRV_CALL(res, dev, method, param)		\
+	do {										\
+		if (dev->t_ops.wl->method) {			\
+			res = (dev->t_ops.wl->method)param;	\
+		}										\
+	} while (0)
+
 int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
-	lwnl_result_e res = LWNL_FAIL;
+	trwifi_result_e res = TRWIFI_FAIL;
 	lldbg("T%d cmd(%d) (%p) (%d)\n", getpid(), cmd, data, data_len);
 	switch (cmd) {
 	case LWNL_INIT:
 	{
-		int ret = nm_ifup(dev);
-		if (ret != 0) {
-			ret = LWNL_FAIL;
+		if (0 == nm_ifup(dev)) {
+			res = TRWIFI_SUCCESS;
 		}
 	}
 	break;
 	case LWNL_DEINIT:
 	{
-		int ret = nm_ifdown(dev);
-		if (ret != 0) {
-			ret = LWNL_FAIL;
+		if (0 == nm_ifdown(dev)) {
+			res = TRWIFI_SUCCESS;
 		}
 	}
 	break;
 	case LWNL_GET_INFO:
 	{
-		trwifi_info *info = (trwifi_info *)data;
-		res = dev->t_ops.wl->get_info(dev, info);
+		TRDRV_CALL(res, dev, get_info, (dev, (trwifi_info *)data));
 	}
 	break;
 	case LWNL_SET_AUTOCONNECT:
 	{
-		uint8_t *check = (uint8_t *)data;
-		res = dev->t_ops.wl->set_autoconnect(dev, *check);
+		TRDRV_CALL(res, dev, set_autoconnect, (dev, *((uint8_t *)data)));
 	}
 	break;
 	case LWNL_START_STA:
 	{
-		res = dev->t_ops.wl->start_sta(dev);
+		TRDRV_CALL(res, dev, start_sta, (dev));
 	}
 	break;
 	case LWNL_CONNECT_AP:
 	{
-		trwifi_ap_config_s *config = (trwifi_ap_config_s *)data;
-		res = dev->t_ops.wl->connect_ap(dev, config, NULL);
+		TRDRV_CALL(res, dev, connect_ap, (dev, (trwifi_ap_config_s*)data, NULL));
 	}
 	break;
 	case LWNL_DISCONNECT_AP:
 	{
-		res = dev->t_ops.wl->disconnect_ap(dev, NULL);
+		TRDRV_CALL(res, dev, disconnect_ap, (dev, NULL));
 	}
 	break;
 	case LWNL_START_SOFTAP:
 	{
-		trwifi_softap_config_s *config = (trwifi_softap_config_s *)data;
-		res = dev->t_ops.wl->start_softap(dev, config);
+		TRDRV_CALL(res, dev, start_softap, (dev, (trwifi_softap_config_s *)data));
 	}
 	break;
 	case LWNL_STOP_SOFTAP:
 	{
-		res = dev->t_ops.wl->stop_softap(dev);
+		TRDRV_CALL(res, dev, stop_softap, (dev));
 	}
 	break;
 	case LWNL_SCAN_AP:
 	{
-		res = dev->t_ops.wl->scan_ap(dev, NULL);
+		TRDRV_CALL(res, dev, scan_ap, (dev, NULL));
+	}
+	break;
+	case LWNL_IOCTL:
+	{
+		TRDRV_CALL(res, dev, drv_ioctl, (dev, (trwifi_msg_s *)data));
 	}
 	break;
 	default:
-		res = LWNL_FAIL;
 		break;
 	}
 	return res;

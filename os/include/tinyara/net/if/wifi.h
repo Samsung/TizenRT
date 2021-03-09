@@ -14,6 +14,7 @@ typedef enum {
 	TRWIFI_BUSY,
 	TRWIFI_FILE_ERROR,
 	TRWIFI_ALREADY_CONNECTED,
+	TRWIFI_NOT_SUPPORTED,
 } trwifi_result_e;
 
 typedef enum {
@@ -23,22 +24,22 @@ typedef enum {
 	TRWIFI_IEEE_80211_G,				  /**<	IEEE 802.11g			  */
 	TRWIFI_IEEE_80211_N,				  /**<	IEEE 802.11n			  */
 	TRWIFI_IEEE_80211_AC,				  /**<	IEEE 802.11ac			  */
-	TRWIFI_NOT_SUPPORTED,				  /**<	Driver does not report	  */
+	TRWIFI_MODE_NOT_SUPPORTED,			  /**<	Driver does not report	  */
 } trwifi_standard_type_e;
 
 typedef enum {
 	TRWIFI_AUTH_OPEN,					 /**<  open mode								 */
 	TRWIFI_AUTH_WEP_SHARED,				 /**<  use shared key (wep key)					 */
-	TRWIFI_AUTH_WPA_PSK,					 /**<  WPA_PSK mode								 */
+	TRWIFI_AUTH_WPA_PSK,				 /**<  WPA_PSK mode								 */
 	TRWIFI_AUTH_WPA2_PSK,				 /**<  WPA2_PSK mode							 */
 	TRWIFI_AUTH_WPA3_PSK,				 /**<  WPA3_PSK mode							 */
 	TRWIFI_AUTH_WPA_AND_WPA2_PSK,		 /**<  WPA_PSK and WPA_PSK mixed mode			 */
-	TRWIFI_AUTH_WPA_PSK_ENT,				 /**<  Enterprise WPA_PSK mode					 */
+	TRWIFI_AUTH_WPA_PSK_ENT,			 /**<  Enterprise WPA_PSK mode					 */
 	TRWIFI_AUTH_WPA2_PSK_ENT,			 /**<  Enterprise WPA2_PSK mode					 */
 	TRWIFI_AUTH_WPA_AND_WPA2_PSK_ENT,	 /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
-	TRWIFI_AUTH_IBSS_OPEN,				  /**<	IBSS ad-hoc mode						  */
-	TRWIFI_AUTH_WPS,						 /**<  WPS mode									 */
-	TRWIFI_AUTH_UNKNOWN,					 /**<  unknown type								 */
+	TRWIFI_AUTH_IBSS_OPEN,				 /**<  IBSS ad-hoc mode						     */
+	TRWIFI_AUTH_WPS,					 /**<  WPS mode									 */
+	TRWIFI_AUTH_UNKNOWN,				 /**<  unknown type								 */
 } trwifi_ap_auth_type_e;
 
 typedef enum {
@@ -99,11 +100,42 @@ typedef struct trwifi_scan_list {
 } trwifi_scan_list_s;
 
 typedef struct {
-	uint32_t ip4_address;								   /**<	 ip4 address							   */
-	unsigned char mac_address[TRWIFI_MACADDR_LEN];		/**<  MAC address of wifi interface				*/
-	int rssi;											   /**<	 Receive Signal Strength Indication in dBm */
-	trwifi_status_e wifi_status;						/**<  @ref trwifi_status					 */
+	int rssi;                       /**<     Received Signal Strength Indication in dBm */
+	trwifi_status_e wifi_status;    /**<  @ref trwifi_status                     */
+	struct timeval disconn_time;    // optional: store the last time when the connection is disconnected
+	int32_t reason_code;            // optional: the reason why connection is disconnected. value is vendor specific
 } trwifi_info;
+
+typedef uint16_t trwifi_cmd;
+/*  Set/Get Power save mode */
+#define TRWIFI_MSG_GET_POWER 1
+#define TRWIFI_MSG_SET_POWER 2
+/*  Get driver statistics */
+#define TRWIFI_MSG_GET_STATS 3
+
+/*  TizenRT Wi-Fi Message */
+typedef struct {
+	trwifi_cmd cmd;
+} trwifi_msg_s;
+
+/*  Statistics message */
+typedef struct {
+	trwifi_cmd cmd;
+	struct timeval start;
+	struct timeval end;
+	uint32_t tx_retransmit;
+	uint32_t tx_drop;
+	uint32_t rx_drop;
+	uint32_t tx_success_cnt;
+	uint32_t tx_success_bytes;
+	uint32_t rx_cnt;
+	uint32_t rx_bytes;
+	uint32_t tx_try;
+	uint32_t rssi_avg;
+	uint32_t rssi_min;
+	uint32_t rssi_max;
+	uint32_t beacon_miss_cnt;
+} trwifi_msg_stats_s;
 
 struct netdev;
 /**
@@ -195,22 +227,6 @@ typedef trwifi_result_e (*trwifi_connect_ap)(struct netdev *dev, trwifi_ap_confi
 typedef trwifi_result_e (*trwifi_disconnect_ap)(struct netdev *dev, void *arg);
 
 /**
- * @brief   Get wi-fi information
- *
- * @param[in]   dev    : struct netdev registered by netdev_register()
- * @param[out]  info   : wi-fi information
- *
- * @function_type  synchronous call
- *
- * @description    Refer trwifi_info. only rssi is required. Other members are not used.
- *
- * @return TRWIFI_SUCCESS      : success
- * @return TRWIFI_FAIL         : fail
- * @return TRWIFI_INVALID_ARGS : arguments are invalid
- */
-typedef trwifi_result_e (*trwifi_get_info)(struct netdev *dev, trwifi_info *info);
-
-/**
  * @brief   Change to STA mode
  *
  * @param[in]   dev    : struct netdev registered by netdev_register()
@@ -289,6 +305,22 @@ typedef trwifi_result_e (*trwifi_stop_softap)(struct netdev *dev);
 typedef trwifi_result_e (*trwifi_set_autoconnect)(struct netdev *dev, uint8_t chk);
 
 /**
+ * @brief   Get wi-fi information
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[out]  info   : wi-fi information
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Refer trwifi_info. only rssi is required. Other members are not used.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
+typedef trwifi_result_e (*trwifi_get_info)(struct netdev *dev, trwifi_info *info);
+
+/**
  * @brief   Set driver speicific operation
  *
  * @param[in]   dev    : struct netdev registered by netdev_register()
@@ -303,8 +335,9 @@ typedef trwifi_result_e (*trwifi_set_autoconnect)(struct netdev *dev, uint8_t ch
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
  * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ * @return TRWIFI_MODE_NOT_SUPPORTED: operation is not supported
  */
-typedef trwifi_result_e (*trwifi_drv_ioctl)(struct netdev *dev, int cmd, unsigned long arg);
+typedef trwifi_result_e (*trwifi_drv_ioctl)(struct netdev *dev, trwifi_msg_s *msg);
 
 struct trwifi_ops {
 	trwifi_init init;

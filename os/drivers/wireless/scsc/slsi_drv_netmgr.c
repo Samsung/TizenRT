@@ -53,16 +53,28 @@
  ****************************************************************************/
 #define SLSIDRV_TAG "[SLSIDRV]"
 
-#define SLSIDRV_ERR                                                         \
-	do {                                                                    \
-		vddbg(SLSIDRV_TAG"[ERR] %s: %d line err(%s)\n",                     \
-				  __FILE__, __LINE__, strerror(errno));                     \
+#define SLSIDRV_ERR										\
+	do {												\
+		vddbg(SLSIDRV_TAG"[ERR] %s: %d line err(%s)\n",	\
+			  __FILE__, __LINE__, strerror(errno));		\
 	} while (0)
 
-#define SLSIDRV_ENTER                                                       \
-	do {                                                                    \
-		vddbg(SLSIDRV_TAG"%s:%d\n", __FILE__, __LINE__);                    \
+#define SLSIDRV_ENTER										\
+	do {													\
+		vddbg(SLSIDRV_TAG"%s:%d\n", __FILE__, __LINE__);	\
 	} while (0)
+
+static trwifi_result_e slsidrv_init(struct netdev *dev);
+static trwifi_result_e slsidrv_deinit(struct netdev *dev);
+static trwifi_result_e slsidrv_scan_ap(struct netdev *dev, trwifi_ap_config_s *config);
+static trwifi_result_e slsidrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg);
+static trwifi_result_e slsidrv_disconnect_ap(struct netdev *dev, void *arg);
+static trwifi_result_e slsidrv_get_info(struct netdev *dev, trwifi_info *wifi_info);
+static trwifi_result_e slsidrv_start_softap(struct netdev *dev, trwifi_softap_config_s *softap_config);
+static trwifi_result_e slsidrv_start_sta(struct netdev *dev);
+static trwifi_result_e slsidrv_stop_softap(struct netdev *dev);
+static trwifi_result_e slsidrv_set_autoconnect(struct netdev *dev, uint8_t check);
+static trwifi_result_e slsidrv_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg);
 
 /****************************************************************************
  * Private Types
@@ -75,16 +87,6 @@ struct _wifi_scan_filter_result_ {
 };
 typedef struct _wifi_scan_filter_result_ scan_filter_result_t;
 
-static trwifi_result_e slsidrv_init(struct netdev *dev);
-static trwifi_result_e slsidrv_deinit(struct netdev *dev);
-static trwifi_result_e slsidrv_scan_ap(struct netdev *dev, trwifi_ap_config_s *config);
-static trwifi_result_e slsidrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg);
-static trwifi_result_e slsidrv_disconnect_ap(struct netdev *dev, void *arg);
-static trwifi_result_e slsidrv_get_info(struct netdev *dev, trwifi_info *wifi_info);
-static trwifi_result_e slsidrv_start_softap(struct netdev *dev, trwifi_softap_config_s *softap_config);
-static trwifi_result_e slsidrv_start_sta(struct netdev *dev);
-static trwifi_result_e slsidrv_stop_softap(struct netdev *dev);
-static trwifi_result_e slsidrv_set_autoconnect(struct netdev *dev, uint8_t check);
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -101,7 +103,7 @@ static struct trwifi_ops g_trwifi_drv_ops = {
 	slsidrv_start_softap,           /* start_softap */
 	slsidrv_stop_softap,            /* stop_softap */
 	slsidrv_set_autoconnect,        /* set_autoconnect */
-	NULL                              /* drv_ioctl */
+	slsidrv_drv_ioctl                   /* drv_ioctl */
 };
 
 /*
@@ -125,8 +127,8 @@ void slsi_ethernetif_input(struct netdev *dev, u8_t *frame_ptr, u16_t len)
 
 static void
 get_security_type(slsi_security_config_t *sec_modes, uint8_t num_sec_modes,
-				   trwifi_ap_auth_type_e *auth,
-				   trwifi_ap_crypto_type_e *crypto)
+				  trwifi_ap_auth_type_e *auth,
+				  trwifi_ap_crypto_type_e *crypto)
 {
 	if (!sec_modes) {
 		*auth = TRWIFI_AUTH_OPEN;
@@ -187,7 +189,7 @@ fetch_scan_results(trwifi_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_
 	slsi_scan_info_t *wifi_scan_iter = NULL;
 	int cnt = 0;
 	if (*slsi_scan_info) {
-	/* Initialize pointer */
+		/* Initialize pointer */
 		wifi_scan_iter = *slsi_scan_info;
 		while (wifi_scan_iter) {
 #if SLSI_DRV_SCAN_DEBUG
@@ -228,7 +230,7 @@ fetch_scan_results(trwifi_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_
 				cur->ap_info.phy_mode = TRWIFI_IEEE_80211_LEGACY;
 			}
 			get_security_type(wifi_scan_iter->sec_modes, wifi_scan_iter->num_sec_modes,
-			&cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
+							  &cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
 			strncpy(cur->ap_info.ssid, (const char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
 			cur->ap_info.ssid_length = (unsigned int)wifi_scan_iter->ssid_len;
 			strncpy((char *)cur->ap_info.bssid, (const char *)wifi_scan_iter->bssid, TRWIFI_MACADDR_STR_LEN);
@@ -386,7 +388,7 @@ return_result:
 
 /*
  * Interface API
-*/
+ */
 trwifi_result_e slsidrv_init(struct netdev *dev)
 {
 	SLSIDRV_ENTER;
@@ -520,7 +522,7 @@ trwifi_result_e slsidrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_co
 				}
 				// Use the auth_type/crypto_type value of best one.
 				vdvdbg("Choose result - rssi:%d channel:%d auth:%d crypto:%d\n",
-					best->ap_info.rssi, best->ap_info.channel, best->ap_info.ap_auth_type, best->ap_info.ap_crypto_type);
+					   best->ap_info.rssi, best->ap_info.channel, best->ap_info.ap_auth_type, best->ap_info.ap_crypto_type);
 				ap_connect_config->ap_auth_type = best->ap_info.ap_auth_type;
 				ap_connect_config->ap_crypto_type = best->ap_info.ap_crypto_type;
 				// Free the result_list.
@@ -582,7 +584,7 @@ trwifi_result_e slsidrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_co
 			goto connect_ap_fail;
 		}
 	} else if (ap_connect_config->ap_auth_type !=  TRWIFI_AUTH_OPEN ||
-				ap_connect_config->ap_crypto_type != TRWIFI_CRYPTO_NONE) {
+			   ap_connect_config->ap_crypto_type != TRWIFI_CRYPTO_NONE) {
 		vddbg("No passphrase!\n");
 		goto connect_ap_fail;
 	}
@@ -599,7 +601,7 @@ trwifi_result_e slsidrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_co
 	} else {
 		result = TRWIFI_SUCCESS;
 		vdvdbg("Successfully joined the network: %s(%d)\n", ap_connect_config->ssid,
-			  ap_connect_config->ssid_length);
+			   ap_connect_config->ssid_length);
 	}
 
 connect_ap_fail:
@@ -633,27 +635,22 @@ trwifi_result_e slsidrv_get_info(struct netdev *dev, trwifi_info *wifi_info)
 	if (wifi_info) {
 		result = TRWIFI_FAIL;
 		if (g_mode != SLSI_WIFI_NONE) {
-			int ret = WiFiGetMac(wifi_info->mac_address);
-			if (ret == SLSI_STATUS_SUCCESS) {
-				wifi_info->rssi = (int)0;
-				if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
-					wifi_info->wifi_status = TRWIFI_SOFTAP_MODE;
-				} else if (g_mode == SLSI_WIFI_STATION_IF) {
-					uint8_t isConnected;
-					if (WiFiIsConnected(&isConnected, NULL) == SLSI_STATUS_SUCCESS) {
-						int8_t rssi;
-						wifi_info->wifi_status = TRWIFI_CONNECTED;
-						if (WiFiGetRssi(&rssi) == SLSI_STATUS_SUCCESS) {
-							wifi_info->rssi = (int)rssi;
-						}
-					} else {
-						wifi_info->wifi_status = TRWIFI_DISCONNECTED;
+			wifi_info->rssi = (int)0;
+			if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
+				wifi_info->wifi_status = TRWIFI_SOFTAP_MODE;
+			} else if (g_mode == SLSI_WIFI_STATION_IF) {
+				uint8_t isConnected;
+				if (WiFiIsConnected(&isConnected, NULL) == SLSI_STATUS_SUCCESS) {
+					int8_t rssi;
+					wifi_info->wifi_status = TRWIFI_CONNECTED;
+					if (WiFiGetRssi(&rssi) == SLSI_STATUS_SUCCESS) {
+						wifi_info->rssi = (int)rssi;
 					}
+				} else {
+					wifi_info->wifi_status = TRWIFI_DISCONNECTED;
 				}
-				result = TRWIFI_SUCCESS;
-			} else {
-				vddbg("no MAC exists\n");
 			}
+			result = TRWIFI_SUCCESS;
 		} else {
 			vddbg("need to init... get info fail\n");
 		}
@@ -818,6 +815,19 @@ trwifi_result_e slsidrv_set_autoconnect(struct netdev *dev, uint8_t check)
 	}
 	return result;
 }
+
+trwifi_result_e slsidrv_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg)
+{
+	if (msg->cmd == TRWIFI_MSG_GET_STATS) {
+		vddbg("slsi_ioctl GET_STATS\n");
+	} else if (msg->cmd == TRWIFI_MSG_GET_POWER) {
+		vddbg("slsi_ioctl GET_POWER\n");
+	} else if (msg->cmd == TRWIFI_MSG_SET_POWER) {
+		vddbg("slsi_ioctl SET_POWER\n");
+	}
+	return TRWIFI_NOT_SUPPORTED;
+}
+
 extern int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
 extern int slsi_linkoutput(struct netdev *dev, void *data, uint16_t dlen);
 

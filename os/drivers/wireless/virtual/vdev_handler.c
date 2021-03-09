@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <debug.h>
+#include <time.h>
 #include <tinyara/wifi/wifi_common.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
@@ -85,7 +86,7 @@ int vwifi_handle_message(struct vwifi_req *req)
 	struct vwifi_ops *ops = get_vdev_onoff();
 	#endif
 	int res = 0;
-	switch(req->type) {
+	switch (req->type) {
 	case VWIFI_MSG_INIT:
 		req->res = ops->init(req);
 		break;

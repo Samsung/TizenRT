@@ -104,11 +104,11 @@ int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 	fd_set rfds = queue->rfds;
 	int res = select(queue->max + 1, &rfds, NULL, NULL, NULL);
 	if (res <= 0) {
-		WM_LOG_ERROR("select error(%d)\n", res);
-		MESSAGE_ERROR;
 		if (errno == EINTR) {
 			return 1;
 		}
+		WM_LOG_ERROR("select error(%d)\n", res);
+		MESSAGE_ERROR;
 		return -1;
 	}
 	if (FD_ISSET(queue->fd, &rfds)) {
