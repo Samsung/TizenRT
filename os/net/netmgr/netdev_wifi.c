@@ -94,7 +94,7 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 		TRDRV_CALL(res, dev, scan_ap, (dev, NULL));
 	}
 	break;
-	case LWNL_IOCTL:
+	case LWNL_REQ_WIFI_IOCTL:
 	{
 		TRDRV_CALL(res, dev, drv_ioctl, (dev, (trwifi_msg_s *)data));
 	}
