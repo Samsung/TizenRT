@@ -279,7 +279,10 @@ wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats)
 
 	wifimgr_get_stats(stats);
 
-	return WIFI_MANAGER_SUCCESS;
+	wifimgr_msg_s msg = {EVT_GETSTATS_CMD, WIFI_MANAGER_FAIL, (void *)stats, NULL};
+	int res = wifimgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
 }
 
 

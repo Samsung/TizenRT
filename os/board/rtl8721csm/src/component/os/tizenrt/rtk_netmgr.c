@@ -382,7 +382,7 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_ap_config_s *config)
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
-	if(wifi_scan_networks(app_scan_result_handler, NULL ) != RTW_SUCCESS){
+	if (wifi_scan_networks(app_scan_result_handler, NULL) != RTW_SUCCESS) {
 		//ndbg("[RTK] [ERR] WiFi scan fail(%d)\n", ret);
 		return wuret;
 	}
@@ -402,18 +402,18 @@ trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_confi
 	wuret = TRWIFI_FAIL;
 
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		if(wifi_netmgr_utils_deinit(dev)){
+		if (wifi_netmgr_utils_deinit(dev)) {
 			ndbg("[RTK] Failed to stop AP mode\n");
 			return TRWIFI_FAIL;
 		}
 		vTaskDelay(20);
-		if (wifi_netmgr_utils_init(dev) < 0){
+		if (wifi_netmgr_utils_init(dev) < 0) {
 			ndbg("\n\rERROR: Wifi on failed!");
 			return TRWIFI_FAIL;
 		}
 	}
 
-	ret = cmd_wifi_connect(ap_connect_config,arg);
+	ret = cmd_wifi_connect(ap_connect_config, arg);
 	if (ret != RTK_STATUS_SUCCESS) {
 		ndbg("[RTK] WiFiNetworkJoin failed: %d, %s\n", ret, ap_connect_config->ssid);
 		return wuret;
@@ -446,30 +446,21 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 	if (wifi_info) {
 		wuret = TRWIFI_FAIL;
 		if (g_mode != RTK_WIFI_NONE) {
-			char mac_str[18] = {0 ,};
-			(void)wifi_get_mac_address((char *)mac_str);
-
-			int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &wifi_info->mac_address[0], &wifi_info->mac_address[1], &wifi_info->mac_address[2], &wifi_info->mac_address[3], &wifi_info->mac_address[4], &wifi_info->mac_address[5]);
-
-			if (ret == WIFIMGR_MACADDR_LEN) {
-				wifi_info->rssi = (int)0;
-				if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-					wifi_info->wifi_status = WIFI_UTILS_SOFTAP_MODE;
-				} else if (g_mode == RTK_WIFI_STATION_IF) {
-					if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
-						int rssi;
-						wifi_info->wifi_status = WIFI_UTILS_CONNECTED;
-						if (wifi_get_rssi(&rssi) == RTK_STATUS_SUCCESS) {
-							wifi_info->rssi = (int)rssi;
-						}
-					} else {
-						wifi_info->wifi_status = WIFI_UTILS_DISCONNECTED;
+			wifi_info->rssi = (int)0;
+			if (g_mode == RTK_WIFI_SOFT_AP_IF) {
+				wifi_info->wifi_status = WIFI_UTILS_SOFTAP_MODE;
+			} else if (g_mode == RTK_WIFI_STATION_IF) {
+				if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
+					int rssi;
+					wifi_info->wifi_status = WIFI_UTILS_CONNECTED;
+					if (wifi_get_rssi(&rssi) == RTK_STATUS_SUCCESS) {
+						wifi_info->rssi = (int)rssi;
 					}
+				} else {
+					wifi_info->wifi_status = WIFI_UTILS_DISCONNECTED;
 				}
-				wuret = TRWIFI_SUCCESS;
-			} else {
-				ndbg("[RTK] no MAC exists\n");
 			}
+			wuret = TRWIFI_SUCCESS;
 		} else {
 			ndbg("[RTK] need to init... get info fail\n");
 		}
@@ -484,7 +475,7 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 		return TRWIFI_INVALID_ARGS;
 	}
 
-	if(g_mode == RTK_WIFI_SOFT_AP_IF)
+	if (g_mode == RTK_WIFI_SOFT_AP_IF)
 		ndbg("[RTK] softap is already running!\n");
 
 	trwifi_result_e ret = TRWIFI_FAIL;
@@ -514,7 +505,7 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret = RTK_STATUS_SUCCESS;
 
-	if(g_mode == RTK_WIFI_STATION_IF)
+	if (g_mode == RTK_WIFI_STATION_IF)
 		ndbg("[RTK] station is already running!\n");
 
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);

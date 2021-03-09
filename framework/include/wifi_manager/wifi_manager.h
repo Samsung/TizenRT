@@ -31,6 +31,8 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
+#include <time.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -243,6 +245,24 @@ typedef struct {
 	uint16_t left;
 	uint16_t scan;
 	uint16_t softap;
+	/*
+	 * driver stats
+	 * a driver collects data periodically
+	 */
+	struct timeval start;
+	struct timeval end;
+	uint32_t tx_retransmit;
+	uint32_t tx_drop;
+	uint32_t rx_drop;
+	uint32_t tx_success_cnt;
+	uint32_t tx_success_bytes;
+	uint32_t rx_cnt;
+	uint32_t rx_bytes;
+	uint32_t tx_try;
+	uint32_t rssi_avg;
+	uint32_t rssi_min;
+	uint32_t rssi_max;
+	uint32_t beacon_miss_cnt;
 } wifi_manager_stats_s;
 
 /**

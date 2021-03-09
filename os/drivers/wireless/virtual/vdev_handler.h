@@ -18,9 +18,9 @@
 #ifndef __VWIFI_HANDLER_H__
 #define __VWIFI_HANDLER_H__
 
-#define VWIFI_LOG nlvdbg
-#define VWIFI_ENTRY nlvdbg("-->T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__)
-#define VWIFI_ERROR(res) nldbg("T%d error %d %d %s:%d\n", getpid(), res, errno, __FUNCTION__, __LINE__)
+#define VWIFI_LOG vdvdbg
+#define VWIFI_ENTRY vdvdbg("-->T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__)
+#define VWIFI_ERROR(res) vddbg("T%d error %d %d %s:%d\n", getpid(), res, errno, __FUNCTION__, __LINE__)
 
 typedef enum {
 	VWIFI_MSG_INIT,

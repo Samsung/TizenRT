@@ -120,21 +120,23 @@ static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_sc
 /*
  * Handler
  */
-void wm_start(void *arg);
-void wm_stop(void *arg);
-void wm_softap_start(void *arg);
-void wm_sta_start(void *arg);
-void wm_connect(void *arg);
-void wm_disconnect(void *arg);
-void wm_cancel(void *arg); // stop reconnecting to wifi AP. it doesn't expect to receive a signal because AP is already disconnected
-void wm_set_info(void *arg);
-void wm_get_info(void *arg);
-void wm_reset_info(void *arg);
-void wm_scan(void *arg);
-void wm_display_state(void *arg);
-void wm_get_stats(void *arg);
-void wm_get_conn_info(void *arg);
-void wm_auto_test(void *arg); // it tests softap mode and stations mode repeatedly
+static void wm_start(void *arg);
+static void wm_stop(void *arg);
+static void wm_softap_start(void *arg);
+static void wm_sta_start(void *arg);
+static void wm_connect(void *arg);
+static void wm_disconnect(void *arg);
+// stop reconnecting to wifi AP.
+// it doesn't expect to receive a signal because AP is already disconnected
+static void wm_cancel(void *arg);
+static void wm_set_info(void *arg);
+static void wm_get_info(void *arg);
+static void wm_reset_info(void *arg);
+static void wm_scan(void *arg);
+static void wm_display_state(void *arg);
+static void wm_get_stats(void *arg);
+static void wm_get_conn_info(void *arg);
+static void wm_auto_test(void *arg); // it tests softap mode and stations mode repeatedly
 
 /*
  * Internal APIs
@@ -288,21 +290,21 @@ typedef enum {
 } wm_test_e;
 
 test_func func_table[WM_TEST_MAX] = {
-	wm_start,
-	wm_stop,
-	wm_softap_start,
-	wm_sta_start,
-	wm_connect,
-	wm_disconnect,
-	wm_cancel,
-	wm_set_info,
-	wm_get_info,
-	wm_reset_info,
-	wm_scan,
-	wm_display_state,
-	wm_get_stats,
-	wm_get_conn_info,
-	wm_auto_test,
+	wm_start,                               /* WM_TEST_START    */
+	wm_stop,								/* WM_TEST_STOP     */
+	wm_softap_start,						/* WM_TEST_SOFTAP   */
+	wm_sta_start,							/* WM_TEST_STA      */
+	wm_connect,								/* WM_TEST_JOIN     */
+	wm_disconnect,							/* WM_TEST_LEAVE    */
+	wm_cancel,								/* WM_TEST_CANCEL   */
+	wm_set_info,							/* WM_TEST_SET      */
+	wm_get_info,							/* WM_TEST_GET      */
+	wm_reset_info,							/* WM_TEST_RESET    */
+	wm_scan,								/* WM_TEST_SCAN     */
+	wm_display_state,						/* WM_TEST_MODE     */
+	wm_get_stats,                           /* WM_TEST_STATS    */
+	wm_get_conn_info,						/* WM_TEST_INFO     */
+	wm_auto_test,							/* WM_TEST_AUTO     */
 	wm_test_on_off,
 #ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
 	wm_run_stress_test
@@ -314,41 +316,41 @@ test_func func_table[WM_TEST_MAX] = {
 exec_func exec_table[WM_TEST_MAX] = {
 	NULL,                                      /* WM_TEST_START    */
 	NULL,                                      /* WM_TEST_STOP     */
-	_wm_test_softap,                           /* WM_TEST_SOFTAP   */
+	_wm_test_softap,                         /* WM_TEST_SOFTAP   */
 	NULL,                                      /* WM_TEST_STA      */
-	_wm_test_join,                             /* WM_TEST_JOIN     */
+	_wm_test_join,                           /* WM_TEST_JOIN     */
 	NULL,                                      /* WM_TEST_LEAVE    */
 	NULL,                                      /* WM_TEST_CANCEL   */
-	_wm_test_set,                              /* WM_TEST_SET      */
+	_wm_test_set,                            /* WM_TEST_SET      */
 	NULL,                                      /* WM_TEST_GET      */
 	NULL,                                      /* WM_TEST_RESET    */
-	_wm_test_scan,                             /* WM_TEST_SCAN     */
+	_wm_test_scan,                           /* WM_TEST_SCAN     */
 	NULL,                                      /* WM_TEST_MODE     */
 	NULL,                                      /* WM_TEST_STATS    */
 	NULL,                                      /* WM_TEST_INFO     */
-	_wm_test_auto,                             /* WM_TEST_AUTO     */
+	_wm_test_auto,                           /* WM_TEST_AUTO     */
 	_wm_test_join,
-	_wm_test_stress,                                       /* WM_TEST_STRESS   */
+	_wm_test_stress,                         /* WM_TEST_STRESS   */
 };
 
 char *func_name[WM_TEST_MAX] = {
-	"start",
-	"stop",
-	"softap",
-	"sta",
-	"join",
-	"leave",
-	"cancel",
-	"set",
-	"get",
-	"reset",
-	"scan",
-	"mode",
-	"stats",
-	"info",
-	"auto",
+	"start",                                /* WM_TEST_START    */
+	"stop",								    /* WM_TEST_STOP     */
+	"softap",							    /* WM_TEST_SOFTAP  */
+	"sta",								    /* WM_TEST_STA      */
+	"join",								    /* WM_TEST_JOIN    */
+	"leave",							    /* WM_TEST_LEAVE    */
+	"cancel",							    /* WM_TEST_CANCEL   */
+	"set",								    /* WM_TEST_SET     */
+	"get",								    /* WM_TEST_GET      */
+	"reset",							    /* WM_TEST_RESET    */
+	"scan",								    /* WM_TEST_SCAN    */
+	"mode",								    /* WM_TEST_MODE     */
+	"stats",                                /* WM_TEST_STATS    */
+	"info",								    /* WM_TEST_INFO     */
+	"auto",                                 /* WM_TEST_AUTO     */
 	"on_off",
-	"stress"
+	"stress"                                /* WM_TEST_STRESS   */
 };
 
 static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
@@ -359,17 +361,21 @@ static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	}
 	printf("------------------------------------\n");
 	printf("[WT] SSID: %s\n", config->ssid);
-	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN || config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN
+		|| config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
 		printf("[WT] SECURITY: unknown\n");
 	} else {
 		char security_type[21] = {0,};
 		strncat(security_type, wifi_test_auth_method[config->ap_auth_type], 20);
 		wifi_manager_ap_auth_type_e tmp_type = config->ap_auth_type;
-		if (tmp_type == WIFI_MANAGER_AUTH_OPEN || tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN || tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+		if (tmp_type == WIFI_MANAGER_AUTH_OPEN
+			|| tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN
+			|| tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
 			printf("[WT] SECURITY: %s\n", security_type);
 		} else {
 			strncat(security_type, "_", strlen("_"));
-			strncat(security_type, wifi_test_crypto_method[config->ap_crypto_type], strlen(wifi_test_crypto_method[config->ap_crypto_type]));
+			strncat(security_type, wifi_test_crypto_method[config->ap_crypto_type],
+					strlen(wifi_test_crypto_method[config->ap_crypto_type]));
 			printf("[WT] SECURITY: %s\n", security_type);
 		}
 	}
@@ -800,6 +806,14 @@ void wm_get_stats(void *arg)
 		printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
 		printf("%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
 		printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
+		printf("Driver stats\n");
+		printf("Duration: %u.%u ~ %u.%u\n", stats.start.tv_sec, stats.start.tv_usec,
+			   stats.end.tv_sec, stats.end.tv_usec);
+		printf("TX:     cnt:%u\t bytes:%u\t retransmit:%u\t tries:%u\n",
+			   stats.tx_success_cnt, stats.tx_success_bytes, stats.tx_retransmit, stats.tx_try);
+		printf("DROP:   tx:%u\t rx:%u\n", stats.tx_drop, stats.rx_drop);
+		printf("RSSI:   avg:%u \t min:%u\t max:%u\n", stats.rssi_avg, stats.rssi_min, stats.rssi_max);
+		printf("BEACON: miss:%u\n", stats.beacon_miss_cnt);
 		printf("=======================================================================\n");
 	}
 	WM_TEST_LOG_END;
@@ -1138,7 +1152,6 @@ static int _wm_test_stress(struct options *opt, int argc, char *argv[])
 	return 0;
 }
 
-
 static int _wm_test_set(struct options *opt, int argc, char *argv[])
 {
 	if (argc < 5) {
@@ -1240,7 +1253,7 @@ exit:
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-	int wm_test_main(int argc, char *argv[])
+int wm_test_main(int argc, char *argv[])
 #endif
 {
 	printf("[WT] wifi manager test!!\n");

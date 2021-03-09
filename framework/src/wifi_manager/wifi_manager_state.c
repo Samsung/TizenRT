@@ -51,13 +51,6 @@ static inline void WIFIMGR_SET_SOFTAP_SSID(char *s)
 	wifimgr_set_info(WIFIMGR_SOFTAP_SSID, &winfo);
 }
 
-static inline void WIFIMGR_SET_MACADDR(char *s)
-{
-	wifimgr_info_msg_s winfo;
-	winfo.mac_addr = s;
-	wifimgr_set_info(WIFIMGR_MACADDR, &winfo);
-}
-
 /*  Copy MACRO */
 #define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)							\
 	do {																\
@@ -424,7 +417,6 @@ wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 		WM_LOG_ERROR("[WM] T%d wifi_utils_get_info fail\n", getpid());
 		WIFIMGR_CHECK_UTILRESULT(wifi_utils_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 	}
-	WIFIMGR_SET_MACADDR((char *)info.mac_address);
 
 #ifdef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), "[WM] Set Autoconnect failed", WIFI_MANAGER_FAIL);
@@ -684,6 +676,35 @@ wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 	return wret;
 }
 
+wifi_manager_result_e _handler_get_stats(wifimgr_msg_s *msg)
+{
+	wifi_manager_result_e wret = WIFI_MANAGER_SUCCESS;
+	trwifi_msg_stats_s stats;
+	stats.cmd = TRWIFI_MSG_GET_STATS;
+	wifi_utils_result_e res = wifi_utils_ioctl(&stats);
+	if (res != WIFI_UTILS_SUCCESS) {
+		wret = WIFI_MANAGER_FAIL;
+	} else {
+		// update msg
+		wifi_manager_stats_s *wstats = (wifi_manager_stats_s *)msg->param;
+		wstats->start = stats.start;
+		wstats->end = stats.end;
+		wstats->tx_retransmit = stats.tx_retransmit;
+		wstats->tx_drop = stats.tx_drop;
+		wstats->rx_drop = stats.rx_drop;
+		wstats->tx_success_cnt = stats.tx_success_cnt;
+		wstats->tx_success_bytes = stats.tx_success_bytes;
+		wstats->rx_cnt = stats.rx_cnt;
+		wstats->rx_bytes = stats.rx_bytes;
+		wstats->tx_try = stats.tx_try;
+		wstats->rssi_avg = stats.rssi_avg;
+		wstats->rssi_min = stats.rssi_min;
+		wstats->rssi_max = stats.rssi_max;
+		wstats->beacon_miss_cnt = stats.beacon_miss_cnt;
+	}
+	return wret;
+}
+
 /*
  * public
  */
@@ -692,7 +713,11 @@ wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)
 	wifi_manager_result_e res = WIFI_MANAGER_FAIL;
 
 	WM_LOG_HANDLER_START;
-	res = g_handler[WIFIMGR_GET_STATE](msg);
+	if (msg->event == EVT_GETSTATS_CMD) {
+		res = _handler_get_stats(msg);
+	} else {
+		res = g_handler[WIFIMGR_GET_STATE](msg);
+	}
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT
 	_set_error_code(res);
 #endif

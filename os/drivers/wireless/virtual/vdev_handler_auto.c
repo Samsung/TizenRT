@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <debug.h>
+#include <time.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "vdev_handler.h"
@@ -113,11 +114,6 @@ trwifi_result_e vwifi_handle_startsoftap(void *req)
 trwifi_result_e vwifi_handle_stopsoftap(void *req)
 {
 	VWIFI_ENTRY;
-	/* if (g_vdev_softap_joined) { */
-	/* 	g_vdev_softap_joined = 0; */
-	/* 	vwifi_create_event(NULL, 0, LWNL_SOFTAP_STA_LEFT); */
-	/* } */
-
 	return TRWIFI_SUCCESS;
 }
 

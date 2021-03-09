@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <debug.h>
+#include <time.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "vdev_handler.h"
@@ -36,7 +37,7 @@ struct vwifi_ethhdr {
 	uint8_t dest[6];
 	uint8_t src[6];
 	uint16_t type;
-}VPACK_STRUCT;
+} VPACK_STRUCT;
 VPACK_END
 
 VPACK_BEGIN
@@ -51,7 +52,7 @@ struct vwifi_iphdr {
 	uint16_t checksum;
 	uint8_t src[4];
 	uint8_t dest[4];
-}VPACK_STRUCT;
+} VPACK_STRUCT;
 VPACK_END
 
 VPACK_BEGIN
@@ -60,7 +61,7 @@ struct vwifi_udphdr {
 	uint16_t dest;
 	uint16_t len;
 	uint16_t checksum;
-}VPACK_STRUCT;
+} VPACK_STRUCT;
 VPACK_END
 
 VPACK_BEGIN
@@ -78,7 +79,7 @@ struct vwifi_dhcpmsg {
 	uint8_t giaddr[4];
 	uint8_t chaddr[16];
 	uint8_t options[312];
-}VPACK_STRUCT;
+} VPACK_STRUCT;
 VPACK_END
 
 static uint8_t g_eth_src[6] = {0,};
