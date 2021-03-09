@@ -36,6 +36,10 @@ CSRCS += tash_usleep.c
 endif
 endif
 
+ifeq ($(CONFIG_SECURED_TASH),y)
+CSRCS += tash_security.c
+endif
+
 MAINSRC = tash_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

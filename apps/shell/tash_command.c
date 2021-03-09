@@ -25,7 +25,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#ifdef CONFIG_TASH_REBOOT
 #include <sys/boardctl.h>
+#endif
 #include <tinyara/ascii.h>
 #include <apps/shell/tash.h>
 #ifdef CONFIG_BUILTIN_APPS
@@ -97,7 +99,7 @@ struct tash_cmd_info_s {
 static int tash_help(int argc, char **args);
 static int tash_clear(int argc, char **args);
 static int tash_exit(int argc, char **args);
-#if defined(CONFIG_BOARDCTL_RESET)
+#ifdef CONFIG_TASH_REBOOT
 static int tash_reboot(int argc, char **argv);
 #endif
 #if TASH_MAX_STORE   > 0
@@ -124,7 +126,7 @@ const static tash_cmdlist_t tash_basic_cmds[] = {
 	{"usleep", tash_usleep, TASH_EXECMD_SYNC},
 #endif
 #endif
-#if defined(CONFIG_BOARDCTL_RESET)
+#ifdef CONFIG_TASH_REBOOT
 	{"reboot", tash_reboot, TASH_EXECMD_SYNC},
 #endif
 #if TASH_MAX_STORE > 0
@@ -476,7 +478,7 @@ int check_exclam_cmd(char *buff)
 }
 #endif
 
-#if defined(CONFIG_BOARDCTL_RESET)
+#ifdef CONFIG_TASH_REBOOT
 static int tash_reboot(int argc, char **argv)
 {
 	/*
@@ -495,7 +497,7 @@ static int tash_reboot(int argc, char **argv)
 	 */
 	return ERROR;
 }
-#endif /* CONFIG_BOARDCTL_RESET */
+#endif /* CONFIG_TASH_REBOOT */
 
 /** @brief Launch a task to run tash cmd asynchronously
  *  @ingroup tash

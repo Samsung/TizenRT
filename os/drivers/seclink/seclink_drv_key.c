@@ -156,7 +156,7 @@ static int hd_handle_ram_key(int cmd, struct seclink_req *req, struct seclink_ke
 		}
 		break;
 	}
-	return;
+	return 0;
 }
 
 /*
@@ -192,7 +192,7 @@ int hd_handle_key_request(int cmd, unsigned long arg, void *lower)
 		return -EINVAL;
 	}
 
-	if (info->key_idx < 0 || info->key_idx > NKEY_SLOT) {
+	if (info->key_idx > NKEY_SLOT) {
 		req->res = HAL_INVALID_SLOT_RANGE;
 		return 0;
 	}

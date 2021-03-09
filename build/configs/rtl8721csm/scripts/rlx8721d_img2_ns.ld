@@ -75,9 +75,9 @@ MEMORY
 	PSRAM_S (rwx)	:		ORIGIN = 0x023C0000, LENGTH = 0x02400000 - 0x023C0000	/* PSRAM_S: 256K */
 
 	/* Flash */
-	KM0_BOOT (rx)  :		ORIGIN = 0x08000000+0x20, LENGTH = 0x02000-0x20	/* XIPBOOT: 8k, 32 Bytes resvd for header*/
-	BACKUP (r) :			ORIGIN = 0x08002000, LENGTH = 0x1000	/* BACKUP: 4K system data in flash */
-	XIPSYS (r) :			ORIGIN = 0x08003000, LENGTH = 0x1000	/* XIPSYS: 4K system data in flash */
+	KM0_BOOT (rx)  :		ORIGIN = 0x08000000+0x20, LENGTH = 0x04000-0x20	/* XIPBOOT: 16k, 32 Bytes resvd for header*/
+	BACKUP (r) :			ORIGIN = 0x08080000, LENGTH = 0x1000	/* BACKUP: 4K system data in flash */
+	XIPSYS (r) :			ORIGIN = 0x08081000, LENGTH = 0x1000	/* XIPSYS: 4K system data in flash */
 	KM4_BOOT (rx)  :		ORIGIN = 0x08004000+0x20, LENGTH = 0x02000-0x20	/* XIPBOOT: 8k, 32 Bytes resvd for header*/
 	KM0_IMG2 (rx)  : 		ORIGIN = 0x0C000000+0x20, LENGTH = 0x02000000-0x20	/* KM0_IMG2: 32MB, 32 Bytes resvd for header, virtual address */
 	KM4_IMG2 (rx)  : 		ORIGIN = 0x0E000000+0x20, LENGTH = 0x02000000-0x20	/* KM4_IMG2 OTA1: 32MB, 32 Bytes resvd for header,  virtual address */

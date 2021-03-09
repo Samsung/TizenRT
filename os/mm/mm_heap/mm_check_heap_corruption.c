@@ -56,7 +56,11 @@
 #include <tinyara/config.h>
 #include <tinyara/arch.h>
 #include <tinyara/mm/mm.h>
+#if defined(CONFIG_DEBUG_MM_HEAPINFO)  && (CONFIG_TASK_NAME_SIZE > 0)
+#include <sys/prctl.h>
+#endif
 #include <debug.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -84,13 +88,25 @@ typedef enum node_type_e node_type_t;
 
 static void dump_node(struct mm_allocnode_s *node, node_type_t type)
 {
+#if defined(CONFIG_DEBUG_MM_HEAPINFO)  && (CONFIG_TASK_NAME_SIZE > 0)
+	char myname[CONFIG_TASK_NAME_SIZE + 1];
+#endif
+
 	if (type == TYPE_CORRUPTED) {
 		dbg("CORRUPTED NODE: addr = 0x%08x size = %u preceding size = %u\n", node, node->size, MM_PREV_NODE_SIZE(node));
 	} else if (type == TYPE_OVERFLOWED) {
 		dbg("OVERFLOWED NODE: addr = 0x%08x size = %u type = %c\n", node, node->size, IS_ALLOCATED_NODE(node) ? 'A' : 'F');
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+#if CONFIG_TASK_NAME_SIZE > 0
+	if (prctl(PR_GET_NAME, myname, node->pid) == OK) {
+		dbg("Node owner pid = %u (%s), allocated by code at addr = 0x%08x\n", node->pid, myname, node->alloc_call_addr);
+	} else {
+		dbg("Node owner pid = %u (Exited Task), allocated by code at addr = 0x%08x\n", node->pid, node->alloc_call_addr);
+	}
+#else
 	dbg("Node owner pid = %u, allocated by code at addr = 0x%08x\n", node->pid, node->alloc_call_addr);
+#endif
 #endif
 }
 

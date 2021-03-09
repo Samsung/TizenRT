@@ -35,25 +35,7 @@
 
 ifeq ($(CONFIG_DRIVERS_WIRELESS),y)
 
-ifeq ($(CONFIG_SCSC_WLAN),y)
-include wireless$(DELIM)scsc$(DELIM)Make.defs
-endif
-
-ifeq ($(CONFIG_SCSC_CORE),y)
-include wireless$(DELIM)scsc$(DELIM)misc$(DELIM)Make.defs
-endif
-
-ifeq ($(CONFIG_RTK_WLAN),y)
-include wireless$(DELIM)realtek$(DELIM)Make.defs
-endif
-
-ifeq ($(CONFIG_VIRTUAL_WLAN),y)
-include wireless$(DELIM)virtual$(DELIM)Make.defs
-endif
-
-ifeq ($(CONFIG_BLUETOOTH_NULL),y)
-include wireless$(DELIM)bluetooth$(DELIM)Make.defs
-endif
+include $(wildcard wireless/*/Make.defs)
 
 # Include wireless devices build support
 
