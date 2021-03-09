@@ -395,7 +395,7 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 * data)
 
 		addr_begin = (((addr_begin-1) >> 2) + 1) << 2;
 		for(;size >= 256 ;size -= 256){
-			FLASH_TxData256B(addr_begin, 256, data);
+			FLASH_TxData256B_RAM(addr_begin, 256, data);
 #ifdef MICRON_N25Q00AA
 			FLASH_ReadFlagStatusReg();
 #endif
