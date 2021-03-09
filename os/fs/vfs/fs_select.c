@@ -266,7 +266,7 @@ int select(int nfds, FAR fd_set *readfds, FAR fd_set *writefds, FAR fd_set *exce
 
 	DEBUGASSERT(ndx == npfds);
 	if (ndx != npfds) {
-		set_errno(EINVAL);
+		set_errno(EBADF);
 		return ERROR;
 	}
 
