@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <debug.h>
 #include <net/if.h>
-#include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "lwnl_evt_queue.h"
@@ -122,6 +121,11 @@ static int lwnl_open(struct file *filep)
 	struct lwnl_upperhalf_s *upper = inode->i_private;
 
 	LWNLDEV_LOCK(upper);
+	/*
+	 * crefs type is uint8 so overflow might happen.
+	 * However there are a few modules which use lwnl.
+	 * So checking overflow is not needed now.
+	 */
 	upper->crefs++;
 	LWNLDEV_UNLOCK(upper);
 
@@ -145,7 +149,11 @@ static int lwnl_close(struct file *filep)
 	if (upper->crefs > 0) {
 		upper->crefs--;
 	} else {
-		ret = -ENOSYS;
+		/*
+		 * lwnl driver doesn't have resources to free. So it doesn't care
+		 * upper->cres == 0 case
+		 */
+		ret = -EBADF;
 	}
 
 #ifndef CONFIG_DISABLE_POLL
@@ -204,7 +212,7 @@ static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg)
 	LWNL_ENTER;
 	int res = lwnl_add_listener(filep);
 	if (res < 0) {
-		res = -ENOSYS;
+		res = -EBADF;
 	}
 	LWNL_LEAVE;
 	return res;
