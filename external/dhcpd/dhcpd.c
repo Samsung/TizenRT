@@ -1487,11 +1487,11 @@ static void dhcpd_stop(void)
 	while (ret != OK) {
 		ret = sem_wait(&g_dhcpd_sem);
 		if (ret != OK) {
-			ndbg("ERR: sem_wait for dhcpd failed\n");
 			if (errno == EINTR) {
 				ndbg("ERR: EINTR for sem_wait in dhcpd\n");
 				continue;
 			}
+			ndbg("ERR: sem_wait for dhcpd failed\n");
 			pthread_mutex_unlock(&g_dhcpd_lock);			
 			return;
 		}

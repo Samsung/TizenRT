@@ -1,5 +1,6 @@
 #include <sys/types.h>
-#include <tinyara/net/if/wifi.h>
+#include <time.h>
+#include <tinyara/wifi/wifi_common.h>
 
 trwifi_ap_scan_info_s g_ap_info[5] = {
 	{1, "testhub_01", 10, "01:02:03:04:05:06", 30, 20, TRWIFI_IEEE_80211_N, TRWIFI_AUTH_WPA2_PSK, TRWIFI_CRYPTO_AES},

@@ -25,7 +25,7 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
-
+#include <time.h>
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -38,15 +38,6 @@
  * Enums
  ****************************************************************************/
 /**
- * @brief time out option (used by message queue, uart, semaphore, mutex)
- *
- */
-typedef enum {
-	WIFI_UTILS_NO_WAIT = 0,      /**<  no wait contant          */
-	WIFI_UTILS_FOREVER = -1,     /**<  wait until job finished  */
-} wifi_utils_timeout_option;
-
-/**
  * @brief <b> wifi result type FAIL, SUCCESS, INVALID ARGS</b>
  */
 typedef enum {
@@ -57,6 +48,7 @@ typedef enum {
 	WIFI_UTILS_BUSY,
 	WIFI_UTILS_FILE_ERROR,
 	WIFI_UTILS_ALREADY_CONNECTED,
+	WIFI_UTILS_NOT_SUPPORTED
 } wifi_utils_result_e;
 
 /**
@@ -69,7 +61,7 @@ typedef enum {
 	WIFI_UTILS_IEEE_80211_G,                  /**<  IEEE 802.11g              */
 	WIFI_UTILS_IEEE_80211_N,                  /**<  IEEE 802.11n              */
 	WIFI_UTILS_IEEE_80211_AC,                 /**<  IEEE 802.11ac             */
-	WIFI_UTILS_NOT_SUPPORTED,                 /**<  Driver does not report    */
+	WIFI_UTILS_MODE_NOT_SUPPORTED,                 /**<  Driver does not report    */
 } wifi_utils_standard_type_e;
 
 /**
@@ -128,7 +120,7 @@ struct wifi_utils_ap_scan_info {
 	unsigned int ssid_length;                                /**<  The length of Service Set Identification               */
 	unsigned char bssid[WIFI_UTILS_MACADDR_STR_LEN + 1];     /**<  MAC address (xx:xx:xx:xx:xx:xx) of Access Point        */
 	unsigned int max_rate;                                   /**<  Maximum data rate in kilobits/s                        */
-	int rssi;                                                /**<  Receive Signal Strength Indication in dBm              */
+	int rssi;                                                /**<  Received Signal Strength Indication in dBm              */
 	wifi_utils_standard_type_e phy_mode;                     /**< Supported MAC/PHY standard                              */
 	wifi_utils_ap_auth_type_e ap_auth_type;                  /**<  @ref wifi_utils_ap_auth_type                           */
 	wifi_utils_ap_crypto_type_e ap_crypto_type;              /**<  @ref wifi_utils_ap_crypto_type                         */
@@ -186,13 +178,13 @@ struct wifi_utils_cb {
 typedef struct wifi_utils_cb wifi_utils_cb_s;
 
 /**
- * @brief wifi information (ip address, mac address)
+ * @brief wifi information
  */
 struct wifi_utils_info {
-	uint32_t ip4_address;                                 /**<  ip4 address                               */
-	unsigned char mac_address[WIFI_UTILS_MACADDR_LEN];    /**<  MAC address of wifi interface             */
-	int rssi;                                             /**<  Receive Signal Strength Indication in dBm */
+	int rssi;                                             /**<  Received Signal Strength Indication in dBm */
 	wifi_utils_status_e wifi_status;                      /**<  @ref wifi_utils_status                    */
+	struct timeval disconn_time; // optional: store the last time when the connection is disconnected
+	int32_t reason_code;         // optional: the reason why connection is disconnected. value is vendor specific
 };
 typedef struct wifi_utils_info wifi_utils_info_s;
 

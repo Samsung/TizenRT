@@ -294,13 +294,6 @@ trwifi_result_e rtkdrv_get_info(struct netdev *dev, trwifi_info *wifi_info)
 	char mac_str[18] = {
 		0,
 	};
-	(void)wifi_get_mac_address((char *)mac_str);
-
-	int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &wifi_info->mac_address[0], &wifi_info->mac_address[1], &wifi_info->mac_address[2], &wifi_info->mac_address[3], &wifi_info->mac_address[4], &wifi_info->mac_address[5]);
-	if (ret != MACADDR_LEN) {
-		vddbg("[RTK] Failed to get MAC addr\n");
-		return LWNL_FAIL;
-	}
 
 	wifi_info->rssi = (int)0;
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {

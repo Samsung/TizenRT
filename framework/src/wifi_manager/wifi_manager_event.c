@@ -26,15 +26,17 @@
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"
 
+/*  wifimgr_evt_str should be mapped to enum _wifimgr_evt  */
 static char *wifimgr_evt_str[] = {
 	"EVT_INIT_CMD",				// Command to initialize WiFi Manager
-	"EVT_DEINIT_CMD",				// Command to Deinit WiFi Manager
+	"EVT_DEINIT_CMD",			// Command to Deinit WiFi Manager
 	"EVT_SET_SOFTAP_CMD",
 	"EVT_SET_STA_CMD",
 	"EVT_CONNECT_CMD",
 	"EVT_DISCONNECT_CMD",
 	"EVT_SCAN_CMD",
 	"EVT_GETINFO_CMD",
+	"EVT_GETSTATS_CMD",
 	"EVT_RECONNECT_CMD",
 	"EVT_STA_CONNECTED",
 	"EVT_STA_CONNECT_FAILED",

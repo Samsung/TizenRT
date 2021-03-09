@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <debug.h>
+#include <time.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "vdev_handler.h"

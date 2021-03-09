@@ -71,7 +71,7 @@ typedef struct {
 	lwnl_req req_type;
 	uint32_t data_len;
 	void *data;
-	lwnl_result_e res;
+	void *result;
 } lwnl_msg;
 
 typedef struct {

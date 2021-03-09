@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <debug.h>
+#include <time.h>
 #include <tinyara/wifi/wifi_common.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
