@@ -66,21 +66,6 @@ int ble_tizenrt_app_handle_upstream_msg(uint16_t subtype, void *pdata)
 	switch (subtype) {
 		case BLE_TIZENRT_MSG_START_ADV:
         {
-            uint8_t  adv_evt_type = GAP_ADTYPE_ADV_IND;
-            uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
-            uint8_t  adv_direct_addr[GAP_BD_ADDR_LEN] = {0};
-            uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
-            uint8_t  adv_filter_policy = GAP_ADV_FILTER_ANY;
-            uint16_t adv_int_min = DEFAULT_ADVERTISING_INTERVAL_MIN;
-            uint16_t adv_int_max = DEFAULT_ADVERTISING_INTERVAL_MAX;
-
-            le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-            le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-            le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(adv_direct_addr), adv_direct_addr);
-            le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
-            le_adv_set_param(GAP_PARAM_ADV_FILTER_POLICY, sizeof(adv_filter_policy), &adv_filter_policy);
-            le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int_min), &adv_int_min);
-            le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int_max), &adv_int_max);
             ret = le_adv_start();
             if(GAP_CAUSE_SUCCESS == ret)
                 debug_print("\r\n[Upstream] Start Adv Success", __FUNCTION__);
@@ -128,7 +113,7 @@ int ble_tizenrt_app_handle_upstream_msg(uint16_t subtype, void *pdata)
 			break;
         case BLE_TIZENRT_MSG_DELETE_BOND:
         {
-            T_TIZENRT_DELETE_BOND_PARAM *param = pdata;
+            T_TIZENRT_SERVER_DELETE_BOND_PARAM *param = pdata;
             param->result = le_bond_delete_by_bd(param->bd_addr, GAP_REMOTE_ADDR_LE_PUBLIC);
             if(GAP_CAUSE_NOT_FIND == param->result)
                 param->result = le_bond_delete_by_bd(param->bd_addr, GAP_REMOTE_ADDR_LE_RANDOM);
@@ -280,7 +265,6 @@ void ble_tizenrt_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t ca
         {
 			printf("\n\r[BLE Tizenrt] GAP stack ready\n\r");
             /*stack ready*/
-            le_adv_start();
         }
     }
 
@@ -328,7 +312,7 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
             {
                 printf("\r\n[BLE Tizenrt] connection lost cause 0x%x", disc_cause);
             }
-			printf("\r\n[BLE Tizenrt] BT Disconnected, start ADV");
+			printf("\r\n[BLE Tizenrt] BT Disconnected");
 
             T_TIZENRT_CONNECTED_CALLBACK_DATA *disconn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
             disconn_data->conn_id = conn_id;
@@ -614,6 +598,10 @@ T_APP_RESULT ble_tizenrt_app_gap_callback(uint8_t cb_type, void *p_cb_data)
                         p_data->p_le_modify_white_list_rsp->cause);
         break;
 
+    case GAP_MSG_LE_ADV_UPDATE_PARAM:
+        printf("\r\n[%s] GAP_MSG_LE_ADV_UPDATE_PARAM: cause 0x%x", __FUNCTION__,
+                        p_data->p_le_adv_update_param_rsp->cause);
+        break;
     default:
         debug_print("\r\n[%s] unhandled cb_type 0x%x", __FUNCTION__, cb_type);
         break;

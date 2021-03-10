@@ -80,6 +80,13 @@ config AMEBAD_BLE_PERIPHERAL
 config AMEBAD_BLE_CENTRAL
 	bool "Enable Amebad BLE Central"
 	default n
+
+if AMEBAD_BLE_CENTRAL && AMEBAD_BLE_PERIPHERAL
+	config AMEBAD_BLE_SCATTERNET
+		bool "Enable Amebad BLE Scatternet"
+		default n
+endif
+
 endif
 
 endmenu

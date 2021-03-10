@@ -33,25 +33,30 @@ extern "C" {
 /*============================================================================*
  *                              Functions
  *============================================================================*/
-extern void print_no_server(const char* format, ...);
 #define RTK_DEBUG_ON 0
 #if RTK_DEBUG_ON
 #define debug_print printf
 #else
+#if defined CONFIG_AMEBAD_BLE_SCATTERNET && CONFIG_AMEBAD_BLE_SCATTERNET
+extern void print_no_combo(const char* format, ...);
+#define debug_print print_no_combo
+#else
+extern void print_no_server(const char* format, ...);
 #define debug_print print_no_server
+#endif
 #endif
 
 typedef enum
 {
-	BLE_TIZENRT_MSG_START_ADV,
-  BLE_TIZENRT_MSG_START_DIRECT_ADV,
+	BLE_TIZENRT_MSG_START_ADV = 12,
+	BLE_TIZENRT_MSG_START_DIRECT_ADV,
 	BLE_TIZENRT_MSG_STOP_ADV,
 	BLE_TIZENRT_MSG_DISCONNECT,
 	BLE_TIZENRT_MSG_NOTIFY,
-  BLE_TIZENRT_MSG_DELETE_BOND,
-  BLE_TIZENRT_MSG_DELETE_BOND_ALL,
-	BLE_TIZENRT_MSG_MAX
-} BLE_TIZENRT_MSG_TYPE;
+	BLE_TIZENRT_MSG_DELETE_BOND,
+	BLE_TIZENRT_MSG_DELETE_BOND_ALL,
+	BLE_TIZENRT_SERVER_MSG_MAX
+} BLE_TIZENRT_SERVER_MSG_TYPE;
 
 typedef enum
 {
@@ -78,7 +83,7 @@ typedef struct
   bool flag;
   T_GAP_CAUSE result;
   uint8_t bd_addr[DA_BLE_BD_ADDR_MAX_LEN];
-} T_TIZENRT_DELETE_BOND_PARAM;
+} T_TIZENRT_SERVER_DELETE_BOND_PARAM;
 
 typedef struct
 {

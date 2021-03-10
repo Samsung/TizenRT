@@ -101,6 +101,9 @@ endif
 ifeq ($(CONFIG_AMEBAD_BLE_CENTRAL),y)
 include component/common/bluetooth/realtek/sdk/example/da_ble_central/Make.defs
 endif
+ifeq ($(CONFIG_AMEBAD_BLE_SCATTERNET),y)
+include component/common/bluetooth/realtek/sdk/example/da_ble_scatternet/Make.defs
+endif
 endif
 
 ifeq ($(CONFIG_AMEBAD_WIFI),y)
@@ -177,6 +180,7 @@ CFLAGS += -I$(DIR_BT)/inc
 CFLAGS += -I$(DIR_BT)/src/mcu/module/data_uart_cmd
 CFLAGS += -I$(DIR_BT)/example/da_ble_peripheral
 CFLAGS += -I$(DIR_BT)/example/da_ble_central
+CFLAGS += -I$(DIR_BT)/example/da_ble_scatternet
 CFLAGS += -I$(TOPDIR)/../da_include/ble
 CFLAGS += -I$(TOPDIR)/../da_include/da_core
 endif

@@ -130,10 +130,12 @@ void ble_tizenrt_app_task_init(void)
                     BLE_TIZENRT_CALLBACK_TASK_PRIORITY);
 
     if (os_sem_take(start_bt_stack_sem_handle, 0xFFFFFFFF) == true) {
-        gap_start_bt_stack(ble_tizenrt_evt_queue_handle, ble_tizenrt_io_queue_handle, BLE_TIZENRT_MAX_NUMBER_OF_GAP_MESSAGE);
+        if(false == gap_start_bt_stack(ble_tizenrt_evt_queue_handle, ble_tizenrt_io_queue_handle, BLE_TIZENRT_MAX_NUMBER_OF_GAP_MESSAGE))
+            debug_print("\r\n[%s] gap_start_bt_stack return false", __FUNCTION__);
         os_sem_delete(start_bt_stack_sem_handle);
         start_bt_stack_sem_handle = NULL;
-    }
+    } else
+        debug_print("\r\n[%s] take start_bt_stack_sem_handle fail", __FUNCTION__);
     debug_print("\r\n[%s] Init Done", __FUNCTION__);
 }
 
