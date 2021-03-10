@@ -257,6 +257,10 @@ EXTERN uint32_t g_dabtstackbase;	/* Initial top of data abort stack */
 
 EXTERN uint32_t _stext_flash;			/* Start of .text in Flash region */
 EXTERN uint32_t _etext_flash;			/* End_1 of .text + .rodata in Flash region */
+#ifdef CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT
+EXTERN uint32_t _stext_ram;			/* Start of .text in RAM region */
+EXTERN uint32_t _etext_ram;			/* End of .text in RAM region */
+#endif
 EXTERN const uint32_t _eronly;	/* End+1 of read only section (.text + .rodata) */
 EXTERN uint32_t _sdata;			/* Start of .data */
 EXTERN uint32_t _edata;			/* End+1 of .data */
