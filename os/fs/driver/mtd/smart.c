@@ -5197,7 +5197,7 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 	case SMART_JOURNAL_TYPE_ERASE: {
 		/* Instead of copy header from journal, Erase block(psector) */
 		ret = MTD_ERASE(dev->mtd, psector, 1);
-		if (ret != OK) {
+		if (ret < 0) {
 			fdbg("Erase failed ret : %d\n", ret);
 			return -EIO;
 		}
