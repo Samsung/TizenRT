@@ -38,11 +38,37 @@ extern uint32_t _sdata;
 extern uint32_t _edata;
 extern uint32_t _sbss;
 extern uint32_t _ebss;
+#ifdef CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT
+extern uint32_t _stext_ram;
+extern uint32_t _etext_ram;
+#endif
+
+bool is_kernel_text_space(void *addr)
+{
+	/* Check if the address lies in the kernel text section range */
+	if ((addr >= (void *)&_stext_flash && addr <= (void *)&_etext_flash)
+#ifdef CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT
+		|| (addr >= (void *)&_stext_ram && addr <= (void *)&_etext_ram)
+#endif
+	) {
+		return true;
+	}
+	return false;
+}
+
+bool is_kernel_data_space(void *addr)
+{
+	/* Check if the address lies in the kernel data or bss section */
+	if ((addr >= (void *)&_sdata && addr <= (void *)&_edata) || (addr >= (void *)&_sbss && addr <= (void *)&_ebss)) {
+		return true;
+	}
+	return false;
+}
 
 #ifdef CONFIG_BUILD_PROTECTED
 bool is_kernel_space(void *addr)
 {
-	if ((addr >= (void *)&_stext && addr <= (void *)&_etext) || (addr >= (void *)&_sdata && addr <= (void *)&_ebss)) {
+	if (is_kernel_text_space(addr) || is_kernel_data_space(addr)) {
 		return true;
 	}
 	return false;
