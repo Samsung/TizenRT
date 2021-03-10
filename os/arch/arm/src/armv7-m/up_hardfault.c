@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/arch.h>
 
 #include <stdint.h>
 #include <string.h>
@@ -137,14 +138,13 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	 * FLASH region or in the user FLASH region.
 	 */
 
-	if (((uintptr_t)pc >= (uintptr_t)&_stext && (uintptr_t)pc < (uintptr_t)&_etext) ||
-			(sched_self()->uspace &&
+	if ((is_kernel_text_space((void *)pc)) || (sched_self()->uspace &&
 			 (uintptr_t)pc >= (uintptr_t)sched_self()->uspace->->us_textstart &&
 			 (uintptr_t)pc < (uintptr_t)sched_self()->uspace->us_textend))
 #else
 	/* SVCalls are expected only from the base, kernel FLASH region */
 
-	if ((uintptr_t)pc >= (uintptr_t)&_stext && (uintptr_t)pc < (uintptr_t)&_etext)
+	if (is_kernel_text_space((void *)pc))
 #endif
 	{
 		/* Fetch the instruction that caused the Hard fault */

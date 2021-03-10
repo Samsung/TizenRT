@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/arch.h>
 
 #include <debug.h>
 
@@ -94,11 +95,13 @@ extern initializer_t _sinit;
 extern initializer_t _einit;
 
 /* _stext and _etext are symbols exported by the linker script that mark the
- * beginning and the end of text.
+ * beginning and the end of text section in ram/flash region.
  */
 
 extern uint32_t _stext;
 extern uint32_t _etext;
+extern uint32_t _ram_kernel_text_start;
+extern uint32_t _ram_kernel_text_end;
 
 /****************************************************************************
  * Public Functions
@@ -132,7 +135,8 @@ void up_cxxinitialize(void)
 	cxxinitialized = true;
 #endif
 
-	cxxinfo("_sinit: %p _einit: %p _stext: %p _etext: %p\n", &_sinit, &_einit, &_stext, &_etext);
+	cxxinfo("_sinit: %p _einit: %p _stext: %p _etext: %p _ram_kernel_text_start: %p _ram_kernel_text_end:%p \n",
+			&_sinit, &_einit, &_stext, &_etext, &_ram_kernel_text_start, &_ram_kernel_text_end);
 
 	/* Visit each entry in the initialization table */
 
@@ -145,7 +149,7 @@ void up_cxxinitialize(void)
 		 * or counts in the initialization table.
 		 */
 
-		if ((void *)initializer > (void *)&_stext && (void *)initializer < (void *)&_etext) {
+		if (is_kernel_text_space((void *)initializer)) {
 			cxxinfo("Calling %p\n", initializer);
 			initializer();
 		}
