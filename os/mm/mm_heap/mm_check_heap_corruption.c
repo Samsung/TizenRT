@@ -223,13 +223,13 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				}
 			}
 		}
-	}
 
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-	if (!up_interrupt_context())
+		if (!up_interrupt_context())
 #endif
-	{
-		mm_givesemaphore(heap);
+		{
+			mm_givesemaphore(heap);
+		}
 	}
 
 	return 0;
