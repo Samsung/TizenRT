@@ -1342,6 +1342,41 @@ errexit:
 }
 
 /****************************************************************************
+ * Name: smart_byte_to_block_write
+ *
+ * Description: To support write some bytes to flash if architecture
+ *              doesn't support bytewrite, first read entire of sector,
+ *              and then do blockwrite after merge rwbuffer & buffer.
+ *
+ ****************************************************************************/
+static int smart_byte_to_block_write(FAR struct smart_struct_s *dev, size_t offset, int nbytes, FAR const uint8_t *buffer)
+{
+	uint32_t startblock;
+	uint16_t nblocks;
+	int ret = OK;
+	/* First calculate the start block and number of blocks affected. */
+	
+	startblock = offset / dev->geo.blocksize;
+	nblocks = (offset - startblock * dev->geo.blocksize + nbytes + dev->geo.blocksize - 1) / dev->geo.blocksize;
+	ret = MTD_BREAD(dev->mtd, startblock, nblocks, (FAR uint8_t *)dev->bytebuffer);
+	if (ret < 0) {
+		fdbg("Error %d reading from device\n", -ret);
+		return ret;
+	}
+
+	memcpy(&dev->bytebuffer[offset - startblock * dev->geo.blocksize], buffer, nbytes);
+	
+	/* Write the data back to the device. */
+	
+	ret = MTD_BWRITE(dev->mtd, startblock, nblocks, (FAR uint8_t *)dev->bytebuffer);
+	if (ret < 0) {
+		fdbg("Error %d writing to device\n", -ret);
+		return ret;
+	}
+	return nbytes;
+}
+
+/****************************************************************************
  * Name: smart_bytewrite
  *
  * Description: Writes a non-page size count of bytes to the underlying
@@ -1369,37 +1404,7 @@ static ssize_t smart_bytewrite(FAR struct smart_struct_s *dev, size_t offset, in
 #endif
 	{
 		/* Perform block-based read-modify-write. */
-
-		uint32_t startblock;
-		uint16_t nblocks;
-
-		/* First calculate the start block and number of blocks affected. */
-
-		startblock = offset / dev->geo.blocksize;
-		nblocks = (offset - startblock * dev->geo.blocksize + nbytes + dev->geo.blocksize - 1) / dev->geo.blocksize;
-
-		DEBUGASSERT(nblocks <= dev->mtdBlksPerSector);
-
-		/* Do a block read. */
-
-		ret = MTD_BREAD(dev->mtd, startblock, nblocks, (FAR uint8_t *)dev->bytebuffer);
-		if (ret < 0) {
-			fdbg("Error %d reading from device\n", -ret);
-			return ret;
-		}
-
-		/* Modify the data. */
-
-		memcpy(&dev->bytebuffer[offset - startblock * dev->geo.blocksize], buffer, nbytes);
-
-		/* Write the data back to the device. */
-
-		ret = MTD_BWRITE(dev->mtd, startblock, nblocks, (FAR uint8_t *)dev->bytebuffer);
-		if (ret < 0) {
-			fdbg("Error %d writing to device\n", -ret);
-			return ret;
-		}
-		ret = nbytes;
+		ret = smart_byte_to_block_write(dev, offset, nbytes, buffer);
 	}
 
 	return ret;
@@ -5038,7 +5043,11 @@ static int smart_journal_release_sector(FAR struct smart_struct_s *dev, uint16_t
 
 
 	offset += offsetof(struct smart_sect_header_s, status);
+#ifdef CONFIG_MTD_BYTE_WRITE
 	ret = MTD_WRITE(dev->mtd, offset, 1, &header.status);
+#else
+	ret = smart_byte_to_block_write(dev, offset, 1, &header.status);
+#endif
 	if (ret != 1) {
 		fdbg("Release sector Error ret : %d target sector : %d\n", ret, psector);
 		return -EIO;
@@ -5096,7 +5105,12 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
 	smart_journal_print_log(dev, log);
 #endif
 	/* First write Journal log with Checkin state */
+
+#ifdef CONFIG_MTD_BYTE_WRITE
 	ret = MTD_WRITE(dev->mtd, address, log_size, (FAR uint8_t *)log);
+#else
+	ret = smart_byte_to_block_write(dev, address, log_size, (FAR uint8_t *)log);
+#endif
 	if (ret != log_size) {
 		fdbg("Checkin Error, write log data... physical address %u ret : %d\n", address, ret);
 		return -EIO;
@@ -5130,7 +5144,11 @@ static int smart_journal_checkout(FAR struct smart_struct_s *dev, journal_log_t 
 	int ret;
 
 	SET_JOURNAL_STATE(log->status, SMART_JOURNAL_STATE_CHECKOUT);
+#if CONFIG_MTD_BYTE_WRITE
 	ret = MTD_WRITE(dev->mtd, address + offsetof(journal_log_t, status), 1, (FAR uint8_t *)&log->status);
+#else
+	ret = smart_byte_to_block_write(dev, address + offsetof(journal_log_t, status), 1, (FAR uint8_t *)&log->status);
+#endif
 	if (ret != 1) {
 		fdbg("Checkout error, change log state to checkout.. ret : %d\n", ret);
 		smart_journal_print_log(dev, log);
@@ -5162,6 +5180,11 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 
 	case SMART_JOURNAL_TYPE_COMMIT: {
 
+#ifdef CONFIG_MTD_BYTE_WRITE
+		/** If board supports bytewrite, bytewrite is always faster than block write.
+		  * We already have a header in journal log, so write contents first, then write header
+		  */
+		  
 		/* Write given data in rwbuffer from users, except mtd header */
 		ret = MTD_WRITE(dev->mtd, ((off_t)psector * dev->sectorsize) + (off_t)mtd_size, dev->sectorsize - mtd_size, (FAR uint8_t *)&dev->rwbuffer[mtd_size]);
 		if (ret != dev->sectorsize - mtd_size) {
@@ -5175,6 +5198,11 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 			fdbg("Checkout error, write mtd header.. ret : %d\n", ret);
 			return -EIO;
 		}
+#else
+		/* If board doesn't support bytewrite, write entire of sector */
+		memcpy(&dev->rwbuffer[0], (FAR uint8_t *)&log->mtd_header, mtd_size);
+		ret = MTD_BWRITE(dev->mtd, psector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+#endif
 
 		/* It is written entire sector, so validation check should be here */
 		ret = MTD_BREAD(dev->mtd, psector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
@@ -5635,7 +5663,11 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		} else {
 			/* If crc is same, then update mtd header */
 			fvdbg("valid data, update header here..\n");
+#ifdef CONFIG_MTD_BYTE_WRITE
 			ret = MTD_WRITE(dev->mtd, psector * dev->sectorsize, mtd_size, (FAR uint8_t *)&log->mtd_header);
+#else
+			ret = smart_byte_to_block_write(dev, psector * dev->sectorsize, mtd_size, (FAR uint8_t *)&log->mtd_header);
+#endif
 			if (ret != mtd_size) {
 				fdbg("Checkout error, write mtd header.. ret : %d\n", ret);
 				return -EIO;
