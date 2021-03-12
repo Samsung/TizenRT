@@ -177,7 +177,8 @@ CFLAGS += -I$(DIR_BT)/inc
 CFLAGS += -I$(DIR_BT)/src/mcu/module/data_uart_cmd
 CFLAGS += -I$(DIR_BT)/example/da_ble_peripheral
 CFLAGS += -I$(DIR_BT)/example/da_ble_central
-CFLAGS += -I$(TOPDIR)/../da_include
+CFLAGS += -I$(TOPDIR)/../da_include/ble
+CFLAGS += -I$(TOPDIR)/../da_include/da_core
 endif
 
 ifeq ($(CONFIG_USBD_MSC),y)
