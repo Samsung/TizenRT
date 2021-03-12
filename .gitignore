@@ -18,6 +18,7 @@ Make.dep
 cscope.out
 tags
 *.pyc
+/submodule
 
 # ctags index file
 .tags
