@@ -173,12 +173,15 @@ done
 
 #Dump Info
 echo ""
-echo "==================================================================================="
-printf '%b\t\t' "\rPARTITION NAMES: \t${parts[@]}\n"
-printf '%b\t\t' "\rPARTITION SIZES: \t${sizes[@]}\n"
-printf '%b\t' "\rPARTITION OFFSETS: \t${offsets[@]}\n"
-printf "\r"
-echo "==================================================================================="
+echo "================================ < Flash Partition Information > ================================"
+printf "\rNAME       :"
+printf '  %12s' "${parts[@]}"
+printf "\r\nSIZE(in KB):"
+printf '  %12s' "${sizes[@]}"
+printf "\r\nAddr       :"
+printf '  %12s' "${offsets[@]}"
+printf "\n"
+echo "================================================================================================="
 echo ""
 
 if test $# -eq 0; then
