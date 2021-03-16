@@ -2233,6 +2233,7 @@ struct smartfs_mountpt_s *smartfs_get_first_mount(void)
 {
 	return g_mounthead;
 }
+#endif
 
 /****************************************************************************
  * Name: smartfs_invalidate_old_entry
@@ -2572,5 +2573,3 @@ error_with_map:
 	}
 	return ret;
 }
-
-#endif
