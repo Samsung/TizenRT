@@ -115,35 +115,19 @@ void esp32_devKit_mount_partions(void)
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
 	struct mtd_dev_s *mtd;
+	partition_info_t partinfo;
 
 	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
 	/* Configure mtd partitions */
-	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data, &partinfo);
 	if (ret != OK) {
 		lldbg("ERROR: configure_mtd_partitions failed");
 		return;
 	}
-#ifdef CONFIG_ESP32_AUTOMOUNT
-#ifdef CONFIG_ESP32_AUTOMOUNT_USERFS
-	/* Initialize and mount user partition (if we have) */
-	ret = mksmartfs(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME, false);
-	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed", CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME);
-	} else {
-		ret = mount(CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME, CONFIG_ESP32_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
-		if (ret != OK) {
-			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ESP32_AUTOMOUNT_USERFS_DEVNAME);
-		}
-	}
-#endif /* CONFIG_ESP32_AUTOMOUNT_USERFS */
+#ifdef CONFIG_AUTOMOUNT
+	automount_fs_partition(&partinfo);
+#endif
 
-#ifdef CONFIG_ESP32_AUTOMOUNT_ROMFS
-	ret = mount(CONFIG_ESP32_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_ESP32_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
-	if (ret != OK) {
-		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", CONFIG_ESP32_AUTOMOUNT_ROMFS_DEVNAME);
-	}
-#endif /* CONFIG_ESP32_AUTOMOUNT_ROMFS */
-#endif /* CONFIG_ESP32_AUTOMOUNT */
 #endif /* CONFIG_FLASH_PARTITION */
 }
 

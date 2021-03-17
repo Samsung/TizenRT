@@ -23,13 +23,6 @@ config FLASH_PARTITION
 
 if FLASH_PARTITION
 
-config FLASH_MINOR
-	int "Minor number for the FLASH device"
-	default 0
-	---help---
-		Sets the minor number for /dev node of the external flash
-		device.
-
 config FLASH_PART_SIZE
 	string "Flash partition size list (in KBytes)"
 	default "16,48,192,32,512,2400,1536,1536,1400,8,512," if !BUILD_PROTECTED
@@ -106,3 +99,31 @@ config SECOND_FLASH_PART_NAME
 
 endif # SECOND_FLASH_PARTITION
 endif # ARCH_BOARD_HAVE_SECOND_FLASH && (NFILE_DESCRIPTORS != 0)
+
+config AUTOMOUNT
+	bool "Automount partitions"
+	default n
+	depends on FLASH_PARTITION
+	depends on !DISABLE_MOUNTPOINT
+	---help---
+		If enabled, mount userfs or romfs partition automatically at boot.
+
+config AUTOMOUNT_USERFS
+	bool "Automount userfs partiton"
+	default n
+	depends on AUTOMOUNT
+	depends on FS_SMARTFS
+	---help---
+		If enabled, mount userfs partition automatically at boot.
+		The device name of the partition will be set like "/dev/smart0pX"
+		for user r/w file system.
+		When SMARTFS_MULTI_ROOT_DIRS is enabled the device name
+		will be appended by "d1" (/dev/smart0pxd1).
+
+config AUTOMOUNT_ROMFS
+	bool "Automount romfs partiton"
+	default n
+	depends on AUTOMOUNT
+	depends on FS_ROMFS
+	---help---
+		If enabled, mount romfs partition automatically at boot.

@@ -217,65 +217,6 @@ config ESPTOOLPY_AFTER
 	default "hard_reset" if ESPTOOLPY_AFTER_RESET
 	default "no_reset" if ESPTOOLPY_AFTER_NORESET
 
-config ESP32_AUTOMOUNT
-	bool "Automount partitions"
-	default n
-	depends on FLASH_PARTITION
-	depends on !DISABLE_MOUNTPOINT
-	---help---
-		If enabled, mount userfs or romfs partition automatically at boot.
-
-config ESP32_AUTOMOUNT_USERFS
-	bool "Automount userfs partiton"
-	default n
-	depends on ESP32_AUTOMOUNT
-	depends on FS_SMARTFS
-	---help---
-		If enabled, mount userfs partition automatically at boot.
-
-config ESP32_AUTOMOUNT_USERFS_DEVNAME
-    string "Device name of the partition for user file system"
-    default "/dev/smart0p0"
-    depends on ESP32_AUTOMOUNT_USERFS
-    ---help---
-        Specifies the device name (/dev/smart0pX) of the partition
-        for user r/w file system.
-        when SMARTFS_MULTI_ROOT_DIRS is enabled the device name
-        will be appended by "d1" (/dev/smart0pxd1).
-
-config ESP32_AUTOMOUNT_USERFS_MOUNTPOINT
-    string "Mountpoint of the partition for user r/w file system"
-    default "/mnt"
-    depends on ESP32_AUTOMOUNT_USERFS
-    ---help---
-        Specifies the mount point where user r/w file system
-        will be mounted at.
-
-config ESP32_AUTOMOUNT_ROMFS
-	bool "Automount romfs partiton"
-	default y
-	depends on ESP32_AUTOMOUNT
-	depends on FS_ROMFS
-	---help---
-		If enabled, mount romfs partition automatically at boot.
-
-config ESP32_AUTOMOUNT_ROMFS_DEVNAME
-    string "Device name of the partition for rom read only file system"
-    default "/dev/mtdblock1"
-    depends on ESP32_AUTOMOUNT_ROMFS
-    ---help---
-	Specifies the block device name of rom readonly file system.
-	the device name starts with "/dev/mtdblock", and the index is
-	its sequency(begin with 0) in partition list.
-
-config ESP32_AUTOMOUNT_ROMFS_MOUNTPOINT
-    string "Mountpoint of the partition for rom read only file system"
-    default "/rom"
-    depends on ESP32_AUTOMOUNT_ROMFS
-    ---help---
-        Specifies the mount point where rom readonly file system
-        will be mounted at.
-
 config SPIRAM_SUPPORT
     bool "ESP32 external SPIRAM support"
     default n
