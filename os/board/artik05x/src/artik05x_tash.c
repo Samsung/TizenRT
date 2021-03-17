@@ -171,36 +171,22 @@ int board_app_initialize(void)
 	int ret;
 #ifdef CONFIG_FLASH_PARTITION
 	struct mtd_dev_s *mtd;
-#if defined(CONFIG_ARTIK05X_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	partition_info_t partinfo;
+#if defined(CONFIG_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	int bufsize;
 	static uint8_t *rambuf;
 #endif /* CONFIG_RAMMTD */
 
 	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
 	/* Configure mtd partitions */
-	configure_mtd_partitions(mtd, &g_flash_part_data);
-
-#ifdef CONFIG_ARTIK05X_AUTOMOUNT
-#ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
-	/* Initialize and mount user partition (if we have) */
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, 1, false);
-#else
-	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
-#endif
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data, &partinfo);
 	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed\n",
-				ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
-	} else {
-		ret = mount(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
-				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT,
-				"smartfs", 0, NULL);
-		if (ret != OK) {
-			lldbg("ERROR: mounting '%s' failed\n",
-					ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
-		}
+		lldbg("ERROR: configure_mtd_partitions failed.\n");
+		return ERROR;
 	}
-#endif /* CONFIG_ARTIK05X_AUTOMOUNT_USERFS */
+
+#ifdef CONFIG_AUTOMOUNT
+	automount_fs_partition(&partinfo);
 
 #ifdef CONFIG_ARTIK05X_AUTOMOUNT_SSSRW
 	/* Initialize and mount secure storage partition (if we have) */
@@ -222,16 +208,6 @@ int board_app_initialize(void)
 		}
 	}
 #endif /* CONFIG_ARTIK05X_AUTOMOUNT_SSSRW */
-
-#ifdef CONFIG_ARTIK05X_AUTOMOUNT_ROMFS
-	ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_ROMFS_DEVNAME,
-			CONFIG_ARTIK05X_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
-
-	if (ret != OK) {
-		lldbg("ERROR: mounting '%s'(ROMFS) failed\n",
-			  CONFIG_ARTIK05X_AUTOMOUNT_ROMFS_DEVNAME);
-	}
-#endif
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK05X_RAMMTD_NEBLOCKS;
@@ -277,7 +253,7 @@ int board_app_initialize(void)
 	}
 
 #endif /* CONFIG_LIBC_ZONEINFO_ROMFS */
-#endif /* CONFIG_ARTIK05X_AUTOMOUNT */
+#endif /* CONFIG_AUTOMOUNT */
 #endif /* CONFIG_FLASH_PARTITION */
 
 #if defined(CONFIG_RTC_DRIVER)

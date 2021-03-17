@@ -185,35 +185,20 @@ void amebad_mount_partions(void)
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
 	struct mtd_dev_s *mtd;
+	partition_info_t partinfo;
 
 	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
 	/* Configure mtd partitions */
-	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data, &partinfo);
 	if (ret != OK) {
 		lldbg("ERROR: configure_mtd_partitions failed\n");
 		return;
 	}
-#ifdef CONFIG_AMEBAD_AUTOMOUNT
-#ifdef CONFIG_AMEBAD_AUTOMOUNT_USERFS
-	/* Initialize and mount user partition (if we have) */
-	ret = mksmartfs(CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME, false);
-	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
-	} else {
-		ret = mount(CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME, CONFIG_AMEBAD_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
-		if (ret != OK) {
-			lldbg("ERROR: mounting '%s' failed\n", CONFIG_AMEBAD_AUTOMOUNT_USERFS_DEVNAME);
-		}
-	}
-#endif /* CONFIG_AMEBAD_AUTOMOUNT_USERFS */
 
-#ifdef CONFIG_AMEBAD_AUTOMOUNT_ROMFS
-	ret = mount(CONFIG_AMEBAD_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_AMEBAD_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
-	if (ret != OK) {
-		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", CONFIG_AMEBAD_AUTOMOUNT_ROMFS_DEVNAME);
-	}
-#endif /* CONFIG_AMEBAD_AUTOMOUNT_ROMFS */
-#endif /* CONFIG_AMEBAD_AUTOMOUNT */
+#ifdef CONFIG_AUTOMOUNT
+	automount_fs_partition(&partinfo);
+#endif
+
 #endif /* CONFIG_FLASH_PARTITION */
 }
 

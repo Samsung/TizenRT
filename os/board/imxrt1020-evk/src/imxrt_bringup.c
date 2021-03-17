@@ -155,7 +155,8 @@ void imxrt_filesystem_initialize(void)
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
 	struct mtd_dev_s *mtd;
-#if defined(CONFIG_IMXRT_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	partition_info_t partinfo;
+#if defined(CONFIG_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	int bufsize;
 	static uint8_t *rambuf;
 #endif							/* CONFIG_RAMMTD */
@@ -164,31 +165,16 @@ void imxrt_filesystem_initialize(void)
 
 	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
 	/* Configure mtd partitions */
-	ret = configure_mtd_partitions(mtd, &g_flash_part_data);
+	ret = configure_mtd_partitions(mtd, &g_flash_part_data, &partinfo);
 	if (ret != OK) {
 		IMXLOG("configure_mtd_partitions failed");
+		return;
 	} else {
 		IMXLOG("SUCCESS: configure_mtd_partitions");
 	}
 
-#ifdef CONFIG_IMXRT_AUTOMOUNT
-#ifdef CONFIG_IMXRT_AUTOMOUNT_USERFS
-	/* Initialize and mount user partition (if we have) */
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(IMXRT_AUTOMOUNT_USERFS_DEVNAME, 1, false);
-#else
-	ret = mksmartfs(IMXRT_AUTOMOUNT_USERFS_DEVNAME, false);
-#endif
-	if (ret != OK) {
-		IMXLOG("USERFS ERROR: mksmartfs failed");
-	} else {
-		IMXLOG("SUCCESS: mksmartfs");
-		ret = mount(IMXRT_AUTOMOUNT_USERFS_DEVNAME, CONFIG_IMXRT_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
-		if (ret != OK) {
-			IMXLOG("USERFS ERROR: mounting failed");
-		}
-	}
-#endif							/* CONFIG_IMXRT_AUTOMOUNT_USERFS */
+#ifdef CONFIG_AUTOMOUNT
+	automount_fs_partition(&partinfo);
 
 #ifdef CONFIG_IMXRT_AUTOMOUNT_SSSRW
 	/* Initialize and mount secure storage partition (if we have) */
@@ -206,14 +192,6 @@ void imxrt_filesystem_initialize(void)
 		}
 	}
 #endif							/* CONFIG_IMXRT_AUTOMOUNT_SSSRW */
-
-#ifdef CONFIG_IMXRT_AUTOMOUNT_ROMFS
-	ret = mount(CONFIG_IMXRT_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_IMXRT_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
-
-	if (ret != OK) {
-		IMXLOG("ROMFS ERROR: mounting failed");
-	}
-#endif
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
@@ -258,7 +236,7 @@ void imxrt_filesystem_initialize(void)
 		IMXLOG("ROMFS ERROR: mounting failed");
 	}
 #endif							/* CONFIG_LIBC_ZONEINFO_ROMFS */
-#endif							/* CONFIG_IMXRT_AUTOMOUNT */
+#endif							/* CONFIG_AUTOMOUNT */
 #endif							/* CONFIG_FLASH_PARTITION */
 }
 

@@ -29,11 +29,18 @@
 struct partition_data_s {
 	char *types;
 	char *sizes;
-	int minor;
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	char *names;
 #endif
 };
+
+#define FLASH_MINOR 0 
+
+struct partition_info_s {
+	int smartfs_partno;
+	int romfs_partno;
+};
+typedef struct partition_info_s partition_info_t;
 
 #ifdef CONFIG_FLASH_PARTITION
 extern struct partition_data_s g_flash_part_data;
@@ -43,8 +50,9 @@ extern struct partition_data_s g_flash_part_data;
 extern struct partition_data_s g_second_flash_part_data;
 #endif
 
-int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *part_data);
+int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *part_data, partition_info_t *partinfo);
 FAR struct mtd_dev_s *mtd_initialize(void);
+void automount_fs_partition(partition_info_t *partinfo);
 #endif
 
  #endif /*__BOARD_COMMON_H__ */

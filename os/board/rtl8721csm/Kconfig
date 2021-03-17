@@ -32,50 +32,6 @@ config AMEBAD_FLASH_BLOCK_SIZE
     default 4096
     help
         Setting this vaule to configure erase unit size of esp32 SPI flash.
-		
-config AMEBAD_AUTOMOUNT
-	bool "Automount partitions"
-	default n
-	depends on FLASH_PARTITION
-	depends on !DISABLE_MOUNTPOINT
-	---help---
-		If enabled, mount userfs or romfs partition automatically at boot.
-
-config AMEBAD_AUTOMOUNT_USERFS
-	bool "Automount userfs partiton"
-	default n
-	depends on AMEBAD_AUTOMOUNT
-	depends on FS_SMARTFS
-	---help---
-		If enabled, mount userfs partition automatically at boot.
-
-config AMEBAD_AUTOMOUNT_USERFS_DEVNAME
-    string "Device name of the partition for user r/w file system"
-    default "/dev/smart0p0"
-    depends on AMEBAD_AUTOMOUNT_USERFS
-
-config AMEBAD_AUTOMOUNT_USERFS_MOUNTPOINT
-    string "Mountpoint of the partition for user r/w file system"
-    default "/mnt"
-    depends on AMEBAD_AUTOMOUNT_USERFS
-
-config AMEBAD_AUTOMOUNT_ROMFS
-	bool "Automount romfs partiton"
-	default y
-	depends on AMEBAD_AUTOMOUNT
-	depends on FS_ROMFS
-	---help---
-		If enabled, mount romfs partition automatically at boot.
-
-config AMEBAD_AUTOMOUNT_ROMFS_DEVNAME
-    string "Device name of the partition for rom read only file system"
-    default "/dev/mtdblock0"
-    depends on AMEBAD_AUTOMOUNT_ROMFS
-
-config AMEBAD_AUTOMOUNT_ROMFS_MOUNTPOINT
-    string "Mountpoint of the partition for rom read only file system"
-    default "/rom"
-    depends on AMEBAD_AUTOMOUNT_ROMFS
 	
 endmenu
 endif
