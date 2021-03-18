@@ -94,6 +94,8 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 			}
 		}
 #endif
+
+#ifdef CONFIG_NETUTILS_WEBSOCKET
 		http_keyvalue_list_init(&request_params);
 		result = http_recv_and_handle_request(p, &request_params);
 		http_keyvalue_list_release(&request_params);
@@ -103,6 +105,29 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 		} else {
 			HTTP_LOGD("Client %d  in normal case.\n", sock_fd);
 		}
+#else
+		do {
+			http_keyvalue_list_init(&request_params);
+			result = http_recv_and_handle_request(p, &request_params);
+			http_keyvalue_list_release(&request_params);
+
+			HTTP_LOGD("Client %d in keep-alive %d.\n", p->keep_alive);
+
+			if (result != HTTP_OK) {
+				HTTP_LOGD("Client %d  in error case.\n", sock_fd);
+				break;
+			} else {
+				HTTP_LOGD("Client %d  in normal case.\n", sock_fd, p->keep_alive);
+
+				// Close client socket if connection is not persistent one.
+				if (p->keep_alive == 0) {
+					HTTP_LOGD("Client %d closing.\n", sock_fd);
+					close(p->client_fd);
+				}
+			}
+		} while(p->keep_alive);
+#endif
+
 		http_client_release(p);
 		HTTP_LOGD("Release client....\n");
 	}
@@ -125,6 +150,7 @@ struct http_client_t *http_client_init(struct http_server_t *server, int sock_fd
 
 	p->client_fd = sock_fd;
 	p->server = server;
+	p->keep_alive = 0;
 
 	return p;
 }
@@ -453,6 +479,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	struct http_message_len_t mlen = {0,};
 	struct sockaddr_in addr;
 	socklen_t addr_len;
+	char *conn_type = NULL;
 
 	client->ws_state = 0;
 
@@ -501,6 +528,15 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 			goto errout;
 		}
 	}
+
+	// Check "Connection" header value
+	conn_type = http_keyvalue_list_find(request_params, "Connection");
+	if (!strcmp(conn_type, "Keep-Alive")) {
+		client->keep_alive = 1;
+	} else {
+		client->keep_alive = 0;
+	}
+
 	if (method == HTTP_METHOD_UNKNOWN) {
 		goto errout;
 	}
@@ -544,11 +580,10 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 		}
 		pthread_setname_np(ws->thread_id, "websocket handle server");
 		pthread_detach(ws->thread_id);
-	} else
-#endif
-	{
+	} else {
 		close(client->client_fd);
 	}
+#endif
 
 	HTTP_FREE(buf);
 	if (enc == HTTP_CHUNKED_ENCODING) {
@@ -695,9 +730,16 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 
 		if (status == 200) {
 			if (headers == NULL) {
-				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-								   "Content-type: text/html\r\n"
-								   "Connection: close\r\n");
+				if (client->keep_alive == 0) {
+					buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+									   "Content-type: text/html\r\n"
+									   "Connection: close\r\n");
+				} else {
+					buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+                                                                           "Content-type: text/html\r\n"
+                                                                           "Connection: Keep-Alive\r\n");
+				}
+
 				if (body) {
 					buflen += snprintf(buf + buflen,
 									   HTTP_CONF_MAX_REQUEST_LENGTH - buflen,

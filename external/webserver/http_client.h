@@ -50,6 +50,8 @@ struct http_client_t {
 	mbedtls_ssl_context       tls_ssl;
 	mbedtls_net_context       tls_client_fd;
 #endif
+
+	int keep_alive;
 };
 
 struct http_message_len_t {
