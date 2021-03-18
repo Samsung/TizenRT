@@ -103,14 +103,20 @@ function rtl8721csm_dwld_help()
         cat <<EOF
 	HELP:
 		make download ALL or [PARTITION(S)]
+		make download ERASE_ALL or erase_[PARTITION(S)]
+
 	PARTITION(S):
-		 [${uniq_parts[@]}]  NOTE:case sensitive
+		[${uniq_parts[@]}]  NOTE:case sensitive
 
 	For examples:
 		make download ALL
-	        make download kernel
+		make download ERASE_ALL
+		make download kernel
+		make download erase_kernel
 		make download ota
-	        make download smartfs
+		make download erase_ota
+		make download smartfs
+		make download erase_userfs
 EOF
 }
 
@@ -238,12 +244,10 @@ download_specific_partition()
 	fi
 	echo "============================="
 	exe_name=$(get_executable_name ${parts[$partidx]})
-	./amebad_image_tool $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
+	./amebad_image_tool 1 $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
 
 	echo ""
 	echo "Download $exe_name COMPLETE!"
-
-	[ -e ${exe_name} ] && rm ${exe_name}
 }
 
 download_all()
@@ -275,19 +279,79 @@ download_all()
 		echo "Downloading ${parts[$partidx]} binary"
 		echo "=========================="
 
-		./amebad_image_tool $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
-		rm ${exe_name}
-
+		./amebad_image_tool 1 $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
 	done
 	echo ""
 	echo "Download COMPLETE!"
+}
+
+erase()
+{
+	cd ${IMG_TOOL_PATH}
+	echo "Starting Erase..."
+	ota_addr=$(($FLASH_START_ADDR + $CONFIG_AMEBAD_FLASH_CAPACITY))
+	if [[ $1 == "erase_all" || $1 == "ERASE_ALL" ]];then
+		found_kernel=false
+		flash_ota=false
+		echo ""
+		echo "=========================="
+		echo "      Erasing All"
+		echo "=========================="
+		./amebad_image_tool 2 $TTYDEV 1 $FLASH_START_ADDR 0 $(($CONFIG_AMEBAD_FLASH_CAPACITY>>10))
+	else
+		for partidx in ${!parts[@]}; do
+			if [[ $1 == "erase_kernel" || $1 == "ERASE_KERNEL" ]];then
+				if [[ "${parts[$partidx]}" != "kernel" ]];then
+					continue
+				elif [[ ${offsets[$partidx]} -lt ${ota_addr} ]];then
+					ota_addr=0
+					found_kernel=false
+				else
+					continue
+				fi
+			elif [[ $1 == "erase_ota" || $1 == "ERASE_OTA" ]];then
+				if [[ "${parts[$partidx]}" != "kernel" ]];then
+					continue
+				elif [[ ${offsets[$partidx]} -lt ${ota_addr} ]];then
+					ota_addr=${offsets[$partidx]}
+					continue
+				else
+					flash_ota=false
+				fi
+			elif [[ $1 == "erase_userfs" || $1 == "ERASE_USERFS" ]];then
+				if [[ "${parts[$partidx]}" != "userfs" ]];then
+					continue
+				fi
+			fi
+			exe_name=$(get_executable_name ${parts[$partidx]})
+			[ "No Binary Match" = "${exe_name}" ] && continue
+
+			echo ""
+			echo "=========================="
+			echo "Erasing ${parts[$partidx]} binary"
+			echo "=========================="
+			./amebad_image_tool 2 $TTYDEV 1 ${offsets[$partidx]} ${exe_name} ${sizes[partidx]}
+		done
+	fi
+	echo ""
+	echo "Erase COMPLETE!"
 }
 
 case $1 in
 	all|ALL)
 		download_all
 		;;
+	erase_kernel|ERASE_KERNEL|erase_ota|ERASE_OTA|erase_userfs|ERASE_USERFS|erase_all|ERASE_ALL)
+		erase $1
+		;;
 	*)
 		download_specific_partition $1
 		;;
 esac
+
+[ -e km0_boot_all.bin ] && rm km0_boot_all.bin
+[ -e km4_boot_all.bin ] && rm km4_boot_all.bin
+[ -e km0_km4_image2.bin ] && rm km0_km4_image2.bin
+if test -f "${SMARTFS_BIN_PATH}"; then
+	[ -e rtl8721csm_smartfs.bin ] && rm rtl8721csm_smartfs.bin
+fi

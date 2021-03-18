@@ -26,5 +26,9 @@
         <option desc="Flash TizenRT kernel">KERNEL</option>
         <option desc="Flash TizenRT userfs">USERFS</option>
         <option desc="Flash TizenRT ota">OTA</option>
+        <option desc="Erase TizenRT kernel">ERASE_KERNEL</option>
+        <option desc="Erase TizenRT ota">ERASE_OTA</option>
+        <option desc="Erase TizenRT userfs">ERASE_USERFS</option>
+        <option desc="Erase all binaries and images">ERASE_ALL</option>
     </options>
 </flash>
