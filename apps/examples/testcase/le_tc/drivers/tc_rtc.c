@@ -101,6 +101,9 @@ static void tc_driver_rtc_ioctl(void)
 	rtctime_s.tm_hour = 1;
 	rtctime_s.tm_min = 2;
 	rtctime_s.tm_sec = 3;
+	rtctime_s.tm_mday = 1;
+	rtctime_s.tm_mon = 2;
+	rtctime_s.tm_year = 3;
 
 	ret = ioctl(fd, RTC_SET_TIME, (unsigned long)&rtctime_s);
 	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
@@ -110,6 +113,9 @@ static void tc_driver_rtc_ioctl(void)
 	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_hour, rtctime_s.tm_hour, close(fd));
 	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_min, rtctime_s.tm_min, close(fd));
 	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_sec, rtctime_s.tm_sec, close(fd));
+	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_mday, rtctime_s.tm_mday, close(fd));
+	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_mon, rtctime_s.tm_mon, close(fd));
+	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_year, rtctime_s.tm_year, close(fd));
 
 	/* Negative test cases */
 	ret = ioctl(fd, -1, 0);
