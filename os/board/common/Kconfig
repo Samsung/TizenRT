@@ -109,7 +109,7 @@ config AUTOMOUNT
 		If enabled, mount userfs or romfs partition automatically at boot.
 
 config AUTOMOUNT_USERFS
-	bool "Automount userfs partiton"
+	bool "Automount userfs partition"
 	default n
 	depends on AUTOMOUNT
 	depends on FS_SMARTFS
@@ -121,7 +121,7 @@ config AUTOMOUNT_USERFS
 		will be appended by "d1" (/dev/smart0pxd1).
 
 config AUTOMOUNT_ROMFS
-	bool "Automount romfs partiton"
+	bool "Automount romfs partition"
 	default n
 	depends on AUTOMOUNT
 	depends on FS_ROMFS
