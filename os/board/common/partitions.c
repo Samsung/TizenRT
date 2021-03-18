@@ -29,6 +29,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#ifdef CONFIG_LIBC_ZONEINFO_ROMFS
+#include <sys/mount.h>
+#endif
+
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
 
@@ -85,6 +89,9 @@ static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, 
 #ifdef CONFIG_FS_ROMFS
 	bool save_romfs_partno = false;
 #endif
+#ifdef CONFIG_LIBC_ZONEINFO_ROMFS
+	bool save_timezone_partno = false;
+#endif
 
 	if (partinfo == NULL) {
 		lldbg("ERROR: partinfo is NULL\n");
@@ -103,6 +110,12 @@ static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, 
 	else if (!strncmp(types, "romfs,", 6)) {
 		do_ftlinit = true;
 		save_romfs_partno = true;
+	}
+#endif
+#ifdef CONFIG_LIBC_ZONEINFO_ROMFS
+	else if (!strncmp(types, "timezone,", 10)) {
+		do_ftlinit = true;
+		save_timezone_partno = true;
 	}
 #endif
 #endif
@@ -130,6 +143,13 @@ static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, 
 #ifdef CONFIG_FS_ROMFS
 		if (save_romfs_partno) {
 			partinfo->romfs_partno = partno;
+			save_romfs_partno = false;
+		}
+#endif
+#ifdef CONFIG_LIBC_ZONEINFO_ROMFS
+		if (save_timezone_partno) {
+			partinfo->timezone_partno = partno;
+			save_timezone_partno = false;
 		}
 #endif
 	}
@@ -289,6 +309,14 @@ void automount_fs_partition(partition_info_t *partinfo)
 		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", fs_devname);
 	}
 #endif /* CONFIG_AUTOMOUNT_ROMFS */
+
+#ifdef CONFIG_LIBC_ZONEINFO_ROMFS
+	snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->timezone_partno);
+	ret = mount(fs_devname, CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
+	if (ret != OK) {
+		lldbg("ROMFS ERROR: timezone mount failed");
+	}
+#endif	/* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif
 }
 #endif // defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_SECOND_FLASH_PARTITION)
