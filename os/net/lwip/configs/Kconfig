@@ -77,7 +77,7 @@ source "net/lwip/configs/ipv6/Kconfig"
 
 if NET_IPv6
 source "net/lwip/configs/nd/Kconfig"
-source "net/lwip/configs/icmp6/Kconfig""
+source "net/lwip/configs/icmp6/Kconfig"
 endif
 
 menuconfig NET_IPv6_MLD
