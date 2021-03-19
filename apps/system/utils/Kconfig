@@ -150,8 +150,8 @@ config ENABLE_TZSELECT
 config ENABLE_IRQINFO
 	bool "irqinfo"
 	default n
-	depends on TASH && !FS_PROCFS_EXCLUDE_IRQS
-	select DEBUG_IRQ_INFO if DEBUG
+	depends on !FS_PROCFS_EXCLUDE_IRQS
+	depends on DEBUG_IRQ_INFO
 	---help---
 		List the registered interrupts, it's occurrence counts and corresponding isr.
 
