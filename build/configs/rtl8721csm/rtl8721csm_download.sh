@@ -18,8 +18,9 @@
 ###########################################################################
 # rtl8721csm_download.sh
 
-if [ -n "$2" ]; then
-	PORT="$2"
+## For manual port selection, set $3 as the portname, eg. make download ALL x ttyUSB2
+if [ -n "$3" ]; then
+	PORT="$3"
 else
 	PORT="ttyUSB1"
 fi
@@ -103,20 +104,20 @@ function rtl8721csm_dwld_help()
         cat <<EOF
 	HELP:
 		make download ALL or [PARTITION(S)]
-		make download ERASE_ALL or erase_[PARTITION(S)]
+		make download ERASE ALL or erase [PARTITION(S)]
 
 	PARTITION(S):
 		[${uniq_parts[@]}]  NOTE:case sensitive
 
 	For examples:
 		make download ALL
-		make download ERASE_ALL
+		make download ERASE ALL
 		make download kernel
-		make download erase_kernel
+		make download erase kernel
 		make download ota
-		make download erase_ota
+		make download erase ota
 		make download smartfs
-		make download erase_userfs
+		make download erase userfs
 EOF
 }
 
@@ -244,7 +245,7 @@ download_specific_partition()
 	fi
 	echo "============================="
 	exe_name=$(get_executable_name ${parts[$partidx]})
-	./amebad_image_tool 1 $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
+	./amebad_image_tool "download" $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
 
 	echo ""
 	echo "Download $exe_name COMPLETE!"
@@ -279,7 +280,7 @@ download_all()
 		echo "Downloading ${parts[$partidx]} binary"
 		echo "=========================="
 
-		./amebad_image_tool 1 $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
+		./amebad_image_tool "download" $TTYDEV 1 ${offsets[$partidx]} ${exe_name}
 	done
 	echo ""
 	echo "Download COMPLETE!"
@@ -290,17 +291,17 @@ erase()
 	cd ${IMG_TOOL_PATH}
 	echo "Starting Erase..."
 	ota_addr=$(($FLASH_START_ADDR + $CONFIG_AMEBAD_FLASH_CAPACITY))
-	if [[ $1 == "erase_all" || $1 == "ERASE_ALL" ]];then
+	if [[ $2 == "all" || $2 == "ALL" ]];then
 		found_kernel=false
 		flash_ota=false
 		echo ""
 		echo "=========================="
 		echo "      Erasing All"
 		echo "=========================="
-		./amebad_image_tool 2 $TTYDEV 1 $FLASH_START_ADDR 0 $(($CONFIG_AMEBAD_FLASH_CAPACITY>>10))
+		./amebad_image_tool "erase" $TTYDEV 1 $FLASH_START_ADDR 0 $(($CONFIG_AMEBAD_FLASH_CAPACITY>>10))
 	else
 		for partidx in ${!parts[@]}; do
-			if [[ $1 == "erase_kernel" || $1 == "ERASE_KERNEL" ]];then
+			if [[ $2 == "kernel" || $2 == "KERNEL" ]];then
 				if [[ "${parts[$partidx]}" != "kernel" ]];then
 					continue
 				elif [[ ${offsets[$partidx]} -lt ${ota_addr} ]];then
@@ -309,7 +310,7 @@ erase()
 				else
 					continue
 				fi
-			elif [[ $1 == "erase_ota" || $1 == "ERASE_OTA" ]];then
+			elif [[ $2 == "ota" || $2 == "OTA" ]];then
 				if [[ "${parts[$partidx]}" != "kernel" ]];then
 					continue
 				elif [[ ${offsets[$partidx]} -lt ${ota_addr} ]];then
@@ -318,7 +319,7 @@ erase()
 				else
 					flash_ota=false
 				fi
-			elif [[ $1 == "erase_userfs" || $1 == "ERASE_USERFS" ]];then
+			elif [[ $2 == "userfs" || $2 == "USERFS" ]];then
 				if [[ "${parts[$partidx]}" != "userfs" ]];then
 					continue
 				fi
@@ -328,9 +329,9 @@ erase()
 
 			echo ""
 			echo "=========================="
-			echo "Erasing ${parts[$partidx]} binary"
+			echo "Erasing ${parts[$partidx]} partition"
 			echo "=========================="
-			./amebad_image_tool 2 $TTYDEV 1 ${offsets[$partidx]} ${exe_name} ${sizes[partidx]}
+			./amebad_image_tool "erase" $TTYDEV 1 ${offsets[$partidx]} ${exe_name} ${sizes[partidx]}
 		done
 	fi
 	echo ""
@@ -341,8 +342,8 @@ case $1 in
 	all|ALL)
 		download_all
 		;;
-	erase_kernel|ERASE_KERNEL|erase_ota|ERASE_OTA|erase_userfs|ERASE_USERFS|erase_all|ERASE_ALL)
-		erase $1
+	erase|ERASE)
+		erase $1 $2
 		;;
 	*)
 		download_specific_partition $1
