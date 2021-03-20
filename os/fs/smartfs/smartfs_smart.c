@@ -288,28 +288,18 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 				goto errout_with_buffer;
 			}
 
-#if defined(CONFIG_SMARTFS_USE_SECTOR_BUFFER) && !defined(NXFUSE_HOST_BUILD)
-			/* If CRC is enabled, hold the entry for writing later */
-			/* Mark flags to indicate that the entry will be written to a new sector in the parent directory.
-			 * This sector will then be chained in the end.
-			 */
-			sf->bflags |= SMARTFS_BFLAG_NEW_ENTRY;
-			/* Save entry mode to write to MTD later */
 			sf->entry.flags = SMARTFS_ERASEDSTATE_16BIT;
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
 			smartfs_wrle16(&sf->entry.flags, (uint16_t)(mode & SMARTFS_DIRENT_MODE));
 #else
 			sf->entry.flags = (uint16_t)(mode & SMARTFS_DIRENT_MODE);
 #endif
-#else
-			/* If CRC is disabled, write the new file entry */
 			/* At this point, either an available entry was found or a new one has been created */
 			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, mode);
 			if (ret != OK) {
 				fdbg("Unable to write entry, ret : %d\n", ret);
 				goto errout_with_buffer;
 			}
-#endif
 		} else {
 			/* Trying to create in a directory that doesn't exist */
 
