@@ -706,15 +706,6 @@ int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *
 		}
 
 		sf->byteswritten = 0;
-		/* File's data sector has been synced with MTD, now check if this is a new file entry and write the entry */
-		if (sf->bflags & SMARTFS_BFLAG_NEW_ENTRY) {
-			/* Flags for this entry have already been set and stored, so mode will not be used */
-			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, (sf->entry.flags & SMARTFS_DIRENT_MODE));
-			if (ret < 0) {
-				fdbg("Failed to write new file entry ot MTD\n");
-				goto errout;
-			}
-		}
 		sf->bflags = SMARTFS_BFLAG_UNMOD;
 	}
 #else							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
