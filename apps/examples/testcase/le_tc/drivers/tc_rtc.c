@@ -20,6 +20,7 @@
 /// @brief Test Case Example for rtc driver
 #include <tinyara/config.h>
 #include <tinyara/rtc.h>
+#include <tinyara/time.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -115,7 +116,15 @@ static void tc_driver_rtc_ioctl(void)
 	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_sec, rtctime_s.tm_sec, close(fd));
 	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_mday, rtctime_s.tm_mday, close(fd));
 	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_mon, rtctime_s.tm_mon, close(fd));
-	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_year, rtctime_s.tm_year, close(fd));
+
+	/* If the year according to the RTC's Epoch is less than 1970,
+	 *  it is assumed to be 100 years later, that is,between 2000 and 2069.
+	 *  Refer : https://man7.org/linux/man-pages/man4/rtc.4.html */
+	if (rtctime_s.tm_year < EPOCH_YEAR - TM_YEAR_BASE) {
+		TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_year, rtctime_s.tm_year + 100, close(fd));
+	} else {
+		TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_year, rtctime_s.tm_year, close(fd));
+	}
 
 	/* Negative test cases */
 	ret = ioctl(fd, -1, 0);
