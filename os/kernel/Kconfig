@@ -186,6 +186,13 @@ config JULIAN_TIME
 	---help---
 		Enables Julian time conversions
 
+config INIT_SYSTEM_TIME
+	bool "Initialize System Time"
+	default y
+	depends on RTC
+	---help---
+		Initialize the system time based on VERSION_BUILD_TIME.
+
 if !RTC
 
 config START_YEAR
