@@ -303,8 +303,7 @@ static void tc_libc_misc_lib_dumpbuffer(void)
 	TC_SUCCESS_RESULT();
 }
 
-#ifndef CONFIG_BUILD_PROTECTED
-#ifdef CONFIG_ARCH_LOWPUTC
+#if !defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ARCH_LOWPUTC)
 /**
  * @fn                  :tc_libc_misc_lldbg
  * @brief               :Identical to [a-z]dbg() except this is uses special interfaces provided by architecture-specific logic to \n
@@ -335,38 +334,7 @@ static void tc_libc_misc_lldbg(void)
 
 	TC_SUCCESS_RESULT();
 }
-
-/**
- * @fn                  :tc_libc_misc_llvdbg
- * @brief               :This is intended for general debug output that is normally suppressed.
- * @scenario            :When debug out is required with all details
- * @API's covered       :llvdbg
- * @Preconditions       :None
- * @Postconditions      :None
- * @Return              :void
- */
-static void tc_libc_misc_llvdbg(void)
-{
-	int ret_chk = -1;
-	const char *msg_output = "tc_libc_misc_llvdbg: Examples";
-	/*
-	   in debug.h file llvdbg is defined as :
-	   # define EXTRA_FMT "%s: "
-	   # define EXTRA_ARG ,__FUNCTION__
-	   # define llvdbg(format, ...) \
-	   lowsyslog(LOG_DEBUG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-	 */
-
-	/* Message displayed is:  "tc_libc_misc_llvdbg: Examples" */
-
-	usleep(USEC_100);
-	ret_chk = llvdbg("Examples");
-	TC_ASSERT_EQ("llvdbg", ret_chk, strlen(msg_output));
-
-	TC_SUCCESS_RESULT();
-}
-#endif
-#endif /* CONFIG_BUILD_PROTECTED */
+#endif /* !CONFIG_BUILD_PROTECTED && CONFIG_ARCH_LOWPUTC */
 #endif /* CONFIG_DEBUG_ERROR */
 
 #ifdef CONFIG_DEBUG_VERBOSE
@@ -400,7 +368,39 @@ static void tc_libc_misc_vdbg(void)
 
 	TC_SUCCESS_RESULT();
 }
-#endif
+
+#if !defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ARCH_LOWPUTC)
+/**
+ * @fn                  :tc_libc_misc_llvdbg
+ * @brief               :This is intended for general debug output that is normally suppressed.
+ * @scenario            :When debug out is required with all details
+ * @API's covered       :llvdbg
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_misc_llvdbg(void)
+{
+	int ret_chk = -1;
+	const char *msg_output = "tc_libc_misc_llvdbg: Examples";
+	/*
+	   in debug.h file llvdbg is defined as :
+	   # define EXTRA_FMT "%s: "
+	   # define EXTRA_ARG ,__FUNCTION__
+	   # define llvdbg(format, ...) \
+	   lowsyslog(LOG_DEBUG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+	 */
+
+	/* Message displayed is:  "tc_libc_misc_llvdbg: Examples" */
+
+	usleep(USEC_100);
+	ret_chk = llvdbg("Examples");
+	TC_ASSERT_EQ("llvdbg", ret_chk, strlen(msg_output));
+
+	TC_SUCCESS_RESULT();
+}
+#endif /* !CONFIG_BUILD_PROTECTED && CONFIG_ARCH_LOWPUTC */
+#endif /* CONFIG_DEBUG_VERBOSE */
 #endif /* CONFIG_DEBUG */
 
 /**
@@ -442,20 +442,22 @@ int libc_misc_main(void)
 	tc_libc_misc_crc32();
 	tc_libc_misc_crc32part();
 #ifdef CONFIG_DEBUG
+
 #ifdef CONFIG_DEBUG_ERROR
 	tc_libc_misc_dbg();
 	tc_libc_misc_lib_dumpbuffer();
-#ifndef CONFIG_BUILD_PROTECTED
-#ifdef CONFIG_ARCH_LOWPUTC
+#if !defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ARCH_LOWPUTC)
 	tc_libc_misc_lldbg();
-	tc_libc_misc_llvdbg();
-#endif
-#endif /* CONFIG_BUILD_PROTECTED */
-#endif
+#endif /* !CONFIG_BUILD_PROTECTED && CONFIG_ARCH_LOWPUTC */
+#endif /* CONFIG_DEBUG_ERROR */
 
 #ifdef CONFIG_DEBUG_VERBOSE
 	tc_libc_misc_vdbg();
-#endif
+#if !defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ARCH_LOWPUTC)
+	tc_libc_misc_llvdbg();
+#endif /* !CONFIG_BUILD_PROTECTED && CONFIG_ARCH_LOWPUTC */
+#endif /* CONFIG_DEBUG_VERBOSE */
+
 #endif /* CONFIG_DEBUG */
 	tc_libc_misc_match();
 
