@@ -323,6 +323,10 @@ erase()
 				if [[ "${parts[$partidx]}" != "userfs" ]];then
 					continue
 				fi
+			else
+				printf "\n## Invalid Option ##\n\n"
+				rtl8721csm_dwld_help
+				break
 			fi
 			exe_name=$(get_executable_name ${parts[$partidx]})
 			[ "No Binary Match" = "${exe_name}" ] && continue
