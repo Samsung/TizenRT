@@ -75,9 +75,9 @@ enum node_type_e {
 	TYPE_CORRUPTED,
 	TYPE_OVERFLOWED,
 };
-
 typedef enum node_type_e node_type_t;
 
+extern bool abort_mode;
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -143,10 +143,11 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 		 * Retake the semaphore for each region to reduce latencies
 		 */
 
+		if (!abort_mode
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-		if (!up_interrupt_context())
+			&& !up_interrupt_context()
 #endif
-		{
+		) {
 			mm_takesemaphore(heap);
 		}
 
@@ -161,10 +162,11 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				dump_node(prev, TYPE_OVERFLOWED);
 				dump_node(node, TYPE_CORRUPTED);
 				dbg("#########################################################################################\n");
+				if (!abort_mode
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-				if (!up_interrupt_context())
+					&& !up_interrupt_context()
 #endif
-				{
+				) {
 					mm_givesemaphore(heap);
 				}
 				return -1;
@@ -182,10 +184,11 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				dump_node(node, TYPE_OVERFLOWED);
 				dump_node(next, TYPE_CORRUPTED);
 				dbg("#########################################################################################\n");
+				if (!abort_mode
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-				if (!up_interrupt_context())
+					&& !up_interrupt_context()
 #endif
-				{
+				) {
 					mm_givesemaphore(heap);
 				}
 				return -1;
@@ -198,10 +201,11 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					dbg("Corrupted node blink(0x%08x) and prev node flink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->blink,
 							((struct mm_freenode_s *)node)->blink->flink);
 					dbg("#########################################################################################\n");
+					if (!abort_mode
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-					if (!up_interrupt_context())
+						&& !up_interrupt_context()
 #endif
-					{
+					) {
 						mm_givesemaphore(heap);
 					}
 					return -1;
@@ -213,10 +217,11 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					dbg("Corrupted node flink(0x%08x) and next node blink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->flink,
 							((struct mm_freenode_s *)node)->flink->blink);
 					dbg("#########################################################################################\n");
+					if (!abort_mode
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-					if (!up_interrupt_context())
+						 && !up_interrupt_context()
 #endif
-					{
+					) {
 						mm_givesemaphore(heap);
 					}
 					return -1;
@@ -224,10 +229,11 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			}
 		}
 
+		if (!abort_mode
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-		if (!up_interrupt_context())
+			&& !up_interrupt_context()
 #endif
-		{
+		) {
 			mm_givesemaphore(heap);
 		}
 	}

@@ -95,9 +95,9 @@
 #include <sys/boardctl.h>
 #endif
 
+bool abort_mode = false;
 #if defined(CONFIG_DEBUG_DISPLAY_SYMBOL)
 #include <stdio.h>
-bool abort_mode = false;
 static bool recursive_abort = false;
 #endif
 
@@ -942,8 +942,8 @@ void up_assert(const uint8_t *filename, int lineno)
 	if (abort_mode) {
 		recursive_abort = true;
 	}
-	abort_mode = true;
 #endif
+	abort_mode = true;
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);

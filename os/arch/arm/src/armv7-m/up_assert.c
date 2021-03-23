@@ -104,9 +104,7 @@
 #include "up_internal.h"
 #include "mpu.h"
 
-#ifdef CONFIG_BINMGR_RECOVERY
 bool abort_mode = false;
-#endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 extern uint32_t g_assertpc;
 #endif
@@ -450,9 +448,7 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 	board_led_on(LED_ASSERTION);
 
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
 	abort_mode = true;
-#endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
