@@ -109,8 +109,9 @@
 #include "up_internal.h"
 #include "mpu.h"
 
-#ifdef CONFIG_BINMGR_RECOVERY
 bool abort_mode = false;
+
+#ifdef CONFIG_BINMGR_RECOVERY
 extern struct tcb_s *g_faultmsg_sender;
 extern sq_queue_t g_faultmsg_list;
 extern sq_queue_t g_freemsg_list;
@@ -464,9 +465,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	reboot_reason_write_user_intended();
 #endif
 
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
 	abort_mode = true;
-#endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
