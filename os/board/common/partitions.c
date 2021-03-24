@@ -29,8 +29,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#ifdef CONFIG_LIBC_ZONEINFO_ROMFS
+#if defined(CONFIG_AUTOMOUNT_USERFS) || defined(CONFIG_AUTOMOUNT_ROMFS) || defined(CONFIG_LIBC_ZONEINFO_ROMFS)
 #include <sys/mount.h>
+#include <tinyara/fs/mksmartfs.h>
 #endif
 
 #include <tinyara/fs/mtd.h>
@@ -276,7 +277,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 
 void automount_fs_partition(partition_info_t *partinfo)
 {
-#if defined(CONFIG_AUTOMOUNT_USERFS) || defined(CONFIG_AUTOMOUNT_ROMFS)
+#if defined(CONFIG_AUTOMOUNT_USERFS) || defined(CONFIG_AUTOMOUNT_ROMFS) || defined(CONFIG_LIBC_ZONEINFO_ROMFS)
 	int ret;
 	char fs_devname[FS_PATH_MAX];
 
@@ -297,7 +298,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 	} else {
 		ret = mount(fs_devname, "/mnt", "smartfs", 0, NULL);
 		if (ret != OK) {
-			lldbg("ERROR: mounting '%s' failed\n", fs_devname);
+			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
 		}
 	}
 #endif
@@ -306,7 +307,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 	snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->romfs_partno);
 	ret = mount(fs_devname, "/rom", "romfs", 0, NULL);
 	if (ret != OK) {
-		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", fs_devname);
+		lldbg("ERROR: mounting '%s'(ROMFS) failed, errno %d\n", fs_devname, get_errno());
 	}
 #endif /* CONFIG_AUTOMOUNT_ROMFS */
 
@@ -314,7 +315,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 	snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->timezone_partno);
 	ret = mount(fs_devname, CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
 	if (ret != OK) {
-		lldbg("ROMFS ERROR: timezone mount failed");
+		lldbg("ROMFS ERROR: timezone mount failed, errno %d\n", get_errno());
 	}
 #endif	/* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif
