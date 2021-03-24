@@ -201,7 +201,7 @@ $(OUTBIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
 		-o $(TINYARA) $(HEAD_OBJ) $(EXTRA_OBJS) \
 		--start-group $(LDLIBS) $(EXTRA_LIBS) $(LIBGCC) --end-group -Map $(TOPDIR)/../build/output/bin/tinyara.map
 ifneq ($(CONFIG_WINDOWS_NATIVE),y)
-	$(Q) $(NM) $(TINYARA) | \
+	$(Q) $(NM) -l $(TINYARA) | \
 	grep -v '\(compiled\)\|\(\$(OBJEXT)$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
 	sort > $(TOPDIR)/$(OUTBIN_DIR)/System.map
 endif

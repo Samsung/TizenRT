@@ -563,6 +563,10 @@ def main():
 	print('*************************************************************')
 	print('')
 
+	# Read config information
+	fd = open(config_path, 'r')
+	data = fd.read()
+	fd.close()
 
 	if not elf :
 		print('Usage error: Must specify -e option, please find below for proper usage')
@@ -618,6 +622,21 @@ def main():
 
 
 	try:
+		# Read config information
+		fd = open(config_path, 'r')
+		data = fd.read()
+		fd.close()
+
+		# Get arch family
+		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data):
+			#If it's cortex M, then run debugsymbolviewer script and return
+			os.system("python ../debug/debugsymbolviewer.py")
+			return None
+
+		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
+			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
+			return
+
 		# Calling the Constructor with the initial set of arguments
 		rParser = dumpParser(dump_file=dump_file,elf=elf,gdb_path=gdb_path,nm_path=nm_path,readelf_path=readelf_path,log_file=log_file, debug=False)
 
@@ -706,15 +725,6 @@ def main():
 
 
 		g_mmheap = rParser.get_address_of_symbol("g_mmheap")
-
-		# Read config information
-		fd = open(config_path, 'r')
-		data = fd.read()
-		fd.close()
-
-		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
-			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
-			return
 
 		# This information depends on the mm_heap_s structure
 
