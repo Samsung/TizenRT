@@ -1,6 +1,6 @@
-###########################################################################
+##########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2021 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,17 @@
 # either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 #
-###########################################################################
+############################################################################
 
-ifeq ($(CONFIG_DRIVERS_OS_API_TEST),y)
-include os_api_test$(DELIM)kernel$(DELIM)Make.defs
-include os_api_test$(DELIM)network$(DELIM)Make.defs
-include os_api_test$(DELIM)filesystem$(DELIM)Make.defs
-CSRCS += os_api_test_drv.c
-DEPPATH += --dep-path os_api_test
-VPATH += :os_api_test
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM)$(CONFIG_AUTOMOUNT_USERFS),yy)
+
+CSRCS += test_filesystem.c
+
+CFLAGS += -I $(TOPDIR)/board/common
+
+# Include filesystem test driver support
+
+DEPPATH += --dep-path os_api_test$(DELIM)filesystem
+VPATH += :os_api_test$(DELIM)filesystem
+
 endif

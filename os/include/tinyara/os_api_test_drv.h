@@ -84,8 +84,11 @@
 #ifdef CONFIG_TC_NET_PBUF
 #define TESTIOC_NET_PBUF			_TESTIOC(23)
 #endif
+#if defined(CONFIG_AUTOMOUNT_USERFS) && defined(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM)
+#define TESTIOC_GET_FS_PARTNO			_TESTIOC(24)
+#endif
 
-#define OS_API_TEST_DRVPATH                       "/dev/os_api_test"
+#define OS_API_TEST_DRVPATH	"/dev/os_api_test"
 
 /****************************************************************************
  * Public Data

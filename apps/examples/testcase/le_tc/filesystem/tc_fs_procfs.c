@@ -51,6 +51,14 @@
 #define PROC_SMARTFS_PATH PROCFS_TEST_MOUNTPOINT"/fs/smartfs"
 #define PROC_SMARTFS_FILE_PATH PROCFS_TEST_MOUNTPOINT"/fs/smartfs/file.txt"
 
+#ifdef CONFIG_AUTOMOUNT_USERFS
+static char *TMP_MOUNT_DEV_DIR;
+#else
+#define TMP_MOUNT_DEV_DIR "/dev/smart1"
+#endif
+
+#define SMARTFS_DEV_PATH TMP_MOUNT_DEV_DIR
+
 /* Read all files in the directory */
 static int read_dir_entries(const char *dirpath)
 {
@@ -308,6 +316,10 @@ void tc_fs_procfs_main(void)
 	int ret;
 	struct stat st;
 	bool procfs_mount_exist = false;
+
+#ifdef CONFIG_AUTOMOUNT_USERFS
+	TMP_MOUNT_DEV_DIR = get_fs_mount_devname();
+#endif
 
 	ret = mount(NULL, PROCFS_TEST_MOUNTPOINT, "procfs", 0, NULL);
 	if (ret < 0) {

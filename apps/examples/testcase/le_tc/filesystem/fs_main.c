@@ -54,6 +54,12 @@
 #include "tc_common.h"
 #include "tc_internal.h"
 
+#ifdef CONFIG_AUTOMOUNT_USERFS
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <tinyara/os_api_test_drv.h>
+#endif
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -62,6 +68,13 @@
 #define SEEK_DEF		3
 #define SEEK_OFFSET		6
 #define MOUNT_DIR "/fsmnt/"
+#define FS_PATH_MAX 15
+
+#ifdef CONFIG_AUTOMOUNT_USERFS
+static char *TMP_MOUNT_DEV_DIR;
+#else
+#define TMP_MOUNT_DEV_DIR "/dev/smart1"
+#endif
 
 #ifdef CONFIG_FS_SMARTFS
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
@@ -170,6 +183,10 @@ static void vfs_rmdir(const char *dirpath);
 
 #ifndef CONFIG_DISABLE_ENVIRON
 extern int mount_show(void);
+#endif
+
+#ifdef CONFIG_AUTOMOUNT_USERFS
+static char devname[CONFIG_SMARTFS_MAXNAMLEN];
 #endif
 
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
@@ -6103,6 +6120,29 @@ static void tc_fs_driver_ramdisk_ops_p(void)
 }
 #endif
 
+#ifdef CONFIG_AUTOMOUNT_USERFS
+char *get_fs_mount_devname(void)
+{
+	return devname;
+}
+
+void get_userfs_devname(void)
+{
+	int partno;
+	int fd;
+	fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	partno = ioctl(fd, TESTIOC_GET_FS_PARTNO, 0);
+	TC_ASSERT_GEQ_CLEANUP("ioctl", partno, 0, close(fd));
+
+	snprintf(devname, FS_PATH_MAX, "/dev/smart0p%d", partno);
+	TMP_MOUNT_DEV_DIR = get_fs_mount_devname();
+
+	close(fd);
+}
+#endif
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -6112,6 +6152,10 @@ int tc_filesystem_main(int argc, char *argv[])
 	if (testcase_state_handler(TC_START, "FileSystem TC") == ERROR) {
 		return ERROR;
 	}
+
+#ifdef CONFIG_AUTOMOUNT_USERFS
+	get_userfs_devname();
+#endif
 
 	tc_fs_vfs_umount_p();
 	tc_fs_vfs_umount_noexist_path_n();
@@ -6313,6 +6357,7 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_FS
 	itc_fs_main();
 #endif
+
 	(void)testcase_state_handler(TC_END, "FileSystem TC");
 
 	return 0;

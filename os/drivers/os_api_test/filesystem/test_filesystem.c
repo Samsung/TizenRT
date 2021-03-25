@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,16 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#include <tinyara/config.h>
+#include <common.h>
 
-/// @file tc_internal.h
+#if defined(CONFIG_AUTOMOUNT_USERFS) && defined(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM)
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
-/// @brief Header file for Filesystem TestCase Example
-#ifndef __EXAMPLES_TESTCASE_FILESYSTEM_TC_INTERNAL_H
-#define __EXAMPLES_TESTCASE_FILESYSTEM_TC_INTERNAL_H
-
-/**********************************************************
-* TC Function Declarations
-**********************************************************/
-void tc_fs_procfs_main(void);
-void tc_fs_smartfs_procfs_main(void);
-void tc_fs_smartfs_mksmartfs_p(void);
-void tc_fs_smartfs_mksmartfs_invalid_path_n(void);
-
-void itc_fs_main(void);
-
-#ifdef CONFIG_AUTOMOUNT_USERFS
-char *get_fs_mount_devname(void);
+int test_fs_get_devname(void)
+{
+	return get_partition_num("userfs");
+}
 #endif
-
-#endif /* __EXAMPLES_TESTCASE_FILESYSTEM_TC_INTERNAL_H */
