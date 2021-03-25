@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016, 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/system/flash_eraseall/flash_eraseall.c
+ * apps/system/flash_test/flash_test.c
  *
  *   Copyright (C) 2013 Ken Pettit. All rights reserved.
  *   Author: Ken Pettit <pettitkd@gmail.com>
@@ -53,44 +53,108 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <tinyara/config.h>
-#include <tinyara/progmem.h>
-#include <sys/stat.h>
-
-#include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <stdint.h>
+#include <sys/types.h>
+
 #include <tinyara/fs/mtd.h>
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Definitions
+ ****************************************************************************/
+#define BUF_SIZE   1024
+
+#define READ_CMD    "read"
+/****************************************************************************
+ * Private Data
  ****************************************************************************/
 
 /****************************************************************************
- * Private data
+ * Private Functions
  ****************************************************************************/
+static int flash_read(unsigned long addr, int size)
+{
+	int ret;
+	int offset;
+	int buf_idx;
+	int read_size;
+	int remaining;
+	FAR uint8_t *buffer;
+	FAR struct mtd_dev_s *dev_mtd = NULL;
+
+	if (addr == 0 || size <= 0) {
+		printf("Invalid arguments, offset 0x%x, read size %d\n", addr, size);
+		return ERROR;
+	}
+
+	dev_mtd = up_flashinitialize();
+	if (!dev_mtd) {
+		printf("up_flashinitialize Failed\n");
+		return ERROR;
+	}
+
+	buffer = (uint8_t *)malloc(BUF_SIZE);
+	if (!buffer) {
+		printf("Failed to allocate buffer %d\n", BUF_SIZE);
+		return ERROR;
+	}
+
+	offset = 0;
+	remaining = size;
+
+	printf("Read 0x%x: ", addr);
+
+	while (remaining > 0) {
+		read_size = BUF_SIZE < remaining ? BUF_SIZE : remaining;
+		ret = MTD_READ(dev_mtd, addr + offset, read_size, buffer);
+		if (ret <= 0) {
+			printf("Read Failed : %d\n", ret);
+			free(buffer);
+			return ERROR;
+		}
+
+		/* Print read buffer */
+		for (buf_idx = 0; buf_idx < ret; buf_idx++) {
+			if ((buf_idx % 16) == 0) {
+				printf("\n");
+			}
+			printf("0x%02x ", buffer[buf_idx]);
+		}
+		offset += ret;
+		remaining -= ret;
+	}
+	printf("\n");
+
+	free(buffer);
+
+	return OK;
+}
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int flash_eraseall_main(int argc, char *argv[])
+int flash_test_main(int argc, char *argv[])
 #endif
 {
-	/* Argument given? */
+	off_t offset;
+	int read_size;
 
-	if (argc < 2) {
-		fprintf(stderr, "usage: flash_eraseall flash_block_device\n");
-		return -1;
+	if (argc == 4 && !strncmp(argv[1], READ_CMD, sizeof(READ_CMD) + 1)) {
+		offset = strtoul(argv[2], NULL, 16);
+		read_size = (int)atoi(argv[3]);
+
+		/* Read an address in flash by size */
+		return flash_read(offset, read_size);
 	}
 
-	/* Do the job */
+	printf("Usage: flash_test read <offset> <size>\n");
+	printf("Read an address in flash by size from offset\n");
 
-	flash_eraseall(argv[1]);
-
-	return 0;
+	return ERROR;
 }

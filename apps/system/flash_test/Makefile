@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2016, 2021 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/system/flash_eraseall/Makefile
+# apps/system/flash_test/Makefile
 #
 #   Copyright (C) 2011 Uros Platise. All rights reserved.
 #   Copyright (C) 2012-2013 Gregory Nutt. All rights reserved.
@@ -63,7 +63,7 @@ ifeq ($(WINTOOL),y)
 INCDIROPT = -w
 endif
 
-APPNAME = flash_eraseall
+APPNAME = flash_test
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_SYNC
 PRIORITY = SCHED_PRIORITY_DEFAULT
@@ -71,7 +71,7 @@ STACKSIZE = 1024
 
 ASRCS =
 CSRCS =
-MAINSRC = flash_eraseall.c
+MAINSRC = flash_test.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -100,8 +100,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_XYZ_PROGNAME ?= flash_eraseall$(EXEEXT)
-PROGNAME = $(CONFIG_XYZ_PROGNAME)
+CONFIG_FLASH_TEST_PROGNAME ?= flash_test$(EXEEXT)
+PROGNAME = $(CONFIG_FLASH_TEST_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -137,7 +137,7 @@ endif
 
 # Register application
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_SYSTEM_FLASH_ERASEALL),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_SYSTEM_FLASH_READ),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
