@@ -975,7 +975,7 @@ int wext_private_command_with_retval(const char *ifname, char *cmd, char *ret_bu
 		return -1;
 	}
 	memset(buf, 0, buf_size);
-	strcpy(buf, cmd);
+	strncpy(buf, cmd, buf_size);
 	memset(&iwr, 0, sizeof(iwr));
 	iwr.u.data.pointer = buf;
 	iwr.u.data.length = buf_size;
@@ -1020,7 +1020,7 @@ int wext_private_command(const char *ifname, char *cmd, int show_msg)
 		return -1;
 	}
 	memset(buf, 0, buf_size);
-	strcpy(buf, cmd);
+	strncpy(buf, cmd, buf_size);
 	memset(&iwr, 0, sizeof(iwr));
 	iwr.u.data.pointer = buf;
 	iwr.u.data.length = buf_size;

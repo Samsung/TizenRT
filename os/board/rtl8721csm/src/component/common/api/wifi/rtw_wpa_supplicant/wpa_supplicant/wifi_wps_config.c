@@ -1149,7 +1149,7 @@ void cmd_wps(int argc, char **argv)
 			if(argc == 2){
 				char device_pin[10];
 				pin_val = wps_generate_pin();
-				sprintf(device_pin, "%08d", pin_val);
+				snprintf(device_pin, sizeof(device_pin), "%08d", pin_val);
 				/* Display PIN 3 times to prevent to be overwritten by logs from other tasks */
 				printf("\n\rWPS: Start WPS PIN Display. PIN: [%s]\n\r", device_pin);
 				printf("\n\rWPS: Start WPS PIN Display. PIN: [%s]\n\r", device_pin);
@@ -1213,7 +1213,7 @@ void cmd_ap_wps(int argc, char **argv)
 			}else{
 				char device_pin[10];
 				pin_val = wps_generate_pin();
-				sprintf(device_pin, "%08d", pin_val);
+				snprintf(device_pin, sizeof(device_pin), "%08d", pin_val);
 				printf("\n\rWPS: Start WPS PIN Display. PIN: %s\n\r", device_pin);
 				wifi_start_ap_wps_thread(WPS_CONFIG_DISPLAY, (char*)device_pin);
 			}
