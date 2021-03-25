@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2017, 2021 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/system/flash_eraseall/Make.defs
+# apps/system/flash_test/Make.defs
 # Adds selected applications to apps/ build
 #
 #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
@@ -51,7 +51,7 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_SYSTEM_FLASH_ERASEALL),y)
-CONFIGURED_APPS += system/flash_eraseall
+ifeq ($(CONFIG_SYSTEM_FLASH_READ),y)
+CONFIGURED_APPS += system/flash_test
 endif
 
