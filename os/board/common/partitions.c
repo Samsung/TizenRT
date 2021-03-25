@@ -163,6 +163,24 @@ static void move_to_next_part(const char **par)
 		while (*(*par)++ != ',');
 }
 
+int get_partition_num(char *part)
+{
+	int partno = 0;
+	int name_len = strlen(part);
+
+	char *partname = CONFIG_FLASH_PART_NAME;
+	while (*partname) {
+		if (!strncmp(partname, part, name_len)) {
+			if (*(partname + name_len) == ',') {
+				return partno;
+			}
+		}
+		partno++;
+		move_to_next_part((const char **)&partname);
+	}
+	return ERROR;
+}
+
 #ifdef CONFIG_MTD_PARTITION_NAMES
 static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char **names, int *index, char *part_name)
 {
@@ -297,7 +315,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 	} else {
 		ret = mount(fs_devname, "/mnt", "smartfs", 0, NULL);
 		if (ret != OK) {
-			lldbg("ERROR: mounting '%s' failed\n", fs_devname);
+			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
 		}
 	}
 #endif
@@ -306,7 +324,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 	snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->romfs_partno);
 	ret = mount(fs_devname, "/rom", "romfs", 0, NULL);
 	if (ret != OK) {
-		lldbg("ERROR: mounting '%s'(ROMFS) failed\n", fs_devname);
+		lldbg("ERROR: mounting '%s'(ROMFS) failed, errno %d\n", fs_devname, get_errno());
 	}
 #endif /* CONFIG_AUTOMOUNT_ROMFS */
 
@@ -314,7 +332,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 	snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->timezone_partno);
 	ret = mount(fs_devname, CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
 	if (ret != OK) {
-		lldbg("ROMFS ERROR: timezone mount failed");
+		lldbg("ROMFS ERROR: timezone mount failed, errno %d\n", get_errno());
 	}
 #endif	/* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif
