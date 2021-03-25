@@ -37,4 +37,7 @@ int test_kthread_stack_overflow_protection(int cmd, unsigned long arg);
 #ifdef CONFIG_TC_NET_PBUF
 int test_net_pbuf(int cmd, unsigned long arg);
 #endif
+#if defined(CONFIG_AUTOMOUNT_USERFS) && defined(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM)
+int test_fs_get_devname(void);
+#endif
 #endif

@@ -37,6 +37,12 @@
  * Definitions
  ****************************************************************************/
 
+#ifdef CONFIG_AUTOMOUNT_USERFS
+static char *TMP_MOUNT_DEV_DIR;
+#else
+#define TMP_MOUNT_DEV_DIR "/dev/smart1"
+#endif
+
 #ifdef CONFIG_FS_SMARTFS
 
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
@@ -1313,6 +1319,9 @@ static void itc_libc_stdio_fwrite_fread_p(void)
 
 void itc_fs_main(void)
 {
+#ifdef CONFIG_AUTOMOUNT_USERFS
+	TMP_MOUNT_DEV_DIR = get_fs_mount_devname();
+#endif
 	itc_fs_vfs_umount_n_twice();
 	itc_fs_vfs_mount_p_read_mode();
 	itc_fs_vfs_mount_n_twice();

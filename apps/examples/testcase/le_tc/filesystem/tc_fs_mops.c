@@ -45,6 +45,12 @@
 #define ROMFS_TEST_FILEPATH "/rom/init.d/rcS"
 #define ROMFS_MOUNT_DEV_DIR "/dev/ram0"
 
+#ifdef CONFIG_AUTOMOUNT_USERFS
+static char *TMP_MOUNT_DEV_DIR;
+#else
+#define TMP_MOUNT_DEV_DIR "/dev/smart1"
+#endif
+
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 #define SMARTFS_MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR"d1"
 #else
@@ -433,6 +439,9 @@ static void tc_fs_mops_test_main(const char *filesystemtype)
 
 void tc_fs_mops_main(void)
 {
+#ifdef CONFIG_AUTOMOUNT_USERFS
+	TMP_MOUNT_DEV_DIR = get_fs_mount_devname();
+#endif
 #ifdef CONFIG_TC_FS_TMPFS_MOPS
 	tc_fs_mops_test_main("tmpfs");
 #endif

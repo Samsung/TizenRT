@@ -191,6 +191,11 @@ static int os_api_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		ret = test_net_pbuf(cmd, arg);
 		break;
 #endif
+#if defined(CONFIG_AUTOMOUNT_USERFS) && defined(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM)
+	case TESTIOC_GET_FS_PARTNO:
+		ret = test_fs_get_devname();
+		break;
+#endif		
 	default:
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;
