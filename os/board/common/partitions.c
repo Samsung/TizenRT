@@ -164,6 +164,24 @@ static void move_to_next_part(const char **par)
 		while (*(*par)++ != ',');
 }
 
+int get_partition_num(char *part)
+{
+	int partno = 0;
+	int name_len = strlen(part);
+
+	char *partname = CONFIG_FLASH_PART_NAME;
+	while (*partname) {
+		if (!strncmp(partname, part, name_len)) {
+			if (*(partname + name_len) == ',') {
+				return partno;
+			}
+		}
+		partno++;
+		move_to_next_part((const char **)&partname);
+	}
+	return ERROR;
+}
+
 #ifdef CONFIG_MTD_PARTITION_NAMES
 static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char **names, int *index, char *part_name)
 {

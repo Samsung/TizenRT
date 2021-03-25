@@ -54,6 +54,7 @@ extern struct partition_data_s g_second_flash_part_data;
 int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *part_data, partition_info_t *partinfo);
 FAR struct mtd_dev_s *mtd_initialize(void);
 void automount_fs_partition(partition_info_t *partinfo);
+int get_partition_num(char *part);
 #endif
 
  #endif /*__BOARD_COMMON_H__ */
