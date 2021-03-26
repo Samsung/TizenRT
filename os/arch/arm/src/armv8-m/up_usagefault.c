@@ -85,19 +85,19 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 	(void)irqsave();
 	uint32_t *regs = (uint32_t *)context;
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
-	lldbg("PANIC!!! Usagefault occured while executing instruction at address : 0x%08x\n", regs[REG_R15]);
+	lldbg("PANIC!!! Usagefault occurred while executing instruction at address : 0x%08x\n", regs[REG_R15]);
 	lldbg("CFAULTS: 0x%08x\n", cfsr);
 
 	if (cfsr & DIVBYZERO) {
-		lldbg("Divide by zero error has occured.\n");
+		lldbg("Divide by zero error has occurred.\n");
 	} else if (cfsr & UNALIGNED) {
-		lldbg("Unaligned access error has occured.\n");
+		lldbg("Unaligned access error has occurred.\n");
 	} else if (cfsr & STKOF) {
-		lldbg("Stack overflow error has occured.\n");
+		lldbg("Stack overflow error has occurred.\n");
 	} else if (cfsr & NOCP) {
-		lldbg("A coprocessor error has occured.\n");
+		lldbg("A coprocessor error has occurred.\n");
 	} else if (cfsr & INVPC) {
-		lldbg("An integrity check error has occured on EXC_RETURN. PC value might be invalid.\n");
+		lldbg("An integrity check error has occurred on EXC_RETURN. PC value might be invalid.\n");
 	} else if (cfsr & INVSTATE) {
 		lldbg("Invalid state. Instruction executed with invalid EPSR.T or EPSR.IT field.\n");
 	} else if (cfsr & UNDEFINSTR) {
