@@ -86,25 +86,25 @@ int up_busfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t *regs = (uint32_t *)context;
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
 	uint32_t bfar = getreg32(NVIC_BFAULT_ADDR);
-	lldbg("PANIC!!! Bus fault occured while executing instruction at address : 0x%08x\n", regs[REG_R15]);
+	lldbg("PANIC!!! Bus fault occurred while executing instruction at address : 0x%08x\n", regs[REG_R15]);
 	lldbg("CFAULTS: 0x%08x\n", cfsr);
 
 	if (cfsr & BFARVALID) {
-		lldbg("Fault occured while accessing address (BFAR) : 0x%08x\n", bfar);
+		lldbg("Fault occurred while accessing address (BFAR) : 0x%08x\n", bfar);
 	} else {
 		lldbg("Unable to determine fault address.\n");
 	}
 
 	if (cfsr & PRECISERR) {
-		lldbg("Precise data access error occured.\n");
+		lldbg("Precise data access error occurred.\n");
 	} else if (cfsr & IMPRECISERR) {
-		lldbg("Imprecise data access error occured.\n");
+		lldbg("Imprecise data access error occurred.\n");
 	} else if (cfsr & STKERR) {
 		lldbg("Error while stacking registers during exception entry.\n");
 	} else if (cfsr & UNSTKERR) {
 		lldbg("Error while unstacking registers during exception return.\n");
 	} else if (cfsr & LSPERR) {
-		lldbg("Error occured during lazy state preservation of Floating Point unit registers.\n");
+		lldbg("Error occurred during lazy state preservation of Floating Point unit registers.\n");
 	} else if (cfsr & IBUSERR) {
 		lldbg("Error on an instruction prefetch.\n");
 	}

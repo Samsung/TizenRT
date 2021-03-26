@@ -121,19 +121,19 @@ int up_memfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t *regs = (uint32_t *)context;
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
 	uint32_t mmfar = getreg32(NVIC_MEMMANAGE_ADDR);
-	lldbg("PANIC!!! Memory Management Fault occured while executing instruction at address : 0x%08x\n", regs[REG_R15]);
+	lldbg("PANIC!!! Memory Management Fault occurred while executing instruction at address : 0x%08x\n", regs[REG_R15]);
 	lldbg("CFAULTS: 0x%08x MMFAR: 0x%08x\n", cfsr, mmfar);
 
 	if (cfsr & MMARVALID) {
-		lldbg("Access violation occured at address (MMFAR) : 0x%08x\n", mmfar);
+		lldbg("Access violation occurred at address (MMFAR) : 0x%08x\n", mmfar);
 	} else {
 		lldbg("Unable to determine access violation address.\n");
 	}
 
 	if (cfsr & DACCVIOL) {
-		lldbg("Data access violation occured.\n");
+		lldbg("Data access violation occurred.\n");
 	} else if (cfsr & IACCVIOL) {
-		lldbg("Instruction access violation occured while fetching instruction from an Execute Never (XN) region.\n");
+		lldbg("Instruction access violation occurred while fetching instruction from an Execute Never (XN) region.\n");
 	} else if (cfsr & MSTKERR) {
 		lldbg("Error while stacking registers during exception entry.\n");
 	} else if (cfsr & MUNSTKERR) {
