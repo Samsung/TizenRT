@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_LWNL_SAMPLE
+	bool "lwnl example"
+	default n
+	---help---
+		Enable the lwnl example
+
+config USER_ENTRYPOINT
+	string
+	default "lwnl_sample_main" if ENTRY_LWNL_SAMPLE
