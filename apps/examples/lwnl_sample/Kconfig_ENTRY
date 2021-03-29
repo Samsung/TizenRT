@@ -1,0 +1,3 @@
+config ENTRY_LWNL_SAMPLE
+	bool "lwnl example"
+	depends on EXAMPLES_LWNL_SAMPLE
