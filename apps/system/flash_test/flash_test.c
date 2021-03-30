@@ -153,8 +153,9 @@ int flash_test_main(int argc, char *argv[])
 		return flash_read(offset, read_size);
 	}
 
-	printf("Usage: flash_test read <offset> <size>\n");
-	printf("Read an address in flash by size from offset\n");
+	printf("Usage: flash_test read <offset> <size(bytes)>\n");
+	printf("Read flash by 'size' from 'flash base address + offset'\n");
+	printf(" * Flash base address is board-specific \n");
 
 	return ERROR;
 }
