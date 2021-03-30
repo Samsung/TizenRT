@@ -125,6 +125,9 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 		case RTW_SECURITY_WPA_AES_PSK:
 			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
 			break;
+		case RTW_SECURITY_WPA_MIXED_PSK:
+			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
+			break;
 		case RTW_SECURITY_WPA2_AES_PSK:
 			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
 			break;
@@ -175,6 +178,9 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 			break;
 		case RTW_SECURITY_WPA_AES_PSK:
 			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
+			break;
+		case RTW_SECURITY_WPA_MIXED_PSK:
+			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP_AND_AES;
 			break;
 		case RTW_SECURITY_WPA2_AES_PSK:
 			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
