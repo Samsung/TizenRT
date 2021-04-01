@@ -492,6 +492,7 @@ int alloc_socket(struct netconn *newconn, int accepted)
 		}
 	}
 	SYS_ARCH_UNPROTECT(lev);
+	kmm_free(sock);
 	return -1;
 }
 
@@ -575,6 +576,11 @@ int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 	LWIP_ASSERT("invalid socket index", (newsock >= LWIP_SOCKET_OFFSET) && (newsock < NUM_SOCKETS + LWIP_SOCKET_OFFSET));
 	LWIP_ASSERT("newconn->callback == event_callback", newconn->callback == event_callback);
 	nsock = get_socket(newsock, getpid());
+	if (nsock == NULL) {
+		netconn_delete(newconn);
+		sock_set_errno(sock, ENFILE);
+		return -1;
+	}
 
 	/* See event_callback: If data comes in right away after an accept, even
 	 * though the server task might not have created a new socket yet.
