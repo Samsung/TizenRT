@@ -774,7 +774,18 @@ static void print_scan_result(rtw_scan_result_t *record)
 	RTW_API_INFO(" %d\t ", record->signal_strength);
 	RTW_API_INFO(" %d\t  ", record->channel);
 	RTW_API_INFO(" %d\t  ", record->wps_type);
-	RTW_API_INFO("%s\t\t ", (record->security == RTW_SECURITY_OPEN) ? "Open" : (record->security == RTW_SECURITY_WEP_PSK) ? "WEP" : (record->security == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" : (record->security == RTW_SECURITY_WPA_AES_PSK) ? "WPA AES" : (record->security == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" : (record->security == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" : (record->security == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" : (record->security == RTW_SECURITY_WPA_WPA2_MIXED) ? "WPA/WPA2 AES" : "Unknown");
+	RTW_API_INFO("%s\t\t ", (record->security == RTW_SECURITY_OPEN) ? "Open" :
+				 (record->security == RTW_SECURITY_WEP_PSK) ? "WEP" :
+				 (record->security == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" :
+				 (record->security == RTW_SECURITY_WPA_AES_PSK) ? "WPA AES" :
+				 ( record->security == RTW_SECURITY_WPA_MIXED_PSK ) ? "WPA Mixed" :
+				 (record->security == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" :
+				 (record->security == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" :
+				 (record->security == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" :
+				 ( record->security == RTW_SECURITY_WPA_WPA2_TKIP_PSK) ? "WPA/WPA2 TKIP" :
+				 ( record->security == RTW_SECURITY_WPA_WPA2_AES_PSK) ? "WPA/WPA2 AES" :
+				 ( record->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? "WPA/WPA2 Mixed" :
+				  "Unknown");
 
 	RTW_API_INFO(" %s ", record->SSID.val);
 	RTW_API_INFO("\r\n");
@@ -1001,7 +1012,18 @@ static void cmd_debug(int argc, char **argv)
 			RTW_API_INFO("BSSID : " MAC_FMT "\r\n", MAC_ARG(ap_info.BSSID.octet));
 			RTW_API_INFO("RSSI  : %d\r\n", ap_info.RSSI);
 			RTW_API_INFO("Beacon period : %d\r\n", ap_info.beacon_period);
-			RTW_API_INFO("Security : %s\r\n", (sec == RTW_SECURITY_OPEN) ? "Open" : (sec == RTW_SECURITY_WEP_PSK) ? "WEP" : (sec == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" : (sec == RTW_SECURITY_WPA_AES_PSK) ? "WPA AES" : (sec == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" : (sec == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" : (sec == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" : "Unknown");
+			RTW_API_INFO("Security : %s\r\n", (sec == RTW_SECURITY_OPEN) ? "Open" :
+								(sec == RTW_SECURITY_WEP_PSK) ? "WEP" :
+								(sec == RTW_SECURITY_WPA_TKIP_PSK) ? "WPA TKIP" :
+								(sec == RTW_SECURITY_WPA_AES_PSK) ? "WPA AES" :
+								(sec == RTW_SECURITY_WPA_MIXED_PSK)  ? "WPA Mixed" :
+								(sec == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" :
+								(sec == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" :
+								(sec == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" :
+								(sec == RTW_SECURITY_WPA_WPA2_TKIP_PSK) ? "WPA/WPA2 TKIP" :
+								(sec == RTW_SECURITY_WPA_WPA2_AES_PSK) ? "WPA/WPA2 AES" :
+								(sec == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? "WPA/WPA2 Mixed" :
+								"Unknown");
 		}
 	} else if (strcmp(argv[1], "reg_mc") == 0) {
 		rtw_mac_t mac;

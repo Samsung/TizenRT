@@ -90,10 +90,14 @@ static void print_scan_result( rtw_scan_result_t* record )
             ( record->security == RTW_SECURITY_WEP_PSK ) ? "WEP" :
             ( record->security == RTW_SECURITY_WPA_TKIP_PSK ) ? "WPA TKIP" :
             ( record->security == RTW_SECURITY_WPA_AES_PSK ) ? "WPA AES" :
+            ( record->security == RTW_SECURITY_WPA_MIXED_PSK ) ? "WPA Mixed" :
             ( record->security == RTW_SECURITY_WPA2_AES_PSK ) ? "WPA2 AES" :
             ( record->security == RTW_SECURITY_WPA2_TKIP_PSK ) ? "WPA2 TKIP" :
             ( record->security == RTW_SECURITY_WPA2_MIXED_PSK ) ? "WPA2 Mixed" :
-            ( record->security == RTW_SECURITY_WPA_WPA2_MIXED ) ? "WPA/WPA2 AES" : "Unknown",
+            ( record->security == RTW_SECURITY_WPA_WPA2_TKIP_PSK ) ? "WPA/WPA2 TKIP" :
+            ( record->security == RTW_SECURITY_WPA_WPA2_AES_PSK ) ? "WPA/WPA2 AES" :
+            ( record->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK ) ? "WPA/WPA2 Mixed" :
+             "Unknown",
             record->signal_strength, MAC_ARG(record->BSSID.octet)   );
 #else
     RTW_API_INFO("%s\t ", ( record->bss_type == RTW_BSS_TYPE_ADHOC ) ? "Adhoc" : "Infra");
@@ -105,12 +109,15 @@ static void print_scan_result( rtw_scan_result_t* record )
                                  ( record->security == RTW_SECURITY_WEP_PSK ) ? "WEP" :
                                  ( record->security == RTW_SECURITY_WPA_TKIP_PSK ) ? "WPA TKIP" :
                                  ( record->security == RTW_SECURITY_WPA_AES_PSK ) ? "WPA AES" :
+                                 ( record->security == RTW_SECURITY_WPA_MIXED_PSK ) ? "WPA Mixed" :
                                  ( record->security == RTW_SECURITY_WPA2_AES_PSK ) ? "WPA2 AES" :
                                  ( record->security == RTW_SECURITY_WPA2_TKIP_PSK ) ? "WPA2 TKIP" :
                                  ( record->security == RTW_SECURITY_WPA2_MIXED_PSK ) ? "WPA2 Mixed" :
-                                 ( record->security == RTW_SECURITY_WPA_WPA2_MIXED ) ? "WPA/WPA2 AES" :
+                                 ( record->security == RTW_SECURITY_WPA_WPA2_TKIP_PSK ) ? "WPA/WPA2 TKIP" :
+                                 ( record->security == RTW_SECURITY_WPA_WPA2_AES_PSK ) ? "WPA/WPA2 AES" :
+                                 ( record->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK ) ? "WPA/WPA2 Mixed" :
 #ifdef CONFIG_SAE_SUPPORT
-								 ( record->security == RTW_SECURITY_WPA3_AES_PSK) ? "WP3-SAE AES" :
+                                 ( record->security == RTW_SECURITY_WPA3_AES_PSK) ? "WP3-SAE AES" :
 #endif
                                  "Unknown");
 
