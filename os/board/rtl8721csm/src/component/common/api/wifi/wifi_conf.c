@@ -201,6 +201,8 @@ static int wifi_connect_local(rtw_network_info_t *pWifi)
 			break;
 		case RTW_SECURITY_WPA_TKIP_PSK:
 		case RTW_SECURITY_WPA2_TKIP_PSK:
+		case RTW_SECURITY_WPA_MIXED_PSK:
+		case RTW_SECURITY_WPA_WPA2_TKIP_PSK:
 			ret = wext_set_auth_param(WLAN0_NAME, IW_AUTH_80211_AUTH_ALG, IW_AUTH_ALG_OPEN_SYSTEM);
 			if(ret == 0)
 				ret = wext_set_key_ext(WLAN0_NAME, IW_ENCODE_ALG_TKIP, NULL, 0, 0, 0, 0, NULL, 0);
@@ -210,7 +212,8 @@ static int wifi_connect_local(rtw_network_info_t *pWifi)
 		case RTW_SECURITY_WPA_AES_PSK:
 		case RTW_SECURITY_WPA2_AES_PSK:
 		case RTW_SECURITY_WPA2_MIXED_PSK:
-		case RTW_SECURITY_WPA_WPA2_MIXED:
+		case RTW_SECURITY_WPA_WPA2_AES_PSK:
+		case RTW_SECURITY_WPA_WPA2_MIXED_PSK:
 #ifdef CONFIG_SAE_SUPPORT
 		case RTW_SECURITY_WPA3_AES_PSK:			
 #endif			
@@ -254,6 +257,8 @@ static int wifi_connect_bssid_local(rtw_network_info_t *pWifi)
 			break;
 		case RTW_SECURITY_WPA_TKIP_PSK:
 		case RTW_SECURITY_WPA2_TKIP_PSK:
+		case RTW_SECURITY_WPA_MIXED_PSK:
+		case RTW_SECURITY_WPA_WPA2_TKIP_PSK:
 			ret = wext_set_auth_param(WLAN0_NAME, IW_AUTH_80211_AUTH_ALG, IW_AUTH_ALG_OPEN_SYSTEM);
 			if(ret == 0)
 				ret = wext_set_key_ext(WLAN0_NAME, IW_ENCODE_ALG_TKIP, NULL, 0, 0, 0, 0, NULL, 0);
@@ -263,6 +268,8 @@ static int wifi_connect_bssid_local(rtw_network_info_t *pWifi)
 		case RTW_SECURITY_WPA_AES_PSK:
 		case RTW_SECURITY_WPA2_AES_PSK:
 		case RTW_SECURITY_WPA2_MIXED_PSK:
+		case RTW_SECURITY_WPA_WPA2_AES_PSK:
+		case RTW_SECURITY_WPA_WPA2_MIXED_PSK:
 			ret = wext_set_auth_param(WLAN0_NAME, IW_AUTH_80211_AUTH_ALG, IW_AUTH_ALG_OPEN_SYSTEM);
 			if(ret == 0)
 				ret = wext_set_key_ext(WLAN0_NAME, IW_ENCODE_ALG_CCMP, NULL, 0, 0, 0, 0, NULL, 0);
@@ -566,9 +573,13 @@ int wifi_connect(
              ( password_len <  RTW_MIN_PSK_LEN ) ) &&
            ( ( security_type == RTW_SECURITY_WPA_TKIP_PSK ) ||
              ( security_type == RTW_SECURITY_WPA_AES_PSK ) ||
+             ( security_type == RTW_SECURITY_WPA_MIXED_PSK ) ||
              ( security_type == RTW_SECURITY_WPA2_AES_PSK ) ||
              ( security_type == RTW_SECURITY_WPA2_TKIP_PSK ) ||
              ( security_type == RTW_SECURITY_WPA2_MIXED_PSK )||
+             ( security_type == RTW_SECURITY_WPA_WPA2_TKIP_PSK)||
+             ( security_type == RTW_SECURITY_WPA_WPA2_AES_PSK)||
+             ( security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK)||
              ( security_type == RTW_SECURITY_WPA3_AES_PSK)) )) {
              error_flag = RTW_WRONG_PASSWORD;
 		return RTW_INVALID_KEY;
@@ -821,9 +832,13 @@ int wifi_connect_bssid(
              ( password_len <  RTW_MIN_PSK_LEN ) ) &&
            ( ( security_type == RTW_SECURITY_WPA_TKIP_PSK ) ||
              ( security_type == RTW_SECURITY_WPA_AES_PSK ) ||
+             ( security_type == RTW_SECURITY_WPA_MIXED_PSK ) ||
              ( security_type == RTW_SECURITY_WPA2_AES_PSK ) ||
              ( security_type == RTW_SECURITY_WPA2_TKIP_PSK ) ||
-             ( security_type == RTW_SECURITY_WPA2_MIXED_PSK ) ) ) ) {
+             ( security_type == RTW_SECURITY_WPA2_MIXED_PSK ) ||
+             ( security_type == RTW_SECURITY_WPA_WPA2_TKIP_PSK)||
+             ( security_type == RTW_SECURITY_WPA_WPA2_AES_PSK)||
+             ( security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK)) ) ) {
 		return RTW_INVALID_KEY;
 	}
 	
