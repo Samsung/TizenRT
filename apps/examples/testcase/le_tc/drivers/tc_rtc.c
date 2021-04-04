@@ -109,7 +109,7 @@ static void tc_driver_rtc_ioctl(void)
 	ret = ioctl(fd, RTC_SET_TIME, (unsigned long)&rtctime_s);
 	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
 
-	ret = ioctl(fd, RTC_RD_TIME, &rtctime_r);
+	ret = ioctl(fd, RTC_RD_TIME, (unsigned long)&rtctime_r);
 	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
 	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_hour, rtctime_s.tm_hour, close(fd));
 	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", rtctime_r.tm_min, rtctime_s.tm_min, close(fd));
@@ -132,9 +132,6 @@ static void tc_driver_rtc_ioctl(void)
 
 	ret = close(fd);
 	TC_ASSERT_EQ("rtc_close", ret, OK);
-
-	ret = unlink("/dev/rtc0");
-	TC_ASSERT_EQ("rtc_unlink", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
