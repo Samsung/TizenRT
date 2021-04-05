@@ -105,7 +105,7 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 		scan_list->ap_info.channel = record->channel;
 		strncpy(scan_list->ap_info.ssid, (const char *)record->SSID.val, record->SSID.len);
 		scan_list->ap_info.ssid_length = record->SSID.len;
-		snprintf((char *)scan_list->ap_info.bssid, WIFI_UTILS_MACADDR_STR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x", record->BSSID.octet[0], record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3], record->BSSID.octet[4], record->BSSID.octet[5]);
+		snprintf((char *)scan_list->ap_info.bssid, WIFI_UTILS_MACADDR_STR_LEN + 1, "%02x:%02x:%02x:%02x:%02x:%02x", record->BSSID.octet[0], record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3], record->BSSID.octet[4], record->BSSID.octet[5]);
 		scan_list->ap_info.max_rate = 0;
 		scan_list->ap_info.rssi = record->signal_strength;
 		scan_list->ap_info.phy_mode = 0x00000004; //bit2 is set to 1 if support 11n
