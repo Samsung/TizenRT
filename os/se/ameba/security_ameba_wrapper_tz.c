@@ -154,7 +154,7 @@ int se_ameba_hal_init(hal_init_param *params)
 		input_data.factory_slot_key_type[count] = HAL_KEY_UNKNOWN;
 	}
 	input_data.factory_slot_key_type[0] = HAL_KEY_ECC_SEC_P256R1;
-	input_data.factory_slot_key_type[1] = HAL_KEY_ECC_SEC_P256R1;
+	input_data.factory_slot_key_type[1] = HAL_KEY_AES_128;
 	input_data.factory_slot_key_type[2] = HAL_KEY_AES_128;
 
 	/* Factory Key and Cert address (Flash) */
