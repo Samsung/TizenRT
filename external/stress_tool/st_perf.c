@@ -191,6 +191,7 @@ void _perf_free_pack(st_pack *pack)
 			free(smoke->func);
 		}
 		sq_entry_t *entry = smoke->entry.flink;
+		sq_rem(&smoke->entry, &pack->queue);
 		free(smoke);
 
 		if (!entry) {
