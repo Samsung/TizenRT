@@ -58,6 +58,7 @@
 #include <tinyara/compiler.h>
 
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 #include <errno.h>
 #include <debug.h>
@@ -217,6 +218,7 @@ static void initialize_system_time(void)
 	struct timespec ts;
 	char *ret;
 
+	memset(&init_time, 0, sizeof(struct tm));
 	ret = strptime(CONFIG_VERSION_BUILD_TIME, "%Y-%m-%d %T", &init_time);
 	if (ret == NULL) {
 		return;
