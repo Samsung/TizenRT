@@ -66,7 +66,7 @@ static void _free_scan_info(wifi_manager_scan_info_s *scan_list)
 }
 
 static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list,
-										 wifi_utils_scan_list_s *wu_scan_list)
+												wifi_utils_scan_list_s *wu_scan_list)
 {
 	wifi_manager_scan_info_s *cur = NULL, *prev = NULL;
 	wifi_utils_scan_list_s *iter = wu_scan_list;
@@ -110,28 +110,40 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 		switch (evt) {
 		case CB_STA_CONNECTED:
 			WM_LOG_INFO("[WM] call sta connect success event\n");
-			cbk->sta_connected(WIFI_MANAGER_SUCCESS);
+			if (cbk->sta_connected) {
+				cbk->sta_connected(WIFI_MANAGER_SUCCESS);
+			}
 			break;
 		case CB_STA_CONNECT_FAILED:
 			WM_LOG_INFO("[WM] call sta connect fail event\n");
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
-			cbk->sta_connected(WIFI_MANAGER_FAIL);
+			if (cbk->sta_connected) {
+				cbk->sta_connected(WIFI_MANAGER_FAIL);
+			}
 			break;
 		case CB_STA_DISCONNECTED:
 			WM_LOG_INFO("[WM] call sta disconnect event\n");
-			cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
+			if (cbk->sta_disconnected) {
+				cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
+			}
 			break;
 		case CB_STA_RECONNECTED:
 			WM_LOG_INFO("[WM] call sta reconnect event\n");
-			cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
+			if (cbk->sta_disconnected) {
+				cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
+			}
 			break;
 		case CB_STA_JOINED:
 			WM_LOG_INFO("[WM] call sta join event\n");
-			cbk->softap_sta_joined();
+			if (cbk->softap_sta_joined) {
+				cbk->softap_sta_joined();
+			}
 			break;
 		case CB_STA_LEFT:
 			WM_LOG_INFO("[WM] call sta leave event\n");
-			cbk->softap_sta_left();
+			if (cbk->softap_sta_left) {
+				cbk->softap_sta_left();
+			}
 			break;
 		case CB_SCAN_DONE:
 			WM_LOG_INFO("[WM] call sta scan event\n");
@@ -139,11 +151,17 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			wifi_manager_scan_info_s *info = NULL;
 			wifi_utils_scan_list_s *list = (wifi_utils_scan_list_s *)arg;
 			if (list) {
-				WIFIMGR_CHECK_RESULT_CLEANUP(
-					_convert_scan_info(&info, (wifi_utils_scan_list_s *)arg),
-					"parse error", , cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL));
-				cbk->scan_ap_done(&info, WIFI_SCAN_SUCCESS);
-				_free_scan_info(info);
+				if (WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, (wifi_utils_scan_list_s *)arg)) {
+					WM_LOG_ERROR("[WM] parse error\n");
+					if (cbk->scan_ap_done) {
+						cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);
+					}
+				} else {
+					if (cbk->scan_ap_done) {
+						cbk->scan_ap_done(&info, WIFI_SCAN_SUCCESS);
+					}
+					_free_scan_info(info);
+				}
 			} else {
 				WIFIADD_ERR_RECORD(ERR_WIFIMGR_SCAN_FAIL);
 				cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);

@@ -517,9 +517,10 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
 	while (wifi_scan_iter != NULL) {
-		printf("[WT] WiFi AP SSID: %-25s, BSSID: %-20s, Rssi: %d, Auth: %d, Crypto: %d\n",
+		printf("[WT] WiFi AP SSID: %-25s, BSSID: %-20s, Rssi: %d, Auth: %s, Crypto: %s\n",
 			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
-			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
+			   wifi_test_auth_method[wifi_scan_iter->ap_auth_type],
+			   wifi_test_crypto_method[wifi_scan_iter->ap_crypto_type]);
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
 	WM_TEST_SIGNAL;
