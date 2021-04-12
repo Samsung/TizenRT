@@ -255,8 +255,8 @@ EXTERN uint32_t g_dabtstackbase;	/* Initial top of data abort stack */
  *    of _data.  like:  uint32_t *pdata = &_sdata;
  */
 
-EXTERN uint32_t _stext;			/* Start of .text */
-EXTERN uint32_t _etext;			/* End_1 of .text + .rodata */
+EXTERN uint32_t _stext_flash;			/* Start of .text in Flash region */
+EXTERN uint32_t _etext_flash;			/* End_1 of .text + .rodata in Flash region */
 EXTERN const uint32_t _eronly;	/* End+1 of read only section (.text + .rodata) */
 EXTERN uint32_t _sdata;			/* Start of .data */
 EXTERN uint32_t _edata;			/* End+1 of .data */

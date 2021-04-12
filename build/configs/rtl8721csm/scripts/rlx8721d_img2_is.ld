@@ -110,7 +110,7 @@ SECTIONS
 	.ram_image2.text :
 	{
 		__ram_text_start__ = .;
-		_stext = ABSOLUTE(.);
+		_stext_flash = ABSOLUTE(.);
 		*(.image2.ram.text*)
 		*(.image2.net.ram.text*)
 		/*os*/
@@ -191,7 +191,7 @@ SECTIONS
 		*lib_vikmemcpy.o (.text*)
 		*dq_rem.o (.text*)
 		*dq_addlast.o (.text*)
-		_etext = ABSOLUTE(.);
+		_etext_flash = ABSOLUTE(.);
 		__ram_text_end__ = .;
 	} > BD_RAM_NS
 

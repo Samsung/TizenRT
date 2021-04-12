@@ -67,7 +67,7 @@ EXTERN(image_vector_table)
 EXTERN(boot_data)
 EXTERN(dcd_data)
 
-ENTRY(_stext)
+ENTRY(_stext_flash)
 
 SECTIONS
 {
@@ -90,7 +90,7 @@ SECTIONS
 
 	.text :
 	{
-		_stext = ABSOLUTE(.);
+		_stext_flash = ABSOLUTE(.);
 		*(.vectors)
 		*(EXCLUDE_FILE(*imxrt_flexspi.o *imxrt_hyperflash.o) .text*)
 		*(.fixup)
@@ -102,7 +102,7 @@ SECTIONS
 		*(.got)
 		*(.gcc_except_table)
 		*(.gnu.linkonce.r.*)
-		_etext = ABSOLUTE(.);
+		_etext_flash = ABSOLUTE(.);
 	} > flash
 
 	.init_section :

@@ -53,7 +53,7 @@ SECTIONS
 {
   .text 0x00000000 :
     {
-      _stext = . ;
+      _stext_flash = . ;
       *(.text)
       *(.text.*)
       *(.gnu.warning)
@@ -69,7 +69,7 @@ SECTIONS
       *(.gnu.linkonce.t.*)
       *(.init)             /* Old ABI */
       *(.fini)             /* Old ABI */
-      _etext = . ;
+      _etext_flash = . ;
     }
 
   .ARM.extab :

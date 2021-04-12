@@ -54,7 +54,7 @@ SECTIONS
 {
   .text 0x00000000 :
     {
-      _stext = . ;
+      _stext_flash = . ;
       /* Place holder to keep the heap object at the top
        * 4 bytes is reserved at the top of the text segment,
        * which can be used to place user heap object, which
@@ -77,7 +77,7 @@ SECTIONS
       *(.gnu.linkonce.t.*)
       *(.init)             /* Old ABI */
       *(.fini)             /* Old ABI */
-      _etext = . ;
+      _etext_flash = . ;
     }
 
   .init_section :

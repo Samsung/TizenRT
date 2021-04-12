@@ -30,7 +30,7 @@ index caf8e32..dadaceb 100644
 +
    .text : ALIGN(4)
    {
-     _stext = .;
+     _stext_flash = .;
 @@ -199,13 +214,6 @@ SECTIONS
      _lit4_end = ABSOLUTE(.);
    } >iram1_0_seg :iram1_0_phdr

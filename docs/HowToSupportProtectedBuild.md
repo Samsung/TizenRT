@@ -104,10 +104,10 @@ The following sections give detailed explanation regarding some of the steps / c
 SECTIONS
 {
 	.text : {
-		_stext = ABSOLUTE(.);
+		_stext_flash = ABSOLUTE(.);
 		....
 		....
-		_etext = ABSOLUTE(.);
+		_etext_flash = ABSOLUTE(.);
 	} > kflash
 	/* Here in comparison to ld.script for flat build, 'flash' memory region should be replaced with 'kflash' memory region. */
 	....
@@ -135,10 +135,10 @@ SECTIONS
 
 ```
 .text : {
-	_stext = ABSOLUTE(.);
+	_stext_flash = ABSOLUTE(.);
 	*(.usrheapptr)		/* User heap pointer added in the .text user section */
 	....
-	_etext = ABSOLUTE(.);
+	_etext_flash = ABSOLUTE(.);
 } > uflash
 ```
 

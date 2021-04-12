@@ -93,12 +93,12 @@ typedef void (*initializer_t)(void);
 extern initializer_t _sinit;
 extern initializer_t _einit;
 
-/* _stext and _etext are symbols exported by the linker script that mark the
+/* _stext_flash and _etext_flash are symbols exported by the linker script that mark the
  * beginning and the end of text.
  */
 
-extern uint32_t _stext;
-extern uint32_t _etext;
+extern uint32_t _stext_flash;
+extern uint32_t _etext_flash;
 
 /****************************************************************************
  * Public Functions
@@ -132,7 +132,7 @@ void up_cxxinitialize(void)
 	cxxinitialized = true;
 #endif
 
-	cxxinfo("_sinit: %p _einit: %p _stext: %p _etext: %p\n", &_sinit, &_einit, &_stext, &_etext);
+	cxxinfo("_sinit: %p _einit: %p _stext_flash: %p _etext_flash: %p\n", &_sinit, &_einit, &_stext_flash, &_etext_flash);
 
 	/* Visit each entry in the initialization table */
 
@@ -145,7 +145,7 @@ void up_cxxinitialize(void)
 		 * or counts in the initialization table.
 		 */
 
-		if ((void *)initializer > (void *)&_stext && (void *)initializer < (void *)&_etext) {
+		if ((void *)initializer > (void *)&_stext_flash && (void *)initializer < (void *)&_etext_flash) {
 			cxxinfo("Calling %p\n", initializer);
 			initializer();
 		}

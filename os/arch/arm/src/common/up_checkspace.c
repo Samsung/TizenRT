@@ -32,8 +32,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-extern uint32_t _stext;
-extern uint32_t _etext;
+extern uint32_t _stext_flash;
+extern uint32_t _etext_flash;
 extern uint32_t _sdata;
 extern uint32_t _edata;
 extern uint32_t _sbss;

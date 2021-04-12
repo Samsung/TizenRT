@@ -168,8 +168,8 @@ static int is_text_address(unsigned long programCounter)
 	 * FLASH region or in the user FLASH region.
 	 */
 
-	if (((uintptr_t)programCounter >= (uintptr_t)&_stext &&
-		 (uintptr_t)programCounter < (uintptr_t)&_etext) ||
+	if (((uintptr_t)programCounter >= (uintptr_t)&_stext_flash &&
+		 (uintptr_t)programCounter < (uintptr_t)&_etext_flash) ||
 		(sched_self()->uspace &&
 		 (uintptr_t)programCounter >= (uintptr_t)sched_self()->uspace->us_textstart &&
 		 (uintptr_t)programCounter < (uintptr_t)sched_self()->uspace->us_textend)) {
@@ -178,8 +178,8 @@ static int is_text_address(unsigned long programCounter)
 #else
 	/* SVCalls are expected only from the base, kernel FLASH region */
 
-	if ((uintptr_t)programCounter >= (uintptr_t)&_stext &&
-		(uintptr_t)programCounter < (uintptr_t)&_etext) {
+	if ((uintptr_t)programCounter >= (uintptr_t)&_stext_flash &&
+		(uintptr_t)programCounter < (uintptr_t)&_etext_flash) {
 		return 1;
 	}
 #endif
