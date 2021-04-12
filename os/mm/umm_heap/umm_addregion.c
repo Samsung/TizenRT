@@ -90,11 +90,11 @@
  *   heap_size  - The size (in bytes) if the memory region.
  *
  * Return Value:
- *   None
+ *   OK on success, negative errno on failure.
  *
  ************************************************************************/
 
-void umm_addregion(FAR void *heap_start, size_t heap_size)
+int umm_addregion(FAR void *heap_start, size_t heap_size)
 {
-	mm_addregion(BASE_HEAP, heap_start, heap_size);
+	return mm_addregion(BASE_HEAP, heap_start, heap_size);
 }

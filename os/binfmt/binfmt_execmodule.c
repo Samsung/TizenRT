@@ -176,7 +176,11 @@ int exec_module(FAR struct binary_s *binp)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	binary_idx = binp->binary_idx;
 	binp->uheap = (struct mm_heap_s *)binp->heapstart;
-	mm_initialize(binp->uheap, (void *)binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
+	ret = mm_initialize(binp->uheap, (void *)binp->heapstart + sizeof(struct mm_heap_s), binp->uheap_size);
+	if (ret != OK) {
+		berr("ERROR: mm_initialize() failed, %d.\n", ret);
+		return ret;
+	}
 	mm_add_app_heap_list(binp->uheap, binp->bin_name);
 
 	binfo("------------------------%s Binary Heap Information------------------------\n", binp->bin_name);

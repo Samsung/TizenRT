@@ -135,11 +135,11 @@ struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1] __attribute__((section("
  *   heap_size  - The size (in bytes) if the (initial) memory region.
  *
  * Return Value:
- *   None
+ *   OK on success, negative errno on failure.
  *
  ************************************************************************/
 
-void umm_initialize(FAR void *heap_start, size_t heap_size)
+int umm_initialize(FAR void *heap_start, size_t heap_size)
 {
-	mm_initialize(BASE_HEAP, heap_start, heap_size);
+	return mm_initialize(BASE_HEAP, heap_start, heap_size);
 }

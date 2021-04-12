@@ -162,7 +162,9 @@ void up_add_kregion(void)
 	for (region_cnt = 1; region_cnt < CONFIG_KMM_REGIONS; region_cnt++) {
 		if (kheap[kregionx_heap_idx[region_cnt]].mm_heapsize == 0) {
 			lldbg("Heap idx = %u start = 0x%x size = %d\n", kregionx_heap_idx[region_cnt], kregionx_start[region_cnt], kregionx_size[region_cnt]);
-			mm_initialize(&kheap[kregionx_heap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
+			if (mm_initialize(&kheap[kregionx_heap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]) != OK) {
+				return;
+			}
 			continue;
 		}
 

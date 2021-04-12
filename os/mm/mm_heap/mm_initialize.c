@@ -59,6 +59,7 @@
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
+#include <errno.h>
 
 #include <tinyara/sched.h>
 #include <tinyara/mm/mm.h>
@@ -91,26 +92,28 @@
  *   heapsize  - Size of the heap region
  *
  * Return Value:
- *   None
+ *   OK on success, negative errno on failure.
  *
  * Assumptions:
  *
  ****************************************************************************/
 
-void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize)
+int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize)
 {
 	FAR struct mm_freenode_s *node;
 	uintptr_t heapbase;
 	uintptr_t heapend;
+
+	if (!heap || !heapstart || !heapsize) {
+		mdbg("ERROR : Invalid parameter, heap : %x, heapstart : %x, heapsize : %u\n", heap, heapstart, heapsize);
+		return -EINVAL;
+	}
+
 #if (CONFIG_KMM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
 	int IDX = heap->mm_nregions;
 #else
 #define IDX 0
 #endif
-
-	if (!heapsize) {
-		return;
-	}
 
 	/* If the MCU handles wide addresses but the memory manager is configured
 	 * for a small heap, then verify that the caller is  not doing something
@@ -131,7 +134,8 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 		/* heapbase cannot be smaller than heapstart.
 		 * If this happens, heapbase can be overflowed from alignment.
 		 */
-		return;
+		mdbg("ERROR : heapbase(%u) is smaller than heapstart(%u).\n", heapbase, (uintptr_t)heapstart);
+		return -EINVAL;
 	}
 
 	if (heapbase >= (uintptr_t)heapend) {
@@ -139,7 +143,8 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 		 * and heapend is the summation of heapstart and heapsize.
 		 * If heapsize is very small, align-up address can be equal to or greater than heapend.
 		 */
-		return;
+		mdbg("ERROR : heapbase(%u) is greater than equal to heapend(%u).\n", heapbase, heapend);
+		return -EINVAL;
 	}
 	heapsize = heapend - heapbase;
 
@@ -186,6 +191,7 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	/* Add the single, large free node to the nodelist */
 
 	mm_addfreechunk(heap, node);
+	return OK;
 }
 
 /****************************************************************************
@@ -201,14 +207,15 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
  *   heapsize  - Size of the initial heap region
  *
  * Return Value:
- *   None
+ *   OK on success, negative errno on failure.
  *
  * Assumptions:
  *
  ****************************************************************************/
 
-void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize)
+int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize)
 {
+	int ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	int i;
 #endif
@@ -245,7 +252,10 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 
 	/* Add the initial region of memory to the heap */
 
-	mm_addregion(heap, heapstart, heapsize);
+	ret = mm_addregion(heap, heapstart, heapsize);
+	if (ret != OK) {
+		return ret;
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	for (i = 0; i < CONFIG_MAX_TASKS; i++) {
 		heap->alloc_list[i].pid = HEAPINFO_INIT_INFO;
@@ -255,4 +265,5 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 	heapinfo_update_group_info(INVALID_PROCESS_ID, HEAPINFO_INVALID_GROUPID, HEAPINFO_INIT_INFO);
 #endif
 #endif
+	return OK;
 }

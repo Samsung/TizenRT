@@ -401,7 +401,10 @@ void os_start(void)
 		 */
 
 		up_allocate_kheap(&heap_start, &heap_size);
-		kmm_initialize(heap_start, heap_size);
+		if (kmm_initialize(heap_start, heap_size) != OK) {
+			sdbg("ERROR : heap initialization is failed. heap_start : %x, heap_size : %u\n", heap_start, heap_size);
+			PANIC();
+		}
 #endif
 
 #ifdef CONFIG_MM_PGALLOC

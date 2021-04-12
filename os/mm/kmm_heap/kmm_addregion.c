@@ -91,11 +91,11 @@
  *   heap_size  - The size (in bytes) if the memory region.
  *
  * Return Value:
- *   None
+ *   OK on success, negative errno on failure.
  *
  ************************************************************************/
 
-void kmm_addregion(FAR void *heap_start, size_t heap_size)
+int kmm_addregion(FAR void *heap_start, size_t heap_size)
 {
 	return mm_addregion(kmm_get_heap(), heap_start, heap_size);
 }

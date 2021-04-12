@@ -104,7 +104,9 @@ void up_add_kregion(void)
 	kheap = kmm_get_heap();
 	for (region_cnt = 1; region_cnt < CONFIG_KMM_REGIONS; region_cnt++) {
 		if (kheap[kregionx_heap_idx[region_cnt]].mm_heapsize == 0) {
-			mm_initialize(&kheap[kregionx_heap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
+			if (mm_initialize(&kheap[kregionx_heap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]) != OK) {
+				return;
+			}
 			continue;
 		}
 		mm_addregion(&kheap[kregionx_heap_idx[region_cnt]], kregionx_start[region_cnt], kregionx_size[region_cnt]);
