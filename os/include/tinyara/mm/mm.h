@@ -441,8 +441,8 @@ extern uint32_t g_cur_app;
 
 /* Functions contained in mm_initialize.c ***********************************/
 
-void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heap_start, size_t heap_size);
-void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize);
+int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heap_start, size_t heap_size);
+int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize);
 
 /* Functions contained in umm_initialize.c **********************************/
 
@@ -450,20 +450,20 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 /* Functions contained in kmm_initialize.c **********************************/
 
 #ifdef CONFIG_MM_KERNEL_HEAP
-void kmm_initialize(FAR void *heap_start, size_t heap_size);
+int kmm_initialize(FAR void *heap_start, size_t heap_size);
 #endif
 
 /* Functions contained in umm_addregion.c ***********************************/
 
 #if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
-void umm_initialize(FAR void *heap_start, size_t heap_size);
-void umm_addregion(FAR void *heapstart, size_t heapsize);
+int umm_initialize(FAR void *heap_start, size_t heap_size);
+int umm_addregion(FAR void *heapstart, size_t heapsize);
 #endif
 
 /* Functions contained in kmm_addregion.c ***********************************/
 
 #ifdef CONFIG_MM_KERNEL_HEAP
-void kmm_addregion(FAR void *heapstart, size_t heapsize);
+int kmm_addregion(FAR void *heapstart, size_t heapsize);
 #endif
 
 /* Functions contained in mm_sem.c ******************************************/
