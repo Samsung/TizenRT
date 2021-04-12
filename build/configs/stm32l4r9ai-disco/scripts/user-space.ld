@@ -45,7 +45,7 @@ SECTIONS
     } > uflash
 
     .text : {
-        _stext = ABSOLUTE(.);
+        _stext_flash = ABSOLUTE(.);
         *(.text .text.*)
         *(.fixup)
         *(.gnu.warning)
@@ -56,7 +56,7 @@ SECTIONS
         *(.got)
         *(.gcc_except_table)
         *(.gnu.linkonce.r.*)
-        _etext = ABSOLUTE(.);
+        _etext_flash = ABSOLUTE(.);
     } > uflash
 
     .init_section : {

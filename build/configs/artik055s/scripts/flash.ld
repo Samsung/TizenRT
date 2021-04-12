@@ -59,7 +59,7 @@ MEMORY
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
-ENTRY(_stext)
+ENTRY(_stext_flash)
 SECTIONS
 {
 	.header : {
@@ -71,7 +71,7 @@ SECTIONS
 	} > FLASH =0x0
 
 	.text : {
-		_stext = ABSOLUTE(.);
+		_stext_flash = ABSOLUTE(.);
 		*(.vectors)
 		*(.text .text.*)
 		*(.fixup)
@@ -83,7 +83,7 @@ SECTIONS
 		*(.got)
 		*(.gcc_except_table)
 		*(.gnu.linkonce.r.*)
-		_etext = ABSOLUTE(.);
+		_etext_flash = ABSOLUTE(.);
 	} > FLASH
 
 	.init_section : {

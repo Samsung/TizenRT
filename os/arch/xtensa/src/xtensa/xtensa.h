@@ -240,8 +240,8 @@ extern uint32_t g_idlestack[IDLETHREAD_STACKWORDS];
  */
 
 extern uint32_t _init_start;	/* Start of initialization logic */
-extern uint32_t _stext;			/* Start of .text */
-extern uint32_t _etext;			/* End+1 of .text + .rodata */
+extern uint32_t _stext_flash;			/* Start of .text */
+extern uint32_t _etext_flash;			/* End+1 of .text + .rodata */
 extern uint32_t _sdata;			/* Start of .data */
 extern uint32_t _edata;			/* End+1 of .data */
 extern uint32_t _srodata;		/* Start of .rodata */

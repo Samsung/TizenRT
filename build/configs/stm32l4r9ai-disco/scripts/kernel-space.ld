@@ -38,11 +38,11 @@
  */
 
 OUTPUT_ARCH(arm)
-ENTRY(_stext)
+ENTRY(_stext_flash)
 SECTIONS
 {
     .text : {
-        _stext = ABSOLUTE(.);
+        _stext_flash = ABSOLUTE(.);
         *(.vectors)
         *(.text .text.*)
         *(.fixup)
@@ -54,7 +54,7 @@ SECTIONS
         *(.got)
         *(.gcc_except_table)
         *(.gnu.linkonce.r.*)
-        _etext = ABSOLUTE(.);
+        _etext_flash = ABSOLUTE(.);
     } > kflash
 
     .init_section : {

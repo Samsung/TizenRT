@@ -38,7 +38,7 @@
  * Public variables
  ****************************************************************************/
 #ifdef CONFIG_EXAMPLES_MPU_TEST
-extern uint32_t _stext;
+extern uint32_t _stext_flash;
 extern uint32_t _sdata;
 #endif
 
@@ -141,7 +141,7 @@ static int os_api_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 
 		switch (obj->type) {
 		case MPUTEST_KERNEL_CODE:
-			obj->addr = &_stext;
+			obj->addr = &_stext_flash;
 			break;
 		case MPUTEST_KERNEL_DATA:
 			obj->addr = &_sdata;
