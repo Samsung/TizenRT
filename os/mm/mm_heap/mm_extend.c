@@ -88,11 +88,11 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 
 	/* Make sure that we were passed valid parameters */
 
-	DEBUGASSERT(heap && mem);
+	ASSERT(heap && mem);
 #if CONFIG_KMM_REGIONS > 1
-	DEBUGASSERT(size >= MIN_EXTEND && (unsigned)region < heap->mm_nregions);
+	ASSERT(size >= MIN_EXTEND && (unsigned)region < heap->mm_nregions);
 #else
-	DEBUGASSERT(size >= MIN_EXTEND && (unsigned)region == 0);
+	ASSERT(size >= MIN_EXTEND && (unsigned)region == 0);
 #endif
 
 	/* Make sure that the memory region are properly aligned */
@@ -100,8 +100,8 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 	blockstart = (uintptr_t)mem;
 	blockend   = blockstart + size;
 
-	DEBUGASSERT(MM_ALIGN_UP(blockstart) == blockstart);
-	DEBUGASSERT(MM_ALIGN_DOWN(blockend) == blockend);
+	ASSERT(MM_ALIGN_UP(blockstart) == blockstart);
+	ASSERT(MM_ALIGN_DOWN(blockend) == blockend);
 
 	/* Take the memory manager semaphore */
 
@@ -112,7 +112,7 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 	 */
 
 	oldnode = heap->mm_heapend[region];
-	DEBUGASSERT((uintptr_t)oldnode + SIZEOF_MM_ALLOCNODE == (uintptr_t)mem);
+	ASSERT((uintptr_t)oldnode + SIZEOF_MM_ALLOCNODE == (uintptr_t)mem);
 
 	/* The size of the old node now extends to the new terminal node.
 	 * This is the old size (SIZEOF_MM_ALLOCNODE) plus the size of
@@ -124,7 +124,7 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 
 	/* The old node should already be marked as allocated */
 
-	DEBUGASSERT((oldnode->preceding & MM_ALLOC_BIT) != 0);
+	ASSERT((oldnode->preceding & MM_ALLOC_BIT) != 0);
 
 	/* Get and initialize the new terminal node in the heap */
 
