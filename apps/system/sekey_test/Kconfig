@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config SYSTEM_SEKEY_TEST
+	bool "Secure Key Tester"
+	default n
+	depends on SECURITY_LINK
+	---help---
+		Enable the SE Key & Cert Test
+
+if SYSTEM_SEKEY_TEST
+
+config ECDSA_KEY_SLOT
+	string "ECDSA Key slot list"
+	default "0"
+	---help---
+		Comma separated list of ecdsa keys.
+
+config CERT_SLOT
+	string "Certificate slot list"
+	default "1,2,3"
+	---help---
+		Comma separated list of certificates (PEM, DER).
+
+endif
