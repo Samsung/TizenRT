@@ -99,12 +99,15 @@ static void tc_driver_rtc_ioctl(void)
 	fd = open("/dev/rtc0", O_RDWR);
 	TC_ASSERT_GT("rtc_open", fd, 0);
 
+	memset(&rtctime_s, 0, sizeof(struct rtc_time));
+	memset(&rtctime_r, 0, sizeof(struct rtc_time));
+
 	rtctime_s.tm_hour = 1;
 	rtctime_s.tm_min = 2;
 	rtctime_s.tm_sec = 3;
 	rtctime_s.tm_mday = 1;
 	rtctime_s.tm_mon = 2;
-	rtctime_s.tm_year = 3;
+	rtctime_s.tm_year = 71;
 
 	ret = ioctl(fd, RTC_SET_TIME, (unsigned long)&rtctime_s);
 	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
