@@ -136,7 +136,7 @@ static inline int date_showtime(void)
 
 	/* Break the current time up into the format needed by strftime */
 
-	(void)gmtime_r((FAR const time_t *)&ts.tv_sec, &tm);
+	(void)localtime_r((FAR const time_t *)&ts.tv_sec, &tm);
 
 	/* Show the current time in the requested format */
 
