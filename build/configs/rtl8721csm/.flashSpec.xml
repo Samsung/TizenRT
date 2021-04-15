@@ -28,6 +28,7 @@
         <option desc="Flash TizenRT ota">OTA</option>
         <option desc="Erase TizenRT kernel">ERASE KERNEL</option>
         <option desc="Erase TizenRT ota">ERASE OTA</option>
+        <option desc="Erase TizenRT Secure Storage">ERASE SS</option>
         <option desc="Erase TizenRT userfs">ERASE USERFS</option>
         <option desc="Erase all binaries and images">ERASE ALL</option>
     </options>
