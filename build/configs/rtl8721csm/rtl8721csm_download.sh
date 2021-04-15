@@ -116,6 +116,7 @@ function rtl8721csm_dwld_help()
 		make download erase kernel
 		make download ota
 		make download erase ota
+		make download erase ss
 		make download smartfs
 		make download erase userfs
 EOF
@@ -298,7 +299,20 @@ erase()
 		echo "=========================="
 		echo "      Erasing All"
 		echo "=========================="
-		./amebad_image_tool "erase" $TTYDEV 1 $FLASH_START_ADDR 0 $(($CONFIG_AMEBAD_FLASH_CAPACITY>>10))
+		for partidx in ${!parts[@]}; do
+			if [[ "${parts[$partidx]}" == "userfs" ]];then
+				continue
+			elif [[ "${parts[$partidx]}" == "ss" ]];then
+				continue
+			else
+				echo ""
+				echo "=========================="
+				echo "Erasing ${parts[$partidx]} partition"
+				echo "=========================="
+			fi
+
+			./amebad_image_tool "erase" $TTYDEV 1 ${offsets[$partidx]} 0 ${sizes[partidx]}
+		done
 	else
 		for partidx in ${!parts[@]}; do
 			if [[ $2 == "kernel" || $2 == "KERNEL" ]];then
@@ -318,6 +332,10 @@ erase()
 					continue
 				else
 					flash_ota=false
+				fi
+			elif [[ $2 == "ss" || $2 == "SS" ]];then
+				if [[ "${parts[$partidx]}" != "ss" ]];then
+					continue
 				fi
 			elif [[ $2 == "userfs" || $2 == "USERFS" ]];then
 				if [[ "${parts[$partidx]}" != "userfs" ]];then
