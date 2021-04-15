@@ -346,14 +346,12 @@ erase()
 				rtl8721csm_dwld_help
 				break
 			fi
-			exe_name=$(get_executable_name ${parts[$partidx]})
-			[ "No Binary Match" = "${exe_name}" ] && continue
 
 			echo ""
 			echo "=========================="
 			echo "Erasing ${parts[$partidx]} partition"
 			echo "=========================="
-			./amebad_image_tool "erase" $TTYDEV 1 ${offsets[$partidx]} ${exe_name} ${sizes[partidx]}
+			./amebad_image_tool "erase" $TTYDEV 1 ${offsets[$partidx]} 0 ${sizes[partidx]}
 		done
 	fi
 	echo ""
