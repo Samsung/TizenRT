@@ -35,8 +35,15 @@ FP = 11
 SP = 13
 LR = 14
 PC = 15
-g_stext=0
-g_etext=0
+
+# Variable to check if board has kernel text in RAM region
+have_ram_kernel_text = False
+
+# Kernel text start & end addresses in FLASH & RAM regions
+g_stext_flash=0
+g_etext_flash=0
+g_stext_ram=0
+g_etext_ram=0
 
 config_path = '../../os/.config'
 elf_path = '../../build/output/bin/tinyara'
@@ -196,12 +203,18 @@ class dumpParser:
 							print(' ')
 							print(' ')
 
-						# If the PC is not withing RAM range, it's a Prefetch issue
+						# If the PC is not within kernel text range, it's a Prefetch issue
 						# So, fill the PC with LR and help to get the call stack
-						if ( pc < g_stext or pc > g_etext):
-							print("It'S A PRE-FETCH ABORT @ PC", hex(pc))
-							# Assign LR to PC to help constructing the stack
-							pc = lr
+						if (not(pc >= g_stext_flash and pc <= g_etext_flash)):
+							if (have_ram_kernel_text):
+								if (not(pc >= g_stext_ram and pc <= g_etext_ram)):
+									print("It'S A PRE-FETCH ABORT @ PC", hex(pc))
+									# Assign LR to PC to help constructing the stack
+									pc = lr
+							else:
+								print("It'S A PRE-FETCH ABORT @ PC", hex(pc))
+								# Assign LR to PC to help constructing the stack
+								pc = lr
 
 					continue
 				# Incase if log file already has this data, address to symbol mapping is
@@ -261,22 +274,31 @@ class dumpParser:
 
 	# Function to read the contents of given length from specific RAM/ELF address
 	def read_address(self, addr, length, debug=False):
-		# First check whether address falls within the code section, if so read from elf
-		if (addr >= g_stext and addr <= g_etext):
-			if debug:
-				print(('address {0:x} is in text range'.format(addr)))
-			# Checking in ELF file once for the offset at which we need to read the address
-			offset = (addr - g_stext ) + int(self.text_offset, 16)
-			if debug:
-				print(('Offset = {0:x}'.format(offset)))
-				print(('Length = {0:x}'.format(length)))
-			self.elf_file_fd.seek(offset)
-			a = self.elf_file_fd.read(length)
-			return a
-		# Since the given address does not belong to ELF section, read from DUMP
-		else:
-			# Calculate the OFFSET in the FILE by subtracting RAM start address
-			offset = addr - self.ram_base_addr
+		global have_ram_kernel_text
+
+		# If the given address does not belong to ELF section, read from DUMP
+		# Calculate the OFFSET in the FILE by subtracting RAM start address
+		offset = addr - self.ram_base_addr
+
+		# Also check whether address falls within the code section, if so read from elf
+		if (have_ram_kernel_text):
+			if (addr >= g_stext_flash and addr <= g_etext_flash) or (addr >= g_stext_ram and addr <= g_etext_ram):
+				# Checking in ELF file once for the offset at which we need to read the address
+				offset = (addr - g_stext_ram) + int(self.text_offset, 16)
+				if debug:
+					print(('address {0:x} is in text range'.format(addr)))
+				self.elf_file_fd.seek(offset)
+				a = self.elf_file_fd.read(length)
+				return a
+		elif not(have_ram_kernel_text):
+			if (addr >= g_stext_flash and addr <= g_etext_flash):
+				# Checking in ELF file once for the offset at which we need to read the address
+				offset = (addr - g_stext_flash) + int(self.text_offset, 16)
+				if debug:
+					print(('address {0:x} is in text range'.format(addr)))
+				self.elf_file_fd.seek(offset)
+				a = self.elf_file_fd.read(length)
+				return a
 
 		if debug:
 			print('offset = {0:x}'.format(offset))
@@ -525,6 +547,7 @@ def main():
 	stackPointer = 0
 	programCounter = 0
 	stackSize = 0
+	have_ram_kernel_text = False
 	gdb_path='/usr/bin/gdb'
 	nm_path='/usr/bin/nm'
 	readelf_path='/usr/bin/readelf'
@@ -637,6 +660,9 @@ def main():
 			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
 			return
 
+		if 'CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT=y' in data:
+			have_ram_kernel_text = True
+
 		# Calling the Constructor with the initial set of arguments
 		rParser = dumpParser(dump_file=dump_file,elf=elf,gdb_path=gdb_path,nm_path=nm_path,readelf_path=readelf_path,log_file=log_file, debug=False)
 
@@ -644,10 +670,15 @@ def main():
 		rParser.setup_symbol_table(elf,debug=False)
 
 		# Find offset
-		global g_stext
-		g_stext = rParser.get_address_of_symbol("_stext")
-		global g_etext
-		g_etext = rParser.get_address_of_symbol("_etext")
+		global g_stext_flash
+		g_stext_flash = rParser.get_address_of_symbol("_stext_flash")
+		global g_etext_flash
+		g_etext_flash = rParser.get_address_of_symbol("_etext_flash")
+		if (have_ram_kernel_text):
+			global g_stext_ram
+			g_stext_ram = rParser.get_address_of_symbol("_stext_ram")
+			global g_etext_ram
+			g_etext_ram = rParser.get_address_of_symbol("_etext_ram")
 
 		# If the log file is given, then parse that log file only and exit
 		if log_file is not None:
@@ -678,10 +709,16 @@ def main():
 		linkRegister = rParser.read_word(ctxt_regs+(4*LR))
 		programCounter = rParser.read_word(ctxt_regs+(4*PC))
 		# There are spl case where PC can be invalid, So assigning LR to PC
-		if ( programCounter < g_stext or programCounter > g_etext):
-			# This is possible for a prefetch abort. so am taking care by assigning LR to PC
-			print("It's a Prefetch abort at Addr : ", hex(programCounter))
-			programCounter = linkRegister
+		if (not(programCounter >= g_stext_flash and programCounter <= g_etext_flash)):
+			if (have_ram_kernel_text):
+				if (not(programCounter >= g_stext_ram and programCounter <= g_etext_ram)):
+					# This is possible for a prefetch abort. so am taking care by assigning LR to PC
+					print("It's a Prefetch abort at Addr : ", hex(programCounter))
+					programCounter = linkRegister
+			else:
+				# This is possible for a prefetch abort. so am taking care by assigning LR to PC
+				print("It's a Prefetch abort at Addr : ", hex(programCounter))
+				programCounter = linkRegister
 
 
 		# Explicitly getting the PC and LR symbol names for display purpose
