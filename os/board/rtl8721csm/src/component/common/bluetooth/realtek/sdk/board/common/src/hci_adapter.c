@@ -34,7 +34,7 @@ extern bool hci_board_complete(void);
 /* ================================internal=========================== */
 bool hci_rtk_tx_cb(void)
 {
-    if (p_hci_rtk->tx_buf != NULL)
+    if (p_hci_rtk->tx_buf != NULL && up_interrupt_context() == false)
     {
         os_mem_free(p_hci_rtk->tx_buf);
         p_hci_rtk->tx_buf = NULL;

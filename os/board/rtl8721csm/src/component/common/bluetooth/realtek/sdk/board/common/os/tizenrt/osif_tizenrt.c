@@ -514,7 +514,7 @@ bool osif_msg_send(void *p_handle, void *p_msg, uint32_t wait_ms)
 		return _FAIL;
 	}
 
-	if (wait_ms != 0xFFFFFFFF) {
+	if (wait_ms != 0xFFFFFFFF && up_interrupt_context() == false) {
 		struct timespec ts;
 		clock_gettime(CLOCK_REALTIME, &ts);
 		ts.tv_sec += wait_ms / 1000;
