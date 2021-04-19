@@ -54,6 +54,9 @@ static trwifi_result_e vdev_start_sta(struct netdev *dev);
 static trwifi_result_e vdev_stop_softap(struct netdev *dev);
 static trwifi_result_e vdev_set_autoconnect(struct netdev *dev, uint8_t check);
 
+static int vdev_linkoutput(struct netdev *dev, void *buf, uint16_t dlen);
+static int vdev_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -115,14 +118,16 @@ static inline int _destroy_message(struct vwifi_msg *msg)
 	return 0;
 }
 
-static inline void _wait_message(struct vwifi_msg *msg) {
+static inline void _wait_message(struct vwifi_msg *msg)
+{
 	int res = sem_wait(msg->signal);
-	if (res < 0){
+	if (res < 0) {
 		VWIFI_ERROR(res);
 	}
 }
 
-static inline void _send_signal(struct vwifi_msg *msg) {
+static inline void _send_signal(struct vwifi_msg *msg)
+{
 	int res = sem_post(msg->signal);
 	if (res < 0) {
 		VWIFI_ERROR(res);
@@ -214,11 +219,107 @@ int _vwifi_create_msgqueue(int *fd)
 }
 
 /*
+ * Internal Function
+ */
+static struct netdev* vdev_register_dev(void)
+{
+	struct nic_io_ops nops = {vdev_linkoutput, vdev_set_multicast_list};
+	struct netdev_config nconfig;
+	nconfig.ops = &nops;
+	nconfig.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
+	nconfig.mtu = CONFIG_NET_ETH_MTU; // is it right that vendor decides MTU size??
+	nconfig.hwaddr_len = IFHWADDRLEN;
+	nconfig.is_default = 1;
+
+	nconfig.type = NM_WIFI;
+	nconfig.t_ops.wl = &g_trwifi_drv_ops;
+	nconfig.priv = NULL;
+
+	return netdev_register(&nconfig);
+}
+
+static void vwifi_send_packet(uint8_t *buf, uint32_t len)
+{
+	if (!g_vwifi_dev) {
+		VWIFI_ERROR(0);
+		return;
+	}
+	netdev_input(g_vwifi_dev, buf, len);
+}
+
+/*
+ * Handler
+ */
+static void vdev_run(int argc, char *argv[])
+{
+	g_vwifi_dev = vdev_register_dev();
+	if (!g_vwifi_dev) {
+		VWIFI_ERROR(0);
+		return;
+	}
+	netdev_set_hwaddr(g_vwifi_dev, g_hwaddr, IFHWADDRLEN);
+
+	int fd;
+	int res = _vwifi_create_msgqueue(&fd);
+	if (res < 0) {
+		VWIFI_ERROR(0);
+		return;
+	}
+
+	fd_set rfds, tfds;
+	FD_ZERO(&rfds);
+	FD_SET(fd, &rfds);
+
+	while (1) {
+		tfds = rfds;
+		res = select(fd + 1, &tfds, NULL, NULL, NULL);
+		if (res <= 0) {
+			VWIFI_ERROR(res);
+			if (errno == EINTR) {
+				continue;
+			}
+			break;
+		}
+		struct vwifi_msg msg;
+		res = _recv_message(fd, (char *)&msg, sizeof(struct vwifi_msg));
+		if (res < 0) {
+			VWIFI_ERROR(res);
+			break;
+		}
+
+		res = vwifi_handle_message(msg.req);
+		if (res < 0) {
+			VWIFI_ERROR(res);
+			break;
+		}
+		_send_signal(&msg);
+	}
+	return;
+}
+
+void vwifi_start(void)
+{
+	vwifi_initialize_scan();
+	return;
+}
+
+void up_netinitialize(void)
+{
+	return;
+}
+
+
+/*
  * Interface API
  */
 trwifi_result_e vdev_init(struct netdev *dev)
 {
 	VWIFI_ENTRY;
+
+	int new_thread = kernel_thread("wifi mocking driver", 100, 2048, (main_t)vdev_run, (char *const *)NULL);
+	if (new_thread < 0) {
+		VWIFI_ERROR(new_thread);
+	}
 
 	struct vwifi_req req = {VWIFI_MSG_INIT, NULL, 0};
 	int res = _progress_message(&req);
@@ -357,96 +458,4 @@ int vdev_set_multicast_list(struct netdev *dev, const struct in_addr *group, net
 {
 	VWIFI_ENTRY;
 	return TRWIFI_SUCCESS;
-}
-
-/*
- * Internal Function
- */
-struct netdev* vdev_register_dev(int sizeof_priv)
-{
-	struct nic_io_ops nops = {vdev_linkoutput, vdev_set_multicast_list};
-	struct netdev_config nconfig;
-	nconfig.ops = &nops;
-	nconfig.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
-	nconfig.mtu = CONFIG_NET_ETH_MTU; // is it right that vendor decides MTU size??
-	nconfig.hwaddr_len = IFHWADDRLEN;
-	nconfig.is_default = 1;
-
-	nconfig.type = NM_WIFI;
-	nconfig.t_ops.wl = &g_trwifi_drv_ops;
-	nconfig.priv = NULL;
-
-	return netdev_register(&nconfig);
-}
-
-
-void vdev_run(int argc, char *argv[])
-{
-	g_vwifi_dev = vdev_register_dev(0);
-	if (!g_vwifi_dev) {
-		VWIFI_ERROR(0);
-		return;
-	}
-	netdev_set_hwaddr(g_vwifi_dev, g_hwaddr, IFHWADDRLEN);
-
-	int fd;
-	int res = _vwifi_create_msgqueue(&fd);
-	if (res < 0) {
-		VWIFI_ERROR(0);
-		return;
-	}
-
-	fd_set rfds, tfds;
-	FD_ZERO(&rfds);
-	FD_SET(fd, &rfds);
-
-	while (1) {
-		tfds = rfds;
-		res = select(fd + 1, &tfds, NULL, NULL, NULL);
-		if (res <= 0) {
-			VWIFI_ERROR(res);
-			if (errno == EINTR) {
-				continue;
-			}
-			break;
-		}
-		struct vwifi_msg msg;
-		res = _recv_message(fd, (char *)&msg, sizeof(struct vwifi_msg));
-		if (res < 0) {
-			VWIFI_ERROR(res);
-			break;
-		}
-		res = vwifi_handle_message(msg.req);
-
-		if (res < 0) {
-			VWIFI_ERROR(res);
-			break;
-		}
-		_send_signal(&msg);
-	}
-	return;
-}
-
-void vwifi_send_packet(uint8_t *buf, uint32_t len)
-{
-	if (!g_vwifi_dev) {
-		VWIFI_ERROR(0);
-		return;
-	}
-	netdev_input(g_vwifi_dev, buf, len);
-}
-
-void vwifi_start(void)
-{
-	vwifi_initialize_scan();
-	int new_thread = kernel_thread("virtual wifi", 100, 2048, (main_t)vdev_run, (char *const *)NULL);
-	if (new_thread < 0) {
-		VWIFI_ERROR(new_thread);
-	}
-	return;
-}
-
-void up_netinitialize(void)
-{
-	return;
 }
