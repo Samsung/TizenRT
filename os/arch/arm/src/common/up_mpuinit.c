@@ -155,7 +155,7 @@ void up_mpuinitialize(void)
 	mpu_region_initialize(&g_mpu_region_usages);
 
 	/* Maximum MPU region number sanity check */
-	DEBUGASSERT(g_mpu_region_usages.max_nregion < MPU_MAX_NREGION);
+	DEBUGASSERT(g_mpu_region_usages.max_nregion <= MPU_MAX_NREGION);
 
 	/* Show MPU information */
 	mpu_showtype();
