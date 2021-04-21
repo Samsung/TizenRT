@@ -58,6 +58,10 @@
 #include <signal.h>
 #include <sched.h>
 #include <pthread.h>
+#ifdef CONFIG_ENABLE_KILLALL
+#include "utils_proc.h"
+#define KILLALL_BUFLEN 128
+#endif
 
 #if defined(CONFIG_ENABLE_KILLALL) && (CONFIG_TASK_NAME_SIZE <= 0)
 #error If you want to use killall, CONFIG_TASK_NAME_SIZE should be > 0
@@ -235,16 +239,47 @@ usage:
 #endif
 
 #if defined(CONFIG_ENABLE_KILLALL)
-static void utils_killall_handler(FAR struct tcb_s *tcb, FAR void *arg)
+static void killall_send_signal(char *buf, void *arg)
 {
+	int i;
+	stat_data stat_info[PROC_STAT_MAX];
+	char *name;
+	int pid;
 	struct utils_killall_arg_s *killall_arg = (struct utils_killall_arg_s *)arg;
+	if (killall_arg == NULL) {
+		printf("Failed to send signal, because of invalid parameter.\n");
+		return;
+	}
 
-	if (strncmp(tcb->name, killall_arg->name, CONFIG_TASK_NAME_SIZE) == 0) {
+	stat_info[0] = buf;
+	for (i = 0; i < PROC_STAT_MAX - 1; i++) {
+		stat_info[i] = strtok_r(stat_info[i], " ", &stat_info[i + 1]);
+	}
+	name = stat_info[PROC_STAT_NAME];
+	pid = atoi(stat_info[PROC_STAT_PID]);
+
+	if (strncmp(name, killall_arg->name, CONFIG_TASK_NAME_SIZE) == 0) {
 		killall_arg->count++;
-		if (send_signal(tcb->pid, killall_arg->signo) != OK) {
+		if (send_signal(pid, killall_arg->signo) != OK) {
 			*(killall_arg->ret) = ERROR;
 		}
 	}
+}
+
+static int killall_read_proc(FAR struct dirent *entryp, FAR void *arg)
+{
+	char *filepath;
+	char buf[KILLALL_BUFLEN];
+	int ret = OK;
+
+	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
+	ret = utils_readfile(filepath, buf, KILLALL_BUFLEN, killall_send_signal, arg);
+	if (ret < 0) {
+		printf("Failed to read %s\n", filepath);
+		ret = ERROR;
+	}
+	free(filepath);
+	return ret;
 }
 
 int utils_killall(int argc, char **args)
@@ -253,6 +288,10 @@ int utils_killall(int argc, char **args)
 	int sigidx;
 	char *ptr;
 	struct utils_killall_arg_s arg;
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	int ret;
+	bool is_mounted = false;
+#endif
 
 	if (argc < 2 || argc > 3) {
 		printf("Invalid argument\n");
@@ -291,17 +330,34 @@ int utils_killall(int argc, char **args)
 		ptr = args[2];
 	}
 
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	is_mounted = false;
+	/* Mount Procfs to use */
+	ret = mount(NULL, PROCFS_MOUNT_POINT, PROCFS_FSTYPE, 0, NULL);
+	if (ret == ERROR) {
+		if (errno == EEXIST) {
+			is_mounted = true;
+		} else {
+			printf("Failed to mount procfs : %d\n", errno);
+			return ERROR;
+		}
+	}
+#endif
+
 	arg.signo = signo;
 	strncpy(arg.name, ptr, CONFIG_TASK_NAME_SIZE);
 	arg.name[CONFIG_TASK_NAME_SIZE] = '\0';
 	arg.count = 0;
 	arg.ret = OK;
 
-	sched_foreach(utils_killall_handler, (FAR void *)&arg);
-	if (arg.count == 0) {
-		printf("%s: no thread found\n", arg.name);
-		return ERROR;
+	utils_proc_pid_foreach(killall_read_proc, (void *)&arg);
+
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	if (!is_mounted) {
+		/* Detach mounted Procfs */
+		(void)umount(PROCFS_MOUNT_POINT);
 	}
+#endif
 
 	return OK;
 
@@ -314,6 +370,12 @@ usage:
 	printf("\nOptions:\n");
 	printf(" -l           List all signal names\n");
 
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+	if (!is_mounted) {
+		/* Detach mounted Procfs */
+		(void)umount(PROCFS_MOUNT_POINT);
+	}
+#endif
 	return ERROR;
 }
 #endif
