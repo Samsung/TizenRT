@@ -42,7 +42,7 @@ void tash_check_security(int fd)
 
 	do {
 		nbytes = write(fd, passwd_prompt, sizeof(passwd_prompt));
-		if (nbytes <= sizeof(passwd_prompt)) {
+		if (nbytes < sizeof(passwd_prompt)) {
 			usleep(20);
 			continue;
 		}
