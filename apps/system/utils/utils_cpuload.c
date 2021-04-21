@@ -109,7 +109,7 @@ static void cpuload_stop(void)
 	}
 }
 
-static void cpuload_print_pid_value(char *buf)
+static void cpuload_print_pid_value(char *buf, void *arg)
 {
 	int i;
 	int pid;
@@ -153,7 +153,7 @@ static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
 	char buf[CPULOAD_BUFLEN];
 
 	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
-	ret = utils_readfile(filepath, buf, CPULOAD_BUFLEN, cpuload_print_pid_value);
+	ret = utils_readfile(filepath, buf, CPULOAD_BUFLEN, cpuload_print_pid_value, NULL);
 	free(filepath);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
@@ -175,7 +175,7 @@ static void cpuload_print_normal(void)
 	printf("\n--------------------------------------------------\n");
 
 	/* Print cpuload for each task */
-	utils_proc_pid_foreach(cpuload_read_proc);
+	utils_proc_pid_foreach(cpuload_read_proc, NULL);
 	printf("--------------------------------------------------\n");
 }
 
@@ -209,7 +209,7 @@ static void cpuload_print_snapshot(void)
 	printf("\n--------------------------------------------------\n");
 
 	/* Print cpuload for each task */
-	utils_proc_pid_foreach(cpuload_read_proc);
+	utils_proc_pid_foreach(cpuload_read_proc, NULL);
 
 	/* Caclate uncounted ticks for dead thread when reading proc entry */
 	for (pid_idx = 0; pid_idx < CONFIG_MAX_TASKS; pid_idx++) {

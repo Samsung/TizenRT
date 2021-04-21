@@ -52,9 +52,9 @@ enum proc_stat_data_e {
 
 typedef char *stat_data;
 typedef int (*procentry_handler_t)(FAR struct dirent *entryp, FAR void *arg);
-typedef void (*utils_print_t)(char *buf);
+typedef void (*utils_handler_t)(char *buf, void *arg);
 
-int utils_proc_pid_foreach(procentry_handler_t handler);
-int utils_readfile(FAR const char *filepath, char *buf, int buflen, utils_print_t print_func);
+int utils_proc_pid_foreach(procentry_handler_t handler, void *arg);
+int utils_readfile(FAR const char *filepath, char *buf, int buflen, utils_handler_t print_func, void *arg);
 
 #endif							/* __APPS_SYSTEM_UTILS_UTILS_PROC_H */
