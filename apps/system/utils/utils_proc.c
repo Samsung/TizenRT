@@ -50,7 +50,7 @@ static bool is_numeric_name(const char *name)
 	return true;
 }
 
-int utils_proc_pid_foreach(procentry_handler_t handler)
+int utils_proc_pid_foreach(procentry_handler_t handler, void *arg)
 {
 	DIR *dirp;
 	struct dirent *entryp;
@@ -83,7 +83,7 @@ int utils_proc_pid_foreach(procentry_handler_t handler)
 		}
 
 		/* Call the handler with this directory entry */
-		if (handler(entryp, NULL) < 0) {
+		if (handler(entryp, arg) < 0) {
 			ret = ERROR;
 			break;
 		}
@@ -93,7 +93,7 @@ int utils_proc_pid_foreach(procentry_handler_t handler)
 	return ret;
 }
 
-int utils_readfile(FAR const char *filepath, char *buf, int buflen, utils_print_t print_func)
+int utils_readfile(FAR const char *filepath, char *buf, int buflen, utils_handler_t handler, void *arg)
 {
 	int fd;
 	ssize_t nread;
@@ -120,8 +120,8 @@ int utils_readfile(FAR const char *filepath, char *buf, int buflen, utils_print_
 			return ERROR;
 		}
 		buf[nread] = '\0';
-		if (print_func != NULL) {
-			print_func(buf);
+		if (handler != NULL) {
+			handler(buf, arg);
 		} else {
 			printf("%s", buf);
 		}

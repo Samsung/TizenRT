@@ -51,7 +51,7 @@ int utils_irqinfo(int argc, char **args)
 #endif
 
 	asprintf(&filepath, "%s/%s", PROCFS_MOUNT_POINT, "irqs");
-	ret = utils_readfile(filepath, buf, IRQ_BUFLEN, NULL);
+	ret = utils_readfile(filepath, buf, IRQ_BUFLEN, NULL, NULL);
 	free(filepath);
 
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)

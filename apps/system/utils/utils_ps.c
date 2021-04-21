@@ -92,7 +92,7 @@ static const char *utils_ttypenames[4] = {
 	"--?--  "
 };
 
-static void ps_print_values(char *buf)
+static void ps_print_values(char *buf, void *arg)
 {
 	int i;
 	int flags;
@@ -135,7 +135,7 @@ static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
 	char buf[PS_BUFLEN];
 
 	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
-	ret = utils_readfile(filepath, buf, PS_BUFLEN, ps_print_values);
+	ret = utils_readfile(filepath, buf, PS_BUFLEN, ps_print_values, NULL);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
 		free(filepath);
@@ -175,7 +175,7 @@ int utils_ps(int argc, char **args)
 	printf("------|------|------|---------|----|----------\n");
 #endif
 	/* Print information for each task/thread */
-	utils_proc_pid_foreach(ps_read_proc);
+	utils_proc_pid_foreach(ps_read_proc, NULL);
 
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	if (!is_mounted) {

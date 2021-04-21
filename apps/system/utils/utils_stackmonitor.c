@@ -173,7 +173,7 @@ static void stkmon_print_inactive_list(void)
 	free(terminated_infos);
 }
 
-static void stkmon_print_active_values(char *buf)
+static void stkmon_print_active_values(char *buf, void *arg)
 {
 	int i;
 	stat_data stat_info[PROC_STAT_MAX];
@@ -209,7 +209,7 @@ static int stkmon_read_proc(FAR struct dirent *entryp, FAR void *arg)
 	char buf[STKMON_BUFLEN];
 
 	asprintf(&filepath, "%s/%s/%s", PROCFS_MOUNT_POINT, entryp->d_name, "stat");
-	ret = utils_readfile(filepath, buf, STKMON_BUFLEN, stkmon_print_active_values);
+	ret = utils_readfile(filepath, buf, STKMON_BUFLEN, stkmon_print_active_values, NULL);
 	if (ret < 0) {
 		printf("Failed to read %s\n", filepath);
 		free(filepath);
@@ -272,7 +272,7 @@ static void *stackmonitor_daemon(void *arg)
 		printf("|------------");
 #endif
 		printf("\n");
-		utils_proc_pid_foreach(stkmon_read_proc);
+		utils_proc_pid_foreach(stkmon_read_proc, NULL);
 #ifndef CONFIG_DISABLE_SIGNALS
 		sleep(CONFIG_STACKMONITOR_INTERVAL);
 	}
