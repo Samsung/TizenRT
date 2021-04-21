@@ -167,7 +167,7 @@ config ENABLE_KILL
 config ENABLE_KILLALL
 	bool "killall"
 	default y
-	depends on !BUILD_PROTECTED
+	depends on FS_PROCFS && !FS_PROCFS_EXCLUDE_PROCESS
 	---help---
 		Send a signal to all processes running any of the specified commands
 
