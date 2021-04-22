@@ -1,0 +1,13 @@
+dictionaries:
+  - en
+  - en_GB
+
+excluded_files:
+  - ".typo-ci.yml"
+
+# Any typos we should ignore?
+excluded_words:
+  - typoci
+
+# Would you like filenames to also be spellchecked?
+spellcheck_filenames: true
