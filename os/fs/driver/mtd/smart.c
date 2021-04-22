@@ -5652,7 +5652,7 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		ret = smart_validate_crc(dev);
 		if (ret == OK) {
 			fvdbg("Entire of sector is valid, so checkout last journal!!!!\n");
-			/* Data in MTD header was succesfully updated but Journal Entry was not checked out. Do it now */
+			/* Data in MTD header was successfully updated but Journal Entry was not checked out. Do it now */
 			ret = smart_journal_checkout(dev, log, address);
 			if (ret != OK) {
 				fdbg("Sector was valid but checkout failed\n");
