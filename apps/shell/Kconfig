@@ -58,17 +58,17 @@ config TASH_SCRIPT
 		See "sh" on TASH help command.
 
 config SECURED_TASH
-    bool "Enable Secure shell"
-    depends on NET_SECURITY_TLS
-    default n
+	bool "Enable Secure shell"
+	depends on NET_SECURITY_TLS
+	default n
 
 if SECURED_TASH
 
 config TASH_PASSWORD_SHA256
-    string "SHA256 encrypted password"
-    default "0000"
-    ---help---
-        Enable password to enter TASH.
+	string "SHA256 encrypted password"
+	default "0000"
+	---help---
+		Enable password to enter TASH.
 endif
 
 endif
