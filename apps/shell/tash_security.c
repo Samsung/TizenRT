@@ -18,6 +18,7 @@
 /// @file   tash_security.c
 /// @brief  functions to check secure tash command
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,50 +26,68 @@
 #include <mbedtls/sha256.h>
 #include "tash_internal.h"
 
+#define SHA256_HASH_nCHAR  (64) // 32 bytes
+#define SHA256_HASH_nBYTE  (32) // 32 bytes
+#define CONVERT_nCHAR      (sizeof(unsigned long) * 2) // unsigned long for strtoul
+
 void tash_check_security(int fd)
 {
-	char *line_buff;
-	int i;
-	int nbytes;
-	char chr[1];
-	unsigned char temp[2];
-
-	unsigned char sha256[64];
-	unsigned char result[64];
-	unsigned char sha256_hex[64];
-	int len = 0;
 	const char passwd_prompt[] = "PASSWORD>>";
-	int count = 0;
+	char *input;
+	int nbytes;
+	int input_len = 0;
+	char pw_sha256_char[CONVERT_nCHAR + 1] = { 0, };
+	unsigned char pw_sha256_hex[SHA256_HASH_nBYTE];
+	unsigned char input_sha256_hex[SHA256_HASH_nBYTE];
+	unsigned long converted_val;
+	int sha256_hex_idx = 0;
+	int retry_count = 0;
+	int offset = 0;
+
+	if (strlen(CONFIG_TASH_PASSWORD_SHA256) != SHA256_HASH_nCHAR) {
+		printf("TASH: CONFIG_TASH_PASSWORD_SHA256 has wrong length (%d).\n", strlen(CONFIG_TASH_PASSWORD_SHA256));
+		printf("      It should be 32 bytes, 64 characters.\n");
+		return;
+	}
+
+	/* Convert password character to hex */
+	do {
+		strncpy(pw_sha256_char, ((char *)CONFIG_TASH_PASSWORD_SHA256 + offset), CONVERT_nCHAR);
+		converted_val = strtoul(pw_sha256_char, NULL, 16);
+		pw_sha256_hex[sha256_hex_idx++] = (unsigned char)((converted_val >> 24) & 0xFF);
+		pw_sha256_hex[sha256_hex_idx++] = (unsigned char)((converted_val >> 16) & 0xFF);
+		pw_sha256_hex[sha256_hex_idx++] = (unsigned char)((converted_val >> 8) & 0xFF);
+		pw_sha256_hex[sha256_hex_idx++] = (unsigned char)(converted_val & 0xFF);
+		offset += CONVERT_nCHAR;
+	} while (offset < SHA256_HASH_nCHAR);
 
 	do {
+		/* Print secure prompt */
 		nbytes = write(fd, passwd_prompt, sizeof(passwd_prompt));
 		if (nbytes < sizeof(passwd_prompt)) {
 			usleep(20);
 			continue;
 		}
-		line_buff = tash_read_input_line(fd);
-		len = strlen(line_buff);
 
-		sprintf((char *)sha256, "%s", CONFIG_TASH_PASSWORD_SHA256);
-
-		for (i = 0; i < 64; i++) {
-			strncpy(chr, (char *)&sha256[i], 1);
-			temp[i % 2] = strtoul(chr, NULL, 16);
-
-			if (i % 2) {
-				sha256_hex[i / 2] = (temp[0] << 4) | temp[1];
-			}
+		/* Read user input */
+		input = tash_read_input_line(fd);
+		input_len = strlen(input);
+		if (input_len == 0) {
+			tash_free(input);
+			continue;
 		}
 
-		mbedtls_sha256((unsigned char *)line_buff, len, result, 0);
+		/* Convert user input to SHA256 hash value */
+		mbedtls_sha256((unsigned char *)input, input_len, input_sha256_hex, 0);
 
-		tash_free(line_buff);
+		tash_free(input);
 
-		if (!strncmp((char *)sha256_hex, (char *)result, 32)) {
+		/* Confirm the password */
+		if (!strncmp((char *)pw_sha256_hex, (char *)input_sha256_hex, SHA256_HASH_nBYTE)) {
 			break;
-		} else if (len != 0) {
-			count++;
-			if (count % 3 == 0) {
+		} else {
+			retry_count++;
+			if (retry_count % 3 == 0) {
 				printf("TASH: It will be locked for 30sec\n");
 				sleep(30);
 			}
