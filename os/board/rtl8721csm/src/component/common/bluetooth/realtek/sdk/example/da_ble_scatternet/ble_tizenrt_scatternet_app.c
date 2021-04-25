@@ -310,21 +310,6 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
 			break;
 		case BLE_TIZENRT_MSG_START_ADV:
         {
-            uint8_t  adv_evt_type = GAP_ADTYPE_ADV_IND;
-            uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
-            uint8_t  adv_direct_addr[GAP_BD_ADDR_LEN] = {0};
-            uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
-            uint8_t  adv_filter_policy = GAP_ADV_FILTER_ANY;
-            uint16_t adv_int_min = DEFAULT_ADVERTISING_INTERVAL_MIN;
-            uint16_t adv_int_max = DEFAULT_ADVERTISING_INTERVAL_MAX;
-
-            le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-            le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-            le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(adv_direct_addr), adv_direct_addr);
-            le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
-            le_adv_set_param(GAP_PARAM_ADV_FILTER_POLICY, sizeof(adv_filter_policy), &adv_filter_policy);
-            le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int_min), &adv_int_min);
-            le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int_max), &adv_int_max);
             ret = le_adv_start();
             if(GAP_CAUSE_SUCCESS == ret)
                 debug_print("\r\n[Upstream] Start Adv Success", __FUNCTION__);
@@ -491,6 +476,25 @@ void ble_tizenrt_scatternet_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, 
                             bt_addr[2],
                             bt_addr[1],
                             bt_addr[0]);
+        }
+    }
+
+    if (ble_tizenrt_scatternet_gap_dev_state.gap_adv_state != new_state.gap_adv_state)
+    {
+        if (new_state.gap_adv_state == GAP_ADV_STATE_IDLE)
+        {
+            if (new_state.gap_adv_sub_state == GAP_ADV_TO_IDLE_CAUSE_CONN)
+            {
+                printf("\r\n[BLE Tizenrt] GAP adv stoped: because connection created");
+            }
+            else
+            {
+                printf("\r\n[BLE Tizenrt] GAP adv stopped");
+            }
+        }
+        else if (new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
+        {
+            printf("\r\n[BLE Tizenrt] GAP adv start");
         }
     }
 

@@ -27,7 +27,21 @@ extern uint8_t  hci_tp_phy_efuse[16];
 static uint8_t vendor_flow;
 static uint8_t iqk_type = 0xff;
 static uint8_t orignal_thermal[3];
+static uint8_t *bte_init_buff = NULL;
 
+static uint8_t *bte_init_buff_get(void)
+{
+    if(NULL == bte_init_buff)
+        bte_init_buff = os_mem_zalloc(RAM_TYPE_DATA_ON, 300);
+    return bte_init_buff;
+}
+
+void bte_init_buff_free(void)
+{
+    if(NULL != bte_init_buff)
+        os_mem_free(bte_init_buff);
+    bte_init_buff = NULL;
+}
 /* ====================hci_patch_util.c================ */
 
 uint8_t hci_tp_read_local_ver(void)
@@ -38,7 +52,8 @@ uint8_t hci_tp_read_local_ver(void)
     HCI_PRINT_TRACE0("hci_tp_read_local_ver");
 
     hci_normal_start();
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 4);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 4);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -81,7 +96,8 @@ uint8_t hci_tp_read_rom_ver(void)
 
     HCI_PRINT_TRACE0("hci_tp_read_rom_ver");
 
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 4);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 4);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -129,7 +145,8 @@ uint8_t hci_tp_read_thermal(void)
 
     if (rltk_wlan_is_mp())
     {
-        p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 4);
+        //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 4);
+        p_cmd = bte_init_buff_get();
             if (p_cmd != NULL)
             {
                 p = p_cmd;
@@ -280,7 +297,8 @@ uint8_t hci_tp_download_patch(void)
     HCI_PRINT_TRACE2("hci_tp_download_patch: frag index %d, len %d",
                      p_hci_rtk->patch_frag_idx, p_hci_rtk->patch_frag_len);
 
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, HCI_CMD_HDR_LEN + 1 + p_hci_rtk->patch_frag_len);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, HCI_CMD_HDR_LEN + 1 + p_hci_rtk->patch_frag_len);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -347,7 +365,8 @@ uint8_t hci_tp_set_controller_baudrate(void)
 
     HCI_PRINT_TRACE1("hci_tp_set_controller_baudrate: baudrate 0x%08x", p_hci_rtk->baudrate);
 
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, HCI_CMD_HDR_LEN + 4);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, HCI_CMD_HDR_LEN + 4);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -406,7 +425,8 @@ uint8_t hci_tp_rf_radio_ver(uint8_t offset, uint16_t value)
     HCI_PRINT_TRACE0("hci_tp_rf_radio_ver");
     hci_board_debug("hci_tp_rf_radio_ver\n");
 
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 8);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 8);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -497,7 +517,8 @@ uint8_t hci_tp_write_efuse_iqk(void)
 
     HCI_PRINT_TRACE0("hci_tp_write_efuse_iqk");
     
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 15);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 15);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -521,7 +542,8 @@ uint8_t hci_tp_hci_reset(void)
     uint8_t *p_cmd;
     uint8_t *p;
     HCI_PRINT_TRACE0("hci_reset");
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 4);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 4);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -567,7 +589,8 @@ uint8_t hci_tp_tx_test_cmd(void)
 #define HCI_LE_TRANSMIT_TEST 0x201e
     hci_board_debug("hci_tp_tx_test_cmd 2402, 0xFF, 0x00\n");
 
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 7);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 7);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -593,7 +616,8 @@ uint8_t hci_tp_rx_test_cmd(void)
 
 #define HCI_LE_RECEIVE_TEST 0x201d
     hci_board_debug("hci_tp_rx_test_cmd 2402\n");
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 6);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 6);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;
@@ -617,7 +641,8 @@ uint8_t hci_tp_test_end_cmd(void)
 
 #define HCI_LE_TEST_END 0x201f
     hci_board_debug("hci_tp_rx_test_cmd 2402\n");
-    p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 6);
+    //p_cmd = os_mem_zalloc(RAM_TYPE_DATA_ON, 6);
+    p_cmd = bte_init_buff_get();
     if (p_cmd != NULL)
     {
         p = p_cmd;

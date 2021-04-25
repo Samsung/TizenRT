@@ -31,20 +31,17 @@ uint8_t g_hci_step = 0;
 extern HCI_PROCESS_TABLE hci_process_table[];
 extern uint8_t hci_total_step;
 extern bool hci_board_complete(void);
+extern void bte_init_buff_free(void);
 /* ================================internal=========================== */
 bool hci_rtk_tx_cb(void)
 {
-    if (p_hci_rtk->tx_buf != NULL)
-    {
-        os_mem_free(p_hci_rtk->tx_buf);
-        p_hci_rtk->tx_buf = NULL;
-    }
     return true;
 }
 /* =================================external========================== */
 bool hci_adapter_send(uint8_t *p_buf, uint16_t len)
 {
     p_hci_rtk->tx_buf  = p_buf;
+    //dbg("-- [TEST]  %p len %d--\n", __builtin_return_address(0), len);
     return hci_tp_send(p_buf, len, hci_rtk_tx_cb);
 }
 
@@ -159,6 +156,7 @@ void hci_tp_config(uint8_t *p_buf, uint16_t len)
                             break;
                         case HCI_TP_CHECK_ERROR:
                             p_hci_rtk->open_cb(false);
+                            bte_init_buff_free();
                             return;
                             break;
                         default:
@@ -175,16 +173,20 @@ void hci_tp_config(uint8_t *p_buf, uint16_t len)
 hci_tp_config_ok:
                 /* next step */
                 g_hci_step++;
+                //dbg("-- [hci_tp_config_ok]  %p %d--\n", __builtin_return_address(0), g_hci_step);
                 if(g_hci_step == hci_total_step)
                 {
                     hci_board_debug("\r\n%s:BT INIT success %x\n",__FUNCTION__,g_hci_step);
                     if(hci_board_complete() == true)
                     {
                          p_hci_rtk->open_cb(true);
+                         bte_init_buff_free();
+                         //dbg("-- [hci_tp_config_complete]  %p %d--\n", __builtin_return_address(0), g_hci_step);
                     }
                     else
                     {
                          p_hci_rtk->open_cb(false);
+                         bte_init_buff_free();
                          return; 
                     }
                 }
@@ -228,13 +230,18 @@ hci_tp_config_ok:
 
 hci_tp_config_fail:
     p_hci_rtk->open_cb(false);
+    bte_init_buff_free();
+    //dbg("-- [hci_tp_config_fail]  %p %d--\n", __builtin_return_address(0), g_hci_step);
     return;
     
 hci_tp_config_end:
     p_hci_rtk->open_cb(true);
+    bte_init_buff_free();
+    //dbg("-- [hci_tp_config_end]  %p %d--\n", __builtin_return_address(0), g_hci_step);
     return;
 
 hci_tp_config_again:
     hci_process_table[g_hci_step].start_pro();
+    //dbg("-- [hci_tp_config_again]  %p %d--\n", __builtin_return_address(0), g_hci_step);
     return;
 }

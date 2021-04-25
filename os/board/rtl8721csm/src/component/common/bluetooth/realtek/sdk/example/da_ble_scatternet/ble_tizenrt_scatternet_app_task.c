@@ -62,7 +62,6 @@ extern T_GAP_DEV_STATE ble_tizenrt_scatternet_gap_dev_state;
 /*============================================================================*
  *                              Functions
  *============================================================================*/
-
 /**
  * @brief        App task to handle events & messages
  * @param[in]    p_param    Parameters sending to the task
@@ -75,7 +74,6 @@ void ble_tizenrt_scatternet_app_main_task(void *p_param)
 
     os_sem_give(start_bt_stack_sem_handle);
 
-    //TODO：usrcamd是否需要
     data_uart_init(ble_tizenrt_scatternet_evt_queue_handle, ble_tizenrt_scatternet_io_queue_handle);
     while (true)
     {

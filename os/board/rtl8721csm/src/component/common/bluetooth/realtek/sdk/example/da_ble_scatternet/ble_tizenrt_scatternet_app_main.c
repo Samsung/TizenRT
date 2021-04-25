@@ -323,5 +323,7 @@ void ble_tizenrt_scatternet_app_deinit(void)
 		printf("[Tizenrt Scatternet] BT Stack deinitalized\n\r");
 	}
 #endif
+    tizenrt_ble_srv_count = 0;
+    memset(tizenrt_ble_srv_database, 0, (7 * sizeof(TIZENERT_SRV_DATABASE)));
 }
 /** @} */ /* End of group SCATTERNET_DEMO_MAIN */
