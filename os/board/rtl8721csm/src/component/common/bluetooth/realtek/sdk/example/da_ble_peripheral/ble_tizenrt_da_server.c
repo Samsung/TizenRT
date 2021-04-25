@@ -292,7 +292,6 @@ da_ble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
     return conn_id;
 }
 
-//extern T_GAP_DEV_STATE ble_tizenrt_gap_dev_state;
 /* Set Advertisement Data API */
 da_ble_result_type rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
 {
@@ -377,69 +376,6 @@ da_ble_result_type rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
 
         return DA_BLE_RESULT_TYPE_SUCCESS;
     }
-#if 0 
-    if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-    {
-        debug_print("\r\n[%s] ADV STATE : advertising", __FUNCTION__);
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
-    } else if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_START) {
-        do
-        {   
-            debug_print("\r\n[%s] ADV STATE : starting", __FUNCTION__);
-            os_delay(100);
-        } while(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_START);
-
-        if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-        {
-            debug_print("\r\n[%s] ADV STATE : advertising", __FUNCTION__);
-            ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
-        }
-    } else if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_STOP) {
-        do
-        {   
-            debug_print("\r\n[%s] ADV STATE : stoping", __FUNCTION__);
-            os_delay(100);
-        } while(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_STOP);
-
-        if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-        {
-            debug_print("\r\n[%s] ADV STATE : advertising", __FUNCTION__);
-            ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
-        }
-    }
-
-    do
-    {   
-        debug_print("\r\n[%s] Waiting for adv idle", __FUNCTION__);
-        os_delay(100);
-    } while(ble_tizenrt_gap_dev_state.gap_adv_state != GAP_ADV_STATE_IDLE);
-
-    debug_print("\r\n[%s] ADV STATE : idle", __FUNCTION__);
-    ret = le_adv_set_param(GAP_PARAM_ADV_DATA, length, (void *)data);
-    if(ret != GAP_CAUSE_SUCCESS)
-    {
-        debug_print("\r\n[%s] Set adv data fail!!!", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_FAILURE;
-    } else {
-        debug_print("\r\n[%s] Set adv data success", __FUNCTION__);
-    }
-
-    if(le_get_active_link_num())
-    {
-        debug_print("\r\n[%s] Active connection exist", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_SUCCESS;
-    } else {
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL);
-        do
-        {   
-            debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
-            os_delay(100);
-        }while(ble_tizenrt_gap_dev_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
-
-        debug_print("\r\n[%s] ADV STATE : advertising", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_SUCCESS;
-    }
-#endif
 }
 
 
@@ -528,69 +464,6 @@ da_ble_result_type rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
 
         return DA_BLE_RESULT_TYPE_SUCCESS;
     }
-#if 0
-    if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-    {
-        debug_print("\r\n[%s] ADV STATE : advertising", __FUNCTION__);
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
-    } else if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_START) {
-        do
-        {   
-            debug_print("\r\n[%s] ADV STATE : starting", __FUNCTION__);
-            os_delay(100);
-        } while(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_START);
-
-        if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-        {
-            debug_print("\r\n[%s] ADV STATE : advertising", __FUNCTION__);
-            ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
-        }
-    } else if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_STOP) {
-        do
-        {   
-            debug_print("\r\n[%s] ADV STATE : stoping", __FUNCTION__);
-            os_delay(100);
-        } while(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_STOP);
-
-        if(ble_tizenrt_gap_dev_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-        {
-            debug_print("\r\n[%s] ADV STATE : advertising", __FUNCTION__);
-            ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
-        }
-    }
-
-    do
-    {   
-        debug_print("\r\n[%s] Waiting for adv idle", __FUNCTION__);
-        os_delay(100);
-    } while(ble_tizenrt_gap_dev_state.gap_adv_state != GAP_ADV_STATE_IDLE);
-
-    debug_print("\r\n[%s] ADV STATE : idle", __FUNCTION__);
-    ret = le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, length, (void *)data);
-    if(ret != GAP_CAUSE_SUCCESS)
-    {
-        debug_print("\r\n[%s] Set adv name fail!!!", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_FAILURE;
-    } else {
-        debug_print("\r\n[%s] Set adv name success", __FUNCTION__);
-    }
-
-    if(le_get_active_link_num())
-    {
-        debug_print("\r\n[%s] Active connection exist", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_SUCCESS;
-    } else {
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL);
-        do
-        {   
-            debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
-            os_delay(100);
-        } while(ble_tizenrt_gap_dev_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
-
-        debug_print("\r\n[%s] ADV STATE : advertising", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_SUCCESS;
-    }
-#endif
 }
 
 bool rtw_ble_server_conn_is_active(da_ble_conn_handle con_handle)
@@ -641,6 +514,12 @@ da_ble_result_type rtw_ble_server_disconnect(da_ble_conn_handle con_handle)
 
 da_ble_result_type rtw_ble_server_start_adv(void)
 {
+    if(le_get_active_link_num())
+    {
+        debug_print("\r\n[%s] Connection already exist, Adv start fail", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
+
     T_GAP_DEV_STATE new_state;
     le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
 
@@ -688,6 +567,12 @@ da_ble_result_type rtw_ble_server_start_adv_directed(uint8_t target_addr[DA_BLE_
     if(target_addr == NULL)
     {
         printf("\r\n[%s] Invalid input", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
+
+    if(le_get_active_link_num())
+    {
+        debug_print("\r\n[%s] Connection already exist, Adv start fail", __FUNCTION__);
         return DA_BLE_RESULT_TYPE_FAILURE;
     }
 
@@ -847,16 +732,6 @@ int rtw_ble_server_set_adv_interval(unsigned int interval)
     uint16_t adv_int = interval;
     le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int), &adv_int);
     le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int), &adv_int);
-    if(GAP_CAUSE_SUCCESS == le_adv_update_param()){
-        adv_int = 0;
-        le_adv_get_param(GAP_PARAM_ADV_INTERVAL_MIN, &adv_int);
-        debug_print("\r\n[%s] interval min %d", __FUNCTION__, adv_int);
-        le_adv_get_param(GAP_PARAM_ADV_INTERVAL_MAX, &adv_int);
-        debug_print("\r\n[%s] interval max %d", __FUNCTION__, adv_int);
-    } else {
-        debug_print("\r\n[%s] Update Fail!", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_FAILURE;
-    }
     return DA_BLE_RESULT_TYPE_SUCCESS;
 }
 #endif /* DA_BLE_SERVER_C_ */
