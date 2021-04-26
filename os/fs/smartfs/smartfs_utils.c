@@ -685,14 +685,19 @@ int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *
 		if (used_value == 0) {
 			set_used_byte_count((uint8_t *)header->used, sf->byteswritten);
 #else
-		if (header->used[0] == CONFIG_SMARTFS_ERASEDSTATE) {
-			*((uint16_t *)header->used) = sf->byteswritten;
+		if (SMARTFS_USED(header) == SMARTFS_ERASEDSTATE_16BIT) {
+			header->used[0] = (uint8_t)(sf->byteswritten & 0x00FF);
+			header->used[1] = (uint8_t)(sf->byteswritten >> 8);
+
 #endif
 		} else {
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
 			set_used_byte_count((uint8_t *)header->used, used_value + sf->byteswritten);
 #else
-			*((uint16_t *)header->used) += sf->byteswritten;
+			uint16_t tmp = SMARTFS_USED(header);
+			tmp += sf->byteswritten;
+			header->used[0] = (uint8_t)(tmp & 0x00FF);
+			header->used[1] = (uint8_t)(tmp >> 8);
 #endif
 		}
 
