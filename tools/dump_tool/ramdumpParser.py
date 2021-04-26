@@ -761,7 +761,7 @@ def main():
 		print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
 
 
-		g_mmheap = rParser.get_address_of_symbol("g_mmheap")
+		g_kmmheap = rParser.get_address_of_symbol("g_kmmheap")
 
 		# This information depends on the mm_heap_s structure
 
@@ -800,8 +800,8 @@ def main():
 		else:
 			MM_ALLOC_BIT = 0x80000000
 
-		start_heap = rParser.read_word(g_mmheap + HEAP_START_POINT)
-		end_heap = rParser.read_word(g_mmheap + HEAP_START_POINT + 4)
+		start_heap = rParser.read_word(g_kmmheap + HEAP_START_POINT)
+		end_heap = rParser.read_word(g_kmmheap + HEAP_START_POINT + 4)
 
 		print('')
 		print('')
@@ -855,13 +855,13 @@ def main():
 		print('       Summary of Heap Usages (Size in Bytes)')
 		print('***********************************************************')
 
-		heap_size = rParser.read_word(g_mmheap + HEAP_SIZE_POINT)
+		heap_size = rParser.read_word(g_kmmheap + HEAP_SIZE_POINT)
 		print('HEAP SIZE        : ', heap_size)
 
-		peack_alloc_size = rParser.read_word(g_mmheap + PEAK_ALLOC_SIZE_POINT)
+		peack_alloc_size = rParser.read_word(g_kmmheap + PEAK_ALLOC_SIZE_POINT)
 		print('PEAK ALLOC SIZE  : ', peack_alloc_size)
 
-		total_alloc_size = rParser.read_word(g_mmheap + TOTAL_ALLOC_SIZE_POINT)
+		total_alloc_size = rParser.read_word(g_kmmheap + TOTAL_ALLOC_SIZE_POINT)
 		print('TOTAL ALLOC SIZE : ', total_alloc_size)
 		print('FREE SIZE        : ', heap_size - total_alloc_size)
 		print('')
@@ -870,7 +870,7 @@ def main():
 		print('-------|------------|-------------------|-----------------|')
 		INVALID_PROCESS_ID = 0xFFFFFFFF
 
-		alloc_list = ALLOC_LIST_POINT + g_mmheap
+		alloc_list = ALLOC_LIST_POINT + g_kmmheap
 		for i in range(0, max_tasks):
 			pid = rParser.read_word(alloc_list)
 			if pid != INVALID_PROCESS_ID :
