@@ -514,10 +514,16 @@ da_ble_result_type rtw_ble_server_disconnect(da_ble_conn_handle con_handle)
 
 da_ble_result_type rtw_ble_server_start_adv(void)
 {
-    if(le_get_active_link_num())
+    uint8_t link_num = le_get_active_link_num();
+    if(link_num)
     {
-        debug_print("\r\n[%s] Connection already exist, Adv start fail", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_FAILURE;
+        T_GAP_CONN_INFO conn_info;
+        for(uint8_t i = 0; i < link_num; i++)
+        {
+            le_get_conn_info(i, &conn_info);
+            if(conn_info.role == GAP_LINK_ROLE_SLAVE)
+                return DA_BLE_RESULT_TYPE_FAILURE;
+        }
     }
 
     T_GAP_DEV_STATE new_state;
@@ -570,10 +576,16 @@ da_ble_result_type rtw_ble_server_start_adv_directed(uint8_t target_addr[DA_BLE_
         return DA_BLE_RESULT_TYPE_FAILURE;
     }
 
-    if(le_get_active_link_num())
+    uint8_t link_num = le_get_active_link_num();
+    if(link_num)
     {
-        debug_print("\r\n[%s] Connection already exist, Adv start fail", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_FAILURE;
+        T_GAP_CONN_INFO conn_info;
+        for(uint8_t i = 0; i < link_num; i++)
+        {
+            le_get_conn_info(i, &conn_info);
+            if(conn_info.role == GAP_LINK_ROLE_SLAVE)
+                return DA_BLE_RESULT_TYPE_FAILURE;
+        }
     }
 
     T_TIZENRT_DIRECT_ADV_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_DIRECT_ADV_PARAM));
