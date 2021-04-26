@@ -177,16 +177,15 @@ hci_tp_config_ok:
                 if(g_hci_step == hci_total_step)
                 {
                     hci_board_debug("\r\n%s:BT INIT success %x\n",__FUNCTION__,g_hci_step);
+                    bte_init_buff_free();
                     if(hci_board_complete() == true)
                     {
                          p_hci_rtk->open_cb(true);
-                         bte_init_buff_free();
                          //dbg("-- [hci_tp_config_complete]  %p %d--\n", __builtin_return_address(0), g_hci_step);
                     }
                     else
                     {
                          p_hci_rtk->open_cb(false);
-                         bte_init_buff_free();
                          return; 
                     }
                 }
