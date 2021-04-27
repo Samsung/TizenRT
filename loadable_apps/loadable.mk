@@ -32,6 +32,8 @@ LDLIBS := $(patsubst %-luarch,%,$(LDLIBS))
 LDLIBS := $(patsubst %-luc,%,$(LDLIBS))
 LDLIBS := $(patsubst %-lumm,%,$(LDLIBS))
 LDLIBS := $(patsubst %-lproxies,%,$(LDLIBS))
+LDLIBS := $(patsubst %-lframework,%,$(LDLIBS))
+LDLIBS := $(patsubst %-lexternal,%,$(LDLIBS))
 else
 
 LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"

@@ -442,7 +442,7 @@ include LibTargets.mk
 
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
-COMMONLIBS = -luarch -luc -lumm -lproxies
+COMMONLIBS = -luarch -luc -lumm -lproxies -lframework -lexternal
 endif
 
 pass1deps: pass1dep $(USERLIBS)
