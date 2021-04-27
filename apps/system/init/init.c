@@ -162,6 +162,12 @@ int preapp_start(int argc, char *argv[])
 		printf("Failed to create Task Manager\n");
 		return ret;
 	}
+
+	ret = task_manager_populate_builtin_list(builtin_list, get_builtin_list_cnt());
+	if (ret < 0) {
+		printf("Failed to initialize Task Manager\n");
+		return ret;
+	}
 #endif
 
 #ifdef CONFIG_EVENTLOOP

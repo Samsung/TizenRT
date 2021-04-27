@@ -35,7 +35,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/clock.h>
 #include <tinyara/task_manager_drv.h>
@@ -83,6 +82,12 @@ static int task_manager_pid;
 		tmvdbg("Registered handle %d\n", handle);                       \
 	} while (0)
 
+
+/****************************************************************************
+ * Public Definitions
+ ****************************************************************************/
+tm_builtin_info_t *tm_builtin_list;
+int tm_builtin_list_cnt;
 
 /****************************************************************************
  * Public Functions
@@ -182,17 +187,17 @@ static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 	}
 
 	handle = TM_OPERATION_FAIL;
-	builtin_cnt = get_builtin_list_cnt();
+	builtin_cnt = tm_builtin_list_cnt;
 	if (builtin_cnt == 0) {
 		return TM_NOT_SUPPORTED;
 	}
 
 	/* Check that task is in builtin-list or not */
 	for (chk_idx = 0; chk_idx < builtin_cnt; chk_idx++) {
-		if (builtin_list[chk_idx].name == NULL) {
+		if (tm_builtin_list[chk_idx].name == NULL) {
 			continue;
 		}
-		if (strncmp((char *)builtin_list[chk_idx].name, name, CONFIG_TASK_NAME_SIZE) == 0) {
+		if (strncmp((char *)tm_builtin_list[chk_idx].name, name, CONFIG_TASK_NAME_SIZE) == 0) {
 			/* Requested name is in builtin-list */
 			handle = taskmgr_assign_handle();
 			if (handle < 0) {
@@ -386,7 +391,7 @@ static int taskmgr_start(int handle, int caller_pid)
 	}
 
 	if (TM_TYPE(handle) == TM_BUILTIN_TASK) {
-		builtin_info_t *task_info = (builtin_info_t *)&builtin_list[TM_IDX(handle)];
+		tm_builtin_info_t *task_info = (tm_builtin_info_t *)&tm_builtin_list[TM_IDX(handle)];
 		pid = task_create(task_info->name, task_info->priority, task_info->stacksize, task_info->entry, (char * const *)NULL);
 	} else if (TM_TYPE(handle) == TM_TASK) {
 		tm_task_info_t *task_info = (tm_task_info_t *)&tm_task_list[TM_IDX(handle)];
@@ -777,7 +782,7 @@ static int taskmgr_get_task_info(tm_appinfo_list_t **data, int handle)
 	}
 
 	if (TM_TYPE(handle) == TM_BUILTIN_TASK) {
-		name = builtin_list[TM_IDX(handle)].name;
+		name = tm_builtin_list[TM_IDX(handle)].name;
 	} else if (TM_TYPE(handle) == TM_TASK) {
 		name = tm_task_list[TM_IDX(handle)].name;
 	}
@@ -825,7 +830,7 @@ static int taskmgr_getinfo_with_name(char *name, tm_response_t *response_msg)
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
 		if (TM_LIST_ADDR(chk_idx)) {
 			if (TM_TYPE(chk_idx) == TM_BUILTIN_TASK) {
-				tm_stored_name = (char *)builtin_list[TM_IDX(chk_idx)].name;
+				tm_stored_name = (char *)tm_builtin_list[TM_IDX(chk_idx)].name;
 			} else if (TM_TYPE(chk_idx) == TM_TASK) {
 				tm_stored_name = tm_task_list[TM_IDX(chk_idx)].name;
 			}
@@ -1491,6 +1496,26 @@ static int taskmgr_init_task_manager(void)
 	}
 
 	SET_TERMINATION_CB(taskmgr_update_stop_status);
+
+	return OK;
+}
+
+int task_manager_populate_builtin_list(const builtin_info_t builtin_list[], int length)
+{
+	int i;
+	tm_builtin_list_cnt = length;
+	tm_builtin_list = TM_ALLOC(tm_builtin_list_cnt * sizeof(tm_builtin_info_t));
+	if (tm_builtin_list == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+
+	for (i = 0; i < tm_builtin_list_cnt; i++) {
+		strncpy(tm_builtin_list[i].name, builtin_list[i].name, CONFIG_TASK_NAME_SIZE);
+		tm_builtin_list[i].entry = builtin_list[i].entry;
+		tm_builtin_list[i].exectype = builtin_list[i].exectype;
+		tm_builtin_list[i].priority = builtin_list[i].priority;
+		tm_builtin_list[i].stacksize = builtin_list[i].stacksize;
+	}
 
 	return OK;
 }

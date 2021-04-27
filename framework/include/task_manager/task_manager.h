@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <pthread.h>
+#include <apps/builtin.h>
 
 /**
  * @brief Task State which managed by Task Manager
@@ -102,6 +103,22 @@ enum tm_defined_broadcast_msg {
 	TM_BROADCAST_MSG_MAX = TM_BROADCAST_SYSTEM_MSG_MAX,
 #endif
 };
+
+/**
+ * @brief Builtin Application Info Structure
+ */
+struct tm_builtin_info_s {
+	char name[CONFIG_TASK_NAME_SIZE];
+	TASK_CALLBACK entry;
+	int exectype;
+	int priority;
+	int stacksize;
+};
+typedef struct tm_builtin_info_s tm_builtin_info_t;
+
+extern tm_builtin_info_t *tm_builtin_list;
+extern int tm_builtin_list_cnt;
+
 /**
  * @brief Application Info Structure
  */
@@ -161,6 +178,14 @@ extern "C" {
  * @endcond
  */
 int task_manager(int argc, char *argv[]);
+/**
+ * @brief Initialize the variables tm_builtin_list and builtin_list_cnt
+ * @details @b #include <task_manager/task_manager.h>\n
+ * This API can initialize the variables tm_builtin_list and builtin_list_cnt.\n
+ * @param[in] builtin_list that contains information about the builtin apps
+ * @param[in] length of builtin_list
+ */
+int task_manager_populate_builtin_list(const builtin_info_t builtin_apps_list[], int length);
 /**
  * @brief Request to register a built-in task
  * @details @b #include <task_manager/task_manager.h>\n

@@ -19,7 +19,6 @@
  * Included Files
  ****************************************************************************/
 #include <stdbool.h>
-#include <apps/builtin.h>
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
 
@@ -32,7 +31,7 @@ bool taskmgr_is_permitted(int handle, pid_t pid)
 	int builtin_cnt;
 	int permission = TM_PERMISSION(handle);
 
-	builtin_cnt = get_builtin_list_cnt();
+	builtin_cnt = tm_builtin_list_cnt;
 
 	if (permission == TM_APP_PERMISSION_ALL \
 		|| (permission == TM_APP_PERMISSION_DEDICATE && TM_GID(handle) == pid)) {
