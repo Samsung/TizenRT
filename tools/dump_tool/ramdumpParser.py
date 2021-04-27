@@ -49,6 +49,7 @@ config_path = '../../os/.config'
 elf_path = '../../build/output/bin/tinyara'
 debug_cmd = 'addr2line'
 file_data = 'HeapInfo'
+heapinfo_path = '../../os/include/tinyara/mm/heapinfo_internal.h'
 
 # Top level class to parse the dump and assert logs parsing feature
 class dumpParser:
@@ -765,7 +766,7 @@ def main():
 
 		# This information depends on the mm_heap_s structure
 
-		SIZE_OF_MM_SEM = 4
+		SIZE_OF_MM_SEM = 8
 		SIZE_OF_MM_HOLDER = 4
 		SIZE_OF_MM_COUNTS_HELD = 4
 
@@ -778,11 +779,26 @@ def main():
 		TOTAL_ALLOC_SIZE_POINT = PEAK_ALLOC_SIZE_POINT + SIZE_OF_PEAK_ALLOC_SIZE
 		SIZE_OF_TOTAL_ALLOC_SIZE = 4
 
+		SIZE_OF_MAX_GROUP = 4
 		SIZE_OF_HEAPINFO_TCB_INFO = 16
+
+		# Read heapinfo_path to procure HEAPINFO_USER_GROUP_NUM value
+
+		heapinfo_user_group_num = 0
+		with open(heapinfo_path) as searchfile:
+			for line in searchfile:
+				if 'HEAPINFO_USER_GROUP_DELIM_NUM' in line:
+					word = line.split(' ')
+					# word[2] contains the value
+					heapinfo_user_group_delim_num = int(word[2], 16)
+					heapinfo_user_group_num = heapinfo_user_group_delim_num + 1
+					break
+
+		TOTAL_HEAPINFO_TCB_INFO_POINT = SIZE_OF_TOTAL_ALLOC_SIZE + SIZE_OF_MAX_GROUP + (SIZE_OF_HEAPINFO_TCB_INFO * heapinfo_user_group_num)
+		ALLOC_LIST_POINT = TOTAL_ALLOC_SIZE_POINT + TOTAL_HEAPINFO_TCB_INFO_POINT
+
 		SIZE_OF_ALLOC_NODE = 16
 
-		ALLOC_LIST_POINT = TOTAL_ALLOC_SIZE_POINT + SIZE_OF_TOTAL_ALLOC_SIZE
-	
 		max_tasks = 0
 		# get MAX_TASKS num
 		if 'CONFIG_MAX_TASKS=' in data:
@@ -837,11 +853,11 @@ def main():
 				data = fd_popen.read().decode()
 				fd_popen.close()
 				if pid >= 0:
-					print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(pid), data[14:], end=' ')
+					print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(pid), data[13:], end=' ')
 					f.write(str(size) + ' 0 ' + str(hex(point)) + ' ' + str(pid) + ' ' + data[14:])
 				else: # If pid is less than 0, it is the stack size of (-pid)
 					stack_size[(-pid) & (max_tasks - 1)] = size
-					print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(-pid), data[14:], end=' ')
+					print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Alloc'), '{:^6}|'.format(-pid), data[13:], end=' ')
 					f.write(str(size) + ' 1 ' + str(hex(point)) + ' ' + str(-pid) + ' ' + data[14:])
 			else:
 				print('{:^10}|'.format(hex(point)), '{:>6}'.format(size), '  |', '{:^7}|'.format('Free'), '{:6}|'.format(""))
