@@ -109,6 +109,7 @@ struct Page_T
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 _sema ftl_sem = NULL;
+static uint8_t s_mapping_table[768];	/*MAPPING_TABLE_SIZE = 768, variable modified array at file scope is not possible*/
 #elif
 QueueHandle_t ftl_sem = NULL;
 #endif
@@ -1562,8 +1563,11 @@ void ftl_mapping_table_init(void)
     {
         //ftl_mapping_table = os_mem_zalloc((RAM_TYPE)ftl_config.ftl_mapping_table_ram_type,
         //                                  MAPPING_TABLE_SIZE);//table is initialised as 0
-
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		ftl_mapping_table = s_mapping_table;
+#elif
 		ftl_mapping_table = rtw_zmalloc(MAPPING_TABLE_SIZE);
+#endif
     }
 
     uint8_t pageID = g_cur_pageID;
