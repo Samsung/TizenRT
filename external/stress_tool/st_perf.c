@@ -130,11 +130,15 @@ void _run_smoke(st_smoke *smoke)
 				// if teardown fails then remained testcase could be affected.
 				// so remained procedures could be useless
 				// so stopping running smoke would be better
-				continue;
+				//continue;
+				printf("%s cnt= %d tc_%s_setup returned %d\n",unit->tc_name, cnt, unit->tc_name , ret);
 			}
 		}
 		st_elapsed_time duration;
 		ret = unit->tc(&duration);
+		if(ret!=STRESS_TC_PASS){
+			printf("%s cnt= %d tc_%s returned %d\n",unit->tc_name, cnt, unit->tc_name , ret);
+		}
 		perf_result = _calc_performance(smoke->performance, &duration);
 		_calc_stability(smoke->stability, ret);
 
