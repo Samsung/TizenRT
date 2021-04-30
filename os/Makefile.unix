@@ -496,6 +496,7 @@ post:
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXE), $(BIN_EXT))
 	$(Q) python ./tools/check_output_size.py
+	$(Q) $(call MAKE_BOOTPARAM)
 
 ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	@echo "MKIMAGE: uImage"
