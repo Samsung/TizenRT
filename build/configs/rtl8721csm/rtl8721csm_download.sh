@@ -251,10 +251,6 @@ download_specific_partition()
 
 	echo ""
 	echo "Download $exe_name COMPLETE!"
-
-	if [[ "${parts[$partidx]}" == "kernel" ]];then
-		download_specific_partition "bootparam"
-	fi
 }
 
 download_all()
@@ -369,6 +365,10 @@ case $1 in
 		;;
 	erase|ERASE)
 		erase $1 $2
+		;;
+	kernel|KERNEL)
+		download_specific_partition $1
+		download_specific_partition "bootparam"
 		;;
 	*)
 		download_specific_partition $1

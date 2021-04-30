@@ -243,9 +243,9 @@ CONFIG_ARCH_BOARD_HAVE_FLASH=y
 # Board-Partition Options
 #
 CONFIG_FLASH_PARTITION=y
-CONFIG_FLASH_PART_SIZE="16,8,16,472,8,1792,1792,1048,"
-CONFIG_FLASH_PART_TYPE="none,none,none,none,none,kernel,kernel,smartfs,"
-CONFIG_FLASH_PART_NAME="km0_bl,km4_bl,reserved,ss,system_data,kernel,kernel,userfs,"
+CONFIG_FLASH_PART_SIZE="16,8,16,472,8,1792,1792,4080,8,"
+CONFIG_FLASH_PART_TYPE="none,none,none,none,none,kernel,kernel,smartfs,bootparam,"
+CONFIG_FLASH_PART_NAME="km0_bl,km4_bl,reserved,ss,system_data,kernel,kernel,userfs,bootparam,"
 # CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH is not set
 CONFIG_AUTOMOUNT=y
 CONFIG_AUTOMOUNT_USERFS=y
