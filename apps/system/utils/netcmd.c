@@ -398,44 +398,23 @@ static int _cmd_ifconfig_setipaddr(struct ifconfig_cmd_info_s *info)
 static int _cmd_ifconfig_setdns(struct ifconfig_cmd_info_s *info)
 {
 	int ret = OK;
-	struct in_addr addr;
-	struct req_lwip_data req;
-	int sock;
+	struct sockaddr_in dns_addr;
 
 	if (info->dns) {
 		ndbg("DNS: %s\n", info->dns);
-		addr.s_addr = inet_addr(info->dns);
-#ifdef CONFIG_NET_LWIP    // this is temporal fix. it should be modified later
-		ip_addr_t dns_addr;
-		IP_SET_TYPE_VAL(dns_addr, IPADDR_TYPE_V4);
-#ifdef CONFIG_NET_IPv6
-		dns_addr.u_addr.ip4.addr = addr.s_addr;
-#else
-		dns_addr.addr = addr.s_addr;
-#endif
-		sock = socket(AF_INET, SOCK_DGRAM, 0);
-		if (sock < 0) {
-			ndbg("dnsclient : socket() failed with errno: %d\n", errno);
-			return ERROR;
-		}
 
-		memset(&req, 0, sizeof(req));
-		req.type = DNSSETSERVER;
-		req.num_dns = 0;
-		req.dns_server = &dns_addr;
+		dns_addr.sin_addr.s_addr = inet_addr(info->dns);
+		dns_addr.sin_family = AF_INET;
 
-		ret = ioctl(sock, SIOCLWIP, (unsigned long)&req);
-		if (ret == ERROR) {
-			ndbg("dnsclient : ioctl() failed with errno: %d\n", errno);
-			close(sock);
-			return ret;
+		ret = netlib_setdnsserver((struct sockaddr *)&dns_addr, -1);
+		if (ret < 0) {
+			ndbg("set dns server fail (%d)\n", ret);
 		}
-		close(sock);
-#endif /*  CONFIG_NET_LWIP */
 	}
 
 	return ret;
 }
+
 int cmd_ifconfig(int argc, char **argv)
 {
 	int ret;

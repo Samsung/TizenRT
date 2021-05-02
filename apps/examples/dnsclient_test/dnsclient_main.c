@@ -126,7 +126,6 @@ static void show_usage(FAR const char *progname)
 /****************************************************************************
  * dnsclient_main
  ****************************************************************************/
-
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -134,7 +133,7 @@ int dnsclient_main(int argc, FAR char *argv[])
 #endif
 {
 	struct hostent *shost = NULL;
-	ip_addr_t dns_addr;
+	struct sockaddr_in dns_addr;
 
 	if (argc < 2) {
 		show_usage(argv[0]);
@@ -143,33 +142,9 @@ int dnsclient_main(int argc, FAR char *argv[])
 
 	if (argc == 3 && argv[2] != NULL) {
 		printf("dnsclient : dns_add_nameserver : %s\n", argv[2]);
-		IP_SET_TYPE_VAL(dns_addr, IPADDR_TYPE_V4);
-#ifdef CONFIG_NET_IPv6
-		dns_addr.u_addr.ip4.addr = inet_addr(argv[2]);
-#else
-		dns_addr.addr = inet_addr(argv[2]);
-#endif /* CONFIG_NET_IPv6 */
-		struct req_lwip_data req;
-
-		int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-		if (sockfd < 0) {
-			printf("dnsclient : socket() failed with errno: %d\n", errno);
-			return -1;
-		}
-
-		memset(&req, 0, sizeof(req));
-		req.type = DNSSETSERVER;
-		req.num_dns = 0;
-		req.dns_server = &dns_addr;
-
-		int ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-		if (ret == ERROR) {
-			printf("dnsclient : ioctl() failed with errno: %d\n", errno);
-			close(sockfd);
-			return -1;
-		}
-
-		close(sockfd);
+		dns_addr.sin_family = AF_INET;
+		inet_pton(AF_INET, argv[2], (void *)&dns_addr.sin_addr);
+		netlib_setdnsserver((struct sockaddr *)&dns_addr, -1);
 	}
 
 	memset(hostname, 0x00, DNS_NAME_MAXSIZE);
