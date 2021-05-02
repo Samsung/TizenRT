@@ -1143,7 +1143,8 @@ int lwip_func_ioctl(int cmd, void *arg)
 		ret = 0;
 		break;
 	case DNSSETSERVER:
-		dns_setserver(in_arg->num_dns, in_arg->dns_server);
+		// Deprecated. Enable network manager to set DNS server
+		//dns_setserver(in_arg->num_dns, in_arg->dns_server);
 		ret = 0;
 		break;
 #endif

@@ -96,6 +96,7 @@ ifeq ($(CONFIG_NET_IPv4),y) # Not yet available for IPv6
 CSRCS += netlib_ipmsfilter.c
 endif
 endif
+CSRCS += netlib_setdnsserver.c
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
@@ -147,4 +148,3 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
-

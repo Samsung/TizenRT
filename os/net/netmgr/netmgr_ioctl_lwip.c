@@ -59,6 +59,31 @@ static struct netif *_netdev_dhcp_dev(FAR const char *intf)
 }
 #endif
 
+static int _netdev_set_dnsserver(struct sockaddr *addr, int index)
+{
+	ip_addr_t dns_addr;
+	struct sockaddr_in *iaddr = (struct sockaddr_in *)addr;
+	ip_addr_set_ip4_u32(&dns_addr, iaddr->sin_addr.s_addr);
+	if (index > 0) {
+		if (index >= CONFIG_NET_DNS_MAX_SERVERS) {
+			return -2;
+		} else {
+			dns_setserver(index, &dns_addr);
+			return 0;
+		}
+	}
+	/* Set DNS server to available slot.*/
+	for (int i = 0; i < CONFIG_NET_DNS_MAX_SERVERS; i++) {
+		if (ip_addr_isany_val(*(dns_getserver(i)))) {
+			dns_setserver(i, &dns_addr);
+			return 0;
+		} else if (ip_addr_cmp(dns_getserver(i), &dns_addr)) {
+			return 0;
+		}
+	}
+	return -3;
+}
+
 /**********************************************************
  * Private Function
  **********************************************************/
@@ -286,7 +311,6 @@ static int _netdev_free_addrinfo(struct addrinfo *ai)
 static int lwip_func_ioctl(int s, int cmd, void *arg)
 {
 	int ret = -EINVAL;
-	ndbg("Enter %d\n");
 
 	struct lwip_sock *sock = get_socket(s, getpid());
 	if (!sock) {
@@ -323,7 +347,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 		ret = OK;
 		break;
 	case DNSSETSERVER:
-		dns_setserver(req->num_dns, req->dns_server);
+		req->req_res = _netdev_set_dnsserver(req->addr, req->index);
 		ret = OK;
 		break;
 	case GETHOSTBYNAME:

@@ -488,8 +488,6 @@ int g_dhcpc_state;
  ****************************************************************************/
 static int dhcpc_request(void *handle, struct dhcpc_state *presult)
 {
-	int sock;
-	int ioctl_ret;
 	int idx;
 	if (!handle) {
 		ndbg("ERROR : handle must not be null\n");
@@ -688,41 +686,22 @@ static int dhcpc_request(void *handle, struct dhcpc_state *presult)
 		 (presult->default_router.s_addr >> 24) & 0xff);
 	ndbg("Lease expires in %d seconds\n", presult->lease_time);
 
-#if defined CONFIG_NET_LWIP    // this is temporal fix. it should be modified later
-	ip_addr_t dns_addr;
-	IP_SET_TYPE_VAL(dns_addr, IPADDR_TYPE_V4);
-
+	struct sockaddr_in dns_addr;
+	dns_addr.sin_family = AF_INET;
 	for (idx = 0; idx < g_total_dns_servers; ++idx) {
-#ifdef CONFIG_NET_IPv6
-	dns_addr.u_addr.ip4.addr = presult->dnsaddr[idx].s_addr;
-#else
-	dns_addr.addr = presult->dnsaddr[idx].s_addr;
-#endif
-		struct req_lwip_data req;
-
-		sock = socket(AF_INET, SOCK_DGRAM, 0);
-		if (sock < 0) {
-			ndbg("dnsclient : socket() failed with errno: %d\n", errno);
-			return ERROR;
+		char dns_buffer[32] = {0,};
+		dns_addr.sin_addr = presult->dnsaddr[idx];
+		int res = netlib_setdnsserver((struct sockaddr *)&dns_addr, -1);
+		if (res < 0) {
+			ndbg("Set DNS server fail idx(%d)\n", idx);
+			return -1;
+		} else {
+			inet_ntop(AF_INET, &presult->dnsaddr[idx], dns_buffer, 32);
+			ndbg("Set DNS server %s\n", dns_buffer);
 		}
-
-		memset(&req, 0, sizeof(req));
-		req.type = DNSSETSERVER;
-		req.num_dns = idx;
-		req.dns_server = &dns_addr;
-
-		ioctl_ret = ioctl(sock, SIOCLWIP, (unsigned long)&req);
-		if (ioctl_ret == ERROR) {
-			ndbg("dnsclient : ioctl() failed with errno: %d\n", errno);
-			close(sock);
-			return ioctl_ret;
-		}
-
-		close(sock);
 	}
-#endif /*  CONFIG_NET_LWIP */
 
-	return OK;
+	return 0;
 }
 
 /****************************************************************************
