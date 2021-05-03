@@ -23,6 +23,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <tinyara/os_api_test_drv.h>
 #include "tc_common.h"
 #include "tc_internal.h"
@@ -43,7 +44,10 @@ int tc_compression_main(int argc, char *argv[])
 	g_tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
 
 	/*If FAIL : Failed to open testcase driver*/
-	TC_ASSERT_GEQ("open", g_tc_fd, 0);
+	if (g_tc_fd < 0) {
+		printf("Failed to open OS API test driver %d\n", errno);
+		return ERROR;
+	}
 
 #ifdef CONFIG_TC_LZMA
 	lzma_main();
