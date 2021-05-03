@@ -491,6 +491,7 @@ ifeq ($(CONFIG_RAW_BINARY),y)
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
 endif
 
+post:
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXE), $(BIN_EXT))
@@ -517,7 +518,7 @@ endif
 # pass1 dependencies and pass1 first, then build pass2 dependencies and pass2.
 # in that case, execute 'make pass1 pass2' from the command line.
 
-$(BIN): pass1deps pass2deps pass1 pass2
+$(BIN): pass1deps pass2deps pass1 pass2 post
 
 # download
 #
