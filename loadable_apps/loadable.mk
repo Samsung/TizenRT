@@ -26,17 +26,8 @@ USERSPACE = $(TOPDIR)/userspace/up_userspace
 LDELFFLAGS += -Bstatic
 LDLIBPATH += -L $(TINYARALIB)
 
-ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
-# If we support common binary, then we exclude some of the libraries from here
-LDLIBS := $(patsubst %-luarch,%,$(LDLIBS))
-LDLIBS := $(patsubst %-luc,%,$(LDLIBS))
-LDLIBS := $(patsubst %-lumm,%,$(LDLIBS))
-LDLIBS := $(patsubst %-lproxies,%,$(LDLIBS))
-else
-
 LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 LDLIBS += $(LIBGCC)
-endif
 
 OBJCOPY = $(CROSSDEV)objcopy
 
@@ -67,9 +58,11 @@ $(OBJS): %$(OBJEXT): %.c
 
 $(BIN): $(OBJS)
 	@echo "LD: $<"
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+	$(Q) $(LD) $(LDELFFLAGS) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LIBGCC) --end-group
 	$(Q) $(NM) -u $(BIN) | awk -F"U " '{print "--require-defined "$$2}' >> $(USER_BIN_DIR)/lib_symbols.txt
+else
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
 endif
 
 clean:
