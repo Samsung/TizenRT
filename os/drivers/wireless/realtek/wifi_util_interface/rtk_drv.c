@@ -31,6 +31,9 @@
 #include <errno.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
+#ifdef CONFIG_NET_NETMGR
+#include <tinyara/netmgr/netdev_mgr.h>
+#endif
 #include <tinyara/net/if/wifi.h>
 #include "wifi_conf.h"
 
