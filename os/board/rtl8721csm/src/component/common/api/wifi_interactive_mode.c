@@ -346,19 +346,25 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	rtw_security_t security_type;
 	char *password;
 
-	wifi_off();
+	if(rltk_wlan_running(WLAN0_IDX)){
+		if (wifi_set_mode(RTW_MODE_AP) < 0){
+			ndbg("\n\rERROR: Wifi Set Mode to SoftAP failed!");
+			ret = RTW_ERROR;
+			return -1;
+		}
+	} else {
+		wifi_off();
 #if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-	//TODO
-	//Delay 20 Ticks
+		//TODO
+		//Delay 20 Ticks
 #else
-	rtw_msleep_os(20);
+		rtw_msleep_os(20);
 #endif
-
-	if (wifi_on(RTW_MODE_AP) < 0) {
-		ndbg("\n\rERROR: Wifi on failed!");
-		return -1;
+		if (wifi_on(RTW_MODE_AP) < 0) {
+			ndbg("\n\rERROR: Wifi on failed!");
+			return -1;
+		}
 	}
-
 	nvdbg("\n\rStarting AP ...");
 
 	switch (softap_config->ap_auth_type) {
@@ -726,8 +732,15 @@ void cmd_wifi_info(int argc, char **argv)
 
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
-	int ret;
+	int mode, ret;
 
+	if(rltk_wlan_running(WLAN0_IDX)){
+		if (wifi_set_mode(RTW_MODE_STA) < 0){
+			ndbg("\n\rERROR: Wifi Set Mode to STA failed!\n");
+			ret = RTW_ERROR;
+			return RTK_STATUS_ERROR;
+		}
+	} else {
 	/* Kill init thread after all init tasks done */
 	ret = wifi_on(RTW_MODE_STA);
 	if (ret != RTW_SUCCESS) {
@@ -735,6 +748,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 		return RTK_STATUS_ERROR;
 	}
 	nvdbg("\r\n===============>>wifi_on success!!\r\n");
+	}
 
 #if RTW_AUTO_RECONNECT
 	//setup reconnection flag
@@ -755,15 +769,41 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 
 int8_t cmd_wifi_off(void)
 {
+	int mode;
+
 #if CONFIG_WEBSERVER
 	stop_web_server();
 #endif
 #if CONFIG_ENABLE_P2P
 	cmd_wifi_p2p_stop(0, NULL);
 #else
+	if((rltk_wlan_running(WLAN0_IDX) == 0) &&
+		(rltk_wlan_running(WLAN1_IDX) == 0)) {
+		RTW_API_INFO("\n\rWIFI is not running");
+		return 0;
+	}
+	wext_get_mode(WLAN0_NAME, &mode);
+	if(mode == IW_MODE_MASTER)
+	{
+		int ret;
+		RTW_API_INFO("\n\rWIFI Mode Change: AP, disable beacon\r\n");
+		ret = wext_set_mode(WLAN0_NAME, IW_MODE_INFRA);
+		rtw_msleep_os(50);
+	}
+	else if(mode == IW_MODE_INFRA)
+	{
+		RTW_API_INFO("\n\rWIFI Mode Change: STA, disconnecting\r\n");
+		unsigned char ssid[33];
+		if(wext_get_ssid(WLAN0_NAME, ssid) > 0)
+			wifi_disconnect();
+	}
+	RTW_API_INFO("\n\rWIFI Mode Change instead of WIFI reload\r\n");
+
+#if 0
 	if (!wifi_off())
 		return 0;
 	return -1;
+#endif
 #endif
 }
 

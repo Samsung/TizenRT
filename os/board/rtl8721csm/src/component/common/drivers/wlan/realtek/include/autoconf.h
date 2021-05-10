@@ -552,7 +552,7 @@ extern unsigned int g_ap_sta_num;
 			#undef CONFIG_CONCURRENT_MODE
 			#undef CONFIG_AUTO_RECONNECT
 		#endif
-	#define CONFIG_WLAN_SWITCH_MODE         //save memory while switching mode without driver re-init
+	//#define CONFIG_WLAN_SWITCH_MODE         //save memory while switching mode without driver re-init
 	//#define LOW_POWER_WIFI_CONNECT
 	#endif
 	#if defined(CONFIG_PLATFORM_8195BHP)
