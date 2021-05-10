@@ -170,6 +170,6 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-  $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/$(CONFIG_ARCH_BOARD)_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
+  $(TOPDIR)/../build/configs/common_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef
 

@@ -4,9 +4,9 @@
 CURDIR=$(readlink -f "$0")
 CURDIR_PATH=$(dirname "$CURDIR")
 
-BINFILE=${CURDIR_PATH}/../../tools/nxp/imxrt1020/ivt_flashloader.bin
-SDPHOST=${CURDIR_PATH}/../../tools/nxp/imxrt1020/sdphost
-BLHOST=${CURDIR_PATH}/../../tools/nxp/imxrt1020/blhost
+BINFILE=${CURDIR_PATH}/../tools/nxp/imxrt1020/ivt_flashloader.bin
+SDPHOST=${CURDIR_PATH}/../tools/nxp/imxrt1020/sdphost
+BLHOST=${CURDIR_PATH}/../tools/nxp/imxrt1020/blhost
 
 BASEADDR=0x20208000
 IVTADDR=0x20208400
