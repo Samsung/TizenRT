@@ -346,10 +346,9 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	rtw_security_t security_type;
 	char *password;
 
-	if(rltk_wlan_running(WLAN0_IDX)){
+	if(rltk_wlan_running(WLAN0_IDX)) {
 		if (wifi_set_mode(RTW_MODE_AP) < 0){
 			ndbg("\n\rERROR: Wifi Set Mode to SoftAP failed!");
-			ret = RTW_ERROR;
 			return -1;
 		}
 	} else {
@@ -732,13 +731,12 @@ void cmd_wifi_info(int argc, char **argv)
 
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
-	int mode, ret;
+	int ret;
 
-	if(rltk_wlan_running(WLAN0_IDX)){
-		if (wifi_set_mode(RTW_MODE_STA) < 0){
+	if(rltk_wlan_running(WLAN0_IDX)) {
+		if (wifi_set_mode(RTW_MODE_STA) < 0) {
 			ndbg("\n\rERROR: Wifi Set Mode to STA failed!\n");
-			ret = RTW_ERROR;
-			return RTK_STATUS_ERROR;
+			return RTK_ERROR;
 		}
 	} else {
 	/* Kill init thread after all init tasks done */
@@ -785,9 +783,8 @@ int8_t cmd_wifi_off(void)
 	wext_get_mode(WLAN0_NAME, &mode);
 	if(mode == IW_MODE_MASTER)
 	{
-		int ret;
 		RTW_API_INFO("\n\rWIFI Mode Change: AP, disable beacon\r\n");
-		ret = wext_set_mode(WLAN0_NAME, IW_MODE_INFRA);
+		wext_set_mode(WLAN0_NAME, IW_MODE_INFRA);
 		rtw_msleep_os(50);
 	}
 	else if(mode == IW_MODE_INFRA)
