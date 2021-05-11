@@ -736,7 +736,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 	if(rltk_wlan_running(WLAN0_IDX)) {
 		if (wifi_set_mode(RTW_MODE_STA) < 0) {
 			ndbg("\n\rERROR: Wifi Set Mode to STA failed!\n");
-			return RTK_ERROR;
+			return RTW_ERROR;
 		}
 	} else {
 	/* Kill init thread after all init tasks done */
