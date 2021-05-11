@@ -753,13 +753,9 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 	wifi_set_autoreconnect(1);
 #endif
 
-	{
-		rtw_wifi_setting_t setting;
-
-		wifi_get_setting(WLAN0_NAME, &setting);
-		wifi_show_setting(WLAN0_NAME, &setting);
-
-	}
+	rtw_wifi_setting_t setting;
+	wifi_get_setting(WLAN0_NAME, &setting);
+	wifi_show_setting(WLAN0_NAME, &setting);
 
 	nvdbg("\r\n===============>>Finish wifi_on!!\r\n");
 	return RTK_STATUS_SUCCESS;
@@ -775,20 +771,17 @@ int8_t cmd_wifi_off(void)
 #if CONFIG_ENABLE_P2P
 	cmd_wifi_p2p_stop(0, NULL);
 #else
-	if ((rltk_wlan_running(WLAN0_IDX) == 0) &&
-		(rltk_wlan_running(WLAN1_IDX) == 0)) {
+	if ((!rltk_wlan_running(WLAN0_IDX)) &&
+		(!rltk_wlan_running(WLAN1_IDX))) {
 		RTW_API_INFO("\n\rWIFI is not running");
 		return 0;
 	}
 	wext_get_mode(WLAN0_NAME, &mode);
-	if (mode == IW_MODE_MASTER)
-	{
+	if (mode == IW_MODE_MASTER) {
 		RTW_API_INFO("\n\rWIFI Mode Change: AP, disable beacon\r\n");
 		wext_set_mode(WLAN0_NAME, IW_MODE_INFRA);
 		rtw_msleep_os(50);
-	}
-	else if (mode == IW_MODE_INFRA)
-	{
+	} else if (mode == IW_MODE_INFRA) {
 		RTW_API_INFO("\n\rWIFI Mode Change: STA, disconnecting\r\n");
 		unsigned char ssid[33];
 		if (wext_get_ssid(WLAN0_NAME, ssid) > 0)
