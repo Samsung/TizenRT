@@ -739,13 +739,13 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 			return RTW_ERROR;
 		}
 	} else {
-	/* Kill init thread after all init tasks done */
-	ret = wifi_on(RTW_MODE_STA);
-	if (ret != RTW_SUCCESS) {
-		ndbg("\n\rrtk_wifi_start failed\n");
-		return RTK_STATUS_ERROR;
-	}
-	nvdbg("\r\n===============>>wifi_on success!!\r\n");
+		/* Kill init thread after all init tasks done */
+		ret = wifi_on(RTW_MODE_STA);
+		if (ret != RTW_SUCCESS) {
+			ndbg("\n\rrtk_wifi_start failed\n");
+			return RTK_STATUS_ERROR;
+		}
+		nvdbg("\r\n===============>>wifi_on success!!\r\n");
 	}
 
 #if RTW_AUTO_RECONNECT
