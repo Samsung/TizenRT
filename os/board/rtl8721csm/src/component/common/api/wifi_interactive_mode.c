@@ -291,11 +291,11 @@ static int _find_ap_from_scan_buf(char*buf, int buflen, char *target_ssid, void 
 		// len offset = 0
 		len = (int)*(buf + plen);
 		// check end
-		if(len == 0) break;
+		if (len == 0) break;
 		// ssid offset = 14
 		ssid_len = len - 14;
 		ssid = buf + plen + 14 ;
-		if((ssid_len == strlen(target_ssid))
+		if ((ssid_len == strlen(target_ssid))
 			&& (!memcmp(ssid, target_ssid, ssid_len)))
 		{
 			strcpy((char*)pwifi->ssid, target_ssid);
@@ -303,11 +303,11 @@ static int _find_ap_from_scan_buf(char*buf, int buflen, char *target_ssid, void 
 			pwifi->channel = *(buf + plen + 13);
 			// security_mode offset = 11
 			security_mode = (u8)*(buf + plen + 11);
-			if(security_mode == IW_ENCODE_ALG_NONE)
+			if (security_mode == IW_ENCODE_ALG_NONE)
 				pwifi->security_type = RTW_SECURITY_OPEN;
-			else if(security_mode == IW_ENCODE_ALG_WEP)
+			else if (security_mode == IW_ENCODE_ALG_WEP)
 				pwifi->security_type = RTW_SECURITY_WEP_PSK;
-			else if(security_mode == IW_ENCODE_ALG_CCMP)
+			else if (security_mode == IW_ENCODE_ALG_CCMP)
 				pwifi->security_type = RTW_SECURITY_WPA2_AES_PSK;
 			break;
 		}
@@ -322,11 +322,11 @@ static int _get_ap_security_mode(IN char * ssid)
 	u32 scan_buflen = 1000;
 
 	memset(&wifi, 0, sizeof(wifi));
-	if(wifi_scan_networks_with_ssid(_find_ap_from_scan_buf, (void*)&wifi, scan_buflen, ssid, strlen(ssid)) != RTW_SUCCESS){
+	if (wifi_scan_networks_with_ssid(_find_ap_from_scan_buf, (void*)&wifi, scan_buflen, ssid, strlen(ssid)) != RTW_SUCCESS) {
 		ndbg("Wifi active scan failed!\n");
 		return RTW_SECURITY_UNKNOWN;
 	}
-	if(strcmp((char *)wifi.ssid, ssid) == 0){
+	if (strcmp((char *)wifi.ssid, ssid) == 0) {
 		//*security_mode = wifi.security_type;
 		//*channel = wifi.channel;
 		return wifi.security_type;
@@ -346,8 +346,8 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	rtw_security_t security_type;
 	char *password;
 
-	if(rltk_wlan_running(WLAN0_IDX)) {
-		if (wifi_set_mode(RTW_MODE_AP) < 0){
+	if (rltk_wlan_running(WLAN0_IDX)) {
+		if (wifi_set_mode(RTW_MODE_AP) < 0) {
 			ndbg("\n\rERROR: Wifi Set Mode to SoftAP failed!");
 			return -1;
 		}
@@ -471,7 +471,7 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 				break;
 
 			security_retry_count++;
-			if(security_retry_count >= 3){
+			if (security_retry_count >= 3) {
 				ndbg("Can't get AP security mode.\n");
 				break;
 			}
@@ -733,7 +733,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
 	int ret;
 
-	if(rltk_wlan_running(WLAN0_IDX)) {
+	if (rltk_wlan_running(WLAN0_IDX)) {
 		if (wifi_set_mode(RTW_MODE_STA) < 0) {
 			ndbg("\n\rERROR: Wifi Set Mode to STA failed!\n");
 			return RTW_ERROR;
@@ -775,23 +775,23 @@ int8_t cmd_wifi_off(void)
 #if CONFIG_ENABLE_P2P
 	cmd_wifi_p2p_stop(0, NULL);
 #else
-	if((rltk_wlan_running(WLAN0_IDX) == 0) &&
+	if ((rltk_wlan_running(WLAN0_IDX) == 0) &&
 		(rltk_wlan_running(WLAN1_IDX) == 0)) {
 		RTW_API_INFO("\n\rWIFI is not running");
 		return 0;
 	}
 	wext_get_mode(WLAN0_NAME, &mode);
-	if(mode == IW_MODE_MASTER)
+	if (mode == IW_MODE_MASTER)
 	{
 		RTW_API_INFO("\n\rWIFI Mode Change: AP, disable beacon\r\n");
 		wext_set_mode(WLAN0_NAME, IW_MODE_INFRA);
 		rtw_msleep_os(50);
 	}
-	else if(mode == IW_MODE_INFRA)
+	else if (mode == IW_MODE_INFRA)
 	{
 		RTW_API_INFO("\n\rWIFI Mode Change: STA, disconnecting\r\n");
 		unsigned char ssid[33];
-		if(wext_get_ssid(WLAN0_NAME, ssid) > 0)
+		if (wext_get_ssid(WLAN0_NAME, ssid) > 0)
 			wifi_disconnect();
 	}
 	RTW_API_INFO("\n\rWIFI Mode Change instead of WIFI reload\r\n");
