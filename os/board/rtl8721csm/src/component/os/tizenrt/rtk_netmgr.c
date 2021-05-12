@@ -341,7 +341,6 @@ static void linkdown_handler(rtk_reason_t *reason)
 trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
-g_mode = RTK_WIFI_NONE;
 	if (g_mode == RTK_WIFI_NONE) {
 		int ret = RTK_STATUS_SUCCESS;
 		
