@@ -477,9 +477,9 @@ extern sq_queue_t g_bin_addr_list;
 
 void elf_save_bin_section_addr(struct binary_s *bin);
 void elf_delete_bin_section_addr(struct binary_s *bin);
+#endif
 #ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
 void *elf_find_start_section_addr(struct binary_s *binp);
-#endif
 #endif
 
 #endif							/* __BINFMT_LIBELF_LIBELF_H */
