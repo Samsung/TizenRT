@@ -66,6 +66,7 @@
 #include <tinyara/binfmt/binfmt.h>
 
 #include "binfmt.h"
+#include "libelf/libelf.h"
 
 #ifdef CONFIG_BINFMT_ENABLE
 
