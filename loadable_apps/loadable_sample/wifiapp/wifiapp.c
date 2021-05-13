@@ -53,6 +53,10 @@ extern int preapp_start(int argc, char **argv);
 extern int smartfs_powercut_main(int argc, char *argv[]);
 #endif
 
+#ifdef CONFIG_WIFI_PLATFORM_LIB
+extern void wifi_pf_test(void);
+#endif
+
 #ifdef CONFIG_APP_BINARY_SEPARATION
 int main(int argc, char **argv)
 #else
@@ -66,6 +70,10 @@ int wifiapp_main(int argc, char **argv)
 
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && defined(CONFIG_APP_BINARY_SEPARATION)
 	preapp_start(argc, argv);
+#endif
+
+#ifdef CONFIG_WIFI_PLATFORM_LIB
+	wifi_pf_test();
 #endif
 
 	printf("This is WIFI App\n");

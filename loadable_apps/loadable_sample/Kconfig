@@ -105,4 +105,18 @@ config EXAMPLES_MICOM_TIMER_INTERVAL
 endif #EXAMPLES_MICOM_TIMER_TEST
 
 endif #EXAMPLES_LOADABLE_AUTOMATIC_TEST
+
+config WIFI_PLATFORM_LIB
+	bool "Support for Wifi platform library"
+	default n
+	depends on SUPPORT_COMMON_BINARY
+	---help---
+		Support for Wifi platform library. Wifi platform library
+		will contain wifi platform specific code and will be included
+		in the common binary. This is done to allow us to perform
+		updates to wifi app and wifi platform independently. If there
+		is no change in wifi platform interface, then only the platform
+		library needs to be updated. Else, the app also needs update.
+		In any case, both app and platform need to be reloaded during update.
+
 endif #EXAMPLES_LOADABLE
