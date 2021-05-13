@@ -30,11 +30,15 @@ SIZE_OF_BOOTPARAM_PART = 8192
 # This script generates Boot Parameters for kernel.
 #
 # Boot Parameter information :
-# +---------------------------------------------------------------------+
-# | Active Idx |  First Address  | Second Address  |      Reserved      |
-# |  (1 byte)  |    (4 bytes)    |    (4 bytes)    | (8Kbytes - 9bytes) |
-# +---------------------------------------------------------------------+
+#  - Boot Parameter Format Version 1 (bootparam_format_version = 1)
+# +---------------------------------------------------------------------------------------------------------------+
+# | Checksum | BP Version | BP Format Version | Active Idx | First Address | Second Address |       Reserved      |
+# | (4bytes) |  (4bytes)  |      (4bytes)     |   (1byte)  |    (4bytes)   |    (4bytes)    | (8Kbytes - 21bytes) |
+# +---------------------------------------------------------------------------------------------------------------+
 #  * The Boot Parameters (8KB) should be downloaded and be located at the end of a flash.
+#  * The "Checksum" is crc32 value for data from "BP Version" to "Second Address".
+#  * The "BP Version" is a version to check the latest of boot parameters.
+#  * The "BP Format Version" is a version to manage the format of boot parameters.
 #  * The "Active Idx" is a index indicating which address value to use.
 #    - If the value is 0, "First address" will be loaded or is loaded.
 #    - If the value is 1, "Second address" will be loaded or is loaded.
@@ -58,11 +62,14 @@ def get_config_value(file_name, config):
 
 def make_bootparam():
     print "========== Start to make boot parameters =========="
+    SIZE_OF_CHECKSUM = 4
+    SIZE_OF_BP_VERSION = 4
+    SIZE_OF_BP_FORMAT_VERSION = 4
     SIZE_OF_KERNEL_INDEX = 1
     SIZE_OF_KERNEL_FIRST_ADDR = 4
     SIZE_OF_KERNEL_SECOND_ADDR = 4
 
-    bootparam_size = SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
+    bootparam_size = SIZE_OF_CHECKSUM + SIZE_OF_BP_VERSION + SIZE_OF_BP_VERSION + SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
 
     names = get_config_value(config_file_path, "CONFIG_FLASH_PART_NAME=").split(",")
     sizes = get_config_value(config_file_path, "CONFIG_FLASH_PART_SIZE=").split(",")
@@ -103,12 +110,22 @@ def make_bootparam():
 
     with open(bootparam_file_path, 'wb') as fp:
         # Write Data
+        bootparam_version = 1
+        bootparam_format_version = 1
         kernel_active_idx = 0
+        fp.write(struct.pack('I', bootparam_version))
+        fp.write(struct.pack('I', bootparam_format_version))
         fp.write(struct.pack('B', kernel_active_idx))
 	for address in kernel_address:
             fp.write(struct.pack('I', int(address, 16)))
-        # Fill remaining space with '0xff'
-        remain_size = partition_size - bootparam_size;
+
+    # Add checksum
+    mkchecksum_path = os.path.dirname(__file__) + '/mkchecksum.py'
+    os.system('python %s %s' % (mkchecksum_path, bootparam_file_path))
+
+    # Fill remaining space with '0xff'
+    with open(bootparam_file_path, 'a') as fp:
+        remain_size = partition_size - bootparam_size
         fp.write(b'\xff' * remain_size)
 
 ###################################################
