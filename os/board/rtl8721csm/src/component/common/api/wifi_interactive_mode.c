@@ -258,7 +258,7 @@ static void cmd_wifi_sta_and_ap(int argc, char **argv)
 		char essid[33];
 
 		if (wext_get_ssid(WLAN1_NAME, (unsigned char *)essid) > 0) {
-			if (strncmp((const char *)essid, (const char *)argv[1]) == 0) {
+			if (strncmp((const char *)essid, (const char *)argv[1], sizeof(essid)) == 0) {
 				ndbg("\n\r%s started", argv[1]);
 				break;
 			}
@@ -326,7 +326,7 @@ static int _get_ap_security_mode(IN char * ssid)
 		ndbg("Wifi active scan failed!\n");
 		return RTW_SECURITY_UNKNOWN;
 	}
-	if (strncmp((char *)wifi.ssid, ssid) == 0) {
+	if (strncmp((char *)wifi.ssid, ssid, sizeof(wifi.ssid)) == 0) {
 		//*security_mode = wifi.security_type;
 		//*channel = wifi.channel;
 		return wifi.security_type;
@@ -998,21 +998,21 @@ static void cmd_exit(int argc, char **argv)
 
 static void cmd_debug(int argc, char **argv)
 {
-	if (strncmp(argv[1], "ready_trx") == 0) {
+	if (strncmp(argv[1], "ready_trx", strlen("ready_trx")) == 0) {
 		ndbg("\r\n%d", wifi_is_ready_to_transceive((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
-	} else if (strncmp(argv[1], "is_up") == 0) {
+	} else if (strncmp(argv[1], "is_up", strlen("is_up")) == 0) {
 		ndbg("\r\n%d", wifi_is_up((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
-	} else if (strncmp(argv[1], "set_mac") == 0) {
+	} else if (strncmp(argv[1], "set_mac", strlen("set_mac")) == 0) {
 		ndbg("\r\n%d", wifi_set_mac_address(argv[2]));
-	} else if (strncmp(argv[1], "get_mac") == 0) {
+	} else if (strncmp(argv[1], "get_mac", strlen("get_mac")) == 0) {
 		u8 mac[18] = {0};
 		wifi_get_mac_address((char *)mac);
 		ndbg("\r\n%s", mac);
-	} else if (strncmp(argv[1], "ps_on") == 0) {
+	} else if (strncmp(argv[1], "ps_on", strlen("ps_on")) == 0) {
 		ndbg("\r\n%d", wifi_enable_powersave());
-	} else if (strncmp(argv[1], "ps_off") == 0) {
+	} else if (strncmp(argv[1], "ps_off", strlen("ps_off")) == 0) {
 		ndbg("\r\n%d", wifi_disable_powersave());
-	} else if (strncmp(argv[1], "get_clientlist") == 0) {
+	} else if (strncmp(argv[1], "get_clientlist", strlen("get_clientlist")) == 0) {
 		int client_number;
 		struct {
 			int count;
@@ -1035,7 +1035,7 @@ static void cmd_debug(int argc, char **argv)
 			}
 			RTW_API_INFO(("------------------------------------\r\n"));
 		}
-	} else if (strncmp(argv[1], "get_apinfo") == 0) {
+	} else if (strncmp(argv[1], "get_apinfo", strlen("get_apinfo")) == 0) {
 		rtw_bss_info_t ap_info;
 		rtw_security_t sec;
 		if (wifi_get_ap_info(&ap_info, &sec) == RTW_SUCCESS) {
@@ -1056,19 +1056,19 @@ static void cmd_debug(int argc, char **argv)
 								(sec == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? "WPA/WPA2 Mixed" :
 								"Unknown");
 		}
-	} else if (strncmp(argv[1], "reg_mc") == 0) {
+	} else if (strncmp(argv[1], "reg_mc", strlen("reg_mc")) == 0) {
 		rtw_mac_t mac;
 		sscanf(argv[2], MAC_FMT, (int *)(mac.octet + 0), (int *)(mac.octet + 1), (int *)(mac.octet + 2), (int *)(mac.octet + 3), (int *)(mac.octet + 4), (int *)(mac.octet + 5));
 		ndbg("\r\n%d", wifi_register_multicast_address(&mac));
-	} else if (strncmp(argv[1], "unreg_mc") == 0) {
+	} else if (strncmp(argv[1], "unreg_mc", strlen("unreg_mc")) == 0) {
 		rtw_mac_t mac;
 		sscanf(argv[2], MAC_FMT, (int *)(mac.octet + 0), (int *)(mac.octet + 1), (int *)(mac.octet + 2), (int *)(mac.octet + 3), (int *)(mac.octet + 4), (int *)(mac.octet + 5));
 		ndbg("\r\n%d", wifi_unregister_multicast_address(&mac));
-	} else if (strncmp(argv[1], "get_rssi") == 0) {
+	} else if (strncmp(argv[1], "get_rssi", strlen("get_rssi")) == 0) {
 		int rssi = 0;
 		wifi_get_rssi(&rssi);
 		ndbg("\n\rwifi_get_rssi: rssi = %d", rssi);
-	} else if (strncmp(argv[1], "dbg") == 0) {
+	} else if (strncmp(argv[1], "dbg", strlen("dbg")) == 0) {
 		char buf[32] = {0};
 		char *copy = buf;
 		int i = 0;
@@ -1081,11 +1081,11 @@ static void cmd_debug(int argc, char **argv)
 		}
 		wext_private_command(WLAN0_NAME, copy, 1);
 #ifdef CONFIG_IEEE80211W
-	} else if (strncmp(argv[1], "11w_sa") == 0) {
+	} else if (strncmp(argv[1], "11w_sa", strlen("11w_sa")) == 0) {
 		rltk_wlan_tx_sa_query(atoi((const char *)argv[2]));
-	} else if (strncmp(argv[1], "11w_deauth") == 0) {
+	} else if (strncmp(argv[1], "11w_deauth", strlen("11w_deauth")) == 0) {
 		rltk_wlan_tx_deauth(atoi((const char *)argv[2]), atoi((const char *)argv[3]));
-	} else if (strncmp(argv[1], "11w_auth") == 0) {
+	} else if (strncmp(argv[1], "11w_auth", strlen("11w_auth")) == 0) {
 		rltk_wlan_tx_auth();
 #endif
 	} else {
