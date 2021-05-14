@@ -1335,13 +1335,13 @@ void app_start(void)
 	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO,"KM4 BOOT REASON: %x \n", BOOT_Reason());
 
 	SystemCoreClockUpdate();
-
-	SOCPS_InitSYSIRQ_HP();
 	
 	/* Init PSRAM */
 	if(TRUE == psram_dev_config.psram_dev_enable) {
 		app_init_psram();
 	}
+
+	SOCPS_InitSYSIRQ_HP();
 
 	os_heap_init();
 
