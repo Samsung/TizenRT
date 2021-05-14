@@ -285,7 +285,7 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 	return 0;
 }
 
-static void linkup_handler(rtk_reason_t *reason)
+void linkup_handler(rtk_reason_t *reason)
 {
 	//RTKDRV_ENTER;
 	pid_t pid;
@@ -311,7 +311,7 @@ static void linkup_handler(rtk_reason_t *reason)
 	}
 }
 
-static void linkdown_handler(rtk_reason_t *reason)
+void linkdown_handler(rtk_reason_t *reason)
 {
 	//RTKDRV_ENTER;
 	pid_t pid;

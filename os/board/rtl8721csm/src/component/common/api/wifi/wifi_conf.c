@@ -536,6 +536,8 @@ int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_network
 
 	return RTK_STATUS_SUCCESS;
 }
+extern void linkup_handler(rtk_reason_t *reason);
+extern void linkdown_handler(rtk_reason_t *reason);
 #endif
 int wifi_connect(
 	char 				*ssid,
@@ -1303,6 +1305,18 @@ int wifi_on(rtw_mode_t mode)
 	static int event_init = 0;
 
 	device_mutex_lock(RT_DEV_LOCK_WLAN);
+
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+	if (ret != RTK_STATUS_SUCCESS) {
+		RTW_API_INFO("[RTK] Link callback handles: register failed !\n");
+		device_mutex_unlock(RT_DEV_LOCK_WLAN);
+		return ret;
+	} else {
+		RTW_API_INFO("[RTK] Link callback handles: registered\n");
+	}
+#endif
+
 	if(rltk_wlan_running(WLAN0_IDX)) {
 		RTW_API_INFO("\n\rWIFI is already running");
 		device_mutex_unlock(RT_DEV_LOCK_WLAN);
