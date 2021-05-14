@@ -1311,7 +1311,7 @@ int wifi_on(rtw_mode_t mode)
 	if (ret != RTK_STATUS_SUCCESS) {
 		RTW_API_INFO("[RTK] Link callback handles: register failed !\n");
 		device_mutex_unlock(RT_DEV_LOCK_WLAN);
-		return ret;
+		return -1;
 	} else {
 		RTW_API_INFO("[RTK] Link callback handles: registered\n");
 	}
