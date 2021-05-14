@@ -58,6 +58,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <tinyara/fs/ioctl.h>
 
@@ -168,6 +169,10 @@ int boardctl(unsigned int cmd, uintptr_t arg);
 #if defined(__cplusplus)
 }
 #endif
+
+#define board_sw_reset()	do {						\
+					boardctl(BOARDIOC_RESET, EXIT_SUCCESS);	\
+				} while (0)
 
 #endif /* CONFIG_LIB_BOARDCTL */
 #endif /* __INCLUDE_SYS_BOARDCTL_H */
