@@ -543,7 +543,11 @@ ifeq (download,$(firstword $(MAKECMDGOALS)))
 endif
 
 download:
-	$(Q) $(call DOWNLOAD, $(DOWNLOAD_ARGS))
+	$(Q) if [ -z ${port} ]; then \
+		$(call DOWNLOAD, $(DOWNLOAD_ARGS)) ; \
+	else \
+		$(call DOWNLOAD, port ${port} $(DOWNLOAD_ARGS)) ; \
+	fi
 
 ota_img:
 	$(Q) $(call OTA_IMG)
