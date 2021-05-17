@@ -165,5 +165,5 @@ define MAKE_BOOTPARAM
 endef
 
 define DOWNLOAD
-  $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
+  $(TOPDIR)/../build/configs/common_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef

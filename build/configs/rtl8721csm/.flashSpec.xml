@@ -21,8 +21,8 @@
     </executors>
     <options>
         <option desc="Flash all binaries and images">ALL</option>
-        <option desc="Flash TizenRT km0 bootloader">KM0_BL</option>
-        <option desc="Flash TizenRT km4 bootloader">KM4_BL</option>
+        <option desc="Flash TizenRT km0 bootloader">BL1</option>
+        <option desc="Flash TizenRT km4 bootloader">BL2</option>
         <option desc="Flash TizenRT kernel">KERNEL</option>
         <option desc="Flash TizenRT userfs">USERFS</option>
         <option desc="Flash TizenRT ota">OTA</option>
