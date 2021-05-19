@@ -99,7 +99,7 @@ void ble_tizenrt_scatternet_app_main_task(void *p_param)
 void ble_tizenrt_scatternet_callback_main_task(void *p_param)
 {
     (void)p_param;
-    T_TIZENRT_SERVER_CALLBACK_MSG callback_msg;
+    T_TIZENRT_APP_CALLBACK_MSG callback_msg;
 
     while (true)
     {
@@ -122,7 +122,7 @@ void ble_tizenrt_scatternet_app_task_init(void)
                             sizeof(uint8_t));
 
     os_msg_queue_create(&ble_tizenrt_scatternet_callback_queue_handle, BLE_TIZENRT_SCATTERNET_MAX_NUMBER_OF_CALLBACK_MESSAGE,
-                            sizeof(T_TIZENRT_SERVER_CALLBACK_MSG));
+                            sizeof(T_TIZENRT_APP_CALLBACK_MSG));
 
     os_sem_create(&start_bt_stack_sem_handle, 0, 1);
 

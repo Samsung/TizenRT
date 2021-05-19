@@ -26,6 +26,7 @@ extern "C" {
 #include <gap_le.h>
 #include <profile_server.h>
 #include <da_ble_server.h>
+#include <tizenrt_ble_common.h>
 /*============================================================================*
  *                              Variables
  *============================================================================*/
@@ -60,7 +61,7 @@ typedef enum
 
 typedef enum
 {
-	BLE_TIZENRT_CALLBACK_TYPE_CONN,
+	BLE_TIZENRT_CALLBACK_TYPE_CONN = 8,
 	BLE_TIZENRT_CALLBACK_TYPE_PROFILE,
   BLE_TIZENRT_CALLBACK_TYPE_MAX
 } BLE_TIZENRT_CALLBACK_TYPE;
@@ -101,11 +102,6 @@ typedef struct
   uint8_t remote_bd[DA_BLE_BD_ADDR_MAX_LEN];
 } T_TIZENRT_CONNECTED_CALLBACK_DATA;
 
-typedef struct
-{
-  uint16_t type;
-  void *msg_data;
-} T_TIZENRT_SERVER_CALLBACK_MSG;
 
 /**
  * @brief    All the application messages are pre-handled in this function
@@ -134,6 +130,8 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
   * @retval result @ref T_APP_RESULT
   */
 T_APP_RESULT ble_tizenrt_app_gap_callback(uint8_t cb_type, void *p_cb_data);
+
+void ble_tizenrt_send_msg(uint16_t sub_type, void *arg);                                          
 
 #ifdef __cplusplus
 }

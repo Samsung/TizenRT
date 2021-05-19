@@ -40,34 +40,35 @@
 #include "os_mem.h"
 #include "os_sync.h"
 
+extern da_ble_server_init_parm server_init_parm;
 extern da_ble_client_init_parm *client_init_parm;
-BLE_TIZENRT_SCATTERNET_APP_LINK ble_tizenrt_scatternet_app_link_table[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
-
-T_CLIENT_ID   ble_tizenrt_scatternet_gcs_client_id;         /**< General Common Services client client id*/
-
-
-T_GAP_DEV_STATE ble_tizenrt_scatternet_gap_dev_state = {0, 0, 0, 0, 0};                /**< GAP device state */
-int ble_scatternet_peripheral_app_max_links = 0;
-int ble_scatternet_central_app_max_links = 0;
-/*============================================================================*
- *                              Functions
- *============================================================================*/
-extern BLE_TIZENRT_BOND_REQ ble_tizenrt_bond_req_table[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS];
 extern uint16_t g_conn_req_num;
-T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_scatternet_read_results[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
+extern BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_table;
+
+T_CLIENT_ID   ble_tizenrt_scatternet_gcs_client_id;         /**< General Common Services client client id*/
+T_GAP_DEV_STATE ble_tizenrt_scatternet_gap_dev_state = {0, 0, 0, 0, 0};                /**< GAP device state */
+int ble_scatternet_peripheral_app_max_links = 0;
+int ble_scatternet_central_app_max_links = 0;
+BLE_TIZENRT_SCATTERNET_APP_LINK ble_tizenrt_scatternet_app_link_table[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
+T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_scatternet_read_results[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
+
+/*============================================================================*
+ *                              Functions
+ *============================================================================*/
+
 void ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg);
 
-void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG callback_msg)
+void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
     debug_print("\r\n[%s] msg type : 0x%x", __FUNCTION__, callback_msg.type);
 	switch (callback_msg.type) {
         case BLE_TIZENRT_BONDED_MSG:
         {
-            debug_print("\r\n[%s] Handle bond msg", __FUNCTION__);
             da_ble_client_device_connected *bonded_dev = callback_msg.u.buf;
+            debug_print("\r\n[%s] SM connected %d", __FUNCTION__, bonded_dev->conn_handle);
             client_init_parm->da_ble_client_device_connected_cb(bonded_dev);
             os_mem_free(bonded_dev);
         }
@@ -89,12 +90,12 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MS
                 {
                     if(ble_tizenrt_bond_req_table[i].is_secured_connect && (ble_tizenrt_scatternet_app_link_table[i].auth_state != GAP_AUTHEN_STATE_COMPLETE))
                     {
-                        debug_print("\r\n[%s] Pairing process start.. conn_id is %d", __FUNCTION__, connected_dev->conn_handle);
+                        debug_print("\r\n[%s] LL connected %d, need pairing", __FUNCTION__, connected_dev->conn_handle);
                         uint32_t handle = (uint32_t) connected_dev->conn_handle;
                         ble_tizenrt_scatternet_send_msg(BLE_TIZENRT_BOND, (void *) handle);
                         os_mem_free(connected_dev);
                     } else {
-                        debug_print("\r\n[%s] Connection established without pairing", __FUNCTION__);
+                        debug_print("\r\n[%s] LL connected %d, do not need pairing", __FUNCTION__, connected_dev->conn_handle);
                         client_init_parm->da_ble_client_device_connected_cb(connected_dev);
                         os_mem_free(connected_dev);
                     }
@@ -163,6 +164,40 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MS
             }
         }
 			break;
+
+        case BLE_TIZENRT_CALLBACK_TYPE_CONN:
+        {
+            T_TIZENRT_CONNECTED_CALLBACK_DATA *connected = callback_msg.u.buf;
+            if(connected != NULL && server_init_parm.connected_cb)
+            {
+                debug_print("\r\n[%s] cb %p conn_id 0x%x conn_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x",
+                                __FUNCTION__, server_init_parm.connected_cb,
+                                connected->conn_id, connected->conn_type,
+                                connected->remote_bd[0], connected->remote_bd[1], connected->remote_bd[2],
+                                connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
+                da_ble_server_connected_t p_func = server_init_parm.connected_cb;
+                p_func(connected->conn_id, connected->conn_type, connected->remote_bd);
+            } else {
+                debug_print("\r\n[%s] NULL connected callback", __FUNCTION__);
+            }
+            os_mem_free(connected);
+        }
+		    break;
+
+        case BLE_TIZENRT_CALLBACK_TYPE_PROFILE:
+        {
+            T_TIZENRT_PROFILE_CALLBACK_DATA *profile = callback_msg.u.buf;
+            if(profile != NULL && profile->cb)
+            {
+                debug_print("\r\n[%s] Profile callback", __FUNCTION__);
+                da_ble_server_cb_t pfunc = profile->cb;
+                pfunc(profile->type, profile->conn_id, profile->att_handle, profile->arg);
+            } else {
+                debug_print("\r\n[%s] NULL profile callback", __FUNCTION__);
+            }
+            os_mem_free(profile);
+        }
+		    break;
 		default:
 			break;
 	}
@@ -171,7 +206,7 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MS
 extern void *ble_tizenrt_scatternet_callback_queue_handle;
 void ble_tizenrt_scatternet_send_callback_msg(uint16_t type, void *arg)
 {
-    T_TIZENRT_CLIENT_APP_CALLBACK_MSG callback_msg;
+    T_TIZENRT_APP_CALLBACK_MSG callback_msg;
     callback_msg.type = type;
     callback_msg.u.buf = arg;
 	if (ble_tizenrt_scatternet_callback_queue_handle != NULL) {

@@ -60,7 +60,7 @@ T_GAP_DEV_STATE ble_tizenrt_central_gap_dev_state = {0, 0, 0, 0, 0};            
 /*============================================================================*
  *                              Functions
  *============================================================================*/
-extern BLE_TIZENRT_BOND_REQ ble_tizenrt_bond_req_table[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS];
+extern BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_table;
 extern uint16_t g_conn_req_num;
 T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_central_read_results[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS] = {0};
 extern void *ble_tizenrt_read_sem;
@@ -68,7 +68,7 @@ extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
 void ble_tizenrt_central_send_msg(uint16_t sub_type, void *arg);
 
-void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG callback_msg)
+void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
     debug_print("\r\n[%s] msg type : 0x%x", __FUNCTION__, callback_msg.type);
 	switch (callback_msg.type) {
@@ -109,6 +109,7 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG c
                     }
                     memset(&ble_tizenrt_bond_req_table[i], sizeof(BLE_TIZENRT_BOND_REQ), 0);
                     g_conn_req_num--;
+                    break;
                 }
             }
         }	
@@ -178,7 +179,7 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_CLIENT_APP_CALLBACK_MSG c
 extern void *ble_tizenrt_central_callback_queue_handle;
 void ble_tizenrt_central_send_callback_msg(uint16_t type, void *arg)
 {
-    T_TIZENRT_CLIENT_APP_CALLBACK_MSG callback_msg;
+    T_TIZENRT_APP_CALLBACK_MSG callback_msg;
     callback_msg.type = type;
     callback_msg.u.buf = arg;
 	if (ble_tizenrt_central_callback_queue_handle != NULL) {

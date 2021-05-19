@@ -18,21 +18,11 @@
 #include "ble_tizenrt_scatternet_link_mgr.h"
 #include "ble_tizenrt_app.h"
 #include <os_mem.h>
-extern da_ble_result_type rtw_ble_combo_init(da_ble_client_init_parm* init_client, da_ble_server_init_parm* init_server);
-bool is_server_init = false;
 
+bool is_server_init = false;
 uint16_t server_profile_count = 0;
 da_ble_server_init_parm server_init_parm;
-
-//static ble_send_msg_func ble_tizenrt_server_send_msg = NULL;  //TODO
-//static void (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg);
-#if defined CONFIG_AMEBAD_BLE_SCATTERNET && CONFIG_AMEBAD_BLE_SCATTERNET
-extern void ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg);
-static void (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg) = ble_tizenrt_scatternet_send_msg;
-#else
-extern void ble_tizenrt_send_msg(uint16_t sub_type, void *arg);
-static void (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg) = ble_tizenrt_send_msg;
-#endif
+void (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg) = NULL;
 
 da_ble_result_type rtw_ble_server_init(da_ble_server_init_parm* init_parm)
 {
@@ -43,6 +33,7 @@ da_ble_result_type rtw_ble_server_init(da_ble_server_init_parm* init_parm)
     }
 
     server_profile_count = init_parm->profile_count;
+    ble_tizenrt_server_send_msg = ble_tizenrt_send_msg;
 
     uint16_t gatt_char_num = 0;
     for (int i = 0; i < init_parm->profile_count; i++)

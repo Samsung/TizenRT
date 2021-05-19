@@ -27,9 +27,8 @@ extern "C" {
 #include "da_ble_client.h"
 #include "profile_server.h"
 #include <gap_msg.h>
+#include <tizenrt_ble_common.h>
 
-//typedef void (*ble_send_msg_func)(uint16_t sub_type, void *arg);
-//#define BLE_TIZENRT_COMBO_ON
 #define BD_ADDR_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BD_ADDR_ARG(x) (x)[5],(x)[4],(x)[3],(x)[2],(x)[1],(x)[0]
 #define UUID_128_FORMAT "0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X"
@@ -76,6 +75,8 @@ T_APP_RESULT ble_tizenrt_scatternet_app_gap_callback(uint8_t cb_type, void *p_cb
  * @retval   result @ref T_APP_RESULT
  */
 T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data);
+
+void ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg);
 
 #ifdef __cplusplus
 }

@@ -190,20 +190,20 @@ void ble_tizenrt_app_handle_io_msg(T_IO_MSG io_msg)
 }
 
 extern da_ble_server_init_parm server_init_parm;
-void ble_tizenrt_handle_callback_msg(T_TIZENRT_SERVER_CALLBACK_MSG callback_msg)
+void ble_tizenrt_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
     debug_print("\r\n[%s] msg type: 0x%x", __FUNCTION__, callback_msg.type);
     switch (callback_msg.type) {
         case BLE_TIZENRT_CALLBACK_TYPE_CONN:
         {
-            T_TIZENRT_CONNECTED_CALLBACK_DATA *connected = callback_msg.msg_data;
-            debug_print("\r\n[%s] cb %p conn_id 0x%x conn_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x", __FUNCTION__,
-                            server_init_parm.connected_cb,
-                            connected->conn_id, connected->conn_type,
-                            connected->remote_bd[0], connected->remote_bd[1], connected->remote_bd[2],
-                            connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
-            if(server_init_parm.connected_cb)
+            T_TIZENRT_CONNECTED_CALLBACK_DATA *connected = callback_msg.u.buf;
+            if(connected != NULL && server_init_parm.connected_cb)
             {
+                debug_print("\r\n[%s] cb %p conn_id 0x%x conn_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x",
+                                __FUNCTION__, server_init_parm.connected_cb,
+                                connected->conn_id, connected->conn_type,
+                                connected->remote_bd[0], connected->remote_bd[1], connected->remote_bd[2],
+                                connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
                 da_ble_server_connected_t p_func = server_init_parm.connected_cb;
                 p_func(connected->conn_id, connected->conn_type, connected->remote_bd);
             } else {
@@ -214,8 +214,8 @@ void ble_tizenrt_handle_callback_msg(T_TIZENRT_SERVER_CALLBACK_MSG callback_msg)
 		    break;
         case BLE_TIZENRT_CALLBACK_TYPE_PROFILE:
         {
-            T_TIZENRT_PROFILE_CALLBACK_DATA *profile = callback_msg.msg_data;
-            if(profile->cb)
+            T_TIZENRT_PROFILE_CALLBACK_DATA *profile = callback_msg.u.buf;
+            if(profile != NULL && profile->cb)
             {
                 debug_print("\r\n[%s] Profile callback", __FUNCTION__);
                 da_ble_server_cb_t pfunc = profile->cb;
@@ -234,9 +234,9 @@ void ble_tizenrt_handle_callback_msg(T_TIZENRT_SERVER_CALLBACK_MSG callback_msg)
 extern void *ble_tizenrt_callback_queue_handle;
 void ble_tizenrt_send_callback_msg(uint16_t type, void *arg)                                                        
 {
-    T_TIZENRT_SERVER_CALLBACK_MSG callback_msg;
+    T_TIZENRT_APP_CALLBACK_MSG callback_msg;
     callback_msg.type = type;
-    callback_msg.msg_data = arg;
+    callback_msg.u.buf = arg;
     if (ble_tizenrt_callback_queue_handle != NULL) {
 		if (os_msg_send(ble_tizenrt_callback_queue_handle, &callback_msg, 0) == false) {
 			printf("\r\n[%s] fail!!! msg_type 0x%x", __FUNCTION__, callback_msg.type);
