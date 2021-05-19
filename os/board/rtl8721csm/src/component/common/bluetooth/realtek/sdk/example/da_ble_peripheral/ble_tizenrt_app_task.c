@@ -100,7 +100,7 @@ void ble_tizenrt_app_main_task(void *p_param)
 void ble_tizenrt_callback_main_task(void *p_param)
 {
     (void)p_param;
-    T_TIZENRT_SERVER_CALLBACK_MSG callback_msg;
+    T_TIZENRT_APP_CALLBACK_MSG callback_msg;
 
     while (true)
     {
@@ -120,7 +120,7 @@ void ble_tizenrt_app_task_init(void)
     os_msg_queue_create(&ble_tizenrt_io_queue_handle, BLE_TIZENRT_MAX_NUMBER_OF_IO_MESSAGE, sizeof(T_IO_MSG));
     os_msg_queue_create(&ble_tizenrt_evt_queue_handle, BLE_TIZENRT_MAX_NUMBER_OF_EVENT_MESSAGE, sizeof(uint8_t));
 
-    os_msg_queue_create(&ble_tizenrt_callback_queue_handle, BLE_TIZENRT_MAX_NUMBER_OF_CALLBACK_MESSAGE, sizeof(T_TIZENRT_SERVER_CALLBACK_MSG));
+    os_msg_queue_create(&ble_tizenrt_callback_queue_handle, BLE_TIZENRT_MAX_NUMBER_OF_CALLBACK_MESSAGE, sizeof(T_TIZENRT_APP_CALLBACK_MSG));
 
     os_sem_create(&start_bt_stack_sem_handle, 0, 1);
 

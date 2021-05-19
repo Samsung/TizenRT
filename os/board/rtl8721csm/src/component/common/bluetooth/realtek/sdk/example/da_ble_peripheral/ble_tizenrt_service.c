@@ -400,7 +400,6 @@ bool parse_service_table(da_ble_server_gatt_t *profile, uint16_t profile_count)
     abs_att_count = 0;
     tizenrt_ble_service_tbl = (T_ATTRIB_APPL *)os_mem_alloc(0, profile_count * sizeof(T_ATTRIB_APPL));
     memset(tizenrt_ble_service_tbl, 0, profile_count * sizeof(T_ATTRIB_APPL));
-    debug_print("\r\n[%s] tizenrt_ble_service_tbl size = %d", __FUNCTION__, sizeof(tizenrt_ble_service_tbl));
     uint8_t srv_index = 0;
     uint8_t char_index = 0;
     uint16_t j = 0;

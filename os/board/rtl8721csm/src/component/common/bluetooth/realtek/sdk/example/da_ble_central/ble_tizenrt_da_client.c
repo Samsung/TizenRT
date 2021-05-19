@@ -20,39 +20,18 @@
 #include <gcs_client.h>
 
 extern T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_central_read_results[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS];
-extern T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_scatternet_read_results[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS];
-
-da_ble_client_init_parm *client_init_parm = NULL;
-uint16_t g_conn_req_num = 0;
-
-//static ble_send_msg_func tizenrt_client_send_msg = NULL;
-//static BLE_TIZENRT_APP_LINK *da_ble_app_link_table = NULL;
-//static uint8_t ble_app_link_table_size = 0;
-//static T_TIZENRT_CLIENT_READ_RESULT *ble_read_results = NULL;
-extern uint16_t server_profile_count;
-#if defined CONFIG_AMEBAD_BLE_SCATTERNET && CONFIG_AMEBAD_BLE_SCATTERNET
-extern void ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg);
-extern T_GCS_WRITE_RESULT g_scatternet_write_result;
-extern T_GCS_WRITE_RESULT g_scatternet_write_no_rsp_result;
-T_GCS_WRITE_RESULT *write_request_reslut = &g_scatternet_write_result;
-T_GCS_WRITE_RESULT *write_no_rsponse_reslut = &g_scatternet_write_no_rsp_result;
-static uint8_t ble_app_link_table_size = BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS;
-BLE_TIZENRT_BOND_REQ ble_tizenrt_bond_req_table[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
-static T_TIZENRT_CLIENT_READ_RESULT *ble_read_results = ble_tizenrt_scatternet_read_results;
-static BLE_TIZENRT_SCATTERNET_APP_LINK *da_ble_app_link_table = ble_tizenrt_scatternet_app_link_table;
-static void (*ble_tizenrt_client_send_msg)(uint16_t sub_type, void *arg) = ble_tizenrt_scatternet_send_msg;
-#else
-extern void ble_tizenrt_central_send_msg(uint16_t sub_type, void *arg);
 extern T_GCS_WRITE_RESULT g_write_result;
 extern T_GCS_WRITE_RESULT g_write_no_rsp_result;
-T_GCS_WRITE_RESULT *write_request_reslut = &g_write_result;
-T_GCS_WRITE_RESULT *write_no_rsponse_reslut = &g_write_no_rsp_result;
-static uint8_t ble_app_link_table_size = BLE_TIZENRT_CENTRAL_APP_MAX_LINKS;
-BLE_TIZENRT_BOND_REQ ble_tizenrt_bond_req_table[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS] = {0};
-static T_TIZENRT_CLIENT_READ_RESULT *ble_read_results = ble_tizenrt_central_read_results;
-static BLE_TIZENRT_APP_LINK *da_ble_app_link_table = ble_tizenrt_central_app_link_table;
-static void (*ble_tizenrt_client_send_msg)(uint16_t sub_type, void *arg) = ble_tizenrt_central_send_msg;
-#endif
+
+uint16_t g_conn_req_num = 0;
+da_ble_client_init_parm *client_init_parm = NULL;
+T_GCS_WRITE_RESULT *write_request_result = NULL;
+T_GCS_WRITE_RESULT *write_no_rsponse_result = NULL;
+uint8_t ble_app_link_table_size = 0;
+BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_table = NULL;
+T_TIZENRT_CLIENT_READ_RESULT *ble_read_results = NULL;
+BLE_TIZENRT_APP_LINK *da_ble_app_link_table = NULL;
+void (*ble_tizenrt_client_send_msg)(uint16_t sub_type, void *arg) = NULL;
 
 da_ble_result_type rtw_ble_client_init(da_ble_client_init_parm* init_parm)
 { 
@@ -60,13 +39,22 @@ da_ble_result_type rtw_ble_client_init(da_ble_client_init_parm* init_parm)
     {
         return DA_BLE_RESULT_TYPE_FAILURE;
     }
-    memset(ble_tizenrt_bond_req_table, 0, BLE_TIZENRT_CENTRAL_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
+
     client_init_parm = os_mem_alloc(0, sizeof(da_ble_client_init_parm));
     client_init_parm->da_ble_client_scan_state_changed_cb = init_parm->da_ble_client_scan_state_changed_cb;
 	client_init_parm->da_ble_client_device_scanned_cb = init_parm->da_ble_client_device_scanned_cb;
 	client_init_parm->da_ble_client_device_connected_cb = init_parm->da_ble_client_device_connected_cb;
 	client_init_parm->da_ble_client_device_disconnected_cb = init_parm->da_ble_client_device_disconnected_cb;
 	client_init_parm->da_ble_client_operation_notification_cb = init_parm->da_ble_client_operation_notification_cb;
+
+    write_request_result = &g_write_result;
+    write_no_rsponse_result = &g_write_no_rsp_result;
+    ble_app_link_table_size = BLE_TIZENRT_CENTRAL_APP_MAX_LINKS;
+    ble_tizenrt_bond_req_table = os_mem_alloc(0, BLE_TIZENRT_CENTRAL_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
+    memset(ble_tizenrt_bond_req_table, 0, BLE_TIZENRT_CENTRAL_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
+    ble_read_results = ble_tizenrt_central_read_results;
+    da_ble_app_link_table = ble_tizenrt_central_app_link_table;
+    ble_tizenrt_client_send_msg = ble_tizenrt_central_send_msg;
 
     if(ble_tizenrt_central_app_init())
         return DA_BLE_RESULT_TYPE_FAILURE;
@@ -403,7 +391,7 @@ da_ble_result_type rtw_ble_client_operation_write(da_ble_client_operation_handle
         if(os_mutex_take(ble_tizenrt_write_sem, 1000))
         {  
             debug_print("\r\n[%s] take write mutex success",__FUNCTION__);
-            if((*write_request_reslut).cause == GAP_SUCCESS)
+            if((*write_request_result).cause == GAP_SUCCESS)
             {
                 debug_print("\r\n[%s] write success: conn_id %d attr_handle 0x%x!",__FUNCTION__,
                                                             handle->conn_handle, handle->attr_handle);
@@ -411,7 +399,7 @@ da_ble_result_type rtw_ble_client_operation_write(da_ble_client_operation_handle
                 return DA_BLE_RESULT_TYPE_SUCCESS;
             } else {
                 debug_print("\r\n[%s] write fail: conn_id %d attr_handle 0x%x cause %d ",__FUNCTION__,
-                                        handle->conn_handle, handle->attr_handle, (*write_request_reslut).cause);
+                                        handle->conn_handle, handle->attr_handle, (*write_request_result).cause);
                 return DA_BLE_RESULT_TYPE_FAILURE;
             }
         }
@@ -451,7 +439,7 @@ da_ble_result_type rtw_ble_client_operation_write_no_response(da_ble_client_oper
         if(os_mutex_take(ble_tizenrt_write_no_rsp_sem, 1000))
         {
             debug_print("\r\n[%s] take write mutex success",__FUNCTION__);
-            if((*write_no_rsponse_reslut).cause == GAP_SUCCESS)
+            if((*write_no_rsponse_result).cause == GAP_SUCCESS)
             {
                 debug_print("\r\n[%s] write success: conn_id %d attr_handle 0x%x!",__FUNCTION__,
                                                             handle->conn_handle, handle->attr_handle);
@@ -462,7 +450,7 @@ da_ble_result_type rtw_ble_client_operation_write_no_response(da_ble_client_oper
                                                             handle->conn_handle, handle->attr_handle);
                 return DA_BLE_RESULT_TYPE_FAILURE;
             }
-            memset(write_no_rsponse_reslut, 0, sizeof((*write_no_rsponse_reslut)));
+            memset(write_no_rsponse_result, 0, sizeof((*write_no_rsponse_result)));
         }
     } while(1);
 
@@ -492,6 +480,13 @@ da_ble_result_type rtw_ble_client_operation_enable_notification(da_ble_client_op
 da_ble_result_type rtw_ble_client_deinit(void)
 {
     ble_tizenrt_central_app_deinit();
+
+    g_conn_req_num = 0;
+    os_mem_free(client_init_parm);
+    client_init_parm = NULL;
+    os_mem_free(ble_tizenrt_bond_req_table);
+    ble_tizenrt_bond_req_table = NULL;
+
     return DA_BLE_RESULT_TYPE_SUCCESS; 
 }
 #endif /* DA_BLE_CLIENT_C_ */
