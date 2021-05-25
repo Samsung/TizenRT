@@ -1539,6 +1539,72 @@ static void tc_pthread_pthread_setcanceltype(void)
 }
 #endif
 
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+static void *test_mutex_consistent(void *param)
+{
+	int ret = -1;
+
+	ret = pthread_mutex_lock(&g_mutex);
+	if (ret == EOWNERDEAD) {
+		/* make the mutex consistent, which became inconsistent because holding thread has been dead*/
+		pthread_mutex_consistent(&g_mutex);
+		pthread_mutex_unlock(&g_mutex);
+	}
+
+	return (void *)ret;
+}
+
+/**
+* @fn                   :tc_pthread_pthread_mutex_consistent
+* @brief                :This tc tests pthread_mutex_consistent()
+* @Scenario             :the pthread_mutex_consistent() function can be used to mark the state protected by the mutex referenced by mutex as consistent again
+*                        and this situation arises, If an owner of a robust mutex terminates while holding the mutex,
+*                        the mutex becomes inconsistent. In this case, the mutex does not become normally usable again until the state is marked consistent.
+*                        after marking consistent next thread can acquire the lock but will receive EOWNERDEAD.
+* @API'scovered         :pthread_mutex_consistent
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_pthread_pthread_mutex_consistent(void)
+{
+	int ret;
+	void *status;
+	pthread_t thread1;
+	pthread_t thread2;
+	pthread_t thread3;
+	pthread_mutexattr_t mutex_attr;
+
+	pthread_mutexattr_init(&mutex_attr);
+	pthread_mutexattr_setrobust(&mutex_attr, PTHREAD_MUTEX_ROBUST);
+	pthread_mutex_init(&g_mutex, &mutex_attr);
+
+	/* creates the 1st thread to lock mutex */
+	ret = pthread_create(&thread1, NULL, &test_mutex_consistent, NULL);
+	TC_ASSERT_EQ("pthread_create", ret, 0);
+	pthread_join(thread1, &status);
+	TC_ASSERT_EQ_CLEANUP("test_mutex_consistent", (int)status, 0, pthread_mutex_unlock(&g_mutex));
+
+	/* create 2nd thread to lock the mutex again, which is inconsistent, it will acquire the lock with an error return of EOWNERDEAD.
+	 * as mutex is in inconsistent state so this thread will create it consistent by calling pthread_mutex_consistent(). */
+	ret = pthread_create(&thread2, NULL, &test_mutex_consistent, NULL);
+	TC_ASSERT_EQ("pthread_create", ret, 0);
+	pthread_join(thread2, &status);
+	TC_ASSERT_EQ_CLEANUP("test_mutex_consistent", (int)status, EOWNERDEAD, pthread_mutex_unlock(&g_mutex));
+
+	/* Now thread3 is used to check whether mutex is working fine or not */
+	ret = pthread_create(&thread3, NULL, &test_mutex_consistent, NULL);
+	TC_ASSERT_EQ("pthread_create", ret, 0);
+	pthread_join(thread3, &status);
+	TC_ASSERT_EQ_CLEANUP("test_mutex_consistent", (int)status, 0, pthread_mutex_unlock(&g_mutex));
+
+	pthread_mutex_unlock(&g_mutex);
+
+	TC_SUCCESS_RESULT();
+}
+
+#endif
+
 /****************************************************************************
  * Name: pthread_main
  ****************************************************************************/
@@ -1561,6 +1627,9 @@ int pthread_main(void)
 	tc_pthread_pthread_mutex_init();
 	tc_pthread_pthread_mutex_destroy();
 	tc_pthread_pthread_mutex_lock_unlock_trylock();
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+	tc_pthread_pthread_mutex_consistent();
+#endif
 	tc_pthread_pthread_once();
 	tc_pthread_pthread_yield();
 	tc_pthread_pthread_cond_signal_wait();
