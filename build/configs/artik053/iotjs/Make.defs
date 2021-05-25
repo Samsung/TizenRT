@@ -150,7 +150,7 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-  $(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053 $(1) $(2) $(3) $(4) $(5) $(6)
+  $(TOPDIR)/../build/configs/common_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef
 
 define OTA_IMG
