@@ -134,6 +134,7 @@ OBJS		= $(AOBJS) $(COBJS)
 BIN		= libnet$(LIBEXT)
 
 all:	$(BIN)
+.PHONY: depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)

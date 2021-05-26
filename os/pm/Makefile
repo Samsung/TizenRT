@@ -59,6 +59,7 @@ BIN = libpm$(LIBEXT)
 
 
 all: $(BIN)
+.PHONY: depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)

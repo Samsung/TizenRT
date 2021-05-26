@@ -42,6 +42,7 @@ OBJS = $(AOBJS) $(COBJS)
 BIN = liblogm$(LIBEXT)
 
 all: $(BIN)
+.PHONY: depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $(notdir $@))

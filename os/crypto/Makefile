@@ -51,6 +51,7 @@ OBJS = $(AOBJS) $(COBJS)
 BIN = libcrypto$(LIBEXT)
 
 all: $(BIN)
+.PHONY: depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
