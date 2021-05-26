@@ -165,6 +165,8 @@ else ifeq ($(CONFIG_ENABLE_STACKMONITOR),y)
 CSRCS += utils_proc.c
 else ifeq ($(CONFIG_ENABLE_HEAPINFO),y)
 CSRCS += utils_proc.c
+else ifeq ($(CONFIG_ENABLE_KILLALL),y)
+CSRCS += utils_proc.c
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
