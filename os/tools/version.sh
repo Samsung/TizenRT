@@ -155,4 +155,4 @@ echo "CONFIG_VERSION_MAJOR=${MAJOR}" >>${OUTFILE}
 echo "CONFIG_VERSION_MINOR=${MINOR}" >>${OUTFILE}
 echo "CONFIG_VERSION_BUILD=\"${BUILD}\"" >>${OUTFILE}
 echo "CONFIG_VERSION_BUILD_USER=\"`whoami`@`hostname`\"" >>${OUTFILE}
-echo "CONFIG_VERSION_BUILD_TIME=\"`date '+%Y-%m-%d %T'`\"" >>${OUTFILE}
+echo "CONFIG_VERSION_BUILD_TIME=\"`date '+%Y-%m-%d %T %Z'`\"" >>${OUTFILE}
