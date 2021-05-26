@@ -412,6 +412,9 @@ function BUILD()
 	else
 		DOCKER_OPT="-i"
 	fi
+
+	HOSTNAME="-h=`git config user.name`" # set github username instead of hostname, "-h=`hostname`"
+	LOCALTIME="-v /etc/localtime:/etc/localtime:ro"
 	
 	DOCKER_IMAGES=`docker images | grep tizenrt/tizenrt | awk '{print $2}'`
 	for im in $DOCKER_IMAGES
@@ -429,7 +432,7 @@ function BUILD()
 		fi
 	fi
 	echo "Docker Image Version : ${DOCKER_VERSION}"
-	docker run --rm ${DOCKER_OPT} -v /etc/localtime:/etc/localtime:ro -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
+	docker run --rm ${DOCKER_OPT} ${HOSTNAME} ${LOCALTIME} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
 	UPDATE_STATUS
 }
 
