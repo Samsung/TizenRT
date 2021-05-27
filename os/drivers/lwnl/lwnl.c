@@ -348,15 +348,15 @@ int lwnl_unregister(struct lwnl_lowerhalf_s *dev)
 	return 0;
 }
 
-int lwnl_postmsg(lwnl_cb_status evttype, void *buffer)
+int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, uint32_t buf_len)
 {
 	if (!g_lwnl_upper) {
 		return -1;
 	}
-
-	int res = lwnl_add_event(evttype, buffer);
+	lwnl_cb_status cb = {dev, evt};
+	int res = lwnl_add_event(cb, buffer, buf_len);
 	if (res < 0) {
-		return -1;
+		return res;
 	}
 
 	LWNLDEV_LOCK(g_lwnl_upper);

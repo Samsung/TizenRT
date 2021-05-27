@@ -97,22 +97,22 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 
 	switch (type) {
 	case 1:
-		lwnl_postmsg(LWNL_STA_CONNECTED, NULL);
+		LWNL_POST_WIFIMSG(LWNL_STA_CONNECTED, NULL, 0);
 		break;
 	case 2:
-		lwnl_postmsg(LWNL_STA_CONNECT_FAILED, NULL);
+		LWNL_POST_WIFIMSG(LWNL_STA_CONNECT_FAILED, NULL, 0);
 		break;
 	case 3:
-		lwnl_postmsg(LWNL_SOFTAP_STA_JOINED, NULL);
+		LWNL_POST_WIFIMSG(LWNL_SOFTAP_STA_JOINED, NULL, 0);
 		break;
 	case 4:
-		lwnl_postmsg(LWNL_STA_DISCONNECTED, NULL);
+		LWNL_POST_WIFIMSG(LWNL_STA_DISCONNECTED, NULL, 0);
 		break;
 	case 5:
-		lwnl_postmsg(LWNL_SOFTAP_STA_LEFT, NULL);
+		LWNL_POST_WIFIMSG(LWNL_SOFTAP_STA_LEFT, NULL, 0);
 		break;
 	default:
-		lwnl_postmsg(LWNL_UNKNOWN, NULL);
+		LWNL_POST_WIFIMSG(LWNL_UNKNOWN, NULL, 0);
 		break;
 	}
 
@@ -174,9 +174,9 @@ int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input, int s
 	trwifi_scan_list_s *scan_list = (trwifi_scan_list_s *)utils_scan_input;
 
 	if (scan_list) {
-		lwnl_postmsg(LWNL_SCAN_DONE, (void *)scan_list);
+		LWNL_POST_WIFISCANMSG(LWNL_SCAN_DONE, (void *)scan_list);
 	} else {
-		lwnl_postmsg(LWNL_SCAN_FAILED, NULL);
+		LWNL_POST_WIFIMSG(LWNL_SCAN_FAILED, NULL, 0);
 	}
 
 	return RTK_STATUS_SUCCESS;

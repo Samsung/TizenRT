@@ -75,7 +75,7 @@ static void *event_listener(void *arg)
 			}
 			memcpy(&status, buf, sizeof(lwnl_cb_status));
 			memcpy(&len, buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
-			printf("[%d] status (%d) len(%d)\n", idx, status, len);
+			printf("[%d] status (%d) (%d) len(%d)\n", idx, status.type, status.evt, len);
 
 			// flush the event queue
 			if (len > 0) {
@@ -90,7 +90,7 @@ static void *event_listener(void *arg)
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-	int lwnl_sample_main(int argc, char *argv[])
+int lwnl_sample_main(int argc, char *argv[])
 #endif
 {
 	pthread_t *pid = NULL;

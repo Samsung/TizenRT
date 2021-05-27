@@ -99,5 +99,5 @@ struct vwifi_ops {
 };
 
 int vwifi_handle_message(struct vwifi_req *req);
-int vwifi_create_event(struct vwifi_evt *vevent, int sleep, lwnl_cb_status event);
+int vwifi_create_event(struct vwifi_evt *vevent, int sleep, uint32_t event);
 #endif // #define __VWIFI_HANDLER_H__

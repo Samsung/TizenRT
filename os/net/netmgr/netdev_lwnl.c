@@ -60,7 +60,7 @@ static int _netdev_getifaddr(struct netdev *dev, void *arg)
 static int _handle_common(lwnl_msg *msg)
 {
 	int res = 0;
-	if (msg->req_type == LWNL_GET_ADDR_INFO) {
+	if (msg->req_type.type == LWNL_REQ_COMMON_GETADDRINFO) {
 		struct ifaddr_msg imsg = {NULL, 0};
 		int ret = nm_foreach(_netdev_getifaddr, (void *)&imsg);
 		if (ret == OK) {

@@ -6,6 +6,29 @@
 #define TRWIFI_SSID_LEN				  32
 #define TRWIFI_PASSPHRASE_LEN		  64
 
+#define LWNL_POST_WIFIMSG(evt, buffer, buf_len) \
+	lwnl_postmsg(LWNL_DEV_WIFI, evt, buffer, buf_len)
+
+#define LWNL_POST_BLEMSG(evt, buffer, buf_len) \
+	lwnl_postmsg(LWNL_DEV_BLE, evt, buffer, buf_len)
+
+/*  if serialization is failed then driver should let pass the fail event to applications*/
+#define LWNL_POST_WIFISCANMSG(evt, scanlist)							\
+	do {																\
+		if (evt == LWNL_SCAN_DONE) {										\
+			uint8_t *buffer = NULL;										\
+			int lwnl_res = trwifi_serialize_scaninfo(&buffer, scanlist); \
+			if (lwnl_res < 0) {											\
+				LWNL_POST_WIFIMSG(LWNL_SCAN_FAILED, NULL, 0);				\
+			} else {													\
+				LWNL_POST_WIFIMSG(LWNL_SCAN_DONE, buffer, lwnl_res);	\
+				kmm_free(buffer);										\
+			}															\
+		} else {														\
+			LWNL_POST_WIFIMSG(evt, NULL, 0);								\
+		}																\
+	} while (0)
+
 typedef enum {
 	TRWIFI_FAIL = -1,
 	TRWIFI_SUCCESS,
@@ -60,6 +83,31 @@ typedef enum {
 	TRWIFI_SOFTAP_MODE,			/**<  soft ap mode			*/
 } trwifi_status_e;
 
+typedef enum {
+	LWNL_REQ_WIFI_INIT,
+	LWNL_REQ_WIFI_DEINIT,
+	LWNL_REQ_WIFI_SCANAP,
+	LWNL_REQ_WIFI_GETINFO,
+	LWNL_REQ_WIFI_SETAUTOCONNECT,
+	LWNL_REQ_WIFI_STARTSTA,
+	LWNL_REQ_WIFI_CONNECTAP,
+	LWNL_REQ_WIFI_DISCONNECTAP,
+	LWNL_REQ_WIFI_STARTSOFTAP,
+	LWNL_REQ_WIFI_STOPSOFTAP,
+	LWNL_REQ_WIFI_UNKNOWN
+} lwnl_req_wifi;
+
+typedef enum {
+	LWNL_STA_CONNECTED,
+	LWNL_STA_CONNECT_FAILED,
+	LWNL_STA_DISCONNECTED,
+	LWNL_SOFTAP_STA_JOINED,
+	LWNL_SOFTAP_STA_LEFT,
+	LWNL_SCAN_DONE,
+	LWNL_SCAN_FAILED,
+	LWNL_EXIT,
+	LWNL_UNKNOWN,
+} lwnl_cb_wifi;
 
 typedef struct {
 	char ssid[TRWIFI_SSID_LEN + 1];				 /**<  Service Set Identification		  */
@@ -319,5 +367,7 @@ struct trwifi_ops {
 	trwifi_set_autoconnect set_autoconnect;
 	trwifi_drv_ioctl drv_ioctl;
 };
+
+int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);
 
 #endif // _TIZENRT_WIRELESS_WIFI_H__

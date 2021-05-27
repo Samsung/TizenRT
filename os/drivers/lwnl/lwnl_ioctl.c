@@ -63,7 +63,6 @@ int lwnl_message_handle(const char *msg, int msg_len)
 	}
 
 	// ToDo : if ethernet is supported then ops should be checked
-
 	switch (req) {
 	case LWNL_INIT:
 	{
