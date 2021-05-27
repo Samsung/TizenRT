@@ -3,7 +3,7 @@
 
 CURDIR=$(readlink -f "$0")
 CURDIR_PATH=$(dirname "$CURDIR")
-NXPTOOLS_PATH=${CURDIR_PATH}/../../tools/nxp/imxrt1050
+NXPTOOLS_PATH=${TOP_PATH}/build/tools/nxp/imxrt1050
 
 BINFILE=${NXPTOOLS_PATH}/ivt_flashloader.bin
 SDPHOST=${NXPTOOLS_PATH}/sdphost
