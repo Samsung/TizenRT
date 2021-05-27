@@ -56,10 +56,10 @@ static inline int _send_msg(lwnl_msg *msg)
 
 int netlib_getifaddrs(struct ifaddrs **ifap)
 {
-	int res = 0;
-	lwnl_msg msg = {INTF_NAME, LWNL_GET_ADDR_INFO, sizeof(*ifap), NULL, (void *)&res};
-	int lres = _send_msg(&msg);
-	if (lres < 0) {
+	lwnl_msg msg = {INTF_NAME, {LWNL_REQ_COMMON_GETADDRINFO},
+					sizeof(*ifap), NULL, 0};
+	int res = _send_msg(&msg);
+	if (res < 0) {
 		printf("error %d %s:%d\n", res, __FILE__, __LINE__);
 		return -1;
 	}

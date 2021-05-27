@@ -123,33 +123,6 @@ static int _lwnl_remove_event(struct lwnl_event *evt)
 	return 0;
 }
 
-static int _lwnl_copy_scan_info(char **buffer, trwifi_scan_list_s *scan_list)
-{
-	trwifi_scan_list_s *item = scan_list;
-	int cnt = 0, total = 0;
-	while (item) {
-		item = item->next;
-		cnt++;
-	}
-	total = cnt;
-	LWQ_LOG("[LWQ] total size(%d) (%d) \n", sizeof(trwifi_ap_scan_info_s),
-			sizeof(trwifi_ap_scan_info_s) * total);
-	*buffer = (char *)kmm_malloc(sizeof(trwifi_ap_scan_info_s) * total);
-	if (!(*buffer)) {
-		LWQ_ERR;
-		return -1;
-	}
-	item = scan_list;
-	cnt = 0;
-	while (item) {
-		memcpy(*buffer + (sizeof(trwifi_ap_scan_info_s) * cnt), &item->ap_info,
-			   sizeof(trwifi_ap_scan_info_s));
-		item = item->next;
-		cnt++;
-	}
-	return total * sizeof(trwifi_ap_scan_info_s);
-}
-
 /**
  * API
  */
@@ -172,7 +145,7 @@ void lwnl_queue_initialize(void)
 	LWQ_UNLOCK;
 }
 
-int lwnl_add_event(lwnl_cb_status type, void *buffer)
+int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
 {
 	LWQ_ENTRY;
 	struct lwnl_event *evt = (struct lwnl_event *)kmm_malloc(sizeof(struct lwnl_event));
@@ -183,39 +156,19 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer)
 	evt->flink = NULL;
 	evt->refs = 0;
 
-	switch (type) {
-	case LWNL_STA_CONNECTED:
-	case LWNL_STA_CONNECT_FAILED:
-	case LWNL_STA_DISCONNECTED:
-	case LWNL_SOFTAP_STA_JOINED:
-	case LWNL_SOFTAP_STA_LEFT:
-	case LWNL_SCAN_FAILED:
-	{
-		evt->data.status = type;
+	evt->data.status = type;
+	if (buffer) {
+		char *output = kmm_malloc(buf_len);
+		if (!output) {
+			LWQ_ERR;
+			return -3;
+		}
+		memcpy(output, buffer, buf_len);
+		evt->data.data = output;
+		evt->data.data_len = buf_len;
+	} else {
 		evt->data.data = NULL;
 		evt->data.data_len = 0;
-		break;
-	}
-	case LWNL_SCAN_DONE:
-	{
-		// ToDo
-		char *output = NULL;
-		int res = _lwnl_copy_scan_info(&output, (trwifi_scan_list_s *)buffer);
-		if (res < 0) {
-			evt->data.status = LWNL_SCAN_FAILED;
-			evt->data.data = NULL;
-			evt->data.data_len = 0;
-			break;
-		}
-		evt->data.status = LWNL_SCAN_DONE;
-		evt->data.data = output;
-		evt->data.data_len = res;
-		break;
-	}
-	case LWNL_UNKNOWN:
-	default:
-		LWNL_ERR;
-		return -3;
 	}
 
 	int res = _lwnl_add_event(evt);

@@ -53,23 +53,18 @@ typedef struct {
 } lwnl_data;
 
 typedef enum {
-	// common
-	LWNL_GET_ADDR_INFO,
-	// wifi
-	LWNL_INIT,
-	LWNL_DEINIT,
-	LWNL_SCAN_AP,
-	LWNL_GET_INFO,
-	LWNL_REGISTER_CALLBACK,
-	LWNL_SET_AUTOCONNECT,
-	LWNL_START_STA,
-	LWNL_CONNECT_AP,
-	LWNL_DISCONNECT_AP,
-	LWNL_START_SOFTAP,
-	LWNL_STOP_SOFTAP,
-	LWNL_IOCTL,
-	LWNL_REQ_UNKNOWN,
+	LWNL_DEV_WIFI,
+	LWNL_DEV_BLE,
+	LWNL_DEV_STACK,
+} lwnl_dev_type;
+
+typedef struct {
+	uint32_t type;
 } lwnl_req;
+
+typedef enum {
+	LWNL_REQ_COMMON_GETADDRINFO,
+} lwnl_req_common;
 
 typedef struct {
 	uint8_t name[LWNL_NI_NAME_SIZE];
@@ -79,17 +74,9 @@ typedef struct {
 	void *result;
 } lwnl_msg;
 
-// Todo lwnl return status need to be specified by interface type.
-typedef enum {
-	LWNL_STA_CONNECTED,
-	LWNL_STA_CONNECT_FAILED,
-	LWNL_STA_DISCONNECTED,
-	LWNL_SOFTAP_STA_JOINED,
-	LWNL_SOFTAP_STA_LEFT,
-	LWNL_SCAN_DONE,
-	LWNL_SCAN_FAILED,
-	LWNL_EXIT,
-	LWNL_UNKNOWN,
+typedef struct {
+	lwnl_dev_type type;
+	uint32_t evt;
 } lwnl_cb_status;
 
 typedef struct {
@@ -141,7 +128,10 @@ struct netdev {
 int lwnl_register(struct lwnl_lowerhalf_s *ldev);
 int lwnl_unregister(struct lwnl_lowerhalf_s *ldev);
 int lwnl_register_dev(struct netdev *dev);
-int lwnl_postmsg(lwnl_cb_status status, void *buffer);
+int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, uint32_t buf_len);
+
+#define LWNL_POST_BLEMSG(evt, buffer, buf_len) \
+	lwnl_postmsg(LWNL_DEV_BLE, evt, buffer, buf_len)
 
 #ifndef CONFIG_NET_NETMGR
 int lwnl_register_dev(struct netdev *dev);

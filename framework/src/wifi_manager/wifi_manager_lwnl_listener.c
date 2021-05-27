@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <tinyara/net/if/wifi.h>
 #include <tinyara/wifi/wifi_utils.h>
 #include "wifi_manager_lwnl_listener.h"
 #include "wifi_manager_dhcp.h"
@@ -97,7 +98,11 @@ static inline void LWNL_SET_MSG(wifimgr_msg_s *msg, wifimgr_evt_e event,
 
 static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 {
-	switch (status) {
+	if (status.type != LWNL_DEV_WIFI) {
+		return 0;
+	}
+
+	switch (status.evt) {
 	case LWNL_STA_CONNECTED:
 		LWNL_SET_MSG(&g_msg, EVT_STA_CONNECTED, WIFI_MANAGER_FAIL, NULL, NULL);
 		break;
@@ -141,12 +146,16 @@ static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
  */
 int lwnl_fetch_event(int fd, void *buf, int buflen)
 {
+	#define LWNL_CB_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
 	lwnl_cb_status status;
 	uint32_t len;
-	char type_buf[8] = {0,};
+	char type_buf[LWNL_CB_HEADER_LEN] = {0,};
 	handler_msg *hmsg = (handler_msg *)buf;
 
-	int nbytes = read(fd, (char *)type_buf, 8);
+	/*  lwnl guarantees that type_buf will read LWNL_CB_HEADER_LEN if it succeeds
+	* So it doesn't need to consider partial read
+	*/
+	int nbytes = read(fd, (char *)type_buf, LWNL_CB_HEADER_LEN);
 	if (nbytes < 0) {
 		WM_LOG_ERROR("Failed to receive (nbytes=%d)\n", nbytes);
 		WM_ERR;
@@ -156,7 +165,7 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	WM_LOG_VERBOSE("scan state(%d) length(%d)\n", status, len);
+	WM_LOG_VERBOSE("scan state(%d) length(%d)\n", status.evt, len);
 	(void)_lwnl_call_event(fd, status, len);
 
 	hmsg->signal = NULL;

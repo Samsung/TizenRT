@@ -939,7 +939,9 @@ CONFIG_NETUTILS_STATS_DISPLAY_TOOL=y
 #
 # Network Manager
 #
-# CONFIG_NET_NETMGR is not set
+CONFIG_NET_NETMGR=y
+# CONFIG_NET_NETMGR_ZEROCOPY is not set
+# CONFIG_NET_TASK_BIND is not set
 
 #
 # Network Device Operations

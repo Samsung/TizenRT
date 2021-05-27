@@ -30,31 +30,32 @@
 #include <tinyara/net/if/wifi.h>
 #include "vdev_handler.h"
 
-extern wifi_utils_scan_list_s *vwifi_get_scan_list(void);
+extern trwifi_scan_list_s *vwifi_get_scan_list(void);
 extern struct vwifi_ops *get_vdev_onoff(void);
 extern struct vwifi_ops *get_vdev_auto(void);
 
 static void vwifi_callback_handler(lwnl_cb_status evt)
 {
-	if (evt == LWNL_SCAN_DONE) {
-		wifi_utils_scan_list_s *scanlist = vwifi_get_scan_list();
-		lwnl_postmsg(evt, scanlist);
+	if (evt.evt == LWNL_SCAN_DONE) {
+		trwifi_scan_list_s *scanlist = vwifi_get_scan_list();
+		LWNL_POST_WIFISCANMSG(LWNL_SCAN_DONE, scanlist);
 	} else {
-		lwnl_postmsg(evt, NULL);
+		LWNL_POST_WIFIMSG(evt.evt, NULL, 0);
 	}
 }
 
 static void _generate_disconnect(int argc, char *argv[])
 {
 	int sleep_time = atoi(argv[1]);
-	lwnl_cb_status event_type = (lwnl_cb_status)atoi(argv[2]);
+	lwnl_cb_status event_type = {LWNL_DEV_WIFI, 0};
+	event_type.evt = atoi(argv[2]);
 
-	printf("[pkbuild] sleep (%d) event type(%d)\n", sleep_time, event_type);
+	nvdbg("[VDEV] sleep (%d) event type(%d)\n", sleep_time, event_type.evt);
 	sleep(sleep_time);
 	vwifi_callback_handler(event_type);
 }
 
-int vwifi_create_event(struct vwifi_evt *vevent, int sleep, lwnl_cb_status event)
+int vwifi_create_event(struct vwifi_evt *vevent, int sleep, uint32_t event)
 {
 	(void)vevent;
 	char sleep_buf[16] = {0,};

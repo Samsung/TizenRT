@@ -39,57 +39,57 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 {
 	trwifi_result_e res = TRWIFI_FAIL;
 	lldbg("T%d cmd(%d) (%p) (%d)\n", getpid(), cmd, data, data_len);
-	switch (cmd) {
-	case LWNL_INIT:
+	switch (cmd.type) {
+	case LWNL_REQ_WIFI_INIT:
 	{
 		if (0 == nm_ifup(dev)) {
 			res = TRWIFI_SUCCESS;
 		}
 	}
 	break;
-	case LWNL_DEINIT:
+	case LWNL_REQ_WIFI_DEINIT:
 	{
 		if (0 == nm_ifdown(dev)) {
 			res = TRWIFI_SUCCESS;
 		}
 	}
 	break;
-	case LWNL_GET_INFO:
+	case LWNL_REQ_WIFI_GETINFO:
 	{
 		TRDRV_CALL(res, dev, get_info, (dev, (trwifi_info *)data));
 	}
 	break;
-	case LWNL_SET_AUTOCONNECT:
+	case LWNL_REQ_WIFI_SETAUTOCONNECT:
 	{
 		TRDRV_CALL(res, dev, set_autoconnect, (dev, *((uint8_t *)data)));
 	}
 	break;
-	case LWNL_START_STA:
+	case LWNL_REQ_WIFI_STARTSTA:
 	{
 		TRDRV_CALL(res, dev, start_sta, (dev));
 	}
 	break;
-	case LWNL_CONNECT_AP:
+	case LWNL_REQ_WIFI_CONNECTAP:
 	{
 		TRDRV_CALL(res, dev, connect_ap, (dev, (trwifi_ap_config_s*)data, NULL));
 	}
 	break;
-	case LWNL_DISCONNECT_AP:
+	case LWNL_REQ_WIFI_DISCONNECTAP:
 	{
 		TRDRV_CALL(res, dev, disconnect_ap, (dev, NULL));
 	}
 	break;
-	case LWNL_START_SOFTAP:
+	case LWNL_REQ_WIFI_STARTSOFTAP:
 	{
 		TRDRV_CALL(res, dev, start_softap, (dev, (trwifi_softap_config_s *)data));
 	}
 	break;
-	case LWNL_STOP_SOFTAP:
+	case LWNL_REQ_WIFI_STOPSOFTAP:
 	{
 		TRDRV_CALL(res, dev, stop_softap, (dev));
 	}
 	break;
-	case LWNL_SCAN_AP:
+	case LWNL_REQ_WIFI_SCANAP:
 	{
 		TRDRV_CALL(res, dev, scan_ap, (dev, NULL));
 	}
@@ -103,4 +103,34 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 		break;
 	}
 	return res;
+}
+
+int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list)
+{
+	trwifi_scan_list_s *item = scan_list;
+	int32_t cnt = 0;
+	int32_t total = 0;
+
+	while (item) {
+		item = item->next;
+		cnt++;
+	}
+	total = cnt * sizeof(trwifi_ap_scan_info_s);
+	uint32_t item_size = sizeof(trwifi_ap_scan_info_s);
+	nvdbg("total size(%d) (%d) \n", sizeof(trwifi_ap_scan_info_s), total);
+
+	*buffer = (uint8_t *)kmm_malloc(total);
+	if (!(*buffer)) {
+		ndbg("malloc fail %d\n", total);
+		return -1;
+	}
+
+	item = scan_list;
+	cnt = 0;
+	while (item) {
+		memcpy(*buffer + (item_size * cnt), &item->ap_info, item_size);
+		item = item->next;
+		cnt++;
+	}
+	return total;
 }
