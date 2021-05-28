@@ -79,9 +79,9 @@ void sysinfo(void)
 
 	/* Print OS version and Build information */
 	/* just get values defined in version.h */
-#ifdef CONFIG_BINARY_VERSION
+#ifdef CONFIG_BOARD_BUILD_DATE
 	printf("\tVersion:\n");
-	printf("\t\tPlatform: " CONFIG_VERSION_STRING "\tBinary: %d\n", CONFIG_BINARY_VERSION);
+	printf("\t\tPlatform: " CONFIG_VERSION_STRING "\tBinary: %d\n", CONFIG_BOARD_BUILD_DATE);
 	printf("\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
 #else
 	printf("\tVersion: " CONFIG_VERSION_STRING "\n\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);

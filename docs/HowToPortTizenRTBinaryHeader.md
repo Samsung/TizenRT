@@ -20,7 +20,7 @@ This is the CRC32 value for all header and actual TizenRT binary. It is checksum
 This is the header total data size excluding CRC32. It is of type uint16_t and its size is 2 bytes.
 
 ### 3. Binary version
-This is the version of the binary in "YYMMDD" format (CONFIG_BINARY_VERSION). It is of type uint32_t and its size is 4 bytes.
+This is the version of the binary in "YYMMDD" format (CONFIG_BOARD_BUILD_DATE). It is of type uint32_t and its size is 4 bytes.
 
 ### 4. Binary size
 This is the actual TizenRT binary size excluding header size of the binary. It is of type uint32_t and its size is 4 bytes.
