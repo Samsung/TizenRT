@@ -135,9 +135,9 @@ def make_kernel_binary_header():
     header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINVER + SIZE_OF_BINSIZE + SIZE_OF_SECURE_HEADER_SIZE
 
     # Get binary version
-    bin_ver = get_config_value(cfg_path, "CONFIG_BINARY_VERSION=")
+    bin_ver = get_config_value(cfg_path, "CONFIG_BOARD_BUILD_DATE=")
     if bin_ver < 0 :
-        print("Error : Not Found config for version, CONFIG_BINARY_VERSION")
+        print("Error : Not Found config for version, CONFIG_BOARD_BUILD_DATE")
         sys.exit(1)
     elif bin_ver < 101 or bin_ver > 991231 :
         print("Error : Invalid value. It has 'YYMMDD' format so it should be in (101, 991231)")
@@ -291,9 +291,9 @@ def make_user_binary_header():
             binary_ram_size = roundup_power_two(binary_ram_size)
 
         # Get kernel binary version
-        kernel_ver = get_config_value(cfg_path, "CONFIG_BINARY_VERSION=")
+        kernel_ver = get_config_value(cfg_path, "CONFIG_BOARD_BUILD_DATE=")
         if kernel_ver < 0 :
-            print("Error : Not Found config for kernel version, CONFIG_BINARY_VERSION")
+            print("Error : Not Found config for kernel version, CONFIG_BOARD_BUILD_DATE")
             sys.exit(1)
         elif kernel_ver < 101 or kernel_ver > 991231 :
             print("Error : Invalid value. It has 'YYMMDD' format so it should be in (101, 991231)")

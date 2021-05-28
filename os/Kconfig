@@ -269,13 +269,13 @@ config PASS1_OBJECT
 
 endif # Build 2-pass
 
-config BINARY_VERSION
-	int "Binary Version(YYMMDD)"
+config BOARD_BUILD_DATE
+	int "Binary Build Date (YYMMDD)"
 	default 200204
 	---help---
-		Binary version which has a "YYMMDD" format is included in binary header.
-		It is used by binary manager to check the latest binary version.
-		So it should be set to a higer value in the latest version.
+		This config indicates build date which has a "YYMMDD" format.
+		It is included in binary header as binary version and binary manager uses it to check the latest binary.
+		So it should be set to a higer value than versions of old binaries if you want to make the binary the latest version.
 
 endmenu # Build Configuration
 
