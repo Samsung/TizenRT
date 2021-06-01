@@ -404,7 +404,7 @@ TEST_SETUP(ecdsa_sign)
 	memset(g_ecdsa_hash.data, 0xa5, SL_TEST_ECC_HASH_LEN);
 
 	g_ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
-	g_ecdsa_mode.hash_t = HAL_HMAC_SHA256;
+	g_ecdsa_mode.hash_t = HAL_HASH_SHA256;
 
 	ST_END_TEST;
 }
@@ -458,7 +458,7 @@ TEST_SETUP(ecdsa_verify)
 	memset(g_ecdsa_hash.data, 0xa5, SL_TEST_ECC_HASH_LEN);
 
 	g_ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
-	g_ecdsa_mode.hash_t = HAL_HMAC_SHA256;
+	g_ecdsa_mode.hash_t = HAL_HASH_SHA256;
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_ecdsa_sign_md(g_hnd, g_ecdsa_mode, &g_ecdsa_hash, SL_TEST_ECC_KEY_SLOT, &g_ecdsa_signature, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
@@ -478,13 +478,13 @@ TEST_TEARDOWN(ecdsa_verify)
 
 	printf("ecdsa hash len(%d)\n", g_ecdsa_hash.data_len);
 	for (int i = 0; i < g_ecdsa_hash.data_len; i++) {
-		printf("%d ", ((char *)g_ecdsa_hash.data)[i]);
+		printf("%x ", ((char *)g_ecdsa_hash.data)[i]);
 	}
 	printf("\n");
 
 	printf("ecdsa signature len(%d)\n", g_ecdsa_signature.data_len);
 	for (int i = 0; i < g_ecdsa_signature.data_len; i++) {
-		printf("%d ", ((char *)g_ecdsa_signature.data)[i]);
+		printf("%x ", ((char *)g_ecdsa_signature.data)[i]);
 	}
 	printf("\n");
 
@@ -506,10 +506,162 @@ TEST_F(ecdsa_verify)
 }
 
 /*
- * Desc: Generate DH parameters
+ * Desc: Get ED25519
+ * This key pair is verified in http://ed25519.herokuapp.com
+ */
+static uint8_t g_ed25519_privkey[] = {
+	0x37, 0x31, 0x64, 0x65, 0x48, 0x53, 0x4d, 0x42,
+	0x4e, 0x4e, 0x56, 0x49, 0x50, 0x39, 0x71, 0x68,
+	0x55, 0x51, 0x75, 0x74, 0x36, 0x36, 0x6d, 0x6f,
+	0x30, 0x4a, 0x65, 0x41, 0x65, 0x79, 0x42, 0x62,
+	0x58, 0x74, 0x61, 0x55, 0x70, 0x62, 0x73, 0x35,
+	0x7a, 0x75, 0x47, 0x52, 0x37, 0x53, 0x53, 0x49,
+	0x55, 0x74, 0x48, 0x54, 0x76, 0x6d, 0x50, 0x35,
+	0x4f, 0x51, 0x73, 0x32, 0x51, 0x48, 0x34, 0x58,
+	0x39, 0x65, 0x38, 0x45, 0x57, 0x6a, 0x43, 0x70,
+	0x37, 0x35, 0x74, 0x4b, 0x43, 0x63, 0x43, 0x4d,
+	0x62, 0x4b, 0x63, 0x63, 0x37, 0x51, 0x3d, 0x3d};
+
+static uint8_t g_ed25519_privkey_only[] = {
+	0xef, 0x57, 0x5e, 0x1d, 0x23, 0x01, 0x34, 0xd5,
+	0x48, 0x3f, 0xda, 0xa1, 0x51, 0x0b, 0xad, 0xeb,
+	0xa9, 0xa8, 0xd0, 0x97, 0x80, 0x7b, 0x20, 0x5b,
+	0x5e, 0xd6, 0x94, 0xa5, 0xbb, 0x39, 0xce, 0xe1};
+
+
+static uint8_t g_ed25519_pubkey[] = {
+	0x91, 0xed, 0x24, 0x88, 0x52, 0xd1, 0xd3, 0xbe,
+	0x63, 0xf9, 0x39, 0x0b, 0x36, 0x40, 0x7e, 0x17,
+	0xf5, 0xef, 0x04, 0x5a, 0x30, 0xa9, 0xef, 0x9b,
+	0x4a, 0x09, 0xc0, 0x8c, 0x6c, 0xa7, 0x1c, 0xed};
+
+#define RW_SLOT_ENTRY 32
+
+TEST_SETUP(ed25519_sign)
+{
+	ST_START_TEST;
+	hal_result_e hres;
+	ST_EXPECT_EQ(SECLINK_OK, sl_init(&g_hnd));
+	hal_data pub_key = {&g_ed25519_pubkey, sizeof(g_ed25519_pubkey), NULL, 0};
+	hal_data priv_key = {&g_ed25519_privkey_only, sizeof(g_ed25519_privkey_only), NULL, 0};
+
+	ST_EXPECT_EQ(0, sl_set_key(g_hnd, HAL_KEY_ECC_25519, RW_SLOT_ENTRY, &pub_key, &priv_key, &hres));
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_ecdsa_signature, SL_TEST_AUTH_MEM_SIZE));
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_ecdsa_hash, SL_TEST_ECC_HASH_LEN));
+	g_ecdsa_hash.data_len = SL_TEST_ECC_HASH_LEN;
+	memset(g_ecdsa_hash.data, 0xa5, SL_TEST_ECC_HASH_LEN);
+
+	g_ecdsa_mode.curve = HAL_ECDSA_CURVE_25519;
+	g_ecdsa_mode.hash_t = HAL_HASH_SHA512;
+
+	ST_END_TEST;
+}
+
+TEST_TEARDOWN(ed25519_sign)
+{
+	ST_START_TEST;
+
+	hal_result_e hres = HAL_FAIL;
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECC_KEY_SLOT, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
+
+	sl_test_free_buffer(&g_ecdsa_hash);
+	sl_test_free_buffer(&g_ecdsa_signature);
+
+	ST_END_TEST;
+}
+
+TEST_F(ed25519_sign)
+{
+	ST_START_TEST;
+
+	hal_result_e hres = HAL_FAIL;
+	ST_EXPECT_EQ(SECLINK_OK, sl_ecdsa_sign_md(g_hnd, g_ecdsa_mode, &g_ecdsa_hash, RW_SLOT_ENTRY, &g_ecdsa_signature, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ST_END_TEST;
+}
+
+/*
+ * Desc: Verify ECDSA
  * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-/* Generate G, P, GX (G^X mod P) */
+TEST_SETUP(ed25519_verify)
+{
+	ST_START_TEST;
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_init(&g_hnd));
+
+	hal_result_e hres;
+	ST_EXPECT_EQ(SECLINK_OK, sl_init(&g_hnd));
+	hal_data pub_key = {&g_ed25519_pubkey, sizeof(g_ed25519_pubkey), NULL, 0};
+	hal_data priv_key = {&g_ed25519_privkey_only, sizeof(g_ed25519_privkey_only), NULL, 0};
+
+	ST_EXPECT_EQ(0, sl_set_key(g_hnd, HAL_KEY_ECC_25519, RW_SLOT_ENTRY, &pub_key, &priv_key, &hres));
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_ecdsa_signature, SL_TEST_AUTH_MEM_SIZE));
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_ecdsa_hash, SL_TEST_ECC_HASH_LEN));
+	g_ecdsa_hash.data_len = SL_TEST_ECC_HASH_LEN;
+	memset(g_ecdsa_hash.data, 0xa5, SL_TEST_ECC_HASH_LEN);
+
+	g_ecdsa_mode.curve = HAL_ECDSA_CURVE_25519;
+	g_ecdsa_mode.hash_t = HAL_HASH_SHA512;
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_ecdsa_sign_md(g_hnd, g_ecdsa_mode, &g_ecdsa_hash, RW_SLOT_ENTRY, &g_ecdsa_signature, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ST_END_TEST;
+}
+
+TEST_TEARDOWN(ed25519_verify)
+{
+	ST_START_TEST;
+
+	hal_result_e hres = HAL_FAIL;
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519, RW_SLOT_ENTRY, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
+
+	printf("ed25519 hash len(%d)\n", g_ecdsa_hash.data_len);
+	for (int i = 0; i < g_ecdsa_hash.data_len; i++) {
+		printf("%x ", ((char *)g_ecdsa_hash.data)[i]);
+	}
+	printf("\n");
+
+	printf("ed25519 signature len(%d)\n", g_ecdsa_signature.data_len);
+	for (int i = 0; i < g_ecdsa_signature.data_len; i++) {
+		printf("%x ", ((char *)g_ecdsa_signature.data)[i]);
+	}
+	printf("\n");
+
+	sl_test_free_buffer(&g_ecdsa_hash);
+	sl_test_free_buffer(&g_ecdsa_signature);
+
+	ST_END_TEST;
+}
+
+TEST_F(ed25519_verify)
+{
+	ST_START_TEST;
+
+	hal_result_e hres = HAL_FAIL;
+	ST_EXPECT_EQ(SECLINK_OK, sl_ecdsa_verify_md(g_hnd, g_ecdsa_mode, &g_ecdsa_hash, &g_ecdsa_signature, RW_SLOT_ENTRY, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ST_END_TEST;
+}
+
+/*
+ * Desc: Generate DH parameters
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ * Generate G, P, GX (G^X mod P)
+ */
 TEST_SETUP(dh_generate_param)
 {
 	ST_START_TEST;
@@ -701,6 +853,103 @@ TEST_TEARDOWN(ecdh_compute_shared_secret)
 }
 
 TEST_F(ecdh_compute_shared_secret)
+{
+	ST_START_TEST;
+
+	// A<--B, B<--A
+	if (ecdh_a.pubkey_x != NULL && ecdh_b.pubkey_x != NULL) {
+		hal_result_e hres = HAL_FAIL;
+		ST_EXPECT_EQ(SECLINK_OK, sl_ecdh_compute_shared_secret(g_hnd, &ecdh_b, SL_TEST_ECDH_KEY_SLOT_A, &g_shared_secret_a, &hres));
+		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_ecdh_compute_shared_secret(g_hnd, &ecdh_a, SL_TEST_ECDH_KEY_SLOT_B, &g_shared_secret_b, &hres));
+		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+		ST_EXPECT_EQ(g_shared_secret_a.data_len, g_shared_secret_b.data_len);
+		ST_EXPECT_EQ(0, memcmp(g_shared_secret_a.data, g_shared_secret_b.data, g_shared_secret_a.data_len));
+	}
+
+	ST_END_TEST;
+}
+
+/*
+ * Desc: Compute ECDH shared secret
+ * Referred https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
+ */
+TEST_SETUP(x25519_compute_shared_secret)
+{
+	ST_START_TEST;
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_init(&g_hnd));
+	hal_result_e hres = HAL_FAIL;
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_A, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_B, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&key_a, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer_priv(&key_a, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&key_b, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer_priv(&key_b, SL_TEST_AUTH_MEM_SIZE));
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_A, &key_a, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_B, &key_b, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ecdh_a.pubkey_x = (hal_data *)zalloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, ecdh_a.pubkey_x);
+	ecdh_a.pubkey_y = (hal_data *)zalloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, ecdh_a.pubkey_y);
+	ecdh_b.pubkey_x = (hal_data *)zalloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, ecdh_b.pubkey_x);
+	ecdh_b.pubkey_y = (hal_data *)zalloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, ecdh_b.pubkey_y);
+
+	//data: pubkey_x, priv: pubkey_y
+	ecdh_a.curve = HAL_ECDSA_CURVE_25519;
+	ecdh_a.pubkey_x->data = key_a.data;
+	ecdh_a.pubkey_x->data_len = key_a.data_len;
+	ecdh_a.pubkey_y->data = key_a.priv;
+	ecdh_a.pubkey_y->data_len = key_a.priv_len;
+
+	//data: pubkey_x, priv: pubkey_y
+	ecdh_b.curve = HAL_ECDSA_CURVE_25519;
+	ecdh_b.pubkey_x->data = key_b.data;
+	ecdh_b.pubkey_x->data_len = key_b.data_len;
+	ecdh_b.pubkey_y->data = key_b.priv;
+	ecdh_b.pubkey_y->data_len = key_b.priv_len;
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_shared_secret_a, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_shared_secret_b, SL_TEST_AUTH_MEM_SIZE));
+	ST_END_TEST;
+}
+
+TEST_TEARDOWN(x25519_compute_shared_secret)
+{
+	ST_START_TEST;
+
+	hal_result_e hres = HAL_FAIL;
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_A, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_B, &hres));
+	ST_EXPECT_EQ(HAL_SUCCESS, hres);
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
+
+	sl_test_free_buffer(&key_a);
+	sl_test_free_buffer(&key_b);
+	free(ecdh_a.pubkey_x);
+	free(ecdh_a.pubkey_y);
+	free(ecdh_b.pubkey_x);
+	free(ecdh_b.pubkey_y);
+	sl_test_free_buffer(&g_shared_secret_a);
+	sl_test_free_buffer(&g_shared_secret_b);
+
+	ST_END_TEST;
+}
+
+TEST_F(x25519_compute_shared_secret)
 {
 	ST_START_TEST;
 
@@ -915,9 +1164,13 @@ void sl_auth_test(void)
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "ECDSA signature", ecdsa_sign);
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "ECDSA verification", ecdsa_verify);
 
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "ED25519 signature", ed25519_sign);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "ED25519 verify", ed25519_verify);
+
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Generate DH parameters", dh_generate_param);
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Compute DH shared secret", dh_compute_shared_secret);
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Compute ECDH shared secret", ecdh_compute_shared_secret);
+	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Compute X25519 shared secret", x25519_compute_shared_secret);
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Set certificate", set_certificate);
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Get certificate", get_certificate);
 	ST_SET_SMOKE(sl_auth, SL_TEST_AUTH_TRIAL, SL_TEST_AUTH_LIMIT_TIME, "Remove certificate", remove_certificate);
