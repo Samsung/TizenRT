@@ -170,6 +170,7 @@ TEST_F(set_sym_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("set symmetric key in ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_AES_256, g_ro_slot_index[i], &g_aes_key_in, NULL, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -187,12 +188,14 @@ TEST_F(get_sym_key_ro)
 	// the result depends on what key type is stored in RO area. so modify return type latter
 	for (int i = 0; i < RO_VALID_RANGE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("get symmetric key ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_AES_256, g_ro_slot_index[i], &g_aes_key_out, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
 
 	for (int i = RO_VALID_RANGE; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("get symmetric key ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_AES_256, g_ro_slot_index[i], &g_aes_key_out, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_SLOT_RANGE, hres);
 	}
@@ -209,6 +212,7 @@ TEST_F(remove_sym_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("remove symmetric key in ro area slot (%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_AES_256, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -225,6 +229,7 @@ TEST_F(generate_sym_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("generate symmetric key in ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_AES_256, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -241,6 +246,7 @@ TEST_F(set_public_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("set public key in ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &g_pubkey_in, NULL, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -258,12 +264,14 @@ TEST_F(get_public_key_ro)
 	// the result depends on what key type is stored in RO area. so modify return type latter
 	for (int i = 0; i < RO_VALID_RANGE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("get public key in ro area slot (%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &g_pubkey_out, &hres));
 		ST_EXPECT_EQ(HAL_SUCCESS, hres);
 	}
 
 	for (int i = RO_VALID_RANGE; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("get public key in ro area slot (%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &g_pubkey_out, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_SLOT_RANGE, hres);
 	}
@@ -280,6 +288,7 @@ TEST_F(remove_public_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("remove public key in ro area slot (%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -297,6 +306,7 @@ TEST_F(generate_public_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("generate public key in ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -314,6 +324,7 @@ TEST_F(set_private_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("set private key in ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], NULL, &g_prikey_in, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -331,6 +342,7 @@ TEST_F(get_private_key_ro)
 	// the result depends on what key type is stored in RO area. so modify return type latter
 	for (int i = 0; i < RO_VALID_RANGE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("set private key in ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &g_prikey_out, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -353,6 +365,7 @@ TEST_F(remove_private_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("remove private key in ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -370,6 +383,7 @@ TEST_F(generate_private_key_ro)
 
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("generate private key in ro area slot(%d)\n", g_ro_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -405,6 +419,7 @@ TEST_F(set_sym_key_rw)
 
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("set symmetric key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_AES_256, g_rw_slot_index[i], &g_aes_key_in, NULL, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
@@ -444,6 +459,7 @@ TEST_F(get_sym_key_rw)
 	// it's symmetric key, so API should not return key value.
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("get symmetric key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_AES_256, g_rw_slot_index[i], &g_aes_key_out, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
@@ -475,6 +491,7 @@ TEST_F(remove_sym_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("remove symmetric key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_AES_256, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
@@ -506,6 +523,7 @@ TEST_F(generate_sym_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("generate symmetric key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_AES_256, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
@@ -540,6 +558,7 @@ TEST_F(set_public_key_rw)
 
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("set public key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &g_pubkey_in, NULL, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
@@ -579,6 +598,7 @@ TEST_F(get_public_key_rw)
 	// it's symmetric key, so API should not return key value.
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("get public key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &g_pubkey_out, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
@@ -610,6 +630,7 @@ TEST_F(remove_public_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("remove public key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
@@ -641,6 +662,7 @@ TEST_F(generate_public_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("generate public key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
@@ -675,6 +697,7 @@ TEST_F(set_private_key_rw)
 
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("set private key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], NULL, &g_prikey_in, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
@@ -714,6 +737,7 @@ TEST_F(get_private_key_rw)
 	// it's symmetric key, so API should not return key value.
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
+		printf("get private key in rw area slot(%d)\n", g_rw_slot_index[i]);
 		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &g_prikey_out, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
