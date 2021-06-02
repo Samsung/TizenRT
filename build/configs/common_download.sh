@@ -307,9 +307,7 @@ erase()
 		echo "      Erasing All"
 		echo "=========================="
 		for partidx in ${!parts[@]}; do
-			if [[ "${parts[$partidx]}" == "userfs" ]];then
-				continue
-			elif [[ "${parts[$partidx]}" == "ss" ]];then
+			if [[ "${parts[$partidx]}" == "ss" ]];then
 				continue
 			else
 				echo ""
