@@ -93,13 +93,13 @@ static void _free_scanlist(void)
 rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_result)
 {
 	wifi_utils_scan_list_s *scan_list;
-	scan_list = (wifi_utils_scan_list_s *)rtw_zmalloc(sizeof(wifi_utils_scan_list_s));
-	if (scan_list == NULL) {
-		ndbg("\r\n[app_scan_result_handler]:Fail to malloc scan_list\r\n");
-		return RTW_ERROR;
-	}
 
 	if (malloced_scan_result->scan_complete != RTW_TRUE) {
+		scan_list = (wifi_utils_scan_list_s *)rtw_zmalloc(sizeof(wifi_utils_scan_list_s));
+		if (scan_list == NULL) {
+			ndbg("\r\n[app_scan_result_handler]:Fail to malloc scan_list\r\n");
+			return RTW_ERROR;
+		}
 		rtw_scan_result_t *record = &malloced_scan_result->ap_details;
 		record->SSID.val[record->SSID.len] = 0; /* Ensure the SSID is null terminated */
 		scan_list->ap_info.channel = record->channel;
