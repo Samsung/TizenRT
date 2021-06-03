@@ -65,6 +65,7 @@ da_ble_result_type rtw_ble_server_deinit(void)
     }
 
     ble_tizenrt_app_deinit();
+    is_server_init = false;
     return DA_BLE_RESULT_TYPE_SUCCESS; 
 }
 

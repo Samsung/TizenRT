@@ -97,6 +97,7 @@ da_ble_result_type rtw_ble_combo_deinit(void)
     client_init_parm = NULL;
     os_mem_free(ble_tizenrt_bond_req_table);
     ble_tizenrt_bond_req_table = NULL;
+    is_server_init = false;
     return DA_BLE_RESULT_TYPE_SUCCESS; 
 }
 #endif /* DA_BLE_COMBO_C_ */
