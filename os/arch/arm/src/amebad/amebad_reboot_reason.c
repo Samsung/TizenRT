@@ -63,22 +63,17 @@
  ****************************************************************************/
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 
-static reboot_reason_code_t backup_reg;
+static reboot_reason_code_t reboot_reason;
 
-void up_reboot_reason_init(void)
-{
-	/* Read the same backup register for the boot reason */
-	backup_reg = BKUP_Read(BKUP_REG1);
-	BKUP_Write(BKUP_REG1, REBOOT_REASON_INITIALIZED);
-
-}
-
-reboot_reason_code_t up_reboot_reason_read(void)
+static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 {
 	u32 boot_reason = 0;
 
-	if (backup_reg != REBOOT_REASON_INITIALIZED) {
-		return backup_reg;
+	/* Read the same backup register for the boot reason */
+	boot_reason = BKUP_Read(BKUP_REG1);
+
+	if (boot_reason != REBOOT_REASON_INITIALIZED) {
+		return boot_reason;
 	} else {
 		/* Read AmebaD Boot Reason, WDT and HW reset supported */
 		boot_reason = BOOT_Reason();
@@ -97,6 +92,17 @@ reboot_reason_code_t up_reboot_reason_read(void)
 	return REBOOT_UNKNOWN;
 }
 
+void up_reboot_reason_init(void)
+{
+	reboot_reason = up_reboot_reason_get_hw_value();
+	BKUP_Write(BKUP_REG1, REBOOT_REASON_INITIALIZED);
+}
+
+reboot_reason_code_t up_reboot_reason_read(void)
+{
+	return reboot_reason;
+}
+
 void up_reboot_reason_write(reboot_reason_code_t reason)
 {
 	/* Set the specific bit in BKUP_REG1 */
@@ -109,7 +115,7 @@ void up_reboot_reason_clear(void)
 	 * If chip vendor needs another thing to do, please change the below.
 	 */
 	up_reboot_reason_write(REBOOT_REASON_INITIALIZED);
-	backup_reg = REBOOT_REASON_INITIALIZED;
+	reboot_reason = REBOOT_REASON_INITIALIZED;
 }
 
 bool up_reboot_reason_is_written(void)
