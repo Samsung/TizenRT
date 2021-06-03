@@ -68,6 +68,10 @@
 
 #include <arch/board/board.h>
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <arch/reboot_reason.h>
+#endif
+
 #include "up_arch.h"
 #include "up_internal.h"
 
@@ -164,6 +168,11 @@ void up_initialize(void)
 	/* Initialize global variables */
 
 	current_regs = NULL;
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_init();
+	lldbg("[Reboot Reason] : %d\n", up_reboot_reason_read());
+#endif
 
 	/* Calibrate the timing loop */
 
