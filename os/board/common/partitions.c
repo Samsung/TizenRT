@@ -34,6 +34,13 @@
 #include <tinyara/fs/mksmartfs.h>
 #endif
 
+#ifdef CONFIG_BOARDCTL_RESET
+#include <sys/boardctl.h>
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#endif
+#endif
+
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
 
@@ -317,9 +324,29 @@ void automount_fs_partition(partition_info_t *partinfo)
 		ret = mount(fs_devname, "/mnt", "smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
+
+#ifdef CONFIG_BOARDCTL_RESET
+			/* Mount was failed, so we'll try low level format forcely */
+			lldbg("Low level format will be done, then board will reset\n");
+
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+			ret = mksmartfs(fs_devname, 1, true);
+#else
+			ret = mksmartfs(fs_devname, true);
+#endif
+			if (ret != OK) {
+				lldbg("ERROR: mksmartfs on %s failed again\n", fs_devname);
+				return;
+			} 
+			/* After llformat, Reset to free all resources & initialize dev of smartfs */
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+			up_reboot_reason_write(REBOOT_SYSTEM_USERFS_FORMAT);
+#endif
+			boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#endif /* CONFIG_BOARDCTL_RESET */
 		}
 	}
-#endif
+#endif /* CONFIG_AUTOMOUNT_USERFS */
 
 #ifdef CONFIG_AUTOMOUNT_ROMFS
 	snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->romfs_partno);

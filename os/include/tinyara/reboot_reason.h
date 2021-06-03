@@ -30,10 +30,11 @@ typedef enum {
 	REBOOT_SYSTEM_WATCHDOG		= 4,	/* Watchdog timeout */
 	REBOOT_SYSTEM_HW_RESET		= 5,	/* HW power reset */
 	REBOOT_SYSTEM_USER_INTENDED	= 6,	/* Reboot from user intention */
+	REBOOT_SYSTEM_USERFS_FORMAT	= 7,	/* Reboot after low level format for File system */
 	REBOOT_SYSTEM_WIFICORE_WATCHDOG = 11,	/* Wi-Fi Core Watchdog Reset */
 	REBOOT_SYSTEM_WIFICORE_PANIC    = 12,	/* Wi-Fi Core Panic */
 	REBOOT_SYSTEM_BINARY_UPDATE	= 34,	/* Reboot for Binary Update */
-	REBOOT_UNKNOWN 	 		= 99,
+	REBOOT_UNKNOWN			= 99,
 } reboot_reason_code_t;
 
 #endif					/* __INCLUDEREBOOT_REASON_H */
