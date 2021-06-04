@@ -73,6 +73,10 @@ config FTL_ENABLED
 	bool "Enable FTL"
 	default n
 
+config AMEBAD_BLE_DEBUG
+	bool "Enable BLE Debug"
+	default n
+
 config AMEBAD_BLE_PERIPHERAL
 	bool "Enable Amebad BLE Peripheral"
 	default n

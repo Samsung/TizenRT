@@ -79,7 +79,11 @@ extern "C" {
 #define EFUSE_SW_DRIVER_DEBUG_LOG    BIT6
 #define EFUSE_SW_RSVD2               BIT7
 
+#ifdef CONFIG_AMEBAD_BLE_DEBUG
 #define CHECK_SW(x)                  (HAL_READ32(SPI_FLASH_BASE, FLASH_SYSTEM_DATA_ADDR + 0x28) & x)
+#else
+#define CHECK_SW(x)                  1
+#endif
 
 extern uint8_t rltk_wlan_is_mp(void);
 
