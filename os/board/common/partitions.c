@@ -86,7 +86,6 @@ FAR struct mtd_dev_s *mtd_initialize(void)
 
 static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, const char *types, partition_info_t *partinfo)
 {
-	bool do_ftlinit = false;
 #ifdef CONFIG_FS_ROMFS
 	bool save_romfs_partno = false;
 #endif
@@ -100,6 +99,7 @@ static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, 
 	}
 
 #ifdef CONFIG_MTD_FTL
+	bool do_ftlinit = false;
 	if (!strncmp(types, "ftl,", 4)
 #ifdef CONFIG_BINARY_MANAGER
 	|| !strncmp(types, "kernel,", 7)
