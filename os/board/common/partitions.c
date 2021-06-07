@@ -48,6 +48,7 @@
 struct partition_data_s g_flash_part_data = {
 	CONFIG_FLASH_PART_TYPE,
 	CONFIG_FLASH_PART_SIZE,
+	CONFIG_FLASH_MINOR,
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	CONFIG_FLASH_PART_NAME
 #endif
@@ -58,6 +59,7 @@ struct partition_data_s g_flash_part_data = {
 struct partition_data_s g_second_flash_part_data = {
 	CONFIG_SECOND_FLASH_PART_TYPE,
 	CONFIG_SECOND_FLASH_PART_SIZE,
+	CONFIG_SECOND_FLASH_MINOR,
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	CONFIG_SECOND_FLASH_PART_NAME
 #endif
@@ -84,7 +86,7 @@ FAR struct mtd_dev_s *mtd_initialize(void)
 	return mtd;
 }
 
-static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, const char *types, partition_info_t *partinfo)
+static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, int partno, const char *types, partition_info_t *partinfo)
 {
 #ifdef CONFIG_FS_ROMFS
 	bool save_romfs_partno = false;
@@ -131,7 +133,7 @@ static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, 
 		char partref[4];
 
 		snprintf(partref, sizeof(partref), "p%d", partno);
-		smart_initialize(FLASH_MINOR, mtd_part, partref);
+		smart_initialize(minor, mtd_part, partref);
 		partinfo->smartfs_partno = partno;
 	}
 #endif
@@ -153,6 +155,7 @@ static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, 
 			save_timezone_partno = false;
 		}
 #endif
+		partinfo->minor = minor;
 	}
 #endif
 	return OK;
@@ -216,6 +219,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 	int partoffset;
 	char *types;
 	char *sizes;
+	int minor;
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	char part_name[MTD_PARTNAME_LEN + 1];
 	int index = 0;
@@ -243,6 +247,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 	partoffset = 0;
 	types = part_data->types;
 	sizes = part_data->sizes;
+	minor = part_data->minor;
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	names = part_data->names;
 #endif
@@ -271,7 +276,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 			return ERROR;
 		}
 
-		ret = type_specific_initialize(mtd_part, partno, types, partinfo);
+		ret = type_specific_initialize(minor, mtd_part, partno, types, partinfo);
 		if (ret != OK) {
 			lldbg("ERROR: fail to initialize type specific mtd part.\n");
 			return ERROR;
@@ -305,7 +310,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 	}
 #ifdef CONFIG_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
-	snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", FLASH_MINOR, partinfo->smartfs_partno);
+	snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", partinfo->minor, partinfo->smartfs_partno);
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	ret = mksmartfs(fs_devname, 1, false);
 #else

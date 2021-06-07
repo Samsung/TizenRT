@@ -29,17 +29,17 @@
 struct partition_data_s {
 	char *types;
 	char *sizes;
+	int minor;
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	char *names;
 #endif
 };
 
-#define FLASH_MINOR 0 
-
 struct partition_info_s {
 	int smartfs_partno;
 	int romfs_partno;
 	int timezone_partno;
+	int minor;
 };
 typedef struct partition_info_s partition_info_t;
 
