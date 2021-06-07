@@ -174,6 +174,7 @@ static inline void jedec_pagewrite(struct jedec_dev_s *priv, FAR const uint8_t *
 /* MTD driver methods */
 
 static int jedec_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks);
+static int jedec_is_erased(FAR struct jedec_dev_s *dev, off_t block);
 static ssize_t jedec_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buf);
 static ssize_t jedec_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf);
 static ssize_t jedec_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer);
@@ -537,6 +538,70 @@ static inline void jedec_bytewrite(struct jedec_dev_s *priv, FAR const uint8_t *
 #endif
 
 /************************************************************************************
+ * Name: jedec_is_erased
+ ************************************************************************************/
+static int jedec_is_erased(FAR struct jedec_dev_s *priv, off_t block)
+{
+	size_t offset;
+	size_t count;
+	uint32_t *buffer;
+	uint32_t erasesize;
+	jedec_geometry_t geo;
+	int ret = 1;
+	
+	DEBUGASSERT(priv);
+	geo = priv->geo;
+
+	if (geo.subsectorshift > 0) {
+		erasesize = (1 << geo.subsectorshift);
+	} else {
+		erasesize = (1 << geo.sectorshift);
+	}
+
+	buffer = kmm_malloc(erasesize * sizeof(uint8_t));
+	if (!buffer) {
+		set_errno(ENOMEM);
+		return 0;
+	}
+	offset = block * erasesize;
+
+	jedec_waitwritecomplete(priv);
+	
+	/* Select this FLASH part */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
+
+	/* Send "Read from Memory" instruction */
+
+	(void)SPI_SEND(priv->dev, JEDEC_READ);
+
+	/* Send the page offset high byte first. */
+
+	(void)SPI_SEND(priv->dev, (offset >> 16) & 0xff);
+	(void)SPI_SEND(priv->dev, (offset >> 8) & 0xff);
+	(void)SPI_SEND(priv->dev, offset & 0xff);
+
+	/* Then read all of the requested bytes */
+	
+	SPI_RECVBLOCK(priv->dev, (FAR uint8_t *)buffer, erasesize);
+
+	/* Deselect the FLASH and unlock the SPI bus */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
+
+	/* Because of sudden power off, some of bits still can be '0', verify here */
+	for (count = 0; count < (erasesize / 4); count++) {
+		if (buffer[count] != 0xffffffff) {
+			fdbg("written wrongly block : %d data : %08lx\n", block, buffer);
+			ret = 0;
+			break;
+		}
+	}
+	kmm_free(buffer);
+	return ret;
+}
+
+/************************************************************************************
  * Name: jedec_erase
  ************************************************************************************/
 
@@ -544,7 +609,7 @@ static int jedec_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nbloc
 {
 	FAR struct jedec_dev_s *priv = (FAR struct jedec_dev_s *)dev;
 	size_t blocksleft = nblocks;
-
+	int ret = 0;
 	fvdbg("startblock: %08lx nblocks: %d\n", (long)startblock, (int)nblocks);
 
 	/* Lock access to the SPI bus until we complete the erase */
@@ -564,7 +629,7 @@ static int jedec_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nbloc
 			sectorboundry = (startblock + blkper - 1) / blkper;
 			sectorboundry *= blkper;
 
-			/* If we are on a sector boundry and have at least a full sector
+			/* If we are on a sector boundary and have at least a full sector
 			 * of blocks left to erase, then we can do a full sector erase.
 			 */
 
@@ -579,6 +644,14 @@ static int jedec_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nbloc
 				/* Just do a sub-sector erase */
 
 				jedec_sectorerase(priv, startblock, JEDEC_SSE);
+				
+				/* TODO we verify erased state only for sub-sector erase for now, let's think about more good idea */
+				ret = jedec_is_erased(priv, startblock);
+				if (!ret) {
+					fdbg("erase failed nblocks : %d blocksleft : %d\n", nblocks, blocksleft);
+					jedec_unlock(priv->dev);
+					return nblocks - blocksleft;
+				}
 				startblock++;
 				blocksleft--;
 				continue;
