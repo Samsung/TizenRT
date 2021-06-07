@@ -494,7 +494,9 @@ post:
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXE), $(BIN_EXT))
+ifeq ($(CONFIG_FLASH_PARTITION),y)
 	$(Q) python ./tools/check_output_size.py
+endif
 	$(Q) $(call MAKE_BOOTPARAM)
 
 ifeq ($(CONFIG_UBOOT_UIMAGE),y)
