@@ -91,15 +91,23 @@ int binary_manager(int argc, char *argv[])
 #endif
 	struct mq_attr attr;
 	binmgr_request_t request_msg;
+	bool is_found_kpart = true;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	int ret;
+	bool is_found_ubin = true;
 
 	/* Scan user binary files and Register them */
 	binary_manager_scan_ubin_all();
 
-	ASSERT(binary_manager_get_ucount() > 0);
+	if (binary_manager_get_ucount() <= 0) {
+		is_found_ubin = false;
+		goto errout_with_nobinary;
+	}
 #endif
-	ASSERT(binary_manager_get_kcount() > 0 && binary_manager_scan_kbin());
+	if (binary_manager_get_kcount() <= 0 || !binary_manager_scan_kbin()) {
+		is_found_kpart = false;
+		goto errout_with_nobinary;
+	}
 
 	bmvdbg("Binary Manager STARTED\n");
 
@@ -197,4 +205,20 @@ int binary_manager(int argc, char *argv[])
 	}
 
 	return 0;
+errout_with_nobinary:
+	while (1) {
+		lldbg("=============== !!ERROR!! ============== \n");
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		if (!is_found_ubin) {
+			lldbg("ERROR!! Not found valid user binaries.\n");
+			lldbg("Please check user binary and smartfs configurations.\n");
+		}
+#endif
+		if (!is_found_kpart) {
+			lldbg("ERROR!! Not found kernel partitions because parsing a partition list is failed.\n");
+			lldbg("Please check logs from configure_mtd_partitions and whether the partition 'kernel' exists in CONFIG_FLASH_PART_TYPE.\n");
+		}
+		lldbg("Enable CONFIG_DEBUG_BINMGR_ERROR if you want to know exact reason.\n\n");
+		sleep(10);
+	}
 }
