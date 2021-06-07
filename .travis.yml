@@ -18,6 +18,7 @@ env:
     - TIZENRT_IMG_VERSION=latest
   
 before_install:
+- echo "fac2145f-613f-4cfb-9e62-cd63a7d63475" | docker login -u "tizenrtpull" --password-stdin
 - docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}
 - echo "${TRAVIS_BUILD_DIR}"
 
