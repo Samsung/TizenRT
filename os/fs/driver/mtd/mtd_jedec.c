@@ -140,7 +140,8 @@ jedec_geometry_t g_jedec_device_info_list[] = {
 	{0xA1, 0x28, 0x16, "Fudan", "4MB", 16, 64, 8, 16384, 12},
 	{0xEF, 0x40, 0x16, "Winbond", "4MB", 16, 64, 8, 16384, 12},
 	{0xEF, 0x40, 0x17, "Winbond", "8MB", 16, 128, 8, 32768, 12},
-	{0x9D, 0x60, 0x16, "ISSI",    "4MB", 16, 64,  8, 16384, 12},
+	{0x9D, 0x60, 0x16, "ISSI", "4MB", 16, 64, 8, 16384, 12},
+	{0x20, 0x40, 0x16, "XMC", "4MB", 16, 64, 8, 16384, 12},
 };
 
 /* This type represents the state of the MTD device.  The struct mtd_dev_s
