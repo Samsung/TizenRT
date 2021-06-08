@@ -560,6 +560,7 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
 	if (msg->event == EVT_DISCONNECT_CMD) {
+		dhcpc_close_ipaddr();
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_DISCONNECTED) {
@@ -568,6 +569,7 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 		wifimgr_call_cb(CB_STA_RECONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 #else
+		dhcpc_close_ipaddr();
 		wifimgr_call_cb(CB_STA_DISCONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 #endif /* CONFIG_DISABLE_EXTERNAL_AUTOCONNECT */
