@@ -26,19 +26,20 @@ import sys
 import string
 
 cfg_file = os.path.dirname(__file__) + '/../.config'
+build_folder = os.path.dirname(__file__) + '/../../build'
 
-def get_config_value(file_name, config):
+def get_value_from_file(file_name, target):
 	with open(file_name, 'r+') as f:
 		lines = f.readlines()
 		value = 'None'
 		for line in lines:
-			if config in line:
+			if target in line:
 				value = (line.split("=")[1])
 				break		
 	return value;
 
-PARTITION_SIZE_LIST = get_config_value(cfg_file, "CONFIG_FLASH_PART_SIZE=")
-PARTITION_NAME_LIST = get_config_value(cfg_file, "CONFIG_FLASH_PART_NAME=")
+PARTITION_SIZE_LIST = get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
+PARTITION_NAME_LIST = get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
 
 if PARTITION_SIZE_LIST == 'None' :
 	sys.exit(0)
@@ -57,16 +58,18 @@ for name in NAME_LIST :
 KERNEL_PARTITION_SIZE = int(SIZE_LIST[KERNEL_IDX]) * 1024
 
 # Check the board type. Because kernel binary name is different based on board type.
-BOARD_TYPE = get_config_value(cfg_file, "CONFIG_ARCH_BOARD=")
+BOARD_TYPE = get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=")
 BOARD_TYPE = BOARD_TYPE.replace('"', '')
 BOARD_TYPE = BOARD_TYPE.rstrip("\n")
 
-if BOARD_TYPE == "rtl8721csm" :
-	# If the board is rtl8721csm, the kernel binary name is km0_km4_image2.bin
-	output_path = os.path.dirname(__file__) + '/../../build/output/bin/km0_km4_image2.bin'
+# Read the kernel binary name from board_metadata.txt.
+metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
+if os.path.isfile(metadata_file) :
+	kernel_bin_name = get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n')
+	output_path = build_folder + '/output/bin/' + kernel_bin_name + '.bin'
 else :
-	# Other cases, the kernel binary name is tinyara.bin
-	output_path = os.path.dirname(__file__) + '/../../build/output/bin/tinyara.bin'
+	print("!!! There is no board_metadata.txt. Check the output size with tinyara.bin by default !!!")
+	output_path = build_folder + '/output/bin/tinyara.bin'
 
 # Partition sizes in the list are in KB, so calculate all sizes in KB.
 KERNEL_BINARY_SIZE=os.path.getsize(output_path)
