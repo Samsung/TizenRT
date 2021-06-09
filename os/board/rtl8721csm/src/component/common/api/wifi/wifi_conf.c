@@ -156,6 +156,8 @@ static struct task_struct wifi_autoreconnect_task;
 #endif
 #endif
 
+#define MAX_STA_LIMIT 1
+
 /******************************************************
  *               Function Definitions
  ******************************************************/
@@ -1528,7 +1530,12 @@ int wifi_set_mode(rtw_mode_t mode)
 	}
 #endif
 #endif
-
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	if (wifi_mode == RTW_MODE_AP) {
+		RTW_API_INFO("\nMax sta: %d\n", MAX_STA_LIMIT);
+		wext_set_sta_num(MAX_STA_LIMIT);
+	}
+#endif
 	return 0;
 Exit:
 #ifdef CONFIG_WLAN_SWITCH_MODE
