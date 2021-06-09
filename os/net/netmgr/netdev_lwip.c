@@ -782,7 +782,7 @@ static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 		return -1;
 	}
 
-	char *rnetif = (char *)kmm_malloc(sizeof(struct netif) + sizeof(struct netdev *));
+	char *rnetif = (char *)kmm_zalloc(sizeof(struct netif) + sizeof(struct netdev *));
 	if (!rnetif) {
 		return -1;
 	}
