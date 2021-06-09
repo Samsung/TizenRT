@@ -274,7 +274,7 @@ SECTIONS
 	{
 		_sdata = ABSOLUTE(.);
 		__data_start__ = .;
-		*(.data*)
+		*(EXCLUDE_FILE (*libapps.a:* *libframework.a:* *libiotivity.a:* *libexternal.a:*) .data*)
 		__data_end__ = .;
 		_edata = ABSOLUTE(.);
 		__ram_image2_text_end__ = .;
@@ -285,7 +285,7 @@ SECTIONS
 	{
 		_sbss = ABSOLUTE(.);
 		__bss_start__ = .;
-		*(.bss*)
+		*(EXCLUDE_FILE (*libapps.a:* *libframework.a:* *libiotivity.a:* *libexternal.a:*) .bss*)
 		*(COMMON)
 		__bss_end__ = .;
 
@@ -384,6 +384,10 @@ SECTIONS
 		*(.psram.data*)
 		. = ALIGN (32);
 		*(.psram.rodata*)
+		*libapps.a:*(.data*)
+		*libiotivity.a:*(.data*)
+		*libexternal.a:*(.data*)
+		*libframework.a:*(.data*)
 	} > PSRAM_NS
 
 	.psram_image2.bss :
@@ -391,6 +395,10 @@ SECTIONS
 		. = ALIGN (32);
 		__psram_bss_start__ = .;
 		*(.psram.bss*)
+		*libapps.a:*(.bss*)
+		*libiotivity.a:*(.bss*)
+		*libexternal.a:*(.bss*)
+		*libframework.a:*(.bss*)
 		__psram_bss_end__ = .;
 	} > PSRAM_NS
 
