@@ -136,19 +136,10 @@
 
 #define BAD_MIC_COUNTERMEASURE 1
 #define DEFRAGMENTATION 1
+#define RX_AGGREGATION 1
+#define RX_AMSDU 1
 
 #define WIFI_LOGO_CERTIFICATION 0
-#if WIFI_LOGO_CERTIFICATION
-    #define RX_AGGREGATION 1
-	#define RX_AMSDU 1
-#else
-	#ifdef CONFIG_HIGH_TP_TEST
-    		#define RX_AGGREGATION 1
-	#else
-		#define RX_AGGREGATION 0
-	#endif
-	#define RX_AMSDU 0
-#endif
 
 #if defined(CONFIG_PLATFORM_8711B)
 	#define CONFIG_FW_C2H_PKT
