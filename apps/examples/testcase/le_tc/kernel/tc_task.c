@@ -416,6 +416,31 @@ static void tc_task_prctl(void)
 	TC_ASSERT_EQ_ERROR_CLEANUP("prctl", strncmp(getname, setname, CONFIG_TASK_NAME_SIZE), 0, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
 
 	prctl(PR_SET_NAME, oldname, 0, 0, 0);
+	TC_ASSERT_EQ("prctl", ret_chk, OK);
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	int reboot_reason_test_val = 100;
+
+	/* Clear, Write & Read the written reboot reason value */
+
+	ret_chk = prctl(PR_REBOOT_REASON_CLEAR);
+	TC_ASSERT_EQ("prctl", ret_chk, OK);
+
+	ret_chk = prctl(PR_REBOOT_REASON_WRITE, reboot_reason_test_val);
+	TC_ASSERT_EQ("prctl", ret_chk, OK);
+
+	ret_chk = prctl(PR_REBOOT_REASON_READ);
+	/* This check is only for a positive return value.
+	 * Reason being board cannot be rebooted for CTC evaluation
+	 * and the value written before a reboot only reflects after reboot */
+	TC_ASSERT_GEQ("prctl", ret_chk, OK);
+
+	/* Clear the latest reboot_reason_test_val reboot reason */
+
+	ret_chk = prctl(PR_REBOOT_REASON_CLEAR);
+	TC_ASSERT_GEQ("prctl", ret_chk, OK);
+#endif
+
 	TC_SUCCESS_RESULT();
 }
 
