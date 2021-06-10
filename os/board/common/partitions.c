@@ -155,9 +155,9 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 			save_timezone_partno = false;
 		}
 #endif
-		partinfo->minor = minor;
 	}
 #endif
+	partinfo->minor = minor;
 	return OK;
 }
 
