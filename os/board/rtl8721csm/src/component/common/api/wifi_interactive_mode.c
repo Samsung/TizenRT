@@ -789,12 +789,7 @@ int8_t cmd_wifi_off(void)
 		}
 	}
 	RTW_API_INFO("\n\rWIFI Mode Change instead of WIFI reload\r\n");
-
-#if 0
-	if (!wifi_off())
-		return 0;
-	return -1;
-#endif
+	return 0;
 #endif
 }
 
