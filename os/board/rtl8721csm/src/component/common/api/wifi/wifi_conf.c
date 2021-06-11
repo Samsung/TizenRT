@@ -381,7 +381,7 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 			if(rtw_join_status & JOIN_NO_NETWORKS)
 				error_flag = RTW_NONE_NETWORK;
 
-			else if(rtw_join_status == 0)
+			else if(rtw_join_status == JOIN_CONNECTING)
 		 		error_flag = RTW_CONNECT_FAIL;
 
 		}else if(join_user_data->network_info.security_type == RTW_SECURITY_WPA2_AES_PSK){
@@ -389,7 +389,7 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 			if(rtw_join_status & JOIN_NO_NETWORKS)
 				error_flag = RTW_NONE_NETWORK;
 
-			else if(rtw_join_status == 0)
+			else if(rtw_join_status == JOIN_CONNECTING)
 		 		error_flag = RTW_CONNECT_FAIL;
 
 			else if(rtw_join_status == (JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING))
