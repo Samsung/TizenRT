@@ -117,7 +117,7 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WEP_SHARED;
 			break;
 		case RTW_SECURITY_WEP_PSK:
-			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
+			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WEP_SHARED;
 			break;
 		case RTW_SECURITY_WPA_TKIP_PSK:
 			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
