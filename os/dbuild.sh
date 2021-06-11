@@ -413,7 +413,7 @@ function BUILD()
 		DOCKER_OPT="-i"
 	fi
 
-	HOSTNAME="-h=`git config user.name`" # set github username instead of hostname, "-h=`hostname`"
+	HOSTNAME="-h=`git config user.name | tr -d ' '`" # set github username instead of hostname, "-h=`hostname`"
 	LOCALTIME="-v /etc/localtime:/etc/localtime:ro"
 	
 	DOCKER_IMAGES=`docker images | grep tizenrt/tizenrt | awk '{print $2}'`
