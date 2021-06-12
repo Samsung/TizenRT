@@ -207,13 +207,12 @@ static int g_mode = 0; // check program is running
 		printf("[WT] <--%s\n", __FUNCTION__);	\
 	} while (0)
 
-/* Supported security method
- */
+/* Supported security method */
 static const char *wifi_test_auth_method[] = {
 #ifdef WT_AUTH_TABLE
 #undef WT_AUTH_TABLE
 #endif
-#define WT_AUTH_TABLE(type, str, desc) str
+#define WT_AUTH_TABLE(type, str, desc) str,
 #include "wm_test_auth_table.h"
 };
 
@@ -221,7 +220,7 @@ static const wifi_manager_ap_auth_type_e auth_type_table[] = {
 #ifdef WT_AUTH_TABLE
 #undef WT_AUTH_TABLE
 #endif
-#define WT_AUTH_TABLE(type, str, desc) type
+#define WT_AUTH_TABLE(type, str, desc) type,
 #include "wm_test_auth_table.h"
 };
 
@@ -229,7 +228,7 @@ static const char *wifi_test_crypto_method[] = {
 #ifdef WT_CRYPTO_TABLE
 #undef WT_CRYPTO_TABLE
 #endif
-#define WT_CRYPTO_TABLE(type, str, desc) str
+#define WT_CRYPTO_TABLE(type, str, desc) str,
 #include "wm_test_crypto_table.h"
 };
 
@@ -237,7 +236,7 @@ static const wifi_manager_ap_crypto_type_e crypto_type_table[] = {
 #ifdef WT_CRYPTO_TABLE
 #undef WT_CRYPTO_TABLE
 #endif
-#define WT_CRYPTO_TABLE(type, str, desc) type
+#define WT_CRYPTO_TABLE(type, str, desc) type,
 #include "wm_test_crypto_table.h"
 };
 
@@ -245,7 +244,7 @@ typedef enum {
 #ifdef WT_MEMBER_POOL
 #undef WT_MEMBER_POOL
 #endif
-#define WT_MEMBER_POOL(type, func, exec, str) type,
+#define WT_MEMBER_POOL(type, func, parser, str) type,
 #include "wm_test_table.h"
 	WM_TEST_MAX,
 	WM_TEST_ERR = -1
@@ -255,15 +254,15 @@ test_func func_table[] = {
 #ifdef WT_MEMBER_POOL
 #undef WT_MEMBER_POOL
 #endif
-#define WT_MEMBER_POOL(type, func, exec, str) func,
+#define WT_MEMBER_POOL(type, func, parser, str) func,
 #include "wm_test_table.h"
 };
 
-exec_func exec_table[] = {
+parser_func parser_table[] = {
 #ifdef WT_MEMBER_POOL
 #undef WT_MEMBER_POOL
 #endif
-#define WT_MEMBER_POOL(type, func, exec, str) exec,
+#define WT_MEMBER_POOL(type, func, parser, str) parser,
 #include "wm_test_table.h"
 };
 
@@ -271,7 +270,7 @@ char *func_name[] = {
 #ifdef WT_MEMBER_POOL
 #undef WT_MEMBER_POOL
 #endif
-#define WT_MEMBER_POOL(type, func, exec, str) str,
+#define WT_MEMBER_POOL(type, func, parser, str) str,
 #include "wm_test_table.h"
 };
 
