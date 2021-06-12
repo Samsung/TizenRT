@@ -207,150 +207,72 @@ static int g_mode = 0; // check program is running
 		printf("[WT] <--%s\n", __FUNCTION__);	\
 	} while (0)
 
-/*
- * Supported security method
+/* Supported security method
  */
 static const char *wifi_test_auth_method[] = {
-	"open",
-	"wep_shared",
-	"wpa",
-	"wpa2",
-	"wpa3",
-	"wpa12",
-	"wpa",
-	"wpa2",
-	"wpa12",
-	"ibss_open",
-	"wps",
-};
-
-static const char *wifi_test_crypto_method[] = {
-	"none",
-	"64",
-	"128",
-	"aes",
-	"tkip",
-	"mixed",
-	"aes_ent",
-	"tkip_ent",
-	"mixed_ent",
+#ifdef WT_AUTH_TABLE
+#undef WT_AUTH_TABLE
+#endif
+#define WT_AUTH_TABLE(type, str, desc) str
+#include "wm_test_auth_table.h"
 };
 
 static const wifi_manager_ap_auth_type_e auth_type_table[] = {
-	WIFI_MANAGER_AUTH_OPEN,                    /**<  open mode                                 */
-	WIFI_MANAGER_AUTH_WEP_SHARED,              /**<  use shared key (wep key)                  */
-	WIFI_MANAGER_AUTH_WPA_PSK,                 /**<  WPA_PSK mode                              */
-	WIFI_MANAGER_AUTH_WPA2_PSK,                /**<  WPA2_PSK mode                             */
-	WIFI_MANAGER_AUTH_WPA3_PSK,                /**<  WPA3_PSK mode                             */
-	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,        /**<  WPA_PSK and WPA_PSK mixed mode            */
-	WIFI_MANAGER_AUTH_WPA_PSK_ENT,             /**<  Enterprise WPA_PSK mode                   */
-	WIFI_MANAGER_AUTH_WPA2_PSK_ENT,            /**<  Enterprise WPA2_PSK mode                  */
-	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT,    /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */
-	WIFI_MANAGER_AUTH_IBSS_OPEN,               /**<  IBSS ad-hoc mode                          */
-	WIFI_MANAGER_AUTH_WPS,                     /**<  WPS mode                                  */
-	WIFI_MANAGER_AUTH_UNKNOWN,                 /**<  unknown type                              */
+#ifdef WT_AUTH_TABLE
+#undef WT_AUTH_TABLE
+#endif
+#define WT_AUTH_TABLE(type, str, desc) type
+#include "wm_test_auth_table.h"
+};
+
+static const char *wifi_test_crypto_method[] = {
+#ifdef WT_CRYPTO_TABLE
+#undef WT_CRYPTO_TABLE
+#endif
+#define WT_CRYPTO_TABLE(type, str, desc) str
+#include "wm_test_crypto_table.h"
 };
 
 static const wifi_manager_ap_crypto_type_e crypto_type_table[] = {
-	WIFI_MANAGER_CRYPTO_NONE,                  /**<  none encryption                           */
-	WIFI_MANAGER_CRYPTO_WEP_64,                /**<  WEP encryption wep-40                     */
-	WIFI_MANAGER_CRYPTO_WEP_128,               /**<  WEP encryption wep-104                    */
-	WIFI_MANAGER_CRYPTO_AES,                   /**<  AES encryption                            */
-	WIFI_MANAGER_CRYPTO_TKIP,                  /**<  TKIP encryption                           */
-	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,          /**<  TKIP and AES mixed encryption             */
-	WIFI_MANAGER_CRYPTO_AES_ENT,               /**<  Enterprise AES encryption                 */
-	WIFI_MANAGER_CRYPTO_TKIP_ENT,              /**<  Enterprise TKIP encryption                */
-	WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT,      /**<  Enterprise TKIP and AES mixed encryption  */
-	WIFI_MANAGER_CRYPTO_UNKNOWN,               /**<  unknown encryption                        */
+#ifdef WT_CRYPTO_TABLE
+#undef WT_CRYPTO_TABLE
+#endif
+#define WT_CRYPTO_TABLE(type, str, desc) type
+#include "wm_test_crypto_table.h"
 };
 
-/*
- * Predefined functions
- */
 typedef enum {
-	WM_TEST_ERR = -1,
-	WM_TEST_START,
-	WM_TEST_STOP,
-	WM_TEST_SOFTAP,
-	WM_TEST_STA,
-	WM_TEST_JOIN,
-	WM_TEST_LEAVE,
-	WM_TEST_CANCEL,
-	WM_TEST_SET,
-	WM_TEST_GET,
-	WM_TEST_RESET,
-	WM_TEST_SCAN,
-	WM_TEST_MODE,
-	WM_TEST_STATS,
-	WM_TEST_INFO,
-	WM_TEST_AUTO,
-	WM_TEST_ONOFF,
-	WM_TEST_STRESS,
+#ifdef WT_MEMBER_POOL
+#undef WT_MEMBER_POOL
+#endif
+#define WT_MEMBER_POOL(type, func, exec, str) type,
+#include "wm_test_table.h"
 	WM_TEST_MAX,
+	WM_TEST_ERR = -1
 } wm_test_e;
 
-test_func func_table[WM_TEST_MAX] = {
-	wm_start,                               /* WM_TEST_START    */
-	wm_stop,								/* WM_TEST_STOP     */
-	wm_softap_start,						/* WM_TEST_SOFTAP   */
-	wm_sta_start,							/* WM_TEST_STA      */
-	wm_connect,								/* WM_TEST_JOIN     */
-	wm_disconnect,							/* WM_TEST_LEAVE    */
-	wm_cancel,								/* WM_TEST_CANCEL   */
-	wm_set_info,							/* WM_TEST_SET      */
-	wm_get_info,							/* WM_TEST_GET      */
-	wm_reset_info,							/* WM_TEST_RESET    */
-	wm_scan,								/* WM_TEST_SCAN     */
-	wm_display_state,						/* WM_TEST_MODE     */
-	wm_get_stats,                           /* WM_TEST_STATS    */
-	wm_get_conn_info,						/* WM_TEST_INFO     */
-	wm_auto_test,							/* WM_TEST_AUTO     */
-	wm_test_on_off,
-#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
-	wm_run_stress_test
-#else
-	NULL
+test_func func_table[] = {
+#ifdef WT_MEMBER_POOL
+#undef WT_MEMBER_POOL
 #endif
+#define WT_MEMBER_POOL(type, func, exec, str) func,
+#include "wm_test_table.h"
 };
 
-exec_func exec_table[WM_TEST_MAX] = {
-	NULL,                                      /* WM_TEST_START    */
-	NULL,                                      /* WM_TEST_STOP     */
-	_wm_test_softap,                         /* WM_TEST_SOFTAP   */
-	NULL,                                      /* WM_TEST_STA      */
-	_wm_test_join,                           /* WM_TEST_JOIN     */
-	NULL,                                      /* WM_TEST_LEAVE    */
-	NULL,                                      /* WM_TEST_CANCEL   */
-	_wm_test_set,                            /* WM_TEST_SET      */
-	NULL,                                      /* WM_TEST_GET      */
-	NULL,                                      /* WM_TEST_RESET    */
-	_wm_test_scan,                           /* WM_TEST_SCAN     */
-	NULL,                                      /* WM_TEST_MODE     */
-	NULL,                                      /* WM_TEST_STATS    */
-	NULL,                                      /* WM_TEST_INFO     */
-	_wm_test_auto,                           /* WM_TEST_AUTO     */
-	_wm_test_join,
-	_wm_test_stress,                         /* WM_TEST_STRESS   */
+exec_func exec_table[] = {
+#ifdef WT_MEMBER_POOL
+#undef WT_MEMBER_POOL
+#endif
+#define WT_MEMBER_POOL(type, func, exec, str) exec,
+#include "wm_test_table.h"
 };
 
-char *func_name[WM_TEST_MAX] = {
-	"start",                                /* WM_TEST_START    */
-	"stop",								    /* WM_TEST_STOP     */
-	"softap",							    /* WM_TEST_SOFTAP  */
-	"sta",								    /* WM_TEST_STA      */
-	"join",								    /* WM_TEST_JOIN    */
-	"leave",							    /* WM_TEST_LEAVE    */
-	"cancel",							    /* WM_TEST_CANCEL   */
-	"set",								    /* WM_TEST_SET     */
-	"get",								    /* WM_TEST_GET      */
-	"reset",							    /* WM_TEST_RESET    */
-	"scan",								    /* WM_TEST_SCAN    */
-	"mode",								    /* WM_TEST_MODE     */
-	"stats",                                /* WM_TEST_STATS    */
-	"info",								    /* WM_TEST_INFO     */
-	"auto",                                 /* WM_TEST_AUTO     */
-	"on_off",
-	"stress"                                /* WM_TEST_STRESS   */
+char *func_name[] = {
+#ifdef WT_MEMBER_POOL
+#undef WT_MEMBER_POOL
+#endif
+#define WT_MEMBER_POOL(type, func, exec, str) str,
+#include "wm_test_table.h"
 };
 
 static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
@@ -1006,6 +928,16 @@ void wm_auto_test(void *arg)
 	}
 	printf("[WT] Exit WiFi Manager Stress Test..\n");
 
+}
+
+void wm_stress_test(void *arg)
+{
+	wm_run_stress_test(arg);
+}
+
+void wm_onoff_test(void *arg)
+{
+	wm_test_on_off(arg);
 }
 
 static wm_test_e _wm_get_opt(int argc, char *argv[])
