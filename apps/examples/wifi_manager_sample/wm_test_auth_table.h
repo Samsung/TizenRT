@@ -1,6 +1,6 @@
 // auth_type, auth string, description
 WT_AUTH_TABLE(WIFI_MANAGER_AUTH_OPEN,                 "open",        "open mode")
-WT_AUTH_TABLE(WIFI_MANAGER_AUTH_WEP_SHARED,           "wep_shared",  "use shared key (wep key)"))
+WT_AUTH_TABLE(WIFI_MANAGER_AUTH_WEP_SHARED,           "wep_shared",  "use shared key (wep key)")
 WT_AUTH_TABLE(WIFI_MANAGER_AUTH_WPA_PSK,              "wpa",         "WPA_PSK mode")
 WT_AUTH_TABLE(WIFI_MANAGER_AUTH_WPA2_PSK,             "wpa2",        "WPA2_PSK mode")
 WT_AUTH_TABLE(WIFI_MANAGER_AUTH_WPA3_PSK,             "wpa3",        "WPA3_PSK mode")
