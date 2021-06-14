@@ -21,12 +21,12 @@
 #include <wifi_manager/wifi_manager.h>
 #include "wm_test.h"
 
-extern void wm_run_stress_test1(struct options *opt);
-extern void wm_run_stress_test2(struct options *opt);
+extern void wm_run_stress_test1(struct wt_options *opt);
+extern void wm_run_stress_test2(struct wt_options *opt);
 
 void wm_run_stress_test(void *arg)
 {
-	struct options *opt = (struct options *)arg;
+	struct wt_options *opt = (struct wt_options *)arg;
 	if (opt->stress_tc_idx == 1) {
 		wm_run_stress_test1(opt);
 	} else if (opt->stress_tc_idx == 2) {

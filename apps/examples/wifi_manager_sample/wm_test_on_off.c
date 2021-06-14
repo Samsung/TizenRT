@@ -118,7 +118,7 @@ static int run_init(void *arg)
 	int cnt_auto_connect = 0;
 
 	/* Set AP Configuration */
-	struct options *ap_info = (struct options *)arg;
+	struct wt_options *ap_info = (struct wt_options *)arg;
 	wifi_manager_ap_config_s apconfig;
 	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
 	apconfig.ssid_length = strlen(ap_info->ssid);
