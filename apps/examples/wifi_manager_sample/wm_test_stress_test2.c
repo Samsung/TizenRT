@@ -468,7 +468,7 @@ TEST_F(join_to_sta)
 	ST_END_TEST;
 }
 
-void wm_run_stress_test2(struct options *opt)
+void wm_run_stress_test2(struct wt_options *opt)
 {
 	WM_AP_SSID = opt->ssid;
 	WM_AP_PASSWORD = opt->password;

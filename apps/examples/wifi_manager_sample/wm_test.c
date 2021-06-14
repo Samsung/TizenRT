@@ -29,131 +29,48 @@
 #include <errno.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wm_test.h"
+#include "wm_test_usage.h"
 
 #define WM_TEST_COUNT  10
 
-#define SOFTAP_USAGE							\
-	"\n softap mode options:\n"					\
-	"	 wm_test softap [ssid] [password]\n"
+typedef int (*parser_func)(struct wt_options *opt, int argc, char *argv[]);
 
-#define STA_USAGE													\
-	"\n station mode options:\n"									\
-	"	 wm_test sta\n"												\
-	"	 wm_test join [ssid] [security mode] [password]\n"			\
-	"	    (1) [security mode] is optional if not open mode\n"		\
-	"	    (2) [password] is unnecessary in case of open mode\n"	\
-	"	 wm_test leave\n"											\
-	"	 wm_test cancel\n"
-
-#define STRESS_USAGE													\
-	"\n stress test mode options:\n"									\
-	"	 wm_test stress 1 [ssid] [security mode] [password]\n"			\
-	"	 wm_test stress 2 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
-
-#define ONOFF_USAGE												\
-	"\n onoff test mode options:\n"								\
-	"	 wm_test on_off [ssid] [security mode] [password]\n"	\
-
-#define SCAN_USAGE								\
-	"\n run scan:\n"							\
-	"	 wm_test scan\n"
-
-#define PROFILE_USAGE											\
-	"\n set a profile:\n"										\
-	"	 wm_test set [ssid] [security mode] [password]\n"		\
-	"	 security mode examples : open, wep_shared \n"			\
-	"	               wpa_aes, wpa_tkip, wpa_mixed  \n"		\
-	"	               wpa2_aes, wpa2_tkip, wpa2_mixed  \n"		\
-	"	               wpa12_aes, wpa12_tkip, wpa12_mixed  \n"	\
-	"	               (*_ent for enterprise)  \n"				\
-	"\n get a profile:\n"										\
-	"	 wm_test get\n"											\
-	"\n remove a profile:\n"									\
-	"	 wm_test reset\n\n"
-
-#define INFO_USAGE								\
-	"\n get current state:\n"					\
-	"	 wm_test mode\n"						\
-	"\n get connection info:\n"					\
-	"	 wm_test info\n"
-
-#define REPEATTC_USAGE													\
-	"\n repeat test of APIs:\n"											\
-	"	 wm_test auto [softap ssid] [softap password] [ssid] [security mode] [password]\n\n"
-
-#define USAGE										\
-	"\n usage: wm_test [options]\n"					\
-	"\n run Wi-Fi Manager:\n"						\
-	"	 wm_test start(default: station mode)\n"	\
-	"	 wm_test stop\n"							\
-	"	 wm_test stats\n"							\
-	SOFTAP_USAGE									\
-	STA_USAGE										\
-	SCAN_USAGE										\
-	PROFILE_USAGE									\
-	INFO_USAGE										\
-	STRESS_USAGE									\
-	ONOFF_USAGE										\
-	REPEATTC_USAGE
-
-/**
+/*
  * Internal functions
  */
 static int wm_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20]);
 static int wm_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6]);
 
-/*
- * Signal
- */
+/* Signal */
 void wm_signal_deinit(void);
 int wm_signal_init(void);
 
-/*
- * Callbacks
- */
+/* Callbacks */
 static void wm_sta_connected(wifi_manager_result_e);
 static void wm_sta_disconnected(wifi_manager_disconnect_e);
 static void wm_softap_sta_join(void);
 static void wm_softap_sta_leave(void);
 static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
 
-/*
- * Handler
- */
-static void wm_start(void *arg);
-static void wm_stop(void *arg);
-static void wm_softap_start(void *arg);
-static void wm_sta_start(void *arg);
-static void wm_connect(void *arg);
-static void wm_disconnect(void *arg);
-// stop reconnecting to wifi AP.
-// it doesn't expect to receive a signal because AP is already disconnected
-static void wm_cancel(void *arg);
-static void wm_set_info(void *arg);
-static void wm_get_info(void *arg);
-static void wm_reset_info(void *arg);
-static void wm_scan(void *arg);
-static void wm_display_state(void *arg);
-static void wm_get_stats(void *arg);
-static void wm_get_conn_info(void *arg);
-static void wm_auto_test(void *arg); // it tests softap mode and stations mode repeatedly
-
-/*
- * Internal APIs
- */
-static int _wm_test_softap(struct options *opt, int argc, char *argv[]);
-static int _wm_test_join(struct options *opt, int argc, char *argv[]);
-static int _wm_test_set(struct options *opt, int argc, char *argv[]);
-static int _wm_test_auto(struct options *opt, int argc, char *argv[]);
-static int _wm_test_scan(struct options *opt, int argc, char *argv[]);
-static int _wm_test_stress(struct options *opt, int argc, char *argv[]);
-
-static void wm_process(int argc, char *argv[]);
-static int wm_parse_commands(struct options *opt, int argc, char *argv[]);
-
-#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
-extern void wm_run_stress_test(void *arg);
+/* Handler */
+#ifdef WT_MEMBER_POOL
+#undef WT_MEMBER_POOL
 #endif
+#define WT_MEMBER_POOL(type, func, parser, str) static void func(void* arg);
+#include "wm_test_table.h"
+
+/* Parser */
+static int _wm_test_parse_none(struct wt_options *opt, int argc, char *argv[]);
+static int _wm_test_parse_stress(struct wt_options *opt, int argc, char *argv[]);
+static int _wm_test_parse_auto(struct wt_options *opt, int argc, char *argv[]);
+static int _wm_test_parse_scan(struct wt_options *opt, int argc, char *argv[]);
+static int _wm_test_parse_set(struct wt_options *opt, int argc, char *argv[]);
+static int _wm_test_parse_join(struct wt_options *opt, int argc, char *argv[]);
+static int _wm_test_parse_softap(struct wt_options *opt, int argc, char *argv[]);
+static int wm_parse_commands(struct wt_options *opt, int argc, char *argv[]);
+/* Main */
+static void wm_process(int argc, char *argv[]);
+extern void wm_run_stress_test(void *arg);
 extern void wm_test_on_off(void *arg);
 
 /*
@@ -329,7 +246,8 @@ static wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 	int i = 0;
 	int list_size = sizeof(wifi_test_auth_method) / sizeof(wifi_test_auth_method[0]);
 	for (; i < list_size; i++) {
-		if ((strcmp(method, wifi_test_auth_method[i]) == 0) || (result[0] && (strcmp(result[0], wifi_test_auth_method[i]) == 0))) {
+		if ((strcmp(method, wifi_test_auth_method[i]) == 0)
+			|| (result[0] && (strcmp(result[0], wifi_test_auth_method[i]) == 0))) {
 			if (result[2] != NULL) {
 				if (strcmp(result[2], "ent") == 0) {
 					return WIFI_MANAGER_AUTH_UNKNOWN;
@@ -368,7 +286,8 @@ static int wm_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20])
 {
 	int wret = -1;
 	if (mac_addr && mac_str) {
-		snprintf(mac_str, 18, "%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+		snprintf(mac_str, 18, "%02X:%02X:%02X:%02X:%02X:%02X",
+				 mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 		wret = OK;
 	}
 	return wret;
@@ -378,7 +297,9 @@ static int wm_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6])
 {
 	int wret = -1;
 	if (mac_addr && mac_str) {
-		int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3], &mac_addr[4], &mac_addr[5]);
+		int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c",
+						 &mac_addr[0], &mac_addr[1], &mac_addr[2],
+						 &mac_addr[3], &mac_addr[4], &mac_addr[5]);
 		if (ret == WIFIMGR_MACADDR_LEN) {
 			wret = OK;
 		}
@@ -482,7 +403,7 @@ void wm_softap_start(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
-	struct options *ap_info = (struct options *)arg;
+	struct wt_options *ap_info = (struct wt_options *)arg;
 	if (strlen(ap_info->ssid) > WIFIMGR_SSID_LEN || strlen(ap_info->password) > WIFIMGR_PASSPHRASE_LEN) {
 		printf("[WT] Param Error\n");
 		WM_TEST_LOG_END;
@@ -521,7 +442,7 @@ void wm_sta_start(void *arg)
 void wm_connect(void *arg)
 {
 	WM_TEST_LOG_START;
-	struct options *ap_info = (struct options *)arg;
+	struct wt_options *ap_info = (struct wt_options *)arg;
 	wifi_manager_ap_config_s apconfig;
 	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
 	apconfig.ssid_length = strlen(ap_info->ssid);
@@ -582,7 +503,7 @@ void wm_cancel(void *arg)
 void wm_set_info(void *arg)
 {
 	WM_TEST_LOG_START;
-	struct options *ap_info = (struct options *)arg;
+	struct wt_options *ap_info = (struct wt_options *)arg;
 	wifi_manager_ap_config_s apconfig;
 	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
 	apconfig.ssid_length = strlen(ap_info->ssid);
@@ -641,7 +562,7 @@ void wm_scan(void *arg)
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 
-	struct options *ap_info = (struct options *)arg;
+	struct wt_options *ap_info = (struct wt_options *)arg;
 	if (ap_info->scan_specific) {
 		wifi_manager_ap_config_s config;
 		config.ssid_length = strlen(ap_info->ssid);
@@ -765,7 +686,7 @@ void wm_get_conn_info(void *arg)
 void wm_auto_test(void *arg)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
-	struct options *info = (struct options *)arg;
+	struct wt_options *info = (struct wt_options *)arg;
 	/* Set SoftAP Configuration */
 	wifi_manager_softap_config_s softap_config;
 	strncpy(softap_config.ssid, info->softap_ssid, WIFIMGR_SSID_LEN);
@@ -955,7 +876,14 @@ static wm_test_e _wm_get_opt(int argc, char *argv[])
 	return WM_TEST_ERR;
 }
 
-static int _wm_test_softap(struct options *opt, int argc, char *argv[])
+int _wm_test_parse_none(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc != 2) {
+		return -1;
+	}
+	return 0;
+}
+int _wm_test_parse_softap(struct wt_options *opt, int argc, char *argv[])
 {
 	if (argc < 5) {
 		return -1;
@@ -966,7 +894,7 @@ static int _wm_test_softap(struct options *opt, int argc, char *argv[])
 	return 0;
 }
 
-static int _wm_test_join(struct options *opt, int argc, char *argv[])
+int _wm_test_parse_join(struct wt_options *opt, int argc, char *argv[])
 {
 	if (argc < 5) {
 		return -1;
@@ -1011,7 +939,7 @@ static int _wm_test_join(struct options *opt, int argc, char *argv[])
 	return 0;
 }
 
-static int _wm_test_stress(struct options *opt, int argc, char *argv[])
+int _wm_test_parse_stress(struct wt_options *opt, int argc, char *argv[])
 {
 	if (argc < 4) {
 		return -1;
@@ -1083,7 +1011,7 @@ static int _wm_test_stress(struct options *opt, int argc, char *argv[])
 	return 0;
 }
 
-static int _wm_test_set(struct options *opt, int argc, char *argv[])
+int _wm_test_parse_set(struct wt_options *opt, int argc, char *argv[])
 {
 	if (argc < 5) {
 		return -1;
@@ -1117,7 +1045,7 @@ static int _wm_test_set(struct options *opt, int argc, char *argv[])
 	return 0;
 }
 
-static int _wm_test_scan(struct options *opt, int argc, char *argv[])
+int _wm_test_parse_scan(struct wt_options *opt, int argc, char *argv[])
 {
 	if (argc > 3) {
 		opt->ssid = argv[3];
@@ -1128,7 +1056,7 @@ static int _wm_test_scan(struct options *opt, int argc, char *argv[])
 	return 0;
 }
 
-static int _wm_test_auto(struct options *opt, int argc, char *argv[])
+int _wm_test_parse_auto(struct wt_options *opt, int argc, char *argv[])
 {
 	if (argc < 7) {
 		return -1;
@@ -1148,7 +1076,7 @@ static int _wm_test_auto(struct options *opt, int argc, char *argv[])
 	return 0;
 }
 
-static int wm_parse_commands(struct options *opt, int argc, char *argv[])
+int wm_parse_commands(struct wt_options *opt, int argc, char *argv[])
 {
 	int ret = 0;
 	wm_test_e options = _wm_get_opt(argc, argv);
@@ -1161,19 +1089,19 @@ static int wm_parse_commands(struct options *opt, int argc, char *argv[])
 		return -1;
 	}
 
-	if (exec_table[options]) {
-		ret = (exec_table[options])(opt, argc, argv);
+	if (parser_table[options]) {
+		ret = (parser_table[options])(opt, argc, argv);
 	}
 
 	return ret;
 }
 
-static void wm_process(int argc, char *argv[])
+void wm_process(int argc, char *argv[])
 {
-	struct options opt;
+	struct wt_options opt;
 	int res = wm_parse_commands(&opt, argc, argv);
 	if (res < 0) {
-		printf("[WT] %s", USAGE);
+		printf("[WT] %s", WT_USAGE);
 		goto exit;
 	}
 	opt.func((void *)&opt);
