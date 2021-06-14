@@ -303,12 +303,6 @@ void vwifi_start(void)
 	return;
 }
 
-void up_netinitialize(void)
-{
-	return;
-}
-
-
 /*
  * Interface API
  */
