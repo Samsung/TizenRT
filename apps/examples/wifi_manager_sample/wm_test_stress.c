@@ -15,7 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
 #include <stdint.h>
 #include <wifi_manager/wifi_manager.h>
@@ -23,13 +22,23 @@
 
 extern void wm_run_stress_test1(struct wt_options *opt);
 extern void wm_run_stress_test2(struct wt_options *opt);
-
+extern void wm_run_stress_test3(struct wt_options *opt);
+extern void wm_run_test_daemon(struct wt_options *opt);
 void wm_run_stress_test(void *arg)
 {
 	struct wt_options *opt = (struct wt_options *)arg;
-	if (opt->stress_tc_idx == 1) {
+	switch (opt->stress_tc_idx) {
+	case 1:
 		wm_run_stress_test1(opt);
-	} else if (opt->stress_tc_idx == 2) {
+		break;
+	case 2:
 		wm_run_stress_test2(opt);
+		break;
+	case 3:
+		wm_run_stress_test3(opt);
+		break;
+	case 4:
+		wm_run_test_daemon(opt);
+		break;
 	}
 }

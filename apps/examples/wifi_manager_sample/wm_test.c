@@ -35,9 +35,7 @@
 
 typedef int (*parser_func)(struct wt_options *opt, int argc, char *argv[]);
 
-/*
- * Internal functions
- */
+/* Internal functions*/
 static int wm_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20]);
 static int wm_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6]);
 
@@ -68,6 +66,7 @@ static int _wm_test_parse_set(struct wt_options *opt, int argc, char *argv[]);
 static int _wm_test_parse_join(struct wt_options *opt, int argc, char *argv[]);
 static int _wm_test_parse_softap(struct wt_options *opt, int argc, char *argv[]);
 static int wm_parse_commands(struct wt_options *opt, int argc, char *argv[]);
+
 /* Main */
 static void wm_process(int argc, char *argv[]);
 extern void wm_run_stress_test(void *arg);
@@ -307,9 +306,6 @@ static int wm_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6])
 	return wret;
 }
 
-/*
- * Signal
- */
 int wm_signal_init(void)
 {
 	if (g_mode != 0) {
@@ -325,9 +321,6 @@ void wm_signal_deinit(void)
 	g_mode = 0;
 }
 
-/*
- * Callback
- */
 void wm_sta_connected(wifi_manager_result_e res)
 {
 	printf("[WT]  T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
@@ -336,7 +329,6 @@ void wm_sta_connected(wifi_manager_result_e res)
 
 void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
-	sleep(2);
 	printf("[WT]  T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;
 }
@@ -374,9 +366,7 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 	WM_TEST_SIGNAL;
 }
 
-/*
- * Control Functions
- */
+/* Control Functions */
 void wm_start(void *arg)
 {
 	WM_TEST_LOG_START;
@@ -878,9 +868,10 @@ static wm_test_e _wm_get_opt(int argc, char *argv[])
 
 int _wm_test_parse_none(struct wt_options *opt, int argc, char *argv[])
 {
-	if (argc != 2) {
+	if (argc != 3) {
 		return -1;
 	}
+
 	return 0;
 }
 int _wm_test_parse_softap(struct wt_options *opt, int argc, char *argv[])
@@ -946,17 +937,18 @@ int _wm_test_parse_stress(struct wt_options *opt, int argc, char *argv[])
 	}
 
 	opt->stress_tc_idx = atoi(argv[3]);
+	if (opt->stress_tc_idx > 4 || opt->stress_tc_idx < 1) {
+		return -2;
+	}
 	if (opt->stress_tc_idx == 1) {
 		// TC index is 1
 		if (argc != 7 && argc != 6) {
 			return -1;
 		}
-	} else if (opt->stress_tc_idx == 2) {
+	} else {
 		if (argc != 10 && argc != 9) {
 			return -1;
 		}
-	} else {
-		return -2;
 	}
 
 	opt->ssid = argv[4];
@@ -1001,7 +993,7 @@ int _wm_test_parse_stress(struct wt_options *opt, int argc, char *argv[])
 	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN) {
 		softap_index = 6;
 	}
-	if (opt->stress_tc_idx == 2) {
+	if (opt->stress_tc_idx != 1) {
 		/* wpa2 aes is a default security mode. */
 		opt->softap_ssid = argv[softap_index++];
 		opt->softap_password = argv[softap_index++];
