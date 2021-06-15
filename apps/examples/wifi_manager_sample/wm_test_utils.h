@@ -18,12 +18,10 @@
 
 #ifndef _WIFI_TEST_UTILS_H__
 #define _WIFI_TEST_UTILS_H__
-#define WO_ERROR(res) printf("[WO][ERR] code(%d) (%d): %s\t%s:%d\n",	\
-							 res, errno, __FUNCTION__, __FILE__, __LINE__)
 
 #define WO_TEST_SIGNAL(conn, queue)										\
 	do {																\
-		printf("[WO] T%d send signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
+		WT_LOG(TAG, "send signal\t %s:%d", __FUNCTION__, __LINE__); \
 		int ssres = wo_add_queue(conn, queue);							\
 		if (ssres != 0) {												\
 			assert(0);													\
@@ -33,7 +31,7 @@
 
 #define WO_TEST_WAIT(conn, queue)										\
 	do {																\
-		printf("[WO] T%d wait signal\t %s:%d\n", getpid(), __FUNCTION__, __LINE__); \
+		WT_LOG(TAG, "wait signal\t %s:%d", __FUNCTION__, __LINE__); \
 		sem_wait(&queue->signal);										\
 		int swres = wo_dequeue(&conn, queue);							\
 		if (swres != 0) {												\

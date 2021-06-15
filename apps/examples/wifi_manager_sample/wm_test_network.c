@@ -39,13 +39,13 @@ static int _send_data(int fd, int size)
 		int send_size = remain > WT_BUF_SIZE ? WT_BUF_SIZE : remain;
 		int nbytes = send(fd, buf, send_size, 0);
 		if (nbytes == 0) {
-			WT_LOG(TAG, "connection closed\n");
+			WT_LOGE(TAG, "connection closed\n");
 			return -1;
 		} else if (nbytes < 0) {
 			if (errno == EWOULDBLOCK) {
 				continue;
 			} else {
-				WT_LOG(TAG, "connection error %d\n", errno);
+				WT_LOGE(TAG, "connection error %d\n", errno);
 				return -1;
 			}
 		}
@@ -63,13 +63,13 @@ static int _recv_data(int fd, int size)
 		int read_size = remain > WT_BUF_SIZE ? WT_BUF_SIZE : remain;
 		int nbytes = recv(fd, buf, read_size, 0);
 		if (nbytes == 0) {
-			WT_LOG(TAG, "connection closed\n");
+			WT_LOGE(TAG, "connection closed\n");
 			return -1;
 		} else if (nbytes < 0) {
 			if (errno == EWOULDBLOCK) {
 				continue;
 			} else {
-				WT_LOG(TAG, "connection error %d\n", errno);
+				WT_LOGE(TAG, "connection error %d\n", errno);
 				return -1;
 			}
 		}
@@ -90,7 +90,7 @@ int wt_receive_dummy(int size)
 
 	listenfd = socket(PF_INET, SOCK_STREAM, 0);
 	if (listenfd < 0) {
-		WT_LOG(TAG, "create socket fail %d\n", errno);
+		WT_LOGE(TAG, "create socket fail %d\n", errno);
 		return -1;
 	}
 
@@ -99,7 +99,7 @@ int wt_receive_dummy(int size)
 	int reuse = 1;
 	ret = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
 	if (ret < 0) {
-		WT_LOG(TAG, "set reuse addr fail %d\n", errno);
+		WT_LOGE(TAG, "set reuse addr fail %d\n", errno);
 		return -1;
 	}
 
@@ -112,7 +112,7 @@ int wt_receive_dummy(int size)
 
 	ret = bind(listenfd, (struct sockaddr *)&saddr, sizeof(saddr));
 	if (ret < 0) {
-		WT_LOG(TAG, "bind fail %d\n", errno);
+		WT_LOGE(TAG, "bind fail %d\n", errno);
 		return -1;
 	}
 
@@ -120,7 +120,7 @@ int wt_receive_dummy(int size)
 
 	ret = listen(listenfd, 1024);
 	if (ret < 0) {
-		WT_LOG(TAG, "listen fail %d\n", errno);
+		WT_LOGE(TAG, "listen fail %d\n", errno);
 		return -1;
 	}
 
@@ -129,7 +129,7 @@ int wt_receive_dummy(int size)
 	socklen_t clilen = sizeof(caddr);
 	connfd = accept(listenfd, (struct sockaddr *)&caddr, &clilen);
 	if (connfd < 0) {
-		WT_LOG(TAG, "accept fail %d\n", errno);
+		WT_LOGE(TAG, "accept fail %d\n", errno);
 		return -1;
 	}
 
@@ -137,7 +137,7 @@ int wt_receive_dummy(int size)
 
 	ret = _recv_data(connfd, size);
 	if (ret < 0) {
-		WT_LOG(TAG, "recv fail size %d ret %d code %d\n", size, ret, errno);
+		WT_LOGE(TAG, "recv fail size %d ret %d code %d\n", size, ret, errno);
 		return -1;
 	}
 
@@ -145,7 +145,7 @@ int wt_receive_dummy(int size)
 
 	ret = _send_data(connfd, WT_ACK_SIZE);
 	if (ret < 0) {
-		WT_LOG(TAG, "send fail size %d ret %d code %d\n", WT_ACK_SIZE, ret, errno);
+		WT_LOGE(TAG, "send fail size %d ret %d code %d\n", WT_ACK_SIZE, ret, errno);
 		return -1;
 	}
 
@@ -167,7 +167,7 @@ int wt_send_dummy(int size)
 
 	sockfd = socket(PF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
-		WT_LOG(TAG, "create socket fail %d\n", errno);
+		WT_LOGE(TAG, "create socket fail %d\n", errno);
 		return -1;
 	}
 
@@ -180,7 +180,7 @@ int wt_send_dummy(int size)
 
 	int addrlen = sizeof(struct sockaddr_in);
 	if (connect(sockfd, (struct sockaddr *)&target_addr, addrlen) < 0) {
-		WT_LOG(TAG, "connect fail %d\n", errno);
+		WT_LOGE(TAG, "connect fail %d\n", errno);
 		return -1;
 	}
 
@@ -188,7 +188,7 @@ int wt_send_dummy(int size)
 
 	ret = _send_data(sockfd, size);
 	if (ret < 0) {
-		WT_LOG(TAG, "send fail size %d ret %d code %d\n", size, ret, errno);
+		WT_LOGE(TAG, "send fail size %d ret %d code %d\n", size, ret, errno);
 		return -1;
 	}
 
@@ -196,7 +196,7 @@ int wt_send_dummy(int size)
 
 	ret = _recv_data(sockfd, WT_ACK_SIZE);
 	if (ret < 0) {
-		WT_LOG(TAG, "receive fail size %d ret %d code %d\n", WT_ACK_SIZE, ret, errno);
+		WT_LOGE(TAG, "receive fail size %d ret %d code %d\n", WT_ACK_SIZE, ret, errno);
 		return -1;
 	}
 	close(sockfd);
