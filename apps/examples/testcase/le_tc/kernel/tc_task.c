@@ -50,9 +50,11 @@
 #define TC_TASK_CREATE_FAIL    1
 #define TC_REPARENT_FAIL       2
 
-static int tc_reparent_chk = 0;
 static int g_callback;
+#ifdef CONFIG_SCHED_HAVE_PARENT
 static int main_pid;
+static int tc_reparent_chk = 0;
+#endif
 #ifndef CONFIG_BUILD_PROTECTED
 static volatile int task_cnt;
 static volatile pid_t ppid;
