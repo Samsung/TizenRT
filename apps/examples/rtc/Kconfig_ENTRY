@@ -1,0 +1,3 @@
+config ENTRY_RTC
+	bool "RTC Accuracy Test"
+	depends on EXAMPLES_RTC
