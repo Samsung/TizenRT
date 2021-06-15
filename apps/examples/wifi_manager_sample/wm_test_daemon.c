@@ -197,6 +197,7 @@ static int run_procedure(void *arg)
 static void *run_wm_daemon(void *arg)
 {
 	wifi_manager_result_e wres = WIFI_MANAGER_SUCCESS;
+	int cnt = 0;
 
 	WT_LOG(WT_TAG, "initialize wi-fi");
 	wres = wifi_manager_init(&g_wifi_callbacks);
@@ -205,7 +206,6 @@ static void *run_wm_daemon(void *arg)
 		return NULL;
 	}
 
-	int cnt = 0;
 	while (1) {
 		WT_LOG(WT_TAG, "=== test count %d===", cnt);
 		if (run_procedure(arg) < 0) {
