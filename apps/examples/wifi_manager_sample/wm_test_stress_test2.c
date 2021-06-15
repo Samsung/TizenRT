@@ -23,13 +23,13 @@
 #include <wifi_manager/wifi_manager.h>
 #include <stress_tool/st_perf.h>
 #include "wm_test.h"
+#include "wm_test_log.h"
 #include "wm_test_utils.h"
 
-/*
- * Macro
- */
+/* Macro*/
 #define WM_TEST_TRIAL	   CONFIG_WIFIMANAGER_TEST_TRIAL
 #define WM_NSOFTAP_SSID "no_sta_0101" // for auto test
+#define TAG "[WTS2]"
 static char *WM_AP_SSID;
 static char *WM_AP_PASSWORD;
 static wifi_manager_ap_auth_type_e WM_AP_AUTH;
@@ -64,31 +64,31 @@ static int g_conn = 0;
  */
 void wm_sta_connected(wifi_manager_result_e res)
 {
-	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	WT_LOG(TAG, "-->  res(%d)", res);
 	WO_TEST_SIGNAL(res, g_wo_queue);
 }
 
 void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
-	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
+	WT_LOG(TAG, "-->");
 	WO_TEST_SIGNAL(disconn, g_wo_queue);
 }
 
 void wm_softap_sta_join(void)
 {
-	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
+	WT_LOG(TAG, "-->");
 	WO_TEST_SIGNAL(-1, g_wo_queue);
 }
 
 void wm_softap_sta_leave(void)
 {
-	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
+	WT_LOG(TAG, "-->");
 	WO_TEST_SIGNAL(-1, g_wo_queue);
 }
 
 void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
-	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
+	WT_LOG(TAG, "-->");
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
@@ -98,7 +98,7 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
 	while (wifi_scan_iter != NULL) {
-		printf("WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d\n",
+		WT_LOG(TAG, "WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d",
 			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
 			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
 		wifi_scan_iter = wifi_scan_iter->next;
@@ -481,7 +481,7 @@ void wm_run_stress_test2(struct wt_options *opt)
 	/*  Create Queue */
 	g_wo_queue = wo_create_queue();
 	if (!g_wo_queue) {
-		printf("[WO] create queue fail\n");
+		WT_LOGE(TAG, "create queue fail");
 		return;
 	}
 

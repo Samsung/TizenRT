@@ -17,5 +17,21 @@
  ****************************************************************************/
 #pragma once
 
-#define WT_LOG(tag, fmt, args...) \
-	printf(tag"[T%d] "fmt"\n", getpid(), ##args)
+#define WT_LOG(tag, fmt, args...)										\
+	printf(tag"[T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__, ##args)
+
+#define WT_LOGE(tag, fmt, args...)										\
+	printf(tag"[ERR][T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__, ##args)
+
+#define WT_LOGP(tag, fmt, args...)				\
+	printf(fmt, ##args)
+
+#define WT_ENTER								\
+	do {										\
+		WT_LOG(TAG, "-->");						\
+	} while (0)
+
+#define WT_LEAVE								\
+	do {										\
+		WT_LOG(TAG, "<--");						\
+	} while (0)
