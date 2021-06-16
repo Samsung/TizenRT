@@ -186,8 +186,8 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 #endif
 
 #if (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU))
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_COMMON_BIN);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		/* Get MPU register values for MPU regions */
 		mpu_get_register_config_value(&com_bin_mpu_regs[0], nregion - 3, (uintptr_t)bin->alloc[ALLOC_TEXT], bin->textsize, true,  true);
 		mpu_get_register_config_value(&com_bin_mpu_regs[3], nregion - 2, (uintptr_t)bin->alloc[ALLOC_RO],   bin->rosize,   true,  false);
