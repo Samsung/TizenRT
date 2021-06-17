@@ -384,16 +384,28 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 
 trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_ap_config_s *config)
 {
+	printf("[pkbuild] scan ap %s %d %p\n", __FUNCTION__, __LINE__, config);
 	trwifi_result_e wuret = TRWIFI_FAIL;
+	if (config != NULL) {
+		printf("[pkbuild] scan with ssid\n");
+		printf("%s %d\n", config->ssid, config->ssid_length);
+
+		if (cmd_wifi_scan_with_ssid(config) != RTW_SUCCESS) {
+			printf("[pkbuidl] scan with ssid fail\n");
+			return wuret;
+		}
+	} else {
+		printf("[pkbuild] scan with no ssid\n");
 	if (wifi_scan_networks(app_scan_result_handler, NULL) != RTW_SUCCESS) {
 		//ndbg("[RTK] [ERR] WiFi scan fail(%d)\n", ret);
+			printf("[pkbuidl] scan with no ssid fail\n");
 		return wuret;
+		}
 	}
-	wuret = TRWIFI_SUCCESS;
 	ndbg("[RTK] WIFi Scan success\n");
-	return wuret;
+	return TRWIFI_SUCCESS;
 }
-
+#if 0
 trwifi_result_e wifi_netmgr_utils_single_channel_scan(struct netdev *dev, trwifi_scan_config_s *scan_config)
 {
 	if (!scan_config) {
@@ -406,6 +418,7 @@ trwifi_result_e wifi_netmgr_utils_single_channel_scan(struct netdev *dev, trwifi
 	ndbg("[RTK] WIFi Scan success\n");
 	return TRWIFI_SUCCESS;
 }
+#endif
 
 trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg)
 {
@@ -470,7 +483,7 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 					int rssi;
 					wifi_info->wifi_status = WIFI_UTILS_CONNECTED;
 					if (wifi_get_rssi(&rssi) == RTK_STATUS_SUCCESS) {
-						wifi_info->rssi = (int)rssi;
+						wifi_info->rssi = (int)rssi;
 					}
 				} else {
 					wifi_info->wifi_status = WIFI_UTILS_DISCONNECTED;

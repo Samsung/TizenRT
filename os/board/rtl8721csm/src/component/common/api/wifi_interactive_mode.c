@@ -836,7 +836,7 @@ extern int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list, int s
 
 #if SCAN_WITH_SSID
 #define SCAN_BUF_LEN 1000
-int8_t cmd_wifi_scan_with_ssid(trwifi_scan_config_s *scan_config)
+int8_t cmd_wifi_scan_with_ssid(trwifi_ap_config_s *scan_config)
 {
 
 	u8 *channel_list = NULL;
@@ -851,55 +851,63 @@ int8_t cmd_wifi_scan_with_ssid(trwifi_scan_config_s *scan_config)
 	if (!scan_config) {
 		return;
 	}
-	mode = scan_config->scan_mode;
+	mode = 0;
 
 	if (0 == mode) {	//full scan
 		if (!scan_config->ssid) {
 			ssid = scan_config->ssid;
 			ssid_len = strlen((const char *)ssid);
+			lldbg("[pkbuild] set ssid %s\n", scan_config->ssid);
 			if ((ssid_len <= 0) || (ssid_len > 32)) {
+				lldbg("[pkbuild] error %s:%d\n", __FUNCTION__, __LINE__);
 				RTW_API_INFO("\n\rWrong ssid. Length must be less than 32.");
+				lldbg("[pkbuild] [ERR] %s %d\n", __FUNCTION__, __LINE__);
 				return;
 			}
 		}
 		if (scan_buf_len < 36) {
 			RTW_API_INFO("\n\rBUFFER_LENGTH too short\n\r");
+			lldbg("[pkbuild] [ERR] %s %d\n", __FUNCTION__, __LINE__);
 			return;
 		}
-	} else if (1 == mode) {	// partial scan
-		if (!scan_config->ssid) {
-			ssid = scan_config->ssid;
-			ssid_len = strlen((const char *)ssid);
-			if ((ssid_len <= 0) || (ssid_len > 32)) {
-				RTW_API_INFO("\n\rWrong ssid. Length must be less than 32.");
-				goto exit;
-			}
-		}
-		num_channel = scan_config->channel_2g_len;
-		channel_list = (u8 *)rtw_malloc(num_channel);
-		if (!channel_list) {
-			RTW_API_INFO("\n\r ERROR: Can't malloc memory for channel list");
-			goto exit;
-		}
-		rtw_memcpy(channel_list, scan_config->channel_2g, num_channel);
-		pscan_config = (u8 *)rtw_malloc(num_channel);
-		if (!pscan_config) {
-			RTW_API_INFO("\n\r ERROR: Can't malloc memory for pscan_config");
-			goto exit;
-		}
-		rtw_memset(pscan_config, PSCAN_ENABLE, num_channel);
-		if (wifi_set_pscan_chan(channel_list, pscan_config, num_channel) < 0) {
-			RTW_API_INFO("\n\rERROR: wifi set partial scan channel fail");
-			goto exit;
-		}
-	} else {
+	}
+	/* else if (1 == mode) {	// partial scan */
+	/* 	if (!scan_config->ssid) { */
+	/* 		ssid = scan_config->ssid; */
+	/* 		ssid_len = strlen((const char *)ssid); */
+	/* 		if ((ssid_len <= 0) || (ssid_len > 32)) { */
+	/* 			RTW_API_INFO("\n\rWrong ssid. Length must be less than 32."); */
+	/* 			goto exit; */
+	/* 		} */
+	/* 	} */
+	/* 	num_channel = scan_config->channel_2g_len; */
+	/* 	channel_list = (u8 *)rtw_malloc(num_channel); */
+	/* 	if (!channel_list) { */
+	/* 		RTW_API_INFO("\n\r ERROR: Can't malloc memory for channel list"); */
+	/* 		goto exit; */
+	/* 	} */
+	/* 	rtw_memcpy(channel_list, scan_config->channel_2g, num_channel); */
+	/* 	pscan_config = (u8 *)rtw_malloc(num_channel); */
+	/* 	if (!pscan_config) { */
+	/* 		RTW_API_INFO("\n\r ERROR: Can't malloc memory for pscan_config"); */
+	/* 		goto exit; */
+	/* 	} */
+	/* 	rtw_memset(pscan_config, PSCAN_ENABLE, num_channel); */
+	/* 	if (wifi_set_pscan_chan(channel_list, pscan_config, num_channel) < 0) { */
+	/* 		RTW_API_INFO("\n\rERROR: wifi set partial scan channel fail"); */
+	/* 		goto exit; */
+	/* 	} */
+	/* } */
+	else {
 		RTW_API_INFO("\n\r For Scan all channel Usage: wifi_scan_with_ssid ssid");
 		RTW_API_INFO("\n\r For Scan partial channel Usage: wifi_scan_with_ssid ssid num_channels channel_num1 ...");
+		lldbg("[pkbuild] [ERR] %s %d\n", __FUNCTION__, __LINE__);
 		return -1;
 	}
 
 	if (wifi_scan_networks_with_ssid(NULL, NULL, scan_buf_len, ssid, ssid_len) != RTW_SUCCESS) {
 		RTW_API_INFO("\n\rERROR: wifi scan failed");
+		lldbg("[pkbuild] [ERR] %s %d\n", __FUNCTION__, __LINE__);
 		goto exit;
 	}
 exit:

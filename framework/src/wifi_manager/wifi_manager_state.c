@@ -26,6 +26,7 @@
 #include <wifi_manager/wifi_manager.h>
 #include <tinyara/net/netlog.h>
 #include <tinyara/wifi/wifi_common.h>
+#include <tinyara/net/if/wifi.h>
 #include "wifi_manager_utils.h"
 #include "wifi_manager_profile.h"
 #include "wifi_manager_dhcp.h"
@@ -301,7 +302,8 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 
 wifi_manager_result_e _wifimgr_scan(wifi_manager_ap_config_s *config)
 {
-	wifi_utils_ap_config_s uconf;
+	trwifi_ap_config_s uconf;
+	memset(&uconf, 0, sizeof(trwifi_ap_config_s));
 	if (!config) {
 		WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), TAG,
 								 "request scan to wifi utils is fail", WIFI_MANAGER_FAIL);

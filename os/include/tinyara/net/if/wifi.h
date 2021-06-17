@@ -9,15 +9,17 @@
 /*  if serialization is failed then driver should let pass the fail event to applications*/
 #define TRWIFI_POST_SCANEVENT(dev, evt, scanlist)						\
 	do {																\
-		if (evt == LWNL_EVT_SCAN_DONE) {									\
+		if (evt == LWNL_EVT_SCAN_DONE && !scanlist) {								\
 			uint8_t *buffer = NULL;										\
 			int lwnl_res = trwifi_serialize_scaninfo(&buffer, scanlist); \
 			if (lwnl_res < 0) {											\
-				trwifi_post_event(dev, LWNL_EVT_SCAN_FAILED, NULL, 0);		\
+				trwifi_post_event(dev, LWNL_EVT_SCAN_FAILED, NULL, 0);	\
 			} else {													\
 				trwifi_post_event(dev, LWNL_EVT_SCAN_DONE, buffer, lwnl_res); \
 				kmm_free(buffer);										\
 			}															\
+		} else {														\
+			trwifi_post_event(dev, LWNL_EVT_SCAN_FAILED, NULL, 0);		\
 		}																\
 	} while (0)
 
