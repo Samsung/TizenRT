@@ -219,29 +219,6 @@ exception_common:
 	mov	r7, r14				/* Save R14 value in r7 */
 #endif
 
-#if !defined(CONFIG_ARCH_HIPRI_INTERRUPT) && !defined(CONFIG_ARCH_NESTED_INTERRUPT)
-
-	/* Disable interrupts, select the stack to use for interrupt handling
-	 * and call up_doirq to handle the interrupt
-	 */
-
-	cpsid	i						/* Disable further interrupts */
-
-#elif !defined(CONFIG_ARCH_NESTED_INTERRUPT)
-	/* Set the BASEPRI register so that further normal interrupts will be
-	 * masked.  Nested, high priority may still occur, however.
-	 *
-	 * REVISIT:  I think this is un-necessary:  "When the processor is
-	 * executing an exception handler, an exception can preempt the exception
-	 * handler if its priority is higher than the priority of the exception
-	 * being handled. See Interrupt priority grouping for more information
-	 * about preemption by an interrupt."
-	 */
-
-	mov		r2, #NVIC_SYSH_DISABLE_PRIORITY
-	msr		basepri, r2				/* Set the BASEPRI */
-#endif
-
 	/* Disable further interrupts until we get g_nestlevel
 	 * and current_regs=regs, If before storing above values, higher priority
 	 * interrupt comes then context will be corrupted.
@@ -254,6 +231,30 @@ exception_common:
 #else
 	cpsid	i
 #endif
+
+#elif CONFIG_ARCH_HIPRI_INTERRUPT
+	/* Set the BASEPRI register so that further normal interrupts will be
+	 * masked.  Nested, high priority may still occur, however.
+	 *
+	 * REVISIT:  I think this is un-necessary:  "When the processor is
+	 * executing an exception handler, an exception can preempt the exception
+	 * handler if its priority is higher than the priority of the exception
+	 * being handled. See Interrupt priority grouping for more information
+	 * about preemption by an interrupt."
+	 */
+
+	mov		r2, #NVIC_SYSH_DISABLE_PRIORITY
+	msr		basepri, r2				/* Set the BASEPRI */
+
+#else
+
+	/* Disable interrupts, select the stack to use for interrupt handling
+	 * and call up_doirq to handle the interrupt
+	 */
+
+	cpsid	i						/* Disable further interrupts */
+
+
 #endif
 
 	/* There are two arguments to up_doirq:
