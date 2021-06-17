@@ -202,20 +202,30 @@ exception_common:
 
 	stmdb	sp!, {r2-r11,r14}		/* Save the remaining registers plus the SP/PRIMASK values */
 
-#ifndef CONFIG_ARCH_HIPRI_INTERRUPT
-	/* Disable interrupts, select the stack to use for interrupt handling
-	 * and call up_doirq to handle the interrupt
-	 */
 
-	cpsid	i						/* Disable further interrupts */
-
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
+#ifdef CONFIG_ARMV8M_USEBASEPRI
+	mov r1, #NVIC_SYSH_DISABLE_PRIORITY
+	msr basepri,r1						/* Set base priority */
 #else
+	cpsid	i
+#endif
+
+#elif CONFIG_ARCH_HIPRI_INTERRUPT
 	/* Set the BASEPRI register so that further normal interrupts will be
 	 * masked.  Nested, high priority may still occur, however.
 	 */
 
 	mov		r2, #NVIC_SYSH_DISABLE_PRIORITY
 	msr		basepri, r2				/* Set the BASEPRI */
+
+#else
+	/* Disable interrupts, select the stack to use for interrupt handling
+	 * and call up_doirq to handle the interrupt
+	 */
+
+	cpsid	i						/* Disable further interrupts */
+
 #endif
 
 	/* There are two arguments to up_doirq:
@@ -231,8 +241,31 @@ exception_common:
 	 * a special special interrupt stack pointer.  The way that this is done
 	 * here prohibits nested interrupts without some additional logic!
 	 */
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
+	ldr		r5, =g_nestlevel
+	ldr		r6, [r5]
+	add		r6, r6, 1
+	str		r6, [r5]
+	cmp		r6, #1
+	bne		9f
+	ldr		r5, =current_regs
+	str		r1, [r5]
+#endif
 
 	ldr		sp, =g_intstackbase
+9:
+	/* Reenabling the interrupts before going into up_doirq
+	 * so that any higher priority interrupt can be served.
+	 */
+
+#ifdef CONFIG_ARCH_NESTED_INTERRUPT
+#ifdef CONFIG_ARMv8M_USEBASEPRI
+	msr		basepri, r3
+#else
+	cpsie	i
+#endif
+#endif
+
 	push	{r1}					/* Save the MSP on the interrupt stack */
 	bl		up_doirq				/* R0=IRQ, R1=register save area on stack */
 	pop		{r1}					/* Recover R1=main stack pointer */
@@ -348,7 +381,7 @@ exception_common:
 
 #ifdef CONFIG_ARMV8M_USEBASEPRI
 	msr		basepri, r3				/* Restore interrupts priority masking */
-#ifndef CONFIG_ARCH_HIPRI_INTERRUPT
+#if !defined(CONFIG_ARCH_HIPRI_INTERRUPT) && !defined(CONFIG_ARCH_NESTED_INTERRUPT)
 	cpsie	i						/* Re-enable interrupts */
 #endif
 
@@ -376,12 +409,15 @@ exception_common:
 	.bss
 	.global	g_intstackalloc
 	.global	g_intstackbase
+	.global	g_nestlevel
 	.align	4
 g_intstackalloc:
 	.skip	(CONFIG_ARCH_INTERRUPTSTACK & ~3)
 g_intstackbase:
 	.size	g_intstackalloc, .-g_intstackalloc
+g_nestlevel:
+	.skip   4
+	.size   g_nestlevel, 4
 #endif
 
 	.end
-
