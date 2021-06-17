@@ -35,11 +35,11 @@ extern struct vwifi_ops *get_vdev_auto(void);
 
 static void vwifi_callback_handler(lwnl_cb_status evt)
 {
-	if (evt.evt == LWNL_SCAN_DONE) {
+	if (evt.evt == LWNL_EVT_SCAN_DONE) {
 		trwifi_scan_list_s *scanlist = vwifi_get_scan_list();
-		LWNL_POST_WIFISCANMSG(LWNL_SCAN_DONE, scanlist);
+		TRWIFI_POST_SCANEVENT(LWNL_EVT_SCAN_DONE, scanlist);
 	} else {
-		LWNL_POST_WIFIMSG(evt.evt, NULL, 0);
+		trwifi_post_event(evt.evt, NULL, 0);
 	}
 }
 

@@ -243,7 +243,7 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 		}
 	} else {
 		nvdbg("SCAN DONE: Calling wifi_scan_result_callback\r\n");
-		LWNL_POST_WIFISCANMSG(LWNL_SCAN_DONE, (void *)g_scan_list);
+		TRWIFI_POST_SCANEVENT(LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
 		_free_scanlist();
 		if (g_scan_list) {
 			ndbg("SCAN list is not initialized\n");
@@ -263,22 +263,22 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 
 	switch (type) {
 	case 1:
-		LWNL_POST_WIFIMSG(LWNL_STA_CONNECTED, NULL, 0);
+		trwifi_post_event(LWNL_EVT_STA_CONNECTED, NULL, 0);
 		break;
 	case 2:
-		LWNL_POST_WIFIMSG(LWNL_STA_CONNECT_FAILED, NULL, 0);
+		trwifi_post_event(LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
 		break;
 	case 3:
-		LWNL_POST_WIFIMSG(LWNL_SOFTAP_STA_JOINED, NULL, 0);
+		trwifi_post_event(LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
 		break;
 	case 4:
-		LWNL_POST_WIFIMSG(LWNL_STA_DISCONNECTED, NULL, 0);
+		trwifi_post_event(LWNL_EVT_STA_DISCONNECTED, NULL, 0);
 		break;
 	case 5:
-		LWNL_POST_WIFIMSG(LWNL_SOFTAP_STA_LEFT, NULL, 0);
+		trwifi_post_event(LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
 		break;
 	default:
-		LWNL_POST_WIFIMSG(LWNL_UNKNOWN, NULL, 0);
+		trwifi_post_event(LWNL_EVT_UNKNOWN, NULL, 0);
 		break;
 	}
 

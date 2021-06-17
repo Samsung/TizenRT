@@ -61,7 +61,7 @@ trwifi_result_e vwifi_handle_deinit(void *req)
 trwifi_result_e vwifi_handle_scanap(void *req)
 {
 	VWIFI_ENTRY;
-	vwifi_create_event(NULL, 2, LWNL_SCAN_DONE);
+	vwifi_create_event(NULL, 2, LWNL_EVT_SCAN_DONE);
 
 	return TRWIFI_SUCCESS;
 }
@@ -69,7 +69,7 @@ trwifi_result_e vwifi_handle_scanap(void *req)
 trwifi_result_e vwifi_handle_connectap(void *req)
 {
 	VWIFI_ENTRY;
-	vwifi_create_event(NULL, 0, LWNL_STA_CONNECTED);
+	vwifi_create_event(NULL, 0, LWNL_EVT_STA_CONNECTED);
 
 	return TRWIFI_SUCCESS;
 }
@@ -77,7 +77,7 @@ trwifi_result_e vwifi_handle_connectap(void *req)
 trwifi_result_e vwifi_handle_disconnectap(void *req)
 {
 	VWIFI_ENTRY;
-	vwifi_create_event(NULL, 0, LWNL_STA_DISCONNECTED);
+	vwifi_create_event(NULL, 0, LWNL_EVT_STA_DISCONNECTED);
 
 	return TRWIFI_SUCCESS;
 }
@@ -103,7 +103,7 @@ trwifi_result_e vwifi_handle_startsoftap(void *req)
 	uint8_t *ssid = (uint8_t *)(((struct vwifi_req *)req)->arg);
 	if (strncmp(ssid, WM_NSOFTAP_SSID, strlen(ssid))) {
 		g_vdev_softap_joined = 1;
-		vwifi_create_event(NULL, 0, LWNL_SOFTAP_STA_JOINED);
+		vwifi_create_event(NULL, 0, LWNL_EVT_SOFTAP_STA_JOINED);
 	}
 	free(req);
 
@@ -115,7 +115,7 @@ trwifi_result_e vwifi_handle_stopsoftap(void *req)
 	VWIFI_ENTRY;
 	/* if (g_vdev_softap_joined) { */
 	/* 	g_vdev_softap_joined = 0; */
-	/* 	vwifi_create_event(NULL, 0, LWNL_SOFTAP_STA_LEFT); */
+	/* 	vwifi_create_event(NULL, 0, LWNL_EVT_SOFTAP_STA_LEFT); */
 	/* } */
 
 	return TRWIFI_SUCCESS;

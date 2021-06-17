@@ -62,9 +62,9 @@ trwifi_result_e vwifi_handle_connectap(void *req)
 {
 	VWIFI_ENTRY;
 
-	vwifi_create_event(NULL, 0, LWNL_STA_CONNECTED);
+	vwifi_create_event(NULL, 0, LWNL_EVT_STA_CONNECTED);
 
-	vwifi_create_event(NULL, 3, LWNL_STA_DISCONNECTED);
+	vwifi_create_event(NULL, 3, LWNL_EVT_STA_DISCONNECTED);
 
 	return 0;
 }
@@ -73,7 +73,7 @@ trwifi_result_e vwifi_handle_disconnectap(void *req)
 {
 	VWIFI_ENTRY;
 
-	vwifi_create_event(NULL, 0, LWNL_STA_DISCONNECTED);
+	vwifi_create_event(NULL, 0, LWNL_EVT_STA_DISCONNECTED);
 
 	return 0;
 }

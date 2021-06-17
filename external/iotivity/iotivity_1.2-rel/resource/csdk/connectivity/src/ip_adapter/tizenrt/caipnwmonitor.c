@@ -338,16 +338,16 @@ u_arraylist_t *CAFindInterfaceChange()
 		free(tmp);
 	}
 
-	if (status.evt == LWNL_STA_CONNECTED ||
-		status.evt == LWNL_SOFTAP_STA_JOINED) {
+	if (status.evt == LWNL_EVT_STA_CONNECTED ||
+		status.evt == LWNL_EVT_SOFTAP_STA_JOINED) {
 		printf("Receive the event(IF is UP)\n");
 		iflist = CAIPGetInterfaceInformation(0);
         if (!iflist) {
             OIC_LOG_V(ERROR, TAG, "get interface info failed: %s", strerror(errno));
             return NULL;
         }
-	} else if (status.evt == LWNL_STA_DISCONNECTED ||
-		status.evt == LWNL_SOFTAP_STA_LEFT) {
+	} else if (status.evt == LWNL_EVT_STA_DISCONNECTED ||
+		status.evt == LWNL_EVT_SOFTAP_STA_LEFT) {
 		printf("Receive the event(IF is down)\n");
 	} else {
 		printf("message not interest in\n");
