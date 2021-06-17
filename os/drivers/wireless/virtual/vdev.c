@@ -58,6 +58,9 @@ static trwifi_result_e vdev_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg);
 static int vdev_linkoutput(struct netdev *dev, void *buf, uint16_t dlen);
 static int vdev_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
 
+static int vdev_linkoutput(struct netdev *dev, void *buf, uint16_t dlen);
+static int vdev_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -72,15 +75,14 @@ static struct trwifi_ops g_trwifi_drv_ops = {
 	vdev_start_softap,           /* start_softap */
 	vdev_stop_softap,            /* stop_softap */
 	vdev_set_autoconnect,        /* set_autoconnect */
-	vdev_drv_ioctl               /* drv_ioctl */
+	vdev_drv_ioctl                   /* drv_ioctl */
 };
 
-static struct netdev *g_vwifi_dev = NULL;
+struct netdev *g_vwifi_dev = NULL;
 static uint8_t g_hwaddr[IFHWADDRLEN] = {0x0e, 0x04, 0x96, 0x1d, 0xb3, 0xb0};
 
 extern void vwifi_handle_packet(uint8_t *buf, uint32_t len);
 extern void vwifi_initialize_scan(void);
-
 /*
  * Callback
  */
@@ -170,6 +172,7 @@ static inline int _send_message(int fd, char *buf, int buflen)
 	return 0;
 }
 
+
 static inline int _progress_message(struct vwifi_req *req)
 {
 	int fd = open(VWIFI_MSG_QUEUE_NAME, O_WRONLY);
@@ -200,31 +203,8 @@ static inline int _progress_message(struct vwifi_req *req)
 	return 0;
 }
 
-/*
- * Inner Function
- */
-static int _vdev_get_stats(trwifi_msg_stats_s *stats)
-{
-	stats->start.tv_sec = 10;
-	stats->start.tv_usec = 20;
-	stats->end.tv_sec = 30;
-	stats->end.tv_usec = 40;
-	stats->tx_retransmit = 1;
-	stats->tx_drop = 2;
-	stats->rx_drop = 3;
-	stats->tx_success_cnt = 4;
-	stats->tx_success_bytes = 5;
-	stats->rx_cnt = 6;
-	stats->rx_bytes = 7;
-	stats->tx_try = 8;
-	stats->rssi_avg = 9;
-	stats->rssi_min = 10;
-	stats->rssi_max = 11;
-	stats->beacon_miss_cnt = 12;
-	return 0;
-}
 
-static int _vwifi_create_msgqueue(int *fd)
+int _vwifi_create_msgqueue(int *fd)
 {
 	int res = mkfifo(VWIFI_MSG_QUEUE_NAME, 0666);
 	if (res < 0 && res != -EEXIST) {
@@ -267,13 +247,6 @@ static struct netdev* vdev_register_dev(void)
  */
 static void vdev_run(int argc, char *argv[])
 {
-	g_vwifi_dev = vdev_register_dev();
-	if (!g_vwifi_dev) {
-		VWIFI_ERROR(0);
-		return;
-	}
-	netdev_set_hwaddr(g_vwifi_dev, g_hwaddr, IFHWADDRLEN);
-
 	int fd;
 	int res = _vwifi_create_msgqueue(&fd);
 	if (res < 0) {
@@ -289,10 +262,10 @@ static void vdev_run(int argc, char *argv[])
 		tfds = rfds;
 		res = select(fd + 1, &tfds, NULL, NULL, NULL);
 		if (res <= 0) {
+			VWIFI_ERROR(res);
 			if (errno == EINTR) {
 				continue;
 			}
-			VWIFI_ERROR(res);
 			break;
 		}
 		struct vwifi_msg msg;
@@ -312,17 +285,21 @@ static void vdev_run(int argc, char *argv[])
 	return;
 }
 
-/*
- * Internal API
- */
 void vwifi_start(void)
 {
 	vwifi_initialize_scan();
-	int new_thread = kernel_thread("wifi mocking driver", 100, 2048, (main_t)vdev_run, (char *const *)NULL);
+	g_vwifi_dev = vdev_register_dev();
+	if (!g_vwifi_dev) {
+		VWIFI_ERROR(0);
+		return;
+	}
+	netdev_set_hwaddr(g_vwifi_dev, g_hwaddr, IFHWADDRLEN);
+
+	int new_thread = kernel_thread("wifi mocking driver", 100, 2048,
+								   (main_t)vdev_run, (char *const *)NULL);
 	if (new_thread < 0) {
 		VWIFI_ERROR(new_thread);
 	}
-
 	return;
 }
 
@@ -340,12 +317,14 @@ void up_netinitialize(void)
 	return;
 }
 
+
 /*
  * Interface API
  */
 trwifi_result_e vdev_init(struct netdev *dev)
 {
 	VWIFI_ENTRY;
+
 	struct vwifi_req req = {VWIFI_MSG_INIT, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
@@ -471,12 +450,7 @@ trwifi_result_e vdev_set_autoconnect(struct netdev *dev, uint8_t check)
 
 trwifi_result_e vdev_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 {
-	if (msg->cmd != TRWIFI_MSG_GET_STATS) {
-		return TRWIFI_NOT_SUPPORTED;
-	}
-	/*  set dummy value */
-	trwifi_msg_stats_s *stats = (trwifi_msg_stats_s *)msg;
-	return _vdev_get_stats(stats) != 0 ? TRWIFI_FAIL : TRWIFI_SUCCESS;
+	return TRWIFI_SUCCESS;
 }
 
 int vdev_linkoutput(struct netdev *dev, void *buf, uint16_t dlen)
@@ -486,7 +460,8 @@ int vdev_linkoutput(struct netdev *dev, void *buf, uint16_t dlen)
 	return TRWIFI_SUCCESS;
 }
 
-int vdev_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action)
+int vdev_set_multicast_list(struct netdev *dev, const struct in_addr *group,
+							netdev_mac_filter_action action)
 {
 	VWIFI_ENTRY;
 	return TRWIFI_SUCCESS;
