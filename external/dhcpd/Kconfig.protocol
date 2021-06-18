@@ -119,4 +119,10 @@ config LWIP_DHCPS_UNICAST
 		DHCP server sent unicast message to client.
 		To send unicast, ARP table should be allowed to static update
 
+config LWIP_DHCPS_ADDITIONAL_DNS
+	bool "Add additional DNS server 8.8.8.8"
+	default n
+	depends on LWIP_DHCPS
+	---help---
+		Add 8.8.8.8 DNS server to dhcps offer message
 endif
