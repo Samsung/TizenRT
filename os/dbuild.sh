@@ -105,6 +105,7 @@ function SELECT_OPTION()
 			if [ "${STATUS}" == "BUILT" ]; then
 				echo "  \"d. Download\""
 			fi
+			echo "  \"t. Build Test\""
 			echo "  \"x. Exit\""
 			echo ======================================================
 			read SELECTED_START
@@ -132,13 +133,15 @@ function SELECT_OPTION()
 		6|smartfs)
 			BUILD smartfs
 			;;
-
 		d|download)
 			if [ "${STATUS}" == "BUILT" ]; then
 				STATUS=PREPARE_DL
 			else
 				echo "No output file"
 			fi
+			;;
+		t|test)
+			BUILD_TEST
 			;;
 		x|exit)
 			exit 1
@@ -152,6 +155,14 @@ function SELECT_OPTION()
 	else
 		SELECT_BOARD
 	fi
+}
+
+function BUILD_TEST()
+{
+	# excute a shell script for build test
+	pushd ${OSDIR} > /dev/null
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} bash -c "./tools/build_test.sh"
+	popd > /dev/null
 }
 
 function SELECT_BOARD()
@@ -194,9 +205,16 @@ function SELECT_BOARD()
 			BOARDNAME_STR[${IDX}]=${BOARDNAME_MEMBER}
 			((IDX=IDX+1))
 		done
+		echo "  \"t. BUILD TEST\""
 		echo "  \"x. EXIT\""
 		echo ======================================================
 		read SELECTED_BOARD
+	fi
+
+	# treate "test"
+	if [ "${SELECTED_BOARD}" == "t" -o "${SELECTED_BOARD}" == "test" -o "${SELECTED_BOARD}" == "TEST" ]; then
+		BUILD_TEST
+		exit 1
 	fi
 
 	# treate "exit"
