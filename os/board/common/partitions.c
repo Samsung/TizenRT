@@ -114,7 +114,7 @@ static int type_specific_initialize(FAR struct mtd_dev_s *mtd_part, int partno, 
 	}
 #endif
 #ifdef CONFIG_LIBC_ZONEINFO_ROMFS
-	else if (!strncmp(types, "timezone,", 10)) {
+	else if (!strncmp(types, "timezone,", 9)) {
 		do_ftlinit = true;
 		save_timezone_partno = true;
 	}
