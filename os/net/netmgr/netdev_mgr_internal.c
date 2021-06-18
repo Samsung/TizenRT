@@ -28,7 +28,6 @@
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
-
 #include "netdev_mgr_internal.h"
 
 #ifndef CONFIG_NETDEV_NUM
@@ -42,7 +41,6 @@ static struct netdev g_netdev[CONFIG_NETDEV_NUM];
 static int g_netdev_idx = 0;
 static int g_wlan_idx = 0;
 static int g_eth_idx = 0;
-
 /* protect access of g_netdev and g_netdev_idx
  * netdev is set while system is resetting.
  * and application doesn't require write operation to netdev
@@ -60,13 +58,11 @@ static sem_t g_netdev_lock;
 		sem_post(&g_netdev_lock);				\
 	} while (0)
 
-
 /*
  * external function
  */
 // the way to get lwip stack need to be changed.
 extern void *get_netdev_ops_lwip(void);
-
 
 struct netdev *nm_get_netdev(uint8_t *ifname)
 {
@@ -97,7 +93,6 @@ int nm_foreach(tr_netdev_callback_t callback, void *arg)
 	return ret;
 }
 
-
 int _nm_register_loop(struct netdev *dev, struct netdev_config *config)
 {
 	int res = 0;
@@ -110,7 +105,6 @@ int _nm_register_loop(struct netdev *dev, struct netdev_config *config)
 
 	return res;
 }
-
 
 struct netdev *nm_register(struct netdev_config *config)
 {
@@ -168,27 +162,21 @@ struct netdev *nm_register(struct netdev_config *config)
 
 	nconfig.is_default = config->is_default;
 	nconfig.loopback = 0;
+	nconfig.io_ops = *config->ops;
 
 	struct netdev_ops *ops = get_netdev_ops_lwip();
-
-	ops->linkoutput = config->ops->linkoutput;
-	ops->igmp_mac_filter = config->ops->igmp_mac_filter;
-
 	dev->ops = (void *)ops;
 	ops->init_nic(dev, &nconfig);
-
 	dev->priv = config->priv;
 
 	//NETDEV_UNLOCK;
 	return dev;
 }
 
-
 int nm_count(void)
 {
 	return g_netdev_idx;
 }
-
 
 int nm_ifup(struct netdev *dev)
 {
@@ -220,7 +208,6 @@ int nm_ifup(struct netdev *dev)
 	return 0;
 }
 
-
 int nm_ifdown(struct netdev *dev)
 {
 	int ret = ((struct netdev_ops *)(dev->ops))->ifdown(dev);
@@ -245,7 +232,6 @@ int nm_ifdown(struct netdev *dev)
 
 	return 0;
 }
-
 
 void nm_init(void)
 {

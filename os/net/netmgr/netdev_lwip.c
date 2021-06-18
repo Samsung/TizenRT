@@ -791,11 +791,12 @@ static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 	*ndev = dev;
 
 	((struct netdev_ops *)dev->ops)->nic = (void *)nic;
-
 	if (config->loopback) {
 		_lwip_init_loop(nic);
 		return 0;
 	}
+	((struct netdev_ops *)dev->ops)->linkoutput = config->io_ops.linkoutput;
+	((struct netdev_ops *)dev->ops)->igmp_mac_filter = config->io_ops.igmp_mac_filter;
 
 	nic->mtu = CONFIG_NET_ETH_MTU;
 	nic->hwaddr_len = config->hwaddr_len;
