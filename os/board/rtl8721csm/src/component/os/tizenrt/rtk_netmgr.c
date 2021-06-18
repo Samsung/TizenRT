@@ -25,7 +25,7 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
-
+#include <tinyara/netmgr/netdev_mgr.h>
 /* WLAN CONFIG ---------------------------------------------------------------*/
 #define RTK_OK          0		/*!< RTK_err_t value indicating success (no error) */
 #define RTK_FAIL        -1		/*!< Generic RTK_err_t code indicating failure */
@@ -64,7 +64,6 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap_config_s *softap_config);
 trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t check);
-
 struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_init,			/* init */
 	wifi_netmgr_utils_deinit,			/* deinit */
@@ -81,6 +80,8 @@ struct trwifi_ops g_trwifi_drv_ops = {
 
 static wifi_utils_scan_list_s *g_scan_list;
 static int g_scan_num;
+extern struct netdev *ameba_nm_dev_wlan0;
+
 static void _free_scanlist(void)
 {
 	while (g_scan_list) {
@@ -243,7 +244,7 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 		}
 	} else {
 		nvdbg("SCAN DONE: Calling wifi_scan_result_callback\r\n");
-		TRWIFI_POST_SCANEVENT(LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
+		TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
 		_free_scanlist();
 		if (g_scan_list) {
 			ndbg("SCAN list is not initialized\n");
@@ -263,22 +264,22 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 
 	switch (type) {
 	case 1:
-		trwifi_post_event(LWNL_EVT_STA_CONNECTED, NULL, 0);
+		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECTED, NULL, 0);
 		break;
 	case 2:
-		trwifi_post_event(LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
+		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
 		break;
 	case 3:
-		trwifi_post_event(LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
 		break;
 	case 4:
-		trwifi_post_event(LWNL_EVT_STA_DISCONNECTED, NULL, 0);
+		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
 		break;
 	case 5:
-		trwifi_post_event(LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
+		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
 		break;
 	default:
-		trwifi_post_event(LWNL_EVT_UNKNOWN, NULL, 0);
+		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
 		break;
 	}
 
@@ -304,7 +305,7 @@ void linkup_handler(rtk_reason_t *reason)
 	}
 	argv[0] = data;
 
-	pid = kernel_thread("lwnl80211_cbk_handler", 100, 1024, (main_t)rtk_drv_callback_handler, argv);
+	pid = kernel_thread("lwnl80211_cbk_handler", 100, 2048, (main_t)rtk_drv_callback_handler, argv);
 	if (pid < 0) {
 		vddbg("pthread create fail(%d)\n", errno);
 		return;
@@ -327,7 +328,7 @@ void linkdown_handler(rtk_reason_t *reason)
 	}
 	argv[0] = data;
 
-	pid = kernel_thread("lwnl80211_cbk_handler", 100, 1024, (main_t)rtk_drv_callback_handler, argv);
+	pid = kernel_thread("lwnl80211_cbk_handler", 100, 2048, (main_t)rtk_drv_callback_handler, argv);
 	if (pid < 0) {
 		vddbg("pthread create fail(%d)\n", errno);
 		return;

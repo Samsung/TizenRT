@@ -15,12 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-#ifndef _NETDEV_LWIP_OPS_H__
-#define _NETDEV_LWIP_OPS_H__
-
 #include <tinyara/config.h>
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <netinet/in.h>
@@ -61,58 +56,25 @@ static int g_num = 0;
 /**
  * Private Function
  */
-static inline int _netif_down(struct netif *ni)
-{
-	/* Is the interface already down? */
-	err_t res = netifapi_netif_set_link_down(ni);
-	if (res != ERR_OK) {
-		ndbg("netdev soft link down fail\n");
-		return -1;
-	}
-
-	res = netifapi_netif_set_down(ni);
-	if (res != ERR_OK) {
-		ndbg("netdev soft if down fail\n");
-		return -2;
-	}
-	return 0;
-}
-
-
-static inline int _netif_up(struct netif *ni)
-{
-	err_t lres = netifapi_netif_set_up(ni);
-	if (lres != ERR_OK) {
-		ndbg("netni soft if up fail\n");
-		return -1;
-	}
-
-	lres = netifapi_netif_set_link_up(ni);
-	if (lres != ERR_OK) {
-		ndbg("netdev soft link up fail\n");
-		return -2;
-	}
-	return 0;
-}
-
-
-static void _netif_soft_ifup(FAR struct netif *dev)
+static int _netif_soft_ifup(FAR struct netif *dev)
 {
 	err_t res = netifapi_netif_set_up(dev);
 	if (res != ERR_OK) {
 		ndbg("netdev soft ifup fail\n");
+		return -1;
 	}
+	return 0;
 }
 
-
-static void _netif_soft_ifdown(FAR struct netif *dev)
+static int _netif_soft_ifdown(FAR struct netif *dev)
 {
 	err_t res = netifapi_netif_set_down(dev);
 	if (res != ERR_OK) {
 		ndbg("netdev soft ifdown fail\n");
+		return -1;
 	}
+	return 0;
 }
-
 
 #ifdef CONFIG_NET_IPv4
 static inline void _convert_ip4addr_lton(struct sockaddr_in *dest_addr, ip_addr_t *src_addr)
@@ -207,7 +169,6 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 }
 #endif // CONFIG_NET_IPv6
 
-
 static err_t _lwip_nic_init(struct netif *nic)
 {
 	nic->name[0] = 'w';
@@ -215,10 +176,8 @@ static err_t _lwip_nic_init(struct netif *nic)
 
 	// To Do: apply flag which is set in netdev
 	// nic->flags = NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
-
 	return ERR_OK;
 }
-
 
 #if LWIP_HAVE_LOOPIF
 #if LWIP_IPV4
@@ -229,7 +188,6 @@ static err_t _netif_loop_output_ipv4(struct netif *netif, struct pbuf *p, const 
 }
 #endif							/* LWIP_IPV4 */
 
-
 #if LWIP_IPV6
 static err_t _netif_loop_output_ipv6(struct netif *netif, struct pbuf *p, const ip6_addr_t *addr)
 {
@@ -238,7 +196,6 @@ static err_t _netif_loop_output_ipv6(struct netif *netif, struct pbuf *p, const 
 }
 #endif							/* LWIP_IPV6 */
 #endif							/* LWIP_HAVE_LOOPIF */
-
 
 static err_t _netif_loopif_init(struct netif *netif)
 {
@@ -265,7 +222,6 @@ static err_t _netif_loopif_init(struct netif *netif)
 
 	return ERR_OK;
 }
-
 
 static void _lwip_init_loop(struct netif *nic)
 {
@@ -297,7 +253,6 @@ static void _lwip_init_loop(struct netif *nic)
 #endif							/* LWIP_HAVE_LOOPIF */
 }
 
-
 static inline void _free_ifaddrs(struct ifaddrs *addrs)
 {
 	struct ifaddrs *ifa = NULL, *prev = NULL;
@@ -320,7 +275,6 @@ static inline void _free_ifaddrs(struct ifaddrs *addrs)
 	}
 }
 
-
 #ifdef CONFIG_NET_NETMGR_ZEROCOPY
 static err_t lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 {
@@ -333,7 +287,6 @@ static err_t lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 
 	return ERR_OK;
 }
-
 
 static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 {
@@ -391,7 +344,6 @@ static err_t lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 
 	return ERR_OK;
 }
-
 
 static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 {
@@ -452,7 +404,6 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 }
 #endif /*  CONFIG_NET_NETMGR_ZEROCOPY */
 
-
 static err_t lwip_set_multicast_list(struct netif *nic, const ip4_addr_t *group, enum netif_mac_filter_action action)
 {
 	struct netdev *dev = LW_GETND(nic);
@@ -465,7 +416,6 @@ static err_t lwip_set_multicast_list(struct netif *nic, const ip4_addr_t *group,
 	}
 	return ERR_OK;
 }
-
 
 #ifdef CONFIG_NET_IPv4
 static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
@@ -483,7 +433,6 @@ static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 
 	return 0;
 }
-
 
 static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
@@ -524,7 +473,6 @@ static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 }
 #endif /*  CONFIG_NET_IPv4 */
 
-
 #ifdef CONFIG_NET_IPv6
 static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, int type)
 {
@@ -559,7 +507,6 @@ static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, i
 	return -ENOTTY;
 }
 #endif /* CONFIG_NET_IPv6 */
-
 
 static int lwip_get_ifaddrs(struct netdev *dev, struct ifaddrs **addrs)
 {
@@ -633,12 +580,16 @@ free_list:
 	return -1;
 }
 
-
 static int lwip_delete_ipaddr(struct netdev *dev)
 {
 	// ToDo: check that it is correct to down the interface when delete an IP?
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
-	int res = _netif_down(ni);
+	err_t lres = netifapi_netif_set_link_down(ni);
+	if (lres != ERR_OK) {
+		ndbg("netdev soft link down fail\n");
+		return -ENOTTY;
+	}
+	int res = _netif_soft_ifdown(ni);
 	if (res < 0) {
 		return -ENOTTY;
 	}
@@ -648,7 +599,6 @@ static int lwip_delete_ipaddr(struct netdev *dev)
 	return 0;
 }
 
-
 static int lwip_get_hwaddr(struct netdev *dev, struct sockaddr *hwaddr)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
@@ -657,7 +607,6 @@ static int lwip_get_hwaddr(struct netdev *dev, struct sockaddr *hwaddr)
 	return 0;
 }
 
-
 static int lwip_set_hwaddr(struct netdev *dev, struct sockaddr *hwaddr)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
@@ -665,14 +614,12 @@ static int lwip_set_hwaddr(struct netdev *dev, struct sockaddr *hwaddr)
 	return 0;
 }
 
-
 static int lwip_get_mtu(struct netdev *dev, int *mtu)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	*mtu = ni->mtu;
 	return 0;
 }
-
 
 static int lwip_get_flag(struct netdev *dev, uint8_t *flag)
 {
@@ -698,18 +645,10 @@ static int lwip_get_flag(struct netdev *dev, uint8_t *flag)
 	return 0;
 }
 
-
-static int lwip_ifup(struct netdev *dev)
+static int lwip_softup(struct netdev *dev)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
-
-	/* Is the interface already up? */
-	if (ni->flags & NETIF_FLAG_LINK_UP) {
-		ndbg("netif is already up\n");
-		return 0;
-	}
-
-	if (_netif_up(ni) < 0) {
+	if (_netif_soft_ifup(ni) != 0) {
 		return -1;
 	}
 
@@ -721,7 +660,6 @@ static int lwip_ifup(struct netdev *dev)
 #ifdef CONFIG_NET_IPv6
 	/* IPV6 auto configuration : Link-Local address */
 	nvdbg("IPV6 link local address auto config\n");
-
 #ifdef CONFIG_NET_IPv6_AUTOCONFIG
 	/* enable IPv6 address stateless auto-configuration */
 	netif_set_ip6_autoconfig_enabled(ni, 1);
@@ -747,18 +685,38 @@ static int lwip_ifup(struct netdev *dev)
 	return 0;
 }
 
+static int lwip_softdown(struct netdev *dev)
+{
+	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
+	return _netif_soft_ifdown(ni);
+}
+
+static int lwip_ifup(struct netdev *dev)
+{
+	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
+	/* Is the interface already up? */
+	if (ni->flags & NETIF_FLAG_LINK_UP) {
+		ndbg("netif is already up\n");
+		return 0;
+	}
+	err_t lres = netifapi_netif_set_link_up(ni);
+	if (lres != ERR_OK) {
+		ndbg("netdev soft link up fail\n");
+		return -2;
+	}
+	return 0;
+}
 
 static int lwip_ifdown(struct netdev *dev)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
-	int res = _netif_down(ni);
-	if (res < 0) {
-		return -ENOTTY;
+	err_t res = netifapi_netif_set_link_down(ni);
+	if (res != ERR_OK) {
+		ndbg("netdev soft link down fail\n");
+		return -1;
 	}
-
 	return 0;
 }
-
 
 static int lwip_joingroup(struct netdev *dev, struct in_addr *addr)
 {
@@ -767,14 +725,12 @@ static int lwip_joingroup(struct netdev *dev, struct in_addr *addr)
 	return igmp_joingroup(ip_2_ip4(&(ni->ip_addr)), &a4);
 }
 
-
 static int lwip_leavegroup(struct netdev *dev, struct in_addr *addr)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	struct ip4_addr a4 = {.addr = addr->s_addr};
 	return igmp_leavegroup(ip_2_ip4(&(ni->ip_addr)), &a4);
 }
-
 
 static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 {
@@ -840,7 +796,6 @@ static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 	return 0;
 }
 
-
 static int lwip_deinit_nic(struct netdev *dev)
 {
 	if (!dev) {
@@ -856,7 +811,6 @@ static int lwip_deinit_nic(struct netdev *dev)
 
 	return 0;
 }
-
 
 #ifdef CONFIG_NET_NETMON
 static int lwip_get_stats(struct netdev *dev, struct netmon_netdev_stats *stats)
@@ -879,7 +833,6 @@ static int lwip_get_stats(struct netdev *dev, struct netmon_netdev_stats *stats)
 	return 0;
 }
 #endif
-
 
 struct netdev_ops *get_netdev_ops_lwip(void)
 {
@@ -904,6 +857,8 @@ struct netdev_ops *get_netdev_ops_lwip(void)
 
 	netdev_ops->ifup = lwip_ifup;
 	netdev_ops->ifdown = lwip_ifdown;
+	netdev_ops->softup = lwip_softup;
+	netdev_ops->softdown = lwip_softdown;
 
 	netdev_ops->joingroup = lwip_joingroup;
 	netdev_ops->leavegroup = lwip_leavegroup;
@@ -916,4 +871,3 @@ struct netdev_ops *get_netdev_ops_lwip(void)
 
 	return netdev_ops;
 }
-#endif // _NETDEV_LWIP_OPS_H__

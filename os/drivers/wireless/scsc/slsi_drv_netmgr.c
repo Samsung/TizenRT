@@ -92,6 +92,7 @@ typedef struct _wifi_scan_filter_result_ scan_filter_result_t;
  ****************************************************************************/
 static scan_filter_result_t scan_filter_result;
 static WiFi_InterFace_ID_t g_mode;
+struct netdev *g_slsi_netdev = NULL;
 static struct trwifi_ops g_trwifi_drv_ops = {
 	slsidrv_init,                   /* init */
 	slsidrv_deinit,                 /* deinit */
@@ -263,22 +264,22 @@ static int slsi_drv_callback_handler(void *arg)
 	vddbg("Got callback from SLSI drv (%d)\n", *type);
 	switch (*type) {
 	case 1:
-		trwifi_post_event(LWNL_EVT_STA_CONNECTED, NULL, 0);
+		trwifi_post_event(g_slsi_netdev, LWNL_EVT_STA_CONNECTED, NULL, 0);
 		break;
 	case 2:
-		trwifi_post_event(LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
+		trwifi_post_event(g_slsi_netdev, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
 		break;
 	case 3:
-		trwifi_post_event(LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+		trwifi_post_event(g_slsi_netdev, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
 		break;
 	case 4:
-		trwifi_post_event(LWNL_EVT_STA_DISCONNECTED, NULL, 0);
+		trwifi_post_event(g_slsi_netdev, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
 		break;
 	case 5:
-		trwifi_post_event(LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
+		trwifi_post_event(g_slsi_netdev, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
 		break;
 	default:
-		trwifi_post_event(LWNL_EVT_UNKNOWN, NULL, 0);
+		trwifi_post_event(g_slsi_netdev, LWNL_EVT_UNKNOWN, NULL, 0);
 		break;
 	}
 
@@ -350,7 +351,7 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 
 	if (reason->reason_code != SLSI_STATUS_SUCCESS) {
 		vddbg("Scan failed %d\n");
-		trwifi_post_event(LWNL_EVT_SCAN_FAILED, NULL, 0);
+		trwifi_post_event(g_slsi_netdev, LWNL_EVT_SCAN_FAILED, NULL, 0);
 		result = SLSI_STATUS_ERROR;
 		goto return_result;
 	}
@@ -364,13 +365,13 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 	if (scan_filter_result.scan_flag) {
 		fetch_scan_results(&scan_filter_result.result_list,
 						   &wifi_scan_result, (const char *)scan_filter_result.scan_ssid);
-		TRWIFI_POST_SCANEVENT(LWNL_EVT_SCAN_DONE, scan_filter_result.result_list);
+		TRWIFI_POST_SCANEVENT(g_slsi_netdev, LWNL_EVT_SCAN_DONE, scan_filter_result.result_list);
 		sem_post(&scan_filter_result.scan_sem);
 	} else {
 		if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == TRWIFI_SUCCESS) {
-			TRWIFI_POST_SCANEVENT(LWNL_EVT_SCAN_DONE, scan_list);
+			TRWIFI_POST_SCANEVENT(g_slsi_netdev, LWNL_EVT_SCAN_DONE, scan_list);
 		} else {
-			trwifi_post_event(LWNL_EVT_SCAN_FAILED, NULL, 0);
+			trwifi_post_event(g_slsi_netdev, LWNL_EVT_SCAN_FAILED, NULL, 0);
 		}
 		free_scan_results(scan_list);
 	}
@@ -831,7 +832,6 @@ trwifi_result_e slsidrv_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 
 extern int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
 extern int slsi_linkoutput(struct netdev *dev, void *data, uint16_t dlen);
-
 struct netdev* slsidrv_register_dev(int sizeof_priv)
 {
 	struct nic_io_ops nops = {slsi_linkoutput, slsi_set_multicast_list};
@@ -852,6 +852,7 @@ struct netdev* slsidrv_register_dev(int sizeof_priv)
 	}
 	nconfig.priv = priv;
 
-	return netdev_register(&nconfig);
+	g_slsi_netdev = netdev_register(&nconfig);
+	return g_slsi_netdev;
 }
 

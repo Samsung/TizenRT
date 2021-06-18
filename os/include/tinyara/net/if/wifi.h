@@ -7,19 +7,17 @@
 #define TRWIFI_PASSPHRASE_LEN		  64
 
 /*  if serialization is failed then driver should let pass the fail event to applications*/
-#define TRWIFI_POST_SCANEVENT(evt, scanlist)							\
+#define TRWIFI_POST_SCANEVENT(dev, evt, scanlist)						\
 	do {																\
-		if (evt == LWNL_EVT_SCAN_DONE) {										\
+		if (evt == LWNL_EVT_SCAN_DONE) {									\
 			uint8_t *buffer = NULL;										\
 			int lwnl_res = trwifi_serialize_scaninfo(&buffer, scanlist); \
 			if (lwnl_res < 0) {											\
-				trwifi_post_event(LWNL_EVT_SCAN_FAILED, NULL, 0);				\
+				trwifi_post_event(dev, LWNL_EVT_SCAN_FAILED, NULL, 0);		\
 			} else {													\
-				trwifi_post_event(LWNL_EVT_SCAN_DONE, buffer, lwnl_res);	\
+				trwifi_post_event(dev, LWNL_EVT_SCAN_DONE, buffer, lwnl_res); \
 				kmm_free(buffer);										\
 			}															\
-		} else {														\
-			trwifi_post_event(evt, NULL, 0);								\
 		}																\
 	} while (0)
 
@@ -397,6 +395,6 @@ struct trwifi_ops {
 };
 
 int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);
-int trwifi_post_event(lwnl_cb_wifi evt, void *buffer, uint32_t buf_len);
+int trwifi_post_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len);
 
 #endif // _TIZENRT_WIRELESS_WIFI_H__

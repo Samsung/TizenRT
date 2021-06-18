@@ -61,9 +61,11 @@ struct netdev_ops {
 	/*  Interface control */
 	int (*ifup)(struct netdev *dev);
 	int (*ifdown)(struct netdev *dev);
+	/*  control network stack traffic */
+	int (*softup)(struct netdev *dev);
+	int (*softdown)(struct netdev *dev);
 
-	/* multicast
-	 */
+	/* multicast */
 	int (*joingroup)(struct netdev *dev, struct in_addr *addr);
 	int (*leavegroup)(struct netdev *dev, struct in_addr *addr);
 
