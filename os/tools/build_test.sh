@@ -32,6 +32,10 @@ build_targets="artik055s/audio
                imxrt1020-evk/loadable_elf_apps
                rtl8721csm/loadable_apps"
 
+echo "===================================="
+echo "========= Build Test START ========="
+echo "===================================="
+
 for target in ${build_targets[@]}; do
 	# verify build clean
 	echo "===================================="
@@ -55,3 +59,12 @@ for target in ${build_targets[@]}; do
 	echo "======== \"${target}\" Built ========"
 	echo "===================================="	
 done
+
+echo "===================================="
+echo "======== Clean build output ========"
+echo "===================================="
+cd ${OSDIR}; ${CLEAN_CMD}
+
+echo "===================================="
+echo "====== Build Test All SUCCESS ======"
+echo "===================================="
