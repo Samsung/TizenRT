@@ -259,7 +259,7 @@ static void cmd_wifi_sta_and_ap(int argc, char **argv)
 
 		if (wext_get_ssid(WLAN1_NAME, (unsigned char *)essid) > 0) {
 			if (strncmp((const char *)essid, (const char *)argv[1], sizeof(essid)) == 0) {
-				ndbg("\n\r%s started", argv[1]);
+				nvdbg("\n\r%s started", argv[1]);
 				break;
 			}
 		}
@@ -598,7 +598,7 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 		ndbg("\n\rERROR: Operation failed!");
 		return -1;
 	} else {
-		ndbg("\r\nConnected\n");
+		nvdbg("\r\nConnected\n");
 	}
 
 	return 0;
@@ -612,7 +612,7 @@ int8_t cmd_wifi_disconnect(void)
 	nvdbg("\n\rDeassociating AP ...");
 
 	if (wext_get_ssid(WLAN0_NAME, (unsigned char *)essid) < 0) {
-		ndbg("\n\rWIFI disconnected");
+		nvdbg("\n\rWIFI disconnected");
 		return 0;
 	}
 
@@ -623,7 +623,7 @@ int8_t cmd_wifi_disconnect(void)
 
 	while (1) {
 		if (wext_get_ssid(WLAN0_NAME, (unsigned char *)essid) < 0) {
-			ndbg("\n\rWIFI disconnected");
+			nvdbg("\n\rWIFI disconnected");
 			return 0;
 		}
 
@@ -994,19 +994,19 @@ static void cmd_exit(int argc, char **argv)
 static void cmd_debug(int argc, char **argv)
 {
 	if (strncmp(argv[1], "ready_trx", strlen("ready_trx")) == 0) {
-		ndbg("\r\n%d", wifi_is_ready_to_transceive((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
+		nvdbg("\r\n%d", wifi_is_ready_to_transceive((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
 	} else if (strncmp(argv[1], "is_up", strlen("is_up")) == 0) {
-		ndbg("\r\n%d", wifi_is_up((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
+		nvdbg("\r\n%d", wifi_is_up((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
 	} else if (strncmp(argv[1], "set_mac", strlen("set_mac")) == 0) {
-		ndbg("\r\n%d", wifi_set_mac_address(argv[2]));
+		nvdbg("\r\n%d", wifi_set_mac_address(argv[2]));
 	} else if (strncmp(argv[1], "get_mac", strlen("get_mac")) == 0) {
 		u8 mac[18] = {0};
 		wifi_get_mac_address((char *)mac);
-		ndbg("\r\n%s", mac);
+		nvdbg("\r\n%s", mac);
 	} else if (strncmp(argv[1], "ps_on", strlen("ps_on")) == 0) {
-		ndbg("\r\n%d", wifi_enable_powersave());
+		nvdbg("\r\n%d", wifi_enable_powersave());
 	} else if (strncmp(argv[1], "ps_off", strlen("ps_off")) == 0) {
-		ndbg("\r\n%d", wifi_disable_powersave());
+		nvdbg("\r\n%d", wifi_disable_powersave());
 	} else if (strncmp(argv[1], "get_clientlist", strlen("get_clientlist")) == 0) {
 		int client_number;
 		struct {
@@ -1016,7 +1016,7 @@ static void cmd_debug(int argc, char **argv)
 
 		client_info.count = 3;
 
-		ndbg("\r\n%d\r\n", wifi_get_associated_client_list(&client_info, sizeof(client_info)));
+		nvdbg("\r\n%d\r\n", wifi_get_associated_client_list(&client_info, sizeof(client_info)));
 
 		if (client_info.count == 0) {
 			RTW_API_INFO(("Clients connected 0..\r\n"));
@@ -1054,15 +1054,15 @@ static void cmd_debug(int argc, char **argv)
 	} else if (strncmp(argv[1], "reg_mc", strlen("reg_mc")) == 0) {
 		rtw_mac_t mac;
 		sscanf(argv[2], MAC_FMT, (int *)(mac.octet + 0), (int *)(mac.octet + 1), (int *)(mac.octet + 2), (int *)(mac.octet + 3), (int *)(mac.octet + 4), (int *)(mac.octet + 5));
-		ndbg("\r\n%d", wifi_register_multicast_address(&mac));
+		nvdbg("\r\n%d", wifi_register_multicast_address(&mac));
 	} else if (strncmp(argv[1], "unreg_mc", strlen("unreg_mc")) == 0) {
 		rtw_mac_t mac;
 		sscanf(argv[2], MAC_FMT, (int *)(mac.octet + 0), (int *)(mac.octet + 1), (int *)(mac.octet + 2), (int *)(mac.octet + 3), (int *)(mac.octet + 4), (int *)(mac.octet + 5));
-		ndbg("\r\n%d", wifi_unregister_multicast_address(&mac));
+		nvdbg("\r\n%d", wifi_unregister_multicast_address(&mac));
 	} else if (strncmp(argv[1], "get_rssi", strlen("get_rssi")) == 0) {
 		int rssi = 0;
 		wifi_get_rssi(&rssi);
-		ndbg("\n\rwifi_get_rssi: rssi = %d", rssi);
+		nvdbg("\n\rwifi_get_rssi: rssi = %d", rssi);
 	} else if (strncmp(argv[1], "dbg", strlen("dbg")) == 0) {
 		char buf[32] = {0};
 		char *copy = buf;
