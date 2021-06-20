@@ -431,7 +431,7 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_ap_config_s
 			return TRWIFI_FAIL;
 		}
 	}
-	ndbg("[RTK] WIFi Scan success\n");
+	nvdbg("[RTK] WIFi Scan success\n");
 	return TRWIFI_SUCCESS;
 }
 
@@ -475,7 +475,7 @@ trwifi_result_e wifi_netmgr_utils_disconnect_ap(struct netdev *dev, void *arg)
 	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret = cmd_wifi_disconnect();
 	if (ret == RTK_STATUS_SUCCESS) {
-		ndbg("[RTK] WiFiNetworkLeave success\n");
+		nvdbg("[RTK] WiFiNetworkLeave success\n");
 		wuret = TRWIFI_SUCCESS;
 	} else {
 		ndbg("[RTK] WiFiNetworkLeave fail because of %d\n", ret);
@@ -581,7 +581,7 @@ trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev)
 		if (ret == RTK_STATUS_SUCCESS) {
 			g_mode = RTK_WIFI_NONE;
 			wuret = TRWIFI_SUCCESS;
-			ndbg("[RTK] Stop AP mode successfully\n");
+			nvdbg("[RTK] Stop AP mode successfully\n");
 		} else {
 			ndbg("[RTK] Stop AP mode fail\n");
 		}
@@ -598,7 +598,7 @@ trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t ch
 	ret = wifi_set_autoreconnect(check);
 	if (ret == RTK_STATUS_SUCCESS) {
 		wuret = TRWIFI_SUCCESS;
-		ndbg("[RTK] External Autoconnect set to %d\n", check);
+		nvdbg("[RTK] External Autoconnect set to %d\n", check);
 	} else {
 		ndbg("[RTK] External Autoconnect failed to set %d", check);
 	}

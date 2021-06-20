@@ -414,7 +414,7 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 		memset(&reason, 0, sizeof(rtk_reason_t));
 
 		if (g_link_down) {
-			ndbg("RTK_API rtk_link_event_handler send link_down\n");
+			nvdbg("RTK_API rtk_link_event_handler send link_down\n");
 			g_link_down(&reason);
 		}
 #endif
@@ -729,8 +729,8 @@ int wifi_connect(
 
 				if (g_link_up) {
 					if (reason.reason_code)
-						ndbg("reason.reason_code=%d\n", reason.reason_code);
-					ndbg("RTK_API %s() send link_up\n", __func__);
+						nvdbg("reason.reason_code=%d\n", reason.reason_code);
+					nvdbg("RTK_API %s() send link_up\n", __func__);
 					g_link_up(&reason);
 				}
 #endif
@@ -746,8 +746,8 @@ int wifi_connect(
 				reason.reason_code = RTK_STATUS_ERROR;
 				if (g_link_up) {
 					if (reason.reason_code)
-						ndbg("reason.reason_code=%d\n", reason.reason_code);
-					ndbg("RTK_API %s() send link_up\n", __func__);
+						nvdbg("reason.reason_code=%d\n", reason.reason_code);
+					nvdbg("RTK_API %s() send link_up\n", __func__);
 					g_link_up(&reason);
 				}
 #endif
@@ -762,9 +762,9 @@ int wifi_connect(
 
 				if (g_link_up) {
 					if (reason.reason_code) {
-						ndbg("reason.reason_code=%d\n", reason.reason_code);
+						nvdbg("reason.reason_code=%d\n", reason.reason_code);
 					}
-					ndbg("RTK_API %s() send link_up\n", __func__);
+					nvdbg("RTK_API %s() send link_up\n", __func__);
 					g_link_up(&reason);
 				}
 #endif
@@ -1601,7 +1601,7 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	}
 
 	if (g_link_up) {
-		ndbg("RTK_API rtk_link_event_handler send link_up\n");
+		nvdbg("RTK_API rtk_link_event_handler send link_up\n");
 		g_link_up(&reason);
 	}
 #endif
@@ -1621,7 +1621,7 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 		memcpy(&(reason.bssid), buf, 17);
 	}
 	if (g_link_down) {
-		ndbg("RTK_API rtk_handle_disconnect send link_down\n");
+		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
 		g_link_down(&reason);
 	}
 #endif
