@@ -127,6 +127,10 @@ static int lwnl_open(struct file *filep)
 	 * So checking overflow is not needed now.
 	 */
 	upper->crefs++;
+	/* lwnl queue will be assigned if fd calls bind()
+	 * Therefore it's safe to initialize f_priv to check whether
+	 * queue is assigned or not*/
+	filep->f_priv = NULL;
 	LWNLDEV_UNLOCK(upper);
 
 	LWNL_LEAVE;
