@@ -44,6 +44,8 @@
 #define MAX_FILE_NAEM_LEN    10
 #define MAX_PATH_LEN         50
 
+#define TZ_SELECT_MULTIPLE_TIMES 1
+
 static char file_name[MAX_FILE_SIZE][MAX_FILE_NAEM_LEN];
 static char folder_name[MAX_FOLDER_SIZE][MAX_FOLDER_NAME_LEN];
 
@@ -120,7 +122,7 @@ int utils_tzselect(int argc, char **args)
 	strncpy(path, TZDIR, MAX_PATH_LEN);
 	ret = search_tz(path);
 	if (ret) {
-		setenv("TZ", path, 0);
+		setenv("TZ", path, TZ_SELECT_MULTIPLE_TIMES);
 		printf("Set time zone : %s\n", path);
 		tzset();
 	} else {
