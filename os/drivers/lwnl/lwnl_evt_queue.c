@@ -31,11 +31,11 @@
 		do {										\
 			sem_wait(&g_wm_sem);					\
 		} while (0)
-
 #define LWQ_UNLOCK									\
 		do {										\
 			sem_post(&g_wm_sem);					\
 		} while (0)
+#define TAG "[LWQ]"
 
 struct lwnl_event {
 	struct lwnl_event *flink;
@@ -57,9 +57,7 @@ static sem_t g_wm_sem;
 /* both data should be protected by LWQ_LOCK */
 static struct lwnl_queue g_queue[LWNL_NPOLLWAITERS];
 static int g_connected = 0;
-#ifdef CONFIG_DEBUG_LWNL80211_INFO
-static int g_totalevt = 0;
-#endif
+static int g_totalevt = 0; /*  debugging */
 
 /*
  * private
@@ -67,17 +65,15 @@ static int g_totalevt = 0;
 static int _lwnl_add_event(struct lwnl_event *event)
 {
 	int check = 0;
-	LWQ_ENTRY;
-#ifdef CONFIG_DEBUG_LWNL80211_INFO
-	LWQ_LOG("[LWQ] _lwnl_add_event: %p\tg_connect %d %d \t%s \n",
+	LWNL_ENTER(TAG);
+	LWNL_LOGI(TAG, "%p\tg_connect %d %d \t%s",
 			event, g_connected, g_totalevt, __FUNCTION__);
-#endif
 	event->flink = NULL;
 	LWQ_LOCK;
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		if (g_queue[i].filep) {
 			check = 1;
-			LWQ_LOG("[LWQ] add event %p %d %p %p \n",
+			LWNL_LOGI(TAG, "add event %p %d %p %p",
 				   g_queue[i].filep, i, g_queue[i].front, event);
 			event->refs = g_connected;
 			if (g_queue[i].front == NULL) {
@@ -89,11 +85,9 @@ static int _lwnl_add_event(struct lwnl_event *event)
 			}
 		}
 	}
-#ifdef CONFIG_DEBUG_LWNL80211_INFO
 	if (check == 1) {
 		g_totalevt++;
 	}
-#endif
 	LWQ_UNLOCK;
 	return 0;
 }
@@ -101,24 +95,22 @@ static int _lwnl_add_event(struct lwnl_event *event)
 /* this function is protected by LWQ_LOCK */
 static int _lwnl_remove_event(struct lwnl_event *evt)
 {
-	LWQ_ENTRY;
+	LWNL_ENTER(TAG);
 	evt->refs--;
-	LWQ_LOG("[LWQ] _remove_event refs(%d) (%p) (%p) \n",
+	LWNL_LOGI(TAG, "refs(%d) (%p) (%p)",
 			evt->refs, evt, evt->data.data);
 	if (evt->refs > 0) {
 		return 0;
 	}
 
-	LWQ_LOG("[LWQ] _remove_event remove item \n");
+	LWNL_LOGI(TAG, "remove item");
 	// it's not refered.
 	if (evt->data.data) {
 		kmm_free(evt->data.data);
 		evt->data.data = NULL;
 	}
 	kmm_free(evt);
-#ifdef CONFIG_DEBUG_LWNL80211_INFO
 	g_totalevt--;
-#endif
 
 	return 0;
 }
@@ -128,7 +120,7 @@ static int _lwnl_remove_event(struct lwnl_event *evt)
  */
 void lwnl_queue_initialize(void)
 {
-	LWQ_ENTRY;
+	LWNL_ENTER(TAG);
 	LWQ_LOCK;
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		g_queue[i].filep = NULL;
@@ -139,18 +131,18 @@ void lwnl_queue_initialize(void)
 	g_connected = 0;
 
 	int res = sem_init(&g_wm_sem, 0, 1);
-	if (res < 0) {
-		LWQ_ERR;
+	if (res != 0) {
+		LWNL_LOGE(TAG, "fail to init semaphore %d", errno);
 	}
 	LWQ_UNLOCK;
 }
 
 int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
 {
-	LWQ_ENTRY;
+	LWNL_ENTER(TAG);
 	struct lwnl_event *evt = (struct lwnl_event *)kmm_malloc(sizeof(struct lwnl_event));
 	if (!evt) {
-		LWQ_ERR;
+		LWNL_LOGE(TAG, "fail to alloc lwnl event");
 		return -1;
 	}
 	evt->flink = NULL;
@@ -160,7 +152,8 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
 	if (buffer) {
 		char *output = kmm_malloc(buf_len);
 		if (!output) {
-			LWQ_ERR;
+			LWNL_LOGE(TAG, "fail to alloc buffer");
+			kmm_free(evt);
 			return -3;
 		}
 		memcpy(output, buffer, buf_len);
@@ -173,12 +166,11 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
 
 	int res = _lwnl_add_event(evt);
 	if (res < 0) {
+		LWNL_LOGE(TAG, "fail to add event");
 		if (evt->data.data) {
 			kmm_free(evt->data.data);
 		}
 		kmm_free(evt);
-
-		LWQ_ERR;
 		return -2;
 	}
 	return 0;
@@ -187,17 +179,17 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
 int lwnl_get_event(struct file *filep, char *buf, int len)
 {
 	LWQ_LOCK;
-	LWQ_ENTRY;
+	LWNL_ENTER(TAG);
 
 	struct lwnl_queue *queue = filep->f_priv;
 	if (!queue) {
 		LWQ_UNLOCK;
-		LWQ_ERR;
+		LWNL_LOGE(TAG, "filep doens't have queue");
 		return -1;
 	}
 
 	if (!queue->front) {
-		LWQ_ERR;
+		LWNL_LOGE(TAG, "filep doesn't have item");
 		LWQ_UNLOCK;
 		return 0;
 	}
@@ -206,7 +198,7 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 
 	if (queue->check_header == 0) {
 		if (len < sizeof(lwnl_cb_status) + sizeof(uint32_t)) {
-			LWQ_ERR;
+			LWNL_LOGE(TAG, "buffer length is less than header");
 			LWQ_UNLOCK;
 			return -1;
 		}
@@ -221,7 +213,7 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 		}
 	} else {
 		if (len < evt->data.data_len) {
-			LWQ_ERR;
+			LWNL_LOGE(TAG, "buffer length is less than data length");
 			LWQ_UNLOCK;
 			return -1;
 		}
@@ -239,10 +231,10 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 int lwnl_add_listener(struct file *filep)
 {
 	LWQ_LOCK;
-	LWQ_ENTRY;
+	LWNL_ENTER(TAG);
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		if (!g_queue[i].filep) {
-			LWQ_LOG("[LWQ] %s %d\t add filep %d %p \n", __FUNCTION__, __LINE__, i, filep);
+			LWNL_LOGI(TAG, "add filep %d %p", i, filep);
 			g_queue[i].filep = filep;
 			filep->f_priv = (void *)&g_queue[i];
 			g_connected++;
@@ -251,18 +243,16 @@ int lwnl_add_listener(struct file *filep)
 		}
 	}
 	LWQ_UNLOCK;
-	LWQ_ERR;
+	LWNL_LOGE(TAG, "no available listener slot");
 	return -1;
 }
 
 int lwnl_remove_listener(struct file *filep)
 {
 	LWQ_LOCK;
-	LWQ_ENTRY;
-#ifdef CONFIG_DEBUG_LWNL80211_INFO
-	LWQ_LOG("[LWQ] T%d remove listener filep %p %d %d \n",
-			getpid(), filep, g_totalevt, LWNL_NPOLLWAITERS);
-#endif
+	LWNL_ENTER(TAG);
+	LWNL_LOGI(TAG, "remove listener filep %p %d %d",
+			filep, g_totalevt, LWNL_NPOLLWAITERS);
 	struct lwnl_queue *queue = (struct lwnl_queue *)filep->f_priv;
 	if (!queue) {
 		// some socket doens't bind event listener.
@@ -273,7 +263,7 @@ int lwnl_remove_listener(struct file *filep)
 	filep->f_priv = queue->filep = NULL;
 	struct lwnl_event *evt;
 	while (queue->front) {
-		LWQ_LOG("[LWQ] call %d remove (%p) \n", i, queue->front);
+		LWNL_LOGI(TAG, "call remove (%p)", queue->front);
 		evt = queue->front;
 		queue->front = evt->flink;
 		_lwnl_remove_event(evt);
@@ -291,7 +281,7 @@ int lwnl_check_queue(struct file *filep)
 {
 	int res = 0;
 	LWQ_LOCK;
-	LWQ_ENTRY;
+	LWNL_ENTER(TAG);
 	struct lwnl_queue *queue = (struct lwnl_queue *)filep->f_priv;
 	if (!queue) {
 		LWQ_UNLOCK;

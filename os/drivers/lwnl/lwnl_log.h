@@ -1,36 +1,30 @@
-#ifndef _LWNL_LOG_H__
-#define _LWNL_LOG_H__
+/****************************************************************************
+ *
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+#pragma once
 
-#define LWNL_TAG "[LWNL]"
-
-#define LWNL_ERR										\
-	do {												\
-		nldbg(LWNL_TAG"[ERR] %s: %d line err(%s)\n",	\
-			  __FILE__, __LINE__, strerror(errno));		\
+#define LWNL_LOGI(tag, fmt, args...) nlvdbg(tag"[T%d]"fmt"\n", getpid(), ##args)
+#define LWNL_LOGE(tag, fmt, args...) nldbg(tag"[ERR][T%d]"fmt"\n", getpid(), ##args)
+#define LWNL_ENTER(tag)							\
+	do {										\
+		LWNL_LOGI(tag, "-->");					\
 	} while (0)
 
-#define LWNL_ENTER														\
-	do {																\
-		nlvdbg(LWNL_TAG"[T%d] --->%s:%d\n", getpid(), __FILE__, __LINE__); \
+#define LWNL_LEAVE(tag)							\
+	do {										\
+		LWNL_LOGI(tag, "<--");					\
 	} while (0)
-
-#define LWNL_LEAVE														\
-	do {																\
-		nlvdbg(LWNL_TAG"[T%d]<---%s:%d\n", getpid(),  __FILE__, __LINE__); \
-	} while (0)
-
-/*  lwnl event queue */
-#define LWQ_ENTRY										\
-		do {											\
-			nlvdbg("[LWQ][T%d] %s\t%s:%d \n", getpid(),	\
-				   __FUNCTION__, __FILE__, __LINE__);	\
-		} while (0)
-
-#define LWQ_ERR												\
-		do {												\
-			nldbg("[LWQ][ERR][T%d] %s\t%s:%d \n", getpid(),	\
-				  __FUNCTION__, __FILE__, __LINE__);		\
-		} while (0)
-
-#define LWQ_LOG nlvdbg
-#endif // #define _LWNL_LOG_H__

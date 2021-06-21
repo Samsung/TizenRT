@@ -307,7 +307,7 @@ void linkup_handler(rtk_reason_t *reason)
 
 	pid = kernel_thread("lwnl80211_cbk_handler", 100, 2048, (main_t)rtk_drv_callback_handler, argv);
 	if (pid < 0) {
-		vddbg("pthread create fail(%d)\n", errno);
+		vddbg("kernel thread create fail(%d)\n", errno);
 		return;
 	}
 }

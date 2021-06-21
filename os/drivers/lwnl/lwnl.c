@@ -33,21 +33,23 @@
 #include "lwnl_evt_queue.h"
 #include "lwnl_log.h"
 
+#define TAG "[LWNL]"
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define LWNLDEV_LOCK(upper)								\
-	do {												\
-		int lock_ret = sem_wait(&upper->exclsem);		\
-		if (lock_ret < 0) {								\
-			LWNL_ERR;									\
-			return lock_ret;							\
-		}												\
+#define LWNLDEV_LOCK(upper)							\
+	do {											\
+		int lock_ret = sem_wait(&upper->exclsem);	\
+		if (lock_ret < 0) {							\
+			LWNL_LOGE(TAG, "fail to lock");			\
+			return lock_ret;						\
+		}											\
 	} while (0)
 
-#define LWNLDEV_UNLOCK(upper)							\
-	do {												\
-		sem_post(&upper->exclsem);						\
+#define LWNLDEV_UNLOCK(upper)					\
+	do {										\
+		sem_post(&upper->exclsem);				\
 	} while (0)
 
 
@@ -110,13 +112,14 @@ static const struct file_operations g_lwnl_fops = {
 	, lwnl_poll                                                      /* poll */
 #endif
 };
+struct lwnl_upperhalf_s *g_lwnl_upper = NULL;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 static int lwnl_open(struct file *filep)
 {
-	LWNL_ENTER;
+	LWNL_ENTER(TAG);
 	struct inode *inode = filep->f_inode;
 	struct lwnl_upperhalf_s *upper = inode->i_private;
 
@@ -133,14 +136,14 @@ static int lwnl_open(struct file *filep)
 	filep->f_priv = NULL;
 	LWNLDEV_UNLOCK(upper);
 
-	LWNL_LEAVE;
+	LWNL_LEAVE(TAG);
 
 	return OK;
 }
 
 static int lwnl_close(struct file *filep)
 {
-	LWNL_ENTER;
+	LWNL_ENTER(TAG);
 	struct inode *inode = filep->f_inode;
 	struct lwnl_upperhalf_s *upper = inode->i_private;
 	int ret = OK;
@@ -157,6 +160,7 @@ static int lwnl_close(struct file *filep)
 		 * lwnl driver doesn't have resources to free. So it doesn't care
 		 * upper->cres == 0 case
 		 */
+		LWNL_LOGE(TAG, "critical error");
 		ret = -EBADF;
 	}
 
@@ -178,34 +182,36 @@ static int lwnl_close(struct file *filep)
 
 	int res = lwnl_remove_listener(filep);
 	if (res < 0) {
+		LWNL_LOGE(TAG, "remove listener fail");
 		ret = -ENOSYS;
 	}
 
-	LWNL_LEAVE;
+	LWNL_LEAVE(TAG);
 	return ret;
 }
 
 static ssize_t lwnl_read(struct file *filep, char *buffer, size_t len)
 {
-	LWNL_ENTER;
+	LWNL_ENTER(TAG);
 
 	int res = lwnl_get_event(filep, buffer, len);
 
 	// todo_net : convert res to vfs error style?
-	LWNL_LEAVE;
+	LWNL_LEAVE(TAG);
 	return res;
 }
 
 static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 {
-	LWNL_ENTER;
+	LWNL_ENTER(TAG);
 #ifdef CONFIG_NET_NETMGR
 	int ret = netdev_req_handle(buffer, len);
 #else
 	int ret = lwnl_message_handle(buffer, len);
 #endif
-	LWNL_LEAVE;
+	LWNL_LEAVE(TAG);
 	if (ret < 0) {
+		LWNL_LOGE(TAG, "handle request fail");
 		return -1;
 	}
 	return len;
@@ -213,18 +219,19 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 
 static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
-	LWNL_ENTER;
+	LWNL_ENTER(TAG);
 	int res = lwnl_add_listener(filep);
 	if (res < 0) {
+		LWNL_LOGE(TAG, "add listener fail");
 		res = -EBADF;
 	}
-	LWNL_LEAVE;
+	LWNL_LEAVE(TAG);
 	return res;
 }
 
 static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 {
-	LWNL_ENTER;
+	LWNL_ENTER(TAG);
 
 	FAR struct inode *inode;
 	FAR struct lwnl_upperhalf_s *upper;
@@ -269,7 +276,7 @@ static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		LWNLDEV_UNLOCK(upper);
 
 		if (i >= LWNL_NPOLLWAITERS) {
-			lldbg("ERROR: Too many poll waiters\n");
+			LWNL_LOGE(TAG, "Too many poll waiters");
 			fds->priv = NULL;
 			ret       = -EBUSY;
 			goto errout_with_dusem;
@@ -302,11 +309,9 @@ errout_with_dusem:
 /*
  * Public APIs
  */
-struct lwnl_upperhalf_s *g_lwnl_upper = NULL;
-
 int lwnl_register(struct lwnl_lowerhalf_s *dev)
 {
-	LWNL_ENTER;
+	LWNL_ENTER(TAG);
 	struct lwnl_upperhalf_s *upper = NULL;
 	int ret;
 
@@ -316,7 +321,7 @@ int lwnl_register(struct lwnl_lowerhalf_s *dev)
 
 	upper = (struct lwnl_upperhalf_s *)kmm_zalloc(sizeof(struct lwnl_upperhalf_s));
 	if (!upper) {
-		LWNL_ERR;
+		LWNL_LOGE(TAG, "fail to alloc memory");
 		return -ENOMEM;
 	}
 
@@ -333,11 +338,11 @@ int lwnl_register(struct lwnl_lowerhalf_s *dev)
 
 	ret = register_driver(LWNL_PATH, &g_lwnl_fops, 0666, upper);
 	if (ret < 0) {
-		LWNL_ERR;
+		LWNL_LOGE(TAG, "fail to register lwnl driver");
 		goto errout_with_priv;
 	}
 
-	LWNL_LEAVE;
+	LWNL_LEAVE(TAG);
 
 	return OK;
 
@@ -349,6 +354,20 @@ errout_with_priv:
 
 int lwnl_unregister(struct lwnl_lowerhalf_s *dev)
 {
+	if (!dev) {
+		LWNL_LOGE(TAG, "dev is null");
+		return -1;
+	}
+
+	struct lwnl_upperhalf_s *upper =  dev->parent;
+	if (!upper) {
+		LWNL_LOGE(TAG, "upper is null");
+		return -2;
+	}
+
+	sem_destroy(&upper->exclsem);
+	kmm_free(upper);
+
 	return 0;
 }
 
@@ -360,6 +379,7 @@ int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, uint32_t buf_len
 	lwnl_cb_status cb = {dev, evt};
 	int res = lwnl_add_event(cb, buffer, buf_len);
 	if (res < 0) {
+		LWNL_LOGE(TAG, "fail to add the event %d", res);
 		return res;
 	}
 

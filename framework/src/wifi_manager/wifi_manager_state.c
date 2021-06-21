@@ -685,7 +685,10 @@ wifi_manager_result_e _handler_get_stats(wifimgr_msg_s *msg)
 	if (res != WIFI_UTILS_SUCCESS) {
 		wret = WIFI_MANAGER_FAIL;
 	} else {
-		// update msg
+		/* update msg
+		 * msg->param was checked in wifi_manager_get_stats()
+		 * So doesn't need to check msg->param in here.
+		 */
 		wifi_manager_stats_s *wstats = (wifi_manager_stats_s *)msg->param;
 		wstats->start = stats.start;
 		wstats->end = stats.end;
