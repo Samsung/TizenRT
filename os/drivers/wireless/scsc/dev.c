@@ -45,7 +45,7 @@ static char *local_mib_file = "localmib.hcf";
 /* MAC address filename */
 static char *maddr_file = "mac.txt";
 
-#ifdef CONFIG_LWNL80211_SLSI
+#ifdef CONFIG_LWNL80211
 extern int slsi_drv_initialize(void);
 #endif
 void slsi_driver_initialize(void)
@@ -54,7 +54,7 @@ void slsi_driver_initialize(void)
 	scsc_mx_module_init();
 	slsi_dev_load();
 
-#ifdef CONFIG_LWNL80211_SLSI
+#ifdef CONFIG_LWNL80211
 	#ifndef CONFIG_NET_NETMGR
 	int res = slsi_drv_initialize();
 	if (!res) {
