@@ -88,7 +88,6 @@
 #define DHCP_CLIENT_PORT         68
 
 static pthread_t g_dhcpd_tid = -1;
-static int g_dhcpd_term = 0;
 
 struct dhcp_join_data {
 	char *intf;
@@ -103,29 +102,126 @@ typedef struct dhcp_join_data dhcp_join_data_s;
 #define DHCPD_MQ_LEN 11
 #define DHCPD_MQ_MAX_LEN 20
 
-void *_dhcpd_join_handler(void *arg)
+static int _send_mqmsg(mqd_t mq, char *msg, size_t msglen, int prio)
 {
-	dhcp_join_data_s *data = (dhcp_join_data_s *)arg;
-	int ret = ERROR;
-	int sockfd = 0;
-	struct req_lwip_data req;
+	nvdbg("dhcps send dhcps msg size %d\n", msglen);
+	while (1) {
+		int mq_ret = mq_send(mq, msg, msglen, prio);
+		if (mq_ret == ERROR) {
+			if (errno == EAGAIN || errno == EINTR) {
+				continue;
+			}
+			ndbg("dhcps _send_mqmsg error %d\n", errno);
+			return -1;
+		}
+		nvdbg("dhcps sent res %d sent %d\n", mq_ret, msglen);
+		break;
+	}
+	return 0;
+}
 
+static int _recv_mqmsg(mqd_t mq, char *msg, size_t msglen, int *prio)
+{
+	nvdbg("dhcps receive dhcps msg size %d\n", msglen);
+	while (1) {
+		int mq_ret = mq_receive(mq, msg, msglen, prio);
+		if (mq_ret == -1) {
+			if (errno == EAGAIN && errno == EINTR) {
+				continue;
+			}
+			ndbg("dhcps _recv_mqmsg error %d\n", errno);
+			return -1;
+		}
+		if (mq_ret == msglen) {
+			break;
+		} else {
+			ndbg("dhcps critical error %d %d\n", mq_ret, msglen);
+		}
+	}
+	return 0;
+}
+
+static void _empty_mq(mqd_t mq)
+{
+	nvdbg("dhcps empty dhcps message queue\n");
+	char msg[DHCPD_MQ_LEN];
+
+	while (1) {
+		struct mq_attr mq_stat;
+		mq_getattr(mq, &mq_stat);
+		if (mq_stat.mq_curmsgs == 0) {
+			nvdbg("dhcps dhcps msg queue is empty\n");
+			return;
+		}
+
+		struct timespec ts;
+		while (1) {
+			int status = clock_gettime(CLOCK_REALTIME, &ts);
+			if (status == 0) {
+				break;
+			}
+			ndbg("fail to get time %d\n", errno);
+			usleep(1000); // 1ms sleep
+			continue;
+		}
+		ts.tv_nsec += 5000000; // 5ms
+		ts.tv_sec = 0;
+		int nbytes = mq_timedreceive(mq, msg, DHCPD_MQ_LEN, 0, &ts);
+		if (nbytes == -1) {
+			if (errno == ETIMEDOUT) {
+				break;
+			} else {
+				nvdbg("dhcps empty dhcps message queue errno %d\n", errno);
+			}
+		}
+		nvdbg("received msg length(%d) msg(%d)\n", nbytes, msg[0]);
+	}
+	nvdbg("dhcps empty mq\n");
+}
+
+static void _create_mq(mqd_t *mq)
+{
+	nvdbg("dhcps create queue\n");
 	struct mq_attr attr;
 	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
 	attr.mq_msgsize = DHCPD_MQ_LEN;
 	attr.mq_flags = 0;
 	attr.mq_curmsgs = 0;
 
-
-	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
-	if (md == (mqd_t)ERROR) {
-		ndbg("Failed to open mq\n");
-		goto go_out;
+	*mq = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
+	if (*mq == (mqd_t)ERROR) {
+		ndbg("dhcps Failed to open mq errno(%d)\n", errno);
+		assert(0);
+		return;
 	}
+	nvdbg("dhcps create mq\n");
+}
+
+static void _delete_mq(mqd_t mq)
+{
+	nvdbg("dhcps delete mq\n");
+	if (mq_close(mq) != 0) {
+		ndbg("dhcps fail to delete mq\n");
+		return;
+	}
+	nvdbg("dhcps delete mq\n");
+}
+
+void *_dhcpd_join_handler(void *arg)
+{
+	dhcp_join_data_s *data = (dhcp_join_data_s *)arg;
+	int ret = ERROR;
+	int sockfd = 0;
+	struct req_lwip_data req;
+	mqd_t md = (mqd_t)-1;
+
+	_create_mq(&md);
+
+	_empty_mq(md);
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		ndbg("socket() failed with errno: %d\n", errno);
+		ndbg("dhcps socket() failed with errno: %d\n", errno);
 		goto go_out;
 	}
 
@@ -135,7 +231,7 @@ void *_dhcpd_join_handler(void *arg)
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
-		ndbg("ioctl() failed with errno: %d\n", errno);
+		ndbg("dhcps ioctl() failed with errno: %d\n", errno);
 		goto go_out;
 	}
 
@@ -143,20 +239,16 @@ void *_dhcpd_join_handler(void *arg)
 		char msg[DHCPD_MQ_LEN];
 		memset(msg, 0, DHCPD_MQ_LEN);
 		int prio = 0;
-		int nbytes = mq_receive(md, msg, DHCPD_MQ_LEN, &prio);
-
-		if (nbytes <= 0) {
-			if (errno != EAGAIN) {
-				ndbg("mq receive none (errno %d)\n", errno);
-				break;
-			}
+		int nbytes = _recv_mqmsg(md, msg, DHCPD_MQ_LEN, &prio);
+		if (nbytes < 0) {
+			ndbg("dhcps mq receive none\n");
+			break;
 		} else if (msg[0] == 0) {// terminate thread
 			break;
 		} else if (msg[0] == 1) {
 			dhcp_node_s node;
 			memcpy(&node.ipaddr, &msg[1], 4);
 			memcpy(&node.macaddr, &msg[5], 6);
-
 			data->fn(DHCP_ACK_EVT, &node);
 		}
 	}
@@ -164,14 +256,11 @@ void *_dhcpd_join_handler(void *arg)
 go_out:
 	free(data->intf);
 	free(data);
-	if (md > 0) {
-		mq_close(md);
-	}
+	_delete_mq(md);
 	if (sockfd > 0) {
 		close(sockfd);
 	}
 	return NULL;
-
 }
 
 /****************************************************************************
@@ -187,7 +276,7 @@ int dhcp_server_status(char *intf)
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		ndbg("socket() failed with errno: %d\n", errno);
+		ndbg("dhcps socket() failed with errno: %d\n", errno);
 		return ret;
 	}
 
@@ -197,7 +286,7 @@ int dhcp_server_status(char *intf)
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
-		ndbg("ioctl() failed with errno: %d\n", errno);
+		ndbg("dhcps ioctl() failed with errno: %d\n", errno);
 		close(sockfd);
 		return ret;
 	}
@@ -210,8 +299,6 @@ int dhcp_server_status(char *intf)
 /****************************************************************************
  * Name: dhcps_server_start
  ****************************************************************************/
-
-
 int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 {
 	pthread_attr_t attr;
@@ -219,28 +306,27 @@ int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 	int ret = ERROR;
 	dhcp_join_data_s *data = (dhcp_join_data_s *)malloc(sizeof(dhcp_join_data_s));
 	if (!data) {
-		ndbg("Failed to alloc mem for data\n");
+		ndbg("dhcps Failed to alloc mem for data\n");
 		return ERROR;
 	}
 	data->intf = (char *)malloc(strlen(intf) + 1);
 	if (!data->intf) {
 		free(data);
-		ndbg("Failed to alloc mem for data->intf\n");
+		ndbg("dhcps Failed to alloc mem for data->intf\n");
 		return ERROR;
 	}
 	memcpy(data->intf, intf, strlen(intf) + 1);
 	data->fn = dhcp_join_cb;
 
-	g_dhcpd_term = 0;
 	if ((ret = pthread_attr_init(&attr)) != 0) {
-		ndbg("Failed to init attr\n");
+		ndbg("dhcps Failed to init attr\n");
 		free(data->intf);
 		free(data);
 		return ERROR;
 	}
 	sparam.sched_priority = 110;
 	if ((ret = pthread_attr_setschedparam(&attr, &sparam)) != 0) {
-		ndbg("Failed to set attr\n");
+		ndbg("dhcps Failed to set attr\n");
 		free(data->intf);
 		free(data);
 		return ERROR;
@@ -249,7 +335,7 @@ int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 	if (ret < 0) {
 		free(data->intf);
 		free(data);
-		ndbg("create iotapi handler fail(%d) errno %d\n", ret, errno);
+		ndbg("dhcps create dhcp handler fail(%d) errno %d\n", ret, errno);
 		return ERROR;
 	}
 	pthread_setname_np(g_dhcpd_tid, "dhcpd cb handler");
@@ -263,31 +349,26 @@ int dhcp_server_stop(char *intf)
 {
 	int ret = ERROR;
 	struct req_lwip_data req;
+	mqd_t md = (mqd_t)-1;
 
-	g_dhcpd_term = 1;
-	sleep(1);
+	_create_mq(&md);
 
-	struct mq_attr attr;
-	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
-	attr.mq_msgsize = DHCPD_MQ_LEN;
-	attr.mq_flags = 0;
-	attr.mq_curmsgs = 0;
-
-	mqd_t md = mq_open(DHCPD_MQ_NAME, O_RDWR | O_CREAT, 0666, &attr);
-	if (md == (mqd_t)ERROR) {
-		ndbg("Failed to open mq\n");
-	}
-	char msg[2] = {0, 0}; // terminate thread message
-	int mq_ret = mq_send(md, msg, 2, 100);
+	nvdbg("dhcps send terminate msg\n");
+	char msg[DHCPD_MQ_LEN] = {0}; // terminate thread message
+	int mq_ret = _send_mqmsg(md, msg, DHCPD_MQ_LEN, 100);
 	if (mq_ret == 0) {
+		nvdbg("dhcps send success\n");
 		pthread_join(g_dhcpd_tid, NULL);
 	} else {
-		ndbg("send mq fail (errno %d)\n", errno);
+		ndbg("dhcps send mq fail\n");
+		assert(0);
 	}
+
+	_delete_mq(md);
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		ndbg("socket() failed with errno: %d\n", errno);
+		ndbg("dhcps socket() failed with errno: %d\n", errno);
 		return ret;
 	}
 
@@ -297,7 +378,7 @@ int dhcp_server_stop(char *intf)
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
-		ndbg("ioctl() failed with errno: %d\n", errno);
+		ndbg("dhcps ioctl() failed with errno: %d\n", errno);
 		close(sockfd);
 		return ret;
 	}
