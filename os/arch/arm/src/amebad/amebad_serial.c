@@ -672,8 +672,7 @@ static bool rtl8721d_up_txready(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	while (!serial_writable(sdrv[uart_index_get(priv->tx)])) ;
-	return true;
+	return (serial_writable(sdrv[uart_index_get(priv->tx)]));
 }
 
 /****************************************************************************
