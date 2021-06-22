@@ -332,7 +332,7 @@ int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 		return ERROR;
 	}
 	ret = pthread_create(&g_dhcpd_tid, &attr, _dhcpd_join_handler, (void *)data);
-	if (ret < 0) {
+	if (ret != OK) {
 		free(data->intf);
 		free(data);
 		ndbg("dhcps create dhcp handler fail(%d) errno %d\n", ret, errno);
