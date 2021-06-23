@@ -61,18 +61,18 @@
 #include <stdbool.h>
 #include <net/if.h>
 #include <debug.h>
-#ifdef CONFIG_SELECT_RTK_WLAN && CONFIG_LWNL80211_RTK
+#ifdef CONFIG_SELECT_RTK_WLAN && CONFIG_LWNL80211
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #endif
 
-#ifdef CONFIG_SELECT_RTK_WLAN && CONFIG_LWNL80211_RTK
+#ifdef CONFIG_SELECT_RTK_WLAN && CONFIG_LWNL80211
 extern int rtk_drv_initialize(void);
 #endif
 
 void up_netinitialize(void)
 {
-#ifdef CONFIG_SELECT_RTK_WLAN && CONFIG_LWNL80211_RTK
+#ifdef CONFIG_SELECT_RTK_WLAN && CONFIG_LWNL80211
 #ifndef CONFIG_NET_NETMGR
 	int res = rtk_drv_initialize();
 	if (res < 0) {

@@ -61,7 +61,7 @@ CSRCS += wifi_conf.c \
 		 wifi_interactive_mode.c \
 		 wifi_util.c \
 		 rtk_lwip_netconf.c
-ifeq ($(CONFIG_LWNL80211_RTK),y)
+ifeq ($(CONFIG_LWNL80211),y)
 CSRCS += rtk_drv.c
 else
 CSRCS += rtk_utils.c

@@ -6,6 +6,21 @@
 #define TRWIFI_SSID_LEN				  32
 #define TRWIFI_PASSPHRASE_LEN		  64
 
+/*  if serialization is failed then driver should let pass the fail event to applications*/
+#define TRWIFI_POST_SCANEVENT(dev, evt, scanlist)						\
+	do {																\
+		if (evt == LWNL_EVT_SCAN_DONE) {									\
+			uint8_t *buffer = NULL;										\
+			int lwnl_res = trwifi_serialize_scaninfo(&buffer, scanlist); \
+			if (lwnl_res < 0) {											\
+				trwifi_post_event(dev, LWNL_EVT_SCAN_FAILED, NULL, 0);		\
+			} else {													\
+				trwifi_post_event(dev, LWNL_EVT_SCAN_DONE, buffer, lwnl_res); \
+				kmm_free(buffer);										\
+			}															\
+		}																\
+	} while (0)
+
 typedef enum {
 	TRWIFI_FAIL = -1,
 	TRWIFI_SUCCESS,
@@ -61,6 +76,32 @@ typedef enum {
 	TRWIFI_SOFTAP_MODE,			/**<  soft ap mode			*/
 } trwifi_status_e;
 
+typedef enum {
+	LWNL_REQ_WIFI_INIT,
+	LWNL_REQ_WIFI_DEINIT,
+	LWNL_REQ_WIFI_SCANAP,
+	LWNL_REQ_WIFI_GETINFO,
+	LWNL_REQ_WIFI_SETAUTOCONNECT,
+	LWNL_REQ_WIFI_STARTSTA,
+	LWNL_REQ_WIFI_CONNECTAP,
+	LWNL_REQ_WIFI_DISCONNECTAP,
+	LWNL_REQ_WIFI_STARTSOFTAP,
+	LWNL_REQ_WIFI_STOPSOFTAP,
+	LWNL_REQ_WIFI_IOCTL,
+	LWNL_REQ_WIFI_UNKNOWN
+} lwnl_req_wifi;
+
+typedef enum {
+	LWNL_EVT_STA_CONNECTED,
+	LWNL_EVT_STA_CONNECT_FAILED,
+	LWNL_EVT_STA_DISCONNECTED,
+	LWNL_EVT_SOFTAP_STA_JOINED,
+	LWNL_EVT_SOFTAP_STA_LEFT,
+	LWNL_EVT_SCAN_DONE,
+	LWNL_EVT_SCAN_FAILED,
+	LWNL_EVT_EXIT,
+	LWNL_EVT_UNKNOWN,
+} lwnl_cb_wifi;
 
 typedef struct {
 	char ssid[TRWIFI_SSID_LEN + 1];				 /**<  Service Set Identification		  */
@@ -172,11 +213,11 @@ typedef trwifi_result_e (*trwifi_deinit)(struct netdev *dev);
  * @param[in]   config : an access point information to scan.
  *
  * @function_type  asynchronous call : Send event by lwnl_postmsg()
- * @event LWNL_SCAN_DONE    : scan success
- * @event LWNL_SCAN_FAILED  : scan fail
+ * @event LWNL_EVT_SCAN_DONE    : scan success
+ * @event LWNL_EVT_SCAN_FAILED  : scan fail
  *
  * @description If the call is successful, then it should generate
- *              events(LWNL_SCAN_DONE or LWNL_SCAN_FAILED).
+ *              events(LWNL_EVT_SCAN_DONE or LWNL_EVT_SCAN_FAILED).
  *              If the call fails then it shouldn't generate events.
  *
  * @return TRWIFI_SUCCESS      : success (should generate an event.)
@@ -193,14 +234,14 @@ typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_ap_config_s
  * @param[in]   arg    : not used.
  *
  * @function_type  asynchronous call : Send event by lwnl_postmsg()
- * @event LWNL_STA_CONNECTED      : connection success
- * @event LWNL_STA_CONNECT_FAILED : connection fail
+ * @event LWNL_EVT_STA_CONNECTED      : connection success
+ * @event LWNL_EVT_STA_CONNECT_FAILED : connection fail
  *
  * @description if the call is successful, then it should generate
- *              events(LWNL_STA_CONNECTED or LWNL_STA_CONNECT_FAILED).
+ *              events(LWNL_EVT_STA_CONNECTED or LWNL_EVT_STA_CONNECT_FAILED).
  *              if the call fails then it shouldn't generate events.
  *              In STA mode and it's connected to an access point, wi-fi library can generates
- *              LWNL_STA_DISCONNECTED event when it's disconnected to AP.
+ *              LWNL_EVT_STA_DISCONNECTED event when it's disconnected to AP.
  *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
@@ -215,10 +256,10 @@ typedef trwifi_result_e (*trwifi_connect_ap)(struct netdev *dev, trwifi_ap_confi
  * @param[in]   arg    : not used.
  *
  * @function_type  asynchronous call : Send event by lwnl_postmsg()
- * @event LWNL_STA_DISCONNECTED : disconnected to an access point
+ * @event LWNL_EVT_STA_DISCONNECTED : disconnected to an access point
  *
  * @description   If wi-fi library is in STA mode and it's connected to an access point,
- *                it should generate LWNL_STA_DISCONNECTED event.
+ *                it should generate LWNL_EVT_STA_DISCONNECTED event.
  *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
@@ -253,9 +294,9 @@ typedef trwifi_result_e (*trwifi_start_sta)(struct netdev *dev);
  *
  * @description    The call changes wi-fi to SoftAP mode.
  *                 If wi-fi is in SoftAP mode this API is not called, because wi-fi manager manages Wi-Fi state.
- *                 In this state, wi-fi library can generate LWNL_SOFTAP_STA_JOINED or LWNL_SOFTAP_STA_LEFT events.
- *                 LWNL_SOFTAP_STA_JOINED is called when a wi-fi device is connected to softAP.
- *                 LWNL_SOFTAP_STA_LEFT is called when a wi-fi device is left from softAP.
+ *                 In this state, wi-fi library can generate LWNL_EVT_SOFTAP_STA_JOINED or LWNL_EVT_SOFTAP_STA_LEFT events.
+ *                 LWNL_EVT_SOFTAP_STA_JOINED is called when a wi-fi device is connected to softAP.
+ *                 LWNL_EVT_SOFTAP_STA_LEFT is called when a wi-fi device is left from softAP.
  *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
@@ -292,10 +333,10 @@ typedef trwifi_result_e (*trwifi_stop_softap)(struct netdev *dev);
  *                 If it's enabled and it connected to an access point then
  *                 it should automatically connect to an access point when
  *                 it is disconnected due to an exceptional situation(e.g power off on an access point,
- *                 weak signal). when wi-fi is disconnected it should generate LWNL_STA_DISCONNECTED event.
- *                 And it generate LWNL_STA_CONNECTED event when it succeeds to reconnect to an access point.
+ *                 weak signal). when wi-fi is disconnected it should generate LWNL_EVT_STA_DISCONNECTED event.
+ *                 And it generate LWNL_EVT_STA_CONNECTED event when it succeeds to reconnect to an access point.
  *                 During auto connect state, if @ref trwifi_disconnect_ap() is called then it stop the auto-connect.
- *                 otherwise if it's disabled, it should generate LWNL_STA_DISCONNECTED event.
+ *                 otherwise if it's disabled, it should generate LWNL_EVT_STA_DISCONNECTED event.
  *                 exceptional situation means all cases except calling @ref trwifi_disconnect_ap()
  *
  * @return TRWIFI_SUCCESS      : success
@@ -352,5 +393,8 @@ struct trwifi_ops {
 	trwifi_set_autoconnect set_autoconnect;
 	trwifi_drv_ioctl drv_ioctl;
 };
+
+int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);
+int trwifi_post_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len);
 
 #endif // _TIZENRT_WIRELESS_WIFI_H__

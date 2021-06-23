@@ -43,6 +43,7 @@
 #include <coap/utlist.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <tinyara/net/if/wifi.h>
 
 #define TAG "OIC_CA_IP_MONITOR"
 
@@ -326,6 +327,9 @@ u_arraylist_t *CAFindInterfaceChange()
 	memcpy(&status, buf, sizeof(lwnl_cb_status));
 	memcpy(&len, buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 	printf("status(%d) len(%d)\n", status, len);
+	if (status.type != LWNL_DEV_WIFI) {
+		return NULL;
+	}
 	// flush the event queue
 	// to do: this operation is unnecessary, so this should be fixed later
 	if (len > 0) {
@@ -334,16 +338,16 @@ u_arraylist_t *CAFindInterfaceChange()
 		free(tmp);
 	}
 
-	if (status == LWNL_STA_CONNECTED ||
-		status == LWNL_SOFTAP_STA_JOINED) {
+	if (status.evt == LWNL_EVT_STA_CONNECTED ||
+		status.evt == LWNL_EVT_SOFTAP_STA_JOINED) {
 		printf("Receive the event(IF is UP)\n");
 		iflist = CAIPGetInterfaceInformation(0);
         if (!iflist) {
             OIC_LOG_V(ERROR, TAG, "get interface info failed: %s", strerror(errno));
             return NULL;
         }
-	} else if (status == LWNL_STA_DISCONNECTED ||
-		status == LWNL_SOFTAP_STA_LEFT) {
+	} else if (status.evt == LWNL_EVT_STA_DISCONNECTED ||
+		status.evt == LWNL_EVT_SOFTAP_STA_LEFT) {
 		printf("Receive the event(IF is down)\n");
 	} else {
 		printf("message not interest in\n");
