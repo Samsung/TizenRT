@@ -393,7 +393,12 @@ struct lwip_sock *get_socket(int s, pid_t pid)
 	list = tcb->group->tg_socketlist;
 	sock = (struct lwip_sock *)list.sl_sockets[s].sock;
 
-	if (!sock || !sock->conn) {
+	if (!sock) {
+		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): Socket is NULL.\n", s + LWIP_SOCKET_OFFSET));
+		set_errno(EBADF);
+		return NULL;
+	}
+	if (!sock->conn) {
 		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): not active\n", s + LWIP_SOCKET_OFFSET));
 		set_errno(EBADF);
 		return NULL;
