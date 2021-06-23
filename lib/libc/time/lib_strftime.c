@@ -156,6 +156,7 @@ static const char *const g_monthname[12] = {
  *   %t     A tab character. (SU)
  *   %y     The year as a decimal number without a century (range 00 to 99).
  *   %Y     The year as a decimal number including the century.
+ *   %Z     The timezone name or abbreviation, or by no bytes if no timezone information exists.
  *   %%     A literal '%' character.
  *
  * Returned Value:
@@ -379,6 +380,34 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 			len = snprintf(dest, chleft, "%04d", tm->tm_year + TM_YEAR_BASE);
 		}
 		break;
+
+		case 'Z': {
+#ifdef CONFIG_LIBC_LOCALTIME
+			char *zoneinfo = getenv("TZ");
+			char *zone = NULL;
+			if (zoneinfo == NULL) {
+				zone = "UTC";
+			} else {
+				int zoneinfo_len;
+				zone = zoneinfo;
+#ifdef CONFIG_LIBC_TZDIR
+				/* If CONFIG_LIBC_TZDIR is enabled, zoneinfo is like "CONFIG_LIBC_TZDIR/XXX". */
+				zoneinfo_len = strlen(CONFIG_LIBC_TZDIR);
+#else
+				/* If CONFIG_LIBC_TZDIR is not enabled, zoneinfo is like "/usr/local/etc/zoneinfo/XXX". */
+				zoneinfo_len = strlen("/usr/local/etc/zoneinfo");
+#endif
+				while (zoneinfo_len != 0) {
+					zone++;
+					zoneinfo_len--;
+				}
+				zone++;
+			}
+
+			len = snprintf(dest, chleft, "%s", zone);
+#endif
+			break;
+		}
 
 		/* %%:  A literal '%' character. */
 
