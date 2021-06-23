@@ -59,6 +59,7 @@
 #include <sched.h>
 #include <mqueue.h>
 #include <assert.h>
+#include <debug.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/sched.h>
@@ -134,6 +135,7 @@ int mq_close_group(mqd_t mqdes, FAR struct task_group_s *group)
 
 			mq_inode_release(inode);
 		} else {
+			dbg("ERROR: mqdes(%x) is not in this thread's group.\n", mqdes);
 			ret = ERROR;
 		}
 		sched_unlock();
