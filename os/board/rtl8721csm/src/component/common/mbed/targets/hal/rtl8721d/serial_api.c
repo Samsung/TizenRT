@@ -481,35 +481,17 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 	puart_adapter->UARTx = UART_DEV_TABLE[uart_idx].UARTx;
 	puart_adapter->IrqNum = UART_DEV_TABLE[uart_idx].IrqNum;
 
-	/*Enable Uart Ip Clock*/
-	//switch (puart_adapter->UartIndex) {
-	//case 0:
-		/* UART 0 */
-	//	RCC_PeriphClockCmd(APBPeriph_UART0, APBPeriph_UART0_CLOCK, ENABLE);
-	//break;
-
-	//case 1:
-		/* UART 1 */
-	//	RCC_PeriphClockCmd(APBPeriph_UART1, APBPeriph_UART1_CLOCK, ENABLE);
-	//break;
-	//default:
-	//break;
-	//}
-
 	/* Configure the UART pins */
 	pinmap_pinout(tx, PinMap_UART_TX);
 	pinmap_pinout(rx, PinMap_UART_RX);
 	pin_mode(tx, PullUp);
 	pin_mode(rx, PullUp);
-	
 
 	UART_StructInit(&puart_adapter->UART_InitStruct);
 	UART_Init(puart_adapter->UARTx, &puart_adapter->UART_InitStruct);
 
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	InterruptRegister((IRQ_FUN)uart_irqhandler, puart_adapter->IrqNum, (u32)puart_adapter, 5);
 	InterruptEn(puart_adapter->IrqNum, 5);
-#endif
 
 #ifdef CONFIG_MBED_ENABLED
 	// For stdio management
@@ -1291,11 +1273,6 @@ void serial_enable (serial_t *obj)
 	default:
 	break;
 	}
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
-	InterruptRegister((IRQ_FUN)uart_irqhandler, puart_adapter->IrqNum, (u32)puart_adapter, 5);
-	InterruptEn(puart_adapter->IrqNum, 5);
-#endif
 }
 
 
