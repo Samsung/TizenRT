@@ -113,7 +113,7 @@ extern uint32_t *g_umm_app_id;
 
 void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 {
-	/* Verify that the caller is sane */
+	/* Verify that the caller is same */
 
 	if (tcb->task_state < FIRST_READY_TO_RUN_STATE || tcb->task_state > LAST_READY_TO_RUN_STATE
 #if SCHED_PRIORITY_MIN > 0
