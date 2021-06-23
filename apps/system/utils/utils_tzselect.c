@@ -99,6 +99,7 @@ bool search_tz(char *dirpath)
 			break;
 		}
 	}
+	printf("\n");
 
 	strncat(dirpath, "/", MAX_PATH_LEN);
 	if (1 <= num && num <= folder_size) {
