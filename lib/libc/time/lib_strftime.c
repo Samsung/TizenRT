@@ -60,6 +60,10 @@
 #include <stdio.h>
 #include <time.h>
 #include <debug.h>
+#ifdef CONFIG_LIBC_LOCALTIME
+#include <string.h>
+#include <stdlib.h>
+#endif
 
 #include <tinyara/time.h>
 
