@@ -29,7 +29,7 @@
 #include "wm_test_log.h"
 
 #define WM_TEST_TRIAL 3
-#define WT_TAG "[WT]"
+#define TAG "[WT]"
 static char *WM_AP_SSID;
 static char *WM_AP_PASSWORD;
 static wifi_manager_ap_auth_type_e WM_AP_AUTH;
@@ -60,42 +60,42 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 #define WM_TEST_SIGNAL								\
 	do {											\
 		sem_post(&g_wm_sem);						\
-		WT_LOG(WT_TAG, "send signal");	\
+		WT_LOG(TAG, "send signal");	\
 	} while (0)
 
 #define WM_TEST_WAIT								\
 	do {											\
-		WT_LOG(WT_TAG, "wait signal");	\
+		WT_LOG(TAG, "wait signal");	\
 		sem_wait(&g_wm_sem);                        \
 	} while (0)
 
 void wm_sta_connected(wifi_manager_result_e res)
 {
-	WT_LOG(WT_TAG, "--> res(%d)", res);
+	WT_LOG(TAG, "--> res(%d)", res);
 	WM_TEST_SIGNAL;
 }
 
 void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
-	WT_LOG(WT_TAG, "-->");
+	WT_LOG(TAG, "-->");
 	WM_TEST_SIGNAL;
 }
 
 void wm_softap_sta_join(void)
 {
-	WT_LOG(WT_TAG, "-->");
+	WT_LOG(TAG, "-->");
 	WM_TEST_SIGNAL;
 }
 
 void wm_softap_sta_leave(void)
 {
-	WT_LOG(WT_TAG, "-->");
+	WT_LOG(TAG, "-->");
 	WM_TEST_SIGNAL;
 }
 
 void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
-	WT_LOG(WT_TAG, "-->");
+	WT_LOG(TAG, "-->");
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
@@ -105,7 +105,7 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
 	while (wifi_scan_iter != NULL) {
-		WT_LOG(WT_TAG, "WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d",
+		WT_LOG(TAG, "WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d",
 			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
 			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
 		wifi_scan_iter = wifi_scan_iter->next;
@@ -138,90 +138,90 @@ static int run_procedure(void *arg)
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 
 	/* Join to softAP*/
-	WT_LOG(WT_TAG, "connect AP");
+	WT_LOG(TAG, "connect AP");
 	wifi_manager_ap_config_s apconfig;
 	wm_get_apinfo(&apconfig);
 	res = wifi_manager_connect_ap(&apconfig);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(WT_TAG, "connect AP fail %d", res);
+		WT_LOGE(TAG, "connect AP fail %d", res);
 		return -1;
 	}
-	WT_LOG(WT_TAG, "wait connect success event");
+	WT_LOG(TAG, "wait connect success event");
 	WM_TEST_WAIT;
 
 	/* Receive data */
-	WT_LOG(WT_TAG, "receive dummy data %d", WT_DATA_SIZE);
+	WT_LOG(TAG, "receive dummy data %d", WT_DATA_SIZE);
 	nres = wt_receive_dummy(WT_DATA_SIZE);
 	if (nres < 0) {
-		WT_LOGE(WT_TAG, "receive data fail %d", nres);
+		WT_LOGE(TAG, "receive data fail %d", nres);
 		return -1;
 	}
 
 	/* Set softAP */
-	WT_LOG(WT_TAG, "start softAP");
+	WT_LOG(TAG, "start softAP");
 	wifi_manager_softap_config_s softap_config;
 	wm_get_softapinfo(&softap_config);
 	res = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(WT_TAG, "set softap fail %d", res);
+		WT_LOGE(TAG, "set softap fail %d", res);
 		return -1;
 	}
 
 	/* Wait join event */
-	WT_LOG(WT_TAG, "wait join event");
+	WT_LOG(TAG, "wait join event");
 	WM_TEST_WAIT;
 
 	/*  receive data */
-	WT_LOG(WT_TAG, "receive data size %d", WT_DATA_SIZE);
+	WT_LOG(TAG, "receive data size %d", WT_DATA_SIZE);
 	nres = wt_receive_dummy(WT_DATA_SIZE);
 	if (nres < 0) {
-		WT_LOGE(WT_TAG, "receive data fail %d", nres);
+		WT_LOGE(TAG, "receive data fail %d", nres);
 		return -1;
 	}
 
 	/*  Wait leave event */
-	WT_LOG(WT_TAG, "wait leave event");
+	WT_LOG(TAG, "wait leave event");
 	WM_TEST_WAIT;
 
 	/* Start STA */
-	WT_LOG(WT_TAG, "start STA");
+	WT_LOG(TAG, "start STA");
 	res = wifi_manager_set_mode(STA_MODE, NULL);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(WT_TAG, "start STA fail %d", res);
+		WT_LOGE(TAG, "start STA fail %d", res);
 		return -1;
 	}
 
 	return 0;
 }
 
-static void *run_wm_daemon(void *arg)
+static void run_wm_daemon(void *arg)
 {
 	wifi_manager_result_e wres = WIFI_MANAGER_SUCCESS;
 	int cnt = 0;
 
-	WT_LOG(WT_TAG, "initialize wi-fi");
+	WT_LOG(TAG, "initialize wi-fi");
 	wres = wifi_manager_init(&g_wifi_callbacks);
 	if (wres != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(WT_TAG, "init fail");
-		return NULL;
+		WT_LOGE(TAG, "init fail");
+		return;
 	}
 
 	while (1) {
-		WT_LOG(WT_TAG, "=== test count %d===", cnt);
+		WT_LOG(TAG, "=== test count %d===", cnt);
 		if (run_procedure(arg) < 0) {
-			WT_LOGE(WT_TAG, "error in main task");
+			WT_LOGE(TAG, "error in main task");
 			break;
 		}
 	}
 
-	WT_LOG(WT_TAG, "deinit wi-fi\n");
+	WT_LOG(TAG, "deinit wi-fi\n");
 	wres = wifi_manager_deinit();
 	if (wres != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(WT_TAG, "deinit fail");
-		return NULL;
+		WT_LOGE(TAG, "deinit fail");
+		return;
 	}
 
-	return NULL;
+	return;
 }
 
 void wm_run_test_daemon(struct wt_options *opt)
@@ -235,7 +235,7 @@ void wm_run_test_daemon(struct wt_options *opt)
 	WM_SOFTAP_CHANNEL = opt->softap_channel;
 
 	if (0 != sem_init(&g_wm_sem, 0, 0)) {
-		WT_LOGE(WT_TAG, "sem init fail %d", errno);
+		WT_LOGE(TAG, "sem init fail %d", errno);
 		return;
 	}
 
