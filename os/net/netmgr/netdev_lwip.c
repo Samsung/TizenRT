@@ -96,7 +96,7 @@ static inline void _convert_ip4addr_ntol(ip_addr_t *dest_addr, struct sockaddr_i
 static inline void _convert_ip6addr_lton(FAR struct sockaddr_in6 *outaddr, ip_addr_t *addr)
 {
 	ip6_addr_t *tmp = ip_2_ip6(addr);
-	NET_LOGI(TAG, "convert address lwip to netstack: %4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x\n",
+	NET_LOGV(TAG, "convert address lwip to netstack: %4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x\n",
 			   IP6_ADDR_BLOCK1(tmp),
 			   IP6_ADDR_BLOCK2(tmp),
 			   IP6_ADDR_BLOCK3(tmp),
@@ -137,7 +137,7 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 		/* leaving MLD6 group */
 		ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
 		mld6_leavegroup_netif(dev, &solicit_addr);
-		NET_LOGI(TAG, "MLD6 group left - %X : %X : %X : %X\n",
+		NET_LOGV(TAG, "MLD6 group left - %X : %X : %X : %X\n",
 			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
 			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
@@ -160,7 +160,7 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 	/* set MLD6 group to receive solicit multicast message */
 	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
 	mld6_joingroup_netif(dev, &solicit_addr);
-	NET_LOGI(TAG, "MLD6 group added - %X : %X : %X : %X\n",
+	NET_LOGV(TAG, "MLD6 group added - %X : %X : %X : %X\n",
 		 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
 		 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
@@ -355,7 +355,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	/* Receive the complete packet */
 	/* Obtain the size of the packet and put it into the "len" variable. */
 	if (0 == len) {
-		NET_LOGI(TAG, "input size is 0\n");
+		NET_LOGV(TAG, "input size is 0\n");
 		return 0;
 	}
 	struct netif *netif = GET_NETIF_FROM_NETDEV(dev);
@@ -472,13 +472,13 @@ static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 #else /*  CONFIG_NET_IPv4 */
 static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
-	NET_LOGI(TAG, "IPv4 not supported\n");
+	NET_LOGV(TAG, "IPv4 not supported\n");
 	return -ENOTTY;
 }
 
 static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
-	NET_LOGI(TAG, "IPv4 not supported\n");
+	NET_LOGV(TAG, "IPv4 not supported\n");
 	return -ENOTTY;
 }
 #endif /*  CONFIG_NET_IPv4 */
@@ -514,7 +514,7 @@ static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, i
 #else /* CONFIG_NET_IPv6 */
 static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, int type)
 {
-	NET_LOGI(TAG, "IPv6 not supported\n");
+	NET_LOGV(TAG, "IPv6 not supported\n");
 	return -ENOTTY;
 }
 #endif /* CONFIG_NET_IPv6 */
@@ -679,14 +679,14 @@ static int lwip_softup(struct netdev *dev)
 	 */
 #ifdef CONFIG_NET_IPv6
 	/* IPV6 auto configuration : Link-Local address */
-	NET_LOGI(TAG, "IPV6 link local address auto config\n");
+	NET_LOGV(TAG, "IPV6 link local address auto config\n");
 #ifdef CONFIG_NET_IPv6_AUTOCONFIG
 	/* enable IPv6 address stateless auto-configuration */
 	netif_set_ip6_autoconfig_enabled(ni, 1);
 #endif /* CONFIG_NET_IPv6_AUTOCONFIG */
 	/* To auto-config linklocal address, ni should have mac address already */
 	netif_create_ip6_linklocal_address(ni);
-	NET_LOGI(TAG, "generated IPV6 linklocal address - %X : %X : %X : %X\n",
+	NET_LOGV(TAG, "generated IPV6 linklocal address - %X : %X : %X : %X\n",
 		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[0]),
 		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[1]),
 		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[2]),
@@ -697,7 +697,7 @@ static int lwip_softup(struct netdev *dev)
 	/* set MLD6 group to receive solicit multicast message */
 	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&ni->ip6_addr[0])->addr[3]);
 	mld6_joingroup_netif(ni, &solicit_addr);
-	NET_LOGI(TAG, "MLD6 group added - %X : %X : %X : %X\n",
+	NET_LOGV(TAG, "MLD6 group added - %X : %X : %X : %X\n",
 		 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
 		 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */

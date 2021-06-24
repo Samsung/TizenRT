@@ -21,6 +21,9 @@
 	nwdbg(fmt, ##args)
 #define NET_LOGE(tag, fmt, args...)									\
 	ndbg(tag "[ERR] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
-#define NET_LOGI(tag, fmt, args...)									\
-	nvdbg(tag "[INFO] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
+#define NET_LOGV(tag, fmt, args...)									\
+	nwdbg(tag "[INFO] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
+#define NET_LOGV(tag, fmt, args...)									\
+	nvdbg(tag "[VERB] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
+
 

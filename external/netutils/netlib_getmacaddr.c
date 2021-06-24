@@ -59,17 +59,16 @@
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <netinet/in.h>
 #include <net/if.h>
-
 #include <netutils/netlib.h>
+#include <tinyara/net/netlog.h>
 
+#define TAG "[NETLIB]"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -105,30 +104,33 @@
 int netlib_getmacaddr(const char *ifname, uint8_t *macaddr)
 {
 	int ret = ERROR;
-	if (ifname && macaddr) {
-		/* Get a socket (only so that we get access to the INET subsystem) */
-
-		int sockfd = socket(PF_INETX, NETLIB_SOCK_IOCTL, 0);
-		if (sockfd >= 0) {
-			struct ifreq req;
-			memset(&req, 0, sizeof(struct ifreq));
-
-			/* Put the driver name into the request */
-
-			strncpy(req.ifr_name, ifname, IFNAMSIZ);
-
-			/* Perform the ioctl to get the MAC address */
-
-			ret = ioctl(sockfd, SIOCGIFHWADDR, (unsigned long)&req);
-			if (!ret) {
-				/* Return the MAC address */
-
-				memcpy(macaddr, &req.ifr_hwaddr.sa_data, IFHWADDRLEN);
-			}
-			close(sockfd);
-		}
+	if (!ifname || !macaddr) {
+		NET_LOGE(TAG, "invalid parameter %p %p\n", ifname, macaddr);
 	}
-	return ret;
+	/* Get a socket (only so that we get access to the INET subsystem) */
+
+	int sockfd = socket(PF_INETX, NETLIB_SOCK_IOCTL, 0);
+	if (sockfd < 0) {
+		NET_LOGE(TAG, "create socket %d\n", errno);
+	}
+
+	struct ifreq req;
+	memset(&req, 0, sizeof(struct ifreq));
+
+	/* Put the driver name into the request */
+	strncpy(req.ifr_name, ifname, IFNAMSIZ);
+
+	/* Perform the ioctl to get the MAC address */
+	ret = ioctl(sockfd, SIOCGIFHWADDR, (unsigned long)&req);
+	close(sockfd);
+	if (ret == -1) {
+		NET_LOGE("ioctl fail %d\n", errno);
+		return ERROR;
+	}
+	/* Return the MAC address */
+	memcpy(macaddr, &req.ifr_hwaddr.sa_data, IFHWADDRLEN);
+
+	return OK;
 }
 
 #endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */

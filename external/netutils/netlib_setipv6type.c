@@ -60,14 +60,11 @@
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-
 #include <netinet/in.h>
 #include <net/if.h>
-
 #include <netutils/netlib.h>
 
 /****************************************************************************

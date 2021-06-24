@@ -129,7 +129,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 	int ret = -EINVAL;
 	(void)sock;
 
-	NET_LOGI(TAG, "cmd: %d\n", cmd);
+	NET_LOGV(TAG, "cmd: %d\n", cmd);
 
 	/* Execute the command */
 	switch (cmd) {

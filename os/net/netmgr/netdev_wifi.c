@@ -82,7 +82,7 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 {
 	trwifi_result_e res = TRWIFI_FAIL;
 
-	NET_LOGI(TAG, "T%d cmd(%d) (%p) (%d)\n", getpid(), cmd, data, data_len);
+	NET_LOGV(TAG, "T%d cmd(%d) (%p) (%d)\n", getpid(), cmd, data, data_len);
 	switch (cmd.type) {
 	case LWNL_REQ_WIFI_INIT:
 	{
@@ -164,7 +164,7 @@ int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list)
 	}
 	total = cnt * sizeof(trwifi_ap_scan_info_s);
 	uint32_t item_size = sizeof(trwifi_ap_scan_info_s);
-	NET_LOGI(TAG, "total size(%d) (%d) \n", sizeof(trwifi_ap_scan_info_s), total);
+	NET_LOGV(TAG, "total size(%d) (%d) \n", sizeof(trwifi_ap_scan_info_s), total);
 
 	*buffer = (uint8_t *)kmm_malloc(total);
 	if (!(*buffer)) {
