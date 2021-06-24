@@ -33,7 +33,9 @@
 #include <ifaddrs.h>
 #include <netutils/netlib.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <tinyara/net/netlog.h>
 
+#define TAG "[NETLIB]"
 #define INTF_NAME "None"
 
 static inline int _send_msg(lwnl_msg *msg)
@@ -42,15 +44,15 @@ static inline int _send_msg(lwnl_msg *msg)
 
 	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (fd < 0) {
+		NET_LOGE(TAG, "create socket %d\n", errno);
 		ret = -1;
 	} else {
 		if (write(fd, msg, sizeof(*msg)) < 0) {
+			NET_LOGE(TAG, "write %d\n", errno);
 			ret = -2;
 		}
-
 		close(fd);
 	}
-
 	return ret;
 }
 
@@ -60,11 +62,10 @@ int netlib_getifaddrs(struct ifaddrs **ifap)
 	lwnl_msg msg = {INTF_NAME, {LWNL_REQ_COMMON_GETADDRINFO}, sizeof(*ifap), NULL, (void *)&res};
 	int lres = _send_msg(&msg);
 	if (lres < 0) {
-		printf("error %d %s:%d\n", res, __FILE__, __LINE__);
+		NET_LOGE("send request msg fail %d\n", res);
 		return -1;
 	}
 	*ifap = (struct ifaddrs *)msg.data;
-
 	return res;
 }
 

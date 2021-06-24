@@ -57,7 +57,7 @@ int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *i
 	FAR struct netdev *dev;
 	int ret = -EINVAL;
 
-	NET_LOGI(TAG, "cmd: %d\n", cmd);
+	NET_LOGV(TAG, "cmd: %d\n", cmd);
 
 	/* Execute the command */
 	switch (cmd) {

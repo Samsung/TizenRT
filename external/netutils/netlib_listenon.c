@@ -58,18 +58,17 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <debug.h>
-
 #include <arpa/inet.h>
 #include <netinet/in.h>
-
+#include <debug.h>
 #include <netutils/netlib.h>
+#include <tinyara/net/netlog.h>
 
+#define TAG "[NETLIB]"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -104,7 +103,7 @@ int netlib_listenon(uint16_t portno)
 
 	listensd = socket(PF_INET, SOCK_STREAM, 0);
 	if (listensd < 0) {
-		ndbg("socket failure: %d\n", errno);
+		NET_LOGE(TAG, "socket failure: %d\n", errno);
 		return ERROR;
 	}
 
@@ -113,7 +112,7 @@ int netlib_listenon(uint16_t portno)
 #ifdef CONFIG_NET_HAVE_REUSEADDR
 	optval = 1;
 	if (setsockopt(listensd, SOL_SOCKET, SO_REUSEADDR, (void *)&optval, sizeof(int)) < 0) {
-		ndbg("setsockopt SO_REUSEADDR failure: %d\n", errno);
+		NET_LOGE(TAG, "setsockopt SO_REUSEADDR failure: %d\n", errno);
 		goto errout_with_socket;
 	}
 #endif
@@ -125,20 +124,20 @@ int netlib_listenon(uint16_t portno)
 	myaddr.sin_addr.s_addr = INADDR_ANY;
 
 	if (bind(listensd, (struct sockaddr *)&myaddr, sizeof(struct sockaddr_in)) < 0) {
-		ndbg("bind failure: %d\n", errno);
+		NET_LOGE(TAG, "bind failure: %d\n", errno);
 		goto errout_with_socket;
 	}
 
 	/* Listen for connections on the bound TCP socket */
 
 	if (listen(listensd, 5) < 0) {
-		ndbg("listen failure %d\n", errno);
+		NET_LOGE(TAG, "listen failure %d\n", errno);
 		goto errout_with_socket;
 	}
 
 	/* Begin accepting connections */
 
-	nvdbg("Accepting connections on port %d\n", ntohs(portno));
+	NET_LOGV(TAG, "Accepting connections on port %d\n", ntohs(portno));
 	return listensd;
 
 errout_with_socket:

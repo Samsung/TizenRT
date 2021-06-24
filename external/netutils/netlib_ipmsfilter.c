@@ -58,18 +58,18 @@
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <debug.h>
-
 #include <netinet/in.h>
+#include <debug.h>
 #include <sys/sockio.h>
-
 #include <netutils/netlib.h>
 #include <netutils/ipmsfilter.h>
+#include <tinyara/net/netlog.h>
+
+#define TAG "[NETLIB]"
 
 #ifdef CONFIG_NET_IGMP
 
@@ -102,7 +102,7 @@ int ipmsfilter(FAR const char *ifname, FAR const struct in_addr *multiaddr, uint
 {
 	int ret = ERROR;
 
-	nvdbg("ifname: %s muliaddr: %08x fmode: %ld\n", ifname, *multiaddr, fmode);
+	NET_LOGV(TAG, "ifname: %s muliaddr: %08x fmode: %ld\n", ifname, *multiaddr, fmode);
 	if (ifname && multiaddr) {
 		/* Get a socket (only so that we get access to the INET subsystem) */
 

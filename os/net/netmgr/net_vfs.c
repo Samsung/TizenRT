@@ -248,7 +248,7 @@ int net_vfcntl(int sd, int cmd, va_list ap)
 	int err = 0;
 	int ret = 0;
 
-	NET_LOGI(TAG, "sd=%d cmd=%d\n", sd, cmd);
+	NET_LOGV(TAG, "sd=%d cmd=%d\n", sd, cmd);
 
 	/* Verify that the sd corresponds to valid, allocated socket */
 

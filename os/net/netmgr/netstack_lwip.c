@@ -344,7 +344,7 @@ static int lwip_ns_addroute(struct rtentry *entry)
 	}
 
 	// ToDo
-	NET_LOGI("not supported yet\n");
+	NET_LOGV("not supported yet\n");
 	return -ENOTTY;
 }
 
@@ -356,7 +356,7 @@ static int lwip_ns_delroute(struct rtentry *entry)
 	}
 
 	// ToDo
-	NET_LOGI("not supported yet\n");
+	NET_LOGV("not supported yet\n");
 	return -ENOTTY;
 }
 #endif

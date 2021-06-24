@@ -55,21 +55,19 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
-
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
-#include <debug.h>
-
 #include <netinet/in.h>
-
+#include <debug.h>
 #include <netutils/netlib.h>
+#include <tinyara/net/netlog.h>
 
+#define TAG "[NETLIB]"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -109,6 +107,7 @@ void netlib_server(uint16_t portno, pthread_startroutine_t handler, int stacksiz
 
 	listensd = netlib_listenon(portno);
 	if (listensd < 0) {
+		NET_LOGE(TAG, "create listen socket\n");
 		return;
 	}
 
@@ -120,11 +119,11 @@ void netlib_server(uint16_t portno, pthread_startroutine_t handler, int stacksiz
 		addrlen = sizeof(struct sockaddr_in);
 		acceptsd = accept(listensd, (struct sockaddr *)&myaddr, &addrlen);
 		if (acceptsd < 0) {
-			ndbg("accept failure: %d\n", errno);
+			NET_LOGE(TAG, "accept failure: %d\n", errno);
 			break;
 		}
 
-		nvdbg("Connection accepted -- spawning sd=%d\n", acceptsd);
+		NET_LOGV(TAG, "Connection accepted -- spawning sd=%d\n", acceptsd);
 
 		/* Create a thread to handle the connection.  The socket descriptor is
 		 * provided in as the single argument to the new thread.
@@ -138,7 +137,7 @@ void netlib_server(uint16_t portno, pthread_startroutine_t handler, int stacksiz
 			/* Close the connection */
 
 			close(acceptsd);
-			ndbg("pthread_create failed\n");
+			NET_LOGE(TAG, "pthread_create failed\n");
 
 			if (ret == EAGAIN) {
 				/* Lacked resources to create a new thread. This is a temporary

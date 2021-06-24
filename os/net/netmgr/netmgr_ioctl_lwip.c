@@ -123,7 +123,7 @@ static void _netdev_set_ipv4addr(FAR struct netif *dev,
 
 int _netdev_dhcpc_start(const char *intf)
 {
-	NET_LOGI(TAG, "LWIP DHCPC started (%s)\n", intf);
+	NET_LOGV(TAG, "LWIP DHCPC started (%s)\n", intf);
 	struct netif *cnif;
 	cnif = _netdev_dhcp_dev(intf);
 	if (cnif == NULL) {
@@ -149,7 +149,7 @@ int _netdev_dhcpc_start(const char *intf)
 		return ERROR;
 	}
 
-	NET_LOGI(TAG, "DHCP client started successfully, waiting IP address (timeout %d msecs)\n", timeleft);
+	NET_LOGV(TAG, "DHCP client started successfully, waiting IP address (timeout %d msecs)\n", timeleft);
 	while (netifapi_dhcp_address_valid(cnif) != 0) {
 		usleep(100000);
 		timeleft -= 100;
@@ -161,7 +161,7 @@ int _netdev_dhcpc_start(const char *intf)
 	}
 
 	memcpy(&ip_check, &ip4_addr_get_u32(ip_2_ip4(&cnif->ip_addr)), sizeof(struct in_addr));
-	NET_LOGI(TAG, "Got IP address %s\n", inet_ntoa(ip_check));
+	NET_LOGV(TAG, "Got IP address %s\n", inet_ntoa(ip_check));
 
 	return 0;
 }
@@ -177,7 +177,7 @@ int _netdev_dhcpc_stop(const char *intf)
 	}
 	_netdev_set_ipv4addr(cnif, &in, &in, &in);
 	netifapi_dhcp_stop(cnif);
-	NET_LOGI(TAG, "Release IP address (lwip)\n");
+	NET_LOGV(TAG, "Release IP address (lwip)\n");
 
 	return OK;
 }
@@ -420,7 +420,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 			NET_LOGE(TAG, "DHCP server start failed (LWIP)\n");
 			goto errout;
 		}
-		NET_LOGI(TAG, "DHCP server started successfully (LWIP)\n");
+		NET_LOGV(TAG, "DHCP server started successfully (LWIP)\n");
 		req->req_res = OK;
 		ret = OK;
 		break;
@@ -438,7 +438,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 			goto errout;
 		}
 		netifapi_dhcps_stop(cnif);
-		NET_LOGI(TAG, "DHCP server stopped successfully (LWIP)\n");
+		NET_LOGV(TAG, "DHCP server stopped successfully (LWIP)\n");
 		req->req_res = OK;
 		ret = OK;
 		break;
@@ -455,7 +455,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 			req->req_res = ERROR;
 			goto errout;
 		}
-		NET_LOGI(TAG, "DHCP server opened\n");
+		NET_LOGV(TAG, "DHCP server opened\n");
 		req->req_res = OK;
 		ret = OK;
 		break;
@@ -501,7 +501,7 @@ errout:
 int netdev_lwipioctl(int sockfd, int cmd, void *arg)
 {
 	int ret = -ENOTTY;
-	NET_LOGI(TAG, "cmd %d\n", cmd);
+	NET_LOGV(TAG, "cmd %d\n", cmd);
 
 	if (cmd == FIONREAD || cmd == FIONBIO) {
 		ret = lwip_ioctl(sockfd, (long)cmd, arg);
