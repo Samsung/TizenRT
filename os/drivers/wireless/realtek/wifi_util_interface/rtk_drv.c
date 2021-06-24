@@ -53,7 +53,7 @@
 		vddbg(RTKDRV_TAG "%s:%d\n", __FILE__, __LINE__); \
 	} while (0)
 
-
+struct netdev *g_rtk_netdev;
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -97,22 +97,22 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 
 	switch (type) {
 	case 1:
-		trwifi_post_event(LWNL_EVT_STA_CONNECTED, NULL, 0);
+		trwifi_post_event(g_rtk_netdev, LWNL_EVT_STA_CONNECTED, NULL, 0);
 		break;
 	case 2:
-		trwifi_post_event(LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
+		trwifi_post_event(g_rtk_netdev, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
 		break;
 	case 3:
-		trwifi_post_event(LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+		trwifi_post_event(g_rtk_netdev, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
 		break;
 	case 4:
-		trwifi_post_event(LWNL_EVT_STA_DISCONNECTED, NULL, 0);
+		trwifi_post_event(g_rtk_netdev, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
 		break;
 	case 5:
-		trwifi_post_event(LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
+		trwifi_post_event(g_rtk_netdev, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
 		break;
 	default:
-		trwifi_post_event(LWNL_EVT_UNKNOWN, NULL, 0);
+		trwifi_post_event(g_rtk_netdev, LWNL_EVT_UNKNOWN, NULL, 0);
 		break;
 	}
 
@@ -174,9 +174,9 @@ int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input, int s
 	trwifi_scan_list_s *scan_list = (trwifi_scan_list_s *)utils_scan_input;
 
 	if (scan_list) {
-		TRWIFI_POST_SCANEVENT(LWNL_EVT_SCAN_DONE, (void *)scan_list);
+		TRWIFI_POST_SCANEVENT(g_rtk_netdev, LWNL_EVT_SCAN_DONE, (void *)scan_list);
 	} else {
-		trwifi_post_event(LWNL_EVT_SCAN_FAILED, NULL, 0);
+		trwifi_post_event(g_rtk_netdev, LWNL_EVT_SCAN_FAILED, NULL, 0);
 	}
 
 	return RTK_STATUS_SUCCESS;
@@ -408,26 +408,27 @@ trwifi_result_e rtkdrv_set_autoconnect(struct netdev *dev, uint8_t check)
 	return LWNL_SUCCESS;
 }
 
+int rtkdrv_linkoutput(struct netdev *dev, void *buf, uint16_t dlen)
+{
+	// To Do
+	return 0;
+}
+
 int rtk_drv_initialize(void)
 {
 	RTKDRV_ENTER;
-	struct netdev *dev = NULL;
-	dev = (struct netdev *)kmm_malloc(sizeof(struct netdev));
-	if (!dev) {
-		return -1;
-	}
-	dev->ifname[0] = 'w';
-	dev->ifname[1] = 'l';
-	dev->ifname[2] = '1';
 
-	dev->type = NM_WIFI;
-	dev->ops = (void *)&g_trwifi_drv_ops;
+	struct nic_io_ops nops = {rtkdrv_linkoutput, NULL};
+	struct netdev_config nconfig;
+	nconfig.ops = &nops;
+	nconfig.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
+	nconfig.mtu = CONFIG_NET_ETH_MTU; // is it right that vendor decides MTU size??
+	nconfig.hwaddr_len = IFHWADDRLEN;
 
-	int res = lwnl_register_dev(dev);
-	if (res < 0) {
-		vddbg("register dev to lwnl fail\n");
-		kmm_free(dev);
-		return -1;
-	}
-	return 0;
+	nconfig.is_default = 1;
+
+	nconfig.type = NM_WIFI;
+	nconfig.t_ops.wl = &g_trwifi_drv_ops;
+	g_rtk_netdev = netdev_register(&nconfig);
+	return (g_rtk_netdev != NULL ? 0 : -1);
 }
