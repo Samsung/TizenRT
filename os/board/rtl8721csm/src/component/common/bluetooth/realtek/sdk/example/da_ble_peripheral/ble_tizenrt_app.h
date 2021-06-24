@@ -131,7 +131,7 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
   */
 T_APP_RESULT ble_tizenrt_app_gap_callback(uint8_t cb_type, void *p_cb_data);
 
-void ble_tizenrt_send_msg(uint16_t sub_type, void *arg);                                          
+bool ble_tizenrt_send_msg(uint16_t sub_type, void *arg);                                      
 
 #ifdef __cplusplus
 }
