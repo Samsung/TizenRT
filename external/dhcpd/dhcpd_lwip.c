@@ -58,25 +58,23 @@
 
 #include <tinyara/config.h>		/* TinyAra configuration */
 #include <stdio.h>
-#include <debug.h>				/* For ndbg, vdbg */
-#include <tinyara/compiler.h>	/* For CONFIG_CPP_HAVE_WARNING */
-#include <protocols/dhcpd.h>	/* Advertised DHCPD APIs */
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
-
 #include <net/if.h>
 #include <netinet/in.h>
 #include <semaphore.h>
 #include <pthread.h>
-#include <netutils/netlib.h>
 #include <mqueue.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
+#include <debug.h>				/* For ndbg, vdbg */
+#include <tinyara/compiler.h>	/* For CONFIG_CPP_HAVE_WARNING */
+#include <protocols/dhcpd.h>	/* Advertised DHCPD APIs */
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Global Data
