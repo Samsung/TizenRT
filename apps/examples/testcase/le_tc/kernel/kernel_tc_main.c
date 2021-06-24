@@ -191,6 +191,9 @@ int tc_kernel_main(int argc, char *argv[])
 	memory_safety_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_IRQ
+	irq_main();
+#endif
 #ifdef CONFIG_ITC_KERNEL_ENVIRON
 	itc_environ_main();
 #endif
