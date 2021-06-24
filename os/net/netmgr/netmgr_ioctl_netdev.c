@@ -27,6 +27,18 @@
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include "netdev_mgr_internal.h"
+#include <tinyara/net/netlog.h>
+
+#define ND_GET_NETDEV(dev, req)						\
+	do {											\
+		dev = _netdev_ifrdev(req);					\
+		if (!dev) {									\
+			NET_LOGE(TAG, "get netdev fail\n");	\
+			return -ENOSYS;							\
+		}											\
+	}while (0)
+
+#define TAG "[NETMGR]"
 
 struct ifenum {
 	FAR struct ifconf	*ifc;
@@ -41,7 +53,6 @@ static FAR struct netdev *_netdev_ifrdev(FAR struct ifreq *req)
 	return NULL;
 }
 
-
 static int _netdev_getconf(struct netdev *dev, void *arg)
 {
 	FAR struct ifenum *ifenum = (FAR struct ifenum *)arg;
@@ -49,6 +60,7 @@ static int _netdev_getconf(struct netdev *dev, void *arg)
 	FAR struct ifreq  *ifr = (FAR struct ifreq *)(ifc->ifc_buf + ifenum->pos);
 
 	if (ifenum->pos + sizeof(struct ifreq) > ifc->ifc_len) {
+		NET_LOGE(TAG, "ifc_len is shorter than provided\n");
 		return -EFAULT;
 	}
 
@@ -59,7 +71,6 @@ static int _netdev_getconf(struct netdev *dev, void *arg)
 
 	return 0;
 }
-
 
 static int ioctl_siocgifconf(FAR struct ifconf *ifc)
 {
@@ -77,7 +88,6 @@ static int ioctl_siocgifconf(FAR struct ifconf *ifc)
 	return ret;
 }
 
-
 static int _netdev_getname(struct netdev *dev, void *arg)
 {
 	uint8_t flag;
@@ -88,7 +98,6 @@ static int _netdev_getname(struct netdev *dev, void *arg)
 	}
 	return 0;
 }
-
 
 static int ioctl_siocgifname(FAR struct ifreq *req)
 {
@@ -114,50 +123,37 @@ static int ioctl_siocgifname(FAR struct ifreq *req)
  *   Negated errno returned on failure.
  *
  ****************************************************************************/
-
 int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 {
 	FAR struct netdev *dev;
 	int ret = -EINVAL;
 	(void)sock;
 
-	nvdbg("cmd: %d\n", cmd);
+	NET_LOGI(TAG, "cmd: %d\n", cmd);
 
 	/* Execute the command */
 	switch (cmd) {
 
 	case SIOCGIFADDR: {			/* Get IP address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_ip4addr(dev, &req->ifr_addr, NETDEV_IP);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, get_ip4addr, (dev, &req->ifr_addr, NETDEV_IP));
 	}
 		break;
 	case SIOCSIFADDR: {			/* Set IP address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->set_ip4addr(dev, &req->ifr_addr, NETDEV_IP);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, set_ip4addr, (dev, &req->ifr_addr, NETDEV_IP));
 	}
 		break;
 
 	case SIOCGIFDSTADDR: {		/* Get P-to-P address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_ip4addr(dev, &req->ifr_addr, NETDEV_GW);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, get_ip4addr, (dev, &req->ifr_addr, NETDEV_GW));
 	}
 		break;
 
 	case SIOCSIFDSTADDR: {		/* Set P-to-P address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->set_ip4addr(dev, &req->ifr_addr, NETDEV_GW);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, set_ip4addr, (dev, &req->ifr_addr, NETDEV_GW));
 	}
 		break;
 
@@ -168,51 +164,36 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		break;
 
 	case SIOCGIFNETMASK: {		/* Get network mask */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_ip4addr(dev, &req->ifr_addr, NETDEV_NETMASK);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, get_ip4addr, (dev, &req->ifr_addr, NETDEV_NETMASK));
 	}
 		break;
 
 	case SIOCSIFNETMASK: {		/* Set network mask */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->set_ip4addr(dev, &req->ifr_addr, NETDEV_NETMASK);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, set_ip4addr, (dev, &req->ifr_addr, NETDEV_NETMASK));
 	}
 		break;
 
 		/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
 #ifdef CONFIG_NET_IPv6
 	case SIOCSLIFADDR: {		/* Set IP address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, set_ip6addr, (dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP));
 	}
 		break;
 
 #endif
 	case SIOCGLIFMTU:			/* Get MTU size */
 	case SIOCGIFMTU: {			/* Get MTU size */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_mtu(dev, &req->ifr_mtu);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, get_mtu, (dev, &req->ifr_mtu));
 	}
 		break;
 
 	case SIOCSIFFLAGS: {		/* Sets the interface flags */
 		/* Is this a request to bring the interface up? */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
+		ND_GET_NETDEV(dev, req);
 		if (req->ifr_flags & IFF_UP) {
 			ret = nm_ifup(dev);
 		} else if (req->ifr_flags & IFF_DOWN) {
@@ -223,39 +204,27 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		break;
 
 	case SIOCGIFFLAGS: {		/* Gets the interface flags */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_flag(dev, &req->ifr_flags);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, get_flag, (dev, &req->ifr_flags));
 	}
 		break;
 
 		/* MAC address operations only make sense if Ethernet is supported */
 	case SIOCGIFHWADDR: {		/* Get hardware address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->get_hwaddr(dev, &req->ifr_hwaddr);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, get_hwaddr, (dev, &req->ifr_hwaddr));
 	}
 		break;
 
 	case SIOCSIFHWADDR: {		/* Set hardware address -- will not take effect until ifup */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->set_hwaddr(dev, &req->ifr_hwaddr);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, set_hwaddr, (dev, &req->ifr_hwaddr));
 	}
 		break;
 
 	case SIOCDIFADDR: {			/* Delete IP address */
-		dev = _netdev_ifrdev(req);
-		if (!dev) {
-			break;
-		}
-		ret = ((struct netdev_ops *)(dev->ops))->delete_ipaddr(dev);
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, delete_ipaddr, (dev));
 	}
 		break;
 
@@ -276,12 +245,9 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 	case SIOCGMIIPHY:			/* Get address of MII PHY in use */
 	case SIOCGMIIREG:			/* Get MII register via MDIO */
 	case SIOCSMIIREG: {			/* Set MII register via MDIO */
-		dev = _netdev_ifrdev(req);
-		if (!dev || !dev->d_ioctl) {
-			break;
-		}
+		ND_GET_NETDEV(dev, req);
 		struct mii_ioctl_data_s *mii_data = &req->ifr_ifru.ifru_mii_data;
-		ret = dev->d_ioctl(dev, cmd, ((long)(uintptr_t)mii_data));
+		ND_NETOPS_RET(ret, dev, d_ioctl, (dev, cmd, ((long)(uintptr_t)mii_data)));
 	}
 		break;
 #endif							/* CONFIG_NETDEV_PHY_IOCTL */
@@ -292,6 +258,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		ret = ioctl_siocgifname(req);
 		break;
 	default: {
+		NET_LOGE(TAG, "netdev invalid command\n");
 		ret = -ENOTTY;
 	}
 		break;

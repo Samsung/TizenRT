@@ -24,6 +24,9 @@
 #ifdef CONFIG_NET_LOCAL
 #include "utils/utils.h"
 #endif
+#include <tinyara/net/netlog.h>
+
+#define TAG "[NETMGR]"
 
 struct tr_netmgr {
 	void *dev;
@@ -57,7 +60,6 @@ extern void vwifi_start(void);
  *   None
  *
  ****************************************************************************/
-
 void net_setup(void)
 {
 	int res = 0;
@@ -66,20 +68,20 @@ void net_setup(void)
 	if (!g_netmgr.dev) {
 		g_netmgr.dev = (void *)kmm_zalloc(sizeof(struct lwnl_lowerhalf_s));
 		if (!g_netmgr.dev) {
-			ndbg("!!!alloc dev fail!!!\n");
+			NET_LOGE(TAG, "!!!alloc dev fail!!!\n");
 		}
 	}
 
 	res = lwnl_register((struct lwnl_lowerhalf_s *)g_netmgr.dev);
 	if (res < 0) {
-		ndbg("!!!register device fail!!!\n");
+		NET_LOGE(TAG, "!!!register device fail!!!\n");
 	}
 #endif
 
 	struct netstack *stk = get_netstack(TR_SOCKET);
 	NETSTACK_CALL_RET(stk, init, (NULL), res);
 	if (res < 0) {
-		ndbg("!!!initialize stack fail!!!\n");
+		NET_LOGE(TAG, "!!!initialize stack fail!!!\n");
 	}
 	netdev_mgr_start();
 }
@@ -100,7 +102,6 @@ void net_setup(void)
  *   None
  *
  ****************************************************************************/
-
 void net_initialize(void)
 {
 #ifdef CONFIG_NET_LOCAL
@@ -118,7 +119,7 @@ void net_initialize(void)
 	int res = -1;
 	NETSTACK_CALL_RET(stk, start, (NULL), res);
 	if (res < 0) {
-		ndbg("!!!start stack fail!!!\n");
+		NET_LOGE(TAG, "!!!start stack fail!!!\n");
 	}
 	return;
 }

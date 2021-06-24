@@ -30,6 +30,10 @@
 
 #define WT_STRESS_USAGE													\
 	"\n stress test mode options:\n"									\
+	" stress test 1: validate deinit ops on each wi-fi state\n"			\
+	" stress test 2: Unit TC\n"											\
+	" stress test 3: scenario base TC (client)\n"						\
+	" stress test 4: scenario base TC (server)\n"						\
 	"	 wm_test stress 1 [ssid] [security mode] [password]\n"			\
 	"	 wm_test stress 2 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
 	"	 wm_test stress 3 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \

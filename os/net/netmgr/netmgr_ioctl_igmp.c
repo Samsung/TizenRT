@@ -15,14 +15,17 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
 #include "sys/sockio.h"
+#include <tinyara/net/netlog.h>
+
+#define TAG "[NETMGR]"
 
 static FAR struct netdev *_netdev_imsfdev(FAR struct ip_msfilter *imsf)
 {
 	if (!imsf) {
+		NET_LOGE(TAG, "ip msfilter is invalid\n");
 		return NULL;
 	}
 	/* Find the network device associated with the device name
@@ -54,13 +57,14 @@ int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *i
 	FAR struct netdev *dev;
 	int ret = -EINVAL;
 
-	nvdbg("cmd: %d\n", cmd);
+	NET_LOGI(TAG, "cmd: %d\n", cmd);
 
 	/* Execute the command */
 	switch (cmd) {
 	case SIOCSIPMSFILTER: {		/* Set source filter content */
 		dev = _netdev_imsfdev(imsf);
 		if (!dev) {
+			NET_LOGE(TAG, "No dev for ip ms filter\n");
 			break;
 		}
 
@@ -74,6 +78,7 @@ int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *i
 	break;
 	case SIOCGIPMSFILTER:		/* Retrieve source filter addresses */
 	default:
+		NET_LOGE(TAG, "not supported command (%d)\n", cmd);
 		ret = -ENOTTY;
 		break;
 	}
