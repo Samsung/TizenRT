@@ -59,8 +59,6 @@ T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_scatternet_read_results[BLE_TIZENRT_SCA
  *                              Functions
  *============================================================================*/
 
-void ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg);
-
 void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
     debug_print("\r\n[%s] msg type : 0x%x", __FUNCTION__, callback_msg.type);
@@ -68,9 +66,14 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
         case BLE_TIZENRT_BONDED_MSG:
         {
             da_ble_client_device_connected *bonded_dev = callback_msg.u.buf;
-            debug_print("\r\n[%s] SM connected %d", __FUNCTION__, bonded_dev->conn_handle);
-            client_init_parm->da_ble_client_device_connected_cb(bonded_dev);
-            os_mem_free(bonded_dev);
+            if(bonded_dev)
+            {
+                debug_print("\r\n[%s] SM connected %d", __FUNCTION__, bonded_dev->conn_handle);
+                client_init_parm->da_ble_client_device_connected_cb(bonded_dev);
+                os_mem_free(bonded_dev);
+            } else {
+                debug_print("\n[%s] Bonded parameter is NULL", __FUNCTION__);
+            } 
         }
 		    break;
                 
@@ -78,32 +81,42 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
 		{
             debug_print("\r\n[%s] Handle connected_dev msg", __FUNCTION__);
             da_ble_client_device_connected *connected_dev = callback_msg.u.buf;
-            debug_print("\r\n[%s] is_boned %x conn_id %d conn_interval 0x%x latency 0x%x mtu 0x%x", __FUNCTION__,
-                    connected_dev->is_bonded, connected_dev->conn_handle,
-                    connected_dev->addr.conn_interval, connected_dev->addr.slave_latency, connected_dev->addr.mtu);
-            debug_print("\r\n[%s] DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X\r\n", __FUNCTION__, 
-			            connected_dev->addr.bd_addr[5], connected_dev->addr.bd_addr[4], connected_dev->addr.bd_addr[3],
-                        connected_dev->addr.bd_addr[2], connected_dev->addr.bd_addr[1], connected_dev->addr.bd_addr[0]);
-            for (int i = 0; i < BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS; i++)
+            if(connected_dev)
             {
-                if(!memcmp(ble_tizenrt_bond_req_table[i].addr, connected_dev->addr.bd_addr, GAP_BD_ADDR_LEN))
+                debug_print("\r\n[%s] is_boned %x conn_id %d conn_interval 0x%x latency 0x%x mtu 0x%x", __FUNCTION__,
+                        connected_dev->is_bonded, connected_dev->conn_handle,
+                        connected_dev->addr.conn_interval, connected_dev->addr.slave_latency, connected_dev->addr.mtu);
+                debug_print("\r\n[%s] DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X\r\n", __FUNCTION__, 
+                            connected_dev->addr.bd_addr[5], connected_dev->addr.bd_addr[4], connected_dev->addr.bd_addr[3],
+                            connected_dev->addr.bd_addr[2], connected_dev->addr.bd_addr[1], connected_dev->addr.bd_addr[0]);
+                for (int i = 0; i < BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS; i++)
                 {
-                    if(ble_tizenrt_bond_req_table[i].is_secured_connect && (ble_tizenrt_scatternet_app_link_table[i].auth_state != GAP_AUTHEN_STATE_COMPLETE))
+                    if(!memcmp(ble_tizenrt_bond_req_table[i].addr, connected_dev->addr.bd_addr, GAP_BD_ADDR_LEN))
                     {
-                        debug_print("\r\n[%s] LL connected %d, need pairing", __FUNCTION__, connected_dev->conn_handle);
-                        uint32_t handle = (uint32_t) connected_dev->conn_handle;
-                        ble_tizenrt_scatternet_send_msg(BLE_TIZENRT_BOND, (void *) handle);
+                        if(ble_tizenrt_bond_req_table[i].is_secured_connect && (ble_tizenrt_scatternet_app_link_table[i].auth_state != GAP_AUTHEN_STATE_COMPLETE))
+                        {
+                            debug_print("\r\n[%s] LL connected %d, need pairing", __FUNCTION__, connected_dev->conn_handle);
+                            uint32_t handle = (uint32_t) connected_dev->conn_handle;
+                            if(ble_tizenrt_scatternet_send_msg(BLE_TIZENRT_BOND, (void *) handle) == false)
+                            {
+                                os_mem_free(connected_dev);
+                                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                                return;
+                            }
+                        } else {
+                            debug_print("\r\n[%s] LL connected %d, do not need pairing", __FUNCTION__, connected_dev->conn_handle);
+                            client_init_parm->da_ble_client_device_connected_cb(connected_dev);
+                        }
                         os_mem_free(connected_dev);
-                    } else {
-                        debug_print("\r\n[%s] LL connected %d, do not need pairing", __FUNCTION__, connected_dev->conn_handle);
-                        client_init_parm->da_ble_client_device_connected_cb(connected_dev);
-                        os_mem_free(connected_dev);
+                        os_mem_free(ble_tizenrt_bond_req_table[i].addr);
+                        memset(&ble_tizenrt_bond_req_table[i], 0, sizeof(BLE_TIZENRT_BOND_REQ));
+                        g_conn_req_num--;
+                        break;
                     }
-                    os_mem_free(ble_tizenrt_bond_req_table[i].addr);
-                    //memset(&ble_tizenrt_bond_req_table[i], sizeof(BLE_TIZENRT_BOND_REQ), 0);
-                    g_conn_req_num--;
-                    break;
                 }
+                os_mem_free(connected_dev);
+            } else {
+                debug_print("\n[%s] Connected parameter is NULL", __FUNCTION__);
             }
         }	
 		    break;
@@ -125,12 +138,17 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
         }
 			break;
 
-        case BLE_TIZENRT_SCANED_DEVICE_MSG:
+        case BLE_TIZENRT_SCANNED_DEVICE_MSG:
         {
             debug_print("\r\n[%s] Handle scanned_device msg", __FUNCTION__);
             da_ble_client_scanned_device *scanned_device = callback_msg.u.buf;
-            client_init_parm->da_ble_client_device_scanned_cb(scanned_device);
-            os_mem_free(scanned_device);
+            if(scanned_device)
+            {
+                client_init_parm->da_ble_client_device_scanned_cb(scanned_device);
+                os_mem_free(scanned_device);
+            } else {
+                debug_print("\n[%s] Scanned_device parameter is NULL", __FUNCTION__);
+            }   
         }
 			break;
 
@@ -147,9 +165,14 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
         {
             debug_print("\r\n[%s] Handle notify_result msg", __FUNCTION__);
             T_TIZENRT_CLIENT_NOTIFICATION *notify_result = callback_msg.u.buf;
-            client_init_parm->da_ble_client_operation_notification_cb(&notify_result->handle, &notify_result->noti_data);
-            os_mem_free(notify_result->noti_data.data);
-            os_mem_free(notify_result);
+            if(notify_result)
+            {
+                client_init_parm->da_ble_client_operation_notification_cb(&notify_result->handle, &notify_result->noti_data);
+                os_mem_free(notify_result->noti_data.data);
+                os_mem_free(notify_result);
+            } else {
+                debug_print("\n[%s] Notify_result parameter is NULL", __FUNCTION__);
+            }
         }
 			break;
 
@@ -204,7 +227,7 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
 }
 
 extern void *ble_tizenrt_scatternet_callback_queue_handle;
-void ble_tizenrt_scatternet_send_callback_msg(uint16_t type, void *arg)
+bool ble_tizenrt_scatternet_send_callback_msg(uint16_t type, void *arg)
 {
     T_TIZENRT_APP_CALLBACK_MSG callback_msg;
     callback_msg.type = type;
@@ -212,12 +235,14 @@ void ble_tizenrt_scatternet_send_callback_msg(uint16_t type, void *arg)
 	if (ble_tizenrt_scatternet_callback_queue_handle != NULL) {
 		if (os_msg_send(ble_tizenrt_scatternet_callback_queue_handle, &callback_msg, 0) == false) {
 			printf("\r\n[%s] fail!!! msg_type 0x%x", __FUNCTION__, callback_msg.type);
+	        return false;
 		} else {
             debug_print("\r\n[%s] success msg_type 0x%x", __FUNCTION__, callback_msg.type);
         }
 	} else {
         debug_print("\r\n[%s] ble_tizenrt_callback_queue_handle is NULL", __FUNCTION__);
     }
+	return true;
 }
 
 int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
@@ -242,33 +267,38 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
 		case BLE_TIZENRT_CONNECT:
 		{
             T_TIZENRT_CONN_PARAM *param = pdata;
-            T_GAP_LE_CONN_REQ_PARAM conn_req_param;
-            conn_req_param.scan_interval = 0x520;	/* 820ms */
-            conn_req_param.scan_window = 0x520;		/* 820ms */
-            conn_req_param.conn_interval_min = param->conn_interval;
-            conn_req_param.conn_interval_max = param->conn_interval;
-            conn_req_param.conn_latency = param->conn_latency;
-            conn_req_param.supv_tout = 1000;
-            conn_req_param.ce_len_min = 2 * (conn_req_param.conn_interval_min - 1);
-            conn_req_param.ce_len_max = 2 * (conn_req_param.conn_interval_max - 1);
-
-            if(GAP_CAUSE_SUCCESS == le_set_conn_param(GAP_CONN_PARAM_1M, &conn_req_param))
+            if(param)
             {
-                debug_print("\r\n[%s] le_set_conn_param success! ", __FUNCTION__);
+                T_GAP_LE_CONN_REQ_PARAM conn_req_param;
+                conn_req_param.scan_interval = 0x520;	/* 820ms */
+                conn_req_param.scan_window = 0x520;		/* 820ms */
+                conn_req_param.conn_interval_min = param->conn_interval;
+                conn_req_param.conn_interval_max = param->conn_interval;
+                conn_req_param.conn_latency = param->conn_latency;
+                conn_req_param.supv_tout = 1000;
+                conn_req_param.ce_len_min = 2 * (conn_req_param.conn_interval_min - 1);
+                conn_req_param.ce_len_max = 2 * (conn_req_param.conn_interval_max - 1);
+
+                if(GAP_CAUSE_SUCCESS == le_set_conn_param(GAP_CONN_PARAM_1M, &conn_req_param))
+                {
+                    debug_print("\r\n[%s] le_set_conn_param success! ", __FUNCTION__);
+                } else {
+                    debug_print("\r\n[%s] le_set_conn_param fail!!! ", __FUNCTION__);
+                }
+                
+                debug_print("\r\n[%s] remote_bd 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X, rbd_type %d\r\n", __FUNCTION__,
+                        param->remote_bd[5], param->remote_bd[4], 
+                        param->remote_bd[3], param->remote_bd[2], param->remote_bd[1], param->remote_bd[0],
+                        param->remote_bd_type);
+                debug_print("\r\n[%s] ci: %d si: %d\r\n", __FUNCTION__, conn_req_param.conn_interval_max, conn_req_param.conn_latency);
+                ret = le_connect(0, param->remote_bd, param->remote_bd_type,
+                                            GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
+                if(ret)
+                    printf("\r\n[%s] le_connect fail 0x%x ", __FUNCTION__, ret);
+                os_mem_free(param);
             } else {
-                debug_print("\r\n[%s] le_set_conn_param fail!!! ", __FUNCTION__);
+                debug_print("\n[%s] Connect parameter is NULL", __FUNCTION__);
             }
-            
-            debug_print("\r\n[%s] remote_bd 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X, rbd_type %d\r\n", __FUNCTION__,
-                    param->remote_bd[5], param->remote_bd[4], 
-                    param->remote_bd[3], param->remote_bd[2], param->remote_bd[1], param->remote_bd[0],
-                    param->remote_bd_type);
-            debug_print("\r\n[%s] ci: %d si: %d\r\n", __FUNCTION__, conn_req_param.conn_interval_max, conn_req_param.conn_latency);
-            ret = le_connect(0, param->remote_bd, param->remote_bd_type,
-                                        GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
-            if(ret)
-                printf("\r\n[%s] le_connect fail 0x%x ", __FUNCTION__, ret);
-            os_mem_free(param);
         }	
 			break;
 		case BLE_TIZENRT_DISCONNECT:
@@ -288,52 +318,72 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
         case BLE_TIZENRT_READ:
         {
             BLE_TIZENRT_READ_PARAM *param = pdata;
-            ret = gcs_attr_read(param->conn_id, param->att_handle);
-            debug_print("\r\n[%s] read_id 0x%x handle 0x%x ret 0x%x", __FUNCTION__, param->conn_id, param->att_handle, ret);
-            os_mem_free(param);
+            if(param)
+            {
+                ret = gcs_attr_read(param->conn_id, param->att_handle);
+                debug_print("\r\n[%s] read_id 0x%x handle 0x%x ret 0x%x", __FUNCTION__, param->conn_id, param->att_handle, ret);
+                os_mem_free(param);
+            } else {
+                debug_print("\n[%s] Read parameter is NULL", __FUNCTION__);
+            }
         }
 			break;
         case BLE_TIZENRT_WRITE:
         {
             BLE_TIZENRT_WRITE_PARAM *param = pdata;
-            debug_print("\r\n[%s] write_id 0x%x handle 0x%x len 0x%x data ", __FUNCTION__, param->conn_id,
-                                        param->att_handle, param->length);
-            for (int i = 0; i < param->length; i++)
+            if(param)
             {
-                debug_print("0x%x", param->data[i]);
+                debug_print("\r\n[%s] write_id 0x%x handle 0x%x len 0x%x data ", __FUNCTION__, param->conn_id,
+                                            param->att_handle, param->length);
+                for (int i = 0; i < param->length; i++)
+                {
+                    debug_print("0x%x", param->data[i]);
+                }
+                
+                ret = gcs_attr_write(param->conn_id, GATT_WRITE_TYPE_REQ, param->att_handle,
+                                        param->length, param->data);
+                if(ret)
+                    printf("\r\n[%s] gcs_attr_write fail 0x%x ", __FUNCTION__, ret);
+            } else {
+                debug_print("\n[%s] Write parameter is NULL", __FUNCTION__);
             }
-            
-            ret = gcs_attr_write(param->conn_id, GATT_WRITE_TYPE_REQ, param->att_handle,
-                                    param->length, param->data);
-            if(ret)
-                printf("\r\n[%s] gcs_attr_write fail 0x%x ", __FUNCTION__, ret);
         }
             break;
         case BLE_TIZENRT_WRITE_NO_RSP:
         {
             BLE_TIZENRT_WRITE_PARAM *param = pdata;
-            debug_print("\r\n[%s] write_id 0x%x handle 0x%x len 0x%x data ", __FUNCTION__, param->conn_id,
-                                       param->att_handle, param->length);
-            for (int i = 0; i < param->length; i++)
+            if(param)
             {
-                debug_print("0x%x", param->data[i]);
+                debug_print("\r\n[%s] write_id 0x%x handle 0x%x len 0x%x data ", __FUNCTION__, param->conn_id,
+                                        param->att_handle, param->length);
+                for (int i = 0; i < param->length; i++)
+                {
+                    debug_print("0x%x", param->data[i]);
+                }
+                ret = gcs_attr_write(param->conn_id, GATT_WRITE_TYPE_CMD, param->att_handle,
+                                        param->length, param->data);
+                if(ret)
+                    printf("\r\n[%s] 0x%x gcs_attr_write fail  ", __FUNCTION__, ret);
+            } else {
+                debug_print("\n[%s] Write_no_rsp parameter is NULL", __FUNCTION__);
             }
-            ret = gcs_attr_write(param->conn_id, GATT_WRITE_TYPE_CMD, param->att_handle,
-                                    param->length, param->data);
-            if(ret)
-                printf("\r\n[%s] 0x%x gcs_attr_write fail  ", __FUNCTION__, ret);
         }
             break;
         case BLE_TIZENRT_DELETE_BOND:
         {
             T_TIZENRT_DELETE_BOND_PARAM *param = pdata;
-            debug_print("\r\n[%s] le_bond_delete_by_bd", __FUNCTION__);
-            ret = le_bond_delete_by_bd(param->remote_bd, param->remote_bd_type);
-            if(ret == GAP_CAUSE_NOT_FIND)
-                printf("\r\n[upstream] Not found !");
-            else
-                printf("\r\n[upstream] delete bond success !");
-            os_mem_free(param);
+            if(param)
+            {
+                debug_print("\r\n[%s] le_bond_delete_by_bd", __FUNCTION__);
+                ret = le_bond_delete_by_bd(param->remote_bd, param->remote_bd_type);
+                if(ret == GAP_CAUSE_NOT_FIND)
+                    printf("\r\n[upstream] Not found !");
+                else
+                    printf("\r\n[upstream] delete bond success !");
+                os_mem_free(param);
+            } else {
+                debug_print("\n[%s] Delete_bond parameter is NULL", __FUNCTION__);
+            }
         }
 	        break;
         
@@ -358,20 +408,25 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
         case BLE_TIZENRT_MSG_START_DIRECT_ADV:
         {
             T_TIZENRT_DIRECT_ADV_PARAM *param = pdata;
-            uint8_t  adv_evt_type = GAP_ADTYPE_ADV_HDC_DIRECT_IND;
-            uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
-            uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
+            if(param)
+            {
+                uint8_t  adv_evt_type = GAP_ADTYPE_ADV_HDC_DIRECT_IND;
+                uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
+                uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
 
-            le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-            le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-            le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, (sizeof(uint8_t)*DA_BLE_BD_ADDR_MAX_LEN), param->bd_addr);
-            le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
-            ret = le_adv_start();
-            if(GAP_CAUSE_SUCCESS == ret)
-                debug_print("\r\n[Upstream] Start Direct Adv Success", __FUNCTION__);
-            else
-                debug_print("\r\n[Upstream] Start Direct Adv Fail !!", __FUNCTION__);   
-            os_mem_free(param);
+                le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
+                le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
+                le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, (sizeof(uint8_t)*DA_BLE_BD_ADDR_MAX_LEN), param->bd_addr);
+                le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
+                ret = le_adv_start();
+                if(GAP_CAUSE_SUCCESS == ret)
+                    debug_print("\r\n[Upstream] Start Direct Adv Success", __FUNCTION__);
+                else
+                    debug_print("\r\n[Upstream] Start Direct Adv Fail !!", __FUNCTION__);   
+                os_mem_free(param);
+            } else {
+                debug_print("\n[%s] Start_direct_adv parameter is NULL", __FUNCTION__);
+            }
         }
 			break;
 		case BLE_TIZENRT_MSG_DISCONNECT:
@@ -380,23 +435,33 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
 		case BLE_TIZENRT_MSG_NOTIFY:
         {
             T_TIZENRT_NOTIFY_PARAM *param = pdata;
-            debug_print("\r\n[%s] conn_id %d abs_handle 0x%x data %p", __FUNCTION__,
-                                        param->conn_id, param->att_handle, param->data);
-            if(tizenrt_ble_service_send_notify(param->conn_id, param->att_handle, param->data, param->len))
-                debug_print("\r\n[%s] success : subtype = 0x%x", __FUNCTION__, subtype);
-            else
-                debug_print("\r\n[%s] fail : subtype = 0x%x", __FUNCTION__, subtype);
-            os_mem_free(param->data);
-            os_mem_free(param);
+            if(param)
+            {
+                debug_print("\r\n[%s] conn_id %d abs_handle 0x%x data %p", __FUNCTION__,
+                                            param->conn_id, param->att_handle, param->data);
+                if(tizenrt_ble_service_send_notify(param->conn_id, param->att_handle, param->data, param->len))
+                    debug_print("\r\n[%s] success : subtype = 0x%x", __FUNCTION__, subtype);
+                else
+                    debug_print("\r\n[%s] fail : subtype = 0x%x", __FUNCTION__, subtype);
+                os_mem_free(param->data);
+                os_mem_free(param);
+            } else {
+                debug_print("\n[%s] Notify parameter is NULL", __FUNCTION__);
+            }
         }
 			break;
         case BLE_TIZENRT_MSG_DELETE_BOND:
         {
             T_TIZENRT_SERVER_DELETE_BOND_PARAM *param = pdata;
-            param->result = le_bond_delete_by_bd(param->bd_addr, GAP_REMOTE_ADDR_LE_PUBLIC);
-            if(GAP_CAUSE_NOT_FIND == param->result)
-                param->result = le_bond_delete_by_bd(param->bd_addr, GAP_REMOTE_ADDR_LE_RANDOM);
-            param->flag = true;
+            if(param)
+            {
+                param->result = le_bond_delete_by_bd(param->bd_addr, GAP_REMOTE_ADDR_LE_PUBLIC);
+                if(GAP_CAUSE_NOT_FIND == param->result)
+                    param->result = le_bond_delete_by_bd(param->bd_addr, GAP_REMOTE_ADDR_LE_RANDOM);
+                param->flag = true;
+            } else {
+                debug_print("\n[%s] Delete_bond parameter is NULL", __FUNCTION__);
+            }
         }
             break;
         case BLE_TIZENRT_MSG_DELETE_BOND_ALL:
@@ -413,7 +478,7 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
 
 extern void *ble_tizenrt_scatternet_evt_queue_handle; 
 extern void *ble_tizenrt_scatternet_io_queue_handle; 
-void ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg)
+bool ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg)
 {
     debug_print("\r\n[%s] in : subtype = 0x%x", __FUNCTION__, sub_type);
     uint8_t event = EVENT_IO_TO_APP;
@@ -427,11 +492,14 @@ void ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg)
     if (ble_tizenrt_scatternet_evt_queue_handle != NULL && ble_tizenrt_scatternet_io_queue_handle != NULL) {
         if (os_msg_send(ble_tizenrt_scatternet_io_queue_handle, &io_msg, 0) == false) {
             printf("\r\n[%s] send msg fail : io_msg.subtype = 0x%x", __FUNCTION__, io_msg.subtype);
+	        return false;
         } else if (os_msg_send(ble_tizenrt_scatternet_evt_queue_handle, &event, 0) == false) {
             printf("\r\n[%s] send evt fail : io_msg.subtype = 0x%x", __FUNCTION__, io_msg.subtype);
+	        return false;
         }
     }
     debug_print("\r\n[%s] success : subtype = 0x%x", __FUNCTION__, sub_type);
+	return true;
 }
 
 void ble_tizenrt_scatternet_app_handle_gap_msg(T_IO_MSG  *p_gap_msg);
@@ -535,20 +603,26 @@ void ble_tizenrt_scatternet_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, 
 
     if (ble_tizenrt_scatternet_gap_dev_state.gap_scan_state != new_state.gap_scan_state)
     {
+        uint32_t state = (uint32_t) new_state.gap_scan_state;
         if (new_state.gap_scan_state == GAP_SCAN_STATE_IDLE)
         {
             APP_PRINT_INFO0("GAP scan stop");
             printf("\r\n[BLE_TIZENRT] GAP scan stop\r\n");
-            ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_SCAN_STATE_MSG, GAP_SCAN_STATE_IDLE);
+            if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_SCAN_STATE_MSG,  (void *) state) == false)
+            {
+                debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+            }
         }
         else if (new_state.gap_scan_state == GAP_SCAN_STATE_SCANNING)
         {
             APP_PRINT_INFO0("GAP scan start");
             printf("\r\n[BLE_TIZENRT] GAP scan start\r\n");
-            uint32_t state = (uint32_t) new_state.gap_scan_state;
-            ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_SCAN_STATE_MSG, (void *) state);
+            //uint32_t state = (uint32_t) new_state.gap_scan_state;
+            if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_SCAN_STATE_MSG, (void *) state) == false)
+            {
+                debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+            }
         }
-        
     }
     ble_tizenrt_scatternet_gap_dev_state = new_state;
 }
@@ -584,16 +658,38 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                                  disc_cause);
             }
             printf("\r\n[BLE_TIZENRT] Disconnect conn_id %d", conn_id);
-            if(GAP_CAUSE_SUCCESS == le_bond_delete_by_bd(ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd,
-                            ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd_type))
+            if(ble_tizenrt_scatternet_app_link_table[conn_id].role == 1)
             {
-                debug_print("\r\n[%s] Delete bond success", __FUNCTION__);
+                if(GAP_CAUSE_SUCCESS == le_bond_delete_by_bd(ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd,
+                                ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd_type))
+                {
+                    debug_print("\r\n[%s] Delete bond success", __FUNCTION__);
+                } else {
+                    debug_print("\r\n[%s] Delete bond fail!!!", __FUNCTION__);
+                }
+                memset(&ble_tizenrt_scatternet_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_SCATTERNET_APP_LINK));
+                uint32_t connid = (uint32_t) conn_id;
+                if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid) == false)
+                {
+                    debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                }
             } else {
-                debug_print("\r\n[%s] Delete bond fail!!!", __FUNCTION__);
+                T_TIZENRT_CONNECTED_CALLBACK_DATA *disconn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
+                if(disconn_data)
+                {
+                    disconn_data->conn_id = conn_id;
+                    disconn_data->conn_type = DA_BLE_SERVER_DISCONNECTED;
+                    memcpy(disconn_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, DA_BLE_BD_ADDR_MAX_LEN);
+                    memset(&ble_tizenrt_scatternet_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_SCATTERNET_APP_LINK));
+                    if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, disconn_data) == false)
+                    {
+                        os_mem_free(disconn_data);
+                        debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                    }
+                } else {
+                    debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                }
             }
-            memset(&ble_tizenrt_scatternet_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_SCATTERNET_APP_LINK));
-            uint32_t connid = (uint32_t) conn_id;
-            ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid);
         }
         break;
 
@@ -620,20 +716,38 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
             if(ble_tizenrt_scatternet_app_link_table[conn_id].role == 1)
             {
                 da_ble_client_device_connected *connected_dev = os_mem_alloc(0, sizeof(da_ble_client_device_connected));
-                memcpy(connected_dev->addr.bd_addr, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
-                le_get_conn_param(GAP_PARAM_CONN_BD_ADDR_TYPE, &connected_dev->addr.addr_type, conn_id);
-                le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &connected_dev->addr.conn_interval, conn_id);
-                le_get_conn_param(GAP_PARAM_CONN_LATENCY, &connected_dev->addr.slave_latency, conn_id);
-                le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &connected_dev->addr.mtu, conn_id);
-                connected_dev->is_bonded = false;
-                connected_dev->conn_handle = conn_id;
-                ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CONNECTED_MSG, connected_dev);
+                if(connected_dev)
+                {
+                    memcpy(connected_dev->addr.bd_addr, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
+                    le_get_conn_param(GAP_PARAM_CONN_BD_ADDR_TYPE, &connected_dev->addr.addr_type, conn_id);
+                    le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &connected_dev->addr.conn_interval, conn_id);
+                    le_get_conn_param(GAP_PARAM_CONN_LATENCY, &connected_dev->addr.slave_latency, conn_id);
+                    le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &connected_dev->addr.mtu, conn_id);
+                    connected_dev->is_bonded = false;
+                    connected_dev->conn_handle = conn_id;
+                    if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CONNECTED_MSG, connected_dev) == false)
+                    {
+                        os_mem_free(connected_dev);
+                        debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                    }
+                } else {
+                    debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                }
             } else {
                 T_TIZENRT_CONNECTED_CALLBACK_DATA *conn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
-                conn_data->conn_id = conn_id;
-                conn_data->conn_type = DA_BLE_SERVER_LL_CONNECTED;
-                memcpy(conn_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
-                ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, conn_data);                
+                if(conn_data)
+                {
+                    conn_data->conn_id = conn_id;
+                    conn_data->conn_type = DA_BLE_SERVER_LL_CONNECTED;
+                    memcpy(conn_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
+                    if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, conn_data) == false)
+                    {
+                        os_mem_free(conn_data);
+                        debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                    }
+                } else {
+                    debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                }
             }
 
 #if F_BT_LE_5_0_SET_PHY_SUPPORT
@@ -687,20 +801,40 @@ void ble_tizenrt_scatternet_app_handle_authen_state_evt(uint8_t conn_id, uint8_t
                 if(ble_tizenrt_scatternet_app_link_table[conn_id].role == 1)
                 {
                     da_ble_client_device_connected *connected_dev = os_mem_alloc(0, sizeof(da_ble_client_device_connected));
-                    memcpy(connected_dev->addr.bd_addr, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
-                    le_get_conn_param(GAP_PARAM_CONN_BD_ADDR_TYPE, &connected_dev->addr.addr_type, conn_id);
-                    le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &connected_dev->addr.conn_interval, conn_id);
-                    le_get_conn_param(GAP_PARAM_CONN_LATENCY, &connected_dev->addr.slave_latency, conn_id);
-                    le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &connected_dev->addr.mtu, conn_id);
-                    connected_dev->is_bonded = true;
-                    connected_dev->conn_handle = conn_id;
-                    ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_BONDED_MSG, connected_dev);
+                    if(connected_dev)
+                    {
+                        memcpy(connected_dev->addr.bd_addr, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
+                        le_get_conn_param(GAP_PARAM_CONN_BD_ADDR_TYPE, &connected_dev->addr.addr_type, conn_id);
+                        le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &connected_dev->addr.conn_interval, conn_id);
+                        le_get_conn_param(GAP_PARAM_CONN_LATENCY, &connected_dev->addr.slave_latency, conn_id);
+                        le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &connected_dev->addr.mtu, conn_id);
+                        connected_dev->is_bonded = true;
+                        connected_dev->conn_handle = conn_id;
+                        if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_BONDED_MSG, connected_dev) == false)
+                        {
+                            os_mem_free(connected_dev);
+                            debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                        }
+                    } else {
+                        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                    }
                 } else {
                     T_TIZENRT_CONNECTED_CALLBACK_DATA *authed_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
-                    authed_data->conn_id = conn_id;
-                    authed_data->conn_type = DA_BLE_SERVER_SM_CONNECTED;
-                    memcpy(authed_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
-                    ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, authed_data);                    
+                    if(authed_data)
+                    {
+                        authed_data->conn_id = conn_id;
+                        authed_data->conn_type = DA_BLE_SERVER_SM_CONNECTED;
+                        memcpy(authed_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
+                        if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, authed_data) == false)
+                        {
+                            os_mem_free(authed_data);
+                            debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                        } else {
+                            debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                        }
+                    } else {
+                        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                    }
                 }
             } else {
                 printf("\r\n[BLE_TIZENRT] Pair failed: cause 0x%x", cause);
@@ -909,12 +1043,12 @@ void ble_tizenrt_scatternet_app_handle_gap_msg(T_IO_MSG *p_gap_msg)
   * @param[in] scan_info point to scan information data.
   * @retval void
   */
-uint8_t ble_tizenrt_scatternet_parse_scaned_devname(T_LE_SCAN_INFO *scan_info, uint8_t *local_name)
+uint8_t ble_tizenrt_scatternet_parse_scanned_devname(T_LE_SCAN_INFO *scan_info, uint8_t *local_name)
 {
     uint8_t pos = 0;
     uint8_t length = 0;
     uint8_t type;
-    while (pos < scan_info->data_len)
+    while (scan_info && pos < scan_info->data_len)
     {
         /* Length of the AD structure. */
         length = scan_info->data[pos++];
@@ -967,19 +1101,29 @@ T_APP_RESULT ble_tizenrt_scatternet_app_gap_callback(uint8_t cb_type, void *p_cb
 							   (p_data->p_le_scan_info->remote_addr_type == GAP_REMOTE_ADDR_LE_RANDOM)? "random":"unknown");
 
         da_ble_client_scanned_device *scanned_device = os_mem_alloc(0, sizeof(da_ble_client_scanned_device));
-        memset(scanned_device, 0, sizeof(da_ble_client_scanned_device));
-        printf("\r\nADVType\t\t\t| AddrType\t|%-17s\t|rssi","BT_Addr");
-        printf("\r\n%-20s\t|%-8s\t|"BD_ADDR_FMT"\t|%d",adv_type,remote_addr_type,BD_ADDR_ARG(p_data->p_le_scan_info->bd_addr),
-                                                p_data->p_le_scan_info->rssi);
-        scanned_device->local_name_length = ble_tizenrt_scatternet_parse_scaned_devname(p_data->p_le_scan_info, scanned_device->local_name);
-        scanned_device->adv_type = p_data->p_le_scan_info->adv_type;
-        scanned_device->rssi = p_data->p_le_scan_info->rssi;
-        scanned_device->addr.addr_type = p_data->p_le_scan_info->remote_addr_type;
-        memcpy(scanned_device->addr.bd_addr, p_data->p_le_scan_info->bd_addr, GAP_BD_ADDR_LEN);
-        scanned_device->raw_data_length = p_data->p_le_scan_info->data_len;
-        memcpy(scanned_device->raw_data, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
-        
-        ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_SCANED_DEVICE_MSG, scanned_device);
+        if(scanned_device)
+        {
+            memset(scanned_device, 0, sizeof(da_ble_client_scanned_device));
+            printf("\r\nADVType\t\t\t| AddrType\t|%-17s\t|rssi","BT_Addr");
+            printf("\r\n%-20s\t|%-8s\t|"BD_ADDR_FMT"\t|%d",adv_type,remote_addr_type,BD_ADDR_ARG(p_data->p_le_scan_info->bd_addr),
+                                                    p_data->p_le_scan_info->rssi);
+            scanned_device->local_name_length = ble_tizenrt_scatternet_parse_scanned_devname(p_data->p_le_scan_info, scanned_device->local_name);
+            scanned_device->adv_type = p_data->p_le_scan_info->adv_type;
+            scanned_device->rssi = p_data->p_le_scan_info->rssi;
+            scanned_device->addr.addr_type = p_data->p_le_scan_info->remote_addr_type;
+            memcpy(scanned_device->addr.bd_addr, p_data->p_le_scan_info->bd_addr, GAP_BD_ADDR_LEN);
+            scanned_device->raw_data_length = p_data->p_le_scan_info->data_len;
+            memcpy(scanned_device->raw_data, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
+            
+            if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_SCANNED_DEVICE_MSG, scanned_device) == false)
+            {
+                os_mem_free(scanned_device);
+                debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                return APP_RESULT_PREP_QUEUE_FULL;
+            }
+        } else {
+            debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        }
         break;
 
     case GAP_MSG_LE_CONN_UPDATE_IND:
@@ -1419,14 +1563,21 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
 
                 ble_tizenrt_scatternet_read_results[conn_id].read_data.length = p_gcs_cb_data->cb_content.read_result.value_size;
                 ble_tizenrt_scatternet_read_results[conn_id].read_data.data = os_mem_alloc(0, p_gcs_cb_data->cb_content.read_result.value_size);
-                memcpy(ble_tizenrt_scatternet_read_results[conn_id].read_data.data, 
-                                    p_gcs_cb_data->cb_content.read_result.p_value,
-                                    p_gcs_cb_data->cb_content.read_result.value_size);
+                if(ble_tizenrt_scatternet_read_results[conn_id].read_data.data)
+                {
+                    memcpy(ble_tizenrt_scatternet_read_results[conn_id].read_data.data, 
+                                        p_gcs_cb_data->cb_content.read_result.p_value,
+                                        p_gcs_cb_data->cb_content.read_result.value_size);
+                } else {
+                    debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                }
             }
             if(os_mutex_give(ble_tizenrt_read_sem))
             {
                 debug_print("\r\n[%s] recieve read result", __FUNCTION__);
             } else {
+                if(p_gcs_cb_data->cb_content.read_result.cause == GAP_SUCCESS)
+                    os_mem_free(ble_tizenrt_scatternet_read_results[conn_id].read_data.data);
                 debug_print("\r\n[%s] fail to give read semaphore", __FUNCTION__);
             }
             break;
@@ -1484,17 +1635,27 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
                                 p_gcs_cb_data->cb_content.notif_ind.value_size);
                 T_TIZENRT_CLIENT_NOTIFICATION *notify_result = os_mem_alloc(0, sizeof(T_TIZENRT_CLIENT_NOTIFICATION));
                 notify_result->noti_data.data = os_mem_alloc(0, p_gcs_cb_data->cb_content.notif_ind.value_size);
-                memcpy(notify_result->noti_data.data, p_gcs_cb_data->cb_content.notif_ind.p_value,
-                                                p_gcs_cb_data->cb_content.notif_ind.value_size);
-                notify_result->noti_data.length = p_gcs_cb_data->cb_content.notif_ind.value_size;
-                notify_result->handle.conn_handle = conn_id;
-                notify_result->handle.attr_handle = p_gcs_cb_data->cb_content.notif_ind.handle;
-                debug_print("\r\n[%s] Notification: 0x", __FUNCTION__);
-                for (int i = 0; i < notify_result->noti_data.length; i++)
+                if(notify_result &&notify_result->noti_data.data)
                 {
-                    debug_print("%x",notify_result->noti_data.data[i]);
+                    memcpy(notify_result->noti_data.data, p_gcs_cb_data->cb_content.notif_ind.p_value,
+                                                    p_gcs_cb_data->cb_content.notif_ind.value_size);
+                    notify_result->noti_data.length = p_gcs_cb_data->cb_content.notif_ind.value_size;
+                    notify_result->handle.conn_handle = conn_id;
+                    notify_result->handle.attr_handle = p_gcs_cb_data->cb_content.notif_ind.handle;
+                    debug_print("\r\n[%s] Notification: 0x", __FUNCTION__);
+                    for (int i = 0; i < notify_result->noti_data.length; i++)
+                    {
+                        debug_print("%x",notify_result->noti_data.data[i]);
+                    }
+                    if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_NOTIFICATION_MSG, notify_result) == false)
+                    {
+                        os_mem_free(notify_result->noti_data.data);
+                        os_mem_free(notify_result);
+                        debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                    }
+                } else {
+                    debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
                 }
-                ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_NOTIFICATION_MSG, notify_result);
             }
             break;
         default:

@@ -22,7 +22,7 @@
 bool is_server_init = false;
 uint16_t server_profile_count = 0;
 da_ble_server_init_parm server_init_parm;
-void (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg) = NULL;
+bool (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg) = NULL;
 
 da_ble_result_type rtw_ble_server_init(da_ble_server_init_parm* init_parm)
 {
@@ -214,14 +214,32 @@ da_ble_result_type rtw_ble_server_charact_notify(da_ble_attr_handle attr_handle,
         return DA_BLE_RESULT_TYPE_NOT_FOUND;
     } 
 
-    T_TIZENRT_NOTIFY_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_NOTIFY_PARAM));
+    T_TIZENRT_NOTIFY_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_NOTIFY_PARAM));;
+    if(!param)
+    {
+        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
     param->data = os_mem_alloc(0, data_length);
+    if(!param->data)
+    {
+        os_mem_free(param);
+        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
+
     memcpy(param->data, data_ptr, data_length);
     param->len = data_length;
     param->conn_id = con_handle;
     param->att_handle = attr_handle;
-    ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_NOTIFY, param);
-    return DA_BLE_RESULT_TYPE_SUCCESS; 
+    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_NOTIFY, param) == false)
+    {
+        os_mem_free(param);
+        os_mem_free(param->data);
+        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
+    return DA_BLE_RESULT_TYPE_SUCCESS;
 }
 
 da_ble_result_type rtw_ble_server_reject(da_ble_attr_handle attr_handle, uint8_t app_errorcode)
@@ -302,7 +320,11 @@ da_ble_result_type rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
     case GAP_ADV_STATE_ADVERTISING:
         {
             debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-            ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+            if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+            {
+                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                return DA_BLE_RESULT_TYPE_FAILURE;
+            }
         }
         break;
     case GAP_ADV_STATE_START:
@@ -316,7 +338,11 @@ da_ble_result_type rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
                 debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+                {
+                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                    return DA_BLE_RESULT_TYPE_FAILURE;
+                }
             }
         }
         break;
@@ -331,7 +357,11 @@ da_ble_result_type rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
                 debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+                {
+                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                    return DA_BLE_RESULT_TYPE_FAILURE;
+                }
             }            
         }
         break;
@@ -358,7 +388,11 @@ da_ble_result_type rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
         debug_print("\r\n[%s] Active connection exist", __FUNCTION__);
         return DA_BLE_RESULT_TYPE_SUCCESS;
     } else {
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL);
+        if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL) == false)
+        {
+            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+            return DA_BLE_RESULT_TYPE_FAILURE;
+        }
         do
         {   
             debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
@@ -390,7 +424,11 @@ da_ble_result_type rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
     case GAP_ADV_STATE_ADVERTISING:
         {
             debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-            ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+            if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+            {
+                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                return DA_BLE_RESULT_TYPE_FAILURE;
+            }
         }
         break;
     case GAP_ADV_STATE_START:
@@ -404,7 +442,11 @@ da_ble_result_type rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
                 debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+                {
+                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                    return DA_BLE_RESULT_TYPE_FAILURE;
+                }
             }
         }
         break;
@@ -419,7 +461,11 @@ da_ble_result_type rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
                 debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+                {
+                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                    return DA_BLE_RESULT_TYPE_FAILURE;
+                }
             }            
         }
         break;
@@ -446,7 +492,11 @@ da_ble_result_type rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
         debug_print("\r\n[%s] Active connection exist", __FUNCTION__);
         return DA_BLE_RESULT_TYPE_SUCCESS;
     } else {
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL);
+        if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL) == false)
+        {
+            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+            return DA_BLE_RESULT_TYPE_FAILURE;
+        }
         do
         {   
             debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
@@ -499,7 +549,11 @@ da_ble_result_type rtw_ble_server_disconnect(da_ble_conn_handle con_handle)
         return DA_BLE_RESULT_TYPE_NOT_FOUND;
     }
 
-    ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DISCONNECT, NULL);
+    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DISCONNECT, NULL) == false)
+    {
+        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
 
     return DA_BLE_RESULT_TYPE_SUCCESS; 
 }
@@ -523,7 +577,11 @@ da_ble_result_type rtw_ble_server_start_adv(void)
 
     if(new_state.gap_adv_state != GAP_ADV_STATE_IDLE)
     {
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+        if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+        {
+            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+            return DA_BLE_RESULT_TYPE_FAILURE;
+        }
         do {   
             debug_print("\r\n[%s] Waiting for adv stop", __FUNCTION__);
             os_delay(100);
@@ -531,7 +589,11 @@ da_ble_result_type rtw_ble_server_start_adv(void)
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     }
 
-    ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL);
+    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL) == false)
+    {
+        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
     do
     {   
         debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
@@ -550,7 +612,11 @@ da_ble_result_type rtw_ble_server_stop_adv(void)
     if(new_state.gap_adv_state == GAP_ADV_STATE_IDLE)
         return DA_BLE_RESULT_TYPE_SUCCESS;
     else {
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+        if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+        {
+            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+            return DA_BLE_RESULT_TYPE_FAILURE;
+        }
         do {
             debug_print("\r\n[%s] Waiting for adv stop", __FUNCTION__);
             os_delay(100);
@@ -581,13 +647,23 @@ da_ble_result_type rtw_ble_server_start_adv_directed(uint8_t target_addr[DA_BLE_
     }
 
     T_TIZENRT_DIRECT_ADV_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_DIRECT_ADV_PARAM));
+    if(param == NULL)
+    {
+        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
     memcpy(param->bd_addr, target_addr, DA_BLE_BD_ADDR_MAX_LEN);
 
     T_GAP_DEV_STATE new_state;
     le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
     if(new_state.gap_adv_state != GAP_ADV_STATE_IDLE)
     {
-        ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+        if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+        {
+            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+            os_mem_free(param);
+            return DA_BLE_RESULT_TYPE_FAILURE;
+        }
         do {   
             debug_print("\r\n[%s] Waiting for adv stop", __FUNCTION__);
             os_delay(100);
@@ -595,7 +671,12 @@ da_ble_result_type rtw_ble_server_start_adv_directed(uint8_t target_addr[DA_BLE_
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     }
     
-    ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_DIRECT_ADV, param);
+    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_DIRECT_ADV, param) == false)
+    {
+        os_mem_free(param);
+        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
     le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
     if(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING)
      {
@@ -651,9 +732,19 @@ da_ble_result_type rtw_ble_server_delete_bonded_device(uint8_t bond_addr[DA_BLE_
 
     da_ble_result_type ret = DA_BLE_RESULT_TYPE_FAILURE;
     T_TIZENRT_SERVER_DELETE_BOND_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_SERVER_DELETE_BOND_PARAM));
+    if(param == NULL)
+    {
+        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
     memcpy(param->bd_addr, bond_addr, DA_BLE_BD_ADDR_MAX_LEN);
     param->flag = false;
-    ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DELETE_BOND, param);
+    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DELETE_BOND, param) == false)
+    {
+        os_mem_free(param);
+        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
 
     do {
         os_delay(100);
@@ -675,7 +766,11 @@ da_ble_result_type rtw_ble_server_delete_bonded_device(uint8_t bond_addr[DA_BLE_
 
 da_ble_result_type rtw_ble_server_delete_bonded_device_all(void)
 {
-    ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DELETE_BOND_ALL, NULL);
+    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DELETE_BOND_ALL, NULL) == false)
+    {
+        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        return DA_BLE_RESULT_TYPE_FAILURE;
+    }
     return DA_BLE_RESULT_TYPE_SUCCESS;
 }
 
@@ -689,7 +784,11 @@ int rtw_ble_server_set_adv_interval(unsigned int interval)
     case GAP_ADV_STATE_ADVERTISING:
         {
             debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-            ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+            if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+            {
+                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                return DA_BLE_RESULT_TYPE_FAILURE;
+            }
         }
         break;
     case GAP_ADV_STATE_START:
@@ -703,7 +802,11 @@ int rtw_ble_server_set_adv_interval(unsigned int interval)
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
                 debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+                {
+                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                    return DA_BLE_RESULT_TYPE_FAILURE;
+                }
             }
         }
         break;
@@ -718,7 +821,11 @@ int rtw_ble_server_set_adv_interval(unsigned int interval)
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
                 debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL);
+                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
+                {
+                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                    return DA_BLE_RESULT_TYPE_FAILURE;
+                }
             }            
         }
         break;

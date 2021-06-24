@@ -57,7 +57,7 @@ typedef enum
 	BLE_TIZENRT_BONDED_MSG,
 	BLE_TIZENRT_CONNECTED_MSG,
   BLE_TIZENRT_SCAN_STATE_MSG,
-	BLE_TIZENRT_SCANED_DEVICE_MSG,
+	BLE_TIZENRT_SCANNED_DEVICE_MSG,
   BLE_TIZENRT_DISCONNECTED_MSG,
   BLE_TIZENRT_NOTIFICATION_MSG,
   BLE_TIZENRT_READ_RESULT_MSG,
@@ -170,7 +170,7 @@ T_APP_RESULT ble_tizenrt_central_app_gap_callback(uint8_t cb_type, void *p_cb_da
  */
 T_APP_RESULT ble_tizenrt_central_gcs_client_callback(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data);
 
-void ble_tizenrt_central_send_msg(uint16_t sub_type, void *arg);
+bool ble_tizenrt_central_send_msg(uint16_t sub_type, void *arg);
 
 #ifdef __cplusplus
 }

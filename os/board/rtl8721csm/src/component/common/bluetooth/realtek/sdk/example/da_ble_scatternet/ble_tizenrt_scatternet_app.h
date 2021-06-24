@@ -76,7 +76,7 @@ T_APP_RESULT ble_tizenrt_scatternet_app_gap_callback(uint8_t cb_type, void *p_cb
  */
 T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data);
 
-void ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg);
+bool ble_tizenrt_scatternet_send_msg(uint16_t sub_type, void *arg);
 
 #ifdef __cplusplus
 }
