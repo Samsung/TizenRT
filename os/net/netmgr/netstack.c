@@ -22,7 +22,9 @@
 #include <net/if.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
+#include <tinyara/net/netlog.h>
 
+#define TAG "[NETMGR]"
 #ifdef CONFIG_NET_LWIP
 extern struct netstack *get_netstack_lwip(void);
 #endif
@@ -46,6 +48,7 @@ static sock_type _get_socktype(int fd)
 	else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS) {
 		return TR_SOCKET;
 	}
+	NET_LOGE(TAG, "not supported socket type\n");
 	return TR_UNKNOWN;
 }
 
@@ -62,6 +65,7 @@ struct netstack *get_netstack(sock_type type)
 		return get_netstack_netlink();
 #endif
 	}
+	NET_LOGE(TAG, "not supported stack type\n");
 	return NULL;
 }
 
@@ -80,5 +84,6 @@ struct netstack *get_netstack_byfd(int fd)
 		return get_netstack_netlink();
 #endif
 	}
+	NET_LOGE(TAG, "not supported stack type\n");
 	return NULL;
 }

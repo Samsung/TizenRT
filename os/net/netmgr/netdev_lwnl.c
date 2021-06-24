@@ -26,6 +26,9 @@
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <tinyara/net/if/wifi.h>
 #include "netdev_mgr_internal.h"
+#include <tinyara/net/netlog.h>
+
+#define TAG "[NETMGR]"
 
 extern int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t data_len);
 extern int netdev_handle_ethernet(struct netdev *dev, lwnl_req cmd, void *data, uint32_t data_len);
@@ -41,6 +44,7 @@ static int _netdev_getifaddr(struct netdev *dev, void *arg)
 	struct ifaddrs *addr = NULL;
 	int res = ND_NETOPS(dev, get_ifaddrs)(dev, &addr);
 	if (res < 0) {
+		NET_LOGE(TAG, "get_ifaddrs fail\n");
 		return -1;
 	}
 
@@ -70,7 +74,7 @@ static int _handle_common(lwnl_msg *msg)
 			res = -1;
 		}
 	} else {
-		ndbg("invalid request type");
+		NET_LOGE(TAG, "invalid request type");
 		res = -1;
 	}
 

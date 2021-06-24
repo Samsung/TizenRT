@@ -27,20 +27,21 @@
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include "netdev_mgr_internal.h"
+#include <tinyara/net/netlog.h>
 #include "netdev_stats.h"
+
+#define TAG "[NETMGR]"
 
 struct netdev *netdev_register(struct netdev_config *config)
 {
 	return nm_register(config);
 }
 
-
 int netdev_start(struct netdev *dev)
 {
 	// linkup??
 	return 0;
 }
-
 
 int netdev_set_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t hwaddr_len)
 {
@@ -50,12 +51,12 @@ int netdev_set_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t hwaddr_len)
 	return res;
 }
 
-
 int netdev_get_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t *hwaddr_len)
 {
 	struct sockaddr addr;
 	int res = ND_NETOPS(dev, get_hwaddr)(dev, &addr);
 	if (res < 0) {
+		NET_LOGE(TAG, "Get get_hwaddr\n");
 		return -1;
 	}
 	if (hwaddr_len) {
@@ -66,7 +67,6 @@ int netdev_get_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t *hwaddr_len)
 	return res;
 }
 
-
 int netdev_input(struct netdev *dev, void *data, uint16_t len)
 {
 	if (len > 0) {
@@ -76,12 +76,10 @@ int netdev_input(struct netdev *dev, void *data, uint16_t len)
 	return ND_NETOPS(dev, input)(dev, data, len);
 }
 
-
 int netdev_get_mtu(struct netdev *dev, int *mtu)
 {
 	return ND_NETOPS(dev, get_mtu)(dev, mtu);
 }
-
 
 int netdev_mgr_start(void)
 {
@@ -96,7 +94,6 @@ int netdev_mgr_start(void)
 
 	return 0;
 }
-
 
 #ifdef CONFIG_SCSC_WLAN
 #include "lwip/netif.h"

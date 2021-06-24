@@ -34,6 +34,8 @@
 #include "netstack.h"
 #include "netdev_stats.h"
 
+#define TAG "[NETMGR]"
+
 /**
  * Public
  */
@@ -202,5 +204,4 @@ int socket(int domain, int type, int protocol)
 
 	NETSTACK_CALL(stk, socket, (domain, type, protocol));
 }
-
 #endif // CONFIG_NET

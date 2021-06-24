@@ -31,6 +31,7 @@
 #include "lwip/tcpip.h"
 #include "lwip/sys.h"
 #include "lwip/netif.h"
+#include <tinyara/net/netlog.h>
 #ifdef CONFIG_NET_NETMON
 #include "lwip/ip.h"
 #include "lwip/ip6.h"
@@ -39,20 +40,27 @@
 #include "lwip/raw.h"
 #endif
 
+#define TAG "[NETMGR]"
+
+extern int netdev_lwipioctl(int sockfd, int cmd, void *arg);
+
 static int _socket_argument_validation(int domain, int type, int protocol)
 {
 	if (domain != AF_INET && domain != AF_INET6 && domain != AF_UNSPEC) {
+		NET_LOGE(TAG, "invalid parameter domain\n");
 		return -1;
 	}
 	switch (protocol) {
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
 		if (type != SOCK_DGRAM && type != SOCK_RAW) {
+			NET_LOGE(TAG, "unknown type\n");
 			return -1;
 		}
 		break;
 	case IPPROTO_TCP:
 		if (type != SOCK_STREAM) {
+			NET_LOGE(TAG, "unknown type\n");
 			return -1;
 		}
 		break;
@@ -60,11 +68,13 @@ static int _socket_argument_validation(int domain, int type, int protocol)
 	case IPPROTO_IGMP:
 	case IPPROTO_ICMPV6:
 		if (type != SOCK_RAW) {
+			NET_LOGE(TAG, "unknown type\n");
 			return -1;
 		}
 		break;
 	case IPPROTO_IP:
 		if (type == SOCK_RAW) {
+			NET_LOGE(TAG, "unknown type\n");
 			return -1;
 		}
 		break;
@@ -81,6 +91,7 @@ static inline int _netsock_clone(FAR struct lwip_sock *sock1, FAR struct lwip_so
 
 	/* Parts of this operation need to be atomic */
 	if (sock1 == NULL || sock2 == NULL) {
+		NET_LOGE(TAG, "invalid parameter\n");
 		return ERROR;
 	}
 
@@ -110,13 +121,11 @@ static int lwip_ns_close(int sockfd)
 	return lwip_close(sockfd);
 }
 
-
 static int lwip_ns_dup(int sockfd)
 {
 	// ToDo
 	return 0;
 }
-
 
 static int lwip_ns_dup2(int sockfd1, int sockfd2)
 {
@@ -169,13 +178,11 @@ errout:
 	return -1;
 }
 
-
 static int lwip_ns_clone(FAR struct socket *psock1, FAR struct socket *psock2)
 {
 	// ToDo
 	return 0;
 }
-
 
 static int lwip_ns_checksd(int sd, int oflags)
 {
@@ -183,17 +190,15 @@ static int lwip_ns_checksd(int sd, int oflags)
 	return 0;
 }
 
-extern int netdev_lwipioctl(int sockfd, int cmd, void *arg);
-
 static int lwip_ns_ioctl(int sockfd, int cmd, unsigned long arg)
 {
 	int res = netdev_lwipioctl(sockfd, cmd, (void *)arg);
 	if (res < 0) {
+		NET_LOGE(TAG, "lwipioctl fail\n");
 		return -ENOTTY;
 	}
 	return 0;
 }
-
 
 static int lwip_ns_vfcntl(int sockfd, int cmd, va_list ap)
 {
@@ -203,26 +208,24 @@ static int lwip_ns_vfcntl(int sockfd, int cmd, va_list ap)
 	} else if (cmd == F_GETFL) {
 		return lwip_fcntl(sockfd, cmd, 0);
 	}
+	NET_LOGE(TAG, "vfcntl fail\n");
 	return -1;
 }
-
 
 static int lwip_ns_poll(int fd, struct pollfd *fds, bool setup)
 {
 	return lwip_poll(fd, fds, setup);
 }
 
-
 static int lwip_ns_socket(int domain, int type, int protocol)
 {
 	int res = _socket_argument_validation(domain, type, protocol);
 	if (res < 0) {
-		ndbg("not supported socket type\n");
+		NET_LOGE(TAG, "not supported socket type\n");
 		return -1;
 	}
 	return lwip_socket(domain, type, protocol);
 }
-
 
 static int lwip_ns_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
@@ -239,66 +242,55 @@ static int lwip_ns_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 	return lwip_accept(s, addr, addrlen);
 }
 
-
 static int lwip_ns_listen(int s, int backlog)
 {
 	return lwip_listen(s, backlog);
 }
-
 
 static int lwip_ns_shutdown(int s, int how)
 {
 	return lwip_shutdown(s, how);
 }
 
-
 static ssize_t lwip_ns_recv(int s, void *mem, size_t len, int flags)
 {
 	return lwip_recv(s, mem, len, flags);
 }
-
 
 static ssize_t lwip_ns_recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
 {
 	return lwip_recvfrom(s, mem, len, flags, from, fromlen);
 }
 
-
 static ssize_t lwip_ns_send(int s, const void *data, size_t size, int flags)
 {
 	return lwip_send(s, data, size, flags);
 }
-
 
 static ssize_t lwip_ns_sendto(int s, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen)
 {
 	return lwip_sendto(s, data, size, flags, to, tolen);
 }
 
-
 static int lwip_ns_getsockname(int s, struct sockaddr *name, socklen_t *namelen)
 {
 	return lwip_getsockname(s, name, namelen);
 }
-
 
 static int lwip_ns_getpeername(int s, struct sockaddr *name, socklen_t *namelen)
 {
 	return lwip_getpeername(s, name, namelen);
 }
 
-
 static int lwip_ns_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
 	return lwip_setsockopt(s, level, optname, optval, optlen);
 }
 
-
 static int lwip_ns_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
 {
 	return lwip_getsockopt(s, level, optname, optval, optlen);
 }
-
 
 static ssize_t lwip_ns_recvmsg(int sockfd, struct msghdr *msg, int flags)
 {
@@ -310,7 +302,6 @@ static ssize_t lwip_ns_recvmsg(int sockfd, struct msghdr *msg, int flags)
 
 	return recvfrom(sockfd, buf, len, flags, from, addrlen);
 }
-
 
 static ssize_t lwip_ns_sendmsg(int sockfd, struct msghdr *msg, int flags)
 {
@@ -328,12 +319,10 @@ static int lwip_ns_init(void *data)
 	return 0;
 }
 
-
 static int lwip_ns_deinit(void *data)
 {
 	return 0;
 }
-
 
 static int lwip_ns_start(void *data)
 {
@@ -341,32 +330,33 @@ static int lwip_ns_start(void *data)
 	return 0;
 }
 
-
 static int lwip_ns_stop(void *data)
 {
 	return 0;
 }
 
-
 #ifdef CONFIG_NET_ROUTE
 static int lwip_ns_addroute(struct rtentry *entry)
 {
 	if (!entry || !entry->rt_target || !entry->rt_netmask) {
+		NET_LOGE(TAG, "invalid parameter\n");
 		return -EINVAL;
 	}
 
 	// ToDo
+	NET_LOGI("not supported yet\n");
 	return -ENOTTY;
 }
-
 
 static int lwip_ns_delroute(struct rtentry *entry)
 {
 	if (!entry || !entry->rt_target || !entry->rt_netmask) {
+		NET_LOGE(TAG, "invalid parameter\n");
 		return -EINVAL;
 	}
 
 	// ToDo
+	NET_LOGI("not supported yet\n");
 	return -ENOTTY;
 }
 #endif
@@ -378,7 +368,7 @@ static inline void _get_tcp_info(struct netmon_sock *sock_info, struct lwip_sock
 	u16_t port = 0;
 
 	if (netconn_getaddr(lsock->conn, &addr, &port, 1)) {
-		ndbg("fail to get local IP info\n");
+		NET_LOGE(TAG, "fail to get local IP info\n");
 	}
 	sock_info->local.ip.sin_family = AF_INET;
 	sock_info->local.ip.sin_port = port;
@@ -388,7 +378,7 @@ static inline void _get_tcp_info(struct netmon_sock *sock_info, struct lwip_sock
 	port = 0;
 
 	if (netconn_getaddr(lsock->conn, &addr, &port, 0)) {
-		ndbg("fail to get remote IP info\n");
+		NET_LOGE(TAG, "fail to get remote IP info\n");
 	}
 	sock_info->local.ip.sin_family = AF_INET;
 	sock_info->local.ip.sin_port = port;
@@ -399,8 +389,8 @@ static void _get_udp_info(struct netmon_sock *sock_info, struct lwip_sock *lsock
 {
 #if LWIP_IPV4 && LWIP_IPV6
 	if (lsock->conn->pcb.ip->local_ip.type != IPADDR_TYPE_V4) {
-		ndbg("monitoring ipv6 is not supported yet");
-			return;
+		NET_LOGE(TAG, "monitoring ipv6 is not supported yet");
+		return;
 	}
 #endif
 
@@ -418,7 +408,7 @@ static void _get_raw_info(struct netmon_sock *sock_info, struct lwip_sock *lsock
 {
 #if LWIP_IPV4 && LWIP_IPV6
 	if (lsock->conn->pcb.ip->local_ip.type == IPADDR_TYPE_V4) {
-		ndbg("monitoring ipv6 is not supported yet");
+		NET_LOGE(TAG, "monitoring ipv6 is not supported yet");
 		return;
 	}
 #endif
@@ -433,22 +423,23 @@ static void _get_raw_info(struct netmon_sock *sock_info, struct lwip_sock *lsock
  *
  * @param data is used to target
  */
-
 static int lwip_ns_getstats(int fd, struct netmon_sock **sock_info)
 {
 	struct socketlist *list = sched_getsockets();
 	DEBUGASSERT(list);
 	struct lwip_sock *sock = (struct lwip_sock *)list->sl_sockets[fd].sock;
 	if (!sock || !sock->conn) {
+		NET_LOGE(TAG, "sock or conn is invalid\n");
 		return -1;
 	}
 	if (!sock->conn->pcb.ip) {
+		NET_LOGE(TAG, "no IP pcb\n");
 		return -2;
 	}
 
 	struct netmon_sock *sinfo = (struct netmon_sock *)kmm_malloc(sizeof(struct netmon_sock));
 	if (!sinfo) {
-		ndbg("alloc sinfo memory fail\n");
+		NET_LOGE(TAG, "alloc sinfo memory fail\n");
 		return -3;
 	}
 
@@ -498,7 +489,7 @@ static void lwip_ns_releaselist(struct socketlist *list)
 			if (list->sl_sockets[i].s_crefs == 1) {
 				ret = lwip_sock_close(psock);
 				if (ret) {
-					ndbg("socket could not close properly\n");
+					NET_LOGE(TAG, "socket could not close properly\n");
 					list->sl_sockets[i].sock = NULL;
 					return;
 				}
@@ -560,9 +551,7 @@ struct netstack_ops g_lwip_stack_ops = {
 	lwip_ns_releaselist
 };
 
-
 struct netstack g_lwip_stack = {&g_lwip_stack_ops, NULL};
-
 
 struct netstack *get_netstack_lwip(void)
 {

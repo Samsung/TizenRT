@@ -24,6 +24,13 @@
 #define NETDEV_NETMASK 3
 
 #define ND_NETOPS(dev, method) (((struct netdev_ops *)((dev)->ops))->method)
+#define ND_NETOPS_RET(res, dev, method, param)							\
+	do {																\
+		if (((struct netdev_ops *)((dev)->ops))->method) {						\
+			res = (((struct netdev_ops *)((dev)->ops))->method)param;	\
+		}																\
+	} while (0)
+#define GET_NETIF_FROM_NETDEV(dev) (struct netif *)(((struct netdev_ops *)(dev)->ops)->nic)
 
 struct nic_config {
 	int flag;
@@ -77,6 +84,9 @@ struct netdev_ops {
 	 */
 #ifdef CONFIG_NET_NETMON
 	int (*get_stats)(struct netdev *dev, struct netmon_netdev_stats *stats);
+#endif
+#ifdef CONFIG_NETDEV_PHY_IOCTL
+	int (*d_ioctl)(struct netdev *dev, int cmd, void *data);
 #endif
 	/*  NIC stack specific */
 	void *nic;

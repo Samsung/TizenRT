@@ -15,22 +15,12 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#pragma once
 
-#include <tinyara/config.h>
-#include <debug.h>
-#include <tinyara/net/netlog.h>
-#define TAG "[NETMGR]"
+#define NET_LOG(tag, fmt, args...)				\
+	nwdbg(fmt, ##args)
+#define NET_LOGE(tag, fmt, args...)									\
+	ndbg(tag "[ERR] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
+#define NET_LOGI(tag, fmt, args...)									\
+	nvdbg(tag "[INFO] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
 
-uint32_t g_link_recv_byte = 0;
-uint32_t g_link_recv_cnt = 0;
-uint32_t g_link_recv_err = 0;
-
-uint32_t g_app_recv_byte = 0;
-uint32_t g_app_recv_cnt = 0;
-
-void netstats_display(void)
-{
-	NET_LOG(TAG, "[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
-	NET_LOG(TAG, "[driver] mbox err %u\n", g_link_recv_err);
-	NET_LOG(TAG, "[app] total recv %u\t%u\n", g_app_recv_byte, g_app_recv_cnt);
-}
