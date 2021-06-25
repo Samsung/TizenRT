@@ -21,12 +21,15 @@
 #include <sched.h>
 #include <wifi_manager/wifi_manager.h>
 #include <tinyara/wifi/wifi_manager.h>
+#include <tinyara/net/netlog.h>
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"
 #include "wifi_manager_message.h"
 #include "wifi_manager_utils.h"
 #include "wifi_manager_lwnl_listener.h"
+
+#define TAG "[WM]"
 
 /*
  * Global variable
@@ -48,7 +51,7 @@ static int _process_msg(int argc, char *argv[])
 		handler_msg hmsg;
 		int res = wifimgr_message_out(&hmsg, &g_wifi_message_queue);
 		if (res < 0) {
-			WM_ERR;
+			NET_LOGE(TAG, "wifimgr msg out fail %d\n", res);
 			return -1;
 		} else if (res == 1) {
 			continue;
@@ -63,8 +66,8 @@ static int _process_msg(int argc, char *argv[])
 int wifimgr_run_msghandler(void)
 {
 	int tid = task_create("wifi msg handler", 100, 4096, (main_t)_process_msg, NULL);
-	if (tid < 0) {
-		WM_ERR;
+	if (tid == -1) {
+		NET_LOGE(TAG, "wifi msg handler task create %d\n", errno);
 		return -1;
 	}
 
@@ -85,13 +88,13 @@ int wifimgr_post_message(wifimgr_msg_s *msg)
 
 	res = wifimgr_message_in(&hmsg, &g_wifi_message_queue);
 	if (res < 0) {
-		WM_ERR;
+		NET_LOGE(TAG, "wifimgr msg in fail %d\n", res);
 		return -1;
 	}
 
 	res = sem_wait(hmsg.signal);
-	if (res < 0) {
-		WM_ERR;
+	if (res == -1) {
+		NET_LOGE(TAG, "wait msg signal fail %d\n", errno);
 		return -2;
 	}
 	sem_destroy(hmsg.signal);

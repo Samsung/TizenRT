@@ -17,13 +17,15 @@
  ****************************************************************************/
 #pragma once
 
+#include <debug.h>
+
 #define NET_LOG(tag, fmt, args...)				\
 	nwdbg(fmt, ##args)
-#define NET_LOGE(tag, fmt, args...)									\
-	ndbg(tag "[ERR] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
-#define NET_LOGV(tag, fmt, args...)									\
-	nwdbg(tag "[INFO] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
-#define NET_LOGV(tag, fmt, args...)									\
-	nvdbg(tag "[VERB] %s:%d\t"fmt, __FUNCTION__, __LINE__, ##args)
+#define NET_LOGE(tag, fmt, args...)				\
+	ndbg("%d "tag "[ERR]\t"fmt, __LINE__, ##args)
+#define NET_LOGI(tag, fmt, args...)					\
+	nwdbg("%d "tag "[INFO]\t"fmt, __LINE__, ##args)
+#define NET_LOGV(tag, fmt, args...)					\
+	nvdbg("%d "tag "[VERB]\t"fmt, __LINE__, ##args)
 
 

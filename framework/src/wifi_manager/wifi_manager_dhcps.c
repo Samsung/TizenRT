@@ -20,12 +20,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
 #include <sys/types.h>
 #include <netutils/netlib.h>
+#include <tinyara/net/netlog.h>
 #include "wifi_manager_error.h"
 #include "wifi_manager_dhcp.h"
-#include "wifi_manager_log.h"
+#define TAG "[WM]"
 
 /**
  * Enum, definitions and variables
@@ -37,15 +37,15 @@
 		int res = -1;                                           \
 		res = netlib_set_ipv4addr(intf, &ip);                   \
 		if (res == -1) {                                        \
-			WM_LOG_ERROR("[WM] set ipv4 addr error\n");                \
+			NET_LOGE(TAG, "set ipv4 addr error\n");                \
 		}                                                       \
 		res = netlib_set_ipv4netmask(intf, &netmask);           \
 		if (res == -1) {                                        \
-			WM_LOG_ERROR("[WM] set netmask addr error\n");             \
+			NET_LOGE(TAG, "set netmask addr error\n");             \
 		}                                                       \
 		res = netlib_set_dripv4addr(intf, &gateway);            \
 		if (res == -1) {                                        \
-			WM_LOG_ERROR("[WM] set route addr error\n");               \
+			NET_LOGE(TAG, "set route addr error\n");               \
 		}                                                       \
 	} while (0)
 
@@ -61,26 +61,26 @@ static uint8_t num_sta = 0;
 void dhcps_inc_num(void)
 {
 	if (num_sta == UINT8_MAX) {
-		WM_LOG_ERROR("num_sta overflowed\n");
+		NET_LOGE(TAG, "num_sta overflowed\n");
 		return;
 	}
-	WM_LOG_INFO("increase num_sta by 1\n");
+	NET_LOGV(TAG, "increase num_sta by 1\n");
 	num_sta++;
 }
 
 void dhcps_dec_num(void)
 {
 	if (num_sta == 0) {
-		WM_LOG_ERROR("num_sta underflowed\n");
+		NET_LOGE(TAG, "num_sta underflowed\n");
 		return;
 	}
-	WM_LOG_INFO("decrease num_sta by 1\n");
+	NET_LOGV(TAG, "decrease num_sta by 1\n");
 	num_sta--;
 }
 
 void dhcps_reset_num(void)
 {
-	WM_LOG_INFO("reset num_sta to 0\n");
+	NET_LOGV(TAG, "reset num_sta to 0\n");
 	num_sta = 0;
 }
 
@@ -105,17 +105,17 @@ dhcp_status_e dhcps_add_node(void *msg)
 {
 	dhcp_node_s *node = (dhcp_node_s *)msg;
 	if (node != NULL) {
-		WM_LOG_INFO("[DHCP] IP: %d:%d:%d:%d\n",
+		NET_LOGV(TAG, "IP: %d:%d:%d:%d\n",
 			  ((char *)&(node->ipaddr))[0],
 			  ((char *)&(node->ipaddr))[1],
 			  ((char *)&(node->ipaddr))[2],
 			  ((char *)&(node->ipaddr))[3]);
-		WM_LOG_INFO("[DHCP] MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		NET_LOGV(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 			  node->macaddr[0], node->macaddr[1],
 			  node->macaddr[2], node->macaddr[3],
 			  node->macaddr[4], node->macaddr[5]);
 	} else {
-		WM_LOG_ERROR("[DHCP] No DHCP node exists\n");
+		NET_LOGE(TAG, "[DHCP] No DHCP node exists\n");
 		return DHCP_ERR;
 	}
 
@@ -154,10 +154,10 @@ wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined_cb cb)
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
 
 	if (dhcp_server_start(WIFIMGR_SOFTAP_IFNAME, cb) != OK) {
-		WM_LOG_ERROR("[DHCP] DHCP Server - started fail\n");
+		NET_LOGE(TAG, "[DHCP] DHCP Server - started fail\n");
 		return WIFI_MANAGER_FAIL;
 	}
-	WM_LOG_INFO("[DHCP] DHCP Server - started successfully\n");
+	NET_LOGV(TAG, "DHCP Server - started successfully\n");
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -169,10 +169,10 @@ wifi_manager_result_e wm_dhcps_stop(void)
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 
 	if (dhcp_server_stop(WIFIMGR_SOFTAP_IFNAME) != OK) {
-		WM_LOG_ERROR("[DHCP] DHCP Server - stopped failed\n");
+		NET_LOGE(TAG, "[DHCP] DHCP Server - stopped failed\n");
 		return WIFI_MANAGER_FAIL;
 	}
-	WM_LOG_INFO("[DHCP] DHCP Server - stopped successfully\n");
+	NET_LOGV(TAG, "DHCP Server - stopped successfully\n");
 	return WIFI_MANAGER_SUCCESS;
 }
 

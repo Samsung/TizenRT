@@ -62,7 +62,7 @@ int netlib_getifaddrs(struct ifaddrs **ifap)
 	lwnl_msg msg = {INTF_NAME, {LWNL_REQ_COMMON_GETADDRINFO}, sizeof(*ifap), NULL, (void *)&res};
 	int lres = _send_msg(&msg);
 	if (lres < 0) {
-		NET_LOGE("send request msg fail %d\n", res);
+		NET_LOGE(TAG, "send request msg fail %d\n", res);
 		return -1;
 	}
 	*ifap = (struct ifaddrs *)msg.data;

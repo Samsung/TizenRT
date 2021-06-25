@@ -45,12 +45,22 @@
 			config->passphrase_length > WIFIMGR_PASSPHRASE_LEN ||		\
 			strlen(config->ssid) > WIFIMGR_SSID_LEN ||					\
 			strlen(config->passphrase) > WIFIMGR_PASSPHRASE_LEN) {		\
-			WM_LOG_ERROR("[WM] AP configuration fails: too long ssid or passphrase\n");	\
-			WM_LOG_ERROR("[WM] Make sure that length of SSID < 33 and length of passphrase < 65\n"); \
+			NET_LOGE(TAG, "AP configuration fails: too long ssid or passphrase\n");	\
+			NET_LOGE(TAG, "Make sure that length of SSID < 33 and length of passphrase < 65\n"); \
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);			\
 			return WIFI_MANAGER_INVALID_ARGS;						    \
 		}																\
 	} while (0)
+
+#define RETURN_RESULT(res, msg)					\
+	do {										\
+		if (res < 0) {							\
+			return WIFI_MANAGER_FAIL;			\
+		} else {								\
+			return msg.result;					\
+		}										\
+	} while (0)
+#define TAG "[WM]"
 
 static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn, wifi_manager_mode_e *mode)
 {
@@ -86,25 +96,16 @@ static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn
 		*mode = SOFTAP_MODE;
 		break;
 	default:
-		WM_LOG_ERROR("[WM][err] invalid state\n");
+		NET_LOGE(TAG, "invalid state\n");
 		break;
 	}
 }
-
-#define RETURN_RESULT(res, msg)					\
-	do {										\
-		if (res < 0) {							\
-			return WIFI_MANAGER_FAIL;			\
-		} else {								\
-			return msg.result;					\
-		}										\
-	} while (0)
-
 /**
  * public APIs
  */
 wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (!wmcb) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
@@ -116,16 +117,16 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 	RETURN_RESULT(res, msg);
 }
 
-
 wifi_manager_result_e wifi_manager_deinit(void)
 {
+	NET_LOGI(TAG, "-->\n");
 	sem_t signal;
 	sem_init(&signal, 0, 0);
 	wifimgr_msg_s msg = {EVT_DEINIT_CMD, WIFI_MANAGER_FAIL, NULL, &signal};
 
 	int res = wifimgr_post_message(&msg);
 	if (res < 0 || msg.result != WIFI_MANAGER_SUCCESS) {
-		WM_LOG_ERROR("[WM] post message fail %d %d%s:%d\n", res, msg.result, __FUNCTION__, __LINE__);
+		NET_LOGE(TAG, "post message fail %d %d\n", res, msg.result);
 		sem_destroy(msg.signal);
 		if (res < 0) {
 			return WIFI_MANAGER_FAIL;
@@ -139,9 +140,9 @@ wifi_manager_result_e wifi_manager_deinit(void)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manager_softap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (mode != STA_MODE && mode != SOFTAP_MODE) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
@@ -175,10 +176,10 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *config,
 													 wifi_manager_reconnect_config_s *conn_config)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (!config || !conn_config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
@@ -193,9 +194,9 @@ wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *c
 	RETURN_RESULT(res, msg);
 }
 
-
 wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
@@ -205,18 +206,18 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 	return wifi_manager_connect_ap_config(config, &conn_config);
 }
 
-
 wifi_manager_result_e wifi_manager_disconnect_ap(void)
 {
+	NET_LOGI(TAG, "-->\n");
 	wifimgr_msg_s msg = {EVT_DISCONNECT_CMD, WIFI_MANAGER_FAIL, NULL, NULL};
 	int res = wifimgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);
 }
 
-
 wifi_manager_result_e wifi_manager_scan_ap(void)
 {
+	NET_LOGI(TAG, "-->\n");
 	wifimgr_msg_s msg = {EVT_SCAN_CMD, WIFI_MANAGER_FAIL, NULL, NULL};
 	int res = wifimgr_post_message(&msg);
 
@@ -225,6 +226,7 @@ wifi_manager_result_e wifi_manager_scan_ap(void)
 
 wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	wifimgr_msg_s msg = {EVT_SCAN_CMD, WIFI_MANAGER_FAIL, config, NULL};
 	int res = wifimgr_post_message(&msg);
 
@@ -236,6 +238,7 @@ wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *co
  */
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (info == NULL) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
@@ -245,7 +248,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	struct in_addr ip_ref;
 	wifi_manager_result_e res = dhcpc_fetch_ipaddr(&ip_ref);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		WM_LOG_ERROR("[WM] T%d Failed to fetch ip4 address\n", getpid());
+		NET_LOGE(TAG, "Failed to fetch ip4 address\n");
 		return WIFI_MANAGER_FAIL;
 	}
 
@@ -269,9 +272,9 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (!stats) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
@@ -285,12 +288,12 @@ wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats)
 	RETURN_RESULT(res, msg);
 }
 
-
 /**
  * Wi-Fi callback
  */
 wifi_manager_result_e wifi_manager_register_cb(wifi_manager_cb_s *wmcb)
 {
+	NET_LOGI(TAG, "-->\n");
 	int res = wifimgr_register_cb(wmcb);
 	if (res < 0) {
 		return WIFI_MANAGER_FAIL;
@@ -299,9 +302,9 @@ wifi_manager_result_e wifi_manager_register_cb(wifi_manager_cb_s *wmcb)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e wifi_manager_unregister_cb(wifi_manager_cb_s *wmcb)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (!wmcb) {
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
@@ -314,73 +317,74 @@ wifi_manager_result_e wifi_manager_unregister_cb(wifi_manager_cb_s *wmcb)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 /**
  * Wi-Fi Profile
  */
 #ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 
 	WIFIMGR_CHECK_AP_CONFIG(config);
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config, 0), "wifimgr save config fail\n", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config, 0), TAG, "wifimgr save config fail", WIFI_MANAGER_FAIL);
 
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 0), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 0), TAG, "wifimgr get config fail", WIFI_MANAGER_FAIL);
 
 	return WIFI_MANAGER_SUCCESS;
 }
-
 
 wifi_manager_result_e wifi_manager_remove_config(void)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_reset(0), "wifimgr remove config fail\n", WIFI_MANAGER_FAIL);
+	NET_LOGI(TAG, "-->\n");
+	WIFIMGR_CHECK_UTILRESULT(wifi_profile_reset(0), TAG, "wifimgr remove config fail", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	if (!config) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 1), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 1), TAG, "wifimgr get config fail", WIFI_MANAGER_FAIL);
 
 	return WIFI_MANAGER_SUCCESS;
 }
 #else
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	return WIFI_MANAGER_NO_API;
 }
-
 
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	return WIFI_MANAGER_NO_API;
 }
-
 
 wifi_manager_result_e wifi_manager_remove_config(void)
 {
+	NET_LOGI(TAG, "-->\n");
 	return WIFI_MANAGER_NO_API;
 }
 
-
 wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config)
 {
+	NET_LOGI(TAG, "-->\n");
 	return WIFI_MANAGER_NO_API;
 }
 #endif // CONFIG_WIFI_MANAGER_SAVE_CONFIG

@@ -108,9 +108,5 @@ config WIFIMGR_INTERNAL_AUTOCONNECT
 
 endif #WIFIMGR_DISABLE_EXTERNAL_AUTOCONNECT
 
-config WIFI_MANAGER_USE_PRINTF
-	bool "Use printf instead of ndbg to sync log output ot app"
-	default y
-
 endif #WIFI_MANAGER
 

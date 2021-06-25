@@ -30,13 +30,14 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/wifi/wifi_utils.h>
 #include <tinyara/net/if/wifi.h>
-#include "wifi_manager_log.h"
+#include <tinyara/net/netlog.h>
 
 #ifdef CONFIG_NET_NETMGR
 #define WU_INTF_NAME "wlan0"
 #else
 #define WU_INTF_NAME "wl1"
 #endif
+#define TAG "[WM]"
 
 static inline wifi_utils_result_e _convert_trwifi_result(trwifi_result_e res)
 {
@@ -66,14 +67,14 @@ static inline int _send_msg(lwnl_msg *msg)
 {
 	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (fd < 0) {
-		WM_LOG_ERROR("send lwnl msg open error\n");
+		NET_LOGE(TAG, "send lwnl msg open error\n");
 		return -1;
 	}
 
 	int res = write(fd, msg, sizeof(*msg));
 	close(fd);
 	if (res < 0) {
-		WM_LOG_ERROR("send lwnl msg write error\n");
+		NET_LOGE(TAG, "send lwnl msg write error\n");
 		return -2;
 	}
 	return 0;
@@ -81,7 +82,6 @@ static inline int _send_msg(lwnl_msg *msg)
 
 wifi_utils_result_e wifi_utils_init(void)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_INIT}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
@@ -92,7 +92,6 @@ wifi_utils_result_e wifi_utils_init(void)
 
 wifi_utils_result_e wifi_utils_deinit(void)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_DEINIT}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
@@ -103,7 +102,6 @@ wifi_utils_result_e wifi_utils_deinit(void)
 
 wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	wifi_utils_ap_config_s *config = NULL;
 	if (arg) {
@@ -126,7 +124,6 @@ wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk)
 
 wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_CONNECTAP},
 					sizeof(wifi_utils_ap_config_s), (void *)ap_connect_config, (void *)&res};
@@ -138,7 +135,6 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 
 wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_DISCONNECTAP}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
@@ -149,7 +145,6 @@ wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 
 wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_config)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_STARTSOFTAP},
 					sizeof(wifi_utils_softap_config_s),
@@ -162,7 +157,6 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 
 wifi_utils_result_e wifi_utils_start_sta(void)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_STARTSTA}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
@@ -173,7 +167,6 @@ wifi_utils_result_e wifi_utils_start_sta(void)
 
 wifi_utils_result_e wifi_utils_stop_softap(void)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_STOPSOFTAP}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
@@ -184,7 +177,6 @@ wifi_utils_result_e wifi_utils_stop_softap(void)
 
 wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	uint8_t *chk = &check;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_SETAUTOCONNECT},
@@ -197,7 +189,6 @@ wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
 
 wifi_utils_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_IOCTL},
 					sizeof(trwifi_msg_s), (void *)dmsg, (void *)&res};
@@ -209,7 +200,6 @@ wifi_utils_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg)
 
 wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 {
-	WM_ENTER;
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_GETINFO},
 					sizeof(wifi_utils_info_s), (void *)wifi_info, (void *)&res};
