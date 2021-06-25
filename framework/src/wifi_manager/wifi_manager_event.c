@@ -31,26 +31,9 @@
 
 /*  wifimgr_evt_str should be mapped to enum _wifimgr_evt  */
 static char *wifimgr_evt_str[] = {
-	"EVT_INIT_CMD",				// Command to initialize WiFi Manager
-	"EVT_DEINIT_CMD",			// Command to Deinit WiFi Manager
-	"EVT_SET_SOFTAP_CMD",
-	"EVT_SET_STA_CMD",
-	"EVT_CONNECT_CMD",
-	"EVT_DISCONNECT_CMD",
-	"EVT_SCAN_CMD",
-	"EVT_GETINFO_CMD",
-	"EVT_GETSTATS_CMD",
-	"EVT_RECONNECT_CMD",
-	"EVT_STA_CONNECTED",
-	"EVT_STA_CONNECT_FAILED",
-	"EVT_STA_DISCONNECTED",
-#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	"EVT_DHCPS_ASSIGN_IP",
-#else
-	"EVT_JOINED",
-#endif
-	"EVT_LEFT",
-	"EVT_SCAN_DONE",
+#undef WIFIMGR_EVT_TABLE
+#define WIFIMGR_EVT_TABLE(str, type, desc) str,
+	#include "wifi_manager_event_table.h"
 	"EVT_NONE",
 };
 
