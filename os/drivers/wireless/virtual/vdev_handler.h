@@ -33,6 +33,7 @@ typedef enum {
 	VWIFI_MSG_STARTSOFTAP,
 	VWIFI_MSG_STOPSOFTAP,
 	VWIFI_MSG_SETAUTOCONNECT,
+	VWIFI_MSG_IOCTL,
 } vwifi_req_e;
 
 typedef enum {
@@ -99,5 +100,5 @@ struct vwifi_ops {
 };
 
 int vwifi_handle_message(struct vwifi_req *req);
-int vwifi_create_event(struct vwifi_evt *vevent, int sleep, uint32_t event);
+int vwifi_create_event(uint32_t event, int32_t res, int32_t sleep);
 #endif // #define __VWIFI_HANDLER_H__
