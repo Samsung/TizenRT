@@ -22,26 +22,8 @@
 #define WIFIMGR_EVENT_INITIALIZER {NULL, {NULL, NULL, NULL, NULL, NULL} }
 
 enum _wifimgr_evt {
-	EVT_INIT_CMD,				// Command to initialize WiFi Manager
-	EVT_DEINIT_CMD,				// Command to Deinit WiFi Manager
-	EVT_SET_SOFTAP_CMD,			// Command to set SoftAP
-	EVT_SET_STA_CMD,			// Command to set STA mode
-	EVT_CONNECT_CMD,			// Command to connect to a WiFi AP
-	EVT_DISCONNECT_CMD,			// Command to Disconnect from a connected WiFi AP
-	EVT_SCAN_CMD,				// Command to perform WiFi Scanning over WLAN channels
-	EVT_GETINFO_CMD,			// Command to get WiFi Manager information
-	EVT_GETSTATS_CMD,			// Command to get WiFi driver stats
-	EVT_RECONNECT_CMD,			// Command to reconnect to WiFi AP. If we use EVT_CONNECT_CMD, then we can't distinguish it's from application request
-	EVT_STA_CONNECTED,			// Event that STA is connected
-	EVT_STA_CONNECT_FAILED, // Event that STA connect failed
-	EVT_STA_DISCONNECTED,	// Event that external STA disconnected from WiFi AP
-#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	EVT_DHCPS_ASSIGN_IP,	// Event that SoftAP got IP address
-#else
-	EVT_JOINED,				// Event that new STA joined softAP
-#endif
-	EVT_LEFT,				// Event that external STA device left softAP
-	EVT_SCAN_DONE,			// Event that WiFi scanning over WLAN channels is done
+#define WIFIMGR_EVT_TABLE(str, type, desc) type,
+	#include "wifi_manager_event_table.h"
 	EVT_NONE,
 };
 typedef enum _wifimgr_evt wifimgr_evt_e;
