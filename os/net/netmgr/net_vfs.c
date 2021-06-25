@@ -56,7 +56,7 @@ int net_checksd(int sd, int oflags)
 
 int net_clone(FAR struct socket *sock1, FAR struct socket *sock2)
 {
-	NET_LOGE(TAG, "Not supported yet\n");
+	NET_LOGV(TAG, "Not supported yet\n");
 	return -1;
 }
 
