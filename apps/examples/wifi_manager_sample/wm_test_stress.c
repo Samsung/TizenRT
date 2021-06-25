@@ -23,6 +23,7 @@
 extern void wm_run_stress_test1(struct wt_options *opt);
 extern void wm_run_stress_test2(struct wt_options *opt);
 extern void wm_run_stress_test3(struct wt_options *opt);
+extern void wm_run_stress_test4(struct wt_options *opt);
 extern void wm_run_test_daemon(struct wt_options *opt);
 void wm_run_stress_test(void *arg)
 {
@@ -38,6 +39,9 @@ void wm_run_stress_test(void *arg)
 		wm_run_stress_test3(opt);
 		break;
 	case 4:
+		wm_run_stress_test4(opt);
+		break;
+	case 5:
 		wm_run_test_daemon(opt);
 		break;
 	}
