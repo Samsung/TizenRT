@@ -20,7 +20,7 @@ ifeq ($(CONFIG_VIRTUAL_WLAN),y)
 
 #Driver API
 CSRCS += vdev.c vdev_handler.c vdev_packet.c
-CSRCS += vdev_handler_auto.c vdev_handler_onoff.c vdev_scan_info.c
+CSRCS += vdev_ops_handler.c vdev_scan_info.c
 
 # Include wireless devices build support
 

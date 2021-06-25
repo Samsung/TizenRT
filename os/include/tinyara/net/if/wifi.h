@@ -157,6 +157,7 @@ typedef uint16_t trwifi_cmd;
 /*  TizenRT Wi-Fi Message */
 typedef struct {
 	trwifi_cmd cmd;
+	void *data;
 } trwifi_msg_s;
 
 /*  Statistics message */
