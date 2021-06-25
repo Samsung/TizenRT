@@ -19,24 +19,24 @@
 #ifndef _WIFI_TEST_UTILS_H__
 #define _WIFI_TEST_UTILS_H__
 
-#define WO_TEST_SIGNAL(conn, queue)										\
-	do {																\
+#define WO_TEST_SIGNAL(conn, queue)									\
+	do {															\
 		WT_LOG(TAG, "send signal\t %s:%d", __FUNCTION__, __LINE__); \
-		int ssres = wo_add_queue(conn, queue);							\
-		if (ssres != 0) {												\
-			assert(0);													\
-		}																\
-		sem_post(&queue->signal);										\
+		int ssres = wo_add_queue(conn, queue);						\
+		if (ssres != 0) {											\
+			assert(0);												\
+		}															\
+		sem_post(&queue->signal);									\
 	} while (0)
 
-#define WO_TEST_WAIT(conn, queue)										\
-	do {																\
+#define WO_TEST_WAIT(conn, queue)									\
+	do {															\
 		WT_LOG(TAG, "wait signal\t %s:%d", __FUNCTION__, __LINE__); \
-		sem_wait(&queue->signal);										\
-		int swres = wo_dequeue(&conn, queue);							\
-		if (swres != 0) {												\
-			assert(0);													\
-		}																\
+		sem_wait(&queue->signal);									\
+		int swres = wo_dequeue(&conn, queue);						\
+		if (swres != 0) {											\
+			assert(0);												\
+		}															\
 	} while (0)
 
 struct wo_queue {

@@ -59,6 +59,8 @@ typedef int (*parser_func)(struct wt_options *opt, int argc, char *argv[]);
 		WT_LOG(TAG, "wait func signal");		\
 		sem_wait(&g_wm_func_sem);				\
 	} while (0)
+#define WT_STRESS_MAX_IDX 4
+#define WT_STRESS_MIN_IDX 1
 
 /* Supported security method */
 static const char *g_wifi_test_auth_method[] = {
@@ -700,7 +702,8 @@ int _wt_parse_stress(struct wt_options *opt, int argc, char *argv[])
 	}
 
 	opt->stress_tc_idx = atoi(argv[3]);
-	if (opt->stress_tc_idx > 4 || opt->stress_tc_idx < 1) {
+	if (opt->stress_tc_idx > WT_STRESS_MAX_IDX
+		|| opt->stress_tc_idx < WT_STRESS_MIN_IDX) {
 		return -2;
 	}
 	if (opt->stress_tc_idx == 1) {

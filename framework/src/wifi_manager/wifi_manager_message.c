@@ -65,7 +65,7 @@ static inline int _recv_message(int fd, void *buf, int buflen)
 			if (err_no == EAGAIN || err_no == EINTR) {
 				continue;
 			}
-			NET_LOGE(TAG, "read error %d\n", errno);
+			NET_LOGE(TAG, "read error %d\n", err_no);
 			return -1;
 		}
 		received += res;
