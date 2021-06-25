@@ -124,7 +124,7 @@ int netlib_getmacaddr(const char *ifname, uint8_t *macaddr)
 	ret = ioctl(sockfd, SIOCGIFHWADDR, (unsigned long)&req);
 	close(sockfd);
 	if (ret == -1) {
-		NET_LOGE("ioctl fail %d\n", errno);
+		NET_LOGE(TAG, "ioctl fail %d\n", errno);
 		return ERROR;
 	}
 	/* Return the MAC address */

@@ -20,9 +20,12 @@
 
 #include <stdint.h>
 #include <tinyara/wifi/wifi_common.h>
+#include <tinyara/net/netlog.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wifi_manager_state.h"
 #include "wifi_manager_info.h"
+
+#define TAG "[WM]"
 
 struct _wifimgr_info {
 	char ssid[WIFIMGR_SSID_LEN + 1];             // SSID of Connected AP if mode is a station

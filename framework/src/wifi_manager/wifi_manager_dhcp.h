@@ -29,15 +29,15 @@
 		int res = -1;                                           \
 		res = netlib_set_ipv4addr(intf, &ip);                   \
 		if (res == -1) {                                        \
-			WM_LOG_ERROR("[WM] set ipv4 addr error\n");                \
+			NET_LOGE(TAG, "set ipv4 addr error\n");                \
 		}                                                       \
 		res = netlib_set_ipv4netmask(intf, &netmask);           \
 		if (res == -1) {                                        \
-			WM_LOG_ERROR("[WM] set netmask addr error\n");             \
+			NET_LOGE(TAG, "set netmask addr error\n");             \
 		}                                                       \
 		res = netlib_set_dripv4addr(intf, &gateway);            \
 		if (res == -1) {                                        \
-			WM_LOG_ERROR("[WM] set route addr error\n");               \
+			NET_LOGE(TAG, "set route addr error\n");               \
 		}                                                       \
 	} while (0)
 
