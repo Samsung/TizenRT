@@ -470,9 +470,9 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 	}
 	default:
 		NET_LOGE(TAG, "Wrong request type: %d\n", req->type);
+		ret = -ENOTTY;
 		break;
 	}
-
 	return ret;
 
 errout:
@@ -497,7 +497,6 @@ errout:
  *   0 on success, negated errno on failure.
  *
  ****************************************************************************/
-
 int netdev_lwipioctl(int sockfd, int cmd, void *arg)
 {
 	int ret = -ENOTTY;
