@@ -46,7 +46,7 @@ config HW_SE_STORAGE
 
 config SE_SECURE_CONTEXT_SIZE
 	int "Secure Context Size"
-	default 4096
+	default 6144
 	---help---
 		Secure Context Size to be allocated for SE NSC
 
