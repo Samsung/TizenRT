@@ -43,15 +43,19 @@ def roundup_power_two(size):
     return size
 
 def get_config_value(file_name, config):
-    with open(file_name, 'r+') as f:
-        lines = f.readlines()
-	found = False
-	value = -1
-	for line in lines:
-		if config in line:
-			value = int(line.split("=")[1])
-			break		
-	return value;
+    with open(file_name, 'r+') as fp:
+        lines = fp.readlines()
+        found = False
+        for line in lines:
+            if config in line:
+                value = (line.split("=")[1])
+                value = value.replace('"','').replace('\n','')
+                found = True
+                break
+    if found == False:
+        print ("FAIL!! No found config %s" %config)
+        sys.exit(1)
+    return int(value);
 
 def check_optimize_config(file_name):
     with open(file_name, 'r+') as f:

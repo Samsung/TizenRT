@@ -270,7 +270,7 @@ config PASS1_OBJECT
 endif # Build 2-pass
 
 config BOARD_BUILD_DATE
-	int "Binary Build Date (YYMMDD)"
+	string "Binary Build Date (YYMMDD)"
 	default 200204
 	---help---
 		This config indicates build date which has a "YYMMDD" format.
