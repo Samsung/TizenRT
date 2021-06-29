@@ -265,7 +265,7 @@ typedef struct {
 	uint32_t beacon_miss_cnt;
 } wifi_manager_stats_s;
 
-typedef enum{
+typedef enum {
 	WIFI_MANAGER_POWERMODE_DISABLE,
 	WIFI_MANAGER_POWERMODE_ENABLE,
 } wifi_manager_powermode_e;
@@ -338,18 +338,6 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 // API type: synchronous
 // callback: none
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
-
-/**
- * @brief Connect to an access point, including re(auto)connect configuration.
- * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] config ssid, passphrase, authentication type, and crypto type of the access point which the wi-fi interface connect to.
- * @param[in] reconn_config reconnect type, interval, minimum or maximum interval is set
- * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since TizenRT v1.1
- */
-// API type: asynchronous
-// callback: sta_connected
-wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *config, wifi_manager_reconnect_config_s *reconn_config);
 
 /**
  * @brief Connect to an access point.

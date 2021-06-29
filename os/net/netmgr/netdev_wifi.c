@@ -82,7 +82,7 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 {
 	trwifi_result_e res = TRWIFI_FAIL;
 
-	NET_LOGV(TAG, "T%d cmd(%d) (%p) (%d)\n", getpid(), cmd, data, data_len);
+	NET_LOGV(TAG, "T%d cmd(%d) (%p) (%d)\n", getpid(), cmd.type, data, data_len);
 	switch (cmd.type) {
 	case LWNL_REQ_WIFI_INIT:
 	{

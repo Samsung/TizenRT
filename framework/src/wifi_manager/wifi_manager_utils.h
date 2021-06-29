@@ -69,10 +69,3 @@
 /*  Network Interface Card name definition */
 #define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
 #define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME
-
-struct _wifimgr_conn_info_msg {
-	wifi_manager_ap_config_s *config;
-	wifi_manager_reconnect_config_s *conn_config;
-	int fd;
-};
-typedef struct _wifimgr_conn_info_msg _wifimgr_conn_info_msg_s;
