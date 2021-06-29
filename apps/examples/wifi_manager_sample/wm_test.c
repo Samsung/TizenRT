@@ -606,6 +606,22 @@ void _wt_get_conn_info(void *arg)
 	WT_LEAVE;
 }
 
+void _wt_set_power(void *arg)
+{
+	WT_ENTER;
+	struct wt_options *opt = (struct wt_options *)arg;
+	wifi_manager_powermode_e pmode = WIFI_MANAGER_POWERMODE_ENABLE;
+	if (opt->power_mode == 0) {
+		pmode = WIFI_MANAGER_POWERMODE_DISABLE;
+	}
+	wifi_manager_result_e res = wifi_manager_set_powermode(pmode);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "failt to set power mode\n");
+		return;
+	}
+	WT_LOG(TAG, "set power mode %d\n", pmode);
+	WT_LEAVE;
+}
 void _wt_stress_test(void *arg)
 {
 	wm_run_stress_test(arg);
@@ -832,6 +848,20 @@ int _wt_parse_auto(struct wt_options *opt, int argc, char *argv[])
 	opt->crypto_type = _wt_get_crypto_type(argv[6]);
 	opt->password = argv[7];
 	return 0;
+}
+
+int _wt_parse_power(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc != 4) {
+		return -1;
+	} else if (!strncmp(argv[3], "on", 3)) {
+		opt->power_mode = 1;
+		return 0;
+	} else if (!strncmp(argv[3], "off", 4)) {
+		opt->power_mode = 0;
+		return 0;
+	}
+	return -1;
 }
 
 int _wt_parse_commands(struct wt_options *opt, int argc, char *argv[])

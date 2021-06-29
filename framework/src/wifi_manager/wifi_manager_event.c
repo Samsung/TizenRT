@@ -31,8 +31,8 @@
 
 /*  wifimgr_evt_str should be mapped to enum _wifimgr_evt  */
 static char *wifimgr_evt_str[] = {
-#undef WIFIMGR_EVT_TABLE
-#define WIFIMGR_EVT_TABLE(str, type, desc) str,
+#undef WIFIMGR_REQUEST_TABLE
+#define WIFIMGR_REQUEST_TABLE(str, type, desc) str,
 	#include "wifi_manager_event_table.h"
 	"EVT_NONE",
 };
@@ -53,7 +53,7 @@ static void _wifi_dhcps_event(dhcp_evt_type_e type, void *data);
 void _wifi_dhcps_event(dhcp_evt_type_e type, void *data)
 {
 	if (type == DHCP_ACK_EVT) {
-		wifimgr_msg_s msg = {EVT_DHCPS_ASSIGN_IP, WIFI_MANAGER_FAIL, data, NULL};
+		wifimgr_msg_s msg = {WIFIMGR_EVT_DHCPS_ASSIGN_IP, WIFI_MANAGER_FAIL, data, NULL};
 		WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), (TAG, "handle dhcpd event fail\n"));
 	}
 	return;
@@ -62,9 +62,9 @@ void _wifi_dhcps_event(dhcp_evt_type_e type, void *data)
 
 void _wifi_utils_connect_event(wifi_utils_result_e result, void *arg)
 {
-	wifimgr_msg_s msg = {EVT_STA_CONNECTED, WIFI_MANAGER_FAIL, NULL, NULL};
+	wifimgr_msg_s msg = {WIFIMGR_EVT_STA_CONNECTED, WIFI_MANAGER_FAIL, NULL, NULL};
 	if (result == WIFI_UTILS_FAIL) {
-		msg.event = EVT_STA_CONNECT_FAILED;
+		msg.event = WIFIMGR_EVT_STA_CONNECT_FAILED;
 	}
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), (TAG, "handle connect_event fail\n"));
 }
@@ -72,7 +72,7 @@ void _wifi_utils_connect_event(wifi_utils_result_e result, void *arg)
 
 void _wifi_utils_disconnect_event(void *arg)
 {
-	wifimgr_msg_s msg = {EVT_STA_DISCONNECTED, WIFI_MANAGER_FAIL, NULL, NULL};
+	wifimgr_msg_s msg = {WIFIMGR_EVT_STA_DISCONNECTED, WIFI_MANAGER_FAIL, NULL, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), (TAG, "handle disconnect event fail\n"));
 }
 
@@ -80,7 +80,7 @@ void _wifi_utils_disconnect_event(void *arg)
 void _wifi_utils_join_event(void *arg)
 {
 #ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
-	wifimgr_msg_s msg = {EVT_JOINED, WIFI_MANAGER_FAIL, NULL, NULL};
+	wifimgr_msg_s msg = {WIFIMGR_EVT_JOINED, WIFI_MANAGER_FAIL, NULL, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), (TAG, "handle join event fail\n"));
 #endif
 	return;
@@ -89,14 +89,14 @@ void _wifi_utils_join_event(void *arg)
 
 void _wifi_utils_leave_event(void *arg)
 {
-	wifimgr_msg_s msg = {EVT_LEFT, WIFI_MANAGER_FAIL, NULL, NULL};
+	wifimgr_msg_s msg = {WIFIMGR_EVT_LEFT, WIFI_MANAGER_FAIL, NULL, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), (TAG, "handle leave event fail\n"));
 }
 
 
 void _wifi_utils_scan_done(wifi_utils_result_e result, wifi_utils_scan_list_s *slist, void *arg)
 {
-	wifimgr_msg_s msg = {EVT_SCAN_DONE, WIFI_MANAGER_FAIL, (void *)slist, NULL};
+	wifimgr_msg_s msg = {WIFIMGR_EVT_SCAN_DONE, WIFI_MANAGER_FAIL, (void *)slist, NULL};
 	WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), (TAG, "handle scan done event fail\n"));
 }
 

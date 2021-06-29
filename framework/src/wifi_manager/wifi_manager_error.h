@@ -18,25 +18,25 @@ static inline _set_error_code(wifi_manager_result_e res)
 	NET_LOGE(TAG, "Wi-Fi manager fail: state error\n");
 	error_code_wifi_manager_t wifi_err_code;
 	switch (msg->event) {
-	case EVT_INIT_CMD:
+	case WIFIMGR_CMD_INIT:
 		wifi_err_code = ERR_WIFIMGR_INIT_FAIL;
 		break;
-	case EVT_DEINIT_CMD:
+	case WIFIMGR_CMD_DEINIT:
 		wifi_err_code = ERR_WIFIMGR_DEINIT_FAIL;
 		break;
-	case EVT_SET_SOFTAP_CMD:
+	case WIFIMGR_CMD_SET_SOFTAP:
 		wifi_err_code = ERR_WIFIMGR_SOFTAP_FAIL;
 		break;
-	case EVT_SET_STA_CMD:
+	case WIFIMGR_CMD_SET_STA:
 		wifi_err_code = ERR_WIFIMGR_STA_FAIL;
 		break;
-	case EVT_CONNECT_CMD:
+	case WIFIMGR_CMD_CONNECT:
 		wifi_err_code = ERR_WIFIMGR_CONNECT_FAIL;
 		break;
-	case EVT_DISCONNECT_CMD:
+	case WIFIMGR_CMD_DISCONNECT:
 		wifi_err_code = ERR_WIFIMGR_DISCONNECT_FAIL;
 		break;
-	case EVT_SCAN_CMD:
+	case WIFIMGR_CMD_SCAN:
 		wifi_err_code = ERR_WIFIMGR_SCAN_FAIL;
 		break;
 	default:

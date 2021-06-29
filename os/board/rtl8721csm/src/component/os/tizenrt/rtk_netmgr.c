@@ -64,6 +64,7 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap_config_s *softap_config);
 trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t check);
+trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg);
 struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_init,			/* init */
 	wifi_netmgr_utils_deinit,			/* deinit */
@@ -75,7 +76,7 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_start_softap,	/* start_softap */
 	wifi_netmgr_utils_stop_softap,		/* stop_softap */
 	wifi_netmgr_utils_set_autoconnect, /* set_autoconnect */
-	NULL					/* drv_ioctl */
+	wifi_netmgr_utils_ioctl,					/* drv_ioctl */
 };
 
 static wifi_utils_scan_list_s *g_scan_list;
@@ -562,4 +563,19 @@ trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t ch
 	return wuret;
 }
 
-
+trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg)
+{
+	if (msg->cmd == TRWIFI_MSG_SET_POWERMODE) {
+		int *mode = (int *)msg->data;
+		if (*mode == TRWIFI_POWERMODE_ON) {
+			ndbg("[RTK] set power mode on\n");
+			wifi_enable_powersave();
+			return TRWIFI_SUCCESS;
+		} else if (*mode == TRWIFI_POWERMODE_OFF) {
+			ndbg("[RTK] set power mode off\n");
+			wifi_disable_powersave();
+			return TRWIFI_SUCCESS;
+		}
+	}
+	return TRWIFI_NOT_SUPPORTED;
+}

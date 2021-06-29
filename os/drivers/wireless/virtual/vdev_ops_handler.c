@@ -94,6 +94,23 @@ int _handle_evt_command(trwifi_msg_s *msg)
 	return 0;
 }
 
+int _handle_power_command(trwifi_msg_s *msg)
+{
+	if (msg->cmd == TRWIFI_MSG_SET_POWERMODE) {
+		int *mode = (int *)msg->data;
+		if (*mode == TRWIFI_POWERMODE_ON) {
+			vdvdbg("set power mode on\n");
+			return TRWIFI_SUCCESS;
+		} else if (*mode == TRWIFI_POWERMODE_OFF) {
+			vdvdbg("set power mode off\n");
+			return TRWIFI_SUCCESS;
+		}
+	} else if (msg->cmd == TRWIFI_MSG_GET_POWERMODE) {
+		vdvdbg("get power mode\n");
+		return TRWIFI_SUCCESS;
+	}
+	return TRWIFI_FAIL;
+}
 static inline void _check_pending_event(void)
 {
 	if (!g_vdev_evt.pending) {
@@ -190,6 +207,12 @@ trwifi_result_e vwifi_handle_ioctl(void *req)
 	case VWIFI_CMD_GEN_EVT_FUNC:
 		_handle_evt_command(msg);
 		break;
+	case TRWIFI_MSG_GET_POWERMODE:
+	case TRWIFI_MSG_SET_POWERMODE:
+		_handle_power_command(msg);
+		break;
+	default:
+		return TRWIFI_NOT_SUPPORTED;
 	}
 	return g_vdev_ops_result;
 }
