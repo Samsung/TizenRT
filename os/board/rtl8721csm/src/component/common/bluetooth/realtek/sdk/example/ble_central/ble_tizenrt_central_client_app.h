@@ -24,7 +24,7 @@ extern "C" {
  *============================================================================*/
 #include <profile_client.h>
 #include <app_msg.h>
-#include "da_ble_client.h"
+#include <ble_manager/ble_client.h>
 #include <gap_msg.h>
 #include <tizenrt_ble_common.h>
 
@@ -67,13 +67,13 @@ typedef enum
 typedef struct
 {
   uint16_t cause;
-  da_ble_client_data_info read_data;
+  ble_data read_data;
 } T_TIZENRT_CLIENT_READ_RESULT;
 
 typedef struct
 {
-  da_ble_client_operation_handle_parm handle;
-  da_ble_client_data_info noti_data;
+  ble_client_operation_handle handle;
+  ble_data noti_data;
 } T_TIZENRT_CLIENT_NOTIFICATION;
 
 

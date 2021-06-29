@@ -24,7 +24,6 @@ extern "C" {
  *============================================================================*/
 #include <profile_client.h>
 #include <app_msg.h>
-#include "da_ble_client.h"
 #include "profile_server.h"
 #include <gap_msg.h>
 #include <tizenrt_ble_common.h>

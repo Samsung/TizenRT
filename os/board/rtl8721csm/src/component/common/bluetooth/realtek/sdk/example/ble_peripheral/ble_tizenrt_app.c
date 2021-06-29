@@ -31,6 +31,7 @@
 #include <ble_tizenrt_service.h>
 #include <os_msg.h>
 #include <os_mem.h>
+#include <tinyara/net/if/ble.h>
 
 /** @defgroup  PERIPH_APP Peripheral Application
     * @brief This file handles BLE peripheral application routines.
@@ -51,7 +52,7 @@
 T_GAP_DEV_STATE ble_tizenrt_gap_dev_state = {0, 0, 0, 0, 0};                 /**< GAP device state */
 T_GAP_CONN_STATE ble_tizenrt_gap_conn_state = GAP_CONN_STATE_DISCONNECTED; /**< GAP connection state */
 struct {
-    uint8_t remote_bd[DA_BLE_BD_ADDR_MAX_LEN];
+    uint8_t remote_bd[TRBLE_BD_ADDR_MAX_LEN];
     T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
 } tizenrt_remote_bd_info = {0};
 
@@ -85,7 +86,7 @@ int ble_tizenrt_app_handle_upstream_msg(uint16_t subtype, void *pdata)
 
             le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
             le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-            le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, (sizeof(uint8_t)*DA_BLE_BD_ADDR_MAX_LEN), param->bd_addr);
+            le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, (sizeof(uint8_t)*TRBLE_BD_ADDR_MAX_LEN), param->bd_addr);
             le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
             ret = le_adv_start();
             if(GAP_CAUSE_SUCCESS == ret)
@@ -189,7 +190,7 @@ void ble_tizenrt_app_handle_io_msg(T_IO_MSG io_msg)
     }
 }
 
-extern da_ble_server_init_parm server_init_parm;
+extern trble_server_init_config server_init_parm;
 void ble_tizenrt_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
     debug_print("\r\n[%s] msg type: 0x%x", __FUNCTION__, callback_msg.type);
@@ -204,7 +205,7 @@ void ble_tizenrt_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
                                 connected->conn_id, connected->conn_type,
                                 connected->remote_bd[0], connected->remote_bd[1], connected->remote_bd[2],
                                 connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
-                da_ble_server_connected_t p_func = server_init_parm.connected_cb;
+                trble_server_connected_t p_func = server_init_parm.connected_cb;
                 p_func(connected->conn_id, connected->conn_type, connected->remote_bd);
             } else {
                 debug_print("\r\n[%s] NULL connected callback", __FUNCTION__);
@@ -218,7 +219,7 @@ void ble_tizenrt_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
             if(profile != NULL && profile->cb)
             {
                 debug_print("\r\n[%s] Profile callback", __FUNCTION__);
-                da_ble_server_cb_t pfunc = profile->cb;
+                trble_server_cb_t pfunc = profile->cb;
                 pfunc(profile->type, profile->conn_id, profile->att_handle, profile->arg);
             } else {
                 debug_print("\r\n[%s] NULL profile callback", __FUNCTION__);
@@ -316,9 +317,9 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
 
             T_TIZENRT_CONNECTED_CALLBACK_DATA *disconn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
             disconn_data->conn_id = conn_id;
-            disconn_data->conn_type = DA_BLE_SERVER_DISCONNECTED;
-            memcpy(disconn_data->remote_bd, tizenrt_remote_bd_info.remote_bd, DA_BLE_BD_ADDR_MAX_LEN);
-            memset(tizenrt_remote_bd_info.remote_bd, 0, DA_BLE_BD_ADDR_MAX_LEN);
+            disconn_data->conn_type = TRBLE_SERVER_DISCONNECTED;
+            memcpy(disconn_data->remote_bd, tizenrt_remote_bd_info.remote_bd, TRBLE_BD_ADDR_MAX_LEN);
+            memset(tizenrt_remote_bd_info.remote_bd, 0, TRBLE_BD_ADDR_MAX_LEN);
             //le_adv_start();
             ble_tizenrt_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, disconn_data);
         }
@@ -341,8 +342,8 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
 
             T_TIZENRT_CONNECTED_CALLBACK_DATA *conn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
             conn_data->conn_id = conn_id;
-            conn_data->conn_type = DA_BLE_SERVER_LL_CONNECTED;
-            memcpy(conn_data->remote_bd, tizenrt_remote_bd_info.remote_bd, DA_BLE_BD_ADDR_MAX_LEN);
+            conn_data->conn_type = TRBLE_SERVER_LL_CONNECTED;
+            memcpy(conn_data->remote_bd, tizenrt_remote_bd_info.remote_bd, TRBLE_BD_ADDR_MAX_LEN);
             debug_print("\r\n[%s] conn_id 0x%x cont_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x", __FUNCTION__,
                             conn_data->conn_id, conn_data->conn_type,
                             conn_data->remote_bd[5], conn_data->remote_bd[4], conn_data->remote_bd[3],
@@ -387,8 +388,8 @@ void ble_tizenrt_app_handle_authen_state_evt(uint8_t conn_id, uint8_t new_state,
 
                 T_TIZENRT_CONNECTED_CALLBACK_DATA *authed_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
                 authed_data->conn_id = conn_id;
-                authed_data->conn_type = DA_BLE_SERVER_SM_CONNECTED;
-                memcpy(authed_data->remote_bd, tizenrt_remote_bd_info.remote_bd, DA_BLE_BD_ADDR_MAX_LEN);
+                authed_data->conn_type = TRBLE_SERVER_SM_CONNECTED;
+                memcpy(authed_data->remote_bd, tizenrt_remote_bd_info.remote_bd, TRBLE_BD_ADDR_MAX_LEN);
                 ble_tizenrt_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, authed_data);
             }
             else
@@ -688,7 +689,7 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                 if (p_cha_info->cb)
                 {
                     T_TIZENRT_PROFILE_CALLBACK_DATA *noti_data = os_mem_alloc(0, sizeof(T_TIZENRT_PROFILE_CALLBACK_DATA));
-                    noti_data->type = DA_BLE_SERVER_ATTR_CB_NOTIFY;
+                    noti_data->type = BLE_SERVER_ATTR_CB_NOTIFY;
                     noti_data->conn_id = p_tizenrt_cb_data->conn_id;
                     noti_data->att_handle = p_cha_info->abs_handle;
                     noti_data->arg = p_cha_info->arg;        /* user defined in service table */
@@ -711,8 +712,8 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                 /* call user defined callback */
                 if (p_cha_info->cb)
                 {
-                    da_ble_server_cb_t p_func = p_cha_info->cb;
-                    p_func(DA_BLE_SERVER_ATTR_CB_READING, p_tizenrt_cb_data->conn_id,
+                    trble_server_cb_t p_func = p_cha_info->cb;
+                    p_func(TRBLE_ATTR_CB_READING, p_tizenrt_cb_data->conn_id,
                                                             p_cha_info->abs_handle, p_cha_info->arg);
                 } else {
                     debug_print("\r\n[%s] NULL read callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);
@@ -738,8 +739,8 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                         /* call user defined callback */
                         if (p_cha_info->cb)
                         {
-                            da_ble_server_cb_t p_func = p_cha_info->cb;
-                            p_func(DA_BLE_SERVER_ATTR_CB_WRITING, p_tizenrt_cb_data->conn_id,
+                            trble_server_cb_t p_func = p_cha_info->cb;
+                            p_func(TRBLE_ATTR_CB_WRITING, p_tizenrt_cb_data->conn_id,
                                                                     p_cha_info->abs_handle, p_cha_info->arg);
                         } else {
                             debug_print("\r\n[%s] NULL write callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);
@@ -751,8 +752,8 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                         /* call user defined callback */
                         if (p_cha_info->cb)
                         {
-                            da_ble_server_cb_t p_func = p_cha_info->cb;
-                            p_func(DA_BLE_SERVER_ATTR_CB_WRITING_NO_RSP, p_tizenrt_cb_data->conn_id,
+                            trble_server_cb_t p_func = p_cha_info->cb;
+                            p_func(TRBLE_ATTR_CB_WRITING_NO_RSP, p_tizenrt_cb_data->conn_id,
                                                                     p_cha_info->abs_handle, p_cha_info->arg);
                         } else {
                             debug_print("\r\n[%s] NULL write callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);

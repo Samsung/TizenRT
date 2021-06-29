@@ -96,13 +96,13 @@ include component/common/bluetooth/realtek/sdk/board/common/src/Make.defs
 include component/common/bluetooth/realtek/sdk/src/ble/profile/client/Make.defs
 include component/common/bluetooth/realtek/sdk/src/ble/profile/server/Make.defs
 ifeq ($(CONFIG_AMEBAD_BLE_PERIPHERAL),y)
-include component/common/bluetooth/realtek/sdk/example/da_ble_peripheral/Make.defs
+include component/common/bluetooth/realtek/sdk/example/ble_peripheral/Make.defs
 endif
 ifeq ($(CONFIG_AMEBAD_BLE_CENTRAL),y)
-include component/common/bluetooth/realtek/sdk/example/da_ble_central/Make.defs
+include component/common/bluetooth/realtek/sdk/example/ble_central/Make.defs
 endif
 ifeq ($(CONFIG_AMEBAD_BLE_SCATTERNET),y)
-include component/common/bluetooth/realtek/sdk/example/da_ble_scatternet/Make.defs
+include component/common/bluetooth/realtek/sdk/example/ble_scatternet/Make.defs
 endif
 endif
 
@@ -178,11 +178,9 @@ CFLAGS += -I$(TOPDIR)/net/netmgr
 ifeq ($(CONFIG_AMEBAD_BLE),y)
 CFLAGS += -I$(DIR_BT)/inc
 CFLAGS += -I$(DIR_BT)/src/mcu/module/data_uart_cmd
-CFLAGS += -I$(DIR_BT)/example/da_ble_peripheral
-CFLAGS += -I$(DIR_BT)/example/da_ble_central
-CFLAGS += -I$(DIR_BT)/example/da_ble_scatternet
-CFLAGS += -I$(TOPDIR)/../da_include/ble
-CFLAGS += -I$(TOPDIR)/../da_include/da_core
+CFLAGS += -I$(DIR_BT)/example/ble_peripheral
+CFLAGS += -I$(DIR_BT)/example/ble_central
+CFLAGS += -I$(DIR_BT)/example/ble_scatternet
 endif
 
 ifeq ($(CONFIG_USBD_MSC),y)
