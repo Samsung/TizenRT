@@ -125,7 +125,6 @@ static void rtc_calculate_wday(int year, int mon, int mday, int* wday)
   */
 static void rtc_restore_timeinfo(void)
 {
-	u32 value;
 	int days_in_year;
 	RRAM_TypeDef* RRAM = ((RRAM_TypeDef *) RRAM_BASE);
 
