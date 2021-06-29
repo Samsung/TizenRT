@@ -616,12 +616,13 @@ void _wt_set_power(void *arg)
 	}
 	wifi_manager_result_e res = wifi_manager_set_powermode(pmode);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(TAG, "failt to set power mode\n");
+		WT_LOGE(TAG, "fail to set power mode\n");
 		return;
 	}
 	WT_LOG(TAG, "set power mode %d\n", pmode);
 	WT_LEAVE;
 }
+
 void _wt_stress_test(void *arg)
 {
 	wm_run_stress_test(arg);

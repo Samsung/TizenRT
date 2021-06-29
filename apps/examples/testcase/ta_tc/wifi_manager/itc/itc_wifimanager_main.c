@@ -306,8 +306,6 @@ static void itc_wifimanager_connect_ap_config_p(void)
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
 	wifi_manager_ap_config_s config;
-	wifi_manager_reconnect_config_s reconfig;
-	reconfig.type = WIFI_RECONN_INTERVAL;
 	reconfig.interval = 10;
 	config.ssid_length = strlen(TEST_SSID);
 	config.passphrase_length = strlen(TEST_PASSWORD);
@@ -318,7 +316,7 @@ static void itc_wifimanager_connect_ap_config_p(void)
 	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
 			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
 
-	ret =  wifi_manager_connect_ap_config(&config, &reconfig);
+	ret =  wifi_manager_connect_ap(&config);
 	TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 	WIFITEST_WAIT;
 
@@ -356,7 +354,7 @@ static void itc_wifimanager_connect_ap_config_n(void)
 	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
 			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
 
-	ret =  wifi_manager_connect_ap_config(&config, NULL);
+	ret =  wifi_manager_connect_ap(&config);
 	TC_ASSERT_NEQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	ret = wifi_manager_disconnect_ap();
