@@ -22,7 +22,7 @@
 #define WIFIMGR_EVENT_INITIALIZER {NULL, {NULL, NULL, NULL, NULL, NULL} }
 
 enum _wifimgr_evt {
-#define WIFIMGR_EVT_TABLE(str, type, desc) type,
+#define WIFIMGR_REQUEST_TABLE(str, type, desc) type,
 	#include "wifi_manager_event_table.h"
 	EVT_NONE,
 };

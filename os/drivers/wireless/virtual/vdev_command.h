@@ -25,9 +25,9 @@ typedef struct {
 } vwifi_ioctl_msg_s;
 
 /*  command */
-#define VWIFI_CMD_SET 0x1
-#define VWIFI_CMD_GEN_EVT 0x2
-#define VWIFI_CMD_GEN_EVT_FUNC 0x3
+#define VWIFI_CMD_SET 0x1001
+#define VWIFI_CMD_GEN_EVT 0x1002
+#define VWIFI_CMD_GEN_EVT_FUNC 0x1003
 
 /*  key */
 #define VWIFI_KEY_RESULT 1

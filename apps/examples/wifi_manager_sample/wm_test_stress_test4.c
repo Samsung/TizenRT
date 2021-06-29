@@ -271,6 +271,17 @@ TEST_F(init_p)
 	ST_END_TEST;
 }
 
+TEST_F(set_power_p)
+{
+	ST_START_TEST;
+	CONTROL_VDRIVER(VWIFI_CMD_SET, VWIFI_KEY_RESULT, TRWIFI_SUCCESS, 0);
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_powermode(WIFI_MANAGER_POWERMODE_DISABLE));
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
+
+}
+
 void wm_run_stress_test4(struct wt_options *opt)
 {
 	WM_AP_SSID = opt->ssid;
@@ -291,6 +302,7 @@ void wm_run_stress_test4(struct wt_options *opt)
 	ST_SET_SMOKE1(wifi, WM_TEST_TRIAL, 0, "use case test", mode_change);
 	ST_SET_SMOKE1(wifi, 1, 0, "init negative case", init_n);
 	ST_SET_SMOKE(wifi, 1, 0, "init positive case", init_p);
+	ST_SET_SMOKE1(wifi, 1, 0, "set power", set_power_p);
 
 	ST_RUN_TEST(wifi);
 	ST_RESULT_TEST(wifi);

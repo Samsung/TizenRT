@@ -257,10 +257,10 @@ static void vdev_run(int argc, char *argv[])
 		tfds = rfds;
 		res = select(fd + 1, &tfds, NULL, NULL, NULL);
 		if (res <= 0) {
-			VWIFI_ERROR(res);
 			if (errno == EINTR) {
 				continue;
 			}
+			VWIFI_ERROR(res);
 			break;
 		}
 		struct vwifi_msg msg;

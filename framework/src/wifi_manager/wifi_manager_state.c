@@ -140,7 +140,8 @@ static wifi_manager_result_e _wifimgr_scan(wifi_manager_ap_config_s *config);
 /*
  * functions managing a state machine
  */
-#define WIFIMGR_STATE_TABLE(handler, str) \
+#undef WIFIMGR_STATE_TABLE
+#define WIFIMGR_STATE_TABLE(state, handler, str)					\
 	static wifi_manager_result_e handler(wifimgr_msg_s *msg);
 #include "wifi_manager_state_table.h"
 static wifi_manager_result_e _handle_request(wifimgr_msg_s *msg);
@@ -151,13 +152,13 @@ typedef wifi_manager_result_e (*wifimgr_handler)(wifimgr_msg_s *msg);
  */
 static const wifimgr_handler g_handler[] = {
 #undef WIFIMGR_STATE_TABLE
-#define WIFIMGR_STATE_TABLE(handler, str) handler,
+#define WIFIMGR_STATE_TABLE(state, handler, str) handler,
 #include "wifi_manager_state_table.h"
 };
 
 static char *wifimgr_state_str[] = {
 #undef WIFIMGR_STATE_TABLE
-#define WIFIMGR_STATE_TABLE(handler, str) str,
+#define WIFIMGR_STATE_TABLE(state, handler, str) str,
 #include "wifi_manager_state_table.h"
 	"WIFIMGR_NONE",
 	"WIFIMGR_STATE_MAX",
@@ -363,7 +364,7 @@ wifi_manager_result_e _wifimgr_scan(wifi_manager_ap_config_s *config)
 wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 {
 	wifimgr_evt_e evt = msg->event;
-	if (evt != EVT_INIT_CMD) {
+	if (evt != WIFIMGR_CMD_INIT) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
@@ -399,7 +400,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 
 wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 {
-	if (msg->event == EVT_CONNECT_CMD) {
+	if (msg->event == WIFIMGR_CMD_CONNECT) {
 		_wifimgr_conn_info_msg_s *conn_msg = (_wifimgr_conn_info_msg_s *)msg->param;
 		wifi_manager_ap_config_s *apinfo = conn_msg->config;
 		wifi_manager_reconnect_config_s *conn_config = conn_msg->conn_config;
@@ -408,16 +409,16 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 		WIFIMGR_COPY_RECONN_INFO(g_manager_info.conn_config, *conn_config);
 		WIFIMGR_CHECK_RESULT(_wifimgr_connect_ap(apinfo), (TAG, "connect ap fail\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTING);
-	} else if (msg->event == EVT_DEINIT_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SEND_API_SIGNAL(msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
-	} else if (msg->event == EVT_SET_SOFTAP_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_SET_SOFTAP) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap((wifi_manager_softap_config_s *)msg->param),
 							 (TAG, "run_softap fail\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SEND_API_SIGNAL(msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
-	} else if (msg->event == EVT_SCAN_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_SCAN) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_ap_config_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
@@ -430,21 +431,21 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 
 wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 {
-	if (msg->event == EVT_DEINIT_CMD) {
+	if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
 		return WIFI_MANAGER_SUCCESS;
 	}
 
-	if (msg->event != EVT_STA_DISCONNECTED
-		&& msg->event != EVT_STA_CONNECTED
-		&& msg->event != EVT_STA_CONNECT_FAILED
-		&& msg->event != EVT_SCAN_DONE) {
+	if (msg->event != WIFIMGR_EVT_STA_DISCONNECTED
+		&& msg->event != WIFIMGR_EVT_STA_CONNECTED
+		&& msg->event != WIFIMGR_EVT_STA_CONNECT_FAILED
+		&& msg->event != WIFIMGR_EVT_SCAN_DONE) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		NET_LOGE(TAG, "invalid param\n");
 		return WIFI_MANAGER_BUSY;
 	}
 
-	if (msg->event == EVT_SCAN_DONE) {
+	if (msg->event == WIFIMGR_EVT_SCAN_DONE) {
 		_free_scan_list((wifi_utils_scan_list_s *)msg->param);
 	}
 
@@ -484,7 +485,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 
 wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 {
-	if (msg->event == EVT_STA_CONNECTED) {
+	if (msg->event == WIFIMGR_EVT_STA_CONNECTED) {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
 		wifi_manager_result_e wret;
 		wret = dhcpc_get_ipaddr();
@@ -497,10 +498,10 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 #endif
 		wifimgr_call_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
-	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
+	} else if (msg->event == WIFIMGR_EVT_STA_CONNECT_FAILED) {
 		wifimgr_call_cb(CB_STA_CONNECT_FAILED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
-	} else if (msg->event == EVT_DEINIT_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else {
@@ -513,11 +514,11 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 
 wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 {
-	if (msg->event == EVT_DISCONNECT_CMD) {
+	if (msg->event == WIFIMGR_CMD_DISCONNECT) {
 		dhcpc_close_ipaddr();
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
-	} else if (msg->event == EVT_STA_DISCONNECTED) {
+	} else if (msg->event == WIFIMGR_EVT_STA_DISCONNECTED) {
 #ifndef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 		NET_LOGV(TAG, "External AUTOCONNECT: go to RECONNECT state\n");
 		wifimgr_call_cb(CB_STA_RECONNECTED, NULL);
@@ -527,22 +528,22 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 		wifimgr_call_cb(CB_STA_DISCONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 #endif /* CONFIG_DISABLE_EXTERNAL_AUTOCONNECT */
-	} else if (msg->event == EVT_SET_SOFTAP_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_SET_SOFTAP) {
 		dhcpc_close_ipaddr();
 		WIFIMGR_COPY_SOFTAP_CONFIG(g_manager_info.softap_config, (wifi_manager_softap_config_s *)msg->param);
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_SOFTAP, msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
-	} else if (msg->event == EVT_DEINIT_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		dhcpc_close_ipaddr();
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
-	} else if (msg->event == EVT_SCAN_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_SCAN) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_ap_config_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
-	} else if (msg->event == EVT_CONNECT_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_CONNECT) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_ALREADY_CONNECTED;
 	} else {
@@ -556,15 +557,15 @@ wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg)
 {
 #ifndef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 	NET_LOGV(TAG, "EXTERNAL AUTOCONNECT event status : %d\n", msg->event);
-	if (msg->event == EVT_DISCONNECT_CMD) {
+	if (msg->event == WIFIMGR_CMD_DISCONNECT) {
 		dhcpc_close_ipaddr();
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
-	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
+	} else if (msg->event == WIFIMGR_EVT_STA_CONNECT_FAILED) {
 		// nothing to do but to wait
-	} else if (msg->event == EVT_STA_CONNECTED) {
+	} else if (msg->event == WIFIMGR_EVT_STA_CONNECTED) {
 		wifimgr_call_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
-	} else if (msg->event == EVT_DEINIT_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SEND_API_SIGNAL(msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
@@ -578,33 +579,33 @@ wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg)
 
 wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 {
-	if (msg->event == EVT_SET_STA_CMD) {
+	if (msg->event == WIFIMGR_CMD_SET_STA) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_CHECK_RESULT(_wifimgr_run_sta(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SEND_API_SIGNAL(msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
-	} else if (msg->event == EVT_SCAN_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_SCAN) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_ap_config_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 #ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
-	} else if (msg->event == EVT_JOINED) {
+	} else if (msg->event == WIFIMGR_EVT_JOINED) {
 #else
 	/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
-	} else if (msg->event == EVT_DHCPS_ASSIGN_IP) {
+	} else if (msg->event == WIFIMGR_EVT_DHCPS_ASSIGN_IP) {
 		if (dhcps_add_node((dhcp_node_s *)msg->param) == DHCP_EXIST) {
 			return WIFI_MANAGER_SUCCESS;
 		}
 #endif
 		dhcps_inc_num();
 		wifimgr_call_cb(CB_STA_JOINED, NULL);
-	} else if (msg->event == EVT_LEFT) {
+	} else if (msg->event == WIFIMGR_EVT_LEFT) {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 		dhcps_del_node();
 #endif
 		dhcps_dec_num();
 		wifimgr_call_cb(CB_STA_LEFT, NULL);
-	} else if (msg->event == EVT_DEINIT_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SEND_API_SIGNAL(msg->signal);
@@ -620,12 +621,12 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 {
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
-	if (msg->event == EVT_SCAN_DONE) {
+	if (msg->event == WIFIMGR_EVT_SCAN_DONE) {
 		wifimgr_call_cb(CB_SCAN_DONE, msg->param);
 		_free_scan_list((wifi_utils_scan_list_s *)msg->param);
 		WIFIMGR_RESTORE_STATE;
 		wret = WIFI_MANAGER_SUCCESS;
-	} else if (msg->event == EVT_DEINIT_CMD) {
+	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 		wret = WIFI_MANAGER_SUCCESS;
@@ -667,6 +668,21 @@ wifi_manager_result_e _handler_get_stats(wifimgr_msg_s *msg)
 	return wret;
 }
 
+wifi_manager_result_e _handler_set_powermode(wifimgr_msg_s *msg)
+{
+	wifi_manager_powermode_e mode = *((wifi_manager_powermode_e *)(msg->param));
+	int imode = TRWIFI_POWERMODE_OFF;
+	if (mode == WIFI_MANAGER_POWERMODE_ENABLE) {
+		imode = TRWIFI_POWERMODE_ON;
+	}
+	trwifi_msg_s tmsg = {TRWIFI_MSG_SET_POWERMODE, (void *)(&imode)};
+	wifi_utils_result_e res = wifi_utils_ioctl(&tmsg);
+	if (res != WIFI_UTILS_SUCCESS) {
+		NET_LOGE(TAG, "set power mode fail %d\n", res);
+		return WIFI_MANAGER_FAIL;
+	}
+	return WIFI_MANAGER_SUCCESS;
+}
 /*
  * public
  */
@@ -677,9 +693,11 @@ wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)
 	NET_LOGI(TAG, "handle request state(%s) evt(%s)\n",
 			 wifimgr_get_state_str(WIFIMGR_GET_STATE),
 			 wifimgr_get_evt_str(msg->event));
-	if (msg->event == EVT_GETSTATS_CMD) {
+	if (msg->event == WIFIMGR_CMD_GETSTATS) {
 		res = _handler_get_stats(msg);
-	} else {
+	} else if (msg->event == WIFIMGR_CMD_SETPOWER) {
+		res = _handler_set_powermode(msg);
+	}else {
 		res = g_handler[WIFIMGR_GET_STATE](msg);
 	}
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT

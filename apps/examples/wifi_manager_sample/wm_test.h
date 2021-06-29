@@ -36,6 +36,7 @@ struct wt_options {
 	int softap_channel;
 	int scan_specific;
 	uint32_t stress_tc_idx;
+	uint8_t power_mode;
 };
 
 #endif // #define __WIFIMANAGER_TEST_H__

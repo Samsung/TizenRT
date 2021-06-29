@@ -265,6 +265,11 @@ typedef struct {
 	uint32_t beacon_miss_cnt;
 } wifi_manager_stats_s;
 
+typedef enum{
+	WIFI_MANAGER_POWERMODE_DISABLE,
+	WIFI_MANAGER_POWERMODE_ENABLE,
+} wifi_manager_powermode_e;
+
 /**
  * @brief Initialize Wi-Fi Manager including starting Wi-Fi interface.
  * @details @b #include <wifi_manager/wifi_manager.h>
@@ -445,6 +450,16 @@ wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s
 // callback: none
 wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats);
 
+/**
+ * @brief Obtain WiFi Manager state stats
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] power save mode
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v3.1
+ */
+// API type: synchronous
+// callback: none
+wifi_manager_result_e wifi_manager_set_powermode(wifi_manager_powermode_e mode);
 #ifdef __cplusplus
 }
 #endif
