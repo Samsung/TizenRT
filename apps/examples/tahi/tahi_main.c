@@ -151,7 +151,7 @@ static int wm_connect(struct options *ap_info)
 	return 0;
 }
 
-static int tahi_init = 0;
+static int g_tahi_init = 0;
 
 static void print_help()
 {
@@ -183,71 +183,61 @@ int tahi_main(int argc, char *argv[])
 
 	printf("[TAHI] IPv6 Test App\n");
 
-	if (argc <= 1) {
-
-		if (tahi_init > 0) {
-			print_help();
-			return 0;
-		}
-
-		printf("[TAHI] Start to connect WiFi\n");
-		sem_init(&sem, 0, 1);
-
-		usleep(100 * 1000);
-
-		res = wifi_manager_init(&wifi_callbacks);
-		if (res != WIFI_MANAGER_SUCCESS) {
-			printf("[TAHI] wifi_manager_init fail\n");
-		}
-
-		usleep(100 * 1000);
-
-		struct options opt = {
-			.auth_type = WIFI_MANAGER_AUTH_WPA2_PSK,
-			.crypto_type = WIFI_MANAGER_CRYPTO_AES,
-			.ssid = TAHI_SSID,
-			.password = TAHI_PASS
-		};
-
-		if (wm_connect(&opt) != 0) {
-			printf("[TAHI] Fail to connect WiFi\n");
-			return 0;
-		}
-		printf("[TAHI] WiFi Connected\n");
-
-		printf("[TAHI] Power\n");
-
-		tahi_init = 1;
-
+	if (argc != 2) {
+		print_help();
+		return 0;
+	} else if (strncmp(argv[1], "log", 4) == 0) {
+		nd6_cache_debug_print();
+		return 0;
+	} else if (g_tahi_init > 0) {
+		printf("already initialized\n");
+		print_help();
 		return 0;
 	}
 
-	if (strncmp(argv[1], "ifup", 5) == 0) {
-		char *intf = TAHI_IF_NAME;
-		char ip6_type[10] = { 0, };
+	printf("[TAHI] Start to connect WiFi\n");
+	sem_init(&sem, 0, 1);
 
-		printf("ifup %s...", intf);
+	usleep(100 * 1000);
 
-		if (argc == 3 && argv[2][0] == '1') {
-			/* Set IPv6 Stable Privacy */
-			ret = netlib_set_ipv6type(intf, 1);
-			sprintf(ip6_type, "Stable Privacy");
-		} else {
-			/* Set IPv6 EUI-64 */
-			ret = netlib_set_ipv6type(intf, 0);
-			sprintf(ip6_type, "EUI-64");
-		}
-		usleep(100 * 1000);
-		if (ret != OK) {
-			printf("[TAHI] %s...set IPv6 [%s] Failed!!\n", intf, ip6_type);
-			return 0;
-		}
-		ret = netlib_ifup(intf);
-		printf("%s\n", (ret == OK) ? "OK" : "Failed");
-
-	} else if (strncmp(argv[1], "log", 4) == 0) {
-		nd6_cache_debug_print();
+	res = wifi_mager_init(&wifi_callbacks);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("[TAHI] wifi_manager_init fail\n");
 	}
+
+	usleep(100 * 1000);
+
+	struct options opt = {
+		.auth_type = WIFI_MANAGER_AUTH_WPA2_PSK,
+		.crypto_type = WIFI_MANAGER_CRYPTO_AES,
+		.ssid = TAHI_SSID,
+		.password = TAHI_PASS
+	};
+
+	if (wifi_manager_set_powermode(WIFI_MANAGER_POWERMODE_DISABLE) != WIFI_MANAGER_SUCCESS) {
+		printf("[TAHI] wifi manager set power mode fail\n");
+		return -1;
+	}
+
+	if (argv[2][0] == '1') {
+		printf("[TAHI] Stable Privacy\n");
+		ret = netlib_set_ipv6type(intf, 1);
+	} else {
+		printf("[TAHI] EUI-64\n");
+		ret = netlib_set_ipv6type(intf, 0);
+	}
+
+	if (wm_connect(&opt) != 0) {
+		printf("[TAHI] Fail to connect WiFi\n");
+		return 0;
+	}
+	printf("[TAHI] WiFi Connected\n");
+
+	printf("[TAHI] Power\n");
+
+	g_tahi_init = 1;
+
+	return 0;
 
 	return 0;
 }
