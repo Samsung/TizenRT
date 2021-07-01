@@ -74,15 +74,17 @@ static void display_reboot_reason_option(void)
 {
 	printf("\nSelect Reboot Reason Test Option.\n");
 	printf("\t-Press H or h : HW Reset Test\n");
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-	printf("\t-Press M or m : Memory Allocation Fail Test\n");
-#endif
 #ifdef CONFIG_WATCHDOG
 	printf("\t-Press W or w : Watchdog Reset Test\n");
+#endif
+#ifdef CONFIG_LIB_BOARDCTL
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+	printf("\t-Press M or m : Memory Allocation Fail Test\n");
 #endif
 	printf("\t-Press P or p : Prefetch Abort Test\n");
 	printf("\t-Press V or v : Random Value Write-Read Test\n");
 	printf("\t-Press C or c : Clear reboot reason\n");
+#endif
 	printf("\t-Press R or r : Check previous reboot reason\n");
 	printf("\t-Press X or x : Terminate Tests.\n");
 }
@@ -117,6 +119,7 @@ static void watchdog_test(void)
 }
 #endif
 
+#ifdef CONFIG_LIB_BOARDCTL
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 static void memory_alloc_fail_test(void)
 {
@@ -150,14 +153,11 @@ static void prefetch_abort_test(void)
 
 static void reboot_board(void)
 {
-#ifdef CONFIG_LIB_BOARDCTL
+
 	printf("Board will be reset automatically.\n");
 	boardctl(BOARDIOC_RESET, 0);
-#else
-	printf("Please reboot the board manually.\n");
-#endif
 }
-
+#endif
 /****************************************************************************
  * reboot_reason_main
  ****************************************************************************/
@@ -184,20 +184,21 @@ int reboot_reason_main(int argc, char *argv[])
 			/* Wait for pressing the hw reset button. */
 			while (1);
 			break;
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-		case 'M':
-		case 'm':
-			/* Test for Memory Allocation Fail */
-			printf("After Memory Allocation Fail, Expected Reboot reason is %d\n", REBOOT_SYSTEM_MEMORYALLOCFAIL);
-			memory_alloc_fail_test();
-			break;
-#endif
 #ifdef CONFIG_WATCHDOG
 		case 'W':
 		case 'w':
 			/* Test for Watchdog Reset */
 			printf("After watchdog reset, Expected Reboot reason is %d\n", REBOOT_SYSTEM_WATCHDOG);
 			watchdog_test();
+			break;
+#endif
+#ifdef CONFIG_LIB_BOARDCTL
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+		case 'M':
+		case 'm':
+			/* Test for Memory Allocation Fail */
+			printf("After Memory Allocation Fail, Expected Reboot reason is %d\n", REBOOT_SYSTEM_MEMORYALLOCFAIL);
+			memory_alloc_fail_test();
 			break;
 #endif
 		case 'P':
@@ -222,6 +223,7 @@ int reboot_reason_main(int argc, char *argv[])
 			prctl(PR_REBOOT_REASON_CLEAR);
 			reboot_board();
 			break;
+#endif
 		case 'R':
 		case 'r':
 			/* Read the previous reboot reason */
