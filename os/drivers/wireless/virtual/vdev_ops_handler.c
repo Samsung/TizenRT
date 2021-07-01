@@ -54,7 +54,7 @@ static trwifi_result_e vwifi_handle_setautoconnect(void *req);
 static int _handle_set_command(trwifi_msg_s *msg);
 static int _handle_evt_command(trwifi_msg_s *msg);
 
-static int g_vdev_ops_result = TRWIFI_FAIL;
+static int g_vdev_ops_result = TRWIFI_SUCCESS;
 static vdev_evt_s g_vdev_evt = {0, 0, 0, 0};
 static const vdev_evt_s VDEV_EVT_INIT = {0, 0, 0, 0};
 

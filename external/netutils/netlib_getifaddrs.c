@@ -36,12 +36,10 @@
 #include <tinyara/net/netlog.h>
 
 #define TAG "[NETLIB]"
-#define INTF_NAME "None"
 
 static inline int _send_msg(lwnl_msg *msg)
 {
 	int ret = 0;
-
 	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (fd < 0) {
 		NET_LOGE(TAG, "create socket %d\n", errno);
@@ -59,10 +57,11 @@ static inline int _send_msg(lwnl_msg *msg)
 int netlib_getifaddrs(struct ifaddrs **ifap)
 {
 	int res = 0;
-	lwnl_msg msg = {INTF_NAME, {LWNL_REQ_COMMON_GETADDRINFO}, sizeof(*ifap), NULL, (void *)&res};
+	lwnl_msg msg = {LWNL_INTF_NAME, {LWNL_REQ_COMMON_GETADDRINFO},
+					sizeof(*ifap), NULL, (void *)&res};
 	int lres = _send_msg(&msg);
 	if (lres < 0) {
-		NET_LOGE(TAG, "send request msg fail %d\n", res);
+		NET_LOGE(TAG, "send request msg fail %d %d\n", lres, res);
 		return -1;
 	}
 	*ifap = (struct ifaddrs *)msg.data;

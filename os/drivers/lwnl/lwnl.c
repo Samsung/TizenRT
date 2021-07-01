@@ -206,6 +206,9 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 	LWNL_ENTER(TAG);
 #ifdef CONFIG_NET_NETMGR
 	int ret = netdev_req_handle(buffer, len);
+	if (ret == -ENOSYS) {
+		// handle BLE request
+	}
 #else
 	int ret = lwnl_message_handle(buffer, len);
 #endif
