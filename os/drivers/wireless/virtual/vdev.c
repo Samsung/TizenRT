@@ -300,6 +300,7 @@ void vwifi_start(void)
 
 void vwifi_send_packet(uint8_t *buf, uint32_t len)
 {
+	VWIFI_LOG("send packet %d\n", len);
 	if (!g_vwifi_dev) {
 		VWIFI_ERROR(0);
 		return;
