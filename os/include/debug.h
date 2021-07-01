@@ -672,6 +672,21 @@ int get_errno(void);
 #define tmllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_REBOOT_REASON_ERROR
+#define rrdbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define rrlldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define rrdbg(...)
+#define rrlldbg(...)
+#endif
+#ifdef CONFIG_DEBUG_REBOOT_REASON_INFO
+#define rrvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define rrllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define rrvdbg(...)
+#define rrllvdbg(...)
+#endif
+
 /******************************************/
 /*        OS Function specific debug      */
 /******************************************/
@@ -1395,6 +1410,22 @@ int get_errno(void);
 #else
 #define tmvdbg      (void)
 #define tmllvdbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_REBOOT_REASON
+#define rrdbg       dbg
+#define rrlldbg     lldbg
+#else
+#define rrdbg       (void)
+#define rrlldbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_REBOOT_REASON
+#define rrvdbg      vdbg
+#define rrllvdbg    llvdbg
+#else
+#define rrvdbg      (void)
+#define rrllvdbg    (void)
 #endif
 
 /******************************************/
