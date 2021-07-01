@@ -63,7 +63,7 @@ void print_no_client(const char* format, ...) {}
  * NOTE: This function shall be called before @ref bte_init is invoked.
  * @return void
  */
-extern da_ble_client_init_parm *client_init_parm;
+extern trble_client_init_config *client_init_parm;
 extern void gap_config_hci_task_secure_context(uint32_t size);
 extern void gap_config_deinit_flow(uint8_t deinit_flow);
 void ble_tizenrt_central_bt_stack_config_init(void)

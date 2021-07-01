@@ -1,4 +1,4 @@
-#include <da_ble_server.h>
+#include <tinyara/net/if/ble.h>
 #include <profile_server.h>
 
 #define TIZENRT_MAX_VAL_LEN 520
@@ -22,7 +22,7 @@ typedef struct
     uint16_t read_len;
     uint8_t *data;      /* used for service callback */
     uint16_t data_len;      /* used for service callback */
-    da_ble_server_cb_t cb;      /* used for user's callback */
+    trble_server_cb_t cb;      /* used for user's callback */
     void* arg;      /* used for user's callback */
 } TIZENERT_CHA_INFO;
 
@@ -38,4 +38,4 @@ typedef struct
 typedef uint8_t TIZENERT_SRV_CNT;
 
 T_SERVER_ID tizenrt_add_service(void *p_func, uint8_t index);
-bool parse_service_table(da_ble_server_gatt_t *profile, uint16_t profile_count);
+bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count);

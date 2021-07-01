@@ -1,15 +1,14 @@
 /*
- * ble_da_ble_combo.c
+ * ble_tizenrt_combo.c
  *
  *  Created on: 2020. 3. 9.
  *      Author: lexi_zhao
  */
 
-#ifndef DA_BLE_COMBO_C_
-#define DA_BLE_COMBO_C_
+#ifndef TRBLE_COMBO_C_
+#define TRBLE_COMBO_C_
 
-#include "da_ble_client.h"
-#include "da_ble_server.h"
+#include <tinyara/net/if/ble.h>
 #include "stddef.h"
 #include <gap_conn_le.h>
 #include "ble_tizenrt_scatternet_app.h"
@@ -24,41 +23,41 @@ extern T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_scatternet_read_results[BLE_TIZE
 extern T_GCS_WRITE_RESULT g_scatternet_write_result;
 extern T_GCS_WRITE_RESULT g_scatternet_write_no_rsp_result;
 
-extern da_ble_client_init_parm *client_init_parm;
+extern trble_client_init_config *client_init_parm;
 extern T_GCS_WRITE_RESULT *write_request_result;
 extern T_GCS_WRITE_RESULT *write_no_rsponse_result;
 extern uint8_t ble_app_link_table_size;
 extern BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_table;
 extern T_TIZENRT_CLIENT_READ_RESULT *ble_read_results;
-extern BLE_TIZENRT_APP_LINK *da_ble_app_link_table;
+extern BLE_TIZENRT_APP_LINK *ble_app_link_table;
 extern bool (*ble_tizenrt_client_send_msg)(uint16_t sub_type, void *arg);
 
-extern da_ble_server_init_parm server_init_parm;
+extern trble_server_init_config server_init_parm;
 extern bool (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg);
 extern bool is_server_init;
 extern uint16_t server_profile_count;
 
-da_ble_result_type rtw_ble_combo_init(da_ble_client_init_parm* init_client, da_ble_server_init_parm* init_server)
+trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_server_init_config* init_server)
 { 
     if (init_client == NULL || init_server == NULL || init_server->profile == NULL \
                             || init_server->profile_count == 0)
     {
-        return DA_BLE_RESULT_TYPE_FAILURE;
+        return TRBLE_FAIL;
     } else if(is_server_init != false || client_init_parm != NULL) {
-        return DA_BLE_RESULT_TYPE_INVALID_STATE;
+        return TRBLE_INVALID_STATE;
     }
 
-    client_init_parm = os_mem_alloc(0, sizeof(da_ble_client_init_parm));
+    client_init_parm = os_mem_alloc(0, sizeof(trble_client_init_config));
     if (client_init_parm == NULL) {
         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_FAILURE;
+        return TRBLE_FAIL;
     }
     ble_tizenrt_bond_req_table = os_mem_alloc(0, BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
     if (ble_tizenrt_bond_req_table == NULL) {
         os_mem_free(client_init_parm);
         client_init_parm = NULL;
         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
-        return DA_BLE_RESULT_TYPE_FAILURE;
+        return TRBLE_FAIL;
     }
 
     write_request_result = &g_scatternet_write_result;
@@ -66,23 +65,23 @@ da_ble_result_type rtw_ble_combo_init(da_ble_client_init_parm* init_client, da_b
     ble_app_link_table_size = BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS;
     memset(ble_tizenrt_bond_req_table, 0, BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
     ble_read_results = ble_tizenrt_scatternet_read_results;
-    da_ble_app_link_table = ble_tizenrt_scatternet_app_link_table;
+    ble_app_link_table = ble_tizenrt_scatternet_app_link_table;
     ble_tizenrt_client_send_msg = ble_tizenrt_scatternet_send_msg;
     ble_tizenrt_server_send_msg = ble_tizenrt_scatternet_send_msg;
     
     //init client
-    client_init_parm->da_ble_client_scan_state_changed_cb = init_client->da_ble_client_scan_state_changed_cb;
-    client_init_parm->da_ble_client_device_scanned_cb = init_client->da_ble_client_device_scanned_cb;
-    client_init_parm->da_ble_client_device_connected_cb = init_client->da_ble_client_device_connected_cb;
-    client_init_parm->da_ble_client_device_disconnected_cb = init_client->da_ble_client_device_disconnected_cb;
-    client_init_parm->da_ble_client_operation_notification_cb = init_client->da_ble_client_operation_notification_cb;
+    client_init_parm->trble_scan_state_changed_cb = init_client->trble_scan_state_changed_cb;
+    client_init_parm->trble_device_scanned_cb = init_client->trble_device_scanned_cb;
+    client_init_parm->trble_device_connected_cb = init_client->trble_device_connected_cb;
+    client_init_parm->trble_device_disconnected_cb = init_client->trble_device_disconnected_cb;
+    client_init_parm->trble_operation_notification_cb = init_client->trble_operation_notification_cb;
 
     //init server
     server_profile_count = init_server->profile_count;
     uint16_t gatt_char_num = 0;
     for (int i = 0; i < init_server->profile_count; i++)
     {
-        if(init_server->profile[i].type == DA_BLE_SERVER_GATT_CHARACT)
+        if(init_server->profile[i].type == TRBLE_GATT_CHARACT)
             gatt_char_num++;
     }
     server_init_parm.profile_count = init_server->profile_count + gatt_char_num;
@@ -92,10 +91,10 @@ da_ble_result_type rtw_ble_combo_init(da_ble_client_init_parm* init_client, da_b
 
     ble_tizenrt_scatternet_app_init();
     is_server_init = true;
-    return DA_BLE_RESULT_TYPE_SUCCESS; 
+    return TRBLE_SUCCESS; 
 }
 
-da_ble_result_type rtw_ble_combo_deinit(void)
+trble_result_e rtw_ble_combo_deinit(void)
 {
     ble_tizenrt_scatternet_app_deinit();
 
@@ -104,6 +103,6 @@ da_ble_result_type rtw_ble_combo_deinit(void)
     os_mem_free(ble_tizenrt_bond_req_table);
     ble_tizenrt_bond_req_table = NULL;
     is_server_init = false;
-    return DA_BLE_RESULT_TYPE_SUCCESS; 
+    return TRBLE_SUCCESS; 
 }
-#endif /* DA_BLE_COMBO_C_ */
+#endif /* TRBLE_COMBO_C_ */

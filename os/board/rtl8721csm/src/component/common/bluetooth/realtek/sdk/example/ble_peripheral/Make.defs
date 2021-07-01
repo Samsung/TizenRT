@@ -49,12 +49,11 @@
 #
 ############################################################################
 
-CSRCS += ble_tizenrt_central_app_main.c \
-	 ble_tizenrt_central_app_task.c \
-	 ble_tizenrt_central_client_app.c \
-	 ble_tizenrt_central_link_mgr.c \
-	 user_cmd.c \
-	 ble_tizenrt_da_client.c
+CSRCS += ble_tizenrt_app_main.c \
+	 ble_tizenrt_app_task.c \
+	 ble_tizenrt_app.c \
+	 ble_tizenrt_service.c \
+	 ble_tizenrt_server.c
 
-DEPPATH += --dep-path component/common/bluetooth/realtek/sdk/example/da_ble_central
-VPATH += :component/common/bluetooth/realtek/sdk/example/da_ble_central
+DEPPATH += --dep-path component/common/bluetooth/realtek/sdk/example/ble_peripheral
+VPATH += :component/common/bluetooth/realtek/sdk/example/ble_peripheral
