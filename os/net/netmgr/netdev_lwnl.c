@@ -85,11 +85,16 @@ int netdev_req_handle(const char *msg, size_t msg_len)
 {
 	lwnl_msg *lmsg = (lwnl_msg *)msg;
 	struct netdev *dev = NULL;
-	dev = (struct netdev *)nm_get_netdev(lmsg->name);
-	if (!dev) {
+
+	if (!strncmp((const char *)lmsg->name, LWNL_INTF_NAME, strlen(LWNL_INTF_NAME) + 1)) {
 		int *res = (int *)lmsg->result;
 		*res = _handle_common(lmsg);
 		return 0;
+	}
+
+	dev = (struct netdev *)nm_get_netdev(lmsg->name);
+	if (!dev) {
+		return -ENOSYS;
 	}
 
 	switch (dev->type) {

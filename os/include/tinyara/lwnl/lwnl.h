@@ -30,6 +30,9 @@
 #define LWNL_ROUTE 1
 #define LWNL_NI_NAME_SIZE 7
 
+/*  stack interface name */
+#define LWNL_INTF_NAME "None"
+
 /* IOCTL commands ***********************************************************/
 
 /****************************************************************************
