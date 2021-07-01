@@ -21,19 +21,28 @@
 /********************************************************************************************
  * Included Files
  ********************************************************************************************/
+#include <sys/prctl.h>
 
 typedef enum {
-	REBOOT_REASON_INITIALIZED	= 0,
-	REBOOT_SYSTEM_DATAABORT		= 1,	/* Data abort */
-	REBOOT_SYSTEM_PREFETCHABORT	= 2,	/* Prefetch abort */
-	REBOOT_SYSTEM_MEMORYALLOCFAIL	= 3,	/* Memory allocation failure */
-	REBOOT_SYSTEM_WATCHDOG		= 4,	/* Watchdog timeout */
-	REBOOT_SYSTEM_HW_RESET		= 5,	/* HW power reset */
-	REBOOT_SYSTEM_USER_INTENDED	= 6,	/* Reboot from user intention */
+	REBOOT_REASON_INITIALIZED       = 0,
+	REBOOT_SYSTEM_DATAABORT         = 1,	/* Data abort */
+	REBOOT_SYSTEM_PREFETCHABORT     = 2,	/* Prefetch abort */
+	REBOOT_SYSTEM_MEMORYALLOCFAIL   = 3,	/* Memory allocation failure */
+	REBOOT_SYSTEM_WATCHDOG          = 4,	/* Watchdog timeout */
+	REBOOT_SYSTEM_HW_RESET          = 5,	/* HW power reset */
+	REBOOT_SYSTEM_USER_INTENDED     = 6,	/* Reboot from user intention */
 	REBOOT_SYSTEM_WIFICORE_WATCHDOG = 11,	/* Wi-Fi Core Watchdog Reset */
 	REBOOT_SYSTEM_WIFICORE_PANIC    = 12,	/* Wi-Fi Core Panic */
-	REBOOT_SYSTEM_BINARY_UPDATE	= 34,	/* Reboot for Binary Update */
-	REBOOT_UNKNOWN 	 		= 99,
+	REBOOT_SYSTEM_BINARY_UPDATE     = 34,	/* Reboot for Binary Update */
+	REBOOT_UNKNOWN                  = 99,
 } reboot_reason_code_t;
+
+#define WRITE_REBOOT_REASON(x) do {                                       \
+					prctl(PR_REBOOT_REASON_WRITE, x); \
+				} while (0)                               \
+#define READ_REBOOT_REASON() prctl(PR_REBOOT_REASON_READ)
+#define CLEAR_REBOOT_REASON() do {                                     \
+					prctl(PR_REBOOT_REASON_CLEAR); \
+				} while (0)                            \
 
 #endif					/* __INCLUDEREBOOT_REASON_H */
