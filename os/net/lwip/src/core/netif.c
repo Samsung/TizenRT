@@ -1113,7 +1113,6 @@ void netif_create_ip6_linklocal_address(struct netif *netif)
 			((u32_t)(netif->hwaddr[4]) << 8) |
 			(netif->hwaddr[5]));
 	} else if (netif->ip6_addr_type == IP6_STABLE_PRIVACY) {
-
 		ip6_addr_t temp;
 		netif_gen_stable_private_id(netif, 0, &temp);
 
@@ -1224,8 +1223,9 @@ err_t netif_gen_stable_private_id(struct netif *netif, s8_t addr_idx, ip6_addr_t
 		param.mac[i] = netif->hwaddr[i];
 	}
 	// ToDo : mbedTLS is in userspace. so mbedtls_sha256 can't be called.
-	//mbedtls_sha256(param.data, sizeof(param.data), rid.val, 0);
-
+#ifndef CONFIG_BUILD_PROTECTED
+	mbedtls_sha256(param.data, sizeof(param.data), rid.val, 0);
+#endif
 	addr->addr[0] = addr->addr[1] = 0;
 	addr->addr[2] = rid.addr[0];
 	addr->addr[3] = rid.addr[1];

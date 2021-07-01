@@ -511,8 +511,23 @@ static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, i
 
 	return 0;
 }
+
+static int lwip_set_ip6addr_type(struct netdev *dev, uint8_t type)
+{
+	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
+	ni->ip6_addr_type = type;
+
+	return 0;
+}
+
 #else /* CONFIG_NET_IPv6 */
 static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, int type)
+{
+	NET_LOGV(TAG, "IPv6 not supported\n");
+	return -ENOTTY;
+}
+
+static int lwip_set_ip6addr_type(struct netdev *dev, uint8_t type)
 {
 	NET_LOGV(TAG, "IPv6 not supported\n");
 	return -ENOTTY;
@@ -870,6 +885,7 @@ struct netdev_ops *get_netdev_ops_lwip(void)
 	netdev_ops->get_ip4addr = lwip_get_ip4addr;
 	netdev_ops->set_ip4addr = lwip_set_ip4addr;
 	netdev_ops->set_ip6addr = lwip_set_ip6addr;
+	netdev_ops->set_ip6addr_type = lwip_set_ip6addr_type;
 	netdev_ops->get_ifaddrs = lwip_get_ifaddrs;
 	netdev_ops->delete_ipaddr = lwip_delete_ipaddr;
 
