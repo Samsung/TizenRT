@@ -30,6 +30,9 @@
 #include <sys/types.h>
 #ifdef CONFIG_BOARDCTL_RESET
 #include <sys/boardctl.h>
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#endif
 #endif
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -80,6 +83,9 @@ static faultmsg_t g_prealloc_faultmsg[FAULTMSG_COUNT];
  ****************************************************************************/
 static void binary_manager_reset_board(void)
 {
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	WRITE_REBOOT_REASON(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
+#endif
 #ifdef CONFIG_BOARDCTL_RESET
 	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 #else
