@@ -29,14 +29,14 @@
 #include "netdev_mgr_internal.h"
 #include <tinyara/net/netlog.h>
 
-#define ND_GET_NETDEV(dev, req)						\
-	do {											\
-		dev = _netdev_ifrdev(req);					\
-		if (!dev) {									\
+#define ND_GET_NETDEV(dev, req)					\
+	do {										\
+		dev = _netdev_ifrdev(req);				\
+		if (!dev) {								\
 			NET_LOGE(TAG, "get netdev fail\n");	\
-			return -ENOSYS;							\
-		}											\
-	}while (0)
+			return -ENOSYS;						\
+		}										\
+	} while (0)
 
 #define TAG "[NETMGR]"
 
@@ -180,6 +180,11 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 	case SIOCSLIFADDR: {		/* Set IP address */
 		ND_GET_NETDEV(dev, req);
 		ND_NETOPS_RET(ret, dev, set_ip6addr, (dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP));
+	}
+		break;
+	case SIOCSLIPTYPE: {		/* Set IPv6 Address type */
+		ND_GET_NETDEV(dev, req);
+		ND_NETOPS_RET(ret, dev, set_ip6addr_type, (dev, (((struct lifreq *)req)->lifr_addr_type)));
 	}
 		break;
 
