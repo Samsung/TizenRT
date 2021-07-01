@@ -65,7 +65,6 @@
 #ifdef CONFIG_LIB_BOARDCTL
 #include <sys/boardctl.h>
 #endif
-#include <sys/prctl.h>
 #include <tinyara/reboot_reason.h>
 
 #define REBOOT_REASON_TEST_VAL 123
@@ -211,7 +210,7 @@ int reboot_reason_main(int argc, char *argv[])
 		case 'v':
 			/* Test for Temp value write-read */
 			printf("Write Test Reboot Reason : %d\n", REBOOT_REASON_TEST_VAL);
-			prctl(PR_REBOOT_REASON_WRITE, REBOOT_REASON_TEST_VAL);
+			WRITE_REBOOT_REASON(REBOOT_REASON_TEST_VAL);
 			reboot_board();
 			break;
 		case 'C':
@@ -219,15 +218,15 @@ int reboot_reason_main(int argc, char *argv[])
 			/* Clear the previous reboot reason with REBOOT_REASON_INITIALIZED(0) */
 			printf("Will write %d and then will clear.\n", REBOOT_REASON_TEST_VAL);
 			printf("Expected reboot reason after reset is %d, otherwise wrong operation.\n", REBOOT_UNKNOWN);
-			prctl(PR_REBOOT_REASON_WRITE, REBOOT_REASON_TEST_VAL);
-			prctl(PR_REBOOT_REASON_CLEAR);
+			WRITE_REBOOT_REASON(REBOOT_REASON_TEST_VAL);
+			CLEAR_REBOOT_REASON();
 			reboot_board();
 			break;
 #endif
 		case 'R':
 		case 'r':
 			/* Read the previous reboot reason */
-			printf("\nPrevious Reboot Reason is : %d\n", prctl(PR_REBOOT_REASON_READ));
+			printf("\nPrevious Reboot Reason is : %d\n", READ_REBOOT_REASON());
 			break;
 		case 'X':
 		case 'x':
