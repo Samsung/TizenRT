@@ -83,38 +83,106 @@ struct vwifi_dhcpmsg {
 VPACK_END
 
 static uint8_t g_eth_src[6] = {0,};
+static uint8_t g_eth_dest[6] = {0,};
+
 static uint8_t g_ip_src[4] = {0,};
+static uint8_t g_ip_dest[4] = {0,};
+
 static uint8_t g_tx_packet[1500] = {0,};
 static uint8_t g_eth_broad[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-static uint8_t g_ip_null_addr[4] = {0x0, 0x0, 0x0, 0x0};
-static uint8_t g_ip_broadaddr[4] = {0xff, 0xff, 0xff, 0xff};
-static uint8_t g_dhcp_magic[4] = {0x63, 0x82, 0x53, 0x63};
-static uint8_t g_dhcp_lease_addr[4] = {0xc0, 0xa8, 0x01, 0x03};
-static uint8_t g_dhcp_server_addr[4] = {0xc0, 0xa8, 0x1, 0x1};
-static uint8_t g_dhcp_subnetmask[4] = {0xff, 0xff, 0xff, 0x0};
-static uint8_t g_dhcp_broadaddr[4] = {0xc0, 0xa8, 0x1, 0xff};
+static const uint8_t g_ip_null_addr[4] = {0x0, 0x0, 0x0, 0x0};
+static const uint8_t g_ip_broadaddr[4] = {0xff, 0xff, 0xff, 0xff};
+static const uint8_t g_dhcp_magic[4] = {0x63, 0x82, 0x53, 0x63};
+static const uint8_t g_dhcp_lease_addr[4] = {0xc0, 0xa8, 0x01, 0x03};
+static const uint8_t g_dhcp_server_addr[4] = {0xc0, 0xa8, 0x1, 0x1};
+static const uint8_t g_dhcp_subnetmask[4] = {0xff, 0xff, 0xff, 0x0};
+static const uint8_t g_dhcp_broadaddr[4] = {0xc0, 0xa8, 0x1, 0xff};
+static uint8_t g_dhcp_discover[] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0e, 0x04,
+	0x96, 0x1d, 0xb3, 0xb0, 0x08, 0x00, 0x45, 0x00,
+	0x01, 0x1c, 0x00, 0x00, 0x00, 0x00, 0xff, 0x11,
+	0xba, 0xd1, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0xff, 0xff, 0x00, 0x44, 0x00, 0x43, 0x01, 0x08,
+	0xcf, 0x04, 0x01, 0x01, 0x06, 0x00, 0x3c, 0x2f,
+	0xb9, 0xd7, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0e, 0x04,
+	0x96, 0x1d, 0xb3, 0xb0, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x63, 0x82,
+	0x53, 0x63, 0x35, 0x01, 0x01, 0x39, 0x02, 0x05,
+	0xdc, 0x37, 0x04, 0x01, 0x03, 0x1c, 0x06, 0xff,
+	0x00, 0x00};
 
 extern void vwifi_send_packet(uint8_t *buf, uint32_t len);
+// lwip function
 extern uint16_t inet_chksum(const void *dataptr, uint16_t len);
 
-int vwifi_handle_eth(uint8_t *buf, uint32_t len, int *next_pos)
+static uint8_t *g_dhcp_buf = NULL;
+static uint32_t g_dhcp_buf_len = 0;
+static uint32_t g_dhcps_assigned_ip = 0;
+/*  parsing a packet */
+static int _vwifi_handle_eth(uint8_t *buf, uint32_t len, int *next_pos);
+static int _vwifi_handle_ip(uint8_t *buf, uint32_t len, int *next_pos);
+static int _vwifi_handle_udp(uint8_t *buf, uint32_t len, int *next_pos);
+static int _vwifi_handle_dhcp(uint8_t *buf, uint32_t blen, int *msg_type);
+/*  dhcp option handler */
+static int _vwifi_handle_option_message_type(uint8_t *buf);
+static void _vwifi_handle_option_parameter(uint8_t *buf);
+static void _vwifi_handle_option_maxsize(uint8_t *buf);
+/*  generate a packet */
+static void _vwifi_create_stoc(uint8_t *buf, uint32_t len);
+static void _vwifi_create_ctos(uint8_t *buf, uint32_t len);
+static void _vwifi_send_dhcpoffer(uint8_t *buf, uint32_t len);
+static void _vwifi_send_dhcpack(uint8_t *buf, uint32_t len);
+static void _vwifi_send_dhcp_request(uint8_t *buf, uint32_t len);
+
+int _vwifi_handle_eth(uint8_t *buf, uint32_t len, int *next_pos)
 {
 	(void)len;
 	VWIFI_LOG("ETHERNET\n");
 
 	struct vwifi_ethhdr *ethhdr = (struct vwifi_ethhdr *)buf;
 	uint8_t *addr = ethhdr->dest;
-	VWIFI_LOG("dest %x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	VWIFI_LOG("dest %02x:%02x:%02x:%02x:%02x:%02x\n",
+			  addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	memcpy(g_eth_dest, addr, 6);
+
 	addr = ethhdr->src;
-	VWIFI_LOG("src %x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	VWIFI_LOG("src %02x:%02x:%02x:%02x:%02x:%02x\n",
+			  addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 	memcpy(g_eth_src, addr, 6);
+
 	VWIFI_LOG("type %x\n", ethhdr->type);
 	*next_pos = sizeof(struct vwifi_ethhdr);
 
 	return 0;
 }
 
-int vwifi_handle_ip(uint8_t *buf, uint32_t len, int *next_pos)
+int _vwifi_handle_ip(uint8_t *buf, uint32_t len, int *next_pos)
 {
 	struct vwifi_iphdr *iphdr = (struct vwifi_iphdr *)buf;
 	uint8_t version = iphdr->v_hl >> 4;
@@ -125,9 +193,15 @@ int vwifi_handle_ip(uint8_t *buf, uint32_t len, int *next_pos)
 		return -1;
 	}
 	VWIFI_LOG("packet length %d\n", ntohs(iphdr->length));
-	VWIFI_LOG("SRC: %d.%d.%d.%d\n", iphdr->src[0], iphdr->src[1],
+	VWIFI_LOG("SRC: %d.%d.%d.%d\n",
+			  iphdr->src[0], iphdr->src[1],
 			  iphdr->src[2], iphdr->src[3]);
 	memcpy(g_ip_src, iphdr->src, 4);
+
+	VWIFI_LOG("DEST: %d.%d.%d.%d\n",
+			  iphdr->dest[0], iphdr->dest[1],
+			  iphdr->dest[2], iphdr->dest[3]);
+	memcpy(g_ip_dest, iphdr->dest, 4);
 
 	VWIFI_LOG("protocol %d\n", iphdr->proto);
 	if (iphdr->proto != 17) {
@@ -137,13 +211,13 @@ int vwifi_handle_ip(uint8_t *buf, uint32_t len, int *next_pos)
 	return 0;
 }
 
-int vwifi_handle_udp(uint8_t *buf, uint32_t len, int *next_pos)
+int _vwifi_handle_udp(uint8_t *buf, uint32_t len, int *next_pos)
 {
 	struct vwifi_udphdr *udphdr = (struct vwifi_udphdr *)buf;
 	VWIFI_LOG("UDP\n");
 	VWIFI_LOG("src %d\n", ntohs(udphdr->src));
 	VWIFI_LOG("dest %d\n", ntohs(udphdr->dest));
-	if (ntohs(udphdr->dest) != 67) {
+	if (ntohs(udphdr->dest) != 67 && ntohs(udphdr->dest) != 68) {
 		VWIFI_LOG("next protocol is not dhcp\n");
 		return -1;
 	}
@@ -151,37 +225,95 @@ int vwifi_handle_udp(uint8_t *buf, uint32_t len, int *next_pos)
 	return 0;
 }
 
-int vwifi_handle_dhcp(uint8_t *buf, uint32_t len, int *msg_type)
+int _vwifi_handle_option_message_type(uint8_t *buf)
+{
+	int type = buf[2];
+	switch (type) {
+	case 1:
+		VWIFI_LOG("DHCP Discover\n");
+		break;
+	case 2:
+		VWIFI_LOG("DHCP Offer\n");
+		break;
+	case 3:
+		VWIFI_LOG("DHCP Request\n");
+		break;
+	case 5:
+		VWIFI_LOG("DHCP Ack\n");
+		break;
+	default:
+		VWIFI_LOG("Unknown %d\n", type);
+		break;
+	}
+	return type;
+}
+
+void _vwifi_handle_option_parameter(uint8_t *buf)
+{
+	int len = buf[1];
+	VWIFI_LOG("requested list\n");
+	for (int i = 0; i < len; i++) {
+		VWIFI_LOG("list item %d\n", buf[2 + i]);
+	}
+	VWIFI_LOG("\n");
+}
+
+void _vwifi_handle_option_maxsize(uint8_t *buf)
+{
+	uint16_t len = 0;
+	memcpy(&len, &buf[2], 2);
+	VWIFI_LOG("max size %u\n", ntohs(len));
+}
+
+int _vwifi_handle_dhcp(uint8_t *buf, uint32_t blen, int *msg_type)
 {
 	struct vwifi_dhcpmsg *dhcpmsg = (struct vwifi_dhcpmsg *)buf;
-	VWIFI_LOG("DHCP\n");
+	VWIFI_LOG("\n\nDHCP\n");
 	VWIFI_LOG("op %d\n", dhcpmsg->op);
 	VWIFI_LOG("type %d\n", dhcpmsg->htype);
 	VWIFI_LOG("length %d\n", dhcpmsg->hlen);
 	VWIFI_LOG("ops %d\n", dhcpmsg->hops);
 	uint32_t *addr = (uint32_t *)dhcpmsg->ciaddr;
-	VWIFI_LOG("client addr %08x\n", addr);
+	VWIFI_LOG("client addr %08x\n", *addr);
 	addr = (uint32_t *)dhcpmsg->yiaddr;
-	VWIFI_LOG("your addr %08x\n", addr);
+	VWIFI_LOG("your addr %08x\n", *addr);
+	g_dhcps_assigned_ip = *addr;
 	addr = (uint32_t *)dhcpmsg->siaddr;
-	VWIFI_LOG("next server addr %08x\n", addr);
+	VWIFI_LOG("next server addr %08x\n", *addr);
 	addr = (uint32_t *)dhcpmsg->giaddr;
-	VWIFI_LOG("relay ageint addr %08x\n", addr);
+	VWIFI_LOG("relay ageint addr %08x\n", *addr);
 	// boot file name 64
 	// server host name 16 * 8 = 128
-	VWIFI_LOG("option %d length %d type %d\n", dhcpmsg->options[0], dhcpmsg->options[1], dhcpmsg->options[2]);
-	VWIFI_LOG("dhcp magic %02x %02x %02x %02x\n", dhcpmsg->options[192], dhcpmsg->options[193], dhcpmsg->options[194], dhcpmsg->options[195]);
-	VWIFI_LOG("option %d length %d type %d\n", dhcpmsg->options[196], dhcpmsg->options[197], dhcpmsg->options[198]);
+	VWIFI_LOG("option %d length %d type %d\n",
+			  dhcpmsg->options[0],
+			  dhcpmsg->options[1],
+			  dhcpmsg->options[2]);
+	VWIFI_LOG("dhcp magic %02x %02x %02x %02x\n",
+			  dhcpmsg->options[192],
+			  dhcpmsg->options[193],
+			  dhcpmsg->options[194],
+			  dhcpmsg->options[195]);
 
-	*msg_type = -1;
-	if (dhcpmsg->options[196] == 53) {
-		*msg_type = dhcpmsg->options[198];
+	int idx = 196;
+	while (dhcpmsg->options[idx] != 0xff) {
+		int option = dhcpmsg->options[idx];
+		int len = dhcpmsg->options[idx + 1];
+		VWIFI_LOG("option %d length %d\n", option, len);
+
+		if (option == 53) {
+			*msg_type = _vwifi_handle_option_message_type(&dhcpmsg->options[idx]);
+		} else if (option == 55) {
+			_vwifi_handle_option_parameter(&dhcpmsg->options[idx]);
+		} else if (option == 57) {
+			_vwifi_handle_option_maxsize(&dhcpmsg->options[idx]);
+		}
+		idx += (len + 2);
 	}
-
 	return 0;
 }
 
-void vwifi_create_else(uint8_t *buf, uint32_t len)
+// STA mode
+void _vwifi_create_stoc(uint8_t *buf, uint32_t len)
 {
 	// udp header
 	struct vwifi_udphdr *udp = (struct vwifi_udphdr *)(&g_tx_packet[34]);
@@ -212,7 +344,40 @@ void vwifi_create_else(uint8_t *buf, uint32_t len)
 	ip->checksum = inet_chksum(ip, 20);
 }
 
-void vwifi_send_dhcpoffer(uint8_t *buf, uint32_t len)
+// softap mode
+void _vwifi_create_ctos(uint8_t *buf, uint32_t len)
+{
+	// udp header
+	struct vwifi_udphdr *udp = (struct vwifi_udphdr *)(&g_tx_packet[34]);
+	udp->src = htons(68);
+	udp->dest = htons(67);
+	udp->len = ntohs(sizeof(struct vwifi_dhcpmsg) + 8);
+	// checksum is 0 to skip checksum
+
+	// ethernet header
+	struct vwifi_ethhdr *eth = (struct vwifi_ethhdr *)g_tx_packet;
+	memcpy(eth->dest, g_eth_src, 6);
+	//memcpy(eth->src, g_eth_dest, 6);
+	eth->src[5] = g_eth_src[5] + 1;
+	eth->type = htons(0x0800);
+
+	// ip header
+	struct vwifi_iphdr *ip = (struct vwifi_iphdr *)(&g_tx_packet[14]);
+	struct vwifi_iphdr *in_ip = (struct vwifi_iphdr *)(&buf[14]);
+	ip->v_hl = in_ip->v_hl;
+	ip->tos = in_ip->tos;
+	ip->length = ntohs(sizeof(struct vwifi_dhcpmsg) + 8 + 20);
+	ip->id = in_ip->id;
+	ip->flag = in_ip->flag;
+	ip->ttl = in_ip->ttl;
+	ip->proto = in_ip->proto;
+	uint8_t  client_ip[] = {0x02, 0x2f, 0xa8, 0xc0};
+	memcpy(ip->src, client_ip, 4);
+	memcpy(ip->dest, g_ip_broadaddr, 4);
+	ip->checksum = inet_chksum(ip, 20);
+}
+
+void _vwifi_send_dhcpoffer(uint8_t *buf, uint32_t len)
 {
 	memset(g_tx_packet, 0, 1500);
 	// dhcp offer create
@@ -260,12 +425,12 @@ void vwifi_send_dhcpoffer(uint8_t *buf, uint32_t len)
 
 	dhcpmsg->options[229] = 0xff;
 
-	vwifi_create_else(buf, len);
+	_vwifi_create_stoc(buf, len);
 
 	vwifi_send_packet(g_tx_packet, 14 + 20 + 8 + sizeof(struct vwifi_dhcpmsg));
 }
 
-void vwifi_send_dhcpack(uint8_t *buf, uint32_t len)
+void _vwifi_send_dhcpack(uint8_t *buf, uint32_t len)
 {
 	memset(g_tx_packet, 0, 1500);
 	// dhcp ACK create
@@ -328,7 +493,56 @@ void vwifi_send_dhcpack(uint8_t *buf, uint32_t len)
 
 	dhcpmsg->options[247] = 0xff;
 
-	vwifi_create_else(buf, len);
+	_vwifi_create_stoc(buf, len);
+	vwifi_send_packet(g_tx_packet, 14 + 20 + 8 + sizeof(struct vwifi_dhcpmsg));
+}
+
+void _vwifi_send_dhcp_request(uint8_t *buf, uint32_t len)
+{
+	memset(g_tx_packet, 0, 1500);
+	// dhcp offer create
+	// offset eth(14) + ip(20) + udp(8)
+	struct vwifi_dhcpmsg *dhcpmsg = (struct vwifi_dhcpmsg *)(&g_tx_packet[42]);
+	struct vwifi_dhcpmsg *in_dhcpmsg = (struct vwifi_dhcpmsg *)(&buf[42]);
+	dhcpmsg->op = 1; // boot request
+	dhcpmsg->htype = 0x01;
+	dhcpmsg->hlen = 6;
+	dhcpmsg->hops = 0;
+	memcpy(dhcpmsg->xid, in_dhcpmsg->xid, 4);
+	dhcpmsg->secs = 0;
+	dhcpmsg->flags = htons(0x8000); // braodcast
+	memcpy(dhcpmsg->ciaddr, g_ip_null_addr, 4);
+	memcpy(dhcpmsg->yiaddr, g_ip_null_addr, 4);
+	memcpy(dhcpmsg->siaddr, g_ip_null_addr, 4);
+	memcpy(dhcpmsg->giaddr, g_ip_null_addr, 4);
+	memcpy(dhcpmsg->chaddr, g_eth_src, 6);
+
+	memcpy(&dhcpmsg->options[192], g_dhcp_magic, 4);
+
+	dhcpmsg->options[196] = 53;
+	dhcpmsg->options[197] = 1;
+	dhcpmsg->options[198] = 3; //dhcp message type request
+
+	// option max size 1500B
+	dhcpmsg->options[199] = 57;
+	dhcpmsg->options[200] = 2;
+	dhcpmsg->options[201] = 0x05;
+	dhcpmsg->options[202] = 0xdc;
+
+	// option requested ip address
+	dhcpmsg->options[203] = 50;
+	dhcpmsg->options[204] = 4;
+	memcpy(&dhcpmsg->options[205], &g_dhcps_assigned_ip, 4);
+
+	// option 55 parameter request list
+	uint8_t param_list[] = {1, 3, 28, 6};
+	dhcpmsg->options[209] = 55;
+	dhcpmsg->options[210] = 4;
+	memcpy(&dhcpmsg->options[211], &param_list, 4);
+
+	dhcpmsg->options[215] = 0xff;
+
+	_vwifi_create_ctos(buf, len);
 	vwifi_send_packet(g_tx_packet, 14 + 20 + 8 + sizeof(struct vwifi_dhcpmsg));
 }
 
@@ -337,30 +551,41 @@ void vwifi_handle_packet(uint8_t *buf, uint32_t len)
 	VWIFI_LOG("%p, len(%d)\n", buf, len);
 	// print ethernet header
 	int next = 0, sum = 0;
-	int res = vwifi_handle_eth(buf, 0, &next);
+	g_dhcp_buf = buf;
+	g_dhcp_buf_len = len;
+	int res = _vwifi_handle_eth(buf, 0, &next);
 	if (res < 0) {
 		return;
 	}
 	sum += next;
 
-	res = vwifi_handle_ip(buf + sum, 0, &next);
+	res = _vwifi_handle_ip(buf + sum, 0, &next);
 	if (res < 0) {
 		return;
 	}
 	sum += next;
 
-	res = vwifi_handle_udp(buf + sum, 0, &next);
+	res = _vwifi_handle_udp(buf + sum, 0, &next);
 	if (res < 0) {
 		return;
 	}
 	sum += next;
 
-	res = vwifi_handle_dhcp(buf + sum, 0, &next);
-	if (next == 1) {
+	res = _vwifi_handle_dhcp(buf + sum, 0, &next);
+	if (next == 1) { // receive dhcp discover
 		VWIFI_LOG("send offer message\n");
-		vwifi_send_dhcpoffer(buf, len);
-	} else if (next == 3) {
+		_vwifi_send_dhcpoffer(buf, len);
+	} else if (next == 3) { // receive dhcp request
 		VWIFI_LOG("send ACK message\n");
-		vwifi_send_dhcpack(buf, len);
+		_vwifi_send_dhcpack(buf, len);
+	} else if (next == 2) { // receive dhcp offer
+		VWIFI_LOG("send REQUEST message\n");
+		_vwifi_send_dhcp_request(buf, len);
 	}
+}
+
+void vwifi_generate_dhcp_discover(void)
+{
+	vdvdbg("dhcp discover len (%d)\n", sizeof(g_dhcp_discover));
+	vwifi_send_packet(g_dhcp_discover, sizeof(g_dhcp_discover));
 }

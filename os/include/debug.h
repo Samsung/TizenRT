@@ -895,8 +895,7 @@ int get_errno(void);
 #define vddbg(...)
 #define vdlldbg(...)
 #endif
-
-#ifdef CONFIG_DEBUG_LWNL80211_VENDER_DRV_INFO
+#ifdef CONFIG_DEBUG_LWNL80211_VENDOR_DRV_INFO
 #define vdvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
 #define vdllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
 #else

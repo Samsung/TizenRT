@@ -39,8 +39,8 @@
 			config->passphrase_length > WIFIMGR_PASSPHRASE_LEN ||		\
 			strlen(config->ssid) > WIFIMGR_SSID_LEN ||					\
 			strlen(config->passphrase) > WIFIMGR_PASSPHRASE_LEN) {		\
-			NET_LOGE(TAG, "AP configuration fails: too long ssid or passphrase\n");	\
-			NET_LOGE(TAG, "Make sure that length of SSID < 33 and length of passphrase < 65\n"); \
+			NET_LOGE(TAG, "AP configuration fails: too long ssid or passphrase %d\n", config->ssid_length);	\
+			NET_LOGE(TAG, "Make sure that length of SSID < 33 and length of passphrase < 65 %d\n", config->passphrase_length); \
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);			\
 			return WIFI_MANAGER_INVALID_ARGS;						    \
 		}																\

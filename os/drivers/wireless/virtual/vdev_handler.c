@@ -29,10 +29,12 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include "vdev_handler.h"
+#include "vdev_command.h"
 
 extern trwifi_scan_list_s *vwifi_get_scan_list(void);
 extern struct vwifi_ops *get_vdev_ops(void);
 extern struct netdev *g_vwifi_dev;
+extern void vwifi_generate_dhcp_discover(void);
 
 static void vwifi_callback_handler(lwnl_cb_status evt)
 {
@@ -52,7 +54,11 @@ static void _generate_evt(int argc, char *argv[])
 
 	vdvdbg("[VDEV] sleep (%d) event type(%d)\n", sleep_time, event_type.evt);
 	sleep(sleep_time);
-	vwifi_callback_handler(event_type);
+	if (event_type.evt == VWIFI_PKT_DHCPS_EVT) {
+		vwifi_generate_dhcp_discover();
+	} else {
+		vwifi_callback_handler(event_type);
+	}
 }
 
 int vwifi_create_event(uint32_t event, int32_t result, int32_t sleep)

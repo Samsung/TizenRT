@@ -143,6 +143,9 @@ static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)
 
 static int _run_procedure(void)
 {
+	wifi_manager_ap_config_s apconfig;
+	wm_get_apinfo(&apconfig);
+
 	CONTROL_VDRIVER(VWIFI_CMD_SET, VWIFI_KEY_RESULT, (int)TRWIFI_SUCCESS, 0);
 
 	wifi_manager_result_e wres = WIFI_MANAGER_SUCCESS;
@@ -155,6 +158,8 @@ static int _run_procedure(void)
 
 	/*  Start softAP */
 	WT_LOG(TAG, "start softAP");
+	/*  it's connected state so disconnected evt have to be happened */
+	//CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT_FUNC , LWNL_EVT_STA_DISCONNECTED, 0, 1000);
 	wifi_manager_softap_config_s softap_config;
 	wm_get_softapinfo(&softap_config);
 	wres = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
@@ -165,6 +170,7 @@ static int _run_procedure(void)
 
 	/*  wait join event */
 	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SOFTAP_STA_JOINED, 0, 3000);
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, VWIFI_PKT_DHCPS_EVT, 0, 3000);
 	WT_LOG(TAG, "wait join event");
 	WM_TEST_WAIT;
 
@@ -203,8 +209,6 @@ static int _run_procedure(void)
 
 	/*  connect to AP */
 	WT_LOG(TAG, "connect AP");
-	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig);
 	wres = wifi_manager_connect_ap(&apconfig);
 	if (wres != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "connect AP fail %d\n", wres);

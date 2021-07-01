@@ -190,7 +190,7 @@ int _netdev_dhcpc_stop(const char *intf)
 
 void _netdev_dhcp_join_cb(dhcp_evt_type_e type, void *data)
 {
-	NET_LOGE(TAG, "dhcpd joined");
+	NET_LOGI(TAG, "dhcpd joined\n");
 
 	struct mq_attr attr;
 	attr.mq_maxmsg = DHCPD_MQ_MAX_LEN;
