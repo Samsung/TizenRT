@@ -592,6 +592,31 @@ config DEBUG_TASK_MANAGER_INFO
 
 endif #DEBUG_TASK_MANAGER
 
+config DEBUG_REBOOT_REASON
+	bool "Reboot Reason Debug Feature"
+	default n
+	depends on SYSTEM_REBOOT_REASON
+	---help---
+		Enable Reboot Reason debug feature.
+
+if DEBUG_REBOOT_REASON
+
+config DEBUG_REBOOT_REASON_ERROR
+	bool "Enable Reboot Reason Error Debug Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Reboot Reason Error Debug Output.
+
+config DEBUG_REBOOT_REASON_INFO
+	bool "Enable Reboot Reason Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Reboot Reason Informational Debug Output.
+
+endif #DEBUG_REBOOT_REASON
+
 config DEBUG_UI
 	bool "AraUI Debug Feature"
 	default n
