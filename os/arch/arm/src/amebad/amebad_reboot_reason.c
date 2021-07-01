@@ -56,6 +56,7 @@
 #include <tinyara/config.h>
 
 #include <stdbool.h>
+#include <debug.h>
 #include <tinyara/reboot_reason.h>
 #include "ameba_soc.h"
 /****************************************************************************
@@ -100,17 +101,21 @@ void up_reboot_reason_init(void)
 
 reboot_reason_code_t up_reboot_reason_read(void)
 {
-	return reboot_reason;
+	int reason = reboot_reason;
+	rrvdbg("Read Reboot Reason : %d\n", reason);
+	return reason;
 }
 
 void up_reboot_reason_write(reboot_reason_code_t reason)
 {
+	rrvdbg("Write Reboot Reason : %d\n", reason);
 	/* Set the specific bit in BKUP_REG1 */
 	BKUP_Write(BKUP_REG1, (u32)reason);
 }
 
 void up_reboot_reason_clear(void)
 {
+	rrvdbg("Clear Reboot Reason\n");
 	/* Reboot Reason Clear API writes the REBOOT_REASON_INITIALIZED by default.
 	 * If chip vendor needs another thing to do, please change the below.
 	 */
