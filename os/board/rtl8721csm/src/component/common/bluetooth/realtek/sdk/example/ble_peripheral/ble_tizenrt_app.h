@@ -25,7 +25,7 @@ extern "C" {
 #include <app_msg.h>
 #include <gap_le.h>
 #include <profile_server.h>
-#include <da_ble_server.h>
+#include <tinyara/net/if/ble.h>
 #include <tizenrt_ble_common.h>
 /*============================================================================*
  *                              Variables
@@ -68,38 +68,38 @@ typedef enum
 
 typedef struct
 {
-  da_ble_attr_handle att_handle;
-  da_ble_conn_handle conn_id;
+  trble_attr_handle att_handle;
+  trble_conn_handle conn_id;
 	uint8_t	 *data;
   uint16_t len;
 } T_TIZENRT_NOTIFY_PARAM;
 
 typedef struct
 {
-  uint8_t bd_addr[DA_BLE_BD_ADDR_MAX_LEN];
+  uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
 } T_TIZENRT_DIRECT_ADV_PARAM;
 
 typedef struct
 {
   bool flag;
   T_GAP_CAUSE result;
-  uint8_t bd_addr[DA_BLE_BD_ADDR_MAX_LEN];
+  uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
 } T_TIZENRT_SERVER_DELETE_BOND_PARAM;
 
 typedef struct
 {
-	da_ble_server_attr_cb_type_e type;
-  da_ble_conn_handle conn_id;
-  da_ble_attr_handle att_handle;
+	trble_attr_cb_type_e type;
+  trble_conn_handle conn_id;
+  trble_attr_handle att_handle;
   void *arg;
-  da_ble_server_cb_t cb;
+  trble_server_cb_t cb;
 } T_TIZENRT_PROFILE_CALLBACK_DATA;
 
 typedef struct
 {
-	da_ble_conn_handle conn_id;
-  da_ble_server_connection_type_e conn_type;
-  uint8_t remote_bd[DA_BLE_BD_ADDR_MAX_LEN];
+	trble_conn_handle conn_id;
+  trble_server_connection_type_e conn_type;
+  uint8_t remote_bd[TRBLE_BD_ADDR_MAX_LEN];
 } T_TIZENRT_CONNECTED_CALLBACK_DATA;
 
 

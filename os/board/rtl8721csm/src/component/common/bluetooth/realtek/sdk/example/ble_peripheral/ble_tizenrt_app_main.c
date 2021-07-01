@@ -35,7 +35,7 @@
 #include "wifi_constants.h"
 #include <wifi/wifi_conf.h>
 #include "rtk_coex.h"
-#include <da_ble_server.h>
+#include <tinyara/net/if/ble.h>
 #include <ble_tizenrt_service.h>
 #include <os_mem.h>
 /** @defgroup  PERIPH_DEMO_MAIN Peripheral Main
@@ -103,7 +103,7 @@ void ble_tizenrt_stack_config_init(void)
   * @brief  Initialize peripheral and gap bond manager related parameters
   * @return void
   */
-extern da_ble_server_init_parm server_init_parm;
+extern trble_server_init_config server_init_parm;
 void ble_tizenrt_app_le_gap_init(void)
 {
     /* Device name and device appearance */

@@ -13,7 +13,7 @@ static uint16_t abs_att_count = 0;
 TIZENERT_SRV_CNT tizenrt_ble_srv_count = 0;
 TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7] = {0};
 
-bool ble_tizenrt_set_server_reject(da_ble_attr_handle abs_handle, uint8_t app_errorcode)
+bool ble_tizenrt_set_server_reject(trble_attr_handle abs_handle, uint8_t app_errorcode)
 {
     for (uint8_t i = 0; i < tizenrt_ble_srv_count; i++)
     {
@@ -251,7 +251,7 @@ T_SERVER_ID tizenrt_add_service(void *p_func, uint8_t index)
 }
 
 
-bool setup_ble_srv_info(uint8_t service_index, da_ble_server_gatt_t *profile)
+bool setup_ble_srv_info(uint8_t service_index, trble_gatt_t *profile)
 {
     tizenrt_ble_srv_database[service_index].start_handle = profile->attr_handle;
     tizenrt_ble_srv_database[service_index].att_count++;
@@ -263,14 +263,14 @@ bool setup_ble_srv_info(uint8_t service_index, da_ble_server_gatt_t *profile)
     return true;
 }
 
-bool setup_ble_char_info(uint8_t service_index, uint8_t character_index, da_ble_server_gatt_t *profile)
+bool setup_ble_char_info(uint8_t service_index, uint8_t character_index, trble_gatt_t *profile)
 {
-    if (profile->type == DA_BLE_SERVER_GATT_CHARACT)
+    if (profile->type == TRBLE_GATT_CHARACT)
     {
         abs_att_count += 2;
         tizenrt_ble_srv_database[service_index].att_count += 2;
         tizenrt_ble_srv_database[service_index].chrc_info[character_index].abs_handle = profile->attr_handle + 1;
-    } else if(profile->type == DA_BLE_SERVER_GATT_DESC) {
+    } else if(profile->type == TRBLE_GATT_DESC) {
         abs_att_count += 1;
         tizenrt_ble_srv_database[service_index].att_count += 1;
         tizenrt_ble_srv_database[service_index].chrc_info[character_index].abs_handle = profile->attr_handle;
@@ -311,22 +311,22 @@ uint32_t switch_perm(uint8_t perm)
 {
     uint32_t read_perm = 0x0, write_perm = 0x0;
 
-    if((perm | DA_BLE_ATTR_PERM_R_PERMIT) == 0x00)
+    if((perm | TRBLE_ATTR_PERM_R_PERMIT) == 0x00)
         read_perm = GATT_PERM_READ;
-    if(perm & DA_BLE_ATTR_PERM_R_AUTHOR)
+    if(perm & TRBLE_ATTR_PERM_R_AUTHOR)
         read_perm = GATT_PERM_READ_AUTHEN_REQ;
-    if(perm & DA_BLE_ATTR_PERM_R_ENCRYPT)
+    if(perm & TRBLE_ATTR_PERM_R_ENCRYPT)
         read_perm = GATT_PERM_READ_AUTHEN_REQ;
-    if(perm & DA_BLE_ATTR_PERM_R_ENCRYPT)
+    if(perm & TRBLE_ATTR_PERM_R_ENCRYPT)
         read_perm = GATT_PERM_READ_ENCRYPTED_REQ;
 
-    if((perm | DA_BLE_ATTR_PERM_W_PERMIT) == 0x00)
+    if((perm | TRBLE_ATTR_PERM_W_PERMIT) == 0x00)
         write_perm = GATT_PERM_WRITE;
-    if(perm & DA_BLE_ATTR_PERM_W_AUTHEN)
+    if(perm & TRBLE_ATTR_PERM_W_AUTHEN)
         write_perm = GATT_PERM_WRITE_AUTHEN_REQ;
-    if(perm & DA_BLE_ATTR_PERM_W_AUTHOR)
+    if(perm & TRBLE_ATTR_PERM_W_AUTHOR)
         write_perm = GATT_PERM_WRITE_AUTHOR_REQ;
-    if(perm & DA_BLE_ATTR_PERM_W_ENCRYPT)
+    if(perm & TRBLE_ATTR_PERM_W_ENCRYPT)
         write_perm = GATT_PERM_WRITE_ENCRYPTED_REQ;
 
     return (read_perm|write_perm);
@@ -394,7 +394,7 @@ static int setup_ble_service_attr(T_ATTRIB_APPL *attr, uint8_t *uuid, uint16_t u
 }
 
 extern uint16_t server_profile_count;
-bool parse_service_table(da_ble_server_gatt_t *profile, uint16_t profile_count)
+bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
 {
     debug_print("\r\n[%s] tizenrt_ble_service_tbl profile %p profile_count %d", __FUNCTION__, profile, profile_count);
     abs_att_count = 0;
@@ -405,20 +405,20 @@ bool parse_service_table(da_ble_server_gatt_t *profile, uint16_t profile_count)
     uint16_t j = 0;
     for (int i = 0; i < server_profile_count; i++)
     {
-        if(profile[i].type ==  DA_BLE_SERVER_GATT_SERVICE)
+        if(profile[i].type ==  TRBLE_GATT_SERVICE)
         {
             srv_index = tizenrt_ble_srv_count++;    /* add the service counter */
             char_index = 0;     /* clr the char_index when begain parse a new service */
             debug_print("\r\n[%s] Parse service decleration", __FUNCTION__);
             setup_ble_service_attr(&tizenrt_ble_service_tbl[j++], profile[i].uuid ,profile[i].uuid_length);
             setup_ble_srv_info(srv_index, &profile[i]);
-        } else if(profile[i].type ==  DA_BLE_SERVER_GATT_CHARACT) 
+        } else if(profile[i].type ==  TRBLE_GATT_CHARACT) 
         {
             setup_ble_char_dec_attr(&tizenrt_ble_service_tbl[j++], profile[i].uuid, profile[i].property, profile[i].uuid_length);
             setup_ble_char_val_attr(&tizenrt_ble_service_tbl[j++], profile[i].uuid, profile[i].permission, profile[i].uuid_length);
             setup_ble_char_info(srv_index, char_index, &profile[i]);
             char_index++;
-        } else if(profile[i].type ==  DA_BLE_SERVER_GATT_DESC)
+        } else if(profile[i].type ==  TRBLE_GATT_DESC)
         {
             setup_ble_char_ccc_attr(&tizenrt_ble_service_tbl[j++], 0, profile[i].uuid_length);
             setup_ble_char_info(srv_index, char_index, &profile[i]);

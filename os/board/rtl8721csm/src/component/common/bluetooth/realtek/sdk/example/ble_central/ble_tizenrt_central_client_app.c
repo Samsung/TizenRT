@@ -35,7 +35,7 @@
 #include "os_mem.h"
 #include "os_sync.h"
 
-extern da_ble_client_init_parm *client_init_parm; 
+extern trble_client_init_config *client_init_parm; 
 
 //uint16_t g_active_conn_num = 0;
 BLE_TIZENRT_APP_LINK ble_tizenrt_central_app_link_table[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS] = {0};
@@ -74,11 +74,11 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
         case BLE_TIZENRT_BONDED_MSG:
         {
             debug_print("\r\n[%s] Handle bond msg", __FUNCTION__);
-            da_ble_client_device_connected *bonded_dev = callback_msg.u.buf;
+            trble_device_connected *bonded_dev = callback_msg.u.buf;
             if(bonded_dev)
             {
                 debug_print("\r\n[%s] SM connected %d", __FUNCTION__, bonded_dev->conn_handle);
-                client_init_parm->da_ble_client_device_connected_cb(bonded_dev);
+                client_init_parm->trble_device_connected_cb(bonded_dev);
                 os_mem_free(bonded_dev);
             } else {
                 debug_print("\n[%s] Bonded parameter is NULL", __FUNCTION__);
@@ -89,7 +89,7 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
 		case BLE_TIZENRT_CONNECTED_MSG:
 		{
             debug_print("\r\n[%s] Handle connected_dev msg", __FUNCTION__);
-            da_ble_client_device_connected *connected_dev = callback_msg.u.buf;
+            trble_device_connected *connected_dev = callback_msg.u.buf;
             if(connected_dev)
             {
                 debug_print("\r\n[%s] is_boned %x conn_id %d conn_interval 0x%x latency 0x%x mtu 0x%x", __FUNCTION__,
@@ -113,7 +113,7 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
                             }
                         } else {
                             debug_print("\r\n[%s] is_secured_connect is false", __FUNCTION__);
-                            client_init_parm->da_ble_client_device_connected_cb(connected_dev);
+                            client_init_parm->trble_device_connected_cb(connected_dev);
                         }
                         if(ble_tizenrt_bond_req_table[i].addr)
                         {
@@ -134,27 +134,27 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
         case BLE_TIZENRT_SCAN_STATE_MSG:
         {
             debug_print("\r\n[%s] Handle scan_state msg", __FUNCTION__);
-            da_ble_client_scan_state scan_state = 0;
+            trble_scan_state scan_state = 0;
             uint16_t new_state = (uint32_t) callback_msg.u.buf;
             if(GAP_SCAN_STATE_IDLE == new_state)
             {
-                scan_state = DA_BLE_CLIENT_SCAN_STOPPED;
+                scan_state = TRBLE_SCAN_STOPPED;
                 debug_print("\r\n[%s] SCAN_STOPPED", __FUNCTION__);
             } else if(GAP_SCAN_STATE_SCANNING == new_state) {
-                scan_state = DA_BLE_CLIENT_SCAN_STARTED;
+                scan_state = TRBLE_SCAN_STARTED;
                 debug_print("\r\n[%s] SCAN_STARTED", __FUNCTION__);
             }
-            client_init_parm->da_ble_client_scan_state_changed_cb(scan_state);
+            client_init_parm->trble_scan_state_changed_cb(scan_state);
         }
 			break;
 
         case BLE_TIZENRT_SCANNED_DEVICE_MSG:
         {
             debug_print("\r\n[%s] Handle scanned_device msg", __FUNCTION__);
-            da_ble_client_scanned_device *scanned_device = callback_msg.u.buf;
+            trble_scanned_device *scanned_device = callback_msg.u.buf;
             if(scanned_device)
             {
-                client_init_parm->da_ble_client_device_scanned_cb(scanned_device);
+                client_init_parm->trble_device_scanned_cb(scanned_device);
                 os_mem_free(scanned_device);
             } else {
                 debug_print("\n[%s] Scanned_device parameter is NULL", __FUNCTION__);
@@ -165,9 +165,8 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
         case BLE_TIZENRT_DISCONNECTED_MSG:
         {
             debug_print("\r\n[%s] Handle disconnected msg", __FUNCTION__);
-            da_ble_client_device_disconnected disconnected;
-            disconnected.conn_handle = (uint32_t) callback_msg.u.buf;
-            client_init_parm->da_ble_client_device_disconnected_cb(&disconnected);
+            trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
+            client_init_parm->trble_device_disconnected_cb(disconnected);
         }
 			break;
 
@@ -177,7 +176,7 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
             T_TIZENRT_CLIENT_NOTIFICATION *notify_result = callback_msg.u.buf;
             if(notify_result)
             {
-                client_init_parm->da_ble_client_operation_notification_cb(&notify_result->handle, &notify_result->noti_data);
+                client_init_parm->trble_operation_notification_cb(&notify_result->handle, &notify_result->noti_data);
                 os_mem_free(notify_result->noti_data.data);
                 os_mem_free(notify_result);
             } else {
@@ -559,7 +558,7 @@ void ble_tizenrt_central_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_S
                              (void *)&ble_tizenrt_central_app_link_table[conn_id].remote_bd_type);
             ble_tizenrt_central_app_link_table[conn_id].conn_state = GAP_CONN_STATE_CONNECTED;
             printf("\r\n[BLE_TIZENRT] Connected success conn_id %d", conn_id);
-            da_ble_client_device_connected *connected_dev = os_mem_alloc(0, sizeof(da_ble_client_device_connected));
+            trble_device_connected *connected_dev = os_mem_alloc(0, sizeof(trble_device_connected));
             if(connected_dev)
             {
                 memcpy(connected_dev->addr.bd_addr, ble_tizenrt_central_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
@@ -627,7 +626,7 @@ void ble_tizenrt_central_app_handle_authen_state_evt(uint8_t conn_id, uint8_t ne
                 printf("\r\n[BLE_TIZENRT] Pair success");
                 ble_tizenrt_central_app_link_table[conn_id].auth_state = GAP_AUTHEN_STATE_COMPLETE;
                 APP_PRINT_INFO0("ble_tizenrt_central_app_handle_authen_state_evt: GAP_AUTHEN_STATE_COMPLETE pair success");
-                da_ble_client_device_connected *connected_dev = os_mem_alloc(0, sizeof(da_ble_client_device_connected));
+                trble_device_connected *connected_dev = os_mem_alloc(0, sizeof(trble_device_connected));
                 if(connected_dev)
                 {
                     memcpy(connected_dev->addr.bd_addr, ble_tizenrt_central_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
@@ -912,14 +911,14 @@ T_APP_RESULT ble_tizenrt_central_app_gap_callback(uint8_t cb_type, void *p_cb_da
 		sprintf(remote_addr_type,"%s",(p_data->p_le_scan_info->remote_addr_type == GAP_REMOTE_ADDR_LE_PUBLIC)? "public":
 							   (p_data->p_le_scan_info->remote_addr_type == GAP_REMOTE_ADDR_LE_RANDOM)? "random":"unknown");
 
-        da_ble_client_scanned_device *scanned_device = os_mem_alloc(0, sizeof(da_ble_client_scanned_device));
+        trble_scanned_device *scanned_device = os_mem_alloc(0, sizeof(trble_scanned_device));
         if(scanned_device)
         {
-            memset(scanned_device, 0, sizeof(da_ble_client_scanned_device));
+            memset(scanned_device, 0, sizeof(trble_scanned_device));
             printf("\r\nADVType\t\t\t| AddrType\t|%-17s\t|rssi","BT_Addr");
             printf("\r\n%-20s\t|%-8s\t|"BD_ADDR_FMT"\t|%d",adv_type,remote_addr_type,BD_ADDR_ARG(p_data->p_le_scan_info->bd_addr),
                                                     p_data->p_le_scan_info->rssi);
-            scanned_device->local_name_length = ble_tizenrt_central_parse_scanned_devname(p_data->p_le_scan_info, scanned_device->local_name);
+            scanned_device->resp_data_length = ble_tizenrt_central_parse_scanned_devname(p_data->p_le_scan_info, scanned_device->resp_data);
             scanned_device->adv_type = p_data->p_le_scan_info->adv_type;
             scanned_device->rssi = p_data->p_le_scan_info->rssi;
             scanned_device->addr.addr_type = p_data->p_le_scan_info->remote_addr_type;
