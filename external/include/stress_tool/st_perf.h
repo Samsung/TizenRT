@@ -21,15 +21,9 @@
 
 #include <sys/time.h>
 
-#if 0
 #define COLOR_SMOKE			"\e[33m"
 #define COLOR_RESULT		"\e[36m"
 #define COLOR_WHITE			"\e[m"
-#else
-#define COLOR_SMOKE			""
-#define COLOR_RESULT		""
-#define COLOR_WHITE			""
-#endif
 
 #if 0
 #define ST_LOG  printf
