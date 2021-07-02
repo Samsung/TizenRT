@@ -40,7 +40,7 @@
 /**
  * Inner Function
  */
-int _calc_performance(st_performance *p, st_elapsed_time *duration)
+int _calc_performance(char *title, st_performance *p, st_elapsed_time *duration)
 {
 	st_performance_time *start = &duration->start;
 	st_performance_time *end = &duration->end;
@@ -58,8 +58,8 @@ int _calc_performance(st_performance *p, st_elapsed_time *duration)
 	stat->end.second = end->second;
 	stat->end.micro = end->micro;
 
-	printf(COLOR_RESULT "TEST#%d\tstart %u end %u, elapsed %u us\n" COLOR_WHITE,
-		   stat->count, start_time, end_time, elapsed);
+	printf(COLOR_RESULT "[STEST][%s] #%dth time \telapsed %d ms %d us\t start %u end %u\n" COLOR_WHITE,
+		   title, stat->count, elapsed/1000, elapsed, start_time, end_time);
 
 	stat->sum += elapsed;
 	if (stat->count == 1) {
@@ -116,8 +116,8 @@ void _run_smoke(st_smoke *smoke)
 
 	printf(COLOR_RESULT);
 	printf("+--------------------------------------------------\n");
-	printf("|\tRun Stress test %s\n", unit->tc_name);
-	printf("|\tRepeat size: %d\n", smoke->repeat_size);
+	printf("|\tStress test [%s]\n", unit->tc_name);
+	printf("|\tTotal repeat: %d\n", smoke->repeat_size);
 	printf("+--------------------------------------------------\n");
 	printf(COLOR_WHITE);
 	for (; cnt < smoke->repeat_size; cnt++) {
@@ -135,7 +135,7 @@ void _run_smoke(st_smoke *smoke)
 		}
 		st_elapsed_time duration;
 		ret = unit->tc(&duration);
-		perf_result = _calc_performance(smoke->performance, &duration);
+		perf_result = _calc_performance(unit->tc_name, smoke->performance, &duration);
 		_calc_stability(smoke->stability, ret);
 
 		if (unit->teardown) {

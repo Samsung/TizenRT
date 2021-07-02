@@ -31,7 +31,7 @@ typedef struct {
 
 /*  key */
 #define VWIFI_KEY_RESULT 1
-// it must not be overlaped lwnl event type
+// it must not be overlapped lwnl event type
 #define VWIFI_PKT_DHCPS_EVT 0x1000
 
 /*  value */
