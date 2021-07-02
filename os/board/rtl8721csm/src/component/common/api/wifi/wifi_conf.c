@@ -1596,8 +1596,8 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
-	if (strlen(buf) >= 17) {			  // bssid is a 17 character string
-		memcpy(&(reason.bssid), buf, 17); // Exclude null-termination
+	if (buf_len >= 6) {
+		//ndbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
 	}
 
 	if (g_link_up) {
@@ -1617,8 +1617,10 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
-	if (strlen(buf) >= 17) { // bssid is a 17 character string
-		memcpy(&(reason.bssid), buf, 17);
+	if (buf_len >= 8) { //mac address len 6; reason code len 2
+		//ndbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
+		memcpy(&(reason.reason_code), buf + 6, 2); //refer to Reason codes (IEEE 802.11-2007, 7.3.1.7, Table 7-22) in ieee802_11_defs.h
+		ndbg("STA disassoc reason code is %d\n", reason.reason_code);
 	}
 	if (g_link_down) {
 		ndbg("RTK_API rtk_handle_disconnect send link_down\n");
