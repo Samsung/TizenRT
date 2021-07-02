@@ -255,6 +255,40 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 	return RTW_SUCCESS;
 }
 
+int parse_scan_with_ssid_res(char*buf, int buflen, char *target_ssid, void *user_data)
+{
+	if (rltk_wlan_scan_with_ssid_by_extended_security_is_enable()) {
+			int plen = 0, scan_cnt = 0;
+			rtw_scan_handler_result_t scan_result_report;
+			scan_result_report.scan_complete = RTW_FALSE;
+			scan_result_report.user_data = user_data;
+			while (plen < buflen) {
+				int len;
+				rtw_memset(&scan_result_report.ap_details, 0, sizeof(scan_result_report.ap_details));
+				len = (int)*(buf + plen);
+				if (len == 0) break;
+				scan_result_report.ap_details.SSID.len = len - 1 - 6 - 4 - 4 - 1 - 1;
+				rtw_memcpy(&scan_result_report.ap_details.SSID.val, (buf + plen + 1 + 6 + 4 + 4 + 1 + 1), scan_result_report.ap_details.SSID.len);
+				rtw_memcpy(&scan_result_report.ap_details.BSSID.octet, buf + plen + 1, 6);
+				rtw_memcpy(&scan_result_report.ap_details.signal_strength, buf + plen + 1 + 6, 4);
+				rtw_memcpy(&scan_result_report.ap_details.security, buf + plen + 1 + 6 + 4, 4);
+				scan_result_report.ap_details.wps_type = (int)*(buf + plen + 1 + 6 + 4 + 4);
+				scan_result_report.ap_details.channel = (int)*(buf + plen + 1 + 6 + 4 + 4 + 1);
+				app_scan_result_handler(&scan_result_report);
+				plen += len;
+				scan_cnt++;
+			}
+			//RTW_API_INFO("\n\rwifi_scan: scan count = %d, scan_cnt);
+			rltk_wlan_enable_scan_with_ssid_by_extended_security(0);
+			scan_result_report.scan_complete = RTW_TRUE;
+			app_scan_result_handler(&scan_result_report);
+			return RTW_SUCCESS;
+		} else {
+			RTW_API_INFO("scan_with_ssid_by_extended_security is not enabled\n");
+			return RTW_ERROR;
+		}
+}
+
 /*
  * Callback
  */
@@ -383,14 +417,22 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 
 trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_ap_config_s *config)
 {
-	trwifi_result_e wuret = TRWIFI_FAIL;
-	if (wifi_scan_networks(app_scan_result_handler, NULL) != RTW_SUCCESS) {
-		//ndbg("[RTK] [ERR] WiFi scan fail(%d)\n", ret);
-		return wuret;
+	if (config) {
+		if (config->ssid != NULL) {
+			int scan_buf_len = 500;
+			rltk_wlan_enable_scan_with_ssid_by_extended_security(1);
+			if (wifi_scan_networks_with_ssid(parse_scan_with_ssid_res, NULL, scan_buf_len, config->ssid, config->ssid_length) != RTW_SUCCESS) {
+				return TRWIFI_FAIL;
+			}
+		}
+	} else {
+		if (wifi_scan_networks(app_scan_result_handler, NULL ) != RTW_SUCCESS) {
+			//ndbg("[RTK] [ERR] WiFi scan fail(%d)\n", ret);
+			return TRWIFI_FAIL;
+		}
 	}
-	wuret = TRWIFI_SUCCESS;
 	ndbg("[RTK] WIFi Scan success\n");
-	return wuret;
+	return TRWIFI_SUCCESS;
 }
 
 trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg)
