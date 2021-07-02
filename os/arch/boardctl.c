@@ -57,11 +57,14 @@
 
 #include <sys/types.h>
 #include <sys/boardctl.h>
+#include <debug.h>
+#include <sched.h>
 #include <stdint.h>
 #include <errno.h>
 #include <assert.h>
 
 #include <tinyara/board.h>
+#include <tinyara/arch.h>
 
 #ifdef CONFIG_LIB_BOARDCTL
 /****************************************************************************
@@ -143,6 +146,11 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 	 * DEPENDENCIES:  Board logic must provide board_reset
 	 */
 	case BOARDIOC_RESET:
+		/* To reboot the board, we will do nothing. */
+		sched_lock();
+		/* Add 100ms delay for flushing another logs like printf. */
+		up_mdelay(100);
+		lldbg("Board will Reboot now.\n");
 		ret = board_reset((int)arg);
 		break;
 #endif
