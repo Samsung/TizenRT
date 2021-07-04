@@ -150,6 +150,7 @@ menu "Bluetooth"
 
 source net/bluetooth/Kconfig
 source ../framework/src/bluetooth/Kconfig
+source ../framework/src/ble_manager/Kconfig
 
 endmenu #Bluetooth
 
