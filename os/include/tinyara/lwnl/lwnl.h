@@ -33,6 +33,8 @@
 /*  stack interface name */
 #define LWNL_INTF_NAME "None"
 
+#define LWNL_MAX_PARAM 4
+
 /* IOCTL commands ***********************************************************/
 
 /****************************************************************************
@@ -76,6 +78,11 @@ typedef struct {
 	void *data;
 	void *result;
 } lwnl_msg;
+
+typedef struct {
+	uint8_t count;
+	void *param[LWNL_MAX_PARAM];
+} lwnl_msg_params;
 
 typedef struct {
 	lwnl_dev_type type;

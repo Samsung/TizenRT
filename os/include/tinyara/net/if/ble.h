@@ -1,5 +1,22 @@
-#ifndef _TIZENRT_WIRELESS_BLE_H__
-#define _TIZENRT_WIRELESS_BLE_H__
+/****************************************************************************
+ *
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -14,7 +31,7 @@
  ****************************************************************************/
 
 /*** Common ***/
-struct netdev;
+struct bledev;
 
 typedef uint16_t trble_conn_handle;
 typedef uint16_t trble_attr_handle;
@@ -250,45 +267,45 @@ typedef struct trble_bonded_device_list {
  ****************************************************************************/
 
 /*** Common ***/
-typedef trble_result_e (*trble_init)(struct netdev *dev, trble_client_init_config *client, trble_server_init_config *server);
-typedef trble_result_e (*trble_deinit)(struct netdev *dev);
-typedef trble_result_e (*trble_get_mac_addr)(struct netdev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
+typedef trble_result_e (*trble_init)(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server);
+typedef trble_result_e (*trble_deinit)(struct bledev *dev);
+typedef trble_result_e (*trble_get_mac_addr)(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 // trble_disconnect can be used in both of server & client.
-typedef trble_result_e (*trble_disconnect)(struct netdev *dev, trble_conn_handle con_handle);
-typedef trble_result_e (*trble_delete_bond)(struct netdev *dev, trble_bd_addr *addr, trble_mode_e mode);
-typedef trble_result_e (*trble_delete_bond_all)(struct netdev *dev, trble_mode_e mode);
+typedef trble_result_e (*trble_disconnect)(struct bledev *dev, trble_conn_handle con_handle, trble_mode_e mode);
+typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, trble_bd_addr *addr, trble_mode_e mode);
+typedef trble_result_e (*trble_delete_bond_all)(struct bledev *dev, trble_mode_e mode);
 
 /*** Central(Client) ***/
-typedef trble_result_e (*trble_start_scan)(struct netdev *dev, trble_scan_filter *filter);
-typedef trble_result_e (*trble_stop_scan)(struct netdev *dev);
-typedef trble_result_e (*trble_connect)(struct netdev *dev, trble_bd_addr *addr);
-typedef trble_result_e (*trble_disconnect_all)(struct netdev *dev);
-typedef trble_result_e (*trble_connected_device_list)(struct netdev *dev, trble_connected_list *out_connected_list);
-typedef trble_result_e (*trble_connected_info)(struct netdev *dev, trble_conn_handle conn_handle, trble_device_connected *out_connected_device);
-typedef trble_result_e (*trble_operation_enable_notification)(struct netdev *dev, trble_operation_handle *handle);
-typedef trble_result_e (*trble_operation_read)(struct netdev *dev, trble_operation_handle *handle, trble_data *out_data);
-typedef trble_result_e (*trble_operation_write)(struct netdev *dev, trble_operation_handle *handle, trble_data *in_data);
-typedef trble_result_e (*trble_operation_write_no_response)(struct netdev *dev, trble_operation_handle *handle, trble_data *in_data);
+typedef trble_result_e (*trble_start_scan)(struct bledev *dev, trble_scan_filter *filter);
+typedef trble_result_e (*trble_stop_scan)(struct bledev *dev);
+typedef trble_result_e (*trble_connect)(struct bledev *dev, trble_bd_addr *addr);
+typedef trble_result_e (*trble_disconnect_all)(struct bledev *dev);
+typedef trble_result_e (*trble_connected_device_list)(struct bledev *dev, trble_connected_list *out_connected_list);
+typedef trble_result_e (*trble_connected_info)(struct bledev *dev, trble_conn_handle conn_handle, trble_device_connected *out_connected_device);
+typedef trble_result_e (*trble_operation_enable_notification)(struct bledev *dev, trble_operation_handle *handle);
+typedef trble_result_e (*trble_operation_read)(struct bledev *dev, trble_operation_handle *handle, trble_data *out_data);
+typedef trble_result_e (*trble_operation_write)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
+typedef trble_result_e (*trble_operation_write_no_response)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
 
 /*** Peripheral(Server) ***/
-typedef trble_result_e (*trble_get_profile_count)(struct netdev *dev, uint16_t *count);
+typedef trble_result_e (*trble_get_profile_count)(struct bledev *dev, uint16_t *count);
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
-typedef trble_result_e (*trble_charact_notify)(struct netdev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
-typedef trble_result_e (*trble_attr_set_data)(struct netdev *dev, trble_attr_handle attr_handle, trble_data *data);
-typedef trble_result_e (*trble_attr_get_data)(struct netdev *dev, trble_attr_handle attr_handle, trble_data *data);
+typedef trble_result_e (*trble_charact_notify)(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
+typedef trble_result_e (*trble_attr_set_data)(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
+typedef trble_result_e (*trble_attr_get_data)(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 // reject attribute request in callback function and return error code
-typedef trble_result_e (*trble_attr_reject)(struct netdev *dev, trble_attr_handle attr_handle, uint8_t app_errorcode);
-typedef trble_result_e (*trble_get_mac_addr_by_conn_handle)(struct netdev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
-typedef trble_result_e (*trble_get_conn_handle_by_addr)(struct netdev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
-typedef trble_result_e (*trble_set_adv_data)(struct netdev *dev, trble_data *data);
-typedef trble_result_e (*trble_set_adv_resp)(struct netdev *dev, trble_data *data);
-typedef trble_result_e (*trble_conn_is_active)(struct netdev *dev, trble_conn_handle con_handle, bool *is_active);
-typedef trble_result_e (*trble_conn_is_any_active)(struct netdev *dev, bool *is_active);
-typedef trble_result_e (*trble_get_bonded_device)(struct netdev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
-typedef trble_result_e (*trble_start_adv)(struct netdev *dev);
-typedef trble_result_e (*trble_start_adv_directed)(struct netdev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
-typedef trble_result_e (*trble_stop_adv)(struct netdev *dev);
-typedef trble_result_e (*trble_set_adv_interval)(struct netdev *dev, uint16_t interval);
+typedef trble_result_e (*trble_attr_reject)(struct bledev *dev, trble_attr_handle attr_handle, uint8_t app_errorcode);
+typedef trble_result_e (*trble_get_mac_addr_by_conn_handle)(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
+typedef trble_result_e (*trble_get_conn_handle_by_addr)(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
+typedef trble_result_e (*trble_set_adv_data)(struct bledev *dev, trble_data *data);
+typedef trble_result_e (*trble_set_adv_resp)(struct bledev *dev, trble_data *data);
+typedef trble_result_e (*trble_conn_is_active)(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
+typedef trble_result_e (*trble_conn_is_any_active)(struct bledev *dev, bool *is_active);
+typedef trble_result_e (*trble_get_bonded_device)(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
+typedef trble_result_e (*trble_start_adv)(struct bledev *dev);
+typedef trble_result_e (*trble_start_adv_directed)(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
+typedef trble_result_e (*trble_stop_adv)(struct bledev *dev);
+typedef trble_result_e (*trble_set_adv_interval)(struct bledev *dev, uint16_t interval);
 
 struct trble_ops {
 	/* Common */
@@ -330,6 +347,4 @@ struct trble_ops {
 	trble_set_adv_interval set_adv_interval;
 };
 
-int trble_post_event(struct netdev *dev, lwnl_cb_ble evt, void *buffer, uint32_t buf_len);
-
-#endif // _TIZENRT_WIRELESS_BLE_H__
+int trble_post_event(struct bledev *dev, lwnl_cb_ble evt, void *buffer, uint32_t buf_len);
