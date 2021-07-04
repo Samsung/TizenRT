@@ -17,8 +17,8 @@
 #
 ###########################################################################
 #
-# File   : artik05x_usbrule.sh
-# Description : usb rule script for ARTIK 05X
+# File   : usbrule.sh
+# Description : usb rule script
 
 args=("$@")
 BOARD=${args[0]}
