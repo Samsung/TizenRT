@@ -6,6 +6,7 @@
 config BLUETOOTH
 	bool "Enable Bluetooth Subsystem"
 	default n
+	depends on DRIVERS_BR_EDR && DRIVERS_BLE
 	---help---
 		Enable Bluetooth Subsystem
 

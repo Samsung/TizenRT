@@ -537,6 +537,27 @@ menuconfig DRIVERS_WIRELESS
 
 source drivers/wireless/Kconfig
 
+menuconfig DRIVERS_BLUETOOTH
+	bool "Bluetooth Device Support"
+	default n
+	---help---
+		Drivers for various bluetooth devices.
+
+if DRIVERS_BLUETOOTH
+config DRIVERS_BR_EDR
+	bool "Enable BR/EDR"
+	---help---
+		Enable Bluetooth Basic Rate/Enhanced Data Rate(BR/EDR)
+
+config DRIVERS_BLE
+	bool "Enable BLE"
+	---help---
+		Enable Bluetooth with low energy(BLE)
+
+source drivers/bluetooth/Kconfig
+
+endif # DRIVERS_BLUETOOTH
+
 config OTP
 	bool "OTP Driver Support"
 	default n
