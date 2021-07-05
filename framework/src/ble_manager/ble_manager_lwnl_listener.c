@@ -32,8 +32,8 @@
 /*  only ble msg handler thread can use this variable */
 static blemgr_msg_s g_msg = {BLE_EVT_NONE, BLE_MANAGER_FAIL, NULL, NULL};
 
-static inline void LWNL_SET_MSG(blemgr_msg_s *msg, blemgr_evt_e event,
-								ble_result result, void *param, sem_t *signal)
+static inline void LWNL_SET_MSG(blemgr_msg_s *msg, blemgr_req_e event,
+								ble_result_e result, void *param, sem_t *signal)
 {
 	msg->event = event;
 	msg->result = result;
@@ -41,12 +41,8 @@ static inline void LWNL_SET_MSG(blemgr_msg_s *msg, blemgr_evt_e event,
 	msg->signal = signal;
 }
 
-static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
+static void _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 {
-	if (status.type != LWNL_DEV_BLE) {
-		return 0;
-	}
-
 	switch (status.evt) {
 	case LWNL_EVT_BLE_CONNECTED:
 		LWNL_SET_MSG(&g_msg, BLE_EVT_CONNECTED, BLE_MANAGER_FAIL, NULL, NULL);
@@ -63,9 +59,9 @@ static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 	default:
 		BLE_LOG_ERROR("Bad status received (%d)\n", status.evt);
 		BLE_ERR;
-		return -1;
+		return;
 	}
-	return 0;
+	return;
 }
 
 /**
@@ -87,13 +83,26 @@ int lwnl_fetch_ble_event(int fd, void *buf, int buflen)
 		BLE_LOG_ERROR("Failed to receive (nbytes=%d)\n", nbytes);
 		BLE_ERR;
 		return -1;
+	} else if (nbytes < LWNL_CB_HEADER_LEN) {
+		BLE_LOG_ERROR("Invalid data received (nbytes=%d)\n", nbytes);
+		BLE_ERR;
+		return -2;
 	}
 
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
 	BLE_LOG_VERBOSE("dev state(%d) length(%d)\n", status.evt, len);
-	(void)_lwnl_call_event(fd, status, len);
+	if (status.type == LWNL_DEV_BLE) {
+		_lwnl_call_event(fd, status, len);
+	} else {
+		/* Remove wifi data in socket. */
+		char *buf = (char *)malloc(len);
+		int nbytes = read(fd, (char *)buf, len);
+		BLE_LOG_VERBOSE("nbytes : %d / len : %d\n", nbytes, len);
+		free(buf);
+		return;
+	}
 
 	hmsg->signal = NULL;
 	hmsg->msg = &g_msg;

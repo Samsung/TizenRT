@@ -91,6 +91,8 @@ if AMEBAD_BLE_CENTRAL && AMEBAD_BLE_PERIPHERAL
 		default n
 endif
 
+endif
+
 endmenu
 
 menu "Realtek RTL8721D TrustZone Support"

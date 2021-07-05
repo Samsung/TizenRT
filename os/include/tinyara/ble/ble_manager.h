@@ -16,11 +16,9 @@
  *
  ****************************************************************************/
 
-#ifndef _TIZENRT_BLE_DRV_MANAGER_H__
-#define _TIZENRT_BLE_DRV_MANAGER_H__
+#pragma once
 
 #include <tinyara/config.h>
-#include <time.h>
 #include <tinyara/net/if/ble.h>
 #include "ble_log.h"
 
@@ -75,5 +73,3 @@ trble_result_e ble_drv_start_adv(void);
 trble_result_e ble_drv_start_adv_directed(uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e ble_drv_stop_adv(void);
 trble_result_e ble_drv_set_adv_interval(uint16_t interval);
-
-#endif // _TIZENRT_BLE_MANAGER_H__

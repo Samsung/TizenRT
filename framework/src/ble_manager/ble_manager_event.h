@@ -18,7 +18,7 @@
 
 #pragma once
 
-enum _blemgr_evt {
+typedef enum {
 	// Common
 	BLE_EVT_CMD_INIT,	
 	BLE_EVT_CMD_DEINIT,
@@ -64,5 +64,4 @@ enum _blemgr_evt {
 	BLE_EVT_SCAN_STOPPED,
 	BLE_EVT_BONDED,
 	BLE_EVT_NONE,
-};
-typedef enum _blemgr_evt blemgr_evt_e;
+} blemgr_req_e;

@@ -30,7 +30,6 @@
 #pragma once
 
 #include "ble_common.h"
-#include "ble_error.h"
 #include "ble_client.h"
 #include "ble_server.h"
 
@@ -61,7 +60,7 @@ typedef struct _blemgr_context {
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_manager_init(ble_client_init_config *client_config, ble_server_init_config *server_config);
+ble_result_e ble_manager_init(ble_client_init_config *client_config, ble_server_init_config *server_config);
 
 /****************************************************************************
  * Name: ble_manager_deinit
@@ -74,7 +73,7 @@ ble_result ble_manager_init(ble_client_init_config *client_config, ble_server_in
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_manager_deinit(void);
+ble_result_e ble_manager_deinit(void);
 
 /****************************************************************************
  * Name: ble_manager_get_mac_addr
@@ -82,7 +81,7 @@ ble_result ble_manager_deinit(void);
  * Description:
  *   Get mac address of BLE device.
  * 
- * Input Parameters:
+ * Output Parameters:
  *   mac       - Empty buffer for mac address.
  * 
  * Returned Value
@@ -90,4 +89,4 @@ ble_result ble_manager_deinit(void);
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
+ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN]);

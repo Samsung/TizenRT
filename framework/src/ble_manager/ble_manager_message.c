@@ -113,23 +113,27 @@ int blemgr_message_out(ble_handler_msg *msg, ble_handler_queue *queue)
 		res = _recv_message(queue->fd, (void *)msg, sizeof(ble_handler_msg));
 		if (res < 0) {
 			BLE_MESSAGE_ERROR;
-		}
-		blemgr_msg_s *bmsg = msg->msg;
-		bmsg->result = blemgr_handle_request(bmsg);
-		if (msg->signal) {
-			sem_post(msg->signal);
+		} else {
+			blemgr_msg_s *bmsg = msg->msg;
+			bmsg->result = blemgr_handle_request(bmsg);
+			if (msg->signal) {
+				sem_post(msg->signal);
+			}
 		}
 	}
+
+// To Do : Need to improve for BLE listener
 #ifdef CONFIG_LWNL80211
 	if (FD_ISSET(queue->nd, &rfds)) {
 		res = lwnl_fetch_ble_event(queue->nd, (void *)msg, sizeof(ble_handler_msg));
 		if (res < 0) {
 			BLE_MESSAGE_ERROR;
-		}
-		blemgr_msg_s *bmsg = msg->msg;
-		bmsg->result = blemgr_handle_request(bmsg);
-		if (msg->signal) {
-			sem_post(msg->signal);
+		} else {
+			blemgr_msg_s *bmsg = msg->msg;
+			bmsg->result = blemgr_handle_request(bmsg);
+			if (msg->signal) {
+				sem_post(msg->signal);
+			}
 		}
 	}
 #endif

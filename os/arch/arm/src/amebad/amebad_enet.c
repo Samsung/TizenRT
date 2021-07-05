@@ -76,7 +76,7 @@ struct bledev *ameba_bm_dev_ble0 = NULL;
 
 extern err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen);
 extern struct trwifi_ops g_trwifi_drv_ops; 
-extern struct trwifi_ops g_trble_drv_ops; 
+extern struct trble_ops g_trble_drv_ops; 
 
 extern void wifi_init_packet_filter(void);
 extern int wifi_add_packet_filter(unsigned char filter_id, rtw_packet_filter_pattern_t *patt, rtw_packet_filter_rule_t rule);

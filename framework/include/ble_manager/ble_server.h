@@ -75,6 +75,12 @@ typedef enum {
 	BLE_ATTR_PERM_W_BANNED    = 0x80,         /* Operation not permitted */
 } ble_attr_permission_e;
 
+typedef enum {
+	BLE_SERVER_LL_CONNECTED,
+	BLE_SERVER_SM_CONNECTED,
+	BLE_SERVER_DISCONNECTED,
+} ble_server_connection_type_e;
+
 typedef struct {
 	ble_server_gatt_profile_type_e type;
 	uint8_t uuid[16];
@@ -85,12 +91,6 @@ typedef struct {
 	ble_server_cb_t cb;
 	void* arg;
 } ble_server_gatt_t;
-
-typedef enum {
-	BLE_SERVER_LL_CONNECTED,
-	BLE_SERVER_SM_CONNECTED,
-	BLE_SERVER_DISCONNECTED,
-} ble_server_connection_type_e;
 
 typedef void (*ble_server_connected_t)(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
 
@@ -108,48 +108,48 @@ typedef struct ble_server_bonded_device_list {
 	struct ble_server_bonded_device_list *next;
 } ble_server_bonded_device_list_s;
 
-ble_result ble_server_get_profile_count(uint16_t *count);
+ble_result_e ble_server_get_profile_count(uint16_t *count);
 
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
-ble_result ble_server_charact_notify(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
+ble_result_e ble_server_charact_notify(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
 
 // set data of attribute value
-ble_result ble_server_attr_set_data(ble_attr_handle attr_handle, ble_data *data);
+ble_result_e ble_server_attr_set_data(ble_attr_handle attr_handle, ble_data *data);
 
 // get data of attribute value
-ble_result ble_server_attr_get_data(ble_attr_handle attr_handle, ble_data *data);
+ble_result_e ble_server_attr_get_data(ble_attr_handle attr_handle, ble_data *data);
 
 // reject attribute request in callback function and return error code
-ble_result ble_server_reject(ble_attr_handle attr_handle, uint8_t app_errorcode);
+ble_result_e ble_server_reject(ble_attr_handle attr_handle, uint8_t app_errorcode);
 
-ble_result ble_server_get_mac_addr_by_conn_handle(ble_conn_handle con_handle, uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
-ble_result ble_server_get_conn_handle_by_addr(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN], ble_conn_handle *con_handle);
+ble_result_e ble_server_get_mac_addr_by_conn_handle(ble_conn_handle con_handle, uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
+ble_result_e ble_server_get_conn_handle_by_addr(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN], ble_conn_handle *con_handle);
 
 // Set Advertisement Data 
-ble_result ble_server_set_adv_data(ble_data *data);
+ble_result_e ble_server_set_adv_data(ble_data *data);
 
 // Set Scan Response Data 
-ble_result ble_server_set_adv_resp(ble_data *data);
+ble_result_e ble_server_set_adv_resp(ble_data *data);
 
 // Get whether the con_handle is active or not
-ble_result ble_server_conn_is_active(ble_conn_handle con_handle, bool *is_active);
-ble_result ble_server_conn_is_any_active(bool *is_active);
+ble_result_e ble_server_conn_is_active(ble_conn_handle con_handle, bool *is_active);
+ble_result_e ble_server_conn_is_any_active(bool *is_active);
 
 // Disconnect client. The client with secured connection would be required pairing again. 
-ble_result ble_server_disconnect(ble_conn_handle con_handle);
+ble_result_e ble_server_disconnect(ble_conn_handle con_handle);
 
-ble_result ble_server_start_adv(void);
-ble_result ble_server_stop_adv(void);
+ble_result_e ble_server_start_adv(void);
+ble_result_e ble_server_stop_adv(void);
 
-ble_result ble_server_get_bonded_device(ble_server_bonded_device_list_s* device_list, uint16_t* device_count);
-ble_result ble_server_delete_bonded_device(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
-ble_result ble_server_delete_bonded_device_all(void);
+ble_result_e ble_server_get_bonded_device(ble_server_bonded_device_list_s* device_list, uint16_t* device_count);
+ble_result_e ble_server_delete_bonded_device(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
+ble_result_e ble_server_delete_bonded_device_all(void);
 
-ble_result ble_server_start_adv_directed(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
+ble_result_e ble_server_start_adv_directed(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
 
 /*
 You can set the fixed interval from 20ms to 10.24 seconds, in steps of 0.625ms. 
 The random delay is a pseudo-random value from 0ms to 10ms that is automatically added. 
 This randomness helps reduce the possibility of collisions between advertisements of different devices
 */
-ble_result ble_server_set_adv_interval(unsigned int interval);
+ble_result_e ble_server_set_adv_interval(unsigned int interval);

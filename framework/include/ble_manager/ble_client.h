@@ -36,7 +36,7 @@
 typedef enum {
 	BLE_CLIENT_SCAN_STARTED,
 	BLE_CLIENT_SCAN_STOPPED,
-} ble_client_scan_state;
+} ble_client_scan_state_e;
 
 typedef enum {
 	BLE_CLIENT_ADV_TYPE_IND,
@@ -45,14 +45,14 @@ typedef enum {
 	BLE_CLIENT_ADV_TYPE_NONCONN_IND,
 	BLE_CLIENT_ADV_TYPE_SCAN_RSP,
 	BLE_CLIENT_ADV_TYPE_UNKNOWN,
-} ble_client_adv_type;
+} ble_client_adv_type_e;
 
 typedef enum {
 	BLE_CLIENT_GATT_TYPE_SERVICE,
 	BLE_CLIENT_GATT_TYPE_CHARACT,
 	BLE_CLIENT_GATT_TYPE_DESC,
 	BLE_CLIENT_GATT_TYPE_UNKNOWN,
-} ble_client_gatt_type;
+} ble_client_gatt_type_e;
 
 typedef enum {
 	BLE_CLIENT_ADDR_TYPE_PUBLIC,
@@ -60,11 +60,11 @@ typedef enum {
 	BLE_CLIENT_ADDR_TYPE_RANDOM_RESOLVABLE,
 	BLE_CLIENT_ADDR_TYPE_RANDOM_NON_RESOLVABLE,
 	BLE_CLIENT_ADDR_TYPE_UNKNOWN,
-} ble_client_addr_type;
+} ble_client_addr_type_e;
 
 typedef struct {
 	uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN];
-	ble_client_addr_type addr_type;
+	ble_client_addr_type_e addr_type;
 	uint16_t conn_interval;
 	uint16_t slave_latency;
 	uint16_t mtu;
@@ -72,7 +72,7 @@ typedef struct {
 } ble_client_bd_addr;
 
 typedef struct {
-	ble_client_adv_type adv_type;
+	ble_client_adv_type_e adv_type;
 	int8_t rssi;
 	ble_client_bd_addr addr;
 	uint8_t raw_data[BLE_ADV_RAW_DATA_MAX_LEN];
@@ -105,7 +105,7 @@ typedef struct {
 
 typedef struct {
 	/* This is a set of callback function for BLE client */
-	void(*ble_client_scan_state_changed_cb)(ble_client_scan_state scan_state);
+	void(*ble_client_scan_state_changed_cb)(ble_client_scan_state_e scan_state);
 	void(*ble_client_device_scanned_cb)(ble_client_scanned_device* scanned_device);
 	void(*ble_client_device_disconnected_cb)(ble_conn_handle conn_id);
 	void(*ble_client_device_connected_cb)(ble_client_device_connected* connected_device);
@@ -130,7 +130,7 @@ typedef struct {
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_start_scan(ble_client_scan_filter* filter);
+ble_result_e ble_client_start_scan(ble_client_scan_filter* filter);
 
 /****************************************************************************
  * Name: ble_client_stop_scan
@@ -144,7 +144,7 @@ ble_result ble_client_start_scan(ble_client_scan_filter* filter);
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_stop_scan(void);
+ble_result_e ble_client_stop_scan(void);
 
 /****************************************************************************
  * Name: ble_client_connect
@@ -160,7 +160,7 @@ ble_result ble_client_stop_scan(void);
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_connect(ble_client_bd_addr* addr);
+ble_result_e ble_client_connect(ble_client_bd_addr* addr);
 
 /****************************************************************************
  * Name: ble_client_connected_device_list
@@ -177,7 +177,7 @@ ble_result ble_client_connect(ble_client_bd_addr* addr);
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_connected_device_list(ble_client_connected_list* out_connected_list);
+ble_result_e ble_client_connected_device_list(ble_client_connected_list* out_connected_list);
 
 /****************************************************************************
  * Name: ble_client_connected_info
@@ -195,7 +195,7 @@ ble_result ble_client_connected_device_list(ble_client_connected_list* out_conne
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_connected_info(ble_conn_handle conn_handle, ble_client_device_connected* out_connected_device);
+ble_result_e ble_client_connected_info(ble_conn_handle conn_handle, ble_client_device_connected* out_connected_device);
 
 /****************************************************************************
  * Name: ble_client_delete_bond
@@ -211,7 +211,7 @@ ble_result ble_client_connected_info(ble_conn_handle conn_handle, ble_client_dev
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_delete_bond(ble_client_bd_addr* addr);
+ble_result_e ble_client_delete_bond(ble_client_bd_addr* addr);
 
 /****************************************************************************
  * Name: ble_client_delete_bond_all
@@ -224,7 +224,7 @@ ble_result ble_client_delete_bond(ble_client_bd_addr* addr);
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_delete_bond_all(void);
+ble_result_e ble_client_delete_bond_all(void);
 
 /****************************************************************************
  * Name: ble_client_disconnect
@@ -240,7 +240,7 @@ ble_result ble_client_delete_bond_all(void);
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_disconnect(ble_conn_handle conn_handle);
+ble_result_e ble_client_disconnect(ble_conn_handle conn_handle);
 
 /****************************************************************************
  * Name: ble_client_disconnect_all
@@ -253,7 +253,7 @@ ble_result ble_client_disconnect(ble_conn_handle conn_handle);
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_disconnect_all(void);
+ble_result_e ble_client_disconnect_all(void);
 
 /****************************************************************************
  * Name: ble_client_operation_enable_notification
@@ -269,7 +269,7 @@ ble_result ble_client_disconnect_all(void);
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_operation_enable_notification(ble_client_operation_handle* handle);
+ble_result_e ble_client_operation_enable_notification(ble_client_operation_handle* handle);
 
 /****************************************************************************
  * Name: ble_client_operation_read
@@ -281,13 +281,15 @@ ble_result ble_client_operation_enable_notification(ble_client_operation_handle*
  * 
  * Input Parameters:
  *   handle  - This includes the handle ID and the attribute ID.
- *   dat     - I/O buffer which trasfers data.
+ *   data    - I/O buffer which trasfers data.
+ *             (On read, this value should be allocated and set the length as the size of buffer.)
+ *
  * 
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result ble_client_operation_read(ble_client_operation_handle* handle, ble_data* out_data);
-ble_result ble_client_operation_write(ble_client_operation_handle* handle, ble_data* in_data);
-ble_result ble_client_operation_write_no_response(ble_client_operation_handle* handle, ble_data* in_data);
+ble_result_e ble_client_operation_read(ble_client_operation_handle* handle, ble_data* data);
+ble_result_e ble_client_operation_write(ble_client_operation_handle* handle, ble_data* data);
+ble_result_e ble_client_operation_write_no_response(ble_client_operation_handle* handle, ble_data* data);
