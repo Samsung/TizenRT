@@ -18,8 +18,6 @@
 ###########################################################################
 # imxrt1020-evk_download.sh
 
-USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
-
 ##Utility Function to Bootstrap and configure memory##
 function imxrt1020_bootstrap()
 {

@@ -37,6 +37,8 @@ BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_AR
 source ${BOARD_SPECIFIC_SCRIPT}
 source ${BOARD_CONFIG}
 
+USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
+
 ## For manual port selection set any argument to port={port required}, eg. make download port=ttyUSB2 ALL or make download all port=ttyUSB3
 
 if [ "$1" == "port" ]; then
