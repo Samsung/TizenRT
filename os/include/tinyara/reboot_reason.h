@@ -40,10 +40,10 @@ typedef enum {
 
 #define WRITE_REBOOT_REASON(x) do {                                       \
 					prctl(PR_REBOOT_REASON_WRITE, x); \
-				} while (0)                               \
+				} while (0)
 #define READ_REBOOT_REASON() prctl(PR_REBOOT_REASON_READ)
 #define CLEAR_REBOOT_REASON() do {                                     \
 					prctl(PR_REBOOT_REASON_CLEAR); \
-				} while (0)                            \
+				} while (0)
 
 #endif					/* __INCLUDEREBOOT_REASON_H */
