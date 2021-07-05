@@ -30,10 +30,10 @@
 
 struct _blemgr_state_handle {
 	blemgr_state_e state;
-	blemgr_server_state server_state;
-	blemgr_server_adv_state adv_state;
-	blemgr_client_state client_state[BLE_MAX_CONNECTION_COUNT];
-	blemgr_client_scan_state scan_state;
+	blemgr_server_state_e server_state;
+	blemgr_server_adv_state_e adv_state;
+	blemgr_client_state_e client_state[BLE_MAX_CONNECTION_COUNT];
+	blemgr_client_scan_state_e scan_state;
 	blemgr_mode_e mode;
 };
 
@@ -61,9 +61,9 @@ static blemgr_state_handle_s g_state_handle = {
 /*
  * public
  */
-ble_result blemgr_handle_request(blemgr_msg_s *msg)
+ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 {
-	trble_result_e ret = TRBLE_SUCCESS;
+	trble_result_e ret = TRBLE_FAIL;
 
 	BLE_LOG_INFO("[BLEMGR] T%d --> _handle_request[%d]\n", getpid(), msg->event);
 
@@ -352,6 +352,7 @@ ble_result blemgr_handle_request(blemgr_msg_s *msg)
 	} break;
 
 	default:
+		ret = BLE_MANAGER_UNKNOWN;
 		break;
 	}
 

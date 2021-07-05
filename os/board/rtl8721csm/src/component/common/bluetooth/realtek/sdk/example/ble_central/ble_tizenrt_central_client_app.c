@@ -134,7 +134,7 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
         case BLE_TIZENRT_SCAN_STATE_MSG:
         {
             debug_print("\r\n[%s] Handle scan_state msg", __FUNCTION__);
-            trble_scan_state scan_state = 0;
+            trble_scan_state_e scan_state = 0;
             uint16_t new_state = (uint32_t) callback_msg.u.buf;
             if(GAP_SCAN_STATE_IDLE == new_state)
             {
@@ -915,8 +915,8 @@ T_APP_RESULT ble_tizenrt_central_app_gap_callback(uint8_t cb_type, void *p_cb_da
         if(scanned_device)
         {
             memset(scanned_device, 0, sizeof(trble_scanned_device));
-            printf("\r\nADVType\t\t\t| AddrType\t|%-17s\t|rssi","BT_Addr");
-            printf("\r\n%-20s\t|%-8s\t|"BD_ADDR_FMT"\t|%d",adv_type,remote_addr_type,BD_ADDR_ARG(p_data->p_le_scan_info->bd_addr),
+            debug_print("\r\nADVType\t\t\t| AddrType\t|%-17s\t|rssi","BT_Addr");
+            debug_print("\r\n%-20s\t|%-8s\t|"BD_ADDR_FMT"\t|%d",adv_type,remote_addr_type,BD_ADDR_ARG(p_data->p_le_scan_info->bd_addr),
                                                     p_data->p_le_scan_info->rssi);
             scanned_device->resp_data_length = ble_tizenrt_central_parse_scanned_devname(p_data->p_le_scan_info, scanned_device->resp_data);
             scanned_device->adv_type = p_data->p_le_scan_info->adv_type;

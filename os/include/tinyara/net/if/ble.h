@@ -96,14 +96,11 @@ typedef enum {
 	TRBLE_NOT_FOUND,
 	TRBLE_INVALID_STATE,
 	TRBLE_INVALID_ARGS,
-	TRBLE_INITIALIZED,
-	TRBLE_DEINITIALIZED,
 	TRBLE_TIMEOUT,
 	TRBLE_BUSY,
 	TRBLE_FILE_ERROR,
 	TRBLE_UNSUPPORTED,
 	TRBLE_CALLBACK_NOT_REGISTERED,
-	TRBLE_NO_API,
 	TRBLE_UNKNOWN,
 } trble_result_e;
 
@@ -120,12 +117,12 @@ typedef enum {
 	TRBLE_ADDR_TYPE_RANDOM_RESOLVABLE,
 	TRBLE_ADDR_TYPE_RANDOM_NON_RESOLVABLE,
 	TRBLE_ADDR_TYPE_UNKNOWN,
-} trble_addr_type;
+} trble_addr_type_e;
 
 typedef enum {
 	TRBLE_SCAN_STARTED,
 	TRBLE_SCAN_STOPPED,
-} trble_scan_state;
+} trble_scan_state_e;
 
 typedef enum {
 	TRBLE_ADV_TYPE_IND,
@@ -134,11 +131,11 @@ typedef enum {
 	TRBLE_ADV_TYPE_NONCONN_IND,
 	TRBLE_ADV_TYPE_SCAN_RSP,
 	TRBLE_ADV_TYPE_UNKNOWN,
-} trble_adv_type;
+} trble_adv_type_e;
 
 typedef struct {
 	uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
-	trble_addr_type addr_type;
+	trble_addr_type_e addr_type;
 	uint16_t conn_interval;
 	uint16_t slave_latency;
 	uint16_t mtu;
@@ -146,7 +143,7 @@ typedef struct {
 } trble_bd_addr;
 
 typedef struct {
-	trble_adv_type adv_type;
+	trble_adv_type_e adv_type;
 	int8_t rssi;
 	trble_bd_addr addr;
 	uint8_t raw_data[TRBLE_ADV_RAW_DATA_MAX_LEN];
@@ -179,7 +176,7 @@ typedef struct {
 
 typedef struct {
 	/* This is a set of callback function for BLE client */
-	void (*trble_scan_state_changed_cb)(trble_scan_state scan_state);
+	void (*trble_scan_state_changed_cb)(trble_scan_state_e scan_state);
 	void (*trble_device_scanned_cb)(trble_scanned_device *scanned_device);
 	void (*trble_device_disconnected_cb)(trble_conn_handle conn_id);
 	void (*trble_device_connected_cb)(trble_device_connected *connected_device);

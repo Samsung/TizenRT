@@ -33,7 +33,7 @@ static ble_handler_queue g_ble_message_queue;
 /*
  * External functions
  */
-extern ble_result blemgr_handle_request(blemgr_msg_s *msg);
+extern ble_result_e blemgr_handle_request(blemgr_msg_s *msg);
 
 static int _process_msg(int argc, char *argv[])
 {

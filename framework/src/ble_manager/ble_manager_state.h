@@ -18,41 +18,36 @@
 #pragma once
 
 /*  State Definition */
-enum _blemgr_state {
+typedef enum {
 	BLEMGR_UNINITIALIZED = 0,
 	BLEMGR_INITIALIZED,
 	BLEMGR_STATE_MAX,
-};
-typedef enum _blemgr_state blemgr_state_e;
+} blemgr_state_e;
 
-enum _blemgr_server_state {
+typedef enum {
 	BLEMGR_SERVER_NONE = 0,
 	BLEMGR_SERVER_CONNECTED,
 	BLEMGR_SERVER_DISCONNECTED,
 	BLEMGR_SERVER_MAX,
-};
-typedef enum _blemgr_server_state blemgr_server_state;
+} blemgr_server_state_e;
 
-enum _blemgr_server_adv_state {
+typedef enum {
 	BLEMGR_SERVER_ADV_NONE = 0,
 	BLEMGR_SERVER_ADV_STOPPED,
 	BLEMGR_SERVER_ADV_STARTED,
 	BLEMGR_SERVER_ADV_MAX,
-};
-typedef enum _blemgr_server_adv_state blemgr_server_adv_state;
+} blemgr_server_adv_state_e;
 
-enum _blemgr_client_state {
+typedef enum {
 	BLEMGR_CLIENT_NONE = 0,
 	BLEMGR_CLIENT_CONNECTED,
 	BLEMGR_CLIENT_DISCONNECTED,
 	BLEMGR_CLIENT_MAX,
-};
-typedef enum _blemgr_client_state blemgr_client_state;
+} blemgr_client_state_e;
 
-enum _blemgr_client_scan_state {
+typedef enum {
 	BLEMGR_CLIENT_SCAN_NONE = 0,
 	BLEMGR_CLIENT_SCAN_STARTED,
 	BLEMGR_CLIENT_SCAN_STOPPED,
 	BLEMGR_CLIENT_SCAN_MAX,
-};
-typedef enum _blemgr_client_scan_state blemgr_client_scan_state;
+} blemgr_client_scan_state_e;

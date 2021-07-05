@@ -23,8 +23,8 @@
 #define BLE_MANAGER_MAX_PARAM 3
 
 struct blemgr_msg {
-	blemgr_evt_e event;
-	ble_result result;
+	blemgr_req_e event;
+	ble_result_e result;
 	void *param;
 	sem_t *signal;
 };
@@ -35,8 +35,6 @@ typedef struct _blemgr_msg_params {
 	void *param[BLE_MANAGER_MAX_PARAM];
 } blemgr_msg_params;
 
-int blemgr_create_param(blemgr_msg_params *param, uint8_t count);
-void blemgr_destory_param(blemgr_msg_params *param);
 // application doesn't need to get messages from queue
 // int blemgr_get_message(struct blemgr_msg *msg, int flag);
 int blemgr_post_message(blemgr_msg_s *msg);

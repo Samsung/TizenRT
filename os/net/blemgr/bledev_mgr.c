@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ static int g_bledev_idx = 0;
 struct bledev *net_get_bledev(uint8_t *ifname)
 {
 	for (int i = 0; i < g_bledev_idx; i++) {
-		if (!strcmp((const char *)ifname, (const char *)g_bledev[i].ifname)) {
+		if (!strncmp((const char *)ifname, (const char *)g_bledev[i].ifname, strlen(g_bledev[i].ifname) + 1)) {
 			return &g_bledev[i];
 		}
 	}

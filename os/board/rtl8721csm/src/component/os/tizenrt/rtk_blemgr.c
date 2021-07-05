@@ -1,6 +1,6 @@
 /******************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
  *
  ******************************************************************/
 #include <tinyara/config.h>
-#include <pthread.h>
 #include <debug.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
@@ -234,6 +233,16 @@ trble_result_e trble_netmgr_stop_scan(struct bledev *dev)
 
 trble_result_e trble_netmgr_connect(struct bledev *dev, trble_bd_addr *addr)
 {
+	int i;
+	int j;
+	uint8_t temp;
+	uint8_t *mac = addr->bd_addr; // This mac should be re-ordered.
+
+	for (i = 0, j = TRBLE_BD_ADDR_MAX_LEN - 1;i < j; i++, j--) {
+		temp = mac[i];
+		mac[i] = mac[j];
+		mac[j] = temp;
+	}
 	return rtw_ble_client_connect(addr, addr->is_secured_connect);
 }
 

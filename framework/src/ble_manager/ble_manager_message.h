@@ -33,4 +33,4 @@ typedef struct {
 } ble_handler_msg;
 
 int blemgr_message_in(ble_handler_msg *msg, ble_handler_queue *queue);
-int blemgr_messsage_out(ble_handler_msg *msg, ble_handler_queue *queue);
+int blemgr_message_out(ble_handler_msg *msg, ble_handler_queue *queue);
