@@ -39,8 +39,6 @@
 
 BOOTSTRAP_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/bootstrap.sh
 
-USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
-
 #Bootstrap to set communicaiton with blhost
 #Input: None
 function bootstrap()

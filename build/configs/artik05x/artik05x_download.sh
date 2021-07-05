@@ -22,8 +22,6 @@
 
 # When location of this script is changed, only OS_DIR_PATH should be changed together!!!
 
-USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
-
 PARTMAP_DIR_PATH=${THIS_PATH}
 PARTITION_KCONFIG=${OS_PATH}/board/common/Kconfig
 BUILD_DIR_PATH=${OS_PATH}/../build
