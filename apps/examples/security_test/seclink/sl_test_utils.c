@@ -79,9 +79,15 @@ void sl_test_init_buffer(hal_data *data)
 
 void sl_test_print_buffer(char *data, int buf_len, const char *message)
 {
+	printf("================================\n");
 	printf("%s length(%d)\n", message, buf_len);
+	printf("--------------------------------\n");
 	for (int i = 0; i < buf_len; i++) {
-		printf("%d ", data[i]);
+		if (i != 0 && i % 16 == 0) {
+			printf("\n");
+		}
+		printf("%02x ", data[i]);
 	}
 	printf("\n");
+	printf("================================\n");
 }
