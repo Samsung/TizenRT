@@ -56,10 +56,53 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-
+#include <wifi_manager/wifi_manager.h>
 /****************************************************************************
  * hello_main
  ****************************************************************************/
+#define WT_TEST_SIGNAL							\
+	do {										\
+		sem_post(&g_wm_sem);					\
+	} while (0)
+
+#define WT_TEST_WAIT							\
+	do {										\
+		sem_wait(&g_wm_sem);					\
+	} while (0)
+
+#define TR_SSID "rt tahi"
+
+static sem_t g_wm_sem = SEM_INITIALIZER(0);
+
+void _wt_print_scanlist(wifi_manager_scan_info_s *slist)
+{
+	while (slist != NULL) {
+		printf("WiFi AP SSID: %-25s, BSSID: %-20s, Rssi: %d, Auth: %d, Crypto: %d\n",
+			   slist->ssid, slist->bssid, slist->rssi,
+			   slist->ap_auth_type,
+			   slist->ap_crypto_type);
+		slist = slist->next;
+	}
+}
+
+void _wt_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+{
+	printf( "-->scan_result %p res %d\n", scan_result, res);
+	/* Make sure you copy the scan results onto a local data structure.
+	 * It will be deleted soon eventually as you exit this function.
+	 */
+	if (scan_result == NULL) {
+		WT_TEST_SIGNAL;
+		return;
+	}
+	_wt_print_scanlist(*scan_result);
+	WT_TEST_SIGNAL;
+}
+
+static wifi_manager_cb_s g_wifi_callbacks = {
+	NULL, NULL, NULL, NULL,
+	_wt_scan_done,
+};
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -68,5 +111,23 @@ int hello_main(int argc, char *argv[])
 #endif
 {
 	printf("Hello, World!!\n");
+	if (argc == 2) {
+		printf("tmp wi-fi test\n");
+		wifi_manager_result_e wres = wifi_manager_init(&g_wifi_callbacks);
+		if (wres != WIFI_MANAGER_SUCCESS) {
+			printf("init fail\n");
+			return -1;
+		}
+		wifi_manager_ap_config_s config;
+		memset(&config, 0, sizeof(config));
+		config.ssid_length = strlen(TR_SSID);
+		strncpy(config.ssid, TR_SSID, config.ssid_length + 1);
+		wres = wifi_manager_scan_specific_ap(&config);
+		if (wres != WIFI_MANAGER_SUCCESS) {
+			printf("scan fail\n");
+			return -1;
+		}
+		WT_TEST_WAIT;
+	}
 	return 0;
 }
