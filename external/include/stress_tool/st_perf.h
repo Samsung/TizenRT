@@ -20,11 +20,15 @@
 #define __ST_PERF_H__
 
 #include <sys/time.h>
-
+#if 0
 #define COLOR_SMOKE			"\e[33m"
 #define COLOR_RESULT		"\e[36m"
 #define COLOR_WHITE			"\e[m"
-
+#else
+#define COLOR_SMOKE ""
+#define COLOR_RESULT ""
+#define COLOR_WHITE ""
+#endif
 #if 0
 #define ST_LOG  printf
 #define ST_ELOG printf
@@ -70,24 +74,26 @@
 #define ST_SET_SMOKE_TAIL_UNIT(repeat, tc_name)							\
 	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
 
-#define ST_SET_PACK(fixture)						\
+#define ST_SET_PACK(fixture)					\
 		static st_pack g_pack_##fixture = {NULL}
 
 #define ST_SET_SMOKE(fixture, repeat, expect, tc_desc, tc_name)			\
-	perf_add_item(&g_pack_##fixture, repeat, tc_desc,					\
+	perf_add_item(&g_pack_##fixture, repeat, #tc_name,					\
 				  NULL, NULL, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
 #define ST_SET_SMOKE1(fixture, repeat, expect, tc_desc, tc_name)	\
-		perf_add_item(&g_pack_##fixture, repeat, tc_desc,			\
-					  NULL, NULL, NULL, NULL, tc_##tc_name,			\
+		perf_add_item(&g_pack_##fixture, repeat, #tc_name,			\
+					  NULL, NULL, NULL, NULL, tc_##tc_name,						\
 					  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
-#define ST_SET_SMOKE5(fixture, repeat, expect, tc_desc, tc_name)		\
-	perf_add_item(&g_pack_##fixture, repeat, tc_desc,					\
-				  tc_##tc_name##_init, tc_##tc_name##_deinit,			\
-				  tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
+#define ST_TC_SET_SMOKE(fixture, repeat, expect, tc_desc, testcase, tc_name) \
+	perf_add_item(&g_pack_##fixture, repeat, #tc_name,					\
+				  NULL, NULL, tc_##testcase##_setup, tc_##testcase##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
+
+#define ST_TC_SET_GLOBAL(fixture, global_config)						\
+		perf_add_global(&g_pack_##fixture, tc_##global_config##_setup, tc_##global_config##_teardown)
 
 #define ST_RUN_TEST(fixture) perf_run(&g_pack_##fixture)
 
@@ -115,14 +121,15 @@
  * Expect
  */
 #define ST_EXPECT_EQ(val, exp)											\
-	do {																\
-		ST_LOG("[ST] --> "#exp" %s:%d""\n", __FUNCTION__, __LINE__);	\
-		if (exp != val) {												\
-			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);				\
-			ST_ERROR;													\
-			res = STRESS_TC_FAIL;										\
-		}																\
-	} while (0)
+		do {															\
+			ST_LOG("[ST] --> "#exp" %s:%d""\n", __FUNCTION__, __LINE__); \
+			if (exp != val) {											\
+				ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);			\
+				ST_ERROR;												\
+				res = STRESS_TC_FAIL;									\
+				goto STFUNC_OUT;										\
+			}															\
+		} while (0)
 
 #define ST_EXPECT_EQ2(val1, val2, exp)									\
 	do {																\
@@ -131,6 +138,7 @@
 			ST_ELOG("[ST] val1 (%d) val2 (%d) exp (%d)\n", val1, val2, exp); \
 			ST_ERROR;													\
 			res = STRESS_TC_FAIL;										\
+			goto STFUNC_OUT;											\
 		}																\
 	} while (0)
 
@@ -140,44 +148,49 @@
 		if ((exp) == val) {						\
 			ST_ERROR;							\
 			res = STRESS_TC_FAIL;				\
+			goto STFUNC_OUT;					\
 		}										\
 	} while (0)
 
-#define ST_EXPECT_LT(val, exp)					\
-	do {										\
-		ST_LOG("--> "#exp"\n");					\
-		if ((exp) >= val) {						\
+#define ST_EXPECT_LT(val, exp)								\
+	do {													\
+		ST_LOG("--> "#exp"\n");								\
+		if ((exp) >= val) {									\
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);	\
-			ST_ERROR;							\
-			res = STRESS_TC_FAIL;				\
-		}										\
+			ST_ERROR;										\
+			res = STRESS_TC_FAIL;							\
+			goto STFUNC_OUT;								\
+		}													\
 	} while (0)
 
-#define ST_EXPECT_LE(val, exp)					\
-	do {										\
-		if (exp > val) {						\
+#define ST_EXPECT_LE(val, exp)								\
+	do {													\
+		if (exp > val) {									\
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);	\
-			ST_ERROR;							\
-			res = STRESS_TC_FAIL;				\
-		}										\
+			ST_ERROR;										\
+			res = STRESS_TC_FAIL;							\
+			goto STFUNC_OUT;								\
+		}													\
 	} while (0)
 
-#define ST_EXPECT_GT(val, exp)					\
-	do {										\
-		if (exp <= val) {						\
+#define ST_EXPECT_GT(val, exp)								\
+	do {													\
+		if (exp <= val) {									\
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);	\
-			ST_ERROR;							\
-			res = STRESS_TC_FAIL;				\
-		}										\
+			ST_ERROR;										\
+			res = STRESS_TC_FAIL;							\
+			goto STFUNC_OUT;								\
+		}													\
 	} while (0)
 
-#define ST_EXPECT_GE(val, exp)					\
-	do {										\
-		if (exp < val) {						\
+#define ST_EXPECT_GE(val, exp)								\
+	do {													\
+		if (exp < val) {									\
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);	\
-			ST_ERROR;							\
-			res = STRESS_TC_FAIL;				\
-		}										\
+			ST_ERROR;										\
+			res = STRESS_TC_FAIL;							\
+			goto STFUNC_OUT;								\
+		}													\
 	} while (0)
 
 #define ST_START_TEST									\
@@ -192,9 +205,10 @@
 	} while (0)
 
 #define ST_END_TEST								\
+	STFUNC_OUT:									\
 	do {										\
 		if (timer) {							\
-			gettimeofday(&end, NULL);			\
+			gettimeofday(&end, NULL);				\
 			timer->start.second = start.tv_sec;	\
 			timer->start.micro = start.tv_usec;	\
 			timer->end.second = end.tv_sec;		\
@@ -203,6 +217,37 @@
 		ST_END_LOG;								\
 		return res;								\
 	} while (0)
+
+#define START_TEST_F(tc_name)											\
+	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};	\
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};		\
+	static st_tc_result tc_##tc_name(void *arg)							\
+	{																	\
+	ST_START_TEST;
+
+#define END_TEST_F								\
+	ST_END_TEST;								\
+	}
+
+#define TESTCASE_SETUP(testcase)							\
+	static st_tc_result tc_##testcase##_setup(void *arg)	\
+	{														\
+	ST_START_TEST;
+
+#define TESTCASE_TEARDOWN(testcase)							\
+	static st_tc_result tc_##testcase##_teardown(void *arg)	\
+	{														\
+	ST_START_TEST;
+
+#define END_TESTCASE							\
+	ST_END_TEST;								\
+	}
+/* #define TEST_SETUP(tc_name)								\ */
+/* 	static st_tc_result tc_##tc_name##_setup(void *arg) */
+
+/* #define TEST_TEARDOWN(tc_name)								\ */
+/* 	static st_tc_result tc_##tc_name##_teardown(void *arg) */
+
 
 /*
  * Structures
@@ -277,6 +322,8 @@ typedef struct _st_smoke {
 
 typedef struct _st_pack {
 	sq_queue_t queue;
+	st_unit_tc setup;
+	st_unit_tc teardown;
 } st_pack;
 
 /*

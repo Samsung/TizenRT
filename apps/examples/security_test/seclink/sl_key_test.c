@@ -247,7 +247,7 @@ TEST_F(set_public_key_ro)
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("set public key in ro area slot(%d)\n", g_ro_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &g_pubkey_in, NULL, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &g_pubkey_in, NULL, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
 
@@ -272,7 +272,7 @@ TEST_F(get_public_key_ro)
 	for (int i = RO_VALID_RANGE; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("get public key in ro area slot (%d)\n", g_ro_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &g_pubkey_out, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &g_pubkey_out, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_SLOT_RANGE, hres);
 	}
 
@@ -289,7 +289,7 @@ TEST_F(remove_public_key_ro)
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("remove public key in ro area slot (%d)\n", g_ro_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
 
@@ -307,7 +307,7 @@ TEST_F(generate_public_key_ro)
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("generate public key in ro area slot(%d)\n", g_ro_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
 
@@ -325,7 +325,7 @@ TEST_F(set_private_key_ro)
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("set private key in ro area slot(%d)\n", g_ro_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], NULL, &g_prikey_in, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], NULL, &g_prikey_in, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
 
@@ -343,13 +343,13 @@ TEST_F(get_private_key_ro)
 	for (int i = 0; i < RO_VALID_RANGE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("set private key in ro area slot(%d)\n", g_ro_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &g_prikey_out, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &g_prikey_out, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
 
 	for (int i = RO_VALID_RANGE; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &g_prikey_out, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &g_prikey_out, &hres));
 		ST_EXPECT_EQ(HAL_INVALID_SLOT_RANGE, hres);
 	}
 
@@ -366,7 +366,7 @@ TEST_F(remove_private_key_ro)
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("remove private key in ro area slot(%d)\n", g_ro_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
 
@@ -384,7 +384,7 @@ TEST_F(generate_private_key_ro)
 	for (int i = 0; i < RO_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("generate private key in ro area slot(%d)\n", g_ro_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_ro_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_ro_slot_index[i], &hres));
 		ST_EXPECT_EQ(HAL_INVALID_REQUEST, hres);
 	}
 
@@ -545,7 +545,7 @@ TEST_TEARDOWN(set_public_key_rw)
 
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 
@@ -559,7 +559,7 @@ TEST_F(set_public_key_rw)
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("set public key in rw area slot(%d)\n", g_rw_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &g_pubkey_in, NULL, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &g_pubkey_in, NULL, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 
@@ -574,7 +574,7 @@ TEST_SETUP(get_public_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &g_pubkey_in, NULL, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &g_pubkey_in, NULL, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -585,7 +585,7 @@ TEST_TEARDOWN(get_public_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 
@@ -599,7 +599,7 @@ TEST_F(get_public_key_rw)
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("get public key in rw area slot(%d)\n", g_rw_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &g_pubkey_out, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &g_pubkey_out, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -613,7 +613,7 @@ TEST_SETUP(remove_public_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &g_pubkey_in, NULL, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &g_pubkey_in, NULL, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -631,7 +631,7 @@ TEST_F(remove_public_key_rw)
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("remove public key in rw area slot(%d)\n", g_rw_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -651,7 +651,7 @@ TEST_TEARDOWN(generate_public_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -663,7 +663,7 @@ TEST_F(generate_public_key_rw)
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("generate public key in rw area slot(%d)\n", g_rw_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -684,7 +684,7 @@ TEST_TEARDOWN(set_private_key_rw)
 
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 
@@ -698,7 +698,7 @@ TEST_F(set_private_key_rw)
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("set private key in rw area slot(%d)\n", g_rw_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], NULL, &g_prikey_in, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], NULL, &g_prikey_in, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 
@@ -713,7 +713,7 @@ TEST_SETUP(get_private_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], NULL, &g_prikey_in, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], NULL, &g_prikey_in, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -724,7 +724,7 @@ TEST_TEARDOWN(get_private_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 
@@ -738,7 +738,7 @@ TEST_F(get_private_key_rw)
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
 		printf("get private key in rw area slot(%d)\n", g_rw_slot_index[i]);
-		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &g_prikey_out, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &g_prikey_out, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -752,7 +752,7 @@ TEST_SETUP(remove_private_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], NULL, &g_prikey_in, &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], NULL, &g_prikey_in, &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -769,7 +769,7 @@ TEST_F(remove_private_key_rw)
 	ST_START_TEST;
 	for (int i = 0; i < RW_SLOT_SIZE; ++i) {
 		hal_result_e hres = HAL_FAIL;
-		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, g_rw_slot_index[i], &hres));
+		ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, g_rw_slot_index[i], &hres));
 		ST_EXPECT_EQ(g_rw_expect[i], hres);
 	}
 	ST_END_TEST;
@@ -781,25 +781,25 @@ void sl_keymgr_test(void)
 
 	ST_SET_PACK(sl_keymgr);
 
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set symmetric key in RO area", set_sym_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get symmetric key in RO area", get_sym_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove symmetric key in RO area", remove_sym_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate symmetric key in RO area", generate_sym_key_ro);
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set symmetric key in RO area", set_sym_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get symmetric key in RO area", get_sym_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove symmetric key in RO area", remove_sym_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate symmetric key in RO area", generate_sym_key_ro); */
 
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set public key in RO area", set_public_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get public key in RO area", get_public_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove public key in RO area", remove_public_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate public key in RO area", generate_public_key_ro);
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set public key in RO area", set_public_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get public key in RO area", get_public_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove public key in RO area", remove_public_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate public key in RO area", generate_public_key_ro); */
 
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set private key in RO area", set_private_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get private key in RO area", get_private_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove private key in RO area", remove_private_key_ro);
-	ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate private key in RO area", generate_private_key_ro);
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set private key in RO area", set_private_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get private key in RO area", get_private_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove private key in RO area", remove_private_key_ro); */
+	/* ST_SET_SMOKE1(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate private key in RO area", generate_private_key_ro); */
 
 	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set symmetric key in RW area", set_sym_key_rw);
 	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get symmetric key in RW area", get_sym_key_rw);
 	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Remove symmetric key in RW area", remove_sym_key_rw);
-	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate symmetric key in RW area", generate_sym_key_rw);
+	/* ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Generate symmetric key in RW area", generate_sym_key_rw); */
 
 	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Set public key in RW area", set_public_key_rw);
 	ST_SET_SMOKE(sl_keymgr, SL_TEST_KEY_TRIAL, SL_TEST_KEY_LIMIT_TIME, "Get public key in RW area", get_public_key_rw);
