@@ -61,7 +61,6 @@
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 #include <assert.h>
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <sys/prctl.h>
 #include <tinyara/reboot_reason.h>
 #endif
 #endif
@@ -238,7 +237,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 	if (!ret) {
 #if defined(CONFIG_MM_ASSERT_ON_FAIL) && defined(CONFIG_SYSTEM_REBOOT_REASON)
-		prctl(PR_REBOOT_REASON_WRITE, REBOOT_SYSTEM_MEMORYALLOCFAIL);
+		WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
 #endif
 		mdbg("Allocation failed, size %u\n", size);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
