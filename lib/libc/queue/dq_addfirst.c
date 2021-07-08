@@ -64,7 +64,7 @@
  * Name: dq_addfirst
  *
  * Description:
- *  dq_addfirst affs 'node' at the beginning of 'queue'
+ *  dq_addfirst adds 'node' at the beginning of 'queue'
  *
  ****************************************************************************/
 
