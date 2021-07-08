@@ -846,7 +846,11 @@ static void tc_mqueue_mq_timedsend_timedreceive_failurechecks(void)
 	TC_ASSERT_GEQ_CLEANUP("timedreceive_test", mq_close(g_timedrecv_mqfd), 0, goto cleanup1);
 	TC_ASSERT_GEQ("timedsend_test", mq_close(g_timedsend_mqfd), 0);
 
+	/* Unlink all mqueues related to this tc. */
+	mq_unlink("t_mqueuer");
+	mq_unlink("t_mqueues");
 	TC_SUCCESS_RESULT();
+	return;
 
 cleanup2:
 	mq_close(g_timedrecv_mqfd);
