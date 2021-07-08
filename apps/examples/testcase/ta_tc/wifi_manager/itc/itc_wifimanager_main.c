@@ -886,16 +886,16 @@ static void itc_wifimanager_success_ratio_ap(void)
 
 	printf("\nSuccess Ratio \n");
 	if (init_cnt > 0) {
-		printf("[Initialization Wifi] Success Ratio = %.2f% \n", (s_init_cnt / init_cnt) * 100);
+		printf("[Initialization Wifi] Success Ratio = %.2f%% \n", (s_init_cnt / init_cnt) * 100);
 	}
 	if (join_cnt > 0) {
-		printf("[Connect Wifi] Success Ratio = %.2f% \n", (s_join_cnt / join_cnt) * 100);
+		printf("[Connect Wifi] Success Ratio = %.2f%% \n", (s_join_cnt / join_cnt) * 100);
 	}
 	if (leave_cnt > 0) {
-		printf("[Disconnect Wifi] Success Ratio = %.2f% \n", (s_leave_cnt / leave_cnt) * 100);
+		printf("[Disconnect Wifi] Success Ratio = %.2f%% \n", (s_leave_cnt / leave_cnt) * 100);
 	}
 	if (deinit_cnt > 0) {
-		printf("[Deinitization Wifi] Success Ratio = %.2f% \n", (s_deinit_cnt / deinit_cnt) * 100);
+		printf("[Deinitialization Wifi] Success Ratio = %.2f%% \n", (s_deinit_cnt / deinit_cnt) * 100);
 	}
 	TC_ASSERT_EQ("itc_wifimanager_success_ratio_ap", s_init_cnt, init_cnt);
 	TC_ASSERT_EQ("itc_wifimanager_success_ratio_ap", s_join_cnt, join_cnt);
