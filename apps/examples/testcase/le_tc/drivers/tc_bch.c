@@ -40,14 +40,17 @@ static inline void close_fds(int *fds, int count)
 /* Close given file descriptor and free the buffer */
 #define cleanup(fd, buf) \
 do {\
-	close(fd);\
-	free(buf);\
+	if (fd > 0)\
+		close(fd);\
+	if (buf)\
+		free(buf);\
 } while (0)
 
 /* Close the file descriptor and unregister the bch device */
 #define clean_unreg(fd) \
 do {\
-	close(fd);\
+	if (fd > 0)\
+		close(fd);\
 	bchdev_unregister("/dev/tmpbchdevrw");\
 } while (0)
 
