@@ -65,10 +65,12 @@ static void *event_listener(void *arg)
 		}
 
 		if (FD_ISSET(fd, &rfds)) {
-			char buf[8] = {0, };
+			#define LWNL_TEST_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
+
+			char buf[LWNL_TEST_HEADER_LEN] = {0, };
 			lwnl_cb_status status;
 			uint32_t len;
-			int nbytes = read(fd, (char *)buf, 8);
+			int nbytes = read(fd, (char *)buf, LWNL_TEST_HEADER_LEN);
 			if (nbytes < 0) {
 				printf("[%d] read error bytes(%d) errno(%d))\n", idx, nbytes, errno);
 				return NULL;
