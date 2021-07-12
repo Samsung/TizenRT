@@ -657,22 +657,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                                  disc_cause);
             }
             printf("\r\n[BLE_TIZENRT] Disconnect conn_id %d", conn_id);
-            if(ble_tizenrt_scatternet_app_link_table[conn_id].role == 1)
-            {
-                if(GAP_CAUSE_SUCCESS == le_bond_delete_by_bd(ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd,
-                                ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd_type))
-                {
-                    debug_print("\r\n[%s] Delete bond success", __FUNCTION__);
-                } else {
-                    debug_print("\r\n[%s] Delete bond fail!!!", __FUNCTION__);
-                }
-                memset(&ble_tizenrt_scatternet_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_SCATTERNET_APP_LINK));
-                uint32_t connid = (uint32_t) conn_id;
-                if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid) == false)
-                {
-                    debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
-                }
-            } else {
+            if(ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_SLAVE) {
                 T_TIZENRT_CONNECTED_CALLBACK_DATA *disconn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
                 if(disconn_data)
                 {
@@ -688,6 +673,20 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                 } else {
                     debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
                 }
+            } else {
+                if(GAP_CAUSE_SUCCESS == le_bond_delete_by_bd(ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd,
+                                ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd_type))
+                {
+                    debug_print("\r\n[%s] Delete bond success", __FUNCTION__);
+                } else {
+                    debug_print("\r\n[%s] Delete bond fail!!!", __FUNCTION__);
+                }
+                memset(&ble_tizenrt_scatternet_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_SCATTERNET_APP_LINK));
+                uint32_t connid = (uint32_t) conn_id;
+                if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid) == false)
+                {
+                    debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                }
             }
         }
         break;
@@ -699,7 +698,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
             //get device role
             if (le_get_conn_info(conn_id, &conn_info)){
 				ble_tizenrt_scatternet_app_link_table[conn_id].role = conn_info.role;
-				if (ble_tizenrt_scatternet_app_link_table[conn_id].role == 1)
+				if (ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_MASTER)
 					ble_scatternet_central_app_max_links ++;
 				else
 					ble_scatternet_peripheral_app_max_links ++;
@@ -712,7 +711,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[2],
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[1],
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[0]);
-            if(ble_tizenrt_scatternet_app_link_table[conn_id].role == 1)
+            if(ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_MASTER)
             {
                 trble_device_connected *connected_dev = os_mem_alloc(0, sizeof(trble_device_connected));
                 if(connected_dev)
@@ -732,7 +731,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                 } else {
                     debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
                 }
-            } else {
+            } else if(ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_SLAVE) {
                 T_TIZENRT_CONNECTED_CALLBACK_DATA *conn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
                 if(conn_data)
                 {
@@ -747,6 +746,8 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                 } else {
                     debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
                 }
+            } else {
+                debug_print("\n[%s] Undefined GAP Role", __FUNCTION__);
             }
 
 #if F_BT_LE_5_0_SET_PHY_SUPPORT
@@ -797,7 +798,7 @@ void ble_tizenrt_scatternet_app_handle_authen_state_evt(uint8_t conn_id, uint8_t
             if (cause == GAP_SUCCESS)
             {
                 printf("\r\n[BLE_TIZENRT] Pair success");
-                if(ble_tizenrt_scatternet_app_link_table[conn_id].role == 1)
+                if(ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_MASTER)
                 {
                     trble_device_connected *connected_dev = os_mem_alloc(0, sizeof(trble_device_connected));
                     if(connected_dev)
@@ -817,7 +818,7 @@ void ble_tizenrt_scatternet_app_handle_authen_state_evt(uint8_t conn_id, uint8_t
                     } else {
                         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
                     }
-                } else {
+                } else if(ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_SLAVE) {
                     T_TIZENRT_CONNECTED_CALLBACK_DATA *authed_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
                     if(authed_data)
                     {
@@ -834,6 +835,8 @@ void ble_tizenrt_scatternet_app_handle_authen_state_evt(uint8_t conn_id, uint8_t
                     } else {
                         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
                     }
+                } else {
+                    debug_print("\n[%s] Undefined GAP Role", __FUNCTION__);
                 }
             } else {
                 printf("\r\n[BLE_TIZENRT] Pair failed: cause 0x%x", cause);
