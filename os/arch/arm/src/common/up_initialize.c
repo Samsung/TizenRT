@@ -171,7 +171,7 @@ void up_initialize(void)
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_init();
-	lldbg("[Reboot Reason] : %d\n", up_reboot_reason_read());
+	lldbg("[Reboot Reason] : %s\n", GET_REBOOT_REASON_STR(up_reboot_reason_read()));
 #endif
 
 	/* Calibrate the timing loop */
