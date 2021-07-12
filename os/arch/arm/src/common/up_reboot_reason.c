@@ -35,4 +35,30 @@ void reboot_reason_write_user_intended(void)
 		up_reboot_reason_write(REBOOT_SYSTEM_USER_INTENDED);
 	}
 }
+
+char *reboot_reason_get_strcode(reboot_reason_code_t code) {
+	switch (code) {
+	case REBOOT_REASON_INITIALIZED:
+		return "[SYS]Initialized";
+	case REBOOT_SYSTEM_DATAABORT:
+		return "[SYS]DataAbort";
+	case REBOOT_SYSTEM_WATCHDOG:
+		return "[SYS]Watchdog";
+	case REBOOT_SYSTEM_HW_RESET:
+		return "[SYS]HWReset";
+	case REBOOT_SYSTEM_USER_INTENDED:
+		return "[SYS]UserIntended";
+	case REBOOT_SYSTEM_BINARY_UPDATE:
+		return "[SYS]BinUpdate";
+	case REBOOT_SYSTEM_BINARY_RECOVERYFAIL:
+		return "[SYS]BinRecoverFail";
+	case REBOOT_SYSTEM_WIFICORE_WATCHDOG:
+		return "[NET]WiFiCoreWatchdog";
+	case REBOOT_SYSTEM_WIFICORE_PANIC:
+		return "[NET]WiFiCorePanic";
+	default:
+	break;
+	}
+	return "Unknown";
+}
 #endif

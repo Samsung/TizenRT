@@ -46,4 +46,6 @@ typedef enum {
 					prctl(PR_REBOOT_REASON_CLEAR); \
 				} while (0)
 
+#define GET_REBOOT_REASON_STR(x) reboot_reason_get_strcode(x)
+
 #endif					/* __INCLUDEREBOOT_REASON_H */

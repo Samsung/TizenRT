@@ -31,5 +31,6 @@ void up_reboot_reason_write(reboot_reason_code_t reason);
 void reboot_reason_write_user_intended(void);
 void up_reboot_reason_clear(void);
 bool up_reboot_reason_is_written(void);
+char *reboot_reason_get_strcode(reboot_reason_code_t code);
 
 #endif	/* __ARCH_ARM_INCLUDE_REBOOT_REASON_H */
