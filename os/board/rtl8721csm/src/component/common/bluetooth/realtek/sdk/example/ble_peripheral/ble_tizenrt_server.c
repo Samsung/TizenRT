@@ -383,25 +383,7 @@ trble_result_e rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
         return TRBLE_FAIL;
     }
 
-    if(le_get_active_link_num())
-    {
-        debug_print("\r\n[%s] Active connection exist", __FUNCTION__);
-        return TRBLE_SUCCESS;
-    } else {
-        if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL) == false)
-        {
-            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-            return TRBLE_FAIL;
-        }
-        do
-        {   
-            debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
-            os_delay(100);
-            le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-        }while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
-
-        return TRBLE_SUCCESS;
-    }
+    return TRBLE_SUCCESS;
 }
 
 
@@ -487,25 +469,7 @@ trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
         return TRBLE_FAIL;
     }
 
-    if(le_get_active_link_num())
-    {
-        debug_print("\r\n[%s] Active connection exist", __FUNCTION__);
-        return TRBLE_SUCCESS;
-    } else {
-        if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL) == false)
-        {
-            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-            return TRBLE_FAIL;
-        }
-        do
-        {   
-            debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
-            os_delay(100);
-            le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-        }while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
-
-        return TRBLE_SUCCESS;
-    }
+    return TRBLE_SUCCESS;
 }
 
 bool rtw_ble_server_conn_is_active(trble_conn_handle con_handle)
