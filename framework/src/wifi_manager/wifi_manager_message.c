@@ -114,11 +114,12 @@ int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 		res = _recv_message(queue->fd, (void *)msg, sizeof(handler_msg));
 		if (res < 0) {
 			NET_LOGE(TAG, "critical error\n");
-		}
-		wifimgr_msg_s *wmsg = msg->msg;
-		wmsg->result = wifimgr_handle_request(wmsg);
-		if (msg->signal) {
-			sem_post(msg->signal);
+		} else {
+			wifimgr_msg_s *wmsg = msg->msg;
+			wmsg->result = wifimgr_handle_request(wmsg);
+			if (msg->signal) {
+				sem_post(msg->signal);
+			}
 		}
 	}
 #ifdef CONFIG_LWNL80211
@@ -126,11 +127,14 @@ int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 		res = lwnl_fetch_event(queue->nd, (void *)msg, sizeof(handler_msg));
 		if (res < 0) {
 			NET_LOGE(TAG, "critical error\n");
-		}
-		wifimgr_msg_s *wmsg = msg->msg;
-		wmsg->result = wifimgr_handle_request(wmsg);
-		if (msg->signal) {
-			sem_post(msg->signal);
+		} else {
+			wifimgr_msg_s *wmsg = msg->msg;
+			if (wmsg) {
+				wmsg->result = wifimgr_handle_request(wmsg);
+			}
+			if (msg->signal) {
+				sem_post(msg->signal);
+			}
 		}
 	}
 #endif

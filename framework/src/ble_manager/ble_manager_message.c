@@ -130,7 +130,9 @@ int blemgr_message_out(ble_handler_msg *msg, ble_handler_queue *queue)
 			BLE_MESSAGE_ERROR;
 		} else {
 			blemgr_msg_s *bmsg = msg->msg;
-			bmsg->result = blemgr_handle_request(bmsg);
+			if (bmsg) {
+				bmsg->result = blemgr_handle_request(bmsg);
+			}
 			if (msg->signal) {
 				sem_post(msg->signal);
 			}
