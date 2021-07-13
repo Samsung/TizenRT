@@ -95,17 +95,17 @@ int lwnl_fetch_ble_event(int fd, void *buf, int buflen)
 	BLE_LOG_VERBOSE("dev state(%d) length(%d)\n", status.evt, len);
 	if (status.type == LWNL_DEV_BLE) {
 		_lwnl_call_event(fd, status, len);
+		hmsg->msg = &g_msg;
 	} else {
 		/* Remove wifi data in socket. */
-		char *buf = (char *)malloc(len);
-		int nbytes = read(fd, (char *)buf, len);
-		BLE_LOG_VERBOSE("nbytes : %d / len : %d\n", nbytes, len);
-		free(buf);
-		return;
+		char *t_buf = (char *)malloc(len);
+		nbytes = read(fd, (char *)t_buf, len);
+		BLE_LOG_INFO("read unused data nbytes : %d / len : %d\n", nbytes, len);
+		free(t_buf);
+		hmsg->msg = NULL;
 	}
 
 	hmsg->signal = NULL;
-	hmsg->msg = &g_msg;
 
 	return 0;
 }

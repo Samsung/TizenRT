@@ -98,7 +98,7 @@ extern void lwnl_initialize_dev(void);
 extern int netdev_req_handle(const char *msg, size_t msg_len);
 #endif
 
-#ifndef CONFIG_BLE_MANAGER
+#ifdef CONFIG_BLE_MANAGER
 extern int bledev_req_handle(const char *msg, size_t msg_len);
 #endif
 /****************************************************************************
@@ -209,9 +209,11 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 	LWNL_ENTER(TAG);
 #ifdef CONFIG_NET_NETMGR
 	int ret = netdev_req_handle(buffer, len);
+#ifdef CONFIG_BLE_MANAGER	
 	if (ret == -ENOSYS) {
 		ret = bledev_req_handle(buffer, len);
 	}
+#endif	
 #else
 	int ret = lwnl_message_handle(buffer, len);
 #endif
