@@ -259,7 +259,7 @@ ble_result_e ble_client_disconnect_all(void);
  * Name: ble_client_operation_enable_notification
  *
  * Description:
- *   Enable the notification comming from the Server(Peripheral).
+ *   Enable the notification coming from the Server(Peripheral).
  * 
  * Input Parameters:
  *   handle  - This includes the handle ID and the attribute ID.

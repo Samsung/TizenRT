@@ -52,8 +52,8 @@ typedef struct _blemgr_context {
  *   Initialize ble manager.
  * 
  * Input Parameters:
- *   client_config - Client config. If this is NULL, diable client mode.
- *   server_config - Server config. If this is NULL, diable server mode.
+ *   client_config - Client config. If this is NULL, disable client mode.
+ *   server_config - Server config. If this is NULL, disable server mode.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
