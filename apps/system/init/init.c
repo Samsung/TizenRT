@@ -52,12 +52,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #endif
-#ifdef CONFIG_WIFI_MANAGER
-#include <tinyara/wifi/wifi_manager.h>
-#endif
-#ifdef CONFIG_BLE_MANAGER
-#include <tinyara/ble/ble_handler.h>
-#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -183,13 +178,6 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
-#if defined(CONFIG_WIFI_MANAGER)
-	(void)wifimgr_run_msghandler();
-#endif
-
-#if defined(CONFIG_BLE_MANAGER)
-	(void)blemgr_run_msghandler();
-#endif
 /***********************************************************************************
  *	current preapp_start does the up_cxxinitialize which initializes the
  *	static constructors. All the tasks and threads created by preapp refer to
