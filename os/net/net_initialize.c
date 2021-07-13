@@ -60,6 +60,12 @@
 #include <debug.h>
 #include <sys/socket.h>
 #include <tinyara/net/net.h>
+#ifdef CONFIG_WIFI_MANAGER
+#include <tinyara/wifi/wifi_manager.h>
+#endif
+#ifdef CONFIG_BLE_MANAGER
+#include <tinyara/ble/ble_handler.h>
+#endif
 #ifdef CONFIG_NET_LWIP
 #include "lwip/init.h"
 #include "lwip/tcpip.h"
@@ -153,6 +159,14 @@ void net_setup(void)
 
 void net_initialize(void)
 {
+#if defined(CONFIG_WIFI_MANAGER)
+	(void)wifimgr_run_msghandler();
+#endif
+
+#if defined(CONFIG_BLE_MANAGER)
+	(void)blemgr_run_msghandler();
+#endif
+
 #ifdef CONFIG_NET_LOCAL
 	/* Initialize the local, "Unix domain" socket support */
 

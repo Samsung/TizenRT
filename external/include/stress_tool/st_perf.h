@@ -200,7 +200,10 @@
 	do {												\
 		ST_START_LOG;									\
 		if (timer) {									\
-			gettimeofday(&start, NULL);					\
+			if (gettimeofday(&start, NULL) == -1){			\
+				res = STRESS_TC_PERF_FAIL;				\
+				goto STFUNC_OUT;						\
+			}											\
 		}												\
 	} while (0)
 
@@ -208,7 +211,9 @@
 	STFUNC_OUT:									\
 	do {										\
 		if (timer) {							\
-			gettimeofday(&end, NULL);				\
+			if (gettimeofday(&end, NULL) == -1) {	\
+				return STRESS_TC_PERF_FAIL;		\
+			}									\
 			timer->start.second = start.tv_sec;	\
 			timer->start.micro = start.tv_usec;	\
 			timer->end.second = end.tv_sec;		\
