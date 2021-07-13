@@ -76,7 +76,6 @@ struct lwnl_upperhalf_s {
 	sem_t exclsem;
 	void *lower; /* Arch-specific operations */
 	struct lwnl_open_s ln_open;
-	struct lwnl_queue *queue;
 };
 
 /****************************************************************************
@@ -209,11 +208,11 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 	LWNL_ENTER(TAG);
 #ifdef CONFIG_NET_NETMGR
 	int ret = netdev_req_handle(buffer, len);
-#ifdef CONFIG_BLE_MANAGER	
+#ifdef CONFIG_BLE_MANAGER
 	if (ret == -ENOSYS) {
 		ret = bledev_req_handle(buffer, len);
 	}
-#endif	
+#endif
 #else
 	int ret = lwnl_message_handle(buffer, len);
 #endif
@@ -228,7 +227,8 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
 	LWNL_ENTER(TAG);
-	int res = lwnl_add_listener(filep);
+	struct sockaddr_lwnl *addr = (struct sockaddr_lwnl *)arg;
+	int res = lwnl_add_listener(filep, addr->dev_type);
 	if (res < 0) {
 		LWNL_LOGE(TAG, "add listener fail");
 		res = -EBADF;
@@ -313,7 +313,6 @@ errout_with_dusem:
 	return ret;
 }
 
-
 /*
  * Public APIs
  */
@@ -394,10 +393,13 @@ int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, uint32_t buf_len
 	LWNLDEV_LOCK(g_lwnl_upper);
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		struct pollfd *fds = g_lwnl_upper->ln_open.io_fds[i];
-		if (fds) {
+		if (fds && (lwnl_get_dev_type(fds->filep) == dev)) {
 			fds->revents |= (fds->events & POLLIN);
 			if (fds->revents != 0) {
-				sem_post(fds->sem);
+				int tres = sem_post(fds->sem);
+				if (tres != 0) {
+					LWNL_LOGE(TAG, "sem post fail %d\n", errno);
+				}
 			}
 		}
 	}
