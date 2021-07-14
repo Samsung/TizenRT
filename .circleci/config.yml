@@ -15,11 +15,13 @@ aliases:
       command: |
         docker exec ${BUILDER} arm-none-eabi-gcc --version
 
-  run-test: &run-test
+  build-job: &build-job
     run:
       name: TizenRT Build Test
       command: |
-        docker exec -it ${BUILDER} bash -c "cd tools; ./build_test.sh"
+        docker exec -it ${BUILDER} bash -c "cd tools; ./configure.sh ${CIRCLE_JOB}"
+        docker exec -it ${BUILDER} bash -c "make"
+
 
 jobs:
   checkout_code:
@@ -32,20 +34,92 @@ jobs:
           paths:
             - ./
             
-  build_test:
+  artik055s/audio:
     machine: true
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
           at: ~/TizenRT
       - *docker-cp
-      - *run-test
+      - *build-job
+
+  artik053/st_things:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  artik053/tc:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  qemu/build_test:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  esp_wrover_kit/hello_with_tash:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  imxrt1020-evk/loadable_elf_apps:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  rtl8721csm/loadable_apps:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
 
 workflows:
   version: 2
   build-tizenrt:
     jobs:
       - checkout_code
-      - build_test:
+      - artik055s/audio:
+          requires:
+            - checkout_code
+      - artik053/st_things:
+          requires:
+            - checkout_code
+      - artik053/tc:
+          requires:
+            - checkout_code
+      - qemu/build_test:
+          requires:
+            - checkout_code
+      - esp_wrover_kit/hello_with_tash:
+          requires:
+            - checkout_code
+      - imxrt1020-evk/loadable_elf_apps:
+          requires:
+            - checkout_code
+      - rtl8721csm/loadable_apps:
           requires:
             - checkout_code
