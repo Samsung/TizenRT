@@ -43,11 +43,15 @@
 	"\n onoff test mode options:\n"								\
 	"	 wm_test on_off [ssid] [security mode] [password]\n"	\
 
-#define WT_SCAN_USAGE							\
-	"\n run scan:\n"							\
-	"	 wm_test scan\n"						\
-	" run scan specific SSID:\n"				\
-	"	 wm_test scan [ssid]\n"
+#define WT_SCAN_USAGE									\
+	"\n run scan:\n"									\
+	"	 wm_test scan\n"								\
+	" run scan specific SSID:\n"						\
+	"	 wm_test scan ssid [ssid]\n"					\
+	" run scan specific channel:\n"						\
+	"	 wm_test scan ch [channel]\n"					\
+	" run scan specific SSID in specific channel:\n"	\
+	"	 wm_test scan both [ssid] [channel]\n"
 
 #define WT_PROFILE_USAGE										\
 	"\n set a profile:\n"										\

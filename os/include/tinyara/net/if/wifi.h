@@ -125,6 +125,12 @@ typedef struct {
 } trwifi_ap_scan_info_s;
 
 typedef struct {
+	unsigned int channel;                             /**<  wifi channel, =0 is full channel scan */
+	char ssid[TRWIFI_SSID_LEN + 1];                  /**<  Service Set Identification            */
+	unsigned int ssid_length;                         /**<  Service Set Identification Length     */
+} trwifi_scan_config_s;
+
+typedef struct {
 	unsigned int channel;								   /**<	 soft ap wifi channel				*/
 	char ssid[TRWIFI_SSID_LEN + 1];						/**<  Service Set Identification		 */
 	unsigned int ssid_length;							   /**<	 Service Set Identification Length	*/
@@ -229,7 +235,21 @@ typedef trwifi_result_e (*trwifi_deinit)(struct netdev *dev);
  * @return TRWIFI_FAIL         : fail (shouldn't generate an event.)
  * @return TRWIFI_INVALID_ARGS : arguments are invalid
  */
-typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_ap_config_s *config);
+/* SCAN type
+ *     1) full scan: config is null
+ *     2) scan with specific SSID: ssid is set in config
+ *     3) scan with specific channel: channel is set in config
+ *     4) scan with specific SSID and channel: Both ssid and channel are set in config
+ *
+ * Notes
+ *     Driver can check whether SSID is set by ssid_length in config.
+ *     If ssid_length is 0 then SSID isn't set. wifi_manager which send requests to a driver will
+ *     check validation of SSID(ex. length of SSID).
+ *     In the same way, if channel in config is 0 then channel isn't configured.
+ *     If channel is 0 then SSID must be set. wifi_manager will check this.
+ *     So a driver doesn't need to consider such case both channel and ssid_length are 0
+ */
+typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_scan_config_s *config);
 
 /**
  * @brief   Connect to an access point
@@ -248,8 +268,8 @@ typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_ap_config_s
  *              In STA mode and it's connected to an access point, wi-fi library can generates
  *              LWNL_EVT_STA_DISCONNECTED event when it's disconnected to AP.
  *
- * @return TRWIFI_SUCCESS      : success
- * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_SUCCESS      : success (should generate an event)
+ * @return TRWIFI_FAIL         : fail (should not generate an event)
  * @return TRWIFI_INVALID_ARGS : arguments are invalid
  */
 typedef trwifi_result_e (*trwifi_connect_ap)(struct netdev *dev, trwifi_ap_config_s *config, void *arg);
