@@ -97,6 +97,15 @@ jobs:
       - *docker-cp
       - *build-job
 
+  rtl8721csm/security_hal_test_tz:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
 workflows:
   version: 2
   build-tizenrt:
@@ -121,5 +130,8 @@ workflows:
           requires:
             - checkout_code
       - rtl8721csm/loadable_apps:
+          requires:
+            - checkout_code
+      - rtl8721csm/security_hal_test_tz:
           requires:
             - checkout_code
