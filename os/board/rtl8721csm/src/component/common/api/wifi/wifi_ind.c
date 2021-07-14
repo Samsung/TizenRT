@@ -197,9 +197,15 @@ void wifi_indication( rtw_event_indicate_t event, char *buf, int buf_len, int fl
 #if(WIFI_INDICATE_MSG==1)
 			printf("\n\r%s(): WIFI_EVENT_ICV_ERROR\n", __func__);
 #endif
+			break;
 		case WIFI_EVENT_CHALLENGE_FAIL:
 #if(WIFI_INDICATE_MSG==1)
 			printf("\n\r%s(): WIFI_EVENT_CHALLENGE_FAIL\n", __func__);
+#endif
+			break;
+		case WIFI_EVENT_STA_FOURWAY_HANDSHAKE_DONE:
+#if(WIFI_INDICATE_MSG==1)
+			printf("\n\r%s(): WIFI_EVENT_STA_FOURWAY_HANDSHAKE_DONE\n", __func__);
 #endif
 			break;
 	}
