@@ -53,7 +53,8 @@ CSRCS += tizenrt_service.c \
 	 lwip_intf_tizenrt.c \
 	 ethernetif_tizenrt.c \
 
-CSRCS += rtk_netmgr.c
+CSRCS += rtk_netmgr.c \
+	 rtk_blemgr.c \
 
 DEPPATH += --dep-path component/os/tizenrt
 VPATH += :component/os/tizenrt

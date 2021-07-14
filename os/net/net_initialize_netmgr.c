@@ -106,7 +106,6 @@ void net_initialize(void)
 {
 #ifdef CONFIG_NET_LOCAL
 	/* Initialize the local, "Unix domain" socket support */
-
 	local_initialize();
 #endif
 

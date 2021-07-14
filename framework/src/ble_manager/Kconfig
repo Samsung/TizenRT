@@ -1,0 +1,16 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config BLE_MANAGER
+	bool "Enable BLE Manager"
+	default n
+	select PIPES
+	depends on DRIVERS_BLE
+	---help---
+		APIs for app to use and control BLE features
+
+if BLE_MANAGER
+
+endif #BLE_MANAGER

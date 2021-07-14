@@ -29,6 +29,7 @@ ASRCS =
 CSRCS += sl_ss_test.c \
 	sl_auth_test.c \
 	sl_key_test.c \
+	sl_simple_test.c \
 	sl_test_utils.c
 
 MAINSRC = sl_test_main.c

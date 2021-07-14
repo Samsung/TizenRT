@@ -64,6 +64,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/netmgr/netdev_mgr.h>
+#include <tinyara/ble/ble_manager.h>
 #include "wifi_structures.h"
 
 //for concurrent mode, not supported now
@@ -71,9 +72,11 @@
 
 struct netdev *ameba_nm_dev_wlan0 = NULL;
 struct netdev *ameba_nm_dev_wlan1 = NULL;
+struct bledev *ameba_bm_dev_ble0 = NULL;
 
 extern err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen);
 extern struct trwifi_ops g_trwifi_drv_ops; 
+extern struct trble_ops g_trble_drv_ops; 
 
 extern void wifi_init_packet_filter(void);
 extern int wifi_add_packet_filter(unsigned char filter_id, rtw_packet_filter_pattern_t *patt, rtw_packet_filter_rule_t rule);
@@ -207,5 +210,11 @@ void up_netinitialize(void)
 	if (ameba_nm_dev_wlan1 == NULL) {
 		DiagPrintf("Failed to register amebad netdev\n");
 	}
-#endif	
+#endif
+#if defined(CONFIG_AMEBAD_BLE) && defined(CONFIG_DRIVERS_BLE)
+	ameba_bm_dev_ble0 = bledev_register(&g_trble_drv_ops);
+	if (ameba_bm_dev_ble0 == NULL) {
+		DiagPrintf("Failed to register amebad netdev\n");
+	}
+#endif
 }

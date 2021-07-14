@@ -113,7 +113,7 @@ int netdev_dhcp_server_status(char *intf)
 		ndbg("DHCP server closed\n");
 		return ERROR;
 	} else {
-		ndbg("DHCP server opened\n");
+		nvdbg("DHCP server opened\n");
 		return OK;
 	}
 }
@@ -137,7 +137,7 @@ int netdev_dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 	}
 
 	if (netifapi_dhcps_start(cur_netif) == OK) {
-		ndbg("started successfully (LWIP)\n");
+		nvdbg("started successfully (LWIP)\n");
 		return OK;
 	}
 
@@ -161,7 +161,7 @@ int netdev_dhcp_server_stop(char *intf)
 	}
 
 	netifapi_dhcps_stop(cur_netif);
-	ndbg("stopped successfully (LWIP)\n");
+	nvdbg("stopped successfully (LWIP)\n");
 
 	return OK;
 }

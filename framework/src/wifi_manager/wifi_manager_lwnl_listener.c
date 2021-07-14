@@ -100,10 +100,6 @@ static inline void LWNL_SET_MSG(wifimgr_msg_s *msg, wifimgr_evt_e event,
 
 static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 {
-	if (status.type != LWNL_DEV_WIFI) {
-		return 0;
-	}
-
 	switch (status.evt) {
 	case LWNL_EVT_STA_CONNECTED:
 		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_STA_CONNECTED, WIFI_MANAGER_FAIL, NULL, NULL);
@@ -166,10 +162,18 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
 	NET_LOGV(TAG, "scan state(%d) length(%d)\n", status.evt, len);
-	(void)_lwnl_call_event(fd, status, len);
+	if (status.type == LWNL_DEV_WIFI) {
+		(void)_lwnl_call_event(fd, status, len);
+		hmsg->msg = &g_msg;
+	} else {
+		char *t_buf = (char *)malloc(len);
+		nbytes = read(fd, t_buf, len);
+		NET_LOGI(TAG, "read unused data in the socket[%d]\n", nbytes);
+		free(t_buf);
+		hmsg->msg = NULL;
+	}
 
 	hmsg->signal = NULL;
-	hmsg->msg = &g_msg;
 
 	return 0;
 }

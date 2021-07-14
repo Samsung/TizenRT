@@ -1716,7 +1716,7 @@ static int bt_conn_le_conn_update_internal(struct bt_conn_s *conn, const struct 
 
 static int send_conn_le_param_update(struct bt_conn_s *conn, const struct bt_le_conn_param *param)
 {
-	ndbg("conn %p features 0x%02x params (%d-%d %d %d)", conn, conn->le.features[0], param->interval_min, param->interval_max, param->latency, param->timeout);
+	nvdbg("conn %p features 0x%02x params (%d-%d %d %d)", conn, conn->le.features[0], param->interval_min, param->interval_max, param->latency, param->timeout);
 	/* Use LE connection parameter request if both local and remote support
 	 * it; or if local role is master then use LE connection update.
 	 */

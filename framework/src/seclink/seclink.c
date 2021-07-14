@@ -29,22 +29,17 @@
 #include <sys/ioctl.h>
 #include <tinyara/seclink.h>
 #include <tinyara/seclink_drv.h>
+#include "seclink_log.h"
 
-#ifndef LINUX
-#define SL_LOG sedbg
-#else
-#define SL_LOG printf
-#endif
-
-#define SL_TAG "[SECLINK]"
+#define TAG "[SLC]"
 
 #define SL_ERR(fd)												\
 	do {														\
 		if (fd == -1) {											\
-			SL_LOG(SL_TAG"%s:%d\n", __FILE__, __LINE__);		\
+			SLC_LOGE(TAG, "\n");		\
 		} else {												\
-			SL_LOG(SL_TAG"%s:%d ret(%d) code(%s)\n",			\
-				   __FILE__, __LINE__, fd, strerror(errno));	\
+			SLC_LOGE(TAG, "ret(%d) code(%s)\n",			\
+				   fd, strerror(errno));	\
 		}														\
 	} while (0)
 
@@ -80,11 +75,6 @@ extern int sl_post_msg(int fd, int cmd, unsigned long arg);
 		}																\
 	} while (0)
 
-#define SL_ENTER														\
-	do {																\
-		SL_LOG(SL_TAG"%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__);	\
-	} while (0)
-
 #define SL_CLOSE(fd)							 \
 	do {										 \
 		close(fd);								 \
@@ -117,7 +107,7 @@ struct _seclink_s_ {
 /*  Common */
 int sl_init(sl_ctx *hnd)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "-->\n");
 
 	int fd = open(SECLINK_PATH, O_RDWR);
 	if (fd < 0) {
@@ -148,7 +138,7 @@ int sl_init(sl_ctx *hnd)
 
 int sl_deinit(sl_ctx hnd)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "-->\n");
 
 	if (!hnd || ((struct _seclink_s_ *)hnd)->fd <= 0) {
 		SL_ERR(-1);
@@ -159,7 +149,7 @@ int sl_deinit(sl_ctx hnd)
 	struct seclink_req req = {.req_type.comm = NULL, 0};
 	SL_CALL_NORET(sl, SECLINKIOC_DEINIT, req);
 	if (req.res != HAL_SUCCESS) {
-		SL_LOG("fail to deinit");
+		SLC_LOGE(TAG, "fail to deinit");
 	}
 
 	SL_CLOSE(sl->fd);
@@ -172,7 +162,7 @@ int sl_deinit(sl_ctx hnd)
 /*  key manager */
 int sl_set_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d) idx(%d)\n", hnd, mode, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -188,7 +178,7 @@ int sl_set_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_data *key, h
 
 int sl_get_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, _OUT_ hal_data *key, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d) idx(%d)\n", hnd, mode, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -204,7 +194,7 @@ int sl_get_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, _OUT_ hal_data *
 
 int sl_remove_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d) idx(%d)\n", hnd, mode, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -220,7 +210,7 @@ int sl_remove_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_result_e 
 
 int sl_generate_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d) idx(%d)\n", hnd, mode, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -238,7 +228,8 @@ int sl_generate_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_result_
 /*  Authenticate */
 int sl_generate_random(sl_ctx hnd, uint32_t len, _OUT_ hal_data *random, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) len(%d)\n", hnd, len);
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -253,7 +244,7 @@ int sl_generate_random(sl_ctx hnd, uint32_t len, _OUT_ hal_data *random, hal_res
 
 int sl_get_hash(sl_ctx hnd, hal_hash_type mode, hal_data *input, _OUT_ hal_data *hash, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d)\n", hnd, mode);
 
 	SL_CHECK_VALID(hnd);
 
@@ -269,7 +260,7 @@ int sl_get_hash(sl_ctx hnd, hal_hash_type mode, hal_data *input, _OUT_ hal_data 
 
 int sl_get_hmac(sl_ctx hnd, hal_hmac_type mode, hal_data *input, uint32_t key_idx, _OUT_ hal_data *hmac, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d)\n", hnd, mode);
 
 	SL_CHECK_VALID(hnd);
 
@@ -285,7 +276,8 @@ int sl_get_hmac(sl_ctx hnd, hal_hmac_type mode, hal_data *input, uint32_t key_id
 
 int sl_rsa_sign_md(sl_ctx hnd, hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, _OUT_ hal_data *sign, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d %d %d %d) idx(%d)\n",
+			 hnd, mode.rsa_a, mode.hash_t, mode.mgf, mode.salt_byte_len, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -301,7 +293,8 @@ int sl_rsa_sign_md(sl_ctx hnd, hal_rsa_mode mode, hal_data *hash, uint32_t key_i
 
 int sl_rsa_verify_md(sl_ctx hnd, hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d %d %d %d) idx(%d)\n",
+			 hnd, mode.rsa_a, mode.hash_t, mode.mgf, mode.salt_byte_len, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -317,7 +310,8 @@ int sl_rsa_verify_md(sl_ctx hnd, hal_rsa_mode mode, hal_data *hash, hal_data *si
 
 int sl_ecdsa_sign_md(sl_ctx hnd, hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, _OUT_ hal_data *sign, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d %d %d %d) idx(%d)\n",
+			 hnd, mode.curve, mode.hash_t, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -333,7 +327,8 @@ int sl_ecdsa_sign_md(sl_ctx hnd, hal_ecdsa_mode mode, hal_data *hash, uint32_t k
 
 int sl_ecdsa_verify_md(sl_ctx hnd, hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) mode(%d %d %d %d) idx(%d)\n",
+			 hnd, mode.curve, mode.hash_t, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -349,7 +344,7 @@ int sl_ecdsa_verify_md(sl_ctx hnd, hal_ecdsa_mode mode, hal_data *hash, hal_data
 
 int sl_dh_generate_param(sl_ctx hnd, uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) dh_type(%d) idx(%d)\n", hnd, dh_param->mode, dh_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -365,7 +360,7 @@ int sl_dh_generate_param(sl_ctx hnd, uint32_t dh_idx, _INOUT_ hal_dh_data *dh_pa
 
 int sl_dh_compute_shared_secret(sl_ctx hnd, hal_dh_data *dh_param, uint32_t dh_idx, _OUT_ hal_data *shared_secret, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) dh_type(%d) idx(%d)\n", hnd, dh_param->mode, dh_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -381,7 +376,7 @@ int sl_dh_compute_shared_secret(sl_ctx hnd, hal_dh_data *dh_param, uint32_t dh_i
 
 int sl_ecdh_compute_shared_secret(sl_ctx hnd, hal_ecdh_data *ecdh_mode, uint32_t key_idx, _OUT_ hal_data *shared_secret, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) curve(%d) idx(%d)\n", hnd, ecdh_mode->curve, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -397,7 +392,7 @@ int sl_ecdh_compute_shared_secret(sl_ctx hnd, hal_ecdh_data *ecdh_mode, uint32_t
 
 int sl_set_certificate(sl_ctx hnd, uint32_t cert_idx, hal_data *cert_in, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, cert_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -413,7 +408,7 @@ int sl_set_certificate(sl_ctx hnd, uint32_t cert_idx, hal_data *cert_in, hal_res
 
 int sl_get_certificate(sl_ctx hnd, uint32_t cert_idx, _OUT_ hal_data *cert_out, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, cert_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -429,7 +424,7 @@ int sl_get_certificate(sl_ctx hnd, uint32_t cert_idx, _OUT_ hal_data *cert_out, 
 
 int sl_remove_certificate(sl_ctx hnd, uint32_t cert_idx, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, cert_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -445,7 +440,7 @@ int sl_remove_certificate(sl_ctx hnd, uint32_t cert_idx, hal_result_e *hres)
 
 int sl_get_factory_key(sl_ctx hnd, uint32_t key_idx, hal_data *key, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, key_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -461,7 +456,7 @@ int sl_get_factory_key(sl_ctx hnd, uint32_t key_idx, hal_data *key, hal_result_e
 
 int sl_get_factory_cert(sl_ctx hnd, uint32_t cert_idx, hal_data *cert, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, cert_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -477,7 +472,7 @@ int sl_get_factory_cert(sl_ctx hnd, uint32_t cert_idx, hal_data *cert, hal_resul
 
 int sl_get_factory_data(sl_ctx hnd, uint32_t data_idx, hal_data *data, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, data_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -494,7 +489,8 @@ int sl_get_factory_data(sl_ctx hnd, uint32_t data_idx, hal_data *data, hal_resul
 /*  Crypto */
 int sl_aes_encrypt(sl_ctx hnd, hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_idx, _OUT_ hal_data *enc_data, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d) aes mode(%d) iv len(%d)\n",
+			 hnd, key_idx, aes_param->mode, aes_param->iv_len);
 
 	SL_CHECK_VALID(hnd);
 
@@ -510,7 +506,8 @@ int sl_aes_encrypt(sl_ctx hnd, hal_data *dec_data, hal_aes_param *aes_param, uin
 
 int sl_aes_decrypt(sl_ctx hnd, hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_idx, _OUT_ hal_data *dec_data, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d) aes mode(%d) iv len(%d)\n",
+			 hnd, key_idx, aes_param->mode, aes_param->iv_len);
 
 	SL_CHECK_VALID(hnd);
 
@@ -526,7 +523,8 @@ int sl_aes_decrypt(sl_ctx hnd, hal_data *enc_data, hal_aes_param *aes_param, uin
 
 int sl_rsa_encrypt(sl_ctx hnd, hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t key_idx, _OUT_ hal_data *enc_data, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d) RSA mode(%d) hash(%d) mgf(%d) salt len(%d)\n",
+			 hnd, key_idx, rsa_mode->rsa_a, rsa_mode->hash_t, rsa_mode->mgf, rsa_mode->salt_byte_len);
 
 	SL_CHECK_VALID(hnd);
 
@@ -542,7 +540,8 @@ int sl_rsa_encrypt(sl_ctx hnd, hal_data *dec_data, hal_rsa_mode *rsa_mode, uint3
 
 int sl_rsa_decrypt(sl_ctx hnd, hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t key_idx, _OUT_ hal_data *dec_data, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d) RSA mode(%d) hash(%d) mgf(%d) salt len(%d)\n",
+			 hnd, key_idx, rsa_mode->rsa_a, rsa_mode->hash_t, rsa_mode->mgf, rsa_mode->salt_byte_len);
 
 	SL_CHECK_VALID(hnd);
 
@@ -560,7 +559,7 @@ int sl_rsa_decrypt(sl_ctx hnd, hal_data *enc_data, hal_rsa_mode *rsa_mode, uint3
 /*  Secure Storage */
 int sl_write_storage(sl_ctx hnd, uint32_t ss_idx, hal_data *data, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, ss_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -576,7 +575,7 @@ int sl_write_storage(sl_ctx hnd, uint32_t ss_idx, hal_data *data, hal_result_e *
 
 int sl_read_storage(sl_ctx hnd, uint32_t ss_idx, _OUT_ hal_data *data, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, ss_idx);
 
 	SL_CHECK_VALID(hnd);
 
@@ -592,7 +591,7 @@ int sl_read_storage(sl_ctx hnd, uint32_t ss_idx, _OUT_ hal_data *data, hal_resul
 
 int sl_delete_storage(sl_ctx hnd, uint32_t ss_idx, hal_result_e *hres)
 {
-	SL_ENTER;
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d)\n", hnd, ss_idx);
 
 	SL_CHECK_VALID(hnd);
 

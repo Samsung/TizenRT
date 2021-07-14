@@ -1,0 +1,125 @@
+version: 2
+
+aliases:
+  docker-cp: &docker-cp
+    run:
+      name: Create Docker Volume
+      command: |
+        docker create -v /${WORKING_DIR} --name ${VOLUME} --privileged tizenrt/tizenrt:${DOCKER_IMG_VERSION} /bin/bash
+        docker cp ./. ${VOLUME}:/${WORKING_DIR}
+        docker run -d --rm -it --name ${BUILDER} --volumes-from=${VOLUME} -w /${WORKING_DIR}/os --privileged tizenrt/tizenrt:${DOCKER_IMG_VERSION} /bin/bash
+
+  arm-version: &arm-version
+      run: 
+      name: ARM GCC Version
+      command: |
+        docker exec ${BUILDER} arm-none-eabi-gcc --version
+
+  build-job: &build-job
+    run:
+      name: TizenRT Build Test
+      command: |
+        docker exec -it ${BUILDER} bash -c "cd tools; ./configure.sh ${CIRCLE_JOB}"
+        docker exec -it ${BUILDER} bash -c "make"
+
+
+jobs:
+  checkout_code:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - checkout
+      - persist_to_workspace:
+          root: ~/TizenRT
+          paths:
+            - ./
+            
+  artik055s/audio:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  artik053/st_things:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  artik053/tc:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  qemu/build_test:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  esp_wrover_kit/hello_with_tash:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  imxrt1020-evk/loadable_elf_apps:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  rtl8721csm/loadable_apps:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+workflows:
+  version: 2
+  build-tizenrt:
+    jobs:
+      - checkout_code
+      - artik055s/audio:
+          requires:
+            - checkout_code
+      - artik053/st_things:
+          requires:
+            - checkout_code
+      - artik053/tc:
+          requires:
+            - checkout_code
+      - qemu/build_test:
+          requires:
+            - checkout_code
+      - esp_wrover_kit/hello_with_tash:
+          requires:
+            - checkout_code
+      - imxrt1020-evk/loadable_elf_apps:
+          requires:
+            - checkout_code
+      - rtl8721csm/loadable_apps:
+          requires:
+            - checkout_code
