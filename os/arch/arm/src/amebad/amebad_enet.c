@@ -211,7 +211,7 @@ void up_netinitialize(void)
 		DiagPrintf("Failed to register amebad netdev\n");
 	}
 #endif
-#ifdef CONFIG_AMEBAD_BLE
+#if defined(CONFIG_AMEBAD_BLE) && defined(CONFIG_DRIVERS_BLE)
 	ameba_bm_dev_ble0 = bledev_register(&g_trble_drv_ops);
 	if (ameba_bm_dev_ble0 == NULL) {
 		DiagPrintf("Failed to register amebad netdev\n");
