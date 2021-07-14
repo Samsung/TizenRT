@@ -114,7 +114,7 @@
 #elif defined(CONFIG_UART1_SERIAL_CONSOLE)
 #define CONSOLE_DEV             g_uart1port             /* UART1 is console */
 #define TTYS0_DEV               g_uart1port             /* UART1 is ttyS0 */
-#define CONSOLE                 UART1_DEV
+#define CONSOLE                 UART3_DEV
 #define UART1_ASSIGNED  1
 #define HAVE_SERIAL_CONSOLE
 #elif defined(CONFIG_UART2_SERIAL_CONSOLE)
@@ -672,7 +672,27 @@ static bool rtl8721d_up_txready(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	return (serial_writable(sdrv[uart_index_get(priv->tx)]));
+
+#if defined(CONFIG_UART0_SERIAL_CONSOLE)
+	if (uart_index_get(priv->tx) == 0){
+		while (!serial_writable(sdrv[uart_index_get(priv->tx)]));
+		return true;
+	}
+	else
+#elif defined(CONFIG_UART1_SERIAL_CONSOLE)
+	if (uart_index_get(priv->tx) == 3){
+		while (!serial_writable(sdrv[uart_index_get(priv->tx)]));
+		return true;
+	}
+	else
+#elif defined(CONFIG_UART2_SERIAL_CONSOLE)
+	if (uart_index_get(priv->tx) == 2){
+		while (!serial_writable(sdrv[uart_index_get(priv->tx)]));
+		return true;
+	}
+	else
+#endif
+		return (serial_writable(sdrv[uart_index_get(priv->tx)]));
 }
 
 /****************************************************************************
@@ -730,7 +750,6 @@ void up_serialinit(void)
 #ifdef TTYS2_DEV
 	uart_register("/dev/ttyS2", &TTYS2_DEV);
 #endif
-
 }
 
 /****************************************************************************
