@@ -122,6 +122,65 @@ extern bool ftl_page_erase(struct Page_T *p);
 void ftl_mapping_table_init(void);
 uint16_t read_mapping_table(uint16_t logical_addr);
 
+#define FTL_SECURE 1
+#if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
+/* FTL Secure Related */
+/* Secure efuse key location */
+#define FTL_KEY_ADDR 0x150
+#define FTL_SECURE_CONTEXT_SIZE 4096
+
+typedef struct {
+	void (*device_lock)(uint32_t);
+	void (*device_unlock)(uint32_t);
+	void (*setstatusbits)(uint32_t);
+	uint32_t (*save_to_storage)(void*, uint16_t, uint16_t);
+	uint32_t (*load_from_storage)(void*, uint16_t, uint16_t);
+} ns_ftl_func_struc;
+#endif
+
+/* Flash Status Bit */
+#define FLASH_STATUS_BITS 0x2c
+uint32_t backup_state = 0;
+//uint32_t cur_state = 0;
+
+static void ftl_ns_setstatusbits(uint32_t NewState)
+{
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	FLASH_Write_Lock();
+	FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);
+	FLASH_Write_Unlock();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+}
+
+static void ftl_setstatusbits(uint32_t NewState)
+{
+	flash_t flash;
+
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	if (!NewState) {	/* If to disable */
+		backup_state = flash_get_status(&flash);	/* Read State */
+		//FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] backup_state: %x \n", backup_state);
+		backup_state = backup_state & 0xFF;		/* Only compare status bits */
+		if (FLASH_STATUS_BITS == backup_state) {	/* State is enable */
+			FLASH_Write_Lock();
+			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);	/* Clear */
+			FLASH_Write_Unlock();
+			//cur_state = flash_get_status(&flash);	/* Read State */
+			//FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] cur_state: %x \n", cur_state);
+		}
+	} else {
+		if (FLASH_STATUS_BITS == backup_state) {	/* State is enable */
+			FLASH_Write_Lock();
+			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState); /* Set State */
+			FLASH_Write_Unlock();
+			//cur_state = flash_get_status(&flash);	/* Read State */
+			//FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] cur_state: %x \n", cur_state);
+		}
+		backup_state = 0;	/* Clear backup state */
+	}
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+}
+
 uint32_t ftl_page_read(struct Page_T *p, uint32_t index)
 {
     uint32_t rdata = 0;
@@ -150,18 +209,22 @@ void ftl_flash_write(uint32_t start_addr, uint32_t data)
 {
 	flash_t flash;
 
+	ftl_setstatusbits(0);
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	flash_write_word(&flash, start_addr, data);
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+	ftl_setstatusbits(1);
 }
 
 bool ftl_flash_erase_sector(uint32_t addr)
 {
 	flash_t flash;
-	
+
+	ftl_setstatusbits(0);
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	flash_erase_sector(&flash, addr);
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+	ftl_setstatusbits(1);
 
 	return TRUE;
 }
@@ -1012,9 +1075,47 @@ L_retry:
     return  ret;
 }
 
+#if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
+/* FTL Secure Save and Load API */
+uint32_t ftl_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+{
+	uint32_t ret = 0;
+	uint8_t* tmp_buff = NULL;
+
+	tmp_buff = rtw_zmalloc(size);
+	if (tmp_buff == NULL) {
+		return 0x10;
+	}
+
+	up_allocate_secure_context(FTL_SECURE_CONTEXT_SIZE);
+	ret = ameba_ftl_save_to_storage(tmp_buff, pdata_tmp, offset, size);
+	up_free_secure_context();
+	if (ret != FTL_WRITE_SUCCESS) {
+		FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] ameba_ftl_save_to_storage ret: %x \n", ret);
+	}
+
+	rtw_mfree(tmp_buff, size);
+	return ret;
+}
+
+uint32_t ftl_secure_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+{
+	uint32_t ret = 0;
+
+	up_allocate_secure_context(FTL_SECURE_CONTEXT_SIZE);
+	ret = ameba_ftl_load_from_storage(pdata_tmp, offset, size);
+	up_free_secure_context();
+	if (ret != FTL_READ_SUCCESS) {
+		FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] ameba_ftl_load_from_storage ret: %x \n", ret);
+	}
+
+	return ret;
+}
+#endif
+
 // return 0 success
 // return !0 fail
-uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+uint32_t ftl_non_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
     uint8_t *pdata8 = (uint8_t *)pdata_tmp;
 
@@ -1101,9 +1202,18 @@ uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
     return ret;
 }
 
+uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+{
+#if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
+	return ftl_secure_save_to_storage(pdata_tmp, offset, size);
+#else
+	return ftl_non_secure_save_to_storage(pdata_tmp, offset, size);
+#endif
+}
+
 // return 0 success
 // return !0 fail
-uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+uint32_t ftl_non_secure_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
     if (g_pPage == NULL)
     {
@@ -1271,7 +1381,14 @@ L_retry:
     return ret;
 }
 
-
+uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+{
+#if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
+	return ftl_secure_load_from_storage(pdata_tmp, offset, size);
+#else
+	return ftl_non_secure_load_from_storage(pdata_tmp, offset, size);
+#endif
+}
 
 uint32_t ftl_ioctl(uint32_t cmd, uint32_t p1, uint32_t p2)
 {
@@ -1402,6 +1519,28 @@ uint32_t ftl_load(void *pdata, uint16_t offset, uint16_t size)
 uint32_t ftl_save(void *pdata, uint16_t offset, uint16_t size)
 {
     return ftl_save_to_storage(pdata, offset + FTL_APP_LOGICAL_ADDR_BASE * 1024, size);
+}
+#endif
+
+#if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
+/* FTL Secure Init */
+uint32_t ftl_secure_init(void)
+{
+	uint32_t ret = 0;
+	ns_ftl_func_struc in_func;
+
+	/* Prepare non-secure API to use in Secure */
+	in_func.device_lock = device_mutex_lock;
+	in_func.device_unlock = device_mutex_unlock;
+	in_func.setstatusbits = ftl_ns_setstatusbits;
+	in_func.save_to_storage = ftl_non_secure_save_to_storage;
+	in_func.load_from_storage = ftl_non_secure_load_from_storage;
+
+	up_allocate_secure_context(FTL_SECURE_CONTEXT_SIZE);
+	ret = ameba_ftl_secure_init(FTL_KEY_ADDR, &in_func);
+	up_free_secure_context();
+
+	return ret;
 }
 #endif
 
@@ -1553,6 +1692,13 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
     ftl_recover_from_power_lost();
     g_free_page_count = ftl_get_free_page_count();
 
+#if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
+	uint32_t ret = ftl_secure_init();
+	if (0 != ret) {
+		FTL_PRINTF(FTL_LEVEL_ERROR, "ftl_secure_init fail, ret: %d!", ret);
+	}
+#endif
+
     return 0;
 }
 
@@ -1597,7 +1743,9 @@ L_retry:
         }
         else
         {
-            FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] length != 1! func: %s, line: %d", __FUNCTION__, __LINE__);
+            FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] length != 1! func: %s, line: %d\n", __FUNCTION__, __LINE__);
+            FTL_PRINTF(FTL_LEVEL_ERROR, "FTL Error... clean all\n");
+            ftl_ioctl(FTL_IOCTL_CLEAR_ALL, 0, 0);
         }
 
     }
