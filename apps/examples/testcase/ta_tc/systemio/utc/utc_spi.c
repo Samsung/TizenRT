@@ -29,7 +29,7 @@
 
 iotbus_spi_context_h spi;
 
-unsigned int bus = 1;
+static unsigned int bus = 0;
 
 unsigned char txbuf[64] = { 0, };
 unsigned char rxbuf[64] = { 0, };;
@@ -98,6 +98,7 @@ static void utc_systemio_spi_recv_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifdef CONFIG_SPI_EXCHANGE
 static void utc_systemio_spi_transfer_buf_p(void)
 {
 	int ret = iotbus_spi_transfer_buf(spi, txbuf, rxbuf, 16);
@@ -113,6 +114,7 @@ static void utc_systemio_spi_transfer_buf_n(void)
 	TC_ASSERT_EQ("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_INVALID_PARAMETER);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 static void utc_systemio_spi_close_p(void)
 {
