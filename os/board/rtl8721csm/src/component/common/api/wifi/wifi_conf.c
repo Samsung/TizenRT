@@ -1597,7 +1597,7 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	if (buf != NULL) {
-		ndbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
+		nvdbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
 	}
 
 	if (g_link_up) {
@@ -1618,9 +1618,9 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	if (buf != NULL) { //mac address len 6; reason code len 2
-		ndbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
+		nvdbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
 		memcpy(&(reason.reason_code), buf + MAC_ADDR_LEN, DISASSOC_REASON_CODE_LEN); //refer to Reason codes (IEEE 802.11-2007, 7.3.1.7, Table 7-22) in ieee802_11_defs.h
-		ndbg("STA disassoc reason code is %d\n", reason.reason_code);
+		nvdbg("STA disassoc reason code is %d\n", reason.reason_code);
 	}
 	if (g_link_down) {
 		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
@@ -1641,11 +1641,11 @@ static void wifi_ap_sta_handshake_done_hdl( char* buf, int buf_len, int flags, v
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	if (buf != NULL) {
-		ndbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
+		nvdbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
 	}
 
 	if (g_link_up) {
-		ndbg("RTK_API rtk_link_event_handler send link_up\n");
+		nvdbg("RTK_API rtk_link_event_handler send link_up\n");
 		g_link_up(&reason);
 	}
 #endif
