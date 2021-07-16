@@ -59,6 +59,7 @@
 #include <debug.h>
 #include <tinyara/reboot_reason.h>
 #include "ameba_soc.h"
+#include "amebad_reboot_reason.h"
 /****************************************************************************
  * Public functions
  ****************************************************************************/
