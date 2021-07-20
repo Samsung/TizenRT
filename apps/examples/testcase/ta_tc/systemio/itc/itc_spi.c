@@ -208,14 +208,14 @@ static void itc_systemio_spi_open_close_n_invalid_frequecy(void)
 }
 
 /**
-* @testcase         itc_systemio_spi_write_recv_trasfer_p
+* @testcase         itc_systemio_spi_write_recv_transfer_p
 * @brief            reads and writes data over spi bus, and transfers rx and tx data over spi bus
 * @scenario         writes data over spi bus, reads data over spi bus and transfers rx and tx data over spi bus
 * @apicovered       iotbus_spi_write, iotbus_spi_recv, iotbus_spi_transfer_buf
 * @precondition     none
 * @postcondition    none
 */
-void itc_systemio_spi_write_recv_trasfer_p(void)
+void itc_systemio_spi_write_recv_transfer_p(void)
 {
 	unsigned char sz_txbuf[64] = { 0, };
 	unsigned char sz_rxbuf[64] = { 0, };
@@ -248,6 +248,6 @@ int itc_spi_main(void)
 	itc_systemio_spi_open_close_n_invalid_bus();
 	itc_systemio_spi_open_close_n_invalid_bpw();
 	itc_systemio_spi_open_close_n_invalid_frequecy();
-	itc_systemio_spi_write_recv_trasfer_p();
+	itc_systemio_spi_write_recv_transfer_p();
 	return 0;
 }

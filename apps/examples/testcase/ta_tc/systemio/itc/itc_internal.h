@@ -37,4 +37,6 @@
 **********************************************************/
 char *Expect_Value(int, int);
 
+int itc_spi_main(void);
+
 #endif /* __EXAMPLES_TESTCASE_SYSTEMIO_ITC_INTERNAL_H */
