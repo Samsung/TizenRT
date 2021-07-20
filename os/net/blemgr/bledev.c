@@ -23,6 +23,8 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/ble.h>
 #include <tinyara/ble/ble_manager.h>
+#include "bledev_mgr_client.h"
+#include "bledev_mgr_server.h"
 
 #define TRBLE_DRV_CALL(res, dev, method, param)		\
 	do {										\
@@ -41,26 +43,13 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	switch (cmd.type) {
 	case LWNL_REQ_BLE_INIT:
 	{
-		lwnl_msg_params param = { 0, };
-		if (data != NULL) {
-			memcpy(&param, data, data_len);
+		trble_client_init_config *t_client = bledrv_client_get_fake_config();
+		trble_server_init_config *t_server = (trble_server_init_config *)data;
+		if (data == NULL) {
+			t_server = bledrv_server_get_null_config();
 		}
-		trble_client_init_config *t_client = (trble_client_init_config *)param.param[0];
-		trble_server_init_config *t_server = (trble_server_init_config *)param.param[1];
-		trble_client_init_config client = { 0, };
-		trble_server_init_config server = { 0, };
 
-#if defined(CONFIG_AMEBAD_BLE_SCATTERNET) || defined(CONFIG_AMEBAD_BLE_CENTRAL)
-		if (t_client != NULL) {
-			memcpy(&client, t_client, sizeof(trble_client_init_config));
-		}
-#endif
-#if defined(CONFIG_AMEBAD_BLE_SCATTERNET) || defined(CONFIG_AMEBAD_BLE_PERIPHERAL)
-		if (t_server != NULL) {
-			memcpy(&server, t_server, sizeof(trble_server_init_config));
-		}
-#endif
-		TRBLE_DRV_CALL(ret, dev, init, (dev, &client, &server));
+		TRBLE_DRV_CALL(ret, dev, init, (dev, t_client, t_server));
 	}
 	break;
 	case LWNL_REQ_BLE_DEINIT:
@@ -76,6 +65,13 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		} else {
 			ret = TRBLE_INVALID_ARGS;
 		}
+	}
+	break;
+	case LWNL_EVT_BLE_SET_CALLBACK:
+	{
+		trble_client_init_config *init_client = (trble_client_init_config *)data;
+		bledrv_client_set_config(init_client);
+		ret = TRBLE_SUCCESS;
 	}
 	break;
 	case LWNL_REQ_BLE_DISCONNECT:

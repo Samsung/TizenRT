@@ -186,17 +186,35 @@ int ble_rmc_main(int argc, char *argv[])
 	RMC_LOG(RMC_TAG, "cmd : %s\n", argv[1]);
 
 	if (strncmp(argv[1], "init", 5) == 0) {
-		ret = ble_manager_init(&client_config, &server_config);
+		ret = ble_manager_init(NULL);
+		if (ret != BLE_MANAGER_SUCCESS) {
+			RMC_LOG(RMC_TAG, "init fail[%d]\n", ret);
+			return 0;
+		}
 		RMC_LOG(RMC_TAG, "init done[%d]\n", ret);
+	}
 
-		sem_init(&g_conn_sem, 0, 0);
+	if (strncmp(argv[1], "init2", 6) == 0) {
+		ret = ble_manager_init(&server_config);
+		if (ret != BLE_MANAGER_SUCCESS) {
+			RMC_LOG(RMC_TAG, "init fail[%d]\n", ret);
+			return 0;
+		}
+		RMC_LOG(RMC_TAG, "init done[%d]\n", ret);
+	}
+
+	if (strncmp(argv[1], "cbs", 5) == 0) {
+		ret = ble_client_set_cb(&client_config);
+		if (ret != BLE_MANAGER_SUCCESS) {
+			RMC_LOG(RMC_TAG, "set callback fail[%d]\n", ret);
+			return 0;
+		}
+		RMC_LOG(RMC_TAG, "set callback done[%d]\n", ret);
 	}
 
 	if (strncmp(argv[1], "deinit", 7) == 0) {
 		ret = ble_manager_deinit();
 		RMC_LOG(RMC_TAG, "deinit done[%d]\n", ret);
-
-		sem_destroy(&g_conn_sem);
 	}
 
 	if (strncmp(argv[1], "mac", 4) == 0) {
@@ -309,6 +327,8 @@ int ble_rmc_main(int argc, char *argv[])
 		addr.mtu = 240;
 		addr.is_secured_connect = true;
 
+		sem_init(&g_conn_sem, 0, 0);
+
 		ret = ble_client_connect(&addr);
 		if (ret != BLE_MANAGER_SUCCESS) {
 			RMC_LOG(RMC_TAG, "connect fail[%d]\n", ret);
@@ -320,9 +340,11 @@ int ble_rmc_main(int argc, char *argv[])
 		abstime.tv_nsec = 0;
 
 		int status = sem_timedwait(&g_conn_sem, &abstime);
+		sem_destroy(&g_conn_sem);
 		int errcode = errno;
 		if (status < 0) {
 			RMC_LOG(RMC_TAG, "ERROR: sem_timedwait failed with: %d\n", errcode);
+			return 0;
 		} else {
 			RMC_LOG(RMC_TAG, "PASS: sem_timedwait succeeded\n");
 		}

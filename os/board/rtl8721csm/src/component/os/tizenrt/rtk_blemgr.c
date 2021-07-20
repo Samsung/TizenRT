@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 #include <tinyara/config.h>
+#include <stdio.h>
 #include <debug.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
