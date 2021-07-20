@@ -71,13 +71,11 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	case BLE_EVT_CMD_INIT: {
 		if (g_state_handle.state != BLEMGR_UNINITIALIZED) {
 			BLE_LOG_INFO("[BLEMGR] already running[mode : %d]\n", g_state_handle.mode);
+			ret = TRBLE_ALREADY_WORKING;
 			break;
 		}
-		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
-		trble_client_init_config *client = (trble_client_init_config *)(param->param[0]);
-		trble_server_init_config *server = (trble_server_init_config *)(param->param[1]);
-
-		ret = ble_drv_init(client, server);
+		trble_server_init_config *server = (trble_server_init_config *)msg->param;
+		ret = ble_drv_init(server);
 		if (ret != TRBLE_SUCCESS) {
 			BLE_LOG_ERROR("[BLEMGR] init fail[%d]\n", ret);
 			break;
@@ -121,6 +119,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	} break;
 
 	// Client
+	case BLE_EVT_CMD_SET_CALLBACK: {
+		BLE_STATE_CHECK;
+
+		trble_client_init_config *config = (trble_client_init_config *)msg->param;
+		ret = ble_drv_client_set_config(config);
+	} break;
+
 	case BLE_EVT_CMD_DEL_BOND: {
 		BLE_STATE_CHECK;
 

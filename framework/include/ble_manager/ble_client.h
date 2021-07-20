@@ -114,6 +114,22 @@ typedef struct {
 } ble_client_init_config;
 
 /****************************************************************************
+ * Name: ble_client_set_cb
+ *
+ * Description:
+ *   Set BLE Client callback functions
+ *
+ * Input Parameters:
+ *   client_config  - The list of client callback functions
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_client_set_cb(ble_client_init_config* client_config);
+
+/****************************************************************************
  * Name: ble_client_start_scan
  *
  * Description:

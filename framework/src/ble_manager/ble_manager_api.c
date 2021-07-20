@@ -32,10 +32,9 @@
 		}                            \
 	} while (0)
 
-ble_result_e ble_manager_init(ble_client_init_config *client_config, ble_server_init_config *server_config)
+ble_result_e ble_manager_init(ble_server_init_config *server_config)
 {
-	blemgr_msg_params param = { 2, {(void *)client_config, (void *)server_config} };
-	blemgr_msg_s msg = {BLE_EVT_CMD_INIT, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	blemgr_msg_s msg = {BLE_EVT_CMD_INIT, BLE_MANAGER_FAIL, (void *)(server_config), NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);
@@ -75,6 +74,14 @@ ble_result_e ble_manager_conn_is_any_active(bool *is_active)
 }
 
 /* Client */
+ble_result_e ble_client_set_cb(ble_client_init_config* client_config)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_SET_CALLBACK, BLE_MANAGER_FAIL, (void *)client_config, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_client_disconnect(ble_conn_handle conn_handle)
 {
 	blemgr_mode_e mode = BLEMGR_CLIENT_MODE;

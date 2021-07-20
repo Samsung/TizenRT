@@ -49,15 +49,14 @@ typedef enum {
  *   Initialize ble manager.
  * 
  * Input Parameters:
- *   client_config - Client config. If this is NULL, disable client mode.
- *   server_config - Server config. If this is NULL, disable server mode.
+ *   server_config - Server config. It can be NULL if an user doesn't want server role.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_init(ble_client_init_config *client_config, ble_server_init_config *server_config);
+ble_result_e ble_manager_init(ble_server_init_config *server_config);
 
 /****************************************************************************
  * Name: ble_manager_deinit
