@@ -19,6 +19,7 @@
 
 BLEDEV_CSRCS += bledev_lwnl.c
 BLEDEV_CSRCS += bledev.c bledev_mgr.c
+BLEDEV_CSRCS += bledev_mgr_client.c bledev_mgr_server.c
 
 # Include bledev build support
 DEPPATH += --dep-path blemgr

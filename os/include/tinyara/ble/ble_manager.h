@@ -37,7 +37,7 @@ struct bledev *net_get_bledev(uint8_t *ifname);
 struct bledev *bledev_register(struct trble_ops *ops);
 
 /*** Common ***/
-trble_result_e ble_drv_init(trble_client_init_config *client, trble_server_init_config *server);
+trble_result_e ble_drv_init(trble_server_init_config *server);
 trble_result_e ble_drv_deinit(void);
 trble_result_e ble_drv_get_mac_addr(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e ble_drv_disconnect(trble_conn_handle con_handle, trble_mode_e mode);
@@ -47,6 +47,7 @@ trble_result_e ble_drv_conn_is_active(trble_conn_handle con_handle, bool *is_act
 trble_result_e ble_drv_conn_is_any_active(bool *is_active);
 
 /*** Central(Client) ***/
+trble_result_e ble_drv_client_set_config(trble_client_init_config *config);
 trble_result_e ble_drv_start_scan(trble_scan_filter *filter);
 trble_result_e ble_drv_stop_scan(void);
 trble_result_e ble_drv_connect(trble_bd_addr *addr);
