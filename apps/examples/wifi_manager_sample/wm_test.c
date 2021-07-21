@@ -113,7 +113,7 @@ typedef enum {
 #include "wm_test_table.h"
 extern void wm_run_stress_test(void *arg);
 extern void wm_test_on_off(void *arg);
-
+extern void wm_run_dns_test(void *arg);
 /* Parser */
 #ifdef WT_MEMBER_POOL
 #undef WT_MEMBER_POOL
@@ -628,6 +628,11 @@ void _wt_stress_test(void *arg)
 	wm_run_stress_test(arg);
 }
 
+void _wt_dns_test(void *arg)
+{
+	wm_run_dns_test(arg);
+}
+
 void _wt_onoff_test(void *arg)
 {
 	wm_test_on_off(arg);
@@ -863,6 +868,15 @@ int _wt_parse_power(struct wt_options *opt, int argc, char *argv[])
 		return 0;
 	}
 	return -1;
+}
+
+int _wt_parse_dns(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc != 4) {
+		return -1;
+	}
+	opt->repeat = atoi(argv[3]);
+	return 0;
 }
 
 int _wt_parse_commands(struct wt_options *opt, int argc, char *argv[])

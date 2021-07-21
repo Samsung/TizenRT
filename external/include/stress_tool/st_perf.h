@@ -120,16 +120,26 @@
 /*
  * Expect
  */
+#define ST_ASSERT_EQ(val, exp)											\
+	do {																\
+		ST_LOG("[ST] --> "#exp" %s:%d""\n", __FUNCTION__, __LINE__);	\
+		if (exp != val) {												\
+			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);				\
+			ST_ERROR;													\
+			assert(0);													\
+		}																\
+	} while (0)
+
 #define ST_EXPECT_EQ(val, exp)											\
-		do {															\
-			ST_LOG("[ST] --> "#exp" %s:%d""\n", __FUNCTION__, __LINE__); \
-			if (exp != val) {											\
-				ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);			\
-				ST_ERROR;												\
-				res = STRESS_TC_FAIL;									\
-				goto STFUNC_OUT;										\
-			}															\
-		} while (0)
+	do {																\
+		ST_LOG("[ST] --> "#exp" %s:%d""\n", __FUNCTION__, __LINE__);	\
+		if (exp != val) {												\
+			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);				\
+			ST_ERROR;													\
+			res = STRESS_TC_FAIL;										\
+			goto STFUNC_OUT;											\
+		}																\
+	} while (0)
 
 #define ST_EXPECT_EQ2(val1, val2, exp)									\
 	do {																\

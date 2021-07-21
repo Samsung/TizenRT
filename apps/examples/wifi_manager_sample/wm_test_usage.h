@@ -71,6 +71,11 @@
 	"	 wm_test power [mode]\n"				\
 	"	 mode examples : on, off\n\n"
 
+#define WT_DNS_USAGE											\
+	"\n dns test mode\n"										\
+	"\n it can be run after a device is connected to an AP\n"	\
+	"	 wm_test dns count\n"
+
 #define WT_USAGE									\
 	"\n usage: wm_test [options]\n"					\
 	"\n run Wi-Fi Manager:\n"						\
@@ -83,4 +88,5 @@
 	WT_PROFILE_USAGE								\
 	WT_INFO_USAGE									\
 	WT_STRESS_USAGE									\
-	WT_ONOFF_USAGE
+	WT_ONOFF_USAGE									\
+	WT_DNS_USAGE
