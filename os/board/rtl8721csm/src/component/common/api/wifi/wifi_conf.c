@@ -1598,6 +1598,8 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	if (buf != NULL) {
 		nvdbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
+	} else {
+		nvdbg("STA MAC address not stored in buf\n");
 	}
 
 	if (g_link_up) {
@@ -1621,6 +1623,8 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 		nvdbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
 		memcpy(&(reason.reason_code), buf + MAC_ADDR_LEN, DISASSOC_REASON_CODE_LEN); //refer to Reason codes (IEEE 802.11-2007, 7.3.1.7, Table 7-22) in ieee802_11_defs.h
 		nvdbg("STA disassoc reason code is %d\n", reason.reason_code);
+	} else {
+		nvdbg("STA MAC address and reason code not stored in buf\n");
 	}
 	if (g_link_down) {
 		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
@@ -1642,6 +1646,8 @@ static void wifi_ap_sta_handshake_done_hdl( char* buf, int buf_len, int flags, v
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	if (buf != NULL) {
 		nvdbg("STA MAC address is " MAC_FMT "\n", MAC_ARG(buf));
+	} else {
+		nvdbg("STA MAC address not stored in buf\n");
 	}
 
 	if (g_link_up) {
