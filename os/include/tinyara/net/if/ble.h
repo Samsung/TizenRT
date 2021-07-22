@@ -53,7 +53,6 @@ typedef enum {
 	LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE,
 	
 	// Client
-	LWNL_EVT_BLE_SET_CALLBACK,
 	LWNL_REQ_BLE_START_SCAN,
 	LWNL_REQ_BLE_STOP_SCAN,
 	LWNL_REQ_BLE_CONNECT,
@@ -84,11 +83,11 @@ typedef enum {
 } lwnl_req_ble;
 
 typedef enum {
-	LWNL_EVT_BLE_CONNECTED,
-	LWNL_EVT_BLE_DISCONNECTED,
-	LWNL_EVT_BLE_SCAN_START,
-	LWNL_EVT_BLE_SCAN_STOP,
-	LWNL_EVT_BLE_UNKNOWN,
+	LWNL_EVT_BLE_CLIENT_CONNECT,
+	LWNL_EVT_BLE_CLIENT_DISCONNECT,
+	LWNL_EVT_BLE_CLIENT_NOTI,
+	LWNL_EVT_BLE_SCAN_STATE,
+	LWNL_EVT_BLE_SCAN_DATA,
 } lwnl_cb_ble;
 
 typedef enum {
@@ -346,4 +345,4 @@ struct trble_ops {
 	trble_set_adv_interval set_adv_interval;
 };
 
-int trble_post_event(struct bledev *dev, lwnl_cb_ble evt, void *buffer, uint32_t buf_len);
+int trble_post_event(lwnl_cb_ble evt, void *buffer, uint32_t buf_len);

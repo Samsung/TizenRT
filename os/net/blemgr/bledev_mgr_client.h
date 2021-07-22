@@ -21,4 +21,3 @@
 #include <tinyara/net/if/ble.h>
 
 trble_client_init_config *bledrv_client_get_fake_config(void);
-void bledrv_client_set_config(trble_client_init_config *init_client);

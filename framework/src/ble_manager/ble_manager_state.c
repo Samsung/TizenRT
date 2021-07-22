@@ -49,6 +49,8 @@ static blemgr_state_handle_s g_state_handle = {
 	BLEMGR_UNKNOWN_MODE,
 };
 
+static ble_client_init_config g_client_config = { 0, };
+
 #define BLE_STATE_CHECK                                   \
 	do {                                                  \
 		if (g_state_handle.state != BLEMGR_INITIALIZED) { \
@@ -122,8 +124,8 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	case BLE_EVT_CMD_SET_CALLBACK: {
 		BLE_STATE_CHECK;
 
-		trble_client_init_config *config = (trble_client_init_config *)msg->param;
-		ret = ble_drv_client_set_config(config);
+		memcpy(&g_client_config, msg->param, sizeof(ble_client_init_config));
+		ret = TRBLE_SUCCESS;
 	} break;
 
 	case BLE_EVT_CMD_DEL_BOND: {
@@ -357,12 +359,74 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_set_adv_interval(interval);
 	} break;
 
+
+	// Event Handling
+	case BLE_EVT_CLIENT_CONNECT: {
+		if (msg->param == NULL) {
+			break;
+		}
+		ble_client_device_connected *data = (ble_client_device_connected *)msg->param;
+		if (g_client_config.ble_client_device_connected_cb) {
+			g_client_config.ble_client_device_connected_cb(data);
+		}
+		free(msg->param);
+	} break;
+
+	case BLE_EVT_CLIENT_DISCONNECT: {
+		if (msg->param == NULL) {
+			break;
+		}
+		ble_conn_handle data = *(ble_conn_handle *)msg->param;
+		if (g_client_config.ble_client_device_disconnected_cb) {
+			g_client_config.ble_client_device_disconnected_cb(data);
+		}
+		free(msg->param);
+	} break;
+
+	case BLE_EVT_CLIENT_NOTI: {
+		if (msg->param == NULL) {
+			break;
+		}
+		uint8_t *data = (uint8_t *)msg->param;
+		ble_client_operation_handle *handle = (ble_client_operation_handle *)data;
+		ble_data read_result[1];
+		read_result->length = *(uint16_t *)(data + sizeof(ble_client_operation_handle));
+		read_result->data = (uint8_t *)(data + sizeof(ble_client_operation_handle) + sizeof(read_result->length));
+
+		if (g_client_config.ble_client_operation_notification_cb) {
+			g_client_config.ble_client_operation_notification_cb(handle, read_result);
+		}
+		free(msg->param);
+	} break;
+
+	case BLE_EVT_SCAN_STATE: {
+		if (msg->param == NULL) {
+			break;
+		}
+		ble_client_scan_state_e data = *(ble_client_scan_state_e *)msg->param;
+		if (g_client_config.ble_client_scan_state_changed_cb) {
+			g_client_config.ble_client_scan_state_changed_cb(data);
+		}
+		free(msg->param);
+	} break;
+
+	case BLE_EVT_SCAN_DATA: {
+		if (msg->param == NULL) {
+			break;
+		}
+		ble_client_scanned_device *data = (ble_client_scanned_device *)msg->param;
+		if (g_client_config.ble_client_device_scanned_cb) {
+			g_client_config.ble_client_device_scanned_cb(data);
+		}
+		free(msg->param);
+	} break;
+
 	default:
 		ret = BLE_MANAGER_UNKNOWN;
 		break;
 	}
 
 handle_req_done:
-	BLE_LOG_INFO("[BLE] T%d <-- _handle_request\n", getpid());
+	BLE_LOG_INFO("[BLEMGR] T%d <-- _handle_request\n", getpid());
 	return ret;
 }

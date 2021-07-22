@@ -41,25 +41,48 @@ static inline void LWNL_SET_MSG(blemgr_msg_s *msg, blemgr_req_e event,
 	msg->signal = signal;
 }
 
+static void *_lwnl_handle_data(int fd, int len)
+{
+	char *buf = (char *)malloc(len);
+	if (!buf) {
+		return NULL;
+	}
+
+	int res = read(fd, buf, len);
+	if (res != len) {
+		BLE_LOG_ERROR("read error\n");
+		free(buf);
+		return NULL;
+	}
+
+	return (void *)buf;
+}
+
 static void _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 {
+	void *param = NULL;
+	if (len > 0) {
+		param = _lwnl_handle_data(fd, len);
+	}
 	switch (status.evt) {
-	case LWNL_EVT_BLE_CONNECTED:
-		LWNL_SET_MSG(&g_msg, BLE_EVT_CONNECTED, BLE_MANAGER_FAIL, NULL, NULL);
+	case LWNL_EVT_BLE_CLIENT_CONNECT:
+		LWNL_SET_MSG(&g_msg, BLE_EVT_CLIENT_CONNECT, BLE_MANAGER_FAIL, param, NULL);
 		break;
-	case LWNL_EVT_BLE_DISCONNECTED:
-		LWNL_SET_MSG(&g_msg, BLE_EVT_DISCONNECTED, BLE_MANAGER_FAIL, NULL, NULL);
+	case LWNL_EVT_BLE_CLIENT_DISCONNECT:
+		LWNL_SET_MSG(&g_msg, BLE_EVT_CLIENT_DISCONNECT, BLE_MANAGER_FAIL, param, NULL);
 		break;
-	case LWNL_EVT_BLE_SCAN_START:
-		LWNL_SET_MSG(&g_msg, BLE_EVT_SCAN_STARTED, BLE_MANAGER_FAIL, NULL, NULL);
+	case LWNL_EVT_BLE_CLIENT_NOTI:
+		LWNL_SET_MSG(&g_msg, BLE_EVT_CLIENT_NOTI, BLE_MANAGER_FAIL, param, NULL);
 		break;
-	case LWNL_EVT_BLE_SCAN_STOP:
-		LWNL_SET_MSG(&g_msg, BLE_EVT_SCAN_STOPPED, BLE_MANAGER_FAIL, NULL, NULL);
+	case LWNL_EVT_BLE_SCAN_STATE:
+		LWNL_SET_MSG(&g_msg, BLE_EVT_SCAN_STATE, BLE_MANAGER_FAIL, param, NULL);
+		break;
+	case LWNL_EVT_BLE_SCAN_DATA:
+		LWNL_SET_MSG(&g_msg, BLE_EVT_SCAN_DATA, BLE_MANAGER_FAIL, param, NULL);
 		break;
 	default:
 		BLE_LOG_ERROR("Bad status received (%d)\n", status.evt);
 		BLE_ERR;
-		return;
 	}
 	return;
 }
@@ -92,16 +115,17 @@ int lwnl_fetch_ble_event(int fd, void *buf, int buflen)
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	BLE_LOG_VERBOSE("dev state(%d) length(%d)\n", status.evt, len);
+	BLE_LOG_INFO("dev state(%d) length(%d)\n", status.evt, len);
 	if (status.type == LWNL_DEV_BLE) {
 		_lwnl_call_event(fd, status, len);
 		hmsg->msg = &g_msg;
 	} else {
 		/* Remove wifi data in socket. */
 		char *t_buf = (char *)malloc(len);
-		nbytes = read(fd, (char *)t_buf, len);
-		BLE_LOG_INFO("read unused data nbytes : %d / len : %d\n", nbytes, len);
-		free(t_buf);
+		if (t_buf) {
+			nbytes = read(fd, (char *)t_buf, len);
+			free(t_buf);
+		}
 		hmsg->msg = NULL;
 	}
 

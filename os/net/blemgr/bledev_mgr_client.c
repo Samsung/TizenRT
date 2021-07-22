@@ -16,54 +16,73 @@
  *
  ****************************************************************************/
 
+#include <tinyara/kmalloc.h>
 #include <string.h>
 #include <tinyara/net/if/ble.h>
 #include <tinyara/ble/ble_manager.h>
 #include <ble_manager/ble_manager.h>
 #include "bledev_mgr_client.h"
 
-#define BLE_DRV_SERVER_MAX_DATA_LEN 512
 #define BLE_DRV_TAG "[BLEDRV_CLIENT]"
-
-static ble_client_init_config g_client_config = { 0, };
 
 static void bledrv_scan_state_changed_cb(trble_scan_state_e scan_state)
 {
-	if (g_client_config.ble_client_scan_state_changed_cb != NULL) {
-		g_client_config.ble_client_scan_state_changed_cb((ble_client_scan_state_e)scan_state);
-	}
+	trble_post_event(LWNL_EVT_BLE_SCAN_STATE, (void *)&scan_state, sizeof(trble_scan_state_e));
 	return;
 }
 
 static void bledrv_device_scanned_cb(trble_scanned_device *scanned_device)
 {
-	if (g_client_config.ble_client_device_scanned_cb != NULL) {
-		g_client_config.ble_client_device_scanned_cb((ble_client_scanned_device *)scanned_device);
+	int i;
+	int j;
+	uint8_t temp;
+	uint8_t *mac = scanned_device->addr.bd_addr; // This mac should be re-ordered.
+
+	for (i = 0, j = TRBLE_BD_ADDR_MAX_LEN - 1; i < j; i++, j--) {
+		temp = mac[i];
+		mac[i] = mac[j];
+		mac[j] = temp;
 	}
+	trble_post_event(LWNL_EVT_BLE_SCAN_DATA, scanned_device, sizeof(trble_scanned_device));
 	return;
 }
 
 static void bledrv_device_disconnected_cb(trble_conn_handle conn_id)
 {
-	if (g_client_config.ble_client_device_disconnected_cb != NULL) {
-		g_client_config.ble_client_device_disconnected_cb((ble_conn_handle)conn_id);
-	}
+	trble_post_event(LWNL_EVT_BLE_CLIENT_DISCONNECT, (void *)&conn_id, sizeof(trble_conn_handle));
 	return;
 }
 
 static void bledrv_device_connected_cb(trble_device_connected *dev)
 {
-	if (g_client_config.ble_client_device_connected_cb != NULL) {
-		g_client_config.ble_client_device_connected_cb((ble_client_device_connected *)dev);
-	}
+	trble_post_event(LWNL_EVT_BLE_CLIENT_CONNECT, (void *)dev, sizeof(trble_device_connected));
 	return;
 }
 
 static void bledrv_operation_notification_cb(trble_operation_handle *handle, trble_data *read_result)
 {
-	if (g_client_config.ble_client_operation_notification_cb != NULL) {
-		g_client_config.ble_client_operation_notification_cb((ble_client_operation_handle *)handle, (ble_data *)read_result);
+	uint32_t size = sizeof(trble_operation_handle) + sizeof(read_result->length) + read_result->length;
+	uint8_t *data = (uint8_t *)kmm_malloc(size);
+	if (data == NULL) {
+		BLE_LOGE(BLE_DRV_TAG, "out of memroy\n");
+		return;
 	}
+	uint8_t *ptr = data;
+	
+	// Copy handle
+	memcpy(ptr, handle, sizeof(trble_operation_handle));
+	ptr += sizeof(trble_operation_handle);
+
+	// Copy read_result len
+	memcpy(ptr, &(read_result->length), sizeof(read_result->length));
+	ptr += sizeof(read_result->length);
+
+	// Copy read_result data
+	memcpy(ptr, read_result->data, read_result->length);
+
+	trble_post_event(LWNL_EVT_BLE_CLIENT_NOTI, data, size);
+
+	kmm_free(data);
 	return;
 }
 
@@ -79,10 +98,4 @@ static trble_client_init_config g_client_fake_config = {
 trble_client_init_config *bledrv_client_get_fake_config(void)
 {
 	return &g_client_fake_config;
-}
-
-void bledrv_client_set_config(trble_client_init_config *init_client)
-{
-	memcpy(&g_client_config, init_client, sizeof(trble_client_init_config));
-	return;
 }

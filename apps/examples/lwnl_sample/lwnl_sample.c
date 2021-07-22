@@ -48,11 +48,10 @@ struct ls_event_list {
 };
 
 struct ls_event_list g_ble_events[] = {
-	{LWNL_EVT_BLE_DISCONNECTED, 20},
-	{LWNL_EVT_BLE_CONNECTED, 0},
-	{LWNL_EVT_BLE_DISCONNECTED, 246},
-	{LWNL_EVT_BLE_SCAN_START, 0},
-	{LWNL_EVT_BLE_SCAN_STOP, 256},
+	{LWNL_EVT_BLE_CLIENT_CONNECT, 0},
+	{LWNL_EVT_BLE_CLIENT_DISCONNECT, 246},
+	{LWNL_EVT_BLE_SCAN_STATE, 0},
+	{LWNL_EVT_BLE_SCAN_DATA, 256},
 };
 
 struct ls_event_list g_wifi_events[] = {
@@ -223,10 +222,10 @@ static void *_ble_event_listener(void *arg)
 
 static void *_generate_random_event(void *arg)
 {
-	lwnl_postmsg(LWNL_DEV_BLE, LWNL_EVT_BLE_CONNECTED, NULL, 0);
+	lwnl_postmsg(LWNL_DEV_BLE, LWNL_EVT_BLE_CLIENT_CONNECT, NULL, 0);
 	lwnl_postmsg(LWNL_DEV_WIFI, LWNL_EVT_STA_CONNECTED, NULL, 0);
 
-	lwnl_postmsg(LWNL_DEV_BLE, LWNL_EVT_BLE_DISCONNECTED, g_buf, 256);
+	lwnl_postmsg(LWNL_DEV_BLE, LWNL_EVT_BLE_SCAN_DATA, g_buf, 256);
 	lwnl_postmsg(LWNL_DEV_WIFI, LWNL_EVT_SCAN_DONE, g_buf, 24);
 
 	return NULL;

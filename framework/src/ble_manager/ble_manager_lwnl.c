@@ -83,16 +83,6 @@ trble_result_e ble_drv_get_mac_addr(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN])
 	return res;
 }
 
-trble_result_e ble_drv_client_set_config(trble_client_init_config *config)
-{
-	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_EVT_BLE_SET_CALLBACK}, sizeof(trble_client_init_config), (void *)config, (void *)&res};
-	if (_send_msg(&msg) < 0) {
-		res = TRBLE_FILE_ERROR;
-	}
-	return res;
-}
-
 trble_result_e ble_drv_disconnect(trble_conn_handle con_handle, trble_mode_e mode)
 {
 	trble_result_e res = TRBLE_SUCCESS;
