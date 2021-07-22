@@ -38,6 +38,7 @@ extern int netdev_mgr_start(void);
 #ifdef CONFIG_VIRTUAL_WLAN
 extern void vwifi_start(void);
 #endif
+extern int trwifi_run_handler(void);
 /****************************************************************************
  * Name: netmgr_setup
  *
@@ -112,13 +113,18 @@ void net_initialize(void)
 #ifdef CONFIG_VIRTUAL_WLAN
 	vwifi_start();
 #endif
-
 	/*  start network stack */
 	struct netstack *stk = get_netstack(TR_SOCKET);
 	int res = -1;
 	NETSTACK_CALL_RET(stk, start, (NULL), res);
 	if (res < 0) {
 		NET_LOGE(TAG, "!!!start stack fail!!!\n");
+		assert(0);
 	}
+	if (trwifi_run_handler() != 0) {
+		NET_LOGE(TAG, "!!!start event handler fail!!!\n");
+		assert(0);
+	}
+
 	return;
 }

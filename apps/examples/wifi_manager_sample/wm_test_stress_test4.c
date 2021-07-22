@@ -29,7 +29,7 @@
 #include "wm_test_mock.h"
 #include "wm_test_log.h"
 
-#define WM_TEST_TRIAL 3
+#define WM_TEST_TRIAL 100
 #define TAG "[WT]"
 //if semaphore operation failed then it'll try it again 10ms later
 #define WT_SEM_TRY_WAIT_US 10000

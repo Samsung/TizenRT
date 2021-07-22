@@ -35,7 +35,74 @@
 			res = (dev->t_ops.wl->method)param;	\
 		}										\
 	} while (0)
+
+#define LOCK_EVTQUEUE(queue)								\
+	do {													\
+		if (sem_wait(&queue.lock) != 0) {					\
+			int derr_no = get_errno();						\
+			if (derr_no == EINTR) {							\
+				continue;									\
+			} else {										\
+				NET_LOGE(TAG, "lock fail %d\n", derr_no);	\
+				assert(0);									\
+			}												\
+		}													\
+	} while (0)
+
+#define UNLOCK_EVTQUEUE(queue)							\
+	do {												\
+		if (sem_post(&queue.lock) != 0) {				\
+			NET_LOGE(TAG, "unlock fail %d\n", errno);	\
+			assert(0);									\
+		}												\
+	} while (0)
+
+#define WAIT_EVTQUEUE(queue)										\
+	do {															\
+		if (sem_wait(&queue.signal) != 0) {							\
+			int derr_no = get_errno();								\
+			if (derr_no == EINTR) {									\
+				continue;											\
+			} else {												\
+				NET_LOGE(TAG, "wait signal error %d\n", derr_no);	\
+				assert(0);											\
+			}														\
+		}															\
+	} while (0)
+
+#define SIGNAL_EVTQUEUE(queue)								\
+	do {													\
+		if (sem_post(&queue.signal) != 0) {					\
+			NET_LOGE(TAG, "send signal fail %d\n", errno);	\
+			assert(0);										\
+		}													\
+	} while (0)
+
+#define CONTAINER_OF(ptr, type, member)							\
+	((type *)((char *)(ptr) - (size_t)(&((type *)0)->member)))
+
+#define TRWIFI_GET_EVT(ptr)						\
+	CONTAINER_OF(ptr, trwifi_evt, entry)
+
+#define NETMGR_EVTHANDLER_PRIO 100
+#define NETMGR_EVTHANDLER_STACKSIZE 2048
 #define TAG "[NETMGR]"
+
+typedef struct {
+	sem_t lock;
+	sem_t signal;
+	sq_queue_t queue;
+} trwifi_evt_queue;
+
+typedef struct {
+	uint32_t evt;
+	void *dev;
+	void *buf;
+	int32_t buf_len;
+	sq_entry_t entry;
+} trwifi_evt;
+
+static trwifi_evt_queue g_queue;
 
 // this function have to succeed. otherwise it'd be better to reset.
 int _trwifi_handle_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len)
@@ -184,11 +251,74 @@ int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list)
 
 int trwifi_post_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len)
 {
-	int res = _trwifi_handle_event(dev, evt, buffer, buf_len);
-	if (res < 0) {
-		// if network stack is not enabled. it needs to be restart
-		NET_LOGE(TAG, "critical error network stack is not enabled\n");
-		assert(0);
+	trwifi_evt *msg = (trwifi_evt *)kmm_zalloc(sizeof(trwifi_evt));
+	if (!msg) {
+		return -1;
 	}
-	return lwnl_postmsg(LWNL_DEV_WIFI, (int)evt, buffer, buf_len);
+	msg->evt = evt;
+	msg->dev = dev;
+	if (buffer) {
+		msg->buf = (void *)kmm_malloc(buf_len);
+		if (!msg->buf) {
+			return -1;
+		}
+		memcpy(msg->buf, buffer, buf_len);
+		msg->buf_len = buf_len;
+	}
+	LOCK_EVTQUEUE(g_queue);
+	sq_addlast(&msg->entry, &g_queue.queue);
+	UNLOCK_EVTQUEUE(g_queue);
+	SIGNAL_EVTQUEUE(g_queue);
+	return 0;
+}
+
+void *_trwifi_event_handler(void *arg)
+{
+	while (1) {
+		WAIT_EVTQUEUE(g_queue);
+		LOCK_EVTQUEUE(g_queue);
+		trwifi_evt *evt = TRWIFI_GET_EVT(sq_remfirst(&g_queue.queue));
+		UNLOCK_EVTQUEUE(g_queue);
+		int res = _trwifi_handle_event(evt->dev, evt->evt, evt->buf, evt->buf_len);
+		if (res < 0) {
+			// if network stack is not enabled. it needs to be restart
+			NET_LOGE(TAG, "critical error network stack is not enabled\n");
+			assert(0);
+		}
+
+		res = lwnl_postmsg(LWNL_DEV_WIFI, evt->evt, evt->buf, evt->buf_len);
+		if (res < 0) {
+			NET_LOGE(TAG, "critical error network stack is not enabled\n");
+			assert(0);
+		}
+		if (evt->buf) {
+			kmm_free(evt->buf);
+			evt->buf_len = 0;
+		}
+		kmm_free(evt);
+	}
+
+	NET_LOGE(TAG, "critical error\n", errno);
+	return NULL;
+}
+
+int trwifi_run_handler(void)
+{
+	if (sem_init(&g_queue.lock, 0, 1) != 0) {
+		NET_LOGE(TAG, "init lock fail %d\n", errno);
+		return -1;
+	}
+	if (sem_init(&g_queue.signal, 0, 0) != 0) {
+		NET_LOGE(TAG, "init signal fail %d\n", errno);
+		return -1;
+	}
+
+	sys_thread_t tid;
+	tid = kernel_thread("netmgr_event_handler", NETMGR_EVTHANDLER_PRIO,
+						NETMGR_EVTHANDLER_STACKSIZE, _trwifi_event_handler, NULL);
+	if (tid == ERROR) {
+		NET_LOGE(TAG, "critical error %d\n", errno);
+		return -2;
+	}
+	return 0;
 }

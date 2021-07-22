@@ -292,11 +292,8 @@ int parse_scan_with_ssid_res(char*buf, int buflen, char *target_ssid, void *user
 /*
  * Callback
  */
-static int rtk_drv_callback_handler(int argc, char *argv[])
+static int rtk_drv_callback_handler(int type)
 {
-	//RTKDRV_ENTER;
-	int type = (int)(argv[1][0] - '0');
-
 	switch (type) {
 	case 1:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECTED, NULL, 0);
@@ -317,57 +314,36 @@ static int rtk_drv_callback_handler(int argc, char *argv[])
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
 		break;
 	}
-
 	return 0;
 }
 
 void linkup_handler(rtk_reason_t *reason)
 {
 	//RTKDRV_ENTER;
-	pid_t pid;
-	char *argv[2];
-	argv[1] = NULL;
-	char data[2] = {0, 0};
+	int type = 0;
 
 	if (g_mode == RTK_WIFI_STATION_IF) {
 		if (reason->reason_code == RTK_STATUS_SUCCESS) {
-			data[0] = '1';
+			type = 1;
 		} else {
-			data[0] = '2';
+			type = 2;
 		}
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		data[0] = '3';
+		type = 3;
 	}
-	argv[0] = data;
-
-	pid = kernel_thread("lwnl80211_cbk_handler", 100, 2048, (main_t)rtk_drv_callback_handler, argv);
-	if (pid < 0) {
-		vddbg("kernel thread create fail(%d)\n", errno);
-		return;
-	}
+	(void)rtk_drv_callback_handler(type);
 }
 
 void linkdown_handler(rtk_reason_t *reason)
 {
 	//RTKDRV_ENTER;
-	pid_t pid;
-	char *argv[2];
-	argv[1] = NULL;
-	char data[2] = {0, 0};
-
-	data[0] = '4';
+	int type = 4;
 	if (g_mode == RTK_WIFI_STATION_IF) {
-		data[0] = '4';
+		type = 4;
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		data[0] = '5';
+		type = 5;
 	}
-	argv[0] = data;
-
-	pid = kernel_thread("lwnl80211_cbk_handler", 100, 2048, (main_t)rtk_drv_callback_handler, argv);
-	if (pid < 0) {
-		vddbg("pthread create fail(%d)\n", errno);
-		return;
-	}
+	(void)rtk_drv_callback_handler(type);
 }
 
 
