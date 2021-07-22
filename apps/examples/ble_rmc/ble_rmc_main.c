@@ -30,8 +30,7 @@
 #include <errno.h>
 
 #define RMC_TAG "[RMC]"
-// #define RMC_LOG(tag, fmt, args...) printf("\033[0;32m"tag fmt"\033[0m", ##args)
-#define RMC_LOG(tag, fmt, args...) printf(tag fmt, ##args)
+#define RMC_LOG(tag, fmt, args...) printf("\x1b[32m"tag"\x1b[0m" fmt, ##args)
 
 static sem_t g_conn_sem = { 0, };
 static ble_conn_handle g_conn = 0;
@@ -56,12 +55,12 @@ static void ble_device_scanned_cb(ble_client_scanned_device *scanned_device)
 		scanned_device->addr.bd_addr[5]
 	);
 	if (g_scan_done == 0) {
-		g_target[0] = scanned_device->addr.bd_addr[5];
-		g_target[1] = scanned_device->addr.bd_addr[4];
-		g_target[2] = scanned_device->addr.bd_addr[3];
-		g_target[3] = scanned_device->addr.bd_addr[2];
-		g_target[4] = scanned_device->addr.bd_addr[1];
-		g_target[5] = scanned_device->addr.bd_addr[0];
+		g_target[0] = scanned_device->addr.bd_addr[0];
+		g_target[1] = scanned_device->addr.bd_addr[1];
+		g_target[2] = scanned_device->addr.bd_addr[2];
+		g_target[3] = scanned_device->addr.bd_addr[3];
+		g_target[4] = scanned_device->addr.bd_addr[4];
+		g_target[5] = scanned_device->addr.bd_addr[5];
 		g_scan_done = 1;
 	}
 	

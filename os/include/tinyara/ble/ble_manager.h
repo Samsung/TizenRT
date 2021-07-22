@@ -47,7 +47,6 @@ trble_result_e ble_drv_conn_is_active(trble_conn_handle con_handle, bool *is_act
 trble_result_e ble_drv_conn_is_any_active(bool *is_active);
 
 /*** Central(Client) ***/
-trble_result_e ble_drv_client_set_config(trble_client_init_config *config);
 trble_result_e ble_drv_start_scan(trble_scan_filter *filter);
 trble_result_e ble_drv_stop_scan(void);
 trble_result_e ble_drv_connect(trble_bd_addr *addr);

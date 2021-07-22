@@ -67,13 +67,6 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		}
 	}
 	break;
-	case LWNL_EVT_BLE_SET_CALLBACK:
-	{
-		trble_client_init_config *init_client = (trble_client_init_config *)data;
-		bledrv_client_set_config(init_client);
-		ret = TRBLE_SUCCESS;
-	}
-	break;
 	case LWNL_REQ_BLE_DISCONNECT:
 	{
 		trble_conn_handle con_handle = 0;
@@ -469,9 +462,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	return ret;
 }
 
-// uint8_t t[3] = { 3, 2, 1 };
-// trble_post_event(dev, LWNL_EVT_BLE_CONNECTED, t, 3);
-int trble_post_event(struct bledev *dev, lwnl_cb_ble evt, void *buffer, uint32_t buf_len)
+int trble_post_event(lwnl_cb_ble evt, void *buffer, uint32_t buf_len)
 {
 	BLE_LOGV(TRBLE_TAG, "trble post event : %d\n", evt);
 	return lwnl_postmsg(LWNL_DEV_BLE, (int)evt, buffer, buf_len);
