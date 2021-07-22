@@ -4837,6 +4837,10 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 		goto ok_out;
 #endif							/* CONFIG_FS_WRITABLE */
 
+	case BIOC_BULKERASE:
+		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
+		goto ok_out;
+		
 	case BIOC_FIBMAP:
 
 		if ((uint16_t)arg >= dev->totalsectors) {

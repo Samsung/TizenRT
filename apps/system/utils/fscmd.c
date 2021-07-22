@@ -63,6 +63,7 @@
 #include <libgen.h>
 #include <sys/statfs.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <tinyara/fs/fs_utils.h>
 #ifdef CONFIG_TASH
 #include <apps/shell/tash.h>
@@ -1336,6 +1337,78 @@ static int tash_df(int argc, char **args)
 }
 #endif
 
+#ifndef CONFIG_DISABLE_ENVIRON
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
+	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
+	
+enum fs_minor_num_e {
+	FS_BLOCK_MINOR_PRIMARY = 0, // minor number primary block driver, usually for /mnt
+	FS_BLOCK_MINOR_SECONDARY = 1 // usually for /ext
+};
+typedef enum fs_minor_num_e fs_minor_t;
+
+static int format_filesystem(fs_minor_t minor)
+{
+	char name[CONFIG_PATH_MAX];
+	int fd;
+	int ret = ERROR;
+
+	if ((minor < FS_BLOCK_MINOR_PRIMARY) || (minor > FS_BLOCK_MINOR_SECONDARY)) {
+		printf("Invalid minor number : %d", minor);
+		return ERROR;
+	}
+	for (int i = 0; i < 9; i++) {
+		snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, i);
+		fd = open(name, O_RDWR);
+		if (fd < 0) {
+			continue;
+		}
+		/* TODO Multi root of smartfs should be considered when it enabled */
+		ret = ioctl(fd, BIOC_BULKERASE, 0);
+		close(fd);
+		if (ret != OK) {
+			printf("Low level format failed ret : %d errno : %d", ret, errno);
+			return ret;
+		}
+		break;
+	}
+	if (ret == OK) {
+		printf("Low level format finished, Please reboot device\n");
+	}
+	return ret;
+}
+#endif
+/****************************************************************************
+ * Name: tash_format
+ *
+ * Description:
+ *   format filesystem
+ *
+ * Usage:
+ *   format [internal / external]
+ ****************************************************************************/
+static int tash_format(int argc, char **args)
+{
+	int ret = OK;
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
+	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
+
+	if (argc >= 2 && strncmp(args[1], "internal", strlen(args[1]) + 1) == 0) {
+		ret = format_filesystem(FS_BLOCK_MINOR_PRIMARY);
+	} else if (argc >= 2 && strncmp(args[1], "external", strlen(args[1]) + 1) == 0) {
+		ret = format_filesystem(FS_BLOCK_MINOR_SECONDARY);
+	} else {
+		printf("Usage: format [internal | external] \n");
+		ret = ERROR;
+	}
+#else
+	printf("BCH should be enabled to format file system\n");
+	ret = ERROR;
+#endif
+	return ret;
+}
+#endif
+
 const static tash_cmdlist_t fs_utilcmds[] = {
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"cat",       tash_cat,       TASH_EXECMD_SYNC},
@@ -1351,6 +1424,10 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"echo",      tash_echo,      TASH_EXECMD_SYNC},
+#endif
+
+#ifndef CONFIG_DISABLE_ENVIRON
+	{"format",     tash_format,     TASH_EXECMD_SYNC},
 #endif
 
 #ifndef CONFIG_DISABLE_ENVIRON
