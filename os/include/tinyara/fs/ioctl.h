@@ -240,7 +240,11 @@
 										 *      ProcFS data.
 										 * OUT: None (ioctl return value provides
 										 *      success/failure indication). */
-#define BIOC_FIBMAP     _BIOC(0x000B)	/* Reveal Physical sector number from bitmap
+#define BIOC_BULKERASE  _BIOC(0x000B)	/* Request Bulk erase to block driver
+										 * IN:	None
+										 * OUT: None (ioctl return value provides
+										 *      success/failure indication). */
+#define BIOC_FIBMAP     _BIOC(0x000C)	/* Reveal Physical sector number from bitmap
 										 * of block device.
 										 * IN:	Logical sector number which need
 										 *		to reveal physical sector.
