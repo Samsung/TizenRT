@@ -257,12 +257,10 @@ fetch_scan_results(trwifi_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_
 /*
  * Callback
  */
-static int slsi_drv_callback_handler(void *arg)
+static int slsi_drv_callback_handler(int type)
 {
-	int *type = (int*)(arg);
-
-	vddbg("Got callback from SLSI drv (%d)\n", *type);
-	switch (*type) {
+	vddbg("Got callback from SLSI drv (%d)\n", type);
+	switch (type) {
 	case 1:
 		trwifi_post_event(g_slsi_netdev, LWNL_EVT_STA_CONNECTED, NULL, 0);
 		break;
@@ -282,67 +280,36 @@ static int slsi_drv_callback_handler(void *arg)
 		trwifi_post_event(g_slsi_netdev, LWNL_EVT_UNKNOWN, NULL, 0);
 		break;
 	}
-
-	kmm_free(type);
-
 	return 0;
 }
 
 static void linkup_handler(slsi_reason_t *reason)
 {
-	int *type = (int *)kmm_malloc(sizeof(int));
-	if (type == NULL) {
-		vddbg("malloc error\n");
-		return;
-	}
-
+	int type = 1;
 	if (g_mode == SLSI_WIFI_STATION_IF) {
 		if (reason->reason_code == SLSI_STATUS_SUCCESS) {
-			*type = 1;
+			type = 1;
 		} else {
-			*type = 2;
+			type = 2;
 		}
 	} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
-		*type = 3;
+		type = 3;
 	}
 
 	/*  If driver sends event to lwnl80211 directly it will generate platform watchdog */
-	pthread_t tid;
-	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
-	if (ret != 0) {
-		vddbg("pthread create fail(%d)\n", errno);
-		kmm_free(type);
-		return;
-	}
-	pthread_setname_np(tid, "trwifi_cbk_handler");
-	pthread_detach(tid);
+	(void)slsi_drv_callback_handler(type);
 }
-
 
 static void linkdown_handler(slsi_reason_t *reason)
 {
-	int *type = (int *)kmm_malloc(sizeof(int));
-	if (type == NULL) {
-		vddbg("malloc error linkdown\n");
-		return;
-	}
-	*type = 4;
+	int type = 4;
 	if (g_mode == SLSI_WIFI_STATION_IF) {
-		*type = 4;
+		type = 4;
 	} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
-		*type = 5;
+		type = 5;
 	}
-	pthread_t tid;
-	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
-	if (ret != 0) {
-		vddbg("pthread create fail(%d)\n", errno);
-		kmm_free(type);
-		return;
-	}
-	pthread_setname_np(tid, "trwifi_cbk_handler");
-	pthread_detach(tid);
+	(void)slsi_drv_callback_handler(type);
 }
-
 
 static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 {

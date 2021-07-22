@@ -151,7 +151,7 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			wifi_manager_scan_info_s *info = NULL;
 			wifi_utils_scan_list_s *list = (wifi_utils_scan_list_s *)arg;
 			if (list) {
-				if (WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, (wifi_utils_scan_list_s *)arg)) {
+				if (WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
 					NET_LOGE(TAG, "parse error\n");
 					if (cbk->scan_ap_done) {
 						cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);
