@@ -165,17 +165,8 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
 	NET_LOGV(TAG, "scan state(%d) length(%d)\n", status.evt, len);
-	if (status.type == LWNL_DEV_WIFI) {
-		(void)_lwnl_call_event(fd, status, len);
-		hmsg->msg = &g_msg;
-	} else {
-		char *t_buf = (char *)malloc(len);
-		nbytes = read(fd, t_buf, len);
-		NET_LOGI(TAG, "read unused data in the socket[%d]\n", nbytes);
-		free(t_buf);
-		hmsg->msg = NULL;
-	}
-
+	(void)_lwnl_call_event(fd, status, len);
+	hmsg->msg = &g_msg;
 	hmsg->signal = NULL;
 
 	return 0;
