@@ -53,7 +53,9 @@ extern "C" {
 #define WPA3_SECURITY		0x00800000
 #define WPS_ENABLED     0x10000000
 
-#define RTW_MAX_PSK_LEN		(64)
+#define RTW_WPA2_MAX_PSK_LEN		(64)
+#define RTW_WPA3_MAX_PSK_LEN		(128)
+#define RTW_MAX_PSK_LEN		RTW_WPA3_MAX_PSK_LEN
 #define RTW_MIN_PSK_LEN		(8)
 
 #define MCSSET_LEN			16
