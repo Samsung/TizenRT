@@ -86,8 +86,6 @@ config NET_ETHERNET
 
 endmenu # Data link support
 
-source net/netdev/Kconfig
-
 menu "Protocols"
 
 menu "Dynamic Host Configuration Protocol (DHCP)"
@@ -182,8 +180,5 @@ config NET_LOOPBACK_INTERFACE
 	---help---
 		Support loop interface (127.0.0.1).
 
-source "net/local/Kconfig"
-
 endif # NET
-
 

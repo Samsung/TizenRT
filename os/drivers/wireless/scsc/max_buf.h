@@ -23,9 +23,6 @@
 #include <arpa/inet.h>
 #include "utils_scsc.h"
 #include "utils_misc.h"
-#ifndef CONFIG_NET_NETMGR
-#define netdev netif
-#endif
 struct slsi_mbuf_fapi {
 	u32 sig_length;
 	u32 data_length;
