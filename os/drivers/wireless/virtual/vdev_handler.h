@@ -51,7 +51,7 @@ typedef enum {
 struct vwifi_req {
 	vwifi_req_e type;
 	void *arg;
-	trwifi_result_e res;
+	trwifi_result_e *res;
 };
 
 struct vwifi_msg {
