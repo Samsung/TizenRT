@@ -30,13 +30,27 @@
 
 extern unsigned char rltk_wlan_running(unsigned char idx);
 
+static void _reverse_mac(uint8_t *mac)
+{
+	int i;
+	int j;
+	uint8_t temp;
+
+	for (i = 0, j = TRBLE_BD_ADDR_MAX_LEN - 1; i < j; i++, j--) {
+		temp = mac[i];
+		mac[i] = mac[j];
+		mac[j] = temp;
+	}
+}
+
 /*** Common ***/
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server);
 trble_result_e trble_netmgr_deinit(struct bledev *dev);
 trble_result_e trble_netmgr_get_mac_addr(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e trble_netmgr_disconnect(struct bledev *dev, trble_conn_handle con_handle, trble_mode_e mode);
-trble_result_e trble_netmgr_delete_bond(struct bledev *dev, trble_bd_addr *addr, trble_mode_e mode);
-trble_result_e trble_netmgr_delete_bond_all(struct bledev *dev, trble_mode_e mode);
+trble_result_e trble_netmgr_get_bonded_device(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
+trble_result_e trble_netmgr_delete_bond(struct bledev *dev, uint8_t addr[TRBLE_BD_ADDR_MAX_LEN]);
+trble_result_e trble_netmgr_delete_bond_all(struct bledev *dev);
 trble_result_e trble_netmgr_conn_is_active(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
 trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_active);
 
@@ -62,7 +76,6 @@ trble_result_e trble_netmgr_get_mac_addr_by_conn_handle(struct bledev *dev, trbl
 trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
 trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data);
 trble_result_e trble_netmgr_set_adv_resp(struct bledev *dev, trble_data *data);
-trble_result_e trble_netmgr_get_bonded_device(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
 trble_result_e trble_netmgr_start_adv(struct bledev *dev);
 trble_result_e trble_netmgr_start_adv_directed(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
@@ -74,6 +87,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_deinit,
 	trble_netmgr_get_mac_addr,
 	trble_netmgr_disconnect,
+	trble_netmgr_get_bonded_device,
 	trble_netmgr_delete_bond,
 	trble_netmgr_delete_bond_all,
 	trble_netmgr_conn_is_active,
@@ -101,7 +115,6 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_get_conn_handle_by_addr,
 	trble_netmgr_set_adv_data,
 	trble_netmgr_set_adv_resp,
-	trble_netmgr_get_bonded_device,
 	trble_netmgr_start_adv,
 	trble_netmgr_start_adv_directed,
 	trble_netmgr_stop_adv,
@@ -129,25 +142,12 @@ trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *c
 	}
 #endif
 	if (ret == TRBLE_SUCCESS) {
-		uint8_t temp;
-		int i;
-		int j;
-
 		ret = rtw_ble_server_get_mac_address(dev->hwaddr);
 
 		if (ret != TRBLE_SUCCESS) {
 			TRBLE_TEST_ERR("[TRBLE] Fail to get BLE mac\n");
 		} else {
-			for (i = 0, j = TRBLE_BD_ADDR_MAX_LEN - 1;i < j; i++, j--) {
-				temp = dev->hwaddr[i];
-				dev->hwaddr[i] = dev->hwaddr[j];
-				dev->hwaddr[j] = temp;
-			}
-			TRBLE_TEST_INFO("[BLE] BLE MAC : ");
-			for (i = 0; i < TRBLE_BD_ADDR_MAX_LEN; i++) {
-				TRBLE_TEST_INFO("%02x ", dev->hwaddr[i]);
-			}
-			TRBLE_TEST_INFO("\n");
+			_reverse_mac(dev->hwaddr);
 		}
 	}
 	return ret;
@@ -172,12 +172,6 @@ trble_result_e trble_netmgr_deinit(struct bledev *dev)
 trble_result_e trble_netmgr_get_mac_addr(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN])
 {
 	memcpy(mac, dev->hwaddr, TRBLE_BD_ADDR_MAX_LEN);
-
-	TRBLE_TEST_INFO("BLE MAC : ");
-	for (int i = 0; i < TRBLE_BD_ADDR_MAX_LEN; i++) {
-		TRBLE_TEST_INFO("%02x ", mac[i]);
-	}
-	TRBLE_TEST_INFO("\n");
 	return TRBLE_SUCCESS;
 }
 
@@ -193,26 +187,29 @@ trble_result_e trble_netmgr_disconnect(struct bledev *dev, trble_conn_handle con
 	return ret;
 }
 
-trble_result_e trble_netmgr_delete_bond(struct bledev *dev, trble_bd_addr *addr, trble_mode_e mode)
+trble_result_e trble_netmgr_get_bonded_device(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count)
 {
-	trble_result_e ret = TRBLE_FAIL;
-	if (mode == TRBLE_MODE_CLIENT) {
-		ret = rtw_ble_client_delete_bond(addr);
-	} else if (mode == TRBLE_MODE_SERVER) {
-		ret = rtw_ble_server_delete_bonded_device(addr->bd_addr);
+	int i;
+	trble_result_e ret = rtw_ble_server_get_bonded_device(device_list, device_count);
+	
+	if (ret == TRBLE_SUCCESS) {
+		for (i = 0; i < *device_count; i++) {
+			_reverse_mac(device_list[i].bd_addr);
+		}
 	}
+
 	return ret;
 }
 
-trble_result_e trble_netmgr_delete_bond_all(struct bledev *dev, trble_mode_e mode)
+trble_result_e trble_netmgr_delete_bond(struct bledev *dev, uint8_t *addr)
 {
-	trble_result_e ret = TRBLE_FAIL;
-	if (mode == TRBLE_MODE_CLIENT) {
-		ret = rtw_ble_client_delete_bond_all();
-	} else if (mode == TRBLE_MODE_SERVER) {
-		ret = rtw_ble_server_delete_bonded_device_all();
-	}
-	return ret;
+	_reverse_mac(addr);
+	return rtw_ble_server_delete_bonded_device(addr);
+}
+
+trble_result_e trble_netmgr_delete_bond_all(struct bledev *dev)
+{
+	return rtw_ble_server_delete_bonded_device_all();
 }
 
 trble_result_e trble_netmgr_conn_is_active(struct bledev *dev, trble_conn_handle con_handle, bool *is_active)
@@ -246,16 +243,7 @@ trble_result_e trble_netmgr_stop_scan(struct bledev *dev)
 
 trble_result_e trble_netmgr_connect(struct bledev *dev, trble_bd_addr *addr)
 {
-	int i;
-	int j;
-	uint8_t temp;
-	uint8_t *mac = addr->bd_addr; // This mac should be re-ordered.
-
-	for (i = 0, j = TRBLE_BD_ADDR_MAX_LEN - 1; i < j; i++, j--) {
-		temp = mac[i];
-		mac[i] = mac[j];
-		mac[j] = temp;
-	}
+	_reverse_mac(addr->bd_addr);
 	return rtw_ble_client_connect(addr, addr->is_secured_connect);
 }
 
@@ -362,11 +350,6 @@ trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data)
 trble_result_e trble_netmgr_set_adv_resp(struct bledev *dev, trble_data *data)
 {
 	return rtw_ble_server_set_adv_name(data->data, data->length);
-}
-
-trble_result_e trble_netmgr_get_bonded_device(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count)
-{
-	return rtw_ble_server_get_bonded_device(device_list, device_count);
 }
 
 trble_result_e trble_netmgr_start_adv(struct bledev *dev)

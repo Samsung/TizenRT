@@ -42,6 +42,10 @@ typedef enum {
 	BLEMGR_UNKNOWN_MODE,
 } blemgr_mode_e;
 
+typedef struct _ble_bonded_device_list {
+	uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN];
+} ble_bonded_device_list;
+
 /****************************************************************************
  * Name: ble_manager_init
  *
@@ -86,6 +90,52 @@ ble_result_e ble_manager_deinit(void);
  *
  ****************************************************************************/
 ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
+
+/****************************************************************************
+ * Name: ble_manager_get_bonded_device
+ *
+ * Description:
+ *   Get the bonded devices.
+ *
+ * Input Parameters:
+ *   device_list   - The linked list of bonded devices(The mem of list should be allocated).
+ *   device_count  - The number of bonded devices.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list* device_list, uint16_t* device_count);
+
+/****************************************************************************
+ * Name: ble_manager_delete_bonded
+ *
+ * Description:
+ *   Delete the bonded device.
+ *
+ * Input Parameters:
+ *   addr      - The mac address of bonded device.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_delete_bonded(uint8_t addr[BLE_BD_ADDR_MAX_LEN]);
+
+/****************************************************************************
+ * Name: ble_manager_delete_bonded_all
+ *
+ * Description:
+ *   Delete all of the bonded devicse.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_delete_bonded_all(void);
 
 // Get whether the con_handle is active or not
 ble_result_e ble_manager_conn_is_active(ble_conn_handle con_handle, bool *is_active);

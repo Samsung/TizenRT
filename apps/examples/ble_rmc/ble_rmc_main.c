@@ -163,7 +163,7 @@ int ble_rmc_main(int argc, char *argv[])
 {
 	RMC_LOG(RMC_TAG, "test!!\n");
 
-	ble_result_e ret;
+	ble_result_e ret = BLE_MANAGER_FAIL;
 
 	ble_client_init_config client_config = {
 		ble_scan_state_changed_cb,
@@ -222,6 +222,56 @@ int ble_rmc_main(int argc, char *argv[])
 	if (strncmp(argv[1], "deinit", 7) == 0) {
 		ret = ble_manager_deinit();
 		RMC_LOG(RMC_TAG, "deinit done[%d]\n", ret);
+	}
+
+	if (strncmp(argv[1], "bond", 5) == 0) {
+		if (argc == 3) {
+			if (strncmp(argv[2], "list", 5) == 0) {
+				RMC_LOG(RMC_TAG, "== BLE Bonded List ==\n", ret);
+
+				ble_bonded_device_list dev_list[BLE_MAX_BONDED_DEVICE] = { 0, };
+				uint16_t dev_count = 0;
+				uint8_t *mac;
+
+				ret = ble_manager_get_bonded_device(dev_list, &dev_count);
+
+				RMC_LOG(RMC_TAG, "Bonded Dev : %d\n", dev_count);
+				
+				for (int i = 0; i < dev_count; i++) {
+					mac = dev_list[i].bd_addr;
+					RMC_LOG(RMC_TAG, "DEV#%d : %02x:%02x:%02x:%02x:%02x:%02x\n", i + 1, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+				}
+
+			} else if (strncmp(argv[2], "clear", 6) == 0) {
+				ret = ble_manager_delete_bonded_all();
+				if (ret != BLE_MANAGER_SUCCESS) {
+					RMC_LOG(RMC_TAG, "fail to delete all of bond dev[%d]\n", ret);
+				} else {
+					RMC_LOG(RMC_TAG, "success to delete all of bond dev\n");
+				}
+			}
+		}
+
+		if (argc == 4 && strncmp(argv[2], "del", 4) == 0) {
+			int cnt = 0;
+			uint8_t mac[BLE_BD_ADDR_MAX_LEN] = { 0, };
+
+			char *ptr = strtok(argv[3], ":");
+			while (ptr != NULL) {
+				mac[cnt++] = strtol(ptr, NULL, 16);
+				ptr = strtok(NULL, ":");
+			}
+			RMC_LOG(RMC_TAG, "TARGET : %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+			ret = ble_manager_delete_bonded(mac);
+			if (ret == BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_TAG, "success to delete bond dev\n");
+			} else if (ret == BLE_MANAGER_NOT_FOUND) {
+				RMC_LOG(RMC_TAG, "[%02x:%02x:%02x:%02x:%02x:%02x] is not found\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+			} else {
+				RMC_LOG(RMC_TAG, "fail to delete bond dev[%d]\n", ret);
+			}
+		}
+		RMC_LOG(RMC_TAG, "bond command done.\n");
 	}
 
 	if (strncmp(argv[1], "mac", 4) == 0) {
@@ -291,12 +341,6 @@ int ble_rmc_main(int argc, char *argv[])
 
 	if (strncmp(argv[1], "connect", 8) == 0) {
 		struct timespec abstime;
-
-		ret = ble_client_delete_bond_all();
-		if (ret != BLE_MANAGER_SUCCESS) {
-			RMC_LOG(RMC_TAG, "fail to del bonded dev[%d]\n", ret);
-			return 0;
-		}
 
 		ble_client_scan_filter filter = { 0, };
 		memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));

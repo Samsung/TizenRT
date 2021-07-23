@@ -16,11 +16,7 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/select.h>
-#include <sys/socket.h>
+#include <string.h>
 #include <tinyara/ble/ble_manager.h>
 #include <ble_manager/ble_manager.h>
 #include "ble_manager_event.h"
@@ -120,6 +116,29 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_disconnect(con_handle, mode);
 	} break;
 
+	case BLE_EVT_CMD_GET_BONDED_DEV: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		trble_bonded_device_list_s *list = (trble_bonded_device_list_s *)param->param[0];
+		uint16_t *device_count = (uint16_t *)param->param[1];
+
+		ret = ble_drv_get_bonded_device(list, device_count);
+	} break;
+
+	case BLE_EVT_CMD_DEL_BOND: {
+		BLE_STATE_CHECK;
+
+		uint8_t *addr = (uint8_t *)msg->param;
+		ret = ble_drv_delete_bonded(addr);
+	} break;
+
+	case BLE_EVT_CMD_DEL_BOND_ALL: {
+		BLE_STATE_CHECK;
+
+		ret = ble_drv_delete_bonded_all();
+	} break;
+
 	// Client
 	case BLE_EVT_CMD_SET_CALLBACK: {
 		BLE_STATE_CHECK;
@@ -128,23 +147,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = TRBLE_SUCCESS;
 	} break;
 
-	case BLE_EVT_CMD_DEL_BOND: {
-		BLE_STATE_CHECK;
-
-		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
-		trble_bd_addr *addr = (trble_bd_addr *)param->param[0];
-		trble_mode_e mode = *(trble_mode_e *)param->param[1];
-
-		ret = ble_drv_delete_bond(addr, mode);
-	} break;
-
-	case BLE_EVT_CMD_DEL_BOND_ALL: {
-		BLE_STATE_CHECK;
-
-		trble_mode_e mode = *(trble_mode_e *)msg->param;
-
-		ret = ble_drv_delete_bond_all(mode);
-	} break;
 	case BLE_EVT_CMD_CONN_IS_ACTIVE: {
 		BLE_STATE_CHECK;
 
@@ -321,16 +323,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		trble_data *data = (trble_data *)msg->param;
 		ret = ble_drv_set_adv_resp(data);
-	} break;
-
-	case BLE_EVT_CMD_GET_BONDED_DEV: {
-		BLE_STATE_CHECK;
-
-		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
-		trble_bonded_device_list_s *list = (trble_bonded_device_list_s *)param->param[0];
-		uint16_t *device_count = (uint16_t *)param->param[1];
-
-		ret = ble_drv_get_bonded_device(list, device_count);
 	} break;
 
 	case BLE_EVT_CMD_START_ADV: {
