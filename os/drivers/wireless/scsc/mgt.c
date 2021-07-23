@@ -261,9 +261,6 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netdev *dev, bool hw_availab
 			bool already_disconnected = false;
 
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Station active: hw_available=%d\n", hw_available);
-#ifndef CONFIG_NET_NETMGR
-			netif_set_link_down(dev);
-#endif
 			if (hw_available) {
 				struct slsi_peer *peer = ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET];
 
@@ -284,9 +281,6 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netdev *dev, bool hw_availab
 			}
 		} else if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "AP active\n");
-#ifndef CONFIG_NET_NETMGR
-			netif_set_link_down(dev);
-#endif
 			if (hw_available) {
 				int r = 0;
 
@@ -916,9 +910,6 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netdev *dev, u8 *peer_a
 		ndev_vif->sta.is_wps = false;
 
 		/* Delayed ARP only needs to run when connected. */
-#ifndef CONFIG_NET_NETMGR
-		netif_set_link_down(dev);
-#endif
 		slsi_mlme_del_vif(sdev, dev);
 		slsi_vif_deactivated(sdev, dev);
 		break;

@@ -63,16 +63,7 @@ CSRCS += \
 CSRCS += \
 	tinyara_wrapper.c
 
-ifeq ($(CONFIG_LWNL80211),y)
-ifeq ($(CONFIG_NET_NETMGR), y)
 CSRCS += slsi_drv_netmgr.c
-else
-CSRCS += slsi_drv_lwnl.c
-# CSRCS += slsi_drv.c
-endif
-else
-CSRCS += slsi_utils.c
-endif
 
 # Include wireless devices build support
 
