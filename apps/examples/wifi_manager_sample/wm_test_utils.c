@@ -117,3 +117,46 @@ void wo_destroy_queue(struct wo_queue *queue)
 
 	free(queue);
 }
+
+void wt_print_conninfo(wifi_manager_info_s *info)
+{
+	WT_LOGP(TAG, "==============================================\n");
+	if (info->mode == SOFTAP_MODE) {
+		WT_LOGP(TAG, "MODE: softap\n");
+		WT_LOGP(TAG, "SSID: %s\n", info->ssid);
+	} else if (info->mode == STA_MODE) {
+		if (info->status == AP_CONNECTED) {
+			WT_LOGP(TAG, "MODE: station (connected)\n");
+			WT_LOGP(TAG, "SSID: %s\n", info->ssid);
+			WT_LOGP(TAG, "rssi: %d\n", info->rssi);
+		} else if (info->status == AP_DISCONNECTED) {
+			WT_LOGP(TAG, "MODE: station (disconnected)\n");
+		}
+	} else {
+		WT_LOGP(TAG, "STATE: NONE\n");
+	}
+	WT_LOGP(TAG, "==============================================\n");
+}
+
+void wt_print_stats(wifi_manager_stats_s *stats)
+{
+	WT_LOGP(TAG, "=======================================================================\n");
+	WT_LOGP(TAG, "CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
+	WT_LOGP(TAG, "%-8d%-12d%-11d%-10d\n", stats->connect, stats->connectfail, stats->disconnect, stats->reconnect);
+	WT_LOGP(TAG, "%-8d%-10d%-8d%-8d\n", stats->scan, stats->softap, stats->joined, stats->left);
+	WT_LOGP(TAG, "Period %d:%d ~ %d:%d\n", stats->start.tv_sec, stats->start.tv_usec,
+			stats->end.tv_sec, stats->end.tv_usec);
+	WT_LOGP(TAG, "retransmit %d\n", stats->tx_retransmit);
+	WT_LOGP(TAG, "TX drop %d\n", stats->tx_drop);
+	WT_LOGP(TAG, "RX drop %d\n", stats->rx_drop);
+	WT_LOGP(TAG, "TX success(count) %d\n", stats->tx_success_cnt);
+	WT_LOGP(TAG, "TX success(bytes) %d\n", stats->tx_success_bytes);
+	WT_LOGP(TAG, "RX counts %d\n", stats->rx_cnt);
+	WT_LOGP(TAG, "RX bytes %d\n", stats->rx_bytes);
+	WT_LOGP(TAG, "TX tries %d\n", stats->tx_try);
+	WT_LOGP(TAG, "RSSI avg %d\n", stats->rssi_avg);
+	WT_LOGP(TAG, "RSSI min %d\n", stats->rssi_min);
+	WT_LOGP(TAG, "RSSI max %d\n", stats->rssi_max);
+	WT_LOGP(TAG, "BEACON missed(counts) %d\n", stats->beacon_miss_cnt);
+	WT_LOGP(TAG, "=======================================================================\n");
+}

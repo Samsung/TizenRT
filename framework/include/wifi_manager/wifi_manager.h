@@ -85,6 +85,7 @@ typedef enum {
 	WIFI_MANAGER_BUSY,
 	WIFI_MANAGER_ALREADY_CONNECTED,
 	WIFI_MANAGER_CALLBACK_NOT_REGISTERED,
+	WIFI_MANAGER_NOT_AVAILABLE,
 	WIFI_MANAGER_NO_API,
 } wifi_manager_result_e;
 
@@ -191,9 +192,7 @@ typedef struct {
  * @brief Keep Wi-Fi Manager information including ip/mac address, ssid, rssi, etc.
  */
 typedef struct {
-	char ip4_address[WIFIMGR_MACADDR_STR_LEN + 1];
 	char ssid[WIFIMGR_SSID_LEN + 1];
-	char mac_address[WIFIMGR_MACADDR_LEN + 1];	   /**<  MAC address of wifi interface             */
 	int rssi;
 	connect_status_e status;
 	wifi_manager_mode_e mode;

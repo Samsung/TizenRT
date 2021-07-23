@@ -290,68 +290,8 @@ static void print_devstats(struct netmon_netdev_stats *stats)
 
 static inline int _print_wifi_info(void)
 {
-#ifdef CONFIG_WIFI_MANAGER
-	wifi_manager_stats_s stats;
-	wifi_manager_info_s info;
-
-	wifi_manager_result_e res = wifi_manager_get_stats(&stats);
-	if (res != WIFI_MANAGER_SUCCESS) {
-		NETCMD_LOG(NTAG, "Get Wi-Fi Manager stats failed\n");
-		return ERROR;
-	}
-	NETCMD_LOG(NTAG, "\n=======================================================================\n");
-	NETCMD_LOG(NTAG, "CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
-	NETCMD_LOG(NTAG, "%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
-	NETCMD_LOG(NTAG, "%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
-	NETCMD_LOG(NTAG, "=======================================================================\n");
-
-	NETCMD_LOG(NTAG, "Connection INFO.\n");
-	res = wifi_manager_get_info(&info);
-	if (res != WIFI_MANAGER_SUCCESS) {
-		NETCMD_LOG(NTAG, "Get Wi-Fi Manager Connection info failed\n");
-		return ERROR;
-	}
-	if (info.mode == SOFTAP_MODE) {
-		if (info.status == CLIENT_CONNECTED) {
-			NETCMD_LOG(NTAG, "MODE: softap (client connected)\n");
-		} else if (info.status == CLIENT_DISCONNECTED) {
-			NETCMD_LOG(NTAG, "MODE: softap (no client)\n");
-		}
-		NETCMD_LOG(NTAG, "IP: %s\n", info.ip4_address);
-		NETCMD_LOG(NTAG, "SSID: %s\n", info.ssid);
-		NETCMD_LOG(NTAG, "MAC %02X:%02X:%02X:%02X:%02X:%02X\n",
-			   info.mac_address[0], info.mac_address[1],
-			   info.mac_address[2], info.mac_address[3],
-			   info.mac_address[4], info.mac_address[5]);
-	} else if (info.mode == STA_MODE) {
-		if (info.status == AP_CONNECTED) {
-			NETCMD_LOG(NTAG, "MODE: station (connected)\n");
-			NETCMD_LOG(NTAG, "IP: %s\n", info.ip4_address);
-			NETCMD_LOG(NTAG, "SSID: %s\n", info.ssid);
-			NETCMD_LOG(NTAG, "rssi: %d\n", info.rssi);
-		} else if (info.status == AP_DISCONNECTED) {
-			NETCMD_LOG(NTAG, "MODE: station (disconnected)\n");
-		} else if (info.status == AP_RECONNECTING) {
-			NETCMD_LOG(NTAG, "MODE: station (reconnecting)\n");
-			NETCMD_LOG(NTAG, "IP: %s\n", info.ip4_address);
-			NETCMD_LOG(NTAG, "SSID: %s\n", info.ssid);
-			NETCMD_LOG(NTAG, "rssi: %d\n", info.rssi);
-		}
-		NETCMD_LOG(NTAG, "MAC %02X:%02X:%02X:%02X:%02X:%02X\n", info.mac_address[0],
-			   info.mac_address[1],
-			   info.mac_address[2],
-			   info.mac_address[3],
-			   info.mac_address[4],
-			   info.mac_address[5]);
-	} else {
-		NETCMD_LOG(NTAG, "STATE: NONE\n");
-	}
-	NETCMD_LOG(NTAG, "=======================================================================\n");
-	return OK;
-#else
 	NETCMD_LOGE(NTAG, "Wi-Fi Manager is not enabled\n");
 	return ERROR;
-#endif
 }
 
 /****************************************************************************

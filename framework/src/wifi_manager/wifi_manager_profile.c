@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <tinyara/wifi/wifi_common.h>
 #include <wifi_manager/wifi_manager.h>
 #include <security/security_api.h>
 #include <tinyara/net/netlog.h>
@@ -193,7 +192,7 @@ static int _wifi_profile_read_file(char *buf, unsigned int buf_size, int interna
  * Public Functions
  */
 
-wifi_utils_result_e wifi_profile_init(void)
+trwifi_result_e wifi_profile_init(void)
 {
 #ifndef CONFIG_WIFI_PROFILE_SECURESTORAGE
 #ifdef WIFI_PROFILE_USE_ETC
@@ -203,19 +202,19 @@ wifi_utils_result_e wifi_profile_init(void)
 		if (errno == ENOENT || errno == ENOTDIR) {
 			ret = mkdir(WIFI_PROFILE_PATH, 0777);
 			if (ret < 0) {
-				return WIFI_UTILS_FILE_ERROR;
+				return TRWIFI_FILE_ERROR;
 			}
 		} else {
-			return WIFI_UTILS_FILE_ERROR;
+			return TRWIFI_FILE_ERROR;
 		}
 	}
 	closedir(dir);
 #endif
 #endif
-	return WIFI_UTILS_SUCCESS;
+	return TRWIFI_SUCCESS;
 }
 
-wifi_utils_result_e wifi_profile_reset(int internal)
+trwifi_result_e wifi_profile_reset(int internal)
 {
 	int ret = -1;
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
@@ -224,7 +223,7 @@ wifi_utils_result_e wifi_profile_reset(int internal)
 	security_error err = security_init(&hnd);
 	if (err != SECURITY_OK) {
 		NET_LOGE(TAG, "Reset wi-fi profile in SS fail\n", ret);
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 	security_data data = {&buf, 1};
 	char ss_name[7] = {0,};
@@ -236,7 +235,7 @@ wifi_utils_result_e wifi_profile_reset(int internal)
 	err = ss_write_secure_storage(hnd, ss_name, 0, &data);
 	if (err != SECURITY_OK) {
 		security_deinit(hnd);
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 
 	security_deinit(hnd);
@@ -249,20 +248,20 @@ wifi_utils_result_e wifi_profile_reset(int internal)
 	}
 	if (ret < 0) {
 		NET_LOGE(TAG, "Delete Wi-Fi profile fail(%d)\n", errno);
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 #endif
-	return WIFI_UTILS_SUCCESS;
+	return TRWIFI_SUCCESS;
 }
 
-wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int internal)
+trwifi_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int internal)
 {
 	char buf[WIFI_PROFILE_BUFSIZE];
 	int ret = 0;
 	int len = 0;
 	len = _wifi_profile_serialize(buf, WIFI_PROFILE_BUFSIZE	, config);
 	if (len < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
 	NET_LOGV(TAG, "store data to file: buffer len(%d)\n", len);
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
@@ -270,7 +269,7 @@ wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int int
 	security_error err = security_init(&hnd);
 	if (err != SECURITY_OK) {
 		NET_LOGE(TAG, "Write Wi-Fi info in SS fail\n", ret);
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 	char ss_name[7] = {0,};
 	int index = WIFI_PROFILE_SS_INDEX;
@@ -284,7 +283,7 @@ wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int int
 	err = ss_write_secure_storage(hnd, ss_name, 0, &data);
 	if (err != SECURITY_OK) {
 		security_deinit(hnd);
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 
 	security_deinit(hnd);
@@ -292,15 +291,15 @@ wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int int
 #else
 	ret = _wifi_profile_store_file(buf, len, internal);
 	if (ret < 0) {
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 #endif
 
-	return WIFI_UTILS_SUCCESS;
+	return TRWIFI_SUCCESS;
 }
 
 
-wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int internal)
+trwifi_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int internal)
 {
 	char buf[WIFI_PROFILE_BUFSIZE] = {0,};
 	int ret = -1;
@@ -319,7 +318,7 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int inte
 	security_error err = security_init(&hnd);
 	if (err != SECURITY_OK) {
 		NET_LOGE(TAG, "Read Wi-Fi info in SS fail\n", ret);
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 
 	char ss_name[7] = {0,};
@@ -334,7 +333,7 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int inte
 	err = ss_read_secure_storage(hnd, ss_name, 0, &data);
 	if (err != SECURITY_OK) {
 		security_deinit(hnd);
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 
 	if (data.length <= 0) {
@@ -347,13 +346,13 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int inte
 #else
 	ret = _wifi_profile_read_file(buf, WIFI_PROFILE_BUFSIZE, internal);
 	if (ret < 0) {
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 #endif
 	ret = _wifi_profile_deserialize(config, buf);
 	if (ret < 0) {
-		return WIFI_UTILS_FILE_ERROR;
+		return TRWIFI_FILE_ERROR;
 	}
 
-	return WIFI_UTILS_SUCCESS;
+	return TRWIFI_SUCCESS;
 }

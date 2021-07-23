@@ -22,6 +22,7 @@
 #include <wifi_manager/wifi_manager.h>
 #include <tinyara/wifi/wifi_manager.h>
 #include <tinyara/net/netlog.h>
+#include <tinyara/net/if/wifi.h>
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"

@@ -26,8 +26,6 @@
 #include <tinyara/wifi/slsi/slsi_wifi_api.h>
 #include <tinyara/kmalloc.h>
 
-#include <tinyara/wifi/wifi_utils.h>
-
 #define DHCP_RETRY_COUNT		1
 #define WIFI_UTILS_DEBUG        0
 

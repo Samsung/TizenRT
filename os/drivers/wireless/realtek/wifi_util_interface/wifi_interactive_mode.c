@@ -15,8 +15,6 @@
  ******************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/wifi/wifi_common.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
