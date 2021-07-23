@@ -56,6 +56,31 @@ ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN])
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list* device_list, uint16_t* device_count)
+{
+	blemgr_msg_params param = { 2, {(void *)device_list, (void *)device_count} };
+	blemgr_msg_s msg = {BLE_EVT_CMD_GET_BONDED_DEV, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_manager_delete_bonded(uint8_t addr[BLE_BD_ADDR_MAX_LEN])
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_DEL_BOND, BLE_MANAGER_FAIL, (void *)addr, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_manager_delete_bonded_all(void)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_DEL_BOND_ALL, BLE_MANAGER_FAIL, NULL, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_manager_conn_is_active(ble_conn_handle con_handle, bool *is_active)
 {
 	blemgr_msg_params param = { 2, {(void *)&con_handle, (void *)is_active} };
@@ -87,25 +112,6 @@ ble_result_e ble_client_disconnect(ble_conn_handle conn_handle)
 	blemgr_mode_e mode = BLEMGR_CLIENT_MODE;
 	blemgr_msg_params param = { 2, {(void *)&conn_handle, (void *)&mode} };
 	blemgr_msg_s msg = {BLE_EVT_CMD_DISCONNECT, BLE_MANAGER_FAIL, (void *)(&param), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_client_delete_bond(ble_client_bd_addr *addr)
-{
-	blemgr_mode_e mode = BLEMGR_CLIENT_MODE;
-	blemgr_msg_params param = { 2, {(void *)addr, (void *)&mode} };
-	blemgr_msg_s msg = {BLE_EVT_CMD_DEL_BOND, BLE_MANAGER_FAIL, (void *)(&param), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_client_delete_bond_all(void)
-{
-	blemgr_mode_e mode = BLEMGR_CLIENT_MODE;
-	blemgr_msg_s msg = {BLE_EVT_CMD_DEL_BOND_ALL, BLE_MANAGER_FAIL, (void *)(&mode), NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);
@@ -201,25 +207,6 @@ ble_result_e ble_server_disconnect(ble_conn_handle con_handle)
 	blemgr_mode_e mode = BLEMGR_SERVER_MODE;
 	blemgr_msg_params param = { 2, {(void *)&mode, (void *)&con_handle} };
 	blemgr_msg_s msg = {BLE_EVT_CMD_DISCONNECT, BLE_MANAGER_FAIL, (void *)(&param), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_server_delete_bonded_device(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN])
-{
-	blemgr_mode_e mode = BLEMGR_SERVER_MODE;
-	blemgr_msg_params param = { 2, {(void *)&mode, (void *)bd_addr} };
-	blemgr_msg_s msg = {BLE_EVT_CMD_DEL_BOND, BLE_MANAGER_FAIL, (void *)(&param), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_server_delete_bonded_device_all(void)
-{
-	blemgr_mode_e mode = BLEMGR_SERVER_MODE;
-	blemgr_msg_s msg = {BLE_EVT_CMD_DEL_BOND_ALL, BLE_MANAGER_FAIL, (void *)(&mode), NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);
@@ -330,15 +317,6 @@ ble_result_e ble_server_start_adv_directed(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN])
 ble_result_e ble_server_set_adv_interval(unsigned int interval)
 {
 	blemgr_msg_s msg = {BLE_EVT_CMD_SET_ADV_INTERVAL, BLE_MANAGER_FAIL, (void *)(&interval), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_server_get_bonded_device(ble_server_bonded_device_list_s *device_list, uint16_t *device_count)
-{
-	blemgr_msg_params param = { 2, {(void *)device_list, (void *)device_count} };
-	blemgr_msg_s msg = {BLE_EVT_CMD_GET_BONDED_DEV, BLE_MANAGER_FAIL, (void *)(&param), NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);

@@ -36,7 +36,10 @@
 #define BLE_BD_ADDR_STR_LEN 17
 #define BLE_ADV_RAW_DATA_MAX_LEN 31
 #define BLE_ADV_RESP_DATA_MAX_LEN 31
+
+/* These are board specific values */
 #define BLE_MAX_CONNECTION_COUNT 3
+#define BLE_MAX_BONDED_DEVICE 10
 
 typedef struct _ble_data {
 	uint8_t *data;

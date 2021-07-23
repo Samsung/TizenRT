@@ -103,11 +103,6 @@ typedef struct {
 	uint16_t profile_count;
 } ble_server_init_config;
 
-typedef struct ble_server_bonded_device_list {
-	uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN];
-	struct ble_server_bonded_device_list *next;
-} ble_server_bonded_device_list_s;
-
 ble_result_e ble_server_get_profile_count(uint16_t *count);
 
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
@@ -136,10 +131,6 @@ ble_result_e ble_server_disconnect(ble_conn_handle con_handle);
 
 ble_result_e ble_server_start_adv(void);
 ble_result_e ble_server_stop_adv(void);
-
-ble_result_e ble_server_get_bonded_device(ble_server_bonded_device_list_s* device_list, uint16_t* device_count);
-ble_result_e ble_server_delete_bonded_device(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
-ble_result_e ble_server_delete_bonded_device_all(void);
 
 ble_result_e ble_server_start_adv_directed(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
 

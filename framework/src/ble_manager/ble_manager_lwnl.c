@@ -94,21 +94,32 @@ trble_result_e ble_drv_disconnect(trble_conn_handle con_handle, trble_mode_e mod
 	return res;
 }
 
-trble_result_e ble_drv_delete_bond(trble_bd_addr *addr, trble_mode_e mode)
+trble_result_e ble_drv_get_bonded_device(trble_bonded_device_list_s *device_list, uint16_t *device_count)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg_params msg_data = { 2, {(void *)addr, (void *)&mode} };
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_DEL_BOND}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	lwnl_msg_params msg_data = { 2, {(void *)device_list, (void *)device_count} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_GET_BONDED_DEV}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
 	return res;
 }
 
-trble_result_e ble_drv_delete_bond_all(trble_mode_e mode)
+
+trble_result_e ble_drv_delete_bonded(uint8_t *addr)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_DEL_BOND_ALL}, sizeof(mode), (void *)&mode, (void *)&res};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_DEL_BOND}, TRBLE_BD_ADDR_MAX_LEN, (void *)addr, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_delete_bonded_all(void)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_DEL_BOND_ALL}, NULL, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
@@ -332,17 +343,6 @@ trble_result_e ble_drv_set_adv_resp(trble_data *data)
 {
 	trble_result_e res = TRBLE_SUCCESS;
 	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_ADV_RESP}, sizeof(data), (void *)data, (void *)&res};
-	if (_send_msg(&msg) < 0) {
-		res = TRBLE_FILE_ERROR;
-	}
-	return res;
-}
-
-trble_result_e ble_drv_get_bonded_device(trble_bonded_device_list_s *device_list, uint16_t *device_count)
-{
-	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg_params msg_data = { 2, {(void *)device_list, (void *)device_count} };
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_GET_BONDED_DEV}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}

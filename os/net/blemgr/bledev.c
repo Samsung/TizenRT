@@ -84,10 +84,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, disconnect, (dev, con_handle, mode));
 	}
 	break;
-	case LWNL_REQ_BLE_DEL_BOND:
+	case LWNL_REQ_BLE_GET_BONDED_DEV:
 	{
-		trble_bd_addr *addr = NULL;
-		trble_mode_e mode;
+		trble_bonded_device_list_s *device_list = NULL;
+		uint16_t *device_count = NULL;
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
@@ -95,21 +95,29 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
-		addr = (trble_bd_addr *)param.param[0];
-		mode = *(trble_mode_e *)param.param[1];
+		device_list = (trble_bonded_device_list_s *)param.param[0];
+		device_count = (uint16_t *)param.param[1];
 
-		TRBLE_DRV_CALL(ret, dev, del_bond, (dev, addr, mode));
+		TRBLE_DRV_CALL(ret, dev, get_bonded_dev, (dev, device_list, device_count));
+	}
+	break;
+	case LWNL_REQ_BLE_DEL_BOND:
+	{
+		uint8_t *addr = NULL;
+
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			addr = (uint8_t *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		
+		TRBLE_DRV_CALL(ret, dev, del_bond, (dev, addr));
 	}
 	break;
 	case LWNL_REQ_BLE_DEL_BOND_ALL:
 	{
-		trble_mode_e mode;
-		if (data != NULL) {
-			mode = *(trble_mode_e *)data;
-		} else {
-			return TRBLE_INVALID_ARGS;
-		}
-		TRBLE_DRV_CALL(ret, dev, del_bond_all, (dev, mode));
+		TRBLE_DRV_CALL(ret, dev, del_bond_all, (dev));
 	}
 	break;
 	case LWNL_REQ_BLE_CONN_IS_ACTIVE:
@@ -398,23 +406,6 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 			return TRBLE_INVALID_ARGS;
 		}
 		TRBLE_DRV_CALL(ret, dev, set_adv_resp, (dev, buf));
-	}
-	break;
-	case LWNL_REQ_BLE_GET_BONDED_DEV:
-	{
-		trble_bonded_device_list_s *device_list = NULL;
-		uint16_t *device_count = NULL;
-
-		lwnl_msg_params param = { 0, };
-		if (data != NULL) {
-			memcpy(&param, data, data_len);
-		} else {
-			return TRBLE_INVALID_ARGS;
-		}
-		device_list = (trble_bonded_device_list_s *)param.param[0];
-		device_count = (uint16_t *)param.param[1];
-
-		TRBLE_DRV_CALL(ret, dev, get_bonded_dev, (dev, device_list, device_count));
 	}
 	break;
 	case LWNL_REQ_BLE_START_ADV:

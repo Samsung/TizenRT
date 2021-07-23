@@ -214,35 +214,6 @@ ble_result_e ble_client_connected_device_list(ble_client_connected_list* out_con
 ble_result_e ble_client_connected_info(ble_conn_handle conn_handle, ble_client_device_connected* out_connected_device);
 
 /****************************************************************************
- * Name: ble_client_delete_bond
- *
- * Description:
- *   Delete the bonded device.
- *
- * Input Parameters:
- *   addr      - This value should include bd_addr and addr_type.
- *
- * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
- *
- ****************************************************************************/
-ble_result_e ble_client_delete_bond(ble_client_bd_addr* addr);
-
-/****************************************************************************
- * Name: ble_client_delete_bond_all
- *
- * Description:
- *   Delete all of the bonded devicse.
- *
- * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
- *
- ****************************************************************************/
-ble_result_e ble_client_delete_bond_all(void);
-
-/****************************************************************************
  * Name: ble_client_disconnect
  *
  * Description:
