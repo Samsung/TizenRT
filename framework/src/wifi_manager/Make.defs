@@ -25,6 +25,7 @@ wifi_manager_state.c\
 wifi_manager_stats.c\
 wifi_manager_msghandler.c\
 wifi_manager_event.c\
+wifi_manager_utils.c\
 wifi_manager_info.c
 
 CSRCS += wifi_manager_dhcpc.c

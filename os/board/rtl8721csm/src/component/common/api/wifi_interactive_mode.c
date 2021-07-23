@@ -15,7 +15,6 @@
  ******************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/wifi/wifi_common.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -367,37 +366,37 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	nvdbg("\n\rStarting AP ...");
 
 	switch (softap_config->ap_auth_type) {
-	case WIFI_UTILS_AUTH_OPEN:
+	case TRWIFI_AUTH_OPEN:
 		security_type = RTW_SECURITY_OPEN;
 		password = NULL;
 		break;
-	case WIFI_UTILS_AUTH_WPA2_PSK:
+	case TRWIFI_AUTH_WPA2_PSK:
 		security_type = RTW_SECURITY_WPA2_AES_PSK;
 		password = softap_config->passphrase;
 		break;
-	case WIFI_UTILS_AUTH_WPA3_PSK:
+	case TRWIFI_AUTH_WPA3_PSK:
 		security_type = RTW_SECURITY_WPA3_AES_PSK;
 		password = softap_config->passphrase;
 		break;
-	case WIFI_UTILS_AUTH_UNKNOWN:
+	case TRWIFI_AUTH_UNKNOWN:
 	default:
 		ndbg("\r\nAP AUTH type is unknown %d;\n", softap_config->ap_auth_type);
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	if (softap_config->channel > 14 || softap_config->channel < 1) {
 		ndbg("\r\nAP channel is wrong: %d;\n", softap_config->channel);
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	if (softap_config->ssid_length < 1) {
 		ndbg("\r\nAP ssid_length is wrong: %s,	%d;\n", softap_config->ssid, softap_config->ssid_length);
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	if (softap_config->ap_auth_type != TRWIFI_AUTH_OPEN && softap_config->passphrase_length < 1) {
 		ndbg("\r\nAP passphrase_length is wrong: %s,  %d;\n", softap_config->passphrase, softap_config->passphrase_length);
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	if (wifi_start_ap(softap_config->ssid,
@@ -428,17 +427,18 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 	void *semaphore;
 	int security_retry_count = 0;
 
-	wifi_utils_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
+	trwifi_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
+	trwifi_ap_crypto_type_e crypto = ap_connect_config->ap_crypto_type;
 	ssid = ap_connect_config->ssid;
 	switch (auth) {
-	case WIFI_UTILS_AUTH_OPEN:
+	case TRWIFI_AUTH_OPEN:
 		security_type = RTW_SECURITY_OPEN;
 		password = NULL;
 		ssid_len = strlen((const char *)ssid);
 		password_len = 0;
 		semaphore = NULL;
 		break;
-	case WIFI_UTILS_AUTH_WEP_SHARED:
+	case TRWIFI_AUTH_WEP_SHARED:
 		security_type = RTW_SECURITY_WEP_PSK;
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
@@ -449,14 +449,14 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		}
 		semaphore = NULL;
 		break;
-	case WIFI_UTILS_AUTH_WPA2_PSK:
+	case TRWIFI_AUTH_WPA2_PSK:
 		security_type = RTW_SECURITY_WPA2_AES_PSK;
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
 		semaphore = NULL;
 		break;
-	case WIFI_UTILS_AUTH_WPA3_PSK:
+	case TRWIFI_AUTH_WPA3_PSK:
 		security_type = RTW_SECURITY_WPA3_AES_PSK;
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
@@ -828,19 +828,19 @@ static void print_scan_result(rtw_scan_result_t *record)
 }
 
 /* Scanning operation should be blocked mode */
-wifi_utils_scan_list_s *g_scan_list;
+trwifi_scan_list_s *g_scan_list;
 int g_scan_num;
 static void _free_scanlist(void)
 {
 	while (g_scan_list) {
-		wifi_utils_scan_list_s *cur = g_scan_list;
+		trwifi_scan_list_s *cur = g_scan_list;
 		g_scan_list = g_scan_list->next;
-		rtw_mfree((unsigned char *)cur, sizeof(wifi_utils_scan_list_s));
+		rtw_mfree((unsigned char *)cur, sizeof(trwifi_scan_list_s));
 	}
 	g_scan_num = 0;
 }
 
-extern int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list, int scan_num);
+extern int8_t wifi_scan_result_callback(trwifi_scan_list_s *scan_list, int scan_num);
 
 
 

@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <tinyara/net/if/wifi.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"

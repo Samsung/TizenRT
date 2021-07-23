@@ -28,7 +28,6 @@
 #include <debug.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
-#include <tinyara/wifi/wifi_utils.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/netlog.h>
 
@@ -38,30 +37,6 @@
 #define WU_INTF_NAME "wl1"
 #endif
 #define TAG "[WM]"
-
-static inline wifi_utils_result_e _convert_trwifi_result(trwifi_result_e res)
-{
-	switch (res) {
-	case TRWIFI_FAIL:
-		return WIFI_UTILS_FAIL;
-	case TRWIFI_SUCCESS:
-		return WIFI_UTILS_SUCCESS;
-	case TRWIFI_INVALID_ARGS:
-		return WIFI_UTILS_INVALID_ARGS;
-	case TRWIFI_TIMEOUT:
-		return WIFI_UTILS_TIMEOUT;
-	case TRWIFI_BUSY:
-		return WIFI_UTILS_BUSY;
-	case TRWIFI_FILE_ERROR:
-		return WIFI_UTILS_FILE_ERROR;
-	case TRWIFI_ALREADY_CONNECTED:
-		return WIFI_UTILS_ALREADY_CONNECTED;
-	case TRWIFI_NOT_SUPPORTED:
-		return WIFI_UTILS_NOT_SUPPORTED;
-	default:
-		return WIFI_UTILS_FAIL;
-	}
-}
 
 static inline int _send_msg(lwnl_msg *msg)
 {
@@ -80,131 +55,124 @@ static inline int _send_msg(lwnl_msg *msg)
 	return 0;
 }
 
-wifi_utils_result_e wifi_utils_init(void)
+trwifi_result_e wifi_utils_init(void)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_INIT}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_deinit(void)
+trwifi_result_e wifi_utils_deinit(void)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_DEINIT}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_scan_ap(void *arg)
+trwifi_result_e wifi_utils_scan_ap(void *arg)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
-	wifi_utils_ap_config_s *config = NULL;
+	trwifi_ap_config_s *config = NULL;
 	if (arg) {
-		config = (wifi_utils_ap_config_s *)arg;
+		config = (trwifi_ap_config_s *)arg;
 	}
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_SCANAP},
-					sizeof(wifi_utils_ap_config_s), (void *)config, (void *)&res};
+					sizeof(trwifi_ap_config_s), (void *)config, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-/* wifi_manager_lwnl_listener monitor status of wi-fi driver
- * So wifi_manager_lwnl doesn't need to register callback */
-wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk)
-{
-	return WIFI_UTILS_SUCCESS;
-}
-
-wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_config, void *arg)
+trwifi_result_e wifi_utils_connect_ap(trwifi_ap_config_s *ap_connect_config, void *arg)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_CONNECTAP},
-					sizeof(wifi_utils_ap_config_s), (void *)ap_connect_config, (void *)&res};
+					sizeof(trwifi_ap_config_s), (void *)ap_connect_config, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
+trwifi_result_e wifi_utils_disconnect_ap(void *arg)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_DISCONNECTAP}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_config)
+trwifi_result_e wifi_utils_start_softap(trwifi_softap_config_s *softap_config)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_STARTSOFTAP},
-					sizeof(wifi_utils_softap_config_s),
+					sizeof(trwifi_softap_config_s),
 					(void *)softap_config, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_start_sta(void)
+trwifi_result_e wifi_utils_start_sta(void)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_STARTSTA}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_stop_softap(void)
+trwifi_result_e wifi_utils_stop_softap(void)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_STOPSOFTAP}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
+trwifi_result_e wifi_utils_set_autoconnect(uint8_t check)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	uint8_t *chk = &check;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_SETAUTOCONNECT},
 					sizeof(uint8_t), (void *)chk, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg)
+trwifi_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_IOCTL},
 					sizeof(trwifi_msg_s), (void *)dmsg, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }
 
-wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
+trwifi_result_e wifi_utils_get_info(trwifi_info *wifi_info)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_GETINFO},
-					sizeof(wifi_utils_info_s), (void *)wifi_info, (void *)&res};
+					sizeof(trwifi_info), (void *)wifi_info, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	}
-	return _convert_trwifi_result(res);
+	return res;
 }

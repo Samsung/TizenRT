@@ -15,9 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-#ifndef _WIFI_TEST_UTILS_H__
-#define _WIFI_TEST_UTILS_H__
+#pragma once
 
 #define WO_TEST_SIGNAL(conn, queue)									\
 	do {															\
@@ -52,4 +50,5 @@ int wo_dequeue(int *conn, struct wo_queue *queue);
 struct wo_queue *wo_create_queue(void);
 void wo_destroy_queue(struct wo_queue *queue);
 
-#endif // #define _WIFI_TEST_UTILS_H__
+void wt_print_conninfo(wifi_manager_info_s *info);
+void wt_print_stats(wifi_manager_stats_s *stats);

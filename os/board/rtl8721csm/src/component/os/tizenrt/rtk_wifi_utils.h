@@ -27,7 +27,6 @@
 #define __RTK_WIFI_UTILS_H
 
 #include <sys/types.h>
-#include <tinyara/wifi/wifi_common.h>
 #include "wifi_constants.h"
 #include "wifi_structures.h"
 #include <tinyara/net/if/wifi.h>

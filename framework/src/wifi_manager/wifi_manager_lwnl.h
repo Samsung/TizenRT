@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2020 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#pragma once
 
-#ifndef _WIFI_MANAGER_INFO_H__
-#define _WIFI_MANAGER_INFO_H__
-
-#define WIFIMGR_SSID 0x01
-#define WIFIMGR_SOFTAP_SSID 0x02
-#define WIFIMGR_RSSI 0x08
-#define WIFIMGR_STATE 0X10
-#define WIFIMGR_ALL_INFO (WIFIMGR_SSID | WIFIMGR_SOFTAP_SSID | WIFIMGR_RSSI | WIFIMGR_STATE)
-
-struct wifimgr_info_msg {
-	char *ssid;
-	char *softap_ssid;
-	int rssi;
-	wifimgr_state_e state;
-};
-typedef struct wifimgr_info_msg wifimgr_info_msg_s;
-
-int wifimgr_get_info(int flag, wifimgr_info_msg_s *info);
-int wifimgr_set_info(int flag, wifimgr_info_msg_s *info);
-
-#endif // _WIFI_MANAGER_INFO_H__
+trwifi_result_e wifi_utils_init(void);
+trwifi_result_e wifi_utils_deinit(void);
+trwifi_result_e wifi_utils_scan_ap(void *arg);
+trwifi_result_e wifi_utils_connect_ap(trwifi_ap_config_s *ap_connect_config, void *arg);
+trwifi_result_e wifi_utils_disconnect_ap(void *arg);
+trwifi_result_e wifi_utils_get_info(trwifi_info *wifi_info);
+trwifi_result_e wifi_utils_start_softap(trwifi_softap_config_s *softap_config);
+trwifi_result_e wifi_utils_start_sta(void);
+trwifi_result_e wifi_utils_stop_softap(void);
+trwifi_result_e wifi_utils_set_autoconnect(uint8_t check);

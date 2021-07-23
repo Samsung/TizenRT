@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2020 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,38 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
-
-#include <stdint.h>
 #include <wifi_manager/wifi_manager.h>
 #include <tinyara/net/if/wifi.h>
-#include <tinyara/net/netlog.h>
-#include "wifi_manager_dhcp.h"
 #include "wifi_manager_utils.h"
-#include "wifi_manager_event.h"
-#include "wifi_manager_msghandler.h"
 
-#define TAG "[WM]"
-
-/*  wifimgr_evt_str should be mapped to enum _wifimgr_evt  */
-static char *wifimgr_evt_str[] = {
-#undef WIFIMGR_REQUEST_TABLE
-#define WIFIMGR_REQUEST_TABLE(str, type, desc) str,
-	#include "wifi_manager_event_table.h"
-	"EVT_NONE",
-};
-
-char *wifimgr_get_evt_str(wifimgr_evt_e evt)
+wifi_manager_result_e wifimgr_convert_trwifi(trwifi_result_e tres)
 {
-	return wifimgr_evt_str[evt];
+	wifi_manager_result_e res = WIFI_MANAGER_FAIL;
+	switch (tres) {
+	case TRWIFI_SUCCESS:
+		res = WIFI_MANAGER_SUCCESS;
+		break;
+	case TRWIFI_INVALID_ARGS:
+		res = WIFI_MANAGER_INVALID_ARGS;
+		break;
+	case TRWIFI_TIMEOUT:
+		res = WIFI_MANAGER_TIMEOUT;
+		break;
+	case TRWIFI_BUSY:
+		res = WIFI_MANAGER_BUSY;
+		break;
+	case TRWIFI_ALREADY_CONNECTED:
+		res = WIFI_MANAGER_ALREADY_CONNECTED;
+		break;
+	case TRWIFI_NOT_SUPPORTED:
+		res = WIFI_MANAGER_NOT_AVAILABLE;
+		break;
+	case TRWIFI_FILE_ERROR:
+	case TRWIFI_FAIL:
+	default:
+		res = WIFI_MANAGER_FAIL;
+		break;
+	}
+	return res;
 }

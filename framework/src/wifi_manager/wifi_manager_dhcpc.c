@@ -20,8 +20,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 #include <sys/types.h>
-#include <netutils/netlib.h>
+#include <tinyara/net/if/wifi.h>
 #include <tinyara/net/netlog.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wifi_manager_utils.h"
@@ -71,14 +72,3 @@ void dhcpc_close_ipaddr(void)
 	NET_LOGV(TAG, "release IP address\n");
 	return;
 }
-
-wifi_manager_result_e dhcpc_fetch_ipaddr(struct in_addr *ip)
-{
-	if (netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, ip) != OK) {
-		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
-		return WIFI_MANAGER_FAIL;
-	}
-	return WIFI_MANAGER_SUCCESS;
-}
-

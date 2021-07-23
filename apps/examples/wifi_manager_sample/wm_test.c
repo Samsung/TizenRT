@@ -139,9 +139,7 @@ static void _wt_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_s
 /*  print info */
 static void _wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title);
 static void _wt_print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title);
-static void _wt_print_stats(wifi_manager_stats_s *stats);
 static void _wt_print_scanlist(wifi_manager_scan_info_s *list);
-static void _wt_print_conninfo(wifi_manager_info_s *info);
 
 /* Main */
 static wt_type_e _wt_get_opt(int argc, char *argv[]);
@@ -234,15 +232,6 @@ void _wt_print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *t
 	WT_LOGP(TAG, "====================================\n");
 }
 
-void _wt_print_stats(wifi_manager_stats_s *stats)
-{
-	WT_LOGP(TAG, "=======================================================================\n");
-	WT_LOGP(TAG, "CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
-	WT_LOGP(TAG, "%-8d%-12d%-11d%-10d\n", stats->connect, stats->connectfail, stats->disconnect, stats->reconnect);
-	WT_LOGP(TAG, "%-8d%-10d%-8d%-8d\n", stats->scan, stats->softap, stats->joined, stats->left);
-	WT_LOGP(TAG, "=======================================================================\n");
-}
-
 void _wt_print_scanlist(wifi_manager_scan_info_s *slist)
 {
 	while (slist != NULL) {
@@ -254,57 +243,6 @@ void _wt_print_scanlist(wifi_manager_scan_info_s *slist)
 	}
 }
 
-void _wt_print_conninfo(wifi_manager_info_s *info)
-{
-	if (info->mode == SOFTAP_MODE) {
-		if (info->status == CLIENT_CONNECTED) {
-			WT_LOGP(TAG, "MODE: softap (client connected)\n");
-		} else if (info->status == CLIENT_DISCONNECTED) {
-			WT_LOGP(TAG, "MODE: softap (no client)\n");
-		}
-		WT_LOGP(TAG, "IP: %s\n", info->ip4_address);
-		WT_LOGP(TAG, "SSID: %s\n", info->ssid);
-		WT_LOGP(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-		   info->mac_address[0], info->mac_address[1],
-		   info->mac_address[2], info->mac_address[3],
-		   info->mac_address[4], info->mac_address[5]);
-	} else if (info->mode == STA_MODE) {
-		if (info->status == AP_CONNECTED) {
-			WT_LOGP(TAG, "MODE: station (connected)\n");
-			WT_LOGP(TAG, "IP: %s\n", info->ip4_address);
-			WT_LOGP(TAG, "SSID: %s\n", info->ssid);
-			WT_LOGP(TAG, "rssi: %d\n", info->rssi);
-		} else if (info->status == AP_DISCONNECTED) {
-			WT_LOGP(TAG, "MODE: station (disconnected)\n");
-		} else if (info->status == AP_RECONNECTING) {
-			WT_LOGP(TAG, "MODE: station (reconnecting)\n");
-			WT_LOGP(TAG, "IP: %s\n", info->ip4_address);
-			WT_LOGP(TAG, "SSID: %s\n", info->ssid);
-		}
-		WT_LOGP(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-		   info->mac_address[0], info->mac_address[1],
-		   info->mac_address[2], info->mac_address[3],
-		   info->mac_address[4], info->mac_address[5]);
-	} else {
-		WT_LOGP(TAG, "STATE: NONE\n");
-	}
-}
-
-int _wt_get_scanned_list(wifi_manager_scan_info_s *slist, char *ssid,
-						 wifi_manager_ap_auth_type_e *atype,
-						 wifi_manager_ap_crypto_type_e *ctype)
-{
-	int ssid_len = strlen(ssid);
-	while (slist) {
-		if (strncmp(ssid, slist->ssid, ssid_len + 1) == 0) {
-			*atype = slist->ap_auth_type;
-			*ctype = slist->ap_crypto_type;
-			return 0;
-		}
-		slist = slist->next;
-	}
-	return -1;
-}
 wifi_manager_ap_auth_type_e _wt_get_auth_type(const char *method)
 {
 	int list_size = sizeof(g_wifi_test_auth_method) / sizeof(g_wifi_test_auth_method[0]);
@@ -680,7 +618,7 @@ void _wt_get_stats(void *arg)
 	if (res != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "Get WiFi Manager stats failed");
 	} else {
-		_wt_print_stats(&stats);
+		wt_print_stats(&stats);
 	}
 	WT_LEAVE;
 }
@@ -694,7 +632,7 @@ void _wt_get_conn_info(void *arg)
 		WT_LOGE(TAG, "fail to get connection info(%d)", res);
 		return;
 	}
-	_wt_print_conninfo(&info);
+	wt_print_conninfo(&info);
 
 	WT_LEAVE;
 }

@@ -22,7 +22,7 @@
 #include <pthread.h>
 #include <debug.h>
 #include <tinyara/net/netlog.h>
-#include <tinyara/wifi/wifi_common.h>
+#include <tinyara/net/if/wifi.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wifi_manager_cb.h"
 #include "wifi_manager_utils.h"
@@ -47,7 +47,7 @@ typedef struct wifimgr_cb_handler wifimgr_cb_handler_s;
  */
 static void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg);
 static void _free_scan_info(wifi_manager_scan_info_s *scan_list);
-static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, wifi_utils_scan_list_s *wu_scan_list);
+static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, trwifi_scan_list_s *wu_scan_list);
 /*
  * Global variable
  */
@@ -67,10 +67,10 @@ static void _free_scan_info(wifi_manager_scan_info_s *scan_list)
 }
 
 static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list,
-												wifi_utils_scan_list_s *wu_scan_list)
+												trwifi_scan_list_s *wu_scan_list)
 {
 	wifi_manager_scan_info_s *cur = NULL, *prev = NULL;
-	wifi_utils_scan_list_s *iter = wu_scan_list;
+	trwifi_scan_list_s *iter = wu_scan_list;
 	while (iter) {
 		cur = (wifi_manager_scan_info_s *)calloc(1, sizeof(wifi_manager_scan_info_s));
 		if (!cur) {
@@ -149,7 +149,7 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			NET_LOGV(TAG, "call sta scan event\n");
 			/* convert scan data.*/
 			wifi_manager_scan_info_s *info = NULL;
-			wifi_utils_scan_list_s *list = (wifi_utils_scan_list_s *)arg;
+			trwifi_scan_list_s *list = (trwifi_scan_list_s *)arg;
 			if (list) {
 				if (WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
 					NET_LOGE(TAG, "parse error\n");

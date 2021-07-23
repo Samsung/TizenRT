@@ -18,7 +18,6 @@
 #include "pthread.h"
 #include "rtk_lwip_netconf.h"
 
-#include <tinyara/wifi/wifi_utils.h>
 #include "wifi_conf.h"
 
 //RTK
