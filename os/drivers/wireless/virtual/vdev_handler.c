@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <debug.h>
 #include <time.h>
-#include <tinyara/wifi/wifi_common.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include "vdev_handler.h"
@@ -95,37 +94,37 @@ int vwifi_handle_message(struct vwifi_req *req)
 	int res = 0;
 	switch (req->type) {
 	case VWIFI_MSG_INIT:
-		req->res = ops->init(req);
+		*req->res = ops->init(req);
 		break;
 	case VWIFI_MSG_DEINIT:
-		req->res = ops->deinit(req);
+		*req->res = ops->deinit(req);
 		break;
 	case VWIFI_MSG_SCANAP:
-		req->res = ops->scan_ap(req);
+		*req->res = ops->scan_ap(req);
 		break;
 	case VWIFI_MSG_CONNECTAP:
-		req->res = ops->connect_ap(req);
+		*req->res = ops->connect_ap(req);
 		break;
 	case VWIFI_MSG_DISCONENCTAP:
-		req->res = ops->disconnect_ap(req);
+		*req->res = ops->disconnect_ap(req);
 		break;
 	case VWIFI_MSG_GETINFO:
-		req->res = ops->get_info(req);
+		*req->res = ops->get_info(req);
 		break;
 	case VWIFI_MSG_STARTSTA:
-		req->res = ops->start_sta(req);
+		*req->res = ops->start_sta(req);
 		break;
 	case VWIFI_MSG_STARTSOFTAP:
-		req->res = ops->start_softap(req);
+		*req->res = ops->start_softap(req);
 		break;
 	case VWIFI_MSG_STOPSOFTAP:
-		req->res = ops->stop_softap(req);
+		*req->res = ops->stop_softap(req);
 		break;
 	case VWIFI_MSG_SETAUTOCONNECT:
-		req->res = ops->set_autoconnect(req);
+		*req->res = ops->set_autoconnect(req);
 		break;
 	case VWIFI_MSG_IOCTL:
-		req->res = ops->drv_ioctl(req);
+		*req->res = ops->drv_ioctl(req);
 		break;
 	default:
 		VWIFI_ERROR(0);
