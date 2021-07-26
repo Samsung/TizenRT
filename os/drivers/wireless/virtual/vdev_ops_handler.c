@@ -172,6 +172,12 @@ trwifi_result_e vwifi_handle_startsta(void *req)
 trwifi_result_e vwifi_handle_startsoftap(void *req)
 {
 	VWIFI_ENTRY;
+	struct vwifi_req *vreq = (struct vwifi_req *)req;
+	char *ssid = (char *)vreq->arg;
+	if (ssid) {
+		vdvdbg("ssid %s\n", ssid);
+		free(ssid);
+	}
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
