@@ -119,7 +119,7 @@ trble_result_e ble_drv_delete_bonded(uint8_t *addr)
 trble_result_e ble_drv_delete_bonded_all(void)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_DEL_BOND_ALL}, NULL, NULL, (void *)&res};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_DEL_BOND_ALL}, 0, NULL, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
@@ -168,10 +168,10 @@ trble_result_e ble_drv_stop_scan()
 	return res;
 }
 
-trble_result_e ble_drv_connect(trble_bd_addr *addr)
+trble_result_e ble_drv_connect(trble_conn_info *conn_info)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CONNECT}, sizeof(trble_bd_addr *), (void *)addr, (void *)&res};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CONNECT}, sizeof(trble_conn_info), (void *)conn_info, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
@@ -359,10 +359,11 @@ trble_result_e ble_drv_start_adv()
 	return res;
 }
 
-trble_result_e ble_drv_start_adv_directed(uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN])
+trble_result_e ble_drv_set_adv_type(trble_adv_type_e adv_type, trble_addr *addr)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_START_ADV_DIRECTED}, 0, NULL, (void *)&res};
+	lwnl_msg_params msg_data = { 2, {(void *)&adv_type, (void *)addr} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_ADV_TYPE}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
