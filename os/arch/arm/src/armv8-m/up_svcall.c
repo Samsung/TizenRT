@@ -265,6 +265,12 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
 
+#ifdef CONFIG_ARMV8M_TRUSTZONE
+		if (rtcb->tz_context) {
+			TZ_LoadContext_S(rtcb->tz_context);
+		}
+#endif
+
 		/* Restore the MPU registers in case we are switching to an application task */
 #if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
