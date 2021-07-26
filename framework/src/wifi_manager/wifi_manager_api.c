@@ -188,6 +188,22 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void)
 wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config)
 {
 	NET_LOGI(TAG, "-->\n");
+	if (config) {
+		if (config->channel < 0 || config->channel > 14) {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+			NET_LOGE(TAG, "invalid channel range %d\n", config->channel);
+			return WIFI_MANAGER_INVALID_ARGS;
+		}
+		if (config->ssid_length > WIFIMGR_SSID_LEN
+			|| config->ssid_length < 0) {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+			return WIFI_MANAGER_INVALID_ARGS;
+		}
+		if (config->ssid_length == 0 && config->channel == 0) {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+			return WIFI_MANAGER_INVALID_ARGS;
+		}
+	}
 	wifimgr_msg_s msg = {WIFIMGR_CMD_SCAN, WIFI_MANAGER_FAIL, (void *)config, NULL};
 	RETURN_RESULT(wifimgr_post_message(&msg), msg);
 }
