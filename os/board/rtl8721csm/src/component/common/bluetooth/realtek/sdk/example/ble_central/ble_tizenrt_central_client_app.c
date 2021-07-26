@@ -94,13 +94,13 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
             {
                 debug_print("\r\n[%s] is_boned %x conn_id %d conn_interval 0x%x latency 0x%x mtu 0x%x", __FUNCTION__,
                         connected_dev->is_bonded, connected_dev->conn_handle,
-                        connected_dev->addr.conn_interval, connected_dev->addr.slave_latency, connected_dev->addr.mtu);
+                        connected_dev->conn_info.conn_interval, connected_dev->conn_info.slave_latency, connected_dev->conn_info.mtu);
                 debug_print("\r\n[%s] DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X\r\n", __FUNCTION__, 
-                            connected_dev->addr.bd_addr[5], connected_dev->addr.bd_addr[4], connected_dev->addr.bd_addr[3],
-                            connected_dev->addr.bd_addr[2], connected_dev->addr.bd_addr[1], connected_dev->addr.bd_addr[0]);
+                            connected_dev->conn_info.addr.mac[5], connected_dev->conn_info.addr.mac[4], connected_dev->conn_info.addr.mac[3],
+                            connected_dev->conn_info.addr.mac[2], connected_dev->conn_info.addr.mac[1], connected_dev->conn_info.addr.mac[0]);
                 for (int i = 0; i < BLE_TIZENRT_CENTRAL_APP_MAX_LINKS; i++)
                 {
-                    if(!memcmp(ble_tizenrt_bond_req_table[i].addr, connected_dev->addr.bd_addr, GAP_BD_ADDR_LEN))
+                    if(!memcmp(ble_tizenrt_bond_req_table[i].addr, connected_dev->conn_info.addr.mac, GAP_BD_ADDR_LEN))
                     {
                         debug_print("\r\n[%s] find conn handle", __FUNCTION__);
                         if(ble_tizenrt_bond_req_table[i].is_secured_connect && (ble_tizenrt_central_app_link_table[i].auth_state != GAP_AUTHEN_STATE_COMPLETE))
@@ -561,11 +561,11 @@ void ble_tizenrt_central_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_S
             trble_device_connected *connected_dev = os_mem_alloc(0, sizeof(trble_device_connected));
             if(connected_dev)
             {
-                memcpy(connected_dev->addr.bd_addr, ble_tizenrt_central_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
-                le_get_conn_param(GAP_PARAM_CONN_BD_ADDR_TYPE, &connected_dev->addr.addr_type, conn_id);
-                le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &connected_dev->addr.conn_interval, conn_id);
-                le_get_conn_param(GAP_PARAM_CONN_LATENCY, &connected_dev->addr.slave_latency, conn_id);
-                le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &connected_dev->addr.mtu, conn_id);
+                memcpy(connected_dev->conn_info.addr.mac, ble_tizenrt_central_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
+                le_get_conn_param(GAP_PARAM_CONN_BD_ADDR_TYPE, &connected_dev->conn_info.addr.type, conn_id);
+                le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &connected_dev->conn_info.conn_interval, conn_id);
+                le_get_conn_param(GAP_PARAM_CONN_LATENCY, &connected_dev->conn_info.slave_latency, conn_id);
+                le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &connected_dev->conn_info.mtu, conn_id);
                 connected_dev->is_bonded = false;
                 connected_dev->conn_handle = conn_id;
                 if(ble_tizenrt_central_send_callback_msg(BLE_TIZENRT_CONNECTED_MSG, connected_dev) == false)
@@ -629,11 +629,11 @@ void ble_tizenrt_central_app_handle_authen_state_evt(uint8_t conn_id, uint8_t ne
                 trble_device_connected *connected_dev = os_mem_alloc(0, sizeof(trble_device_connected));
                 if(connected_dev)
                 {
-                    memcpy(connected_dev->addr.bd_addr, ble_tizenrt_central_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
-                    le_get_conn_param(GAP_PARAM_CONN_BD_ADDR_TYPE, &connected_dev->addr.addr_type, conn_id);
-                    le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &connected_dev->addr.conn_interval, conn_id);
-                    le_get_conn_param(GAP_PARAM_CONN_LATENCY, &connected_dev->addr.slave_latency, conn_id);
-                    le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &connected_dev->addr.mtu, conn_id);
+                    memcpy(connected_dev->conn_info.addr.mac, ble_tizenrt_central_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
+                    le_get_conn_param(GAP_PARAM_CONN_BD_ADDR_TYPE, &connected_dev->conn_info.addr.type, conn_id);
+                    le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &connected_dev->conn_info.conn_interval, conn_id);
+                    le_get_conn_param(GAP_PARAM_CONN_LATENCY, &connected_dev->conn_info.slave_latency, conn_id);
+                    le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &connected_dev->conn_info.mtu, conn_id);
                     connected_dev->is_bonded = true;
                     connected_dev->conn_handle = conn_id;
                     if(ble_tizenrt_central_send_callback_msg(BLE_TIZENRT_BONDED_MSG, connected_dev) == false)
@@ -921,8 +921,8 @@ T_APP_RESULT ble_tizenrt_central_app_gap_callback(uint8_t cb_type, void *p_cb_da
             scanned_device->resp_data_length = ble_tizenrt_central_parse_scanned_devname(p_data->p_le_scan_info, scanned_device->resp_data);
             scanned_device->adv_type = p_data->p_le_scan_info->adv_type;
             scanned_device->rssi = p_data->p_le_scan_info->rssi;
-            scanned_device->addr.addr_type = p_data->p_le_scan_info->remote_addr_type;
-            memcpy(scanned_device->addr.bd_addr, p_data->p_le_scan_info->bd_addr, GAP_BD_ADDR_LEN);
+            scanned_device->conn_info.addr.type = p_data->p_le_scan_info->remote_addr_type;
+            memcpy(scanned_device->conn_info.addr.mac, p_data->p_le_scan_info->bd_addr, GAP_BD_ADDR_LEN);
             scanned_device->raw_data_length = p_data->p_le_scan_info->data_len;
             memcpy(scanned_device->raw_data, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
             

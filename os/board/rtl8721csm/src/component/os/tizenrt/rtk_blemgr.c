@@ -57,7 +57,7 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 /*** Central(Client) ***/
 trble_result_e trble_netmgr_start_scan(struct bledev *dev, trble_scan_filter *filter);
 trble_result_e trble_netmgr_stop_scan(struct bledev *dev);
-trble_result_e trble_netmgr_connect(struct bledev *dev, trble_bd_addr *addr);
+trble_result_e trble_netmgr_connect(struct bledev *dev, trble_conn_info *conn_info);
 trble_result_e trble_netmgr_disconnect_all(struct bledev *dev);
 trble_result_e trble_netmgr_connected_device_list(struct bledev *dev, trble_connected_list *out_connected_list);
 trble_result_e trble_netmgr_connected_info(struct bledev *dev, trble_conn_handle conn_handle, trble_device_connected *out_connected_device);
@@ -76,10 +76,10 @@ trble_result_e trble_netmgr_get_mac_addr_by_conn_handle(struct bledev *dev, trbl
 trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
 trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data);
 trble_result_e trble_netmgr_set_adv_resp(struct bledev *dev, trble_data *data);
-trble_result_e trble_netmgr_start_adv(struct bledev *dev);
-trble_result_e trble_netmgr_start_adv_directed(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
-trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
+trble_result_e trble_netmgr_set_adv_type(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr);
 trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interval);
+trble_result_e trble_netmgr_start_adv(struct bledev *dev);
+trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
 
 struct trble_ops g_trble_drv_ops = {
 	// Common
@@ -115,10 +115,10 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_get_conn_handle_by_addr,
 	trble_netmgr_set_adv_data,
 	trble_netmgr_set_adv_resp,
-	trble_netmgr_start_adv,
-	trble_netmgr_start_adv_directed,
-	trble_netmgr_stop_adv,
+	trble_netmgr_set_adv_type,
 	trble_netmgr_set_adv_interval,
+	trble_netmgr_start_adv,
+	trble_netmgr_stop_adv,
 };
 
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server)
@@ -241,10 +241,10 @@ trble_result_e trble_netmgr_stop_scan(struct bledev *dev)
 	return rtw_ble_client_stop_scan();
 }
 
-trble_result_e trble_netmgr_connect(struct bledev *dev, trble_bd_addr *addr)
+trble_result_e trble_netmgr_connect(struct bledev *dev, trble_conn_info *conn_info)
 {
-	_reverse_mac(addr->bd_addr);
-	return rtw_ble_client_connect(addr, addr->is_secured_connect);
+	_reverse_mac(conn_info->addr.mac);
+	return rtw_ble_client_connect(conn_info, conn_info->is_secured_connect);
 }
 
 trble_result_e trble_netmgr_disconnect_all(struct bledev *dev)
@@ -352,19 +352,9 @@ trble_result_e trble_netmgr_set_adv_resp(struct bledev *dev, trble_data *data)
 	return rtw_ble_server_set_adv_name(data->data, data->length);
 }
 
-trble_result_e trble_netmgr_start_adv(struct bledev *dev)
+trble_result_e trble_netmgr_set_adv_type(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr)
 {
-	return rtw_ble_server_start_adv();
-}
-
-trble_result_e trble_netmgr_start_adv_directed(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN])
-{
-	return rtw_ble_server_start_adv_directed(bd_addr);
-}
-
-trble_result_e trble_netmgr_stop_adv(struct bledev *dev)
-{
-	return rtw_ble_server_stop_adv();
+	return TRBLE_UNSUPPORTED;
 }
 
 trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interval)
@@ -372,3 +362,12 @@ trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interv
 	return rtw_ble_server_set_adv_interval(interval);
 }
 
+trble_result_e trble_netmgr_stop_adv(struct bledev *dev)
+{
+	return rtw_ble_server_stop_adv();
+}
+
+trble_result_e trble_netmgr_start_adv(struct bledev *dev)
+{
+	return rtw_ble_server_start_adv();
+}

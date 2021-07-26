@@ -50,7 +50,7 @@ trble_result_e ble_drv_conn_is_any_active(bool *is_active);
 /*** Central(Client) ***/
 trble_result_e ble_drv_start_scan(trble_scan_filter *filter);
 trble_result_e ble_drv_stop_scan(void);
-trble_result_e ble_drv_connect(trble_bd_addr *addr);
+trble_result_e ble_drv_connect(trble_conn_info *conn_info);
 trble_result_e ble_drv_disconnect_all(void);
 trble_result_e ble_drv_connected_device_list(trble_connected_list *out_connected_list);
 trble_result_e ble_drv_connected_info(trble_conn_handle conn_handle, trble_device_connected *out_connected_device);

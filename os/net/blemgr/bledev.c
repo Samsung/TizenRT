@@ -105,7 +105,6 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		uint8_t *addr = NULL;
 
-		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
 			addr = (uint8_t *)data;
 		} else {
@@ -164,13 +163,13 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	break;
 	case LWNL_REQ_BLE_CONNECT:
 	{
-		trble_bd_addr *addr = NULL;
+		trble_conn_info *conn_info = NULL;
 		if (data != NULL) {
-			addr = (trble_bd_addr *)data;
+			conn_info = (trble_conn_info *)data;
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
-		TRBLE_DRV_CALL(ret, dev, connect, (dev, addr));
+		TRBLE_DRV_CALL(ret, dev, connect, (dev, conn_info));
 	}
 	break;
 	case LWNL_REQ_BLE_DISCONNECT_ALL:
@@ -413,17 +412,22 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, start_adv, (dev));
 	}
 	break;
-	case LWNL_REQ_BLE_START_ADV_DIRECTED:
+	case LWNL_REQ_BLE_SET_ADV_TYPE:
 	{
-		uint8_t *bd_addr = { 0, };
+		trble_adv_type_e adv_type;
+		trble_addr *addr;
 
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			bd_addr = (uint8_t *)data;
+			memcpy(&param, data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
 
-		TRBLE_DRV_CALL(ret, dev, start_adv_dir, (dev, bd_addr));
+		adv_type = *(trble_adv_type_e *)param.param[0];
+		addr = (trble_addr *)param.param[1];
+
+		TRBLE_DRV_CALL(ret, dev, set_adv_type, (dev, adv_type, addr));
 	}
 	break;
 	case LWNL_REQ_BLE_STOP_ADV:

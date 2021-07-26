@@ -193,9 +193,9 @@ trble_result_e rtw_ble_client_stop_scan(void)
     return TRBLE_SUCCESS;
 }
 
-trble_result_e rtw_ble_client_connect(trble_bd_addr* addr, bool is_secured_connect)
+trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secured_connect)
 { 
-    if (addr == NULL || g_conn_req_num >= ble_app_link_table_size)
+    if (conn_info == NULL || g_conn_req_num >= ble_app_link_table_size)
     {
         printf("\r\n[%s] invalid\r\n", __FUNCTION__);
         return TRBLE_FAIL;
@@ -209,7 +209,7 @@ trble_result_e rtw_ble_client_connect(trble_bd_addr* addr, bool is_secured_conne
         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
         return TRBLE_FAIL;
     }
-    memcpy(ble_tizenrt_bond_req_table[i - 1].addr, addr->bd_addr, GAP_BD_ADDR_LEN);
+    memcpy(ble_tizenrt_bond_req_table[i - 1].addr, conn_info->addr.mac, GAP_BD_ADDR_LEN);
     ble_tizenrt_bond_req_table[i - 1].is_secured_connect = is_secured_connect;
     g_conn_req_num++;
     debug_print("\r\n[%s] ble_tizenrt_bond_req_table[%d]\r\n", __FUNCTION__, i - 1);
@@ -222,14 +222,14 @@ trble_result_e rtw_ble_client_connect(trble_bd_addr* addr, bool is_secured_conne
         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
         return TRBLE_FAIL;
     }
-    memcpy(conn_arg->remote_bd, addr->bd_addr, GAP_BD_ADDR_LEN);
-    conn_arg->remote_bd_type = addr->addr_type;
-    conn_arg->conn_interval = addr->conn_interval;
-    conn_arg->conn_latency = addr->slave_latency;
+    memcpy(conn_arg->remote_bd, conn_info->addr.mac, GAP_BD_ADDR_LEN);
+    conn_arg->remote_bd_type = conn_info->addr.type;
+    conn_arg->conn_interval = conn_info->conn_interval;
+    conn_arg->conn_latency = conn_info->slave_latency;
     printf("\r\n[%s] DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X\r\n", __FUNCTION__, 
                         conn_arg->remote_bd[5], conn_arg->remote_bd[4], conn_arg->remote_bd[3],
                         conn_arg->remote_bd[2], conn_arg->remote_bd[1], conn_arg->remote_bd[0]);
-    printf("\r\n[%s] ci: %d si: %d\r\n", __FUNCTION__, addr->conn_interval, addr->slave_latency);
+    printf("\r\n[%s] ci: %d si: %d\r\n", __FUNCTION__, conn_info->conn_interval, conn_info->slave_latency);
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_CONNECT, conn_arg) == false)
     {
         os_mem_free(conn_arg);
@@ -274,11 +274,11 @@ trble_result_e rtw_ble_client_read_connected_info(trble_conn_handle conn_handle,
     if(le_get_conn_info(conn_handle, &conn_info))
     {
         out_connected_device->conn_handle = ble_app_link_table[conn_handle].conn_id;
-        out_connected_device->addr.addr_type = ble_app_link_table[conn_handle].remote_bd_type;
-        le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &out_connected_device->addr.conn_interval, conn_handle);
-        le_get_conn_param(GAP_PARAM_CONN_LATENCY, &out_connected_device->addr.slave_latency, conn_handle);
-        le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &out_connected_device->addr.mtu, conn_handle);
-        memcpy(out_connected_device->addr.bd_addr, ble_app_link_table[conn_handle].remote_bd, GAP_BD_ADDR_LEN);
+        out_connected_device->conn_info.addr.type = ble_app_link_table[conn_handle].remote_bd_type;
+        le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &out_connected_device->conn_info.conn_interval, conn_handle);
+        le_get_conn_param(GAP_PARAM_CONN_LATENCY, &out_connected_device->conn_info.slave_latency, conn_handle);
+        le_get_conn_param(GAP_PARAM_CONN_MTU_SIZE, &out_connected_device->conn_info.mtu, conn_handle);
+        memcpy(out_connected_device->conn_info.addr.mac, ble_app_link_table[conn_handle].remote_bd, GAP_BD_ADDR_LEN);
         if(ble_app_link_table[conn_handle].auth_state == GAP_AUTHEN_STATE_COMPLETE)
             out_connected_device->is_bonded = true;
         else
@@ -291,7 +291,7 @@ trble_result_e rtw_ble_client_read_connected_info(trble_conn_handle conn_handle,
     return TRBLE_SUCCESS;
 }
 
-trble_result_e rtw_ble_client_delete_bond(trble_bd_addr* addr)
+trble_result_e rtw_ble_client_delete_bond(trble_addr* addr)
 {
     if(NULL == addr)
     {
@@ -305,8 +305,8 @@ trble_result_e rtw_ble_client_delete_bond(trble_bd_addr* addr)
         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
         return TRBLE_FAIL;
     }
-    memcpy(param->remote_bd, addr->bd_addr, GAP_BD_ADDR_LEN);
-    param->remote_bd_type = addr->addr_type;
+    memcpy(param->remote_bd, addr->mac, GAP_BD_ADDR_LEN);
+    param->remote_bd_type = addr->type;
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DELETE_BOND, param) == false)
     {
         os_mem_free(param);
