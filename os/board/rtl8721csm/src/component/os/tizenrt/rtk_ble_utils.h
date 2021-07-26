@@ -58,10 +58,10 @@ extern trble_result_e rtw_ble_server_set_adv_interval(uint16_t interval); // int
 extern trble_result_e rtw_ble_client_start_scan(void);
 extern trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_parm);
 extern trble_result_e rtw_ble_client_stop_scan(void);
-extern trble_result_e rtw_ble_client_connect(trble_bd_addr* addr, bool is_secured_connect);
+extern trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secured_connect);
 extern trble_result_e rtw_ble_client_read_connected_device_list(trble_connected_list* out_connected_list);
 extern trble_result_e rtw_ble_client_read_connected_info(trble_conn_handle conn_handle, trble_device_connected* out_connected_device);
-extern trble_result_e rtw_ble_client_delete_bond(trble_bd_addr* addr);
+extern trble_result_e rtw_ble_client_delete_bond(trble_addr* addr);
 extern trble_result_e rtw_ble_client_delete_bond_all(void);
 extern trble_result_e rtw_ble_client_disconnect(trble_conn_handle conn_handle);
 extern trble_result_e rtw_ble_client_disconnect_all(void);

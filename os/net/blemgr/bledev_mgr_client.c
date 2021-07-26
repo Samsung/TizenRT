@@ -36,7 +36,7 @@ static void bledrv_device_scanned_cb(trble_scanned_device *scanned_device)
 	int i;
 	int j;
 	uint8_t temp;
-	uint8_t *mac = scanned_device->addr.bd_addr; // This mac should be re-ordered.
+	uint8_t *mac = scanned_device->conn_info.addr.mac; // This mac should be re-ordered.
 
 	for (i = 0, j = TRBLE_BD_ADDR_MAX_LEN - 1; i < j; i++, j--) {
 		temp = mac[i];

@@ -36,10 +36,23 @@ struct bledev;
 typedef uint16_t trble_conn_handle;
 typedef uint16_t trble_attr_handle;
 
+typedef enum {
+	TRBLE_ADDR_TYPE_PUBLIC,
+	TRBLE_ADDR_TYPE_RANDOM_STATIC,
+	TRBLE_ADDR_TYPE_RANDOM_RESOLVABLE,
+	TRBLE_ADDR_TYPE_RANDOM_NON_RESOLVABLE,
+	TRBLE_ADDR_TYPE_UNKNOWN,
+} trble_addr_type_e;
+
 typedef struct _trble_data {
 	uint8_t *data;
 	uint16_t length;
 } trble_data;
+
+typedef struct {
+	uint8_t mac[TRBLE_BD_ADDR_MAX_LEN];
+	trble_addr_type_e type;
+} trble_addr;
 
 typedef enum {
 	// Common
@@ -75,10 +88,10 @@ typedef enum {
 	LWNL_REQ_BLE_GET_CONN_BY_MAC,
 	LWNL_REQ_BLE_SET_ADV_DATA,
 	LWNL_REQ_BLE_SET_ADV_RESP,
-	LWNL_REQ_BLE_START_ADV,
-	LWNL_REQ_BLE_START_ADV_DIRECTED,
-	LWNL_REQ_BLE_STOP_ADV,
+	LWNL_REQ_BLE_SET_ADV_TYPE,
 	LWNL_REQ_BLE_SET_ADV_INTERVAL,
+	LWNL_REQ_BLE_START_ADV,
+	LWNL_REQ_BLE_STOP_ADV,
 	LWNL_REQ_BLE_UNKNOWN
 } lwnl_req_ble;
 
@@ -113,14 +126,6 @@ typedef enum {
 
 /*** Central(Client) ***/
 typedef enum {
-	TRBLE_ADDR_TYPE_PUBLIC,
-	TRBLE_ADDR_TYPE_RANDOM_STATIC,
-	TRBLE_ADDR_TYPE_RANDOM_RESOLVABLE,
-	TRBLE_ADDR_TYPE_RANDOM_NON_RESOLVABLE,
-	TRBLE_ADDR_TYPE_UNKNOWN,
-} trble_addr_type_e;
-
-typedef enum {
 	TRBLE_SCAN_STARTED,
 	TRBLE_SCAN_STOPPED,
 } trble_scan_state_e;
@@ -135,18 +140,17 @@ typedef enum {
 } trble_adv_type_e;
 
 typedef struct {
-	uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
-	trble_addr_type_e addr_type;
+	trble_addr addr;
 	uint16_t conn_interval;
 	uint16_t slave_latency;
 	uint16_t mtu;
 	bool is_secured_connect;
-} trble_bd_addr;
+} trble_conn_info;
 
 typedef struct {
 	trble_adv_type_e adv_type;
 	int8_t rssi;
-	trble_bd_addr addr;
+	trble_conn_info conn_info;
 	uint8_t raw_data[TRBLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
 	uint8_t resp_data[TRBLE_ADV_RESP_DATA_MAX_LEN];
@@ -154,7 +158,7 @@ typedef struct {
 } trble_scanned_device;
 
 typedef struct {
-	trble_bd_addr addr;
+	trble_conn_info conn_info;
 	bool is_bonded;
 	trble_conn_handle conn_handle;
 } trble_device_connected;
@@ -279,7 +283,7 @@ typedef trble_result_e (*trble_conn_is_any_active)(struct bledev *dev, bool *is_
 /*** Central(Client) ***/
 typedef trble_result_e (*trble_start_scan)(struct bledev *dev, trble_scan_filter *filter);
 typedef trble_result_e (*trble_stop_scan)(struct bledev *dev);
-typedef trble_result_e (*trble_connect)(struct bledev *dev, trble_bd_addr *addr);
+typedef trble_result_e (*trble_connect)(struct bledev *dev, trble_conn_info *conn_info);
 typedef trble_result_e (*trble_disconnect_all)(struct bledev *dev);
 typedef trble_result_e (*trble_connected_device_list)(struct bledev *dev, trble_connected_list *out_connected_list);
 typedef trble_result_e (*trble_connected_info)(struct bledev *dev, trble_conn_handle conn_handle, trble_device_connected *out_connected_device);
@@ -300,10 +304,10 @@ typedef trble_result_e (*trble_get_mac_addr_by_conn_handle)(struct bledev *dev, 
 typedef trble_result_e (*trble_get_conn_handle_by_addr)(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
 typedef trble_result_e (*trble_set_adv_data)(struct bledev *dev, trble_data *data);
 typedef trble_result_e (*trble_set_adv_resp)(struct bledev *dev, trble_data *data);
-typedef trble_result_e (*trble_start_adv)(struct bledev *dev);
-typedef trble_result_e (*trble_start_adv_directed)(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
-typedef trble_result_e (*trble_stop_adv)(struct bledev *dev);
+typedef trble_result_e (*trble_set_adv_type)(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr);
 typedef trble_result_e (*trble_set_adv_interval)(struct bledev *dev, uint16_t interval);
+typedef trble_result_e (*trble_start_adv)(struct bledev *dev);
+typedef trble_result_e (*trble_stop_adv)(struct bledev *dev);
 
 struct trble_ops {
 	/* Common */
@@ -339,10 +343,10 @@ struct trble_ops {
 	trble_get_conn_handle_by_addr get_conn_by_mac;
 	trble_set_adv_data set_adv_data;
 	trble_set_adv_resp set_adv_resp;
-	trble_start_adv start_adv;
-	trble_start_adv_directed start_adv_dir;
-	trble_stop_adv stop_adv;
+	trble_set_adv_type set_adv_type;
 	trble_set_adv_interval set_adv_interval;
+	trble_start_adv start_adv;
+	trble_stop_adv stop_adv;
 };
 
 int trble_post_event(lwnl_cb_ble evt, void *buffer, uint32_t buf_len);
