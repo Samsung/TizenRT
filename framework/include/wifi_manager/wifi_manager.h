@@ -376,13 +376,18 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void);
  * @callback: scan_ap_done
  * @since TizenRT v1.1
  */
-/* scan type
- *     full scan: config is null
- *     scan with specific SSID: ssid is set in config
- *     scan with specific channel: channel is set in config
+/* SCAN type
+ *     1) full scan: config is null
+ *     2) scan with specific SSID: ssid is set in config
+ *     3) scan with specific channel: channel is set in config
+ *     4) scan with specific SSID and channel: Both ssid and channel are set in config
  *
- * invalid usage
- *     if both SSID and channel are set in config then it'll return error.
+ * Notes
+ *     if both SSID and channel are not set in config then it'll return error.
+ *     wifi_manager check whether SSID is set by ssid_length in config. In the same way
+ *     not checking channel is 0, but checking channel is greater than 0 and less than 15 in 2.5GHz.
+ *     So if both channel and ssid_length are 0 then wifi_manager return WIFI_MANAGER_INVALID_ARGS.
+ *     To request full scan to wifi_manager, config which is assigned null be pass to wifi_manager.
  */
 wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config);
 

@@ -301,23 +301,19 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 
 wifi_manager_result_e _wifimgr_scan(wifi_manager_scan_config_s *config)
 {
-	trwifi_scan_config_s uconf = {0, {0,}, 0};
 	if (!config) {
 		WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), TAG,
 								 "request full scan is fail", WIFI_MANAGER_FAIL);
 		return WIFI_MANAGER_SUCCESS;
 	}
-	if (config->ssid_length > 0 && config->channel != 0) {
-		/*  both channel and ssid are set, it's invalid usage */
-		return WIFI_MANAGER_INVALID_ARGS;
-	}
-	if (config->ssid_length > WIFIMGR_SSID_LEN) {
-		return WIFI_MANAGER_INVALID_ARGS;
-	}
+
+	trwifi_scan_config_s uconf = {0, {0,}, 0};
+	memset(&uconf, 0, sizeof(trwifi_scan_config_s));
 	if (config->ssid_length > 0) {
 		strncpy(uconf.ssid, config->ssid, config->ssid_length + 1);
 		uconf.ssid_length = config->ssid_length;
-	} else if (config->channel != 0) {
+	}
+	if (config->channel != 0) {
 		uconf.channel = config->channel;
 	}
 
