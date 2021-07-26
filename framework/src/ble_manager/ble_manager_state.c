@@ -178,8 +178,8 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	case BLE_EVT_CMD_CONNECT: {
 		BLE_STATE_CHECK;
 
-		trble_bd_addr *addr = (trble_bd_addr *)msg->param;
-		ret = ble_drv_connect(addr);
+		trble_conn_info *conn_info = (trble_conn_info *)msg->param;
+		ret = ble_drv_connect(conn_info);
 	} break;
 
 	case BLE_EVT_CMD_DISCONNECT_ALL: {
@@ -325,23 +325,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_set_adv_resp(data);
 	} break;
 
-	case BLE_EVT_CMD_START_ADV: {
+	case BLE_EVT_CMD_SET_ADV_TYPE: {
 		BLE_STATE_CHECK;
 
-		ret = ble_drv_start_adv();
-	} break;
-
-	case BLE_EVT_CMD_START_ADV_DIRECTED: {
-		BLE_STATE_CHECK;
-
-		uint8_t *bd_addr = (uint8_t *)msg->param;
-		ret = ble_drv_start_adv_directed(bd_addr);
-	} break;
-
-	case BLE_EVT_CMD_STOP_ADV: {
-		BLE_STATE_CHECK;
-
-		ret = ble_drv_stop_adv();
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		trble_adv_type_e adv_type = *(trble_adv_type_e *)param->param[0];
+		trble_addr *addr = (trble_addr *)param->param[1];
+		ret = ble_drv_set_adv_type(adv_type, addr);
 	} break;
 
 	case BLE_EVT_CMD_SET_ADV_INTERVAL: {
@@ -351,13 +341,27 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_set_adv_interval(interval);
 	} break;
 
+	case BLE_EVT_CMD_START_ADV: {
+		BLE_STATE_CHECK;
+
+		ret = ble_drv_start_adv();
+	} break;
+
+	case BLE_EVT_CMD_STOP_ADV: {
+		BLE_STATE_CHECK;
+
+		ret = ble_drv_stop_adv();
+	} break;
+
+	
+
 
 	// Event Handling
 	case BLE_EVT_CLIENT_CONNECT: {
 		if (msg->param == NULL) {
 			break;
 		}
-		ble_client_device_connected *data = (ble_client_device_connected *)msg->param;
+		ble_device_connected *data = (ble_device_connected *)msg->param;
 		if (g_client_config.ble_client_device_connected_cb) {
 			g_client_config.ble_client_device_connected_cb(data);
 		}
@@ -395,7 +399,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		if (msg->param == NULL) {
 			break;
 		}
-		ble_client_scan_state_e data = *(ble_client_scan_state_e *)msg->param;
+		ble_scan_state_e data = *(ble_scan_state_e *)msg->param;
 		if (g_client_config.ble_client_scan_state_changed_cb) {
 			g_client_config.ble_client_scan_state_changed_cb(data);
 		}
@@ -406,7 +410,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		if (msg->param == NULL) {
 			break;
 		}
-		ble_client_scanned_device *data = (ble_client_scanned_device *)msg->param;
+		ble_scanned_device *data = (ble_scanned_device *)msg->param;
 		if (g_client_config.ble_client_device_scanned_cb) {
 			g_client_config.ble_client_device_scanned_cb(data);
 		}

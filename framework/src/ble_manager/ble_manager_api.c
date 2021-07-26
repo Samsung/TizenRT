@@ -117,7 +117,7 @@ ble_result_e ble_client_disconnect(ble_conn_handle conn_handle)
 	RETURN_RESULT(res, msg);
 }
 
-ble_result_e ble_client_start_scan(ble_client_scan_filter *filter)
+ble_result_e ble_client_start_scan(ble_scan_filter *filter)
 {
 	blemgr_msg_s msg = {BLE_EVT_CMD_START_SCAN, BLE_MANAGER_FAIL, (void *)(filter), NULL};
 	int res = blemgr_post_message(&msg);
@@ -133,9 +133,9 @@ ble_result_e ble_client_stop_scan(void)
 	RETURN_RESULT(res, msg);
 }
 
-ble_result_e ble_client_connect(ble_client_bd_addr *addr)
+ble_result_e ble_client_connect(ble_conn_info *conn_info)
 {
-	blemgr_msg_s msg = {BLE_EVT_CMD_CONNECT, BLE_MANAGER_FAIL, (void *)(addr), NULL};
+	blemgr_msg_s msg = {BLE_EVT_CMD_CONNECT, BLE_MANAGER_FAIL, (void *)(conn_info), NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);
@@ -149,7 +149,7 @@ ble_result_e ble_client_disconnect_all(void)
 	RETURN_RESULT(res, msg);
 }
 
-ble_result_e ble_client_connected_device_list(ble_client_connected_list *out_connected_list)
+ble_result_e ble_client_connected_device_list(ble_device_connected_list *out_connected_list)
 {
 	blemgr_msg_s msg = {BLE_EVT_CMD_CONNECTED_DEV_LIST, BLE_MANAGER_FAIL, (void *)(out_connected_list), NULL};
 	int res = blemgr_post_message(&msg);
@@ -157,7 +157,7 @@ ble_result_e ble_client_connected_device_list(ble_client_connected_list *out_con
 	RETURN_RESULT(res, msg);
 }
 
-ble_result_e ble_client_connected_info(ble_conn_handle conn_handle, ble_client_device_connected *out_connected_device)
+ble_result_e ble_client_connected_info(ble_conn_handle conn_handle, ble_device_connected *out_connected_device)
 {
 	blemgr_msg_params param = { 2, {(void *)&conn_handle, (void *)out_connected_device} };
 	blemgr_msg_s msg = {BLE_EVT_CMD_CONNECTED_INFO, BLE_MANAGER_FAIL, (void *)(&param), NULL};
@@ -290,6 +290,23 @@ ble_result_e ble_server_set_adv_resp(ble_data *data)
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_server_set_adv_type(ble_adv_type_e adv_type, ble_addr *addr)
+{
+	blemgr_msg_params param = { 2, {(void *)&adv_type, (void *)addr} };
+	blemgr_msg_s msg = {BLE_EVT_CMD_SET_ADV_TYPE, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_set_adv_interval(unsigned int interval)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_SET_ADV_INTERVAL, BLE_MANAGER_FAIL, (void *)(&interval), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_server_start_adv(void)
 {
 	blemgr_msg_s msg = {BLE_EVT_CMD_START_ADV, BLE_MANAGER_FAIL, NULL, NULL};
@@ -301,22 +318,6 @@ ble_result_e ble_server_start_adv(void)
 ble_result_e ble_server_stop_adv(void)
 {
 	blemgr_msg_s msg = {BLE_EVT_CMD_STOP_ADV, BLE_MANAGER_FAIL, NULL, NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_server_start_adv_directed(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN])
-{
-	blemgr_msg_s msg = {BLE_EVT_CMD_START_ADV_DIRECTED, BLE_MANAGER_FAIL, (void *)(bd_addr), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_server_set_adv_interval(unsigned int interval)
-{
-	blemgr_msg_s msg = {BLE_EVT_CMD_SET_ADV_INTERVAL, BLE_MANAGER_FAIL, (void *)(&interval), NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);

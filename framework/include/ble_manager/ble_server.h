@@ -126,13 +126,8 @@ ble_result_e ble_server_set_adv_data(ble_data *data);
 // Set Scan Response Data 
 ble_result_e ble_server_set_adv_resp(ble_data *data);
 
-// Disconnect client. The client with secured connection would be required pairing again. 
-ble_result_e ble_server_disconnect(ble_conn_handle con_handle);
-
-ble_result_e ble_server_start_adv(void);
-ble_result_e ble_server_stop_adv(void);
-
-ble_result_e ble_server_start_adv_directed(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
+// Set Adv type
+ble_result_e ble_server_set_adv_type(ble_adv_type_e adv_type, ble_addr *addr);
 
 /*
 You can set the fixed interval from 20ms to 10.24 seconds, in steps of 0.625ms. 
@@ -140,3 +135,9 @@ The random delay is a pseudo-random value from 0ms to 10ms that is automatically
 This randomness helps reduce the possibility of collisions between advertisements of different devices
 */
 ble_result_e ble_server_set_adv_interval(unsigned int interval);
+
+ble_result_e ble_server_start_adv(void);
+ble_result_e ble_server_stop_adv(void);
+
+// Disconnect client. The client with secured connection would be required pairing again. 
+ble_result_e ble_server_disconnect(ble_conn_handle con_handle);

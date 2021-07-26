@@ -36,61 +36,36 @@
 typedef enum {
 	BLE_CLIENT_SCAN_STARTED,
 	BLE_CLIENT_SCAN_STOPPED,
-} ble_client_scan_state_e;
-
-typedef enum {
-	BLE_CLIENT_ADV_TYPE_IND,
-	BLE_CLIENT_ADV_TYPE_DIRECT,
-	BLE_CLIENT_ADV_TYPE_SCAN_IND,
-	BLE_CLIENT_ADV_TYPE_NONCONN_IND,
-	BLE_CLIENT_ADV_TYPE_SCAN_RSP,
-	BLE_CLIENT_ADV_TYPE_UNKNOWN,
-} ble_client_adv_type_e;
-
-typedef enum {
-	BLE_CLIENT_GATT_TYPE_SERVICE,
-	BLE_CLIENT_GATT_TYPE_CHARACT,
-	BLE_CLIENT_GATT_TYPE_DESC,
-	BLE_CLIENT_GATT_TYPE_UNKNOWN,
-} ble_client_gatt_type_e;
-
-typedef enum {
-	BLE_CLIENT_ADDR_TYPE_PUBLIC,
-	BLE_CLIENT_ADDR_TYPE_RANDOM_STATIC,
-	BLE_CLIENT_ADDR_TYPE_RANDOM_RESOLVABLE,
-	BLE_CLIENT_ADDR_TYPE_RANDOM_NON_RESOLVABLE,
-	BLE_CLIENT_ADDR_TYPE_UNKNOWN,
-} ble_client_addr_type_e;
+} ble_scan_state_e;
 
 typedef struct {
-	uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN];
-	ble_client_addr_type_e addr_type;
+	ble_addr addr;
 	uint16_t conn_interval;
 	uint16_t slave_latency;
 	uint16_t mtu;
 	bool is_secured_connect;
-} ble_client_bd_addr;
+} ble_conn_info;
 
 typedef struct {
-	ble_client_adv_type_e adv_type;
+	ble_adv_type_e adv_type;
 	int8_t rssi;
-	ble_client_bd_addr addr;
+	ble_conn_info conn_info;
 	uint8_t raw_data[BLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
 	uint8_t resp_data[BLE_ADV_RESP_DATA_MAX_LEN];
 	uint8_t resp_data_length;
-} ble_client_scanned_device;
+} ble_scanned_device;
 
 typedef struct {
-	ble_client_bd_addr addr;
+	ble_conn_info conn_info;
 	bool is_bonded;
 	ble_conn_handle conn_handle;
-} ble_client_device_connected;
+} ble_device_connected;
 
 typedef struct {
 	ble_conn_handle conn_handle[BLE_MAX_CONNECTION_COUNT];
 	uint8_t connected_count;
-} ble_client_connected_list;
+} ble_device_connected_list;
 
 typedef struct {
 	ble_conn_handle conn_handle;
@@ -101,14 +76,14 @@ typedef struct {
 	uint8_t raw_data[BLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
 	uint16_t scan_duration;
-} ble_client_scan_filter;
+} ble_scan_filter;
 
 typedef struct {
 	/* This is a set of callback function for BLE client */
-	void(*ble_client_scan_state_changed_cb)(ble_client_scan_state_e scan_state);
-	void(*ble_client_device_scanned_cb)(ble_client_scanned_device* scanned_device);
+	void(*ble_client_scan_state_changed_cb)(ble_scan_state_e scan_state);
+	void(*ble_client_device_scanned_cb)(ble_scanned_device* scanned_device);
 	void(*ble_client_device_disconnected_cb)(ble_conn_handle conn_id);
-	void(*ble_client_device_connected_cb)(ble_client_device_connected* connected_device);
+	void(*ble_client_device_connected_cb)(ble_device_connected* connected_device);
 	void(*ble_client_operation_notification_cb)(ble_client_operation_handle* handle, ble_data* read_result);
 	uint16_t mtu;
 } ble_client_init_config;
@@ -146,7 +121,7 @@ ble_result_e ble_client_set_cb(ble_client_init_config* client_config);
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_start_scan(ble_client_scan_filter* filter);
+ble_result_e ble_client_start_scan(ble_scan_filter* filter);
 
 /****************************************************************************
  * Name: ble_client_stop_scan
@@ -169,14 +144,14 @@ ble_result_e ble_client_stop_scan(void);
  *   Connect to Server(Peripheral).
  *
  * Input Parameters:
- *   addr      - This includes Server(Peripheral) info.
+ *   conn_info   - This includes Server(Peripheral) info.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_connect(ble_client_bd_addr* addr);
+ble_result_e ble_client_connect(ble_conn_info* conn_info);
 
 /****************************************************************************
  * Name: ble_client_connected_device_list
@@ -193,7 +168,7 @@ ble_result_e ble_client_connect(ble_client_bd_addr* addr);
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_connected_device_list(ble_client_connected_list* out_connected_list);
+ble_result_e ble_client_connected_device_list(ble_device_connected_list* out_connected_list);
 
 /****************************************************************************
  * Name: ble_client_connected_info
@@ -211,7 +186,7 @@ ble_result_e ble_client_connected_device_list(ble_client_connected_list* out_con
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_connected_info(ble_conn_handle conn_handle, ble_client_device_connected* out_connected_device);
+ble_result_e ble_client_connected_info(ble_conn_handle conn_handle, ble_device_connected* out_connected_device);
 
 /****************************************************************************
  * Name: ble_client_disconnect

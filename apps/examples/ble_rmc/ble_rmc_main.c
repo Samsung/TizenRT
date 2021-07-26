@@ -37,30 +37,30 @@ static ble_conn_handle g_conn = 0;
 static int g_scan_done = -1;
 static uint8_t g_target[BLE_BD_ADDR_MAX_LEN] = { 0, };
 
-static void ble_scan_state_changed_cb(ble_client_scan_state_e scan_state)
+static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
 {
 	RMC_LOG(RMC_TAG, "'%s' is called[%d]\n", __FUNCTION__, scan_state);
 	return;
 }
 
-static void ble_device_scanned_cb(ble_client_scanned_device *scanned_device)
+static void ble_device_scanned_cb(ble_scanned_device *scanned_device)
 {
 	RMC_LOG(RMC_TAG, "'%s' is called\n", __FUNCTION__);
 	printf("scan mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
-		scanned_device->addr.bd_addr[0],
-		scanned_device->addr.bd_addr[1],
-		scanned_device->addr.bd_addr[2],
-		scanned_device->addr.bd_addr[3],
-		scanned_device->addr.bd_addr[4],
-		scanned_device->addr.bd_addr[5]
+		scanned_device->conn_info.addr.mac[0],
+		scanned_device->conn_info.addr.mac[1],
+		scanned_device->conn_info.addr.mac[2],
+		scanned_device->conn_info.addr.mac[3],
+		scanned_device->conn_info.addr.mac[4],
+		scanned_device->conn_info.addr.mac[5]
 	);
 	if (g_scan_done == 0) {
-		g_target[0] = scanned_device->addr.bd_addr[0];
-		g_target[1] = scanned_device->addr.bd_addr[1];
-		g_target[2] = scanned_device->addr.bd_addr[2];
-		g_target[3] = scanned_device->addr.bd_addr[3];
-		g_target[4] = scanned_device->addr.bd_addr[4];
-		g_target[5] = scanned_device->addr.bd_addr[5];
+		g_target[0] = scanned_device->conn_info.addr.mac[0];
+		g_target[1] = scanned_device->conn_info.addr.mac[1];
+		g_target[2] = scanned_device->conn_info.addr.mac[2];
+		g_target[3] = scanned_device->conn_info.addr.mac[3];
+		g_target[4] = scanned_device->conn_info.addr.mac[4];
+		g_target[5] = scanned_device->conn_info.addr.mac[5];
 		g_scan_done = 1;
 	}
 	
@@ -73,7 +73,7 @@ static void ble_device_disconnected_cb(ble_conn_handle conn_id)
 	return;
 }
 
-static void ble_device_connected_cb(ble_client_device_connected *dev)
+static void ble_device_connected_cb(ble_device_connected *dev)
 {
 	int ret;
 	RMC_LOG(RMC_TAG, "'%s' is called\n", __FUNCTION__);
@@ -304,7 +304,7 @@ int ble_rmc_main(int argc, char *argv[])
 		} else if (argc == 3 && argv[2][0] == '2') {
 			printf("Start with filter!\n");
 
-			ble_client_scan_filter filter = { 0, };
+			ble_scan_filter filter = { 0, };
 			memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
 			filter.raw_data_length = sizeof(ble_filter);
 			filter.scan_duration = 1500;
@@ -342,10 +342,10 @@ int ble_rmc_main(int argc, char *argv[])
 	if (strncmp(argv[1], "connect", 8) == 0) {
 		struct timespec abstime;
 
-		ble_client_scan_filter filter = { 0, };
+		ble_scan_filter filter = { 0, };
 		memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
 		filter.raw_data_length = sizeof(ble_filter);
-		filter.scan_duration = 1500;
+		filter.scan_duration = 1000;
 		g_scan_done = 0;
 		ret = ble_client_start_scan(&filter);
 
@@ -370,17 +370,17 @@ int ble_rmc_main(int argc, char *argv[])
 			g_target[5]
 		);
 
-		ble_client_bd_addr addr = { 0, };
-		memcpy(addr.bd_addr, g_target, BLE_BD_ADDR_MAX_LEN);
-		addr.addr_type = BLE_CLIENT_ADDR_TYPE_PUBLIC;
-		addr.conn_interval = 8;
-		addr.slave_latency = 128;
-		addr.mtu = 240;
-		addr.is_secured_connect = true;
+		ble_conn_info conn_info = { 0, };
+		memcpy(conn_info.addr.mac, g_target, BLE_BD_ADDR_MAX_LEN);
+		conn_info.addr.type = BLE_ADDR_TYPE_PUBLIC;
+		conn_info.conn_interval = 8;
+		conn_info.slave_latency = 128;
+		conn_info.mtu = 240;
+		conn_info.is_secured_connect = true;
 
 		sem_init(&g_conn_sem, 0, 0);
 
-		ret = ble_client_connect(&addr);
+		ret = ble_client_connect(&conn_info);
 		if (ret != BLE_MANAGER_SUCCESS) {
 			RMC_LOG(RMC_TAG, "connect fail[%d]\n", ret);
 		}

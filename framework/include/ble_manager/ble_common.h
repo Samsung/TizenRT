@@ -46,6 +46,28 @@ typedef struct _ble_data {
 	uint16_t length;
 } ble_data;
 
+typedef enum {
+	BLE_ADV_TYPE_IND,
+	BLE_ADV_TYPE_DIRECT,
+	BLE_ADV_TYPE_SCAN_IND,
+	BLE_ADV_TYPE_NONCONN_IND,
+	BLE_ADV_TYPE_SCAN_RSP,
+	BLE_ADV_TYPE_UNKNOWN,
+} ble_adv_type_e;
+
+typedef enum {
+	BLE_ADDR_TYPE_PUBLIC,
+	BLE_ADDR_TYPE_RANDOM_STATIC,
+	BLE_ADDR_TYPE_RANDOM_RESOLVABLE,
+	BLE_ADDR_TYPE_RANDOM_NON_RESOLVABLE,
+	BLE_ADDR_TYPE_UNKNOWN,
+} ble_addr_type_e;
+
+typedef struct {
+	uint8_t mac[BLE_BD_ADDR_MAX_LEN];
+	ble_addr_type_e type;
+} ble_addr;
+
 /**
  * @brief Result types of BLE Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
