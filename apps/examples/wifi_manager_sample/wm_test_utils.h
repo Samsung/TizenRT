@@ -52,3 +52,8 @@ void wo_destroy_queue(struct wo_queue *queue);
 
 void wt_print_conninfo(wifi_manager_info_s *info);
 void wt_print_stats(wifi_manager_stats_s *stats);
+wifi_manager_ap_auth_type_e wt_get_auth_type(const char *method);
+wifi_manager_ap_crypto_type_e wt_get_crypto_type(const char *method);
+void wt_print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title);
+void wt_print_stats(wifi_manager_stats_s *stats);
+void wt_print_scanlist(wifi_manager_scan_info_s *slist);

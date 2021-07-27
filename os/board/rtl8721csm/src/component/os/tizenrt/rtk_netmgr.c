@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  ******************************************************************/
+#include <tinyara/config.h>
 #include <pthread.h>
-
-#include "wifi_conf.h"
+#include "wifi/wifi_conf.h"
 #include "rtk_wifi_utils.h"
 #include <wifi_manager/wifi_manager.h>
 #include <debug.h>

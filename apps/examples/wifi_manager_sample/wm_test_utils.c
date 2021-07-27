@@ -27,15 +27,49 @@
 #include "wm_test_log.h"
 
 #define TAG "[WU]"
+
+/* Supported security method */
+static const char *g_wifi_test_auth_method[] = {
+#ifdef WT_AUTH_TABLE
+#undef WT_AUTH_TABLE
+#endif
+#define WT_AUTH_TABLE(type, str, desc) str,
+#include "wm_test_auth_table.h"
+};
+
+static const wifi_manager_ap_crypto_type_e g_crypto_type_table[] = {
+#ifdef WT_CRYPTO_TABLE
+#undef WT_CRYPTO_TABLE
+#endif
+#define WT_CRYPTO_TABLE(type, str, desc) type,
+#include "wm_test_crypto_table.h"
+};
+
+static const wifi_manager_ap_auth_type_e g_auth_type_table[] = {
+#ifdef WT_AUTH_TABLE
+#undef WT_AUTH_TABLE
+#endif
+#define WT_AUTH_TABLE(type, str, desc) type,
+#include "wm_test_auth_table.h"
+};
+
+static const char *g_wifi_test_crypto_method[] = {
+#ifdef WT_CRYPTO_TABLE
+#undef WT_CRYPTO_TABLE
+#endif
+#define WT_CRYPTO_TABLE(type, str, desc) str,
+#include "wm_test_crypto_table.h"
+};
+
 /* queue */
 #define WO_QUEUE_SIZE 10
-#define WO_QUEUE_LOCK(lock)						\
-	do {										\
-		sem_wait(lock);							\
+#define WO_QUEUE_LOCK(lock) \
+	do {                    \
+		sem_wait(lock);     \
 	} while (0)
-#define WO_QUEUE_UNLOCK(lock)					\
-	do {										\
-		sem_post(lock);							\
+#define WO_QUEUE_UNLOCK(lock) \
+	do {                      \
+		sem_post(lock);       \
 	} while (0)
 
 int wo_is_empty(struct wo_queue *queue)
@@ -159,4 +193,98 @@ void wt_print_stats(wifi_manager_stats_s *stats)
 	WT_LOGP(TAG, "RSSI max %d\n", stats->rssi_max);
 	WT_LOGP(TAG, "BEACON missed(counts) %d\n", stats->beacon_miss_cnt);
 	WT_LOGP(TAG, "=======================================================================\n");
+}
+
+void wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
+{
+	WT_LOGP(TAG, "====================================\n");
+	if (title) {
+		WT_LOGP(TAG, "%s\n", title);
+	}
+	WT_LOGP(TAG, "------------------------------------\n");
+	WT_LOGP(TAG, "SSID: %s\n", config->ssid);
+	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN || config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+		WT_LOGP(TAG, "SECURITY: unknown\n");
+	} else {
+		char security_type[21] = {
+			0,
+		};
+		strncat(security_type, g_wifi_test_auth_method[config->ap_auth_type], 20);
+		wifi_manager_ap_auth_type_e tmp_type = config->ap_auth_type;
+		if (tmp_type == WIFI_MANAGER_AUTH_OPEN || tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN || tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+			WT_LOGP(TAG, "SECURITY: %s\n", security_type);
+		} else {
+			strncat(security_type, "_", strlen("_"));
+			strncat(security_type, g_wifi_test_crypto_method[config->ap_crypto_type],
+					strlen(g_wifi_test_crypto_method[config->ap_crypto_type]));
+			WT_LOGP(TAG, "SECURITY: %s\n", security_type);
+		}
+	}
+	WT_LOGP(TAG, "====================================\n");
+}
+
+wifi_manager_ap_auth_type_e wt_get_auth_type(const char *method)
+{
+	int list_size = sizeof(g_wifi_test_auth_method) / sizeof(g_wifi_test_auth_method[0]);
+	char *result[3];
+	char *next_ptr;
+	char data[20];
+	strncpy(data, method, 20);
+	result[0] = strtok_r(data, "_", &next_ptr);
+	result[1] = strtok_r(NULL, "_", &next_ptr);
+	result[2] = strtok_r(NULL, "_", &next_ptr);
+
+	for (int i = 0; i < list_size; i++) {
+		if ((strncmp(method, g_wifi_test_auth_method[i], strlen(method) + 1) == 0) || (result[0] && (strncmp(result[0], g_wifi_test_auth_method[i], strlen(method) + 1) == 0))) {
+			if (result[2] != NULL) {
+				if (strcmp(result[2], "ent") == 0) {
+					return WIFI_MANAGER_AUTH_UNKNOWN;
+				}
+			}
+			return g_auth_type_table[i];
+		}
+	}
+	return WIFI_MANAGER_AUTH_UNKNOWN;
+}
+
+wifi_manager_ap_crypto_type_e wt_get_crypto_type(const char *method)
+{
+	char data[20];
+	char *result[2];
+	char *next_ptr;
+	int list_size = sizeof(g_wifi_test_crypto_method) / sizeof(g_wifi_test_crypto_method[0]);
+
+	strncpy(data, method, 20);
+	result[0] = strtok_r(data, "_", &next_ptr);
+	result[1] = next_ptr;
+
+	for (int i = 0; i < list_size; i++) {
+		if (strncmp(result[1], g_wifi_test_crypto_method[i], strlen(result[1]) + 1) == 0) {
+			return g_crypto_type_table[i];
+		}
+	}
+	return WIFI_MANAGER_CRYPTO_UNKNOWN;
+}
+
+void wt_print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
+{
+	WT_LOGP(TAG, "====================================\n");
+	if (title) {
+		WT_LOGP(TAG, "%s\n", title);
+	}
+	WT_LOGP(TAG, "------------------------------------\n");
+	WT_LOGP(TAG, "SSID: %s\n", config->ssid);
+	WT_LOGP(TAG, "channel: %d\n", config->channel);
+	WT_LOGP(TAG, "====================================\n");
+}
+
+void wt_print_scanlist(wifi_manager_scan_info_s *slist)
+{
+	while (slist != NULL) {
+		WT_LOGP(TAG, "WiFi AP SSID: %-25s, BSSID: %-20s, Rssi: %d, Auth: %s, Crypto: %s\n",
+				slist->ssid, slist->bssid, slist->rssi,
+				g_wifi_test_auth_method[slist->ap_auth_type],
+				g_wifi_test_crypto_method[slist->ap_crypto_type]);
+		slist = slist->next;
+	}
 }

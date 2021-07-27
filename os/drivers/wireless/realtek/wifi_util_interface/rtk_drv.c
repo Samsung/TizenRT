@@ -167,7 +167,7 @@ static void linkdown_handler(rtk_reason_t *reason)
 }
 
 
-int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *utils_scan_input, int scan_num)
+int8_t wifi_scan_result_callback(trwifi_scan_list_s *utils_scan_input, int scan_num)
 {
 	trwifi_scan_list_s *scan_list = (trwifi_scan_list_s *)utils_scan_input;
 
@@ -248,7 +248,7 @@ trwifi_result_e rtkdrv_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_con
 		vddbg("[RTK] SoftAP is running\n");
 		return LWNL_FAIL;
 	}
-	int ret = cmd_wifi_connect((wifi_utils_ap_config_s *)ap_connect_config, arg);
+	int ret = cmd_wifi_connect((trwifi_ap_config_s *)ap_connect_config, arg);
 	if (ret != RTK_STATUS_SUCCESS) {
 		if (ret == RTK_STATUS_ALREADY_CONNECTED) {
 			vdvdbg("[RTK] Connect failed (alreay connected: %d)\n", ret);
@@ -326,7 +326,7 @@ trwifi_result_e rtkdrv_start_softap(struct netdev *dev, trwifi_softap_config_s *
 		return LWNL_FAIL;
 	}
 
-	if (cmd_wifi_ap((wifi_utils_softap_config_s *)softap_config) != RTK_STATUS_SUCCESS) {
+	if (cmd_wifi_ap((trwifi_softap_config_s *)softap_config) != RTK_STATUS_SUCCESS) {
 		vddbg("[RTK] Failed to start AP mode\n");
 		return LWNL_FAIL;
 	}
