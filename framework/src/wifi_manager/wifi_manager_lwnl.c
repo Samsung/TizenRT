@@ -31,11 +31,7 @@
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/netlog.h>
 
-#ifdef CONFIG_NET_NETMGR
 #define WU_INTF_NAME "wlan0"
-#else
-#define WU_INTF_NAME "wl1"
-#endif
 #define TAG "[WM]"
 
 static inline int _send_msg(lwnl_msg *msg)
