@@ -33,10 +33,20 @@
 #include <stdbool.h>
 #include "ble_common.h"
 
+typedef struct _ble_client_ctx ble_client_ctx;
+
 typedef enum {
-	BLE_CLIENT_SCAN_STARTED,
-	BLE_CLIENT_SCAN_STOPPED,
+	BLE_SCAN_STOPPED = 0,
+	BLE_SCAN_STARTED,
 } ble_scan_state_e;
+
+typedef enum {
+	BLE_CLIENT_NONE = 0,
+	BLE_CLIENT_IDLE,
+	BLE_CLIENT_CONNECTED,
+	BLE_CLIENT_CONNECTING,
+	BLE_CLIENT_DISCONNECTING,
+} ble_client_state_e;
 
 typedef struct {
 	ble_addr addr;
@@ -68,41 +78,27 @@ typedef struct {
 } ble_device_connected_list;
 
 typedef struct {
-	ble_conn_handle conn_handle;
-	ble_attr_handle attr_handle;
-} ble_client_operation_handle;
-
-typedef struct {
 	uint8_t raw_data[BLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
 	uint16_t scan_duration;
 } ble_scan_filter;
 
 typedef struct {
-	/* This is a set of callback function for BLE client */
+	/* This is a set of callback function for BLE Scan */
 	void(*ble_client_scan_state_changed_cb)(ble_scan_state_e scan_state);
 	void(*ble_client_device_scanned_cb)(ble_scanned_device* scanned_device);
-	void(*ble_client_device_disconnected_cb)(ble_conn_handle conn_id);
-	void(*ble_client_device_connected_cb)(ble_device_connected* connected_device);
-	void(*ble_client_operation_notification_cb)(ble_client_operation_handle* handle, ble_data* read_result);
-	uint16_t mtu;
-} ble_client_init_config;
+} ble_scan_callback_list;
 
-/****************************************************************************
- * Name: ble_client_set_cb
- *
- * Description:
- *   Set BLE Client callback functions
- *
- * Input Parameters:
- *   client_config  - The list of client callback functions
- *
- * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
- *
- ****************************************************************************/
-ble_result_e ble_client_set_cb(ble_client_init_config* client_config);
+typedef struct {
+	/* This is a set of callback function for BLE client */
+	void(*ble_client_device_disconnected_cb)(ble_client_ctx *ctx);
+	void(*ble_client_device_connected_cb)(ble_client_ctx *ctx, ble_device_connected* connected_device);
+	void(*ble_client_operation_notification_cb)(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
+} ble_client_callback_list;
+
+ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks);
+ble_result_e ble_client_destroy_ctx(ble_client_ctx *ctx);
+ble_client_state_e ble_client_get_state(ble_client_ctx *ctx);
 
 /****************************************************************************
  * Name: ble_client_start_scan
@@ -115,13 +111,14 @@ ble_result_e ble_client_set_cb(ble_client_init_config* client_config);
  *               'ble_client_stop_scan' is called.
  *               To get specific BLE adv info, filter value should be filled
  *               with exact value.
+ *   callbacks - The list of scan result callback.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_start_scan(ble_scan_filter* filter);
+ble_result_e ble_client_start_scan(ble_scan_filter* filter, ble_scan_callback_list *callbacks);
 
 /****************************************************************************
  * Name: ble_client_stop_scan
@@ -144,14 +141,44 @@ ble_result_e ble_client_stop_scan(void);
  *   Connect to Server(Peripheral).
  *
  * Input Parameters:
- *   conn_info   - This includes Server(Peripheral) info.
+ *   ctx        - The context of client.
+ *   conn_info  - This includes Server(Peripheral) info.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_connect(ble_conn_info* conn_info);
+ble_result_e ble_client_connect(ble_client_ctx *ctx, ble_conn_info* conn_info);
+
+/****************************************************************************
+ * Name: ble_client_disconnect
+ *
+ * Description:
+ *   Disconnect with connected handle ID.
+ *
+ * Input Parameters:
+ *   ctx        - The context of client.
+ * 
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_client_disconnect(ble_client_ctx *ctx);
+
+/****************************************************************************
+ * Name: ble_client_disconnect_all
+ *
+ * Description:
+ *   Disconnect all of the connected devices.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_client_disconnect_all(void);
 
 /****************************************************************************
  * Name: ble_client_connected_device_list
@@ -177,7 +204,7 @@ ble_result_e ble_client_connected_device_list(ble_device_connected_list* out_con
  *   Get the specific device info with conn_handle.
  *
  * Input Parameters:
- *   conn_handle          - The handle ID of connected device.
+ *   ctx                  - The context of client.
  *   out_connected_device - This should have pre-allocated and cleared memory.
  *                          The BLE driver will write the device info.
  *
@@ -186,36 +213,7 @@ ble_result_e ble_client_connected_device_list(ble_device_connected_list* out_con
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_connected_info(ble_conn_handle conn_handle, ble_device_connected* out_connected_device);
-
-/****************************************************************************
- * Name: ble_client_disconnect
- *
- * Description:
- *   Disconnect with connected handle ID.
- *
- * Input Parameters:
- *   conn_handle  - The handle ID of connected device.
- * 
- * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
- *
- ****************************************************************************/
-ble_result_e ble_client_disconnect(ble_conn_handle conn_handle);
-
-/****************************************************************************
- * Name: ble_client_disconnect_all
- *
- * Description:
- *   Disconnect all of the connected devicse.
- *
- * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
- *
- ****************************************************************************/
-ble_result_e ble_client_disconnect_all(void);
+ble_result_e ble_client_connected_info(ble_client_ctx *ctx, ble_device_connected* out_connected_device);
 
 /****************************************************************************
  * Name: ble_client_operation_enable_notification
@@ -224,14 +222,15 @@ ble_result_e ble_client_disconnect_all(void);
  *   Enable the notification coming from the Server(Peripheral).
  * 
  * Input Parameters:
- *   handle  - This includes the handle ID and the attribute ID.
+ *   ctx     - The context of client.
+ *   attr_handle  - attribute handle.
  * 
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_operation_enable_notification(ble_client_operation_handle* handle);
+ble_result_e ble_client_operation_enable_notification(ble_client_ctx *ctx, ble_attr_handle attr_handle);
 
 /****************************************************************************
  * Name: ble_client_operation_read
@@ -242,9 +241,10 @@ ble_result_e ble_client_operation_enable_notification(ble_client_operation_handl
  *   I/O operation with Server(Peripheral).
  * 
  * Input Parameters:
- *   handle  - This includes the handle ID and the attribute ID.
- *   data    - I/O buffer which trasfers data.
- *             (On read, this value should be allocated and set the length as the size of buffer.)
+ *   ctx          - The context of client.
+ *   attr_handle  - attribute handle.
+ *   data         - I/O buffer which transfers data.
+ *                  (On read, this value should be allocated and set the length as the size of buffer.)
  *
  * 
  * Returned Value
@@ -252,6 +252,6 @@ ble_result_e ble_client_operation_enable_notification(ble_client_operation_handl
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_operation_read(ble_client_operation_handle* handle, ble_data* data);
-ble_result_e ble_client_operation_write(ble_client_operation_handle* handle, ble_data* data);
-ble_result_e ble_client_operation_write_no_response(ble_client_operation_handle* handle, ble_data* data);
+ble_result_e ble_client_operation_read(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
+ble_result_e ble_client_operation_write(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
+ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);

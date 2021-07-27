@@ -25,6 +25,19 @@
 
 #define BLE_DRV_TAG "[BLEDRV_CLIENT]"
 
+static void _reverse_mac(uint8_t *mac)
+{
+	int i;
+	int j;
+	uint8_t temp;
+
+	for (i = 0, j = TRBLE_BD_ADDR_MAX_LEN - 1; i < j; i++, j--) {
+		temp = mac[i];
+		mac[i] = mac[j];
+		mac[j] = temp;
+	}
+}
+
 static void bledrv_scan_state_changed_cb(trble_scan_state_e scan_state)
 {
 	trble_post_event(LWNL_EVT_BLE_SCAN_STATE, (void *)&scan_state, sizeof(trble_scan_state_e));
@@ -33,16 +46,7 @@ static void bledrv_scan_state_changed_cb(trble_scan_state_e scan_state)
 
 static void bledrv_device_scanned_cb(trble_scanned_device *scanned_device)
 {
-	int i;
-	int j;
-	uint8_t temp;
-	uint8_t *mac = scanned_device->conn_info.addr.mac; // This mac should be re-ordered.
-
-	for (i = 0, j = TRBLE_BD_ADDR_MAX_LEN - 1; i < j; i++, j--) {
-		temp = mac[i];
-		mac[i] = mac[j];
-		mac[j] = temp;
-	}
+	_reverse_mac(scanned_device->conn_info.addr.mac);
 	trble_post_event(LWNL_EVT_BLE_SCAN_DATA, scanned_device, sizeof(trble_scanned_device));
 	return;
 }
@@ -55,13 +59,14 @@ static void bledrv_device_disconnected_cb(trble_conn_handle conn_id)
 
 static void bledrv_device_connected_cb(trble_device_connected *dev)
 {
+	_reverse_mac(dev->conn_info.addr.mac);
 	trble_post_event(LWNL_EVT_BLE_CLIENT_CONNECT, (void *)dev, sizeof(trble_device_connected));
 	return;
 }
 
 static void bledrv_operation_notification_cb(trble_operation_handle *handle, trble_data *read_result)
 {
-	uint32_t size = sizeof(trble_operation_handle) + sizeof(read_result->length) + read_result->length;
+	uint32_t size = sizeof(trble_conn_handle) + sizeof(trble_attr_handle) + sizeof(read_result->length) + read_result->length;
 	uint8_t *data = (uint8_t *)kmm_malloc(size);
 	if (data == NULL) {
 		BLE_LOGE(BLE_DRV_TAG, "out of memroy\n");
@@ -69,9 +74,13 @@ static void bledrv_operation_notification_cb(trble_operation_handle *handle, trb
 	}
 	uint8_t *ptr = data;
 	
-	// Copy handle
-	memcpy(ptr, handle, sizeof(trble_operation_handle));
-	ptr += sizeof(trble_operation_handle);
+	// Copy conn handle
+	memcpy(ptr, &(handle->conn_handle), sizeof(trble_conn_handle));
+	ptr += sizeof(trble_conn_handle);
+
+	// Copy attr handle
+	memcpy(ptr, &(handle->attr_handle), sizeof(trble_attr_handle));
+	ptr += sizeof(trble_attr_handle);
 
 	// Copy read_result len
 	memcpy(ptr, &(read_result->length), sizeof(read_result->length));
