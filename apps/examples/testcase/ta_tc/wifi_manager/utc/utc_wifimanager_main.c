@@ -217,11 +217,7 @@ static void utc_wifimanager_get_mode_p(void)
 
 	TC_ASSERT_EQ("wifi_manager_get_info", ret, WIFI_MANAGER_SUCCESS);
 	TC_ASSERT_EQ("wifi_manager_get_info", info.mode, SOFTAP_MODE);
-	printf("\nMAC Address: ");
-	for (i = 0; i < 5; i++) {
-		printf("%x:", info.mac_address[i]);
-	}
-	printf("%x\n", info.mac_address[5]);
+
 	ret_cmp = strncmp(info.ssid, ap_config.ssid, strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID));
 	TC_ASSERT_EQ("wifi_manager_get_mode", ret_cmp, 0);
 

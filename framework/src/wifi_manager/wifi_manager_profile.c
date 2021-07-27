@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <wifi_manager/wifi_manager.h>
 #include <security/security_api.h>
+#include <tinyara/net/if/wifi.h>
 #include <tinyara/net/netlog.h>
 #include "wifi_manager_profile.h"
 

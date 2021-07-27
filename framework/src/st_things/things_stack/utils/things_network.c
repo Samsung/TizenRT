@@ -297,7 +297,11 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 		wifi_manager_info_s wifi_info;
 		wifi_manager_get_info(&wifi_info);
 
-		things_wifi_changed_call_func(1, wifi_info.ssid, wifi_info.ip4_address);
+		struct in_addr addr;
+		char str[16];
+		netlib_get_ipv4addr("wlan0", &addr);
+		inet_ntop(AF_INET, &addr, str, 16);
+		things_wifi_changed_call_func(1, wifi_info.ssid, str);
 	}
 
 	return NULL;
