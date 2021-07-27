@@ -128,7 +128,7 @@ ble_result_e ble_manager_delete_bonded(uint8_t addr[BLE_BD_ADDR_MAX_LEN]);
  * Name: ble_manager_delete_bonded_all
  *
  * Description:
- *   Delete all of the bonded devicse.
+ *   Delete all of the bonded devices.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on

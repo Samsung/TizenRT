@@ -24,30 +24,26 @@ typedef enum {
 	BLEMGR_STATE_MAX,
 } blemgr_state_e;
 
-typedef enum {
-	BLEMGR_SERVER_NONE = 0,
-	BLEMGR_SERVER_CONNECTED,
-	BLEMGR_SERVER_DISCONNECTED,
-	BLEMGR_SERVER_MAX,
-} blemgr_server_state_e;
+typedef struct _ble_client_ctx {
+	ble_conn_handle conn_handle;
+	volatile ble_client_state_e state;
+	ble_conn_info info;
+	bool is_bonded;
+	bool auto_connect;
+	ble_client_callback_list callbacks;
+} ble_client_ctx;
 
-typedef enum {
-	BLEMGR_SERVER_ADV_NONE = 0,
-	BLEMGR_SERVER_ADV_STOPPED,
-	BLEMGR_SERVER_ADV_STARTED,
-	BLEMGR_SERVER_ADV_MAX,
-} blemgr_server_adv_state_e;
+typedef struct _ble_scan_ctx {
+	volatile ble_scan_state_e state;
+	ble_scan_filter filter;
+	ble_scan_callback_list callback;
+} ble_scan_ctx;
 
-typedef enum {
-	BLEMGR_CLIENT_NONE = 0,
-	BLEMGR_CLIENT_CONNECTED,
-	BLEMGR_CLIENT_DISCONNECTED,
-	BLEMGR_CLIENT_MAX,
-} blemgr_client_state_e;
-
-typedef enum {
-	BLEMGR_CLIENT_SCAN_NONE = 0,
-	BLEMGR_CLIENT_SCAN_STARTED,
-	BLEMGR_CLIENT_SCAN_STOPPED,
-	BLEMGR_CLIENT_SCAN_MAX,
-} blemgr_client_scan_state_e;
+typedef struct _ble_server_ctx {
+	ble_conn_handle conn_handle;
+	volatile ble_server_state_e state;
+	bool is_secured_connect_allowed;
+	ble_server_gatt_t *profile;
+	uint16_t profile_count;
+	ble_server_connected_t callback;
+} ble_server_ctx;

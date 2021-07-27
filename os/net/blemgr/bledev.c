@@ -67,23 +67,6 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		}
 	}
 	break;
-	case LWNL_REQ_BLE_DISCONNECT:
-	{
-		trble_conn_handle con_handle = 0;
-		trble_mode_e mode;
-
-		lwnl_msg_params param = { 0, };
-		if (data != NULL) {
-			memcpy(&param, data, data_len);
-		} else {
-			return TRBLE_INVALID_ARGS;
-		}
-		con_handle = *(trble_conn_handle *)param.param[0];
-		mode = *(trble_mode_e *)param.param[1];
-
-		TRBLE_DRV_CALL(ret, dev, disconnect, (dev, con_handle, mode));
-	}
-	break;
 	case LWNL_REQ_BLE_GET_BONDED_DEV:
 	{
 		trble_bonded_device_list_s *device_list = NULL;
@@ -161,7 +144,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, stop_scan, (dev));
 	}
 	break;
-	case LWNL_REQ_BLE_CONNECT:
+	case LWNL_REQ_BLE_CLIENT_CONNECT:
 	{
 		trble_conn_info *conn_info = NULL;
 		if (data != NULL) {
@@ -169,12 +152,25 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
-		TRBLE_DRV_CALL(ret, dev, connect, (dev, conn_info));
+		TRBLE_DRV_CALL(ret, dev, client_connect, (dev, conn_info));
 	}
 	break;
-	case LWNL_REQ_BLE_DISCONNECT_ALL:
+	case LWNL_REQ_BLE_CLIENT_DISCONNECT:
 	{
-		TRBLE_DRV_CALL(ret, dev, disconnect_all, (dev));
+		trble_conn_handle con_handle = 0;
+
+		if (data != NULL) {
+			con_handle = *(trble_conn_handle *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, client_disconnect, (dev, con_handle));
+	}
+	break;
+	case LWNL_REQ_BLE_CLIENT_DISCONNECT_ALL:
+	{
+		TRBLE_DRV_CALL(ret, dev, client_disconnect_all, (dev));
 	}
 	break;
 	case LWNL_REQ_BLE_CONNECTED_DEV_LIST:
@@ -349,6 +345,19 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		err_code = *(uint8_t *)param.param[1];
 
 		TRBLE_DRV_CALL(ret, dev, attr_reject, (dev, attr_handle, err_code));
+	}
+	break;
+	case LWNL_REQ_BLE_SERVER_DISCONNECT:
+	{
+		trble_conn_handle con_handle = 0;
+
+		if (data != NULL) {
+			con_handle = *(trble_conn_handle *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, server_disconnect, (dev, con_handle));
 	}
 	break;
 	case LWNL_REQ_BLE_GET_MAC_BY_CONN:

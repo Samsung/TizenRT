@@ -81,6 +81,15 @@ typedef enum {
 	BLE_SERVER_DISCONNECTED,
 } ble_server_connection_type_e;
 
+typedef enum {
+	BLE_SERVER_NONE = 0,
+	BLE_SERVER_IDLE,
+	BLE_SERVER_LL_CONNECT,
+	BLE_SERVER_SM_CONNECT,
+	BLE_SERVER_CONNECTING,
+	BLE_SERVER_DISCONNECTING,
+} ble_server_state_e;
+
 typedef struct {
 	ble_server_gatt_profile_type_e type;
 	uint8_t uuid[16];

@@ -59,7 +59,6 @@ typedef enum {
 	LWNL_REQ_BLE_INIT,
 	LWNL_REQ_BLE_DEINIT,
 	LWNL_REQ_BLE_GET_MAC,
-	LWNL_REQ_BLE_DISCONNECT,
 	LWNL_REQ_BLE_GET_BONDED_DEV,
 	LWNL_REQ_BLE_DEL_BOND,
 	LWNL_REQ_BLE_DEL_BOND_ALL,
@@ -69,8 +68,9 @@ typedef enum {
 	// Client
 	LWNL_REQ_BLE_START_SCAN,
 	LWNL_REQ_BLE_STOP_SCAN,
-	LWNL_REQ_BLE_CONNECT,
-	LWNL_REQ_BLE_DISCONNECT_ALL,
+	LWNL_REQ_BLE_CLIENT_CONNECT,
+	LWNL_REQ_BLE_CLIENT_DISCONNECT,
+	LWNL_REQ_BLE_CLIENT_DISCONNECT_ALL,
 	LWNL_REQ_BLE_CONNECTED_DEV_LIST,
 	LWNL_REQ_BLE_CONNECTED_INFO,
 	LWNL_REQ_BLE_OP_ENABLE_NOTI,
@@ -84,6 +84,7 @@ typedef enum {
 	LWNL_REQ_BLE_ATTR_SET_DATA,
 	LWNL_REQ_BLE_ATTR_GET_DATA,
 	LWNL_REQ_BLE_ATTR_REJECT,
+	LWNL_REQ_BLE_SERVER_DISCONNECT,
 	LWNL_REQ_BLE_GET_MAC_BY_CONN,
 	LWNL_REQ_BLE_GET_CONN_BY_MAC,
 	LWNL_REQ_BLE_SET_ADV_DATA,
@@ -118,16 +119,10 @@ typedef enum {
 	TRBLE_UNKNOWN,
 } trble_result_e;
 
-typedef enum {
-	TRBLE_MODE_SERVER,
-	TRBLE_MODE_CLIENT,
-	TRBLE_MODE_UNKNOWN,
-} trble_mode_e;
-
 /*** Central(Client) ***/
 typedef enum {
-	TRBLE_SCAN_STARTED,
-	TRBLE_SCAN_STOPPED,
+	TRBLE_SCAN_STOPPED = 0,
+	TRBLE_SCAN_STARTED,	
 } trble_scan_state_e;
 
 typedef enum {
@@ -273,7 +268,6 @@ typedef trble_result_e (*trble_init)(struct bledev *dev, trble_client_init_confi
 typedef trble_result_e (*trble_deinit)(struct bledev *dev);
 typedef trble_result_e (*trble_get_mac_addr)(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 // trble_disconnect can be used in both of server & client.
-typedef trble_result_e (*trble_disconnect)(struct bledev *dev, trble_conn_handle con_handle, trble_mode_e mode);
 typedef trble_result_e (*trble_get_bonded_device)(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
 typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, uint8_t addr[TRBLE_BD_ADDR_MAX_LEN]);
 typedef trble_result_e (*trble_delete_bond_all)(struct bledev *dev);
@@ -283,8 +277,9 @@ typedef trble_result_e (*trble_conn_is_any_active)(struct bledev *dev, bool *is_
 /*** Central(Client) ***/
 typedef trble_result_e (*trble_start_scan)(struct bledev *dev, trble_scan_filter *filter);
 typedef trble_result_e (*trble_stop_scan)(struct bledev *dev);
-typedef trble_result_e (*trble_connect)(struct bledev *dev, trble_conn_info *conn_info);
-typedef trble_result_e (*trble_disconnect_all)(struct bledev *dev);
+typedef trble_result_e (*trble_client_connect)(struct bledev *dev, trble_conn_info *conn_info);
+typedef trble_result_e (*trble_client_disconnect)(struct bledev *dev, trble_conn_handle con_handle);
+typedef trble_result_e (*trble_client_disconnect_all)(struct bledev *dev);
 typedef trble_result_e (*trble_connected_device_list)(struct bledev *dev, trble_connected_list *out_connected_list);
 typedef trble_result_e (*trble_connected_info)(struct bledev *dev, trble_conn_handle conn_handle, trble_device_connected *out_connected_device);
 typedef trble_result_e (*trble_operation_enable_notification)(struct bledev *dev, trble_operation_handle *handle);
@@ -300,6 +295,7 @@ typedef trble_result_e (*trble_attr_set_data)(struct bledev *dev, trble_attr_han
 typedef trble_result_e (*trble_attr_get_data)(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 // reject attribute request in callback function and return error code
 typedef trble_result_e (*trble_attr_reject)(struct bledev *dev, trble_attr_handle attr_handle, uint8_t app_errorcode);
+typedef trble_result_e (*trble_server_disconnect)(struct bledev *dev, trble_conn_handle con_handle);
 typedef trble_result_e (*trble_get_mac_addr_by_conn_handle)(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 typedef trble_result_e (*trble_get_conn_handle_by_addr)(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
 typedef trble_result_e (*trble_set_adv_data)(struct bledev *dev, trble_data *data);
@@ -314,7 +310,6 @@ struct trble_ops {
 	trble_init init;
 	trble_deinit deinit;
 	trble_get_mac_addr get_mac;
-	trble_disconnect disconnect;
 	trble_get_bonded_device get_bonded_dev;
 	trble_delete_bond del_bond;
 	trble_delete_bond_all del_bond_all;
@@ -324,8 +319,9 @@ struct trble_ops {
 	/* Central(Client) */
 	trble_start_scan start_scan;
 	trble_stop_scan stop_scan;
-	trble_connect connect;
-	trble_disconnect_all disconnect_all;
+	trble_client_connect client_connect;
+	trble_client_disconnect client_disconnect;
+	trble_client_disconnect_all client_disconnect_all;
 	trble_connected_device_list conn_dev_list;
 	trble_connected_info conn_info;
 	trble_operation_enable_notification op_enable_noti;
@@ -339,6 +335,7 @@ struct trble_ops {
 	trble_attr_set_data attr_set_data;
 	trble_attr_get_data attr_get_data;
 	trble_attr_reject attr_reject;
+	trble_server_disconnect server_disconnect;
 	trble_get_mac_addr_by_conn_handle get_mac_by_conn;
 	trble_get_conn_handle_by_addr get_conn_by_mac;
 	trble_set_adv_data set_adv_data;
