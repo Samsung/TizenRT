@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <net/if.h>
 #include <json/cJSON.h>
 #include <tinyara/hashmap.h>
 
@@ -918,8 +919,8 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	snprintf(ssid_device_name, sizeof(ssid_device_name), "%s", device->name);
 	THINGS_LOG_V(TAG, "[softap] DeviceName : %s", ssid_device_name);
 
-	wifi_manager_info_s st_wifi_info;
-	wifi_manager_get_info(&st_wifi_info);
+	char mac_address[IFHWADDRLEN];
+	netlib_getmacaddr("wlan0", mac_address);
 
 #if defined(CONFIG_ST_THINGS_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_HW_ACCEL)
 	if (is_artik) {
@@ -930,7 +931,7 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	} else
 #endif
 	{
-		snprintf((char *)ext_value, sizeof(ext_value), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
+		snprintf((char *)ext_value, sizeof(ext_value), "%02X%02X", mac_address[4], mac_address[5]);
 	}
 
 	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_device->mnid, g_setup_id, ssid_type, ext_value);

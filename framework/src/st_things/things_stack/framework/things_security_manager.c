@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ifaddrs.h>
+#include <net/if.h>
 #include <netpacket/packet.h>
 
 #include "securevirtualresourcetypes.h"
@@ -493,16 +494,15 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 	THINGS_LOG_D(TAG, "In %s", __func__);
 
 #ifdef __ST_THINGS_RTOS__
-	wifi_manager_info_s st_wifi_info;
-	wifi_manager_get_info(&st_wifi_info);
-
-	if (wifi_manager_get_info(&st_wifi_info) != WIFI_MANAGER_SUCCESS) {
-
+	char mac_address[IFHWADDRLEN];
+	if (netlib_getmacaddr("wlan0", mac_address) != 0) {
 		THINGS_LOG_E(TAG, "MAC Get Error\n");
 		return OIC_SEC_ERROR;
 	}
-
-	snprintf((char *)p_id_buf, MAC_BUF_SIZE - 1, "%02X%02X%02X%02X%02X%02X", st_wifi_info.mac_address[0], st_wifi_info.mac_address[1], st_wifi_info.mac_address[2], st_wifi_info.mac_address[3], st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
+	snprintf((char *)p_id_buf, MAC_BUF_SIZE - 1, "%02X%02X%02X%02X%02X%02X",
+			 mac_address[0], mac_address[1],
+			 mac_address[2], mac_address[3],
+			 mac_address[4], mac_address[5]);
 #else
 	struct ifaddrs *ifaddr = NULL;
 	struct ifaddrs *ifa = NULL;
