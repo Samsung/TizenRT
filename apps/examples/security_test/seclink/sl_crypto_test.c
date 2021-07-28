@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2020 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,37 +28,38 @@
 #include "sl_test_usage.h"
 
 static char *g_command[] = {
-#ifdef SL_KEY_TEST_POOL
-#undef SL_KEY_TEST_POOL
+#ifdef SL_CRYPTO_TEST_POOL
+#undef SL_CRYPTO_TEST_POOL
 #endif
-#define SL_KEY_TEST_POOL(command, type, func) command,
-#include "sl_key_table.h"
+#define SL_CRYPTO_TEST_POOL(command, type, func) command,
+#include "sl_crypto_table.h"
 };
 
-#ifdef SL_KEY_TEST_POOL
-#undef SL_KEY_TEST_POOL
+#ifdef SL_CRYPTO_TEST_POOL
+#undef SL_CRYPTO_TEST_POOL
 #endif
-#define SL_KEY_TEST_POOL(command, type, func) \
+#define SL_CRYPTO_TEST_POOL(command, type, func) \
 	extern void func(sl_options *opt);
-#include "sl_key_table.h"
+#include "sl_crypto_table.h"
 
 static sl_test_func g_func_list[] = {
-#ifdef SL_KEY_TEST_POOL
-#undef SL_KEY_TEST_POOL
+#ifdef SL_CRYPTO_TEST_POOL
+#undef SL_CRYPTO_TEST_POOL
 #endif
-#define SL_KEY_TEST_POOL(command, type, func) func,
-#include "sl_key_table.h"
+#define SL_CRYPTO_TEST_POOL(command, type, func) func,
+#include "sl_crypto_table.h"
 };
 
 typedef enum {
-#ifdef SL_KEY_TEST_POOL
-#undef SL_KEY_TEST_POOL
+#ifdef SL_CRYPTO_TEST_POOL
+#undef SL_CRYPTO_TEST_POOL
 #endif
-#define SL_KEY_TEST_POOL(command, type, func) type,
-#include "sl_key_table.h"
-	SL_KEY_TYPE_MAX,
-	SL_KEY_TYPE_ERR = -1
-} sl_key_type_e;
+#define SL_CRYPTO_TEST_POOL(command, type, func) type,
+#include "sl_crypto_table.h"
+	SL_CRYPTO_TYPE_MAX,
+	SL_CRYPTO_TYPE_ERR = -1
+} sl_crypto_type_e;
+
 
 static int _parse_command(sl_options *opt)
 {
@@ -71,33 +72,39 @@ static int _parse_command(sl_options *opt)
 	opt->count = atoi(argv[3]);
 
 	if (strncmp(argv[2], "all", strlen("all") + 1) == 0) {
-		return SL_KEY_TYPE_MAX;
+		return SL_CRYPTO_TYPE_MAX;
 	}
 
-	for (int i = 0; i < SL_KEY_TYPE_MAX; i++) {
+	for (int i = 0; i < SL_CRYPTO_TYPE_MAX; i++) {
 		if (strncmp(argv[2], g_command[i], strlen(g_command[i]) + 1) == 0) {
-			return (sl_key_type_e)i;
+			return (sl_crypto_type_e)i;
 		}
 	}
-	return SL_KEY_TYPE_ERR;
+	return SL_CRYPTO_TYPE_ERR;
 }
 
 static void _run_all(sl_options *opt)
 {
-	for (int i = 0; i < SL_KEY_TYPE_MAX; i++) {
+	for (int i = 0; i < SL_CRYPTO_TYPE_MAX; i++) {
 		g_func_list[i](opt);
 	}
 }
 
-/*
- * Key
- * Injected key slot range 0~31
- * tp1x: 0~7
- * RAM key slot range 32~63
- * tp1x: 32~63
- */
-void sl_handle_key(sl_options *opt)
+void sl_handle_crypto(sl_options *opt)
 {
-	printf("ToDo\n");
+	if (opt->run_all == 1) {
+		/*  run all test count times */
+		_run_all(opt);
+		return;
+	}
+	sl_crypto_type_e type = _parse_command(opt);
+	if (type == SL_CRYPTO_TYPE_ERR) {
+		printf("%s\n", SL_USAGE);
+		return;
+	} else if (type == SL_CRYPTO_TYPE_MAX) {
+		_run_all(opt);
+		return;
+	}
+	g_func_list[type](opt);
 	return;
 }

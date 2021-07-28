@@ -16,10 +16,11 @@
  *
  ****************************************************************************/
 
-#ifndef __ST_PERF_H__
-#define __ST_PERF_H__
+#pragma once
 
 #include <sys/time.h>
+#include <queue.h>
+
 #if 0
 #define COLOR_SMOKE			"\e[33m"
 #define COLOR_RESULT		"\e[36m"
@@ -75,7 +76,7 @@
 	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
 
 #define ST_SET_PACK(fixture)					\
-		static st_pack g_pack_##fixture = {NULL}
+		static st_pack g_pack_##fixture;
 
 #define ST_SET_SMOKE(fixture, repeat, expect, tc_desc, tc_name)			\
 	perf_add_item(&g_pack_##fixture, repeat, #tc_name,					\
@@ -343,5 +344,3 @@ void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 				   st_unit_tc func_init, st_unit_tc func_deinit,
 				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func,
 				   unsigned int expect, st_performance *perf, st_stability *stab);
-
-#endif //__ST_PERF_H__
