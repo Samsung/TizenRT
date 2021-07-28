@@ -27,6 +27,7 @@
 #include "sl_test.h"
 #include "sl_sample_key.h"
 
+#define REPEAT_COUNT 5
 #define KEY_SLOT 32
 #define SL_TEST_KEY_LEN 256
 #define SL_TEST_SYM_KEY_LEN 32
@@ -183,7 +184,7 @@ START_TEST_F(ecdsa_sign)
 	memset(g_ecdsa_hash.data, 0xa5, SL_TEST_ECC_HASH_LEN);
 
 	g_ecdsa_mode.curve = HAL_ECDSA_SEC_P256R1;
-	g_ecdsa_mode.hash_t = HAL_HMAC_SHA256;
+	g_ecdsa_mode.hash_t = HAL_HASH_SHA256;
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_ecdsa_sign_md(g_hnd, g_ecdsa_mode,
 											  &g_ecdsa_hash, SL_TEST_ECC_KEY_SLOT, &g_ecdsa_signature, &hres));
@@ -212,7 +213,7 @@ START_TEST_F(ecdsa_verify)
 	memset(g_ecdsa_hash.data, 0xa5, SL_TEST_ECC_HASH_LEN);
 
 	g_ecdsa_mode.curve = HAL_ECDSA_SEC_P256R1;
-	g_ecdsa_mode.hash_t = HAL_HMAC_SHA256;
+	g_ecdsa_mode.hash_t = HAL_HASH_SHA256;
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_ecdsa_sign_md(g_hnd, g_ecdsa_mode, &g_ecdsa_hash, SL_TEST_ECC_KEY_SLOT, &g_ecdsa_signature, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
@@ -443,22 +444,22 @@ void sl_simple_test(void)
 	ST_SET_PACK(sl_simple);
 
 	ST_TC_SET_GLOBAL(sl_simple, simple_tc);
-	ST_TC_SET_SMOKE(sl_simple, 1, 0, "set key", key_testcase, set_sym_key);
-	ST_TC_SET_SMOKE(sl_simple, 1, 0, "set key", key_testcase, set_asym_key);
-	ST_TC_SET_SMOKE(sl_simple, 1, 0, "get key", key_testcase, get_key);
-	ST_TC_SET_SMOKE(sl_simple, 1, 0, "generate key", key_testcase, gen_key);
+	ST_TC_SET_SMOKE(sl_simple, REPEAT_COUNT, 0, "set key", key_testcase, set_sym_key);
+	ST_TC_SET_SMOKE(sl_simple, REPEAT_COUNT, 0, "set key", key_testcase, set_asym_key);
+	ST_TC_SET_SMOKE(sl_simple, REPEAT_COUNT, 0, "get key", key_testcase, get_key);
+	ST_TC_SET_SMOKE(sl_simple, REPEAT_COUNT, 0, "generate key", key_testcase, gen_key);
 
 	ST_SET_SMOKE1(sl_simple, 1, 0, "generate random", gen_random);
 
-	ST_SET_SMOKE1(sl_simple, 1, 0, "write secure storage", write_storage);
-	ST_SET_SMOKE1(sl_simple, 1, 0, "read secure storage", read_storage);
-	ST_SET_SMOKE1(sl_simple, 1, 0, "delete secure storage", delete_storage);
+	ST_SET_SMOKE1(sl_simple, REPEAT_COUNT, 0, "write secure storage", write_storage);
+	ST_SET_SMOKE1(sl_simple, REPEAT_COUNT, 0, "read secure storage", read_storage);
+	ST_SET_SMOKE1(sl_simple, REPEAT_COUNT, 0, "delete secure storage", delete_storage);
 
-	ST_SET_SMOKE1(sl_simple, 1, 0, "ecdsa sign", ecdsa_sign);
-	ST_SET_SMOKE1(sl_simple, 1, 0, "ecdsa verify", ecdsa_verify);
-	ST_SET_SMOKE1(sl_simple, 1, 0, "ecdh compute", ecdh_compute);
-	ST_SET_SMOKE1(sl_simple, 1, 0, "set certificate", set_certificate);
-	ST_SET_SMOKE1(sl_simple, 1, 0, "get certificate", get_certificate);
+	ST_SET_SMOKE1(sl_simple, REPEAT_COUNT, 0, "ecdsa sign", ecdsa_sign);
+	ST_SET_SMOKE1(sl_simple, REPEAT_COUNT, 0, "ecdsa verify", ecdsa_verify);
+	ST_SET_SMOKE1(sl_simple, REPEAT_COUNT, 0, "ecdh compute", ecdh_compute);
+	ST_SET_SMOKE1(sl_simple, REPEAT_COUNT, 0, "set certificate", set_certificate);
+	ST_SET_SMOKE1(sl_simple, REPEAT_COUNT, 0, "get certificate", get_certificate);
 
 	ST_RUN_TEST(sl_simple);
 	ST_RESULT_TEST(sl_simple);

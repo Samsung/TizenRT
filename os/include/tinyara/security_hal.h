@@ -29,7 +29,7 @@
 /*
  * Common
  */
-#define HAL_DATA_INITIALIZER {0, 0, 0, 0}
+#define HAL_DATA_INITIALIZER {NULL, 0, NULL, 0}
 
 /* Enumerator */
 typedef enum {
@@ -221,8 +221,6 @@ typedef struct _hal_ss_info {
 #define HAL_INIT_ECDSA_PARAM(param)							\
 	hal_ecdsa_mode param = HAL_ECDSA_PARAM_INITIALIZER
 
-#define HAL_DATA_INITIALIZER					\
-	{NULL, 0, NULL, 0}
 #define HAL_INIT_DATA(data)						\
 	hal_data data = HAL_DATA_INITIALIZER
 

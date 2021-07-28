@@ -12,5 +12,12 @@ config SECURITY_LINK_DRV
 
 if SECURITY_LINK_DRV
 source "$FRAMEWORK_DIR/src/seclink/Kconfig"
+
+config SECURITY_LINK_DRV_PROFILE
+	bool "Display security driver performance""
+	depends on TIMER
+	default n
+	---help---
+		Enable seclink Driver to support communication between HAL and security API.
 endif #SECURITY_LINK_DRV
 

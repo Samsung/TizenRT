@@ -15,8 +15,21 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef __SECURITY_SECLINK_TEST_H__
-#define __SECURITY_SECLINK_TEST_H__
+#pragma once
+
+struct _sl_options;
+typedef void (*sl_test_func)(struct _sl_options *arg);
+
+struct _sl_options {
+	sl_test_func func;
+	int argc;
+	char **argv;
+	int count; // repeat count
+	int type;  // type
+	char run_all;
+};
+typedef struct _sl_options sl_options;
+
 
 /*
  * Definitions
@@ -35,5 +48,3 @@ int sl_test_malloc_buffer(hal_data *data, int buf_len);
 int sl_test_malloc_buffer_priv(hal_data *data, int buf_len);
 void sl_test_init_buffer(hal_data *data);
 void sl_test_print_buffer(char *data, int buf_len, const char *message);
-
-#endif /* __SECURITY_SECLINK_TEST_H__ */

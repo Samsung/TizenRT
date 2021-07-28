@@ -26,12 +26,23 @@ APPNAME = sl_test
 THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
-CSRCS += sl_ss_test.c \
+CSRCS += \
 	sl_auth_test.c \
 	sl_key_test.c \
-	sl_simple_test.c \
+	sl_crypto_test.c \
+	sl_ss_test.c \
 	sl_test_utils.c
 
+#AUTHENTICATION
+CSRCS += \
+sl_auth_test_ecdh.c\
+sl_auth_test_x25519.c\
+sl_auth_test_ecdsa_verify.c\
+sl_auth_test_ecdsa_signature.c\
+sl_auth_test_ed25519_verify.c\
+sl_auth_test_ed25519_signature.c
+
+CSRCS += 
 MAINSRC = sl_test_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
