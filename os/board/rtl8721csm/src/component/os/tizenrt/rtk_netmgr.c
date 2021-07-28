@@ -394,16 +394,31 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config_s *config)
 {
 	if (config) {
-		if (config->ssid_length > 0) {
+		 if ((config->channel >= 1) && (config->channel <= 13)) {
+			uint32_t	channel;
+			uint8_t     pscan_config;
+			if (config->ssid_length == 0) {
+				rtw_memset(config->ssid, 0, sizeof(config->ssid));
+				config->ssid_length = 0;
+			}
+			channel = config->channel;
+			channel &= 0xff;
+			pscan_config = PSCAN_ENABLE;
+			if (wifi_set_pscan_chan((uint8_t *)&channel, &pscan_config, 1) < 0 ) {
+				RTW_API_INFO("set pscan channel failed\n");
+				return TRWIFI_FAIL;
+			}
+		}
+		if ((config->ssid_length > 0) || ((config->channel >= 1) && (config->channel <= 13))) {
 			int scan_buf_len = 500;
 			rltk_wlan_enable_scan_with_ssid_by_extended_security(1);
 			if (wifi_scan_networks_with_ssid(parse_scan_with_ssid_res, NULL,
-											 scan_buf_len, config->ssid, config->ssid_length) != RTW_SUCCESS) {
+											scan_buf_len, config->ssid, config->ssid_length) != RTW_SUCCESS) {
 				return TRWIFI_FAIL;
 			}
 		} else {
-			// scan specified channel.
-			return TRWIFI_NOT_SUPPORTED;
+			RTW_API_INFO("Invalid channel range\n");
+			return TRWIFI_FAIL;
 		}
 	} else {
 		if (wifi_scan_networks(app_scan_result_handler, NULL ) != RTW_SUCCESS) {
