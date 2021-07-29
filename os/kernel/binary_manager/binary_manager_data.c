@@ -23,7 +23,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-#include <crc32.h>
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <queue.h>
 #include <stdint.h>
@@ -70,12 +69,8 @@ static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_
 {
 	int fd;
 	int ret;
-	uint32_t crc_value = 0;
-	uint8_t *crc_buffer;
-	uint32_t crc_bufsize;
 
 	memset(header_data, 0, sizeof(kernel_binary_header_t));
-	crc_buffer = NULL;
 
 	fd = open(path, O_RDONLY);
 	if (fd < 0) {
@@ -97,27 +92,6 @@ static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_
 		goto errout_with_fd;
 	}
 
-	crc_bufsize = header_data->binary_size;
-	crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
-	if (!crc_buffer) {
-		bmdbg("Failed to allocate buffer for checking crc, size %u\n", crc_bufsize);
-		goto errout_with_fd;
-	}
-
-	/* Calculate checksum and Verify it */
-	crc_value = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_data->header_size, crc_value);
-	ret = read(fd, (void *)crc_buffer, crc_bufsize);
-	if (ret < 0 || ret != crc_bufsize) {
-		bmdbg("Failed to read : %d, errno %d\n", ret, errno);
-		goto errout_with_fd;
-	}
-	crc_value = crc32part(crc_buffer, crc_bufsize, crc_value);
-
-	if (crc_value != header_data->crc_hash) {
-		bmdbg("Failed to crc check : %u != %u\n", crc_value, header_data->crc_hash);
-		goto errout_with_fd;
-	}
-	kmm_free(crc_buffer);
 	bmvdbg("Binary header : %u %u %u %u \n", header_data->header_size, header_data->binary_size, header_data->version, header_data->secure_header_size);
 	close(fd);
 
@@ -125,9 +99,7 @@ static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_
 
 errout_with_fd:
 	close(fd);
-	if (crc_buffer) {
-		kmm_free(crc_buffer);
-	}
+
 	return ERROR;
 }
 
@@ -183,30 +155,28 @@ void binary_manager_register_kpart(int part_num, int part_size)
 bool binary_manager_scan_kbin(void)
 {
 	int ret;
-	int part_idx;
-	uint32_t latest_ver;
+	binmgr_bpdata_t *bp_data;
 	kernel_binary_header_t header_data;
 	char filepath[BINARY_PATH_LEN];
 
-	latest_ver = 0;
-
-	/* Load the binaries with high priority directly */
-	for (part_idx = 0; part_idx < kernel_info.part_count; part_idx++) {
-		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_num[part_idx]);
+	ret = binary_manager_scan_bootparam();
+	if (ret == BINMGR_OK) {
+		bp_data = binary_manager_get_bpdata();
+		/* Verify running kernel binary based on bootparam */
+		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_num[bp_data->active_idx]);
 		ret = binary_manager_verify_kernel_binary(filepath, &header_data);
-		if (ret == OK && latest_ver < header_data.version) {
-			/* Update latest version and inuse index */
+		if (ret == OK) {
+			/* Update inuse index and kernel version */
+			kernel_info.inuse_idx = bp_data->active_idx;
 			kernel_info.version = header_data.version;
-			kernel_info.inuse_idx = part_idx;
-			latest_ver = header_data.version;
+			bmvdbg("Kernel version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
+			return true;
 		}
+	} else {
+		lldbg("ERROR!! Failed to scan boot param.\n");
+		lldbg("Please check whether the partition 'bootparam' exists in CONFIG_FLASH_PART_TYPE with 8192K size.\n");
 	}
-	bmvdbg("Latest version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
 
-	/* Found valid binary */
-	if (kernel_info.version != 0) {
-		return true;
-	}
 	return false;
 }
 

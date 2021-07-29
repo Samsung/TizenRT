@@ -74,6 +74,10 @@
 
 #define FILES_PER_BIN              2                          /* The number of files per binary */
 
+/* Bootparam information */
+#define BOOTPARAM_COUNT            2                          /* The number of boot parameters */
+#define BOOTPARAM_PARTSIZE         (8 * 1024)                 /* The size of partition for boot param binary : 8K */
+
 #define CHECKSUM_SIZE              4
 
 /* Index of 'Common Library' data in binary table. */
@@ -151,6 +155,23 @@ struct binmgr_kinfo_s {
 	uint32_t version;
 };
 typedef struct binmgr_kinfo_s binmgr_kinfo_t;
+
+/* Boot parameter data */
+struct binmgr_bpdata_s {
+	uint32_t crc_hash;
+	uint32_t version;
+	uint32_t format_ver;
+	uint8_t active_idx;
+	uint32_t address[BOOTPARAM_COUNT];
+} __attribute__((__packed__));
+typedef struct binmgr_bpdata_s binmgr_bpdata_t;
+
+struct binmgr_bpinfo_s {
+	uint8_t inuse_idx;
+	int part_num;
+	binmgr_bpdata_t bp_data;
+};
+typedef struct binmgr_bpinfo_s binmgr_bpinfo_t;
 
 struct statecb_node_s {
 	struct statecb_node_s *flink;
@@ -238,6 +259,8 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
 void binary_manager_release_binary_sem(int bin_idx);
 void binary_manager_update_running_state(int bin_id);
 int binary_manager_get_index_with_name(char *bin_name);
+int binary_manager_scan_bootparam(void);
+binmgr_bpdata_t *binary_manager_get_bpdata(void);
 
 /****************************************************************************
  * Binary Manager Main Thread
