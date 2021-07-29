@@ -105,6 +105,7 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 	if (!strncmp(types, "ftl,", 4)
 #ifdef CONFIG_BINARY_MANAGER
 	|| !strncmp(types, "kernel,", 7)
+	|| !strncmp(types, "bootparam,", 10)
 #endif
 	) {
 		do_ftlinit = true;
@@ -285,6 +286,8 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 #ifdef CONFIG_BINARY_MANAGER
 		if (!strncmp(types, "kernel,", 7)) {
 			binary_manager_register_kpart(partno, partsize);
+		} else if (!strncmp(types, "bootparam,", 10)) {
+			binary_manager_register_bppart(partno, partsize);
 		}
 #endif
 #ifdef CONFIG_MTD_PARTITION_NAMES
