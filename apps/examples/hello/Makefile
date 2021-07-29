@@ -59,6 +59,8 @@ include $(APPDIR)/Make.defs
 APPNAME = hello
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
+PRIORITY = 100
+STACKSIZE = 10240
 
 # Hello, World! Example
 
