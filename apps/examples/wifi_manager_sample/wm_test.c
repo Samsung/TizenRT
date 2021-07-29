@@ -184,6 +184,15 @@ static sem_t g_wm_sem = SEM_INITIALIZER(0);
 static sem_t g_wm_func_sem = SEM_INITIALIZER(0);
 static int g_mode = 0; // check program is running
 
+// if _wt_scan_done is for WT_TYPE_SJOIN then it doesn't need to print
+// scan list. So if g_scan_join is 1 then it doesn't print scan list
+static int g_scan_join = 0;
+static int g_scanned_result = 0;
+static char g_scanned_ssid[WIFIMGR_SSID_LEN + 1] = {0, };
+static wifi_manager_ap_auth_type_e g_scanned_auth_type = WIFI_MANAGER_AUTH_OPEN;
+static wifi_manager_ap_crypto_type_e g_scanned_crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+
+
 void _wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 {
 	WT_LOGP(TAG, "====================================\n");
@@ -281,6 +290,21 @@ void _wt_print_conninfo(wifi_manager_info_s *info)
 	}
 }
 
+int _wt_get_scanned_list(wifi_manager_scan_info_s *slist, char *ssid,
+						 wifi_manager_ap_auth_type_e *atype,
+						 wifi_manager_ap_crypto_type_e *ctype)
+{
+	int ssid_len = strlen(ssid);
+	while (slist) {
+		if (strncmp(ssid, slist->ssid, ssid_len + 1) == 0) {
+			*atype = slist->ap_auth_type;
+			*ctype = slist->ap_crypto_type;
+			return 0;
+		}
+		slist = slist->next;
+	}
+	return -1;
+}
 wifi_manager_ap_auth_type_e _wt_get_auth_type(const char *method)
 {
 	int list_size = sizeof(g_wifi_test_auth_method) / sizeof(g_wifi_test_auth_method[0]);
@@ -340,6 +364,7 @@ void _wt_signal_deinit(void)
 	g_mode = 0;
 }
 
+/*  callback */
 void _wt_sta_connected(wifi_manager_result_e res)
 {
 	WT_LOG(TAG, "-->res(%d)", res);
@@ -374,7 +399,16 @@ void _wt_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_res
 		WT_TEST_SIGNAL;
 		return;
 	}
-	_wt_print_scanlist(*scan_result);
+	if (g_scan_join == 0) {
+		_wt_print_scanlist(*scan_result);
+	} else {
+		// request type is WT_TYPE_SJOIN. so it doesn't print scan list
+		// and pass scan list result to _wt_scan_connect;
+		g_scanned_result = _wt_get_scanned_list(*scan_result,
+												g_scanned_ssid,
+												&g_scanned_auth_type,
+												&g_scanned_crypto_type);
+	}
 	WT_TEST_SIGNAL;
 }
 
@@ -471,6 +505,60 @@ void _wt_connect(void *arg)
 	/* Wait for DHCP connection */
 	WT_LOG(TAG, "wait join done");
 	WT_TEST_WAIT;
+	WT_LEAVE;
+}
+
+void _wt_scan_connect(void *arg)
+{
+	WT_ENTER;
+	WT_LOG(TAG, "--> scan_connect\n");
+	g_scan_join = 1;
+	struct wt_options *ap_info = (struct wt_options *)arg;
+	wifi_manager_scan_config_s sconfig;
+	sconfig.channel = 0;
+	sconfig.ssid_length = strlen(ap_info->ssid);
+	strncpy(sconfig.ssid, ap_info->ssid, sconfig.ssid_length + 1);
+	strncpy(g_scanned_ssid, ap_info->ssid, sconfig.ssid_length + 1);
+
+	wifi_manager_result_e res = wifi_manager_scan_ap(&sconfig);
+
+	if (res != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "request scan ssid (%s) fail %d\n", sconfig.ssid, res);
+		return;
+	}
+	WT_TEST_WAIT;
+
+	g_scan_join = 0;
+	if (g_scanned_result != 0) {
+		WT_LOGE(TAG, "scan ssid fail\n");
+		return;
+	}
+
+	wifi_manager_ap_config_s apconfig;
+	memset(&apconfig, 0, sizeof(wifi_manager_ap_config_s));
+	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
+	apconfig.ssid_length = strlen(ap_info->ssid);
+	apconfig.ap_auth_type = g_scanned_auth_type;
+	if (ap_info->auth_type != WIFI_MANAGER_AUTH_OPEN) {
+		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
+		apconfig.passphrase_length = strlen(ap_info->password);
+		apconfig.ap_crypto_type = g_scanned_crypto_type;
+	} else {
+		apconfig.passphrase[0] = '\0';
+		apconfig.passphrase_length = 0;
+		apconfig.ap_crypto_type = ap_info->crypto_type;
+	}
+
+	_wt_print_wifi_ap_profile(&apconfig, "Scan connect AP Info");
+
+	res = wifi_manager_connect_ap(&apconfig);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "AP connect failed %d\n", res);
+		return;
+	}
+	/* Wait for DHCP connection */
+	WT_TEST_WAIT;
+	WT_LOG(TAG, "<-- scan_connect\n");
 	WT_LEAVE;
 }
 
@@ -843,7 +931,7 @@ int _wt_parse_scan(struct wt_options *opt, int argc, char *argv[])
 		return 0;
 	} else if (argc == 6) {
 		opt->scan_specific = 1;
-		if (strncmp("both", argv[3], strlen("ssid") + 1) == 0) {
+		if (strncmp("both", argv[3], strlen("both") + 1) == 0) {
 			opt->ssid = argv[4];
 			opt->channel = atoi(argv[5]);
 			return 0;
