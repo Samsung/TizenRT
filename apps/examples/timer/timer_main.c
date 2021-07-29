@@ -110,7 +110,7 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 	int intval = pargs->intval;
 	int fd = pargs->fd;
 #ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
-	int frt_fd;
+	int frt_fd = -1;
 	char path[_POSIX_PATH_MAX];
 	int frt_dev;
 	struct timer_status_s before;
@@ -215,10 +215,12 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 	}
 #endif
 error:
-	pthread_exit(NULL);
 #ifdef CONFIG_EXAMPLES_TIMER_FRT_MEASUREMENT
-	close(frt_fd);
+	if (frt_fd > 0) {
+		close(frt_fd);
+	}
 #endif
+	pthread_exit(NULL);
 	return NULL;
 }
 
