@@ -6,6 +6,7 @@ WT_MEMBER_POOL(WT_TYPE_STOP, _wt_stop, _wt_parse_none, "stop")
 WT_MEMBER_POOL(WT_TYPE_SOFTAP, _wt_softap_start, _wt_parse_softap, "softap")
 WT_MEMBER_POOL(WT_TYPE_STA, _wt_sta_start, _wt_parse_none, "sta")
 WT_MEMBER_POOL(WT_TYPE_JOIN, _wt_connect, _wt_parse_join, "join")
+WT_MEMBER_POOL(WT_TYPE_SJOIN, _wt_scan_connect, _wt_parse_join, "sjoin")
 WT_MEMBER_POOL(WT_TYPE_LEAVE, _wt_disconnect, _wt_parse_none, "leave")
 // stop reconnecting to wifi AP. it doesn't expect to receive a signal because AP is already disconnected */
 WT_MEMBER_POOL(WT_TYPE_CANCEL, _wt_cancel, _wt_parse_none, "cancel")
