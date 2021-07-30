@@ -182,6 +182,14 @@ extern void cmd_p2p_connect(int argc, char **argv);
 extern u32 CmdDumpWord(IN u16 argc, IN u8 *argv[]);
 extern u32 CmdWriteWord(IN u16 argc, IN u8 *argv[]);
 #endif
+
+struct wlan_connect_info {
+	unsigned char ssid[TRWIFI_SSID_LEN + 1];
+	unsigned char channel;
+};
+static struct wlan_connect_info wifi_ap_info;
+static void wlan_store_connect_info(void);
+
 #ifdef CONFIG_CONCURRENT_MODE
 static void cmd_wifi_sta_and_ap(int argc, char **argv)
 {
@@ -415,6 +423,24 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	return ret;
 }
 
+void wlan_store_connect_info(void)
+{
+	u8 *ifname[1] = {(u8*)WLAN0_NAME};
+	rtw_wifi_setting_t setting;
+
+	memset(&setting, 0, sizeof(rtw_wifi_setting_t));
+	if (wifi_get_setting((const char*)ifname[0],&setting)) {
+		RTW_API_INFO("\r\n %s():wifi_get_setting fail", __func__);
+		return;
+	}
+
+	if (setting.mode != RTW_MODE_AP) {
+		rtw_memset(&wifi_ap_info,0,sizeof(struct wlan_connect_info));
+		rtw_memcpy(&wifi_ap_info.ssid, setting.ssid, strlen((char const*)setting.ssid) + 1);
+		wifi_ap_info.channel = setting.channel;
+	}
+}
+
 int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 {
 	int ret;
@@ -427,6 +453,9 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 	int key_id = 0;
 	void *semaphore;
 	int security_retry_count = 0;
+
+	uint32_t	channel;
+	uint8_t     pscan_config;
 
 	wifi_utils_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
 	wifi_utils_ap_crypto_type_e crypto = ap_connect_config->ap_crypto_type;
@@ -488,6 +517,17 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		return -1;
 	}
 
+	if (rtw_memcmp(ssid, &wifi_ap_info.ssid, strlen(ssid))) {
+		channel = wifi_ap_info.channel;
+		channel &= 0xff;
+		pscan_config = PSCAN_ENABLE | PSCAN_FAST_SURVEY;
+		ret = wifi_set_pscan_chan((uint8_t *)&channel, &pscan_config, 1);
+		rtw_memset(&wifi_ap_info,0,sizeof(struct wlan_connect_info));
+		if (ret < 0) {
+			RTW_API_INFO("\n\rset pscan failed");
+		}
+	}
+
 	ret = wifi_connect(ssid,
 					   security_type,
 					   password,
@@ -499,6 +539,8 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 	if (ret) {
 		ndbg("\n\rrtk_wifi_connect failed\n");
 		return -1;
+	} else {
+		wlan_store_connect_info();
 	}
 
 	return 0;
