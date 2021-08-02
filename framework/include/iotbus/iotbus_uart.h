@@ -36,6 +36,10 @@
 #include <tinyara/iotbus_sig.h>
 #include <iotbus/iotbus_error.h>
 
+/* Control the loopback mode */
+
+#define LOOPBACK_ON     1       /* Enable the Loopback mode */
+#define LOOPBACK_OFF    0       /* Disable the Loopback mode*/
 
 /**
  * @brief Enumeration of UART state
@@ -157,6 +161,17 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
  */
 int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtscts);
 #endif /* CONFIG_SERIAL_TERMIOS */
+
+/**
+ * @brief enable/disable loopback mode for uart.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] hnd handle of uart_context
+ * @param[in] mode, loopback mode either can be ON or OFF
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @since TizenRT v3.1
+ */
+int iotbus_uart_control_loopback(iotbus_uart_context_h hnd, bool mode);
 
 /**
  * @brief reads data over uart bus.
