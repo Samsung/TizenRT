@@ -564,6 +564,13 @@ static int rtl8721d_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long 
 		rtl8721d_up_rxint(dev, priv->rxint_enable);
 		break;
 
+	case TIOCLOOPBACK:
+		if (!arg) {
+			return -EINVAL;
+		}
+		serial_control_loopback(sdrv[uart_index_get(priv->tx)], *(bool *)arg);
+		break;
+
 	default:
 		ret = -ENOTTY;
 		break;
