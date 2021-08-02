@@ -51,7 +51,7 @@ static void tc_net_pbuf_layer_transport_p(int fd)
 	args.len = PBUF_TRANSPORT_HLEN;
 	args.type = PBUF_RAM;
 
-	ret = ioctl(fd, TESTIOC_NET_PBUF, &args);
+	ret = ioctl(fd, TESTIOC_NET_PBUF, (uint32_t)(&args));
 	TC_ASSERT_GEQ("pbuf", ret, 1);
 	TC_SUCCESS_RESULT();
 }
@@ -73,7 +73,7 @@ static void tc_net_pbuf_layer_ip_p(int fd)
 	args.len = PBUF_IP_HLEN;
 	args.type = PBUF_RAM;
 
-	ret = ioctl(fd, TESTIOC_NET_PBUF, &args);
+	ret = ioctl(fd, TESTIOC_NET_PBUF, (uint32_t)(&args));
 	TC_ASSERT_GEQ("pbuf", ret, 1);
 	TC_SUCCESS_RESULT();
 }
@@ -95,7 +95,7 @@ static void tc_net_pbuf_layer_link_p(int fd)
 	args.len = PBUF_LINK_HLEN;
 	args.type = PBUF_RAM;
 
-	ret = ioctl(fd, TESTIOC_NET_PBUF, &args);
+	ret = ioctl(fd, TESTIOC_NET_PBUF, (uint32_t)(&args));
 	TC_ASSERT_GEQ("pbuf", ret, 1);
 	TC_SUCCESS_RESULT();
 }
@@ -117,7 +117,7 @@ static void tc_net_pbuf_layer_raw_tx_p(int fd)
 	args.len = PBUF_LINK_ENCAPSULATION_HLEN;
 	args.type = PBUF_RAM;
 
-	ret = ioctl(fd, TESTIOC_NET_PBUF, &args);
+	ret = ioctl(fd, TESTIOC_NET_PBUF, (uint32_t)(&args));
 	TC_ASSERT_GEQ("pbuf", ret, 1);
 	TC_SUCCESS_RESULT();
 }
@@ -139,7 +139,7 @@ static void tc_net_pbuf_layer_raw_p(int fd)
 	args.len = 0;
 	args.type = PBUF_RAM;
 
-	ret = ioctl(fd, TESTIOC_NET_PBUF, &args);
+	ret = ioctl(fd, TESTIOC_NET_PBUF, (uint32_t)(&args));
 	TC_ASSERT_GEQ("pbuf", ret, 1);
 	TC_SUCCESS_RESULT();
 }
@@ -161,7 +161,7 @@ static void tc_net_pbuf_layer_n(int fd)
 	args.len = 0;
 	args.type = PBUF_RAM;
 
-	ret = ioctl(fd, TESTIOC_NET_PBUF, &args);
+	ret = ioctl(fd, TESTIOC_NET_PBUF, (uint32_t)(&args));
 	TC_ASSERT_EQ("pbuf", ret, 0);
 	TC_SUCCESS_RESULT();
 }
@@ -183,7 +183,7 @@ static void tc_net_pbuf_type_n(int fd)
 	args.len = 0;
 	args.type = PBUF_TEST;
 
-	ret = ioctl(fd, TESTIOC_NET_PBUF, &args);
+	ret = ioctl(fd, TESTIOC_NET_PBUF, (uint32_t)(&args));
 	TC_ASSERT_EQ("pbuf", ret, 0);
 	TC_SUCCESS_RESULT();
 }
