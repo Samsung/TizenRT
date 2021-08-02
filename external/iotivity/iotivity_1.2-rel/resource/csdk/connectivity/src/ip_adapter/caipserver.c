@@ -27,6 +27,7 @@
 
 #ifdef __TIZENRT__
 #include <tinyara/config.h>
+#include <tinyara/lwnl/lwnl.h>
 #include <sys/uio.h>
 #endif
 
