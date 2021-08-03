@@ -137,7 +137,7 @@ typedef struct rtw_wifi_setting {
 	unsigned char 		ssid[33];
 	unsigned char		channel;
 	rtw_security_t		security_type;
-	unsigned char 		password[65];
+	unsigned char 		password[RTW_MAX_PSK_LEN+1];
 	unsigned char		key_idx;
 }rtw_wifi_setting_t;
 #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || defined(__CC_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
@@ -152,7 +152,7 @@ typedef struct rtw_wifi_config {
 	unsigned char 		ssid[32];
 	unsigned char		ssid_len;
 	unsigned char		security_type;
-	unsigned char		password[65];
+	unsigned char		password[RTW_MAX_PSK_LEN+1];
 	unsigned char		password_len;
 	unsigned char		channel;
 } rtw_wifi_config_t;
