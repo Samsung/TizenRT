@@ -288,12 +288,10 @@ static int sysdbg_close(FAR struct file *filep)
  *   Read the saved debug data and display on console
  *
  * Inputs:
- *   file pointer
- *   buffer : User space buffer
- *   buflen : User space buffer length
+ *   None
  *
  * Return Value:
- *   total size of written buffer
+ *   None
  *
  * Assumptions:
  *   None
