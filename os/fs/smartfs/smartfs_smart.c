@@ -517,7 +517,6 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 	bytesread = 0;
 	while (bytesread != buflen) {
 		/* Test if we are at the end of data */
-
 		if (sf->currsector == SMARTFS_ERASEDSTATE_16BIT) {
 			/* Break and return the number of bytes we read (may be zero) */
 
@@ -550,7 +549,6 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 		}
 #endif
 		/* Calculate the number of bytes to read into the buffer */
-
 		bytestoread = bytesinsector - (sf->curroffset - (uint16_t)sizeof(struct smartfs_chain_header_s));
 		if (bytestoread + bytesread > buflen) {
 			/* Truncate bytesto read based on buffer len */
@@ -588,7 +586,6 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 	}
 
 	/* Return the number of bytes we read */
-
 	ret = bytesread;
 
 errout_with_semaphore:
@@ -651,6 +648,10 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 	byteswritten = 0;
+
+	/* As long as the current file pointer positions for writing is less than the total data length in the file, we are doing and overwrite operation
+	 * When the file pointer positins surpasses the file's data length, it becomes an append operation which will be handled by a separate function
+	 */
 	while ((sf->filepos < sf->entry.datalen) && (buflen > 0)) {
 		/* Overwriting data caused by a seek, etc.  In this case, we need
 		 * to check if the write causes the file length to be extended
@@ -662,7 +663,6 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 		smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset, fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&buffer[byteswritten]);
 		/* Limit the write based on available data to write */
-
 		if (readwrite.count > buflen) {
 			readwrite.count = buflen;
 		}
@@ -671,7 +671,6 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 		if (readwrite.count > sf->entry.datalen - sf->filepos) {
 			/* Limit the write length so we write to the current EOF. */
-
 			readwrite.count = sf->entry.datalen - sf->filepos;
 		}
 
@@ -680,15 +679,32 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		if (readwrite.count > 0) {
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-			/* If sector buffer enabled and it is not last sector, then overwrite it.
-			 * Otherwise, it will be written by sync_internal
+			/* If sector buffer enabled and sector buffer is full, then overwrite it.
+			 * Otherwise, it will be written by sync_internal or when we have more data to fill up the buffer
 			 */
-			if (readwrite.count == sf->entry.datalen - sf->filepos) {
+			/* Do not overwrite if this is last chunk of file, or if it does not fill the sector buffer completely */
+			if (sf->curroffset + readwrite.count < fs->fs_llformat.availbytes || readwrite.count == (sf->entry.datalen - sf->filepos)) {
 				memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
 				sf->bflags |= SMARTFS_BFLAG_DIRTY;
+				sf->byteswritten = readwrite.count;
 			} else
 #endif				
 			{
+				if (sf->bflags & SMARTFS_BFLAG_DIRTY) {
+					/* Copy the bytes for the rest of the sector into sf->buffer to populate the entire buffer, then write it */
+					memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
+					smartfs_setbuffer(&readwrite, sf->currsector, sizeof(struct smartfs_chain_header_s), fs->fs_llformat.availbytes - sizeof(struct smartfs_chain_header_s), (uint8_t *)&sf->buffer[sizeof(struct smartfs_chain_header_s)]);
+
+					/* Now we will actually be writing the saved buffer data to flash, so prevent double counting of readwrite.count */
+					sf->filepos -= (sf->curroffset - sizeof(struct smartfs_chain_header_s));
+					buflen += (sf->curroffset - sizeof(struct smartfs_chain_header_s));
+					byteswritten -= (sf->curroffset - sizeof(struct smartfs_chain_header_s));
+					sf->curroffset = sizeof(struct smartfs_chain_header_s);
+
+					/* Uncommitted data in sf buffer will now been taken care of, hence buffer is clean */
+					sf->bflags = SMARTFS_BFLAG_UNMOD;
+					sf->byteswritten = 0;
+				}
 				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 				if (ret < 0) {
 					fdbg("Error writing sector %d data, ret : %d\n", readwrite.logsector, ret);
@@ -696,21 +712,26 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 				}
 			}
 
-			/* Update our control variables */
-
+			/* Update our control variables
+			 * The data might not actually be written to the flash yet, but the file position and the current offset are updated before hand
+			 * The data will be writtne during sync
+			 */
 			sf->filepos += readwrite.count;
 			sf->curroffset += readwrite.count;
 			buflen -= readwrite.count;
 			byteswritten += readwrite.count;
 			
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-			/* Now filepos reached end of file, but chainheader in sf->buffer can be old data, so read it */
-			if (sf->filepos == sf->entry.datalen) {
+			/* We have retained some data in the sf->buffer for committing later, but chainheader in sf->buffer can be old data, so read it */
+			if (sf->bflags & SMARTFS_BFLAG_DIRTY) {
 				smartfs_setbuffer(&readwrite, sf->currsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)sf->buffer);
 				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 				if (ret < 0) {
 					fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
 					goto errout_with_semaphore;
+				}
+				if (sf->filepos == sf->entry.datalen) {
+					sf->byteswritten = 0;
 				}
 			}
 #endif

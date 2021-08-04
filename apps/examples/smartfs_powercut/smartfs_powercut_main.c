@@ -99,7 +99,7 @@ int TEST_SMALL_BUFSIZE;
 
 /* File does not exist, verification & recovery not needed, we can rollback to backup file */
 #define FILE_CHUNK_NO_INDEX     -1
-
+#if 0
 struct buffer_data_s {
 	uint16_t crc;
 	char data[TEST_LARGE_BUFSIZE];
@@ -646,14 +646,139 @@ static int do_test(char *src, char *backup, char *backupdir, int bufsize, file_t
 	printf("Test on file :%s successful!!\n", src);
 	return OK;
 }
-
+#endif
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
 int smartfs_powercut_main(int argc, char *argv[])
 #endif
 {
+	//int ret;
+	int fd;
 	int ret;
+	char buf[1024];
+	char tmp[1024];
+
+
+	for (int j = 10; j <= 10; j++)  {
+		printf("##### Start File Creation Test Case, File Size : %dKB #####\n", j);
+		fd = open("/mnt/test", O_CREAT | O_WROK);
+		for (int i = 0; i < j; i++) {
+			write(fd, buf, 1024);
+		}
+		close(fd);
+
+		memset(buf, '0', 1024);
+		printf("##### Start Partial Overwrite Case #####\n");
+		fd = open("/mnt/test", O_WROK);
+		lseek(fd, 0, SEEK_SET);
+		for (int i = 0; i < j/2; i++) {
+			write(fd, buf, 1024);
+		}
+		printf("Write complete\n");
+		close(fd);
+		printf("File closed\n");
+
+		fd = open("/mnt/test", O_RDOK);
+                if (fd < 0)
+                        printf("Unable to open file\n");
+                for (int i = 0; i < j; i++) {
+                        ret = read(fd, tmp, 1024);
+                        if (ret < 1024)
+                                printf("Could not read 1024 bytes in itr %d\n", i);
+                        for (int k = 0; k < 1024; k++) {
+                                printf("%c", tmp[k]);
+                                if ((k+1)%100 == 0)
+                                        printf("\n");
+                        }
+                        printf("\n");
+                }
+		close(fd);
+
+		memset(buf, '1', 1024);
+		printf("##### Start Full Overwrite Case #####\n");
+                fd = open("/mnt/test", O_WROK);
+                lseek(fd, 0, SEEK_SET);
+                for (int i = 0; i < j; i++) {
+                        write(fd, buf, 1024);
+                }
+                printf("Write complete\n");
+                close(fd);
+		printf("File closed\n");
+
+		fd = open("/mnt/test", O_RDOK);
+		if (fd < 0)
+			printf("Unable to open file\n");
+		for (int i = 0; i < j; i++) {
+			ret = read(fd, tmp, 1024);
+			if (ret < 1024)
+				printf("Could not read 1024 bytes in itr %d\n", i);
+			for (int k = 0; k < 1024; k++) {
+				printf("%c", tmp[k]);
+				if ((k+1)%100 == 0)
+					printf("\n");
+			}
+			printf("\n");
+		}
+		close(fd);
+
+		memset(buf, '2', 1024);
+                printf("##### Start Append Case #####\n");
+                fd = open("/mnt/test", O_WROK | O_APPEND);
+                for (int i = 0; i < j/2; i++) {
+                        write(fd, buf, 1024);
+                }
+                printf("Write complete\n");
+                close(fd);
+                printf("File closed\n");
+
+		fd = open("/mnt/test", O_RDOK);
+                if (fd < 0)
+                        printf("Unable to open file\n");
+                for (int i = 0; i < (j + j/2); i++) {
+                        ret = read(fd, tmp, 1024);
+                        if (ret < 1024)
+                                printf("Could not read 1024 bytes in itr %d\n", i);
+                        for (int k = 0; k < 1024; k++) {
+                                printf("%c", tmp[k]);
+                                if ((k+1)%100 == 0)
+                                        printf("\n");
+                        }
+                        printf("\n");
+                }
+		close(fd);
+
+		memset(buf, '3', 1024);
+                printf("##### Start Overwrite-Append Case #####\n");
+                fd = open("/mnt/test", O_WROK);
+		lseek(fd, 1024 * 14, SEEK_SET);
+                for (int i = 0; i < j/2 + 1; i++) {
+                        write(fd, buf, 1024);
+                }
+                printf("Write complete\n");
+                close(fd);
+                printf("File closed\n");
+
+                fd = open("/mnt/test", O_RDOK);
+                if (fd < 0)
+                        printf("Unable to open file\n");
+                for (int i = 0; i < (j * 2); i++) {
+                        ret = read(fd, tmp, 1024);
+                        if (ret < 1024)
+                                printf("Could not read 1024 bytes in itr %d\n", i);
+                        for (int k = 0; k < 1024; k++) {
+                                printf("%c", tmp[k]);
+                                if ((k+1)%100 == 0)
+                                        printf("\n");
+                        }
+                        printf("\n");
+                }
+		close(fd);
+
+		//unlink("/mnt/test");
+		printf("##### End of Test #####\n");
+	}
+#if 0
 
 	printf("Initializing test files\n");
 	ret = init_test_file();
@@ -697,6 +822,6 @@ int smartfs_powercut_main(int argc, char *argv[])
 			return ret;
 		}
 	}
-	
+#endif
 	return OK;
 }

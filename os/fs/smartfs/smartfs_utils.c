@@ -695,14 +695,25 @@ int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *
 			set_used_byte_count((uint8_t *)header->used, used_value + sf->byteswritten);
 #else
 			uint16_t tmp = SMARTFS_USED(header);
-			tmp += sf->byteswritten;
-			header->used[0] = (uint8_t)(tmp & 0x00FF);
-			header->used[1] = (uint8_t)(tmp >> 8);
+			/* If the file position is not a the end of the file, then we are overwriting sector data partially,
+			 * Hence, read the remaining data to complete the sector buffer
+			 */
+			if (sf->filepos < sf->entry.datalen) {
+				smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset, fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&sf->buffer[sf->curroffset]);
+				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+				if (ret < 0) {
+					fdbg("Error %d reading pre-written bytes from sector %d\n", ret, sf->currsector);
+					goto errout;
+				}
+			} else {
+				tmp += sf->byteswritten;
+				header->used[0] = (uint8_t)(tmp & 0x00FF);
+				header->used[1] = (uint8_t)(tmp >> 8);
+			}
 #endif
 		}
 
 		/* Write the entire sector to FLASH */
-
 		smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 		if (ret < 0) {
