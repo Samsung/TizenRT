@@ -223,7 +223,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					} else {
 						HTTP_LOGD("unknown version\n");
 					}
-				} else { /* If this is called by webclient */
+				} else if(response) { /* If this is called by webclient */
 					http_separate_status_line(buf + len->sentence_start, &protocol, &response->status, response->phrase);
 					HTTP_LOGD("Response Status : %d\n", response->status);
 					HTTP_LOGD("Response Phrase : %s\n", response->phrase);
@@ -263,7 +263,9 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					}
 					if (strcmp(key, "Content-Length") == 0) {
 						len->content_len = HTTP_ATOI(value);
-						response->total_len = len->content_len;
+						if(response){
+							response->total_len = len->content_len;
+						}
 
 						HTTP_LOGD("This request contains contents, length : %d\n", len->content_len);
 					}
@@ -316,15 +318,17 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					HTTP_LOGD("[BODY_END]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					//HTTP_LOGD("All body readed : \n%s\n", *body);
 
-					response->total_len = len->content_len;
+					if(response) {
+						response->total_len = len->content_len;
 
-					if (is_header == true) {
-						response->entity_len = buf_len - len->sentence_start;
-						response->entity = buf + len->sentence_start;
-					} else {
-						response->entity_len = buf_len;
-						response->entity = buf;
-					}	
+						if (is_header == true) {
+							response->entity_len = buf_len - len->sentence_start;
+							response->entity = buf + len->sentence_start;
+						} else {
+							response->entity_len = buf_len;
+							response->entity = buf;
+						}
+					}
 
 					read_finish = true;
 				} else {
@@ -362,20 +366,22 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					}
 					len->message_len += buf_len;
 
-					response->total_len = len->content_len;
+					if(response) {
+						response->total_len = len->content_len;
 
-					if (is_chunked) {
-						if (response->entity) {
-							response->entity = *body;
-							response->entity_len = len->content_len;
+						if (is_chunked) {
+							if (response->entity) {
+								response->entity = *body;
+								response->entity_len = len->content_len;
+							}
+						} else if (is_header == true && !is_chunked) {
+							response->entity_len = buf_len - len->sentence_start;
+							response->entity = buf + len->sentence_start;
+							HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len, response->entity_len);
+						} else {
+							response->entity = buf;
+							response->entity_len = buf_len;
 						}
-					} else if (is_header == true && !is_chunked) {
-						response->entity_len = buf_len - len->sentence_start;
-						response->entity = buf + len->sentence_start;
-						HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len, response->entity_len);
-					} else {
-						response->entity = buf;
-						response->entity_len = buf_len;
 					}
 					
 					HTTP_LOGD("[BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
