@@ -54,7 +54,7 @@ static int sysdbg_close(FAR struct file *filep);
 static ssize_t sysdbg_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 static void sysdbg_monitor_enable(void);
 static void sysdbg_monitor_disable(void);
-static void sysdbg_read(void);
+static void sysdbg_print(void);
 
 #ifdef CONFIG_TASK_SCHED_HISTORY
 static void update_maxtask_count(int count);
@@ -282,7 +282,7 @@ static int sysdbg_close(FAR struct file *filep)
 }
 
 /****************************************************************************
- * Name: sysdbg_read
+ * Name: sysdbg_print
  *
  * Description:
  *   Read the saved debug data and display on console
@@ -298,7 +298,7 @@ static int sysdbg_close(FAR struct file *filep)
  *
  ****************************************************************************/
 
-static void sysdbg_read(void)
+static void sysdbg_print(void)
 {
 #if defined(CONFIG_TASK_SCHED_HISTORY) || defined(CONFIG_IRQ_SCHED_HISTORY) || defined(CONFIG_SEMAPHORE_HISTORY)
 	uint32_t idx = 0;
@@ -426,7 +426,7 @@ static ssize_t sysdbg_write(FAR struct file *filep, FAR const char *buffer, size
 	} else if (strncmp("disable_monitor", arg1, 15) == 0) {
 		sysdbg_monitor_disable();
 	} else if (strncmp("read", arg1, 4) == 0) {
-		sysdbg_read();
+		sysdbg_print();
 	} else if (strncmp(arg1, "max_task_count", 14) == 0) {
 #ifdef CONFIG_TASK_SCHED_HISTORY
 		update_maxtask_count(atoi(arg2));
