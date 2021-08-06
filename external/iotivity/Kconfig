@@ -7,7 +7,6 @@ menuconfig ENABLE_IOTIVITY
 	bool "enable / disable iotivity stack"
 	default n
 	select NET_LWIP_NETDB
-	select TIME_EXTENDED
 	select ARCH_STDARG_H
 	---help---
 		select to enable the iotivity stack in tinyara
