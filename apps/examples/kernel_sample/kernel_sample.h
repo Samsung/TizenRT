@@ -216,6 +216,9 @@ int vfork_test(void);
 int workqueue_test(void);
 #endif
 
+/* pthread.c **************************************************************/
+void pthread_test(void);
+
 /* APIs exported (conditionally) by the OS specifically for testing of
  * priority inheritance
  */
