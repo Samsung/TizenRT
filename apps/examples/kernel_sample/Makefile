@@ -100,6 +100,10 @@ CSRCS += mqueue.c timedmqueue.c
 endif # CONFIG_DISABLE_PTHREAD
 endif # CONFIG_DISABLE_MQUEUE
 
+ifneq ($(CONFIG_DISABLE_PTHREAD),y)
+CSRCS += pthread.c
+endif
+
 ifneq ($(CONFIG_DISABLE_POSIX_TIMERS),y)
 CSRCS += posixtimer.c
 endif
