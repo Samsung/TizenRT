@@ -467,6 +467,7 @@ static int user_main(int argc, char *argv[])
 #ifdef CONFIG_SCHED_WORKQUEUE
 		printf("\nuser_main: workqueue() test\n");
 		workqueue_test();
+		check_test_memory_usage();
 #endif
 
 #ifndef CONFIG_DISABLE_PTHREAD
