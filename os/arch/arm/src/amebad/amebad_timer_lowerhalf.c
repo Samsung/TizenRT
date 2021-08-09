@@ -143,7 +143,7 @@ static void amebad_gpt_handler(uint32_t data)
 	uint32_t next_interval_us = 0;
 	DEBUGASSERT(priv);
 	if (!priv) {
-		return -ENODEV;
+		return;
 	}
 
 	if (priv->freerunmode) {	/* Free Run Mode */
