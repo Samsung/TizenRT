@@ -191,6 +191,7 @@ static void mq_rcvtimeout(int argc, uint32_t pid)
  *   EINTR     The call was interrupted by a signal handler.
  *   EINVAL    Invalid 'msg' or 'mqdes' or 'abstime'
  *   ETIMEDOUT The call timed out before a message could be transferred.
+ *   ENOMEM    The system lacks sufficient memory resources for watchdog.
  *
  * Assumptions:
  *
@@ -230,7 +231,7 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 
 	rtcb->waitdog = wd_create();
 	if (!rtcb->waitdog) {
-		set_errno(EINVAL);
+		set_errno(ENOMEM);
 		leave_cancellation_point();
 		return ERROR;
 	}
