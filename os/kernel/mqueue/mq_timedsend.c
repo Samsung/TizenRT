@@ -192,6 +192,7 @@ static void mq_sndtimeout(int argc, uint32_t pid)
  *   EMSGSIZE 'msglen' was greater than the maxmsgsize attribute of the
  *            message queue.
  *   EINTR    The call was interrupted by a signal handler.
+ *   ENOMEM    The system lacks sufficient memory resources for watchdog.
  *
  * Assumptions/restrictions:
  *
@@ -236,7 +237,7 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
 
 	rtcb->waitdog = wd_create();
 	if (!rtcb->waitdog) {
-		set_errno(EINVAL);
+		set_errno(ENOMEM);
 		leave_cancellation_point();
 		return ERROR;
 	}

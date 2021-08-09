@@ -237,7 +237,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 
 		rtcb->waitdog = wd_create();
 		if (!rtcb->waitdog) {
-			ret = EINVAL;
+			ret = ENOMEM;
 		} else {
 			svdbg("Give up mutex...\n");
 
