@@ -400,10 +400,8 @@ static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned l
 
 	switch (cmd) {
 	case TCIOC_SETDIV:
-		ret = -EINVAL;
 		break;
 	case TCIOC_GETDIV:
-		ret = -EINVAL;
 		break;
 	case TCIOC_SETMODE:
 		if ((timer_mode_t)arg == MODE_FREERUN) {
@@ -413,23 +411,18 @@ static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned l
 		} else if ((timer_mode_t)arg == MODE_ALARM) {
 			priv->freerunmode = false;
 			ret = OK;
-		} else {
-			ret = -EINVAL;
 		}
 		break;
 	case TCIOC_SETRESOLUTION:
 		if ((timer_resolution_t)arg == TIME_RESOLUTION_MS) {
 			// TBD
 			ret = OK;
-		} else {
-			ret = -EINVAL;
 		}
 		break;
 	case TCIOC_SETIRQPRIO:
 		ret = up_prioritize_irq(TIM_x[priv->obj.timer_id], arg);
 		break;
 	case TCIOC_SETCLKSRC:
-		ret = -EINVAL;
 		break;
 	default:
 		tmrdbg("Invalid cmd %d\n", cmd);
