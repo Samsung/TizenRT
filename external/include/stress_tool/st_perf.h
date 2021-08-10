@@ -22,16 +22,16 @@
 #include <queue.h>
 
 #if 0
-#define COLOR_SMOKE			"\e[33m"
-#define COLOR_RESULT		"\e[36m"
-#define COLOR_WHITE			"\e[m"
+#define COLOR_SMOKE "\e[33m"
+#define COLOR_RESULT "\e[36m"
+#define COLOR_WHITE "\e[m"
 #else
 #define COLOR_SMOKE ""
 #define COLOR_RESULT ""
 #define COLOR_WHITE ""
 #endif
 #if 0
-#define ST_LOG  printf
+#define ST_LOG printf
 #define ST_ELOG printf
 #else
 #define ST_LOG
@@ -41,60 +41,66 @@
 /*
  * Initializer Macro
  */
-#define ST_PERF_INITIALIZER {{0, 0}, {0, 0}, 0, 0, 0, 0, 0, STRESS_TC_PASS}
-#define ST_STAB_INITIALIZER {0, 0, 0, 0, STRESS_TC_PASS}
+#define ST_PERF_INITIALIZER                           \
+	{                                                 \
+		{0, 0}, {0, 0}, 0, 0, 0, 0, 0, STRESS_TC_PASS \
+	}
+#define ST_STAB_INITIALIZER        \
+	{                              \
+		0, 0, 0, 0, STRESS_TC_PASS \
+	}
 
 /*
  * Test case Macro
  */
-#define TEST_SETUP(tc_name)								\
+#define TEST_SETUP(tc_name) \
 	static st_tc_result tc_##tc_name##_setup(void *arg)
 
-#define TEST_TEARDOWN(tc_name)								\
+#define TEST_TEARDOWN(tc_name) \
 	static st_tc_result tc_##tc_name##_teardown(void *arg)
 
-#define TEST_F(tc_name)													\
-	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};	\
-	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};		\
+#define TEST_F(tc_name)                                                \
+	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER}; \
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};      \
 	static st_tc_result tc_##tc_name(void *arg)
 
-#define ST_SET_FUNC(tc_desc, tc_name)									\
-		static st_func g_##tc_name = {tc_desc, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name}
+#define ST_SET_FUNC(tc_desc, tc_name) \
+	static st_func g_##tc_name = {tc_desc, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name}
 
-#define ST_SET_PERF(expect, tc_name)									\
-		static st_performance g_perf_##tc_name = {expect, ST_PERF_INITIALIZER}
+#define ST_SET_PERF(expect, tc_name) \
+	static st_performance g_perf_##tc_name = {expect, ST_PERF_INITIALIZER}
 
-#define ST_SET_STAB(tc_name)											\
-		static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER}
+#define ST_SET_STAB(tc_name) \
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER}
 
 #define ST_GET_SMOKE(tc_name) g_smoke_##tc_name
 
-#define ST_SET_SMOKE_UNIT(repeat, tc_name, tc_next)						\
-		static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), &(g_smoke_##tc_next)}
+#define ST_SET_SMOKE_UNIT(repeat, tc_name, tc_next) \
+	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), &(g_smoke_##tc_next)}
 
-#define ST_SET_SMOKE_TAIL_UNIT(repeat, tc_name)							\
+#define ST_SET_SMOKE_TAIL_UNIT(repeat, tc_name) \
 	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
 
-#define ST_SET_PACK(fixture)					\
-		static st_pack g_pack_##fixture;
+#define ST_SET_PACK(fixture) \
+	static st_pack g_pack_##fixture;
 
-#define ST_SET_SMOKE(fixture, repeat, expect, tc_desc, tc_name)			\
-	perf_add_item(&g_pack_##fixture, repeat, #tc_name,					\
+#define ST_SET_SMOKE(fixture, repeat, expect, tc_desc, tc_name)                            \
+	perf_add_item(&g_pack_##fixture, repeat, #tc_name,                                     \
 				  NULL, NULL, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
-#define ST_SET_SMOKE1(fixture, repeat, expect, tc_desc, tc_name)	\
-		perf_add_item(&g_pack_##fixture, repeat, #tc_name,			\
-					  NULL, NULL, NULL, NULL, tc_##tc_name,						\
-					  expect, &g_perf_##tc_name, &g_stab_##tc_name)
+#define ST_SET_SMOKE1(fixture, repeat, expect, tc_desc, tc_name) \
+	perf_add_item(&g_pack_##fixture, repeat, #tc_name,           \
+				  NULL, NULL, NULL, NULL, tc_##tc_name,          \
+				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
-#define ST_TC_SET_SMOKE(fixture, repeat, expect, tc_desc, testcase, tc_name) \
-	perf_add_item(&g_pack_##fixture, repeat, #tc_name,					\
+#define ST_TC_SET_SMOKE(fixture, repeat, expect, tc_desc, testcase, tc_name)                 \
+	perf_add_item(&g_pack_##fixture, repeat, #tc_name,                                       \
 				  NULL, NULL, tc_##testcase##_setup, tc_##testcase##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
-#define ST_TC_SET_GLOBAL(fixture, global_config)						\
-		perf_add_global(&g_pack_##fixture, tc_##global_config##_setup, tc_##global_config##_teardown)
+#define ST_TC_SET_GLOBAL(fixture, global_config) \
+	perf_add_global(&g_pack_##fixture, tc_##global_config##_setup, tc_##global_config##_teardown)
 
 #define ST_RUN_TEST(fixture) perf_run(&g_pack_##fixture)
 
@@ -102,158 +108,170 @@
 /*
  * Log
  */
-#define ST_ERROR														\
-	do {																\
+#define ST_ERROR                                                                             \
+	do {                                                                                     \
 		ST_ELOG(COLOR_SMOKE "[ERROR] F:%s\tFile:%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
-		ST_ELOG(COLOR_WHITE);											\
+		ST_ELOG(COLOR_WHITE);                                                                \
 	} while (0)
 
-#define ST_START_LOG													\
-	do {																\
+#define ST_START_LOG                                                                              \
+	do {                                                                                          \
 		ST_ELOG(COLOR_WHITE "[INFO] Start F:%s\tFile:%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 	} while (0)
 
-#define ST_END_LOG														\
-	do {																\
+#define ST_END_LOG                                                                                \
+	do {                                                                                          \
 		ST_ELOG(COLOR_WHITE "[INFO] End F:%s\tFile:%s:%d\n\n", __FUNCTION__, __FILE__, __LINE__); \
 	} while (0)
 
 /*
  * Expect
  */
-#define ST_EXPECT_EQ(val, exp)											\
-		do {															\
-			ST_LOG("[ST] --> "#exp" %s:%d""\n", __FUNCTION__, __LINE__); \
-			if (exp != val) {											\
-				ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);			\
-				ST_ERROR;												\
-				res = STRESS_TC_FAIL;									\
-				goto STFUNC_OUT;										\
-			}															\
-		} while (0)
+#define ST_EXPECT_EQ(val, exp)                             \
+	do {                                                   \
+		ST_LOG("[ST] --> " #exp " %s:%d"                   \
+			   "\n",                                       \
+			   __FUNCTION__, __LINE__);                    \
+		if (exp != val) {                                  \
+			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
+			ST_ERROR;                                      \
+			res = STRESS_TC_FAIL;                          \
+			goto STFUNC_OUT;                               \
+		}                                                  \
+	} while (0)
 
-#define ST_EXPECT_EQ2(val1, val2, exp)									\
-	do {																\
-		ST_LOG("--> "#exp"\n");											\
-		if (exp != val1 && exp != val2) {								\
+#define ST_EXPECT_ASSERT(val, exp)                             \
+	do {                                                   \
+		ST_LOG("[ST] --> " #exp " %s:%d"                   \
+			   "\n",                                       \
+			   __FUNCTION__, __LINE__);                    \
+		if (exp != val) {                                  \
+			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
+			ST_ERROR;                                      \
+			assert(0);                                     \
+		}                                                  \
+	} while (0)
+#define ST_EXPECT_EQ2(val1, val2, exp)                                       \
+	do {                                                                     \
+		ST_LOG("--> " #exp "\n");                                            \
+		if (exp != val1 && exp != val2) {                                    \
 			ST_ELOG("[ST] val1 (%d) val2 (%d) exp (%d)\n", val1, val2, exp); \
-			ST_ERROR;													\
-			res = STRESS_TC_FAIL;										\
-			goto STFUNC_OUT;											\
-		}																\
+			ST_ERROR;                                                        \
+			res = STRESS_TC_FAIL;                                            \
+			goto STFUNC_OUT;                                                 \
+		}                                                                    \
 	} while (0)
 
-#define ST_EXPECT_NEQ(val, exp)					\
-	do {										\
-		ST_LOG("--> "#exp"\n");					\
-		if ((exp) == val) {						\
-			ST_ERROR;							\
-			res = STRESS_TC_FAIL;				\
-			goto STFUNC_OUT;					\
-		}										\
+#define ST_EXPECT_NEQ(val, exp)   \
+	do {                          \
+		ST_LOG("--> " #exp "\n"); \
+		if ((exp) == val) {       \
+			ST_ERROR;             \
+			res = STRESS_TC_FAIL; \
+			goto STFUNC_OUT;      \
+		}                         \
 	} while (0)
 
-#define ST_EXPECT_LT(val, exp)								\
-	do {													\
-		ST_LOG("--> "#exp"\n");								\
-		if ((exp) >= val) {									\
-			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);	\
-			ST_ERROR;										\
-			res = STRESS_TC_FAIL;							\
-			goto STFUNC_OUT;								\
-		}													\
+#define ST_EXPECT_LT(val, exp)                             \
+	do {                                                   \
+		ST_LOG("--> " #exp "\n");                          \
+		if ((exp) >= val) {                                \
+			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
+			ST_ERROR;                                      \
+			res = STRESS_TC_FAIL;                          \
+			goto STFUNC_OUT;                               \
+		}                                                  \
 	} while (0)
 
-#define ST_EXPECT_LE(val, exp)								\
-	do {													\
-		if (exp > val) {									\
-			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);	\
-			ST_ERROR;										\
-			res = STRESS_TC_FAIL;							\
-			goto STFUNC_OUT;								\
-		}													\
+#define ST_EXPECT_LE(val, exp)                             \
+	do {                                                   \
+		if (exp > val) {                                   \
+			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
+			ST_ERROR;                                      \
+			res = STRESS_TC_FAIL;                          \
+			goto STFUNC_OUT;                               \
+		}                                                  \
 	} while (0)
 
-#define ST_EXPECT_GT(val, exp)								\
-	do {													\
-		if (exp <= val) {									\
-			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);	\
-			ST_ERROR;										\
-			res = STRESS_TC_FAIL;							\
-			goto STFUNC_OUT;								\
-		}													\
+#define ST_EXPECT_GT(val, exp)                             \
+	do {                                                   \
+		if (exp <= val) {                                  \
+			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
+			ST_ERROR;                                      \
+			res = STRESS_TC_FAIL;                          \
+			goto STFUNC_OUT;                               \
+		}                                                  \
 	} while (0)
 
-#define ST_EXPECT_GE(val, exp)								\
-	do {													\
-		if (exp < val) {									\
-			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp);	\
-			ST_ERROR;										\
-			res = STRESS_TC_FAIL;							\
-			goto STFUNC_OUT;								\
-		}													\
+#define ST_EXPECT_GE(val, exp)                             \
+	do {                                                   \
+		if (exp < val) {                                   \
+			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
+			ST_ERROR;                                      \
+			res = STRESS_TC_FAIL;                          \
+			goto STFUNC_OUT;                               \
+		}                                                  \
 	} while (0)
 
-#define ST_START_TEST									\
-	st_tc_result res = STRESS_TC_PASS;					\
-	struct timeval start, end;							\
-	st_elapsed_time *timer = (st_elapsed_time *)arg;	\
-	do {												\
-		ST_START_LOG;									\
-		if (timer) {									\
-			if (gettimeofday(&start, NULL) == -1){			\
-				res = STRESS_TC_PERF_FAIL;				\
-				goto STFUNC_OUT;						\
-			}											\
-		}												\
+#define ST_START_TEST                                \
+	st_tc_result res = STRESS_TC_PASS;               \
+	struct timeval start, end;                       \
+	st_elapsed_time *timer = (st_elapsed_time *)arg; \
+	do {                                             \
+		ST_START_LOG;                                \
+		if (timer) {                                 \
+			if (gettimeofday(&start, NULL) == -1) {  \
+				res = STRESS_TC_PERF_FAIL;           \
+				goto STFUNC_OUT;                     \
+			}                                        \
+		}                                            \
 	} while (0)
 
-#define ST_END_TEST								\
-	STFUNC_OUT:									\
-	do {										\
-		if (timer) {							\
-			if (gettimeofday(&end, NULL) == -1) {	\
-				return STRESS_TC_PERF_FAIL;		\
-			}									\
-			timer->start.second = start.tv_sec;	\
-			timer->start.micro = start.tv_usec;	\
-			timer->end.second = end.tv_sec;		\
-			timer->end.micro = end.tv_usec;		\
-		}										\
-		ST_END_LOG;								\
-		return res;								\
+#define ST_END_TEST                               \
+	STFUNC_OUT:                                   \
+	do {                                          \
+		if (timer) {                              \
+			if (gettimeofday(&end, NULL) == -1) { \
+				return STRESS_TC_PERF_FAIL;       \
+			}                                     \
+			timer->start.second = start.tv_sec;   \
+			timer->start.micro = start.tv_usec;   \
+			timer->end.second = end.tv_sec;       \
+			timer->end.micro = end.tv_usec;       \
+		}                                         \
+		ST_END_LOG;                               \
+		return res;                               \
 	} while (0)
 
-#define START_TEST_F(tc_name)											\
-	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};	\
-	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};		\
-	static st_tc_result tc_##tc_name(void *arg)							\
-	{																	\
-	ST_START_TEST;
+#define START_TEST_F(tc_name)                                          \
+	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER}; \
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};      \
+	static st_tc_result tc_##tc_name(void *arg)                        \
+	{                                                                  \
+		ST_START_TEST;
 
-#define END_TEST_F								\
-	ST_END_TEST;								\
+#define END_TEST_F \
+	ST_END_TEST;   \
 	}
 
-#define TESTCASE_SETUP(testcase)							\
-	static st_tc_result tc_##testcase##_setup(void *arg)	\
-	{														\
-	ST_START_TEST;
+#define TESTCASE_SETUP(testcase)                         \
+	static st_tc_result tc_##testcase##_setup(void *arg) \
+	{                                                    \
+		ST_START_TEST;
 
-#define TESTCASE_TEARDOWN(testcase)							\
-	static st_tc_result tc_##testcase##_teardown(void *arg)	\
-	{														\
-	ST_START_TEST;
+#define TESTCASE_TEARDOWN(testcase)                         \
+	static st_tc_result tc_##testcase##_teardown(void *arg) \
+	{                                                       \
+		ST_START_TEST;
 
-#define END_TESTCASE							\
-	ST_END_TEST;								\
+#define END_TESTCASE \
+	ST_END_TEST;     \
 	}
 /* #define TEST_SETUP(tc_name)								\ */
 /* 	static st_tc_result tc_##tc_name##_setup(void *arg) */
 
 /* #define TEST_TEARDOWN(tc_name)								\ */
 /* 	static st_tc_result tc_##tc_name##_teardown(void *arg) */
-
 
 /*
  * Structures
@@ -265,7 +283,7 @@ typedef enum {
 	STRESS_TC_PERF_FAIL
 } st_tc_result;
 
-typedef st_tc_result(*st_unit_tc)(void *arg);
+typedef st_tc_result (*st_unit_tc)(void *arg);
 
 typedef struct _st_performance_time {
 	unsigned int second;
@@ -282,10 +300,10 @@ typedef struct _st_performance_stat {
 	st_performance_time start;
 	st_performance_time end;
 	unsigned int count;
-	unsigned int max;	// milli second
-	unsigned int min;	// milli second
-	unsigned int sum;	// milli second
-	unsigned int fail;  // the number of performance fails
+	unsigned int max;  // milli second
+	unsigned int min;  // milli second
+	unsigned int sum;  // milli second
+	unsigned int fail; // the number of performance fails
 	st_tc_result result;
 } st_performance_stat;
 
@@ -299,7 +317,7 @@ typedef struct _st_stability_stat {
 } st_stability_stat;
 
 typedef struct _st_performance {
-	unsigned int expect;	// performance limit: milli second
+	unsigned int expect; // performance limit: milli second
 	st_performance_stat stat;
 } st_performance;
 

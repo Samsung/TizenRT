@@ -21,12 +21,13 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-//#include <stdio.h>
-//#include <string.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <tinyara/seclink.h>
 #include <tinyara/seclink_drv.h>
 #include "sl_test.h"
+
 #ifdef SL_TEST_POOL
 #undef SL_TEST_POOL
 #endif

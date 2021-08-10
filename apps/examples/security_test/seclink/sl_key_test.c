@@ -9,7 +9,8 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific
  * language governing permissions and limitations under the License.
  *
@@ -25,6 +26,7 @@
 #include <tinyara/seclink_drv.h>
 #include <stress_tool/st_perf.h>
 #include "sl_test.h"
+#include "sl_sample_key.h"
 #include "sl_test_usage.h"
 
 static char *g_command[] = {
@@ -39,7 +41,7 @@ static char *g_command[] = {
 #undef SL_KEY_TEST_POOL
 #endif
 #define SL_KEY_TEST_POOL(command, type, func) \
-	extern void func(sl_options *opt);
+	void func(sl_options *opt);
 #include "sl_key_table.h"
 
 static sl_test_func g_func_list[] = {
@@ -60,33 +62,96 @@ typedef enum {
 	SL_KEY_TYPE_ERR = -1
 } sl_key_type_e;
 
-static int _parse_command(sl_options *opt)
+#define SL_RW_KEY_SLOT 32
+#define SL_TEST_KEY_LEN 256
+#define SL_TEST_SYM_KEY_LEN 32
+static sl_ctx g_hnd;
+static hal_data g_sym_key_in;
+static hal_data g_asym_pubkey_in;
+static hal_data g_asym_prikey_in;
+static hal_data g_key_out;
+
+ST_SET_PACK(sl_key);
+
+TESTCASE_SETUP(sl_key_global)
 {
-	int argc = opt->argc;
-	char **argv = opt->argv;
+	ST_EXPECT_EQ(SECLINK_OK, sl_init(&g_hnd));
+}
+END_TESTCASE
 
-	if (argc < 4) {
-		return -1;
-	}
-	opt->count = atoi(argv[3]);
+TESTCASE_TEARDOWN(sl_key_global)
+{
+	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
+}
+END_TESTCASE
 
-	if (strncmp(argv[2], "all", strlen("all") + 1) == 0) {
-		return SL_KEY_TYPE_MAX;
-	}
+TESTCASE_SETUP(key_testcase)
+{
+	/*  public key */
+	g_asym_pubkey_in.data = g_ed25519_pubkey;
+	g_asym_pubkey_in.data_len = sizeof(g_ed25519_pubkey);
+	g_asym_pubkey_in.priv = NULL;
+	g_asym_pubkey_in.priv_len = 0;
 
-	for (int i = 0; i < SL_KEY_TYPE_MAX; i++) {
-		if (strncmp(argv[2], g_command[i], strlen(g_command[i]) + 1) == 0) {
-			return (sl_key_type_e)i;
-		}
-	}
-	return SL_KEY_TYPE_ERR;
+	g_asym_prikey_in.data = g_ed25519_privkey_only;
+	g_asym_prikey_in.data_len = sizeof(g_ed25519_privkey_only);
+	g_asym_prikey_in.priv = NULL;
+	g_asym_prikey_in.priv_len = 0;
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_sym_key_in, SL_TEST_SYM_KEY_LEN));
+	g_sym_key_in.priv = NULL;
+	g_sym_key_in.priv_len = 0;
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_key_out, SL_TEST_KEY_LEN));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer_priv(&g_key_out, SL_TEST_KEY_LEN));
+}
+END_TESTCASE
+
+TESTCASE_TEARDOWN(key_testcase)
+{
+	sl_test_free_buffer(&g_sym_key_in);
+	sl_test_free_buffer(&g_key_out);
+}
+END_TESTCASE
+
+/*
+ * Desc: set asymmetric key
+ */
+START_TEST_F(set_asym_key)
+{
+	ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_25519,
+										SL_RW_KEY_SLOT, &g_asym_pubkey_in, &g_asym_prikey_in));
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519,
+										   SL_RW_KEY_SLOT));
+}
+END_TEST_F
+
+/*
+ * Desc: Read data in secure storage
+ */
+START_TEST_F(gen_asym_key)
+{
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_SEC_P256R1,
+											 SL_RW_KEY_SLOT));
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1,
+										   SL_RW_KEY_SLOT));
+}
+END_TEST_F
+
+/*
+ * Parser
+ */
+void sl_handle_key_set_asym_rw(sl_options *opt)
+{
+	ST_TC_SET_SMOKE(sl_key, opt->count, 0, "set a asymmetric key",
+					key_testcase, set_asym_key);
 }
 
-static void _run_all(sl_options *opt)
+void sl_handle_key_gen_asym_rw(sl_options *opt)
 {
-	for (int i = 0; i < SL_KEY_TYPE_MAX; i++) {
-		g_func_list[i](opt);
-	}
+	ST_TC_SET_SMOKE(sl_key, opt->count, 0, "generate a asymmetric key",
+					key_testcase, gen_asym_key);
 }
 
 /*
@@ -98,6 +163,9 @@ static void _run_all(sl_options *opt)
  */
 void sl_handle_key(sl_options *opt)
 {
-	printf("ToDo\n");
-	return;
+	ST_TC_SET_GLOBAL(sl_key, sl_key_global);
+	SL_PARSE_MESSAGE(opt, g_command, sl_key_type_e,
+					 g_func_list, SL_KEY_TYPE_MAX, SL_KEY_TYPE_ERR);
+	ST_RUN_TEST(sl_key);
+	ST_RESULT_TEST(sl_key);
 }
