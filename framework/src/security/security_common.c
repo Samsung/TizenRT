@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <tinyara/seclink.h>
-#include <tinyara/security_hal.h>
 #include <security/security_common.h>
 #include "security_internal.h"
 
@@ -91,7 +90,7 @@ security_error security_free_data(security_data *data)
 		return SECURITY_INVALID_INPUT_PARAMS;
 	}
 
-	return SECURITY_OK;
+	SECAPI_RETURN(SECURITY_OK);
 }
 
 security_error security_get_status(int *status)

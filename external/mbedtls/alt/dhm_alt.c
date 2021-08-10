@@ -213,7 +213,6 @@ int mbedtls_dhm_make_params(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 	unsigned char *p;
 	hal_dh_data d_param;
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 
 	if (mbedtls_mpi_cmp_int(&ctx->P, 0) == 0) {
 		return MBEDTLS_ERR_DHM_BAD_INPUT_DATA;
@@ -274,8 +273,8 @@ int mbedtls_dhm_make_params(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 			goto cleanup;
 		}
 
-		ret = sl_dh_generate_param(shnd, ctx->key_index, &d_param, &hres);
-		if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+		ret = sl_dh_generate_param(shnd, ctx->key_index, &d_param);
+		if (ret != SECLINK_OK) {
 			sl_deinit(shnd);
 			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 			goto cleanup;
@@ -366,7 +365,6 @@ int mbedtls_dhm_make_public(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 	int generator = 0;
 	hal_dh_data d_param;
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 
 	if (ctx == NULL || olen < 1 || olen > ctx->len) {
 		return MBEDTLS_ERR_DHM_BAD_INPUT_DATA;
@@ -426,8 +424,8 @@ int mbedtls_dhm_make_public(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 			goto cleanup;
 		}
 
-		ret = sl_dh_generate_param(shnd, ctx->key_index, &d_param, &hres);
-		if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+		ret = sl_dh_generate_param(shnd, ctx->key_index, &d_param);
+		if (ret != SECLINK_OK) {
 			sl_deinit(shnd);
 			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 			goto cleanup;
@@ -542,7 +540,6 @@ int mbedtls_dhm_calc_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 	hal_dh_data d_param;
 	hal_data shared_secret = {output, output_size, NULL, 0};
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 
 	if (ctx == NULL || output_size < ctx->len) {
 		return MBEDTLS_ERR_DHM_BAD_INPUT_DATA;
@@ -605,8 +602,8 @@ int mbedtls_dhm_calc_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 			goto cleanup;
 		}
 
-		ret = sl_dh_compute_shared_secret(shnd, &d_param, ctx->key_index, &shared_secret, &hres);
-		if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+		ret = sl_dh_compute_shared_secret(shnd, &d_param, ctx->key_index, &shared_secret);
+		if (ret != SECLINK_OK) {
 			sl_deinit(shnd);
 			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 			goto cleanup;

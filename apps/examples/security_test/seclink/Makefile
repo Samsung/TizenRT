@@ -33,16 +33,11 @@ CSRCS += \
 	sl_ss_test.c \
 	sl_test_utils.c
 
-#AUTHENTICATION
+#CRYPTO
 CSRCS += \
-sl_auth_test_ecdh.c\
-sl_auth_test_x25519.c\
-sl_auth_test_ecdsa_verify.c\
-sl_auth_test_ecdsa_signature.c\
-sl_auth_test_ed25519_verify.c\
-sl_auth_test_ed25519_signature.c
+sl_crypto_aes_test.c\
+sl_crypto_rsa_test.c
 
-CSRCS += 
 MAINSRC = sl_test_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

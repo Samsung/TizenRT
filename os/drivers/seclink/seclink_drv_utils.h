@@ -55,7 +55,6 @@
 			(void)sldrv_get_time(&hnd);									\
 			SLDRV_LOG(SLDRV_TAG"[PERF]"#method " res %d elapsed %u %u ms\n", \
 				  res, hnd.elapsed, hnd.elapsed / 1000);				\
-			(void)sldrv_destroy_time(&hnd);								\
 		} else {														\
 			ret = -ENOSYS;												\
 		}																\
@@ -71,7 +70,6 @@ typedef struct {
 
 int sldrv_start_time(sldrv_timer_handle *hnd);
 int sldrv_get_time(sldrv_timer_handle *hnd);
-int sldrv_destroy_time(sldrv_timer_handle *hnd);
 #else
 
 #define SLDRV_CALL(ret, res, method, param)		\

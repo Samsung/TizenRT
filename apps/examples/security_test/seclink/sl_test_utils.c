@@ -91,3 +91,32 @@ void sl_test_print_buffer(char *data, int buf_len, const char *message)
 	printf("\n");
 	printf("================================\n");
 }
+
+void sl_run_all(sl_options *opt, sl_test_func *func, int tmax)
+{
+	for (int i = 0; i < tmax; i++) {
+		func[i](opt);
+	}
+}
+
+int sl_parse_command(sl_options *opt, char **command, int tmax, int terr)
+{
+	int argc = opt->argc;
+	char **argv = opt->argv;
+
+	if (argc < 4) {
+		return -1;
+	}
+	opt->count = atoi(argv[3]);
+
+	if (strncmp(argv[2], "all", strlen("all") + 1) == 0) {
+		return tmax;
+	}
+
+	for (int i = 0; i < tmax; i++) {
+		if (strncmp(argv[2], command[i], strlen(command[i]) + 1) == 0) {
+			return i;
+		}
+	}
+	return terr;
+}

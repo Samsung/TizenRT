@@ -27,7 +27,6 @@
 #define SS_PATH "ss/"
 #define FACTORY_PATH "factory/"
 
-
 /**
  * Private
  */
@@ -124,46 +123,46 @@ hal_hmac_type secutils_convert_hmacmode_s2h(security_hmac_mode mode)
 	return HAL_HMAC_UNKNOWN;
 }
 
-security_error secutils_convert_error_h2s(hal_result_e herr)
+security_error secutils_convert_error_h2s(int herr)
 {
 	switch (herr) {
-	case HAL_SUCCESS:
+	case SECLINK_OK:
 		return SECURITY_OK;
-	case HAL_NOT_INITIALIZED:
-		return SECURITY_ERROR;
-	case HAL_INVALID_ARGS:
+	case SECLINK_INVALID_ARGS:
 		return SECURITY_INVALID_INPUT_PARAMS;
-	case HAL_INVALID_SLOT_RANGE:
+	case SECLINK_INVALID_REQUEST:
+		return SECURITY_INVALID_REQUEST;
+	case SECLINK_INVALID_SLOT_RANGE:
 		return SECURITY_ERROR;
-	case HAL_INVALID_SLOT_TYPE:
+	case SECLINK_INVALID_SLOT_TYPE:
 		return SECURITY_ERROR;
-	case HAL_EMPTY_SLOT:
+	case SECLINK_EMPTY_SLOT:
 		return SECURITY_ERROR;
-	case HAL_BAD_KEY:
+	case SECLINK_BAD_KEY:
 		return SECURITY_INVALID_KEY_INDEX;
-	case HAL_BAD_KEY_PAIR:
+	case SECLINK_BAD_KEY_PAIR:
 		return SECURITY_ERROR;
-	case HAL_BAD_CERT:
+	case SECLINK_BAD_CERT:
 		return SECURITY_INVALID_CERT_INDEX;
-	case HAL_BAD_CERTKEY_PAIR:
+	case SECLINK_BAD_CERTKEY_PAIR:
 		return SECURITY_ERROR;
-	case HAL_NOT_ENOUGH_MEMORY:
+	case SECLINK_NOT_ENOUGH_MEMORY:
 		return SECURITY_ALLOC_ERROR;
-	case HAL_ALLOC_FAIL:
+	case SECLINK_ALLOC_FAIL:
 		return SECURITY_ALLOC_ERROR;
-	case HAL_KEY_IN_USE:
+	case SECLINK_KEY_IN_USE:
 		return SECURITY_KEY_STORAGE_IN_USE;
-	case HAL_CERT_IN_USE:
+	case SECLINK_CERT_IN_USE:
 		return SECURITY_KEY_STORAGE_IN_USE;
-	case HAL_DATA_IN_USE:
+	case SECLINK_DATA_IN_USE:
 		return SECURITY_KEY_STORAGE_IN_USE;
-	case HAL_NOT_SUPPORTED:
+	case SECLINK_NOT_SUPPORTED:
 		return SECURITY_NOT_SUPPORT;
-	case HAL_NOT_IMPLEMENTED:
+	case SECLINK_NOT_IMPLEMENTED:
 		return SECURITY_NOT_SUPPORT;
-	case HAL_BUSY:
+	case SECLINK_BUSY:
 		return SECURITY_RSC_BUSY;
-	case HAL_FAIL:
+	default:
 		return SECURITY_ERROR;
 	}
 	return SECURITY_ERROR;
@@ -253,7 +252,6 @@ hal_dh_key_type secutils_convert_dhmode_s2h(security_dh_mode mode)
 	return HAL_DH_UNKNOWN;
 }
 
-
 /* Convert path to slot index of SE */
 // To do: security api only support to storing key in secure storage only.
 // it'll provide the feature that is storing key in file system later.
@@ -268,7 +266,7 @@ int secutils_convert_path_s2h(const char *path, uint32_t *slot)
 		*slot = atoi(&path[3]);
 		return 0;
 	}
-	
+
 	return -1;
 }
 
@@ -316,7 +314,7 @@ int secutils_convert_ecdsaparam_s2h(security_ecdsa_param *eparam, hal_ecdsa_mode
 		return -1;
 	}
 	hmode->curve = secutils_convert_ecdsamode_s2h(eparam->curve);
-	hmode->hash_t = secutils_convert_hashmode_s2h(eparam->hash_t);;
+	hmode->hash_t = secutils_convert_hashmode_s2h(eparam->hash_t);
 
 	return 0;
 }
@@ -365,4 +363,3 @@ int secutils_convert_ecdhparam_s2h(security_ecdh_param *eparam, hal_ecdh_data *h
 
 	return 0;
 }
-

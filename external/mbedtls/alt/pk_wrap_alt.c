@@ -138,8 +138,6 @@ static int rsa_verify_wrap(void *ctx,
 	hal_rsa_mode rsa_mode;
 
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
-
 #if SIZE_MAX > UINT_MAX
 	if ((md_alg == MBEDTLS_MD_NONE) && (UINT_MAX < hash_len)) {
 		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
@@ -190,10 +188,10 @@ static int rsa_verify_wrap(void *ctx,
 		free(pubkey.data);
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
-	ret = sl_set_key(shnd, key_type, key_idx, &pubkey, NULL, &hres);
+	ret = sl_set_key(shnd, key_type, key_idx, &pubkey, NULL);
 	free(pubkey_buf);
 	free(pubkey.data);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+	if (ret != SECLINK_OK) {
 		sl_deinit(shnd);
 		return MBEDTLS_ERR_RSA_PUBLIC_FAILED;
 	}
@@ -229,11 +227,11 @@ static int rsa_verify_wrap(void *ctx,
 	memcpy(t_sig.data, sig, sig_len);
 	t_sig.data_len = sig_len;
 
-	ret = sl_rsa_verify_md(shnd, rsa_mode, &t_hash, &t_sig, key_idx, &hres);
+	ret = sl_rsa_verify_md(shnd, rsa_mode, &t_hash, &t_sig, key_idx);
 	free(t_hash.data);
 	free(t_sig.data);
 	sl_deinit(shnd);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+	if (ret != SECLINK_OK) {
 		return MBEDTLS_ERR_RSA_PUBLIC_FAILED;
 	}
 
@@ -256,7 +254,6 @@ static int rsa_sign_wrap(void *ctx,
 	hal_data t_sig = {sig, 0, NULL, 0};
 	hal_rsa_mode rsa_mode;
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 
 #if SIZE_MAX > UINT_MAX
 	if (md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len) {
@@ -285,16 +282,15 @@ static int rsa_sign_wrap(void *ctx,
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
-	ret = sl_rsa_sign_md(shnd, rsa_mode, &t_hash, key_idx, &t_sig, &hres);
+	ret = sl_rsa_sign_md(shnd, rsa_mode, &t_hash, key_idx, &t_sig);
 	free(t_hash.data);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
-		sl_deinit(shnd);
+	sl_deinit(shnd);
+	if (ret != SECLINK_OK) {
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
 	*sig_len = t_sig.data_len;
 
-	sl_deinit(shnd);
 	return 0;
 }
 
@@ -355,7 +351,6 @@ static int rsa_decrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, 
 	int ret;
 	hal_rsa_mode rsa_mode;
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 	unsigned int key_idx = ((mbedtls_rsa_context *) ctx)->key_index;
 
 	if (((mbedtls_rsa_context *) ctx)->padding == MBEDTLS_RSA_PKCS_V15) {
@@ -384,15 +379,13 @@ static int rsa_decrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, 
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
-	ret = sl_rsa_decrypt(shnd, &enc_data, &rsa_mode, key_idx, &dec_data, &hres);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
-		sl_deinit(shnd);
+	ret = sl_rsa_decrypt(shnd, &enc_data, &rsa_mode, key_idx, &dec_data);
+	sl_deinit(shnd);
+	if (ret != SECLINK_OK) {
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
 	*olen = dec_data.data_len;
-
-	sl_deinit(shnd);
 	return 0;
 }
 
@@ -404,7 +397,6 @@ static int rsa_encrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, 
 	hal_key_type key_type;
 	hal_rsa_mode rsa_mode;
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 	unsigned int key_idx = ((mbedtls_rsa_context *) ctx)->key_index;
 
 	if (((mbedtls_rsa_context *) ctx)->padding == MBEDTLS_RSA_PKCS_V15) {
@@ -465,10 +457,10 @@ static int rsa_encrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, 
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
-	ret = sl_set_key(shnd, key_type, key_idx, &pubkey, NULL, &hres);
+	ret = sl_set_key(shnd, key_type, key_idx, &pubkey, NULL);
 	free(pubkey_buf);
 	free(pubkey.data);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+	if (ret != SECLINK_OK) {
 		sl_deinit(shnd);
 		return MBEDTLS_ERR_RSA_PUBLIC_FAILED;
 	}
@@ -482,16 +474,13 @@ static int rsa_encrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, 
 	dec_data.data = (unsigned char *)input;
 	dec_data.data_len = ilen;
 
-	ret = sl_rsa_encrypt(shnd, &dec_data, &rsa_mode, key_idx, &enc_data, &hres);
-
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
-		sl_deinit(shnd);
+	ret = sl_rsa_encrypt(shnd, &dec_data, &rsa_mode, key_idx, &enc_data);
+	sl_deinit(shnd);
+	if (ret != SECLINK_OK) {
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
 	*olen = enc_data.data_len;
-
-	sl_deinit(shnd);
 	return 0;
 }
 
@@ -704,7 +693,6 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 	unsigned int key_idx;
 	hal_ecdsa_mode ecdsa_mode;
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 
 	((void)md_alg);
 
@@ -783,23 +771,18 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 	}
 
 	while (1) {
-		ret = sl_set_key(shnd, key_type, key_idx, &pubkey, NULL, &hres);
+		ret = sl_set_key(shnd, key_type, key_idx, &pubkey, NULL);
 		if (ret != SECLINK_OK) {
-			ret = MBEDTLS_ERR_RSA_PUBLIC_FAILED;
-			free(pubkey_buf);
-			free(pubkey.data);
-			goto FREE;
-		}
-
-		if (hres != HAL_SUCCESS) {
-			if (hres == HAL_KEY_IN_USE) {
+			if (ret == SECLINK_KEY_IN_USE) {
 				key_idx++;
+				if (key_idx == SECLINK_MAX_RAM_KEY) {
+					ret = MBEDTLS_ERR_RSA_PUBLIC_FAILED;
+					free(pubkey_buf);
+					free(pubkey.data);
+					goto FREE;
+				}
 				continue;
 			}
-			ret = MBEDTLS_ERR_RSA_PUBLIC_FAILED;
-			free(pubkey_buf);
-			free(pubkey.data);
-			goto FREE;
 		}
 		free(pubkey_buf);
 		free(pubkey.data);
@@ -837,16 +820,16 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 	memcpy(t_sig.data, sig, sig_len);
 	t_sig.data_len = sig_len;
 
-	ret = sl_ecdsa_verify_md(shnd, ecdsa_mode, &t_hash, &t_sig, key_idx, &hres);
+	ret = sl_ecdsa_verify_md(shnd, ecdsa_mode, &t_hash, &t_sig, key_idx);
 	free(t_hash.data);
 	free(t_sig.data);
 
 FREE_WITH_KEY:
-	(void)sl_remove_key(shnd, key_type, key_idx, &hres);
+	(void)sl_remove_key(shnd, key_type, key_idx);
 
 FREE:
 	sl_deinit(shnd);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+	if (ret != SECLINK_OK) {
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
@@ -859,8 +842,8 @@ int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *ha
 	mbedtls_ecdsa_context ecdsa;
 	hal_ecdsa_mode ecdsa_mode;
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
-	mbedtls_ecdsa_init(&ecdsa);
+
+		mbedtls_ecdsa_init(&ecdsa);
 
 	if ((ret = mbedtls_ecdsa_from_keypair(&ecdsa, ctx)) == 0) {
 		unsigned int key_idx = (((mbedtls_ecp_keypair *) ctx)->grp).key_index = (((mbedtls_ecp_keypair *) ctx)->key_index);
@@ -895,16 +878,15 @@ int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *ha
 			return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		}
 
-		ret = sl_ecdsa_sign_md(shnd, ecdsa_mode, &t_hash, key_idx, &sign, &hres);
+		ret = sl_ecdsa_sign_md(shnd, ecdsa_mode, &t_hash, key_idx, &sign);
+		sl_deinit(shnd);
 		free(t_hash.data);
-		if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
-			sl_deinit(shnd);
+		if (ret != SECLINK_OK) {
 			return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		}
 
 		/* Use r and s to generate signature */
 		*sig_len = sign.data_len;
-		sl_deinit(shnd);
 		return ret;
 	}
 
@@ -1007,7 +989,5 @@ const mbedtls_pk_info_t mbedtls_ecdsa_info = {
 	eckey_debug,				/* Compatible key structures */
 };
 #endif							/* MBEDTLS_ECDSA_C */
-
 #endif							/* MBEDTLS_PK_ECDSA_VERIFY_ALT */
-
 #endif							/* MBEDTLS_PK_C */

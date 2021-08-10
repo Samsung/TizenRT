@@ -68,7 +68,6 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 	unsigned int ret;
 	hal_key_type key_type;
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 	unsigned char key_data[MBEDTLS_MAX_KEY_SIZE_ALT];
 	unsigned char key_priv[MBEDTLS_MAX_KEY_SIZE_ALT];
 	hal_data key = {key_data, sizeof(key_data), key_priv, sizeof(key_priv)};
@@ -110,30 +109,26 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 
 	grp->key_index = ECP_KEY_INDEX;
 	while (1) {
-		ret = sl_generate_key(shnd, key_type, grp->key_index, &hres);
+		ret = sl_generate_key(shnd, key_type, grp->key_index);
 		if (ret != SECLINK_OK) {
-			ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-			sl_deinit(shnd);
-			goto cleanup;
-		}
-
-		if (hres != HAL_SUCCESS) {
-			if (hres == HAL_KEY_IN_USE) {
+			if (ret == SECLINK_KEY_IN_USE) {
 				grp->key_index++;
+				if (grp->key_index == SECLINK_MAX_RAM_KEY) {
+					ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+					sl_deinit(shnd);
+					goto cleanup;
+				}
 				continue;
 			}
-			ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-			sl_deinit(shnd);
-			goto cleanup;
 		}
 		break;
 	}
 
 	/* Get Public value from sss */
-	ret = sl_get_key(shnd, key_type, grp->key_index, &key, &hres);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+	ret = sl_get_key(shnd, key_type, grp->key_index, &key);
+	if (ret != SECLINK_OK) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-		(void)sl_remove_key(shnd, key_type, grp->key_index, &hres);
+		(void)sl_remove_key(shnd, key_type, grp->key_index);
 		(void)sl_deinit(shnd);
 		goto cleanup;
 	}
@@ -160,7 +155,6 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 	unsigned char shared_secret_data[MBEDTLS_MAX_KEY_SIZE_ALT];
 	hal_data shared_secret = {shared_secret_data, MBEDTLS_MAX_KEY_SIZE_ALT, NULL, 0};
 	sl_ctx shnd;
-	hal_result_e hres = HAL_FAIL;
 	hal_key_type key_type = HAL_KEY_UNKNOWN;
 
 	/* compute ECC shared secret with stored key (permanent) */
@@ -224,8 +218,8 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 		goto cleanup_with_mem;
 	}
 
-	ret = sl_ecdh_compute_shared_secret(shnd, &ecc_pub, grp->key_index, &shared_secret, &hres);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+	ret = sl_ecdh_compute_shared_secret(shnd, &ecc_pub, grp->key_index, &shared_secret);
+	if (ret != SECLINK_OK) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		goto cleanup_with_mem;
 	}
@@ -250,7 +244,6 @@ cleanup_with_mem:
 	}
 
 cleanup:
-	
 	switch (grp->id) {
 	case MBEDTLS_ECP_DP_SECP192R1:
 		key_type = HAL_KEY_ECC_SEC_P192R1;
@@ -279,7 +272,7 @@ cleanup:
 	default:
 		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
 	}
-	sl_remove_key(shnd, key_type, grp->key_index, &hres);
+	sl_remove_key(shnd, key_type, grp->key_index);
 
 	sl_deinit(shnd);
 
