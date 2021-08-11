@@ -838,6 +838,7 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 	t_sig.data_len = sig_len;
 
 	ret = sl_ecdsa_verify_md(shnd, ecdsa_mode, &t_hash, &t_sig, key_idx, &hres);
+	hal_result_e hhres = hres;
 	free(t_hash.data);
 	free(t_sig.data);
 
@@ -846,7 +847,7 @@ FREE_WITH_KEY:
 
 FREE:
 	sl_deinit(shnd);
-	if (ret != SECLINK_OK || hres != HAL_SUCCESS) {
+	if (ret != SECLINK_OK || hres != HAL_SUCCESS || hhres != HAL_SUCCESS) {
 		return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
 	}
 
