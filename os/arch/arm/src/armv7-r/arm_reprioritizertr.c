@@ -161,13 +161,12 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 
 				rtcb = this_task();
 
-				/* Then switch contexts.  Any necessary address environment
-				 * changes will be made when the interrupt returns.
-				 */
-#ifdef CONFIG_TASK_SCHED_HISTORY
-				/* Save the task name which will be scheduled */
-				save_task_scheduling_status(rtcb);
-#endif
+				/* Restore rtcb data for context switching */
+				
+				up_restoretask(rtcb);
+				
+				/* Then switch contexts */
+				
 				up_restorestate(rtcb->xcp.regs);
 			}
 

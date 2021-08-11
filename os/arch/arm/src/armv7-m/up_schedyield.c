@@ -25,19 +25,11 @@
 #include <sys/types.h>
 #include <debug.h>
 #include <queue.h>
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-#include <stdint.h>
-#endif
 
+#include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #if CONFIG_RR_INTERVAL > 0
 #include <tinyara/clock.h>
-#endif
-#ifdef CONFIG_ARMV7M_MPU
-#include <tinyara/mpu.h>
-#endif
-#ifdef CONFIG_TASK_SCHED_HISTORY
-#include <tinyara/debug/sysdbg.h>
 #endif
 
 #include "sched/sched.h"
@@ -50,10 +42,6 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-extern uint32_t g_umm_app_id;
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -128,12 +116,6 @@ void up_schedyield(void)
 
 		ntcb->task_state = TSTATE_TASK_RUNNING;
 
-#ifdef CONFIG_TASK_SCHED_HISTORY
-		/* Save the task name which will be scheduled */
-
-		save_task_scheduling_status(ntcb);
-#endif
-
 		/* Are we in an interrupt handler? */
 
 		if (current_regs) {
@@ -144,37 +126,9 @@ void up_schedyield(void)
 
 			up_savestate(rtcb->xcp.regs);
 
-			/* Restore the exception context of the ntcb at the (new) head
-			 * of the g_readytorun task list.
-			 */
+			/* Restore ntcb data for context switching */
 
-			/* Restore the MPU registers in case we are switching to an application task */
-#ifdef CONFIG_ARMV7M_MPU
-			/* Condition check : Update MPU registers only if this is not a kernel thread. */
-
-			if ((ntcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-#if defined(CONFIG_APP_BINARY_SEPARATION)
-				for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
-					up_mpu_set_register(&ntcb->mpu_regs[i]);
-				}
-#endif
-			}
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-			up_mpu_set_register(ntcb->stack_mpu_regs);
-#endif
-#endif
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-			if (g_umm_app_id) {
-				*g_umm_app_id = ntcb->app_id;
-			}
-#endif
-
-#ifdef CONFIG_TASK_MONITOR
-			/* Update rtcb active flag for monitoring. */
-
-			ntcb->is_active = true;
-#endif
+			up_restoretask(ntcb);
 
 			/* Then switch contexts */
 

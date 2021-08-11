@@ -62,6 +62,7 @@
 #include <debug.h>
 
 #include <arch/irq.h>
+#include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/userspace.h>
 
@@ -76,10 +77,7 @@
 #include "svcall.h"
 #include "exc_return.h"
 #include "up_internal.h"
-#ifdef CONFIG_ARMV8M_MPU
-#include "mpu.h"
-#include <tinyara/mpu.h>
-#endif
+
 #define INDEX_ERROR (-1)
 /****************************************************************************
  * Pre-processor Definitions
@@ -265,34 +263,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
 
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-		if (rtcb->tz_context) {
-			TZ_LoadContext_S(rtcb->tz_context);
-		}
-#endif
+		/* Restore rtcb data for context switching */
 
-		/* Restore the MPU registers in case we are switching to an application task */
-#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
-		/* Condition check : Update MPU registers only if this is not a kernel thread. */
-		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
-				up_mpu_set_register(&rtcb->mpu_regs[i]);
-			}
-		}
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		up_mpu_set_register(rtcb->stack_mpu_regs);
-#endif
-#endif
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-			if (g_umm_app_id) {
-				*g_umm_app_id = rtcb->app_id;
-			}
-#endif
-
-#ifdef CONFIG_TASK_MONITOR
-		/* Update tcb active flag for monitoring. */
-		rtcb->is_active = true;
-#endif
+		up_restoretask(rtcb);
 	}
 	break;
 
@@ -320,32 +293,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
 
-		/* Restore the MPU registers in case we are switching to an application task */
-#if (defined(CONFIG_ARMV8M_MPU) && defined(CONFIG_APP_BINARY_SEPARATION))
-		/* Condition check : Update MPU registers only if this is not a kernel thread. */
-		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
-				up_mpu_set_register(&rtcb->mpu_regs[i]);
-			}
-		}
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		up_mpu_set_register(rtcb->stack_mpu_regs);
-#endif
-#endif
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-			if (g_umm_app_id) {
-				*g_umm_app_id = rtcb->app_id;
-			}
-#endif
+		/* Restore rtcb data for context switching */
 
-#ifdef CONFIG_TASK_MONITOR
-		/* Update tcb active flag for monitoring. */
-		rtcb->is_active = true;
-#endif
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-		if (rtcb->tz_context)
-			TZ_LoadContext_S(rtcb->tz_context);
-#endif
+		up_restoretask(rtcb);
 	}
 	break;
 
