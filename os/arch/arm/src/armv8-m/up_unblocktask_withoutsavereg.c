@@ -62,18 +62,11 @@
 #include "sched/sched.h"
 #include "clock/clock.h"
 #include "up_internal.h"
-#ifdef CONFIG_ARMV8M_MPU
-#include "mpu.h"
-#include <tinyara/mpu.h>
-#endif
 
 #ifdef CONFIG_TASK_SCHED_HISTORY
 #include <tinyara/debug/sysdbg.h>
 #endif
 
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-#include <tinyara/tz_context.h>
-#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -81,9 +74,7 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-extern uint32_t *g_umm_app_id;
-#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -153,41 +144,10 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 
 		rtcb = this_task();
 
-#ifdef CONFIG_TASK_SCHED_HISTORY
-		/* Save the task name which will be scheduled */
-		save_task_scheduling_status(rtcb);
-#endif
+		/* Restore rtcb data for context switching */
 
-		/* Restore the MPU registers in case we are switching to an application task */
-#ifdef CONFIG_ARMV8M_MPU
-		/* Condition check : Update MPU registers only if this is not a kernel thread. */
-		if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-#if defined(CONFIG_APP_BINARY_SEPARATION)
-			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
-				up_mpu_set_register(&rtcb->mpu_regs[i]);
-			}
-#endif
-		}
-#ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
-		up_mpu_set_register(rtcb->stack_mpu_regs);
-#endif
-#endif
+		up_restoretask(rtcb);
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (g_umm_app_id) {
-			*g_umm_app_id = rtcb->app_id;
-		}
-#endif
-#ifdef CONFIG_TASK_MONITOR
-		/* Update rtcb active flag for monitoring. */
-		rtcb->is_active = true;
-#endif
-
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-		if (rtcb->tz_context) {
-			TZ_LoadContext_S(rtcb->tz_context);
-		}
-#endif
 		/* Then switch contexts */
 
 		up_restorestate(rtcb->xcp.regs);

@@ -432,6 +432,23 @@ void up_allocate_secure_context(TZ_ModuleId_t size);
 void up_free_secure_context();
 #endif
 
+/************************************************************************************
+ * Name: up_restoretask
+ *
+ * Description:
+ *   Restore and set data needed for context switching from tcb before context switching.
+ *
+ *   This function is called only from the TinyAra scheduling
+ *   logic.
+ *
+ * Inputs:
+ *   tcb: Refers to the tcb which will be scheduled.
+ *     This tcb is at the head of the g_readytorun task lists.
+ *
+ ************************************************************************************/
+
+void up_restoretask(struct tcb_s *tcb);
+
 /****************************************************************************
  * Name: up_unblock_task
  *

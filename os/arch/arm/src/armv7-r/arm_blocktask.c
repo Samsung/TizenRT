@@ -143,13 +143,9 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 			rtcb = this_task();
 
-#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
-			save_task_scheduling_status(rtcb);
-#endif
+			/* Switch context of rtcb */
 
-			/* Then switch contexts. */
-			up_restorestate(rtcb->xcp.regs);
+			up_restoretask(rtcb);
 		}
 
 		/* Copy the user C context into the TCB at the (old) head of the

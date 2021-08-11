@@ -131,17 +131,14 @@ void up_schedyield(void)
 
 			trace_sched(NULL, ntcb);
 
-	#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
+			/* Restore ntcb data for context switching */
 
-			save_task_scheduling_status(ntcb);
-	#endif
+			up_restoretask(ntcb);
 
-			/* Then switch contexts.  Any necessary address environment
-			 * changes will be made when the interrupt returns.
-			 */
+			/* Then switch contexts */
 
 			up_restorestate(ntcb->xcp.regs);
+
 		}
 
 		/* Copy the exception context into the TCB at the (old) head of the
