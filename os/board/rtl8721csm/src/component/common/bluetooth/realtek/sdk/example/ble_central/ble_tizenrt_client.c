@@ -331,7 +331,7 @@ trble_result_e rtw_ble_client_disconnect(trble_conn_handle conn_handle)
     uint32_t conn_id = conn_handle;
     if(GAP_CONN_STATE_CONNECTED == ble_app_link_table[conn_handle].conn_state)
     {
-        if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DISCONNECT, (void *)conn_id))
+        if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DISCONNECT, (void *)conn_id) == false)
         {
             debug_print("\r\n[%s] msg send fail", __FUNCTION__);
             return TRBLE_FAIL;
@@ -377,6 +377,12 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
 
     if (handle == NULL || out_data == NULL || out_data->data == NULL)
     {
+        return TRBLE_FAIL;
+    }
+
+    if(!le_get_active_link_num())
+    {
+        debug_print("\r\n[%s] No active connection", __FUNCTION__);
         return TRBLE_FAIL;
     }
 
@@ -426,6 +432,12 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
 {
     if (handle == NULL || in_data == NULL || in_data->data == NULL)
     {
+        return TRBLE_FAIL;
+    }
+
+    if(!le_get_active_link_num())
+    {
+        debug_print("\r\n[%s] No active connection", __FUNCTION__);
         return TRBLE_FAIL;
     }
 
@@ -481,6 +493,12 @@ trble_result_e rtw_ble_client_operation_write_no_response(trble_operation_handle
         return TRBLE_FAIL;
     }
 
+    if(!le_get_active_link_num())
+    {
+        debug_print("\r\n[%s] No active connection", __FUNCTION__);
+        return TRBLE_FAIL;
+    }
+
     if(ble_tizenrt_write_no_rsp_sem == NULL)
     {
         if(false == os_mutex_create(&ble_tizenrt_write_no_rsp_sem))
@@ -530,6 +548,12 @@ trble_result_e rtw_ble_client_operation_enable_notification(trble_operation_hand
 { 
     if (handle == NULL)
     {
+        return TRBLE_FAIL;
+    }
+
+    if(!le_get_active_link_num())
+    {
+        debug_print("\r\n[%s] No active connection", __FUNCTION__);
         return TRBLE_FAIL;
     }
 
