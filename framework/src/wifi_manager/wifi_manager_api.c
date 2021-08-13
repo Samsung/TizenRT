@@ -189,13 +189,12 @@ wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config)
 {
 	NET_LOGI(TAG, "-->\n");
 	if (config) {
-		if (config->channel < 0 || config->channel > 14) {
+		if (config->channel > WIFIMGR_2G_CHANNEL_MAX) {
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 			NET_LOGE(TAG, "invalid channel range %d\n", config->channel);
 			return WIFI_MANAGER_INVALID_ARGS;
 		}
-		if (config->ssid_length > WIFIMGR_SSID_LEN
-			|| config->ssid_length < 0) {
+		if (config->ssid_length > WIFIMGR_SSID_LEN) {
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 			return WIFI_MANAGER_INVALID_ARGS;
 		}

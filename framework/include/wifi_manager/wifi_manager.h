@@ -40,6 +40,7 @@ extern "C" {
 #define WIFIMGR_MACADDR_LEN        6
 #define WIFIMGR_MACADDR_STR_LEN    17
 #define WIFIMGR_SSID_LEN           32
+#define WIFIMGR_2G_CHANNEL_MAX     14
 #define WIFIMGR_PASSPHRASE_LEN     64
 /**
  * @brief <b> wifi MAC/PHY standard types
@@ -386,7 +387,7 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void);
  *     if both SSID and channel are not set in config then it'll return error.
  *     wifi_manager check whether SSID is set by ssid_length in config. In the same way
  *     not checking channel is 0, but checking channel is greater than 0 and less than 15 in 2.5GHz.
- *     So if both channel and ssid_length are 0 then wifi_manager return WIFI_MANAGER_INVALID_ARGS.
+ *     So if both channel and ssid_length are 0 then wifi_manager returns WIFI_MANAGER_INVALID_ARGS.
  *     To request full scan to wifi_manager, config which is assigned null be pass to wifi_manager.
  */
 wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config);
