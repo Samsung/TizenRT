@@ -418,6 +418,14 @@ config MMINFO
 		This selection enables building of the "upper-half" mminfo
 		driver.
 
+config PRODCONFIG
+	bool "Product config Driver Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" prodconfig
+		driver.
+
+
 menuconfig ANALOG
 	bool "Analog Device(ADC/DAC) Support"
 	default n
