@@ -66,6 +66,10 @@
 #ifdef CONFIG_FLASH_PARTITION
 #include <tinyara/fs/mtd.h>
 #endif
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
 #include <arch/board/board.h>
 #include "gpio_api.h"
 #include "timer_api.h"
@@ -77,6 +81,9 @@
  * Pre-processor Definitions
  ************************************************************************************/
 extern FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmode, u32 pinpull);
+#ifdef CONFIG_PRODCONFIG
+extern u32 EFUSERead8(u32 CtrlSetting, u32 Addr, u8 *Data, u8 L25OutVoltage);
+#endif
 
 /************************************************************************************
  * Private Functions
@@ -85,6 +92,25 @@ extern FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmo
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+#ifdef CONFIG_PRODCONFIG
+static int up_check_prod(void)
+{
+	u8 prod_disable;
+	EFUSERead8(0, EFUSE_SEC_CONFIG_ADDR1, &prod_disable, L25EOUTVOLTAGE);
+	if (prod_disable == 0xff) {
+		return OK;
+	}
+	return ERROR;
+}
+int up_check_prodswd(void)
+{
+	return up_check_prod();
+}
+int up_check_proddownload(void)
+{
+	return up_check_prod();
+}
+#endif
 
 void board_gpio_initialize(void)
 {
