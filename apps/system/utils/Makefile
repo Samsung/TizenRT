@@ -127,6 +127,10 @@ ifeq ($(CONFIG_ENABLE_HEAPINFO),y)
 CSRCS += utils_heapinfo.c
 endif
 
+ifeq ($(CONFIG_ENABLE_PRODCONFIG),y)
+CSRCS += utils_prodconfig.c
+endif
+
 ifeq ($(CONFIG_ENABLE_IRQINFO),y)
 CSRCS += utils_irqinfo.c
 endif

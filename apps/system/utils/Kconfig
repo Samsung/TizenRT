@@ -140,6 +140,13 @@ config HEAPINFO_USER_GROUP_LIST
 endif
 endif
 
+config ENABLE_PRODCONFIG
+	bool "prodconfig"
+	depends on PRODCONFIG
+	default n
+	---help---
+		print product configuration like swd.
+
 config ENABLE_TZSELECT
 	bool "tzselect"
 	default n

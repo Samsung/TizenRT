@@ -52,6 +52,9 @@ const static tash_cmdlist_t system_cmds[] = {
 #if defined(CONFIG_ENABLE_KILLALL)
 	{"killall",  utils_killall,      TASH_EXECMD_SYNC},
 #endif
+#if defined(CONFIG_ENABLE_PRODCONFIG)
+	{"prodconfig", utils_prodconfig, TASH_EXECMD_SYNC},
+#endif
 #if defined(CONFIG_ENABLE_PS)
 	{"ps",       utils_ps,           TASH_EXECMD_SYNC},
 #endif
