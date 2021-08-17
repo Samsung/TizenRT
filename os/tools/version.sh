@@ -137,7 +137,7 @@ if [ -z "${BUILD}" ]; then
 		echo "GIT version information is not available"
 		BUILD=NA
 	else
-		BUILD=`echo ${GITINFO} | cut -d' ' -f2`
+		BUILD=`echo ${GITINFO} | cut -d' ' -f2 | cut -c -7`
 		if [ -z "${BUILD}" ]; then
 			echo "GIT build information not found"
 			BUILD=NA
