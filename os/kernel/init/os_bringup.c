@@ -78,6 +78,9 @@
 #ifdef CONFIG_SCHED_CPULOAD
 #include <tinyara/cpuload.h>
 #endif
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#endif
 #ifdef CONFIG_MMINFO
 #include <tinyara/mminfo.h>
 #endif
@@ -281,6 +284,10 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_MMINFO
 	mminfo_register();
+#endif
+
+#ifdef CONFIG_PRODCONFIG
+	prodconfig_register();
 #endif
 
 #ifdef CONFIG_TASK_MONITOR
