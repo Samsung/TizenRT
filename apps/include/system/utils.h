@@ -66,6 +66,10 @@ int utils_free(int argc, char **args);
 int utils_heapinfo(int argc, char **args);
 #endif
 
+#if defined(CONFIG_ENABLE_PRODCONFIG)
+int utils_prodconfig(int argc, char **args);
+#endif
+
 #if defined(CONFIG_ENABLE_IRQINFO)
 int utils_irqinfo(int argc, char **args);
 #endif
