@@ -53,33 +53,6 @@
  *============================================================================*/
 void print_no_server(const char* format, ...) {}
 
-/** @brief  GAP - scan response data (max size = 31 bytes) */
-static const uint8_t scan_rsp_data[] =
-{
-    0x03,                             /* length */
-    GAP_ADTYPE_APPEARANCE,            /* type="Appearance" */
-    LO_WORD(GAP_GATT_APPEARANCE_UNKNOWN),
-    HI_WORD(GAP_GATT_APPEARANCE_UNKNOWN),
-};
-
-/** @brief  GAP - Advertisement data (max size = 31 bytes, best kept short to conserve power) */
-static const uint8_t adv_data[] =
-{
-    /* Flags */
-    0x02,             /* length */
-    GAP_ADTYPE_FLAGS, /* type="Flags" */
-    GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
-    /* Service */
-    0x03,             /* length */
-    GAP_ADTYPE_16BIT_COMPLETE,
-    LO_WORD(GATT_UUID_SIMPLE_PROFILE),
-    HI_WORD(GATT_UUID_SIMPLE_PROFILE),
-    /* Local name */
-    0x0C,             /* length */
-    GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-    'B', 'L', 'E', '_', 'T', 'I', 'Z', 'E', 'N', 'R', 'T',
-};
-
 /*============================================================================*
  *                              Functions
  *============================================================================*/
@@ -111,15 +84,9 @@ void ble_tizenrt_app_le_gap_init(void)
     uint16_t appearance = GAP_GATT_APPEARANCE_UNKNOWN;
     uint8_t  slave_init_mtu_req = false;
 
-
     /* Advertising parameters */
-    uint8_t  adv_evt_type = GAP_ADTYPE_ADV_IND;
-    uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
-    uint8_t  adv_direct_addr[GAP_BD_ADDR_LEN] = {0};
     uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
     uint8_t  adv_filter_policy = GAP_ADV_FILTER_ANY;
-    uint16_t adv_int_min = DEFAULT_ADVERTISING_INTERVAL_MIN;
-    uint16_t adv_int_max = DEFAULT_ADVERTISING_INTERVAL_MAX;
 
     /* GAP Bond Manager parameters */
     debug_print("\r\n[%s] is_secured_connect_allowed %d", __FUNCTION__, server_init_parm.is_secured_connect_allowed);
@@ -141,15 +108,8 @@ void ble_tizenrt_app_le_gap_init(void)
                      &slave_init_mtu_req);
 
     /* Set advertising parameters */
-    le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(adv_direct_addr), adv_direct_addr);
     le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
     le_adv_set_param(GAP_PARAM_ADV_FILTER_POLICY, sizeof(adv_filter_policy), &adv_filter_policy);
-    le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int_min), &adv_int_min);
-    le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int_max), &adv_int_max);
-    le_adv_set_param(GAP_PARAM_ADV_DATA, sizeof(adv_data), (void *)adv_data);
-    le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, sizeof(scan_rsp_data), (void *)scan_rsp_data);
 
     /* Setup the GAP Bond Manager */
     gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);

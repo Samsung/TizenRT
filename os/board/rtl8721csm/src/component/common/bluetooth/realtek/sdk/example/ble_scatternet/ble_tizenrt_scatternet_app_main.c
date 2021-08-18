@@ -57,26 +57,6 @@ void print_no_combo(const char* format, ...) {}
 /** @brief Default scan window (units of 0.625ms, 0x520=820ms) */
 #define DEFAULT_SCAN_WINDOW       0x520
 
-static const uint8_t scan_rsp_data[] =
-{
-    0x03,                             /* length */
-    GAP_ADTYPE_APPEARANCE,            /* type="Appearance" */
-    LO_WORD(GAP_GATT_APPEARANCE_UNKNOWN),
-    HI_WORD(GAP_GATT_APPEARANCE_UNKNOWN),
-};
-
-/** @brief  GAP - Advertisement data (max size = 31 bytes, best kept short to conserve power) */
-static const uint8_t adv_data[] =
-{
-    /* Flags */
-    0x02,             /* length */
-    GAP_ADTYPE_FLAGS, /* type="Flags" */
-    GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
-    /* Local name */
-    0x0C,             /* length */
-    GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-    'B', 'L', 'E', '_', 'T', 'I', 'Z', 'E', 'N', 'R', 'T',
-};
 /*============================================================================*
  *                              Functions
  *============================================================================*/
@@ -114,13 +94,8 @@ void ble_tizenrt_scatternet_app_le_gap_init(void)
     uint8_t  slave_init_mtu_req = false;
 
     /* Advertising parameters */
-    uint8_t  adv_evt_type = GAP_ADTYPE_ADV_IND;
-    uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
-    uint8_t  adv_direct_addr[GAP_BD_ADDR_LEN] = {0};
     uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
     uint8_t  adv_filter_policy = GAP_ADV_FILTER_ANY;
-    uint16_t adv_int_min = DEFAULT_ADVERTISING_INTERVAL_MIN;
-    uint16_t adv_int_max = DEFAULT_ADVERTISING_INTERVAL_MAX;
 
     /* Scan parameters */
     uint8_t  scan_mode = GAP_SCAN_MODE_ACTIVE;
@@ -149,15 +124,8 @@ void ble_tizenrt_scatternet_app_le_gap_init(void)
                      &slave_init_mtu_req);
 
     /* Set advertising parameters */
-    le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(adv_direct_addr), adv_direct_addr);
     le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
     le_adv_set_param(GAP_PARAM_ADV_FILTER_POLICY, sizeof(adv_filter_policy), &adv_filter_policy);
-    le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int_min), &adv_int_min);
-    le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int_max), &adv_int_max);
-    le_adv_set_param(GAP_PARAM_ADV_DATA, sizeof(adv_data), (void *)adv_data);
-    le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, sizeof(scan_rsp_data), (void *)scan_rsp_data);
 
     /* Set scan parameters */
     le_scan_set_param(GAP_PARAM_SCAN_MODE, sizeof(scan_mode), &scan_mode);
