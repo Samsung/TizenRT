@@ -26,7 +26,6 @@
 #include <ble_tizenrt_central_client_app.h>
 #include <data_uart.h>
 #include <user_cmd_parse.h>
-#include <user_cmd.h>
 #include <basic_types.h>
 #include <gap_msg.h>
 

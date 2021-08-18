@@ -26,7 +26,6 @@
 #include <gap_bond_le.h>
 #include <ble_tizenrt_central_client_app.h>
 #include <ble_tizenrt_central_link_mgr.h>
-#include <user_cmd.h>
 #include <user_cmd_parse.h>
 #include <gcs_client.h>
 #include "platform_opts_bt.h"
