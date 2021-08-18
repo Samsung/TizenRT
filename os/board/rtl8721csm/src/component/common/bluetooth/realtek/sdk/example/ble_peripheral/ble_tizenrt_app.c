@@ -76,30 +76,6 @@ int ble_tizenrt_app_handle_upstream_msg(uint16_t subtype, void *pdata)
 		case BLE_TIZENRT_MSG_STOP_ADV:
 			ret = le_adv_stop();
 			break;
-        case BLE_TIZENRT_MSG_START_DIRECT_ADV:
-        {
-            T_TIZENRT_DIRECT_ADV_PARAM *param = pdata;
-            if(param)
-            {
-                uint8_t  adv_evt_type = GAP_ADTYPE_ADV_HDC_DIRECT_IND;
-                uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
-                uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
-
-                le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-                le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-                le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, (sizeof(uint8_t)*TRBLE_BD_ADDR_MAX_LEN), param->bd_addr);
-                le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
-                ret = le_adv_start();
-                if(GAP_CAUSE_SUCCESS == ret)
-                    debug_print("\r\n[Upstream] Start Direct Adv Success", __FUNCTION__);
-                else
-                    debug_print("\r\n[Upstream] Start Direct Adv Fail !!", __FUNCTION__);   
-                os_mem_free(param);
-            } else {
-                debug_print("\n[%s] Start_direct_adv parameter is NULL", __FUNCTION__);
-            }
-        }
-			break;
 		case BLE_TIZENRT_MSG_DISCONNECT:
 			ret = le_disconnect(0);
 			break;
