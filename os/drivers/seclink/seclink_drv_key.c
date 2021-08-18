@@ -109,7 +109,7 @@ static int hd_handle_ram_key(int cmd, struct seclink_req *req, struct seclink_ke
 {
 	int res = 0;
 	int key_state = _get_key_slot_state(info->key_idx);
-	SLDRV_LOG("keymgr request cmd(%x) (%d) isempty(%d)\n", cmd, info->mode, key_state);
+	SLDRV_LOG("keymgr request cmd(%x) (%d) key(%d) isempty(%d)\n", cmd, info->mode, info->key_idx, key_state);
 	if (key_state == KEYSLOT_INVALID_RANGE) {
 		req->res = HAL_INVALID_SLOT_RANGE;
 		return 0;

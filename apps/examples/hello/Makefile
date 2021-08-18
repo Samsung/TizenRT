@@ -65,7 +65,7 @@ STACKSIZE = 10240
 # Hello, World! Example
 
 ASRCS =
-CSRCS =
+CSRCS = ssl_server_tr.c ssl_client_tr.c
 MAINSRC = hello_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

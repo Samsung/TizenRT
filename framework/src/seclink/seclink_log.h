@@ -17,9 +17,12 @@
  ****************************************************************************/
 #pragma once
 
+#define SEVDBG 
+#define SEDBG lldbg
+
 #define SLC_LOG(tag, fmt, args...)				\
-	sevdbg(fmt, ##args)
+	SEVDBG(fmt, ##args)
 #define SLC_LOGE(tag, fmt, args...)				\
-	sedbg("%d "tag "[ERR]\t"fmt, __LINE__, ##args)
+	SEDBG("%d "tag "[ERR]\t"fmt, __LINE__, ##args)
 #define SLC_LOGI(tag, fmt, args...)					\
-	sevdbg("%d "tag "[INFO]\t"fmt, __LINE__, ##args)
+	SEVDBG("%d "tag "[INFO]\t"fmt, __LINE__, ##args)

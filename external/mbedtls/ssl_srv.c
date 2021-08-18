@@ -3254,10 +3254,13 @@ static int ssl_write_server_key_exchange( mbedtls_ssl_context *ssl )
         const mbedtls_ecp_group_id *gid;
 
         /* Match our preference list against the offered curves */
+				lldbg("[PB] T%d curve %p\n", getpid(), ssl->conf->curve_list);
         for( gid = ssl->conf->curve_list; *gid != MBEDTLS_ECP_DP_NONE; gid++ )
-            for( curve = ssl->handshake->curves; *curve != NULL; curve++ )
+					for( curve = ssl->handshake->curves; *curve != NULL; curve++ ) {
+						lldbg("[PB] curve %d %d\n", (*curve)->grp_id, *gid);
                 if( (*curve)->grp_id == *gid )
                     goto curve_matching_done;
+					}
 
 curve_matching_done:
         if( curve == NULL || *curve == NULL )
