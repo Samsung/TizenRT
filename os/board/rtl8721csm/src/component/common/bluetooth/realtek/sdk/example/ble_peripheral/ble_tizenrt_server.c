@@ -590,69 +590,6 @@ trble_result_e rtw_ble_server_stop_adv(void)
     return TRBLE_SUCCESS;
 }
 
-trble_result_e rtw_ble_server_start_adv_directed(uint8_t target_addr[TRBLE_BD_ADDR_MAX_LEN])
-{
-    if(target_addr == NULL)
-    {
-        printf("\r\n[%s] Invalid input", __FUNCTION__);
-        return TRBLE_FAIL;
-    }
-
-    uint8_t link_num = le_get_active_link_num();
-    if(link_num)
-    {
-        T_GAP_CONN_INFO conn_info;
-        for(uint8_t i = 0; i < link_num; i++)
-        {
-            le_get_conn_info(i, &conn_info);
-            if(conn_info.role == GAP_LINK_ROLE_SLAVE)
-                return TRBLE_FAIL;
-        }
-    }
-
-    T_TIZENRT_DIRECT_ADV_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_DIRECT_ADV_PARAM));
-    if(param == NULL)
-    {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
-        return TRBLE_FAIL;
-    }
-    memcpy(param->bd_addr, target_addr, TRBLE_BD_ADDR_MAX_LEN);
-
-    T_GAP_DEV_STATE new_state;
-    le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-    if(new_state.gap_adv_state != GAP_ADV_STATE_IDLE)
-    {
-        if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
-        {
-            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-            os_mem_free(param);
-            return TRBLE_FAIL;
-        }
-        do {   
-            debug_print("\r\n[%s] Waiting for adv stop", __FUNCTION__);
-            os_delay(100);
-            le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-        } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
-    }
-    
-    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_DIRECT_ADV, param) == false)
-    {
-        os_mem_free(param);
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-        return TRBLE_FAIL;
-    }
-    le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-    if(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING)
-     {
-        do {
-            debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
-            os_delay(100);
-            le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-        } while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
-     }
-    return TRBLE_SUCCESS;
-}
-
 trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bonded_device_list, uint16_t* device_count)
 {
     if(bonded_device_list == NULL || device_count == NULL)

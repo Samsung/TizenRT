@@ -50,7 +50,6 @@ extern void print_no_server(const char* format, ...);
 typedef enum
 {
 	BLE_TIZENRT_MSG_START_ADV = 12,
-	BLE_TIZENRT_MSG_START_DIRECT_ADV,
 	BLE_TIZENRT_MSG_STOP_ADV,
 	BLE_TIZENRT_MSG_DISCONNECT,
 	BLE_TIZENRT_MSG_NOTIFY,
