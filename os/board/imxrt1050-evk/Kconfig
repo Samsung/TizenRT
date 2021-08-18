@@ -31,30 +31,6 @@ config IMXRT_NORFLASH
 	---help---
 		Enables Norflash
 
-config IMXRT_AUTOMOUNT_SSSRW
-	bool "Automount secure storage partiton"
-	default n
-	depends on AUTOMOUNT
-	---help---
-		If enabled, secure storage partition will be mounted
-		automatically at boot.
-
-config IMXRT_AUTOMOUNT_SSSRW_DEVNAME
-	string "Device name of the partition for secure storage"
-	default "/dev/smart0p10"
-	depends on IMXRT_AUTOMOUNT_SSSRW
-	---help---
-		Specifies the device name (/dev/smart0pX) of the partition
-		for secure storage.
-
-config IMXRT_AUTOMOUNT_SSSRW_MOUNTPOINT
-	string "Mountpoint of the partition for secure storage"
-	default "/sss"
-	depends on IMXRT_AUTOMOUNT_SSSRW
-	---help---
-		Specifies the mount point where secure storage
-		will be mounted at.
-
 config IMXRT_AUTOMOUNT_TZDEVNAME
 	string "Device name of the partition for zoneinfo file system"
 	default "/dev/mtdblock10"
@@ -67,7 +43,7 @@ config IMXRT_AUTOMOUNT_TZDEVNAME
 config SVR_DB_SECURESTORAGE
 	bool "Enable storing SVR DB inside secure storage partition"
 	default n
-	depends on (SECURITY_SS && IMXRT_AUTOMOUNT_SSSRW)
+	depends on SECURITY_SS
 	---help---
 		If enabled, SVR DB is stored in secure storage partion
 		mounted at the specified mount point.
