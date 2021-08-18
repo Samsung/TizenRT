@@ -846,10 +846,16 @@ int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *ha
 		mbedtls_ecdsa_init(&ecdsa);
 
 	if ((ret = mbedtls_ecdsa_from_keypair(&ecdsa, ctx)) == 0) {
-		unsigned int key_idx = (((mbedtls_ecp_keypair *) ctx)->grp).key_index = (((mbedtls_ecp_keypair *) ctx)->key_index);
+		lldbg("[PB] %p %d %d\n", __builtin_return_address(0),
+			  (((mbedtls_ecp_keypair *)ctx)->grp).key_index,
+			  (((mbedtls_ecp_keypair *)ctx)->key_index));
+
+		unsigned int key_idx = (((mbedtls_ecp_keypair *)ctx)->grp).key_index = (((mbedtls_ecp_keypair *)ctx)->key_index);
 		unsigned int curve = ecdsa.grp.id;
 
-		hal_data t_hash = {0,};
+		hal_data t_hash = {
+			0,
+		};
 		t_hash.data = (unsigned char *)malloc(hash_len);
 		if (t_hash.data == NULL) {
 			return MBEDTLS_ERR_ECP_ALLOC_FAILED;

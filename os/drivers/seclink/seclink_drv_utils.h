@@ -26,38 +26,39 @@
 #endif
 
 #ifndef LINUX
-#define SLDRV_LOG sevdbg
+#define SLDRV_LOG lldbg
 #else
 #define SLDRV_LOG printf
 #endif
 
 #define SLDRV_TAG "[SECLINK_DRV]"
 
-#define SLDRV_ERR(fd)										\
-	do {													\
-		SLDRV_LOG(SL_TAG"%s:%d ret(%d) code(%s))\n",		\
-				  __FILE__, __LINE__, fd, strerror(errno));	\
+#define SLDRV_ERR(fd)                                       \
+	do {                                                    \
+		SLDRV_LOG(SL_TAG "%s:%d ret(%d) code(%s))\n",       \
+				  __FILE__, __LINE__, fd, strerror(errno)); \
 	} while (0)
 
-#define SLDRV_ENTER											\
-	do {													\
-		SLDRV_LOG(SLDRV_TAG"%s:%d\n", __FILE__, __LINE__);	\
-	} while (0)
+/* #define SLDRV_ENTER											\ */
+/* 	do {													\ */
+/* 		SLDRV_LOG(SLDRV_TAG"%s:%d\n", __FILE__, __LINE__);	\ */
+/* 	} while (0) */
+#define SLDRV_ENTER
 
 #ifdef CONFIG_SECURITY_LINK_DRV_PROFILE
 
-#define SLDRV_CALL(ret, res, method, param)								\
-	do {																\
-		if (se->ops->method) {											\
-			sldrv_timer_handle hnd;										\
-			(void)sldrv_start_time(&hnd);								\
-			res = (se->ops->method)param;								\
-			(void)sldrv_get_time(&hnd);									\
-			SLDRV_LOG(SLDRV_TAG"[PERF]"#method " res %d elapsed %u %u ms\n", \
-				  res, hnd.elapsed, hnd.elapsed / 1000);				\
-		} else {														\
-			ret = -ENOSYS;												\
-		}																\
+#define SLDRV_CALL(ret, res, method, param)                                         \
+	do {                                                                            \
+		if (se->ops->method) {                                                      \
+			sldrv_timer_handle hnd;                                                 \
+			(void)sldrv_start_time(&hnd);                                           \
+			res = (se->ops->method)param;                                           \
+			(void)sldrv_get_time(&hnd);                                             \
+			SLDRV_LOG(SLDRV_TAG "[PERF] T%d " #method " res %d elapsed %u %u ms\n", \
+					  getpid(), res, hnd.elapsed, hnd.elapsed / 1000);              \
+		} else {                                                                    \
+			ret = -ENOSYS;                                                          \
+		}                                                                           \
 	} while (0)
 
 typedef struct {
@@ -67,18 +68,17 @@ typedef struct {
 	uint32_t elapsed; /*  micro seconds */
 } sldrv_timer_handle;
 
-
 int sldrv_start_time(sldrv_timer_handle *hnd);
 int sldrv_get_time(sldrv_timer_handle *hnd);
 #else
 
-#define SLDRV_CALL(ret, res, method, param)		\
-	do {										\
-		if (se->ops->method) {					\
-			res = (se->ops->method)param;		\
-		} else {								\
-			ret = -ENOSYS;						\
-		}										\
+#define SLDRV_CALL(ret, res, method, param) \
+	do {                                    \
+		if (se->ops->method) {              \
+			res = (se->ops->method)param;   \
+		} else {                            \
+			ret = -ENOSYS;                  \
+		}                                   \
 	} while (0)
 
 #endif
