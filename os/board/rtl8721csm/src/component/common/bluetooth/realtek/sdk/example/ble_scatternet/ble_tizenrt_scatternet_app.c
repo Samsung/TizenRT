@@ -31,7 +31,6 @@
 #include "ble_tizenrt_app.h"
 #include "profile_server.h"
 #include <ble_tizenrt_service.h>
-#include <user_cmd.h>
 #include <user_cmd_parse.h>
 #include <gcs_client.h>
 #include "platform_opts_bt.h"

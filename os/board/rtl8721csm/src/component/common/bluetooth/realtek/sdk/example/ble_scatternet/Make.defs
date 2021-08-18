@@ -54,7 +54,6 @@ CSRCS += ble_tizenrt_scatternet_app_main.c \
 	 ble_tizenrt_scatternet_app.c \
 	 ble_tizenrt_scatternet_link_mgr.c \
 	 ble_tizenrt_combo.c
-# user_cmd.c \
 
 DEPPATH += --dep-path component/common/bluetooth/realtek/sdk/example/ble_scatternet
 VPATH += :component/common/bluetooth/realtek/sdk/example/ble_scatternet

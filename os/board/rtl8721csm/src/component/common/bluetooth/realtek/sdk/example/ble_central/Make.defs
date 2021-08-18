@@ -53,7 +53,6 @@ CSRCS += ble_tizenrt_central_app_main.c \
 	 ble_tizenrt_central_app_task.c \
 	 ble_tizenrt_central_client_app.c \
 	 ble_tizenrt_central_link_mgr.c \
-	 user_cmd.c \
 	 ble_tizenrt_client.c
 
 DEPPATH += --dep-path component/common/bluetooth/realtek/sdk/example/ble_central
