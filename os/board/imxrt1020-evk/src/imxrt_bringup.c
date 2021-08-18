@@ -176,23 +176,6 @@ void imxrt_filesystem_initialize(void)
 #ifdef CONFIG_AUTOMOUNT
 	automount_fs_partition(&partinfo);
 
-#ifdef CONFIG_IMXRT_AUTOMOUNT_SSSRW
-	/* Initialize and mount secure storage partition (if we have) */
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(CONFIG_IMXRT_AUTOMOUNT_SSSRW_DEVNAME, 1, false);
-#else
-	ret = mksmartfs(CONFIG_IMXRT_AUTOMOUNT_SSSRW_DEVNAME, false);
-#endif
-	if (ret != OK) {
-		IMXLOG("SSSRW ERROR: mksmartfs failed");
-	} else {
-		ret = mount(CONFIG_IMXRT_AUTOMOUNT_SSSRW_DEVNAME, CONFIG_IMXRT_AUTOMOUNT_SSSRW_MOUNTPOINT, "smartfs", 0, NULL);
-		if (ret != OK) {
-			IMXLOG("SSSRW ERROR: mounting failed");
-		}
-	}
-#endif							/* CONFIG_IMXRT_AUTOMOUNT_SSSRW */
-
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_IMXRT_RAMMTD_NEBLOCKS;
 
