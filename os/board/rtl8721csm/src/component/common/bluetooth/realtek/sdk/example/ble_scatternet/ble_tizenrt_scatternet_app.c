@@ -404,30 +404,6 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
 		case BLE_TIZENRT_MSG_STOP_ADV:
 			ret = le_adv_stop();
 			break;
-        case BLE_TIZENRT_MSG_START_DIRECT_ADV:
-        {
-            T_TIZENRT_DIRECT_ADV_PARAM *param = pdata;
-            if(param)
-            {
-                uint8_t  adv_evt_type = GAP_ADTYPE_ADV_HDC_DIRECT_IND;
-                uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
-                uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
-
-                le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-                le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-                le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, (sizeof(uint8_t)*TRBLE_BD_ADDR_MAX_LEN), param->bd_addr);
-                le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
-                ret = le_adv_start();
-                if(GAP_CAUSE_SUCCESS == ret)
-                    debug_print("\r\n[Upstream] Start Direct Adv Success", __FUNCTION__);
-                else
-                    debug_print("\r\n[Upstream] Start Direct Adv Fail !!", __FUNCTION__);   
-                os_mem_free(param);
-            } else {
-                debug_print("\n[%s] Start_direct_adv parameter is NULL", __FUNCTION__);
-            }
-        }
-			break;
 		case BLE_TIZENRT_MSG_DISCONNECT:
 			ret = le_disconnect(0);
 			break;
@@ -1107,9 +1083,15 @@ T_APP_RESULT ble_tizenrt_scatternet_app_gap_callback(uint8_t cb_type, void *p_cb
             scanned_device->rssi = p_data->p_le_scan_info->rssi;
             scanned_device->conn_info.addr.type = p_data->p_le_scan_info->remote_addr_type;
             memcpy(scanned_device->conn_info.addr.mac, p_data->p_le_scan_info->bd_addr, GAP_BD_ADDR_LEN);
-            scanned_device->raw_data_length = p_data->p_le_scan_info->data_len;
-            memcpy(scanned_device->raw_data, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
-            
+            if(scanned_device->adv_type == GAP_ADV_EVT_TYPE_SCAN_RSP)
+            {
+                scanned_device->resp_data_length = p_data->p_le_scan_info->data_len;
+                memcpy(scanned_device->resp_data, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
+            } else {
+                scanned_device->raw_data_length = p_data->p_le_scan_info->data_len;
+                memcpy(scanned_device->raw_data, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
+            }
+
             if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_SCANNED_DEVICE_MSG, scanned_device) == false)
             {
                 os_mem_free(scanned_device);

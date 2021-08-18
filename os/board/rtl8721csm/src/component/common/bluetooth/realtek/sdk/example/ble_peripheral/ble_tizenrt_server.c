@@ -302,102 +302,8 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
     return conn_id;
 }
 
-/* Set Advertisement Data API */
-trble_result_e rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
+void rtw_ble_server_adv_into_idle(void)
 {
-    if (is_server_init != true)
-        return TRBLE_INVALID_STATE;
-
-    if(length > 31)
-        return TRBLE_FAIL;
-
-    T_GAP_DEV_STATE new_state;
-    le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-
-    switch (new_state.gap_adv_state)
-    {
-        debug_print("\r\n[%s] ADV STATE : %d", __FUNCTION__, new_state.gap_adv_state);
-    case GAP_ADV_STATE_ADVERTISING:
-        {
-            debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-            if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
-            {
-                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                return TRBLE_FAIL;
-            }
-        }
-        break;
-    case GAP_ADV_STATE_START:
-        {
-            do {   
-                debug_print("\r\n[%s] ADV STATE : START", __FUNCTION__);
-                os_delay(100);
-                le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-            } while(new_state.gap_adv_state == GAP_ADV_STATE_START);
-
-            if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-            {
-                debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
-                {
-                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                    return TRBLE_FAIL;
-                }
-            }
-        }
-        break;
-    case GAP_ADV_STATE_STOP:
-        {
-            do {   
-                debug_print("\r\n[%s] ADV STATE : STOPPING", __FUNCTION__);
-                os_delay(100);
-                le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-            } while(new_state.gap_adv_state == GAP_ADV_STATE_STOP);
-
-            if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-            {
-                debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
-                {
-                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                    return TRBLE_FAIL;
-                }
-            }            
-        }
-        break;
-    default:
-        break;
-    }
-
-    do {   
-        debug_print("\r\n[%s] Waiting for adv idle , now %d", __FUNCTION__, new_state.gap_adv_state);
-        os_delay(100);
-        le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-    } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
-
-    debug_print("\r\n[%s] ADV STATE : IDLE", __FUNCTION__);
-    if(GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_ADV_DATA, length, (void *)data))
-        debug_print("\r\n[%s] Set adv data success", __FUNCTION__);
-    else {
-        debug_print("\r\n[%s] Set adv data fail!!!", __FUNCTION__);
-        return TRBLE_FAIL;
-    }
-
-    return TRBLE_SUCCESS;
-}
-
-
-
-trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
-{
-    if (is_server_init != true)
-    {
-        return TRBLE_INVALID_STATE;
-    }
-
-    if(length > 31)
-        return TRBLE_FAIL;
-
     T_GAP_DEV_STATE new_state;
     le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
 
@@ -462,9 +368,48 @@ trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
     } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
 
     debug_print("\r\n[%s] ADV STATE : IDLE", __FUNCTION__);
+}
+
+/* Set Advertisement Data API */
+trble_result_e rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
+{
+    if (is_server_init != true)
+        return TRBLE_INVALID_STATE;
+
+    if(length > 31)
+        return TRBLE_FAIL;
+
+    rtw_ble_server_adv_into_idle();
+
+    if(GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_ADV_DATA, length, (void *)data))
+    {
+        le_adv_update_param();
+        debug_print("\r\n[%s] Set adv data success", __FUNCTION__);
+    } else {
+        debug_print("\r\n[%s] Set adv data fail!!!", __FUNCTION__);
+        return TRBLE_FAIL;
+    }
+
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
+{
+    if (is_server_init != true)
+    {
+        return TRBLE_INVALID_STATE;
+    }
+
+    if(length > 31)
+        return TRBLE_FAIL;
+
+    rtw_ble_server_adv_into_idle();
+
     if(GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, length, (void *)data))
+    {    
+        le_adv_update_param();
         debug_print("\r\n[%s] Set adv name success", __FUNCTION__);
-    else {
+    } else {
         debug_print("\r\n[%s] Set adv name fail!!!", __FUNCTION__);
         return TRBLE_FAIL;
     }
@@ -677,73 +622,33 @@ trble_result_e rtw_ble_server_delete_bonded_device_all(void)
 
 int rtw_ble_server_set_adv_interval(unsigned int interval)
 {
-    T_GAP_DEV_STATE new_state;
-    le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
+    rtw_ble_server_adv_into_idle();
 
-    switch (new_state.gap_adv_state)
-    {
-    case GAP_ADV_STATE_ADVERTISING:
-        {
-            debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-            if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
-            {
-                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                return TRBLE_FAIL;
-            }
-        }
-        break;
-    case GAP_ADV_STATE_START:
-        {
-            do {   
-                debug_print("\r\n[%s] ADV STATE : START", __FUNCTION__);
-                os_delay(100);
-                le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-            } while(new_state.gap_adv_state == GAP_ADV_STATE_START);
-
-            if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-            {
-                debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
-                {
-                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                    return TRBLE_FAIL;
-                }
-            }
-        }
-        break;
-    case GAP_ADV_STATE_STOP:
-        {
-            do {   
-                debug_print("\r\n[%s] ADV STATE : STOPPING", __FUNCTION__);
-                os_delay(100);
-                le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-            } while(new_state.gap_adv_state == GAP_ADV_STATE_STOP);
-
-            if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
-            {
-                debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
-                if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
-                {
-                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                    return TRBLE_FAIL;
-                }
-            }            
-        }
-        break;
-    default:
-        break;
-    }
-
-    do {   
-        debug_print("\r\n[%s] Waiting for adv idle", __FUNCTION__);
-        os_delay(100);
-        le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-    } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
-
-    debug_print("\r\n[%s] ADV STATE : IDLE", __FUNCTION__);
     uint16_t adv_int = interval;
     le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int), &adv_int);
     le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int), &adv_int);
+    return TRBLE_SUCCESS;
+}
+
+int rtw_ble_server_set_adv_type(trble_adv_type_e type, void *param)
+{
+    if(type == TRBLE_ADV_TYPE_DIRECT && param == NULL)
+    {
+        debug_print("\r\n[%s] Invalid Input", __FUNCTION__);
+        return TRBLE_FAIL;
+    }
+
+    uint8_t  adv_evt_type = type;
+    uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
+    uint8_t  adv_direct_addr[GAP_BD_ADDR_LEN] = {0};
+    if(adv_evt_type == TRBLE_ADV_TYPE_DIRECT)
+        memcpy(adv_direct_addr, param, sizeof(adv_direct_addr));
+
+    rtw_ble_server_adv_into_idle();
+
+    le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
+    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
+    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(adv_direct_addr), adv_direct_addr);
     return TRBLE_SUCCESS;
 }
 #endif /* TRBLE_SERVER_C_ */
