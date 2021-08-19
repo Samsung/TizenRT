@@ -2910,7 +2910,7 @@ static int ssl_parse_server_key_exchange( mbedtls_ssl_context *ssl )
                                             MBEDTLS_SSL_ALERT_MSG_HANDSHAKE_FAILURE );
             return( MBEDTLS_ERR_SSL_PK_TYPE_MISMATCH );
         }
-
+// pkbuild
         if( ( ret = mbedtls_pk_verify( &ssl->session_negotiate->peer_cert->pk,
                                md_alg, hash, hashlen, p, sig_len ) ) != 0 )
         {
@@ -3773,7 +3773,7 @@ int mbedtls_ssl_handshake_client_step( mbedtls_ssl_context *ssl )
            break;
 
        case MBEDTLS_SSL_SERVER_KEY_EXCHANGE:
-           ret = ssl_parse_server_key_exchange( ssl );
+				 ret = ssl_parse_server_key_exchange( ssl ); // pkbuild
            break;
 
        case MBEDTLS_SSL_CERTIFICATE_REQUEST:

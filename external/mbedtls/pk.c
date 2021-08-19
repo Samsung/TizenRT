@@ -270,7 +270,7 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
     return( mbedtls_pk_verify( ctx, md_alg, hash, hash_len, sig, sig_len ) );
 }
 
-/*
+/*+
  * Make a signature
  */
 int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
