@@ -82,7 +82,7 @@ void gtimer_init (gtimer_t *obj, uint32_t tid)
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	RTIM_TimeBaseInit(TIM_x[tid], &TIM_InitStruct, TIMx_irq[tid], (IRQ_FUN) gtimer_timeout_handler, (u32)obj);
 #else
-	RTIM_TimeBaseInit(TIM_x[tid], &TIM_InitStruct, TIMx_irq[tid], NULL, NULL);
+	RTIM_TimeBaseInit(TIM_x[tid], &TIM_InitStruct, TIMx_irq[tid], NULL, 0);
 	InterruptDis(TIMx_irq[tid]);
 	InterruptRegister((IRQ_FUN) gtimer_timeout_handler, TIMx_irq[tid], (u32)obj, 14);
 	InterruptEn(TIMx_irq[tid], 14);
