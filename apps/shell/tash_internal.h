@@ -26,7 +26,7 @@
 
 #define tash_alloc(a)         malloc(a)
 #define tash_free(a)          free(a)
-#define TASH_LINEBUFLEN       (256)
+#define TASH_LINEBUFLEN       (128)
 
 #ifdef CONFIG_TASH_MAX_STORE_COMMANDS
 #define TASH_MAX_STORE        (CONFIG_TASH_MAX_STORE_COMMANDS)
