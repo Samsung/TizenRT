@@ -181,7 +181,7 @@ config ENABLE_PS
 config ENABLE_STACKMONITOR
 	bool "Stack monitor"
 	default n
-	depends on !FS_PROCFS_EXCLUDE_PROCESS
+	depends on FS_PROCFS && !FS_PROCFS_EXCLUDE_PROCESS
 	select STACK_COLORATION
 	---help---
 		The stack monitor is a daemon that will periodically assess
