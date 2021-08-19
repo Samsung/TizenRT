@@ -74,6 +74,7 @@
 #include <limits.h>
 
 #include "mbedtls/asn1.h"
+#include "mbedtls/asn1write.h"
 
 #include "mbedtls/alt/common.h"
 
@@ -685,6 +686,61 @@ static void eckey_debug(const void *ctx, mbedtls_pk_debug_item *items)
 	items->value = &(((mbedtls_ecp_keypair *) ctx)->Q);
 }
 
+// pkbuild
+static int _eckey_buffer(mbedtls_ecp_keypair *ec, unsigned char *buf, size_t size)
+{
+	size_t len = 0;
+	int ret = 0;
+	unsigned char *c = buf + size;
+	//mbedtls_ecp_keypair *ec = mbedtls_pk_ec(*key);
+	size_t pub_len = 0, par_len = 0;
+
+	/*
+         * RFC 5915, or SEC1 Appendix C.4
+         *
+         * ECPrivateKey ::= SEQUENCE {
+         *      version        INTEGER { ecPrivkeyVer1(1) } (ecPrivkeyVer1),
+         *      privateKey     OCTET STRING,
+         *      parameters [0] ECParameters {{ NamedCurve }} OPTIONAL,
+         *      publicKey  [1] BIT STRING OPTIONAL
+         *    }
+         */
+
+	/* publicKey */
+	MBEDTLS_ASN1_CHK_ADD(pub_len, pk_write_ec_pubkey(&c, buf, ec));
+
+	if (c - buf < 1)
+		return (MBEDTLS_ERR_ASN1_BUF_TOO_SMALL);
+	*--c = 0;
+	pub_len += 1;
+
+	MBEDTLS_ASN1_CHK_ADD(pub_len, mbedtls_asn1_write_len(&c, buf, pub_len));
+	MBEDTLS_ASN1_CHK_ADD(pub_len, mbedtls_asn1_write_tag(&c, buf, MBEDTLS_ASN1_BIT_STRING));
+
+	MBEDTLS_ASN1_CHK_ADD(pub_len, mbedtls_asn1_write_len(&c, buf, pub_len));
+	MBEDTLS_ASN1_CHK_ADD(pub_len, mbedtls_asn1_write_tag(&c, buf,
+														 MBEDTLS_ASN1_CONTEXT_SPECIFIC | MBEDTLS_ASN1_CONSTRUCTED | 1));
+	len += pub_len;
+
+	/* parameters */
+	MBEDTLS_ASN1_CHK_ADD(par_len, pk_write_ec_param(&c, buf, ec));
+
+	MBEDTLS_ASN1_CHK_ADD(par_len, mbedtls_asn1_write_len(&c, buf, par_len));
+	MBEDTLS_ASN1_CHK_ADD(par_len, mbedtls_asn1_write_tag(&c, buf,
+														 MBEDTLS_ASN1_CONTEXT_SPECIFIC | MBEDTLS_ASN1_CONSTRUCTED | 0));
+	len += par_len;
+
+	/* privateKey: write as MPI then fix tag */
+	MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_mpi(&c, buf, &ec->d));
+	*c = MBEDTLS_ASN1_OCTET_STRING;
+
+	/* version */
+	MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_int(&c, buf, 1));
+
+	MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_len(&c, buf, len));
+	MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_tag(&c, buf, MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE));
+}
+
 int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len)
 {
 	int ret = 0;
@@ -836,68 +892,146 @@ FREE:
 	return ret;
 }
 
-int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, unsigned char *sig, size_t *sig_len, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
+int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg,
+					const unsigned char *hash, size_t hash_len,
+					unsigned char *sig, size_t *sig_len,
+					int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
 {
 	int ret;
 	mbedtls_ecdsa_context ecdsa;
 	hal_ecdsa_mode ecdsa_mode;
 	sl_ctx shnd;
 
-		mbedtls_ecdsa_init(&ecdsa);
+	mbedtls_ecdsa_init(&ecdsa);
 
-	if ((ret = mbedtls_ecdsa_from_keypair(&ecdsa, ctx)) == 0) {
-		lldbg("[PB] %p %d %d\n", __builtin_return_address(0),
-			  (((mbedtls_ecp_keypair *)ctx)->grp).key_index,
-			  (((mbedtls_ecp_keypair *)ctx)->key_index));
+	if ((ret = mbedtls_ecdsa_from_keypair(&ecdsa, ctx)) != 0) {
+		return MBEDTLS_ERR_ECP_INVALID_KEY;
+	}
 
-		unsigned int key_idx = (((mbedtls_ecp_keypair *)ctx)->grp).key_index = (((mbedtls_ecp_keypair *)ctx)->key_index);
-		unsigned int curve = ecdsa.grp.id;
+	/*  Get DER key*/
+// pkbuild
+unsigned int pubkey_buflen = MBEDTLS_MAX_BUF_SIZE_ALT;
+unsigned char *prikey_buf = (unsigned char *)malloc(pubkey_buflen);
+hal_key_type key_type;
+int key_idx = 32;
 
-		hal_data t_hash = {
-			0,
-		};
-		t_hash.data = (unsigned char *)malloc(hash_len);
-		if (t_hash.data == NULL) {
-			return MBEDTLS_ERR_ECP_ALLOC_FAILED;
-		}
-		memcpy(t_hash.data, hash, hash_len);
-		t_hash.data_len = hash_len;
+	if (prikey_buf == NULL) {
+		return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+	}
+	int len = _eckey_buffer((mbedtls_ecp_keypair *)ctx, prikey_buf, pubkey_buflen);
 
-		mbedtls_ecdsa_free(&ecdsa);
-		/*
+	if ((len <= 0)) {
+		free(prikey_buf);
+		return MBEDTLS_ERR_ECP_INVALID_KEY;
+	}
+
+	/*
+	lldbg("[PB] %p %d %d\n", __builtin_return_address(0),
+		  (((mbedtls_ecp_keypair *)ctx)->grp).key_index,
+		  (((mbedtls_ecp_keypair *)ctx)->key_index));
+
+	unsigned int key_idx = (((mbedtls_ecp_keypair *)ctx)->grp).key_index = (((mbedtls_ecp_keypair *)ctx)->key_index);
+	*/
+	unsigned int curve = ecdsa.grp.id;
+
+	hal_data t_hash = {0,};
+	t_hash.data = (unsigned char *)malloc(hash_len);
+	if (t_hash.data == NULL) {
+		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+	}
+	memcpy(t_hash.data, hash, hash_len);
+	t_hash.data_len = hash_len;
+
+	mbedtls_ecdsa_free(&ecdsa);
+	/*
 		 * 1. Check hash algorithm and sign curve
 		 */
-		ret = ecdsa_get_mode(md_alg, curve, &ecdsa_mode);
-		if (ret) {
-			free(t_hash.data);
-			return ret;
-		}
-
-		/*
-		 * 2. Sign
-		 */
-		hal_data sign = {sig, 0, NULL, 0};
-
-		ret = sl_init(&shnd);
-		if (ret != SECLINK_OK) {
-			free(t_hash.data);
-			return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-		}
-
-		ret = sl_ecdsa_sign_md(shnd, ecdsa_mode, &t_hash, key_idx, &sign);
-		sl_deinit(shnd);
+	ret = ecdsa_get_mode(md_alg, curve, &ecdsa_mode);
+	if (ret) {
 		free(t_hash.data);
-		if (ret != SECLINK_OK) {
-			return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-		}
-
-		/* Use r and s to generate signature */
-		*sig_len = sign.data_len;
 		return ret;
 	}
 
-	return MBEDTLS_ERR_ECP_INVALID_KEY;
+	/*
+		 * 2. Sign
+		 */
+	hal_data sign = {sig, 0, NULL, 0};
+
+	ret = sl_init(&shnd);
+	if (ret != SECLINK_OK) {
+		free(t_hash.data);
+		return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+	}
+
+	hal_data prikey = {0,};
+	prikey.data_len = len;
+	prikey.data = (unsigned char *)malloc(len);
+	if (!prikey.data) {
+		// ToDo
+		return -1;
+	}
+	memcpy(prikey.data, prikey_buf + pubkey_buflen - len, len);
+	switch (curve) {
+//case MBEDTLS_ECP_DP_SECP192R1:
+	//case MBEDTLS_ECP_DP_SECP224R1:
+	case MBEDTLS_ECP_DP_SECP256R1:
+		key_type = HAL_KEY_ECC_SEC_P256R1;
+		break;
+	case MBEDTLS_ECP_DP_SECP384R1:
+		key_type = HAL_KEY_ECC_SEC_P384R1;
+		break;
+	case MBEDTLS_ECP_DP_SECP521R1:
+		key_type = HAL_KEY_ECC_SEC_P512R1;
+		break;
+	case MBEDTLS_ECP_DP_BP256R1:
+		key_type = HAL_KEY_ECC_BRAINPOOL_P256R1;
+		break;
+	case MBEDTLS_ECP_DP_BP384R1:
+		key_type = HAL_KEY_ECC_BRAINPOOL_P384R1;
+		break;
+	case MBEDTLS_ECP_DP_BP512R1:
+		key_type = HAL_KEY_ECC_BRAINPOOL_P512R1;
+		break;
+	//case MBEDTLS_ECP_DP_CURVE25519:
+	//case MBEDTLS_ECP_DP_SECP192K1:
+	//case MBEDTLS_ECP_DP_SECP224K1:
+	//case MBEDTLS_ECP_DP_SECP256K1:
+	default:
+		printf("[pkbuild] unknown");
+		break;
+	}
+
+	while (1) {
+		ret = sl_set_key(shnd, key_type, key_idx, NULL, &prikey);
+		if (ret != SECLINK_OK) {
+			if (ret == SECLINK_KEY_IN_USE) {
+				key_idx++;
+				if (key_idx == SECLINK_MAX_RAM_KEY) {
+					ret = MBEDTLS_ERR_RSA_PUBLIC_FAILED;
+					free(prikey_buf);
+					free(prikey.data);
+					return ; // todo 
+				}
+				continue;
+			}
+		}
+		free(prikey_buf);
+		free(prikey.data);
+		break;
+	}
+
+	ret = sl_ecdsa_sign_md(shnd, ecdsa_mode, &t_hash, key_idx, &sign);
+	sl_deinit(shnd);
+	free(t_hash.data);
+	if (ret != SECLINK_OK) {
+		return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+	}
+
+	/* Use r and s to generate signature */
+	*sig_len = sign.data_len;
+	return ret;
 }
+
 
 const mbedtls_pk_info_t mbedtls_eckey_info = {
 	MBEDTLS_PK_ECKEY,

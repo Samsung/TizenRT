@@ -13,7 +13,8 @@
 #include <string.h>
 
 #define SERVER_PORT "4433"
-#define SERVER_ADDR "127.0.0.1"
+//#define SERVER_ADDR "127.0.0.1"
+#define SERVER_ADDR "192.168.50.164"
 #define SERVER_NAME ""
 #define GET_REQUEST "GET / HTTP/1.0\r\n\r\n"
 

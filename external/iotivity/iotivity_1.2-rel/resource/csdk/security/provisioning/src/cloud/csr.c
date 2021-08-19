@@ -292,6 +292,7 @@ static int GenerateCSR(char *subject, OCByteString *csr)
     memcpy(csr->bytes, buf + bufsize - ret, ret * sizeof(uint8_t));
     csr->len = ret;
     // Private key to output
+		// pkbuild
     ret = mbedtls_pk_write_key_der(key, buf, bufsize);
     if (ret < 0)
     {

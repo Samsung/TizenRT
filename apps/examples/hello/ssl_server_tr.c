@@ -80,7 +80,7 @@ int main(void)
 	"<p>Successful connection using: %s</p>\r\n"
 #define TLS_DATA "This is from SERVER"
 
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 3
 
 static char test_data[4100] = {
 	0,
@@ -158,10 +158,6 @@ static unsigned char rootca[] =
 	"AOh+ajEBIKgHNSm6amXOCTBg40J97MBfJflm2DEHLP6v\r\n"
 	"-----END CERTIFICATE-----\r\n";
 static int rootca_len = sizeof(rootca);
-
-static mbedtls_ecp_group_id g_server_curves[2] = {
-	MBEDTLS_ECP_DP_SECP256R1,
-	MBEDTLS_ECP_DP_NONE};
 
 int ssl_server(void)
 {
@@ -294,8 +290,12 @@ int ssl_server(void)
 		goto exit;
 	}
 
-	lldbg("[PB] set curve %p\n", g_server_curves);
-	mbedtls_ssl_conf_curves(&conf, (mbedtls_ecp_group_id *)g_server_curves);
+	static mbedtls_ecp_group_id server_curves[2] = {
+		MBEDTLS_ECP_DP_SECP256R1,
+		MBEDTLS_ECP_DP_NONE};
+
+	lldbg("[PB] set curve %p\n", server_curves);
+	mbedtls_ssl_conf_curves(&conf, (mbedtls_ecp_group_id *)server_curves);
 
 	int my_ciphersuite[2] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM, 0};
 	//{MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, 0},
