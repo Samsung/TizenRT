@@ -258,12 +258,15 @@ bool ble_tizenrt_send_callback_msg(uint16_t type, void *arg)
     if (ble_tizenrt_callback_queue_handle != NULL) {
 		if (os_msg_send(ble_tizenrt_callback_queue_handle, &callback_msg, 0) == false) {
 			printf("\r\n[%s] fail!!! msg_type 0x%x", __FUNCTION__, callback_msg.type);
+            return false;
 		} else {
             debug_print("\r\n[%s] success msg_type 0x%x", __FUNCTION__, callback_msg.type);
         }
 	} else {
         debug_print("\r\n[%s] ble_tizenrt_callback_queue_handle is NULL", __FUNCTION__);
+        return false;
     }
+    return true;
 }
 /**
  * @brief    Handle msg GAP_MSG_LE_DEV_STATE_CHANGE

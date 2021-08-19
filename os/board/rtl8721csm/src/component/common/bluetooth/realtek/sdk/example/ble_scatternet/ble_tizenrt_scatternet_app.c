@@ -240,6 +240,7 @@ bool ble_tizenrt_scatternet_send_callback_msg(uint16_t type, void *arg)
         }
 	} else {
         debug_print("\r\n[%s] ble_tizenrt_callback_queue_handle is NULL", __FUNCTION__);
+        return false;
     }
 	return true;
 }
