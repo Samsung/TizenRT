@@ -93,7 +93,7 @@ void up_restoretask(struct tcb_s *tcb)
 #endif
 
 #ifdef CONFIG_TASK_MONITOR
-		/* Update rtcb active flag for monitoring. */
+		/* Update tcb active flag for monitoring. */
 		tcb->is_active = true;
 #endif
 
