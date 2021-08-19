@@ -92,7 +92,7 @@ u32 ipc_get_message(u8 IPC_ChNum)
 	else if(CpuId == 0) 
 		IPC_DEV = IPCM4_DEV;
 	else
-		return NULL;//invalid CPU ID
+		return 0;//invalid CPU ID
 	if(IPC_ChNum > 10){
 		u32 Messages_address = IPC_DEV -> IPCx_USR[11];
 		DCache_Invalidate((u32)&(((u32*)Messages_address)[IPC_ChNum]), sizeof(u32));

@@ -429,7 +429,6 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 	int security_retry_count = 0;
 
 	wifi_utils_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
-	wifi_utils_ap_crypto_type_e crypto = ap_connect_config->ap_crypto_type;
 	ssid = ap_connect_config->ssid;
 	switch (auth) {
 	case WIFI_UTILS_AUTH_OPEN:
