@@ -535,13 +535,6 @@ void ble_tizenrt_central_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_S
                                  disc_cause);
             }
             printf("\r\n[BLE_TIZENRT] Disconnect conn_id %d", conn_id);
-            if(GAP_CAUSE_SUCCESS == le_bond_delete_by_bd(ble_tizenrt_central_app_link_table[conn_id].remote_bd,
-                            ble_tizenrt_central_app_link_table[conn_id].remote_bd_type))
-            {
-                debug_print("\r\n[%s] Delete bond success", __FUNCTION__);
-            } else {
-                debug_print("\r\n[%s] Delete bond fail!!!", __FUNCTION__);
-            }
             memset(&ble_tizenrt_central_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_APP_LINK));
             uint32_t connid = (uint32_t) conn_id;
             if(ble_tizenrt_central_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid) == false)
