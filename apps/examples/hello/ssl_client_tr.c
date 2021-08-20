@@ -13,8 +13,8 @@
 #include <string.h>
 
 #define SERVER_PORT "4433"
-//#define SERVER_ADDR "127.0.0.1"
-#define SERVER_ADDR "192.168.50.164"
+char *SERVER_ADDR = NULL;
+//#define SERVER_ADDR "192.168.50.164"
 #define SERVER_NAME ""
 #define GET_REQUEST "GET / HTTP/1.0\r\n\r\n"
 
@@ -51,10 +51,10 @@ static unsigned char rootca[] =
 
 static int rootca_len = sizeof(rootca);
 
-int ssl_client(void)
+int ssl_client(char *ipaddr)
 {
 	struct timespec ts;
-
+	SERVER_ADDR = ipaddr;
 	ts.tv_sec = 1612483200; // 2021-02-05 00:00:00
 	ts.tv_nsec = 0;
 

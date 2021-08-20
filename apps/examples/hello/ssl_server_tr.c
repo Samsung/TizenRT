@@ -293,12 +293,9 @@ int ssl_server(void)
 	static mbedtls_ecp_group_id server_curves[2] = {
 		MBEDTLS_ECP_DP_SECP256R1,
 		MBEDTLS_ECP_DP_NONE};
-
-	lldbg("[PB] set curve %p\n", server_curves);
 	mbedtls_ssl_conf_curves(&conf, (mbedtls_ecp_group_id *)server_curves);
 
 	int my_ciphersuite[2] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM, 0};
-	//{MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, 0},
 	mbedtls_ssl_conf_ciphersuites(&conf, my_ciphersuite);
 
 	if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {

@@ -4591,7 +4591,7 @@ write_msg:
     return( ret );
 }
 
-int mbedtls_ssl_parse_certificate( mbedtls_ssl_context *ssl ) // pkbuild
+int mbedtls_ssl_parse_certificate( mbedtls_ssl_context *ssl )
 {
     int ret = MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
     size_t i, n;

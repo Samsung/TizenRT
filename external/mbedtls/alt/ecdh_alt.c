@@ -71,7 +71,7 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 	unsigned char key_data[MBEDTLS_MAX_KEY_SIZE_ALT];
 	unsigned char key_priv[MBEDTLS_MAX_KEY_SIZE_ALT];
 	hal_data key = {key_data, sizeof(key_data), key_priv, sizeof(key_priv)};
-	lldbg("\n[PB] %d %p\n", grp->id, __builtin_return_address(0));
+
 	switch (grp->id) {
 	case MBEDTLS_ECP_DP_SECP192R1:
 		key_type = HAL_KEY_ECC_SEC_P192R1;
@@ -107,12 +107,10 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 		goto cleanup;
 	}
 
-	//key_type = HAL_KEY_ECC_SEC_P256R1; // pkbuild 
 	grp->key_index = ECP_KEY_INDEX;
 	while (1) {
 		ret = sl_generate_key(shnd, key_type, grp->key_index);
 		if (ret != SECLINK_OK) {
-			lldbg("[pkbuild] T%d generate fail %d\n", getpid(), ret);
 			if (ret == SECLINK_KEY_IN_USE) {
 				grp->key_index++;
 				if (grp->key_index == SECLINK_MAX_RAM_KEY) {

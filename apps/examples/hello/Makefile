@@ -59,13 +59,11 @@ include $(APPDIR)/Make.defs
 APPNAME = hello
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
-PRIORITY = 100
-STACKSIZE = 10240
 
 # Hello, World! Example
 
 ASRCS =
-CSRCS = ssl_server_tr.c ssl_client_tr.c
+CSRCS =
 MAINSRC = hello_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
