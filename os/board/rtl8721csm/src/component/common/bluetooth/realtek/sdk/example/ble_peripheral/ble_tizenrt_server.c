@@ -29,7 +29,7 @@ trble_result_e rtw_ble_server_init(trble_server_init_config* init_parm)
     if (init_parm == NULL || init_parm->profile == NULL || init_parm->profile_count == 0)
     {
         debug_print("\r\n[%s] Invalid parameters 0x%x 0x%x %d", __FUNCTION__, init_parm, init_parm->profile, init_parm->profile_count);
-        return TRBLE_FAIL;
+        return TRBLE_INVALID_ARGS;
     }
 
     server_profile_count = init_parm->profile_count;
@@ -377,7 +377,7 @@ trble_result_e rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
         return TRBLE_INVALID_STATE;
 
     if(length > 31)
-        return TRBLE_FAIL;
+        return TRBLE_INVALID_ARGS;
 
     rtw_ble_server_adv_into_idle();
 
@@ -401,7 +401,7 @@ trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
     }
 
     if(length > 31)
-        return TRBLE_FAIL;
+        return TRBLE_INVALID_ARGS;
 
     rtw_ble_server_adv_into_idle();
 
@@ -539,8 +539,8 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
 {
     if(bonded_device_list == NULL || device_count == NULL)
     {
-        printf("\r\n[%s] Invalid input", __FUNCTION__);
-        return TRBLE_FAIL;
+        debug_print("\r\n[%s] Invalid input", __FUNCTION__);
+        return TRBLE_INVALID_ARGS;
     }
 
     T_LE_KEY_ENTRY *p_entry;
@@ -572,8 +572,8 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
 {
     if(bond_addr == NULL)
     {
-        printf("\r\n[%s] Invalid input", __FUNCTION__);
-        return TRBLE_FAIL;
+        debug_print("\r\n[%s] Invalid input", __FUNCTION__);
+        return TRBLE_INVALID_ARGS;
     }
 
     trble_result_e ret = TRBLE_FAIL;
@@ -635,20 +635,22 @@ int rtw_ble_server_set_adv_type(trble_adv_type_e type, void *param)
     if(type == TRBLE_ADV_TYPE_DIRECT && param == NULL)
     {
         debug_print("\r\n[%s] Invalid Input", __FUNCTION__);
-        return TRBLE_FAIL;
+        return TRBLE_INVALID_ARGS;
     }
 
     uint8_t  adv_evt_type = type;
-    uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
-    uint8_t  adv_direct_addr[GAP_BD_ADDR_LEN] = {0};
-    if(adv_evt_type == TRBLE_ADV_TYPE_DIRECT)
-        memcpy(adv_direct_addr, param, sizeof(adv_direct_addr));
 
     rtw_ble_server_adv_into_idle();
 
     le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
-    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(adv_direct_addr), adv_direct_addr);
+    if(adv_evt_type == TRBLE_ADV_TYPE_DIRECT)
+    {
+        uint8_t  adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
+        uint8_t  adv_direct_addr[GAP_BD_ADDR_LEN] = {0};
+        memcpy(adv_direct_addr, param, sizeof(adv_direct_addr));
+        le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
+        le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(adv_direct_addr), adv_direct_addr);
+    }
     return TRBLE_SUCCESS;
 }
 #endif /* TRBLE_SERVER_C_ */
