@@ -11,12 +11,6 @@ config FILESYSTEM_TEST
 
 if FILESYSTEM_TEST
 
-config WRITE_REMOVE_TEST
-	bool "repeat write & remove test"
-	default n
-	---help---
-		Enable "rw_test" application
-
 config ROMFS_TEST
 	bool "romfs test"
 	default n

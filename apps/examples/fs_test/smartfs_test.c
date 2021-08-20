@@ -34,7 +34,7 @@
 #define USAGE                                                           \
 	"\n FS R/W Performance Test\n"                                      \
 	"\n Usage :     smartfs_test <operation> <path> <size> <iteration> <print_option>\n"  \
-	"\nOperation :  1.Read/Write / 2.Read / 3.Write\n"                  \
+	"\nOperation :  1.Read/Write / 2.Read / 3.Write / 4. Write/Remove \n"                  \
 	" Path :        Test File Path\n"                                   \
 	" Size :        Write/Read Data size\n"                             \
 	" Iteration :   Number of repetitions\n"                            \
@@ -48,6 +48,7 @@ enum TEST_OPTS {
 	TEST_OPT_WRITEREAD = 1,
 	TEST_OPT_READ = 2,
 	TEST_OPT_WRITE = 3,
+	TEST_OPT_WRITEREMOVE = 4,
 	TEST_OPT_MAX,
 };
 
@@ -165,6 +166,25 @@ static int fs_read(char *filepath, char *buf, size_t nbytes)
 	return OK;
 }
 
+static int fs_remove(char *filepath, void *buf, int nbytes)
+{
+	int ret;
+	long time;
+	long timediff;
+
+	time = get_time();
+	ret = unlink(filepath);
+	if (ret < 0) {
+		printf("%s errno: %d\n", __FUNCTION__, errno);
+		return ERROR;
+	}
+	timediff = get_time() - time;
+	g_total_time += timediff;
+	print_log("remove:%dms, ", timediff);
+
+	return OK;
+}
+
 static int write_read_test(char *filepath, void *buf, int nbytes, int iteration)
 {
 	int i;
@@ -212,6 +232,26 @@ static int read_test(char *filepath, void *buf, int nbytes, int iteration)
 
 	for (i = 0; i < iteration; i++) {
 		ret = fs_read(filepath, buf, nbytes);
+		if (ret < 0) {
+			return ERROR;
+		}
+	}
+
+	return OK;
+}
+
+static int write_remove_test(char *filepath, void *buf, int nbytes, int iteration)
+{
+	int i;
+	int ret;
+
+	for (i = 0; i < iteration; i++) {
+		ret = fs_write(filepath, buf, nbytes);
+		if (ret < 0) {
+			return ERROR;
+		}
+
+		ret = fs_remove(filepath, buf, nbytes);
 		if (ret < 0) {
 			return ERROR;
 		}
@@ -268,6 +308,9 @@ int smartfs_test_main(int argc, char *argv[])
 			break;
 		case TEST_OPT_READ:
 			ret = write_test(filepath, buf, size, iteration);
+			break;
+		case TEST_OPT_WRITEREMOVE:
+			ret = write_remove_test(filepath, buf, size, iteration);
 			break;
 		}
 		free(buf);
