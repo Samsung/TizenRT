@@ -74,8 +74,8 @@ ifeq ($(CONFIG_PROCFS_TEST),y)
 CSRCS += procfs_test.c
 endif
 
-ifeq ($(CONFIG_FS_RW_TEST),y)
-CSRCS += fs_rw_test.c
+ifeq ($(CONFIG_SMARTFS_TEST),y)
+CSRCS += smartfs_test.c
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -166,10 +166,10 @@ $(BUILTIN_REGISTRY)$(DELIM)procfs_test_main.bdat: $(DEPCONFIG) Makefile
 context: $(BUILTIN_REGISTRY)$(DELIM)procfs_test_main.bdat
 endif
 
-ifeq ($(CONFIG_FS_RW_TEST),y)
-$(BUILTIN_REGISTRY)$(DELIM)fs_rw_test_main.bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,fs_rw_test,fs_rw_test_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
-context: $(BUILTIN_REGISTRY)$(DELIM)fs_rw_test_main.bdat
+ifeq ($(CONFIG_SMARTFS_TEST),y)
+$(BUILTIN_REGISTRY)$(DELIM)smartfs_test_main.bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,smartfs_test,smartfs_test_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+context: $(BUILTIN_REGISTRY)$(DELIM)smartfs_test_main.bdat
 endif
 
 else
