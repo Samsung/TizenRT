@@ -58,10 +58,6 @@ THREADEXEC = TASH_EXECMD_ASYNC
 ASRCS =
 CSRCS =
 
-ifeq ($(CONFIG_WRITE_REMOVE_TEST),y)
-CSRCS += write_remove_test.c
-endif
-
 ifeq ($(CONFIG_ROMFS_TEST),y)
 CSRCS += romfs_test.c
 endif
@@ -141,12 +137,6 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_FILESYSTEM_TEST),yy)
-
-ifeq ($(CONFIG_WRITE_REMOVE_TEST),y)
-$(BUILTIN_REGISTRY)$(DELIM)write_remove_test_main.bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,write_remove,write_remove_test_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
-context: $(BUILTIN_REGISTRY)$(DELIM)write_remove_test_main.bdat
-endif
 
 ifeq ($(CONFIG_ROMFS_TEST),y)
 $(BUILTIN_REGISTRY)$(DELIM)romfs_test_main.bdat: $(DEPCONFIG) Makefile
