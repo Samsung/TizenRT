@@ -32,7 +32,7 @@
 #define WIFI_UTILS_MACADDR_LEN        6
 #define WIFI_UTILS_MACADDR_STR_LEN    17
 #define WIFI_UTILS_SSID_LEN           32
-#define WIFI_UTILS_PASSPHRASE_LEN     64
+#define WIFI_UTILS_PASSPHRASE_LEN     128
 
 /****************************************************************************
  * Enums

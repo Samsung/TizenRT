@@ -4,7 +4,7 @@
 #define TRWIFI_MACADDR_LEN			  6
 #define TRWIFI_MACADDR_STR_LEN		  17
 #define TRWIFI_SSID_LEN				  32
-#define TRWIFI_PASSPHRASE_LEN		  64
+#define TRWIFI_PASSPHRASE_LEN		  128
 
 /*  if serialization is failed then driver should let pass the fail event to applications*/
 #define TRWIFI_POST_SCANEVENT(dev, evt, scanlist)						\
