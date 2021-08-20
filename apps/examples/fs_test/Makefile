@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/fs_helper/Makefile
+# apps/examples/fs_test/Makefile
 #
 #   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -105,8 +105,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_FS_HELPER_PROGNAME ?= romfs_test(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_FS_HELPEFS_HELPERGNAME)
+CONFIG_EXAMPLES_FS_TEST_PROGNAME ?= fs_test(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_TEST_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -140,7 +140,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_FILESYSTEM_HELPER_ENABLE),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_FILESYSTEM_TEST),yy)
 
 ifeq ($(CONFIG_WRITE_REMOVE_TEST),y)
 $(BUILTIN_REGISTRY)$(DELIM)write_remove_test_main.bdat: $(DEPCONFIG) Makefile
