@@ -60,6 +60,11 @@
 
 #include <arch/board/board.h>
 
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
+
 #include "up_arch.h"
 #include "stm32f429i-disco.h"
 
@@ -74,6 +79,17 @@
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+
+#ifdef CONFIG_PRODCONFIG
+int up_check_prodswd(void)
+{
+	return OK;
+}
+int up_check_proddownload(void)
+{
+	return OK;
+}
+#endif
 
 /************************************************************************************
  * Name: stm32_boardinitialize

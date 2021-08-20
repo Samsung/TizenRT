@@ -77,6 +77,12 @@
 #include <tinyara/analog/adc.h>
 #include "imxrt_adc.h"
 #endif
+
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
+
 #ifdef CONFIG_IMXRT_SEMC_SDRAM
 #include "imxrt_semc_sdram.h"
 #endif
@@ -119,6 +125,16 @@
  ****************************************************************************/
 #define PORT_ASSIGN(a, b) (a >> (GPIO_PORT_SHIFT - 5) | b >> GPIO_PIN_SHIFT)
 
+#ifdef CONFIG_PRODCONFIG
+int up_check_prodswd(void)
+{
+	return OK;
+}
+int up_check_proddownload(void)
+{
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Name: imxrt_boardinitialize
