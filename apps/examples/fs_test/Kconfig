@@ -3,13 +3,13 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config FILESYSTEM_HELPER_ENABLE
-    bool "enable filesystem helper application"
+config FILESYSTEM_TEST
+    bool "enable filesystem test application"
     default n
         ---help---
-        enable filesystem helper application
+        enable filesystem test application
 
-if FILESYSTEM_HELPER_ENABLE
+if FILESYSTEM_TEST
 
 config WRITE_REMOVE_TEST
 	bool "repeat write & remove test"
@@ -53,4 +53,4 @@ config PROCFS_TEST
 	---help---
 		Enable "procfs_test" application
 
-endif #FILESYSTEM_HELPER_ENABLE
+endif #FILESYSTEM_TEST

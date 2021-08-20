@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_FILESYSTEM_HELPER_ENABLE),y)
-CONFIGURED_APPS += examples/fs_helper
+ifeq ($(CONFIG_FILESYSTEM_TEST),y)
+CONFIGURED_APPS += examples/fs_test
 endif
