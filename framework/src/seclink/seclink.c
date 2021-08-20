@@ -193,7 +193,7 @@ int sl_set_key(sl_ctx hnd,
 {
 	SL_CHECK_VALID(hnd);
 	SLC_LOGI(TAG, "--> hnd(%p) mode(%d) idx(%d)\n", hnd, mode, key_idx);
-	//lldbg("[pkbuild] T%d set key %d %p\n", getpid(), key_idx, __builtin_return_address(0));
+
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
 	struct seclink_key_info info = {mode, key_idx, key, prikey};
 	struct seclink_req req = {.req_type.key = &info, 0};
@@ -209,7 +209,7 @@ int sl_get_key(sl_ctx hnd,
 {
 	SL_CHECK_VALID(hnd);
 	SLC_LOGI(TAG, "--> hnd(%p) mode(%d) idx(%d)\n", hnd, mode, key_idx);
-	//lldbg("[pkbuild] T%d %d %p\n", getpid(), key_idx, __builtin_return_address(0));
+
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
 	struct seclink_key_info info = {mode, key_idx, key, NULL};
 	struct seclink_req req = {.req_type.key = &info, 0};
@@ -239,7 +239,7 @@ int sl_generate_key(sl_ctx hnd,
 {
 	SL_CHECK_VALID(hnd);
 	SLC_LOGI(TAG, "--> hnd(%p) mode(%d) idx(%d)\n", hnd, mode, key_idx);
-	//lldbg("[pkbuild] T%d generate key %d %p\n", getpid(), key_idx, __builtin_return_address(0));
+
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
 	struct seclink_key_info info = {mode, key_idx, NULL, NULL};
 	struct seclink_req req = {.req_type.key = &info, 0};
@@ -342,7 +342,6 @@ int sl_ecdsa_sign_md(sl_ctx hnd,
 	SL_CHECK_VALID(hnd);
 	SLC_LOGI(TAG, "--> hnd(%p) mode(%d %d) idx(%d)\n",
 			 hnd, mode.curve, mode.hash_t, key_idx);
-	//lldbg("[pkbuild] T%d ecdsa sign idx %d\n", getpid(), key_idx);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
 	struct seclink_auth_info info = {.auth_type.ecdsa_type = mode, key_idx, hash, .auth_data.data = sign};
@@ -361,7 +360,7 @@ int sl_ecdsa_verify_md(sl_ctx hnd,
 	SL_CHECK_VALID(hnd);
 	SLC_LOGI(TAG, "--> hnd(%p) mode(%d %d) idx(%d)\n",
 			 hnd, mode.curve, mode.hash_t, key_idx);
-	//lldbg("[pkbuild] T%d ecdsa verify idx %d\n", getpid(), key_idx);
+
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
 	struct seclink_auth_info info = {.auth_type.ecdsa_type = mode,
 									 key_idx,

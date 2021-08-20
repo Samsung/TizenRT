@@ -124,10 +124,8 @@ int mbedtls_pk_setup( mbedtls_pk_context *ctx, const mbedtls_pk_info_t *info )
     if( ctx == NULL || info == NULL || ctx->pk_info != NULL )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-		lldbg("[PB] %s %p %p\n", __FUNCTION__, info->ctx_alloc_func, info->ctx_free_func);
-    if( ( ctx->pk_ctx = info->ctx_alloc_func() ) == NULL ) {
-			return( MBEDTLS_ERR_PK_ALLOC_FAILED );
-		}
+    if( ( ctx->pk_ctx = info->ctx_alloc_func() ) == NULL )
+        return( MBEDTLS_ERR_PK_ALLOC_FAILED );
 
     ctx->pk_info = info;
 
@@ -270,7 +268,7 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
     return( mbedtls_pk_verify( ctx, md_alg, hash, hash_len, sig, sig_len ) );
 }
 
-/*+
+/*
  * Make a signature
  */
 int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
