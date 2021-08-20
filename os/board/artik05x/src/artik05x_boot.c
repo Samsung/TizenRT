@@ -61,6 +61,10 @@
 
 #include <tinyara/gpio.h>
 #include <tinyara/board.h>
+#ifdef CONFIG_HWCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
 
 #include "up_arch.h"
 #include "s5j_gpio.h"
@@ -204,6 +208,17 @@ static void artik05x_clear_bootcount(void)
 	putreg32(0, CONFIG_ARTIK05X_BOOT_COUNTS_ADDR);
 #endif
 }
+
+#ifdef CONFIG_PRODCONFIG
+int up_check_prodswd(void)
+{
+	return OK;
+}
+int up_check_proddownload(void)
+{
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Name: up_flashinitialize

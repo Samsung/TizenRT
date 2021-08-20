@@ -73,6 +73,12 @@
 #ifdef CONFIG_FLASH_PARTITION
 #include <tinyara/fs/mtd.h>
 #endif
+
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
+
 #include <../xtensa/xtensa.h>
 
 #if defined(CONFIG_ADC)
@@ -98,6 +104,17 @@ extern int esp_spiram_init();
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+
+#ifdef CONFIG_PRODCONFIG
+int up_check_prodswd(void)
+{
+	return OK;
+}
+int up_check_proddownload(void)
+{
+	return OK;
+}
+#endif
 
 /************************************************************************************
  * Name: esp32_board_initialize

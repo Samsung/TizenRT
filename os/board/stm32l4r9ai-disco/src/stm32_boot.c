@@ -51,8 +51,24 @@
 #include <arch/board/board.h>
 #include <arch/board/stm32l4r9i_discovery.h>
 
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
+
 #include "up_arch.h"
 #include "stm32l4r9ai-disco.h"
+
+#ifdef CONFIG_PRODCONFIG
+int up_check_prodswd(void)
+{
+	return OK;
+}
+int up_check_proddownload(void)
+{
+	return OK;
+}
+#endif
 
 /************************************************************************************
  * Name: stm32l4_board_initialize

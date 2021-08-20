@@ -65,6 +65,11 @@
 #include <tinyara/fs/ioctl.h>
 #endif
 
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
+
 #include "up_arch.h"
 #include "up_internal.h"
 #include "lm3s6965ek_internal.h"
@@ -80,6 +85,17 @@
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+
+#ifdef CONFIG_PRODCONFIG
+int up_check_prodswd(void)
+{
+	return OK;
+}
+int up_check_proddownload(void)
+{
+	return OK;
+}
+#endif
 
 /************************************************************************************
  * Name: tiva_boardinitialize

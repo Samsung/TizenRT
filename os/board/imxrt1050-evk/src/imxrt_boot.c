@@ -90,6 +90,11 @@
 #include "imxrt_wdog.h"
 #endif
 
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
+
 #ifdef CONFIG_ANALOG
 #include "imxrt_adc.h"
 #endif
@@ -135,6 +140,17 @@ static void imxrt_pwm_initialize(void)
 #endif
 	return;
 }
+
+#ifdef CONFIG_PRODCONFIG
+int up_check_prodswd(void)
+{
+	return OK;
+}
+int up_check_proddownload(void)
+{
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Name: imxrt_spi_initialize
