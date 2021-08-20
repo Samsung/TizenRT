@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,145 +15,211 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/**
- * @file procfs_test.c
- * @brief This is test application for proc file system.
- */
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-
-#include <sys/types.h>
-#include <sys/mount.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <ctype.h>
 #include <string.h>
+#include <sys/mount.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define BUFFER_SIZE 1024
+#define PROC_MOUNTPOINT "/proc"
+
+#define PROC_BUFFER_LEN 128
+#define PROC_FILEPATH_LEN CONFIG_PATH_MAX
+#define TASK_STACK_SIZE 512
+#define INTERVAL_UPDATE_SEC 10
+
+typedef int (*direntry_handler_t)(FAR const char *dirpath,
+								  FAR struct dirent *entryp,
+								  FAR void *pvarg);
+
 /****************************************************************************
- * Private data
+ * Private Data
  ****************************************************************************/
-struct pthread_arg {
-	int argc;
-	char **argv;
+
+const char *g_proc_pid_entries[] = {
+	"status",
+	"cmdline",
+#ifdef CONFIG_SCHED_CPULOAD
+	"loadavg",
+#endif
+	"stack",
+	"group/status",
+	"group/fd",
 };
 
 /****************************************************************************
- * Public Functions
+ * Private Functions
  ****************************************************************************/
-static int read_file(const char *srcpath)
+
+int foreach_proc_entry(direntry_handler_t handler)
 {
-	int nbytesread;
-	int rdfd;
-	static char buffer[BUFFER_SIZE];
+	DIR *dirp;
+	FAR const char *dirpath = PROC_MOUNTPOINT;
+	int ret = OK;
 
-	/* Open the source file for reading */
+	/* Open the directory */
+	dirp = opendir(dirpath);
 
-	rdfd = open(srcpath, O_RDONLY);
-	if (rdfd < 0) {
-		printf("ERROR: Failed to open %s for reading: %s\n", srcpath, strerror(errno));
-		return -1;
+	if (!dirp) {
+		/* Failed to open the directory */
+		printf("Error : no such %s: %s\n", "directory", dirpath);
+		return ERROR;
 	}
 
-	/* read the file */
-
+	/* Read each directory entry */
 	for (;;) {
-		do {
-			nbytesread = read(rdfd, buffer, BUFFER_SIZE);
-			if (nbytesread == 0) {
-				/* End of file */
+		struct dirent *entryp = readdir(dirp);
+		if (!entryp) {
+			/* Finished with this directory */
+			break;
+		}
 
-				close(rdfd);
-				return OK;
-			} else if (nbytesread < 0) {
-				/* EINTR is not an error (but will still stop the copy) */
-
-				printf("ERROR: Read failure: %s\n", strerror(errno));
-				return -1;
-			}
-			printf("read file string[%s]", buffer);
-
-		} while (nbytesread <= 0);
+		/* Call the handler with this directory entry */
+		if (handler(dirpath, entryp, NULL) < 0) {
+			/* The handler reported a problem */
+			ret = ERROR;
+			break;
+		}
 	}
-	close(rdfd);
+	closedir(dirp);
+	return ret;
+}
+
+int readfile(FAR const char *filepath)
+{
+	int fd;
+	ssize_t nread;
+	char buffer[PROC_BUFFER_LEN];
+
+	nread = 0;
+
+	/* Open the file */
+	fd = open(filepath, O_RDONLY);
+	if (fd < 0) {
+		printf("Failed to open %s\n", filepath);
+		return ERROR;
+	}
+
+	/* Initialize buffer for read operation */
+	memset(buffer, 0, PROC_BUFFER_LEN);
+
+	do {
+		nread = read(fd, buffer, PROC_BUFFER_LEN - 1);
+		if (nread < 0) {
+			/* Read error */
+			printf("Failed to read : %d\n", errno);
+			close(fd);
+			return ERROR;
+		}
+		buffer[nread] = '\0';
+		printf("%s", buffer);
+	} while (nread == PROC_BUFFER_LEN - 1);
+
+	printf("\n");
+
+	/* Close the file and return. */
+	close(fd);
+	return nread;
+}
+
+static int read_proc_entry(FAR const char *dirpath, FAR struct dirent *entryp, FAR void *pvarg)
+{
+	/* This function is for showing all file entries of /proc like uptime, version */
+	int ret;
+	char filepath[PROC_FILEPATH_LEN];
+
+	if (DIRENT_ISDIRECTORY(entryp->d_type)) {
+		/* Is a directory... skip this entry */
+		return OK;
+	}
+
+	snprintf(filepath, PROC_FILEPATH_LEN, "%s/%s", PROC_MOUNTPOINT, entryp->d_name);
+
+	printf("%s : ", entryp->d_name);
+
+	ret = readfile(filepath);
+	if (ret < 0) {
+		printf("Failed to read %s\n", filepath);
+		return ERROR;
+	}
+	printf("----------------------------------------\n");
+
 	return OK;
 }
 
-int procfs_commands(void *args)
+static int read_pid_entry(FAR const char *dirpath, FAR struct dirent *entryp, FAR void *pvarg)
 {
-	char filename[100] = "/proc/0/status";
+	/* This function is for showing all file entries of /proc/[pid] */
 	int ret;
+	int i;
+	char filepath[PROC_FILEPATH_LEN];
 
-	ret = read_file(filename);
-	if (ret < 0) {
-		printf("procfs error!\n");
-	} else {
-		printf("success procfs test!\n");
+	if (!DIRENT_ISDIRECTORY(entryp->d_type)) {
+		/* Not a directory... skip this entry */
+		return OK;
 	}
-	if (umount("/proc") < 0) {
-		printf("umount procfs fail\n");
-		return -1;
+
+	for (i = 0; i < NAME_MAX && entryp->d_name[i] != '\0'; i++) {
+		if (!isdigit(entryp->d_name[i])) {
+			/* Name contains something other than a numeric character */
+			return OK;
+		}
 	}
-	return 0;
+
+	printf("[TASK %s] \n", entryp->d_name);
+
+	for (i = 0; i < sizeof(g_proc_pid_entries) / sizeof(g_proc_pid_entries[0]); i++) {
+		/* Read values from entries of /proc/[pid] */
+		snprintf(filepath, PROC_FILEPATH_LEN, "%s/%s/%s", PROC_MOUNTPOINT, entryp->d_name, g_proc_pid_entries[i]);
+		ret = readfile(filepath);
+		if (ret < 0) {
+			printf("Failed to read %s\n", filepath);
+			return ERROR;
+		}
+	}
+	printf("----------------------------------\n");
+
+	return OK;
 }
 
 /****************************************************************************
- * fs_command_main
+ * proc_test_main
  ****************************************************************************/
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int procfs_test_main(int argc, char **argv)
+int proc_test_main(int argc, char *argv[])
 #endif
 {
-	pthread_t tid;
-	pthread_attr_t attr;
-	struct sched_param sparam;
-	int r;
+	int ret;
 
-	struct pthread_arg args;
+	printf("Proc Test START!!\n");
 
-	args.argc = argc;
-	args.argv = argv;
-
-	/* Initialize the attribute variable */
-	r = pthread_attr_init(&attr);
-	if (r != 0) {
-		printf("%s: pthread_attr_init failed, status=%d\n", __func__, r);
+	ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
+	if (ret == ERROR && errno != EEXIST) {
+		printf("Failed to mount procfs : %d\n", errno);
+		return 0;
 	}
 
-	/* 1. set a priority */
-	sparam.sched_priority = 100;
-	r = pthread_attr_setschedparam(&attr, &sparam);
-	if (r != 0) {
-		printf("%s: pthread_attr_setschedparam failed, status=%d\n", __func__, r);
+	while (1) {
+		foreach_proc_entry(read_proc_entry);
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_PROCESS
+		foreach_proc_entry(read_pid_entry);
+#endif
+		sleep(INTERVAL_UPDATE_SEC);
 	}
-
-	r = pthread_attr_setschedpolicy(&attr, SCHED_RR);
-	if (r != 0) {
-		printf("%s: pthread_attr_setschedpolicy failed, status=%d\n", __func__, r);
-	}
-
-	/* 2. set a stacksize */
-	r = pthread_attr_setstacksize(&attr, 51200);
-	if (r != 0) {
-		printf("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, r);
-	}
-
-	/* 3. create pthread with entry function */
-	r = pthread_create(&tid, &attr, (pthread_startroutine_t)procfs_commands, (void *)&args);
-	if (r != 0) {
-		printf("%s: pthread_create failed, status=%d\n", __func__, r);
-	}
-
-	/* Wait for the threads to stop */
-	pthread_join(tid, NULL);
 
 	return 0;
 }
