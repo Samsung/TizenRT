@@ -74,7 +74,7 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 	/* Read the same backup register for the boot reason */
 	boot_reason = BKUP_Read(BKUP_REG1);
 
-	if (boot_reason != REBOOT_REASON_INITIALIZED) {
+	if ((boot_reason != REBOOT_REASON_INITIALIZED) && (boot_reason != 0)) {
 		return boot_reason;
 	} else {
 		/* Read AmebaD Boot Reason, WDT and HW reset supported */
