@@ -1334,8 +1334,6 @@ void app_start(void)
 	/* enable non-secure cache */
 	Cache_Enable(ENABLE);
 
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO,"KM4 BOOT REASON: %x \n", BOOT_Reason());
-
 	SystemCoreClockUpdate();
 
 	SOCPS_InitSYSIRQ_HP();
