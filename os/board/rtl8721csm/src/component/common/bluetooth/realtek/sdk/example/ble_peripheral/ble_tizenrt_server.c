@@ -670,7 +670,8 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
         p_entry = le_find_key_entry_by_idx(i);
         if (p_entry != NULL) 
         {
-            memcpy(bonded_device_list[*device_count].bd_addr, p_entry->remote_bd.addr, TRBLE_BD_ADDR_MAX_LEN);
+            memcpy(bonded_device_list[*device_count].bd_addr.mac, p_entry->remote_bd.addr, TRBLE_BD_ADDR_MAX_LEN);
+            bonded_device_list[*device_count].bd_addr.type = p_entry->remote_bd.remote_bd_type;
             (*device_count)++;
             debug_print("\r\nbond_dev[%d]: bd 0x%02x%02x%02x%02x%02x%02x, addr_type %d",
                             p_entry->idx,

@@ -17,8 +17,13 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <string.h>
+#include <mqueue.h>
+#include <errno.h>
+#include <unistd.h>
 #include <tinyara/ble/ble_manager.h>
 #include <ble_manager/ble_manager.h>
+#include "ble_manager_common.h"
+#include "ble_manager_autoconnect.h"
 #include "ble_manager_event.h"
 #include "ble_manager_msghandler.h"
 #include "ble_manager_state.h"
@@ -50,7 +55,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 {
 	trble_result_e ret = TRBLE_FAIL;
 
-	BLE_LOG_INFO("[BLEMGR] T%d --> _handle_request[%d]\n", getpid(), msg->event);
+	BLE_LOG_DEBUG("[BLEMGR] T%d --> _handle_request[%d]\n", getpid(), msg->event);
 
 	switch (msg->event) {
 	case BLE_EVT_CMD_INIT: {
@@ -261,6 +266,75 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
+	case BLE_EVT_CMD_CLIENT_ENABLE_AUTOCONNECT: {
+		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;
+
+		if (ctx == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+
+		if (ctx->state != BLE_CLIENT_IDLE && ctx->state != BLE_CLIENT_CONNECTED) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+
+		ctx->auto_connect = true;
+		ret = TRBLE_SUCCESS;
+	} break;
+
+	case BLE_EVT_CMD_CLIENT_DISABLE_AUTOCONNECT: {
+		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;
+		ret = TRBLE_SUCCESS;		
+
+		if (ctx == NULL || ctx->mqfd <= 0) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+		
+		if (ctx->state != BLE_CLIENT_AUTOCONNECTING) {
+			/* This is good state */
+			ctx->auto_connect = false;
+			break;
+		}
+
+		char buf[BLE_MQ_SIZE] = { 0, };
+		buf[0] = BLE_AUTOCON_EVT_CANCEL;
+		int status = mq_send(ctx->mqfd, buf, BLE_MQ_SIZE, 0);
+		if (status < 0) {
+			BLE_LOG_ERROR("[BLEMGR] fail to send mqueue(evt : %d)[%d]\n", msg->event, errno);
+			ret = TRBLE_FILE_ERROR;
+			break;
+		}
+	} break;
+
+	case BLE_EVT_CMD_CLIENT_RECONNECT: {
+		BLE_STATE_CHECK;
+
+		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;
+
+		if (ctx == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+
+		if (ctx->state != BLE_CLIENT_IDLE && ctx->state != BLE_CLIENT_AUTOCONNECTING) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+
+		if (ctx->state == BLE_CLIENT_IDLE) {
+			ctx->state = BLE_CLIENT_CONNECTING;
+			break;
+		}
+		
+		ret = ble_drv_client_connect((trble_conn_info *)&(ctx->info));
+		if (ret != TRBLE_SUCCESS) {
+			ctx->state = BLE_CLIENT_IDLE;
+			memset(&(ctx->info), 0, sizeof(ble_conn_info));
+		}
+	} break;
+
 	case BLE_EVT_CMD_CLIENT_DISCONNECT: {
 		BLE_STATE_CHECK;
 
@@ -270,15 +344,25 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			break;
 		}
 
-		if (ctx->state != BLE_CLIENT_CONNECTED) {
-			ret = TRBLE_INVALID_STATE;
-			break;
-		}
-
-		ctx->state = BLE_CLIENT_DISCONNECTING;
-		ret = ble_drv_client_disconnect(ctx->conn_handle);
-		if (ret != TRBLE_SUCCESS) {
-			ctx->state = BLE_CLIENT_CONNECTED;
+		ret = TRBLE_SUCCESS;
+		if (ctx->state == BLE_CLIENT_CONNECTED) {
+			ctx->state = BLE_CLIENT_DISCONNECTING;
+			ctx->auto_connect = false;
+			ret = ble_drv_client_disconnect(ctx->conn_handle);
+			if (ret != TRBLE_SUCCESS) {
+				ctx->state = BLE_CLIENT_CONNECTED;
+			}
+		} else if (ctx->state == BLE_CLIENT_CONNECTING) {
+			ret = TRBLE_INVALID_STATE;		
+		} else if (ctx->state == BLE_CLIENT_AUTOCONNECTING) {
+			char buf[BLE_MQ_SIZE] = { 0, };
+			buf[0] = BLE_AUTOCON_EVT_CANCEL;
+			int status = mq_send(ctx->mqfd, buf, BLE_MQ_SIZE, 0);
+			if (status < 0) {
+				BLE_LOG_ERROR("[BLEMGR] fail to send mqueue(evt : %d)[%d]\n", msg->event, errno);
+				ret = TRBLE_FILE_ERROR;
+				break;
+			}
 		}
 	} break;
 
@@ -542,14 +626,31 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		int i;
 		ble_client_ctx *ctx = NULL;
+		ble_client_state_e priv_state = BLE_CLIENT_NONE;
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
-			if (g_client_table[i].state == BLE_CLIENT_CONNECTING && memcmp(g_client_table[i].info.addr.mac, data->conn_info.addr.mac, BLE_BD_ADDR_MAX_LEN) == 0) {
-				g_client_table[i].state = BLE_CLIENT_CONNECTED;
-				g_client_table[i].conn_handle = data->conn_handle;
-				g_client_table[i].is_bonded = data->is_bonded;
-				memcpy(&(g_client_table[i].info), &(data->conn_info), sizeof(ble_conn_info));
-				ctx = &g_client_table[i];
-				break;
+			if (memcmp(g_client_table[i].info.addr.mac, data->conn_info.addr.mac, BLE_BD_ADDR_MAX_LEN) == 0) {
+				if (g_client_table[i].state == BLE_CLIENT_CONNECTING || g_client_table[i].state == BLE_CLIENT_AUTOCONNECTING) {
+					priv_state = g_client_table[i].state;
+					g_client_table[i].state = BLE_CLIENT_CONNECTED;
+					g_client_table[i].conn_handle = data->conn_handle;
+					g_client_table[i].is_bonded = data->is_bonded;
+
+					memcpy(&(g_client_table[i].info.addr), &(data->conn_info.addr), sizeof(trble_addr));
+					g_client_table[i].info.conn_interval = data->conn_info.conn_interval;
+					g_client_table[i].info.slave_latency = data->conn_info.slave_latency;
+					g_client_table[i].info.mtu = data->conn_info.mtu;
+					ctx = &g_client_table[i];
+					break;
+				}
+			}
+		}
+
+		if (priv_state == BLE_CLIENT_AUTOCONNECTING) {
+			char buf[BLE_MQ_SIZE] = { 0, };
+			buf[0] = BLE_AUTOCON_EVT_CONNECTED;
+			int status = mq_send(ctx->mqfd, buf, BLE_MQ_SIZE, 0);
+			if (status < 0) {
+				BLE_LOG_ERROR("[BLEMGR] fail to send mqueue(evt : %d)[%d]\n", msg->event, errno);
 			}
 		}
 
@@ -566,16 +667,41 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		int i;
 		ble_conn_handle data = *(ble_conn_handle *)msg->param;
 		ble_client_ctx *ctx = NULL;
+		ble_client_state_e priv_state = BLE_CLIENT_NONE;
 
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
 			if (g_client_table[i].state != BLE_CLIENT_NONE && g_client_table[i].conn_handle == data) {
-				g_client_table[i].state = BLE_CLIENT_IDLE;
 				ctx = &g_client_table[i];
 				break;
 			}
 		}
 
-		if (ctx && ctx->callbacks.ble_client_device_disconnected_cb) {
+		if (ctx == NULL) {
+			free(msg->param);
+			break;
+		}
+
+		priv_state = ctx->state;
+		if (ctx->auto_connect == true) {
+			if (ctx->state == BLE_CLIENT_AUTOCONNECTING) {
+				char buf[BLE_MQ_SIZE] = { 0, };
+				buf[0] = BLE_AUTOCON_EVT_DISCONNECTED;
+				int status = mq_send(ctx->mqfd, buf, BLE_MQ_SIZE, 0);
+				if (status < 0) {
+					BLE_LOG_ERROR("[BLEMGR] fail to send mqueue(evt : %d)[%d]\n", msg->event, errno);
+				}
+			} else {
+				ctx->state = BLE_CLIENT_AUTOCONNECTING;
+				ble_autocon_result_e result = ble_manager_autoconnect(ctx);
+				if (result != BLE_AUTOCON_SUCCESS) {
+					BLE_LOG_ERROR("[BLEMGR] auto connnect fail[%d]\n", result);
+				}
+			}
+		} else {
+			ctx->state = BLE_CLIENT_IDLE;
+		}
+
+		if (priv_state != BLE_CLIENT_AUTOCONNECTING && ctx->callbacks.ble_client_device_disconnected_cb) {
 			ctx->callbacks.ble_client_device_disconnected_cb(ctx);
 		}
 		free(msg->param);
@@ -641,6 +767,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	}
 
 handle_req_done:
-	BLE_LOG_INFO("[BLEMGR] T%d <-- _handle_request\n", getpid());
+	BLE_LOG_DEBUG("[BLEMGR] T%d <-- _handle_request\n", getpid());
 	return _convert_ret(ret);
 }

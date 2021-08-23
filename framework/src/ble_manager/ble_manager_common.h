@@ -15,22 +15,32 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #pragma once
 
-#include <errno.h>
-/**
- * Logging
- */
-#define BLE_TAG "[LE]"
+#include <mqueue.h>
+#include <ble_manager/ble_manager.h>
 
-#define BLE_LOG_VERBOSE printf
-#define BLE_LOG_INFO printf
-#define BLE_LOG_DEBUG(...)
-#define BLE_LOG_ERROR printf
+typedef struct _ble_client_ctx {
+	ble_conn_handle conn_handle;
+	volatile ble_client_state_e state;
+	ble_conn_info info;
+	bool is_bonded;
+	bool auto_connect;
+	mqd_t mqfd;
+	ble_client_callback_list callbacks;
+} ble_client_ctx;
 
-#define BLE_ERR												\
-	do {													\
-		BLE_LOG_ERROR(BLE_TAG"[ERR] %s: %d line err(%s)\n",	\
-					 __FILE__, __LINE__, strerror(errno));	\
-	} while (0)
+typedef struct _ble_scan_ctx {
+	volatile ble_scan_state_e state;
+	ble_scan_filter filter;
+	ble_scan_callback_list callback;
+} ble_scan_ctx;
+
+typedef struct _ble_server_ctx {
+	ble_conn_handle conn_handle;
+	volatile ble_server_state_e state;
+	bool is_secured_connect_allowed;
+	ble_server_gatt_t *profile;
+	uint16_t profile_count;
+	ble_server_connected_t callback;
+} ble_server_ctx;

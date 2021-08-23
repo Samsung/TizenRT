@@ -24,6 +24,9 @@
 #include <tinyara/ble/ble_manager.h>
 #include "rtk_ble_utils.h"
 
+/* This value is between 5 and 95 */
+#define WIFI_TIME_SLOT 56
+
 #define TRBLE_TEST_LOG printf("[TRBLE] %s : %s \n", __FILE__, __FUNCTION__)
 #define TRBLE_TEST_INFO printf
 #define TRBLE_TEST_ERR printf
@@ -123,6 +126,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_stop_adv,
 };
 
+extern int rltk_coex_set_ble_scan_duty(uint8_t duty);
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server)
 {
 	trble_result_e ret = TRBLE_INVALID_ARGS;
@@ -143,6 +147,8 @@ trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *c
 		ret = rtw_ble_server_init(server);
 	}
 #endif
+	/* Set WiFi time slot */
+	(void)rltk_coex_set_ble_scan_duty(WIFI_TIME_SLOT);
 	if (ret == TRBLE_SUCCESS) {
 		ret = rtw_ble_server_get_mac_address(dev->hwaddr);
 
@@ -184,7 +190,7 @@ trble_result_e trble_netmgr_get_bonded_device(struct bledev *dev, trble_bonded_d
 	
 	if (ret == TRBLE_SUCCESS) {
 		for (i = 0; i < *device_count; i++) {
-			_reverse_mac(device_list[i].bd_addr);
+			_reverse_mac(device_list[i].bd_addr.mac);
 		}
 	}
 

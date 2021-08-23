@@ -46,6 +46,7 @@ typedef enum {
 	BLE_CLIENT_CONNECTED,
 	BLE_CLIENT_CONNECTING,
 	BLE_CLIENT_DISCONNECTING,
+	BLE_CLIENT_AUTOCONNECTING,
 } ble_client_state_e;
 
 typedef struct {
@@ -151,6 +152,8 @@ ble_result_e ble_client_stop_scan(void);
  *
  ****************************************************************************/
 ble_result_e ble_client_connect(ble_client_ctx *ctx, ble_conn_info* conn_info);
+ble_result_e ble_client_reconnect(ble_client_ctx *ctx);
+ble_result_e ble_client_autoconnect(ble_client_ctx *ctx, bool is_auto);
 
 /****************************************************************************
  * Name: ble_client_disconnect

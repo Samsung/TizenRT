@@ -43,7 +43,7 @@ typedef enum {
 } blemgr_mode_e;
 
 typedef struct _ble_bonded_device_list {
-	uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN];
+	ble_addr bd_addr;
 } ble_bonded_device_list;
 
 /****************************************************************************
