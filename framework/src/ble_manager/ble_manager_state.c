@@ -347,7 +347,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = TRBLE_SUCCESS;
 		if (ctx->state == BLE_CLIENT_CONNECTED) {
 			ctx->state = BLE_CLIENT_DISCONNECTING;
-			ctx->auto_connect = false;
 			ret = ble_drv_client_disconnect(ctx->conn_handle);
 			if (ret != TRBLE_SUCCESS) {
 				ctx->state = BLE_CLIENT_CONNECTED;
@@ -682,7 +681,8 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 
 		priv_state = ctx->state;
-		if (ctx->auto_connect == true) {
+		if (ctx->auto_connect == true && 
+				(priv_state == BLE_CLIENT_CONNECTED || priv_state == BLE_CLIENT_AUTOCONNECTING)) {
 			if (ctx->state == BLE_CLIENT_AUTOCONNECTING) {
 				char buf[BLE_MQ_SIZE] = { 0, };
 				buf[0] = BLE_AUTOCON_EVT_DISCONNECTED;
