@@ -164,7 +164,9 @@
  *
  * Comment if your system does not have a correct clock.
  */
-//pkbuild #define MBEDTLS_HAVE_TIME_DATE
+#ifndef CONFIG_TLS_HAVE_NO_TIME_DATE
+#define MBEDTLS_HAVE_TIME_DATE
+#endif
 
 /**
  * \def MBEDTLS_PLATFORM_MEMORY
