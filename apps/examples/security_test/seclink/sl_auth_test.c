@@ -412,7 +412,7 @@ END_TEST_F
 TESTCASE_SETUP(ed25519_verify)
 {
 	hal_data pub_key = {&g_ed25519_pubkey, sizeof(g_ed25519_pubkey), NULL, 0};
-	hal_data priv_key = {&g_ed25519_privkey, sizeof(g_ed25519_privkey_only), NULL, 0};
+	hal_data priv_key = {&g_ed25519_privkey_only, sizeof(g_ed25519_privkey_only), NULL, 0};
 
 	ST_EXPECT_EQ(0, sl_set_key(g_hnd, HAL_KEY_ECC_25519, RW_SLOT_ENTRY, &pub_key, &priv_key));
 

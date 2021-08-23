@@ -246,7 +246,7 @@ security_error auth_verify_ecdsa_signature(security_handle hnd,
 	hal_data h_sign = {sign->data, sign->length, NULL, 0};
 
 	SECAPI_CALL(sl_ecdsa_verify_md(ctx->sl_hnd, hmode, &h_hash, &h_sign, key_idx));
-SECAPI_RETURN(SECURITY_OK);
+	SECAPI_RETURN(SECURITY_OK);
 }
 
 security_error auth_get_hash(security_handle hnd, security_hash_mode mode, security_data *data, security_data *hash)

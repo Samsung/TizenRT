@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2019 Samsung Electronics All Rights Reserved.
+# Copyright 2021 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-SRC_ALT_CSRCS = dhm_alt.c ecdh_alt.c entropy_poll_alt.c pk_wrap_alt.c alt_utils.c
+ifeq ($(CONFIG_EXAMPLES_TLS_HANDSHAKE),y)
+CONFIGURED_APPS += examples/performance/tls_handshake
+endif
 
-DEPPATH	+= --dep-path alt
-VPATH   += :alt

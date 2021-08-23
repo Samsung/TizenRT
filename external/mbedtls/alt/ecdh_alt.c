@@ -15,7 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 /*
  *  Elliptic curve Diffie-Hellman
  *
@@ -36,7 +35,6 @@
  *
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
-
 /*
  * References:
  *
@@ -62,8 +60,12 @@
 #include <string.h>
 
 #include "mbedtls/alt/common.h"
+#include "alt_utils.h"
+
 #if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)
-int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
+int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp,
+							mbedtls_mpi *d, mbedtls_ecp_point *Q,
+							int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
 {
 	unsigned int ret;
 	hal_key_type key_type;
@@ -72,35 +74,11 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 	unsigned char key_priv[MBEDTLS_MAX_KEY_SIZE_ALT];
 	hal_data key = {key_data, sizeof(key_data), key_priv, sizeof(key_priv)};
 
-	switch (grp->id) {
-	case MBEDTLS_ECP_DP_SECP192R1:
-		key_type = HAL_KEY_ECC_SEC_P192R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP224R1:
-		key_type = HAL_KEY_ECC_SEC_P224R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP256R1:
-		key_type = HAL_KEY_ECC_SEC_P256R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP384R1:
-		key_type = HAL_KEY_ECC_SEC_P384R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP521R1:
-		key_type = HAL_KEY_ECC_SEC_P512R1;
-		break;
-	case MBEDTLS_ECP_DP_BP256R1:
-		key_type = HAL_KEY_ECC_BRAINPOOL_P256R1;
-		break;
-	case MBEDTLS_ECP_DP_BP384R1:
-		key_type = HAL_KEY_ECC_BRAINPOOL_P384R1;
-		break;
-	case MBEDTLS_ECP_DP_BP512R1:
-		key_type = HAL_KEY_ECC_BRAINPOOL_P512R1;
-		break;
-	default:
+	if ((key_type = alt_get_keytype(grp->id)) == HAL_KEY_UNKNOWN) {
 		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
 		goto cleanup;
 	}
+
 	ret = sl_init(&shnd);
 	if (ret != SECLINK_OK) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
@@ -108,20 +86,10 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 	}
 
 	grp->key_index = ECP_KEY_INDEX;
-	while (1) {
-		ret = sl_generate_key(shnd, key_type, grp->key_index);
-		if (ret != SECLINK_OK) {
-			if (ret == SECLINK_KEY_IN_USE) {
-				grp->key_index++;
-				if (grp->key_index == SECLINK_MAX_RAM_KEY) {
-					ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-					sl_deinit(shnd);
-					goto cleanup;
-				}
-				continue;
-			}
-		}
-		break;
+	if ((grp->key_index = alt_gen_key(shnd, key_type, ECP_KEY_INDEX)) == -1) {
+		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+		sl_deinit(shnd);
+		goto cleanup;
 	}
 
 	/* Get Public value from sss */
@@ -194,26 +162,7 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->X, ecc_pub.pubkey_x->data, ecc_pub.pubkey_x->data_len));
 	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->Y, ecc_pub.pubkey_y->data, ecc_pub.pubkey_y->data_len));
 
-	switch (grp->id) {
-	case MBEDTLS_ECP_DP_SECP192R1:
-		ecc_pub.curve = HAL_ECDSA_SEC_P192R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP224R1:
-		ecc_pub.curve = HAL_ECDSA_SEC_P224R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP256R1:
-		ecc_pub.curve = HAL_ECDSA_SEC_P256R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP384R1:
-		ecc_pub.curve = HAL_ECDSA_SEC_P384R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP521R1:
-		ecc_pub.curve = HAL_ECDSA_SEC_P521R1;
-		break;
-	case MBEDTLS_ECP_DP_BP256R1:
-		ecc_pub.curve = HAL_ECDSA_BRAINPOOL_P256R1;
-		break;
-	default:
+	if ((ecc_pub.curve = alt_get_curve(grp->id)) == HAL_ECDSA_UNKNOWN) {
 		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 		goto cleanup_with_mem;
 	}
@@ -223,7 +172,6 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		goto cleanup_with_mem;
 	}
-
 	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(z, shared_secret.data, shared_secret.data_len));
 
 	ret = 0;
@@ -244,36 +192,11 @@ cleanup_with_mem:
 	}
 
 cleanup:
-	switch (grp->id) {
-	case MBEDTLS_ECP_DP_SECP192R1:
-		key_type = HAL_KEY_ECC_SEC_P192R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP224R1:
-		key_type = HAL_KEY_ECC_SEC_P224R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP256R1:
-		key_type = HAL_KEY_ECC_SEC_P256R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP384R1:
-		key_type = HAL_KEY_ECC_SEC_P384R1;
-		break;
-	case MBEDTLS_ECP_DP_SECP521R1:
-		key_type = HAL_KEY_ECC_SEC_P512R1;
-		break;
-	case MBEDTLS_ECP_DP_BP256R1:
-		key_type = HAL_KEY_ECC_BRAINPOOL_P256R1;
-		break;
-	case MBEDTLS_ECP_DP_BP384R1:
-		key_type = HAL_KEY_ECC_BRAINPOOL_P384R1;
-		break;
-	case MBEDTLS_ECP_DP_BP512R1:
-		key_type = HAL_KEY_ECC_BRAINPOOL_P512R1;
-		break;
-	default:
+	if ((key_type = alt_get_keytype(grp->id)) == HAL_KEY_UNKNOWN) {
 		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+	} else {
+		sl_remove_key(shnd, key_type, grp->key_index);
 	}
-	sl_remove_key(shnd, key_type, grp->key_index);
-
 	sl_deinit(shnd);
 
 	return ret;

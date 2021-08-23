@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <tinyara/seclink.h>
 #include <tinyara/seclink_drv.h>
 #include <stress_tool/st_perf.h>

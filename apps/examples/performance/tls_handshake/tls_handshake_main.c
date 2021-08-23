@@ -15,18 +15,34 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdio.h>
-#include "sl_test.h"
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include "tls_handshake_usage.h"
 
-void sl_handle_crypto_rsa_enc(sl_options *opt)
-{
-	printf("ToDo\n");
-}
+extern int tls_handshake_server(void);
+extern int tls_handshake_client(char *ipaddr);
 
-void sl_handle_crypto_rsa_dec(sl_options *opt)
+int tls_handshake_main(int argc, char **argv)
 {
-	printf("ToDo\n");
+	int ret = 0;
+	if (argc == 2) {
+		if ((ret = strncmp("-s", argv[1], 3)) != 0) {
+			printf("%s\n", TLS_HANDSHAKE_USAGE);
+			return -1;
+		}
+		tls_handshake_server();
+	} else if (argc == 3) {
+		if ((ret = strncmp("-c", argv[1], 3)) != 0) {
+			printf("%s\n", TLS_HANDSHAKE_USAGE);
+			return -1;
+		}
+		tls_handshake_client(argv[2]);
+	}
+
+	return 0;
 }

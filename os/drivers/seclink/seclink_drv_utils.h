@@ -22,6 +22,7 @@
 #include <debug.h>
 #endif
 #ifdef CONFIG_SECURITY_LINK_DRV_PROFILE
+#include <unistd.h>
 #include <tinyara/timer.h>
 #endif
 
@@ -39,10 +40,6 @@
 				  __FILE__, __LINE__, fd, strerror(errno)); \
 	} while (0)
 
-/* #define SLDRV_ENTER											\ */
-/* 	do {													\ */
-/* 		SLDRV_LOG(SLDRV_TAG"%s:%d\n", __FILE__, __LINE__);	\ */
-/* 	} while (0) */
 #define SLDRV_ENTER
 
 #ifdef CONFIG_SECURITY_LINK_DRV_PROFILE

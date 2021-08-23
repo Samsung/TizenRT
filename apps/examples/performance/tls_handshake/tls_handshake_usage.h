@@ -2,7 +2,7 @@
  *
  * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License\n");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -16,17 +16,16 @@
  *
  ****************************************************************************/
 
-#include <tinyara/config.h>
+#define TLS_HANDSHAKE_SERVER_USAGE \
+	"\ntls_handshake -s\n"             \
+	"example: tls_handshake -s\n"
 
-#include <stdio.h>
-#include "sl_test.h"
+#define TLS_HANDSHAKE_CLIENT_USAGE    \
+	"\ntls_handshake -c target_address\n" \
+	"example: tls_handshake -c 127.0.0.1\n"
 
-void sl_handle_crypto_rsa_enc(sl_options *opt)
-{
-	printf("ToDo\n");
-}
-
-void sl_handle_crypto_rsa_dec(sl_options *opt)
-{
-	printf("ToDo\n");
-}
+#define TLS_HANDSHAKE_USAGE        \
+	"usage: tls_handshake mode\n" \
+	"mode : client, server\n" \
+TLS_HANDSHAKE_CLIENT_USAGE \
+TLS_HANDSHAKE_SERVER_USAGE

@@ -15,13 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
- 
 #include <tinyara/config.h>
-#include <stdio.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <tinyara/timer.h>
-#include <netutils/netlib.h>
 #include "seclink_drv_utils.h"
 
 int sldrv_start_time(sldrv_timer_handle *hnd)

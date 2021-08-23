@@ -17,9 +17,9 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/security_hal.h>
-
 #include <stdlib.h>
+#include <string.h>
+#include <tinyara/security_hal.h>
 #include "sl_test.h"
 
 void sl_test_free_buffer(hal_data *data)
