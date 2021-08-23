@@ -139,6 +139,7 @@ typedef struct {
 	uint16_t conn_interval;
 	uint16_t slave_latency;
 	uint16_t mtu;
+	uint16_t scan_timeout; /* ms */
 	bool is_secured_connect;
 } trble_conn_info;
 
