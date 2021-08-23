@@ -78,6 +78,9 @@
 #include "mbedtls/asn1write.h"
 
 #include "mbedtls/alt/common.h"
+#include "alt_utils.h"
+
+#define ALT_DEBUG 0
 
 #if defined(MBEDTLS_RSA_C)
 static int rsa_get_mode(mbedtls_md_type_t md_alg, hal_rsa_mode *rsa_mode)
@@ -594,33 +597,6 @@ const mbedtls_pk_info_t mbedtls_rsa_info = {
 
 #if defined(MBEDTLS_PK_ECDSA_VERIFY_ALT)
 #if defined(MBEDTLS_ECP_C)
-static hal_key_type _eckey_get_keytype(unsigned int curve)
-{
-	switch (curve) {
-		//case MBEDTLS_ECP_DP_SECP192R1:
-		//case MBEDTLS_ECP_DP_SECP224R1:
-	case MBEDTLS_ECP_DP_SECP256R1:
-		return HAL_KEY_ECC_SEC_P256R1;
-	case MBEDTLS_ECP_DP_SECP384R1:
-		return HAL_KEY_ECC_SEC_P384R1;
-	case MBEDTLS_ECP_DP_SECP521R1:
-		return HAL_KEY_ECC_SEC_P512R1;
-	case MBEDTLS_ECP_DP_BP256R1:
-		return HAL_KEY_ECC_BRAINPOOL_P256R1;
-	case MBEDTLS_ECP_DP_BP384R1:
-		return HAL_KEY_ECC_BRAINPOOL_P384R1;
-	case MBEDTLS_ECP_DP_BP512R1:
-		return HAL_KEY_ECC_BRAINPOOL_P512R1;
-	//case MBEDTLS_ECP_DP_CURVE25519:
-	//case MBEDTLS_ECP_DP_SECP192K1:
-	//case MBEDTLS_ECP_DP_SECP224K1:
-	//case MBEDTLS_ECP_DP_SECP256K1:
-	default:
-		break;
-	}
-	return HAL_KEY_UNKNOWN;
-}
-
 static int _eckey_pk_write_ec_pubkey(unsigned char **p, unsigned char *start,
 									 mbedtls_ecp_keypair *ec)
 {
@@ -777,30 +753,6 @@ static int _eckey_get_ecdsa_mode(mbedtls_md_type_t md_alg,
 	return 0;
 }
 
-static int _eckey_set_key(sl_ctx shnd,
-						  hal_key_type key_type,
-						  hal_data *pubkey,
-						  hal_data *prikey, int from)
-{
-	int ret = 0;
-	int key_idx = from;
-
-	while (1) {
-		ret = sl_set_key(shnd, key_type, key_idx, pubkey, prikey);
-		if (ret != SECLINK_OK) {
-			if (ret == SECLINK_KEY_IN_USE) {
-				key_idx++;
-				if (key_idx == SECLINK_MAX_RAM_KEY) {
-					return -1;
-				}
-				continue;
-			}
-		}
-		break;
-	}
-	return key_idx;
-}
-
 /*
  * Convert a signature (given by context) to ASN.1
  */
@@ -901,17 +853,19 @@ int eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		goto FREE;
 	}
-
+#if ALT_DEBUG
+	alt_print_buffer(pubkey.data, pubkey.data_len, "public key");
+#endif
 	memcpy(pubkey.data, pubkey_buf + pubkey_buflen - len, len);
 	free(pubkey_buf);
-	hal_key_type key_type = _eckey_get_keytype(curve);
+	hal_key_type key_type = alt_get_keytype(curve);
 	if (key_type == HAL_KEY_UNKNOWN) {
 		free(pubkey.data);
 		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 		goto FREE;
 	}
 
-	key_idx = _eckey_set_key(shnd, key_type, &pubkey, NULL, key_idx);
+	key_idx = alt_set_key(shnd, key_type, &pubkey, NULL, key_idx);
 	free(pubkey.data);
 	if (key_idx == -1) {
 		goto FREE;
@@ -999,7 +953,7 @@ int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg,
 		return ret;
 	}
 
-	if ((key_type = _eckey_get_keytype(curve)) == HAL_KEY_UNKNOWN) {
+	if ((key_type = alt_get_keytype(curve)) == HAL_KEY_UNKNOWN) {
 		return MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 	}
 
@@ -1030,6 +984,9 @@ int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg,
 		}
 		memcpy(prikey.data, prikey_buf + pubkey_buflen - len, len);
 		free(prikey_buf);
+#if ALT_DEBUG
+		alt_print_buffer(prikey.data, prikey.data_len, "private key");
+#endif
 	}
 
 	t_hash.data = (unsigned char *)malloc(hash_len);
@@ -1054,7 +1011,7 @@ int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg,
 	}
 
 	if (!is_injected_key) {
-		key_idx = _eckey_set_key(shnd, key_type, NULL, &prikey, 32);
+		key_idx = alt_set_key(shnd, key_type, NULL, &prikey, 32);
 		free(prikey.data);
 		if (key_idx < 0) {
 			free(t_hash.data);

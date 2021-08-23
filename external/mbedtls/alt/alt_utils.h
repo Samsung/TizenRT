@@ -15,18 +15,13 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#pragma once
 
-#include <tinyara/config.h>
-
-#include <stdio.h>
-#include "sl_test.h"
-
-void sl_handle_crypto_rsa_enc(sl_options *opt)
-{
-	printf("ToDo\n");
-}
-
-void sl_handle_crypto_rsa_dec(sl_options *opt)
-{
-	printf("ToDo\n");
-}
+hal_key_type alt_get_keytype(unsigned int curve);
+hal_ecdsa_curve alt_get_curve(mbedtls_ecp_group_id curve);
+int alt_gen_key(sl_ctx shnd, hal_key_type key_type, int from);
+int alt_set_key(sl_ctx shnd,
+					   hal_key_type key_type,
+					   hal_data *pubkey,
+					   hal_data *prikey, int from);
+void alt_print_buffer(char *data, int buf_len, const char *message);

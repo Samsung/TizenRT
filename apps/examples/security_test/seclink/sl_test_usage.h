@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
- #pragma once
- 
+#pragma once
+
 #define SL_AUTH_USAGE                              \
 	"\n authentication test\n"                     \
 	"    TASH> sl_test auth [algorithm] [count]\n" \

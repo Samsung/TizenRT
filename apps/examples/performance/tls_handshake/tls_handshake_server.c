@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /*
  *  SSL server demonstration program
  *
@@ -16,7 +33,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
+#include <tinyara/config.h>
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -80,12 +97,7 @@ int main(void)
 	"<p>Successful connection using: %s</p>\r\n"
 #define TLS_DATA "This is from SERVER"
 
-#define DEBUG_LEVEL 1
-
-static char test_data[4100] = {
-	0,
-};
-static int test_size[7] = {64, 128, 256, 512, 1024, 2048, 4096};
+#define DEBUG_LEVEL 3
 
 static void my_debug(void *ctx, int level,
 					 const char *file, int line,
@@ -97,7 +109,7 @@ static void my_debug(void *ctx, int level,
 	fflush((FILE *)ctx);
 }
 
-static unsigned char srv_cert[] =\
+static unsigned char srv_cert[] =
 	"-----BEGIN CERTIFICATE-----\r\n"
 	"MIICjjCCAjOgAwIBAgIBBjAKBggqhkjOPQQDAjCBlzELMAkGA1UEBhMCS1IxLjAs\r\n"
 	"BgNVBAoMJVNhbXN1bmcgRWxlY3Ryb25pY3MgRGlnaXRhbCBBcHBsaWFuY2UxITAf\r\n"
@@ -116,7 +128,7 @@ static unsigned char srv_cert[] =\
 	"-----END CERTIFICATE-----\r\n";
 static int srv_cert_len = sizeof(srv_cert);
 
-static unsigned char srv_key[] =\
+static unsigned char srv_key[] =
 	"-----BEGIN EC PRIVATE KEY-----\r\n"
 	"MHcCAQEEIDxkbi9CHy4EEjrqwaindd5NfyDbJBWBquaP/2MEg0p7oAoGCCqGSM49\r\n"
 	"AwEHoUQDQgAE9H898pD806VIl/q3YTO3EMOWCwiMvc8CIS5C82tNCoBShJM1QKTs\r\n"
@@ -124,7 +136,7 @@ static unsigned char srv_key[] =\
 	"-----END EC PRIVATE KEY-----\r\n";
 static int srv_key_len = sizeof(srv_key);
 
-static unsigned char subca[] =\
+static unsigned char subca[] =
 	"-----BEGIN CERTIFICATE-----\r\n"
 	"MIICNjCCAd2gAwIBAgIBAzAKBggqhkjOPQQDAjCBjTELMAkGA1UEBhMCS1IxLjAs\r\n"
 	"BgNVBAoMJVNhbXN1bmcgRWxlY3Ryb25pY3MgRGlnaXRhbCBBcHBsaWFuY2UxHDAa\r\n"
@@ -157,9 +169,9 @@ static unsigned char rootca[] =
 	"hkjOPQQDAgNIADBFAiBlSErIUCMyKg75TSXQt47WctpwO57cFy398AMl1b+RpAIh\r\n"
 	"AOh+ajEBIKgHNSm6amXOCTBg40J97MBfJflm2DEHLP6v\r\n"
 	"-----END CERTIFICATE-----\r\n";
-	static int rootca_len = sizeof(rootca);
+static int rootca_len = sizeof(rootca);
 
-int main(void)
+int tls_handshake_server(void)
 {
 	int ret, len;
 	mbedtls_net_context listen_fd, client_fd;
@@ -289,6 +301,14 @@ int main(void)
 		mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret);
 		goto exit;
 	}
+
+	static mbedtls_ecp_group_id server_curves[2] = {
+		MBEDTLS_ECP_DP_SECP256R1,
+		MBEDTLS_ECP_DP_NONE};
+	mbedtls_ssl_conf_curves(&conf, (mbedtls_ecp_group_id *)server_curves);
+
+	int my_ciphersuite[2] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM, 0};
+	mbedtls_ssl_conf_ciphersuites(&conf, my_ciphersuite);
 
 	if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ssl_setup returned %d\n\n", ret);

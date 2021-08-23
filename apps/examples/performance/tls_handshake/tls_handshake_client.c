@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 #include <tinyara/config.h>
 #include <time.h>
 
@@ -13,9 +30,7 @@
 #include <string.h>
 
 #define SERVER_PORT "4433"
-char *SERVER_ADDR = NULL;
-//#define SERVER_ADDR "192.168.50.164"
-#define SERVER_NAME ""
+static char *SERVER_ADDR = NULL;
 #define GET_REQUEST "GET / HTTP/1.0\r\n\r\n"
 
 #define DEBUG_LEVEL 0
@@ -51,17 +66,8 @@ static unsigned char rootca[] =
 
 static int rootca_len = sizeof(rootca);
 
-int ssl_client(char *ipaddr)
+int tls_handshake_client(char *ipaddr)
 {
-	struct timespec ts;
-	SERVER_ADDR = ipaddr;
-	ts.tv_sec = 1612483200; // 2021-02-05 00:00:00
-	ts.tv_nsec = 0;
-
-	clock_settime(CLOCK_REALTIME, &ts);
-
-	int ret = 1, len;
-	int exit_code = -1;
 	mbedtls_net_context server_fd;
 	uint32_t flags;
 	unsigned char buf[1024];
@@ -72,6 +78,14 @@ int ssl_client(char *ipaddr)
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
 	mbedtls_x509_crt cacert;
+	int ret = 1;
+	int len = 0;
+	struct timespec ts;
+	SERVER_ADDR = ipaddr;
+	ts.tv_sec = 1612483200; // 2021-02-05 00:00:00
+	ts.tv_nsec = 0;
+
+	clock_settime(CLOCK_REALTIME, &ts);
 
 #if defined(MBEDTLS_DEBUG_C)
 	mbedtls_debug_set_threshold(DEBUG_LEVEL);
@@ -156,11 +170,6 @@ int ssl_client(char *ipaddr)
 		goto exit;
 	}
 
-	/* if ((ret = mbedtls_ssl_set_hostname(&ssl, SERVER_NAME)) != 0) { */
-	/* 	mbedtls_printf(" failed\n	 ! mbedtls_ssl_set_hostname returned %d\n\n", ret); */
-	/* 	goto exit; */
-	/* } */
-
 	mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
 	/*
@@ -224,17 +233,17 @@ int ssl_client(char *ipaddr)
 		memset(buf, 0, sizeof(buf));
 		ret = mbedtls_ssl_read(&ssl, buf, len);
 
-		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 			continue;
-
-		if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)
+		}
+		if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+			ret = 0;
 			break;
-
+		}
 		if (ret < 0) {
 			mbedtls_printf("failed\n	! mbedtls_ssl_read returned %d\n\n", ret);
 			break;
 		}
-
 		if (ret == 0) {
 			mbedtls_printf("\n\nEOF\n\n");
 			break;
@@ -246,12 +255,10 @@ int ssl_client(char *ipaddr)
 
 	mbedtls_ssl_close_notify(&ssl);
 
-	exit_code = -1;
-
 exit:
 
 #ifdef MBEDTLS_ERROR_C
-	if (exit_code != -1) {
+	if (ret != -1) {
 		char error_buf[100];
 		mbedtls_strerror(ret, error_buf, 100);
 		mbedtls_printf("Last error was: %d - %s\n\n", ret, error_buf);
