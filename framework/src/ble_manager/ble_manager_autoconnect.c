@@ -96,6 +96,11 @@ static void *_autocon_process(void *param)
 
 	sprintf(mq_name, "%p", ctx);
 	ctx->mqfd = mq_open(mq_name, O_RDWR | O_CREAT, 0666, &attr);
+	if (ctx->mqfd < 0) {
+		BLE_LOG_ERROR("[BLEMGR] fail to open mqueue(fd : %d , err : %d)", ctx->mqfd, errno);
+		ctx->state = BLE_CLIENT_IDLE;
+		return NULL;
+	}
 	g_ctx = ctx;
 
 	while (ctx->state == BLE_CLIENT_AUTOCONNECTING) {
