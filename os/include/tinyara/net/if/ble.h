@@ -257,7 +257,7 @@ typedef struct {
 } trble_server_init_config;
 
 typedef struct trble_bonded_device_list {
-	uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
+	trble_addr bd_addr;
 } trble_bonded_device_list_s;
 
 /****************************************************************************

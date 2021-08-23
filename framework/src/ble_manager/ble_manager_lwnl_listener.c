@@ -115,7 +115,7 @@ int lwnl_fetch_ble_event(int fd, void *buf, int buflen)
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	BLE_LOG_VERBOSE("dev state(%d) length(%d)\n", status.evt, len);
+	BLE_LOG_DEBUG("[BLEMGR] dev state(%d) length(%d)\n", status.evt, len);
 	_lwnl_call_event(fd, status, len);
 	hmsg->msg = &g_msg;
 	hmsg->signal = NULL;

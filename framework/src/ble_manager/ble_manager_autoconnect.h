@@ -15,22 +15,33 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #pragma once
 
-#include <errno.h>
-/**
- * Logging
- */
-#define BLE_TAG "[LE]"
+#define BLE_MQ_SIZE 1
 
-#define BLE_LOG_VERBOSE printf
-#define BLE_LOG_INFO printf
-#define BLE_LOG_DEBUG(...)
-#define BLE_LOG_ERROR printf
+typedef enum {
+	BLE_AUTOCON_FAIL,
+	BLE_AUTOCON_SUCCESS,
+	BLE_AUTOCON_ALREADY_RUNNING,
+	BLE_AUTOCON_INVALID_STATE,
+} ble_autocon_result_e;
 
-#define BLE_ERR												\
-	do {													\
-		BLE_LOG_ERROR(BLE_TAG"[ERR] %s: %d line err(%s)\n",	\
-					 __FILE__, __LINE__, strerror(errno));	\
-	} while (0)
+typedef enum {
+	BLE_AUTOCON_STATE_DISCONNECT,
+	BLE_AUTOCON_STATE_SCAN_STARTING,
+	BLE_AUTOCON_STATE_SCAN_STOPPING,
+	BLE_AUTOCON_STATE_CONNECTING,
+	BLE_AUTOCON_STATE_CONNECTED,
+	BLE_AUTOCON_STATE_DONE,
+} ble_autocon_state;
+
+typedef enum {
+	BLE_AUTOCON_EVT_SCAN_START,
+	BLE_AUTOCON_EVT_MAC_SCANNED,
+	BLE_AUTOCON_EVT_SCAN_STOP,
+	BLE_AUTOCON_EVT_CONNECTED,
+	BLE_AUTOCON_EVT_DISCONNECTED,
+	BLE_AUTOCON_EVT_CANCEL,
+} ble_autocon_event;
+
+ble_autocon_result_e ble_manager_autoconnect(ble_client_ctx *ctx);

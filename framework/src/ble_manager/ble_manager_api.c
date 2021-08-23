@@ -155,6 +155,25 @@ ble_result_e ble_client_connect(ble_client_ctx *ctx, ble_conn_info *conn_info)
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_client_autoconnect(ble_client_ctx *ctx, bool is_auto)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_CLIENT_DISABLE_AUTOCONNECT, BLE_MANAGER_FAIL, (void *)(ctx), NULL};
+	if (is_auto == true) {
+		msg.event = BLE_EVT_CMD_CLIENT_ENABLE_AUTOCONNECT;
+	}
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_client_reconnect(ble_client_ctx *ctx)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_CLIENT_RECONNECT, BLE_MANAGER_FAIL, (void *)(ctx), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_client_disconnect(ble_client_ctx *ctx)
 {
 	blemgr_msg_s msg = {BLE_EVT_CMD_CLIENT_DISCONNECT, BLE_MANAGER_FAIL, (void *)(ctx), NULL};
