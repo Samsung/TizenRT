@@ -94,6 +94,8 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 			}
 		}
 #endif
+
+#ifdef CONFIG_NETUTILS_WEBSOCKET
 		http_keyvalue_list_init(&request_params);
 		result = http_recv_and_handle_request(p, &request_params);
 		http_keyvalue_list_release(&request_params);
@@ -103,6 +105,29 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 		} else {
 			HTTP_LOGD("Client %d  in normal case.\n", sock_fd);
 		}
+#else
+		do {
+			http_keyvalue_list_init(&request_params);
+			result = http_recv_and_handle_request(p, &request_params);
+			http_keyvalue_list_release(&request_params);
+
+			HTTP_LOGD("Client %d in keep-alive %d.\n", sock_fd, p->keep_alive);
+
+			if (result != HTTP_OK) {
+				HTTP_LOGD("Client %d  in error case.\n", sock_fd);
+				break;
+			} else {
+				HTTP_LOGD("Client %d  in normal case.\n", sock_fd);
+
+				// Close client socket if connection is not persistent one.
+				if (p->keep_alive == 0) {
+					HTTP_LOGD("Client %d closing.\n", sock_fd);
+					close(p->client_fd);
+				}
+			}
+		} while(p->keep_alive);
+#endif
+
 		http_client_release(p);
 		HTTP_LOGD("Release client....\n");
 	}
@@ -125,6 +150,7 @@ struct http_client_t *http_client_init(struct http_server_t *server, int sock_fd
 
 	p->client_fd = sock_fd;
 	p->server = server;
+	p->keep_alive = 0;
 
 	return p;
 }
@@ -147,7 +173,8 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					   struct http_keyvalue_list_t *params,
 					   struct http_client_t *client,
 					   struct http_client_response_t *response,
-					   struct http_req_message *req)
+					   struct http_req_message *req,
+					   int *chunk_processed)
 {
 	int protocol = 0;
 	int sentence_end = 0;
@@ -197,7 +224,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					} else {
 						HTTP_LOGD("unknown version\n");
 					}
-				} else { /* If this is called by webclient */
+				} else if(response) { /* If this is called by webclient */
 					http_separate_status_line(buf + len->sentence_start, &protocol, &response->status, response->phrase);
 					HTTP_LOGD("Response Status : %d\n", response->status);
 					HTTP_LOGD("Response Phrase : %s\n", response->phrase);
@@ -237,7 +264,9 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					}
 					if (strcmp(key, "Content-Length") == 0) {
 						len->content_len = HTTP_ATOI(value);
-						response->total_len = len->content_len;
+						if (response) {
+							response->total_len = len->content_len;
+						}
 
 						HTTP_LOGD("This request contains contents, length : %d\n", len->content_len);
 					}
@@ -290,15 +319,17 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					HTTP_LOGD("[BODY_END]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					//HTTP_LOGD("All body readed : \n%s\n", *body);
 
-					response->total_len = len->content_len;
+					if (response) {
+						response->total_len = len->content_len;
 
-					if (is_header == true) {
-						response->entity_len = buf_len - len->sentence_start;
-						response->entity = buf + len->sentence_start;
-					} else {
-						response->entity_len = buf_len;
-						response->entity = buf;
-					}	
+						if (is_header == true) {
+							response->entity_len = buf_len - len->sentence_start;
+							response->entity = buf + len->sentence_start;
+						} else {
+							response->entity_len = buf_len;
+							response->entity = buf;
+						}
+					}
 
 					read_finish = true;
 				} else {
@@ -336,20 +367,22 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					}
 					len->message_len += buf_len;
 
-					response->total_len = len->content_len;
+					if (response) {
+						response->total_len = len->content_len;
 
-					if (is_chunked) {
-						if (response->entity) {
-							response->entity = *body;
-							response->entity_len = len->content_len;
+						if (is_chunked) {
+							if (response->entity) {
+								response->entity = *body;
+								response->entity_len = len->content_len;
+							}
+						} else if (is_header == true && !is_chunked) {
+							response->entity_len = buf_len - len->sentence_start;
+							response->entity = buf + len->sentence_start;
+							HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len, response->entity_len);
+						} else {
+							response->entity = buf;
+							response->entity_len = buf_len;
 						}
-					} else if (is_header == true && !is_chunked) {
-						response->entity_len = buf_len - len->sentence_start;
-						response->entity = buf + len->sentence_start;
-						HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len, response->entity_len);
-					} else {
-						response->entity = buf;
-						response->entity_len = buf_len;
 					}
 					
 					HTTP_LOGD("[BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
@@ -365,9 +398,10 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					sentence_end = http_find_first_crlf(buf, buf_len, len->sentence_start);
 
 					if (sentence_end < 0) {
-						HTTP_LOGE("Error: Cannot find body\n");
+						HTTP_LOGE("Error: Cannot find body - Need more data\n");
 						process_finish = true;
-						read_finish = true;
+						read_finish = false;
+						*chunk_processed = len->sentence_start;
 						break;
 					}
 
@@ -389,6 +423,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						HTTP_LOGD("Chunked size is zero\n");
 						entity[len->entity_len] = '\0';
 						req->entity = entity + len->entity_len;
+						req->entity_len = 0;
 						http_dispatch_url(client, req);
 						read_finish = true;
 						return read_finish;
@@ -398,7 +433,8 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				i = 0;
 				if (len->chunked_remain > 0) {
 					for (i = 0; len->chunked_remain > 0; ++i) {
-						if (len->sentence_start >= buf_len + len->message_len) {
+						if (len->sentence_start >= buf_len + len->message_len
+                                                    || i + len->entity_len >= HTTP_CONF_MAX_ENTITY_LENGTH) {
 							len->message_len = len->sentence_start;
 							len->entity_len += i;
 							read_finish = false;
@@ -413,17 +449,30 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				if (!len->chunked_remain) {
 					entity[len->entity_len] = '\0';
 					req->entity = entity + len->entity_len - len->content_len;
+					req->entity_len = len->content_len;
 					http_dispatch_url(client, req);
+
+					// Reset entity length. Next chunk will be processed from begining of entity buffer.
+					len->entity_len = 0;
+
 					len->sentence_start += 2;
+
+					// Save number bytes of data is processed.
+					*chunk_processed = len->sentence_start;
+
 					sentence_end = http_find_first_crlf(buf, buf_len + len->message_len, len->sentence_start);
 					if (sentence_end < 0) {
-						HTTP_LOGE("Error: Not accord with chunked encoding\n");
-						read_finish = true;
+						HTTP_LOGE("Error: Not accord with chunked encoding - need more data\n");
+						read_finish = false;
 						return read_finish;
 					}
-					len->sentence_start = sentence_end + 2;
-					if (*(buf + sentence_end - 1) == '0') {
+
+					// Check last chunk is in buffer
+					if (*(buf + sentence_end - 1) == '0'
+					    && (sentence_end - len->sentence_start) == 1) {
+						entity[len->entity_len] = '\0';
 						req->entity = entity + len->entity_len;
+						req->entity_len = 0;
 						http_dispatch_url(client, req);
 						process_finish = true;
 						read_finish = true;
@@ -453,6 +502,10 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	struct http_message_len_t mlen = {0,};
 	struct sockaddr_in addr;
 	socklen_t addr_len;
+	char *conn_type = NULL;
+	int chunk_processed = 0;
+	int unprocessed = 0;
+	int i = 0;
 
 	client->ws_state = 0;
 
@@ -476,7 +529,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	while (!read_finish) {
 		if (remain <= 0) {
 			HTTP_LOGE("Error: Request size is too large!!\n");
-			goto errout;
+			goto err_large_request;
 		}
 #ifdef CONFIG_NET_SECURITY_TLS
 		if (client->server->tls_init) {
@@ -496,11 +549,38 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 		buf_len += len;
 		remain -= len;
 
-		read_finish = http_parse_message(buf, len, &method, url, &body, &enc, &state, &mlen, request_params, client, NULL, &req);
+		read_finish = http_parse_message(buf, buf_len, &method, url, &body, &enc, &state, &mlen, request_params, client, NULL, &req, &chunk_processed);
 		if (read_finish == HTTP_ERROR) {
 			goto errout;
 		}
+
+		/* TODO: hot fix
+		   If buf contains partial chunk then copy that partial chunk
+		   to the beginning of buf for next socket read and send it to
+                   http parse along with newly received data from socket */
+		if (enc == HTTP_CHUNKED_ENCODING && !read_finish) {
+			HTTP_LOGD("chunk_processed=%d\n", chunk_processed);
+			unprocessed = buf_len - chunk_processed;
+			if (unprocessed > 0) {
+				for (i=chunk_processed; i<buf_len; i++) {
+					buf[i-chunk_processed] = buf[i];
+				}
+			}
+
+                        buf_len = unprocessed;
+                        remain = HTTP_CONF_MAX_REQUEST_LENGTH - buf_len;
+                        memset(&mlen, 0x0, sizeof(struct http_message_len_t));
+		}
 	}
+
+	// Check "Connection" header value
+	conn_type = http_keyvalue_list_find(request_params, "Connection");
+	if (!strcmp(conn_type, "Keep-Alive")) {
+		client->keep_alive = 1;
+	} else {
+		client->keep_alive = 0;
+	}
+
 	if (method == HTTP_METHOD_UNKNOWN) {
 		goto errout;
 	}
@@ -544,17 +624,20 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 		}
 		pthread_setname_np(ws->thread_id, "websocket handle server");
 		pthread_detach(ws->thread_id);
-	} else
-#endif
-	{
+	} else {
 		close(client->client_fd);
 	}
+#endif
 
 	HTTP_FREE(buf);
 	if (enc == HTTP_CHUNKED_ENCODING) {
 		HTTP_FREE(body);
 	}
 	return HTTP_OK;
+
+err_large_request:
+	http_send_response(client, 413, "Payload Too Large\r\n", NULL);
+
 errout:
 	close(client->client_fd);
 	HTTP_FREE(buf);
@@ -658,7 +741,7 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 	}
 }
 
-int http_send_response(struct http_client_t *client, int status, const char *body, struct http_keyvalue_list_t *headers)
+int http_send_response_helper(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers)
 {
 	char *buf;
 	int buflen = 0, ret, sndlen;
@@ -669,6 +752,9 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 		HTTP_LOGE("Error: Fail to malloc buffer\n");
 		return HTTP_ERROR;
 	}
+
+	memset(buf, 0, HTTP_CONF_MAX_REQUEST_LENGTH);
+
 #ifdef CONFIG_NETUTILS_WEBSOCKET
 	if (client->ws_state >= MIN_WS_HEADER_FIELD) {
 		unsigned char accept_key[WEBSOCKET_ACCEPT_KEY_LEN] = {0, };
@@ -683,7 +769,7 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 #endif
 	{
 		buflen = snprintf(buf, HTTP_CONF_MAX_REQUEST_LENGTH, "HTTP/1.1 %d %s\r\n",
-						  status, (status == 200) ? "OK" : body);
+						  status, status_message);
 		if (headers) {
 			cur = headers->head->next;
 			while (cur != headers->tail) {
@@ -691,29 +777,36 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 								   "%s: %s\r\n", cur->key, cur->value);
 				cur = cur->next;
 			}
+		} else {
+			// Add content header
+			if (client->keep_alive == 0) {
+				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+                                                                "Connection: close\r\n");
+			} else {
+				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+                                                                "Connection: Keep-Alive\r\n");
+			}
+
+			// Add content type and content length headers
+			if (body) {
+				buflen += snprintf(buf + buflen,
+                                                           HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+                                                           "Content-type: text/html\r\n"
+                                                           "Content-Length: %d\r\n",
+                                                           strlen(body));
+			}
 		}
 
-		if (status == 200) {
-			if (headers == NULL) {
-				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-								   "Content-type: text/html\r\n"
-								   "Connection: close\r\n");
-				if (body) {
-					buflen += snprintf(buf + buflen,
-									   HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-									   "Content-Length: %d\r\n"
-									   "\r\n"
-									   "%s",
-									   strlen(body), body);
-				} else {
-					buflen += snprintf(buf + buflen,
-									   HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-									   "\r\n");
-				}
-			} else {
-				snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-						 "\r\n%s", body);
-			}
+		// Append extra CRLF to mark headers done
+		buflen += snprintf(buf + buflen,
+					HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "\r\n");
+
+		// Include response body
+		if (body) {
+			buflen += snprintf(buf + buflen,
+						HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+						"%s",
+						body);
 		}
 	}
 
@@ -739,4 +832,15 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 	}
 	HTTP_FREE(buf);
 	return HTTP_OK;
+}
+int http_send_response(struct http_client_t *client, int status, const char *body, struct http_keyvalue_list_t *headers)
+{
+	const char* status_message = (status == 200) ? "OK" : body;
+
+	return http_send_response_helper(client, status, status_message, body, headers);
+}
+
+int http_send_response_with_status_msg(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers)
+{
+	return http_send_response_helper(client, status, status_message, body, headers);
 }
