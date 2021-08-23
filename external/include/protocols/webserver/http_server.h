@@ -159,6 +159,7 @@ struct http_req_message {
 	char *url;
 	struct http_keyvalue_list_t *headers;
 	char *entity;
+	int entity_len;
 	char *query_string;
 	int encoding;
 };
@@ -293,6 +294,19 @@ int http_server_deregister_cb(struct http_server_t *server, int method, const ch
  * @since TizenRT v1.0
  */
 int http_send_response(struct http_client_t *client, int status, const char *body, struct http_keyvalue_list_t *headers);
+
+/**
+ * @brief http_send_response_with_status_msg() sends the response.
+ *
+ * @param[in] client a pointer of HTTP client.
+ * @param[in] status status code of a response.
+ * @param[in] status_message status message associated with status code.
+ * @param[in] body Response payload.
+ * @param[in] headers HTTP headers of a response.
+ * @return On success, HTTP_OK(0) is returned.
+ *         On failure, HTTP_ERROR(-1) is returned.
+ */
+int http_send_response_with_status_msg(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers);
 
 #ifdef CONFIG_NET_SECURITY_TLS
 /**

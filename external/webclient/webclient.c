@@ -1066,7 +1066,7 @@ retry:
 						 &param->response->entity,
 						 &encoding, &state, &mlen,
 						 param->response->headers,
-						 NULL, param->response, NULL);
+						 NULL, param->response, NULL, NULL);
 
 		++loopcount;
 		nvdbg("====== loopcount : %d read_finish : %d=====\n", loopcount, read_finish);
