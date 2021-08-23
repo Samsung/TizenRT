@@ -388,7 +388,12 @@ struct lwip_sock *get_socket(int s, pid_t pid)
 	}
 
 	tcb = sched_gettcb(pid);
-	DEBUGASSERT(tcb && tcb->group);
+	if (tcb == NULL) {
+		LWIP_DEBUGF(SOCKETS_DEBUG, ("pid: %d[%d] tcb is null\n", (int)pid, getpid()));
+		return NULL;
+	}
+
+	DEBUGASSERT(tcb->group);
 
 	list = tcb->group->tg_socketlist;
 	sock = (struct lwip_sock *)list.sl_sockets[s].sock;
