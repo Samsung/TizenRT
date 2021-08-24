@@ -82,7 +82,7 @@ int tls_handshake_client(char *ipaddr)
 	int len = 0;
 	struct timespec ts;
 	SERVER_ADDR = ipaddr;
-	ts.tv_sec = 1612483200; // 2021-02-05 00:00:00
+	ts.tv_sec = 1633074152; // 2021-10-01
 	ts.tv_nsec = 0;
 
 	clock_settime(CLOCK_REALTIME, &ts);
