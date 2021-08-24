@@ -92,7 +92,6 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 {
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT
 	irqstate_t flags;
-	uint32_t stack_remain;
 #endif
 	board_led_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
@@ -104,6 +103,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT_STACKCHECK
 
 	/* check remaining stack available, assert if stack overflows */
+	uint32_t stack_remain;
 
 	stack_remain = (CONFIG_ARCH_INTERRUPTSTACK & ~3) - up_check_intstack();
 	if (stack_remain < 8) {
