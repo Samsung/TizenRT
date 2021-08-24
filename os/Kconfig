@@ -237,7 +237,7 @@ config COMMON_BINARY_PATH
 
 config COMMON_BINARY_NAME
 	string "Name of common binary file"
-	default "tinyara_common_binary"
+	default "common_binary"
 	---help---
 		Filename of the common binary file.
 
