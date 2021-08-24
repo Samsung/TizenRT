@@ -15,17 +15,5 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-#include <tinyara/config.h>
-#include <stdio.h>
-#include "sl_test.h"
-
-void sl_handle_crypto_aes_enc(sl_options *opt)
-{
-	printf("ToDo\n");
-}
-
-void sl_handle_crypto_aes_dec(sl_options *opt)
-{
-	printf("ToDo\n");
-}
+SL_MBED_TEST_POOL("aes", SL_MBED_TYPE_AES, sl_handle_mbed_aes)
+SL_MBED_TEST_POOL("ecdsa", SL_MBED_TYPE_ECDSA, sl_handle_mbed_ecdsa)

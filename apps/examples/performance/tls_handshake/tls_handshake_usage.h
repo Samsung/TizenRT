@@ -21,11 +21,11 @@
 	"example: tls_handshake -s\n"
 
 #define TLS_HANDSHAKE_CLIENT_USAGE    \
-	"\ntls_handshake -c target_address\n" \
+	"\ntls_handshake -c <target_address>\n" \
 	"example: tls_handshake -c 127.0.0.1\n"
 
 #define TLS_HANDSHAKE_USAGE        \
-	"usage: tls_handshake mode\n" \
+	"usage: tls_handshake <mode>\n" \
 	"mode : client, server\n" \
 TLS_HANDSHAKE_CLIENT_USAGE \
 TLS_HANDSHAKE_SERVER_USAGE

@@ -47,7 +47,7 @@
 #define SLDRV_CALL(ret, res, method, param)                                         \
 	do {                                                                            \
 		if (se->ops->method) {                                                      \
-			sldrv_timer_handle hnd;                                                 \
+			sldrv_timer_handle hnd;																		\
 			(void)sldrv_start_time(&hnd);                                           \
 			res = (se->ops->method)param;                                           \
 			(void)sldrv_get_time(&hnd);                                             \

@@ -15,7 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
 #include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>

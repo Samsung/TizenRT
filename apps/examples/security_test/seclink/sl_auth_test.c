@@ -705,6 +705,7 @@ void sl_handle_auth_remove_cert(sl_options *opt)
 {
 	ST_SET_SMOKE(sl_auth, opt->count, 0, "Get certificate", get_certificate);
 }
+
 void sl_handle_auth(sl_options *opt)
 {
 	ST_TC_SET_GLOBAL(sl_auth, sl_auth_global);
