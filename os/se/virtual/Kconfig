@@ -33,7 +33,13 @@ config HW_ECDSA_VERIFICATION
 		Verifing a ECDSA signature based on hardware.
 
 config HW_RSA_ENC
-	bool "HW rsa encryption"
+	bool "HW rsa encryption decription"
+	default n
+	---help---
+		Encrypts a data based on hardware.
+
+config HW_AES_ENC
+	bool "HW aes encryption decryption"
 	default n
 	---help---
 		Encrypts a data based on hardware.

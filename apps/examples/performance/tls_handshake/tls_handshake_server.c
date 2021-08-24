@@ -424,6 +424,29 @@ reset:
 	len = ret;
 	mbedtls_printf(" %d bytes written\n\n%s\n", len, (char *)buf);
 
+	/*  7-1 write 1MiB */
+	unsigned int remain = 1024 * 1024;
+	memset(buf, 0x01, sizeof(buf));
+	while (remain) {
+		size_t buf_size = remain > sizeof(buf) ? sizeof(buf) : remain;
+		mbedtls_printf("[pkbuild] write %ld size\n", buf_size);
+		ret = mbedtls_ssl_write(&ssl, buf, buf_size);
+		if (ret == MBEDTLS_ERR_NET_CONN_RESET) {
+			mbedtls_printf(" failed\n  ! peer closed the connection\n\n");
+			goto reset;
+		}
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+			continue;
+		}
+		if (ret < 0) {
+			mbedtls_printf(" failed\n  ! mbedtls_ssl_write returned %d\n\n", ret);
+			goto reset;
+		}
+
+		mbedtls_printf(" %d bytes sent\n", ret);
+		remain -= ret;
+	}
+
 	mbedtls_printf("  . Closing the connection...");
 
 	while ((ret = mbedtls_ssl_close_notify(&ssl)) < 0) {

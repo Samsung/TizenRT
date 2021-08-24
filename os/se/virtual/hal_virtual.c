@@ -369,9 +369,33 @@ int virtual_hal_aes_encrypt(_IN_ hal_data *dec_data, _IN_ hal_aes_param *aes_par
 {
 	VH_ENTER;
 
-	enc_data->data = (unsigned char *)kmm_malloc(dec_data->data_len);
-	memcpy(enc_data->data, dec_data->data, dec_data->data_len);
+	selldbg("input %p %d %p %d\n", enc_data->data, enc_data->data_len, enc_data->priv, enc_data->priv_len);
+	selldbg("output %p %d %p %d\n", dec_data->data, dec_data->data_len, dec_data->priv, dec_data->priv_len);
+	selldbg("param: mode %d %p %d offset %d nc off %d %p %p\n",
+			aes_param->mode,
+			aes_param->iv,
+			aes_param->iv_len,
+			((aes_param->iv_offset != NULL) ? *(aes_param->iv_offset) : -1),
+			((aes_param->nc_off != NULL) ? *(aes_param->nc_off) : -1),
+			aes_param->nonce_counter,
+			aes_param->stream_block);
+
+	assert(enc_data->priv == NULL);
+	assert(dec_data->priv == NULL);
+	assert(enc_data->priv_len == 0);
+	assert(dec_data->priv_len == 0);
+	assert(enc_data->data_len == dec_data->data_len);
+
+	/*  update output */
+	memset(enc_data->data, 0x01, dec_data->data_len);
 	enc_data->data_len = dec_data->data_len;
+
+	if (aes_param->iv_offset) {
+		*(aes_param->iv_offset) += 1;
+	}
+	if (aes_param->nc_off) {
+		*(aes_param->nc_off) += 1;
+	}
 
 	return 0;
 }
@@ -380,9 +404,33 @@ int virtual_hal_aes_decrypt(_IN_ hal_data *enc_data, _IN_ hal_aes_param *aes_par
 {
 	VH_ENTER;
 
-	dec_data->data = (unsigned char *)kmm_malloc(enc_data->data_len);
-	memcpy(dec_data->data, enc_data->data, enc_data->data_len);
+	selldbg("input %p %d %p %d\n", enc_data->data, enc_data->data_len, enc_data->priv, enc_data->priv_len);
+	selldbg("output %p %d %p %d\n", dec_data->data, dec_data->data_len, dec_data->priv, dec_data->priv_len);
+	selldbg("param: mode %d %p %d offset %d nc off %d %p %p\n",
+			aes_param->mode,
+			aes_param->iv,
+			aes_param->iv_len,
+			((aes_param->iv_offset != NULL) ? *(aes_param->iv_offset) : -1),
+			((aes_param->nc_off != NULL) ? *(aes_param->nc_off) : -1),
+			aes_param->nonce_counter,
+			aes_param->stream_block);
+
+	assert(enc_data->priv == NULL);
+	assert(dec_data->priv == NULL);
+	assert(enc_data->priv_len == 0);
+	assert(dec_data->priv_len == 0);
+	assert(enc_data->data_len == dec_data->data_len);
+
+	/*  update output */
+	memset(dec_data->data, 0x01, enc_data->data_len);
 	dec_data->data_len = enc_data->data_len;
+
+	if (aes_param->iv_offset) {
+		*(aes_param->iv_offset) += 1;
+	}
+	if (aes_param->nc_off) {
+		*(aes_param->nc_off) += 1;
+	}
 
 	return 0;
 }

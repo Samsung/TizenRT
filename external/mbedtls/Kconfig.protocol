@@ -72,13 +72,20 @@ config TLS_HW_ECDSA_VERIFICATION
 		 . Brainpool 256
 
 config TLS_HW_RSA_ENC
-	bool "Use H/W rsa encryption"
+	bool "Use H/W rsa encryption decryption"
 	depends on HW_RSA_ENC
 	default n
 	---help---
 		Encrypts a data based on hardware.
 		Supporting key size : 1024, 2048
-		
+
+config TLS_HW_AES_ENC
+	bool "Use H/W aes encryption decryption"
+	depends on HW_AES_ENC
+	default n
+	---help---
+		Encrypts a data based on hardware.
+
 endmenu
 
 endif

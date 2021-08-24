@@ -31,12 +31,8 @@ CSRCS += \
 	sl_key_test.c \
 	sl_crypto_test.c \
 	sl_ss_test.c \
+	sl_mbed_test.c\
 	sl_test_utils.c
-
-#CRYPTO
-CSRCS += \
-sl_crypto_aes_test.c\
-sl_crypto_rsa_test.c
 
 MAINSRC = sl_test_main.c
 
