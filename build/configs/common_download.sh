@@ -107,8 +107,7 @@ function get_executable_name()
 			else
 				echo "${BL2}.bin"
 			fi;;
-		kernel|os)
-			echo "${KERNEL_BIN_NAME}";;
+		kernel|os) echo "${KERNEL_BIN_NAME}";;
 		ota) echo "${OTA}.bin";;
 		micom|wifi|loadparam) echo "$1";;
 		zoneinfo) echo "zoneinfo.img";;

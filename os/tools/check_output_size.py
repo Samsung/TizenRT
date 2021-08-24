@@ -63,16 +63,12 @@ BOARD_TYPE = get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=")
 BOARD_TYPE = BOARD_TYPE.replace('"', '')
 BOARD_TYPE = BOARD_TYPE.rstrip("\n")
 
-BUILD_DATE = get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=")
-BUILD_DATE = BOARD_TYPE.replace('"', '')
-BUILD_DATE = BOARD_TYPE.rstrip("\n")
-
 # Read the kernel binary name from board_metadata.txt.
 metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
 if os.path.isfile(metadata_file) :
 	kernel_bin_name = get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n')
 	for filename in os.listdir(output_folder) :
-		if filename.startswith(kernel_bin_name) and ("common" not in filename) :
+		if filename.startswith(kernel_bin_name) :
 			kernel_bin_name = filename.rsplit('.')[0]
 	output_path = build_folder + '/output/bin/' + kernel_bin_name + '.bin'
 else :

@@ -525,5 +525,4 @@ fi
 if [ "${STATUS}" == "DOWNLOAD" ]; then
 	DOWNLOAD ${DL_ARG}
 fi
-
 exit 0
