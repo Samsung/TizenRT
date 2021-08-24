@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <tinyara/seclink.h>
+#include <tinyara/security_hal.h>
 #include <tinyara/seclink_drv.h>
 #include <stress_tool/st_perf.h>
 #include "sl_test.h"
@@ -66,10 +67,12 @@ typedef enum {
 #define SL_TEST_KEY_LEN 256
 #define SL_TEST_SYM_KEY_LEN 32
 static sl_ctx g_hnd;
-static hal_data g_sym_key_in;
-static hal_data g_asym_pubkey_in;
-static hal_data g_asym_prikey_in;
-static hal_data g_key_out;
+static hal_data g_sym_key_in = HAL_DATA_INITIALIZER;
+static hal_data g_asym_pubkey_in = HAL_DATA_INITIALIZER;
+static hal_data g_asym_prikey_in = HAL_DATA_INITIALIZER;
+static hal_data g_ecc_pubkey_in = HAL_DATA_INITIALIZER;
+static hal_data g_ecc_prikey_in = HAL_DATA_INITIALIZER;
+static hal_data g_key_out = HAL_DATA_INITIALIZER;
 
 ST_SET_PACK(sl_key);
 
@@ -98,6 +101,16 @@ TESTCASE_SETUP(key_testcase)
 	g_asym_prikey_in.priv = NULL;
 	g_asym_prikey_in.priv_len = 0;
 
+	g_ecc_pubkey_in.data = g_ecc_pubkey;
+	g_ecc_pubkey_in.data_len = sizeof(g_ecc_pubkey);
+	g_ecc_pubkey_in.priv = NULL;
+	g_ecc_pubkey_in.priv_len = 0;
+
+	g_ecc_prikey_in.data = g_ecc_privkey;
+	g_ecc_prikey_in.data_len = sizeof(g_ecc_privkey);
+	g_ecc_prikey_in.priv = NULL;
+	g_ecc_prikey_in.priv_len = 0;
+
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_sym_key_in, SL_TEST_SYM_KEY_LEN));
 	g_sym_key_in.priv = NULL;
 	g_sym_key_in.priv_len = 0;
@@ -117,12 +130,25 @@ END_TESTCASE
 /*
  * Desc: set asymmetric key
  */
-START_TEST_F(set_asym_key)
+START_TEST_F(set_ecc_25519_key)
 {
 	ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_25519,
 										SL_RW_KEY_SLOT, &g_asym_pubkey_in, &g_asym_prikey_in));
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519,
+										   SL_RW_KEY_SLOT));
+}
+END_TEST_F
+
+/*
+ * Desc: set ecc p256r1 key
+ */
+START_TEST_F(set_ecc_256_key)
+{
+	ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1,
+										SL_RW_KEY_SLOT, &g_ecc_pubkey_in, &g_ecc_prikey_in));
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1,
 										   SL_RW_KEY_SLOT));
 }
 END_TEST_F
@@ -145,7 +171,13 @@ END_TEST_F
 void sl_handle_key_set_asym_rw(sl_options *opt)
 {
 	ST_TC_SET_SMOKE(sl_key, opt->count, 0, "set a asymmetric key",
-					key_testcase, set_asym_key);
+					key_testcase, set_ecc_25519_key);
+}
+
+void sl_handle_key_set_ecc_rw(sl_options *opt)
+{
+	ST_TC_SET_SMOKE(sl_key, opt->count, 0, "set a asymmetric ECC key",
+					key_testcase, set_ecc_256_key);
 }
 
 void sl_handle_key_gen_asym_rw(sl_options *opt)

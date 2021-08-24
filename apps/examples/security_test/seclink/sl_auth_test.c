@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <tinyara/seclink.h>
 #include <tinyara/seclink_drv.h>
+#include <tinyara/security_hal.h>
 #include <stress_tool/st_perf.h>
 #include "sl_test.h"
 #include "sl_sample_key.h"
@@ -70,18 +71,20 @@ typedef enum {
 #define SL_TEST_CERT_SLOT 32
 
 static sl_ctx g_hnd;
-static hal_data g_key_a;
-static hal_data g_key_b;
-static hal_data g_shared_secret_a;
-static hal_data g_shared_secret_b;
+static hal_data g_key_a = HAL_DATA_INITIALIZER;
+static hal_data g_key_b = HAL_DATA_INITIALIZER;
+static hal_data g_pubkey = HAL_DATA_INITIALIZER;
+static hal_data g_privkey = HAL_DATA_INITIALIZER;
+static hal_data g_shared_secret_a = HAL_DATA_INITIALIZER;
+static hal_data g_shared_secret_b = HAL_DATA_INITIALIZER;
 static hal_ecdh_data g_ecdh_a;
 static hal_ecdh_data g_ecdh_b;
-static hal_data g_ecdsa_signature;
-static hal_data g_ecdsa_hash;
+static hal_data g_ecdsa_signature = HAL_DATA_INITIALIZER;
+static hal_data g_ecdsa_hash = HAL_DATA_INITIALIZER;
 static hal_ecdsa_mode g_ecdsa_mode;
-static hal_data g_rand;
-static hal_data g_cert_in;
-static hal_data g_cert_out;
+static hal_data g_rand = HAL_DATA_INITIALIZER;
+static hal_data g_cert_in = HAL_DATA_INITIALIZER;
+static hal_data g_cert_out = HAL_DATA_INITIALIZER;
 
 ST_SET_PACK(sl_auth);
 
@@ -321,6 +324,97 @@ START_TEST_F(ecdh_compute)
 }
 END_TEST_F
 
+TESTCASE_SETUP(ecdh_setkey_compute)
+{
+	g_pubkey.data = g_ecc_pubkey;
+	g_pubkey.data_len = sizeof(g_ecc_pubkey);
+	g_pubkey.priv = NULL;
+	g_pubkey.priv_len = 0;
+	g_privkey.data = g_ecc_privkey;
+	g_privkey.data_len = sizeof(g_ecc_privkey);
+	g_privkey.priv = NULL;
+	g_privkey.priv_len = 0;
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, SL_TEST_ECDH_KEY_SLOT_A, &g_pubkey, &g_privkey));
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, SL_TEST_ECDH_KEY_SLOT_B));
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_key_a, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer_priv(&g_key_a, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_key_b, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer_priv(&g_key_b, SL_TEST_AUTH_MEM_SIZE));
+
+	lldbg("before key a %d %d\n", g_key_a.data_len, g_key_a.priv_len);
+	lldbg("before key b %d %d\n", g_key_b.data_len, g_key_b.priv_len);
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, SL_TEST_ECDH_KEY_SLOT_A, &g_key_a));
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, SL_TEST_ECDH_KEY_SLOT_B, &g_key_b));
+
+	g_ecdh_a.pubkey_x = (hal_data *)zalloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_ecdh_a.pubkey_x);
+	g_ecdh_a.pubkey_y = (hal_data *)zalloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_ecdh_a.pubkey_y);
+	g_ecdh_b.pubkey_x = (hal_data *)zalloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_ecdh_b.pubkey_x);
+	g_ecdh_b.pubkey_y = (hal_data *)zalloc(sizeof(hal_data));
+	ST_EXPECT_NEQ(NULL, g_ecdh_b.pubkey_y);
+
+	//data: pubkey_x, priv: pubkey_y
+	g_ecdh_a.curve = HAL_ECDSA_SEC_P256R1;
+	g_ecdh_a.pubkey_x->data = g_key_a.data;
+	g_ecdh_a.pubkey_x->data_len = g_key_a.data_len;
+	g_ecdh_a.pubkey_y->data = g_key_a.priv;
+	g_ecdh_a.pubkey_y->data_len = g_key_a.priv_len;
+
+	lldbg("key a %d %d\n", g_key_a.data_len, g_key_a.priv_len);
+	lldbg("key b %d %d\n", g_key_b.data_len, g_key_b.priv_len);
+	sl_test_print_buffer(g_key_a.data, g_key_a.data_len, "key A pub");
+	sl_test_print_buffer(g_key_a.priv, g_key_a.priv_len, "key A priv");
+	sl_test_print_buffer(g_key_b.data, g_key_b.data_len, "key B pub");
+	sl_test_print_buffer(g_key_b.priv, g_key_b.priv_len, "key B priv");
+
+	//data: pubkey_x, priv: pubkey_y
+	g_ecdh_b.curve = HAL_ECDSA_SEC_P256R1;
+	g_ecdh_b.pubkey_x->data = g_key_b.data;
+	g_ecdh_b.pubkey_x->data_len = g_key_b.data_len;
+	g_ecdh_b.pubkey_y->data = g_key_b.priv;
+	g_ecdh_b.pubkey_y->data_len = g_key_b.priv_len;
+
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_shared_secret_a, SL_TEST_AUTH_MEM_SIZE));
+	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_shared_secret_b, SL_TEST_AUTH_MEM_SIZE));
+}
+END_TEST_F
+
+TESTCASE_TEARDOWN(ecdh_setkey_compute)
+{
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, SL_TEST_ECDH_KEY_SLOT_A));
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, SL_TEST_ECDH_KEY_SLOT_B));
+
+	sl_test_free_buffer(&g_key_a);
+	sl_test_free_buffer(&g_key_b);
+	free(g_ecdh_a.pubkey_x);
+	free(g_ecdh_a.pubkey_y);
+	free(g_ecdh_b.pubkey_x);
+	free(g_ecdh_b.pubkey_y);
+	sl_test_free_buffer(&g_shared_secret_a);
+	sl_test_free_buffer(&g_shared_secret_b);
+}
+END_TEST_F
+
+START_TEST_F(ecdh_setkey_compute)
+{
+	// A<--B, B<--A
+	if (g_ecdh_a.pubkey_x != NULL && g_ecdh_b.pubkey_x != NULL) {
+		ST_EXPECT_EQ(SECLINK_OK, sl_ecdh_compute_shared_secret(g_hnd, &g_ecdh_a, SL_TEST_ECDH_KEY_SLOT_B, &g_shared_secret_b));
+		ST_EXPECT_EQ(SECLINK_OK, sl_ecdh_compute_shared_secret(g_hnd, &g_ecdh_b, SL_TEST_ECDH_KEY_SLOT_A, &g_shared_secret_a));
+
+		ST_EXPECT_EQ(g_shared_secret_a.data_len, g_shared_secret_b.data_len);
+		ST_EXPECT_EQ(0, memcmp(g_shared_secret_a.data, g_shared_secret_b.data, g_shared_secret_a.data_len));
+	}
+}
+END_TEST_F
+
 TESTCASE_SETUP(ecdsa_sign)
 {
 	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, SL_TEST_ECC_KEY_SLOT));
@@ -464,6 +558,11 @@ END_TESTCASE
 void sl_handle_auth_ecdh(sl_options *opt)
 {
 	ST_SET_SMOKE(sl_auth, opt->count, 0, "ecdh compute", ecdh_compute);
+}
+
+void sl_handle_auth_ecdh2(sl_options *opt)
+{
+	ST_SET_SMOKE(sl_auth, opt->count, 0, "ecdh compute with setkey", ecdh_setkey_compute);
 }
 
 void sl_handle_auth_x25519(sl_options *opt)
