@@ -79,7 +79,8 @@ function FIND_BINFILE()
 	elif [[ "${CONFIG_ARCH_BOARD}" == "cy4390x" ]]; then
 		BINFILE="${BINDIR}/tinyara_master_strip"
 	elif [[ "${CONFIG_ARCH_BOARD}" == "rtl8721csm" ]]; then
-		BINFILE="${BINDIR}/km0_km4_image2${EXTNAME}"
+		source ${OSDIR}/tools/extract_binname.sh ${OSDIR}
+		BINFILE="${BINDIR}/${KERNEL_BIN_NAME}"
 	else
 		BINFILE="${BINDIR}/tinyara${EXTNAME}"
 	fi
@@ -524,4 +525,5 @@ fi
 if [ "${STATUS}" == "DOWNLOAD" ]; then
 	DOWNLOAD ${DL_ARG}
 fi
+
 exit 0

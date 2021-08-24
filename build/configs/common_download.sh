@@ -24,6 +24,7 @@ CUR_PATH=$(dirname "$CURDIR")
 #When the location of this script is changed, only TOP_PATH needs to be changed.
 TOP_PATH=${CUR_PATH}/../..
 OS_PATH=${TOP_PATH}/os
+TOOL_PATH=${OS_PATH}/tools
 BIN_PATH=${TOP_PATH}/build/output/bin
 PARTITION_KCONFIG=${OS_PATH}/board/common/Kconfig
 
@@ -36,6 +37,7 @@ BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_AR
 
 source ${BOARD_SPECIFIC_SCRIPT}
 source ${BOARD_CONFIG}
+source ./tools/extract_binname.sh ${OS_PATH}
 
 USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
 
@@ -105,7 +107,8 @@ function get_executable_name()
 			else
 				echo "${BL2}.bin"
 			fi;;
-		kernel|os) echo "${KERNEL}.bin";;
+		kernel|os)
+			echo "${KERNEL_BIN_NAME}";;
 		ota) echo "${OTA}.bin";;
 		micom|wifi|loadparam) echo "$1";;
 		zoneinfo) echo "zoneinfo.img";;
