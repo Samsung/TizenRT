@@ -1,4 +1,4 @@
 ./km0_boot_all.bin
-./km0_km4_image2*.bin
+./kernel_tp1x*.bin
 ./km4_boot_all.bin
 ./rtl8721csm_smartfs.bin
