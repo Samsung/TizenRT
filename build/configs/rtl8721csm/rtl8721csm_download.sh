@@ -23,13 +23,14 @@ IMG_TOOL_PATH=${TOOL_PATH}/image_tool
 
 function pre_download()
 {
-cp -p ${BIN_PATH}/km0_boot_all.bin ${IMG_TOOL_PATH}/km0_boot_all.bin
-cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
-cp -p ${BIN_PATH}/km0_km4_image2.bin ${IMG_TOOL_PATH}/km0_km4_image2.bin
-if test -f "${SMARTFS_BIN_PATH}"; then
-	cp -p ${BIN_PATH}/rtl8721csm_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
-fi
-cp -p ${BIN_PATH}/bootparam.bin ${IMG_TOOL_PATH}/bootparam.bin
+	source ${TOP_PATH}/os/.bininfo
+	cp -p ${BIN_PATH}/km0_boot_all.bin ${IMG_TOOL_PATH}/km0_boot_all.bin
+	cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
+	cp -p ${BIN_PATH}/${KERNEL_BIN_NAME} ${IMG_TOOL_PATH}/${KERNEL_BIN_NAME}
+	if test -f "${SMARTFS_BIN_PATH}"; then
+		cp -p ${BIN_PATH}/rtl8721csm_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
+	fi
+	cp -p ${BIN_PATH}/bootparam.bin ${IMG_TOOL_PATH}/bootparam.bin
 }
 
 
@@ -54,7 +55,7 @@ function post_download()
 	cd ${IMG_TOOL_PATH}
 	[ -e ${BL1}.bin ] && rm ${BL1}.bin
 	[ -e ${BL2}.bin ] && rm ${BL2}.bin
-	[ -e ${KERNEL}.bin ] && rm ${KERNEL}.bin
+	[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
 	if test -f "${SMARTFS_BIN_PATH}"; then
 		[ -e ${CONFIG_ARCH_BOARD}_smartfs.bin ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin
 	fi
