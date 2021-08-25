@@ -253,14 +253,16 @@ void binary_manager_get_state_with_name(int request_pid, char *bin_name);
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
 int binary_manager_register_ubin(char *name, uint32_t version, uint8_t load_priority);
 void binary_manager_scan_ubin_all(void);
-int binary_manager_scan_ubin(int bin_idx);
+int binary_manager_scan_ubin(int bin_idx, bool *need_update);
 int binary_manager_read_header(char *path, user_binary_header_t *header_data, bool crc_check);
 int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
 void binary_manager_release_binary_sem(int bin_idx);
 void binary_manager_update_running_state(int bin_id);
 int binary_manager_get_index_with_name(char *bin_name);
-int binary_manager_scan_bootparam(void);
+int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
+int binary_manager_update_bpinfo(void);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
+int binary_manager_update_bootparam(void);
 
 /****************************************************************************
  * Binary Manager Main Thread

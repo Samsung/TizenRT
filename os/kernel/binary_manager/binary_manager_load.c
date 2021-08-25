@@ -34,6 +34,7 @@
 #include <queue.h>
 #include <semaphore.h>
 #include <sys/types.h>
+#include <sys/boardctl.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/mm/mm.h>
@@ -43,6 +44,10 @@
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/binfmt/binfmt.h>
+#endif
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
 #endif
 
 #include "sched/sched.h"
@@ -493,45 +498,51 @@ static int update_thread(int argc, char *argv[])
 {
 	int ret;
 	int bin_idx;
+	bool need_update;
+	uint32_t bin_count;
 
-	if (argc <= 1) {
-		bmdbg("Invalid arguments for update, argc %d\n", argc);
-		return ERROR;
-	}
-
-	/* argv[1] binary index for update */
-	bin_idx = (int)atoi(argv[1]);
-	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
-		bmdbg("Invalid index %d\n", bin_idx);
-		return ERROR;
-	}
-
-	if (BIN_STATE(bin_idx) < BINARY_INACTIVE || BIN_STATE(bin_idx) > BINARY_RUNNING) {
-		bmdbg("Invalid binary state %d\n", BIN_STATE(bin_idx));
-		return BINMGR_OPERATION_FAIL;
-	}
-
-	/* Scan binary files */
-	ret = binary_manager_scan_ubin(bin_idx);
-	if (ret != OK) {
-		bmdbg("Failed to find binary file %s\n", BIN_NAME(bin_idx));
-		return BINMGR_OPERATION_FAIL;
-	}
-
-	/* Terminate binary if binary is already loaded */
-	if (BIN_STATE(bin_idx) == BINARY_LOADED || BIN_STATE(bin_idx) == BINARY_RUNNING) {
-		ret = binary_manager_terminate_binary(bin_idx);
-		if (ret != OK) {
-			bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
-			return BINMGR_OPERATION_FAIL;
+	/* Update bootparam and Reboot if new kernel binary exists */
+	if (binary_manager_check_kernel_update(&need_update) == BINMGR_OK && need_update) {
+		ret = binary_manager_update_bootparam();
+		if (ret != BINMGR_OK) {
+			bmdbg("Failed to update bootparam, %d\n", ret);
+			return ret;
 		}
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+		up_reboot_reason_write(REBOOT_SYSTEM_BINARY_UPDATE);
+#endif
+		lldbg("==> [REBOOT] Board will be rebooted with new kernel binary");
+		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+		return BINMGR_OK;
 	}
 
-	/* Load binary */
-	ret = binary_manager_execute_loader(LOADCMD_LOAD, bin_idx);
-	if (ret != OK) {
-		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
-		return BINMGR_OPERATION_FAIL;
+	bin_count = binary_manager_get_ucount();
+
+	/* Reload binaries if new binary is scanned */
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {		
+		if (BIN_STATE(bin_idx) < BINARY_INACTIVE || BIN_STATE(bin_idx) > BINARY_RUNNING) {
+			continue;
+		}
+
+		/* Scan binary files */
+		ret = binary_manager_scan_ubin(bin_idx, &need_update);
+		if (ret == OK && (need_update || BIN_STATE(bin_idx) == BINARY_INACTIVE)) {
+			/* Terminate binary if binary is already loaded */
+			if (BIN_STATE(bin_idx) == BINARY_LOADED || BIN_STATE(bin_idx) == BINARY_RUNNING) {
+				ret = binary_manager_terminate_binary(bin_idx);
+				if (ret != OK) {
+					bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
+					return BINMGR_OPERATION_FAIL;
+				}
+			}
+
+			/* Load binary */
+			ret = binary_manager_execute_loader(LOADCMD_LOAD, bin_idx);
+			if (ret != OK) {
+				bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
+				return BINMGR_OPERATION_FAIL;
+			}
+		}
 	}
 
 	return BINMGR_OK;

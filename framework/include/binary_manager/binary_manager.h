@@ -38,16 +38,14 @@
  ****************************************************************************/
 #ifdef CONFIG_BINMGR_UPDATE
 /**
- * @brief Loads the binary after downloading a new binary
+ * @brief Loads the new binaries after downloading them
  * @details @b #include <binary_manager/binary_manager.h>\n
- *  This function loads a new binary after downloading the binary.\n
- * It requests the binary manager to load the input binary name.
- * @param[in] binary_name The name of a new binary to be loaded
+ *  This function loads the new binaries after downloading them.\n
  * @return A defined value of binmgr_result_type_e in <tinyara/binary_manager.h>
  *         0 (BINMGR_OK) On success. On failure, negative value is returned.
  * @since TizenRT v3.0
  */
-binmgr_result_type_e binary_manager_update_binary(char *binary_name);
+binmgr_result_type_e binary_manager_update_binary(void);
 
 /**
  * @brief Get the binary information with name

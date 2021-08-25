@@ -28,16 +28,10 @@
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <sys/boardctl.h>
 
 #include <tinyara/binary_manager.h>
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <tinyara/kthread.h>
-#endif
-
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <tinyara/reboot_reason.h>
-#include <arch/reboot_reason.h>
 #endif
 
 #include "sched/sched.h"
@@ -173,15 +167,8 @@ int binary_manager(int argc, char *argv[])
 			binary_manager_create_entry(request_msg.requester_pid, request_msg.data.update_bin.bin_name, request_msg.data.update_bin.version);
 			break;
 		case BINMGR_UPDATE:
-			if (!strncmp("kernel", request_msg.data.bin_name, BIN_NAME_MAX)) {
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-				up_reboot_reason_write(REBOOT_SYSTEM_BINARY_UPDATE);
-#endif
-				boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
-				break;
-			}
 #ifdef CONFIG_APP_BINARY_SEPARATION
-			binary_manager_execute_loader(LOADCMD_UPDATE, binary_manager_get_index_with_name(request_msg.data.bin_name));
+			binary_manager_execute_loader(LOADCMD_UPDATE, 0);
 #endif
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION

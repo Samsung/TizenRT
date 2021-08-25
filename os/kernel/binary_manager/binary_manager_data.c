@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <crc32.h>
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <queue.h>
 #include <stdint.h>
@@ -65,12 +66,16 @@ static binmgr_kinfo_t kernel_info;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_t *header_data)
+static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_t *header_data, bool crc_check)
 {
 	int fd;
 	int ret;
+	uint32_t crc_value = 0;
+	uint8_t *crc_buffer;
+	uint32_t crc_bufsize;
 
 	memset(header_data, 0, sizeof(kernel_binary_header_t));
+	crc_buffer = NULL;
 
 	fd = open(path, O_RDONLY);
 	if (fd < 0) {
@@ -92,6 +97,27 @@ static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_
 		goto errout_with_fd;
 	}
 
+	if (crc_check) {
+		crc_bufsize = header_data->binary_size;
+		crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
+		if (!crc_buffer) {
+			bmdbg("Failed to allocate buffer for checking crc, size %u\n", crc_bufsize);
+			goto errout_with_fd;
+		}
+		/* Calculate checksum and Verify it */
+		crc_value = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_data->header_size, crc_value);
+		ret = read(fd, (void *)crc_buffer, crc_bufsize);
+		if (ret < 0 || ret != crc_bufsize) {
+			bmdbg("Failed to read : %d, errno %d\n", ret, errno);
+			goto errout_with_fd;
+		}
+		crc_value = crc32part(crc_buffer, crc_bufsize, crc_value);
+		if (crc_value != header_data->crc_hash) {
+			bmdbg("Failed to crc check : %u != %u\n", crc_value, header_data->crc_hash);
+			goto errout_with_fd;
+		}
+		kmm_free(crc_buffer);
+	}
 	bmvdbg("Binary header : %u %u %u %u \n", header_data->header_size, header_data->binary_size, header_data->version, header_data->secure_header_size);
 	close(fd);
 
@@ -99,6 +125,9 @@ static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_
 
 errout_with_fd:
 	close(fd);
+	if (crc_buffer) {
+		kmm_free(crc_buffer);
+	}
 
 	return ERROR;
 }
@@ -159,12 +188,12 @@ bool binary_manager_scan_kbin(void)
 	kernel_binary_header_t header_data;
 	char filepath[BINARY_PATH_LEN];
 
-	ret = binary_manager_scan_bootparam();
+	ret = binary_manager_update_bpinfo();
 	if (ret == BINMGR_OK) {
 		bp_data = binary_manager_get_bpdata();
 		/* Verify running kernel binary based on bootparam */
 		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_num[bp_data->active_idx]);
-		ret = binary_manager_verify_kernel_binary(filepath, &header_data);
+		ret = binary_manager_verify_kernel_binary(filepath, &header_data, false);
 		if (ret == OK) {
 			/* Update inuse index and kernel version */
 			kernel_info.inuse_idx = bp_data->active_idx;
@@ -179,6 +208,40 @@ bool binary_manager_scan_kbin(void)
 
 	return false;
 }
+
+/*************************************************************************************
+ * Name: binary_manager_check_kernel_update
+ *
+ * Description:
+ *	 This function checks that new kernel binary exists on inactive partition
+ *   and verifies the update is needed by comparing running version with new version.
+ *
+ *************************************************************************************/
+int binary_manager_check_kernel_update(bool *need_update)
+{
+	int ret;
+	char filepath[BINARY_PATH_LEN];
+	kernel_binary_header_t header_data;
+
+	if (!need_update) {
+		bmdbg("Invalid parameter\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	*need_update = false;
+
+	/* Verify kernel binary on the partition without running binary */
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_num[kernel_info.inuse_idx ^ 1]);
+	ret = binary_manager_verify_kernel_binary(filepath, &header_data, true);
+	if (ret == OK && kernel_info.version < header_data.version) {
+		/* Need to update bootparam and reboot */
+		*need_update = true;
+		return BINMGR_OK;
+	}
+
+	return ret;
+}
+
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 /****************************************************************************

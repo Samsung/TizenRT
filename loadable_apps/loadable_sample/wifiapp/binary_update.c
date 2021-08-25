@@ -408,7 +408,7 @@ static int binary_update_reload(char *name)
 	int ret;
 
 	printf("\n** Binary Update RELOAD [%s] test.\n", name);
-	ret = binary_manager_update_binary(name);
+	ret = binary_manager_update_binary();
 	if (ret == OK) {
 		printf("RELOAD [%s] SUCCESS\n", name);
 	} else {

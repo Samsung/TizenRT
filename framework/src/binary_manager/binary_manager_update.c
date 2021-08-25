@@ -30,17 +30,12 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
-binmgr_result_type_e binary_manager_update_binary(char *binary_name)
+binmgr_result_type_e binary_manager_update_binary(void)
 {
 	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 
-	if (binary_name == NULL || strlen(binary_name) > BIN_NAME_MAX - 1) {
-		bmdbg("load_new_binary failed : invalid binary name\n");
-		return BINMGR_INVALID_PARAM;
-	}
-
-	ret = binary_manager_set_request(&request_msg, BINMGR_UPDATE, binary_name);
+	ret = binary_manager_set_request(&request_msg, BINMGR_UPDATE, NULL);
 	if (ret != BINMGR_OK) {
 		return ret;
 	}

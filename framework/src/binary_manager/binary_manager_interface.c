@@ -41,7 +41,6 @@ binmgr_result_type_e binary_manager_set_request(binmgr_request_t *request_msg, i
 	case BINMGR_GET_STATE:
 	case BINMGR_GET_INFO:
 	case BINMGR_NOTIFY_STARTED:
-	case BINMGR_UPDATE:
 		if (arg == NULL) {
 			bmdbg("Invalid param, cmd : %d\n", cmd);
 			return BINMGR_INVALID_PARAM;
@@ -64,6 +63,7 @@ binmgr_result_type_e binary_manager_set_request(binmgr_request_t *request_msg, i
 		}
 		request_msg->data.cb_info = (binmgr_cb_t *)arg;
 		break;
+	case BINMGR_UPDATE:
 	default:
 		break;
 	}

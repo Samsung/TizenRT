@@ -151,14 +151,15 @@ void binary_manager_scan_ubin_all(void)
  *	 This function scans binary files of binary with specific index.
  *
  ****************************************************************************/
-int binary_manager_scan_ubin(int bin_idx)
+int binary_manager_scan_ubin(int bin_idx, bool *need_update)
 {
 	int ret;
 	DIR *dirp;
 	int file_idx;
 	int name_len;
-	int latest_ver;
 	int latest_idx;
+	uint32_t latest_ver;
+	uint32_t running_ver;
 	char *bin_name;
 	user_binary_header_t header_data;
 	char filepath[BINARY_PATH_LEN];
@@ -175,6 +176,8 @@ int binary_manager_scan_ubin(int bin_idx)
 	file_idx = 0;
 	latest_ver = 0;
 	latest_idx = -1;
+	*need_update = false;
+	running_ver = BIN_VER(bin_idx, BIN_USEIDX(bin_idx));
 	bin_name = BIN_NAME(bin_idx);
 	name_len = strlen(bin_name);
 
@@ -201,7 +204,10 @@ int binary_manager_scan_ubin(int bin_idx)
 					latest_ver = header_data.bin_ver;
 					latest_idx = file_idx;
 					BIN_USEIDX(bin_idx) = latest_idx;
-					bmvdbg("Latest version %d, idx %d\n", latest_ver, latest_idx);
+					if (running_ver != latest_ver) {
+						*need_update = true;
+					}
+					bmvdbg("Latest version %u, idx %d\n", latest_ver, latest_idx);
 				}
 			}
 			file_idx++;
