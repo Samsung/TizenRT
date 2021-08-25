@@ -18,7 +18,7 @@
 #include <pthread.h>
 
 #include <tinyara/wifi/wifi_utils.h>
-#include "wifi_conf.h"
+#include "wifi/wifi_conf.h"
 #include "rtk_wifi_utils.h"
 #include <wifi_manager/wifi_manager.h>
 #include <debug.h>

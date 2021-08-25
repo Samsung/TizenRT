@@ -14,7 +14,7 @@
 #include "main.h"
 #include "main_test.h"
 #if CONFIG_WLAN
-#include "wifi_conf.h"
+#include "wifi/wifi_conf.h"
 #include "wlan_intf.h"
 #include "wifi_constants.h"
 #endif
@@ -75,7 +75,7 @@ void wlan_network()
 		printf("\n\r%s xTaskCreate(init_thread) failed", __FUNCTION__);
 }
 #else
-#include "wifi_conf.h"
+#include "wifi/wifi_conf.h"
 #include "wlan_intf.h"
 #include "wifi_constants.h"
 #include <platform/platform_stdlib.h>
