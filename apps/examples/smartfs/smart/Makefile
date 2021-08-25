@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/smart_test/Makefile
+# apps/examples/smartfs/smart/Makefile
 #
 #   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,15 +54,16 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-APPNAME = smart_test
+# built-in application info
+
+APPNAME = smart
 FUNCNAME = $(APPNAME)_main
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_SYNC
 
+# smart file sytem test example
+
 ASRCS =
-CSRCS =
-MAINSRC = smart_test.c
+CSRCS = smart_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -76,12 +77,12 @@ ifneq ($(CONFIG_BUILD_KERNEL),y)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\..\libapps$(LIBEXT)
+  BIN = ..\..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = ..\\..\\libapps$(LIBEXT)
+  BIN = ..\\..\\..\\libapps$(LIBEXT)
 else
-  BIN = ../../libapps$(LIBEXT)
+  BIN = ../..//../libapps$(LIBEXT)
 endif
 endif
 
@@ -91,8 +92,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_SMART_TEST_PROGNAME ?= $(APPNAME)$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_SMART_TEST_PROGNAME)
+CONFIG_EXAMPLES_SMART_PROGNAME ?= smart$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_SMART_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -101,7 +102,7 @@ ROOTDEPPATH = --dep-path .
 VPATH =
 
 all: .built
-.PHONY: clean depend distclean
+.PHONY: clean depend distclean preconfig
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -126,7 +127,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SMART_TEST),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SMART),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
@@ -152,5 +153,4 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
-.PHONY: preconfig
 preconfig:

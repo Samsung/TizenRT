@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * examples/smartfs_powercut/smartfs_powercut_main.c
+ * apps/examples/smartfs/smartfs_powercut/smartfs_powercut_main.c
  *
  *   Copyright (C) 2008, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

@@ -1,8 +1,8 @@
-examples/artik_demo
-^^^^^^^^^^^^^^^^^^^
+examples/board_speficie_demo/artik_demo
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   This is an example to show DM APIs working with artik cloud(https://artik.cloud).
-  For more infomation, see the examples/artik_demo/artik_demo.c
+  For more infomation, see the examples/board_speficie_demo/artik_demo/artik_demo.c
 
   Configs (see the details on Kconfig):
   * CONFIG_EXAMPLES_ARTIK_DEMO
