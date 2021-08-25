@@ -20,7 +20,7 @@
 #include "hci_process.h"
 #include "build_info.h"
 #include "bt_intf.h"
-#include "wifi_conf.h" /* for wifi_disable_powersave and wifi_resume_powersave */
+#include "wifi/wifi_conf.h" /* for wifi_disable_powersave and wifi_resume_powersave */
 
 #define hci_board_32reg_set(addr, val) HAL_WRITE32(addr, 0, val)
 #define hci_board_32reg_read(addr) HAL_READ32(addr, 0)

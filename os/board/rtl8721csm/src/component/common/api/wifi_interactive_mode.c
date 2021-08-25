@@ -25,8 +25,8 @@
 #include <lwip/netif.h>
 
 #include "osdep_service.h"
-#include "wifi_conf.h"
-#include "wifi_util.h"
+#include "wifi/wifi_conf.h"
+#include "wifi/wifi_util.h"
 #include "lwip/ip_addr.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/tcpip.h"

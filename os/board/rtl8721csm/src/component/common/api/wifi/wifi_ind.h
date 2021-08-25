@@ -30,7 +30,7 @@
  *  @{
  */
  
-#include "wifi_conf.h"  
+#include "wifi/wifi_conf.h"  
 
 #ifdef __cplusplus
   extern "C" {

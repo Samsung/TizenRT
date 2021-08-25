@@ -34,8 +34,8 @@
 
 #include "wifi_constants.h"
 #include "wifi_structures.h"
-#include "wifi_util.h"
-#include "wifi_ind.h"
+#include "wifi/wifi_util.h"
+#include "wifi/wifi_ind.h"
 #include <platform/platform_stdlib.h>
 
 #ifdef __cplusplus
