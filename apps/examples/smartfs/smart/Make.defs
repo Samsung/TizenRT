@@ -1,5 +1,5 @@
 ############################################################################
-# apps/examples/smart/Make.defs
+# apps/examples/smartfs/smart/Make.defs
 # Adds selected applications to apps/ build
 #
 #   Copyright (C) 2015 Gregory Nutt. All rights reserved.
@@ -35,5 +35,5 @@
 ############################################################################
 
 ifeq ($(CONFIG_EXAMPLES_SMART),y)
-CONFIGURED_APPS += examples/smart
+CONFIGURED_APPS += examples/smartfs/smart
 endif

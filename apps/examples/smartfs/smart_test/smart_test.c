@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/system/smart_test/smart_test_main.c
+ * apps/examples/smartfs/smart_test/smart_test_main.c
  *
  *   Copyright (C) 2013, 2015 Ken Pettit. All rights reserved.
  *   Author: Ken Pettit <pettitkd@gmail.com>

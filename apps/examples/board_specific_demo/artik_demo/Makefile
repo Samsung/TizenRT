@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2020 Samsung Electronics All Rights Reserved.
+# Copyright 2016 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/smartfs_powercut/Makefile
+# apps/examples/artik_demo/Makefile
 #
 #   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,19 +54,17 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# smartfs powercut Test built-in application info
+# built-in application info
 
-APPNAME = smartfs_powercut
+APPNAME = artik_demo
 FUNCNAME = $(APPNAME)_main
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 4096
-THREADEXEC = TASH_EXECMD_ASYNC
+THREADEXEC = TASH_EXECMD_SYNC
 
-# smartfs powercut Test Example
+# artik demo example
 
 ASRCS =
-CSRCS =
-MAINSRC = smartfs_powercut_main.c
+
+MAINSRC = artik_demo.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -80,12 +78,12 @@ ifneq ($(CONFIG_BUILD_KERNEL),y)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\..\libapps$(LIBEXT)
+  BIN = ..\..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = ..\\..\\libapps$(LIBEXT)
+  BIN = ..\\..\\..\\libapps$(LIBEXT)
 else
-  BIN = ../../libapps$(LIBEXT)
+  BIN = ../..//../libapps$(LIBEXT)
 endif
 endif
 
@@ -95,14 +93,12 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_SMARTFS_POWERCUT_PROGNAME ?= smartfs_powercut(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_SMARTFS_POWERCUT_PROGNAME)
+CONFIG_EXAMPLES_ARTIK_DEMO_PROGNAME ?= artik_demo$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_ARTIK_DEMO_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
 # Common build
-
-VPATH =
 
 all: .built
 .PHONY: clean depend distclean
@@ -130,7 +126,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SMARTFS_POWERCUT),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_ARTIK_DEMO),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
