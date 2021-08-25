@@ -36,6 +36,7 @@ BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_AR
 
 source ${BOARD_SPECIFIC_SCRIPT}
 source ${BOARD_CONFIG}
+source ${OS_PATH}/.bininfo
 
 USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
 
@@ -105,7 +106,7 @@ function get_executable_name()
 			else
 				echo "${BL2}.bin"
 			fi;;
-		kernel|os) echo "${KERNEL}.bin";;
+		kernel|os) echo "${KERNEL_BIN_NAME}";;
 		ota) echo "${OTA}.bin";;
 		micom|wifi|loadparam) echo "$1";;
 		zoneinfo) echo "zoneinfo.img";;

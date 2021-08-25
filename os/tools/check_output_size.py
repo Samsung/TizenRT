@@ -25,8 +25,10 @@ import os
 import sys
 import string
 
-cfg_file = os.path.dirname(__file__) + '/../.config'
-build_folder = os.path.dirname(__file__) + '/../../build'
+os_folder = os.path.dirname(__file__) + '/..'
+cfg_file = os_folder + '/.config'
+build_folder = os_folder + '/../build'
+output_folder = build_folder + '/output/bin'
 
 def get_value_from_file(file_name, target):
 	with open(file_name, 'r+') as f:
@@ -57,19 +59,10 @@ for name in NAME_LIST :
 
 KERNEL_PARTITION_SIZE = int(SIZE_LIST[KERNEL_IDX]) * 1024
 
-# Check the board type. Because kernel binary name is different based on board type.
-BOARD_TYPE = get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=")
-BOARD_TYPE = BOARD_TYPE.replace('"', '')
-BOARD_TYPE = BOARD_TYPE.rstrip("\n")
-
-# Read the kernel binary name from board_metadata.txt.
-metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
-if os.path.isfile(metadata_file) :
-	kernel_bin_name = get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n')
-	output_path = build_folder + '/output/bin/' + kernel_bin_name + '.bin'
-else :
-	print("!!! There is no board_metadata.txt. Check the output size with tinyara.bin by default !!!")
-	output_path = build_folder + '/output/bin/tinyara.bin'
+# Read the kernel binary name from .bininfo
+bininfo_file = os_folder + '/.bininfo'
+kernel_bin_name = get_value_from_file(bininfo_file, "KERNEL_BIN_NAME=").replace('"','').rstrip('\n')
+output_path = build_folder + '/output/bin/' + kernel_bin_name
 
 # Partition sizes in the list are in KB, so calculate all sizes in KB.
 KERNEL_BINARY_SIZE=os.path.getsize(output_path)
