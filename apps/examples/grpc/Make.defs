@@ -16,4 +16,4 @@
 #
 ###########################################################################
 
-include $(wildcard examples/protobuf/*/Make.defs)
+include $(wildcard examples/grpc/*/Make.defs)
