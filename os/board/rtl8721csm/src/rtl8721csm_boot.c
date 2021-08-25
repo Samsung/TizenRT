@@ -73,6 +73,8 @@
 #include <arch/board/board.h>
 #include "gpio_api.h"
 #include "timer_api.h"
+#include "amebad_i2c.h"
+#include "amebad_spi.h"
 #ifdef CONFIG_FLASH_PARTITION
 #include "common.h"
 #endif
@@ -83,6 +85,9 @@
 extern FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmode, u32 pinpull);
 #ifdef CONFIG_PRODCONFIG
 extern u32 EFUSERead8(u32 CtrlSetting, u32 Addr, u8 *Data, u8 L25OutVoltage);
+#endif
+#if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_AMEBAD_I2S)
+extern int i2schar_devinit(void);
 #endif
 
 /************************************************************************************
@@ -111,6 +116,48 @@ int up_check_proddownload(void)
 	return up_check_prod();
 }
 #endif
+
+void board_i2s_initialize(void)
+{
+#if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_AMEBAD_I2S)
+	i2schar_devinit();
+#endif
+}
+
+void board_spi_initialize(void)
+{
+#ifdef CONFIG_SPI
+	struct spi_dev_s *spi;
+	spi = up_spiinitialize(1);
+
+#ifdef CONFIG_SPI_USERIO
+	if (spi_uioregister(1, spi) < 0) {
+		lldbg("Failed to register SPI1\n");
+	}
+#endif
+#endif
+}
+
+void board_i2c_initialize(void)
+{
+#ifdef CONFIG_I2C
+	FAR struct i2c_dev_s *i2c;
+	int bus = 0;
+	int ret;
+	char path[16];
+
+	snprintf(path, sizeof(path), "/dev/i2c-%d", bus);
+	i2c = up_i2cinitialize(bus);
+#ifdef CONFIG_I2C_USERIO
+	if (i2c) {
+		ret = i2c_uioregister(path, i2c);
+		if (ret < 0) {
+			up_i2cuninitialize(i2c);
+		}
+	}
+#endif
+#endif
+}
 
 void board_gpio_initialize(void)
 {
@@ -266,6 +313,9 @@ void board_initialize(void)
 	ipc_table_init();
 	amebad_mount_partions();
 	board_gpio_initialize();
+	board_i2c_initialize();
+	board_spi_initialize();
+	board_i2s_initialize();
 #ifdef CONFIG_WATCHDOG
 	amebad_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif
