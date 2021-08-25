@@ -95,7 +95,7 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 		}
 #endif
 
-#ifdef CONFIG_NETUTILS_WEBSOCKET
+do_keep_alive :
 		http_keyvalue_list_init(&request_params);
 		result = http_recv_and_handle_request(p, &request_params);
 		http_keyvalue_list_release(&request_params);
@@ -105,27 +105,15 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 		} else {
 			HTTP_LOGD("Client %d  in normal case.\n", sock_fd);
 		}
-#else
-		do {
-			http_keyvalue_list_init(&request_params);
-			result = http_recv_and_handle_request(p, &request_params);
-			http_keyvalue_list_release(&request_params);
 
-			HTTP_LOGD("Client %d in keep-alive %d.\n", p->keep_alive);
+#ifndef CONFIG_NETUTILS_WEBSOCKET
+		/* If result is OK & it need to be keep alive, try once again */
+		if (result == HTTP_OK && p->keep_alive) {
+			goto do_keep_alive;
+		}
 
-			if (result != HTTP_OK) {
-				HTTP_LOGD("Client %d  in error case.\n", sock_fd);
-				break;
-			} else {
-				HTTP_LOGD("Client %d  in normal case.\n", sock_fd, p->keep_alive);
-
-				// Close client socket if connection is not persistent one.
-				if (p->keep_alive == 0) {
-					HTTP_LOGD("Client %d closing.\n", sock_fd);
-					close(p->client_fd);
-				}
-			}
-		} while(p->keep_alive);
+		HTTP_LOGD("Client %d closing.\n", sock_fd);
+		close(p->client_fd);
 #endif
 
 		http_client_release(p);
@@ -223,7 +211,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					} else {
 						HTTP_LOGD("unknown version\n");
 					}
-				} else if(response) { /* If this is called by webclient */
+				} else if (response) { /* If this is called by webclient */
 					http_separate_status_line(buf + len->sentence_start, &protocol, &response->status, response->phrase);
 					HTTP_LOGD("Response Status : %d\n", response->status);
 					HTTP_LOGD("Response Phrase : %s\n", response->phrase);
@@ -263,7 +251,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					}
 					if (strcmp(key, "Content-Length") == 0) {
 						len->content_len = HTTP_ATOI(value);
-						if(response){
+						if (response){
 							response->total_len = len->content_len;
 						}
 
@@ -318,7 +306,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					HTTP_LOGD("[BODY_END]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					//HTTP_LOGD("All body readed : \n%s\n", *body);
 
-					if(response) {
+					if (response) {
 						response->total_len = len->content_len;
 
 						if (is_header == true) {
@@ -366,7 +354,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					}
 					len->message_len += buf_len;
 
-					if(response) {
+					if (response) {
 						response->total_len = len->content_len;
 
 						if (is_chunked) {
@@ -377,7 +365,9 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						} else if (is_header == true && !is_chunked) {
 							response->entity_len = buf_len - len->sentence_start;
 							response->entity = buf + len->sentence_start;
-							HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len, response->entity_len);
+							HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n",
+									buf_len, len->sentence_start, len->message_len,
+									len->content_len, response->entity_len);
 						} else {
 							response->entity = buf;
 							response->entity_len = buf_len;
@@ -485,7 +475,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	struct http_message_len_t mlen = {0,};
 	struct sockaddr_in addr;
 	socklen_t addr_len;
-	char *conn_type = NULL;
+	char *header_field_value = NULL;
 
 	client->ws_state = 0;
 
@@ -536,8 +526,8 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	}
 
 	// Check "Connection" header value
-	conn_type = http_keyvalue_list_find(request_params, "Connection");
-	if (!strcmp(conn_type, "Keep-Alive")) {
+	header_field_value = http_keyvalue_list_find(request_params, "Connection");
+	if (!strncmp(header_field_value, "Keep-Alive", strlen("Keep-Alive")+1)) {
 		client->keep_alive = 1;
 	} else {
 		client->keep_alive = 0;
