@@ -493,6 +493,7 @@ endif
 post:
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
+	$(Q) python ./tools/set_bininfo.py $(BIN_EXT)
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXE), $(BIN_EXT))
 ifeq ($(CONFIG_FLASH_PARTITION),y)
 	$(Q) python ./tools/check_output_size.py
@@ -653,6 +654,7 @@ distclean: clean subdir_distclean clean_context
 	$(call DELFILE, .config.old)
 	$(call DELFILE, .version)
 	$(call DELFILE, .appSpec)
+	$(call DELFILE, .bininfo)
 
 # Application housekeeping targets.  The APPDIR variable refers to the user
 # application directory.  A sample apps/ directory is included with TinyAra,
