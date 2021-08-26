@@ -106,6 +106,7 @@ typedef enum binary_state binary_state_e;
 enum binmgr_request_msg_type {
 	BINMGR_GET_INFO,
 	BINMGR_GET_INFO_ALL,
+	BINMGR_SETBP,
 	BINMGR_UPDATE,
 	BINMGR_GET_STATE,
 	BINMGR_CREATE_BIN,
@@ -229,6 +230,12 @@ struct binmgr_createbin_response_s {
 	char binpath[BINARY_PATH_LEN];
 };
 typedef struct binmgr_createbin_response_s binmgr_createbin_response_t;
+
+struct binmgr_setbp_response_s {
+	binmgr_result_type_e result;
+	bool is_updated;
+};
+typedef struct binmgr_setbp_response_s binmgr_setbp_response_t;
 
 struct binmgr_getstate_response_s {
 	binmgr_result_type_e result;

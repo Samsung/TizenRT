@@ -180,16 +180,38 @@ int binary_manager_update_bpinfo(void)
  *	 This function updates new bootparam data in inactive bootparam partition.
  *
  ********************************************************************************/
-int binary_manager_update_bootparam(void)
+int binary_manager_update_bootparam(int requester_pid)
 {
 	int fd;
 	int ret;
+	bool need_update;
 	uint8_t inuse_idx;
 	binmgr_bpdata_t bp_data;
+	char q_name[BIN_PRIVMQ_LEN];
+	binmgr_setbp_response_t response_msg;
+
+	memset((void *)&response_msg, 0, sizeof(binmgr_setbp_response_t));
+
+	if (requester_pid < 0) {
+		bmdbg("Invalid requester pid %d\n", requester_pid);
+		return BINMGR_INVALID_PARAM;
+	}
 
 	if (g_bp_info.inuse_idx >= BOOTPARAM_COUNT) {
 		bmdbg("ERROR: Invalid bootparam data, inuse idx %u\n", g_bp_info.inuse_idx);
-		return BINMGR_INVALID_PARAM;
+		response_msg.result = BINMGR_INVALID_PARAM;
+		goto send_response;
+	}
+
+	response_msg.result = BINMGR_OPERATION_FAIL;
+
+	ret = binary_manager_check_kernel_update(&need_update);
+	if (ret != BINMGR_OK) {
+		bmdbg("ERROR: Failed to check kernel update, ret %d\n", ret);
+		goto send_response;
+	} else if (!need_update) {
+		bmdbg("ERROR: Already the latest version is running, %d\n", ret);
+		goto send_response;
 	}
 
 	fd = binary_manager_open_bootparam();
@@ -228,16 +250,18 @@ int binary_manager_update_bootparam(void)
 		bmdbg("ERROR: Write Failed, errno %d\n", errno);
 		goto errout_with_fd;
 	}
-	close(fd);
 
 	g_bp_info.inuse_idx = inuse_idx;
 	g_bp_info.bp_data = bp_data;
 
-	return BINMGR_OK;
+	response_msg.result = BINMGR_OK; 
 
 errout_with_fd:
 	close(fd);
-	return BINMGR_OPERATION_FAIL;
+
+send_response:
+	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
+	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_createbin_response_t));
 }
 
 /****************************************************************************

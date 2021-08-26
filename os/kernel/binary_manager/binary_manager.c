@@ -166,6 +166,9 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_CREATE_BIN:
 			binary_manager_create_entry(request_msg.requester_pid, request_msg.data.update_bin.bin_name, request_msg.data.update_bin.version);
 			break;
+		case BINMGR_SETBP:
+			binary_manager_update_bootparam(request_msg.requester_pid);
+			break;
 		case BINMGR_UPDATE:
 #ifdef CONFIG_APP_BINARY_SEPARATION
 			binary_manager_execute_loader(LOADCMD_UPDATE, 0);

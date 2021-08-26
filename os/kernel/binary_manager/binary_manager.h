@@ -262,7 +262,7 @@ int binary_manager_get_index_with_name(char *bin_name);
 int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
 int binary_manager_update_bpinfo(void);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
-int binary_manager_update_bootparam(void);
+int binary_manager_update_bootparam(int requester_pid);
 
 /****************************************************************************
  * Binary Manager Main Thread

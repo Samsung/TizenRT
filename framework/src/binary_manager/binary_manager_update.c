@@ -30,6 +30,39 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
+binmgr_result_type_e binary_manager_set_bootparam(void)
+{
+	binmgr_result_type_e ret;
+	binmgr_request_t request_msg;
+	binmgr_setbp_response_t response_msg;
+
+	ret = binary_manager_set_request(&request_msg, BINMGR_SETBP, NULL);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_send_request(&request_msg);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_setbp_response_t));
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	if (response_msg.result == BINMGR_OK) {
+		/* Copy binary info data */
+		is_updated
+	} else {
+		bmdbg("Binary manager set BOOTPARAM FAIL %d\n", response_msg.result);
+	}
+
+	return response_msg.result;
+
+}
+
+
 binmgr_result_type_e binary_manager_update_binary(void)
 {
 	binmgr_result_type_e ret;
