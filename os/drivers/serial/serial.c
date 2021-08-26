@@ -125,40 +125,6 @@ static const struct file_operations g_serialops = {
  * Private Functions
  ************************************************************************************/
 
-/************************************************************************************
- * Name: uart_takesem
- ************************************************************************************/
-
-static int uart_takesem(FAR sem_t *sem, bool errout)
-{
-	/* Loop, ignoring interrupts, until we have successfully acquired the semaphore */
-
-	while (sem_wait(sem) != OK) {
-		/* The only case that an error should occur here is if the wait was awakened
-		 * by a signal.
-		 */
-
-		ASSERT(get_errno() == EINTR);
-
-		/* When the signal is received, should we errout? Or should we just continue
-		 * waiting until we have the semaphore?
-		 */
-
-		if (errout) {
-			return -EINTR;
-		}
-	}
-
-	return OK;
-}
-
-
-/************************************************************************************
- * Name: uart_givesem
- ************************************************************************************/
-
-#define uart_givesem(sem) (void)sem_post(sem)
-
 /****************************************************************************
  * Name: uart_pollnotify
  ****************************************************************************/
@@ -239,121 +205,6 @@ void uart_datasent(FAR uart_dev_t *dev)
 	/* Notify all poll/select waiters that they can write to xmit buffer */
 
 	uart_pollnotify(dev, POLLOUT);
-}
-
-/************************************************************************************
- * Name: uart_putxmitchar
- ************************************************************************************/
-
-static int uart_putxmitchar(FAR uart_dev_t *dev, int ch, bool oktoblock)
-{
-	irqstate_t flags;
-	int nexthead;
-	int ret;
-
-	/* Increment to see what the next head pointer will be.  We need to use the "next"
-	 * head pointer to determine when the circular buffer would overrun
-	 */
-
-	nexthead = dev->xmit.head + 1;
-	if (nexthead >= dev->xmit.size) {
-		nexthead = 0;
-	}
-
-	/* Loop until we are able to add the character to the TX buffer */
-
-	for (;;) {
-		if (nexthead != dev->xmit.tail) {
-			dev->xmit.buffer[dev->xmit.head] = ch;
-			dev->xmit.head = nexthead;
-			return OK;
-		}
-
-		/* The buffer is full and no data is available now.  Should be block,
-		 * waiting for the hardware to remove some data from the TX
-		 * buffer?
-		 */
-
-		else if (oktoblock) {
-			/* Inform the interrupt level logic that we are waiting. This and
-			 * the following steps must be atomic.
-			 */
-
-			flags = irqsave();
-
-			/* Check again...  In certain race conditions an interrupt may
-			 * have occurred between the test at the top of the loop and
-			 * entering the critical section and the TX buffer may no longer
-			 * be full.
-			 *
-			 * NOTE: On certain devices, such as USB CDC/ACM, the entire TX
-			 * buffer may have been emptied in this race condition.  In that
-			 * case, the logic would hang below waiting for space in the TX
-			 * buffer without this test.
-			 */
-
-			if (nexthead != dev->xmit.tail) {
-				ret = OK;
-			}
-#ifdef CONFIG_SERIAL_REMOVABLE
-			/* Check if the removable device is no longer connected while we
-			 * have interrupts off.  We do not want the transition to occur
-			 * as a race condition before we begin the wait.
-			 */
-
-			else if (dev->disconnected) {
-				ret = -ENOTCONN;
-			}
-#endif
-			else {
-				/* Wait for some characters to be sent from the buffer with
-				 * the TX interrupt enabled.  When the TX interrupt is
-				 * enabled, uart_xmitchars should execute and remove some
-				 * of the data from the TX buffer.
-				 */
-
-				dev->xmitwaiting = true;
-				uart_enabletxint(dev);
-				ret = uart_takesem(&dev->xmitsem, true);
-				uart_disabletxint(dev);
-			}
-
-			irqrestore(flags);
-
-#ifdef CONFIG_SERIAL_REMOVABLE
-			/* Check if the removable device was disconnected while we were
-			 * waiting.
-			 */
-
-			if (dev->disconnected) {
-				return -ENOTCONN;
-			}
-#endif
-			/* Check if we were awakened by signal. */
-
-			if (ret < 0) {
-				/* A signal received while waiting for the xmit buffer to become
-				 * non-full will abort the transfer.
-				 */
-
-				return -EINTR;
-			}
-		}
-
-		/* The caller has request that we not block for data.  So return the
-		 * EAGAIN error to signal this situation.
-		 */
-
-		else {
-			return -EAGAIN;
-		}
-	}
-
-	/* We won't get here.  Some compilers may complain that this code is
-	 * unreachable.
-	 */
-
-	return OK;
 }
 
 /************************************************************************************
@@ -1303,6 +1154,148 @@ errout_with_sem:
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+
+/************************************************************************************
+ * Name: uart_takesem
+ ************************************************************************************/
+
+int uart_takesem(FAR sem_t *sem, bool errout)
+{
+	/* Loop, ignoring interrupts, until we have successfully acquired the semaphore */
+
+	while (sem_wait(sem) != OK) {
+		/* The only case that an error should occur here is if the wait was awakened
+		 * by a signal.
+		 */
+
+		ASSERT(get_errno() == EINTR);
+
+		/* When the signal is received, should we errout? Or should we just continue
+		 * waiting until we have the semaphore?
+		 */
+
+		if (errout) {
+			return -EINTR;
+		}
+	}
+
+	return OK;
+}
+
+/************************************************************************************
+ * Name: uart_putxmitchar
+ ************************************************************************************/
+
+int uart_putxmitchar(FAR uart_dev_t *dev, int ch, bool oktoblock)
+{
+	irqstate_t flags;
+	int nexthead;
+	int ret;
+
+	/* Increment to see what the next head pointer will be.  We need to use the "next"
+	 * head pointer to determine when the circular buffer would overrun
+	 */
+
+	nexthead = dev->xmit.head + 1;
+	if (nexthead >= dev->xmit.size) {
+		nexthead = 0;
+	}
+
+	/* Loop until we are able to add the character to the TX buffer */
+
+	for (;;) {
+		if (nexthead != dev->xmit.tail) {
+			dev->xmit.buffer[dev->xmit.head] = ch;
+			dev->xmit.head = nexthead;
+			return OK;
+		}
+
+		/* The buffer is full and no data is available now.  Should be block,
+		 * waiting for the hardware to remove some data from the TX
+		 * buffer?
+		 */
+
+		else if (oktoblock) {
+			/* Inform the interrupt level logic that we are waiting. This and
+			 * the following steps must be atomic.
+			 */
+
+			flags = irqsave();
+
+			/* Check again...  In certain race conditions an interrupt may
+			 * have occurred between the test at the top of the loop and
+			 * entering the critical section and the TX buffer may no longer
+			 * be full.
+			 *
+			 * NOTE: On certain devices, such as USB CDC/ACM, the entire TX
+			 * buffer may have been emptied in this race condition.  In that
+			 * case, the logic would hang below waiting for space in the TX
+			 * buffer without this test.
+			 */
+
+			if (nexthead != dev->xmit.tail) {
+				ret = OK;
+			}
+#ifdef CONFIG_SERIAL_REMOVABLE
+			/* Check if the removable device is no longer connected while we
+			 * have interrupts off.  We do not want the transition to occur
+			 * as a race condition before we begin the wait.
+			 */
+
+			else if (dev->disconnected) {
+				ret = -ENOTCONN;
+			}
+#endif
+			else {
+				/* Wait for some characters to be sent from the buffer with
+				 * the TX interrupt enabled.  When the TX interrupt is
+				 * enabled, uart_xmitchars should execute and remove some
+				 * of the data from the TX buffer.
+				 */
+
+				dev->xmitwaiting = true;
+				uart_enabletxint(dev);
+				ret = uart_takesem(&dev->xmitsem, true);
+				uart_disabletxint(dev);
+			}
+
+			irqrestore(flags);
+
+#ifdef CONFIG_SERIAL_REMOVABLE
+			/* Check if the removable device was disconnected while we were
+			 * waiting.
+			 */
+
+			if (dev->disconnected) {
+				return -ENOTCONN;
+			}
+#endif
+			/* Check if we were awakened by signal. */
+
+			if (ret < 0) {
+				/* A signal received while waiting for the xmit buffer to become
+				 * non-full will abort the transfer.
+				 */
+
+				return -EINTR;
+			}
+		}
+
+		/* The caller has request that we not block for data.  So return the
+		 * EAGAIN error to signal this situation.
+		 */
+
+		else {
+			return -EAGAIN;
+		}
+	}
+
+	/* We won't get here.  Some compilers may complain that this code is
+	 * unreachable.
+	 */
+
+	return OK;
+}
 
 /************************************************************************************
  * Name: uart_register
