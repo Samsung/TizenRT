@@ -786,17 +786,130 @@ int up_lowgetc(void)
  *  sent character
  *
  ****************************************************************************/
+
+extern bool abort_mode;
+
 int up_putc(int ch)
 {
-	/* Check for LF */
 
-	if (ch == '\n') {
-		/* Add CR */
+	if (getpid() == 0 || (up_interrupt_context() && !abort_mode)) {
+		/* Check for LF */
 
-		up_lowputc('\r');
+		if (ch == '\n') {
+			/* Add CR */
+
+			up_lowputc('\r');
+		}
+
+		up_lowputc(ch);
+		return ch;
 	}
 
-	up_lowputc(ch);
+	else if (abort_mode) {
+		/* In the case of a board crash or assert failure we use up_lowputc
+		 * instead of buffer. Few lldbg logs might be still left
+		 * in the buffer. So we empty the buffer first then proceed as
+		 * described above using up_lowputc.
+		 */
+		struct uart_dev_s *dev = &CONSOLE_DEV;
+		int ret;
+
+		if (!up_interrupt_context()) {
+			/* During interrupt context we need not worry about the xmit buffer
+			 * But if not in interrupt context we need to ensure its integrity
+			 * by taking the sem.
+			 */
+			ret = (ssize_t)uart_takesem(&dev->xmit.sem, true);
+		}
+
+		uart_disabletxint(dev);
+
+		if (dev->xmit.head != dev->xmit.tail) {
+			/* Few lldbg logs from the application side might
+			 * be present in the xmit buffer. So we empty those
+			 * logs first.
+			 */
+
+			up_lowputc('\r');
+			up_lowputc('\n');
+
+			char msg_start[] = "***** xmit buffer content start (may contain lldbg logs) ****\n";
+			char msg_end[] = "***** xmit buffer content end ****\n";
+
+			for (int i = 0; msg_start[i] != '\0'; i++) {
+				up_lowputc(msg_start[i]);
+			}
+
+			while (dev->xmit.head != dev->xmit.tail) {
+				/* Send the next byte */
+
+				up_lowputc(dev->xmit.buffer[dev->xmit.tail]);
+
+				/* Increment the tail index */
+				if (++(dev->xmit.tail) >= dev->xmit.size) {
+					dev->xmit.tail = 0;
+				}
+			}
+
+			for (int i = 0; msg_end[i] != '\0'; i++) {
+				up_lowputc(msg_end[i]);
+			}
+
+			up_lowputc('\r');
+			up_lowputc('\n');
+		}
+
+		if (!up_interrupt_context()) {
+			uart_givesem(&dev->xmit.sem);
+		}
+
+		if (ch == '\n') {
+			/* Add CR */
+
+			up_lowputc('\r');
+		}
+
+		up_lowputc(ch);
+		return ch;
+	}
+
+	/* If not in interrupt context, we are adding the lldbg logs to the xmit buffer. We
+	 * add one character after the other
+	 */
+
+	struct uart_dev_s *dev = &CONSOLE_DEV;
+	bool oktoblock = true;
+	int ret;
+
+	ret = (ssize_t)uart_takesem(&dev->xmit.sem, true);
+
+	if (ret < 0) {
+		/* Skip the character */
+		return ch;
+	}
+
+	uart_disabletxint(dev);
+
+	ret = OK;
+
+	/* If this is the console, convert \n -> \r\n */
+
+	if (dev->isconsole && ch == '\n') {
+		ret = uart_putxmitchar(dev, '\r', oktoblock);
+	}
+
+	/* Put the character into the transmit buffer */
+
+	if (ret == OK) {
+		ret = uart_putxmitchar(dev, ch, oktoblock);
+	}
+
+	if (dev->xmit.head != dev->xmit.tail) {
+		uart_enabletxint(dev);
+	}
+
+	uart_givesem(&dev->xmit.sem);
+
 	return ch;
 }
 
