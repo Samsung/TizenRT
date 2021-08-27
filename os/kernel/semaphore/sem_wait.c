@@ -221,9 +221,8 @@ int sem_wait(FAR sem_t *sem)
 			 * latter cases be examining the errno value.
 			 *
 			 * In the event that the semaphore wait was interrupted by a signal or
-			 * a timeout, certain semaphore clean-up operations have already been
-			 * performed (see sem_waitirq.c).  Specifically:
-			 *
+			 * a timeout, certain semaphore clean-up operations like semcount recovery
+			 * have already been performed (see sem_waitirq.c). Specifically:
 			 * - sem_canceled() was called to restore the priority of all threads
 			 *   that hold a reference to the semaphore,
 			 * - The semaphore count was decremented, and
