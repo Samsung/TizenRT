@@ -197,9 +197,12 @@ ifeq ($(WINTOOL),y)
   CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/common}"
   CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src}"
 else
+  CFLAGS += -I$(ARCH_SRCDIR)/chip
   CFLAGS += -I$(ARCH_SRCDIR)/common
+  CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/cmsis
   CFLAGS += -I$(BOARD_SRCDIR)/common
   CFLAGS += -I$(ARCH_SRCDIR)/armv8-m
+  CFLAGS += -I$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src
 endif
 
 all: libboard$(LIBEXT)
