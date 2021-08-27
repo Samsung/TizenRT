@@ -527,7 +527,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 
 	// Check "Connection" header value
 	header_field_value = http_keyvalue_list_find(request_params, "Connection");
-	if (!strncmp(header_field_value, "Keep-Alive", strlen("Keep-Alive")+1)) {
+	if (!strncasecmp(header_field_value, "Keep-Alive", strlen("Keep-Alive")+1)) {
 		client->keep_alive = 1;
 	} else {
 		client->keep_alive = 0;
