@@ -21,6 +21,18 @@
 
 #include <tinyara/config.h>
 
+#undef  CONFIG_DEBUG
+#undef  CONFIG_DEBUG_ERROR
+#undef  CONFIG_DEBUG_WARN
+#undef  CONFIG_DEBUG_VERBOSE
+#undef  CONFIG_ARCH_LOWPUTC
+
+#define CONFIG_DEBUG 1
+#define CONFIG_DEBUG_ERROR 1
+#define CONFIG_DEBUG_WARN 1
+#define CONFIG_DEBUG_VERBOSE 1
+#define CONFIG_ARCH_LOWPUTC 1
+
 #include <debug.h>
 #include <errno.h>
 #include <string.h>
@@ -320,11 +332,13 @@ void automount_fs_partition(partition_info_t *partinfo)
 	ret = mksmartfs(fs_devname, false);
 #endif
 	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed\n", fs_devname);
+		lldbg("ERROR: mksmartfs on %s failed errno : %d\n", fs_devname, errno);
 	} else {
 		ret = mount(fs_devname, "/mnt", "smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
+		} else {
+			lldbg("%s is mounted successfully @ %s \n", fs_devname, "/mnt");
 		}
 	}
 #endif
@@ -334,6 +348,8 @@ void automount_fs_partition(partition_info_t *partinfo)
 	ret = mount(fs_devname, "/rom", "romfs", 0, NULL);
 	if (ret != OK) {
 		lldbg("ERROR: mounting '%s'(ROMFS) failed, errno %d\n", fs_devname, get_errno());
+	} else {
+		lldbg("%s is mounted successfully @ %s \n", fs_devname, "/rom");
 	}
 #endif /* CONFIG_AUTOMOUNT_ROMFS */
 
@@ -342,6 +358,8 @@ void automount_fs_partition(partition_info_t *partinfo)
 	ret = mount(fs_devname, CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
 	if (ret != OK) {
 		lldbg("ROMFS ERROR: timezone mount failed, errno %d\n", get_errno());
+	} else {
+		lldbg("%s is mounted successfully @ %s \n", fs_devname, CONFIG_LIBC_TZDIR);
 	}
 #endif	/* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif
