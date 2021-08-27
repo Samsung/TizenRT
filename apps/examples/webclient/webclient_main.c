@@ -166,8 +166,9 @@ static int g_testentity;
 static int g_total_received_size;
 static int g_callback_call_count;
 
-static const char headerfield_connect[] = "Connect";
+static const char headerfield_connect[] = "Connection";
 static const char headerfield_close[] = "close";
+static const char headerfield_keepAlive[] = "keep-alive";
 static const char headerfield_useragent[] = "User-Agent";
 static const char headerfield_tinyara[] = "TinyARA";
 
@@ -293,6 +294,8 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 				printf("entity is too big\n");
 				goto exit;
 			}
+		} else  if (strncmp(p, "keep-alive", 10) == 0) {
+			request->keep_alive = atoi(q);
 		} else {
 			goto exit;
 		}
@@ -327,7 +330,12 @@ pthread_addr_t webclient_cb(void *arg)
 	 * must initialize keyvalue list for request headers
 	 */
 	http_keyvalue_list_init(&headers);
-	http_keyvalue_list_add(&headers, headerfield_connect, headerfield_close);
+	if (request.keep_alive == 0) {
+		http_keyvalue_list_add(&headers, headerfield_connect, headerfield_close);
+	} else if (request.keep_alive == 1) {
+		http_keyvalue_list_add(&headers, headerfield_connect, headerfield_keepAlive);
+	}
+
 	http_keyvalue_list_add(&headers, headerfield_useragent, headerfield_tinyara);
 	request.headers = &headers;
 
