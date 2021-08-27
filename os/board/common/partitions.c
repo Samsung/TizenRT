@@ -322,6 +322,8 @@ void automount_fs_partition(partition_info_t *partinfo)
 		ret = mount(fs_devname, "/mnt", "smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
+		} else {
+			lldbg("%s is mounted successfully @ %s \n", fs_devname, "/mnt");
 		}
 	}
 #endif
