@@ -26,6 +26,7 @@
 19. up_reboot_reason_read()
 20. up_reboot_reason_write()
 21. up_reboot_reason_clear()
+22. up_check_prodswd() and up_check_proddownload()
 
 ## API Description
 
@@ -278,3 +279,21 @@ c. **up_watchdog_disable()** : Disable board specific watchdog
 *File Location:*	"os/arch/arm/src/chip/chip_reboot_reason.c"
 
 *Prototype Location:*	"os/arch/arm/include/reboot_reason.h"
+
+- Add low level chip specific API **up_check_prodswd** and **up_check_proddownload** to check JTAG usage and Downloader usage.  
+For more details, please contact to Samsung TizenRT Developers.
+```c
+ * Prototype: int up_check_prodswd(void)
+ * Input Parameters:
+ *   none
+ * Returned Value:
+ *   OK for success, ERROR for failure.
+```
+```c
+ * Prototype: int up_check_proddownload(void)
+ * Input Parameters:
+ *   none
+ * Returned Value:
+ *   OK for success, ERROR for failure.
+```
+*Prototype Location:*	"os/arch/arm/include/prodconfig.h"
