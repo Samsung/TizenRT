@@ -140,6 +140,7 @@ struct http_client_request_t {
 	struct http_client_ssl_config_t ssl_config;
 #endif
 	int async_flag;
+	int keep_alive;
 };
 
 /**

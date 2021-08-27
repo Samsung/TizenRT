@@ -153,6 +153,7 @@
 #define ISO_space                  0x20
 
 #define MBED_DEBUG_LEVEL 0
+#define KEEP_ALIVE_REQUEST_COUNT 3
 
 /****************************************************************************
  * Private Types
@@ -939,10 +940,12 @@ static pthread_addr_t wget_base(void *arg)
 	struct http_client_request_t *param = (struct http_client_request_t *)arg;
 	struct http_client_response_t response = {0, };
 	int read_finish = false;
+	int send_len = 0;
 
 	struct http_client_tls_t *client_tls = (struct http_client_tls_t *)malloc(sizeof(
 			struct http_client_tls_t));
 	int handshake_retry = WEBCLIENT_CONF_HANDSHAKE_RETRY;
+	int keep_alive_count = 0;
 
 	if (client_tls == NULL) {
 		free(param->buffer);
@@ -1005,81 +1008,93 @@ retry:
 		goto errout;
 	}
 
-	buf_len = 0;
-	while (sndlen > 0) {
-		if (param->tls) {
-			ret = mbedtls_ssl_write(&(client_tls->tls_ssl),
-									(const unsigned char *)param->buffer + buf_len,
-									sndlen);
-		} else {
-			ret = send(sockfd, param->buffer + buf_len, sndlen, 0);
-		}
-		if (ret < 1) {
-			ndbg("ERROR: send failed: %d\n", ret);
-			goto errout;
-		} else {
-			sndlen -= ret;
-			buf_len += ret;
-			ndbg("SEND SUCCESS: send %d bytes\n", ret);
-		}
+	send_len = sndlen;
+	keep_alive_count = 0;
+	if (param->keep_alive) {
+		keep_alive_count = KEEP_ALIVE_REQUEST_COUNT;
 	}
 
-	if (param->callback && param->response == NULL) {
-		param->response = &response;
-		if (http_client_response_init(param->response) < 0) {
-			ndbg("ERROR: response init failed: %d\n", ret);
-			param->response = NULL;
-			goto errout;
-		}
-	}
+	for (int i = 0; i <= keep_alive_count; i++) {
+		buf_len = 0;
+		sndlen = send_len;
 
-	int loopcount = 0;
-	while (!read_finish) {
-		ndbg("Receive start\n");
-		memset(param->response->message, 0, WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
-		if (param->tls) {
-			len = mbedtls_ssl_read(&(client_tls->tls_ssl),
-								   (unsigned char *)param->response->message,
-								   WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
-		} else {
-			len = recv(sockfd, param->response->message,
-					   WEBCLIENT_CONF_MAX_MESSAGE_SIZE, 0);
-		}
-
-		if (len < 0) {
-			ndbg("Error: Receive Fail\n");
-			goto errout;
-		} else if (len == 0) {
-			ndbg("Finish read\n");
-			if (mlen.message_len - mlen.sentence_start == mlen.content_len) {
-				ndbg("download completed successfully\n");
-				break;
+		while (sndlen > 0) {
+			if (param->tls) {
+				ret = mbedtls_ssl_write(&(client_tls->tls_ssl),
+										(const unsigned char *)param->buffer + buf_len,
+										sndlen);
 			} else {
-				ndbg("Error: Receive Fail\n");
+				ret = send(sockfd, param->buffer + buf_len, sndlen, 0);
+			}
+			if (ret < 1) {
+				ndbg("ERROR: send failed: %d\n", ret);
+				goto errout;
+			} else {
+				sndlen -= ret;
+				buf_len += ret;
+				ndbg("SEND SUCCESS: send %d bytes\n", ret);
+			}
+		}
+
+		if (param->callback && param->response == NULL) {
+			param->response = &response;
+			if (http_client_response_init(param->response) < 0) {
+				ndbg("ERROR: response init failed: %d\n", ret);
+				param->response = NULL;
 				goto errout;
 			}
 		}
 
-		usleep(1);
-		read_finish = http_parse_message(param->response->message,
-						 len, NULL, param->response->url,
-						 &param->response->entity,
-						 &encoding, &state, &mlen,
-						 param->response->headers,
-						 NULL, param->response, NULL);
+		read_finish = false;
+		int loopcount = 0;
+		while (!read_finish) {
+			ndbg("Receive start\n");
+			memset(param->response->message, 0, WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
+			if (param->tls) {
+				len = mbedtls_ssl_read(&(client_tls->tls_ssl),
+									   (unsigned char *)param->response->message,
+									   WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
+			} else {
+				len = recv(sockfd, param->response->message,
+						   WEBCLIENT_CONF_MAX_MESSAGE_SIZE, 0);
+			}
 
-		++loopcount;
-		nvdbg("====== loopcount : %d read_finish : %d=====\n", loopcount, read_finish);
-		if (read_finish == HTTP_ERROR) {
-			ndbg("Error: Parse message Fail\n");
-			goto errout;
-		}
+			if (len < 0) {
+				ndbg("Error: Receive Fail\n");
+				goto errout;
+			} else if (len == 0) {
+				ndbg("Finish read\n");
+				if (mlen.message_len - mlen.sentence_start == mlen.content_len) {
+					ndbg("download completed successfully\n");
+					break;
+				} else {
+					ndbg("Error: Receive Fail\n");
+					goto errout;
+				}
+			}
 
-		param->response->method = param->method;
-		param->response->url = param->url;
+			usleep(1);
+			read_finish = http_parse_message(param->response->message,
+							 len, NULL, param->response->url,
+							 &param->response->entity,
+							 &encoding, &state, &mlen,
+							 param->response->headers,
+							 NULL, param->response, NULL);
 
-		if (param->callback && param->response->entity_len != 0) {
-			param->callback(param->response);
+			++loopcount;
+			nvdbg("====== loopcount : %d read_finish : %d=====\n", loopcount, read_finish);
+			if (read_finish == HTTP_ERROR) {
+				ndbg("Error: Parse message Fail\n");
+				goto errout;
+			}
+
+			param->response->method = param->method;
+			param->response->url = param->url;
+
+			if (param->callback && param->response->entity_len != 0) {
+				param->callback(param->response);
+			}
+
 		}
 	}
 
