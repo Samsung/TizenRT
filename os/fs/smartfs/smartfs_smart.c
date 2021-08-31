@@ -245,20 +245,20 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			goto errout_with_buffer;
 		}
 
-		/* TODO: Test open mode based on the file mode */
+		/* The file exists already.
+		 * If the file has been requested to be opened in TRUNCATE mode, then shrink the file.
+		 * However, if APPEND mode has also been requested, do not shrink the file to 0.
+		 */
 
-		/* The file exists.  Check if we are opening it for O_CREAT or
-		 * O_TRUNC mode and delete the sector chain if we are. */
+		/* TODO: This method for checking the open modes is not in full accordance with POSIX standard.
+		 *       POSIX standard truncates the file i.e. shrinks to 0 irrespective of other included flags.
+		 */
 
-		if ((oflags & (O_CREAT | O_TRUNC)) != 0) {
-			/* Don't truncate if open for APPEND */
-
-			if (!(oflags & O_APPEND)) {
-				/* Truncate the file to length 0 as part of the open */
-				ret = smartfs_shrinkfile(fs, sf, 0);
-				if (ret < 0) {
-					goto errout_with_buffer;
-				}
+		if (((oflags & O_TRUNC) != 0) && ((oflags & O_APPEND) == 0)) {
+			/* Truncate the file to length 0 as part of the open */
+			ret = smartfs_shrinkfile(fs, sf, 0);
+			if (ret < 0) {
+				goto errout_with_buffer;
 			}
 		}
 	} else if (ret == -ENOENT) {
