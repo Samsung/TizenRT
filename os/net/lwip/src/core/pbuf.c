@@ -224,16 +224,19 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 		}
 		p->type = type;
 		p->next = NULL;
-
+		p->flags = 0;
 		/* make the payload pointer point 'offset' bytes into pbuf data memory */
 		p->payload = LWIP_MEM_ALIGN((void *)((u8_t *) p + (SIZEOF_STRUCT_PBUF + offset)));
-		LWIP_ASSERT("pbuf_alloc: pbuf p->payload properly aligned", ((mem_ptr_t) p->payload % MEM_ALIGNMENT) == 0);
+		LWIP_ASSERT("pbuf_alloc: pbuf p->payload properly aligned",
+					((mem_ptr_t)p->payload % MEM_ALIGNMENT) == 0);
 		/* the total length of the pbuf chain is the requested size */
 		p->tot_len = length;
 		/* set the length of the first pbuf in the chain */
 		p->len = LWIP_MIN(length, PBUF_POOL_BUFSIZE_ALIGNED - LWIP_MEM_ALIGN_SIZE(offset));
-		LWIP_ASSERT("check p->payload + p->len does not overflow pbuf", ((u8_t *) p->payload + p->len <= (u8_t *) p + SIZEOF_STRUCT_PBUF + PBUF_POOL_BUFSIZE_ALIGNED));
-		LWIP_ASSERT("PBUF_POOL_BUFSIZE must be bigger than MEM_ALIGNMENT", (PBUF_POOL_BUFSIZE_ALIGNED - LWIP_MEM_ALIGN_SIZE(offset)) > 0);
+		LWIP_ASSERT("check p->payload + p->len does not overflow pbuf",
+					((u8_t *)p->payload + p->len <= (u8_t *)p + SIZEOF_STRUCT_PBUF + PBUF_POOL_BUFSIZE_ALIGNED));
+		LWIP_ASSERT("PBUF_POOL_BUFSIZE must be bigger than MEM_ALIGNMENT",
+					(PBUF_POOL_BUFSIZE_ALIGNED - LWIP_MEM_ALIGN_SIZE(offset)) > 0);
 		/* set reference count (needed here in case we fail) */
 		p->ref = 1;
 
