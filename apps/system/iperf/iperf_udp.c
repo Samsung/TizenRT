@@ -124,7 +124,7 @@ int iperf_udp_recv(struct iperf_stream *sp)
 		sp->packet_count = pcount;
 	} else {
 		sp->outoforder_packets++;
-		iperf_err(sp->test, "OUT OF ORDER - incoming packet = %lld and received packet = %d AND SP = %d", pcount, sp->packet_count, sp->socket);
+		// pkbuild iperf_err(sp->test, "OUT OF ORDER - incoming packet = %lld and received packet = %d AND SP = %d", pcount, sp->packet_count, sp->socket);
 	}
 
 	/* jitter measurement */

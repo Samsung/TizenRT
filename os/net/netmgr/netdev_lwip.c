@@ -363,7 +363,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
 
 	if (!p) {
-		NET_LOGE(TAG, "pbuf alloc\n");
+		NET_LOGE(TAG, "T%d pbuf alloc\n", getpid()); 
 		LWIP_DEBUGF(NETIF_DEBUG, ("mem error\n"));
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
@@ -372,9 +372,15 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	LWIP_DEBUGF(NETIF_DEBUG, ("processing pbufs\n"));
 
 	/* We iterate over the pbuf chain until we have read the entire packet into the pbuf. */
+	uint32_t total = 0;
+	uint32_t remain = len;
 	for (q = p; q != NULL; q = q->next) {
-		memcpy(q->payload, frame_ptr, q->len);
-		frame_ptr += q->len;
+		int buf_size = q->len > remain ? remain : q->len;
+		lldbg("[PK] %p %p %p %p %d %d %d %d\n", p, q, q->payload, frame_ptr, len, total, q->len, remain);
+		memcpy(q->payload, frame_ptr, buf_size);
+		frame_ptr += buf_size;
+		total += buf_size;
+		remain -= buf_size;
 	}
 
 	struct eth_hdr *ethhdr = p->payload;

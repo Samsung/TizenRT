@@ -409,6 +409,7 @@ void mem_init(void)
 	ram_end->next = MEM_SIZE_ALIGNED;
 	ram_end->prev = MEM_SIZE_ALIGNED;
 
+	lldbg("[pkbuild] lwip mem range %p %p \n", ram, ram_end);
 	/* initialize the lowest-free pointer to the start of the heap */
 	lfree = (struct mem *)(void *)ram;
 
