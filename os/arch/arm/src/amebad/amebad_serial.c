@@ -786,7 +786,16 @@ int up_lowgetc(void)
  *  sent character
  *
  ****************************************************************************/
-int up_putc(int ch)
+
+#define MAX_BUFFER_SIZE 1000
+extern bool abort_mode;
+static char buffer[MAX_BUFFER_SIZE];
+static int start = 0;
+static int end = 0;
+sem_t mutex;
+static bool init_mutex = true;
+
+int putc_helper(int ch)
 {
 	/* Check for LF */
 
@@ -797,6 +806,54 @@ int up_putc(int ch)
 	}
 
 	up_lowputc(ch);
+
+}
+
+int up_putc(int ch)
+{
+	if (abort_mode) {
+		/* board has crashed. so disable the uart interrupts
+		 * and procedd with up_lowputc directly
+		 */
+		struct uart_dev_s *dev = &CONSOLE_DEV;
+		uart_disabletxint(dev);
+		putc_helper(ch);
+	}
+	else if (getpid() == 0 || up_interrupt_context()) {
+		/* Direclty send it to the lower level */
+		putc_helper(ch);
+	}
+	else {
+		/* we are in application context */
+		buffer[end] = ch;
+		end = end + 1;
+
+		if (ch == '\n' || end == MAX_BUFFER_SIZE) {
+			/* we got a complete line to output or the buffer is full */
+			if (init_mutex) {
+				sem_init(&mutex, 1, 1);
+				init_mutex = false;
+			}
+
+			sem_wait(&mutex);
+			struct uart_dev_s *dev = &CONSOLE_DEV;
+			uart_disabletxint(dev);
+
+			/* print this entire line in a new line to avoid the line
+			 * starting in the middle of a line that is being output
+			 */
+			putc_helper('\n');
+
+			for (; start != end; start++) putc_helper(buffer[start]);
+
+			start = 0;
+			end = 0;
+
+			uart_enabletxint(dev);
+			sem_post(&mutex);
+
+		}
+	}
 	return ch;
 }
 
