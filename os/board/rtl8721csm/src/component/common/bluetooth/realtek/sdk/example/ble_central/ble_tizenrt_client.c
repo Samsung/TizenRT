@@ -23,12 +23,13 @@ extern T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_central_read_results[BLE_TIZENRT
 extern T_GCS_WRITE_RESULT g_write_result;
 extern T_GCS_WRITE_RESULT g_write_no_rsp_result;
 
-uint16_t g_conn_req_num = 0;
+uint8_t g_master_link_num = 0;
 trble_client_init_config *client_init_parm = NULL;
 T_GCS_WRITE_RESULT *write_request_result = NULL;
 T_GCS_WRITE_RESULT *write_no_rsponse_result = NULL;
 uint8_t ble_app_link_table_size = 0;
-BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_table = NULL;
+uint8_t ble_client_connect_is_running = 0;
+BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_info = NULL;
 T_TIZENRT_CLIENT_READ_RESULT *ble_read_results = NULL;
 BLE_TIZENRT_APP_LINK *ble_app_link_table = NULL;
 bool (*ble_tizenrt_client_send_msg)(uint16_t sub_type, void *arg) = NULL;
@@ -46,8 +47,8 @@ trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm)
         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
         return TRBLE_FAIL;
     }
-    ble_tizenrt_bond_req_table = os_mem_alloc(0, BLE_TIZENRT_CENTRAL_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
-    if(ble_tizenrt_bond_req_table == NULL)
+    ble_tizenrt_bond_req_info = os_mem_alloc(0, sizeof(BLE_TIZENRT_BOND_REQ));
+    if(ble_tizenrt_bond_req_info == NULL)
     {
         os_mem_free(client_init_parm);
         client_init_parm = NULL;
@@ -64,7 +65,7 @@ trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm)
     write_request_result = &g_write_result;
     write_no_rsponse_result = &g_write_no_rsp_result;
     ble_app_link_table_size = BLE_TIZENRT_CENTRAL_APP_MAX_LINKS;
-    memset(ble_tizenrt_bond_req_table, 0, BLE_TIZENRT_CENTRAL_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
+    memset(ble_tizenrt_bond_req_info, 0, sizeof(BLE_TIZENRT_BOND_REQ));
     ble_read_results = ble_tizenrt_central_read_results;
     ble_app_link_table = ble_tizenrt_central_app_link_table;
     ble_tizenrt_client_send_msg = ble_tizenrt_central_send_msg;
@@ -194,32 +195,29 @@ trble_result_e rtw_ble_client_stop_scan(void)
 }
 
 trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secured_connect)
-{ 
-    if (conn_info == NULL || g_conn_req_num >= ble_app_link_table_size)
+{
+    if(ble_client_connect_is_running)
+    {
+        printf("\r\n[%s] ble_client_connect is running\r\n", __FUNCTION__);
+        return TRBLE_FAIL;
+    } else
+        ble_client_connect_is_running = 1;
+
+    if(conn_info == NULL || g_master_link_num >= ble_app_link_table_size)
     {
         printf("\r\n[%s] invalid\r\n", __FUNCTION__);
+        ble_client_connect_is_running = 0;
         return TRBLE_FAIL;
     }
 
-    int i = 0;
-    while(i < ble_app_link_table_size && ble_tizenrt_bond_req_table[i++].addr) ;
-    ble_tizenrt_bond_req_table[i - 1].addr = os_mem_alloc(0, GAP_BD_ADDR_LEN);
-    if(ble_tizenrt_bond_req_table[i - 1].addr == NULL)
-    {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
-        return TRBLE_FAIL;
-    }
-    memcpy(ble_tizenrt_bond_req_table[i - 1].addr, conn_info->addr.mac, GAP_BD_ADDR_LEN);
-    ble_tizenrt_bond_req_table[i - 1].is_secured_connect = is_secured_connect;
-    g_conn_req_num++;
-    debug_print("\r\n[%s] ble_tizenrt_bond_req_table[%d]\r\n", __FUNCTION__, i - 1);
+    memcpy(ble_tizenrt_bond_req_info->addr, conn_info->addr.mac, GAP_BD_ADDR_LEN);
+    ble_tizenrt_bond_req_info->is_secured_connect = is_secured_connect;
+
     T_TIZENRT_CONN_PARAM *conn_arg = os_mem_alloc(0, sizeof(T_TIZENRT_CONN_PARAM));
     if(conn_arg == NULL)
     {
-        os_mem_free(ble_tizenrt_bond_req_table[i - 1].addr);
-        memset(ble_tizenrt_bond_req_table[i - 1].addr, 0, sizeof(BLE_TIZENRT_BOND_REQ));
-        g_conn_req_num--;
         debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        ble_client_connect_is_running = 0;
         return TRBLE_FAIL;
     }
     memcpy(conn_arg->remote_bd, conn_info->addr.mac, GAP_BD_ADDR_LEN);
@@ -233,9 +231,8 @@ trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secure
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_CONNECT, conn_arg) == false)
     {
         os_mem_free(conn_arg);
-        os_mem_free(ble_tizenrt_bond_req_table[i - 1].addr);
-        memset(&ble_tizenrt_bond_req_table[i], 0, sizeof(BLE_TIZENRT_BOND_REQ));
         debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        ble_client_connect_is_running = 0;
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;
@@ -574,11 +571,11 @@ trble_result_e rtw_ble_client_deinit(void)
 {
     ble_tizenrt_central_app_deinit();
 
-    g_conn_req_num = 0;
+    g_master_link_num = 0;
     os_mem_free(client_init_parm);
     client_init_parm = NULL;
-    os_mem_free(ble_tizenrt_bond_req_table);
-    ble_tizenrt_bond_req_table = NULL;
+    os_mem_free(ble_tizenrt_bond_req_info);
+    ble_tizenrt_bond_req_info = NULL;
 
     return TRBLE_SUCCESS; 
 }
