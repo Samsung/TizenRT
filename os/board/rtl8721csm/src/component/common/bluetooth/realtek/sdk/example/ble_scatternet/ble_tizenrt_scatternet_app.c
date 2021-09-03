@@ -41,16 +41,16 @@
 
 extern trble_server_init_config server_init_parm;
 extern trble_client_init_config *client_init_parm;
-extern uint16_t g_conn_req_num;
+extern uint8_t g_master_link_num;
+extern uint8_t ble_app_link_table_size;
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
-extern BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_table;
+extern BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_info;
+extern uint8_t ble_client_connect_is_running;
 
 T_CLIENT_ID   ble_tizenrt_scatternet_gcs_client_id;         /**< General Common Services client client id*/
 T_GAP_DEV_STATE ble_tizenrt_scatternet_gap_dev_state = {0, 0, 0, 0, 0};                /**< GAP device state */
-int ble_scatternet_peripheral_app_max_links = 0;
-int ble_scatternet_central_app_max_links = 0;
 BLE_TIZENRT_SCATTERNET_APP_LINK ble_tizenrt_scatternet_app_link_table[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
 T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_scatternet_read_results[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
 
@@ -64,6 +64,7 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
 	switch (callback_msg.type) {
         case BLE_TIZENRT_BONDED_MSG:
         {
+            debug_print("\r\n[%s] Handle bond msg", __FUNCTION__);
             trble_device_connected *bonded_dev = callback_msg.u.buf;
             if(bonded_dev)
             {
@@ -88,29 +89,24 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                 debug_print("\r\n[%s] DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X\r\n", __FUNCTION__, 
                             connected_dev->conn_info.addr.mac[5], connected_dev->conn_info.addr.mac[4], connected_dev->conn_info.addr.mac[3],
                             connected_dev->conn_info.addr.mac[2], connected_dev->conn_info.addr.mac[1], connected_dev->conn_info.addr.mac[0]);
-                for (int i = 0; i < BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS; i++)
+                uint32_t handle = (uint32_t) connected_dev->conn_handle;
+                if(!memcmp(ble_tizenrt_bond_req_info->addr, connected_dev->conn_info.addr.mac, GAP_BD_ADDR_LEN))
                 {
-                    if(!memcmp(ble_tizenrt_bond_req_table[i].addr, connected_dev->conn_info.addr.mac, GAP_BD_ADDR_LEN))
+                    debug_print("\r\n[%s] find conn handle", __FUNCTION__);
+                    if(ble_tizenrt_bond_req_info->is_secured_connect && (ble_tizenrt_scatternet_app_link_table[handle].auth_state != GAP_AUTHEN_STATE_COMPLETE))
                     {
-                        if(ble_tizenrt_bond_req_table[i].is_secured_connect && (ble_tizenrt_scatternet_app_link_table[i].auth_state != GAP_AUTHEN_STATE_COMPLETE))
+                        debug_print("\r\n[%s] LL connected %d, need pairing", __FUNCTION__, connected_dev->conn_handle);
+                        if(ble_tizenrt_scatternet_send_msg(BLE_TIZENRT_BOND, (void *) handle) == false)
                         {
-                            debug_print("\r\n[%s] LL connected %d, need pairing", __FUNCTION__, connected_dev->conn_handle);
-                            uint32_t handle = (uint32_t) connected_dev->conn_handle;
-                            if(ble_tizenrt_scatternet_send_msg(BLE_TIZENRT_BOND, (void *) handle) == false)
-                            {
-                                os_mem_free(connected_dev);
-                                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                                return;
-                            }
-                        } else {
-                            debug_print("\r\n[%s] LL connected %d, do not need pairing", __FUNCTION__, connected_dev->conn_handle);
-                            client_init_parm->trble_device_connected_cb(connected_dev);
+                            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
                         }
-                        os_mem_free(connected_dev);
-                        os_mem_free(ble_tizenrt_bond_req_table[i].addr);
-                        memset(&ble_tizenrt_bond_req_table[i], 0, sizeof(BLE_TIZENRT_BOND_REQ));
-                        g_conn_req_num--;
-                        break;
+                        if(ble_client_connect_is_running)
+                            ble_client_connect_is_running = 0;
+                    } else {
+                        debug_print("\r\n[%s] LL connected %d, do not need pairing", __FUNCTION__, connected_dev->conn_handle);
+                        if(ble_client_connect_is_running)
+                            ble_client_connect_is_running = 0;
+                        client_init_parm->trble_device_connected_cb(connected_dev);
                     }
                 }
                 os_mem_free(connected_dev);
@@ -154,6 +150,8 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
         case BLE_TIZENRT_DISCONNECTED_MSG:
         {
             debug_print("\r\n[%s] Handle disconnected msg", __FUNCTION__);
+            if(ble_client_connect_is_running)
+                ble_client_connect_is_running = 0;
             trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
             client_init_parm->trble_device_disconnected_cb(disconnected);
         }
@@ -290,10 +288,12 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
                         param->remote_bd[3], param->remote_bd[2], param->remote_bd[1], param->remote_bd[0],
                         param->remote_bd_type);
                 debug_print("\r\n[%s] ci: %d si: %d\r\n", __FUNCTION__, conn_req_param.conn_interval_max, conn_req_param.conn_latency);
-                ret = le_connect(0, param->remote_bd, param->remote_bd_type,
-                                            GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
-                if(ret)
+                ret = le_connect(0, param->remote_bd, param->remote_bd_type, GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
+                if(ret) {
                     printf("\r\n[%s] le_connect fail 0x%x ", __FUNCTION__, ret);
+                    if(ble_client_connect_is_running)
+                        ble_client_connect_is_running = 0;
+                }
                 os_mem_free(param);
             } else {
                 debug_print("\n[%s] Connect parameter is NULL", __FUNCTION__);
@@ -305,6 +305,8 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
             uint8_t param = (uint32_t) pdata;
             debug_print("\r\n[%s] disconn_id 0x%x", __FUNCTION__, param);
             ret = le_disconnect(param);
+            if(ret)
+                printf("\r\n[%s] le_disconnect fail 0x%x ", __FUNCTION__, ret);
         }
 			break;
         case BLE_TIZENRT_BOND:
@@ -657,14 +659,13 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                                  disc_cause);
             }
             printf("\r\n[BLE_TIZENRT] Disconnect conn_id %d", conn_id);
-            if(ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_SLAVE) {
+            if (ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_SLAVE) {
                 T_TIZENRT_CONNECTED_CALLBACK_DATA *disconn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
                 if(disconn_data)
                 {
                     disconn_data->conn_id = conn_id;
                     disconn_data->conn_type = TRBLE_SERVER_DISCONNECTED;
                     memcpy(disconn_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, TRBLE_BD_ADDR_MAX_LEN);
-                    memset(&ble_tizenrt_scatternet_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_SCATTERNET_APP_LINK));
                     if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, disconn_data) == false)
                     {
                         os_mem_free(disconn_data);
@@ -674,13 +675,17 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                     debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
                 }
             } else {
-                memset(&ble_tizenrt_scatternet_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_SCATTERNET_APP_LINK));
+                if (ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_MASTER)
+                    if (g_master_link_num){
+                        g_master_link_num --;
+                    }
                 uint32_t connid = (uint32_t) conn_id;
                 if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid) == false)
                 {
                     debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
                 }
             }
+            memset(&ble_tizenrt_scatternet_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_SCATTERNET_APP_LINK));
         }
         break;
 
@@ -690,22 +695,18 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                              (void *)&ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd_type);
             //get device role
             if (le_get_conn_info(conn_id, &conn_info)){
-				ble_tizenrt_scatternet_app_link_table[conn_id].role = conn_info.role;
-				if (ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_MASTER)
-					ble_scatternet_central_app_max_links ++;
-				else
-					ble_scatternet_peripheral_app_max_links ++;
+                ble_tizenrt_scatternet_app_link_table[conn_id].role = conn_info.role;
             }
             printf("\r\n[BLE_TIZENRT] Connected success conn_id %d", conn_id);
-            debug_print("\r\n[[BLE_TIZENRT] addr 0x%x0x%x0x%x0x%x0x%x0x%x", __FUNCTION__,
+            debug_print("\r\n[BLE_TIZENRT] addr %02x:%02x:%02x:%02x:%02x:%02x",
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[5],
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[4],
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[3],
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[2],
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[1],
                             ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd[0]);
-            if(ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_MASTER)
-            {
+            if (ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_MASTER) {
+                g_master_link_num ++;
                 trble_device_connected *connected_dev = os_mem_alloc(0, sizeof(trble_device_connected));
                 if(connected_dev)
                 {
@@ -724,7 +725,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                 } else {
                     debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
                 }
-            } else if(ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_SLAVE) {
+            } else if (ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_SLAVE) {
                 T_TIZENRT_CONNECTED_CALLBACK_DATA *conn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
                 if(conn_data)
                 {

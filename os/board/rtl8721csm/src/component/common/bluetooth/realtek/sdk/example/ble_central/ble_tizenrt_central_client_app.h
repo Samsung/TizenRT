@@ -48,7 +48,7 @@ extern void print_no_client(const char* format, ...);
 
 typedef struct
 {
-  uint8_t *addr;
+  uint8_t addr[GAP_BD_ADDR_LEN];
   bool is_secured_connect;
 } BLE_TIZENRT_BOND_REQ;
 

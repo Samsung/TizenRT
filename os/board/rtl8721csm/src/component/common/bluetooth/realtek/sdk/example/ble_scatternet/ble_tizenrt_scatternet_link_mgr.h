@@ -32,12 +32,12 @@
  */
 typedef struct
 {
-  T_GAP_CONN_STATE conn_state;
-  uint8_t conn_id;
-  T_GAP_ROLE role;
-  uint8_t auth_state;
-  uint8_t remote_bd[GAP_BD_ADDR_LEN];
-  T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
+	T_GAP_CONN_STATE conn_state;
+	uint8_t conn_id;
+	uint8_t auth_state;
+	T_GAP_ROLE role;
+	uint8_t remote_bd[GAP_BD_ADDR_LEN];
+	T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
 } BLE_TIZENRT_SCATTERNET_APP_LINK;
 /** @} */ /* End of group CENTRAL_CLIENT_GAP_MSG */
 /** @addtogroup  CENTRAL_CLIENT_SCAN_MGR
