@@ -80,7 +80,7 @@ T_HCI_UART *hci_uart_obj;
       #define HCI_UART_IRQ  UART1_IRQ
 #endif
 
-#define HCIUART_IRQ_PRIO    10
+#define HCIUART_IRQ_PRIO    6
 
 
 /* ========================================HCI UART BRIDGE================= */
