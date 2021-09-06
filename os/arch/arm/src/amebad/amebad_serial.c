@@ -175,6 +175,8 @@
  */
 
 static serial_t* sdrv[MAX_UART_INDEX + 1] = {NULL, NULL, NULL, NULL, NULL}; //uart 0~3, uart2 is configured as log uart
+static bool g_tc_rxavailable;
+static bool g_tc_rxavailable_res;	// used to hold the result of rxavailable TC
 
 struct rtl8721d_up_dev_s {
 	uint8_t parity;				/* 0=none, 1=odd, 2=even */
@@ -571,6 +573,22 @@ static int rtl8721d_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long 
 		serial_control_loopback(sdrv[uart_index_get(priv->tx)], *(bool *)arg);
 		break;
 
+	case TIOCS_AVAIL:
+		g_tc_rxavailable = 1;
+		g_tc_rxavailable_res = 0;
+		rtl8721d_up_send(dev, 'a');
+		sleep(1);
+		ret = g_tc_rxavailable_res;
+		break;
+
+	case TIOCS_READY:
+		ret = rtl8721d_up_txready(dev);
+		break;
+
+	case TIOCS_EMPTY:
+		ret = rtl8721d_up_txempty(dev);
+		break;
+
 	default:
 		ret = -ENOTTY;
 		break;
@@ -628,8 +646,17 @@ static void rtl8721d_up_rxint(struct uart_dev_s *dev, bool enable)
 
 static bool rtl8721d_up_rxavailable(struct uart_dev_s *dev)
 {
+	bool ret = 0;
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
+	if (g_tc_rxavailable) {
+		ret = (serial_readable(sdrv[uart_index_get(priv->tx)]));
+		if (!g_tc_rxavailable_res) {
+			g_tc_rxavailable_res = ret;
+			g_tc_rxavailable = 0;
+		}
+		return ret;
+	}
 	return (serial_readable(sdrv[uart_index_get(priv->tx)]));
 }
 
