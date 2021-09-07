@@ -181,9 +181,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
 		g_umm_app_id = (uint32_t *)(bin->datastart + 4);
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 		elf_save_bin_section_addr(bin);
-#endif
 
 #if (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU))
 		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_COMMON_BIN);
@@ -217,9 +215,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
 		goto errout_with_unload;
 	}
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 	elf_save_bin_section_addr(bin);
-#endif
 
 	/* Print Binary section address & size details */
 

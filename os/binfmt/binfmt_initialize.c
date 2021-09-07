@@ -60,10 +60,8 @@
 #include <tinyara/binfmt/builtin.h>
 #include <tinyara/binfmt/elf.h>
 
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 #include <queue.h>
 sq_queue_t g_bin_addr_list;
-#endif
 
 #ifdef CONFIG_BINFMT_ENABLE
 
