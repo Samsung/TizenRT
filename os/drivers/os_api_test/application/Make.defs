@@ -1,6 +1,6 @@
-###########################################################################
+##########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2022 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,20 @@
 # either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 #
-###########################################################################
+############################################################################
+# Include OS API test drivers
 
 ifeq ($(CONFIG_DRIVERS_OS_API_TEST),y)
-include os_api_test$(DELIM)application$(DELIM)Make.defs
-include os_api_test$(DELIM)kernel$(DELIM)Make.defs
-include os_api_test$(DELIM)network$(DELIM)Make.defs
-include os_api_test$(DELIM)filesystem$(DELIM)Make.defs
-CSRCS += os_api_test_drv.c
-DEPPATH += --dep-path os_api_test
-VPATH += :os_api_test
+
+#ifdef CONFIG_EXAMPLES_DAT
+CSRCS += test_app.c
+#endif
+
+CFLAGS += -I$(TOPDIR)/application
+
+# Include OS API test driver support
+
+DEPPATH += --dep-path os_api_test$(DELIM)application
+VPATH += :os_api_test$(DELIM)application
+
 endif

@@ -78,6 +78,16 @@ uint32_t *g_umm_app_id;
  *   -1 (ERROR) and sets errno appropriately.
  *
  ****************************************************************************/
+#ifdef CONFIG_DEBUG_SYSTEM
+#include <tinyara/clock.h>
+#ifdef CONFIG_SYSTIME_TIME64
+uint64_t app_start_time_sec[3];
+#else
+uint32_t app_start_time_sec[3];
+#endif
+unsigned int app_start_time_csec[3];
+#endif
+
 #ifdef CONFIG_BINARY_MANAGER
 int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr)
 {
@@ -194,6 +204,20 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	heap_table[binary_idx] = bin->sections[BIN_HEAP];
 #endif
 
+#ifdef CONFIG_DEBUG_SYSTEM
+	clock_t ticktime;
+	ticktime = clock();
+
+	app_start_time_sec[bin->binary_idx] = ticktime / CLOCKS_PER_SEC;
+	app_start_time_csec[bin->binary_idx] = (100 * (ticktime % CLOCKS_PER_SEC) + (CLOCKS_PER_SEC / 2)) / CLOCKS_PER_SEC;
+
+	/* Make sure that rounding did not force the hundredths of a second above 99 */
+	if (app_start_time_csec[bin->binary_idx] > 99) {
+		app_start_time_sec[bin->binary_idx]++;
+		app_start_time_csec[bin->binary_idx] -= 100;
+	}
+	binfo("app[%d] start time : %u.%u\n", binary_idx, app_start_time_sec[bin->binary_idx], app_start_time_csec[bin->binary_idx]);
+#endif
 	/* Start the module */
 	pid = exec_module(bin);
 	if (pid < 0) {

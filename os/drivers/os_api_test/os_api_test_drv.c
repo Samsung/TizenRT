@@ -196,6 +196,46 @@ static int os_api_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		ret = test_fs_get_devname();
 		break;
 #endif		
+#ifdef CONFIG_DEBUG_SYSTEM
+#ifdef CONFIG_SYSTEM_DEBUG_ANALYSER_TOOL
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	case TESTIOC_GET_APP_COUNT:
+		ret = binary_manager_get_ucount();
+		break;
+	case TESTIOC_GET_APP_START_TIME_SEC:
+		ret = test_get_app_start_time_sec(cmd, arg);
+		break;
+	case TESTIOC_GET_APP_START_TIME_CSEC:
+		ret = test_get_app_start_time_csec(cmd, arg);
+		break;
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	case TESTIOC_GET_APP_MEMORY_ADDR:
+		ret = test_get_app_memory_addr(cmd, arg);
+		break;
+#endif
+#endif
+#endif
+#endif
+#ifdef CONFIG_ARM_MPU
+	case TESTIOC_MPU_GET_ACTIVE_REGIONS:
+		ret = test_mpu_get_active_regions(cmd, arg);
+		break;
+#endif
+#ifdef CONFIG_STACK_COLORATION
+	case TESTIOC_GET_TCB_INFO:
+		ret = test_tcb_info(cmd, arg);
+		break;
+#endif
+	case TESTIOC_GET_TCBLIST_INFO:
+		ret = test_gtasklist_info(cmd, arg);
+		break;
+#ifdef CONFIG_ARCH_STACKDUMP
+	case TESTIOC_GET_TCBSTACK_INFO:
+		ret = test_tcb_callstack_info(cmd, arg);
+		break;
+#endif
+#endif
 	default:
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;

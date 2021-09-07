@@ -37,6 +37,18 @@
 #define TASK_NAME_SIZE 15
 
 #define SEMAPHORE_STATUS_SIZE 2
+
+/********************************************************************************
+ * Public Type Definitions
+ ********************************************************************************/
+#ifdef CONFIG_SYSTEM_DEBUG_ANALYSER_TOOL
+#ifdef CONFIG_SYSTIME_TIME64
+extern uint64_t app_start_time_sec[3];
+#else
+extern uint32_t app_start_time_sec[3];
+#endif
+extern unsigned int app_start_time_csec[3];
+#endif
 /****************************************************************************
  * Public Types
  ****************************************************************************/
