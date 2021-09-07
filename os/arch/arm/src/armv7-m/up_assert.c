@@ -86,6 +86,10 @@
 #include <arch/board/board.h>
 #include <tinyara/sched.h>
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/binfmt/elf.h>
+#endif
+
 #include "sched/sched.h"
 #ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
@@ -459,6 +463,7 @@ void up_assert(const uint8_t *filename, int lineno)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	uint32_t assert_pc;
 	bool is_kernel_fault;
+	struct tcb_s *fault_tcb = this_task();
 
 	/* Extract the PC value of instruction which caused the abort/assert */
 
@@ -471,6 +476,9 @@ void up_assert(const uint8_t *filename, int lineno)
 	/* Is the fault in Kernel? */
 
 	is_kernel_fault = is_kernel_space((void *)assert_pc);
+	if (!is_kernel_fault) {
+		lldbg("APP BINARY BASE ADDR : %p\n", elf_find_text_section_addr(fault_tcb->group->tg_binidx));
+	}
 
 #endif  /* CONFIG_APP_BINARY_SEPARATION */
 
@@ -483,7 +491,7 @@ void up_assert(const uint8_t *filename, int lineno)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	if (!is_kernel_fault) {
 		lldbg("Checking current app heap for corruption...\n");
-		if (mm_check_heap_corruption((struct mm_heap_s *)(this_task()->uheap)) == OK) {
+		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
 			lldbg("No heap corruption detected\n");
 		}
 	}
