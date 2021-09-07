@@ -118,9 +118,7 @@ int binfmt_exit(FAR struct binary_s *bin)
 		berr("ERROR: unload_module() failed: %d\n", ret);
 	}
 
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 	elf_delete_bin_section_addr(bin);
-#endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	uheap_start = (uint32_t)bin->uheap;

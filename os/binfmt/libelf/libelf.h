@@ -460,15 +460,16 @@ int elf_cache_init(int filfd, uint16_t offset, off_t filelen, uint8_t compressio
 int elf_cache_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, size_t readsize, off_t offset);
 #endif
 
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 struct bin_addr_info_s {
 	struct bin_addr_info_s *flink;
-	char bin_name[BIN_NAME_MAX];
+	int bin_idx;
 	uint32_t text_addr;
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	uint32_t rodata_addr;
 	uint32_t data_addr;
 	uint32_t bss_addr;
+#endif
 #endif
 };
 typedef struct bin_addr_info_s bin_addr_info_t;
@@ -477,7 +478,6 @@ extern sq_queue_t g_bin_addr_list;
 
 void elf_save_bin_section_addr(struct binary_s *bin);
 void elf_delete_bin_section_addr(struct binary_s *bin);
-#endif
 #ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
 void *elf_find_start_section_addr(struct binary_s *binp);
 #endif
