@@ -215,6 +215,7 @@ void *elf_find_text_section_addr(int bin_idx)
 		}
 		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
 	}
+	return NULL;
 }
 
 void elf_save_bin_section_addr(struct binary_s *bin)
