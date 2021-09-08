@@ -198,53 +198,22 @@ ble_autocon_result_e ble_manager_autoconnect(ble_client_ctx *ctx)
 		return BLE_AUTOCON_INVALID_STATE;
 	}
 
-	pthread_attr_t attr;
-	struct sched_param sparam;
 	int status;
-	pthread_t g_thread = 0;
+	pthread_t auto_thread = 0;
 
-	/* Initialize the attribute variable */
-	status = pthread_attr_init(&attr);
+	/* create pthread with entry function */
+	status = pthread_create(&auto_thread, NULL, _autocon_process, (pthread_addr_t)ctx);
 	if (status != 0) {
-		BLE_LOG_ERROR("[BLEMGR] pthread_attr_init failed, status=%d, errno=%d\n", status, errno);
+		BLE_LOG_ERROR("[BLEMGR] pthread_create failed, status=%d\n", status);
 		return BLE_AUTOCON_FAIL;
 	}
 
-	/* 1. set a priority */
-	sparam.sched_priority = 100;
-	status = pthread_attr_setschedparam(&attr, &sparam);
-	if (status != 0) {
-		BLE_LOG_ERROR("[BLEMGR] pthread_attr_setschedparam failed, status=%d, errno=%d\n", status, errno);
-		return BLE_AUTOCON_FAIL;
-	}
-
-	/* 2. set a stacksize */
-	status = pthread_attr_setstacksize(&attr, 1024);
-	if (status != 0) {
-		BLE_LOG_ERROR("[BLEMGR] pthread_attr_setstacksize failed, status=%d, errno=%d\n", status, errno);
-		return BLE_AUTOCON_FAIL;
-	}
-
-	/* 3. set a sched policy */
-	status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
-	if (status != 0) {
-		BLE_LOG_ERROR("[BLEMGR] pthread_attr_setschedpolicy failed, status=%d, errno=%d\n", status, errno);
-		return BLE_AUTOCON_FAIL;
-	}
-
-	/* 4. create pthread with entry function */
-	status = pthread_create(&g_thread, &attr, _autocon_process, (pthread_addr_t)ctx);
-	if (status != 0) {
-		BLE_LOG_ERROR("[BLEMGR] pthread_create failed, status=%d, errno=%d\n", status, errno);
-		return BLE_AUTOCON_FAIL;
-	}
-
-	status = pthread_setname_np(g_thread, "ble_autoconnect");
+	status = pthread_setname_np(auto_thread, "ble_autoconnect");
 	if (status != 0) {
 		BLE_LOG_ERROR("[BLEMGR] failed to set name for pthread, status=%d, errno=%d\n", status, errno);
 		return BLE_AUTOCON_FAIL;
 	}
-	pthread_detach(g_thread);
+	pthread_detach(auto_thread);
 
 	return BLE_AUTOCON_SUCCESS;
 }

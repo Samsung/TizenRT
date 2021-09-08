@@ -203,11 +203,12 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	case BLE_EVT_CMD_START_SCAN: {
 		BLE_STATE_CHECK;
 
-		if (g_scan_ctx.state == BLE_SCAN_STARTED) {
+		if (g_scan_ctx.state != BLE_SCAN_STOPPED) {
 			ret = TRBLE_BUSY;
 			break;
 		}
 
+		ble_scan_state_e priv_state = g_scan_ctx.state;
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
 		ble_scan_filter *filter = (ble_scan_filter *)param->param[0];
 		ble_scan_callback_list *callbacks = (ble_scan_callback_list *)param->param[1];
@@ -222,10 +223,12 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 		memcpy(&(g_scan_ctx.callback), callbacks, sizeof(ble_scan_callback_list));
 
+		g_scan_ctx.state = BLE_SCAN_CHANGING;
 		ret = ble_drv_start_scan((trble_scan_filter *)filter);
 		if (ret != TRBLE_SUCCESS) {
 			memset(&(g_scan_ctx.callback), 0, sizeof(ble_scan_callback_list));
 			memset(&(g_scan_ctx.filter), 0, sizeof(ble_scan_filter));
+			g_scan_ctx.state = priv_state;
 		}
 	} break;
 
@@ -233,11 +236,17 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		BLE_STATE_CHECK;
 
 		ret = TRBLE_SUCCESS;
-		if (g_scan_ctx.state == BLE_SCAN_STOPPED) {
+		if (g_scan_ctx.state != BLE_SCAN_STARTED) {
 			break;
 		}
-		
+
+		ble_scan_state_e priv_state = g_scan_ctx.state;
+
+		g_scan_ctx.state = BLE_SCAN_CHANGING;
 		ret = ble_drv_stop_scan();
+		if (ret != TRBLE_SUCCESS) {
+			g_scan_ctx.state = priv_state;
+		}
 	} break;
 
 	case BLE_EVT_CMD_CLIENT_CONNECT: {
