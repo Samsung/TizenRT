@@ -347,4 +347,4 @@ struct trble_ops {
 	trble_stop_adv stop_adv;
 };
 
-int trble_post_event(lwnl_cb_ble evt, void *buffer, uint32_t buf_len);
+int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len);

@@ -28,13 +28,13 @@
 #include "lwnl_evt_queue.h"
 #include "lwnl_log.h"
 
-#define LWQ_LOCK								\
+#define LWQ_LOCK(type)							\
 	do {										\
-		sem_wait(&g_wm_sem);					\
+		sem_wait(&g_queue_sem[type]);			\
 	} while (0)
-#define LWQ_UNLOCK								\
+#define LWQ_UNLOCK(type)						\
 	do {										\
-		sem_post(&g_wm_sem);					\
+		sem_post(&g_queue_sem[type]);			\
 	} while (0)
 
 #define CONTAINER_OF(ptr, type, member)									\
@@ -71,7 +71,7 @@ struct lwnl_filep {
 };
 
 /* protect g_filep_list and g_connected*/
-static sem_t g_wm_sem;
+static sem_t g_queue_sem[LWNL_DEV_TYPE_MAX];
 /* both data should be protected by LWQ_LOCK */
 static struct lwnl_filep g_filep_list[LWNL_NPOLLWAITERS];
 static sq_queue_t g_event_queue[LWNL_DEV_TYPE_MAX];
@@ -95,8 +95,8 @@ static int _lwnl_update_event_filep(struct lwnl_event *evt)
 	int check = 0;
 	uint32_t refs = 0;
 	LWNL_LOGI(TAG, "%p\ttotal evt %d", evt, g_totalevt);
-	LWQ_LOCK;
 	lwnl_dev_type dtype = evt->data.status.type;
+	LWQ_LOCK(dtype);
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		if (g_filep_list[i].filep && g_filep_list[i].type == dtype) {
 			check = 1;
@@ -114,7 +114,7 @@ static int _lwnl_update_event_filep(struct lwnl_event *evt)
 	if (check == 1) {
 		g_totalevt++;
 	}
-	LWQ_UNLOCK;
+	LWQ_UNLOCK(dtype);
 	return 0;
 }
 
@@ -149,7 +149,6 @@ static int _lwnl_remove_event(struct lwnl_event *evt)
 void lwnl_queue_initialize(void)
 {
 	LWNL_ENTER(TAG);
-	LWQ_LOCK;
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		g_filep_list[i].filep = NULL;
 		g_filep_list[i].check_header = 0;
@@ -159,15 +158,14 @@ void lwnl_queue_initialize(void)
 	for (int i = 0; i < LWNL_DEV_TYPE_MAX; i++) {
 		g_connected[i] = 0;
 		sq_init(&g_event_queue[i]);
-	}
 
-	if (sem_init(&g_wm_sem, 0, 1) != 0) {
-		LWNL_LOGE(TAG, "fail to init semaphore %d", errno);
+		if (sem_init(&g_queue_sem[i], 0, 1) != 0) {
+			LWNL_LOGE(TAG, "fail to init semaphore %d", errno);
+		}
 	}
-	LWQ_UNLOCK;
 }
 
-int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
+int lwnl_add_event(lwnl_cb_status type, void *buffer, int32_t buf_len)
 {
 	LWNL_LOGI(TAG, "--> dev %d type %d buffer %p len (%d)",
 			  type.type, type.evt, buffer, buf_len);
@@ -181,15 +179,20 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
 	evt->data.data = NULL;
 	evt->data.data_len = 0;
 	if (buffer) {
-		char *output = kmm_malloc(buf_len);
-		if (!output) {
-			LWNL_LOGE(TAG, "fail to alloc buffer");
-			kmm_free(evt);
-			return -3;
+		if (buf_len < 0) {
+			evt->data.data = buffer;
+			evt->data.data_len = -(buf_len);
+		} else {
+			char *output = kmm_malloc(buf_len);
+			if (!output) {
+				LWNL_LOGE(TAG, "fail to alloc buffer");
+				kmm_free(evt);
+				return -3;
+			}
+			memcpy(output, buffer, buf_len);
+			evt->data.data = output;
+			evt->data.data_len = buf_len;
 		}
-		memcpy(output, buffer, buf_len);
-		evt->data.data = output;
-		evt->data.data_len = buf_len;
 	}
 	sq_addlast(&evt->entry, &g_event_queue[type.type]);
 	if (_lwnl_update_event_filep(evt) < 0) {
@@ -207,16 +210,15 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 {
 	int written = 0;
 	LWNL_ENTER(TAG);
-	LWQ_LOCK;
 	struct lwnl_filep *fp = filep->f_priv;
 	if (!fp) {
-		LWQ_UNLOCK;
 		LWNL_LOGE(TAG, "filep doens't have fp");
 		return -1;
 	}
 
+	LWQ_LOCK(fp->type);
 	if (sq_empty(&fp->queue)) {
-		LWQ_UNLOCK;
+		LWQ_UNLOCK(fp->type);
 		LWNL_LOGE(TAG, "filep doesn't have item");
 		return 0;
 	}
@@ -226,7 +228,7 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 	LWNL_LOGI(TAG, "event %p check %d fp %p", evt, fp->check_header, filep);
 	if (fp->check_header == 0) {
 		if (len < LWQ_EVENT_HEADER) {
-			LWQ_UNLOCK;
+			LWQ_UNLOCK(fp->type);
 			LWNL_LOGE(TAG, "buffer length is less than header");
 			return -1;
 		}
@@ -236,12 +238,12 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 		written = LWQ_EVENT_HEADER;
 		if (evt->data.data_len > 0) {
 			fp->check_header = 1;
-			LWQ_UNLOCK;
+			LWQ_UNLOCK(fp->type);
 			return written;
 		}
 	} else {
 		if (len < evt->data.data_len) {
-			LWQ_UNLOCK;
+			LWQ_UNLOCK(fp->type);
 			LWNL_LOGE(TAG, "buffer length (%d) is less than data length (%d)", len, evt->data.data_len);
 			return -1;
 		}
@@ -253,14 +255,14 @@ int lwnl_get_event(struct file *filep, char *buf, int len)
 	_lwnl_remove_event_filep(fp);
 	_lwnl_remove_event(evt);
 
-	LWQ_UNLOCK;
+	LWQ_UNLOCK(fp->type);
 	return written;
 }
 
 int lwnl_add_listener(struct file *filep, lwnl_dev_type type)
 {
 	LWNL_LOGI(TAG, "--> fp (%p) type (%d)", filep, type);
-	LWQ_LOCK;
+	LWQ_LOCK(type);
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		if (!g_filep_list[i].filep) {
 			LWNL_LOGI(TAG, "add fp %p to idx %d %p", filep, i);
@@ -270,11 +272,11 @@ int lwnl_add_listener(struct file *filep, lwnl_dev_type type)
 			sq_init(&g_filep_list[i].queue);
 			g_filep_list[i].queue_size = 0;
 			g_connected[type]++;
-			LWQ_UNLOCK;
+			LWQ_UNLOCK(type);
 			return 0;
 		}
 	}
-	LWQ_UNLOCK;
+	LWQ_UNLOCK(type);
 	LWNL_LOGE(TAG, "no available listener slot");
 	return -1;
 }
@@ -283,15 +285,14 @@ int lwnl_remove_listener(struct file *filep)
 {
 	LWNL_LOGI(TAG, "remove listener filep %p %d %d",
 			filep, g_totalevt, LWNL_NPOLLWAITERS);
-	LWQ_LOCK;
 	struct lwnl_filep *llfp = (struct lwnl_filep *)filep->f_priv;
 	if (!llfp) {
 		// some socket doens't bind event listener.
 		// so it can cause overhead.
-		LWQ_UNLOCK;
 		return 0;
 	}
-
+	
+	LWQ_LOCK(llfp->type);
 	sq_entry_t *entry = NULL;
 	while ((entry = sq_peek(&llfp->queue)) != NULL) {
 		struct lwnl_event *evt = LWQ_GET_EVT(entry);
@@ -304,7 +305,7 @@ int lwnl_remove_listener(struct file *filep)
 	llfp->queue_size = 0;
 	filep->f_priv = llfp->filep = NULL;
 
-	LWQ_UNLOCK;
+	LWQ_UNLOCK(llfp->type);
 	return 0;
 }
 
@@ -322,16 +323,15 @@ int lwnl_check_queue(struct file *filep)
 {
 	int res = 0;
 	LWNL_ENTER(TAG);
-	LWQ_LOCK;
 	struct lwnl_filep *llfp = (struct lwnl_filep *)filep->f_priv;
 	if (!llfp) {
 		LWNL_LOGE(TAG, "llfp is null\n", llfp);
-		goto done;
+		return res;
 	}
+	LWQ_LOCK(llfp->type);
 	if (!sq_empty(&llfp->queue)) {
 		res = 1;
 	}
-done:
-	LWQ_UNLOCK;
+	LWQ_UNLOCK(llfp->type);
 	return res;
 }
