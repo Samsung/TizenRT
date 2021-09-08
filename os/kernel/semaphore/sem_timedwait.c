@@ -164,8 +164,7 @@ void sem_timeout(int argc, uint32_t pid)
  *   abstime - The absolute time to wait until a timeout is declared.
  *
  * Return Value:
- *   One success, the length of the selected message in bytes.is
- *   returned.  On failure, -1 (ERROR) is returned and the errno
+ *   0 (OK) on success. On failure, -1 (ERROR) is returned and the errno
  *   is set appropriately:
  *
  *   EINVAL    The sem argument does not refer to a valid semaphore.  Or the
