@@ -38,6 +38,7 @@ typedef struct _ble_client_ctx ble_client_ctx;
 typedef enum {
 	BLE_SCAN_STOPPED = 0,
 	BLE_SCAN_STARTED,
+	BLE_SCAN_CHANGING,
 } ble_scan_state_e;
 
 typedef enum {
