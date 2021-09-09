@@ -144,10 +144,7 @@ struct netdev {
 int lwnl_register(struct lwnl_lowerhalf_s *ldev);
 int lwnl_unregister(struct lwnl_lowerhalf_s *ldev);
 int lwnl_register_dev(struct netdev *dev);
-int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, uint32_t buf_len);
-
-#define LWNL_POST_BLEMSG(evt, buffer, buf_len) \
-	lwnl_postmsg(LWNL_DEV_BLE, evt, buffer, buf_len)
+int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, int32_t buf_len);
 
 #ifndef CONFIG_NET_NETMGR
 int lwnl_register_dev(struct netdev *dev);
