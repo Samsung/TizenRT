@@ -464,6 +464,10 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)"; \
 		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files"; \
 	fi
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+	$(Q) tools/compression/mkcompressimg $(CONFIG_COMPRESSION_BLOCK_SIZE) $(CONFIG_COMPRESSION_TYPE) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).comp
+	$(Q) mv $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).comp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
+endif
 	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files/
 	$(Q) $(MAKE) smartfs
 endif
