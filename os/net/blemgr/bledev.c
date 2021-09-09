@@ -466,7 +466,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	return ret;
 }
 
-int trble_post_event(lwnl_cb_ble evt, void *buffer, uint32_t buf_len)
+int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len)
 {
 	BLE_LOGV(TRBLE_TAG, "trble post event : %d\n", evt);
 	return lwnl_postmsg(LWNL_DEV_BLE, (int)evt, buffer, buf_len);

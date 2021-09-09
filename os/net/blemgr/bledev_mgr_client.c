@@ -66,7 +66,7 @@ static void bledrv_device_connected_cb(trble_device_connected *dev)
 
 static void bledrv_operation_notification_cb(trble_operation_handle *handle, trble_data *read_result)
 {
-	uint32_t size = sizeof(trble_conn_handle) + sizeof(trble_attr_handle) + sizeof(read_result->length) + read_result->length;
+	int32_t size = sizeof(trble_conn_handle) + sizeof(trble_attr_handle) + sizeof(read_result->length) + read_result->length;
 	uint8_t *data = (uint8_t *)kmm_malloc(size);
 	if (data == NULL) {
 		BLE_LOGE(BLE_DRV_TAG, "out of memroy\n");
@@ -89,9 +89,8 @@ static void bledrv_operation_notification_cb(trble_operation_handle *handle, trb
 	// Copy read_result data
 	memcpy(ptr, read_result->data, read_result->length);
 
-	trble_post_event(LWNL_EVT_BLE_CLIENT_NOTI, data, size);
+	trble_post_event(LWNL_EVT_BLE_CLIENT_NOTI, data, -(size));
 
-	kmm_free(data);
 	return;
 }
 
