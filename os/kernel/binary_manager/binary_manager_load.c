@@ -193,7 +193,6 @@ static int binary_manager_load(int bin_idx)
 			strncpy(load_attr.bin_name, header_data.bin_name, BIN_NAME_MAX - 1);
 			load_attr.bin_name[BIN_NAME_MAX - 1] = '\0';
 			load_attr.bin_size = header_data.bin_size;
-			load_attr.compression_type = header_data.compression_type;
 			load_attr.ram_size = header_data.bin_ramsize;
 			load_attr.stack_size = header_data.bin_stacksize;
 			load_attr.priority = header_data.bin_priority;

@@ -443,7 +443,7 @@ void elf_cache_uninit(void);
  *   OK (0) on Success
  *   ERROR (-1) on Failure
  ****************************************************************************/
-int elf_cache_init(int filfd, uint16_t offset, off_t filelen, uint8_t compression_type);
+int elf_cache_init(int filfd, uint16_t offset, off_t filelen);
 
 /****************************************************************************
  * Name: elf_cache_read
