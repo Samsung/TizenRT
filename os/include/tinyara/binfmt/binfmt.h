@@ -176,7 +176,6 @@ struct binary_s {
 	size_t stacksize;			/* Size of the stack in bytes (unallocated) */
 	size_t filelen;                 /* Size of binary size, used only when underlying is MTD */
 	size_t offset;                  /* Offset of binary from partition start*/
-	uint8_t compression_type;		/* Binary Compression type */
 #ifdef CONFIG_BINARY_MANAGER
 	uint8_t binary_idx;             /* Index of binary in binary table */
 	uint32_t bin_ver;               /* version of binary */

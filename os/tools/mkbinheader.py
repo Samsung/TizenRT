@@ -168,11 +168,11 @@ def make_kernel_binary_header():
 #
 # User binary header information on APP_BINARY_SEPARTION
 #
-# total header size is 42bytes.
-# +--------------------------------------------------------------------------------
-# | Header size | Binary type | Compression  | Binary priority | Loading priority |
-# |   (2bytes)  |   (1byte)   |   (1byte)    |     (1byte)     |      (1bytes)    |
-# +--------------------------------------------------------------------------------
+# total header size is 41bytes.
+# +-----------------------------------------------------------------
+# | Header size | Binary type | Binary priority | Loading priority |
+# |   (2bytes)  |   (1byte)   |     (1byte)     |      (1bytes)    |
+# +-----------------------------------------------------------------
 # -------------------------------------------------------------------------------------
 # | Binary size |  Binary name | Binary version | Binary ram size | Binary stack size |
 # |  (4bytes)   |   (16bytes)  |    (4bytes)    |    (4bytes)     |     (4bytes)      |
@@ -216,7 +216,6 @@ def make_user_binary_header():
 
     SIZE_OF_HEADERSIZE = 2
     SIZE_OF_BINTYPE = 1
-    SIZE_OF_COMFLAG = 1
     SIZE_OF_MAINPRIORITY = 1
     SIZE_OF_LOADINGPRIORITY = 1
     SIZE_OF_BINSIZE = 4
@@ -226,7 +225,7 @@ def make_user_binary_header():
     SIZE_OF_MAINSTACKSIZE = 4
     SIZE_OF_KERNELVER = 4
 
-    header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_COMFLAG + SIZE_OF_MAINPRIORITY + SIZE_OF_LOADINGPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER
+    header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_MAINPRIORITY + SIZE_OF_LOADINGPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER
 
     COMP_NONE = 0
     COMP_LZMA = 1
@@ -328,7 +327,6 @@ def make_user_binary_header():
 
         fp.write(struct.pack('H', header_size))
         fp.write(struct.pack('B', bin_type))
-        fp.write(struct.pack('B', bin_comp))
         fp.write(struct.pack('B', main_priority))
         fp.write(struct.pack('B', loading_priority))
         fp.write(struct.pack('I', file_size))

@@ -201,7 +201,6 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_OFFSET(bin_idx)                             binary_manager_get_udata(bin_idx)->load_attr.offset
 #define BIN_STACKSIZE(bin_idx)                          binary_manager_get_udata(bin_idx)->load_attr.stack_size
 #define BIN_PRIORITY(bin_idx)                           binary_manager_get_udata(bin_idx)->load_attr.priority
-#define BIN_COMPRESSION_TYPE(bin_idx)                   binary_manager_get_udata(bin_idx)->load_attr.compression_type
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #define BIN_LOADINFO(bin_idx)                           binary_manager_get_udata(bin_idx)->binp
 #endif
