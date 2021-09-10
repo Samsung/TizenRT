@@ -362,7 +362,7 @@ trble_result_e trble_netmgr_set_adv_resp(struct bledev *dev, trble_data *data)
 
 trble_result_e trble_netmgr_set_adv_type(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr)
 {
-	return TRBLE_UNSUPPORTED;
+	return rtw_ble_server_set_adv_type(adv_type, addr);
 }
 
 trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interval)

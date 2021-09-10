@@ -43,6 +43,7 @@ extern uint8_t* rtw_ble_server_get_mac_address_by_conn_handle(trble_conn_handle 
 extern trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac);
 extern trble_result_e rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length);
 extern trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length);
+extern trble_result_e rtw_ble_server_set_adv_type(trble_adv_type_e type, trble_addr *param);
 extern bool rtw_ble_server_conn_is_active(trble_conn_handle con_handle);
 extern bool rtw_ble_server_conn_is_any_active(void);
 extern trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle);
@@ -51,7 +52,6 @@ extern trble_result_e rtw_ble_server_stop_adv(void);
 extern trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bonded_device_list, uint16_t* device_count);
 extern trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 extern trble_result_e rtw_ble_server_delete_bonded_device_all(void);
-extern trble_result_e rtw_ble_server_start_adv_directed(uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 extern trble_result_e rtw_ble_server_set_adv_interval(uint16_t interval); // interval range (0x0020 ~ 0x4000)
 
 
