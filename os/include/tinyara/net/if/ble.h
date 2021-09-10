@@ -172,6 +172,7 @@ typedef struct {
 typedef struct {
 	uint8_t raw_data[TRBLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
+	uint8_t mac[TRBLE_BD_ADDR_MAX_LEN];
 	uint16_t scan_duration;
 } trble_scan_filter;
 
