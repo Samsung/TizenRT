@@ -339,6 +339,56 @@ def make_user_binary_header():
 
         fp.close()
 
+
+############################################################################
+#
+# Common binary header information :
+#
+# total header size is 10 bytes.
+# +---------------------------------------------+
+# | Header size | Binary Version |  Binary Size |
+# |   (2bytes)  |    (4bytes)    |   (4bytes)   |
+# +---------------------------------------------+
+#
+# parameter information :
+#
+# argv[1] is file path of binary file.
+# argv[2] is binary type.
+# argv[3] is binary version.
+#
+###########################################################################
+def make_common_binary_header():
+
+    SIZE_OF_HEADERSIZE = 2
+    SIZE_OF_BINVER = 4
+    SIZE_OF_BINSIZE = 4
+
+    # Calculate binary header size
+    header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINVER + SIZE_OF_BINSIZE
+
+    # Get binary version
+    bin_ver = get_config_value(cfg_path, "CONFIG_COMMON_BINARY_VERSION=")
+    if bin_ver < 0 :
+        print("Error : Not Found config for version, CONFIG_COMMON_BINARY_VERSION")
+        sys.exit(1)
+    elif bin_ver < 101 or bin_ver > 991231 :
+        print("Error : Invalid value. It has 'YYMMDD' format so it should be in (101, 991231)")
+        sys.exit(1)
+
+    with open(file_path, 'rb') as fp:
+        # binary data copy to 'data'
+        data = fp.read()
+        file_size = fp.tell()
+        fp.close()
+
+        fp = open(file_path, 'wb')
+
+        # Generate binary with header data
+        fp.write(struct.pack('H', header_size))
+        fp.write(struct.pack('I', int(bin_ver)))
+        fp.write(struct.pack('I', file_size))
+        fp.write(data)
+
 ############################################################################
 #
 # Generate headers for binary types
@@ -350,6 +400,8 @@ if binary_type == 'kernel' :
     make_kernel_binary_header()
 elif binary_type == 'user' :
     make_user_binary_header()
+elif binary_type == 'common' :
+    make_common_binary_header()
 else : # Not supported.
     print("Error : Not supported Binary Type")
     sys.exit(1)

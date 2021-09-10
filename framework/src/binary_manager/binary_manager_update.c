@@ -30,17 +30,12 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
-binmgr_result_type_e binary_manager_update_binary(char *binary_name)
+binmgr_result_type_e binary_manager_update_binary(void)
 {
 	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 
-	if (binary_name == NULL || strlen(binary_name) > BIN_NAME_MAX - 1) {
-		bmdbg("load_new_binary failed : invalid binary name\n");
-		return BINMGR_INVALID_PARAM;
-	}
-
-	ret = binary_manager_set_request(&request_msg, BINMGR_UPDATE, binary_name);
+	ret = binary_manager_set_request(&request_msg, BINMGR_UPDATE, NULL);
 	if (ret != BINMGR_OK) {
 		return ret;
 	}
@@ -122,23 +117,19 @@ binmgr_result_type_e binary_manager_get_update_info_all(binary_update_info_list_
 	return response_msg.result;
 }
 
-binmgr_result_type_e binary_manager_get_download_path(char *binary_name, uint32_t version, char *download_path)
+binmgr_result_type_e binary_manager_get_download_path(char *binary_name, char *download_path)
 {
 	binmgr_result_type_e ret;
 	binmgr_update_bin_t data;
 	binmgr_request_t request_msg;
-	binmgr_createbin_response_t response_msg;
+	binmgr_getpath_response_t response_msg;
 
-	if (binary_name == NULL || version == 0) {
+	if (binary_name == NULL || strlen(binary_name) > BIN_NAME_MAX - 1) {
 		bmdbg("Invalid parameter\n");
 		return BINMGR_INVALID_PARAM;
 	}
 
-	strncpy(data.bin_name, binary_name, BIN_NAME_MAX - 1);
-	data.bin_name[BIN_NAME_MAX - 1] = '\0';
-	data.version = version;
-
-	ret = binary_manager_set_request(&request_msg, BINMGR_CREATE_BIN, &data);
+	ret = binary_manager_set_request(&request_msg, BINMGR_GET_DOWNLOAD_PATH, binary_name);
 	if (ret != BINMGR_OK) {
 		return ret;
 	}
@@ -148,13 +139,13 @@ binmgr_result_type_e binary_manager_get_download_path(char *binary_name, uint32_
 		return ret;
 	}
 
-	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_createbin_response_t));
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getpath_response_t));
 	if (ret != BINMGR_OK) {
 		return ret;
 	}
 
 	if (response_msg.result == BINMGR_OK) {
-		bmvdbg("Create file path : %s\n", response_msg.binpath);
+		bmvdbg("Download path : %s\n", response_msg.binpath);
 		strncpy(download_path, response_msg.binpath, strlen(response_msg.binpath) + 1);
 	}
 

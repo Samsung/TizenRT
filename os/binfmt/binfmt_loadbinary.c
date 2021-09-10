@@ -136,26 +136,33 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		/* Initialize the binary structure */
 
 		bin->filename = filename;
+
 		if (load_attr) {
-			bin->exports = NULL;
-			bin->nexports = 0;
-			bin->filelen = load_attr->bin_size;
-			bin->offset = load_attr->offset;
-			bin->stacksize = load_attr->stack_size;
-			bin->priority = load_attr->priority;
-			bin->binary_idx = binary_idx;
-			bin->bin_ver = load_attr->bin_ver;
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			strncpy(bin->bin_name, load_attr->bin_name, BIN_NAME_MAX);
-#else
-			bin->bin_name = load_attr->bin_name;
-#endif
-			bin->ramsize = load_attr->ram_size;
-		} else {
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-			bin->islibrary = true;
-			g_lib_binp = bin;
+			if (binary_idx == BM_CMNLIB_IDX) {
+				bin->islibrary = true;
+				bin->filelen = load_attr->bin_size;
+				bin->offset = load_attr->offset;
+				bin->bin_ver = load_attr->bin_ver;
+				g_lib_binp = bin;
+			} else
 #endif
+			{
+				bin->exports = NULL;
+				bin->nexports = 0;
+				bin->filelen = load_attr->bin_size;
+				bin->offset = load_attr->offset;
+				bin->stacksize = load_attr->stack_size;
+				bin->priority = load_attr->priority;
+				bin->binary_idx = binary_idx;
+				bin->bin_ver = load_attr->bin_ver;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+				strncpy(bin->bin_name, load_attr->bin_name, BIN_NAME_MAX);
+#else
+				bin->bin_name = load_attr->bin_name;
+#endif
+				bin->ramsize = load_attr->ram_size;
+			}
 		}
 
 		/* Load the module into memory */

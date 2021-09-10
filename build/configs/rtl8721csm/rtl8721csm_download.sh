@@ -21,14 +21,20 @@
 TOOL_PATH=${TOP_PATH}/build/tools/amebad
 IMG_TOOL_PATH=${TOOL_PATH}/image_tool
 
+OS_PATH=${TOP_PATH}/os
+CONFIG=${OS_PATH}/.config
+source ${CONFIG}
+
 function pre_download()
 {
 	source ${TOP_PATH}/os/.bininfo
 	cp -p ${BIN_PATH}/km0_boot_all.bin ${IMG_TOOL_PATH}/km0_boot_all.bin
 	cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
 	cp -p ${BIN_PATH}/${KERNEL_BIN_NAME} ${IMG_TOOL_PATH}/${KERNEL_BIN_NAME}
-	if test -f "${SMARTFS_BIN_PATH}"; then
-		cp -p ${BIN_PATH}/rtl8721csm_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
+	cp -p ${BIN_PATH}/micom ${IMG_TOOL_PATH}/micom
+	cp -p ${BIN_PATH}/wifi ${IMG_TOOL_PATH}/wifi
+	if test -f "${BIN_PATH}/${CONFIG_COMMON_BINARY_NAME}"; then
+		cp -p ${BIN_PATH}/${CONFIG_COMMON_BINARY_NAME} ${IMG_TOOL_PATH}/${CONFIG_COMMON_BINARY_NAME}
 	fi
 	cp -p ${BIN_PATH}/bootparam.bin ${IMG_TOOL_PATH}/bootparam.bin
 }
@@ -56,8 +62,10 @@ function post_download()
 	[ -e ${BL1}.bin ] && rm ${BL1}.bin
 	[ -e ${BL2}.bin ] && rm ${BL2}.bin
 	[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
-	if test -f "${SMARTFS_BIN_PATH}"; then
-		[ -e ${CONFIG_ARCH_BOARD}_smartfs.bin ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin
+	[ -e micom ] && rm micom
+	[ -e wifi ] && rm wifi
+	if test -f "${CONFIG_COMMON_BINARY_NAME}"; then
+		[ -e ${CONFIG_COMMON_BINARY_NAME} ] && rm ${CONFIG_COMMON_BINARY_NAME}
 	fi
 	[ -e ${BOOTPARAM}.bin ] && rm ${BOOTPARAM}.bin
 }

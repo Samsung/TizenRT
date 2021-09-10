@@ -72,7 +72,7 @@
 #define BIN_TYPE_BIN               0                          /* 'bin' type for kernel binary */
 #define BIN_TYPE_ELF               1                          /* 'elf' type for user binary */
 
-#define FILES_PER_BIN              2                          /* The number of files per binary */
+#define PARTS_PER_BIN              2                          /* The number of partitions per binary */
 
 /* Bootparam information */
 #define BOOTPARAM_COUNT            2                          /* The number of boot parameters */
@@ -82,6 +82,11 @@
 
 /* Index of 'Common Library' data in binary table. */
 #define BM_CMNLIB_IDX              0
+
+#define BM_CMNLIB_NAME             "common"
+
+#define BM_VERSION_DATE_MIN        101
+#define BM_VERSION_DATE_MAX        991231
 
 /* The number of arguments for loader */
 #define LOADER_ARGC                1
@@ -104,19 +109,20 @@ enum loading_thread_cmd {
 	LOADCMD_LOAD_MAX,
 };
 
-/* Binary types */
-enum binary_type_e {
-	BINARY_TYPE_REALTIME = 0,
-	BINARY_TYPE_NONREALTIME = 1,
-	BINARY_TYPE_MAX,
-};
-
 /* Binary loading priority */
 enum binary_loading_priority_e {
 	BINARY_LOADPRIO_LOW = 1,
 	BINARY_LOADPRIO_MID = 2,
 	BINARY_LOADPRIO_HIGH = 3,
 	BINARY_LOADPRIO_MAX,
+};
+
+/* Binary Type */
+enum binary_type_e {
+	BINARY_KERNEL = 1,
+	BINARY_COMMON = 2,
+	BINARY_USERAPP = 3,
+	BINARY_TYPE_MAX,
 };
 
 #ifdef CONFIG_BINMGR_RECOVERY
@@ -127,15 +133,24 @@ struct faultmsg_s {
 typedef struct faultmsg_s faultmsg_t;
 #endif
 
+/* Partition information : partition size, devnum */
+struct part_info_s {
+	uint32_t size;
+	uint8_t devnum;
+};
+typedef struct part_info_s part_info_t;
+
 /* User binary data type in binary table */
 struct binmgr_uinfo_s {
 	pid_t bin_id;
 	uint8_t state;
 	uint8_t useidx;
-	int file_cnt;
+	uint8_t bp_idx;
+	uint8_t bin_count;
 	load_attr_t load_attr;
-	uint8_t load_priority[FILES_PER_BIN];
-	uint32_t bin_ver[FILES_PER_BIN];
+	part_info_t part_info[PARTS_PER_BIN];
+	uint8_t load_priority[PARTS_PER_BIN];
+	uint32_t bin_ver[PARTS_PER_BIN];
 	float available_kernel_ver;
 	struct tcb_s *rt_list;
 	struct tcb_s *nrt_list;
@@ -150,11 +165,17 @@ typedef struct binmgr_uinfo_s binmgr_uinfo_t;
 struct binmgr_kinfo_s {
 	uint8_t inuse_idx;
 	uint32_t part_count;
-	uint32_t part_size[KERNEL_BIN_COUNT];
-	int8_t part_num[KERNEL_BIN_COUNT];
+	part_info_t part_info[KERNEL_BIN_COUNT];
 	uint32_t version;
 };
 typedef struct binmgr_kinfo_s binmgr_kinfo_t;
+
+/* User bootparam data */
+struct binmgr_userbp_s {
+	char name[BIN_NAME_MAX];
+	uint8_t useidx;
+};
+typedef struct binmgr_userbp_s binmgr_userbp_t;
 
 /* Boot parameter data */
 struct binmgr_bpdata_s {
@@ -163,6 +184,10 @@ struct binmgr_bpdata_s {
 	uint32_t format_ver;
 	uint8_t active_idx;
 	uint32_t address[BOOTPARAM_COUNT];
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint8_t app_count;
+	binmgr_userbp_t app_data[CONFIG_NUM_APPS + 1];
+#endif
 } __attribute__((__packed__));
 typedef struct binmgr_bpdata_s binmgr_bpdata_t;
 
@@ -184,15 +209,19 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_ID(bin_idx)                                 binary_manager_get_udata(bin_idx)->bin_id
 #define BIN_STATE(bin_idx)                              binary_manager_get_udata(bin_idx)->state
 #define BIN_USEIDX(bin_idx)                             binary_manager_get_udata(bin_idx)->useidx
+#define BIN_BPIDX(bin_idx)                              binary_manager_get_udata(bin_idx)->bp_idx
+#define BIN_COUNT(bin_idx)                              binary_manager_get_udata(bin_idx)->bin_count
+
 #define BIN_RTLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->rt_list
 #define BIN_NRTLIST(bin_idx)                            binary_manager_get_udata(bin_idx)->nrt_list
+#define BIN_PARTSIZE(bin_idx, part_idx)                 binary_manager_get_udata(bin_idx)->part_info[part_idx].size
+#define BIN_PARTNUM(bin_idx, part_idx)                  binary_manager_get_udata(bin_idx)->part_info[part_idx].devnum
 
 #define BIN_LOADVER(bin_idx)                            binary_manager_get_udata(bin_idx)->load_attr.bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->available_kernel_ver
 #define BIN_CBLIST(bin_idx)                             binary_manager_get_udata(bin_idx)->cb_list
-#define BIN_FILECNT(bin_idx)                            binary_manager_get_udata(bin_idx)->file_cnt
-#define BIN_LOAD_PRIORITY(bin_idx, file_idx)            binary_manager_get_udata(bin_idx)->load_priority[file_idx]
-#define BIN_VER(bin_idx, file_idx)                      binary_manager_get_udata(bin_idx)->bin_ver[file_idx]
+#define BIN_LOAD_PRIORITY(bin_idx, part_idx)            binary_manager_get_udata(bin_idx)->load_priority[part_idx]
+#define BIN_VER(bin_idx, part_idx)                      binary_manager_get_udata(bin_idx)->bin_ver[part_idx]
 
 #define BIN_LOAD_ATTR(bin_idx)                          binary_manager_get_udata(bin_idx)->load_attr
 #define BIN_NAME(bin_idx)                               binary_manager_get_udata(bin_idx)->load_attr.bin_name
@@ -250,16 +279,14 @@ void binary_manager_get_info_with_name(int request_pid, char *bin_name);
 void binary_manager_get_info_all(int request_pid);
 void binary_manager_get_state_with_name(int request_pid, char *bin_name);
 void binary_manager_send_response(char *q_name, void *response_msg, int msg_size);
-int binary_manager_register_ubin(char *name, uint32_t version, uint8_t load_priority);
-void binary_manager_scan_ubin_all(void);
-int binary_manager_scan_ubin(int bin_idx);
-int binary_manager_read_header(char *path, user_binary_header_t *header_data, bool crc_check);
+int binary_manager_read_header(int type, char *devpath, void *header_data, bool crc_check);
 int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
 void binary_manager_release_binary_sem(int bin_idx);
 void binary_manager_update_running_state(int bin_id);
 int binary_manager_get_index_with_name(char *bin_name);
-int binary_manager_scan_bootparam(void);
+int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
+int binary_manager_get_inactive_path(int requester_pid, char *bin_name);
 
 /****************************************************************************
  * Binary Manager Main Thread

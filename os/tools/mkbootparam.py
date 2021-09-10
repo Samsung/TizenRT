@@ -22,6 +22,7 @@ import struct
 
 config_file_path = os.path.dirname(__file__) + '/../.config'
 bootparam_file_path = os.path.dirname(__file__) + '/../../build/output/bin/bootparam.bin'
+user_file_dir = os.path.dirname(__file__) + '/../../build/output/bin/user'
 
 SIZE_OF_BOOTPARAM_PART = 8192
 
@@ -31,10 +32,15 @@ SIZE_OF_BOOTPARAM_PART = 8192
 #
 # Boot Parameter information :
 #  - Boot Parameter Format Version 1 (bootparam_format_version = 1)
-# +---------------------------------------------------------------------------------------------------------------+
-# | Checksum | BP Version | BP Format Version | Active Idx | First Address | Second Address |       Reserved      |
-# | (4bytes) |  (4bytes)  |      (4bytes)     |   (1byte)  |    (4bytes)   |    (4bytes)    | (8Kbytes - 21bytes) |
-# +---------------------------------------------------------------------------------------------------------------+
+#  - The data from 'App Count' depends on CONFIG_APP_SEPARATION.
+# +------------------------------------------------------------------------------------------
+# | Checksum | BP Version | BP Format Version | Active Idx | First Address | Second Address |
+# | (4bytes) |  (4bytes)  |      (4bytes)     |   (1byte)  |    (4bytes)   |    (4bytes)    |
+# +------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------+
+# | App Count | App1 Name  | App1 Active Idx | App2 Name  | App2 Active Idx |     App# ...   |      Reserved      |
+# |  (1byte)  | (16 bytes) |   (1 bytes)     | (16 bytes) |    (1 bytes)    |  (## bytes)    |(8Kbytes - 21bytes) |
+# ----------------------------------------------------------------------------------------------------------------+
 #  * The Boot Parameters (8KB) should be downloaded and be located at the end of a flash.
 #  * The "Checksum" is crc32 value for data from "BP Version" to "Second Address".
 #  * The "BP Version" is a version to check the latest of boot parameters.
@@ -42,6 +48,12 @@ SIZE_OF_BOOTPARAM_PART = 8192
 #  * The "Active Idx" is a index indicating which address value to use.
 #    - If the value is 0, "First address" will be loaded or is loaded.
 #    - If the value is 1, "Second address" will be loaded or is loaded.
+#  * The "App Count" is the number of user applications. The maximum number is CONFIG_NUM_APPS.
+#  * The "App Name" is the name of user application.
+#  * The "App Active Idx" is a index indicating which partition to use for user application.
+#    - All user app have 2 partitions.
+#    - If the value is 0, "First partition" will be loaded or is loaded.
+#    - If the value is 1, "Second partition" will be loaded or is loaded.
 #
 ###########################################################################################
 
@@ -52,7 +64,6 @@ def get_config_value(file_name, config):
         for line in lines:
             if config in line:
                 value = (line.split("=")[1])
-                value = value.replace('"','').replace('\n','')
                 found = True
                 break
     if found == False:
@@ -71,8 +82,8 @@ def make_bootparam():
 
     bootparam_size = SIZE_OF_CHECKSUM + SIZE_OF_BP_VERSION + SIZE_OF_BP_VERSION + SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
 
-    names = get_config_value(config_file_path, "CONFIG_FLASH_PART_NAME=").split(",")
-    sizes = get_config_value(config_file_path, "CONFIG_FLASH_PART_SIZE=").split(",")
+    names = get_config_value(config_file_path, "CONFIG_FLASH_PART_NAME=").replace('"','').replace('\n','').split(",")
+    sizes = get_config_value(config_file_path, "CONFIG_FLASH_PART_SIZE=").replace('"','').replace('\n','').split(",")
     names = filter(None, names)
     sizes = filter(None, sizes)
 
@@ -108,6 +119,12 @@ def make_bootparam():
         print "FAIL!! No found kernel partition"
         sys.exit(1)
 
+    user_file_list = os.listdir(user_file_dir)
+    user_app_count = len(user_file_list)
+    SIZE_OF_BINNAME = 16
+    SIZE_OF_BINIDX = 1
+    app_bootparam_size = (user_app_count * (SIZE_OF_BINNAME + SIZE_OF_BINIDX)) + 1
+
     with open(bootparam_file_path, 'wb') as fp:
         # Write Data
         bootparam_version = 1
@@ -115,17 +132,25 @@ def make_bootparam():
         kernel_active_idx = 0
         fp.write(struct.pack('I', bootparam_version))
         fp.write(struct.pack('I', bootparam_format_version))
+	# Kernel data
         fp.write(struct.pack('B', kernel_active_idx))
 	for address in kernel_address:
             fp.write(struct.pack('I', int(address, 16)))
-
     # Add checksum
     mkchecksum_path = os.path.dirname(__file__) + '/mkchecksum.py'
     os.system('python %s %s' % (mkchecksum_path, bootparam_file_path))
 
+    with open(bootparam_file_path, 'a') as fp:
+        # User Data
+        user_active_idx = 0
+        fp.write(struct.pack('B', user_app_count))
+        for user_file in user_file_list:
+            fp.write('{:{}{}.{}}'.format(user_file, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0'))
+            fp.write(struct.pack('B', user_active_idx))
+
     # Fill remaining space with '0xff'
     with open(bootparam_file_path, 'a') as fp:
-        remain_size = partition_size - bootparam_size
+        remain_size = partition_size - bootparam_size - app_bootparam_size
         fp.write(b'\xff' * remain_size)
 
 ###################################################

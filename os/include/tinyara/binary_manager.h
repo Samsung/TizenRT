@@ -27,8 +27,6 @@
 #include <stdint.h>
 #include <limits.h>
 
-#include <tinyara/fs/fs.h>
-
 #ifdef CONFIG_BINARY_MANAGER
 /****************************************************************************
  * Pre-processor Definitions
@@ -52,9 +50,6 @@
 /* The maximum length of binary name */
 #define BIN_NAME_MAX                     16
 
-/* The length of dev name */
-#define BINMGR_DEVNAME_LEN               16
-
 /* The number of User binaries */
 #ifdef CONFIG_NUM_APPS
 #define USER_BIN_COUNT                   CONFIG_NUM_APPS
@@ -65,23 +60,12 @@
 
 #define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
 
-#define BINARY_MNT_PATH                  CONFIG_MOUNT_POINT
-
-/* Mount point for User binaries */
-#define BINARY_DIR_PATH                  CONFIG_MOUNT_POINT"bins"
-
 /* Kernel version has "YYMMDD" format */
 #define KERNEL_BIN_VER_MIN               101      /* YYMMDD : 000101 */
 #define KERNEL_BIN_VER_MAX               991231   /* YYMMDD : 991231 */
 
-/* The length of binary file or kernel partition path.
- * A path is same like below:
- *  - User filepath : "/<mount_path>/<binary_name>_<binary_version>"
- *         length : CONFIG_NAME_MAX + BIN_NAME_MAX + binary_version (32) + /,_(3) + '\0'(1)
- *  - Kernel partpath : "/dev/mtdblock#" defined as BINMGR_DEVNAME_FMT
- * So define binary path length as (CONFIG_NAME_MAX + BIN_NAME_MAX + 40) with some extra.
- */
-#define BINARY_PATH_LEN                  (CONFIG_NAME_MAX + BIN_NAME_MAX + 40)
+/* The lenght of user or kernel partition path */
+#define BINARY_PATH_LEN                  16
 
 /* Binary states used in state callback */
 enum binary_statecb_state_e {
@@ -108,7 +92,7 @@ enum binmgr_request_msg_type {
 	BINMGR_GET_INFO_ALL,
 	BINMGR_UPDATE,
 	BINMGR_GET_STATE,
-	BINMGR_CREATE_BIN,
+	BINMGR_GET_DOWNLOAD_PATH,
 	BINMGR_NOTIFY_STARTED,
 	BINMGR_REGISTER_STATECB,
 	BINMGR_UNREGISTER_STATECB,
@@ -158,6 +142,14 @@ struct kernel_binary_header_s {
 } __attribute__((__packed__));
 typedef struct kernel_binary_header_s kernel_binary_header_t;
 
+struct common_binary_header_s {
+	uint32_t crc_hash;
+	uint16_t header_size;
+	uint32_t version;
+	uint32_t bin_size;
+} __attribute__((__packed__));
+typedef struct common_binary_header_s common_binary_header_t;
+
 /* The structure of binary update information for kernel or user binaries */
 struct binary_update_info_s {
 	int available_size;
@@ -193,7 +185,6 @@ typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
 struct binmgr_update_bin_s {
 	char bin_name[BIN_NAME_MAX];
 	int type;
-	uint32_t version;
 };
 typedef struct binmgr_update_bin_s binmgr_update_bin_t;
 
@@ -222,11 +213,11 @@ struct binmgr_request_s {
 };
 typedef struct binmgr_request_s binmgr_request_t;
 
-struct binmgr_createbin_response_s {
+struct binmgr_getpath_response_s {
 	int result;
 	char binpath[BINARY_PATH_LEN];
 };
-typedef struct binmgr_createbin_response_s binmgr_createbin_response_t;
+typedef struct binmgr_getpath_response_s binmgr_getpath_response_t;
 
 struct binmgr_getstate_response_s {
 	binmgr_result_type_e result;
@@ -257,6 +248,7 @@ typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
  ****************************************************************************/
 void binary_manager_register_kpart(int part_num, int part_size);
 void binary_manager_register_bppart(int part_num, int part_size);
+void binary_manager_register_upart(char *name, int part_num, int part_size);
 
 #ifdef __cplusplus
 #define EXTERN extern "C"

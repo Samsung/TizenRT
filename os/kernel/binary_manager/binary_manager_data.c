@@ -63,47 +63,6 @@ static uint32_t g_bin_count;
 static binmgr_kinfo_t kernel_info;
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-static int binary_manager_verify_kernel_binary(char *path, kernel_binary_header_t *header_data)
-{
-	int fd;
-	int ret;
-
-	memset(header_data, 0, sizeof(kernel_binary_header_t));
-
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		bmdbg("Failed to open %s: %d, errno %d\n", path, ret, errno);
-		return ERROR;
-	}
-
-	/* Read the binary header */
-	ret = read(fd, (FAR uint8_t *)header_data, sizeof(kernel_binary_header_t));
-	if (ret != sizeof(kernel_binary_header_t)) {
-		bmdbg("Failed to read %s: %d, errno %d\n", path, ret, errno);
-		goto errout_with_fd;
-	}
-
-	/* Verify header data */
-	if (header_data->header_size == 0 || header_data->binary_size == 0 \
-		|| header_data->version < KERNEL_BIN_VER_MIN || header_data->version > KERNEL_BIN_VER_MAX) {
-		bmdbg("Invalid header data : headersize %u, version %u, binary size %u\n", header_data->header_size, header_data->version, header_data->binary_size);
-		goto errout_with_fd;
-	}
-
-	bmvdbg("Binary header : %u %u %u %u \n", header_data->header_size, header_data->binary_size, header_data->version, header_data->secure_header_size);
-	close(fd);
-
-	return OK;
-
-errout_with_fd:
-	close(fd);
-
-	return ERROR;
-}
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 /****************************************************************************
@@ -137,8 +96,8 @@ void binary_manager_register_kpart(int part_num, int part_size)
 		return;
 	}
 
-	kernel_info.part_size[kernel_info.part_count] = part_size;
-	kernel_info.part_num[kernel_info.part_count] = part_num;
+	kernel_info.part_info[kernel_info.part_count].size = part_size;
+	kernel_info.part_info[kernel_info.part_count].devnum = part_num;
 
 	bmvdbg("[KERNEL %d] part num %d size %d\n", kernel_info.part_count, part_num, part_size);
 
@@ -159,26 +118,52 @@ bool binary_manager_scan_kbin(void)
 	kernel_binary_header_t header_data;
 	char filepath[BINARY_PATH_LEN];
 
-	ret = binary_manager_scan_bootparam();
-	if (ret == BINMGR_OK) {
-		bp_data = binary_manager_get_bpdata();
-		/* Verify running kernel binary based on bootparam */
-		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_num[bp_data->active_idx]);
-		ret = binary_manager_verify_kernel_binary(filepath, &header_data);
-		if (ret == OK) {
-			/* Update inuse index and kernel version */
-			kernel_info.inuse_idx = bp_data->active_idx;
-			kernel_info.version = header_data.version;
-			bmvdbg("Kernel version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
-			return true;
-		}
-	} else {
-		lldbg("ERROR!! Failed to scan boot param.\n");
-		lldbg("Please check whether the partition 'bootparam' exists in CONFIG_FLASH_PART_TYPE with 8192K size.\n");
+	bp_data = binary_manager_get_bpdata();
+	/* Verify running kernel binary based on bootparam */
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[bp_data->active_idx].devnum);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, false);
+	if (ret == OK) {
+		/* Update inuse index and kernel version */
+		kernel_info.inuse_idx = bp_data->active_idx;
+		kernel_info.version = header_data.version;
+		bmvdbg("Kernel version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
+		return true;
 	}
 
 	return false;
 }
+
+/*************************************************************************************
+* Name: binary_manager_check_kernel_update
+*
+* Description:
+*   This function checks that new kernel binary exists on inactive partition
+*  and verifies the update is needed by comparing running version with new version.
+*
+*************************************************************************************/
+int binary_manager_check_kernel_update(bool *need_update)
+{
+	int ret;
+	char filepath[BINARY_PATH_LEN];
+	kernel_binary_header_t header_data;
+
+	if (!need_update) {
+		bmdbg("Invalid parameter\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	*need_update = false;
+
+	/* Verify kernel binary on the partition without running binary */
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[kernel_info.inuse_idx ^ 1].devnum);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, true);
+	if (ret == OK && kernel_info.version < header_data.version) {
+		/* Need to update bootparam and reboot */
+		*need_update = true;
+	}
+
+	return BINMGR_OK;
+}	
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 /****************************************************************************
@@ -206,35 +191,161 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx)
 }
 
 /****************************************************************************
- * Name: binary_manager_register_ubin
+ * Name: binary_manager_register_upart
  *
  * Description:
- *	 This function registers user binaries.
+ *	 This function registers a partition of user binaries.
  *
  ****************************************************************************/
-int binary_manager_register_ubin(char *name, uint32_t version, uint8_t load_priority)
+void binary_manager_register_upart(char *name, int part_num, int part_size)
 {
-	if (name == NULL || g_bin_count >= USER_BIN_COUNT) {
-		bmdbg("ERROR: Invalid parameter\n");
-		return ERROR;
+	int bin_idx;
+
+	if (part_num < 0 || part_size <= 0 || g_bin_count >= USER_BIN_COUNT) {
+		bmdbg("ERROR: Invalid part info : num %d, size %d, registered user count: %u\n", part_num, part_size, g_bin_count);
+		return;
+	}
+
+	for (bin_idx = 0; bin_idx <= g_bin_count; bin_idx++) {
+		/* Already Registered */
+		if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
+			BIN_PARTNUM(bin_idx, 1) = part_num;
+			BIN_PARTSIZE(bin_idx, 1) = part_size;
+			bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
+			return;
+		}
+	}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	if (!strncmp(name, BM_CMNLIB_NAME, sizeof(BM_CMNLIB_NAME))) {
+		bin_idx = BM_CMNLIB_IDX;
+	} else
+#endif
+	{
+		bin_idx = ++g_bin_count;
 	}
 
 	/* Initialize binary table and register binary name, version and priority */
-	g_bin_count++;
-	BIN_ID(g_bin_count) = -1;
-	BIN_FILECNT(g_bin_count) = 1;
-	BIN_RTLIST(g_bin_count) = NULL;
-	BIN_NRTLIST(g_bin_count) = NULL;
-	BIN_STATE(g_bin_count) = BINARY_INACTIVE;
-	BIN_VER(g_bin_count, 0) = version;
-	BIN_LOAD_PRIORITY(g_bin_count, 0) = load_priority;
-	strncpy(BIN_NAME(g_bin_count), name, BIN_NAME_MAX - 1);
-	BIN_NAME(g_bin_count)[BIN_NAME_MAX - 1] = '\0';
-	sq_init(&BIN_CBLIST(g_bin_count));
+	BIN_ID(bin_idx) = -1;
+	BIN_RTLIST(bin_idx) = NULL;
+	BIN_NRTLIST(bin_idx) = NULL;
+	BIN_STATE(bin_idx) = BINARY_INACTIVE;
+	BIN_PARTNUM(bin_idx, 0) = part_num;
+	BIN_PARTSIZE(bin_idx, 0) = part_size;
+	strncpy(BIN_NAME(bin_idx), name, BIN_NAME_MAX - 1);
+	BIN_NAME(bin_idx)[BIN_NAME_MAX - 1] = '\0';
+	sq_init(&BIN_CBLIST(bin_idx));
 
-	bmvdbg("[USER %d] %s\n", g_bin_count, BIN_NAME(g_bin_count));
+	bmvdbg("[USER%d : 1] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 0), BIN_PARTNUM(bin_idx, 0));
+}
 
-	return g_bin_count;
+/****************************************************************************
+ * Name: binary_manager_scan_ubin_all
+ *
+ * Description:
+ *	 This function scans user binaries and update information based on bootparam.
+ *
+ ****************************************************************************/
+bool binary_manager_scan_ubin_all(void)
+{
+	int ret;
+	int bin_idx;
+	int part_idx;
+	int bp_app_idx;
+	bool is_found;
+	uint32_t version;
+	binmgr_bpdata_t *bp_data;
+	common_binary_header_t common_header_data;
+	user_binary_header_t user_header_data;
+	char devpath[BINARY_PATH_LEN];
+
+	is_found = false;
+
+	bp_data = binary_manager_get_bpdata();
+	/* Update user binary data based on bootparam */
+	for (bp_app_idx = 0; bp_app_idx < bp_data->app_count; bp_app_idx++) {
+		bin_idx = binary_manager_get_index_with_name(bp_data->app_data[bp_app_idx].name);
+		if (bin_idx < 0) {
+			bmdbg("Failed to find matched binary %s in binary table \n", bp_data->app_data[bp_app_idx].name);
+			continue;
+		}
+		BIN_BPIDX(bin_idx) = bp_app_idx;
+		part_idx = bp_data->app_data[bp_app_idx].useidx;
+		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
+		if (bin_idx == BM_CMNLIB_IDX) {
+			ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, false);			
+			version = common_header_data.version;
+		} else {
+			ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, false);			
+			version = user_header_data.bin_ver;
+		}
+		if (ret == OK) {
+			/* Return true it there is at least one valid binary */
+			BIN_USEIDX(bin_idx) = part_idx;
+			BIN_COUNT(bin_idx) = 1;
+			BIN_VER(bin_idx, part_idx) = version;			
+			bmvdbg("[%d] part index %d, version %d\n", bin_idx, part_idx, version);
+			if (bin_idx != BM_CMNLIB_IDX) {
+				BIN_LOAD_PRIORITY(bin_idx, part_idx) = user_header_data.loading_priority;
+			}
+			/* Return true it there is at least one valid binary */
+			is_found = true;
+		} else {
+			bmdbg("Failed to find valid binary, %s\n", BIN_NAME(bin_idx));
+		}
+	}
+
+	return is_found;
+}
+
+/********************************************************************************************
+ * Name: binary_manager_check_user_update
+ *
+ * Description:
+ *	 This function checks that new user binary exists on inactive partition
+ *	and verifies the update is needed by comparing running version with new version.
+ *
+ *******************************************************************************************/
+int binary_manager_check_user_update(int bin_idx, bool *need_update)
+{
+	int ret;
+	int part_idx;
+	uint32_t version;
+	uint32_t running_ver;
+	char devpath[BINARY_PATH_LEN];
+	common_binary_header_t common_header_data;
+	user_binary_header_t user_header_data;
+
+	if (bin_idx < 0 || bin_idx > binary_manager_get_ucount()) {
+		bmdbg("Invalid bin idx %d\n", bin_idx);
+		return ERROR;
+	}
+
+	*need_update = false;
+
+	running_ver = BIN_VER(bin_idx, BIN_USEIDX(bin_idx));
+	part_idx = BIN_USEIDX(bin_idx) ^ 1;
+
+	snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
+	if (bin_idx == BM_CMNLIB_IDX) {
+		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, true);
+		version = common_header_data.version;
+	} else {
+		ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, true);
+		version = user_header_data.bin_ver;
+	}
+	if (ret == BINMGR_OK) {		
+		BIN_VER(bin_idx, part_idx) = version;
+		if (bin_idx != BM_CMNLIB_IDX) {
+			BIN_LOAD_PRIORITY(bin_idx, part_idx) = user_header_data.loading_priority;
+		}
+		if (running_ver < version) {
+			*need_update = true;
+			bmvdbg("Found Latest version %u in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
+		}
+	}
+
+	return OK;
 }
 
 /****************************************************************************
@@ -350,13 +461,13 @@ void binary_manager_remove_binlist(FAR struct tcb_s *tcb)
  ****************************************************************************/
 void binary_manager_clear_bindata(int bin_idx)
 {
-	struct tcb_s *tcb;
-
 	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
 		return;
 	}
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	struct tcb_s *tcb;
+
 	tcb = sched_gettcb(BIN_ID(bin_idx));
 	/* If 'reload' flag is true, a binary manager uses loading data 'bininfo' when loading the binary later.
 	 * So clear BIN_LOADINFO which points loading data if flag is false.

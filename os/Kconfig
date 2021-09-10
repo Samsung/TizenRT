@@ -229,11 +229,13 @@ config SUPPORT_COMMON_BINARY
 
 if SUPPORT_COMMON_BINARY
 
-config COMMON_BINARY_PATH
-	string "Path where common binary is stored"
-	default "/mnt/"
+config COMMON_BINARY_VERSION
+	string "Common binary version (YYMMDD)"
+	default 200204
 	---help---
-		Path where common binary is stored.
+		This config indicates common binary version which has a "YYMMDD" format.
+		It is included in common binary header and binary manager uses it to check the latest binary.
+		So it should be set to a higher value than versions of old binaries if you want to make the binary the latest version.
 
 config COMMON_BINARY_NAME
 	string "Name of common binary file"
