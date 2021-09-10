@@ -92,22 +92,27 @@ int binary_manager(int argc, char *argv[])
 	struct mq_attr attr;
 	binmgr_request_t request_msg;
 	bool is_found_kpart = true;
+	bool is_found_bootparam = true;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	int ret;
 	bool is_found_ubin = true;
-
-	/* Scan user binary files and Register them */
-	binary_manager_scan_ubin_all();
-
-	if (binary_manager_get_ucount() <= 0) {
-		is_found_ubin = false;
+#endif
+	if (binary_manager_update_bpinfo() != BINMGR_OK) {
+		is_found_bootparam = false;
 		goto errout_with_nobinary;
 	}
-#endif
+
 	if (binary_manager_get_kcount() <= 0 || !binary_manager_scan_kbin()) {
 		is_found_kpart = false;
 		goto errout_with_nobinary;
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	if (binary_manager_get_ucount() <= 0 || !binary_manager_scan_ubin_all()) {
+		is_found_ubin = false;
+		goto errout_with_nobinary;
+	}
+#endif
 
 	bmvdbg("Binary Manager STARTED\n");
 
@@ -169,20 +174,11 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_GET_INFO_ALL:
 			binary_manager_get_info_all(request_msg.requester_pid);
 			break;
-		case BINMGR_CREATE_BIN:
-			binary_manager_create_entry(request_msg.requester_pid, request_msg.data.update_bin.bin_name, request_msg.data.update_bin.version);
+		case BINMGR_GET_DOWNLOAD_PATH:
+			binary_manager_get_inactive_path(request_msg.requester_pid, request_msg.data.bin_name);
 			break;
 		case BINMGR_UPDATE:
-			if (!strncmp("kernel", request_msg.data.bin_name, BIN_NAME_MAX)) {
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-				up_reboot_reason_write(REBOOT_SYSTEM_BINARY_UPDATE);
-#endif
-				boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
-				break;
-			}
-#ifdef CONFIG_APP_BINARY_SEPARATION
-			binary_manager_execute_loader(LOADCMD_UPDATE, binary_manager_get_index_with_name(request_msg.data.bin_name));
-#endif
+			binary_manager_execute_loader(LOADCMD_UPDATE, 0);
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case BINMGR_GET_STATE:
@@ -208,10 +204,14 @@ int binary_manager(int argc, char *argv[])
 errout_with_nobinary:
 	while (1) {
 		lldbg("=============== !!ERROR!! ============== \n");
+		if (!is_found_bootparam) {
+			lldbg("ERROR!! Not found user partitions because parsing a partition list is failed.\n");
+			lldbg("Please check whether the partition 'bootparam' exists in CONFIG_FLASH_PART_TYPE with 8192K size.\n");
+		}
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		if (!is_found_ubin) {
-			lldbg("ERROR!! Not found valid user binaries.\n");
-			lldbg("Please check user binary and smartfs configurations.\n");
+			lldbg("ERROR!! Not found user partitions because parsing a partition list is failed.\n");
+			lldbg("Please check logs from configure_mtd_partitions and whether the partition 'bin' exists in CONFIG_FLASH_PART_TYPE.\n");
 		}
 #endif
 		if (!is_found_kpart) {

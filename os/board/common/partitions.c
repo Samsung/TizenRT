@@ -118,6 +118,9 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 #ifdef CONFIG_BINARY_MANAGER
 	|| !strncmp(types, "kernel,", 7)
 	|| !strncmp(types, "bootparam,", 10)
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	|| !strncmp(types, "bin,", 4)
+#endif
 #endif
 	) {
 		do_ftlinit = true;
@@ -304,6 +307,11 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 #endif
 #ifdef CONFIG_MTD_PARTITION_NAMES
 		configure_partition_name(mtd_part, (const char **)&names, &index, part_name);
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
+		if (!strncmp(types, "bin,", 4)) {
+			binary_manager_register_upart(part_name, partno, partsize);
+		}
+#endif
 #endif
 		move_to_next_part((const char **)&sizes);
 		move_to_next_part((const char **)&types);

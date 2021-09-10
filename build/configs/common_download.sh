@@ -109,6 +109,7 @@ function get_executable_name()
 		kernel|os) echo "${KERNEL_BIN_NAME}";;
 		ota) echo "${OTA}.bin";;
 		micom|wifi|loadparam) echo "$1";;
+		common) echo ${CONFIG_COMMON_BINARY_NAME};;
 		zoneinfo) echo "zoneinfo.img";;
 		rom) echo "romfs.img";;
 		bootparam)
@@ -247,6 +248,7 @@ download_all()
 	found_kernel=false
 	found_wifi=false
 	found_micom=false
+	found_common=false
 
 	for partidx in ${!parts[@]}; do
 
@@ -275,6 +277,13 @@ download_all()
 				continue
 			fi
 			found_micom=true
+		fi
+
+		if [[ "${parts[$partidx]}" == "common" ]];then
+			if [[ $found_common == true ]];then
+				continue
+			fi
+			found_common=true
 		fi
 
 		if [[ "${parts[$partidx]}" == "ftl" ]];then

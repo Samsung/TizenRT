@@ -39,7 +39,6 @@ COMPRESSION_TYPE = 0
 BLOCK_SIZE = 0
 endif
 
-BOARDNAME=$(CONFIG_ARCH_BOARD)
 APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
 
 SRCS += $(USERSPACE).c
@@ -68,13 +67,12 @@ endif
 clean:
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
-	$(call DELFILE, $(TOPDIR)/../tools/fs/contents-smartfs/$(BOARDNAME)/base-files/bins/$(BIN)_$(BIN_VER))
 	$(call CLEAN)
 
 distclean: clean
 
 install:
-	$(Q) mkdir -p $(USER_BIN_DIR)
+	$(Q) mkdir -p $(USER_BIN_DIR)/user
 	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
 ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
 	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
@@ -83,8 +81,7 @@ ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
 endif
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) user $(BIN_TYPE) $(KERNEL_VER) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE) $(LOADING_PRIORITY)
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
-	$(Q) mkdir -p $(TOPDIR)/../tools/fs/contents-smartfs/$(BOARDNAME)/base-files/bins
-	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(TOPDIR)/../tools/fs/contents-smartfs/$(BOARDNAME)/base-files/bins/$(BIN)_$(BIN_VER)
+	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/user
 
 verify:
 # If we support common binary, then the symbols in the common binary will appear as UNDEFINED

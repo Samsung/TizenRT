@@ -459,17 +459,13 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	fi
 	$(Q) $(STRIP) -g -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
 	$(Q) $(OBJCOPY) --remove-section .comment $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
-	$(Q) if [ ! -d "$(TOPDIR)/../tools/fs/contents-smartfs" ]; then \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs"; \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)"; \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files"; \
-	fi
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) common $(CONFIG_COMMON_BINARY_VERSION)
+	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
 ifeq ($(CONFIG_COMPRESSED_BINARY),y)
 	$(Q) tools/compression/mkcompressimg $(CONFIG_COMPRESSION_BLOCK_SIZE) $(CONFIG_COMPRESSION_TYPE) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).comp
 	$(Q) mv $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).comp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
 endif
-	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files/
-	$(Q) $(MAKE) smartfs
+	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/user/common
 endif
 endif
 

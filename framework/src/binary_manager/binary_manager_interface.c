@@ -41,21 +41,12 @@ binmgr_result_type_e binary_manager_set_request(binmgr_request_t *request_msg, i
 	case BINMGR_GET_STATE:
 	case BINMGR_GET_INFO:
 	case BINMGR_NOTIFY_STARTED:
-	case BINMGR_UPDATE:
+	case BINMGR_GET_DOWNLOAD_PATH:
 		if (arg == NULL) {
 			bmdbg("Invalid param, cmd : %d\n", cmd);
 			return BINMGR_INVALID_PARAM;
 		}
 		snprintf(request_msg->data.bin_name, BIN_NAME_MAX, "%s", (char *)arg);
-		break;
-	case BINMGR_CREATE_BIN:
-		if (arg == NULL) {
-			bmdbg("Invalid param, cmd : %d\n", cmd);
-			return BINMGR_INVALID_PARAM;
-		}
-		binmgr_update_bin_t *data = (binmgr_update_bin_t *)arg;
-		strncpy(request_msg->data.update_bin.bin_name, data->bin_name, BIN_NAME_MAX);
-		request_msg->data.update_bin.version = data->version;
 		break;
 	case BINMGR_REGISTER_STATECB:
 		if (arg == NULL) {
@@ -64,6 +55,7 @@ binmgr_result_type_e binary_manager_set_request(binmgr_request_t *request_msg, i
 		}
 		request_msg->data.cb_info = (binmgr_cb_t *)arg;
 		break;
+	case BINMGR_UPDATE:
 	default:
 		break;
 	}
