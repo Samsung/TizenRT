@@ -178,10 +178,11 @@ bool MallocCycQueue()
  */
 void FreeCycQueue()
 {
-	if (cyc_buffer != NULL) {
-    	os_mem_free(cyc_buffer);
-	}
+    if (cyc_buffer != NULL) {
+        os_mem_free(cyc_buffer);
+    }
     pRead = 0;
     pWrite = 0;
     cyc_buffer = NULL;
 }
+
