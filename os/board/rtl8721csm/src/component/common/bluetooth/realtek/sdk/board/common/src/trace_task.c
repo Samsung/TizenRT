@@ -119,7 +119,7 @@ bool bt_trace_init(void)
 {
     trace_uart_init();
 
-    if((trace.handle != NULL)&&(trace.QueueHandleEvent != NULL))
+    if ((trace.handle != NULL) && (trace.QueueHandleEvent != NULL))
     {
         printf("reopen bt trace, do nothing\r\n");
         return false;
@@ -145,8 +145,7 @@ bool bt_trace_uninit(void)
 
 bool trace_print(void *pData, uint16_t Length)
 {
-    /* just debug */
-    if(trace.handle == NULL)
+    if (trace.handle == NULL)
     {
         printf("trace task is deleted, not work\r\n");
         return false;
