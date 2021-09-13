@@ -121,7 +121,7 @@ bool bt_trace_init(void)
 
     if ((trace.handle != NULL) && (trace.QueueHandleEvent != NULL))
     {
-        printf("reopen bt trace, do nothing\r\n");
+        dbg("reopen bt trace, do nothing\r\n");
         return false;
     }
 
@@ -147,7 +147,7 @@ bool trace_print(void *pData, uint16_t Length)
 {
     if (trace.handle == NULL)
     {
-        printf("trace task is deleted, not work\r\n");
+        dbg("trace task is deleted, not work\r\n");
         return false;
     }
 
@@ -165,7 +165,6 @@ bool trace_print(void *pData, uint16_t Length)
     }
     else
     {
-        //printf("trace_print: buffer is full, need %d, left %d\r\n", Length, CycQueueRemainSize());
         return false;
     }
 }

@@ -77,10 +77,10 @@ uint32_t traceuart_irq(void *data)
             break;
         case RUART_RECEIVE_LINE_STATUS:
             reg_val = (UART_LineStatusGet(TRACE_UART_DEV));
-            printf("traceuart_irq: LSR interrupt, reg_val=%x\r\n", reg_val);
+            dbg("traceuart_irq: LSR interrupt, reg_val=%x\r\n", reg_val);
             break;
         default:
-            printf("traceuart_irq: Unknown interrupt type %x\r\n", int_id);
+            dbg("traceuart_irq: Unknown interrupt type %x\r\n", int_id);
             break;
     }
 
@@ -92,7 +92,7 @@ bool trace_uart_init(void)
 {
     if (!CHECK_SW(EFUSE_SW_TRACE_SWITCH))
     {
-        printf("trace_uart_init: TRACE OPEN\r\n");
+        dbg("trace_uart_init: TRACE OPEN\r\n");
         g_uart_obj.tx_switch = true;
         g_uart_obj.tx_busy = 0;
 
@@ -144,7 +144,7 @@ bool trace_uart_deinit(void)
             return true;
         }
         else {
-            printf("trace_uart_deinit: no need\r\n");
+            dbg("trace_uart_deinit: no need\r\n");
             return false;
         }
     }
@@ -158,7 +158,7 @@ static uint32_t traceuart_dma_tx_complete(void *data)
     PGDMA_InitTypeDef GDMA_InitStruct;
     uint8_t  IsrTypeMap;
 
-    printf("TRACE DMA Tx complete ISR\r\n");
+    dbg("TRACE DMA Tx complete ISR\r\n");
 
     GDMA_InitStruct = &t->UARTTxGdmaInitStruct;
 
@@ -179,7 +179,6 @@ bool trace_uart_tx(uint8_t *pstr,uint16_t len, UART_TX_CB tx_cb)
 {
     if (g_uart_obj.tx_switch == false)
     {
-        //printf("trace_uart_deinit has been called please call init\r\n");
         if (tx_cb)
             tx_cb();
         return true;
@@ -210,7 +209,7 @@ bool trace_uart_tx(uint8_t *pstr,uint16_t len, UART_TX_CB tx_cb)
         NVIC_SetPriority(GDMA_GetIrqNum(0, p_uart_obj->UARTTxGdmaInitStruct.GDMA_ChNum), TRACEUART_DMA_PRIO);
 
         if (!ret ) {
-            printf("%s Error(%d)\r\n", __FUNCTION__, ret);
+            dbg("Error(%d)\r\n", ret);
             p_uart_obj->tx_busy = 0;
         }
 
@@ -218,7 +217,7 @@ bool trace_uart_tx(uint8_t *pstr,uint16_t len, UART_TX_CB tx_cb)
     }
     else
     {
-        printf("TX not finished, can't send\r\n");
+        dbg("TX not finished, can't send\r\n");
         return false;
     }
 #endif
