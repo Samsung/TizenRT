@@ -36,7 +36,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 CXXPROTO	= route_guide.proto
 ASRCS		=
 CSRCS		=
-CXXFLAGS 	+= -I../../../external/protobuf/src/
+CXXFLAGS 	+= -I../../../../external/protobuf/src/
 CXXFLAGS 	+= -DGOOGLE_PROTOBUF_NO_RTTI -D__TizenRT__
 MAINSRC		= route_guide_client.cc
 
@@ -101,9 +101,9 @@ $(CXXOBJS): %$(MSG_PREFIX)$(OBJEXT): %$(GENCXXEXT)
 
 $(CXXOBJS2): %$(SERVICE_PREFIX)$(OBJEXT): %$(SERVICECXXEXT)
 	$(call COMPILEXX, $<, $@)
-	
+
 $(CXXOBJS3): %$(OBJEXT): %$(CXXEXT)
-	$(call COMPILEXX, $<, $@)	
+	$(call COMPILEXX, $<, $@)
 
 ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
 $(MAINOBJ): %$(OBJEXT): %$(CXXEXT)
