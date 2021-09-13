@@ -65,8 +65,8 @@ function FIND_BINFILE()
 		EXTNAME=""
 	fi
 
-	if [ -f ./.bininfo ]; then
-		source ./.bininfo
+	if [ -f ${OSDIR}/.bininfo ]; then
+		source ${OSDIR}/.bininfo
 		BINFILE="${BINDIR}/${KERNEL_BIN_NAME}"
 	else
 		if [[ "${CONFIG_ARCH_BOARD}" == "esp32"* ]]; then
