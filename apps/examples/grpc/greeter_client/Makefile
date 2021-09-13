@@ -36,7 +36,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 CXXPROTO	= helloworld.proto
 ASRCS		=
 CSRCS		=
-CXXFLAGS 	+= -I../../../external/protobuf/src/
+CXXFLAGS 	+= -I../../../../external/protobuf/src/
 CXXFLAGS 	+= -DGOOGLE_PROTOBUF_NO_RTTI -D__TizenRT__
 MAINSRC		= greeter_client.cc
 
