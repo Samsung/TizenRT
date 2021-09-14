@@ -351,7 +351,7 @@ trwifi_result_e vdev_scan_ap(struct netdev *dev, trwifi_scan_config_s *config)
 		}
 	}
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_SCANAP, (void *)config, tres};
+	struct vwifi_req req = {VWIFI_MSG_SCANAP, (void *)config, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;

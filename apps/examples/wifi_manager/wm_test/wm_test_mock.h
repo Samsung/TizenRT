@@ -20,7 +20,7 @@
 
 #ifdef CONFIG_VIRTUAL_WLAN
 #include <tinyara/net/if/wifi.h>
-#include "../../../os/drivers/wireless/virtual/vdev_command.h"
+#include "../../../../os/drivers/wireless/virtual/vdev_command.h"
 
 int control_mock(int cmd, int key, int value, int wait);
 #define CONTROL_VDRIVER(cmd, key, value, wait)	\
