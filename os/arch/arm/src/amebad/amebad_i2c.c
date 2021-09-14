@@ -411,7 +411,6 @@ static inline int amebad_i2c_sem_waitdone(FAR struct amebad_i2c_priv_s *priv)
 {
 	struct timespec abstime;
 	irqstate_t flags;
-	uint32_t regval;
 	int ret;
 
 	flags = irqsave();
