@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef __INCLUDE_TINYARA_LWNL_H__
-#define __INCLUDE_TINYARA_LWNL_H__
+#pragma once
+
 #include <stdbool.h>
 #include <stdint.h>
 /****************************************************************************
@@ -35,6 +35,8 @@
 #define LWNL_INTF_NAME "None"
 
 #define LWNL_MAX_PARAM 4
+
+#define LWNL_CB_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
 
 /* IOCTL commands ***********************************************************/
 
@@ -115,27 +117,6 @@ typedef struct lwnl_lowerhalf_s {
 	void *priv;
 };
 
-#ifndef CONFIG_NET_NETMGR
-typedef enum {
-	NM_LOOPBACK,
-	NM_WIFI,
-	NM_ETHERNET,
-	NM_UNKNOWN,
-} netdev_type;
-
-typedef enum {
-	/** Delete a filter entry */
-	NM_DEL_MAC_FILTER = 0,
-	/** Add a filter entry */
-	NM_ADD_MAC_FILTER = 1
-} netdev_mac_filter_action;
-
-struct netdev {
-	char ifname[IFNAMSIZ];
-	netdev_type type;
-	void *ops;
-};
-#endif //CONFIG_NET_NETMGR
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -145,9 +126,3 @@ int lwnl_register(struct lwnl_lowerhalf_s *ldev);
 int lwnl_unregister(struct lwnl_lowerhalf_s *ldev);
 int lwnl_register_dev(struct netdev *dev);
 int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, int32_t buf_len);
-
-#ifndef CONFIG_NET_NETMGR
-int lwnl_register_dev(struct netdev *dev);
-#endif // CONFIG_NET_NETMGR
-
-#endif /* __INCLUDE_TINYARA_LWNL_H__ */

@@ -20,10 +20,6 @@
 ifeq ($(CONFIG_LWNL80211),y)
 CSRCS += lwnl.c lwnl_evt_queue.c
 
-ifneq ($(CONFIG_NET_NETMGR), y)
-CSRCS += lwnl_ioctl.c lwnl_netdev.c
-endif
-
 DEPPATH += --dep-path lwnl
 VPATH += :lwnl
 

@@ -320,9 +320,6 @@ struct netif *netif_add(struct netif *netif,
 	netif->next = netif_list;
 	netif_list = netif;
 	mib2_netif_added(netif);
-#ifndef CONFIG_NET_NETMGR
-	g_netdevices = netif_list;
-#endif
 #if LWIP_IGMP
 	/* start IGMP processing */
 	if (netif->flags & NETIF_FLAG_IGMP) {
