@@ -211,7 +211,7 @@ exception_common:
 	cpsid	i
 #endif
 
-#elif CONFIG_ARCH_HIPRI_INTERRUPT
+#elif defined(CONFIG_ARCH_HIPRI_INTERRUPT)
 	/* Set the BASEPRI register so that further normal interrupts will be
 	 * masked.  Nested, high priority may still occur, however.
 	 */
