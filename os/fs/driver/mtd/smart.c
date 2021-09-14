@@ -5674,11 +5674,7 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		if (ret != OK) {
 			/* If CRC still does not match, the data in the sector is not correct */
 			fdbg("Invalid data, release data sector & journal!\n");
-			ret = smart_journal_release_sector(dev, psector);
-			if (ret != OK) {
-				fdbg("release committed sector : %d failed\n", psector);
-				return -EIO;
-			}
+			goto error_with_active_sector;
 		} else {
 			/* If CRC matches, then update the MTD header with new metadata from log */
 			fvdbg("valid data, update header here..\n");
@@ -5690,6 +5686,38 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 			if (ret != mtd_size) {
 				fdbg("Checkout error, write mtd header.. ret : %d\n", ret);
 				return -EIO;
+			}
+
+			/* Very rarely, some of bits in header can be flipped because of sudden power off.
+			   There is chance that matched crc but different data exist.
+			   Hence validation of header's data should be checked again */
+			struct smart_sect_header_s header;
+			ret = MTD_READ(dev->mtd, psector * dev->sectorsize, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
+			if (ret != sizeof(struct smart_sect_header_s)) {
+				fdbg("Read header failed psector : %d offset : %d\n", psector, psector * dev->sectorsize);
+				return -EIO;
+			}
+
+			if (UINT8TOUINT16(header.logicalsector) != UINT8TOUINT16(log->mtd_header.logicalsector)) {
+				fdbg("logical sector is mismatch in journal : %d on flash : %d\n", \
+					UINT8TOUINT16(log->mtd_header.logicalsector), UINT8TOUINT16(header.logicalsector));
+				goto error_with_active_sector;
+			}
+
+			if (UINT8TOUINT16(header.crc16) != UINT8TOUINT16(log->mtd_header.crc16)) {
+				fdbg("crc is mismatch in journal : %d on flash : %d\n", \
+					UINT8TOUINT16(log->mtd_header.crc16), UINT8TOUINT16(header.logicalsector));
+				goto error_with_active_sector;
+			}
+
+			if (header.seq != log->mtd_header.seq) {
+				fdbg("seq is mismatch in journal : %d on flash : %d\n", log->mtd_header.seq, header.seq);
+				goto error_with_active_sector;
+			}
+
+			if (header.status != log->mtd_header.status) {
+				fdbg("status is mismatch in journal : %d on flash : %d\n", log->mtd_header.status, header.status);
+				goto error_with_active_sector;
 			}
 		}
 		break;
@@ -5734,6 +5762,18 @@ error_with_checkin:
 		return ret;
 	}
 	return -EINVAL;
+
+error_with_active_sector:
+	ret = smart_journal_release_sector(dev, psector);
+	if (ret != OK) {
+		fdbg("release committed sector : %d failed\n", psector);
+		return -EIO;
+	}
+	ret = smart_journal_checkout(dev, log, address);
+	if (ret != OK) {
+		fdbg("checkout failed sector\n");
+	}
+	return ret;
 }
 
 #endif
