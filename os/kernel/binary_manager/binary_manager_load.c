@@ -429,6 +429,11 @@ static int loadingall_thread(int argc, char *argv[])
 	int load_cnt;
 	uint32_t bin_count;
 
+	if (!binary_manager_scan_ubin_all()) {
+		bmdbg("Failed to find valid binaries to load\n");
+		return BINMGR_OPERATION_FAIL;
+	}
+
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	ret = binary_manager_load(BM_CMNLIB_IDX);
 	if (ret < 0) {
@@ -526,52 +531,25 @@ static int update_thread(int argc, char *argv[])
 {
 	int ret;
 	int bin_idx;
-	bool need_reboot = false;
-	bool need_update = false;
-	bool check_update;
 	uint32_t bin_count;
-	binmgr_bpdata_t update_bp_data;
+	binmgr_bpinfo_t bp_info;
 
-	/* Get current bootparam data and update version */
-	memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
-	update_bp_data.version++;
-
-	/* Update bootparam and Reboot if new kernel binary exists */
-	ret = binary_manager_check_kernel_update(&check_update);
-	if (ret != BINMGR_OK) {
-		bmdbg("Failed to check kernel update, %d\n", ret);
-		return ret;
-	} else if (check_update) {
-		update_bp_data.active_idx ^= 1;
-		need_reboot = true;
-	}
-
-	bin_count = binary_manager_get_ucount();
-	/* Reload binaries if new binary is scanned */
-	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
-		/* Scan binary files */
-		ret = binary_manager_check_user_update(bin_idx, &check_update);
-		if (ret == OK && check_update) {
-			/* Update index for inactive partition */
-			update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
-			need_update = true;
-		}
-	}
-
-	if (!need_reboot && !need_update) {
-		bmvdbg("All running binaries are the latest\n");
-		return BINMGR_OK;
-	}
-
-	/* Then, update bootparam */
-	ret = binary_manager_update_bootparam(&update_bp_data);
-	if (ret != BINMGR_OK) {
-		bmdbg("Failed to update bootparam, %d\n", ret);
+	/* Get the latest bootparam */
+	ret = binary_manager_scan_bootparam(&bp_info);
+	if (ret < 0) {
+		bmdbg("Failed to scan bootparam %d\n", ret);
 		return ret;
 	}
 
-	/* Reboot if kernel update exist */
-	if (need_reboot) {
+	if (binary_manager_get_bpdata()->version >= bp_info.bp_data.version) {
+		/* No bootparam update */
+		bmdbg("All binaries are running based on bootparam\n");
+		return OK;
+	}
+
+	/* Is there a kernel update? */
+	if (binary_manager_get_kdata()->inuse_idx != bp_info.bp_data.active_idx) {
+		/* Reboot if kernel update exist */
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 		up_reboot_reason_write(REBOOT_SYSTEM_BINARY_UPDATE);
 #endif
@@ -599,6 +577,10 @@ static int update_thread(int argc, char *argv[])
 		return BINMGR_OPERATION_FAIL;
 	}
 #endif
+
+	/* Update boot parameter data */
+	binary_manager_set_bpidx(bp_info.inuse_idx);
+	binary_manager_set_bpdata(&bp_info.bp_data);
 
 	/* Load binary */
 	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, bin_idx);

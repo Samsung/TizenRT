@@ -108,7 +108,7 @@ int binary_manager(int argc, char *argv[])
 	}
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	if (binary_manager_get_ucount() <= 0 || !binary_manager_scan_ubin_all()) {
+	if (binary_manager_get_ucount() <= 0) {
 		is_found_ubin = false;
 		goto errout_with_nobinary;
 	}
@@ -176,6 +176,9 @@ int binary_manager(int argc, char *argv[])
 			break;
 		case BINMGR_GET_DOWNLOAD_PATH:
 			binary_manager_get_inactive_path(request_msg.requester_pid, request_msg.data.bin_name);
+			break;
+		case BINMGR_SETBP:
+			binary_manager_update_bootparam(request_msg.requester_pid, request_msg.data.type);
 			break;
 		case BINMGR_UPDATE:
 			binary_manager_execute_loader(LOADCMD_UPDATE, 0);

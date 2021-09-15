@@ -67,6 +67,19 @@
 /* The lenght of user or kernel partition path */
 #define BINARY_PATH_LEN                  16
 
+/* Binary Type */
+enum binary_type_e {
+	BINARY_KERNEL = 1,
+	BINARY_COMMON = 2,
+	BINARY_USERAPP = 3,
+	BINARY_TYPE_MAX,
+};
+
+/* Macros for binary grouping used for request to set bootparam */
+#define BM_SET_GROUP(type, x)    ((type) |= (1 << (x)))
+#define BM_CLR_GROUP(type, x)    ((type) &= ~(1 << (x)))
+#define BM_CHECK_GROUP(type, x)  ((type) & (1 << (x)))
+
 /* Binary states used in state callback */
 enum binary_statecb_state_e {
 	BINARY_STARTED = 0,           /* Binary is started */
@@ -90,6 +103,7 @@ typedef enum binary_state binary_state_e;
 enum binmgr_request_msg_type {
 	BINMGR_GET_INFO,
 	BINMGR_GET_INFO_ALL,
+	BINMGR_SETBP,
 	BINMGR_UPDATE,
 	BINMGR_GET_STATE,
 	BINMGR_GET_DOWNLOAD_PATH,
@@ -182,12 +196,6 @@ typedef struct binary_update_info_list_s binary_update_info_list_t;
 
 typedef void (*binmgr_statecb_t)(char *bin_name, int state, void *cb_data);
 
-struct binmgr_update_bin_s {
-	char bin_name[BIN_NAME_MAX];
-	int type;
-};
-typedef struct binmgr_update_bin_s binmgr_update_bin_t;
-
 struct binmgr_cb_s {
 	binmgr_statecb_t func;
 	void *data;
@@ -206,12 +214,17 @@ struct binmgr_request_s {
 	int cmd;
 	int requester_pid;
 	union {
+		uint8_t type;
 		char bin_name[BIN_NAME_MAX];
 		binmgr_cb_t *cb_info;
-		binmgr_update_bin_t update_bin;
 	} data;
 };
 typedef struct binmgr_request_s binmgr_request_t;
+
+struct binmgr_setbp_response_s {
+	binmgr_result_type_e result;
+};
+typedef struct binmgr_setbp_response_s binmgr_setbp_response_t;
 
 struct binmgr_getpath_response_s {
 	int result;

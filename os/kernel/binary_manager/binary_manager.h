@@ -117,14 +117,6 @@ enum binary_loading_priority_e {
 	BINARY_LOADPRIO_MAX,
 };
 
-/* Binary Type */
-enum binary_type_e {
-	BINARY_KERNEL = 1,
-	BINARY_COMMON = 2,
-	BINARY_USERAPP = 3,
-	BINARY_TYPE_MAX,
-};
-
 #ifdef CONFIG_BINMGR_RECOVERY
 struct faultmsg_s {
 	struct faultmsg_s *flink;	/* Implements singly linked list */
@@ -287,6 +279,7 @@ int binary_manager_get_index_with_name(char *bin_name);
 int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
 int binary_manager_get_inactive_path(int requester_pid, char *bin_name);
+int binary_manager_set_bootparam(int requester_pid, uint8_t type);
 
 /****************************************************************************
  * Binary Manager Main Thread

@@ -318,7 +318,7 @@ int binary_manager_check_user_update(int bin_idx, bool *need_update)
 
 	if (bin_idx < 0 || bin_idx > binary_manager_get_ucount()) {
 		bmdbg("Invalid bin idx %d\n", bin_idx);
-		return ERROR;
+		return BINMGR_INVALID_PARAM;
 	}
 
 	*need_update = false;
@@ -345,7 +345,7 @@ int binary_manager_check_user_update(int bin_idx, bool *need_update)
 		}
 	}
 
-	return OK;
+	return BINMGR_OK;
 }
 
 /****************************************************************************
