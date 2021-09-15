@@ -136,10 +136,13 @@ static char *wifimgr_state_str[] = {
 #define WIFIMGR_GET_STATE g_manager_info.state
 #define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
 #define WIFIMGR_STORE_PREV_STATE (g_manager_info.prev_state = g_manager_info.state)
-#define WIFIMGR_RESTORE_STATE								\
-	do {													\
-		g_manager_info.state = g_manager_info.prev_state;	\
-		g_manager_info.prev_state = WIFIMGR_NONE;			\
+#define WIFIMGR_RESTORE_STATE                             \
+	do {                                                  \
+		g_manager_info.state = g_manager_info.prev_state; \
+		g_manager_info.prev_state = WIFIMGR_NONE;         \
+		wifimgr_info_msg_s twmsg;                         \
+		twmsg.state = g_manager_info.state;               \
+		wifimgr_set_info(WIFIMGR_STATE, &twmsg);         \
 	} while (0)
 
 #define TAG "[WM]"
