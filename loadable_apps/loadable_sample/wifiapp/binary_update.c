@@ -315,7 +315,8 @@ static int binary_update_unregister_state_changed_callback(void)
 
 static int binary_update_same_version_test(void)
 {
-	int ret;	
+	int ret;
+	uint8_t type = 0;
 	char path[BINARY_PATH_LEN];
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
@@ -335,6 +336,12 @@ static int binary_update_same_version_test(void)
 
 	sleep(2);
 
+	BM_SET_GROUP(type, BINARY_USERAPP);
+	ret = binary_manager_set_bootparam(type);
+	if (ret != OK) {
+		return ret;
+	}
+
 	ret = binary_update_reload();
 	if (ret != OK) {
 		return ret;
@@ -351,6 +358,7 @@ static int binary_update_same_version_test(void)
 static int binary_update_new_version_test(char *bin_name)
 {
 	int ret;
+	uint8_t type = 0;
 	char path[BINARY_PATH_LEN];
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
@@ -371,6 +379,12 @@ static int binary_update_new_version_test(char *bin_name)
 
 	/* Copy current binary and update version. */
 	ret = binary_update_download_binary(path, &pre_bin_info, true, DOWNLOAD_VALID_BIN);
+	if (ret != OK) {
+		return ret;
+	}
+
+	BM_SET_GROUP(type, BINARY_USERAPP);
+	ret = binary_manager_set_bootparam(type);
 	if (ret != OK) {
 		return ret;
 	}
