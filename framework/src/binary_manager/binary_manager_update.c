@@ -30,6 +30,39 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
+binmgr_result_type_e binary_manager_set_bootparam(uint8_t type)
+{
+	binmgr_result_type_e ret;
+	binmgr_request_t request_msg;
+	binmgr_setbp_response_t response_msg;
+
+	if (!BM_CHECK_GROUP(type, BINARY_KERNEL) && !BM_CHECK_GROUP(type, BINARY_USERAPP)
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	&& !BM_CHECK_GROUP(type, BINARY_COMMON)
+#endif
+	) {
+		bmdbg("Invalid parameter %u\n", type);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	ret = binary_manager_set_request(&request_msg, BINMGR_SETBP, type);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_send_request(&request_msg);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_setbp_response_t));
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	return response_msg.result;
+}
+
 binmgr_result_type_e binary_manager_update_binary(void)
 {
 	binmgr_result_type_e ret;
@@ -120,7 +153,6 @@ binmgr_result_type_e binary_manager_get_update_info_all(binary_update_info_list_
 binmgr_result_type_e binary_manager_get_download_path(char *binary_name, char *download_path)
 {
 	binmgr_result_type_e ret;
-	binmgr_update_bin_t data;
 	binmgr_request_t request_msg;
 	binmgr_getpath_response_t response_msg;
 

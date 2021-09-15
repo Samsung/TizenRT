@@ -196,7 +196,7 @@ int binary_manager_update_bpinfo(void)
 *	 This function updates input bootparam data, bp_data to inactive bootparam partition.
 *
 ********************************************************************************/
-int binary_manager_update_bootparam(binmgr_bpdata_t *bp_data)
+int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data)
 {
 	int fd;
 	int ret;	
@@ -244,15 +244,95 @@ int binary_manager_update_bootparam(binmgr_bpdata_t *bp_data)
 	}
 	close(fd);
 
-	g_bp_info.inuse_idx = inuse_idx;
-	memcpy(&g_bp_info.bp_data, bp_data, sizeof(binmgr_bpdata_t));
-
 	return BINMGR_OK;
 errout_with_fd:
 	close(fd);
 	return BINMGR_OPERATION_FAIL;
 }
 
+void binary_manager_update_bootparam(int requester_pid, uint8_t type)
+{
+	int ret;
+	int bin_idx;
+	bool need_update;
+	bool check_update;
+	uint32_t bin_count;
+	char q_name[BIN_PRIVMQ_LEN];
+	binmgr_bpdata_t update_bp_data;
+	binmgr_setbp_response_t response_msg;
+
+	memset((void *)&response_msg, 0, sizeof(binmgr_setbp_response_t));
+
+	if (requester_pid < 0) {
+		bmdbg("Invalid requester pid %d\n", requester_pid);
+		return;
+	}
+
+	/* Get current bootparam data and update version */
+	memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
+	update_bp_data.version++;
+
+	if (BM_CHECK_GROUP(type, BINARY_KERNEL)) {
+		/* Update bootparam and Reboot if new kernel binary exists */
+		ret = binary_manager_check_kernel_update(&check_update);
+		if (ret != BINMGR_OK) {
+			bmdbg("Failed to check kernel update, %d\n", ret);
+			goto send_response;
+		} else if (!check_update) {
+			bmdbg("No binary to update\n");
+			goto send_response;
+		}		
+		/* Update index for inactive partition */
+		update_bp_data.active_idx ^= 1;
+	}
+
+	need_update = false;
+
+	if (BM_CHECK_GROUP(type, BINARY_USERAPP)) {
+		bin_count = binary_manager_get_ucount();
+		/* Reload binaries if new binary is scanned */
+		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+			/* Scan binary files */
+			ret = binary_manager_check_user_update(bin_idx, &check_update);
+			if (ret == OK && check_update) {
+				/* Update index for inactive partition */
+				update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
+				need_update = true;
+			}
+		}
+		if (!need_update) {
+			bmdbg("No binary to update\n");
+			goto send_response;
+		}
+	}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	if (BM_CHECK_GROUP(type, BINARY_COMMON)) {
+		ret = binary_manager_check_user_update(BM_CMNLIB_IDX, &check_update);
+		if (ret != BINMGR_OK) {
+			bmdbg("Failed to check kernel update, %d\n", ret);
+			goto send_response;
+		} else if (!check_update) {
+			bmdbg("No binary to update\n");
+			goto send_response;
+		}		
+		/* Update index for inactive partition */
+		update_bp_data.app_data[BIN_BPIDX(BM_CMNLIB_IDX)].useidx ^= 1;
+	}
+#endif
+
+	/* Then, Write bootparam with updated bootparam data */
+	ret = binary_manager_write_bootparam(&update_bp_data);
+	if (ret == BINMGR_OK) {
+		bmvdbg("Update bootparam SUCCESS\n");
+	} else {
+		bmdbg("Failed to update bootparam, %d\n", ret);
+	}
+
+send_response:
+	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
+	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_setbp_response_t));
+}
 
 /****************************************************************************
  * Name: binary_manager_get_bpdata
@@ -264,4 +344,33 @@ errout_with_fd:
 binmgr_bpdata_t *binary_manager_get_bpdata(void)
 {
 	return &g_bp_info.bp_data;
+}
+
+/****************************************************************************
+ * Name: binary_manager_set_bpdata
+ *
+ * Description:
+ *	 This function set boot parameter data to g_bp_info.
+ *
+ ****************************************************************************/
+int binary_manager_set_bpdata(binmgr_bpdata_t *bp_data)
+{
+	if (bp_data == NULL) {
+		return ERROR;
+	}
+	memcpy(&g_bp_info.bp_data, bp_data, sizeof(binmgr_bpdata_t));
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: binary_manager_set_bp_index
+ *
+ * Description:
+ *	 This function set boot parameter index to g_bp_info.
+ *
+ ****************************************************************************/
+void binary_manager_set_bpidx(uint8_t index)
+{
+	g_bp_info.inuse_idx = index;
 }
