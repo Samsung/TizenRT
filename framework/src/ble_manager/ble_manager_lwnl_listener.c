@@ -89,7 +89,6 @@ static void _lwnl_call_event(int fd, lwnl_cb_status status, int len)
  */
 int lwnl_fetch_ble_event(int fd, void *buf, int buflen)
 {
-	#define LWNL_CB_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
 	lwnl_cb_status status;
 	uint32_t len;
 	char type_buf[LWNL_CB_HEADER_LEN] = {0,};
