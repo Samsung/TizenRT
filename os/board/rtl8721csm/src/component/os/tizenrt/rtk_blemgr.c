@@ -227,7 +227,10 @@ trble_result_e trble_netmgr_start_scan(struct bledev *dev, trble_scan_filter *fi
 	if (filter == NULL) {
 		ret = rtw_ble_client_start_scan();
 	} else {
-		ret = rtw_ble_client_start_scan_with_filter(filter);
+		trble_scan_filter t_filter;
+		memcpy(&t_filter, filter, sizeof(trble_scan_filter));
+		_reverse_mac(t_filter.addr.mac);
+		ret = rtw_ble_client_start_scan_with_filter(&t_filter);
 	}
 	return ret;
 }
