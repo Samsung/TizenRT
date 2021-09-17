@@ -60,10 +60,12 @@ static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
 	return;
 }
 
-static void ble_device_scanned_cb(ble_scanned_device *scanned_device)
+static uint8_t ble_filter[] = { 0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 };
+static uint8_t ble_mac_filter[] = { 0x10, 0x00, 0x00, 0x00, 0x00, 0x15 };
+static void ble_device_scanned_cb_with_filter(ble_scanned_device *scanned_device)
 {
-	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called\n", __FUNCTION__);
-	printf("scan mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
+	RMC_LOG(RMC_CLIENT_TAG, "Find RMC with scan filter!!!\n");
+	printf("scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
 		scanned_device->conn_info.addr.mac[0],
 		scanned_device->conn_info.addr.mac[1],
 		scanned_device->conn_info.addr.mac[2],
@@ -76,6 +78,30 @@ static void ble_device_scanned_cb(ble_scanned_device *scanned_device)
 		memcpy(g_target.mac, scanned_device->conn_info.addr.mac, BLE_BD_ADDR_MAX_LEN);
 		g_target.type = scanned_device->conn_info.addr.type;
 		g_scan_done = 1;
+	}
+}
+
+static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_device)
+{
+	/*
+	In without filter callback, you should not do heavy works such as printing every result of scan result.
+	*/
+	if (memcmp(scanned_device->conn_info.addr.mac, ble_mac_filter, BLE_BD_ADDR_MAX_LEN) == 0) {
+		RMC_LOG(RMC_CLIENT_TAG, "Find RMC with MAC !!!\n");
+		return;
+	}
+	
+	if (memcmp(scanned_device->raw_data, ble_filter, sizeof(ble_filter)) == 0) {
+		RMC_LOG(RMC_CLIENT_TAG,"Find RMC with raw data !!!\n");
+		printf("scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
+			scanned_device->conn_info.addr.mac[0],
+			scanned_device->conn_info.addr.mac[1],
+			scanned_device->conn_info.addr.mac[2],
+			scanned_device->conn_info.addr.mac[3],
+			scanned_device->conn_info.addr.mac[4],
+			scanned_device->conn_info.addr.mac[5]
+		);
+		return;
 	}
 	
 	return;
@@ -184,7 +210,6 @@ static ble_server_gatt_t gatt_profile[] = {
 	},
 };
 
-static uint8_t ble_filter[] = { 0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 };
 static uint8_t g_adv_raw[] = { 
 	0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 
 };
@@ -194,7 +219,7 @@ static uint8_t g_adv_resp[] = {
 
 static ble_scan_callback_list scan_config = {
 	ble_scan_state_changed_cb,
-	ble_device_scanned_cb,
+	NULL,
 };
 
 static ble_client_callback_list client_config = {
@@ -450,6 +475,7 @@ int ble_rmc_main(int argc, char *argv[])
 	if (strncmp(argv[1], "scan", 5) == 0) {
 		if (argc == 3 && argv[2][0] == '1') {
 			printf("Start !\n");
+			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_without_filter;
 			ret = ble_client_start_scan(NULL, &scan_config);
 
 			if (ret != BLE_MANAGER_SUCCESS) {
@@ -463,6 +489,7 @@ int ble_rmc_main(int argc, char *argv[])
 			memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
 			filter.raw_data_length = sizeof(ble_filter);
 			filter.scan_duration = 1000;
+			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_with_filter;
 			ret = ble_client_start_scan(&filter, &scan_config);
 
 			if (ret != BLE_MANAGER_SUCCESS) {
