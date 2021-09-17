@@ -19,6 +19,7 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <string.h>
 #include <pthread.h>
 #include <assert.h>
 #include <debug.h>
@@ -100,26 +101,36 @@ static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_sc
 	return WIFI_MANAGER_SUCCESS;
 }
 
-static int _create_cb_msg(wifi_manager_cb_msg_s *msg,
+static void _create_cb_msg(wifi_manager_cb_msg_s *msg,
 						  _wifimgr_usr_cb_type_e evt,
-						  trwifi_cbk_msg_s *tmsg,
-						  wifi_manager_scan_info_s *info)
+						  void *arg)
 {
-	msg->res = WIFI_MANAGER_SUCCESS;
-	msg->reason = tmsg->reason;
-	memcpy(msg->bssid, tmsg->bssid, sizeof(msg->bssid));
-
-	if (evt == CB_STA_DISCONNECTED) {
-		msg->res = WIFI_MANAGER_DISCONNECT;
-	} else if (evt == CB_STA_RECONNECTED) {
-		msg->res = WIFI_MANAGER_RECONNECT;
-	} else if (evt == CB_SCAN_DONE) {
-		if (info) {
+	if (evt == CB_SCAN_DONE) {
+		trwifi_scan_list_s *list = (trwifi_scan_list_s *)arg;
+		wifi_manager_scan_info_s *info = NULL;
+		if (!list || WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
+			NET_LOGE(TAG, "convert scan error\n");
+			msg->res = WIFI_MANAGER_FAIL;
+		} else {
 			msg->scanlist = info;
-			msg->res = WIFI_MANAGER_SUCCESS;
+		}
+	} else {
+		trwifi_cbk_msg_s *tmsg = (trwifi_cbk_msg_s *)arg;
+		msg->reason = tmsg->reason;
+		memcpy(msg->bssid, tmsg->bssid, sizeof(msg->bssid));
+		if (evt == CB_STA_DISCONNECTED) {
+			msg->res = WIFI_MANAGER_DISCONNECT;
+		} else if (evt == CB_STA_RECONNECTED) {
+			msg->res = WIFI_MANAGER_RECONNECT;
 		}
 	}
-	return 0;
+}
+
+static void _delete_cb_msg(wifi_manager_cb_msg_s *msg)
+{
+	if (msg->scanlist) {
+		_free_scan_info(msg->scanlist);
+	}
 }
 
 static void _post_user_cb(_wifimgr_usr_cb_type_e evt,
@@ -184,29 +195,12 @@ static void _post_user_cb(_wifimgr_usr_cb_type_e evt,
 
 void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 {
-	int res = 0;
 	wifi_manager_cb_msg_s msg = {WIFI_MANAGER_SUCCESS, 0, {0,}, NULL};
-	wifi_manager_scan_info_s *info = NULL;
 
-	if (evt == CB_SCAN_DONE) {
-		trwifi_scan_list_s *list = (trwifi_scan_list_s *)arg;
-		if (list) {
-			if (WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
-				NET_LOGE(TAG, "convert scan error\n");
-			}
-		}
-	}
-
-	if ((res = _create_cb_msg(&msg, evt, (trwifi_cbk_msg_s *)arg, info)) != 0) {
-		NET_LOGE(TAG, "convert lwnl msg error evt %d\n", evt);
-		assert(0);
-	}
-
+	_create_cb_msg(&msg, evt, arg);
 	_post_user_cb(evt, msg);
+	_delete_cb_msg(&msg);
 
-	if (info) {
-		_free_scan_info(info);
-	}
 	WIFIMGR_STATS_INC(evt);
 }
 

@@ -97,11 +97,11 @@ static void _wt_signal_deinit(void);
 static int _wt_signal_init(void);
 
 /* Callbacks */
-static void _wt_sta_connected(wifi_manager_result_e);
-static void _wt_sta_disconnected(wifi_manager_disconnect_e);
-static void _wt_softap_sta_join(void);
-static void _wt_softap_sta_leave(void);
-static void _wt_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
+static void _wt_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
+static void _wt_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
+static void _wt_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
+static void _wt_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
+static void _wt_scan_done(wifi_manager_cb_msg_s msg, void *arg);
 
 /* Main */
 static wt_type_e _wt_get_opt(int argc, char *argv[]);
@@ -187,46 +187,47 @@ void _wt_signal_deinit(void)
 }
 
 /*  callback */
-void _wt_sta_connected(wifi_manager_result_e res)
+void _wt_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "-->res(%d)", res);
+	WT_LOG(TAG, "-->res(%d)", msg.res);
 	WT_TEST_SIGNAL;
 }
 
-void _wt_sta_disconnected(wifi_manager_disconnect_e disconn)
-{
-	WT_LOG(TAG, "-->");
-	WT_TEST_SIGNAL;
-}
-
-void _wt_softap_sta_join(void)
+void _wt_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
 	WT_TEST_SIGNAL;
 }
 
-void _wt_softap_sta_leave(void)
+void _wt_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
 	WT_TEST_SIGNAL;
 }
 
-void _wt_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+void _wt_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
+{
+	WT_LOG(TAG, "-->");
+	WT_TEST_SIGNAL;
+}
+
+void _wt_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
-	if (scan_result == NULL) {
+	if (msg.res != WIFI_MANAGER_SUCCESS || msg.scanlist == NULL) {
 		WT_TEST_SIGNAL;
 		return;
 	}
 	if (g_scan_join == 0) {
-		wt_print_scanlist(*scan_result);
+		wt_print_scanlist(msg.scanlist);
 	} else {
-		// request type is WT_TYPE_SJOIN. so it doesn't print scan list
-		// and pass scan list result to _wt_scan_connect;
-		g_scanned_result = _wt_get_scanned_list(*scan_result,
+		/* request type is WT_TYPE_SJOIN. so it doesn't print scan list
+		 * and pass scan list result to _wt_scan_connect;
+		 */
+		g_scanned_result = _wt_get_scanned_list(msg.scanlist,
 												g_scanned_ssid,
 												&g_scanned_auth_type,
 												&g_scanned_crypto_type);

@@ -20,7 +20,7 @@
 #include <tinyara/net/if/wifi.h>
 #include "wifi_manager_utils.h"
 
-wifi_manager_result_e wifimgr_convert_trwifi(trwifi_result_e tres)
+wifi_manager_result_e wifimgr_convert2wifimgr_res(trwifi_result_e tres)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_FAIL;
 	switch (tres) {
@@ -49,4 +49,62 @@ wifi_manager_result_e wifimgr_convert_trwifi(trwifi_result_e tres)
 		break;
 	}
 	return res;
+}
+
+trwifi_ap_auth_type_e wifimgr_convert2trwifi_auth(wifi_manager_ap_auth_type_e atype)
+{
+	switch (atype) {
+	case WIFI_MANAGER_AUTH_OPEN:
+		return TRWIFI_AUTH_OPEN;
+	case WIFI_MANAGER_AUTH_WEP_SHARED:
+		return TRWIFI_AUTH_WEP_SHARED;
+	case WIFI_MANAGER_AUTH_WPA_PSK:
+		return TRWIFI_AUTH_WPA_PSK;
+	case WIFI_MANAGER_AUTH_WPA2_PSK:
+		return TRWIFI_AUTH_WPA2_PSK;
+	case WIFI_MANAGER_AUTH_WPA3_PSK:
+		return TRWIFI_AUTH_WPA3_PSK;
+	case WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK:
+		return TRWIFI_AUTH_WPA_AND_WPA2_PSK;
+	case WIFI_MANAGER_AUTH_WPA_PSK_ENT:
+		return TRWIFI_AUTH_WPA_PSK_ENT;
+	case WIFI_MANAGER_AUTH_WPA2_PSK_ENT:
+		return TRWIFI_AUTH_WPA2_PSK_ENT;
+	case WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT:
+		return TRWIFI_AUTH_WPA_AND_WPA2_PSK_ENT;
+	case WIFI_MANAGER_AUTH_IBSS_OPEN:
+		return TRWIFI_AUTH_IBSS_OPEN;
+	case WIFI_MANAGER_AUTH_WPS:
+		return TRWIFI_AUTH_WPS;
+	case WIFI_MANAGER_AUTH_UNKNOWN:
+		return TRWIFI_AUTH_UNKNOWN;
+	}
+	return TRWIFI_AUTH_UNKNOWN;
+}
+
+trwifi_ap_crypto_type_e wifimgr_convert2trwifi_crypto(wifi_manager_ap_crypto_type_e ctype)
+{
+	switch (ctype) {
+	case WIFI_MANAGER_CRYPTO_NONE:
+		return TRWIFI_CRYPTO_NONE;
+	case WIFI_MANAGER_CRYPTO_WEP_64:
+		return TRWIFI_CRYPTO_WEP_64;
+	case WIFI_MANAGER_CRYPTO_WEP_128:
+		return TRWIFI_CRYPTO_WEP_128;
+	case WIFI_MANAGER_CRYPTO_AES:
+		return TRWIFI_CRYPTO_AES;
+	case WIFI_MANAGER_CRYPTO_TKIP:
+		return TRWIFI_CRYPTO_TKIP;
+	case WIFI_MANAGER_CRYPTO_TKIP_AND_AES:
+		return TRWIFI_CRYPTO_TKIP_AND_AES;
+	case WIFI_MANAGER_CRYPTO_AES_ENT:
+		return TRWIFI_CRYPTO_AES_ENT;
+	case WIFI_MANAGER_CRYPTO_TKIP_ENT:
+		return TRWIFI_CRYPTO_TKIP_ENT;
+	case WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT:
+		return TRWIFI_CRYPTO_TKIP_AND_AES_ENT;
+	case WIFI_MANAGER_CRYPTO_UNKNOWN:
+		return TRWIFI_CRYPTO_UNKNOWN;
+	}
+	return TRWIFI_CRYPTO_UNKNOWN;
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2020 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,11 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
-
-struct wifimgr_msg {
-	wifimgr_evt_e event;
-	wifi_manager_result_e result;
-	void *param;
-	sem_t *signal;
-};
-typedef struct wifimgr_msg wifimgr_msg_s;
-
-// application doesn't need to get messages from queue
-// member result in struct wifimgr_msg_s will be filled result of wifimgr_post_message()
-int wifimgr_post_message(wifimgr_msg_s *msg);
+/*  lwnl, event */
+WIFIMGR_LWNL_MAP_TABLE(LWNL_EVT_STA_CONNECTED, WIFIMGR_EVT_STA_CONNECTED)
+WIFIMGR_LWNL_MAP_TABLE(LWNL_EVT_STA_CONNECT_FAILED, WIFIMGR_EVT_STA_CONNECT_FAILED)
+WIFIMGR_LWNL_MAP_TABLE(LWNL_EVT_STA_DISCONNECTED, WIFIMGR_EVT_STA_DISCONNECTED)
+WIFIMGR_LWNL_MAP_TABLE(LWNL_EVT_SOFTAP_STA_JOINED, WIFIMGR_EVT_JOINED)
+WIFIMGR_LWNL_MAP_TABLE(LWNL_EVT_SOFTAP_STA_LEFT, WIFIMGR_EVT_LEFT)
+WIFIMGR_LWNL_MAP_TABLE(LWNL_EVT_SCAN_DONE, WIFIMGR_EVT_SCAN_DONE)
+WIFIMGR_LWNL_MAP_TABLE(LWNL_EVT_SCAN_FAILED, WIFIMGR_EVT_SCAN_DONE)

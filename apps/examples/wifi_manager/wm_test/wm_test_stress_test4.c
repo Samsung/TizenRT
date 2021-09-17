@@ -29,7 +29,7 @@
 #include "wm_test_mock.h"
 #include "wm_test_log.h"
 
-#define WM_TEST_TRIAL 100
+#define WM_TEST_TRIAL 2
 #define TAG "[WT]"
 //if semaphore operation failed then it'll try it again 10ms later
 #define WT_SEM_TRY_WAIT_US 10000
@@ -45,18 +45,18 @@ static sem_t g_wm_sem;
 /*
  * callbacks
  */
-static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(wifi_manager_disconnect_e);
-static void wm_softap_sta_join(void);
-static void wm_softap_sta_leave(void);
-static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
+static void wm_cb_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_cb_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_cb_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_cb_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_cb_scan_done(wifi_manager_cb_msg_s msg, void *arg);
 
 static wifi_manager_cb_s g_wifi_callbacks = {
-	wm_sta_connected,
-	wm_sta_disconnected,
-	wm_softap_sta_join,
-	wm_softap_sta_leave,
-	wm_scan_done,
+	wm_cb_sta_connected,
+	wm_cb_sta_disconnected,
+	wm_cb_softap_sta_join,
+	wm_cb_softap_sta_leave,
+	wm_cb_scan_done,
 };
 
 #define WM_TEST_SIGNAL							\
@@ -78,47 +78,49 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 		}												\
 	} while (0)
 
-void wm_sta_connected(wifi_manager_result_e res)
+void wm_cb_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "--> res(%d)", res);
+	WT_LOG(TAG, "--> res(%d)", msg.res);
+	WT_LOG(TAG, "bssid %02x:%02x:%02x:%02x:%02x:%02x",
+		   msg.bssid[0], msg.bssid[1],
+		   msg.bssid[2], msg.bssid[3],
+		   msg.bssid[4], msg.bssid[5]);
 	WM_TEST_SIGNAL;
 }
 
-void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
+void wm_cb_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "-->");
+	WT_LOG(TAG, "--> res(%d) reason %d", msg.res, msg.reason);
 	WM_TEST_SIGNAL;
 }
 
-void wm_softap_sta_join(void)
+void wm_cb_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "-->");
+	WT_LOG(TAG, "--> res(%d)", msg.res);
+	WT_LOG(TAG, "bssid %02x:%02x:%02x:%02x:%02x:%02x",
+		   msg.bssid[0], msg.bssid[1],
+		   msg.bssid[2], msg.bssid[3],
+		   msg.bssid[4], msg.bssid[5]);
 	WM_TEST_SIGNAL;
 }
 
-void wm_softap_sta_leave(void)
+void wm_cb_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "-->");
+	WT_LOG(TAG, "--> res(%d) reason %d", msg.res, msg.reason);
 	WM_TEST_SIGNAL;
 }
 
-void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+void wm_cb_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "-->");
+	WT_LOG(TAG, "--> res(%d)", msg.res);
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
-	if (scan_result == NULL) {
+	if (msg.res != WIFI_MANAGER_SUCCESS || msg.scanlist == NULL) {
 		WM_TEST_SIGNAL;
 		return;
 	}
-	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
-	while (wifi_scan_iter != NULL) {
-		WT_LOG(TAG, "WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d",
-			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
-			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
-		wifi_scan_iter = wifi_scan_iter->next;
-	}
+	wt_print_scanlist(msg.scanlist);
 	WM_TEST_SIGNAL;
 }
 
@@ -175,8 +177,6 @@ static int _run_procedure(void)
 
 	/*  Start softAP */
 	WT_LOG(TAG, "start softAP");
-	/*  it's connected state so disconnected evt have to be happened */
-	//CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT_FUNC , LWNL_EVT_STA_DISCONNECTED, 0, 1000);
 	wifi_manager_softap_config_s softap_config;
 	wm_get_softapinfo(&softap_config);
 	wres = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
@@ -223,6 +223,26 @@ static int _run_procedure(void)
 	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SCAN_DONE, 0, 1000);
 	WT_LOG(TAG, "wait scan done event");
 	WM_TEST_WAIT;
+
+	/*  scan in softAP mode */
+	WT_LOG(TAG, "scan in softAP mode");
+	wres = wifi_manager_scan_ap(NULL);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "fail to scan %d\n", wres);
+		return -1;
+	}
+
+	/*  wait scan event */
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SCAN_DONE, 0, 1000);
+	WT_LOG(TAG, "wait scan done event");
+	WM_TEST_WAIT;
+
+	wres = wifi_manager_get_info(&wminfo);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "get info fail %d\n", wres);
+		return -1;
+	}
+	wt_print_conninfo(&wminfo);
 
 	/*  set STA */
 	WT_LOG(TAG, "start STA mode");
@@ -318,7 +338,7 @@ static int _run_procedure(void)
 	wt_print_stats(&stats);
 
 	WT_LOG(TAG, "deinit wi-fi");
-	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT_FUNC, LWNL_EVT_STA_DISCONNECTED, 0, 0);
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT_FUNC, LWNL_EVT_STA_DISCONNECTED, 3, 0);
 	wres = wifi_manager_deinit();
 	if (wres != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "fail to deinit %d\n", wres);
@@ -371,7 +391,133 @@ TEST_F(set_power_p)
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_powermode(WIFI_MANAGER_POWERMODE_DISABLE));
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 	ST_END_TEST;
+}
 
+TEST_F(scan_p)
+{
+	ST_START_TEST;
+	CONTROL_VDRIVER(VWIFI_CMD_SET, VWIFI_KEY_RESULT, TRWIFI_SUCCESS, 0);
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	wifi_manager_info_s wminfo;
+
+	/*  scan in softAP mode */
+	WT_LOG(TAG, "scan in softAP mode");
+	wifi_manager_result_e wres = wifi_manager_scan_ap(NULL);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "fail to scan %d\n", wres);
+		return -1;
+	}
+
+	/*  wait scan event */
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SCAN_DONE, 0, 1000);
+	WT_LOG(TAG, "wait scan done event");
+	WM_TEST_WAIT;
+
+	/*  scan in softAP mode */
+	WT_LOG(TAG, "scan in softAP mode");
+	wres = wifi_manager_scan_ap(NULL);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "fail to scan %d\n", wres);
+		return -1;
+	}
+
+	/*  wait scan event */
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SCAN_DONE, 0, 1000);
+	WT_LOG(TAG, "wait scan done event");
+	WM_TEST_WAIT;
+
+	wres = wifi_manager_get_info(&wminfo);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "get info fail %d\n", wres);
+		return -1;
+	}
+	wt_print_conninfo(&wminfo);
+
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
+}
+
+TEST_F(scan_n)
+{
+	ST_START_TEST;
+	CONTROL_VDRIVER(VWIFI_CMD_SET, VWIFI_KEY_RESULT, TRWIFI_SUCCESS, 0);
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	wifi_manager_info_s wminfo;
+
+	/*  scan in softAP mode */
+	WT_LOG(TAG, "scan in softAP mode");
+	wifi_manager_result_e wres = wifi_manager_scan_ap(NULL);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "fail to scan %d\n", wres);
+		return -1;
+	}
+
+	/*  wait scan event */
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SCAN_DONE, 0, 1000);
+	WT_LOG(TAG, "wait scan done event");
+	WM_TEST_WAIT;
+
+	/*  scan in softAP mode */
+	WT_LOG(TAG, "scan in softAP mode");
+	wres = wifi_manager_scan_ap(NULL);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "fail to scan %d\n", wres);
+		return -1;
+	}
+
+	/*  wait scan event */
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SCAN_FAILED, 0, 1000);
+	WT_LOG(TAG, "wait scan done event");
+	WM_TEST_WAIT;
+
+	wres = wifi_manager_get_info(&wminfo);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "get info fail %d\n", wres);
+		return -1;
+	}
+	wt_print_conninfo(&wminfo);
+
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
+}
+
+/* desc: check reason code is valid when it is disconnected unexpectedly */
+TEST_F(disconn_evt)
+{
+	ST_START_TEST;
+
+	CONTROL_VDRIVER(VWIFI_CMD_SET, VWIFI_KEY_RESULT, TRWIFI_SUCCESS, 0);
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	wifi_manager_info_s wminfo;
+
+	/*  connect to AP */
+	WT_LOG(TAG, "connect AP");
+	wifi_manager_ap_config_s apconfig;
+	wm_get_apinfo(&apconfig);
+	wifi_manager_result_e wres = wifi_manager_connect_ap(&apconfig);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "connect AP fail %d\n", wres);
+		return -1;
+	}
+
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_STA_CONNECTED, 0, 1000);
+	WT_LOG(TAG, "wait connect success event");
+	WM_TEST_WAIT;
+
+	// set reason code 3
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_STA_DISCONNECTED, 3, 1000);
+	WT_LOG(TAG, "wait disconnect success event");
+	WM_TEST_WAIT;
+
+	wres = wifi_manager_get_info(&wminfo);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "get info fail %d\n", wres);
+		return -1;
+	}
+	wt_print_conninfo(&wminfo);
+
+	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
 }
 
 void wm_run_stress_test4(struct wt_options *opt)
@@ -395,6 +541,9 @@ void wm_run_stress_test4(struct wt_options *opt)
 	ST_SET_SMOKE1(wifi, 1, 0, "init negative case", init_n);
 	ST_SET_SMOKE(wifi, 1, 0, "init positive case", init_p);
 	ST_SET_SMOKE1(wifi, 1, 0, "set power", set_power_p);
+	ST_SET_SMOKE1(wifi, 1, 0, "scan positive case", scan_p);
+	ST_SET_SMOKE1(wifi, 1, 0, "scan negative case", scan_n);
+	ST_SET_SMOKE1(wifi, 1, 0, "scan negative case", disconn_evt);
 
 	ST_RUN_TEST(wifi);
 	ST_RESULT_TEST(wifi);

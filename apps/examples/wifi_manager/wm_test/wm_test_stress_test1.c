@@ -51,11 +51,11 @@ static wifi_manager_ap_crypto_type_e WM_AP_CRYPTO;
 	} while (0)
 
 /* callbacks*/
-static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(wifi_manager_disconnect_e);
-static void wm_softap_sta_joined(void);
-static void wm_softap_sta_left(void);
-static void wm_scan_ap_done(wifi_manager_scan_info_s **, wifi_manager_scan_result_e);
+static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_softap_sta_joined(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_softap_sta_left(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_scan_ap_done(wifi_manager_cb_msg_s msg, void *arg);
 
 /* Global*/
 static wifi_manager_cb_s g_wifi_callbacks = {
@@ -69,32 +69,32 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_wm_cond = PTHREAD_COND_INITIALIZER;
 
-void wm_sta_connected(wifi_manager_result_e res)
+void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "--> res(%d)", res);
+	WT_LOG(TAG, "--> res(%d)", msg.res);
 	WM_TEST_SIGNAL;
 }
 
-void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
+void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
 	WM_TEST_SIGNAL;
 }
 
-void wm_softap_sta_joined(void)
+void wm_softap_sta_joined(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
 }
 
-void wm_softap_sta_left(void)
+void wm_softap_sta_left(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
 }
 
-void wm_scan_ap_done(wifi_manager_scan_info_s **info, wifi_manager_scan_result_e res)
+void wm_scan_ap_done(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
-	WT_LOG(TAG, " result (%d) info pointer(%p)", res, *info);
+	WT_LOG(TAG, " result (%d) info pointer(%p)", msg.res, msg.scanlist);
 }
 
 static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)

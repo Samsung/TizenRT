@@ -41,8 +41,8 @@
 #define TAG "[WTON]"
 
 /* callbacks*/
-static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(wifi_manager_disconnect_e);
+static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
 
 /* State */
 static int run_init(void *arg);
@@ -57,11 +57,11 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 };
 static struct wo_queue *g_wo_queue = NULL;
 
-void wm_sta_connected(wifi_manager_result_e res)
+void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	int conn = 0;
-	WT_LOG(TAG, "-->res(%d)", res);
-	if (WIFI_MANAGER_SUCCESS == res) {
+	WT_LOG(TAG, "-->res(%d)", msg.res);
+	if (WIFI_MANAGER_SUCCESS == msg.res) {
 		conn = WO_CONN_SUCCESS;
 	} else {
 		conn = WO_CONN_FAIL;
@@ -69,9 +69,9 @@ void wm_sta_connected(wifi_manager_result_e res)
 	WO_TEST_SIGNAL(conn, g_wo_queue);
 }
 
-void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
+void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "--> %d", disconn);
+	WT_LOG(TAG, "--> %d", msg.res);
 	WO_TEST_SIGNAL(WO_CONN_FAIL, g_wo_queue);
 }
 

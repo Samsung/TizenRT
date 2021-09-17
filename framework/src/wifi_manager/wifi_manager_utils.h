@@ -62,7 +62,7 @@
 		if (wmres != TRWIFI_SUCCESS) {					\
 			NET_LOGE(TAG, msg " reason(%d)\n", wmres);	\
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_UTILS_FAIL);	\
-			return wifimgr_convert_trwifi(wmres);		\
+			return wifimgr_convert2wifimgr_res(wmres);		\
 		}												\
 	} while (0)
 
@@ -70,4 +70,6 @@
 #define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
 #define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME
 
-wifi_manager_result_e wifimgr_convert_trwifi(trwifi_result_e tres);
+wifi_manager_result_e wifimgr_convert2wifimgr_res(trwifi_result_e tres);
+trwifi_ap_auth_type_e wifimgr_convert2trwifi_auth(wifi_manager_ap_auth_type_e atype);
+trwifi_ap_crypto_type_e wifimgr_convert2trwifi_crypto(wifi_manager_ap_crypto_type_e ctype);

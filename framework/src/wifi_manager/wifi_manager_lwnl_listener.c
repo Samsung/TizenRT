@@ -117,7 +117,7 @@ static trwifi_scan_list_s *_lwnl_handle_scan(int fd, int len)
 	return scan_list;
 }
 
-static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
+static int _lwnl_generate_msg(int fd, lwnl_cb_status status, int len)
 {
 	switch (status.evt) {
 	case LWNL_EVT_SCAN_DONE: {
@@ -129,12 +129,14 @@ static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 		}
 		break;
 	}
+	case LWNL_EVT_SCAN_FAILED:
+		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_SCAN_DONE, WIFI_MANAGER_FAIL, NULL, NULL);
+		break;
 	case LWNL_EVT_STA_CONNECTED:
 	case LWNL_EVT_STA_CONNECT_FAILED:
 	case LWNL_EVT_STA_DISCONNECTED:
 	case LWNL_EVT_SOFTAP_STA_JOINED:
-	case LWNL_EVT_SOFTAP_STA_LEFT:
-	case LWNL_EVT_SCAN_FAILED: {
+	case LWNL_EVT_SOFTAP_STA_LEFT: {
 		if (len == sizeof(trwifi_cbk_msg_s)) {
 			int res = read(fd, (void *)&g_cbk, len);
 			if (res == -1) {
@@ -164,14 +166,12 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 {
 	lwnl_cb_status status;
 	uint32_t len;
-	char type_buf[LWNL_CB_HEADER_LEN] = {
-		0,
-	};
+	char type_buf[LWNL_CB_HEADER_LEN] = {0, };
 	handler_msg *hmsg = (handler_msg *)buf;
 
-	/*  lwnl guarantees that type_buf will read LWNL_CB_HEADER_LEN if it succeeds
-	* So it doesn't need to consider partial read
-	*/
+	/* lwnl guarantees that type_buf will read LWNL_CB_HEADER_LEN if it succeeds
+	 * So it doesn't need to consider partial read
+	 */
 	int nbytes = read(fd, (char *)type_buf, LWNL_CB_HEADER_LEN);
 	if (nbytes < 0) {
 		NET_LOGE(TAG, "Failed to receive (nbytes=%d)\n", nbytes);
@@ -181,8 +181,9 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	NET_LOGV(TAG, "scan state(%d) length(%d)\n", status.evt, len);
-	(void)_lwnl_call_event(fd, status, len);
+	NET_LOGV(TAG, "receive state(%d) length(%d)\n", status.evt, len);
+	(void)_lwnl_generate_msg(fd, status, len);
+
 	hmsg->msg = &g_msg;
 	hmsg->signal = NULL;
 

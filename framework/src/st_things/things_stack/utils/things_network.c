@@ -307,11 +307,11 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 	return NULL;
 }
 
-void things_wifi_sta_connected(wifi_manager_result_e res)
+void things_wifi_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	static bool is_wifi_retry_connect;
 	is_wifi_retry_connect = false;
-	if (res == WIFI_MANAGER_FAIL) {
+	if (msg.res == WIFI_MANAGER_FAIL) {
 		THINGS_LOG_E(TAG, "Failed to connect to the AP");
 
 		if (!dm_is_es_complete()) {
@@ -341,19 +341,19 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 	}
 }
 
-void things_wifi_sta_disconnected(wifi_manager_disconnect_e disconn)
+void things_wifi_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 	things_wifi_changed_call_func(0, NULL, NULL);
 }
 
-void things_wifi_soft_ap_sta_joined(void)
+void things_wifi_soft_ap_sta_joined(wifi_manager_cb_msg_s msg, void *arg)
 {
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 }
 
-void things_wifi_soft_ap_sta_left(void)
+void things_wifi_soft_ap_sta_left(wifi_manager_cb_msg_s msg, void *arg)
 {
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 }
@@ -375,20 +375,20 @@ void things_wifi_list_cleanup(void)
 	g_wifi_count = 0;
 }
 
-void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+void things_wifi_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 {
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
 	THINGS_LOG_V(TAG, "WiFi Scan done.");
-	if (scan_result == NULL) {
+	if (msg.res != WIFI_MANAGER_SUCCESS || msg.scanlist == NULL) {
 		THINGS_LOG_E(TAG, "\tWiFi scan result is NULL.");
 		return;
 	}
 	pthread_mutex_lock(&g_ap_list_mutex);
 	things_wifi_list_cleanup();
-	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
+	wifi_manager_scan_info_s *wifi_scan_iter = msg.scanlist;
 	access_point_info_s *pinfo = NULL;
 	access_point_info_s *p_last_info = NULL;
 	while (wifi_scan_iter != NULL) {

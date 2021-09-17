@@ -110,7 +110,7 @@ struct lwnl_upperhalf_s;
 /* Callback */
 typedef CODE void (*lwnl_callback_t)(struct lwnl_lowerhalf_s *dev, lwnl_cb_status status, void *buffer);
 
-typedef struct lwnl_lowerhalf_s {
+struct lwnl_lowerhalf_s {
 	struct lwnl_ops_s *ops;
 	struct lwnl_upperhalf_s *parent;
 	lwnl_callback_t cbk;
@@ -124,5 +124,6 @@ typedef struct lwnl_lowerhalf_s {
 /* Registrations */
 int lwnl_register(struct lwnl_lowerhalf_s *ldev);
 int lwnl_unregister(struct lwnl_lowerhalf_s *ldev);
+struct netdev;
 int lwnl_register_dev(struct netdev *dev);
 int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, int32_t buf_len);
