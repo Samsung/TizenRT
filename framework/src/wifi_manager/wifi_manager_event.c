@@ -33,7 +33,10 @@
 static char *wifimgr_evt_str[] = {
 #undef WIFIMGR_REQUEST_TABLE
 #define WIFIMGR_REQUEST_TABLE(str, type, desc) str,
-	#include "wifi_manager_event_table.h"
+#include "wifi_manager_cmd_table.h"
+#undef WIFIMGR_EVT_TABLE
+#define WIFIMGR_EVT_TABLE(str, type, desc) str,
+#include "wifi_manager_event_table.h"
 	"EVT_NONE",
 };
 

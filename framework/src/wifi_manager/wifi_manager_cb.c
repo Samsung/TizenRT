@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <pthread.h>
+#include <assert.h>
 #include <debug.h>
 #include <tinyara/net/netlog.h>
 #include <tinyara/net/if/wifi.h>
@@ -99,10 +100,32 @@ static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_sc
 	return WIFI_MANAGER_SUCCESS;
 }
 
-void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
+static int _create_cb_msg(wifi_manager_cb_msg_s *msg,
+						  _wifimgr_usr_cb_type_e evt,
+						  trwifi_cbk_msg_s *tmsg,
+						  wifi_manager_scan_info_s *info)
 {
-	int i = 0;
-	for (; i < WIFIMGR_NUM_CALLBACKS; i++) {
+	msg->res = WIFI_MANAGER_SUCCESS;
+	msg->reason = tmsg->reason;
+	memcpy(msg->bssid, tmsg->bssid, sizeof(msg->bssid));
+
+	if (evt == CB_STA_DISCONNECTED) {
+		msg->res = WIFI_MANAGER_DISCONNECT;
+	} else if (evt == CB_STA_RECONNECTED) {
+		msg->res = WIFI_MANAGER_RECONNECT;
+	} else if (evt == CB_SCAN_DONE) {
+		if (info) {
+			msg->scanlist = info;
+			msg->res = WIFI_MANAGER_SUCCESS;
+		}
+	}
+	return 0;
+}
+
+static void _post_user_cb(_wifimgr_usr_cb_type_e evt,
+						  wifi_manager_cb_msg_s msg)
+{
+	for (int i = 0; i < WIFIMGR_NUM_CALLBACKS; i++) {
 		wifi_manager_cb_s *cbk = g_cb_handler.cb[i];
 		if (!cbk) {
 			continue;
@@ -111,67 +134,78 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 		case CB_STA_CONNECTED:
 			NET_LOGV(TAG, "call sta connect success event\n");
 			if (cbk->sta_connected) {
-				cbk->sta_connected(WIFI_MANAGER_SUCCESS);
+				cbk->sta_connected(msg, NULL);
 			}
 			break;
 		case CB_STA_CONNECT_FAILED:
 			NET_LOGV(TAG, "call sta connect fail event\n");
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 			if (cbk->sta_connected) {
-				cbk->sta_connected(WIFI_MANAGER_FAIL);
+				cbk->sta_connected(msg, NULL);
 			}
 			break;
 		case CB_STA_DISCONNECTED:
 			NET_LOGV(TAG, "call sta disconnect event\n");
 			if (cbk->sta_disconnected) {
-				cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
+				cbk->sta_disconnected(msg, NULL);
 			}
 			break;
 		case CB_STA_RECONNECTED:
 			NET_LOGV(TAG, "call sta reconnect event\n");
 			if (cbk->sta_disconnected) {
-				cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
+				cbk->sta_disconnected(msg, NULL);
 			}
 			break;
 		case CB_STA_JOINED:
 			NET_LOGV(TAG, "call sta join event\n");
 			if (cbk->softap_sta_joined) {
-				cbk->softap_sta_joined();
+				cbk->softap_sta_joined(msg, NULL);
 			}
 			break;
 		case CB_STA_LEFT:
 			NET_LOGV(TAG, "call sta leave event\n");
 			if (cbk->softap_sta_left) {
-				cbk->softap_sta_left();
+				cbk->softap_sta_left(msg, NULL);
 			}
 			break;
 		case CB_SCAN_DONE:
 			NET_LOGV(TAG, "call sta scan event\n");
 			/* convert scan data.*/
-			wifi_manager_scan_info_s *info = NULL;
-			trwifi_scan_list_s *list = (trwifi_scan_list_s *)arg;
-			if (list) {
-				if (WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
-					NET_LOGE(TAG, "parse error\n");
-					if (cbk->scan_ap_done) {
-						cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);
-					}
-				} else {
-					if (cbk->scan_ap_done) {
-						cbk->scan_ap_done(&info, WIFI_SCAN_SUCCESS);
-					}
-					_free_scan_info(info);
-				}
-			} else {
-				WIFIADD_ERR_RECORD(ERR_WIFIMGR_SCAN_FAIL);
-				cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);
+			if (cbk->scan_ap_done) {
+				cbk->scan_ap_done(msg, NULL);
 			}
 			break;
 		default:
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 			NET_LOGE(TAG, "Invalid State\n");
-			return;
 		}
+	}
+}
+
+void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
+{
+	int res = 0;
+	wifi_manager_cb_msg_s msg = {WIFI_MANAGER_SUCCESS, 0, {0,}, NULL};
+	wifi_manager_scan_info_s *info = NULL;
+
+	if (evt == CB_SCAN_DONE) {
+		trwifi_scan_list_s *list = (trwifi_scan_list_s *)arg;
+		if (list) {
+			if (WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
+				NET_LOGE(TAG, "convert scan error\n");
+			}
+		}
+	}
+
+	if ((res = _create_cb_msg(&msg, evt, (trwifi_cbk_msg_s *)arg, info)) != 0) {
+		NET_LOGE(TAG, "convert lwnl msg error evt %d\n", evt);
+		assert(0);
+	}
+
+	_post_user_cb(evt, msg);
+
+	if (info) {
+		_free_scan_info(info);
 	}
 	WIFIMGR_STATS_INC(evt);
 }

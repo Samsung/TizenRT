@@ -19,8 +19,10 @@
 
 enum _wifimgr_evt {
 #define WIFIMGR_REQUEST_TABLE(str, type, desc) type,
-	#include "wifi_manager_event_table.h"
-	EVT_NONE,
+#include "wifi_manager_cmd_table.h"
+#define WIFIMGR_EVT_TABLE(str, type, desc) type,
+#include "wifi_manager_event_table.h"
+	WIFIMGR_EVT_NONE,
 };
 typedef enum _wifimgr_evt wifimgr_evt_e;
 

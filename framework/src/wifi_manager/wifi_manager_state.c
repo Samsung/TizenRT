@@ -147,8 +147,6 @@ static char *wifimgr_state_str[] = {
 
 #define TAG "[WM]"
 
-
-
 static inline void WIFIMGR_SET_STATE(wifimgr_state_e s)
 {
 	g_manager_info.state = s;
@@ -416,11 +414,11 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
 		break;
 	case WIFIMGR_DISCONN_INTERNAL_ERROR:
-		wifimgr_call_cb(CB_STA_CONNECT_FAILED, NULL);
+		wifimgr_call_cb(CB_STA_CONNECT_FAILED, msg->param);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		break;
 	case WIFIMGR_DISCONN_NONE:
-		wifimgr_call_cb(CB_STA_DISCONNECTED, NULL);
+		wifimgr_call_cb(CB_STA_DISCONNECTED, msg->param);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		break;
 	default:
@@ -446,10 +444,10 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 			return wret;
 		}
 #endif
-		wifimgr_call_cb(CB_STA_CONNECTED, NULL);
+		wifimgr_call_cb(CB_STA_CONNECTED, msg->param);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	} else if (msg->event == WIFIMGR_EVT_STA_CONNECT_FAILED) {
-		wifimgr_call_cb(CB_STA_CONNECT_FAILED, NULL);
+		wifimgr_call_cb(CB_STA_CONNECT_FAILED, msg->param);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
@@ -470,7 +468,7 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == WIFIMGR_EVT_STA_DISCONNECTED) {
 		dhcpc_close_ipaddr();
-		wifimgr_call_cb(CB_STA_DISCONNECTED, NULL);
+		wifimgr_call_cb(CB_STA_DISCONNECTED, msg->param);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == WIFIMGR_CMD_SET_SOFTAP) {
 		dhcpc_close_ipaddr();
@@ -518,13 +516,13 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 		}
 #endif
 		dhcps_inc_num();
-		wifimgr_call_cb(CB_STA_JOINED, NULL);
+		wifimgr_call_cb(CB_STA_JOINED, msg->param);
 	} else if (msg->event == WIFIMGR_EVT_LEFT) {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 		dhcps_del_node();
 #endif
 		dhcps_dec_num();
-		wifimgr_call_cb(CB_STA_LEFT, NULL);
+		wifimgr_call_cb(CB_STA_LEFT, msg->param);
 	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);

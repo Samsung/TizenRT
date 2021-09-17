@@ -15,22 +15,11 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-/*  str, type, description */
-WIFIMGR_REQUEST_TABLE("CMD_INIT", WIFIMGR_CMD_INIT, "Command to initialize WiFi Manager")
-WIFIMGR_REQUEST_TABLE("CMD_DEINIT", WIFIMGR_CMD_DEINIT, "Command to Deinit WiFi Manager")
-WIFIMGR_REQUEST_TABLE("CMD_SET_SOFTAP", WIFIMGR_CMD_SET_SOFTAP, "Command to set SoftAP")
-WIFIMGR_REQUEST_TABLE("CMD_SET_STA", WIFIMGR_CMD_SET_STA, "Command to set STA mode")
-WIFIMGR_REQUEST_TABLE("CMD_CONNECT", WIFIMGR_CMD_CONNECT,	"Command to connect to a WiFi AP")
-WIFIMGR_REQUEST_TABLE("CMD_DISCONNECT", WIFIMGR_CMD_DISCONNECT, "Command to Disconnect from a connected WiFi AP")
-WIFIMGR_REQUEST_TABLE("CMD_SCAN", WIFIMGR_CMD_SCAN, "Command to perform WiFi Scanning over WLAN channels")
-WIFIMGR_REQUEST_TABLE("CMD_GETINFO", WIFIMGR_CMD_GETINFO, "Command to get WiFi Manager information")
-WIFIMGR_REQUEST_TABLE("CMD_GETSTATS", WIFIMGR_CMD_GETSTATS, "Command to get WiFi driver stats")
-WIFIMGR_REQUEST_TABLE("CMD_SET_POWERMODE", WIFIMGR_CMD_SETPOWER, "Command to set WiFi driver power save mode")
-WIFIMGR_REQUEST_TABLE("EVT_STA_CONNECTED", WIFIMGR_EVT_STA_CONNECTED, "Event that STA is connected")
-WIFIMGR_REQUEST_TABLE("EVT_STA_CONNECT_FAILED", WIFIMGR_EVT_STA_CONNECT_FAILED, "Event that STA connect failed")
-WIFIMGR_REQUEST_TABLE("EVT_STA_DISCONNECTED", WIFIMGR_EVT_STA_DISCONNECTED, "Event that external STA disconnected from WiFi AP")
-WIFIMGR_REQUEST_TABLE("EVT_DHCPS_ASSIGN_IP", WIFIMGR_EVT_DHCPS_ASSIGN_IP, "Event that SoftAP got IP address")
-WIFIMGR_REQUEST_TABLE("EVT_JOINED", WIFIMGR_EVT_JOINED, "Event that new STA joined softAP")
-WIFIMGR_REQUEST_TABLE("EVT_LEFT", WIFIMGR_EVT_LEFT, "Event that external STA device left softAP")
-WIFIMGR_REQUEST_TABLE("EVT_SCAN_DONE", WIFIMGR_EVT_SCAN_DONE, "Event that WiFi scanning over WLAN channels is done")
+/*  str, event, description */
+WIFIMGR_EVT_TABLE("EVT_STA_CONNECTED", WIFIMGR_EVT_STA_CONNECTED, "Event that STA is connected")
+WIFIMGR_EVT_TABLE("EVT_STA_CONNECT_FAILED", WIFIMGR_EVT_STA_CONNECT_FAILED, "Event that STA connect failed")
+WIFIMGR_EVT_TABLE("EVT_STA_DISCONNECTED", WIFIMGR_EVT_STA_DISCONNECTED, "Event that external STA disconnected from WiFi AP")
+WIFIMGR_EVT_TABLE("EVT_JOINED", WIFIMGR_EVT_JOINED, "Event that new STA joined softAP")
+WIFIMGR_EVT_TABLE("EVT_LEFT", WIFIMGR_EVT_LEFT, "Event that external STA device left softAP")
+WIFIMGR_EVT_TABLE("EVT_SCAN_DONE", WIFIMGR_EVT_SCAN_DONE, "Event that WiFi scanning over WLAN channels is done")
+WIFIMGR_EVT_TABLE("EVT_DHCPS_ASSIGN_IP", WIFIMGR_EVT_DHCPS_ASSIGN_IP, "Event that SoftAP got IP address")
