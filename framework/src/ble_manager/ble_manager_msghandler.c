@@ -59,7 +59,7 @@ static int _process_msg(int argc, char *argv[])
  */
 int blemgr_run_msghandler(void)
 {
-	int tid = task_create("ble msg handler", 100, 4096, (main_t)_process_msg, NULL);
+	int tid = task_create("ble msg handler", 103, 4096, (main_t)_process_msg, NULL);
 	if (tid < 0) {
 		BLE_ERR;
 		return -1;
