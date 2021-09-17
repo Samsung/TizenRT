@@ -119,7 +119,10 @@ def make_bootparam():
         print "FAIL!! No found kernel partition"
         sys.exit(1)
 
-    user_file_list = os.listdir(user_file_dir)
+    if os.path.exists(user_file_dir):
+        user_file_list = os.listdir(user_file_dir)
+    else:
+        user_file_list = []
     user_app_count = len(user_file_list)
     SIZE_OF_BINNAME = 16
     SIZE_OF_BINIDX = 1
