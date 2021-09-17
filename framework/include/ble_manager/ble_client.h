@@ -83,7 +83,7 @@ typedef struct {
 typedef struct {
 	uint8_t raw_data[BLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
-	uint8_t mac[BLE_BD_ADDR_MAX_LEN];
+	ble_addr addr;
 	uint16_t scan_duration;
 } ble_scan_filter;
 
