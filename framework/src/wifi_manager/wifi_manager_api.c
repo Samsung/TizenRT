@@ -58,11 +58,9 @@
 
 static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn, wifi_manager_mode_e *mode)
 {
+	*conn = STATUS_UNKNOWN;
+	*mode = WIFI_NONE;
 	switch (*state) {
-	case WIFIMGR_UNINITIALIZED:
-		*conn = STATUS_UNKNOWN;
-		*mode = WIFI_NONE;
-		break;
 	case WIFIMGR_STA_DISCONNECTED:
 		*conn = AP_DISCONNECTED;
 		*mode = STA_MODE;
@@ -84,6 +82,8 @@ static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn
 		// so set unknown state to *conn;
 		*conn = STATUS_UNKNOWN;
 		*mode = SOFTAP_MODE;
+		break;
+	case WIFIMGR_UNINITIALIZED:
 		break;
 	default:
 		NET_LOGE(TAG, "invalid state\n");

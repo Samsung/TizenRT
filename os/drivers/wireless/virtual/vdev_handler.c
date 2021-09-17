@@ -27,6 +27,7 @@
 #include <time.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
+#include <tinyara/net/if/wifi_types.h>
 #include "vdev_handler.h"
 #include "vdev_command.h"
 
@@ -41,7 +42,8 @@ static void vwifi_callback_handler(lwnl_cb_status evt)
 		trwifi_scan_list_s *scanlist = vwifi_get_scan_list();
 		TRWIFI_POST_SCANEVENT(g_vwifi_dev, LWNL_EVT_SCAN_DONE, scanlist);
 	} else {
-		trwifi_post_event(g_vwifi_dev, evt.evt, NULL, 0);
+		trwifi_cbk_msg_s msg = {TRWIFI_REASON_UNKNOWN, {0,}, NULL};
+		trwifi_post_event(g_vwifi_dev, evt.evt, &msg, sizeof(trwifi_cbk_msg_s));
 	}
 }
 
