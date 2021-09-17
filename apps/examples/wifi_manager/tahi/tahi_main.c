@@ -83,29 +83,29 @@ extern void nd6_cache_debug_print(void);
 /*
  * Callback
  */
-static void wm_sta_connected(wifi_manager_result_e res)
+static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, msg.res);
 	sem_post(&sem);
 }
 
-static void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
+static void wm_sta_disconnected((wifi_manager_cb_msg_s msg, void *arg)
 {
 	sleep(2);
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 }
 
-static void wm_softap_sta_join(void)
+static void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 }
 
-static void wm_softap_sta_leave(void)
+static void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 }
 
-static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+static void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 }

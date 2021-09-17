@@ -19,6 +19,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <sys/types.h>
 #include <tinyara/config.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -36,11 +37,16 @@ extern struct vwifi_ops *get_vdev_ops(void);
 extern struct netdev *g_vwifi_dev;
 extern void vwifi_generate_dhcp_discover(void);
 
-static void vwifi_callback_handler(lwnl_cb_status evt)
+static void vwifi_callback_handler(lwnl_cb_status evt, int result)
 {
 	if (evt.evt == LWNL_EVT_SCAN_DONE) {
 		trwifi_scan_list_s *scanlist = vwifi_get_scan_list();
 		TRWIFI_POST_SCANEVENT(g_vwifi_dev, LWNL_EVT_SCAN_DONE, scanlist);
+	} else if (evt.evt == LWNL_EVT_SCAN_FAILED) {
+		trwifi_post_event(g_vwifi_dev, evt.evt, NULL, 0);
+	} else if (evt.evt == LWNL_EVT_STA_DISCONNECTED) {
+		trwifi_cbk_msg_s msg = {result, {0,}, NULL};
+		trwifi_post_event(g_vwifi_dev, evt.evt, &msg, sizeof(trwifi_cbk_msg_s));
 	} else {
 		trwifi_cbk_msg_s msg = {TRWIFI_REASON_UNKNOWN, {0,}, NULL};
 		trwifi_post_event(g_vwifi_dev, evt.evt, &msg, sizeof(trwifi_cbk_msg_s));
@@ -51,14 +57,17 @@ static void _generate_evt(int argc, char *argv[])
 {
 	lwnl_cb_status event_type = {LWNL_DEV_WIFI, 0};
 	event_type.evt = atoi(argv[1]);
+	int result = atoi(argv[2]);
 	int sleep_time = atoi(argv[3]);
 
-	vdvdbg("[VDEV] sleep (%d) event type(%d)\n", sleep_time, event_type.evt);
+	vdvdbg("[VDEV] sleep (%d) result (%d)event type(%d)\n",
+				 sleep_time, result, event_type.evt);
+
 	sleep(sleep_time);
 	if (event_type.evt == VWIFI_PKT_DHCPS_EVT) {
 		vwifi_generate_dhcp_discover();
 	} else {
-		vwifi_callback_handler(event_type);
+		vwifi_callback_handler(event_type, result);
 	}
 }
 

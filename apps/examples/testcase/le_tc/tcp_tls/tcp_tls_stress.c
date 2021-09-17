@@ -99,8 +99,8 @@ typedef enum {
 /*
  * Callbacks
  */
-static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(wifi_manager_disconnect_e);
+static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
 
 /*
  * Global
@@ -126,13 +126,13 @@ static mbedtls_config mbedtls_c;
 /*
  * Callback
  */
-void wm_sta_connected(wifi_manager_result_e res)
+void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, msg.res);
 	WM_TEST_SIGNAL;
 }
 
-void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
+void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;

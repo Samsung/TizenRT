@@ -55,15 +55,17 @@ static bool g_is_connected = false;
 
 static void iotjs_startup_wifi_connect(void);
 
-static void iotjs_startup_wifi_sta_connected(wifi_manager_result_e status)
+static void iotjs_startup_wifi_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
+	wifi_manager_result_e status = msg.res;
 	printf("log: %s status=0x%x\n", __FUNCTION__, status);
 	g_is_connected = ((status == WIFI_MANAGER_SUCCESS) ||
 			  (status == WIFI_MANAGER_ALREADY_CONNECTED));
 }
 
-static void iotjs_startup_wifi_sta_disconnected(wifi_manager_disconnect_e status)
+static void iotjs_startup_wifi_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
+	wifi_manager_disconnect_e status = msg.disconn;
 	printf("log: %s status=0x%x\n", __FUNCTION__, status);
 	g_is_connected = false;
 	sleep(10);

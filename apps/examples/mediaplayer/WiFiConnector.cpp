@@ -45,14 +45,14 @@ std::chrono::seconds WiFiConnector::WAIT_WIFI_TIMEOUT(5);
 int WiFiConnector::connect(void)
 {
 	static wifi_manager_cb_s wifi_callbacks = {
-		[](wifi_manager_result_e result) {
+		[](wifi_manager_cb_msg_s msg, void *arg) {
 			/* wifi_sta_connected */
-			printf("result %d\n", (int)result);
+			printf("result %d\n", (int)msg.res);
 			WIFI_CONNECTED_NOTIFY();
 		},
-		[](wifi_manager_disconnect_e result) {
+		[](wifi_manager_cb_msg_s msg, void *arg) {
 			/* wifi_sta_disconnected */
-			printf("result %d\n", (int)result);
+			printf("result %d\n", (int)msg.res);
 		},
 		NULL,
 		NULL,

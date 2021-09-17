@@ -95,13 +95,13 @@ static pthread_cond_t wifi_cond;
 /*
  * wi-fi callbacks
  */
-void sta_connected(wifi_manager_result_e res)
+void sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	printf(" t%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	printf(" t%d --> %s res(%d)\n", getpid(), __FUNCTION__, msg.res);
 	WIFI_SIGNAL;
 }
 
-void sta_disconnected(wifi_manager_disconnect_e disconn)
+void sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	sleep(1);
 	printf(" t%d --> %s\n", getpid(), __FUNCTION__);

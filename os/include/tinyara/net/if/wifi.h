@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #define TRWIFI_MACADDR_LEN			  6
 #define TRWIFI_MACADDR_STR_LEN		  17
 #define TRWIFI_SSID_LEN				  32
@@ -156,9 +158,9 @@ typedef enum {
  * @event LWNL_EVT_SCAN_FAILED
  *        a wi-fi driver generates the event if it failed to scan.
  *        a wi-fi driver must generate LWNL_EVT_SCAN_DONE or LWNL_EVT_SCAN_FAILED
- *        if it returns success about trwifi_scan_ap()
+ *        if it returns success to trwifi_scan_ap()
  *        The driver can pass the event by calling
- *        trwifi_post_event(struct netdev *, LWNL_EVT_SCAN_FAILED, trwifi_cbk_msg_s *, sizeof(trwifi_cbk_msg_s))
+ *        trwifi_post_event(struct netdev *, LWNL_EVT_SCAN_FAILED, NULL, 0);
  */
 typedef enum {
 	LWNL_EVT_STA_CONNECTED,
@@ -310,7 +312,8 @@ typedef trwifi_result_e (*trwifi_deinit)(struct netdev *dev);
  * @return TRWIFI_FAIL         : fail (shouldn't generate an event.)
  * @return TRWIFI_INVALID_ARGS : arguments are invalid
  *
- * @note   Driver can check whether SSID is set by ssid_length in config.
+ * @note   A driver must generate event if it return success.
+ *         A driver can check whether SSID is set by ssid_length in config.
  *         If ssid_length is 0 then SSID isn't set. wifi_manager which send requests to a driver will
  *         check validation of SSID(ex. length of SSID).
  *         In the same way, if channel in config is 0 then channel isn't configured.
@@ -341,7 +344,7 @@ typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_scan_config
  *              events(LWNL_EVT_STA_CONNECTED or LWNL_EVT_STA_CONNECT_FAILED).
  *              if the call fails then it shouldn't generate events.
  *              In STA mode and it's connected to an access point, wi-fi library can generates
- *              LWNL_EVT_STA_DISCONNECTED event when it's disconnected to AP.
+ *              LWNL_EVT_STA_DISCONNECTED event when it's disconnected to AP unexpectedly.
  *
  * @return TRWIFI_SUCCESS      : success (should generate an event)
  * @return TRWIFI_FAIL         : fail (should not generate an event)
@@ -359,7 +362,8 @@ typedef trwifi_result_e (*trwifi_connect_ap)(struct netdev *dev, trwifi_ap_confi
  * @event LWNL_EVT_STA_DISCONNECTED : disconnected to an access point
  *
  * @description   If wi-fi library is in STA mode and it's connected to an access point,
- *                it should generate LWNL_EVT_STA_DISCONNECTED event if an AP is disconnected.
+ *                and it return success then it should generate LWNL_EVT_STA_DISCONNECTED event
+ *                if an AP is disconnected.
  *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
@@ -398,7 +402,8 @@ typedef trwifi_result_e (*trwifi_start_sta)(struct netdev *dev);
  *
  * @description    The call changes wi-fi to SoftAP mode.
  *                 If wi-fi is in SoftAP mode this API is not called, because wi-fi manager manages Wi-Fi state.
- *                 In this state, wi-fi library can generate LWNL_EVT_SOFTAP_STA_JOINED or LWNL_EVT_SOFTAP_STA_LEFT events.
+ *                 In this state, wi-fi library can generate LWNL_EVT_SOFTAP_STA_JOINED or
+ *                 LWNL_EVT_SOFTAP_STA_LEFT events.
  *                 LWNL_EVT_SOFTAP_STA_JOINED is called when a wi-fi device is connected to softAP.
  *                 LWNL_EVT_SOFTAP_STA_LEFT is called when a wi-fi device is left from softAP.
  *

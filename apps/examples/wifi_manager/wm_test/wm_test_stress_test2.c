@@ -41,11 +41,11 @@ static int WM_SOFTAP_CHANNEL;
 /*
  * callbacks
  */
-static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(wifi_manager_disconnect_e);
-static void wm_softap_sta_join(void);
-static void wm_softap_sta_leave(void);
-static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
+static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg);
 
 /*
  * Global
@@ -62,48 +62,42 @@ static int g_conn = 0;
 /*
  * Callback
  */
-void wm_sta_connected(wifi_manager_result_e res)
+void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WT_LOG(TAG, "-->  res(%d)", res);
-	WO_TEST_SIGNAL(res, g_wo_queue);
+	WT_LOG(TAG, "-->  res(%d)", msg.res);
+	WO_TEST_SIGNAL(msg.res, g_wo_queue);
 }
 
-void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
-{
-	WT_LOG(TAG, "-->");
-	WO_TEST_SIGNAL(disconn, g_wo_queue);
-}
-
-void wm_softap_sta_join(void)
+void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
-	WO_TEST_SIGNAL(-1, g_wo_queue);
+	WO_TEST_SIGNAL(msg.res, g_wo_queue);
 }
 
-void wm_softap_sta_leave(void)
+void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
 	WO_TEST_SIGNAL(-1, g_wo_queue);
 }
 
-void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
+{
+	WT_LOG(TAG, "-->");
+	WO_TEST_SIGNAL(-1, g_wo_queue);
+}
+
+void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WT_LOG(TAG, "-->");
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
-	if (scan_result == NULL) {
-		WO_TEST_SIGNAL(res, g_wo_queue);
+	if (msg.res != WIFI_MANAGER_SUCCESS || msg.scanlist == NULL) {
+		WO_TEST_SIGNAL(msg.res, g_wo_queue);
 		return;
 	}
-	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
-	while (wifi_scan_iter != NULL) {
-		WT_LOG(TAG, "WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d",
-			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
-			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
-		wifi_scan_iter = wifi_scan_iter->next;
-	}
-	WO_TEST_SIGNAL(res, g_wo_queue);
+	wt_print_scanlist(msg.scanlist);
+	WO_TEST_SIGNAL(msg.res, g_wo_queue);
 }
 
 static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)

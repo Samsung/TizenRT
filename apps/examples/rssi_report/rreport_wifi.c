@@ -22,28 +22,26 @@
 #include <wifi_manager/wifi_manager.h>
 #include "rreport_config.h"
 
-#define WM_TEST_SIGNAL								\
-	do {											\
-		sem_post(&g_wm_sem);						\
-		printf("T%d send signal\n", getpid());	\
+#define WM_TEST_SIGNAL                         \
+	do {                                       \
+		sem_post(&g_wm_sem);                   \
+		printf("T%d send signal\n", getpid()); \
 	} while (0)
 
-#define WM_TEST_WAIT								\
-	do {											\
-		printf("T%d wait signal\n", getpid());	\
-		sem_wait(&g_wm_sem);                        \
+#define WM_TEST_WAIT                           \
+	do {                                       \
+		printf("T%d wait signal\n", getpid()); \
+		sem_wait(&g_wm_sem);                   \
 	} while (0)
-
-
 
 /*
  * Callbacks
  */
-static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(wifi_manager_disconnect_e);
-static void wm_softap_sta_join(void);
-static void wm_softap_sta_leave(void);
-static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
+static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg);
 
 static wifi_manager_cb_s wifi_callbacks = {
 	wm_sta_connected,
@@ -58,42 +56,42 @@ static sem_t g_wm_sem = SEM_INITIALIZER(0);
 /*
  * Callback
  */
-void wm_sta_connected(wifi_manager_result_e res)
+void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, msg.res);
 	WM_TEST_SIGNAL;
 }
 
-void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
+void wm_sta_disconnected((wifi_manager_cb_msg_s msg, void *arg)
 {
 	sleep(2);
-	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
+	printf(" T%d --> res %d %s\n", getpid(), msg.res, __FUNCTION__);
 	WM_TEST_SIGNAL;
 }
 
-void wm_softap_sta_join(void)
+void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
 {
-	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
+	printf(" T%d --> %s res %d\n", getpid(), __FUNCTION__, msg.res);
 	WM_TEST_SIGNAL;
 }
 
-void wm_softap_sta_leave(void)
+void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
 {
-	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
+	printf(" T%d --> %s %d\n", getpid(), __FUNCTION__, msg.res);
 	WM_TEST_SIGNAL;
 }
 
-void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
-	if (scan_result == NULL) {
+	if (msg.scanlist == NULL) {
 		WM_TEST_SIGNAL;
 		return;
 	}
-	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
+	wifi_manager_scan_info_s *wifi_scan_iter = msg.scanlist;
 	while (wifi_scan_iter != NULL) {
 		printf("WiFi AP SSID: %-25s, BSSID: %-20s, Rssi: %d, Auth: %d, Crypto: %d\n",
 			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,

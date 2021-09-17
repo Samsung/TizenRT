@@ -86,16 +86,10 @@ typedef enum {
 	WIFI_MANAGER_ALREADY_CONNECTED,
 	WIFI_MANAGER_CALLBACK_NOT_REGISTERED,
 	WIFI_MANAGER_NOT_AVAILABLE,
-	WIFI_MANAGER_NO_API,
-} wifi_manager_result_e;
-
-/**
- * @brief Wi-Fi disconnect event reason
- */
-typedef enum {
 	WIFI_MANAGER_DISCONNECT,
 	WIFI_MANAGER_RECONNECT, //AUTOCONNECT
-} wifi_manager_disconnect_e;
+	WIFI_MANAGER_NO_API,
+} wifi_manager_result_e;
 
 /**
  * @brief Mode of Wi-Fi interface such as station mode or ap mode
@@ -118,14 +112,6 @@ typedef enum {
 	WIFI_RECONN_EXPONENT,
 	WIFI_RECONN_NONE,
 } wifi_manager_reconn_type_e;
-
-/**
- * @brief Result types of nearby access point scanning
- */
-typedef enum {
-	WIFI_SCAN_FAIL = -1,
-	WIFI_SCAN_SUCCESS,
-} wifi_manager_scan_result_e;
 
 /**
  * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
@@ -177,15 +163,28 @@ struct wifi_manager_scan_info_s {
 
 typedef struct wifi_manager_scan_info_s wifi_manager_scan_info_s;
 
+struct wifi_manager_cb_msg {
+	wifi_manager_result_e res;
+	uint32_t reason;
+	uint8_t bssid[6];
+	wifi_manager_scan_info_s *scanlist;
+};
+typedef struct wifi_manager_cb_msg wifi_manager_cb_msg_s;
+
 /**
  * @brief Include callback functions which are asynchronously called after Wi-Fi Manager APIs are called
  */
 typedef struct {
-	void (*sta_connected)(wifi_manager_result_e);	// in station mode, connected to ap
-	void (*sta_disconnected)(wifi_manager_disconnect_e);		// in station mode, disconnected from ap
-	void (*softap_sta_joined)(void);	// in softap mode, a station joined
-	void (*softap_sta_left)(void);		// in softap mode, a station left
-	void (*scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // scanning ap is done
+	// in station mode, connected to ap
+	void (*sta_connected)(wifi_manager_cb_msg_s msg, void *arg);
+	// in station mode, disconnected from ap
+	void (*sta_disconnected)(wifi_manager_cb_msg_s msg, void *arg);
+	// in softap mode, a station joined
+	void (*softap_sta_joined)(wifi_manager_cb_msg_s msg, void *arg);
+	// in softap mode, a station left
+	void (*softap_sta_left)(wifi_manager_cb_msg_s msg, void *arg);
+	// scanning ap is done
+	void (*scan_ap_done)(wifi_manager_cb_msg_s msg, void *arg);
 } wifi_manager_cb_s;
 
 /**

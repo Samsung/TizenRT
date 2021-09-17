@@ -231,8 +231,8 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 	strncpy(util_config.passphrase, config->passphrase, WIFIMGR_PASSPHRASE_LEN);
 	util_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	util_config.passphrase_length = config->passphrase_length;
-	util_config.ap_auth_type = config->ap_auth_type;
-	util_config.ap_crypto_type = config->ap_crypto_type;
+	util_config.ap_auth_type = wifimgr_convert2trwifi_auth(config->ap_auth_type);
+	util_config.ap_crypto_type = wifimgr_convert2trwifi_crypto(config->ap_crypto_type);
 
 	trwifi_result_e wres = wifi_utils_connect_ap(&util_config, NULL);
 	if (wres == TRWIFI_ALREADY_CONNECTED) {
@@ -580,7 +580,7 @@ wifi_manager_result_e _handler_get_stats(wifimgr_msg_s *msg)
 		wstats->rssi_max = stats.rssi_max;
 		wstats->beacon_miss_cnt = stats.beacon_miss_cnt;
 	}
-	return wifimgr_convert_trwifi(res);
+	return wifimgr_convert2wifimgr_res(res);
 }
 
 wifi_manager_result_e _handler_set_powermode(wifimgr_msg_s *msg)
@@ -592,7 +592,7 @@ wifi_manager_result_e _handler_set_powermode(wifimgr_msg_s *msg)
 	}
 	trwifi_msg_s tmsg = {TRWIFI_MSG_SET_POWERMODE, (void *)(&imode)};
 	trwifi_result_e res = wifi_utils_ioctl(&tmsg);
-	return wifimgr_convert_trwifi(res);
+	return wifimgr_convert2wifimgr_res(res);
 }
 
 wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)
