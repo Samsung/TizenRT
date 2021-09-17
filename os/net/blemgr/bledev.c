@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <semaphore.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/ble.h>
 #include <tinyara/ble/ble_manager.h>
@@ -32,6 +33,54 @@
 			res = (dev->ops->method)param;	\
 		}										\
 	} while (0)
+
+#define SCAN_INFO_BUFFER_SIZE 150
+static trble_scanned_device scan_info_buf[SCAN_INFO_BUFFER_SIZE] = { 0, };
+static int write_index = 0;
+static int read_index = 0;
+static sem_t g_scan_countsem;
+static volatile int g_run_process = 0;
+
+int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len)
+{
+	BLE_LOGV(TRBLE_TAG, "trble post event : %d\n", evt);
+	return lwnl_postmsg(LWNL_DEV_BLE, (int)evt, buffer, buf_len);
+}
+
+int trble_scan_data_enque(trble_scanned_device *info)
+{
+	if (g_run_process != 1) {
+		return -1;
+	}
+	int write_index_next = (write_index + 1) % SCAN_INFO_BUFFER_SIZE;
+	if (write_index_next == read_index) {
+		/* Queue is Full */
+		return -2;
+	}
+	memcpy(&scan_info_buf[write_index], info, sizeof(trble_scanned_device));
+	write_index = write_index_next;
+
+	sem_post(&g_scan_countsem);
+
+	return 0;
+}
+
+static int _bledev_handler(int argc, char *argv[])
+{
+	g_run_process = 1;
+	trble_scanned_device *scanned_device;
+	while(g_run_process) {
+		sem_wait(&g_scan_countsem);
+		int current_write_index = write_index;
+		if (current_write_index == read_index) {
+			BLE_LOGV(TRBLE_TAG, "Scan Info Queue is Empty\n");
+			continue;
+		}
+		scanned_device = &scan_info_buf[read_index];
+		trble_post_event(LWNL_EVT_BLE_SCAN_DATA, scanned_device, sizeof(trble_scanned_device));
+		read_index = (read_index + 1) % SCAN_INFO_BUFFER_SIZE;
+	}
+}
 
 int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
@@ -50,11 +99,23 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		}
 
 		TRBLE_DRV_CALL(ret, dev, init, (dev, t_client, t_server));
+
+		if (ret == TRBLE_SUCCESS) {
+			sem_init(&g_scan_countsem, 0, 0);
+			int pid = kernel_thread("bledev_handler", 103, 2048, (main_t)_bledev_handler, NULL);
+			if (pid < 0) {
+				ret = TRBLE_FAIL;
+			}
+		}
 	}
 	break;
 	case LWNL_REQ_BLE_DEINIT:
 	{
 		TRBLE_DRV_CALL(ret, dev, deinit, (dev));
+		if (ret == TRBLE_SUCCESS) {
+			g_run_process = 0;
+			sem_destroy(&g_scan_countsem);
+		}
 	}
 	break;
 	case LWNL_REQ_BLE_GET_MAC:
@@ -464,10 +525,4 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 	BLE_LOGV(TRBLE_TAG, "trble drv result : %d\n", ret);
 	return ret;
-}
-
-int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len)
-{
-	BLE_LOGV(TRBLE_TAG, "trble post event : %d\n", evt);
-	return lwnl_postmsg(LWNL_DEV_BLE, (int)evt, buffer, buf_len);
 }

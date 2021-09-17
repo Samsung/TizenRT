@@ -349,3 +349,4 @@ struct trble_ops {
 };
 
 int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len);
+int trble_scan_data_enque(trble_scanned_device *info);
