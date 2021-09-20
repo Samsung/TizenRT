@@ -118,6 +118,7 @@ typedef struct
   T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
   uint16_t conn_interval;
   uint16_t conn_latency;
+  uint16_t scan_timeout;
 } T_TIZENRT_CONN_PARAM;
 
 typedef enum

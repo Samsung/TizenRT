@@ -288,7 +288,7 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
                         param->remote_bd[3], param->remote_bd[2], param->remote_bd[1], param->remote_bd[0],
                         param->remote_bd_type);
                 debug_print("\r\n[%s] ci: %d si: %d\r\n", __FUNCTION__, conn_req_param.conn_interval_max, conn_req_param.conn_latency);
-                ret = le_connect(0, param->remote_bd, param->remote_bd_type, GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
+                ret = le_connect(0, param->remote_bd, param->remote_bd_type, GAP_LOCAL_ADDR_LE_PUBLIC, param->scan_timeout);
                 if(ret) {
                     printf("\r\n[%s] le_connect fail 0x%x ", __FUNCTION__, ret);
                     if(ble_client_connect_is_running)
