@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <semaphore.h>
+#include <errno.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/ble.h>
 #include <tinyara/ble/ble_manager.h>
@@ -34,10 +35,10 @@
 		}										\
 	} while (0)
 
-#define SCAN_INFO_BUFFER_SIZE 150
+#define SCAN_INFO_BUFFER_SIZE 100
 static trble_scanned_device scan_info_buf[SCAN_INFO_BUFFER_SIZE] = { 0, };
-static int write_index = 0;
-static int read_index = 0;
+static int g_write_index = 0;
+static int g_read_index = 0;
 static sem_t g_scan_countsem;
 static volatile int g_run_process = 0;
 
@@ -52,13 +53,13 @@ int trble_scan_data_enque(trble_scanned_device *info)
 	if (g_run_process != 1) {
 		return -1;
 	}
-	int write_index_next = (write_index + 1) % SCAN_INFO_BUFFER_SIZE;
-	if (write_index_next == read_index) {
+	int write_index_next = (g_write_index + 1) % SCAN_INFO_BUFFER_SIZE;
+	if (write_index_next == g_read_index) {
 		/* Queue is Full */
 		return -2;
 	}
-	memcpy(&scan_info_buf[write_index], info, sizeof(trble_scanned_device));
-	write_index = write_index_next;
+	memcpy(&scan_info_buf[g_write_index], info, sizeof(trble_scanned_device));
+	g_write_index = write_index_next;
 
 	sem_post(&g_scan_countsem);
 
@@ -69,22 +70,29 @@ static int _bledev_handler(int argc, char *argv[])
 {
 	g_run_process = 1;
 	trble_scanned_device *scanned_device;
-	while(g_run_process) {
-		sem_wait(&g_scan_countsem);
-		int current_write_index = write_index;
-		if (current_write_index == read_index) {
+
+	while (g_run_process) {
+		if (sem_wait(&g_scan_countsem) < 0) {
+			if (errno == EINTR) {
+				continue;
+			} else {
+				return -1;
+			}
+		}
+		if (g_read_index == g_write_index) {
 			BLE_LOGV(TRBLE_TAG, "Scan Info Queue is Empty\n");
 			continue;
 		}
-		scanned_device = &scan_info_buf[read_index];
+		scanned_device = &scan_info_buf[g_read_index];
 		trble_post_event(LWNL_EVT_BLE_SCAN_DATA, scanned_device, sizeof(trble_scanned_device));
-		read_index = (read_index + 1) % SCAN_INFO_BUFFER_SIZE;
+		g_read_index = (g_read_index + 1) % SCAN_INFO_BUFFER_SIZE;
 	}
+
+	return 0;
 }
 
 int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
-	// To Do
 	trble_result_e ret = TRBLE_FAIL;
 
 	BLE_LOGV(TRBLE_TAG, "cmd(%d) data(%p) len(%d)\n", cmd.type, data, data_len);

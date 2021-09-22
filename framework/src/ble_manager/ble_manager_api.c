@@ -104,7 +104,7 @@ ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks)
 	blemgr_msg_s msg = {BLE_EVT_CMD_CREATE_CTX, BLE_MANAGER_FAIL, (void *)callbacks, NULL};
 	int res = blemgr_post_message(&msg);
 
-	if (res < 0) {
+	if (res < 0 || msg.result != BLE_MANAGER_SUCCESS) {
 		return NULL;
 	}
 	return (ble_client_ctx *)msg.param;
@@ -123,7 +123,7 @@ ble_client_state_e ble_client_get_state(ble_client_ctx *ctx)
 	blemgr_msg_s msg = {BLE_EVT_CMD_GET_CLIENT_STATE, BLE_MANAGER_FAIL, (void *)ctx, NULL};
 	int res = blemgr_post_message(&msg);
 
-	if (res < 0) {
+	if (res < 0 || msg.result != BLE_MANAGER_SUCCESS) {
 		return BLE_CLIENT_NONE;
 	}
 	return (ble_client_state_e)msg.param;
