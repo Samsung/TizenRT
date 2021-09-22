@@ -30,7 +30,6 @@
 #include "ble_manager_log.h"
 
 static ble_client_ctx g_client_table[BLE_MAX_CONNECTION_COUNT] = { 0, };
-// static ble_server_ctx g_server_ctx = { 0, };
 static ble_scan_ctx g_scan_ctx = { 0, };
 static blemgr_state_e g_manager_state = BLEMGR_UNINITIALIZED;
 
@@ -267,6 +266,9 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 
 		memcpy(&(ctx->info), conn_info, sizeof(ble_conn_info));
+		if (ctx->info.scan_timeout == 0) {
+			ctx->info.scan_timeout = BLE_DEFAULT_CONN_TIMEOUT;
+		}
 		ctx->state = BLE_CLIENT_CONNECTING;
 		ret = ble_drv_client_connect((trble_conn_info *)&(ctx->info));
 		if (ret != TRBLE_SUCCESS) {
