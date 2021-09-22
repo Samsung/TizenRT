@@ -582,6 +582,7 @@ int ble_rmc_main(int argc, char *argv[])
 			memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
 			filter.raw_data_length = sizeof(ble_filter);
 			filter.scan_duration = 1000;
+			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_with_filter;
 			g_scan_done = 0;
 			ret = ble_client_start_scan(&filter, &scan_config);
 
