@@ -224,7 +224,8 @@ trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secure
     conn_arg->remote_bd_type = conn_info->addr.type;
     conn_arg->conn_interval = conn_info->conn_interval;
     conn_arg->conn_latency = conn_info->slave_latency;
-    conn_arg->scan_timeout = conn_info->scan_timeout;
+    /* Defines the timeout multiplier as a multiple of 10ms. */
+    conn_arg->scan_timeout = conn_info->scan_timeout / 10;
     printf("\r\n[%s] DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X\r\n", __FUNCTION__, 
                         conn_arg->remote_bd[5], conn_arg->remote_bd[4], conn_arg->remote_bd[3],
                         conn_arg->remote_bd[2], conn_arg->remote_bd[1], conn_arg->remote_bd[0]);
