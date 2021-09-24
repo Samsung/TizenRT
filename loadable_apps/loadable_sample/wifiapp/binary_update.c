@@ -317,7 +317,6 @@ static int binary_update_same_version_test(void)
 {
 	int ret;
 	uint8_t type = 0;
-	char path[BINARY_PATH_LEN];
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
 
