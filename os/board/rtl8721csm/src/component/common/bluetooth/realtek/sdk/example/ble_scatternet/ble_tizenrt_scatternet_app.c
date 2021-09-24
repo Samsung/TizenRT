@@ -152,6 +152,14 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
             debug_print("\r\n[%s] Handle disconnected msg", __FUNCTION__);
             if(ble_client_connect_is_running)
                 ble_client_connect_is_running = 0;
+
+        if(ble_tizenrt_read_sem != NULL)
+                os_mutex_give(ble_tizenrt_read_sem);
+        if(ble_tizenrt_write_sem != NULL)
+                os_mutex_give(ble_tizenrt_write_sem);
+        if(ble_tizenrt_write_no_rsp_sem != NULL)
+                os_mutex_give(ble_tizenrt_write_no_rsp_sem);
+
             trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
             client_init_parm->trble_device_disconnected_cb(disconnected);
         }
@@ -168,18 +176,6 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                 os_mem_free(notify_result);
             } else {
                 debug_print("\n[%s] Notify_result parameter is NULL", __FUNCTION__);
-            }
-        }
-			break;
-
-        case BLE_TIZENRT_READ_RESULT_MSG:
-        {
-            debug_print("\r\n[%s] Handle read msg", __FUNCTION__);
-            if(os_mutex_give(ble_tizenrt_read_sem))
-            {
-                debug_print("\r\n[%s] recieve read result", __FUNCTION__);
-            } else {
-                printf("\r\n[%s] fail to give semaphore", __FUNCTION__);
             }
         }
 			break;
@@ -634,7 +630,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                 debug_print("\r\n[%s] ble_tizenrt_scatternet_app_handle_conn_state_evt: connection lost, conn_id %d, cause 0x%x", __FUNCTION__, conn_id,
                                  disc_cause);
             }
-            printf("\r\n[BLE_TIZENRT] Disconnect conn_id %d", conn_id);
+            debug_print("\r\n[BLE_TIZENRT] Disconnect conn_id %d\n", conn_id);
             if (ble_tizenrt_scatternet_app_link_table[conn_id].role == GAP_LINK_ROLE_SLAVE) {
                 T_TIZENRT_CONNECTED_CALLBACK_DATA *disconn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
                 if(disconn_data)
