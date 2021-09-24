@@ -88,6 +88,15 @@ jobs:
       - *docker-cp
       - *build-job
 
+  rtl8721csm/hello:
+    machine: true
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
   rtl8721csm/loadable_apps:
     machine: true
     working_directory: ~/TizenRT
@@ -118,6 +127,9 @@ workflows:
           requires:
             - checkout_code
       - imxrt1020-evk/loadable_elf_apps:
+          requires:
+            - checkout_code
+      - rtl8721csm/hello:
           requires:
             - checkout_code
       - rtl8721csm/loadable_apps:
