@@ -176,7 +176,13 @@ void ble_tizenrt_central_app_task_deinit(void)
         os_timer_delete(&scan_filter_tmr_handle);
     }
     if (ble_tizenrt_read_sem) {
-        os_sem_delete(ble_tizenrt_read_sem);
+        os_mutex_delete(ble_tizenrt_read_sem);
+    }
+    if (ble_tizenrt_write_sem) {
+        os_mutex_delete(ble_tizenrt_write_sem);
+    }
+    if (ble_tizenrt_write_no_rsp_sem) {
+        os_mutex_delete(ble_tizenrt_write_no_rsp_sem);
     }
 
     ble_tizenrt_central_io_queue_handle = NULL;

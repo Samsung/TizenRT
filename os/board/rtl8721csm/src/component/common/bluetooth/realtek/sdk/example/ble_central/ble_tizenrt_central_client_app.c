@@ -182,17 +182,6 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
         }
 			break;
 
-        case BLE_TIZENRT_READ_RESULT_MSG:
-        {
-            debug_print("\r\n[%s] Handle read msg", __FUNCTION__);
-            if(os_mutex_give(ble_tizenrt_read_sem))
-            {
-                debug_print("\r\n[%s] recieve read result", __FUNCTION__);
-            } else {
-                printf("\r\n[%s] fail to give semaphore", __FUNCTION__);
-            }
-        }
-			break;
 		default:
 			break;
 	}
