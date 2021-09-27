@@ -77,9 +77,6 @@ static void _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 	case LWNL_EVT_BLE_SCAN_STATE:
 		LWNL_SET_MSG(&g_msg, BLE_EVT_SCAN_STATE, BLE_MANAGER_FAIL, param, NULL);
 		break;
-	case LWNL_EVT_BLE_SCAN_DATA:
-		LWNL_SET_MSG(&g_msg, BLE_EVT_SCAN_DATA, BLE_MANAGER_FAIL, param, NULL);
-		break;
 	default:
 		BLE_LOG_ERROR("Bad status received (%d)\n", status.evt);
 		BLE_ERR;

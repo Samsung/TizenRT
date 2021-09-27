@@ -52,11 +52,12 @@ static inline int _send_msg(lwnl_msg *msg)
 }
 
 /* Common */
-trble_result_e ble_drv_init(trble_server_init_config *server)
+trble_result_e ble_drv_init(trble_server_init_config *server, trble_scan_queue *scan_queue)
 {
 	trble_result_e res = TRBLE_SUCCESS;
 
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_INIT}, sizeof(trble_server_init_config), (void *)server, (void *)&res};
+	lwnl_msg_params msg_data = { 2, {(void *)server, (void *)scan_queue} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_INIT}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}

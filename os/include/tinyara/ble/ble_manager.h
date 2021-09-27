@@ -37,7 +37,7 @@ struct bledev *net_get_bledev(uint8_t *ifname);
 struct bledev *bledev_register(struct trble_ops *ops);
 
 /*** Common ***/
-trble_result_e ble_drv_init(trble_server_init_config *server);
+trble_result_e ble_drv_init(trble_server_init_config *server, trble_scan_queue *scan_queue);
 trble_result_e ble_drv_deinit(void);
 trble_result_e ble_drv_get_mac_addr(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e ble_drv_get_bonded_device(trble_bonded_device_list_s *device_list, uint16_t *device_count);
