@@ -531,7 +531,7 @@ static int update_thread(int argc, char *argv[])
 {
 	int ret;
 	int bin_idx;
-	uint32_t bin_count;
+	uint32_t bin_count = binary_manager_get_ucount();
 	binmgr_bpinfo_t bp_info;
 
 	/* Get the latest bootparam */
