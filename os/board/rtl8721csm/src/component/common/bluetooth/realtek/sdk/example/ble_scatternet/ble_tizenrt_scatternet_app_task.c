@@ -143,6 +143,8 @@ void ble_tizenrt_scatternet_app_task_init(void)
 extern T_ATTRIB_APPL *tizenrt_ble_service_tbl;
 extern uint32_t *scan_filter_tmr_handle;
 extern void *ble_tizenrt_read_sem;
+extern void *ble_tizenrt_write_sem;
+extern void *ble_tizenrt_write_no_rsp_sem;
 void ble_tizenrt_scatternet_app_task_deinit(void)
 {
     if (ble_tizenrt_scatternet_io_queue_handle) {
