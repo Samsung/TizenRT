@@ -507,7 +507,7 @@ extern unsigned int g_ap_sta_num;
 		#undef RX_AGGREGATION
 		#define RX_AGGREGATION 1
 		#undef NOT_SUPPORT_40M
-		#define RX_SHORTCUT 1
+		//#define RX_SHORTCUT 1
 		#endif
 		#undef NOT_SUPPORT_5G
 		#undef CONFIG_ADAPTOR_INFO_CACHING_FLASH
