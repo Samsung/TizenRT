@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <semaphore.h>
 
 #define TRBLE_BD_ADDR_MAX_LEN 6
 #define TRBLE_ADV_RAW_DATA_MAX_LEN 31
@@ -101,7 +102,6 @@ typedef enum {
 	LWNL_EVT_BLE_CLIENT_DISCONNECT,
 	LWNL_EVT_BLE_CLIENT_NOTI,
 	LWNL_EVT_BLE_SCAN_STATE,
-	LWNL_EVT_BLE_SCAN_DATA,
 } lwnl_cb_ble;
 
 typedef enum {
@@ -152,6 +152,14 @@ typedef struct {
 	uint8_t resp_data[TRBLE_ADV_RESP_DATA_MAX_LEN];
 	uint8_t resp_data_length;
 } trble_scanned_device;
+
+typedef struct {
+	int size;
+	volatile int write_index;
+	volatile int read_index;
+	sem_t countsem;
+	trble_scanned_device *queue;
+} trble_scan_queue;
 
 typedef struct {
 	trble_conn_info conn_info;

@@ -35,12 +35,7 @@
 		}										\
 	} while (0)
 
-#define SCAN_INFO_BUFFER_SIZE 100
-static trble_scanned_device scan_info_buf[SCAN_INFO_BUFFER_SIZE] = { 0, };
-static int g_write_index = 0;
-static int g_read_index = 0;
-static sem_t g_scan_countsem;
-static volatile int g_run_process = 0;
+static trble_scan_queue *g_scan_queue = NULL;
 
 int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len)
 {
@@ -50,43 +45,22 @@ int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len)
 
 int trble_scan_data_enque(trble_scanned_device *info)
 {
-	if (g_run_process != 1) {
+	if (g_scan_queue == NULL) {
 		return -1;
 	}
-	int write_index_next = (g_write_index + 1) % SCAN_INFO_BUFFER_SIZE;
-	if (write_index_next == g_read_index) {
-		/* Queue is Full */
+	int write_index_next = (g_scan_queue->write_index + 1) % g_scan_queue->size;
+	if (write_index_next == g_scan_queue->read_index) {
+		/* 
+		Scan Queue is Full
+		- This functions is related to interrupt callbacks.
+		  If any logs are printed in this line, they come up very fast and cannot check other logs.
+		*/
 		return -2;
 	}
-	memcpy(&scan_info_buf[g_write_index], info, sizeof(trble_scanned_device));
-	g_write_index = write_index_next;
+	memcpy(&g_scan_queue->queue[g_scan_queue->write_index], info, sizeof(trble_scanned_device));
+	g_scan_queue->write_index = write_index_next;
 
-	sem_post(&g_scan_countsem);
-
-	return 0;
-}
-
-static int _bledev_handler(int argc, char *argv[])
-{
-	g_run_process = 1;
-	trble_scanned_device *scanned_device;
-
-	while (g_run_process) {
-		if (sem_wait(&g_scan_countsem) < 0) {
-			if (errno == EINTR) {
-				continue;
-			} else {
-				return -1;
-			}
-		}
-		if (g_read_index == g_write_index) {
-			BLE_LOGV(TRBLE_TAG, "Scan Info Queue is Empty\n");
-			continue;
-		}
-		scanned_device = &scan_info_buf[g_read_index];
-		trble_post_event(LWNL_EVT_BLE_SCAN_DATA, scanned_device, sizeof(trble_scanned_device));
-		g_read_index = (g_read_index + 1) % SCAN_INFO_BUFFER_SIZE;
-	}
+	sem_post(&g_scan_queue->countsem);
 
 	return 0;
 }
@@ -100,20 +74,24 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	switch (cmd.type) {
 	case LWNL_REQ_BLE_INIT:
 	{
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
 		trble_client_init_config *t_client = bledrv_client_get_fake_config();
-		trble_server_init_config *t_server = (trble_server_init_config *)data;
-		if (data == NULL) {
+		trble_server_init_config *t_server = (trble_server_init_config *)param.param[0];
+		if (t_server == NULL) {
 			t_server = bledrv_server_get_null_config();
 		}
+		g_scan_queue = (trble_scan_queue *)param.param[1];
 
 		TRBLE_DRV_CALL(ret, dev, init, (dev, t_client, t_server));
 
-		if (ret == TRBLE_SUCCESS) {
-			sem_init(&g_scan_countsem, 0, 0);
-			int pid = kernel_thread("bledev_handler", 103, 2048, (main_t)_bledev_handler, NULL);
-			if (pid < 0) {
-				ret = TRBLE_FAIL;
-			}
+		if (ret != TRBLE_SUCCESS) {
+			g_scan_queue = NULL;
 		}
 	}
 	break;
@@ -121,8 +99,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		TRBLE_DRV_CALL(ret, dev, deinit, (dev));
 		if (ret == TRBLE_SUCCESS) {
-			g_run_process = 0;
-			sem_destroy(&g_scan_countsem);
+			g_scan_queue = NULL;
 		}
 	}
 	break;
