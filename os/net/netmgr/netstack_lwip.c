@@ -26,12 +26,14 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
+#include "lwip/sockets.h"
 #include "lwip/opt.h"
 #include "lwip/init.h"
 #include "lwip/tcpip.h"
 #include "lwip/sys.h"
 #include "lwip/netif.h"
 #include <tinyara/net/netlog.h>
+#include <unistd.h>
 #ifdef CONFIG_NET_NETMON
 #include "lwip/ip.h"
 #include "lwip/ip6.h"
@@ -40,7 +42,15 @@
 #include "lwip/raw.h"
 #endif
 
+#define NETMGR_TCP 0
+#define NETMGR_UDP 1
+
+#define TCP_STR "TCP"
+#define UDP_STR "UDP"
+#define UNKNOWN_STR "UNKNOWN"
+
 #define TAG "[NETMGR]"
+#define TTAG "[NTRACE]"
 
 extern int netdev_lwipioctl(int sockfd, int cmd, void *arg);
 
@@ -85,6 +95,42 @@ static int _socket_argument_validation(int domain, int type, int protocol)
 	return 0;
 }
 
+static void _get_port(int fd, int *port)
+{
+	*port = -1;
+	struct lwip_sock *sock = get_socket(fd, getpid());
+	if (!sock) {
+		NET_LOGE(TTAG, "get socket fail\n");
+		return;
+	}
+
+	struct netconn *conn = sock->conn;
+	if (conn->type == NETCONN_TCP) {
+		struct tcp_pcb *tpcb = conn->pcb.tcp;
+		*port = tpcb->local_port;
+	} else if (conn->type == NETCONN_UDP || conn->type == NETCONN_UDPLITE) {
+		struct udp_pcb *upcb = conn->pcb.udp;
+		*port = upcb->local_port;
+	}
+}
+
+static void _get_proto(int fd, char **type)
+{
+	*type = UNKNOWN_STR;
+	struct lwip_sock *sock = get_socket(fd, getpid());
+	if (!sock) {
+		NET_LOGE(TTAG, "get socket fail\n");
+		return;
+	}
+
+	struct netconn *conn = sock->conn;
+	if (conn->type == NETCONN_TCP) {
+		*type = TCP_STR;
+	} else if (conn->type == NETCONN_UDP || conn->type == NETCONN_UDPLITE) {
+		*type = UDP_STR;
+	}
+}
+
 static inline int _netsock_clone(FAR struct lwip_sock *sock1, FAR struct lwip_sock *sock2)
 {
 	int ret = OK;
@@ -118,7 +164,11 @@ static inline int _netsock_clone(FAR struct lwip_sock *sock1, FAR struct lwip_so
  */
 static int lwip_ns_close(int sockfd)
 {
-	return lwip_close(sockfd);
+	int res = lwip_close(sockfd);
+#ifdef CONFIG_NET_DEBUG_PORT
+	NET_LOGI(TTAG, "pid %d socket %d\n", getpid(), sockfd);
+#endif
+	return res;
 }
 
 static int lwip_ns_dup(int sockfd)
@@ -135,18 +185,15 @@ static int lwip_ns_dup2(int sockfd1, int sockfd2)
 	int ret;
 
 	/* Lock the scheduler throughout the following */
-
 	sched_lock();
 
 	/* Get the socket structures underly both descriptors */
-
 	sock1 = (struct lwip_sock *)get_socket(sockfd1, getpid());
 	sock2 = (struct lwip_sock *)get_socket(sockfd2, getpid());
 
 	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
 	 * descriptors and that sockfd1 has valid allocated conn
 	 */
-
 	if (!sock1 || !sock2) {
 		err = EBADF;
 		goto errout;
@@ -155,14 +202,12 @@ static int lwip_ns_dup2(int sockfd1, int sockfd2)
 	/* If sockfd2 also has valid allocated conn, then we will have to
 	 * close it!
 	 */
-
 	if (sock2->conn) {
 		netconn_delete(sock2->conn);
 		sock2->conn = NULL;
 	}
 
 	/* Duplicate the socket state */
-
 	ret = _netsock_clone(sock1, sock2);
 	if (ret < 0) {
 		err = -ret;
@@ -229,12 +274,33 @@ static int lwip_ns_socket(int domain, int type, int protocol)
 		NET_LOGE(TAG, "not supported socket type\n");
 		return -1;
 	}
-	return lwip_socket(domain, type, protocol);
+	res = lwip_socket(domain, type, protocol);
+#ifdef CONFIG_NET_DEBUG_PORT
+	if (res != -1) {
+		char *str = NULL;
+		_get_proto(res, &str);
+		NET_LOGI(TTAG, "pid %d socket %d proto %s\n", getpid(), res, str);
+	}
+#endif
+	return res;
 }
 
 static int lwip_ns_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
-	return lwip_bind(s, name, namelen);
+	int res = lwip_bind(s, name, namelen);
+#ifdef CONFIG_NET_DEBUG_PORT
+	if (res == 0) {
+		int pid = getpid();
+		char *str = NULL;
+		int request_port = ntohs(((struct sockaddr_in *)name)->sin_port);
+		int assigned_port = 0;
+		_get_port(s, &assigned_port);
+		_get_proto(s, &str);
+		NET_LOGI(TTAG, "pid %d socket %d proto %s request %d assgiend %d\n",
+						 pid, s, str, request_port, assigned_port);
+	}
+#endif
+	return res;
 }
 
 static int lwip_ns_connect(int s, const struct sockaddr *name, socklen_t namelen)

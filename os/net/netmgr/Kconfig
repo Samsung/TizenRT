@@ -23,6 +23,19 @@ config NET_TASK_BIND
 	default n
 	---help---
 		Enable bind sockets to task
+
+config NET_DEBUG_PORT
+	bool "Debugging binded local ports"
+	depends on NSOCKET_DESCRIPTORS > 0
+	depends on DEBUG_NET_WARN
+	default n
+	---help---
+		Debugging which task requested an open port.
+		It accesses lwip pcb outside lwip main thread. So it have to be
+		used debugging purpose only.
+		And it can't catch ports which applications call lwip API directly like
+		dns. And you have to set DEBUG_NET_WARN to print port information.
+
 endif
 
 menu "Network Device Operations"
