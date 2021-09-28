@@ -317,6 +317,7 @@ struct smart_struct_s {
 	uint16_t njournalPerBlk;		/* Total Number of Journal entries per Erase block */
 	uint16_t njournaleraseblocks;		/* Total Number of Journal Erase block */
 	uint32_t njournalentries;		/* Total Number of Journal Entries */
+	FAR uint16_t *block_map;			/* Number of checkout journal in each of Journal block */
 #endif
 };
 
@@ -1176,6 +1177,13 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	if (dev->wearstatus != NULL) {
 		smart_free(dev, dev->wearstatus);
 		dev->wearstatus = NULL;
+	}
+#endif
+
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	if (dev->block_map != NULL) {
+		kmm_free(dev->block_map);
+		dev->block_map = NULL;
 	}
 #endif
 
@@ -5014,7 +5022,11 @@ static int smart_journal_move_to_next(FAR struct smart_struct_s *dev)
 			fdbg("Journal Erase failed ret : %d journal sequence : %d old block : %d\n", ret, dev->journal_seq, old_block);
 			return -EIO;
 		}
-	
+
+		/* Now journal will use next block and previous has erased, so adjust it */
+		dev->block_map[old_block - dev->neraseblocks] = 0;
+		dev->block_map[dev->journal_seq / dev->njournalPerBlk] = 1;
+		
 #ifdef CONFIG_MTD_SMART_SECTOR_ERASE_DEBUG
 		if (dev->erasecounts) {
 			/* For Journal block, we reset it roughly but we can compare them enoughly */
@@ -5535,12 +5547,20 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 		fdbg("Journal Scan Start !!\n");
 	}
 	dev->journal_seq = 0;
+
+	dev->block_map = (FAR uint16_t *)kmm_zalloc(dev->njournaleraseblocks * sizeof(uint16_t));
+	if (dev->block_map == NULL) {
+		fdbg("out of memory!!\n");
+		return -ENOMEM;
+	}
+	
 	for (dev->journal_seq = 0; dev->journal_seq < dev->njournalentries; dev->journal_seq++) {
 		ret = smart_journal_read_journal_log(dev, &log);
 		if (ret < 0) {
 			fdbg("Reading Journal Entry Failed! ret : %d journal_seq : %d\n", ret, dev->journal_seq);
 			return -EIO;
 		}
+		uint16_t block = dev->journal_seq / dev->njournalPerBlk;
 
 		if (!smart_journal_check_log_empty(&log)) {
 			if (print_dump) {
@@ -5568,6 +5588,7 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 			} else {
 				last_checkout_seq = dev->journal_seq;
 			}
+			dev->block_map[block]++;
 		} 
 	}
 	
@@ -5584,6 +5605,15 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 		smart_journal_move_to_next(dev);
 	} else {
 		dev->journal_seq = 0;
+	}
+	
+	for (int i = 0; i < dev->njournaleraseblocks; i++) {
+		fvdbg("Block : %d numberof journal : %d\n", i, dev->block_map[i]);
+		/* If block is filled with journal fully, we will erase it */
+		if (dev->block_map[i] == dev->njournalPerBlk) {
+			smart_journal_erase(dev, dev->neraseblocks + i);
+			dev->block_map[i] = 0;
+		}
 	}
 
 	fvdbg("seq : %d\n", dev->journal_seq);
@@ -5739,6 +5769,11 @@ static int smart_journal_recovery(FAR struct smart_struct_s *dev, journal_log_t 
 		if (ret != OK) {
 			return -EIO;
 		}
+
+		/* If erased block is journal block, set 0 as checkout number in target block */
+		if (psector >= dev->neraseblocks) {
+			dev->block_map[psector - dev->neraseblocks] = 0;
+		}
 		
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 		/* Update the new wear level count. */
@@ -5869,6 +5904,10 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 		dev->allocsector = NULL;
 #endif
+#ifdef CONFIG_MTD_SMART_JOURNALING
+		dev->block_map = NULL;
+#endif
+
 		dev->sectorsize = 0;
 		ret = smart_setsectorsize(dev, CONFIG_MTD_SMART_SECTOR_SIZE);
 		if (ret == -ENOMEM) {
@@ -5992,6 +6031,11 @@ errout:
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 	if (rootdirdev) {
 		smart_free(dev, rootdirdev);
+	}
+#endif
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	if (dev->block_map != NULL) {
+		kmm_free(dev->block_map);
 	}
 #endif
 
