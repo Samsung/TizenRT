@@ -3016,6 +3016,10 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 #else
 	ret = MTD_BWRITE(dev->mtd, newsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 #endif
+	if (ret != dev->mtdBlksPerSector) {
+		fdbg("Error writing to physical sector ret : %d logical %d physical : %d\n", ret, UINT8TOUINT16(header->logicalsector), newsector);
+		return -EIO;
+	}
 
 #else							/* CONFIG_MTD_SMART_ENABLE_CRC */
 
@@ -5767,13 +5771,14 @@ error_with_active_sector:
 	ret = smart_journal_release_sector(dev, psector);
 	if (ret != OK) {
 		fdbg("release committed sector : %d failed\n", psector);
-		return -EIO;
+		return ret;
 	}
 	ret = smart_journal_checkout(dev, log, address);
 	if (ret != OK) {
 		fdbg("checkout failed sector\n");
+		return ret;
 	}
-	return ret;
+	return -EINVAL;
 }
 
 #endif
