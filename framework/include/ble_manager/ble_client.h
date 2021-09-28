@@ -67,7 +67,7 @@ typedef struct {
 	uint8_t raw_data_length;
 	uint8_t resp_data[BLE_ADV_RESP_DATA_MAX_LEN];
 	uint8_t resp_data_length;
-} ble_scanned_device;
+} __attribute__((aligned(4), packed)) ble_scanned_device;
 
 typedef struct {
 	ble_conn_info conn_info;
