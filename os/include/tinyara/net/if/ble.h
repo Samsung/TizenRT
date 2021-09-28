@@ -151,7 +151,7 @@ typedef struct {
 	uint8_t raw_data_length;
 	uint8_t resp_data[TRBLE_ADV_RESP_DATA_MAX_LEN];
 	uint8_t resp_data_length;
-} trble_scanned_device;
+} __attribute__((aligned(4), packed)) trble_scanned_device;
 
 typedef struct {
 	int size;

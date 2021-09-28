@@ -57,7 +57,13 @@ int trble_scan_data_enque(trble_scanned_device *info)
 		*/
 		return -2;
 	}
-	memcpy(&g_scan_queue->queue[g_scan_queue->write_index], info, sizeof(trble_scanned_device));
+
+	int i;
+	uint32_t *u1 = (uint32_t *)info;
+	uint32_t *u2 = (uint32_t *)&g_scan_queue->queue[g_scan_queue->write_index];
+	for (i = 0; i < sizeof(trble_scanned_device) / sizeof(uint32_t); i++) {
+		*(u2 + i) = *(u1 + i);
+	}
 	g_scan_queue->write_index = write_index_next;
 
 	sem_post(&g_scan_queue->countsem);

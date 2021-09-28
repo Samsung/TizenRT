@@ -25,7 +25,7 @@
 
 #define BLE_DRV_TAG "[BLEDRV_CLIENT]"
 
-static void _reverse_mac(uint8_t *mac)
+static inline void _reverse_mac(uint8_t *mac)
 {
 	int i;
 	int j;
