@@ -35,4 +35,6 @@ struct wt_options {
 	int scan_specific;
 	uint32_t stress_tc_idx;
 	uint8_t power_mode;
+	char *security;
+	char *path;
 };
