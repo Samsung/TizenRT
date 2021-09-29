@@ -550,6 +550,32 @@ void _wt_onoff_test(void *arg)
 	wm_test_on_off(arg);
 }
 
+int _wt_parse_interop(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc < 4) {
+		return -1;
+	}
+
+	opt->path = argv[3];
+	return 0;
+}
+
+void _wt_interop_test(void *arg)
+{
+	wm_test_interop(arg);
+}
+
+void _wt_interop_add_ap(void *arg)
+{
+	wm_interop_add_ap_config(arg);
+}
+
+void _wt_interop_display_ap(void *arg)
+{
+	wm_interop_display_ap_config(arg);
+}
+
+
 wt_type_e _wt_get_opt(int argc, char *argv[])
 {
 	int idx = 0;
@@ -708,6 +734,7 @@ int _wt_parse_set(struct wt_options *opt, int argc, char *argv[])
 		return -1;
 	}
 	opt->ssid = argv[3];
+	opt->security = argv[4];
 	opt->auth_type = wt_get_auth_type(argv[4]);
 	if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
 		return -1;

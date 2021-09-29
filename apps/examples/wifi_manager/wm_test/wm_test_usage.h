@@ -75,6 +75,18 @@
 	"	 wm_test power [mode]\n"				\
 	"	 mode examples : on, off\n\n"
 
+#define WT_INTEROP_USAGE						\
+	"\n Interoperability test: \n"				\
+	"	wm_test interop [file_path]\n"
+		
+#define WT_DISPLAY_AP_USAGE					\
+	"\n Display AP configuration  \n"				\
+	"	wm_test display_ap [file_path]  \n"		\
+
+#define WT_ADD_AP_USAGE					\
+	"\n Add AP config in file /mnt/wm_aplist.conf \n"				\
+	"	wm_test add_ap [ssid] [security mode] [password] \n\n"		\
+
 #define WT_USAGE									\
 	"\n usage: wm_test [options]\n"					\
 	"\n run Wi-Fi Manager:\n"						\
@@ -87,4 +99,7 @@
 	WT_PROFILE_USAGE								\
 	WT_INFO_USAGE									\
 	WT_STRESS_USAGE									\
-	WT_ONOFF_USAGE
+	WT_ONOFF_USAGE									\
+	WT_INTEROP_USAGE								\
+	WT_ADD_AP_USAGE									\
+	WT_DISPLAY_AP_USAGE
