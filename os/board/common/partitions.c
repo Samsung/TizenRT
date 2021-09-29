@@ -335,9 +335,9 @@ void automount_fs_partition(partition_info_t *partinfo)
 	/* Initialize and mount user partition (if we have) */
 	snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", partinfo->minor, partinfo->smartfs_partno);
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(fs_devname, 1, false);
+	ret = mksmartfs(fs_devname, 1, true);
 #else
-	ret = mksmartfs(fs_devname, false);
+	ret = mksmartfs(fs_devname, true);
 #endif
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed errno : %d\n", fs_devname, errno);

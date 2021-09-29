@@ -425,14 +425,15 @@ static int part_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 	}
 	break;
 
-	case MTDIOC_BULKERASE: {
-		/* Erase the entire partition */
-
-		ret = priv->parent->erase(priv->parent, priv->firstblock / priv->blkpererase, priv->neraseblocks);
-		if (ret == priv->neraseblocks) {
-			ret = OK;
-		}
-	}
+    case MTDIOC_BULKERASE: {
+        /* Erase the entire partition */
+        fdbg("bulk erase start number of block : %d\n", priv->neraseblocks);
+        ret = priv->parent->erase(priv->parent, priv->firstblock / priv->blkpererase, priv->neraseblocks);
+        if (ret == priv->neraseblocks) {
+            ret = OK;
+        }
+        fdbg("bulk erase ended\n");
+    }
 	break;
 
 	default: {
