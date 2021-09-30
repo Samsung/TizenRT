@@ -2163,6 +2163,42 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #endif
 			}
 
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
+			/* Check CRC of the winner sector just in case */
+
+			ret = MTD_BREAD(dev->mtd, winner * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+			if (ret != dev->mtdBlksPerSector) {
+				goto err_out;
+			}
+
+			/* Validate the CRC of the read-back data */
+			ret = smart_validate_crc(dev);
+			if (ret != OK) {
+				/* The winner sector has CRC error, so we select the loser
+				 * sector.  After swapping the winner and the loser sector, we
+				 * will release the loser sector with CRC error.
+				 */
+
+				if (sector == winner) {
+					/* winner: sector(CRC error) -> origin
+					 * loser : origin            -> sector(CRC error)
+					 */
+
+					winner = loser;
+					loser = sector;
+				} else {
+					/* winner: origin(CRC error) -> sector
+					 * loser : sector            -> origin(CRC error)
+					 */
+
+					loser = winner;
+					winner = sector;
+				}
+			}
+#endif /* CONFIG_MTD_SMART_ENABLE_CRC */
+
+			fvdbg("Duplicate Sector active_sector=%d, inactive_sector=%d\n", winner, loser);
+
 			/* Now release the loser sector. */
 
 			readaddress = loser * dev->mtdBlksPerSector * dev->geo.blocksize;
