@@ -128,6 +128,9 @@ endif
 ifeq ($(CONFIG_TC_KERNEL_SIGNAL),y)
   CSRCS += tc_signal.c
 endif
+ifeq ($(CONFIG_TC_KERNEL_SYSTEM_DEBUG),y)
+  CSRCS += tc_sysdbg.c
+endif
 ifeq ($(CONFIG_TC_KERNEL_TASK),y)
   CSRCS += tc_task.c
 endif
