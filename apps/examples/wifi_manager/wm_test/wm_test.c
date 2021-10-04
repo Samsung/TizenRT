@@ -676,6 +676,14 @@ int _wt_parse_stress(struct wt_options *opt, int argc, char *argv[])
 		}
 	}
 
+	if (!strncmp(argv[4], "file", 5)) {
+		opt->path = argv[5];
+		opt->softap_ssid = argv[6];
+		opt->softap_password = (10 == argc) ? (argv[8]) : (argv[7]);
+		opt->softap_channel = (10 == argc) ? atoi(argv[9]) : atoi(argv[8]);
+		return 0;
+	}
+
 	opt->ssid = argv[4];
 	opt->auth_type = wt_get_auth_type(argv[5]);
 	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
