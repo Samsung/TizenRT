@@ -942,7 +942,7 @@ fail:
 
 int sysdbg_init(void)
 {
-	(void)register_driver("/dev/sysdbg", &g_sysdbgops, 0666, NULL);
+	(void)register_driver(SYSDBG_PATH, &g_sysdbgops, 0666, NULL);
 #if defined(CONFIG_TASK_SCHED_HISTORY) || defined(CONFIG_IRQ_SCHED_HISTORY) \
 	|| defined(CONFIG_SEMAPHORE_HISTORY)
 	sysdbg_monitor_enable();
