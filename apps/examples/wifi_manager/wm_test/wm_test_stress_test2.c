@@ -30,6 +30,25 @@
 #define WM_TEST_TRIAL	   CONFIG_WIFIMANAGER_TEST_TRIAL
 #define WM_NSOFTAP_SSID "no_sta_0101" // for auto test
 #define TAG "[WTS2]"
+#ifndef CONFIG_EXAMPLES_WIFIMANAGER_AP_LIST_ITEMS_COUNT
+#define MAX_INTEROP_AP_CONFIG_COUNT 10
+#else
+#define MAX_INTEROP_AP_CONFIG_COUNT CONFIG_EXAMPLES_WIFIMANAGER_AP_LIST_ITEMS_COUNT
+#endif
+#define MAX_INTEROP_SECURITY_LEN 10
+typedef struct {
+	wifi_manager_ap_config_s ap_config;
+	char security[MAX_INTEROP_SECURITY_LEN];
+	int scan_result;
+	int connect_result;
+} interop_ap_info_s;
+
+typedef struct {
+	int ap_count;
+	interop_ap_info_s ap_info[MAX_INTEROP_AP_CONFIG_COUNT];
+} interop_ap_config_list_s;
+
+static interop_ap_config_list_s g_apconfig_list;
 static char *WM_AP_SSID;
 static char *WM_AP_PASSWORD;
 static wifi_manager_ap_auth_type_e WM_AP_AUTH;
@@ -462,7 +481,7 @@ TEST_F(join_to_sta)
 	ST_END_TEST;
 }
 
-void wm_run_stress_test2(struct wt_options *opt)
+void wm_run_stress_test2_single_ap(struct wt_options *opt)
 {
 	WM_AP_SSID = opt->ssid;
 	WM_AP_PASSWORD = opt->password;
@@ -499,4 +518,33 @@ void wm_run_stress_test2(struct wt_options *opt)
 
 	/*  Destroy queue */
 	wo_destroy_queue(g_wo_queue);
+}
+
+void wm_run_stress_test2(struct wt_options *opt)
+{
+	if (!opt->path) {
+		wm_run_stress_test2_single_ap(opt);
+	} else {
+		int ap_count = 0;
+		interop_ap_info_s *ap_info = NULL;
+		memset(&g_apconfig_list, 0, sizeof(g_apconfig_list));
+		int ret = 0;
+		ret = wifi_interop_read_file(&g_apconfig_list, opt->path);
+		if (ret < 0) {
+			WT_LOGE(TAG, "-->%s: failed to open file \n", __FUNCTION__);
+			return;
+		}
+		print_ap_config_list(&g_apconfig_list);
+		ap_count = g_apconfig_list.ap_count;
+
+		for (int i = 0; i < ap_count; i++) {
+			ap_info = g_apconfig_list.ap_info + i;
+			opt->ssid = ap_info->ap_config.ssid;
+			opt->password = ap_info->ap_config.passphrase;
+			opt->auth_type = ap_info->ap_config.ap_auth_type;
+			opt->crypto_type = ap_info->ap_config.ap_crypto_type;
+
+			wm_run_stress_test2_single_ap(opt);
+		}	
+	}
 }
