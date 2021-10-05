@@ -136,7 +136,7 @@ trble_result_e ble_drv_conn_is_any_active(bool *is_active)
 	return res;
 }
 
-/*** Central(Client) ***/
+/*** Scanner(Observer) ***/
 trble_result_e ble_drv_start_scan(trble_scan_filter *filter)
 {
 	trble_result_e res = TRBLE_SUCCESS;
@@ -157,6 +157,37 @@ trble_result_e ble_drv_stop_scan()
 	return res;
 }
 
+trble_result_e ble_drv_scan_whitelist_add(trble_addr *addr)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_WHITELIST_ADD}, sizeof(trble_addr), addr, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_scan_whitelist_delete(trble_addr *addr)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_WHITELIST_DELETE}, sizeof(trble_addr), addr, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_scan_whitelist_clear_all(void)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_WHITELIST_CLEAR_ALL}, 0, NULL, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+/*** Central(Client) ***/
 trble_result_e ble_drv_client_connect(trble_conn_info *conn_info)
 {
 	trble_result_e res = TRBLE_SUCCESS;

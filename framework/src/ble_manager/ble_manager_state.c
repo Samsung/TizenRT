@@ -31,6 +31,15 @@
 
 /* This is a heuristic value. It can be customized following a system evn */
 #define SCAN_INFO_BUFFER_SIZE 100
+#define SCAN_WHITELIST_SIZE 10
+
+#define SCAN_WHITELIST_EMPTY 0
+#define SCAN_WHITELIST_IN_USE 1
+
+typedef struct {
+	uint8_t flag;
+	trble_addr addr;
+} ble_scan_whitelist;
 
 static trble_scan_queue scan_queue[1] = { 0, };
 static volatile int g_run_process = 0;
@@ -38,6 +47,7 @@ static volatile int g_run_process = 0;
 static ble_client_ctx g_client_table[BLE_MAX_CONNECTION_COUNT] = { 0, };
 static ble_scan_ctx g_scan_ctx = { 0, };
 static blemgr_state_e g_manager_state = BLEMGR_UNINITIALIZED;
+static ble_scan_whitelist g_scan_whitelist[SCAN_WHITELIST_SIZE] = { 0, };
 
 #define BLE_STATE_CHECK                                   \
 	do {                                                  \
@@ -47,6 +57,61 @@ static blemgr_state_e g_manager_state = BLEMGR_UNINITIALIZED;
 			goto handle_req_done;                         \
 		}                                                 \
 	} while (0)
+
+static bool _whitelist_delete(trble_addr *addr)
+{
+	int i;
+	for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
+		if (g_scan_whitelist[i].flag == SCAN_WHITELIST_IN_USE) {
+			if (memcmp(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN) == 0 && 
+				g_scan_whitelist[i].addr.type == addr->type) {
+				g_scan_whitelist[i].flag = SCAN_WHITELIST_EMPTY;
+				memset(&g_scan_whitelist[i], 0, sizeof(ble_scan_whitelist));
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+static bool _whitelist_add(trble_addr *addr)
+{
+	int i;
+	for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
+		if (g_scan_whitelist[i].flag == SCAN_WHITELIST_EMPTY) {
+			g_scan_whitelist[i].flag = SCAN_WHITELIST_IN_USE;
+			g_scan_whitelist[i].addr.type = addr->type;
+			memcpy(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN);
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool _whitelist_is_full(void)
+{
+	int i;
+	for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
+		if (g_scan_whitelist[i].flag == SCAN_WHITELIST_EMPTY) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool _whitelist_is_exist(trble_addr *addr)
+{
+	int i;
+	for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
+		if (g_scan_whitelist[i].flag == SCAN_WHITELIST_IN_USE) {
+			if (memcmp(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN) == 0 && 
+				g_scan_whitelist[i].addr.type == addr->type) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 static ble_result_e _convert_ret(trble_result_e val)
 {
@@ -63,6 +128,7 @@ static int _bledev_handler(int argc, char *argv[])
 			if (errno == EINTR) {
 				continue;
 			} else {
+				g_run_process = 0;
 				return -1;
 			}
 		}
@@ -125,6 +191,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
 			memset(&g_client_table[i], 0, sizeof(ble_client_ctx));
+		}
+
+		for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
+			memset(&g_scan_whitelist[i], 0, sizeof(ble_scan_whitelist));
 		}
 		g_manager_state = BLEMGR_INITIALIZED;
 		g_scan_ctx.state = BLE_SCAN_STOPPED;
@@ -197,6 +267,137 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_conn_is_any_active(is_active);
 	} break;
 
+	// Scanner
+	case BLE_EVT_CMD_START_SCAN: {
+		BLE_STATE_CHECK;
+
+		if (g_scan_ctx.state != BLE_SCAN_STOPPED) {
+			ret = TRBLE_BUSY;
+			break;
+		}
+
+		ble_scan_state_e priv_state = g_scan_ctx.state;
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		ble_scan_filter *filter = (ble_scan_filter *)param->param[0];
+		ble_scan_callback_list *callbacks = (ble_scan_callback_list *)param->param[1];
+
+		if (callbacks == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+		memcpy(&(g_scan_ctx.callback), callbacks, sizeof(ble_scan_callback_list));
+
+		if (filter != NULL) {
+			memcpy(&(g_scan_ctx.filter), filter, sizeof(ble_scan_filter));
+		}
+
+		g_scan_ctx.state = BLE_SCAN_CHANGING;
+		ret = ble_drv_start_scan((trble_scan_filter *)filter);
+		if (ret != TRBLE_SUCCESS) {
+			memset(&(g_scan_ctx.callback), 0, sizeof(ble_scan_callback_list));
+			memset(&(g_scan_ctx.filter), 0, sizeof(ble_scan_filter));
+			g_scan_ctx.state = priv_state;
+		}
+	} break;
+
+	case BLE_EVT_CMD_STOP_SCAN: {
+		BLE_STATE_CHECK;
+
+		ret = TRBLE_SUCCESS;
+		if (g_scan_ctx.state != BLE_SCAN_STARTED) {
+			break;
+		}
+
+		ble_scan_state_e priv_state = g_scan_ctx.state;
+
+		g_scan_ctx.state = BLE_SCAN_CHANGING;
+		ret = ble_drv_stop_scan();
+		if (ret != TRBLE_SUCCESS) {
+			g_scan_ctx.state = priv_state;
+		}
+	} break;
+
+	case BLE_EVT_CMD_WHITELIST_ADD: {
+		BLE_STATE_CHECK;
+
+		ret = TRBLE_SUCCESS;
+		trble_addr *addr = (trble_addr *)msg->param;
+		if (addr == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+
+		if (_whitelist_is_exist(addr) == true) {
+			/* Already Exist */
+			break;
+		}
+
+		if (_whitelist_is_full() == true) {
+			ret = TRBLE_OUT_OF_MEMORY;
+			break;
+		}
+
+		if (g_scan_ctx.state != BLE_SCAN_STOPPED) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+
+		ret = ble_drv_scan_whitelist_add(addr);
+		if (ret == TRBLE_SUCCESS) {
+			if (_whitelist_add(addr) == false) {
+				ret = TRBLE_FAIL;
+			}
+		}
+	} break;
+
+	case BLE_EVT_CMD_WHITELIST_DELETE: {
+		BLE_STATE_CHECK;
+
+		ret = TRBLE_SUCCESS;
+		trble_addr *addr = (trble_addr *)msg->param;
+		if (addr == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+
+		if (_whitelist_is_exist(addr) != true) {
+			/* Already Deleted */
+			break;
+		}
+
+		if (g_scan_ctx.state != BLE_SCAN_STOPPED) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+		
+		ret = ble_drv_scan_whitelist_delete(addr);
+		if (ret == TRBLE_SUCCESS) {
+			if (_whitelist_delete(addr) == false) {
+				ret = TRBLE_FAIL;
+			}
+		}
+
+	} break;
+
+	case BLE_EVT_CMD_WHITELIST_CLEAR_ALL: {
+		BLE_STATE_CHECK;
+
+		int i;
+		ret = TRBLE_SUCCESS;
+		if (g_scan_ctx.state != BLE_SCAN_STOPPED) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+		
+		ret = ble_drv_scan_whitelist_clear_all();
+		if (ret == TRBLE_SUCCESS) {
+			for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
+				memset(&g_scan_whitelist[i], 0, sizeof(ble_scan_whitelist));
+			}
+		}
+
+	} break;
+
 	// Client
 	case BLE_EVT_CMD_CREATE_CTX: {
 		BLE_STATE_CHECK;
@@ -253,55 +454,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		msg->param = (void *)(ctx->state);
 		ret = TRBLE_SUCCESS;
-	} break;
-
-	case BLE_EVT_CMD_START_SCAN: {
-		BLE_STATE_CHECK;
-
-		if (g_scan_ctx.state != BLE_SCAN_STOPPED) {
-			ret = TRBLE_BUSY;
-			break;
-		}
-
-		ble_scan_state_e priv_state = g_scan_ctx.state;
-		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
-		ble_scan_filter *filter = (ble_scan_filter *)param->param[0];
-		ble_scan_callback_list *callbacks = (ble_scan_callback_list *)param->param[1];
-
-		if (filter != NULL) {
-			memcpy(&(g_scan_ctx.filter), filter, sizeof(ble_scan_filter));
-		}
-
-		if (callbacks == NULL) {
-			ret = TRBLE_INVALID_ARGS;
-			break;
-		}
-		memcpy(&(g_scan_ctx.callback), callbacks, sizeof(ble_scan_callback_list));
-
-		g_scan_ctx.state = BLE_SCAN_CHANGING;
-		ret = ble_drv_start_scan((trble_scan_filter *)filter);
-		if (ret != TRBLE_SUCCESS) {
-			memset(&(g_scan_ctx.callback), 0, sizeof(ble_scan_callback_list));
-			memset(&(g_scan_ctx.filter), 0, sizeof(ble_scan_filter));
-			g_scan_ctx.state = priv_state;
-		}
-	} break;
-
-	case BLE_EVT_CMD_STOP_SCAN: {
-		BLE_STATE_CHECK;
-
-		ret = TRBLE_SUCCESS;
-		if (g_scan_ctx.state != BLE_SCAN_STARTED) {
-			break;
-		}
-
-		ble_scan_state_e priv_state = g_scan_ctx.state;
-
-		g_scan_ctx.state = BLE_SCAN_CHANGING;
-		ret = ble_drv_stop_scan();
-		if (ret != TRBLE_SUCCESS) {
-			g_scan_ctx.state = priv_state;
-		}
 	} break;
 
 	case BLE_EVT_CMD_CLIENT_CONNECT: {

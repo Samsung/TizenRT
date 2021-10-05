@@ -98,6 +98,48 @@ ble_result_e ble_manager_conn_is_any_active(bool *is_active)
 	RETURN_RESULT(res, msg);
 }
 
+/* Scanner */
+ble_result_e ble_client_start_scan(ble_scan_filter *filter, ble_scan_callback_list *callbacks)
+{
+	blemgr_msg_params param = { 2, {(void *)filter, (void *)callbacks} };
+	blemgr_msg_s msg = {BLE_EVT_CMD_START_SCAN, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_client_stop_scan(void)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_STOP_SCAN, BLE_MANAGER_FAIL, NULL, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_scan_whitelist_add(ble_addr *addr)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_WHITELIST_ADD, BLE_MANAGER_FAIL, (void *)(addr), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_scan_whitelist_delete(ble_addr *addr)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_WHITELIST_DELETE, BLE_MANAGER_FAIL, (void *)(addr), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_scan_whitelist_clear_all(void)
+{
+	blemgr_msg_s msg = {BLE_EVT_CMD_WHITELIST_CLEAR_ALL, BLE_MANAGER_FAIL, NULL, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 /* Client */
 ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks)
 {
@@ -127,23 +169,6 @@ ble_client_state_e ble_client_get_state(ble_client_ctx *ctx)
 		return BLE_CLIENT_NONE;
 	}
 	return (ble_client_state_e)msg.param;
-}
-
-ble_result_e ble_client_start_scan(ble_scan_filter *filter, ble_scan_callback_list *callbacks)
-{
-	blemgr_msg_params param = { 2, {(void *)filter, (void *)callbacks} };
-	blemgr_msg_s msg = {BLE_EVT_CMD_START_SCAN, BLE_MANAGER_FAIL, (void *)(&param), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_client_stop_scan(void)
-{
-	blemgr_msg_s msg = {BLE_EVT_CMD_STOP_SCAN, BLE_MANAGER_FAIL, NULL, NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
 }
 
 ble_result_e ble_client_connect(ble_client_ctx *ctx, ble_conn_info *conn_info)

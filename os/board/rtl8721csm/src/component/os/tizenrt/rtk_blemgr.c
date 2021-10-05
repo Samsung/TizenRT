@@ -56,9 +56,14 @@ trble_result_e trble_netmgr_delete_bond_all(struct bledev *dev);
 trble_result_e trble_netmgr_conn_is_active(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
 trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_active);
 
-/*** Central(Client) ***/
+/*** Scanner(Observer) ***/
 trble_result_e trble_netmgr_start_scan(struct bledev *dev, trble_scan_filter *filter);
 trble_result_e trble_netmgr_stop_scan(struct bledev *dev);
+trble_result_e trble_netmgr_scan_whitelist_add(struct bledev *dev, trble_addr *addr);
+trble_result_e trble_netmgr_scan_whitelist_delete(struct bledev *dev, trble_addr *addr);
+trble_result_e trble_netmgr_scan_whitelist_clear_all(struct bledev *dev);
+
+/*** Central(Client) ***/
 trble_result_e trble_netmgr_client_connect(struct bledev *dev, trble_conn_info *conn_info);
 trble_result_e trble_netmgr_client_disconnect(struct bledev *dev, trble_conn_handle con_handle);
 trble_result_e trble_netmgr_client_disconnect_all(struct bledev *dev);
@@ -78,6 +83,8 @@ trble_result_e trble_netmgr_attr_reject(struct bledev *dev, trble_attr_handle at
 trble_result_e trble_netmgr_server_disconnect(struct bledev *dev, trble_conn_handle con_handle);
 trble_result_e trble_netmgr_get_mac_addr_by_conn_handle(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
+
+/*** Advertiser(Broadcaster) ***/
 trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data);
 trble_result_e trble_netmgr_set_adv_resp(struct bledev *dev, trble_data *data);
 trble_result_e trble_netmgr_set_adv_type(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr);
@@ -96,9 +103,14 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_conn_is_active,
 	trble_netmgr_conn_is_any_active,
 
-	// Client
+	// Observer
 	trble_netmgr_start_scan,
 	trble_netmgr_stop_scan,
+	trble_netmgr_scan_whitelist_add,
+	trble_netmgr_scan_whitelist_delete,
+	trble_netmgr_scan_whitelist_clear_all,
+
+	// Client
 	trble_netmgr_client_connect,
 	trble_netmgr_client_disconnect,
 	trble_netmgr_client_disconnect_all,
@@ -118,6 +130,8 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_server_disconnect,
 	trble_netmgr_get_mac_addr_by_conn_handle,
 	trble_netmgr_get_conn_handle_by_addr,
+
+	// Broadcaster
 	trble_netmgr_set_adv_data,
 	trble_netmgr_set_adv_resp,
 	trble_netmgr_set_adv_type,
@@ -220,17 +234,15 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 	return TRBLE_SUCCESS;
 }
 
-/*** Central(Client) ***/
+/*** Scanner(Observer) ***/
 trble_result_e trble_netmgr_start_scan(struct bledev *dev, trble_scan_filter *filter)
 {
 	trble_result_e ret = TRBLE_FAIL;
 	if (filter == NULL) {
 		ret = rtw_ble_client_start_scan();
 	} else {
-		trble_scan_filter t_filter;
-		memcpy(&t_filter, filter, sizeof(trble_scan_filter));
-		_reverse_mac(t_filter.addr.mac);
-		ret = rtw_ble_client_start_scan_with_filter(&t_filter);
+		/* This will be enabled after setting whiltlist APIs in RTK layer */
+		// ret = rtw_ble_client_start_scan_with_filter(filter, filter->whitelist_enable);
 	}
 	return ret;
 }
@@ -240,6 +252,22 @@ trble_result_e trble_netmgr_stop_scan(struct bledev *dev)
 	return rtw_ble_client_stop_scan();
 }
 
+trble_result_e trble_netmgr_scan_whitelist_add(struct bledev *dev, trble_addr *addr)
+{
+	return TRBLE_UNSUPPORTED;
+}
+
+trble_result_e trble_netmgr_scan_whitelist_delete(struct bledev *dev, trble_addr *addr)
+{
+	return TRBLE_UNSUPPORTED;
+}
+
+trble_result_e trble_netmgr_scan_whitelist_clear_all(struct bledev *dev)
+{
+	return TRBLE_UNSUPPORTED;
+}
+
+/*** Central(Client) ***/
 trble_result_e trble_netmgr_client_connect(struct bledev *dev, trble_conn_info *conn_info)
 {
 	trble_conn_info conn_info_copy[1] = { 0, };
@@ -353,6 +381,8 @@ trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t 
 	return TRBLE_SUCCESS;
 }
 
+
+/*** Advertiser(Broadcaster) ***/
 trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data)
 {
 	return rtw_ble_server_set_adv_data(data->data, data->length);
