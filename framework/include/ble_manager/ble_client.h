@@ -36,12 +36,6 @@
 typedef struct _ble_client_ctx ble_client_ctx;
 
 typedef enum {
-	BLE_SCAN_STOPPED = 0,
-	BLE_SCAN_STARTED,
-	BLE_SCAN_CHANGING,
-} ble_scan_state_e;
-
-typedef enum {
 	BLE_CLIENT_NONE = 0,
 	BLE_CLIENT_IDLE,
 	BLE_CLIENT_CONNECTED,
@@ -60,16 +54,6 @@ typedef struct {
 } ble_conn_info;
 
 typedef struct {
-	ble_adv_type_e adv_type;
-	int8_t rssi;
-	ble_conn_info conn_info;
-	uint8_t raw_data[BLE_ADV_RAW_DATA_MAX_LEN];
-	uint8_t raw_data_length;
-	uint8_t resp_data[BLE_ADV_RESP_DATA_MAX_LEN];
-	uint8_t resp_data_length;
-} __attribute__((aligned(4), packed)) ble_scanned_device;
-
-typedef struct {
 	ble_conn_info conn_info;
 	bool is_bonded;
 	ble_conn_handle conn_handle;
@@ -81,19 +65,6 @@ typedef struct {
 } ble_device_connected_list;
 
 typedef struct {
-	uint8_t raw_data[BLE_ADV_RAW_DATA_MAX_LEN];
-	uint8_t raw_data_length;
-	ble_addr addr;
-	uint16_t scan_duration;
-} ble_scan_filter;
-
-typedef struct {
-	/* This is a set of callback function for BLE Scan */
-	void(*ble_client_scan_state_changed_cb)(ble_scan_state_e scan_state);
-	void(*ble_client_device_scanned_cb)(ble_scanned_device* scanned_device);
-} ble_scan_callback_list;
-
-typedef struct {
 	/* This is a set of callback function for BLE client */
 	void(*ble_client_device_disconnected_cb)(ble_client_ctx *ctx);
 	void(*ble_client_device_connected_cb)(ble_client_ctx *ctx, ble_device_connected* connected_device);
@@ -103,40 +74,6 @@ typedef struct {
 ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks);
 ble_result_e ble_client_destroy_ctx(ble_client_ctx *ctx);
 ble_client_state_e ble_client_get_state(ble_client_ctx *ctx);
-
-/****************************************************************************
- * Name: ble_client_start_scan
- *
- * Description:
- *   Start BLE adv scanning
- *
- * Input Parameters:
- *   filter    - If this value is NULL, start to scan for BLE adv till 
- *               'ble_client_stop_scan' is called.
- *               To get specific BLE adv info, filter value should be filled
- *               with exact value.
- *   callbacks - The list of scan result callback.
- *
- * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
- *
- ****************************************************************************/
-ble_result_e ble_client_start_scan(ble_scan_filter* filter, ble_scan_callback_list *callbacks);
-
-/****************************************************************************
- * Name: ble_client_stop_scan
- *
- * Description:
- *   Stop BLE adv scanning. This should be called to stop BLE scanning after 
- *   ble_client_start_scan is called without filter.
- *
- * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
- *
- ****************************************************************************/
-ble_result_e ble_client_stop_scan(void);
 
 /****************************************************************************
  * Name: ble_client_connect

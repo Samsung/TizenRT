@@ -66,17 +66,17 @@ static void ble_device_scanned_cb_with_filter(ble_scanned_device *scanned_device
 {
 	RMC_LOG(RMC_CLIENT_TAG, "Find RMC with scan filter!!!\n");
 	printf("scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
-		scanned_device->conn_info.addr.mac[0],
-		scanned_device->conn_info.addr.mac[1],
-		scanned_device->conn_info.addr.mac[2],
-		scanned_device->conn_info.addr.mac[3],
-		scanned_device->conn_info.addr.mac[4],
-		scanned_device->conn_info.addr.mac[5]
+		scanned_device->addr.mac[0],
+		scanned_device->addr.mac[1],
+		scanned_device->addr.mac[2],
+		scanned_device->addr.mac[3],
+		scanned_device->addr.mac[4],
+		scanned_device->addr.mac[5]
 	);
 
 	if (g_scan_done == 0) {
-		memcpy(g_target.mac, scanned_device->conn_info.addr.mac, BLE_BD_ADDR_MAX_LEN);
-		g_target.type = scanned_device->conn_info.addr.type;
+		memcpy(g_target.mac, scanned_device->addr.mac, BLE_BD_ADDR_MAX_LEN);
+		g_target.type = scanned_device->addr.type;
 		g_scan_done = 1;
 	}
 }
@@ -86,7 +86,7 @@ static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_dev
 	/*
 	In without filter callback, you should not do heavy works such as printing every result of scan result.
 	*/
-	if (memcmp(scanned_device->conn_info.addr.mac, ble_mac_filter, BLE_BD_ADDR_MAX_LEN) == 0) {
+	if (memcmp(scanned_device->addr.mac, ble_mac_filter, BLE_BD_ADDR_MAX_LEN) == 0) {
 		RMC_LOG(RMC_CLIENT_TAG, "Find RMC with MAC !!!\n");
 		return;
 	}
@@ -94,12 +94,12 @@ static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_dev
 	if (memcmp(scanned_device->raw_data, ble_filter, sizeof(ble_filter)) == 0) {
 		RMC_LOG(RMC_CLIENT_TAG,"Find RMC with raw data !!!\n");
 		printf("scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
-			scanned_device->conn_info.addr.mac[0],
-			scanned_device->conn_info.addr.mac[1],
-			scanned_device->conn_info.addr.mac[2],
-			scanned_device->conn_info.addr.mac[3],
-			scanned_device->conn_info.addr.mac[4],
-			scanned_device->conn_info.addr.mac[5]
+			scanned_device->addr.mac[0],
+			scanned_device->addr.mac[1],
+			scanned_device->addr.mac[2],
+			scanned_device->addr.mac[3],
+			scanned_device->addr.mac[4],
+			scanned_device->addr.mac[5]
 		);
 		return;
 	}

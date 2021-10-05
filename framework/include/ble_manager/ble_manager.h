@@ -34,6 +34,7 @@
 #include "ble_common.h"
 #include "ble_client.h"
 #include "ble_server.h"
+#include "ble_scan.h"
 
 typedef enum {
 	BLEMGR_SERVER_MODE,

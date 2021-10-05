@@ -46,7 +46,7 @@ static void bledrv_scan_state_changed_cb(trble_scan_state_e scan_state)
 
 static void bledrv_device_scanned_cb(trble_scanned_device *scanned_device)
 {
-	_reverse_mac(scanned_device->conn_info.addr.mac);
+	_reverse_mac(scanned_device->addr.mac);
 	trble_scan_data_enque(scanned_device);
 	return;
 }
