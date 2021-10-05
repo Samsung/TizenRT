@@ -263,7 +263,6 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		ret = ioctl_siocgifname(req);
 		break;
 	default: {
-		NET_LOGE(TAG, "netdev invalid command\n");
 		ret = -ENOTTY;
 	}
 		break;

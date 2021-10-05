@@ -89,7 +89,7 @@ struct netstack_ops {
 #endif
 
 #ifdef CONFIG_NET_NETMON
-	int (*getstats)(int fd, struct netmon_sock **sock);
+	int (*getstats)(void *arg);
 #endif
 
 	void (*initlist)(struct socketlist *list);
