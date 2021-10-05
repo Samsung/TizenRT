@@ -58,6 +58,7 @@ NETDEV_CSRCS += netdev_mgr.c netdev_mgr_internal.c
 NETDEV_CSRCS += netmgr_ioctl_netdev.c
 NETDEV_CSRCS += netdev_lwnl.c
 NETDEV_CSRCS += netdev_wifi.c netdev_eth.c
+NETDEV_CSRCS += netmgr_logger.c
 
 ifeq ($(CONFIG_NET_STATS) ,y)
 NETDEV_CSRCS += netdev_stats.c

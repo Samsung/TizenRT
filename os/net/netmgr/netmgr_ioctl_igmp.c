@@ -78,7 +78,6 @@ int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *i
 	break;
 	case SIOCGIPMSFILTER:		/* Retrieve source filter addresses */
 	default:
-		NET_LOGE(TAG, "not supported command (%d)\n", cmd);
 		ret = -ENOTTY;
 		break;
 	}

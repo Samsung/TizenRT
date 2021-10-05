@@ -28,4 +28,37 @@
 #define NET_LOGV(tag, fmt, args...)					\
 	nvdbg("%d "tag "[VERB]\t"fmt, __LINE__, ##args)
 
+typedef struct {
+  int idx;
+  int size;
+  char *buf;
+} netmgr_logger;
+
+typedef netmgr_logger *netmgr_logger_p;
+
+/*
+ * DESCRIPTION: Initialize logger
+ * RETURN: return 0 if succeed, else return negative if fail
+ *
+ * NOTE: netlogger_deinit() have to be called to prevent memory leak
+ *       if it was succeeded.
+ */
+int netlogger_init(netmgr_logger_p *log);
+/*
+ * DESCRIPTION: Deinitialize logger
+ * RETURN: None
+ */
+void netlogger_deinit(netmgr_logger_p log);
+/*
+ * DESCRIPTION: add msg to logger.
+ * RETURN: return 0 if succeed, else return negative if fail to add logger.
+ */
+int netlogger_debug_msg(netmgr_logger_p log, const char *format, ...);
+/*
+ * DESCRIPTION: serialize message in logger to user memory region.
+ * RETURN: return size of buffer if success, else return -1
+ *
+ * NOTE: a caller has responsible to free buf.
+ */
+int netlogger_serialize(netmgr_logger_p log, char **buf);
 
