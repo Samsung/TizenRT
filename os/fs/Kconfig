@@ -79,3 +79,12 @@ config SYSLOG_DEVPATH
 		(such as "/dev/ttyS1")/
 
 endif
+
+config GENERATE_FS_IMAGE
+	bool "Generate fs image"
+	depends on FLASH_PARTITION && FS_SMARTFS
+	default n
+	---help---
+		If enabled, smartfs image is generated when build if there is a smartfs partition
+		in the partition list(CONFIG_FLASH_PART_TYPE).
+		If no content added before build, empty smartfs image will be generated.
