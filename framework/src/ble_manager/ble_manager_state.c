@@ -37,7 +37,7 @@
 #define SCAN_WHITELIST_IN_USE 1
 
 typedef struct {
-	uint8_t flag;
+	uint8_t use;
 	trble_addr addr;
 } ble_scan_whitelist;
 
@@ -62,13 +62,14 @@ static bool _whitelist_delete(trble_addr *addr)
 {
 	int i;
 	for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
-		if (g_scan_whitelist[i].flag == SCAN_WHITELIST_IN_USE) {
-			if (memcmp(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN) == 0 && 
-				g_scan_whitelist[i].addr.type == addr->type) {
-				g_scan_whitelist[i].flag = SCAN_WHITELIST_EMPTY;
-				memset(&g_scan_whitelist[i], 0, sizeof(ble_scan_whitelist));
-				return true;
-			}
+		if (g_scan_whitelist[i].use != SCAN_WHITELIST_IN_USE) {
+			continue;
+		}
+		if (memcmp(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN) == 0 && 
+			g_scan_whitelist[i].addr.type == addr->type) {
+			g_scan_whitelist[i].use = SCAN_WHITELIST_EMPTY;
+			memset(&g_scan_whitelist[i], 0, sizeof(ble_scan_whitelist));
+			return true;
 		}
 	}
 	return false;
@@ -78,12 +79,13 @@ static bool _whitelist_add(trble_addr *addr)
 {
 	int i;
 	for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
-		if (g_scan_whitelist[i].flag == SCAN_WHITELIST_EMPTY) {
-			g_scan_whitelist[i].flag = SCAN_WHITELIST_IN_USE;
-			g_scan_whitelist[i].addr.type = addr->type;
-			memcpy(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN);
-			return true;
+		if (g_scan_whitelist[i].use != SCAN_WHITELIST_EMPTY) {
+			continue;
 		}
+		g_scan_whitelist[i].use = SCAN_WHITELIST_IN_USE;
+		g_scan_whitelist[i].addr.type = addr->type;
+		memcpy(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN);
+		return true;
 	}
 	return false;
 }
@@ -92,7 +94,7 @@ static bool _whitelist_is_full(void)
 {
 	int i;
 	for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
-		if (g_scan_whitelist[i].flag == SCAN_WHITELIST_EMPTY) {
+		if (g_scan_whitelist[i].use == SCAN_WHITELIST_EMPTY) {
 			return false;
 		}
 	}
@@ -103,11 +105,12 @@ static bool _whitelist_is_exist(trble_addr *addr)
 {
 	int i;
 	for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
-		if (g_scan_whitelist[i].flag == SCAN_WHITELIST_IN_USE) {
-			if (memcmp(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN) == 0 && 
-				g_scan_whitelist[i].addr.type == addr->type) {
-				return true;
-			}
+		if (g_scan_whitelist[i].use != SCAN_WHITELIST_IN_USE) {
+			continue;
+		}
+		if (memcmp(g_scan_whitelist[i].addr.mac, addr->mac, TRBLE_BD_ADDR_MAX_LEN) == 0 && 
+			g_scan_whitelist[i].addr.type == addr->type) {
+			return true;
 		}
 	}
 	return false;
@@ -156,7 +159,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	BLE_LOG_DEBUG("[BLEMGR] T%d --> _handle_request[%d]\n", getpid(), msg->event);
 
 	switch (msg->event) {
-	case BLE_EVT_CMD_INIT: {
+	case BLE_CMD_INIT: {
 		int i;
 		if (g_manager_state != BLEMGR_UNINITIALIZED) {
 			BLE_LOG_INFO("[BLEMGR] already running\n");
@@ -200,7 +203,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		g_scan_ctx.state = BLE_SCAN_STOPPED;
 	} break;
 
-	case BLE_EVT_CMD_DEINIT: {
+	case BLE_CMD_DEINIT: {
 		BLE_STATE_CHECK;
 
 		int i;
@@ -221,14 +224,17 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		g_scan_ctx.state = BLE_SCAN_STOPPED;
 	} break;
 
-	case BLE_EVT_CMD_GET_MAC: {
+	case BLE_CMD_GET_MAC: {
 		BLE_STATE_CHECK;
 
 		uint8_t *mac = (uint8_t *)msg->param;
+		if (mac == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+		}
 		ret = ble_drv_get_mac_addr(mac);
 	} break;
 	
-	case BLE_EVT_CMD_GET_BONDED_DEV: {
+	case BLE_CMD_GET_BONDED_DEV: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -238,20 +244,20 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_get_bonded_device(list, device_count);
 	} break;
 
-	case BLE_EVT_CMD_DEL_BOND: {
+	case BLE_CMD_DEL_BOND: {
 		BLE_STATE_CHECK;
 
 		uint8_t *addr = (uint8_t *)msg->param;
 		ret = ble_drv_delete_bonded(addr);
 	} break;
 
-	case BLE_EVT_CMD_DEL_BOND_ALL: {
+	case BLE_CMD_DEL_BOND_ALL: {
 		BLE_STATE_CHECK;
 
 		ret = ble_drv_delete_bonded_all();
 	} break;
 
-	case BLE_EVT_CMD_CONN_IS_ACTIVE: {
+	case BLE_CMD_CONN_IS_ACTIVE: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -260,7 +266,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_conn_is_active(con_handle, is_active);
 	} break;
 
-	case BLE_EVT_CMD_CONN_IS_ANY_ACTIVE: {
+	case BLE_CMD_CONN_IS_ANY_ACTIVE: {
 		BLE_STATE_CHECK;
 
 		bool *is_active = (bool *)msg->param;
@@ -268,9 +274,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	} break;
 
 	// Scanner
-	case BLE_EVT_CMD_START_SCAN: {
+	case BLE_CMD_START_SCAN: {
 		BLE_STATE_CHECK;
 
+		ret = TRBLE_SUCCESS;
 		if (g_scan_ctx.state != BLE_SCAN_STOPPED) {
 			ret = TRBLE_BUSY;
 			break;
@@ -300,11 +307,14 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
-	case BLE_EVT_CMD_STOP_SCAN: {
+	case BLE_CMD_STOP_SCAN: {
 		BLE_STATE_CHECK;
 
 		ret = TRBLE_SUCCESS;
-		if (g_scan_ctx.state != BLE_SCAN_STARTED) {
+		if (g_scan_ctx.state == BLE_SCAN_STOPPED) {
+			break;
+		} else if (g_scan_ctx.state == BLE_SCAN_CHANGING) {
+			ret = TRBLE_BUSY;
 			break;
 		}
 
@@ -317,7 +327,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
-	case BLE_EVT_CMD_WHITELIST_ADD: {
+	case BLE_CMD_WHITELIST_ADD: {
 		BLE_STATE_CHECK;
 
 		ret = TRBLE_SUCCESS;
@@ -350,7 +360,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
-	case BLE_EVT_CMD_WHITELIST_DELETE: {
+	case BLE_CMD_WHITELIST_DELETE: {
 		BLE_STATE_CHECK;
 
 		ret = TRBLE_SUCCESS;
@@ -379,7 +389,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 	} break;
 
-	case BLE_EVT_CMD_WHITELIST_CLEAR_ALL: {
+	case BLE_CMD_WHITELIST_CLEAR_ALL: {
 		BLE_STATE_CHECK;
 
 		int i;
@@ -399,7 +409,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	} break;
 
 	// Client
-	case BLE_EVT_CMD_CREATE_CTX: {
+	case BLE_CMD_CREATE_CTX: {
 		BLE_STATE_CHECK;
 		
 		int i;
@@ -425,7 +435,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
-	case BLE_EVT_CMD_DESTROY_CTX: {
+	case BLE_CMD_DESTROY_CTX: {
 		BLE_STATE_CHECK;
 
 		/* 
@@ -443,7 +453,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		memset(ctx, 0, sizeof(ble_client_ctx));
 	} break;
 
-	case BLE_EVT_CMD_GET_CLIENT_STATE: {
+	case BLE_CMD_GET_CLIENT_STATE: {
 		BLE_STATE_CHECK;
 
 		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;		
@@ -456,7 +466,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = TRBLE_SUCCESS;
 	} break;
 
-	case BLE_EVT_CMD_CLIENT_CONNECT: {
+	case BLE_CMD_CLIENT_CONNECT: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -485,7 +495,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
-	case BLE_EVT_CMD_CLIENT_ENABLE_AUTOCONNECT: {
+	case BLE_CMD_CLIENT_ENABLE_AUTOCONNECT: {
 		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;
 
 		if (ctx == NULL) {
@@ -502,7 +512,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = TRBLE_SUCCESS;
 	} break;
 
-	case BLE_EVT_CMD_CLIENT_DISABLE_AUTOCONNECT: {
+	case BLE_CMD_CLIENT_DISABLE_AUTOCONNECT: {
 		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;
 		ret = TRBLE_SUCCESS;		
 
@@ -527,7 +537,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
-	case BLE_EVT_CMD_CLIENT_RECONNECT: {
+	case BLE_CMD_CLIENT_RECONNECT: {
 		BLE_STATE_CHECK;
 
 		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;
@@ -554,7 +564,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
-	case BLE_EVT_CMD_CLIENT_DISCONNECT: {
+	case BLE_CMD_CLIENT_DISCONNECT: {
 		BLE_STATE_CHECK;
 
 		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;
@@ -584,20 +594,20 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 	} break;
 
-	case BLE_EVT_CMD_CLIENT_DISCONNECT_ALL: {
+	case BLE_CMD_CLIENT_DISCONNECT_ALL: {
 		BLE_STATE_CHECK;
 
 		ret = ble_drv_client_disconnect_all();
 	} break;
 
-	case BLE_EVT_CMD_CONNECTED_DEV_LIST: {
+	case BLE_CMD_CONNECTED_DEV_LIST: {
 		BLE_STATE_CHECK;
 
 		trble_connected_list *list = (trble_connected_list *)msg->param;
 		ret = ble_drv_connected_device_list(list);
 	} break;
 
-	case BLE_EVT_CMD_CONNECTED_INFO: {
+	case BLE_CMD_CONNECTED_INFO: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -617,7 +627,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_connected_info(ctx->conn_handle, device);
 	} break;
 
-	case BLE_EVT_CMD_OP_ENABLE_NOTI: {
+	case BLE_CMD_OP_ENABLE_NOTI: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -641,7 +651,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_operation_enable_notification(handle);
 	} break;
 
-	case BLE_EVT_CMD_OP_READ: {
+	case BLE_CMD_OP_READ: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -666,7 +676,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_operation_read(handle, data);
 	} break;
 
-	case BLE_EVT_CMD_OP_WRITE: {
+	case BLE_CMD_OP_WRITE: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -691,7 +701,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_operation_write(handle, data);
 	} break;
 
-	case BLE_EVT_CMD_OP_WRITE_NO_RESP: {
+	case BLE_CMD_OP_WRITE_NO_RESP: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -717,14 +727,14 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	} break;
 
 	// Server
-	case BLE_EVT_CMD_GET_PROFILE_COUNT: {
+	case BLE_CMD_GET_PROFILE_COUNT: {
 		BLE_STATE_CHECK;
 
 		uint16_t *count = (uint16_t *)msg->param;
 		ret = ble_drv_get_profile_count(count);
 	} break;
 
-	case BLE_EVT_CMD_CHARACT_NOTI: {
+	case BLE_CMD_CHARACT_NOTI: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -735,7 +745,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_charact_notify(attr_handle, con_handle, data);
 	} break;
 
-	case BLE_EVT_CMD_ATTR_SET_DATA: {
+	case BLE_CMD_ATTR_SET_DATA: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -745,7 +755,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_attr_set_data(attr_handle, data);
 	} break;
 
-	case BLE_EVT_CMD_ATTR_GET_DATA: {
+	case BLE_CMD_ATTR_GET_DATA: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -755,7 +765,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_attr_get_data(attr_handle, data);
 	} break;
 
-	case BLE_EVT_CMD_ATTR_REJECT: {
+	case BLE_CMD_ATTR_REJECT: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -765,14 +775,14 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_attr_reject(attr_handle, app_errorcode);
 	} break;
 
-	case BLE_EVT_CMD_SERVER_DISCONNECT: {
+	case BLE_CMD_SERVER_DISCONNECT: {
 		BLE_STATE_CHECK;
 
 		trble_conn_handle conn_handle = *(trble_conn_handle *)msg->param;
 		ret = ble_drv_server_disconnect(conn_handle);
 	} break;
 
-	case BLE_EVT_CMD_GET_MAC_BY_CONN: {
+	case BLE_CMD_GET_MAC_BY_CONN: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -782,7 +792,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_get_mac_addr_by_conn_handle(con_handle, bd_addr);
 	} break;
 
-	case BLE_EVT_CMD_GET_CONN_BY_MAC: {
+	case BLE_CMD_GET_CONN_BY_MAC: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -792,21 +802,21 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_get_conn_handle_by_addr(bd_addr, con_handle);
 	} break;
 
-	case BLE_EVT_CMD_SET_ADV_DATA: {
+	case BLE_CMD_SET_ADV_DATA: {
 		BLE_STATE_CHECK;
 
 		trble_data *data = (trble_data *)msg->param;
 		ret = ble_drv_set_adv_data(data);
 	} break;
 
-	case BLE_EVT_CMD_SET_ADV_RESP: {
+	case BLE_CMD_SET_ADV_RESP: {
 		BLE_STATE_CHECK;
 
 		trble_data *data = (trble_data *)msg->param;
 		ret = ble_drv_set_adv_resp(data);
 	} break;
 
-	case BLE_EVT_CMD_SET_ADV_TYPE: {
+	case BLE_CMD_SET_ADV_TYPE: {
 		BLE_STATE_CHECK;
 
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
@@ -815,20 +825,20 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_set_adv_type(adv_type, addr);
 	} break;
 
-	case BLE_EVT_CMD_SET_ADV_INTERVAL: {
+	case BLE_CMD_SET_ADV_INTERVAL: {
 		BLE_STATE_CHECK;
 
 		uint16_t interval = *(uint16_t *)msg->param;
 		ret = ble_drv_set_adv_interval(interval);
 	} break;
 
-	case BLE_EVT_CMD_START_ADV: {
+	case BLE_CMD_START_ADV: {
 		BLE_STATE_CHECK;
 
 		ret = ble_drv_start_adv();
 	} break;
 
-	case BLE_EVT_CMD_STOP_ADV: {
+	case BLE_CMD_STOP_ADV: {
 		BLE_STATE_CHECK;
 
 		ret = ble_drv_stop_adv();

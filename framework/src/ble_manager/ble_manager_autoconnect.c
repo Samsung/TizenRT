@@ -59,12 +59,13 @@ static void ble_auto_device_scanned_cb(ble_scanned_device *scanned_device)
 	char buf[BLE_MQ_SIZE] = { 0, };
 
 	if (scanned_device->adv_type == BLE_ADV_TYPE_DIRECT) {
-		if (memcmp(g_ctx->info.addr.mac, scanned_device->addr.mac, BLE_BD_ADDR_MAX_LEN) == 0) {
-			buf[0] = (char)BLE_AUTOCON_EVT_MAC_SCANNED;
-			status = mq_send(g_ctx->mqfd, buf, BLE_MQ_SIZE, 0);
-			if (status < 0) {
-				BLE_LOG_ERROR("[BLEMGR][%s] fail to send mqueue[%d]\n", __FUNCTION__, errno);
-			}
+		return;
+	}
+	if (memcmp(g_ctx->info.addr.mac, scanned_device->addr.mac, BLE_BD_ADDR_MAX_LEN) == 0) {
+		buf[0] = (char)BLE_AUTOCON_EVT_MAC_SCANNED;
+		status = mq_send(g_ctx->mqfd, buf, BLE_MQ_SIZE, 0);
+		if (status < 0) {
+			BLE_LOG_ERROR("[BLEMGR][%s] fail to send mqueue[%d]\n", __FUNCTION__, errno);
 		}
 	}
 	return;
