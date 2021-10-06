@@ -77,7 +77,9 @@ enum node_type_e {
 };
 typedef enum node_type_e node_type_t;
 
+#if defined(__KERNEL__)
 extern bool abort_mode;
+#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -125,6 +127,10 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 	struct mm_allocnode_s *node;
 	struct mm_allocnode_s *prev;
 	struct mm_allocnode_s *next;
+	bool aborted = false;
+#if defined(__KERNEL__)
+	aborted = abort_mode;
+#endif
 #if CONFIG_KMM_REGIONS > 1
 	int region;
 #else
@@ -143,7 +149,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 		 * Retake the semaphore for each region to reduce latencies
 		 */
 
-		if (!abort_mode
+		if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 			&& !up_interrupt_context()
 #endif
@@ -162,7 +168,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				dump_node(prev, TYPE_OVERFLOWED);
 				dump_node(node, TYPE_CORRUPTED);
 				dbg("#########################################################################################\n");
-				if (!abort_mode
+				if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 					&& !up_interrupt_context()
 #endif
@@ -184,7 +190,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				dump_node(node, TYPE_OVERFLOWED);
 				dump_node(next, TYPE_CORRUPTED);
 				dbg("#########################################################################################\n");
-				if (!abort_mode
+				if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 					&& !up_interrupt_context()
 #endif
@@ -201,7 +207,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					dbg("Corrupted node blink(0x%08x) and prev node flink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->blink,
 							((struct mm_freenode_s *)node)->blink->flink);
 					dbg("#########################################################################################\n");
-					if (!abort_mode
+					if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 						&& !up_interrupt_context()
 #endif
@@ -217,7 +223,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					dbg("Corrupted node flink(0x%08x) and next node blink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->flink,
 							((struct mm_freenode_s *)node)->flink->blink);
 					dbg("#########################################################################################\n");
-					if (!abort_mode
+					if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 						 && !up_interrupt_context()
 #endif
@@ -229,7 +235,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			}
 		}
 
-		if (!abort_mode
+		if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 			&& !up_interrupt_context()
 #endif
