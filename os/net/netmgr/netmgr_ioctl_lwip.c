@@ -462,12 +462,14 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 	}
 #endif // CONFIG_LWIP_DHCPS
 #endif // CONFIG_NET_LWIP_DHCP
+#ifdef CONFIG_NET_STATS
 	case GETNETSTATS: {
 		stats_display();
 		netstats_display();
 		ret = OK;
 		break;
 	}
+#endif
 	default:
 		NET_LOGE(TAG, "Wrong request type: %d\n", req->type);
 		ret = -ENOTTY;

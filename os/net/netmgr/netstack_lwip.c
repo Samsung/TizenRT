@@ -34,11 +34,11 @@
 #include "lwip/netif.h"
 #include <tinyara/net/netlog.h>
 #include <unistd.h>
+#include "lwip/udp.h"
+#include "lwip/tcp.h"
 #ifdef CONFIG_NET_NETMON
 #include "lwip/ip.h"
 #include "lwip/ip6.h"
-#include "lwip/udp.h"
-#include "lwip/tcp.h"
 #include "lwip/raw.h"
 #endif
 
