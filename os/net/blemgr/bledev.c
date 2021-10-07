@@ -208,7 +208,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, whitelist_delete, (dev, addr));
 	}
 	break;
-	case_REQ_BLE_WHITELIST_CLEAR_ALL:
+	case LWNL_REQ_BLE_WHITELIST_CLEAR_ALL:
 	{
 		TRBLE_DRV_CALL(ret, dev, whitelist_clear_all, (dev));
 	}
