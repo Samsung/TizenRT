@@ -86,7 +86,7 @@ DEPPATH = --dep-path .
 
 include netmgr/Make.defs
 
-ifeq ($(CONFIG_BLE_MANAGER),y)
+ifeq ($(CONFIG_DRIVERS_BLE),y)
 include blemgr/Make.defs
 endif
 
