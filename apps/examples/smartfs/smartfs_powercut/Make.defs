@@ -52,5 +52,5 @@
 ############################################################################
 
 ifeq ($(CONFIG_EXAMPLES_SMARTFS_POWERCUT),y)
-CONFIGURED_APPS += examples/smartfs_powercut
+CONFIGURED_APPS += examples/smartfs/smartfs_powercut
 endif
