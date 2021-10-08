@@ -140,6 +140,19 @@ ble_result_e ble_scan_whitelist_clear_all(void)
 	RETURN_RESULT(res, msg);
 }
 
+uint16_t ble_scan_whitelist_list(ble_addr addr[], uint16_t size)
+{
+	blemgr_msg_params param = { 2, {(void *)addr, (void *)&size} };
+	blemgr_msg_s msg = {BLE_CMD_WHITELIST_LIST, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	if (res < 0 || msg.result != BLE_MANAGER_SUCCESS) {
+		return 0;
+	}
+
+	return (uint16_t)msg.ret.val;
+}
+
 /* Client */
 ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks)
 {
@@ -149,7 +162,7 @@ ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks)
 	if (res < 0 || msg.result != BLE_MANAGER_SUCCESS) {
 		return NULL;
 	}
-	return (ble_client_ctx *)msg.param;
+	return (ble_client_ctx *)msg.ret.ptr;
 }
 
 ble_result_e ble_client_destroy_ctx(ble_client_ctx *ctx)
@@ -168,7 +181,7 @@ ble_client_state_e ble_client_get_state(ble_client_ctx *ctx)
 	if (res < 0 || msg.result != BLE_MANAGER_SUCCESS) {
 		return BLE_CLIENT_NONE;
 	}
-	return (ble_client_state_e)msg.param;
+	return (ble_client_state_e)msg.ret.val;
 }
 
 ble_result_e ble_client_connect(ble_client_ctx *ctx, ble_conn_info *conn_info)

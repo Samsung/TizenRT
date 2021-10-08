@@ -27,6 +27,10 @@ struct blemgr_msg {
 	ble_result_e result;
 	void *param;
 	sem_t *signal;
+	union {
+		void *ptr;
+		int32_t val;
+	} ret;
 };
 typedef struct blemgr_msg blemgr_msg_s;
 

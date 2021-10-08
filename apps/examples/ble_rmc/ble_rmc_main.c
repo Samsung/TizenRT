@@ -61,7 +61,10 @@ static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
 }
 
 static uint8_t ble_filter[] = { 0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 };
-static uint8_t ble_mac_filter[] = { 0x10, 0x00, 0x00, 0x00, 0x00, 0x15 };
+static uint8_t ble_mac_filter[2][BLE_BD_ADDR_MAX_LEN] = { 
+	{0x10, 0x00, 0x00, 0x00, 0x00, 0x15 }, 
+	{0x28, 0x6d, 0x97, 0x86, 0x60, 0xc0 }, 
+};
 static void ble_device_scanned_cb_with_filter(ble_scanned_device *scanned_device)
 {
 	RMC_LOG(RMC_CLIENT_TAG, "Find RMC with scan filter!!!\n");
@@ -86,7 +89,7 @@ static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_dev
 	/*
 	In without filter callback, you should not do heavy works such as printing every result of scan result.
 	*/
-	if (memcmp(scanned_device->addr.mac, ble_mac_filter, BLE_BD_ADDR_MAX_LEN) == 0) {
+	if (memcmp(scanned_device->addr.mac, &ble_mac_filter[0], BLE_BD_ADDR_MAX_LEN) == 0) {
 		RMC_LOG(RMC_CLIENT_TAG, "Find RMC with MAC !!!\n");
 		return;
 	}
@@ -485,10 +488,29 @@ int ble_rmc_main(int argc, char *argv[])
 		} else if (argc == 3 && argv[2][0] == '2') {
 			printf("Start with filter!\n");
 
+			ble_addr addr[2] = { 0, };
+			addr[0].type = BLE_ADDR_TYPE_PUBLIC;
+			memcpy(addr[0].mac, &ble_mac_filter[0], BLE_BD_ADDR_MAX_LEN);
+			addr[1].type = BLE_ADDR_TYPE_PUBLIC;
+			memcpy(addr[1].mac, &ble_mac_filter[1], BLE_BD_ADDR_MAX_LEN);
+
+			ret = ble_scan_whitelist_add(&addr[0]);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_CLIENT_TAG, "fail to add whitelist[%d]\n", ret);
+				return 0;
+			}
+
+			ret = ble_scan_whitelist_add(&addr[1]);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_CLIENT_TAG, "fail to add whitelist[%d]\n", ret);
+				return 0;
+			}
+
 			ble_scan_filter filter = { 0, };
-			memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
-			filter.raw_data_length = sizeof(ble_filter);
-			filter.scan_duration = 1000;
+			// memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
+			filter.raw_data_length = 0;
+			filter.scan_duration = 0;
+			filter.whitelist_enable = true;
 			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_with_filter;
 			ret = ble_client_start_scan(&filter, &scan_config);
 
