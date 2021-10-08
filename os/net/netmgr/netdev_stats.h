@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 
-#ifndef __NETMGR_STATS_H__
-#define __NETMGR_STATS_H__
+#pragma once
 
-#if CONFIG_NET_STATS
+#ifdef CONFIG_NET_STATS
+
 extern uint32_t g_link_recv_byte;
 extern uint32_t g_link_recv_cnt;
 extern uint32_t g_link_recv_err;
@@ -28,14 +28,18 @@ extern uint32_t g_app_recv_byte;
 extern uint32_t g_app_recv_cnt;
 
 #define NETMGR_STATS_ADD(x, y) \
-	do {\
-		x += y;\
+	do {                       \
+		x += y;                \
 	} while (0)
 
 #define NETMGR_STATS_INC(x) x++;
 void netstats_display(void);
+
 #else
+
 #define NETMGR_STATS_ADD(x, y)
 #define NETMGR_STATS_INC(x)
+
+#define netstats_display(...)
+
 #endif
-#endif // __NETMGR_STATS_H__
