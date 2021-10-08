@@ -29,18 +29,6 @@
 #include "ble_manager_state.h"
 #include "ble_manager_log.h"
 
-/* This is a heuristic value. It can be customized following a system evn */
-#define SCAN_INFO_BUFFER_SIZE 100
-#define SCAN_WHITELIST_SIZE 10
-
-#define SCAN_WHITELIST_EMPTY 0
-#define SCAN_WHITELIST_IN_USE 1
-
-typedef struct {
-	uint8_t use;
-	trble_addr addr;
-} ble_scan_whitelist;
-
 static trble_scan_queue scan_queue[1] = { 0, };
 static volatile int g_run_process = 0;
 
@@ -296,6 +284,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		if (filter != NULL) {
 			memcpy(&(g_scan_ctx.filter), filter, sizeof(ble_scan_filter));
+		} else {
+			memset(&(g_scan_ctx.filter), 0, sizeof(ble_scan_filter));
+			filter = &(g_scan_ctx.filter);
+		}
+
+		if (filter->scan_duration > SCAN_MAX_TIMEOUT || filter->scan_duration == 0) {
+			filter->scan_duration = SCAN_MAX_TIMEOUT;
 		}
 
 		g_scan_ctx.state = BLE_SCAN_CHANGING;
@@ -408,6 +403,26 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 	} break;
 
+	case BLE_CMD_WHITELIST_LIST: {
+		BLE_STATE_CHECK;
+
+		int i;
+		uint16_t count = 0;
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		ble_addr *addr = (ble_addr *)param->param[0];
+		uint16_t size = *(uint16_t *)param->param[1];
+		for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
+			if (g_scan_whitelist[i].use == SCAN_WHITELIST_IN_USE) {
+				memcpy(&addr[count++], &g_scan_whitelist[i].addr, sizeof(ble_addr));
+			}
+			if (count >= size) {
+				break;
+			}
+		}
+		msg->ret.val = count;
+		ret = TRBLE_SUCCESS;
+	} break;
+
 	// Client
 	case BLE_CMD_CREATE_CTX: {
 		BLE_STATE_CHECK;
@@ -424,7 +439,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			}
 		}
 
-		msg->param = (void *)ctx;
+		msg->ret.ptr = (void *)ctx;
 		if (ctx == NULL) {
 			ret = TRBLE_NOT_FOUND;
 			break;
@@ -462,7 +477,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			break;
 		}
 
-		msg->param = (void *)(ctx->state);
+		msg->ret.val = ctx->state;
 		ret = TRBLE_SUCCESS;
 	} break;
 

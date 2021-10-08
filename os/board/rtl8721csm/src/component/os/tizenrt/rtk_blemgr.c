@@ -237,14 +237,7 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 /*** Scanner(Observer) ***/
 trble_result_e trble_netmgr_start_scan(struct bledev *dev, trble_scan_filter *filter)
 {
-	trble_result_e ret = TRBLE_FAIL;
-	if (filter == NULL) {
-		ret = rtw_ble_client_start_scan();
-	} else {
-		/* This will be enabled after setting whiltlist APIs in RTK layer */
-		// ret = rtw_ble_client_start_scan_with_filter(filter, filter->whitelist_enable);
-	}
-	return ret;
+	return rtw_ble_client_start_scan_with_filter(filter, filter->whitelist_enable);
 }
 
 trble_result_e trble_netmgr_stop_scan(struct bledev *dev)
@@ -254,17 +247,23 @@ trble_result_e trble_netmgr_stop_scan(struct bledev *dev)
 
 trble_result_e trble_netmgr_scan_whitelist_add(struct bledev *dev, trble_addr *addr)
 {
-	return TRBLE_UNSUPPORTED;
+	trble_addr t_addr[1] = { 0, };
+	memcpy(t_addr, addr, sizeof(trble_addr));
+	_reverse_mac(t_addr->mac);
+	return rtw_ble_client_scan_whitelist_add(t_addr);
 }
 
 trble_result_e trble_netmgr_scan_whitelist_delete(struct bledev *dev, trble_addr *addr)
 {
-	return TRBLE_UNSUPPORTED;
+	trble_addr t_addr[1] = { 0, };
+	memcpy(t_addr, addr, sizeof(trble_addr));
+	_reverse_mac(t_addr->mac);
+	return rtw_ble_client_scan_whitelist_delete(t_addr);
 }
 
 trble_result_e trble_netmgr_scan_whitelist_clear_all(struct bledev *dev)
 {
-	return TRBLE_UNSUPPORTED;
+	return rtw_ble_client_scan_whitelist_clear_all();
 }
 
 /*** Central(Client) ***/

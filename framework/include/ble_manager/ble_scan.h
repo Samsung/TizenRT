@@ -43,7 +43,7 @@ typedef struct {
 	uint8_t raw_data[BLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
 	bool whitelist_enable;
-	uint16_t scan_duration;
+	uint32_t scan_duration;
 } ble_scan_filter;
 
 typedef struct {
@@ -62,6 +62,19 @@ typedef struct {
 	void(*ble_client_device_scanned_cb)(ble_scanned_device* scanned_device);
 } ble_scan_callback_list;
 
+/* This is a heuristic value. It can be customized following a system evn */
+#define SCAN_INFO_BUFFER_SIZE 100
+#define SCAN_WHITELIST_SIZE 10
+#define SCAN_MAX_TIMEOUT (5 * 60 * 1000) /* 5 min (Unit : ms) */
+
+#define SCAN_WHITELIST_EMPTY 0
+#define SCAN_WHITELIST_IN_USE 1
+
+typedef struct {
+	uint8_t use;
+	ble_addr addr;
+} ble_scan_whitelist;
+
 /****************************************************************************
  * Name: ble_client_start_scan
  *
@@ -69,10 +82,10 @@ typedef struct {
  *   Start BLE adv scanning
  *
  * Input Parameters:
- *   filter    - If this value is NULL, start to scan for BLE adv till 
- *               'ble_client_stop_scan' is called.
+ *   filter    - If this value is NULL, all filters are disabled.
  *               To get specific BLE adv info, filter value should be filled
  *               with exact value.
+ *               If scan_ducation is zero, the scan timer will be set for SCAN_MAX_TIMEOUT.
  *   callbacks - The list of scan result callback.
  *
  * Returned Value
@@ -127,3 +140,19 @@ ble_result_e ble_scan_whitelist_delete(ble_addr *addr);
  *
  ****************************************************************************/
 ble_result_e ble_scan_whitelist_clear_all(void);
+
+/****************************************************************************
+ * Name: ble_scan_whitelist_list
+ *
+ * Input Parameters:
+ *   addr  - BLE Address Array. This must be pre-allocated.
+ *   size  - The size of pre-allocated memory.
+ *
+ * Description:
+ *   Show scan whitelist.
+ *
+ * Returned Value
+ *   The number of whitelist.
+ *
+ ****************************************************************************/
+uint16_t ble_scan_whitelist_list(ble_addr addr[], uint16_t size);

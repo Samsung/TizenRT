@@ -189,7 +189,7 @@ typedef struct {
 	uint8_t raw_data[TRBLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
 	bool whitelist_enable;
-	uint16_t scan_duration;
+	uint32_t scan_duration;
 } trble_scan_filter;
 
 typedef struct {
