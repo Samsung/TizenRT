@@ -24,6 +24,7 @@
 #include <gap.h>
 #include <gap_msg.h>
 #include <gap_bond_le.h>
+#include <gap_le.h>
 #include <ble_tizenrt_central_client_app.h>
 #include <ble_tizenrt_central_link_mgr.h>
 #include <user_cmd_parse.h>
@@ -36,6 +37,7 @@
 
 extern trble_client_init_config *client_init_parm; 
 extern uint8_t ble_client_connect_is_running;
+extern void *ble_tizenrt_modify_whitelist_sem;
 
 //uint16_t g_active_conn_num = 0;
 BLE_TIZENRT_APP_LINK ble_tizenrt_central_app_link_table[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS] = {0};
@@ -67,6 +69,7 @@ T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_central_read_results[BLE_TIZENRT_CENTRA
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
+extern uint8_t modify_whitelist_code;
 
 void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
@@ -99,16 +102,23 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
                 debug_print("\r\n[%s] DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X\r\n", __FUNCTION__, 
                             connected_dev->conn_info.addr.mac[5], connected_dev->conn_info.addr.mac[4], connected_dev->conn_info.addr.mac[3],
                             connected_dev->conn_info.addr.mac[2], connected_dev->conn_info.addr.mac[1], connected_dev->conn_info.addr.mac[0]);
-                uint32_t handle = (uint32_t) connected_dev->conn_handle;
                 if(!memcmp(ble_tizenrt_bond_req_info->addr, connected_dev->conn_info.addr.mac, GAP_BD_ADDR_LEN))
                 {
                     debug_print("\r\n[%s] find conn handle", __FUNCTION__);
-                    if(ble_tizenrt_bond_req_info->is_secured_connect && (ble_tizenrt_central_app_link_table[handle].auth_state != GAP_AUTHEN_STATE_COMPLETE))
+                    if(ble_tizenrt_bond_req_info->is_secured_connect && (ble_tizenrt_central_app_link_table[connected_dev->conn_handle].auth_state != GAP_AUTHEN_STATE_COMPLETE))
                     {
-                        debug_print("\r\n[%s] LL connected %d, need pairing", __FUNCTION__, connected_dev->conn_handle);
-                        if(ble_tizenrt_central_send_msg(BLE_TIZENRT_BOND, (void *) handle) == false)
+                        trble_conn_handle *conn_id = os_mem_alloc(0, sizeof(trble_conn_handle));
+                        if(conn_id == NULL)
                         {
-                            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                            debug_print("\r\n[%s] Memory allocation failed", __FUNCTION__);
+                        } else {
+                            *conn_id = (trble_conn_handle) connected_dev->conn_handle;
+                            debug_print("\r\n[%s] LL connected %d, need pairing", __FUNCTION__, connected_dev->conn_handle);
+                            if(ble_tizenrt_central_send_msg(BLE_TIZENRT_BOND, conn_id) == false)
+                            {
+                                os_mem_free(conn_id);
+                                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                            }
                         }
                         if(ble_client_connect_is_running)
                             ble_client_connect_is_running = 0;
@@ -162,6 +172,14 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
             debug_print("\r\n[%s] Handle disconnected msg", __FUNCTION__);
             if(ble_client_connect_is_running)
                 ble_client_connect_is_running = 0;
+
+            if(ble_tizenrt_read_sem != NULL)
+                os_mutex_give(ble_tizenrt_read_sem);
+            if(ble_tizenrt_write_sem != NULL)
+                os_mutex_give(ble_tizenrt_write_sem);
+            if(ble_tizenrt_write_no_rsp_sem != NULL)
+                os_mutex_give(ble_tizenrt_write_no_rsp_sem);
+
             trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
             client_init_parm->trble_device_disconnected_cb(disconnected);
         }
@@ -213,13 +231,19 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
 	switch (subtype) {
 		case BLE_TIZENRT_START_SCAN:
         {
-            uint8_t scan_filter_policy = GAP_SCAN_FILTER_ANY;
+            uint8_t scan_filter_policy = *((uint8_t *)pdata);
             uint8_t scan_filter_duplicate = GAP_SCAN_FILTER_DUPLICATE_DISABLE;
-            le_scan_set_param(GAP_PARAM_SCAN_FILTER_POLICY, sizeof(scan_filter_policy),
-		                      &scan_filter_policy);
-			le_scan_set_param(GAP_PARAM_SCAN_FILTER_DUPLICATES, sizeof(scan_filter_duplicate),
-		                      &scan_filter_duplicate);
-			ret = le_scan_start();
+
+            if(pdata)
+            {
+                le_scan_set_param(GAP_PARAM_SCAN_FILTER_POLICY, sizeof(scan_filter_policy),
+                                  &scan_filter_policy);
+                le_scan_set_param(GAP_PARAM_SCAN_FILTER_DUPLICATES, sizeof(scan_filter_duplicate),
+                                  &scan_filter_duplicate);
+                ret = le_scan_start();
+            } else {
+                debug_print("\n[%s] Scan parameter is NULL", __FUNCTION__);
+            }
         }
 			break;
 		case BLE_TIZENRT_STOP_SCAN:
@@ -258,7 +282,6 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
                     if(ble_client_connect_is_running)
                         ble_client_connect_is_running = 0;
                  }
-                os_mem_free(param);
             } else {
                 debug_print("\n[%s] Connect parameter is NULL", __FUNCTION__);
             }
@@ -266,18 +289,28 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
 			break;
 		case BLE_TIZENRT_DISCONNECT:
         {
-            uint8_t param = (uint32_t) pdata;
-            debug_print("\r\n[%s] disconn_id 0x%x", __FUNCTION__, param);
-            ret = le_disconnect(param);
-            if(ret)
-                printf("\r\n[%s] le_disconnect fail 0x%x ", __FUNCTION__, ret);
+            uint8_t param = *((uint8_t *)pdata);
+            if (pdata)
+            {
+                debug_print("\r\n[%s] disconn_id 0x%x", __FUNCTION__, param);
+                ret = le_disconnect(param);
+                if(ret)
+                    printf("\r\n[%s] le_disconnect fail 0x%x ", __FUNCTION__, ret);
+            } else {
+                debug_print("\n[%s] Disconnect parameter is NULL", __FUNCTION__);
+            }
         }
 			break;
         case BLE_TIZENRT_BOND:
         {
-            uint8_t param = (uint32_t) pdata;
-            debug_print("\r\n[%s] bond_id 0x%x", __FUNCTION__, param);
-            ret = le_bond_pair(param);
+            uint8_t param = *((uint8_t *)pdata);
+            if (pdata)
+            {
+                debug_print("\r\n[%s] bond_id 0x%x", __FUNCTION__, param);
+                ret = le_bond_pair(param);
+            } else {
+                debug_print("\n[%s] Bond parameter is NULL", __FUNCTION__);
+            }
         }
 			break;
         case BLE_TIZENRT_READ:
@@ -287,7 +320,6 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
             {
                 ret = gcs_attr_read(param->conn_id, param->att_handle);
                 debug_print("\r\n[%s] read_id 0x%x handle 0x%x ret 0x%x", __FUNCTION__, param->conn_id, param->att_handle, ret);
-                os_mem_free(param);
             } else {
                 debug_print("\n[%s] Read parameter is NULL", __FUNCTION__);
             }
@@ -304,7 +336,6 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
                 {
                     debug_print("0x%x", param->data[i]);
                 }
-                
                 ret = gcs_attr_write(param->conn_id, GATT_WRITE_TYPE_REQ, param->att_handle,
                                         param->length, param->data);
                 if(ret)
@@ -345,7 +376,6 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
                     printf("\r\n[upstream] Not found !");
                 else
                     printf("\r\n[upstream] delete bond success !");
-                os_mem_free(param);
             } else {
                 debug_print("\n[%s] Delete_bond parameter is NULL", __FUNCTION__);
             }
@@ -358,10 +388,28 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
             le_bond_clear_all_keys();
         }
 			break;
+        case BLE_TIZENRT_MODIFY_WHITELIST:
+        {
+            T_TIZENRT_MODIFY_WHITELIST_PARAM *param = pdata;
+            if(param)
+            {
+                debug_print("\r\n[%s] le_modify_white_list", __FUNCTION__);
+                ret = le_modify_white_list(param->type, param->remote_bd, param->remote_bd_type);
+                if(ret)
+                    printf("\r\n[%s] 0x%x le_modify_white_list fail  ", __FUNCTION__, ret);
+            } else {
+                debug_print("\n[%s] Modify_whitelist parameter is NULL", __FUNCTION__);
+            }
+        }
+            break;
 		default:
 			break;
 	}
-	return ret;
+
+    if(pdata)
+        os_mem_free(pdata);
+
+    return ret;
 }
 
 extern void *ble_tizenrt_central_evt_queue_handle; 
@@ -998,6 +1046,8 @@ T_APP_RESULT ble_tizenrt_central_app_gap_callback(uint8_t cb_type, void *p_cb_da
 		printf("\r\nGAP_MSG_LE_MODIFY_WHITE_LIST: operation  0x%x, cause 0x%x",
 			       p_data->p_le_modify_white_list_rsp->operation,
 				   p_data->p_le_modify_white_list_rsp->cause);
+        modify_whitelist_code = p_data->p_le_modify_white_list_rsp->cause;
+        os_mutex_give(ble_tizenrt_modify_whitelist_sem);
    		break;
     default:
         APP_PRINT_ERROR1("ble_tizenrt_central_app_gap_callback: unhandled cb_type 0x%x", cb_type);

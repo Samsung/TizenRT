@@ -155,6 +155,7 @@ extern uint32_t *scan_filter_tmr_handle;
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
+extern void *ble_tizenrt_modify_whitelist_sem;
 void ble_tizenrt_central_app_task_deinit(void)
 {
     if (ble_tizenrt_central_io_queue_handle) {
@@ -185,6 +186,9 @@ void ble_tizenrt_central_app_task_deinit(void)
     }
     if (ble_tizenrt_write_no_rsp_sem) {
         os_mutex_delete(ble_tizenrt_write_no_rsp_sem);
+    }
+    if (ble_tizenrt_modify_whitelist_sem) {
+        os_mutex_delete(ble_tizenrt_modify_whitelist_sem);
     }
 
     ble_tizenrt_central_io_queue_handle = NULL;
