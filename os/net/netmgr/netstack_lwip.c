@@ -38,13 +38,11 @@
 #include "lwip/sys.h"
 #include "lwip/netif.h"
 #include "lwip/ip_addr.h"
-#ifdef CONFIG_NET_NETMON
-#include "lwip/ip.h"
-#include "lwip/ip6.h"
 #include "lwip/udp.h"
 #include "lwip/tcp.h"
 #include "lwip/raw.h"
-#endif
+#include "lwip/ip.h"
+#include "lwip/ip6.h"
 
 #define TCP_STR "TCP"
 #define UDP_STR "UDP"
