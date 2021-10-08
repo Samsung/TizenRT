@@ -15,7 +15,7 @@ if SECURITY_LINK_DRV
 source "$FRAMEWORK_DIR/src/seclink/Kconfig"
 
 config SECURITY_LINK_DRV_PROFILE
-	bool "Display security driver performance""
+	bool "Display security driver performance"
 	depends on TIMER
 	default n
 	---help---
