@@ -69,7 +69,7 @@ static inline void _print_sock(char *buf)
 	NETCMD_LOG(NTAG, "%s\n", buf);
 	NETCMD_LOG(NTAG, "==============================================\n");
 }
-#ifdef CONFIG_NET_STATS
+
 /**
  * Print a externally used netdev information.
  */
@@ -83,7 +83,6 @@ static void _print_devstats(struct netmon_netdev_stats *stats)
 	NETCMD_LOG(NTAG, "==============================================\n");
 	return;
 }
-#endif /* CONFIG_NET_STATS */
 
 static inline int _print_wifi_info(void)
 {
@@ -113,7 +112,6 @@ int cmd_netmon(int argc, char **argv)
 	} else if (!(strncmp(argv[1], "wifi", strlen("wifi") + 1))) {
 		return _print_wifi_info();
 	} else {
-#ifdef CONFIG_NET_STATS
 		struct netmon_netdev_stats stats = {{0, }, 0, 0, 0, 0};
 		char *intf = NULL;
 		/* Get network interface stats if exists: SIOCGDEVSTATS */
@@ -127,9 +125,6 @@ int cmd_netmon(int argc, char **argv)
 			NETCMD_LOGE(NTAG, "No device interface %s\n", intf);
 			return ERROR;
 		}
-#else
-		NETCMD_LOGE(NTAG, "No such an option\n");
-#endif
 	}
 	return OK;
 }
