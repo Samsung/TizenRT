@@ -845,7 +845,6 @@ static int lwip_deinit_nic(struct netdev *dev)
 		kmm_free((void *)ni);
 	}
 	ND_NETOPS(dev, nic) = NULL;
-	//((struct netdev_ops *)(dev->ops))->nic = NULL;
 
 	return 0;
 }
@@ -853,6 +852,7 @@ static int lwip_deinit_nic(struct netdev *dev)
 #ifdef CONFIG_NET_NETMON
 static int lwip_get_stats(struct netdev *dev, struct netmon_netdev_stats *stats)
 {
+#ifdef CONFIG_NET_STATS
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	stats->devinpkts = ni->mib2_counters.ifinucastpkts +
 		ni->mib2_counters.ifinnucastpkts +
@@ -867,8 +867,10 @@ static int lwip_get_stats(struct netdev *dev, struct netmon_netdev_stats *stats)
 		ni->mib2_counters.ifouterrors;
 
 	stats->devoutoctets = ni->mib2_counters.ifoutoctets;
-
 	return 0;
+#else
+	return -ENOTTY;
+#endif
 }
 #endif
 
