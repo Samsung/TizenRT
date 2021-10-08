@@ -50,6 +50,9 @@ function pre_download()
 	if test -f "${BIN_PATH}/${CONFIG_COMMON_BINARY_NAME}"; then
 		cp -p ${BIN_PATH}/${CONFIG_COMMON_BINARY_NAME} ${IMG_TOOL_PATH}/${CONFIG_COMMON_BINARY_NAME}
 	fi
+	if test -f "${SMARTFS_BIN_PATH}"; then
+		cp -p ${BIN_PATH}/rtl8721csm_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
+	fi
 	cp -p ${BIN_PATH}/bootparam.bin ${IMG_TOOL_PATH}/bootparam.bin
 }
 
@@ -84,6 +87,9 @@ function post_download()
 	fi
 	if test -f "${CONFIG_COMMON_BINARY_NAME}"; then
 		[ -e ${CONFIG_COMMON_BINARY_NAME} ] && rm ${CONFIG_COMMON_BINARY_NAME}
+	fi
+	if test -f "${SMARTFS_BIN_PATH}"; then
+		[ -e ${CONFIG_ARCH_BOARD}_smartfs.bin ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin
 	fi
 	[ -e ${BOOTPARAM}.bin ] && rm ${BOOTPARAM}.bin
 }
