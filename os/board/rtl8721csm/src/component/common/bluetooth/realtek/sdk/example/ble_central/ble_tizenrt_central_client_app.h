@@ -121,6 +121,13 @@ typedef struct
   uint16_t scan_timeout;
 } T_TIZENRT_CONN_PARAM;
 
+typedef struct
+{
+  uint8_t remote_bd[GAP_BD_ADDR_LEN];
+  T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
+  uint8_t type;
+} T_TIZENRT_MODIFY_WHITELIST_PARAM;
+
 typedef enum
 {
 	BLE_TIZENRT_START_SCAN,
@@ -134,6 +141,7 @@ typedef enum
   BLE_TIZENRT_ENABLE_NOTIFY,
   BLE_TIZENRT_DELETE_BOND,
   BLE_TIZENRT_CLEAR_ALL_BONDS,
+  BLE_TIZENRT_MODIFY_WHITELIST,
   BLE_TIZENRT_CLIENT_MSG_MAX
 } BLE_TIZENRT_CLIENT_MSG_TYPE;
 
