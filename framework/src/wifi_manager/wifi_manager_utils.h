@@ -72,4 +72,6 @@
 
 wifi_manager_result_e wifimgr_convert2wifimgr_res(trwifi_result_e tres);
 trwifi_ap_auth_type_e wifimgr_convert2trwifi_auth(wifi_manager_ap_auth_type_e atype);
+wifi_manager_ap_auth_type_e wifimgr_convert2wifimgr_auth(trwifi_ap_auth_type_e atype);
 trwifi_ap_crypto_type_e wifimgr_convert2trwifi_crypto(wifi_manager_ap_crypto_type_e ctype);
+wifi_manager_ap_crypto_type_e wifimgr_convert2wifimgr_crypto(trwifi_ap_crypto_type_e ctype);

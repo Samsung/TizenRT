@@ -108,3 +108,61 @@ trwifi_ap_crypto_type_e wifimgr_convert2trwifi_crypto(wifi_manager_ap_crypto_typ
 	}
 	return TRWIFI_CRYPTO_UNKNOWN;
 }
+
+wifi_manager_ap_auth_type_e wifimgr_convert2wifimgr_auth(trwifi_ap_auth_type_e atype)
+{
+	switch (atype) {
+	case TRWIFI_AUTH_OPEN:
+		return WIFI_MANAGER_AUTH_OPEN;
+	case TRWIFI_AUTH_WEP_SHARED:
+		return WIFI_MANAGER_AUTH_WEP_SHARED;
+	case TRWIFI_AUTH_WPA_PSK:
+		return WIFI_MANAGER_AUTH_WPA_PSK;
+	case TRWIFI_AUTH_WPA2_PSK:
+		return WIFI_MANAGER_AUTH_WPA2_PSK;
+	case TRWIFI_AUTH_WPA3_PSK:
+		return WIFI_MANAGER_AUTH_WPA3_PSK;
+	case TRWIFI_AUTH_WPA_AND_WPA2_PSK:
+		return WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK;
+	case TRWIFI_AUTH_WPA_PSK_ENT:
+		return WIFI_MANAGER_AUTH_WPA_PSK_ENT;
+	case TRWIFI_AUTH_WPA2_PSK_ENT:
+		return WIFI_MANAGER_AUTH_WPA2_PSK_ENT;
+	case TRWIFI_AUTH_WPA_AND_WPA2_PSK_ENT:
+		return WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK_ENT;
+	case TRWIFI_AUTH_IBSS_OPEN:
+		return WIFI_MANAGER_AUTH_IBSS_OPEN;
+	case TRWIFI_AUTH_WPS:
+		return WIFI_MANAGER_AUTH_WPS;
+	case TRWIFI_AUTH_UNKNOWN:
+		return WIFI_MANAGER_AUTH_UNKNOWN;
+	}
+	return WIFI_MANAGER_AUTH_UNKNOWN;
+}
+
+wifi_manager_ap_crypto_type_e wifimgr_convert2wifimgr_crypto(trwifi_ap_crypto_type_e ctype)
+{
+	switch (ctype) {
+	case TRWIFI_CRYPTO_NONE:
+		return WIFI_MANAGER_CRYPTO_NONE;
+	case TRWIFI_CRYPTO_WEP_64:
+		return WIFI_MANAGER_CRYPTO_WEP_64;
+	case TRWIFI_CRYPTO_WEP_128:
+		return WIFI_MANAGER_CRYPTO_WEP_128;
+	case TRWIFI_CRYPTO_AES:
+		return WIFI_MANAGER_CRYPTO_AES;
+	case TRWIFI_CRYPTO_TKIP:
+		return WIFI_MANAGER_CRYPTO_TKIP;
+	case TRWIFI_CRYPTO_TKIP_AND_AES:
+		return WIFI_MANAGER_CRYPTO_TKIP_AND_AES;
+	case TRWIFI_CRYPTO_AES_ENT:
+		return WIFI_MANAGER_CRYPTO_AES_ENT;
+	case TRWIFI_CRYPTO_TKIP_ENT:
+		return WIFI_MANAGER_CRYPTO_TKIP_ENT;
+	case TRWIFI_CRYPTO_TKIP_AND_AES_ENT:
+		return WIFI_MANAGER_CRYPTO_TKIP_AND_AES_ENT;
+	case TRWIFI_CRYPTO_UNKNOWN:
+		return WIFI_MANAGER_CRYPTO_UNKNOWN;
+	}
+	return WIFI_MANAGER_CRYPTO_UNKNOWN;
+}

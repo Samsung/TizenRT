@@ -83,8 +83,8 @@ static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_sc
 		cur->rssi = iter->ap_info.rssi;
 		cur->channel = iter->ap_info.channel;
 		cur->phy_mode = iter->ap_info.phy_mode;
-		cur->ap_auth_type = iter->ap_info.ap_auth_type;
-		cur->ap_crypto_type = iter->ap_info.ap_crypto_type;
+		cur->ap_auth_type = wifimgr_convert2wifimgr_auth(iter->ap_info.ap_auth_type);
+		cur->ap_crypto_type = wifimgr_convert2wifimgr_crypto(iter->ap_info.ap_crypto_type);
 		strncpy(cur->ssid, (char *)iter->ap_info.ssid, WIFIMGR_SSID_LEN);
 		cur->ssid[WIFIMGR_SSID_LEN] = '\0';
 		strncpy(cur->bssid, (char *)iter->ap_info.bssid, WIFIMGR_MACADDR_STR_LEN);
