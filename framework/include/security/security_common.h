@@ -21,6 +21,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SECURITY_MAX_KEY_BUF          256
 #define SECURITY_MAX_CERT_BUF         2048
 #define SECURITY_MAX_SS_BUF           4096
@@ -203,5 +207,9 @@ security_error security_init(security_handle *hnd);
 security_error security_deinit(security_handle hnd);
 security_error security_free_data(security_data *data);
 security_error security_get_status(int *status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _SECURITY_API_COMMON_H__

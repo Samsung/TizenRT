@@ -20,6 +20,11 @@
 #define _SECURITY_API_CRYPTO_H__
 
 #include "security_common.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Crypto
  */
@@ -28,5 +33,9 @@ security_error crypto_aes_encryption(security_handle hnd, security_aes_param *pa
 security_error crypto_aes_decryption(security_handle hnd, security_aes_param *param, const char *key_name, security_data *input, security_data *output);
 security_error crypto_rsa_encryption(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *input, security_data *output);
 security_error crypto_rsa_decryption(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *input, security_data *output);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _SECURITY_API_CRYPTO_H__
