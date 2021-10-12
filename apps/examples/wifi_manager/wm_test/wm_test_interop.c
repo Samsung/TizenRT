@@ -543,6 +543,7 @@ static int _summary_result_on_file(void)
 
 	fclose(fp);
 	WT_LEAVE;
+	return 0;
 }
 
 static int _wm_interop_init(void)

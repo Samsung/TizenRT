@@ -82,7 +82,7 @@ struct netdev_ops {
 	/* statistics
 	 */
 #ifdef CONFIG_NET_NETMON
-	int (*get_stats)(struct netdev *dev, struct netmon_netdev_stats *stats);
+	int (*get_stats)(struct netdev *dev, void *arg);
 #endif
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 	int (*d_ioctl)(struct netdev *dev, int cmd, void *data);

@@ -70,10 +70,6 @@ NETDEV_CSRCS += netdev_lwip.c
 NETDEV_CSRCS += netstack_lwip.c
 endif # CONFIG_NET_LWIP
 
-ifeq ($(CONFIG_NET_NETMON) ,y)
-NETDEV_CSRCS += netmgr_ioctl_netmon.c
-endif
-
 ifeq ($(CONFIG_LWNL80211) ,y)
 NETDEV_CSRCS += netstack_lwnl.c
 endif

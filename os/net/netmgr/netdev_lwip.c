@@ -27,6 +27,7 @@
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
+#include <tinyara/netmgr/netctl.h>
 #include "lwip/opt.h"
 #include "lwip/netif.h"
 #include "lwip/ip_addr.h"
@@ -44,9 +45,9 @@
  */
 #ifdef CONFIG_NET_IPv6
 #define AF_INETX AF_INET6
-#else							/* CONFIG_NET_IPv6 */
+#else /* CONFIG_NET_IPv6 */
 #define AF_INETX AF_INET
-#endif							/* CONFIG_NET_IPv6 */
+#endif /* CONFIG_NET_IPv6 */
 #define LW_GETND(nic) (struct netdev *)(*(struct netdev **)(&((char *)nic)[sizeof(struct netif)]))
 #define GET_NETIF_FROM_NETDEV(dev) (struct netif *)(((struct netdev_ops *)(dev)->ops)->nic)
 #define TAG "[NETMGR]"
@@ -91,20 +92,19 @@ static inline void _convert_ip4addr_ntol(ip_addr_t *dest_addr, struct sockaddr_i
 }
 #endif
 
-
 #ifdef CONFIG_NET_IPv6
 static inline void _convert_ip6addr_lton(FAR struct sockaddr_in6 *outaddr, ip_addr_t *addr)
 {
 	ip6_addr_t *tmp = ip_2_ip6(addr);
 	NET_LOGV(TAG, "convert address lwip to netstack: %4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x\n",
-			   IP6_ADDR_BLOCK1(tmp),
-			   IP6_ADDR_BLOCK2(tmp),
-			   IP6_ADDR_BLOCK3(tmp),
-			   IP6_ADDR_BLOCK4(tmp),
-			   IP6_ADDR_BLOCK5(tmp),
-			   IP6_ADDR_BLOCK6(tmp),
-			   IP6_ADDR_BLOCK7(tmp),
-			   IP6_ADDR_BLOCK8(tmp));
+			 IP6_ADDR_BLOCK1(tmp),
+			 IP6_ADDR_BLOCK2(tmp),
+			 IP6_ADDR_BLOCK3(tmp),
+			 IP6_ADDR_BLOCK4(tmp),
+			 IP6_ADDR_BLOCK5(tmp),
+			 IP6_ADDR_BLOCK6(tmp),
+			 IP6_ADDR_BLOCK7(tmp),
+			 IP6_ADDR_BLOCK8(tmp));
 
 	outaddr->sin6_family = AF_INET6;
 	outaddr->sin6_port = 0;
@@ -138,8 +138,8 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 		ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
 		mld6_leavegroup_netif(dev, &solicit_addr);
 		NET_LOGV(TAG, "MLD6 group left - %X : %X : %X : %X\n",
-			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
-			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+				 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+				 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
 		/* delete static ipv6 address if the same ip address exists */
 		netif_ip6_addr_set_state(dev, idx, IP6_ADDR_INVALID);
@@ -161,8 +161,8 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
 	mld6_joingroup_netif(dev, &solicit_addr);
 	NET_LOGV(TAG, "MLD6 group added - %X : %X : %X : %X\n",
-		 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
-		 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
 
 	return;
@@ -186,7 +186,7 @@ static err_t _netif_loop_output_ipv4(struct netif *netif, struct pbuf *p, const 
 	LWIP_UNUSED_ARG(addr);
 	return netif_loop_output(netif, p);
 }
-#endif							/* LWIP_IPV4 */
+#endif /* LWIP_IPV4 */
 
 #if LWIP_IPV6
 static err_t _netif_loop_output_ipv6(struct netif *netif, struct pbuf *p, const ip6_addr_t *addr)
@@ -194,8 +194,8 @@ static err_t _netif_loop_output_ipv6(struct netif *netif, struct pbuf *p, const 
 	LWIP_UNUSED_ARG(addr);
 	return netif_loop_output(netif, p);
 }
-#endif							/* LWIP_IPV6 */
-#endif							/* LWIP_HAVE_LOOPIF */
+#endif /* LWIP_IPV6 */
+#endif /* LWIP_HAVE_LOOPIF */
 
 static err_t _netif_loopif_init(struct netif *netif)
 {
@@ -231,24 +231,24 @@ static void _lwip_init_loop(struct netif *nic)
 	IP4_ADDR(&loop_gw, 127, 0, 0, 1);
 	IP4_ADDR(&loop_ipaddr, 127, 0, 0, 1);
 	IP4_ADDR(&loop_netmask, 255, 0, 0, 0);
-#else							/* LWIP_IPV4 */
+#else /* LWIP_IPV4 */
 #define LOOPIF_ADDRINIT
-#endif							/* LWIP_IPV4 */
+#endif /* LWIP_IPV4 */
 
 #if NO_SYS
 	netif_add(nic, LOOPIF_ADDRINIT NULL, _netif_loopif_init, ip_input);
-#else							/* NO_SYS */
+#else  /* NO_SYS */
 	netif_add(nic, LOOPIF_ADDRINIT NULL, _netif_loopif_init, tcpip_input);
-#endif							/* NO_SYS */
+#endif /* NO_SYS */
 
 #if LWIP_IPV6
 	IP_ADDR6_HOST(nic->ip6_addr, 0, 0, 0, 0x00000001UL);
 	nic->ip6_addr_state[0] = IP6_ADDR_VALID;
-#endif							/* LWIP_IPV6 */
+#endif /* LWIP_IPV6 */
 
 	netif_set_link_up(nic);
 	netif_set_up(nic);
-#endif							/* LWIP_HAVE_LOOPIF */
+#endif /* LWIP_HAVE_LOOPIF */
 }
 
 static inline void _free_ifaddrs(struct ifaddrs *addrs)
@@ -318,8 +318,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 		} else {
 			LINK_STATS_INC(link.recv);
 		}
-	}
-	break;
+	} break;
 	default:
 		LWIP_DEBUGF(NETIF_DEBUG, ("not supported ethernet type error\n"));
 		NET_LOGE(TAG, "not supported ethernet type\n");
@@ -398,8 +397,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 		} else {
 			LINK_STATS_INC(link.recv);
 		}
-	}
-	break;
+	} break;
 	default:
 		pbuf_free(p);
 		p = NULL;
@@ -416,7 +414,7 @@ static err_t lwip_set_multicast_list(struct netif *nic, const ip4_addr_t *group,
 	struct in_addr addr;
 	addr.s_addr = group->addr;
 	int res = ND_NETOPS(dev, igmp_mac_filter)(dev, &addr,
-											(action == NETIF_DEL_MAC_FILTER) ? NM_DEL_MAC_FILTER : NM_ADD_MAC_FILTER);
+											  (action == NETIF_DEL_MAC_FILTER) ? NM_DEL_MAC_FILTER : NM_ADD_MAC_FILTER);
 	if (res < 0) {
 		NET_LOGE(TAG, "set igmp mac filter\n");
 		return ERR_IF;
@@ -469,7 +467,7 @@ static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 
 	return 0;
 }
-#else /*  CONFIG_NET_IPv4 */
+#else  /*  CONFIG_NET_IPv4 */
 static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
 	NET_LOGV(TAG, "IPv4 not supported\n");
@@ -520,7 +518,7 @@ static int lwip_set_ip6addr_type(struct netdev *dev, uint8_t type)
 	return 0;
 }
 
-#else /* CONFIG_NET_IPv6 */
+#else  /* CONFIG_NET_IPv6 */
 static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, int type)
 {
 	NET_LOGV(TAG, "IPv6 not supported\n");
@@ -702,10 +700,10 @@ static int lwip_softup(struct netdev *dev)
 	/* To auto-config linklocal address, ni should have mac address already */
 	netif_create_ip6_linklocal_address(ni);
 	NET_LOGV(TAG, "generated IPV6 linklocal address - %X : %X : %X : %X\n",
-		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[0]),
-		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[1]),
-		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[2]),
-		 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[3]));
+			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[0]),
+			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[1]),
+			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[2]),
+			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[3]));
 #ifdef CONFIG_NET_IPv6_MLD
 	ip6_addr_t solicit_addr;
 
@@ -713,8 +711,8 @@ static int lwip_softup(struct netdev *dev)
 	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&ni->ip6_addr[0])->addr[3]);
 	mld6_joingroup_netif(ni, &solicit_addr);
 	NET_LOGV(TAG, "MLD6 group added - %X : %X : %X : %X\n",
-		 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
-		 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
 #endif /* CONFIG_NET_IPv6 */
 	return 0;
@@ -850,23 +848,39 @@ static int lwip_deinit_nic(struct netdev *dev)
 }
 
 #ifdef CONFIG_NET_NETMON
-static int lwip_get_stats(struct netdev *dev, struct netmon_netdev_stats *stats)
+static int lwip_get_stats(struct netdev *dev, void *arg)
 {
 #ifdef CONFIG_NET_STATS
+	struct lwip_netmon_msg *msg = (struct lwip_netmon_msg *)arg;
+	netmgr_logger_p logger;
+	char *buf;
+	int res = netlogger_init(&logger);
+	if (res != 0) {
+		return -ENOTTY;
+	}
+
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
-	stats->devinpkts = ni->mib2_counters.ifinucastpkts +
-		ni->mib2_counters.ifinnucastpkts +
-		ni->mib2_counters.ifindiscards +
-		ni->mib2_counters.ifinerrors +
-		ni->mib2_counters.ifinunknownprotos;
+	u32_t devinpkts = ni->mib2_counters.ifinucastpkts +
+					  ni->mib2_counters.ifinnucastpkts +
+					  ni->mib2_counters.ifindiscards +
+					  ni->mib2_counters.ifinerrors +
+					  ni->mib2_counters.ifinunknownprotos;
 
-	stats->devinoctets = ni->mib2_counters.ifinoctets;
-	stats->devoutpkts = ni->mib2_counters.ifoutucastpkts +
-		ni->mib2_counters.ifoutnucastpkts +
-		ni->mib2_counters.ifoutdiscards +
-		ni->mib2_counters.ifouterrors;
+	u32_t devinoctets = ni->mib2_counters.ifinoctets;
+	u32_t devoutpkts = ni->mib2_counters.ifoutucastpkts +
+					   ni->mib2_counters.ifoutnucastpkts +
+					   ni->mib2_counters.ifoutdiscards +
+					   ni->mib2_counters.ifouterrors;
 
-	stats->devoutoctets = ni->mib2_counters.ifoutoctets;
+	u32_t devoutoctets = ni->mib2_counters.ifoutoctets;
+
+	netlogger_debug_msg(logger, "inpkts\tinoctets\toutpkts\toutoctests\n");
+	netlogger_debug_msg(logger, "%u\t%u\t%u\t%u\n",
+						devinpkts, devinoctets, devoutpkts, devoutoctets);
+	netlogger_serialize(logger, &buf);
+	netlogger_deinit(logger);
+	msg->info = buf;
+
 	return 0;
 #else
 	return -ENOTTY;

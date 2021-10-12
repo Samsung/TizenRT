@@ -73,13 +73,10 @@ static inline void _print_sock(char *buf)
 /**
  * Print a externally used netdev information.
  */
-static void _print_devstats(struct netmon_netdev_stats *stats)
+static void _print_devstats(char *buf)
 {
 	NETCMD_LOG(NTAG, "\n==============================================\n");
-	NETCMD_LOG(NTAG, "IFNAME    RXbyte    RXPKT    TXbyte    TXPKT\n");
-	NETCMD_LOG(NTAG, "----------------------------------------------\n");
-	NETCMD_LOG(NTAG, "%-10s%-10d%-9d", stats->devname, stats->devinoctets, stats->devinpkts);
-	NETCMD_LOG(NTAG, "%-10d%-9d\n", stats->devoutoctets, stats->devoutpkts);
+	NETCMD_LOG(NTAG, "%s", buf);
 	NETCMD_LOG(NTAG, "==============================================\n");
 	return;
 }
@@ -101,28 +98,25 @@ int cmd_netmon(int argc, char **argv)
 		_print_help();
 	} else if (!(strncmp(argv[1], "sock", strlen("sock") + 1))) {
 		/* Get socket information: SIOCGETSOCK */
-		struct netmon_sock info = {NULL};
-		ret = netlib_netmon_sock(&info);
+		char *buf = NULL;
+		ret = netlib_netmon_sock(buf);
 		if (ret != 0) {
 			NETCMD_LOGE(NTAG, "Failed to fetch socket info.\n");
 		} else {
-			_print_sock(info.sock_info);
-			free(info.sock_info);
+			_print_sock(buf);
+			free(buf);
 		}
 	} else if (!(strncmp(argv[1], "wifi", strlen("wifi") + 1))) {
 		return _print_wifi_info();
+	} else if (!(strncmp(argv[1], "netstats", strlen("netstats") + 1))) {
+		return -1;
 	} else {
-		struct netmon_netdev_stats stats = {{0, }, 0, 0, 0, 0};
-		char *intf = NULL;
-		/* Get network interface stats if exists: SIOCGDEVSTATS */
-		intf = argv[1];
-		strncpy(stats.devname, intf, IFNAMSIZ);
-		stats.devname[IFNAMSIZ] = '\0';
-		ret = netlib_netmon_devstats(&stats);
+		char *buf = NULL;
+		ret = netlib_netmon_devstats(argv[1], buf);
 		if (!ret) {
-			_print_devstats(&stats);
+			_print_devstats(buf);
 		} else {
-			NETCMD_LOGE(NTAG, "No device interface %s\n", intf);
+			NETCMD_LOGE(NTAG, "No device interface %s\n", argv[1]);
 			return ERROR;
 		}
 	}

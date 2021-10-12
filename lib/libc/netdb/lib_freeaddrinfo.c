@@ -26,6 +26,7 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
+#include <tinyara/netmgr/netctl.h>
 
 /****************************************************************************
  * Public Functions
@@ -66,7 +67,7 @@ void freeaddrinfo(FAR struct addrinfo *ai)
 
 	memset(&req, 0, sizeof(req));
 	req.type = FREEADDRINFO;
-	req.ai = ai;
+	req.msg.netdb.ai_res = ai;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {

@@ -73,6 +73,7 @@
 #include <netdb.h>
 #include <debug.h>				/* For ndbg, vdbg */
 #include <tinyara/compiler.h>	/* For CONFIG_CPP_HAVE_WARNING */
+#include <tinyara/netmgr/netctl.h>
 #include <protocols/dhcpd.h>	/* Advertised DHCPD APIs */
 #include <netutils/netlib.h>
 
@@ -234,7 +235,7 @@ void *_dhcpd_join_handler(void *arg)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPDSTART;
-	req.intf = data->intf;
+	req.msg.dhcp.intf = data->intf;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
@@ -290,7 +291,7 @@ int dhcp_server_status(char *intf)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPDSTATUS;
-	req.intf = intf;
+	req.msg.dhcp.intf = intf;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
@@ -369,7 +370,7 @@ int dhcp_server_stop(char *intf)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPDSTOP;
-	req.intf = intf;
+	req.msg.dhcp.intf = intf;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
