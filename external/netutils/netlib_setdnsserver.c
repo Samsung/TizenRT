@@ -51,9 +51,9 @@
  *   EBADF
  *     'fd' is not a valid descriptor.
  *   EFAULT
- *     'arg' references an inaccessible memory area.
+ *     'addr' references an inaccessible memory area.
  *   EINVAL
- *     'cmd' or 'arg' is not valid.
+ *     'addr' or 'index' is not valid.
  *   ENOTTY
  *     'fd' is not associated with a character special device.
  *   ENOTTY
@@ -67,6 +67,9 @@
 
 int netlib_setdnsserver(struct sockaddr *addr, int index)
 {
+	if (!addr) {
+		return -1;
+	}
 	int ret = -1;
 	struct req_lwip_data req;
 

@@ -1045,7 +1045,6 @@
 /* ---------- Debug options ---------- */
 
 /* ---------- Stat options ---------- */
-
 #ifdef CONFIG_NET_STATS
 #define LWIP_STATS	CONFIG_NET_STATS
 #endif
@@ -1093,7 +1092,7 @@
 #ifdef CONFIG_NET_UDP_STATS
 #define UDP_STATS	CONFIG_NET_UDP_STATS
 #else
-#define IGMP_STATS
+#define UDP_STATS 0
 #endif
 
 #ifdef CONFIG_NET_TCP_STATS

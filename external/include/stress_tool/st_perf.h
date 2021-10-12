@@ -38,6 +38,7 @@
 #define ST_ELOG printf
 #endif
 
+#define ST_NO_TIMELIMIT 0
 /*
  * Initializer Macro
  */

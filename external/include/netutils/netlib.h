@@ -154,7 +154,7 @@ void netlib_freeifaddrs(struct ifaddrs *ifa);
 
 #ifdef CONFIG_NET_NETMON
 int netlib_netmon_sock(void *arg);
-int netlib_netmon_devstats(const char *ifname, void *arg);
+int netlib_netmon_devstats(const char *ifname, void **arg);
 #endif
 
 /* HTTP support */
