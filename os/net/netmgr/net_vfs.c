@@ -161,8 +161,6 @@ int net_poll(int sd, struct pollfd *fds, bool setup)
  ****************************************************************************/
 extern int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *imsf);
 extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
-extern int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg);
-
 
 int net_ioctl(int sd, int cmd, unsigned long arg)
 {
@@ -195,12 +193,6 @@ int net_ioctl(int sd, int cmd, unsigned long arg)
 	if (ret == -ENOTTY) {
 		ret = netdev_ifrioctl(NULL, cmd, (FAR struct ifreq *)((uintptr_t)arg));
 	}
-
-#ifdef CONFIG_NET_NETMON
-	if (ret == -ENOTTY) {
-		ret = netdev_nmioctl(NULL, cmd, (void *)((uintptr_t)arg));
-	}
-#endif                          /* CONFIG_NET_NETMON */
 #ifdef CONFIG_NET_IGMP
 	if (ret == -ENOTTY) {
 		ret = netdev_imsfioctl(NULL, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));

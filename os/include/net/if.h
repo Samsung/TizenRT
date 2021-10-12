@@ -244,22 +244,6 @@ struct ifconf {
 #define ifc_buf	ifc_ifcu.ifcu_buf	/* Buffer address.  */
 #define ifc_req	ifc_ifcu.ifcu_req	/* Array of structures.  */
 
-#ifdef CONFIG_NET_NETMON
-/* Socket info. */
-struct netmon_sock {
-	char *sock_info; /*  contains socket information string */
-};
-#ifdef CONFIG_NET_STATS
-/* Netdev info. */
-struct netmon_netdev_stats {
-	char devname[IFNAMSIZ + 1];
-	u32_t devinpkts;
-	u32_t devinoctets;
-	u32_t devoutpkts;
-	u32_t devoutoctets;
-};
-#endif								/* CONFIG_NET_STATS */
-#endif                              /* CONFIG_NET_NETMON */
 /*******************************************************************************************
  * Public Function Prototypes
  *******************************************************************************************/

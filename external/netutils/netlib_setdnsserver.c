@@ -26,6 +26,7 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
+#include <tinyara/netmgr/netctl.h>
 #include <tinyara/net/netlog.h>
 
 #define TAG "[NETLIB]"
@@ -77,8 +78,8 @@ int netlib_setdnsserver(struct sockaddr *addr, int index)
 
 	memset(&req, 0, sizeof(req));
 	req.type = DNSSETSERVER;
-	req.addr = addr;
-	req.index = index;
+	req.msg.dns.addr = addr;
+	req.msg.dns.index = index;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	close(sockfd);

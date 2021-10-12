@@ -30,6 +30,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/mqueue.h>
 #include <tinyara/net/net.h>
+#include <tinyara/netmgr/netctl.h>
 #include "netstack.h"
 #include "lwip/sockets.h"
 #include "lwip/opt.h"
@@ -718,7 +719,7 @@ static int lwip_ns_getstats(void *arg)
 	if (!arg) {
 		return -EINVAL;
 	}
-	struct netmon_sock *info = (struct netmon_sock *)arg;
+	struct lwip_netmon_msg *msg = (struct lwip_netmon_msg *)arg;
 	netmgr_logger_p logger;
 	char *buf;
 	int res = netlogger_init(&logger);
@@ -728,7 +729,7 @@ static int lwip_ns_getstats(void *arg)
 	sched_foreach(_netmon_handler, (void *)logger);
 	netlogger_serialize(logger, &buf);
 	netlogger_deinit(logger);
-	info->sock_info = buf;
+	msg->info = buf;
 
 	return 0;
 }

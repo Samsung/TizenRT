@@ -29,7 +29,9 @@
 #include <net/if.h>
 #include "netdev_mgr_internal.h"
 #include "netdev_stats.h"
+#include "netstack.h"
 #include <tinyara/net/netlog.h>
+#include <tinyara/netmgr/netctl.h>
 #include "lwip/opt.h"
 #include "lwip/netif.h"
 #include "lwip/netdb.h"
@@ -337,32 +339,34 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 	switch (req->type) {
 #if LWIP_DNS
 	case GETADDRINFO:
-		req->req_res = lwip_getaddrinfo(req->host_name, req->serv_name, req->ai_hint, &res);
+		req->req_res = lwip_getaddrinfo(req->msg.netdb.host_name,
+										req->msg.netdb.serv_name,
+										req->msg.netdb.ai_hint, &res);
 		if (req->req_res != 0) {
 			NET_LOGE(TAG, "lwip_getaddrinfo() returned with the error code: %d\n", ret);
-			req->ai_res = NULL;
+			req->msg.netdb.ai_res = NULL;
 			ret = -EINVAL;
 		} else {
-			req->ai_res = _netdev_copy_addrinfo(res);
+			req->msg.netdb.ai_res = _netdev_copy_addrinfo(res);
 			lwip_freeaddrinfo(res);
 			ret = OK;
 		}
 		break;
 	case FREEADDRINFO:
-		req->req_res = _netdev_free_addrinfo(req->ai);
+		req->req_res = _netdev_free_addrinfo(req->msg.netdb.ai_res);
 		ret = OK;
 		break;
 	case DNSSETSERVER:
-		req->req_res = _netdev_set_dnsserver(req->addr, req->index);
+		req->req_res = _netdev_set_dnsserver(req->msg.dns.addr, req->msg.dns.index);
 		ret = OK;
 		break;
 	case GETHOSTBYNAME:
-		host_ent = lwip_gethostbyname(req->host_name);
+		host_ent = lwip_gethostbyname(req->msg.netdb.host_name);
 		if (!host_ent) {
 			NET_LOGE(TAG, "lwip_gethostbyname() returned with the error code: %d\n", HOST_NOT_FOUND);
 			ret = -EINVAL;
 		} else {
-			user_ent = req->host_entry;
+			user_ent = req->msg.netdb.host_entry;
 			strncpy(user_ent->h_name, host_ent->h_name, DNS_MAX_NAME_LENGTH);
 			user_ent->h_name[DNS_MAX_NAME_LENGTH] = 0;
 			memcpy(user_ent->h_addr_list[0], host_ent->h_addr_list[0], sizeof(struct in_addr));
@@ -373,7 +377,13 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 		}
 		break;
 	case GETNAMEINFO:
-		req->req_res = lwip_getnameinfo(req->sa, req->sa_len, (char *)req->host_name, req->host_len, (char *)req->serv_name, req->serv_len, req->flags);
+		req->req_res = lwip_getnameinfo(req->msg.netdb.sa,
+										req->msg.netdb.sa_len,
+										(char *)req->msg.netdb.host_name,
+										req->msg.netdb.host_len,
+										(char *)req->msg.netdb.serv_name,
+										req->msg.netdb.serv_len,
+										req->msg.netdb.flags);
 		if (req->req_res != 0) {
 			NET_LOGE(TAG, "lwip_getnameinfo() returned with the error code: %d\n", ret);
 			ret = -EINVAL;
@@ -386,7 +396,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 #if defined(CONFIG_NET_LWIP_DHCP)
 #if defined(CONFIG_LWIP_DHCPC)
 	case DHCPCSTART:
-		req->req_res = _netdev_dhcpc_start((const char *)req->intf);
+		req->req_res = _netdev_dhcpc_start((const char *)req->msg.dhcp.intf);
 		if (req->req_res != OK) {
 			NET_LOGE(TAG, "Start DHCP clent failed\n");
 			goto errout;
@@ -394,7 +404,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 		ret = OK;
 		break;
 	case DHCPCSTOP:
-		req->req_res = _netdev_dhcpc_stop((const char *)req->intf);
+		req->req_res = _netdev_dhcpc_stop((const char *)req->msg.dhcp.intf);
 		if (req->req_res != OK) {
 			NET_LOGE(TAG, "Stop DHCP client failed\n");
 			goto errout;
@@ -405,7 +415,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 
 #if defined(CONFIG_LWIP_DHCPS)
 	case DHCPDSTART: {
-		struct netif *cnif = _netdev_dhcp_dev((const char *)req->intf);
+		struct netif *cnif = _netdev_dhcp_dev((const char *)req->msg.dhcp.intf);
 		if (cnif == NULL) {
 			NET_LOGE(TAG, "No network interface for dhcpd start\n");
 			req->req_res = ERROR;
@@ -426,7 +436,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 		break;
 	}
 	case DHCPDSTOP: {
-		struct netif *cnif = _netdev_dhcp_dev((const char *)req->intf);
+		struct netif *cnif = _netdev_dhcp_dev((const char *)req->msg.dhcp.intf);
 		if (cnif == NULL) {
 			NET_LOGE(TAG, "No network interface for dhcpd stop\n");
 			req->req_res = ERROR;
@@ -444,7 +454,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 		break;
 	}
 	case DHCPDSTATUS: {
-		struct netif *cnif = _netdev_dhcp_dev((const char *)req->intf);
+		struct netif *cnif = _netdev_dhcp_dev((const char *)req->msg.dhcp.intf);
 		if (cnif == NULL) {
 			NET_LOGE(TAG, "No network interface for dhcpd status\n");
 			req->req_res = ERROR;
@@ -466,6 +476,27 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 		stats_display();
 		netstats_display();
 		ret = OK;
+		break;
+	}
+	case GETSOCKINFO: {
+		struct lwip_netmon_msg *msg = &(((struct req_lwip_data *)arg)->msg.netmon);
+		struct netstack *st = get_netstack(TR_SOCKET);
+		if (!st) {
+			return -1;
+		}
+		req->req_res = st->ops->getstats((void *)msg);
+		ret = OK;
+		break;
+	}
+	case GETDEVSTATS: {
+		struct lwip_netmon_msg *msg = &(((struct req_lwip_data *)arg)->msg.netmon);
+		struct netdev *dev = nm_get_netdev((uint8_t *)msg->ifname);
+		if (!dev) {
+			ret = -ENOTTY;
+		} else {
+			req->req_res = ((struct netdev_ops *)(dev->ops))->get_stats(dev, (void *)msg);
+			ret = OK;
+		}
 		break;
 	}
 	default:
