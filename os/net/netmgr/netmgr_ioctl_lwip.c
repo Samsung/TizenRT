@@ -15,7 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
 #include <errno.h>
@@ -339,17 +338,16 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 	switch (req->type) {
 #if LWIP_DNS
 	case GETADDRINFO:
+		ret = OK; /*  req->req_res stores return value. So doesn't need to set ret */
 		req->req_res = lwip_getaddrinfo(req->msg.netdb.host_name,
 										req->msg.netdb.serv_name,
 										req->msg.netdb.ai_hint, &res);
 		if (req->req_res != 0) {
 			NET_LOGE(TAG, "lwip_getaddrinfo() returned with the error code: %d\n", ret);
 			req->msg.netdb.ai_res = NULL;
-			ret = -EINVAL;
 		} else {
 			req->msg.netdb.ai_res = _netdev_copy_addrinfo(res);
 			lwip_freeaddrinfo(res);
-			ret = OK;
 		}
 		break;
 	case FREEADDRINFO:

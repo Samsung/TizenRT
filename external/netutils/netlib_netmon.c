@@ -22,16 +22,19 @@
 
 #include <tinyara/config.h>
 #if defined(CONFIG_NET) && (CONFIG_NSOCKET_DESCRIPTORS > 0)
+
+#include <errno.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <string.h>
-#include <errno.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <tinyara/netmgr/netctl.h>
 #include <netutils/netlib.h>
 #include <tinyara/net/netlog.h>
+
+#define TAG "[NETLIB]"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -59,7 +62,7 @@ int netlib_netmon_sock(void *arg)
 	struct req_lwip_data req;
 	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
 	if (sockfd == -1) {
-		NET_LOGE("socket() failed with errno: %d\n", errno);
+		NET_LOGE(TAG, "socket() failed with errno: %d\n", errno);
 		return -1;
 	}
 
@@ -69,7 +72,7 @@ int netlib_netmon_sock(void *arg)
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	close(sockfd);
 	if (ret == ERROR) {
-		NET_LOGE("ioctl() failed with errno: %d\n", errno);
+		NET_LOGE(TAG, "ioctl() failed with errno: %d\n", errno);
 		return -1;
 	}
 	arg = (void *)req.msg.netmon.info;
@@ -93,7 +96,7 @@ int netlib_netmon_sock(void *arg)
  *
  ****************************************************************************/
 
-int netlib_netmon_devstats(const char *ifname, void *arg)
+int netlib_netmon_devstats(const char *ifname, void **arg)
 {
 	if (ifname == NULL || arg == NULL) {
 		return -1;
@@ -102,7 +105,7 @@ int netlib_netmon_devstats(const char *ifname, void *arg)
 	struct req_lwip_data req;
 	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
 	if (sockfd == -1) {
-		NET_LOGE("socket() failed with errno: %d\n", errno);
+		NET_LOGE(TAG, "socket() failed with errno: %d\n", errno);
 		return -1;
 	}
 
@@ -113,10 +116,13 @@ int netlib_netmon_devstats(const char *ifname, void *arg)
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	close(sockfd);
 	if (ret == ERROR) {
-		NET_LOGE("ioctl() failed with errno: %d\n", errno);
+		NET_LOGE(TAG, "ioctl() failed with errno: %d\n", errno);
 		return -1;
 	}
-	arg = (void *)req.msg.netmon.info;
+	ret = req.req_res;
+	if (ret == 0) {
+		*arg = (void *)req.msg.netmon.info;
+	}
 	return req.req_res;
 }
 #endif /* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */

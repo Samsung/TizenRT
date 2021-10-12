@@ -60,7 +60,6 @@
 /****************************************************************************
  * Name: getaddrinfo
  ****************************************************************************/
-#ifdef CONFIG_NET_LWIP_NETDB
 int getaddrinfo(FAR const char *hostname,
 				FAR const char *servname,
 				FAR const struct addrinfo *hint,
@@ -83,15 +82,15 @@ int getaddrinfo(FAR const char *hostname,
 	req.msg.netdb.ai_res = NULL;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+	close(sockfd);
 	if (ret == ERROR) {
 		printf("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
 		return ret;
 	}
 
 	ret = req.req_res;
-	*res = (struct addrinfo *)req.msg.netdb.ai_res;
-	close(sockfd);
+	if (ret == 0) {
+		*res = (struct addrinfo *)req.msg.netdb.ai_res;
+	}
 	return ret;
 }
-#endif

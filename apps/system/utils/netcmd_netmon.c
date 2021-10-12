@@ -100,11 +100,11 @@ int cmd_netmon(int argc, char **argv)
 		/* Get socket information: SIOCGETSOCK */
 		char *buf = NULL;
 		ret = netlib_netmon_sock(buf);
-		if (ret != 0) {
-			NETCMD_LOGE(NTAG, "Failed to fetch socket info.\n");
-		} else {
+		if (!ret) {
 			_print_sock(buf);
 			free(buf);
+		} else {
+			NETCMD_LOGE(NTAG, "Failed to fetch socket info.\n");
 		}
 	} else if (!(strncmp(argv[1], "wifi", strlen("wifi") + 1))) {
 		return _print_wifi_info();
@@ -112,9 +112,10 @@ int cmd_netmon(int argc, char **argv)
 		return -1;
 	} else {
 		char *buf = NULL;
-		ret = netlib_netmon_devstats(argv[1], buf);
+		ret = netlib_netmon_devstats(argv[1], (void **)&buf);
 		if (!ret) {
 			_print_devstats(buf);
+			free(buf);
 		} else {
 			NETCMD_LOGE(NTAG, "No device interface %s\n", argv[1]);
 			return ERROR;

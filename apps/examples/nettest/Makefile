@@ -63,7 +63,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # transport layer (TCP / UDP) / IP multicast functionality test example
 
 ASRCS =
-CSRCS = nettest_stress.c
+CSRCS = nettest_stress.c test_main.c
 MAINSRC = nettest.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

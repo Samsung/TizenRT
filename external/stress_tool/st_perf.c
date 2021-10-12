@@ -175,10 +175,10 @@ void _print_performance(st_performance *perf)
 	st_performance_stat *p = &perf->stat;
 	if (p->result == STRESS_TC_PASS) {
 		printf("             %-11d%-8d%-8d%-8d%-8d:SUCCESS\n",
-			   p->count, p->max/1000, p->min/1000, p->sum/1000, p->fail);
+			   p->count, p->max / 1000, p->min / 1000, p->sum / 1000, p->fail);
 	} else {
 		printf("             %-11d%-8d%-8d%-8d%-8d:FAILURE\n",
-			   p->count, p->max/1000, p->min/1000, p->sum/1000, p->fail);
+			   p->count, p->max / 1000, p->min / 1000, p->sum / 1000, p->fail);
 	}
 }
 
