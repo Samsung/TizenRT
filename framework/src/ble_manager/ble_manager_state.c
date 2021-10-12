@@ -413,10 +413,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		uint16_t size = *(uint16_t *)param->param[1];
 		for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
 			if (g_scan_whitelist[i].use == SCAN_WHITELIST_IN_USE) {
-				memcpy(&addr[count++], &g_scan_whitelist[i].addr, sizeof(ble_addr));
-			}
-			if (count >= size) {
-				break;
+				if (count < size) {
+					memcpy(&addr[count], &g_scan_whitelist[i].addr, sizeof(ble_addr));
+				}
+				count++;
 			}
 		}
 		msg->ret.val = count;

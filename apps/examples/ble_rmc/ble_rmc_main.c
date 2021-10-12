@@ -60,11 +60,13 @@ static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
 	return;
 }
 
+/* These values can be modified as a developer wants. */
 static uint8_t ble_filter[] = { 0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 };
 static uint8_t ble_mac_filter[2][BLE_BD_ADDR_MAX_LEN] = { 
-	{0x10, 0x00, 0x00, 0x00, 0x00, 0x15 }, 
-	{0x28, 0x6d, 0x97, 0x86, 0x60, 0xc0 }, 
+	{ 0x10, 0x00, 0x00, 0x00, 0x00, 0x15 }, 
+	{ 0x28, 0x6d, 0x97, 0x86, 0x60, 0xc0 }, 
 };
+
 static void ble_device_scanned_cb_with_filter(ble_scanned_device *scanned_device)
 {
 	RMC_LOG(RMC_CLIENT_TAG, "Find RMC with scan filter!!!\n");
@@ -89,11 +91,6 @@ static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_dev
 	/*
 	In without filter callback, you should not do heavy works such as printing every result of scan result.
 	*/
-	if (memcmp(scanned_device->addr.mac, &ble_mac_filter[0], BLE_BD_ADDR_MAX_LEN) == 0) {
-		RMC_LOG(RMC_CLIENT_TAG, "Find RMC with MAC !!!\n");
-		return;
-	}
-	
 	if (memcmp(scanned_device->raw_data, ble_filter, sizeof(ble_filter)) == 0) {
 		RMC_LOG(RMC_CLIENT_TAG,"Find RMC with raw data !!!\n");
 		printf("scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
@@ -347,7 +344,7 @@ int ble_rmc_main(int argc, char *argv[])
 			if (ret != BLE_MANAGER_SUCCESS) {
 				if (ret != BLE_MANAGER_ALREADY_WORKING) {
 					RMC_LOG(RMC_CLIENT_TAG, "init with null fail[%d]\n", ret);
-					return 0;
+					goto ble_rmc_done;
 				}
 				RMC_LOG(RMC_CLIENT_TAG, "init is already done\n");
 			} else {
@@ -358,7 +355,7 @@ int ble_rmc_main(int argc, char *argv[])
 			if (ret != BLE_MANAGER_SUCCESS) {
 				if (ret != BLE_MANAGER_ALREADY_WORKING) {
 					RMC_LOG(RMC_CLIENT_TAG, "init fail[%d]\n", ret);
-					return 0;
+					goto ble_rmc_done;
 				}
 				RMC_LOG(RMC_CLIENT_TAG, "init is already done\n");
 			} else {
@@ -386,7 +383,7 @@ int ble_rmc_main(int argc, char *argv[])
 		ret = ble_manager_get_bonded_device(dev_list, &dev_count);
 		if (ret != BLE_MANAGER_SUCCESS) {
 			RMC_LOG(RMC_CLIENT_TAG, "Fail to get bond data[%d]\n", ret);
-			return 0;
+			goto ble_rmc_done;
 		}
 		
 		RMC_LOG(RMC_CLIENT_TAG, "Bonded Dev Num : %d\n", dev_count);
@@ -465,7 +462,7 @@ int ble_rmc_main(int argc, char *argv[])
 
 		if (ret != BLE_MANAGER_SUCCESS) {
 			RMC_LOG(RMC_CLIENT_TAG, "get mac fail[%d]\n", ret);
-			return 0;
+			goto ble_rmc_done;
 		}
 
 		RMC_LOG(RMC_CLIENT_TAG, "BLE mac : %02x", mac[0]);
@@ -475,48 +472,116 @@ int ble_rmc_main(int argc, char *argv[])
 		printf("\n");
 	}
 
+	if (strncmp(argv[1], "whitelist", 10) == 0) {
+		if (argc == 4 && strncmp(argv[2], "add", 4) == 0) {
+			ble_addr addr[1] = { 0, };
+			int count = 0;
+
+			count = sscanf(argv[3], "%02x:%02x:%02x:%02x:%02x:%02x", &addr->mac[0], &addr->mac[1], &addr->mac[2],
+				&addr->mac[3], &addr->mac[4], &addr->mac[5]);
+			if (count != BLE_BD_ADDR_MAX_LEN) {
+				RMC_LOG(RMC_CLIENT_TAG, "Fail to read MAC[%d]\n", count);
+				goto ble_rmc_done;
+			}
+
+			RMC_LOG(RMC_CLIENT_TAG, "Input Mac[%d] : %02x:%02x:%02x:%02x:%02x:%02x\n", addr->type, addr->mac[0], 
+				addr->mac[1], addr->mac[2], addr->mac[3], addr->mac[4], addr->mac[5]);
+
+			ret = ble_scan_whitelist_add(addr);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_CLIENT_TAG, "Add whitelist fail[%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_CLIENT_TAG, "Add whitelist Success\n");
+		} else if (argc == 4 && strncmp(argv[2], "del", 4) == 0) {
+			ble_addr addr[1] = { 0, };
+			int count = 0;
+
+			count = sscanf(argv[3], "%02x:%02x:%02x:%02x:%02x:%02x", &addr->mac[0], &addr->mac[1], &addr->mac[2],
+				&addr->mac[3], &addr->mac[4], &addr->mac[5]);
+			if (count != BLE_BD_ADDR_MAX_LEN) {
+				RMC_LOG(RMC_CLIENT_TAG, "Fail to read MAC[%d]\n", count);
+				goto ble_rmc_done;
+			}
+
+			RMC_LOG(RMC_CLIENT_TAG, "Input Mac[%d] : %02x:%02x:%02x:%02x:%02x:%02x\n", addr->type, addr->mac[0], 
+				addr->mac[1], addr->mac[2], addr->mac[3], addr->mac[4], addr->mac[5]);
+
+			ret = ble_scan_whitelist_delete(addr);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_CLIENT_TAG, "Del whitelist fail[%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_CLIENT_TAG, "Del whitelist Success\n");
+		} else if (argc == 3 && strncmp(argv[2], "clear", 6) == 0) {
+			ret = ble_scan_whitelist_clear_all();
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_CLIENT_TAG, "Clear whitelist fail[%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_CLIENT_TAG, "Clear whitelist Success\n");
+		} else if (argc == 3 && strncmp(argv[2], "list", 5) == 0) {
+			ble_addr addr_list[10] = { 0, };
+			ble_addr *addr;
+			uint16_t count = 0;
+			int i;
+			count = ble_scan_whitelist_list(addr_list, 10);
+
+			RMC_LOG(RMC_CLIENT_TAG, "Total List : %u\n", count);
+			for (i = 0; i < count; i++) {
+				addr = &addr_list[i];
+				RMC_LOG(RMC_CLIENT_TAG, "#%d Mac[%d] : %02x:%02x:%02x:%02x:%02x:%02x\n", i+1, addr->type, addr->mac[0], 
+				addr->mac[1], addr->mac[2], addr->mac[3], addr->mac[4], addr->mac[5]);
+			}
+
+		} else {
+			RMC_LOG(RMC_CLIENT_TAG, "No whitelist command\n");
+			goto ble_rmc_done;
+		}
+	}
+
+	/* 
+	* [ Scan ] Usage :
+	* 1. Normal Scan with MAX Scan Timeout
+	* TASH>> scan 1
+	* 2. Filter Scan
+	* TASH>> scan 2 [timer_value]
+	* ( timer_value : optional. this should be in seconds )
+	*/
 	if (strncmp(argv[1], "scan", 5) == 0) {
-		if (argc == 3 && argv[2][0] == '1') {
-			printf("Start !\n");
+		if (argc >= 3 && argv[2][0] == '1') {
+			RMC_LOG(RMC_CLIENT_TAG, "Scan Start !\n");
 			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_without_filter;
 			ret = ble_client_start_scan(NULL, &scan_config);
 
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "scan start fail[%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
-		} else if (argc == 3 && argv[2][0] == '2') {
-			printf("Start with filter!\n");
+		} else if (argc >= 3 && argv[2][0] == '2') {
+			RMC_LOG(RMC_CLIENT_TAG, "Scan Start with WhiteList!\n");
 
-			ble_addr addr[2] = { 0, };
-			addr[0].type = BLE_ADDR_TYPE_PUBLIC;
-			memcpy(addr[0].mac, &ble_mac_filter[0], BLE_BD_ADDR_MAX_LEN);
-			addr[1].type = BLE_ADDR_TYPE_PUBLIC;
-			memcpy(addr[1].mac, &ble_mac_filter[1], BLE_BD_ADDR_MAX_LEN);
-
-			ret = ble_scan_whitelist_add(&addr[0]);
-			if (ret != BLE_MANAGER_SUCCESS) {
-				RMC_LOG(RMC_CLIENT_TAG, "fail to add whitelist[%d]\n", ret);
-				return 0;
-			}
-
-			ret = ble_scan_whitelist_add(&addr[1]);
-			if (ret != BLE_MANAGER_SUCCESS) {
-				RMC_LOG(RMC_CLIENT_TAG, "fail to add whitelist[%d]\n", ret);
-				return 0;
+			uint32_t scan_time = 0; // Seconds
+			if (argc == 4) {
+				int temp = atoi(argv[3]);
+				if (temp < 0) {
+					RMC_LOG(RMC_CLIENT_TAG, "Fail to set timer\n");
+				} else {
+					scan_time = (uint32_t)temp;
+					RMC_LOG(RMC_CLIENT_TAG, "Timer : %u s\n", scan_time);
+				}
 			}
 
 			ble_scan_filter filter = { 0, };
-			// memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
 			filter.raw_data_length = 0;
-			filter.scan_duration = 0;
+			filter.scan_duration = scan_time * 1000; // scan_duration should be in milliseconds.
 			filter.whitelist_enable = true;
 			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_with_filter;
 			ret = ble_client_start_scan(&filter, &scan_config);
 
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "scan start fail[%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
 		} else {
 			printf("stop !\n");
@@ -524,7 +589,7 @@ int ble_rmc_main(int argc, char *argv[])
 
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "scan stop fail[%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
 		}
 	}
@@ -547,7 +612,7 @@ int ble_rmc_main(int argc, char *argv[])
 		ret = ble_client_disconnect(g_ctx);
 		if (ret != BLE_MANAGER_SUCCESS) {
 			RMC_LOG(RMC_CLIENT_TAG, "disconnect fail[%d]\n", ret);
-			return 0;
+			goto ble_rmc_done;
 		}
 		RMC_LOG(RMC_CLIENT_TAG, "disconnect ok\n");
 	}
@@ -557,7 +622,7 @@ int ble_rmc_main(int argc, char *argv[])
 			ret = ble_client_autoconnect(g_ctx, false);
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "Stop auto connection fail[%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
 		}
 	}
@@ -573,7 +638,7 @@ int ble_rmc_main(int argc, char *argv[])
 				ret = ble_client_disconnect(g_ctx);
 				if (ret != BLE_MANAGER_SUCCESS && ret != BLE_MANAGER_INVALID_STATE) {
 					RMC_LOG(RMC_CLIENT_TAG, "disconnect fail[%d]\n", ret);
-					return 0;
+					goto ble_rmc_done;
 				}
 				int cnt = 20;
 				while (cnt--) {
@@ -610,14 +675,14 @@ int ble_rmc_main(int argc, char *argv[])
 
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "scan start fail[%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
 
 			sleep(2);
 
 			if (g_scan_done != 1) {
 				RMC_LOG(RMC_CLIENT_TAG, "scan fail to get adv packet\n");
-				return 0;
+				goto ble_rmc_done;
 			}
 		}
 
@@ -652,7 +717,7 @@ int ble_rmc_main(int argc, char *argv[])
 			ret = ble_server_set_adv_data(data);
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_SERVER_TAG, "Fail to set adv raw data[%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
 			RMC_LOG(RMC_SERVER_TAG, "Set adv raw data ... ok\n");
 
@@ -662,7 +727,7 @@ int ble_rmc_main(int argc, char *argv[])
 			ret = ble_server_set_adv_resp(data);
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_SERVER_TAG, "Fail to set adv resp data[%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
 			RMC_LOG(RMC_SERVER_TAG, "Set adv resp data ... ok\n");
 		}
@@ -671,7 +736,7 @@ int ble_rmc_main(int argc, char *argv[])
 			ret = ble_server_start_adv();
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_SERVER_TAG, "Fail to start adv [%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
 			RMC_LOG(RMC_SERVER_TAG, "Start adv ... ok\n");
 		}
@@ -680,12 +745,13 @@ int ble_rmc_main(int argc, char *argv[])
 			ret = ble_server_stop_adv();
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_SERVER_TAG, "Fail to stop adv [%d]\n", ret);
-				return 0;
+				goto ble_rmc_done;
 			}
 			RMC_LOG(RMC_SERVER_TAG, "Stop adv ... ok\n");
 		}
 	}
 
+ble_rmc_done:
 	RMC_LOG(RMC_CLIENT_TAG, "done\n");
 	return 0;
 }

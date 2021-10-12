@@ -62,7 +62,7 @@ typedef struct {
 	void(*ble_client_device_scanned_cb)(ble_scanned_device* scanned_device);
 } ble_scan_callback_list;
 
-/* This is a heuristic value. It can be customized following a system evn */
+/* This is a heuristic value. It can be customized following a system env */
 #define SCAN_INFO_BUFFER_SIZE 100
 #define SCAN_WHITELIST_SIZE 10
 #define SCAN_MAX_TIMEOUT (5 * 60 * 1000) /* 5 min (Unit : ms) */
@@ -85,7 +85,7 @@ typedef struct {
  *   filter    - If this value is NULL, all filters are disabled.
  *               To get specific BLE adv info, filter value should be filled
  *               with exact value.
- *               If scan_ducation is zero, the scan timer will be set for SCAN_MAX_TIMEOUT.
+ *               If scan_duration is zero, the scan timer will be set for SCAN_MAX_TIMEOUT.
  *   callbacks - The list of scan result callback.
  *
  * Returned Value
