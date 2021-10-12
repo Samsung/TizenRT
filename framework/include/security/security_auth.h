@@ -20,6 +20,10 @@
 
 #include "security_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Authenticate
  */
@@ -53,5 +57,9 @@ security_error auth_compute_dhparams(security_handle hnd, const char *dh_name, s
 security_error auth_generate_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *param);
 
 security_error auth_compute_ecdhkey(security_handle hnd, const char *ecdh_name, security_ecdh_param *param, security_data *secret);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //  _SECURITY_API_AUTH_H__
