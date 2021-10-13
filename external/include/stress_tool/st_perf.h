@@ -60,9 +60,7 @@
 #define TEST_TEARDOWN(tc_name) \
 	static st_tc_result tc_##tc_name##_teardown(void *arg)
 
-#define TEST_F(tc_name)                                                \
-	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER}; \
-	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};      \
+#define TEST_F(tc_name) \
 	static st_tc_result tc_##tc_name(void *arg)
 
 #define ST_SET_FUNC(tc_desc, tc_name) \
@@ -86,16 +84,22 @@
 	static st_pack g_pack_##fixture;
 
 #define ST_SET_SMOKE(fixture, repeat, expect, tc_desc, tc_name)                            \
+	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};                            \
+	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};                                 \
 	perf_add_item(&g_pack_##fixture, repeat, #tc_name,                                     \
 				  NULL, NULL, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
 #define ST_SET_SMOKE1(fixture, repeat, expect, tc_desc, tc_name) \
+	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};  \
+	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};       \
 	perf_add_item(&g_pack_##fixture, repeat, #tc_name,           \
 				  NULL, NULL, NULL, NULL, tc_##tc_name,          \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
 #define ST_TC_SET_SMOKE(fixture, repeat, expect, tc_desc, testcase, tc_name)                 \
+	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};                              \
+	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};                                   \
 	perf_add_item(&g_pack_##fixture, repeat, #tc_name,                                       \
 				  NULL, NULL, tc_##testcase##_setup, tc_##testcase##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
@@ -136,12 +140,12 @@
 		if (exp != val) {                                  \
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
 			ST_ERROR;                                      \
-			res = STRESS_TC_FAIL;                          \
+			st_res = STRESS_TC_FAIL;                       \
 			goto STFUNC_OUT;                               \
 		}                                                  \
 	} while (0)
 
-#define ST_EXPECT_ASSERT(val, exp)                             \
+#define ST_EXPECT_ASSERT(val, exp)                         \
 	do {                                                   \
 		ST_LOG("[ST] --> " #exp " %s:%d"                   \
 			   "\n",                                       \
@@ -158,19 +162,19 @@
 		if (exp != val1 && exp != val2) {                                    \
 			ST_ELOG("[ST] val1 (%d) val2 (%d) exp (%d)\n", val1, val2, exp); \
 			ST_ERROR;                                                        \
-			res = STRESS_TC_FAIL;                                            \
+			st_res = STRESS_TC_FAIL;                                         \
 			goto STFUNC_OUT;                                                 \
 		}                                                                    \
 	} while (0)
 
-#define ST_EXPECT_NEQ(val, exp)   \
-	do {                          \
-		ST_LOG("--> " #exp "\n"); \
-		if ((exp) == val) {       \
-			ST_ERROR;             \
-			res = STRESS_TC_FAIL; \
-			goto STFUNC_OUT;      \
-		}                         \
+#define ST_EXPECT_NEQ(val, exp)      \
+	do {                             \
+		ST_LOG("--> " #exp "\n");    \
+		if ((exp) == val) {          \
+			ST_ERROR;                \
+			st_res = STRESS_TC_FAIL; \
+			goto STFUNC_OUT;         \
+		}                            \
 	} while (0)
 
 #define ST_EXPECT_LT(val, exp)                             \
@@ -179,7 +183,7 @@
 		if ((exp) >= val) {                                \
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
 			ST_ERROR;                                      \
-			res = STRESS_TC_FAIL;                          \
+			st_res = STRESS_TC_FAIL;                       \
 			goto STFUNC_OUT;                               \
 		}                                                  \
 	} while (0)
@@ -189,7 +193,7 @@
 		if (exp > val) {                                   \
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
 			ST_ERROR;                                      \
-			res = STRESS_TC_FAIL;                          \
+			st_res = STRESS_TC_FAIL;                       \
 			goto STFUNC_OUT;                               \
 		}                                                  \
 	} while (0)
@@ -199,7 +203,7 @@
 		if (exp <= val) {                                  \
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
 			ST_ERROR;                                      \
-			res = STRESS_TC_FAIL;                          \
+			st_res = STRESS_TC_FAIL;                       \
 			goto STFUNC_OUT;                               \
 		}                                                  \
 	} while (0)
@@ -209,20 +213,20 @@
 		if (exp < val) {                                   \
 			ST_ELOG("[ST] val (%d) exp (%d)\n", val, exp); \
 			ST_ERROR;                                      \
-			res = STRESS_TC_FAIL;                          \
+			st_res = STRESS_TC_FAIL;                       \
 			goto STFUNC_OUT;                               \
 		}                                                  \
 	} while (0)
 
 #define ST_START_TEST                                \
-	st_tc_result res = STRESS_TC_PASS;               \
+	st_tc_result st_res = STRESS_TC_PASS;            \
 	struct timeval start, end;                       \
 	st_elapsed_time *timer = (st_elapsed_time *)arg; \
 	do {                                             \
 		ST_START_LOG;                                \
 		if (timer) {                                 \
 			if (gettimeofday(&start, NULL) == -1) {  \
-				res = STRESS_TC_PERF_FAIL;           \
+				st_res = STRESS_TC_PERF_FAIL;        \
 				goto STFUNC_OUT;                     \
 			}                                        \
 		}                                            \
@@ -241,14 +245,12 @@
 			timer->end.micro = end.tv_usec;       \
 		}                                         \
 		ST_END_LOG;                               \
-		return res;                               \
+		return st_res;                            \
 	} while (0)
 
-#define START_TEST_F(tc_name)                                          \
-	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER}; \
-	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};      \
-	static st_tc_result tc_##tc_name(void *arg)                        \
-	{                                                                  \
+#define START_TEST_F(tc_name)                   \
+	static st_tc_result tc_##tc_name(void *arg) \
+	{                                           \
 		ST_START_TEST;
 
 #define END_TEST_F \
@@ -268,11 +270,6 @@
 #define END_TESTCASE \
 	ST_END_TEST;     \
 	}
-/* #define TEST_SETUP(tc_name)								\ */
-/* 	static st_tc_result tc_##tc_name##_setup(void *arg) */
-
-/* #define TEST_TEARDOWN(tc_name)								\ */
-/* 	static st_tc_result tc_##tc_name##_teardown(void *arg) */
 
 /*
  * Structures
