@@ -708,7 +708,6 @@ static int lwip_ns_delroute(struct rtentry *entry)
 }
 #endif
 
-#ifdef CONFIG_NET_NETMON
 /**
  * Copy the global socket contents to the input
  *
@@ -733,7 +732,6 @@ static int lwip_ns_getstats(void *arg)
 
 	return 0;
 }
-#endif
 
 static void lwip_ns_initlist(struct socketlist *list)
 {
@@ -814,9 +812,7 @@ struct netstack_ops g_lwip_stack_ops = {
 	lwip_ns_addroute,
 	lwip_ns_delroute,
 #endif
-#ifdef CONFIG_NET_NETMON
 	lwip_ns_getstats,
-#endif
 	lwip_ns_initlist,
 	lwip_ns_releaselist};
 

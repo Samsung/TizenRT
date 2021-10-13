@@ -847,7 +847,6 @@ static int lwip_deinit_nic(struct netdev *dev)
 	return 0;
 }
 
-#ifdef CONFIG_NET_NETMON
 static int lwip_get_stats(struct netdev *dev, void *arg)
 {
 #ifdef CONFIG_NET_STATS
@@ -886,7 +885,6 @@ static int lwip_get_stats(struct netdev *dev, void *arg)
 	return -ENOTTY;
 #endif
 }
-#endif
 
 struct netdev_ops *get_netdev_ops_lwip(void)
 {
@@ -920,9 +918,7 @@ struct netdev_ops *get_netdev_ops_lwip(void)
 	netdev_ops->leavegroup = lwip_leavegroup;
 
 	netdev_ops->input = lwip_input;
-#ifdef CONFIG_NET_NETMON
 	netdev_ops->get_stats = lwip_get_stats;
-#endif
 	netdev_ops->nic = NULL;
 
 	return netdev_ops;

@@ -19,6 +19,7 @@
 #pragma once
 
 #if CONFIG_NET_LWIP
+#include <sys/types.h>
 
 typedef enum {
 	GETADDRINFO,

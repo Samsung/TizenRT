@@ -27,8 +27,8 @@
 #define TC_SERVICE "80"
 #define NT_STR_DNS_ADDR "8.8.8.8"
 
-char g_hostname[NT_MAXHOST]; // stack overflow can be happened if set this value local variable.
-char g_serv[NT_MAXSERV];
+static char g_hostname[NT_MAXHOST]; // stack overflow can be happened if set this value local variable.
+static char g_serv[NT_MAXSERV];
 
 static void _print_addrinfo(struct addrinfo *addr)
 {
