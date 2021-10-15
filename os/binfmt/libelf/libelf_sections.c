@@ -226,7 +226,7 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 		bin_info->bin_idx = bin->binary_idx;
 		bin_info->text_addr = (uint32_t)bin->alloc[ALLOC_TEXT];
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
-		binfo("[%s] text_addr : %x\n", bin_info->bin_name, bin_info->text_addr);
+		binfo("[%s] text_addr : %x\n", bin->bin_name, bin_info->text_addr);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		bin_info->rodata_addr = (uint32_t)bin->alloc[ALLOC_RO];
 		bin_info->data_addr = (uint32_t)bin->datastart;
