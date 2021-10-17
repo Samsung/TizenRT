@@ -292,6 +292,7 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 int elf_unload(struct elf_loadinfo_s *loadinfo);
 
 void *elf_find_text_section_addr(int bin_idx);
+void elf_show_all_bin_addr(void);
 
 #undef EXTERN
 #if defined(__cplusplus)

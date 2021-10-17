@@ -68,6 +68,7 @@
 #include <queue.h>
 #include <string.h>
 #include <tinyara/binfmt/binfmt.h>
+#include <binary_manager/binary_manager.h>
 
 #include "libelf.h"
 
@@ -257,6 +258,15 @@ void elf_delete_bin_section_addr(struct binary_s *bin)
 	}
 }
 
+void elf_show_all_bin_addr(void)
+{
+	bin_addr_info_t *info;
+	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
+	while (info) {
+		lldbg("[%s] Text Addr : %p\n", BIN_NAME(info->bin_idx), info->text_addr);
+		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
+	}
+}
 
 /****************************************************************************
  * Name: elf_loadshdrs
