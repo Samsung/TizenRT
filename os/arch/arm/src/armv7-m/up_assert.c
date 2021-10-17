@@ -477,7 +477,7 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	is_kernel_fault = is_kernel_space((void *)assert_pc);
 	if (!is_kernel_fault) {
-		lldbg("APP BINARY BASE ADDR : %p\n", elf_find_text_section_addr(fault_tcb->group->tg_binidx));
+		elf_show_all_bin_addr();
 	}
 
 #endif  /* CONFIG_APP_BINARY_SEPARATION */
