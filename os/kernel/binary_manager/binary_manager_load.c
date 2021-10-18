@@ -206,6 +206,7 @@ static int binary_manager_load(int bin_idx)
 			}
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 			if (bin_idx == BM_CMNLIB_IDX) {
+				strncpy(load_attr.bin_name, BM_CMNLIB_NAME, sizeof(BM_CMNLIB_NAME));
 				load_attr.offset = CHECKSUM_SIZE + common_header_data.header_size;
 				load_attr.bin_size = common_header_data.bin_size;
 				load_attr.bin_ver = common_header_data.version;
