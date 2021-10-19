@@ -23,6 +23,7 @@ import struct
 config_file_path = os.path.dirname(__file__) + '/../.config'
 bootparam_file_path = os.path.dirname(__file__) + '/../../build/output/bin/bootparam.bin'
 user_file_dir = os.path.dirname(__file__) + '/../../build/output/bin/user'
+build_folder = os.path.dirname(__file__) + '/../../build'
 
 SIZE_OF_BOOTPARAM_PART = 8192
 
@@ -57,7 +58,7 @@ SIZE_OF_BOOTPARAM_PART = 8192
 #
 ###########################################################################################
 
-def get_config_value(file_name, config):
+def get_value_from_file(file_name, config):
     with open(file_name, 'r+') as fp:
         lines = fp.readlines()
         found = False
@@ -82,19 +83,19 @@ def make_bootparam():
 
     bootparam_size = SIZE_OF_CHECKSUM + SIZE_OF_BP_VERSION + SIZE_OF_BP_VERSION + SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
 
-    names = get_config_value(config_file_path, "CONFIG_FLASH_PART_NAME=").replace('"','').replace('\n','').split(",")
-    sizes = get_config_value(config_file_path, "CONFIG_FLASH_PART_SIZE=").replace('"','').replace('\n','').split(",")
-    names = filter(None, names)
-    sizes = filter(None, sizes)
+    part_names = get_value_from_file(config_file_path, "CONFIG_FLASH_PART_NAME=").replace('"','').replace('\n','').split(",")
+    part_sizes = get_value_from_file(config_file_path, "CONFIG_FLASH_PART_SIZE=").replace('"','').replace('\n','').split(",")
+    part_names = filter(None, part_names)
+    part_sizes = filter(None, part_sizes)
 
     # Calculate partition size of boot parameters
     partition_size = 0
     offset = 0
-    for index, name in enumerate(names):
+    for index, name in enumerate(part_names):
         if name == "bootparam":
-            partition_size = int(sizes[index]) * 1024
+            partition_size = int(part_sizes[index]) * 1024
             break
-        offset += int(sizes[index]) * 1024
+        offset += int(part_sizes[index]) * 1024
 
     if partition_size == 0:
         print "FAIL!! No bootparam partition."
@@ -109,11 +110,11 @@ def make_bootparam():
     # Get addresses of kernel partitions
     kernel_address = []
     offset = 0
-    for index, types in enumerate(names):
+    for index, types in enumerate(part_names):
         if types == "kernel":
             address = hex(int(FLASH_START_ADDR, 16) + offset)
             kernel_address.append(address)
-        offset += int(sizes[index]) * 1024
+        offset += int(part_sizes[index]) * 1024
 
     if len(kernel_address) == 0 or len(kernel_address) > 2:
         print "FAIL!! No found kernel partition"
@@ -159,6 +160,14 @@ def make_bootparam():
 ###################################################
 # Generate boot parameters
 ###################################################
-FLASH_START_ADDR = sys.argv[1]
-FLASH_SIZE = sys.argv[2]
+# Check the board type.
+BOARD_TYPE = get_value_from_file(config_file_path, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
+metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
+# Get the flash start address and its size from metadata file.
+if os.path.isfile(metadata_file) :
+	FLASH_START_ADDR = get_value_from_file(metadata_file, "FLASH_START_ADDR=").replace('"','').rstrip('\n')
+	FLASH_SIZE = get_value_from_file(metadata_file, "FLASH_SIZE=").replace('"','').rstrip('\n')
+else :
+	print "FAIL!! No board specific metadata file."
+
 make_bootparam()
