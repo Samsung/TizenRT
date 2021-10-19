@@ -286,9 +286,7 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	up_addrenv_clone(&loadinfo.addrenv, &binp->addrenv);
 #else
 	binp->alloc[ALLOC_TEXT] = (FAR void *)loadinfo.textalloc;
-#if defined(CONFIG_SUPPORT_COMMON_BINARY) || defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME)
 	binp->textsize = loadinfo.textsize;
-#endif
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	binp->alloc[ALLOC_CTOR] = loadinfo.ctoralloc;
 	binp->alloc[ALLOC_DTOR] = loadinfo.dtoralloc;

@@ -464,6 +464,7 @@ struct bin_addr_info_s {
 	struct bin_addr_info_s *flink;
 	int bin_idx;
 	uint32_t text_addr;
+	uint32_t text_size;
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	uint32_t rodata_addr;
