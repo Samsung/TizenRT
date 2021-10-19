@@ -226,6 +226,7 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 	if (bin_info != NULL) {
 		bin_info->bin_idx = bin->binary_idx;
 		bin_info->text_addr = (uint32_t)bin->alloc[ALLOC_TEXT];
+		bin_info->text_size = bin->textsize;
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 		binfo("[%s] text_addr : %x\n", bin->bin_name, bin_info->text_addr);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -263,7 +264,7 @@ void elf_show_all_bin_addr(void)
 	bin_addr_info_t *info;
 	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
 	while (info) {
-		lldbg("[%s] Text Addr : %p\n", BIN_NAME(info->bin_idx), info->text_addr);
+		lldbg("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(info->bin_idx), info->text_addr, info->text_size);
 		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
 	}
 }
