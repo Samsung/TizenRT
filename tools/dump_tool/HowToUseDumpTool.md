@@ -265,6 +265,8 @@ Ramdump received successfully..!
 DumpParser Script provides two interfaces: CUI and GUI
 
 ### DumpParser using CUI
+
+#### To get call stack using RAM dump
 1. Run Ramdump Parser Script
 ```
 cd $TIZENRT_BASEDIR/tools/dump_tool/
@@ -272,6 +274,125 @@ python dumpParser.py -r $TIZENRT_BASEDIR/build/output/bin/ramdump_0x02020000_0x0
 ```
 2. See the Output
 
+#### To display Debug Symbols/Crash point using assert logs
+1. Copy crash logs
+    First copy the crash logs to a file named log_file in tools/dump_tool/`<log_file>`
+2. Run Script in tools/dump_tool path
+    $ python3 ramdumpParser.py -e `<Elf path>` -t `<Log file path>`
+
+    ex)
+    $ python3 ramdumpParser.py -e ../../build/output/bin/wifi_dbg -t ./log_file
+
+Example Call Stack Output for App crash is as follows:
+```
+*************************************************************
+dump_file         : None
+log_file          : .log_file
+elf_file  : ../../../output/wifi_dbg
+*************************************************************
+
+Number of applicaions : 2
+App1 is : micom
+App2 is : wifi
+
+----------------------------------------------------------
+App Crash point is as follows:
+App name : wifi
+0x00001492
+main
+/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:85
+
+0x00003367
+binary_manager_send_request
+/root/tizenrt/framework/src/binary_manager/binary_manager_interface.c:97
+
+----------------------------------------------------------
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  DEBUG DISPLAY SYMBOLS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Dump_address	 Symbol_address	  Symbol_name	File_name
+0xe0072f3	 0xe007290 	  up_assert	/root/tizenrt/os/include/assert.h:211
+0xe04f0bn	 0xe04f028 	  __FUNCTION__.6571
+0xe04f043	 0xe04f028 	  __FUNCTION__.6571
+0xe007733	 0xe0076e8 	  up_memfault	/root/tizenrt/os/arch/arm/src/armv8-m/up_memfault.c:116
+0x10012345	 0x1001232c 	  up_doirq	/root/tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
+0x10012055	 0x10012014 	  exception_common	/root/tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
+0xe001e4f	 0xe001e4e 	  sem_freeholder	/root/tizenrt/os/kernel/semaphore/sem_holder.c:163
+
+PC_value	 Symbol_address	  Symbol_name	File_name
+0x218ec12	 0x2000000 	  __psram_image2_text_start__
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+ex)
+$ python3 ramdumpParser.py -e ../../build/output/bin/tinyara -t ./log_file
+
+Example Call Stack Output for Kernel crash is as follows:
+```
+*************************************************************
+dump_file         : None
+log_file          : .log_file
+elf_file  : ../../build/output/bin/tinyara
+*************************************************************
+----------------------------------------------------------
+Kernel Crash point is as follows:
+0x10010f36
+os_start
+/root/product/.tizenrt/os/kernel/init/os_start.c:615
+
+----------------------------------------------------------
+
+--------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE -------------------------
+Dump_address	 Symbol_address	  Symbol_name	File_name
+0xe0542b3	 0xe0542a3 	  __FUNCTION__.6620
+0xe0086cd	 0xe0086cc 	  lowoutstream_putc	/root/product/.tizenrt/lib/libc/stdio/lib_lowoutstream.c:76
+0x10012565	 0x1001254c 	  up_doirq	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
+0x10012275	 0x10012234 	  exception_common	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
+0x10012809	 0x10012808 	  up_unblock_task	/root/product/.tizenrt/os/include/tinyara/arch.h:472
+0xe001c15	 0xe001be8 	  task_activate	/root/product/.tizenrt/os/include/sched.h:141
+0x10010f36	 0x10010d90 	  os_start	/root/product/.tizenrt/os/include/tinyara/init.h:89
+0xe000e6f	 0xe000d2c 	  app_start	/root/product/.tizenrt/os/board/rtl8721csm/src/component/soc/realtek/amebad/fwlib/ram_hp/rtl8721dhp_app_start.c:1318
+
+PC_value	 Symbol_address	  Symbol_name	File_name
+0x10010f36	 0x10010d90 	  os_start	/root/product/.tizenrt/os/include/tinyara/init.h:89
+-----------------------------------------------------------------------------------------
+```
+ex)
+$python3 ramdumpParser.py -e ../../build/output/bin/common_dbg -t ./log_file
+
+Example Call Stack Output for Common Binary crash is as follows:
+```
+*************************************************************
+dump_file         : None
+log_file          : ./log_file
+elf_file  : ../../build/output/bin/common_dbg
+*************************************************************
+
+Number of applicaions : 2
+App[1] is : common
+App[2] is : app
+
+----------------------------------------------------------
+App Crash point is as follows:
+App name : common
+0x0003cdf2
+sched_get_priority_max
+/root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:113
+
+----------------------------------------------------------
+
+--------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE -------------------------
+Dump_address	 Symbol_address	  Symbol_name	File_name
+0xe006337	 0xe006310 	  lowvsyslog	/root/product/.tizenrt/os/include/syslog.h:263
+0xe0060c1	 0xe0060c0 	  lib_noflush	/root/product/.tizenrt/os/include/tinyara/streams.h:605
+0xe009c59	 0xe009bf8 	  up_memfault	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_memfault.c:116
+0x10012565	 0x1001254c 	  up_doirq	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
+0x10012275	 0x10012234 	  exception_common	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
+0xe001e8f	 0xe001e8e 	  sem_freeholder	/root/product/.tizenrt/os/kernel/semaphore/sem_holder.c:163
+0xe050791	 0xe050744 	  pthread_start	/root/product/.tizenrt/os/kernel/pthread/pthread_create.c:188
+
+PC_value	 Symbol_address	  Symbol_name	File_name
+0x213ce12	 0x2000000 	  __psram_image2_text_start__
+-----------------------------------------------------------------------------------------
+```
 ### DumpParser using GUI
 The UI configuration of DumpParser is as follows
 

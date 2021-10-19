@@ -29,6 +29,7 @@ import sys, time
 import struct
 import subprocess
 from getopt import GetoptError, getopt as GetOpt
+from array import *
 
 # Global variables
 FP = 11
@@ -40,16 +41,22 @@ PC = 15
 have_ram_kernel_text = False
 
 # Kernel text start & end addresses in FLASH & RAM regions
-g_stext_flash=0
-g_etext_flash=0
-g_stext_ram=0
-g_etext_ram=0
+g_stext_flash = 0
+g_etext_flash = 0
+g_stext_ram = 0
+g_etext_ram = 0
+
+g_app_idx = 0 # To extract number of apps dynamically
+g_assertpc = 0 # To extract the global PC value g_assertpc
+
+app_name = []
 
 config_path = '../../os/.config'
 elf_path = '../../build/output/bin/tinyara'
 debug_cmd = 'addr2line'
 file_data = 'HeapInfo'
 heapinfo_path = '../../os/include/tinyara/mm/heapinfo_internal.h'
+bin_path='../../build/output/bin/'
 
 # Top level class to parse the dump and assert logs parsing feature
 class dumpParser:
@@ -498,6 +505,120 @@ class dumpParser:
 		self.stacksize = ss
 		self.find_stackframe_using_framepointer(frame)
 
+# Function to Parse the i/p log file in case of app crashes to corresponding app display debug symbols
+def find_crash_point(log_file):
+
+    global g_app_idx
+    global g_assertpc
+    pc_value = 0
+    lr_value = 0
+
+    # Parse the contents based on tokens in log file.
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            if 'up_registerdump:' in line:
+                word = line.split(':')
+
+                # word[1] contains the register name i.e R0 or R8
+                reg = word[1].split()
+
+                if reg[0] == 'R8':
+                    t = word[2].split( )
+
+                    # Check for corruption of PC value in logs
+                    if (len(word[2].split( )) != 8):
+                        print('\nAssert logs are corrupted, and we are not able to determine the value of PC.\n')
+                        continue
+
+                    # Last subword of word[2] contains the PC value
+                    pc_value = int(t[-1],16)
+                    lr_value = int(t[-2],16)
+                    continue
+            # Get the number of applications loaded
+            if 'elf_show_all_bin_addr:' in line:
+                g_app_idx = g_app_idx + 1
+
+            # Get the number of applications loaded
+            if 'g_assertpc:' in line:
+                word = line.split(':')
+                #word[2] contains the g_assertpc value
+                g_assertpc = int(word[2].strip(),16)
+
+    if g_app_idx:
+        print('Number of applications :', g_app_idx)
+
+    app_idx = 0
+    g_stext_app = array('i', range(0, g_app_idx))
+    g_etext_app = array('i', range(0, g_app_idx))
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            # Read the app text address and size
+            if 'elf_show_all_bin_addr:' in line:
+               word = line.split(':')
+               t = word[2].split(',') # word[2] is the App Start Text address
+               w = word[1].split(' ')
+               # w[1] denotes string '[<app_name>]'
+               start_idx = int(w[1].find('[')) + 1
+               end_idx = int(w[1].find(']'))
+               app_name.append(w[1][start_idx:end_idx])
+               print('App[%d] is :' % (app_idx + 1), app_name[app_idx])
+               g_stext_app[app_idx] = int(t[0], 16)
+               g_etext_app[app_idx] = g_stext_app[app_idx] + int(word[3], 10) # word[3] is text_size
+               app_idx = app_idx + 1
+
+    print('\n----------------------------------------------------------')
+    if g_app_idx:
+        print('App Crash point is as follows:')
+    address1 = hex(pc_value)
+    address2 = hex(lr_value)
+    result = 0
+
+    if (pc_value != 00000000):
+        for app_idx in range(g_app_idx):
+            # Check for pc & lr values in all application text addresses
+            if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
+                addr = pc_value - int(hex(g_stext_app[app_idx]), 16)
+                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + bin_path + app_name[app_idx] + '_dbg ' + hex(addr))
+                result = f.read()
+                if '??' not in result and '$d' not in result:
+                    print('App name : {0}'.format(app_name[app_idx]))
+                    print(result)
+            if (address2 >= hex(g_stext_app[app_idx]) and address2 < hex(g_etext_app[app_idx])):
+                addr = pc_value - int(hex(g_stext_app[app_idx]), 16)
+                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + bin_path + app_name[app_idx] + '_dbg ' + hex(addr))
+                result = f.read()
+                if '??' not in result and '$d' not in result:
+                    print('App name : {0}'.format(app_name[app_idx]))
+                    print(result)
+    else:
+        address1 = hex(g_assertpc)
+        for app_idx in range(g_app_idx):
+            # Check for pc & lr values in all application text addresses
+            if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
+                addr = g_assertpc - int(hex(g_stext_app[app_idx]), 16)
+                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + bin_path + app_name[app_idx] + '_dbg ' + hex(addr))
+                result = f.read()
+                if '??' not in result and '$d' not in result:
+                    print('App name : {0}'.format(app_name[app_idx]))
+                    print(result)
+
+    # Check for pc & lr values in kernel text address range
+    if (address1 >= hex(g_stext_flash) and address1 < hex(g_etext_flash)) or (address1 >= hex(g_stext_ram) and address1 < hex(g_etext_ram)):
+        # If yes, print the crash point using addr2line
+        f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf_path + ' ' + hex(pc_value))
+        result = f.read()
+        if '??' not in result and '$d' not in result:
+            print('Kernel Crash point is as follows:')
+            print(result)
+    if (address2 >= hex(g_stext_flash) and address2 < hex(g_etext_flash)) or (address2 >= hex(g_stext_ram) and address2 < hex(g_etext_ram)):
+        f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf_path + ' ' + hex(lr_value))
+        result = f.read()
+        if '??' not in result and '$d' not in result:
+            print('Kernel Crash point is as follows:')
+            print(result)
+
+    print('----------------------------------------------------------\n')
+
 def usage():
 	print('*************************************************************')
 	print('\nUsage: %s -e ELF_FILE -r DUMP_FILE [OPTIONS]' % sys.argv[0])
@@ -583,7 +704,7 @@ def main():
 	print('*************************************************************')
 	print('dump_file         :', dump_file)
 	print('log_file          :', log_file)
-	print('Tinyara_elf_file  :', elf)
+	print('elf_file  :', elf)
 	print('*************************************************************')
 	print('')
 
@@ -651,19 +772,6 @@ def main():
 		data = fd.read()
 		fd.close()
 
-		# Get arch family
-		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data):
-			#If it's cortex M, then run debugsymbolviewer script and return
-			os.system("python ../debug/debugsymbolviewer.py")
-			return None
-
-		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
-			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
-			return
-
-		if 'CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT=y' in data:
-			have_ram_kernel_text = True
-
 		# Calling the Constructor with the initial set of arguments
 		rParser = dumpParser(dump_file=dump_file,elf=elf,gdb_path=gdb_path,nm_path=nm_path,readelf_path=readelf_path,log_file=log_file, debug=False)
 
@@ -680,6 +788,24 @@ def main():
 			g_stext_ram = rParser.get_address_of_symbol("_stext_ram")
 			global g_etext_ram
 			g_etext_ram = rParser.get_address_of_symbol("_etext_ram")
+
+		# If there are apps loaded, find the point of crash in the application binaries
+		if 'CONFIG_APP_BINARY_SEPARATION=y' in data:
+			find_crash_point(log_file)
+
+		# Get ARM arch family
+		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data):
+			#If architecture is cortex M, then run debugsymbolviewer script
+                        #It displays the debug symbols corresponding to all the addresses in the kernel text address range
+			os.system("python ../debug/debugsymbolviewer.py")
+			return None
+
+		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
+			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
+			return
+
+		if 'CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT=y' in data:
+			have_ram_kernel_text = True
 
 		# If the log file is given, then parse that log file only and exit
 		if log_file is not None:
