@@ -96,7 +96,7 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 		goto error;
 	}
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
-	out_buf = (unsigned char *)malloc(block_size);
+	out_buf = (unsigned char *)malloc(compressBound(block_size));
 	if (!out_buf) {
 		printf("Failed to allocate memory for out_buf\n");
 		goto error;

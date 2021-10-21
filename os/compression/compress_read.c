@@ -408,7 +408,7 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen)
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
 	/* Allocating memory for read and out buffer to be used for Miniz decompression */
 	if (compression_header->compression_format == COMPRESSION_TYPE_MINIZ) {
-		buffers.read_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize);
+		buffers.read_buffer = (unsigned char *)kmm_malloc(compressBound(compression_header->blocksize));
 		buffers.out_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize);
 	}
 #endif
