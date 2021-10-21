@@ -402,7 +402,7 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen)
 #if CONFIG_COMPRESSION_TYPE == LZMA
 	/* Allocating memory for read and out buffer to be used for LZMA decompression */
 	if (compression_header->compression_format == COMPRESSION_TYPE_LZMA) {
-		buffers.read_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize + 5);
+		buffers.read_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize + LZMA_PROPS_SIZE);
 		buffers.out_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize);
 	}
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
