@@ -184,15 +184,13 @@ define MAKE_BOARD_SPECIFIC_BIN
 endef
 
 SECURE_HEADER_SIZE=32
-FLASH_BASE_ADDRESS=0x8000000
-FLASH_SIZE=8388608
 
 define MAKE_SAMSUNG_HEADER
   $(TOPDIR)/../os/tools/mksamsungheader.py kernel ${SECURE_HEADER_SIZE}
 endef
 
 define MAKE_BOOTPARAM
-  $(TOPDIR)/../os/tools/mkbootparam.py ${FLASH_BASE_ADDRESS} ${FLASH_SIZE}
+  $(TOPDIR)/../os/tools/mkbootparam.py
 endef
 
 define DOWNLOAD

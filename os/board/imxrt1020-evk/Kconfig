@@ -5,6 +5,20 @@
 
 if ARCH_BOARD_IMXRT1020_EVK
 
+config FLASH_START_ADDR
+	hex
+	default 0x60000000
+	---help---
+		A start address of flash (in hex).
+		This is fixed value, so user doesn't need to change it.
+
+config FLASH_SIZE
+	int
+	default 8388608
+	---help---
+		A size of flash (in bytes).
+		This is fixed value, so user doesn't need to change it.
+
 config IMXRT_NORFLASH
 	bool "Enable Norflash"
 	default y

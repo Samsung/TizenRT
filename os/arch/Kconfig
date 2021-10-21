@@ -851,25 +851,11 @@ config RAM_DDR_SIZE
 
 if BOOT_RUNFROMFLASH && ARCH_USE_MMU
 
-config FLASH_START
-	hex "Boot FLASH start address (physical)"
-	default 0x0
-	---help---
-		The physical start address of installed boot FLASH.  "Boot" FLASH
-		refers to the FLASH that you link program code into.
-
 config FLASH_VSTART
 	hex "Boot FLASH start address (virtual)"
 	default 0x0
 	---help---
 		The virtual start address of installed boot FLASH.  "Boot" FLASH
-		refers to the FLASH that you link program code into.
-
-config FLASH_SIZE
-	int "Boot FLASH size"
-	default 0
-	---help---
-		The size in bytes of the installed boot FLASH.  "Boot" FLASH
 		refers to the FLASH that you link program code into.
 
 endif # BOOT_RUNFROMFLASH && ARCH_USE_MMU

@@ -26,5 +26,3 @@ BL2="km4_boot_all"
 KERNEL="km0_km4_image2"
 OTA="km0_km4_image2"
 BOOTPARAM="bootparam"
-
-FLASH_START_ADDR=0x08000000
