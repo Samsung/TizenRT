@@ -89,7 +89,7 @@ def print_symbol(search_addr):
 	next_addr = 0x00000000
 	l = 0
 	h = len(symbol_lookup_table)
-	mid = (l + h) / 2
+	mid = (l + h) // 2
 
 	while (l <= h):
 		addr = symbol_lookup_table[mid - 1][0]
@@ -104,7 +104,7 @@ def print_symbol(search_addr):
 		else:
 			l = mid + 1
 
-		mid = (l + h) / 2
+		mid = (l + h) // 2
 
 	if (l > h):
 		if debug:
@@ -169,7 +169,7 @@ if (__name__ == '__main__'):
 
     setup_symbol_table(systemmap_path)
 
-    print('----------------------------------  DEBUG DISPLAY SYMBOLS -------------------------------')
+    print('------------------------------- DEBUG SYMBOLS IN TEXT RANGE -----------------------------')
     print('Dump_address\t Symbol_address\t  Symbol_name\tFile_name')
     parse_file(log_file)
     print('-----------------------------------------------------------------------------------------')
