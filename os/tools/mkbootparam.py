@@ -82,6 +82,8 @@ def make_bootparam():
 
     bootparam_size = SIZE_OF_CHECKSUM + SIZE_OF_BP_VERSION + SIZE_OF_BP_VERSION + SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
 
+    FLASH_START_ADDR = get_config_value(config_file_path, "CONFIG_FLASH_START_ADDR=")
+    FLASH_SIZE = get_config_value(config_file_path, "CONFIG_FLASH_SIZE=")
     names = get_config_value(config_file_path, "CONFIG_FLASH_PART_NAME=").replace('"','').replace('\n','').split(",")
     sizes = get_config_value(config_file_path, "CONFIG_FLASH_PART_SIZE=").replace('"','').replace('\n','').split(",")
     names = filter(None, names)
@@ -159,6 +161,4 @@ def make_bootparam():
 ###################################################
 # Generate boot parameters
 ###################################################
-FLASH_START_ADDR = sys.argv[1]
-FLASH_SIZE = sys.argv[2]
 make_bootparam()

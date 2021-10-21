@@ -401,7 +401,7 @@ IFS=',' read -ra sizes <<< "$sizes"
 
 #Calculate Flash Offset
 num=${#sizes[@]}
-offsets[0]=`printf "0x%X" ${FLASH_START_ADDR}`
+offsets[0]=`printf "0x%X" ${CONFIG_FLASH_START_ADDR}`
 
 for (( i=1; i<=$num-1; i++ ))
 do

@@ -5,6 +5,20 @@
 
 if ARCH_BOARD_IMXRT1050_EVK
 
+config FLASH_START_ADDR
+	hex
+	default 0x60000000
+	---help---
+		A start address of flash (in hex).
+		This is fixed value, so user doesn't need to change it.
+
+config FLASH_SIZE
+	int
+	default 16777216
+	---help---
+		A size of flash (in bytes).
+		This is fixed value, so user doesn't need to change it.
+
 choice
 	prompt "Boot Flash"
 	default IMXRT1050_EVK_HYPER_FLASH

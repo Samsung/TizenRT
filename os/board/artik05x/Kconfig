@@ -2,6 +2,20 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
+config FLASH_START_ADDR
+	hex
+	default 0x4000000
+	---help---
+		A start address of flash (in hex).
+		This is fixed value, so user doesn't need to change it.
+
+config FLASH_SIZE
+	int
+	default 8388608
+	depends on S5J_SFLASH
+	---help---
+		A size of flash (in bytes).
+		This is fixed value, so user doesn't need to change it.
 
 config ARTIK05X_BOOT_FAILURE_DETECTION
 	bool "Clear bootcount when boot completes"
@@ -21,14 +35,6 @@ config ARTIK05X_BOOT_COUNTS_ADDR
 		The number of tries to boot will be stored in this address.
 		On successful boot, it is cleared to zero. The register should
 		be kept intact even on watchdog resets.
-
-config ARTIK05X_FLASH_CAPACITY
-	int "Size of external flash memory (in bytes)"
-	default 8388608
-	depends on S5J_SFLASH
-	---help---
-		Sets the capacity of the external flash memory
-		on the ARTIK-05x Series Starter Kit board.
 
 config ARTIK05X_FLASH_PAGE_SIZE
 	int "Page size of external flash memory (in bytes)"

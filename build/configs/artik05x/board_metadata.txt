@@ -29,5 +29,3 @@ KERNEL="tinyara_head"
 OTA="ota"
 
 DEFAULT_PORT=ttyUSB1
-
-FLASH_START_ADDR=0x04000000
