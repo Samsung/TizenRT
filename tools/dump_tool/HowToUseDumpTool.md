@@ -308,7 +308,7 @@ binary_manager_send_request
 
 ----------------------------------------------------------
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  DEBUG DISPLAY SYMBOLS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------- DEBUG SYMBOLS IN TEXT RANGE -----------------------------
 Dump_address	 Symbol_address	  Symbol_name	File_name
 0xe0072f3	 0xe007290 	  up_assert	/root/tizenrt/os/include/assert.h:211
 0xe04f0bn	 0xe04f028 	  __FUNCTION__.6571
@@ -340,7 +340,7 @@ os_start
 
 ----------------------------------------------------------
 
---------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE -------------------------
+------------------------------- DEBUG SYMBOLS IN TEXT RANGE -----------------------------
 Dump_address	 Symbol_address	  Symbol_name	File_name
 0xe0542b3	 0xe0542a3 	  __FUNCTION__.6620
 0xe0086cd	 0xe0086cc 	  lowoutstream_putc	/root/product/.tizenrt/lib/libc/stdio/lib_lowoutstream.c:76
@@ -379,7 +379,7 @@ sched_get_priority_max
 
 ----------------------------------------------------------
 
---------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE -------------------------
+------------------------------- DEBUG SYMBOLS IN TEXT RANGE -----------------------------
 Dump_address	 Symbol_address	  Symbol_name	File_name
 0xe006337	 0xe006310 	  lowvsyslog	/root/product/.tizenrt/os/include/syslog.h:263
 0xe0060c1	 0xe0060c0 	  lib_noflush	/root/product/.tizenrt/os/include/tinyara/streams.h:605
