@@ -149,7 +149,7 @@ config MM_SHM
 
 config MM_ASSERT_ON_FAIL
 	bool "Assertion when Memory allocation fail"
-	default n
+	default y
 	---help---
 		When memory allocation fails, make assertion.
 		From the application binary with loadable build, it will be reloaded.
