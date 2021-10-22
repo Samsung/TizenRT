@@ -33,8 +33,6 @@
 #include <stdbool.h>
 #include "ble_common.h"
 
-typedef struct _ble_client_ctx ble_client_ctx;
-
 typedef enum {
 	BLE_CLIENT_NONE = 0,
 	BLE_CLIENT_IDLE,
@@ -63,6 +61,14 @@ typedef struct {
 	ble_conn_handle conn_handle[BLE_MAX_CONNECTION_COUNT];
 	uint8_t connected_count;
 } ble_device_connected_list;
+
+typedef struct {
+	ble_conn_handle conn_handle;
+	volatile ble_client_state_e state;
+	ble_conn_info info;
+	bool is_bonded;
+	bool auto_connect;
+} ble_client_ctx;
 
 typedef struct {
 	/* This is a set of callback function for BLE client */

@@ -44,4 +44,4 @@ typedef enum {
 	BLE_AUTOCON_EVT_CANCEL,
 } ble_autocon_event;
 
-ble_autocon_result_e ble_manager_autoconnect(ble_client_ctx *ctx);
+ble_autocon_result_e ble_manager_autoconnect(ble_client_ctx_internal *ctx);
