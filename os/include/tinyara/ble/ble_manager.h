@@ -41,7 +41,7 @@ trble_result_e ble_drv_init(trble_server_init_config *server, trble_scan_queue *
 trble_result_e ble_drv_deinit(void);
 trble_result_e ble_drv_get_mac_addr(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e ble_drv_get_bonded_device(trble_bonded_device_list_s *device_list, uint16_t *device_count);
-trble_result_e ble_drv_delete_bonded(uint8_t addr[TRBLE_BD_ADDR_MAX_LEN]);
+trble_result_e ble_drv_delete_bonded(trble_addr *addr);
 trble_result_e ble_drv_delete_bonded_all(void);
 trble_result_e ble_drv_conn_is_active(trble_conn_handle con_handle, bool *is_active);
 trble_result_e ble_drv_conn_is_any_active(bool *is_active);

@@ -138,10 +138,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	break;
 	case LWNL_REQ_BLE_DEL_BOND:
 	{
-		uint8_t *addr = NULL;
+		trble_addr *addr = NULL;
 
 		if (data != NULL) {
-			addr = (uint8_t *)data;
+			addr = (trble_addr *)data;
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}

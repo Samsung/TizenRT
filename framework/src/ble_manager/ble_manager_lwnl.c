@@ -95,7 +95,7 @@ trble_result_e ble_drv_get_bonded_device(trble_bonded_device_list_s *device_list
 	return res;
 }
 
-trble_result_e ble_drv_delete_bonded(uint8_t *addr)
+trble_result_e ble_drv_delete_bonded(trble_addr *addr)
 {
 	trble_result_e res = TRBLE_SUCCESS;
 	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_DEL_BOND}, TRBLE_BD_ADDR_MAX_LEN, (void *)addr, (void *)&res};

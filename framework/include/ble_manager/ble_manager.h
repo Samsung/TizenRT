@@ -116,14 +116,14 @@ ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list* device_list, 
  *   Delete the bonded device.
  *
  * Input Parameters:
- *   addr      - The mac address of bonded device.
+ *   addr      - The ble address of bonded device.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_delete_bonded(uint8_t addr[BLE_BD_ADDR_MAX_LEN]);
+ble_result_e ble_manager_delete_bonded(ble_addr *addr);
 
 /****************************************************************************
  * Name: ble_manager_delete_bonded_all
