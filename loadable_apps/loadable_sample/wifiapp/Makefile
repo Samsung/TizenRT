@@ -68,7 +68,7 @@ endif
 #########################################
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 
-BIN = wifi
+BIN = app2
 # need to update
 BIN_TYPE = ELF
 BIN_VER = 20190412

@@ -108,8 +108,8 @@ function get_executable_name()
 			fi;;
 		kernel|os) echo "${KERNEL_BIN_NAME}";;
 		ota) echo "${OTA}.bin";;
-		micom) echo "${MICOM_BIN_NAME}";;
-		wifi) echo "${WIFI_BIN_NAME}";;
+		app1) echo "${APP1_BIN_NAME}";;
+		app2) echo "${APP2_BIN_NAME}";;
 		loadparam) echo "$1";;
 		common) echo "${COMMON_BIN_NAME}";;
 		zoneinfo) echo "zoneinfo.img";;
@@ -248,8 +248,8 @@ download_all()
 {
 	echo "Starting Download..."
 	found_kernel=false
-	found_wifi=false
-	found_micom=false
+	found_app1=false
+	found_app2=false
 	found_common=false
 
 	for partidx in ${!parts[@]}; do
@@ -267,18 +267,18 @@ download_all()
 			found_kernel=true
 		fi
 
-		if [[ "${parts[$partidx]}" == "wifi" ]];then
-			if [[ $found_wifi == true ]];then
+		if [[ "${parts[$partidx]}" == "app1" ]];then
+			if [[ $found_app1 == true ]];then
 				continue
 			fi
-			found_wifi=true
+			found_app1=true
 		fi
 
-		if [[ "${parts[$partidx]}" == "micom" ]];then
-			if [[ $found_micom == true ]];then
+		if [[ "${parts[$partidx]}" == "app2" ]];then
+			if [[ $found_app2 == true ]];then
 				continue
 			fi
-			found_micom=true
+			found_app2=true
 		fi
 
 		if [[ "${parts[$partidx]}" == "common" ]];then

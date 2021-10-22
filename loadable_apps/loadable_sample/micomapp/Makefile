@@ -67,7 +67,7 @@ endif
 #########################################
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 
-BIN = micom
+BIN = app1
 # need to update
 BIN_TYPE = ELF
 DYNAMIC_RAM_SIZE = 51200

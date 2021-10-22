@@ -50,10 +50,10 @@ def save_bininfo(bin_name) :
 	with open(os_folder + '/.bininfo', "a") as f :
 		if ("kernel" in bin_name) :
 			f.write('KERNEL_BIN_NAME=' + bin_name + '\n')
-		if ("wifi" in bin_name) :
-			f.write('WIFI_BIN_NAME=' + bin_name + '\n')
-		if ("micom" in bin_name) :
-			f.write('MICOM_BIN_NAME=' + bin_name + '\n')
+		if ("app1" in bin_name) :
+			f.write('APP1_BIN_NAME=' + bin_name + '\n')
+		if ("app2" in bin_name) :
+			f.write('APP2_BIN_NAME=' + bin_name + '\n')
 		if ("common" in bin_name) :
 			f.write('COMMON_BIN_NAME=' + bin_name + '\n')
 
@@ -84,7 +84,7 @@ if os.path.isfile(metadata_file) :
 			save_bininfo(BIN_NAME + '.' + EXT_NAME)
 			continue
 		# Change the user bin name as "[user_bin_name]_[board]_[version]"
-		if (filename == "micom" or filename == "wifi") :
+		if ("app1" == filename or "app2" == filename) :
 			USER_BIN_NAME = filename + '_' + BOARD_TYPE + '_' + BIN_VERSION
 			os.rename(output_folder + '/' + filename, output_folder + '/' + USER_BIN_NAME)
 			save_bininfo(USER_BIN_NAME)

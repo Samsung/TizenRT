@@ -33,13 +33,13 @@ function pre_download()
 	cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
 	cp -p ${BIN_PATH}/${KERNEL_BIN_NAME} ${IMG_TOOL_PATH}/${KERNEL_BIN_NAME}
 	if [ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]; then
-		if test -f "${BIN_PATH}/${MICOM_BIN_NAME}"; then
+		if test -f "${BIN_PATH}/${APP1_BIN_NAME}"; then
 			APP_NUM=$(($APP_NUM+1))
-			cp -p ${BIN_PATH}/${MICOM_BIN_NAME} ${IMG_TOOL_PATH}/${MICOM_BIN_NAME}
+			cp -p ${BIN_PATH}/${APP1_BIN_NAME} ${IMG_TOOL_PATH}/${APP1_BIN_NAME}
 		fi
-		if test -f "${BIN_PATH}/${WIFI_BIN_NAME}"; then
+		if test -f "${BIN_PATH}/${APP2_BIN_NAME}"; then
 			APP_NUM=$(($APP_NUM+1))
-			cp -p ${BIN_PATH}/${WIFI_BIN_NAME} ${IMG_TOOL_PATH}/${WIFI_BIN_NAME}
+			cp -p ${BIN_PATH}/${APP2_BIN_NAME} ${IMG_TOOL_PATH}/${APP2_BIN_NAME}
 		fi
 		if [ ${APP_NUM} -eq 0 ]; then
 			echo "No User Binary."
@@ -79,11 +79,11 @@ function post_download()
 	[ -e ${BL1}.bin ] && rm ${BL1}.bin
 	[ -e ${BL2}.bin ] && rm ${BL2}.bin
 	[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
-	if test -f ${MICOM_BIN_NAME}; then
-		[ -e ${MICOM_BIN_NAME} ] && rm ${MICOM_BIN_NAME}
+	if test -f ${APP1_BIN_NAME}; then
+		[ -e ${APP1_BIN_NAME} ] && rm ${APP1_BIN_NAME}
 	fi
-	if test -f ${WIFI_BIN_NAME}; then
-		[ -e ${WIFI_BIN_NAME} ] && rm ${WIFI_BIN_NAME}
+	if test -f ${APP2_BIN_NAME}; then
+		[ -e ${APP2_BIN_NAME} ] && rm ${APP2_BIN_NAME}
 	fi
 	if test -f ${COMMON_BIN_NAME}; then
 		[ -e ${COMMON_BIN_NAME} ] && rm ${COMMON_BIN_NAME}
