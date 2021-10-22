@@ -33,13 +33,13 @@ function pre_download()
 	cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
 	cp -p ${BIN_PATH}/${KERNEL_BIN_NAME} ${IMG_TOOL_PATH}/${KERNEL_BIN_NAME}
 	if [ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]; then
-		if test -f "${BIN_PATH}/micom"; then
+		if test -f "${BIN_PATH}/${MICOM_BIN_NAME}"; then
 			APP_NUM=$(($APP_NUM+1))
-			cp -p ${BIN_PATH}/micom ${IMG_TOOL_PATH}/micom
+			cp -p ${BIN_PATH}/${MICOM_BIN_NAME} ${IMG_TOOL_PATH}/${MICOM_BIN_NAME}
 		fi
-		if test -f "${BIN_PATH}/wifi"; then
+		if test -f "${BIN_PATH}/${WIFI_BIN_NAME}"; then
 			APP_NUM=$(($APP_NUM+1))
-			cp -p ${BIN_PATH}/wifi ${IMG_TOOL_PATH}/wifi
+			cp -p ${BIN_PATH}/${WIFI_BIN_NAME} ${IMG_TOOL_PATH}/${WIFI_BIN_NAME}
 		fi
 		if [ ${APP_NUM} -eq 0 ]; then
 			echo "No User Binary."
@@ -47,8 +47,8 @@ function pre_download()
 			exit 1
 		fi
 	fi
-	if test -f "${BIN_PATH}/${CONFIG_COMMON_BINARY_NAME}"; then
-		cp -p ${BIN_PATH}/${CONFIG_COMMON_BINARY_NAME} ${IMG_TOOL_PATH}/${CONFIG_COMMON_BINARY_NAME}
+	if test -f "${BIN_PATH}/${COMMON_BIN_NAME}"; then
+		cp -p ${BIN_PATH}/${COMMON_BIN_NAME} ${IMG_TOOL_PATH}/${COMMON_BIN_NAME}
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
 		cp -p ${BIN_PATH}/rtl8721csm_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
@@ -79,14 +79,14 @@ function post_download()
 	[ -e ${BL1}.bin ] && rm ${BL1}.bin
 	[ -e ${BL2}.bin ] && rm ${BL2}.bin
 	[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
-	if test -f "micom"; then
-		[ -e micom ] && rm micom
+	if test -f ${MICOM_BIN_NAME}; then
+		[ -e ${MICOM_BIN_NAME} ] && rm ${MICOM_BIN_NAME}
 	fi
-	if test -f "wifi"; then
-		[ -e wifi ] && rm wifi
+	if test -f ${WIFI_BIN_NAME}; then
+		[ -e ${WIFI_BIN_NAME} ] && rm ${WIFI_BIN_NAME}
 	fi
-	if test -f "${CONFIG_COMMON_BINARY_NAME}"; then
-		[ -e ${CONFIG_COMMON_BINARY_NAME} ] && rm ${CONFIG_COMMON_BINARY_NAME}
+	if test -f ${COMMON_BIN_NAME}; then
+		[ -e ${COMMON_BIN_NAME} ] && rm ${COMMON_BIN_NAME}
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
 		[ -e ${CONFIG_ARCH_BOARD}_smartfs.bin ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin

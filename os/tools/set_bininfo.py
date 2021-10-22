@@ -47,11 +47,25 @@ def check_version_config(file_name):
     return any([True if 'CONFIG_BOARD_BUILD_DATE' in line and not line.startswith('#') else False for line in lines ])
 
 def save_bininfo(bin_name) :
-	with open(os_folder + '/.bininfo', "w") as f :
-		f.write('KERNEL_BIN_NAME=' + bin_name)
+	with open(os_folder + '/.bininfo', "a") as f :
+		if ("kernel" in bin_name) :
+			f.write('KERNEL_BIN_NAME=' + bin_name + '\n')
+		if ("wifi" in bin_name) :
+			f.write('WIFI_BIN_NAME=' + bin_name + '\n')
+		if ("micom" in bin_name) :
+			f.write('MICOM_BIN_NAME=' + bin_name + '\n')
+		if ("common" in bin_name) :
+			f.write('COMMON_BIN_NAME=' + bin_name + '\n')
+
+# Delete previous .bininfo
+if os.path.isfile(os_folder + '/.bininfo') :
+	os.remove(os_folder + '/.bininfo')
 
 # Check the board type. Because kernel binary name is different based on board type.
 BOARD_TYPE = get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
+
+# Extract Common binary name
+CONFIG_CMN_BIN_NAME = get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_NAME=").replace('"', '').rstrip("\n")
 
 if check_version_config(cfg_file) :
 	BIN_VERSION = get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=").replace('"', '').rstrip("\n")
@@ -68,7 +82,19 @@ if os.path.isfile(metadata_file) :
 			# Change the kernel bin name as "kernel_[board]_[version].extension"
 			os.rename(output_folder + '/' + filename, output_folder + '/' + BIN_NAME + '.' + EXT_NAME)
 			save_bininfo(BIN_NAME + '.' + EXT_NAME)
-			break
+			continue
+		# Change the user bin name as "[user_bin_name]_[board]_[version]"
+		if (filename == "micom" or filename == "wifi") :
+			USER_BIN_NAME = filename + '_' + BOARD_TYPE + '_' + BIN_VERSION
+			os.rename(output_folder + '/' + filename, output_folder + '/' + USER_BIN_NAME)
+			save_bininfo(USER_BIN_NAME)
+			continue
+		# Change the common bin name as "common_[board]_[version]"
+		if (filename == CONFIG_CMN_BIN_NAME) :
+			COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + BIN_VERSION
+			os.rename(output_folder + '/' + CONFIG_CMN_BIN_NAME, output_folder + '/' + COMMON_BIN_NAME)
+			save_bininfo(COMMON_BIN_NAME)
+			continue
 else :
 	save_bininfo("tinyara.bin")
 

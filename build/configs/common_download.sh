@@ -108,8 +108,10 @@ function get_executable_name()
 			fi;;
 		kernel|os) echo "${KERNEL_BIN_NAME}";;
 		ota) echo "${OTA}.bin";;
-		micom|wifi|loadparam) echo "$1";;
-		common) echo ${CONFIG_COMMON_BINARY_NAME};;
+		micom) echo "${MICOM_BIN_NAME}";;
+		wifi) echo "${WIFI_BIN_NAME}";;
+		loadparam) echo "$1";;
+		common) echo "${COMMON_BIN_NAME}";;
 		zoneinfo) echo "zoneinfo.img";;
 		rom) echo "romfs.img";;
 		bootparam)

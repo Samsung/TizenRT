@@ -24,9 +24,13 @@ TOOL_DIR = OS_DIR + '/tools/'
 
 def read_binpath():
 	with open(OS_DIR + '/.bininfo') as f:
-		info = f.readlines()
-	binary_path = info
-	return binary_path[0].split('=')[1].rstrip('\n')
+		info = f.readline()
+		while info :
+			if ("kernel" in info) :
+				binary_path = info.split('=')[1].rstrip('\n')
+				break
+			info = f.readline()
+	return binary_path
 ############################################################################
 #
 # This script generates samsung binary header for kernel.
