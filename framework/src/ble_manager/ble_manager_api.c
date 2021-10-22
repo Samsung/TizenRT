@@ -65,7 +65,7 @@ ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list* device_list, 
 	RETURN_RESULT(res, msg);
 }
 
-ble_result_e ble_manager_delete_bonded(uint8_t addr[BLE_BD_ADDR_MAX_LEN])
+ble_result_e ble_manager_delete_bonded(ble_addr *addr)
 {
 	blemgr_msg_s msg = {BLE_CMD_DEL_BOND, BLE_MANAGER_FAIL, (void *)addr, NULL};
 	int res = blemgr_post_message(&msg);

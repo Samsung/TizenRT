@@ -298,7 +298,7 @@ typedef trble_result_e (*trble_deinit)(struct bledev *dev);
 typedef trble_result_e (*trble_get_mac_addr)(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 // trble_disconnect can be used in both of server & client.
 typedef trble_result_e (*trble_get_bonded_device)(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
-typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, uint8_t addr[TRBLE_BD_ADDR_MAX_LEN]);
+typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, trble_addr *addr);
 typedef trble_result_e (*trble_delete_bond_all)(struct bledev *dev);
 typedef trble_result_e (*trble_conn_is_active)(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
 typedef trble_result_e (*trble_conn_is_any_active)(struct bledev *dev, bool *is_active);
