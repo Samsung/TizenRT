@@ -36,8 +36,6 @@
 #include "miniz/miniz.h"
 #endif
 
-#define MAX_BLOCK_SIZE 8192
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -264,11 +262,6 @@ int main(int argc, char *argv[])	//Main defined
 	}
 
 	block_size = atoi(argv[1]);
-
-	if (block_size > MAX_BLOCK_SIZE) {
-		fprintf(stderr, "Block size should be less than %d, Modify MAX_BLOCK_SIZE if needed\n", MAX_BLOCK_SIZE);
-		exit(2);
-	}
 
 	comp_format = atoi(argv[2]);
 

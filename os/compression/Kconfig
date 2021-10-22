@@ -25,8 +25,8 @@ config COMPRESSION_TYPE
 
 config COMPRESSION_BLOCK_SIZE
 	int "Block size for binary compression"
-	default 2048
-	range 512 8192
+	default 16384
+	range 512 16384
 	---help---
 		Enter block size to use for compression of binary.
 
