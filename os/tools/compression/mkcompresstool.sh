@@ -46,7 +46,13 @@ APPNAME=mkcompressimg
 
 echo $TMPDIR
 echo $SOURCEDIR
-echo "==========Copying lzma files====================="
+if [ $CONFIG_COMPRESSION_TYPE == 1 ]
+then
+	echo "==========Copying lzma files====================="
+elif [ $CONFIG_COMPRESSION_TYPE == 2 ]
+then
+	echo "==========Copying miniz files====================="
+fi
 cp $SOURCEDIR/*.* $TMPDIR/
 
 echo "Copying Done"
