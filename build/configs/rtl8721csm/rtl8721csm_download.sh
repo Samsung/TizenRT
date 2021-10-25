@@ -79,13 +79,13 @@ function post_download()
 	[ -e ${BL1}.bin ] && rm ${BL1}.bin
 	[ -e ${BL2}.bin ] && rm ${BL2}.bin
 	[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
-	if test -f ${APP1_BIN_NAME}; then
+	if test -f "${APP1_BIN_NAME}"; then
 		[ -e ${APP1_BIN_NAME} ] && rm ${APP1_BIN_NAME}
 	fi
-	if test -f ${APP2_BIN_NAME}; then
+	if test -f "${APP2_BIN_NAME}"; then
 		[ -e ${APP2_BIN_NAME} ] && rm ${APP2_BIN_NAME}
 	fi
-	if test -f ${COMMON_BIN_NAME}; then
+	if test -f "${COMMON_BIN_NAME}"; then
 		[ -e ${COMMON_BIN_NAME} ] && rm ${COMMON_BIN_NAME}
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
