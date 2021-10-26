@@ -33,12 +33,13 @@
 #define RMC_CLIENT_TAG "\x1b[32m[RMC CLIENT]\x1b[0m"
 #define RMC_SERVER_TAG "\x1b[36m[RMC SERVER]\x1b[0m"
 #define RMC_LOG(tag, fmt, args...) printf(tag fmt, ##args)
+#define RMC_MAX_CONNECTION 3
 
-static sem_t g_conn_sem = { 0, };
-static ble_conn_handle g_conn = 0;
-static int g_scan_done = -1;
+static int g_scan_done = 0;
+static int g_scan_state = -1;
 static ble_addr g_target = { 0, };
-static ble_client_ctx *g_ctx = NULL;
+static ble_client_ctx *ctx_list[RMC_MAX_CONNECTION] = { 0, };
+static int ctx_count = 0;
 
 static char *client_state_str[] = {
 	"\x1b[35mNONE\x1b[0m",
@@ -57,6 +58,11 @@ static char *__client_state_str(ble_client_state_e state)
 static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
 {
 	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[%d]\n", __FUNCTION__, scan_state);
+	if (scan_state == BLE_SCAN_STOPPED) {
+		g_scan_state = 0;
+	} else if (scan_state == BLE_SCAN_STARTED) {
+		g_scan_state = 1;
+	}
 	return;
 }
 
@@ -69,6 +75,10 @@ static uint8_t ble_mac_filter[2][BLE_BD_ADDR_MAX_LEN] = {
 
 static void ble_device_scanned_cb_with_filter(ble_scanned_device *scanned_device)
 {
+	if (g_scan_done == 1) {
+		return;
+	}
+
 	RMC_LOG(RMC_CLIENT_TAG, "Find RMC with scan filter!!!\n");
 	printf("scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
 		scanned_device->addr.mac[0],
@@ -101,7 +111,6 @@ static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_dev
 			scanned_device->addr.mac[4],
 			scanned_device->addr.mac[5]
 		);
-		return;
 	}
 	
 	return;
@@ -109,8 +118,7 @@ static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_dev
 
 static void ble_device_disconnected_cb(ble_client_ctx *ctx)
 {
-	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[%p]\n", __FUNCTION__, ctx);
-	(void)sem_post(&g_conn_sem);
+	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[ID : %d]\n", __FUNCTION__, ctx->conn_handle);
 	return;
 }
 
@@ -118,7 +126,6 @@ static void ble_device_connected_cb(ble_client_ctx *ctx, ble_device_connected *d
 {
 	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[%p]\n", __FUNCTION__, ctx);
 
-	g_conn = dev->conn_handle;
 	RMC_LOG(RMC_CLIENT_TAG, "Conn Handle : %d\n", dev->conn_handle);
 	RMC_LOG(RMC_CLIENT_TAG, "Bonded : %d / CI : %d / SL : %d / MTU : %d\n", 
 		dev->is_bonded,
@@ -135,7 +142,6 @@ static void ble_device_connected_cb(ble_client_ctx *ctx, ble_device_connected *d
 		dev->conn_info.addr.mac[5]
 	);
 
-	(void)sem_post(&g_conn_sem);
 	return;
 }
 
@@ -233,79 +239,61 @@ static ble_server_init_config server_config = {
 	true,
 	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
 
-static int ble_connect_common(bool is_auto)
+static int ble_connect_common(ble_client_ctx *ctx, ble_addr *addr, bool is_auto)
 {
 	ble_result_e ret = BLE_MANAGER_FAIL;
-	struct timespec abstime;
+	ble_attr_handle attr_handle;
 	ble_client_state_e cli_state = BLE_CLIENT_NONE;
 	ble_conn_info conn_info = { 0, };
 
-	memcpy(conn_info.addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
-	RMC_LOG(RMC_CLIENT_TAG, "BLE mac type : %d\n", g_target.type);
-	conn_info.addr.type = g_target.type;
+	memcpy(conn_info.addr.mac, addr->mac, BLE_BD_ADDR_MAX_LEN);
+	conn_info.addr.type = addr->type;
 	conn_info.conn_interval = 8;
 	conn_info.slave_latency = 128;
 	conn_info.mtu = 240;
 	conn_info.scan_timeout = 1000;
 	conn_info.is_secured_connect = true;
 
-	sem_init(&g_conn_sem, 0, 0);
-
-	if (g_ctx == NULL) {
-		g_ctx = ble_client_create_ctx(&client_config);
-		if (g_ctx == NULL) {
-			RMC_LOG(RMC_CLIENT_TAG, "create ctx fail\n");
-			return 0;
-		}
+	if (ctx == NULL) {
+		RMC_LOG(RMC_CLIENT_TAG, "ctx fail\n");
+		return -1;
 	}
-	RMC_LOG(RMC_CLIENT_TAG, "create ctx ok[%p]\n", g_ctx);
 
-	ret = ble_client_autoconnect(g_ctx, is_auto);
+	ret = ble_client_autoconnect(ctx, is_auto);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		RMC_LOG(RMC_CLIENT_TAG, "fail to set autoconnect=%d [%d]\n", is_auto, ret);
 	}
 
-	cli_state = ble_client_get_state(g_ctx);
+	cli_state = ble_client_get_state(ctx);
 	RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(cli_state));
 
-	ret = ble_client_connect(g_ctx, &conn_info);
+	ret = ble_client_connect(ctx, &conn_info);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		RMC_LOG(RMC_CLIENT_TAG, "connect fail[%d]\n", ret);
-		return 0;
+		return -2;
 	}
 
-	cli_state = ble_client_get_state(g_ctx);
+	cli_state = ble_client_get_state(ctx);
 	RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(cli_state));
 
-	ret = clock_gettime(CLOCK_REALTIME, &abstime);
+	int wait_time = 10; // Wait 10 seconds
+	int count = wait_time * 4;
+	while (count--) {
+		cli_state = ble_client_get_state(ctx);
+		if (cli_state == BLE_CLIENT_CONNECTED) {
+			RMC_LOG(RMC_CLIENT_TAG, "BLE is connected\n");
+			break;
+		} else if (cli_state == BLE_CLIENT_IDLE) {
+			RMC_LOG(RMC_CLIENT_TAG, "BLE is not connected");
+			return -3;
+		}
 
-	abstime.tv_sec = abstime.tv_sec + 10;
-	abstime.tv_nsec = 0;
-
-	int status = sem_timedwait(&g_conn_sem, &abstime);
-	sem_destroy(&g_conn_sem);
-	int errcode = errno;
-	if (status < 0) {
-		RMC_LOG(RMC_CLIENT_TAG, "ERROR: sem_timedwait failed with: %d\n", errcode);
-		return 0;
-	} else {
-		RMC_LOG(RMC_CLIENT_TAG, "PASS: sem_timedwait succeeded\n");
+		usleep(250 * 1000);
 	}
-
-	cli_state = ble_client_get_state(g_ctx);
 	RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(cli_state));
-
-	if (cli_state != BLE_CLIENT_CONNECTED) {
-		RMC_LOG(RMC_CLIENT_TAG, "BLE is not connected");
-		return 0;
-	} else {
-		RMC_LOG(RMC_CLIENT_TAG, "BLE is connected\n");
-	}
-	
-	ble_attr_handle attr_handle;
 
 	attr_handle = 0xff03;
-	ret = ble_client_operation_enable_notification(g_ctx, attr_handle);
+	ret = ble_client_operation_enable_notification(ctx, attr_handle);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		RMC_LOG(RMC_CLIENT_TAG, "Fail to enable noti handle1[%d]\n", ret);
 	} else {
@@ -313,7 +301,7 @@ static int ble_connect_common(bool is_auto)
 	}
 
 	attr_handle = 0x006e;
-	ret = ble_client_operation_enable_notification(g_ctx, attr_handle);
+	ret = ble_client_operation_enable_notification(ctx, attr_handle);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		RMC_LOG(RMC_CLIENT_TAG, "Fail to enable noti handle2[%d]\n", ret);
 	} else {
@@ -375,7 +363,11 @@ int ble_rmc_main(int argc, char *argv[])
 	}
 
 	if (strncmp(argv[1], "state", 6) == 0) {
-		RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(ble_client_get_state(g_ctx)));
+		if (argc < 3) {
+			goto ble_rmc_done;
+		}
+		int id = atoi(argv[2]);
+		RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(ble_client_get_state(ctx_list[id])));
 	}
 
 	if (strncmp(argv[1], "deinit", 7) == 0) {
@@ -389,6 +381,7 @@ int ble_rmc_main(int argc, char *argv[])
 		ble_bonded_device_list dev_list[BLE_MAX_BONDED_DEVICE] = { 0, };
 		uint16_t dev_count = 0;
 		ble_addr *addr;
+		ble_client_ctx *ctx;
 
 		ret = ble_manager_get_bonded_device(dev_list, &dev_count);
 		if (ret != BLE_MANAGER_SUCCESS) {
@@ -401,16 +394,26 @@ int ble_rmc_main(int argc, char *argv[])
 			addr = &(dev_list[0].bd_addr);
 			RMC_LOG(RMC_CLIENT_TAG, "Bond[%d] %02x:%02x:%02x:%02x:%02x:%02x\n", addr->type, 
 				addr->mac[0], addr->mac[1], addr->mac[2], addr->mac[3], addr->mac[4], addr->mac[5]);
-			memcpy(g_target.mac, addr->mac, BLE_BD_ADDR_MAX_LEN);
-			g_target.type = addr->type;
 		} else {
 			RMC_LOG(RMC_CLIENT_TAG, "There is no bonded data.");
 		}
 
+		ctx = ble_client_create_ctx(&client_config);
+		if (ctx == NULL) {
+			RMC_LOG(RMC_CLIENT_TAG, "create ctx fail\n");
+			goto ble_rmc_done;
+		}
+
+		int val;
 		if (argc == 3 && strncmp(argv[2], "auto", 5) == 0) {
-			(void)ble_connect_common(true);
+			val = ble_connect_common(ctx, addr, true);
 		} else {
-			(void)ble_connect_common(false);
+			val = ble_connect_common(ctx, addr, false);
+		}
+		RMC_LOG(RMC_CLIENT_TAG, "Re-Connect Result : %d\n", val);
+		if (val == 0) {
+			RMC_LOG(RMC_CLIENT_TAG, "Re-Connect Success [ID : %d]\n", ctx_count);
+			ctx_list[ctx_count++] = ctx;
 		}
 	}
 
@@ -571,7 +574,7 @@ int ble_rmc_main(int argc, char *argv[])
 		} else if (argc >= 3 && argv[2][0] == '2') {
 			RMC_LOG(RMC_CLIENT_TAG, "Scan Start with WhiteList!\n");
 
-			uint32_t scan_time = 0; // Seconds
+			uint32_t scan_time = 5; // Seconds
 			if (argc == 4) {
 				int temp = atoi(argv[3]);
 				if (temp < 0) {
@@ -585,7 +588,7 @@ int ble_rmc_main(int argc, char *argv[])
 			ble_scan_filter filter = { 0, };
 			filter.raw_data_length = 0;
 			filter.scan_duration = scan_time * 1000; // scan_duration should be in milliseconds.
-			filter.whitelist_enable = true;
+			filter.whitelist_enable = false;
 			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_with_filter;
 			ret = ble_client_start_scan(&filter, &scan_config);
 
@@ -604,22 +607,13 @@ int ble_rmc_main(int argc, char *argv[])
 		}
 	}
 
-	if (strncmp(argv[1], "check", 6) == 0) {
-		bool chk = false;
-		ret = ble_manager_conn_is_active(g_conn, &chk);
-		if (ret != BLE_MANAGER_SUCCESS) {
-			RMC_LOG(RMC_CLIENT_TAG, "Fail to get status[%d]\n", ret);
-		} else {
-			if (chk == true) {
-				RMC_LOG(RMC_CLIENT_TAG, "Connected!\n");
-			} else {
-				RMC_LOG(RMC_CLIENT_TAG, "Disonnected!\n");
-			}
-		}
-	}
-
 	if (strncmp(argv[1], "disconn", 8) == 0) {
-		ret = ble_client_disconnect(g_ctx);
+		if (argc < 3) {
+			goto ble_rmc_done;
+		}
+		int id = atoi(argv[2]);
+
+		ret = ble_client_disconnect(ctx_list[id]);
 		if (ret != BLE_MANAGER_SUCCESS) {
 			RMC_LOG(RMC_CLIENT_TAG, "disconnect fail[%d]\n", ret);
 			goto ble_rmc_done;
@@ -628,8 +622,9 @@ int ble_rmc_main(int argc, char *argv[])
 	}
 
 	if (strncmp(argv[1], "stop", 5) == 0) {
-		if (argc == 3 && strncmp(argv[2], "auto", 5) == 0) {
-			ret = ble_client_autoconnect(g_ctx, false);
+		if (argc == 4 && strncmp(argv[2], "auto", 5) == 0) {
+			int id = atoi(argv[3]);
+			ret = ble_client_autoconnect(ctx_list[id], false);
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "Stop auto connection fail[%d]\n", ret);
 				goto ble_rmc_done;
@@ -638,38 +633,21 @@ int ble_rmc_main(int argc, char *argv[])
 	}
 
 	if (strncmp(argv[1], "connect", 8) == 0) {
-		ble_client_state_e cli_state;
+		ble_client_ctx *ctx = NULL;
+		
+		/*
+		1. scan
+		2. delete bond
+		3. create ctx
+		4. connect
+		*/
 
-		if (g_ctx != NULL) {
-			cli_state = ble_client_get_state(g_ctx);
-			RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(cli_state));
-
-			if (cli_state != BLE_CLIENT_IDLE) {
-				ret = ble_client_disconnect(g_ctx);
-				if (ret != BLE_MANAGER_SUCCESS && ret != BLE_MANAGER_INVALID_STATE) {
-					RMC_LOG(RMC_CLIENT_TAG, "disconnect fail[%d]\n", ret);
-					goto ble_rmc_done;
-				}
-				int cnt = 20;
-				while (cnt--) {
-					cli_state = ble_client_get_state(g_ctx);
-					RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(cli_state));
-
-					if (cli_state == BLE_CLIENT_IDLE) {
-						break;
-					} else {
-						usleep(100 * 1000);
-					}
-				}
-			}
+		// 1. scan & delete bond
+		if (g_scan_state == 1) {
+			RMC_LOG(RMC_CLIENT_TAG, "Scan is running\n");
+			goto ble_rmc_done;
 		}
-
-		ret = ble_manager_delete_bonded_all();
-		if (ret != BLE_MANAGER_SUCCESS) {
-			RMC_LOG(RMC_CLIENT_TAG, "fail to delete all of bond dev[%d]\n", ret);
-		} else {
-			RMC_LOG(RMC_CLIENT_TAG, "success to delete all of bond dev\n");
-		}
+		g_scan_state = -1;
 
 		if (argc == 3 && strncmp(argv[2], "fail", 5) == 0) {
 			memset(g_target.mac, 1, BLE_BD_ADDR_MAX_LEN);
@@ -678,7 +656,7 @@ int ble_rmc_main(int argc, char *argv[])
 			ble_scan_filter filter = { 0, };
 			memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
 			filter.raw_data_length = sizeof(ble_filter);
-			filter.scan_duration = 1000;
+			filter.scan_duration = 1500;
 			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_with_filter;
 			g_scan_done = 0;
 			ret = ble_client_start_scan(&filter, &scan_config);
@@ -688,12 +666,33 @@ int ble_rmc_main(int argc, char *argv[])
 				goto ble_rmc_done;
 			}
 
-			sleep(2);
-
-			if (g_scan_done != 1) {
-				RMC_LOG(RMC_CLIENT_TAG, "scan fail to get adv packet\n");
+			while (1) {
+				if (g_scan_state == 0) {
+					break;
+				}
+				usleep(100 * 1000);
+			}
+			
+			if (g_scan_done == 0) {
+				RMC_LOG(RMC_CLIENT_TAG, "No target device\n");
 				goto ble_rmc_done;
 			}
+			RMC_LOG(RMC_CLIENT_TAG, "Found device!\n");
+
+			// ret = ble_manager_delete_bonded(&g_target);
+			ret = ble_manager_delete_bonded_all();
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_CLIENT_TAG, "fail to delete bond dev[%d]\n", ret);
+			} else {
+				RMC_LOG(RMC_CLIENT_TAG, "success to delete bond dev\n");
+			}
+		}
+
+		// 3. create ctx
+		ctx = ble_client_create_ctx(&client_config);
+		if (ctx == NULL) {
+			RMC_LOG(RMC_CLIENT_TAG, "create ctx fail\n");
+			goto ble_rmc_done;
 		}
 
 		RMC_LOG(RMC_CLIENT_TAG, "Try to connect! [%02x:%02x:%02x:%02x:%02x:%02x]\n", 
@@ -705,11 +704,17 @@ int ble_rmc_main(int argc, char *argv[])
 			g_target.mac[5]
 		);
 
+		int val;
 		if (argc == 3 && strncmp(argv[2], "auto", 5) == 0) {
 			/* For initial connection, remove bonded data all */
-			(void)ble_connect_common(true);
+			val = ble_connect_common(ctx, &g_target, true);
 		} else {
-			(void)ble_connect_common(false);
+			val = ble_connect_common(ctx, &g_target, false);
+		}
+		RMC_LOG(RMC_CLIENT_TAG, "Connect Result : %d\n", val);
+		if (val == 0) {
+			RMC_LOG(RMC_CLIENT_TAG, "Connect Success [ID : %d]\n", ctx_count);
+			ctx_list[ctx_count++] = ctx;
 		}
 	}
 
