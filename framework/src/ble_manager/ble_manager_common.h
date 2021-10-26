@@ -20,7 +20,7 @@
 #include <mqueue.h>
 #include <ble_manager/ble_manager.h>
 
-typedef struct _ble_client_ctx {
+typedef struct {
 	ble_conn_handle conn_handle;
 	volatile ble_client_state_e state;
 	ble_conn_info info;
@@ -28,15 +28,15 @@ typedef struct _ble_client_ctx {
 	bool auto_connect;
 	mqd_t mqfd;
 	ble_client_callback_list callbacks;
-} ble_client_ctx;
+} ble_client_ctx_internal;
 
-typedef struct _ble_scan_ctx {
+typedef struct {
 	volatile ble_scan_state_e state;
 	ble_scan_filter filter;
 	ble_scan_callback_list callback;
 } ble_scan_ctx;
 
-typedef struct _ble_server_ctx {
+typedef struct {
 	ble_conn_handle conn_handle;
 	volatile ble_server_state_e state;
 	bool is_secured_connect_allowed;
