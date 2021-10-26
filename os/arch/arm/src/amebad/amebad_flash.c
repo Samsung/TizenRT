@@ -82,6 +82,13 @@
  * Private Types
  ************************************************************************************/
 
+struct flash_info_s {
+	u8 manufacturer;		/* Manufacturer ID */
+	u8 memory;				/* Memory Type */
+	u8 capacity;			/* Memory Capacity */
+	u8 manufacturer_2;		/* Actually manufacturer ID */
+};
+
 /* This type represents the state of the MTD device.  The struct mtd_dev_s must
  * appear at the beginning of the definition so that you can freely cast between
  * pointers to struct mtd_dev_s and struct amebad_dev_s.
@@ -89,6 +96,7 @@
 struct amebad_dev_s {
 	struct mtd_dev_s mtd;		/* MTD interface */
 	int nsectors;				/* number of erase sectors */
+	struct flash_info_s info;
 };
 
 /************************************************************************************
@@ -112,12 +120,13 @@ static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
 /************************************************************************************
  * Name: amebad_erase
  ************************************************************************************/
-static ssize_t amebad_erase_page(size_t page)
+static ssize_t amebad_erase_page(FAR struct mtd_dev_s *dev, size_t page)
 {
 	uint32_t address;
 	irqstate_t irqs;
 	ssize_t ret;
-	
+	FAR struct amebad_dev_s *priv = (FAR struct amebad_dev_s *)dev;
+
 	if (page > (AMEBAD_START_SECOTR + AMEBAD_NSECTORS)) {
 		printf("Invalid page number\n");
 		return -EFAULT;
@@ -128,8 +137,18 @@ static ssize_t amebad_erase_page(size_t page)
 
 	/* do erase */
 	address = page * CONFIG_AMEBAD_FLASH_BLOCK_SIZE;
+
+	/* Fudan's nor flash checks erase state internally, so skip it */
+	if (priv->info.manufacturer != 0xA1) {
+		ret = flash_erase_verify(address, false);
+		/* Ok, it erased already so return 0 here */
+		if (ret == 0) {
+			irqrestore(irqs);
+			return ret;
+		}
+	}
 	flash_erase_sector(NULL, address);
-	ret = flash_erase_verify(address);
+	ret = flash_erase_verify(address, true);
 	/* Restore IRQs */
 	irqrestore(irqs);
 	if (ret != OK) {
@@ -145,7 +164,7 @@ static int amebad_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblo
 
 	/* Erase the specified blocks and return status (OK or a negated errno) */
 	while (nblocks > 0) {
-		result = amebad_erase_page(startblock);
+		result = amebad_erase_page(dev, startblock);
 		if (result < 0) {
 			return (int)result;
 		}
@@ -350,9 +369,10 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 		priv->mtd.write = amebad_write;
 #endif
 		priv->nsectors = AMEBAD_NSECTORS;
-		u8 chip_id[4];
-		flash_read_id(NULL, chip_id, 4);
-		lldbg("Manufacturer : %u memory type : %u capacity : %u\n", chip_id[0], chip_id[1], chip_id[2]);
+		struct flash_info_s info;
+		flash_read_id(NULL, (uint8_t *)&info, 4);
+		priv->info = info;
+		lldbg("Manufacturer : 0x%X memory type : 0x%X capacity : 0x%X\n", info.manufacturer, info.memory, info.capacity);
 		return (FAR struct mtd_dev_s *)priv;
 	}
 	return NULL;

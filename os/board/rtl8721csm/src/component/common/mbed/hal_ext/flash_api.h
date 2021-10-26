@@ -55,9 +55,10 @@ void flash_erase_block(flash_t * obj, uint32_t address);
 /**
   * @brief  Verify erased block
   * @param address: address of target page
+  * @param show_log: Throw debug message if it is true
   * @retval 0 : success or -1 : Failure.
   */
-int flash_erase_verify(u32 address);
+int flash_erase_verify(u32 address, bool show_log);
 
 /**
   * @brief  Read a word from specified address

@@ -180,17 +180,21 @@ void flash_erase_chip(flash_t *obj)
 /**
   * @brief  Verify erased block
   * @param address: address of target page
+  * @param show_log: Throw debug message if it is true
   * @retval 0 : success or -1 : Failure.
   */
-int flash_erase_verify(u32 address)
+int flash_erase_verify(u32 address, bool show_log)
 {
 	int count = 0x1000; //4k, block size
+	u32 addr = address;
 	while (count > 0) {
-		if (HAL_READ32(SPI_FLASH_BASE, address) != 0xffffffff) {
-			dbg("Not erased, address : %u value : %u\n", address, HAL_READ32(SPI_FLASH_BASE, address));
+		if (HAL_READ32(SPI_FLASH_BASE, addr) != 0xffffffff) {
+			if (show_log) {
+				vdbg("Not erased, address : %u value : %u\n", addr, HAL_READ32(SPI_FLASH_BASE, addr));
+			}
 			return -1;
 		}
-		address += sizeof(u32);
+		addr += sizeof(u32);
 		count -= sizeof(u32);
 	}
 	return 0;
