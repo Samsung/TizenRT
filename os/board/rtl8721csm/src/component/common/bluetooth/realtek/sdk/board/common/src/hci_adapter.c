@@ -27,6 +27,7 @@ typedef struct
 T_HCI_UART hci_rtk;
 T_HCI_UART *p_hci_rtk = &hci_rtk;
 
+uint8_t flag_for_hci_trx = 0;
 uint8_t g_hci_step = 0;
 extern HCI_PROCESS_TABLE hci_process_table[];
 extern uint8_t hci_total_step;
@@ -88,12 +89,17 @@ void hci_tp_close(void)
     return;
 }
 
-void hci_tp_del(void)
+void hci_tp_del(uint8_t param)
 {
-    HCI_PRINT_INFO0("hci_tp_del");
-    bt_power_off();
-    hci_uart_deinit();
-    return;
+    if (param == 0) {
+        flag_for_hci_trx = 1;
+    }
+    else if (param == 1) {
+        HCI_PRINT_INFO0("hci_tp_del");
+        bt_power_off();
+        hci_uart_deinit();
+        flag_for_hci_trx = 0;
+    }
 }
 
 bool hci_tp_send(uint8_t *p_buf, uint16_t len, P_HCI_TP_TX_CB tx_cb)
