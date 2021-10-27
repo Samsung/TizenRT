@@ -248,8 +248,7 @@ trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)
 	trble_result_e ret = TRBLE_UNSUPPORTED;
 	if (msg->cmd == TRBLE_MSG_GET_VERSION) {
 		uint8_t *version = (uint8_t *)msg->data;
-		// This will be set after BLE driver PR added
-		// ret = rtw_ble_get_version(version);
+		ret = rtw_ble_get_version(version);
 	}
 	return ret;
 }

@@ -22,7 +22,7 @@ void hci_tp_open(P_HCI_TP_OPEN_CB open_cb, P_HCI_TP_RX_IND rx_ind);
 
 void hci_tp_close(void);
 
-void hci_tp_del(void);
+void hci_tp_del(uint8_t param);
 
 void hci_tp_config(uint8_t *p_buf, uint16_t len);
 

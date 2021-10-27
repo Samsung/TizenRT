@@ -46,6 +46,7 @@ typedef struct
 }T_HCI_UART;
 
 T_HCI_UART *hci_uart_obj;
+extern uint8_t flag_for_hci_trx;
 
 #define TX_TRASMIT_COUNT 16
 #define hci_board_debug DBG_8195A
@@ -247,10 +248,11 @@ static inline void receive_chars(T_HCI_UART *hci_adapter, int ind)
 
     /* HCI_PRINT_INFO1("receive_chars: rx_len %u", hci_adapter->rx_len); */
     /* FIXME: There is too many rx indication events ? */
-    if (ind && hci_adapter->rx_ind)
-    {
-        hci_adapter->rx_ind();
-
+    if (flag_for_hci_trx == 0) {
+        if (ind && hci_adapter->rx_ind)
+        {
+            hci_adapter->rx_ind();
+        }
     }
 }
 
