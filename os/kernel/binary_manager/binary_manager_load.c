@@ -200,7 +200,7 @@ static int binary_manager_load(int bin_idx)
 					BIN_USEIDX(bin_idx) ^= 1;
 					continue;
 				} else {
-					bmdbg("No valid binary %s file\n", BIN_NAME(bin_idx));
+					printf("Fail to load %s binary : No valid binary file\n", BIN_NAME(bin_idx));
 					break;
 				}
 			}
