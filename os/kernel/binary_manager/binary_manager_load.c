@@ -58,6 +58,12 @@ extern struct binary_s *g_lib_binp;
 /* The buffer size for checking crc of common library */
 #define CMNLIB_CRC_BUFSIZE    512000
 
+#ifdef CONFIG_COMPRESSED_BINARY
+#define BINARY_COMP_TYPE "[Compressed Binary]"
+#else
+#define BINARY_COMP_TYPE "[Un-compressed Binary]"
+#endif
+
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
@@ -112,7 +118,7 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 	while (retry_count < BINMGR_LOADING_TRYCNT) {
 		ret = load_binary(bin_idx, path, load_attr);
 		if (ret >= 0) {
-			bmvdbg("Load '%s' success! pid = %d\n", path, ret);
+			bmvdbg("%s Load '%s' success! pid = %d\n", BINARY_COMP_TYPE, load_attr->bin_name, ret);
 			/* Set the data in table from header */
 			BIN_LOAD_ATTR(bin_idx) = *load_attr;
 			strncpy(BIN_NAME(bin_idx), load_attr->bin_name, BIN_NAME_MAX);
