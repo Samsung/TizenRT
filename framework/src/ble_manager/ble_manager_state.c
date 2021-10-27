@@ -261,6 +261,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_conn_is_any_active(is_active);
 	} break;
 
+	case BLE_CMD_GET_VERSION: {
+		BLE_STATE_CHECK;
+
+		trble_msg_s tmsg = { TRBLE_MSG_GET_VERSION, msg->param };
+		ret = ble_drv_ioctl(&tmsg);
+	} break;
+
 	// Scanner
 	case BLE_CMD_START_SCAN: {
 		BLE_STATE_CHECK;

@@ -65,6 +65,7 @@ typedef enum {
 	LWNL_REQ_BLE_DEL_BOND_ALL,
 	LWNL_REQ_BLE_CONN_IS_ACTIVE,
 	LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE,
+	LWNL_REQ_BLE_IOCTL,
 	
 	// Scanner
 	LWNL_REQ_BLE_START_SCAN,
@@ -126,6 +127,16 @@ typedef enum {
 	TRBLE_OUT_OF_MEMORY,
 	TRBLE_UNKNOWN,
 } trble_result_e;
+
+/*** BLE ioctl Message ***/
+typedef enum {
+	TRBLE_MSG_GET_VERSION,
+} trble_ioctl_cmd;
+
+typedef struct {
+	trble_ioctl_cmd cmd;
+	void *data;
+} trble_msg_s;
 
 /*** Central(Client) ***/
 typedef enum {
@@ -291,6 +302,7 @@ typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, uint8_t addr[TRB
 typedef trble_result_e (*trble_delete_bond_all)(struct bledev *dev);
 typedef trble_result_e (*trble_conn_is_active)(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
 typedef trble_result_e (*trble_conn_is_any_active)(struct bledev *dev, bool *is_active);
+typedef trble_result_e (*trble_drv_ioctl)(struct bledev *dev, trble_msg_s *msg);
 
 /*** Scanner(Observer) ***/
 typedef trble_result_e (*trble_start_scan)(struct bledev *dev, trble_scan_filter *filter);
@@ -340,6 +352,7 @@ struct trble_ops {
 	trble_delete_bond_all del_bond_all;
 	trble_conn_is_active conn_is_active;
 	trble_conn_is_any_active conn_is_any_active;
+	trble_drv_ioctl drv_ioctl;
 
 	/* Scanner(Observer) */
 	trble_start_scan start_scan;

@@ -136,6 +136,16 @@ trble_result_e ble_drv_conn_is_any_active(bool *is_active)
 	return res;
 }
 
+trble_result_e ble_drv_ioctl(trble_msg_s *dmsg)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_IOCTL}, sizeof(trble_msg_s), (void *)dmsg, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 /*** Scanner(Observer) ***/
 trble_result_e ble_drv_start_scan(trble_scan_filter *filter)
 {
