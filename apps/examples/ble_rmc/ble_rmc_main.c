@@ -364,6 +364,16 @@ int ble_rmc_main(int argc, char *argv[])
 		}
 	}
 
+	if (strncmp(argv[1], "version", 8) == 0) {
+		uint8_t version[3] = { 0, };
+		ret = ble_manager_get_version(version);
+		if (ret != BLE_MANAGER_SUCCESS) {
+			RMC_LOG(RMC_TAG, "Fail to get BLE version[%d]\n", ret);
+		} else {
+			RMC_LOG(RMC_TAG, "BLE Version : %02x %02x %02x\n", version[0], version[1], version[2]);
+		}
+	}
+
 	if (strncmp(argv[1], "state", 6) == 0) {
 		RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(ble_client_get_state(g_ctx)));
 	}

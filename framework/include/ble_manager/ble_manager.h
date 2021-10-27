@@ -141,3 +141,19 @@ ble_result_e ble_manager_delete_bonded_all(void);
 // Get whether the con_handle is active or not
 ble_result_e ble_manager_conn_is_active(ble_conn_handle con_handle, bool *is_active);
 ble_result_e ble_manager_conn_is_any_active(bool *is_active);
+
+/****************************************************************************
+ * Name: ble_manager_get_version
+ *
+ * Description:
+ *   Get 3 bytes data of current BLE Driver version.
+ *
+ * Input Parameters:
+ *   version  - 3 bytes array to get BLE current version.
+ * 
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_get_version(uint8_t version[3]);

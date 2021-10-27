@@ -98,6 +98,14 @@ ble_result_e ble_manager_conn_is_any_active(bool *is_active)
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_manager_get_version(uint8_t version[3])
+{
+	blemgr_msg_s msg = {BLE_CMD_GET_VERSION, BLE_MANAGER_FAIL, (void *)(version), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 /* Scanner */
 ble_result_e ble_client_start_scan(ble_scan_filter *filter, ble_scan_callback_list *callbacks)
 {

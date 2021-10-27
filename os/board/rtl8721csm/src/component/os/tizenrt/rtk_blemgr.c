@@ -55,6 +55,7 @@ trble_result_e trble_netmgr_delete_bond(struct bledev *dev, uint8_t addr[TRBLE_B
 trble_result_e trble_netmgr_delete_bond_all(struct bledev *dev);
 trble_result_e trble_netmgr_conn_is_active(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
 trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_active);
+trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg);
 
 /*** Scanner(Observer) ***/
 trble_result_e trble_netmgr_start_scan(struct bledev *dev, trble_scan_filter *filter);
@@ -102,6 +103,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_delete_bond_all,
 	trble_netmgr_conn_is_active,
 	trble_netmgr_conn_is_any_active,
+	trble_netmgr_ioctl,
 
 	// Observer
 	trble_netmgr_start_scan,
@@ -232,6 +234,17 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 {
 	*is_active = rtw_ble_server_conn_is_any_active();
 	return TRBLE_SUCCESS;
+}
+
+trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)
+{
+	trble_result_e ret = TRBLE_UNSUPPORTED;
+	if (msg->cmd == TRBLE_MSG_GET_VERSION) {
+		uint8_t *version = (uint8_t *)msg->data;
+		// This will be set after BLE driver PR added
+		// ret = rtw_ble_get_version(version);
+	}
+	return ret;
 }
 
 /*** Scanner(Observer) ***/

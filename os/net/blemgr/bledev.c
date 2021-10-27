@@ -182,6 +182,17 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, conn_is_any_active, (dev, is_active));
 	}
 	break;
+	case LWNL_REQ_BLE_IOCTL:
+	{
+		trble_msg_s *msg = NULL;
+		if (data != NULL) {
+			msg = (trble_msg_s *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		TRBLE_DRV_CALL(ret, dev, drv_ioctl, (dev, msg));
+	}
+	break;
 	
 	// Scanner
 	case LWNL_REQ_BLE_START_SCAN:
