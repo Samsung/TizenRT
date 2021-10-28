@@ -848,18 +848,6 @@ config RAM_DDR_SIZE
 		If the board uses external DDR RAM memory, you need to define
 		the size of DDR RAM
 
-
-if BOOT_RUNFROMFLASH && ARCH_USE_MMU
-
-config FLASH_VSTART
-	hex "Boot FLASH start address (virtual)"
-	default 0x0
-	---help---
-		The virtual start address of installed boot FLASH.  "Boot" FLASH
-		refers to the FLASH that you link program code into.
-
-endif # BOOT_RUNFROMFLASH && ARCH_USE_MMU
-
 config ARCH_HAVE_SDRAM
 	bool
 	default n
