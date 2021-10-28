@@ -43,8 +43,8 @@
 #define APP2_PATH         "/dev/mtdblock9"
 
 /* App binary information for update test */
-#define APP1_NAME                  "micom"
-#define APP2_NAME                  "wifi"
+#define APP1_NAME                  "app1"
+#define APP2_NAME                  "app2"
 
 #define EXEC_FINITE                 0
 #define EXEC_INFINITE               1
@@ -439,23 +439,23 @@ static void binary_update_invalid_binary_test(void)
 
 static void binary_update_run_tests(void)
 {
-	/* 1. Reload test with same version. */
+	/* 1. Get info all test. */
+	binary_update_getinfo_all();
+
+	/* 2. Reload test with same version. */
 	binary_update_same_version_test();
 
-	/* 2. Reload test with invalid binary. */
+	/* 3. Reload test with invalid binary. */
 	binary_update_invalid_binary_test();
 
-	/* 3. Register a callack for changed state. */
+	/* 4. Register a callack for changed state. */
 	binary_update_register_state_changed_callback();
 
-	/* 4. Reload test with new version. */
+	/* 5. Reload test with new version. */
 	binary_update_new_version_test(APP1_NAME);
 
-	/* 5. Unregister registered callback. */
+	/* 6. Unregister registered callback. */
 	binary_update_unregister_state_changed_callback();
-
-	/* 6. Get info all test. */
-	binary_update_getinfo_all();
 }
 
 static void binary_update_show_success_ratio(int rep_cnt)
