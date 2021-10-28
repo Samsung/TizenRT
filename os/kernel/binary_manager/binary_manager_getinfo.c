@@ -95,7 +95,7 @@ void binary_manager_get_state_with_name(int requester_pid, char *bin_name)
 	response_msg.result = BINMGR_NOT_FOUND;
 
 	bin_count = binary_manager_get_ucount();
-	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+	for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
 		if (!strncmp(BIN_NAME(bin_idx), bin_name, strlen(bin_name) + 1)) {
 			response_msg.result = BINMGR_OK;
 			response_msg.state = BIN_STATE(bin_idx);
@@ -147,7 +147,7 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	else {
 		bin_count = binary_manager_get_ucount();
-		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+		for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
 			if (!strncmp(BIN_NAME(bin_idx), bin_name, BIN_NAME_MAX)) {
 				response_msg.result = BINMGR_OK;
 				response_msg.data.available_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
@@ -203,7 +203,11 @@ void binary_manager_get_info_all(int requester_pid)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* User binaries data */
 	bin_count = binary_manager_get_ucount();
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
+#else
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+#endif
 		response_msg.result = BINMGR_OK;
 		response_msg.data.bin_info[result_idx].available_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
 		strncpy(response_msg.data.bin_info[result_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
@@ -212,7 +216,7 @@ void binary_manager_get_info_all(int requester_pid)
 	}
 
 	if (response_msg.result == BINMGR_OK) {
-		response_msg.data.bin_count = bin_count + 1;
+		response_msg.data.bin_count = result_idx;
 	}
 #endif
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_all_response_t));
