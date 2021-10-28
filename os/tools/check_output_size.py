@@ -46,6 +46,8 @@ def check_binary_size(bin_type, part_size):
 	# Read the binary name from .bininfo
 	bininfo_file = os_folder + '/.bininfo'
 	bin_name = get_value_from_file(bininfo_file, bin_type + "_BIN_NAME=").replace('"','').rstrip('\n')
+	if bin_name == 'None' :
+		return
 	output_path = build_folder + '/output/bin/' + bin_name
 
 	# Get the partition and binary size
