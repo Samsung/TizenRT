@@ -118,7 +118,11 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 	while (retry_count < BINMGR_LOADING_TRYCNT) {
 		ret = load_binary(bin_idx, path, load_attr);
 		if (ret >= 0) {
-			bmvdbg("%s Load '%s' success! pid = %d\n", BINARY_COMP_TYPE, load_attr->bin_name, ret);
+			if (bin_idx == 0) {
+				lldbg("%s Load 'common'(%s) success!\n", BINARY_COMP_TYPE, path);
+			} else {
+				lldbg("%s Load '%s'(%s) success! pid = %d\n", BINARY_COMP_TYPE, load_attr->bin_name, path, ret);
+			}
 			/* Set the data in table from header */
 			BIN_LOAD_ATTR(bin_idx) = *load_attr;
 			strncpy(BIN_NAME(bin_idx), load_attr->bin_name, BIN_NAME_MAX);
