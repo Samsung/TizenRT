@@ -126,7 +126,7 @@ extern uint32_t g_assertpc;
 #define CONFIG_BOARD_RESET_ON_ASSERT 0
 #endif
 
-#define IS_FAULT_IN_USER_THREAD  (fault_tcb->uheap != NULL)
+#define IS_FAULT_IN_USER_THREAD  ((void *)fault_tcb->uheap != NULL)
 #define IS_FAULT_IN_USER_SPACE   (is_kernel_space((void *)assert_pc) == false)
 
 /****************************************************************************
