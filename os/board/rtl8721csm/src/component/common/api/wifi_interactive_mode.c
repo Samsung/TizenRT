@@ -449,7 +449,13 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		semaphore = NULL;
 		break;
 	case TRWIFI_AUTH_WPA2_PSK:
-		security_type = RTW_SECURITY_WPA2_AES_PSK;
+		if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_TKIP_AND_AES) {
+			security_type = RTW_SECURITY_WPA2_MIXED_PSK;
+		} else if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
+			security_type = RTW_SECURITY_WPA2_AES_PSK;
+		} else {
+			security_type = RTW_SECURITY_WPA2_TKIP_PSK;
+		}
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
@@ -463,7 +469,9 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		semaphore = NULL;
 		break;
 	case TRWIFI_AUTH_WPA_PSK:
-		if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
+		if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_TKIP_AND_AES) {
+			security_type = RTW_SECURITY_WPA_MIXED_PSK;
+		} else if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
 			security_type = RTW_SECURITY_WPA_AES_PSK;
 		} else {
 			security_type = RTW_SECURITY_WPA_TKIP_PSK;
@@ -473,10 +481,23 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		password_len = ap_connect_config->passphrase_length;
 		semaphore = NULL;
 		break;
+	case TRWIFI_AUTH_WPA_AND_WPA2_PSK:
+		if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_TKIP_AND_AES) {
+			security_type = RTW_SECURITY_WPA_WPA2_MIXED_PSK;
+		} else if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
+			security_type = RTW_SECURITY_WPA_WPA2_AES_PSK;
+		} else {
+			security_type = RTW_SECURITY_WPA_WPA2_TKIP_PSK;
+		}
+		password = ap_connect_config->passphrase;
+		ssid_len = strlen((const char *)ssid);
+		password_len = ap_connect_config->passphrase_length;
+		semaphore = NULL;
+		break;
 	default:
 		while (1) {
 			security_type = (_get_ap_security_mode((char*)ssid));
-			if (security_type >= 0)	
+			if (security_type >= 0)
 				break;
 
 			security_retry_count++;
