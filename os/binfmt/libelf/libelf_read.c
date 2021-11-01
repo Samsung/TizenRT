@@ -131,7 +131,9 @@ static inline void elf_dumpreaddata(FAR char *buffer, int buflen)
 int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t readsize, off_t offset)
 {
 	ssize_t nbytes;				/* Number of bytes read */
+#if !defined(CONFIG_COMPRESSED_BINARY)
 	off_t rpos;					/* Position returned by lseek */
+#endif
 
 	/* Advance offset by binary header size, loadinfo->offset will be 0 in normal exec call */
 	offset += loadinfo->offset;
