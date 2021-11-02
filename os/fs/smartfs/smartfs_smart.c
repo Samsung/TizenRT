@@ -576,14 +576,6 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 
 			sf->currsector = SMARTFS_NEXTSECTOR(header);
 			sf->curroffset = sizeof(struct smartfs_chain_header_s);
-
-			/* Test if at end of data */
-
-			if (sf->currsector == SMARTFS_ERASEDSTATE_16BIT) {
-				/* No more data!  Return what we have */
-
-				break;
-			}
 		}
 	}
 
