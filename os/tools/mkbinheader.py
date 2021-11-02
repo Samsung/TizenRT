@@ -317,7 +317,8 @@ def make_user_binary_header():
             fp_tmp = open("tmp", 'wb+')
             fp_tmp.write(data)
             fp_tmp.close()
-            os.system(mkbinheader_path + '/compression/mkcompressimg ' + comp_blk_size + ' ' + comp_enabled + ' tmp' + ' tmp_comp')
+            if os.system(mkbinheader_path + '/compression/mkcompressimg ' + comp_blk_size + ' ' + comp_enabled + ' tmp' + ' tmp_comp') != 0 :
+                sys.exit(1)
             fp_tmp = open("tmp_comp", 'rb')
             data = fp_tmp.read()
             file_size = fp_tmp.tell()

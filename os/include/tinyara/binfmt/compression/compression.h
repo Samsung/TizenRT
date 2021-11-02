@@ -27,6 +27,12 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define COMP_SUCCESS            0
+#define COMP_NOT_SUPPORTED      1
+#define COMP_FAILURE            2
+#define COMP_INVALID_INPUT      3
+#define COMP_USAGE_ERROR        4
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
