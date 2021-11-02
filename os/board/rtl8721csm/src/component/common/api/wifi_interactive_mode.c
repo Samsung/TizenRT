@@ -429,24 +429,25 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 
 	trwifi_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
 	ssid = ap_connect_config->ssid;
+	ssid_len = strlen((const char *)ssid);
+	if (auth == TRWIFI_AUTH_OPEN) {
+		password = NULL;
+		password_len = 0;
+	} else {
+		password = ap_connect_config->passphrase;
+		password_len = ap_connect_config->passphrase_length;
+	}
+	semaphore = NULL;
 	switch (auth) {
 	case TRWIFI_AUTH_OPEN:
 		security_type = RTW_SECURITY_OPEN;
-		password = NULL;
-		ssid_len = strlen((const char *)ssid);
-		password_len = 0;
-		semaphore = NULL;
 		break;
 	case TRWIFI_AUTH_WEP_SHARED:
 		security_type = RTW_SECURITY_WEP_PSK;
-		password = ap_connect_config->passphrase;
-		ssid_len = strlen((const char *)ssid);
-		password_len = ap_connect_config->passphrase_length;
 		if ((password_len != 5) && (password_len != 13) && (password_len != 10) && (password_len != 26)) {
 			ndbg("\n\rWrong WEP key length. Must be 5 or 13 ASCII characters, or 10 or 26 for HEX password.");
 			return -1;
 		}
-		semaphore = NULL;
 		break;
 	case TRWIFI_AUTH_WPA2_PSK:
 		if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_TKIP_AND_AES) {
@@ -456,17 +457,9 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		} else {
 			security_type = RTW_SECURITY_WPA2_TKIP_PSK;
 		}
-		password = ap_connect_config->passphrase;
-		ssid_len = strlen((const char *)ssid);
-		password_len = ap_connect_config->passphrase_length;
-		semaphore = NULL;
 		break;
 	case TRWIFI_AUTH_WPA3_PSK:
 		security_type = RTW_SECURITY_WPA3_AES_PSK;
-		password = ap_connect_config->passphrase;
-		ssid_len = strlen((const char *)ssid);
-		password_len = ap_connect_config->passphrase_length;
-		semaphore = NULL;
 		break;
 	case TRWIFI_AUTH_WPA_PSK:
 		if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_TKIP_AND_AES) {
@@ -476,10 +469,6 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		} else {
 			security_type = RTW_SECURITY_WPA_TKIP_PSK;
 		}
-		password = ap_connect_config->passphrase;
-		ssid_len = strlen((const char *)ssid);
-		password_len = ap_connect_config->passphrase_length;
-		semaphore = NULL;
 		break;
 	case TRWIFI_AUTH_WPA_AND_WPA2_PSK:
 		if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_TKIP_AND_AES) {
@@ -489,10 +478,6 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 		} else {
 			security_type = RTW_SECURITY_WPA_WPA2_TKIP_PSK;
 		}
-		password = ap_connect_config->passphrase;
-		ssid_len = strlen((const char *)ssid);
-		password_len = ap_connect_config->passphrase_length;
-		semaphore = NULL;
 		break;
 	default:
 		while (1) {
@@ -506,10 +491,6 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 				break;
 			}
 		}
-		password = ap_connect_config->passphrase;
-		ssid_len = strlen((const char *)ssid);
-		password_len = ap_connect_config->passphrase_length;
-		semaphore = NULL;
 		break;
 	}
 
