@@ -50,7 +50,7 @@ extern void *ble_tizenrt_write_no_rsp_sem;
 extern BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_info;
 extern uint8_t ble_client_connect_is_running;
 extern void *ble_tizenrt_modify_whitelist_sem;
-uint8_t modify_whitelist_code;
+extern uint8_t modify_whitelist_code;
 
 
 T_CLIENT_ID   ble_tizenrt_scatternet_gcs_client_id;         /**< General Common Services client client id*/
