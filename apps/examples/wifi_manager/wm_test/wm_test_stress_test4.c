@@ -29,7 +29,8 @@
 #include "wm_test_mock.h"
 #include "wm_test_log.h"
 
-#define WM_TEST_TRIAL 2
+#define WM_TEST_TRIAL 20
+#define SELF_TEST
 #define TAG "[WT]"
 //if semaphore operation failed then it'll try it again 10ms later
 #define WT_SEM_TRY_WAIT_US 10000
@@ -192,12 +193,13 @@ static int _run_procedure(void)
 	}
 	wt_print_conninfo(&wminfo);
 
+#ifndef SELF_TEST
 	/*  wait join event */
 	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SOFTAP_STA_JOINED, 0, 3000);
 	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, VWIFI_PKT_DHCPS_EVT, 0, 3000);
 	WT_LOG(TAG, "wait join event");
 	WM_TEST_WAIT;
-
+#endif
 	wres = wifi_manager_get_info(&wminfo);
 	if (wres != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "get info fail %d\n", wres);
@@ -543,7 +545,9 @@ void wm_run_stress_test4(struct wt_options *opt)
 	ST_SET_SMOKE1(wifi, 1, 0, "set power", set_power_p);
 	ST_SET_SMOKE1(wifi, 1, 0, "scan positive case", scan_p);
 	ST_SET_SMOKE1(wifi, 1, 0, "scan negative case", scan_n);
-	ST_SET_SMOKE1(wifi, 1, 0, "scan negative case", disconn_evt);
+#ifndef SELF_TEST
+	ST_SET_SMOKE1(wifi, 1, 0, "disconn negative case", disconn_evt);
+#endif
 
 	ST_RUN_TEST(wifi);
 	ST_RESULT_TEST(wifi);
