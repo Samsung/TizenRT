@@ -119,9 +119,9 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 		ret = load_binary(bin_idx, path, load_attr);
 		if (ret >= 0) {
 			if (bin_idx == 0) {
-				lldbg("%s Load 'common'(%s) success!\n", BINARY_COMP_TYPE, path);
+				printf("%s Load 'common'(%s) success!\n", BINARY_COMP_TYPE, path);
 			} else {
-				lldbg("%s Load '%s'(%s) success! pid = %d\n", BINARY_COMP_TYPE, load_attr->bin_name, path, ret);
+				printf("%s Load '%s'(%s) success! pid = %d\n", BINARY_COMP_TYPE, load_attr->bin_name, path, ret);
 			}
 			/* Set the data in table from header */
 			BIN_LOAD_ATTR(bin_idx) = *load_attr;
@@ -132,7 +132,7 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 			usleep(1000);
 		}
 		retry_count++;
-		lldbg("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
+		printf("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
 	}
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp = load_attr->binp;
@@ -564,7 +564,7 @@ static int update_thread(int argc, char *argv[])
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 		up_reboot_reason_write(REBOOT_SYSTEM_BINARY_UPDATE);
 #endif
-		lldbg("==> [REBOOT] Board will be rebooted with new kernel binary");
+		printf("==> [REBOOT] Board will be rebooted with new kernel binary");
 		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 	}
 
