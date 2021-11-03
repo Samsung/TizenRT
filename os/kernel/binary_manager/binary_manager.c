@@ -206,22 +206,22 @@ int binary_manager(int argc, char *argv[])
 	return 0;
 errout_with_nobinary:
 	while (1) {
-		lldbg("=============== !!ERROR!! ============== \n");
+		printf("=============== !!ERROR!! ============== \n");
 		if (!is_found_bootparam) {
-			lldbg("ERROR!! Not found user partitions because parsing a partition list is failed.\n");
-			lldbg("Please check whether the partition 'bootparam' exists in CONFIG_FLASH_PART_TYPE with 8192K size.\n");
+			printf("ERROR!! Not found user partitions because parsing a partition list is failed.\n");
+			printf("Please check whether the partition 'bootparam' exists in CONFIG_FLASH_PART_TYPE with 8192K size.\n");
 		}
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		if (!is_found_ubin) {
-			lldbg("ERROR!! Not found user partitions because parsing a partition list is failed.\n");
-			lldbg("Please check logs from configure_mtd_partitions and whether the partition 'bin' exists in CONFIG_FLASH_PART_TYPE.\n");
+			printf("ERROR!! Not found user partitions because parsing a partition list is failed.\n");
+			printf("Please check logs from configure_mtd_partitions and whether the partition 'bin' exists in CONFIG_FLASH_PART_TYPE.\n");
 		}
 #endif
 		if (!is_found_kpart) {
-			lldbg("ERROR!! Not found kernel partitions because parsing a partition list is failed.\n");
-			lldbg("Please check logs from configure_mtd_partitions and whether the partition 'kernel' exists in CONFIG_FLASH_PART_TYPE.\n");
+			printf("ERROR!! Not found kernel partitions because parsing a partition list is failed.\n");
+			printf("Please check logs from configure_mtd_partitions and whether the partition 'kernel' exists in CONFIG_FLASH_PART_TYPE.\n");
 		}
-		lldbg("Enable CONFIG_DEBUG_BINMGR_ERROR if you want to know exact reason.\n\n");
+		printf("Enable CONFIG_DEBUG_BINMGR_ERROR if you want to know exact reason.\n\n");
 		sleep(10);
 	}
 }
