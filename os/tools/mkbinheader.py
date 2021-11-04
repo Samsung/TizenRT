@@ -313,6 +313,7 @@ def make_user_binary_header():
         # Compress data according to Compression Algorithm represented by bin_comp
         # Run mkcompressimg tool with provided options. Read output compressed file into data.
         if bin_comp > COMP_NONE :
+            os.system('cp ' + file_path + ' ' + file_path + '.uncomp')
             fp_tmp = open("tmp", 'wb+')
             fp_tmp.write(data)
             fp_tmp.close()
