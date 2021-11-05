@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <semaphore.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
@@ -35,15 +36,18 @@
 
 #define WIFIMGR_MSG_QUEUE_NAME "/dev/wifimgr_msg"
 #define TAG "[WM]"
+static int message_in_fd;
 
 static inline int _send_message(int fd, void *buf, int buflen)
 {
 	int sent = 0;
+	NET_LOGE(TAG, "0 _send_message  %d\n", sent);
 	while (1) {
 		int res = write(fd, (void *)buf + sent, buflen - sent);
 		if (res < 0) {
 			int err_no = get_errno();
 			if (err_no == EAGAIN || err_no == EINTR) {
+				NET_LOGE(TAG, "1 _send_message  %d\n", err_no);
 				continue;
 			}
 			NET_LOGE(TAG, "write error %d\n", err_no);
@@ -51,9 +55,12 @@ static inline int _send_message(int fd, void *buf, int buflen)
 		}
 		sent += res;
 		if (sent == buflen) {
+			NET_LOGE(TAG, "1 _send_message  %d  \n", sent);
 			break;
 		}
+		NET_LOGE(TAG, "2 _send_message  %d  -  %d\n", buflen, sent);
 	}
+	NET_LOGE(TAG, "3 _send_message  %d\n", sent);
 	return 0;
 }
 
@@ -62,9 +69,11 @@ static inline int _recv_message(int fd, void *buf, int buflen)
 	int received = 0;
 	while (1) {
 		int res = read(fd, buf + received, buflen - received);
+		NET_LOGE(TAG, "0 _recv_message %d\n", res);
 		if (res < 0) {
 			int err_no = get_errno();
 			if (err_no == EAGAIN || err_no == EINTR) {
+				NET_LOGE(TAG, "1 _recv_message %d\n", err_no);
 				continue;
 			}
 			NET_LOGE(TAG, "read error %d\n", err_no);
@@ -72,8 +81,10 @@ static inline int _recv_message(int fd, void *buf, int buflen)
 		}
 		received += res;
 		if (received == buflen) {
+			NET_LOGE(TAG, "2 _recv_message %d\n", received);
 			break;
 		}
+		NET_LOGE(TAG, "3 _recv_message %d  - %d\n", buflen, received);
 	}
 	return 0;
 }
@@ -83,14 +94,18 @@ static inline int _recv_message(int fd, void *buf, int buflen)
  */
 int wifimgr_message_in(handler_msg *msg, handler_queue *queue)
 {
-	int fd = open(WIFIMGR_MSG_QUEUE_NAME, O_WRONLY);
+	NET_LOGE(TAG, "0 wifimgr_message_in in  %d\n", 0);
+	// int fd = open(WIFIMGR_MSG_QUEUE_NAME, 1 << 1);
+	int fd = message_in_fd;
 	if (fd < 0) {
 		NET_LOGE(TAG, "open error %d\n", errno);
 		return -1;
 	}
 
 	int res = _send_message(fd, (void *)msg, sizeof(handler_msg));
-	close(fd);
+	NET_LOGE(TAG, "1 wifimgr_message_in  %d\n", res);
+	// close(fd);
+	NET_LOGE(TAG, "2 wifimgr_message_in close  %d\n", res);
 	if (res < 0) {
 		return -1;
 	}
@@ -102,8 +117,11 @@ int wifimgr_message_in(handler_msg *msg, handler_queue *queue)
 // this function
 int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 {
+	
 	fd_set rfds = queue->rfds;
+	NET_LOGE(TAG, "1 message out  \n");
 	int res = select(queue->max + 1, &rfds, NULL, NULL, NULL);
+	NET_LOGE(TAG, "2 message out select  %d\n", res);
 	if (res <= 0) {
 		int err_no = get_errno();
 		if (err_no == EINTR) {
@@ -115,12 +133,15 @@ int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 	if (FD_ISSET(queue->fd, &rfds)) {
 		res = _recv_message(queue->fd, (void *)msg, sizeof(handler_msg));
 		if (res < 0) {
-			NET_LOGE(TAG, "critical error\n");
+			NET_LOGE(TAG, "critical error%d\n",1);
 		} else {
 			wifimgr_msg_s *wmsg = msg->msg;
+			NET_LOGE(TAG, "3 message out select  %d\n", res);
 			wmsg->result = wifimgr_handle_request(wmsg);
+			NET_LOGE(TAG, "4 message out select  %d\n", res);
 			if (msg->signal) {
 				sem_post(msg->signal);
+				NET_LOGE(TAG, "5 message out select  %d\n", res);
 			}
 		}
 	}
@@ -154,13 +175,14 @@ int wifimgr_create_msgqueue(handler_queue *queue)
 		return -1;
 	}
 
-	queue->fd = open(WIFIMGR_MSG_QUEUE_NAME, O_RDWR);
+	queue->fd = open(WIFIMGR_MSG_QUEUE_NAME, 1 << 0 | 1 << 1);
 	if (queue->fd < 0) {
 		NET_LOGE(TAG, "open wifimgr msg queue fail %d\n", errno);
 		unlink(WIFIMGR_MSG_QUEUE_NAME);
 		return -1;
 	}
 	FD_SET(queue->fd, &queue->rfds);
+	message_in_fd = open(WIFIMGR_MSG_QUEUE_NAME, 1 << 1);
 
 #ifdef CONFIG_LWNL80211
 	queue->nd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);

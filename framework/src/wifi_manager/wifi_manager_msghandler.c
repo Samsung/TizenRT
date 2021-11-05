@@ -23,6 +23,8 @@
 #include <tinyara/wifi/wifi_manager.h>
 #include <tinyara/net/netlog.h>
 #include <tinyara/net/if/wifi.h>
+#include <sys/types.h>
+#include <semaphore.h>
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"
@@ -36,7 +38,7 @@
  * Global variable
  */
 static handler_queue g_wifi_message_queue;
-
+// static sem_t g_sem;
 /*
  * External functions
  */
@@ -68,10 +70,10 @@ int wifimgr_run_msghandler(void)
 {
 	int tid = task_create("wifi msg handler", 100, 4096, (main_t)_process_msg, NULL);
 	if (tid == -1) {
-		NET_LOGE(TAG, "wifi msg handler task create %d\n", errno);
+		NET_LOGE(TAG, "wifi msg handler task create %d\n", 0);
 		return -1;
 	}
-
+	// int res = sem_init(&g_sem, 0, 0);
 	return 0;
 }
 
@@ -94,11 +96,14 @@ int wifimgr_post_message(wifimgr_msg_s *msg)
 	}
 
 	res = sem_wait(hmsg.signal);
+	NET_LOGE(TAG, "1 wifimgr_post_message  %d\n", res);
 	if (res == -1) {
 		NET_LOGE(TAG, "wait msg signal fail %d\n", errno);
 		return -2;
 	}
+	NET_LOGE(TAG, "2 wifimgr_post_message  %d\n", res);
 	sem_destroy(hmsg.signal);
+	NET_LOGE(TAG, "3 wifimgr_post_message  %d\n", res);
 
 	return 0;
 }
