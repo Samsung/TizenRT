@@ -21,7 +21,9 @@ import os
 import sys
 import string
 
-EXT_NAME = sys.argv[1]
+SOURCE_EXT_NAME = sys.argv[1]
+TARGET_EXT_NAME = "trpk" # TizenRT Package (TizenRT Header + output)
+
 
 # This script changes the kernel binary name as "kernel_[board]_[version]".
 
@@ -78,22 +80,22 @@ metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
 if os.path.isfile(metadata_file) :
 	kernel_bin_name = get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n')
 	for filename in os.listdir(output_folder) :
-		if (filename == kernel_bin_name + '.' + EXT_NAME) :
+		if (filename == kernel_bin_name + '.' + SOURCE_EXT_NAME) :
 			# Change the kernel bin name as "kernel_[board]_[version].extension"
-			os.rename(output_folder + '/' + filename, output_folder + '/' + BIN_NAME + '.' + EXT_NAME)
-			save_bininfo(BIN_NAME + '.' + EXT_NAME)
+			os.rename(output_folder + '/' + filename, output_folder + '/' + BIN_NAME + '.' + TARGET_EXT_NAME)
+			save_bininfo(BIN_NAME + '.' + TARGET_EXT_NAME)
 			continue
 		# Change the user bin name as "[user_bin_name]_[board]_[version]"
 		if ("app1" == filename or "app2" == filename) :
 			USER_BIN_NAME = filename + '_' + BOARD_TYPE + '_' + BIN_VERSION
-			os.rename(output_folder + '/' + filename, output_folder + '/' + USER_BIN_NAME)
-			save_bininfo(USER_BIN_NAME)
+			os.rename(output_folder + '/' + filename, output_folder + '/' + USER_BIN_NAME + '.' + TARGET_EXT_NAME)
+			save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
 			continue
 		# Change the common bin name as "common_[board]_[version]"
 		if (filename == CONFIG_CMN_BIN_NAME) :
 			COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + BIN_VERSION
-			os.rename(output_folder + '/' + CONFIG_CMN_BIN_NAME, output_folder + '/' + COMMON_BIN_NAME)
-			save_bininfo(COMMON_BIN_NAME)
+			os.rename(output_folder + '/' + CONFIG_CMN_BIN_NAME, output_folder + '/' + COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
+			save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
 			continue
 else :
 	save_bininfo("tinyara.bin")
