@@ -45,6 +45,9 @@
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/binfmt/binfmt.h>
 #endif
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#endif
 
 #include "sched/sched.h"
 #include "task/task.h"
