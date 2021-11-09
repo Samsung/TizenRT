@@ -706,6 +706,12 @@ char *mm_get_app_heap_name(void *address);
 /* Function to check heap corruption */
 int mm_check_heap_corruption(struct mm_heap_s *heap);
 
+#define USER_HEAP   1
+#define KERNEL_HEAP 2
+
+/* Function to manage the memory allocation failure case. */
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int heapidx, size_t size, int heap_type);
+
 #if CONFIG_KMM_NHEAPS > 1
 /**
  * @cond

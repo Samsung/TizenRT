@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 
+#include <debug.h>
 #include <stdlib.h>
 
 #include <tinyara/mm/mm.h>
@@ -89,6 +90,7 @@
 #if CONFIG_KMM_NHEAPS > 1
 void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 {
+	void *ret;
 	struct mm_heap_s *kheap;
 	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
 		mdbg("kmm_memalign_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
@@ -98,9 +100,17 @@ void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_memalign(&kheap[heap_index], alignment, size, retaddr);
+	ret = mm_memalign(&kheap[heap_index], alignment, size, retaddr);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], 1, size, KERNEL_HEAP);
+	}
+	return ret;
 #else
-	return mm_memalign(&kheap[heap_index], alignment, size);
+	ret = mm_memalign(&kheap[heap_index], alignment, size);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], 1, size, KERNEL_HEAP);
+	}
+	return ret;
 #endif
 }
 #endif
@@ -136,6 +146,8 @@ FAR void *kmm_memalign(size_t alignment, size_t size)
 			return ret;
 		}
 	}
+
+	mm_manage_alloc_fail(kheap, CONFIG_KMM_NHEAPS, size, KERNEL_HEAP);
 	return NULL;
 }
 
