@@ -276,19 +276,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	 * to the SYSLOG.
 	 */
 
-	if (!ret) {
-#if defined(CONFIG_MM_ASSERT_ON_FAIL) && defined(CONFIG_SYSTEM_REBOOT_REASON)
-		WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
-#endif
-		mdbg("Allocation failed, size %u\n", size);
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_parse_heap(heap, HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
-#endif
-
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-		PANIC();
-#endif
-	} else {
+	if (ret) {
 		mvdbg("Allocated %p, size %u\n", ret, size);
 	}
 

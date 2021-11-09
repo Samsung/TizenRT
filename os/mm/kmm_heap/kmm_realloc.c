@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <debug.h>
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -87,6 +87,7 @@
 #if CONFIG_KMM_NHEAPS > 1
 void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 {
+	void *ret;
 	struct mm_heap_s *kheap;
 	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
 		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
@@ -96,9 +97,17 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_realloc(&kheap[heap_index], oldmem, size, retaddr);
+	ret = mm_realloc(&kheap[heap_index], oldmem, size, retaddr);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], 1, size, KERNEL_HEAP);
+	}
+	return ret;
 #else
-	return mm_realloc(&kheap[heap_index], oldmem, size);
+	ret = mm_realloc(&kheap[heap_index], oldmem, size);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], 1, size, KERNEL_HEAP);
+	}
+	return ret;
 #endif
 }
 #endif
@@ -148,6 +157,8 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 			return ret;
 		}
 	}
+
+	mm_manage_alloc_fail(kheap_new, CONFIG_KMM_NHEAPS, newsize, KERNEL_HEAP);
 	return NULL;
 }
 

@@ -82,15 +82,24 @@
 #if CONFIG_KMM_NHEAPS > 1
 void *calloc_at(int heap_index, size_t n, size_t elem_size)
 {
+	void *ret;
 	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
 		mdbg("calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_calloc(&BASE_HEAP[heap_index], n, elem_size, retaddr);
+	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size, retaddr);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, n * elem_size, USER_HEAP);
+	}
+	return ret;
 #else
-	return mm_calloc(&BASE_HEAP[heap_index], n, elem_size);
+	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, n * elem_size, USER_HEAP);
+	}
+	return ret;
 #endif
 }
 #endif
@@ -126,7 +135,7 @@ static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t retadd
 			return ret;
 		}
 	}
-
+	mm_manage_alloc_fail(BASE_HEAP, e, n * elem_size, USER_HEAP);
 	return NULL;
 }
 

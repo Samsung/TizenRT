@@ -104,15 +104,24 @@
 #if CONFIG_KMM_NHEAPS > 1
 void *malloc_at(int heap_index, size_t size)
 {
+	void *ret;
 	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
 		mdbg("malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
-	return mm_malloc(&BASE_HEAP[heap_index], size, retaddr);
+	ret = mm_malloc(&BASE_HEAP[heap_index], size, retaddr);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, size, USER_HEAP);
+	}
+	return ret;
 #else
-	return mm_malloc(&BASE_HEAP[heap_index], size);
+	ret = mm_malloc(&BASE_HEAP[heap_index], size);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, size, USER_HEAP);
+	}
+	return ret;
 #endif
 }
 #endif
@@ -149,6 +158,7 @@ static void *heap_malloc(size_t size, int s, int e, size_t retaddr)
 		}
 	}
 
+	mm_manage_alloc_fail(BASE_HEAP, e, size, USER_HEAP);
 	return NULL;
 }
 #endif
