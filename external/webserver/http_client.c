@@ -567,6 +567,9 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 				}
 			}
 
+			//reset chunk_processed
+			chunk_processed = 0;
+
                         buf_len = unprocessed;
                         remain = HTTP_CONF_MAX_REQUEST_LENGTH - buf_len;
                         memset(&mlen, 0x0, sizeof(struct http_message_len_t));
