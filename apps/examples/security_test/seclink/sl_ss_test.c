@@ -195,13 +195,13 @@ TESTCASE_SETUP(sl_ss_global)
 	g_size_arr[0] = SL_TEST_MAX_DATA;
 	g_size_arr[1] = 300;
 	g_size_arr[2] = 300;
-	ST_EXPECT_ASSERT(SECLINK_OK, sl_init(&g_hnd));
+	ST_ASSERT_EQ(SECLINK_OK, sl_init(&g_hnd));
 }
 END_TESTCASE
 
 TESTCASE_TEARDOWN(sl_ss_global)
 {
-	ST_EXPECT_ASSERT(SECLINK_OK, sl_deinit(g_hnd));
+	ST_ASSERT_EQ(SECLINK_OK, sl_deinit(g_hnd));
 }
 END_TESTCASE
 

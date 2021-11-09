@@ -145,7 +145,7 @@
 		}                                                  \
 	} while (0)
 
-#define ST_EXPECT_ASSERT(val, exp)                         \
+#define ST_ASSERT_EQ(val, exp)                         \
 	do {                                                   \
 		ST_LOG("[ST] --> " #exp " %s:%d"                   \
 			   "\n",                                       \
