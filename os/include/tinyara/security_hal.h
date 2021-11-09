@@ -16,8 +16,7 @@
  *
  ****************************************************************************/
 
-#ifndef __SECURITY_HAL_H__
-#define __SECURITY_HAL_H__
+#pragma once
 
 #include <stdint.h>
 
@@ -526,5 +525,3 @@ struct sec_ops_s {
 };
 
 int se_initialize(void);
-
-#endif // __SECURITY_HAL_H__
