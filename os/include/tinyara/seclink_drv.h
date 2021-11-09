@@ -15,6 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#pragma once
+
 #include <stdint.h>
 #include <semaphore.h>
 
@@ -35,5 +37,4 @@ struct sec_lowerhalf_s {
 };
 
 int se_register(const char *path, struct sec_lowerhalf_s *lower);
-
 int se_unregister(struct sec_lowerhalf_s *lower);
