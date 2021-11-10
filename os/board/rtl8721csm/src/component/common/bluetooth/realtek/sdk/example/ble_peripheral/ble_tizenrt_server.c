@@ -315,7 +315,7 @@ void rtw_ble_server_adv_into_idle(void)
             if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
             {
                 debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                return TRBLE_FAIL;
+                return;
             }
         }
         break;
@@ -333,7 +333,7 @@ void rtw_ble_server_adv_into_idle(void)
                 if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
                 {
                     debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                    return TRBLE_FAIL;
+                    return;
                 }
             }
         }
@@ -352,7 +352,7 @@ void rtw_ble_server_adv_into_idle(void)
                 if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
                 {
                     debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                    return TRBLE_FAIL;
+                    return;
                 }
             }            
         }

@@ -38,14 +38,14 @@ static inline int _send_msg(lwnl_msg *msg)
 {
 	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (fd < 0) {
-		BLE_LOG_ERROR("send lwnl msg open error(%d)\n", get_errno(errno));
+		BLE_LOG_ERROR("send lwnl msg open error(%d)\n", get_errno());
 		return -1;
 	}
 
 	int res = write(fd, msg, sizeof(*msg));
 	close(fd);
 	if (res < 0) {
-		BLE_LOG_ERROR("send lwnl msg write error(%d)\n", get_errno(errno));
+		BLE_LOG_ERROR("send lwnl msg write error(%d)\n", get_errno());
 		return -2;
 	}
 	return 0;
