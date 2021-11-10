@@ -45,7 +45,7 @@ binmgr_result_type_e binary_manager_set_bootparam(uint8_t type)
 		return BINMGR_INVALID_PARAM;
 	}
 
-	ret = binary_manager_set_request(&request_msg, BINMGR_SETBP, type);
+	ret = binary_manager_set_request(&request_msg, BINMGR_SETBP, &type);
 	if (ret != BINMGR_OK) {
 		return ret;
 	}
