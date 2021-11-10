@@ -187,29 +187,27 @@ def make_kernel_binary_header():
 # argv[1] is file path of binary file.
 # argv[2] is binary type.
 # argv[3] is binary format.
-# argv[4] is kernel version.
-# argv[5] is binary name.
-# argv[6] is binary version.
-# argv[7] is a dynamic ram size required to run this binary.
-# argv[8] is main task stack size.
-# argv[9] is main task priority.
-# argv[10] is compression type
-# argv[11] is block size for compression
-# argv[12] is a loading priority.
+# argv[4] is binary name.
+# argv[5] is binary version.
+# argv[6] is a dynamic ram size required to run this binary.
+# argv[7] is main task stack size.
+# argv[8] is main task priority.
+# argv[9] is compression type
+# argv[10] is block size for compression
+# argv[11] is a loading priority.
 #
 ############################################################################
 
 def make_user_binary_header():
     binary_format = sys.argv[3]
-    kernel_ver = sys.argv[4]
-    binary_name = sys.argv[5]
-    binary_ver = sys.argv[6]
-    dynamic_ram_size = sys.argv[7]
-    main_stack_size = sys.argv[8]
-    main_priority = sys.argv[9]
-    comp_enabled = sys.argv[10]
-    comp_blk_size = sys.argv[11]
-    loading_priority = sys.argv[12]
+    binary_name = sys.argv[4]
+    binary_ver = sys.argv[5]
+    dynamic_ram_size = sys.argv[6]
+    main_stack_size = sys.argv[7]
+    main_priority = sys.argv[8]
+    comp_enabled = sys.argv[9]
+    comp_blk_size = sys.argv[10]
+    loading_priority = sys.argv[11]
 
     # Path to directory of this file
     mkbinheader_path = os.path.dirname(__file__)
