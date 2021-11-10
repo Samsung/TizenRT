@@ -126,6 +126,17 @@ binmgr_result_type_e binary_manager_get_download_path(char *binary_name, char *d
  */
 binmgr_result_type_e binary_manager_get_state(char *binary_name, int *state);
 
+/**
+ * @brief Set boot param
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It sends a message the binary manager to set boot param.
+ * @param[in] type Binary group type for bootparam
+ * @return A defined value of binmgr_result_type_e in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) on success. On failure, negative value is returned.
+ * @since TizenRT v3.1 PRE
+ */
+binmgr_result_type_e binary_manager_set_bootparam(uint8_t type);
+
 #endif
 /**
  * @}
