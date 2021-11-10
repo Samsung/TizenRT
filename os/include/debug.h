@@ -485,6 +485,30 @@ int get_errno(void);
 #define nllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_BLE_ERROR
+#define bledbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define blelldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define bledbg(...)
+#define blelldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_BLE_WARN
+#define blewdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define blellwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define blewdbg(...)
+#define blellwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_BLE_INFO
+#define blevdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define blellvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define blevdbg(...)
+#define blellvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_SCHED_ERROR
 #define sdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define slldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1271,6 +1295,30 @@ int get_errno(void);
 #define nllvdbg     (void)
 #endif
 
+#ifdef CONFIG_DEBUG_BLE_ERROR
+#define bledbg        dbg
+#define blelldbg      lldbg
+#else
+#define bledbg        (void)
+#define blelldbg      (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BLE_WARN
+#define blewdbg       wdbg
+#define blellwdbg     llwdbg
+#else
+#define blewdbg       (void)
+#define blellwdbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_BLE_INFO
+#define blevdbg       vdbg
+#define blellvdbg     llvdbg
+#else
+#define blevdbg       (void)
+#define blellvdbg     (void)
+#endif
+
 #ifdef CONFIG_DEBUG_SCHED_ERROR
 #define sdbg        dbg
 #define slldbg      lldbg
@@ -1785,6 +1833,14 @@ int get_errno(void);
 #else
 #define ndbgdumpbuffer(m, b, n)
 #define nvdbgdumpbuffer(m, b, n)
+#endif
+
+#ifdef CONFIG_DEBUG_BLE
+#define bledbgdumpbuffer(m, b, n)  dbgdumpbuffer(m, b, n)
+#define blevdbgdumpbuffer(m, b, n) vdbgdumpbuffer(m, b, n)
+#else
+#define bledbgdumpbuffer(m, b, n)
+#define blevdbgdumpbuffer(m, b, n)
 #endif
 
 #ifdef CONFIG_DEBUG_USB
