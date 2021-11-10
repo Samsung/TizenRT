@@ -34,11 +34,11 @@ config APP2_BIN_DYN_RAMSIZE
 	---help---
 		App2 Binary Dynamic RAM size
 
-config APP1_BIN_LOADING_PRIORITY
-	string "App1 binary Loading Priority"
+config APP2_BIN_LOADING_PRIORITY
+	string "App2 binary Loading Priority"
 	default "HIGH"
 	---help---
-		App1 Binary Loading Priority.
+		App2 Binary Loading Priority.
 		HIGH(or H), MID(or M) and LOW(or L) can be.
 
 config APP2_MAIN_STACKSIZE
@@ -51,6 +51,6 @@ config APP2_MAIN_PRIORITY
 	int "Main Task Priority of App2 Binary"
 	default 180
 	---help---
-		Main Task Priority of App1 Binary
+		Main Task Priority of App2 Binary
 
 endif
