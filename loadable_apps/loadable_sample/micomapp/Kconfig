@@ -1,0 +1,56 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig APP1_INFO
+	bool "App1 Information"
+	default y
+	---help---
+		Set App1 Information
+
+if APP1_INFO
+config APP1_BIN_NAME
+	string "App1 binary name"
+	default "app1"
+	---help---
+		App1 Binary Name
+
+config APP1_BIN_TYPE
+	string "App1 binary type"
+	default "ELF"
+	---help---
+		App1 Binary Type. Currently, only support for ELF.
+
+config APP1_BIN_VER
+	int "App1 binary version(YYMMDD)"
+	default 190412
+	---help---
+		App1 Binary version(YYMMDD format)
+
+config APP1_BIN_DYN_RAMSIZE
+	int "App1 binary Dynamic RAM size"
+	default 512000
+	---help---
+		App1 Binary Dynamic RAM size
+
+config APP1_BIN_LOADING_PRIORITY
+	string "App1 binary Loading Priority"
+	default "HIGH"
+	---help---
+		App1 Binary Loading Priority.
+		HIGH(or H), MID(or M) and LOW(or L) can be.
+
+config APP1_MAIN_STACKSIZE
+	int "Main Task Stacksize of App1 Binary"
+	default 4096
+	---help---
+		Main Task Stacksize of App1 Binary
+
+config APP1_MAIN_PRIORITY
+	int "Main Task Priority of App1 Binary"
+	default 220
+	---help---
+		Main Task Priority of App1 Binary
+
+endif
