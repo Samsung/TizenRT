@@ -2863,4 +2863,32 @@ int wifi_set_null1_param(uint8_t check_period, uint8_t limit, uint8_t interval)
 }
 #endif
 
+/*
+Data rate input table
+0x00->1M
+0x01->2M
+0x02->5.5M
+0x03->11M
+0x04->6M
+0x05->9M
+0x06->12M
+0x07->18M
+0x08->24M
+0x09->36M
+0x0a->48M
+0x0b->54M
+0x0c->6.5M
+0x0d->13M
+0x0e->19.5M
+0x0f->26M
+0x10->39M
+0x11->52M
+0x12->58.5M
+0x13->65M
+*/
+int wifi_set_tx_data_rate(uint8_t data_rate)
+{
+	return rltk_wlan_set_tx_data_rate(data_rate);
+}
+
 #endif	//#if CONFIG_WLAN
