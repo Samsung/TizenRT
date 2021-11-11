@@ -66,7 +66,7 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
     ble_app_link_table_size = BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS;
     memset(ble_tizenrt_bond_req_info, 0, sizeof(BLE_TIZENRT_BOND_REQ));
     ble_read_results = ble_tizenrt_scatternet_read_results;
-    ble_app_link_table = ble_tizenrt_scatternet_app_link_table;
+    ble_app_link_table = (BLE_TIZENRT_APP_LINK *)ble_tizenrt_scatternet_app_link_table;
     ble_tizenrt_client_send_msg = ble_tizenrt_scatternet_send_msg;
     ble_tizenrt_server_send_msg = ble_tizenrt_scatternet_send_msg;
     
