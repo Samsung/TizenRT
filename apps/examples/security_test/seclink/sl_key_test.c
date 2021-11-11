@@ -130,10 +130,29 @@ END_TESTCASE
 /*
  * Desc: set asymmetric key
  */
+static char key_a_buf[1024];
+static char key_b_buf[1024];
+
 START_TEST_F(set_ecc_25519_key)
 {
-	ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_25519,
+	ST_ASSERT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_ECC_25519,
 										SL_RW_KEY_SLOT, &g_asym_pubkey_in, &g_asym_prikey_in));
+
+	hal_data key_a = HAL_DATA_INITIALIZER;
+  key_a.data = &key_a_buf;
+  key_a.data_len = 1024;
+  key_a.priv = &key_b_buf;
+  key_a.priv_len = 1024;
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_25519, SL_RW_KEY_SLOT, &key_a));
+	if (key_a.data_len > 0) {
+		sl_test_print_buffer(key_a.data, key_a.data_len, "ECC25519 pubkey");
+	}
+
+  ST_EXPECT_EQ(sizeof(g_ed25519_pubkey), key_a.data_len);
+  memcmp(g_ed25519_pubkey, key_a.data , sizeof(g_ed25519_pubkey));
+  /* sl_get_key shouldn't return private key*/
+  ST_EXPECT_NEQ(sizeof(g_ed25519_privkey_only), key_a.priv_len);
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519,
 										   SL_RW_KEY_SLOT));

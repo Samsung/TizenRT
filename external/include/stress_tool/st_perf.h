@@ -84,22 +84,22 @@
 	static st_pack g_pack_##fixture;
 
 #define ST_SET_SMOKE(fixture, repeat, expect, tc_desc, tc_name)                            \
-	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};                            \
-	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};                                 \
+	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};                            \
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};                                 \
 	perf_add_item(&g_pack_##fixture, repeat, #tc_name,                                     \
 				  NULL, NULL, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
 #define ST_SET_SMOKE1(fixture, repeat, expect, tc_desc, tc_name) \
-	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};  \
-	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};       \
+	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};  \
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};       \
 	perf_add_item(&g_pack_##fixture, repeat, #tc_name,           \
 				  NULL, NULL, NULL, NULL, tc_##tc_name,          \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
 
 #define ST_TC_SET_SMOKE(fixture, repeat, expect, tc_desc, testcase, tc_name)                 \
-	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};                              \
-	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};                                   \
+	static st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};                              \
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};                                   \
 	perf_add_item(&g_pack_##fixture, repeat, #tc_name,                                       \
 				  NULL, NULL, tc_##testcase##_setup, tc_##testcase##_teardown, tc_##tc_name, \
 				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
@@ -145,7 +145,7 @@
 		}                                                  \
 	} while (0)
 
-#define ST_EXPECT_ASSERT(val, exp)                         \
+#define ST_ASSERT_EQ(val, exp)                         \
 	do {                                                   \
 		ST_LOG("[ST] --> " #exp " %s:%d"                   \
 			   "\n",                                       \
