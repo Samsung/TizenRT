@@ -418,11 +418,11 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 {
 	int ret;
 
-	char *ssid;
+	char *ssid = NULL;
 	rtw_security_t security_type = -1;
-	char *password;
-	int ssid_len;
-	int password_len;
+	char *password = NULL;
+	int ssid_len = 0;
+	int password_len = 0;
 	int key_id = 0;
 	void *semaphore;
 	int security_retry_count = 0;
