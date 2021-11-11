@@ -995,7 +995,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 
 		if (ctx && ctx->callbacks.ble_client_operation_notification_cb) {
-			ctx->callbacks.ble_client_operation_notification_cb(ctx, attr_handle, read_result);
+			ctx->callbacks.ble_client_operation_notification_cb((ble_client_ctx *)ctx, attr_handle, read_result);
 		}
 		free(msg->param);
 	} break;

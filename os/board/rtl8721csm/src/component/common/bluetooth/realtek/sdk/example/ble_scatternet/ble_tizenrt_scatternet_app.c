@@ -1121,7 +1121,7 @@ T_APP_RESULT ble_tizenrt_scatternet_app_gap_callback(uint8_t cb_type, void *p_cb
             scanned_device->rssi = p_data->p_le_scan_info->rssi;
             scanned_device->addr.type = p_data->p_le_scan_info->remote_addr_type;
             memcpy(scanned_device->addr.mac, p_data->p_le_scan_info->bd_addr, GAP_BD_ADDR_LEN);
-            if(scanned_device->adv_type == GAP_ADV_EVT_TYPE_SCAN_RSP)
+            if((T_GAP_ADV_EVT_TYPE)scanned_device->adv_type == GAP_ADV_EVT_TYPE_SCAN_RSP)
             {
                 scanned_device->resp_data_length = p_data->p_le_scan_info->data_len;
                 memcpy(scanned_device->resp_data, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
