@@ -209,6 +209,7 @@ void binary_manager_register_upart(char *name, int part_num, int part_size)
 	for (bin_idx = 0; bin_idx <= g_bin_count; bin_idx++) {
 		/* Already Registered */
 		if (!strncmp(BIN_NAME(bin_idx), name, strlen(name) + 1)) {
+			BIN_COUNT(bin_idx)++;
 			BIN_PARTNUM(bin_idx, 1) = part_num;
 			BIN_PARTSIZE(bin_idx, 1) = part_size;
 			bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
@@ -227,6 +228,7 @@ void binary_manager_register_upart(char *name, int part_num, int part_size)
 
 	/* Initialize binary table and register binary name, version and priority */
 	BIN_ID(bin_idx) = -1;
+	BIN_COUNT(bin_idx)++;
 	BIN_RTLIST(bin_idx) = NULL;
 	BIN_NRTLIST(bin_idx) = NULL;
 	BIN_STATE(bin_idx) = BINARY_INACTIVE;
@@ -282,7 +284,6 @@ bool binary_manager_scan_ubin_all(void)
 		if (ret == OK) {
 			/* Return true it there is at least one valid binary */
 			BIN_USEIDX(bin_idx) = part_idx;
-			BIN_COUNT(bin_idx) = 1;
 			BIN_VER(bin_idx, part_idx) = version;			
 			bmvdbg("[%d] part index %d, version %d\n", bin_idx, part_idx, version);
 			if (bin_idx != BM_CMNLIB_IDX) {

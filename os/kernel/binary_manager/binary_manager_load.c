@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <queue.h>
+#include <stdbool.h>
 #include <semaphore.h>
 #include <sys/types.h>
 #include <sys/boardctl.h>
@@ -161,6 +162,7 @@ static int binary_manager_load(int bin_idx)
 	int ret;
 	int bin_count;
 	load_attr_t load_attr;
+	bool need_update_bp;
 	char devpath[BINARY_PATH_LEN];
 	user_binary_header_t user_header_data;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
@@ -192,6 +194,8 @@ static int binary_manager_load(int bin_idx)
 		bin_count = BIN_COUNT(bin_idx);
 	}
 
+	need_update_bp = false;
+
 	do {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		if (!binp)
@@ -209,11 +213,12 @@ static int binary_manager_load(int bin_idx)
 			}
 			if (ret != OK) {
 				if (--bin_count > 0) {
-					bmdbg("Failed to read header %s, try to read another file\n", devpath);
+					bmdbg("Failed to read header %s, try to read binary in another partition\n", devpath);
 					BIN_USEIDX(bin_idx) ^= 1;
+					need_update_bp = true;
 					continue;
 				} else {
-					printf("Fail to load %s binary : No valid binary file\n", BIN_NAME(bin_idx));
+					printf("Fail to load %s binary : No valid binary\n", BIN_NAME(bin_idx));
 					break;
 				}
 			}
@@ -244,6 +249,19 @@ static int binary_manager_load(int bin_idx)
 #endif
 		ret = binary_manager_load_binary(bin_idx, devpath, &load_attr);
 		if (ret == OK) {
+			if (need_update_bp) {
+				/* Update boot param data because the binary not written to bootparam is loaded */
+				binmgr_bpdata_t update_bp_data;
+				memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
+				update_bp_data.version++;
+				update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
+				ret = binary_manager_write_bootparam(&update_bp_data);
+				if (ret == BINMGR_OK) {
+					bmvdbg("Update bootparam SUCCESS\n");
+				} else {
+					bmdbg("Failed to update bootparam, %d\n", ret);
+				}
+			}
 			return BINMGR_OK;
 		}
 		if (--bin_count > 0) {
