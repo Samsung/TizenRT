@@ -15,18 +15,14 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#include <tinyara/config.h>
 
 #include <stdio.h>
 #include <sys/time.h>
 #include <stddef.h>
 #include <stdlib.h>
-#ifdef __LINUX__
-#include "queue.h"
-#include "st_perf.h"
-#else
 #include <queue.h>
 #include <stress_tool/st_perf.h>
-#endif
 
 #define PERF_ERR(msg) \
 	printf("[perf error]"msg"\t%s%d\n", __FUNCTION__, __LINE__);

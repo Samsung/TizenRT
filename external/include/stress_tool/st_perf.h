@@ -18,9 +18,6 @@
 
 #pragma once
 
-#include <sys/time.h>
-#include <queue.h>
-
 #if 0
 #define COLOR_SMOKE "\e[33m"
 #define COLOR_RESULT "\e[36m"
