@@ -55,7 +55,7 @@ int net_checksd(int sd, int oflags)
 
 int net_clone(FAR struct socket *sock1, FAR struct socket *sock2)
 {
-	NET_LOGV(TAG, "Not supported yet\n");
+	NET_LOGKV(TAG, "Not supported yet\n");
 	return -1;
 }
 
@@ -173,14 +173,14 @@ int net_ioctl(int sd, int cmd, unsigned long arg)
 	 */
 	if (!((_FIOCVALID(cmd)) ||  (_SIOCVALID(cmd)))) {
 		ret = -ENOTTY;
-		NET_LOGE(TAG, "command is not valid\n");
+		NET_LOGKE(TAG, "command is not valid\n");
 		goto errout;
 	}
 
 	/* ToDo:  Verify that the sd corresponds to valid, allocated socket */
 	sock = get_socket(sd, getpid());
 	if (sock == NULL) {
-		NET_LOGE(TAG, "get socket fail\n");
+		NET_LOGKE(TAG, "get socket fail\n");
 		ret = -EBADF;
 		goto errout;
 	}
@@ -239,13 +239,13 @@ int net_vfcntl(int sd, int cmd, va_list ap)
 	int err = 0;
 	int ret = 0;
 
-	NET_LOGV(TAG, "sd=%d cmd=%d\n", sd, cmd);
+	NET_LOGKV(TAG, "sd=%d cmd=%d\n", sd, cmd);
 
 	/* Verify that the sd corresponds to valid, allocated socket */
 
 	if (!sock) {
 		err = EBADF;
-		NET_LOGE(TAG, "invalid socket\n");
+		NET_LOGKE(TAG, "invalid socket\n");
 		goto errout;
 	}
 

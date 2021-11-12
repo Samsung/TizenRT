@@ -60,20 +60,20 @@ extern int netdev_lwipioctl(int sockfd, int cmd, void *arg);
 static int _socket_argument_validation(int domain, int type, int protocol)
 {
 	if (domain != AF_INET && domain != AF_INET6 && domain != AF_UNSPEC) {
-		NET_LOGE(TAG, "invalid parameter domain\n");
+		NET_LOGKE(TAG, "invalid parameter domain\n");
 		return -1;
 	}
 	switch (protocol) {
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
 		if (type != SOCK_DGRAM && type != SOCK_RAW) {
-			NET_LOGE(TAG, "unknown type\n");
+			NET_LOGKE(TAG, "unknown type\n");
 			return -1;
 		}
 		break;
 	case IPPROTO_TCP:
 		if (type != SOCK_STREAM) {
-			NET_LOGE(TAG, "unknown type\n");
+			NET_LOGKE(TAG, "unknown type\n");
 			return -1;
 		}
 		break;
@@ -81,13 +81,13 @@ static int _socket_argument_validation(int domain, int type, int protocol)
 	case IPPROTO_IGMP:
 	case IPPROTO_ICMPV6:
 		if (type != SOCK_RAW) {
-			NET_LOGE(TAG, "unknown type\n");
+			NET_LOGKE(TAG, "unknown type\n");
 			return -1;
 		}
 		break;
 	case IPPROTO_IP:
 		if (type == SOCK_RAW) {
-			NET_LOGE(TAG, "unknown type\n");
+			NET_LOGKE(TAG, "unknown type\n");
 			return -1;
 		}
 		break;
@@ -177,7 +177,7 @@ static void _get_port(int fd, int *port)
 	*port = -1;
 	struct lwip_sock *sock = get_socket(fd, getpid());
 	if (!sock) {
-		NET_LOGE(TTAG, "get socket fail\n");
+		NET_LOGKE(TTAG, "get socket fail\n");
 		return;
 	}
 
@@ -200,10 +200,10 @@ static inline void _get_tcp_info(int fd, struct lwip_sock *lsock, netmgr_logger_
 	char buf[CONFIG_TASK_NAME_SIZE];
 
 	if (netconn_getaddr(lsock->conn, &addr, &port, 1)) {
-		NET_LOGV(TAG, "local IP isn't set\n");
+		NET_LOGKV(TAG, "local IP isn't set\n");
 	}
 	if (netconn_getaddr(lsock->conn, &raddr, &rport, 0)) {
-		NET_LOGV(TAG, "remote IP isn't set\n");
+		NET_LOGKV(TAG, "remote IP isn't set\n");
 	}
 
 	_get_pid_name(lsock->conn->pid, buf);
@@ -259,10 +259,10 @@ static void _get_udp_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logge
 	char buf[CONFIG_TASK_NAME_SIZE];
 
 	if (netconn_getaddr(lsock->conn, &addr, &port, 1)) {
-		NET_LOGV(TAG, "local addr isn't set\n");
+		NET_LOGKV(TAG, "local addr isn't set\n");
 	}
 	if (netconn_getaddr(lsock->conn, &raddr, &rport, 0)) {
-		NET_LOGV(TAG, "remote addr isn't set\n");
+		NET_LOGKV(TAG, "remote addr isn't set\n");
 	}
 	_get_pid_name(lsock->conn->pid, buf);
 
@@ -364,7 +364,7 @@ static void _get_proto(int fd, char **type)
 	*type = UNKNOWN_STR;
 	struct lwip_sock *sock = get_socket(fd, getpid());
 	if (!sock) {
-		NET_LOGE(TTAG, "get socket fail\n");
+		NET_LOGKE(TTAG, "get socket fail\n");
 		return;
 	}
 
@@ -382,7 +382,7 @@ static inline int _netsock_clone(FAR struct lwip_sock *sock1, FAR struct lwip_so
 
 	/* Parts of this operation need to be atomic */
 	if (sock1 == NULL || sock2 == NULL) {
-		NET_LOGE(TAG, "invalid parameter\n");
+		NET_LOGKE(TAG, "invalid parameter\n");
 		return ERROR;
 	}
 
@@ -414,12 +414,12 @@ static void _netmon_handler(struct tcb_s *tcb, void *arg)
 	for (int fd = 0; fd < CONFIG_NSOCKET_DESCRIPTORS; fd++) {
 		struct lwip_sock *sock = (struct lwip_sock *)slist->sl_sockets[fd].sock;
 		if (!sock || !sock->conn) {
-			NET_LOGV(TAG, "fd %d is not assigned socket %p %p\n", fd, sock, sock->conn);
+			NET_LOGKV(TAG, "fd %d is not assigned socket %p %p\n", fd, sock, sock->conn);
 			continue;
 		};
 
 		if (!sock->conn->pcb.ip) {
-			NET_LOGV(TAG, "no IP pcb\n");
+			NET_LOGKV(TAG, "no IP pcb\n");
 			fflush(stdout);
 			assert(0);
 			continue;
@@ -442,7 +442,7 @@ static int lwip_ns_close(int sockfd)
 {
 	int res = lwip_close(sockfd);
 #ifdef CONFIG_NET_DEBUG_PORT
-	NET_LOGI(TTAG, "pid %d socket %d\n", getpid(), sockfd);
+	NET_LOGKI(TTAG, "pid %d socket %d\n", getpid(), sockfd);
 #endif
 	return res;
 }
@@ -502,14 +502,14 @@ errout:
 static int lwip_ns_clone(FAR struct socket *psock1, FAR struct socket *psock2)
 {
 	// ToDo
-	NET_LOGV(TAG, "Not supported yet\n");
+	NET_LOGKV(TAG, "Not supported yet\n");
 	return 0;
 }
 
 static int lwip_ns_checksd(int sd, int oflags)
 {
 	// ToDo
-	NET_LOGV(TAG, "Not supported yet\n");
+	NET_LOGKV(TAG, "Not supported yet\n");
 	return 0;
 }
 
@@ -518,9 +518,9 @@ static int lwip_ns_ioctl(int sockfd, int cmd, unsigned long arg)
 	int res = netdev_lwipioctl(sockfd, cmd, (void *)arg);
 	if (res < 0) {
 		if (res == -ENOTTY) {
-			NET_LOGV(TAG, "command is not for lwip ioctl\n");
+			NET_LOGKV(TAG, "command is not for lwip ioctl\n");
 		} else {
-			NET_LOGE(TAG, "lwipioctl fail\n");
+			NET_LOGKE(TAG, "lwipioctl fail\n");
 		}
 	}
 	return res;
@@ -534,7 +534,7 @@ static int lwip_ns_vfcntl(int sockfd, int cmd, va_list ap)
 	} else if (cmd == F_GETFL) {
 		return lwip_fcntl(sockfd, cmd, 0);
 	}
-	NET_LOGE(TAG, "vfcntl fail\n");
+	NET_LOGKE(TAG, "vfcntl fail\n");
 	return -1;
 }
 
@@ -547,7 +547,7 @@ static int lwip_ns_socket(int domain, int type, int protocol)
 {
 	int res = _socket_argument_validation(domain, type, protocol);
 	if (res < 0) {
-		NET_LOGE(TAG, "not supported socket type\n");
+		NET_LOGKE(TAG, "not supported socket type\n");
 		return -1;
 	}
 	res = lwip_socket(domain, type, protocol);
@@ -555,7 +555,7 @@ static int lwip_ns_socket(int domain, int type, int protocol)
 	if (res != -1) {
 		char *str = NULL;
 		_get_proto(res, &str);
-		NET_LOGI(TTAG, "pid %d socket %d proto %s\n", getpid(), res, str);
+		NET_LOGKI(TTAG, "pid %d socket %d proto %s\n", getpid(), res, str);
 	}
 #endif
 	return res;
@@ -572,7 +572,7 @@ static int lwip_ns_bind(int s, const struct sockaddr *name, socklen_t namelen)
 		int assigned_port = 0;
 		_get_port(s, &assigned_port);
 		_get_proto(s, &str);
-		NET_LOGI(TTAG, "pid %d socket %d proto %s request %d assgiend %d\n",
+		NET_LOGKI(TTAG, "pid %d socket %d proto %s request %d assgiend %d\n",
 				 pid, s, str, request_port, assigned_port);
 	}
 #endif
@@ -686,24 +686,24 @@ static int lwip_ns_stop(void *data)
 static int lwip_ns_addroute(struct rtentry *entry)
 {
 	if (!entry || !entry->rt_target || !entry->rt_netmask) {
-		NET_LOGE(TAG, "invalid parameter\n");
+		NET_LOGKE(TAG, "invalid parameter\n");
 		return -EINVAL;
 	}
 
 	// ToDo
-	NET_LOGV("not supported yet\n");
+	NET_LOGKV("not supported yet\n");
 	return -ENOTTY;
 }
 
 static int lwip_ns_delroute(struct rtentry *entry)
 {
 	if (!entry || !entry->rt_target || !entry->rt_netmask) {
-		NET_LOGE(TAG, "invalid parameter\n");
+		NET_LOGKE(TAG, "invalid parameter\n");
 		return -EINVAL;
 	}
 
 	// ToDo
-	NET_LOGV("not supported yet\n");
+	NET_LOGKV("not supported yet\n");
 	return -ENOTTY;
 }
 #endif
@@ -757,7 +757,7 @@ static void lwip_ns_releaselist(struct socketlist *list)
 			if (list->sl_sockets[i].s_crefs == 1) {
 				ret = lwip_sock_close(psock);
 				if (ret) {
-					NET_LOGE(TAG, "socket could not close properly\n");
+					NET_LOGKE(TAG, "socket could not close properly\n");
 					list->sl_sockets[i].sock = NULL;
 					return;
 				}
