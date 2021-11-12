@@ -20,7 +20,7 @@
 -include $(TOPDIR)/Make.defs
 
 ASRCS		=
-CSRCS		= st_perf.c
+CSRCS		= st_perf.c st_perf_print.c
 
 CFLAGS+=-I$(TOPDIR)/../external/include
 
