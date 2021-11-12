@@ -86,9 +86,6 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	int pid;
 	int errcode;
 	int ret;
-#if (defined(CONFIG_SUPPORT_COMMON_BINARY) && (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU)))
-	uint32_t com_bin_mpu_regs[MPU_REG_NUMBER * MPU_NUM_REGIONS];	/* We need 3 register values to configure each MPU region */
-#endif
 
 	/* Sanity check */
 	if (load_attr && load_attr->bin_size <= 0) {
@@ -193,15 +190,15 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_COMMON_BIN);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		/* Get MPU register values for MPU regions */
-		mpu_get_register_config_value(&com_bin_mpu_regs[0], nregion - 3, (uintptr_t)bin->alloc[ALLOC_TEXT], bin->textsize, true,  true);
-		mpu_get_register_config_value(&com_bin_mpu_regs[3], nregion - 2, (uintptr_t)bin->alloc[ALLOC_RO],   bin->rosize,   true,  false);
-		mpu_get_register_config_value(&com_bin_mpu_regs[6], nregion - 1, (uintptr_t)bin->alloc[ALLOC_DATA], bin->ramsize,  false, false);
+		mpu_get_register_config_value(&bin->cmn_mpu_regs[0], nregion - 3, (uintptr_t)bin->alloc[ALLOC_TEXT], bin->textsize, true,  true);
+		mpu_get_register_config_value(&bin->cmn_mpu_regs[3], nregion - 2, (uintptr_t)bin->alloc[ALLOC_RO],   bin->rosize,   true,  false);
+		mpu_get_register_config_value(&bin->cmn_mpu_regs[6], nregion - 1, (uintptr_t)bin->alloc[ALLOC_DATA], bin->ramsize,  false, false);
 #else
-		mpu_get_register_config_value(&com_bin_mpu_regs[0], nregion - 1, (uintptr_t)bin->ramstart,          bin->ramsize,  false, true);
+		mpu_get_register_config_value(&bin->cmn_mpu_regs[0], nregion - 1, (uintptr_t)bin->ramstart,          bin->ramsize,  false, true);
 #endif
 		/* Set MPU register values to real MPU h/w */
 		for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
-			up_mpu_set_register(&com_bin_mpu_regs[i]);
+			up_mpu_set_register(&bin->cmn_mpu_regs[i]);
 		}
 #endif
 
