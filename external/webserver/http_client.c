@@ -516,6 +516,8 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 		return HTTP_ERROR;
 	}
 
+	memset(buf, 0, HTTP_CONF_MAX_REQUEST_LENGTH);
+
 	if (getpeername(client->client_fd, (struct sockaddr *)&addr, &addr_len) < 0) {
 		HTTP_LOGE("Error: Fail to getpeername\n");
 		goto errout;
@@ -578,7 +580,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 
 	// Check "Connection" header value
 	conn_type = http_keyvalue_list_find(request_params, "Connection");
-	if (!strcmp(conn_type, "Keep-Alive")) {
+	if (!strncasecmp(conn_type, "Keep-Alive", strlen("Keep-Alive")+1)) {
 		client->keep_alive = 1;
 	} else {
 		client->keep_alive = 0;
