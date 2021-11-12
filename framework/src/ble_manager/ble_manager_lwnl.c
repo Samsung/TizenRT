@@ -129,7 +129,7 @@ trble_result_e ble_drv_conn_is_active(trble_conn_handle con_handle, bool *is_act
 trble_result_e ble_drv_conn_is_any_active(bool *is_active)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE}, sizeof(is_active), (void *)is_active, (void *)&res};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE}, sizeof(bool), (void *)is_active, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
@@ -382,7 +382,7 @@ trble_result_e ble_drv_get_conn_handle_by_addr(uint8_t bd_addr[TRBLE_BD_ADDR_MAX
 trble_result_e ble_drv_set_adv_data(trble_data *data)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_ADV_DATA}, sizeof(data), (void *)data, (void *)&res};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_ADV_DATA}, sizeof(trble_data), (void *)data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
@@ -392,7 +392,7 @@ trble_result_e ble_drv_set_adv_data(trble_data *data)
 trble_result_e ble_drv_set_adv_resp(trble_data *data)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_ADV_RESP}, sizeof(data), (void *)data, (void *)&res};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_ADV_RESP}, sizeof(trble_data), (void *)data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}

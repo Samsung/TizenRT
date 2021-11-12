@@ -466,7 +466,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		2. auto connection
 		*/
 		ret = TRBLE_SUCCESS;
-		ble_client_ctx *ctx = (ble_client_ctx *)msg->param;
+		ble_client_ctx_internal *ctx = (ble_client_ctx_internal *)msg->param;
 
 		if (ctx == NULL) {
 			ret = TRBLE_INVALID_ARGS;
@@ -908,6 +908,12 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 					break;
 				}
 			}
+		}
+
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE context table");
+			ret = TRBLE_NOT_FOUND;
+			break;
 		}
 
 		if (priv_state == BLE_CLIENT_AUTOCONNECTING) {
