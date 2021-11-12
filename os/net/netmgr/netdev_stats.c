@@ -30,7 +30,7 @@ uint32_t g_app_recv_cnt = 0;
 
 void netstats_display(void)
 {
-	NET_LOG(TAG, "[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
-	NET_LOG(TAG, "[driver] mbox err %u\n", g_link_recv_err);
-	NET_LOG(TAG, "[app] total recv %u\t%u\n", g_app_recv_byte, g_app_recv_cnt);
+	NET_LOGK(TAG, "[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
+	NET_LOGK(TAG, "[driver] mbox err %u\n", g_link_recv_err);
+	NET_LOGK(TAG, "[app] total recv %u\t%u\n", g_app_recv_byte, g_app_recv_cnt);
 }

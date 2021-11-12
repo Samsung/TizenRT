@@ -56,7 +56,7 @@ int netdev_get_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t *hwaddr_len)
 	struct sockaddr addr;
 	int res = ND_NETOPS(dev, get_hwaddr)(dev, &addr);
 	if (res < 0) {
-		NET_LOGE(TAG, "Get get_hwaddr\n");
+		NET_LOGKE(TAG, "Get get_hwaddr\n");
 		return -1;
 	}
 	if (hwaddr_len) {

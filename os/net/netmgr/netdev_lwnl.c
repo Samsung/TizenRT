@@ -44,7 +44,7 @@ static int _netdev_getifaddr(struct netdev *dev, void *arg)
 	struct ifaddrs *addr = NULL;
 	int res = ND_NETOPS(dev, get_ifaddrs)(dev, &addr);
 	if (res < 0) {
-		NET_LOGE(TAG, "get_ifaddrs fail\n");
+		NET_LOGKE(TAG, "get_ifaddrs fail\n");
 		return -1;
 	}
 
@@ -74,7 +74,7 @@ static int _handle_common(lwnl_msg *msg)
 			res = -1;
 		}
 	} else {
-		NET_LOGE(TAG, "invalid request type");
+		NET_LOGKE(TAG, "invalid request type");
 		res = -1;
 	}
 
