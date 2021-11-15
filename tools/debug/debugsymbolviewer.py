@@ -19,9 +19,9 @@
 from __future__ import print_function
 from math import log
 import re
+import sys
 
-systemmap_path = '../../build/output/bin/System.map'		# System map file
-log_file = '../dump_tool/log_file'				# Crash log file
+bin_path = '../../build/output/bin/'		# System map file
 symbol_lookup_table = []	# Lookup table created from contents of system map file
 debug = False			# Variable to print debug logs
 pc_value = 0x00000000		# Program counter value
@@ -56,9 +56,9 @@ def setup_symbol_table(sm_file):
 					# Extract kernel text start & end addresses from the table
 					symbol = s[2].rstrip('\n')
 					if symbol == '_stext_flash':
-						flash_text_start_addr = hex(int(s[0], 16))
+						flash_text_start_addr = hex(int(s[0], 16) + int(offset,16))
 					if symbol == '_etext_flash':
-						flash_text_end_addr= hex(int(s[0], 16))
+						flash_text_end_addr= hex(int(s[0], 16) + int(offset,16))
 					if symbol == '_stext_ram':
 						is_ram_text = True
 						ram_text_start_addr = hex(int(s[0], 16))
@@ -67,13 +67,13 @@ def setup_symbol_table(sm_file):
 
 	if debug:
 		# Printing the Created Symbol table
-		print('~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE START ~~~~~~~~~~~~~~~~~~~~~')
+		print('\n~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE START ~~~~~~~~~~~~~~~~~~~~~')
 		for line in symbol_lookup_table:
 			print("{0:x} {1}".format(line[0], line[1]))
 		print('~~~~~~~~~~~~~~~~~~~~~~~~SYMBOL TABLE END   ~~~~~~~~~~~~~~~~~~~~~')
 
 		# Printing the kernel text address ranges in ram and flash areas
-		print('~~~~~~~~~~~~~~~~~~~~~~~~~~  KERNEL TEXT RANGE ~~~~~~~~~~~~~~~~~~~~~~~')
+		print('~~~~~~~~~~~~~~~~~~~~~~~~~~  TEXT ADDRESS RANGE ~~~~~~~~~~~~~~~~~~~~~~~')
 		print('flash_text_start_addr\t=\t', flash_text_start_addr)
 		print('flash_text_end_addr\t=\t', flash_text_end_addr)
 		if (is_ram_text):
@@ -88,7 +88,7 @@ def print_symbol(search_addr):
 	addr = 0x00000000
 	next_addr = 0x00000000
 	l = 0
-	h = len(symbol_lookup_table)
+	h = len(symbol_lookup_table) - 1
 	mid = (l + h) // 2
 
 	while (l <= h):
@@ -108,11 +108,11 @@ def print_symbol(search_addr):
 
 	if (l > h):
 		if debug:
-			print('Symbol not found for address: {0} in system map file'.format(hex(search_addr)))
+			print('Symbol not found for address: {0} in map file'.format(hex(search_addr)))
 
 
 # Function to check if address lies in the kernel text address range
-def is_kernel_text_address(address):
+def is_text_address(address):
 
 	# Check the address
 	if (address >= ram_text_start_addr and address < ram_text_end_addr) or (address >= flash_text_start_addr and address < flash_text_end_addr):
@@ -158,18 +158,30 @@ def parse_file(log_file):
 
 					stack_addr = int(sub_word,16)
 					# Check if the stack address lies in kernel text address range
-					if (is_kernel_text_address(hex(stack_addr))):
+					if (is_text_address(hex(stack_addr))):
 						#If yes, print it's corresponding symbol
+                                                stack_addr = stack_addr - int(offset,16)
 						print_symbol(stack_addr)
 
 
 #Execution starts here
 if (__name__ == '__main__'):
+
     # init
+    bin_path += sys.argv[1]
+    log_file = sys.argv[2]
+    offset = sys.argv[3]
+    is_kernel_crash = int(sys.argv[4])	# 1 if kernel crash, 0 in case of application crash
 
-    setup_symbol_table(systemmap_path)
+    if debug:
+        if (is_kernel_crash):
+           print("Is kernel crash : yes")
+        else:
+           print("Is application crash : yes")
+        print("Map file : " + bin_path)
+        print("Offset (text range start) : " + offset)
+    setup_symbol_table(bin_path)
 
-    print('------------------------------- DEBUG SYMBOLS IN TEXT RANGE -----------------------------')
     print('Dump_address\t Symbol_address\t  Symbol_name\tFile_name')
     parse_file(log_file)
     print('-----------------------------------------------------------------------------------------')
