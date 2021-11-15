@@ -252,7 +252,7 @@ void binary_manager_deactivate_rtthreads(int bin_idx);
 void binary_manager_set_faultmsg_sender(pid_t pid);
 int binary_manager_faultmsg_sender(int argc, char *argv[]);
 mqd_t binary_manager_get_mqfd(void);
-void binary_manager_recover_userfault(uint32_t assert_pc);
+void binary_manager_recover_userfault(void);
 #endif
 
 void binary_manager_add_binlist(FAR struct tcb_s *tcb);

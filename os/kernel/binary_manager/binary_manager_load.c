@@ -302,6 +302,8 @@ static int binary_manager_terminate_binary(int bin_idx)
 			return BINMGR_OPERATION_FAIL;
 		}
 		g_lib_binp = NULL;
+		BIN_STATE(BM_CMNLIB_IDX) = BINARY_INACTIVE;
+		BIN_LOADINFO(bin_idx) = NULL;
 		bmvdbg("Unload common binary !! %d\n", ret);
 		return BINMGR_OK;
 	}
@@ -520,34 +522,49 @@ static int reloading_thread(int argc, char *argv[])
 		return ERROR;
 	}
 
-	/* argv[1] binary index for reloading */
-	int bin_idx = (int)atoi(argv[1]);
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	if (bin_idx == BM_CMNLIB_IDX) {
-		int ret;
+	int ret;
+	int bidx;
+	int bin_count = binary_manager_get_ucount();
 
-		/* Reload common library and all binaries */
-		char libname[CONFIG_NAME_MAX];
-		snprintf(libname, CONFIG_NAME_MAX, BINMGR_DEVNAME_FMT, BIN_PARTNUM(BM_CMNLIB_IDX, 0));
-		ret = load_binary(BM_CMNLIB_IDX, libname, NULL);
-		if (ret < 0) {
+	/*
+	 * Unload all user binaries and common binary in sequence.
+	 * The threads of common binary are linked to a list of threads of user binary.
+	 * So the common binary should be unloaded after termination of all user binaries
+	 * to clear used resources normally.
+	 */
+
+	/* 1. Unload all user binaries */
+	for (bidx = 1; bidx <= bin_count; bidx++) {
+		ret = binary_manager_terminate_binary(bidx);
+		if (ret != OK) {
+			bmdbg("Failed to terminate binary %s\n", BIN_NAME(bidx));
 			return BINMGR_OPERATION_FAIL;
 		}
+		bmdbg("Terminate binary %d\n", bidx);
+	}
 
-		int bidx;
-		int bin_count = binary_manager_get_ucount();
+	/* 2. Unload common binary */
+	ret = binary_manager_terminate_binary(BM_CMNLIB_IDX);
+	if (ret != OK) {
+		bmdbg("Failed to terminate common binary\n");
+		return BINMGR_OPERATION_FAIL;
+	}
 
-		for (bidx = 1; bidx <= bin_count; bidx++) {
-			ret = binary_manager_reload(bidx);
-			if (ret < 0) {
-				return ret;
-			}
-		}
+	/* 3. Load all binaries */
+	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, 0);
+	if (ret != OK) {
+		bmdbg("Failed to execute loader to load all binaries\n");
+		return BINMGR_OPERATION_FAIL;
+	}
 
-		return ret;
-	} else
-#endif
+	return BINMGR_OK;
+#else
+	/* argv[1] binary index for reloading */
+	int bin_idx = (int)atoi(argv[1]);
+
 	return binary_manager_reload(bin_idx);
+#endif
 }
 #endif
 
@@ -779,7 +796,6 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		}
 		/* Calculate checksum and Verify it */
 		calculate_crc = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_size - CHECKSUM_SIZE, calculate_crc);
-		
 		while (bin_size > 0) {
 			read_size = bin_size < crc_bufsize ? bin_size : crc_bufsize;
 			ret = read(fd, (void *)crc_buffer, read_size);

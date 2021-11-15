@@ -517,7 +517,7 @@ void up_assert(const uint8_t *filename, int lineno)
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE) {
 		/* Recover user fault through binary manager */
-		binary_manager_recover_userfault(assert_pc);
+		binary_manager_recover_userfault();
 	} else
 #endif
 	{
