@@ -211,14 +211,15 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	heap_table[binary_idx] = bin->heapstart;
 #endif
 
+	elf_save_bin_section_addr(bin);
 	/* Start the module */
 	pid = exec_module(bin);
 	if (pid < 0) {
 		errcode = pid;
 		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
+		elf_delete_bin_section_addr(bin);
 		goto errout_with_unload;
 	}
-	elf_save_bin_section_addr(bin);
 
 	/* Print Binary section address & size details */
 
