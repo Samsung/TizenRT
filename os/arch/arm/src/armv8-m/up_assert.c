@@ -495,6 +495,7 @@ void up_assert(const uint8_t *filename, int lineno)
 			lldbg("No heap corruption detected\n");
 		}
 	}
+	lldbg("Assert location (PC) : %08x\n", g_assertpc);
 #endif
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
