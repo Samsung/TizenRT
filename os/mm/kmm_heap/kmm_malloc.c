@@ -86,7 +86,7 @@ static void *kheap_malloc(size_t size, size_t retaddr)
 	void *ret;
 	struct mm_heap_s *kheap = kmm_get_heap();
 
-	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
+	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_malloc(&kheap[heap_idx], size, retaddr);
 #else
@@ -97,7 +97,7 @@ static void *kheap_malloc(size_t size, size_t retaddr)
 		}
 	}
 
-	mm_manage_alloc_fail(kheap, CONFIG_KMM_NHEAPS, size, KERNEL_HEAP);
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, KERNEL_HEAP);
 	return NULL;
 }
 
@@ -126,8 +126,8 @@ void *kmm_malloc_at(int heap_index, size_t size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("kmm_malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("kmm_malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
 	}
 
@@ -136,13 +136,13 @@ void *kmm_malloc_at(int heap_index, size_t size)
 	ARCH_GET_RET_ADDRESS
 	ret = mm_malloc(&kheap[heap_index], size, retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], 1, size, KERNEL_HEAP);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
 	}
 	return ret;
 #else
 	ret = mm_malloc(&kheap[heap_index], size);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], 1, size, KERNEL_HEAP);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
 	}
 	return ret;
 #endif

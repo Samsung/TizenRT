@@ -87,21 +87,22 @@
 void *realloc_at(int heap_index, void *oldmem, size_t size)
 {
 	void *ret;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
 	}
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
 	}
 	return ret;
 #else
 	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
 	}
 	return ret;
 #endif
@@ -127,11 +128,12 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	int heap_idx;
 	int prev_heap_idx;
 	void *ret;
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 #endif
 	heap_idx = mm_get_heapindex(oldmem);
-	if (heap_idx < 0) {
+	if (heap_idx < HEAP_START_IDX) {
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -145,7 +147,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	/* Try to mm_malloc to another heap */
 	mdbg("After realloc, memory can be allocated to another heap which is not as same as previous.\n");
 	prev_heap_idx = heap_idx;
-	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
+	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_malloc(&BASE_HEAP[heap_idx], size, retaddr);
 #else
@@ -157,6 +159,6 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, CONFIG_KMM_NHEAPS, size, USER_HEAP);
+	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
 	return NULL;
 }

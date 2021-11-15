@@ -89,8 +89,8 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
 	}
 
@@ -99,13 +99,13 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 	ARCH_GET_RET_ADDRESS
 	ret = mm_realloc(&kheap[heap_index], oldmem, size, retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], 1, size, KERNEL_HEAP);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
 	}
 	return ret;
 #else
 	ret = mm_realloc(&kheap[heap_index], oldmem, size);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], 1, size, KERNEL_HEAP);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
 	}
 	return ret;
 #endif
@@ -133,6 +133,7 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	int kheap_idx;
 	struct mm_heap_s *kheap_origin = mm_get_heap(oldmem);
 	struct mm_heap_s *kheap_new;
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_realloc(kheap_origin, oldmem, newsize, retaddr);
@@ -145,7 +146,7 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 
 	/* Try to mm_malloc to another heap. */
 	kheap_new = kmm_get_heap();
-	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
+	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ARCH_GET_RET_ADDRESS
 		ret = mm_malloc(&kheap_new[kheap_idx], newsize, retaddr);
@@ -158,7 +159,7 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 		}
 	}
 
-	mm_manage_alloc_fail(kheap_new, CONFIG_KMM_NHEAPS, newsize, KERNEL_HEAP);
+	mm_manage_alloc_fail(kheap_new, HEAP_START_IDX, HEAP_END_IDX, newsize, KERNEL_HEAP);
 	return NULL;
 }
 

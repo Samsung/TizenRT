@@ -83,21 +83,22 @@
 void *calloc_at(int heap_index, size_t n, size_t elem_size)
 {
 	void *ret;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+	if (heap_index > HEAP_END_IDX || heap_index < 0) {
+		mdbg("calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
 	}
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size, retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, n * elem_size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, n * elem_size, USER_HEAP);
 	}
 	return ret;
 #else
 	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, n * elem_size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, n * elem_size, USER_HEAP);
 	}
 	return ret;
 #endif
@@ -125,7 +126,7 @@ static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t retadd
 	int heap_idx;
 	void *ret;
 
-	for (heap_idx = s; heap_idx < e; heap_idx++) {
+	for (heap_idx = s; heap_idx <= e; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_calloc(&BASE_HEAP[heap_idx], n, elem_size, retaddr);
 #else
@@ -135,7 +136,7 @@ static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t retadd
 			return ret;
 		}
 	}
-	mm_manage_alloc_fail(BASE_HEAP, e, n * elem_size, USER_HEAP);
+	mm_manage_alloc_fail(BASE_HEAP, s, e, n * elem_size, USER_HEAP);
 	return NULL;
 }
 
@@ -149,7 +150,7 @@ static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t retadd
 
 FAR void *calloc(size_t n, size_t elem_size)
 {
-	int heap_idx = 0;
+	int heap_idx = HEAP_START_IDX;
 	void *ret = NULL;
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -162,14 +163,14 @@ FAR void *calloc(size_t n, size_t elem_size)
 	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
 
-	ret = heap_calloc(n, elem_size, heap_idx, CONFIG_KMM_NHEAPS, retaddr);
+	ret = heap_calloc(n, elem_size, heap_idx, HEAP_END_IDX, retaddr);
 	if (ret != NULL) {
 		return ret;
 	}
 
 #if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
 	/* Try to mm_calloc to other heaps */
-	ret = heap_calloc(n, elem_size, 0, CONFIG_RAM_MALLOC_PRIOR_INDEX, retaddr);
+	ret = heap_calloc(n, elem_size, HEAP_START_IDX, CONFIG_RAM_MALLOC_PRIOR_INDEX - 1, retaddr);
 #endif
 
 	return ret;
