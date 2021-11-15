@@ -226,26 +226,24 @@ void binary_manager_deactivate_rtthreads(int bin_idx)
  *	 This function deactivates RT threads and unblocks fault message sender.
  *
  ****************************************************************************/
-void binary_manager_recover_userfault(uint32_t assert_pc)
+void binary_manager_recover_userfault(void)
 {
 	int bin_idx;
-	struct tcb_s *tcb;
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	if (is_common_library_space((void *)assert_pc)) {
-		/* If a fault happens in common library, it needs to reload all user binaries */
-		int bin_count = binary_manager_get_ucount();
-		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
-			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-			binary_manager_deactivate_rtthreads(bin_idx);
-		}
-		/* Send fault message and Unblock fault message sender */
-		return binary_manager_unblock_fault_message_sender(BM_CMNLIB_IDX);
-	}
-#endif
+	/* If a fault happens in common binary or user binaries, it needs to reload all user binaries */
+	int bin_count = binary_manager_get_ucount();
 
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
+		binary_manager_deactivate_rtthreads(bin_idx);
+	}
+	/* Send fault message and Unblock fault message sender */
+	return binary_manager_unblock_fault_message_sender(bin_idx);
+#else
 	/* Get a tcb of fault thread for fault handling */
-	tcb = this_task();
+	struct tcb_s *tcb = this_task();
+
 	if (tcb != NULL && tcb->group != NULL) {
 		/* Exclude realtime task/pthreads from scheduling */
 		bin_idx = tcb->group->tg_binidx;
@@ -254,6 +252,7 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 		/* Send fault message and Unblock fault message sender */
 		return binary_manager_unblock_fault_message_sender(bin_idx);
 	}
+#endif
 
 	/* Board reset on failure of recovery */
 	binary_manager_reset_board();
@@ -332,31 +331,26 @@ void binary_manager_recovery(int bin_idx)
 	}
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	/* If a fault happens in common library, we need to reload the library and all user binaries */
+	/* If a fault happens in common or user binaries, we need to reload the library and all user binaries */
 	int bidx;
-	if (bin_idx == BM_CMNLIB_IDX) {
-		int bin_count = binary_manager_get_ucount();
-		for (bidx = 1; bidx <= bin_count; bidx++) {
-			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-			ret = binary_manager_deactivate_binary(bidx);
-			if (ret != OK) {
-				bmlldbg("Failure during recovery excluding binary pid = %d\n", bidx);
-				goto reboot_board;
-			}
-
-			BIN_STATE(bidx) = BINARY_FAULT;
-		}
-	} else
-#endif
-	{
+	int bin_count = binary_manager_get_ucount();
+	for (bidx = 1; bidx <= bin_count; bidx++) {
 		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-		ret = binary_manager_deactivate_binary(bin_idx);
+		ret = binary_manager_deactivate_binary(bidx);
 		if (ret != OK) {
-			bmlldbg("Failed to deactivate binary\n");
+			bmlldbg("Failed to deactivate binary, bin idx %d\n", bidx);
 			goto reboot_board;
 		}
+		BIN_STATE(bidx) = BINARY_FAULT;
 	}
-
+#else
+	/* Exclude its all children from scheduling if the binary is registered with the binary manager */
+	ret = binary_manager_deactivate_binary(bin_idx);
+	if (ret != OK) {
+		bmlldbg("Failed to deactivate binary, bin idx %d\n", bin_idx);
+		goto reboot_board;
+	}
+#endif
 	/* Create loader to reload binary */
 	BIN_STATE(bin_idx) = BINARY_FAULT;
 	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);

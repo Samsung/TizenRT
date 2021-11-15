@@ -73,14 +73,4 @@ bool is_kernel_space(void *addr)
 	}
 	return false;
 }
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-bool is_common_library_space(void *addr)
-{
-	if (g_lib_binp && addr >= (void *)g_lib_binp->alloc[ALLOC_TEXT] && addr <= (void *)(g_lib_binp->alloc[ALLOC_TEXT] + g_lib_binp->textsize)) {
-		return true;
-	}
-	return false;
-}
-#endif							/* CONFIG_SUPPORT_COMMON_BINARY */
 #endif							/* CONFIG_BUILD_PROTECTED */
