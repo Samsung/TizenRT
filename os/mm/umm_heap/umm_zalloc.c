@@ -84,21 +84,22 @@
 void *zalloc_at(int heap_index, size_t size)
 {
 	void *ret;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
 	}
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_zalloc(&BASE_HEAP[heap_index], size, retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
 	}
 	return ret;
 #else
 	ret = mm_zalloc(&BASE_HEAP[heap_index], size);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], 1, size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
 	}
 	return ret;
 #endif
@@ -126,7 +127,7 @@ static void *heap_zalloc(size_t size, int s, int e, size_t retaddr)
 	int heap_idx;
 	void *ret;
 
-	for (heap_idx = s; heap_idx < e; heap_idx++) {
+	for (heap_idx = s; heap_idx <= e; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_zalloc(&BASE_HEAP[heap_idx], size, retaddr);
 #else
@@ -137,7 +138,7 @@ static void *heap_zalloc(size_t size, int s, int e, size_t retaddr)
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, e, size, USER_HEAP);
+	mm_manage_alloc_fail(BASE_HEAP, s, e, size, USER_HEAP);
 	return NULL;
 }
 #endif
@@ -165,14 +166,14 @@ FAR void *zalloc(size_t size)
 	if (alloc) {
 		memset(alloc, 0, size);
 	} else {
-		mm_manage_alloc_fail(BASE_HEAP, 1, size, USER_HEAP);
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
 	}
 
 	return alloc;
 
 #else /* CONFIG_ARCH_ADDRENV */
 	/* Use mm_zalloc() becuase it implements the clear */
-	int heap_idx = 0;
+	int heap_idx = HEAP_START_IDX;
 	void *ret = NULL;
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -185,14 +186,14 @@ FAR void *zalloc(size_t size)
 	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
 
-	ret = heap_zalloc(size, heap_idx, CONFIG_KMM_NHEAPS, retaddr);
+	ret = heap_zalloc(size, heap_idx, HEAP_END_IDX, retaddr);
 	if (ret != NULL) {
 		return ret;
 	}
 
 #if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
 	/* Try to mm_calloc to other heaps */
-	ret = heap_zalloc(size, 0, CONFIG_RAM_MALLOC_PRIOR_INDEX, retaddr);
+	ret = heap_zalloc(size, HEAP_START_IDX, CONFIG_RAM_MALLOC_PRIOR_INDEX - 1, retaddr);
 #endif
 
 	return ret;

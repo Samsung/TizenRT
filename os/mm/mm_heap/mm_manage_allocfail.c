@@ -59,7 +59,7 @@
  *
  ************************************************************************/
 
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int heapidx, size_t size, int heap_type)
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type)
 {
 	mfdbg("Allocation failed from %s heap.\n", (heap_type == KERNEL_HEAP) ? KERNEL_STR : USER_STR);
 	mfdbg(" - requested size %u\n", size);
@@ -67,7 +67,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int heapidx, size_t size, int 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	struct mallinfo info;
 	memset(&info, 0, sizeof(struct mallinfo));
-	for (int idx = 0; idx < heapidx; idx++) {
+	for (int idx = startidx; idx <= endidx; idx++) {
 		mm_mallinfo(&heap[idx], &info);
 	}
 	mfdbg(" - largest free size : %d\n", info.mxordblk);
@@ -79,7 +79,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int heapidx, size_t size, int 
 #endif /* CONFIG_MM_ASSERT_ON_FAIL */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	for (int idx = 0; idx < heapidx; idx++) {
+	for (int idx = startidx; idx <= endidx; idx++) {
 		heapinfo_parse_heap(&heap[idx], HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
 	}
 #endif
