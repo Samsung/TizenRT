@@ -21,6 +21,9 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#if !defined(__KERNEL__)
+#include <stdio.h>
+#endif
 #include <debug.h>
 #include <string.h>
 #include <stdlib.h>
@@ -33,8 +36,12 @@
 #endif
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
+#if defined(__KERNEL__)
 #define mfdbg lldbg // When CONFIG_MM_ASSERT_ON_FAIL is enabled, we cannot use the buffer way like mdbg because of board assert.
 #else
+#define mfdbg printf
+#endif /* defined(__KERNEL__) */
+#else  /* CONFIG_MM_ASSERT_ON_FAIL */
 #define mfdbg mdbg
 #endif
 
