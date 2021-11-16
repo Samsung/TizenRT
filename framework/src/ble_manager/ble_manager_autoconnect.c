@@ -113,7 +113,18 @@ static void *_autocon_process(void *param)
 			}
 		}
 		memset(buf, 0, sizeof(buf));
-		nbytes = mq_receive(ctx->mqfd, buf, sizeof(buf), 0);
+		for (;;) {
+			nbytes = mq_receive(ctx->mqfd, buf, sizeof(buf), 0);
+			if (nbytes < 0) {
+				int err_no = get_errno();
+				if (err_no == EINTR || err_no == EAGAIN) {
+					continue;
+				}
+				BLE_LOG_ERROR("[BLEMGR] mq_receive fail(fd : %d , err : %d)", ctx->mqfd, errno);
+				goto finish_auto;
+			}
+			break;
+		}
 		evt = (ble_autocon_event)(buf[0]);
 		BLE_LOG_DEBUG("[BLEMGR] mqueue evt : %d\n", evt);
 
