@@ -60,6 +60,10 @@ ifeq ($(CONFIG_BUILD_KERNEL),y)
 CSRCS += umm_sbrk.c
 endif
 
+ifeq ($(CONFIG_MM_KERNEL_HEAP),y)
+CSRCS += umm_xalloc_user_at.c
+endif
+
 # Add the user heap directory to the build
 
 DEPPATH += --dep-path umm_heap
