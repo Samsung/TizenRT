@@ -88,6 +88,9 @@ void *calloc_at(int heap_index, size_t n, size_t elem_size)
 		return NULL;
 	}
 
+	if (n == 0 || elem_size == 0) {
+		return NULL;
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size, retaddr);
@@ -152,6 +155,10 @@ FAR void *calloc(size_t n, size_t elem_size)
 {
 	int heap_idx = HEAP_START_IDX;
 	void *ret = NULL;
+
+	if (n == 0 || elem_size == 0) {
+		return NULL;
+	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS

@@ -110,6 +110,9 @@ void *malloc_at(int heap_index, size_t size)
 		return NULL;
 	}
 
+	if (size == 0) {
+		return NULL;
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_malloc(&BASE_HEAP[heap_index], size, retaddr);
@@ -210,6 +213,10 @@ FAR void *malloc(size_t size)
 
 	int heap_idx = HEAP_START_IDX;
 	void *ret = NULL;
+
+	if (size == 0) {
+		return NULL;
+	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
