@@ -90,6 +90,10 @@ void *kmm_zalloc_at(int heap_index, size_t size)
 		return NULL;
 	}
 
+	if (size == 0) {
+		return NULL;
+	}
+
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
@@ -126,6 +130,10 @@ FAR void *kmm_zalloc(size_t size)
 {
 	void *ret;
 	int kheap_idx;
+
+	if (size == 0) {
+		return NULL;
+	}
 
 	struct mm_heap_s *kheap = kmm_get_heap();
 

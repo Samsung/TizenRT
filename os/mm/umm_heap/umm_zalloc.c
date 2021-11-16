@@ -89,6 +89,9 @@ void *zalloc_at(int heap_index, size_t size)
 		return NULL;
 	}
 
+	if (size == 0) {
+		return NULL;
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_zalloc(&BASE_HEAP[heap_index], size, retaddr);
@@ -159,6 +162,9 @@ static void *heap_zalloc(size_t size, int s, int e, size_t retaddr)
 
 FAR void *zalloc(size_t size)
 {
+	if (size == 0) {
+		return NULL;
+	}
 #ifdef CONFIG_ARCH_ADDRENV
 	/* Use malloc() because it implements the sbrk() logic */
 

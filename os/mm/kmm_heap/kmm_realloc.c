@@ -94,6 +94,10 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 		return NULL;
 	}
 
+	if (size == 0) {
+		return NULL;
+	}
+
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
@@ -134,6 +138,9 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	struct mm_heap_s *kheap_origin = mm_get_heap(oldmem);
 	struct mm_heap_s *kheap_new;
 
+	if (newsize == 0) {
+		return NULL;
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_realloc(kheap_origin, oldmem, newsize, retaddr);

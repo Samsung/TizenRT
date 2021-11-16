@@ -131,6 +131,10 @@ void *kmm_malloc_at(int heap_index, size_t size)
 		return NULL;
 	}
 
+	if (size == 0) {
+		return NULL;
+	}
+
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
@@ -170,6 +174,9 @@ FAR void *kmm_malloc(size_t size)
 #else
 	size_t retaddr = 0;
 #endif
+	if (size == 0) {
+		return NULL;
+	}
 	return kheap_malloc(size, retaddr);
 }
 #endif							/* CONFIG_MM_KERNEL_HEAP */

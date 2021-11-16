@@ -92,6 +92,10 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 		return NULL;
 	}
 
+	if (size == 0) {
+		return NULL;
+	}
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_memalign(&BASE_HEAP[heap_index], alignment, size, retaddr);
@@ -125,6 +129,10 @@ FAR void *memalign(size_t alignment, size_t size)
 {
 	int heap_idx;
 	void *ret;
+
+	if (size == 0) {
+		return NULL;
+	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS

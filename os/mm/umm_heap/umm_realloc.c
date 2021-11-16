@@ -92,6 +92,10 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 		return NULL;
 	}
 
+	if (size == 0) {
+		return NULL;
+	}
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
 	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, retaddr);
@@ -128,6 +132,10 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	int heap_idx;
 	int prev_heap_idx;
 	void *ret;
+
+	if (size == 0) {
+		return NULL;
+	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS

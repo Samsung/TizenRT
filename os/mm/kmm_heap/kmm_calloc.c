@@ -114,6 +114,10 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 		return NULL;
 	}
 
+	if (n == 0 || elem_size == 0) {
+		return NULL;
+	}
+
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS
@@ -147,6 +151,9 @@ FAR void *kmm_calloc(size_t n, size_t elem_size)
 #else
 	size_t retaddr = 0;
 #endif
+	if (n == 0 || elem_size == 0) {
+		return NULL;
+	}
 	return kheap_calloc(n, elem_size, retaddr);
 }
 
