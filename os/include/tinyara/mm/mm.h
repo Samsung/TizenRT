@@ -792,6 +792,54 @@ void *zalloc_at(int heap_index, size_t size);
 #endif
 
 /**
+ * @brief Free the memory from specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_free() function.
+ *   This function is used to free the memory from specified user heap.
+ */
+void free_user_at(struct mm_heap_s *heap, void *mem);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_calloc() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *calloc_user_at(struct mm_heap_s *heap, size_t n, size_t elem_size);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_memalign() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *memalign_user_at(struct mm_heap_s *heap, size_t alignment, size_t size);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_malloc() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *malloc_user_at(struct mm_heap_s *heap, size_t size);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_realloc() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *realloc_user_at(struct mm_heap_s *heap, void *oldmem, size_t newsize);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_zalloc() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *zalloc_user_at(struct mm_heap_s *heap, size_t size);
+
+/**
  * @endcond
  */
 
