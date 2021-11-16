@@ -126,8 +126,8 @@ extern uint32_t g_assertpc;
 #define CONFIG_BOARD_RESET_ON_ASSERT 0
 #endif
 
-#define IS_FAULT_IN_USER_THREAD  ((void *)fault_tcb->uheap != NULL)
-#define IS_FAULT_IN_USER_SPACE   (is_kernel_space((void *)assert_pc) == false)
+#define IS_FAULT_IN_USER_THREAD(fault_tcb)  ((void *)fault_tcb->uheap != NULL)
+#define IS_FAULT_IN_USER_SPACE(assert_pc)   (is_kernel_space((void *)assert_pc) == false)
 
 /****************************************************************************
  * Private Data
@@ -462,21 +462,6 @@ void up_assert(const uint8_t *filename, int lineno)
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	uint32_t assert_pc;
-	struct tcb_s *fault_tcb = this_task();
-
-	/* Extract the PC value of instruction which caused the abort/assert */
-
-	if (current_regs) {
-		assert_pc = current_regs[REG_R15];
-	} else {
-		assert_pc = (uint32_t)g_assertpc;
-	}
-
-#endif  /* CONFIG_APP_BINARY_SEPARATION */
-
 	up_dumpstate();
 
 	lldbg("Checking kernel heap for corruption...\n");
@@ -484,7 +469,9 @@ void up_assert(const uint8_t *filename, int lineno)
 		lldbg("No heap corruption detected\n");
 	}
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	if (IS_FAULT_IN_USER_THREAD) {
+	struct tcb_s *fault_tcb = this_task();
+
+	if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
 		elf_show_all_bin_addr();
 		lldbg("Checking current app heap for corruption...\n");
 		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
@@ -498,7 +485,17 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	if (IS_FAULT_IN_USER_SPACE) {
+	uint32_t assert_pc;
+
+	/* Extract the PC value of instruction which caused the abort/assert */
+
+	if (current_regs) {
+		assert_pc = current_regs[REG_R15];
+	} else {
+		assert_pc = (uint32_t)g_assertpc;
+	}
+
+	if (IS_FAULT_IN_USER_SPACE(assert_pc)) {
 		/* Recover user fault through binary manager */
 		binary_manager_recover_userfault();
 	} else
