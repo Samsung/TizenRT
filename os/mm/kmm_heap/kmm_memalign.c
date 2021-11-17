@@ -103,19 +103,16 @@ void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	ret = mm_memalign(&kheap[heap_index], alignment, size, retaddr);
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
-	}
-	return ret;
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_memalign(&kheap[heap_index], alignment, size, caller_retaddr);
 #else
 	ret = mm_memalign(&kheap[heap_index], alignment, size);
+#endif
 	if (ret == NULL) {
 		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
 	}
 	return ret;
-#endif
 }
 #endif
 
@@ -146,8 +143,9 @@ FAR void *kmm_memalign(size_t alignment, size_t size)
 	struct mm_heap_s *kheap = kmm_get_heap();
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ARCH_GET_RET_ADDRESS
-		ret = mm_memalign(&kheap[kheap_idx], alignment, size, retaddr);
+		size_t caller_retaddr = 0;
+		ARCH_GET_RET_ADDRESS(caller_retaddr)
+		ret = mm_memalign(&kheap[kheap_idx], alignment, size, caller_retaddr);
 #else
 		ret = mm_memalign(&kheap[kheap_idx], alignment, size);
 #endif
