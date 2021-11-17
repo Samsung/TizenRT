@@ -5,7 +5,8 @@
 In this file,  
 > [**General**](README.md#general)  
 > [**Directory Location**](README.md#directory-location)  
-> [**Application Configuration File**](README.md#application-configuration-file)
+> [**Application Configuration File**](README.md#application-configuration-file)  
+> [**Suggestion for Optimizing SmartFs Read**](README.md#Suggestion-for-Optimizing-SmartFs-Read)
 
 Outside this file,  
 > [**Built-In Applications**](builtin/README.md)  
@@ -65,3 +66,19 @@ CONFIGURED_APPS += examples/hello
 endif
 ```
 
+## Suggestion for optimizing SmartFs Read
+
+USing just any buffer size for reading the contents of a SmartFs file, back-to-back(looped),
+might cause repetitive reading of sectors and performance degradation.
+Hence, programmers are encouraged to use an optimal buffer size for reading back-to-back from
+a SmartFs file.
+
+```
+stat("\mnt", &st);
+buf_size = st.st_blksize;
+```
+
+Please refer the "read_optimization" example (apps/examples/smartfs/read_optimization) for
+more details. The same will give you a demonstration of the improvement in read performance.
+
+NOTE: This suggestion is useful only when read requests are made contiguously, back-to-back.
