@@ -116,10 +116,6 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 	/* Handle bad sizes */
 
-	if (size < 1) {
-		return NULL;
-	}
-
 	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {
 		mdbg("Because of mm_allocnode, %u cannot be allocated. The maximum \
 			 allocable size is (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) \
