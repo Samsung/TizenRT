@@ -111,12 +111,12 @@
  * allocators can be used just like the standard memory allocators.
  */
 
-#define ccm_malloc(s)      mm_malloc(&g_ccm_heap, s)
-#define ccm_zalloc(s)      mm_zalloc(&g_ccm_heap, s)
-#define ccm_calloc(n, s)   mm_calloc(&g_ccm_heap, n, s)
-#define ccm_free(p)        mm_free(&g_ccm_heap, p)
-#define ccm_realloc(p, s)  mm_realloc(&g_ccm_heap, p, s)
-#define ccm_memalign(a, s) mm_memalign(&g_ccm_heap, a, s)
+#define ccm_malloc(s)      malloc_user_at(&g_ccm_heap, s)
+#define ccm_zalloc(s)      zalloc_user_at(&g_ccm_heap, s)
+#define ccm_calloc(n, s)   calloc_user_at(&g_ccm_heap, n, s)
+#define ccm_free(p)        free_user_at(&g_ccm_heap, p)
+#define ccm_realloc(p, s)  realloc_user_at(&g_ccm_heap, p, s)
+#define ccm_memalign(a, s) memalign_user_at(&g_ccm_heap, a, s)
 
 /****************************************************************************
  * Public Types
