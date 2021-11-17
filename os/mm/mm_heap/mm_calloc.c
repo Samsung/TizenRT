@@ -82,11 +82,6 @@ FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size)
 {
 	FAR void *ret = NULL;
 
-	if ((n == 0) || (elem_size == 0)) {
-		mdbg("Invalid Parameter, n : %u, elem_size : %u\n", n, elem_size);
-		return NULL;
-	}
-
 	if (n > (MMSIZE_MAX / elem_size)) {
 		mdbg("Parameter n(%u) should be smaller than (MMSIZE_MAX / elem_size)(%u), \
 			because multiplication of n and elem_size cannot overflow the size_t.\n", n, (MMSIZE_MAX / elem_size));
