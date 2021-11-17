@@ -111,7 +111,6 @@ void _run_smoke(st_smoke *smoke)
 	st_tc_result ret;
 	st_func *unit = smoke->func;
 	st_stability *stab = smoke->stability;
-	st_performance *perf = smoke->performance;
 
 	print_smoke_title(smoke);
 
