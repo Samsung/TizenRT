@@ -35,7 +35,7 @@ static int _create_netlink(int type, int protocol)
 
 	int fd = open(LWNL_PATH, O_RDWR);
 	if (fd < 0) {
-		NET_LOGE(TAG, "open netlink dev fail\n");
+		NET_LOGKE(TAG, "open netlink dev fail\n");
 		return -1;
 	}
 	return fd;
