@@ -28,8 +28,8 @@
 #include "wm_test_network.h"
 #include "wm_test_mock.h"
 #include "wm_test_log.h"
-
-#define WM_TEST_TRIAL 2
+#define SELF_TEST
+#define WM_TEST_TRIAL 100
 #define TAG "[WT]"
 //if semaphore operation failed then it'll try it again 10ms later
 #define WT_SEM_TRY_WAIT_US 10000
@@ -158,15 +158,7 @@ static int _run_procedure(void)
 	wifi_manager_stats_s stats;
 	wm_get_apinfo(&apconfig);
 
-	CONTROL_VDRIVER(VWIFI_CMD_SET, VWIFI_KEY_RESULT, (int)TRWIFI_SUCCESS, 0);
-
 	wifi_manager_result_e wres = WIFI_MANAGER_SUCCESS;
-	WT_LOG(TAG, "init wi-fi");
-	wres = wifi_manager_init(&g_wifi_callbacks);
-	if (wres != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(TAG, "fail to init %d\n", wres);
-		return -1;
-	}
 
 	wres = wifi_manager_get_info(&wminfo);
 	if (wres != WIFI_MANAGER_SUCCESS) {
@@ -191,13 +183,13 @@ static int _run_procedure(void)
 		return -1;
 	}
 	wt_print_conninfo(&wminfo);
-
+#ifndef SELF_TEST
 	/*  wait join event */
 	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_SOFTAP_STA_JOINED, 0, 3000);
 	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, VWIFI_PKT_DHCPS_EVT, 0, 3000);
 	WT_LOG(TAG, "wait join event");
 	WM_TEST_WAIT;
-
+#endif
 	wres = wifi_manager_get_info(&wminfo);
 	if (wres != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "get info fail %d\n", wres);
@@ -337,20 +329,29 @@ static int _run_procedure(void)
 	}
 	wt_print_stats(&stats);
 
-	WT_LOG(TAG, "deinit wi-fi");
-	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT_FUNC, LWNL_EVT_STA_DISCONNECTED, 3, 0);
-	wres = wifi_manager_deinit();
-	if (wres != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(TAG, "fail to deinit %d\n", wres);
-		return -1;
-	}
+	
 	return 0;
 }
 
 TEST_F(mode_change)
 {
 	ST_START_TEST;
-	ST_EXPECT_EQ(0, _run_procedure());
+  CONTROL_VDRIVER(VWIFI_CMD_SET, VWIFI_KEY_RESULT, (int)TRWIFI_SUCCESS, 0);
+
+	wifi_manager_result_e wres = WIFI_MANAGER_SUCCESS;
+	WT_LOG(TAG, "init wi-fi");
+	wres = wifi_manager_init(&g_wifi_callbacks);
+	if (wres != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "fail to init %d\n", wres);
+		assert(0);
+	}
+	int res = _run_procedure();
+  printf("%d\n", res);
+
+	WT_LOG(TAG, "deinit wi-fi");
+	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT_FUNC, LWNL_EVT_STA_DISCONNECTED, 3, 0);
+  ST_ASSERT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+
 	ST_END_TEST;
 }
 
@@ -538,13 +539,14 @@ void wm_run_stress_test4(struct wt_options *opt)
 	ST_SET_PACK(wifi);
 
 	ST_SET_SMOKE1(wifi, WM_TEST_TRIAL, 0, "use case test", mode_change);
+#ifndef SELF_TEST
 	ST_SET_SMOKE1(wifi, 1, 0, "init negative case", init_n);
 	ST_SET_SMOKE(wifi, 1, 0, "init positive case", init_p);
 	ST_SET_SMOKE1(wifi, 1, 0, "set power", set_power_p);
 	ST_SET_SMOKE1(wifi, 1, 0, "scan positive case", scan_p);
 	ST_SET_SMOKE1(wifi, 1, 0, "scan negative case", scan_n);
 	ST_SET_SMOKE1(wifi, 1, 0, "scan negative case", disconn_evt);
-
+#endif
 	ST_RUN_TEST(wifi);
 	ST_RESULT_TEST(wifi);
 
