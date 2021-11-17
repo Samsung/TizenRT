@@ -5,7 +5,8 @@
 In this file,  
 > [**General**](README.md#general)  
 > [**Directory Location**](README.md#directory-location)  
-> [**Application Configuration File**](README.md#application-configuration-file)
+> [**Application Configuration File**](README.md#application-configuration-file)  
+> [**Suggestion for Optimizing SmartFs Ops**](README.md#Suggestion-for-Optimizing-SmartFs-Ops)
 
 Outside this file,  
 > [**Built-In Applications**](builtin/README.md)  
@@ -65,3 +66,20 @@ CONFIGURED_APPS += examples/hello
 endif
 ```
 
+## Suggestion for optimizing SmartFs Ops
+
+Using just any buffer size for reading/appending to the contents of a SmartFs file in a
+back-to-back(looped) manner might cause repetitive reading of sectors and performance degradation.
+Hence, programmers are encouraged to use an optimal buffer size for reading/appending
+back-to-back to/from a SmartFs file.
+
+You can use the following to obtain the optimal buffer size: -
+```
+stat("\mnt", &st);
+buf_size = st.st_blksize;
+```
+
+Please refer to the "buffer_optimization" example (apps/examples/smartfs/buffer_optimization) for
+more details. The same will give you a demonstration of the improvement in read/append performance.
+
+NOTE: This suggestion is useful only when read/append requests are made contiguously, back-to-back.
