@@ -97,19 +97,16 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	ret = mm_memalign(&BASE_HEAP[heap_index], alignment, size, retaddr);
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
-	}
-	return ret;
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_memalign(&BASE_HEAP[heap_index], alignment, size, caller_retaddr);
 #else
 	ret = mm_memalign(&BASE_HEAP[heap_index], alignment, size);
+#endif
 	if (ret == NULL) {
 		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
 	}
 	return ret;
-#endif
 }
 #endif
 /****************************************************************************
@@ -129,17 +126,18 @@ FAR void *memalign(size_t alignment, size_t size)
 {
 	int heap_idx;
 	void *ret;
+	size_t caller_retaddr = 0;
 
 	if (size == 0) {
 		return NULL;
 	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size, retaddr);
+		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size, caller_retaddr);
 #else
 		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size);
 #endif

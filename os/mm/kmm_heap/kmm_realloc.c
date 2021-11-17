@@ -100,19 +100,16 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	ret = mm_realloc(&kheap[heap_index], oldmem, size, retaddr);
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
-	}
-	return ret;
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_realloc(&kheap[heap_index], oldmem, size, caller_retaddr);
 #else
 	ret = mm_realloc(&kheap[heap_index], oldmem, size);
+#endif
 	if (ret == NULL) {
 		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
 	}
 	return ret;
-#endif
 }
 #endif
 
@@ -142,8 +139,9 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	ret = mm_realloc(kheap_origin, oldmem, newsize, retaddr);
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_realloc(kheap_origin, oldmem, newsize, caller_retaddr);
 #else
 	ret = mm_realloc(kheap_origin, oldmem, newsize);
 #endif
@@ -155,8 +153,8 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	kheap_new = kmm_get_heap();
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ARCH_GET_RET_ADDRESS
-		ret = mm_malloc(&kheap_new[kheap_idx], newsize, retaddr);
+		ARCH_GET_RET_ADDRESS(caller_retaddr)
+		ret = mm_malloc(&kheap_new[kheap_idx], newsize, caller_retaddr);
 #else
 		ret = mm_malloc(&kheap_new[kheap_idx], newsize);
 #endif

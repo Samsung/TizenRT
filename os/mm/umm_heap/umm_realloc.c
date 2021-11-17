@@ -97,19 +97,16 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, retaddr);
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
-	}
-	return ret;
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, caller_retaddr);
 #else
 	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size);
+#endif
 	if (ret == NULL) {
 		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
 	}
 	return ret;
-#endif
 }
 #endif
 /****************************************************************************
@@ -138,14 +135,15 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 	heap_idx = mm_get_heapindex(oldmem);
 	if (heap_idx < HEAP_START_IDX) {
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_realloc(&BASE_HEAP[heap_idx], oldmem, size, retaddr);
+	ret = mm_realloc(&BASE_HEAP[heap_idx], oldmem, size, caller_retaddr);
 #else
 	ret = mm_realloc(&BASE_HEAP[heap_idx], oldmem, size);
 #endif
@@ -157,7 +155,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	prev_heap_idx = heap_idx;
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size, retaddr);
+		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
 #else
 		ret = mm_malloc(&BASE_HEAP[heap_idx], size);
 #endif

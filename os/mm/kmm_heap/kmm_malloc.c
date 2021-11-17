@@ -80,7 +80,7 @@
  * Private Functions
  ****************************************************************************/
 
-static void *kheap_malloc(size_t size, size_t retaddr)
+static void *kheap_malloc(size_t size, size_t caller_retaddr)
 {
 	int heap_idx;
 	void *ret;
@@ -88,7 +88,7 @@ static void *kheap_malloc(size_t size, size_t retaddr)
 
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&kheap[heap_idx], size, retaddr);
+		ret = mm_malloc(&kheap[heap_idx], size, caller_retaddr);
 #else
 		ret = mm_malloc(&kheap[heap_idx], size);
 #endif
@@ -137,19 +137,16 @@ void *kmm_malloc_at(int heap_index, size_t size)
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	ret = mm_malloc(&kheap[heap_index], size, retaddr);
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
-	}
-	return ret;
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_malloc(&kheap[heap_index], size, caller_retaddr);
 #else
 	ret = mm_malloc(&kheap[heap_index], size);
+#endif
 	if (ret == NULL) {
 		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
 	}
 	return ret;
-#endif
 }
 #endif
 
@@ -169,14 +166,13 @@ void *kmm_malloc_at(int heap_index, size_t size)
 
 FAR void *kmm_malloc(size_t size)
 {
+	size_t caller_retaddr = 0;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-#else
-	size_t retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 	if (size == 0) {
 		return NULL;
 	}
-	return kheap_malloc(size, retaddr);
+	return kheap_malloc(size, caller_retaddr);
 }
 #endif							/* CONFIG_MM_KERNEL_HEAP */

@@ -120,8 +120,9 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	ret = mm_calloc(&kheap[heap_index], n, elem_size, retaddr);
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_calloc(&kheap[heap_index], n, elem_size, caller_retaddr);
 	if (ret == NULL) {
 		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, n * elem_size, KERNEL_HEAP);
 	}
@@ -146,15 +147,14 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 
 FAR void *kmm_calloc(size_t n, size_t elem_size)
 {
+	size_t caller_retaddr = 0;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-#else
-	size_t retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 	if (n == 0 || elem_size == 0) {
 		return NULL;
 	}
-	return kheap_calloc(n, elem_size, retaddr);
+	return kheap_calloc(n, elem_size, caller_retaddr);
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */

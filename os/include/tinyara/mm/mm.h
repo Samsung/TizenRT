@@ -233,22 +233,19 @@ typedef size_t mmaddress_t;		/* 32 bit address space */
 
 #if defined(CONFIG_ARCH_MIPS)
 /* Macro gets return address of malloc API */
-#define ARCH_GET_RET_ADDRESS \
-	mmaddress_t retaddr = 0; \
+#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
 	do { \
-		asm volatile ("sw $ra, %0" : "=m" (retaddr)); \
+		asm volatile ("sw $ra, %0" : "=m" (caller_retaddr)); \
 	} while (0);
 #elif defined(CONFIG_ARCH_ARM)
-#define ARCH_GET_RET_ADDRESS \
-	mmaddress_t retaddr = 0; \
+#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
 	do { \
-		asm volatile ("mov %0,lr\n" : "=r" (retaddr));\
+		asm volatile ("mov %0,lr\n" : "=r" (caller_retaddr));\
 	} while (0);
 #elif defined(CONFIG_ARCH_XTENSA)
-#define ARCH_GET_RET_ADDRESS \
-	mmaddress_t retaddr = 0; \
+#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
 	do { \
-		asm volatile ("mov %0,a0\n" : "=&r" (retaddr));\
+		asm volatile ("mov %0,a0\n" : "=&r" (caller_retaddr));\
 	} while (0);
 #else
 #error Unknown CONFIG_ARCH option, malloc debug feature wont work.
