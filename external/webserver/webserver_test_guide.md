@@ -77,10 +77,11 @@ Branch: master
 - Update variable **url** in client.py with WebServer IP Address
 
 **Steps to Test Web Server**
+
 Connect TP1x and testing machine to same router
 - Start web server - 
 `webserver start none`
-- Execute 
+- Execute -
 `python3 webserver_test_script.py`
 
 **Limitations**
