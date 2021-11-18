@@ -29,7 +29,7 @@
 #include "wm_test_mock.h"
 #include "wm_test_log.h"
 #define SELF_TEST
-#define WM_TEST_TRIAL 100
+#define WM_TEST_TRIAL 1000
 #define TAG "[WT]"
 //if semaphore operation failed then it'll try it again 10ms later
 #define WT_SEM_TRY_WAIT_US 10000
@@ -332,7 +332,7 @@ static int _run_procedure(void)
 	
 	return 0;
 }
-
+static int g_cnt = 0;
 TEST_F(mode_change)
 {
 	ST_START_TEST;
@@ -346,8 +346,9 @@ TEST_F(mode_change)
 		assert(0);
 	}
 	int res = _run_procedure();
-  printf("%d\n", res);
-
+  printf("=============================================\n\n");
+  printf("count %d %d\n\n", ++g_cnt, res);
+  printf("=============================================\n\n");
 	WT_LOG(TAG, "deinit wi-fi");
 	CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT_FUNC, LWNL_EVT_STA_DISCONNECTED, 3, 0);
   ST_ASSERT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());

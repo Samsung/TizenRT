@@ -22,25 +22,17 @@
 #endif
 
 /*  network log for kernel space */
-#define NET_LOGK(tag, fmt, args...) \
-	nwdbg(fmt, ##args)
-#define NET_LOGKE(tag, fmt, args...) \
-	ndbg("%d " tag "[ERR]\t" fmt, __LINE__, ##args)
-#define NET_LOGKI(tag, fmt, args...) \
-	nwdbg("%d " tag "[INFO]\t" fmt, __LINE__, ##args)
-#define NET_LOGKV(tag, fmt, args...) \
-	nvdbg("%d " tag "[VERB]\t" fmt, __LINE__, ##args)
+#define NET_LOGK(tag, fmt, args...) nwdbg(fmt, ##args)
+#define NET_LOGKE(tag, fmt, args...) ndbg("%d " tag "[ERR]\t" fmt, __LINE__, ##args)
+#define NET_LOGKI(tag, fmt, args...) nwdbg("%d " tag "[INFO]\t" fmt, __LINE__, ##args)
+#define NET_LOGKV(tag, fmt, args...) nvdbg("%d " tag "[VERB]\t" fmt, __LINE__, ##args)
 
 /*  To-do: change dbg to user space API */
 /*  network log for user space */
-#define NET_LOG(tag, fmt, args...) \
-	nwdbg(fmt, ##args)
-#define NET_LOGE(tag, fmt, args...) \
-	ndbg("%d " tag "[ERR]\t" fmt, __LINE__, ##args)
-#define NET_LOGI(tag, fmt, args...) \
-	nwdbg("%d " tag "[INFO]\t" fmt, __LINE__, ##args)
-#define NET_LOGV(tag, fmt, args...) \
-	nvdbg("%d " tag "[VERB]\t" fmt, __LINE__, ##args)
+#define NET_LOG(tag, fmt, args...) printf(fmt, ##args)
+#define NET_LOGE(tag, fmt, args...) printf("%d " tag "[ERR]\t" fmt, __LINE__, ##args)
+#define NET_LOGI(tag, fmt, args...) printf("%d " tag "[INFO]\t" fmt, __LINE__, ##args)
+#define NET_LOGV(tag, fmt, args...)
 
 typedef struct {
 	int idx;

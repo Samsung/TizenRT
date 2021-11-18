@@ -1,0 +1,318 @@
+* Branch
+- 211117_wifi_loadable_test
+  
+* Cases
+| case | ndbg | nwdbg | netlogk | netlog, netloge | netlogi | result | Desc           |
+|------+------+-------+---------+-----------------+---------+--------+----------------|
+|    1 | X    | X     | O       | X               | X       | X, O   | 2000번 성공    |
+|    4 | O    | X     | O       | X               | X       | O      |                |
+|    5 | O    | X     | O       | O               | X       | O, X   |                |
+|    6 | O    | O     | O       | X               | X       | O      |                |
+|    7 | O    | O     | O       | O               | X       | O      |                |
+|    8 | O    | O     | O       | O               | O       | O      |                |
+|    9 | O    | O     | X       | X               | X       | X, O   | 2번째 183 성공 |
+
+* Cases(printf)
+| case | ndbg | nwdbg | netlogk | netlog, netloge | netlogi | result     |
+|------+------+-------+---------+-----------------+---------+------------|
+|   11 | X    | X     | O       | X               | X       | Case1 중복 |
+|   12 | X    | X     | O       | O               | X       | O          |
+|   13 | X    | X     | O       | O               | O       | O          |
+|   14 | O    | X     | O       | X               | X       | O          |
+|   15 | O    | X     | O       | O               | X       | O          |
+|   16 | O    | X     | O       | O               | O       | O          |
+|   17 | O    | O     | O       | X               | X       | CASE6 중복 |
+|   18 | O    | O     | O       | O               | X       | X          |
+|   19 | O    | O     | O       | O               | O       | O, X       |
+
+* Case 1
+- 한번 실패, 안정적임
+- 5-2 과 동일한 실패
+  
+* Case 9
+#+begin_src text
+[10:14:27:684] ␍␍RTL8721D[Driver]: Sending EAPOL-Key 2/4␊
+[10:14:27:684] ␍␊
+[10:14:27:684] ␍␍RTL8721D[Dri␍wlan1: 1 DL RSVD page success! DLBcnCount:01, poll:00000001␊
+[10:14:27:684] ␍ver]: ClientSendEAPOL[1600]: no use cache pmksa ␍␊
+[10:14:27:701] ␍␊
+[10:14:27:717] ␍␍RTL8721D[Driver]: RX message 3 of 4-Way Handshake from 38:d5:47:e3:6b:f8␊
+[10:14:27:733] ␍␊
+[10:14:27:733] ␍␍RTL8721D[Driver]: Sending EAPOL-Key 4/4␊
+[10:14:27:733] ␍␊
+[10:14:27:733] ␍␍RTL8721D[Driver]: set pairwise key to hw: alg:4(WEP40-1 WEP104-5 TKIP-2 AES-4)␊
+[10:14:27:733] ␍␊
+[10:14:27:733] ␍␍RTL8721D[Driver]: set group key to hw: alg:4(WEP40-1 WEP104-5 TKIP-2 AES-4) keyid:1␊
+[10:14:27:749] ␍==============================================␍␊
+[10:14:27:749] MODE: station (disconnected)␍␊
+[10:14:27:765] ==============================================␍␊
+[10:14:27:765] [WT][T15] wait connect success event⇥	_run_procedure:282␍␊
+[10:14:27:765] [WT][T15] wait signal⇥	_run_procedure:283␍␊
+[10:14:28:693] ␍WIFI is already running[WT][T13] --> res(0)⇥	wm_cb_sta_connected:83␍␊
+[10:14:28:693] [WT][T13] bssid 00:00:00:00:00:00⇥	wm_cb_sta_connected:87␍␊
+[10:14:28:709] [WT][T13] send signal⇥	wm_cb_sta_connected:88␍␊
+[10:14:28:709] ==============================================␍␊
+[10:14:28:709] MODE: station (connected)␍␊
+[10:14:28:709] SSID: tizenrt03␍␊
+[10:14:28:709] rssi: -29␍␊
+[10:14:28:709] ==============================================␍␊
+[10:14:28:725] _tizenrt_timerStop: ␍␊
+[10:14:28:725] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10070f70_tizenrt_timerStop: ␍␊
+[10:14:28:741] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10070ee0_tizenrt_timerStop: ␍␊
+[10:14:28:741] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10070c60[WT][T15] wait disconnect success event⇥	_run_procedure:299␍␊
+[10:14:28:757] [WT][T15] wait signal⇥	_run_procedure:300␍␊
+[10:14:28:757] [WT][T13] --> res(9) reason 0⇥	wm_cb_sta_disconnected:93␍␊
+[10:14:28:773] [WT][T13] send signal⇥	wm_cb_sta_disconnected:94␍␊
+[10:14:28:773] [WT][T15] connect AP⇥	_run_procedure:303␍␊
+[10:14:28:773] [RTK] Link callback handles: registered␍␊
+[10:14:28:773] ␍␊
+[10:14:28:789] _tizenrt_timerStop: ␍␊
+[10:14:28:789] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10070f70␊
+[10:14:28:789] ␍␍RTL8721D[Driver]: set ssid [tizenrt03] ␊
+[10:14:28:789] ␍␊
+[10:14:30:134] ␍␍RTL8721D[Driver]: rtw_set_wpa_ie[1161]: AuthKeyMgmt = 0x2 ␊
+[10:14:30:134] ␍␊
+[10:14:30:134] ␍␍RTL8721D[Driver]: rtw_restruct_sec_ie[3764]: no pmksa cached ␊
+[10:14:30:149] ␍_tizenrt_timerStop: ␍␊
+[10:14:30:149] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10070ee0<break>
+#+end_src
+
+* Case 5
+
+** 5-1
+
+#+begin_src text
+88:7c:a0   , Rssi: -92, Auth: wpa2, Crypto: aes␍␊
+[19:12:05:399] [WT][T13] send signal⇥	wm_cb_scan_done:124␍␊
+[19:12:05:415] [WT][T15] connect AP⇥	_run_procedure:268␍␊
+[19:12:05:415] [RTK] Link callback handles: registered␍␊
+[19:12:05:415] ␍␊
+[19:12:05:415] _tizenrt_timerStop: ␍␊
+[19:12:05:415] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 100717d0␊
+[19:12:05:431] ␍␍RTL8721D[Driver]: set ssid [tizenrt03] ␊
+[19:12:05:431] ␍␊
+[19:12:06:775] ␍␍RTL8721D[Driver]: rtw_set_wpa_ie[1161]: AuthKeyMgmt = 0x2 ␊
+[19:12:06:775] ␍␊
+[19:12:07:400] ␍␍RTL8721D[Driver]: rtw_restruct_sec_ie[3764]: no pmksa cached ␊
+[19:12:07:400] ␍_tizenrt_timerStop: ␍␊
+[19:12:07:400] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10071740<break>
+#+end_src
+
+** 5-2
+
+#+begin_src text
+[19:14:54:983] WIFI  wlan0 Setting:␍␊
+[19:14:54:983] ␍==============================␍␊
+[19:14:54:983] ␍      MODE => STATION␍␊
+[19:14:54:983] ␍      SSID => ␍␊
+[19:14:54:999] ␍   CHANNEL => 1␍␊
+[19:14:54:999] ␍  SECURITY => OPEN␍␊
+[19:14:54:999] ␍  PASSWORD => ␍␊
+[19:14:54:999] _tizenrt_timerStop: ␍␊
+[19:14:54:999] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 100717d0==============================================␍␊
+[19:14:55:015] MODE: station (disconnected)␍␊
+[19:14:55:015] ==============================================␍␊
+[19:14:55:015] [WT][T15] start softAP⇥	_run_procedure:171␍␊
+[19:14:55:031] ␍␍␊
+[19:14:55:031] _tizenrt_timerStop: ␍␊
+[19:14:55:031] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 100717d0␍[wifi_set_mode] WIFI Mode Change: STA-->AP␍␊
+[19:14:55:095] Max sta: 1␍␊
+[19:14:55:808] <break>
+#+end_src
+
+* Case 18
+
+#+begin_src text
+20:25:41:945] [WT][T13] send signal⇥	wm_cb_scan_done:124␍␊
+[20:25:41:945] [WT][T15] connect AP⇥	_run_procedure:268␍␊
+[20:25:41:945] [RTK] Link callback handles: registered␍␊
+[20:25:41:961] ␍␊
+[20:25:41:961] _tizenrt_timerStop: ␍␊
+[20:25:41:961] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10071830␊
+[20:25:41:961] ␍␍RTL8721D[Driver]: set ssid [tizenrt03] ␊
+[20:25:41:977] ␍␊
+[20:25:43:305] ␍␍RTL8721D[Driver]: rtw_set_wpa_ie[1161]: AuthKeyMgmt = 0x2 ␊
+[20:25:43:305] ␍␊
+[20:25:43:929] ␍␍RTL8721D[Driver]: rtw_restruct_sec_ie[3764]: no pmksa cached ␊
+[20:25:43:929] ␍_tizenrt_timerStop: ␍␊
+[20:25:43:929] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 100717a0␊
+[20:25:44:057] ␍␍RTL8721D[Driver]: start auth to 38:d5:47:e3:6b:f8␊
+[20:25:44:073] ␍␊
+[20:25:44:073] ␍␍RTL8721D[Driver]: auth alg = 2␊
+[20:25:44:073] ␍␊
+[20:25:44:073] ␍␍RTL8721D[Driver]: ␍␊
+[20:25:44:073] ␍OnAuthClient:algthm = 0, seq = 2, status = 0, sae_msg_len = 11␊
+[20:25:44:089] ␍␊
+[20:25:44:089] ␍␍RTL8721D[Driver]: auth success, start assoc␊
+[20:25:44:089] ␍up_usagefault: PANIC!!! Usagefault occurred while executing instruction at address : 0x0e008128␍␊
+[20:25:44:089] up_usagefault: CFAULTS: 0x00020000␍␊
+[20:25:44:105] up_usagefault: Invalid state. Instruction executed with invalid EPSR.T or EPSR.IT field.␍␊
+[20:25:44:105] up_assert: Assertion failed at file:armv8-m/up_usagefault.c line: 111 task: lpwork␍␊
+[20:25:44:121] up_dumpstate: sp:         1005f09c␍␊
+[20:25:44:121] up_dumpstate: stack base: 1005f198␍␊
+[20:25:44:121] up_dumpstate: stack size: 000007ec␍␊
+[20:25:44:121] up_dumpstate: stack used: 00000208␍␊
+[20:25:44:121] up_stackdump: 1005f080: 00000020 00020000 00000020 00020000 00000020 00020000 00000020 00020000␍␊
+[20:25:44:137] up_stackdump: 1005f0a0: 1005f0e0 00000000 00000006 00000020 00000000 00000000 00000000 0e007f0b␍␊
+[20:25:44:137] up_stackdump: 1005f0c0: 1002b06c 10012565 000000e0 10076ac0 00000024 000000e0 10072230 10012275␍␊
+[20:25:44:153] up_stackdump: 1005f0e0: 1005f130 000000e0 10076ac0 00000024 000000e0 10072230 00000020 00000000␍␊
+[20:25:44:153] up_stackdump: 1005f100: 00000000 00000000 ffffffb8 1005e9b0 00000000 10076ac0 00000000 1002a07c␍␊
+[20:25:44:169] up_stackdump: 1005f120: 0e001e5b 1001138f 0e008128 60000000 0e008128 0e008128 0e008128 0e008128␍␊
+[20:25:44:169] up_stackdump: 1005f140: 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128␍␊
+[20:25:44:185] up_stackdump: 1005f160: 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128␍␊
+[20:25:44:201] up_stackdump: 1005f180: 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128 0e008128␍␊
+[20:25:44:201] up_registerdump: R0: 00000000 10076ac0 00000000 1002a07c 10076ac0 00000024 000000e0 10072230␍␊
+[20:25:44:217] up_registerdump: R8: 00000020 00000000 00000000 00000000 0e001e5b 1005f130 1001138f 0e008128␍␊
+[20:25:44:217] up_registerdump: xPSR: 60000000 BASEPRI: 000000e0 CONTROL: 00000000␍␊
+[20:25:44:217] up_registerdump: EXC_RETURN: ffffffb8␍␊
+[20:25:44:233] up_showtasks: *******************************************␍␊
+[20:25:44:233] up_showtasks: List of all tasks in the system:␍␊
+[20:25:44:233] up_showtasks: *******************************************␍␊
+[20:25:44:249] up_showtasks:                            NAME |   PID |  PRI |    USED / TOTAL STACK␍␊
+[20:25:44:249] up_showtasks: ---------------------------------------------------------------------␍␊
+[20:25:44:249] up_taskdump:                       Idle Task |     0 |    0 |    1024 /    1024␍␊
+[20:25:44:265] up_taskdump:   !!! PID (0) STACK OVERFLOW !!! ␍␊
+[20:25:44:265] up_taskdump:                          hpwork |     1 |  201 |     264 /    2028␍␊
+[20:25:44:281] up_taskdump:                          lpwork |     2 |   50 |     584 /    2028␍␊
+[20:25:44:281] up_taskdump:                     LWIP_TCP/IP |     3 |  105 |    1732 /    4068␍␊
+[20:25:44:281] up_taskdump:            netmgr_event_handler |     4 |  100 |     392 /    2012␍␊
+[20:25:44:297] up_taskdump:                  binary_manager |     5 |  203 |     896 /    2020␍␊
+[20:25:44:297] up_taskdump:               bm_faultmsgsender |     6 |  205 |     216 /     988␍␊
+[20:25:44:313] up_taskdump:                            app1 |     8 |  220 |     532 /    4068␍␊
+[20:25:44:313] up_taskdump:                            app2 |    10 |  180 |     620 /    8164␍␊
+[20:25:44:329] up_taskdump:                           uwork |    11 |  100 |     288 /    2028␍␊
+[20:25:44:329] up_taskdump:                            tash |    12 |  125 |     624 /    4076␍␊
+[20:25:44:345] up_taskdump:                wifi msg handler |    13 |  100 |    1988 /    4060␍␊
+[20:25:44:345] up_taskdump:                         wm_test |    14 |  100 |     532 /    3988␍␊
+[20:25:44:345] up_taskdump:                wifi test sample |    15 |  100 |    1364 /   10108␍␊
+[20:25:44:361] up_taskdump:                rtw_recv_tasklet |    16 |  105 |    2716 /    4036␍␊
+[20:25:44:361] up_taskdump:                rtw_xmit_tasklet |    17 |  105 |     868 /     964␍␊
+[20:25:44:377] up_taskdump:            rtw_interrupt_thread |    18 |  106 |     340 /     964␍␊
+[20:25:44:377] up_taskdump:                      cmd_thread |    19 |  105 |    1388 /    4044␍␊
+[20:25:44:393] mpu_show_regioninfo: *****************************************************************************␍␊
+[20:25:44:393] mpu_show_regioninfo: *REGION_NO.⇥	BASE_ADDRESS⇥	    SIZE⇥	   STATUS⇥	 ACCESS⇥	   ⇥	NO_EXECUTE*␍␊
+[20:25:44:409] mpu_show_regioninfo: *****************************************************************************␍␊
+[20:25:44:409] mpu_show_regioninfo:        0⇥	⇥	10043360⇥	   157A0⇥	       1⇥	       1⇥	       0␍␊
+[20:25:44:425] mpu_show_regioninfo:        1⇥	⇥	 2000000⇥	  100020⇥	       1⇥	       1⇥	       0␍␊
+[20:25:44:425] mpu_show_regioninfo:        2⇥	⇥	 21FDFA0⇥	   55B60⇥	       1⇥	       3⇥	       0␍␊
+[20:25:44:441] mpu_show_regioninfo:        3⇥	⇥	 2253B00⇥	   1FDE0⇥	       1⇥	       3⇥	       1␍␊
+[20:25:44:441] mpu_show_regioninfo:        4⇥	⇥	 217F040⇥	   7EF60⇥	       1⇥	       1⇥	       1␍␊
+[20:25:44:441] mpu_show_regioninfo:        5⇥	⇥	       0⇥	      20⇥	       0⇥	       0⇥	       0␍␊
+[20:25:44:457] mpu_show_regioninfo:        6⇥	⇥	       0⇥	      20⇥	       0⇥	       0⇥	       0␍␊
+[20:25:44:457] mpu_show_regioninfo:        7⇥	⇥	       0⇥	      20⇥	       0⇥	       0⇥	       0␍␊
+[20:25:44:473] mpu_show_regioninfo: *****************************************************************************␍␊
+[20:25:44:473] up_assert: Checking kernel heap for corruption...␍␊
+[20:25:44:473] mm_check_heap_corruption: #########################################################################################␍␍␊
+[20:25:44:489] mm_check_heap_corruption: ERROR: Heap node corruption detected.␍␍␊
+[20:25:44:489] mm_check_heap_corruption: =========================================================================================␍␍␊
+[20:25:44:505] mm_check_heap_corruption: Possible corruption scenario 1:␍␍␊
+[20:25:44:505] mm_check_heap_corruption: =========================================================================================␍␍␊
+[20:25:44:521] dump_node: OVERFLOWED NODE: addr = 0x1005e958 size = 80 type = A␍␍␊
+[20:25:44:521] dump_node: CORRUPTED NODE: addr = 0x1005e9a8 size = 2064 preceding size = 80␍␍␊
+[20:25:44:537] mm_check_heap_corruption: =========================================================================================␍␍␊
+[20:25:44:537] mm_check_heap_corruption: Possible corruption scenario 2:␍␍␊
+[20:25:44:553] mm_check_heap_corruption: =========================================================================================␍␍␊
+[20:25:44:553] dump_node: OVERFLOWED NODE: addr = 0x1005e9a8 size = 2064 type = A␍␍␊
+[20:25:44:569] dump_node: CORRUPTED NODE: addr = 0x1005f1b8 size = 234914088 preceding size = 234914088␍␍␊
+[20:25:44:569] mm_check_heap_corruption: #########################################################################################␍␍␊
+
+#+end_src
+
+* Case 19
+** 19-1
+#+begin_src text
+  [10:59:56:117] ==============================================␍␊
+  [10:59:56:117] MODE: station (disconnected)␍␊
+  [10:59:56:117] ==============================================␍␊
+  [10:59:56:133] [WT][T15] scan in STA mode⇥	_run_procedure:256␍␊
+  [10:59:56:133] 190 [WM][INFO]⇥	-->␍␊
+  [10:59:56:133] 604 [WM][INFO]⇥	handle request state(STA_DISCONNECTED) evt(CMD_SCAN)␍␊
+  [10:59:56:149] [WT][T15] wait scan done event in STA mode⇥	_run_procedure:264␍␊
+  [10:59:56:149] [WT][T15] wait signal⇥	_run_procedure:265␍␊
+  [10:59:57:493] 604 [WM][INFO]⇥	handle request state(SCANNING) evt(EVT_SCAN_DONE)␍␊
+  [10:59:57:493] [WT][T13] --> res(0)⇥	wm_cb_scan_done:115␍␊
+  [10:59:57:493] WiFi AP SSID:                          , BSSID: 38:d5:47:e3:6b:f8   , Rssi: -18, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:509] WiFi AP SSID: koreana3                 , BSSID: fc:34:97:04:49:e0   , Rssi: -63, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:525] WiFi AP SSID: KT_GiGA_2G_92D6          , BSSID: 88:3c:1c:64:92:da   , Rssi: -71, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:525] WiFi AP SSID: t-broad1421              , BSSID: 54:d1:63:21:14:27   , Rssi: -81, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:541] WiFi AP SSID:                          , BSSID: 54:d1:63:21:14:28   , Rssi: -82, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:557] WiFi AP SSID: SK_WiFiGIGAA9B4          , BSSID: 08:5d:dd:f2:a9:b7   , Rssi: -82, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:557] WiFi AP SSID: sung0048(2g)             , BSSID: 70:5d:cc:ac:a9:4a   , Rssi: -82, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:573] WiFi AP SSID:                          , BSSID: 0a:5d:dd:f2:a9:b7   , Rssi: -83, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:589] WiFi AP SSID:                          , BSSID: 12:23:aa:80:7e:f5   , Rssi: -83, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:589] WiFi AP SSID: KT_GiGA_2G_Wave2_9FB3    , BSSID: 00:07:89:ba:9f:b6   , Rssi: -84, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:605] WiFi AP SSID: SK_WiFiGIGA502C          , BSSID: 08:5d:dd:cc:50:2f   , Rssi: -84, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:621] WiFi AP SSID: NETGEAR23                , BSSID: 84:1b:5e:33:33:92   , Rssi: -84, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:637] WiFi AP SSID: KT_GiGA_2G_FEFB          , BSSID: 88:3c:1c:33:fe:ff   , Rssi: -86, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:637] WiFi AP SSID:                          , BSSID: 12:23:aa:49:27:6a   , Rssi: -86, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:653] WiFi AP SSID: KT_GiGA_2G_Wave2_53BE    , BSSID: 00:07:89:bf:53:c1   , Rssi: -88, Auth: wpa12, Crypto: mixed␍␊
+  [10:59:57:669] WiFi AP SSID: iptime1503               , BSSID: 88:36:6c:bc:ad:4a   , Rssi: -88, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:669] WiFi AP SSID: U+NetE34C                , BSSID: 80:ca:4b:14:e3:4e   , Rssi: -88, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:685] WiFi AP SSID:                          , BSSID: 22:23:aa:46:52:39   , Rssi: -88, Auth: wpa2, Crypto: aes␍␊
+  [10:59:57:701] [WT][T13] send signal⇥	wm_cb_scan_done:124␍␊
+  [10:59:57:701] [WT][T15] connect AP⇥	_run_procedure:268␍␊
+  [10:59:57:701] 169 [WM][INFO]⇥	-->␍␊
+  [10:59:57:701] 604 [WM][INFO]⇥	handle request state(STA_DISCONNECTED) evt(CMD_CONNECT)␍␊
+  [10:59:57:717] [RTK] Link callback handles: registered␍␊
+  [10:59:57:717] ␍␊
+  [10:59:57:717] _tizenrt_timerStop: ␍␊
+  [10:59:57:717] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10071830␊
+  [10:59:57:733] ␍␍RTL8721D[Driver]: set ssid [tizenrt03] ␊
+  [10:59:57:733] ␍␊
+  [10:59:59:061] ␍␍RTL8721D[Driver]: rtw_set_wpa_ie[1161]: AuthKeyMgmt = 0x2 ␊
+  [10:59:59:077] ␍␊
+  [10:59:59:685] ␍␍RTL8721D[Driver]: rtw_restruct_sec_ie[3764]: no pmksa cached ␊
+  [10:59:59:701] ␍_tizenrt_timerStop: ␍␊
+  [10:59:59:701] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 100717a0<break>
+#+end_src
+
+** 19-2
+#+begin_src text
+[11:28:21:837] ␍WIFI Mode Change instead of WIFI reload␍␍␊
+[11:28:21:853] [WT][T15] init wi-fi⇥	tc_mode_change:342␍␊
+[11:28:21:853] 98 [WM][INFO]⇥	-->␍␊
+[11:28:21:853] 604 [WM][INFO]⇥	handle request state(UNINITIALIZED) evt(CMD_INIT)␍␊
+[11:28:21:869] ␍␊
+[11:28:21:869] ␍WIFI Mode No Need To Change: STA -->STA␍␊
+[11:28:21:869] ␍␍␊
+[11:28:21:869] WIFI  wlan0 Setting:␍␊
+[11:28:21:869] ␍==============================␍␊
+[11:28:21:869] ␍      MODE => STATION␍␊
+[11:28:21:869] ␍      SSID => ␍␊
+[11:28:21:869] ␍   CHANNEL => 11␍␊
+[11:28:21:869] ␍  SECURITY => OPEN␍␊
+[11:28:21:885] ␍  PASSWORD => ␍␊
+[11:28:21:885] _tizenrt_timerStop: ␍␊
+[11:28:21:885] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10071830221 [WM][INFO]⇥	-->␍␊
+[11:28:21:885] ==============================================␍␊
+[11:28:21:901] MODE: station (disconnected)␍␊
+[11:28:21:901] ==============================================␍␊
+[11:28:21:901] [WT][T15] start softAP⇥	_run_procedure:171␍␊
+[11:28:21:901] 133 [WM][INFO]⇥	-->␍␊
+[11:28:21:917] ␍604 [WM][INFO]⇥	handle request state(STA_DISCONNECTED) evt(CMD_SET_SOFTAP)␍␊
+[11:28:21:917] ␍␊
+[11:28:21:917] _tizenrt_timerStop: ␍␊
+[11:28:21:917] ␍[_tizenrt_timerStop] _tizenrt_stop_timer is Done! timer->work_hdl = 10071830␍[wifi_set_mode] WIFI Mode Change: STA-->AP␍␊
+[11:28:21:982] Max sta: 1␍␊
+[11:28:22:708] <break>
+#+end_src
+
+* Fail Cases
+
+** Hang after 'Max sta1' log
+- Notice: Stops at the same location even after rebooting. You have to pull out the USB cable and plug it back in to make it work.
+
+*** Example
+- Case 1, Case 5-2, Case 19-1
+
+** Hang after timerstop
+
+*** Example
+- Case 9, Case 5-1
+
+** Connect assert
+- it only occurred once during the whole test.
+  
+*** Example
+- Case18
+
