@@ -32,7 +32,22 @@ Branch: master
 
 ### Certificate for HTTPS protocol
 **Certificate Generation**
-1. Open san.cnf in a text editor.
+1. Create a san.cnf file with following info.
+
+    `[req]
+    default_bits  = 2048
+    distinguished_name = req_distinguished_name
+    req_extensions = req_ext
+    x509_extensions = v3_req
+    prompt = no[req_distinguished_name]
+    countryName = XX
+    stateOrProvinceName = N/A
+    localityName = N/A
+    organizationName = Self-signed certificate
+    commonName = 120.0.0.1: Self-signed certificate[req_ext]
+    subjectAltName = @alt_names[v3_req]
+    subjectAltName = @alt_names[alt_names]
+    IP.1 = 127.0.0.1` 
 2. Replace the IP address of **commonName** and **IP.1** with the IP address of the webserver (test board)
 3. Run the following commands to generate the certificate and key files
 
