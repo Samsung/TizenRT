@@ -343,7 +343,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 										req->msg.netdb.serv_name,
 										req->msg.netdb.ai_hint, &res);
 		if (req->req_res != 0) {
-			NET_LOGE(TAG, "lwip_getaddrinfo() returned with the error code: %d\n", ret);
+			NET_LOGE(TAG, "lwip_getaddrinfo() returned with the error code: %d\n", req->req_res);
 			req->msg.netdb.ai_res = NULL;
 		} else {
 			req->msg.netdb.ai_res = _netdev_copy_addrinfo(res);
@@ -383,7 +383,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 										req->msg.netdb.serv_len,
 										req->msg.netdb.flags);
 		if (req->req_res != 0) {
-			NET_LOGE(TAG, "lwip_getnameinfo() returned with the error code: %d\n", ret);
+			NET_LOGE(TAG, "lwip_getnameinfo() returned with the error code: %d\n", req->req_res);
 			ret = -EINVAL;
 		} else {
 			ret = OK;
@@ -396,7 +396,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 	case DHCPCSTART:
 		req->req_res = _netdev_dhcpc_start((const char *)req->msg.dhcp.intf);
 		if (req->req_res != OK) {
-			NET_LOGE(TAG, "Start DHCP clent failed\n");
+			NET_LOGE(TAG, "Start DHCP clent failed %d\n", req->req_res);
 			goto errout;
 		}
 		ret = OK;
@@ -404,7 +404,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 	case DHCPCSTOP:
 		req->req_res = _netdev_dhcpc_stop((const char *)req->msg.dhcp.intf);
 		if (req->req_res != OK) {
-			NET_LOGE(TAG, "Stop DHCP client failed\n");
+			NET_LOGE(TAG, "Stop DHCP client failed %d\n", req->req_res);
 			goto errout;
 		}
 		ret = OK;
