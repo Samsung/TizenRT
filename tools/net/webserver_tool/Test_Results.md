@@ -10,7 +10,7 @@
 |   DELETE  |     1000     | 1000 |  0   |
 
 
-### Case 1: HTTPS,Keep-alive 0 , chunk 0 :
+### Case 2: HTTPS,Keep-alive 0 , chunk 0 :
 | Test_Type | Total_checks | Pass | Fail |
 | ------|------ | ------|------ |
 |    GET    |     1000     | 991  |  9  |
@@ -23,3 +23,9 @@
 |    Test_Type     | Total_checks | Pass | Fail |
 | ------|------ | ------|------ |
 | POST |     1000     | 1000 |  0   |
+
+### Case 3: HTTP, Chunk 0 keep-alive 1,(5 requests per connection) :
+
+|    Test_Type     | Total_checks | Pass | Fail |
+| ------|------ | ------|------ |
+| GET |     50     | 50 |  0   |
