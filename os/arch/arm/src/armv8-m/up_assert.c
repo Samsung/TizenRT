@@ -100,12 +100,15 @@
 #include <sys/boardctl.h>
 #endif
 #ifdef CONFIG_BINMGR_RECOVERY
-#include <unistd.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <queue.h>
 #include <tinyara/wdog.h>
 #include "semaphore/semaphore.h"
 #include "binary_manager/binary_manager.h"
+#endif
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+#include <tinyara/wqueue.h>
 #endif
 #include "irq/irq.h"
 
@@ -498,6 +501,13 @@ void up_assert(const uint8_t *filename, int lineno)
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
+
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+	if (IS_HPWORK || IS_LPWORK) {
+		lldbg("Running work function is %x.\n", work_get_current());
+	}
+#endif /* defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__) */
+
 	up_dumpstate();
 
 	lldbg("Checking kernel heap for corruption...\n");
