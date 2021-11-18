@@ -29,3 +29,9 @@
 |    Test_Type     | Total_checks | Pass | Fail |
 | ------|------ | ------|------ |
 | GET |     50     | 50 |  0   |
+
+### Case 4: HTTP, chunk-size 100B, data-size 1KB, keep-alive 1,(5 requests per connection) :
+
+|    Test_Type     | Total_checks | Pass | Fail |
+| ------|------ | ------|------ |
+| GET |     50     | 50 |  0   |
