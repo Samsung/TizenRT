@@ -63,6 +63,7 @@
 #include <stdint.h>
 #include <semaphore.h>
 #include <queue.h>
+#include <stdbool.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -498,6 +499,18 @@ void lpwork_restorepriority(uint8_t reqprio);
  ****************************************************************************/
 #if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
 worker_t work_get_current(void);
+
+#ifdef CONFIG_SCHED_HPWORK
+#define IS_HPWORK (strncmp(this_task()->name, HPWORKNAME, sizeof(HPWORKNAME)) == 0)
+#else
+#define IS_HPWORK (false)
+#endif
+
+#ifdef CONFIG_SCHED_LPWORK
+#define IS_LPWORK (strncmp(this_task()->name, LPWORKNAME, sizeof(HPWORKNAME)) == 0)
+#else
+#define IS_LPWORK (false)
+#endif
 #endif
 
 #undef EXTERN
