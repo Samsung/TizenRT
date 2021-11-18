@@ -68,7 +68,6 @@
 
 #include "wqueue.h"
 
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -84,6 +83,9 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+static worker_t cur_worker;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -92,6 +94,12 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+worker_t work_get_current(void)
+{
+	return cur_worker;
+}
+#endif
 
 /****************************************************************************
  * Name: work_process
@@ -182,6 +190,9 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 				work_unlock();
 #else
 				irqrestore(flags);
+#endif
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+				cur_worker = worker;
 #endif
 				worker(arg);
 
