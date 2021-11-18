@@ -24,13 +24,13 @@
 | ------|------ | ------|------ |
 | POST |     1000     | 1000 |  0   |
 
-### Case 3: HTTP, Chunk 0 keep-alive 1,(5 requests per connection) :
+### Case 4: HTTP, Chunk 0 keep-alive 1,(5 requests per connection) :
 
 |    Test_Type     | Total_checks | Pass | Fail |
 | ------|------ | ------|------ |
 | GET |     50     | 50 |  0   |
 
-### Case 4: HTTP, chunk-size 100B, data-size 1KB, keep-alive 1,(5 requests per connection) :
+### Case 5: HTTP, chunk-size 100B, data-size 1KB, keep-alive 1,(5 requests per connection) :
 
 |    Test_Type     | Total_checks | Pass | Fail |
 | ------|------ | ------|------ |
