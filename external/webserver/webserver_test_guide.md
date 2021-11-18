@@ -79,7 +79,7 @@ Branch: master
 **Steps to Test Web Server**
 Connect TP1x and testing machine to same router
 Start web server - webserver start none
-Execute `python3 client.py`
+Execute `python3 webserver_test_script.py`
 
 **Limitations**
 - Certificates used in HTTPS require TP1x board IP address as input. This requires connecting board to network and then again build image.
