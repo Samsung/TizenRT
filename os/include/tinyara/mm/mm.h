@@ -232,12 +232,15 @@ typedef size_t mmsize_t;
 typedef size_t mmaddress_t;		/* 32 bit address space */
 
 #if defined(CONFIG_ARCH_MIPS)
-/* Macro gets return address of malloc API */
+/* Macro gets return address of malloc API. */
 #define ARCH_GET_RET_ADDRESS(caller_retaddr) \
 	do { \
 		asm volatile ("sw $ra, %0" : "=m" (caller_retaddr)); \
 	} while (0);
 #elif defined(CONFIG_ARCH_ARM)
+/* This macro should be placed at the first of the function.
+ * If no, it is better to use "__builtin_return_address(0)" instead.
+ */
 #define ARCH_GET_RET_ADDRESS(caller_retaddr) \
 	do { \
 		asm volatile ("mov %0,lr\n" : "=r" (caller_retaddr));\

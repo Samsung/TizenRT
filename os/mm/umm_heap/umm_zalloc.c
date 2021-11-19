@@ -84,6 +84,10 @@
 void *zalloc_at(int heap_index, size_t size)
 {
 	void *ret;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
@@ -93,8 +97,6 @@ void *zalloc_at(int heap_index, size_t size)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
 	ret = mm_zalloc(&BASE_HEAP[heap_index], size, caller_retaddr);
 #else
 	ret = mm_zalloc(&BASE_HEAP[heap_index], size);

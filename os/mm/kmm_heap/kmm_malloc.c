@@ -126,6 +126,10 @@ void *kmm_malloc_at(int heap_index, size_t size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
@@ -137,8 +141,6 @@ void *kmm_malloc_at(int heap_index, size_t size)
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
 	ret = mm_malloc(&kheap[heap_index], size, caller_retaddr);
 #else
 	ret = mm_malloc(&kheap[heap_index], size);

@@ -115,13 +115,15 @@ void *malloc_user_at(struct mm_heap_s *heap, size_t size)
  ************************************************************************/
 void *realloc_user_at(struct mm_heap_s *heap, void *oldmem, size_t newsize)
 {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	if (newsize == 0) {
 		free_user_at(heap, oldmem);
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)	
 	return mm_realloc(heap, oldmem, newsize, caller_retaddr);
 #else
 	return mm_realloc(heap, oldmem, newsize);

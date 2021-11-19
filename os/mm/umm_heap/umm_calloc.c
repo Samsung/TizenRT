@@ -83,6 +83,10 @@
 void *calloc_at(int heap_index, size_t n, size_t elem_size)
 {
 	void *ret;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	if (heap_index > HEAP_END_IDX || heap_index < 0) {
 		mdbg("calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
@@ -92,8 +96,6 @@ void *calloc_at(int heap_index, size_t n, size_t elem_size)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
 	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size, caller_retaddr);
 #else
 	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size);
