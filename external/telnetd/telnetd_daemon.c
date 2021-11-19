@@ -180,7 +180,7 @@ static int telnetd_daemon(int argc, char *argv[])
 	sa.sa_flags = SA_NOCLDWAIT;
 	if (sigaction(SIGCHLD, &sa, NULL) < 0) {
 		int errval = errno;
-		ndbg("ERROR: sigaction failed: %d\n", errval);
+		printf("ERROR: sigaction failed: %d\n", errval);
 		return -errval;
 	}
 
@@ -190,7 +190,7 @@ static int telnetd_daemon(int argc, char *argv[])
 	sigaddset(&blockset, SIGCHLD);
 	if (sigprocmask(SIG_BLOCK, &blockset, NULL) < 0) {
 		int errval = errno;
-		ndbg("ERROR: sigprocmask failed: %d\n", errval);
+		printf("ERROR: sigprocmask failed: %d\n", errval);
 		return -errval;
 	}
 #endif							/* CONFIG_SCHED_HAVE_PARENT */
@@ -200,7 +200,7 @@ static int telnetd_daemon(int argc, char *argv[])
 	listensd = socket(PF_INET, SOCK_STREAM, 0);
 	if (listensd < 0) {
 		int errval = errno;
-		ndbg("ERROR: socket failure: %d\n", errval);
+		printf("ERROR: socket failure: %d\n", errval);
 		return -errval;
 	}
 
@@ -209,7 +209,7 @@ static int telnetd_daemon(int argc, char *argv[])
 #ifdef CONFIG_NET_HAVE_REUSEADDR
 	optval = 1;
 	if (setsockopt(listensd, SOL_SOCKET, SO_REUSEADDR, (void *)&optval, sizeof(int)) < 0) {
-		ndbg("ERROR: setsockopt SO_REUSEADDR failure: %d\n", errno);
+		printf("ERROR: setsockopt SO_REUSEADDR failure: %d\n", errno);
 		goto errout_with_socket;
 	}
 #endif
@@ -221,14 +221,14 @@ static int telnetd_daemon(int argc, char *argv[])
 	myaddr.sin_addr.s_addr = INADDR_ANY;
 
 	if (bind(listensd, (struct sockaddr *)&myaddr, sizeof(struct sockaddr_in)) < 0) {
-		ndbg("ERROR: bind failure: %d\n", errno);
+		printf("ERROR: bind failure: %d\n", errno);
 		goto errout_with_socket;
 	}
 
 	/* Listen for connections on the bound TCP socket */
 
 	if (listen(listensd, 5) < 0) {
-		ndbg("ERROR: listen failure %d\n", errno);
+		printf("ERROR: listen failure %d\n", errno);
 		goto errout_with_socket;
 	}
 
@@ -275,7 +275,7 @@ static int telnetd_daemon(int argc, char *argv[])
 
 		/* Create a character device to "wrap" the accepted socket descriptor */
 
-		ndbg("Creating the telnet driver\n");
+		printf("Creating the telnet driver\n");
 
 		session.ts_sd = acceptsd;
 		session.ts_devpath[0] = '\0';
@@ -290,7 +290,7 @@ static int telnetd_daemon(int argc, char *argv[])
 
 		/* Open the driver */
 
-		ndbg("Opening the telnet driver at %s\n", session.ts_devpath);
+		printf("Opening the telnet driver at %s\n", session.ts_devpath);
 		drvrfd = open(session.ts_devpath, O_RDWR);
 		if (drvrfd < 0) {
 			nlldbg("ERROR: Failed to open %s: %d\n", session.ts_devpath, errno);
@@ -313,7 +313,7 @@ static int telnetd_daemon(int argc, char *argv[])
 		 * will inherit the new stdin, stdout, and stderr.
 		 */
 
-		ndbg("Starting the telnet session\n");
+		printf("Starting the telnet session\n");
 		pid = task_create("Telnet session", daemon->priority, daemon->stacksize, daemon->entry, NULL);
 		if (pid < 0) {
 			nlldbg("Failed start the telnet session: %d\n", errno);
@@ -392,7 +392,7 @@ int telnetd_start(FAR struct telnetd_config_s *config)
 	if (pid < 0) {
 		int errval = errno;
 		free(daemon);
-		ndbg("ERROR: Failed to start the telnet daemon: %d\n", errval);
+		printf("ERROR: Failed to start the telnet daemon: %d\n", errval);
 		return -errval;
 	}
 
