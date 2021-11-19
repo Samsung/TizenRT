@@ -107,7 +107,7 @@ int ftpc_idle(SESSION handle, unsigned int idletime)
 	/* Check if the server supports the SITE IDLE command */
 
 	if (!FTPC_HAS_IDLE(session)) {
-		ndbg("Server does not support SITE IDLE\n");
+		printf("Server does not support SITE IDLE\n");
 		return ERROR;
 	}
 
@@ -126,7 +126,7 @@ int ftpc_idle(SESSION handle, unsigned int idletime)
 	if (session->code == 500 || session->code == 502) {
 		/* Server does not support SITE IDLE */
 
-		ndbg("Server does not support SITE IDLE\n");
+		printf("Server does not support SITE IDLE\n");
 		FTPC_CLR_IDLE(session);
 	}
 

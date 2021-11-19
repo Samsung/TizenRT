@@ -109,7 +109,7 @@ SESSION ftpc_connect(FAR struct ftpc_connect_s *server)
 
 	session = (struct ftpc_session_s *)zalloc(sizeof(struct ftpc_session_s));
 	if (!session) {
-		ndbg("Failed to allocate a session\n");
+		printf("Failed to allocate a session\n");
 		set_errno(ENOMEM);
 		goto errout;
 	}
@@ -148,7 +148,7 @@ SESSION ftpc_connect(FAR struct ftpc_connect_s *server)
 
 	ret = ftpc_reconnect(session);
 	if (ret != OK) {
-		ndbg("ftpc_reconnect() failed: %d\n", errno);
+		printf("ftpc_reconnect() failed: %d\n", errno);
 		goto errout_with_alloc;
 	}
 
@@ -186,7 +186,7 @@ int ftpc_reconnect(FAR struct ftpc_session_s *session)
 
 	ret = wd_start(session->wdog, session->conntimeo, ftpc_timeout, 1, session);
 	if (ret != OK) {
-		ndbg("wd_start() failed\n");
+		printf("wd_start() failed\n");
 		goto errout;
 	}
 
@@ -194,7 +194,7 @@ int ftpc_reconnect(FAR struct ftpc_session_s *session)
 
 	ret = ftpc_sockinit(&session->cmd);
 	if (ret != OK) {
-		ndbg("ftpc_sockinit() failed: %d\n", errno);
+		printf("ftpc_sockinit() failed: %d\n", errno);
 		goto errout;
 	}
 
@@ -202,7 +202,7 @@ int ftpc_reconnect(FAR struct ftpc_session_s *session)
 
 #ifdef CONFIG_DEBUG
 	tmp = inet_ntoa(session->addr);
-	ndbg("Connecting to server address %s:%d\n", tmp, ntohs(session->port));
+	printf("Connecting to server address %s:%d\n", tmp, ntohs(session->port));
 #endif
 
 	addr.sin_family = AF_INET;
@@ -211,7 +211,7 @@ int ftpc_reconnect(FAR struct ftpc_session_s *session)
 
 	ret = ftpc_sockconnect(&session->cmd, &addr);
 	if (ret != OK) {
-		ndbg("ftpc_sockconnect() failed: %d\n", errno);
+		printf("ftpc_sockconnect() failed: %d\n", errno);
 		goto errout_with_socket;
 	}
 
@@ -241,11 +241,11 @@ int ftpc_reconnect(FAR struct ftpc_session_s *session)
 		goto errout_with_socket;
 	}
 #ifdef CONFIG_DEBUG
-	ndbg("Connected\n");
+	printf("Connected\n");
 	tmp = inet_ntoa(addr.sin_addr);
-	ndbg("  Remote address: %s:%d\n", tmp, ntohs(addr.sin_port));
+	printf("  Remote address: %s:%d\n", tmp, ntohs(addr.sin_port));
 	tmp = inet_ntoa(session->cmd.laddr.sin_addr);
-	ndbg("  Local address:  %s:%d\n", tmp, ntohs(session->cmd.laddr.sin_port));
+	printf("  Local address:  %s:%d\n", tmp, ntohs(session->cmd.laddr.sin_port));
 #endif
 	return OK;
 
