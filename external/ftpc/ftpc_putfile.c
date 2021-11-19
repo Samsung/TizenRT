@@ -271,7 +271,7 @@ static int ftpc_sendfile(struct ftpc_session_s *session, const char *path, FILE 
 					rname = strndup(str + 1, len - 3);
 				} else {
 					rname = strndup(str, len - 1);
-					nvdbg("Unique filename is: %s\n", rname);
+					printf("Unique filename is: %s\n", rname);
 				}
 				free(rname);
 			}
@@ -327,7 +327,7 @@ static int ftpc_sendfile(struct ftpc_session_s *session, const char *path, FILE 
 	if (!FTPC_IS_PASSIVE(session)) {
 		ret = ftpc_sockaccept(&session->data);
 		if (ret != OK) {
-			ndbg("Data connection not accepted\n");
+			printf("Data connection not accepted\n");
 			return ERROR;
 		}
 	}
@@ -386,7 +386,7 @@ int ftp_putfile(SESSION handle, const char *lname, const char *rname, uint8_t ho
 
 	abslpath = ftpc_abslpath(session, lname);
 	if (!abslpath) {
-		ndbg("ftpc_abslpath(%s) failed: %d\n", errno);
+		printf("ftpc_abslpath(%s) failed: %d\n", errno);
 		goto errout;
 	}
 
@@ -394,14 +394,14 @@ int ftp_putfile(SESSION handle, const char *lname, const char *rname, uint8_t ho
 
 	ret = stat(abslpath, &statbuf);
 	if (ret != OK) {
-		ndbg("stat(%s) failed: %d\n", errno);
+		printf("stat(%s) failed: %d\n", errno);
 		goto errout_with_abspath;
 	}
 
 	/* Make sure that the local name does not refer to a directory */
 
 	if (S_ISDIR(statbuf.st_mode)) {
-		ndbg("%s is a directory\n", abslpath);
+		printf("%s is a directory\n", abslpath);
 		goto errout_with_abspath;
 	}
 
@@ -409,7 +409,7 @@ int ftp_putfile(SESSION handle, const char *lname, const char *rname, uint8_t ho
 
 	finstream = fopen(abslpath, "r");
 	if (!finstream) {
-		ndbg("fopen() failed: %d\n", errno);
+		printf("fopen() failed: %d\n", errno);
 		goto errout_with_abspath;
 	}
 
@@ -423,7 +423,7 @@ int ftp_putfile(SESSION handle, const char *lname, const char *rname, uint8_t ho
 
 		session->offset = ftpc_filesize(session, rname);
 		if (session->offset == (off_t)ERROR) {
-			ndbg("Failed to get size of remote file: %s\n", rname);
+			printf("Failed to get size of remote file: %s\n", rname);
 			goto errout_with_instream;
 		} else {
 			/* Seek to the offset in the file corresponding to the size
@@ -432,7 +432,7 @@ int ftp_putfile(SESSION handle, const char *lname, const char *rname, uint8_t ho
 
 			ret = fseek(finstream, session->offset, SEEK_SET);
 			if (ret != OK) {
-				ndbg("fseek failed: %d\n", errno);
+				printf("fseek failed: %d\n", errno);
 				goto errout_with_instream;
 			}
 		}

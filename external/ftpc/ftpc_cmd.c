@@ -151,7 +151,7 @@ int ftpc_cmd(struct ftpc_session_s *session, const char *cmd, ...)
 	/* Verify that we are still connecte to the server */
 
 	if (!ftpc_sockconnected(&session->cmd)) {
-		ndbg("Cmd channel si not connected\n");
+		printf("Cmd channel si not connected\n");
 		goto errout;
 	}
 
@@ -176,7 +176,7 @@ int ftpc_cmd(struct ftpc_session_s *session, const char *cmd, ...)
 		/* Check for an error in sending the data */
 
 		if (ret < 0) {
-			ndbg("Error sending cmd %s: %d\n", cmd, errno);
+			printf("Error sending cmd %s: %d\n", cmd, errno);
 			goto errout;
 		}
 
@@ -184,7 +184,7 @@ int ftpc_cmd(struct ftpc_session_s *session, const char *cmd, ...)
 
 		ret = fptc_getreply(session);
 		if (ret < 0) {
-			ndbg("Error getting reply: %d\n", errno);
+			printf("Error getting reply: %d\n", errno);
 			goto errout;
 		}
 
@@ -193,7 +193,7 @@ int ftpc_cmd(struct ftpc_session_s *session, const char *cmd, ...)
 		if (session->code == 421) {
 			/* Server is closing the control connection. */
 
-			ndbg("Server closed control connection\n");
+			printf("Server closed control connection\n");
 
 			/* If we were previously logged in and this is not a QUIT commnad
 			 * then attempt to automatically reconnect to the server.
@@ -204,18 +204,18 @@ int ftpc_cmd(struct ftpc_session_s *session, const char *cmd, ...)
 				/* Don't try re-connecting more than once */
 
 				if (reconnect) {
-					ndbg("Reconnect failed\n");
+					printf("Reconnect failed\n");
 					goto errout;
 				} else {
 					/* Try to restore the connection and, if successful,
 					 * continue the loop and try to send the command again.
 					 */
 
-					ndbg("Reconnecting...\n");
+					printf("Reconnecting...\n");
 					reconnect = true;
 					ret = ftpc_restore();
 					if (ret < 0) {
-						ndbg("Failed to restore the connection");
+						printf("Failed to restore the connection");
 						goto errout;
 					}
 					continue;

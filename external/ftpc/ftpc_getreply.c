@@ -98,7 +98,7 @@ static int ftpc_gets(struct ftpc_session_s *session)
 	/* Verify that the command channel is still connected */
 
 	if (!ftpc_sockconnected(&session->cmd)) {
-		ndbg("Cmd channel disconnected\n");
+		printf("Cmd channel disconnected\n");
 		return ERROR;
 	}
 
@@ -112,7 +112,7 @@ static int ftpc_gets(struct ftpc_session_s *session)
 		/* Check if the command stream was closed */
 
 		if (ch == EOF) {
-			ndbg("EOF: Server closed command stream\n");
+			printf("EOF: Server closed command stream\n");
 			ftpc_reset(session);
 			return ERROR;
 		}
@@ -193,7 +193,7 @@ static int ftpc_gets(struct ftpc_session_s *session)
 
 			session->reply[ndx++] = (char)ch;
 		} else {
-			ndbg("Reply truncated\n");
+			printf("Reply truncated\n");
 		}
 	}
 
@@ -231,7 +231,7 @@ int fptc_getreply(struct ftpc_session_s *session)
 		/* No.. cancel the timer and return an error */
 
 		wd_cancel(session->wdog);
-		nvdbg("Lost connection\n");
+		printf("Lost connection\n");
 		return ERROR;
 	}
 
@@ -241,11 +241,11 @@ int fptc_getreply(struct ftpc_session_s *session)
 		/* No.. cancel the timer and return an error */
 
 		wd_cancel(session->wdog);
-		nvdbg("ftpc_gets failed\n");
+		printf("ftpc_gets failed\n");
 		return ERROR;
 	}
 
-	nvdbg("Reply: %s\n", session->reply);
+	printf("Reply: %s\n", session->reply);
 
 	if (session->reply[3] == '-') {
 		/* Multi-line response */
@@ -256,7 +256,7 @@ int fptc_getreply(struct ftpc_session_s *session)
 				break;
 			}
 
-			nvdbg("Reply: %s\n", session->reply);
+			printf("Reply: %s\n", session->reply);
 		} while (strncmp(tmp, session->reply, 4) != 0);
 	}
 
