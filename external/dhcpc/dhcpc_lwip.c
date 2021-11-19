@@ -80,15 +80,15 @@
 		int res = -1;					\
 		res = netlib_set_ipv4addr(intf, &ip);		\
 		if (res == -1) {				\
-			nvdbg("set ipv4 addr error\n");	\
+			printf("set ipv4 addr error\n");	\
 		}						\
 		res = netlib_set_ipv4netmask(intf, &netmask);	\
 		if (res == -1) {				\
-			nvdbg("set netmask addr error\n");	\
+			printf("set netmask addr error\n");	\
 		}						\
 		res = netlib_set_dripv4addr(intf, &gateway);	\
 		if (res == -1) {				\
-			nvdbg("set route addr error\n");	\
+			printf("set route addr error\n");	\
 		}						\
 	} while (0)
 
@@ -114,7 +114,7 @@ int dhcp_client_start(const char *intf)
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		ndbg("socket() failed with errno: %d\n", errno);
+		printf("socket() failed with errno: %d\n", errno);
 		return ret;
 	}
 
@@ -124,7 +124,7 @@ int dhcp_client_start(const char *intf)
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
-		ndbg("ioctl() failed with errno: %d\n", errno);
+		printf("ioctl() failed with errno: %d\n", errno);
 		close(sockfd);
 		return ret;
 	}
@@ -143,7 +143,7 @@ void dhcp_client_stop(const char *intf)
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		ndbg("socket() failed with errno: %d\n", errno);
+		printf("socket() failed with errno: %d\n", errno);
 		return;
 	}
 
