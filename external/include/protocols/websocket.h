@@ -56,7 +56,7 @@
 #define WEBSOCKET_DEBUG_PRINT
 /**< websocket debug print option if defined, enables debug print */
 #if defined(WEBSOCKET_DEBUG_PRINT)
-#define WEBSOCKET_DEBUG ndbg
+#define WEBSOCKET_DEBUG printf
 #else
 #define WEBSOCKET_DEBUG(...) do { } while (0)
 #endif
