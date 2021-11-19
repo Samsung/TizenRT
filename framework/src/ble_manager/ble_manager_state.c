@@ -181,7 +181,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
-			memset(&g_client_table[i], 0, sizeof(ble_client_ctx));
+			memset(&g_client_table[i], 0, sizeof(ble_client_ctx_internal));
 		}
 
 		for (i = 0; i < SCAN_WHITELIST_SIZE; i++) {
