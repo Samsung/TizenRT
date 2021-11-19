@@ -173,6 +173,7 @@ void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func,
 				   unsigned int expect, st_performance *perf, st_stability *stab);
 void perf_add_global(st_pack *pack, st_unit_tc global_setup, st_unit_tc global_teardown, const char *title);
+void perf_set_keeprunning(int enable);
 /******************************************
  * API
  *******************************************/
@@ -324,6 +325,17 @@ void perf_add_global(st_pack *pack, st_unit_tc global_setup, st_unit_tc global_t
  * Note: deprecated. ST_RUN_TEST prints the result of testsuite
  */
 #define ST_RESULT_TEST(testsuite)
+
+/*
+ * Description: Set stress test style
+ *
+ * Note: Keep stress test running even it failed.
+ */
+#define ST_SET_KEEP_RUNNING \
+	perf_set_keeprunning(1);
+#define ST_RESET_KEEP_RUNNING \
+	perf_set_keeprunning(0);
+
 /*
  * Description: define setup
  *

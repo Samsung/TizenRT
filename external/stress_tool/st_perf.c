@@ -37,10 +37,11 @@
 #define PR_GET_SMOKE(ptr) \
 	CONTAINER_OF(ptr, st_smoke, entry)
 
+static int g_keep_running = 0;
+
 /**
  * Inner Function
  */
-
 int _calc_performance(char *title, st_performance *p, st_elapsed_time *duration)
 {
 	st_performance_time *start = &duration->start;
@@ -97,7 +98,7 @@ void _calc_stability(st_stability *stab, st_tc_result r)
 		s->result = STRESS_TC_SKIP;
 		break;
 	default:
-    printf("fail %s:%d\n", __FILE__, __LINE__);
+		printf("fail %s:%d\n", __FILE__, __LINE__);
 		break;
 	}
 }
@@ -139,10 +140,9 @@ void _run_smoke(st_smoke *smoke)
 				break;
 			}
 		}
-		if (ret != STRESS_TC_PASS) {
+		if (g_keep_running == 0 && ret != STRESS_TC_PASS) {
 			break;
 		}
-		//_smoke_print_interim_result(smoke, &duration);
 	}
 	print_smoke_result(smoke);
 }
@@ -269,4 +269,9 @@ void perf_add_global(st_pack *pack, st_unit_tc global_setup, st_unit_tc global_t
 		assert(0);
 	}
 	strncpy(pack->title, title, len + 1);
+}
+
+void perf_set_keeprunning(int enable)
+{
+	g_keep_running = enable;
 }
