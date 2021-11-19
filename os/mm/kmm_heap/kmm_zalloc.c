@@ -85,6 +85,10 @@ void *kmm_zalloc_at(int heap_index, size_t size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
@@ -96,8 +100,6 @@ void *kmm_zalloc_at(int heap_index, size_t size)
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
 	ret = mm_zalloc(&kheap[heap_index], size, caller_retaddr);
 #else
 	ret = mm_zalloc(&kheap[heap_index], size);
@@ -127,7 +129,10 @@ FAR void *kmm_zalloc(size_t size)
 {
 	void *ret;
 	int kheap_idx;
-
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	if (size == 0) {
 		return NULL;
 	}
@@ -136,8 +141,6 @@ FAR void *kmm_zalloc(size_t size)
 
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		size_t caller_retaddr = 0;
-		ARCH_GET_RET_ADDRESS(caller_retaddr)
 		ret = mm_zalloc(&kheap[kheap_idx], size, caller_retaddr);
 #else
 		ret = mm_zalloc(&kheap[kheap_idx], size);

@@ -89,6 +89,10 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
@@ -100,8 +104,6 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
 	ret = mm_realloc(&kheap[heap_index], oldmem, size, caller_retaddr);
 #else
 	ret = mm_realloc(&kheap[heap_index], oldmem, size);
@@ -132,6 +134,10 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 {
 	void *ret;
 	int kheap_idx;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	struct mm_heap_s *kheap_origin = mm_get_heap(oldmem);
 	struct mm_heap_s *kheap_new;
 
@@ -139,8 +145,6 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
 	ret = mm_realloc(kheap_origin, oldmem, newsize, caller_retaddr);
 #else
 	ret = mm_realloc(kheap_origin, oldmem, newsize);
@@ -153,7 +157,6 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	kheap_new = kmm_get_heap();
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ARCH_GET_RET_ADDRESS(caller_retaddr)
 		ret = mm_malloc(&kheap_new[kheap_idx], newsize, caller_retaddr);
 #else
 		ret = mm_malloc(&kheap_new[kheap_idx], newsize);
