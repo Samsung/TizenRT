@@ -467,6 +467,10 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Checking kernel heap for corruption...\n");
 	if (mm_check_heap_corruption(g_kmmheap) == OK) {
 		lldbg("No heap corruption detected\n");
+	} else {
+		/* treat kernel fault */
+
+		_up_assert(EXIT_FAILURE);
 	}
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	struct tcb_s *fault_tcb = this_task();
