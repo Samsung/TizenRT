@@ -64,14 +64,14 @@
 #define CONFIG_CPP_HAVE_WARNING 1
 #define FAR
 
-#define ndbg(...) printf(__VA_ARGS__)
-#define nvdbg(...) printf(__VA_ARGS__)
+#define printf(...) printf(__VA_ARGS__)
+#define printf(...) printf(__VA_ARGS__)
 
 #define ERROR (-1)
 #define OK    (0)
 #else
 #include <tinyara/config.h>		/* TinyAra configuration */
-#include <debug.h>				/* For ndbg, vdbg */
+#include <debug.h>				/* For printf, vdbg */
 #include <tinyara/compiler.h>	/* For CONFIG_CPP_HAVE_WARNING */
 #include <arch/irq.h>			/* For irqstore() and friends -- REVISIT */
 #include <tinyara/net/net.h>	/* For net_lock() and friends */
@@ -79,10 +79,10 @@
 #include <tinyara/net/arp.h>	/* For low-level ARP interfaces -- REVISIT */
 #endif
 #include <protocols/dhcpd.h>	/* Advertised DHCPD APIs */
-#undef nvdbg
-#undef ndbg
-#define ndbg(...) printf(__VA_ARGS__)
-#define nvdbg(...) printf(__VA_ARGS__)
+#undef printf
+#undef printf
+#define printf(...) printf(__VA_ARGS__)
+#define printf(...) printf(__VA_ARGS__)
 #endif							/* CONFIG_NETUTILS_DHCPD_HOST */
 
 #include <sys/types.h>
@@ -380,7 +380,7 @@ static time_t dhcpd_time(void)
 #ifdef HAVE_LEASE_TIME
 static inline bool dhcpd_leaseexpired(struct lease_s *lease)
 {
-	ndbg("dhcpd_leaseexpired is called!!\n");
+	printf("dhcpd_leaseexpired is called!!\n");
 
 	return false;
 #if 0
@@ -409,7 +409,7 @@ struct lease_s *dhcpd_setlease(const uint8_t *mac, in_addr_t ipaddr, time_t expi
 	int ndx = ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP;
 	struct lease_s *ret = NULL;
 
-	nvdbg("ipaddr: %08x ipaddr: %08x ndx: %d MAX: %d\n", ipaddr, CONFIG_NETUTILS_DHCPD_STARTIP, ndx, CONFIG_NETUTILS_DHCPD_MAXLEASES);
+	printf("ipaddr: %08x ipaddr: %08x ndx: %d MAX: %d\n", ipaddr, CONFIG_NETUTILS_DHCPD_STARTIP, ndx, CONFIG_NETUTILS_DHCPD_MAXLEASES);
 
 	/* Verify that the address offset is within the supported range */
 
@@ -462,15 +462,15 @@ static struct lease_s *dhcpd_findbyipaddr(in_addr_t ipaddr)
 	if (ipaddr >= CONFIG_NETUTILS_DHCPD_STARTIP && ipaddr <= CONFIG_NETUTILS_DHCP_OPTION_ENDIP) {
 
 		struct lease_s *lease = &g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP];
-		ndbg("dhcpd_findbyipaddr lease index  = %d\n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP);
+		printf("dhcpd_findbyipaddr lease index  = %d\n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP);
 
 		if (lease->allocated > 0) {
-			ndbg("returen lease %d %d\n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP, g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated);
+			printf("returen lease %d %d\n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP, g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated);
 			return lease;
 		}
 	}
 
-	ndbg("returen null\n");
+	printf("returen null\n");
 
 	return NULL;
 }
@@ -496,7 +496,7 @@ static in_addr_t dhcpd_allocipaddr(void)
 
 		lease = dhcpd_findbyipaddr(ipaddr);
 		if ((lease == NULL || dhcpd_leaseexpired(lease))) {
-			ndbg("lease pass!!\n");
+			printf("lease pass!!\n");
 #ifdef CONFIG_CPP_HAVE_WARNING
 			/**
 			#warning "FIXME: Should check if anything responds to an ARP request or ping"
@@ -504,7 +504,7 @@ static in_addr_t dhcpd_allocipaddr(void)
 			**/
 #endif
 
-			ndbg("leases talbe = %d %d \n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP, g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated);
+			printf("leases talbe = %d %d \n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP, g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated);
 
 			memset(g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].mac, 0, DHCP_HLEN_ETHERNET);
 			g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated = true;
@@ -514,11 +514,11 @@ static in_addr_t dhcpd_allocipaddr(void)
 #endif
 			/* Return the address in host order */
 
-			ndbg("return ipaddr\n");
+			printf("return ipaddr\n");
 			return ipaddr;
 		}
 	}
-	ndbg("return ipaddr = 0\n");
+	printf("return ipaddr = 0\n");
 	return 0;
 }
 
@@ -543,7 +543,7 @@ static inline bool dhcpd_parseoptions(void)
 	if (memcmp(ptr, g_magiccookie, 4) != 0) {
 		/* Bad magic number... skip g_state.ds_outpacket */
 
-		ndbg("Bad magic: %d,%d,%d,%d\n", ptr[0], ptr[1], ptr[2], ptr[3]);
+		printf("Bad magic: %d,%d,%d,%d\n", ptr[0], ptr[1], ptr[2], ptr[3]);
 		return false;
 	}
 
@@ -683,13 +683,13 @@ static inline bool dhcpd_verifyreqip(void)
 		 */
 
 		lease = dhcpd_findbyipaddr(g_state.ds_optreqip);
-		ndbg(" lease = %d\n", lease);
+		printf(" lease = %d\n", lease);
 		if (!lease || dhcpd_leaseexpired(lease)) {
-			ndbg("can use IP %08lx\n", (long)g_state.ds_optreqip);
+			printf("can use IP %08lx\n", (long)g_state.ds_optreqip);
 			return true;
 		}
 	}
-	ndbg("can't use IP %08lx\n", (long)g_state.ds_optreqip);
+	printf("can't use IP %08lx\n", (long)g_state.ds_optreqip);
 	return false;
 }
 
@@ -821,7 +821,7 @@ static inline int dhcpd_socket(void)
 
 	sockfd = socket(PF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		ndbg("socket failed: %d\n", errno);
+		printf("socket failed: %d\n", errno);
 		return ERROR;
 	}
 
@@ -829,7 +829,7 @@ static inline int dhcpd_socket(void)
 	optval = 1;
 	ret = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (void *)&optval, sizeof(int));
 	if (ret < 0) {
-		ndbg("setsockopt SO_REUSEADDR failed: %d\n", errno);
+		printf("setsockopt SO_REUSEADDR failed: %d\n", errno);
 		close(sockfd);
 		return ERROR;
 	}
@@ -837,7 +837,7 @@ static inline int dhcpd_socket(void)
 	optval = 1;
 	ret = setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, (void *)&optval, sizeof(int));
 	if (ret < 0) {
-		ndbg("setsockopt SO_BROADCAST failed: %d\n", errno);
+		printf("setsockopt SO_BROADCAST failed: %d\n", errno);
 		close(sockfd);
 		return ERROR;
 	}
@@ -933,7 +933,7 @@ static int dhcpd_sendpacket(int bbroadcast)
 	 * cannot re-use the listener socket because it is not bound correctly
 	 */
 	if (g_dhcpd_sockfd == -1) {
-		ndbg("socket is not valid\n");
+		printf("socket is not valid\n");
 	}
 
 	/* Then send the reponse to the DHCP client port at that address */
@@ -946,7 +946,7 @@ static int dhcpd_sendpacket(int bbroadcast)
 	/* Send the minimum sized packet that includes the END option */
 
 	len = (g_state.ds_optend - (uint8_t *)&g_state.ds_outpacket) + 1;
-	nvdbg("sendto %08lx:%04x len=%d\n", (long)ntohl(addr.sin_addr.s_addr), ntohs(addr.sin_port), len);
+	printf("sendto %08lx:%04x len=%d\n", (long)ntohl(addr.sin_addr.s_addr), ntohs(addr.sin_port), len);
 	ret = sendto(g_dhcpd_sockfd, &g_state.ds_outpacket, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 
 	return ret;
@@ -975,7 +975,7 @@ static int dhcpd_send_offerpacket(void)
 #endif
 
 	if (g_dhcpd_sockfd == -1) {
-		ndbg("dhcpd socket is not valid\n");
+		printf("dhcpd socket is not valid\n");
 	}
 	/* Then send the reponse to the DHCP client port at that address */
 
@@ -987,7 +987,7 @@ static int dhcpd_send_offerpacket(void)
 	/* Send the minimum sized packet that includes the END option */
 
 	len = (g_state.ds_optend - (uint8_t *)&g_state.ds_outpacket) + 1;
-	nvdbg("dhcp offer sendto %08lx:%04x len=%d\n", (long)ntohl(addr.sin_addr.s_addr), ntohs(addr.sin_port), len);
+	printf("dhcp offer sendto %08lx:%04x len=%d\n", (long)ntohl(addr.sin_addr.s_addr), ntohs(addr.sin_port), len);
 	ret = sendto(g_dhcpd_sockfd, &g_state.ds_outpacket, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 
 	return ret;
@@ -1006,7 +1006,7 @@ static inline int dhcpd_sendoffer(in_addr_t ipaddr, uint32_t leasetime)
 #endif
 	/* IP address is in host order */
 
-	nvdbg("Sending offer: %08lx\n", (long)ipaddr);
+	printf("Sending offer: %08lx\n", (long)ipaddr);
 
 	/* Initialize the outgoing packet */
 
@@ -1131,7 +1131,7 @@ static inline int dhcpd_discover(void)
 		/* Get the IP address associated with the lease (host order) */
 
 		ipaddr = dhcp_leaseipaddr(lease);
-		ndbg("Already have lease for IP %08lx\n", (long)ipaddr);
+		printf("Already have lease for IP %08lx\n", (long)ipaddr);
 	}
 
 	/* Check if the client has requested a specific IP address */
@@ -1141,12 +1141,12 @@ static inline int dhcpd_discover(void)
 
 		ipaddr = g_state.ds_optreqip;
 
-		ndbg("User requested IP %08lx\n", (long)ipaddr);
+		printf("User requested IP %08lx\n", (long)ipaddr);
 	} else {
 		/* No... allocate a new IP address (host order) */
 
 		ipaddr = dhcpd_allocipaddr();
-		ndbg("Allocated IP %08lx\n", (long)ipaddr);
+		printf("Allocated IP %08lx\n", (long)ipaddr);
 	}
 
 	/* Did we get any IP address? */
@@ -1154,14 +1154,14 @@ static inline int dhcpd_discover(void)
 	if (!ipaddr) {
 		/* Nope... return failure */
 
-		ndbg("Failed to get IP address\n");
+		printf("Failed to get IP address\n");
 		return ERROR;
 	}
 
 	/* Reserve the leased IP for a shorter time for the offer */
 
 	if (!dhcpd_setlease(g_state.ds_inpacket.chaddr, ipaddr, CONFIG_NETUTILS_DHCPD_OFFERTIME)) {
-		ndbg("Failed to set lease\n");
+		printf("Failed to set lease\n");
 		return ERROR;
 	}
 
@@ -1196,7 +1196,7 @@ static inline int dhcpd_request(void)
 		 */
 
 		ipaddr = dhcp_leaseipaddr(lease);
-		ndbg("Lease ipaddr: %08x Server IP: %08x Requested IP: %08x\n", ipaddr, g_state.ds_optserverip, g_state.ds_optreqip);
+		printf("Lease ipaddr: %08x Server IP: %08x Requested IP: %08x\n", ipaddr, g_state.ds_optserverip, g_state.ds_optreqip);
 
 		if (g_state.ds_optserverip) {
 			/* ACK if the serverip is correct and the requested IP address is the one
@@ -1248,7 +1248,7 @@ static inline int dhcpd_request(void)
 	 */
 
 	else if (g_state.ds_optreqip && !g_state.ds_optserverip) {
-		ndbg("Server IP: %08x Requested IP: %08x\n", g_state.ds_optserverip, g_state.ds_optreqip);
+		printf("Server IP: %08x Requested IP: %08x\n", g_state.ds_optserverip, g_state.ds_optreqip);
 
 		/* Is this IP address already assigned? */
 
@@ -1277,7 +1277,7 @@ static inline int dhcpd_request(void)
 	 */
 
 	if (response == DHCPACK) {
-		ndbg("ACK IP %08lx\n", (long)ipaddr);
+		printf("ACK IP %08lx\n", (long)ipaddr);
 
 		memset(g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].mac, 0, DHCP_HLEN_ETHERNET);
 		g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated = true;
@@ -1285,17 +1285,17 @@ static inline int dhcpd_request(void)
 		g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].expiry = dhcpd_time() + CONFIG_NETUTILS_DHCPD_OFFERTIME;
 #endif
 		if (dhcpd_sendack(ipaddr) == ERROR) {
-			ndbg("Failed to send ACK\n");
+			printf("Failed to send ACK\n");
 			return ERROR;
 		}
 	} else if (response == DHCPNAK) {
-		ndbg("NAK IP %08lx\n", (long)ipaddr);
+		printf("NAK IP %08lx\n", (long)ipaddr);
 		if (dhcpd_sendnak() == ERROR) {
-			ndbg("Failed to send NAK\n");
+			printf("Failed to send NAK\n");
 			return ERROR;
 		}
 	} else {
-		ndbg("Remaining silent IP %08lx\n", (long)ipaddr);
+		printf("Remaining silent IP %08lx\n", (long)ipaddr);
 	}
 
 	return OK;
@@ -1357,7 +1357,7 @@ static inline int dhcpd_openlistener(void)
 
 	sockfd = dhcpd_socket();
 	if (sockfd < 0) {
-		ndbg("socket failed: %d\n", errno);
+		printf("socket failed: %d\n", errno);
 		return ERROR;
 	}
 
@@ -1366,13 +1366,13 @@ static inline int dhcpd_openlistener(void)
 	strncpy(req.ifr_name, DHCPD_IFNAME, IFNAMSIZ);
 	ret = ioctl(sockfd, SIOCGIFADDR, (unsigned long)&req);
 	if (ret < 0) {
-		ndbg("setsockopt SIOCGIFADDR failed: %d\n", errno);
+		printf("setsockopt SIOCGIFADDR failed: %d\n", errno);
 		close(sockfd);
 		return ERROR;
 	}
 
 	g_state.ds_serverip = ((struct sockaddr_in *)&req.ifr_addr)->sin_addr.s_addr;
-	nvdbg("serverip: %08lx\n", ntohl(g_state.ds_serverip));
+	printf("serverip: %08lx\n", ntohl(g_state.ds_serverip));
 
 	/* Bind the socket to a local port. We have to bind to INADDRY_ANY to
 	 * receive broadcast messages.
@@ -1384,7 +1384,7 @@ static inline int dhcpd_openlistener(void)
 
 	ret = bind(sockfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 	if (ret < 0) {
-		ndbg("bind failed, port=%d addr=%08lx: %d\n", addr.sin_port, (long)addr.sin_addr.s_addr, errno);
+		printf("bind failed, port=%d addr=%08lx: %d\n", addr.sin_port, (long)addr.sin_addr.s_addr, errno);
 		close(sockfd);
 		return ERROR;
 	}
@@ -1405,29 +1405,29 @@ static int dhcpd_netif_init(char *intf)
 	netmask_ipaddr.s_addr = htonl(CONFIG_NETUTILS_DHCPD_NETMASK);
 
 	if (netlib_set_ipv4addr(intf, &server_ipaddr) == ERROR) {
-		ndbg("failed to set server IP address\n");
+		printf("failed to set server IP address\n");
 		return -1;
 	}
 
 	if (netlib_set_ipv4netmask(intf, &netmask_ipaddr) == ERROR) {
-		ndbg("failed to set netmask\n");
+		printf("failed to set netmask\n");
 		return -1;
 	}
 
 	if (netlib_set_dripv4addr(intf, &server_ipaddr) == ERROR) {
-		ndbg("failed to set default gateway\n");
+		printf("failed to set default gateway\n");
 		return -1;
 	}
 
-	ndbg("\n");
+	printf("\n");
 
-	ndbg("Server IP address set : %u.%u.%u.%u\n", (unsigned char)((htonl(server_ipaddr.s_addr) >> 24) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 16) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 8) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 0) & 0xff));
+	printf("Server IP address set : %u.%u.%u.%u\n", (unsigned char)((htonl(server_ipaddr.s_addr) >> 24) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 16) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 8) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 0) & 0xff));
 
-	ndbg("Server netmask address set : %u.%u.%u.%u\n", (unsigned char)((htonl(netmask_ipaddr.s_addr) >> 24) & 0xff), (unsigned char)((htonl(netmask_ipaddr.s_addr) >> 16) & 0xff), (unsigned char)((htonl(netmask_ipaddr.s_addr) >> 8) & 0xff), (unsigned char)((htonl(netmask_ipaddr.s_addr) >> 0) & 0xff));
+	printf("Server netmask address set : %u.%u.%u.%u\n", (unsigned char)((htonl(netmask_ipaddr.s_addr) >> 24) & 0xff), (unsigned char)((htonl(netmask_ipaddr.s_addr) >> 16) & 0xff), (unsigned char)((htonl(netmask_ipaddr.s_addr) >> 8) & 0xff), (unsigned char)((htonl(netmask_ipaddr.s_addr) >> 0) & 0xff));
 
-	ndbg("Server default gateway address set : %u.%u.%u.%u\n", (unsigned char)((htonl(server_ipaddr.s_addr) >> 24) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 16) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 8) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 0) & 0xff));
+	printf("Server default gateway address set : %u.%u.%u.%u\n", (unsigned char)((htonl(server_ipaddr.s_addr) >> 24) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 16) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 8) & 0xff), (unsigned char)((htonl(server_ipaddr.s_addr) >> 0) & 0xff));
 
-	ndbg("\n");
+	printf("\n");
 	return 0;
 }
 
@@ -1444,17 +1444,17 @@ static int dhcpd_netif_deinit(char *intf)
 	netmask_ipaddr.s_addr = IPADDR_NONE;
 
 	if (netlib_set_ipv4addr(intf, &server_ipaddr) == ERROR) {
-		ndbg("failed to set server IP address\n");
+		printf("failed to set server IP address\n");
 		return -1;
 	}
 
 	if (netlib_set_ipv4netmask(intf, &netmask_ipaddr) == ERROR) {
-		ndbg("failed to set netmask\n");
+		printf("failed to set netmask\n");
 		return -1;
 	}
 
 	if (netlib_set_dripv4addr(intf, &server_ipaddr) == ERROR) {
-		ndbg("failed to set default gateway\n");
+		printf("failed to set default gateway\n");
 		return -1;
 	}
 
@@ -1488,10 +1488,10 @@ static void dhcpd_stop(void)
 		ret = sem_wait(&g_dhcpd_sem);
 		if (ret != OK) {
 			if (errno == EINTR) {
-				ndbg("ERR: EINTR for sem_wait in dhcpd\n");
+				printf("ERR: EINTR for sem_wait in dhcpd\n");
 				continue;
 			}
-			ndbg("ERR: sem_wait for dhcpd failed\n");
+			printf("ERR: sem_wait for dhcpd failed\n");
 			pthread_mutex_unlock(&g_dhcpd_lock);			
 			return;
 		}
@@ -1499,12 +1499,12 @@ static void dhcpd_stop(void)
 	g_dhcpd_running = 0;
 	ret = sem_destroy(&g_dhcpd_sem);
 	if (ret != OK) {
-		ndbg("ERR: sem_destroy for dhcpd failed\n");
+		printf("ERR: sem_destroy for dhcpd failed\n");
 		pthread_mutex_unlock(&g_dhcpd_lock);
 		return;
 	}
 #if DHCPD_SELECT
-	ndbg("WARN : dhcpd will be stopped after %d seconds\n", g_select_timeout.tv_sec);
+	printf("WARN : dhcpd will be stopped after %d seconds\n", g_select_timeout.tv_sec);
 #endif
 	pthread_mutex_unlock(&g_dhcpd_lock);
 }
@@ -1520,7 +1520,7 @@ static int dhcpd_run(void *arg)
 	int ret = OK;
 	fd_set sockfd_set;
 #endif
-	ndbg("Started on %s\n", DHCPD_IFNAME);
+	printf("Started on %s\n", DHCPD_IFNAME);
 
 	/* Initialize everything to zero */
 	memset(&g_state, 0, sizeof(struct dhcpd_state_s));
@@ -1528,7 +1528,7 @@ static int dhcpd_run(void *arg)
 	/* Initialize netif address (ip address, netmask, default gateway) */
 
 	if (dhcpd_netif_init(DHCPD_IFNAME) < 0) {
-		ndbg("Failed to initialize network interface %s\n", DHCPD_IFNAME);
+		printf("Failed to initialize network interface %s\n", DHCPD_IFNAME);
 		ret = ERROR;
 		return ret;
 	}
@@ -1542,7 +1542,7 @@ static int dhcpd_run(void *arg)
 	/* TODO : Need to add cancellation point */
 	g_dhcpd_sockfd = dhcpd_openlistener();
 	if (g_dhcpd_sockfd < 0) {
-		ndbg("Failed to create socket\n");
+		printf("Failed to create socket\n");
 		ret = ERROR;
 		goto exit_with_error;
 	}
@@ -1561,12 +1561,12 @@ static int dhcpd_run(void *arg)
 			if (!g_dhcpd_quit) {
 				continue;
 			} else {
-				ndbg("select timeout exit\n");
+				printf("select timeout exit\n");
 				break;
 			}
 		} else {
 			/* Debugging purpose : Error case */
-			ndbg("ERROR, select ret %d [errno %d]\n", ret, errno);
+			printf("ERROR, select ret %d [errno %d]\n", ret, errno);
 			break;
 		}
 #else
@@ -1575,7 +1575,7 @@ static int dhcpd_run(void *arg)
 		if (nbytes < 0) {
 			/* On errors (other EINTR), close the socket and try again */
 
-			ndbg("recv failed: %d\n", errno);
+			printf("recv failed: %d\n", errno);
 			if (errno != EINTR) {
 				close(g_dhcpd_sockfd);
 				g_dhcpd_sockfd = -1;
@@ -1588,7 +1588,7 @@ static int dhcpd_run(void *arg)
 		if (!dhcpd_parseoptions()) {
 			/* Failed to parse the message options */
 
-			ndbg("No msg type\n");
+			printf("No msg type\n");
 
 			continue;
 		}
@@ -1602,31 +1602,31 @@ static int dhcpd_run(void *arg)
 
 		switch (g_state.ds_optmsgtype) {
 		case DHCPDISCOVER:
-			ndbg("DHCPDISCOVER\n");
+			printf("DHCPDISCOVER\n");
 			int res = dhcpd_discover();
 			if (res == ERROR) {
-				ndbg("dhcpd discover fail\n");
+				printf("dhcpd discover fail\n");
 			}
 			break;
 
 		case DHCPREQUEST:
-			ndbg("DHCPREQUEST\n");
+			printf("DHCPREQUEST\n");
 			dhcpd_request();
 			break;
 
 		case DHCPDECLINE:
-			ndbg("DHCPDECLINE\n");
+			printf("DHCPDECLINE\n");
 			dhcpd_decline();
 			break;
 
 		case DHCPRELEASE:
-			ndbg("DHCPRELEASE\n");
+			printf("DHCPRELEASE\n");
 			dhcpd_release();
 			break;
 
 		case DHCPINFORM:		/* Not supported */
 		default:
-			ndbg("Unsupported message type: %d\n", g_state.ds_optmsgtype);
+			printf("Unsupported message type: %d\n", g_state.ds_optmsgtype);
 			break;
 		}
 	}
@@ -1642,7 +1642,7 @@ exit_with_error:
 	/* de-initialize netif address (ip address, netmask, default gateway) */
 
 	if (dhcpd_netif_deinit(DHCPD_IFNAME) < 0) {
-		ndbg("Failed to deinit netif %s\n", DHCPD_IFNAME);
+		printf("Failed to deinit netif %s\n", DHCPD_IFNAME);
 	}
 
 	return ret;
@@ -1673,39 +1673,39 @@ static int dhcpd_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 
 	ret = sem_init(&g_dhcpd_sem, 0, 0);
 	if (ret != OK) {
-		ndbg("failed to initialize semaphore\n");
+		printf("failed to initialize semaphore\n");
 		goto err_exit;
 	}
 	/* Set network interface name for DHCPD */
 	if (intf) {
 		strncpy(DHCPD_IFNAME, intf, strlen(intf));
 	} else {
-		ndbg("failed to get interface\n");
+		printf("failed to get interface\n");
 		goto err_exit;
 	}
 
 	status = pthread_attr_init(&attr);
 	if (status != 0) {
-		ndbg("failed to start dhcpd\n");
+		printf("failed to start dhcpd\n");
 		goto err_exit;
 	}
 
 	sparam.sched_priority = DHCPD_SCHED_PRI;
 	status = pthread_attr_setschedparam(&attr, &sparam);
 	if (status != 0) {
-		ndbg("failed to pthread_attr_setschedparam, ret %d, errno %d\n", status, errno);
+		printf("failed to pthread_attr_setschedparam, ret %d, errno %d\n", status, errno);
 		goto err_exit;
 	}
 
 	status = pthread_attr_setschedpolicy(&attr, DHCPD_SCHED_POLICY);
 	if (status != 0) {
-		ndbg("failed to pthread_attr_setchedpolicy, ret %d, errno %d\n", status, errno);
+		printf("failed to pthread_attr_setchedpolicy, ret %d, errno %d\n", status, errno);
 		goto err_exit;
 	}
 
 	status = pthread_attr_setstacksize(&attr, DHCPD_STACK_SIZE);
 	if (status != 0) {
-		ndbg("failed to pthread_attr_setstacksize, ret %d, errno %d\n", status, errno);
+		printf("failed to pthread_attr_setstacksize, ret %d, errno %d\n", status, errno);
 		goto err_exit;
 	}
 
@@ -1715,7 +1715,7 @@ static int dhcpd_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 
 	status = pthread_create(&g_tid, &attr, (pthread_startroutine_t)dhcpd_run, NULL);
 	if (status != 0) {
-		ndbg("failed to start dhcpd\n");
+		printf("failed to start dhcpd\n");
 		goto err_exit;
 	}
 
@@ -1748,7 +1748,7 @@ int dhcp_server_status(char *intf)
 int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 {
 	if (dhcpd_start(intf, dhcp_join_cb) >= 0) {
-		ndbg("[DHCPS] started successfully (External app)\n");
+		printf("[DHCPS] started successfully (External app)\n");
 		return OK;
 	}
 	return -1;
@@ -1761,6 +1761,6 @@ int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 int dhcp_server_stop(char *intf)
 {
 	dhcpd_stop();
-	ndbg("[DHCPS] stopped successfully (External app)\n");
+	printf("[DHCPS] stopped successfully (External app)\n");
 	return OK;
 }
