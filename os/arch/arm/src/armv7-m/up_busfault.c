@@ -44,6 +44,7 @@
 #include "nvic.h"
 #include "up_internal.h"
 
+extern uint32_t system_exception_location;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -86,6 +87,8 @@ int up_busfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t *regs = (uint32_t *)context;
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
 	uint32_t bfar = getreg32(NVIC_BFAULT_ADDR);
+	system_exception_location = regs[REG_R15];
+
 	lldbg("PANIC!!! Bus fault occurred while executing instruction at address : 0x%08x\n", regs[REG_R15]);
 	lldbg("CFAULTS: 0x%08x\n", cfsr);
 

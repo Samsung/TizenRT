@@ -121,9 +121,8 @@ extern sq_queue_t g_faultmsg_list;
 extern sq_queue_t g_freemsg_list;
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-extern uint32_t g_assertpc;
-#endif
+extern uint32_t system_exception_location;
+extern uint32_t user_assert_location;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -138,7 +137,7 @@ extern uint32_t g_assertpc;
 #endif
 
 #define IS_FAULT_IN_USER_THREAD(fault_tcb)  ((void *)fault_tcb->uheap != NULL)
-#define IS_FAULT_IN_USER_SPACE(assert_pc)   (is_kernel_space((void *)assert_pc) == false)
+#define IS_FAULT_IN_USER_SPACE(asserted_location)   (is_kernel_space((void *)asserted_location) == false)
 
 /****************************************************************************
  * Private Data
@@ -466,6 +465,12 @@ void dump_all_stack(void)
 
 void up_assert(const uint8_t *filename, int lineno)
 {
+	/* ARCH_GET_RET_ADDRESS should always be
+	 * called at the start of the function */
+
+	size_t kernel_assert_location = 0;
+	ARCH_GET_RET_ADDRESS(kernel_assert_location)
+
 	board_led_on(LED_ASSERTION);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
@@ -473,6 +478,20 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
 	abort_mode = true;
+
+	uint32_t asserted_location;
+
+        /* Extract the PC value of instruction which caused the abort/assert */
+
+	if (system_exception_location) {
+		asserted_location = (uint32_t)system_exception_location;
+		system_exception_location = 0x0;	/* reset */
+	} else if (user_assert_location) {
+		asserted_location = (uint32_t)user_assert_location;
+		user_assert_location = 0x0;
+	} else {
+		asserted_location = (uint32_t)kernel_assert_location;
+	}
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
@@ -499,25 +518,15 @@ void up_assert(const uint8_t *filename, int lineno)
 			lldbg("No heap corruption detected\n");
 		}
 	}
-	lldbg("Assert location (PC) : %08x\n", g_assertpc);
 #endif
+	lldbg("Assert location (PC) : 0x%08x\n", asserted_location);
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	uint32_t assert_pc;
-
-	/* Extract the PC value of instruction which caused the abort/assert */
-
-	if (current_regs) {
-		assert_pc = current_regs[REG_R15];
-	} else {
-		assert_pc = (uint32_t)g_assertpc;
-	}
-
-	if (IS_FAULT_IN_USER_SPACE(assert_pc)) {
+	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
 		binary_manager_recover_userfault();
 	} else
