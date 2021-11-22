@@ -353,7 +353,7 @@ static uart_dev_t g_uart2port = {
 		.buffer = g_uart2rxbuffer,
 	},
 	.xmit = {
-		.size = CONFIG_UART1_TXBUFSIZE,
+		.size = CONFIG_UART2_TXBUFSIZE,
 		.buffer = g_uart2txbuffer,
 	},
 	.ops = &g_uart_ops,
