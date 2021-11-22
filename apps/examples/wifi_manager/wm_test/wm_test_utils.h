@@ -17,24 +17,47 @@
  ****************************************************************************/
 #pragma once
 
-#define WO_TEST_SIGNAL(conn, queue)									\
-	do {															\
-		WT_LOG(TAG, "send signal\t %s:%d", __FUNCTION__, __LINE__); \
-		int ssres = wo_add_queue(conn, queue);						\
-		if (ssres != 0) {											\
-			assert(0);												\
-		}															\
-		sem_post(&queue->signal);									\
+#include <errno.h>
+
+#define WO_CONN_FAIL 1
+#define WO_CONN_SUCCESS 2
+#define WT_SEM_TRY_WAIT_US 10000
+
+#define WM_SEM_POST(sem)             \
+	do {                                \
+		while (sem_post(&sem) != 0) {   \
+			usleep(WT_SEM_TRY_WAIT_US); \
+		}                               \
 	} while (0)
 
-#define WO_TEST_WAIT(conn, queue)									\
-	do {															\
+#define WM_SEM_WAIT(sem)                            \
+	do {                                             \
+		while (sem_wait(&sem) != 0) {                \
+			if (errno == EINTR) {                    \
+				continue;                            \
+			}                                        \
+			WT_LOGE(TAG, "sem wait fail %d", errno); \
+		}                                            \
+	} while (0)
+
+#define WO_TEST_SIGNAL(conn, queue)                                 \
+	do {                                                            \
+		WT_LOG(TAG, "send signal\t %s:%d", __FUNCTION__, __LINE__); \
+		int ssres = wo_add_queue(conn, queue);                      \
+		if (ssres != 0) {                                           \
+			assert(0);                                              \
+		}                                                           \
+		WM_SEM_POST(queue->signal);                              \
+	} while (0)
+
+#define WO_TEST_WAIT(conn, queue)                                   \
+	do {                                                            \
 		WT_LOG(TAG, "wait signal\t %s:%d", __FUNCTION__, __LINE__); \
-		sem_wait(&queue->signal);									\
-		int swres = wo_dequeue(&conn, queue);						\
-		if (swres != 0) {											\
-			assert(0);												\
-		}															\
+		WM_SEM_WAIT(queue->signal);                                \
+		int swres = wo_dequeue(&conn, queue);                       \
+		if (swres != 0) {                                           \
+			assert(0);                                              \
+		}                                                           \
 	} while (0)
 
 struct wo_queue {
