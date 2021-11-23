@@ -19,7 +19,6 @@
  * KIND, either express or implied.
  *
  ***************************************************************************/
-
 #include "timeval.h"
 
 #if defined(WIN32) && !defined(MSDOS)

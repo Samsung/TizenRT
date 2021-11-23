@@ -19,7 +19,8 @@
 #ifndef __EASY_TLS_H
 #define __EASY_TLS_H
 
-#include <debug.h>
+// pkbuild #include <debug.h>
+#include <stdbool.h>
 
 #include "mbedtls/config.h"
 #include "mbedtls/ssl.h"

@@ -19,6 +19,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <mbedtls/easy_tls.h>
 #include <mbedtls/debug.h>
 

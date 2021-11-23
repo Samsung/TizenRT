@@ -94,7 +94,7 @@ But we don't support cmake so that we use the fixed file. */
 /* #undef HAVE_BUILTIN_AVAILABLE */
 
 /* Define to 1 if you have the clock_gettime function and monotonic timer. */
-#define HAVE_CLOCK_GETTIME_MONOTONIC 1
+//#define HAVE_CLOCK_GETTIME_MONOTONIC 1 // pkbuild
 
 /* Define to 1 if you have the closesocket function. */
 /* #undef HAVE_CLOSESOCKET */
