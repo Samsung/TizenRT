@@ -39,18 +39,6 @@
 #else
 #define MAX_INTEROP_AP_CONFIG_COUNT CONFIG_EXAMPLES_WIFIMANAGER_AP_LIST_ITEMS_COUNT
 #endif
-#define MAX_INTEROP_SECURITY_LEN 10
-typedef struct {
-	wifi_manager_ap_config_s ap_config;
-	char security[MAX_INTEROP_SECURITY_LEN];
-	int scan_result;
-	int connect_result;
-} interop_ap_info_s;
-
-typedef struct {
-	int ap_count;
-	interop_ap_info_s ap_info[MAX_INTEROP_AP_CONFIG_COUNT];
-} interop_ap_config_list_s;
 
 static interop_ap_config_list_s g_apconfig_list;
 static char *WM_AP_SSID;
@@ -70,6 +58,7 @@ static void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
 static void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
 static void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg);
 
+extern int wifi_interop_read_file(interop_ap_config_list_s *ap_config_list, char *file_path);
 /*
  * Global
  */

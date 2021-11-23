@@ -288,3 +288,18 @@ void wt_print_scanlist(wifi_manager_scan_info_s *slist)
 		slist = slist->next;
 	}
 }
+
+void print_ap_config_list(interop_ap_config_list_s *ap_config_list)
+{
+	interop_ap_info_s *ap_info = NULL;
+
+	WT_LOG(TAG, "AP config from file ");
+	WT_LOG(TAG, "=============================================================");
+	for (int i = 0; i < ap_config_list->ap_count; i++) {
+		ap_info = ap_config_list->ap_info + i;
+		WT_LOG(TAG, "ssid[%s] passphrase[%s] auth_type[%d], crypto_type[%d]",
+				ap_info->ap_config.ssid, ap_info->ap_config.passphrase,
+				ap_info->ap_config.ap_auth_type, ap_info->ap_config.ap_crypto_type);
+	}
+	WT_LOG(TAG, "==============================================================");
+}
