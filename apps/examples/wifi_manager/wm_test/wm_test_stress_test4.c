@@ -18,6 +18,10 @@
 
 #include <tinyara/config.h>
 
+#include <unistd.h>
+#include <string.h>
+#include <queue.h>
+#include <semaphore.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <errno.h>
