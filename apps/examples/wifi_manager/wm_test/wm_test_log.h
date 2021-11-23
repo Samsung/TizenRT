@@ -18,10 +18,10 @@
 #pragma once
 
 #define WT_LOG(tag, fmt, args...)										\
-	printf(tag"[T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__, ##args)
+	printf(tag "[T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__)
 
 #define WT_LOGE(tag, fmt, args...)										\
-	printf(tag"[ERR][T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__, ##args)
+	printf(tag "[ERR][T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__)
 
 #define WT_LOGP(tag, fmt, args...)				\
 	printf(fmt, ##args)
