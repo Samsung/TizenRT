@@ -17,6 +17,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -131,7 +132,7 @@ struct wo_queue *wo_create_queue(void)
 	}
 	res = sem_init(&queue->signal, 0, 0);
 	if (res < 0) {
-		WT_LOGE(TAG, "fail to intiailize signal", errno);
+		WT_LOGE(TAG, "fail to intiailize signal %d", errno);
 		sem_destroy(&queue->lock);
 		free(queue);
 	}
@@ -178,7 +179,7 @@ void wt_print_stats(wifi_manager_stats_s *stats)
 	WT_LOGP(TAG, "CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
 	WT_LOGP(TAG, "%-8d%-12d%-11d%-10d\n", stats->connect, stats->connectfail, stats->disconnect, stats->reconnect);
 	WT_LOGP(TAG, "%-8d%-10d%-8d%-8d\n", stats->scan, stats->softap, stats->joined, stats->left);
-	WT_LOGP(TAG, "Period %d:%d ~ %d:%d\n", stats->start.tv_sec, stats->start.tv_usec,
+	WT_LOGP(TAG, "Period %ld:%ld ~ %ld:%ld\n", stats->start.tv_sec, stats->start.tv_usec,
 			stats->end.tv_sec, stats->end.tv_usec);
 	WT_LOGP(TAG, "retransmit %d\n", stats->tx_retransmit);
 	WT_LOGP(TAG, "TX drop %d\n", stats->tx_drop);
@@ -206,17 +207,16 @@ void wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN || config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
 		WT_LOGP(TAG, "SECURITY: unknown\n");
 	} else {
-		char security_type[21] = {
-			0,
-		};
-		strncat(security_type, g_wifi_test_auth_method[config->ap_auth_type], 20);
+		char security_type[21] = {0,};
+		strncat(security_type, g_wifi_test_auth_method[config->ap_auth_type],
+						strlen(g_wifi_test_auth_method[config->ap_auth_type]));
 		wifi_manager_ap_auth_type_e tmp_type = config->ap_auth_type;
 		if (tmp_type == WIFI_MANAGER_AUTH_OPEN || tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN || tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
 			WT_LOGP(TAG, "SECURITY: %s\n", security_type);
 		} else {
-			strncat(security_type, "_", strlen("_"));
+			strncat(security_type, "_", strlen("_")+1);
 			strncat(security_type, g_wifi_test_crypto_method[config->ap_crypto_type],
-					strlen(g_wifi_test_crypto_method[config->ap_crypto_type]));
+							strlen(g_wifi_test_crypto_method[config->ap_crypto_type]));
 			WT_LOGP(TAG, "SECURITY: %s\n", security_type);
 		}
 	}

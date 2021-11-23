@@ -16,8 +16,9 @@
  *
  ****************************************************************************/
 #pragma once
-
+#include <unistd.h>
 #include <errno.h>
+#include <assert.h>
 
 #define WO_CONN_FAIL 1
 #define WO_CONN_SUCCESS 2
