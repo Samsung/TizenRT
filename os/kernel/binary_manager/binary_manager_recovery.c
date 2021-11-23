@@ -136,7 +136,8 @@ static void binary_manager_recover_tcb(struct tcb_s *tcb)
  * Name: binary_manager_deactivate_binary
  *
  * Description:
- *	 This function excludes all active threads in a same binary from scheduling.
+ *   This function excludes all active threads in a same binary from scheduling
+ *   and all user binaries' state are changed to BINARY_FAULT.
  *
  ****************************************************************************/
 static int binary_manager_deactivate_binary(int bin_idx)
@@ -144,24 +145,38 @@ static int binary_manager_deactivate_binary(int bin_idx)
 	irqstate_t flags;
 	struct tcb_s *ptr;
 
-	if (bin_idx > 0) {
-		/* Get a tcb of main task */
-		ptr = BIN_NRTLIST(bin_idx);
-		while (ptr) {
-			flags = irqsave();
-			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			binary_manager_recover_tcb(ptr);
-			/* Remove the TCB from the task list associated with the state */
-			BM_DEACTIVATE_TASK(ptr);
-			ptr = ptr->bin_flink;
-			irqrestore(flags);
-		}
-		/* Release all kernel semaphores held by the threads in binary */
-		binary_manager_release_binary_sem(bin_idx);
-		return OK;
+	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
+		bmdbg("Invalid binary index, %d\n", bin_idx);
+		return BINMGR_INVALID_PARAM;
 	}
 
-	return ERROR;
+	/* Update binary state */
+	BIN_STATE(bin_idx) = BINARY_FAULT;
+
+	if (bin_idx == BM_CMNLIB_IDX) {
+		/*
+		 * In case of common binary, it doesn't need to deactivate binary
+		 * because all threads of common binary are linked to a list of user binary and they are deactivated by user binary's deactivation.
+		 * So it is enough to update state of common binary to BINARY_FAULT.
+		 */
+		return BINMGR_OK;
+	}
+
+	/* Get a tcb of main task */
+	ptr = BIN_NRTLIST(bin_idx);
+	while (ptr) {
+		flags = irqsave();
+		/* Recover semaphores, message queue, and watchdog timer resources.*/
+		binary_manager_recover_tcb(ptr);
+		/* Remove the TCB from the task list associated with the state */
+		BM_DEACTIVATE_TASK(ptr);
+		ptr = ptr->bin_flink;
+		irqrestore(flags);
+	}
+	/* Release all kernel semaphores held by the threads in binary */
+	binary_manager_release_binary_sem(bin_idx);
+
+	return BINMGR_OK;
 }
 
 /****************************************************************************
@@ -334,25 +349,24 @@ void binary_manager_recovery(int bin_idx)
 	/* If a fault happens in common or user binaries, we need to reload the library and all user binaries */
 	int bidx;
 	int bin_count = binary_manager_get_ucount();
-	for (bidx = 1; bidx <= bin_count; bidx++) {
+
+	for (bidx = 0; bidx <= bin_count; bidx++) {
 		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
 		ret = binary_manager_deactivate_binary(bidx);
-		if (ret != OK) {
+		if (ret != BINMGR_OK) {
 			bmlldbg("Failed to deactivate binary, bin idx %d\n", bidx);
 			goto reboot_board;
 		}
-		BIN_STATE(bidx) = BINARY_FAULT;
 	}
 #else
 	/* Exclude its all children from scheduling if the binary is registered with the binary manager */
 	ret = binary_manager_deactivate_binary(bin_idx);
-	if (ret != OK) {
+	if (ret != BINMGR_OK) {
 		bmlldbg("Failed to deactivate binary, bin idx %d\n", bin_idx);
 		goto reboot_board;
 	}
 #endif
 	/* Create loader to reload binary */
-	BIN_STATE(bin_idx) = BINARY_FAULT;
 	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);
 	if (ret == OK) {
 		abort_mode = false;
