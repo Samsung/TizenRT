@@ -64,21 +64,6 @@ static int g_ap_found_status;
 static int g_current_ap_idx;
 static int g_connect_status;
 
-#define MAX_INTEROP_AP_CONFIG_COUNT 10
-#define MAX_INTEROP_SECURITY_LEN 10
-
-typedef struct {
-	wifi_manager_ap_config_s ap_config;
-	char security[MAX_INTEROP_SECURITY_LEN];
-	int scan_result;
-	int connect_result;
-} interop_ap_info_s;
-
-typedef struct {
-	int ap_count;
-	interop_ap_info_s ap_info[MAX_INTEROP_AP_CONFIG_COUNT];
-} interop_ap_config_list_s;
-
 static interop_ap_config_list_s g_apconfig_list;
 
 
@@ -400,21 +385,6 @@ int wifi_interop_read_file(interop_ap_config_list_s *ap_config_list, char *file_
 	WT_LEAVE;
 	fclose(fp);
 	return 0;
-}
-
-void print_ap_config_list(interop_ap_config_list_s *ap_config_list)
-{
-	interop_ap_info_s *ap_info = NULL;
-
-	WT_LOG(TAG, "AP config from file ");
-	WT_LOG(TAG, "=============================================================");
-	for (int i = 0; i < ap_config_list->ap_count; i++) {
-		ap_info = ap_config_list->ap_info + i;
-		WT_LOG(TAG, "ssid[%s] passphrase[%s] auth_type[%d], crypto_type[%d]",
-				ap_info->ap_config.ssid, ap_info->ap_config.passphrase,
-				ap_info->ap_config.ap_auth_type, ap_info->ap_config.ap_crypto_type);
-	}
-	WT_LOG(TAG, "==============================================================");
 }
 
 static int _wm_interop_read_config(interop_ap_config_list_s *ap_config_list, char *path)

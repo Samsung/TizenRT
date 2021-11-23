@@ -69,6 +69,22 @@ struct wo_queue {
 	int rear;
 };
 
+#define MAX_INTEROP_AP_CONFIG_COUNT 10
+#define MAX_INTEROP_SECURITY_LEN 10
+
+typedef struct {
+	wifi_manager_ap_config_s ap_config;
+	char security[MAX_INTEROP_SECURITY_LEN];
+	int scan_result;
+	int connect_result;
+} interop_ap_info_s;
+
+typedef struct {
+	int ap_count;
+	interop_ap_info_s ap_info[MAX_INTEROP_AP_CONFIG_COUNT];
+} interop_ap_config_list_s;
+
+
 int wo_add_queue(int conn, struct wo_queue *queue);
 int wo_dequeue(int *conn, struct wo_queue *queue);
 struct wo_queue *wo_create_queue(void);
@@ -81,3 +97,7 @@ wifi_manager_ap_crypto_type_e wt_get_crypto_type(const char *method);
 void wt_print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title);
 void wt_print_stats(wifi_manager_stats_s *stats);
 void wt_print_scanlist(wifi_manager_scan_info_s *slist);
+void wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title);
+wifi_manager_ap_auth_type_e wt_get_autbh_type(const char *method);
+wifi_manager_ap_crypto_type_e wt_get_crypto_type(const char *method);
+void print_ap_config_list(interop_ap_config_list_s *ap_config_list);
