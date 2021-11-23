@@ -70,8 +70,8 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 	wm_scan_ap_done
 };
 
-static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t g_wm_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t g_wm_mutex;
+static pthread_cond_t g_wm_cond;
 
 void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
@@ -247,6 +247,24 @@ TEST_F(scan)
 	ST_END_TEST;
 }
 
+static int _wm_initialize_signal(void)
+{
+	int status = pthread_cond_init(&g_wm_cond, NULL);
+	if (status != 0) {
+		printf("start_thread: ERROR pthread_cond_init failed, status=%d\n", status);
+	}
+	status = pthread_mutex_init(&g_wm_mutex, NULL);
+	if (status != 0) {
+		printf("start_thread: ERROR pthread_mutex_init failed, status=%d\n", status);
+	}
+}
+
+static int _wm_deinitialize_signal(void)
+{
+	pthread_cond_destroy(&g_wm_cond);
+	pthread_mutex_destroy(&g_wm_mutex);
+}
+
 void wm_run_stress_test1(struct wt_options *opt)
 {
 	WM_AP_SSID = opt->ssid;
@@ -254,6 +272,7 @@ void wm_run_stress_test1(struct wt_options *opt)
 	WM_AP_AUTH = opt->auth_type;
 	WM_AP_CRYPTO = opt->crypto_type;
 
+	_wm_initialize_signal();
 	ST_SET_PACK(wifi);
 
 	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 10000000, "init", init);
@@ -264,4 +283,5 @@ void wm_run_stress_test1(struct wt_options *opt)
 
 	ST_RUN_TEST(wifi);
 	ST_RESULT_TEST(wifi);
+	_wm_deinitialize_signal();
 }
