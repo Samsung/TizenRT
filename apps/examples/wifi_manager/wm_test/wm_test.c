@@ -31,6 +31,7 @@
 #include "wm_test.h"
 #include "wm_test_usage.h"
 #include "wm_test_log.h"
+#include "wm_test_utils.h"
 
 #define WM_TEST_COUNT 10
 #define TAG "[WT]"
@@ -79,8 +80,12 @@ typedef enum {
 #endif
 #define WT_MEMBER_POOL(type, func, parser, str) static void func(void *arg);
 #include "wm_test_table.h"
+
 extern void wm_run_stress_test(void *arg);
 extern void wm_test_on_off(void *arg);
+extern void wm_test_interop(void *arg);
+extern void wm_interop_add_ap_config(void *arg);
+extern void wm_interop_display_ap_config(void *arg);
 
 /* Parser */
 #ifdef WT_MEMBER_POOL
