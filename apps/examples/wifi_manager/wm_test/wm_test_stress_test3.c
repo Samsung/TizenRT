@@ -18,9 +18,12 @@
 
 #include <tinyara/config.h>
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <errno.h>
+#include <queue.h>
+#include <semaphore.h>
 #include <wifi_manager/wifi_manager.h>
 #include <stress_tool/st_perf.h>
 #include "wm_test.h"
