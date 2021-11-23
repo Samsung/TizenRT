@@ -226,11 +226,6 @@ typedef size_t mmsize_t;
 #define MMSIZE_MAX SIZE_MAX
 #endif
 
-/* typedef is used for defining size of address space */
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-typedef size_t mmaddress_t;		/* 32 bit address space */
-
 #if defined(CONFIG_ARCH_MIPS)
 /* Macro gets return address of malloc API. */
 #define ARCH_GET_RET_ADDRESS(caller_retaddr) \
@@ -253,6 +248,11 @@ typedef size_t mmaddress_t;		/* 32 bit address space */
 #else
 #error Unknown CONFIG_ARCH option, malloc debug feature wont work.
 #endif
+
+/* typedef is used for defining size of address space */
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+typedef size_t mmaddress_t;             /* 32 bit address space */
 
 #define SIZEOF_MM_MALLOC_DEBUG_INFO \
 	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
