@@ -537,6 +537,9 @@ static int reloading_thread(int argc, char *argv[])
 	}
 #endif
 
+	/* Deinitialize modules in kernel */
+	binary_manager_deinit_modules();
+
 	/* Create a loader to reload binary */
 	ret = binary_manager_execute_loader(load_cmd, bin_idx);
 	if (ret != OK) {
@@ -606,6 +609,9 @@ static int update_thread(int argc, char *argv[])
 		return BINMGR_OPERATION_FAIL;
 	}
 #endif
+
+	/* Deinitialize modules in kernel */
+	binary_manager_deinit_modules();
 
 	/* Update boot parameter data */
 	binary_manager_set_bpidx(bp_info.inuse_idx);

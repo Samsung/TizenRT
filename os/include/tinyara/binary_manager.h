@@ -262,6 +262,7 @@ typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
 void binary_manager_register_kpart(int part_num, int part_size);
 void binary_manager_register_bppart(int part_num, int part_size);
 void binary_manager_register_upart(char *name, int part_num, int part_size);
+void binary_manager_deinit_modules(void);
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
