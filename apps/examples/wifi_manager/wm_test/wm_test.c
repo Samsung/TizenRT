@@ -26,6 +26,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <semaphore.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wm_test.h"
 #include "wm_test_usage.h"
@@ -140,8 +141,8 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 	_wt_scan_done,
 };
 
-static sem_t g_wm_sem = SEM_INITIALIZER(0);
-static sem_t g_wm_func_sem = SEM_INITIALIZER(0);
+static sem_t g_wm_sem;
+static sem_t g_wm_func_sem;
 static int g_mode = 0; // check program is running
 
 // if _wt_scan_done is for WT_TYPE_SJOIN then it doesn't need to print
@@ -173,6 +174,14 @@ int _wt_get_scanned_list(wifi_manager_scan_info_s *slist, char *ssid,
 
 int _wt_signal_init(void)
 {
+	int res = sem_init(&g_wm_sem, 0, 0);
+	if (res != 0) {
+		return -1;
+	}
+	res = sem_init(&g_wm_func_sem, 0, 0);
+	if (res != 0) {
+		return -1;
+	}
 	if (g_mode != 0) {
 		WT_LOGE(TAG, "Program is already running");
 		return -1;
@@ -183,6 +192,8 @@ int _wt_signal_init(void)
 
 void _wt_signal_deinit(void)
 {
+	sem_destroy(&g_wm_sem);
+	sem_destroy(&g_wm_func_sem);
 	g_mode = 0;
 }
 
@@ -730,7 +741,11 @@ int _wt_parse_stress(struct wt_options *opt, int argc, char *argv[])
 		/* wpa2 aes is a default security mode. */
 		opt->softap_ssid = argv[softap_index++];
 		opt->softap_password = argv[softap_index++];
-		opt->softap_channel = atoi(argv[softap_index]);
+		opt->softap_channel = atoi(argv[softap_index++]);
+	}
+	printf("[pkbuild] argc %d %d\n", argc, softap_index);
+	if (argc - 1 == softap_index + 1) {
+		opt->repeat = atoi(argv[softap_index]);
 	}
 
 	return 0;
@@ -862,6 +877,7 @@ void _wt_process(int argc, char *argv[])
 {
 	struct wt_options opt;
 	memset(&opt, 0, sizeof(struct wt_options));
+	opt.repeat = 1;
 	int res = _wt_parse_commands(&opt, argc, argv);
 	if (res < 0) {
 		WT_LOGE(TAG, "%s", WT_USAGE);
