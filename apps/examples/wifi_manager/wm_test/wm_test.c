@@ -797,7 +797,7 @@ int _wt_parse_scan(struct wt_options *opt, int argc, char *argv[])
 		opt->scan_specific = 1;
 		if (strncmp("ssid", argv[3], strlen("ssid") + 1) == 0) {
 			if (strlen(argv[4]) > WIFIMGR_SSID_LEN) {
-				WT_LOGE(TAG, "ssid length is too long\n", strlen(argv[4]));
+				WT_LOGE(TAG, "ssid length(%lu) is too long\n", strlen(argv[4]));
 				return -1;
 			}
 			opt->ssid = argv[4];
