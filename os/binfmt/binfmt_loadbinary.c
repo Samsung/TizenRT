@@ -95,16 +95,8 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	}
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-	if (load_attr) {
-		bin = load_attr->binp;
-	} else {
-		bin = g_lib_binp;
-	}
-#else
 	bin = load_attr->binp;
-#endif
+
 	/* If we find a non-null value for bin, it means that
 	 * we are in a reload scenario.
 	 */
@@ -201,7 +193,12 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			up_mpu_set_register(&bin->cmn_mpu_regs[i]);
 		}
 #endif
-
+		/* Update binary table */
+		BIN_STATE(binary_idx) = BINARY_RUNNING;
+		BIN_LOADVER(binary_idx) = bin->bin_ver;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		BIN_LOADINFO(binary_idx) = bin;
+#endif
 		return OK;
 	}
 	/* If we support common binary, then we need to place a pointer to the app's heap object
