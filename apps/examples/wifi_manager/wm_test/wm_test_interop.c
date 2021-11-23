@@ -27,6 +27,7 @@
 #include <wifi_manager/wifi_manager.h>
 #include "wm_test.h"
 #include "wm_test_log.h"
+#include "wm_test_utils.h"
 
 static sem_t g_wio_sem;
 
