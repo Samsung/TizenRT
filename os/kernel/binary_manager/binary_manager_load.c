@@ -295,15 +295,27 @@ static int binary_manager_terminate_binary(int bin_idx)
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin_idx == BM_CMNLIB_IDX) {
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		if (BIN_STATE(bin_idx) == BINARY_FAULT) {
+			/* Set the flag to reload binary without freeing memory in unload_module for app reloading optimization. */
+			binp = BIN_LOADINFO(bin_idx);
+			binp->reload = true;
+		}
+#endif
 		ret = unload_module(g_lib_binp);
 		if (ret != OK) {
 			bmdbg("Failed to unload common binary %d\n", ret);
 			return BINMGR_OPERATION_FAIL;
 		}
-		g_lib_binp = NULL;
-		BIN_STATE(BM_CMNLIB_IDX) = BINARY_INACTIVE;
-		BIN_LOADINFO(bin_idx) = NULL;
-		bmvdbg("Unload common binary !! %d\n", ret);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+		if (binp == NULL || binp->reload != true)
+#endif
+		{
+			g_lib_binp = NULL;
+			BIN_LOADINFO(bin_idx) = NULL;
+		}
+		BIN_STATE(bin_idx) = BINARY_INACTIVE;
+		bmvdbg("Unload common binary Done!!\n");
 		return BINMGR_OK;
 	}
 #endif
@@ -383,6 +395,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	}
 	bmvdbg("Unload binary %s\n", BIN_NAME(bin_idx));
 
+	BIN_STATE(bin_idx) = BINARY_INACTIVE;
 	BIN_RTLIST(bin_idx) = NULL;
 	BIN_NRTLIST(bin_idx) = NULL;
 
