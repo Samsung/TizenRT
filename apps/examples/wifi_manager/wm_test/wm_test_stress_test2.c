@@ -20,6 +20,9 @@
 
 #include <sys/types.h>
 #include <stdio.h>
+#include <queue.h>
+#include <semaphore.h>
+#include <assert.h>
 #include <wifi_manager/wifi_manager.h>
 #include <stress_tool/st_perf.h>
 #include "wm_test.h"
