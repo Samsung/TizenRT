@@ -81,10 +81,10 @@ void mbedtls_aes_init(mbedtls_aes_context *ctx)
 void mbedtls_aes_free(mbedtls_aes_context *ctx)
 {
 	if (ctx->enc_key_idx != KEY_INDEX_INVALID) {
-		sl_remove_key(ctx->shnd, ctx->key_type, ctx->enc_key_idx);
+		sl_remove_key(ctx->shnd, ctx->enc_key_type, ctx->enc_key_idx);
 	}
 	if (ctx->dec_key_idx != KEY_INDEX_INVALID) {
-		sl_remove_key(ctx->shnd, ctx->key_type, ctx->enc_key_idx);
+		sl_remove_key(ctx->shnd, ctx->dec_key_type, ctx->dec_key_idx);
 	}
 	sl_deinit(ctx->shnd);
 }
@@ -98,7 +98,7 @@ int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx, const unsigned char *key,
 	}
 
 	if (ctx->enc_key_idx != KEY_INDEX_INVALID) {
-		sl_remove_key(ctx->shnd, ctx->key_type, ctx->enc_key_idx);
+		sl_remove_key(ctx->shnd, ctx->enc_key_type, ctx->enc_key_idx);
 	}
 	hal_data aeskey = HAL_DATA_INITIALIZER;
 	aeskey.data = (void *)key;
@@ -109,7 +109,7 @@ int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx, const unsigned char *key,
 		return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
 	}
 	ctx->enc_key_idx = key_idx;
-	ctx->key_type = key_type;
+	ctx->enc_key_type = key_type;
 
 	return 0;
 }
@@ -123,7 +123,7 @@ int mbedtls_aes_setkey_dec(mbedtls_aes_context *ctx, const unsigned char *key,
 	}
 
 	if (ctx->dec_key_idx != KEY_INDEX_INVALID) {
-		sl_remove_key(ctx->shnd, ctx->key_type, ctx->dec_key_idx);
+		sl_remove_key(ctx->shnd, ctx->dec_key_type, ctx->dec_key_idx);
 	}
 	hal_data aeskey = HAL_DATA_INITIALIZER;
 	aeskey.data = (void *)key;
@@ -134,7 +134,7 @@ int mbedtls_aes_setkey_dec(mbedtls_aes_context *ctx, const unsigned char *key,
 		return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
 	}
 	ctx->dec_key_idx = key_idx;
-	ctx->key_type = key_type;
+	ctx->dec_key_type = key_type;
 
 	return 0;
 }
