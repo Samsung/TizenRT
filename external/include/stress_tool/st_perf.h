@@ -180,6 +180,7 @@ void perf_set_keeprunning(int enable);
 /*
  * Expect?
  */
+
 #define ST_EXPECT_EQ(val, exp)                                          \
 	do {                                                                \
 		if (exp != val) {                                               \
@@ -261,6 +262,13 @@ void perf_set_keeprunning(int enable);
 /*
  * Testcase definitions
  */
+
+/*
+ * Description: Define testsuite & do not set global configuration
+ */
+#define ST_SET_PACK_GLOBAL(testsuite)         \
+	static st_pack g_pack_##testsuite;
+
 /*
  * Description: Define testsuite
  */

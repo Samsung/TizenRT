@@ -60,7 +60,7 @@ typedef enum {
 	SL_MBED_TYPE_ERR = -1
 } sl_mbed_type_e;
 
-ST_SET_PACK(sl_mbed);
+ST_SET_PACK_GLOBAL(sl_mbed);
 /*
  * AES test vectors from:
  *
