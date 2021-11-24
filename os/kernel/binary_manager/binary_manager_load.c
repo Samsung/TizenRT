@@ -405,44 +405,6 @@ static int binary_manager_terminate_binary(int bin_idx)
 	return OK;
 }
 
-#ifdef CONFIG_BINMGR_RECOVERY
-/****************************************************************************
- * Name: binary_manager_reload
- *
- * Description:
- *   This function will terminate all the task/thread created by the binary
- *   i.e input binary id.
- *   It is called after all children are excluded from scheduling by fault recovery.
- *   It terminates its children, unloads binary and then it will load the binary.
- *
- * Input parameters:
- *   binid   -   The pid of binary to be reload
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-static int binary_manager_reload(int bin_idx)
-{
-	int ret;
-
-	/* Terminate binary */
-	ret = binary_manager_terminate_binary(bin_idx);
-	if (ret != OK) {
-		bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
-		return BINMGR_OPERATION_FAIL;
-	}
-
-	/* Load binary */
-	ret = binary_manager_execute_loader(LOADCMD_LOAD, bin_idx);
-	if (ret != OK) {
-		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
-		return BINMGR_OPERATION_FAIL;
-	}
-	return BINMGR_OK;
-}
-#endif
-
 /****************************************************************************
  * Name: loading_thread
  *
@@ -524,18 +486,26 @@ static int loadingall_thread(int argc, char *argv[])
  * Name: reloading_thread
  *
  * Description:
- *   This thread reloads binary with binary index.
+ *   This function terminates all the task/thread created by the binary.
+ *   If common binary is enabled, it terminates all user binaries and common binary.
+ *   Otherwise, it terminates a faulty binary only.
+ *   It is called after all children are excluded from scheduling by fault recovery.
+ *   It terminates all children of binary, unloads binary and then it will load the binary.
  *
  ****************************************************************************/
 static int reloading_thread(int argc, char *argv[])
 {
+	int ret;
+	int load_cmd;
+
 	if (argc <= 1) {
 		bmdbg("Invalid arguments for reloading, argc %d\n", argc);
 		return ERROR;
 	}
 
+	/* argv[1] binary index for reloading */
+	int bin_idx = (int)atoi(argv[1]);
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	int ret;
 	int bidx;
 	int bin_count = binary_manager_get_ucount();
 
@@ -545,9 +515,10 @@ static int reloading_thread(int argc, char *argv[])
 	 * So the common binary should be unloaded after termination of all user binaries
 	 * to clear used resources normally.
 	 */
+	load_cmd = LOADCMD_LOAD_ALL;
 
-	/* 1. Unload all user binaries */
-	for (bidx = 1; bidx <= bin_count; bidx++) {
+	/* Unload all user binaries and common binary */
+	for (bidx = 0; bidx <= bin_count; bidx++) {
 		ret = binary_manager_terminate_binary(bidx);
 		if (ret != OK) {
 			bmdbg("Failed to terminate binary %s\n", BIN_NAME(bidx));
@@ -555,28 +526,25 @@ static int reloading_thread(int argc, char *argv[])
 		}
 		bmdbg("Terminate binary %d\n", bidx);
 	}
+#else
+	load_cmd = LOADCMD_LOAD;
 
-	/* 2. Unload common binary */
-	ret = binary_manager_terminate_binary(BM_CMNLIB_IDX);
+	/* Unload the faulty binary */
+	ret = binary_manager_terminate_binary(bin_idx);
 	if (ret != OK) {
-		bmdbg("Failed to terminate common binary\n");
+		bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
 		return BINMGR_OPERATION_FAIL;
 	}
+#endif
 
-	/* 3. Load all binaries */
-	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, 0);
+	/* Create a loader to reload binary */
+	ret = binary_manager_execute_loader(load_cmd, bin_idx);
 	if (ret != OK) {
-		bmdbg("Failed to execute loader to load all binaries\n");
+		bmdbg("Failed to execute loader to reload binary, %d\n", ret);
 		return BINMGR_OPERATION_FAIL;
 	}
 
 	return BINMGR_OK;
-#else
-	/* argv[1] binary index for reloading */
-	int bin_idx = (int)atoi(argv[1]);
-
-	return binary_manager_reload(bin_idx);
-#endif
 }
 #endif
 
