@@ -32,8 +32,9 @@ typedef struct
 {
 	sl_ctx shnd;
 	uint32_t enc_key_idx;
+	hal_key_type enc_key_type;
 	uint32_t dec_key_idx;
-	hal_key_type key_type;
+	hal_key_type dec_key_type;
 	int nr;			  /*!< The number of rounds. */
 	uint32_t *rk;	  /*!< AES round keys. */
 	uint32_t buf[68]; /*!< Unaligned data buffer. This buffer can
