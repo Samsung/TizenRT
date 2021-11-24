@@ -74,7 +74,7 @@ static hal_data g_ecc_pubkey_in = HAL_DATA_INITIALIZER;
 static hal_data g_ecc_prikey_in = HAL_DATA_INITIALIZER;
 static hal_data g_key_out = HAL_DATA_INITIALIZER;
 
-ST_SET_PACK(sl_key);
+ST_SET_PACK_GLOBAL(sl_key);
 
 TESTCASE_SETUP(sl_key_global)
 {

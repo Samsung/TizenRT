@@ -86,7 +86,7 @@ static hal_data g_rand = HAL_DATA_INITIALIZER;
 static hal_data g_cert_in = HAL_DATA_INITIALIZER;
 static hal_data g_cert_out = HAL_DATA_INITIALIZER;
 
-ST_SET_PACK(sl_auth);
+ST_SET_PACK_GLOBAL(sl_auth);
 
 START_TEST_F(gen_random)
 {

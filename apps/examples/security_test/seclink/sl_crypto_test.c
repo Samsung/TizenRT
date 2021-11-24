@@ -27,7 +27,7 @@
 #include "sl_test.h"
 #include "sl_test_usage.h"
 
-ST_SET_PACK(sl_crypto);
+ST_SET_PACK_GLOBAL(sl_crypto);
 
 static char *g_command[] = {
 #ifdef SL_CRYPTO_TEST_POOL

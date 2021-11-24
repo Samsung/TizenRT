@@ -72,7 +72,7 @@ static unsigned char *g_ss_data[SL_TEST_MAX_SLOT_INDEX] = {
 	NULL,
 };
 
-ST_SET_PACK(sl_ss);
+ST_SET_PACK_GLOBAL(sl_ss);
 
 /*
  * Desc: Write data in secure storage
