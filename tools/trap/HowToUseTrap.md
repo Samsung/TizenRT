@@ -1,4 +1,4 @@
-# How to Use Dump Tool
+# How to Use TRAP (TizenRT dump and Abort Parser) Tool
 Here we explain how to enable build support for DUMP upload,
 and how to actually upload and parse it in the event of a crash during runtime.
 
@@ -49,18 +49,18 @@ Device Drivers -> Block-to-character(BCH) Support
 With the DUMP Tool configured above, whenever the target board crashes because of an assert condition, it enters into PANIC mode, and displays the following message:
 ```
 	****************************************************
-	Disconnect this serial terminal and run Dump Tool
+	Disconnect this serial terminal and run TRAP Tool
 	****************************************************
 ```
 After you see this message, you can upload the dumps by following the step below:  
 1. Disconnect/close your serial terminal (may be minicom)  
 
-2. Run dump tool
+2. Run TRAP tool
 ```
-cd $TIZENRT_BASEDIR/tools/dump_tool/
-./dump_tool.sh
+cd $TIZENRT_BASEDIR/tools/trap/
+./trap.sh
 ```
-3. Dump Tool will prompt for user's input for device adapter connected to the linux machine.
+3. TRAP Tool will prompt for user's input for device adapter connected to the linux machine.
 ```
 Please enter serial port adapter:
 For example: /dev/ttyUSB0 or /dev/ttyACM0
@@ -79,7 +79,7 @@ Choose from the following options:-
 2. Userfs Dump
 3. Both RAM and Userfs dumps
 4. External Userfs Partition Dump
-5. Exit Dump Tool
+5. Exit TRAP Tool
 6. Reboot TARGET Device
 1 (-> RAM Dump option chosen)
 ```
@@ -100,7 +100,7 @@ Please enter your input: 1
 ramdump_recv: No. of Regions to be dumped received
 
 ```
-6. Dump Tool receives the RAM contents from target.
+6. TRAP Tool receives the RAM contents from target.
 ```
 Receiving ramdump......
 
@@ -112,14 +112,14 @@ Dumping data, Address: 0x02023800, Size: 968704bytes
 [===========================================================>]
 Ramdump received successfully..!
 ```
-7. The dump tool will again provide a list of options for the user to choose from
+7. The TRAP tool will again provide a list of options for the user to choose from
 ```
 Choose from the following options:-
 1. RAM Dump
 2. Userfs Dump
 3. Both RAM and Userfs dumps
 4. External Userfs Partition Dump
-5. Exit Dump Tool
+5. Exit TRAP Tool
 6. Reboot TARGET Device
 2 (-> Userfs Dump option chosen)
 ```
@@ -137,14 +137,14 @@ Receiving file system dump.....
 
 Filesystem Dump received successfully
 ```
-9. The dump tool will again provide a list of options for the user to choose from
+9. The TRAP tool will again provide a list of options for the user to choose from
 ```
 Choose from the following options:-
 1. RAM Dump
 2. Userfs Dump
 3. Both RAM and Userfs dumps
 4. External Userfs Partition Dump
-5. Exit Dump Tool
+5. Exit TRAP Tool
 6. Reboot TARGET Device
 4 (-> External Userfs Partition dump option chosen)
 ```
@@ -164,14 +164,14 @@ Receiving external file system dump.....
 
 External Userfs partition dump received successfully
 ```
-11. The dump tool will again provide a list of options for the user to choose from
+11. The TRAP tool will again provide a list of options for the user to choose from
 ```
 Choose from the following options:-
 1. RAM Dump
 2. Userfs Dump
 3. Both RAM and Userfs dumps
 4. External Userfs Partition Dump
-5. Exit Dump Tool
+5. Exit TRAP Tool
 6. Reboot TARGET Device
 6 (-> Reboot TARGET Device option chosen)
 ```
@@ -181,7 +181,7 @@ CONFIG_BOARD_ASSERT_AUTORESET needs to be enabled to reboot TARGET Device after 
 do_handshake: Target Handshake successful
 Dump tool exits after successful operation
 ```
-13. The dump tool exits if user chooses Option 5.
+13. The TRAP tool exits if user chooses Option 5.
 ```
 Dump tool exits after successful operation
 ```
@@ -269,15 +269,15 @@ DumpParser Script provides two interfaces: CUI and GUI
 #### To get call stack using RAM dump
 1. Run Ramdump Parser Script
 ```
-cd $TIZENRT_BASEDIR/tools/dump_tool/
+cd $TIZENRT_BASEDIR/tools/trap/
 python dumpParser.py -r $TIZENRT_BASEDIR/build/output/bin/ramdump_0x02020000_0x0210c800.bin -e $TIZENRT_BASEDIR/build/output/bin/tinyara -g 0
 ```
 2. See the Output
 
 #### To display Debug Symbols/Crash point using assert logs
 1. Copy crash logs
-    First copy the crash logs to a file named log_file in tools/dump_tool/`<log_file>`
-2. Run Script in tools/dump_tool path
+    First copy the crash logs to a file named log_file in tools/trap/`<log_file>`
+2. Run Script in tools/trap path
     $ python3 ramdumpParser.py -e `<Elf path>` -t `<Log file path>`
 
     ex)
@@ -420,7 +420,7 @@ The UI configuration of DumpParser is as follows
 
 1. Run GUI Ramdump Parser Script
 ```
-cd $TIZENRT_BASEDIR/tools/dump_tool/
+cd $TIZENRT_BASEDIR/tools/trap/
 python gui_dumpParser.py
 ```
 
@@ -446,7 +446,7 @@ Call Trace of Crashed Task :[appmain] with pid :2 and state :TSTATE_TASK_RUNNING
 ********************************************************************
 ```
 ## How to port memory dump functionality
-To port dump tool for a new board, do the following steps:
+To port TRAP tool for a new board, do the following steps:
 
 1. Add low level chip specific API's to receive and transfer characters through UART:
 
@@ -493,9 +493,9 @@ endif
        board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 ```
-5. In dump_tool.c, configure correct port parameters for the the board's tty serial device port n configure_tty function.
+5. In trap.c, configure correct port parameters for the the board's tty serial device port n configure_tty function.
 Like BaudRate, StopBits, Parity, Databits, HardwareFlowControl.
-6. In dump_tool.c, add if the serial device port does not exist already.
+6. In trap.c, add if the serial device port does not exist already.
 ```
         /* Get the tty type  */
         if (!strcmp(dev_file, "/dev/ttyUSB1")) {
