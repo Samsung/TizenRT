@@ -68,6 +68,9 @@ extern struct binary_s *g_lib_binp;
 #define BINARY_COMP_TYPE "[Un-compressed Binary]"
 #endif
 
+/* Partition Name - first partition : "A", second partition : "B" */
+#define GET_PARTNAME(part_idx)  ((part_idx == 0) ? "A" : "B")
+
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
@@ -122,14 +125,10 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 	while (retry_count < BINMGR_LOADING_TRYCNT) {
 		ret = load_binary(bin_idx, path, load_attr);
 		if (ret >= 0) {
-			if (bin_idx == 0) {
-				printf("%s Load 'common'(%s) success!\n", BINARY_COMP_TYPE, path);
-			} else {
-				printf("%s Load '%s'(%s) success! pid = %d\n", BINARY_COMP_TYPE, load_attr->bin_name, path, ret);
-			}
 			/* Set the data in table from header */
 			BIN_LOAD_ATTR(bin_idx) = *load_attr;
 			strncpy(BIN_NAME(bin_idx), load_attr->bin_name, BIN_NAME_MAX);
+			printf("Load success! [Name: %s] [Version: %d] [Partition: %s] %s\n", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx), GET_PARTNAME(BIN_USEIDX(bin_idx)), BINARY_COMP_TYPE);
 			return OK;
 		} else if (errno == ENOMEM) {
 			/* Sleep for a moment to get available memory */
