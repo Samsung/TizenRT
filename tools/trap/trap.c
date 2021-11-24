@@ -2,7 +2,7 @@
 *
 * Copyright 2016 Samsung Electronics All Rights Reserved.
 *
-* File Name : dump_tool.c
+* File Name : trap.c
 * Description: Receive RAM and/or Userfs dump using UART
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@
  * Included Files
  ****************************************************************************/
 
-#include "dump_tool.h"
+#include "trap.h"
 
 /****************************************************************************
  * Private Variables
@@ -304,9 +304,9 @@ int main(int argc, char *argv[])
 	ret = 1;
 
 	if (argc < 2) {
-		printf("Usage: ./dump_tool.sh <device>\n");
-		printf("Ex   : ./dump_tool.sh /dev/ttyUSB1   or\n");
-		printf("       ./dump_tool.sh /dev/ttyACM0\n");
+		printf("Usage: ./trap.sh <device>\n");
+		printf("Ex   : ./trap.sh /dev/ttyUSB1   or\n");
+		printf("       ./trap.sh /dev/ttyACM0\n");
 		return -1;
 	}
 
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
 	printf("Target device locked and ready to DUMP!!!\n");
 
 	while (1) {
-		printf("Choose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. External Userfs Partition Dump\n5. Exit Dump Tool\n6. Reboot TARGET Device\n");
+		printf("Choose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. External Userfs Partition Dump\n5. Exit TRAP Tool\n6. Reboot TARGET Device\n");
 		fflush(stdout);
 		scanf("%d", &choice);
 		getchar();
@@ -393,7 +393,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		/* If no flag is set, then exit the dump tool */
+		/* If no flag is set, then exit the TRAP tool */
 		if (DUMP_FLAGS == CLEAR_DUMP_FLAGS) {
 			break;
 		}

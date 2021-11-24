@@ -16,16 +16,16 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# File 	 : dump_tool.sh
+# File 	 : trap.sh
 # Description : RAM and USerfs extraction util
 
 # Output PATH
 BUILD_BIN_PATH=../../build/output/bin
 
-# Compile dump_tool application
-gcc dump_tool_utils.c dump_tool.c -o dump_tool
+# Compile trap application
+gcc trap_utils.c trap.c -o trap
 
-# Run Dump Tool
+# Run TRAP Tool
 RAMDUMP_FILE=./ramdump_0x*.bin
 rm -f ${RAMDUMP_FILE}
 FSDUMP_FILE=./fsdump_0x*.bin
@@ -42,7 +42,7 @@ while [ $ok = true ]
 do
 echo Enter:
 read dev_port
-if sudo ./dump_tool $dev_port;
+if sudo ./trap $dev_port;
 	then
 		ok=false
 	else

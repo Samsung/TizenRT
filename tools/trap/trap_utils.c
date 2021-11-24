@@ -2,7 +2,7 @@
 *
 * Copyright 2020 Samsung Electronics All Rights Reserved.
 *
-* File Name : dump_tool_utils.c
+* File Name : trap_utils.c
 * Description: Receive FS and Ram Dump using UART
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@
  ****************************************************************************/
 
 #include <termios.h>
-#include "dump_tool.h"
+#include "trap.h"
 
 /****************************************************************************
  * Public Functions
