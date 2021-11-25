@@ -112,18 +112,6 @@ void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 	WO_TEST_SIGNAL(msg.res, g_wo_queue);
 }
 
-static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)
-{
-	strncpy(apconfig->ssid, WM_AP_SSID, strlen(WM_AP_SSID) + 1);
-	apconfig->ssid_length = strlen(WM_AP_SSID);
-	apconfig->ap_auth_type = WM_AP_AUTH;
-	if (WM_AP_AUTH != WIFI_MANAGER_AUTH_OPEN) {
-		strncpy(apconfig->passphrase, WM_AP_PASSWORD, strlen(WM_AP_PASSWORD) + 1);
-		apconfig->passphrase_length = strlen(WM_AP_PASSWORD);
-		apconfig->ap_crypto_type = WM_AP_CRYPTO;
-	}
-}
-
 static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
 {
 	strncpy(ap_config->ssid, WM_SOFTAP_SSID, strlen(WM_SOFTAP_SSID) + 1);
@@ -161,7 +149,7 @@ TEST_F(sta_join)
 {
 	ST_START_TEST;
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig);
+	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 
@@ -202,7 +190,7 @@ TEST_SETUP(sta_leave)
 
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig);
+	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 
@@ -397,7 +385,7 @@ TEST_SETUP(conn_to_softap)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig);
+	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 	ST_END_TEST;

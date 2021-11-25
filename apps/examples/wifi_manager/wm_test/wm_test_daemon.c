@@ -110,18 +110,6 @@ void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 	WM_TEST_SIGNAL;
 }
 
-static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)
-{
-	strncpy(apconfig->ssid, WM_AP_SSID, strlen(WM_AP_SSID) + 1);
-	apconfig->ssid_length = strlen(WM_AP_SSID);
-	apconfig->ap_auth_type = WM_AP_AUTH;
-	if (WM_AP_AUTH != WIFI_MANAGER_AUTH_OPEN) {
-		strncpy(apconfig->passphrase, WM_AP_PASSWORD, strlen(WM_AP_PASSWORD) + 1);
-		apconfig->passphrase_length = strlen(WM_AP_PASSWORD);
-		apconfig->ap_crypto_type = WM_AP_CRYPTO;
-	}
-}
-
 static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
 {
 	strncpy(ap_config->ssid, WM_SOFTAP_SSID, strlen(WM_SOFTAP_SSID) + 1);
@@ -137,7 +125,7 @@ static int run_procedure(void *arg)
 	/* Join to softAP*/
 	WT_LOG(TAG, "connect AP");
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig);
+	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
 	res = wifi_manager_connect_ap(&apconfig);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "connect AP fail %d", res);

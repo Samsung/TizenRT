@@ -203,20 +203,24 @@ void wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 		WT_LOGP(TAG, "%s\n", title);
 	}
 	WT_LOGP(TAG, "------------------------------------\n");
-	WT_LOGP(TAG, "SSID: %s\n", config->ssid);
+	if (config->ssid_length > 0) {
+		WT_LOGP(TAG, "SSID: %s\n", config->ssid);
+	}
 	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN || config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
 		WT_LOGP(TAG, "SECURITY: unknown\n");
 	} else {
-		char security_type[21] = {0,};
+		char security_type[21] = {
+			0,
+		};
 		strncat(security_type, g_wifi_test_auth_method[config->ap_auth_type],
-						strlen(g_wifi_test_auth_method[config->ap_auth_type]));
+				strlen(g_wifi_test_auth_method[config->ap_auth_type]));
 		wifi_manager_ap_auth_type_e tmp_type = config->ap_auth_type;
 		if (tmp_type == WIFI_MANAGER_AUTH_OPEN || tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN || tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
 			WT_LOGP(TAG, "SECURITY: %s\n", security_type);
 		} else {
-			strncat(security_type, "_", strlen("_")+1);
+			strncat(security_type, "_", strlen("_") + 1);
 			strncat(security_type, g_wifi_test_crypto_method[config->ap_crypto_type],
-							strlen(g_wifi_test_crypto_method[config->ap_crypto_type]));
+					strlen(g_wifi_test_crypto_method[config->ap_crypto_type]));
 			WT_LOGP(TAG, "SECURITY: %s\n", security_type);
 		}
 	}
@@ -298,8 +302,26 @@ void print_ap_config_list(interop_ap_config_list_s *ap_config_list)
 	for (int i = 0; i < ap_config_list->ap_count; i++) {
 		ap_info = ap_config_list->ap_info + i;
 		WT_LOG(TAG, "ssid[%s] passphrase[%s] auth_type[%d], crypto_type[%d]",
-				ap_info->ap_config.ssid, ap_info->ap_config.passphrase,
-				ap_info->ap_config.ap_auth_type, ap_info->ap_config.ap_crypto_type);
+			   ap_info->ap_config.ssid, ap_info->ap_config.passphrase,
+			   ap_info->ap_config.ap_auth_type, ap_info->ap_config.ap_crypto_type);
 	}
 	WT_LOG(TAG, "==============================================================");
+}
+
+void wm_get_apinfo(wifi_manager_ap_config_s *apconfig,
+				   char *ssid,
+				   char *pwd,
+				   wifi_manager_ap_auth_type_e auth,
+				   wifi_manager_ap_crypto_type_e crypto)
+{
+	strncpy(apconfig->ssid, ssid, strlen(ssid) + 1);
+	apconfig->ssid_length = strlen(ssid);
+	apconfig->ap_auth_type = auth;
+	apconfig->ap_crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+	apconfig->passphrase_length = 0;
+	if (auth != WIFI_MANAGER_AUTH_OPEN) {
+		strncpy(apconfig->passphrase, pwd, strlen(pwd) + 1);
+		apconfig->passphrase_length = strlen(pwd);
+		apconfig->ap_crypto_type = crypto;
+	}
 }

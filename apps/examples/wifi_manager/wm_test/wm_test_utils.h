@@ -101,3 +101,8 @@ void wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title);
 wifi_manager_ap_auth_type_e wt_get_autbh_type(const char *method);
 wifi_manager_ap_crypto_type_e wt_get_crypto_type(const char *method);
 void print_ap_config_list(interop_ap_config_list_s *ap_config_list);
+void wm_get_apinfo(wifi_manager_ap_config_s *apconfig,
+				   char *ssid,
+				   char *pwd,
+				   wifi_manager_ap_auth_type_e auth,
+				   wifi_manager_ap_crypto_type_e crypto);
