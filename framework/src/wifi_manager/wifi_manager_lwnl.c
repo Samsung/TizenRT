@@ -25,7 +25,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
-#include <debug.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>

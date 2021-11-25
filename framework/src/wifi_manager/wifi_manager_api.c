@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <wifi_manager/wifi_manager.h>
 #include <tinyara/net/if/wifi.h>
 #include "wifi_manager_error.h"
