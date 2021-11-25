@@ -17,7 +17,7 @@
  ****************************************************************************/
 #define WT_SOFTAP_USAGE							\
 	"\n softap mode options:\n"					\
-	"	 wm_test softap [ssid] [password]\n"
+	"	 wm_test softap ssid password channel\n"
 
 #define WT_STA_USAGE												\
 	"\n station mode options:\n"									\
@@ -36,9 +36,10 @@
 	" stress test 4: scenario base TC (server)\n"						\
 	"	 wm_test stress 1 [ssid] [security mode] [password]\n"			\
 	"	 wm_test stress 2 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
-	"	 wm_test stress 2 file [file path] [softap ssid] [softap security mode] [softap password] [softap channel]\n" \
-	"	 wm_test stress 3 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
-	"	 wm_test stress 4 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
+	"	 wm_test stress 2 file [file path] [softap ssid] [softap password] [softap channel]\n" \
+	"	 wm_test stress 3 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel] [count]\n" \
+	"	 wm_test stress 4 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel] [count]\n\n" \
+	" Note: stress test 2, 3, 4 doesn't support open auth type"\
 
 #define WT_ONOFF_USAGE											\
 	"\n onoff test mode options:\n"								\

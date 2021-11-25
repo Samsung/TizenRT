@@ -37,4 +37,5 @@ struct wt_options {
 	uint8_t power_mode;
 	char *security;
 	char *path;
+	int repeat;
 };

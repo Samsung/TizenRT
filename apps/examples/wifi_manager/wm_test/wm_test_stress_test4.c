@@ -137,7 +137,7 @@ static int _run_procedure(void)
 	wifi_manager_ap_config_s apconfig;
 	wifi_manager_info_s wminfo;
 	wifi_manager_stats_s stats;
-	wm_get_apinfo(&apconfig);
+	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
 
 	CONTROL_VDRIVER(VWIFI_CMD_SET, VWIFI_KEY_RESULT, (int)TRWIFI_SUCCESS, 0);
 
@@ -582,7 +582,7 @@ void wm_run_stress_test4(struct wt_options *opt)
 
 	ST_SET_PACK(wifi_connect);
 	ST_TC_SET_GLOBAL(wifi_connect, global_config);
-	ST_SET_SMOKE1(wifi_connect, 10, 0, "", connect_stress);
+	ST_SET_SMOKE1(wifi_connect, opt->repeat, 0, "", connect_stress);
 	ST_SET_KEEP_RUNNING;
 	ST_RUN_TEST(wifi_connect);
 	ST_RESET_KEEP_RUNNING;
