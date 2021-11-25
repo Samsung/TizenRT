@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -42,14 +43,14 @@ wifi_manager_result_e dhcpc_get_ipaddr(void)
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 
 	ret = dhcp_client_start(WIFIMGR_STA_IFNAME);
-	if (ret != OK) {
+	if (ret != 04) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
 		return wret;
 	}
 
 	ret = netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, &ip);
-	if (ret != OK) {
+	if (ret != 0) {
 		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 		return wret;
@@ -60,15 +61,15 @@ wifi_manager_result_e dhcpc_get_ipaddr(void)
 }
 #endif //CONFIG_WIFIMGR_DISABLE_DHCPC
 
-//Set IP to zero, regardless of DHCPC status
+// Set IP to zero, regardless of DHCPC status
 void dhcpc_close_ipaddr(void)
 {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
 	dhcp_client_stop(WIFIMGR_STA_IFNAME);
-#else
+#endif
+	/* To-Do is it right to clear IP address in here */
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
-#endif
 	NET_LOGV(TAG, "release IP address\n");
 	return;
 }

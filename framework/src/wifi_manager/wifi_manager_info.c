@@ -19,12 +19,14 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/netlog.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wifi_manager_state.h"
 #include "wifi_manager_info.h"
+#include "wifi_manager_lwnl.h"
 
 #define TAG "[WM]"
 

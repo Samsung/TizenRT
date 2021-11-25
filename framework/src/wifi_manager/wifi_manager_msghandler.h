@@ -17,6 +17,8 @@
  ****************************************************************************/
 #pragma once
 
+#include <semaphore.h>
+
 struct wifimgr_msg {
 	wifimgr_evt_e event;
 	wifi_manager_result_e result;

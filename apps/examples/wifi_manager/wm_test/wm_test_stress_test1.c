@@ -28,6 +28,7 @@
 #include <stress_tool/st_perf.h>
 #include "wm_test.h"
 #include "wm_test_log.h"
+#include "wm_test_utils.h"
 
 /* Macro*/
 #define WM_TEST_TRIAL	   CONFIG_WIFIMANAGER_TEST_TRIAL

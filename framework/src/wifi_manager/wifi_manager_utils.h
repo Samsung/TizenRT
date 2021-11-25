@@ -20,6 +20,12 @@
 #include <tinyara/net/netlog.h>
 #include "wifi_manager_error.h"
 
+#ifndef __LINUX__
+#define net_task_create task_create
+#else
+int net_task_create(FAR const char *name, int priority, int stack_size,
+                    main_t entry, FAR char *const argv[]);
+#endif
 /*  Check Result MACRO */
 #define WIFIMGR_SPC // to pass the code check ruls
 #define WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, free_rsc)	\

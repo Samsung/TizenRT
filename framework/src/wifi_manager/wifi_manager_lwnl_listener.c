@@ -16,7 +16,6 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <debug.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <errno.h>

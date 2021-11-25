@@ -19,8 +19,9 @@
 #include <tinyara/config.h>
 
 #include <stdio.h>
-#include <debug.h>
+#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <net/if.h>
@@ -32,9 +33,14 @@
 #include "wifi_manager_msghandler.h"
 #include "wifi_manager_message.h"
 #include <tinyara/net/netlog.h>
-
+#ifndef __LINUX__
 #define WIFIMGR_MSG_QUEUE_NAME "/dev/wifimgr_msg"
+#else
+#define WIFIMGR_MSG_QUEUE_NAME "/tmp/wifimgr_msg"
+#endif
 #define TAG "[WM]"
+
+extern wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg);
 
 static inline int _send_message(int fd, void *buf, int buflen)
 {

@@ -279,10 +279,10 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 							 TAG, "Starting softap mode failed");
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 	WIFIMGR_CHECK_RESULT(wm_dhcps_start(), (TAG, "Starting DHCP server failed\n"), WIFI_MANAGER_FAIL);
+	dhcps_reset_num();
 #endif
 	/* update wifi_manager_info */
 	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
-	dhcps_reset_num();
 
 	/* For tracking softap stats, the LAST value is used */
 	WIFIMGR_STATS_INC(CB_SOFTAP_DONE);
@@ -514,14 +514,14 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 		if (dhcps_add_node((dhcp_node_s *)msg->param) == DHCP_EXIST) {
 			return WIFI_MANAGER_SUCCESS;
 		}
-#endif
 		dhcps_inc_num();
+#endif
 		wifimgr_call_cb(CB_STA_JOINED, msg->param);
 	} else if (msg->event == WIFIMGR_EVT_LEFT) {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 		dhcps_del_node();
-#endif
 		dhcps_dec_num();
+#endif
 		wifimgr_call_cb(CB_STA_LEFT, msg->param);
 	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
@@ -558,7 +558,7 @@ wifi_manager_result_e _handler_get_stats(wifimgr_msg_s *msg)
 {
 	trwifi_msg_stats_s stats;
 	stats.cmd = TRWIFI_MSG_GET_STATS;
-	trwifi_result_e res = wifi_utils_ioctl(&stats);
+	trwifi_result_e res = wifi_utils_ioctl((trwifi_msg_s *)&stats);
 	if (res == TRWIFI_SUCCESS) {
 		/* update msg
 		 * msg->param was checked in wifi_manager_get_stats()

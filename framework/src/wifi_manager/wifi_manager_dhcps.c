@@ -163,7 +163,7 @@ wifi_manager_result_e wm_dhcps_start(void)
 	_dhcps_remove_list();
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
 
-	if (dhcp_server_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcps_event) != OK) {
+	if (dhcp_server_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcps_event) != 0) {
 		NET_LOGE(TAG, "[DHCP] DHCP Server - started fail\n");
 		return WIFI_MANAGER_FAIL;
 	}
@@ -177,7 +177,7 @@ wifi_manager_result_e wm_dhcps_stop(void)
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 
-	if (dhcp_server_stop(WIFIMGR_SOFTAP_IFNAME) != OK) {
+	if (dhcp_server_stop(WIFIMGR_SOFTAP_IFNAME) != 0) {
 		NET_LOGE(TAG, "[DHCP] DHCP Server - stopped failed\n");
 		return WIFI_MANAGER_FAIL;
 	}

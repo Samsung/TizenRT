@@ -19,10 +19,10 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <assert.h>
-#include <debug.h>
 #include <tinyara/net/netlog.h>
 #include <tinyara/net/if/wifi.h>
 #include <wifi_manager/wifi_manager.h>
