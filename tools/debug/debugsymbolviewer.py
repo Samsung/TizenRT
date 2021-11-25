@@ -21,10 +21,10 @@ from math import log
 import re
 import sys
 
-bin_path = '../../build/output/bin/'		# System map file
-symbol_lookup_table = []	# Lookup table created from contents of system map file
-debug = False			# Variable to print debug logs
-pc_value = 0x00000000		# Program counter value
+bin_path = '../../build/output/bin/'	# System map file
+symbol_lookup_table = []		# Lookup table created from contents of system map file
+debug = False				# Variable to print debug logs
+pc_value = 0x00000000			# Program counter value
 
 # Kernel text start & end addresses
 ram_text_start_addr = 0x00000000
