@@ -526,6 +526,6 @@ void wm_run_stress_test2(struct wt_options *opt)
 			opt->crypto_type = ap_info->ap_config.ap_crypto_type;
 
 			wm_run_stress_test2_single_ap(opt);
-		}	
+		}
 	}
 }

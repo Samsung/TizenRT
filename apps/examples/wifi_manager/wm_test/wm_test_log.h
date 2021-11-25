@@ -17,21 +17,32 @@
  ****************************************************************************/
 #pragma once
 
-#define WT_LOG(tag, fmt, args...)										\
-	printf(tag "[T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__)
+#ifndef __LINUX__
+#define WT_LOG(tag, fmt, args...) \
+	printf(tag "[T%d] " fmt "\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__)
 
-#define WT_LOGE(tag, fmt, args...)										\
-	printf(tag "[ERR][T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__)
+#define WT_LOGE(tag, fmt, args...) \
+	printf(tag "[ERR][T%d] " fmt "\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__)
 
-#define WT_LOGP(tag, fmt, args...)				\
+#define WT_LOGP(tag, fmt, args...) \
 	printf(fmt, ##args)
+#else
+#define WT_LOG(tag, fmt, args...) \
+	printf(tag "[INFO] " fmt "\t%s:%d\n", ##args, __FUNCTION__, __LINE__)
 
-#define WT_ENTER								\
-	do {										\
-		WT_LOG(TAG, "-->");						\
+#define WT_LOGE(tag, fmt, args...) \
+	printf(tag "[ERR] " fmt "\t%s:%d\n", ##args, __FUNCTION__, __LINE__)
+
+#define WT_LOGP(tag, fmt, args...) \
+	printf(fmt, ##args)
+#endif
+
+#define WT_ENTER            \
+	do {                    \
+		WT_LOG(TAG, "-->"); \
 	} while (0)
 
-#define WT_LEAVE								\
-	do {										\
-		WT_LOG(TAG, "<--");						\
+#define WT_LEAVE            \
+	do {                    \
+		WT_LOG(TAG, "<--"); \
 	} while (0)
