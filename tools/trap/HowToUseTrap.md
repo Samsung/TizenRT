@@ -270,7 +270,6 @@ DumpParser Script provides two interfaces: CUI and GUI
 1. Run Ramdump Parser Script
 ```
 cd $TIZENRT_BASEDIR/tools/trap/
-python dumpParser.py -r $TIZENRT_BASEDIR/build/output/bin/ramdump_0x02020000_0x0210c800.bin -e $TIZENRT_BASEDIR/build/output/bin/tinyara -g 0
 ```
 2. See the Output
 
@@ -288,7 +287,7 @@ Example Call Stack Output for App crash is as follows:
 *************************************************************
 dump_file         : None
 log_file          : .log_file
-elf_file  : ../../../output/app2_dbg
+elf_file          : ../../../output/app2_dbg
 *************************************************************
 
 Number of applicaions : 2
@@ -296,26 +295,33 @@ App[1] is : app1
 App[2] is : app2
 
 ----------------------------------------------------------
+-------------------------- DEBUG SYMBOLS IN "app1" TEXT RANGE -------------------------
+Dump_address	 Symbol_address	  Symbol_name	File_name
+
+PC_value	 Symbol_address	  Symbol_name	File_name
+-----------------------------------------------------------------------------------------
 App Crash point is as follows:
 [ Caller - return address (LR) - of the function which has caused the crash ]
-App name : app2
-symbol addr : 0x000014d6
-main
-/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:121
 
-[Probable crash point corresponding to the R15 register value (PC) might be -4 or -8 bytes]
-App name : app2
-0x000014e5
-function name : main
-file : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:113
+symbol addr       : 0x000014e5
+function name     : main
+file              : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:113
 
--------------------------- DEBUG SYMBOLS IN APPLICATION TEXT RANGE -------------------------
+App Crash point is as follows:
+[ Current location (PC) of assert ]
+ - Exact crash point might be -4 or -8 bytes from the PC.
+
+symbol addr       : 0x000014d6
+function name     : main
+file              : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:129
+
+-------------------------- DEBUG SYMBOLS IN "app2" TEXT RANGE -------------------------
 Dump_address	 Symbol_address	  Symbol_name	File_name
-0x1dc5	 0x1db5 	  write	/root/tizenrt/os/include/unistd.h:310
-0x1dc5	 0x1db5 	  write	/root/tizenrt/os/include/unistd.h:310
+0x1dc5	 0x1dc5 	  printf	/root/tizenrt/os/include/stdio.h:406
+0x1dc5	 0x1dc5 	  printf	/root/tizenrt/os/include/stdio.h:406
 0x14e5	 0x1479 	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
-0x1479	 0x1479 	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
-0x1ef5	 0x1edd 	  task_startup	/root/tizenrt/os/include/tinyara/userspace.h:127
+0x1479	 0x1439 	  __fixunssfsi
+0x1ef5	 0x1ef0 	  g_cb_handler	/root/tizenrt/lib/libc/sched/task_startup.c:119
 
 PC_value	 Symbol_address	  Symbol_name	File_name
 -----------------------------------------------------------------------------------------
@@ -329,32 +335,40 @@ Example Call Stack Output for Kernel crash is as follows:
 *************************************************************
 dump_file         : None
 log_file          : ./log_file
-elf_file  : ../../build/output/bin/tinyara.axf
+elf_file          : ../../build/output/bin/tinyara.axf
 *************************************************************
 
 
 ----------------------------------------------------------
 Kernel Crash point is as follows:
 [ Caller - return address (LR) - of the function which has caused the crash ]
-symbol addr : 0x10010f36
-function name : os_start
-file : /root/product/.tizenrt/os/kernel/init/os_start.c:615
+
+symbol addr       : 0x0e001c1b
+function name     : setbasepri
+file              : /root/tizenrt/os/include/arch/armv8-m/irq.h:247
+
+Kernel Crash point is as follows:
+[ Current location (PC) of assert ]
+ - Exact crash point might be -4 or -8 bytes from the PC.
+
+symbol addr       : 0x10010f1e
+function name     : os_start
+file              : /root/tizenrt/os/kernel/init/os_start.c:610
 
 --------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE --------------------------
 Dump_address	 Symbol_address	  Symbol_name	File_name
-0xe0558ab	 0xe05589b 	  __FUNCTION__.6623
-0xe006337	 0xe006310 	  lowvsyslog	/root/product/.tizenrt/os/include/syslog.h:263
-0xe0087dd	 0xe0087dc 	  lowoutstream_putc	/root/product/.tizenrt/lib/libc/stdio/lib_lowoutstream.c:76
-0xe009df5	 0xe009db0 	  up_usagefault	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_usagefault.c:83
-0x10012565	 0x1001254c 	  up_doirq	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
-0x10012275	 0x10012234 	  exception_common	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
-0x10012809	 0x10012808 	  up_unblock_task	/root/product/.tizenrt/os/include/tinyara/arch.h:472
-0xe001c15	 0xe001be8 	  task_activate	/root/product/.tizenrt/os/include/sched.h:141
-0x10010f36	 0x10010d90 	  os_start	/root/product/.tizenrt/os/include/tinyara/init.h:89
-0xe000e6f	 0xe000d2c 	  app_start	/root/product/.tizenrt/os/board/rtl8721csm/src/component/soc/realtek/amebad/fwlib/ram_hp/rtl8721dhp_app_start.c:1318
+0xe0060b3	 0xe00608c 	  lowvsyslog	/root/tizenrt/os/include/syslog.h:263
+0xe0067f5	 0xe0067f4 	  lowoutstream_putc	/root/tizenrt/lib/libc/stdio/lib_lowoutstream.c:76
+0xe005e89	 0xe005e88 	  lib_noflush	/root/tizenrt/os/include/tinyara/streams.h:605
+0xe0086ef	 0xe008678 	  up_usagefault	/root/tizenrt/os/arch/arm/src/armv8-m/up_usagefault.c:84
+0x10012375	 0x1001235c 	  up_doirq	/root/tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
+0x1001207d	 0x1001203c 	  exception_common	/root/tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
+0x10012619	 0x10012618 	  up_unblock_task	/root/tizenrt/os/include/tinyara/arch.h:472
+0xe001c1b	 0xe001bcc 	  task_activate	/root/tizenrt/os/include/sched.h:141
+0x10010f1e	 0x10010d78 	  os_start	/root/tizenrt/os/include/tinyara/init.h:89
 
 PC_value	 Symbol_address	  Symbol_name	File_name
-0x10010f36	 0x10010d90 	  os_start	/root/product/.tizenrt/os/include/tinyara/init.h:89
+0x10010f1e	 0x10010d78 	  os_start	/root/tizenrt/os/include/tinyara/init.h:89
 -----------------------------------------------------------------------------------------
 ----------------------------------------------------------
 ```
@@ -366,7 +380,7 @@ Example Call Stack Output for Common Binary crash is as follows:
 *************************************************************
 dump_file         : None
 log_file          : ./log_file
-elf_file  : ../../build/output/bin/common_dbg
+elf_file          : ../../build/output/bin/common_dbg
 *************************************************************
 
 Number of applicaions : 2
@@ -375,18 +389,20 @@ App[2] is : app
 
 ----------------------------------------------------------
 App Crash point is as follows:
-[Probable crash point corresponding to the R15 register value (PC) might be -4 or -8 bytes]
 [ Current location (PC) of assert ]
  - Exact crash point might be -4 or -8 bytes from the PC.
-App name : common
-symbol addr : 0x0003cdea
-function name : sched_get_priority_max
+
+App name         : common
+symbol addr      : 0x0003cdea
+function name    : sched_get_priority_max
 /root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:110
 
+App Crash point is as follows:
 [ Caller - return address (LR) - of the function which has caused the crash ]
-App name : app
-symbol addr : 0x00000551
-function name : set_app_main_task
+
+App name         : app
+symbol addr      : 0x00000551
+function name    : set_app_main_task
 file : /root/product/main/set_app_main/src/set_app_main.c:380 (discriminator 1)
 
 -------------------------- DEBUG SYMBOLS IN APPLICATION TEXT RANGE -------------------------
