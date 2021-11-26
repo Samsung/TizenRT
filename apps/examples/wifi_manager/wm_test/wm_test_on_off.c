@@ -110,22 +110,8 @@ static int run_init(void *arg)
 	/* Set AP Configuration */
 	struct wt_options *ap_info = (struct wt_options *)arg;
 	wifi_manager_ap_config_s apconfig;
-	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
-	apconfig.ssid_length = strlen(ap_info->ssid);
-	apconfig.ssid[WIFIMGR_SSID_LEN] = '\0';
-	apconfig.ap_auth_type = ap_info->auth_type;
-	if (ap_info->auth_type != WIFI_MANAGER_AUTH_OPEN) {
-		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
-		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
-		apconfig.passphrase_length = strlen(ap_info->password);
-		apconfig.ap_crypto_type = ap_info->crypto_type;
-	} else {
-		apconfig.passphrase[0] = '\0';
-		apconfig.passphrase_length = 0;
-		apconfig.ap_crypto_type = ap_info->crypto_type;
-	}
-
-	print_wifi_ap_profile(&apconfig, "Connecting AP Info");
+  wm_get_apinfo(&apconfig, ap_info->ssid, ap_info->password, ap_info->auth_type, ap_info->crypto_type);
+  print_wifi_ap_profile(&apconfig, "Connecting AP Info");
 
 	/*  Run Auto Test */
 	int state = 1;
