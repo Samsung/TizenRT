@@ -164,7 +164,7 @@ class HeapInfo(Tk):
 		self.heap_label['text'] = 'MemAddr : ' + MemAddr + '\n' + 'Size : ' +  Size
 
 
-class DumpParser(Tk):
+class TRAP(Tk):
 	def __init__(self):
 		Tk.__init__(self)
 		self.modevar = IntVar()
@@ -188,7 +188,7 @@ class DumpParser(Tk):
 		self.logpath = PathFrame(self.dataframe, "AssertLogFile path")
 		self.ramdumppath = PathFrame(self.dataframe, "Ramdump path    ")
 
-		btn = Button(self, text="Run DumpParser", command=self.RunDumpParser)
+		btn = Button(self, text="Run TRAP", command=self.RunTRAP)
 		btn.pack(anchor=W)
 
 	def OnRadioClick(self):
@@ -204,7 +204,7 @@ class DumpParser(Tk):
 		elif self.modevar.get() == 4:
 			self.logtext.pack(anchor=W)
 
-	def RunDumpParser(self):
+	def RunTRAP(self):
 		resWin = Toplevel(self)
 		resWin.wm_title("Dump Information")
 		resText = Text(resWin)
@@ -253,6 +253,6 @@ class DumpParser(Tk):
 
 if __name__ == "__main__":
 	os.chdir(os.path.dirname(os.path.realpath(__file__)))
-	app = DumpParser()
+	app = TRAP()
 	app.title("Ramdump Parser")
 	app.mainloop()
