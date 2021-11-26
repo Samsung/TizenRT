@@ -28,7 +28,7 @@ trble_result_e rtw_ble_server_init(trble_server_init_config* init_parm)
 {
     if (init_parm == NULL || init_parm->profile == NULL || init_parm->profile_count == 0)
     {
-        debug_print("\r\n[%s] Invalid parameters 0x%x 0x%x %d", __FUNCTION__, init_parm, init_parm->profile, init_parm->profile_count);
+        debug_print("Invalid parameters 0x%x 0x%x %d \n", init_parm, init_parm->profile, init_parm->profile_count);
         return TRBLE_INVALID_ARGS;
     }
 
@@ -48,7 +48,7 @@ trble_result_e rtw_ble_server_init(trble_server_init_config* init_parm)
     ble_tizenrt_app_init();
     
     is_server_init = true;
-    debug_print("\r\n[%s] Tizenrt Sever Init Success Profile_count %d", __FUNCTION__, server_init_parm.profile_count);
+    debug_print("Tizenrt Sever Init Success Profile_count %d \n", server_init_parm.profile_count);
     return TRBLE_SUCCESS;
 }
 
@@ -77,7 +77,7 @@ trble_result_e rtw_ble_server_get_mac_address(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]
     }
 
     if (gap_get_param(GAP_PARAM_BD_ADDR, mac) != GAP_CAUSE_SUCCESS) {
-        debug_print("Failed to get local addr.\r\n");
+        debug_print("Failed to get local addr. \n");
         return TRBLE_FAIL;
     }
     
@@ -90,7 +90,7 @@ extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 /* set data pointer of attribute value */
 trble_result_e rtw_ble_server_att_set_data_ptr(trble_attr_handle attr_handle, uint8_t *new_data_ptr)
 {
-    debug_print("\r\n[%s] new_data_ptr %p", __FUNCTION__, new_data_ptr);
+    debug_print("new_data_ptr %p \n", new_data_ptr);
     if (is_server_init != true)
     {
         return TRBLE_INVALID_STATE;
@@ -106,7 +106,7 @@ trble_result_e rtw_ble_server_att_set_data_ptr(trble_attr_handle attr_handle, ui
                 if(attr_handle == tizenrt_ble_srv_database[i].chrc_info[j].abs_handle)
                 {
                     tizenrt_ble_srv_database[i].chrc_info[j].read_ptr = new_data_ptr;
-                    debug_print("[%s] tizenrt_ble_srv_database[%d].chrc_info[%d].read_ptr %p", __FUNCTION__, i, j,
+                    debug_print("tizenrt_ble_srv_database[%d].chrc_info[%d].read_ptr %p \n", i, j,
                                                         tizenrt_ble_srv_database[i].chrc_info[j].read_ptr);
                     return TRBLE_SUCCESS;
                 }
@@ -160,7 +160,7 @@ uint8_t* rtw_ble_server_att_get_data_ptr(trble_attr_handle attr_handle)
             {
                 if(attr_handle == tizenrt_ble_srv_database[i].chrc_info[j].abs_handle)
                 {
-                    debug_print("abs_handle 0x%x index 0x%x %p", tizenrt_ble_srv_database[i].chrc_info[j].abs_handle,
+                    debug_print("abs_handle 0x%x index 0x%x %p \n", tizenrt_ble_srv_database[i].chrc_info[j].abs_handle,
                                                 tizenrt_ble_srv_database[i].chrc_info[j].index,
                                                 tizenrt_ble_srv_database[i].chrc_info[j].data);
                     return tizenrt_ble_srv_database[i].chrc_info[j].data;
@@ -189,7 +189,7 @@ uint16_t rtw_ble_server_att_get_length(trble_attr_handle attr_handle)
             {
                 if(attr_handle == tizenrt_ble_srv_database[i].chrc_info[j].abs_handle)
                 {
-                    debug_print("abs_handle 0x%x att_index 0x%x %d", tizenrt_ble_srv_database[i].chrc_info[j].abs_handle,
+                    debug_print("abs_handle 0x%x att_index 0x%x %d \n", tizenrt_ble_srv_database[i].chrc_info[j].abs_handle,
                                                 tizenrt_ble_srv_database[i].chrc_info[j].index,
                                                 tizenrt_ble_srv_database[i].chrc_info[j].data_len);
                     return tizenrt_ble_srv_database[i].chrc_info[j].data_len;
@@ -203,7 +203,7 @@ uint16_t rtw_ble_server_att_get_length(trble_attr_handle attr_handle)
 
 trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *data_ptr, uint16_t data_length)
 {
-    debug_print("\r\n[%s] send notify abs_handle 0x%x", __FUNCTION__, attr_handle);
+    debug_print("send notify abs_handle 0x%x \n", attr_handle);
     if (is_server_init != true)
     {
         return TRBLE_INVALID_STATE;
@@ -217,14 +217,14 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
     T_TIZENRT_NOTIFY_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_NOTIFY_PARAM));;
     if(!param)
     {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
     param->data = os_mem_alloc(0, data_length);
     if(!param->data)
     {
         os_mem_free(param);
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
 
@@ -236,7 +236,7 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
     {
         os_mem_free(param);
         os_mem_free(param->data);
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;
@@ -263,7 +263,7 @@ trble_result_e rtw_ble_server_reject(trble_attr_handle attr_handle, uint8_t app_
     {
         return TRBLE_SUCCESS; 
     } else {
-        debug_print("\r\n[%s] fail", __FUNCTION__);
+        debug_print("fail \n");
         return TRBLE_FAIL;
     }
 
@@ -277,10 +277,10 @@ uint8_t* rtw_ble_server_get_mac_address_by_conn_handle(trble_conn_handle con_han
     uint8_t bd_type;
     if(le_get_conn_addr(con_handle, bd_addr, &bd_type))
     {
-        debug_print("\r\n[%s] success", __FUNCTION__);
+        debug_print("success \n");
         return bd_addr;
     } else {
-        debug_print("\r\n[%s] fail", __FUNCTION__);
+        debug_print("fail \n");
         return NULL;
     }
 }
@@ -292,11 +292,11 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
     uint8_t conn_id = 0xff;
     if(le_get_conn_id(mac, GAP_REMOTE_ADDR_LE_PUBLIC, &conn_id))
     {
-        debug_print("\r\n[%s] get public add handle", __FUNCTION__);
+        debug_print("get public add handle \n");
         return conn_id;
     } else if(le_get_conn_id(mac, GAP_REMOTE_ADDR_LE_RANDOM, &conn_id))
     {
-        debug_print("\r\n[%s] get random add handle", __FUNCTION__);
+        debug_print("get random add handle \n");
         return conn_id;
     } 
     return conn_id;
@@ -311,29 +311,29 @@ void rtw_ble_server_adv_into_idle(void)
     {
     case GAP_ADV_STATE_ADVERTISING:
         {
-            debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
+            debug_print("ADV STATE : ADVERTISING \n");
             if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
             {
-                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                return;
+                debug_print("msg send fail \n");
+                return TRBLE_FAIL;
             }
         }
         break;
     case GAP_ADV_STATE_START:
         {
             do {   
-                debug_print("\r\n[%s] ADV STATE : START", __FUNCTION__);
+                debug_print("ADV STATE : START \n");
                 os_delay(100);
                 le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
             } while(new_state.gap_adv_state == GAP_ADV_STATE_START);
 
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
-                debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
+                debug_print("ADV STATE : ADVERTISING \n");
                 if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
                 {
-                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                    return;
+                    debug_print("msg send fail \n");
+                    return TRBLE_FAIL;
                 }
             }
         }
@@ -341,18 +341,18 @@ void rtw_ble_server_adv_into_idle(void)
     case GAP_ADV_STATE_STOP:
         {
             do {   
-                debug_print("\r\n[%s] ADV STATE : STOPPING", __FUNCTION__);
+                debug_print("ADV STATE : STOPPING \n");
                 os_delay(100);
                 le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
             } while(new_state.gap_adv_state == GAP_ADV_STATE_STOP);
 
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
-                debug_print("\r\n[%s] ADV STATE : ADVERTISING", __FUNCTION__);
+                debug_print("ADV STATE : ADVERTISING \n");
                 if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
                 {
-                    debug_print("\r\n[%s] msg send fail", __FUNCTION__);
-                    return;
+                    debug_print("msg send fail \n");
+                    return TRBLE_FAIL;
                 }
             }            
         }
@@ -362,12 +362,12 @@ void rtw_ble_server_adv_into_idle(void)
     }
 
     do {   
-        debug_print("\r\n[%s] Waiting for adv idle", __FUNCTION__);
+        debug_print("Waiting for adv idle \n");
         os_delay(100);
         le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
     } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
 
-    debug_print("\r\n[%s] ADV STATE : IDLE", __FUNCTION__);
+    debug_print("ADV STATE : IDLE \n");
 }
 
 /* Set Advertisement Data API */
@@ -384,9 +384,9 @@ trble_result_e rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
     if(GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_ADV_DATA, length, (void *)data))
     {
         le_adv_update_param();
-        debug_print("\r\n[%s] Set adv data success", __FUNCTION__);
+        debug_print("Set adv data success \n");
     } else {
-        debug_print("\r\n[%s] Set adv data fail!!!", __FUNCTION__);
+        debug_print("Set adv data fail!!! \n");
         return TRBLE_FAIL;
     }
 
@@ -408,9 +408,9 @@ trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
     if(GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, length, (void *)data))
     {    
         le_adv_update_param();
-        debug_print("\r\n[%s] Set adv name success", __FUNCTION__);
+        debug_print("Set adv name success \n");
     } else {
-        debug_print("\r\n[%s] Set adv name fail!!!", __FUNCTION__);
+        debug_print("Set adv name fail!!! \n");
         return TRBLE_FAIL;
     }
 
@@ -460,7 +460,7 @@ trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle)
 
     if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DISCONNECT, NULL) == false)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
 
@@ -488,11 +488,11 @@ trble_result_e rtw_ble_server_start_adv(void)
     {
         if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
         {
-            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+            debug_print("msg send fail \n");
             return TRBLE_FAIL;
         }
         do {   
-            debug_print("\r\n[%s] Waiting for adv stop", __FUNCTION__);
+            debug_print("Waiting for adv stop \n");
             os_delay(100);
             le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
@@ -500,12 +500,12 @@ trble_result_e rtw_ble_server_start_adv(void)
 
     if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL) == false)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
     do
     {   
-        debug_print("\r\n[%s] Waiting for adv start", __FUNCTION__);
+        debug_print("Waiting for adv start \n");
         os_delay(100);
         le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
     } while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
@@ -523,11 +523,11 @@ trble_result_e rtw_ble_server_stop_adv(void)
     else {
         if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_STOP_ADV, NULL) == false)
         {
-            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+            debug_print("msg send fail \n");
             return TRBLE_FAIL;
         }
         do {
-            debug_print("\r\n[%s] Waiting for adv stop", __FUNCTION__);
+            debug_print("Waiting for adv stop \n");
             os_delay(100);
             le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
@@ -539,14 +539,14 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
 {
     if(bonded_device_list == NULL || device_count == NULL)
     {
-        debug_print("\r\n[%s] Invalid input", __FUNCTION__);
+        debug_print("Invalid input \n");
         return TRBLE_INVALID_ARGS;
     }
 
     T_LE_KEY_ENTRY *p_entry;
     *device_count = 0;
     uint16_t bonded_num = le_get_bond_dev_num();
-    debug_print("\r\n[%s] bonded num : %d", __FUNCTION__, bonded_num);
+    debug_print("bonded num : %d \n", bonded_num);
     for (int i = 0; i < bonded_num; i++)
     {
         p_entry = le_find_key_entry_by_idx(i);
@@ -555,7 +555,7 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
             memcpy(bonded_device_list[*device_count].bd_addr.mac, p_entry->remote_bd.addr, TRBLE_BD_ADDR_MAX_LEN);
             bonded_device_list[*device_count].bd_addr.type = p_entry->remote_bd.remote_bd_type;
             (*device_count)++;
-            debug_print("\r\nbond_dev[%d]: bd 0x%02x%02x%02x%02x%02x%02x, addr_type %d",
+            debug_print("bond_dev[%d]: bd 0x%02x%02x%02x%02x%02x%02x, addr_type %d \n",
                             p_entry->idx,
                             p_entry->remote_bd.addr[5],
                             p_entry->remote_bd.addr[4],
@@ -573,7 +573,7 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
 {
     if(bond_addr == NULL)
     {
-        debug_print("\r\n[%s] Invalid input", __FUNCTION__);
+        debug_print("Invalid input \n");
         return TRBLE_INVALID_ARGS;
     }
 
@@ -581,7 +581,7 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
     T_TIZENRT_SERVER_DELETE_BOND_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_SERVER_DELETE_BOND_PARAM));
     if(param == NULL)
     {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
     memcpy(param->bd_addr, bond_addr, TRBLE_BD_ADDR_MAX_LEN);
@@ -589,7 +589,7 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
     if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DELETE_BOND, param) == false)
     {
         os_mem_free(param);
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
 
@@ -599,11 +599,11 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
 
     if(GAP_CAUSE_SUCCESS == param->result)
     {
-        debug_print("\r\n[%s] success", __FUNCTION__);
+        debug_print("success \n");
         ret = TRBLE_SUCCESS;
     } else if(GAP_CAUSE_NOT_FIND == param->result)
     {
-        debug_print("\r\n[%s] not find", __FUNCTION__);
+        debug_print("not find \n");
         ret = TRBLE_NOT_FOUND;
     }
     os_mem_free(param);
@@ -615,7 +615,7 @@ trble_result_e rtw_ble_server_delete_bonded_device_all(void)
 {
     if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DELETE_BOND_ALL, NULL) == false)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;
@@ -635,7 +635,7 @@ trble_result_e rtw_ble_server_set_adv_type(trble_adv_type_e type, trble_addr *ad
 {
     if(type == TRBLE_ADV_TYPE_DIRECT && addr == NULL)
     {
-        debug_print("\r\n[%s] Invalid Input", __FUNCTION__);
+        debug_print("Invalid Input \n");
         return TRBLE_INVALID_ARGS;
     }
 

@@ -25,7 +25,7 @@ bool ble_tizenrt_set_server_reject(trble_attr_handle abs_handle, uint8_t app_err
                 if(abs_handle == tizenrt_ble_srv_database[i].chrc_info[j].abs_handle)
                 {
                     tizenrt_ble_srv_database[i].chrc_info[j].app_reject = ATT_ERR | app_errorcode;
-                    debug_print("\r\n[%s] abs_handle = 0x%x app_reject = 0x%x", __FUNCTION__, abs_handle, 
+                    debug_print("abs_handle = 0x%x app_reject = 0x%x \n", abs_handle, 
                                                 tizenrt_ble_srv_database[i].chrc_info[j].app_reject);
                      return true;
                 }
@@ -50,7 +50,7 @@ bool tizenrt_ble_service_send_notify(uint8_t conn_id, uint16_t abs_handle, uint8
         }
     }
     /* send notification to client */
-    debug_print("\r\n[%s] service_id %d index = 0x%x, value = 0x%x len = 0x%x", __FUNCTION__,
+    debug_print("service_id %d index = 0x%x, value = 0x%x len = 0x%x \n",
                                         service_id, cha_index, *p_value, length);
     return server_send_data(conn_id, service_id, cha_index, p_value,
                             length, GATT_PDU_TYPE_NOTIFICATION);
@@ -73,7 +73,7 @@ void tizenrt_ble_service_cccd_update_cb(uint8_t conn_id, T_SERVER_ID service_id,
                 if(attrib_index == tizenrt_ble_srv_database[i].chrc_info[j].index)
                 {
                     callback_data.att_index = j;
-                    debug_print("\r\n[%s] Attribute 0x%x cccbits 0x%x cb %p srv_index %d cha_index 0x%x", __FUNCTION__,
+                    debug_print("Attribute 0x%x cccbits 0x%x cb %p srv_index %d cha_index 0x%x \n",
                                                                     tizenrt_ble_srv_database[i].chrc_info[j].abs_handle,
                                                                     cccbits, tizenrt_ble_srv_database[i].chrc_info[j].cb,
                                                                     i, j);
@@ -122,7 +122,7 @@ T_APP_RESULT tizenrt_ble_service_attr_write_cb(uint8_t conn_id, T_SERVER_ID serv
                         callback_data.att_index = j;
                         memcpy(p_char_info->data, p_value, length);
                         p_char_info->data_len = length;
-                        debug_print("\r\n[%s] service_id %d index 0x%x att_index %d abs_handle 0x%x data 0x", __FUNCTION__,
+                        debug_print("service_id %d index 0x%x att_index %d abs_handle 0x%x data 0x \n",
                                                                 service_id, attrib_index, j,
                                                                 p_char_info->abs_handle);
                         for (int k = 0; k < p_char_info->data_len; k++)
@@ -142,7 +142,7 @@ T_APP_RESULT tizenrt_ble_service_attr_write_cb(uint8_t conn_id, T_SERVER_ID serv
 
     if(p_char_info->app_reject)
     {
-        debug_print("\r\n[%s] app_reject = 0x%x", __FUNCTION__, p_char_info->app_reject);
+        debug_print("app_reject = 0x%x \n", p_char_info->app_reject);
         return p_char_info->app_reject;
     }
     return cause;
@@ -155,7 +155,7 @@ T_APP_RESULT  tizenrt_ble_service_attr_read_cb(uint8_t conn_id, T_SERVER_ID serv
     (void)offset;
     T_APP_RESULT  cause  = APP_RESULT_SUCCESS;
 
-    debug_print("\r\n[%s] service_id %d index 0x%x", __FUNCTION__, service_id, attrib_index);
+    debug_print("service_id %d index 0x%x \n", service_id, attrib_index);
 
     TIZENRT_CALLBACK_DATA callback_data;
     TIZENERT_CHA_INFO *p_char_info = NULL;
@@ -173,13 +173,13 @@ T_APP_RESULT  tizenrt_ble_service_attr_read_cb(uint8_t conn_id, T_SERVER_ID serv
                 {   
                     p_char_info = &tizenrt_ble_srv_database[i].chrc_info[j];
                     callback_data.att_index = j;
-                    debug_print("\r\n[%s] att_index %d abs_handle 0x%x", __FUNCTION__, 
+                    debug_print("att_index %d abs_handle 0x%x \n", 
                                 callback_data.att_index, p_char_info->abs_handle);
                 }
             }
         }
     }
-    
+
     if (tizenet_ble_service_cb)
     {
         tizenet_ble_service_cb(service_id, (void *)&callback_data);
@@ -187,8 +187,8 @@ T_APP_RESULT  tizenrt_ble_service_attr_read_cb(uint8_t conn_id, T_SERVER_ID serv
     *pp_value = p_char_info->read_ptr;
     *p_length = p_char_info->read_len;
 
-    debug_print("\r\n[%s] p_char_info->data %p ", __FUNCTION__, p_char_info->data);
-    debug_print("\r\n[%s] pp_value %p ", __FUNCTION__, *pp_value);
+    debug_print("p_char_info->data %p  \n", p_char_info->data);
+    debug_print("pp_value %p \n", *pp_value);
     for (int i = 0; i < *p_length; i++)
     {
         debug_print("%x", *(*pp_value + i));
@@ -199,7 +199,7 @@ T_APP_RESULT  tizenrt_ble_service_attr_read_cb(uint8_t conn_id, T_SERVER_ID serv
     }
     if(p_char_info->app_reject)
     {
-        debug_print("\r\n[%s] app_reject = 0x%x", __FUNCTION__, p_char_info->app_reject);
+        debug_print("app_reject = 0x%x \n", p_char_info->app_reject);
         return p_char_info->app_reject;
     }
     return (cause);
@@ -219,7 +219,7 @@ T_SERVER_ID tizenrt_add_service(void *p_func, uint8_t index)
     uint16_t tizenrt_attr_tbl_size = tizenrt_ble_srv_database[index].att_count * sizeof(T_ATTRIB_APPL);
     uint16_t tizenrt_attr_start_handle = tizenrt_ble_srv_database[index].start_handle;
 #if 0
-    debug_print("\r\n[%s] tizenrt_ble_srv_database[%d].abs_handle = %d tizenrt_attr_tbl_cnt = %d ", __FUNCTION__,
+    debug_print("tizenrt_ble_srv_database[%d].abs_handle = %d tizenrt_attr_tbl_cnt = %d \n",
                                                 index,
                                                 tizenrt_ble_srv_database[index].abs_handle,
                                                 tizenrt_ble_srv_database[index].att_count);
@@ -228,7 +228,7 @@ T_SERVER_ID tizenrt_add_service(void *p_func, uint8_t index)
                                     tizenrt_attr_tbl_size,
                                     tizenrt_ble_service_cbs))
 #else
-    debug_print("\r\n[%s] tizenrt_ble_srv_database[%d].abs_handle = %d tizenrt_attr_tbl_size = %d start_handle = 0x%x", __FUNCTION__,
+    debug_print("tizenrt_ble_srv_database[%d].abs_handle = %d tizenrt_attr_tbl_size = %d start_handle = 0x%x \n",
                                                 index,
                                                 tizenrt_ble_srv_database[index].abs_handle,
                                                 tizenrt_attr_tbl_size,
@@ -240,13 +240,13 @@ T_SERVER_ID tizenrt_add_service(void *p_func, uint8_t index)
                                     tizenrt_attr_start_handle))
 #endif
     {
-        printf("\r\n[%s] add service fail", __FUNCTION__);
+        dbg("add service fail \n");
         service_id = 0xff;
         return service_id;
     }
     tizenet_ble_service_cb = (P_FUN_SERVER_GENERAL_CB) p_func;
     tizenrt_ble_srv_database[index].srv_id = service_id;
-    printf("\r\n[%s] add service %d success", __FUNCTION__, service_id);
+    dbg("add service %d success \n", service_id);
     return service_id;
 }
 
@@ -257,7 +257,7 @@ bool setup_ble_srv_info(uint8_t service_index, trble_gatt_t *profile)
     tizenrt_ble_srv_database[service_index].att_count++;
     tizenrt_ble_srv_database[service_index].abs_handle = abs_att_count++;
 
-    debug_print("\r\n[%s] tizenrt_ble_srv_database[%d].abs_handle = 0x%x", __FUNCTION__,
+    debug_print("tizenrt_ble_srv_database[%d].abs_handle = 0x%x \n",
                                     service_index,
                                     tizenrt_ble_srv_database[service_index].abs_handle);
     return true;
@@ -283,7 +283,7 @@ bool setup_ble_char_info(uint8_t service_index, uint8_t character_index, trble_g
     tizenrt_ble_srv_database[service_index].chrc_info[character_index].read_len = 0;
     tizenrt_ble_srv_database[service_index].chrc_info[character_index].data = tizenrt_ble_write_value;
     tizenrt_ble_srv_database[service_index].chrc_info[character_index].data_len = 0;
-    debug_print("\r\n[%s] tizenrt_ble_srv_database[%d].chrc_info[%d].abs_handle 0x%x .cb %p .index %d ", __FUNCTION__,
+    debug_print("tizenrt_ble_srv_database[%d].chrc_info[%d].abs_handle 0x%x .cb %p .index %d \n",
                             service_index,
                             character_index,
                             tizenrt_ble_srv_database[service_index].chrc_info[character_index].abs_handle,
@@ -303,7 +303,7 @@ static int setup_ble_char_ccc_attr(T_ATTRIB_APPL *attr, uint16_t cccd, uint16_t 
     attr->value_len     = 2;
     attr->p_value_context = NULL;
     attr->permissions   = GATT_PERM_READ | GATT_PERM_WRITE;
-    debug_print("\r\n[%s] cccd = 0x%x ", __FUNCTION__, cccd);
+    debug_print("cccd = 0x%x \n", cccd);
     return 0;
 }
 
@@ -338,19 +338,19 @@ static int setup_ble_char_val_attr(T_ATTRIB_APPL *attr, uint8_t *uuid, uint8_t p
     {
         attr->flags = ATTRIB_FLAG_UUID_128BIT | ATTRIB_FLAG_VALUE_APPL;
         memcpy(attr->type_value, uuid, 16);
-        debug_print("\r\n[%s] char_val_uuid 0x", __FUNCTION__);
+        debug_print("char_val_uuid 0x \n");
         for(uint16_t i = 0; i < 16; i++)
             debug_print("%x", attr->type_value[i]);
-        debug_print(" permission = 0x%x ", attr->permissions);
+        debug_print(" permission = 0x%x \n", attr->permissions);
     } else {
         attr->flags = ATTRIB_FLAG_VALUE_APPL;
         attr->type_value[0] = uuid[0];
         attr->type_value[1] = uuid[1];
-        debug_print("\r\n[%s] char_val_uuid = 0x%x%x", __FUNCTION__, uuid[0], uuid[1]);
+        debug_print("char_val_uuid = 0x%x%x \n", uuid[0], uuid[1]);
     }
     attr->value_len = 0; 
     attr->p_value_context = NULL;
-    
+
     return 0;
 }
 
@@ -363,7 +363,7 @@ static int setup_ble_char_dec_attr(T_ATTRIB_APPL *attr, uint8_t *uuid, uint8_t p
     attr->value_len     = 1;
     attr->p_value_context = NULL;
     attr->permissions   = GATT_PERM_READ;
-    debug_print("\r\n[%s] set characteristic declartion ", __FUNCTION__);
+    debug_print("set characteristic declartion \n");
     return 0;
 }
 
@@ -376,7 +376,7 @@ static int setup_ble_service_attr(T_ATTRIB_APPL *attr, uint8_t *uuid, uint16_t u
         attr->flags = ATTRIB_FLAG_LE | ATTRIB_FLAG_VOID;
         attr->p_value_context = uuid;
         attr->value_len = uuid_length;
-        debug_print("\r\n[%s] srv_uuid 0x", __FUNCTION__);
+        debug_print("srv_uuid 0x \n");
         for(uint16_t i = 0; i < 16; i++)
             debug_print("%x", *(((uint8_t *)attr->p_value_context)+i));
     } else {
@@ -385,10 +385,9 @@ static int setup_ble_service_attr(T_ATTRIB_APPL *attr, uint8_t *uuid, uint16_t u
         attr->type_value[3] = uuid[1];
         attr->value_len = 2;
         attr->p_value_context = NULL;
-        debug_print("\r\n[%s] srv_uuid 0x%x%x ", __FUNCTION__, uuid[0], uuid[1]);
+        debug_print("srv_uuid 0x%x%x \n", uuid[0], uuid[1]);
     }
-    
-    
+
     attr->permissions   = GATT_PERM_READ;
     return 0;
 }
@@ -396,7 +395,7 @@ static int setup_ble_service_attr(T_ATTRIB_APPL *attr, uint8_t *uuid, uint16_t u
 extern uint16_t server_profile_count;
 bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
 {
-    debug_print("\r\n[%s] tizenrt_ble_service_tbl profile %p profile_count %d", __FUNCTION__, profile, profile_count);
+    debug_print("tizenrt_ble_service_tbl profile %p profile_count %d \n", profile, profile_count);
     abs_att_count = 0;
     tizenrt_ble_service_tbl = (T_ATTRIB_APPL *)os_mem_alloc(0, profile_count * sizeof(T_ATTRIB_APPL));
     memset(tizenrt_ble_service_tbl, 0, profile_count * sizeof(T_ATTRIB_APPL));
@@ -409,7 +408,7 @@ bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
         {
             srv_index = tizenrt_ble_srv_count++;    /* add the service counter */
             char_index = 0;     /* clr the char_index when begain parse a new service */
-            debug_print("\r\n[%s] Parse service decleration", __FUNCTION__);
+            debug_print("Parse service decleration \n");
             setup_ble_service_attr(&tizenrt_ble_service_tbl[j++], profile[i].uuid ,profile[i].uuid_length);
             setup_ble_srv_info(srv_index, &profile[i]);
         } else if(profile[i].type ==  TRBLE_GATT_CHARACT) 
@@ -425,7 +424,7 @@ bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
             char_index++;
         }
     }
-    debug_print("\r\n[%s] tizenrt_ble_srv_count = %d", __FUNCTION__, tizenrt_ble_srv_count);
-    debug_print("\r\n[%s] Init Success", __FUNCTION__);
+    debug_print("tizenrt_ble_srv_count = %d \n", tizenrt_ble_srv_count);
+    debug_print("Init Success \n");
     return true;
 }

@@ -50,14 +50,14 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
 
     client_init_parm = os_mem_alloc(0, sizeof(trble_client_init_config));
     if (client_init_parm == NULL) {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
     ble_tizenrt_bond_req_info = os_mem_alloc(0, sizeof(BLE_TIZENRT_BOND_REQ));
     if (ble_tizenrt_bond_req_info == NULL) {
         os_mem_free(client_init_parm);
         client_init_parm = NULL;
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
 
@@ -66,10 +66,10 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
     ble_app_link_table_size = BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS;
     memset(ble_tizenrt_bond_req_info, 0, sizeof(BLE_TIZENRT_BOND_REQ));
     ble_read_results = ble_tizenrt_scatternet_read_results;
-    ble_app_link_table = (BLE_TIZENRT_APP_LINK *)ble_tizenrt_scatternet_app_link_table;
+    ble_app_link_table = ble_tizenrt_scatternet_app_link_table;
     ble_tizenrt_client_send_msg = ble_tizenrt_scatternet_send_msg;
     ble_tizenrt_server_send_msg = ble_tizenrt_scatternet_send_msg;
-    
+
     //init client
     client_init_parm->trble_scan_state_changed_cb = init_client->trble_scan_state_changed_cb;
     client_init_parm->trble_device_scanned_cb = init_client->trble_device_scanned_cb;

@@ -60,7 +60,7 @@ struct {
  *============================================================================*/
 int ble_tizenrt_app_handle_upstream_msg(uint16_t subtype, void *pdata)
 {
-    debug_print("\r\n[%s] subtype = 0x%x", __FUNCTION__, subtype);
+    debug_print("subtype = 0x%x \n", subtype);
 	int ret = 0;
     
 	switch (subtype) {
@@ -68,9 +68,9 @@ int ble_tizenrt_app_handle_upstream_msg(uint16_t subtype, void *pdata)
         {
             ret = le_adv_start();
             if(GAP_CAUSE_SUCCESS == ret)
-                debug_print("\r\n[Upstream] Start Adv Success", __FUNCTION__);
+                debug_print("[Upstream] Start Adv Success \n");
             else
-                debug_print("\r\n[Upstream] Start Adv Fail !!", __FUNCTION__);   
+                debug_print("[Upstream] Start Adv Fail !! \n");
         }
 			break;
 		case BLE_TIZENRT_MSG_STOP_ADV:
@@ -84,16 +84,16 @@ int ble_tizenrt_app_handle_upstream_msg(uint16_t subtype, void *pdata)
             T_TIZENRT_NOTIFY_PARAM *param = pdata;
             if(param)
             {
-                debug_print("\r\n[%s] conn_id %d abs_handle 0x%x data %p", __FUNCTION__,
+                debug_print("conn_id %d abs_handle 0x%x data %p \n",
                                             param->conn_id, param->att_handle, param->data);
                 if(tizenrt_ble_service_send_notify(param->conn_id, param->att_handle, param->data, param->len))
-                    debug_print("\r\n[%s] success : subtype = 0x%x", __FUNCTION__, subtype);
+                    debug_print("success : subtype = 0x%x \n", subtype);
                 else
-                    debug_print("\r\n[%s] fail : subtype = 0x%x", __FUNCTION__, subtype);
+                    debug_print("fail : subtype = 0x%x \n", subtype);
                 os_mem_free(param->data);
                 os_mem_free(param);
             } else {
-                debug_print("\n[%s] Notify parameter is NULL", __FUNCTION__);
+                debug_print("Notify parameter is NULL \n");
             }
         }
 			break;
@@ -107,13 +107,13 @@ int ble_tizenrt_app_handle_upstream_msg(uint16_t subtype, void *pdata)
                     param->result = le_bond_delete_by_bd(param->bd_addr, GAP_REMOTE_ADDR_LE_RANDOM);
                 param->flag = true;
             } else {
-                debug_print("\n[%s] Delete_bond parameter is NULL", __FUNCTION__);
+                debug_print("Delete_bond parameter is NULL \n");
             }
         }
             break;
         case BLE_TIZENRT_MSG_DELETE_BOND_ALL:
         {
-            debug_print("\r\n[%s] le_bond_clear_all_keys", __FUNCTION__);
+            debug_print("le_bond_clear_all_keys \n");
             le_bond_clear_all_keys();
         }
             break;
@@ -138,14 +138,14 @@ bool ble_tizenrt_send_msg(uint16_t sub_type, void *arg)
 
     if (ble_tizenrt_evt_queue_handle != NULL && ble_tizenrt_io_queue_handle != NULL) {
         if (os_msg_send(ble_tizenrt_io_queue_handle, &io_msg, 0) == false) {
-            printf("\r\n[%s] send msg fail !!! type = 0x%x", __FUNCTION__, io_msg.subtype);
+            dbg("send msg fail !!! type = 0x%x \n", io_msg.subtype);
             return false;
         } else if (os_msg_send(ble_tizenrt_evt_queue_handle, &event, 0) == false) {
-            printf("\r\n[%s] send evt fail !!! type = 0x%x", __FUNCTION__, io_msg.subtype);
+            dbg("send evt fail !!! type = 0x%x \n", io_msg.subtype);
             return false;
         }
     }
-    debug_print("\r\n[%s] success : subtype = 0x%x", __FUNCTION__, sub_type);
+    debug_print("success : subtype = 0x%x \n", sub_type);
     return true;
 }
 
@@ -159,7 +159,7 @@ void ble_tizenrt_app_handle_gap_msg(T_IO_MSG  *p_gap_msg);
  */
 void ble_tizenrt_app_handle_io_msg(T_IO_MSG io_msg)
 {
-    debug_print("\r\n[%s] io_msg.type = 0x%x", __FUNCTION__, io_msg.type);
+    debug_print("io_msg.type = 0x%x \n", io_msg.type);
     uint16_t msg_type = io_msg.type;
     uint16_t subtype;
 	void *arg = NULL;
@@ -186,22 +186,22 @@ void ble_tizenrt_app_handle_io_msg(T_IO_MSG io_msg)
 extern trble_server_init_config server_init_parm;
 void  ble_tizenrt_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
-    debug_print("\r\n[%s] msg type: 0x%x", __FUNCTION__, callback_msg.type);
+    debug_print("msg type: 0x%x \n", callback_msg.type);
     switch (callback_msg.type) {
         case BLE_TIZENRT_CALLBACK_TYPE_CONN:
         {
             T_TIZENRT_CONNECTED_CALLBACK_DATA *connected = callback_msg.u.buf;
             if(connected != NULL && server_init_parm.connected_cb)
             {
-                debug_print("\r\n[%s] cb %p conn_id 0x%x conn_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x",
-                                __FUNCTION__, server_init_parm.connected_cb,
+                debug_print("cb %p conn_id 0x%x conn_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x \n",
+                                server_init_parm.connected_cb,
                                 connected->conn_id, connected->conn_type,
                                 connected->remote_bd[0], connected->remote_bd[1], connected->remote_bd[2],
                                 connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
                 trble_server_connected_t p_func = server_init_parm.connected_cb;
                 p_func(connected->conn_id, connected->conn_type, connected->remote_bd);
             } else {
-                debug_print("\r\n[%s] NULL connected callback", __FUNCTION__);
+                debug_print("NULL connected callback \n");
             }
             os_mem_free(connected);
         }
@@ -211,11 +211,11 @@ void  ble_tizenrt_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
             T_TIZENRT_PROFILE_CALLBACK_DATA *profile = callback_msg.u.buf;
             if(profile != NULL && profile->cb)
             {
-                debug_print("\r\n[%s] Profile callback", __FUNCTION__);
+                debug_print("Profile callback \n");
                 trble_server_cb_t pfunc = profile->cb;
                 pfunc(profile->type, profile->conn_id, profile->att_handle, profile->arg);
             } else {
-                debug_print("\r\n[%s] NULL profile callback", __FUNCTION__);
+                debug_print("NULL profile callback \n");
             }
             os_mem_free(profile);
         }
@@ -233,13 +233,13 @@ bool ble_tizenrt_send_callback_msg(uint16_t type, void *arg)
     callback_msg.u.buf = arg;
     if (ble_tizenrt_callback_queue_handle != NULL) {
 		if (os_msg_send(ble_tizenrt_callback_queue_handle, &callback_msg, 0) == false) {
-			printf("\r\n[%s] fail!!! msg_type 0x%x", __FUNCTION__, callback_msg.type);
+            dbg("fail!!! msg_type 0x%x \n", callback_msg.type);
             return false;
 		} else {
-            debug_print("\r\n[%s] success msg_type 0x%x", __FUNCTION__, callback_msg.type);
+            debug_print("success msg_type 0x%x \n", callback_msg.type);
         }
 	} else {
-        debug_print("\r\n[%s] ble_tizenrt_callback_queue_handle is NULL", __FUNCTION__);
+        debug_print("ble_tizenrt_callback_queue_handle is NULL \n");
         return false;
     }
     return true;
@@ -254,13 +254,13 @@ bool ble_tizenrt_send_callback_msg(uint16_t type, void *arg)
  */
 void ble_tizenrt_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t cause)
 {
-    debug_print("\r\n[%s] init state %d, adv state %d, cause 0x%x", __FUNCTION__,
+    debug_print("init state %d, adv state %d, cause 0x%x \n",
                     new_state.gap_init_state, new_state.gap_adv_state, cause);
     if (ble_tizenrt_gap_dev_state.gap_init_state != new_state.gap_init_state)
     {
         if (new_state.gap_init_state == GAP_INIT_STATE_STACK_READY)
         {
-			printf("\n\r[BLE Tizenrt] GAP stack ready\n\r");
+            dbg("GAP stack ready \n");
             /*stack ready*/
         }
     }
@@ -271,16 +271,16 @@ void ble_tizenrt_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t ca
         {
             if (new_state.gap_adv_sub_state == GAP_ADV_TO_IDLE_CAUSE_CONN)
             {
-                printf("\r\n[BLE Tizenrt] GAP adv stoped: because connection created");
+                dbg("GAP adv stoped: because connection created \n");
             }
             else
             {
-                printf("\r\n[BLE Tizenrt] GAP adv stopped");
+                dbg("GAP adv stopped \n");
             }
         }
         else if (new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
         {
-            printf("\r\n[BLE Tizenrt] GAP adv start");
+            dbg("GAP adv start \n");
         }
     }
 
@@ -298,7 +298,7 @@ void ble_tizenrt_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t ca
  */
 void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new_state, uint16_t disc_cause)
 {
-    debug_print("\r\n[%s] conn_id %d old_state %d new_state %d, disc_cause 0x%x", __FUNCTION__,
+    debug_print("conn_id %d old_state %d new_state %d, disc_cause 0x%x \n",
                     conn_id, ble_tizenrt_gap_conn_state, new_state, disc_cause);
     switch (new_state)
     {
@@ -307,9 +307,9 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
             if ((disc_cause != (HCI_ERR | HCI_ERR_REMOTE_USER_TERMINATE))
                 && (disc_cause != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)))
             {
-                printf("\r\n[BLE Tizenrt] connection lost cause 0x%x", disc_cause);
+                dbg("connection lost cause 0x%x \n", disc_cause);
             }
-			printf("\r\n[BLE Tizenrt] BT Disconnected");
+            dbg("BT Disconnected \n");
 
             T_TIZENRT_CONNECTED_CALLBACK_DATA *disconn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
             if(disconn_data)
@@ -322,10 +322,10 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
                 if(ble_tizenrt_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, disconn_data) == false)
                 {
                     os_mem_free(disconn_data);
-                    debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                    debug_print("callback msg send fail \n");
                 }
             } else {
-                debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                debug_print("Memory allocation failed \n");
             }
         }
         break;
@@ -340,10 +340,10 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
             le_get_conn_param(GAP_PARAM_CONN_LATENCY, &conn_latency, conn_id);
             le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &conn_supervision_timeout, conn_id);
             le_get_conn_addr(conn_id, tizenrt_remote_bd_info.remote_bd, &tizenrt_remote_bd_info.remote_bd_type);
-            debug_print("\r\n[%s] GAP_CONN_STATE_CONNECTED:remote_bd %s, remote_addr_type %d, conn_interval 0x%x, conn_latency 0x%x, conn_supervision_timeout 0x%x",
-                                            __FUNCTION__, tizenrt_remote_bd_info.remote_bd, tizenrt_remote_bd_info.remote_bd_type,
+            debug_print("GAP_CONN_STATE_CONNECTED:remote_bd %s, remote_addr_type %d, conn_interval 0x%x, conn_latency 0x%x, conn_supervision_timeout 0x%x \n",
+                                            tizenrt_remote_bd_info.remote_bd, tizenrt_remote_bd_info.remote_bd_type,
                                             conn_interval, conn_latency, conn_supervision_timeout);
-			printf("\r\n[BLE Tizenrt] BT Connected");
+            dbg("BT Connected \n");
 
             T_TIZENRT_CONNECTED_CALLBACK_DATA *conn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
             if(conn_data)
@@ -351,17 +351,17 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
                 conn_data->conn_id = conn_id;
                 conn_data->conn_type = TRBLE_SERVER_LL_CONNECTED;
                 memcpy(conn_data->remote_bd, tizenrt_remote_bd_info.remote_bd, TRBLE_BD_ADDR_MAX_LEN);
-                debug_print("\r\n[%s] conn_id 0x%x cont_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x", __FUNCTION__,
+                debug_print("conn_id 0x%x cont_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x \n",
                                 conn_data->conn_id, conn_data->conn_type,
                                 conn_data->remote_bd[5], conn_data->remote_bd[4], conn_data->remote_bd[3],
                                 conn_data->remote_bd[2], conn_data->remote_bd[2], conn_data->remote_bd[0]);
                 if(ble_tizenrt_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, conn_data) == false)
                 {
                     os_mem_free(conn_data);
-                    debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                    debug_print("callback msg send fail \n");
                 }
             } else {
-                debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                debug_print("Memory allocation failed \n");
             }
         }
         break;
@@ -383,13 +383,13 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
  */
 void ble_tizenrt_app_handle_authen_state_evt(uint8_t conn_id, uint8_t new_state, uint16_t cause)
 {
-    debug_print("\r\n[%s] app_handle_authen_state_evt:conn_id %d, cause 0x%x", __FUNCTION__, conn_id, cause);
+    debug_print("app_handle_authen_state_evt:conn_id %d, cause 0x%x \n", conn_id, cause);
 
     switch (new_state)
     {
     case GAP_AUTHEN_STATE_STARTED:
         {
-            debug_print("\r\n[%s] app_handle_authen_state_evt: GAP_AUTHEN_STATE_STARTED", __FUNCTION__);
+            debug_print("app_handle_authen_state_evt: GAP_AUTHEN_STATE_STARTED \n");
         }
         break;
 
@@ -397,8 +397,8 @@ void ble_tizenrt_app_handle_authen_state_evt(uint8_t conn_id, uint8_t new_state,
         {
             if (cause == GAP_SUCCESS)
             {
-                printf("\r\n[BLE Tizenrt] Pair success");
-                debug_print("\r\n[%s] GAP_AUTHEN_STATE_COMPLETE pair success", __FUNCTION__);
+                dbg("Pair success \n");
+                debug_print("GAP_AUTHEN_STATE_COMPLETE pair success \n");
 
                 T_TIZENRT_CONNECTED_CALLBACK_DATA *authed_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
                 if(authed_data)
@@ -409,23 +409,23 @@ void ble_tizenrt_app_handle_authen_state_evt(uint8_t conn_id, uint8_t new_state,
                     if(ble_tizenrt_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, authed_data) == false)
                     {
                         os_mem_free(authed_data);
-                        debug_print("\r\n[%s] callback msg send fail", __FUNCTION__);
+                        debug_print("callback msg send fail \n");
                     }
                 } else {
-                    debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+                    debug_print("Memory allocation failed \n");
                 }
             }
             else
             {
-                printf("\r\n[BLE Tizenrt] Pair failed: cause 0x%x", cause);
-                debug_print("\r\n[%s] GAP_AUTHEN_STATE_COMPLETE pair failed", __FUNCTION__);
+                dbg("Pair failed: cause 0x%x \n", cause);
+                debug_print("GAP_AUTHEN_STATE_COMPLETE pair failed \n");
             }
         }
         break;
 
     default:
         {
-            printf("\r\n[%s] unknown newstate %d", __FUNCTION__, new_state);
+            dbg("unknown newstate %d \n", new_state);
         }
         break;
     }
@@ -440,7 +440,7 @@ void ble_tizenrt_app_handle_authen_state_evt(uint8_t conn_id, uint8_t new_state,
  */
 void ble_tizenrt_app_handle_conn_mtu_info_evt(uint8_t conn_id, uint16_t mtu_size)
 {
-    printf("\r\n[%s] conn_id %d, mtu_size %d", __FUNCTION__, conn_id, mtu_size);
+    dbg("conn_id %d, mtu_size %d \n", conn_id, mtu_size);
 }
 
 /**
@@ -464,20 +464,20 @@ void ble_tizenrt_app_handle_conn_param_update_evt(uint8_t conn_id, uint8_t statu
             le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &conn_interval, conn_id);
             le_get_conn_param(GAP_PARAM_CONN_LATENCY, &conn_slave_latency, conn_id);
             le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &conn_supervision_timeout, conn_id);
-            printf("\r\n[BLE Tizenrt] conn param update success:conn_interval 0x%x, conn_slave_latency 0x%x, conn_supervision_timeout 0x%x",
+            dbg("conn param update success:conn_interval 0x%x, conn_slave_latency 0x%x, conn_supervision_timeout 0x%x",
                             conn_interval, conn_slave_latency, conn_supervision_timeout);
         }
         break;
 
     case GAP_CONN_PARAM_UPDATE_STATUS_FAIL:
         {
-            printf("\r\n[BLE Tizenrt] conn param update failed: cause 0x%x", cause);	
+            dbg("conn param update failed: cause 0x%x \n", cause);	
         }
         break;
 
     case GAP_CONN_PARAM_UPDATE_STATUS_PENDING:
         {
-		    printf("\r\n[BLE Tizenrt] conn param update pending: conn_id %d\r\n", conn_id);
+            dbg("conn param update pending: conn_id %d \n", conn_id);
         }
         break;
 
@@ -499,7 +499,7 @@ void ble_tizenrt_app_handle_gap_msg(T_IO_MSG *p_gap_msg)
     uint8_t conn_id;
     memcpy(&gap_msg, &p_gap_msg->u.param, sizeof(p_gap_msg->u.param));
 
-    debug_print("\r\n[%s] subtype %d", __FUNCTION__, p_gap_msg->subtype);
+    debug_print("subtype %d \n", p_gap_msg->subtype);
     switch (p_gap_msg->subtype)
     {
     case GAP_MSG_LE_DEV_STATE_CHANGE:
@@ -544,7 +544,7 @@ void ble_tizenrt_app_handle_gap_msg(T_IO_MSG *p_gap_msg)
         {
             conn_id = gap_msg.msg_data.gap_bond_just_work_conf.conn_id;
             le_bond_just_work_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
-            printf("\r\n[%s] GAP_MSG_LE_BOND_JUST_WORK", __FUNCTION__);
+            dbg("GAP_MSG_LE_BOND_JUST_WORK \n");
         }
         break;
 
@@ -554,7 +554,7 @@ void ble_tizenrt_app_handle_gap_msg(T_IO_MSG *p_gap_msg)
             conn_id = gap_msg.msg_data.gap_bond_passkey_display.conn_id;
             le_bond_get_display_key(conn_id, &display_value);
             le_bond_passkey_display_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
-		    printf("\r\n[%s] GAP_MSG_LE_BOND_PASSKEY_DISPLAY:passkey %d", __FUNCTION__, display_value);
+            dbg("GAP_MSG_LE_BOND_PASSKEY_DISPLAY:passkey %d \n", display_value);
         }
         break;
 
@@ -563,14 +563,14 @@ void ble_tizenrt_app_handle_gap_msg(T_IO_MSG *p_gap_msg)
             uint32_t display_value = 0;
             conn_id = gap_msg.msg_data.gap_bond_user_conf.conn_id;
             le_bond_get_display_key(conn_id, &display_value);
-            printf("\r\n[%s] GAP_MSG_LE_BOND_USER_CONFIRMATION: passkey %d", __FUNCTION__, display_value);
+            dbg("GAP_MSG_LE_BOND_USER_CONFIRMATION: passkey %d \n", display_value);
         }
         break;
 
     case GAP_MSG_LE_BOND_PASSKEY_INPUT:
         {
             conn_id = gap_msg.msg_data.gap_bond_passkey_input.conn_id;
-		    printf("\r\n[%s] GAP_MSG_LE_BOND_PASSKEY_INPUT: conn_id %d", __FUNCTION__, conn_id);
+            dbg("GAP_MSG_LE_BOND_PASSKEY_INPUT: conn_id %d \n", conn_id);
         }
         break;
 #if F_BT_LE_SMP_OOB_SUPPORT
@@ -578,14 +578,14 @@ void ble_tizenrt_app_handle_gap_msg(T_IO_MSG *p_gap_msg)
         {
             uint8_t oob_data[GAP_OOB_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
             conn_id = gap_msg.msg_data.gap_bond_oob_input.conn_id;
-            printf("\r\n[%s] GAP_MSG_LE_BOND_OOB_INPUT", __FUNCTION__);
+            dbg("GAP_MSG_LE_BOND_OOB_INPUT \n");
             le_bond_set_param(GAP_PARAM_BOND_OOB_DATA, GAP_OOB_LEN, oob_data);
             le_bond_oob_input_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
         }
         break;
 #endif
     default:
-        printf("\r\n[%s] unknown subtype %d", __FUNCTION__, p_gap_msg->subtype);
+        dbg("unknown subtype %d \n", p_gap_msg->subtype);
         break;
     }
 }
@@ -610,24 +610,24 @@ T_APP_RESULT ble_tizenrt_app_gap_callback(uint8_t cb_type, void *p_cb_data)
     {
 #if F_BT_LE_4_2_DATA_LEN_EXT_SUPPORT
     case GAP_MSG_LE_DATA_LEN_CHANGE_INFO:
-        printf("\r\n[%s] GAP_MSG_LE_DATA_LEN_CHANGE_INFO: conn_id %d, tx octets 0x%x, max_tx_time 0x%x", __FUNCTION__,
+        dbg("GAP_MSG_LE_DATA_LEN_CHANGE_INFO: conn_id %d, tx octets 0x%x, max_tx_time 0x%x \n",
                         p_data->p_le_data_len_change_info->conn_id,
                         p_data->p_le_data_len_change_info->max_tx_octets,
                         p_data->p_le_data_len_change_info->max_tx_time);
         break;
 #endif
     case GAP_MSG_LE_MODIFY_WHITE_LIST:
-        printf("\r\n[%s] GAP_MSG_LE_MODIFY_WHITE_LIST: operation %d, cause 0x%x", __FUNCTION__,
+        dbg("GAP_MSG_LE_MODIFY_WHITE_LIST: operation %d, cause 0x%x \n",
                         p_data->p_le_modify_white_list_rsp->operation,
                         p_data->p_le_modify_white_list_rsp->cause);
         break;
 
     case GAP_MSG_LE_ADV_UPDATE_PARAM:
-        printf("\r\n[%s] GAP_MSG_LE_ADV_UPDATE_PARAM: cause 0x%x", __FUNCTION__,
+        dbg("GAP_MSG_LE_ADV_UPDATE_PARAM: cause 0x%x \n",
                         p_data->p_le_adv_update_param_rsp->cause);
         break;
     default:
-        debug_print("\r\n[%s] unhandled cb_type 0x%x", __FUNCTION__, cb_type);
+        debug_print("unhandled cb_type 0x%x \n", cb_type);
         break;
     }
     return result;
@@ -659,13 +659,12 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
         switch (p_param->eventId)
         {
         case PROFILE_EVT_SRV_REG_COMPLETE:
-            debug_print("\r\n[%s] PROFILE_EVT_SRV_REG_COMPLETE: result %d", __FUNCTION__,
+            debug_print("PROFILE_EVT_SRV_REG_COMPLETE: result %d \n",
                             p_param->event_data.service_reg_result);
             break;
 
         case PROFILE_EVT_SEND_DATA_COMPLETE:
-            debug_print("\r\n[%s] PROFILE_EVT_SEND_DATA_COMPLETE: conn_id %d, cause 0x%x, service_id %d, attrib_idx 0x%x, credits %d",
-                            __FUNCTION__,
+            debug_print("PROFILE_EVT_SEND_DATA_COMPLETE: conn_id %d, cause 0x%x, service_id %d, attrib_idx 0x%x, credits %d",
                             p_param->event_data.send_data_result.conn_id,
                             p_param->event_data.send_data_result.cause,
                             p_param->event_data.send_data_result.service_id,
@@ -673,11 +672,11 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                             p_param->event_data.send_data_result.credits);
             if (p_param->event_data.send_data_result.cause == GAP_SUCCESS)
             {
-                debug_print("\r\n[%s] PROFILE_EVT_SEND_DATA_COMPLETE success", __FUNCTION__);
+                debug_print("PROFILE_EVT_SEND_DATA_COMPLETE success \n");
             }
             else
             {
-                printf("\r\n[%s] PROFILE_EVT_SEND_DATA_COMPLETE failed", __FUNCTION__);
+                dbg("PROFILE_EVT_SEND_DATA_COMPLETE failed \n");
             }
             break;
 
@@ -692,27 +691,27 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
         {
         case SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION:
             {
-                debug_print("\r\n[%s] service_id 0x%x att_handle 0x%x", __FUNCTION__, 
+                debug_print("service_id 0x%x att_handle 0x%x \n", 
                                             tizenrt_ble_srv_database[p_tizenrt_cb_data->srv_index].srv_id, 
-                                            p_cha_info->abs_handle);                       
+                                            p_cha_info->abs_handle);
                 if(p_tizenrt_cb_data->val & GATT_CLIENT_CHAR_CONFIG_NOTIFY)
                 {
-                    printf("\r\n[%s] cccd 0x%x update : notify enable", __FUNCTION__, p_cha_info->abs_handle);
+                    dbg("cccd 0x%x update : notify enable \n", p_cha_info->abs_handle);
                 } else {
-                    printf("\r\n[%s] cccd 0x%x update : notify disable", __FUNCTION__, p_cha_info->abs_handle);
+                    dbg("cccd 0x%x update : notify disable \n", p_cha_info->abs_handle);
                 }
                 if(p_tizenrt_cb_data->val & GATT_CLIENT_CHAR_CONFIG_INDICATE)
                 {
-                    printf("\r\n[%s] cccd 0x%x update : indicate enable", __FUNCTION__, p_cha_info->abs_handle);
+                    dbg("cccd 0x%x update : indicate enable \n", p_cha_info->abs_handle);
                 } else {
-                    printf("\r\n[%s] cccd 0x%x update : indicate disable", __FUNCTION__, p_cha_info->abs_handle);
+                    dbg("cccd 0x%x update : indicate disable \n", p_cha_info->abs_handle);
                 }
                 break;
             }
 
         case SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE:
             {
-                debug_print("\r\n[%s] service_id 0x%x index 0x%x abs_handle 0x%x", __FUNCTION__, 
+                debug_print("service_id 0x%x index 0x%x abs_handle 0x%x \n", 
                                             tizenrt_ble_srv_database[p_tizenrt_cb_data->srv_index].srv_id,
                                             p_cha_info->index,
                                             p_cha_info->abs_handle);
@@ -723,14 +722,14 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                     p_func(TRBLE_ATTR_CB_READING, p_tizenrt_cb_data->conn_id,
                                                             p_cha_info->abs_handle, p_cha_info->arg);
                 } else {
-                    debug_print("\r\n[%s] NULL read callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);
+                    debug_print("NULL read callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                 }
                 break;
             }
 
         case SERVICE_CALLBACK_TYPE_WRITE_CHAR_VALUE:
             {
-                debug_print("\r\n[%s] service_id 0x%x Attribute 0x%x write_type %d len %d data 0x", __FUNCTION__,
+                debug_print("service_id 0x%x Attribute 0x%x write_type %d len %d data 0x \n",
                                 tizenrt_ble_srv_database[p_tizenrt_cb_data->srv_index].srv_id, 
                                 p_cha_info->abs_handle,
                                 p_tizenrt_cb_data->val,
@@ -750,7 +749,7 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                             p_func(TRBLE_ATTR_CB_WRITING, p_tizenrt_cb_data->conn_id,
                                                                     p_cha_info->abs_handle, p_cha_info->arg);
                         } else {
-                            debug_print("\r\n[%s] NULL write callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);
+                            debug_print("NULL write callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                         }
                         break;
                     }
@@ -763,14 +762,14 @@ T_APP_RESULT ble_tizenrt_app_profile_callback(T_SERVER_ID service_id, void *p_da
                             p_func(TRBLE_ATTR_CB_WRITING_NO_RSP, p_tizenrt_cb_data->conn_id,
                                                                     p_cha_info->abs_handle, p_cha_info->arg);
                         } else {
-                            debug_print("\r\n[%s] NULL write callback abs_handle 0x%x", __FUNCTION__, p_cha_info->abs_handle);
+                            debug_print("NULL write callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                         }
                         break;
                     }
                 default:
                     break;
                 }
-                break;                                         
+                break;
             }
 
         default:

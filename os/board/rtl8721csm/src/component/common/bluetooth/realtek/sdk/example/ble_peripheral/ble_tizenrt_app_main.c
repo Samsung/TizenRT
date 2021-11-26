@@ -38,6 +38,7 @@
 #include <tinyara/net/if/ble.h>
 #include <ble_tizenrt_service.h>
 #include <os_mem.h>
+
 /** @defgroup  PERIPH_DEMO_MAIN Peripheral Main
     * @brief Main file to initialize hardware and BT stack and start task scheduling
     * @{
@@ -89,7 +90,7 @@ void ble_tizenrt_app_le_gap_init(void)
     uint8_t  adv_filter_policy = GAP_ADV_FILTER_ANY;
 
     /* GAP Bond Manager parameters */
-    debug_print("\r\n[%s] is_secured_connect_allowed %d", __FUNCTION__, server_init_parm.is_secured_connect_allowed);
+    debug_print("is_secured_connect_allowed %d \n", server_init_parm.is_secured_connect_allowed);
     uint8_t  auth_pair_mode = (server_init_parm.is_secured_connect_allowed) ? GAP_PAIRING_MODE_PAIRABLE : GAP_PAIRING_MODE_NO_PAIRING;
     uint16_t auth_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
     uint8_t  auth_io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT;
@@ -129,7 +130,7 @@ void ble_tizenrt_app_le_gap_init(void)
     }
     /* register gap message callback */
     le_register_app_cb(ble_tizenrt_app_gap_callback);
-    debug_print("\r\n[%s] Init Done", __FUNCTION__);
+    debug_print("Init Done \n");
 }
 
 /**
@@ -150,7 +151,7 @@ void ble_tizenrt_app_le_profile_init(void)
         tizenrt_ble_srv_database[i].srv_id = tizenrt_add_service((void *)ble_tizenrt_app_profile_callback, i);
     }
     server_register_app_cb(ble_tizenrt_app_profile_callback);
-    debug_print("\r\n[%s] Init Done", __FUNCTION__);
+    debug_print("Init Done \n");
 }
 
 /**
@@ -166,7 +167,7 @@ int ble_tizenrt_app_main(void)
     ble_tizenrt_app_le_gap_init();
     ble_tizenrt_app_le_profile_init();
     ble_tizenrt_app_task_init();
-    debug_print("\r\n[%s] Init Done", __FUNCTION__);
+    debug_print("Init Done \n");
     return 0;
 }
 
@@ -178,7 +179,7 @@ int ble_tizenrt_app_init(void)
 	/* judge BLE central is already on */
 	le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
 	if (new_state.gap_init_state == GAP_INIT_STATE_STACK_READY) {
-        printf("\r\n[%s] BT Stack already on", __FUNCTION__);
+		dbg("BT Stack already on \n");
 		return 0;
 	}
 	else
@@ -194,7 +195,7 @@ int ble_tizenrt_app_init(void)
 
 	/*Start BT WIFI coexistence*/
 	wifi_btcoex_set_bt_on();
-    debug_print("\r\n[%s] Init Done", __FUNCTION__);
+	debug_print("Init Done \n");
 	return 0;
 }
 
@@ -209,14 +210,14 @@ void ble_tizenrt_app_deinit(void)
 	T_GAP_DEV_STATE state;
 	le_get_gap_param(GAP_PARAM_DEV_STATE , &state);
 	if (state.gap_init_state != GAP_INIT_STATE_STACK_READY) {
-		printf("[BLE Tizenrt]BT Stack is not running\n\r");
+		dbg("BT Stack is not running \n");
 	}
 #if F_BT_DEINIT
 	else {
 		bte_deinit();
 		bt_trace_uninit();
 		memset(&ble_tizenrt_gap_dev_state, 0, sizeof(T_GAP_DEV_STATE));
-		printf("[BLE Tizenrt]BT Stack deinitalized\n\r");
+		dbg("BT Stack deinitalized \n");
 	}
 #endif
     tizenrt_ble_srv_count = 0;

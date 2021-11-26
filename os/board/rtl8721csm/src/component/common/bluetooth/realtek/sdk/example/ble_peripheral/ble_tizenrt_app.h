@@ -27,6 +27,7 @@ extern "C" {
 #include <profile_server.h>
 #include <tinyara/net/if/ble.h>
 #include <tizenrt_ble_common.h>
+#include <osdep_service.h>
 /*============================================================================*
  *                              Variables
  *============================================================================*/
@@ -34,18 +35,8 @@ extern "C" {
 /*============================================================================*
  *                              Functions
  *============================================================================*/
-#define RTK_DEBUG_ON 0
-#if RTK_DEBUG_ON
-#define debug_print printf
-#else
-#if defined CONFIG_AMEBAD_BLE_SCATTERNET && CONFIG_AMEBAD_BLE_SCATTERNET
-extern void print_no_combo(const char* format, ...);
-#define debug_print print_no_combo
-#else
-extern void print_no_server(const char* format, ...);
-#define debug_print print_no_server
-#endif
-#endif
+#define debug_print blevdbg
+//#define CONFIG_DEBUG_SCAN_INFO
 
 typedef enum
 {
