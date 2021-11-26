@@ -475,13 +475,13 @@ exit:
 
 START_TEST_F(aes_selftest)
 {
-	ST_EXPECT_ASSERT(0, mbedtls_seclink_aes_self_test(1));
+	ST_ASSERT_EQ(0, mbedtls_seclink_aes_self_test(1));
 }
 END_TEST_F
 
 START_TEST_F(ecdsa_selftest)
 {
-	ST_EXPECT_ASSERT(0, 0);
+	ST_ASSERT_EQ(0, 0);
 }
 END_TEST_F
 
