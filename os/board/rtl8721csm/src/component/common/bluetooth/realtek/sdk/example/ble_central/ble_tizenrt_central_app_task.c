@@ -66,7 +66,7 @@ extern T_GAP_DEV_STATE ble_tizenrt_central_gap_dev_state;
  *============================================================================*/
 void ble_tizenrt_central_callback_task(void *p_param)
 {
-    debug_print("\r\n[%s] Task run", __FUNCTION__);
+    debug_print("Task run \n");
 
     (void)p_param;
     T_TIZENRT_APP_CALLBACK_MSG callback_msg;
@@ -75,7 +75,7 @@ void ble_tizenrt_central_callback_task(void *p_param)
     {
         if (os_msg_recv(ble_tizenrt_central_callback_queue_handle, &callback_msg, 0xFFFFFFFF) == true)
         {
-            debug_print("\r\n[%s] Recieve msg type 0x%x", __FUNCTION__, callback_msg.type);
+            debug_print("Recieve msg type 0x%x", callback_msg.type);
             ble_tizenrt_central_handle_callback_msg(callback_msg);
         }
     }
@@ -100,12 +100,12 @@ void ble_tizenrt_central_app_task_init()
                     BLE_TIZENRT_CENRTAL_CALLBACK_TASK_PRIORITY);
 
     if (os_sem_take(start_bt_stack_sem_handle, 0xFFFFFFFF) == true) {
-        debug_print("\r\n[%s] start_bt_stack_sem_handle take success", __FUNCTION__);
+        debug_print("start_bt_stack_sem_handle take success \n");
         gap_start_bt_stack(ble_tizenrt_central_evt_queue_handle, ble_tizenrt_central_io_queue_handle, BLE_TIZENRT_CENTRAL_MAX_NUMBER_OF_GAP_MESSAGE);
         os_sem_delete(start_bt_stack_sem_handle);
         start_bt_stack_sem_handle = NULL;
     }
-    debug_print("\r\n[%s] init success", __FUNCTION__);
+    debug_print("init success \n");
 }
 
 /**
@@ -120,9 +120,9 @@ void ble_tizenrt_central_app_main_task(void *p_param)
 
     if(os_sem_give(start_bt_stack_sem_handle))
     {
-        debug_print("\r\n[%s] start_bt_stack_sem_handle give success", __FUNCTION__);
+        debug_print("start_bt_stack_sem_handle give success \n");
     } else {
-        debug_print("\r\n[%s] start_bt_stack_sem_handle give success", __FUNCTION__);
+        debug_print("start_bt_stack_sem_handle give fail \n");
     }
 
     data_uart_init(ble_tizenrt_central_evt_queue_handle, ble_tizenrt_central_io_queue_handle);
@@ -139,7 +139,7 @@ void ble_tizenrt_central_app_main_task(void *p_param)
                 T_IO_MSG io_msg;
                 if (os_msg_recv(ble_tizenrt_central_io_queue_handle, &io_msg, 0) == true)
                 {
-                    debug_print("\r\n[%s] Recieve msg", __FUNCTION__);
+                    debug_print("Recieve msg \n");
                     ble_tizenrt_central_app_handle_io_msg(io_msg);
                 }
             }
