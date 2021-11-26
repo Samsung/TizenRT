@@ -44,7 +44,7 @@ Hardware Configuration > Board Selection -> Reset a board on assert status autom
 Device Drivers -> Block-to-character(BCH) Support
 ```
 
-## How to upload RAMDUMP-or-UserfsDUMP
+## How to upload RAMDUMP or UserfsDUMP
 ### In Linux
 With the DUMP Tool configured above, whenever the target board crashes because of an assert condition, it enters into PANIC mode, and displays the following message:
 ```
@@ -205,7 +205,7 @@ After you see this message, you can upload the ramdump by following the step bel
 ```
 Please enter COM port number & press enter : <ComPort>
 ```
-Once connection with the COM port is established, you will get following message:
+Once connection with the COM port is established, you will get following message:  
 --> Connection established.
 
 Now you can enter desired ramdump region from the options: (Multi-heap scenario)
@@ -262,32 +262,29 @@ Ramdump received successfully..!
 ```
 
 ## How to parse RAMDUMP
-DumpParser Script provides two interfaces: CUI and GUI
+TRAP Script provides two interfaces: CUI and GUI
 
-### DumpParser using CUI
+### TRAP using CUI
 
-#### To get call stack using RAM dump
-1. Run Ramdump Parser Script
+#### To display Debug Symbols/Crash point using assert logs
+1. Change the directory to trap
 ```
 cd $TIZENRT_BASEDIR/tools/trap/
 ```
-2. See the Output
-
-#### To display Debug Symbols/Crash point using assert logs
-1. Copy crash logs
-    First copy the crash logs to a file named log_file in tools/trap/`<log_file>`
-2. Run Script in tools/trap path
-    $ python3 ramdumpParser.py -e `<Elf path>` -t `<Log file path>`
+2. Copy crash logs  
+    First copy the crash logs to a file in tools/trap/`<log_file>`
+3. Run Ramdump Parser Script and see the Output  
+    $ python3 ramdumpParser.py -t `<Log file path>`
 
     ex)
-    $ python3 ramdumpParser.py -e ../../build/output/bin/app2_dbg -t ./log_file
+    $ python3 ramdumpParser.py -t ./log_file
 
 Example Call Stack Output for App crash is as follows:
 ```
 *************************************************************
 dump_file         : None
 log_file          : .log_file
-elf_file          : ../../../output/app2_dbg
+elf_file          : ../../build/output/bin/tinyara.axf
 *************************************************************
 
 Number of applicaions : 2
@@ -303,6 +300,7 @@ PC_value	 Symbol_address	  Symbol_name	File_name
 App Crash point is as follows:
 [ Caller - return address (LR) - of the function which has caused the crash ]
 
+App name          : app2
 symbol addr       : 0x000014e5
 function name     : main
 file              : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:113
@@ -311,6 +309,7 @@ App Crash point is as follows:
 [ Current location (PC) of assert ]
  - Exact crash point might be -4 or -8 bytes from the PC.
 
+App name          : app2
 symbol addr       : 0x000014d6
 function name     : main
 file              : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:129
@@ -328,13 +327,13 @@ PC_value	 Symbol_address	  Symbol_name	File_name
 ----------------------------------------------------------
 ```
 ex)
-$ python3 ramdumpParser.py -e ../../build/output/bin/tinyara -t ./log_file
+$ python3 ramdumpParser.py -t ./logs
 
 Example Call Stack Output for Kernel crash is as follows:
 ```
 *************************************************************
 dump_file         : None
-log_file          : ./log_file
+log_file          : ./logs
 elf_file          : ../../build/output/bin/tinyara.axf
 *************************************************************
 
@@ -373,14 +372,14 @@ PC_value	 Symbol_address	  Symbol_name	File_name
 ----------------------------------------------------------
 ```
 ex)
-$python3 ramdumpParser.py -e ../../build/output/bin/common_dbg -t ./log_file
+$python3 ramdumpParser.py -t ./log.txt
 
 Example Call Stack Output for Common Binary crash is as follows:
 ```
 *************************************************************
 dump_file         : None
-log_file          : ./log_file
-elf_file          : ../../build/output/bin/common_dbg
+log_file          : ./log.txt
+elf_file          : ../../build/output/bin/tinyara.axf
 *************************************************************
 
 Number of applicaions : 2
@@ -422,8 +421,76 @@ PC_value	 Symbol_address	  Symbol_name	File_name
 ----------------------------------------------------------
 
 ```
-### DumpParser using GUI
-The UI configuration of DumpParser is as follows
+#### To get call stack using RAM dump
+1. Enable memory dumps. Refer to [How to enable memory dumps](how-to-enable-memory-dumps)
+2. Get RAM dump using [How to upload RAMDUMP or UserfsDUMP](how-to-upload-ramdump-or-userfsdump) [Options 1- 7]
+3. Change the directory to trap.
+```
+cd $TIZENRT_BASEDIR/tools/trap/
+```
+4. [Optional] Copy crash logs if any  
+    First copy the crash logs to a file in tools/trap/`<log_file>`
+5. Run Ramdump Parser Script and see the Output  
+    $ python3 ramdumpParser.py -t `<Log file path>` -r `<Ramdump file path>`
+
+    ex)
+    $ python3 ramdumpParser.py -t ./log_file -r ../../ramdump_0x02023800_0x02110000.bin OR
+    $ python3 ramdumpParser.py -r ../../ramdump_0x02023800_0x02110000.bin
+
+Example Call Stack Output for Kernel crash is as follows:
+```
+*************************************************************
+dump_file         : ../../ramdump_0x02023800_0x02110000.bin
+log_file          : logs
+elf_file          : ../../build/output/bin/tinyara
+*************************************************************
+
+self.ram_base_addr 2023800
+self.ram_end_addr 2110000
+----------------------------------------------------------
+Kernel Crash point is as follows:
+[ Caller - return address (LR) - of the function which has caused the crash ]
+
+symbol addr       : 0x040cd264
+function name     : irqrestore
+file              : /root/tizenrt/os/include/arch/armv7-r/irq.h:414
+
+Kernel Crash point is as follows:
+[ Current location (PC) of assert ]
+ - Exact crash point might be -4 or -8 bytes from the PC.
+
+symbol addr       : 0x040d53cc
+function name     : test_func
+file              : /root/tizenrt/apps/examples/hello/hello_main.c:67
+
+--------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE --------------------------
+Dump_address	 Symbol_address	  Symbol_name	File_name
+0x40c9718	 0x40c94fc 	  up_assert	/root/tizenrt/os/include/assert.h:211
+0x40ebc72	 0x40ebbd8 	  __FUNCTION__.6146
+0x40ebbcb	 0x40ebbcb 	  __FUNCTION__.6135
+0x40cf4f8	 0x40cf4e0 	  lowsyslog	/root/tizenrt/os/include/syslog.h:251
+0x40c98e4	 0x40c98b0 	  arm_dataabort	/root/tizenrt/os/arch/arm/src/armv7-r/arm_dataabort.c:101
+0x40c98e4	 0x40c98b0 	  arm_dataabort	/root/tizenrt/os/arch/arm/src/armv7-r/arm_dataabort.c:101
+0x40c827c	 0x40c8220 	  arm_vectordata	/root/tizenrt/os/arch/arm/src/armv7-r/arm_vectors.S:498
+0x40cc1d4	 0x40cc18c 	  task_start	/root/tizenrt/os/kernel/task/task_start.c:133
+0x40d3c30	 0x40d3c2c 	  hello_main	/root/tizenrt/apps/examples/hello/hello_main.c:73
+
+PC_value	 Symbol_address	  Symbol_name	File_name
+0x40d3c30	 0x40d3c2c 	  hello_main	/root/tizenrt/apps/examples/hello/hello_main.c:73
+-----------------------------------------------------------------------------------------
+----------------------------------------------------------
+
+CALL STACK of Aborted task:
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+[<40d53cc>] hello_main+0x18 [Line 67 of hello_main.c]
+[<40cceb8>] task_start+0x50 [Line 180 of task_start.c]
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+```
+### TRAP using GUI
+The UI configuration of TRAP is as follows
 
 | (X) (-)           | Dump Parser           |        |
 | ----------------- |:---------------------:| ------:|
@@ -432,7 +499,7 @@ The UI configuration of DumpParser is as follows
 | (O) AssertLogFile |                       |        |
 | (O) Ramdump       |                       |        |
 | Ramdump path      | `<Your Ramdump path>` | Browse |
-| Run DumpParser    |                       |        |
+| Run TRAP    |                       |        |
 
 1. Run GUI Ramdump Parser Script
 ```
@@ -443,7 +510,7 @@ python gui_dumpParser.py
 2. Browse ELF path
 3. Select Ramdump mode
 4. Browse Ramdump path
-5. Click `Run DumpParser` button
+5. Click `Run TRAP` button
 6. See the Output
 
 ### Example Call Stack Output

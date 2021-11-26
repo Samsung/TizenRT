@@ -21,7 +21,7 @@ from math import log
 import re
 import sys
 
-bin_path = '../../build/output/bin/'	# System map file
+bin_path = '../../build/output/bin/'	# Output bin path
 symbol_lookup_table = []		# Lookup table created from contents of system map file
 debug = False				# Variable to print debug logs
 pc_value = 0x00000000			# Program counter value
@@ -161,7 +161,7 @@ def parse_file(log_file):
 					if (is_text_address(hex(stack_addr))):
 						#If yes, print it's corresponding symbol
                                                 stack_addr = stack_addr - int(offset,16)
-						print_symbol(stack_addr)
+                                                print_symbol(stack_addr)
 
 
 #Execution starts here
