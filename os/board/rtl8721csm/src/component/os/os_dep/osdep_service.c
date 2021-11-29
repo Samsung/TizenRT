@@ -22,6 +22,7 @@
 #define OSDEP_DBG(x, ...) do {} while(0)
 
 extern struct osdep_service_ops osdep_service;
+extern int _tizenrt_printf(const char *format);
 
 #ifdef CONFIG_LITTLE_ENDIAN
 u16
@@ -457,7 +458,10 @@ int rtw_memcmp(void *dst, void *src, u32 sz)
 
 	return _FALSE;
 }
-
+int rtw_printf(const char *format,...)
+{
+	_tizenrt_printf(format);
+}
 void rtw_memset(void *pbuf, int c, u32 sz)
 {
 	if(osdep_service.rtw_memset)
@@ -1196,7 +1200,7 @@ static void worker_thread_main( void *arg )
 		{
 			message.function(message.buf, message.buf_len, message.flags, message.user_data);
 			if(message.buf){
-				//printf("\n!!!!!Free %p(%d)\n", message.buf, message.buf_len);
+				//rtw_printf("\n!!!!!Free %p(%d)\n", message.buf, message.buf_len);
 				_rtw_mfree((u8 *)message.buf, message.buf_len);
 			}
 		}

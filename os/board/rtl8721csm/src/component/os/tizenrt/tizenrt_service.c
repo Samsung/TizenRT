@@ -1116,7 +1116,10 @@ void vTaskDelay(int ms)
 {
 	_tizenrt_mdelay_os(ms);
 }
-
+int _tizenrt_printf(const char *format)
+{
+	vddbg(format, ##__VA_ARGS__);
+}
 const struct osdep_service_ops osdep_service = {
 	_tizenrt_malloc,			//rtw_vmalloc
 	_tizenrt_zmalloc,			//rtw_zvmalloc
