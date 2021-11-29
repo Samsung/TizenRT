@@ -716,11 +716,11 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	uint32_t crc_bufsize;
 	int header_size = 0;
 
-	if (type < BINARY_KERNEL || type >= BINARY_TYPE_MAX || !header_data) {
+	if (type < BINARY_KERNEL || type >= BINARY_TYPE_COUNT || !header_data) {
 		bmdbg("Invalid parameter\n");
 		return BINMGR_INVALID_PARAM;
 	}
-	
+
 	if (type == BINARY_KERNEL) {
 		header_size = sizeof(kernel_binary_header_t);
 	} else if (type == BINARY_USERAPP) {

@@ -141,28 +141,26 @@ bool binary_manager_scan_kbin(void)
 *  and verifies the update is needed by comparing running version with new version.
 *
 *************************************************************************************/
-int binary_manager_check_kernel_update(bool *need_update)
+int binary_manager_check_kernel_update(void)
 {
 	int ret;
 	char filepath[BINARY_PATH_LEN];
 	kernel_binary_header_t header_data;
 
-	if (!need_update) {
-		bmdbg("Invalid parameter\n");
-		return BINMGR_INVALID_PARAM;
-	}
-
-	*need_update = false;
-
 	/* Verify kernel binary on the partition without running binary */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[kernel_info.inuse_idx ^ 1].devnum);
 	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, true);
-	if (ret == OK && kernel_info.version < header_data.version) {
-		/* Need to update bootparam and reboot */
-		*need_update = true;
+	if (ret == BINMGR_OK) {
+		if (kernel_info.version < header_data.version) {
+			/* Need to update bootparam and reboot */
+			return BINMGR_OK;
+		} else {
+			bmvdbg("Latest version is running, version %d\n", kernel_info.version);
+			return BINMGR_ALREADY_UPDATED;
+		}
 	}
 
-	return BINMGR_OK;
+	return ret;
 }	
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -307,7 +305,7 @@ bool binary_manager_scan_ubin_all(void)
  *	and verifies the update is needed by comparing running version with new version.
  *
  *******************************************************************************************/
-int binary_manager_check_user_update(int bin_idx, bool *need_update)
+int binary_manager_check_user_update(int bin_idx)
 {
 	int ret;
 	int part_idx;
@@ -321,11 +319,11 @@ int binary_manager_check_user_update(int bin_idx, bool *need_update)
 		bmdbg("Invalid bin idx %d\n", bin_idx);
 		return BINMGR_INVALID_PARAM;
 	}
-
-	*need_update = false;
-
+ 
 	running_ver = BIN_VER(bin_idx, BIN_USEIDX(bin_idx));
 	part_idx = BIN_USEIDX(bin_idx) ^ 1;
+
+	bmvdbg("Checking [%d] current version %d, part_idx %d\n", bin_idx, running_ver, part_idx);
 
 	snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
 	if (bin_idx == BM_CMNLIB_IDX) {
@@ -341,12 +339,15 @@ int binary_manager_check_user_update(int bin_idx, bool *need_update)
 			BIN_LOAD_PRIORITY(bin_idx, part_idx) = user_header_data.loading_priority;
 		}
 		if (running_ver < version) {
-			*need_update = true;
-			bmvdbg("Found Latest version %u in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
+ 			bmvdbg("Found Latest version %u in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
+			return BINMGR_OK;
+		} else {
+			bmvdbg("Latest version is running, version %d\n", running_ver);
+			return BINMGR_ALREADY_UPDATED;
 		}
 	}
 
-	return BINMGR_OK;
+	return ret;
 }
 
 /****************************************************************************

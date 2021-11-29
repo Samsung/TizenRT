@@ -135,7 +135,7 @@ binmgr_result_type_e binary_manager_get_state(char *binary_name, int *state);
  *         0 (BINMGR_OK) on success. On failure, negative value is returned.
  * @since TizenRT v3.1 PRE
  */
-binmgr_result_type_e binary_manager_set_bootparam(uint8_t type);
+binmgr_result_type_e binary_manager_set_bootparam(uint8_t type, binary_setbp_result_t *update_result);
 
 #endif
 /**

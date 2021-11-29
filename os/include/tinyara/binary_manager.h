@@ -67,12 +67,12 @@
 /* The lenght of user or kernel partition path */
 #define BINARY_PATH_LEN                  16
 
-/* Binary Type */
+/* Binary Type : Kernel, Common, User app */
 enum binary_type_e {
-	BINARY_KERNEL = 1,
-	BINARY_COMMON = 2,
-	BINARY_USERAPP = 3,
-	BINARY_TYPE_MAX,
+	BINARY_KERNEL = 0,
+	BINARY_COMMON = 1,
+	BINARY_USERAPP = 2,
+	BINARY_TYPE_MAX = 3,
 };
 
 /* Macros for binary grouping used for request to set bootparam */
@@ -165,6 +165,12 @@ struct common_binary_header_s {
 typedef struct common_binary_header_s common_binary_header_t;
 
 /* The structure of binary update information for kernel or user binaries */
+struct binary_setbp_result_s {
+	int result[BINARY_TYPE_MAX];
+};
+typedef struct binary_setbp_result_s binary_setbp_result_t;
+
+/* The structure of binary update information for kernel or user binaries */
 struct binary_update_info_s {
 	int available_size;
 	char name[BIN_NAME_MAX];
@@ -223,6 +229,7 @@ typedef struct binmgr_request_s binmgr_request_t;
 
 struct binmgr_setbp_response_s {
 	binmgr_result_type_e result;
+	binary_setbp_result_t data;
 };
 typedef struct binmgr_setbp_response_s binmgr_setbp_response_t;
 
