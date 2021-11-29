@@ -102,7 +102,7 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 	} else if (cfsr & INVPC) {
 		lldbg("An integrity check error has occurred on EXC_RETURN. PC value might be invalid.\n");
 		/* As PC value might be invalid use LR value to determine if
-		 * the crash occured in the kernel space or in the user space */
+		 * the crash occurred in the kernel space or in the user space */
 		system_exception_location = regs[REG_R14];
 	} else if (cfsr & INVSTATE) {
 		lldbg("Invalid state. Instruction executed with invalid EPSR.T or EPSR.IT field.\n");
