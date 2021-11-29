@@ -25,7 +25,7 @@
 
 #define FTL_PRINTF(LEVEL, pFormat, ...)     do {\
    if (LEVEL <= FTL_PRINT_LEVEL)\
-        printf("["#LEVEL"]:"pFormat, ##__VA_ARGS__);\
+        rtw_printf("["#LEVEL"]:"pFormat, ##__VA_ARGS__);\
 }while(0)
 
 //////////////////////////////////////////////////
