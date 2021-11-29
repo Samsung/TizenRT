@@ -198,3 +198,6 @@ int sl_rsa_decrypt(sl_ctx hnd, hal_data *enc_data, hal_rsa_mode *rsa_mode, uint3
 int sl_write_storage(sl_ctx hnd, uint32_t ss_idx, hal_data *data);
 int sl_read_storage(sl_ctx hnd, uint32_t ss_idx, _OUT_ hal_data *data);
 int sl_delete_storage(sl_ctx hnd, uint32_t ss_idx);
+
+/*  Utils */
+char *sl_strerror(int error);

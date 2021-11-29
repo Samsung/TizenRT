@@ -609,3 +609,50 @@ int sl_delete_storage(sl_ctx hnd, uint32_t ss_idx)
 	SL_CALL(sl, SECLINKIOC_DELETESTORAGE, req);
 	return _sl_convert_res(req.res);
 }
+
+char *sl_strerror(int error)
+{
+	switch (error) {
+	case SECLINK_OK:
+		return "It's ok";
+	case SECLINK_ERROR:
+		return "Error";
+	case SECLINK_INVALID_ARGS:
+		return "Invalid arguments";
+	case SECLINK_INVALID_REQUEST:
+		return "Invalid request";
+	case SECLINK_INVALID_SLOT_RANGE:
+		return "Invalid slot range";
+	case SECLINK_INVALID_SLOT_TYPE:
+		return "Invalid slot type";
+	case SECLINK_EMPTY_SLOT:
+		return "Empty slot";
+	case SECLINK_BAD_KEY:
+		return "Bad key";
+	case SECLINK_BAD_KEY_PAIR:
+		return "Bad key pair";
+	case SECLINK_BAD_CERT:
+		return "Bad certificate ";
+	case SECLINK_BAD_CERTKEY_PAIR:
+		return "Bad certificate and key pair";
+	case SECLINK_NOT_ENOUGH_MEMORY:
+		return "Memory is not enough";
+	case SECLINK_ALLOC_FAIL:
+		return "Allocation fail in SE";
+	case SECLINK_KEY_IN_USE:
+		return "Key is in use";
+	case SECLINK_CERT_IN_USE:
+		return "Certificate is in use";
+	case SECLINK_DATA_IN_USE:
+		return "Data is in use";
+	case SECLINK_NOT_SUPPORTED:
+		return "Not supported operation";
+	case SECLINK_NOT_IMPLEMENTED:
+		return "Not implemented in the SE";
+	case SECLINK_BUSY:
+		return "Busy";
+	case SECLINK_NOT_INITIALIZED:
+		return "Not initialized";
+	}
+	return "Unknown error(this should be handled carefully)";
+}
