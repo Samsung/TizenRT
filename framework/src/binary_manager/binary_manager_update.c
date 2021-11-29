@@ -30,11 +30,16 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
-binmgr_result_type_e binary_manager_set_bootparam(uint8_t type)
+binmgr_result_type_e binary_manager_set_bootparam(uint8_t type, binary_setbp_result_t *update_result)
 {
 	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 	binmgr_setbp_response_t response_msg;
+
+	if (update_result == NULL) {
+		bmdbg("update_result is NULL\n");
+		return BINMGR_INVALID_PARAM;
+	}
 
 	if (!BM_CHECK_GROUP(type, BINARY_KERNEL) && !BM_CHECK_GROUP(type, BINARY_USERAPP)
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
@@ -58,6 +63,15 @@ binmgr_result_type_e binary_manager_set_bootparam(uint8_t type)
 	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_setbp_response_t));
 	if (ret != BINMGR_OK) {
 		return ret;
+	}
+
+	if (response_msg.result != BINMGR_OK) {
+		bmdbg("Binary manager setbp FAIL %d\n", response_msg.result);
+		if (response_msg.result == BINMGR_ALREADY_UPDATED) {
+			/* Copy result data */
+			memset(update_result, 0, sizeof(binary_setbp_result_t));
+			memcpy(update_result, &response_msg.data, sizeof(binary_setbp_result_t));
+		}
 	}
 
 	return response_msg.result;

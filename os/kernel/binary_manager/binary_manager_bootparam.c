@@ -255,7 +255,7 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 	int ret;
 	int bin_idx;
 	bool need_update;
-	bool check_update;
+	bool is_all_updatable;
 	uint32_t bin_count;
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_bpdata_t update_bp_data;
@@ -268,22 +268,27 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 		return;
 	}
 
+	response_msg.result = BINMGR_OK;
+	is_all_updatable = true;
+
 	/* Get current bootparam data and update version */
 	memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
 	update_bp_data.version++;
 
 	if (BM_CHECK_GROUP(type, BINARY_KERNEL)) {
 		/* Update bootparam and Reboot if new kernel binary exists */
-		ret = binary_manager_check_kernel_update(&check_update);
-		if (ret != BINMGR_OK) {
+		ret = binary_manager_check_kernel_update();
+		if (ret == BINMGR_OK) {
+			/* Update index for inactive partition */
+			update_bp_data.active_idx ^= 1;
+		} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
+			bmdbg("No binary to update\n");
+			is_all_updatable = false;
+			response_msg.data.result[BINARY_KERNEL] = BINMGR_ALREADY_UPDATED;
+		} else {
 			bmdbg("Failed to check kernel update, %d\n", ret);
 			goto send_response;
-		} else if (!check_update) {
-			bmdbg("No binary to update\n");
-			goto send_response;
-		}		
-		/* Update index for inactive partition */
-		update_bp_data.active_idx ^= 1;
+		}
 	}
 
 	need_update = false;
@@ -293,43 +298,56 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 		/* Reload binaries if new binary is scanned */
 		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 			/* Scan binary files */
-			ret = binary_manager_check_user_update(bin_idx, &check_update);
-			if (ret == OK && check_update) {
+			ret = binary_manager_check_user_update(bin_idx);
+			if (ret == BINMGR_OK) {
 				/* Update index for inactive partition */
 				update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
 				need_update = true;
+			} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
+				bmdbg("No binary to update: bin_idx %d, ret %d\n", bin_idx, ret);
+			} else {
+				bmdbg("Failed to check user update: bin_idx %d, ret %d\n", bin_idx, ret);
+				goto send_response;
 			}
 		}
 		if (!need_update) {
-			bmdbg("No binary to update\n");
-			goto send_response;
+			bmdbg("No App binaries to update\n");
+			is_all_updatable = false;
+			response_msg.data.result[BINARY_USERAPP] = BINMGR_ALREADY_UPDATED;
 		}
 	}
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (BM_CHECK_GROUP(type, BINARY_COMMON)) {
-		ret = binary_manager_check_user_update(BM_CMNLIB_IDX, &check_update);
-		if (ret != BINMGR_OK) {
-			bmdbg("Failed to check kernel update, %d\n", ret);
-			goto send_response;
-		} else if (!check_update) {
+		ret = binary_manager_check_user_update(BM_CMNLIB_IDX);
+		if (ret == BINMGR_OK) {
+			/* Update index for inactive partition */
+			update_bp_data.app_data[BIN_BPIDX(BM_CMNLIB_IDX)].useidx ^= 1;
+		} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
 			bmdbg("No binary to update\n");
+			is_all_updatable = false;
+			response_msg.data.result[BINARY_COMMON] = BINMGR_ALREADY_UPDATED;
+		} else {
+			bmdbg("Failed to check common update, %d\n", ret);
 			goto send_response;
-		}		
-		/* Update index for inactive partition */
-		update_bp_data.app_data[BIN_BPIDX(BM_CMNLIB_IDX)].useidx ^= 1;
+		}
 	}
 #endif
 
-	/* Then, Write bootparam with updated bootparam data */
-	ret = binary_manager_write_bootparam(&update_bp_data);
-	if (ret == BINMGR_OK) {
-		bmvdbg("Update bootparam SUCCESS\n");
+	if (is_all_updatable) {
+		/* Then, Write bootparam with updated bootparam data */
+		ret = binary_manager_write_bootparam(&update_bp_data);
+		if (ret == BINMGR_OK) {
+			bmvdbg("Update bootparam SUCCESS\n");
+		} else {
+			bmdbg("Failed to update bootparam, %d\n", ret);
+		}
 	} else {
-		bmdbg("Failed to update bootparam, %d\n", ret);
+		ret = BINMGR_ALREADY_UPDATED;
 	}
 
 send_response:
+	response_msg.result = ret;
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_setbp_response_t));
 }

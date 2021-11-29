@@ -317,6 +317,7 @@ static int binary_update_same_version_test(void)
 {
 	int ret;
 	uint8_t type = 0;
+	binary_setbp_result_t result;
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
 
@@ -336,8 +337,14 @@ static int binary_update_same_version_test(void)
 	sleep(2);
 
 	BM_SET_GROUP(type, BINARY_USERAPP);
-	ret = binary_manager_set_bootparam(type);
+	ret = binary_manager_set_bootparam(type, &result);
 	if (ret != OK) {
+		if (ret == BINMGR_ALREADY_UPDATED) {
+			int idx;
+			for (idx = 0; idx < BINARY_TYPE_MAX; idx++) {
+				printf("[%d] result %d\n", idx, result.result[idx]);
+			}
+		}
 		return ret;
 	}
 
@@ -359,6 +366,7 @@ static int binary_update_new_version_test(char *bin_name)
 	int ret;
 	uint8_t type = 0;
 	char path[BINARY_PATH_LEN];
+	binary_setbp_result_t result;
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
 
@@ -383,8 +391,15 @@ static int binary_update_new_version_test(char *bin_name)
 	}
 
 	BM_SET_GROUP(type, BINARY_USERAPP);
-	ret = binary_manager_set_bootparam(type);
+	ret = binary_manager_set_bootparam(type, &result);
+	printf("binary_manager_set_bootparam %d\n", ret);
 	if (ret != OK) {
+		if (ret == BINMGR_ALREADY_UPDATED) {
+			int idx;
+			for (idx = 0; idx < BINARY_TYPE_MAX; idx++) {
+				printf("[%d] result %d\n", idx, result.result[idx]);
+			}
+		}
 		return ret;
 	}
 
