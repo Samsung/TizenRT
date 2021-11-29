@@ -485,7 +485,7 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	lldbg("Checking kernel heap for corruption...\n");
 	if (mm_check_heap_corruption(g_kmmheap) == OK) {
-		lldbg("No heap corruption detected\n");
+		lldbg("No kernel heap corruption detected\n");
 	} else {
 		/* treat kernel fault */
 
@@ -498,7 +498,7 @@ void up_assert(const uint8_t *filename, int lineno)
 		elf_show_all_bin_addr();
 		lldbg("Checking current app heap for corruption...\n");
 		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
-			lldbg("No heap corruption detected\n");
+			lldbg("No app heap corruption detected\n");
 		}
 	}
 #endif
