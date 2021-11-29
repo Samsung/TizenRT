@@ -135,8 +135,6 @@ struct lp_wqueue_s *get_lpwork(void);
 
 /* This semaphore/mutex supports exclusive access to the user-mode work queue */
 
-struct wqueue_s *get_usrwork(void);
-
 #ifdef CONFIG_BUILD_PROTECTED
 sem_t *get_usrsem(void);
 #else
