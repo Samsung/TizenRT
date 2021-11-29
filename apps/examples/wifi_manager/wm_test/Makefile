@@ -37,7 +37,9 @@ wm_test_stress_test2.c\
 wm_test_stress_test3.c\
 wm_test_stress_test4.c\
 wm_test_daemon.c\
-wm_test_network.c
+wm_test_network.c\
+wm_test_connect_stable.c
+
 ifeq ($(CONFIG_VIRTUAL_WLAN),y)
 CSRCS += wm_test_mock.c
 endif

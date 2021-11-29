@@ -87,6 +87,7 @@ extern void wm_test_on_off(void *arg);
 extern void wm_test_interop(void *arg);
 extern void wm_interop_add_ap_config(void *arg);
 extern void wm_interop_display_ap_config(void *arg);
+extern void wm_test_connect_stable(void *arg);
 
 /* Parser */
 #ifdef WT_MEMBER_POOL
@@ -588,6 +589,11 @@ void _wt_set_power(void *arg)
 void _wt_stress_test(void *arg)
 {
 	wm_run_stress_test(arg);
+}
+
+void _wt_conn_stable_test(void *arg)
+{
+  wm_test_connect_stable(arg);
 }
 
 void _wt_onoff_test(void *arg)
