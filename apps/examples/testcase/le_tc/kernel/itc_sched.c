@@ -101,6 +101,17 @@ static void itc_sched_setget_scheduler_param_p_all_priority(void)
 	int exec_index;
 	int sched_arr[ARRLEN] = { SCHED_RR, SCHED_FIFO };
 
+	int origin_scheduler;
+	int origin_priority;
+
+	/* Get current scheduler and priority */
+	origin_scheduler = sched_getscheduler(getpid());
+	TC_ASSERT_NEQ("sched_getscheduler", origin_scheduler, ERROR);
+
+	ret_chk = sched_getparam(getpid(), &st_getparam);
+	TC_ASSERT_EQ("sched_getparam", ret_chk, OK);
+	origin_priority = st_getparam.sched_priority;
+
 	while (arr_idx < 2) {
 		for (exec_index = SCHED_PRIORITY_MIN; exec_index <= SCHED_PRIORITY_MAX; exec_index++) {
 			st_setparam.sched_priority = exec_index;
@@ -120,6 +131,12 @@ static void itc_sched_setget_scheduler_param_p_all_priority(void)
 		}
 		arr_idx++;
 	}
+
+	/* Restore original scheduler and priority */
+	st_setparam.sched_priority = origin_priority;
+	ret_chk = sched_setscheduler(getpid(), origin_scheduler, &st_setparam);
+	TC_ASSERT_NEQ("sched_setscheduler", ret_chk, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
