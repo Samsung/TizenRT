@@ -30,7 +30,6 @@
 #include <stdlib.h>
 
 #include <tinyara/binary_manager.h>
-
 #ifdef CONFIG_BOARDCTL_RESET
 #include <sys/boardctl.h>
 #endif

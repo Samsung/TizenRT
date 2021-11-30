@@ -41,9 +41,11 @@
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 #include <tinyara/kthread.h>
-
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/binfmt/binfmt.h>
+#endif
+#ifdef CONFIG_BINMGR_RELOAD_REBOOT
+#include <tinyara/reboot_reason.h>
 #endif
 #ifdef CONFIG_BINARY_SIGNING
 #include <tinyara/signature.h>
@@ -593,8 +595,6 @@ static int reloading_thread(int argc, char *argv[])
 static int update_thread(int argc, char *argv[])
 {
 	int ret;
-	int bin_idx;
-	uint32_t bin_count = binary_manager_get_ucount();
 
 	/* Check whether there is kernel binary for update.
 	 * If kernel update exists, board will be rebooted. Or, it will return negative values. */
@@ -603,6 +603,13 @@ static int update_thread(int argc, char *argv[])
 		/* Return errors except for BINMGR_ALREADY_UPDATE which means already the latest kernel binary is running */
 		return ret;
 	}
+
+#ifdef CONFIG_BINMGR_RELOAD_REBOOT // Board Reset for binary reloading
+	printf("==> [REBOOT] Board will be rebooted for new binary loading");
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
+#else
+	int bin_idx;
+	uint32_t bin_count = binary_manager_get_ucount();
 
 	/* Else, Reload all binaries */
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
@@ -634,7 +641,7 @@ static int update_thread(int argc, char *argv[])
 	if (ret != OK) {
 		return BINMGR_OPERATION_FAIL;
 	}
-
+#endif
 	return BINMGR_OK;
 }
 
