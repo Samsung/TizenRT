@@ -99,6 +99,7 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 	}
 
 	if (size == 0) {
+		mm_free(&kheap[heap_index], oldmem);
 		return NULL;
 	}
 
@@ -142,8 +143,10 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	struct mm_heap_s *kheap_new;
 
 	if (newsize == 0) {
+		mm_free(kheap_origin, oldmem);
 		return NULL;
 	}
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ret = mm_realloc(kheap_origin, oldmem, newsize, caller_retaddr);
 #else
