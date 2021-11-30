@@ -30,6 +30,7 @@ config BINMGR_RECOVERY
 	bool "Enable Recovery Management"
 	default y
 	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE
+	depends on !BINMGR_RELOAD_REBOOT
 	---help---
 		Enable the recovery management.
 		If any fault occurs in a system, it will either restart binary or reboot the system
@@ -43,5 +44,13 @@ config BINMGR_UPDATE
 	select BOARDCTL_RESET
 	---help---
 		Enables Binary Manager Update APIs.
+
+config BINMGR_RELOAD_REBOOT
+	bool "Enable board reset for binary reloading"
+	default n
+	depends on BINMGR_UPDATE
+	---help---
+		Enable the board reset for binary reloading.
+		If it is enabled, the board will be rebooted for binary reloading when fault recovery or binary update.
 
 endif # BINARY_MANAGER

@@ -215,7 +215,7 @@ void binary_manager_deactivate_rtthreads(int bin_idx)
 void binary_manager_recover_userfault(void)
 {
 	int bin_idx;
-
+#ifndef CONFIG_BINMGR_RELOAD_REBOOT // Board Reset for binary reloading
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	/* If a fault happens in common binary or user binaries, it needs to reload all user binaries */
 	int bin_count = binary_manager_get_ucount();
@@ -239,7 +239,7 @@ void binary_manager_recover_userfault(void)
 		return binary_manager_unblock_fault_message_sender(bin_idx);
 	}
 #endif
-
+#endif
 	/* Board reset on failure of recovery */
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 }
