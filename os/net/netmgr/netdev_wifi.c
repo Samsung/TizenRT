@@ -145,6 +145,20 @@ int _trwifi_handle_command(struct netdev *dev, lwnl_req cmd)
 	return 0;
 }
 
+/* it's for reloading operation in binary manager.
+ * it must be used to binary manager only.
+ */
+trwifi_result_e netdev_deinit_wifi(void)
+{
+	struct netdev *dev = (struct netdev *)nm_get_netdev((uint8_t *)"wlan0");
+	if (!dev) {
+		return TRWIFI_FAIL;
+	}
+	trwifi_result_e res = TRWIFI_FAIL;
+	TRWIFI_CALL(res, dev, deinit, (dev));
+	return res;
+}
+
 int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
 	trwifi_result_e res = TRWIFI_FAIL;
