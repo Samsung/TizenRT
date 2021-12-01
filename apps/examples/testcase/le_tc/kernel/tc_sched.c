@@ -115,13 +115,17 @@ static void tc_sched_sched_setget_scheduler_param(void)
 	struct sched_param st_setparam;
 	struct sched_param st_getparam;
 	struct sched_param prio_origin;
+	int scheduler_origin;
 	int loop_cnt = LOOPCOUNT;
 	int arr_idx = 0;
 	int sched_arr[ARRLEN] = { SCHED_RR, SCHED_FIFO };
 
-	/* get original priority of task into prio_origin */
+	/* get original priority and scheduler of task */
 	ret_chk = sched_getparam(getpid(), &prio_origin);
 	TC_ASSERT_EQ("sched_getparam", ret_chk, OK);
+
+	scheduler_origin = sched_getscheduler(getpid());
+	TC_ASSERT_NEQ("sched_getscheduler", scheduler_origin, ERROR);
 
 	/*  Check null priority parameter */
 
@@ -161,9 +165,9 @@ static void tc_sched_sched_setget_scheduler_param(void)
 		arr_idx++;
 	}
 
-	/* restore the task priority as previous after testing */
-	ret_chk = sched_setparam(getpid(), &prio_origin);
-	TC_ASSERT_EQ_CLEANUP("sched_setparam", ret_chk, OK, sched_setparam(getpid(), &prio_origin));
+	/* restore the task priority and scheduler as previous after testing */
+	ret_chk = sched_setscheduler(getpid(), scheduler_origin, &prio_origin);
+	TC_ASSERT_NEQ("sched_setscheduler", ret_chk, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
