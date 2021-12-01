@@ -453,8 +453,9 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	if (ret == OK) {
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 		/* Add tcb to binary thread list */
-
-		binary_manager_add_binlist(&ptcb->cmn);
+		if ((ptcb->cmn.flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+			binary_manager_add_binlist(&ptcb->cmn);
+		}
 #endif
 		ret = task_activate((FAR struct tcb_s *)ptcb);
 	}

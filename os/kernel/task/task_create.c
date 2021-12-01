@@ -219,10 +219,12 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	pid = (int)tcb->cmn.pid;
 
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-	FAR struct tcb_s *rtcb = this_task();
-	tcb->cmn.group->tg_binidx = rtcb->group->tg_binidx;
-	/* Add tcb to binary thread list */
-	binary_manager_add_binlist(&tcb->cmn);
+	if ((tcb->cmn.flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+		FAR struct tcb_s *rtcb = this_task();
+		tcb->cmn.group->tg_binidx = rtcb->group->tg_binidx;
+		/* Add tcb to binary thread list */
+		binary_manager_add_binlist(&tcb->cmn);
+	}
 #endif
 
 #ifdef CONFIG_HEAPINFO_USER_GROUP
