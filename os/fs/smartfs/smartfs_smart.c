@@ -686,11 +686,18 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 				smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset,\
 					 fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&buffer[byteswritten]);
 #endif
+				/* Only the data bytes of the sector are written,
+				 * we do not re-write/overwrite the header bytes.
+				 */
 				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 				if (ret < 0) {
 					fdbg("Error writing sector %d data, ret : %d\n", readwrite.logsector, ret);
 					goto errout_with_semaphore;
 				}
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+				/* Clear the flags, no longer dirty if the buffer content is written to flash */
+				sf->bflags = SMARTFS_BFLAG_UNMOD;
+#endif
 			}
 
 			/* Update our control variables */
@@ -712,22 +719,26 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 				goto errout_with_semaphore;
 			}
 
-			/* If file is modified and more data remains to be appended to file, but no next sector is available,
-			 * do not update sf->currsector and curroffset. Will be handled when buffer data is synced.
+			/* If file is modified and more data remains to be appended to file,
+			 * but no next sector is available, do not update sf->currsector and curroffset.
+			 * This will be handled when buffer data is synced.
 			 */
 			if (SMARTFS_NEXTSECTOR(header) != 0xFFFF) {
-				sf->currsector = SMARTFS_NEXTSECTOR(header);
-				
 				/* Now get the chained sector info and reset the offset */
+				sf->currsector = SMARTFS_NEXTSECTOR(header);
 				sf->curroffset = size;
+
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-				/* Read the next sector if more bytes remain in the write buffer */
+				/* Read the next sector's data if we have reached the end of the current sector
+				 * AND more data is left to be written.
+				 * The header of the current sector will be read later if required.
+				 */
 				if (buflen > 0) {
-					smartfs_setbuffer(&readwrite, sf->currsector, 0,\
-						 fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
+					smartfs_setbuffer(&readwrite, sf->currsector, size,\
+						 fs->fs_llformat.availbytes - size, (uint8_t *)&sf->buffer[size]);
 					ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 					if (ret < 0) {
-						fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
+						fdbg("Error %d reading sector %d\n", ret, sf->currsector);
 						goto errout_with_semaphore;
 					}
 				}
@@ -736,6 +747,20 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		}
 	}
 
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	/* If there is unsynced data in the sf->buffer and the control is now leaving the
+	 * scope of this function, the correct header should also be present in sf->buffer
+	 * for smartfs_append_data or smartfs_sync_internal. Hence we read the header now.
+	 */
+	if (sf->bflags & SMARTFS_BFLAG_DIRTY && byteswritten > 0) {
+		smartfs_setbuffer(&readwrite, sf->currsector, 0, size, (uint8_t*)sf->buffer);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
+			goto errout_with_semaphore;
+		}
+	}
+#endif
 	/* Now append any remaining data to end of the file. */
 	if (buflen > 0) {
 		byteswritten = smartfs_append_data(fs, sf, buffer, byteswritten, buflen);
