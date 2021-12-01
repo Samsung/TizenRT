@@ -378,6 +378,11 @@ static void up_dumpstate(void)
 
 	if (sp > ustackbase || sp <= ustackbase - ustacksize) {
 		lldbg("ERROR: Stack pointer is not within the allocated stack\n");
+		lldbg("Proper task stack dump:\n");
+		up_stackdump(ustackbase - ustacksize + 1, ustackbase);
+		lldbg("Wrong Stack pointer %08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+		sp, *((uint32_t *)sp + 0), *((uint32_t *)sp + 1), *((uint32_t *)sp + 2), ((uint32_t *)sp + 3),
+		*((uint32_t *)sp + 4), ((uint32_t *)sp + 5), ((uint32_t *)sp + 6), ((uint32_t *)sp + 7));
 	} else {
 		up_stackdump(sp, ustackbase);
 	}
