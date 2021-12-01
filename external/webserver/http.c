@@ -98,6 +98,38 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 	struct sockaddr_in client_addr;
 	struct mq_attr mqattr;
 	struct http_server_t *server = (struct http_server_t *)arg;
+	int reuse = 1;
+
+	/*
+	 * Initialize socket and bind, start listening
+	 */
+
+	server->listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (server->listen_fd < 0) {
+		HTTP_LOGE("Error: Cannot create socket!!\n");
+		return NULL;
+	}
+
+	if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+		HTTP_LOGE("Error: Cannot set socket option!!\n");
+	}
+
+	server->servaddr.sin_family = AF_INET;
+	server->servaddr.sin_port = HTTP_HTONS(server->port);
+	server->servaddr.sin_addr.s_addr = INADDR_ANY;
+
+	if (bind(server->listen_fd, (struct sockaddr *)&(server->servaddr), sizeof(struct sockaddr_in)) < 0) {
+		HTTP_LOGE("Error: Cannot socket bind!!\n");
+		close(server->listen_fd);
+		return NULL;
+	}
+
+	if (listen(server->listen_fd, HTTP_CONF_MAX_CLIENT) < 0) {
+		HTTP_LOGE("Error: Cannot listen!!\n");
+		close(server->listen_fd);
+		return NULL;
+	}
+
 
 	if ((msg_q = http_server_mq_open(server->port)) == NULL) {
 		HTTP_LOGE("msg queue open fail in http_server_handler %d\n" , server->port);
@@ -242,40 +274,10 @@ int http_server_start(struct http_server_t *server)
 {
 	pthread_attr_t attr;
 	unsigned int cli_handle_stack = HTTP_CLIENT_HANDLER_STACKSIZE;
-	int reuse = 1;
 	int i;
 
 	if (server == NULL) {
 		HTTP_LOGE("Error: Server must be initialized before start");
-		return HTTP_ERROR;
-	}
-	/*
-	 * Initialize socket and bind, start listening
-	 */
-
-	server->listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (server->listen_fd < 0) {
-		HTTP_LOGE("Error: Cannot create socket!!\n");
-		return HTTP_ERROR;
-	}
-
-	if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
-		HTTP_LOGE("Error: Cannot set socket option!!\n");
-	}
-
-	server->servaddr.sin_family = AF_INET;
-	server->servaddr.sin_port = HTTP_HTONS(server->port);
-	server->servaddr.sin_addr.s_addr = INADDR_ANY;
-
-	if (bind(server->listen_fd, (struct sockaddr *)&(server->servaddr), sizeof(struct sockaddr_in)) < 0) {
-		HTTP_LOGE("Error: Cannot socket bind!!\n");
-		close(server->listen_fd);
-		return HTTP_ERROR;
-	}
-
-	if (listen(server->listen_fd, HTTP_CONF_MAX_CLIENT) < 0) {
-		HTTP_LOGE("Error: Cannot listen!!\n");
-		close(server->listen_fd);
 		return HTTP_ERROR;
 	}
 
