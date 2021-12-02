@@ -70,8 +70,12 @@ struct wo_queue {
 	int rear;
 };
 
-#define MAX_INTEROP_AP_CONFIG_COUNT 10
 #define MAX_INTEROP_SECURITY_LEN 10
+#ifndef CONFIG_EXAMPLES_WIFIMANAGER_AP_LIST_ITEMS_COUNT
+#define MAX_INTEROP_AP_CONFIG_COUNT 10
+#else
+#define MAX_INTEROP_AP_CONFIG_COUNT CONFIG_EXAMPLES_WIFIMANAGER_AP_LIST_ITEMS_COUNT
+#endif
 
 typedef struct {
 	wifi_manager_ap_config_s ap_config;
