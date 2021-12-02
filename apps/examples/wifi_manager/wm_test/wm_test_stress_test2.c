@@ -34,11 +34,6 @@
 #define WM_TEST_TRIAL	   CONFIG_WIFIMANAGER_TEST_TRIAL
 #define WM_NSOFTAP_SSID "no_sta_0101" // for auto test
 #define TAG "[WTS2]"
-#ifndef CONFIG_EXAMPLES_WIFIMANAGER_AP_LIST_ITEMS_COUNT
-#define MAX_INTEROP_AP_CONFIG_COUNT 10
-#else
-#define MAX_INTEROP_AP_CONFIG_COUNT CONFIG_EXAMPLES_WIFIMANAGER_AP_LIST_ITEMS_COUNT
-#endif
 
 static interop_ap_config_list_s g_apconfig_list;
 static char *WM_AP_SSID;
