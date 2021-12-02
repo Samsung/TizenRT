@@ -475,14 +475,6 @@ int get_errno(void);
 #define lllvdbg(...)
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG
-#define lwipdbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#define lwiplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
-#else
-#define lwipdbg(...)
-#define lwiplldbg(...)
-#endif
-
 #ifdef CONFIG_DEBUG_MM_ERROR
 #define mdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define mlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
