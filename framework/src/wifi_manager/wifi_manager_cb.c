@@ -114,6 +114,8 @@ static void _create_cb_msg(wifi_manager_cb_msg_s *msg,
 		} else {
 			msg->scanlist = info;
 		}
+	} else if (evt == CB_STA_CONNECT_FAILED) {
+		msg->res = WIFI_MANAGER_FAIL;
 	} else {
 		trwifi_cbk_msg_s *tmsg = (trwifi_cbk_msg_s *)arg;
 		msg->reason = tmsg->reason;
