@@ -246,12 +246,14 @@ static int _wm_initialize_signal(void)
 	if (status != 0) {
 		printf("start_thread: ERROR pthread_mutex_init failed, status=%d\n", status);
 	}
+	return 0;
 }
 
 static int _wm_deinitialize_signal(void)
 {
 	pthread_cond_destroy(&g_wm_cond);
 	pthread_mutex_destroy(&g_wm_mutex);
+	return 0;
 }
 
 void wm_run_stress_test1(struct wt_options *opt)
