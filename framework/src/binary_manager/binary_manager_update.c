@@ -41,9 +41,12 @@ binmgr_result_type_e binary_manager_set_bootparam(uint8_t type, binary_setbp_res
 		return BINMGR_INVALID_PARAM;
 	}
 
-	if (!BM_CHECK_GROUP(type, BINARY_KERNEL) && !BM_CHECK_GROUP(type, BINARY_USERAPP)
+	if (!BM_CHECK_GROUP(type, BINARY_KERNEL)
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	&& !BM_CHECK_GROUP(type, BINARY_USERAPP)
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	&& !BM_CHECK_GROUP(type, BINARY_COMMON)
+#endif
 #endif
 	) {
 		bmdbg("Invalid parameter %u\n", type);

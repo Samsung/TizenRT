@@ -315,7 +315,7 @@ static inline void os_do_appstart(void)
 	}
 #endif
 
-#if !defined(CONFIG_BINARY_MANAGER)
+#if !defined(CONFIG_APP_BINARY_SEPARATION)
 	/* Start the application initialization task.  In a flat build, this is
 	 * entrypoint is given by the definitions, CONFIG_USER_ENTRYPOINT.  In
 	 * the protected build, however, we must get the address of the
@@ -327,7 +327,7 @@ static inline void os_do_appstart(void)
 #if defined(CONFIG_USER_ENTRYPOINT)
 	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
 #endif
-#endif // !CONFIG_BINARY_MANAGER
+#endif // !CONFIG_APP_BINARY_SEPARATION
 
 	ASSERT(pid > 0);
 }

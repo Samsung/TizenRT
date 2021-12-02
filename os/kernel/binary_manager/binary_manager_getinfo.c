@@ -214,11 +214,11 @@ void binary_manager_get_info_all(int requester_pid)
 		response_msg.data.bin_info[result_idx].version = BIN_VER(bin_idx, BIN_USEIDX(bin_idx));
 		result_idx++;
 	}
-
+#endif
 	if (response_msg.result == BINMGR_OK) {
 		response_msg.data.bin_count = result_idx;
 	}
-#endif
+
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_all_response_t));
 }
 

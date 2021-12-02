@@ -36,6 +36,7 @@
 #endif
 #include <tinyara/mm/mm.h>
 #include <tinyara/binary_manager.h>
+#include <tinyara/reboot_reason.h>
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "sched/sched.h"
@@ -159,9 +160,50 @@ int binary_manager_check_kernel_update(void)
 			return BINMGR_ALREADY_UPDATED;
 		}
 	}
-
 	return ret;
 }	
+
+/*************************************************************************************
+* Name: binary_manager_update_kernel_binary
+*
+* Description:
+*  This function checks whether there is a kernel update.
+*  It gets the latest bootparam and compares active index written in bootparam with current active index.
+*  If they are different, reboot the board to boot kernel binary based on the latest bootparam.
+*
+*************************************************************************************/
+int binary_manager_update_kernel_binary(void)
+{
+	int ret;
+	binmgr_bpinfo_t bp_info;
+
+	/* Get the latest bootparam */
+	ret = binary_manager_scan_bootparam(&bp_info);
+	if (ret < 0) {
+		bmdbg("Failed to scan bootparam %d\n", ret);
+		return ret;
+	}
+
+	/* Compare bootparam version with current running version */
+	if (binary_manager_get_bpdata()->version >= bp_info.bp_data.version) {
+		/* No bootparam update */
+		bmdbg("All binaries are running based on bootparam\n");
+		return BINMGR_NOT_FOUND;
+	}
+
+	/* Running kernel binary is the latest? */
+	if (binary_manager_get_kdata()->inuse_idx == bp_info.bp_data.active_idx) {
+		/* Yes, current version is the latest. No need to update kernel */
+		bmvdbg("Already running kernel binary is the latest\n");
+		return BINMGR_ALREADY_UPDATED;
+	}
+
+	/* No, Reboot for kernel update */
+	printf("==> [REBOOT] Board will be rebooted for new binary loading");
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
+
+	return BINMGR_OK;
+}
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 /****************************************************************************

@@ -28,16 +28,15 @@
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <sys/boardctl.h>
 
 #include <tinyara/binary_manager.h>
+
+#ifdef CONFIG_BOARDCTL_RESET
+#include <sys/boardctl.h>
+#endif
+#include <tinyara/reboot_reason.h>
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <tinyara/kthread.h>
-#endif
-
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <tinyara/reboot_reason.h>
-#include <arch/reboot_reason.h>
 #endif
 
 #include "sched/sched.h"
@@ -71,6 +70,30 @@ mqd_t binary_manager_get_mqfd(void)
 	return g_binmgr_mq_fd;
 }
 #endif
+
+/****************************************************************************
+ * Name: binary_manager_reset_board
+ *
+ * Description:
+ *	 This function resets the board.
+ *
+ ****************************************************************************/
+void binary_manager_reset_board(int reboot_reason)
+{
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	WRITE_REBOOT_REASON(reboot_reason);
+#endif
+#ifdef CONFIG_BOARDCTL_RESET
+	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#else
+	(void)irqsave();
+	sched_lock();
+	for (;;) {
+		lldbg("\nASSERT!! Push the reset button!\n");
+		up_mdelay(300000);  // Print the message every 5 min
+	}
+#endif
+}
 
 /****************************************************************************
  * Main Function
@@ -181,7 +204,11 @@ int binary_manager(int argc, char *argv[])
 			binary_manager_update_bootparam(request_msg.requester_pid, request_msg.data.type);
 			break;
 		case BINMGR_UPDATE:
+#ifdef CONFIG_APP_BINARY_SEPARATION
 			binary_manager_execute_loader(LOADCMD_UPDATE, 0);
+#else
+			binary_manager_update_kernel_binary();
+#endif
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case BINMGR_GET_STATE:

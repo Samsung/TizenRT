@@ -253,13 +253,15 @@ errout_with_fd:
 void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 {
 	int ret;
-	int bin_idx;
-	bool need_update;
 	bool is_all_updatable;
-	uint32_t bin_count;
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_bpdata_t update_bp_data;
 	binmgr_setbp_response_t response_msg;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int bin_idx;
+	bool need_update;
+	uint32_t bin_count;
+#endif
 
 	memset((void *)&response_msg, 0, sizeof(binmgr_setbp_response_t));
 
@@ -291,6 +293,7 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 		}
 	}
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	need_update = false;
 
 	if (BM_CHECK_GROUP(type, BINARY_USERAPP)) {
@@ -332,6 +335,7 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 			goto send_response;
 		}
 	}
+#endif
 #endif
 
 	if (is_all_updatable) {

@@ -24,7 +24,6 @@
 #include <debug.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <crc32.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
@@ -46,9 +45,6 @@
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/binfmt/binfmt.h>
 #endif
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <tinyara/reboot_reason.h>
-#endif
 
 #include "sched/sched.h"
 #include "task/task.h"
@@ -56,11 +52,11 @@
 
 #include "binary_manager.h"
 
+/****************************************************************************
+ * Private Definitions
+ ****************************************************************************/
 extern sq_queue_t g_sem_list;
 extern struct binary_s *g_lib_binp;
-
-/* The buffer size for checking crc of common library */
-#define CMNLIB_CRC_BUFSIZE    512000
 
 #ifdef CONFIG_COMPRESSED_BINARY
 #define BINARY_COMP_TYPE "[Compressed Binary]"
@@ -71,9 +67,6 @@ extern struct binary_s *g_lib_binp;
 /* Partition Name - first partition : "A", second partition : "B" */
 #define GET_PARTNAME(part_idx)  ((part_idx == 0) ? "A" : "B")
 
-/****************************************************************************
- * Private Definitions
- ****************************************************************************/
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -564,29 +557,13 @@ static int update_thread(int argc, char *argv[])
 	int ret;
 	int bin_idx;
 	uint32_t bin_count = binary_manager_get_ucount();
-	binmgr_bpinfo_t bp_info;
 
-	/* Get the latest bootparam */
-	ret = binary_manager_scan_bootparam(&bp_info);
-	if (ret < 0) {
-		bmdbg("Failed to scan bootparam %d\n", ret);
+	/* Check whether there is kernel binary for update.
+	 * If kernel update exists, board will be rebooted. Or, it will return negative values. */
+	ret = binary_manager_update_kernel_binary();
+	if (ret != BINMGR_ALREADY_UPDATED) {
+		/* Return errors except for BINMGR_ALREADY_UPDATE which means already the latest kernel binary is running */
 		return ret;
-	}
-
-	if (binary_manager_get_bpdata()->version >= bp_info.bp_data.version) {
-		/* No bootparam update */
-		bmdbg("All binaries are running based on bootparam\n");
-		return OK;
-	}
-
-	/* Is there a kernel update? */
-	if (binary_manager_get_kdata()->inuse_idx != bp_info.bp_data.active_idx) {
-		/* Reboot if kernel update exist */
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-		up_reboot_reason_write(REBOOT_SYSTEM_BINARY_UPDATE);
-#endif
-		printf("==> [REBOOT] Board will be rebooted with new kernel binary");
-		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 	}
 
 	/* Else, Reload all binaries */
@@ -614,8 +591,7 @@ static int update_thread(int argc, char *argv[])
 	binary_manager_deinit_modules();
 
 	/* Update boot parameter data */
-	binary_manager_set_bpidx(bp_info.inuse_idx);
-	binary_manager_set_bpdata(&bp_info.bp_data);
+	binary_manager_update_bpinfo();
 
 	/* Load binary */
 	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, bin_idx);
@@ -625,40 +601,6 @@ static int update_thread(int argc, char *argv[])
 	}
 
 	return BINMGR_OK;
-}
-
-static int binary_manager_verify_header_data(int type, void *header_input)
-{
-	/* Verify header data */
-	if (type == BINARY_KERNEL) {
-		kernel_binary_header_t *header_data = (kernel_binary_header_t *)header_input;
-		if (header_data->header_size == 0 || header_data->binary_size == 0 \
-		|| header_data->version < KERNEL_BIN_VER_MIN || header_data->version > KERNEL_BIN_VER_MAX) {
-			bmdbg("Invalid kernel header data : headersize %u, version %u, binary size %u\n", header_data->header_size, header_data->version, header_data->binary_size);
-			return ERROR;
-		}		
-		bmvdbg("Kernel binary header : %u %u %u %u \n", header_data->header_size, header_data->binary_size, header_data->version, header_data->secure_header_size);
-	} else if (type == BINARY_USERAPP) {
-		user_binary_header_t *header_data = (user_binary_header_t *)header_input;
-		if (header_data->bin_type != BIN_TYPE_ELF || header_data->bin_ver == 0 \
-		|| header_data->loading_priority == 0 || header_data->loading_priority >= BINARY_LOADPRIO_MAX \
-		|| header_data->bin_ramsize == 0 || header_data->bin_size == 0) {
-			bmdbg("Invalid user header data : headersize %u, binsize %u, ramsize %u, bintype %u\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
-			return ERROR;
-		}		
-		bmvdbg("User binary header : %u %u %u %u %s %u %u %u\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->loading_priority, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver);
-	} else {
-		/* Verify header data */
-		common_binary_header_t *header_data = (common_binary_header_t *)header_input;
-		if (header_data->header_size == 0 || header_data->bin_size == 0 ||\
-			header_data->version < BM_VERSION_DATE_MIN || header_data->version > BM_VERSION_DATE_MAX) {
-			bmdbg("Invalid common header data : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
-			return ERROR;
-		}
-		bmvdbg("Common binary header : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
-	}
-
-	return OK;
 }
 
 /****************************************************************************
@@ -702,115 +644,6 @@ void binary_manager_release_binary_sem(int bin_idx)
 		} while (sem);
 	}
 	irqrestore(flags);
-}
-
-int binary_manager_read_header(int type, char *devpath, void *header_data, bool crc_check)
-{
-	int fd;
-	int ret;
-	uint32_t read_size;
-	uint32_t bin_size;
-	uint32_t calculate_crc = 0;
-	uint8_t *crc_buffer;
-	uint32_t crc_hash;
-	uint32_t crc_bufsize;
-	int header_size = 0;
-
-	if (type < BINARY_KERNEL || type >= BINARY_TYPE_COUNT || !header_data) {
-		bmdbg("Invalid parameter\n");
-		return BINMGR_INVALID_PARAM;
-	}
-
-	if (type == BINARY_KERNEL) {
-		header_size = sizeof(kernel_binary_header_t);
-	} else if (type == BINARY_USERAPP) {
-		header_size = sizeof(user_binary_header_t);
-	} else if (type == BINARY_COMMON) {
-		header_size = sizeof(common_binary_header_t);
-	}
-
-	memset(header_data, 0, header_size);
-	crc_buffer = NULL;
-
-	fd = open(devpath, O_RDONLY);
-	if (fd < 0) {
-		bmdbg("Failed to open %s: %d, errno %d\n", devpath, ret, errno);
-		return BINMGR_OPERATION_FAIL;
-	}
-
-	/* Read the binary header */
-	ret = read(fd, (FAR uint8_t *)header_data, header_size);
-	if (ret != header_size) {
-		bmdbg("Failed to read %s: %d, errno %d\n", devpath, ret, errno);
-		ret = BINMGR_OPERATION_FAIL;
-		goto errout_with_fd;
-	}
-
-	/* Verify header data */
-	ret = binary_manager_verify_header_data(type, header_data);
-	if (ret < 0) {
-		ret = BINMGR_NOT_FOUND;
-		goto errout_with_fd;
-	}
-
-	if (crc_check) {
-		if (type == BINARY_KERNEL) {
-			crc_bufsize = ((kernel_binary_header_t *)header_data)->binary_size;
-			bin_size = ((kernel_binary_header_t *)header_data)->binary_size;
-			crc_hash = ((kernel_binary_header_t *)header_data)->crc_hash;
-		} else if (type == BINARY_USERAPP) {
-			crc_bufsize = ((user_binary_header_t *)header_data)->bin_ramsize;
-			bin_size = ((user_binary_header_t *)header_data)->bin_size;
-			crc_hash = ((user_binary_header_t *)header_data)->crc_hash;
-		} else if (type == BINARY_COMMON) {
-			crc_bufsize = CMNLIB_CRC_BUFSIZE;
-			bin_size = ((common_binary_header_t *)header_data)->bin_size;
-			crc_hash = ((common_binary_header_t *)header_data)->crc_hash;
-		}
-		struct mallinfo mem;
-#ifdef CONFIG_CAN_PASS_STRUCTS
-		mem = kmm_mallinfo();
-#else
-		(void)kmm_mallinfo(&mem);
-#endif
-		crc_bufsize = crc_bufsize < (mem.mxordblk / 2) ? crc_bufsize : (mem.mxordblk / 2);
-		crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
-		if (!crc_buffer) {
-			bmdbg("Failed to allocate buffer for checking crc, size %u\n", crc_bufsize);
-			ret = BINMGR_OUT_OF_MEMORY;
-			goto errout_with_fd;
-		}
-		/* Calculate checksum and Verify it */
-		calculate_crc = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_size - CHECKSUM_SIZE, calculate_crc);
-		while (bin_size > 0) {
-			read_size = bin_size < crc_bufsize ? bin_size : crc_bufsize;
-			ret = read(fd, (void *)crc_buffer, read_size);
-			if (ret < 0 || ret != read_size) {
-				bmdbg("Failed to read : %d, errno %d\n", ret, errno);
-				ret = BINMGR_OPERATION_FAIL;
-				goto errout_with_fd;
-			}
-			calculate_crc = crc32part(crc_buffer, read_size, calculate_crc);
-			bin_size -= read_size;
-		}
-
-		if (calculate_crc != crc_hash) {
-			bmdbg("Failed to crc check : %u != %u\n", calculate_crc, crc_hash);
-			ret = BINMGR_NOT_FOUND;
-			goto errout_with_fd;
-		}
-		kmm_free(crc_buffer);
-	}
-	close(fd);
-
-	return BINMGR_OK;
-
-errout_with_fd:
-	close(fd);
-	if (crc_buffer) {
-		kmm_free(crc_buffer);
-	}
-	return ret;
 }
 
 /****************************************************************************
