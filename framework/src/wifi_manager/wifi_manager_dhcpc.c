@@ -43,7 +43,7 @@ wifi_manager_result_e dhcpc_get_ipaddr(void)
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 
 	ret = dhcp_client_start(WIFIMGR_STA_IFNAME);
-	if (ret != 04) {
+	if (ret != 0) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
 		return wret;
