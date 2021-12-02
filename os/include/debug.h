@@ -158,6 +158,9 @@ int get_errno(void);
 #define lldbg(format, ...) \
 	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
+#define lldbg_noarg(format, ...) \
+	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_ERR, format, ##__VA_ARGS__)
+
 #else
 /**
  * @brief  Error debug
@@ -179,14 +182,21 @@ int get_errno(void);
  */
 #define lldbg(format, ...) \
 	lowsyslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+
+#define lldbg_noarg(format, ...) \
+	lowsyslog(LOG_ERR, format, ##__VA_ARGS__)
+
 #else
 #define lldbg(...)
+#define lldbg_noarg(...)
 #endif
 #endif
 
 #else
 #define dbg(...)
+#define dbg_noarg(...)
 #define lldbg(...)
+#define lldbg_noarg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_WARN
@@ -194,8 +204,14 @@ int get_errno(void);
 #define wdbg(format, ...) \
 	logm(LOGM_NORMAL, LOGM_IDX, LOGM_WRN, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
+#define wdbg_noarg(format, ...) \
+	logm(LOGM_NORMAL, LOGM_IDX, LOGM_WRN, format, ##__VA_ARGS__)
+
 #define llwdbg(format, ...) \
 	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_WRN, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+
+#define llwdbg_noarg(format, ...) \
+	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_WRN, format, ##__VA_ARGS__)
 
 #else
 /**
@@ -207,6 +223,9 @@ int get_errno(void);
 #define wdbg(format, ...) \
 	syslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
+#define wdbg_noarg(format, ...) \
+	syslog(LOG_WARNING, format, ##__VA_ARGS__)
+
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
  * @brief  Warning debug for low-level
@@ -215,14 +234,20 @@ int get_errno(void);
  */
 #define llwdbg(format, ...) \
 	lowsyslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+
+#define llwdbg_noarg(format, ...) \
+	lowsyslog(LOG_WARNING, format, ##__VA_ARGS__)
 #else
 #define llwdbg(...)
+#define llwdbg_noarg(...)
 #endif
 #endif
 
 #else
 #define wdbg(...)
+#define wdbg_noarg(...)
 #define llwdbg(...)
+#define llwdbg_noarg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_VERBOSE
@@ -230,8 +255,14 @@ int get_errno(void);
 #define vdbg(format, ...) \
 	logm(LOGM_NORMAL, LOGM_IDX, LOGM_INF, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
+#define vdbg_noarg(format, ...) \
+	logm(LOGM_NORMAL, LOGM_IDX, LOGM_INF, format, ##__VA_ARGS__)
+
 #define llvdbg(format, ...) \
 	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_INF, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+
+#define llvdbg_noarg(format, ...) \
+	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_INF, format, ##__VA_ARGS__)
 
 #else
 /**
@@ -243,6 +274,9 @@ int get_errno(void);
 #define vdbg(format, ...) \
 	syslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
+#define vdbg_noarg(format, ...) \
+	syslog(LOG_INFO, format, ##__VA_ARGS__)
+
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
  * @brief  Informational(Verbose) debug for low-level
@@ -252,24 +286,36 @@ int get_errno(void);
 #define llvdbg(format, ...) \
 	lowsyslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
+#define llvdbg_noarg(format, ...) \
+	lowsyslog(LOG_INFO, format, ##__VA_ARGS__)
+
 #else
 #define llvdbg(...)
+#define llvdbg_noarg(...)
 #endif
 #endif
 
 #else
 #define vdbg(...)
+#define vdbg_noarg(...)
 #define llvdbg(...)
+#define llvdbg_noarg(...)
 #endif
 
 #else							/* CONFIG_DEBUG */
 
 #define dbg(...)
+#define dbg_noarg(...)
 #define lldbg(...)
+#define lldbg_noarg(...)
 #define wdbg(...)
+#define wdbg_noarg(...)
 #define llwdbg(...)
+#define llwdbg_noarg(...)
 #define vdbg(...)
+#define vdbg_noarg(...)
 #define llvdbg(...)
+#define llvdbg_noarg(...)
 
 #endif							/* CONFIG_DEBUG */
 
@@ -462,24 +508,24 @@ int get_errno(void);
 #endif
 
 #ifdef CONFIG_DEBUG_NET_ERROR
-#define ndbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#define nlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#define ndbg(format, ...)    dbg_noarg(format, ##__VA_ARGS__)
+#define nlldbg(format, ...)  lldbg_noarg(format, ##__VA_ARGS__)
 #else
 #define ndbg(...)
 #define nlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_NET_WARN
-#define nwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
-#define nllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#define nwdbg(format, ...)    wdbg_noarg(format, ##__VA_ARGS__)
+#define nllwdbg(format, ...)  llwdbg_noarg(format, ##__VA_ARGS__)
 #else
 #define nwdbg(...)
 #define nllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_NET_INFO
-#define nvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
-#define nllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#define nvdbg(format, ...)   vdbg_noarg(format, ##__VA_ARGS__)
+#define nllvdbg(format, ...) llvdbg_noarg(format, ##__VA_ARGS__)
 #else
 #define nvdbg(...)
 #define nllvdbg(...)
