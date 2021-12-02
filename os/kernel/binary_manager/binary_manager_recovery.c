@@ -28,12 +28,6 @@
 #include <errno.h>
 #include <semaphore.h>
 #include <sys/types.h>
-#ifdef CONFIG_BOARDCTL_RESET
-#include <sys/boardctl.h>
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <tinyara/reboot_reason.h>
-#endif
-#endif
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/mm/mm.h>
@@ -41,6 +35,7 @@
 #include <tinyara/init.h>
 #include <tinyara/board.h>
 #include <tinyara/wdog.h>
+#include <tinyara/reboot_reason.h>
 
 #include "task/task.h"
 #include "sched/sched.h"
@@ -74,30 +69,6 @@ static faultmsg_t g_prealloc_faultmsg[FAULTMSG_COUNT];
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-/****************************************************************************
- * Name: binary_manager_reset_board
- *
- * Description:
- *	 This function resets the board.
- *
- ****************************************************************************/
-static void binary_manager_reset_board(void)
-{
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	WRITE_REBOOT_REASON(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
-#endif
-#ifdef CONFIG_BOARDCTL_RESET
-	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
-#else
-	(void)irqsave();
-	sched_lock();
-	for (;;) {
-		lldbg("\nASSERT!! Push the reset button!\n");
-		up_mdelay(300000);  // Print the message every 5 min
-	}
-#endif
-}
-
 /****************************************************************************
  * Name: binary_manager_recover_tcb
  *
@@ -204,7 +175,7 @@ static void binary_manager_unblock_fault_message_sender(int bin_idx)
 	}
 
 	/* Board reset on failure of recovery */
-	binary_manager_reset_board();
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 }
 
 /****************************************************************************
@@ -270,7 +241,7 @@ void binary_manager_recover_userfault(void)
 #endif
 
 	/* Board reset on failure of recovery */
-	binary_manager_reset_board();
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 }
 
 
@@ -377,5 +348,5 @@ void binary_manager_recovery(int bin_idx)
 reboot_board:
 	/* Reboot the board  */
 	bmlldbg("RECOVERY FAIL, BOARD RESET!!\n");
-	binary_manager_reset_board();
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 }
