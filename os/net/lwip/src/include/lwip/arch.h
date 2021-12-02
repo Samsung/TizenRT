@@ -70,10 +70,13 @@
  * in turn pull in a lot of standard libary code. In resource-constrained
  * systems, this should be defined to something less resource-consuming.
  */
+
 #ifndef LWIP_PLATFORM_DIAG
-#define LWIP_PLATFORM_DIAG(x) printf x
-#include <stdio.h>
-#include <stdlib.h>
+#define LWIP_PLATFORM_DIAG(msg) do { ndbg msg; } while (0)
+#endif
+
+#ifndef LWIP_STATS_DIAG
+#define LWIP_STATS_DIAG(msg) do { ndbg msg; } while (0)
 #endif
 
 /** Platform specific assertion handling.\n
