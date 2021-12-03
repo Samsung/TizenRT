@@ -561,17 +561,15 @@ void wm_run_stress_test4(struct wt_options *opt)
 		return;
 	}
 
-#if 0
 	ST_SET_PACK(wifi);
-	ST_SET_SMOKE1(wifi, WM_TEST_TRIAL, 0, "use case test", mode_change);
-	ST_SET_SMOKE1(wifi, 1, 0, "init negative case", init_n);
-	ST_SET_SMOKE(wifi, 1, 0, "init positive case", init_p);
-	ST_SET_SMOKE1(wifi, 1, 0, "set power", set_power_p);
-	ST_SET_SMOKE1(wifi, 1, 0, "scan positive case", scan_p);
-	ST_SET_SMOKE1(wifi, 1, 0, "scan negative case", scan_n);
-	ST_SET_SMOKE1(wifi, 1, 0, "scan negative case", disconn_evt);
+	ST_SET_SMOKE1(wifi, opt->repeat, 0, "use case test", mode_change);
+	ST_SET_SMOKE1(wifi, opt->repeat, 0, "init negative case", init_n);
+	ST_SET_SMOKE(wifi, opt->repeat, 0, "init positive case", init_p);
+	ST_SET_SMOKE1(wifi, opt->repeat, 0, "set power", set_power_p);
+	ST_SET_SMOKE1(wifi, opt->repeat, 0, "scan positive case", scan_p);
+	ST_SET_SMOKE1(wifi, opt->repeat, 0, "scan negative case", scan_n);
+	ST_SET_SMOKE1(wifi, opt->repeat, 0, "scan negative case", disconn_evt);
 	ST_RUN_TEST(wifi);
-#endif
 
 	ST_SET_PACK(wifi_connect);
 	ST_TC_SET_GLOBAL(wifi_connect, global_config);
