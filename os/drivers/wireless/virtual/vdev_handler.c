@@ -28,7 +28,7 @@
 #include <time.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
-#include <tinyara/net/if/wifi_types.h>
+//#include <tinyara/net/if/wifi_types.h>
 #include "vdev_handler.h"
 #include "vdev_command.h"
 
@@ -60,7 +60,7 @@ static void _generate_evt(int argc, char *argv[])
 	int result = atoi(argv[2]);
 	int sleep_time = atoi(argv[3]);
 
-	vdvdbg("[VDEV] sleep (%d) result (%d)event type(%d)\n",
+	VWIFI_LOG("[VDEV] sleep (%d) result (%d)event type(%d)\n",
 				 sleep_time, result, event_type.evt);
 
 	sleep(sleep_time);
