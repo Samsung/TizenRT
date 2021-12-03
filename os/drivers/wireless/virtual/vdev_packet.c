@@ -586,6 +586,6 @@ void vwifi_handle_packet(uint8_t *buf, uint32_t len)
 
 void vwifi_generate_dhcp_discover(void)
 {
-	vdvdbg("dhcp discover len (%d)\n", sizeof(g_dhcp_discover));
+	VWIFI_LOG("dhcp discover len (%d)\n", sizeof(g_dhcp_discover));
 	vwifi_send_packet(g_dhcp_discover, sizeof(g_dhcp_discover));
 }

@@ -345,9 +345,9 @@ trwifi_result_e vdev_scan_ap(struct netdev *dev, trwifi_scan_config_s *config)
 {
 	VWIFI_ENTRY;
 	if (config) {
-		vdvdbg("channel %d\n", config->channel);
+		VWIFI_LOG("channel %d\n", config->channel);
 		if (config->ssid_length > 0) {
-			vdvdbg("ssid %s %d\n", config->ssid, config->ssid_length);
+			VWIFI_LOG("ssid %s %d\n", config->ssid, config->ssid_length);
 		}
 	}
 	trwifi_result_e tres = TRWIFI_SUCCESS;
