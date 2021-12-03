@@ -107,13 +107,6 @@ void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 	WO_TEST_SIGNAL(msg.res, g_wo_queue);
 }
 
-static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
-{
-	strncpy(ap_config->ssid, WM_SOFTAP_SSID, strlen(WM_SOFTAP_SSID) + 1);
-	strncpy(ap_config->passphrase, WM_SOFTAP_PASSWORD, strlen(WM_SOFTAP_PASSWORD) + 1);
-	ap_config->channel = WM_SOFTAP_CHANNEL;
-}
-
 static void wm_get_nosoftapinfo(wifi_manager_softap_config_s *ap_config)
 {
 	strncpy(ap_config->ssid, WM_NSOFTAP_SSID, strlen(WM_NSOFTAP_SSID) + 1);
@@ -270,7 +263,7 @@ TEST_SETUP(softap_joined_scan)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_softap_config_s ap_config;
-	wm_get_softapinfo(&ap_config);
+	wm_get_softapinfo(&ap_config, WM_SOFTAP_SSID, WM_SOFTAP_PASSWORD, WM_SOFTAP_CHANNEL);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 
@@ -326,7 +319,7 @@ TEST_SETUP(softap_joined_stop)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_softap_config_s ap_config;
-	wm_get_softapinfo(&ap_config);
+	wm_get_softapinfo(&ap_config, WM_SOFTAP_SSID, WM_SOFTAP_PASSWORD, WM_SOFTAP_CHANNEL);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 
@@ -437,7 +430,7 @@ TEST_SETUP(join_to_sta)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_softap_config_s ap_config;
-	wm_get_softapinfo(&ap_config);
+	wm_get_softapinfo(&ap_config, WM_SOFTAP_SSID, WM_SOFTAP_PASSWORD, WM_SOFTAP_CHANNEL);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
 	WO_TEST_WAIT(g_conn, g_wo_queue); // wait STA joined
 	ST_END_TEST;
