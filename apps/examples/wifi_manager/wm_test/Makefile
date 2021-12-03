@@ -38,6 +38,7 @@ wm_test_stress_test3.c\
 wm_test_stress_test4.c\
 wm_test_daemon.c\
 wm_test_network.c\
+wm_test_event_tc.c\
 wm_test_connect_stable.c
 
 ifeq ($(CONFIG_VIRTUAL_WLAN),y)
