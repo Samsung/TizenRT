@@ -25,14 +25,14 @@
 #define WO_CONN_SUCCESS 2
 #define WT_SEM_TRY_WAIT_US 10000
 
-#define WM_SEM_POST(sem)             \
+#define WM_SEM_POST(sem)                \
 	do {                                \
 		while (sem_post(&sem) != 0) {   \
 			usleep(WT_SEM_TRY_WAIT_US); \
 		}                               \
 	} while (0)
 
-#define WM_SEM_WAIT(sem)                            \
+#define WM_SEM_WAIT(sem)                             \
 	do {                                             \
 		while (sem_wait(&sem) != 0) {                \
 			if (errno == EINTR) {                    \
@@ -49,13 +49,13 @@
 		if (ssres != 0) {                                           \
 			assert(0);                                              \
 		}                                                           \
-		WM_SEM_POST(queue->signal);                              \
+		WM_SEM_POST(queue->signal);                                 \
 	} while (0)
 
 #define WO_TEST_WAIT(conn, queue)                                   \
 	do {                                                            \
 		WT_LOG(TAG, "wait signal\t %s:%d", __FUNCTION__, __LINE__); \
-		WM_SEM_WAIT(queue->signal);                                \
+		WM_SEM_WAIT(queue->signal);                                 \
 		int swres = wo_dequeue(&conn, queue);                       \
 		if (swres != 0) {                                           \
 			assert(0);                                              \
@@ -89,7 +89,6 @@ typedef struct {
 	interop_ap_info_s ap_info[MAX_INTEROP_AP_CONFIG_COUNT];
 } interop_ap_config_list_s;
 
-
 int wo_add_queue(int conn, struct wo_queue *queue);
 int wo_dequeue(int *conn, struct wo_queue *queue);
 struct wo_queue *wo_create_queue(void);
@@ -111,3 +110,7 @@ void wm_get_apinfo(wifi_manager_ap_config_s *apconfig,
 				   char *pwd,
 				   wifi_manager_ap_auth_type_e auth,
 				   wifi_manager_ap_crypto_type_e crypto);
+void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config,
+					   char *softap_ssid,
+					   char *softap_password,
+					   int softap_channel);

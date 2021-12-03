@@ -325,3 +325,13 @@ void wm_get_apinfo(wifi_manager_ap_config_s *apconfig,
 		apconfig->ap_crypto_type = crypto;
 	}
 }
+
+void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config,
+					   char *softap_ssid,
+					   char *softap_password,
+					   int softap_channel)
+{
+	strncpy(ap_config->ssid, softap_ssid, strlen(softap_ssid) + 1);
+	strncpy(ap_config->passphrase, softap_password, strlen(softap_password) + 1);
+	ap_config->channel = softap_channel;
+}

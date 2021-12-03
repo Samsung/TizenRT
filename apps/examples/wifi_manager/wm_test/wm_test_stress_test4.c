@@ -116,13 +116,6 @@ void wm_cb_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 	WO_TEST_SIGNAL(WO_CONN_SUCCESS, g_wo_queue);
 }
 
-static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
-{
-	strncpy(ap_config->ssid, WM_SOFTAP_SSID, strlen(WM_SOFTAP_SSID) + 1);
-	strncpy(ap_config->passphrase, WM_SOFTAP_PASSWORD, strlen(WM_SOFTAP_PASSWORD) + 1);
-	ap_config->channel = WM_SOFTAP_CHANNEL;
-}
-
 /*
  * Following API are not covered.
  * 1) wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *config);
@@ -159,7 +152,7 @@ static int _run_procedure(void)
 	/*  Start softAP */
 	WT_LOG(TAG, "start softAP");
 	wifi_manager_softap_config_s softap_config;
-	wm_get_softapinfo(&softap_config);
+	wm_get_softapinfo(&softap_config, WM_SOFTAP_SSID, WM_SOFTAP_PASSWORD, WM_SOFTAP_CHANNEL);
 	wres = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
 	if (wres != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "fail to start softap %d\n", wres);
