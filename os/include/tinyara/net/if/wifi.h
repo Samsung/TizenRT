@@ -28,6 +28,10 @@
 #define TRWIFI_CBK_MSG_INITIALIZER {0, {0,}, NULL}
 
 /*  reason */
+/* It's on-going definitions to get wi-fi error reason
+ * It's not defined yet. REASON_UNKNOWN is sample definition to test.
+ * It'll be added later.
+ */
 #define TRWIFI_REASON_UNKNOWN 0
 
 /*  if serialization is failed then driver should let pass the fail event to applications*/

@@ -80,7 +80,7 @@
 #define WT_INTEROP_USAGE						\
 	"\n Interoperability test: \n"				\
 	"	wm_test interop [file_path]\n"
-		
+
 #define WT_DISPLAY_AP_USAGE					\
 	"\n Display AP configuration  \n"				\
 	"	wm_test display_ap [file_path]  \n"		\

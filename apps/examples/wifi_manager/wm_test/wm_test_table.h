@@ -23,3 +23,4 @@ WT_MEMBER_POOL(WT_TYPE_CONN_STABLE, _wt_conn_stable_test, _wt_parse_join, "conn_
 WT_MEMBER_POOL(WT_TEST_INTEROP, _wt_interop_test, _wt_parse_interop, "interop")
 WT_MEMBER_POOL(WT_TEST_ADD_AP, _wt_interop_add_ap, _wt_parse_set, "add_ap")
 WT_MEMBER_POOL(WT_TEST_DISPLAY_AP, _wt_interop_display_ap, _wt_parse_interop, "display_ap")
+WT_MEMBER_POOL(WT_TYPE_EVT_TC, _wt_run_evt_tc, _wt_parse_evt_tc, "tc_evt")

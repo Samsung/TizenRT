@@ -28,7 +28,6 @@
 #include <time.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
-//#include <tinyara/net/if/wifi_types.h>
 #include "vdev_handler.h"
 #include "vdev_command.h"
 

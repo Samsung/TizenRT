@@ -88,6 +88,7 @@ extern void wm_test_interop(void *arg);
 extern void wm_interop_add_ap_config(void *arg);
 extern void wm_interop_display_ap_config(void *arg);
 extern void wm_test_connect_stable(void *arg);
+extern void wm_run_event_tc(struct wt_options *opt);
 
 /* Parser */
 #ifdef WT_MEMBER_POOL
@@ -616,6 +617,11 @@ void _wt_interop_display_ap(void *arg)
 	wm_interop_display_ap_config(arg);
 }
 
+void _wt_run_evt_tc(void *arg)
+{
+	wm_run_event_tc(arg);
+}
+
 wt_type_e _wt_get_opt(int argc, char *argv[])
 {
 	int idx = 0;
@@ -803,6 +809,22 @@ int _wt_parse_interop(struct wt_options *opt, int argc, char *argv[])
 		return -1;
 	}
 	opt->path = argv[2];
+	return 0;
+}
+
+int _wt_parse_evt_tc(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc != 9) {
+		return -1;
+	}
+	if (_parse_security_str(opt, argv[3], argv[4]) != 0) {
+		return -1;
+	}
+	opt->ssid = argv[2];
+	opt->softap_ssid = argv[5];
+	opt->softap_password = argv[6];
+	opt->softap_channel = atoi(argv[7]);
+	opt->repeat = atoi(argv[8]);
 	return 0;
 }
 
