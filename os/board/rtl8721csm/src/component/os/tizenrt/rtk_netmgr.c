@@ -392,6 +392,8 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 
 trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config_s *config)
 {
+	g_scan_num = 0;
+	g_scan_num = NULL;
 	if (config) {
 		if (config->ssid_length > 0) {
 			int scan_buf_len = 500;
