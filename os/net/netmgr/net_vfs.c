@@ -178,7 +178,7 @@ int net_ioctl(int sd, int cmd, unsigned long arg)
 	}
 
 	/* ToDo:  Verify that the sd corresponds to valid, allocated socket */
-	sock = get_socket(sd, getpid());
+	sock = get_socket_by_pid(sd, getpid());
 	if (sock == NULL) {
 		NET_LOGKE(TAG, "get socket fail\n");
 		ret = -EBADF;
@@ -235,7 +235,7 @@ errout:
 int net_vfcntl(int sd, int cmd, va_list ap)
 {
 
-	FAR struct socket *sock = (struct socket *)get_socket(sd, getpid());
+	FAR struct socket *sock = (struct socket *)get_socket_by_pid(sd, getpid());
 	int err = 0;
 	int ret = 0;
 

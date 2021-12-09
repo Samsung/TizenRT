@@ -264,12 +264,6 @@ struct netconn {
 	sys_mbox_t acceptmbox;
 #endif							/* LWIP_TCP */
 	/* only used for socket layer */
-#if LWIP_SOCKET
-	int socket;
-	struct socketlist *slist;
-	/* interoperability with tinyara network stack */
-	int crefs;				/* for dup */
-#endif							/* LWIP_SOCKET */
 #if LWIP_SO_SNDTIMEO
 	/* timeout to wait for sending data (which means enqueueing data for sending
 	   in internal buffers) in milliseconds */
@@ -306,8 +300,16 @@ struct netconn {
 #endif							/* LWIP_TCP */
 	/* A callback function that is informed about events for this netconn */
 	netconn_callback callback;
-	/* pid information that generates netconn */
-	pid_t pid;
+#if LWIP_SOCKET
+	int socket;
+	//pkbuild struct socketlist *slist;
+	/* interoperability with tinyara network stack */
+	int crefs;				/* for dup */
+	/* task group information that generates netconn
+	 * this will be used when get socketlist from task group
+	 */
+	void *group;
+#endif							/* LWIP_SOCKET */
 };
 
 /* Register an Network connection event */
