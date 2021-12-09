@@ -165,17 +165,10 @@ static char *_convert_udp_type(struct lwip_sock *sock)
 	return "UDP";
 }
 
-static void _get_pid_name(pid_t pid, char *buf)
-{
-	if (pthread_getname_np(pid, buf)) {
-		strncpy(buf, "NONE", 5);
-	}
-}
-
 static void _get_port(int fd, int *port)
 {
 	*port = -1;
-	struct lwip_sock *sock = get_socket(fd, getpid());
+	struct lwip_sock *sock = get_socket_by_pid(fd, getpid());
 	if (!sock) {
 		NET_LOGKE(TTAG, "get socket fail\n");
 		return;
@@ -197,7 +190,6 @@ static inline void _get_tcp_info(int fd, struct lwip_sock *lsock, netmgr_logger_
 	u16_t port = 0;
 	ip_addr_t raddr = IPADDR4_INIT(0L);
 	u16_t rport = 0;
-	char buf[CONFIG_TASK_NAME_SIZE];
 
 	if (netconn_getaddr(lsock->conn, &addr, &port, 1)) {
 		NET_LOGKV(TAG, "local IP isn't set\n");
@@ -206,9 +198,8 @@ static inline void _get_tcp_info(int fd, struct lwip_sock *lsock, netmgr_logger_
 		NET_LOGKV(TAG, "remote IP isn't set\n");
 	}
 
-	_get_pid_name(lsock->conn->pid, buf);
 	netlogger_debug_msg(logger, "TCP\t%d\t%s:%d\t%s\t%s\t%s\t",
-		   fd, buf, lsock->conn->pid,
+		   fd, lsock->pname, lsock->pid,
 		   _convert_netconn_state(lsock->conn->state),
 		   _convert_ip_type(lsock->conn->type),
 		   _convert_tcp_state(lsock->conn->pcb.tcp->state));
@@ -256,7 +247,6 @@ static void _get_udp_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logge
 	u16_t port = 0;
 	ip_addr_t raddr = IPADDR4_INIT(0L);
 	u16_t rport = 0;
-	char buf[CONFIG_TASK_NAME_SIZE];
 
 	if (netconn_getaddr(lsock->conn, &addr, &port, 1)) {
 		NET_LOGKV(TAG, "local addr isn't set\n");
@@ -264,11 +254,9 @@ static void _get_udp_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logge
 	if (netconn_getaddr(lsock->conn, &raddr, &rport, 0)) {
 		NET_LOGKV(TAG, "remote addr isn't set\n");
 	}
-	_get_pid_name(lsock->conn->pid, buf);
-
 	netlogger_debug_msg(logger, "%s\t%d\t%s:%d\t%s\t%s\t%x\t",
 		   _convert_udp_type(lsock),
-		   fd, buf, lsock->conn->pid,
+		   fd, lsock->pname, lsock->pid,
 		   _convert_netconn_state(lsock->conn->state),
 		   _convert_ip_type(lsock->conn->type),
 		   lsock->conn->pcb.udp->flags);
@@ -312,12 +300,8 @@ static void _get_udp_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logge
 
 static void _get_raw_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logger)
 {
-	char buf[CONFIG_TASK_NAME_SIZE];
-
-	_get_pid_name(lsock->conn->pid, buf);
-
-	netlogger_debug_msg(logger, "RAW\t%d\t%s:%d\t%s\t%s\t%x\t",
-		   fd, buf, lsock->conn->pid,
+		netlogger_debug_msg(logger, "RAW\t%d\t%s:%d\t%s\t%s\t%x\t",
+		   fd, lsock->pname, lsock->pid,
 		   _convert_netconn_state(lsock->conn->state),
 		   _convert_ip_type(lsock->conn->type),
 		   lsock->conn->pcb.raw->protocol);
@@ -362,7 +346,7 @@ static void _get_raw_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logge
 static void _get_proto(int fd, char **type)
 {
 	*type = UNKNOWN_STR;
-	struct lwip_sock *sock = get_socket(fd, getpid());
+	struct lwip_sock *sock = get_socket_by_pid(fd, getpid());
 	if (!sock) {
 		NET_LOGKE(TTAG, "get socket fail\n");
 		return;
@@ -464,8 +448,8 @@ static int lwip_ns_dup2(int sockfd1, int sockfd2)
 	sched_lock();
 
 	/* Get the socket structures underly both descriptors */
-	sock1 = (struct lwip_sock *)get_socket(sockfd1, getpid());
-	sock2 = (struct lwip_sock *)get_socket(sockfd2, getpid());
+	sock1 = (struct lwip_sock *)get_socket_by_pid(sockfd1, getpid());
+	sock2 = (struct lwip_sock *)get_socket_by_pid(sockfd2, getpid());
 
 	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
 	 * descriptors and that sockfd1 has valid allocated conn

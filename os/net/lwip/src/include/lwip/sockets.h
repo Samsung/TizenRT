@@ -495,14 +495,14 @@ struct lwip_sock {
 	u8_t err;
 	/** counter of how many threads are waiting for this socket using select */
 	SELWAIT_T select_waiting;
+	u32_t pid;
+	u8_t pname[CONFIG_TASK_NAME_SIZE];
 };
 
 #define lwip_socket_init()		/* Compatibility define, no init needed. */
 void lwip_socket_thread_init(void);	/* LWIP_NETCONN_SEM_PER_THREAD==1: initialize thread-local semaphore */
 void lwip_socket_thread_cleanup(void);	/* LWIP_NETCONN_SEM_PER_THREAD==1: destroy thread-local semaphore */
 
-struct lwip_sock *get_socket(int sd, pid_t pid);
-//int alloc_socket(struct netconn *newconn, int accepted);
 int lwip_accept(int s, struct sockaddr *addr, socklen_t * addrlen);
 int lwip_bind(int s, const struct sockaddr *name, socklen_t namelen);
 int lwip_shutdown(int s, int how);
@@ -528,6 +528,9 @@ int lwip_ioctl(int s, long cmd, void *argp);
 int lwip_fcntl(int s, int cmd, int val);
 
 int lwip_poll(int fd, struct pollfd *fds, bool setup);
+
+/*  API for network manager only*/
+struct lwip_sock *get_socket_by_pid(int sd, pid_t pid);
 #ifdef __cplusplus
 }
 #endif

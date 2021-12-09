@@ -317,7 +317,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 {
 	int ret = -EINVAL;
 
-	struct lwip_sock *sock = get_socket(s, getpid());
+	struct lwip_sock *sock = get_socket_by_pid(s, getpid());
 	if (!sock) {
 		NET_LOGKE(TAG, "get socket fail\n");
 		ret = -EBADF;
