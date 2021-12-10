@@ -913,6 +913,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		if (ctx == NULL) {
 			BLE_LOG_ERROR("[BLEMGR] fail to find BLE context table");
 			ret = TRBLE_NOT_FOUND;
+			free(msg->param);
 			break;
 		}
 
