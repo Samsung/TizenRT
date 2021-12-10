@@ -7,7 +7,7 @@ if DRIVERS_BLE && DRIVERS_BR_EDR
 
 choice
 	prompt "Bluetooth Driver"
-	default BT_NULL
+	default BLUETOOTH_NULL
 
 config BLUETOOTH_NULL
 	bool "NULL Bluetooth device"
