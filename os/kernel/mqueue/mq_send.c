@@ -128,6 +128,8 @@
  *   EMSGSIZE 'msglen' was greater than the maxmsgsize attribute of the
  *            message queue.
  *   EINTR    The call was interrupted by a signal handler.
+ *   EBUSY    Fail to get the msg from interrupt handler.
+ *   ENOMEM   Fail to allocate the msg from normal thread.
  *
  * Assumptions/restrictions:
  *
