@@ -45,16 +45,17 @@ g_stext_flash = 0
 g_etext_flash = 0
 g_stext_ram = 0
 g_etext_ram = 0
-
 g_app_idx = 0 # To extract number of apps dynamically
 g_assertpc = 0 # To extract the global PC value g_assertpc
-
+g_stext_app = [0] * 10
+g_etext_app = [0] * 10
 app_name = []
 
 BIN_PATH = '../../build/output/bin/'
 CONFIG_PATH = '../../os/.config'
 MAKEFILE_PATH = '../../os/Make.defs'
 HEAPINFO_PATH = '../../os/include/tinyara/mm/heapinfo_internal.h'
+BIN_ADDR_FXN = 'elf_show_all_bin_addr'
 debug_cmd = 'addr2line'
 file_data = 'HeapInfo'
 
@@ -505,17 +506,53 @@ class dumpParser:
 		self.stacksize = ss
 		self.find_stackframe_using_framepointer(frame)
 
-def format_output(res):
+def format_output(res, string):
      r = res.split('\n')
-     print('symbol addr       :', r[0])
-     print('function name     :', r[1])
-     print('file              :', r[2])
+     print('\t- symbol addr {0}       : {1}'.format(string, r[0]))
+     print('\t- function name {0}     : {1}'.format(string, r[1]))
+     print('\t- file {0}              : {1}'.format(string, r[2]))
+
+# Function to get the number of application binaries, names, text address and sizes
+def find_number_of_binaries(log_file):
+
+    global g_app_idx
+    global g_stext_app
+    global g_etext_app
+
+    # Parse the contents based on tokens in log file.
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            # Get the number of applications loaded
+            if BIN_ADDR_FXN in line:
+                g_app_idx = g_app_idx + 1
+
+    app_idx = 0
+    g_stext_app = array('i', range(0, g_app_idx))
+    g_etext_app = array('i', range(0, g_app_idx))
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            # Read the app text address and size
+            if BIN_ADDR_FXN in line:
+               word = line.split(':')
+               t = word[2].split(',') # word[2] is the App Start Text address
+               w = word[1].split(' ')
+               # w[1] denotes string '[<app_name>]'
+               start_idx = int(w[1].find('[')) + 1
+               end_idx = int(w[1].find(']'))
+               app_name.append(w[1][start_idx:end_idx])
+               g_stext_app[app_idx] = int(t[0], 16)
+               g_etext_app[app_idx] = g_stext_app[app_idx] + int(word[3], 10) # word[3] is text_size
+               app_idx = app_idx + 1
+
 
 # Function to Parse the i/p log file in case of app crashes to corresponding app display debug symbols
 def find_crash_point(log_file, elf):
 
     global g_app_idx
     global g_assertpc
+    global g_stext_app
+    global g_etext_app
+    app_idx = 0
     pc_value = 0
     lr_value = 0
     is_app_crash = 0
@@ -542,9 +579,6 @@ def find_crash_point(log_file, elf):
                     pc_value = int(t[-1],16)
                     lr_value = int(t[-2],16)
                     continue
-            # Get the number of applications loaded
-            if 'elf_show_all_bin_addr:' in line:
-                g_app_idx = g_app_idx + 1
 
             # Get the assert location PC value
             if 'Assert location (PC) :' in line:
@@ -552,140 +586,154 @@ def find_crash_point(log_file, elf):
                 #word[2] contains the g_assertpc value
                 g_assertpc = int(word[2].strip(),16)
 
-            # If PC value is invalid, show inavlid PC
-            if 'PC value might be invalid' in line:
-                print('PC value is invalid! No probable crash point detected for PC.')
-
-    if g_app_idx:
-        print('Number of applications :', g_app_idx)
-
-    app_idx = 0
-    g_stext_app = array('i', range(0, g_app_idx))
-    g_etext_app = array('i', range(0, g_app_idx))
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            # Read the app text address and size
-            if 'elf_show_all_bin_addr:' in line:
-               word = line.split(':')
-               t = word[2].split(',') # word[2] is the App Start Text address
-               w = word[1].split(' ')
-               # w[1] denotes string '[<app_name>]'
-               start_idx = int(w[1].find('[')) + 1
-               end_idx = int(w[1].find(']'))
-               app_name.append(w[1][start_idx:end_idx])
-               print('App[%d] is :' % (app_idx + 1), app_name[app_idx])
-               g_stext_app[app_idx] = int(t[0], 16)
-               g_etext_app[app_idx] = g_stext_app[app_idx] + int(word[3], 10) # word[3] is text_size
-               app_idx = app_idx + 1
-
-    print('----------------------------------------------------------')
+    print('-----------------------------------------------------------------------------------------')
     address1 = hex(lr_value)
     address2 = hex(pc_value)
     result = 0
 
-    # Check for pc & lr values in application text address range
+    # Check for lr & pc values in application text address range
     if (pc_value != 00000000):
         for app_idx in range(g_app_idx):
             os.system("nm --defined-only -l --numeric-sort " + BIN_PATH + app_name[app_idx] + "_dbg > " + BIN_PATH + app_name[app_idx] + ".map")
-            # Check for lr & pc values in all application text addresses
             if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
                 addr = lr_value - int(hex(g_stext_app[app_idx]), 16)
                 f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
                 result = f.read()
                 if '??' not in result and '$d' not in result:
                     is_app_crash = 1
-                    print('App Crash point is as follows:')
-                    print('[ Caller - return address (LR) - of the function which has caused the crash ]\n')
-                    print('App name          : {0}'.format(app_name[app_idx]))
-                    format_output(result)
+                    print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
+                    print('\n2. Crash point (PC or LR)')
+                    print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
+                    format_output(result, "")
             if (address2 >= hex(g_stext_app[app_idx]) and address2 < hex(g_etext_app[app_idx])):
                 addr = pc_value - int(hex(g_stext_app[app_idx]), 16)
                 f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
                 result = f.read()
                 if '??' not in result and '$d' not in result:
+                    if (not is_app_crash):
+                        print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
+                        print('\n2. Crash point (PC or LR)')
                     is_app_crash = 1
-                    print('\nApp Crash point is as follows:')
-                    print('[ Current location (PC) of assert ]')
-                    print(' - Exact crash point might be -4 or -8 bytes from the PC.\n')
-                    print('App name          : {0}'.format(app_name[app_idx]))
-                    format_output(result)
-
-            #It displays the debug symbols corresponding to all the addresses in the application text address range
-            print('\n-------------------------- DEBUG SYMBOLS IN "{0}" TEXT RANGE -------------------------'.format(app_name[app_idx]))
-            os.system("python ../debug/debugsymbolviewer.py " + app_name[app_idx] + ".map " + log_file + " " + hex(int(hex(g_stext_app[app_idx]), 16)) + " 0")
+                    print('\n\t[ Current location (PC) of assert ]')
+                    format_output(result, "")
+                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
+                result1 = f.read()
+                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
+                result2 = f.read()
+                if '??' not in result and '$d' not in result:
+                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                    format_output(result1, "of (pc - 4)")
+                    format_output(result2, "of (pc - 8)")
 
     # Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
     else:
         address1 = hex(g_assertpc)
         for app_idx in range(g_app_idx):
             os.system("nm --defined-only -l --numeric-sort " + BIN_PATH + app_name[app_idx] + "_dbg > " + BIN_PATH + app_name[app_idx] + ".map")
-            # Check for lr & pc values in all application text addresses
             if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
                 addr = g_assertpc - int(hex(g_stext_app[app_idx]), 16)
                 f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
                 result = f.read()
                 if '??' not in result and '$d' not in result:
                     is_app_crash = 1
-                    print('App Crash point is as follows:')
-                    print('[ Current location (PC) of assert ]')
-                    print(' - Exact crash point might be -4 or -8 bytes from the PC.\n')
-                    print('App name          : {0}'.format(app_name[app_idx]))
-                    format_output(result)
+                    print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
+                    print('\n2. Crash point (PC or LR)')
+                    print('\n\t[ Current location (PC) of assert ]')
+                    format_output(result, "")
+                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
+                result1 = f.read()
+                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
+                result2 = f.read()
+                if '??' not in result and '$d' not in result:
+                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                    format_output(result1, "of (pc - 4)")
+                    format_output(result2, "of (pc - 8)")
 
-            #It displays the debug symbols corresponding to all the addresses in the application text address range
-            print('\n-------------------------- DEBUG SYMBOLS IN "{0}" TEXT RANGE -------------------------'.format(app_name[app_idx]))
-            os.system("python ../debug/debugsymbolviewer.py " + app_name[app_idx] + ".map " + log_file + " " + hex(int(hex(g_stext_app[app_idx]), 16)) + " 0")
-
-    # Check for pc & lr values in application text address range
+    # Check for lr & pc values in kernel text address range
     if (not is_app_crash) and (pc_value != 00000000):
         address1 = hex(lr_value)
-        # Check for pc & lr values in kernel text address range
         if (address1 >= hex(g_stext_flash) and address1 < hex(g_etext_flash)) or (address1 >= hex(g_stext_ram) and address1 < hex(g_etext_ram)):
             # If yes, print the crash point using addr2line
             f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(lr_value))
             result = f.read()
             if '??' not in result and '$d' not in result:
                 is_kernel_crash = 1
-                print('Kernel Crash point is as follows:')
-                print('[ Caller - return address (LR) - of the function which has caused the crash ]\n')
-                format_output(result)
+                print('1. Crash Binary             : kernel')
+                print('\n2. Crash point (PC or LR)')
+                print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
+                format_output(result, "")
         if (address2 >= hex(g_stext_flash) and address2 < hex(g_etext_flash)) or (address2 >= hex(g_stext_ram) and address2 < hex(g_etext_ram)):
             f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value))
             result = f.read()
             if '??' not in result and '$d' not in result:
+                if (not is_kernel_crash):
+                    print('1. Crash Binary             : kernel')
+                    print('\n2. Crash point (PC or LR)')
                 is_kernel_crash = 1
-                print('\nKernel Crash point is as follows:')
-                print('[ Current location (PC) of assert ]')
-                print(' - Exact crash point might be -4 or -8 bytes from the PC.\n')
-                format_output(result)
-
-        #It displays the debug symbols corresponding to all the addresses in the kernel text address range
-        print('\n--------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE --------------------------')
-        os.system("python ../debug/debugsymbolviewer.py System.map " + log_file + " 0x0 1")
+                print('\n\t[ Current location (PC) of assert ]')
+                format_output(result, "")
+            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 4))
+            result1 = f.read()
+            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 8))
+            result2 = f.read()
+            if '??' not in result and '$d' not in result:
+                print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                format_output(result1, "of (pc - 4)")
+                format_output(result2, "of (pc - 8)")
 
     # Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
     if (pc_value == 00000000 and g_assertpc):
         address1 = hex(g_assertpc)
         if (address1 >= hex(g_stext_flash) and address1 < hex(g_etext_flash)) or (address1 >= hex(g_stext_ram) and address1 < hex(g_etext_ram)):
             # If yes, print the crash point using addr2line
-            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + address1)
+            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc))
             result = f.read()
             if '??' not in result and '$d' not in result:
                 is_kernel_crash = 1
-                print('Kernel Crash point is as follows:')
-                print('[ Current location (PC) of assert ]')
-                print(' - Exact crash point might be -4 or -8 bytes from the PC.\n')
-                format_output(result)
-
-        #It displays the debug symbols corresponding to all the addresses in the kernel text address range
-        print('\n--------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE --------------------------')
-        os.system("python ../debug/debugsymbolviewer.py System.map " + log_file + " 0x0 1")
+                print('1. Crash Binary             : kernel')
+                print('\n2. Crash point (PC or LR)')
+                print('\n\t[ Current location (PC) of assert ]')
+                format_output(result, "")
+            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 4))
+            result1 = f.read()
+            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 8))
+            result2 = f.read()
+            if '??' not in result and '$d' not in result:
+                print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                format_output(result1, "of (pc - 4)")
+                format_output(result2, "of (pc - 8)")
 
     if (not is_app_crash) and (not is_kernel_crash):
-        print('PC & LR values not in any text range, no probable crash point detected')
-        print('----------------------------------------------------------\n')
+        print('1. Crash Binary             : NA')
+        print('\n2. Crash point (PC or LR)')
+        # Parse the contents based on tokens in log file.
+        with open(log_file) as searchfile:
+            for line in searchfile:
+                # If PC value is invalid, show inavlid PC
+                if 'PC value might be invalid' in line:
+                    print('\tPC value might be invalid.')
+        print('\tPC & LR values not in any text range! No probable crash point detected.')
 
-    print('----------------------------------------------------------\n')
+    print('\n3. Call stack of last run thread using Stack dump\n')
+    # Parse the contents based on tokens in log file.
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            # Print the current stack pointer value
+            if 'up_dumpstate: sp:' in line:
+                word = line.split(':')
+                # word[2] contains the current stack pointer
+                stack_curr = int(word[2], 16)
+                print("\t- Current stack pointer:\t", hex(stack_curr))
+
+    # It displays the debug symbols corresponding to all the addresses in the kernel and application text address range
+    print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
+    os.system("python ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
+
+    print('\n4. Miscellaneous information:')
+    # It displays the debug symbols corresponding to all the wrong sp addresses (if any)
+    # The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses
+    os.system("python ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
+    print('-----------------------------------------------------------------------------------------')
 
 def usage():
 	print('*************************************************************')
@@ -772,12 +820,21 @@ def main():
 				ext = (line.split("=")[1].strip())
 	elf = (BIN_PATH + 'tinyara' + ext)
 
+	# Get the number of application binaries, names, text address and sizes
+	find_number_of_binaries(log_file)
+
 	print('')
 	print('')
 	print('*************************************************************')
-	print('dump_file         :', dump_file)
-	print('log_file          :', log_file)
-	print('elf_file          :', elf)
+	print('dump_file                   :', dump_file)
+	print('log_file                    :', log_file)
+	if (g_app_idx > 0):
+		print('Number of binaries          : %d [kernel + apps]' % (g_app_idx + 1))
+	else:
+		print('Number of binary            : 1 [kernel]')
+	print('"kernel" elf_file           :', elf)
+	for app_idx in range(g_app_idx):
+		print('"app%d" elf_file             :' % (app_idx + 1), BIN_PATH + app_name[app_idx] + '_dbg ')
 	print('*************************************************************')
 	print('')
 
@@ -857,9 +914,13 @@ def main():
 			global g_etext_ram
 			g_etext_ram = rParser.get_address_of_symbol("_etext_ram")
 
-		if ((dump_file != None) and (log_file != None)):
-			# Find the point of crash in the kernel, application or common binaries
-			find_crash_point(log_file, elf)
+		if 'CONFIG_BOARD_CRASHDUMP=y' in data:
+			if ((dump_file != None) and (log_file != None)):
+				# Find the point of crash in the kernel, application or common binaries
+				find_crash_point(log_file, elf)
+		else:
+				find_crash_point(log_file, elf)
+
 
 		# Get ARM arch family
 		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data):
