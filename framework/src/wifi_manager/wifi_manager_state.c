@@ -462,11 +462,11 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 {
 	if (msg->event == WIFIMGR_CMD_DISCONNECT) {
-		dhcpc_close_ipaddr();
+		//dhcpc_close_ipaddr();
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == WIFIMGR_EVT_STA_DISCONNECTED) {
-		dhcpc_close_ipaddr();
+		//dhcpc_close_ipaddr(); //2
 		wifimgr_call_cb(CB_STA_DISCONNECTED, msg->param);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == WIFIMGR_CMD_SET_SOFTAP) {
