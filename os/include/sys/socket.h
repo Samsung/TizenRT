@@ -122,9 +122,6 @@ extern "C" {
 #ifndef AF_UNSPEC
 #define AF_UNSPEC PF_UNSPEC
 #endif
-#ifndef AF_LOCAL
-#define AF_LOCAL PF_LOCAL
-#endif
 #ifndef AF_INET
 #define AF_INET PF_INET
 #endif
