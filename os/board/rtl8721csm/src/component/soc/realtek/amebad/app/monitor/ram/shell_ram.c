@@ -192,7 +192,7 @@ VOID shell_init_ram(VOID)
 	if (pdTRUE != xTaskCreate( shell_task_ram, "LOGUART_TASK", 1024*2, 
 		NULL, tskIDLE_PRIORITY + 5 , NULL))
 	{
-		DiagPrintf("Create Log UART Task Err!!\n");
+		rtw_printf("Create Log UART Task Err!!\n");
 	}
 
 	//CONSOLE_AMEBA();

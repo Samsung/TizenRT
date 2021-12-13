@@ -77,7 +77,7 @@ void os_heap_init(void){
 	}
 #endif
 }
-#define dbg_printf DiagPrintf
+#define dbg_printf rtw_printf
 typedef struct fault_handler_back_trace_s {
     uint32_t msp_top;         /*!< the Top address of the MSP */
     uint32_t msp_limit;       /*!< the Limit address of the MSP */
@@ -1317,7 +1317,7 @@ static void app_driver_call_os_func_init(void)
 // The Main App entry point
 void app_start(void)
 {
-	//cmse_address_info_t cmse_address_info = cmse_TT((void *)DiagPrintf);
+	//cmse_address_info_t cmse_address_info = cmse_TT((void *)rtw_printf);
 
 	irq_table_init(MSP_RAM_HP_NS); /* NS Vector table init */
 	VectorTableOverride();
