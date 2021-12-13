@@ -75,23 +75,6 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define DHCPC_SET_IP4ADDR(intf, ip, netmask, gateway)	        \
-	do {							\
-		int res = -1;					\
-		res = netlib_set_ipv4addr(intf, &ip);		\
-		if (res == -1) {				\
-			printf("set ipv4 addr error\n");	\
-		}						\
-		res = netlib_set_ipv4netmask(intf, &netmask);	\
-		if (res == -1) {				\
-			printf("set netmask addr error\n");	\
-		}						\
-		res = netlib_set_dripv4addr(intf, &gateway);	\
-		if (res == -1) {				\
-			printf("set route addr error\n");	\
-		}						\
-	} while (0)
-
 /****************************************************************************
  * Private Types
  ****************************************************************************/
