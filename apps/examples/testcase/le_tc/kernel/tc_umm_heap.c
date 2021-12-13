@@ -283,7 +283,7 @@ static void tc_umm_heap_realloc(void)
 
 	/* Relloc Free by size 0 */
 	mem_ptr[0] = (int *)malloc(alloc_size);
-	TC_ASSERT_NEQ("malloc", mem_ptr[1], NULL);
+	TC_ASSERT_NEQ("malloc", mem_ptr[0], NULL);
 	alloc_size /= 2;
 	mem_ptr[1] = (int *)realloc(mem_ptr[0], alloc_size);
 	TC_ASSERT_NEQ_CLEANUP("realloc", mem_ptr[1], NULL, free(mem_ptr[0]));
