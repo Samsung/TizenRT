@@ -76,7 +76,8 @@
 
 /* Bootparam information */
 #define BOOTPARAM_COUNT            2                          /* The number of boot parameters */
-#define BOOTPARAM_PARTSIZE         (8 * 1024)                 /* The size of partition for boot param binary : 8K */
+#define BOOTPARAM_SIZE             4096                       /* The size of boot parameter : 4K */
+#define BOOTPARAM_PARTSIZE         (BOOTPARAM_SIZE * 2)       /* The size of partition for dual boot parameters : 8K */
 
 #define CHECKSUM_SIZE              4
 
