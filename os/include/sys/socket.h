@@ -131,9 +131,6 @@ extern "C" {
 #ifndef AF_INET6
 #define AF_INET6 PF_INET6
 #endif
-#ifndef AF_PACKET
-#define AF_PACKET PF_PACKET
-#endif
 
 /****************************************************************************
  * Public Structure
