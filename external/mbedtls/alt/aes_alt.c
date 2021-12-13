@@ -204,9 +204,8 @@ int mbedtls_aes_crypt_cfb128(mbedtls_aes_context *ctx,
 	if (mode == MBEDTLS_AES_ENCRYPT) {
 		ret = sl_aes_encrypt(ctx->shnd, &aes_in, &aes_param, ctx->enc_key_idx, &aes_out);
 	} else if (mode == MBEDTLS_AES_DECRYPT) {
-		ret = sl_aes_decrypt(ctx->shnd, &aes_in, &aes_param, ctx->dec_key_idx, &aes_out);
+		ret = sl_aes_decrypt(ctx->shnd, &aes_in, &aes_param, ctx->enc_key_idx, &aes_out);
 	}
-
 	if (ret != SECLINK_OK) {
 		return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
 	}
