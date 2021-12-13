@@ -85,18 +85,6 @@ static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	WT_LOG(TAG, "====================================");
 }
 
-static void wm_get_info(wifi_manager_ap_config_s *arg)
-{
-	WT_LOG(TAG, "-->");
-	wifi_manager_ap_config_s apconfig;
-	wifi_manager_result_e res = wifi_manager_get_config(&apconfig);
-	if (res != WIFI_MANAGER_SUCCESS) {
-		WT_LOGE(TAG, "Get AP configuration failed");
-		return;
-	}
-	print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Information");
-}
-
 static int run_init(void *arg)
 {
 	wifi_manager_result_e res = wifi_manager_init(&g_wifi_callbacks);
