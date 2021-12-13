@@ -112,7 +112,6 @@ static wifi_manager_result_e _wifimgr_scan(wifi_manager_scan_config_s *config);
 #define WIFIMGR_STATE_TABLE(state, handler, str)				\
 	static wifi_manager_result_e handler(wifimgr_msg_s *msg);
 #include "wifi_manager_state_table.h"
-static wifi_manager_result_e _handle_request(wifimgr_msg_s *msg);
 typedef wifi_manager_result_e (*wifimgr_handler)(wifimgr_msg_s *msg);
 
 /* g_handler should be matched to _wifimgr_state*/
