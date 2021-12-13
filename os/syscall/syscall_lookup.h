@@ -238,7 +238,7 @@ SYSCALL_LOOKUP(stat,                    2, STUB_stat)
 SYSCALL_LOOKUP(statfs,                  2, STUB_statfs)
 
 #  if CONFIG_NFILE_STREAMS > 0
-SYSCALL_LOOKUP(fdopen,                  3, STUB_fs_fdopen)
+SYSCALL_LOOKUP(fs_fdopen,               3, STUB_fs_fdopen)
 SYSCALL_LOOKUP(sched_getstreams,        0, STUB_sched_getstreams)
 #  endif
 
