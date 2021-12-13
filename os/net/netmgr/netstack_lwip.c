@@ -164,7 +164,7 @@ static char *_convert_udp_type(struct lwip_sock *sock)
 	}
 	return "UDP";
 }
-
+#ifdef CONFIG_NET_DEBUG_PORT
 static void _get_port(int fd, int *port)
 {
 	*port = -1;
@@ -183,6 +183,7 @@ static void _get_port(int fd, int *port)
 		*port = upcb->local_port;
 	}
 }
+#endif
 
 static inline void _get_tcp_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logger)
 {
@@ -343,6 +344,7 @@ static void _get_raw_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logge
 	}
 }
 
+#ifdef CONFIG_NET_DEBUG_PORT
 static void _get_proto(int fd, char **type)
 {
 	*type = UNKNOWN_STR;
@@ -359,6 +361,7 @@ static void _get_proto(int fd, char **type)
 		*type = UDP_STR;
 	}
 }
+#endif
 
 static inline int _netsock_clone(FAR struct lwip_sock *sock1, FAR struct lwip_sock *sock2)
 {
