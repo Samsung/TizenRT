@@ -176,7 +176,7 @@ CmdLogBuf(
 		ConfigDebugBuffer = 0;
 	}
 
-	DiagPrintf("AAAAA\n");
+	rtw_printf("AAAAA\n");
 	DiagPrintfD("BBBBB\n");
 		
 	return _TRUE;

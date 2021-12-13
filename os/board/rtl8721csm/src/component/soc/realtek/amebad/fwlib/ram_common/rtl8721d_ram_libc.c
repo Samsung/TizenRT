@@ -168,7 +168,7 @@ int _rtl_vsprintf(char *buf, size_t size, const char *fmt, const int *dp)
 				*q++ = *dp++;
 			else {
 				if(*fmt != '%')
-					DiagPrintf("%s: format not support!\n", __func__);
+					rtw_printf("%s: format not support!\n", __func__);
 				*q++ = *fmt;
 			}
 
@@ -227,7 +227,7 @@ int _rtl_sprintf(char* str, const char* fmt, ...)
 		if((*fmt1  == 's') || (*fmt1 == 'x') || (*fmt1 == 'X') || (*fmt1 == 'p') || (*fmt1 == 'P') || (*fmt1 == 'd') || (*fmt1 == 'c') || (*fmt1 == '%'))
 			continue;
 		else {
-			DiagPrintf("%s: format not support!\n", __func__);
+			rtw_printf("%s: format not support!\n", __func__);
 			break;
 		}
 	}
@@ -266,7 +266,7 @@ int _rtl_printf(const char* fmt, ...)
 		if((*fmt1  == 's') || (*fmt1 == 'x') || (*fmt1 == 'X') || (*fmt1 == 'p') || (*fmt1 == 'P') || (*fmt1 == 'd') || (*fmt1 == 'c') || (*fmt1 == '%'))
 			continue;
 		else {
-			DiagPrintf("%s: format not support!\n", __func__);
+			rtw_printf("%s: format not support!\n", __func__);
 			break;
 		}
 	}
@@ -327,7 +327,7 @@ int _rtl_sscanf(const char *buf, const char *fmt, ...)
 		if((*fmt1  == 'c') || (*fmt1 == 's') || (*fmt1 == 'o') || (*fmt1 == 'x') || (*fmt1 == 'X') || (*fmt1 == 'i') || (*fmt1 == 'd') || (*fmt1 == 'u') || (*fmt1 == '%'))
 			continue;
 		else {
-			DiagPrintf("%s: format not support!\n", __func__);
+			rtw_printf("%s: format not support!\n", __func__);
 			break;
 		}
 	}

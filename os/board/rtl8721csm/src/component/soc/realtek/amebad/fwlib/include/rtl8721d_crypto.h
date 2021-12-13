@@ -568,7 +568,7 @@ int rtl_cryptoEngine_init(void)
 #undef crypto_dbg_mem_dump
 #define crypto_dbg_mem_dump(start, size, str_header) \
 	if (ConfigDebug[LEVEL_INFO] & BIT(MODULE_IPSEC)) { \
-		DiagPrintf("%s(): memdump : address: %08x, size: %d\n", "rtl_cryptoEngine_dbg", start, size); \
+		rtw_printf("%s(): memdump : address: %08x, size: %d\n", "rtl_cryptoEngine_dbg", start, size); \
 		CRYPTO_MemDump((const u8*)(start), size, (char*)(str_header)); \
 	}
 #endif

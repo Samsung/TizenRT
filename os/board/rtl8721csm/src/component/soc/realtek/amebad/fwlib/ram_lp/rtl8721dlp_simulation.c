@@ -69,7 +69,7 @@ VOID app_simulation_init(VOID *Data)
 	if (pdTRUE != xTaskCreate(app_simulation_task,"simulation_task", 1024, 
 		NULL, tskIDLE_PRIORITY + 5 , NULL))
 	{
-		DiagPrintf("Create simulation_task Err!!\n");
+		rtw_printf("Create simulation_task Err!!\n");
 	}
 
 }

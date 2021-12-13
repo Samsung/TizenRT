@@ -102,7 +102,7 @@ static VOID LOG_BUFF_TASK(VOID *Data)
 	
 			taskYIELD();
 		}
-		DiagPrintf((const char *)read_pointer);
+		rtw_printf((const char *)read_pointer);
 
 		read_pointer = (read_pointer + sizeof(log_buffer_t));
 		if (read_pointer > log_buffer_end) {
@@ -140,7 +140,7 @@ u32 LOG_PRINTF_BUFFER_INIT(u32 thread_init)
 	if (pdTRUE != xTaskCreate(LOG_BUFF_TASK, (const char * const)"LOGBUFF_TASK", 128, 
 		NULL, tskIDLE_PRIORITY + 3 , &log_buffer_thread_handle))
 	{
-		DiagPrintf("CreateLOGBUFF_TASK Err!!\n");
+		rtw_printf("CreateLOGBUFF_TASK Err!!\n");
 	}
 #endif
 	return 0;

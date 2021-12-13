@@ -72,7 +72,7 @@ void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
 	dev_tmp = rtk_get_netdev(idx_wlan);
 
 	if (!dev_tmp) {
-		DiagPrintf("[rltk_wlan_set_netif_info] get dev fail\n");
+		rtw_printf("[rltk_wlan_set_netif_info] get dev fail\n");
 		return;
 	}
 	netdev_set_hwaddr(dev_tmp, dev_addr, IFHWADDRLEN);
@@ -235,7 +235,7 @@ int netif_get_hwaddr(int idx_wlan, uint8_t *dev_addr)
 	dev_tmp = rtk_get_netdev(idx_wlan);
 
 	if (!dev_tmp) {
-		DiagPrintf("[netif_get_hwaddr] get dev fail\n");
+		rtw_printf("[netif_get_hwaddr] get dev fail\n");
 		return -1;
 	}
 	if (netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN) == 0)
@@ -287,7 +287,7 @@ unsigned char *rltk_wlan_get_ip(int idx)
 	dev_tmp = rtk_get_netdev(idx);
 	
 	if (!dev_tmp) {
-		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+		rtw_printf("[rltk_wlan_get_ip] get dev fail\n");
 		return NULL;
 	}
 
@@ -302,7 +302,7 @@ unsigned char *rltk_wlan_get_gw(int idx)
 	dev_tmp = rtk_get_netdev(idx);
 	
 	if (!dev_tmp) {
-		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+		rtw_printf("[rltk_wlan_get_ip] get dev fail\n");
 		return NULL;
 	}
 
@@ -317,7 +317,7 @@ unsigned char *rltk_wlan_get_gwmask(int idx)
 	dev_tmp = rtk_get_netdev(idx);
 	
 	if (!dev_tmp) {
-		DiagPrintf("[rltk_wlan_get_ip] get dev fail\n");
+		rtw_printf("[rltk_wlan_get_ip] get dev fail\n");
 		return NULL;
 	}
 

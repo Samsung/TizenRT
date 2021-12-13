@@ -248,7 +248,7 @@ VOID SOCPS_SWRLDO_Suspend(u32 new_status)
 		Temp &= ~BIT_MASK_SWR_REG_ZCDC_H;
 	}
 
-	//DiagPrintf("setting ZCD to %x in %s\n",Temp,new_status? "suspend": "resume");
+	//rtw_printf("setting ZCD to %x in %s\n",Temp,new_status? "suspend": "resume");
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_SYS_EFUSE_SYSCFG1,Temp);
 }
 
