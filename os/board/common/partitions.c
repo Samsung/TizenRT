@@ -100,6 +100,7 @@ FAR struct mtd_dev_s *mtd_initialize(void)
 
 static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, int partno, const char *types, partition_info_t *partinfo)
 {
+	int tagno = MTD_NONE;
 #ifdef CONFIG_FS_ROMFS
 	bool save_romfs_partno = false;
 #endif
@@ -114,26 +115,31 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 
 #ifdef CONFIG_MTD_FTL
 	bool do_ftlinit = false;
-	if (!strncmp(types, "ftl,", 4)
+	if (!strncmp(types, "ftl,", 4)) {
+		tagno = MTD_FTL;
+		do_ftlinit = true;
+	}
 #ifdef CONFIG_BINARY_MANAGER
-	|| !strncmp(types, "kernel,", 7)
+	else if (!strncmp(types, "kernel,", 7)
 	|| !strncmp(types, "bootparam,", 10)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	|| !strncmp(types, "bin,", 4)
 #endif
-#endif
 	) {
 		do_ftlinit = true;
 	}
+#endif
 #ifdef CONFIG_FS_ROMFS
 	else if (!strncmp(types, "romfs,", 6)) {
 		do_ftlinit = true;
+		tagno = MTD_ROMFS;
 		save_romfs_partno = true;
 	}
 #endif
 #ifdef CONFIG_LIBC_ZONEINFO_ROMFS
 	else if (!strncmp(types, "timezone,", 9)) {
 		do_ftlinit = true;
+		tagno = MTD_ROMFS;
 		save_timezone_partno = true;
 	}
 #endif
@@ -151,6 +157,7 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 		snprintf(partref, sizeof(partref), "p%d", partno);
 		smart_initialize(minor, mtd_part, partref);
 		partinfo->smartfs_partno = partno;
+		mtd_setpartitiontagno(mtd_part, MTD_FS);
 	}
 #endif
 #ifdef CONFIG_MTD_FTL
@@ -159,6 +166,7 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 			printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
 			return ERROR;
 		}
+		mtd_setpartitiontagno(mtd_part, tagno);
 #ifdef CONFIG_FS_ROMFS
 		if (save_romfs_partno) {
 			partinfo->romfs_partno = partno;
