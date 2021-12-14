@@ -1043,6 +1043,9 @@ FAR struct mtd_dev_s *m25p_initialize(FAR struct spi_dev_s *dev)
 		priv->mtd.write = m25p_write;
 #endif
 		priv->mtd.ioctl = m25p_ioctl;
+#ifdef CONFIG_MTD_REGISTRATION
+		priv->mtd.name = "m25px";
+#endif
 		priv->dev = dev;
 
 		/* Deselect the FLASH */

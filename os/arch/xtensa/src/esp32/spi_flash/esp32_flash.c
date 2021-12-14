@@ -316,6 +316,9 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 #if defined(CONFIG_MTD_BYTE_WRITE)
 		priv->mtd.write = esp32_write;
 #endif
+#ifdef CONFIG_MTD_REGISTRATION
+		priv->mtd.name = "esp32_flash";
+#endif
         priv->nsectors = ESP32_NSECTORS;
 		return (FAR struct mtd_dev_s *)priv;
     }
