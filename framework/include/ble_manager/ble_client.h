@@ -70,11 +70,15 @@ typedef struct {
 	bool auto_connect;
 } ble_client_ctx;
 
+typedef void(*ble_client_device_disconnected_cb)(ble_client_ctx *ctx);
+typedef void(*ble_client_device_connected_cb)(ble_client_ctx *ctx, ble_device_connected* connected_device);
+typedef void(*ble_client_operation_notification_cb)(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
+
 typedef struct {
 	/* This is a set of callback function for BLE client */
-	void(*ble_client_device_disconnected_cb)(ble_client_ctx *ctx);
-	void(*ble_client_device_connected_cb)(ble_client_ctx *ctx, ble_device_connected* connected_device);
-	void(*ble_client_operation_notification_cb)(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
+	ble_client_device_disconnected_cb disconnected_cb;
+	ble_client_device_connected_cb connected_cb;
+	ble_client_operation_notification_cb notification_cb;
 } ble_client_callback_list;
 
 ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks);

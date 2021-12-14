@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <tinyara/ble/ble_manager.h>
 #include <ble_manager/ble_manager.h>
+#include "ble_queue.h"
 #include "ble_manager_common.h"
 #include "ble_manager_autoconnect.h"
 #include "ble_manager_event.h"
@@ -29,8 +30,8 @@
 #include "ble_manager_state.h"
 #include "ble_manager_log.h"
 
-static trble_scan_queue scan_queue[1] = { 0, };
-static volatile int g_run_process = 0;
+#define BLE_EVT_HIGH_BUFFER_SIZE 20
+#define BLE_EVT_LOW_BUFFER_SIZE 100
 
 static ble_client_ctx_internal g_client_table[BLE_MAX_CONNECTION_COUNT] = { 0, };
 static ble_scan_ctx g_scan_ctx = { 0, };
@@ -109,32 +110,59 @@ static ble_result_e _convert_ret(trble_result_e val)
 	return (ble_result_e)val;
 }
 
-static int _bledev_handler(int argc, char *argv[])
-{
-	g_run_process = 1;
-	ble_scanned_device *scanned_device;
-
-	while (g_run_process) {
-		if (sem_wait(&scan_queue->countsem) < 0) {
-			if (errno == EINTR) {
-				continue;
-			} else {
-				g_run_process = 0;
-				return -1;
-			}
-		}
-		if (scan_queue->read_index == scan_queue->write_index) {
-			BLE_LOG_INFO("[BLEMGR] Scan Info Queue is Empty\n");
-			continue;
-		}
-		scanned_device = (ble_scanned_device *)&(scan_queue->queue[scan_queue->read_index]);
-		if (g_scan_ctx.state == BLE_SCAN_STARTED && g_scan_ctx.callback.ble_client_device_scanned_cb) {
-			g_scan_ctx.callback.ble_client_device_scanned_cb(scanned_device);
-		}
-		scan_queue->read_index = (scan_queue->read_index + 1) % scan_queue->size;
+static void _event_caller(int evt_pri, void *data) {
+	if (data == NULL) {
+		return;
 	}
 
-	return 0;
+	switch (evt_pri) {
+	case BLE_QUEUE_EVT_PRI_HIGH: {
+		blemgr_msg_params *msg = (blemgr_msg_params *)data;
+		switch (msg->evt) {
+		case BLE_EVT_CLIENT_CONNECT: {
+			ble_client_device_connected_cb callback = msg->param[0];
+			callback(msg->param[1], msg->param[2]);
+		} break;
+		case BLE_EVT_CLIENT_DISCONNECT: {
+			ble_client_device_disconnected_cb callback = msg->param[0];
+			callback(msg->param[1]);
+		} break;
+		case BLE_EVT_CLIENT_NOTI: {
+			ble_client_operation_notification_cb callback = msg->param[0];
+			ble_attr_handle attr_handle = *(ble_attr_handle *)(msg->param[2] + sizeof(ble_conn_handle));
+
+			ble_data read_result[1];
+			read_result->length = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(ble_attr_handle));
+			read_result->data = (uint8_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(ble_attr_handle) + sizeof(read_result->length));
+			
+			callback(msg->param[1], attr_handle, read_result);
+		} break;
+		case BLE_EVT_SCAN_STATE: {
+			ble_scan_state_e state = *(ble_scan_state_e *)msg->param[2];
+			ble_client_scan_state_changed_cb callback = msg->param[0];
+			callback(state);
+			if (state == BLE_SCAN_STOPPED) {
+				memset(&(g_scan_ctx.filter), 0, sizeof(ble_scan_filter));
+				memset(&(g_scan_ctx.callback), 0, sizeof(ble_scan_callback_list));
+			}
+		} break;
+		default:
+			break;
+		}
+
+		if (msg->param[2] != NULL) {
+			free(msg->param[2]);
+		}
+	} break;
+	case BLE_QUEUE_EVT_PRI_LOW: {
+		ble_scanned_device *scanned_device = (ble_scanned_device *)data;
+		if (g_scan_ctx.state == BLE_SCAN_STARTED && g_scan_ctx.callback.device_scanned_cb) {
+			g_scan_ctx.callback.device_scanned_cb(scanned_device);
+		}
+	} break;
+	default:
+		break;
+	}
 }
 
 /*
@@ -143,6 +171,10 @@ static int _bledev_handler(int argc, char *argv[])
 ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 {
 	trble_result_e ret = TRBLE_FAIL;
+	blemgr_msg_params queue_msg = { 
+		.evt = msg->event,
+		.count = 3
+	};
 
 	BLE_LOG_DEBUG("[BLEMGR] T%d --> _handle_request[%d]\n", getpid(), msg->event);
 
@@ -155,28 +187,24 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			break;
 		}
 
-		sem_init(&scan_queue->countsem, 0, 0);
-		scan_queue->size = SCAN_INFO_BUFFER_SIZE;
-		scan_queue->queue = (trble_scanned_device *)malloc(sizeof(trble_scanned_device) * scan_queue->size);
-		if (scan_queue->queue == NULL) {
-			ret = TRBLE_FAIL;
+		/* BLE Priority Queue Setup */
+		if (ble_queue_init(_event_caller) != BLE_QUEUE_SUCCESS) {
 			break;
 		}
-
-		int tid = task_create("ble_evt_handler", 100, 2048, (main_t)_bledev_handler, NULL);
-		if (tid < 0) {
-			ret = TRBLE_FAIL;
+		if (ble_queue_pri_set(BLE_QUEUE_EVT_PRI_HIGH, BLE_EVT_HIGH_BUFFER_SIZE, sizeof(blemgr_msg_params)) != BLE_QUEUE_SUCCESS) {
+			ble_queue_deinit();
+			break;
+		}
+		if (ble_queue_pri_set(BLE_QUEUE_EVT_PRI_LOW, BLE_EVT_LOW_BUFFER_SIZE, sizeof(trble_scanned_device)) != BLE_QUEUE_SUCCESS) {
+			ble_queue_deinit();
 			break;
 		}
 		
 		trble_server_init_config *server = (trble_server_init_config *)msg->param;
-		ret = ble_drv_init(server, scan_queue);
+		ret = ble_drv_init(server, (trble_queue *)ble_queue_get_pri_queue(BLE_QUEUE_EVT_PRI_LOW));
 		if (ret != TRBLE_SUCCESS) {
-			g_run_process = 0;
-			scan_queue->size = 0;
-			sem_destroy(&scan_queue->countsem);
-			free(scan_queue->queue);
-			BLE_LOG_ERROR("[BLEMGR] init fail[%d]\n", ret);
+			/* Clear Queue */
+			ble_queue_deinit();
 			break;
 		}
 
@@ -204,10 +232,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
 			g_client_table[i].state = BLE_CLIENT_NONE;
 		}
-		g_run_process = 0;
-		scan_queue->size = 0;
-		sem_destroy(&scan_queue->countsem);
-		free(scan_queue->queue);
+		ble_queue_deinit();
 		g_manager_state = BLEMGR_UNINITIALIZED;
 		g_scan_ctx.state = BLE_SCAN_STOPPED;
 	} break;
@@ -911,7 +936,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 
 		if (ctx == NULL) {
-			BLE_LOG_ERROR("[BLEMGR] fail to find BLE context table");
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE context table\n");
 			ret = TRBLE_NOT_FOUND;
 			free(msg->param);
 			break;
@@ -926,10 +951,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			}
 		}
 
-		if (ctx && ctx->callbacks.ble_client_device_connected_cb) {
-			ctx->callbacks.ble_client_device_connected_cb((ble_client_ctx *)ctx, data);
+		if (ctx && ctx->callbacks.connected_cb) {
+			memcpy(queue_msg.param, (void*[]){ctx->callbacks.connected_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
+			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
-		free(msg->param);
 	} break;
 
 	case BLE_EVT_CLIENT_DISCONNECT: {
@@ -947,9 +972,9 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 				break;
 			}
 		}
+		free(msg->param);
 
 		if (ctx == NULL) {
-			free(msg->param);
 			break;
 		}
 
@@ -974,10 +999,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			ctx->state = BLE_CLIENT_IDLE;
 		}
 
-		if (priv_state != BLE_CLIENT_AUTOCONNECTING && ctx->callbacks.ble_client_device_disconnected_cb) {
-			ctx->callbacks.ble_client_device_disconnected_cb((ble_client_ctx *)ctx);
+		if (priv_state != BLE_CLIENT_AUTOCONNECTING && ctx->callbacks.disconnected_cb) {
+			memcpy(queue_msg.param, (void*[]){ctx->callbacks.disconnected_cb, ctx, NULL}, sizeof(void*) * queue_msg.count);
+			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
-		free(msg->param);
 	} break;
 
 	case BLE_EVT_CLIENT_NOTI: {
@@ -986,13 +1011,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 		int i;
 		ble_client_ctx_internal *ctx = NULL;
-		uint8_t *data = (uint8_t *)msg->param;
-		ble_conn_handle conn_handle = *(ble_conn_handle *)data;
-		ble_attr_handle attr_handle = *(ble_attr_handle *)(data + sizeof(ble_conn_handle));
-
-		ble_data read_result[1];
-		read_result->length = *(uint16_t *)(data + sizeof(ble_conn_handle) + sizeof(ble_attr_handle));
-		read_result->data = (uint8_t *)(data + sizeof(ble_conn_handle) + sizeof(ble_attr_handle) + sizeof(read_result->length));
+		ble_conn_handle conn_handle = *(ble_conn_handle *)msg->param;
 
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
 			if (g_client_table[i].conn_handle == conn_handle) {
@@ -1001,10 +1020,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			}
 		}
 
-		if (ctx && ctx->callbacks.ble_client_operation_notification_cb) {
-			ctx->callbacks.ble_client_operation_notification_cb((ble_client_ctx *)ctx, attr_handle, read_result);
+		if (ctx && ctx->callbacks.notification_cb) {
+			memcpy(queue_msg.param, (void*[]){ctx->callbacks.notification_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
+			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
-		free(msg->param);
 	} break;
 
 	case BLE_EVT_SCAN_STATE: {
@@ -1013,14 +1032,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 		ble_scan_state_e data = *(ble_scan_state_e *)msg->param;
 		g_scan_ctx.state = data;
-		if (g_scan_ctx.callback.ble_client_scan_state_changed_cb) {
-			g_scan_ctx.callback.ble_client_scan_state_changed_cb(data);
+		if (g_scan_ctx.callback.state_changed_cb) {
+			memcpy(queue_msg.param, (void*[]){g_scan_ctx.callback.state_changed_cb, NULL, msg->param}, sizeof(void*) * queue_msg.count);
+			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
-		if (data == BLE_SCAN_STOPPED) {
-			memset(&(g_scan_ctx.filter), 0, sizeof(ble_scan_filter));
-			memset(&(g_scan_ctx.callback), 0, sizeof(ble_scan_callback_list));
-		}
-		free(msg->param);
 	} break;
 
 	default:

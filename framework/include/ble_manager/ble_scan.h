@@ -56,14 +56,16 @@ typedef struct {
 	uint8_t resp_data_length;
 } __attribute__((aligned(4), packed)) ble_scanned_device;
 
+typedef void(*ble_client_scan_state_changed_cb)(ble_scan_state_e scan_state);
+typedef void(*ble_client_device_scanned_cb)(ble_scanned_device* scanned_device);
+
 typedef struct {
 	/* This is a set of callback function for BLE Scan */
-	void(*ble_client_scan_state_changed_cb)(ble_scan_state_e scan_state);
-	void(*ble_client_device_scanned_cb)(ble_scanned_device* scanned_device);
+	ble_client_scan_state_changed_cb state_changed_cb;
+	ble_client_device_scanned_cb device_scanned_cb;
 } ble_scan_callback_list;
 
 /* This is a heuristic value. It can be customized following a system env */
-#define SCAN_INFO_BUFFER_SIZE 100
 #define SCAN_WHITELIST_SIZE 10
 #define SCAN_MAX_TIMEOUT (5 * 60 * 1000) /* 5 min (Unit : ms) */
 
