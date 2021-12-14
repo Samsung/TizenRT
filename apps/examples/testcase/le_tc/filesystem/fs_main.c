@@ -2502,7 +2502,7 @@ static void tc_fs_vfs_sendfile_p(void)
 	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size, close(fd1); vfs_unmount());
 
 	/* offset = 1 */
-	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	fd2 = open(dest_file, O_WRONLY | O_CREAT | O_TRUNC);
 	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1); vfs_unmount());
 
 	offset = 1;
@@ -2613,7 +2613,7 @@ static void tc_fs_vfs_sendfile_offset_eof_n(void)
 	size = st.st_size;
 
 	/* current offset of input file is EOF, returns ERROR */
-	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	fd2 = open(dest_file, O_WRONLY | O_CREAT | O_TRUNC);
 	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1); vfs_unmount());
 
 	ret = lseek(fd1, 0, SEEK_END);
@@ -3090,7 +3090,7 @@ static void tc_libc_stdio_dprintf_p(void)
 
 	/* Init */
 	vfs_mount();
-	fd = open(filename, O_RDWR | O_CREAT);
+	fd = open(filename, O_RDWR | O_CREAT | O_TRUNC);
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	/* Testcase */
