@@ -447,7 +447,8 @@ int ble_rmc_main(int argc, char *argv[])
 
 		if (argc == 4 && strncmp(argv[2], "del", 4) == 0) {
 			int cnt = 0;
-			uint8_t mac[BLE_BD_ADDR_MAX_LEN] = { 0, };
+			ble_addr addr[1] = { 0, };
+			uint8_t *mac = addr->mac;
 
 			char *ptr = strtok(argv[3], ":");
 			while (ptr != NULL) {
@@ -455,7 +456,7 @@ int ble_rmc_main(int argc, char *argv[])
 				ptr = strtok(NULL, ":");
 			}
 			RMC_LOG(RMC_CLIENT_TAG, "TARGET : %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-			ret = ble_manager_delete_bonded(mac);
+			ret = ble_manager_delete_bonded(addr);
 			if (ret == BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "success to delete bond dev\n");
 			} else if (ret == BLE_MANAGER_NOT_FOUND) {
