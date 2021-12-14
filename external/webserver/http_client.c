@@ -582,6 +582,15 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	conn_type = http_keyvalue_list_find(request_params, "Connection");
 	if (!strncasecmp(conn_type, "Keep-Alive", strlen("Keep-Alive")+1)) {
 		client->keep_alive = 1;
+		struct timeval tv;
+		tv.tv_sec = HTTP_CONF_KEEP_ALIVE_MSEC / 1000;
+		tv.tv_usec = (HTTP_CONF_KEEP_ALIVE_MSEC % 1000) * 1000;
+		HTTP_LOGD("Keep-alive case, change timeout to (%u.%d)sec\n", tv.tv_sec, tv.tv_usec);
+		if (setsockopt(client->client_fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
+			HTTP_LOGE("Error: Fail to setsockopt\n");
+		} else {
+			HTTP_LOGD("Timeout modified done\n");
+		}
 	} else {
 		client->keep_alive = 0;
 	}
