@@ -529,7 +529,7 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	/* Output a header before the first entry */
 	if (filep->f_pos == 0) {
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		total = snprintf(buffer, buflen, "%-*s  Start    Size   MTD\n", MTD_PARTNAME_LEN, "Name");
+		total = snprintf(buffer, buflen, " %-*s  Start    Size", MTD_PARTNAME_LEN, "Name");
 #else
 		total = snprintf(buffer, buflen, "  Start    Size");
 #endif
@@ -545,8 +545,7 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	 * end-of-file.  This also handles the special case when there are
 	 * no registered MTD partitions.
 	 */
-
-	if (attr->nextpart) {
+	while (attr->nextpart) {
 		/* Get the geometry of the FLASH device */
 		ret = attr->nextpart->parent->ioctl(attr->nextpart->parent, MTDIOC_GEOMETRY, (unsigned long)((uintptr_t)&geo));
 		if (ret < 0) {
@@ -561,16 +560,15 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 		blkpererase = geo.erasesize / geo.blocksize;
 
 		/* Copy data from the next known partition */
-
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		ret = snprintf(&buffer[total], buflen - total, "%s%7d %7d", attr->nextpart->name, attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks);
+		ret = snprintf(&buffer[total], buflen - total, "%15s %7d %7d", attr->nextpart->name, attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks);
 #else
 		ret = snprintf(&buffer[total], buflen - total, "%7d %7d", attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks);
 #endif
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
 		if (ret + total < buflen) {
-			ret += snprintf(&buffer[total + ret], buflen - (total + ret), "   %s\n", attr->nextpart->parent->name);
+			ret += snprintf(&buffer[total + ret], buflen - (total + ret), "%15s\n", attr->nextpart->parent->name);
 		}
 #else
 		if (ret + total < buflen) {
@@ -585,6 +583,12 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 
 			total += ret;
 			attr->nextpart = attr->nextpart->pnext;
+		} else {
+			/* This one didn't fit completely.  Truncate the partial
+			* entry and break the loop.
+			*/
+			buffer[total] = '\0';
+			break;
 		}
 	}
 
