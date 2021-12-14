@@ -75,7 +75,6 @@ static void tc_umm_heap_malloc_free(void)
 	int n_alloc;
 	int n_test_iter;
 	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
-	struct mallinfo minfo;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	pid_t hash_pid = PIDHASH(getpid());;
 	struct mm_heap_s *heap;
@@ -113,7 +112,7 @@ static void tc_umm_heap_malloc_free(void)
 
 #if !defined(CONFIG_MM_ASSERT_ON_FAIL)
 	/* Test unavailable allocation due to big size */
-
+	struct mallinfo minfo;
 #ifdef CONFIG_CAN_PASS_STRUCTS
 	minfo = mallinfo();
 #else
