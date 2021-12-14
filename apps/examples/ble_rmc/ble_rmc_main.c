@@ -68,19 +68,26 @@ static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
 
 /* These values can be modified as a developer wants. */
 static uint8_t ble_filter[] = { 0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 };
-static uint8_t ble_mac_filter[2][BLE_BD_ADDR_MAX_LEN] = { 
-	{ 0x10, 0x00, 0x00, 0x00, 0x00, 0x15 }, 
-	{ 0x28, 0x6d, 0x97, 0x86, 0x60, 0xc0 }, 
-};
 
-static void ble_device_scanned_cb_with_filter(ble_scanned_device *scanned_device)
+static void ble_device_scanned_cb_for_test(ble_scanned_device *scanned_device)
+{
+	RMC_LOG(RMC_CLIENT_TAG, "scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
+		scanned_device->addr.mac[0],
+		scanned_device->addr.mac[1],
+		scanned_device->addr.mac[2],
+		scanned_device->addr.mac[3],
+		scanned_device->addr.mac[4],
+		scanned_device->addr.mac[5]
+	);
+}
+
+static void ble_device_scanned_cb_for_connect(ble_scanned_device *scanned_device)
 {
 	if (g_scan_done == 1) {
 		return;
 	}
 
-	RMC_LOG(RMC_CLIENT_TAG, "Find RMC with scan filter!!!\n");
-	printf("scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
+	RMC_LOG(RMC_CLIENT_TAG, "Found mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
 		scanned_device->addr.mac[0],
 		scanned_device->addr.mac[1],
 		scanned_device->addr.mac[2],
@@ -94,26 +101,6 @@ static void ble_device_scanned_cb_with_filter(ble_scanned_device *scanned_device
 		g_target.type = scanned_device->addr.type;
 		g_scan_done = 1;
 	}
-}
-
-static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_device)
-{
-	/*
-	In without filter callback, you should not do heavy works such as printing every result of scan result.
-	*/
-	if (memcmp(scanned_device->raw_data, ble_filter, sizeof(ble_filter)) == 0) {
-		RMC_LOG(RMC_CLIENT_TAG,"Find RMC with raw data !!!\n");
-		printf("scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
-			scanned_device->addr.mac[0],
-			scanned_device->addr.mac[1],
-			scanned_device->addr.mac[2],
-			scanned_device->addr.mac[3],
-			scanned_device->addr.mac[4],
-			scanned_device->addr.mac[5]
-		);
-	}
-	
-	return;
 }
 
 static void ble_device_disconnected_cb(ble_client_ctx *ctx)
@@ -309,6 +296,28 @@ static int ble_connect_common(ble_client_ctx *ctx, ble_addr *addr, bool is_auto)
 	}
 
 	return 0;
+}
+
+static void set_scan_timer(uint32_t *scan_time, char *data)
+{
+	int temp = atoi(data);
+	if (temp < 0) {
+		RMC_LOG(RMC_CLIENT_TAG, "Fail to set timer\n");
+	} else {
+		*scan_time = (uint32_t)temp;
+	}
+}
+
+static void set_scan_filter(ble_scan_filter *filter, uint8_t *raw_data, uint8_t len, bool whitelist_enable, uint32_t scan_duration)
+{
+	memset(filter, 0, sizeof(ble_scan_filter));
+	if (raw_data != NULL && len > 0) {
+		memcpy(filter->raw_data, raw_data, len);
+		filter->raw_data_length = len;
+	}
+
+	filter->scan_duration = scan_duration;
+	filter->whitelist_enable = whitelist_enable;
 }
 
 /****************************************************************************
@@ -557,40 +566,56 @@ int ble_rmc_main(int argc, char *argv[])
 	/* 
 	* [ Scan ] Usage :
 	* 1. Normal Scan with MAX Scan Timeout
-	* TASH>> scan 1
-	* 2. Filter Scan
-	* TASH>> scan 2 [timer_value]
-	* ( timer_value : optional. this should be in seconds )
+	* TASH>> ble_rmc scan 1
+	* 2. Whitelist Scan
+	* TASH>> ble_rmc scan 2 [timer_value]
+	* ( timer_value : optional. this should be in seconds, default : 5s )
+	* 3. Filter Scan
+	* TASH>> ble_rmc scan 3 [timer_value]
+	* ( timer_value : optional. this should be in seconds, default : 5s )
+	* 4. Stop Scan
+	* TASH>> ble_rmc scan
 	*/
 	if (strncmp(argv[1], "scan", 5) == 0) {
-		if (argc >= 3 && argv[2][0] == '1') {
-			RMC_LOG(RMC_CLIENT_TAG, "Scan Start !\n");
-			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_without_filter;
+		if (argc >= 3 && strncmp(argv[2], "1", 2) == 0) {
+			RMC_LOG(RMC_CLIENT_TAG, "Scan Start without filter !\n");
+			scan_config.device_scanned_cb = ble_device_scanned_cb_for_test;
 			ret = ble_client_start_scan(NULL, &scan_config);
 
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "scan start fail[%d]\n", ret);
 				goto ble_rmc_done;
 			}
-		} else if (argc >= 3 && argv[2][0] == '2') {
+		} else if (argc >= 3 && strncmp(argv[2], "2", 2) == 0) {
 			RMC_LOG(RMC_CLIENT_TAG, "Scan Start with WhiteList!\n");
 
 			uint32_t scan_time = 5; // Seconds
 			if (argc == 4) {
-				int temp = atoi(argv[3]);
-				if (temp < 0) {
-					RMC_LOG(RMC_CLIENT_TAG, "Fail to set timer\n");
-				} else {
-					scan_time = (uint32_t)temp;
-					RMC_LOG(RMC_CLIENT_TAG, "Timer : %u s\n", scan_time);
-				}
+				set_scan_timer(&scan_time, argv[3]);
 			}
+			RMC_LOG(RMC_CLIENT_TAG, "Timer : %us\n", scan_time);
 
 			ble_scan_filter filter = { 0, };
-			filter.raw_data_length = 0;
-			filter.scan_duration = scan_time * 1000; // scan_duration should be in milliseconds.
-			filter.whitelist_enable = false;
-			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_with_filter;
+			set_scan_filter(&filter, NULL, 0, true, scan_time * 1000);
+			scan_config.device_scanned_cb = ble_device_scanned_cb_for_test;
+			ret = ble_client_start_scan(&filter, &scan_config);
+
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_CLIENT_TAG, "scan start fail[%d]\n", ret);
+				goto ble_rmc_done;
+			}
+		} else if (argc >= 3 && strncmp(argv[2], "3", 2) == 0) {
+			RMC_LOG(RMC_CLIENT_TAG, "Scan Start with Packet Filter!\n");
+
+			uint32_t scan_time = 5; // Seconds
+			if (argc == 4) {
+				set_scan_timer(&scan_time, argv[3]);
+			}
+			RMC_LOG(RMC_CLIENT_TAG, "Timer : %us\n", scan_time);
+
+			ble_scan_filter filter = { 0, };
+			set_scan_filter(&filter, ble_filter, sizeof(ble_filter), false, scan_time * 1000);
+			scan_config.device_scanned_cb = ble_device_scanned_cb_for_test;
 			ret = ble_client_start_scan(&filter, &scan_config);
 
 			if (ret != BLE_MANAGER_SUCCESS) {
@@ -655,10 +680,8 @@ int ble_rmc_main(int argc, char *argv[])
 			g_target.type = BLE_ADDR_TYPE_PUBLIC;
 		} else {
 			ble_scan_filter filter = { 0, };
-			memcpy(&(filter.raw_data), ble_filter, sizeof(ble_filter));
-			filter.raw_data_length = sizeof(ble_filter);
-			filter.scan_duration = 1500;
-			scan_config.ble_client_device_scanned_cb = ble_device_scanned_cb_with_filter;
+			set_scan_filter(&filter, ble_filter, sizeof(ble_filter), false, 1500);
+			scan_config.device_scanned_cb = ble_device_scanned_cb_for_connect;
 			g_scan_done = 0;
 			ret = ble_client_start_scan(&filter, &scan_config);
 
@@ -680,7 +703,6 @@ int ble_rmc_main(int argc, char *argv[])
 			}
 			RMC_LOG(RMC_CLIENT_TAG, "Found device!\n");
 
-			// ret = ble_manager_delete_bonded(&g_target);
 			ret = ble_manager_delete_bonded_all();
 			if (ret != BLE_MANAGER_SUCCESS) {
 				RMC_LOG(RMC_CLIENT_TAG, "fail to delete bond dev[%d]\n", ret);

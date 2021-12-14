@@ -177,8 +177,10 @@ typedef struct {
 	volatile int write_index;
 	volatile int read_index;
 	sem_t countsem;
-	trble_scanned_device *queue;
-} trble_scan_queue;
+	sem_t *grp_count;
+	void *queue;
+	int data_size;
+} trble_queue;
 
 typedef struct {
 	trble_conn_info conn_info;
