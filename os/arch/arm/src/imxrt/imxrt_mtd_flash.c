@@ -642,6 +642,9 @@ FAR struct mtd_dev_s *imxrt_mtd_initialize(void)
 		priv->mtd.write = imxrt_write;
 #endif
 		priv->mtd.ioctl = imxrt_ioctl;
+#ifdef CONFIG_MTD_REGISTRATION
+		priv->mtd.name = "imxrt_flash";
+#endif
 
 		/* Identify the FLASH chip and get its capacity */
 
