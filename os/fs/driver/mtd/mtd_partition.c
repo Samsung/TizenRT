@@ -216,6 +216,10 @@ static bool part_bytecheck(FAR struct mtd_partition_s *priv, off_t byoff)
  * Private Functions
  ****************************************************************************/
 
+//TODO: Check mtd part functions for memory leaks such as unchecked buffer overflows,
+//	etc. happening especially with the procfs_part_read function.
+//	All functions should work irrespective of supplied buffer's size
+
 /****************************************************************************
  * Name: part_erase
  *
