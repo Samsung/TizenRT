@@ -159,6 +159,7 @@ int netlog_reset(void);
 #define NET_LOGV(mod, fmt, args...) \
 	netlogger_print(mod, NL_LEVEL_VERB, __FUNCTION__, __FILE__, __LINE__, fmt, ##args);
 #else
+#if 0
 #define NET_LOG(mod, fmt, args...) \
 	printf(mod fmt, ##args);
 #define NET_LOGE(mod, fmt, args...) \
@@ -166,4 +167,10 @@ int netlog_reset(void);
 #define NET_LOGI(mod, fmt, args...) \
 	printf(mod"[INFO] " fmt, ##args);
 #define NET_LOGV(mod, fmt, args...)
+#else
+#define NET_LOG(mod, fmt, args...)
+#define NET_LOGE(mod, fmt, args...)
+#define NET_LOGI(mod, fmt, args...)
+#define NET_LOGV(mod, fmt, args...)
+#endif
 #endif
