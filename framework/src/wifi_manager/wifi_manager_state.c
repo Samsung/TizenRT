@@ -552,7 +552,7 @@ wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 	}
 	return wret;
 }
-
+#ifdef CONFIG_ENABLE_DRIVER_IOCTL
 wifi_manager_result_e _handler_get_stats(wifimgr_msg_s *msg)
 {
 	trwifi_msg_stats_s stats;
@@ -593,7 +593,7 @@ wifi_manager_result_e _handler_set_powermode(wifimgr_msg_s *msg)
 	trwifi_result_e res = wifi_utils_ioctl(&tmsg);
 	return wifimgr_convert2wifimgr_res(res);
 }
-
+#endif
 wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_FAIL;
@@ -601,11 +601,14 @@ wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)
 	NET_LOGI(TAG, "handle request state(%s) evt(%s)\n",
 			 wifimgr_get_state_str(WIFIMGR_GET_STATE),
 			 wifimgr_get_evt_str(msg->event));
+#ifdef CONFIG_ENABLE_DRIVER_IOCTL
 	if (msg->event == WIFIMGR_CMD_GETSTATS) {
 		res = _handler_get_stats(msg);
 	} else if (msg->event == WIFIMGR_CMD_SETPOWER) {
 		res = _handler_set_powermode(msg);
-	} else {
+	} else
+#endif
+	{
 		res = g_handler[WIFIMGR_GET_STATE](msg);
 	}
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT

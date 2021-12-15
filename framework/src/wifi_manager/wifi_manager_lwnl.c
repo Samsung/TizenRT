@@ -150,17 +150,6 @@ trwifi_result_e wifi_utils_set_autoconnect(uint8_t check)
 	return res;
 }
 
-trwifi_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg)
-{
-	trwifi_result_e res = TRWIFI_SUCCESS;
-	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_IOCTL},
-					sizeof(trwifi_msg_s), (void *)dmsg, (void *)&res};
-	if (_send_msg(&msg) < 0) {
-		return TRWIFI_FAIL;
-	}
-	return res;
-}
-
 trwifi_result_e wifi_utils_get_info(trwifi_info *wifi_info)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
@@ -171,3 +160,17 @@ trwifi_result_e wifi_utils_get_info(trwifi_info *wifi_info)
 	}
 	return res;
 }
+
+#ifdef CONFIG_ENABLE_DRIVER_IOCTL
+trwifi_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg)
+{
+	trwifi_result_e res = TRWIFI_SUCCESS;
+	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_IOCTL},
+					sizeof(trwifi_msg_s), (void *)dmsg, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		return TRWIFI_FAIL;
+	}
+	return res;
+}
+#endif
+

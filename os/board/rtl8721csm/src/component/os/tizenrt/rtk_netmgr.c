@@ -75,7 +75,9 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_start_softap,	/* start_softap */
 	wifi_netmgr_utils_stop_softap,		/* stop_softap */
 	wifi_netmgr_utils_set_autoconnect, /* set_autoconnect */
+#ifdef CONFIG_ENABLE_DRIVER_IOCTL
 	wifi_netmgr_utils_ioctl,					/* drv_ioctl */
+#endif
 };
 
 static trwifi_scan_list_s *g_scan_list;
@@ -586,6 +588,7 @@ trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t ch
 	return wuret;
 }
 
+#ifdef CONFIG_ENABLE_DRIVER_IOCTL
 trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 {
 	if (msg->cmd == TRWIFI_MSG_SET_POWERMODE) {
@@ -602,3 +605,4 @@ trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 	}
 	return TRWIFI_NOT_SUPPORTED;
 }
+#endif
