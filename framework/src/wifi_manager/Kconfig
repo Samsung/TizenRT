@@ -101,5 +101,11 @@ config DISABLE_EXTERNAL_AUTOCONNECT
 	bool "Disable external autoconnect"
 	default n
 
+config ENABLE_DRIVER_IOCTL
+	bool "Enable driver ioctl""
+	default n
+	---help---
+		get or set additional driver features
+
 endif #WIFI_MANAGER
 
