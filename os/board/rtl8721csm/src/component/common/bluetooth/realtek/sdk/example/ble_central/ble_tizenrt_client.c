@@ -88,7 +88,7 @@ trble_result_e rtw_ble_client_scan_whitelist_add(trble_addr *addr)
     {
         if(false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
         {
-            printf("\create sem fail! \n");
+            printf("create sem fail! \n");
             return TRBLE_FAIL;
         } else {
             debug_print("create sem 0x%x success \n", ble_tizenrt_modify_whitelist_sem);

@@ -70,7 +70,7 @@ typedef struct {
 	bool auto_connect;
 } ble_client_ctx;
 
-typedef void(*ble_client_device_disconnected_cb)(ble_client_ctx *ctx);
+typedef void(*ble_client_device_disconnected_cb)(ble_client_ctx *ctx, uint8_t reason);
 typedef void(*ble_client_device_connected_cb)(ble_client_ctx *ctx, ble_device_connected* connected_device);
 typedef void(*ble_client_operation_notification_cb)(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
 

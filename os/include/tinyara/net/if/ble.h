@@ -209,7 +209,7 @@ typedef struct {
 	/* This is a set of callback function for BLE client */
 	void (*trble_scan_state_changed_cb)(trble_scan_state_e scan_state);
 	void (*trble_device_scanned_cb)(trble_scanned_device *scanned_device);
-	void (*trble_device_disconnected_cb)(trble_conn_handle conn_id);
+	void (*trble_device_disconnected_cb)(trble_conn_handle conn_id, uint8_t reason);
 	void (*trble_device_connected_cb)(trble_device_connected *connected_device);
 	void (*trble_operation_notification_cb)(trble_operation_handle *handle, trble_data *read_result);
 	uint16_t mtu;

@@ -125,7 +125,9 @@ static void _event_caller(int evt_pri, void *data) {
 		} break;
 		case BLE_EVT_CLIENT_DISCONNECT: {
 			ble_client_device_disconnected_cb callback = msg->param[0];
-			callback(msg->param[1]);
+			uint32_t value = *(uint32_t *)msg->param[2];
+			uint8_t reason = (uint8_t)(value & 0xff);
+			callback(msg->param[1], reason);
 		} break;
 		case BLE_EVT_CLIENT_NOTI: {
 			ble_client_operation_notification_cb callback = msg->param[0];
@@ -962,7 +964,9 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			break;
 		}
 		int i;
-		ble_conn_handle data = *(ble_conn_handle *)msg->param;
+		uint32_t value = *(uint32_t *)msg->param;
+		ble_conn_handle data = (ble_conn_handle)(value >> 16);
+		uint8_t reason = (uint8_t)(value & 0xff);
 		ble_client_ctx_internal *ctx = NULL;
 		ble_client_state_e priv_state = BLE_CLIENT_NONE;
 
@@ -972,7 +976,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 				break;
 			}
 		}
-		free(msg->param);
 
 		if (ctx == NULL) {
 			break;

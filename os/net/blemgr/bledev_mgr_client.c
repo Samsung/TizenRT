@@ -51,9 +51,11 @@ static void bledrv_device_scanned_cb(trble_scanned_device *scanned_device)
 	return;
 }
 
-static void bledrv_device_disconnected_cb(trble_conn_handle conn_id)
+static void bledrv_device_disconnected_cb(trble_conn_handle conn_id, uint8_t reason)
 {
-	trble_post_event(LWNL_EVT_BLE_CLIENT_DISCONNECT, (void *)&conn_id, sizeof(trble_conn_handle));
+	uint32_t value = (uint32_t)conn_id;
+	value = (value << 16) | (reason & 0xff);
+	trble_post_event(LWNL_EVT_BLE_CLIENT_DISCONNECT, (void *)&value, sizeof(uint32_t));
 	return;
 }
 

@@ -103,15 +103,15 @@ static void ble_device_scanned_cb_for_connect(ble_scanned_device *scanned_device
 	}
 }
 
-static void ble_device_disconnected_cb(ble_client_ctx *ctx)
+static void ble_device_disconnected_cb(ble_client_ctx *ctx, int reason)
 {
-	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[ID : %d]\n", __FUNCTION__, ctx->conn_handle);
+	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[ID : %d / reason : %d]\n", __FUNCTION__, ctx->conn_handle, reason);
 	return;
 }
 
 static void ble_device_connected_cb(ble_client_ctx *ctx, ble_device_connected *dev)
 {
-	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[%p]\n", __FUNCTION__, ctx);
+	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[ID : %d]\n", __FUNCTION__, ctx->conn_handle);
 
 	RMC_LOG(RMC_CLIENT_TAG, "Conn Handle : %d\n", dev->conn_handle);
 	RMC_LOG(RMC_CLIENT_TAG, "Bonded : %d / CI : %d / SL : %d / MTU : %d\n", 
@@ -134,7 +134,7 @@ static void ble_device_connected_cb(ble_client_ctx *ctx, ble_device_connected *d
 
 static void ble_operation_notification_cb(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data *read_result)
 {
-	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[%p]\n", __FUNCTION__, ctx);
+	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[ID : %d]\n", __FUNCTION__, ctx->conn_handle);
 	printf("attr : %x // len : %d\n", attr_handle, read_result->length);
 	if (read_result->length > 0) {
 		printf("read : ");

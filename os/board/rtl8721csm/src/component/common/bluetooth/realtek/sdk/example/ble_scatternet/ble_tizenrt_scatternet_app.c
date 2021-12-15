@@ -172,8 +172,10 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
             if(ble_tizenrt_write_no_rsp_sem != NULL)
                 os_mutex_give(ble_tizenrt_write_no_rsp_sem);
 
-            trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
-            client_init_parm->trble_device_disconnected_cb(disconnected);
+            uint32_t temp = (uint32_t) callback_msg.u.buf;
+            uint8_t reason = temp & 0xff;
+            trble_conn_handle disconnected = temp >> 16;
+            client_init_parm->trble_device_disconnected_cb(disconnected, reason);
         }
 			break;
 
@@ -694,8 +696,9 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                     if (g_master_link_num){
                         g_master_link_num --;
                     }
-                uint32_t connid = (uint32_t) conn_id;
-                if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid) == false)
+                uint32_t temp = (uint32_t) conn_id;
+                temp = (temp << 16) | (disc_cause & 0xff);
+                if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) temp) == false)
                 {
                     debug_print("callback msg send fail \n");
                 }
