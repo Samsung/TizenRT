@@ -19,11 +19,11 @@
 ifeq ($(CONFIG_RTK_BLE),y)
 
 #Driver API
-CSRCS += 
+CSRCS += rtk_ble_driver.c
 
 # Include ble devices build support
 
-DEPPATH += --dep-path bluetooth$(DELIM)rtk_ble
-VPATH += :bluetooth$(DELIM)rtk_ble
+DEPPATH += --dep-path bluetooth$(DELIM)realtek_ble
+VPATH += :bluetooth$(DELIM)realtek_ble
 
 endif

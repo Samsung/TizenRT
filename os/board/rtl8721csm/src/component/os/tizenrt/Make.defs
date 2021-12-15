@@ -54,7 +54,6 @@ CSRCS += tizenrt_service.c \
 	 ethernetif_tizenrt.c \
 
 CSRCS += rtk_netmgr.c \
-	 rtk_blemgr.c \
 
 DEPPATH += --dep-path component/os/tizenrt
 VPATH += :component/os/tizenrt

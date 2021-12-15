@@ -38,8 +38,17 @@
 #define BLE_ADV_RESP_DATA_MAX_LEN 31
 
 /* These are board specific values */
-#define BLE_MAX_CONNECTION_COUNT 3
-#define BLE_MAX_BONDED_DEVICE 10
+#ifdef CONFIG_BLE_CENTRAL_CONN_NUM
+#define BLE_MAX_CENTRAL_CONN_NUM CONFIG_BLE_CENTRAL_CONN_NUM
+#else
+#define BLE_MAX_CENTRAL_CONN_NUM 3
+#endif
+
+#ifdef CONFIG_BLE_MAX_BONDED_DEVICE
+#define BLE_MAX_BONDED_DEVICE CONFIG_BLE_MAX_BONDED_DEVICE
+#else
+#define BLE_MAX_BONDED_DEVICE 5
+#endif
 #define BLE_DEFAULT_CONN_TIMEOUT 10000 /* 10 seconds */
 
 typedef struct _ble_data {

@@ -25,7 +25,12 @@
 #define TRBLE_BD_ADDR_MAX_LEN 6
 #define TRBLE_ADV_RAW_DATA_MAX_LEN 31
 #define TRBLE_ADV_RESP_DATA_MAX_LEN 31
-#define TRBLE_MAX_CONNECTION_COUNT 3
+
+#ifdef CONFIG_BLE_CENTRAL_CONN_NUM
+#define TRBLE_MAX_CENTRAL_CONN_NUM CONFIG_BLE_CENTRAL_CONN_NUM
+#else
+#define TRBLE_MAX_CENTRAL_CONN_NUM 3
+#endif
 
 /****************************************************************************
  * BLE Variables
@@ -187,7 +192,7 @@ typedef struct {
 } trble_device_connected;
 
 typedef struct {
-	trble_conn_handle conn_handle[TRBLE_MAX_CONNECTION_COUNT];
+	trble_conn_handle conn_handle[TRBLE_MAX_CENTRAL_CONN_NUM];
 	uint8_t connected_count;
 } trble_connected_list;
 

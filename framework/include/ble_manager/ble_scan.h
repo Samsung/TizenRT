@@ -64,8 +64,18 @@ typedef struct {
 
 /* This is a heuristic value. It can be customized following a system env */
 #define SCAN_INFO_BUFFER_SIZE 100
+
+#ifdef CONFIG_BLE_SCAN_MAX_WHITELIST
+#define SCAN_WHITELIST_SIZE CONFIG_BLE_SCAN_MAX_WHITELIST
+#else
 #define SCAN_WHITELIST_SIZE 10
+#endif
+
+#ifdef CONFIG_BLE_SCAN_MAX_TIMEOUT
+#define SCAN_MAX_TIMEOUT (CONFIG_BLE_SCAN_MAX_TIMEOUT * 1000)
+#else
 #define SCAN_MAX_TIMEOUT (5 * 60 * 1000) /* 5 min (Unit : ms) */
+#endif
 
 #define SCAN_WHITELIST_EMPTY 0
 #define SCAN_WHITELIST_IN_USE 1
