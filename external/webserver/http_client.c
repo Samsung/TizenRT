@@ -167,6 +167,49 @@ int http_client_release(struct http_client_t *client)
 	return HTTP_OK;
 }
 
+static int process_trailer_header(char *buf, unsigned int buf_len, struct http_req_message *req,
+				struct http_keyvalue_list_t *params,
+				struct http_client_t *client, unsigned int sentence_start)
+{
+	char *header_field_value = NULL;
+	unsigned int sentence_end;
+	char *entity;
+	unsigned int trailter_len;
+
+	/* Process the Trailer */
+	header_field_value = http_keyvalue_list_find(params, "Trailer");
+	if (strncmp(header_field_value, "(null)", 7) == 0) {
+		return -1;
+	}
+
+	/* match the Trailer field */
+	if (strncmp(buf + sentence_start, header_field_value, strlen(header_field_value))
+		 || *(buf + sentence_start + strlen(header_field_value)) != ':' ) {
+		return -1;
+	}
+
+	HTTP_LOGD("Trailer header: %s\n", header_field_value);
+	sentence_end = http_find_first_crlf(buf, buf_len, sentence_start);
+	if (sentence_end < 0 || sentence_end - sentence_start == 0) {
+		HTTP_LOGE("Error: Not accord with chunked encoding\n");
+		return -1;
+	}
+
+	/* copy Trailer data */
+	trailter_len = sentence_end - sentence_start;
+	entity = (char *)zalloc(trailter_len + 1);
+	if (entity == NULL) {
+		HTTP_LOGE("Error: Fail to alloc memory\n");
+		return -1;
+	}
+	memcpy(entity, buf + sentence_start, trailter_len);
+	req->entity = entity;
+	req->entity_len = trailter_len;
+	http_dispatch_url(client, req);
+
+	return 1;
+}
+
 int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					   char **body, int *enc, int *state,
 					   struct http_message_len_t *len,
@@ -184,6 +227,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 	int read_finish = false;
 	char *entity = *body;
 	bool is_chunked = false;
+	int ret = 0;
 
 	while (!process_finish) {
 		/* At this point, we read a line of http request */
@@ -476,6 +520,13 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						http_dispatch_url(client, req);
 						process_finish = true;
 						read_finish = true;
+
+						/* sentence start is next statement after \r\n */
+						len->sentence_start = sentence_end + 2;
+						ret = process_trailer_header(buf, buf_len, req, params, client, len->sentence_start);
+						if (ret < 0) {
+							HTTP_LOGD("Trailer header is not present or failed to process it \n");
+						}
 					}
 				}
 			}
@@ -542,7 +593,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 			len = recv(client->client_fd, buf + buf_len, HTTP_CONF_MAX_REQUEST_LENGTH - buf_len, 0);
 		}
 		if (len < 0) {
-			HTTP_LOGE("Error: Receive Fail %d\n", len);
+			HTTP_LOGE("Error: Receive Fail %d errno:[%s-%d] \n", len, strerror(errno), errno);
 			goto errout;
 		} else if (len == 0) {
 			HTTP_LOGD("Finish read\n");
