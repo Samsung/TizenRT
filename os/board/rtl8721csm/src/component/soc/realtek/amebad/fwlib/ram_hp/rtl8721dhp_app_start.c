@@ -14,6 +14,7 @@
 #include "ameba_soc.h"
 #include "rtl8721d_system.h"
 #include "psram_reserve.h"
+#include "amebad_reboot_reason.h"
 #ifdef CONFIG_ARMV8M_MPU
 #include "up_mpuinit.h"
 #endif
@@ -1047,6 +1048,14 @@ void app_mpu_s_nocache_init(void)
 #endif
 }
 
+#ifdef CONFIG_AMEBAD_TRUSTZONE
+void app_hardfualt_s_prehanlder(uint32_t fault_id)
+{
+	//write reboot reason, TrustZone watchdog
+	BKUP_Write(BKUP_REG1, REBOOT_SYSTEM_TZWD_RESET);
+}
+#endif
+
 VOID app_vdd1833_detect(VOID)
 {
 	u32 temp;
@@ -1376,6 +1385,10 @@ extern void __libc_init_array(void);
 	mpu_init();
 	app_mpu_nocache_init();
 	app_mpu_s_nocache_init();
+
+#ifdef CONFIG_AMEBAD_TRUSTZONE
+	Secure_VectorTableOverride(app_hardfualt_s_prehanlder);
+#endif
 #endif
 	app_vdd1833_detect();
 	memcpy_gdma_init();
@@ -1430,4 +1443,5 @@ RAM_START_FUNCTION Img2EntryFun0 = {
 	NULL,//BOOT_RAM_WakeFromPG,
 	(u32)NewVectorTable
 };
+
 
