@@ -99,10 +99,6 @@
 #include "lwip/inet_chksum.h"
 #endif
 
-#if LWIP_SELECT
-#include <tinyara/clock.h>
-#endif
-
 /* If the netconn API is not required publicly, then we include the necessary
    files here to get the implementation */
 #if !LWIP_NETCONN
@@ -245,25 +241,12 @@ struct lwip_select_cb {
 	struct lwip_select_cb *next;
 	/** Pointer to the previous waiting task */
 	struct lwip_select_cb *prev;
-#if LWIP_SELECT
-	/** readset passed to select */
-	fd_set *readset;
-	/** writeset passed to select */
-	fd_set *writeset;
-	/** unimplemented: exceptset passed to select */
-	fd_set *exceptset;
-	/** semaphore to wake up a task waiting for select */
-	sys_sem_t sem;
-#else
 	/** Pointer to semaphore used post output event */
 	sys_sem_t *poll_sem;
 	/** Pointer to event-set of requested poll events */
 	pollevent_t events;
 	/** socket descriptor value */
 	int sfd;
-	/** semaphore to wake up a task waiting for select */
-	SELECT_SEM_T sem;
-#endif
 	/** don't signal the same semaphore twice: set to 1 when signalled */
 	int sem_signalled;
 };
@@ -1343,276 +1326,6 @@ int lwip_writev(int s, const struct iovec *iov, int iovcnt)
 	return lwip_sendmsg(s, &msg, 0);
 }
 
-#if LWIP_SELECT
-
-/**
- * Go through the readset and writeset lists and see which socket of the sockets
- * set in the sets has events. On return, readset, writeset and exceptset have
- * the sockets enabled that had events.
- *
- * exceptset is not used for now!!!
- *
- * @param maxfdp1 the highest socket index in the sets
- * @param readset_in:    set of sockets to check for read events
- * @param writeset_in:   set of sockets to check for write events
- * @param exceptset_in:  set of sockets to check for error events
- * @param readset_out:   set of sockets that had read events
- * @param writeset_out:  set of sockets that had write events
- * @param exceptset_out: set os sockets that had error events
- * @return number of sockets that had events (read/write/exception) (>= 0)
- */
-static int lwip_selscan(int maxfdp1, fd_set *readset_in, fd_set *writeset_in, fd_set *exceptset_in, fd_set *readset_out, fd_set *writeset_out, fd_set *exceptset_out)
-{
-	int i, nready = 0;
-	fd_set lreadset, lwriteset, lexceptset;
-	struct lwip_sock *sock;
-	SYS_ARCH_DECL_PROTECT(lev);
-
-	FD_ZERO(&lreadset);
-	FD_ZERO(&lwriteset);
-	FD_ZERO(&lexceptset);
-
-	/* Go through each socket in each list to count number of sockets which
-	   currently match */
-	for (i = LWIP_SOCKET_OFFSET; i < maxfdp1; i++) {
-		/* if this FD is not in the set, continue */
-		if (!(readset_in && FD_ISSET(i, readset_in)) && !(writeset_in && FD_ISSET(i, writeset_in)) && !(exceptset_in && FD_ISSET(i, exceptset_in))) {
-			continue;
-		}
-		/* First get the socket's status (protected)... */
-		SYS_ARCH_PROTECT(lev);
-		sock = tryget_socket_by_pid(i, getpid());
-		if (sock != NULL) {
-			void *lastdata = sock->lastdata;
-			s16_t rcvevent = sock->rcvevent;
-			u16_t sendevent = sock->sendevent;
-			u16_t errevent = sock->errevent;
-			SYS_ARCH_UNPROTECT(lev);
-
-			/* ... then examine it: */
-			/* See if netconn of this socket is ready for read */
-			if (readset_in && FD_ISSET(i, readset_in) && ((lastdata != NULL) || (rcvevent > 0))) {
-				FD_SET(i, &lreadset);
-				LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_selscan: fd=%d ready for reading\n", i));
-				nready++;
-			}
-			/* See if netconn of this socket is ready for write */
-			if (writeset_in && FD_ISSET(i, writeset_in) && (sendevent != 0)) {
-				FD_SET(i, &lwriteset);
-				LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_selscan: fd=%d ready for writing\n", i));
-				nready++;
-			}
-			/* See if netconn of this socket had an error */
-			if (exceptset_in && FD_ISSET(i, exceptset_in) && (errevent != 0)) {
-				FD_SET(i, &lexceptset);
-				LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_selscan: fd=%d ready for exception\n", i));
-				nready++;
-			}
-		} else {
-			SYS_ARCH_UNPROTECT(lev);
-			/* continue on to next FD in list */
-		}
-	}
-	/* copy local sets to the ones provided as arguments */
-	*readset_out = lreadset;
-	*writeset_out = lwriteset;
-	*exceptset_out = lexceptset;
-
-	LWIP_ASSERT("nready >= 0", nready >= 0);
-	return nready;
-}
-
-/**
- * Processing exceptset is not yet implemented.
- */
-int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset, struct timeval *timeout)
-{
-	u32_t waitres = 0;
-	int nready;
-	fd_set lreadset, lwriteset, lexceptset;
-	u32_t msectimeout;
-	struct lwip_select_cb select_cb;
-	int i;
-	int maxfdp2;
-#if LWIP_NETCONN_SEM_PER_THREAD
-	int waited = 0;
-#endif
-	SYS_ARCH_DECL_PROTECT(lev);
-
-	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_select(%d, %p, %p, %p, tvsec=%" S32_F " tvusec=%" S32_F ")\n", maxfdp1, (void *)readset, (void *)writeset, (void *)exceptset, timeout ? (s32_t) timeout->tv_sec : (s32_t) - 1, timeout ? (s32_t) timeout->tv_usec : (s32_t) - 1));
-
-	/* Go through each socket in each list to count number of sockets which
-	   currently match */
-	nready = lwip_selscan(maxfdp1, readset, writeset, exceptset, &lreadset, &lwriteset, &lexceptset);
-	/* If we don't have any current events, then suspend if we are supposed to */
-	if (!nready) {
-		if (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0) {
-			LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_select: no timeout, returning 0\n"));
-			/* This is OK as the local fdsets are empty and nready is zero,
-			   or we would have returned earlier. */
-			goto return_copy_fdsets;
-		}
-
-		/* None ready: add our semaphore to list:
-		   We don't actually need any dynamic memory. Our entry on the
-		   list is only valid while we are in this function, so it's ok
-		   to use local variables. */
-
-		select_cb.next = NULL;
-		select_cb.prev = NULL;
-		select_cb.readset = readset;
-		select_cb.writeset = writeset;
-		select_cb.exceptset = exceptset;
-		select_cb.sem_signalled = 0;
-#if LWIP_NETCONN_SEM_PER_THREAD
-		select_cb.sem = LWIP_NETCONN_THREAD_SEM_GET();
-#else							/* LWIP_NETCONN_SEM_PER_THREAD */
-		if (sys_sem_new(&select_cb.sem, 0) != ERR_OK) {
-			/* failed to create semaphore */
-			set_errno(ENOMEM);
-			return -1;
-		}
-#endif							/* LWIP_NETCONN_SEM_PER_THREAD */
-
-		/* Protect the select_cb_list */
-		SYS_ARCH_PROTECT(lev);
-
-		/* Put this select_cb on top of list */
-		select_cb.next = select_cb_list;
-		if (select_cb_list != NULL) {
-			select_cb_list->prev = &select_cb;
-		}
-		select_cb_list = &select_cb;
-		/* Increasing this counter tells event_callback that the list has changed. */
-		select_cb_ctr++;
-
-		/* Now we can safely unprotect */
-		SYS_ARCH_UNPROTECT(lev);
-
-		/* Increase select_waiting for each socket we are interested in */
-		maxfdp2 = maxfdp1;
-		for (i = LWIP_SOCKET_OFFSET; i < maxfdp1; i++) {
-			if ((readset && FD_ISSET(i, readset)) || (writeset && FD_ISSET(i, writeset)) || (exceptset && FD_ISSET(i, exceptset))) {
-				struct lwip_sock *sock;
-				SYS_ARCH_PROTECT(lev);
-				sock = tryget_socket_by_pid(i, getpid());
-				if (sock != NULL) {
-					sock->select_waiting++;
-					LWIP_ASSERT("sock->select_waiting > 0", sock->select_waiting > 0);
-				} else {
-					/* Not a valid socket */
-					nready = -1;
-					maxfdp2 = i;
-					SYS_ARCH_UNPROTECT(lev);
-					break;
-				}
-				SYS_ARCH_UNPROTECT(lev);
-			}
-		}
-
-		if (nready >= 0) {
-			/* Call lwip_selscan again: there could have been events between
-			   the last scan (without us on the list) and putting us on the list! */
-			nready = lwip_selscan(maxfdp1, readset, writeset, exceptset, &lreadset, &lwriteset, &lexceptset);
-			if (!nready) {
-				/* Still none ready, just wait to be woken */
-				if (timeout == 0) {
-					/* Wait forever */
-					msectimeout = 0;
-				} else {
-					msectimeout = ((timeout->tv_sec * 1000) + ((timeout->tv_usec + 500) / 1000));
-					if (msectimeout >= 0 && msectimeout < MSEC_PER_TICK) {
-						/* Wait MSEC_PER_TICK at least (0 means wait forever) */
-						msectimeout = MSEC_PER_TICK;
-					}
-				}
-
-				waitres = sys_arch_sem_wait(SELECT_SEM_PTR(select_cb.sem), msectimeout);
-#if LWIP_NETCONN_SEM_PER_THREAD
-				waited = 1;
-#endif
-			}
-		}
-
-		/* Decrease select_waiting for each socket we are interested in */
-		for (i = LWIP_SOCKET_OFFSET; i < maxfdp2; i++) {
-			if ((readset && FD_ISSET(i, readset)) || (writeset && FD_ISSET(i, writeset)) || (exceptset && FD_ISSET(i, exceptset))) {
-				struct lwip_sock *sock;
-				SYS_ARCH_PROTECT(lev);
-				sock = tryget_socket_by_pid(i, getpid());
-				if (sock != NULL) {
-					/* for now, handle select_waiting==0... */
-					LWIP_ASSERT("sock->select_waiting > 0", sock->select_waiting > 0);
-					if (sock->select_waiting > 0) {
-						sock->select_waiting--;
-					}
-				} else {
-					/* Not a valid socket */
-					nready = -1;
-				}
-				SYS_ARCH_UNPROTECT(lev);
-			}
-		}
-		/* Take us off the list */
-		SYS_ARCH_PROTECT(lev);
-		if (select_cb.next != NULL) {
-			select_cb.next->prev = select_cb.prev;
-		}
-		if (select_cb_list == &select_cb) {
-			LWIP_ASSERT("select_cb.prev == NULL", select_cb.prev == NULL);
-			select_cb_list = select_cb.next;
-		} else {
-			LWIP_ASSERT("select_cb.prev != NULL", select_cb.prev != NULL);
-			select_cb.prev->next = select_cb.next;
-		}
-		/* Increasing this counter tells event_callback that the list has changed. */
-		select_cb_ctr++;
-		SYS_ARCH_UNPROTECT(lev);
-
-#if LWIP_NETCONN_SEM_PER_THREAD
-		if (select_cb.sem_signalled && (!waited || (waitres == SYS_ARCH_TIMEOUT))) {
-			/* don't leave the thread-local semaphore signalled */
-			sys_arch_sem_wait(select_cb.sem, MSEC_PER_TICK);
-		}
-#else							/* LWIP_NETCONN_SEM_PER_THREAD */
-		sys_sem_free(&select_cb.sem);
-#endif							/* LWIP_NETCONN_SEM_PER_THREAD */
-
-		if (nready < 0) {
-			/* This happens when a socket got closed while waiting */
-			set_errno(EBADF);
-			return -1;
-		}
-
-		if (waitres == SYS_ARCH_TIMEOUT) {
-			/* Timeout */
-			LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_select: timeout expired\n"));
-			/* This is OK as the local fdsets are empty and nready is zero,
-			   or we would have returned earlier. */
-			goto return_copy_fdsets;
-		}
-
-		/* See what's set */
-		nready = lwip_selscan(maxfdp1, readset, writeset, exceptset, &lreadset, &lwriteset, &lexceptset);
-	}
-
-	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_select: nready=%d\n", nready));
-return_copy_fdsets:
-	set_errno(0);
-	if (readset) {
-		*readset = lreadset;
-	}
-	if (writeset) {
-		*writeset = lwriteset;
-	}
-	if (exceptset) {
-		*exceptset = lexceptset;
-	}
-	return nready;
-}
-
-#else							/* LWIP_SELECT */
-
 static int lwip_poll_scan(int fd, struct lwip_sock *sock, struct pollfd *fds)
 {
 	void *lastdata = NULL;
@@ -1658,12 +1371,8 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 	int scb_size = 0;
 	struct lwip_select_cb *select_cb = NULL;
 
-	/* Sanity check */
-#ifdef CONFIG_DEBUG
-	if (!fds) {
-		return -EINVAL;
-	}
-#endif
+	LWIP_ASSERT("fds != NULL", fds != NULL);
+
 	SYS_ARCH_DECL_PROTECT(lev);
 	fds->scb = NULL;
 	nready = lwip_poll_scan(fd, sock, fds);
@@ -1677,15 +1386,12 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 
 	scb_size = LWIP_MEM_ALIGN_SIZE(sizeof(struct lwip_select_cb));
 	select_cb = (struct lwip_select_cb *)mem_malloc(scb_size);
-
 	if (!select_cb) {
 		return -ENOMEM;
 	}
-
-	memset(select_cb, 0, scb_size);
+	//memset(select_cb, 0, scb_size); // pkbuild can be removed
 
 	/* None ready: add our semaphore to list: */
-
 	select_cb->next = NULL;
 	select_cb->prev = NULL;
 	select_cb->sem_signalled = 0;
@@ -1820,7 +1526,64 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 
 }
 
-#endif							/*LWIP_SELECT */
+inline static int
+lwip_poll_should_wake(const struct lwip_select_cb *scb, int fd, int has_recvevent, int has_sendevent, int has_errevent)
+{
+	if (scb->sfd == fd) {
+		/* Do not update pollfd->revents right here;
+         that would be a data race because lwip_pollscan
+         accesses revents without protecting. */
+		if (has_recvevent && (scb->events & POLLIN) != 0) {
+			return 1;
+		}
+		if (has_sendevent && (scb->events & POLLOUT) != 0) {
+			return 1;
+		}
+		if (has_errevent) {
+			/* POLLERR is output only. */
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void select_check_waiters(int s, int has_recvevent, int has_sendevent, int has_errevent)
+{
+  struct lwip_select_cb *scb;
+  int last_select_cb_ctr;
+  SYS_ARCH_DECL_PROTECT(lev);
+  SYS_ARCH_PROTECT(lev);
+again:
+  /* remember the state of select_cb_list to detect changes */
+  last_select_cb_ctr = select_cb_ctr;
+  for (scb = select_cb_list; scb != NULL; scb = scb->next) {
+		g_api_search_total++;
+    if (scb->sem_signalled == 0) {
+      /* semaphore not signalled yet */
+      int do_signal = 0;
+			do_signal = lwip_poll_should_wake(scb, s, has_recvevent, has_sendevent, has_errevent);
+      if (do_signal) {
+        scb->sem_signalled = 1;
+        /* For !LWIP_TCPIP_CORE_LOCKING, we don't call SYS_ARCH_UNPROTECT() before signaling
+           the semaphore, as this might lead to the select thread taking itself off the list,
+           invalidating the semaphore. */
+        sys_sem_signal(scb->poll_sem);
+      }
+    }
+    /* unlock interrupts with each step */
+    SYS_ARCH_UNPROTECT(lev);
+    /* this makes sure interrupt protection time is short */
+    SYS_ARCH_PROTECT(lev);
+    if (last_select_cb_ctr != select_cb_ctr) {
+      /* someone has changed select_cb_list, restart at the beginning */
+      goto again;
+    }
+    /* remember the state of select_cb_list to detect changes */
+    last_select_cb_ctr = select_cb_ctr;
+  }
+  SYS_ARCH_UNPROTECT(lev);
+}
 
 /**
  * Callback registered in the netconn layer for each socket-netconn.
@@ -1829,9 +1592,9 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len)
 {
 	int s;
+	int check_waiters;
 	struct lwip_sock *sock;
-	struct lwip_select_cb *scb;
-	int last_select_cb_ctr;
+
 	SYS_ARCH_DECL_PROTECT(lev);
 	LWIP_UNUSED_ARG(len);
 
@@ -1862,21 +1625,29 @@ static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len
 	} else {
 		return;
 	}
-
+	check_waiters = 1;
 	SYS_ARCH_PROTECT(lev);
 	/* Set event as required */
 	switch (evt) {
 	case NETCONN_EVT_RCVPLUS:
 		sock->rcvevent++;
+		if (sock->rcvevent > 1) {
+			check_waiters = 0;
+		}
 		break;
 	case NETCONN_EVT_RCVMINUS:
 		sock->rcvevent--;
+		check_waiters = 0;
 		break;
 	case NETCONN_EVT_SENDPLUS:
+		if (sock->sendevent) {
+			check_waiters = 0;
+		}
 		sock->sendevent = 1;
 		break;
 	case NETCONN_EVT_SENDMINUS:
 		sock->sendevent = 0;
+		check_waiters = 0;
 		break;
 	case NETCONN_EVT_ERROR:
 		sock->errevent = 1;
@@ -1886,78 +1657,18 @@ static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len
 		break;
 	}
 
-	if (sock->select_waiting == 0) {
-		/* none is waiting for this socket, no need to check select_cb_list */
+	if (sock->select_waiting && check_waiters) {
+		g_api_search_cnt++;
+		int has_recvevent, has_sendevent, has_errevent;
+		has_recvevent = sock->rcvevent > 0;
+		has_sendevent = sock->sendevent != 0;
+		has_errevent = sock->errevent != 0;
 		SYS_ARCH_UNPROTECT(lev);
-		return;
-	}
-
-	/* Now decide if anyone is waiting for this socket */
-	/* NOTE: This code goes through the select_cb_list list multiple times
-	   ONLY IF a select was actually waiting. We go through the list the number
-	   of waiting select calls + 1. This list is expected to be small. */
-
-	/* At this point, SYS_ARCH is still protected! */
-again:
-	for (scb = select_cb_list; scb != NULL; scb = scb->next) {
-		/* remember the state of select_cb_list to detect changes */
-		last_select_cb_ctr = select_cb_ctr;
-		if (scb->sem_signalled == 0) {
-			/* semaphore not signalled yet */
-			int do_signal = 0;
-			int check_set = 0;
-			/* Test this select call for our socket */
-			if (sock->rcvevent > 0) {
-#if LWIP_SELECT
-				check_set = scb->readset && FD_ISSET(s, scb->readset);
-#else
-				check_set = (scb->sfd == s) && (scb->events & POLLIN);
-#endif
-				if (check_set) {
-					do_signal = 1;
-				}
-			}
-			if (sock->sendevent != 0) {
-#if LWIP_SELECT
-				check_set = scb->writeset && FD_ISSET(s, scb->writeset);
-#else
-				check_set = (scb->sfd == s) && (scb->events & POLLOUT);
-#endif
-				if (!do_signal && check_set) {
-					do_signal = 1;
-				}
-			}
-			if (sock->errevent != 0) {
-#if LWIP_SELECT
-				check_set = scb->exceptset && FD_ISSET(s, scb->exceptset);
-#else
-				check_set = (scb->sfd == s) && (scb->events & POLLERR);
-#endif
-				if (!do_signal && check_set) {
-					do_signal = 1;
-				}
-			}
-			if (do_signal) {
-				scb->sem_signalled = 1;
-				/* Don't call SYS_ARCH_UNPROTECT() before signaling the semaphore, as this might
-				   lead to the select thread taking itself off the list, invalidagin the semaphore. */
-#if LWIP_SELECT
-				sys_sem_signal(&scb->sem);
-#else
-				sys_sem_signal(scb->poll_sem);
-#endif
-			}
-		}
-		/* unlock interrupts with each step */
+		/* Check any select calls waiting on this socket */
+		select_check_waiters(s, has_recvevent, has_sendevent, has_errevent);
+  } else {
 		SYS_ARCH_UNPROTECT(lev);
-		/* this makes sure interrupt protection time is short */
-		SYS_ARCH_PROTECT(lev);
-		if (last_select_cb_ctr != select_cb_ctr) {
-			/* someone has changed select_cb_list, restart at the beginning */
-			goto again;
 		}
-	}
-	SYS_ARCH_UNPROTECT(lev);
 }
 
 /**
