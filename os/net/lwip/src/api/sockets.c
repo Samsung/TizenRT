@@ -1389,7 +1389,6 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 	if (!select_cb) {
 		return -ENOMEM;
 	}
-	//memset(select_cb, 0, scb_size); // pkbuild can be removed
 
 	/* None ready: add our semaphore to list: */
 	select_cb->next = NULL;
