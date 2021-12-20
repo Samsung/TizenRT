@@ -440,6 +440,14 @@
 #define TCP_WND_UPDATE_THRESHOLD	CONFIG_NET_TCP_WND_UPDATE_THRESHOLD
 #endif
 
+#ifdef CONFIG_NET_WND_SCALE
+#define LWIP_WND_SCALE 1
+#endif
+
+#ifdef CONFIG_NET_TCP_RCV_SCALE
+#define TCP_RCV_SCALE CONFIG_NET_TCP_RCV_SCALE
+#endif
+
 /* ---------- TCP options ---------- */
 
 /* ---------- UDP options ---------- */
