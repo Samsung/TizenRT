@@ -128,7 +128,9 @@ FAR void *memalign(size_t alignment, size_t size)
 {
 	int heap_idx;
 	void *ret;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	size_t caller_retaddr = 0;
+#endif
 
 	if (size == 0) {
 		return NULL;
