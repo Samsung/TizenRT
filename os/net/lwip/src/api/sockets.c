@@ -1374,7 +1374,6 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 	LWIP_ASSERT("fds != NULL", fds != NULL);
 
 	SYS_ARCH_DECL_PROTECT(lev);
-	fds->scb = NULL;
 	nready = lwip_poll_scan(fd, sock, fds);
 
 	/* Check if any requested events are already in effect */
@@ -1407,7 +1406,7 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 		select_cb_list->prev = select_cb;
 	}
 
-	fds->scb = (void *)select_cb;
+	fds->priv = (void *)select_cb;
 	select_cb_list = select_cb;
 
 	/* Increasing this counter tells event_callback that the list has changed. */
@@ -1438,7 +1437,7 @@ static int lwip_poll_teardown(int fd, struct lwip_sock *sock, struct pollfd *fds
 	struct lwip_select_cb *select_cb = NULL;
 	SYS_ARCH_DECL_PROTECT(lev);
 
-	select_cb = (struct lwip_select_cb *)fds->scb;
+	select_cb = (struct lwip_select_cb *)fds->priv;
 
 	SYS_ARCH_PROTECT(lev);
 	if (sock->select_waiting > 0) {
@@ -1557,7 +1556,6 @@ again:
   /* remember the state of select_cb_list to detect changes */
   last_select_cb_ctr = select_cb_ctr;
   for (scb = select_cb_list; scb != NULL; scb = scb->next) {
-		g_api_search_total++;
     if (scb->sem_signalled == 0) {
       /* semaphore not signalled yet */
       int do_signal = 0;
@@ -1657,7 +1655,6 @@ static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len
 	}
 
 	if (sock->select_waiting && check_waiters) {
-		g_api_search_cnt++;
 		int has_recvevent, has_sendevent, has_errevent;
 		has_recvevent = sock->rcvevent > 0;
 		has_sendevent = sock->sendevent != 0;

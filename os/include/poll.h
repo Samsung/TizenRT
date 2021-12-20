@@ -139,9 +139,6 @@ struct pollfd {
 	pollevent_t revents;		/* The output event flags */
 	FAR void *priv;				/* For use by drivers */
 	FAR void *filep;			/* The file pointer corresponding to fd */
-#ifdef CONFIG_NET_LWIP
-	FAR void *scb;
-#endif
 };
 
 /****************************************************************************
