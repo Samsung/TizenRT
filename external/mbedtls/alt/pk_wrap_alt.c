@@ -83,6 +83,8 @@
 #define ALT_DEBUG 0
 
 #if defined(MBEDTLS_RSA_C)
+#if defined(MBEDTLS_PK_RSA_VERIFY_ALT)
+
 static int rsa_get_mode(mbedtls_md_type_t md_alg, hal_rsa_mode *rsa_mode)
 {
 	switch (md_alg) {
@@ -127,7 +129,6 @@ static int rsa_get_mode(mbedtls_md_type_t md_alg, hal_rsa_mode *rsa_mode)
 	return 0;
 }
 
-#if defined(MBEDTLS_PK_RSA_VERIFY_ALT)
 static int rsa_verify_wrap(void *ctx,
 						   mbedtls_md_type_t md_alg,
 						   const unsigned char *hash,
@@ -307,55 +308,6 @@ static int rsa_sign_wrap(void *ctx,
 	return 0;
 }
 
-#else /* MBEDTLS_PK_RSA_VERIFY_ALT */
-
-static int rsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len)
-{
-	int ret;
-	mbedtls_rsa_context *rsa = (mbedtls_rsa_context *)ctx;
-	size_t rsa_len = mbedtls_rsa_get_len(rsa);
-
-#if SIZE_MAX > UINT_MAX
-	if (md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
-	}
-#endif /* SIZE_MAX > UINT_MAX */
-
-	if (sig_len < rsa_len) {
-		return MBEDTLS_ERR_RSA_VERIFY_FAILED;
-	}
-
-	if ((ret = mbedtls_rsa_pkcs1_verify(rsa, NULL, NULL, MBEDTLS_RSA_PUBLIC, md_alg, (unsigned int)hash_len, hash, sig)) != 0) {
-		return ret;
-	}
-
-	/* The buffer contains a valid signature followed by extra data.
-	 * We have a special error code for that so that so that callers can
-	 * use mbedtls_pk_verify() to check "Does the buffer start with a
-	 * valid signature?" and not just "Does the buffer contain a valid
-	 * signature?". */
-	if (sig_len > rsa_len) {
-		return MBEDTLS_ERR_PK_SIG_LEN_MISMATCH;
-	}
-
-	return 0;
-}
-
-static int rsa_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, unsigned char *sig, size_t *sig_len, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
-{
-	mbedtls_rsa_context *rsa = (mbedtls_rsa_context *)ctx;
-
-#if SIZE_MAX > UINT_MAX
-	if (md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len) {
-		return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
-	}
-#endif /* SIZE_MAX > UINT_MAX */
-
-	*sig_len = mbedtls_rsa_get_len(rsa);
-
-	return mbedtls_rsa_pkcs1_sign(rsa, f_rng, p_rng, MBEDTLS_RSA_PRIVATE, md_alg, (unsigned int)hash_len, hash, sig);
-}
-
 #endif /* MBEDTLS_PK_RSA_VERIFY_ALT */
 
 #if defined(MBEDTLS_PK_RSA_ENCRYPT_ALT)
@@ -500,31 +452,6 @@ static int rsa_encrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, 
 
 	*olen = enc_data.data_len;
 	return 0;
-}
-
-#else /* MBEDTLS_PK_RSA_ENCRYPT_ALT */
-
-static int rsa_decrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, unsigned char *output, size_t *olen, size_t osize, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
-{
-	mbedtls_rsa_context *rsa = (mbedtls_rsa_context *)ctx;
-
-	if (ilen != mbedtls_rsa_get_len(rsa)) {
-		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
-	}
-
-	return mbedtls_rsa_pkcs1_decrypt(rsa, f_rng, p_rng, MBEDTLS_RSA_PRIVATE, olen, input, output, osize);
-}
-
-static int rsa_encrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, unsigned char *output, size_t *olen, size_t osize, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
-{
-	mbedtls_rsa_context *rsa = (mbedtls_rsa_context *)ctx;
-	*olen = mbedtls_rsa_get_len(rsa);
-
-	if (*olen > osize) {
-		return MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE;
-	}
-
-	return mbedtls_rsa_pkcs1_encrypt(rsa, f_rng, p_rng, MBEDTLS_RSA_PUBLIC, ilen, input, output);
 }
 
 #endif /* MBEDTLS_PK_RSA_ENCRYPT_ALT */
