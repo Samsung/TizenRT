@@ -141,8 +141,8 @@ static void tc_umm_heap_calloc(void)
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
 	int n_alloc;
 	int n_test_iter;
-	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
 	pid_t hash_pid = PIDHASH(getpid());;
 	struct mm_heap_s *heap;
 #endif
