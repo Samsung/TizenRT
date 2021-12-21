@@ -70,6 +70,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#ifndef CONFIG_APP_BINARY_SEPARATION
 /************************************************************************
  * Name: memalign_at
  *
@@ -111,6 +112,7 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 	return ret;
 }
 #endif
+#endif
 /****************************************************************************
  * Name: memalign
  *
@@ -126,7 +128,6 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 
 FAR void *memalign(size_t alignment, size_t size)
 {
-	int heap_idx;
 	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	size_t caller_retaddr = 0;
@@ -139,6 +140,20 @@ FAR void *memalign(size_t alignment, size_t size)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* User supports a single heap on app separation */
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ret = mm_memalign(BASE_HEAP, alignment, size, caller_retaddr);
+#else
+	ret = mm_memalign(BASE_HEAP, alignment, size);
+#endif
+	if (ret == NULL) {
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+	}
+
+#else /* CONFIG_APP_BINARY_SEPARATION */
+
+	int heap_idx;
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size, caller_retaddr);
@@ -151,6 +166,7 @@ FAR void *memalign(size_t alignment, size_t size)
 	}
 
 	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
-	return NULL;
+#endif /* CONFIG_APP_BINARY_SEPARATION */
+	return ret;
 }
 
