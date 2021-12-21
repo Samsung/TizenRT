@@ -32,7 +32,7 @@
 static trble_scan_queue scan_queue[1] = { 0, };
 static volatile int g_run_process = 0;
 
-static ble_client_ctx_internal g_client_table[BLE_MAX_CONNECTION_COUNT] = { 0, };
+static ble_client_ctx_internal g_client_table[BLE_MAX_CENTRAL_CONN_NUM] = { 0, };
 static ble_scan_ctx g_scan_ctx = { 0, };
 static blemgr_state_e g_manager_state = BLEMGR_UNINITIALIZED;
 static ble_scan_whitelist g_scan_whitelist[SCAN_WHITELIST_SIZE] = { 0, };
@@ -180,7 +180,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			break;
 		}
 
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+		for (i = 0; i < BLE_MAX_CENTRAL_CONN_NUM; i++) {
 			memset(&g_client_table[i], 0, sizeof(ble_client_ctx_internal));
 		}
 
@@ -201,7 +201,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			break;
 		}
 
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+		for (i = 0; i < BLE_MAX_CENTRAL_CONN_NUM; i++) {
 			g_client_table[i].state = BLE_CLIENT_NONE;
 		}
 		g_run_process = 0;
@@ -439,7 +439,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = TRBLE_SUCCESS;
 		ble_client_callback_list *callbacks = (ble_client_callback_list *)msg->param;
 		
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+		for (i = 0; i < BLE_MAX_CENTRAL_CONN_NUM; i++) {
 			if (g_client_table[i].state == BLE_CLIENT_NONE) {
 				ctx = &g_client_table[i];
 				break;
@@ -892,7 +892,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		int i;
 		ble_client_ctx_internal *ctx = NULL;
 		ble_client_state_e priv_state = BLE_CLIENT_NONE;
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+		for (i = 0; i < BLE_MAX_CENTRAL_CONN_NUM; i++) {
 			if (memcmp(g_client_table[i].info.addr.mac, data->conn_info.addr.mac, BLE_BD_ADDR_MAX_LEN) == 0) {
 				if (g_client_table[i].state == BLE_CLIENT_CONNECTING || g_client_table[i].state == BLE_CLIENT_AUTOCONNECTING) {
 					priv_state = g_client_table[i].state;
@@ -941,7 +941,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ble_client_ctx_internal *ctx = NULL;
 		ble_client_state_e priv_state = BLE_CLIENT_NONE;
 
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+		for (i = 0; i < BLE_MAX_CENTRAL_CONN_NUM; i++) {
 			if (g_client_table[i].state != BLE_CLIENT_NONE && g_client_table[i].conn_handle == data) {
 				ctx = &g_client_table[i];
 				break;
@@ -994,7 +994,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		read_result->length = *(uint16_t *)(data + sizeof(ble_conn_handle) + sizeof(ble_attr_handle));
 		read_result->data = (uint8_t *)(data + sizeof(ble_conn_handle) + sizeof(ble_attr_handle) + sizeof(read_result->length));
 
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+		for (i = 0; i < BLE_MAX_CENTRAL_CONN_NUM; i++) {
 			if (g_client_table[i].conn_handle == conn_handle) {
 				ctx = &g_client_table[i];
 				break;

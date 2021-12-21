@@ -22,7 +22,7 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/ble.h>
 #include <tinyara/ble/ble_manager.h>
-#include "rtk_ble_utils.h"
+#include "rtk_ble_driver.h"
 
 /* This value is between 5 and 95 */
 #define WIFI_TIME_SLOT 56

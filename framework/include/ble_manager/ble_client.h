@@ -58,7 +58,7 @@ typedef struct {
 } ble_device_connected;
 
 typedef struct {
-	ble_conn_handle conn_handle[BLE_MAX_CONNECTION_COUNT];
+	ble_conn_handle conn_handle[BLE_MAX_CENTRAL_CONN_NUM];
 	uint8_t connected_count;
 } ble_device_connected_list;
 
