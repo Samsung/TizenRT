@@ -67,6 +67,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#ifndef CONFIG_APP_BINARY_SEPARATION
 /************************************************************************
  * Name: zalloc_at
  *
@@ -144,6 +145,7 @@ static void *heap_zalloc(size_t size, int s, int e, size_t caller_retaddr)
 	return NULL;
 }
 #endif
+#endif
 
 /************************************************************************
  * Name: zalloc
@@ -179,13 +181,26 @@ FAR void *zalloc(size_t size)
 
 #else /* CONFIG_ARCH_ADDRENV */
 	/* Use mm_zalloc() becuase it implements the clear */
-	int heap_idx = HEAP_START_IDX;
 	void *ret = NULL;
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* User supports a single heap on app separation */
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ret = mm_zalloc(BASE_HEAP, size, caller_retaddr);
+#else
+	ret = mm_zalloc(BASE_HEAP, size);
+#endif
+	if (ret == NULL) {
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+	}
+
+#else /* CONFIG_APP_BINARY_SEPARATION */
+
+	int heap_idx = HEAP_START_IDX;
 #ifdef CONFIG_RAM_MALLOC_PRIOR_INDEX
 	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
@@ -199,6 +214,7 @@ FAR void *zalloc(size_t size)
 	/* Try to mm_calloc to other heaps */
 	ret = heap_zalloc(size, HEAP_START_IDX, CONFIG_RAM_MALLOC_PRIOR_INDEX - 1, caller_retaddr);
 #endif
+#endif /* CONFIG_APP_BINARY_SEPARATION */
 
 	return ret;
 #endif /* CONFIG_ARCH_ADDRENV */
