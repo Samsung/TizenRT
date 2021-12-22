@@ -1,0 +1,3 @@
+config ENTRY_CONNECT_TEST
+	bool "connect test"
+	depends on EXAMPLES_CONNECT_TEST
