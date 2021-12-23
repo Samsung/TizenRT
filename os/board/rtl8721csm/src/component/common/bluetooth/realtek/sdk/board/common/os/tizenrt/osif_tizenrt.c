@@ -673,6 +673,9 @@ struct osif_timer_entry {
 _list osif_timer_table;
 bool osif_timer_table_init = 0;
 
+/****************************************************************************/
+/* To be only used in BLE related functions                                 */
+/****************************************************************************/
 void osif_timer_wrapper(void *timer)
 {
 	uint32_t lock;
@@ -698,7 +701,7 @@ void osif_timer_wrapper(void *timer)
 	}
 
 	if (timer_entry->timer->reload) {
-		if (work_queue(LPWORK, timer_entry->timer->work_hdl, osif_timer_wrapper, (void *) (timer_entry->timer), (timer_entry->timer->timeout * TICK_PER_SEC / 1000L)) != OK) {
+		if (work_queue(HPWORK, timer_entry->timer->work_hdl, osif_timer_wrapper, (void *) (timer_entry->timer), (timer_entry->timer->timeout * TICK_PER_SEC / 1000L)) != OK) {
 			dbg("work queue fail \n");
 			timer_entry->timer->live = 0;
 		}
@@ -803,7 +806,7 @@ bool osif_timer_create(void **pp_handle, const char *p_timer_name, uint32_t time
 }
 
 /****************************************************************************/
-/* Start software timer                                                     */
+/* Start software timer, to be only used in BLE related functions           */
 /****************************************************************************/
 bool osif_timer_start(void **pp_handle)
 {
@@ -815,7 +818,7 @@ bool osif_timer_start(void **pp_handle)
 	}
 
 	timer = *pp_handle;
-	if (work_queue(LPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (timer->timeout * TICK_PER_SEC / 1000L)) != OK) {
+	if (work_queue(HPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (timer->timeout * TICK_PER_SEC / 1000L)) != OK) {
 		dbg("work queue fail \n");
 		return _FAIL;
 	}
@@ -826,7 +829,7 @@ bool osif_timer_start(void **pp_handle)
 }
 
 /****************************************************************************/
-/* Restart software timer                                                   */
+/* Restart software timer, to be only used in BLE related functions         */
 /****************************************************************************/
 bool osif_timer_restart(void **pp_handle, uint32_t interval_ms)
 {
@@ -839,14 +842,14 @@ bool osif_timer_restart(void **pp_handle, uint32_t interval_ms)
 	}
 
 	timer = *pp_handle;
-	ret = work_queue(LPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (interval_ms * TICK_PER_SEC / 1000L));
+	ret = work_queue(HPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (interval_ms * TICK_PER_SEC / 1000L));
 	if (ret == -EALREADY) {
-		if (work_cancel(LPWORK, timer->work_hdl) != OK) {
+		if (work_cancel(HPWORK, timer->work_hdl) != OK) {
 			dbg("work cancel fail \n");
 			return _FAIL;
 		}
 
-		if (work_queue(LPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (interval_ms * TICK_PER_SEC / 1000L)) != OK) {
+		if (work_queue(HPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (interval_ms * TICK_PER_SEC / 1000L)) != OK) {
 			dbg("work queue fail \n");
 			return _FAIL;
 		}
@@ -862,7 +865,7 @@ bool osif_timer_restart(void **pp_handle, uint32_t interval_ms)
 }
 
 /****************************************************************************/
-/* Stop software timer                                                      */
+/* Stop software timer, to be only used in BLE related functions            */
 /****************************************************************************/
 bool osif_timer_stop(void **pp_handle)
 {
@@ -874,7 +877,7 @@ bool osif_timer_stop(void **pp_handle)
 	}
 
 	timer = *pp_handle;
-	if (work_cancel(LPWORK, timer->work_hdl) != OK) {
+	if (work_cancel(HPWORK, timer->work_hdl) != OK) {
 		dbg("work cancel fail \n");
 		return _FAIL;
 	}
@@ -885,7 +888,7 @@ bool osif_timer_stop(void **pp_handle)
 }
 
 /****************************************************************************/
-/* Delete software timer                                                    */
+/* Delete software timer, to be only used in BLE related functions          */
 /****************************************************************************/
 bool osif_timer_delete(void **pp_handle)
 {
@@ -900,7 +903,7 @@ bool osif_timer_delete(void **pp_handle)
 	}
 
 	timer = *pp_handle;
-	ret = work_cancel(LPWORK, timer->work_hdl);
+	ret = work_cancel(HPWORK, timer->work_hdl);
 	if (ret != OK && ret != -ENOENT) {
 		dbg("work cancel fail \n");
 		return _FAIL;
