@@ -253,8 +253,10 @@ SECTIONS
 		__preinit_array_end = .;
 		. = ALIGN(4);
 		__init_array_start = .;
+		_sinit = ABSOLUTE(.);
 		KEEP(*(SORT(.init_array.*)))
 		KEEP(*(.init_array))
+		_einit = ABSOLUTE(.);
 		__init_array_end = .;
 		. = ALIGN(4);
 		__fini_array_start = .;
