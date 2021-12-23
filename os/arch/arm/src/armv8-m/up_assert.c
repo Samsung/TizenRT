@@ -527,11 +527,11 @@ void up_assert(const uint8_t *filename, int lineno)
 	struct tcb_s *fault_tcb = this_task();
 
 	if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
-		elf_show_all_bin_addr();
 		lldbg("Checking current app heap for corruption...\n");
 		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
 			lldbg("No app heap corruption detected\n");
 		}
+		elf_show_all_bin_addr();
 	}
 #endif
 	lldbg("Assert location (PC) : 0x%08x\n", asserted_location);
