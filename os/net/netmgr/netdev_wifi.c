@@ -111,6 +111,7 @@ int _trwifi_handle_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uin
 		NET_LOGKE(TAG, "invalid parameter dev\n");
 		return -1;
 	}
+  printf("[pkbuild] T%d %p \t%s:%d\n", getpid(), __builtin_return_address(0), __FUNCTION__, __LINE__);
 	if (evt == LWNL_EVT_STA_CONNECTED) {
 		return ND_NETOPS(dev, softup(dev));
 	} else if (evt == LWNL_EVT_STA_DISCONNECTED) {
@@ -128,6 +129,7 @@ int _trwifi_handle_command(struct netdev *dev, lwnl_req cmd)
 	}
 	switch (cmd.type) {
 	case LWNL_REQ_WIFI_STARTSOFTAP: {
+  printf("[pkbuild] soft up \t%s:%d\n",  __FUNCTION__, __LINE__);
 		return ND_NETOPS(dev, softup(dev));
 	}
 	case LWNL_REQ_WIFI_STOPSOFTAP: {
@@ -197,11 +199,13 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 	break;
 	case LWNL_REQ_WIFI_DISCONNECTAP:
 	{
+    printf("[pkbuild] LWNL_REQ_WIFI_DISCONNECTAP \t%s:%d\n",  __FUNCTION__, __LINE__);
 		TRWIFI_CALL(res, dev, disconnect_ap, (dev, NULL));
 	}
 	break;
 	case LWNL_REQ_WIFI_STARTSOFTAP:
 	{
+    printf("[pkbuild] LWNL_REQ_WIFI_STARTSOFTAP \t%s:%d\n",  __FUNCTION__, __LINE__);
 		TRWIFI_CALL(res, dev, start_softap, (dev, (trwifi_softap_config_s *)data));
 	}
 	break;
@@ -279,7 +283,9 @@ int trwifi_post_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32
 		memcpy(msg->buf, buffer, buf_len);
 		msg->buf_len = buf_len;
 	}
+  
 	LOCK_EVTQUEUE(g_queue);
+  printf("[pkbuild] post event %d \t%s:%d\n", evt, __FUNCTION__, __LINE__);
 	sq_addlast(&msg->entry, &g_queue.queue);
 	UNLOCK_EVTQUEUE(g_queue);
 	SIGNAL_EVTQUEUE(g_queue);
@@ -292,6 +298,7 @@ void *_trwifi_event_handler(void *arg)
 		WAIT_EVTQUEUE(g_queue);
 		LOCK_EVTQUEUE(g_queue);
 		trwifi_evt *evt = TRWIFI_GET_EVT(sq_remfirst(&g_queue.queue));
+    printf("[pkbuild] receive event %d \t%s:%d\n", evt->evt, __FUNCTION__, __LINE__);
 		UNLOCK_EVTQUEUE(g_queue);
 		int res = _trwifi_handle_event(evt->dev, evt->evt, evt->buf, evt->buf_len);
 		if (res < 0) {
@@ -300,6 +307,7 @@ void *_trwifi_event_handler(void *arg)
 			assert(0);
 		}
 
+    printf("[pkbuild] post lwnl event  \t%s:%d\n",  __FUNCTION__, __LINE__);
 		res = lwnl_postmsg(LWNL_DEV_WIFI, evt->evt, evt->buf, evt->buf_len);
 		if (res < 0) {
 			NET_LOGKE(TAG, "critical error network stack is not enabled\n");

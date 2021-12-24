@@ -70,7 +70,7 @@ static int _process_msg(int argc, char *argv[])
  */
 int wifimgr_run_msghandler(void)
 {
-	int tid = net_task_create("wifi msg handler", 100, 4096, (main_t)_process_msg, NULL);
+	int tid = net_task_create("wifi msg handler", 110, 4096, (main_t)_process_msg, NULL);
 	if (tid == -1) {
 		NET_LOGE(TAG, "wifi msg handler task create %d\n", errno);
 		return -1;

@@ -589,6 +589,9 @@ void netif_set_default(struct netif *netif)
  */
 void netif_set_up(struct netif *netif)
 {
+  /* lldbg_noarg("[pkbuild] setup %c%c %x \t%s:%d\n",   */
+  /*             netif->name[0], netif->name[1], */
+  /*             netif->flags,__FUNCTION__, __LINE__); */
 	if (!(netif->flags & NETIF_FLAG_UP)) {
 		netif->flags |= NETIF_FLAG_UP;
 

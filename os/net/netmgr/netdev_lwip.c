@@ -60,7 +60,7 @@ static int g_num = 0;
  */
 static int _netif_soft_ifup(FAR struct netif *dev)
 {
-	err_t res = netifapi_netif_set_up(dev);
+  err_t res = netifapi_netif_set_up(dev);
 	if (res != ERR_OK) {
 		NET_LOGKE(TAG, "netdev soft ifup fail\n");
 		return -1;
@@ -70,7 +70,7 @@ static int _netif_soft_ifup(FAR struct netif *dev)
 
 static int _netif_soft_ifdown(FAR struct netif *dev)
 {
-	err_t res = netifapi_netif_set_down(dev);
+  err_t res = netifapi_netif_set_down(dev);
 	if (res != ERR_OK) {
 		NET_LOGKE(TAG, "netdev soft ifdown fail\n");
 		return -1;
@@ -97,14 +97,14 @@ static inline void _convert_ip6addr_lton(FAR struct sockaddr_in6 *outaddr, ip_ad
 {
 	ip6_addr_t *tmp = ip_2_ip6(addr);
 	NET_LOGKV(TAG, "convert address lwip to netstack: %4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x\n",
-			 IP6_ADDR_BLOCK1(tmp),
-			 IP6_ADDR_BLOCK2(tmp),
-			 IP6_ADDR_BLOCK3(tmp),
-			 IP6_ADDR_BLOCK4(tmp),
-			 IP6_ADDR_BLOCK5(tmp),
-			 IP6_ADDR_BLOCK6(tmp),
-			 IP6_ADDR_BLOCK7(tmp),
-			 IP6_ADDR_BLOCK8(tmp));
+			  IP6_ADDR_BLOCK1(tmp),
+			  IP6_ADDR_BLOCK2(tmp),
+			  IP6_ADDR_BLOCK3(tmp),
+			  IP6_ADDR_BLOCK4(tmp),
+			  IP6_ADDR_BLOCK5(tmp),
+			  IP6_ADDR_BLOCK6(tmp),
+			  IP6_ADDR_BLOCK7(tmp),
+			  IP6_ADDR_BLOCK8(tmp));
 
 	outaddr->sin6_family = AF_INET6;
 	outaddr->sin6_port = 0;
@@ -138,8 +138,8 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 		ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
 		mld6_leavegroup_netif(dev, &solicit_addr);
 		NET_LOGKV(TAG, "MLD6 group left - %X : %X : %X : %X\n",
-				 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
-				 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+				  PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+				  PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
 		/* delete static ipv6 address if the same ip address exists */
 		netif_ip6_addr_set_state(dev, idx, IP6_ADDR_INVALID);
@@ -161,8 +161,8 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
 	mld6_joingroup_netif(dev, &solicit_addr);
 	NET_LOGKV(TAG, "MLD6 group added - %X : %X : %X : %X\n",
-			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
-			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+			  PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+			  PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
 
 	return;
@@ -680,11 +680,12 @@ static int lwip_get_flag(struct netdev *dev, uint8_t *flag)
 static int lwip_softup(struct netdev *dev)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
+	printf("[pkbuild] T%d %s %p \t%s:%d\n", getpid(),
+		   dev->ifname, __builtin_return_address(0), __FUNCTION__, __LINE__);
 	if (_netif_soft_ifup(ni) != 0) {
 		NET_LOGKE(TAG, "netdev stack up fail\n");
 		return -1;
 	}
-
 	/* Below logic is not processed by lwIP thread.
 	 * So it can cause conflict to lwIP thread later.
 	 * But now there are no APIs that can manage IPv6 auto-config.
@@ -700,10 +701,10 @@ static int lwip_softup(struct netdev *dev)
 	/* To auto-config linklocal address, ni should have mac address already */
 	netif_create_ip6_linklocal_address(ni);
 	NET_LOGKV(TAG, "generated IPV6 linklocal address - %X : %X : %X : %X\n",
-			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[0]),
-			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[1]),
-			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[2]),
-			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[3]));
+			  PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[0]),
+			  PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[1]),
+			  PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[2]),
+			  PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[3]));
 #ifdef CONFIG_NET_IPv6_MLD
 	ip6_addr_t solicit_addr;
 
@@ -711,8 +712,8 @@ static int lwip_softup(struct netdev *dev)
 	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&ni->ip6_addr[0])->addr[3]);
 	mld6_joingroup_netif(ni, &solicit_addr);
 	NET_LOGKV(TAG, "MLD6 group added - %X : %X : %X : %X\n",
-			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
-			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+			  PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
+			  PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
 #endif /* CONFIG_NET_IPv6 */
 	return 0;
@@ -720,6 +721,8 @@ static int lwip_softup(struct netdev *dev)
 
 static int lwip_softdown(struct netdev *dev)
 {
+	printf("[pkbuild] T%d %s %p\t%s:%d\n", getpid(), dev->ifname,
+		   __builtin_return_address(0), __FUNCTION__, __LINE__);
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	return _netif_soft_ifdown(ni);
 }

@@ -293,6 +293,7 @@ int parse_scan_with_ssid_res(char*buf, int buflen, char *target_ssid, void *user
  */
 static int rtk_drv_callback_handler(int type)
 {
+  printf("[pkbuild] T%d rtk post event %d \t%s:%d\n", getpid(),  type, __FUNCTION__, __LINE__);
 	switch (type) {
 	case 1:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECTED, NULL, 0);
