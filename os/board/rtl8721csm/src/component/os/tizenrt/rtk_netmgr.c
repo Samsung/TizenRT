@@ -369,6 +369,8 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 			return wuret;
 		}
 		g_mode = RTK_WIFI_STATION_IF;
+		extern const char lib_wlan_rev[];
+		RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);
 		wuret = TRWIFI_SUCCESS;
 	} else {
 		ndbg("Already %d\n", g_mode);
