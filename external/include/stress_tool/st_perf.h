@@ -170,8 +170,7 @@ void perf_add_expect_performance(st_smoke *smoke, unsigned int usec);
 void perf_initialize(st_pack *pack);
 void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 				   st_unit_tc func_init, st_unit_tc func_deinit,
-				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func,
-				   unsigned int expect, st_performance *perf, st_stability *stab);
+				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func, unsigned int expect);
 void perf_add_global(st_pack *pack, st_unit_tc global_setup, st_unit_tc global_teardown, const char *title);
 void perf_set_keeprunning(int enable);
 /******************************************
@@ -266,7 +265,7 @@ void perf_set_keeprunning(int enable);
 /*
  * Description: Define testsuite & do not set global configuration
  */
-#define ST_SET_PACK_GLOBAL(testsuite)         \
+#define ST_SET_PACK_GLOBAL(testsuite) \
 	static st_pack g_pack_##testsuite;
 
 /*
@@ -282,11 +281,9 @@ void perf_set_keeprunning(int enable);
  * Note: testcase is composed to setup, teardown and testcase
  */
 #define ST_SET_SMOKE(testsuite, repeat, expect, tc_desc, tc_name)                          \
-	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};                            \
-	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};                                 \
 	perf_add_item(&g_pack_##testsuite, repeat, #tc_name,                                   \
 				  NULL, NULL, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name, \
-				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
+				  expect)
 
 /*
  * Description: Add testcase(smoke) to testsuite(testsuite)
@@ -294,11 +291,9 @@ void perf_set_keeprunning(int enable);
  * Note: testcase is composed to testcase only
  */
 #define ST_SET_SMOKE1(testsuite, repeat, expect, tc_desc, tc_name) \
-	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};    \
-	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};         \
 	perf_add_item(&g_pack_##testsuite, repeat, #tc_name,           \
 				  NULL, NULL, NULL, NULL, tc_##tc_name,            \
-				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
+				  expect)
 
 /*
  * Description: Add testcase(smoke) to testsuite(testsuite)
@@ -307,11 +302,9 @@ void perf_set_keeprunning(int enable);
  *       reuse_tc is for sharing setup and teardown code among testcases.
  */
 #define ST_TC_SET_SMOKE(testsuite, repeat, expect, tc_desc, reuse_tc, tc_name)               \
-	st_performance g_perf_##tc_name = {0, ST_PERF_INITIALIZER};                              \
-	st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER};                                   \
 	perf_add_item(&g_pack_##testsuite, repeat, #tc_name,                                     \
 				  NULL, NULL, tc_##reuse_tc##_setup, tc_##reuse_tc##_teardown, tc_##tc_name, \
-				  expect, &g_perf_##tc_name, &g_stab_##tc_name)
+				  expect)
 
 /*
  * Description: Define setup and teardown for testsuite

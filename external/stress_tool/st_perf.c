@@ -42,16 +42,21 @@ static int g_keep_running = 0;
 /**
  * Inner Function
  */
-int _calc_performance(char *title, st_performance *p, st_elapsed_time *duration)
+static int _calc_performance(char *title, st_performance *perf, st_elapsed_time *duration)
 {
 	st_performance_time *start = &duration->start;
 	st_performance_time *end = &duration->end;
 
-	unsigned int start_time = start->second * 1000000 + start->micro;
-	unsigned int end_time = end->second * 1000000 + end->micro;
-	unsigned int elapsed = end_time - start_time;
-
-	st_performance_stat *stat = &p->stat;
+	unsigned int elapsed_sec = end->second - start->second;
+	unsigned int elapsed_msec = 0;
+	if (end->micro > start->micro) {
+		elapsed_msec = end->micro - start->micro;
+	} else {
+		elapsed_sec--;
+		elapsed_msec = 1000000 + end->micro - start->micro;
+	}
+	unsigned int elapsed = elapsed_sec * 1000000 + elapsed_msec;
+	st_performance_stat *stat = &perf->stat;
 	if (stat->count == 0) {
 		stat->start.second = start->second;
 		stat->start.micro = start->micro;
@@ -72,8 +77,8 @@ int _calc_performance(char *title, st_performance *p, st_elapsed_time *duration)
 			stat->min = elapsed;
 		}
 	}
-	p->stat.total_elapsed += elapsed;
-	if (p->expect != 0 && p->expect < elapsed) {
+	perf->stat.total_elapsed += elapsed;
+	if (perf->expect != 0 && perf->expect < elapsed) {
 		stat->fail++;
 		stat->result = STRESS_TC_FAIL;
 		return -1;
@@ -81,7 +86,7 @@ int _calc_performance(char *title, st_performance *p, st_elapsed_time *duration)
 	return 0;
 }
 
-void _calc_stability(st_stability *stab, st_tc_result r)
+static void _calc_stability(st_stability *stab, st_tc_result r)
 {
 	st_stability_stat *s = &stab->stat;
 	s->count++;
@@ -109,9 +114,10 @@ void _run_smoke(st_smoke *smoke)
 		return;
 	}
 	int cnt = 0;
-	st_tc_result ret;
+	st_tc_result ret = STRESS_TC_PASS;
 	st_func *unit = smoke->func;
 	st_stability *stab = smoke->stability;
+	st_elapsed_time duration;
 
 	print_smoke_title(smoke);
 
@@ -128,7 +134,6 @@ void _run_smoke(st_smoke *smoke)
 				break;
 			}
 		}
-		st_elapsed_time duration;
 		ret = unit->tc(&duration);
 		perf_result = _calc_performance(unit->tc_name, smoke->performance, &duration);
 		_calc_stability(smoke->stability, ret);
@@ -160,6 +165,12 @@ void _perf_free_pack(st_pack *pack)
 		}
 		sq_entry_t *entry = smoke->entry.flink;
 		sq_rem(&smoke->entry, &pack->queue);
+		if (smoke->stability) {
+			free(smoke->stability);
+		}
+		if (smoke->performance) {
+			free(smoke->performance);
+		}
 		free(smoke);
 
 		if (!entry) {
@@ -228,11 +239,25 @@ void perf_run(st_pack *pack)
 void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 				   st_unit_tc func_init, st_unit_tc func_deinit,
 				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func,
-				   unsigned int expect, st_performance *perf, st_stability *stab)
+				   unsigned int expect)
 {
-	st_func *sfunc = (st_func *)malloc(sizeof(st_func));
+	st_performance *perf = (st_performance *)zalloc(sizeof(st_performance));
+	if (!perf) {
+		PERF_ERR("perf alloc fail\n");
+		return;
+	}
+	st_stability *stab = (st_stability *)zalloc(sizeof(st_stability));
+	if (!stab) {
+		PERF_ERR("stab alloc fail\n");
+		free(perf);
+		return;
+	}
+
+	st_func *sfunc = (st_func *)zalloc(sizeof(st_func));
 	if (!sfunc) {
 		PERF_ERR("func alloc fail\n");
+		free(perf);
+		free(stab);
 		return;
 	}
 	sfunc->tc_name = tc_desc;
@@ -244,10 +269,12 @@ void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 
 	perf->expect = expect;
 
-	st_smoke *smoke = (st_smoke *)malloc(sizeof(st_smoke));
+	st_smoke *smoke = (st_smoke *)zalloc(sizeof(st_smoke));
 	if (!smoke) {
-		PERF_ERR("malloc fail\n");
+		PERF_ERR("smoke alloc fail\n");
 		free(sfunc);
+		free(perf);
+		free(stab);
 		return;
 	}
 	smoke->repeat_size = repeat;
