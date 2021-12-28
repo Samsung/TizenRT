@@ -200,6 +200,15 @@ void perf_set_keeprunning(int enable);
 		}                                                               \
 	} while (0)
 
+#define ST_ASSERT_NEQ(val, exp)                                          \
+	do {                                                                \
+		if (exp == val) {                                               \
+			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
+			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+			assert(0);                                                  \
+		}                                                               \
+	} while (0)
+
 #define ST_EXPECT_EQ2(val1, val2, exp)                                           \
 	do {                                                                         \
 		if (exp != val1 && exp != val2) {                                        \
