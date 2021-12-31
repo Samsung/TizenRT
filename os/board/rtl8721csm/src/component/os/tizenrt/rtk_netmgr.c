@@ -291,12 +291,17 @@ int parse_scan_with_ssid_res(char*buf, int buflen, char *target_ssid, void *user
 /*
  * Callback
  */
+extern unsigned char ap_bssid[ETH_ALEN];
 static int rtk_drv_callback_handler(int type)
 {
 	switch (type) {
 	case 1:
-		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECTED, NULL, 0);
+	{
+		trwifi_cbk_msg_s msg = {TRWIFI_REASON_UNKNOWN, {0,}, NULL};
+		rtw_memcpy(msg.bssid, ap_bssid, ETH_ALEN);
+		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECTED, &msg, sizeof(trwifi_cbk_msg_s));
 		break;
+	}
 	case 2:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
 		break;

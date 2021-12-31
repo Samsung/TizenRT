@@ -63,7 +63,7 @@ extern u8 rtw_get_band_type(void);
  ******************************************************/
 static internal_scan_handler_t scan_result_handler_ptr = {0, 0, 0, RTW_FALSE, 0, 0, 0, 0, 0};
 static internal_join_result_t* join_user_data;
-static unsigned char ap_bssid[6];
+unsigned char ap_bssid[ETH_ALEN];
 #if CONFIG_WIFI_IND_USE_THREAD
 static void* disconnect_sema = NULL;
 #endif
