@@ -126,7 +126,18 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			heap->peak_alloc_size = 0;
 			return OK;
 		}
-		heapinfo_parse_heap(heap, option->mode, option->pid);
+#if CONFIG_KMM_NHEAPS > 1
+		if (option->heap_type == HEAPINFO_HEAP_TYPE_KERNEL) {
+			int heap_idx;
+			for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
+				printf("\n [HEAP %d]\n", heap_idx);
+				heapinfo_parse_heap(&heap[heap_idx], option->mode, option->pid);
+			}
+		} else
+#endif
+		{
+			heapinfo_parse_heap(heap, option->mode, option->pid);
+		}
 		ret = OK;
 		break;
 #endif

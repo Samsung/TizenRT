@@ -56,6 +56,9 @@ CSRCS += network_tc_main.c
 ifeq ($(CONFIG_TC_NET_SOCKET),y)
 CSRCS +=tc_net_socket.c
 endif
+ifeq ($(CONFIG_TC_NET_SOCKET_SHARE),y)
+CSRCS +=itc_net_socket_share.c
+endif
 ifeq ($(CONFIG_TC_NET_PBUF),y)
 CSRCS += tc_net_pbuf.c
 endif

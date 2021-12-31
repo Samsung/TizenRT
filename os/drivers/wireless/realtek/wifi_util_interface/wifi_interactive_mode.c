@@ -15,8 +15,6 @@
  ******************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/wifi/wifi_common.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -266,7 +264,7 @@ void dhcpd_event(void)
 	return;
 }
 
-int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config)
+int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 {
 	int ret = 0;
 	int timeout = 20;
@@ -307,33 +305,33 @@ int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config)
 	nvdbg("\n\rStarting AP ...");
 
 	switch (softap_config->ap_auth_type) {
-	case WIFI_UTILS_AUTH_OPEN:
+	case TRWIFI_AUTH_OPEN:
 		security_type = RTW_SECURITY_OPEN;
 		password = NULL;
 		break;
-	case WIFI_UTILS_AUTH_WPA2_PSK:
+	case TRWIFI_AUTH_WPA2_PSK:
 		security_type = RTW_SECURITY_WPA2_AES_PSK;
 		password = softap_config->passphrase;
 		break;
-	case WIFI_UTILS_AUTH_UNKNOWN:
+	case TRWIFI_AUTH_UNKNOWN:
 	default:
 		ndbg("\r\nAP AUTH type is unknown %d;\n", softap_config->ap_auth_type);
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	if (softap_config->channel > 14 || softap_config->channel < 1) {
 		ndbg("\r\nAP channel is wrong: %d;\n", softap_config->channel);
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	if (softap_config->ssid_length < 1) {
 		ndbg("\r\nAP ssid_length is wrong: %s,	%d;\n", softap_config->ssid, softap_config->ssid_length);
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
-	if (softap_config->ap_auth_type != WIFI_UTILS_AUTH_OPEN && softap_config->passphrase_length < 1) {
+	if (softap_config->ap_auth_type != TRWIFI_AUTH_OPEN && softap_config->passphrase_length < 1) {
 		ndbg("\r\nAP passphrase_length is wrong: %s,  %d;\n", softap_config->passphrase, softap_config->passphrase_length);
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	if (wifi_start_ap(softap_config->ssid,
@@ -351,7 +349,7 @@ int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config)
 	return ret;
 }
 
-int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
+int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 {
 	int ret;
 
@@ -363,17 +361,17 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 	int key_id;
 	void *semaphore;
 
-	wifi_utils_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
-	wifi_utils_ap_crypto_type_e crypto = ap_connect_config->ap_crypto_type;
+	trwifi_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
+	trwifi_ap_crypto_type_e crypto = ap_connect_config->ap_crypto_type;
 	/* WIFI_MANAGER_CRYPTO_AES: 3 */
-	if (crypto == 3 && auth != WIFI_UTILS_AUTH_WPA2_PSK) {
+	if (crypto == 3 && auth != TRWIFI_AUTH_WPA2_PSK) {
 		ndbg("\r\nInvalid crypto/auth match\n");
 		return -1;
 	}
 	ssid = ap_connect_config->ssid;
 
 	switch (auth) {
-	case WIFI_UTILS_AUTH_OPEN:
+	case TRWIFI_AUTH_OPEN:
 		security_type = RTW_SECURITY_OPEN;
 		password = NULL;
 		ssid_len = strlen((const char *)ssid);
@@ -381,7 +379,7 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 		key_id = 0;
 		semaphore = NULL;
 		break;
-	case WIFI_UTILS_AUTH_WEP_SHARED:
+	case TRWIFI_AUTH_WEP_SHARED:
 		security_type = RTW_SECURITY_WEP_PSK;
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
@@ -393,7 +391,7 @@ int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg)
 		}
 		semaphore = NULL;
 		break;
-	case WIFI_UTILS_AUTH_WPA2_PSK:
+	case TRWIFI_AUTH_WPA2_PSK:
 		security_type = RTW_SECURITY_WPA2_AES_PSK;
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
@@ -735,24 +733,24 @@ static void print_scan_result(rtw_scan_result_t *record)
 }
 
 /* Scanning operation should be blocked mode */
-wifi_utils_scan_list_s *g_scan_list;
+trwifi_scan_list_s *g_scan_list;
 int g_scan_num;
 static void _free_scanlist(void)
 {
 	while (g_scan_list) {
-		wifi_utils_scan_list_s *cur = g_scan_list;
+		trwifi_scan_list_s *cur = g_scan_list;
 		g_scan_list = g_scan_list->next;
-		rtw_mfree(cur, sizeof(wifi_utils_scan_list_s));
+		rtw_mfree(cur, sizeof(trwifi_scan_list_s));
 	}
 	g_scan_num = 0;
 }
 
-extern int8_t wifi_scan_result_callback(wifi_utils_scan_list_s *scan_list, int scan_num);
+extern int8_t wifi_scan_result_callback(trwifi_scan_list_s *scan_list, int scan_num);
 
 rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_result)
 {
-	wifi_utils_scan_list_s *scan_list;
-	scan_list = (wifi_utils_scan_list_s *)rtw_zmalloc(sizeof(wifi_utils_scan_list_s));
+	trwifi_scan_list_s *scan_list;
+	scan_list = (trwifi_scan_list_s *)rtw_zmalloc(sizeof(trwifi_scan_list_s));
 	if (scan_list == NULL) {
 		ndbg("\r\n[app_scan_result_handler]:Fail to malloc scan_list\r\n");
 		return RTW_ERROR;
@@ -764,60 +762,60 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 		scan_list->ap_info.channel = record->channel;
 		strncpy(scan_list->ap_info.ssid, record->SSID.val, record->SSID.len);
 		scan_list->ap_info.ssid_length = record->SSID.len;
-		snprintf(scan_list->ap_info.bssid, WIFI_UTILS_MACADDR_STR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x", record->BSSID.octet[0], record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3], record->BSSID.octet[4], record->BSSID.octet[5]);
+		snprintf(scan_list->ap_info.bssid, TRWIFI_MACADDR_STR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x", record->BSSID.octet[0], record->BSSID.octet[1], record->BSSID.octet[2], record->BSSID.octet[3], record->BSSID.octet[4], record->BSSID.octet[5]);
 		scan_list->ap_info.max_rate = 0;
 		scan_list->ap_info.rssi = record->signal_strength;
 		scan_list->ap_info.phy_mode = 0x00000004; //bit2 is set to 1 if support 11n
 		switch (record->security) {
 		case RTW_SECURITY_OPEN:
-			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_OPEN;
+			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_OPEN;
 			break;
 		case RTW_SECURITY_WEP_SHARED:
-			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WEP_SHARED;
+			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WEP_SHARED;
 			break;
 		case RTW_SECURITY_WEP_PSK:
-			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_PSK;
+			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA_PSK;
 			break;
 		case RTW_SECURITY_WPA2_AES_PSK:
-			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
+			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA2_PSK;
 			break;
 		case RTW_SECURITY_WPA_WPA2_MIXED:
-			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK;
+			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA_AND_WPA2_PSK;
 			break;
 		default:
-			scan_list->ap_info.ap_auth_type = WIFI_UTILS_AUTH_UNKNOWN;
+			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_UNKNOWN;
 			break;
 		}
 
 		switch (record->security) {
 		case RTW_SECURITY_OPEN:
-			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_NONE;
+			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_NONE;
 			break;
 		case RTW_SECURITY_WEP_SHARED:
-			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_64;
+			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_WEP_64;
 			break;
 		case RTW_SECURITY_WEP_PSK:
-			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_WEP_128;
+			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_WEP_128;
 			break;
 		case RTW_SECURITY_WPA_TKIP_PSK:
-			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP;
+			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_TKIP;
 			break;
 		case RTW_SECURITY_WPA_AES_PSK:
 		case RTW_SECURITY_WPA2_AES_PSK:
-			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
+			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_AES;
 			break;
 		case RTW_SECURITY_WPA2_MIXED_PSK:
-			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_TKIP_AND_AES;
+			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_TKIP_AND_AES;
 			break;
 		default:
-			scan_list->ap_info.ap_crypto_type = WIFI_UTILS_CRYPTO_UNKNOWN;
+			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_UNKNOWN;
 			break;
 		}
 		if (g_scan_list == NULL) {
 			g_scan_list = scan_list;
 			g_scan_num = 1;
 		} else {
-			wifi_utils_scan_list_s *cur = g_scan_list;
+			trwifi_scan_list_s *cur = g_scan_list;
 			int idx;
 			for (idx = 1; idx < g_scan_num; idx++) {
 				cur = cur->next;

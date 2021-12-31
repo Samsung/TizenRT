@@ -74,26 +74,26 @@ static sem_t g_wifi_sem = SEM_INITIALIZER(0);
 		sem_wait(&g_wifi_sem);                      \
 	} while (0)
 
-static void wifi_sta_connected(wifi_manager_result_e result)
+static void wifi_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WIFITEST_SIGNAL;
 }
 
-static void wifi_sta_disconnected(wifi_manager_disconnect_e disconn)
+static void wifi_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	WIFITEST_SIGNAL;
 }
 
-static void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res)
+static void wifi_scan_ap_done(wifi_manager_cb_msg_s msg, void *arg)
 {
 	/* Make sure you copy the scan results onto a local data structure.
 	 *	 * It will be deleted soon eventually as you exit this function.
 	 *		 */
-	if (res == WIFI_SCAN_FAIL) {
+	if (msg.res != WIFI_MANAGER_SUCCESS || !msg.scanlist) {
 		WIFITEST_SIGNAL;
 		return;
 	}
-	wifi_manager_scan_info_s *wifi_scan_iter = *scan_info;
+	wifi_manager_scan_info_s *wifi_scan_iter = msg.scanlist;
 	while (wifi_scan_iter != NULL) {
 		printf("SSID: %-20s, BSSID: %-20s, RSSI: %d, CH: %d, Phy_type: %d\n", \
 				wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi, \

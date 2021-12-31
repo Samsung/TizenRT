@@ -167,7 +167,7 @@ void lwnl_queue_initialize(void)
 	LWQ_UNLOCK;
 }
 
-int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
+int lwnl_add_event(lwnl_cb_status type, void *buffer, int32_t buf_len)
 {
 	LWNL_LOGI(TAG, "--> dev %d type %d buffer %p len (%d)",
 			  type.type, type.evt, buffer, buf_len);
@@ -181,15 +181,20 @@ int lwnl_add_event(lwnl_cb_status type, void *buffer, uint32_t buf_len)
 	evt->data.data = NULL;
 	evt->data.data_len = 0;
 	if (buffer) {
-		char *output = kmm_malloc(buf_len);
-		if (!output) {
-			LWNL_LOGE(TAG, "fail to alloc buffer");
-			kmm_free(evt);
-			return -3;
+		if (buf_len < 0) {
+			evt->data.data = buffer;
+			evt->data.data_len = -(buf_len);
+		} else {
+			char *output = kmm_malloc(buf_len);
+			if (!output) {
+				LWNL_LOGE(TAG, "fail to alloc buffer");
+				kmm_free(evt);
+				return -3;
+			}
+			memcpy(output, buffer, buf_len);
+			evt->data.data = output;
+			evt->data.data_len = buf_len;
 		}
-		memcpy(output, buffer, buf_len);
-		evt->data.data = output;
-		evt->data.data_len = buf_len;
 	}
 	sq_addlast(&evt->entry, &g_event_queue[type.type]);
 	if (_lwnl_update_event_filep(evt) < 0) {

@@ -36,6 +36,7 @@ BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_AR
 
 source ${BOARD_SPECIFIC_SCRIPT}
 source ${BOARD_CONFIG}
+source ${OS_PATH}/.bininfo
 
 USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
 
@@ -105,9 +106,12 @@ function get_executable_name()
 			else
 				echo "${BL2}.bin"
 			fi;;
-		kernel|os) echo "${KERNEL}.bin";;
+		kernel|os) echo "${KERNEL_BIN_NAME}";;
 		ota) echo "${OTA}.bin";;
-		micom|wifi|loadparam) echo "$1";;
+		app1) echo "${APP1_BIN_NAME}";;
+		app2) echo "${APP2_BIN_NAME}";;
+		loadparam) echo "$1";;
+		common) echo "${COMMON_BIN_NAME}";;
 		zoneinfo) echo "zoneinfo.img";;
 		rom) echo "romfs.img";;
 		bootparam)
@@ -244,8 +248,9 @@ download_all()
 {
 	echo "Starting Download..."
 	found_kernel=false
-	found_wifi=false
-	found_micom=false
+	found_app1=false
+	found_app2=false
+	found_common=false
 
 	for partidx in ${!parts[@]}; do
 
@@ -262,18 +267,25 @@ download_all()
 			found_kernel=true
 		fi
 
-		if [[ "${parts[$partidx]}" == "wifi" ]];then
-			if [[ $found_wifi == true ]];then
+		if [[ "${parts[$partidx]}" == "app1" ]];then
+			if [[ $found_app1 == true ]];then
 				continue
 			fi
-			found_wifi=true
+			found_app1=true
 		fi
 
-		if [[ "${parts[$partidx]}" == "micom" ]];then
-			if [[ $found_micom == true ]];then
+		if [[ "${parts[$partidx]}" == "app2" ]];then
+			if [[ $found_app2 == true ]];then
 				continue
 			fi
-			found_micom=true
+			found_app2=true
+		fi
+
+		if [[ "${parts[$partidx]}" == "common" ]];then
+			if [[ $found_common == true ]];then
+				continue
+			fi
+			found_common=true
 		fi
 
 		if [[ "${parts[$partidx]}" == "ftl" ]];then
@@ -391,7 +403,7 @@ IFS=',' read -ra sizes <<< "$sizes"
 
 #Calculate Flash Offset
 num=${#sizes[@]}
-offsets[0]=`printf "0x%X" ${FLASH_START_ADDR}`
+offsets[0]=`printf "0x%X" ${CONFIG_FLASH_START_ADDR}`
 
 for (( i=1; i<=$num-1; i++ ))
 do

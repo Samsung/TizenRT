@@ -34,7 +34,9 @@ But we don't support cmake so that we use the fixed file. */
 /* #undef EGD_SOCKET */
 
 /* Define if you want to enable IPv6 support */
+#ifdef CONFIG_NET_IPv6
 #define ENABLE_IPV6 1
+#endif
 
 /* Define to the type of arg 2 for gethostname. */
 #define GETHOSTNAME_TYPE_ARG2 size_t
@@ -94,8 +96,9 @@ But we don't support cmake so that we use the fixed file. */
 /* #undef HAVE_BUILTIN_AVAILABLE */
 
 /* Define to 1 if you have the clock_gettime function and monotonic timer. */
+#ifdef CONFIG_CLOCK_MONOTONIC
 #define HAVE_CLOCK_GETTIME_MONOTONIC 1
-
+#endif
 /* Define to 1 if you have the closesocket function. */
 /* #undef HAVE_CLOSESOCKET */
 
@@ -398,10 +401,8 @@ But we don't support cmake so that we use the fixed file. */
 /* Define to 1 if you have the memrchr function or macro. */
 /* #undef HAVE_MEMRCHR */
 
-#ifndef __TIZENRT__
 /* Define to 1 if you have the MSG_NOSIGNAL flag. */
-#define HAVE_MSG_NOSIGNAL 1
-#endif
+/* #define HAVE_MSG_NOSIGNAL 1 */
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #define HAVE_NETDB_H 1
@@ -429,28 +430,28 @@ But we don't support cmake so that we use the fixed file. */
 /* #undef HAVE_OLD_GSSMIT */
 
 /* Define to 1 if you have the <openssl/crypto.h> header file. */
-#define HAVE_OPENSSL_CRYPTO_H 1
+//#define HAVE_OPENSSL_CRYPTO_H 1
 
 /* Define to 1 if you have the <openssl/engine.h> header file. */
-#define HAVE_OPENSSL_ENGINE_H 1
+//#define HAVE_OPENSSL_ENGINE_H 1
 
 /* Define to 1 if you have the <openssl/err.h> header file. */
-#define HAVE_OPENSSL_ERR_H 1
+//#define HAVE_OPENSSL_ERR_H 1
 
 /* Define to 1 if you have the <openssl/pem.h> header file. */
-#define HAVE_OPENSSL_PEM_H 1
+//#define HAVE_OPENSSL_PEM_H 1
 
 /* Define to 1 if you have the <openssl/rsa.h> header file. */
-#define HAVE_OPENSSL_RSA_H 1
+//#define HAVE_OPENSSL_RSA_H 1
 
 /* if you have the function SRP_Calc_client_key */
-#define HAVE_OPENSSL_SRP 1
+//#define HAVE_OPENSSL_SRP 1
 
 /* Define to 1 if you have the <openssl/ssl.h> header file. */
-#define HAVE_OPENSSL_SSL_H 1
+//#define HAVE_OPENSSL_SSL_H 1
 
 /* Define to 1 if you have the <openssl/x509.h> header file. */
-#define HAVE_OPENSSL_X509_H 1
+//#define HAVE_OPENSSL_X509_H 1
 
 /* Define to 1 if you have the <pem.h> header file. */
 /* #undef HAVE_PEM_H */
@@ -617,10 +618,8 @@ But we don't support cmake so that we use the fixed file. */
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #define HAVE_SYS_IOCTL_H 1
 
-#ifndef __TIZENRT__
 /* Define to 1 if you have the <sys/param.h> header file. */
-#define HAVE_SYS_PARAM_H 1
-#endif
+/* #define HAVE_SYS_PARAM_H 1 */
 
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #define HAVE_SYS_POLL_H 1
@@ -797,7 +796,7 @@ But we don't support cmake so that we use the fixed file. */
 #define RETSIGTYPE void
 
 /* Define to the type qualifier of arg 5 for select. */
-#define SELECT_QUAL_ARG5 
+#define SELECT_QUAL_ARG5
 
 /* Define to the type of arg 1 for select. */
 #define SELECT_TYPE_ARG1 int
@@ -893,10 +892,8 @@ But we don't support cmake so that we use the fixed file. */
 /* Use TLS-SRP authentication */
 #define USE_TLS_SRP 1
 
-#ifndef __TIZENRT__
 /* Use Unix domain sockets */
-#define USE_UNIX_SOCKETS 1
-#endif
+/* #define USE_UNIX_SOCKETS 1 */
 
 /* Version number of package */
 #define VERSION "2.8.12"

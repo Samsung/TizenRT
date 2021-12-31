@@ -1936,25 +1936,24 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*buf, int buflen, cha
 	int ret;
 
 	scan_buf.buf_len = scan_buflen;
-	scan_buf.buf = (char*)rtw_malloc(scan_buf.buf_len);
-	if(!scan_buf.buf){
+	scan_buf.buf = (char *)rtw_malloc(scan_buf.buf_len);
+	if (!scan_buf.buf) {
 		RTW_API_INFO("\n\rERROR: Can't malloc memory(%d)", scan_buf.buf_len);
 		return RTW_NOMEM;
 	}
 	//set ssid
 	memset(scan_buf.buf, 0, scan_buf.buf_len);
 	memcpy(scan_buf.buf, &ssid_len, sizeof(int));
-	memcpy(scan_buf.buf+sizeof(int), ssid, ssid_len);
+	memcpy(scan_buf.buf + sizeof(int), ssid, ssid_len);
 
-	//Scan channel	
-	if((scan_cnt = wifi_scan(RTW_SCAN_TYPE_ACTIVE, RTW_BSS_TYPE_ANY, &scan_buf)) < 0){
+	//Scan channel
+	if ((scan_cnt = wifi_scan(RTW_SCAN_TYPE_ACTIVE, RTW_BSS_TYPE_ANY, &scan_buf)) <= 0) {
 		RTW_API_INFO("\n\rERROR: wifi scan failed");
 		ret = RTW_ERROR;
-	}else{
-		if(NULL == results_handler)
-		{
+	} else {
+		if (NULL == results_handler) {
 			int plen = 0;
-			while(plen < scan_buf.buf_len){
+			while (plen < scan_buf.buf_len) {
 				int len, rssi, ssid_length, i, security_mode;
 				int wps_password_id;
 				char *mac, *pssid;
@@ -1964,52 +1963,53 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*buf, int buflen, cha
 				len = (int)*(scan_buf.buf + plen);
 				RTW_API_INFO("len = %d,\t", len);
 				// check end
-				if(len == 0) break;
+				if (len == 0)
+					break;
 				// mac
 				mac = scan_buf.buf + plen + 1;
 				RTW_API_INFO("mac = ");
-				for(i=0; i<6; i++)
-					RTW_API_INFO("%02x ", (u8)*(mac+i));
+				for (i = 0; i < 6; i++)
+					RTW_API_INFO("%02x ", (u8) * (mac + i));
 				RTW_API_INFO(",\t");
 				// rssi
-				rssi = *(int*)(scan_buf.buf + plen + 1 + 6);
+				rssi = *(int *)(scan_buf.buf + plen + 1 + 6);
 				RTW_API_INFO(" rssi = %d,\t", rssi);
 				// security_mode
 				security_mode = (int)*(scan_buf.buf + plen + 1 + 6 + 4);
 				switch (security_mode) {
-					case IW_ENCODE_ALG_NONE:
-						RTW_API_INFO("sec = open    ,\t");
-						break;
-					case IW_ENCODE_ALG_WEP:
-						RTW_API_INFO("sec = wep     ,\t");
-						break;
-					case IW_ENCODE_ALG_CCMP:
-						RTW_API_INFO("sec = wpa/wpa2,\t");
-						break;
+				case IW_ENCODE_ALG_NONE:
+					RTW_API_INFO("sec = open    ,\t");
+					break;
+				case IW_ENCODE_ALG_WEP:
+					RTW_API_INFO("sec = wep     ,\t");
+					break;
+				case IW_ENCODE_ALG_CCMP:
+					RTW_API_INFO("sec = wpa/wpa2,\t");
+					break;
 				}
 				// password id
 				wps_password_id = (int)*(scan_buf.buf + plen + 1 + 6 + 4 + 1);
 				RTW_API_INFO("wps password id = %d,\t", wps_password_id);
-				
+
 				RTW_API_INFO("channel = %d,\t", *(scan_buf.buf + plen + 1 + 6 + 4 + 1 + 1));
 				// ssid
 				ssid_length = len - 1 - 6 - 4 - 1 - 1 - 1;
 				pssid = scan_buf.buf + plen + 1 + 6 + 4 + 1 + 1 + 1;
 				RTW_API_INFO("ssid = ");
-				for(i=0; i<ssid_length; i++)
-					RTW_API_INFO("%c", *(pssid+i));
+				for (i = 0; i < ssid_length; i++)
+					RTW_API_INFO("%c", *(pssid + i));
 				plen += len;
 				add_cnt++;
 			}
 
 			RTW_API_INFO("\n\rwifi_scan: add count = %d, scan count = %d", add_cnt, scan_cnt);
+		} else {
+			results_handler(scan_buf.buf, scan_buf.buf_len, ssid, user_data);
 		}
 		ret = RTW_SUCCESS;
 	}
-	if(results_handler)
-		results_handler(scan_buf.buf, scan_buf.buf_len, ssid, user_data);
-		
-	if(scan_buf.buf)
+
+	if (scan_buf.buf)
 		rtw_free(scan_buf.buf);
 
 	return ret;

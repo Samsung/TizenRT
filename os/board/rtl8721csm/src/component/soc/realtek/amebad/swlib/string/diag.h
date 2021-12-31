@@ -147,14 +147,15 @@ extern u32 ConfigDebug[];
 #define DRIVER_PREFIX	"RTL8721D[Driver]: "
 
 #ifdef CONFIG_DEBUG_LOG
+extern int rtw_printf(const char *format,...);
 #define DBG_8195A(...)     do {\
     if (unlikely(ConfigDebug[LEVEL_ERROR] & BIT(MODULE_MISC))) \
-        DiagPrintf("\r" __VA_ARGS__);\
+        rtw_printf("\r" __VA_ARGS__);\
 }while(0)
 
 #define MONITOR_LOG(...)     do {\
      if (unlikely(ConfigDebug[LEVEL_ERROR] & BIT(MODULE_MONIT))) \
-        DiagPrintf( __VA_ARGS__);\
+        rtw_printf( __VA_ARGS__);\
 }while(0)
 
 #else   // else of "#if CONFIG_DEBUG_LOG"

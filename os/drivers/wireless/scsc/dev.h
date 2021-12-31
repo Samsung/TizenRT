@@ -27,10 +27,8 @@
 #include <tinyara/kmalloc.h>
 #include <scsc/scsc_mx.h>
 #include <tinyara/wdog.h>
-#ifdef CONFIG_NET_NETMGR
 #include <net/if.h>
 #include <tinyara/netmgr/netdev_mgr.h>
-#endif
 #include "max_buf.h"
 #include "fapi.h"
 #include "utils_scsc.h"

@@ -63,7 +63,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # transport layer (TCP / UDP) / IP multicast functionality test example
 
 ASRCS =
-CSRCS = nettest_stress.c
+CSRCS = nettest_stress.c test_main.c
 MAINSRC = nettest.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -78,12 +78,12 @@ ifneq ($(CONFIG_BUILD_KERNEL),y)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\..\libapps$(LIBEXT)
+  BIN = $(APPDIR)\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = ..\\..\\libapps$(LIBEXT)
+  BIN = $(APPDIR)\\libapps$(LIBEXT)
 else
-  BIN = ../../libapps$(LIBEXT)
+  BIN = $(APPDIR)/libapps$(LIBEXT)
 endif
 endif
 

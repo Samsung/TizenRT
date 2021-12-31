@@ -1,0 +1,3 @@
+config ENTRY_TLS_HANDSHAKE
+	bool "TLS handshake benchmark program"
+	depends on EXAMPLES_TLS_HANDSHAKE

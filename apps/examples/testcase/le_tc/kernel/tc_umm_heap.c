@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 #include <sched.h>
 #include <sys/wait.h>
@@ -34,14 +35,28 @@
 #include <tinyara/sched.h>
 #include "tc_internal.h"
 
+/****************************************************************************
+ * Definitions
+ ****************************************************************************/
+
 #define ALLOC_SIZE_VAL 10
 #define ALLOC_FREE_TIMES 5
 #define TEST_TIMES 100
 #define ALL_FREE 0
-#define TOTAL_ALLOC_SIZE (MM_ALIGN_UP((sizeof(int) * ALLOC_SIZE_VAL) + SIZEOF_MM_ALLOCNODE)) * ALLOC_FREE_TIMES
+#define MEM_REQ_SIZE(unit, iter) (MM_ALIGN_UP((unit) + SIZEOF_MM_ALLOCNODE) * (iter))
+
 /****************************************************************************
- * Definitions
+ * Private functions
  ****************************************************************************/
+
+static void mem_deallocate_func(int *mem_arr[], int dealloc_size)
+{
+	int dealloc_cnt;
+	for (dealloc_cnt = 0; dealloc_cnt < dealloc_size; dealloc_cnt++) {
+		free(mem_arr[dealloc_cnt]);
+		mem_arr[dealloc_cnt] = NULL;
+	}
+}
 
 /**
 * @fn                   :tc_umm_heap_malloc_free
@@ -53,36 +68,60 @@
 * @failcase             :When malloc function returns null memory or memory is not null after free.
 * @Preconditions        :NA
 */
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-static void mem_deallocate_func(int *mem_arr[], int dealloc_size)
-{
-	int dealloc_cnt;
-	for (dealloc_cnt = 0; dealloc_cnt < dealloc_size; dealloc_cnt++) {
-		free(mem_arr[dealloc_cnt]);
-		mem_arr[dealloc_cnt] = NULL;
-	}
-}
 
 static void tc_umm_heap_malloc_free(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
-	int alloc_cnt;
-	int alloc_tc_cnt;
-	pid_t hash_pid;
+	int n_alloc;
+	int n_test_iter;
+	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	pid_t hash_pid = PIDHASH(getpid());;
 	struct mm_heap_s *heap;
-	hash_pid = PIDHASH(getpid());
+#endif
 
-	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
-		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
-			mem_ptr[alloc_cnt] = (int *)malloc(ALLOC_SIZE_VAL * sizeof(int));
-			TC_ASSERT_NEQ("malloc", mem_ptr[alloc_cnt], NULL);
+	/* Iteration test */
+
+	for (n_test_iter = 0; n_test_iter < TEST_TIMES; n_test_iter++) {
+		/* Allocate memory */
+
+		for (n_alloc = 0; n_alloc < ALLOC_FREE_TIMES; n_alloc++) {
+			mem_ptr[n_alloc] = (int *)malloc(alloc_size);
+			TC_ASSERT_NEQ("malloc", mem_ptr[n_alloc], NULL);
 		}
-		heap = mm_get_heap(mem_ptr[alloc_cnt - 1]);
-		TC_ASSERT_NEQ_CLEANUP("malloc", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("malloc", heap->alloc_list[hash_pid].curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify Allocation */
+
+		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+#endif
+
+		/* Free allocated memory */
+
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-		TC_ASSERT_EQ("malloc", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify freeing */
+
+		TC_ASSERT_EQ("mem_deallocate_func", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+#endif
 	}
+
+#if !defined(CONFIG_MM_ASSERT_ON_FAIL)
+	/* Test unavailable allocation due to big size */
+	struct mallinfo minfo;
+#ifdef CONFIG_CAN_PASS_STRUCTS
+	minfo = mallinfo();
+#else
+	(void)mallinfo(&minfo);
+#endif
+	mem_ptr[0] = (int *)malloc(minfo.mxordblk + 1);
+	TC_ASSERT_EQ_CLEANUP("malloc", mem_ptr[0], NULL, free(mem_ptr[0]));
+#endif
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -99,23 +138,42 @@ static void tc_umm_heap_malloc_free(void)
 static void tc_umm_heap_calloc(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
-	int alloc_cnt;
-	int alloc_tc_cnt;
-	pid_t hash_pid;
+	int n_alloc;
+	int n_test_iter;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
+	pid_t hash_pid = PIDHASH(getpid());;
 	struct mm_heap_s *heap;
-	hash_pid = PIDHASH(getpid());
+#endif
 
-	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
-		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
-			mem_ptr[alloc_cnt] = (int *)calloc(ALLOC_SIZE_VAL, sizeof(int));
-			TC_ASSERT_NEQ("calloc", mem_ptr[alloc_cnt], NULL);
+	/* Iteration test */
+
+	for (n_test_iter = 0; n_test_iter < TEST_TIMES; n_test_iter++) {
+		/* Allocate memory */
+
+		for (n_alloc = 0; n_alloc < ALLOC_FREE_TIMES; n_alloc++) {
+			mem_ptr[n_alloc] = (int *)calloc(ALLOC_SIZE_VAL, sizeof(int));
+			TC_ASSERT_NEQ("calloc", mem_ptr[n_alloc], NULL);
 		}
-		heap = mm_get_heap(mem_ptr[alloc_cnt - 1]);
-		TC_ASSERT_NEQ_CLEANUP("calloc", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("calloc", heap->alloc_list[hash_pid].curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify Allocation */
+
+		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+#endif
+
+		/* Free allocated memory */
+
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
 
-		TC_ASSERT_EQ("calloc", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify freeing */
+
+		TC_ASSERT_EQ("mem_deallocate_func", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+#endif
 	}
 	TC_SUCCESS_RESULT();
 }
@@ -134,25 +192,121 @@ static void tc_umm_heap_calloc(void)
 static void tc_umm_heap_realloc(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
-	int *val = NULL;
-	int alloc_cnt;
-	int alloc_tc_cnt;
-	pid_t hash_pid;
+	int *prev_mem = NULL;
+	int n_alloc;
+	int n_test_iter;
+	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
+	struct mallinfo prev;
+	struct mallinfo cur;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	pid_t hash_pid = PIDHASH(getpid());;
 	struct mm_heap_s *heap;
-	hash_pid = PIDHASH(getpid());
+#endif
 
-	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
-		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
-			mem_ptr[alloc_cnt] = (int *)realloc(val, ALLOC_SIZE_VAL * sizeof(int));
-			TC_ASSERT_NEQ("realloc", mem_ptr[alloc_cnt], NULL);
+	/* Iteration test */
+
+	for (n_test_iter = 0; n_test_iter < TEST_TIMES; n_test_iter++) {
+		/* Save mallinfo before test start */
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		prev = mallinfo();
+#else
+		(void)mallinfo(&prev);
+#endif
+
+		/* Allocate memory */
+
+		for (n_alloc = 0; n_alloc < ALLOC_FREE_TIMES; n_alloc++) {
+			mem_ptr[n_alloc] = (int *)realloc(prev_mem, alloc_size);
+			TC_ASSERT_NEQ("realloc", mem_ptr[n_alloc], NULL);
 		}
-		heap = mm_get_heap(mem_ptr[alloc_cnt - 1]);
-		TC_ASSERT_NEQ_CLEANUP("realloc", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("realloc", heap->alloc_list[hash_pid].curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+
+		/* Verify allocation */
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		cur = mallinfo();
+#else
+		(void)mallinfo(&cur);
+#endif
+		// Due to remain size, it could be greater than sizeof(int) + SIZEOF_MM_ALLOCNODE.
+		TC_ASSERT_EQ_CLEANUP("mallinfo", cur.uordblks - prev.uordblks, MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES),
+		                     mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_CLEANUP("mallinfo", prev.fordblks - cur.fordblks, MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES),
+                             mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify allocation by heapinfo */
+
+		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+#endif
+
+		/* Free allocated memory */
+
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
 
-		TC_ASSERT_EQ("realloc", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+		/* Verify freeing */
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		cur = mallinfo();
+#else
+		(void)mallinfo(&cur);
+#endif
+		TC_ASSERT_EQ("mallinfo", cur.uordblks - prev.uordblks, 0);
+		TC_ASSERT_EQ("mallinfo", prev.fordblks - cur.fordblks, 0);
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify freeing by heapinfo */
+
+		TC_ASSERT_EQ("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+#endif
 	}
+
+	/* Relloc Free by size 0 */
+
+	mem_ptr[0] = (int *)malloc(10);
+	mem_ptr[1] = (int *)realloc(mem_ptr[0], 0);
+	TC_ASSERT_EQ_CLEANUP("realloc", mem_ptr[1], NULL, free(mem_ptr[0]));
+
+	/* Verify freeing */
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+	cur = mallinfo();
+#else
+	(void)mallinfo(&cur);
+#endif
+	TC_ASSERT_EQ("mallinfo", cur.uordblks - prev.uordblks, 0);
+	TC_ASSERT_EQ("mallinfo", prev.fordblks - cur.fordblks, 0);
+
+	/* Relloc Free by size 0 */
+	mem_ptr[0] = (int *)malloc(alloc_size);
+	TC_ASSERT_NEQ("malloc", mem_ptr[0], NULL);
+	alloc_size /= 2;
+	mem_ptr[1] = (int *)realloc(mem_ptr[0], alloc_size);
+	TC_ASSERT_NEQ_CLEANUP("realloc", mem_ptr[1], NULL, free(mem_ptr[0]));
+
+	/* Verify freeing */
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+	cur = mallinfo();
+#else
+	(void)mallinfo(&cur);
+#endif
+	TC_ASSERT_EQ("mallinfo", cur.uordblks - prev.uordblks, MEM_REQ_SIZE(alloc_size, 1));
+	TC_ASSERT_EQ("mallinfo", prev.fordblks - cur.fordblks, MEM_REQ_SIZE(alloc_size, 1));
+
+	free(mem_ptr[1]);
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+	cur = mallinfo();
+#else
+	(void)mallinfo(&cur);
+#endif
+	TC_ASSERT_EQ("mallinfo", cur.uordblks - prev.uordblks, 0);
+	TC_ASSERT_EQ("mallinfo", prev.fordblks - cur.fordblks, 0);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -169,91 +323,45 @@ static void tc_umm_heap_realloc(void)
 static void tc_umm_heap_memalign(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
-	int alloc_cnt;
-	int alloc_tc_cnt;
-	pid_t hash_pid;
+	int n_alloc;
+	int n_test_iter;
+	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	pid_t hash_pid = PIDHASH(getpid());;
 	struct mm_heap_s *heap;
-	hash_pid = PIDHASH(getpid());
+#endif
 
-	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
-		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
-			mem_ptr[alloc_cnt] = (int *)memalign(sizeof(int), ALLOC_SIZE_VAL * sizeof(int));
-			TC_ASSERT_NEQ("memalign", mem_ptr[alloc_cnt], NULL);
+	/* Iteration test */
+
+	for (n_test_iter = 0; n_test_iter < TEST_TIMES; n_test_iter++) {
+		/* Allocate memory */
+
+		for (n_alloc = 0; n_alloc < ALLOC_FREE_TIMES; n_alloc++) {
+			mem_ptr[n_alloc] = (int *)memalign(sizeof(int), alloc_size);
+			TC_ASSERT_NEQ("memalign", mem_ptr[n_alloc], NULL);
 		}
-		heap = mm_get_heap(mem_ptr[alloc_cnt - 1]);
-		TC_ASSERT_NEQ_CLEANUP("memalign", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("memalign", heap->alloc_list[hash_pid].curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify Allocation */
+
+		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+#endif
+
+		/* Free allocated memory */
+
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
 
-		TC_ASSERT_EQ("memalign", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify freeing */
+
+		TC_ASSERT_EQ("mem_deallocate_func", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+#endif
 	}
 	TC_SUCCESS_RESULT();
 }
-
-/**
-* @fn                   :tc_umm_heap_random_malloc
-* @brief                :Allocate memory through malloc with random size
-* @scenario             :Allocate memory through malloc\n
-*                        with random size
-* @API's covered        :malloc, free
-* @passcase             :When malloc function returns non null memory and memory is null after free.
-* @failcase             :When malloc function returns null memory or memory is not null after free.
-* @Preconditions        :NA
-*/
-static void tc_umm_heap_random_malloc(void)
-{
-	struct mallinfo info;
-	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
-	int *valid_ptr = NULL;
-	int allocated[ALLOC_FREE_TIMES] = { 0 };
-	int alloc_cnt;
-	int alloc_tc_cnt;
-	int allocated_size = 0;
-	pid_t hash_pid;
-	struct mm_heap_s *heap;
-	hash_pid = PIDHASH(getpid());
-
-	srand(time(NULL));
-
-	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
-		allocated_size = 0;
-		valid_ptr = NULL;
-		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
-			allocated[alloc_cnt] = rand() + 1;
-#ifdef CONFIG_CAN_PASS_STRUCTS
-			info = mallinfo();
-#else
-			mallinfo(&info);
-#endif
-			mem_ptr[alloc_cnt] = (int *)malloc(allocated[alloc_cnt]);
-			/* If the largest free chunk is bigger than the memory to allocate,
-			   malloc will be successful and return the pointer of memory.
-			   Else, malloc will be failed and return NULL pointer */
-			if (info.mxordblk >= MM_ALIGN_UP(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE)) {
-				TC_ASSERT_NEQ("malloc", mem_ptr[alloc_cnt], NULL);
-			} else {
-				TC_ASSERT_EQ("malloc", mem_ptr[alloc_cnt], NULL);
-				allocated[alloc_cnt] = 0;
-			}
-		}
-		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
-			/* do alloc 'allocated[alloc_cnt]',
-			   but allocated MM_ALIGN_UP'(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE)',
-			   because of the chunk size */
-			if (allocated[alloc_cnt] > 0) {
-				allocated_size += MM_ALIGN_UP(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE);
-				valid_ptr = mem_ptr[alloc_cnt];
-			}
-		}
-		heap = mm_get_heap(valid_ptr);
-		TC_ASSERT_NEQ_CLEANUP("malloc", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("malloc", heap->alloc_list[hash_pid].curr_alloc_size, allocated_size, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-		TC_ASSERT_EQ("random_malloc", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
-	}
-	TC_SUCCESS_RESULT();
-}
-#endif
 
 /**
 * @fn                   :tc_umm_heap_mallinfo
@@ -269,59 +377,127 @@ static void tc_umm_heap_random_malloc(void)
 static void tc_umm_heap_mallinfo(void)
 {
 	int *mem_ptr = NULL;
-	int alloc_tc_cnt;
-	struct mallinfo st_mallinfo;
+	int n_test_iter;
+	size_t alloc_size = sizeof(int);
+	struct mallinfo prev;
+	struct mallinfo cur;
 
-	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
-		mem_ptr = (int *)malloc(sizeof(int));
+	for (n_test_iter = 0; n_test_iter < TEST_TIMES; n_test_iter++) {
+		/* Save mallinfo before test start */
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		prev = mallinfo();
+#else
+		(void)mallinfo(&prev);
+#endif
+
+		/* Allocate memory */
+
+		mem_ptr = (int *)malloc(alloc_size);
 		TC_ASSERT_NEQ("malloc", mem_ptr, NULL);
 
-		st_mallinfo = mallinfo();
-		TC_ASSERT_GT_CLEANUP("mallinfo", st_mallinfo.fordblks, 0, TC_FREE_MEMORY(mem_ptr));
+		/* Verify allocation */
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		cur = mallinfo();
+#else
+		(void)mallinfo(&cur);
+#endif
+		// Due to remain size, it could be greater than sizeof(int) + SIZEOF_MM_ALLOCNODE.
+		TC_ASSERT_EQ_CLEANUP("mallinfo", cur.uordblks - prev.uordblks, MEM_REQ_SIZE(alloc_size, 1), TC_FREE_MEMORY(mem_ptr));
+		TC_ASSERT_EQ_CLEANUP("mallinfo", prev.fordblks - cur.fordblks, MEM_REQ_SIZE(alloc_size, 1), TC_FREE_MEMORY(mem_ptr));
+
 		TC_FREE_MEMORY(mem_ptr);
+
+		/* Verify freeing */
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+		cur = mallinfo();
+#else
+		(void)mallinfo(&cur);
+#endif
+		TC_ASSERT_EQ("mallinfo", cur.uordblks - prev.uordblks, 0);
+		TC_ASSERT_EQ("mallinfo", prev.fordblks - cur.fordblks, 0);
 	}
 	TC_SUCCESS_RESULT();
 }
 
 static void tc_umm_heap_zalloc(void)
 {
-	int mem_idx;
-	int *mem_ptr = NULL;
-	mem_ptr = zalloc(sizeof(int) * 5);
-	TC_ASSERT_NEQ("zalloc", mem_ptr, NULL);
+	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
+	int n_alloc;
+	int n_test_iter;
+	int n_mem_ptr_idx;
+	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	pid_t hash_pid = PIDHASH(getpid());;
+	struct mm_heap_s *heap;
+#endif
 
-	for (mem_idx = 0; mem_idx < 5; mem_idx++) {
-		TC_ASSERT_EQ_ERROR_CLEANUP("zalloc", mem_ptr[mem_idx], 0, get_errno(), TC_FREE_MEMORY(mem_ptr));
+	/* Iteration test */
+
+	for (n_test_iter = 0; n_test_iter < TEST_TIMES; n_test_iter++) {
+		/* Allocate memory */
+
+		for (n_alloc = 0; n_alloc < ALLOC_FREE_TIMES; n_alloc++) {
+			mem_ptr[n_alloc] = (int *)zalloc(alloc_size);
+			TC_ASSERT_NEQ("zalloc", mem_ptr[n_alloc], NULL);
+			/* Verify zero allocation */
+
+			for (n_mem_ptr_idx = 0; n_mem_ptr_idx < ALLOC_SIZE_VAL; n_mem_ptr_idx++) {
+				TC_ASSERT_EQ_ERROR_CLEANUP("zalloc", mem_ptr[n_alloc][n_mem_ptr_idx], 0, get_errno(),
+				                           mem_deallocate_func(mem_ptr, n_alloc + 1));
+			}
+		}
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify Allocation */
+
+		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+#endif
+
+		/* Free allocated memory */
+
+		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		/* Verify freeing */
+
+		TC_ASSERT_EQ("mem_deallocate_func", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+#endif
 	}
-	TC_FREE_MEMORY(mem_ptr);
 	TC_SUCCESS_RESULT();
 }
 
-static int umm_task(int argc, char *argv[])
+static int umm_test(int argc, char *argv[])
 {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	sched_lock();  // To prevent other thread allocation mixing in mallinfo
+
 	tc_umm_heap_malloc_free();
 	tc_umm_heap_calloc();
 	tc_umm_heap_realloc();
 	tc_umm_heap_memalign();
-	tc_umm_heap_random_malloc();
-#endif
 	tc_umm_heap_mallinfo();
 	tc_umm_heap_zalloc();
+
+	sched_unlock();
 
 	return 0;
 }
 
 /****************************************************************************
- * Name: umm_heap
+ * Public functions
  ****************************************************************************/
 
 int umm_heap_main(void)
 {
 	int pid;
 	int stat_loc;
-	pid = task_create("umm_task", 150, 2048, umm_task, (char * const *)NULL);
-	pid = waitpid(pid, &stat_loc, 0);
+	pid = task_create("umm_test", 150, 2048, umm_test, (char * const *)NULL);
+	pid = waitpid(pid, &stat_loc, 0);	// wait umm_test task termination for atomic test
 	if (pid < 0) {
 		sleep(5);
 	}

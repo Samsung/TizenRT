@@ -410,7 +410,7 @@ static inline int wget_parseheaders(struct wget_s *ws)
 							ws->line + strlen(g_httplocation), &ws->port,
 							ws->hostname, CONFIG_WEBCLIENT_MAXHOSTNAME,
 							ws->filename, CONFIG_WEBCLIENT_MAXFILENAME);
-						nvdbg("New hostname='%s' filename='%s'\n", ws->hostname,
+						printf("New hostname='%s' filename='%s'\n", ws->hostname,
 							  ws->filename);
 					}
 			}
@@ -454,17 +454,17 @@ static int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr)
 	FAR struct hostent *he;
 	he = gethostbyname(hostname);
 	if (he == NULL) {
-		ndbg("gethostbyname failed\n");
+		printf("gethostbyname failed\n");
 		return -ENOENT;
 	} else if (he->h_addrtype != AF_INET) {
-		ndbg("gethostbyname returned an address of type: %d\n", he->h_addrtype);
+		printf("gethostbyname returned an address of type: %d\n", he->h_addrtype);
 		return -ENOEXEC;
 	}
 
 	memcpy(ipv4addr, he->h_addr, sizeof(in_addr_t));
 	return OK;
 #else
-	ndbg("NETDB is not supported\n");
+	printf("NETDB is not supported\n");
 	return ERROR;
 #endif
 }
@@ -472,7 +472,7 @@ static int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr)
 #ifdef CONFIG_NET_SECURITY_TLS
 static void wget_tls_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
-	ndbg("%s:%04d: %s", file, line, str);
+	printf("%s:%04d: %s", file, line, str);
 }
 
 int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_config_t *ssl_config)
@@ -496,23 +496,23 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 #endif
 
 	/* 0. Initialize the RNG */
-	ndbg("  . Seeding the random number generator...");
+	printf("  . Seeding the random number generator...");
 
 	if ((result = mbedtls_ctr_drbg_seed(&(client->tls_ctr_drbg), mbedtls_entropy_func, &(client->tls_entropy), (const unsigned char *)tlsname, strlen(tlsname))) != 0) {
-		ndbg("Error: mbedtls_ctr_drbg_seed returned -%4x\n", -result);
+		printf("Error: mbedtls_ctr_drbg_seed returned -%4x\n", -result);
 		goto TLS_INIT_EXIT;
 	}
 
-	ndbg("Ok\n");
+	printf("Ok\n");
 
 	/* 1. Setup ssl stuff */
-	ndbg("  . Setting up the SSL data...");
+	printf("  . Setting up the SSL data...");
 
 	if ((result = mbedtls_ssl_config_defaults(&(client->tls_conf),
 				  MBEDTLS_SSL_IS_CLIENT,
 				  MBEDTLS_SSL_TRANSPORT_STREAM,
 				  MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
-		ndbg("Error: mbedtls_ssl_config_defaults returned -%4x\n", -result);
+		printf("Error: mbedtls_ssl_config_defaults returned -%4x\n", -result);
 		goto TLS_INIT_EXIT;
 	}
 
@@ -520,53 +520,53 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 						 &(client->tls_ctr_drbg));
 	mbedtls_ssl_conf_dbg(&(client->tls_conf), wget_tls_debug, stdout);
 
-	ndbg("Ok\n");
+	printf("Ok\n");
 
 	if (ssl_config->dev_cert && ssl_config->private_key) {
 		/* 2. Load the certificates and private key */
 
-		ndbg("  . Loading the client cert. and key...");
+		printf("  . Loading the client cert. and key...");
 
 		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
 											 (const unsigned char *)ssl_config->dev_cert,
 											 ssl_config->dev_cert_len)) != 0) {
-			ndbg("Error: cli_cert parse fail, returned -%4x\n", -result);
+			printf("Error: cli_cert parse fail, returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}
 
 		if ((result = mbedtls_pk_parse_key(&(client->tls_pkey),
 										   (const unsigned char *)ssl_config->private_key,
 										   ssl_config->private_key_len, NULL, 0)) != 0) {
-			ndbg("Error: cli_key parse fail, returned -%4x\n", -result);
+			printf("Error: cli_key parse fail, returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}
 
 		if ((result = mbedtls_ssl_conf_own_cert(&(client->tls_conf),
 												&(client->tls_clicert),
 												&(client->tls_pkey))) != 0) {
-			ndbg("Error: mbedtls_ssl_conf_own_cert returned -%4x\n", -result);
+			printf("Error: mbedtls_ssl_conf_own_cert returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}
 
-		ndbg("Ok\n");
+		printf("Ok\n");
 	}
 
 	if (ssl_config->root_ca) {
 
 		/* 3. Load the CA certificate */
-		ndbg("  . Loading the CA cert...");
+		printf("  . Loading the CA cert...");
 
 		if ((result = mbedtls_x509_crt_parse(&(client->tls_rootca),
 											 (const unsigned char *)ssl_config->root_ca,
 											 ssl_config->root_ca_len)) != 0) {
-			ndbg("Error: CA_cert parse fail, returned -%4x\n", -result);
+			printf("Error: CA_cert parse fail, returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}
 
 		/* CA cert may be first or second in chain depending if client cert was loaded */
 		mbedtls_ssl_conf_ca_chain(&(client->tls_conf), &(client->tls_rootca), NULL);
 
-		ndbg("Ok\n");
+		printf("Ok\n");
 	}
 
 	return 0;
@@ -611,15 +611,15 @@ int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 	client->tls_client_fd.fd = client->client_fd;
 
 	if (mbedtls_net_set_block(&(client->tls_client_fd)) < 0) {
-		ndbg("Error: mbedtls_net_set_block fail\n");
+		printf("Error: mbedtls_net_set_block fail\n");
 		goto HANDSHAKE_FAIL;
 	}
 
-	ndbg("TLS Init Success\n");
+	printf("TLS Init Success\n");
 
 	if ((result = mbedtls_ssl_setup(&(client->tls_ssl),
 									&(client->tls_conf))) != 0) {
-		ndbg("Error: mbedtls_ssl_setup returned -%4x\n", -result);
+		printf("Error: mbedtls_ssl_setup returned -%4x\n", -result);
 		goto HANDSHAKE_FAIL;
 	}
 
@@ -632,7 +632,7 @@ int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 	 */
 #if WEBCLIENT_CONF_CHECK_TLS_HOSTNAME
 	if ((result = mbedtls_ssl_set_hostname(&(client->tls_ssl), hostname)) != 0) {
-		ndbg("Error: mbedtls_hostname returned -%4x\n", -result);
+		printf("Error: mbedtls_hostname returned -%4x\n", -result);
 		goto HANDSHAKE_FAIL;
 	}
 #endif
@@ -644,12 +644,12 @@ int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 	while ((result = mbedtls_ssl_handshake(&(client->tls_ssl))) != 0) {
 		if (result != MBEDTLS_ERR_SSL_WANT_READ &&
 			result != MBEDTLS_ERR_SSL_WANT_WRITE) {
-			ndbg("Error: TLS Handshake fail returned -%4x\n", -result);
+			printf("Error: TLS Handshake fail returned -%4x\n", -result);
 			goto HANDSHAKE_FAIL;
 		}
 	}
 
-	ndbg("TLS Handshake Success\n");
+	printf("TLS Handshake Success\n");
 
 	return 0;
 HANDSHAKE_FAIL:
@@ -868,10 +868,10 @@ static int wget_socket_connect(struct wget_s *ws)
 	/* Set send and receive timeout values */
 	tv.tv_sec = WEBCLIENT_CONF_TIMEOUT_MSEC / 1000;
 	tv.tv_usec = (WEBCLIENT_CONF_TIMEOUT_MSEC % 1000) * 1000;
-	nvdbg("webclient recv timeout(%d.%d)sec\n", tv.tv_sec, tv.tv_usec);
+	printf("webclient recv timeout(%d.%d)sec\n", tv.tv_sec, tv.tv_usec);
 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
 				   (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
-		ndbg("ERROR: setsockopt failed\n");
+		printf("ERROR: setsockopt failed\n");
 	}
 
 	/* Get the server address from the host name */
@@ -880,7 +880,7 @@ static int wget_socket_connect(struct wget_s *ws)
 	ret = wget_gethostip(ws->hostname, &server.sin_addr.s_addr);
 	if (ret < 0) {
 		/* Could not resolve host (or malformed IP address) */
-		ndbg("ERROR: Failed to resolve hostname\n");
+		printf("ERROR: Failed to resolve hostname\n");
 		close(sockfd);
 		return WGET_SOCKET_CONNECT_ERR;
 	}
@@ -891,7 +891,7 @@ static int wget_socket_connect(struct wget_s *ws)
 	 */
 	ret = connect(sockfd, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
 	if (ret < 0) {
-		ndbg("ERROR: connect failed: %d errno: %d\n", ret, errno);
+		printf("ERROR: connect failed: %d errno: %d\n", ret, errno);
 		close(sockfd);
 		return WGET_SOCKET_CONNECT_ERR;
 	}
@@ -957,16 +957,16 @@ static pthread_addr_t wget_base(void *arg)
 	/* Parse the hostname (with optional port number) and filename from the URL */
 	ret = netlib_parsehttpurl(param->url, &ws.port, ws.hostname, CONFIG_WEBCLIENT_MAXHOSTNAME, ws.filename, CONFIG_WEBCLIENT_MAXFILENAME);
 	if (ret != 0) {
-		ndbg("ERROR: Malformed HTTP URL: %s\n", param->url);
+		printf("ERROR: Malformed HTTP URL: %s\n", param->url);
 		free(param->buffer);
 		free(client_tls);
 		return (pthread_addr_t)WGET_ERR;
 	}
 
-	nvdbg("hostname='%s' filename='%s'\n", ws.hostname, ws.filename);
+	printf("hostname='%s' filename='%s'\n", ws.hostname, ws.filename);
 
 	if (param->tls && webclient_tls_init(client_tls, &param->ssl_config)) {
-		ndbg("Fail to client tls init\n");
+		printf("Fail to client tls init\n");
 		goto errout_before_tlsinit;
 	}
 
@@ -980,13 +980,13 @@ static pthread_addr_t wget_base(void *arg)
 	ws.ndx = 0;
 
 	if ((sndlen = wget_msg_construct(ws.buffer, param, &ws)) <= 0) {
-		ndbg("ERROR: construction message failed\n");
+		printf("ERROR: construction message failed\n");
 		goto errout_before_tlsinit;
 	}
 
 retry:
 	if ((sockfd = wget_socket_connect(&ws)) < 0) {
-		ndbg("ERROR: socket failed: %d\n", errno);
+		printf("ERROR: socket failed: %d\n", errno);
 		goto errout_before_tlsinit;
 	}
 
@@ -996,7 +996,7 @@ retry:
 			if (ret == MBEDTLS_ERR_NET_SEND_FAILED ||
 				ret == MBEDTLS_ERR_NET_RECV_FAILED ||
 				ret == MBEDTLS_ERR_SSL_CONN_EOF) {
-				ndbg("Handshake again.... \n");
+				printf("Handshake again.... \n");
 				mbedtls_net_free(&(client_tls->tls_client_fd));
 				mbedtls_ssl_free(&(client_tls->tls_ssl));
 				goto retry;
@@ -1015,19 +1015,19 @@ retry:
 			ret = send(sockfd, param->buffer + buf_len, sndlen, 0);
 		}
 		if (ret < 1) {
-			ndbg("ERROR: send failed: %d\n", ret);
+			printf("ERROR: send failed: %d\n", ret);
 			goto errout;
 		} else {
 			sndlen -= ret;
 			buf_len += ret;
-			ndbg("SEND SUCCESS: send %d bytes\n", ret);
+			printf("SEND SUCCESS: send %d bytes\n", ret);
 		}
 	}
 
 	if (param->callback && param->response == NULL) {
 		param->response = &response;
 		if (http_client_response_init(param->response) < 0) {
-			ndbg("ERROR: response init failed: %d\n", ret);
+			printf("ERROR: response init failed: %d\n", ret);
 			param->response = NULL;
 			goto errout;
 		}
@@ -1035,7 +1035,7 @@ retry:
 
 	int loopcount = 0;
 	while (!read_finish) {
-		ndbg("Receive start\n");
+		printf("Receive start\n");
 		memset(param->response->message, 0, WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
 		if (param->tls) {
 			len = mbedtls_ssl_read(&(client_tls->tls_ssl),
@@ -1047,15 +1047,15 @@ retry:
 		}
 
 		if (len < 0) {
-			ndbg("Error: Receive Fail\n");
+			printf("Error: Receive Fail\n");
 			goto errout;
 		} else if (len == 0) {
-			ndbg("Finish read\n");
+			printf("Finish read\n");
 			if (mlen.message_len - mlen.sentence_start == mlen.content_len) {
-				ndbg("download completed successfully\n");
+				printf("download completed successfully\n");
 				break;
 			} else {
-				ndbg("Error: Receive Fail\n");
+				printf("Error: Receive Fail\n");
 				goto errout;
 			}
 		}
@@ -1066,12 +1066,12 @@ retry:
 						 &param->response->entity,
 						 &encoding, &state, &mlen,
 						 param->response->headers,
-						 NULL, param->response, NULL);
+						 NULL, param->response, NULL, NULL);
 
 		++loopcount;
-		nvdbg("====== loopcount : %d read_finish : %d=====\n", loopcount, read_finish);
+		printf("====== loopcount : %d read_finish : %d=====\n", loopcount, read_finish);
 		if (read_finish == HTTP_ERROR) {
-			ndbg("Error: Parse message Fail\n");
+			printf("Error: Parse message Fail\n");
 			goto errout;
 		}
 
@@ -1144,12 +1144,12 @@ static pthread_addr_t wget_base(void *arg)
 	/* Parse the hostname (with optional port number) and filename from the URL */
 	ret = netlib_parsehttpurl(param->url, &ws.port, ws.hostname, CONFIG_WEBCLIENT_MAXHOSTNAME, ws.filename, CONFIG_WEBCLIENT_MAXFILENAME);
 	if (ret != 0) {
-		ndbg("ERROR: Malformed HTTP URL: %s\n", param->url);
+		printf("ERROR: Malformed HTTP URL: %s\n", param->url);
 		free(param->buffer);
 		return (pthread_addr_t)WGET_ERR;
 	}
 
-	nvdbg("hostname='%s' filename='%s'\n", ws.hostname, ws.filename);
+	printf("hostname='%s' filename='%s'\n", ws.hostname, ws.filename);
 
 	/* Re-initialize portions of the state structure that could have
 	 * been left from the previous time through the loop and should not
@@ -1161,35 +1161,35 @@ static pthread_addr_t wget_base(void *arg)
 	ws.ndx = 0;
 
 	if ((sndlen = wget_msg_construct(ws.buffer, param, &ws)) <= 0) {
-		ndbg("ERROR: construction message failed\n");
+		printf("ERROR: construction message failed\n");
 		goto errout_before_init;
 	}
 
-	nvdbg("Length Info: sndlen : %d buf_len : %d param->buglen : %d\n", strlen(ws.buffer), strlen(param->buffer), param->buflen);
-	nvdbg("Send Data: %s\n", param->buffer);
+	printf("Length Info: sndlen : %d buf_len : %d param->buglen : %d\n", strlen(ws.buffer), strlen(param->buffer), param->buflen);
+	printf("Send Data: %s\n", param->buffer);
 	if ((sockfd = wget_socket_connect(&ws)) < 0) {
-		ndbg("ERROR: socket failed: %d\n", errno);
+		printf("ERROR: socket failed: %d\n", errno);
 		goto errout_before_init;
 	}
 
 	buf_len = 0;
 	while (sndlen > 0) {
-		nvdbg("INFO: sndlen : %d buf_len : %d\n", sndlen, buf_len);
+		printf("INFO: sndlen : %d buf_len : %d\n", sndlen, buf_len);
 		ret = send(sockfd, param->buffer + buf_len, sndlen, 0);
 		if (ret < 1) {
-			ndbg("ERROR: send failed: %d\n", ret);
+			printf("ERROR: send failed: %d\n", ret);
 			goto errout;
 		} else {
 			sndlen -= ret;
 			buf_len += ret;
-			nvdbg("SEND SUCCESS: send %d bytes\n", ret);
+			printf("SEND SUCCESS: send %d bytes\n", ret);
 		}
 	}
 
 	if (param->callback && param->response == NULL) {
 		param->response = &response;
 		if (http_client_response_init(param->response) < 0) {
-			ndbg("ERROR: response init failed: %d\n", ret);
+			printf("ERROR: response init failed: %d\n", ret);
 			param->response = NULL;
 			goto errout;
 		}
@@ -1197,21 +1197,21 @@ static pthread_addr_t wget_base(void *arg)
 
 	int loopcount = 0;
 	while (!read_finish) {
-		ndbg("Receive start\n");
+		printf("Receive start\n");
 		memset(param->response->message, 0, WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
 		len = recv(sockfd, param->response->message,
 				   WEBCLIENT_CONF_MAX_MESSAGE_SIZE, 0);
 
 		if (len < 0) {
-			ndbg("Error: Receive Fail\n");
+			printf("Error: Receive Fail\n");
 			goto errout;
 		} else if (len == 0) {
-			ndbg("Finish read\n");
+			printf("Finish read\n");
 			if (mlen.message_len - mlen.sentence_start == mlen.content_len) {
-				ndbg("download completed successfully\n");
+				printf("download completed successfully\n");
 				break;
 			} else {
-				ndbg("Error: Receive Fail\n");
+				printf("Error: Receive Fail\n");
 				goto errout;
 			}
 		}
@@ -1225,9 +1225,9 @@ static pthread_addr_t wget_base(void *arg)
 						 NULL, param->response, NULL);
 
 		++loopcount;
-		nvdbg("====== loopcount : %d read_finish : %d=====\n", loopcount, read_finish);
+		printf("====== loopcount : %d read_finish : %d=====\n", loopcount, read_finish);
 		if (read_finish == HTTP_ERROR) {
-			ndbg("Error: Parse message Fail %d \n", read_finish);
+			printf("Error: Parse message Fail %d \n", read_finish);
 			goto errout;
 		}
 
@@ -1401,18 +1401,18 @@ int http_client_response_init(struct http_client_response_t *response)
 {
 	response->phrase = malloc(WEBCLIENT_CONF_MAX_PHRASE_SIZE);
 	if (response->phrase == NULL) {
-		ndbg("Error: Fail to init\n");
+		printf("Error: Fail to init\n");
 		return -1;
 	}
 	response->message = malloc(WEBCLIENT_CONF_MAX_MESSAGE_SIZE);
 	if (response->message == NULL) {
-		ndbg("Error: Fail to init\n");
+		printf("Error: Fail to init\n");
 		free(response->phrase);
 		return -1;
 	}
 	response->headers = malloc(sizeof(struct http_keyvalue_list_t));
 	if (response->headers == NULL || http_keyvalue_list_init(response->headers) < 0) {
-		ndbg("Error: Fail to init\n");
+		printf("Error: Fail to init\n");
 		free(response->phrase);
 		free(response->message);
 		return -1;

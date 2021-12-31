@@ -200,7 +200,7 @@ static int read_pid_entry(FAR const char *dirpath, FAR struct dirent *entryp, FA
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int proc_test_main(int argc, char *argv[])
+int procfs_test_main(int argc, char *argv[])
 #endif
 {
 	int ret;

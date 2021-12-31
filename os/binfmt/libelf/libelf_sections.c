@@ -65,11 +65,10 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/elf.h>
 
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 #include <queue.h>
 #include <string.h>
 #include <tinyara/binfmt/binfmt.h>
-#endif
+#include <binary_manager/binary_manager.h>
 
 #include "libelf.h"
 
@@ -207,16 +206,29 @@ void *elf_find_start_section_addr(struct binary_s *binp)
 }
 #endif
 
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+void *elf_find_text_section_addr(int bin_idx)
+{
+	bin_addr_info_t *info;
+	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
+	while (info) {
+		if (info->bin_idx == bin_idx) {
+			return (void *)info->text_addr;
+		}
+		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
+	}
+	return NULL;
+}
+
 void elf_save_bin_section_addr(struct binary_s *bin)
 {
 	bin_addr_info_t *bin_info;
 	bin_info = (bin_addr_info_t *)kmm_malloc(sizeof(bin_addr_info_t));
 	if (bin_info != NULL) {
-		strncpy(bin_info->bin_name, bin->bin_name, BIN_NAME_MAX);
+		bin_info->bin_idx = bin->binary_idx;
 		bin_info->text_addr = (uint32_t)bin->alloc[ALLOC_TEXT];
-
-		binfo("[%s] text_addr : %x\n", bin_info->bin_name, bin_info->text_addr);
+		bin_info->text_size = bin->textsize;
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+		binfo("[%s] text_addr : %x\n", bin->bin_name, bin_info->text_addr);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		bin_info->rodata_addr = (uint32_t)bin->alloc[ALLOC_RO];
 		bin_info->data_addr = (uint32_t)bin->datastart;
@@ -225,6 +237,7 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 		binfo("   rodata_addr : %x\n", bin_info->rodata_addr);
 		binfo("   data_addr   : %x\n", bin_info->data_addr);
 		binfo("   bss_addr    : %x\n", bin_info->bss_addr);
+#endif
 #endif
 		sq_addlast((sq_entry_t *)bin_info, &g_bin_addr_list);
 	} else {
@@ -237,7 +250,7 @@ void elf_delete_bin_section_addr(struct binary_s *bin)
 	bin_addr_info_t *info;
 	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
 	while (info) {
-		if (strncmp(info->bin_name, bin->bin_name, BIN_NAME_MAX) == 0) {
+		if (info->bin_idx == bin->binary_idx) {
 			sq_rem((sq_entry_t *)info, &g_bin_addr_list);
 			kmm_free(info);
 			break;
@@ -245,7 +258,16 @@ void elf_delete_bin_section_addr(struct binary_s *bin)
 		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
 	}
 }
-#endif
+
+void elf_show_all_bin_addr(void)
+{
+	bin_addr_info_t *info;
+	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
+	while (info) {
+		lldbg("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(info->bin_idx), info->text_addr, info->text_size);
+		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
+	}
+}
 
 /****************************************************************************
  * Name: elf_loadshdrs

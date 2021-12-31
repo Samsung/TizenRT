@@ -27,12 +27,17 @@ struct blemgr_msg {
 	ble_result_e result;
 	void *param;
 	sem_t *signal;
+	union {
+		void *ptr;
+		int32_t val;
+	} ret;
 };
 typedef struct blemgr_msg blemgr_msg_s;
 
 typedef struct _blemgr_msg_params {
 	uint8_t count;
 	void *param[BLE_MANAGER_MAX_PARAM];
+	blemgr_req_e evt;
 } blemgr_msg_params;
 
 // application doesn't need to get messages from queue

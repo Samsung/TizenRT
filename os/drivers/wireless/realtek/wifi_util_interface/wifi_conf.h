@@ -37,8 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <tinyara/wifi/wifi_common.h>
+#include <tinyara/net/if/wifi.h>
 #include <tinyara/wifi/rtk/wifi_constants.h>
 #include <tinyara/wifi/rtk/wifi_structures.h>
 
@@ -164,8 +163,8 @@ typedef rtw_result_t (*rtw_scan_result_handler_t)(rtw_scan_handler_result_t *mal
 extern rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_result);
 extern int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id);
 extern int8_t cmd_wifi_off(void);
-extern int8_t cmd_wifi_connect(wifi_utils_ap_config_s *ap_connect_config, void *arg);
-extern int8_t cmd_wifi_ap(wifi_utils_softap_config_s *softap_config);
+extern int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg);
+extern int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config);
 
 /******************************************************
  *                    Structures

@@ -88,7 +88,7 @@ int _handle_evt_command(trwifi_msg_s *msg)
 		g_vdev_evt.value = vmsg->value;
 		g_vdev_evt.wait = vmsg->wait;
 	} else if (msg->cmd == VWIFI_CMD_GEN_EVT) {
-		vdvdbg("key %d wait %d value %d\n", vmsg->key, vmsg->wait, vmsg->value);
+		VWIFI_LOG("key %d wait %d value %d\n", vmsg->key, vmsg->wait, vmsg->value);
 		vwifi_create_event(vmsg->key, vmsg->value, vmsg->wait);
 	}
 	return 0;
@@ -99,14 +99,14 @@ int _handle_power_command(trwifi_msg_s *msg)
 	if (msg->cmd == TRWIFI_MSG_SET_POWERMODE) {
 		int *mode = (int *)msg->data;
 		if (*mode == TRWIFI_POWERMODE_ON) {
-			vdvdbg("set power mode on\n");
+			VWIFI_LOG("set power mode on\n");
 			return TRWIFI_SUCCESS;
 		} else if (*mode == TRWIFI_POWERMODE_OFF) {
-			vdvdbg("set power mode off\n");
+			VWIFI_LOG("set power mode off\n");
 			return TRWIFI_SUCCESS;
 		}
 	} else if (msg->cmd == TRWIFI_MSG_GET_POWERMODE) {
-		vdvdbg("get power mode\n");
+		VWIFI_LOG("get power mode\n");
 		return TRWIFI_SUCCESS;
 	}
 	return TRWIFI_FAIL;
@@ -140,8 +140,8 @@ trwifi_result_e vwifi_handle_scanap(void *req)
 	struct vwifi_req *vreq = (struct vwifi_req *)req;
 	trwifi_scan_config_s *config = (trwifi_scan_config_s *)(vreq->arg);
 	if (config) {
-		vdvdbg("ssid length %d\n", config->ssid_length);
-		vdvdbg("channel %d\n", config->channel);
+		VWIFI_LOG("ssid length %d\n", config->ssid_length);
+		VWIFI_LOG("channel %d\n", config->channel);
 	}
 	_check_pending_event();
 	return g_vdev_ops_result;
@@ -181,7 +181,7 @@ trwifi_result_e vwifi_handle_startsoftap(void *req)
 	struct vwifi_req *vreq = (struct vwifi_req *)req;
 	char *ssid = (char *)vreq->arg;
 	if (ssid) {
-		vdvdbg("ssid %s\n", ssid);
+		VWIFI_LOG("ssid %s\n", ssid);
 		free(ssid);
 	}
 	_check_pending_event();

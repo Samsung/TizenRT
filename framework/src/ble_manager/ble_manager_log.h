@@ -26,7 +26,7 @@
 
 #define BLE_LOG_VERBOSE printf
 #define BLE_LOG_INFO printf
-#define BLE_LOG_DEBUG printf
+#define BLE_LOG_DEBUG(...)
 #define BLE_LOG_ERROR printf
 
 #define BLE_ERR												\

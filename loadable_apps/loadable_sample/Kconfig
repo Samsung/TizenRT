@@ -106,3 +106,6 @@ endif #EXAMPLES_MICOM_TIMER_TEST
 
 endif #EXAMPLES_LOADABLE_AUTOMATIC_TEST
 endif #EXAMPLES_LOADABLE
+
+source "$LOADABLEDIR/loadable_sample/micomapp/Kconfig"
+source "$LOADABLEDIR/loadable_sample/wifiapp/Kconfig"

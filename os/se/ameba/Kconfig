@@ -38,6 +38,12 @@ config HW_RSA_ENC
 	---help---
 		Encrypts a data based on hardware.
 
+config HW_AES_ENC
+	bool "HW aes encryption decryption"
+	default n
+	---help---
+		Encrypts a data based on hardware.
+
 config HW_SE_STORAGE
 	bool "Secure Storage Support"
 	default n

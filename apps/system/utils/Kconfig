@@ -23,7 +23,7 @@ config FS_CMDS
 if FS_CMDS
 config FSCMD_BUFFER_LEN
        int "Buffer length of FSCMD"
-       default 32
+       default 256
        ---help---
              Buffer length of FS command's I/O operation
              Using this buffer in cat, and so on.

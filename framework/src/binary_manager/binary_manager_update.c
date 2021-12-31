@@ -30,17 +30,62 @@
 #include <binary_manager/binary_manager.h>
 #include "binary_manager_internal.h"
 
-binmgr_result_type_e binary_manager_update_binary(char *binary_name)
+binmgr_result_type_e binary_manager_set_bootparam(uint8_t type, binary_setbp_result_t *update_result)
+{
+	binmgr_result_type_e ret;
+	binmgr_request_t request_msg;
+	binmgr_setbp_response_t response_msg;
+
+	if (update_result == NULL) {
+		bmdbg("update_result is NULL\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	if (!BM_CHECK_GROUP(type, BINARY_KERNEL)
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	&& !BM_CHECK_GROUP(type, BINARY_USERAPP)
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	&& !BM_CHECK_GROUP(type, BINARY_COMMON)
+#endif
+#endif
+	) {
+		bmdbg("Invalid parameter %u\n", type);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	ret = binary_manager_set_request(&request_msg, BINMGR_SETBP, &type);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_send_request(&request_msg);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_setbp_response_t));
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	if (response_msg.result != BINMGR_OK) {
+		bmdbg("Binary manager setbp FAIL %d\n", response_msg.result);
+		if (response_msg.result == BINMGR_ALREADY_UPDATED) {
+			/* Copy result data */
+			memset(update_result, 0, sizeof(binary_setbp_result_t));
+			memcpy(update_result, &response_msg.data, sizeof(binary_setbp_result_t));
+		}
+	}
+
+	return response_msg.result;
+}
+
+binmgr_result_type_e binary_manager_update_binary(void)
 {
 	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 
-	if (binary_name == NULL || strlen(binary_name) > BIN_NAME_MAX - 1) {
-		bmdbg("load_new_binary failed : invalid binary name\n");
-		return BINMGR_INVALID_PARAM;
-	}
-
-	ret = binary_manager_set_request(&request_msg, BINMGR_UPDATE, binary_name);
+	ret = binary_manager_set_request(&request_msg, BINMGR_UPDATE, NULL);
 	if (ret != BINMGR_OK) {
 		return ret;
 	}
@@ -122,23 +167,18 @@ binmgr_result_type_e binary_manager_get_update_info_all(binary_update_info_list_
 	return response_msg.result;
 }
 
-binmgr_result_type_e binary_manager_get_download_path(char *binary_name, uint32_t version, char *download_path)
+binmgr_result_type_e binary_manager_get_download_path(char *binary_name, char *download_path)
 {
 	binmgr_result_type_e ret;
-	binmgr_update_bin_t data;
 	binmgr_request_t request_msg;
-	binmgr_createbin_response_t response_msg;
+	binmgr_getpath_response_t response_msg;
 
-	if (binary_name == NULL || version == 0) {
+	if (binary_name == NULL || strlen(binary_name) > BIN_NAME_MAX - 1) {
 		bmdbg("Invalid parameter\n");
 		return BINMGR_INVALID_PARAM;
 	}
 
-	strncpy(data.bin_name, binary_name, BIN_NAME_MAX - 1);
-	data.bin_name[BIN_NAME_MAX - 1] = '\0';
-	data.version = version;
-
-	ret = binary_manager_set_request(&request_msg, BINMGR_CREATE_BIN, &data);
+	ret = binary_manager_set_request(&request_msg, BINMGR_GET_DOWNLOAD_PATH, binary_name);
 	if (ret != BINMGR_OK) {
 		return ret;
 	}
@@ -148,13 +188,13 @@ binmgr_result_type_e binary_manager_get_download_path(char *binary_name, uint32_
 		return ret;
 	}
 
-	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_createbin_response_t));
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getpath_response_t));
 	if (ret != BINMGR_OK) {
 		return ret;
 	}
 
 	if (response_msg.result == BINMGR_OK) {
-		bmvdbg("Create file path : %s\n", response_msg.binpath);
+		bmvdbg("Download path : %s\n", response_msg.binpath);
 		strncpy(download_path, response_msg.binpath, strlen(response_msg.binpath) + 1);
 	}
 

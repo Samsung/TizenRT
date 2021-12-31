@@ -79,11 +79,8 @@ struct netdev_ops {
 	int (*linkoutput)(struct netdev *dev, void *data, uint16_t len);
 	int (*igmp_mac_filter)(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
 
-	/* statistics
-	 */
-#ifdef CONFIG_NET_NETMON
-	int (*get_stats)(struct netdev *dev, struct netmon_netdev_stats *stats);
-#endif
+	/* statistics */
+	int (*get_stats)(struct netdev *dev, void *arg);
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 	int (*d_ioctl)(struct netdev *dev, int cmd, void *data);
 #endif

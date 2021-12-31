@@ -29,13 +29,13 @@
 #include "tc_common.h"
 #include "tc_internal.h"
 
+#ifdef CONFIG_TC_NET_PBUF
 static int g_tc_fd;
-
 int tc_get_fd(void)
 {
 	return g_tc_fd;
 }
-
+#endif
 /****************************************************************************
  * Name: network_tc_main
  ****************************************************************************/
@@ -48,18 +48,22 @@ int tc_network_main(int argc, char *argv[])
 	if (testcase_state_handler(TC_START, "Network TC") == ERROR) {
 		return ERROR;
 	}
-
+#ifdef CONFIG_TC_NET_SOCKET
+	net_socket_main();
+#endif
+#ifdef CONFIG_TC_NET_SOCKET_SHARE
+	net_socket_share_main();
+#endif
+#ifdef CONFIG_TC_NET_PBUF
 	g_tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
 	if (g_tc_fd < 0) {
 		lldbg("Failed to open OS API test driver %d\n", errno);
 		return ERROR;
 	}
-
-#ifdef CONFIG_TC_NET_SOCKET
-	net_socket_main();
-#endif
-#ifdef CONFIG_TC_NET_PBUF
 	net_pbuf_main();
+
+	close(g_tc_fd);
+	g_tc_fd = -1;
 #endif
 #ifdef CONFIG_TC_NET_SETSOCKOPT
 	net_setsockopt_main();
@@ -154,8 +158,6 @@ int tc_network_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_NET_CONNECT
 	itc_net_connect_main();
 #endif
-	close(g_tc_fd);
-	g_tc_fd = -1;
 
 	(void)testcase_state_handler(TC_END, "Network TC");
 

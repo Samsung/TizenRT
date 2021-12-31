@@ -319,21 +319,21 @@ void up_netinitialize(void)
 trwifi_result_e vdev_init(struct netdev *dev)
 {
 	VWIFI_ENTRY;
-
-	struct vwifi_req req = {VWIFI_MSG_INIT, NULL, 0};
+	trwifi_result_e tres = TRWIFI_SUCCESS;
+	struct vwifi_req req = {VWIFI_MSG_INIT, NULL, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		VWIFI_ERROR(0);
 		return TRWIFI_FAIL;
 	}
-	return req.res;
+	return tres;
 }
 
 trwifi_result_e vdev_deinit(struct netdev *dev)
 {
 	VWIFI_ENTRY;
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_DEINIT, NULL, tres};
+	struct vwifi_req req = {VWIFI_MSG_DEINIT, NULL, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -345,13 +345,13 @@ trwifi_result_e vdev_scan_ap(struct netdev *dev, trwifi_scan_config_s *config)
 {
 	VWIFI_ENTRY;
 	if (config) {
-		vdvdbg("channel %d\n", config->channel);
+		VWIFI_LOG("channel %d\n", config->channel);
 		if (config->ssid_length > 0) {
-			vdvdbg("ssid %s %d\n", config->ssid, config->ssid_length);
+			VWIFI_LOG("ssid %s %d\n", config->ssid, config->ssid_length);
 		}
 	}
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_SCANAP, (void *)config, tres};
+	struct vwifi_req req = {VWIFI_MSG_SCANAP, (void *)config, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -363,7 +363,7 @@ trwifi_result_e vdev_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_conne
 {
 	VWIFI_ENTRY;
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_CONNECTAP, NULL, tres};
+	struct vwifi_req req = {VWIFI_MSG_CONNECTAP, NULL, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -375,7 +375,7 @@ trwifi_result_e vdev_disconnect_ap(struct netdev *dev, void *arg)
 {
 	VWIFI_ENTRY;
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_DISCONENCTAP, NULL, tres};
+	struct vwifi_req req = {VWIFI_MSG_DISCONENCTAP, NULL, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -397,7 +397,7 @@ trwifi_result_e vdev_start_softap(struct netdev *dev, trwifi_softap_config_s *so
 {
 	VWIFI_ENTRY;
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_STARTSOFTAP, NULL, tres};
+	struct vwifi_req req = {VWIFI_MSG_STARTSOFTAP, NULL, &tres};
 	uint8_t *ssid = (uint8_t *)kmm_zalloc(softap_config->ssid_length + 1);
 	if (!ssid) {
 		return TRWIFI_FAIL;
@@ -415,7 +415,7 @@ trwifi_result_e vdev_start_sta(struct netdev *dev)
 {
 	VWIFI_ENTRY;
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_STARTSTA, NULL, tres};
+	struct vwifi_req req = {VWIFI_MSG_STARTSTA, NULL, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -427,7 +427,7 @@ trwifi_result_e vdev_stop_softap(struct netdev *dev)
 {
 	VWIFI_ENTRY;
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_STOPSOFTAP, NULL, tres};
+	struct vwifi_req req = {VWIFI_MSG_STOPSOFTAP, NULL, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -440,7 +440,7 @@ trwifi_result_e vdev_set_autoconnect(struct netdev *dev, uint8_t check)
 {
 	VWIFI_ENTRY;
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_SETAUTOCONNECT, NULL, tres};
+	struct vwifi_req req = {VWIFI_MSG_SETAUTOCONNECT, NULL, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;
@@ -453,7 +453,7 @@ trwifi_result_e vdev_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 {
 	VWIFI_ENTRY;
 	trwifi_result_e tres = TRWIFI_SUCCESS;
-	struct vwifi_req req = {VWIFI_MSG_IOCTL, msg, tres};
+	struct vwifi_req req = {VWIFI_MSG_IOCTL, msg, &tres};
 	int res = _progress_message(&req);
 	if (res < 0) {
 		return TRWIFI_FAIL;

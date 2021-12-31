@@ -14,6 +14,15 @@ config TLS_MPI_MAX_SIZE
 		You can find this value in the information for the certificate to use.
 		ex) Server public key is 2048 bit
 
+config TLS_HAVE_NO_TIME_DATE
+	bool "Disable time check"
+	default n
+	---help---
+		Disable checking time in a certificate.
+		The time needs to be correct (not necesarily very accurate, but at least
+		* the date should be correct). This is used to verify the validity period of
+		* X.509 certificates.
+
 if TLS_WITH_HW_ACCEL
 
 menu "HW Options"
@@ -63,13 +72,20 @@ config TLS_HW_ECDSA_VERIFICATION
 		 . Brainpool 256
 
 config TLS_HW_RSA_ENC
-	bool "Use H/W rsa encryption"
+	bool "Use H/W rsa encryption decryption"
 	depends on HW_RSA_ENC
 	default n
 	---help---
 		Encrypts a data based on hardware.
 		Supporting key size : 1024, 2048
-		
+
+config TLS_HW_AES_ENC
+	bool "Use H/W aes encryption decryption"
+	depends on HW_AES_ENC
+	default n
+	---help---
+		Encrypts a data based on hardware.
+
 endmenu
 
 endif

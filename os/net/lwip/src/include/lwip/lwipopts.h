@@ -440,6 +440,14 @@
 #define TCP_WND_UPDATE_THRESHOLD	CONFIG_NET_TCP_WND_UPDATE_THRESHOLD
 #endif
 
+#ifdef CONFIG_NET_WND_SCALE
+#define LWIP_WND_SCALE 1
+#endif
+
+#ifdef CONFIG_NET_TCP_RCV_SCALE
+#define TCP_RCV_SCALE CONFIG_NET_TCP_RCV_SCALE
+#endif
+
 /* ---------- TCP options ---------- */
 
 /* ---------- UDP options ---------- */
@@ -1045,7 +1053,6 @@
 /* ---------- Debug options ---------- */
 
 /* ---------- Stat options ---------- */
-
 #ifdef CONFIG_NET_STATS
 #define LWIP_STATS	CONFIG_NET_STATS
 #endif
@@ -1056,46 +1063,62 @@
 
 #ifdef CONFIG_NET_LINK_STATS
 #define LINK_STATS	CONFIG_NET_LINK_STATS
+#else
+#define LINK_STATS 0
 #endif
 
 #ifdef CONFIG_NET_ETHARP_STATS
 #define ETHARP_STATS	CONFIG_NET_ETHARP_STATS
+#else
+#define ETHARP_STATS 0
 #endif
 
 #ifdef CONFIG_NET_IP_STATS
 #define IP_STATS	CONFIG_NET_IP_STATS
+#else
+#define IP_STATS 0
 #endif
 
 #ifdef CONFIG_NET_IPFRAG_STATS
 #define IPFRAG_STATS	CONFIG_NET_IPFRAG_STATS
+#else
+#define IPFRAG_STATS 0
 #endif
 
 #ifdef CONFIG_NET_ICMP_STATS
 #define ICMP_STATS	CONFIG_NET_ICMP_STATS
+#else
+#define ICMP_STATS 0
 #endif
 
 #ifdef CONFIG_NET_IGMP_STATS
 #define IGMP_STATS	CONFIG_NET_IGMP_STATS
+#else
+#define IGMP_STATS 0
 #endif
 
 #ifdef CONFIG_NET_UDP_STATS
 #define UDP_STATS	CONFIG_NET_UDP_STATS
+#else
+#define UDP_STATS 0
 #endif
 
 #ifdef CONFIG_NET_TCP_STATS
 #define TCP_STATS	CONFIG_NET_TCP_STATS
+#else
+#define TCP_STATS 0
 #endif
 
 #ifdef CONFIG_NET_MEM_STATS
 #define MEM_STATS	CONFIG_NET_MEM_STATS
+#else
+#define MEM_STATS 0
 #endif
 
 #ifdef CONFIG_NET_MEMP_STATS
 #define MEMP_STATS	CONFIG_NET_MEMP_STATS
-#endif
-
-#ifdef CONFIG_NET_SYS_STATS
-#define SYS_STATS	CONFIG_NET_SYS_STATS
+#else
+#define MEMP_STATS 0
 #endif
 
 #ifdef CONFIG_NET_IPv6_STATS

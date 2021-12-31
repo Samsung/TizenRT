@@ -20,6 +20,7 @@
 
 #define TRACE_EVENT_TX                0
 #define TRACE_EVENT_TX_COMPLETED      1
+#define TRACE_EVENT_DEINIT            0xFF
 
 typedef struct _TTraceTaskBuffer
 {
@@ -35,16 +36,18 @@ typedef struct
 } T_TRACE_TASK_INFO;
 
 static T_TRACE_TASK_INFO trace;
-
+static uint8_t flag_trace_deinit = 0;
 
 bool traceuart_tx_cb(void)
 {
     uint8_t Event = TRACE_EVENT_TX_COMPLETED;
-    os_msg_send(trace.QueueHandleEvent, &Event, 0);
-    return true;
+    if (flag_trace_deinit == 0) {
+        os_msg_send(trace.QueueHandleEvent, &Event, 0);
+        return true;
+    }
+    return false;
 }
 
-/* =========================interal====================== */
 static void traceStartTransmit(void)
 {
     uint16_t queueSize = CycQueueSize();
@@ -61,13 +64,14 @@ static void traceStartTransmit(void)
         {
             trace.Buffer.Length = queueSize;
         }
-        trace_uart_tx(trace.Buffer.Pointer, trace.Buffer.Length,traceuart_tx_cb);
+        trace_uart_tx(trace.Buffer.Pointer, trace.Buffer.Length, traceuart_tx_cb);
     }
 }
 
 static void trace_task(void *pParameters)
 {
     (void)pParameters;
+    uint8_t flag_to_break = 0;
     while (1)
     {
         uint8_t Event;
@@ -90,55 +94,75 @@ static void trace_task(void *pParameters)
                 traceStartTransmit();
                 break;
 
+            case TRACE_EVENT_DEINIT:
+                flag_to_break = 1;
+                break;
+
             default:
                 break;
             }
         }
+        if (flag_to_break)
+            break;
     }
+    FreeCycQueue();
+    trace_uart_deinit();
+    if (trace.QueueHandleEvent != NULL)
+        os_msg_queue_delete(trace.QueueHandleEvent);
+    trace.handle = NULL;
+    trace.QueueHandleEvent = NULL;
+    flag_trace_deinit = 2;
+    os_task_delete(NULL);
 }
 
-/* ======================================== */
 bool bt_trace_init(void)
 {
+#ifdef CONFIG_AMEBAD_BLE_DEBUG
     trace_uart_init();
 
-    if((trace.handle != NULL)&&(trace.QueueHandleEvent != NULL))
+    if ((trace.handle != NULL) && (trace.QueueHandleEvent != NULL))
     {
-        platform_debug("reopen bt trace, do nothing\r\n");
+        dbg("reopen bt trace, do nothing\r\n");
         return false;
     }
 
     os_msg_queue_create(&trace.QueueHandleEvent, TRACE_QUEUE_LENGTH_EVENT, sizeof(uint8_t));
     os_task_create(&trace.handle, "trace_task", trace_task, NULL, 0x200, TRACE_TASK_PRIO);   /*need up priority */
-
+#endif
     return true;
 }
 
 bool bt_trace_uninit(void)
 {
-    FreeCycQueue();
-    trace_uart_deinit();
-	if(trace.handle != NULL)
-		os_task_delete(trace.handle);
-	if(trace.QueueHandleEvent != NULL)
-		os_msg_queue_delete(trace.QueueHandleEvent);
-
-	trace.handle = NULL;
-	trace.QueueHandleEvent = NULL;
+#ifdef CONFIG_AMEBAD_BLE_DEBUG
+    uint8_t event = TRACE_EVENT_DEINIT;
+    flag_trace_deinit = 1;
+    os_msg_send(trace.QueueHandleEvent, &event, 0xFFFFFFFF);
+    while (flag_trace_deinit != 2) {
+        os_delay(10);
+    }
+    flag_trace_deinit = 0;
+#endif
     return true;
 }
 
 bool trace_print(void *pData, uint16_t Length)
 {
-    /* just debug */
-    if(trace.handle == NULL)
+#ifdef CONFIG_AMEBAD_BLE_DEBUG
+    if (trace.handle == NULL)
     {
-        platform_debug("trace task is deleted, not work\r\n");
+        dbg("trace task is deleted, not work\r\n");
         return false;
     }
 
-    if (CycQueueWrite(pData, Length))
+    if (flag_trace_deinit == 0 && CycQueueWrite(pData, Length))
     {
+        uint32_t pending_msg_count = 0;
+        os_msg_queue_peek(trace.QueueHandleEvent, &pending_msg_count);
+        if (pending_msg_count >= TRACE_QUEUE_LENGTH_EVENT) {
+            return false;
+        }
+
         uint8_t Event = TRACE_EVENT_TX;
         os_msg_send(trace.QueueHandleEvent, &Event, 0);
         return true;
@@ -147,4 +171,7 @@ bool trace_print(void *pData, uint16_t Length)
     {
         return false;
     }
+#else
+    return true;
+#endif
 }

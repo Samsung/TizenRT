@@ -39,7 +39,7 @@ static inline void transmit_log(TRACE_UART_INFO *trace_pointer)
     if (trace_pointer->tx_len == 0)
     {
         traceuart_stop_tx(trace_pointer);
-        if(trace_pointer->tx_cb)
+        if (trace_pointer->tx_cb)
             trace_pointer->tx_cb();
         return;
     }
@@ -77,10 +77,10 @@ uint32_t traceuart_irq(void *data)
             break;
         case RUART_RECEIVE_LINE_STATUS:
             reg_val = (UART_LineStatusGet(TRACE_UART_DEV));
-            platform_debug("traceuart_irq: LSR interrupt, reg_val=%x\r\n",reg_val);
+            dbg("traceuart_irq: LSR interrupt, reg_val=%x\r\n", reg_val);
             break;
         default:
-            platform_debug("traceuart_irq: Unknown interrupt type %x", int_id);
+            dbg("traceuart_irq: Unknown interrupt type %x\r\n", int_id);
             break;
     }
 
@@ -90,46 +90,40 @@ uint32_t traceuart_irq(void *data)
 
 bool trace_uart_init(void)
 {
-    if(!CHECK_SW(EFUSE_SW_TRACE_SWITCH))
+    if (!CHECK_SW(EFUSE_SW_TRACE_SWITCH))
     {
-        /* 0 */
-    platform_debug("trace_uart_init:  TRACE OPEN");
-    g_uart_obj.tx_switch = true;
+        dbg("trace_uart_init: TRACE OPEN\r\n");
+        g_uart_obj.tx_switch = true;
+        g_uart_obj.tx_busy = 0;
 
-    /* gloabal_init */
-    g_uart_obj.tx_busy = 0;
+        Pinmux_Config(TRACE_UART_TX, PINMUX_FUNCTION_UART);
+        PAD_PullCtrl(TRACE_UART_TX, GPIO_PuPd_UP);
 
-    Pinmux_Config(TRACE_UART_TX, PINMUX_FUNCTION_UART);
+        UART_InitTypeDef UARTStruct;
+        UART_InitTypeDef *pUARTStruct = &UARTStruct;
 
-    PAD_PullCtrl(TRACE_UART_TX, GPIO_PuPd_UP);
+        UART_StructInit(pUARTStruct);
+        pUARTStruct->WordLen = RUART_WLS_8BITS;
+        pUARTStruct->StopBit = RUART_STOP_BIT_1;
+        pUARTStruct->Parity = RUART_PARITY_DISABLE;
+        pUARTStruct->ParityType = RUART_EVEN_PARITY;
+        pUARTStruct->StickParity = RUART_STICK_PARITY_DISABLE;
 
-    UART_InitTypeDef    UARTStruct;
-    UART_InitTypeDef    *pUARTStruct = &UARTStruct;
-
-    UART_StructInit(pUARTStruct);
-    pUARTStruct->WordLen = RUART_WLS_8BITS;
-    pUARTStruct->StopBit = RUART_STOP_BIT_1;
-    pUARTStruct->Parity = RUART_PARITY_DISABLE;
-    pUARTStruct->ParityType = RUART_EVEN_PARITY;
-    pUARTStruct->StickParity = RUART_STICK_PARITY_DISABLE;
-
-    UART_Init(TRACE_UART_DEV, pUARTStruct);
-    UART_SetBaud(TRACE_UART_DEV, TRACE_UART_BAUDRATE);
-    UART_RxCmd(TRACE_UART_DEV, DISABLE);
-
+        UART_Init(TRACE_UART_DEV, pUARTStruct);
+        UART_SetBaud(TRACE_UART_DEV, TRACE_UART_BAUDRATE);
+        UART_RxCmd(TRACE_UART_DEV, DISABLE);
 
 #ifdef TRACE_UART_TX_IRQ
-    InterruptDis(TRACE_UART_IRQ);
-    InterruptUnRegister(TRACE_UART_IRQ);
-    InterruptRegister((IRQ_FUN)traceuart_irq,
-            TRACE_UART_IRQ, (uint32_t)&g_uart_obj,
-            TRACEUART_IRQ_PRIO);
-    InterruptEn(TRACE_UART_IRQ, TRACEUART_IRQ_PRIO);
+        InterruptDis(TRACE_UART_IRQ);
+        InterruptUnRegister(TRACE_UART_IRQ);
+        InterruptRegister((IRQ_FUN)traceuart_irq,
+                TRACE_UART_IRQ, (uint32_t)&g_uart_obj,
+                TRACEUART_IRQ_PRIO);
+        InterruptEn(TRACE_UART_IRQ, TRACEUART_IRQ_PRIO);
 #endif
     }
     else
     {
-        /* default 1 close */
         g_uart_obj.tx_switch = false;
     }
 
@@ -138,11 +132,9 @@ bool trace_uart_init(void)
 
 bool trace_uart_deinit(void)
 {
-
-    if(!CHECK_SW(EFUSE_SW_TRACE_SWITCH))
+    if (!CHECK_SW(EFUSE_SW_TRACE_SWITCH))
     {
         if (g_uart_obj.tx_switch == true) {
-            /* has already close */
             UART_DeInit(TRACE_UART_DEV);
 #ifdef TRACE_UART_TX_IRQ
             InterruptDis(TRACE_UART_IRQ);
@@ -152,14 +144,12 @@ bool trace_uart_deinit(void)
             return true;
         }
         else {
-            hci_board_debug("\r\n:trace_uart_deinit: no need\r\n");
+            dbg("trace_uart_deinit: no need\r\n");
             return false;
         }
     }
     return true;
 }
-
-
 
 #ifdef TRACE_UART_DMA
 static uint32_t traceuart_dma_tx_complete(void *data)
@@ -168,7 +158,7 @@ static uint32_t traceuart_dma_tx_complete(void *data)
     PGDMA_InitTypeDef GDMA_InitStruct;
     uint8_t  IsrTypeMap;
 
-    platform_debug("TRACE DMA Tx complete ISR");
+    dbg("TRACE DMA Tx complete ISR\r\n");
 
     GDMA_InitStruct = &t->UARTTxGdmaInitStruct;
 
@@ -179,26 +169,26 @@ static uint32_t traceuart_dma_tx_complete(void *data)
     UART_RXDMACmd(TRACE_UART_DEV, DISABLE);
     /* Wake task to continue tx */
     t->tx_busy = 0;
-    if(t->tx_cb)
+    if (t->tx_cb)
         t->tx_cb();
     return 0;
 }
 #endif
+
 bool trace_uart_tx(uint8_t *pstr,uint16_t len, UART_TX_CB tx_cb)
 {
-    if(g_uart_obj.tx_switch == false)
+    if (g_uart_obj.tx_switch == false)
     {
-        if(tx_cb)
+        if (tx_cb)
             tx_cb();
         return true;
     }
 
 #ifdef TRACE_UART_TX_WHILE
     UART_SendData(TRACE_UART_DEV, pstr, len);
-    if(tx_cb)
+    if (tx_cb)
         tx_cb();
 #else
-
     TRACE_UART_INFO   *p_uart_obj= &g_uart_obj;
 
     if (!(p_uart_obj->tx_busy))
@@ -215,11 +205,11 @@ bool trace_uart_tx(uint8_t *pstr,uint16_t len, UART_TX_CB tx_cb)
         int ret;
         UART_TXDMAConfig(TRACE_UART_DEV, 8);
         UART_TXDMACmd(TRACE_UART_DEV, ENABLE);
-        ret = UART_TXGDMA_Init(TRACE_UART_INDEX, &p_uart_obj->UARTTxGdmaInitStruct,(void *) p_uart_obj, traceuart_dma_tx_complete,pstr,len);
+        ret = UART_TXGDMA_Init(TRACE_UART_INDEX, &p_uart_obj->UARTTxGdmaInitStruct,(void *) p_uart_obj, traceuart_dma_tx_complete, pstr, len);
         NVIC_SetPriority(GDMA_GetIrqNum(0, p_uart_obj->UARTTxGdmaInitStruct.GDMA_ChNum), TRACEUART_DMA_PRIO);
 
         if (!ret ) {
-            platform_debug("%s Error(%d)\n", __FUNCTION__, ret);
+            dbg("Error(%d)\r\n", ret);
             p_uart_obj->tx_busy = 0;
         }
 
@@ -227,11 +217,11 @@ bool trace_uart_tx(uint8_t *pstr,uint16_t len, UART_TX_CB tx_cb)
     }
     else
     {
-        platform_debug("!!!TX not finished, can't send");
+        dbg("TX not finished, can't send\r\n");
         return false;
     }
-
 #endif
+
     return true;
 }
 

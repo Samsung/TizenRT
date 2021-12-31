@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <debug.h>
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -73,7 +73,7 @@ static void *kheap_calloc(size_t n, size_t elem_size, size_t retaddr)
 	void *ret;
 	struct mm_heap_s *kheap = kmm_get_heap();
 
-	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
+	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_calloc(&kheap[heap_idx], n, elem_size, retaddr);
 #else
@@ -84,6 +84,7 @@ static void *kheap_calloc(size_t n, size_t elem_size, size_t retaddr)
 		}
 	}
 
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, n * elem_size, KERNEL_HEAP);
 	return NULL;
 }
 
@@ -106,18 +107,34 @@ static void *kheap_calloc(size_t n, size_t elem_size, size_t retaddr)
 #if CONFIG_KMM_NHEAPS > 1
 void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 {
+	void *ret;
 	struct mm_heap_s *kheap;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("kmm_calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("kmm_calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
+		return NULL;
+	}
+
+	if (n == 0 || elem_size == 0) {
 		return NULL;
 	}
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	return mm_calloc(&kheap[heap_index], n, elem_size, retaddr);
+	ret = mm_calloc(&kheap[heap_index], n, elem_size, caller_retaddr);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, n * elem_size, KERNEL_HEAP);
+	}
+	return ret;
 #else
-	return mm_calloc(&kheap[heap_index], n, elem_size);
+	ret = mm_calloc(&kheap[heap_index], n, elem_size);
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, n * elem_size, KERNEL_HEAP);
+	}
+	return ret;
 #endif
 }
 #endif
@@ -132,12 +149,14 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 
 FAR void *kmm_calloc(size_t n, size_t elem_size)
 {
+	size_t caller_retaddr = 0;
+	if (n == 0 || elem_size == 0) {
+		return NULL;
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-#else
-	size_t retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
-	return kheap_calloc(n, elem_size, retaddr);
+	return kheap_calloc(n, elem_size, caller_retaddr);
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */

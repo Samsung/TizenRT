@@ -457,15 +457,17 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 		rm $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME); \
 		exit 1; \
 	fi
+	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)_dbg
 	$(Q) $(STRIP) -g -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
 	$(Q) $(OBJCOPY) --remove-section .comment $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
-	$(Q) if [ ! -d "$(TOPDIR)/../tools/fs/contents-smartfs" ]; then \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs"; \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)"; \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files"; \
-	fi
-	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files/
-	$(Q) $(MAKE) smartfs
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).uncomp
+	$(Q) tools/compression/mkcompressimg $(CONFIG_COMPRESSION_BLOCK_SIZE) $(CONFIG_COMPRESSION_TYPE) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).comp
+	$(Q) mv $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).comp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
+endif
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) common
+	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
+	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/user/common
 endif
 endif
 
@@ -493,11 +495,23 @@ endif
 post:
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
+	$(Q) python ./tools/set_bininfo.py $(BIN_EXT)
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXE), $(BIN_EXT))
 ifeq ($(CONFIG_FLASH_PARTITION),y)
 	$(Q) python ./tools/check_output_size.py
 endif
 	$(Q) $(call MAKE_BOOTPARAM)
+
+ifeq ($(CONFIG_GENERATE_FS_IMAGE),y)
+ifneq ($(findstring "smartfs",$(CONFIG_FLASH_PART_TYPE)), "smartfs")
+	$(Q) if [ ! -d "$(TOPDIR)/../tools/fs/contents-smartfs" ]; then \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs"; \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)"; \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files"; \
+	fi; \
+	$(MAKE) smartfs
+endif
+endif
 
 ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	@echo "MKIMAGE: uImage"
@@ -625,7 +639,7 @@ subdir_clean:
 	$(Q) $(MAKE) -C tools -f Makefile.host TOPDIR="$(TOPDIR)" clean
 
 clean: subdir_clean
-	$(call DELFILE, $(OUTBIN_DIR)/*)
+	$(call DELDIR, $(OUTBIN_DIR)/*)
 	$(call DELFILE, _SAVED_APPS_config)
 	$(call DELFILE, tinyara-export*)
 	$(call DELFILE, tinyara_user*)
@@ -653,6 +667,7 @@ distclean: clean subdir_distclean clean_context
 	$(call DELFILE, .config.old)
 	$(call DELFILE, .version)
 	$(call DELFILE, .appSpec)
+	$(call DELFILE, .bininfo)
 
 # Application housekeeping targets.  The APPDIR variable refers to the user
 # application directory.  A sample apps/ directory is included with TinyAra,

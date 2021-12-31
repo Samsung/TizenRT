@@ -88,6 +88,10 @@
 
 #include <tinyara/mm/mm.h>
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/binfmt/elf.h>
+#endif
+
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 #include <arch/reboot_reason.h>
 #endif
@@ -96,12 +100,15 @@
 #include <sys/boardctl.h>
 #endif
 #ifdef CONFIG_BINMGR_RECOVERY
-#include <unistd.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <queue.h>
 #include <tinyara/wdog.h>
 #include "semaphore/semaphore.h"
 #include "binary_manager/binary_manager.h"
+#endif
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+#include <tinyara/wqueue.h>
 #endif
 #include "irq/irq.h"
 
@@ -117,9 +124,8 @@ extern sq_queue_t g_faultmsg_list;
 extern sq_queue_t g_freemsg_list;
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-extern uint32_t g_assertpc;
-#endif
+extern uint32_t system_exception_location;
+extern uint32_t user_assert_location;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -132,6 +138,9 @@ extern uint32_t g_assertpc;
 #ifndef CONFIG_BOARD_RESET_ON_ASSERT
 #define CONFIG_BOARD_RESET_ON_ASSERT 0
 #endif
+
+#define IS_FAULT_IN_USER_THREAD(fault_tcb)  ((void *)fault_tcb->uheap != NULL)
+#define IS_FAULT_IN_USER_SPACE(asserted_location)   (is_kernel_space((void *)asserted_location) == false)
 
 /****************************************************************************
  * Private Data
@@ -148,10 +157,26 @@ extern uint32_t g_assertpc;
 #ifdef CONFIG_ARCH_STACKDUMP
 static void up_stackdump(uint32_t sp, uint32_t stack_base)
 {
-	uint32_t stack;
+	uint32_t stack = sp & ~0x1f;
+	uint32_t *ptr = (uint32_t *)stack;
+	uint8_t i;
 
-	for (stack = sp & ~0x1f; stack < stack_base; stack += 32) {
-		uint32_t *ptr = (uint32_t *)stack;
+	lldbg("%08x:", stack);
+	for (i = 0; i < 8; i++) {  // Print first 8 values for sp located
+		if (stack < sp) {
+			/* If stack pointer(sp) is aligned(sp & 0x1f) to an address outside allocated stack */
+			/* Then, for stack addresses outside allocated stack, print 'xxxxxxxx' */
+			lldbg_noarg(" xxxxxxxx");
+		} else {
+			/* For remaining stack addresses inside allocated stack, print proper stack address values */
+			lldbg_noarg(" %08x", ptr[i]);
+		}
+		stack += 4;
+	}
+	lldbg_noarg("\n");
+
+	for (; stack < stack_base; stack += 32) { // Print remaining stack values from 9th value to end
+		ptr = (uint32_t *)stack;
 		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
 			   stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
 	}
@@ -369,6 +394,11 @@ static void up_dumpstate(void)
 
 	if (sp > ustackbase || sp <= ustackbase - ustacksize) {
 		lldbg("ERROR: Stack pointer is not within the allocated stack\n");
+		lldbg("Proper task stack dump:\n");
+		up_stackdump(ustackbase - ustacksize + 1, ustackbase);
+		lldbg("Wrong Stack pointer %08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+		sp, *((uint32_t *)sp + 0), *((uint32_t *)sp + 1), *((uint32_t *)sp + 2), ((uint32_t *)sp + 3),
+		*((uint32_t *)sp + 4), ((uint32_t *)sp + 5), ((uint32_t *)sp + 6), ((uint32_t *)sp + 7));
 	} else {
 		up_stackdump(sp, ustackbase);
 	}
@@ -459,6 +489,12 @@ void dump_all_stack(void)
 
 void up_assert(const uint8_t *filename, int lineno)
 {
+	/* ARCH_GET_RET_ADDRESS should always be
+	 * called at the start of the function */
+
+	size_t kernel_assert_location = 0;
+	ARCH_GET_RET_ADDRESS(kernel_assert_location)
+
 	board_led_on(LED_ASSERTION);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
@@ -467,53 +503,63 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	abort_mode = true;
 
+	uint32_t asserted_location;
+
+        /* Extract the PC value of instruction which caused the abort/assert */
+
+	if (system_exception_location) {
+		asserted_location = (uint32_t)system_exception_location;
+		system_exception_location = 0x0;	/* reset */
+	} else if (user_assert_location) {
+		asserted_location = (uint32_t)user_assert_location;
+		user_assert_location = 0x0;
+	} else {
+		asserted_location = (uint32_t)kernel_assert_location;
+	}
+
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	uint32_t assert_pc;
-	bool is_kernel_fault;
-
-	/* Extract the PC value of instruction which caused the abort/assert */
-
-	if (current_regs) {
-		assert_pc = current_regs[REG_R15];
-	} else {
-		assert_pc = (uint32_t)g_assertpc;
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+	if (IS_HPWORK || IS_LPWORK) {
+		lldbg("Running work function is %x.\n", work_get_current());
 	}
-
-	/* Is the fault in Kernel? */
-
-	is_kernel_fault = is_kernel_space((void *)assert_pc);
-
-#endif  /* CONFIG_APP_BINARY_SEPARATION */
+#endif /* defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__) */
 
 	up_dumpstate();
 
 	lldbg("Checking kernel heap for corruption...\n");
 	if (mm_check_heap_corruption(g_kmmheap) == OK) {
-		lldbg("No heap corruption detected\n");
+		lldbg("No kernel heap corruption detected\n");
+	} else {
+		/* treat kernel fault */
+
+		_up_assert(EXIT_FAILURE);
 	}
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	if (!is_kernel_fault) {
+	struct tcb_s *fault_tcb = this_task();
+
+	if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
 		lldbg("Checking current app heap for corruption...\n");
-		if (mm_check_heap_corruption((struct mm_heap_s *)(this_task()->uheap)) == OK) {
-			lldbg("No heap corruption detected\n");
+		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
+			lldbg("No app heap corruption detected\n");
 		}
+		elf_show_all_bin_addr();
 	}
 #endif
+	lldbg("Assert location (PC) : 0x%08x\n", asserted_location);
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	if (is_kernel_fault == false) {
+	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
-		binary_manager_recover_userfault(assert_pc);
+		binary_manager_recover_userfault();
 	} else
 #endif
 	{

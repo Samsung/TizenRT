@@ -64,6 +64,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
+#include <tinyara/mpu.h>
 
 #include "binfmt.h"
 #include "libelf/libelf.h"
@@ -221,6 +222,20 @@ int unload_module(FAR struct binary_s *binp)
 		/* Whole loading sections are in one memory block, so free the first allocated memory is enough. */
 		binfo("Freeing : %p\n", binp->alloc[0]);
 		kmm_free((FAR void *)binp->alloc[0]);
+#endif
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (binp->islibrary) {
+#if (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU))
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+				up_mpu_disable_region(&binp->cmn_mpu_regs[i]);
+			}
+#else
+			up_mpu_disable_region(&binp->cmn_mpu_regs[0]);
+#endif
+#endif
+		}
 #endif
 		/* Notice that the address environment is not destroyed.  This should
 		 * happen automatically when the task exits.

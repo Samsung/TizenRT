@@ -104,16 +104,28 @@
 #if CONFIG_KMM_NHEAPS > 1
 void *malloc_at(int heap_index, size_t size)
 {
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+	void *ret;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
+		return NULL;
+	}
+
+	if (size == 0) {
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	return mm_malloc(&BASE_HEAP[heap_index], size, retaddr);
+	ret = mm_malloc(&BASE_HEAP[heap_index], size, caller_retaddr);
 #else
-	return mm_malloc(&BASE_HEAP[heap_index], size);
+	ret = mm_malloc(&BASE_HEAP[heap_index], size);
 #endif
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
+	}
+	return ret;
 }
 #endif
 
@@ -128,19 +140,19 @@ void *malloc_at(int heap_index, size_t size)
  *   size - Size (in bytes) of the memory region to be allocated.
  *   s     - Start index
  *   e     - End index
- *   retaddr - caller function return address, used only for DEBUG_MM_HEAPINFO
+ *   caller_retaddr - caller function return address, used only for DEBUG_MM_HEAPINFO
  * Return Value:
  *   The address of the allocated memory (NULL on failure to allocate)
  *
  ************************************************************************/
-static void *heap_malloc(size_t size, int s, int e, size_t retaddr)
+static void *heap_malloc(size_t size, int s, int e, size_t caller_retaddr)
 {
 	int heap_idx;
 	void *ret;
 
-	for (heap_idx = s; heap_idx < e; heap_idx++) {
+	for (heap_idx = s; heap_idx <= e; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size, retaddr);
+		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
 #else
 		ret = mm_malloc(&BASE_HEAP[heap_idx], size);
 #endif
@@ -149,6 +161,7 @@ static void *heap_malloc(size_t size, int s, int e, size_t retaddr)
 		}
 	}
 
+	mm_manage_alloc_fail(BASE_HEAP, s, e, size, USER_HEAP);
 	return NULL;
 }
 #endif
@@ -197,27 +210,30 @@ FAR void *malloc(size_t size)
 	return mem;
 #else /* CONFIG_BUILD_KERNEL */
 
-	int heap_idx = 0;
+	int heap_idx = HEAP_START_IDX;
 	void *ret = NULL;
+	size_t caller_retaddr = 0;
+
+	if (size == 0) {
+		return NULL;
+	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-#else
-	size_t retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 
 #ifdef CONFIG_RAM_MALLOC_PRIOR_INDEX
 	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
 
-	ret = heap_malloc(size, heap_idx, CONFIG_KMM_NHEAPS, retaddr);
+	ret = heap_malloc(size, heap_idx, HEAP_END_IDX, caller_retaddr);
 	if (ret != NULL) {
 		return ret;
 	}
 
 #if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
 	/* Try to mm_calloc to other heaps */
-	ret = heap_malloc(size, 0, CONFIG_RAM_MALLOC_PRIOR_INDEX, retaddr);
+	ret = heap_malloc(size, HEAP_START_IDX, CONFIG_RAM_MALLOC_PRIOR_INDEX - 1, caller_retaddr);
 #endif
 
 	return ret;

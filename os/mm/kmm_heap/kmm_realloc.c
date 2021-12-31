@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <debug.h>
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -87,19 +87,32 @@
 #if CONFIG_KMM_NHEAPS > 1
 void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 {
+	void *ret;
 	struct mm_heap_s *kheap;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
+		return NULL;
+	}
+
+	if (size == 0) {
+		mm_free(&kheap[heap_index], oldmem);
 		return NULL;
 	}
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	return mm_realloc(&kheap[heap_index], oldmem, size, retaddr);
+	ret = mm_realloc(&kheap[heap_index], oldmem, size, caller_retaddr);
 #else
-	return mm_realloc(&kheap[heap_index], oldmem, size);
+	ret = mm_realloc(&kheap[heap_index], oldmem, size);
 #endif
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
+	}
+	return ret;
 }
 #endif
 
@@ -122,11 +135,20 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 {
 	void *ret;
 	int kheap_idx;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
 	struct mm_heap_s *kheap_origin = mm_get_heap(oldmem);
 	struct mm_heap_s *kheap_new;
+
+	if (newsize == 0) {
+		mm_free(kheap_origin, oldmem);
+		return NULL;
+	}
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	ret = mm_realloc(kheap_origin, oldmem, newsize, retaddr);
+	ret = mm_realloc(kheap_origin, oldmem, newsize, caller_retaddr);
 #else
 	ret = mm_realloc(kheap_origin, oldmem, newsize);
 #endif
@@ -136,10 +158,9 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 
 	/* Try to mm_malloc to another heap. */
 	kheap_new = kmm_get_heap();
-	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
+	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ARCH_GET_RET_ADDRESS
-		ret = mm_malloc(&kheap_new[kheap_idx], newsize, retaddr);
+		ret = mm_malloc(&kheap_new[kheap_idx], newsize, caller_retaddr);
 #else
 		ret = mm_malloc(&kheap_new[kheap_idx], newsize);
 #endif
@@ -148,6 +169,8 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 			return ret;
 		}
 	}
+
+	mm_manage_alloc_fail(kheap_new, HEAP_START_IDX, HEAP_END_IDX, newsize, KERNEL_HEAP);
 	return NULL;
 }
 

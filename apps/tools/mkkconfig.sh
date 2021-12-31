@@ -52,7 +52,7 @@
 # Get the input parameter list
 
 USAGE () {
-  echo "USAGE: mkkconfig.sh [-d] [-h] [-m <menu>] [-o <kconfig-file>]"
+  echo "USAGE: mkkconfig.sh [-d] [-h] [-m <menu>] [-o <kconfig-file>] [-mindepth <mindepth>] [-maxdepth <maxdepth>]"
   echo "Where:"
   echo " <-d>:"
   echo "   Enables debug output"
@@ -62,12 +62,18 @@ USAGE () {
   echo "   Identifies the specific configuratin for the selected <board-name>."
   echo "   This must correspond to a sub-directory under the board directory at"
   echo "   under build/configs/<board-name>/."
+  echo " -mindepth <mindepth>:"
+  echo "   Set the minimum depth to find configurations in sub-directory"
+  echo " -maxdepth <maxdepth>:"
+  echo "   Set the maximum depth to find configurations in sub-directory"
   echo " <-h>:"
   echo "   Prints this message and exits."
 }
 
 KCONFIG=Kconfig
 unset MENU
+DEPTH_MIN=2
+DEPTH_MAX=2
 
 while [ ! -z "$1" ]; do
   case $1 in
@@ -86,6 +92,14 @@ while [ ! -z "$1" ]; do
       USAGE
       exit 0
       ;;
+    -mindepth )
+      shift
+      DEPTH_MIN=$1
+      ;;
+    -maxdepth )
+      shift
+      DEPTH_MAX=$1
+      ;;
     * )
       echo "ERROR: Unrecognized argument: $1"
       USAGE
@@ -95,6 +109,9 @@ while [ ! -z "$1" ]; do
   shift
 done
 
+if [ ${DEPTH_MIN} -gt ${DEPTH_MAX} ]; then
+  { echo "ERROR: Invalid depths, min ${DEPTH_MIN}, max ${DEPTH_MAX}"; exit 1; }
+fi
 
 if [ -f ${KCONFIG} ]; then
   rm ${KCONFIG} || { echo "ERROR: Failed to remove $PWD/${KCONFIG}"; exit 1; }
@@ -102,7 +119,7 @@ fi
 
 echo mkkconfig in $PWD
 
-KCONFIG_LIST=`find $PWD -mindepth 2 -maxdepth 2 -name ${KCONFIG} | sort -n`
+KCONFIG_LIST=`find $PWD -mindepth ${DEPTH_MIN} -maxdepth ${DEPTH_MAX} -name ${KCONFIG} | sort -n`
 
 echo "#" > ${KCONFIG}
 echo "# For a description of the syntax of this configuration file," >> ${KCONFIG}

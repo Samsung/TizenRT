@@ -39,11 +39,7 @@ security_error keymgr_generate_key(security_handle hnd, security_key_type algo, 
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_result_e hres = HAL_SUCCESS;
-	SECAPI_CALL(sl_generate_key(ctx->sl_hnd, htype, key_idx, &hres));
-	if (hres != HAL_SUCCESS) {
-		SECAPI_HAL_RETURN(hres);
-	}
+	SECAPI_CALL(sl_generate_key(ctx->sl_hnd, htype, key_idx));
 	SECAPI_RETURN(SECURITY_OK);
 }
 
@@ -57,7 +53,6 @@ security_error keymgr_set_key(security_handle hnd, security_key_type algo, const
 	//convert key type
 	hal_key_type htype = HAL_KEY_UNKNOWN;
 	SECAPI_CONVERT_KEYTYPE(algo, htype);
-
 
 	// convert path
 	uint32_t key_idx = 0;
@@ -74,11 +69,7 @@ security_error keymgr_set_key(security_handle hnd, security_key_type algo, const
 		h_prikey.data_len = prikey->length;
 	}
 
-	hal_result_e hres = HAL_SUCCESS;
-	SECAPI_CALL(sl_set_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &h_prikey, &hres));
-	if (hres != HAL_SUCCESS) {
-		SECAPI_HAL_RETURN(hres);
-	}
+	SECAPI_CALL(sl_set_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &h_prikey));
 	SECAPI_RETURN(SECURITY_OK);
 }
 
@@ -108,11 +99,7 @@ security_error keymgr_get_key(security_handle hnd, security_key_type algo, const
 
 	// convert key
 	hal_data h_pubkey = {ctx->data1, ctx->dlen1, ctx->data2, ctx->dlen2};
-	hal_result_e hres = HAL_SUCCESS;
-	SECAPI_CALL(sl_get_key(ctx->sl_hnd, htype, key_idx, &h_pubkey, &hres));
-	if (hres != HAL_SUCCESS) {
-		SECAPI_HAL_RETURN(hres);
-	}
+	SECAPI_CALL(sl_get_key(ctx->sl_hnd, htype, key_idx, &h_pubkey));
 
 	if (h_pubkey.priv_len > 0 && !pubkey_y) {
 		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
@@ -135,7 +122,6 @@ security_error keymgr_get_key(security_handle hnd, security_key_type algo, const
 		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
 	}
 	SECAPI_PRIV_DCOPY(h_pubkey, pubkey_y);
-
 	SECAPI_RETURN(SECURITY_OK);
 }
 
@@ -154,11 +140,6 @@ security_error keymgr_remove_key(security_handle hnd, security_key_type algo, co
 	uint32_t key_idx = 0;
 	SECAPI_CONVERT_PATH(key_name, &key_idx);
 
-	hal_result_e hres = HAL_SUCCESS;
-	SECAPI_CALL(sl_remove_key(ctx->sl_hnd, htype, key_idx, &hres));
-	if (hres != HAL_SUCCESS) {
-		SECAPI_HAL_RETURN(hres);
-	}
-
+	SECAPI_CALL(sl_remove_key(ctx->sl_hnd, htype, key_idx));
 	SECAPI_RETURN(SECURITY_OK);
 }

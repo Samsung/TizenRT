@@ -418,7 +418,7 @@ MBEDTLS_DEPRECATED void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
 #endif
 
 #else  /* MBEDTLS_AES_ALT */
-#include "aes_alt.h"
+#include "alt/aes_alt.h"
 #endif /* MBEDTLS_AES_ALT */
 
 #ifdef __cplusplus

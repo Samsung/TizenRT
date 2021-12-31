@@ -16,7 +16,13 @@
 #
 ###########################################################################
 
-SRC_ALT_CSRCS = dhm_alt.c ecdh_alt.c entropy_poll_alt.c pk_wrap_alt.c
+SRC_ALT_CSRCS = \
+dhm_alt.c \
+ecdh_alt.c \
+entropy_poll_alt.c \
+pk_wrap_alt.c \
+alt_utils.c \
+aes_alt.c
 
 DEPPATH	+= --dep-path alt
 VPATH   += :alt

@@ -192,7 +192,8 @@ static void mq_sndtimeout(int argc, uint32_t pid)
  *   EMSGSIZE 'msglen' was greater than the maxmsgsize attribute of the
  *            message queue.
  *   EINTR    The call was interrupted by a signal handler.
- *   ENOMEM    The system lacks sufficient memory resources for watchdog.
+ *   ENOMEM   The system lacks sufficient memory resources for watchdog.
+ *   EBUSY    Fail to get the msg from interrupt handler.
  *
  * Assumptions/restrictions:
  *

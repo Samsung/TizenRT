@@ -53,16 +53,6 @@ void slsi_driver_initialize(void)
 	platform_mif_module_probe();
 	scsc_mx_module_init();
 	slsi_dev_load();
-
-#ifdef CONFIG_LWNL80211
-	#ifndef CONFIG_NET_NETMGR
-	int res = slsi_drv_initialize();
-	if (!res) {
-		SLSI_DBG1_NODEV(SLSI_INIT_DEINIT, "register fail\n");
-		return;
-	}
-	#endif
-#endif
 }
 
 static void slsi_regd_init(struct slsi_dev *sdev)

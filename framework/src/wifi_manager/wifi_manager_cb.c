@@ -19,10 +19,12 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
-#include <debug.h>
+#include <assert.h>
 #include <tinyara/net/netlog.h>
-#include <tinyara/wifi/wifi_common.h>
+#include <tinyara/net/if/wifi.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wifi_manager_cb.h"
 #include "wifi_manager_utils.h"
@@ -47,7 +49,7 @@ typedef struct wifimgr_cb_handler wifimgr_cb_handler_s;
  */
 static void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg);
 static void _free_scan_info(wifi_manager_scan_info_s *scan_list);
-static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, wifi_utils_scan_list_s *wu_scan_list);
+static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, trwifi_scan_list_s *wu_scan_list);
 /*
  * Global variable
  */
@@ -67,10 +69,10 @@ static void _free_scan_info(wifi_manager_scan_info_s *scan_list)
 }
 
 static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list,
-												wifi_utils_scan_list_s *wu_scan_list)
+												trwifi_scan_list_s *wu_scan_list)
 {
 	wifi_manager_scan_info_s *cur = NULL, *prev = NULL;
-	wifi_utils_scan_list_s *iter = wu_scan_list;
+	trwifi_scan_list_s *iter = wu_scan_list;
 	while (iter) {
 		cur = (wifi_manager_scan_info_s *)calloc(1, sizeof(wifi_manager_scan_info_s));
 		if (!cur) {
@@ -81,8 +83,8 @@ static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_sc
 		cur->rssi = iter->ap_info.rssi;
 		cur->channel = iter->ap_info.channel;
 		cur->phy_mode = iter->ap_info.phy_mode;
-		cur->ap_auth_type = iter->ap_info.ap_auth_type;
-		cur->ap_crypto_type = iter->ap_info.ap_crypto_type;
+		cur->ap_auth_type = wifimgr_convert2wifimgr_auth(iter->ap_info.ap_auth_type);
+		cur->ap_crypto_type = wifimgr_convert2wifimgr_crypto(iter->ap_info.ap_crypto_type);
 		strncpy(cur->ssid, (char *)iter->ap_info.ssid, WIFIMGR_SSID_LEN);
 		cur->ssid[WIFIMGR_SSID_LEN] = '\0';
 		strncpy(cur->bssid, (char *)iter->ap_info.bssid, WIFIMGR_MACADDR_STR_LEN);
@@ -99,10 +101,44 @@ static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_sc
 	return WIFI_MANAGER_SUCCESS;
 }
 
-void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
+static void _create_cb_msg(wifi_manager_cb_msg_s *msg,
+						  _wifimgr_usr_cb_type_e evt,
+						  void *arg)
 {
-	int i = 0;
-	for (; i < WIFIMGR_NUM_CALLBACKS; i++) {
+	if (evt == CB_SCAN_DONE) {
+		trwifi_scan_list_s *list = (trwifi_scan_list_s *)arg;
+		wifi_manager_scan_info_s *info = NULL;
+		if (!list || WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
+			NET_LOGE(TAG, "convert scan error\n");
+			msg->res = WIFI_MANAGER_FAIL;
+		} else {
+			msg->scanlist = info;
+		}
+	} else if (evt == CB_STA_CONNECT_FAILED) {
+		msg->res = WIFI_MANAGER_FAIL;
+	} else {
+		trwifi_cbk_msg_s *tmsg = (trwifi_cbk_msg_s *)arg;
+		msg->reason = tmsg->reason;
+		memcpy(msg->bssid, tmsg->bssid, sizeof(msg->bssid));
+		if (evt == CB_STA_DISCONNECTED) {
+			msg->res = WIFI_MANAGER_DISCONNECT;
+		} else if (evt == CB_STA_RECONNECTED) {
+			msg->res = WIFI_MANAGER_RECONNECT;
+		}
+	}
+}
+
+static void _delete_cb_msg(wifi_manager_cb_msg_s *msg)
+{
+	if (msg->scanlist) {
+		_free_scan_info(msg->scanlist);
+	}
+}
+
+static void _post_user_cb(_wifimgr_usr_cb_type_e evt,
+						  wifi_manager_cb_msg_s msg)
+{
+	for (int i = 0; i < WIFIMGR_NUM_CALLBACKS; i++) {
 		wifi_manager_cb_s *cbk = g_cb_handler.cb[i];
 		if (!cbk) {
 			continue;
@@ -111,68 +147,62 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 		case CB_STA_CONNECTED:
 			NET_LOGV(TAG, "call sta connect success event\n");
 			if (cbk->sta_connected) {
-				cbk->sta_connected(WIFI_MANAGER_SUCCESS);
+				cbk->sta_connected(msg, NULL);
 			}
 			break;
 		case CB_STA_CONNECT_FAILED:
 			NET_LOGV(TAG, "call sta connect fail event\n");
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 			if (cbk->sta_connected) {
-				cbk->sta_connected(WIFI_MANAGER_FAIL);
+				cbk->sta_connected(msg, NULL);
 			}
 			break;
 		case CB_STA_DISCONNECTED:
 			NET_LOGV(TAG, "call sta disconnect event\n");
 			if (cbk->sta_disconnected) {
-				cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
+				cbk->sta_disconnected(msg, NULL);
 			}
 			break;
 		case CB_STA_RECONNECTED:
 			NET_LOGV(TAG, "call sta reconnect event\n");
 			if (cbk->sta_disconnected) {
-				cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
+				cbk->sta_disconnected(msg, NULL);
 			}
 			break;
 		case CB_STA_JOINED:
 			NET_LOGV(TAG, "call sta join event\n");
 			if (cbk->softap_sta_joined) {
-				cbk->softap_sta_joined();
+				cbk->softap_sta_joined(msg, NULL);
 			}
 			break;
 		case CB_STA_LEFT:
 			NET_LOGV(TAG, "call sta leave event\n");
 			if (cbk->softap_sta_left) {
-				cbk->softap_sta_left();
+				cbk->softap_sta_left(msg, NULL);
 			}
 			break;
 		case CB_SCAN_DONE:
 			NET_LOGV(TAG, "call sta scan event\n");
 			/* convert scan data.*/
-			wifi_manager_scan_info_s *info = NULL;
-			wifi_utils_scan_list_s *list = (wifi_utils_scan_list_s *)arg;
-			if (list) {
-				if (WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
-					NET_LOGE(TAG, "parse error\n");
-					if (cbk->scan_ap_done) {
-						cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);
-					}
-				} else {
-					if (cbk->scan_ap_done) {
-						cbk->scan_ap_done(&info, WIFI_SCAN_SUCCESS);
-					}
-					_free_scan_info(info);
-				}
-			} else {
-				WIFIADD_ERR_RECORD(ERR_WIFIMGR_SCAN_FAIL);
-				cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);
+			if (cbk->scan_ap_done) {
+				cbk->scan_ap_done(msg, NULL);
 			}
 			break;
 		default:
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 			NET_LOGE(TAG, "Invalid State\n");
-			return;
 		}
 	}
+}
+
+void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
+{
+	wifi_manager_cb_msg_s msg = {WIFI_MANAGER_SUCCESS, 0, {0,}, NULL};
+
+	_create_cb_msg(&msg, evt, arg);
+	_post_user_cb(evt, msg);
+	_delete_cb_msg(&msg);
+
 	WIFIMGR_STATS_INC(evt);
 }
 

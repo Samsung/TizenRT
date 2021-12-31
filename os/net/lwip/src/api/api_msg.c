@@ -704,7 +704,8 @@ struct netconn *netconn_alloc(enum netconn_type t, netconn_callback callback)
 #if LWIP_SOCKET
 	/* initialize socket to -1 since 0 is a valid socket */
 	conn->socket = -1;
-	conn->slist = NULL;			// KBUILD
+	conn->crefs = 0;
+	conn->group = NULL;
 #endif							/* LWIP_SOCKET */
 	conn->callback = callback;
 #if LWIP_TCP

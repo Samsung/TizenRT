@@ -24,14 +24,31 @@ typedef struct {
 	int wait;
 } vwifi_ioctl_msg_s;
 
-/*  command */
+/*
+ * command in trwifi_result_e
+ */
+// Set return result else.
 #define VWIFI_CMD_SET 0x1001
+// Generate an event immediately
 #define VWIFI_CMD_GEN_EVT 0x1002
+// Register an event to generate it when a vdev receives a request.
+// This command needs in this situation as request deinit to the vdev
+// while vdev is in sta connected state. because wifi_manager waits
+// disconnect event from a vdev however deinit is synchronous call
+// user can't generate fake disconnect event.
 #define VWIFI_CMD_GEN_EVT_FUNC 0x1003
 
-/*  key */
+/*
+ * key
+ */
+// command: VWIFI_CMD_SET
+// this'll set return value of vdev.
 #define VWIFI_KEY_RESULT 1
+
+// command: VWIFI_CMD_GEN_EVT, VWIFI_CMD_GEN_EVT_FUNC
 // it must not be overlapped lwnl event type
 #define VWIFI_PKT_DHCPS_EVT 0x1000
 
-/*  value */
+// Command: VWIFI_CMD_GEN_EVT or VWIFI_CMD_GEN_EVT_FUNC
+// key: LWNL_EVT_STA_DISCONNECTED
+// value: reason code

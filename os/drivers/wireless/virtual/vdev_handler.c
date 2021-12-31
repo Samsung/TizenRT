@@ -19,13 +19,13 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <sys/types.h>
 #include <tinyara/config.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <debug.h>
 #include <time.h>
-#include <tinyara/wifi/wifi_common.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include "vdev_handler.h"
@@ -36,13 +36,19 @@ extern struct vwifi_ops *get_vdev_ops(void);
 extern struct netdev *g_vwifi_dev;
 extern void vwifi_generate_dhcp_discover(void);
 
-static void vwifi_callback_handler(lwnl_cb_status evt)
+static void vwifi_callback_handler(lwnl_cb_status evt, int result)
 {
 	if (evt.evt == LWNL_EVT_SCAN_DONE) {
 		trwifi_scan_list_s *scanlist = vwifi_get_scan_list();
 		TRWIFI_POST_SCANEVENT(g_vwifi_dev, LWNL_EVT_SCAN_DONE, scanlist);
-	} else {
+	} else if (evt.evt == LWNL_EVT_SCAN_FAILED) {
 		trwifi_post_event(g_vwifi_dev, evt.evt, NULL, 0);
+	} else if (evt.evt == LWNL_EVT_STA_DISCONNECTED) {
+		trwifi_cbk_msg_s msg = {result, {0,}, NULL};
+		trwifi_post_event(g_vwifi_dev, evt.evt, &msg, sizeof(trwifi_cbk_msg_s));
+	} else {
+		trwifi_cbk_msg_s msg = {TRWIFI_REASON_UNKNOWN, {0,}, NULL};
+		trwifi_post_event(g_vwifi_dev, evt.evt, &msg, sizeof(trwifi_cbk_msg_s));
 	}
 }
 
@@ -50,14 +56,17 @@ static void _generate_evt(int argc, char *argv[])
 {
 	lwnl_cb_status event_type = {LWNL_DEV_WIFI, 0};
 	event_type.evt = atoi(argv[1]);
+	int result = atoi(argv[2]);
 	int sleep_time = atoi(argv[3]);
 
-	vdvdbg("[VDEV] sleep (%d) event type(%d)\n", sleep_time, event_type.evt);
+	VWIFI_LOG("[VDEV] sleep (%d) result (%d)event type(%d)\n",
+				 sleep_time, result, event_type.evt);
+
 	sleep(sleep_time);
 	if (event_type.evt == VWIFI_PKT_DHCPS_EVT) {
 		vwifi_generate_dhcp_discover();
 	} else {
-		vwifi_callback_handler(event_type);
+		vwifi_callback_handler(event_type, result);
 	}
 }
 
@@ -95,37 +104,37 @@ int vwifi_handle_message(struct vwifi_req *req)
 	int res = 0;
 	switch (req->type) {
 	case VWIFI_MSG_INIT:
-		req->res = ops->init(req);
+		*req->res = ops->init(req);
 		break;
 	case VWIFI_MSG_DEINIT:
-		req->res = ops->deinit(req);
+		*req->res = ops->deinit(req);
 		break;
 	case VWIFI_MSG_SCANAP:
-		req->res = ops->scan_ap(req);
+		*req->res = ops->scan_ap(req);
 		break;
 	case VWIFI_MSG_CONNECTAP:
-		req->res = ops->connect_ap(req);
+		*req->res = ops->connect_ap(req);
 		break;
 	case VWIFI_MSG_DISCONENCTAP:
-		req->res = ops->disconnect_ap(req);
+		*req->res = ops->disconnect_ap(req);
 		break;
 	case VWIFI_MSG_GETINFO:
-		req->res = ops->get_info(req);
+		*req->res = ops->get_info(req);
 		break;
 	case VWIFI_MSG_STARTSTA:
-		req->res = ops->start_sta(req);
+		*req->res = ops->start_sta(req);
 		break;
 	case VWIFI_MSG_STARTSOFTAP:
-		req->res = ops->start_softap(req);
+		*req->res = ops->start_softap(req);
 		break;
 	case VWIFI_MSG_STOPSOFTAP:
-		req->res = ops->stop_softap(req);
+		*req->res = ops->stop_softap(req);
 		break;
 	case VWIFI_MSG_SETAUTOCONNECT:
-		req->res = ops->set_autoconnect(req);
+		*req->res = ops->set_autoconnect(req);
 		break;
 	case VWIFI_MSG_IOCTL:
-		req->res = ops->drv_ioctl(req);
+		*req->res = ops->drv_ioctl(req);
 		break;
 	default:
 		VWIFI_ERROR(0);

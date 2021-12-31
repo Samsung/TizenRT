@@ -26,6 +26,7 @@
 #ifndef MBED_SERIAL_API_H
 #define MBED_SERIAL_API_H
 
+#include <stdbool.h>
 #include "device.h"
 
 #ifdef __cplusplus
@@ -142,6 +143,16 @@ void serial_irq_handler(serial_t *obj, uart_irq_handler handler, uint32_t id);
   * @retval none  
   */
 void serial_irq_set(serial_t *obj, SerialIrq irq, uint32_t enable);
+
+/**
+  * @brief  Enable/Disable UART loopback mode for testing.
+  * @param  obj: uart object define in application software.
+  * @param  enable/disable the loopback mode
+  * 		@arg 0 disable
+  *		@arg 1 enable
+  * @retval none
+  */
+void serial_control_loopback(serial_t *obj, bool enable);
 
 /**
   * @brief  get one byte from UART.

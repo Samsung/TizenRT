@@ -63,6 +63,7 @@
 #include <stdint.h>
 #include <semaphore.h>
 #include <queue.h>
+#include <stdbool.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -152,7 +153,7 @@
 /* High priority, kernel work queue configuration ***************************/
 
 #ifdef CONFIG_SCHED_HPWORK
-
+#define HPWORKNAME "hpwork"
 #ifndef CONFIG_SCHED_HPWORKPRIORITY
 #define CONFIG_SCHED_HPWORKPRIORITY 201
 #endif
@@ -166,6 +167,7 @@
 /* Low priority kernel work queue configuration *****************************/
 
 #ifdef CONFIG_SCHED_LPWORK
+#define LPWORKNAME "lpwork"
 
 #ifndef CONFIG_SCHED_LPNTHREADS
 #define CONFIG_SCHED_LPNTHREADS 1
@@ -184,6 +186,7 @@
 #endif
 
 #ifdef CONFIG_SCHED_HPWORK
+
 #if CONFIG_SCHED_LPWORKPRIORITY >= CONFIG_SCHED_HPWORKPRIORITY
 #error CONFIG_SCHED_LPWORKPRIORITY >= CONFIG_SCHED_HPWORKPRIORITY
 #endif
@@ -486,6 +489,28 @@ void lpwork_boostpriority(uint8_t reqprio);
 
 #if defined(CONFIG_SCHED_LPWORK) && defined(CONFIG_PRIORITY_INHERITANCE)
 void lpwork_restorepriority(uint8_t reqprio);
+#endif
+
+/****************************************************************************
+ * Name: work_get_current
+ *
+ * Description:
+ *   Get the current running worker
+ ****************************************************************************/
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+worker_t work_get_current(void);
+
+#ifdef CONFIG_SCHED_HPWORK
+#define IS_HPWORK (strncmp(this_task()->name, HPWORKNAME, sizeof(HPWORKNAME)) == 0)
+#else
+#define IS_HPWORK (false)
+#endif
+
+#ifdef CONFIG_SCHED_LPWORK
+#define IS_LPWORK (strncmp(this_task()->name, LPWORKNAME, sizeof(HPWORKNAME)) == 0)
+#else
+#define IS_LPWORK (false)
+#endif
 #endif
 
 #undef EXTERN

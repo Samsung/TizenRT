@@ -22,14 +22,19 @@
 
 #include <tinyara/config.h>
 #if defined(CONFIG_NET) && (CONFIG_NSOCKET_DESCRIPTORS > 0)
+
+#include <errno.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <string.h>
-#include <errno.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <tinyara/netmgr/netctl.h>
 #include <netutils/netlib.h>
+#include <tinyara/net/netlog.h>
+
+#define TAG "[NETLIB]"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -54,16 +59,26 @@
 int netlib_netmon_sock(void *arg)
 {
 	int ret = ERROR;
-	/* Get sockets */
+	struct req_lwip_data req;
 	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
-	if (sockfd >= 0) {
-		ret = ioctl(sockfd, SIOCGETSOCK, (unsigned long)arg);
-	    close(sockfd);
+	if (sockfd == -1) {
+		NET_LOGE(TAG, "socket() failed with errno: %d\n", errno);
+		return -1;
 	}
-	return ret;
+
+	memset(&req, 0, sizeof(req));
+	req.type = GETSOCKINFO;
+
+	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+	close(sockfd);
+	if (ret == ERROR) {
+		NET_LOGE(TAG, "ioctl() failed with errno: %d\n", errno);
+		return -1;
+	}
+	arg = (void *)req.msg.netmon.info;
+	return req.req_res;
 }
 
-#ifdef CONFIG_NET_STATS
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -81,16 +96,33 @@ int netlib_netmon_sock(void *arg)
  *
  ****************************************************************************/
 
-int netlib_netmon_devstats(void *arg)
+int netlib_netmon_devstats(const char *ifname, void **arg)
 {
-    int ret = ERROR;
-    /* Get netdev stats */
-    int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
-    if (sockfd >= 0) {
-        ret = ioctl(sockfd, SIOCGDSTATS, (unsigned long)arg);
-        close(sockfd);
-    }
-    return ret;
+	if (ifname == NULL || arg == NULL) {
+		return -1;
+	}
+	int ret = ERROR;
+	struct req_lwip_data req;
+	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
+	if (sockfd == -1) {
+		NET_LOGE(TAG, "socket() failed with errno: %d\n", errno);
+		return -1;
+	}
+
+	memset(&req, 0, sizeof(req));
+	req.type = GETDEVSTATS;
+	req.msg.netmon.ifname = ifname;
+
+	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+	close(sockfd);
+	if (ret == ERROR) {
+		NET_LOGE(TAG, "ioctl() failed with errno: %d\n", errno);
+		return -1;
+	}
+	ret = req.req_res;
+	if (ret == 0) {
+		*arg = (void *)req.msg.netmon.info;
+	}
+	return req.req_res;
 }
-#endif							/* CONFIG_NET_STATS */
-#endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */
+#endif /* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */

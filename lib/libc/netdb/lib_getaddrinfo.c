@@ -26,6 +26,7 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
+#include <tinyara/netmgr/netctl.h>
 
 /****************************************************************************
  * Public Functions
@@ -59,8 +60,10 @@
 /****************************************************************************
  * Name: getaddrinfo
  ****************************************************************************/
-#ifdef CONFIG_NET_LWIP_NETDB
-int getaddrinfo(FAR const char *hostname, FAR const char *servname, FAR const struct addrinfo *hint, FAR struct addrinfo **res)
+int getaddrinfo(FAR const char *hostname,
+				FAR const char *servname,
+				FAR const struct addrinfo *hint,
+				FAR struct addrinfo **res)
 {
 	int ret = -1;
 	struct req_lwip_data req;
@@ -73,21 +76,21 @@ int getaddrinfo(FAR const char *hostname, FAR const char *servname, FAR const st
 
 	memset(&req, 0, sizeof(req));
 	req.type = GETADDRINFO;
-	req.host_name = hostname;
-	req.serv_name = servname;
-	req.ai_hint = hint;
-	req.ai_res = NULL;
+	req.msg.netdb.host_name = hostname;
+	req.msg.netdb.serv_name = servname;
+	req.msg.netdb.ai_hint = hint;
+	req.msg.netdb.ai_res = NULL;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+	close(sockfd);
 	if (ret == ERROR) {
 		printf("ioctl() failed with errno: %d\n", errno);
-		close(sockfd);
 		return ret;
 	}
 
 	ret = req.req_res;
-	*res = (struct addrinfo *)req.ai_res;
-	close(sockfd);
+	if (ret == 0) {
+		*res = (struct addrinfo *)req.msg.netdb.ai_res;
+	}
 	return ret;
 }
-#endif

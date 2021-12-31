@@ -202,6 +202,7 @@
 #define TIOCCLRSIG      _TIOC(0x002f)	/* Clear signal to handle Interrupt */
 #define TIOCTXSTATE     _TIOC(0x0030)	/* Get State of TX */
 #define TIOCRXSTATE     _TIOC(0x0031)	/* Get State of RX */
+#define TIOCLOOPBACK    _TIOC(0x0032)	/* Enable/Disable loopback mode */
 
 #define TIOCS_NONE      0x00	/* Default State of Low Driver */
 #define TIOCS_EMPTY     0x01	/* Low Driver's buffer is Empty, same as uart_txempty for tx */

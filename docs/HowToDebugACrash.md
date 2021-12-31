@@ -10,7 +10,8 @@ which resulted in the crash.
 - [Prerequisites](#prerequisites)  
 - [How to use addr2line](#how-to-use-addr2line)
 - [How to debug a crash with addr2line](#how-to-debug-a-crash-with-addr2line)
-- [Example debugging scenraio](#Example-debugging-scenario)
+- [Example debugging scenario](#Example-debugging-scenario)
+- [Understanding Debug messages during a fault](#Understanding-debug-messages-during-a-fault)
 
 ## Prerequisites
 1. To use addr2line, please enable below config.  
@@ -46,8 +47,8 @@ menuconfig -> Chip selection -> Dump stack on assertions
 ```
 
 ## How to use addr2line
-After build, use **addr2line** from linux shell.  
-Please refer to linux man page.  
+After build, use **addr2line** from Linux shell.  
+Please refer to Linux man page.  
 (https://man7.org/linux/man-pages/man1/addr2line.1.html)  
 Simple command is like below.  
 ```
@@ -63,7 +64,7 @@ For this to work, the ARM toolchain needs to be configured in the PATH:
 $ arm-none-eabi-addr2line -e [filepath] -a [address]
 ```
 
-However, if the toolchain path is not configured, or if you have mulitple versions of toolchain, then you may specify the complete path to the
+However, if the toolchain path is not configured, or if you have multiple versions of toolchain, then you may specify the complete path to the
 required addr2line tool as follows:
 ```
 $ /home/tools/gcc-arm-none-eabi-9-2019-q4-major/bin/arm-none-eabi-addr2line -e [filepath] -a [address]
@@ -161,3 +162,110 @@ Callstack from values in stackdump
 0e002495	os/kernel/binary_manager/binary_manager_load.c:392
 0e001b53	os/kernel/task/task_start.c:180
 ```
+
+## Understanding Debug messages during a fault
+A crash can occur due to any one of the faults, such as, memory fault, usage fault, hard fault, etc.. When a fault occurs, the hardware encodes the cause of the fault in a corresponding fault status register. The fault handler prints the contents of this register in hexadecimal format and also provides a brief description for the cause of the fault. The following sections provide additional information and tips to understand and debug each of the fault scenarios. Here we discuss the various fault scenarios encoded in the MMFSR, BFSR, UFSR and HFSR registers for memfault, busfault, usage fault and hard fault respectively. Please refer to the ARM Architecture reference manual of the corresponding architecture to find the description of these registers and their bit fields.
+
+Armv7-m : https://developer.arm.com/documentation/ddi0403/eb/
+
+Armv8-m : https://developer.arm.com/documentation/ddi0553/latest
+
+### MemManage Fault Status Register (MMFSR)
+
+1. ```MMARVALID```
+
+Debug msg: Access violation occurred at address (MMFAR) : 0xAddress
+
+This message indicates that the address which caused the memfault is available to us. Check the printed address value. If the address is zero, it is probably caused due to a null pointer access. If the address value is non-zero, then the fault can be caused due to one of the following reasons. 
+- The address is outside of the configured MPU regions
+- The MPU region configuration does not match the access type. For example, trying to write to a read-only region
+
+
+Debug msg: Unable to determine access violation address.
+
+This message indicates that the hardware was not able to find the address which caused the fault. This generally happens in case of an instruction access violation. However, the debug logs show the values of PC and LR register at the time of crash. The PC register would contain an invalid address. The developer needs to debug further to find the root cause of the crash. The following guidelines may be used:
+- If the PC value seems to be a valid address, then check whether it falls within a valid MPU region (with execute permission)
+- If PC value seems to be totally invalid, then we need to find all locations in the code, which can cause the PC value to get changed in a non sequential manner. It could be either due to an invalid function pointer or an invalid value filled into the PC during a context switch or irq handling.
+- The developer may use the LR value to find the previous function, and then manually walk through the code to find the probable cause for PC corruption.
+
+
+In both the above cases, the developer can use the addr2line tool along with the PC and LR values to find the line number in code, where the error has occurred. Please note the following points:
+- The LR value points to the next instruction to be executed after return from a function call. So, the LR will point to a line number after a function in which the fault would have occurred.
+- The LR and PC might not contain exact line numbers if the function was declared as "inline", or if some compiler optimization has caused the function to be inlined.
+
+
+2. ```DACCVIOL```
+
+Debug msg: Data access violation occurred.
+
+Use the PC value and the address printed in the debug message to find which variable is causing an invalid data access as mentioned in point (1) above.
+
+
+3. ```IACCVIOL```
+
+Debug msg: Instruction access violation occurred while fetching instruction from an Execute Never (XN) region.
+
+Execution from an MPU region with no execute permission. Check the line number of PC and make sure that corresponding MPU region has the proper privileges. 
+
+
+4. ```MSTKERR``` and ```MUNSTKERR```
+
+Debug msg:
+Error while stacking registers during exception entry.
+or
+Error while unstacking registers during exception return.
+
+In both these cases, the data access violation has occurred during stack handling. So, check the stack pointer value and find out if it is within the stack. Also, stack handling happens either in case of function call / return and in case of exception handling. So, developer might need to check the sanity of exception handling code.
+
+
+5. ```MLSPERR```
+
+Debug msg: Error occurred during lazy state preservation of Floating Point unit registers.
+
+This bit also indicates an error during stacking of registers during exception handling.
+
+
+### Bus Fault Status Register (BFSR)
+A bus fault is very similar to memory management fault as mentioned above. Any access of data or instructions from an invalid memory address can cause a bus fault. If the MPU is enabled, then most of such invalid accesses will result in a corresponding memfault. However, if the MPU is disabled, all invalid memory accesses result in bus fault. Bus faults can either be data abort or prefetch abort, based on whether the fault occurred while accessing data or instructions. The BFARVALID, STKERR, UNSTKERR, LSPERR fields of this register are similar to the corresponding bits in the memfault scenario. The IBUSERR bit indicates an instruction access fault; whereas, the PRECISERR and IMPRECISERR bits indicate a data access violation. The PRECISERR is similar to DACCVIOL in the memfault register.
+
+The only difference lies in the IMPRECISERR bit. This bit is set if an imprecise data access violation has occurred. It means that the current PC value does NOT point to the instruction which caused the data access violation. The violation is caused by some previous instruction, but was delayed because memory accesses are not always synchronous. In order to debug this type of fault, the developer can check the previous few lines of code starting from the current PC value. The developer can also use the objdump tool to print the disassembly of the code at the current PC value and then check each assembly instruction which is either loading or storing values into the memory.
+
+
+### Usage Fault Status Register (UFSR)
+
+1. ```DIVBYZERO```
+
+Indicates divide by zero error.
+
+2. ```UNALIGNED```
+
+Indicates unaligned memory access.
+
+3. ```UNDEFINSTR```
+
+Indicates undefined instruction execution.
+
+4. ```STKOF```
+
+Indicates stack overflow.
+
+5. ```NOCP```
+
+Indicates co-processor is disabled.
+
+6. ```INVPC```
+
+This bit is set if the integrity check fails during an exception return. It can happen due to any one of the following reasons:
+- If exception number held in IPSR register does NOT match the current exception (corresponding bit set in SHCSR register).
+- If bit[1] of EXC_RETURN is set to (1). EXC_RETURN is the value in R14 at the time of exception return.
+- If returning to thread mode and IPSR is not restored to (0).
+- If returning to handler mode and IPSR is not restored to non-zero.
+The developer has to check any code which might result in one of the above conditions.
+
+7. ```INVSTATE```
+
+The bit[0] of PC register must always be set to (1). If this condition is not met, then INVSTATE exception is generated. In order to debug this fault, the developer needs to check any instruction which could load the PC with an invalid value.
+
+
+### Hard Fault Status Register (HFSR)
+The most common cause of a hard fault is escalation of other faults. This happens when a fault condition occurs, but the corresponding fault is not implemented by the hardware or not enabled. For example, if a memory access violation occurs and the memfault and busfault are not enabled, then it gets escalated to hard fault. If the hard fault is caused by such an escalation, then the FORCED bit is set to (1) in the HFSR. The hard fault handler prints the value of all fault registers mentioned above. The developer can find which fault had occurred from these register values and then perform debugging according to the above mentioned guidelines for the corresponding fault scenario.

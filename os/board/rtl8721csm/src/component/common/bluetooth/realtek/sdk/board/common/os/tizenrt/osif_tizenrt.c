@@ -74,7 +74,7 @@ static int osif_wrapper_thread(int argc, char *argv[])
 	void *p_param;
 
 	if (argc != 3) {
-		printf("[osif_task_create] %s osif_wrapper_thread error\r\n", argv[0]);
+		dbg("%s osif_wrapper_thread error \n", argv[0]);
 		return -1;
 	}
 
@@ -97,12 +97,12 @@ bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(vo
 	char *task_info[3];
 
 	if (!pp_handle) {
-		printf("[osif_task_create] pp_handle is NULL\r\n");
+		dbg("pp_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (*pp_handle) {
-		printf("[osif_task_create] task already init\r\n");
+		dbg("task already init \n");
 		return _FAIL;
 	}
 
@@ -110,11 +110,13 @@ bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(vo
 	task_info[1] = itoa((int) p_param, param_addr, 16);
 	task_info[2] = NULL;
 	stack_size = stack_size * sizeof(uint32_t);
-	priority = (priority + SCHED_PRIORITY_DEFAULT > SCHED_PRIORITY_MAX || priority + SCHED_PRIORITY_DEFAULT < SCHED_PRIORITY_MIN)? SCHED_PRIORITY_DEFAULT : priority + SCHED_PRIORITY_DEFAULT;
+	priority = priority + SCHED_PRIORITY_DEFAULT;
+	if (priority > SCHED_PRIORITY_MAX)
+		priority = SCHED_PRIORITY_DEFAULT;
 
 	pid = kernel_thread(p_name, priority, stack_size, osif_wrapper_thread, (char *const *) task_info);
 	if (pid == ERROR) {
-		printf("[osif_task_create] %s create fail\r\n", p_name);
+		dbg("%s create fail \n", p_name);
 		return _FAIL;
 	}
 
@@ -131,12 +133,12 @@ bool osif_task_delete(void *p_handle)
 	pid_t pid = (pid_t) ((uint32_t) p_handle);
 
 	if (!p_handle) {
-		printf("[osif_task_delete] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (task_delete(pid) != OK) {
-		printf("[osif_task_delete] delete task 0x%x fail\r\n", p_handle);
+		dbg("delete task 0x%x fail \n", p_handle);
 		return _FAIL;
 	}
 
@@ -176,7 +178,7 @@ bool osif_task_yield(void)
 bool osif_task_handle_get(void **pp_handle)
 {
 	if (!pp_handle) {
-		printf("[osif_task_handle_get] pp_handle is NULL\r\n");
+		dbg("pp_handle is NULL \n");
 		return _FAIL;
 	}
 
@@ -193,12 +195,12 @@ bool osif_task_priority_get(void *p_handle, uint16_t *p_priority)
 	pid_t pid = (pid_t) ((uint32_t) p_handle);
 
 	if (!p_handle) {
-		printf("[osif_task_priority_get] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (p_priority == NULL) {
-		printf("[osif_task_priority_get] p_priority is NULL\r\n");
+		dbg("p_priority is NULL \n");
 		return _FAIL;
 	}
 
@@ -218,20 +220,22 @@ bool osif_task_priority_set(void *p_handle, uint16_t priority)
 	pid_t pid = (pid_t) ((uint32_t) p_handle);
 
 	if (!p_handle) {
-		printf("[osif_task_priority_set] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
 	p_tcb = sched_gettcb(pid);
 	if (!p_tcb) {
-		printf("[osif_task_priority_set] pid %d tcb is NULL\r\n", pid);
+		dbg("pid %d tcb is NULL \n", pid);
 		return _FAIL;
 	}
 
-	priority = (priority + SCHED_PRIORITY_DEFAULT > SCHED_PRIORITY_MAX || priority + SCHED_PRIORITY_DEFAULT < SCHED_PRIORITY_MIN)? SCHED_PRIORITY_DEFAULT : priority + SCHED_PRIORITY_DEFAULT;
+	priority = priority + SCHED_PRIORITY_DEFAULT;
+	if (priority > SCHED_PRIORITY_MAX)
+		priority = SCHED_PRIORITY_DEFAULT;
 
 	if (sched_setpriority(p_tcb, priority) != OK) {
-		printf("[osif_task_priority_set] sched setpriority fail\r\n");
+		dbg("sched setpriority fail \n");
 		return _FAIL;
 	}
 
@@ -287,7 +291,16 @@ bool osif_task_signal_clear(void *p_handle)
 /****************************************************************************/
 uint32_t osif_lock(void)
 {
-	return irqsave();
+	uint32_t flags = 0U;
+	if (osif_task_context_check() == true)
+	{
+		save_and_cli();
+	}
+	else
+	{
+		dbg("warn: unexpected isr mode \n");
+	}
+	return flags;
 }
 
 /****************************************************************************/
@@ -295,7 +308,14 @@ uint32_t osif_lock(void)
 /****************************************************************************/
 void osif_unlock(uint32_t flags)
 {
-	irqrestore((irqstate_t) flags);
+	if (osif_task_context_check() == true)
+	{
+		restore_flags();
+	}
+	else
+	{
+		dbg("warn: unexpected isr mode \n");
+	}
 }
 
 /****************************************************************************/
@@ -306,25 +326,25 @@ bool osif_sem_create(void **pp_handle, uint32_t init_count, uint32_t max_count)
 	sem_t *sem;
 
 	if (!pp_handle) {
-		printf("[osif_sem_create] pp_handle is NULL\r\n");
+		dbg("pp_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (*pp_handle) {
-		printf("[osif_sem_create] sem already init\r\n");
+		dbg("sem already init \n");
 		return _FAIL;
 	}
 
 	sem = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(sem_t));
 	if (sem == NULL) {
-		printf("[osif_sem_create] alloc sem_t fail\r\n");
+		dbg("alloc sem_t fail \n");
 		return _FAIL;
 	}
 	memset(sem, 0, sizeof(sem_t));
 
 	if (sem_init(sem, 0, init_count) != OK) {
 		osif_mem_free(sem);
-		printf("[osif_sem_create] sem init fail\r\n");
+		dbg("sem init fail \n");
 		return _FAIL;
 	}
 
@@ -339,12 +359,12 @@ bool osif_sem_create(void **pp_handle, uint32_t init_count, uint32_t max_count)
 bool osif_sem_delete(void *p_handle)
 {
 	if (!p_handle) {
-		printf("[osif_sem_delete] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (sem_destroy((sem_t *) p_handle) != OK) {
-		printf("[osif_sem_delete] sema destroy fail\r\n");
+		dbg("sema destroy fail \n");
 		return _FAIL;
 	}
 
@@ -360,7 +380,7 @@ bool osif_sem_delete(void *p_handle)
 bool osif_sem_take(void *p_handle, uint32_t wait_ms)
 {
 	if (!p_handle) {
-		printf("[osif_sem_take] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
@@ -370,12 +390,12 @@ bool osif_sem_take(void *p_handle, uint32_t wait_ms)
 		ts.tv_sec += wait_ms / 1000;
 		ts.tv_nsec += (wait_ms % 1000) * 1000 * 1000;
 		if (sem_timedwait((sem_t *) p_handle, &ts) != OK) {
-			printf("[osif_sem_take] sema wait 0x%x ms fail\r\n", wait_ms);
+			dbg("sema wait 0x%x ms fail \n", wait_ms);
 			return _FAIL;
 		}
 	} else {
 		if (sem_wait((sem_t *) p_handle) != OK) {
-			printf("[osif_sem_take] sema wait fail\r\n");
+			dbg("sema wait fail \n");
 			return _FAIL;
 		}
 	}
@@ -389,12 +409,12 @@ bool osif_sem_take(void *p_handle, uint32_t wait_ms)
 bool osif_sem_give(void *p_handle)
 {
 	if (!p_handle) {
-		printf("[osif_sem_give] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (sem_post((sem_t *) p_handle) != OK) {
-		printf("[osif_sem_give] sema post fail\r\n");
+		dbg("sema post fail \n");
 		return _FAIL;
 	}
 
@@ -441,14 +461,15 @@ bool osif_msg_queue_create(void **pp_handle, uint32_t msg_num, uint32_t msg_size
 	mqd_t pmqd;
 	char mq_name[9];
 	struct mq_attr attr;
+	int ret;
 
 	if (!pp_handle) {
-		printf("[osif_msg_queue_create] pp_handle is NULL\r\n");
+		dbg("pp_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (*pp_handle) {
-		printf("[osif_msg_queue_create] msg queue already init\r\n");
+		dbg("msg queue already init \n");
 		return _FAIL;
 	}
 
@@ -459,7 +480,8 @@ bool osif_msg_queue_create(void **pp_handle, uint32_t msg_num, uint32_t msg_size
 
 	pmqd = mq_open((const char *) mq_name, O_RDWR | O_CREAT, 0666, &attr);
 	if (pmqd == (mqd_t) ERROR) {
-		printf("[osif_msg_queue_create] mq open fail\r\n");
+		ret = get_errno();
+		dbg("mq open fail: %d \n", ret);
 		return _FAIL;
 	}
 
@@ -473,13 +495,16 @@ bool osif_msg_queue_create(void **pp_handle, uint32_t msg_num, uint32_t msg_size
 /****************************************************************************/
 bool osif_msg_queue_delete(void *p_handle)
 {
+	int ret;
+
 	if (!p_handle) {
-		printf("[osif_msg_queue_delete] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if(mq_close((mqd_t) p_handle) != OK) {
-		printf("[osif_msg_queue_delete] mq 0x%x close fail\r\n", p_handle);
+		ret = get_errno();
+		dbg("mq 0x%x close fail: %d \n", p_handle, ret);
 		return _FAIL;
 	}
 
@@ -492,12 +517,12 @@ bool osif_msg_queue_delete(void *p_handle)
 bool osif_msg_queue_peek(void *p_handle, uint32_t *p_msg_num)
 {
 	if (!p_handle) {
-		printf("[osif_msg_queue_peek] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (p_msg_num == NULL) {
-		printf("[osif_msg_queue_peek] p_msg_num is NULL\r\n");
+		dbg("p_msg_num is NULL \n");
 		return _FAIL;
 	}
 
@@ -512,24 +537,27 @@ bool osif_msg_queue_peek(void *p_handle, uint32_t *p_msg_num)
 bool osif_msg_send(void *p_handle, void *p_msg, uint32_t wait_ms)
 {
 	int prio = MQ_PRIO_MAX;
+	int ret;
 
 	if (!p_handle) {
-		printf("[osif_msg_send] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
-	if (up_interrupt_context() == false && wait_ms != 0xFFFFFFFF) {
+	if (osif_task_context_check() == true && wait_ms != 0xFFFFFFFF) {
 		struct timespec ts;
 		clock_gettime(CLOCK_REALTIME, &ts);
 		ts.tv_sec += wait_ms / 1000;
 		ts.tv_nsec += (wait_ms % 1000) * 1000 * 1000;
 		if (mq_timedsend((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, prio, &ts) != OK) {
-			printf("[osif_msg_send] mq time send fail\r\n");
+			ret = get_errno();
+			dbg("mq time send fail: %d \n", ret);
 			return _FAIL;
 		}
 	} else {
 		if (mq_send((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, prio) != OK) {
-			printf("[osif_msg_send] mq send fail\r\n");
+			ret = get_errno();
+			dbg("mq send fail: %d \n", ret);
 			return _FAIL;
 		}
 	}
@@ -543,9 +571,10 @@ bool osif_msg_send(void *p_handle, void *p_msg, uint32_t wait_ms)
 bool osif_msg_recv(void *p_handle, void *p_msg, uint32_t wait_ms)
 {
 	int prio;
+	int ret;
 
 	if (!p_handle) {
-		printf("[osif_msg_recv] p_handle is NULL\r\n");
+		dbg("p_handle is NULL \n");
 		return _FAIL;
 	}
 
@@ -555,15 +584,17 @@ bool osif_msg_recv(void *p_handle, void *p_msg, uint32_t wait_ms)
 		ts.tv_sec += wait_ms / 1000;
 		ts.tv_nsec += (wait_ms % 1000) * 1000 * 1000;
 		if (mq_timedreceive((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, &prio, &ts) == ERROR) {
-			if(ETIMEDOUT != get_errno())
+			ret = get_errno();
+			if (ETIMEDOUT != ret)
 			{
-				printf("[osif_msg_recv] mq time receive fail errno:%d\r\n", get_errno());
+				dbg("mq time receive fail errno: %d \n", ret);
 			}
 			return _FAIL;
 		}
 	} else {
 		if (mq_receive((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, &prio) == ERROR) {
-			printf("[osif_msg_recv] mq receive fail\r\n");
+			ret = get_errno();
+			dbg("mq receive fail: %d \n", ret);
 			return _FAIL;
 		}
 	}
@@ -662,13 +693,13 @@ void osif_timer_wrapper(void *timer)
 	osif_unlock(lock);
 
 	if (plist == &osif_timer_table) {
-		printf("[osif_timer_wrapper] find timer_entry fail\r\n");
+		dbg("find timer_entry fail \n");
 		return;
 	}
 
 	if (timer_entry->timer->reload) {
 		if (work_queue(LPWORK, timer_entry->timer->work_hdl, osif_timer_wrapper, (void *) (timer_entry->timer), (timer_entry->timer->timeout * TICK_PER_SEC / 1000L)) != OK) {
-			printf("[osif_timer_wrapper] work queue fail\r\n");
+			dbg("work queue fail \n");
 			timer_entry->timer->live = 0;
 		}
 	} else {
@@ -688,12 +719,12 @@ bool osif_timer_id_get(void **pp_handle, uint32_t *p_timer_id)
 	struct osif_timer_list *timer;
 
 	if (pp_handle == NULL || *pp_handle == NULL) {
-		printf("[osif_timer_id_get] pp_handle || *pp_handle is NULL\r\n");
+		dbg("pp_handle || *pp_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (p_timer_id == NULL) {
-		printf("[osif_timer_id_get] p_timer_id is NULL\r\n");
+		dbg("p_timer_id is NULL \n");
 		return _FAIL;
 	}
 
@@ -714,25 +745,25 @@ bool osif_timer_create(void **pp_handle, const char *p_timer_name, uint32_t time
 	struct osif_timer_entry *timer_entry;
 
 	if (!pp_handle) {
-		printf("[osif_timer_create] pp_handle is NULL\r\n");
+		dbg("pp_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (*pp_handle) {
-		printf("[osif_timer_create] timer already init\r\n");
+		dbg("timer already init \n");
 		return _FAIL;
 	}
 
 	timer = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct osif_timer_list));
 	if (timer == NULL) {
-		printf("[osif_timer_create] alloc osif_timer_list fail\r\n");
+		dbg("alloc osif_timer_list fail \n");
 		return _FAIL;
 	}
 	memset(timer, 0, sizeof(struct osif_timer_list));
 
 	timer->work_hdl = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct work_s));
 	if (timer->work_hdl == NULL) {
-		printf("[osif_timer_create] alloc work_s fail\r\n");
+		dbg("alloc work_s fail \n");
 		osif_mem_free(timer);
 		return _FAIL;
 	}
@@ -755,7 +786,7 @@ bool osif_timer_create(void **pp_handle, const char *p_timer_name, uint32_t time
 
 	timer_entry = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct osif_timer_entry));
 	if (timer_entry == NULL) {
-		printf("[osif_timer_create] alloc osif_timer_entry fail\r\n");
+		dbg("alloc osif_timer_entry fail \n");
 		osif_mem_free(timer->work_hdl);
 		osif_mem_free(timer);
 		return _FAIL;
@@ -779,13 +810,13 @@ bool osif_timer_start(void **pp_handle)
 	struct osif_timer_list *timer;
 
 	if (pp_handle == NULL || *pp_handle == NULL) {
-		printf("[osif_timer_start] pp_handle || *pp_handle is NULL\r\n");
+		dbg("pp_handle || *pp_handle is NULL \n");
 		return _FAIL;
 	}
 
 	timer = *pp_handle;
 	if (work_queue(LPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (timer->timeout * TICK_PER_SEC / 1000L)) != OK) {
-		printf("[osif_timer_start] work queue fail\r\n");
+		dbg("work queue fail \n");
 		return _FAIL;
 	}
 
@@ -803,7 +834,7 @@ bool osif_timer_restart(void **pp_handle, uint32_t interval_ms)
 	struct osif_timer_list *timer;
 
 	if (pp_handle == NULL || *pp_handle == NULL) {
-		printf("[osif_timer_restart] pp_handle || *pp_handle is NULL\r\n");
+		dbg("pp_handle || *pp_handle is NULL \n");
 		return _FAIL;
 	}
 
@@ -811,16 +842,16 @@ bool osif_timer_restart(void **pp_handle, uint32_t interval_ms)
 	ret = work_queue(LPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (interval_ms * TICK_PER_SEC / 1000L));
 	if (ret == -EALREADY) {
 		if (work_cancel(LPWORK, timer->work_hdl) != OK) {
-			printf("[osif_timer_restart] work cancel fail\r\n");
+			dbg("work cancel fail \n");
 			return _FAIL;
 		}
 
 		if (work_queue(LPWORK, timer->work_hdl, osif_timer_wrapper, (void *) (timer), (interval_ms * TICK_PER_SEC / 1000L)) != OK) {
-			printf("[osif_timer_restart] work queue fail\r\n");
+			dbg("work queue fail \n");
 			return _FAIL;
 		}
 	} else if (ret != OK) {
-		printf("[osif_timer_restart] work queue fail\r\n");
+		dbg("work queue fail \n");
 		return _FAIL;
 	}
 
@@ -838,13 +869,13 @@ bool osif_timer_stop(void **pp_handle)
 	struct osif_timer_list *timer;
 
 	if (pp_handle == NULL || *pp_handle == NULL) {
-		printf("[osif_timer_stop] pp_handle || *pp_handle is NULL\r\n");
+		dbg("pp_handle || *pp_handle is NULL \n");
 		return _FAIL;
 	}
 
 	timer = *pp_handle;
 	if (work_cancel(LPWORK, timer->work_hdl) != OK) {
-		printf("[osif_timer_stop] work cancel fail\r\n");
+		dbg("work cancel fail \n");
 		return _FAIL;
 	}
 
@@ -871,7 +902,7 @@ bool osif_timer_delete(void **pp_handle)
 	timer = *pp_handle;
 	ret = work_cancel(LPWORK, timer->work_hdl);
 	if (ret != OK && ret != -ENOENT) {
-		printf("[osif_timer_delete] work cancel fail\r\n");
+		dbg("work cancel fail \n");
 		return _FAIL;
 	}
 
@@ -891,7 +922,7 @@ bool osif_timer_delete(void **pp_handle)
 	osif_unlock(lock);
 
 	if (plist == &osif_timer_table) {
-		printf("[osif_timer_delete] find timer_entry fail\r\n");
+		dbg("find timer_entry fail \n");
 		return _FAIL;
 	}
 
@@ -919,12 +950,12 @@ bool osif_timer_state_get(void **pp_handle, uint32_t *p_timer_state)
 	struct osif_timer_list *timer;
 
 	if (pp_handle == NULL || *pp_handle == NULL) {
-		printf("[osif_timer_state_get] pp_handle || *pp_handle is NULL\r\n");
+		dbg("pp_handle || *pp_handle is NULL \n");
 		return _FAIL;
 	}
 
 	if (p_timer_state == NULL) {
-		printf("[osif_timer_state_get] p_timer_state is NULL\r\n");
+		dbg("p_timer_state is NULL \n");
 		return _FAIL;
 	}
 

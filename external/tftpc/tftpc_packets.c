@@ -119,7 +119,7 @@ int tftp_sockinit(struct sockaddr_in *server, in_addr_t addr)
 
 	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sd < 0) {
-		ndbg("socket failed: %d\n", errno);
+		printf("socket failed: %d\n", errno);
 		return ERROR;
 	}
 
@@ -129,7 +129,7 @@ int tftp_sockinit(struct sockaddr_in *server, in_addr_t addr)
 	timeo.tv_usec = (CONFIG_NETUTILS_TFTP_TIMEOUT % 10) * 100000;
 	ret = setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(struct timeval));
 	if (ret < 0) {
-		ndbg("setsockopt failed: %d\n", errno);
+		printf("setsockopt failed: %d\n", errno);
 	}
 
 	/* Initialize the server address structure */
@@ -229,7 +229,7 @@ int tftp_parseerrpacket(const uint8_t *buffer)
 	const char *errmsg = (const char *)&buffer[4];
 
 	if (opcode == TFTP_ERR) {
-		ndbg("ERR message: %s (%d)\n", errmsg, errcode);
+		printf("ERR message: %s (%d)\n", errmsg, errcode);
 		return OK;
 	}
 	return ERROR;
@@ -271,14 +271,14 @@ ssize_t tftp_recvfrom(int sd, void *buf, size_t len, struct sockaddr_in *from)
 			/* Check for a timeout */
 
 			if (errno == EAGAIN) {
-				ndbg("recvfrom timed out\n");
+				printf("recvfrom timed out\n");
 				return ERROR;
 			}
 
 			/* If EINTR, then loop and try again.  Other errors are fatal */
 
 			else if (errno != EINTR) {
-				ndbg("recvfrom failed: %d\n", errno);
+				printf("recvfrom failed: %d\n", errno);
 				return ERROR;
 			}
 		}
@@ -318,7 +318,7 @@ ssize_t tftp_sendto(int sd, const void *buf, size_t len, struct sockaddr_in *to)
 			/* If EINTR, then loop and try again.  Other errors are fatal */
 
 			if (errno != EINTR) {
-				ndbg("sendto failed: %d\n", errno);
+				printf("sendto failed: %d\n", errno);
 				return ERROR;
 			}
 		}

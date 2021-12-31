@@ -28,12 +28,6 @@
 #include <errno.h>
 #include <semaphore.h>
 #include <sys/types.h>
-#ifdef CONFIG_BOARDCTL_RESET
-#include <sys/boardctl.h>
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <tinyara/reboot_reason.h>
-#endif
-#endif
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/mm/mm.h>
@@ -41,6 +35,7 @@
 #include <tinyara/init.h>
 #include <tinyara/board.h>
 #include <tinyara/wdog.h>
+#include <tinyara/reboot_reason.h>
 
 #include "task/task.h"
 #include "sched/sched.h"
@@ -74,30 +69,6 @@ static faultmsg_t g_prealloc_faultmsg[FAULTMSG_COUNT];
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-/****************************************************************************
- * Name: binary_manager_reset_board
- *
- * Description:
- *	 This function resets the board.
- *
- ****************************************************************************/
-static void binary_manager_reset_board(void)
-{
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	WRITE_REBOOT_REASON(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
-#endif
-#ifdef CONFIG_BOARDCTL_RESET
-	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
-#else
-	(void)irqsave();
-	sched_lock();
-	for (;;) {
-		lldbg("\nASSERT!! Push the reset button!\n");
-		up_mdelay(300000);  // Print the message every 5 min
-	}
-#endif
-}
-
 /****************************************************************************
  * Name: binary_manager_recover_tcb
  *
@@ -136,7 +107,8 @@ static void binary_manager_recover_tcb(struct tcb_s *tcb)
  * Name: binary_manager_deactivate_binary
  *
  * Description:
- *	 This function excludes all active threads in a same binary from scheduling.
+ *   This function excludes all active threads in a same binary from scheduling
+ *   and all user binaries' state are changed to BINARY_FAULT.
  *
  ****************************************************************************/
 static int binary_manager_deactivate_binary(int bin_idx)
@@ -144,24 +116,38 @@ static int binary_manager_deactivate_binary(int bin_idx)
 	irqstate_t flags;
 	struct tcb_s *ptr;
 
-	if (bin_idx > 0) {
-		/* Get a tcb of main task */
-		ptr = BIN_NRTLIST(bin_idx);
-		while (ptr) {
-			flags = irqsave();
-			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			binary_manager_recover_tcb(ptr);
-			/* Remove the TCB from the task list associated with the state */
-			BM_DEACTIVATE_TASK(ptr);
-			ptr = ptr->bin_flink;
-			irqrestore(flags);
-		}
-		/* Release all kernel semaphores held by the threads in binary */
-		binary_manager_release_binary_sem(bin_idx);
-		return OK;
+	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
+		bmdbg("Invalid binary index, %d\n", bin_idx);
+		return BINMGR_INVALID_PARAM;
 	}
 
-	return ERROR;
+	/* Update binary state */
+	BIN_STATE(bin_idx) = BINARY_FAULT;
+
+	if (bin_idx == BM_CMNLIB_IDX) {
+		/*
+		 * In case of common binary, it doesn't need to deactivate binary
+		 * because all threads of common binary are linked to a list of user binary and they are deactivated by user binary's deactivation.
+		 * So it is enough to update state of common binary to BINARY_FAULT.
+		 */
+		return BINMGR_OK;
+	}
+
+	/* Get a tcb of main task */
+	ptr = BIN_NRTLIST(bin_idx);
+	while (ptr) {
+		flags = irqsave();
+		/* Recover semaphores, message queue, and watchdog timer resources.*/
+		binary_manager_recover_tcb(ptr);
+		/* Remove the TCB from the task list associated with the state */
+		BM_DEACTIVATE_TASK(ptr);
+		ptr = ptr->bin_flink;
+		irqrestore(flags);
+	}
+	/* Release all kernel semaphores held by the threads in binary */
+	binary_manager_release_binary_sem(bin_idx);
+
+	return BINMGR_OK;
 }
 
 /****************************************************************************
@@ -189,7 +175,7 @@ static void binary_manager_unblock_fault_message_sender(int bin_idx)
 	}
 
 	/* Board reset on failure of recovery */
-	binary_manager_reset_board();
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 }
 
 /****************************************************************************
@@ -226,26 +212,24 @@ void binary_manager_deactivate_rtthreads(int bin_idx)
  *	 This function deactivates RT threads and unblocks fault message sender.
  *
  ****************************************************************************/
-void binary_manager_recover_userfault(uint32_t assert_pc)
+void binary_manager_recover_userfault(void)
 {
 	int bin_idx;
-	struct tcb_s *tcb;
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	if (is_common_library_space((void *)assert_pc)) {
-		/* If a fault happens in common library, it needs to reload all user binaries */
-		int bin_count = binary_manager_get_ucount();
-		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
-			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-			binary_manager_deactivate_rtthreads(bin_idx);
-		}
-		/* Send fault message and Unblock fault message sender */
-		return binary_manager_unblock_fault_message_sender(BM_CMNLIB_IDX);
-	}
-#endif
+	/* If a fault happens in common binary or user binaries, it needs to reload all user binaries */
+	int bin_count = binary_manager_get_ucount();
 
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
+		binary_manager_deactivate_rtthreads(bin_idx);
+	}
+	/* Send fault message and Unblock fault message sender */
+	return binary_manager_unblock_fault_message_sender(bin_idx);
+#else
 	/* Get a tcb of fault thread for fault handling */
-	tcb = this_task();
+	struct tcb_s *tcb = this_task();
+
 	if (tcb != NULL && tcb->group != NULL) {
 		/* Exclude realtime task/pthreads from scheduling */
 		bin_idx = tcb->group->tg_binidx;
@@ -254,9 +238,10 @@ void binary_manager_recover_userfault(uint32_t assert_pc)
 		/* Send fault message and Unblock fault message sender */
 		return binary_manager_unblock_fault_message_sender(bin_idx);
 	}
+#endif
 
 	/* Board reset on failure of recovery */
-	binary_manager_reset_board();
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 }
 
 
@@ -332,33 +317,27 @@ void binary_manager_recovery(int bin_idx)
 	}
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	/* If a fault happens in common library, we need to reload the library and all user binaries */
+	/* If a fault happens in common or user binaries, we need to reload the library and all user binaries */
 	int bidx;
-	if (bin_idx == BM_CMNLIB_IDX) {
-		int bin_count = binary_manager_get_ucount();
-		for (bidx = 1; bidx <= bin_count; bidx++) {
-			/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-			ret = binary_manager_deactivate_binary(bidx);
-			if (ret != OK) {
-				bmlldbg("Failure during recovery excluding binary pid = %d\n", bidx);
-				goto reboot_board;
-			}
+	int bin_count = binary_manager_get_ucount();
 
-			BIN_STATE(bidx) = BINARY_FAULT;
-		}
-	} else
-#endif
-	{
+	for (bidx = 0; bidx <= bin_count; bidx++) {
 		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
-		ret = binary_manager_deactivate_binary(bin_idx);
-		if (ret != OK) {
-			bmlldbg("Failed to deactivate binary\n");
+		ret = binary_manager_deactivate_binary(bidx);
+		if (ret != BINMGR_OK) {
+			bmlldbg("Failed to deactivate binary, bin idx %d\n", bidx);
 			goto reboot_board;
 		}
 	}
-
+#else
+	/* Exclude its all children from scheduling if the binary is registered with the binary manager */
+	ret = binary_manager_deactivate_binary(bin_idx);
+	if (ret != BINMGR_OK) {
+		bmlldbg("Failed to deactivate binary, bin idx %d\n", bin_idx);
+		goto reboot_board;
+	}
+#endif
 	/* Create loader to reload binary */
-	BIN_STATE(bin_idx) = BINARY_FAULT;
 	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);
 	if (ret == OK) {
 		abort_mode = false;
@@ -369,5 +348,5 @@ void binary_manager_recovery(int bin_idx)
 reboot_board:
 	/* Reboot the board  */
 	bmlldbg("RECOVERY FAIL, BOARD RESET!!\n");
-	binary_manager_reset_board();
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 }

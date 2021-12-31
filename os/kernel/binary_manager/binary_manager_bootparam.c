@@ -31,7 +31,7 @@
 #include "binary_manager.h"
 
 /* Data for Boot parameters */
-static binmgr_bpinfo_t bp_info;
+static binmgr_bpinfo_t g_bp_info;
 
 #define BP_SEEK_OFFSET(index)   (index == 0 ? 0 : BOOTPARAM_PARTSIZE / 2)
 
@@ -52,20 +52,24 @@ void binary_manager_register_bppart(int part_num, int part_size)
 		return;
 	}
 
-	bp_info.part_num = part_num;
+	g_bp_info.part_num = part_num;
 
 	bmvdbg("[BOOTPARAM] part num %d\n", part_num);
 }
 
-bool is_valid_bootparam(binmgr_bpdata_t *bp_data)
+bool is_valid_bootparam(char *bootparam)
 {
+	binmgr_bpdata_t *bp_data = (binmgr_bpdata_t *)bootparam;
+
 	if (!bp_data) {
 		bmdbg("Boot param is NULL\n");
 		return false;
 	} else if (bp_data->format_ver == 0 || bp_data->active_idx >= binary_manager_get_kdata()->part_count) {
 		bmdbg("Invalid data. ver: %u, active index: %u, addresses: %x, %x\n", bp_data->version, bp_data->active_idx, bp_data->address[0], bp_data->address[1]);
 		return false;
-	} else if (bp_data->crc_hash != crc32((uint8_t *)bp_data + CHECKSUM_SIZE, sizeof(binmgr_bpdata_t) - CHECKSUM_SIZE)) {
+	}
+
+	if (bp_data->crc_hash != crc32((uint8_t *)bootparam + CHECKSUM_SIZE, BOOTPARAM_SIZE - CHECKSUM_SIZE)) {
 		bmdbg("Invalid crc32 value, crc32 %u, ver: %u, active index: %u, addresses: %x, %x\n", bp_data->crc_hash, bp_data->version, bp_data->active_idx, bp_data->address[0], bp_data->address[1]);
 		return false;
 	}
@@ -73,70 +77,284 @@ bool is_valid_bootparam(binmgr_bpdata_t *bp_data)
 	return true;
 }
 
-/*****************************************************************************************************
- * Name: binary_manager_scan_bootparam
- *
- * Description:
- *	 This function updates the latest boot parameter information by scanning all boot parameters.
- *
- *****************************************************************************************************/
-int binary_manager_scan_bootparam(void)
+static int binary_manager_open_bootparam(void)
 {
 	int fd;
-	int ret;
-	int bp_idx;
-	int latest_idx = -1;
-	uint32_t latest_ver = 0;
-	binmgr_bpdata_t bp_data[BOOTPARAM_COUNT];
 	char bp_devpath[BINARY_PATH_LEN];
 
-	if (bp_info.part_num < 0) {
-		bmdbg("Invalid Bootparam partition Num : %d\n", bp_info.part_num);
+	if (g_bp_info.part_num < 0) {
+		bmdbg("Invalid Bootparam partition Num : %d\n", g_bp_info.part_num);
 		return BINMGR_INVALID_PARAM;
 	}
 
 	/* Open dev to access boot parameters */
-	snprintf(bp_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, bp_info.part_num);
+	snprintf(bp_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, g_bp_info.part_num);
 	fd = open(bp_devpath, O_RDWR, 0666);
 	if (fd < 0) {
 		bmdbg("ERROR: Get a fd of bootparam, errno %d\n", errno);
 		return BINMGR_OPERATION_FAIL;
+	}
+	return fd;
+}
+
+/*****************************************************************************************************
+ * Name: binary_manager_scan_bootparam
+ *
+ * Description:
+ *	 This function checks the latest boot parameter information by scanning all boot parameters.
+ *
+ *****************************************************************************************************/
+int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
+{
+	int fd;
+	int ret;
+	int bp_idx;
+	uint32_t latest_ver = 0;
+	char *bootparam;
+
+	if (bp_info == NULL) {
+		bmdbg("Invalid input bp_info\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	fd = binary_manager_open_bootparam();
+	if (fd < 0) {
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	bootparam = (char *)kmm_malloc(BOOTPARAM_SIZE);
+	if (!bootparam) {
+		bmdbg("Failed to allocate memory to read bootparam\n");
+		return BINMGR_OUT_OF_MEMORY;
 	}
 
 	for (bp_idx = 0; bp_idx < BOOTPARAM_COUNT; bp_idx++) {
 		ret = lseek(fd, BP_SEEK_OFFSET(bp_idx), SEEK_SET);
 		if (ret < 0) {
 			bmdbg("ERROR: Seek Failed, errno %d\n", errno);
+			kmm_free(bootparam);
 			close(fd);
 			return BINMGR_OPERATION_FAIL;
 		}
+
 		/* Read bootparam data */
-		ret = read(fd, (FAR uint8_t *)&bp_data[bp_idx], sizeof(binmgr_bpdata_t));
-		if (ret != sizeof(binmgr_bpdata_t)) {
+		ret = read(fd, (FAR uint8_t *)bootparam, BOOTPARAM_SIZE);
+		if (ret != BOOTPARAM_SIZE) {
 			continue;
-		} else if (!is_valid_bootparam(&bp_data[bp_idx])) {
+		} else if (!is_valid_bootparam(bootparam)) {
 			continue;
 		}
 
 		/* Update the latest version and index */
-		if (latest_ver < bp_data->version) {
-			latest_ver = bp_data->version;
-			latest_idx = bp_idx;
-			bmvdbg("Latest Version %d, index %d\n", latest_ver, latest_idx);
+		if (latest_ver < ((binmgr_bpdata_t *)bootparam)->version) {
+			latest_ver = ((binmgr_bpdata_t *)bootparam)->version;
+			/* Update bootparam data */
+			bp_info->inuse_idx = bp_idx;
+			memcpy(&bp_info->bp_data, bootparam, sizeof(binmgr_bpdata_t));
+			bmvdbg("Latest Version %d, index %d\n", latest_ver, bp_idx);
 		}
 	}
 	close(fd);
+	kmm_free(bootparam);
 
-	if (latest_ver == 0 || latest_idx < 0) {
+	if (latest_ver == 0) {
 		bmdbg("Failed to find valid bootparam\n");
 		return BINMGR_NOT_FOUND;
 	}
 
-	bp_info.inuse_idx = latest_idx;
-	bp_info.bp_data = bp_data[latest_idx];
-	bmvdbg("Bootparam[%d] ver: %u, active index: %u, addresses: %x, %x\n", latest_idx, bp_info.bp_data.version, bp_info.bp_data.active_idx, bp_info.bp_data.address[0], bp_info.bp_data.address[1]);
+	return BINMGR_OK;
+}
+
+/******************************************************************************
+* Name: binary_manager_update_bpinfo
+*
+* Description:
+*	 This function saves the latest boot parameter information to g_bp_info.
+*
+******************************************************************************/
+int binary_manager_update_bpinfo(void)
+{
+	int ret;
+	binmgr_bpinfo_t bp_info;
+
+	ret = binary_manager_scan_bootparam(&bp_info);
+	if (ret == BINMGR_OK) {	
+		/* Set scanned bootparam data to g_bp_info */
+		g_bp_info.inuse_idx = bp_info.inuse_idx;
+		g_bp_info.bp_data = bp_info.bp_data;
+		bmvdbg("Bootparam[%d] ver: %u, active index: %u, addresses: %x, %x\n", g_bp_info.inuse_idx, g_bp_info.bp_data.version, g_bp_info.bp_data.active_idx, g_bp_info.bp_data.address[0], g_bp_info.bp_data.address[1]);
+	}
+
+	return ret;
+}
+
+/*********************************************************************************
+* Name: binary_manager_update_bootparam
+*
+* Description:
+*	 This function updates input bootparam data, bp_data to inactive bootparam partition.
+*
+********************************************************************************/
+int binary_manager_write_bootparam(char *bootparam)
+{
+	int fd;
+	int ret;	
+	uint8_t inuse_idx;
+
+	if (!bootparam) {
+		bmdbg("ERROR: Input bp data is NULL\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	if (g_bp_info.inuse_idx >= BOOTPARAM_COUNT) {
+		bmdbg("ERROR: Invalid bootparam data, inuse idx %u\n", g_bp_info.inuse_idx);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	fd = binary_manager_open_bootparam();
+	if (fd < 0) {
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	/* Update bootparam data : CRC */
+	((binmgr_bpdata_t *)bootparam)->crc_hash = crc32((uint8_t *)bootparam + CHECKSUM_SIZE, BOOTPARAM_SIZE - CHECKSUM_SIZE);
+	inuse_idx = g_bp_info.inuse_idx ^ 1;
+
+	ret = lseek(fd, BP_SEEK_OFFSET(inuse_idx), SEEK_SET);
+	if (ret < 0) {
+		bmdbg("ERROR: Seek Failed, errno %d\n", errno);
+		goto errout_with_fd;
+	}
+
+	/* Write bootparam data */
+	ret = write(fd, (FAR uint8_t *)bootparam, BOOTPARAM_SIZE);
+	if (ret != BOOTPARAM_SIZE) {
+		bmdbg("ERROR: Write Failed, errno %d\n", errno);
+		goto errout_with_fd;
+	}
+	close(fd);
 
 	return BINMGR_OK;
+errout_with_fd:
+	close(fd);
+	return BINMGR_OPERATION_FAIL;
+}
+
+void binary_manager_update_bootparam(int requester_pid, uint8_t type)
+{
+	int ret;
+	char *bootparam;
+	bool is_all_updatable;
+	char q_name[BIN_PRIVMQ_LEN];
+	binmgr_bpdata_t update_bp_data;
+	binmgr_setbp_response_t response_msg;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int bin_idx;
+	bool need_update;
+	uint32_t bin_count;
+#endif
+
+	memset((void *)&response_msg, 0, sizeof(binmgr_setbp_response_t));
+
+	if (requester_pid < 0) {
+		bmdbg("Invalid requester pid %d\n", requester_pid);
+		return;
+	}
+
+	bootparam = (char *)kmm_malloc(BOOTPARAM_SIZE);
+	if (!bootparam) {
+		bmdbg("Failed to allocate memory to read bootparam\n");
+		ret = BINMGR_OUT_OF_MEMORY;
+		goto send_response;
+	}
+	memset(bootparam, 0xff, BOOTPARAM_SIZE);
+
+	response_msg.result = BINMGR_OK;
+	is_all_updatable = true;
+
+	/* Get current bootparam data and update version */
+	memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
+	update_bp_data.version++;
+
+	if (BM_CHECK_GROUP(type, BINARY_KERNEL)) {
+		/* Update bootparam and Reboot if new kernel binary exists */
+		ret = binary_manager_check_kernel_update();
+		if (ret == BINMGR_OK) {
+			/* Update index for inactive partition */
+			update_bp_data.active_idx ^= 1;
+		} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
+			bmdbg("No binary to update\n");
+			is_all_updatable = false;
+			response_msg.data.result[BINARY_KERNEL] = BINMGR_ALREADY_UPDATED;
+		} else {
+			bmdbg("Failed to check kernel update, %d\n", ret);
+			goto send_response;
+		}
+	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	need_update = false;
+
+	if (BM_CHECK_GROUP(type, BINARY_USERAPP)) {
+		bin_count = binary_manager_get_ucount();
+		/* Reload binaries if new binary is scanned */
+		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+			/* Scan binary files */
+			ret = binary_manager_check_user_update(bin_idx);
+			if (ret == BINMGR_OK) {
+				/* Update index for inactive partition */
+				update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
+				need_update = true;
+			} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
+				bmdbg("No binary to update: bin_idx %d, ret %d\n", bin_idx, ret);
+			} else {
+				bmdbg("Failed to check user update: bin_idx %d, ret %d\n", bin_idx, ret);
+				goto send_response;
+			}
+		}
+		if (!need_update) {
+			bmdbg("No App binaries to update\n");
+			is_all_updatable = false;
+			response_msg.data.result[BINARY_USERAPP] = BINMGR_ALREADY_UPDATED;
+		}
+	}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	if (BM_CHECK_GROUP(type, BINARY_COMMON)) {
+		ret = binary_manager_check_user_update(BM_CMNLIB_IDX);
+		if (ret == BINMGR_OK) {
+			/* Update index for inactive partition */
+			update_bp_data.app_data[BIN_BPIDX(BM_CMNLIB_IDX)].useidx ^= 1;
+		} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
+			bmdbg("No binary to update\n");
+			is_all_updatable = false;
+			response_msg.data.result[BINARY_COMMON] = BINMGR_ALREADY_UPDATED;
+		} else {
+			bmdbg("Failed to check common update, %d\n", ret);
+			goto send_response;
+		}
+	}
+#endif
+#endif
+
+	if (is_all_updatable) {
+		/* Then, Write bootparam with updated bootparam data */
+		memcpy(bootparam, &update_bp_data, sizeof(binmgr_bpdata_t));
+		ret = binary_manager_write_bootparam(bootparam);
+		if (ret == BINMGR_OK) {
+			bmvdbg("Update bootparam SUCCESS\n");
+		} else {
+			bmdbg("Failed to update bootparam, %d\n", ret);
+		}
+	} else {
+		ret = BINMGR_ALREADY_UPDATED;
+	}
+
+send_response:
+	kmm_free(bootparam);
+	response_msg.result = ret;
+	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
+	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_setbp_response_t));
 }
 
 /****************************************************************************
@@ -148,5 +366,34 @@ int binary_manager_scan_bootparam(void)
  ****************************************************************************/
 binmgr_bpdata_t *binary_manager_get_bpdata(void)
 {
-	return &bp_info.bp_data;
+	return &g_bp_info.bp_data;
+}
+
+/****************************************************************************
+ * Name: binary_manager_set_bpdata
+ *
+ * Description:
+ *	 This function set boot parameter data to g_bp_info.
+ *
+ ****************************************************************************/
+int binary_manager_set_bpdata(binmgr_bpdata_t *bp_data)
+{
+	if (bp_data == NULL) {
+		return ERROR;
+	}
+	memcpy(&g_bp_info.bp_data, bp_data, sizeof(binmgr_bpdata_t));
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: binary_manager_set_bp_index
+ *
+ * Description:
+ *	 This function set boot parameter index to g_bp_info.
+ *
+ ****************************************************************************/
+void binary_manager_set_bpidx(uint8_t index)
+{
+	g_bp_info.inuse_idx = index;
 }

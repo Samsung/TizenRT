@@ -44,6 +44,7 @@
 #include "nvic.h"
 #include "up_internal.h"
 
+extern uint32_t system_exception_location;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -85,6 +86,8 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 	(void)irqsave();
 	uint32_t *regs = (uint32_t *)context;
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
+	system_exception_location = regs[REG_R15];
+
 	lldbg("PANIC!!! Usagefault occurred while executing instruction at address : 0x%08x\n", regs[REG_R15]);
 	lldbg("CFAULTS: 0x%08x\n", cfsr);
 
@@ -98,6 +101,9 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 		lldbg("A coprocessor error has occurred.\n");
 	} else if (cfsr & INVPC) {
 		lldbg("An integrity check error has occurred on EXC_RETURN. PC value might be invalid.\n");
+		/* As PC value might be invalid use LR value to determine if
+		 * the crash occurred in the kernel space or in the user space */
+		system_exception_location = regs[REG_R14];
 	} else if (cfsr & INVSTATE) {
 		lldbg("Invalid state. Instruction executed with invalid EPSR.T or EPSR.IT field.\n");
 	} else if (cfsr & UNDEFINSTR) {

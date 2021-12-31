@@ -77,9 +77,6 @@ static void _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 	case LWNL_EVT_BLE_SCAN_STATE:
 		LWNL_SET_MSG(&g_msg, BLE_EVT_SCAN_STATE, BLE_MANAGER_FAIL, param, NULL);
 		break;
-	case LWNL_EVT_BLE_SCAN_DATA:
-		LWNL_SET_MSG(&g_msg, BLE_EVT_SCAN_DATA, BLE_MANAGER_FAIL, param, NULL);
-		break;
 	default:
 		BLE_LOG_ERROR("Bad status received (%d)\n", status.evt);
 		BLE_ERR;
@@ -92,7 +89,6 @@ static void _lwnl_call_event(int fd, lwnl_cb_status status, int len)
  */
 int lwnl_fetch_ble_event(int fd, void *buf, int buflen)
 {
-	#define LWNL_CB_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
 	lwnl_cb_status status;
 	uint32_t len;
 	char type_buf[LWNL_CB_HEADER_LEN] = {0,};
@@ -115,7 +111,7 @@ int lwnl_fetch_ble_event(int fd, void *buf, int buflen)
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	BLE_LOG_VERBOSE("dev state(%d) length(%d)\n", status.evt, len);
+	BLE_LOG_DEBUG("[BLEMGR] dev state(%d) length(%d)\n", status.evt, len);
 	_lwnl_call_event(fd, status, len);
 	hmsg->msg = &g_msg;
 	hmsg->signal = NULL;

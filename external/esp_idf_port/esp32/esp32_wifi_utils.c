@@ -36,9 +36,6 @@
 #include <tinyara/wdog.h>
 #include <tinyara/arch.h>
 #include <tinyara/cancelpt.h>
-#include <tinyara/wifi/wifi_common.h>
-
-#include <tinyara/wifi/wifi_utils.h>
 
 #include "esp_attr.h"
 #include "esp_phy_init.h"
@@ -135,8 +132,8 @@ void scan_done_handler(void)
 		return;
 	}
 
-	wifi_utils_scan_list_s *scan_list = NULL;
-	scan_list = (wifi_utils_scan_list_s *)zalloc(sta_number * sizeof(wifi_utils_scan_list_s));
+	trwifi_scan_list_s *scan_list = NULL;
+	scan_list = (trwifi_scan_list_s *)zalloc(sta_number * sizeof(trwifi_scan_list_s));
 	if (scan_list == NULL) {
 		ESP_LOGE(TAG, "Failed to malloc buffer to print scan results");
 		return;

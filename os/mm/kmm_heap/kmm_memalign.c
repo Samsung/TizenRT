@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 
+#include <debug.h>
 #include <stdlib.h>
 
 #include <tinyara/mm/mm.h>
@@ -89,19 +90,31 @@
 #if CONFIG_KMM_NHEAPS > 1
 void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 {
+	void *ret;
 	struct mm_heap_s *kheap;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("kmm_memalign_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("kmm_memalign_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
+		return NULL;
+	}
+
+	if (size == 0) {
 		return NULL;
 	}
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	return mm_memalign(&kheap[heap_index], alignment, size, retaddr);
+	ret = mm_memalign(&kheap[heap_index], alignment, size, caller_retaddr);
 #else
-	return mm_memalign(&kheap[heap_index], alignment, size);
+	ret = mm_memalign(&kheap[heap_index], alignment, size);
 #endif
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
+	}
+	return ret;
 }
 #endif
 
@@ -124,11 +137,18 @@ FAR void *kmm_memalign(size_t alignment, size_t size)
 {
 	void *ret;
 	int kheap_idx;
-	struct mm_heap_s *kheap = kmm_get_heap();
-	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
+
+	if (size == 0) {
+		return NULL;
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ARCH_GET_RET_ADDRESS
-		ret = mm_memalign(&kheap[kheap_idx], alignment, size, retaddr);
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
+	struct mm_heap_s *kheap = kmm_get_heap();
+	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ret = mm_memalign(&kheap[kheap_idx], alignment, size, caller_retaddr);
 #else
 		ret = mm_memalign(&kheap[kheap_idx], alignment, size);
 #endif
@@ -136,6 +156,8 @@ FAR void *kmm_memalign(size_t alignment, size_t size)
 			return ret;
 		}
 	}
+
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, KERNEL_HEAP);
 	return NULL;
 }
 

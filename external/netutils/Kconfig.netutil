@@ -5,6 +5,7 @@
 
 config NETUTILS_NETLIB
 	bool "Network support library"
+	depends on NET
 	default n
 	---help---
 		Enable support for the network support library.
@@ -18,7 +19,7 @@ config NET_NETMON
 
 config NETUTILS_STATS_DISPLAY_TOOL
 	bool "Enable network statistics Tool"
-	select NET_STATS
+	depends on NET_STATS
 	default y
 	---help---
 		Enable support for the network statistics.

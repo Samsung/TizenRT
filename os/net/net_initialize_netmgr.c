@@ -21,9 +21,6 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "netmgr/netstack.h"
-#ifdef CONFIG_NET_LOCAL
-#include "utils/utils.h"
-#endif
 #include <tinyara/net/netlog.h>
 
 #define TAG "[NETMGR]"
@@ -69,20 +66,20 @@ void net_setup(void)
 	if (!g_netmgr.dev) {
 		g_netmgr.dev = (void *)kmm_zalloc(sizeof(struct lwnl_lowerhalf_s));
 		if (!g_netmgr.dev) {
-			NET_LOGE(TAG, "!!!alloc dev fail!!!\n");
+			NET_LOGKE(TAG, "!!!alloc dev fail!!!\n");
 		}
 	}
 
 	res = lwnl_register((struct lwnl_lowerhalf_s *)g_netmgr.dev);
 	if (res < 0) {
-		NET_LOGE(TAG, "!!!register device fail!!!\n");
+		NET_LOGKE(TAG, "!!!register device fail!!!\n");
 	}
 #endif
 
 	struct netstack *stk = get_netstack(TR_SOCKET);
 	NETSTACK_CALL_RET(stk, init, (NULL), res);
 	if (res < 0) {
-		NET_LOGE(TAG, "!!!initialize stack fail!!!\n");
+		NET_LOGKE(TAG, "!!!initialize stack fail!!!\n");
 	}
 	netdev_mgr_start();
 }
@@ -105,11 +102,6 @@ void net_setup(void)
  ****************************************************************************/
 void net_initialize(void)
 {
-#ifdef CONFIG_NET_LOCAL
-	/* Initialize the local, "Unix domain" socket support */
-	local_initialize();
-#endif
-
 #ifdef CONFIG_VIRTUAL_WLAN
 	vwifi_start();
 #endif
@@ -118,11 +110,11 @@ void net_initialize(void)
 	int res = -1;
 	NETSTACK_CALL_RET(stk, start, (NULL), res);
 	if (res < 0) {
-		NET_LOGE(TAG, "!!!start stack fail!!!\n");
+		NET_LOGKE(TAG, "!!!start stack fail!!!\n");
 		assert(0);
 	}
 	if (trwifi_run_handler() != 0) {
-		NET_LOGE(TAG, "!!!start event handler fail!!!\n");
+		NET_LOGKE(TAG, "!!!start event handler fail!!!\n");
 		assert(0);
 	}
 

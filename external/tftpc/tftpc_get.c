@@ -105,13 +105,13 @@ static inline ssize_t tftp_write(int fd, const uint8_t *buf, size_t len)
 		/* Check for non-EINTR errors */
 
 		if (nbyteswritten < 0) {
-			ndbg("write failed: %d\n", errno);
+			printf("write failed: %d\n", errno);
 			return ERROR;
 		}
 
 		/* Handle partial writes */
 
-		nvdbg("Wrote %d bytes to file\n", nbyteswritten);
+		printf("Wrote %d bytes to file\n", nbyteswritten);
 		left -= nbyteswritten;
 		buf += nbyteswritten;
 	}
@@ -175,7 +175,7 @@ int tftpget(FAR const char *remote, FAR const char *local, in_addr_t addr, bool 
 
 	packet = (FAR uint8_t *)zalloc(TFTP_IOBUFSIZE);
 	if (!packet) {
-		ndbg("packet memory allocation failure\n");
+		printf("packet memory allocation failure\n");
 		set_errno(ENOMEM);
 		goto errout;
 	}
@@ -244,13 +244,13 @@ int tftpget(FAR const char *remote, FAR const char *local, in_addr_t addr, bool 
 				/* Verify the sender address and port number */
 
 				if (server.sin_addr.s_addr != from.sin_addr.s_addr) {
-					nvdbg("Invalid address in DATA\n");
+					printf("Invalid address in DATA\n");
 					retry--;
 					continue;
 				}
 
 				if (server.sin_port && server.sin_port != from.sin_port) {
-					nvdbg("Invalid port in DATA\n");
+					printf("Invalid port in DATA\n");
 					len = tftp_mkerrpacket(packet, TFTP_ERR_UNKID, TFTP_ERRST_UNKID);
 					ret = tftp_sendto(sd, packet, len, &from);
 					retry--;
@@ -262,14 +262,14 @@ int tftpget(FAR const char *remote, FAR const char *local, in_addr_t addr, bool 
 				if (nbytesrecvd < TFTP_DATAHEADERSIZE) {
 					/* Packet is not big enough to be parsed */
 
-					nvdbg("Tiny data packet ignored\n");
+					printf("Tiny data packet ignored\n");
 					continue;
 				}
 
 				if (tftp_parsedatapacket(packet, &opcode, &rblockno) != OK || blockno != rblockno) {
 					/* Opcode is not TFTP_DATA or the block number is unexpected */
 
-					nvdbg("Parse failure\n");
+					printf("Parse failure\n");
 					if (opcode > TFTP_MAXRFC1350) {
 						len = tftp_mkerrpacket(packet, TFTP_ERR_ILLEGALOP, TFTP_ERRST_ILLEGALOP);
 						ret = tftp_sendto(sd, packet, len, &from);
@@ -292,7 +292,7 @@ int tftpget(FAR const char *remote, FAR const char *local, in_addr_t addr, bool 
 		/* Did we exhaust all of the retries? */
 
 		if (retry == TFTP_RETRIES) {
-			nvdbg("Retry limit exceeded\n");
+			printf("Retry limit exceeded\n");
 			goto errout_with_sd;
 		}
 
@@ -314,7 +314,7 @@ int tftpget(FAR const char *remote, FAR const char *local, in_addr_t addr, bool 
 		if (ret != len) {
 			goto errout_with_sd;
 		}
-		nvdbg("ACK blockno %d\n", blockno);
+		printf("ACK blockno %d\n", blockno);
 	} while (ndatabytes >= TFTP_DATASIZE);
 
 	/* Return success */

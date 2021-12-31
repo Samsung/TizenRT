@@ -22,11 +22,13 @@
 #include <string.h>
 #include <sys/types.h>
 #include <netutils/netlib.h>
+#include <tinyara/net/if/wifi.h>
 #include <tinyara/net/netlog.h>
-#include "wifi_manager_error.h"
 #include "wifi_manager_dhcp.h"
-#define TAG "[WM]"
-
+#include "wifi_manager_event.h"
+#include "wifi_manager_msghandler.h"
+#include "wifi_manager_error.h"
+#include "wifi_manager_utils.h"
 /**
  * Enum, definitions and variables
  */
@@ -48,12 +50,23 @@
 			NET_LOGE(TAG, "set route addr error\n");               \
 		}                                                       \
 	} while (0)
+#define TAG "[WM]"
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 static dhcp_node_s g_dhcp_list = {WIFIMGR_IP4_ZERO, WIFIMGR_MAC_ZERO};
 #endif
-
 static uint8_t num_sta = 0;
+
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
+void _wifi_dhcps_event(dhcp_evt_type_e type, void *data)
+{
+	if (type == DHCP_ACK_EVT) {
+		wifimgr_msg_s msg = {WIFIMGR_EVT_DHCPS_ASSIGN_IP, WIFI_MANAGER_FAIL, data, NULL};
+		WIFIMGR_CHECK_RESULT_NORET(wifimgr_post_message(&msg), (TAG, "handle dhcpd event fail\n"));
+	}
+	return;
+}
+#endif
 
 /**
  * Internal DHCP server APIs
@@ -89,7 +102,6 @@ uint8_t dhcps_get_num(void)
 	return num_sta;
 }
 
-
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 static void _dhcps_remove_list(void)
 {
@@ -99,7 +111,6 @@ static void _dhcps_remove_list(void)
 		g_dhcp_list.macaddr[i] = 0;
 	}
 }
-
 
 dhcp_status_e dhcps_add_node(void *msg)
 {
@@ -128,7 +139,6 @@ dhcp_status_e dhcps_add_node(void *msg)
 	return DHCP_OK;
 }
 
-
 void dhcps_del_node(void)
 {
 	//TODO: Currently only one client can be joined and left
@@ -138,7 +148,7 @@ void dhcps_del_node(void)
 	}
 }
 
-wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined_cb cb)
+wifi_manager_result_e wm_dhcps_start(void)
 {
 #ifdef CONFIG_NET_DHCP
 	struct in_addr ip = {.s_addr = CONFIG_NETUTILS_DHCPD_ROUTERIP};
@@ -153,7 +163,7 @@ wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined_cb cb)
 	_dhcps_remove_list();
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
 
-	if (dhcp_server_start(WIFIMGR_SOFTAP_IFNAME, cb) != OK) {
+	if (dhcp_server_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcps_event) != 0) {
 		NET_LOGE(TAG, "[DHCP] DHCP Server - started fail\n");
 		return WIFI_MANAGER_FAIL;
 	}
@@ -162,13 +172,12 @@ wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined_cb cb)
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 wifi_manager_result_e wm_dhcps_stop(void)
 {
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 
-	if (dhcp_server_stop(WIFIMGR_SOFTAP_IFNAME) != OK) {
+	if (dhcp_server_stop(WIFIMGR_SOFTAP_IFNAME) != 0) {
 		NET_LOGE(TAG, "[DHCP] DHCP Server - stopped failed\n");
 		return WIFI_MANAGER_FAIL;
 	}

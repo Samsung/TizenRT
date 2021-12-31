@@ -227,24 +227,6 @@ config NET_LWIP_SNMP_MAX_TREE_DEPTH
 
 endif #NET_LWIP_SNMP
 
-menu "Interface Name"
-config NET_ETH_IFNAME
-    string "Ethernet"
-    default "en"
-
-config NET_LOOP_IFNAME
-    string "Loopback"
-    default "lo"
-
-config NET_STA_IFNAME
-    string "Wi-Fi Station"
-    default "wl"
-
-config NET_SOFTAP_IFNAME
-    string "Wi-Fi SoftAP"
-    default "sa"
-endmenu #"Interface Name"
-
 menuconfig NET_LWIP_NETDB
 	bool "Enable LWIP NETDB Library"
 	default y

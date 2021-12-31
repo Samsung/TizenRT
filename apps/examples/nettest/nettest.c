@@ -144,6 +144,7 @@ uint32_t total_data;
 
 #define NETTEST_SERVER_MODE 1
 #define NETTEST_CLIENT_MODE 2
+#define NETTEST_INTERNAL_MODE 3
 #define NETTEST_PROTO_TCP "tcp"
 #define NETTEST_PROTO_UDP "udp"
 #define NETTEST_PROTO_BROADCAST "brc"
@@ -170,6 +171,7 @@ static void show_usage(void)
 	printf("MODE:\n");
 	printf("\t1: server\n");
 	printf("\t2: client\n");
+	printf("\t3: internal\n");
 
 	printf("PROTOCOL\n");
 	printf("\ttcp: TCP\n");
@@ -477,7 +479,7 @@ void ipmcast_receiver_thread(int num_packets, const char *intf)
 		printf("[MCASTSERV] fail: adding multicast group %d\n", errno);
 		goto out_with_socket;
 	}
-		
+
 	if (bind(sd, (struct sockaddr *)&localSock, sizeof(localSock))) {
 		printf("[MCASTSERV] ERR: binding datagram socket\n");
 		goto out_with_socket;
@@ -832,6 +834,7 @@ out_with_socket:
 }
 
 extern void nettest_stress(char *addr, int port);
+extern int network_internal_test(void);
 
 /* Sample App to test Transport Layer (TCP / UDP) / IP Multicast Functionality */
 #ifdef CONFIG_BUILD_KERNEL
@@ -847,12 +850,16 @@ int nettest_main(int argc, char *argv[])
 	/* pps - packet per second, default value 1 */
 	uint32_t pps = 1;
 
+	if (argc == 2 && atoi(argv[1]) == NETTEST_INTERNAL_MODE) {
+		network_internal_test();
+		return 0;
+	}
 	if (argc < 5) {
 		goto err_with_input;
 	}
 
 	mode = atoi(argv[1]);
-	if (mode != NETTEST_SERVER_MODE && mode != NETTEST_CLIENT_MODE) {
+	if (mode != NETTEST_SERVER_MODE && mode != NETTEST_CLIENT_MODE && mode != NETTEST_INTERNAL_MODE) {
 		goto err_with_input;
 	}
 
@@ -930,4 +937,3 @@ err_with_input:
 	show_usage();
 	return -1;
 }
-

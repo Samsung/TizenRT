@@ -53,7 +53,8 @@ CSRCS += hci_uart.c \
 	 hci_board.c \
 	 bt_fwconfig.c \
 	 bt_normal_patch.c \
-	 bt_mp_patch.c
+	 bt_mp_patch.c \
+	 ble_tizenrt_adapter.c
 
 DEPPATH += --dep-path component/common/bluetooth/realtek/sdk/board/amebad/src/hci
 VPATH += :component/common/bluetooth/realtek/sdk/board/amebad/src/hci

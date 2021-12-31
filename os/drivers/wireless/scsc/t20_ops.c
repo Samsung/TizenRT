@@ -25,9 +25,6 @@
 #include "mib.h"
 #include "wlan_80211_utils.h"
 #include "netif.h"
-#ifndef CONFIG_NET_NETMGR
-#include <tinyara/net/netdev.h>
-#endif
 
 #define SLSI_FW_SCAN_DONE_TIMEOUT_MSEC (15 * 1000)
 #define SLSI_MAX_CHAN_2G_BAND          14
@@ -1807,10 +1804,6 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 	}
 
 	SLSI_NET_DBG2(dev, SLSI_T20_80211, "slsi_read_disconnect_ind_timeout: timeout = %d", sdev->device_config.ap_disconnect_ind_timeout);
-#ifndef CONFIG_NET_NETMGR
-	// network manager sets device link up
-	netif_set_link_up(dev);
-#endif
 	goto exit_with_vif_mutex;
 
 exit_with_vif:
@@ -1866,9 +1859,6 @@ int slsi_stop_ap(void *priv)
 		r = -EINVAL;
 		goto exit;
 	}
-#ifndef CONFIG_NET_NETMGR
-	netif_set_link_down(dev);
-#endif
 	/* All STA related packets and info should already have been flushed */
 	slsi_mlme_del_vif(sdev, dev);
 	slsi_vif_deactivated(sdev, dev);
@@ -2008,22 +1998,13 @@ void *slsi_t20_init(void *ctx, const char *ifname, void *global_priv)
 		return NULL;
 	}
 
-#ifdef CONFIG_NET_NETMGR
 	int res = slsi_net_open(dev);
 	if (res < 0) {
 		kmm_free(drv);
 		return NULL;
 	}
-	nldbg("sleep 3 sec\n");
-	sleep(3); // lsi code
-#else
-	netdev_ifup(dev);
-	/* Free drv context if driver start was unsuccessful (interface is not up) */
-	if ((dev->d_flags & IFF_UP) == 0) {
-		kmm_free(drv);
-		return NULL;
-	}
-#endif
+	nlvdbg("sleep 1 sec\n");
+	sleep(1); // lsi code
 
 	/* Update sdev with driver context sent to supplicant */
 	sdev->drv = drv;
@@ -2061,11 +2042,7 @@ int slsi_t20_deinit(void *priv)
 	sdev->is_supplicant_deinit = 1;
 
 	/* The drv context in supplicant is freed by ifdown handler */
-#ifdef CONFIG_NET_NETMGR
 	slsi_net_stop(dev);
-#else
-	netdev_ifdown(dev);
-#endif
 	/* Free the drv context allocated during init */
 	kmm_free(drv);
 	drv = NULL;

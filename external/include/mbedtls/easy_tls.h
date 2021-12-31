@@ -37,7 +37,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#define EASY_TLS_DEBUG	ndbg
+#define EASY_TLS_DEBUG	printf
 
 enum easy_tls_error {
 	TLS_SUCCESS,

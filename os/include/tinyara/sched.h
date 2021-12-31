@@ -622,14 +622,15 @@ struct tcb_s {
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	uint32_t uspace;		/* User space object for app binary */
 
-#ifdef CONFIG_ARM_MPU
-	uint32_t mpu_regs[MPU_REG_NUMBER * MPU_NUM_REGIONS];	/* MPU register values for loading data */
+#ifdef CONFIG_ARM_MPU						/* MPU register values for loadable apps only */
+	uint32_t mpu_regs[MPU_REG_NUMBER * MPU_NUM_REGIONS];	/* MPU for apps is configured during loading and disabled in task_terminate */
 #endif
 #endif
 
-#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
-uint32_t stack_mpu_regs[MPU_REG_NUMBER]; /* MPU register values for stack protection */
+#if defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)		/* MPU register values for stack protection */
+	uint32_t stack_mpu_regs[MPU_REG_NUMBER];		/* MPU for stack is configured during stack creation and disabled at stack release */
 #endif
+
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	uint32_t app_id;			/* Indicates app id of the task and used to index into umm_heap_table */
 #endif

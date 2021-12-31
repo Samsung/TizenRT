@@ -90,9 +90,7 @@
 
 #define INSN_SVC0        0xdf00	/* insn: svc 0 */
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-uint32_t g_assertpc;
-#endif
+uint32_t system_exception_location;
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -120,13 +118,8 @@ uint32_t g_assertpc;
 
 int up_hardfault(int irq, FAR void *context, FAR void *arg)
 {
-#if defined(CONFIG_DEBUG_HARDFAULT) || !defined(CONFIG_ARMV8M_USEBASEPRI) || defined(CONFIG_BINMGR_RECOVERY)
 	uint32_t *regs = (uint32_t *)context;
-#endif
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	g_assertpc = regs[REG_R15];
-#endif
+	system_exception_location = regs[REG_R15];
 	/* Get the value of the program counter where the fault occurred */
 
 #ifndef CONFIG_ARMV8M_USEBASEPRI

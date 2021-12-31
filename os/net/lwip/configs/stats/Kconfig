@@ -3,7 +3,6 @@ menu "Enable Statistics"
 config NET_STATS
 	bool "Enable Statistics"
 	default y
-	select NET_NETMON
 	---help---
 		Enable statistics collection in lwip_stats.
 
@@ -88,10 +87,12 @@ config NET_MEMP_STATS
 		Enable mem.c stats.
 
 config NET_SYS_STATS
-	bool "Enable System Stats"
+	bool 
 	default n
 	---help---
-		Enable system stats (sem and mbox counts, etc).
+		Enable system stats (sem andp mbox counts, etc).
+		warning. mbox id is set by mbox.used count. So this option 
+		should be handled carefully.
 
 config NET_IPv6_STATS
 	bool "Enable IPv6 Stats"

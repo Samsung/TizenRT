@@ -170,11 +170,13 @@ struct mtd_dev_s {
 };
 
 enum mtd_partition_tag_s {
-	MTD_MASTER = 0,
-	MTD_FS = 1,
-	MTD_NV = 2,
-	MTD_OTA = 3,
-	MTD_ROMFS = 4
+	MTD_NONE = 0,  /* None */
+	MTD_FS = 1,    /* File System */
+	MTD_NV = 2,    /* Non-Volatile */
+	MTD_OTA = 3,   /* OTA */
+	MTD_ROMFS = 4, /* ROM FS */
+	MTD_FTL = 5,   /* Directly use FTL as a block driver (ex. BCH) */
+	MTD_TAG_MAX,
 };
 
 struct spi_dev_s;
@@ -218,7 +220,7 @@ extern "C" {
  *       mtd            - The MTD device to be partitioned
  *       firstblock - The offset in bytes to the first block
  *       nblocks        - The number of blocks in the partition
- *       tagno           - The number of each mtd's tag to classify
+ *       partno           - Partition number
  *
  * Returned Value:
  *       On success, another MTD device representing the partition is returned.
@@ -226,7 +228,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock, off_t nblocks, uint16_t tagno);
+FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock, off_t nblocks, uint16_t partno);
 
 /****************************************************************************
  * Name: get_mtd_partition
@@ -236,6 +238,16 @@ FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock,
  *
  ****************************************************************************/
 FAR struct mtd_dev_s *get_mtd_partition(uint16_t tagno);
+
+/****************************************************************************
+ * Name: mtd_setpartitiontagno
+ *
+ * Description:
+ *   Sets the tag number of the specified partition.
+ *
+ ****************************************************************************/
+
+int mtd_setpartitiontagno(FAR struct mtd_dev_s *mtd, uint16_t tagno);
 
 /****************************************************************************
  * Name: mtd_setpartitionname

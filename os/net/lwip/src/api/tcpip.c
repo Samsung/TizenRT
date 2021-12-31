@@ -54,6 +54,8 @@
  */
 
 #include "lwip/opt.h"
+#include <lwip/stats.h>
+#include <lwip/tcp.h>
 
 #if !NO_SYS						/* don't build if not configured for use in lwipopts.h */
 
@@ -481,7 +483,6 @@ err_t tcpip_trycallback(struct tcpip_callback_msg *msg)
 void tcpip_init(tcpip_init_done_fn initfunc, void *arg)
 {
 //  lwip_init();
-
 	tcpip_init_done = initfunc;
 	tcpip_init_done_arg = arg;
 	if (sys_mbox_new(&mbox, TCPIP_MBOX_SIZE) != ERR_OK) {

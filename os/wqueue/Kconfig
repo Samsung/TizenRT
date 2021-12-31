@@ -177,3 +177,12 @@ config SCHED_USRWORKSTACKSIZE
 
 endif # SCHED_USRWORK
 endif # BUILD_PROTECTED || BUILD_KERNEL
+
+config DEBUG_WORKQUEUE
+	bool "Workqueue Debugging on assertion"
+	depends on SCHED_WORKQUEUE
+	default n
+	---help---
+		When asserted from workqueue, it is from running function, not workqueue itself.
+		So print the log which thread delegated the work into the workqueue.
+

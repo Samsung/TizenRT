@@ -345,11 +345,17 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 		priv->mtd.bwrite = amebad_bwrite;
 		priv->mtd.read = amebad_read;
 		priv->mtd.ioctl = amebad_ioctl;
-
 #if defined(CONFIG_MTD_BYTE_WRITE)
 		priv->mtd.write = amebad_write;
 #endif
 		priv->nsectors = AMEBAD_NSECTORS;
+#ifdef CONFIG_MTD_REGISTRATION
+		priv->mtd.name = "ameba_flash";
+#endif
+		u8 chip_id[4];
+		flash_read_id(NULL, chip_id, 4);
+
+		printf("Manufacturer : %u memory type : %u capacity : %u\n", chip_id[0], chip_id[1], chip_id[2]);
 		return (FAR struct mtd_dev_s *)priv;
 	}
 	return NULL;

@@ -40,6 +40,7 @@
 /* These are board specific values */
 #define BLE_MAX_CONNECTION_COUNT 3
 #define BLE_MAX_BONDED_DEVICE 10
+#define BLE_DEFAULT_CONN_TIMEOUT 10000 /* 10 seconds */
 
 typedef struct _ble_data {
 	uint8_t *data;
@@ -83,6 +84,7 @@ typedef enum {
 	BLE_MANAGER_UNSUPPORTED,
 	BLE_MANAGER_CALLBACK_NOT_REGISTERED,
 	BLE_MANAGER_ALREADY_WORKING,
+	BLE_MANAGER_OUT_OF_MEMORY,
 	BLE_MANAGER_UNKNOWN,
 } ble_result_e;
 

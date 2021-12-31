@@ -19,7 +19,18 @@
 import os
 import sys
 
-TOOL_DIR = os.getcwd() + '/tools/'
+OS_DIR = os.path.dirname(__file__) + '/..'
+TOOL_DIR = OS_DIR + '/tools/'
+
+def read_binpath():
+	with open(OS_DIR + '/.bininfo') as f:
+		info = f.readline()
+		while info :
+			if ("kernel" in info) :
+				binary_path = info.split('=')[1].rstrip('\n')
+				break
+			info = f.readline()
+	return binary_path
 ############################################################################
 #
 # This script generates samsung binary header for kernel.
@@ -41,9 +52,9 @@ TOOL_DIR = os.getcwd() + '/tools/'
 # argv[3] is a size of secure header which is board-specific.
 #
 ############################################################################
-binary_path = sys.argv[1]
-binary_type = sys.argv[2]
-secure_header_size = sys.argv[3]
+binary_path = OS_DIR + '/../build/output/bin/' + read_binpath()
+binary_type = sys.argv[1]
+secure_header_size = sys.argv[2]
 
 mkbinheader_path = TOOL_DIR + 'mkbinheader.py'
 mkchecksum_path = TOOL_DIR + 'mkchecksum.py'

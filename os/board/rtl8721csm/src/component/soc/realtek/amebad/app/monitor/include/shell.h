@@ -72,7 +72,7 @@ typedef struct {
 #endif
 
 //#ifdef CONFIG_DEBUG_LOG
-#define _ConsolePrint  DiagPrintf
+#define _ConsolePrint  rtw_printf
 //#else
 //#define _ConsolePrint
 //#endif

@@ -104,14 +104,9 @@ int elf_uninit(struct elf_loadinfo_s *loadinfo)
 	elf_freebuffers(loadinfo);
 
 	/* Free buffers used for decompression */
-	if (loadinfo->compression_type > COMPRESS_TYPE_NONE) {
 #ifdef CONFIG_COMPRESSED_BINARY
-		compress_uninit();
-#else
-		berr("No support for reading compressed binary\n");
-		return ERROR;
+	compress_uninit();
 #endif
-	}
 #if defined(CONFIG_ELF_CACHE_READ)
 	elf_cache_uninit();
 #endif

@@ -1,3 +1,0 @@
-config ENTRY_PROTOTEST
-	bool "Protocol Buffers Serialize/Deserialize Test"
-	depends on EXAMPLES_PROTOTEST

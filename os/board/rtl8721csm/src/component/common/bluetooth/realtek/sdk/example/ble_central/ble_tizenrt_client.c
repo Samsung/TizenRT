@@ -18,20 +18,24 @@
 #include "os_mem.h"
 #include "os_timer.h"
 #include <gcs_client.h>
+#include <tinyara/net/if/ble.h>
 
 extern T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_central_read_results[BLE_TIZENRT_CENTRAL_APP_MAX_LINKS];
 extern T_GCS_WRITE_RESULT g_write_result;
 extern T_GCS_WRITE_RESULT g_write_no_rsp_result;
 
-uint16_t g_conn_req_num = 0;
+uint8_t g_master_link_num = 0;
 trble_client_init_config *client_init_parm = NULL;
 T_GCS_WRITE_RESULT *write_request_result = NULL;
 T_GCS_WRITE_RESULT *write_no_rsponse_result = NULL;
 uint8_t ble_app_link_table_size = 0;
-BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_table = NULL;
+uint8_t ble_client_connect_is_running = 0;
+BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_info = NULL;
 T_TIZENRT_CLIENT_READ_RESULT *ble_read_results = NULL;
 BLE_TIZENRT_APP_LINK *ble_app_link_table = NULL;
 bool (*ble_tizenrt_client_send_msg)(uint16_t sub_type, void *arg) = NULL;
+void *ble_tizenrt_modify_whitelist_sem = NULL;
+uint8_t modify_whitelist_code = 1;
 
 trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm)
 { 
@@ -43,15 +47,15 @@ trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm)
     client_init_parm = os_mem_alloc(0, sizeof(trble_client_init_config));
     if(client_init_parm == NULL)
     {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
-    ble_tizenrt_bond_req_table = os_mem_alloc(0, BLE_TIZENRT_CENTRAL_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
-    if(ble_tizenrt_bond_req_table == NULL)
+    ble_tizenrt_bond_req_info = os_mem_alloc(0, sizeof(BLE_TIZENRT_BOND_REQ));
+    if(ble_tizenrt_bond_req_info == NULL)
     {
         os_mem_free(client_init_parm);
         client_init_parm = NULL;
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
     
@@ -64,13 +68,173 @@ trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm)
     write_request_result = &g_write_result;
     write_no_rsponse_result = &g_write_no_rsp_result;
     ble_app_link_table_size = BLE_TIZENRT_CENTRAL_APP_MAX_LINKS;
-    memset(ble_tizenrt_bond_req_table, 0, BLE_TIZENRT_CENTRAL_APP_MAX_LINKS * sizeof(BLE_TIZENRT_BOND_REQ));
+    memset(ble_tizenrt_bond_req_info, 0, sizeof(BLE_TIZENRT_BOND_REQ));
     ble_read_results = ble_tizenrt_central_read_results;
     ble_app_link_table = ble_tizenrt_central_app_link_table;
     ble_tizenrt_client_send_msg = ble_tizenrt_central_send_msg;
 
     ble_tizenrt_central_app_init();
     return TRBLE_SUCCESS; 
+}
+
+trble_result_e rtw_ble_client_scan_whitelist_add(trble_addr *addr)
+{
+    if (client_init_parm == NULL || client_init_parm->trble_device_scanned_cb == NULL || addr == NULL)
+    {
+        return TRBLE_FAIL;
+    }
+
+    if (ble_tizenrt_modify_whitelist_sem == NULL)
+    {
+        if(false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
+        {
+            printf("\create sem fail! \n");
+            return TRBLE_FAIL;
+        } else {
+            debug_print("create sem 0x%x success \n", ble_tizenrt_modify_whitelist_sem);
+        }
+    }
+
+    T_TIZENRT_MODIFY_WHITELIST_PARAM *whitelist_arg = os_mem_alloc(0, sizeof(T_TIZENRT_MODIFY_WHITELIST_PARAM));
+    if (whitelist_arg == NULL)
+    {
+        debug_print("Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+
+    memcpy(whitelist_arg->remote_bd, addr->mac, GAP_BD_ADDR_LEN);
+    whitelist_arg->type = GAP_WHITE_LIST_OP_ADD;
+    if (addr->type == TRBLE_ADDR_TYPE_PUBLIC)
+    {
+        whitelist_arg->remote_bd_type = GAP_REMOTE_ADDR_LE_PUBLIC;    /* Public Address */
+    } else if ((TRBLE_ADDR_TYPE_RANDOM_STATIC <= addr->type) && (TRBLE_ADDR_TYPE_RANDOM_NON_RESOLVABLE >= addr->type)) {
+        whitelist_arg->remote_bd_type = GAP_REMOTE_ADDR_LE_RANDOM;    /* Random Address */
+    } else {
+        os_mem_free(whitelist_arg);
+        debug_print("Unknown Address Type \n");
+        return TRBLE_FAIL;
+    }
+
+    if (ble_tizenrt_client_send_msg(BLE_TIZENRT_MODIFY_WHITELIST, whitelist_arg) == false)
+    {
+        os_mem_free(whitelist_arg);
+        debug_print("msg send fail \n");
+        return TRBLE_FAIL;
+    }
+    if (false == os_mutex_take(ble_tizenrt_modify_whitelist_sem,3000))
+    {
+        debug_print("set whitelist timeout \n");
+        return TRBLE_FAIL;
+    }
+    if (modify_whitelist_code != 0)
+    {
+        debug_print("set whitelist fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_client_scan_whitelist_delete(trble_addr *addr)
+{
+    if (client_init_parm == NULL || client_init_parm->trble_device_scanned_cb == NULL || addr == NULL)
+    {
+        return TRBLE_FAIL;
+    }
+
+    if (ble_tizenrt_modify_whitelist_sem == NULL)
+    {
+        if(false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
+        {
+            printf("create sem fail! \n");
+            return TRBLE_FAIL;
+        } else {
+            debug_print("create sem 0x%x success \n", ble_tizenrt_modify_whitelist_sem);
+        }
+    }
+
+    T_TIZENRT_MODIFY_WHITELIST_PARAM *whitelist_arg = os_mem_alloc(0, sizeof(T_TIZENRT_MODIFY_WHITELIST_PARAM));
+    if (whitelist_arg == NULL)
+    {
+        debug_print("Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+
+    memcpy(whitelist_arg->remote_bd, addr->mac, GAP_BD_ADDR_LEN);
+    whitelist_arg->type = GAP_WHITE_LIST_OP_REMOVE;
+    if (addr->type == TRBLE_ADDR_TYPE_PUBLIC)
+    {
+        whitelist_arg->remote_bd_type = GAP_REMOTE_ADDR_LE_PUBLIC;    /* Public Address */
+    } else if ((TRBLE_ADDR_TYPE_RANDOM_STATIC <= addr->type) && (TRBLE_ADDR_TYPE_RANDOM_NON_RESOLVABLE >= addr->type)) {
+        whitelist_arg->remote_bd_type = GAP_REMOTE_ADDR_LE_RANDOM;    /* Random Address */
+    } else {
+        os_mem_free(whitelist_arg);
+        debug_print("Unknown Address Type \n");
+        return TRBLE_FAIL;
+    }
+
+    if (ble_tizenrt_client_send_msg(BLE_TIZENRT_MODIFY_WHITELIST, whitelist_arg) == false)
+    {
+        os_mem_free(whitelist_arg);
+        debug_print("msg send fail \n");
+        return TRBLE_FAIL;
+    }
+    if (false == os_mutex_take(ble_tizenrt_modify_whitelist_sem,3000))
+    {
+        debug_print("set whitelist timeout \n");
+        return TRBLE_FAIL;
+    }
+    if (modify_whitelist_code != 0)
+    {
+        debug_print("set whitelist fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_client_scan_whitelist_clear_all(void)
+{
+    if (client_init_parm == NULL || client_init_parm->trble_device_scanned_cb == NULL)
+    {
+        return TRBLE_FAIL;
+    }
+
+    if (ble_tizenrt_modify_whitelist_sem == NULL)
+    {
+        if (false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
+        {
+            printf("create sem fail! \n");
+            return TRBLE_FAIL;
+        } else {
+            debug_print("create sem 0x%x success \n", ble_tizenrt_modify_whitelist_sem);
+        }
+    }
+
+    T_TIZENRT_MODIFY_WHITELIST_PARAM *whitelist_arg = os_mem_alloc(0, sizeof(T_TIZENRT_MODIFY_WHITELIST_PARAM));
+    if (whitelist_arg == NULL)
+    {
+        debug_print("Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+
+    whitelist_arg->type = GAP_WHITE_LIST_OP_CLEAR;
+    whitelist_arg->remote_bd_type = GAP_REMOTE_ADDR_LE_PUBLIC;    /* Public Address */
+    if (ble_tizenrt_client_send_msg(BLE_TIZENRT_MODIFY_WHITELIST, whitelist_arg) == false)
+    {
+        os_mem_free(whitelist_arg);
+        debug_print("msg send fail \n");
+        return TRBLE_FAIL;
+    }
+    if (false == os_mutex_take(ble_tizenrt_modify_whitelist_sem,3000))
+    {
+        debug_print("set whitelist timeout \n");
+        return TRBLE_FAIL;
+    }
+    if (modify_whitelist_code != 0)
+    {
+        debug_print("set whitelist fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
 }
 
 trble_result_e rtw_ble_client_start_scan(void)
@@ -88,14 +252,23 @@ trble_result_e rtw_ble_client_start_scan(void)
 
     if(le_scan_info_filter(false, 0, 0, NULL))
     {
-        debug_print("\r\n[%s] disable scan info filter success", __FUNCTION__);
+        debug_print("disable scan info filter success \n");
     } else {
-        debug_print("\r\n[%s] disable scan info filter fail!!!", __FUNCTION__);
+        debug_print("disable scan info filter fail!!! \n");
     }
 
-    if(ble_tizenrt_client_send_msg(BLE_TIZENRT_START_SCAN, NULL) == false)
+    uint8_t *scan_filter_policy = os_mem_alloc(0, sizeof(uint8_t));
+    if(scan_filter_policy == NULL)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("\n[%s] Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+
+    *scan_filter_policy = GAP_SCAN_FILTER_ANY;
+    if (ble_tizenrt_client_send_msg(BLE_TIZENRT_START_SCAN, scan_filter_policy) == false)
+    {
+        os_mem_free(scan_filter_policy);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;
@@ -104,10 +277,10 @@ trble_result_e rtw_ble_client_start_scan(void)
 void *scan_filter_tmr_handle = NULL;
 void scan_stop_cb(void *arg)
 {
-    printf("\r\n[%s] scan duration exhausted", __FUNCTION__);
+    dbg("scan duration exhausted \n");
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_STOP_SCAN, NULL) == false)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return;
     }
     T_GAP_DEV_STATE new_state;
@@ -117,9 +290,9 @@ void scan_stop_cb(void *arg)
 	} while(new_state.gap_scan_state != GAP_SCAN_STATE_IDLE);
 }
 
-trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_parm)
+trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_parm, bool whitelist_enable)
 { 
-    if (client_init_parm == NULL || client_init_parm->trble_device_scanned_cb == NULL || scan_parm == NULL || scan_parm->raw_data_length == 0)
+    if (client_init_parm == NULL || client_init_parm->trble_device_scanned_cb == NULL || scan_parm == NULL)
     {
         return TRBLE_FAIL;
     }
@@ -127,21 +300,44 @@ trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_par
 	T_GAP_DEV_STATE new_state;
 	le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
 	if (new_state.gap_scan_state != GAP_SCAN_STATE_IDLE) {
-        printf("\r\n[%s] Scan already started !!", __FUNCTION__);
+        dbg("Scan already started!! \n");
 		return TRBLE_INVALID_STATE;
 	}
 
-    if(!le_scan_info_filter(true, 0, scan_parm->raw_data_length, scan_parm->raw_data))
-    {
-        printf("\r\n[%s] set scan info fail !!", __FUNCTION__);
-        return TRBLE_FAIL;
+    if (scan_parm->raw_data_length != 0) {
+        if(!le_scan_info_filter(true, 0, scan_parm->raw_data_length, scan_parm->raw_data))
+        {
+            printf("set scan info fail !! \n");
+            return TRBLE_FAIL;
+        } else {
+            debug_print("set scan info success \n");
+        }
     } else {
-        debug_print("\r\n[%s] set scan info success", __FUNCTION__);
+        if(le_scan_info_filter(false, 0, 0, NULL))
+        {
+            debug_print("disable scan info filter success \n");
+        } else {
+            debug_print("disable scan info filter fail!!! \n");
+        }
     }
-    
-    if(ble_tizenrt_client_send_msg(BLE_TIZENRT_START_SCAN, NULL) == false)
+
+    uint8_t *scan_filter_policy = os_mem_alloc(0, sizeof(uint8_t));
+    if(scan_filter_policy == NULL)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("\n[%s] Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+
+    if (whitelist_enable == true) {
+        *scan_filter_policy = GAP_SCAN_FILTER_WHITE_LIST;
+    } else {
+        *scan_filter_policy = GAP_SCAN_FILTER_ANY;
+    }
+
+    if(ble_tizenrt_client_send_msg(BLE_TIZENRT_START_SCAN, scan_filter_policy) == false)
+    {
+        os_mem_free(scan_filter_policy);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
     if(scan_parm->scan_duration != 0)
@@ -150,26 +346,26 @@ trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_par
         {
             if(!os_timer_create(&scan_filter_tmr_handle, "scan_with_filter", 0, scan_parm->scan_duration, 0, scan_stop_cb))
             {
-                printf("\r\n[%s] timer creat fail !!", __FUNCTION__);
+                dbg("timer creat fail!! \n");
                 return TRBLE_FAIL;
             } else {
-                debug_print("\r\n[%s] timer creat success", __FUNCTION__);
+                debug_print("timer creat success \n");
             }
 
             if(!os_timer_start(&scan_filter_tmr_handle))
             {
-                printf("\r\n[%s] timer start fail !!", __FUNCTION__);
+                dbg("timer start fail!! \n");
                 return TRBLE_FAIL;
             } else {
-                debug_print("\r\n[%s] timer start success", __FUNCTION__);
+                debug_print("timer start success \n");
             }
         } else {
             if(!os_timer_restart(&scan_filter_tmr_handle, scan_parm->scan_duration))
             {
-                printf("\r\n[%s] timer restart fail !!", __FUNCTION__);
+                dbg("timer restart fail!! \n");
                 return TRBLE_FAIL;
             } else {
-                debug_print("\r\n[%s] timer restart success", __FUNCTION__);
+                debug_print("timer restart success \n");
             }
         }
     }
@@ -187,55 +383,53 @@ trble_result_e rtw_ble_client_stop_scan(void)
 
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_STOP_SCAN, NULL) == false)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;
 }
 
 trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secured_connect)
-{ 
-    if (conn_info == NULL || g_conn_req_num >= ble_app_link_table_size)
+{
+    if(ble_client_connect_is_running)
     {
-        printf("\r\n[%s] invalid\r\n", __FUNCTION__);
+        dbg("ble_client_connect is running \n");
+        return TRBLE_FAIL;
+    } else
+        ble_client_connect_is_running = 1;
+
+    if(conn_info == NULL || g_master_link_num >= ble_app_link_table_size)
+    {
+        dbg("invalid \n");
+        ble_client_connect_is_running = 0;
         return TRBLE_FAIL;
     }
 
-    int i = 0;
-    while(i < ble_app_link_table_size && ble_tizenrt_bond_req_table[i++].addr) ;
-    ble_tizenrt_bond_req_table[i - 1].addr = os_mem_alloc(0, GAP_BD_ADDR_LEN);
-    if(ble_tizenrt_bond_req_table[i - 1].addr == NULL)
-    {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
-        return TRBLE_FAIL;
-    }
-    memcpy(ble_tizenrt_bond_req_table[i - 1].addr, conn_info->addr.mac, GAP_BD_ADDR_LEN);
-    ble_tizenrt_bond_req_table[i - 1].is_secured_connect = is_secured_connect;
-    g_conn_req_num++;
-    debug_print("\r\n[%s] ble_tizenrt_bond_req_table[%d]\r\n", __FUNCTION__, i - 1);
+    memcpy(ble_tizenrt_bond_req_info->addr, conn_info->addr.mac, GAP_BD_ADDR_LEN);
+    ble_tizenrt_bond_req_info->is_secured_connect = is_secured_connect;
+
     T_TIZENRT_CONN_PARAM *conn_arg = os_mem_alloc(0, sizeof(T_TIZENRT_CONN_PARAM));
     if(conn_arg == NULL)
     {
-        os_mem_free(ble_tizenrt_bond_req_table[i - 1].addr);
-        memset(ble_tizenrt_bond_req_table[i - 1].addr, 0, sizeof(BLE_TIZENRT_BOND_REQ));
-        g_conn_req_num--;
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
+        ble_client_connect_is_running = 0;
         return TRBLE_FAIL;
     }
     memcpy(conn_arg->remote_bd, conn_info->addr.mac, GAP_BD_ADDR_LEN);
     conn_arg->remote_bd_type = conn_info->addr.type;
     conn_arg->conn_interval = conn_info->conn_interval;
     conn_arg->conn_latency = conn_info->slave_latency;
-    printf("\r\n[%s] DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X\r\n", __FUNCTION__, 
+    /* Defines the timeout multiplier as a multiple of 10ms. */
+    conn_arg->scan_timeout = conn_info->scan_timeout / 10;
+    dbg("DestAddr: 0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X \n", 
                         conn_arg->remote_bd[5], conn_arg->remote_bd[4], conn_arg->remote_bd[3],
                         conn_arg->remote_bd[2], conn_arg->remote_bd[1], conn_arg->remote_bd[0]);
-    printf("\r\n[%s] ci: %d si: %d\r\n", __FUNCTION__, conn_info->conn_interval, conn_info->slave_latency);
+    dbg("ci: %d si: %d \n", conn_info->conn_interval, conn_info->slave_latency);
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_CONNECT, conn_arg) == false)
     {
         os_mem_free(conn_arg);
-        os_mem_free(ble_tizenrt_bond_req_table[i - 1].addr);
-        memset(&ble_tizenrt_bond_req_table[i], 0, sizeof(BLE_TIZENRT_BOND_REQ));
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
+        ble_client_connect_is_running = 0;
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;
@@ -284,7 +478,7 @@ trble_result_e rtw_ble_client_read_connected_info(trble_conn_handle conn_handle,
         else
             out_connected_device->is_bonded = false;
     } else {
-        printf("\r\n[%s] Fail to get connected info of %d", __FUNCTION__, conn_handle);
+        dbg("Fail to get connected info of %d \n", conn_handle);
         return TRBLE_FAIL;
     }
     
@@ -295,14 +489,14 @@ trble_result_e rtw_ble_client_delete_bond(trble_addr* addr)
 {
     if(NULL == addr)
     {
-        printf("\r\n[%s] Invalid Input");
+        dbg("Invalid Input \n");
         return TRBLE_FAIL;
     }
 
     T_TIZENRT_DELETE_BOND_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_DELETE_BOND_PARAM));
     if(param == NULL)
     {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
     memcpy(param->remote_bd, addr->mac, GAP_BD_ADDR_LEN);
@@ -310,7 +504,7 @@ trble_result_e rtw_ble_client_delete_bond(trble_addr* addr)
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DELETE_BOND, param) == false)
     {
         os_mem_free(param);
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;
@@ -320,7 +514,7 @@ trble_result_e rtw_ble_client_delete_bond_all(void)
 {
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_CLEAR_ALL_BONDS, NULL) == false)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS; 
@@ -328,16 +522,24 @@ trble_result_e rtw_ble_client_delete_bond_all(void)
 
 trble_result_e rtw_ble_client_disconnect(trble_conn_handle conn_handle)
 {
-    uint32_t conn_id = conn_handle;
+    trble_conn_handle *conn_id = os_mem_alloc(0, sizeof(trble_conn_handle));
+    if(conn_id == NULL)
+    {
+        debug_print("\n[%s] Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+
     if(GAP_CONN_STATE_CONNECTED == ble_app_link_table[conn_handle].conn_state)
     {
-        if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DISCONNECT, (void *)conn_id) == false)
+        *conn_id = conn_handle;
+        if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DISCONNECT, conn_id) == false)
         {
-            debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+            os_mem_free(conn_id);
+            debug_print("msg send fail \n");
             return TRBLE_FAIL;
         }
     } else {
-        debug_print("\r\n[%s] Invaild conn handle %d", __FUNCTION__, conn_handle);
+        debug_print("Invaild conn handle %d \n", conn_handle);
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;
@@ -345,15 +547,22 @@ trble_result_e rtw_ble_client_disconnect(trble_conn_handle conn_handle)
 
 trble_result_e rtw_ble_client_disconnect_all(void)
 {
-    uint32_t conn_id;
+    trble_conn_handle *conn_id = os_mem_alloc(0, sizeof(trble_conn_handle));
+    if(conn_id == NULL)
+    {
+        debug_print("\n[%s] Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+
     for(uint16_t i = 0; i < ble_app_link_table_size; i++)
     {
         if(ble_app_link_table[i].conn_state == GAP_CONN_STATE_CONNECTED)
         {
-            conn_id = i;
-            if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DISCONNECT, (void *)conn_id) == false)
+            *conn_id = i;
+            if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DISCONNECT, conn_id) == false)
             {
-                debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+                os_mem_free(conn_id);
+                debug_print("msg send fail \n");
                 return TRBLE_FAIL;
             }
         }
@@ -368,10 +577,10 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
     {
         if(!os_mutex_create(&ble_tizenrt_read_sem))
         {
-            printf("\r\n[%s] create mutex fail!", __FUNCTION__);
+            dbg("create mutex fail! \n");
             return TRBLE_FAIL;
         } else {
-            debug_print("\r\n[%s] create mutex 0x%x success", __FUNCTION__, ble_tizenrt_read_sem);
+            debug_print("create mutex 0x%x success \n", ble_tizenrt_read_sem);
         }
     }
 
@@ -382,14 +591,14 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
 
     if(!le_get_active_link_num())
     {
-        debug_print("\r\n[%s] No active connection", __FUNCTION__);
+        debug_print("No active connection \n");
         return TRBLE_FAIL;
     }
 
     BLE_TIZENRT_READ_PARAM *param = os_mem_alloc(0, sizeof(BLE_TIZENRT_READ_PARAM));
     if(param == NULL)
     {
-        debug_print("\n[%s] Memory allocation failed", __FUNCTION__);
+        debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
     param->conn_id = handle->conn_handle;
@@ -397,16 +606,16 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
     if(ble_tizenrt_client_send_msg(BLE_TIZENRT_READ, param) == false)
     {
         os_mem_free(param);
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL; 
     }
     int ticks = 0;
     while(ticks++ < 30)
     {
-        debug_print("\r\n[%s] ticks %d",__FUNCTION__, ticks);
+        debug_print("ticks %d \n", ticks);
         if(os_mutex_take(ble_tizenrt_read_sem, 1000))
         {  
-            debug_print("\r\n[%s] take sema success",__FUNCTION__);
+            debug_print("take sema success \n");
             if(ble_read_results[handle->conn_handle].cause == GAP_SUCCESS)
             {
                 out_data->length = ble_read_results[handle->conn_handle].read_data.length;
@@ -414,11 +623,11 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
                                             ble_read_results[handle->conn_handle].read_data.length);
                 os_mem_free(ble_read_results[handle->conn_handle].read_data.data);
                 ble_read_results[handle->conn_handle].read_data.data = NULL;
-                debug_print("\r\n[%s] read success: conn_id %d attr_handle 0x%x!",__FUNCTION__,
+                debug_print("read success: conn_id %d attr_handle 0x%x! \n",
                                                             handle->conn_handle, handle->attr_handle);
                 return TRBLE_SUCCESS;
             } else {
-                debug_print("\r\n[%s] read fail: conn_id %d attr_handle 0x%x!",__FUNCTION__,
+                debug_print("read fail: conn_id %d attr_handle 0x%x! \n",
                                                             handle->conn_handle, handle->attr_handle);
                 return TRBLE_FAIL;
             }
@@ -437,7 +646,7 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
 
     if(!le_get_active_link_num())
     {
-        debug_print("\r\n[%s] No active connection", __FUNCTION__);
+        debug_print("No active connection \n");
         return TRBLE_FAIL;
     }
 
@@ -445,39 +654,45 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
     {
         if(false == os_mutex_create(&ble_tizenrt_write_sem))
         {
-            printf("\r\n[%s] creat write mutex fail!", __FUNCTION__);
+            dbg("creat write mutex fail! \n");
             return TRBLE_FAIL;
         } else {
-            debug_print("\r\n[%s] creat write mutex 0x%x success", __FUNCTION__, ble_tizenrt_write_sem);
+            debug_print("creat write mutex 0x%x success \n", ble_tizenrt_write_sem);
         }
     }
 
-    BLE_TIZENRT_WRITE_PARAM param;
-    debug_print("\r\n[%s] att_handle 0x%x len 0x%x data",__FUNCTION__, handle->attr_handle, in_data->length);
-
-    param.data = in_data->data;
-    param.length = in_data->length;
-    param.conn_id = handle->conn_handle;
-    param.att_handle = handle->attr_handle;
-    if(ble_tizenrt_client_send_msg(BLE_TIZENRT_WRITE, &param) == false)
+    BLE_TIZENRT_WRITE_PARAM *param = os_mem_alloc(0, sizeof(BLE_TIZENRT_WRITE_PARAM));
+    if(param == NULL)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("\n[%s] Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+    debug_print("att_handle 0x%x len 0x%x data \n", handle->attr_handle, in_data->length);
+    param->data = in_data->data;
+    param->length = in_data->length;
+    param->conn_id = handle->conn_handle;
+    param->att_handle = handle->attr_handle;
+
+    if(ble_tizenrt_client_send_msg(BLE_TIZENRT_WRITE, param) == false)
+    {
+        os_mem_free(param);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL; 
     }
     int wticks = 0;
     while(wticks++ < 30)
     {
-        debug_print("\r\n[%s] wticks %d",__FUNCTION__, wticks);
+        debug_print("wticks %d \n", wticks);
         if(os_mutex_take(ble_tizenrt_write_sem, 1000))
         {  
-            debug_print("\r\n[%s] take write mutex success",__FUNCTION__);
-            debug_print("\r\n[%s] conn_id %d att_handle 0x%x!", __FUNCTION__, handle->conn_handle, handle->attr_handle);
+            debug_print("take write mutex success \n");
+            debug_print("conn_id %d att_handle 0x%x! \n", handle->conn_handle, handle->attr_handle);
             if(write_request_result->cause == GAP_SUCCESS)
             {
-                debug_print("\r\n[%s] write_req success", __FUNCTION__);                                                            
+                debug_print("write_req success \n");
                 return TRBLE_SUCCESS;
             } else {
-                debug_print("\r\n[%s] write_req fail");
+                debug_print("write_req fail \n");
                 return TRBLE_FAIL;
             }
         }
@@ -495,7 +710,7 @@ trble_result_e rtw_ble_client_operation_write_no_response(trble_operation_handle
 
     if(!le_get_active_link_num())
     {
-        debug_print("\r\n[%s] No active connection", __FUNCTION__);
+        debug_print("No active connection \n");
         return TRBLE_FAIL;
     }
 
@@ -503,40 +718,46 @@ trble_result_e rtw_ble_client_operation_write_no_response(trble_operation_handle
     {
         if(false == os_mutex_create(&ble_tizenrt_write_no_rsp_sem))
         {
-            debug_print("\r\n[%s] create mutex fail!", __FUNCTION__);
+            debug_print("create mutex fail! \n");
             return TRBLE_FAIL;
         } else {
-            debug_print("\r\n[%s] create mutex 0x%x success", __FUNCTION__, ble_tizenrt_write_no_rsp_sem);
+            debug_print("create mutex 0x%x success \n", ble_tizenrt_write_no_rsp_sem);
         }
     }
 
-    BLE_TIZENRT_WRITE_PARAM param;
-    debug_print("\r\n[%s] att_handle 0x%x len 0x%x data",__FUNCTION__, handle->attr_handle, in_data->length);
-    param.data = in_data->data;
-    param.length = in_data->length;
-    param.conn_id = handle->conn_handle;
-    param.att_handle = handle->attr_handle;
-
-    if(ble_tizenrt_client_send_msg(BLE_TIZENRT_WRITE_NO_RSP, &param) == false)
+    BLE_TIZENRT_WRITE_PARAM *param = os_mem_alloc(0, sizeof(BLE_TIZENRT_WRITE_PARAM));
+    if(param == NULL)
     {
-        debug_print("\r\n[%s] msg send fail", __FUNCTION__);
+        debug_print("\n[%s] Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+    debug_print("att_handle 0x%x len 0x%x data \n", handle->attr_handle, in_data->length);
+    param->data = in_data->data;
+    param->length = in_data->length;
+    param->conn_id = handle->conn_handle;
+    param->att_handle = handle->attr_handle;
+
+    if(ble_tizenrt_client_send_msg(BLE_TIZENRT_WRITE_NO_RSP, param) == false)
+    {
+        os_mem_free(param);
+        debug_print("msg send fail \n");
         return TRBLE_FAIL; 
     }
 
     int wticks = 0;
     while(wticks++ < 30)
     {
-        debug_print("\r\n[%s] wticks %d",__FUNCTION__, wticks);
+        debug_print("wticks %d \n", wticks);
         if(os_mutex_take(ble_tizenrt_write_no_rsp_sem, 1000))
         {
-            debug_print("\r\n[%s] take write_no_rsp mutex success", __FUNCTION__);
-            debug_print("\r\n[%s] conn_id %d att_handle 0x%x!", __FUNCTION__, handle->conn_handle, handle->attr_handle);
+            debug_print("take write_no_rsp mutex success \n");
+            debug_print("conn_id %d att_handle 0x%x! \n", handle->conn_handle, handle->attr_handle);
             if(write_no_rsponse_result->cause == GAP_SUCCESS)
             {
-                debug_print("\r\n[%s] send write_cmd success", __FUNCTION__);
+                debug_print("send write_cmd success \n");
                 return TRBLE_SUCCESS;
             } else {
-                debug_print("\r\n[%s] send write_cmd fail", __FUNCTION__);
+                debug_print("send write_cmd fail \n");
                 return TRBLE_FAIL;
             }
         }
@@ -553,7 +774,7 @@ trble_result_e rtw_ble_client_operation_enable_notification(trble_operation_hand
 
     if(!le_get_active_link_num())
     {
-        debug_print("\r\n[%s] No active connection", __FUNCTION__);
+        debug_print("No active connection \n");
         return TRBLE_FAIL;
     }
 
@@ -574,11 +795,11 @@ trble_result_e rtw_ble_client_deinit(void)
 {
     ble_tizenrt_central_app_deinit();
 
-    g_conn_req_num = 0;
+    g_master_link_num = 0;
     os_mem_free(client_init_parm);
     client_init_parm = NULL;
-    os_mem_free(ble_tizenrt_bond_req_table);
-    ble_tizenrt_bond_req_table = NULL;
+    os_mem_free(ble_tizenrt_bond_req_info);
+    ble_tizenrt_bond_req_info = NULL;
 
     return TRBLE_SUCCESS; 
 }

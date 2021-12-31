@@ -484,6 +484,7 @@ static void aes_gen_tables( void )
 
 void mbedtls_aes_init( mbedtls_aes_context *ctx )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     memset( ctx, 0, sizeof( mbedtls_aes_context ) );
 }
 
@@ -491,7 +492,7 @@ void mbedtls_aes_free( mbedtls_aes_context *ctx )
 {
     if( ctx == NULL )
         return;
-
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     mbedtls_zeroize( ctx, sizeof( mbedtls_aes_context ) );
 }
 
@@ -502,6 +503,7 @@ void mbedtls_aes_free( mbedtls_aes_context *ctx )
 int mbedtls_aes_setkey_enc( mbedtls_aes_context *ctx, const unsigned char *key,
                     unsigned int keybits )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     unsigned int i;
     uint32_t *RK;
 
@@ -616,6 +618,7 @@ int mbedtls_aes_setkey_enc( mbedtls_aes_context *ctx, const unsigned char *key,
 int mbedtls_aes_setkey_dec( mbedtls_aes_context *ctx, const unsigned char *key,
                     unsigned int keybits )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     int i, j, ret;
     mbedtls_aes_context cty;
     uint32_t *RK;
@@ -732,6 +735,7 @@ int mbedtls_internal_aes_encrypt( mbedtls_aes_context *ctx,
                                   const unsigned char input[16],
                                   unsigned char output[16] )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     int i;
     uint32_t *RK, X0, X1, X2, X3, Y0, Y1, Y2, Y3;
 
@@ -788,6 +792,7 @@ void mbedtls_aes_encrypt( mbedtls_aes_context *ctx,
                           const unsigned char input[16],
                           unsigned char output[16] )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     mbedtls_internal_aes_encrypt( ctx, input, output );
 }
 #endif /* !MBEDTLS_DEPRECATED_REMOVED */
@@ -800,6 +805,7 @@ int mbedtls_internal_aes_decrypt( mbedtls_aes_context *ctx,
                                   const unsigned char input[16],
                                   unsigned char output[16] )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     int i;
     uint32_t *RK, X0, X1, X2, X3, Y0, Y1, Y2, Y3;
 
@@ -856,6 +862,7 @@ void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
                           const unsigned char input[16],
                           unsigned char output[16] )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     mbedtls_internal_aes_decrypt( ctx, input, output );
 }
 #endif /* !MBEDTLS_DEPRECATED_REMOVED */
@@ -868,6 +875,7 @@ int mbedtls_aes_crypt_ecb( mbedtls_aes_context *ctx,
                     const unsigned char input[16],
                     unsigned char output[16] )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
 #if defined(MBEDTLS_AESNI_C) && defined(MBEDTLS_HAVE_X86_64)
     if( mbedtls_aesni_has_support( MBEDTLS_AESNI_AES ) )
         return( mbedtls_aesni_crypt_ecb( ctx, mode, input, output ) );
@@ -902,6 +910,7 @@ int mbedtls_aes_crypt_cbc( mbedtls_aes_context *ctx,
                     const unsigned char *input,
                     unsigned char *output )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     int i;
     unsigned char temp[16];
 
@@ -969,7 +978,8 @@ int mbedtls_aes_crypt_cfb128( mbedtls_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output )
 {
-    int c;
+	//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
+	int c;
     size_t n = *iv_off;
 
     if( mode == MBEDTLS_AES_DECRYPT )
@@ -1014,6 +1024,7 @@ int mbedtls_aes_crypt_cfb8( mbedtls_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     unsigned char c;
     unsigned char ov[17];
 
@@ -1049,6 +1060,7 @@ int mbedtls_aes_crypt_ctr( mbedtls_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output )
 {
+//printf("[pkbuild] %s %d\n", __FUNCTION__, __LINE__);
     int c, i;
     size_t n = *nc_off;
 

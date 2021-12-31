@@ -177,21 +177,16 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 		return ret;
 	}
 
-	if (loadinfo->compression_type > COMPRESS_TYPE_NONE) {
 #ifdef CONFIG_COMPRESSED_BINARY
-		ret = compress_init(loadinfo->filfd, loadinfo->offset, &loadinfo->filelen);
-		if (ret != OK) {
-			berr("Failed to read header for compressed binary : %d\n", ret);
-			return ret;
-		}
-#else
-		berr("No support for reading compressed binary\n");
-		return ERROR;
-#endif
+	ret = compress_init(loadinfo->filfd, loadinfo->offset, &loadinfo->filelen);
+	if (ret != OK) {
+		berr("Failed to read header for compressed binary : %d\n", ret);
+		return ret;
 	}
+#endif
 
 #if defined(CONFIG_ELF_CACHE_READ)
-	ret = elf_cache_init(loadinfo->filfd, loadinfo->offset, loadinfo->filelen, loadinfo->compression_type);
+	ret = elf_cache_init(loadinfo->filfd, loadinfo->offset, loadinfo->filelen);
 	if (ret != OK) {
 		berr("Failed to init cache support: %d\n", ret);
 		return ret;

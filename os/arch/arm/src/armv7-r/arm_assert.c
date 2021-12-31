@@ -77,6 +77,9 @@
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+#include <tinyara/wqueue.h>
+#endif
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -130,11 +133,28 @@ bool g_upassert = false;
 #ifdef CONFIG_ARCH_STACKDUMP
 static void up_stackdump(uint32_t sp, uint32_t stack_base)
 {
-	uint32_t stack;
+	uint32_t stack = sp & ~0x1f;
+	uint32_t *ptr = (uint32_t *)stack;
+	uint8_t i;
 
-	for (stack = sp & ~0x1f; stack < stack_base; stack += 32) {
-		uint32_t *ptr = (uint32_t *)stack;
-		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n", stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
+	lldbg("%08x:", stack);
+	for (i = 0; i < 8; i++) {  // Print first 8 values for sp located
+		if (stack < sp) {
+			/* If stack pointer(sp) is aligned(sp & 0x1f) to an address outside allocated stack */
+			/* Then, for stack addresses outside allocated stack, print 'xxxxxxxx' */
+			lldbg_noarg(" xxxxxxxx");
+		} else {
+			/* For remaining stack addresses inside allocated stack, print proper stack address values */
+			lldbg_noarg(" %08x", ptr[i]);
+		}
+		stack += 4;
+	}
+	lldbg_noarg("\n");
+
+	for (; stack < stack_base; stack += 32) { // Print remaining stack values from 9th value to end
+		ptr = (uint32_t *)stack;
+		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+			   stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
 	}
 }
 #else
@@ -950,6 +970,13 @@ void up_assert(const uint8_t *filename, int lineno)
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
+
+#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+	if (IS_HPWORK || IS_LPWORK) {
+		lldbg("Running work function is %x.\n", work_get_current());
+	}
+#endif /* defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__) */
+
 	up_dumpstate();
 
 #if defined(CONFIG_BOARD_CRASHDUMP)

@@ -34,6 +34,7 @@
 #include "ble_common.h"
 #include "ble_client.h"
 #include "ble_server.h"
+#include "ble_scan.h"
 
 typedef enum {
 	BLEMGR_SERVER_MODE,
@@ -43,7 +44,7 @@ typedef enum {
 } blemgr_mode_e;
 
 typedef struct _ble_bonded_device_list {
-	uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN];
+	ble_addr bd_addr;
 } ble_bonded_device_list;
 
 /****************************************************************************
@@ -115,14 +116,14 @@ ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list* device_list, 
  *   Delete the bonded device.
  *
  * Input Parameters:
- *   addr      - The mac address of bonded device.
+ *   addr      - The ble address of bonded device.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_delete_bonded(uint8_t addr[BLE_BD_ADDR_MAX_LEN]);
+ble_result_e ble_manager_delete_bonded(ble_addr *addr);
 
 /****************************************************************************
  * Name: ble_manager_delete_bonded_all
@@ -140,3 +141,19 @@ ble_result_e ble_manager_delete_bonded_all(void);
 // Get whether the con_handle is active or not
 ble_result_e ble_manager_conn_is_active(ble_conn_handle con_handle, bool *is_active);
 ble_result_e ble_manager_conn_is_any_active(bool *is_active);
+
+/****************************************************************************
+ * Name: ble_manager_get_version
+ *
+ * Description:
+ *   Get 3 bytes data of current BLE Driver version.
+ *
+ * Input Parameters:
+ *   version  - 3 bytes array to get BLE current version.
+ * 
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_get_version(uint8_t version[3]);

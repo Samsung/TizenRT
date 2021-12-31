@@ -62,7 +62,7 @@ BOOL _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
 		flash_init_para.phase_shift_idx = 0;
 	}
 	if (window_size > 0) {
-		DiagPrintf(cal_ok_log, line_delay, window_size, phase_shift_idx);
+		rtw_printf(cal_ok_log, line_delay, window_size, phase_shift_idx);
 
 		flash_init_para.phase_shift_idx = phase_shift_idx;
 		flash_init_para.FLASH_rd_sample_phase_cal = line_delay;

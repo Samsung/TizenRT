@@ -44,7 +44,7 @@ extern "C" {
 
 /* ======== hci_uart ======== */
 /* ======== trace_task ======== */
-#define TRACE_TASK_PRIO  6
+#define TRACE_TASK_PRIO  3
 
 /* ======== hci_rtk ======== */
 #define hci_board_debug DBG_8195A

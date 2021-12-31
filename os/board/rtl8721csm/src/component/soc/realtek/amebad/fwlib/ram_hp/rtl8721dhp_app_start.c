@@ -14,6 +14,7 @@
 #include "ameba_soc.h"
 #include "rtl8721d_system.h"
 #include "psram_reserve.h"
+#include "amebad_reboot_reason.h"
 #ifdef CONFIG_ARMV8M_MPU
 #include "up_mpuinit.h"
 #endif
@@ -77,7 +78,7 @@ void os_heap_init(void){
 	}
 #endif
 }
-#define dbg_printf DiagPrintf
+#define dbg_printf rtw_printf
 typedef struct fault_handler_back_trace_s {
     uint32_t msp_top;         /*!< the Top address of the MSP */
     uint32_t msp_limit;       /*!< the Limit address of the MSP */
@@ -1047,6 +1048,14 @@ void app_mpu_s_nocache_init(void)
 #endif
 }
 
+#ifdef CONFIG_AMEBAD_TRUSTZONE
+void app_hardfualt_s_prehanlder(uint32_t fault_id)
+{
+	//write reboot reason, TrustZone watchdog
+	BKUP_Write(BKUP_REG1, REBOOT_SYSTEM_TZWD_RESET);
+}
+#endif
+
 VOID app_vdd1833_detect(VOID)
 {
 	u32 temp;
@@ -1317,7 +1326,7 @@ static void app_driver_call_os_func_init(void)
 // The Main App entry point
 void app_start(void)
 {
-	//cmse_address_info_t cmse_address_info = cmse_TT((void *)DiagPrintf);
+	//cmse_address_info_t cmse_address_info = cmse_TT((void *)rtw_printf);
 
 	irq_table_init(MSP_RAM_HP_NS); /* NS Vector table init */
 	VectorTableOverride();
@@ -1376,6 +1385,10 @@ extern void __libc_init_array(void);
 	mpu_init();
 	app_mpu_nocache_init();
 	app_mpu_s_nocache_init();
+
+#ifdef CONFIG_AMEBAD_TRUSTZONE
+	Secure_VectorTableOverride(app_hardfualt_s_prehanlder);
+#endif
 #endif
 	app_vdd1833_detect();
 	memcpy_gdma_init();
@@ -1393,7 +1406,7 @@ extern void __libc_init_array(void);
 #ifdef CONFIG_STACK_COLORATION
 	/* Set the IDLE stack to the coloration value and jump into os_start() */
 
-	go_os_start((FAR void *)&_ebss, CONFIG_IDLETHREAD_STACKSIZE);
+	go_os_start((FAR void *)g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE, CONFIG_IDLETHREAD_STACKSIZE);
 #else
 	/* Call os_start() */
 
@@ -1430,4 +1443,5 @@ RAM_START_FUNCTION Img2EntryFun0 = {
 	NULL,//BOOT_RAM_WakeFromPG,
 	(u32)NewVectorTable
 };
+
 

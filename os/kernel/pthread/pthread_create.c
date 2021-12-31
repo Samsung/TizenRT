@@ -451,6 +451,11 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 
 	sched_lock();
 	if (ret == OK) {
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
+		/* Add tcb to binary thread list */
+
+		binary_manager_add_binlist(&ptcb->cmn);
+#endif
 		ret = task_activate((FAR struct tcb_s *)ptcb);
 	}
 
@@ -470,11 +475,6 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		if (!pjoin->started) {
 			ret = EINVAL;
 		}
-
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-		/* Add tcb to binary thread list */
-		binary_manager_add_binlist(&ptcb->cmn);
-#endif
 		sched_unlock();
 		(void)sem_destroy(&pjoin->data_sem);
 	} else {

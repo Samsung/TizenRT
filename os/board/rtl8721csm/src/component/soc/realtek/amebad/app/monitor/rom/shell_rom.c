@@ -480,7 +480,7 @@ VOID shell_init_rom(u32 TBLSz, VOID *pTBL)
 	shell_ctl.CRSTS = 0;
 	shell_ctl.pHistoryBuf = &shell_history_cmd[0];
 #endif
-	shell_ctl.pfINPUT = (VOID *)&DiagPrintf;
+	shell_ctl.pfINPUT = (VOID *)&rtw_printf;
 
 	if (TBLSz != 0) {
 		shell_ctl.pCmdTbl = (PCOMMAND_TABLE) pTBL;

@@ -144,16 +144,16 @@ static void _tizenrt_init_sema(_sema *sema, int init_val)
 	if (*sema == NULL) {
 		*sema = (_sema) _tizenrt_zmalloc(sizeof(sem_t));
 		if (*sema == NULL) {
-			DiagPrintf("\r\n Failed to kmm_zalloc in %s\n", __FUNCTION__);
+			rtw_printf("\r\n Failed to kmm_zalloc in %s\n", __FUNCTION__);
 			return;
 		}
 	} else {
-		DiagPrintf("\r\n already inited %s\n", __FUNCTION__);
+		rtw_printf("\r\n already inited %s\n", __FUNCTION__);
 		return;
 	}
 	int ret = sem_init((sem_t *)(*sema), 0, init_val);
 	if (ret != OK) {
-		DiagPrintf("\r\n Failed to sem_init in %s\n", __FUNCTION__);
+		rtw_printf("\r\n Failed to sem_init in %s\n", __FUNCTION__);
 		_tizenrt_mfree(*sema, sizeof(sem_t));
 		return;
 	}
@@ -167,7 +167,7 @@ static void _tizenrt_free_sema(_sema *sema)
 		if (i == 0) {
 			kmm_free(*sema);
 		} else {
-			DiagPrintf("\r\n _tizenrt_free_sema fail!!! \n");
+			rtw_printf("\r\n _tizenrt_free_sema fail!!! \n");
 		}
 	}
 	*sema = NULL;
@@ -318,12 +318,12 @@ static void _tizenrt_exit_critical(_lock *plock, _irqL *pirqL)
 
 static void _tizenrt_enter_critical_from_isr(_lock *plock, _irqL *pirqL)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 }
 
 static void _tizenrt_exit_critical_from_isr(_lock *plock, _irqL *pirqL)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 }
 
 static int _tizenrt_enter_critical_mutex(_mutex *pmutex, _irqL *pirqL)
@@ -414,45 +414,45 @@ static void _tizenrt_spinunlock(_lock *plock)
 
 static void _tizenrt_spinlock_irqsave(_lock *plock, _irqL *irqL)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	save_and_cli();
 	_tizenrt_spinlock(plock);
 }
 
 static void _tizenrt_spinunlock_irqsave(_lock *plock, _irqL *irqL)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	_tizenrt_spinunlock(plock);
 	restore_flags();
 }
 
 static int _tizenrt_init_xqueue(_xqueue *queue, const char *name, u32 message_size, u32 number_of_messages)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 static int _tizenrt_push_to_xqueue(_xqueue *queue, void *message, u32 timeout_ms)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 static int _tizenrt_pop_from_xqueue(_xqueue *queue, void *message, u32 timeout_ms)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 static int _tizenrt_peek_from_xqueue( _xqueue* queue, void* message, u32 timeout_ms )
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 static int _tizenrt_deinit_xqueue(_xqueue *queue)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -769,7 +769,7 @@ static void _tizenrt_delete_task(struct task_struct *ptask)
 static void _tizenrt_set_priority_task(void* task, u32 NewPriority)
 {
 	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 
 	if (rtcb == NULL) {
 		prefdbg("Failed to get main task %d!\n", *(pid_t *)task)
@@ -783,7 +783,7 @@ static void _tizenrt_set_priority_task(void* task, u32 NewPriority)
 static int _tizenrt_get_priority_task(void *task)
 {
 	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 
 	if (rtcb == NULL) {
 		prefdbg("Failed to get main task %d!\n", *(pid_t *)task)
@@ -796,7 +796,7 @@ static int _tizenrt_get_priority_task(void *task)
 static void _tizenrt_suspend_task(void *task)
 {
 	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 
 	if (rtcb == NULL) {
 		prefdbg("Failed to get main task %d!\n", *(pid_t *)task)
@@ -809,7 +809,7 @@ static void _tizenrt_suspend_task(void *task)
 static void _tizenrt_resume_task(void *task)
 {
 	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 
 	if (rtcb == NULL) {
 		prefdbg("Failed to get main task %d!\n", *(pid_t *)task)
@@ -954,37 +954,37 @@ void *_tizenrt_timerGetID(_timerHandle xTimer)
 
 u32 _tizenrt_timerStart(_timerHandle xTimer, osdepTickType xBlockTime)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerStartFromISR(_timerHandle xTimer, osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerStopFromISR(_timerHandle xTimer, osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerResetFromISR(_timerHandle xTimer, osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerChangePeriodFromISR(_timerHandle xTimer, osdepTickType xNewPeriod, osdepBASE_TYPE *pxHigherPriorityTaskWoken)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
 u32 _tizenrt_timerReset(_timerHandle xTimer, osdepTickType xBlockTime)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -1002,7 +1002,7 @@ void _tizenrt_wakelock_timeout(uint32_t timeout)
 
 u8 _tizenrt_get_scheduler_state(void)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -1010,14 +1010,14 @@ static IRQ_FUN TizenUserIrqFunTable[MAX_PERIPHERAL_IRQ_NUM];
 static int wrapper_IrqFun(int irq, FAR void *context, FAR void *arg)
 {
 	if (irq < AMEBAD_IRQ_FIRST) {
-		DiagPrintf("INT %d should not come here\r\n", irq);
+		rtw_printf("INT %d should not come here\r\n", irq);
 		return OK;
 	}
 	__NVIC_ClearPendingIRQ(irq - AMEBAD_IRQ_FIRST);
 	if (TizenUserIrqFunTable[irq - AMEBAD_IRQ_FIRST] != NULL) {
 		TizenUserIrqFunTable[irq - AMEBAD_IRQ_FIRST]((VOID *)(arg));
 	} else {
-		DiagPrintf("INT_Entry Irq %d Fun Not Assign!!!!!", irq - AMEBAD_IRQ_FIRST);
+		rtw_printf("INT_Entry Irq %d Fun Not Assign!!!!!", irq - AMEBAD_IRQ_FIRST);
 	}
 	return OK;
 }
@@ -1025,7 +1025,7 @@ static int wrapper_IrqFun(int irq, FAR void *context, FAR void *arg)
 BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data, u32 Priority)
 {
 	if (IrqNum < 0) {
-		DiagPrintf("INT %d should not come here\r\n", IrqNum);
+		rtw_printf("INT %d should not come here\r\n", IrqNum);
 		return _TRUE;
 	}
 	Priority = (Priority >> IRQ_PRIORITY_SHIFT);
@@ -1042,7 +1042,7 @@ BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data, u32 Priority)
 BOOL irq_unregister(IRQn_Type IrqNum)
 {
 	if (IrqNum < 0) {
-		DiagPrintf("INT %d should not come here\r\n", IrqNum);
+		rtw_printf("INT %d should not come here\r\n", IrqNum);
 		return _TRUE;
 	}
 	irq_detach(IrqNum);
@@ -1053,7 +1053,7 @@ BOOL irq_unregister(IRQn_Type IrqNum)
 void irq_enable(IRQn_Type IrqNum)
 {
 	if (IrqNum < 0) {
-		DiagPrintf("INT %d should not come here\r\n", IrqNum);
+		rtw_printf("INT %d should not come here\r\n", IrqNum);
 		return;
 	}
 	up_enable_irq(IrqNum + AMEBAD_IRQ_FIRST);
@@ -1062,7 +1062,7 @@ void irq_enable(IRQn_Type IrqNum)
 void irq_disable(IRQn_Type IrqNum)
 {
 	if (IrqNum < 0) {
-		DiagPrintf("INT %d should not come here\r\n", IrqNum);
+		rtw_printf("INT %d should not come here\r\n", IrqNum);
 		return;
 	}
 	up_disable_irq(IrqNum + AMEBAD_IRQ_FIRST);
@@ -1073,14 +1073,14 @@ int __wrap_printf(const char *format, ...)
 	int ret = 0;
 	va_list args;
 	va_start(args, (const char *)format);
-	ret = DiagPrintf((const char *)format, args);
+	ret = rtw_printf((const char *)format, args);
 	va_end(args);
 	return ret;
 }
 
 void shell_switch_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 {
-	DiagPrintf("%s %d\r\n", __func__, __LINE__);
+	rtw_printf("%s %d\r\n", __func__, __LINE__);
 }
 
 uint32_t *vTaskStackAddr(void)
@@ -1116,7 +1116,10 @@ void vTaskDelay(int ms)
 {
 	_tizenrt_mdelay_os(ms);
 }
-
+int _tizenrt_printf(const char *format)
+{
+	vddbg(format, ##__VA_ARGS__);
+}
 const struct osdep_service_ops osdep_service = {
 	_tizenrt_malloc,			//rtw_vmalloc
 	_tizenrt_zmalloc,			//rtw_zvmalloc

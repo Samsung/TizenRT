@@ -100,9 +100,6 @@
 #define LIBELF_NALLOC      1
 #endif
 
-/* Uncompressed elf representation */
-#define COMPRESS_TYPE_NONE 0
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -171,7 +168,6 @@ struct elf_loadinfo_s {
 	uint16_t buflen;			/* size of iobuffer[] */
 	int filfd;					/* Descriptor for the file being loaded */
 	uint16_t offset;             /* elf offset when binary header is included */
-	uint8_t compression_type;		/* Binary Compression type */
 	uintptr_t symtab;			/* Copy of symbol table */
 	uintptr_t reltab;			/* Copy of relocation table */
 	uintptr_t strtab;			/* Copy of string table */
@@ -294,6 +290,9 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
  ****************************************************************************/
 
 int elf_unload(struct elf_loadinfo_s *loadinfo);
+
+void *elf_find_text_section_addr(int bin_idx);
+void elf_show_all_bin_addr(void);
 
 #undef EXTERN
 #if defined(__cplusplus)

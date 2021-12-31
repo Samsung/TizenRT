@@ -104,7 +104,8 @@ struct mtd_partition_s {
 								 * sub-region */
 	off_t blocksize;			/* The size of one read/write block */
 	uint16_t blkpererase;		/* Number of R/W blocks in one erase block */
-	uint16_t tagnumber;			/* Number of tag to classify each MTD driver */
+	uint16_t partno;		     	/* Partition number */
+	uint16_t tagno;		     	/* Number of tag to classify each MTD driver */
 	struct mtd_partition_s *pnext;	/* Pointer to next partition struct */
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	char name[MTD_PARTNAME_LEN + 1];   /* Name of the partition */
@@ -214,6 +215,10 @@ static bool part_bytecheck(FAR struct mtd_partition_s *priv, off_t byoff)
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+//TODO: Check mtd part functions for memory leaks such as unchecked buffer overflows,
+//	etc. happening especially with the procfs_part_read function.
+//	All functions should work irrespective of supplied buffer's size
 
 /****************************************************************************
  * Name: part_erase
@@ -529,9 +534,9 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	/* Output a header before the first entry */
 	if (filep->f_pos == 0) {
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		total = snprintf(buffer, buflen, "%-*s  Start    Size   MTD\n", MTD_PARTNAME_LEN, "Name");
+		total = snprintf(buffer, buflen, " %-*s  Start    Size   Tag", MTD_PARTNAME_LEN, "Name");
 #else
-		total = snprintf(buffer, buflen, "  Start    Size");
+		total = snprintf(buffer, buflen, "  Start    Size   Tag");
 #endif
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
@@ -545,8 +550,7 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	 * end-of-file.  This also handles the special case when there are
 	 * no registered MTD partitions.
 	 */
-
-	if (attr->nextpart) {
+	while (attr->nextpart) {
 		/* Get the geometry of the FLASH device */
 		ret = attr->nextpart->parent->ioctl(attr->nextpart->parent, MTDIOC_GEOMETRY, (unsigned long)((uintptr_t)&geo));
 		if (ret < 0) {
@@ -561,16 +565,15 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 		blkpererase = geo.erasesize / geo.blocksize;
 
 		/* Copy data from the next known partition */
-
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		ret = snprintf(&buffer[total], buflen - total, "%s%7d %7d", attr->nextpart->name, attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks);
+		ret = snprintf(&buffer[total], buflen - total, "%15s %7d %7d %4d", attr->nextpart->name, attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks, attr->nextpart->tagno);
 #else
-		ret = snprintf(&buffer[total], buflen - total, "%7d %7d", attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks);
+		ret = snprintf(&buffer[total], buflen - total, "%7d %7d %4d", attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks, attr->nextpart->tagno);
 #endif
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
 		if (ret + total < buflen) {
-			ret += snprintf(&buffer[total + ret], buflen - (total + ret), "   %s\n", attr->nextpart->parent->name);
+			ret += snprintf(&buffer[total + ret], buflen - (total + ret), "%15s\n", attr->nextpart->parent->name);
 		}
 #else
 		if (ret + total < buflen) {
@@ -585,6 +588,12 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 
 			total += ret;
 			attr->nextpart = attr->nextpart->pnext;
+		} else {
+			/* This one didn't fit completely.  Truncate the partial
+			* entry and break the loop.
+			*/
+			buffer[total] = '\0';
+			break;
 		}
 	}
 
@@ -678,6 +687,7 @@ static int part_procfs_stat(const char *relpath, struct stat *buf)
  *   mtd        - The MTD device to be partitioned
  *   firstblock - The offset in bytes to the first block
  *   nblocks    - The number of blocks in the partition
+ *   partno     - Partition number
  *
  * Returned Value:
  *   On success, another MTD device representing the partition is returned.
@@ -685,7 +695,7 @@ static int part_procfs_stat(const char *relpath, struct stat *buf)
  *
  ****************************************************************************/
 
-FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock, off_t nblocks, uint16_t tagno)
+FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock, off_t nblocks, uint16_t partno)
 {
 	FAR struct mtd_partition_s *part;
 	FAR struct mtd_geometry_s geo;
@@ -760,7 +770,8 @@ FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock,
 	part->neraseblocks = eraseend - erasestart;
 	part->blocksize = geo.blocksize;
 	part->blkpererase = blkpererase;
-	part->tagnumber = tagno;
+	part->partno = partno;
+	part->tagno = MTD_NONE;
 
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	strncpy(part->name, "(noname)", MTD_PARTNAME_LEN);
@@ -808,12 +819,33 @@ FAR struct mtd_dev_s *get_mtd_partition(uint16_t tagno)
 	part = g_pfirstpartition;
 
 	do {
-		if (part->tagnumber == tagno) {
+		if (part->tagno == tagno) {
 			return (FAR struct mtd_dev_s *)part;
 		}
 		part = part->pnext;
 	} while (part);
 	return NULL;
+}
+
+/****************************************************************************
+ * Name: mtd_setpartitiontagno
+ *
+ * Description:
+ *   Sets the tag number of the specified partition.
+ *
+ ****************************************************************************/
+
+int mtd_setpartitiontagno(FAR struct mtd_dev_s *mtd, uint16_t tagno)
+{
+	FAR struct mtd_partition_s *priv = (FAR struct mtd_partition_s *)mtd;
+
+	if (priv == NULL || tagno >= MTD_TAG_MAX) {
+		return -EINVAL;
+	}
+
+	/* Set tag number */
+	priv->tagno = tagno;
+	return OK;
 }
 
 /****************************************************************************

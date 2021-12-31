@@ -353,7 +353,7 @@ static uart_dev_t g_uart2port = {
 		.buffer = g_uart2rxbuffer,
 	},
 	.xmit = {
-		.size = CONFIG_UART1_TXBUFSIZE,
+		.size = CONFIG_UART2_TXBUFSIZE,
 		.buffer = g_uart2txbuffer,
 	},
 	.ops = &g_uart_ops,
@@ -564,6 +564,13 @@ static int rtl8721d_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long 
 		rtl8721d_up_rxint(dev, priv->rxint_enable);
 		break;
 
+	case TIOCLOOPBACK:
+		if (!arg) {
+			return -EINVAL;
+		}
+		serial_control_loopback(sdrv[uart_index_get(priv->tx)], *(bool *)arg);
+		break;
+
 	default:
 		ret = -ENOTTY;
 		break;
@@ -673,28 +680,7 @@ static bool rtl8721d_up_txready(struct uart_dev_s *dev)
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 
-#if defined(CONFIG_UART0_SERIAL_CONSOLE)
-	if (uart_index_get(priv->tx) == 0){
-		while (!serial_writable(sdrv[uart_index_get(priv->tx)]));
-		return true;
-	}
-	else
-#elif defined(CONFIG_UART1_SERIAL_CONSOLE)
-	if (uart_index_get(priv->tx) == 3){
-		while (!serial_writable(sdrv[uart_index_get(priv->tx)]));
-		return true;
-	}
-	else
-#elif defined(CONFIG_UART2_SERIAL_CONSOLE)
-	if (uart_index_get(priv->tx) == 2){
-		while (!serial_writable(sdrv[uart_index_get(priv->tx)]));
-		return true;
-	}
-	else
-#endif
-	{
-		return (serial_writable(sdrv[uart_index_get(priv->tx)]));
-	}
+	return (serial_writable(sdrv[uart_index_get(priv->tx)]));
 }
 
 /****************************************************************************

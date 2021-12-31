@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2020 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,89 +15,105 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <tinyara/seclink.h>
 #include <tinyara/seclink_drv.h>
 #include <stress_tool/st_perf.h>
 #include "sl_test.h"
+#include "sl_test_usage.h"
 
-#define SECLINK_SS_TEST_TRIAL SECLINK_TEST_TRIAL
-#define SECLINK_SS_TEST_LIMIT_TIME SECLINK_TEST_LIMIT
-#define SECLINK_SS_TEST_MEM_SIZE SECLINK_TEST_MEM_SIZE
+static char *g_command[] = {
+#ifdef SL_SS_TEST_POOL
+#undef SL_SS_TEST_POOL
+#endif
+#define SL_SS_TEST_POOL(command, type, func) command,
+#include "sl_ss_table.h"
+};
 
+#ifdef SL_SS_TEST_POOL
+#undef SL_SS_TEST_POOL
+#endif
+#define SL_SS_TEST_POOL(command, type, func) \
+	extern void func(sl_options *opt);
+#include "sl_ss_table.h"
+
+static sl_test_func g_func_list[] = {
+#ifdef SL_SS_TEST_POOL
+#undef SL_SS_TEST_POOL
+#endif
+#define SL_SS_TEST_POOL(command, type, func) func,
+#include "sl_ss_table.h"
+};
+
+typedef enum {
+#ifdef SL_SS_TEST_POOL
+#undef SL_SS_TEST_POOL
+#endif
+#define SL_SS_TEST_POOL(command, type, func) type,
+#include "sl_ss_table.h"
+	SL_SS_TYPE_MAX,
+	SL_SS_TYPE_ERR = -1
+} sl_ss_type_e;
+
+#define SL_TEST_START_INDEX 0
 #define SL_TEST_MAX_SLOT_INDEX 3
 #define SL_TEST_START_INDEX 0
 #define SL_TEST_MAX_DATA 8192
-#define SL_SS_TEST_LIMIT_TIME 1000000
-#define SL_SS_TEST_TRIAL 1
 
 /*  Each storage has different size */
 static sl_ctx g_hnd;
 static uint32_t g_size_arr[SL_TEST_MAX_SLOT_INDEX];
 static hal_data g_input[SL_TEST_MAX_SLOT_INDEX];
 static hal_data g_output[SL_TEST_MAX_SLOT_INDEX];
-static unsigned char *g_ss_data[SL_TEST_MAX_SLOT_INDEX] = {NULL,};
+static unsigned char *g_ss_data[SL_TEST_MAX_SLOT_INDEX] = {
+	NULL,
+};
+
+ST_SET_PACK_GLOBAL(sl_ss);
 
 /*
  * Desc: Write data in secure storage
- * Refered https://developer.artik.io/documentation/security-api/see-securestorage-test_8c-example.html
  */
-TEST_SETUP(write_storage)
+TESTCASE_SETUP(write_storage)
 {
-	ST_START_TEST;
-
 	for (int i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		g_ss_data[i] = (unsigned char *)malloc(g_size_arr[i]);
 		memset(g_ss_data[i], i + 1, g_size_arr[i]);
 		g_input[i].data = g_ss_data[i];
 		g_input[i].data_len = g_size_arr[i];
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
-TEST_TEARDOWN(write_storage)
+TESTCASE_TEARDOWN(write_storage)
 {
-	ST_START_TEST;
-	hal_result_e hres;
+
 	for (uint32_t i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ(SECLINK_OK, sl_delete_storage(g_hnd, i, &hres));
-		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_delete_storage(g_hnd, i));
 	}
 
 	for (int i = 0; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		free(g_ss_data[i]);
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
-TEST_F(write_storage)
+START_TEST_F(write_storage)
 {
-	ST_START_TEST;
-	hal_result_e hres;
 	for (uint32_t i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ(SECLINK_OK, sl_write_storage(g_hnd, i, &g_input[i], &hres));
-		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_write_storage(g_hnd, i, &g_input[i]));
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
 /*
  * Desc: Read data in secure storage
- * Refered https://developer.artik.io/documentation/security-api/see-securestorage-test_8c-example.html
  */
-TEST_SETUP(read_storage)
+TESTCASE_SETUP(read_storage)
 {
-	ST_START_TEST;
-
 	for (int i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		g_ss_data[i] = (unsigned char *)malloc(g_size_arr[i]);
 		memset(g_ss_data[i], i + 1, g_size_arr[i]);
@@ -105,58 +121,46 @@ TEST_SETUP(read_storage)
 		g_input[i].data_len = g_size_arr[i];
 	}
 
-	hal_result_e hres;
 	for (uint32_t i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ(SECLINK_OK, sl_write_storage(g_hnd, i, &g_input[i], &hres));
-		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_write_storage(g_hnd, i, &g_input[i]));
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
-TEST_TEARDOWN(read_storage)
+TESTCASE_TEARDOWN(read_storage)
 {
-	ST_START_TEST;
-
-	hal_result_e hres;
 	for (uint32_t i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ(SECLINK_OK, sl_delete_storage(g_hnd, i, &hres));
-		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_delete_storage(g_hnd, i));
+
 		sl_test_free_buffer(&g_output[i]);
 	}
 
 	for (int i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		free(g_ss_data[i]);
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
-TEST_F(read_storage)
+START_TEST_F(read_storage)
 {
-	ST_START_TEST;
-	hal_result_e hres;
 	for (uint32_t i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_output[i], SL_TEST_MAX_DATA));
-		ST_EXPECT_EQ(SECLINK_OK, sl_read_storage(g_hnd, i, &g_output[i], &hres));
-		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_read_storage(g_hnd, i, &g_output[i]));
 
-		char message[32] = {0,};
-		snprintf(message, 32, "read storage %u", i);
+		char message[32] = {
+			0,
+		};
+		snprintf(message, 32, "read storage slot %u", i);
 		sl_test_print_buffer(g_output[i].data, g_output[i].data_len, message);
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
 /*
  * Desc: Delete data in secure storage
- * Refered https://developer.artik.io/documentation/security-api/see-securestorage-test_8c-example.html
  */
-TEST_SETUP(delete_storage)
+TESTCASE_SETUP(delete_storage)
 {
-	ST_START_TEST;
-
 	for (int i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		g_ss_data[i] = (unsigned char *)malloc(g_size_arr[i]);
 		memset(g_ss_data[i], i + 1, g_size_arr[i]);
@@ -164,71 +168,64 @@ TEST_SETUP(delete_storage)
 		g_input[i].data_len = g_size_arr[i];
 	}
 
-	hal_result_e hres;
 	for (uint32_t i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ(SECLINK_OK, sl_write_storage(g_hnd, i, &g_input[i], &hres));
-		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_write_storage(g_hnd, i, &g_input[i]));
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
-TEST_TEARDOWN(delete_storage)
+TESTCASE_TEARDOWN(delete_storage)
 {
-	ST_START_TEST;
-
 	for (int i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		free(g_ss_data[i]);
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
-TEST_F(delete_storage)
+START_TEST_F(delete_storage)
 {
-	ST_START_TEST;
-
-	hal_result_e hres;
 	for (uint32_t i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
-		ST_EXPECT_EQ(SECLINK_OK, sl_delete_storage(g_hnd, i, &hres));
-		ST_EXPECT_EQ(HAL_SUCCESS, hres);
+		ST_EXPECT_EQ(SECLINK_OK, sl_delete_storage(g_hnd, i));
 	}
-
-	ST_END_TEST;
 }
+END_TEST_F
 
-static void _sl_init_sstest(void)
+TESTCASE_SETUP(sl_ss_global)
 {
 	g_size_arr[0] = SL_TEST_MAX_DATA;
 	g_size_arr[1] = 300;
 	g_size_arr[2] = 300;
+	ST_ASSERT_EQ(SECLINK_OK, sl_init(&g_hnd));
+}
+END_TESTCASE
 
-	int res = sl_init(&g_hnd);
-	if (res != SECLINK_OK) {
-		printf("initialize error\n");
-	}
+TESTCASE_TEARDOWN(sl_ss_global)
+{
+	ST_ASSERT_EQ(SECLINK_OK, sl_deinit(g_hnd));
+}
+END_TESTCASE
+
+void sl_handle_ss_write(sl_options *opt)
+{
+	ST_SET_SMOKE(sl_ss, opt->count, 0, "write storage", write_storage);
 }
 
-static void _sl_deinit_sstest(void)
+void sl_handle_ss_read(sl_options *opt)
 {
-	int res = sl_deinit(g_hnd);
-	if (res != SECLINK_OK) {
-		printf("deinitialize error\n");
-	}
+	ST_SET_SMOKE(sl_ss, opt->count, 0, "read storage", read_storage);
 }
 
-void sl_ss_test(void)
+void sl_handle_ss_delete(sl_options *opt)
 {
-	_sl_init_sstest();
+	ST_SET_SMOKE(sl_ss, opt->count, 0, "delete storage", delete_storage);
+}
 
-	ST_SET_PACK(sl_ss);
+void sl_handle_ss(sl_options *opt)
+{
+	ST_TC_SET_GLOBAL(sl_ss, sl_ss_global);
 
-	ST_SET_SMOKE(sl_ss, SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Write data in secure storage", write_storage);
-	ST_SET_SMOKE(sl_ss, SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Read data from secure storage", read_storage);
-	ST_SET_SMOKE(sl_ss, SL_SS_TEST_TRIAL, SL_SS_TEST_LIMIT_TIME, "Delete data of secure storage", delete_storage);
-
+	SL_PARSE_MESSAGE(opt, g_command, sl_ss_type_e,
+					 g_func_list, SL_SS_TYPE_MAX, SL_SS_TYPE_ERR);
 	ST_RUN_TEST(sl_ss);
 	ST_RESULT_TEST(sl_ss);
-
-	_sl_deinit_sstest();
 }

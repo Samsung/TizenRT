@@ -5,6 +5,20 @@
 
 if ARCH_BOARD_RTL8721CSM
 
+config FLASH_START_ADDR
+    hex
+    default 0x8000000
+    help
+        A start address of flash (in hex).
+        This is fixed value, so user doesn't need to change it.
+
+config FLASH_SIZE
+    int
+    default 8388608
+    help
+        A size of flash (in bytes).
+        This is fixed value, so user doesn't need to change it.
+
 menu "SPI Flash driver"
 
 config AMEBAD_FLASH_BASE

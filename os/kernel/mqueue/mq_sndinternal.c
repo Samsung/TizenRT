@@ -171,8 +171,10 @@ int mq_verifysend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
  *   None
  *
  * Return Value:
- *   A reference to the allocated msg structure.  On a failure to allocate,
- *   this function PANICs.
+ *   A reference to the allocated msg structure.
+ *   NULL on a failure to allocate,
+ *    if from interrupt handler, set the errno as EBUSY,
+ *    if from normal thread, set the errno as ENOMEM.
  *
  ****************************************************************************/
 
@@ -195,6 +197,9 @@ FAR struct mqueue_msg_s *mq_msgalloc(void)
 
 			mqmsg = (FAR struct mqueue_msg_s *)sq_remfirst(&g_msgfreeirq);
 		}
+		if (!mqmsg) {
+			set_errno(EBUSY);
+		}
 	}
 
 	/* We were not called from an interrupt handler. */
@@ -214,9 +219,11 @@ FAR struct mqueue_msg_s *mq_msgalloc(void)
 			mqmsg = (FAR struct mqueue_msg_s *)kmm_malloc((sizeof(struct mqueue_msg_s)));
 
 			/* Check if we got an allocated message */
-
-			ASSERT(mqmsg);
-			mqmsg->type = MQ_ALLOC_DYN;
+			if (mqmsg) {
+				mqmsg->type = MQ_ALLOC_DYN;
+			} else {
+				set_errno(ENOMEM);
+			}
 		}
 	}
 

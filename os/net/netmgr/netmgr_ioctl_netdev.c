@@ -33,7 +33,7 @@
 	do {										\
 		dev = _netdev_ifrdev(req);				\
 		if (!dev) {								\
-			NET_LOGE(TAG, "get netdev fail\n");	\
+			NET_LOGKE(TAG, "get netdev fail\n");	\
 			return -ENOSYS;						\
 		}										\
 	} while (0)
@@ -60,7 +60,7 @@ static int _netdev_getconf(struct netdev *dev, void *arg)
 	FAR struct ifreq  *ifr = (FAR struct ifreq *)(ifc->ifc_buf + ifenum->pos);
 
 	if (ifenum->pos + sizeof(struct ifreq) > ifc->ifc_len) {
-		NET_LOGE(TAG, "ifc_len is shorter than provided\n");
+		NET_LOGKE(TAG, "ifc_len is shorter than provided\n");
 		return -EFAULT;
 	}
 
@@ -129,7 +129,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 	int ret = -EINVAL;
 	(void)sock;
 
-	NET_LOGV(TAG, "cmd: %d\n", cmd);
+	NET_LOGKV(TAG, "cmd: %d\n", cmd);
 
 	/* Execute the command */
 	switch (cmd) {
@@ -263,7 +263,6 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		ret = ioctl_siocgifname(req);
 		break;
 	default: {
-		NET_LOGE(TAG, "netdev invalid command\n");
 		ret = -ENOTTY;
 	}
 		break;

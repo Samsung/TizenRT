@@ -18,7 +18,6 @@
 #include "pthread.h"
 #include "rtk_lwip_netconf.h"
 
-#include <tinyara/wifi/wifi_utils.h>
 #include "wifi_conf.h"
 
 //RTK
@@ -63,9 +62,9 @@ static int callback_handler(void *arg)
 	int *type = (int*)(arg);
 
 	if (*type == 1 && g_cbk.sta_connected) {
-		g_cbk.sta_connected(WIFI_UTILS_SUCCESS, NULL);
+		g_cbk.sta_connected(TRWIFI_SUCCESS, NULL);
 	} else if (*type == 2 && g_cbk.sta_connected) {
-		g_cbk.sta_connected(WIFI_UTILS_FAIL, NULL);
+		g_cbk.sta_connected(TRWIFI_FAIL, NULL);
 	} else if (*type == 3 && g_cbk.softap_sta_joined) {
 		g_cbk.softap_sta_joined(NULL);
 	} else if (*type == 4 && g_cbk.sta_disconnected) {
@@ -132,9 +131,9 @@ static void linkdown_handler(rtk_reason_t *reason)
 //
 // Interface API
 //
-wifi_utils_result_e wifi_utils_init(void)
+trwifi_result_e wifi_utils_init(void)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	trwifi_result_e wuret = TRWIFI_FAIL;
 	if (g_mode == RTK_WIFI_NONE) {
 		int ret = RTK_STATUS_SUCCESS;
 		g_cbk = (wifi_utils_cb_s){NULL, NULL, NULL, NULL, NULL};
@@ -153,71 +152,71 @@ wifi_utils_result_e wifi_utils_init(void)
 			return wuret;
 		}
 		g_mode = RTK_WIFI_STATION_IF;
-		wuret = WIFI_UTILS_SUCCESS;
+		wuret = TRWIFI_SUCCESS;
 	} else {
 		ndbg("Already %d\n", g_mode);
 	}
 	return wuret;
-	//return WIFI_UTILS_FAIL;
+	//return TRWIFI_FAIL;
 }
 
-wifi_utils_result_e wifi_utils_deinit(void)
+trwifi_result_e trwifi_deinit(void)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret = cmd_wifi_off();
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_NONE;
-		g_cbk = (wifi_utils_cb_s){NULL, NULL, NULL, NULL, NULL};
-		wuret = WIFI_UTILS_SUCCESS;
+		g_cbk = (trwifi_cb_s){NULL, NULL, NULL, NULL, NULL};
+		wuret = TRWIFI_SUCCESS;
 	} else {
 		ndbg("[RTK] Failed to stop STA mode\n");
 	}
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_scan_ap(void *arg)
+trwifi_result_e trwifi_scan_ap(void *arg)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	trwifi_result_e wuret = TRWIFI_FAIL;
 	if(wifi_scan_networks(app_scan_result_handler, NULL ) != RTW_SUCCESS){
 		//ndbg("[RTK] [ERR] WiFi scan fail(%d)\n", ret);
 		return wuret;
 	}
-	wuret = WIFI_UTILS_SUCCESS;
+	wuret = TRWIFI_SUCCESS;
 	ndbg("[RTK] WIFi Scan success\n");
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk)
+trwifi_result_e trwifi_register_callback(trwifi_cb_s *cbk)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_INVALID_ARGS;
+	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
 	if (cbk) {
 		g_cbk = *cbk;
-		wuret = WIFI_UTILS_SUCCESS;
+		wuret = TRWIFI_SUCCESS;
 	} else {
 		ndbg("[RTK] WiFi callback register failure (no callback)\n");
 	}
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_config, void *arg)
+trwifi_result_e wifi_utils_connect_ap(trwifi_ap_config_s *ap_connect_config, void *arg)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_INVALID_ARGS;
+	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
 	if (!ap_connect_config) {
 		return wuret;
 	}
 
 	int ret;
-	wuret = WIFI_UTILS_FAIL;
+	wuret = TRWIFI_FAIL;
 
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		if(wifi_utils_deinit()){
+		if(trwifi_deinit()){
 			ndbg("[RTK] Failed to stop AP mode\n");
-			return WIFI_UTILS_FAIL;
+			return TRWIFI_FAIL;
 		}
 		vTaskDelay(20);
-		if (wifi_utils_init() < 0){
+		if (trwifi_init() < 0){
 			ndbg("\n\rERROR: Wifi on failed!");
-			return WIFI_UTILS_FAIL;
+			return TRWIFI_FAIL;
 		}
 	}
 
@@ -226,7 +225,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 		ndbg("[RTK] WiFiNetworkJoin failed: %d, %s\n", ret, ap_connect_config->ssid);
 		return wuret;
 	} else {
-		wuret = WIFI_UTILS_SUCCESS;
+		wuret = TRWIFI_SUCCESS;
 		nvdbg("[RTK] Successfully joined the network: %s(%d)\n", ap_connect_config->ssid,
 			  ap_connect_config->ssid_length);
 	}
@@ -234,13 +233,13 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
+trwifi_result_e wifi_utils_disconnect_ap(void *arg)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret = cmd_wifi_disconnect();
 	if (ret == RTK_STATUS_SUCCESS) {
 		ndbg("[RTK] WiFiNetworkLeave success\n");
-		wuret = WIFI_UTILS_SUCCESS;
+		wuret = TRWIFI_SUCCESS;
 	} else {
 		ndbg("[RTK] WiFiNetworkLeave fail because of %d\n", ret);
 	}
@@ -248,11 +247,11 @@ wifi_utils_result_e wifi_utils_disconnect_ap(void *arg)
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
+trwifi_result_e wifi_utils_get_info(trwifi_info_s *wifi_info)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_INVALID_ARGS;
+	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
 	if (wifi_info) {
-		wuret = WIFI_UTILS_FAIL;
+		wuret = TRWIFI_FAIL;
 		if (g_mode != RTK_WIFI_NONE) {
 			char mac_str[18] = {0 ,};
 			(void)wifi_get_mac_address((char *)mac_str);
@@ -260,20 +259,20 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 			if (ret == WIFIMGR_MACADDR_LEN) {
 				wifi_info->rssi = (int)0;
 				if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-					wifi_info->wifi_status = WIFI_UTILS_SOFTAP_MODE;
+					wifi_info->wifi_status = TRWIFI_SOFTAP_MODE;
 				} else if (g_mode == RTK_WIFI_STATION_IF) {
 					uint8_t isConnected;
 					if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
 						int8_t rssi;
-						wifi_info->wifi_status = WIFI_UTILS_CONNECTED;
+						wifi_info->wifi_status = TRWIFI_CONNECTED;
 						if (wifi_get_rssi(&rssi) == RTK_STATUS_SUCCESS) {
 							wifi_info->rssi = (int)rssi;
 						}
 					} else {
-						wifi_info->wifi_status = WIFI_UTILS_DISCONNECTED;
+						wifi_info->wifi_status = TRWIFI_DISCONNECTED;
 					}
 				}
-				wuret = WIFI_UTILS_SUCCESS;
+				wuret = TRWIFI_SUCCESS;
 			} else {
 				ndbg("[RTK] no MAC exists\n");
 			}
@@ -284,21 +283,21 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info_s *wifi_info)
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_config)
+trwifi_result_e wifi_utils_start_softap(trwifi_softap_config_s *softap_config)
 {
 	if (!softap_config) {
-		return WIFI_UTILS_INVALID_ARGS;
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	if(g_mode == RTK_WIFI_SOFT_AP_IF)
 		ndbg("[RTK] softap is already running!\n");
 
-	wifi_utils_result_e ret = WIFI_UTILS_FAIL;
+	trwifi_result_e ret = TRWIFI_FAIL;
 
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 	if (ret != RTK_STATUS_SUCCESS) {
 		ndbg("[RTK] Link callback handles: register failed !\n");
-		return WIFI_UTILS_FAIL;
+		return TRWIFI_FAIL;
 	} else {
 		nvdbg("[RTK] Link callback handles: registered\n");
 	}
@@ -310,14 +309,14 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	g_mode = RTK_WIFI_SOFT_AP_IF;
 	nvdbg("[RTK] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
 
-	ret = WIFI_UTILS_SUCCESS;
+	ret = TRWIFI_SUCCESS;
 
 	return ret;
 }
 
-wifi_utils_result_e wifi_utils_start_sta(void)
+trwifi_result_e wifi_utils_start_sta(void)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret = RTK_STATUS_SUCCESS;
 
 	if(g_mode == RTK_WIFI_STATION_IF)
@@ -336,22 +335,22 @@ wifi_utils_result_e wifi_utils_start_sta(void)
 	ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_STATION_IF;
-		wuret = WIFI_UTILS_SUCCESS;
+		wuret = TRWIFI_SUCCESS;
 	} else {
 		ndbg("[RTK] Failed to start STA mode\n");
 	}
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_stop_softap(void)
+trwifi_result_e wifi_utils_stop_softap(void)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret;
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		ret = cmd_wifi_off();
 		if (ret == RTK_STATUS_SUCCESS) {
 			g_mode = RTK_WIFI_NONE;
-			wuret = WIFI_UTILS_SUCCESS;
+			wuret = TRWIFI_SUCCESS;
 			ndbg("[RTK] Stop AP mode successfully\n");
 		} else {
 			ndbg("[RTK] Stop AP mode fail\n");
@@ -362,13 +361,13 @@ wifi_utils_result_e wifi_utils_stop_softap(void)
 	return wuret;
 }
 
-wifi_utils_result_e wifi_utils_set_autoconnect(uint8_t check)
+trwifi_result_e wifi_utils_set_autoconnect(uint8_t check)
 {
-	wifi_utils_result_e wuret = WIFI_UTILS_FAIL;
+	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret = RTK_FAIL;
 	ret = wifi_set_autoreconnect(check);
 	if (ret == RTK_STATUS_SUCCESS) {
-		wuret = WIFI_UTILS_SUCCESS;
+		wuret = TRWIFI_SUCCESS;
 		ndbg("[RTK] External Autoconnect set to %d\n", check);
 	} else {
 		ndbg("[RTK] External Autoconnect failed to set %d", check);

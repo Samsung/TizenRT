@@ -158,7 +158,7 @@ static void ftpc_nlstparse(FAR FILE *instream, callback_t callback, FAR void *ar
 		if (buffer[0] == '\0') {
 			break;
 		}
-		nvdbg("File: %s\n", buffer);
+		printf("File: %s\n", buffer);
 
 		/* Perform the callback operation */
 
@@ -181,7 +181,7 @@ static int ftpc_recvdir(FAR struct ftpc_session_s *session, FAR FILE *outstream)
 	/* Verify that we are still connected to the server */
 
 	if (!ftpc_connected(session)) {
-		ndbg("Not connected to server\n");
+		printf("Not connected to server\n");
 		return ERROR;
 	}
 
@@ -216,7 +216,7 @@ static int ftpc_recvdir(FAR struct ftpc_session_s *session, FAR FILE *outstream)
 	if (!FTPC_IS_PASSIVE(session)) {
 		ret = ftpc_sockaccept(&session->data);
 		if (ret != OK) {
-			ndbg("ftpc_sockaccept() failed: %d\n", errno);
+			printf("ftpc_sockaccept() failed: %d\n", errno);
 			return ERROR;
 		}
 	}
@@ -301,7 +301,7 @@ FAR struct ftpc_dirlist_s *ftpc_listdir(SESSION handle, FAR const char *dirpath)
 	asprintf(&tmpfname, "%s/TMP%d.dat", CONFIG_FTP_TMPDIR, getpid());
 	filestream = fopen(tmpfname, "w+");
 	if (!filestream) {
-		ndbg("Failed to create %s: %d\n", tmpfname, errno);
+		printf("Failed to create %s: %d\n", tmpfname, errno);
 		free(absrpath);
 		free(tmpfname);
 		return NULL;
@@ -314,7 +314,7 @@ FAR struct ftpc_dirlist_s *ftpc_listdir(SESSION handle, FAR const char *dirpath)
 	if (!iscurrdir) {
 		ret = ftpc_cmd(session, "CWD %s", absrpath);
 		if (ret != OK) {
-			ndbg("CWD to %s failed\n", absrpath);
+			printf("CWD to %s failed\n", absrpath);
 		}
 	}
 
@@ -329,7 +329,7 @@ FAR struct ftpc_dirlist_s *ftpc_listdir(SESSION handle, FAR const char *dirpath)
 	if (!iscurrdir) {
 		int tmpret = ftpc_cmd(session, "CWD %s", session->currdir);
 		if (tmpret != OK) {
-			ndbg("CWD back to to %s failed\n", session->currdir);
+			printf("CWD back to to %s failed\n", session->currdir);
 		}
 	}
 
@@ -344,17 +344,17 @@ FAR struct ftpc_dirlist_s *ftpc_listdir(SESSION handle, FAR const char *dirpath)
 
 		ftpc_nlstparse(filestream, ftpc_dircount, &nnames);
 		if (!nnames) {
-			ndbg("Nothing found in directory\n");
+			printf("Nothing found in directory\n");
 			goto errout;
 		}
-		nvdbg("nnames: %d\n", nnames);
+		printf("nnames: %d\n", nnames);
 
 		/* Allocate and initialize a directory container */
 
 		allocsize = SIZEOF_FTPC_DIRLIST(nnames);
 		dirlist = (struct ftpc_dirlist_s *)malloc(allocsize);
 		if (!dirlist) {
-			ndbg("Failed to allocate dirlist\n");
+			printf("Failed to allocate dirlist\n");
 			goto errout;
 		}
 

@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <semaphore.h>
 
 #define TRBLE_BD_ADDR_MAX_LEN 6
 #define TRBLE_ADV_RAW_DATA_MAX_LEN 31
@@ -64,10 +65,16 @@ typedef enum {
 	LWNL_REQ_BLE_DEL_BOND_ALL,
 	LWNL_REQ_BLE_CONN_IS_ACTIVE,
 	LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE,
+	LWNL_REQ_BLE_IOCTL,
 	
-	// Client
+	// Scanner
 	LWNL_REQ_BLE_START_SCAN,
 	LWNL_REQ_BLE_STOP_SCAN,
+	LWNL_REQ_BLE_WHITELIST_ADD,
+	LWNL_REQ_BLE_WHITELIST_DELETE,
+	LWNL_REQ_BLE_WHITELIST_CLEAR_ALL,
+
+	// Client
 	LWNL_REQ_BLE_CLIENT_CONNECT,
 	LWNL_REQ_BLE_CLIENT_DISCONNECT,
 	LWNL_REQ_BLE_CLIENT_DISCONNECT_ALL,
@@ -87,6 +94,8 @@ typedef enum {
 	LWNL_REQ_BLE_SERVER_DISCONNECT,
 	LWNL_REQ_BLE_GET_MAC_BY_CONN,
 	LWNL_REQ_BLE_GET_CONN_BY_MAC,
+
+	// Advertiser
 	LWNL_REQ_BLE_SET_ADV_DATA,
 	LWNL_REQ_BLE_SET_ADV_RESP,
 	LWNL_REQ_BLE_SET_ADV_TYPE,
@@ -101,7 +110,6 @@ typedef enum {
 	LWNL_EVT_BLE_CLIENT_DISCONNECT,
 	LWNL_EVT_BLE_CLIENT_NOTI,
 	LWNL_EVT_BLE_SCAN_STATE,
-	LWNL_EVT_BLE_SCAN_DATA,
 } lwnl_cb_ble;
 
 typedef enum {
@@ -116,8 +124,19 @@ typedef enum {
 	TRBLE_UNSUPPORTED,
 	TRBLE_CALLBACK_NOT_REGISTERED,
 	TRBLE_ALREADY_WORKING,
+	TRBLE_OUT_OF_MEMORY,
 	TRBLE_UNKNOWN,
 } trble_result_e;
+
+/*** BLE ioctl Message ***/
+typedef enum {
+	TRBLE_MSG_GET_VERSION,
+} trble_ioctl_cmd;
+
+typedef struct {
+	trble_ioctl_cmd cmd;
+	void *data;
+} trble_msg_s;
 
 /*** Central(Client) ***/
 typedef enum {
@@ -146,12 +165,22 @@ typedef struct {
 typedef struct {
 	trble_adv_type_e adv_type;
 	int8_t rssi;
-	trble_conn_info conn_info;
+	trble_addr addr;
 	uint8_t raw_data[TRBLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
 	uint8_t resp_data[TRBLE_ADV_RESP_DATA_MAX_LEN];
 	uint8_t resp_data_length;
-} trble_scanned_device;
+} __attribute__((aligned(4), packed)) trble_scanned_device;
+
+typedef struct {
+	int size;
+	volatile int write_index;
+	volatile int read_index;
+	sem_t countsem;
+	sem_t *grp_count;
+	void *queue;
+	int data_size;
+} trble_queue;
 
 typedef struct {
 	trble_conn_info conn_info;
@@ -172,7 +201,8 @@ typedef struct {
 typedef struct {
 	uint8_t raw_data[TRBLE_ADV_RAW_DATA_MAX_LEN];
 	uint8_t raw_data_length;
-	uint16_t scan_duration;
+	bool whitelist_enable;
+	uint32_t scan_duration;
 } trble_scan_filter;
 
 typedef struct {
@@ -257,7 +287,7 @@ typedef struct {
 } trble_server_init_config;
 
 typedef struct trble_bonded_device_list {
-	uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
+	trble_addr bd_addr;
 } trble_bonded_device_list_s;
 
 /****************************************************************************
@@ -270,14 +300,20 @@ typedef trble_result_e (*trble_deinit)(struct bledev *dev);
 typedef trble_result_e (*trble_get_mac_addr)(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 // trble_disconnect can be used in both of server & client.
 typedef trble_result_e (*trble_get_bonded_device)(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
-typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, uint8_t addr[TRBLE_BD_ADDR_MAX_LEN]);
+typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, trble_addr *addr);
 typedef trble_result_e (*trble_delete_bond_all)(struct bledev *dev);
 typedef trble_result_e (*trble_conn_is_active)(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
 typedef trble_result_e (*trble_conn_is_any_active)(struct bledev *dev, bool *is_active);
+typedef trble_result_e (*trble_drv_ioctl)(struct bledev *dev, trble_msg_s *msg);
 
-/*** Central(Client) ***/
+/*** Scanner(Observer) ***/
 typedef trble_result_e (*trble_start_scan)(struct bledev *dev, trble_scan_filter *filter);
 typedef trble_result_e (*trble_stop_scan)(struct bledev *dev);
+typedef trble_result_e (*trble_scan_whitelist_add)(struct bledev *dev, trble_addr *addr);
+typedef trble_result_e (*trble_scan_whitelist_delete)(struct bledev *dev, trble_addr *addr);
+typedef trble_result_e (*trble_scan_whitelist_clear_all)(struct bledev *dev);
+
+/*** Central(Client) ***/
 typedef trble_result_e (*trble_client_connect)(struct bledev *dev, trble_conn_info *conn_info);
 typedef trble_result_e (*trble_client_disconnect)(struct bledev *dev, trble_conn_handle con_handle);
 typedef trble_result_e (*trble_client_disconnect_all)(struct bledev *dev);
@@ -299,6 +335,8 @@ typedef trble_result_e (*trble_attr_reject)(struct bledev *dev, trble_attr_handl
 typedef trble_result_e (*trble_server_disconnect)(struct bledev *dev, trble_conn_handle con_handle);
 typedef trble_result_e (*trble_get_mac_addr_by_conn_handle)(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 typedef trble_result_e (*trble_get_conn_handle_by_addr)(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
+
+/*** Advertiser(Broadcaster) ***/
 typedef trble_result_e (*trble_set_adv_data)(struct bledev *dev, trble_data *data);
 typedef trble_result_e (*trble_set_adv_resp)(struct bledev *dev, trble_data *data);
 typedef trble_result_e (*trble_set_adv_type)(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr);
@@ -316,10 +354,16 @@ struct trble_ops {
 	trble_delete_bond_all del_bond_all;
 	trble_conn_is_active conn_is_active;
 	trble_conn_is_any_active conn_is_any_active;
+	trble_drv_ioctl drv_ioctl;
 
-	/* Central(Client) */
+	/* Scanner(Observer) */
 	trble_start_scan start_scan;
 	trble_stop_scan stop_scan;
+	trble_scan_whitelist_add whitelist_add;
+	trble_scan_whitelist_delete whitelist_delete;
+	trble_scan_whitelist_clear_all whitelist_clear_all;
+	
+	/* Central(Client) */
 	trble_client_connect client_connect;
 	trble_client_disconnect client_disconnect;
 	trble_client_disconnect_all client_disconnect_all;
@@ -339,6 +383,8 @@ struct trble_ops {
 	trble_server_disconnect server_disconnect;
 	trble_get_mac_addr_by_conn_handle get_mac_by_conn;
 	trble_get_conn_handle_by_addr get_conn_by_mac;
+
+	/* Advertiser(Broadcaster) */
 	trble_set_adv_data set_adv_data;
 	trble_set_adv_resp set_adv_resp;
 	trble_set_adv_type set_adv_type;
@@ -347,4 +393,5 @@ struct trble_ops {
 	trble_stop_adv stop_adv;
 };
 
-int trble_post_event(lwnl_cb_ble evt, void *buffer, uint32_t buf_len);
+int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len);
+int trble_scan_data_enque(trble_scanned_device *info);

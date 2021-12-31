@@ -98,9 +98,7 @@
 #define svcdbg(...)
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-extern uint32_t g_assertpc;
-#endif
+uint32_t user_assert_location;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 extern uint32_t *g_umm_app_id;
 #endif
@@ -194,9 +192,6 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	/* The SVCall software interrupt is called with R0 = system call command
 	 * and R1..R7 =  variable number of arguments depending on the system call.
 	 */
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	g_assertpc = regs[REG_R14];
-#endif
 
 #if defined(CONFIG_DEBUG_SYSCALL) || defined(CONFIG_DEBUG_SVCALL)
 #ifndef CONFIG_DEBUG_SVCALL
@@ -544,6 +539,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		DEBUGASSERT(index < CONFIG_SYS_NNEST);
 		if (index >= CONFIG_SYS_NNEST) {
 			return INDEX_ERROR;
+		}
+
+		if (cmd == SYS_up_assert) {
+			/* get the user assert location from the LR value */
+			user_assert_location = regs[REG_R14];
 		}
 
 		/* Setup to return to dispatch_syscall in privileged mode. */

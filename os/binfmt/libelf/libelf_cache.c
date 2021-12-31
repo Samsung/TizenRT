@@ -61,8 +61,6 @@ static block_cache_t *most_accessed;	/* Pointer to most accessed block for quick
 /* Number of requests for the most accessed block in blockcache list */
 static unsigned int max_accessed_count;
 
-/* Compression Type of a file */
-static unsigned int elf_compress_type;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -139,18 +137,10 @@ static off_t elf_cache_read_block(int filfd, uint16_t binary_header_size, FAR ui
 	binfo("filfd: %d block_number: %d binary_header_size: %d\n", filfd, block_number, binary_header_size);
 
 	/* Seek to location of 'block_number' block in elf file for uncompressed elf */
-	if (elf_compress_type == COMPRESS_TYPE_NONE) {
-		rpos = elf_cache_lseek_block(filfd, binary_header_size, block_number);
-	}
 #ifdef CONFIG_COMPRESSED_BINARY
-	else {
-		if (elf_compress_type == CONFIG_COMPRESSION_TYPE) {
-			rpos = binary_header_size + (block_number * cache_blocks_size);
-		} else {
-			berr("No support for decompression of compression format %d of this binary\n", elf_compress_type);
-			return ERROR;
-		}
-	}
+	rpos = binary_header_size + (block_number * cache_blocks_size);
+#else
+	rpos = elf_cache_lseek_block(filfd, binary_header_size, block_number);
 #endif
 
 
@@ -166,20 +156,12 @@ static off_t elf_cache_read_block(int filfd, uint16_t binary_header_size, FAR ui
 		readsize = cache_blocks_size;
 	}
 
-	if (elf_compress_type == COMPRESS_TYPE_NONE) {
-		/* Read actual data to 'block_number's buf */
-		nbytes = read(filfd, buf, readsize);
-	}
 #ifdef CONFIG_COMPRESSED_BINARY
-	else {
-		if (elf_compress_type == CONFIG_COMPRESSION_TYPE) {
-			/* Read readsize bytes from offset from uncompressed file into user buffer */
-			nbytes = compress_read(filfd, binary_header_size, buf, readsize, rpos - binary_header_size);
-		} else {
-			berr("No support for decompression of compression format %d of this binary\n", elf_compress_type);
-			return ERROR;
-		}
-	}
+	/* Read readsize bytes from offset from uncompressed file into user buffer */
+	nbytes = compress_read(filfd, binary_header_size, buf, readsize, rpos - binary_header_size);
+#else
+	/* Read actual data to 'block_number's buf */
+	nbytes = read(filfd, buf, readsize);
 #endif
 
 	binfo("readsize: %d nbytes: %d rpos: %d\n", readsize, nbytes, rpos);
@@ -454,18 +436,17 @@ error_cache_read:
  *   OK (0) on Success
  *   Negative value on Failure
  ****************************************************************************/
-int elf_cache_init(int filfd, uint16_t offset, off_t filelen, uint8_t compression_type)
+int elf_cache_init(int filfd, uint16_t offset, off_t filelen)
 {
 	int ret = OK;
 
-	binfo("filfd: %d offset: %d filelen: %d compression_type: %d\n", filfd, offset, filelen, compression_type);
+	binfo("filfd: %d offset: %u filelen: %d\n", filfd, offset, filelen);
 
 	/* Initialize the ELF params */
 	number_blocks_caching = CONFIG_ELF_CACHE_BLOCKS_COUNT;
 	cache_blocks_size = CONFIG_ELF_CACHE_BLOCK_SIZE;
 	file_len = filelen;
 	number_of_blocks = file_len / cache_blocks_size;
-	elf_compress_type = compression_type;
 
 	/* Set number of blocks to use for caching */
 	if (CONFIG_ELF_CACHE_BLOCKS_COUNT > (CUTOFF_RATIO_CACHE_BLOCKS) * (number_of_blocks)) {

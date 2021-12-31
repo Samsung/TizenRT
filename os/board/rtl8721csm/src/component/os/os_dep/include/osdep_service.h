@@ -399,6 +399,7 @@ void	rtw_mfree2d(void *pbuf, int h, int w, int size);
  */
 void	rtw_memcpy(void* dst, void* src, u32 sz);
 
+int rtw_printf(const char *format,...);
 /**
  * @brief  This function compares the first "sz" bytes of the block of memory pointed by "dst"
  *		   to the first "sz" bytes pointed by "src".

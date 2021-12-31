@@ -1,24 +1,54 @@
-#ifndef _TIZENRT_WIRELESS_WIFI_H__
-#define _TIZENRT_WIRELESS_WIFI_H__
+/****************************************************************************
+ *
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+
+#pragma once
+
+#include <stdint.h>
+#include <sys/time.h>
 
 #define TRWIFI_MACADDR_LEN			  6
 #define TRWIFI_MACADDR_STR_LEN		  17
 #define TRWIFI_SSID_LEN				  32
 #define TRWIFI_PASSPHRASE_LEN		  64
+#define TRWIFI_CBK_MSG_INITIALIZER {0, {0,}, NULL}
+
+/*  reason */
+/* It's on-going definitions to get wi-fi error reason
+ * It's not defined yet. REASON_UNKNOWN is sample definition to test.
+ * It'll be added later.
+ */
+#define TRWIFI_REASON_UNKNOWN 0
 
 /*  if serialization is failed then driver should let pass the fail event to applications*/
-#define TRWIFI_POST_SCANEVENT(dev, evt, scanlist)						\
-	do {																\
-		if (evt == LWNL_EVT_SCAN_DONE) {									\
-			uint8_t *buffer = NULL;										\
-			int lwnl_res = trwifi_serialize_scaninfo(&buffer, scanlist); \
-			if (lwnl_res < 0) {											\
-				trwifi_post_event(dev, LWNL_EVT_SCAN_FAILED, NULL, 0);		\
-			} else {													\
+#define TRWIFI_POST_SCANEVENT(dev, evt, scanlist)                             \
+	do {                                                                      \
+		if (evt == LWNL_EVT_SCAN_DONE && scanlist != NULL) {                  \
+			uint8_t *buffer = NULL;                                           \
+			int lwnl_res = trwifi_serialize_scaninfo(&buffer, scanlist);      \
+			if (lwnl_res < 0) {                                               \
+				trwifi_post_event(dev, LWNL_EVT_SCAN_FAILED, NULL, 0);        \
+			} else {                                                          \
 				trwifi_post_event(dev, LWNL_EVT_SCAN_DONE, buffer, lwnl_res); \
-				kmm_free(buffer);										\
-			}															\
-		}																\
+				kmm_free(buffer);                                             \
+			}                                                                 \
+		} else {                                                              \
+			trwifi_post_event(dev, LWNL_EVT_SCAN_FAILED, NULL, 0);            \
+		}                                                                     \
 	} while (0)
 
 typedef enum {
@@ -91,6 +121,55 @@ typedef enum {
 	LWNL_REQ_WIFI_UNKNOWN
 } lwnl_req_wifi;
 
+/**
+ * @event LWNL_EVT_STA_CONNECTED
+ *        if trwifi_connect_ap() were succeeded then a driver should
+ *        generate LWNL_EVT_STA_CONNECTED. A driver can pass the event by calling
+ *        trwifi_post_event(struct netdev *, LWNL_EVT_STA_CONNECTED, trwifi_cbk_msg_s *, sizeof(trwifi_cbk_msg_s))
+ *
+ * @event LWNL_EVT_STA_CONNECT_FAILED
+ *        if trwifi_connect_ap() were failed then a driver should generate
+ *        LWNL_EVT_STA_CONNECT_FAILED. A driver can pass the event by calling
+ *        trwifi_post_event(struct netdev *, LWNL_EVT_STA_CONNECTED, trwifi_cbk_msg_s *, sizeof(trwifi_cbk_msg_s))
+ *        reason in trwifi_cbk_msg_s must be written.
+ *
+ * @event LWNL_EVT_STA_DISCONNECTED:
+ *        The event can be happened after a target succeeded to connect to an AP.
+ *        There're two cases. the first case is wifi_manager called trwifi_disconnect_ap().
+ *        A driver should generate the LWNL_EVT_STA_DISCONNECTED event, if it is connected to an AP.
+ *        The other case is an AP is disconnected unexpectedly. For example a connected AP is turn off.
+ *        The driver have to pass the event with reason code by calling
+ *        trwifi_post_event(struct netdev *, LWNL_EVT_STA_DISCONNECTED, trwifi_cbk_msg_s *, sizeof(trwifi_cbk_msg_s))
+ *        reason in trwifi_cbk_msg_s must be written.
+ *
+ * @event LWNL_EVT_SOFTAP_STA_JOINED:
+ *        if a station is joined while wi-fi is softap mode after calling trwifi_start_softap() then
+ *        LWNL_EVT_SOFTAP_STA_JOINED event should be generated.
+ *        A driver can pass the event by calling
+ *        trwifi_post_event(struct netdev *, LWNL_EVT_SOFTAP_STA_JOINED, trwifi_cbk_msg_s *, sizeof(trwifi_cbk_msg_s))
+ *        bssid in trwifi_cbk_msg_s must be written.
+ *
+ * @event LWNL_EVT_SOFTAP_STA_LEFT:
+ *        If a station were left then a wi-fi driver should generate LWNL_EVT_SOFTAP_STA_LEFT.
+ *        A driver can pass the event by calling
+ *        trwifi_post_event(struct netdev *, LWNL_EVT_SOFTAP_STA_LEFT, trwifi_cbk_msg_s *, sizeof(trwifi_cbk_msg_s))
+ *        reason in trwifi_cbk_msg_s must be written.
+ *
+ * @event LWNL_EVT_SCAN_DONE
+ *        a wi-fi driver generates the event if it succeeded to scan.
+ *        a wi-fi driver must generate LWNL_EVT_SCAN_DONE or LWNL_EVT_SCAN_FAILED
+ *        if it returns success about trwifi_scan_ap()
+ *        Unlike other events it uses TRWIFI_POST_SCANEVENT() because of serializing scan information.
+ *        The driver can pass the event by calling
+ *        TRWIFI_POST_SCANEVENT(struct netdev *, LWNL_EVT_SCAN_DONE, trwifi_scan_list_s *)
+ *
+ * @event LWNL_EVT_SCAN_FAILED
+ *        a wi-fi driver generates the event if it failed to scan.
+ *        a wi-fi driver must generate LWNL_EVT_SCAN_DONE or LWNL_EVT_SCAN_FAILED
+ *        if it returns success to trwifi_scan_ap()
+ *        The driver can pass the event by calling
+ *        trwifi_post_event(struct netdev *, LWNL_EVT_SCAN_FAILED, NULL, 0);
+ */
 typedef enum {
 	LWNL_EVT_STA_CONNECTED,
 	LWNL_EVT_STA_CONNECT_FAILED,
@@ -102,6 +181,12 @@ typedef enum {
 	LWNL_EVT_EXIT,
 	LWNL_EVT_UNKNOWN,
 } lwnl_cb_wifi;
+
+typedef struct {
+	uint32_t reason;
+	char bssid[6];
+	void *data;
+} trwifi_cbk_msg_s;
 
 typedef struct {
 	char ssid[TRWIFI_SSID_LEN + 1];				 /**<  Service Set Identification		  */
@@ -223,31 +308,32 @@ typedef trwifi_result_e (*trwifi_deinit)(struct netdev *dev);
  * @param[in]   dev    : struct netdev registered by netdev_register()
  * @param[in]   config : an access point information to scan.
  *
- * @function_type  asynchronous call : Send event by lwnl_postmsg()
- * @event LWNL_EVT_SCAN_DONE    : scan success
- * @event LWNL_EVT_SCAN_FAILED  : scan fail
+ * @function_type  asynchronous call : Send event by trwifi_post_event()
+ * @event  LWNL_EVT_SCAN_DONE    : scan success
+ * @event  LWNL_EVT_SCAN_FAILED  : scan fail
  *
- * @description If the call is successful, then it should generate
+ * @description If the call is successful, then it must generate
  *              events(LWNL_EVT_SCAN_DONE or LWNL_EVT_SCAN_FAILED).
  *              If the call fails then it shouldn't generate events.
  *
  * @return TRWIFI_SUCCESS      : success (should generate an event.)
  * @return TRWIFI_FAIL         : fail (shouldn't generate an event.)
  * @return TRWIFI_INVALID_ARGS : arguments are invalid
- */
-/* SCAN type
- *     1) full scan: config is null
- *     2) scan with specific SSID: ssid is set in config
- *     3) scan with specific channel: channel is set in config
- *     4) scan with specific SSID and channel: Both ssid and channel are set in config
  *
- * Notes
- *     Driver can check whether SSID is set by ssid_length in config.
- *     If ssid_length is 0 then SSID isn't set. wifi_manager which send requests to a driver will
- *     check validation of SSID(ex. length of SSID).
- *     In the same way, if channel in config is 0 then channel isn't configured.
- *     If channel is 0 then SSID must be set. wifi_manager will check this.
- *     So a driver doesn't need to consider such case both channel and ssid_length are 0
+ * @note   A driver must generate event if it return success.
+ *         A driver can check whether SSID is set by ssid_length in config.
+ *         If ssid_length is 0 then SSID isn't set. wifi_manager which send requests to a driver will
+ *         check validation of SSID(ex. length of SSID).
+ *         In the same way, if channel in config is 0 then channel isn't configured.
+ *         If channel is 0 then SSID must be set. wifi_manager will check this.
+ *         So a driver doesn't need to consider such case both channel and ssid_length are 0
+ *
+ *         SCAN type
+ *           1) full scan: config is null
+ *           2) scan with specific SSID: ssid is set in config
+ *           3) scan with specific channel: channel is set in config
+ *           4) scan with specific SSID and channel: Both ssid and channel are set in config
+ *
  */
 typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_scan_config_s *config);
 
@@ -258,7 +344,7 @@ typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_scan_config
  * @param[in]   config : an access point information to connect
  * @param[in]   arg    : not used.
  *
- * @function_type  asynchronous call : Send event by lwnl_postmsg()
+ * @function_type  asynchronous call : Send event by trwifi_post_event()
  * @event LWNL_EVT_STA_CONNECTED      : connection success
  * @event LWNL_EVT_STA_CONNECT_FAILED : connection fail
  *
@@ -266,7 +352,7 @@ typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_scan_config
  *              events(LWNL_EVT_STA_CONNECTED or LWNL_EVT_STA_CONNECT_FAILED).
  *              if the call fails then it shouldn't generate events.
  *              In STA mode and it's connected to an access point, wi-fi library can generates
- *              LWNL_EVT_STA_DISCONNECTED event when it's disconnected to AP.
+ *              LWNL_EVT_STA_DISCONNECTED event when it's disconnected to AP unexpectedly.
  *
  * @return TRWIFI_SUCCESS      : success (should generate an event)
  * @return TRWIFI_FAIL         : fail (should not generate an event)
@@ -280,11 +366,12 @@ typedef trwifi_result_e (*trwifi_connect_ap)(struct netdev *dev, trwifi_ap_confi
  * @param[in]   dev    : struct netdev registered by netdev_register()
  * @param[in]   arg    : not used.
  *
- * @function_type  asynchronous call : Send event by lwnl_postmsg()
+ * @function_type  asynchronous call : Send event by trwifi_post_event()
  * @event LWNL_EVT_STA_DISCONNECTED : disconnected to an access point
  *
  * @description   If wi-fi library is in STA mode and it's connected to an access point,
- *                it should generate LWNL_EVT_STA_DISCONNECTED event.
+ *                and it return success then it should generate LWNL_EVT_STA_DISCONNECTED event
+ *                if an AP is disconnected.
  *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
@@ -303,6 +390,10 @@ typedef trwifi_result_e (*trwifi_disconnect_ap)(struct netdev *dev, void *arg);
  *                 If wi-fi is in STA mode this API is not called, because wi-fi manager manages
  *                 Wi-Fi state.
  *
+ * @note   Even though a wifi_manager requested to change to STA mode or to stop wi-fi
+ *         while wi-fi driver is in softap mode and there are joined nodes,
+ *         a wi-fi driver shouldn't generate LWNL_EVT_SOFTAP_STA_LEFT event.
+ *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
  * @return TRWIFI_INVALID_ARGS : arguments are invalid
@@ -319,9 +410,15 @@ typedef trwifi_result_e (*trwifi_start_sta)(struct netdev *dev);
  *
  * @description    The call changes wi-fi to SoftAP mode.
  *                 If wi-fi is in SoftAP mode this API is not called, because wi-fi manager manages Wi-Fi state.
- *                 In this state, wi-fi library can generate LWNL_EVT_SOFTAP_STA_JOINED or LWNL_EVT_SOFTAP_STA_LEFT events.
+ *                 In this state, wi-fi library can generate LWNL_EVT_SOFTAP_STA_JOINED or
+ *                 LWNL_EVT_SOFTAP_STA_LEFT events.
  *                 LWNL_EVT_SOFTAP_STA_JOINED is called when a wi-fi device is connected to softAP.
  *                 LWNL_EVT_SOFTAP_STA_LEFT is called when a wi-fi device is left from softAP.
+ *
+ * @note   wifi_manager which manage TizenRT wi-fi calls trwifi_start_softap() if a wi-fi driver
+ *         isn't connected to an AP. wifi_manager called trwifi_disconnect_ap() before it calls
+ *         trwifi_start_softap() if a wi-fi driver connected to an AP. So it's guaranteed that
+ *         a wi-fi driver isn't connected to an AP when wifi_manager calls the API.
  *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
@@ -338,6 +435,9 @@ typedef trwifi_result_e (*trwifi_start_softap)(struct netdev *dev, trwifi_softap
  *
  * @description    Stop softAP mode.
  *                 @ref trwifi_start_sta or @ref trwifi_deinit can be called after this API
+ *
+ * @note   A wi-fi driver shouldn't generate an events even though there is a node connected to
+ *         an wi-fi driver.
  *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
@@ -395,8 +495,9 @@ typedef trwifi_result_e (*trwifi_get_info)(struct netdev *dev, trwifi_info *info
  *
  * @function_type  synchronous call
  *
- * @description    Set driver specific operation. it's decided by vendor.
- *                 If arg is not null arg is freed by upper layer.
+ * @description    Set driver specific operation. it's decided by a vendor.
+ *                 If arg is not null arg is freed by upper layer. So a wi-fi driver shouldn't
+ *                 free it.
  *
  * @return TRWIFI_SUCCESS      : success
  * @return TRWIFI_FAIL         : fail
@@ -421,5 +522,3 @@ struct trwifi_ops {
 
 int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);
 int trwifi_post_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len);
-
-#endif // _TIZENRT_WIRELESS_WIFI_H__

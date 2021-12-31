@@ -284,6 +284,37 @@ config DEBUG_NET_INFO
 
 endif #DEBUG_NET
 
+config DEBUG_BLE
+	bool "BLE Debug Feature"
+	default n
+	---help---
+		Enable BLE debug feature.
+
+if DEBUG_BLE
+
+config DEBUG_BLE_ERROR
+	bool "BLE Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable BLE error debug SYSLOG output.
+
+config DEBUG_BLE_WARN
+	bool "BLE Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable BLE warning debug SYSLOG output.
+
+config DEBUG_BLE_INFO
+	bool "BLE Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable BLE informational debug SYSLOG output.
+
+endif #DEBUG_BLE
+
 config DEBUG_PM
 	bool "Power Management Debug Features"
 	default n

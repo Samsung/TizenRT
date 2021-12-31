@@ -226,33 +226,33 @@ typedef size_t mmsize_t;
 #define MMSIZE_MAX SIZE_MAX
 #endif
 
-/* typedef is used for defining size of address space */
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-typedef size_t mmaddress_t;		/* 32 bit address space */
-
 #if defined(CONFIG_ARCH_MIPS)
-/* Macro gets return address of malloc API */
-#define ARCH_GET_RET_ADDRESS \
-	mmaddress_t retaddr = 0; \
+/* Macro gets return address of malloc API. */
+#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
 	do { \
-		asm volatile ("sw $ra, %0" : "=m" (retaddr)); \
+		asm volatile ("sw $ra, %0" : "=m" (caller_retaddr)); \
 	} while (0);
 #elif defined(CONFIG_ARCH_ARM)
-#define ARCH_GET_RET_ADDRESS \
-	mmaddress_t retaddr = 0; \
+/* This macro should be placed at the first of the function.
+ * If no, it is better to use "__builtin_return_address(0)" instead.
+ */
+#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
 	do { \
-		asm volatile ("mov %0,lr\n" : "=r" (retaddr));\
+		asm volatile ("mov %0,lr\n" : "=r" (caller_retaddr));\
 	} while (0);
 #elif defined(CONFIG_ARCH_XTENSA)
-#define ARCH_GET_RET_ADDRESS \
-	mmaddress_t retaddr = 0; \
+#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
 	do { \
-		asm volatile ("mov %0,a0\n" : "=&r" (retaddr));\
+		asm volatile ("mov %0,a0\n" : "=&r" (caller_retaddr));\
 	} while (0);
 #else
 #error Unknown CONFIG_ARCH option, malloc debug feature wont work.
 #endif
+
+/* typedef is used for defining size of address space */
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+typedef size_t mmaddress_t;             /* 32 bit address space */
 
 #define SIZEOF_MM_MALLOC_DEBUG_INFO \
 	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
@@ -706,6 +706,15 @@ char *mm_get_app_heap_name(void *address);
 /* Function to check heap corruption */
 int mm_check_heap_corruption(struct mm_heap_s *heap);
 
+#define USER_HEAP   1
+#define KERNEL_HEAP 2
+
+#define HEAP_START_IDX 0
+#define HEAP_END_IDX   (CONFIG_KMM_NHEAPS - 1)
+
+/* Function to manage the memory allocation failure case. */
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type);
+
 #if CONFIG_KMM_NHEAPS > 1
 /**
  * @cond
@@ -781,6 +790,54 @@ void *zalloc_at(int heap_index, size_t size);
 #define realloc_at(heap_index, oldmem, size)     realloc(oldmem, size)
 #define zalloc_at(heap_index, size)              zalloc(size)
 #endif
+
+/**
+ * @brief Free the memory from specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_free() function.
+ *   This function is used to free the memory from specified user heap.
+ */
+void free_user_at(struct mm_heap_s *heap, void *mem);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_calloc() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *calloc_user_at(struct mm_heap_s *heap, size_t n, size_t elem_size);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_memalign() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *memalign_user_at(struct mm_heap_s *heap, size_t alignment, size_t size);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_malloc() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *malloc_user_at(struct mm_heap_s *heap, size_t size);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_realloc() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *realloc_user_at(struct mm_heap_s *heap, void *oldmem, size_t newsize);
+/**
+ * @brief Allocate to specified user heap.
+ * @details @b #include <tinyara/mm/mm.h>\n
+ *   This is a simple wrapper for the mm_zalloc() function.
+ *   This function is used to allocate the memory from kernel side
+ *   to specified user heap.
+ */
+void *zalloc_user_at(struct mm_heap_s *heap, size_t size);
 
 /**
  * @endcond

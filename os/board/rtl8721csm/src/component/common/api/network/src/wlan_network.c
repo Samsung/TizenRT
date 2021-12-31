@@ -189,7 +189,7 @@ void wlan_network(void)
 {
 	int ret = rtw_create_task(&task, "wlan_init", 1600, 10, init_thread, NULL);
 	if (ret != _SUCCESS) {
-		DiagPrintf("wlan init thread fail");
+		rtw_printf("wlan init thread fail");
 	}
 }
 #endif

@@ -11,6 +11,7 @@
  * @version v0.1
  */
 
+#include <stdio.h>
 #include <string.h>
 #include "os_sync.h"
 #include "cycle_queue.h"
@@ -93,17 +94,18 @@ bool CycQueueWrite(uint8_t *pWriteBuf, uint16_t length)
     bool     ret = true;
     uint32_t s;
 
+    s = os_lock();
+
     if (cyc_buffer == NULL)
     {
         MallocCycQueue();
         if(cyc_buffer == NULL)
         {
-            APP_PRINT_ERROR0("cyc_buffer is NULL, malloc fail");
+            dbg("cyc_buffer is NULL, malloc fail\r\n");
+            os_unlock(s);
             return false;
         }
     }
-
-    s = os_lock();
 
     if (CycQueueRemainSize() >= length)
     {
@@ -158,7 +160,7 @@ bool MallocCycQueue()
 {
     if(cyc_buffer != NULL)
     {
-        APP_PRINT_ERROR0("cyc_buffer is not free");
+        dbg("cyc_buffer is not free\r\n");
         FreeCycQueue();
     }
     cyc_buffer = os_mem_zalloc(RAM_TYPE_DATA_ON, MAX_BUFFER_SIZE);
@@ -176,10 +178,11 @@ bool MallocCycQueue()
  */
 void FreeCycQueue()
 {
-	if (cyc_buffer != NULL) {
-    	os_mem_free(cyc_buffer);
-	}
+    if (cyc_buffer != NULL) {
+        os_mem_free(cyc_buffer);
+    }
     pRead = 0;
     pWrite = 0;
     cyc_buffer = NULL;
 }
+

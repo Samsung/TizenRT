@@ -116,9 +116,7 @@ struct binary_s {
 	uint32_t datastart;		/* Start address of data section */
 #endif
 
-#if defined(CONFIG_SUPPORT_COMMON_BINARY) || defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME)
 	size_t textsize;		/* Size of text section */
-#endif
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	size_t rosize;			/* Size of ro section */
 	size_t datasize;		/* Size of data section */
@@ -129,6 +127,9 @@ struct binary_s {
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	uint8_t islibrary;		/* Is this bin object containing a library */
+#ifdef CONFIG_ARM_MPU							/* MPU register values for common binary only */
+	uint32_t cmn_mpu_regs[MPU_REG_NUMBER * MPU_NUM_REGIONS];	/* Common binary MPU is configured during loading and disabled during unload_module */
+#endif
 #endif
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
 	FAR char *argbuffer;		/* Allocated argument list */
@@ -176,7 +177,6 @@ struct binary_s {
 	size_t stacksize;			/* Size of the stack in bytes (unallocated) */
 	size_t filelen;                 /* Size of binary size, used only when underlying is MTD */
 	size_t offset;                  /* Offset of binary from partition start*/
-	uint8_t compression_type;		/* Binary Compression type */
 #ifdef CONFIG_BINARY_MANAGER
 	uint8_t binary_idx;             /* Index of binary in binary table */
 	uint32_t bin_ver;               /* version of binary */

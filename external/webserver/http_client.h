@@ -50,6 +50,8 @@ struct http_client_t {
 	mbedtls_ssl_context       tls_ssl;
 	mbedtls_net_context       tls_client_fd;
 #endif
+
+	int keep_alive;
 };
 
 struct http_message_len_t {
@@ -67,13 +69,33 @@ void *http_handle_client(void *arg /* struct http_client_t *client */);
 struct http_client_t *http_client_init(struct http_server_t *server, int sock_fd);
 int   http_client_release(struct http_client_t *client);
 
+/**
+ * @brief http_parse_message parse the http request and resonse message
+ * @param[in] buf of http request and response message
+ * @param[in] buf_len : http request and response buffer len
+ * @param[out] method : http methods HTTP_METHOD_GET HTTP_METHOD_PUT HTTP_METHOD_POST HTTP_METHOD_DELETE 
+ * @param[out] url : http url
+ * @param[in] body : http entity mesage
+ * @param[out] enc : HTTP_CHUNKED_ENCODING or HTTP_CONTENT_LENGTH
+ * @param[in] state : http state machine HTTP_REQUEST_HEADER, HTTP_REQUEST_PARAMETERS, HTTP_REQUEST_BODY
+ * @param[in] len : http various message len of type http_message_len_t
+ * @param[in] params : http headers 
+ * @param[in] client : client instance managed by webserver
+ * @param[in] response : HTTP response structure called by webclient
+ * @param[in] req : http request message
+ * @param[out] chunk_processed : Number of byte prcessed
+ * @return false when parsing and reading of http message is finished 
+ * @API_type: synchronous
+ * @callback: none
+ */
 int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					   char **body, int *enc, int *state,
 					   struct http_message_len_t *len,
 					   struct http_keyvalue_list_t *params,
 					   struct http_client_t *client,
 					   struct http_client_response_t *response,
-					   struct http_req_message *req);
+					   struct http_req_message *req,
+					   int *chunk_processed);
 int   http_recv_and_handle_request(struct http_client_t *client, struct http_keyvalue_list_t *request_params);
 
 #ifdef CONFIG_NET_SECURITY_TLS

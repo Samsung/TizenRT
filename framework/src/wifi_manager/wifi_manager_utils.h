@@ -20,6 +20,12 @@
 #include <tinyara/net/netlog.h>
 #include "wifi_manager_error.h"
 
+#ifndef __LINUX__
+#define net_task_create task_create
+#else
+int net_task_create(FAR const char *name, int priority, int stack_size,
+                    main_t entry, FAR char *const argv[]);
+#endif
 /*  Check Result MACRO */
 #define WIFIMGR_SPC // to pass the code check ruls
 #define WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, free_rsc)	\
@@ -52,20 +58,26 @@
 		wifi_manager_result_e wmres = func;				\
 		if (wmres != WIFI_MANAGER_SUCCESS) {			\
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_API_FAIL);	\
-			NET_LOGE msg;\
+			NET_LOGE msg;								\
 		}												\
 	} while (0)											\
 
-#define WIFIMGR_CHECK_UTILRESULT(func, tag, msg, ret)	\
+#define WIFIMGR_CHECK_UTILRESULT(func, tag, msg)		\
 	do {												\
-		wifi_utils_result_e wmres = func;				\
-		if (wmres != WIFI_UTILS_SUCCESS) {				\
-			NET_LOGE(TAG, msg " reason(%d)\n", wmres);			\
+		trwifi_result_e wmres = func;					\
+		if (wmres != TRWIFI_SUCCESS) {					\
+			NET_LOGE(TAG, msg " reason(%d)\n", wmres);	\
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_UTILS_FAIL);	\
-			return ret;									\
+			return wifimgr_convert2wifimgr_res(wmres);		\
 		}												\
 	} while (0)
 
 /*  Network Interface Card name definition */
 #define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
 #define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME
+
+wifi_manager_result_e wifimgr_convert2wifimgr_res(trwifi_result_e tres);
+trwifi_ap_auth_type_e wifimgr_convert2trwifi_auth(wifi_manager_ap_auth_type_e atype);
+wifi_manager_ap_auth_type_e wifimgr_convert2wifimgr_auth(trwifi_ap_auth_type_e atype);
+trwifi_ap_crypto_type_e wifimgr_convert2trwifi_crypto(wifi_manager_ap_crypto_type_e ctype);
+wifi_manager_ap_crypto_type_e wifimgr_convert2wifimgr_crypto(trwifi_ap_crypto_type_e ctype);

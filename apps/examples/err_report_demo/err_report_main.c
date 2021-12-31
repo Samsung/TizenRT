@@ -84,43 +84,43 @@ uint8_t g_err_nsuccess;
 /*
  * WiFi Manager callback prototypes
  */
-static void prv_sta_connected(wifi_manager_result_e res);
-static void prv_sta_disconnected(wifi_manager_disconnect_e res);
-static void prv_softap_sta_join(void);
-static void prv_softap_sta_leave(void);
-static void prv_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
+static void prv_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
+static void prv_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
+static void prv_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
+static void prv_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
+static void prv_scan_done(wifi_manager_cb_msg_s msg, void *arg);
 
 /*
  * WiFi Manager callback definitions
  */
-static void prv_sta_connected(wifi_manager_result_e res)
+static void prv_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	printf(" [RT] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	printf(" [RT] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, msg.res);
 	ERR_REPORT_TEST_SIGNAL;
 }
 
-static void prv_sta_disconnected(wifi_manager_disconnect_e res)
+static void prv_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	sleep(2);
-	printf(" [RT] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	printf(" [RT] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, msg.res);
 	ERR_REPORT_TEST_SIGNAL;
 }
 
-static void prv_softap_sta_join(void)
+static void prv_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
 {
 	printf(" [RT] T%d --> %s\n", getpid(), __FUNCTION__);
 	ERR_REPORT_TEST_SIGNAL;
 }
 
-static void prv_softap_sta_leave(void)
+static void prv_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
 {
 	printf(" [RT] T%d --> %s\n", getpid(), __FUNCTION__);
 	ERR_REPORT_TEST_SIGNAL;
 }
 
-static void prv_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+static void prv_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 {
-	printf(" [RT] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	printf(" [RT] T%d --> %s res(%d)\n", getpid(), __FUNCTION__, msg.res);
 	ERR_REPORT_TEST_SIGNAL;
 }
 

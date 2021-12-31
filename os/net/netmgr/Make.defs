@@ -58,6 +58,7 @@ NETDEV_CSRCS += netdev_mgr.c netdev_mgr_internal.c
 NETDEV_CSRCS += netmgr_ioctl_netdev.c
 NETDEV_CSRCS += netdev_lwnl.c
 NETDEV_CSRCS += netdev_wifi.c netdev_eth.c
+NETDEV_CSRCS += netmgr_logger.c
 
 ifeq ($(CONFIG_NET_STATS) ,y)
 NETDEV_CSRCS += netdev_stats.c
@@ -68,10 +69,6 @@ NETDEV_CSRCS += netmgr_ioctl_lwip.c
 NETDEV_CSRCS += netdev_lwip.c
 NETDEV_CSRCS += netstack_lwip.c
 endif # CONFIG_NET_LWIP
-
-ifeq ($(CONFIG_NET_NETMON) ,y)
-NETDEV_CSRCS += netmgr_ioctl_netmon.c
-endif
 
 ifeq ($(CONFIG_LWNL80211) ,y)
 NETDEV_CSRCS += netstack_lwnl.c

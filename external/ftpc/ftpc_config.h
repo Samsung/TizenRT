@@ -68,7 +68,7 @@
  * this file is to muck with some of the settings to support some debug
  * features.
  *
- * The FPT client uses common networking debug macros (ndbg and nvdbg).
+ * The FPT client uses common networking debug macros (printf and printf).
  * This can be overwhelming if there is a lot of networking debug output
  * as well.  But by defining CONFIG_DEBUG_FTPC, this file will force
  * networking debug ON only for the files within this directory.

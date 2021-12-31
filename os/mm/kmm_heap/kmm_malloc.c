@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <debug.h>
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -80,15 +80,15 @@
  * Private Functions
  ****************************************************************************/
 
-static void *kheap_malloc(size_t size, size_t retaddr)
+static void *kheap_malloc(size_t size, size_t caller_retaddr)
 {
 	int heap_idx;
 	void *ret;
 	struct mm_heap_s *kheap = kmm_get_heap();
 
-	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
+	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&kheap[heap_idx], size, retaddr);
+		ret = mm_malloc(&kheap[heap_idx], size, caller_retaddr);
 #else
 		ret = mm_malloc(&kheap[heap_idx], size);
 #endif
@@ -97,6 +97,7 @@ static void *kheap_malloc(size_t size, size_t retaddr)
 		}
 	}
 
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, KERNEL_HEAP);
 	return NULL;
 }
 
@@ -123,19 +124,31 @@ static void *kheap_malloc(size_t size, size_t retaddr)
 #if CONFIG_KMM_NHEAPS > 1
 void *kmm_malloc_at(int heap_index, size_t size)
 {
+	void *ret;
 	struct mm_heap_s *kheap;
-	if (heap_index >= CONFIG_KMM_NHEAPS || heap_index < 0) {
-		mdbg("kmm_malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, CONFIG_KMM_NHEAPS);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
+#endif
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("kmm_malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
+		return NULL;
+	}
+
+	if (size == 0) {
 		return NULL;
 	}
 
 	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-	return mm_malloc(&kheap[heap_index], size, retaddr);
+	ret = mm_malloc(&kheap[heap_index], size, caller_retaddr);
 #else
-	return mm_malloc(&kheap[heap_index], size);
+	ret = mm_malloc(&kheap[heap_index], size);
 #endif
+	if (ret == NULL) {
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
+	}
+	return ret;
 }
 #endif
 
@@ -155,11 +168,13 @@ void *kmm_malloc_at(int heap_index, size_t size)
 
 FAR void *kmm_malloc(size_t size)
 {
+	size_t caller_retaddr = 0;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS
-#else
-	size_t retaddr = 0;
+	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
-	return kheap_malloc(size, retaddr);
+	if (size == 0) {
+		return NULL;
+	}
+	return kheap_malloc(size, caller_retaddr);
 }
 #endif							/* CONFIG_MM_KERNEL_HEAP */

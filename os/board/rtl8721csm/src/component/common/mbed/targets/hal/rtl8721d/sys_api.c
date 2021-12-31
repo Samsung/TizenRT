@@ -27,7 +27,7 @@
 
 void rtc_backup_timeinfo(void);
 
-//#define printf					DiagPrintf
+//#define printf					rtw_printf
 
 /** @addtogroup AmebaD_Mbed_API 
   * @{

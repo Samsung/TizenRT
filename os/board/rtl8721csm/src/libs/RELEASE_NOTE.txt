@@ -1,0 +1,23 @@
+/* == "version" + "Realtek git version" + "compile date" + "compile time" == */
+
+== version 1275267f861fdafc92c5c5e89f10c0ee8a87e8ff_2021/12/15-10:27:50 ==
+1.	Update BT Coex table
+	- Change Coex Case for STA_Connected, BT on from case 2 to Case 8
+2.	Adjust Wifi connecting procedure to enhance success ratio with re-scan scheme
+	- Modify internal connecting procedure (auth && assoc) to default 3 times without reporting fail event if receiving deauth/disassoc during connecting procedure
+
+== version c3bce922b02e978ab1093cd3df284d8000554a9e_2021/12/13-10:03:43 ==	
+1.	Change 'DiagPrintf()'/'DBG_8195A' to 'vddbg'
+	- Change 'Diagprintf()'/ 'DBG_8195A' to 'vddbg' for lib_wlan  and lib_wps
+
+== version d67dfd89b34751790cb9e24e6040533adb17ae23_2021/11/26-18:58:34 ==
+1.	Change 'printf' to 'vddbg'
+	- change 'printf' to 'vddbg' for lib_wlan and lib_wps
+
+== version 82d5256271aaeae176566c681ff54a4cad1c1387_2021/10/01-19:28:15 ==
+1.	process qos null data to avoid TCP receive crash
+	- Stop sending qos null data to upper layer to avoid skb len indicated as negative value
+
+== version d06b90c60bad665c8ed3d045190782cefa7c7dec_2021/09/20-11:52:04 ==
+1.	Tune BT Coex case
+	- Tune BT Coex Case to unsure BT no delay with Slave Latency enable

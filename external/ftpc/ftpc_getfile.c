@@ -124,7 +124,7 @@ static int ftpc_recvinit(struct ftpc_session_s *session, FAR const char *path, u
 
 		ret = ftpc_cmd(session, "REST %ld", offset);
 		if (ret < 0) {
-			ndbg("REST command failed: %d\n", errno);
+			printf("REST command failed: %d\n", errno);
 			return ERROR;
 		}
 
@@ -155,7 +155,7 @@ static int ftpc_recvinit(struct ftpc_session_s *session, FAR const char *path, u
 
 	ret = ftpc_cmd(session, "RETR %s", path);
 	if (ret < 0) {
-		ndbg("RETR command failed: %d\n", errno);
+		printf("RETR command failed: %d\n", errno);
 		return ERROR;
 	}
 
@@ -167,7 +167,7 @@ static int ftpc_recvinit(struct ftpc_session_s *session, FAR const char *path, u
 	if (!FTPC_IS_PASSIVE(session)) {
 		ret = ftpc_sockaccept(&session->data);
 		if (ret != OK) {
-			ndbg("Data connection not accepted\n");
+			printf("Data connection not accepted\n");
 		}
 	}
 
@@ -264,7 +264,7 @@ int ftpc_getfile(SESSION handle, FAR const char *rname, FAR const char *lname, u
 
 	abslpath = ftpc_abslpath(session, lname);
 	if (!abslpath) {
-		ndbg("ftpc_abslpath(%s) failed: %d\n", errno);
+		printf("ftpc_abslpath(%s) failed: %d\n", errno);
 		goto errout;
 	}
 
@@ -275,7 +275,7 @@ int ftpc_getfile(SESSION handle, FAR const char *rname, FAR const char *lname, u
 		/* It already exists.  Is it a directory? */
 
 		if (S_ISDIR(statbuf.st_mode)) {
-			ndbg("'%s' is a directory\n", abslpath);
+			printf("'%s' is a directory\n", abslpath);
 			goto errout_with_abspath;
 		}
 	}
@@ -284,7 +284,7 @@ int ftpc_getfile(SESSION handle, FAR const char *rname, FAR const char *lname, u
 
 #ifdef S_IWRITE
 	if (!(statbuf.st_mode & S_IWRITE)) {
-		ndbg("'%s' permission denied\n", abslpath);
+		printf("'%s' permission denied\n", abslpath);
 		goto errout_with_abspath;
 	}
 #endif
@@ -303,13 +303,13 @@ int ftpc_getfile(SESSION handle, FAR const char *rname, FAR const char *lname, u
 
 	ret = ftpc_recvinit(session, rname, xfrmode, offset);
 	if (ret != OK) {
-		ndbg("ftpc_recvinit failed\n");
+		printf("ftpc_recvinit failed\n");
 		goto errout_with_abspath;
 	}
 
 	loutstream = fopen(abslpath, (offset > 0 || (how == FTPC_GET_APPEND)) ? "a" : "w");
 	if (!loutstream) {
-		ndbg("fopen failed: %d\n", errno);
+		printf("fopen failed: %d\n", errno);
 		goto errout_with_abspath;
 	}
 
@@ -318,7 +318,7 @@ int ftpc_getfile(SESSION handle, FAR const char *rname, FAR const char *lname, u
 	if (offset > 0) {
 		ret = fseek(loutstream, offset, SEEK_SET);
 		if (ret != OK) {
-			ndbg("fseek failed: %d\n", errno);
+			printf("fseek failed: %d\n", errno);
 			goto errout_with_outstream;
 		}
 	}

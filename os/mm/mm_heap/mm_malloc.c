@@ -58,12 +58,6 @@
 
 #include <debug.h>
 
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-#include <assert.h>
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <tinyara/reboot_reason.h>
-#endif
-#endif
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -121,10 +115,6 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	int ndx;
 
 	/* Handle bad sizes */
-
-	if (size < 1) {
-		return NULL;
-	}
 
 	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {
 		mdbg("Because of mm_allocnode, %u cannot be allocated. The maximum \
@@ -235,19 +225,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	 * to the SYSLOG.
 	 */
 
-	if (!ret) {
-#if defined(CONFIG_MM_ASSERT_ON_FAIL) && defined(CONFIG_SYSTEM_REBOOT_REASON)
-		WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
-#endif
-		mdbg("Allocation failed, size %u\n", size);
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_parse_heap(heap, HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
-#endif
-
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-		PANIC();
-#endif
-	} else {
+	if (ret) {
 		mvdbg("Allocated %p, size %u\n", ret, size);
 	}
 

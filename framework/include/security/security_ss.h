@@ -21,6 +21,10 @@
 
 #include "security_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct security_storage_file {
 	char name[20];
 	unsigned int attr;
@@ -36,5 +40,9 @@ security_error ss_write_secure_storage(security_handle hnd, const char *name, un
 security_error ss_delete_secure_storage(security_handle hnd, const char *name);
 security_error ss_get_size_secure_storage(security_handle hnd, const char *name, unsigned int *size);
 security_error ss_get_list_secure_storage(security_handle hnd, security_storage_list *list);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _SECURITY_API_SS_H__

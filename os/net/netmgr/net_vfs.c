@@ -26,7 +26,6 @@
 #include <net/if.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
-#include "local/uds_net.h"
 #include <tinyara/net/netlog.h>
 
 #define TAG "[NETMGR]"
@@ -56,7 +55,7 @@ int net_checksd(int sd, int oflags)
 
 int net_clone(FAR struct socket *sock1, FAR struct socket *sock2)
 {
-	NET_LOGV(TAG, "Not supported yet\n");
+	NET_LOGKV(TAG, "Not supported yet\n");
 	return -1;
 }
 
@@ -162,8 +161,6 @@ int net_poll(int sd, struct pollfd *fds, bool setup)
  ****************************************************************************/
 extern int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *imsf);
 extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
-extern int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg);
-
 
 int net_ioctl(int sd, int cmd, unsigned long arg)
 {
@@ -176,14 +173,14 @@ int net_ioctl(int sd, int cmd, unsigned long arg)
 	 */
 	if (!((_FIOCVALID(cmd)) ||  (_SIOCVALID(cmd)))) {
 		ret = -ENOTTY;
-		NET_LOGE(TAG, "command is not valid\n");
+		NET_LOGKE(TAG, "command is not valid\n");
 		goto errout;
 	}
 
 	/* ToDo:  Verify that the sd corresponds to valid, allocated socket */
-	sock = get_socket(sd, getpid());
+	sock = get_socket_by_pid(sd, getpid());
 	if (sock == NULL) {
-		NET_LOGE(TAG, "get socket fail\n");
+		NET_LOGKE(TAG, "get socket fail\n");
 		ret = -EBADF;
 		goto errout;
 	}
@@ -196,12 +193,6 @@ int net_ioctl(int sd, int cmd, unsigned long arg)
 	if (ret == -ENOTTY) {
 		ret = netdev_ifrioctl(NULL, cmd, (FAR struct ifreq *)((uintptr_t)arg));
 	}
-
-#ifdef CONFIG_NET_NETMON
-	if (ret == -ENOTTY) {
-		ret = netdev_nmioctl(NULL, cmd, (void *)((uintptr_t)arg));
-	}
-#endif                          /* CONFIG_NET_NETMON */
 #ifdef CONFIG_NET_IGMP
 	if (ret == -ENOTTY) {
 		ret = netdev_imsfioctl(NULL, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
@@ -244,17 +235,17 @@ errout:
 int net_vfcntl(int sd, int cmd, va_list ap)
 {
 
-	FAR struct socket *sock = (struct socket *)get_socket(sd, getpid());
+	FAR struct socket *sock = (struct socket *)get_socket_by_pid(sd, getpid());
 	int err = 0;
 	int ret = 0;
 
-	NET_LOGV(TAG, "sd=%d cmd=%d\n", sd, cmd);
+	NET_LOGKV(TAG, "sd=%d cmd=%d\n", sd, cmd);
 
 	/* Verify that the sd corresponds to valid, allocated socket */
 
 	if (!sock) {
 		err = EBADF;
-		NET_LOGE(TAG, "invalid socket\n");
+		NET_LOGKE(TAG, "invalid socket\n");
 		goto errout;
 	}
 

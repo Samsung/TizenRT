@@ -27,28 +27,19 @@ extern "C" {
 #include <tinyara/net/if/ble.h>
 #include <gap_msg.h>
 #include <tizenrt_ble_common.h>
+#include <osdep_service.h>
 
 #define BD_ADDR_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BD_ADDR_ARG(x) (x)[5],(x)[4],(x)[3],(x)[2],(x)[1],(x)[0]
 #define UUID_128_FORMAT "0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X:0x%2X"
 #define UUID_128(x)  x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15]
 
-#define RTK_DEBUG_ON 0
-#if RTK_DEBUG_ON
-#define debug_print printf
-#else
-#if defined CONFIG_AMEBAD_BLE_SCATTERNET && CONFIG_AMEBAD_BLE_SCATTERNET
-extern void print_no_combo(const char* format, ...);
-#define debug_print print_no_combo
-#else
-extern void print_no_client(const char* format, ...);
-#define debug_print print_no_client
-#endif
-#endif
+#define debug_print blevdbg
+//#define CONFIG_DEBUG_SCAN_INFO
 
 typedef struct
 {
-  uint8_t *addr;
+  uint8_t addr[GAP_BD_ADDR_LEN];
   bool is_secured_connect;
 } BLE_TIZENRT_BOND_REQ;
 
@@ -118,7 +109,15 @@ typedef struct
   T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
   uint16_t conn_interval;
   uint16_t conn_latency;
+  uint16_t scan_timeout;
 } T_TIZENRT_CONN_PARAM;
+
+typedef struct
+{
+  uint8_t remote_bd[GAP_BD_ADDR_LEN];
+  T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
+  uint8_t type;
+} T_TIZENRT_MODIFY_WHITELIST_PARAM;
 
 typedef enum
 {
@@ -133,6 +132,7 @@ typedef enum
   BLE_TIZENRT_ENABLE_NOTIFY,
   BLE_TIZENRT_DELETE_BOND,
   BLE_TIZENRT_CLEAR_ALL_BONDS,
+  BLE_TIZENRT_MODIFY_WHITELIST,
   BLE_TIZENRT_CLIENT_MSG_MAX
 } BLE_TIZENRT_CLIENT_MSG_TYPE;
 

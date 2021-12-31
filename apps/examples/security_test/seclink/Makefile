@@ -26,10 +26,12 @@ APPNAME = sl_test
 THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
-CSRCS += sl_ss_test.c \
+CSRCS += \
 	sl_auth_test.c \
 	sl_key_test.c \
-	sl_simple_test.c \
+	sl_crypto_test.c \
+	sl_ss_test.c \
+	sl_mbed_test.c\
 	sl_test_utils.c
 
 MAINSRC = sl_test_main.c
@@ -46,12 +48,12 @@ ifneq ($(CONFIG_BUILD_KERNEL),y)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\..\..\libapps$(LIBEXT)
+  BIN = $(APPDIR)\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = ..\\..\\..\\libapps$(LIBEXT)
+  BIN = $(APPDIR)\\libapps$(LIBEXT)
 else
-  BIN = ../../../libapps$(LIBEXT)
+  BIN = $(APPDIR)/libapps$(LIBEXT)
 endif
 endif
 

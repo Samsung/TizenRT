@@ -244,51 +244,6 @@ struct ifconf {
 #define ifc_buf	ifc_ifcu.ifcu_buf	/* Buffer address.  */
 #define ifc_req	ifc_ifcu.ifcu_req	/* Array of structures.  */
 
-#ifdef CONFIG_NET_NETMON
-/* This is Network monitor request */
-enum netmon_proto {
-	NETMON_INVALID = 0,
-	NETMON_TCP = 0x10,
-	NETMON_UDP = 0x20,
-	NETMON_UDPLITE = 0x21,
-	NETMON_UDPNOCHKSUM = 0x22,
-	NETMON_RAW = 0x40,
-	NETMON_TYPE_IPV6 = 0x08,
-};
-enum netmon_state {
-	NETMON_NONE,
-	NETMON_WRITE,
-	NETMON_LISTEN,
-	NETMON_CONNECT,
-	NETMON_CLOSE,
-};
-/* Socket info. */
-struct netmon_sock {
-	struct netmon_sock *flink;
-	enum netmon_proto type;
-	enum netmon_state state;
-	union {
-		struct sockaddr_in ip;
-		struct sockaddr_in6 ip6;
-	} local;
-	union {
-		struct sockaddr_in ip;
-		struct sockaddr_in6 ip6;
-	} remote;
-	pid_t pid;
-	char  pid_name[CONFIG_TASK_NAME_SIZE];
-};
-#ifdef CONFIG_NET_STATS
-/* Netdev info. */
-struct netmon_netdev_stats {
-	char devname[IFNAMSIZ + 1];
-	u32_t devinpkts;
-	u32_t devinoctets;
-	u32_t devoutpkts;
-	u32_t devoutoctets;
-};
-#endif								/* CONFIG_NET_STATS */
-#endif                              /* CONFIG_NET_NETMON */
 /*******************************************************************************************
  * Public Function Prototypes
  *******************************************************************************************/

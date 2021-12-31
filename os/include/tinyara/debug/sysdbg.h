@@ -31,6 +31,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define SYSDBG_PATH "/dev/sysdbg"
 
 /* Reducing the size intentionally for debug purpose to avoid memory crunch */
 #define TASK_NAME_SIZE 15

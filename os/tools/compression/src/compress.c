@@ -36,15 +36,13 @@
 #include "miniz/miniz.h"
 #endif
 
-#define MAX_BLOCK_SIZE 8192
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 static void show_usage(const char *progname)
 {
 	fprintf(stderr, "USAGE: %s <block size> <compression format> <uncompressed file name> <compressed file name>\n", progname);
-	exit(1);
+	exit(COMP_USAGE_ERROR);
 }
 
 static void compress_file(int block_size, int type, char *in_file, char *out_file)
@@ -67,6 +65,7 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 #if CONFIG_COMPRESSION_TYPE == LZMA
 	long unsigned int propsSize = LZMA_PROPS_SIZE;
 #endif
+	int exit_code = COMP_FAILURE;
 
 	ret = stat((char *)in_file, &buf);
 	if (ret < 0) {
@@ -98,7 +97,7 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 		goto error;
 	}
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
-	out_buf = (unsigned char *)malloc(block_size);
+	out_buf = (unsigned char *)malloc(compressBound(block_size));
 	if (!out_buf) {
 		printf("Failed to allocate memory for out_buf\n");
 		goto error;
@@ -164,6 +163,7 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 		ret = LzmaCompress(&out_buf[LZMA_PROPS_SIZE], &writesize, read_buf, (block_size - readsize), out_buf, &propsSize, 0, 1<<13 , -1, -1, -1, -1, 1);
 		if (ret != SZ_OK) {
 			printf("LZMA Compress failed, ret = %d\n", ret);
+			goto error;
 		}
 
 		printf("==> lzma_compress %d writesize %lu\n", index, writesize);
@@ -173,12 +173,13 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 		ret = mz_compress(out_buf, &writesize, read_buf, (block_size - readsize));
 		if (ret != Z_OK) {
 			printf("Miniz Compress failed, ret = %d\n", ret);
+			goto error;
 		}
 		printf("==> miniz_compress %d writesize %lu\n", index, writesize);
 #else
 		printf("Compression for type %d not supported\n", CONFIG_COMPRESSION_TYPE);
 		printf("Set CONFIG_COMPRESSION_TYPE to %d, then generate mkcompressimg again for this type", CONFIG_COMPRESSION_TYPE);
-		exit(1);
+		exit(COMP_NOT_SUPPORTED);
 #endif
 		phdr->secoff[index + 1] = phdr->secoff[index] + writesize;
 
@@ -230,6 +231,8 @@ static void compress_file(int block_size, int type, char *in_file, char *out_fil
 		}
 	}
 
+	exit_code = COMP_SUCCESS; /* Compression is successful */
+
 error:
 	if (phdr) {
 		free(phdr);
@@ -246,6 +249,7 @@ error:
 	if (out_fd > 0) {
 		close(out_fd);
 	}
+	exit(exit_code);
 }
 
 /****************************************************************************
@@ -265,22 +269,17 @@ int main(int argc, char *argv[])	//Main defined
 
 	block_size = atoi(argv[1]);
 
-	if (block_size > MAX_BLOCK_SIZE) {
-		fprintf(stderr, "Block size should be less than %d, Modify MAX_BLOCK_SIZE if needed\n", MAX_BLOCK_SIZE);
-		exit(2);
-	}
-
 	comp_format = atoi(argv[2]);
 
 	if (comp_format <= COMPRESSION_TYPE_NONE || comp_format > COMPRESSION_TYPE_MAX) {
 		fprintf(stderr, "Compression Mode %d not supported\n", comp_format);
-		exit(3);
+		exit(COMP_NOT_SUPPORTED);
 	}
 
 	ret = stat((char *)argv[3], &buf);
 	if (ret < 0) {
 		fprintf(stderr, "Input file not found\n");
-		exit(4);
+		exit(COMP_INVALID_INPUT);
 	}
 
 	compress_file(block_size, comp_format, argv[3], argv[4]);

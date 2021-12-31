@@ -167,6 +167,10 @@ int tc_kernel_main(int argc, char *argv[])
 	signal_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_SYSTEM_DEBUG
+	debug_main();
+#endif
+
 #ifdef CONFIG_TC_KERNEL_TASK
 	task_main();
 #endif

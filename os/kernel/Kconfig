@@ -966,7 +966,6 @@ config IDLETHREAD_STACKSIZE
 config USERMAIN_STACKSIZE
 	int "Main thread stack size"
 	default 2048
-	depends on !BINARY_MANAGER
 	---help---
 		The size of the stack to allocate for the user initialization thread
 		that is started as soon as the OS completes its initialization.

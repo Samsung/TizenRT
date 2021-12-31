@@ -361,9 +361,6 @@ void lwip_init(void)
 	mem_init();
 	memp_init();
 	pbuf_init();
-#ifndef CONFIG_NET_NETMGR
-	netif_init();
-#endif
 #if LWIP_IPV4
 	ip_init();
 #if LWIP_ARP

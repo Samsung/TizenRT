@@ -169,10 +169,10 @@ VOID CPTest_OSCCalibrationOk(VOID)
 		}
 	} 
 	
-	DiagPrintf("\n");
-	DiagPrintf("<<<<                          >>>>\n");
-	DiagPrintf("<<<<    Flash boot SUCCESS    >>>>\n");
-	DiagPrintf("<<<<                          >>>>\n");
-	DiagPrintf("\n");
+	rtw_printf("\n");
+	rtw_printf("<<<<                          >>>>\n");
+	rtw_printf("<<<<    Flash boot SUCCESS    >>>>\n");
+	rtw_printf("<<<<                          >>>>\n");
+	rtw_printf("\n");
 }
 #endif

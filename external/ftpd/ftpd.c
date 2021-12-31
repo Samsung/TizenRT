@@ -290,7 +290,7 @@ static FAR struct ftpd_account_s *ftpd_account_new(FAR const char *user, uint8_t
 
 	ret = (struct ftpd_account_s *)zalloc(allocsize);
 	if (!ret) {
-		ndbg("Failed to allocate account\n");
+		printf("Failed to allocate account\n");
 		return NULL;
 	}
 
@@ -713,11 +713,11 @@ static int ftpd_rxpoll(int sd, int timeout)
 	 */
 
 	if (ret == 0) {
-		//nvdbg("poll() timed out\n");
+		//printf("poll() timed out\n");
 		return -ETIMEDOUT;
 	} else if (ret < 0) {
 		int errval = errno;
-		nvdbg("poll() failed: %d\n", errval);
+		printf("poll() failed: %d\n", errval);
 		return -errval;
 	} else {
 		return OK;
@@ -750,11 +750,11 @@ static int ftpd_txpoll(int sd, int timeout)
 	 */
 
 	if (ret == 0) {
-		nvdbg("poll() timed out\n");
+		printf("poll() timed out\n");
 		return -ETIMEDOUT;
 	} else if (ret < 0) {
 		int errval = errno;
-		nvdbg("poll() failed: %d\n", errval);
+		printf("poll() failed: %d\n", errval);
 		return -errval;
 	} else {
 		return OK;
@@ -775,7 +775,7 @@ static int ftpd_accept(int sd, FAR void *addr, FAR socklen_t *addrlen, int timeo
 	acceptsd = accept(sd, (FAR struct sockaddr *)addr, addrlen);
 	if (acceptsd < 0) {
 		int errval = errno;
-		ndbg("accept() failed: %d\n", errval);
+		printf("accept() failed: %d\n", errval);
 		return -errval;
 	}
 
@@ -799,7 +799,7 @@ static ssize_t ftpd_recv(int sd, FAR void *data, size_t size, int timeout)
 	if (ret < 0) {
 		int errval = errno;
 
-		ndbg("recv() failed: %d\n", errval);
+		printf("recv() failed: %d\n", errval);
 		return -errval;
 	}
 
@@ -820,7 +820,7 @@ static ssize_t ftpd_send(int sd, FAR const void *data, size_t size, int timeout)
 	if (timeout >= 0) {
 		int status = ftpd_txpoll(sd, timeout);
 		if (status < 0) {
-			nvdbg("ftpd_rxpoll: %d\n", status);
+			printf("ftpd_rxpoll: %d\n", status);
 			return (ssize_t)status;
 		}
 	}
@@ -831,7 +831,7 @@ static ssize_t ftpd_send(int sd, FAR const void *data, size_t size, int timeout)
 	ret = send(sd, data, size, 0);
 	if (ret < 0) {
 		ssize_t errval = errno;
-		ndbg("send() failed: %d\n", errval);
+		printf("send() failed: %d\n", errval);
 		return -errval;
 	}
 
@@ -886,7 +886,7 @@ static int ftpd_dataopen(FAR struct ftpd_session_s *session)
 
 		if (session->data.sd < 0) {
 			int errval = errno;
-			ndbg("socket() failed: %d\n", errval);
+			printf("socket() failed: %d\n", errval);
 			(void)ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 451, ' ', "Socket error !");
 			return -errval;
 		}
@@ -895,7 +895,7 @@ static int ftpd_dataopen(FAR struct ftpd_session_s *session)
 		ret = connect(session->data.sd, (FAR const struct sockaddr *)(&session->data.addr), session->data.addrlen);
 		if (ret < 0) {
 			int errval = errno;
-			ndbg("connect() failed: %d\n", errval);
+			printf("connect() failed: %d\n", errval);
 			(void)ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 451, ' ', "Connect error !");
 			(void)ftpd_dataclose(session);
 			return -errval;
@@ -909,7 +909,7 @@ static int ftpd_dataopen(FAR struct ftpd_session_s *session)
 	session->data.addrlen = sizeof(session->data.addr);
 	sd = ftpd_accept(session->data.sd, (struct sockaddr *)(&session->data.addr), &session->data.addrlen, -1);
 	if (sd < 0) {
-		ndbg("ftpd_accept() failed: %d\n", sd);
+		printf("ftpd_accept() failed: %d\n", sd);
 		(void)ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 451, ' ', "Accept error !");
 		(void)ftpd_dataclose(session);
 		return sd;
@@ -956,7 +956,7 @@ static FAR struct ftpd_server_s *ftpd_openserver(int port)
 
 	server = (FAR struct ftpd_server_s *)zalloc(sizeof(struct ftpd_server_s));
 	if (!server) {
-		ndbg("Failed to allocate server\n");
+		printf("Failed to allocate server\n");
 		return NULL;
 	}
 
@@ -1412,7 +1412,7 @@ static off_t ftpd_offsatoi(FAR const char *filename, off_t offset)
 	outstream = fopen(filename, "r");
 	if (!outstream) {
 		int errval = errno;
-		ndbg("Failed to open %s: %d\n", filename, errval);
+		printf("Failed to open %s: %d\n", filename, errval);
 		return -errval;
 	}
 
@@ -1549,13 +1549,13 @@ static int ftpd_stream(FAR struct ftpd_session_s *session, int cmdtype)
 		if (session->type == FTPD_SESSIONTYPE_A) {
 			seekpos = ftpd_offsatoi(path, session->restartpos);
 			if (seekpos < 0) {
-				ndbg("ftpd_offsatoi failed: %d\n", seekpos);
+				printf("ftpd_offsatoi failed: %d\n", seekpos);
 				errval = -seekpos;
 			}
 		} else {
 			seekpos = session->restartpos;
 			if (seekpos < 0) {
-				ndbg("Bad restartpos: %d\n", seekpos);
+				printf("Bad restartpos: %d\n", seekpos);
 				errval = EINVAL;
 			}
 		}
@@ -1566,7 +1566,7 @@ static int ftpd_stream(FAR struct ftpd_session_s *session, int cmdtype)
 			seekoffs = lseek(session->fd, seekpos, SEEK_SET);
 			if (seekoffs < 0) {
 				errval = errno;
-				ndbg("lseek failed: %d\n", errval);
+				printf("lseek failed: %d\n", errval);
 			}
 		}
 
@@ -1587,7 +1587,7 @@ static int ftpd_stream(FAR struct ftpd_session_s *session, int cmdtype)
 
 	ret = ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 150, ' ', "Opening data connection");
 	if (ret < 0) {
-		ndbg("ftpd_response failed: %d\n", ret);
+		printf("ftpd_response failed: %d\n", ret);
 		goto errout_with_session;
 	}
 
@@ -1625,7 +1625,7 @@ static int ftpd_stream(FAR struct ftpd_session_s *session, int cmdtype)
 		 */
 
 		if (rdbytes < 0) {
-			ndbg("Read failed: rdbytes=%d errval=%d\n", rdbytes, errval);
+			printf("Read failed: rdbytes=%d errval=%d\n", rdbytes, errval);
 			(void)ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 550, ' ', "Data read error !");
 			ret = -errval;
 			break;
@@ -1670,7 +1670,7 @@ static int ftpd_stream(FAR struct ftpd_session_s *session, int cmdtype)
 			wrbytes = ftpd_send(session->data.sd, buffer, buflen, session->txtimeout);
 			if (wrbytes < 0) {
 				errval = -wrbytes;
-				ndbg("ftpd_send failed: %d\n", errval);
+				printf("ftpd_send failed: %d\n", errval);
 			}
 		} else {
 			/* Write to the file */
@@ -1678,7 +1678,7 @@ static int ftpd_stream(FAR struct ftpd_session_s *session, int cmdtype)
 			wrbytes = write(session->fd, buffer, buflen);
 			if (wrbytes < 0) {
 				errval = errno;
-				ndbg("write() failed: %d\n", errval);
+				printf("write() failed: %d\n", errval);
 			}
 		}
 
@@ -1689,7 +1689,7 @@ static int ftpd_stream(FAR struct ftpd_session_s *session, int cmdtype)
 		 */
 
 		if (wrbytes != ((ssize_t)buflen)) {
-			ndbg("Write failed: wrbytes=%d errval=%d\n", wrbytes, errval);
+			printf("Write failed: wrbytes=%d errval=%d\n", wrbytes, errval);
 			(void)ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 550, ' ', "Data send error !");
 			ret = -errval;
 			break;
@@ -1965,7 +1965,7 @@ static int fptd_listscan(FAR struct ftpd_session_s *session, FAR char *path, uns
 	dir = opendir(path);
 	if (!dir) {
 		int errval = errno;
-		ndbg("dir() failed\n", errval);
+		printf("dir() failed\n", errval);
 		return -errval;
 	}
 
@@ -2253,7 +2253,7 @@ static int ftpd_command_port(FAR struct ftpd_session_s *session)
 		if (temp < 0 || temp > 255) {
 			ret = ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 501, ' ', "Illegal PORT command");
 			if (ret < 0) {
-				ndbg("ftpd_response failed: %d\n", ret);
+				printf("ftpd_response failed: %d\n", ret);
 				return ret;
 			}
 		}
@@ -2402,7 +2402,7 @@ static int ftpd_command_eprt(FAR struct ftpd_session_s *session)
 		} else
 #endif
 		{
-			ndbg("Unrecognized family: %d\n", family);
+			printf("Unrecognized family: %d\n", family);
 			family = AF_UNSPEC;
 		}
 
@@ -2617,7 +2617,7 @@ static int ftpd_command_pasv(FAR struct ftpd_session_s *session)
 		} else
 #endif
 		{
-			ndbg("Unsupported family\n");
+			printf("Unsupported family\n");
 		}
 
 	session->data.addr.in4.sin_port = 0;
@@ -3201,7 +3201,7 @@ static int ftpd_startworker(pthread_startroutine_t handler, FAR void *arg, size_
 
 	ret = pthread_attr_init(&attr);
 	if (ret != 0) {
-		ndbg("pthread_attr_init() failed: %d\n", ret);
+		printf("pthread_attr_init() failed: %d\n", ret);
 		goto errout;
 	}
 
@@ -3209,7 +3209,7 @@ static int ftpd_startworker(pthread_startroutine_t handler, FAR void *arg, size_
 
 	ret = pthread_attr_setstacksize(&attr, stacksize);
 	if (ret != 0) {
-		ndbg("pthread_attr_setstacksize() failed: %d\n", ret);
+		printf("pthread_attr_setstacksize() failed: %d\n", ret);
 		goto errout_with_attr;
 	}
 
@@ -3217,7 +3217,7 @@ static int ftpd_startworker(pthread_startroutine_t handler, FAR void *arg, size_
 
 	ret = pthread_create(&threadid, &attr, handler, arg);
 	if (ret != 0) {
-		ndbg("pthread_create() failed: %d\n", ret);
+		printf("pthread_create() failed: %d\n", ret);
 		goto errout_with_attr;
 	}
 
@@ -3225,7 +3225,7 @@ static int ftpd_startworker(pthread_startroutine_t handler, FAR void *arg, size_
 
 	ret = pthread_detach(threadid);
 	if (ret != 0) {
-		ndbg("pthread_detach() failed: %d\n", ret);
+		printf("pthread_detach() failed: %d\n", ret);
 	}
 
 errout_with_attr:
@@ -3313,7 +3313,7 @@ static FAR void *ftpd_worker(FAR void *arg)
 	uint8_t ch;
 	int ret;
 
-	nvdbg("Worker started\n");
+	printf("Worker started\n");
 	DEBUGASSERT(session);
 
 	/* Configure the session sockets */
@@ -3324,7 +3324,7 @@ static FAR void *ftpd_worker(FAR void *arg)
 
 	ret = ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 220, ' ', CONFIG_FTPD_SERVERID);
 	if (ret < 0) {
-		ndbg("ftpd_response() failed: %d\n", ret);
+		printf("ftpd_response() failed: %d\n", ret);
 		ftpd_freesession(session);
 		return NULL;
 	}
@@ -3404,7 +3404,7 @@ static FAR void *ftpd_worker(FAR void *arg)
 
 		ret = ftpd_command(session);
 		if (ret < 0) {
-			ndbg("Disconnected by the command handler: %d\n", ret);
+			printf("Disconnected by the command handler: %d\n", ret);
 			break;
 		}
 	}
@@ -3477,27 +3477,27 @@ int ftpd_adduser(FTPD_SESSION handle, uint8_t accountflags, FAR const char *user
 
 	newaccount = ftpd_account_new(user, accountflags);
 	if (!newaccount) {
-		ndbg("Failed to allocte memory to the account\n");
+		printf("Failed to allocte memory to the account\n");
 		ret = -ENOMEM;
 		goto errout;
 	}
 
 	ret = ftpd_account_setpassword(newaccount, passwd);
 	if (ret < 0) {
-		ndbg("ftpd_account_setpassword failed: %d\n", ret);
+		printf("ftpd_account_setpassword failed: %d\n", ret);
 		goto errout_with_account;
 	}
 
 	ret = ftpd_account_sethome(newaccount, home);
 	if (ret < 0) {
-		ndbg("ftpd_account_sethome failed: %d\n", ret);
+		printf("ftpd_account_sethome failed: %d\n", ret);
 		goto errout_with_account;
 	}
 
 	server = (FAR struct ftpd_server_s *)handle;
 	ret = ftpd_account_add(server, newaccount);
 	if (ret < 0) {
-		ndbg("ftpd_account_add failed: %d\n", ret);
+		printf("ftpd_account_add failed: %d\n", ret);
 		goto errout_with_account;
 	}
 
@@ -3546,7 +3546,7 @@ int ftpd_session(FTPD_SESSION handle, int timeout)
 
 	session = (FAR struct ftpd_session_s *)zalloc(sizeof(struct ftpd_session_s));
 	if (!session) {
-		ndbg("Failed to allocate session\n");
+		printf("Failed to allocate session\n");
 		ret = -ENOMEM;
 		goto errout;
 	}
@@ -3581,7 +3581,7 @@ int ftpd_session(FTPD_SESSION handle, int timeout)
 
 	session->cmd.buffer = (FAR char *)malloc(session->cmd.buflen);
 	if (!session->cmd.buffer) {
-		ndbg("Failed to allocate command buffer\n");
+		printf("Failed to allocate command buffer\n");
 		ret = -ENOMEM;
 		goto errout_with_session;
 	}
@@ -3590,7 +3590,7 @@ int ftpd_session(FTPD_SESSION handle, int timeout)
 
 	session->data.buffer = (FAR char *)malloc(session->data.buflen);
 	if (!session->data.buffer) {
-		ndbg("Failed to allocate data buffer\n");
+		printf("Failed to allocate data buffer\n");
 		ret = -ENOMEM;
 		goto errout_with_session;
 	}
@@ -3603,7 +3603,7 @@ int ftpd_session(FTPD_SESSION handle, int timeout)
 
 #ifdef CONFIG_DEBUG_NET
 		if (session->cmd.sd != -ETIMEDOUT) {
-			ndbg("ftpd_accept() failed: %d\n", session->cmd.sd);
+			printf("ftpd_accept() failed: %d\n", session->cmd.sd);
 		}
 #endif
 		ret = session->cmd.sd;
@@ -3614,7 +3614,7 @@ int ftpd_session(FTPD_SESSION handle, int timeout)
 
 	ret = ftpd_startworker(ftpd_worker, (FAR void *)session, CONFIG_FTPD_WORKERSTACKSIZE);
 	if (ret < 0) {
-		ndbg("ftpd_startworker() failed: %d\n", ret);
+		printf("ftpd_startworker() failed: %d\n", ret);
 		goto errout_with_session;
 	}
 

@@ -24,6 +24,8 @@ ble_manager_lwnl_listener.c\
 ble_manager_state.c\
 ble_manager_message.c\
 ble_manager_msghandler.c\
+ble_manager_autoconnect.c\
+ble_queue.c\
 
 DEPPATH += --dep-path src/ble_manager
 VPATH += :src/ble_manager
