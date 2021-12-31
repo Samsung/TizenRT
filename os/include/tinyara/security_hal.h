@@ -34,10 +34,11 @@ typedef enum {
 	HAL_INVALID_SLOT_RANGE,
 	HAL_INVALID_SLOT_TYPE, // ex. request to save key into cert slot
 	HAL_EMPTY_SLOT,
-	HAL_BAD_KEY,	         // only public key can be returned
-	HAL_BAD_KEY_PAIR,      // public and private keys do not match
+	HAL_BAD_KEY,	  // only public key can be returned
+	HAL_BAD_KEY_PAIR, // public and private keys do not match
+	HAL_BAD_KEY_TYPE, // the type when key was set and the type to get key are not matched.
 	HAL_BAD_CERT,
-	HAL_BAD_CERTKEY_PAIR,  // certificate and key do not match
+	HAL_BAD_CERTKEY_PAIR, // certificate and key do not match
 	HAL_NOT_ENOUGH_MEMORY,
 	HAL_ALLOC_FAIL,
 	HAL_KEY_IN_USE,
