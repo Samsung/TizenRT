@@ -22,14 +22,15 @@
 /*
  * For TinyAra
  */
+#define WEBSERVER_TAG "[HTTP_WEBSERVER] "
 #ifdef CONFIG_NETUTILS_WEBSERVER_LOGD
-#define HTTP_LOGD(...) printf(__VA_ARGS__)
+#define HTTP_LOGD(fmt, ...) printf(WEBSERVER_TAG "%s(%d) " fmt, __FUNCTION__, __LINE__,##__VA_ARGS__)
 #else
 #define HTTP_LOGD(...)
 #endif
 
 #ifdef CONFIG_NETUTILS_WEBSERVER_LOGE
-#define HTTP_LOGE(...) printf(__VA_ARGS__)
+#define HTTP_LOGE(fmt, ...) printf(WEBSERVER_TAG "[ERR] %s(%d) " fmt, __FUNCTION__, __LINE__,##__VA_ARGS__)
 #else
 #define HTTP_LOGE(...)
 #endif

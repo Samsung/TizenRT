@@ -52,6 +52,10 @@ struct http_client_t {
 #endif
 
 	int keep_alive;
+	int keep_alive_timeout;
+	uint32_t max_request;
+	uint32_t remaining_request;
+	int keep_alive_header_flag;
 };
 
 struct http_message_len_t {
