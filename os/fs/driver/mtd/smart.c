@@ -4792,6 +4792,10 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 	FAR struct mtd_smart_procfs_data_s *procfs_data;
 	FAR struct mtd_smart_debug_data_s *debug_data;
 #endif
+	uint16_t sector;
+	FAR struct smart_sect_header_s *header;
+	size_t offset;
+
 	fvdbg("Entry cmd : %08x\n", cmd);
 	DEBUGASSERT(inode && inode->i_private);
 
@@ -4887,8 +4891,34 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 
 	case BIOC_BULKERASE:
 		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
+
+		fdbg("Format Finished\n");
+		sleep(1);
 		goto ok_out;
-		
+	case BIOC_CORRUPTION :
+		sector = dev->sMap[SMART_FIRST_DIR_SECTOR];
+		header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
+		ret = MTD_BREAD(dev->mtd, sector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+		if (ret != dev->mtdBlksPerSector) {
+			fdbg("Error reading root sector %d\n", sector);
+			ret = -EIO;
+			goto ok_out;
+		}
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+		header->status = header->status & ~(SMART_STATUS_RELEASED | SMART_STATUS_COMMITTED);
+#else
+		header->status = header->status | SMART_STATUS_RELEASED | SMART_STATUS_COMMITTED;
+#endif
+		offset = sector * dev->mtdBlksPerSector * dev->geo.blocksize + offsetof(struct smart_sect_header_s, status);
+		ret = smart_bytewrite(dev, offset, 1, &header->status);
+		if (ret != 1) {
+			fdbg("Error releasing root sector ret : %d rootsector : %d\n", ret, sector);
+			ret = -EIO;
+		} else {
+			ret = OK;
+		}
+		goto ok_out;
+
 	case BIOC_FIBMAP:
 
 		if ((uint16_t)arg >= dev->totalsectors) {
