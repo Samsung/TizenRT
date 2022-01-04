@@ -585,6 +585,15 @@ config ARCH_INTERRUPTSTACK
 		defined to be zero), the user task stacks will be used during interrupt
 		handling.
 
+config ARCH_NESTED_IRQ_STACK_SIZE
+	int "Nested IRQ secondary stack size"
+	depends on ARCH_HAVE_INTERRUPTSTACK
+	default 512
+	---help---
+		This is an additional stack which will be used only when nested irq
+		happens with a stale or invalid value of MSP. That is, when the nested
+		IRQ occurs in handler mode, but the MSP value has not yet been updated.
+
 config ARCH_HAVE_NESTED_INTERRUPT
 	bool
 	default n
