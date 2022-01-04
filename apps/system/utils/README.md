@@ -16,10 +16,11 @@ Most of the commands support *--help* option to show how to use.
 |                    | [heapinfo](#heapinfo)                           | [mkdir](#mkdir)         |
 |                    | [irqinfo](#irqinfo)                             | [mv](#mv)               |
 |                    | [kill/killall](#killkillall)                    | [mount](#mount)         |
-|                    | [ps](#ps)                                       | [umount](#umount)       |
-|                    | [reboot](#reboot)                               | [pwd](#pwd)             |
-|                    | [stkmon](#stkmon)                               | [rm](#rm)               |
-|                    | [uptime](#uptime)                               | [rmdir](#rmdir)         |
+|                    | [prodconfig](#prodconfig)                       | [umount](#umount)       |
+|                    | [ps](#s)                                        | [pwd](#pwd)             |
+|                    | [reboot](#reboot)                               | [rm](#rm)               |
+|                    | [stkmon](#stkmon)                               | [rmdir](#rmdir)         |
+|                    | [uptime](#uptime)                               |                         |
 
 
 ## exit
@@ -736,6 +737,23 @@ Kernel Features -> Disable TinyAra interfaces -> [ ] Disable environment variabl
 Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 ```
 
+## prodconfig
+This shows the status of hw configurations like swd enable/disable.
+```bash
+TASH>>prodconfig
+```
+If "HW Debug : On" is printed, it means SWD is enabled. If "Off", the SWD is disabled.  
+If "Download : Downloader & Hotfix Available" is printed, it is possible to download the image through downloader tool. If not, it is only possible to download the image through hotfix.
+
+### How to Enable
+Enable *CONFIG_PRODCONFIG* and *CONFIG_ENABLE_PRODCONFIG* to use this command on menuconfig as shown below:
+```
+Device Drivers -> [*] Product config Driver Support
+```
+```
+Application Configuration -> System Libraries and Add-Ons -> [*] prodconfig
+```
+
 
 ## ps
 This command shows information about a selection of the active threads.
@@ -759,7 +777,6 @@ Enable *CONFIG_ENABLE_PS* to use this command on menuconfig as shown below:
 ```
 Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell commands -> [*] ps
 ```
-
 
 ## pwd
 This shows current working directory.
