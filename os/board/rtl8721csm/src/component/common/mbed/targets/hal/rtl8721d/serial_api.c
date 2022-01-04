@@ -490,7 +490,6 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 
 	UART_StructInit(&puart_adapter->UART_InitStruct);
 	UART_Init(puart_adapter->UARTx, &puart_adapter->UART_InitStruct);
-
 	InterruptRegister((IRQ_FUN)uart_irqhandler, puart_adapter->IrqNum, (u32)puart_adapter, 5);
 	InterruptEn(puart_adapter->IrqNum, 5);
 
@@ -713,7 +712,6 @@ int serial_getc(serial_t *obj)
 	PMBED_UART_ADAPTER puart_adapter=&(uart_adapter[obj->uart_idx]);
 	u8 RxByte = 0;
 
-	while (!serial_readable(obj));
 	UART_CharGet(puart_adapter->UARTx, &RxByte);
 
 	return (int)RxByte;
@@ -730,7 +728,6 @@ void serial_putc(serial_t *obj, int c)
 {
 	PMBED_UART_ADAPTER puart_adapter=&(uart_adapter[obj->uart_idx]);
 
-	while (!serial_writable(obj));
 	UART_CharPut(puart_adapter->UARTx, (c & 0xFF));
 
 	if (serial_irq_en[obj->uart_idx] & SERIAL_TX_IRQ_EN) {
@@ -769,6 +766,24 @@ int serial_writable(serial_t *obj)
 	PMBED_UART_ADAPTER puart_adapter=&(uart_adapter[obj->uart_idx]);
 
 	if (UART_Writable(puart_adapter->UARTx)) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+/**
+  * @brief  check if transmit fifo is empty
+  * @param  obj: uart object define in application software.
+  * @retval status value:
+  *          - 1: TRUE
+  *          - 0: FALSE   
+  */
+int serial_tx_empty(serial_t *obj)
+{
+	PMBED_UART_ADAPTER puart_adapter=&(uart_adapter[obj->uart_idx]);
+
+	if (puart_adapter->UARTx->LSR & RUART_LINE_STATUS_REG_TEMT) {
 		return 1;
 	} else {
 		return 0;
@@ -1230,7 +1245,6 @@ int32_t serial_send_blocked (serial_t *obj, char *ptxbuf, uint32_t len, uint32_t
 
 	obj->tx_len = len;
 	while (1) {
-		while (!serial_writable(obj));
 		UART_CharPut(UARTx, *ptxbuf);
 
 		ptxbuf++;

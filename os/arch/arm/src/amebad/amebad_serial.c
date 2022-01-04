@@ -162,6 +162,7 @@
 #define UART2_ASSIGNED  1
 #endif
 #define CHAR_TIMEOUT 6540
+#define TX_FIFO_MAX 16
 
 /****************************************************************************
  * Private Types
@@ -195,6 +196,7 @@ struct rtl8721d_up_dev_s {
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
 	uint8_t oflow:1;			/* output flow control (CTS) enabled */
 #endif
+	uint8_t tx_level;
 };
 
 /****************************************************************************
@@ -418,7 +420,6 @@ static int rtl8721d_up_setup(struct uart_dev_s *dev)
 	serial_baud(sdrv[uart_index_get(priv->tx)], priv->baud);
 	serial_format(sdrv[uart_index_get(priv->tx)], priv->bits, priv->parity, priv->stopbit);
 	serial_set_flow_control(sdrv[uart_index_get(priv->tx)], priv->FlowControl, priv->rts, priv->cts);
-
 	return OK;
 }
 
@@ -456,15 +457,17 @@ static void rtl8721d_up_shutdown(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-//extern uint32_t uart_irqhandler(void *data);
 void rtl8721d_uart_irq(uint32_t id, SerialIrq event)
 {
 	struct uart_dev_s *dev = (struct uart_dev_s *)id;
+	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	if (event == RxIrq) {
 		uart_recvchars(dev);
 	}
 	if (event == TxIrq) {
+		priv->tx_level = TX_FIFO_MAX;
 		uart_xmitchars(dev);
+		priv->tx_level = 0;
 	}
 }
 static int rtl8721d_up_attach(struct uart_dev_s *dev)
@@ -647,6 +650,7 @@ static void rtl8721d_up_send(struct uart_dev_s *dev, int ch)
 	DEBUGASSERT(priv);
 	/*write one byte to tx fifo*/
 	serial_putc(sdrv[uart_index_get(priv->tx)], ch);
+	priv->tx_level--;
 }
 
 /****************************************************************************
@@ -680,7 +684,7 @@ static bool rtl8721d_up_txready(struct uart_dev_s *dev)
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 
-	return (serial_writable(sdrv[uart_index_get(priv->tx)]));
+	return priv->tx_level;
 }
 
 /****************************************************************************
@@ -695,8 +699,7 @@ static bool rtl8721d_up_txempty(struct uart_dev_s *dev)
 {
 	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	while (!serial_writable(sdrv[uart_index_get(priv->tx)])) ;
-	return true;
+	return (serial_tx_empty(sdrv[uart_index_get(priv->tx)]));
 }
 
 /****************************************************************************
