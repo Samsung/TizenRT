@@ -244,7 +244,13 @@
 										 * IN:	None
 										 * OUT: None (ioctl return value provides
 										 *      success/failure indication). */
-#define BIOC_FIBMAP     _BIOC(0x000C)	/* Reveal Physical sector number from bitmap
+
+#define BIOC_CORRUPTION _BIOC(0x000C)	/* Request corrupt blocks for testing(usually remove root sector)
+										 * IN:	None
+										 * OUT: None (ioctl return value provides
+										 *		success/failure indication). */
+
+#define BIOC_FIBMAP     _BIOC(0x000D)	/* Reveal Physical sector number from bitmap
 										 * of block device.
 										 * IN:	Logical sector number which need
 										 *		to reveal physical sector.
