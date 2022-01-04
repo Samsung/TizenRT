@@ -30,4 +30,16 @@ if NETUTILS_WEBSERVER
 	default n
 	---help---
 		Enables HTTP error logs.
+
+	config NETUTILS_WEBSERVER_MAX_CLIENT_RCV_TIMEOUT
+	int "HTTP maximum client recv data timeout"
+	default 360
+	---help---
+		Validate max
+
+	config NETUTILS_WEBSERVER_MIN_CLIENT_RCV_TIMEOUT
+	int "HTTP min client recv data timeout"
+	default 50
+	---help---
+		Validate min
 endif

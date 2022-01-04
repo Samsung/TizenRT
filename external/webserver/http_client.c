@@ -32,6 +32,8 @@
 #include "http_log.h"
 
 #define MIN_WS_HEADER_FIELD 2
+#define MAX_CLIENT_REQUEST 999999 /* it Will be updated if max client request exceeds 999999 */
+#define MIN_CLIENT_REQUEST 100
 
 pthread_addr_t http_handle_client(pthread_addr_t arg)
 {
@@ -123,13 +125,15 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 				if (p->keep_alive == 0) {
 					HTTP_LOGD("Client %d closing.\n", sock_fd);
 					close(p->client_fd);
+					break;
 				}
 			}
-		} while(p->keep_alive);
+			p->remaining_request--;
+		} while (p->keep_alive && p->remaining_request);
 #endif
 
+		HTTP_LOGD("Release client....keep_alive[%d], remaining_request[%d] \n", p->keep_alive, p->remaining_request);
 		http_client_release(p);
-		HTTP_LOGD("Release client....\n");
 	}
 
 	mq_close(msg_q);
@@ -151,6 +155,10 @@ struct http_client_t *http_client_init(struct http_server_t *server, int sock_fd
 	p->client_fd = sock_fd;
 	p->server = server;
 	p->keep_alive = 0;
+	p->keep_alive_timeout = HTTP_CONF_SOCKET_TIMEOUT_MSEC / HTTP_CONF_SEC_TO_MSEC;
+	p->max_request = MAX_CLIENT_REQUEST;
+	p->remaining_request = MAX_CLIENT_REQUEST;
+	p->keep_alive_header_flag = 0;
 
 	return p;
 }
@@ -208,6 +216,55 @@ static int process_trailer_header(char *buf, unsigned int buf_len, struct http_r
 	http_dispatch_url(client, req);
 
 	return 1;
+}
+
+#if CONFIG_NETUTILS_WEBSERVER_MIN_CLIENT_RCV_TIMEOUT >= CONFIG_NETUTILS_WEBSERVER_MAX_CLIENT_RCV_TIMEOUT
+#error "minimum recv time out must be less than maximum timeout"
+#endif
+
+static void parse_keep_alive_header(struct http_client_t *client, struct http_keyvalue_list_t *params)
+{
+	char *token = NULL;
+	char str_keep_alive[HTTP_CONF_MAX_VALUE_LENGTH] = { 0, };
+	char *header_field_value = NULL;
+
+	if (client->keep_alive_header_flag == 1) {
+		HTTP_LOGE("keep alive header is already set: timeout[%d] max[%d] \n",
+				client->keep_alive_timeout, client->max_request);
+		return;
+	}
+
+	header_field_value = http_keyvalue_list_find(params, "Keep-Alive");
+	if (strncmp(header_field_value, "(null)", 7) == 0) {
+		return;
+	}
+
+	HTTP_LOGD("Keep Alive Header [%s] \n", header_field_value);
+
+	strncpy(str_keep_alive, header_field_value, HTTP_CONF_MAX_VALUE_LENGTH);
+
+	token = strtok(str_keep_alive, ", ");
+	while (token != NULL) {
+		if (strncmp(token, "timeout=", 8) == 0) {
+			client->keep_alive_timeout = atoi(token + 8);
+			if (client->keep_alive_timeout < CONFIG_NETUTILS_WEBSERVER_MIN_CLIENT_RCV_TIMEOUT) {
+				client->keep_alive_timeout = CONFIG_NETUTILS_WEBSERVER_MIN_CLIENT_RCV_TIMEOUT;
+			} else if (client->keep_alive_timeout > CONFIG_NETUTILS_WEBSERVER_MAX_CLIENT_RCV_TIMEOUT) {
+				client->keep_alive_timeout = CONFIG_NETUTILS_WEBSERVER_MAX_CLIENT_RCV_TIMEOUT;
+			}
+
+			HTTP_LOGD("keep_alive_timeout : %d \n", client->keep_alive_timeout);
+		} else if (strncmp(token, "max=", 4) == 0) {
+			client->max_request = atoi(token + 4);
+			if (client->max_request < MIN_CLIENT_REQUEST) {
+				client->max_request =  MIN_CLIENT_REQUEST;
+			}
+
+			HTTP_LOGD("max request : %d \n", client->max_request);
+		}
+
+		token = strtok(NULL, ", ");
+	}
 }
 
 int http_parse_message(char *buf, int buf_len, int *method, char *url,
@@ -304,6 +361,8 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						}
 						if (strcmp(key, "Sec-WebSocket-Key") == 0) {
 							strncpy((char *)client->ws_key, value, WEBSOCKET_CLIENT_KEY_LEN);
+						} else if (strcmp(key, "Keep-Alive") == 0) {
+							parse_keep_alive_header(client, params);
 						}
 					}
 					if (strcmp(key, "Content-Length") == 0) {
@@ -633,14 +692,20 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	conn_type = http_keyvalue_list_find(request_params, "Connection");
 	if (!strncasecmp(conn_type, "Keep-Alive", strlen("Keep-Alive")+1)) {
 		client->keep_alive = 1;
-		struct timeval tv;
-		tv.tv_sec = HTTP_CONF_KEEP_ALIVE_MSEC / 1000;
-		tv.tv_usec = (HTTP_CONF_KEEP_ALIVE_MSEC % 1000) * 1000;
-		HTTP_LOGD("Keep-alive case, change timeout to (%u.%d)sec\n", tv.tv_sec, tv.tv_usec);
-		if (setsockopt(client->client_fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
-			HTTP_LOGE("Error: Fail to setsockopt\n");
-		} else {
-			HTTP_LOGD("Timeout modified done\n");
+
+		if (client->keep_alive_timeout != (HTTP_CONF_SOCKET_TIMEOUT_MSEC / HTTP_CONF_SEC_TO_MSEC) &&
+				client->keep_alive_header_flag == 0) {
+			struct timeval tv;
+			tv.tv_sec = client->keep_alive_timeout;
+			tv.tv_usec = 0;
+			HTTP_LOGD("Keep-alive case, change timeout to (%u.%d)sec\n", tv.tv_sec, tv.tv_usec);
+			if (setsockopt(client->client_fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
+				HTTP_LOGE("Error: set timeout to socket fails \n");
+			} else {
+				HTTP_LOGD("Timeout modified done\n");
+				client->remaining_request = client->max_request;
+				client->keep_alive_header_flag = 1;
+			}
 		}
 	} else {
 		client->keep_alive = 0;
@@ -811,6 +876,7 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 	char *buf;
 	int buflen = 0, ret, sndlen;
 	struct http_keyvalue_t *cur = NULL;
+	int len = 0;
 
 	buf = HTTP_MALLOC(HTTP_CONF_MAX_REQUEST_LENGTH);
 	if (buf == NULL) {
@@ -838,10 +904,43 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 		if (headers) {
 			cur = headers->head->next;
 			while (cur != headers->tail) {
+				if (strcmp(cur->key, "Content-Length") == 0 || strcmp(cur->key, "Content-Type") == 0
+					|| strcmp(cur->key, "Keep-Alive") == 0) {
+					cur = cur->next;
+					continue;
+				}
+
 				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
 								   "%s: %s\r\n", cur->key, cur->value);
 				cur = cur->next;
 			}
+
+			// Add content type and content length headers
+			if (body) {
+				len = snprintf(buf + buflen,
+                                                           HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+                                                           "Content-Type: text/html\r\n"
+                                                           "Content-Length: %d\r\n",
+                                                           strlen(body));
+				if (len < 0) {
+					HTTP_LOGE("Error: snprintf failed \n");
+					return HTTP_ERROR;
+				}
+
+				buflen += len;
+			}
+
+			// Add keep alive header
+			len = snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+						"Keep-Alive: timeout=%d, max=%d\r\n",
+						client->keep_alive_timeout, client->max_request);
+
+			if (len < 0) {
+				HTTP_LOGE("Error: snprintf failed \n");
+				return HTTP_ERROR;
+			}
+
+			buflen += len;
 		} else {
 			// Add content header
 			if (client->keep_alive == 0) {
@@ -860,6 +959,17 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
                                                            "Content-Length: %d\r\n",
                                                            strlen(body));
 			}
+
+			// Add keep alive header
+			len = snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+						"Keep-Alive: timeout=%d, max=%d\r\n",
+						client->keep_alive_timeout, client->max_request);
+			if (len < 0) {
+				HTTP_LOGE("Error: snprintf failed \n");
+				return HTTP_ERROR;
+			}
+
+			buflen += len;
 		}
 
 		// Append extra CRLF to mark headers done
