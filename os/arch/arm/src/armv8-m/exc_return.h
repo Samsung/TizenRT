@@ -121,7 +121,7 @@
  * the main stack. Execution uses MSP after return.
  */
 
-#define EXC_RETURN_HANDLER       0xfffffff1
+#define EXC_RETURN_HANDLER       0xffffffb0
 
 /* EXC_RETURN_PRIVTHR: Return to privileged thread mode. Exception return gets
  * state from the main stack. Execution uses MSP after return.
