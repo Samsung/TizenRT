@@ -18,8 +18,8 @@
 
 // @file tc_net_getpeername.c
 // @brief Test Case Example for getpeername() API
-#include <tinyara/config.h>
 
+#include <tinyara/config.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -29,26 +29,25 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
 
 #include "tc_internal.h"
 
 #define PORTNUM 1115
 #define MAXRCVLEN 20
+
 static int g_sem = 0;
 static int g_running_client = 0;
 
 /**
-   * @fn                   :getpeername_wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+ * @fn                   :getpeername_wait
+ * @brief                :function to wait on semaphore
+ * @scenario             :
+ * API's covered         :
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void
+ */
 static int getpeername_wait(void)
 {
 	while (g_sem <= 0) {
@@ -61,14 +60,14 @@ static int getpeername_wait(void)
 }
 
 /**
-   * @fn                   :getpeername_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+ * @fn                   :getpeername_signal
+ * @brief                :function to signal semaphore
+ * @scenario             :
+ * API's covered         :
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void
+ */
 static void getpeername_signal(void)
 {
 	g_sem = 1;
@@ -78,6 +77,7 @@ static void getpeername_error(void)
 {
 	g_sem = -1;
 }
+
 static int _wait_client(void)
 {
 	while (g_running_client <= 0) {
@@ -87,14 +87,15 @@ static int _wait_client(void)
 	}
 	return 1;
 }
+
 /**
-   * @testcase		   :tc_net_getpeername_sock_n
-   * @brief		   :negative test case wthout client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getpeername_sock_n
+ * @brief		   :negative test case wthout client server model
+ * @scenario		   :
+ * @apicovered	   :getpeername()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getpeername_sock_n(void)
 {
 	int len = sizeof(struct sockaddr);
@@ -105,15 +106,14 @@ static void tc_net_getpeername_sock_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-
 /**
-   * @testcase		   :tc_net_getpeername_close_n
-   * @brief		   :negative test case without client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getpeername_close_n
+ * @brief		   :negative test case without client server model
+ * @scenario		   :
+ * @apicovered	   :getpeername()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getpeername_close_n(void)
 {
 	int sock;
@@ -132,13 +132,13 @@ static void tc_net_getpeername_close_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_p
-   * @brief		   :positive testcase for  getpeername api with client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getpeername_p
+ * @brief		   :positive testcase for  getpeername api with client server model
+ * @scenario		   :
+ * @apicovered	   :getpeername()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getpeername_p(int fd)
 {
 	socklen_t len;
@@ -152,13 +152,13 @@ static void tc_net_getpeername_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_n
-   * @brief		   :negative testcase for  getpeername api with client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getpeername_n
+ * @brief		   :negative testcase for  getpeername api with client server model
+ * @scenario		   :
+ * @apicovered	   :getpeername()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getpeername_n(int fd)
 {
 	socklen_t len;
@@ -172,14 +172,14 @@ static void tc_net_getpeername_n(int fd)
 }
 
 /**
-   * @fn                   :getpeername_server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,accept,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+ * @fn                   :getpeername_server
+ * @brief                :
+ * @scenario             :
+ * API's covered         :socket,bind,listen,accept,close
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void *
+ */
 void *getpeername_server(void *args)
 {
 	struct sockaddr_in sa;
@@ -224,14 +224,14 @@ void *getpeername_server(void *args)
 }
 
 /**
-   * @fn                   :getpeername_client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+ * @fn                   :getpeername_client
+ * @brief                :
+ * @scenario             :
+ * API's covered         :socket,connect,close
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void *
+ */
 void *getpeername_client(void *args)
 {
 	int mysocket;
@@ -274,7 +274,6 @@ void *getpeername_client(void *args)
  ****************************************************************************/
 int net_getpeername_main(void)
 {
-
 	pthread_t Server, Client;
 	g_sem = 0;
 	g_running_client = 0;
@@ -286,7 +285,6 @@ int net_getpeername_main(void)
 		pthread_join(Client, NULL);
 		return -1;
 	}
-
 	pthread_create(&Server, NULL, getpeername_server, NULL);
 
 	pthread_join(Server, NULL);

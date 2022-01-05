@@ -79,7 +79,6 @@ static void itc_net_fcntl_p_dupfd_nonblock(void)
 /****************************************************************************
  * Name: fcntl()
  ****************************************************************************/
-
 int itc_net_fcntl_main(void)
 {
 	itc_net_fcntl_p_dupfd();

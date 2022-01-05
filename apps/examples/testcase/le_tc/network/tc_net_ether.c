@@ -21,27 +21,25 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
 #include <netinet/ether.h>
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
 #include "tc_internal.h"
 
 /**
-* @testcase		tc_net_ether_ntoa_p
-* @brief
-* @scenario
-* @apicovered		ether_ntoa()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_ether_ntoa_p
+ * @brief
+ * @scenario
+ * @apicovered		ether_ntoa()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_ether_ntoa_p(void)
 {
 	struct sockaddr *sa;
@@ -81,9 +79,9 @@ static void tc_net_ether_ntoa_p(void)
 /****************************************************************************
  * Name: ether_ntoa()
  ****************************************************************************/
-
 int net_ether_main(void)
 {
 	tc_net_ether_ntoa_p();
+
 	return 0;
 }

@@ -20,9 +20,9 @@
 /// @file itc_net_netdb.c
 /// @brief ITC Test Case Example for getaddrinfo() API
 
+#include <tinyara/config.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <tinyara/config.h>
 #ifdef CONFIG_NET_LWIP_NETDB
 #include <netdb.h>
 #endif
@@ -30,7 +30,6 @@
 #include "tc_internal.h"
 
 #ifdef CONFIG_NET_LWIP_NETDB
-
 /**
 * @testcase          :itc_net_netdb_getaddrinfo_n
 * @brief             :getaddrinfo() returns one or more addrinfo structures
@@ -54,13 +53,11 @@ static void itc_net_netdb_getaddrinfo_n(void)
 	TC_ASSERT_NEQ("getaddrinfo", ret, 0);
 	TC_SUCCESS_RESULT();
 }
-
 #endif
 
 /****************************************************************************
 * Name: getaddrinfo()
 ****************************************************************************/
-
 int itc_net_netdb_main(void)
 {
 #ifdef CONFIG_NET_LWIP_NETDB

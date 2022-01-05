@@ -21,26 +21,23 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_bind_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :bind()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_bind_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :bind()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_bind_p(void)
 {
 	struct sockaddr_in sa;
@@ -64,13 +61,13 @@ static void tc_net_bind_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_bind_udp_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :bind()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_bind_udp_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :bind()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_bind_udp_p(void)
 {
 	struct sockaddr_in sa;
@@ -93,16 +90,15 @@ static void tc_net_bind_udp_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_bind_broadcast_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :bind()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_bind_broadcast_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :bind()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_bind_broadcast_p(void)
 {
-
 	struct sockaddr_in sa;
 	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socket_fd < 0) {
@@ -124,13 +120,13 @@ static void tc_net_bind_broadcast_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_bind_fd_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :bind()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_bind_fd_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :bind()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_bind_fd_n(void)
 {
 	struct sockaddr_in sa;
@@ -148,13 +144,13 @@ static void tc_net_bind_fd_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_bind_size_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :bind()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_bind_size_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :bind()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_bind_size_n(void)
 {
 	struct sockaddr_in sa;
@@ -174,22 +170,19 @@ static void tc_net_bind_size_n(void)
 
 	TC_ASSERT_NEQ("bind", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
-
 /**
-   * @testcase		   :tc_net_bind_fd_size_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :bind()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_bind_fd_size_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :bind()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_bind_fd_size_n(void)
 {
 	struct sockaddr_in sa;
-
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
@@ -205,15 +198,14 @@ static void tc_net_bind_fd_size_n(void)
 /****************************************************************************
  * Name: bind()
  ****************************************************************************/
-
 int net_bind_main(void)
 {
-
 	tc_net_bind_p();
 	tc_net_bind_fd_n();
 	tc_net_bind_fd_size_n();
 	tc_net_bind_udp_p();
 	tc_net_bind_broadcast_p();
 	tc_net_bind_size_n();
+
 	return 0;
 }

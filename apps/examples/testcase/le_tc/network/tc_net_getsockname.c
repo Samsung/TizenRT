@@ -18,29 +18,27 @@
 
 /// @file tc_net_getsockname.c
 /// @brief Test Case Example for getsockname() API
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_getsockname_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getsockname_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :getsockname()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getsockname_p(void)
 {
 	int sock;
@@ -59,13 +57,13 @@ static void tc_net_getsockname_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getsockname_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :getsockname()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getsockname_n(void)
 {
 	int sock;
@@ -78,17 +76,16 @@ static void tc_net_getsockname_n(void)
 
 	TC_ASSERT_NEQ("getsockname", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_close_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getsockname_close_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :getsockname()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getsockname_close_n(void)
 {
 	int sock;
@@ -108,13 +105,13 @@ static void tc_net_getsockname_close_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_udp_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getsockname_udp_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :getsockname()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getsockname_udp_p(void)
 {
 	int sock;
@@ -133,13 +130,13 @@ static void tc_net_getsockname_udp_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_icmp_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getsockname_icmp_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :getsockname()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getsockname_icmp_p(void)
 {
 	int sock;
@@ -158,13 +155,13 @@ static void tc_net_getsockname_icmp_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_len_sock_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_getsockname_len_sock_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :getsockname()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_getsockname_len_sock_n(void)
 {
 	int sock;
@@ -182,7 +179,6 @@ static void tc_net_getsockname_len_sock_n(void)
 /****************************************************************************
  * Name: getsockname()
  ****************************************************************************/
-
 int net_getsockname_main(void)
 {
 	tc_net_getsockname_p();
@@ -191,5 +187,6 @@ int net_getsockname_main(void)
 	tc_net_getsockname_udp_p();
 	tc_net_getsockname_icmp_p();
 	tc_net_getsockname_close_n();
+
 	return 0;
 }

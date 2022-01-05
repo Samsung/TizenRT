@@ -197,6 +197,7 @@ int net_socket_share_main(void)
 	sem_wait(&g_signal);
 	pthread_join(server, NULL);
 	pthread_join(client, NULL);
+
 	TC_ASSERT_EQ_RETURN("destroy signal", 0, sem_destroy(&g_signal), -1);
 	TC_ASSERT_EQ_RETURN("destroy signal", 0, sem_destroy(&g_conn_signal), -1);
 	return 0;

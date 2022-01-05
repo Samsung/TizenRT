@@ -18,32 +18,29 @@
 
 /// @file tc_net_fcntl.c
 /// @brief Test Case Example for fcntl() API
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_fcntl_nonblock_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_fcntl_nonblock_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :fcntl()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_fcntl_nonblock_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
@@ -55,65 +52,59 @@ static void tc_net_fcntl_nonblock_p(void)
 
 	TC_ASSERT_NEQ("fcntl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_fcntl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_fcntl_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :fcntl()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_fcntl_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
 		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
+
 	int ret = fcntl(fd, F_SETFL, 0);
 	close(fd);
 
 	TC_ASSERT_NEQ("fcntl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
-
 /**
-   * @testcase		   :tc_net_fcntl_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_fcntl_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :fcntl()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_fcntl_n(void)
 {
-
 	int fd = -1;
 	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
 
 	TC_ASSERT_NEQ("fcntl", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_fcntl_ndelay_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_fcntl_ndelay_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :fcntl()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_fcntl_ndelay_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
@@ -125,19 +116,17 @@ static void tc_net_fcntl_ndelay_p(void)
 
 	TC_ASSERT_NEQ("fcntl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: fcntl()
  ****************************************************************************/
-
 int net_fcntl_main(void)
 {
-
 	tc_net_fcntl_nonblock_p();
 	tc_net_fcntl_p();
 	tc_net_fcntl_n();
 	tc_net_fcntl_ndelay_p();
+
 	return 0;
 }

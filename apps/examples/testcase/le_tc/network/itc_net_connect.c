@@ -35,6 +35,7 @@
 #define CLIENT_WAIT_TIME 7
 
 static int g_port;
+
 /**
 * @fn               :server_connect
 * @description      :starts server
@@ -92,7 +93,7 @@ static void *server_connect(void *ptr_num_clients)
 		pthread_exit(pret);
 	}
 	while (num_clients-- > 0) {
-		client_socket = accept(server_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+		client_socket = accept(server_socket, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 		if (client_socket < 0) {
 			close(server_socket);
 			*pret = ERROR;
@@ -231,8 +232,8 @@ static void *client_connect(void *ptr_id)
 		}
 		recv_len += valrecv;
 	}
-	
-	if (strncmp(buffer + sizeof(CLIENT_MSG), SERVER_MSG, strlen(SERVER_MSG)) !=  0) {
+
+	if (strncmp(buffer + sizeof(CLIENT_MSG), SERVER_MSG, strlen(SERVER_MSG)) != 0) {
 		close(sock);
 		*pret = ERROR;
 		pthread_exit(pret);
@@ -323,7 +324,11 @@ static void itc_net_connect_p_multiple_clients(void)
 	sleep(CLIENT_WAIT_TIME);
 
 	ret = pthread_join(server_thread, (void *)&pret);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK, free(pret); pthread_join(client3_thread, NULL); pthread_join(client2_thread, NULL); pthread_join(client1_thread, NULL));
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK,
+						 free(pret);
+						 pthread_join(client3_thread, NULL);
+						 pthread_join(client2_thread, NULL);
+						 pthread_join(client1_thread, NULL));
 	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK, free(pret); pthread_join(client3_thread, NULL); pthread_join(client2_thread, NULL); pthread_join(client1_thread, NULL));
 	ret = pthread_join(client3_thread, (void *)&pret);
 	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK, free(pret); pthread_join(client2_thread, NULL); pthread_join(client1_thread, NULL));

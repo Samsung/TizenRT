@@ -40,15 +40,16 @@
 
 static int s = 0;
 static int g_client_running = 0; // 0 is wait, 1 is running, -1 is running the client fails
+
 /**
-   * @fn                   :wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+ * @fn                   :wait
+ * @brief                :function to wait on semaphore
+ * @scenario             :
+ * API's covered         :
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void
+ */
 static int wait(void)
 {
 	while (s <= 0) {
@@ -89,15 +90,15 @@ static int _wait_client(void)
 	}
 	return 1;
 }
-/**
-   * @testcase		   :tc_net_accept_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :accept()
-   * @precondition	   :
-   * @postcondition	   :
-   */
 
+/**
+ * @testcase		   :tc_net_accept_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :accept()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 void tc_net_accept_p(int fd)
 {
 	int connect_fd = accept(fd, NULL, NULL);
@@ -109,14 +110,13 @@ void tc_net_accept_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_accept_socket_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :accept()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-
+ * @testcase		   :tc_net_accept_socket_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :accept()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 void tc_net_accept_socket_n(int fd)
 {
 	int connect_fd = accept(-1, NULL, NULL);
@@ -126,14 +126,14 @@ void tc_net_accept_socket_n(int fd)
 }
 
 /**
-   * @fn                   :Server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+ * @fn                   :Server
+ * @brief                :
+ * @scenario             :
+ * API's covered         :socket,bind,listen,close
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void *
+ */
 void *Server(void *args)
 {
 
@@ -173,17 +173,16 @@ void *Server(void *args)
 }
 
 /**
-   * @fn                   :Client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+ * @fn                   :Client
+ * @brief                :
+ * @scenario             :
+ * API's covered         :socket,connect,close
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void *
+ */
 void *Client(void *args)
 {
-
 	int mysocket;
 	struct sockaddr_in dest;
 
@@ -213,7 +212,6 @@ void *Client(void *args)
 
 	close(mysocket);
 	return 0;
-
 }
 
 /****************************************************************************

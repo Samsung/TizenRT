@@ -36,16 +36,18 @@
 
 #define PORTNUM 1110
 #define MAXRCVLEN 20
+
 static int s1 = 0;
+
 /**
-   * @fn                   :wait1
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+ * @fn                   :wait1
+ * @brief                :function to wait on semaphore
+ * @scenario             :
+ * API's covered         :
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void
+ */
 static void wait1(void)
 {
 	while (s1 <= 0) {
@@ -56,30 +58,29 @@ static void wait1(void)
 }
 
 /**
-   * @fn                   :signal1
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+ * @fn                   :signal1
+ * @brief                :function to signal semaphore
+ * @scenario             :
+ * API's covered         :
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void
+ */
 void signal1(void)
 {
 	s1++;
 }
 
 /**
-   * @testcase		   :tc_net_send_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :accept(),send()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_send_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :accept(),send()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 void tc_net_send_p(int fd)
 {
-
 	char *msg = "Hello World !\n";
 	int connect_fd = accept(fd, NULL, NULL);
 	if (connect_fd < 0) {
@@ -92,18 +93,17 @@ void tc_net_send_p(int fd)
 	TC_SUCCESS_RESULT()
 
 	close(connect_fd);
-
 }
 
 /**
-   * @fn                   :server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+ * @fn                   :server
+ * @brief                :
+ * @scenario             :
+ * API's covered         :socket,bind,listen,close
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void *
+ */
 void *server(void *args)
 {
 	struct sockaddr_in sa;
@@ -113,7 +113,7 @@ void *server(void *args)
 		return 0;
 	}
 
-	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
 		printf("setsockopt(SO_REUSEADDR) failed %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
 		close(socket_fd);
 		return 0;
@@ -142,18 +142,19 @@ void *server(void *args)
 	tc_net_send_p(socket_fd);
 
 	close(socket_fd);
+
 	return 0;
 }
 
 /**
-   * @fn                   :client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,recv,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+ * @fn                   :client
+ * @brief                :
+ * @scenario             :
+ * API's covered         :socket,connect,recv,close
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void *
+ */
 void *client(void *args)
 {
 
@@ -189,8 +190,8 @@ void *client(void *args)
 	buffer[len] = '\0';
 
 	close(mysocket);
-	return 0;
 
+	return 0;
 }
 
 /****************************************************************************
@@ -198,13 +199,11 @@ void *client(void *args)
  ****************************************************************************/
 int net_send_main(void)
 {
-
 	pthread_t Server, Client;
 	pthread_create(&Server, NULL, server, NULL);
 	pthread_create(&Client, NULL, client, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
 
 	return 0;

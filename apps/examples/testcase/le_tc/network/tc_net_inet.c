@@ -18,6 +18,7 @@
 
 /// @file tc_net_inet.c
 /// @brief Test Case Example for inet() API
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
@@ -31,15 +32,14 @@
 
 #include "tc_internal.h"
 
-
 /**
-* @testcase		tc_net_inet_addr_p
-* @brief
-* @scenario
-* @apicovered		inet_addr()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_inet_addr_p
+ * @brief
+ * @scenario
+ * @apicovered		inet_addr()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_inet_addr_p(void)
 {
 	unsigned int ret;
@@ -50,15 +50,14 @@ static void tc_net_inet_addr_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-
 /**
-* @testcase		tc_net_inet_aton_p
-* @brief
-* @scenario
-* @apicovered		inet_aton()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_inet_aton_p
+ * @brief
+ * @scenario
+ * @apicovered		inet_aton()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_inet_aton_p(void)
 {
 	struct sockaddr_in addr_inet;
@@ -70,15 +69,14 @@ static void tc_net_inet_aton_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-
 /**
-* @testcase		tc_net_inet_ntoa_p
-* @brief
-* @scenario
-* @apicovered		inet_ntoa()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_inet_ntoa_p
+ * @brief
+ * @scenario
+ * @apicovered		inet_ntoa()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_inet_ntoa_p(void)
 {
 	struct sockaddr_in addr_inet;
@@ -92,13 +90,13 @@ static void tc_net_inet_ntoa_p(void)
 }
 
 /**
-* @testcase     tc_net_inet_ntop
-* @brief
-* @scenario
-* @apicovered       inet_ntop()
-* @precondition
-* @postcondition
-*/
+ * @testcase     tc_net_inet_ntop
+ * @brief
+ * @scenario
+ * @apicovered       inet_ntop()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_inet_ntop(void)
 {
 	struct in_addr in_addr;
@@ -126,18 +124,17 @@ static void tc_net_inet_ntop(void)
 	ret = inet_ntop(33, &in_addr, dst, INET_ADDRSTRLEN);
 	TC_ASSERT_EQ("inet_ntop", ret, NULL);
 
-
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @testcase		tc_net_inet_pton
-* @brief
-* @scenario
-* @apicovered		inet_pton()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_inet_pton
+ * @brief
+ * @scenario
+ * @apicovered		inet_pton()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_inet_pton(void)
 {
 	struct sockaddr_in addr_inet;
@@ -163,13 +160,13 @@ static void tc_net_inet_pton(void)
 }
 
 /**
-* @testcase		tc_net_htons
-* @brief
-* @scenario
-* @apicovered		htons()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_htons
+ * @brief
+ * @scenario
+ * @apicovered		htons()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_htons(void)
 {
 	uint16_t var = 20;
@@ -184,13 +181,13 @@ static void tc_net_htons(void)
 }
 
 /**
-* @testcase		tc_net_ntohs
-* @brief
-* @scenario
-* @apicovered		ntohs()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_ntohs
+ * @brief
+ * @scenario
+ * @apicovered		ntohs()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_ntohs(void)
 {
 	uint16_t var = 0x1400;
@@ -205,13 +202,13 @@ static void tc_net_ntohs(void)
 }
 
 /**
-* @testcase		tc_net_htonl
-* @brief
-* @scenario
-* @apicovered		htonl()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_htonl
+ * @brief
+ * @scenario
+ * @apicovered		htonl()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_htonl(void)
 {
 	uint32_t var = 10;
@@ -226,13 +223,13 @@ static void tc_net_htonl(void)
 }
 
 /**
-* @testcase		tc_net_ntohl
-* @brief
-* @scenario
-* @apicovered		ntohl()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_ntohl
+ * @brief
+ * @scenario
+ * @apicovered		ntohl()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_ntohl(void)
 {
 	uint32_t var = 0xa000000;
@@ -246,11 +243,9 @@ static void tc_net_ntohl(void)
 	TC_SUCCESS_RESULT();
 }
 
-
 /****************************************************************************
  * Name: inet()
  ****************************************************************************/
-
 int net_inet_main(void)
 {
 	tc_net_htonl();
