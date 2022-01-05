@@ -20,7 +20,6 @@ from __future__ import print_function
 from math import log
 from array import *
 import os
-import re
 import sys
 
 bin_path = '../../build/output/bin/'	# Output bin path
@@ -40,9 +39,9 @@ g_etext_app = [0] * 10
 app_name = []
 
 def bytes_needed(n):
-    if n == 0:
-        return 1
-    return int(log(n, 256)) + 1
+	if n == 0:
+		return 1
+	return int(log(n, 256)) + 1
 
 # Function to get the application binary names, text address and sizes
 def find_app_text_range(log_file):
@@ -76,7 +75,7 @@ def find_app_text_range(log_file):
 		print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 		print('')
 
-# Function to setup the kernel text addresses 
+# Function to setup the kernel text addresses
 def find_kernel_text_range(log_file):
 	global flash_text_start_addr
 	global flash_text_end_addr
@@ -187,14 +186,14 @@ def is_app_text_address(address):
 		if (address >= hex(g_stext_app[idx]) and address < hex(g_etext_app[idx])):
 			return (idx + 1)
 	if (idx == app_idx):
-			return False
+		return False
 
 # Function to check if address lies in the kernel text address range
 def is_kernel_text_address(address):
 
 	# Check the kernel text address range
 	if (address >= ram_text_start_addr and address < ram_text_end_addr) or (address >= flash_text_start_addr and address < flash_text_end_addr):
-		return True 
+		return True
 	else:
 		return False
 
@@ -203,7 +202,6 @@ def is_kernel_text_address(address):
 def print_stack(log_file):
 	stack_addr = 0x00000000
 	stack_val = 0x00000000
-	format_print = True
 	# Parse the contents based on tokens in log file.
 	with open(log_file) as searchfile:
 		for line in searchfile:
@@ -213,9 +211,9 @@ def print_stack(log_file):
 				reg = word[1].split()
 
 				if reg[0] == 'R8':
-					t = word[2].split( )
+					t = word[2].split()
 					# Check for corruption of PC value in logs
-					if (len(word[2].split( )) != 8):
+					if (len(word[2].split()) != 8):
 						print('\nAssert logs are corrupted, and we are not able to determine the value of PC.\n')
 						continue
 				continue
@@ -223,7 +221,7 @@ def print_stack(log_file):
 			# Read the stack contents of aborted stack and check for valid addresses
 			if 'up_stackdump:' in line:
 				word = line.split(':')
-				t = word[2].split( )
+				t = word[2].split()
 				stack_addr = int(word[1], 16)
 				for sub_word in t:
 					stack_addr = stack_addr + 4
@@ -237,13 +235,14 @@ def print_stack(log_file):
 					# Check if the stack address lies in kernel text address range
 					if (is_kernel_text_address(hex(stack_val))):
 						#If yes, print it's corresponding symbol
-                                                print_symbol(stack_addr, stack_val, 0)
+						print_symbol(stack_addr, stack_val, 0)
 					# Check if the stack address lies in application text address range
 					is_app_symbol = is_app_text_address(hex(stack_val))	# app index in case of application symbol
 					if (is_app_symbol):
 						#If yes, print it's corresponding symbol
-                                                stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
-                                                print_symbol(stack_addr, stack_val, is_app_symbol)
+						stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
+						print_symbol(stack_addr, stack_val, is_app_symbol)
+
 
 # Function to Parse the i/p log file (which contains wrong stackdump during assert)
 def print_wrong_sp(log_file):
@@ -255,8 +254,8 @@ def print_wrong_sp(log_file):
 			# Read the stack contents of aborted stack and check for valid addresses
 			if 'Wrong Stack pointer' in line:
 				word = line.split(':')
-				t = word[2].split( )
-				s = word[1].split( )
+				t = word[2].split()
+				s = word[1].split()
 				stack_addr = int(s[-1], 16)
 				for sub_word in t:
 					stack_addr = stack_addr + 4
@@ -274,7 +273,7 @@ def print_wrong_sp(log_file):
 							print('Stack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
 							format_print = False
 						#If yes, print it's corresponding symbol
-                                                print_symbol(stack_addr, stack_val, 0)
+						print_symbol(stack_addr, stack_val, 0)
 					# Check if the stack address lies in application text address range
 					is_app_symbol = is_app_text_address(hex(stack_val))	# app index in case of application symbol
 					if (is_app_symbol):
@@ -283,34 +282,33 @@ def print_wrong_sp(log_file):
 							print('Stack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
 							format_print = False
 						#If yes, print it's corresponding symbol
-                                                stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
-                                                print_symbol(stack_addr, stack_val, is_app_symbol)
+						stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
+						print_symbol(stack_addr, stack_val, is_app_symbol)
 
 
 #Execution starts here
 if (__name__ == '__main__'):
 
-    # init
-    log_file = sys.argv[1]		# Log file containing crash logs
-    app_idx = int(sys.argv[2])		# Number of applications (g_app_idx)
-    is_wrong_sp = int(sys.argv[3])	# 1 if wrong SP information needs to be printed, 0 if no wrong sp in logs
+	# init
+	log_file = sys.argv[1]		# Log file containing crash logs
+	app_idx = int(sys.argv[2])		# Number of applications (g_app_idx)
+	is_wrong_sp = int(sys.argv[3])	# 1 if wrong SP information needs to be printed, 0 if no wrong sp in logs
 
-    if debug:
-        print("Log file : " + log_file)
-        print("Number of applications : ", app_idx)
-        print("is_wrong_sp : ", is_wrong_sp)
+	if debug:
+		print("Log file : " + log_file)
+		print("Number of applications : ", app_idx)
+		print("is_wrong_sp : ", is_wrong_sp)
 
-    find_kernel_text_range(bin_path + "System.map")
-    if (app_idx > 0):
-        find_app_text_range(log_file)
+	find_kernel_text_range(bin_path + "System.map")
+	if (app_idx > 0):
+		find_app_text_range(log_file)
 
-    setup_symbol_table(bin_path + "System.map", 0)
-    for idx in range(app_idx):
-        os.system("nm --defined-only -l --numeric-sort " + bin_path + app_name[idx] + "_dbg > " + bin_path + app_name[idx] + ".map")
-        setup_symbol_table(bin_path + app_name[idx] + ".map", idx + 1)
+	setup_symbol_table(bin_path + "System.map", 0)
+	for idx in range(app_idx):
+		os.system("nm --defined-only -l --numeric-sort " + bin_path + app_name[idx] + "_dbg > " + bin_path + app_name[idx] + ".map")
+		setup_symbol_table(bin_path + app_name[idx] + ".map", idx + 1)
 
-    if (is_wrong_sp):
-        print_wrong_sp(log_file)
-    else:
-        print_stack(log_file)
-
+	if (is_wrong_sp):
+		print_wrong_sp(log_file)
+	else:
+		print_stack(log_file)
