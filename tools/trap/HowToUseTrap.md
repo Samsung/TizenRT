@@ -4,8 +4,8 @@ and how to actually upload and parse it in the event of a crash during runtime.
 
 ## Contents
 > [Build Steps](#how-to-enable-memory-dumps)  
-> [Upload Steps](#how-to-upload-RAMDUMP-or-UserfsDUMP)  
 > [Parsing Steps](#how-to-parse-RAMDUMP)  
+> [Upload Steps](#how-to-upload-RAMDUMP-or-UserfsDUMP)  
 > [Porting Guide](#how-to-port-memory-dump-functionality)  
 
 ## How to enable memory dumps
@@ -42,6 +42,305 @@ Hardware Configuration > Board Selection -> Reset a board on assert status autom
 7. Enable CONFIG_BCH to enable Block-to-Character driver support for extracting External Userfs Partition Dump
 ```
 Device Drivers -> Block-to-character(BCH) Support
+```
+
+## How to parse RAMDUMP
+TRAP Script provides two interfaces: CUI and GUI
+
+### TRAP using CUI
+
+#### To display Debug Symbols/Crash point using assert logs
+1. Change the directory to trap
+```
+cd $TIZENRT_BASEDIR/tools/trap/
+```
+2. Copy crash logs  
+    First copy the crash logs to a file in tools/trap/`<log_file>`
+3. Run Ramdump Parser Script and see the Output  
+    $ python3 ramdumpParser.py -t `<Log file path>`
+
+    ex)
+    $ python3 ramdumpParser.py -t ./log_file
+
+Example Call Stack Output for App crash is as follows:
+```
+test@VirtualBox ~/tizenRTGH/tools/trap (master) $python3 ramdumpParser.py -t wificrash
+
+
+*************************************************************
+dump_file                   : None
+log_file                    : wificrash
+Number of binaries          : 3 [kernel + apps]
+"kernel" elf_file           : ../../build/output/bin/tinyara.axf
+"app1" elf_file             : ../../build/output/bin/app1_dbg 
+"app2" elf_file             : ../../build/output/bin/app2_dbg 
+*************************************************************
+
+-----------------------------------------------------------------------------------------
+
+1. Crash Binary           : app2
+
+2. Crash point (PC or LR)
+
+	[ Caller - return address (LR) - of the function which has caused the crash ]
+	- symbol addr        : 0x0000166d
+	- function name      : task_startup
+	- file               : /root/tizenrt/lib/libc/sched/task_startup.c:123
+
+	[ Current location (PC) of assert ]
+	- symbol addr        : 0x00000c52
+	- function name      : main
+	- file               : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:67
+
+	[ Exact crash point might be -4 or -8 bytes from the PC ]
+	- symbol addr of (pc - 4)       : 0x00000c4e
+	- function name of (pc - 4)     : __aeabi_d2uiz
+	- file of (pc - 4)              : lib_rawoutstream.c:?
+	- symbol addr of (pc - 8)       : 0x00000c4a
+	- function name of (pc - 8)     : __aeabi_d2uiz
+	- file of (pc - 8)              : lib_rawoutstream.c:?
+
+3. Call stack of last run thread using Stack dump
+
+	- Current stack pointer:	 0x21812f8
+
+Stack_address	 Symbol_address	 Symbol location  Symbol_name		File_name
+0x2181308	 0xe0060b8	 kernel  	  lowvsyslog	/root/tizenrt/os/include/syslog.h:263
+0x2181310	 0xe00681c	 kernel  	  lowoutstream_putc	/root/tizenrt/lib/libc/stdio/lib_lowoutstream.c:76
+0x2181314	 0xe005eb4	 kernel  	  lib_noflush	/root/tizenrt/os/include/tinyara/streams.h:605
+0x2181340	 0xe0085b0	 kernel  	  up_memfault	/root/tizenrt/os/arch/arm/src/armv8-m/up_memfault.c:117
+0x2181360	 0x100123b4	 kernel  	  up_doirq	/root/tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
+0x2181368	 0xc51   	 app2    	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
+0x2181378	 0x10012094	 kernel  	  exception_common	/root/tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
+0x2181384	 0xc51   	 app2    	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
+0x21813c0	 0x1655  	 app2    	  task_startup	/root/tizenrt/os/include/tinyara/userspace.h:127
+0x21813c4	 0xc51   	 app2    	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
+0x21813d0	 0xe001c2c	 kernel  	  task_start	/root/tizenrt/os/kernel/task/task_start.c:133
+
+4. Miscellaneous information:
+-----------------------------------------------------------------------------------------
+```
+ex)
+$ python3 ramdumpParser.py -t ./logs
+
+Example Call Stack Output for Kernel crash is as follows:
+```
+*************************************************************
+dump_file                   : None
+log_file                    : kernelassert
+Number of binary            : 1 [kernel]
+"kernel" elf_file           : ../../build/output/bin/tinyara.axf
+*************************************************************
+
+-----------------------------------------------------------------------------------------
+1. Crash Binary             : kernel
+
+2. Crash point (PC or LR)
+
+	[ Caller - return address (LR) - of the function which has caused the crash ]
+	- symbol addr        : 0x0e001c1b
+	- function name      : setbasepri
+	- file               : /root/tizenrt/os/include/arch/armv8-m/irq.h:247
+
+	[ Current location (PC) of assert ]
+	- symbol addr        : 0x10010f5e
+	- function name      : os_start
+	- file               : /root/tizenrt/os/kernel/init/os_start.c:609
+
+	[ Exact crash point might be -4 or -8 bytes from the PC ]
+	- symbol addr of (pc - 4)       : 0x10010f5a
+	- function name of (pc - 4)     : os_start
+	- file of (pc - 4)              : /root/tizenrt/os/kernel/init/os_start.c:609
+	- symbol addr of (pc - 8)       : 0x10010f56
+	- function name of (pc - 8)     : os_start
+	- file of (pc - 8)              : /root/tizenrt/os/kernel/init/os_start.c:607 (discriminator 1)
+
+3. Call stack of last run thread using Stack dump
+
+	- Current stack pointer:	 0x10004f20
+
+Stack_address	 Symbol_address	 Symbol location  Symbol_name		File_name
+0x10004f30	 0xe0060b8	 kernel  	  lowvsyslog	/root/tizenrt/os/include/syslog.h:263
+0x10004f38	 0xe0067bc	 kernel  	  __ultoa_invert	/root/tizenrt/lib/libc/stdio/lib_ultoa_invert.c:64
+0x10004f3c	 0xe005eb4	 kernel  	  lib_noflush	/root/tizenrt/os/include/tinyara/streams.h:605
+0x10004f68	 0xe008750	 kernel  	  up_usagefault	/root/tizenrt/os/arch/arm/src/armv8-m/up_usagefault.c:84
+0x10004f78	 0x100123b4	 kernel  	  up_doirq	/root/tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
+0x10004f90	 0x10012094	 kernel  	  exception_common	/root/tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
+0x10004fd4	 0x10012670	 kernel  	  up_unblock_task	/root/tizenrt/os/include/tinyara/arch.h:472
+0x10004fd8	 0xe001bcc	 kernel  	  task_activate	/root/tizenrt/os/include/sched.h:141
+0x10004fdc	 0x10010db8	 kernel  	  os_start	/root/tizenrt/os/include/tinyara/init.h:89
+
+4. Miscellaneous information:
+-----------------------------------------------------------------------------------------
+```
+ex)
+python3 ramdumpParser.py -t ./logfile
+
+Example Call Stack Output for Common Binary crash is as follows:
+```
+*************************************************************
+dump_file                   : None
+log_file                    : ./log_file
+Number of binaries          : 3 [kernel + apps]
+"kernel" elf_file           : ../../build/output/bin/tinyara.axf
+"app1" elf_file             : ../../build/output/bin/common_dbg 
+"app2" elf_file             : ../../build/output/bin/app_dbg 
+*************************************************************
+
+-----------------------------------------------------------------------------------------
+
+1. Crash Binary           : common
+
+2. Crash point (PC or LR)
+
+	[ Current location (PC) of assert ]
+	- symbol addr        : 0x0003d7b3
+	- function name      : sched_get_priority_max
+	- file               : /root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:110
+
+	[ Exact crash point might be -4 or -8 bytes from the PC ]
+	- symbol addr of (pc - 4)       : 0x0003d7af
+	- function name of (pc - 4)     : sched_get_priority_max
+	- file of (pc - 4)              : /root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:109
+	- symbol addr of (pc - 8)       : 0x0003d7ab
+	- function name of (pc - 8)     : sched_get_priority_max
+	- file of (pc - 8)              : /root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:109
+
+3. Call stack of last run thread using Stack dump
+
+	- Current stack pointer:	 0x220cf38
+
+Stack_address	 Symbol_address	 Symbol location  Symbol_name		File_name
+0x220cf38	 0xe009fa0	 kernel  	  up_assert	/root/product/.tizenrt/os/include/assert.h:211
+0x220cf50	 0xe009904	 kernel  	  LOGUART_PutChar_RAM	/root/product/.tizenrt/os/arch/arm/src/chip/amebad_serial.c:382
+0x220cf58	 0xe009904	 kernel  	  LOGUART_PutChar_RAM	/root/product/.tizenrt/os/arch/arm/src/chip/amebad_serial.c:382
+0x220cf5c	 0x3d7a5 	 app1    	  sched_get_priority_max	/root/product/.tizenrt/os/include/sched.h:292
+0x220cf88	 0xe03be70	 kernel  	  STUB_up_assert	/root/product/.tizenrt/os/syscall/stubs/STUB_up_assert.c:7
+0x220cf90	 0x10012954	 kernel  	  dispatch_syscall	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_svcall.c:150
+0x220cfa0	 0x3d7a5 	 app1    	  sched_get_priority_max	/root/product/.tizenrt/os/include/sched.h:292
+0x220cfa8	 0x170   	 app2    	  coap_option_def
+0x220d35c	 0xe0189dc	 kernel  	  serial_putc	/root/product/.tizenrt/os/board/rtl8721csm/src/component/common/mbed/targets/hal/rtl8721d/serial_api.c:729
+0x220d36c	 0xe0099c0	 kernel  	  rtl8721d_up_txready	/root/product/.tizenrt/os/arch/arm/src/chip/amebad_serial.c:678
+0x220d374	 0xe0134d8	 kernel  	  uart_xmitchars	/root/product/.tizenrt/os/include/tinyara/serial/serial.h:362
+0x220d38c	 0xe01844c	 kernel  	  uart_irqhandler	/root/product/.tizenrt/os/board/rtl8721csm/src/component/common/mbed/targets/hal/rtl8721d/serial_api.c:295
+0x220d3a4	 0x10011710	 kernel  	  wrapper_IrqFun	/root/product/.tizenrt/os/board/rtl8721csm/src/component/os/tizenrt/tizenrt_service.c:1010
+0x220d3b0	 0x1001297c	 kernel  	  up_svcall	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_svcall.c:183
+0x220d3dc	 0x10012894	 kernel  	  exception_common	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_exception.S:157
+0x220d404	 0x41    	 app2    	  __aeabi_dadd
+0x220d420	 0x3df95 	 app1    	  pthread_startup	/root/product/.tizenrt/os/include/tinyara/userspace.h:147
+0x220d424	 0x41    	 app2    	  __aeabi_dadd
+0x220d430	 0xe074d0c	 kernel  	  pthread_start	/root/product/.tizenrt/os/kernel/pthread/pthread_create.c:188
+
+4. Miscellaneous information:
+-----------------------------------------------------------------------------------------
+```
+
+#### To get call stack using RAM dump
+1. Enable memory dumps. Refer to [How to enable memory dumps](how-to-enable-memory-dumps)
+2. Get RAM dump using [How to upload RAMDUMP or UserfsDUMP](how-to-upload-ramdump-or-userfsdump) [Options 1- 7]
+3. Change the directory to trap.
+```
+cd $TIZENRT_BASEDIR/tools/trap/
+```
+4. [Optional] Copy crash logs if any  
+    First copy the crash logs to a file in tools/trap/`<log_file>`
+5. Run Ramdump Parser Script and see the Output  
+    $ python3 ramdumpParser.py -t `<Log file path>` -r `<Ramdump file path>`
+
+    ex)
+    $ python3 ramdumpParser.py -t ./log_file -r ../../ramdump_0x02023800_0x02110000.bin OR
+    $ python3 ramdumpParser.py -r ../../ramdump_0x02023800_0x02110000.bin
+
+Example Call Stack Output for Kernel crash is as follows:
+```
+*************************************************************
+dump_file         : ../../ramdump_0x02023800_0x02110000.bin
+log_file          : logs
+elf_file          : ../../build/output/bin/tinyara
+*************************************************************
+
+self.ram_base_addr 2023800
+self.ram_end_addr 2110000
+----------------------------------------------------------
+Kernel Crash point is as follows:
+[ Caller - return address (LR) - of the function which has caused the crash ]
+
+symbol addr       : 0x040cd264
+function name     : irqrestore
+file              : /root/tizenrt/os/include/arch/armv7-r/irq.h:414
+
+Kernel Crash point is as follows:
+[ Current location (PC) of assert ]
+ - Exact crash point might be -4 or -8 bytes from the PC.
+
+symbol addr       : 0x040d53cc
+function name     : test_func
+file              : /root/tizenrt/apps/examples/hello/hello_main.c:67
+
+--------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE --------------------------
+Dump_address	 Symbol_address	  Symbol_name	File_name
+0x40c9718	 0x40c94fc 	  up_assert	/root/tizenrt/os/include/assert.h:211
+0x40ebc72	 0x40ebbd8 	  __FUNCTION__.6146
+0x40ebbcb	 0x40ebbcb 	  __FUNCTION__.6135
+0x40cf4f8	 0x40cf4e0 	  lowsyslog	/root/tizenrt/os/include/syslog.h:251
+0x40c98e4	 0x40c98b0 	  arm_dataabort	/root/tizenrt/os/arch/arm/src/armv7-r/arm_dataabort.c:101
+0x40c98e4	 0x40c98b0 	  arm_dataabort	/root/tizenrt/os/arch/arm/src/armv7-r/arm_dataabort.c:101
+0x40c827c	 0x40c8220 	  arm_vectordata	/root/tizenrt/os/arch/arm/src/armv7-r/arm_vectors.S:498
+0x40cc1d4	 0x40cc18c 	  task_start	/root/tizenrt/os/kernel/task/task_start.c:133
+0x40d3c30	 0x40d3c2c 	  hello_main	/root/tizenrt/apps/examples/hello/hello_main.c:73
+
+PC_value	 Symbol_address	  Symbol_name	File_name
+0x40d3c30	 0x40d3c2c 	  hello_main	/root/tizenrt/apps/examples/hello/hello_main.c:73
+-----------------------------------------------------------------------------------------
+----------------------------------------------------------
+
+CALL STACK of Aborted task:
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+[<40d53cc>] hello_main+0x18 [Line 67 of hello_main.c]
+[<40cceb8>] task_start+0x50 [Line 180 of task_start.c]
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+```
+### TRAP using GUI
+The UI configuration of TRAP is as follows
+
+| (X) (-)           | Dump Parser           |        |
+| ----------------- |:---------------------:| ------:|
+| ELF path          | `<Your ELF path>`     | Browse |
+| (O) AssertLog     |                       |        |
+| (O) AssertLogFile |                       |        |
+| (O) Ramdump       |                       |        |
+| Ramdump path      | `<Your Ramdump path>` | Browse |
+| Run TRAP    |                       |        |
+
+1. Run GUI Ramdump Parser Script
+```
+cd $TIZENRT_BASEDIR/tools/trap/
+python gui_dumpParser.py
+```
+
+2. Browse ELF path
+3. Select Ramdump mode
+4. Browse Ramdump path
+5. Click `Run TRAP` button
+6. See the Output
+
+### Example Call Stack Output
+```
+********************************************************************
+Board Crashed at :
+PC: [0x40cb800] simulate_data_abort+0x20 [Line 63 of  "hello_main.c]"
+LR: [0x40cb340] up_putc+0x28 [Line 1102 of  "chip/s5j_serial.c]"
+FP: 0x2024fc4 and SP: 0x2024fb8
+*******************************************************************
+Call Trace of Crashed Task :[appmain] with pid :2 and state :TSTATE_TASK_RUNNING
+*******************************************************************
+[<40cb800>] simulate_data_abort+0x20         [Line 63 of \"hello_main.c\"]
+[<40cb828>] hello_main+0x18         [Line 68 of \"hello_main.c\"]
+[<40c9fec>] task_start+0x64         [Line 173 of \"task/task_start.c\"]
+********************************************************************
 ```
 
 ## How to upload RAMDUMP or UserfsDUMP
@@ -261,273 +560,6 @@ to C:\Users\thapa.v\ramdump_0x02046800_0x825344.bin
 Ramdump received successfully..!
 ```
 
-## How to parse RAMDUMP
-TRAP Script provides two interfaces: CUI and GUI
-
-### TRAP using CUI
-
-#### To display Debug Symbols/Crash point using assert logs
-1. Change the directory to trap
-```
-cd $TIZENRT_BASEDIR/tools/trap/
-```
-2. Copy crash logs  
-    First copy the crash logs to a file in tools/trap/`<log_file>`
-3. Run Ramdump Parser Script and see the Output  
-    $ python3 ramdumpParser.py -t `<Log file path>`
-
-    ex)
-    $ python3 ramdumpParser.py -t ./log_file
-
-Example Call Stack Output for App crash is as follows:
-```
-*************************************************************
-dump_file         : None
-log_file          : .log_file
-elf_file          : ../../build/output/bin/tinyara.axf
-*************************************************************
-
-Number of applicaions : 2
-App[1] is : app1
-App[2] is : app2
-
-----------------------------------------------------------
--------------------------- DEBUG SYMBOLS IN "app1" TEXT RANGE -------------------------
-Dump_address	 Symbol_address	  Symbol_name	File_name
-
-PC_value	 Symbol_address	  Symbol_name	File_name
------------------------------------------------------------------------------------------
-App Crash point is as follows:
-[ Caller - return address (LR) - of the function which has caused the crash ]
-
-App name          : app2
-symbol addr       : 0x000014e5
-function name     : main
-file              : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:113
-
-App Crash point is as follows:
-[ Current location (PC) of assert ]
- - Exact crash point might be -4 or -8 bytes from the PC.
-
-App name          : app2
-symbol addr       : 0x000014d6
-function name     : main
-file              : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:129
-
--------------------------- DEBUG SYMBOLS IN "app2" TEXT RANGE -------------------------
-Dump_address	 Symbol_address	  Symbol_name	File_name
-0x1dc5	 0x1dc5 	  printf	/root/tizenrt/os/include/stdio.h:406
-0x1dc5	 0x1dc5 	  printf	/root/tizenrt/os/include/stdio.h:406
-0x14e5	 0x1479 	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
-0x1479	 0x1439 	  __fixunssfsi
-0x1ef5	 0x1ef0 	  g_cb_handler	/root/tizenrt/lib/libc/sched/task_startup.c:119
-
-PC_value	 Symbol_address	  Symbol_name	File_name
------------------------------------------------------------------------------------------
-----------------------------------------------------------
-```
-ex)
-$ python3 ramdumpParser.py -t ./logs
-
-Example Call Stack Output for Kernel crash is as follows:
-```
-*************************************************************
-dump_file         : None
-log_file          : ./logs
-elf_file          : ../../build/output/bin/tinyara.axf
-*************************************************************
-
-
-----------------------------------------------------------
-Kernel Crash point is as follows:
-[ Caller - return address (LR) - of the function which has caused the crash ]
-
-symbol addr       : 0x0e001c1b
-function name     : setbasepri
-file              : /root/tizenrt/os/include/arch/armv8-m/irq.h:247
-
-Kernel Crash point is as follows:
-[ Current location (PC) of assert ]
- - Exact crash point might be -4 or -8 bytes from the PC.
-
-symbol addr       : 0x10010f1e
-function name     : os_start
-file              : /root/tizenrt/os/kernel/init/os_start.c:610
-
---------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE --------------------------
-Dump_address	 Symbol_address	  Symbol_name	File_name
-0xe0060b3	 0xe00608c 	  lowvsyslog	/root/tizenrt/os/include/syslog.h:263
-0xe0067f5	 0xe0067f4 	  lowoutstream_putc	/root/tizenrt/lib/libc/stdio/lib_lowoutstream.c:76
-0xe005e89	 0xe005e88 	  lib_noflush	/root/tizenrt/os/include/tinyara/streams.h:605
-0xe0086ef	 0xe008678 	  up_usagefault	/root/tizenrt/os/arch/arm/src/armv8-m/up_usagefault.c:84
-0x10012375	 0x1001235c 	  up_doirq	/root/tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
-0x1001207d	 0x1001203c 	  exception_common	/root/tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
-0x10012619	 0x10012618 	  up_unblock_task	/root/tizenrt/os/include/tinyara/arch.h:472
-0xe001c1b	 0xe001bcc 	  task_activate	/root/tizenrt/os/include/sched.h:141
-0x10010f1e	 0x10010d78 	  os_start	/root/tizenrt/os/include/tinyara/init.h:89
-
-PC_value	 Symbol_address	  Symbol_name	File_name
-0x10010f1e	 0x10010d78 	  os_start	/root/tizenrt/os/include/tinyara/init.h:89
------------------------------------------------------------------------------------------
-----------------------------------------------------------
-```
-ex)
-$python3 ramdumpParser.py -t ./log.txt
-
-Example Call Stack Output for Common Binary crash is as follows:
-```
-*************************************************************
-dump_file         : None
-log_file          : ./log.txt
-elf_file          : ../../build/output/bin/tinyara.axf
-*************************************************************
-
-Number of applicaions : 2
-App[1] is : common
-App[2] is : app
-
-----------------------------------------------------------
-App Crash point is as follows:
-[ Current location (PC) of assert ]
- - Exact crash point might be -4 or -8 bytes from the PC.
-
-App name         : common
-symbol addr      : 0x0003cdea
-function name    : sched_get_priority_max
-/root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:110
-
-App Crash point is as follows:
-[ Caller - return address (LR) - of the function which has caused the crash ]
-
-App name         : app
-symbol addr      : 0x00000551
-function name    : set_app_main_task
-file : /root/product/main/set_app_main/src/set_app_main.c:380 (discriminator 1)
-
--------------------------- DEBUG SYMBOLS IN APPLICATION TEXT RANGE -------------------------
-Dump_address	 Symbol_address	  Symbol_name	File_name
-0x551	 0x3e2 	  gstSupportCourseInfo	/root/product/main/set_app_main/src/set_app_main.c:312
-0x3011	 0x3011 	  wm_easysetup_event_handler	/root/product/main/fill_ocf/src/fill_ocf.c:80
-0x57a1	 0x5729 	  process_operation_uri_from_bixby
-0x2eb9	 0x2e11 	  device_publish_resource_list_getter	/root/product/main/fill_ocf/src/fill_ocf.c:204
-0x2e11	 0x2df7 	  init_product_resources	/root/product/main/fill_ocf/src/fill_ocf.c:228
-0x1e49	 0x1e41 	  otn_wifi_apporve_update	/root/product/apps/otn/wifi_updater/src/otn_wifi_update.c:159
-0x2df7	 0x2df7 	  init_product_resources	/root/product/main/fill_ocf/src/fill_ocf.c:228
-0x105	 0x105 	  set_app_main_task	/root/product/main/set_app_main/src/set_app_main.c:128
-0x105	 0x105 	  set_app_main_task	/root/product/main/set_app_main/src/set_app_main.c:128
-
-PC_value	 Symbol_address	  Symbol_name	File_name
------------------------------------------------------------------------------------------
-----------------------------------------------------------
-
-```
-#### To get call stack using RAM dump
-1. Enable memory dumps. Refer to [How to enable memory dumps](how-to-enable-memory-dumps)
-2. Get RAM dump using [How to upload RAMDUMP or UserfsDUMP](how-to-upload-ramdump-or-userfsdump) [Options 1- 7]
-3. Change the directory to trap.
-```
-cd $TIZENRT_BASEDIR/tools/trap/
-```
-4. [Optional] Copy crash logs if any  
-    First copy the crash logs to a file in tools/trap/`<log_file>`
-5. Run Ramdump Parser Script and see the Output  
-    $ python3 ramdumpParser.py -t `<Log file path>` -r `<Ramdump file path>`
-
-    ex)
-    $ python3 ramdumpParser.py -t ./log_file -r ../../ramdump_0x02023800_0x02110000.bin OR
-    $ python3 ramdumpParser.py -r ../../ramdump_0x02023800_0x02110000.bin
-
-Example Call Stack Output for Kernel crash is as follows:
-```
-*************************************************************
-dump_file         : ../../ramdump_0x02023800_0x02110000.bin
-log_file          : logs
-elf_file          : ../../build/output/bin/tinyara
-*************************************************************
-
-self.ram_base_addr 2023800
-self.ram_end_addr 2110000
-----------------------------------------------------------
-Kernel Crash point is as follows:
-[ Caller - return address (LR) - of the function which has caused the crash ]
-
-symbol addr       : 0x040cd264
-function name     : irqrestore
-file              : /root/tizenrt/os/include/arch/armv7-r/irq.h:414
-
-Kernel Crash point is as follows:
-[ Current location (PC) of assert ]
- - Exact crash point might be -4 or -8 bytes from the PC.
-
-symbol addr       : 0x040d53cc
-function name     : test_func
-file              : /root/tizenrt/apps/examples/hello/hello_main.c:67
-
---------------------------- DEBUG SYMBOLS IN KERNEL TEXT RANGE --------------------------
-Dump_address	 Symbol_address	  Symbol_name	File_name
-0x40c9718	 0x40c94fc 	  up_assert	/root/tizenrt/os/include/assert.h:211
-0x40ebc72	 0x40ebbd8 	  __FUNCTION__.6146
-0x40ebbcb	 0x40ebbcb 	  __FUNCTION__.6135
-0x40cf4f8	 0x40cf4e0 	  lowsyslog	/root/tizenrt/os/include/syslog.h:251
-0x40c98e4	 0x40c98b0 	  arm_dataabort	/root/tizenrt/os/arch/arm/src/armv7-r/arm_dataabort.c:101
-0x40c98e4	 0x40c98b0 	  arm_dataabort	/root/tizenrt/os/arch/arm/src/armv7-r/arm_dataabort.c:101
-0x40c827c	 0x40c8220 	  arm_vectordata	/root/tizenrt/os/arch/arm/src/armv7-r/arm_vectors.S:498
-0x40cc1d4	 0x40cc18c 	  task_start	/root/tizenrt/os/kernel/task/task_start.c:133
-0x40d3c30	 0x40d3c2c 	  hello_main	/root/tizenrt/apps/examples/hello/hello_main.c:73
-
-PC_value	 Symbol_address	  Symbol_name	File_name
-0x40d3c30	 0x40d3c2c 	  hello_main	/root/tizenrt/apps/examples/hello/hello_main.c:73
------------------------------------------------------------------------------------------
-----------------------------------------------------------
-
-CALL STACK of Aborted task:
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-[<40d53cc>] hello_main+0x18 [Line 67 of hello_main.c]
-[<40cceb8>] task_start+0x50 [Line 180 of task_start.c]
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-```
-### TRAP using GUI
-The UI configuration of TRAP is as follows
-
-| (X) (-)           | Dump Parser           |        |
-| ----------------- |:---------------------:| ------:|
-| ELF path          | `<Your ELF path>`     | Browse |
-| (O) AssertLog     |                       |        |
-| (O) AssertLogFile |                       |        |
-| (O) Ramdump       |                       |        |
-| Ramdump path      | `<Your Ramdump path>` | Browse |
-| Run TRAP    |                       |        |
-
-1. Run GUI Ramdump Parser Script
-```
-cd $TIZENRT_BASEDIR/tools/trap/
-python gui_dumpParser.py
-```
-
-2. Browse ELF path
-3. Select Ramdump mode
-4. Browse Ramdump path
-5. Click `Run TRAP` button
-6. See the Output
-
-### Example Call Stack Output
-```
-********************************************************************
-Board Crashed at :
-PC: [0x40cb800] simulate_data_abort+0x20 [Line 63 of  "hello_main.c]"
-LR: [0x40cb340] up_putc+0x28 [Line 1102 of  "chip/s5j_serial.c]"
-FP: 0x2024fc4 and SP: 0x2024fb8
-*******************************************************************
-Call Trace of Crashed Task :[appmain] with pid :2 and state :TSTATE_TASK_RUNNING
-*******************************************************************
-[<40cb800>] simulate_data_abort+0x20         [Line 63 of \"hello_main.c\"]
-[<40cb828>] hello_main+0x18         [Line 68 of \"hello_main.c\"]
-[<40c9fec>] task_start+0x64         [Line 173 of \"task/task_start.c\"]
-********************************************************************
-```
 ## How to port memory dump functionality
 To port TRAP tool for a new board, do the following steps:
 
