@@ -147,33 +147,6 @@ static void tc_net_bind_fd_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-#ifdef AF_UNIX
-/**
-   * @testcase		   :tc_net_bind_addrfamily_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :bind()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_bind_addrfamily_n(void)
-{
-	struct sockaddr_in sa;
-	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	memset(&sa, 0, sizeof sa);
-
-	sa.sin_family = AF_UNIX;
-	sa.sin_port = htons(5123);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	int ret = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
-	close(fd);
-
-	TC_ASSERT_NEQ("bind", ret, 0);
-	TC_SUCCESS_RESULT();
-
-}
-#endif
 /**
    * @testcase		   :tc_net_bind_size_n
    * @brief		   :
