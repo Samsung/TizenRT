@@ -18,16 +18,15 @@
 
 /// @file tc_net_netdb.c
 /// @brief Test Case Example for getaddrinfo(), freeaddrinfo() API
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 #ifdef CONFIG_NET_LWIP_NETDB
 #include <netdb.h>
@@ -37,16 +36,15 @@
 
 #ifdef CONFIG_NET_LWIP_NETDB
 /**
-* @testcase		tc_net_netdb_p
-* @brief		freeaddrinfo() has no way to check errors.
-* @scenario
-* @apicovered		getaddrinfo() freeaddrinfo()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_netdb_p
+ * @brief		freeaddrinfo() has no way to check errors.
+ * @scenario
+ * @apicovered		getaddrinfo() freeaddrinfo()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_netdb_p(void)
 {
-
 	struct addrinfo hints;
 	struct addrinfo *res;
 	int ret;
@@ -69,11 +67,11 @@ static void tc_net_netdb_p(void)
 /****************************************************************************
  * Name: getaddrinfo(), freeaddrinfo()
  ****************************************************************************/
-
 int net_netdb_main(void)
 {
 #ifdef CONFIG_NET_LWIP_NETDB
 	tc_net_netdb_p();
 #endif
+
 	return 0;
 }

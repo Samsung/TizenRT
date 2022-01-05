@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/*  @file tc_net_pbuf.c
+/* @file tc_net_pbuf.c
  * @brief Test Case Example for pbuf() API
  */
 
@@ -35,13 +35,13 @@
 #define PBUF_TEST 6
 
 /**
-* @testcase		:tc_net_pbuf_layer_transport_p
-* @brief		:check for the memory allocation for the pbuf by transport layer
-* @scenario		:
-* @apicovered		:pbuf_alloc()
-* @precondition	:
-* @postcondition	:
-*/
+ * @testcase		:tc_net_pbuf_layer_transport_p
+ * @brief		:check for the memory allocation for the pbuf by transport layer
+ * @scenario		:
+ * @apicovered		:pbuf_alloc()
+ * @precondition	:
+ * @postcondition	:
+ */
 static void tc_net_pbuf_layer_transport_p(int fd)
 {
 	int ret = 0;
@@ -57,13 +57,13 @@ static void tc_net_pbuf_layer_transport_p(int fd)
 }
 
 /**
-* @testcase		:tc_net_pbuf_layer_ip_p
-* @brief		:check for the memory allocation for the pbuf by ip layer
-* @scenario		:
-* @apicovered		:pbuf_alloc()
-* @precondition	:
-* @postcondition	:
-*/
+ * @testcase		:tc_net_pbuf_layer_ip_p
+ * @brief		:check for the memory allocation for the pbuf by ip layer
+ * @scenario		:
+ * @apicovered		:pbuf_alloc()
+ * @precondition	:
+ * @postcondition	:
+ */
 static void tc_net_pbuf_layer_ip_p(int fd)
 {
 	int ret = 0;
@@ -79,13 +79,13 @@ static void tc_net_pbuf_layer_ip_p(int fd)
 }
 
 /**
-* @testcase		:tc_net_pbuf_layer_link_p
-* @brief		:check for the memory allocation for the pbuf by link layer
-* @scenario		:
-* @apicovered		:pbuf_alloc()
-* @precondition	:
-* @postcondition	:
-*/
+ * @testcase		:tc_net_pbuf_layer_link_p
+ * @brief		:check for the memory allocation for the pbuf by link layer
+ * @scenario		:
+ * @apicovered		:pbuf_alloc()
+ * @precondition	:
+ * @postcondition	:
+ */
 static void tc_net_pbuf_layer_link_p(int fd)
 {
 	int ret = 0;
@@ -101,13 +101,13 @@ static void tc_net_pbuf_layer_link_p(int fd)
 }
 
 /**
-* @testcase		:tc_net_pbuf_layer_raw_tx_p
-* @brief		:check for the memory allocation for the pbuf by encapsulating link layer headers (e.g. 802.11)
-* @scenario		:
-* @apicovered		:pbuf_alloc()
-* @precondition	:
-* @postcondition	:
-*/
+ * @testcase		:tc_net_pbuf_layer_raw_tx_p
+ * @brief		:check for the memory allocation for the pbuf by encapsulating link layer headers (e.g. 802.11)
+ * @scenario		:
+ * @apicovered		:pbuf_alloc()
+ * @precondition	:
+ * @postcondition	:
+ */
 static void tc_net_pbuf_layer_raw_tx_p(int fd)
 {
 	int ret = 0;
@@ -123,13 +123,13 @@ static void tc_net_pbuf_layer_raw_tx_p(int fd)
 }
 
 /**
-* @testcase		:tc_net_pbuf_layer_raw_p
-* @brief		:check for the memory allocation for the pbuf by RX buffers
-* @scenario		:
-* @apicovered		:pbuf_alloc()
-* @precondition	:
-* @postcondition	:
-*/
+ * @testcase		:tc_net_pbuf_layer_raw_p
+ * @brief		:check for the memory allocation for the pbuf by RX buffers
+ * @scenario		:
+ * @apicovered		:pbuf_alloc()
+ * @precondition	:
+ * @postcondition	:
+ */
 static void tc_net_pbuf_layer_raw_p(int fd)
 {
 	int ret = 0;
@@ -145,13 +145,13 @@ static void tc_net_pbuf_layer_raw_p(int fd)
 }
 
 /**
-* @testcase		:tc_net_pbuf_layer_n
-* @brief		:passed incorrect layer
-* @scenario		:
-* @apicovered		:pbuf_alloc()
-* @precondition	:
-* @postcondition	:
-*/
+ * @testcase		:tc_net_pbuf_layer_n
+ * @brief		:passed incorrect layer
+ * @scenario		:
+ * @apicovered		:pbuf_alloc()
+ * @precondition	:
+ * @postcondition	:
+ */
 static void tc_net_pbuf_layer_n(int fd)
 {
 	int ret = 0;
@@ -167,13 +167,13 @@ static void tc_net_pbuf_layer_n(int fd)
 }
 
 /**
-* @testcase		:tc_net_pbuf_type_n
-* @brief		:passed incorrect type. type parameter decides how and where the pbuf should be allocated.
-* @scenario		:
-* @apicovered		:pbuf_alloc()
-* @precondition	:
-* @postcondition	:
-*/
+ * @testcase		:tc_net_pbuf_type_n
+ * @brief		:passed incorrect type. type parameter decides how and where the pbuf should be allocated.
+ * @scenario		:
+ * @apicovered		:pbuf_alloc()
+ * @precondition	:
+ * @postcondition	:
+ */
 static void tc_net_pbuf_type_n(int fd)
 {
 	int ret = 0;

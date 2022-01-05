@@ -152,7 +152,6 @@ static void itc_net_listen_n_after_socket_close(void)
 /****************************************************************************
  * Name: listen()
  ****************************************************************************/
-
 int itc_net_listen_main(void)
 {
 	itc_net_listen_p_multiple_time();

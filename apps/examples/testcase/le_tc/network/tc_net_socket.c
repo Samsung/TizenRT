@@ -21,25 +21,23 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-* @testcase		tc_net_socket_pf_inet_sock_raw_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_pf_inet_sock_raw_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_pf_inet_sock_raw_n(void)
 {
 	int fd = -1;
@@ -49,13 +47,13 @@ static void tc_net_socket_pf_inet_sock_raw_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_dgram_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_dgram_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_dgram_p(void)
 {
 	int fd = -1;
@@ -67,13 +65,13 @@ static void tc_net_socket_af_inet_sock_dgram_p(void)
 }
 
 /**
-* @testcase		tc_net_socket_pf_inet_sock_dgram_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_pf_inet_sock_dgram_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_pf_inet_sock_dgram_p(void)
 {
 	int fd = -1;
@@ -85,13 +83,13 @@ static void tc_net_socket_pf_inet_sock_dgram_p(void)
 }
 
 /**
-* @testcase		tc_net_socket_pf_inet_sock_stream_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_pf_inet_sock_stream_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_pf_inet_sock_stream_p(void)
 {
 
@@ -104,13 +102,13 @@ static void tc_net_socket_pf_inet_sock_stream_p(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_dgram_tcp_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_dgram_tcp_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_dgram_tcp_n(void)
 {
 	int fd = -1;
@@ -121,13 +119,13 @@ static void tc_net_socket_af_inet_sock_dgram_tcp_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_dgram_udp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_dgram_udp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_dgram_udp_p(void)
 {
 
@@ -140,13 +138,13 @@ static void tc_net_socket_af_inet_sock_dgram_udp_p(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_soc_dgram_icmp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_soc_dgram_icmp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_dgram_icmp_n(void)
 {
 
@@ -158,13 +156,13 @@ static void tc_net_socket_af_inet_sock_dgram_icmp_n(void)
 
 #ifdef CONFIG_NET_LWIP_IGMP
 /**
-* @testcase		tc_net_socket_af_inet_sock_dgram_igmp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_dgram_igmp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_dgram_igmp_n(void)
 {
 	int fd = -1;
@@ -176,13 +174,13 @@ static void tc_net_socket_af_inet_sock_dgram_igmp_n(void)
 
 #ifdef CONFIG_NET_IPv6
 /**
-* @testcase		tc_net_socket_af_inet_sock_dgram_ipv6_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_dgram_ipv6_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_dgram_ipv6_n(void)
 {
 	int fd = -1;
@@ -192,13 +190,13 @@ static void tc_net_socket_af_inet_sock_dgram_ipv6_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_dgram_icmpv6_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_dgram_icmpv6_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_dgram_icmpv6_n(void)
 {
 	int fd = -1;
@@ -228,13 +226,13 @@ static void tc_net_socket_af_x25_sock_stream_n(void)
 
 #ifdef AF_AX25
 /**
-* @testcase		tc_net_socket_af_ax25_sock_stream_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_ax25_sock_stream_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_ax25_sock_stream_n(void)
 {
 	int fd = -1;
@@ -246,13 +244,13 @@ static void tc_net_socket_af_ax25_sock_stream_n(void)
 
 #ifdef AF_PACKET
 /**
-* @testcase		tc_net_socket_af_packet_sock_stream_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_packet_sock_stream_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_packet_sock_stream_n(void)
 {
 	int fd = -1;
@@ -264,13 +262,13 @@ static void tc_net_socket_af_packet_sock_stream_n(void)
 
 #ifdef AF_NETLINK
 /**
-* @testcase		tc_net_socket_af_netlink_sock_stream_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_netlink_sock_stream_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_netlink_sock_stream_n(void)
 {
 	int fd = -1;
@@ -281,13 +279,13 @@ static void tc_net_socket_af_netlink_sock_stream_n(void)
 #endif
 
 /**
-* @testcase		tc_net_socket_af_unspec_sock_stream_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_unspec_sock_stream_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_unspec_sock_stream_p(void)
 {
 	int fd = -1;
@@ -299,13 +297,13 @@ static void tc_net_socket_af_unspec_sock_stream_p(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_tcp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_tcp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_tcp_p(void)
 {
 	int fd = -1;
@@ -317,13 +315,13 @@ static void tc_net_socket_af_inet_sock_stream_tcp_p(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_protocol_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_protocol_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_protocol_n(void)
 {
 	int fd = -1;
@@ -333,13 +331,13 @@ static void tc_net_socket_af_inet_sock_stream_protocol_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_domain_sock_stream_protocol_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_domain_sock_stream_protocol_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_domain_sock_stream_protocol_n(void)
 {
 	int fd = -1;
@@ -349,13 +347,13 @@ static void tc_net_socket_domain_sock_stream_protocol_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_type_protocol_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_type_protocol_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_type_protocol_n(void)
 {
 	int fd = -1;
@@ -365,13 +363,13 @@ static void tc_net_socket_af_inet_type_protocol_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_domain_type_protocol_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_domain_type_protocol_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_domain_type_protocol_n(void)
 {
 	int fd = -1;
@@ -381,13 +379,13 @@ static void tc_net_socket_domain_type_protocol_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_domain_sock_stream_tcp_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_domain_sock_stream_tcp_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_domain_sock_stream_tcp_n(void)
 {
 	int fd = -1;
@@ -397,13 +395,13 @@ static void tc_net_socket_domain_sock_stream_tcp_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_udp_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_udp_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_udp_n(void)
 {
 	int fd = -1;
@@ -413,13 +411,13 @@ static void tc_net_socket_af_inet_sock_stream_udp_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_icmp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_icmp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_icmp_n(void)
 {
 	int fd = -1;
@@ -430,13 +428,13 @@ static void tc_net_socket_af_inet_sock_stream_icmp_n(void)
 
 #ifdef CONFIG_NET_LWIP_IGMP
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_igmp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_igmp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_igmp_n(void)
 {
 	int fd = -1;
@@ -449,13 +447,13 @@ static void tc_net_socket_af_inet_sock_stream_igmp_n(void)
 
 #ifdef CONFIG_NET_IPv6
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_protoipv6_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_protoipv6_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_protoipv6_n(void)
 {
 	int fd = -1;
@@ -465,13 +463,13 @@ static void tc_net_socket_af_inet_sock_stream_protoipv6_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_icmpv6_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_icmpv6_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_icmpv6_n(void)
 {
 	int fd = -1;
@@ -481,13 +479,13 @@ static void tc_net_socket_af_inet_sock_stream_icmpv6_n(void)
 }
 #endif
 /**
-* @testcase		tc_net_socket_af_inet6_sock_stream_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet6_sock_stream_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet6_sock_stream_p(void)
 {
 	int fd = -1;
@@ -499,13 +497,13 @@ static void tc_net_socket_af_inet6_sock_stream_p(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_type_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_type_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_type_n(void)
 {
 	int fd = -1;
@@ -515,13 +513,13 @@ static void tc_net_socket_af_inet_sock_stream_type_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_domain_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_domain_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_domain_n(void)
 {
 	int fd = -1;
@@ -531,13 +529,13 @@ static void tc_net_socket_af_inet_sock_stream_domain_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_domain_protocol_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_domain_protocol_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_domain_protocol_n(void)
 {
 	int fd = -1;
@@ -547,13 +545,13 @@ static void tc_net_socket_af_inet_sock_stream_domain_protocol_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_type_protocol_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_type_protocol_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_type_protocol_n(void)
 {
 	int fd = -1;
@@ -563,13 +561,13 @@ static void tc_net_socket_af_inet_sock_stream_type_protocol_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_stream_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_stream_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_stream_p(void)
 {
 	int fd = -1;
@@ -581,14 +579,14 @@ static void tc_net_socket_af_inet_sock_stream_p(void)
 }
 
 #ifdef CONFIG_NET_IPv6
-/**
-* @testcase		tc_net_socket_invalid_domain_sock_stream_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ /**
+ * @testcase		tc_net_socket_invalid_domain_sock_stream_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_invalid_domain_sock_stream_n(void)
 {
 	int fd = -1;
@@ -600,13 +598,13 @@ static void tc_net_socket_invalid_domain_sock_stream_n(void)
 
 #ifdef AF_NETLINK
 /**
-* @testcase		tc_net_socket_af_netlink_sock_dgram_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_netlink_sock_dgram_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_netlink_sock_dgram_p(void)
 {
 	int fd = -1;
@@ -618,13 +616,13 @@ static void tc_net_socket_af_netlink_sock_dgram_p(void)
 }
 #endif
 /**
-* @testcase		tc_net_socket_af_unspec_sock_dgram_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_unspec_sock_dgram_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_unspec_sock_dgram_p(void)
 {
 	int fd = -1;
@@ -637,13 +635,13 @@ static void tc_net_socket_af_unspec_sock_dgram_p(void)
 
 #ifdef AF_LOCAL
 /**
-* @testcase		tc_net_socket_af_local_sock_dgram_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_local_sock_dgram_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_local_sock_dgram_p(void)
 {
 	int fd = -1;
@@ -657,13 +655,13 @@ static void tc_net_socket_af_local_sock_dgram_p(void)
 
 #ifdef AF_X25
 /**
-* @testcase		tc_net_socket_af_x25_sock_dgram_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_x25_sock_dgram_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_x25_sock_dgram_n(void)
 {
 	int fd = -1;
@@ -672,15 +670,16 @@ static void tc_net_socket_af_x25_sock_dgram_n(void)
 	TC_SUCCESS_RESULT()
 }
 #endif
+
 #ifdef AF_AX25
 /**
-* @testcase		tc_net_socket_af_ax25_sock_dgram_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_ax25_sock_dgram_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_ax25_sock_dgram_n(void)
 {
 	int fd = -1;
@@ -692,13 +691,13 @@ static void tc_net_socket_af_ax25_sock_dgram_n(void)
 
 #ifdef AF_PACKET
 /**
-* @testcase		tc_net_socket_af_packet_sock_dgram_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_packet_sock_dgram_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_packet_sock_dgram_p(void)
 {
 	int fd = -1;
@@ -711,13 +710,13 @@ static void tc_net_socket_af_packet_sock_dgram_p(void)
 #endif
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_raw_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_raw_n(void)
 {
 	int fd = -1;
@@ -727,13 +726,13 @@ static void tc_net_socket_af_inet_sock_raw_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_tcp_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_raw_tcp_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_raw_tcp_n(void)
 {
 	int fd = -1;
@@ -743,13 +742,13 @@ static void tc_net_socket_af_inet_sock_raw_tcp_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_udp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_raw_udp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_raw_udp_p(void)
 {
 	int fd = -1;
@@ -761,13 +760,13 @@ static void tc_net_socket_af_inet_sock_raw_udp_p(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_icmp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_raw_icmp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_raw_icmp_p(void)
 {
 	int fd = -1;
@@ -780,13 +779,13 @@ static void tc_net_socket_af_inet_sock_raw_icmp_p(void)
 
 #ifdef CONFIG_NET_LWIP_IGMP
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_igmp_p
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_raw_igmp_p
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_raw_igmp_p(void)
 {
 	int fd = -1;
@@ -799,13 +798,13 @@ static void tc_net_socket_af_inet_sock_raw_igmp_p(void)
 
 #ifdef CONFIG_NET_IPv6
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_ipv6_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_raw_ipv6_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_raw_ipv6_n(void)
 {
 	int fd = -1;
@@ -813,14 +812,15 @@ static void tc_net_socket_af_inet_sock_raw_ipv6_n(void)
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 }
+
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_icmpv6_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
+ * @testcase		tc_net_socket_af_inet_sock_raw_icmpv6_n
+ * @brief
+ * @scenario
+ * @apicovered		socket()
+ * @precondition
+ * @postcondition
+ */
 static void tc_net_socket_af_inet_sock_raw_icmpv6_p(void)
 {
 	int fd = -1;
@@ -834,7 +834,6 @@ static void tc_net_socket_af_inet_sock_raw_icmpv6_p(void)
 /****************************************************************************
  * Name: socket()
  ****************************************************************************/
-
 int net_socket_main(void)
 {
 	tc_net_socket_af_inet_sock_stream_p();

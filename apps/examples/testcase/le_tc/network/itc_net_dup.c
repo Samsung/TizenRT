@@ -96,7 +96,6 @@ static void itc_net_dup2_p_multiple_time(void)
 /****************************************************************************
 * Name: dup()
 ****************************************************************************/
-
 int itc_net_dup_main(void)
 {
 	itc_net_dup_p_multiple_time();

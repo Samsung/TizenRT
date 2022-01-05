@@ -18,30 +18,28 @@
 
 /// @file tc_net_setsockopt.c
 /// @brief Test Case Example for setsockopt() API
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-* @fn                   :tc_net_setsockopt_multicast_ttl_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
+ * @fn                   :tc_net_setsockopt_multicast_ttl_p
+ * @brief                :
+ * @Scenario             :
+ * @API's covered        :setsockopt()
+ * Preconditions         :socket file descriptor
+ * Postconditions        :
+ * @return               :void
+ */
 /*
 static void tc_net_setsockopt_multicast_ttl_p(int s)
 {
@@ -58,15 +56,16 @@ static void tc_net_setsockopt_multicast_ttl_p(int s)
   nw_total_pass++;
 }
 */
+
 /**
-* @fn                   :tc_net_setsockopt_multicast_ttl_loop_own_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
+ * @fn                   :tc_net_setsockopt_multicast_ttl_loop_own_p
+ * @brief                :
+ * @Scenario             :
+ * @API's covered        :setsockopt()
+ * Preconditions         :socket file descriptor
+ * Postconditions        :
+ * @return               :void
+ */
 /*
 static void tc_net_setsockopt_multicast_ttl_loop_own_p(int s)
 {
@@ -83,15 +82,16 @@ static void tc_net_setsockopt_multicast_ttl_loop_own_p(int s)
   nw_total_pass++;
 }
 */
+
 /**
-* @fn                   :tc_net_setsockopt_multicast_ttl_loop_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
+ * @fn                   :tc_net_setsockopt_multicast_ttl_loop_p
+ * @brief                :
+ * @Scenario             :
+ * @API's covered        :setsockopt()
+ * Preconditions         :socket file descriptor
+ * Postconditions        :
+ * @return               :void
+ */
 /*
 static void tc_net_setsockopt_multicast_ttl_loop_p(int s)
 {
@@ -108,15 +108,16 @@ static void tc_net_setsockopt_multicast_ttl_loop_p(int s)
   nw_total_pass++;
 }
 */
+
 /**
-* @fn                   :tc_net_setsockopt_multicast_if_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor, ipv4 addr
-* Postconditions        :
-* @return               :void
-*/
+ * @fn                   :tc_net_setsockopt_multicast_if_p
+ * @brief                :
+ * @Scenario             :
+ * @API's covered        :setsockopt()
+ * Preconditions         :socket file descriptor, ipv4 addr
+ * Postconditions        :
+ * @return               :void
+ */
 /*
 static void tc_net_setsockopt_multicast_if_p(int s, const char *my_ipv4addr)
 {
@@ -135,15 +136,16 @@ static void tc_net_setsockopt_multicast_if_p(int s, const char *my_ipv4addr)
   nw_total_pass++;
 }
 */
+
 /**
-* @fn                   :tc_net_setsockopt_multicast_add_group_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor, group ipv4 addr
-* Postconditions        :
-* @return               :void
-*/
+ * @fn                   :tc_net_setsockopt_multicast_add_group_p
+ * @brief                :
+ * @Scenario             :
+ * @API's covered        :setsockopt()
+ * Preconditions         :socket file descriptor, group ipv4 addr
+ * Postconditions        :
+ * @return               :void
+ */
 /*
 static void tc_net_setsockopt_multicast_add_group_p(int s,
     const char *group_ipv4addr)
@@ -165,15 +167,16 @@ static void tc_net_setsockopt_multicast_add_group_p(int s,
   nw_total_pass++;
 }
 */
+
 /**
-* @fn                   :tc_net_setsockopt_multicast_drop_group_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor, group ipv4 addr
-* Postconditions        :
-* @return               :void
-*/
+ * @fn                   :tc_net_setsockopt_multicast_drop_group_p
+ * @brief                :
+ * @Scenario             :
+ * @API's covered        :setsockopt()
+ * Preconditions         :socket file descriptor, group ipv4 addr
+ * Postconditions        :
+ * @return               :void
+ */
 /*
 static void tc_net_setsockopt_multicast_drop_group_p(int s,
     const char *group_ipv4addr)
@@ -197,13 +200,13 @@ static void tc_net_setsockopt_multicast_drop_group_p(int s,
 */
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_nodelay_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_multicast_tcp_nodelay_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 {
 	int ret = -1;
@@ -213,17 +216,16 @@ static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_keepalive_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_multicast_tcp_keepalive_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 {
 	int ret = -1;
@@ -233,17 +235,16 @@ static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_keepidle_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_multicast_tcp_keepidle_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 {
 	int ret = -1;
@@ -253,17 +254,16 @@ static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_keepintvl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_multicast_tcp_keepintvl_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 {
 	int ret = -1;
@@ -273,17 +273,16 @@ static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_keepcnt_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_multicast_tcp_keepcnt_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 {
 	int ret = -1;
@@ -293,17 +292,16 @@ static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_ip_tos_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_ip_tos_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_ip_tos_p(int s)
 {
 	int ret = -1;
@@ -313,7 +311,6 @@ static void tc_net_setsockopt_ip_tos_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -370,23 +367,22 @@ static void tc_net_setsockopt_no_check_p(int s)
 */
 
 /**
-   * @testcase		   :tc_net_setsockopt_broadcast_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_broadcast_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_broadcast_p(int s)
 {
 	int ret = 0;
-	int optval = 1;				//broadcast value
+	int optval = 1; //broadcast value
 
 	ret = setsockopt(s, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -419,13 +415,13 @@ static void tc_net_setsockopt_sndtimo_p(int s)
 */
 
 /**
-   * @testcase		   :tc_net_setsockopt_rcvtimo_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_rcvtimo_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_rcvtimo_p(int s)
 {
 	int ret = -1;
@@ -437,17 +433,16 @@ static void tc_net_setsockopt_rcvtimo_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_reuseaddr_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_reuseaddr_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_reuseaddr_p(int s)
 {
 	int ret = -1;
@@ -457,18 +452,17 @@ static void tc_net_setsockopt_reuseaddr_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 #if 0
 /**
-   * @testcase		   :tc_net_setsockopt_reuseport_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_reuseport_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_reuseport_p(int s)
 {
 	int ret = -1;
@@ -510,13 +504,13 @@ static void tc_net_setsockopt_rcvbuf_p(int s)
 */
 
 /**
-   * @testcase		   :tc_net_setsockopt_keepalive_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_keepalive_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_keepalive_p(int s)
 {
 	int ret = -1;
@@ -526,7 +520,6 @@ static void tc_net_setsockopt_keepalive_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -580,13 +573,13 @@ static void tc_net_setsockopt_sol_socket_timestamping_p(fd)
 }*/
 
 /**
-   * @testcase		   :tc_net_setsockopt_bad_filedesc_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_bad_filedesc_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_bad_filedesc_n(void)
 {
 	int ret = -1;
@@ -596,17 +589,16 @@ static void tc_net_setsockopt_bad_filedesc_n(void)
 
 	TC_ASSERT_EQ("setsockopt", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_invalid_filedesc_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_invalid_filedesc_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_invalid_filedesc_n(void)
 {
 	int ret = -1;
@@ -616,17 +608,16 @@ static void tc_net_setsockopt_invalid_filedesc_n(void)
 
 	TC_ASSERT_EQ("setsockopt", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_invalid_level_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_setsockopt_invalid_level_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :setsockopt()
+ * @precondition	   :socket file descriptor
+ * @postcondition	   :
+ */
 static void tc_net_setsockopt_invalid_level_n(int s)
 {
 	int ret = -1;
@@ -636,38 +627,11 @@ static void tc_net_setsockopt_invalid_level_n(int s)
 
 	TC_ASSERT_EQ("setsockopt", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
-
-/**
-* @fn                   :tc_net_setsockopt_invalid_opt_name_n
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-
-static void tc_net_setsockopt_invalid_opt_name_n(int s)
-{
-    int ret = -1;
-    //int optval=1;
-
-    ret = setsockopt(s, SOL_SOCKET, SCTP_AUTOCLOSE, 0, 0);
-    if (ret != -1) {
-		printf("tc_net_setsockopt_invalid_opt_name_n FAIL: setopt KEEPALIVE failure\n");
-		nw_total_fail++;
-		RETURN_ERR;
-    }
-
-    printf("tc_net_setsockopt_invalid_opt_name_n PASS\n");
-    nw_total_pass++;
-}*/
 
 /****************************************************************************
  * Name: setsockopt()
  ****************************************************************************/
-
 void net_setsockopt_main(void)
 {
 	int fd = -1;
@@ -679,7 +643,6 @@ void net_setsockopt_main(void)
 		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
-	//tc_net_setsockopt_invalid_opt_name_n(fd);
 	tc_net_setsockopt_invalid_level_n(fd);
 	tc_net_setsockopt_invalid_filedesc_n();
 	tc_net_setsockopt_bad_filedesc_n();
@@ -708,5 +671,6 @@ void net_setsockopt_main(void)
 	//tc_net_setsockopt_multicast_ttl_p(fd);
 
 	close(fd);
+
 	return;
 }

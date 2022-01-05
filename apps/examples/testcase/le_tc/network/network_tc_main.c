@@ -36,6 +36,7 @@ int tc_get_fd(void)
 	return g_tc_fd;
 }
 #endif
+
 /****************************************************************************
  * Name: network_tc_main
  ****************************************************************************/
@@ -158,7 +159,6 @@ int tc_network_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_NET_CONNECT
 	itc_net_connect_main();
 #endif
-
 	(void)testcase_state_handler(TC_END, "Network TC");
 
 	return 0;

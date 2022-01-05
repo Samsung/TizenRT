@@ -41,7 +41,8 @@ static void itc_net_close_p_multi_times(void)
 	for (index = 0; index < LOOP_COUNT; index++) {
 		fd = -1;
 		fd = socket(AF_INET, SOCK_STREAM, 0);
-		TC_ASSERT_GEQ("socket", fd, CONFIG_NFILE_DESCRIPTORS);//If ASSERT FAILS, no need to close(fd) as socket is not created
+		//If ASSERT FAILS, no need to close(fd) as socket is not created
+		TC_ASSERT_GEQ("socket", fd, CONFIG_NFILE_DESCRIPTORS);
 
 		ret = close(fd);
 		TC_ASSERT_EQ("close", ret, 0);
@@ -76,7 +77,6 @@ static void itc_net_close_n_reclose(void)
 /****************************************************************************
  * Name: close()
  ****************************************************************************/
-
 int itc_net_close_main(void)
 {
 	itc_net_close_p_multi_times();

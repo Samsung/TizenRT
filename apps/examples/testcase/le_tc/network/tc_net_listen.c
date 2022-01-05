@@ -18,29 +18,27 @@
 
 /// @file tc_net_listen.c
 /// @brief Test Case Example for listen() API
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_listen_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :listen()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_listen_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :listen()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_listen_p(void)
 {
 	struct sockaddr_in sa;
@@ -66,17 +64,16 @@ static void tc_net_listen_p(void)
 
 	TC_ASSERT_NEQ("listen", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_listen_fd_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :listen()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_listen_fd_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :listen()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_listen_fd_n(void)
 {
 	struct sockaddr_in sa;
@@ -104,13 +101,13 @@ static void tc_net_listen_fd_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_listen_backlog_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :listen()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_listen_backlog_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :listen()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_listen_backlog_p(void)
 {
 	struct sockaddr_in sa;
@@ -136,23 +133,22 @@ static void tc_net_listen_backlog_p(void)
 
 	TC_ASSERT_NEQ("listen", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_listen_fd_backlog_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :listen()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_listen_fd_backlog_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :listen()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_listen_fd_backlog_n(void)
 {
 	struct sockaddr_in sa;
 	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socket_fd < 0) {
-		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
+		printf("Socket creation fail %s:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
 	memset(&sa, 0, sizeof sa);
@@ -176,12 +172,12 @@ static void tc_net_listen_fd_backlog_n(void)
 /****************************************************************************
  * Name: listen()
  ****************************************************************************/
-
 int net_listen_main(void)
 {
 	tc_net_listen_p();
 	tc_net_listen_fd_n();
 	tc_net_listen_backlog_p();
 	tc_net_listen_fd_backlog_n();
+
 	return 0;
 }

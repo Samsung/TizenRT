@@ -36,16 +36,18 @@
 
 #define PORTNUM 1109
 #define MAXRCVLEN 20
+
 static int mutex = 0;
+
 /**
-   * @fn                   :recv_wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+ * @fn                   :recv_wait
+ * @brief                :function to wait on semaphore
+ * @scenario             :
+ * API's covered         :
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void
+ */
 void recv_wait(void)
 {
 	while (mutex <= 0) {
@@ -55,27 +57,27 @@ void recv_wait(void)
 }
 
 /**
-   * @fn                   :recv_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+ * @fn                   :recv_signal
+ * @brief                :function to signal semaphore
+ * @scenario             :
+ * API's covered         :
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void
+ */
 void recv_signal(void)
 {
 	mutex++;
 }
 
 /**
-   * @testcase		   :tc_net_recv_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :recv()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_recv_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :recv()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 void tc_net_recv_p(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -83,17 +85,16 @@ void tc_net_recv_p(int fd)
 
 	TC_ASSERT_NEQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_recv_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :recv()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_recv_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :recv()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 void tc_net_recv_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -102,17 +103,16 @@ void tc_net_recv_n(int fd)
 
 	TC_ASSERT_EQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_recv_shutdown_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :recv()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_recv_shutdown_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :recv()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 void tc_net_recv_shutdown_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -121,17 +121,16 @@ void tc_net_recv_shutdown_n(int fd)
 
 	TC_ASSERT_EQ("recv", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_recv_close_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :recv()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_recv_close_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :recv()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 void tc_net_recv_close_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -140,21 +139,19 @@ void tc_net_recv_close_n(int fd)
 
 	TC_ASSERT_EQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @fn                   :recv_server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,accept,send,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+ * @fn                   :recv_server
+ * @brief                :
+ * @scenario             :
+ * API's covered         :socket,bind,listen,accept,send,close
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void *
+ */
 void *recv_server(void *args)
 {
-
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
 	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -222,21 +219,19 @@ void *recv_server(void *args)
 
 	close(socket_fd);
 	return 0;
-
 }
 
 /**
-   * @fn                   :recv_client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+ * @fn                   :recv_client
+ * @brief                :
+ * @scenario             :
+ * API's covered         :socket,connect,close
+ * Preconditions         :
+ * Postconditions        :
+ * @return               :void *
+ */
 void *recv_client(void *args)
 {
-
 	int mysocket;
 	struct sockaddr_in dest;
 
@@ -287,7 +282,6 @@ void *recv_client(void *args)
  ****************************************************************************/
 int net_recv_main(void)
 {
-
 	pthread_t Server, Client;
 
 	mutex = 0;
@@ -296,7 +290,6 @@ int net_recv_main(void)
 	pthread_create(&Client, NULL, recv_client, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
 
 	return 0;

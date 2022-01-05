@@ -18,34 +18,30 @@
 
 /// @file tc_net_ioctl.c
 /// @brief Test Case Example for ioctl() API
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
 #include "tc_internal.h"
 
-
 /**
-   * @testcase		   :tc_net_ioctl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :ioctl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_ioctl_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :ioctl()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_ioctl_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -58,20 +54,18 @@ static void tc_net_ioctl_p(void)
 
 	TC_ASSERT_NEQ("ioctl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_ioctl_fionread_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :ioctl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_ioctl_fionread_p
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :ioctl()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_ioctl_fionread_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -84,38 +78,32 @@ static void tc_net_ioctl_fionread_p(void)
 
 	TC_ASSERT_NEQ("ioctl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_ioctl_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :ioctl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+ * @testcase		   :tc_net_ioctl_n
+ * @brief		   :
+ * @scenario		   :
+ * @apicovered	   :ioctl()
+ * @precondition	   :
+ * @postcondition	   :
+ */
 static void tc_net_ioctl_n(void)
 {
-
 	int fd = -1;
 	int ret = ioctl(fd, FIONBIO, 0);
 
 	TC_ASSERT_NEQ("ioctl", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: ioctl()
  ****************************************************************************/
-
 int net_ioctl_main(void)
 {
-
 	tc_net_ioctl_p();
 	tc_net_ioctl_fionread_p();
-
 	tc_net_ioctl_n();
 
 	return 0;
