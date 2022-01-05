@@ -130,30 +130,6 @@ static void tc_net_getpeername_close_n(void)
 	TC_ASSERT_EQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
 }
-#ifdef AF_UNIX
-/**
-   * @testcase		   :tc_net_getpeername_unix_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getpeername_unix_p(void)
-{
-	int sock;
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
-
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
-
-	close(sock);
-
-	TC_ASSERT_NEQ("getpeername", ret, -1);
-	TC_SUCCESS_RESULT();
-}
-#endif
 
 /**
    * @testcase		   :tc_net_getpeername_p

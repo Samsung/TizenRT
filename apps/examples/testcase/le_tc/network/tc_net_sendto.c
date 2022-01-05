@@ -93,61 +93,7 @@ void tc_net_sendto_n(void)
 	TC_SUCCESS_RESULT();
 
 }
-#ifdef AF_UNIX
-/**
-   * @testcase		   :tc_net_sendto_af_unix_n
-   * @brief		   :negative testcase for sendto api using udp
-   * @scenario		   :
-   * @apicovered	   :sendto()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-void tc_net_sendto_af_unix_n(int fd)
-{
-	char *buffer = "hello";
-	int len = strlen(buffer) + 1;
-	struct sockaddr_in dest;
-	socklen_t fromlen;
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = AF_UNIX;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
-	dest.sin_port = htons(PORTNUM);
-	fromlen = sizeof(dest);
-	int ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
-	TC_ASSERT_EQ("sendto", ret, -1);
-	TC_SUCCESS_RESULT();
-
-}
-#endif
-#ifdef AF_UNIX
-/**
-   * @testcase		   :tc_net_sendto_shutdown_n
-   * @brief		   :negative testcase for sendto api using udp
-   * @scenario		   :
-   * @apicovered	   :sendto()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-void tc_net_sendto_shutdown_n(int fd)
-{
-	char *buffer = "hello";
-	int len = strlen(buffer) + 1;
-	struct sockaddr_in dest;
-	socklen_t fromlen;
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = AF_UNIX;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
-	dest.sin_port = htons(PORTNUM);
-	fromlen = sizeof(dest);
-	shutdown(fd, SHUT_WR);
-	int ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
-
-	TC_ASSERT_EQ("sendto", ret, -1);
-	TC_SUCCESS_RESULT();
-
-}
-#endif
 /**
    * @fn                   :sendto_server
    * @brief                :udp server
@@ -212,10 +158,6 @@ void *sendto_udpclient(void *args)
 	}
 	tc_net_sendto_p(mysocket);
 	tc_net_sendto_n();
-#ifdef AF_UNIX
-	tc_net_sendto_af_unix_n(mysocket);
-	tc_net_sendto_shutdown_n(mysocket);
-#endif
 	close(mysocket);
 
 	return 0;

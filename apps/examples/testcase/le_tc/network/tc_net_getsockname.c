@@ -57,28 +57,7 @@ static void tc_net_getsockname_p(void)
 	TC_ASSERT_NEQ("getsockname", ret, -1);
 	TC_SUCCESS_RESULT();
 }
-#ifdef AF_UNIX
-/**
-   * @testcase		   :tc_net_getsockname_unix_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getsockname_unix_p(void)
-{
-	int sock;
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
 
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	int ret = getsockname(sock, &foo, (socklen_t *)&len);
-	close(sock);
-	TC_ASSERT_NEQ("getsockname", ret, -1);
-	TC_SUCCESS_RESULT();
-}
-#endif
 /**
    * @testcase		   :tc_net_getsockname_n
    * @brief		   :
