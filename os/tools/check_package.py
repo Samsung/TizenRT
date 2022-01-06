@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# This script parses the package header informations and show them.
+# This script parses the package header information and show them.
 # And verify the package by calculating the crc and comparing it with the value of the header.
 #
 # Usage :
