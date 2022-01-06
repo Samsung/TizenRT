@@ -41,6 +41,8 @@ LOADING_HIGH = 3
 
 PACKAGE_TYPE_ELF = 1
 
+VERIFY_SUCCESS = True
+
 target = sys.argv[1]
 if target == "-h" or target == "--help" :
 	print("Usage :")
@@ -113,6 +115,7 @@ elif "app_" in target :
 		print("\tPackage Type      : ELF(%d)" %package_type[0])
 	else :
 		print("\tPackage Type Invalid : %d" %package_type[0])
+		VERIFY_SUCCESS = False
 	print("\tMain Priority     : " + str(main_prio[0]))
 	if loading_prio[0] == LOADING_LOW :
 		print("\tLoading Priority  : LOADING_LOW(%d)" %LOADING_LOW)
@@ -122,6 +125,7 @@ elif "app_" in target :
 		print("\tLoading Priority  : LOADING_HIGH(%d)" %LOADING_HIGH)
 	else :
 		print("\tLoading Priority : Invalid(%d)" %loading_prio[0])
+		VERIFY_SUCCESS = False
 	print("\tFile Size         : " + str(file_size[0]))
 	print("\tPackage Name      : " + str(package_name[0]) + str(package_name[1]) + str(package_name[2]))
 	print("\tPackage Version   : " + str(package_ver[0]))
@@ -131,6 +135,7 @@ elif "app_" in target :
 
 else :
 	print("!!!Not Supported Package. Please Check the package!!!")
+	VERIFY_SUCCESS = False
 	sys.exit(1)
 
 # Verify the package by calculating the crc and comparing it with the value of the header.
@@ -148,6 +153,7 @@ if checksum_header == checksum_calc :
 	print("\t* Checksum verification Done.")
 else :
 	print("\t* Checksum is invalid, header : " + str(checksum_header) + ", calc : " + str(checksum_calc));
+	VERIFY_SUCCESS = False
 
 
 # Verify the package version between header and the file name
@@ -157,3 +163,8 @@ if package_ver[0] == int(file_name_ver) :
 	print("\t* Version Matched between filename and header.")
 else :
 	print("\t* Version NOT MATCHED!!! between filename(" + file_name_ver + ") and header(" + str(package_ver[0]) + ")")
+	VERIFY_SUCCESS = False
+
+# Return exit(1) if there is a validation failure.
+if VERIFY_SUCCESS == False :
+	sys.exit(1)
