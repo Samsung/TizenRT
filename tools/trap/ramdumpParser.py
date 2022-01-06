@@ -709,7 +709,7 @@ def find_crash_point(log_file, elf):
         # Parse the contents based on tokens in log file.
         with open(log_file) as searchfile:
             for line in searchfile:
-                # If PC value is invalid, show inavlid PC
+                # If PC value is invalid, show invalid PC
                 if 'PC value might be invalid' in line:
                     print('\tPC value might be invalid.')
         print('\tPC & LR values not in any text range! No probable crash point detected.')
