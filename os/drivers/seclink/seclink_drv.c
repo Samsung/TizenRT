@@ -53,7 +53,7 @@
 	do {													\
 		int sl_res = sem_post(lock);						\
 		if (sl_res < 0) {									\
-			SLDRV_LOG(SLDRV_TAG" lock fail(%d)\n", errno);	\
+			SLDRV_LOG(SLDRV_TAG" unlock fail(%d)\n", errno);	\
 		}													\
 	} while (0)
 
