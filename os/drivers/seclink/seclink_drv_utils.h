@@ -26,12 +26,7 @@
 #include <tinyara/timer.h>
 #endif
 
-#ifndef LINUX
-#define SLDRV_LOG lldbg
-#else
 #define SLDRV_LOG printf
-#endif
-
 #define SLDRV_TAG "[SECLINK_DRV]"
 
 #define SLDRV_ERR(fd)                                       \
