@@ -202,24 +202,6 @@ static void tc_net_socket_af_inet_sock_dgram_icmpv6_n(void)
 	TC_SUCCESS_RESULT()
 }
 
-#ifdef AF_X25
-/**
-* @testcase		tc_net_socket_af_x25_sock_stream_n
-* @brief
-* @scenario
-* @apicovered		socket()
-* @precondition
-* @postcondition
-*/
-static void tc_net_socket_af_x25_sock_stream_n(void)
-{
-	int fd = -1;
-	fd = socket(AF_X25, SOCK_STREAM, 0);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
-	TC_SUCCESS_RESULT()
-}
-#endif
-
 /**
  * @testcase		tc_net_socket_af_unspec_sock_stream_p
  * @brief
@@ -567,24 +549,6 @@ static void tc_net_socket_af_local_sock_dgram_p(void)
 	TC_SUCCESS_RESULT()
 
 	close(fd);
-}
-#endif
-
-#ifdef AF_X25
-/**
- * @testcase		tc_net_socket_af_x25_sock_dgram_n
- * @brief
- * @scenario
- * @apicovered		socket()
- * @precondition
- * @postcondition
- */
-static void tc_net_socket_af_x25_sock_dgram_n(void)
-{
-	int fd = -1;
-	fd = socket(AF_X25, SOCK_DGRAM, 0);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
-	TC_SUCCESS_RESULT()
 }
 #endif
 
