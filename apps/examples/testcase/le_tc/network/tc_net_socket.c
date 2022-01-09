@@ -532,26 +532,6 @@ static void tc_net_socket_af_unspec_sock_dgram_p(void)
 	close(fd);
 }
 
-#ifdef AF_LOCAL
-/**
- * @testcase		tc_net_socket_af_local_sock_dgram_p
- * @brief
- * @scenario
- * @apicovered		socket()
- * @precondition
- * @postcondition
- */
-static void tc_net_socket_af_local_sock_dgram_p(void)
-{
-	int fd = -1;
-	fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
-
 /**
  * @testcase		tc_net_socket_af_inet_sock_raw_n
  * @brief
