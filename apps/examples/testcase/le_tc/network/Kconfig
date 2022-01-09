@@ -49,6 +49,7 @@ config TC_NET_ALL
 
 config TC_NET_SOCKET
 	bool "socket() api"
+	depends on NET_LWIP_IGMP
 	default n
 
 config TC_NET_SOCKET_SHARE
