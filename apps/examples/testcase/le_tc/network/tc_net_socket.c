@@ -220,24 +220,6 @@ static void tc_net_socket_af_x25_sock_stream_n(void)
 }
 #endif
 
-#ifdef AF_NETLINK
-/**
- * @testcase		tc_net_socket_af_netlink_sock_stream_n
- * @brief
- * @scenario
- * @apicovered		socket()
- * @precondition
- * @postcondition
- */
-static void tc_net_socket_af_netlink_sock_stream_n(void)
-{
-	int fd = -1;
-	fd = socket(AF_NETLINK, SOCK_STREAM, 0);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
-	TC_SUCCESS_RESULT()
-}
-#endif
-
 /**
  * @testcase		tc_net_socket_af_unspec_sock_stream_p
  * @brief
@@ -550,25 +532,6 @@ static void tc_net_socket_invalid_domain_sock_stream_n(void)
 	TC_SUCCESS_RESULT()
 }
 
-#ifdef AF_NETLINK
-/**
- * @testcase		tc_net_socket_af_netlink_sock_dgram_p
- * @brief
- * @scenario
- * @apicovered		socket()
- * @precondition
- * @postcondition
- */
-static void tc_net_socket_af_netlink_sock_dgram_p(void)
-{
-	int fd = -1;
-	fd = socket(AF_NETLINK, SOCK_DGRAM, 0);
-	TC_ASSERT_GEQ("socket", fd, 0)
-	TC_SUCCESS_RESULT()
-
-	close(fd);
-}
-#endif
 /**
  * @testcase		tc_net_socket_af_unspec_sock_dgram_p
  * @brief
