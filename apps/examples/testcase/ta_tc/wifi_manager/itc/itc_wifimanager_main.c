@@ -215,7 +215,7 @@ static void itc_wifimanager_get_mode_p(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	wifi_manager_info_s info;
 	int ret_cmp = 0;
-	int i;
+	//int i;
 
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
@@ -238,13 +238,6 @@ static void itc_wifimanager_get_mode_p(void)
 	ret = wifi_manager_get_info(&info);
 	TC_ASSERT_EQ_CLEANUP("wifi_manager_get_info", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 	TC_ASSERT_EQ_CLEANUP("wifi_manager_get_info", info.mode, SOFTAP_MODE, wifi_manager_deinit());
-
-	printf("\nMAC Address: ");
-
-	for (i = 0; i < 5; i++) {
-		printf("%x:", info.mac_address[i]);
-	}
-	printf("%x\n", info.mac_address[5]);
 
 	ret_cmp = strncmp(info.ssid, ap_config.ssid, strlen(TEST_SOFTAP_SSID));
 	TC_ASSERT_EQ_CLEANUP("string cmp between SSID ", ret_cmp, 0, wifi_manager_deinit());
@@ -307,7 +300,7 @@ static void itc_wifimanager_connect_ap_config_p(void)
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
 	wifi_manager_ap_config_s config;
-	reconfig.interval = 10;
+	//config.interval = 10;
 	config.ssid_length = strlen(TEST_SSID);
 	config.passphrase_length = strlen(TEST_PASSWORD);
 	strncpy(config.ssid, TEST_SSID, config.ssid_length + 1);
