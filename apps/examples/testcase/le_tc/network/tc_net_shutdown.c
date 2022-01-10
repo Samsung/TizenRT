@@ -275,7 +275,7 @@ void *shutdown_client(void *args)
 	tc_net_shutdown_n();
 	close(mysocket);
 
-	return 0;
+	return NULL;
 }
 
 /****************************************************************************
