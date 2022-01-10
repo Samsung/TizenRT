@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <semaphore.h>
 
 #include "tc_internal.h"
 
@@ -264,20 +265,20 @@ static void itc_net_connect_p(void)
 	int num_clients = 1;
 	int id = 1;
 	int ret;
-	int *ptr = &num_clients;
-	int *ptr_id = &id;
 	int *pret = OK;
+
 	g_port = 8880;
 
-	pthread_create(&server_thread, NULL, server_connect, ptr);
+	pthread_create(&server_thread, NULL, server_connect, (void *)&num_clients);
 	sleep(SERVER_WAIT_TIME);
-	pthread_create(&client_thread, NULL, client_connect, ptr_id);
+	pthread_create(&client_thread, NULL, client_connect, (void *)&id);
 
 	sleep(CLIENT_WAIT_TIME);
 
 	ret = pthread_join(server_thread, (void *)&pret);
 	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK, free(pret); pthread_join(client_thread, NULL));
 	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK, free(pret); pthread_join(client_thread, NULL));
+
 	ret = pthread_join(client_thread, (void *)&pret);
 	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK, free(pret));
 	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK, free(pret));
@@ -305,21 +306,17 @@ static void itc_net_connect_p_multiple_clients(void)
 	int id2 = 2;
 	int id3 = 3;
 	int ret;
-	int *ptr_num_clients = &num_clients;
-	int *ptr_id1 = &id1;
-	int *ptr_id2 = &id2;
-	int *ptr_id3 = &id3;
 	int *pret = OK;
 
 	g_port = 8890;
 
-	pthread_create(&server_thread, NULL, server_connect, ptr_num_clients);
+	pthread_create(&server_thread, NULL, server_connect, (void *)&num_clients);
 	sleep(SERVER_WAIT_TIME);
-	pthread_create(&client1_thread, NULL, client_connect, ptr_id1);
+	pthread_create(&client1_thread, NULL, client_connect, (void *)&id1);
 	sleep(SERVER_WAIT_TIME);
-	pthread_create(&client2_thread, NULL, client_connect, ptr_id2);
+	pthread_create(&client2_thread, NULL, client_connect, (void *)&id2);
 	sleep(SERVER_WAIT_TIME);
-	pthread_create(&client3_thread, NULL, client_connect, ptr_id3);
+	pthread_create(&client3_thread, NULL, client_connect, (void *)&id3);
 
 	sleep(CLIENT_WAIT_TIME);
 
@@ -329,14 +326,28 @@ static void itc_net_connect_p_multiple_clients(void)
 						 pthread_join(client3_thread, NULL);
 						 pthread_join(client2_thread, NULL);
 						 pthread_join(client1_thread, NULL));
-	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK, free(pret); pthread_join(client3_thread, NULL); pthread_join(client2_thread, NULL); pthread_join(client1_thread, NULL));
+	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK,
+						 free(pret);
+						 pthread_join(client3_thread, NULL);
+						 pthread_join(client2_thread, NULL);
+						 pthread_join(client1_thread, NULL));
 	ret = pthread_join(client3_thread, (void *)&pret);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK, free(pret); pthread_join(client2_thread, NULL); pthread_join(client1_thread, NULL));
-	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK, free(pret); pthread_join(client2_thread, NULL); pthread_join(client1_thread, NULL));
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK,
+						 free(pret);
+						 pthread_join(client2_thread, NULL);
+						 pthread_join(client1_thread, NULL));
+	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK,
+						 free(pret);
+						 pthread_join(client2_thread, NULL);
+						 pthread_join(client1_thread, NULL));
 
 	ret = pthread_join(client2_thread, (void *)&pret);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK, free(pret); pthread_join(client1_thread, NULL));
-	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK, free(pret); pthread_join(client1_thread, NULL));
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK,
+						 free(pret);
+						 pthread_join(client1_thread, NULL));
+	TC_ASSERT_EQ_CLEANUP("pthread_join", *pret, OK,
+						 free(pret);
+						 pthread_join(client1_thread, NULL));
 
 	ret = pthread_join(client1_thread, NULL);
 	TC_ASSERT_EQ_CLEANUP("pthread_join", ret, OK, free(pret));
