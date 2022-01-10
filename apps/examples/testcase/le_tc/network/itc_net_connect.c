@@ -307,6 +307,7 @@ static void itc_net_connect_p_multiple_clients(void)
 	int ret;
 	int *pret = OK;
 
+	_initialize_test();
 	g_port = 8890;
 	_initialize_test();
 
