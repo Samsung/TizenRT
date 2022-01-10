@@ -195,7 +195,6 @@ static void utc_wifimanager_get_mode_p(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	wifi_manager_info_s info;
 	int ret_cmp = 0;
-	int i;
 
 	ret = wifi_manager_get_info(&info);
 
