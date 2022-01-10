@@ -99,7 +99,10 @@ config TC_NET_FCNTL
 config TC_NET_IOCTL
 	bool "ioctl() api"
 	default n
-
+	---help---
+		tc_net_ioctl_fionread_p requires NET_SO_RCVBUF
+		itc_net_setsockopt_p_sndtimo requires NET_SO_SNDTIMEO
+		
 config TC_NET_ACCEPT
 	bool "accept() api"
 	default n
@@ -155,6 +158,8 @@ config ITC_NET_LISTEN
 config ITC_NET_SETSOCKOPT
 	bool "ITC setsockopt() api"
 	default n
+	---help---
+		itc_net_setsockopt_p_rcvbuf requires NET_SO_RCVBUF
 
 config ITC_NET_SEND
 	bool "ITC send() api"
