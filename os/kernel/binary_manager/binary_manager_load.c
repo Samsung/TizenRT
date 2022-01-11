@@ -45,6 +45,9 @@
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/binfmt/binfmt.h>
 #endif
+#ifdef CONFIG_BINARY_SIGNING
+#include <tinyara/signature.h>
+#endif
 
 #include "sched/sched.h"
 #include "task/task.h"
@@ -193,6 +196,24 @@ static int binary_manager_load(int bin_idx)
 		if (!binp)
 #endif
 		{
+#ifdef CONFIG_BINARY_SIGNING
+			/* Check signature */
+			ret = up_verify_usersignature(BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
+			if (ret == OK) {
+				printf("%s Signature Checking Success\n", BIN_NAME(bin_idx));
+			} else {
+				printf("Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
+				if (--bin_count > 0) {
+					BIN_USEIDX(bin_idx) ^= 1;
+					bmdbg("Try to read another partition %d\n", BIN_USEIDX(bin_idx));
+					continue;
+				} else {
+					bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
+					break;
+				}
+			}
+#endif
+
 			/* Read header data and Check crc */
 			snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx))));
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
@@ -220,6 +241,10 @@ static int binary_manager_load(int bin_idx)
 				load_attr.offset = CHECKSUM_SIZE + common_header_data.header_size;
 				load_attr.bin_size = common_header_data.bin_size;
 				load_attr.bin_ver = common_header_data.version;
+#ifdef CONFIG_BINARY_SIGNING
+				load_attr.offset += USER_SIGN_PREPEND_SIZE;
+#endif
+
 			} else
 #endif
 			{
@@ -230,6 +255,9 @@ static int binary_manager_load(int bin_idx)
 				load_attr.stack_size = user_header_data.bin_stacksize;
 				load_attr.priority = user_header_data.bin_priority;
 				load_attr.offset = CHECKSUM_SIZE + user_header_data.header_size;
+#ifdef CONFIG_BINARY_SIGNING
+				load_attr.offset += USER_SIGN_PREPEND_SIZE;
+#endif
 				load_attr.bin_ver = user_header_data.bin_ver;
 			}
 		}

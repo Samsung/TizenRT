@@ -293,7 +293,6 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 		}
 
 		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.blocksize, partno);
-		partoffset += partsize / geo.blocksize;
 
 		if (!mtd_part) {
 			printf("ERROR: failed to create partition.\n");
@@ -308,7 +307,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 
 #ifdef CONFIG_BINARY_MANAGER
 		if (!strncmp(types, "kernel,", 7)) {
-			binary_manager_register_kpart(partno, partsize);
+			binary_manager_register_kpart(partno, partsize, partoffset * geo.blocksize);
 		} else if (!strncmp(types, "bootparam,", 10)) {
 			binary_manager_register_bppart(partno, partsize);
 		}
@@ -317,10 +316,12 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 		configure_partition_name(mtd_part, (const char **)&names, &index, part_name);
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 		if (!strncmp(types, "bin,", 4)) {
-			binary_manager_register_upart(part_name, partno, partsize);
+			binary_manager_register_upart(part_name, partno, partsize, partoffset * geo.blocksize);
 		}
 #endif
 #endif
+		partoffset += partsize / geo.blocksize;
+
 		move_to_next_part((const char **)&sizes);
 		move_to_next_part((const char **)&types);
 		partno++;

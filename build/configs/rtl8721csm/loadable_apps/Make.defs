@@ -232,6 +232,10 @@ define MAKE_BOOTPARAM
   $(TOPDIR)/../os/tools/mkbootparam.py
 endef
 
+define MAKE_USER_SIGNING
+  $(TOPDIR)/../build/configs/rtl8721csm/rtl8721csm_signing.sh user
+endef
+
 define DOWNLOAD
   $(TOPDIR)/../build/configs/common_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef

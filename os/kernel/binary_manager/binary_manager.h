@@ -57,7 +57,7 @@
 
 /* Binary Manager Core Thread information */
 #define BINARY_MANAGER_NAME        "binary_manager"           /* Binary manager thread name */
-#define BINARY_MANAGER_STACKSIZE   2048                       /* Binary manager thread stack size */
+#define BINARY_MANAGER_STACKSIZE   4096                       /* Binary manager thread stack size */
 #define BINARY_MANAGER_PRIORITY    203                        /* Binary manager thread priority */
 
 /* Loading Thread information */
@@ -130,6 +130,7 @@ typedef struct faultmsg_s faultmsg_t;
 struct part_info_s {
 	uint32_t size;
 	uint8_t devnum;
+	uint32_t address;
 };
 typedef struct part_info_s part_info_t;
 
@@ -209,6 +210,7 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_NRTLIST(bin_idx)                            binary_manager_get_udata(bin_idx)->nrt_list
 #define BIN_PARTSIZE(bin_idx, part_idx)                 binary_manager_get_udata(bin_idx)->part_info[part_idx].size
 #define BIN_PARTNUM(bin_idx, part_idx)                  binary_manager_get_udata(bin_idx)->part_info[part_idx].devnum
+#define BIN_PARTADDR(bin_idx, part_idx)                 binary_manager_get_udata(bin_idx)->part_info[part_idx].address
 
 #define BIN_LOADVER(bin_idx)                            binary_manager_get_udata(bin_idx)->load_attr.bin_ver
 #define BIN_KERNEL_VER(bin_idx)                         binary_manager_get_udata(bin_idx)->available_kernel_ver

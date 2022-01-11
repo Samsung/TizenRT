@@ -469,6 +469,9 @@ endif
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
 	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/user/common
 endif
+ifeq ($(CONFIG_BINARY_SIGNING),y)
+	$(Q) $(call MAKE_USER_SIGNING)
+endif
 endif
 
 pass2deps: pass2dep $(TINYARALIBS)
