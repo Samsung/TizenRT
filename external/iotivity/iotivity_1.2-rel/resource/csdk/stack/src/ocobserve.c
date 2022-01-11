@@ -83,7 +83,7 @@ static OCQualityOfService DetermineObserverQoS(OCMethod method,
 #endif
         {
             resourceObserver->lowQosCount = 0;
-            // at some point we have to to send CON to check on the
+            // at some point we have to send CON to check on the
             // availability of observer
             OIC_LOG(INFO, TAG, "This time we are sending the  notification as High qos");
             decidedQoS = OC_HIGH_QOS;

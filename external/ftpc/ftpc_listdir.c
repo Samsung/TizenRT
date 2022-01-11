@@ -329,7 +329,7 @@ FAR struct ftpc_dirlist_s *ftpc_listdir(SESSION handle, FAR const char *dirpath)
 	if (!iscurrdir) {
 		int tmpret = ftpc_cmd(session, "CWD %s", session->currdir);
 		if (tmpret != OK) {
-			printf("CWD back to to %s failed\n", session->currdir);
+			printf("CWD back to %s failed\n", session->currdir);
 		}
 	}
 

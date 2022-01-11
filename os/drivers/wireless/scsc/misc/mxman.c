@@ -171,7 +171,7 @@ static void mxman_message_handler(const void *message, void *data)
 }
 
 /*
- * This function calulates and checks two or three (depending on crc32_over_binary flag)
+ * This function calculates and checks two or three (depending on crc32_over_binary flag)
  * crc32 values in the firmware header. The function will check crc32 over the firmware binary
  * (i.e. everything in the file following the header) only if the crc32_over_binary is set to 'true'.
  * This includes initialised data regions so it can be used to check when loading but will not be

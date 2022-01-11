@@ -331,9 +331,9 @@ void ft3x67_TS_GetGestureID(uint16_t DeviceAddr, uint32_t * pGestureId)
   * @param  DeviceAddr: Device address on communication Bus (I2C slave address of FT3X67).
   * @param  touchIdx : Passed index of the touch (0..1) on which we want to get the
   *                    detailed information.
-  * @param  pWeight : Pointer to to get the weight information of 'touchIdx'.
-  * @param  pArea   : Pointer to to get the sub-area information of 'touchIdx'.
-  * @param  pEvent  : Pointer to to get the event information of 'touchIdx'.
+  * @param  pWeight : Pointer to get the weight information of 'touchIdx'.
+  * @param  pArea   : Pointer to get the sub-area information of 'touchIdx'.
+  * @param  pEvent  : Pointer to get the event information of 'touchIdx'.
   * @note   Area and Weight features are not supported by FT3X67. Return always 0 value.
   * @retval None.
   */
