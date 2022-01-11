@@ -124,7 +124,9 @@ int prctl(int option, ...)
 	va_start(ap, option);
 	switch (option) {
 	case PR_SET_NAME:
+	case PR_SET_NAME_BYPID:
 	case PR_GET_NAME:
+	case PR_GET_NAME_BYPID:
 #if CONFIG_TASK_NAME_SIZE > 0
 	{
 		/* Get the prctl arguments */
@@ -133,14 +135,12 @@ int prctl(int option, ...)
 		int pid = va_arg(ap, int);
 		FAR struct tcb_s *tcb;
 
-		/* Get the TCB associated with the PID (handling the special case of
-		 * pid==0 meaning "this thread")
-		 */
-
-		if (!pid) {
-			tcb = this_task();
+		if (option == PR_SET_NAME_BYPID || option == PR_GET_NAME_BYPID) {
+			/* Get the TCB associated with the PID */
+			tcb = sched_gettcb((pid_t)pid);
 		} else {
-			tcb = sched_gettcb(pid);
+			/* Get the current running TCB */
+			tcb = this_task();
 		}
 
 		/* An invalid pid will be indicated by a NULL TCB returned from
@@ -163,7 +163,7 @@ int prctl(int option, ...)
 
 		/* Now get or set the task name */
 
-		if (option == PR_SET_NAME) {
+		if (option == PR_SET_NAME || option == PR_SET_NAME_BYPID) {
 			/* Ensure that tcb->name will be null-terminated, truncating if necessary */
 
 			strncpy(tcb->name, name, CONFIG_TASK_NAME_SIZE);

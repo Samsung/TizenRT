@@ -64,22 +64,38 @@
 /* Supported prctl() commands.
  *
  *  PR_SET_NAME
- *    Set the task (or thread) name for the thread whose ID is in required
- *    arg2 (int), using the value in the location pointed to by required arg1
- *    (char*).  The name can be up to CONFIG_TASK_NAME_SIZE long (including
+ *    Set the calling task (or thread) name, using the value in the location 
+ *    pointed to by required arg1(char*).
+ *    The name can be up to CONFIG_TASK_NAME_SIZE long (including
  *    any null termination).  The thread ID of 0 will set the name of the
  *    calling thread. As an example:
  *
- *      prctl(PR_SET_NAME, "MyName", 0);
+ *      prctl(PR_SET_NAME, "MyName");
+ *
+ *  PR_SET_NAME_BYPID
+ *    Set the task (or thread) name for the thread whose ID is in required
+ *    arg2 (int), using the value in the location pointed to by required arg1
+ *    (char*).  The name can be up to CONFIG_TASK_NAME_SIZE long (including
+ *    any null termination). As an example:
+ *
+ *      prctl(PR_SET_NAME_BYPID, "MyName", 0);
  *
  *  PR_GET_NAME
+ *    Return the calling task (or thread) name, in the buffer pointed to 
+ *    by optional arg1 (char *). The buffer must be CONFIG_TASK_NAME_SIZE long
+ *    (including any null termination). As an example:
+ *
+ *      char myname[CONFIG_TASK_NAME_SIZE];
+ *      prctl(PR_GET_NAME, myname);
+ *
+ *  PR_GET_NAME_BYPID
  *    Return the task (or thread) name for the for the thread whose ID is
  *    optional arg2 (int), in the buffer pointed to by optional arg1 (char *).
  *    The buffer must be CONFIG_TASK_NAME_SIZE long (including any null
  *    termination). As an example:
  *
  *      char myname[CONFIG_TASK_NAME_SIZE];
- *      prctl(PR_GET_NAME, myname, 0);
+ *      prctl(PR_GET_NAME_BYPID, myname, 0);
  */
 
 /**
@@ -88,7 +104,9 @@
  */
 enum prctl_type_e {
 	PR_SET_NAME = 0,
+	PR_SET_NAME_BYPID,
 	PR_GET_NAME,
+	PR_GET_NAME_BYPID,
 	PR_GET_STKLOG,
 	PR_MSG_SAVE,
 	PR_MSG_READ,
