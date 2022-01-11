@@ -23,11 +23,22 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <wifi_manager/wifi_manager.h>
+#include <wifi_mbox/wifi_mbox.h>
+#include "wifi_mock.h"
 #include "tc_common.h"
 
 #define WIFI_PROFILE_PATH "/mnt/"
 #define WIFI_PROFILE_FILENAME_INTERNAL "wifi_connected.conf"
 
+#define WEVT_CONNECTED 1
+#define WEVT_DISCONNECTED 2
+#define WEVT_CONNFAIL 3
+#define WEVT_SCAN_SUCCESS 4
+#define WEVT_SCAN_FAIL 5
+#define WEVT_OK 6
+#define WEVT_FAIL 7
+
+static struct wifi_mbox *g_queue = NULL;
 static char *g_ssid = NULL;
 static char *g_passphrase = NULL;
 static char *g_softap_ssid = NULL;
@@ -35,19 +46,6 @@ static char *g_softap_passphrase = NULL;
 static int g_softap_channel = -1;
 static wifi_manager_ap_auth_type_e g_auth = WIFI_MANAGER_AUTH_UNKNOWN;
 static wifi_manager_ap_crypto_type_e g_crypto = WIFI_MANAGER_CRYPTO_UNKNOWN;
-static sem_t g_sig = SEM_INITIALIZER(0);
-
-#define WIFITEST_SIGNAL                                          \
-	do {                                                         \
-		sem_post(&g_sig);                      \
-		printf("%s: T%d send signal\n", __FUNCTION__, getpid()); \
-	} while (0)
-
-#define WIFITEST_WAIT                                            \
-	do {                                                         \
-		printf("%s: T%d wait signal\n", __FUNCTION__, getpid()); \
-		sem_wait(&g_sig);                      \
-	} while (0)
 
 void wifi_sta_connected(wifi_manager_cb_msg_s msg, void *arg);	  // in station mode, connected to ap
 void wifi_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg); // in station mode, disconnected from ap
@@ -84,7 +82,11 @@ static wifi_manager_cb_s wifi_dup_callbacks = {
 
 void wifi_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WIFITEST_SIGNAL;
+  int res = WEVT_CONNECTED;
+  if (msg.res != WIFI_MANAGER_SUCCESS) {
+    res = WEVT_CONNFAIL;
+  }
+  WMBOX_SIGNAL(res, g_queue);
 }
 
 void wifi_sta_dup_connected(wifi_manager_cb_msg_s msg, void *arg)
@@ -94,7 +96,7 @@ void wifi_sta_dup_connected(wifi_manager_cb_msg_s msg, void *arg)
 
 void wifi_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
-	WIFITEST_SIGNAL;
+  WMBOX_SIGNAL(WEVT_DISCONNECTED, g_queue);
 }
 
 void wifi_sta_dup_disconnected(wifi_manager_cb_msg_s msg, void *arg)
@@ -108,7 +110,7 @@ void wifi_scan_ap_done(wifi_manager_cb_msg_s msg, void *arg)
 	 * It will be deleted soon eventually as you exit this function.
 	 */
 	if (msg.res != WIFI_MANAGER_SUCCESS || !msg.scanlist) {
-		WIFITEST_SIGNAL;
+		WMBOX_SIGNAL(WEVT_SCAN_FAIL, g_queue);
 		return;
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = msg.scanlist;
@@ -118,7 +120,7 @@ void wifi_scan_ap_done(wifi_manager_cb_msg_s msg, void *arg)
 			   wifi_scan_iter->channel, wifi_scan_iter->phy_mode);
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
-	WIFITEST_SIGNAL;
+	WMBOX_SIGNAL(WEVT_SCAN_SUCCESS, g_queue);
 }
 
 static void _set_ap_config(wifi_manager_ap_config_s *config,
@@ -136,6 +138,7 @@ static void _set_ap_config(wifi_manager_ap_config_s *config,
 	config->ap_crypto_type = crypto;
 }
 
+#ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
 static void _print_ap_config(wifi_manager_ap_config_s *config)
 {
 	printf("AP config: %s(%d), %s(%d), %d %d\n",
@@ -143,6 +146,7 @@ static void _print_ap_config(wifi_manager_ap_config_s *config)
 		   config->passphrase, config->passphrase_length,
 		   config->ap_auth_type, config->ap_crypto_type);
 }
+#endif
 
 static void _print_stats(wifi_manager_stats_s *stats)
 {
@@ -213,8 +217,8 @@ static void utc_wifimanager_set_mode_p(void)
 	ap_config.channel = g_softap_channel;
 	strncpy(ap_config.passphrase, g_softap_passphrase,
 			strlen(g_softap_passphrase) + 1);
-  _print_softap_config(&ap_config);
-	
+	_print_softap_config(&ap_config);
+
 	ret = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
 
 	TC_ASSERT_EQ("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS);
@@ -313,8 +317,12 @@ static void utc_wifimanager_connect_ap_p(void)
                  g_crypto);
 	/* current wifi mode is station, then this try will succeed */
 	ret = wifi_manager_connect_ap(&config);
-
 	TC_ASSERT_EQ("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS);
+  CONTROL_VDRIVER(VWIFI_CMD_GEN_EVT, LWNL_EVT_STA_CONNECTED, 0, 1000);
+  int conn_res = WEVT_FAIL;
+  WMBOX_WAIT(conn_res, g_queue);
+  TC_ASSERT_EQ("wifi_manager_connect_ap cb", conn_res, WEVT_CONNECTED);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -432,6 +440,59 @@ static void utc_wifimanager_scan_specific_ap_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_wifimanager_get_stats_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_get_stats(NULL);
+	TC_ASSERT_EQ("wifi_manager_get_stats_n", ret, WIFI_MANAGER_INVALID_ARGS);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifimanager_get_stats_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_INVALID_ARGS;
+	wifi_manager_stats_s stats;
+	ret = wifi_manager_get_stats(&stats);
+	if (ret == WIFI_MANAGER_SUCCESS) {
+    _print_stats(&stats);
+	}
+	TC_ASSERT_EQ("wifi_manager_get_stats_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifimanager_register_cb_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_register_cb(&wifi_dup_callbacks);
+	TC_ASSERT_EQ("wifi_manager_register_cb_n", ret, WIFI_MANAGER_DEINITIALIZED);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifimanager_register_cb_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_register_cb(&wifi_dup_callbacks);
+	TC_ASSERT_EQ("wifi_manager_register_cb_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifimanager_unregister_cb_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_unregister_cb(&wifi_dup_callbacks);
+	TC_ASSERT_EQ("wifi_manager_unregister_cb_n", ret, WIFI_MANAGER_FAIL);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifimanager_unregister_cb_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_unregister_cb(&wifi_dup_callbacks);
+	TC_ASSERT_EQ("wifi_manager_unregister_cb_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+#ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
 static void utc_wifimanager_save_config_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
@@ -537,58 +598,7 @@ static void utc_wifimanager_get_connected_config_p(void)
 	TC_ASSERT_EQ("wifi_manager_get_connected_config_p", ret, WIFI_MANAGER_SUCCESS);
 	TC_SUCCESS_RESULT();
 }
-
-static void utc_wifimanager_get_stats_n(void)
-{
-	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
-	ret = wifi_manager_get_stats(NULL);
-	TC_ASSERT_EQ("wifi_manager_get_stats_n", ret, WIFI_MANAGER_INVALID_ARGS);
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_wifimanager_get_stats_p(void)
-{
-	wifi_manager_result_e ret = WIFI_MANAGER_INVALID_ARGS;
-	wifi_manager_stats_s stats;
-	ret = wifi_manager_get_stats(&stats);
-	if (ret == WIFI_MANAGER_SUCCESS) {
-    _print_stats(&stats);
-	}
-	TC_ASSERT_EQ("wifi_manager_get_stats_p", ret, WIFI_MANAGER_SUCCESS);
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_wifimanager_register_cb_n(void)
-{
-	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
-	ret = wifi_manager_register_cb(&wifi_dup_callbacks);
-	TC_ASSERT_EQ("wifi_manager_register_cb_n", ret, WIFI_MANAGER_DEINITIALIZED);
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_wifimanager_register_cb_p(void)
-{
-	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
-	ret = wifi_manager_register_cb(&wifi_dup_callbacks);
-	TC_ASSERT_EQ("wifi_manager_register_cb_p", ret, WIFI_MANAGER_SUCCESS);
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_wifimanager_unregister_cb_n(void)
-{
-	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
-	ret = wifi_manager_unregister_cb(&wifi_dup_callbacks);
-	TC_ASSERT_EQ("wifi_manager_unregister_cb_n", ret, WIFI_MANAGER_FAIL);
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_wifimanager_unregister_cb_p(void)
-{
-	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
-	ret = wifi_manager_unregister_cb(&wifi_dup_callbacks);
-	TC_ASSERT_EQ("wifi_manager_unregister_cb_p", ret, WIFI_MANAGER_SUCCESS);
-	TC_SUCCESS_RESULT();
-}
+#endif //CONFIG_WIFI_MANAGER_SAVE_CONFIG
 
 int wifi_manager_utc(int argc, FAR char *argv[])
 {
@@ -611,28 +621,23 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	 * Otherwise, you will get failed.
 	 */
 	utc_wifimanager_connect_ap_n(); // try to connect to ap in softap mode
-	utc_wifimanager_get_connected_config_n();
 	utc_wifimanager_connect_ap_p(); // change to station mode and try to connect to ap
 
-	WIFITEST_WAIT;
-
-	sleep(5);
+#ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
+	utc_wifimanager_get_connected_config_n();
 	utc_wifimanager_get_connected_config_p();
-
 	utc_wifimanager_save_config_n();
 	utc_wifimanager_get_config_n();
 	utc_wifimanager_remove_config_n();
 	utc_wifimanager_save_config_p(); // save correct wifi config
 	utc_wifimanager_get_config_p();
 	utc_wifimanager_remove_config_p();
+#endif
 
-	utc_wifimanager_unregister_cb_n(); // nothing to unregister
+  utc_wifimanager_unregister_cb_n(); // nothing to unregister
 	utc_wifimanager_register_cb_p();
 
 	utc_wifimanager_disconnect_ap_p();
-
-	WIFITEST_WAIT;
-
 	utc_wifimanager_disconnect_ap_n(); //  Should be run after positive tc, that is, the second disconnect gets failed.
 	utc_wifimanager_unregister_cb_p();
 
@@ -641,12 +646,8 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 
 	utc_wifimanager_scan_ap_n(); // Get failed becasue there is no callback hander for scan results
 	utc_wifimanager_scan_specific_ap_n();
-
 	utc_wifimanager_scan_ap_p(); // Reinitialized wifi manager with the callback hander for scan results
-	WIFITEST_WAIT;
-
 	utc_wifimanager_scan_specific_ap_p();
-	WIFITEST_WAIT;
 
 	utc_wifimanager_get_stats_n();
 	utc_wifimanager_get_stats_p();
@@ -664,6 +665,7 @@ int main(int argc, FAR char *argv[])
 int utc_wifimanager_main(int argc, char *argv[])
 #endif
 {
+  g_queue = wifi_mbox_init();
   g_ssid = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID;
   g_passphrase = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE;
   g_softap_ssid = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID;
@@ -671,6 +673,7 @@ int utc_wifimanager_main(int argc, char *argv[])
   g_softap_channel = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_CHANNEL;
   g_auth = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_AUTHENTICATION;
   g_crypto = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_CRYPTO;
+
   int ssid_len = strlen(g_ssid);
 	int passphrase_len = strlen(g_passphrase);
 	int softap_ssid_len = strlen(g_softap_ssid);
@@ -683,6 +686,8 @@ int utc_wifimanager_main(int argc, char *argv[])
 	}
 
 	wifi_manager_utc(argc, argv);
+
+  wifi_mbox_deinit(g_queue);
 
 	return 0;
 }
