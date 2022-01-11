@@ -414,7 +414,7 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	return ret;
 }
 
-int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
+int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32_t ap_channel)
 {
 	int ret;
 
@@ -426,6 +426,7 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 	int key_id = 0;
 	void *semaphore;
 	int security_retry_count = 0;
+	uint8_t pscan_config;
 
 	trwifi_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
 	ssid = ap_connect_config->ssid;
@@ -495,6 +496,15 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg)
 	if (wifi_on(RTW_MODE_STA) < 0) {
 		ndbg("\n\rERROR: Wifi on failed!");
 		return -1;
+	}
+
+	if ((ap_channel >= 1) && (ap_channel <= 13)) {
+		pscan_config = PSCAN_ENABLE | PSCAN_FAST_SURVEY;
+		ret = wifi_set_pscan_chan((uint8_t *)&ap_channel, &pscan_config, 1);
+
+		if (ret < 0) {
+			RTW_API_INFO("\n\rset pscan failed");
+		}
 	}
 
 	ret = wifi_connect(ssid,
