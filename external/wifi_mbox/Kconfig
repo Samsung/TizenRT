@@ -1,0 +1,5 @@
+config WIFI_MBOX
+	bool "Wifi message box"
+	default n
+	---help---
+		Enable wi-fi message box to pass message from callback to main thread
