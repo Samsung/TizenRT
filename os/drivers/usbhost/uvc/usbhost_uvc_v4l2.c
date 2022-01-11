@@ -139,7 +139,7 @@ static void uvc_reduce_fraction(uint32_t *ntor, uint32_t *dtor)
  * Name: uvc_convert_interval
  *
  * Description:
- *   This is a helper function to calculate frame interval from it numerator &
+ *   This is a helper function to calculate frame interval from it's numerator &
  *   denominator.
  *
  * Input Parameters:
