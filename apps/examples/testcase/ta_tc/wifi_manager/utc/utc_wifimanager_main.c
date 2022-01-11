@@ -28,18 +28,25 @@
 #define WIFI_PROFILE_PATH "/mnt/"
 #define WIFI_PROFILE_FILENAME_INTERNAL "wifi_connected.conf"
 
-static sem_t g_wifi_manager_test_sem = SEM_INITIALIZER(0);
+static char *g_ssid = NULL;
+static char *g_passphrase = NULL;
+static char *g_softap_ssid = NULL;
+static char *g_softap_passphrase = NULL;
+static int g_softap_channel = -1;
+static wifi_manager_ap_auth_type_e g_auth = WIFI_MANAGER_AUTH_UNKNOWN;
+static wifi_manager_ap_crypto_type_e g_crypto = WIFI_MANAGER_CRYPTO_UNKNOWN;
+static sem_t g_sig = SEM_INITIALIZER(0);
 
 #define WIFITEST_SIGNAL                                          \
 	do {                                                         \
-		sem_post(&g_wifi_manager_test_sem);                      \
+		sem_post(&g_sig);                      \
 		printf("%s: T%d send signal\n", __FUNCTION__, getpid()); \
 	} while (0)
 
 #define WIFITEST_WAIT                                            \
 	do {                                                         \
 		printf("%s: T%d wait signal\n", __FUNCTION__, getpid()); \
-		sem_wait(&g_wifi_manager_test_sem);                      \
+		sem_wait(&g_sig);                      \
 	} while (0)
 
 void wifi_sta_connected(wifi_manager_cb_msg_s msg, void *arg);	  // in station mode, connected to ap
@@ -114,6 +121,29 @@ void wifi_scan_ap_done(wifi_manager_cb_msg_s msg, void *arg)
 	WIFITEST_SIGNAL;
 }
 
+static void _set_ap_config(wifi_manager_ap_config_s *config,
+                           char *ssid,
+                           char *passphrase,
+                           wifi_manager_ap_auth_type_e auth,
+                           wifi_manager_ap_crypto_type_e crypto)
+{
+  config->ssid_length = strlen(ssid);
+	config->passphrase_length = strlen(passphrase);
+	strncpy(config->ssid, ssid, config->ssid_length + 1);
+	strncpy(config->passphrase, passphrase,
+			config->passphrase_length + 1);
+	config->ap_auth_type = auth;
+	config->ap_crypto_type = crypto;
+}
+
+static void _print_ap_config(wifi_manager_ap_config_s *config)
+{
+	printf("AP config: %s(%d), %s(%d), %d %d\n",
+		   config->ssid, config->ssid_length,
+		   config->passphrase, config->passphrase_length,
+		   config->ap_auth_type, config->ap_crypto_type);
+}
+
 static void utc_wifimanager_init_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
@@ -143,11 +173,11 @@ static void utc_wifimanager_set_mode_n(void)
 	TC_ASSERT_EQ("wifi_manager_set_mode", ret, WIFI_MANAGER_INVALID_ARGS);
 
 	wifi_manager_softap_config_s ap_config;
-	strncpy(ap_config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID) + 1);
-	ap_config.channel = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_CHANNEL;
-	strncpy(ap_config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE) + 1);
+	strncpy(ap_config.ssid, g_softap_ssid,
+			strlen(g_softap_ssid) + 1);
+	ap_config.channel = g_softap_channel;
+	strncpy(ap_config.passphrase, g_softap_passphrase,
+			strlen(g_softap_passphrase) + 1);
 
 	ret = wifi_manager_set_mode(WIFI_NONE, &ap_config);
 
@@ -160,13 +190,16 @@ static void utc_wifimanager_set_mode_p(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
 	wifi_manager_softap_config_s ap_config;
-	strncpy(ap_config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID) + 1);
-	ap_config.channel = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_CHANNEL;
-	strncpy(ap_config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE) + 1);
-	printf("SoftAP config: %s(%d), %s(%d), %d\n", ap_config.ssid, strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID),
-		   ap_config.passphrase, strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE), ap_config.channel);
+	strncpy(ap_config.ssid, g_softap_ssid,
+			strlen(g_softap_ssid) + 1);
+	ap_config.channel = g_softap_channel;
+	strncpy(ap_config.passphrase, g_softap_passphrase,
+			strlen(g_softap_passphrase) + 1);
+	printf("SoftAP config: %s(%d), %s(%d), %d\n", ap_config.ssid,
+		   strlen(g_softap_ssid),
+		   ap_config.passphrase,
+		   strlen(g_softap_passphrase),
+		   ap_config.channel);
 
 	ret = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
 
@@ -202,21 +235,23 @@ static void utc_wifimanager_get_mode_p(void)
 	TC_ASSERT_EQ("wifi_manager_get_info", info.mode, STA_MODE);
 
 	wifi_manager_softap_config_s ap_config;
-	strncpy(ap_config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID) + 1);
-	ap_config.channel = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_CHANNEL;
-	strncpy(ap_config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE) + 1);
-	ret = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
+	strncpy(ap_config.ssid,
+			g_softap_ssid,
+			strlen(g_softap_ssid) + 1);
+	ap_config.channel = g_softap_channel;
+	strncpy(ap_config.passphrase,
+			g_softap_passphrase,
+			strlen(g_softap_passphrase) + 1);
 
+	ret = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
 	TC_ASSERT_EQ("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS);
 
 	ret = wifi_manager_get_info(&info);
-
 	TC_ASSERT_EQ("wifi_manager_get_info", ret, WIFI_MANAGER_SUCCESS);
 	TC_ASSERT_EQ("wifi_manager_get_info", info.mode, SOFTAP_MODE);
 
-	ret_cmp = strncmp(info.ssid, ap_config.ssid, strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID));
+	ret_cmp = strncmp(info.ssid, ap_config.ssid,
+					  strlen(g_softap_ssid));
 	TC_ASSERT_EQ("wifi_manager_get_mode", ret_cmp, 0);
 
 	TC_SUCCESS_RESULT();
@@ -231,18 +266,17 @@ static void utc_wifimanager_connect_ap_n(void)
 	 * so that you do not need to change the ap configuration
 	 */
 	wifi_manager_ap_config_s config;
-	config.ssid_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID);
-	config.passphrase_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE);
-	strncpy(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, config.ssid_length + 1);
-	strncpy(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE, config.passphrase_length + 1);
-	config.ap_auth_type = (wifi_manager_ap_auth_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_AUTHENTICATION;
-	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_CRYPTO;
+  _set_ap_config(&config,
+                 g_ssid,
+                 g_passphrase,
+                 g_auth,
+                 g_crypto);
 
 	/* current wifi mode is softap, then this try will fail */
 	ret = wifi_manager_connect_ap(&config);
-
 	TC_ASSERT_EQ("wifi_manager_connect_ap", ret, WIFI_MANAGER_FAIL);
-	TC_SUCCESS_RESULT();
+
+  TC_SUCCESS_RESULT();
 }
 
 static void utc_wifimanager_connect_ap_p(void)
@@ -258,14 +292,11 @@ static void utc_wifimanager_connect_ap_p(void)
 	 * Otherwise, this function will fail.
 	 */
 	wifi_manager_ap_config_s config;
-	config.ssid_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID);
-	config.passphrase_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE);
-	strncpy(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, config.ssid_length + 1);
-	strncpy(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE, config.passphrase_length + 1);
-	config.ap_auth_type = (wifi_manager_ap_auth_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_AUTHENTICATION;
-	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_CRYPTO;
-	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
-
+  _set_ap_config(&config,
+                 g_ssid,
+                 g_passphrase,
+                 g_auth,
+                 g_crypto);
 	/* current wifi mode is station, then this try will succeed */
 	ret = wifi_manager_connect_ap(&config);
 
@@ -340,8 +371,8 @@ static void utc_wifimanager_scan_specific_ap_n(void)
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
 	wifi_manager_ap_config_s config;
-	config.ssid_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID);
-	strncpy(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, config.ssid_length + 1);
+	config.ssid_length = strlen(g_ssid);
+	strncpy(config.ssid, g_ssid, config.ssid_length + 1);
 	memset(config.passphrase, 0, WIFIMGR_PASSPHRASE_LEN + 1);
 	config.passphrase_length = 0;
 	config.ap_auth_type = 0;
@@ -374,8 +405,8 @@ static void utc_wifimanager_scan_specific_ap_p(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
 	wifi_manager_ap_config_s config;
-	config.ssid_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID);
-	strncpy(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, config.ssid_length + 1);
+	config.ssid_length = strlen(g_ssid);
+	strncpy(config.ssid, g_ssid, config.ssid_length + 1);
 	memset(config.passphrase, 0, WIFIMGR_PASSPHRASE_LEN + 1);
 	config.passphrase_length = 0;
 	config.ap_auth_type = 0;
@@ -401,13 +432,12 @@ static void utc_wifimanager_save_config_p(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
 	wifi_manager_ap_config_s config;
-	config.ssid_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID);
-	config.passphrase_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE);
-	strncpy(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, config.ssid_length + 1);
-	strncpy(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE, config.passphrase_length + 1);
-	config.ap_auth_type = (wifi_manager_ap_auth_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_AUTHENTICATION;
-	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_CRYPTO;
-	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+  _set_ap_config(&config,
+                 g_ssid,
+                 g_passphrase,
+                 g_auth,
+                 g_crypto);
+	_print_ap_config(&config);
 
 	ret = wifi_manager_save_config(&config);
 
@@ -426,8 +456,8 @@ static void utc_wifimanager_get_config_p(void)
 		printf("SSID: %s\n", config.ssid);
 		printf("SECURITY TYPE: %d\n", config.ap_auth_type);
 		printf("====================================\n");
-		res = strncmp(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, strlen(config.ssid));
-		res = strncmp(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE, strlen(config.passphrase));
+		res = strncmp(config.ssid, g_ssid, strlen(config.ssid));
+		res = strncmp(config.passphrase, g_passphrase, strlen(config.passphrase));
 		if (res < 0) {
 			ret = WIFI_MANAGER_FAIL;
 		}
@@ -447,8 +477,8 @@ static void utc_wifimanager_get_config_n(void)
 		printf("SSID: %s\n", config.ssid);
 		printf("SECURITY TYPE: %d\n", config.ap_auth_type);
 		printf("====================================\n");
-		res = strncmp(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, strlen(config.ssid));
-		res = strncmp(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE, strlen(config.passphrase));
+		res = strncmp(config.ssid, g_ssid, strlen(config.ssid));
+		res = strncmp(config.passphrase, g_passphrase, strlen(config.passphrase));
 		if (res < 0) {
 			ret = WIFI_MANAGER_FAIL;
 		}
@@ -584,7 +614,6 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	 * and utc_wifimanager_connect_ap_p() before trying these two tests
 	 * Otherwise, you will get failed.
 	 */
-
 	utc_wifimanager_connect_ap_n(); // try to connect to ap in softap mode
 	utc_wifimanager_get_connected_config_n();
 	utc_wifimanager_connect_ap_p(); // change to station mode and try to connect to ap
@@ -639,10 +668,17 @@ int main(int argc, FAR char *argv[])
 int utc_wifimanager_main(int argc, char *argv[])
 #endif
 {
-	int ssid_len = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID);
-	int passphrase_len = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE);
-	int softap_ssid_len = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID);
-	int softap_passphrase_len = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE);
+  g_ssid = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID;
+  g_passphrase = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE;
+  g_softap_ssid = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID;
+  g_softap_passphrase = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_PASSPHRASE;
+  g_softap_channel = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_CHANNEL;
+  g_auth = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_AUTHENTICATION;
+  g_crypto = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_CRYPTO;
+  int ssid_len = strlen(g_ssid);
+	int passphrase_len = strlen(g_passphrase);
+	int softap_ssid_len = strlen(g_softap_ssid);
+	int softap_passphrase_len = strlen(g_softap_passphrase);
 
 	if ((ssid_len > 31) || (softap_ssid_len > 31) || (passphrase_len > 63) || (softap_passphrase_len > 63)) {
 		printf("AP or SoftAP configuration fails: too long ssid or passphrase\n");
