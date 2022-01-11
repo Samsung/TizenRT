@@ -25,6 +25,9 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#ifdef CONFIG_BINARY_SIGNING
+#include <tinyara/signature.h>
+#endif
 #include <tinyara/mm/mm.h>
 #include <tinyara/binary_manager.h>
 
@@ -123,6 +126,17 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		bmdbg("Failed to open %s: %d, errno %d\n", devpath, ret, errno);
 		return BINMGR_OPERATION_FAIL;
 	}
+
+#ifdef CONFIG_BINARY_SIGNING
+	if (type != BINARY_KERNEL) {
+		ret = lseek(fd, USER_SIGN_PREPEND_SIZE, SEEK_SET);
+		if (ret < 0) {
+			bmdbg("Failed to set offset to skip signing header, errno : %d\n", errno);
+			ret = BINMGR_OPERATION_FAIL;
+			goto errout_with_fd;
+		}
+	}
+#endif
 
 	/* Read the binary header */
 	ret = read(fd, (FAR uint8_t *)header_data, header_size);

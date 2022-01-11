@@ -37,6 +37,9 @@
 #include <tinyara/mm/mm.h>
 #include <tinyara/binary_manager.h>
 #include <tinyara/reboot_reason.h>
+#ifdef CONFIG_BINARY_SIGNING
+#include <tinyara/signature.h>
+#endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "sched/sched.h"
@@ -90,17 +93,18 @@ binmgr_kinfo_t *binary_manager_get_kdata(void)
 	return &kernel_info;	
 }
 
-void binary_manager_register_kpart(int part_num, int part_size)
+void binary_manager_register_kpart(int part_num, int part_size, int part_offset)
 {
-	if (part_num < 0 || part_size <= 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
-		bmdbg("ERROR: Invalid part info : num %d, size %d\n", part_num, part_size);
+	if (part_num < 0 || part_size <= 0 || part_offset < 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
+		bmdbg("ERROR: Invalid part info : num %d, size %d, offset %d\n", part_num, part_size, part_offset);
 		return;
 	}
 
 	kernel_info.part_info[kernel_info.part_count].size = part_size;
 	kernel_info.part_info[kernel_info.part_count].devnum = part_num;
+	kernel_info.part_info[kernel_info.part_count].address = CONFIG_FLASH_START_ADDR + part_offset;
 
-	bmvdbg("[KERNEL %d] part num %d size %d\n", kernel_info.part_count, part_num, part_size);
+	bmvdbg("[KERNEL %d] part num %d size %d, address 0x%x\n", kernel_info.part_count, part_num, part_size, CONFIG_FLASH_START_ADDR + part_offset);
 
 	kernel_info.part_count++;
 }
@@ -145,11 +149,25 @@ bool binary_manager_scan_kbin(void)
 int binary_manager_check_kernel_update(void)
 {
 	int ret;
+	int inactive_partidx;
 	char filepath[BINARY_PATH_LEN];
 	kernel_binary_header_t header_data;
 
+	inactive_partidx = kernel_info.inuse_idx ^ 1;
+
+#ifdef CONFIG_BINARY_SIGNING
+	/* Check signature */
+	ret = up_verify_kernelsignature(kernel_info.part_info[inactive_partidx].address);
+	if (ret == OK) {
+		bmvdbg("Kernel Signature Checking Success\n");
+	} else {
+		bmdbg("Invalid Kernel Signature, address : 0x%x\n", kernel_info.part_info[inactive_partidx].address);
+		return BINMGR_NOT_FOUND;
+	}
+#endif
+
 	/* Verify kernel binary on the partition without running binary */
-	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[kernel_info.inuse_idx ^ 1].devnum);
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[inactive_partidx].devnum);
 	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, true);
 	if (ret == BINMGR_OK) {
 		if (kernel_info.version < header_data.version) {
@@ -237,11 +255,11 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx)
  *	 This function registers a partition of user binaries.
  *
  ****************************************************************************/
-void binary_manager_register_upart(char *name, int part_num, int part_size)
+void binary_manager_register_upart(char *name, int part_num, int part_size, int part_offset)
 {
 	int bin_idx;
 
-	if (part_num < 0 || part_size <= 0 || g_bin_count >= USER_BIN_COUNT) {
+	if (part_num < 0 || part_size <= 0 || g_bin_count >= USER_BIN_COUNT || part_offset < 0) {
 		bmdbg("ERROR: Invalid part info : num %d, size %d, registered user count: %u\n", part_num, part_size, g_bin_count);
 		return;
 	}
@@ -252,7 +270,8 @@ void binary_manager_register_upart(char *name, int part_num, int part_size)
 			BIN_COUNT(bin_idx)++;
 			BIN_PARTNUM(bin_idx, 1) = part_num;
 			BIN_PARTSIZE(bin_idx, 1) = part_size;
-			bmvdbg("[USER%d : 2] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1));
+			BIN_PARTADDR(bin_idx, 1) = CONFIG_FLASH_START_ADDR + part_offset;
+			bmvdbg("[USER%d : 2] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1), BIN_PARTADDR(bin_idx, 1));
 			return;
 		}
 	}
@@ -274,11 +293,12 @@ void binary_manager_register_upart(char *name, int part_num, int part_size)
 	BIN_STATE(bin_idx) = BINARY_INACTIVE;
 	BIN_PARTNUM(bin_idx, 0) = part_num;
 	BIN_PARTSIZE(bin_idx, 0) = part_size;
+	BIN_PARTADDR(bin_idx, 0) = CONFIG_FLASH_START_ADDR + part_offset;
 	strncpy(BIN_NAME(bin_idx), name, BIN_NAME_MAX - 1);
 	BIN_NAME(bin_idx)[BIN_NAME_MAX - 1] = '\0';
 	sq_init(&BIN_CBLIST(bin_idx));
 
-	bmvdbg("[USER%d : 1] %s size %d num %d\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 0), BIN_PARTNUM(bin_idx, 0));
+	bmvdbg("[USER%d : 1] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 0), BIN_PARTNUM(bin_idx, 0), BIN_PARTADDR(bin_idx, 0));
 }
 
 /****************************************************************************
@@ -367,6 +387,16 @@ int binary_manager_check_user_update(int bin_idx)
 
 	bmvdbg("Checking [%d] current version %d, part_idx %d\n", bin_idx, running_ver, part_idx);
 
+#ifdef CONFIG_BINARY_SIGNING
+	/* Check signature */
+	ret = up_verify_usersignature(BIN_PARTADDR(bin_idx, part_idx));
+	if (ret == OK) {
+		bmvdbg("%s Signature Checking Success\n", BIN_NAME(bin_idx));
+	} else {
+		bmdbg("Invalid Signature, name : %s, address : 0x%x\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
+		return BINMGR_NOT_FOUND;
+	}
+#endif
 	snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
 	if (bin_idx == BM_CMNLIB_IDX) {
 		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, true);

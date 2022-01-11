@@ -178,7 +178,9 @@ endif
 ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
 CHIP_CSRCS += amebad_reboot_reason.c
 endif
-
+ifeq ($(CONFIG_BINARY_SIGNING),y)
+CHIP_CSRCS += amebad_signature.c
+endif
 ifeq ($(CONFIG_AMEBAD_BLE),y)
 ifeq ($(CONFIG_ARCH_FPU),y)
 EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/lib_btgap_fpu.a
