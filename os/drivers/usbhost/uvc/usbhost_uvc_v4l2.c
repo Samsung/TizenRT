@@ -49,15 +49,12 @@ static int uvc_do_halfpush(FAR void *video_private, bool enable);
 static int uvc_set_buf(FAR void *video_private, enum v4l2_buf_type type, uint32_t bufaddr, uint32_t bufsize);
 static int uvc_cancel_dma(FAR void *video_private);
 static int uvc_get_range_of_fmt(FAR void *video_private, FAR struct v4l2_fmtdesc *format);
-static int uvc_get_range_of_framesize(FAR void *video_private, FAR struct v4l2_frmsizeenum
-									  *frmsize);
+static int uvc_get_range_of_framesize(FAR void *video_private, FAR struct v4l2_frmsizeenum *frmsize);
 static int uvc_try_format(FAR void *video_private, FAR struct v4l2_format *format);
 static int uvc_set_format(FAR void *video_private, FAR struct v4l2_format *format);
-static int uvc_get_range_of_frameinterval(FAR void *video_private, FAR struct v4l2_frmivalenum
-		*frmival);
+static int uvc_get_range_of_frameinterval(FAR void *video_private, FAR struct v4l2_frmivalenum *frmival);
 static int uvc_set_frameinterval(FAR void *video_private, FAR struct v4l2_streamparm *parm);
-static int uvc_get_range_of_ctrlvalue(FAR void *video_private, FAR struct v4l2_query_ext_ctrl
-									  *range);
+static int uvc_get_range_of_ctrlvalue(FAR void *video_private, FAR struct v4l2_query_ext_ctrl *range);
 static int uvc_get_menu_of_ctrlvalue(FAR void *video_private, FAR struct v4l2_querymenu *menu);
 static int uvc_get_ctrlvalue(FAR void *video_private, uint16_t ctrl_class, FAR struct v4l2_ext_control *control);
 static int uvc_set_ctrlvalue(FAR void *video_private, uint16_t ctrl_class, FAR struct v4l2_ext_control *control);
@@ -142,7 +139,7 @@ static void uvc_reduce_fraction(uint32_t *ntor, uint32_t *dtor)
  * Name: uvc_convert_interval
  *
  * Description:
- *   This is a helper function to calulate frame interval from it numerator &
+ *   This is a helper function to calculate frame interval from it's numerator &
  *   denominator.
  *
  * Input Parameters:

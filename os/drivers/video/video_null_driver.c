@@ -171,7 +171,7 @@ struct dummy_null_priv_s {
 	uint32_t *reqbuff;			/* User request buffer */
 	uint32_t reqsize;			/* User request buffer size */
 	uint32_t *trfbuff;			/* Transfer buffer */
-	uint32_t trfsize;			/* Data recevied so far from camera */
+	uint32_t trfsize;			/* Data received so far from camera */
 	bool reqcancel;				/* Request status */
 	struct v4l2_format_s *def_format;	/* Reference to default format */
 	struct v4l2_format_s *cur_format;	/* Reference to current format */
@@ -425,7 +425,7 @@ static void video_null_reduce_fraction(uint32_t *ntor, uint32_t *dtor)
  * Name: video_null_convert_interval
  *
  * Description:
- *   This is a helper function to calulate frame interval from it numerator &
+ *   This is a helper function to calculate frame interval from it's numerator &
  *   denominator.
  *
  * Input Parameters:
@@ -460,7 +460,7 @@ static uint32_t video_null_convert_interval(uint32_t ntor, uint32_t dtor)
  *
  * Input Parameters:
  *   frame - Pointer to frame interval.
- *   interval - Interval to to match with frame.
+ *   interval - Interval to match with frame.
  *
  * Returned Values:
  *   OK on success, appropriate error code on failures

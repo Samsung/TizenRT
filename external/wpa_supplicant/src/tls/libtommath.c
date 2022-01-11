@@ -1240,7 +1240,7 @@ static int mp_grow(mp_int *a, int size)
 		 * in case the operation failed we don't want
 		 * to overwrite the dp member of a.
 		 */
-		tmp = OPT_CAST(mp_digit) XREALLOC(a->dp, sizeof(mp_digit) * size);
+		tmp = OPT_CAST(mp_digit)XREALLOC(a->dp, sizeof(mp_digit) * size);
 		if (tmp == NULL) {
 			/* reallocation failed but "a" is still valid [can be freed] */
 			return MP_MEM;
@@ -2183,7 +2183,7 @@ static int mp_2expt(mp_int *a, int b)
 }
 
 /* pre-calculate the value required for Barrett reduction
- * For a given modulus "b" it calulates the value required in "a"
+ * For a given modulus "b" it calculates the value required in "a"
  */
 static int mp_reduce_setup(mp_int *a, mp_int *b)
 {

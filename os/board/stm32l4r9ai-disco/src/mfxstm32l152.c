@@ -465,7 +465,7 @@ void mfxstm32l152_IO_Start(uint16_t DeviceAddr, uint32_t IO_Pin)
   /* AGPIO[0..3] can be either IDD or GPIO */
   /* AGPIO[4..7] can be either TS or GPIO */
   /* if IDD or TS are enabled no matter the value this bit GPIO are not available for those pins */
-  /*  however the MFX will waste some cycles to to handle these potential GPIO (pooling, etc) */
+  /*  however the MFX will waste some cycles to handle these potential GPIO (pooling, etc) */
   /* so if IDD and TS are both active it is better to let ALTERNATE off (0) */
   /* if however IDD or TS are not connected then set it on gives more GPIOs availability */
   /* remind that AGPIO are less efficient then normal GPIO (They use pooling rather then EXTI */
@@ -945,7 +945,7 @@ void mfxstm32l152_IO_EnableAF(uint16_t DeviceAddr)
   /* AGPIO[0..3] can be either IDD or GPIO */
   /* AGPIO[4..7] can be either TS or GPIO */
   /* if IDD or TS are enabled no matter the value this bit GPIO are not available for those pins */
-  /*  however the MFX will waste some cycles to to handle these potential GPIO (pooling, etc) */
+  /*  however the MFX will waste some cycles to handle these potential GPIO (pooling, etc) */
   /* so if IDD and TS are both active it is better to let ALTERNATE disabled (0) */
   /* if however IDD or TS are not connected then set it on gives more GPIOs availability */
   /* remind that AGPIO are less efficient then normal GPIO (they use pooling rather then EXTI) */
@@ -971,7 +971,7 @@ void mfxstm32l152_IO_EnableAF(uint16_t DeviceAddr)
   /* AGPIO[0..3] can be either IDD or GPIO */
   /* AGPIO[4..7] can be either TS or GPIO */
   /* if IDD or TS are enabled no matter the value this bit GPIO are not available for those pins */
-  /*  however the MFX will waste some cycles to to handle these potential GPIO (pooling, etc) */
+  /*  however the MFX will waste some cycles to handle these potential GPIO (pooling, etc) */
   /* so if IDD and TS are both active it is better to let ALTERNATE disabled (0) */
   /* if however IDD or TS are not connected then set it on gives more GPIOs availability */
   /* remind that AGPIO are less efficient then normal GPIO (they use pooling rather then EXTI) */

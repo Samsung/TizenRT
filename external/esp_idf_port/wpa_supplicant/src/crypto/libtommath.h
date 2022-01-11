@@ -2289,7 +2289,7 @@ mp_2expt (mp_int * a, int b)
 
 
 /* pre-calculate the value required for Barrett reduction
- * For a given modulus "b" it calulates the value required in "a"
+ * For a given modulus "b" it calculates the value required in "a"
  */
 static int 
 mp_reduce_setup (mp_int * a, mp_int * b)

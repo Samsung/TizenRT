@@ -178,7 +178,7 @@ class _NestedDescriptorBase(DescriptorBase):
       proto: An empty proto instance from descriptor_pb2.
 
     Raises:
-      Error: If self couldnt be serialized, due to to few constructor arguments.
+      Error: If self couldnt be serialized, due to few constructor arguments.
     """
     if (self.file is not None and
         self._serialized_start is not None and

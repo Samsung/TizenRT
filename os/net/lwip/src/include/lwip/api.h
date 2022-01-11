@@ -186,7 +186,7 @@ enum netconn_state {
  * to call netconn_accept 3 times without being blocked.
  * Same thing for receive mbox.
  *
- * RCVMINUS events say: Your call to to a possibly blocking function is "acknowledged".
+ * RCVMINUS events say: Your call to a possibly blocking function is "acknowledged".
  * Socket implementation decrements the counter.
  *
  * For TX, there is no need to count, its merely a flag. SENDPLUS means you may send something.

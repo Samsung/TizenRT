@@ -123,7 +123,7 @@
  *
  * \par
  * If the CborConvertTagsToObjects option is active, then the tag and the
- * tagged value are converted to to a JSON object. Otherwise, if enabled, the
+ * tagged value are converted to a JSON object. Otherwise, if enabled, the
  * last (innermost) tag is stored in the metadata.
  *
  * \par Non-string keys in maps:
