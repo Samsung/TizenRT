@@ -144,6 +144,24 @@ static void _print_ap_config(wifi_manager_ap_config_s *config)
 		   config->ap_auth_type, config->ap_crypto_type);
 }
 
+static void _print_stats(wifi_manager_stats_s *stats)
+{
+	printf("=======================================================================\n");
+	printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
+	printf("%-8d%-12d%-11d%-10d", stats->connect, stats->connectfail, stats->disconnect, stats->reconnect);
+	printf("%-8d%-10d%-8d%-8d\n", stats->scan, stats->softap, stats->joined, stats->left);
+	printf("=======================================================================\n");
+}
+
+static void _print_softap_config(wifi_manager_softap_config_s *apconfig)
+{
+	printf("SoftAP config: %s(%d), %s(%d), %d\n", apconfig->ssid,
+		   strlen(apconfig->ssid),
+		   apconfig->passphrase,
+		   strlen(apconfig->passphrase),
+		   apconfig->channel);
+}
+
 static void utc_wifimanager_init_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
@@ -195,12 +213,8 @@ static void utc_wifimanager_set_mode_p(void)
 	ap_config.channel = g_softap_channel;
 	strncpy(ap_config.passphrase, g_softap_passphrase,
 			strlen(g_softap_passphrase) + 1);
-	printf("SoftAP config: %s(%d), %s(%d), %d\n", ap_config.ssid,
-		   strlen(g_softap_ssid),
-		   ap_config.passphrase,
-		   strlen(g_softap_passphrase),
-		   ap_config.channel);
-
+  _print_softap_config(&ap_config);
+	
 	ret = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
 
 	TC_ASSERT_EQ("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS);
@@ -452,10 +466,7 @@ static void utc_wifimanager_get_config_p(void)
 	wifi_manager_ap_config_s config;
 	ret = wifi_manager_get_config(&config);
 	if (ret == WIFI_MANAGER_SUCCESS) {
-		printf("====================================\n");
-		printf("SSID: %s\n", config.ssid);
-		printf("SECURITY TYPE: %d\n", config.ap_auth_type);
-		printf("====================================\n");
+    _print_ap_config(&config);
 		res = strncmp(config.ssid, g_ssid, strlen(config.ssid));
 		res = strncmp(config.passphrase, g_passphrase, strlen(config.passphrase));
 		if (res < 0) {
@@ -473,10 +484,7 @@ static void utc_wifimanager_get_config_n(void)
 	wifi_manager_ap_config_s config;
 	ret = wifi_manager_get_config(&config);
 	if (ret == WIFI_MANAGER_SUCCESS) {
-		printf("====================================\n");
-		printf("SSID: %s\n", config.ssid);
-		printf("SECURITY TYPE: %d\n", config.ap_auth_type);
-		printf("====================================\n");
+		_print_ap_config(&config);
 		res = strncmp(config.ssid, g_ssid, strlen(config.ssid));
 		res = strncmp(config.passphrase, g_passphrase, strlen(config.passphrase));
 		if (res < 0) {
@@ -512,11 +520,7 @@ static void utc_wifimanager_get_connected_config_n(void)
 
 	ret = wifi_manager_get_connected_config(&apconfig);
 	if (ret == WIFI_MANAGER_SUCCESS) {
-		printf("====================================\n");
-		printf("SSID: %s\n", apconfig.ssid);
-		printf("SECURITY TYPE: %d\n", apconfig.ap_auth_type);
-		printf("CYPTO TYPE: %d\n", apconfig.ap_crypto_type);
-		printf("====================================\n");
+    _print_ap_config(&apconfig);
 	}
 	TC_ASSERT_EQ("wifi_manager_get_connected_config_n", ret, WIFI_MANAGER_FAIL);
 	TC_SUCCESS_RESULT();
@@ -528,11 +532,7 @@ static void utc_wifimanager_get_connected_config_p(void)
 	wifi_manager_ap_config_s apconfig;
 	ret = wifi_manager_get_connected_config(&apconfig);
 	if (ret == WIFI_MANAGER_SUCCESS) {
-		printf("====================================\n");
-		printf("SSID: %s\n", apconfig.ssid);
-		printf("SECURITY TYPE: %d\n", apconfig.ap_auth_type);
-		printf("CYPTO TYPE: %d\n", apconfig.ap_crypto_type);
-		printf("====================================\n");
+    _print_ap_config(&apconfig);
 	}
 	TC_ASSERT_EQ("wifi_manager_get_connected_config_p", ret, WIFI_MANAGER_SUCCESS);
 	TC_SUCCESS_RESULT();
@@ -552,11 +552,7 @@ static void utc_wifimanager_get_stats_p(void)
 	wifi_manager_stats_s stats;
 	ret = wifi_manager_get_stats(&stats);
 	if (ret == WIFI_MANAGER_SUCCESS) {
-		printf("=======================================================================\n");
-		printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
-		printf("%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
-		printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
-		printf("=======================================================================\n");
+    _print_stats(&stats);
 	}
 	TC_ASSERT_EQ("wifi_manager_get_stats_p", ret, WIFI_MANAGER_SUCCESS);
 	TC_SUCCESS_RESULT();
