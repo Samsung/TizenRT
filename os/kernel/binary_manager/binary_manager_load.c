@@ -124,14 +124,14 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 			/* Set the data in table from header */
 			BIN_LOAD_ATTR(bin_idx) = *load_attr;
 			strncpy(BIN_NAME(bin_idx), load_attr->bin_name, BIN_NAME_MAX);
-			printf("Load success! [Name: %s] [Version: %d] [Partition: %s] %s\n", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx), GET_PARTNAME(BIN_USEIDX(bin_idx)), BINARY_COMP_TYPE);
+			printf("[Binary Loading] Load success! [Name: %s] [Version: %d] [Partition: %s] %s\n", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx), GET_PARTNAME(BIN_USEIDX(bin_idx)), BINARY_COMP_TYPE);
 			return OK;
 		} else if (errno == ENOMEM) {
 			/* Sleep for a moment to get available memory */
 			usleep(1000);
 		}
 		retry_count++;
-		printf("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
+		printf("[Binary Loading] Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
 	}
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp = load_attr->binp;
@@ -200,15 +200,15 @@ static int binary_manager_load(int bin_idx)
 			/* Check signature */
 			ret = up_verify_usersignature(BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 			if (ret == OK) {
-				printf("%s Signature Checking Success\n", BIN_NAME(bin_idx));
+				printf("[Binary Loading] %s Signature Checking Success\n", BIN_NAME(bin_idx));
 			} else {
-				printf("Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
+				printf("[Binary Loading] Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
-					bmdbg("Try to read another partition %d\n", BIN_USEIDX(bin_idx));
+					printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
-					bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
+					printf("[Binary Loading] No valid binary %s\n", BIN_NAME(bin_idx));
 					break;
 				}
 			}
@@ -224,14 +224,17 @@ static int binary_manager_load(int bin_idx)
 			{
 				ret = binary_manager_read_header(BINARY_USERAPP, devpath, &user_header_data, true);
 			}
-			if (ret != OK) {
+			if (ret == BINMGR_OK) {
+				printf("[Binary Loading] %s Header Checking Success\n", BIN_NAME(bin_idx));
+			} else {
+				printf("[Binary Loading] Invalid Header data, name : %s, devpath : %p\n", BIN_NAME(bin_idx), devpath);
 				if (--bin_count > 0) {
-					bmdbg("Failed to read header %s, try to read binary in another partition\n", devpath);
 					BIN_USEIDX(bin_idx) ^= 1;
+					printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					need_update_bp = true;
 					continue;
 				} else {
-					printf("Fail to load %s binary : No valid binary\n", BIN_NAME(bin_idx));
+					printf("[Binary Loading] No valid binary %s\n", BIN_NAME(bin_idx));
 					break;
 				}
 			}
@@ -267,6 +270,7 @@ static int binary_manager_load(int bin_idx)
 		}
 		load_attr.binp = binp;
 #endif
+
 		ret = binary_manager_load_binary(bin_idx, devpath, &load_attr);
 		if (ret == OK) {
 			if (need_update_bp) {
@@ -287,6 +291,10 @@ static int binary_manager_load(int bin_idx)
 		if (--bin_count > 0) {
 			/* Change index 0 to 1 and 1 to 0. */
 			BIN_USEIDX(bin_idx) ^= 1;
+			printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
+			need_update_bp = true;
+		} else {
+			printf("[Binary Loading] No valid binary %s\n", BIN_NAME(bin_idx));
 		}
 	} while (bin_count > 0);
 
@@ -459,14 +467,12 @@ static int loadingall_thread(int argc, char *argv[])
 	uint32_t bin_count;
 
 	if (!binary_manager_scan_ubin_all()) {
-		bmdbg("Failed to find valid binaries to load\n");
 		return BINMGR_OPERATION_FAIL;
 	}
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	ret = binary_manager_load(BM_CMNLIB_IDX);
 	if (ret < 0) {
-		bmdbg("Failed to load common binary, %d\n", ret);
 		return BINMGR_OPERATION_FAIL;
 	}
 #endif

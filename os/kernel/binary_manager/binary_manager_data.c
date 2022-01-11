@@ -328,7 +328,7 @@ bool binary_manager_scan_ubin_all(void)
 	for (bp_app_idx = 0; bp_app_idx < bp_data->app_count; bp_app_idx++) {
 		bin_idx = binary_manager_get_index_with_name(bp_data->app_data[bp_app_idx].name);
 		if (bin_idx < 0) {
-			bmdbg("Failed to find matched binary %s in binary table \n", bp_data->app_data[bp_app_idx].name);
+			printf("[Binary Scanning] Failed to find matched binary %s in binary table \n", bp_data->app_data[bp_app_idx].name);
 			continue;
 		}
 		BIN_BPIDX(bin_idx) = bp_app_idx;
@@ -345,14 +345,14 @@ bool binary_manager_scan_ubin_all(void)
 			/* Return true it there is at least one valid binary */
 			BIN_USEIDX(bin_idx) = part_idx;
 			BIN_VER(bin_idx, part_idx) = version;			
-			bmvdbg("[%d] part index %d, version %d\n", bin_idx, part_idx, version);
+			printf("[Binary Scanning] Found binary %s in partition %d, version %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx), version);
 			if (bin_idx != BM_CMNLIB_IDX) {
 				BIN_LOAD_PRIORITY(bin_idx, part_idx) = user_header_data.loading_priority;
 			}
 			/* Return true it there is at least one valid binary */
 			is_found = true;
 		} else {
-			bmdbg("Failed to find valid binary, %s\n", BIN_NAME(bin_idx));
+			printf("[Binary Scanning] Failed to find valid binary %s based on boot parameter. \n", BIN_NAME(bin_idx));
 		}
 	}
 

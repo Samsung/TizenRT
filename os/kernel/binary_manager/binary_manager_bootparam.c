@@ -83,7 +83,7 @@ static int binary_manager_open_bootparam(void)
 	char bp_devpath[BINARY_PATH_LEN];
 
 	if (g_bp_info.part_num < 0) {
-		bmdbg("Invalid Bootparam partition Num : %d\n", g_bp_info.part_num);
+		printf("[Bootparam Scanning] Invalid Bootparam partition Num : %d\n", g_bp_info.part_num);
 		return BINMGR_INVALID_PARAM;
 	}
 
@@ -91,7 +91,7 @@ static int binary_manager_open_bootparam(void)
 	snprintf(bp_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, g_bp_info.part_num);
 	fd = open(bp_devpath, O_RDWR, 0666);
 	if (fd < 0) {
-		bmdbg("ERROR: Get a fd of bootparam, errno %d\n", errno);
+		printf("[Bootparam Scanning] Failed to get a fd of bootparam, errno %d\n", errno);
 		return BINMGR_OPERATION_FAIL;
 	}
 	return fd;
@@ -124,15 +124,15 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 
 	bootparam = (char *)kmm_malloc(BOOTPARAM_SIZE);
 	if (!bootparam) {
-		bmdbg("Failed to allocate memory to read bootparam\n");
 		close(fd);
+		printf("[Bootparam Scanning] Failed to allocate memory to read bootparam\n");
 		return BINMGR_OUT_OF_MEMORY;
 	}
 
 	for (bp_idx = 0; bp_idx < BOOTPARAM_COUNT; bp_idx++) {
 		ret = lseek(fd, BP_SEEK_OFFSET(bp_idx), SEEK_SET);
 		if (ret < 0) {
-			bmdbg("ERROR: Seek Failed, errno %d\n", errno);
+			printf("[Bootparam Scanning] Failed to seek to read bootparam, offset %d errno %d\n", BP_SEEK_OFFSET(bp_idx), errno);
 			kmm_free(bootparam);
 			close(fd);
 			return BINMGR_OPERATION_FAIL;
@@ -141,6 +141,7 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 		/* Read bootparam data */
 		ret = read(fd, (FAR uint8_t *)bootparam, BOOTPARAM_SIZE);
 		if (ret != BOOTPARAM_SIZE) {
+			printf("[Bootparam Scanning] Failed to read bootparam, errno %d\n", errno);
 			continue;
 		} else if (!is_valid_bootparam(bootparam)) {
 			continue;
@@ -152,14 +153,14 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 			/* Update bootparam data */
 			bp_info->inuse_idx = bp_idx;
 			memcpy(&bp_info->bp_data, bootparam, sizeof(binmgr_bpdata_t));
-			bmvdbg("Latest Version %d, index %d\n", latest_ver, bp_idx);
+			printf("[Bootparam Scanning] BP Use index %d, version %d\n", bp_idx, latest_ver);
 		}
 	}
 	close(fd);
 	kmm_free(bootparam);
 
 	if (latest_ver == 0) {
-		bmdbg("Failed to find valid bootparam\n");
+		printf("[Bootparam Scanning] Failed to find valid bootparam\n");
 		return BINMGR_NOT_FOUND;
 	}
 
