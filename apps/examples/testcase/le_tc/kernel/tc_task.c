@@ -377,45 +377,46 @@ static void tc_task_prctl(void)
 	char getname[CONFIG_TASK_NAME_SIZE + 1];
 	char oldname[CONFIG_TASK_NAME_SIZE + 1];
 	int ret_chk;
+	pid_t mypid = getpid();
 
 	/* unrecognized option case */
 
-	ret_chk = prctl(PR_INVALID, oldname, 0, 0, 0);
+	ret_chk = prctl(PR_INVALID, oldname, mypid);
 	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
 	TC_ASSERT_EQ("prctl", get_errno(), EINVAL);
 
 	/* no such process case */
 
-	ret_chk = prctl(PR_GET_NAME, oldname, PID_INVALID, 0, 0);
+	ret_chk = prctl(PR_GET_NAME_BYPID, oldname, PID_INVALID);
 	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
 	TC_ASSERT_EQ("prctl", get_errno(), ESRCH);
 
 	/* no name case */
 
-	ret_chk = prctl(PR_GET_NAME, NULL, 0, 0, 0);
+	ret_chk = prctl(PR_GET_NAME_BYPID, NULL, mypid);
 	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
 	TC_ASSERT_EQ("prctl", get_errno(), EFAULT);
 
 	/* save taskname */
 
-	ret_chk = prctl(PR_GET_NAME, oldname, 0, 0, 0);
+	ret_chk = prctl(PR_GET_NAME_BYPID, oldname, mypid);
 	TC_ASSERT_EQ("prctl", ret_chk, OK);
 
 	/* set taskname */
 
-	ret_chk = prctl(PR_SET_NAME, setname, 0, 0, 0);
+	ret_chk = prctl(PR_SET_NAME_BYPID, setname, mypid);
 	TC_ASSERT_EQ("prctl", ret_chk, OK);
 
 	/* get taskname */
 
-	ret_chk = prctl(PR_GET_NAME, getname, 0, 0, 0);
-	TC_ASSERT_EQ_ERROR_CLEANUP("prctl", ret_chk, OK, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
+	ret_chk = prctl(PR_GET_NAME_BYPID, getname, mypid);
+	TC_ASSERT_EQ_ERROR_CLEANUP("prctl", ret_chk, OK, get_errno(), prctl(PR_SET_NAME_BYPID, oldname, mypid));
 
 	/* compare getname and setname */
 
-	TC_ASSERT_EQ_ERROR_CLEANUP("prctl", strncmp(getname, setname, CONFIG_TASK_NAME_SIZE), 0, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
+	TC_ASSERT_EQ_ERROR_CLEANUP("prctl", strncmp(getname, setname, CONFIG_TASK_NAME_SIZE), 0, get_errno(), prctl(PR_SET_NAME_BYPID, oldname, mypid));
 
-	prctl(PR_SET_NAME, oldname, 0, 0, 0);
+	prctl(PR_SET_NAME_BYPID, oldname, mypid);
 	TC_ASSERT_EQ("prctl", ret_chk, OK);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
