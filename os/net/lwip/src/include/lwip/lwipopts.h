@@ -1031,6 +1031,12 @@
 #define DHCP_DEBUG	LWIP_DBG_OFF
 #endif
 
+#ifdef CONFIG_NET_DNS_DEBUG
+#define DNS_DEBUG LWIP_DBG_ON
+#else
+#define DNS_DEBUG LWIP_DBG_OFF
+#endif
+
 #ifdef CONFIG_NET_POLL_DEBUG
 #define POLL_DEBUG	LWIP_DBG_ON
 #else
