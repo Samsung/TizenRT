@@ -55,6 +55,12 @@ config NET_DHCP_DEBUG
 	---help---
 		Enable debugging in dhcp.c
 
+config NET_DNS_DEBUG
+	bool "DNS debug message"
+	default n
+	---help---
+		Enable debugging in DNS
+
 config NET_ETHARP_DEBUG
 	bool "Enable ETHARP Debugging"
 	default n
