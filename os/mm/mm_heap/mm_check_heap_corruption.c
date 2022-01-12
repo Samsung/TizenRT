@@ -92,6 +92,7 @@ static void dump_node(struct mm_allocnode_s *node, node_type_t type)
 {
 #if defined(CONFIG_DEBUG_MM_HEAPINFO)  && (CONFIG_TASK_NAME_SIZE > 0)
 	char myname[CONFIG_TASK_NAME_SIZE + 1];
+	char is_stack[9] = "'s stack";
 #endif
 
 	if (type == TYPE_CORRUPTED) {
@@ -100,14 +101,23 @@ static void dump_node(struct mm_allocnode_s *node, node_type_t type)
 		dbg("OVERFLOWED NODE: addr = 0x%08x size = %u type = %c\n", node, node->size, IS_ALLOCATED_NODE(node) ? 'A' : 'F');
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-#if CONFIG_TASK_NAME_SIZE > 0
-	if (prctl(PR_GET_NAME, myname, node->pid) == OK) {
-		dbg("Node owner pid = %u (%s), allocated by code at addr = 0x%08x\n", node->pid, myname, node->alloc_call_addr);
+	pid_t pid = node->pid;
+	if (pid < 0) {
+		/* For stack allocated node, pid is negative value.
+		 * To use the pid, change it to original positive value.
+		 */
+		pid = (-1) * pid;
 	} else {
-		dbg("Node owner pid = %u (Exited Task), allocated by code at addr = 0x%08x\n", node->pid, node->alloc_call_addr);
+		is_stack[0] = '\0';
+	}
+#if CONFIG_TASK_NAME_SIZE > 0
+	if (prctl(PR_GET_NAME, myname, pid) == OK) {
+		dbg("Node owner pid = %d (%s%s), allocated by code at addr = 0x%08x\n", node->pid, myname, is_stack, node->alloc_call_addr);
+	} else {
+		dbg("Node owner pid = %d (Exited Task%s), allocated by code at addr = 0x%08x\n", node->pid, is_stack, node->alloc_call_addr);
 	}
 #else
-	dbg("Node owner pid = %u, allocated by code at addr = 0x%08x\n", node->pid, node->alloc_call_addr);
+	dbg("Node owner pid = %d%s, allocated by code at addr = 0x%08x\n", node->pid, is_stack, node->alloc_call_addr);
 #endif
 #endif
 }
