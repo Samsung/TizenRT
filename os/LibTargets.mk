@@ -58,19 +58,19 @@
 # Possible kernel-mode builds
 
 libc$(DELIM)libkc$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libkc$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libkc$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkc$(LIBEXT) BINDIR=kbin
 
 $(LIBRARIES_DIR)$(DELIM)libkc$(LIBEXT): libc$(DELIM)libkc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libkc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkc$(LIBEXT)
 
 mm$(DELIM)libkmm$(LIBEXT): context
-	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libkmm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libkmm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkmm$(LIBEXT) BINDIR=kbin
 
 $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT): mm$(DELIM)libkmm$(LIBEXT)
 	$(Q) install mm$(DELIM)libkmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT)
 
 wqueue$(DELIM)libkwque$(LIBEXT): context
-	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libkwque$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libkwque$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkwque$(LIBEXT) BINDIR=kbin
 
 $(LIBRARIES_DIR)$(DELIM)libkwque$(LIBEXT): wqueue$(DELIM)libkwque$(LIBEXT)
 	$(Q) install wqueue$(DELIM)libkwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkwque$(LIBEXT)
@@ -160,19 +160,19 @@ $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT): syscall$(DELIM)libstubs$(LIBEXT)
 # Possible user-mode builds
 
 libc$(DELIM)libuc$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libuc$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libuc$(LIBEXT) KERNEL=n BIN=libuc$(LIBEXT) BINDIR=ubin
 
 $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT): libc$(DELIM)libuc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libuc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT)
 
 mm$(DELIM)libumm$(LIBEXT): context
-	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libumm$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libumm$(LIBEXT) KERNEL=n BIN=libumm$(LIBEXT) BINDIR=ubin
 
 $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT): mm$(DELIM)libumm$(LIBEXT)
 	$(Q) install mm$(DELIM)libumm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT)
 
 wqueue$(DELIM)libuwque$(LIBEXT): context
-	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libuwque$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libuwque$(LIBEXT) KERNEL=n BIN=libuwque$(LIBEXT) BINDIR=ubin
 
 $(LIBRARIES_DIR)$(DELIM)libuwque$(LIBEXT): wqueue$(DELIM)libuwque$(LIBEXT)
 	$(Q) install wqueue$(DELIM)libuwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuwque$(LIBEXT)
