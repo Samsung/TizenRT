@@ -132,7 +132,8 @@ typedef enum {
 	HAL_KEY_ECC_SEC_P256R1,		  // nist curve for p256r1
 	HAL_KEY_ECC_SEC_P384R1,		  // nist curve for p384r1
 	HAL_KEY_ECC_SEC_P512R1,		  // nist curve for p512r1
-	HAL_KEY_ECC_25519,			  // curve25519
+	HAL_KEY_ECC_25519,			  // Montgomery curve for key exchange
+	HAL_KEY_ED_25519, // Twisted Edwards curve for signing and verification
 	/* HMAC */
 	HAL_KEY_HMAC_MD5,	 // hmac with md5
 	HAL_KEY_HMAC_SHA1,	 // hmac with sha1
