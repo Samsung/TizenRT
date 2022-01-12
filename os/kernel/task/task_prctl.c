@@ -106,7 +106,7 @@
  * Returned Value:
  *   The returned value may depend on the specific commnand.  For PR_SET_NAME
  *   and PR_GET_NAME, the returned value of 0 indicates successful operation.
- *   On any failure, -1 is retruend and the errno value is set appropriately.
+ *   On any failure, -1 is returned and the errno value is set appropriately.
  *
  *     EINVAL The value of 'option' is not recognized.
  *     EFAULT optional arg1 is not a valid address.
