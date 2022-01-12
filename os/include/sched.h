@@ -182,7 +182,7 @@ int task_create(FAR const char *name, int priority, int stack_size, main_t entry
  *   a wrapper around the internal, task_terminate function.
  *
  *   The logic in this function only deletes non-running tasks.  If the 'pid'
- *   parameter refers to the currently runing task, then processing is
+ *   parameter refers to the currently running task, then processing is
  *   redirected to exit().  This can only happen if a task calls task_delete()
  *   in order to delete itself.
  *
