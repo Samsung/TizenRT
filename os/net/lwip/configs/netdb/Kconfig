@@ -46,7 +46,7 @@ config NET_DNS_MAX_TTL
 	int "lwip DNS_MAX_TTL: DNS resource record max. TTL (one week as default)"
 	default 604800
 	---help---
-		DNS max TTL
+		DNS max TTL. The unit is second
 
 config NET_DNS_MAX_RETRIES
 	int "DNS maximum number of retries when asking for a name, before timeout"
