@@ -111,7 +111,7 @@ static void dump_node(struct mm_allocnode_s *node, node_type_t type)
 		is_stack[0] = '\0';
 	}
 #if CONFIG_TASK_NAME_SIZE > 0
-	if (prctl(PR_GET_NAME, myname, pid) == OK) {
+	if (prctl(PR_GET_NAME_BYPID, myname, pid) == OK) {
 		dbg("Node owner pid = %d (%s%s), allocated by code at addr = 0x%08x\n", node->pid, myname, is_stack, node->alloc_call_addr);
 	} else {
 		dbg("Node owner pid = %d (Exited Task%s), allocated by code at addr = 0x%08x\n", node->pid, is_stack, node->alloc_call_addr);
