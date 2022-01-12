@@ -129,8 +129,6 @@ void wm_cb_scan_done(wifi_manager_cb_msg_s msg, void *arg)
 static size_t curl_callback(void *contents, size_t size, size_t nmemb,
 							void *userp)
 {
-	WT_LOG(TAG, "size %lu  nmemb %lu\n", size, nmemb);
-
 	struct message *msg = (struct message *)userp;
 #ifdef PRINT_RESPONSE
 	if (msg->received + (size * nmemb) > msg->buf_size) {
