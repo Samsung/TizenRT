@@ -486,13 +486,13 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%10s | %5d | %4d | %7lu / %7lu\n",
+	lldbg("%10s | %5d | %4d | %7lu / %7lu | %16p\n",
 			tcb->name, tcb->pid, tcb->sched_priority,
-			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size);
+			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr);
 #else
-	lldbg("%5d | %4d | %7lu / %7lu\n",
+	lldbg("%5d | %4d | %7lu / %7lu | %16p\n",
 			tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size,
-			(unsigned long)tcb->adj_stack_size);
+			(unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr);
 #endif
 
 	if (used_stack_size == tcb->adj_stack_size) {
@@ -513,11 +513,11 @@ static inline void up_showtasks(void)
 	lldbg("*******************************************\n");
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK\n");
-	lldbg("--------------------------------------------------\n");
+	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK | STACK ALLOC ADDR\n");
+	lldbg("----------------------------------------------------------------------\n");
 #else
-	lldbg("  PID | PRI |   USED / TOTAL STACK\n");
-	lldbg("----------------------------------\n");
+	lldbg("  PID | PRI |   USED / TOTAL STACK | STACK ALLOC ADDR\n");
+	lldbg("------------------------------------------------------\n");
 #endif
 
 	/* Dump interesting properties of each task in the crash environment */
