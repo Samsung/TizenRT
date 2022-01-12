@@ -226,7 +226,7 @@
  * @since TizenRT v1.0
  */
 #define pthread_setname_np(thread, name) \
-	prctl((int)PR_SET_NAME, (char*)name, (int)thread)
+	prctl((int)PR_SET_NAME_BYPID, (char*)name, (int)thread)
 
 /**
  * @ingroup PTHREAD_KERNEL
@@ -238,7 +238,7 @@
  * @since TizenRT v1.0
  */
 #define pthread_getname_np(thread, name) \
-	prctl((int)PR_GET_NAME, (char*)name, (int)thread)
+	prctl((int)PR_GET_NAME_BYPID, (char*)name, (int)thread)
 
 /********************************************************************************
  * Global Type Declarations
