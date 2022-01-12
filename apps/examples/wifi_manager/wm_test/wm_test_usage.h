@@ -89,6 +89,11 @@
 	"\n Add AP config in file /mnt/wm_aplist.conf \n"				\
 	"	wm_test add_ap [ssid] [security mode] [password] \n\n"		\
 
+#define WT_DNS_USAGE											\
+	"\n dns test mode\n"										\
+	"\n it can be run after a device is connected to an AP\n"	\
+	"	 wm_test dns count\n"
+
 #define WT_USAGE									\
 	"\n usage: wm_test [options]\n"					\
 	"\n run Wi-Fi Manager:\n"						\
@@ -104,4 +109,5 @@
 	WT_ONOFF_USAGE									\
 	WT_INTEROP_USAGE								\
 	WT_ADD_AP_USAGE									\
-	WT_DISPLAY_AP_USAGE
+	WT_DISPLAY_AP_USAGE\
+	WT_DNS_USAGE

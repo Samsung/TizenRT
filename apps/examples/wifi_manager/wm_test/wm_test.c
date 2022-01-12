@@ -84,6 +84,7 @@ typedef enum {
 
 extern void wm_run_stress_test(void *arg);
 extern void wm_test_on_off(void *arg);
+extern void wm_run_dns_test(void *arg);
 extern void wm_test_interop(void *arg);
 extern void wm_interop_add_ap_config(void *arg);
 extern void wm_interop_display_ap_config(void *arg);
@@ -602,6 +603,11 @@ void _wt_onoff_test(void *arg)
 	wm_test_on_off(arg);
 }
 
+void _wt_dns_test(void *arg)
+{
+	wm_run_dns_test(arg);
+}
+
 void _wt_interop_test(void *arg)
 {
 	wm_test_interop(arg);
@@ -825,6 +831,15 @@ int _wt_parse_evt_tc(struct wt_options *opt, int argc, char *argv[])
 	opt->softap_password = argv[6];
 	opt->softap_channel = atoi(argv[7]);
 	opt->repeat = atoi(argv[8]);
+	return 0;
+}
+
+int _wt_parse_dns(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc != 3) {
+		return -1;
+	}
+	opt->repeat = atoi(argv[2]);
 	return 0;
 }
 
