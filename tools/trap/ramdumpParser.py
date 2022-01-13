@@ -727,13 +727,30 @@ def find_crash_point(log_file, elf):
 
     # It displays the debug symbols corresponding to all the addresses in the kernel and application text address range
     print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
-    os.system("python ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
+    os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
 
     print('\n4. Miscellaneous information:')
     # It displays the debug symbols corresponding to all the wrong sp addresses (if any)
     # The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses
-    os.system("python ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
+    os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
     print('-----------------------------------------------------------------------------------------')
+
+# Function to delete the timestamp from the log file if it consists of timestamp at the start of each line
+def format_log_file(log_file):
+
+	with open(log_file, "r") as f:
+		data = f.readlines()
+	with open(log_file, "w") as f:
+		for line in data:
+			delete_idx = 0
+			# Timestamp present if line starts with '['
+			if line[0] == '[':
+				for idx in range(0, len(line)):
+					if ']' == line[idx]:
+						delete_idx = idx + 1
+						break
+			line = line[delete_idx:]
+			f.write(line)
 
 def usage():
 	print('*************************************************************')
@@ -750,17 +767,17 @@ def usage():
 	print('')
 	print('syntax :')
 	print('--------')
-	print('python %s -r Filename_ramBaseAddr_ramEndAddr.bin -G <Gdb path> -N < NM path> ' % sys.argv[0])
+	print('python3 %s -r Filename_ramBaseAddr_ramEndAddr.bin -G <Gdb path> -N < NM path> ' % sys.argv[0])
 	print('')
 	print('I assume, gdb and nm tool exist in your linux machine like /usr/bin/gdb and /usr/bin/nm, so hard coded this path inside script')
 	print('')
 	print('Below example if you give dump file as path: ')
 	print('--------------------------------------------')
-	print('python ramdumpParser.py -r build/output/bin/ramdump_0x4a0000_0x6a0000.bin')
+	print('python3 ramdumpParser.py -r build/output/bin/ramdump_0x4a0000_0x6a0000.bin')
 	print('')
 	print('Below example if you give simple assert log file as path: ')
 	print('---------------------------------------------------------')
-	print('python ramdumpParser.py -r log.txt ')
+	print('python3 ramdumpParser.py -r log.txt ')
 	print('')
 	print('')
 	print('Note:')
@@ -769,7 +786,7 @@ def usage():
 	print('')
 	print('If you do not have gdb and nm path set, please pass the path as below')
 	print('')
-	print('python ramdumpParser.py -r /build/bin/ramdump_0x4a0000_0x6a0000.bin -G <your_gdb_path> -N <your_nm_path>')
+	print('python3 ramdumpParser.py -r /build/bin/ramdump_0x4a0000_0x6a0000.bin -G <your_gdb_path> -N <your_nm_path>')
 	print('')
 	print('')
 	print('*************************************************************')
@@ -847,6 +864,9 @@ def main():
 			print("!!! Please check the path settings")
 			print("!!! If this tool is being run from a shared location, contact the maintainer")
 			sys.exit(1)
+
+	# Format log file if timestamp is present at the start of each line
+	format_log_file(log_file)
 
 	# Get the number of application binaries, names, text address and sizes
 	find_number_of_binaries(log_file)
