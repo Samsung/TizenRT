@@ -3,10 +3,14 @@ Here we explain how to enable build support for DUMP upload,
 and how to actually upload and parse it in the event of a crash during runtime.
 
 ## Contents
+> [Prerequisites](#prerequisites)  
 > [Build Steps](#how-to-enable-memory-dumps)  
 > [Parsing Steps](#how-to-parse-RAMDUMP)  
 > [Upload Steps](#how-to-upload-RAMDUMP-or-UserfsDUMP)  
 > [Porting Guide](#how-to-port-memory-dump-functionality)  
+
+## Prerequisites
+Install Python 3.7 or above.
 
 ## How to enable memory dumps
 Below configuration must be enabled to support dump upload
