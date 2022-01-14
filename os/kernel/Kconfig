@@ -193,6 +193,14 @@ config INIT_SYSTEM_TIME
 	---help---
 		Initialize the system time based on VERSION_BUILD_TIME.
 
+config INIT_SYSTEM_TIME_WITH_MIDNIGHT
+	bool "set system init time to midnight"
+	default n
+	depends on INIT_SYSTEM_TIME
+	---help---
+		When CONFIG_INIT_SYSTEM_TIME is enabled, this config allows to start
+		system time with midnight (0:0:0).
+
 if !RTC
 
 config START_YEAR
