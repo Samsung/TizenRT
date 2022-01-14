@@ -20,7 +20,6 @@ config NET_TCP_WND
 
 config NET_WND_SCALE
 	bool "Window scale support"
-	range 0 14
 	default n
 	---help---
 		Set LWIP_WND_SCALE to 1 to enable window scaling.
@@ -30,6 +29,7 @@ if NET_WND_SCALE
 config NET_TCP_RCV_SCALE
 	int "Receive window scale support"
 	default 0
+	range 0 14
 	---help---
 		Set TCP_RCV_SCALE to the desired scaling factor (shift count in the range of [0..14]).
 		When LWIP_WND_SCALE is enabled but TCP_RCV_SCALE is 0, we can use a large
