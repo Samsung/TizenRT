@@ -820,6 +820,34 @@ def main():
 				ext = (line.split("=")[1].strip())
 	elf = (BIN_PATH + 'tinyara' + ext)
 
+	if not log_file and not dump_file:
+		print('Usage error: Must specify one of the -t or -e options. Plz find below for proper usage')
+		usage()
+
+	access_check_list = [
+		("gdb", gdb_path),
+		("nm", nm_path),
+		("readelf", readelf_path)
+	]
+
+	exist_check_list = [
+		("dump_file", dump_file),
+		("log_file", log_file),
+		("elf", elf)
+	] + access_check_list
+
+	for name, path in exist_check_list:
+		if path and not os.path.exists(path):
+			print(f"{path} does not exist. Please provide the proper path for {name}...")
+			sys.exit(1)
+
+	for name, path in access_check_list:
+		if not os.access(path, os.X_OK):
+			print(f"!!! No execute permissions on {name} path {path}")
+			print("!!! Please check the path settings")
+			print("!!! If this tool is being run from a shared location, contact the maintainer")
+			sys.exit(1)
+
 	# Get the number of application binaries, names, text address and sizes
 	find_number_of_binaries(log_file)
 
@@ -842,55 +870,6 @@ def main():
 	fd = open(CONFIG_PATH, 'r')
 	data = fd.read()
 	fd.close()
-
-	if log_file is not None:
-		if not os.path.exists(log_file):
-			print('{0} does not exist. Please provide the proper path for log_file...'.format(log_file))
-			sys.exit(1)
-
-	if dump_file is not None:
-		if not os.path.exists(dump_file):
-			print('{0} does not exist. Plz provide proper path for dump_file...'.format(dump_file))
-			sys.exit(1)
-
-	if not log_file and not dump_file:
-		print('Usage error: Must specify one of the -t or -e options. Plz find below for proper usage')
-		usage()
-
-	if not os.path.exists(elf):
-		print('{0} does not exist. Cannot proceed without System.map Exiting...'.format(elf))
-		sys.exit(1)
-
-	if not os.path.exists(gdb_path):
-		print('{0} does not exist. Cannot proceed without GDB Tool Exiting...'.format(gdb_path))
-		sys.exit(1)
-
-	if not os.access(gdb_path, os.X_OK):
-		print("!!! No execute permissions on gdb path {0}".format(gdb_path))
-		print("!!! Please check the path settings")
-		print("!!! If this tool is being run from a shared location, contact the maintainer")
-		sys.exit(1)
-
-	if not os.path.exists(nm_path):
-		print('{0} does not exist. Cannot proceed without NM Tool Exiting...'.format(nm_path))
-		sys.exit(1)
-
-	if not os.access(nm_path, os.X_OK):
-		print("!!! No execute permissions on gdb path {0}".format(nm_path))
-		print("!!! Please check the path settings")
-		print("!!! If this tool is being run from a shared location, contact the maintainer")
-		sys.exit(1)
-
-	if not os.path.exists(readelf_path):
-		print('{0} does not exist. Cannot proceed without readelf Tool Exiting...'.format(readelf_path))
-		sys.exit(1)
-
-	if not os.access(readelf_path, os.X_OK):
-		print("!!! No execute permissions on readelf path {0}".format(readelf_path))
-		print("!!! Please check the path settings")
-		print("!!! If this tool is being run from a shared location, contact the maintainer")
-		sys.exit(1)
-
 
 	try:
 		if 'CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT=y' in data:
