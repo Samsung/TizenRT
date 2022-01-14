@@ -1814,7 +1814,7 @@ u32_t tcp_next_iss(struct tcp_pcb *pcb)
 
 #if TCP_CALCULATE_EFF_SEND_MSS
 /**
- * Calcluates the effective send mss that can be used for a specific IP address
+ * Calculates the effective send mss that can be used for a specific IP address
  * by using ip_route to determin the netif used to send to the address and
  * calculating the minimum of TCP_MSS and that netif's mtu (if set).
  */
