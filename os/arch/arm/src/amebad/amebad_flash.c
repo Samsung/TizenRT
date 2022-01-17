@@ -69,7 +69,7 @@
 #include "up_arch.h"
 #include "chip.h"
 #include "flash_api.h"
-
+#include "device_lock.h"
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -115,7 +115,6 @@ static ssize_t amebad_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
 static ssize_t amebad_erase_page(size_t page)
 {
 	uint32_t address;
-	irqstate_t irqs;
 	ssize_t ret;
 	
 	if (page > (AMEBAD_START_SECOTR + AMEBAD_NSECTORS)) {
@@ -123,15 +122,13 @@ static ssize_t amebad_erase_page(size_t page)
 		return -EFAULT;
 	}
 
-	/* Disable IRQs while erasing sector */
-	irqs = irqsave();
-
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	/* do erase */
 	address = page * CONFIG_AMEBAD_FLASH_BLOCK_SIZE;
 	flash_erase_sector(NULL, address);
 	ret = flash_erase_verify(address);
-	/* Restore IRQs */
-	irqrestore(irqs);
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
 	if (ret != OK) {
 		ret = -EIO;
 	}
@@ -158,7 +155,6 @@ static int amebad_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblo
 static ssize_t amebad_flash_write(size_t addr, const void *buf, size_t length)
 {
 	int32_t result = 0;
-	irqstate_t irqs;
 
 	if (buf == NULL) {
 		return -EINVAL;
@@ -168,12 +164,9 @@ static ssize_t amebad_flash_write(size_t addr, const void *buf, size_t length)
 		return -EFAULT;
 	}
 
-	/* Disable IRQs while erasing sector */
-	irqs = irqsave();
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	result = flash_stream_write(NULL, addr, length, (u8 *)buf);
-
-	/* Restore IRQs */
-	irqrestore(irqs);
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	if (result < 0) {
 		return -EIO;
@@ -186,7 +179,6 @@ ssize_t amebad_flash_read(size_t addr, void *buf, size_t length)
 {
 	int32_t result = 0;
 	ssize_t ret = 0;
-	irqstate_t irqs;
 
 	if (buf == NULL) {
 		return -EINVAL;
@@ -196,8 +188,7 @@ ssize_t amebad_flash_read(size_t addr, void *buf, size_t length)
 		return -EFAULT;
 	}
 
-	/* Disable IRQs while erasing sector */
-	irqs = irqsave();
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	if ((addr & 0x3) == 0) {
 		//! if addr is 4 bytes aligned
 		result = flash_stream_read(NULL, addr, length, buf);
@@ -225,9 +216,8 @@ ssize_t amebad_flash_read(size_t addr, void *buf, size_t length)
 			aligned_read_buf = NULL;
 		}
 	}
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
-	/* Restore IRQs */
-	irqrestore(irqs);
 	return ret;
 }
 
