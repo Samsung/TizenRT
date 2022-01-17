@@ -49,7 +49,12 @@ Device Drivers -> Block-to-character(BCH) Support
 ```
 
 ## How to parse RAMDUMP
-TRAP Script provides two interfaces: CUI and GUI
+TRAP Script provides two interfaces:  
+1. [CUI](#trap-using-cui)  
+2. [GUI](#trap-using-gui)  
+
+>**Note**
+>To get *Debug Symbols/Crash point using assert logs* ([CUI](#trap-using-cui)), enabling *memory dumps* ([Build Steps](#how-to-enable-memory-dumps)) is not mandatory.
 
 ### TRAP using CUI
 
@@ -59,12 +64,48 @@ TRAP Script provides two interfaces: CUI and GUI
 cd $TIZENRT_BASEDIR/tools/trap/
 ```
 2. Copy crash logs  
-    First copy the crash logs to a file in tools/trap/`<log_file>`
-3. Run Ramdump Parser Script and see the Output  
+First copy the entire crash logs to a file in tools/trap/`<log_file>`  
+The crash log format should be something like below:
+```
+up_assert: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: app2
+up_dumpstate: sp:     1002cd0c
+up_dumpstate: IRQ stack:
+up_dumpstate:   base: 1002cea0
+up_dumpstate:   size: 00000400
+up_dumpstate:   used: 00000278
+up_stackdump: 1002cd00: xxxxxxxx xxxxxxxx xxxxxxxx 0000000b 0000000e ffffffbc 01000213 1002cdf8
+.
+.
+.
+mpu_show_regioninfo:        7            2200DC0          12C500               1               1               1
+mpu_show_regioninfo: *****************************************************************************
+up_assert: Checking kernel heap for corruption...
+up_assert: No kernel heap corruption detected
+up_assert: Checking current app heap for corruption...
+up_assert: No app heap corruption detected
+elf_show_all_bin_addr: [common] Text Addr : 0x2100020, Text Size : 672480
+elf_show_all_bin_addr: [app] Text Addr : 0x232d2c0, Text Size : 179616
+up_assert: Assert location (PC) : 0x02100025
+```
+3. In the scenario where log file format is not supported, you will see a prompt as below:
+```
+test@VirtualBox ~/tizenRTGH/tools/trap (master) $sudo python3 ramdumpParser.py -t logs
+
+	- Below log format is not supported in TRAP
+		-|19:27:38.36| up_assert: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: main_task
+	- Instead, supported log format in TRAP is as follows:
+		-up_assert: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: main_task
+
+	Kindly modify the log file as per accepted format.
+
+```
+Modify the log file to a supported format as shown in point 2.
+
+4. Run Ramdump Parser Script and see the Output  
     $ python3 ramdumpParser.py -t `<Log file path>`
 
-    ex)
-    $ python3 ramdumpParser.py -t ./log_file
+ex)
+$ python3 ramdumpParser.py -t ./log_file
 
 Example Call Stack Output for App crash is as follows:
 ```

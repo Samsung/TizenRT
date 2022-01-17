@@ -616,14 +616,18 @@ def find_crash_point(log_file, elf):
                     is_app_crash = 1
                     print('\n\t[ Current location (PC) of assert ]')
                     format_output(result, "")
-                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
-                result1 = f.read()
-                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
-                result2 = f.read()
-                if '??' not in result and '$d' not in result:
-                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                    format_output(result1, "of (pc - 4)")
-                    format_output(result2, "of (pc - 8)")
+                if ((addr - 4) > 0x0):
+                    f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
+                    result1 = f.read()
+                    if '??' not in result1 and '$d' not in result1:
+                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                        format_output(result1, "of (pc - 4)")
+                if ((addr - 8) > 0x0):
+                    f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
+                    result2 = f.read()
+                    if '??' not in result2 and '$d' not in result2:
+                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                        format_output(result2, "of (pc - 8)")
 
     # Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
     else:
@@ -640,14 +644,18 @@ def find_crash_point(log_file, elf):
                     print('\n2. Crash point (PC or LR)')
                     print('\n\t[ Current location (PC) of assert ]')
                     format_output(result, "")
-                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
-                result1 = f.read()
-                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
-                result2 = f.read()
-                if '??' not in result and '$d' not in result:
-                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                    format_output(result1, "of (pc - 4)")
-                    format_output(result2, "of (pc - 8)")
+                if ((addr - 4) > 0x0):
+                    f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
+                    result1 = f.read()
+                    if '??' not in result1 and '$d' not in result1:
+                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                        format_output(result1, "of (pc - 4)")
+                if ((addr - 8) > 0x0):
+                    f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
+                    result2 = f.read()
+                    if '??' not in result2 and '$d' not in result2:
+                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                        format_output(result2, "of (pc - 8)")
 
     # Check for lr & pc values in kernel text address range
     if (not is_app_crash) and (pc_value != 00000000):
@@ -672,14 +680,18 @@ def find_crash_point(log_file, elf):
                 is_kernel_crash = 1
                 print('\n\t[ Current location (PC) of assert ]')
                 format_output(result, "")
-            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 4))
-            result1 = f.read()
-            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 8))
-            result2 = f.read()
-            if '??' not in result and '$d' not in result:
-                print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                format_output(result1, "of (pc - 4)")
-                format_output(result2, "of (pc - 8)")
+            if ((pc_value - 4) > 0x0):
+                f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 4))
+                result1 = f.read()
+                if '??' not in result1 and '$d' not in result1:
+                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                    format_output(result1, "of (pc - 4)")
+            if ((pc_value - 8) > 0x0):
+                f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 8))
+                result2 = f.read()
+                if '??' not in result2 and '$d' not in result2:
+                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                    format_output(result2, "of (pc - 8)")
 
     # Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
     if (pc_value == 00000000 and g_assertpc):
@@ -694,14 +706,18 @@ def find_crash_point(log_file, elf):
                 print('\n2. Crash point (PC or LR)')
                 print('\n\t[ Current location (PC) of assert ]')
                 format_output(result, "")
-            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 4))
-            result1 = f.read()
-            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 8))
-            result2 = f.read()
-            if '??' not in result and '$d' not in result:
-                print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                format_output(result1, "of (pc - 4)")
-                format_output(result2, "of (pc - 8)")
+            if ((g_assertpc - 4) > 0x0):
+                f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 4))
+                result1 = f.read()
+                if '??' not in result1 and '$d' not in result1:
+                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                    format_output(result1, "of (pc - 4)")
+            if ((g_assertpc - 8) > 0x0):
+                f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 8))
+                result2 = f.read()
+                if '??' not in result2 and '$d' not in result2:
+                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                    format_output(result2, "of (pc - 8)")
 
     if (not is_app_crash) and (not is_kernel_crash):
         print('1. Crash Binary             : NA')
@@ -735,13 +751,25 @@ def find_crash_point(log_file, elf):
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
     print('-----------------------------------------------------------------------------------------')
 
-# Function to delete the timestamp from the log file if it consists of timestamp at the start of each line
+# Function to format logs and delete the timestamp (format-[xxxxxxxxx]) if it consists of timestamp at the start of each log line
 def format_log_file(log_file):
 
+	# Delete unwanted logs (if any) and timestamp at the start of each line
 	with open(log_file, "r") as f:
 		data = f.readlines()
 	with open(log_file, "w") as f:
+		trunc = True # False if log line is to be retained, True otherwise
 		for line in data:
+			# Truncate logs after first crash dump: up_assert
+			if ('up_assert: Assertion failed at file:' in line) and (trunc == False):
+				break
+			# Truncate logs before first crash dump: up_assert
+			if 'up_assert: Assertion failed at file:' in line:
+				trunc = False
+			if trunc:
+				# Do not write line and move to the next line
+				continue
+
 			delete_idx = 0
 			# Timestamp present if line starts with '['
 			if line[0] == '[':
@@ -749,8 +777,26 @@ def format_log_file(log_file):
 					if ']' == line[idx]:
 						delete_idx = idx + 1
 						break
+			if line[delete_idx] == ' ':	# Check for trailing white spaces
+				delete_idx = delete_idx + 1
 			line = line[delete_idx:]
 			f.write(line)
+
+	# Check for invalid format after above formatting
+	with open(log_file, "r") as f:
+		data = f.readlines()
+		for line in data:
+			if 'up_assert:' in line:
+				if line[0] != 'u':
+					for idx in range(0, len(line)):
+						if 'u' == line[idx]:
+							delete_idx = idx
+							break
+					correctFormatString = line[delete_idx:]
+					print ("\n\t- Below log format is not supported in TRAP")
+					print ('\t\t-{0}\t- Instead, supported log format in TRAP is as follows:'.format(line))
+					print ("\t\t-{0}\n\tKindly modify the log file as per accepted format.\n".format(correctFormatString))
+					sys.exit(1)
 
 def usage():
 	print('*************************************************************')
@@ -913,13 +959,8 @@ def main():
 			global g_etext_ram
 			g_etext_ram = rParser.get_address_of_symbol("_etext_ram")
 
-		if 'CONFIG_BOARD_CRASHDUMP=y' in data:
-			if ((dump_file != None) and (log_file != None)):
-				# Find the point of crash in the kernel, application or common binaries
-				find_crash_point(log_file, elf)
-		else:
-				find_crash_point(log_file, elf)
-
+		# Find the point of crash in the kernel, application or common binaries
+		find_crash_point(log_file, elf)
 
 		# Get ARM arch family
 		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data):
