@@ -175,18 +175,67 @@ error_with_fd_sample:
 	return ret;
 }
 
+static int validate_file(int fd, ssize_t bufsize, int *index, file_type_t type)
+{
+	int ret;
+	int fd_sample = -1;
+	int i;
+	uint16_t crc1;
+	uint16_t crc2;
+
+	if (type == FILE_TYPE_TEXT) {
+		fd_sample = open(SAMPLE_TXT_FILE, O_RDOK);
+		if (fd_sample < 0) {
+			printf("Unable to open Sample Text File : %s, errno : %d\n", SAMPLE_TXT_FILE, errno);
+			return ERROR;
+		}
+	}
+
+	for (i = 0; i < TEST_WRITECOUNT; i++) {
+		if (type == FILE_TYPE_TEXT) {
+			ret = read(fd, (void *)g_buf.data, bufsize);
+			if (ret != bufsize) {
+				printf("Unable to read file, ret: %d, i: %d\n", ret, i);
+				break;
+			}
+			crc1 = crc16((const uint8_t *)g_buf.data, bufsize);
+
+			ret = read(fd_sample, (void *)g_buf.data, bufsize);
+			if (ret != bufsize) {
+				printf("Failed to read sample file, ret: %d, i: %d\n", ret, i);
+				close(fd_sample);
+				return ERROR;
+			}
+			crc2 = crc16((const uint8_t *)g_buf.data, bufsize);
+		}  else {
+			ret = read(fd, (void *)&g_buf, bufsize);
+			if (ret != bufsize) {
+				printf("Unable to read file, ret: %d, i: %d\n", ret, i);
+				break;
+			}
+			crc1 = crc16((const uint8_t *)g_buf.data, (bufsize - sizeof(g_buf.crc)));
+			crc2 = g_buf.crc;
+		}
+
+		if (crc1 != crc2) {
+			printf("Validate file failed at index %d, crc1 : %d, crc2 : %d\n", i, crc1, crc2);
+			break;
+		}
+	}
+	*index = i;
+
+	if (type == FILE_TYPE_TEXT) {
+		close(fd_sample);
+	}
+
+	return OK;
+}
+
 static int create_file(char *path, ssize_t bufsize, file_type_t type)
 {
 	int fd;
 	int ret;
-	struct stat st;
 
-	/* If file is already exist and written fully, just return OK */
-	if (stat(path, &st) == OK) {
-		printf("File already exist path : %s size : %d\n", path, st.st_size);
-		return OK;
-	}
-	
 	fd = open(path, O_CREAT | O_WROK);
 	if (fd < 0) {
 		printf("create_file %s error errno : %d\n", path, errno);
@@ -208,8 +257,82 @@ static int create_file(char *path, ssize_t bufsize, file_type_t type)
 	
 error_with_fd:
 	close(fd);
-	printf("create file path : %s ret : %d\n", path, ret);
+	printf("Created file path : %s ret : %d\n", path, ret);
 	return ret;
+}
+
+static int init_backup_file(char *path, ssize_t bufsize, file_type_t type)
+{
+	int ret;
+	int fd;
+	int index = TEST_WRITECOUNT;
+
+	fd = open(path, O_RDWR);
+	if (fd < 0) {
+		if (errno == ENOENT) {
+			printf("File to be validated does not exist!! path : %s\n", path);
+			index = FILE_CHUNK_NO_INDEX;
+			goto create_backup_file;
+		}
+
+		printf("Unable to open file : %s for validating, errno : %d\n", path, errno);
+		return ERROR;
+	}
+
+	ret = validate_file(fd, bufsize, &index, type);
+	close(fd);
+	if (ret != OK) {
+		printf("Error while validating file path: %s, index: %d, ret: %d\n", path, index, ret);
+		return ret;
+	}
+
+	/* If an incomplete backup file exists, unlink it. It will be re created */
+	if (index < TEST_WRITECOUNT) {
+		ret = unlink(path);
+		if (ret != OK) {
+			printf("Failed to unlink incomplete backup file: %s, ret: %d, errno: %d\n", path, ret, errno);
+			return ERROR;
+		}
+		printf("Unlinked incomplete backup file: %s\n", path);
+		/* Modify reference index variable to indicate that the file was unlinked */
+		index = FILE_CHUNK_NO_INDEX;
+	} else {
+		printf("Complete file: %s already exists\n", path);
+	}
+
+create_backup_file:
+	/* If the backup file does not exist, create it now */
+	if (index == FILE_CHUNK_NO_INDEX) {
+		ret = create_file(path, bufsize, type);
+		if (ret != OK) {
+			printf("Failed to create file path: %s, ret: %d, errno: %d\n", path, ret, errno);
+			return ERROR;
+		}
+	}
+
+	return OK;
+}
+
+static int init_main_file(char *path, ssize_t bufsize, file_type_t type)
+{
+	int ret;
+	struct stat st;
+
+	if (stat(path, &st) == OK) {
+		/* Main file already exists, return OK
+		 * completeness and correctness will be verified and recovered
+		 */
+		printf("File: %s already exists\n", path);
+		return OK;
+	}
+
+	ret = create_file(path, bufsize, type);
+	if (ret != OK) {
+		printf("Failed to create file path: %s, ret: %d\n", path, ret);
+		return ret;
+	}
+
+	return OK;
 }
 
 static int create_sample_text_file(void)
@@ -259,13 +382,9 @@ error_with_fd_sample:
 static int verify_file(char *path, int bufsize, int *index, file_type_t type)
 {
 	int fd;
-	int fd_sample = 0;
 	int ret;
 	off_t size;
-	int i;
 	struct stat st;
-	uint16_t crc1;
-	uint16_t crc2;
 	
 	fd = open(path, O_RDWR);
 	if (fd < 0) {
@@ -279,55 +398,12 @@ static int verify_file(char *path, int bufsize, int *index, file_type_t type)
 		return ERROR;
 	}
 
-	if (type == FILE_TYPE_TEXT) {
-		fd_sample = open(SAMPLE_TXT_FILE, O_RDOK);
-		if (fd_sample < 0) {
-			printf("Unable to open Sample Text File : %s, errno : %d\n", SAMPLE_TXT_FILE, errno);
-			ret = ERROR;
-			goto error_with_fd;
-		}
-	}
+	validate_file(fd, bufsize, index, type);
 
-	for (i = 0; i < TEST_WRITECOUNT; i++) {
-		if (type == FILE_TYPE_TEXT) {
-			ret = read(fd, (void *)g_buf.data, bufsize);
-			if (ret != bufsize) {
-				printf("Unable to read file: %s, ret: %d, i: %d\n", path, ret, i);
-				break;
-			}
-			crc1 = crc16((const uint8_t *)g_buf.data, bufsize);
-
-			ret = read(fd_sample, (void *)g_buf.data, bufsize);
-			if (ret != bufsize) {
-				printf("Failed to read sample file: %s, ret: %d, i: %d\n", path, ret, i);
-				ret = ERROR;
-				goto error_with_fd_sample;
-			}
-			crc2 = crc16((const uint8_t *)g_buf.data, bufsize);
-		}  else {
-			ret = read(fd, (void *)&g_buf, bufsize);
-			if (ret != bufsize) {
-				printf("Unable to read file: %s, ret: %d, i: %d\n", path, ret, i);
-				break;
-			}
-			crc1 = crc16((const uint8_t *)g_buf.data, (bufsize - sizeof(g_buf.crc)));
-			crc2 = g_buf.crc;
-		}
-
-		if (crc1 != crc2) {
-			printf("Verify file : %s failed at index %d, crc1 : %d, crc2 : %d\n", path, i, crc1, crc2);
-			break;
-		}
-	}
-
-	if (type == FILE_TYPE_TEXT) {
-		close(fd_sample);
-	}
-	*index = i;
 	/* Shrink file to last valid index here, it is necessary to bury invalid data chunk */
-	if ((i > 0) && (i < TEST_WRITECOUNT)) {
+	if (((*index) > 0) && ((*index) < TEST_WRITECOUNT)) {
 		/* truncate current file to include valid data only */
-		size = i * bufsize;
+		size = (*index) * bufsize;
 		
 		ret = lseek(fd, 0, SEEK_SET);
 		if (ret != 0) {
@@ -360,10 +436,6 @@ static int verify_file(char *path, int bufsize, int *index, file_type_t type)
 
 	ret = OK;
 
-error_with_fd_sample:
-	if (fd_sample > 0) {
-		close(fd_sample);
-	}
 error_with_fd:
 	close(fd);
 	return ret;
@@ -382,7 +454,7 @@ static int recovery_file(char *src, char* backup, char* backup_dir, int bufsize,
 	printf("Recovering file src : %s idx : %d\n", src, idx);
 	/* If index is FILE_CHUNK_NO_INDEX, There is no tested file, so just rollback backup file
 	 * If index is 0, we should recovery whole of data from back up file, so just rollback it.
-	 * If idnex is same as _TEST_WRITECOUNT, totally written, so no recovery necessary.
+	 * If index is same as TEST_WRITECOUNT, totally written, so no recovery necessary.
 	 */
 	if (idx == FILE_CHUNK_NO_INDEX || idx == 0 || idx == TEST_WRITECOUNT) {
 		if (idx == 0 || idx == TEST_WRITECOUNT) {
@@ -529,15 +601,17 @@ int init_test_file(void)
 		return ERROR;
 	}
 
-	/* Create small random character files */
-	ret = create_file(TEST_SMALL_R, TEST_SMALL_BUFSIZE, FILE_TYPE_RANDOM);
-	if (ret != OK && errno != EEXIST) {
-		return ERROR;
+	/* Validate and create small random character files */
+	ret = init_main_file(TEST_SMALL_R, TEST_SMALL_BUFSIZE, FILE_TYPE_RANDOM);
+	if (ret != OK) {
+		printf("Failed to initialize file path: %s, ret: %d\n", TEST_SMALL_R, ret);
+		return ret;
 	}
 
-	ret = create_file(TEST_SMALL_R_BACKUP, TEST_SMALL_BUFSIZE, FILE_TYPE_RANDOM);
-	if (ret != OK && errno != EEXIST) {
-		return ERROR;
+	ret = init_backup_file(TEST_SMALL_R_BACKUP, TEST_SMALL_BUFSIZE, FILE_TYPE_RANDOM);
+	if (ret != OK) {
+		printf("Failed to initialize backup file path: %s, ret %d\n", TEST_SMALL_R_BACKUP, ret);
+		return ret;
 	}
 
 	/* Create small text file backup dir */
@@ -547,15 +621,17 @@ int init_test_file(void)
 		return ERROR;
 	}
 
-	/* Create small text file and its backup */
-	ret = create_file(TEST_SMALL_T, TEST_SMALL_BUFSIZE, FILE_TYPE_TEXT);
-	if (ret != OK && errno != EEXIST) {
-		return ERROR;
+	/* Validate and create small text file and its backup */
+	ret = init_main_file(TEST_SMALL_T, TEST_SMALL_BUFSIZE, FILE_TYPE_TEXT);
+	if (ret != OK) {
+		printf("Failed to initialize file path: %s, ret: %d\n", TEST_SMALL_T, ret);
+		return ret;
 	}
 
-	ret = create_file(TEST_SMALL_T_BACKUP, TEST_SMALL_BUFSIZE, FILE_TYPE_TEXT);
-	if (ret != OK && errno != EEXIST) {
-		return ERROR;
+	ret = init_backup_file(TEST_SMALL_T_BACKUP, TEST_SMALL_BUFSIZE, FILE_TYPE_TEXT);
+	if (ret != OK) {
+		printf("Failed to initialize backup file path: %s, ret %d\n", TEST_SMALL_T_BACKUP, ret);
+		return ret;
 	}
 
 	/* Create large random file backup dir */
@@ -565,15 +641,17 @@ int init_test_file(void)
 		return ERROR;
 	}
 
-	/* Create large random character files */
-	ret = create_file(TEST_LARGE_R, TEST_LARGE_BUFSIZE, FILE_TYPE_RANDOM);
-	if (ret != OK && errno != EEXIST) {
-		return ERROR;
+	/* Validate and create large random character files */
+	ret = init_main_file(TEST_LARGE_R, TEST_LARGE_BUFSIZE, FILE_TYPE_RANDOM);
+	if (ret != OK) {
+		printf("Failed to initialize file path: %s, ret: %d\n", TEST_LARGE_R, ret);
+		return ret;
 	}
 
-	ret = create_file(TEST_LARGE_R_BACKUP, TEST_LARGE_BUFSIZE, FILE_TYPE_RANDOM);
-	if (ret != OK && errno != EEXIST) {
-		return ERROR;
+	ret = init_backup_file(TEST_LARGE_R_BACKUP, TEST_LARGE_BUFSIZE, FILE_TYPE_RANDOM);
+	if (ret != OK) {
+		printf("Failed to initialize backup file path: %s, ret %d\n", TEST_LARGE_R_BACKUP, ret);
+		return ret;
 	}
 
 	/* Create large text file backup dir */
@@ -583,15 +661,17 @@ int init_test_file(void)
 		return ERROR;
 	}
 
-	/* Create large text file and its backup */
-	ret = create_file(TEST_LARGE_T, TEST_LARGE_BUFSIZE, FILE_TYPE_TEXT);
-	if (ret != OK && errno != EEXIST) {
-		return ERROR;
+	/* Validate and create large text file and its backup */
+	ret = init_main_file(TEST_LARGE_T, TEST_LARGE_BUFSIZE, FILE_TYPE_TEXT);
+	if (ret != OK) {
+		printf("Failed to initialize file path: %s, ret: %d\n", TEST_LARGE_T, ret);
+		return ret;
 	}
 
-	ret = create_file(TEST_LARGE_T_BACKUP, TEST_LARGE_BUFSIZE, FILE_TYPE_TEXT);
-	if (ret != OK && errno != EEXIST) {
-		return ERROR;
+	ret = init_backup_file(TEST_LARGE_T_BACKUP, TEST_LARGE_BUFSIZE, FILE_TYPE_TEXT);
+	if (ret != OK) {
+		printf("Failed to initialize backup file path: %s, ret %d\n", TEST_LARGE_T_BACKUP, ret);
+		return ret;
 	}
 
 	printf("Initializing test files successful!!\n");
