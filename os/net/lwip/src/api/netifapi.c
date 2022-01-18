@@ -231,7 +231,7 @@ err_t netifapi_netif_common(struct netif *netif, netifapi_void_fn voidfunc, neti
  * call the "errtfunc" (or the "voidfunc" if "errtfunc" is NULL) in a thread-safe
  * way by running that function inside the tcpip_thread context.
  *
- * @note use only for functions where there is only "netif" parameter.
+ * @note if netif needs to get argurment, use this API
  */
 err_t netifapi_netif_common_arg(struct netif *netif, netifapi_void_fn_arg voidfunc, netifapi_errt_fn_arg errtfunc, void *arg)
 {
@@ -242,7 +242,7 @@ err_t netifapi_netif_common_arg(struct netif *netif, netifapi_void_fn_arg voidfu
 	NETIFAPI_VAR_REF(msg).netif = netif;
 	NETIFAPI_VAR_REF(msg).msg.common_arg.voidfunc = voidfunc;
 	NETIFAPI_VAR_REF(msg).msg.common_arg.errtfunc = errtfunc;
-  NETIFAPI_VAR_REF(msg).msg.common_arg.arg = arg;
+	NETIFAPI_VAR_REF(msg).msg.common_arg.arg = arg;
 	err = tcpip_api_call(netifapi_do_netif_common_arg, &API_VAR_REF(msg).call);
 	NETIFAPI_VAR_FREE(msg);
 	return err;

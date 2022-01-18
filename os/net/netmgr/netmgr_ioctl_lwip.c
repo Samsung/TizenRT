@@ -425,13 +425,13 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 		}
 		ret = OK;
 		break;
-  case DHCPCSETHOSTNAME:
-    req->req_res = _netdev_dhcpc_sethostname(&req->msg.dhcp);
-    if (req->req_res != OK) {
-      NET_LOGKE(TAG, "Set dhcp host name failed %d\n", req->req_res);
+	case DHCPCSETHOSTNAME:
+		req->req_res = _netdev_dhcpc_sethostname(&req->msg.dhcp);
+		if (req->req_res != OK) {
+			NET_LOGKE(TAG, "Set dhcp host name failed %d\n", req->req_res);
 			goto errout;
-    }
-    ret = OK;
+		}
+		ret = OK;
 #endif
 
 #if defined(CONFIG_LWIP_DHCPS)

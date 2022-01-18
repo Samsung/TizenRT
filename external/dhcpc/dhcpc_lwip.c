@@ -154,10 +154,10 @@ int dhcp_client_sethostname(const char *intf, const char *hostname)
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPCSETHOSTNAME;
 	req.msg.dhcp.intf = intf;
-  req.msg.dhcp.hostname = hostname;
+	req.msg.dhcp.hostname = hostname;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-  close(sockfd);
+	close(sockfd);
 	if (ret == ERROR) {
 		printf("ioctl() failed with errno: %d\n", errno);
 		return ret;
