@@ -752,10 +752,6 @@ err_t dhcp_start(struct netif *netif)
 	struct dhcp *dhcp;
 	err_t result;
 
-#if LWIP_NETIF_HOSTNAME
-	dhcp_hostname(netif, DHCP_HOSTNAME_DEFAULT);
-#endif
-
 	LWIP_ERROR("netif != NULL", (netif != NULL), return ERR_ARG;);
 	LWIP_ERROR("netif is not up, old style port?", netif_is_up(netif), return ERR_ARG;);
 	dhcp = netif_dhcp_data(netif);
