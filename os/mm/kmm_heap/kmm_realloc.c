@@ -98,12 +98,13 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 		return NULL;
 	}
 
+	kheap = kmm_get_heap();
+
 	if (size == 0) {
 		mm_free(&kheap[heap_index], oldmem);
 		return NULL;
 	}
 
-	kheap = kmm_get_heap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ret = mm_realloc(&kheap[heap_index], oldmem, size, caller_retaddr);
 #else
