@@ -215,7 +215,6 @@ static void itc_wifimanager_get_mode_p(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	wifi_manager_info_s info;
 	int ret_cmp = 0;
-	//int i;
 
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
