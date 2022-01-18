@@ -1824,7 +1824,7 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 
 /**
  * Callback registered in the netconn layer for each socket-netconn.
- * Processes recvevent (data available) and wakes up tasks waiting for select.
+ * Processes receive events (data available) and wakes up tasks waiting for select.
  */
 static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len)
 {
