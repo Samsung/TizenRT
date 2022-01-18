@@ -745,3 +745,9 @@ void dhcp_client_stop(const char *intf)
 	printf("[DHCPC] dhcpc_stop -release IP address (app)\n");
 	return;
 }
+
+int dhcp_client_sethostname(const char *intf, const char *hostname)
+{
+	printf("[DHCPC] switch to lwIP dhcpc to use this option\n");
+	return -1;
+}

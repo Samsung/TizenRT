@@ -253,9 +253,9 @@ static int _cmd_ifconfig_parse(int argc, char **argv, struct ifconfig_cmd_info_s
 
 	info->intf = argv[1];
 
-  if (strncmp(argv[2], "dhcp", strlen("dhcp") + 1) == 0) {
-    return _cmd_ifconfig_dhcp(argc, argv);
-  }
+	if (strncmp(argv[2], "dhcp", strlen("dhcp") + 1) == 0) {
+		return _cmd_ifconfig_dhcp(argc, argv);
+	}
 
 	for (i = 2; i < argc; i++) {
 		tmp = argv[i];
