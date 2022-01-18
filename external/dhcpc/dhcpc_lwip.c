@@ -139,3 +139,30 @@ void dhcp_client_stop(const char *intf)
 	close(sockfd);
 	return;
 }
+
+int dhcp_client_sethostname(const char *intf, const char *hostname)
+{
+	int ret = -1;
+	struct req_lwip_data req;
+
+	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sockfd < 0) {
+		printf("socket() failed with errno: %d\n", errno);
+		return ret;
+	}
+
+	memset(&req, 0, sizeof(req));
+	req.type = DHCPCSETHOSTNAME;
+	req.msg.dhcp.intf = intf;
+  req.msg.dhcp.hostname = hostname;
+
+	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+  close(sockfd);
+	if (ret == ERROR) {
+		printf("ioctl() failed with errno: %d\n", errno);
+		return ret;
+	}
+	ret = req.req_res;
+
+	return ret;
+}

@@ -182,6 +182,22 @@ int _netdev_dhcpc_stop(const char *intf)
 
 	return OK;
 }
+
+int _netdev_dhcpc_sethostname(struct lwip_dhcp_msg *msg)
+{
+  // it's blocked call. So it's ok to use local variable
+  struct lwip_dhcpc_msg dmsg;
+  dmsg.netif = _netdev_dhcp_dev(msg->intf);
+  if (dmsg.netif == NULL) {
+    NET_LOGKE(TAG, "No network interface for dhcpc %s\n", msg->intf);
+    return ERROR;
+  }
+  dmsg.hostname = msg->hostname;
+
+  netifapi_dhcp_sethostname(dmsg.netif, (void *)&dmsg);
+
+  return 0;
+}
 #endif
 
 #if defined(CONFIG_LWIP_DHCPS)
@@ -409,6 +425,13 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 		}
 		ret = OK;
 		break;
+  case DHCPCSETHOSTNAME:
+    req->req_res = _netdev_dhcpc_sethostname(&req->msg.dhcp);
+    if (req->req_res != OK) {
+      NET_LOGKE(TAG, "Set dhcp host name failed %d\n", req->req_res);
+			goto errout;
+    }
+    ret = OK;
 #endif
 
 #if defined(CONFIG_LWIP_DHCPS)
