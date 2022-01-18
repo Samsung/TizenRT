@@ -107,6 +107,18 @@ int dhcp_client_start(const char *intf);
  */
 void dhcp_client_stop(const char *intf);
 
+/**
+ * @brief Set hostname
+ *
+ * @param[in] intf name of interface to stop dhcpc
+ * @param[in] hostname hostname of interface
+ * @return On success, 0. On failure, returns negative
+ * @since TizenRT v3.1
+ *
+ * @note It shouldn't be called while dhcp_client_start is called.
+ */
+int dhcp_client_sethostname(const char *intf, const char *hostnameq);
+
 #undef EXTERN
 #ifdef __cplusplus
 }

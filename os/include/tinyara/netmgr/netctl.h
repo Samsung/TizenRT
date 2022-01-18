@@ -29,6 +29,7 @@ typedef enum {
 	DNSSETSERVER,
 	DHCPCSTART,
 	DHCPCSTOP,
+  DHCPCSETHOSTNAME,
 	DHCPDSTART,
 	DHCPDSTOP,
 	DHCPDSTATUS,
@@ -57,6 +58,7 @@ struct lwip_dns_msg {
 
 struct lwip_dhcp_msg {
 	const char *intf;
+  const char *hostname;
 };
 
 struct lwip_netmon_msg {
