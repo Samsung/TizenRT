@@ -19,8 +19,7 @@ config NET_TCP_WND
 		for things to work well
 
 config NET_WND_SCALE
-	int "Window scale support"
-	range 0 14
+	bool "Window scale support"
 	default n
 	---help---
 		Set LWIP_WND_SCALE to 1 to enable window scaling.

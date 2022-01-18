@@ -6,7 +6,7 @@
 config EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
 	bool "Wi-Fi Manager UTC TestCase Example"
 	select WIFI_MANAGER
-  select WIFI_MBOX
+	select WIFI_MBOX
 	default n
 	---help---
 		Enable the Wi-Fi Manager TestCase Example
