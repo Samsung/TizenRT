@@ -226,6 +226,19 @@ int cmd_ifdown(int argc, char **argv)
 	return ret;
 }
 
+static int _cmd_ifconfig_dhcp_sethostname(char *intf, char *hostname)
+{
+  return dhcp_client_sethostname(intf, hostname);
+}
+
+static int _cmd_ifconfig_dhcp(int argc, char **argv)
+{
+  if (argc == 4) {
+    return _cmd_ifconfig_dhcp_sethostname(argv[1], argv[3]);
+  }
+  return -1;
+}
+
 static int _cmd_ifconfig_parse(int argc, char **argv, struct ifconfig_cmd_info_s *info)
 {
 	int ret = OK;
@@ -239,6 +252,10 @@ static int _cmd_ifconfig_parse(int argc, char **argv, struct ifconfig_cmd_info_s
 	}
 
 	info->intf = argv[1];
+
+  if (strncmp(argv[2], "dhcp", strlen("dhcp") + 1) == 0) {
+    return _cmd_ifconfig_dhcp(argc, argv);
+  }
 
 	for (i = 2; i < argc; i++) {
 		tmp = argv[i];
