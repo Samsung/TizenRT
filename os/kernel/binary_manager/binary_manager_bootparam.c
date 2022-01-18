@@ -125,6 +125,7 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 	bootparam = (char *)kmm_malloc(BOOTPARAM_SIZE);
 	if (!bootparam) {
 		bmdbg("Failed to allocate memory to read bootparam\n");
+		close(fd);
 		return BINMGR_OUT_OF_MEMORY;
 	}
 
