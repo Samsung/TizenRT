@@ -183,8 +183,10 @@ int _netdev_dhcpc_stop(const char *intf)
 	return OK;
 }
 
+
 int _netdev_dhcpc_sethostname(struct lwip_dhcp_msg *msg)
 {
+#ifdef CONFIG_LWIP_DHCP_HOSTNAME
   // it's blocked call. So it's ok to use local variable
   struct lwip_dhcpc_msg dmsg;
   dmsg.netif = _netdev_dhcp_dev(msg->intf);
@@ -197,6 +199,10 @@ int _netdev_dhcpc_sethostname(struct lwip_dhcp_msg *msg)
   netifapi_dhcp_sethostname(dmsg.netif, (void *)&dmsg);
 
   return 0;
+#else
+  NET_LOGKE(TAG, "Enable LWIP_DHCP_HOSNAME\n");
+  return -1;
+#endif
 }
 #endif
 
