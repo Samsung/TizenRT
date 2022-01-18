@@ -34,17 +34,19 @@
 #include "wifi_manager_profile.h"
 
 /*  Check Result MACRO */
-#define WIFIMGR_CHECK_AP_CONFIG(config)									\
-	do {																\
-		if (config->ssid_length > WIFIMGR_SSID_LEN ||					\
-			config->passphrase_length > WIFIMGR_PASSPHRASE_LEN ||		\
-			strlen(config->ssid) > WIFIMGR_SSID_LEN ||					\
-			strlen(config->passphrase) > WIFIMGR_PASSPHRASE_LEN) {		\
-			NET_LOGE(TAG, "AP configuration fails: too long ssid or passphrase %d\n", config->ssid_length);	\
-			NET_LOGE(TAG, "Make sure that length of SSID < 33 and length of passphrase < 65 %d\n", config->passphrase_length); \
-			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);			\
-			return WIFI_MANAGER_INVALID_ARGS;						    \
-		}																\
+#define WIFIMGR_CHECK_AP_CONFIG(config)                                                                                         \
+	do {                                                                                                                        \
+		if (config->ssid_length > WIFIMGR_SSID_LEN || strlen(config->ssid) > WIFIMGR_SSID_LEN) {                                \
+			NET_LOGE(TAG, "AP configuration fails: too long ssid\n");                                                           \
+			NET_LOGE(TAG, "Make sure that length of SSID < 33\n");                                                              \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);                                                                  \
+			return WIFI_MANAGER_INVALID_ARGS;                                                                                   \
+		} else if (config->passphrase_length > WIFIMGR_PASSPHRASE_LEN || strlen(config->passphrase) > WIFIMGR_PASSPHRASE_LEN) { \
+			NET_LOGE(TAG, "AP configuration fails: too long passphrase\n");                                                     \
+			NET_LOGE(TAG, "Make sure that length of passphrase < 65\n");                                                        \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);                                                                  \
+			return WIFI_MANAGER_INVALID_ARGS;                                                                                   \
+		}                                                                                                                       \
 	} while (0)
 
 #define RETURN_RESULT(res, msg)					\
