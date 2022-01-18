@@ -117,7 +117,7 @@ void dhcp_client_stop(const char *intf);
  *
  * @note It shouldn't be called while dhcp_client_start is called.
  */
-int dhcp_client_sethostname(const char *intf, const char *hostnameq);
+int dhcp_client_sethostname(const char *intf, const char *hostname);
 
 #undef EXTERN
 #ifdef __cplusplus
