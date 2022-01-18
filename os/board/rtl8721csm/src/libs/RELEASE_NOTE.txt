@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 565ea29f4a3ff3e39c078e60524f0cd9ff6905e6_2022/01/18-15:05:31 ==
+1.	Stop issue disconnect log when start softap after station disconnect
+	- Stop issue disconnect log when start softap after station disconnect for lib_wlan  and lib_wps
+
 == version 1275267f861fdafc92c5c5e89f10c0ee8a87e8ff_2021/12/15-10:27:50 ==
 1.	Update BT Coex table
 	- Change Coex Case for STA_Connected, BT on from case 2 to Case 8
