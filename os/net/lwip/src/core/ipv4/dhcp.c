@@ -725,12 +725,12 @@ void dhcp_hostname(struct netif *netif, char *name)
 
 int dhcp_sethostname(struct netif *netif, void *arg)
 {
-  if (!arg) {
-    return ERR_ARG;
-  }
-  struct lwip_dhcpc_msg *msg = (struct lwip_dhcpc_msg *)arg;
-  dhcp_hostname(msg->netif, (char *)msg->hostname);
-  return 0;
+	if (!arg) {
+		return ERR_ARG;
+	}
+	struct lwip_dhcpc_msg *msg = (struct lwip_dhcpc_msg *)arg;
+	dhcp_hostname(msg->netif, (char *)msg->hostname);
+	return 0;
 }
 #endif
 
