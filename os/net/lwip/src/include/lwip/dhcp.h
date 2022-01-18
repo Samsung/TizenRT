@@ -48,6 +48,11 @@ extern "C" {
 
 #define DHCP_BOOT_FILE_LEN      128U
 
+struct lwip_dhcpc_msg {
+	struct netif *netif;
+	const char *hostname;
+};
+
 /* AutoIP cooperation flags (struct dhcp.autoip_coop_state) */
 typedef enum {
 	DHCP_AUTOIP_COOP_STATE_OFF = 0,
@@ -152,6 +157,15 @@ void dhcp_stop(struct netif *netif);
 
 #if LWIP_DHCP_HOSTNAME
 void dhcp_hostname(struct netif *netif, char *name);
+/**
+ * @brief dhcp_sethostname() set hotsname of dhcpc
+ *
+ * @internal
+ * @param[in] msg contains netif and hostname
+ * @note msg parameter must not be null
+ * @return On success, ERR_OK. On failure, returns error @ref err_t
+*/
+int dhcp_sethostname(struct netif *netif, void *arg);
 #endif
 
 /// @cond
