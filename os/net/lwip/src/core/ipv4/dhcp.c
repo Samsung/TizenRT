@@ -77,6 +77,7 @@
  *
  */
 
+#include <lwip/err.h>
 #include <tinyara/kmalloc.h>
 
 #include "lwip/opt.h"
@@ -702,11 +703,10 @@ void dhcp_cleanup(struct netif *netif)
 	}
 }
 
-#if LWIP_NETIF_HOSTNAME
+#if LWIP_DHCP_HOSTNAME
 void dhcp_hostname(struct netif *netif, char *name)
 {
 	char *name_heap;
-
 	if (netif == NULL || name == NULL) {
 		return;
 	}
@@ -721,6 +721,16 @@ void dhcp_hostname(struct netif *netif, char *name)
 	name_heap[strlen(name)] = '\0'; //for safety
 
 	netif_set_hostname(netif, name_heap);
+}
+
+int dhcp_sethostname(struct netif *netif, void *arg)
+{
+  if (!arg) {
+    return ERR_ARG;
+  }
+  struct lwip_dhcpc_msg *msg = (struct lwip_dhcpc_msg *)arg;
+  dhcp_hostname(msg->netif, (char *)msg->hostname);
+  return 0;
 }
 #endif
 
