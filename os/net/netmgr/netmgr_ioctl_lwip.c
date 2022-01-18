@@ -432,6 +432,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 			goto errout;
 		}
 		ret = OK;
+    break;
 #endif
 
 #if defined(CONFIG_LWIP_DHCPS)
