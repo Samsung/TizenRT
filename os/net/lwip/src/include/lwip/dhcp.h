@@ -137,7 +137,7 @@ err_t dhcp_renew(struct netif *netif);
 /**
  * @brief Release a DHCP lease.
  *
- * @param etif network interface which must release its lease
+ * @param netif network interface which must release its lease
  * @return lwIP error code
  * - ERR_OK - No error
  * - ERR_MEM - Out of memory
@@ -161,7 +161,8 @@ void dhcp_hostname(struct netif *netif, char *name);
  * @brief dhcp_sethostname() set hotsname of dhcpc
  *
  * @internal
- * @param[in] msg contains netif and hostname
+ * @param netif The network interface to stop DHCP on
+ * @param msg contains hostname
  * @note msg parameter must not be null
  * @return On success, ERR_OK. On failure, returns error @ref err_t
 */
