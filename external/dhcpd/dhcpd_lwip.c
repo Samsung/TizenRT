@@ -59,6 +59,7 @@
 #include <tinyara/config.h>		/* TinyAra configuration */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
