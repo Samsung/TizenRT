@@ -3128,7 +3128,7 @@ static void tc_libc_stdio_dprintf_invalid_fd_n(void)
 /**
  * @testcase         tc_libc_stdio_fdopen_p
  * @brief            fdopen with available fd value
- * @scenario         Open file with specific flags, and then fdopen with diffrent flag. Then check flag is changed properly
+ * @scenario         Open file with specific flags, and then fdopen with different flag. Then check flag is changed properly
  * @apicovered       open, fdopen
  * @precondition     File VFS_FILE_PATH should be existed
  * @postcondition    NA

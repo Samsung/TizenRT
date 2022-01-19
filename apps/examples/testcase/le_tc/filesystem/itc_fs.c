@@ -438,7 +438,7 @@ static void itc_fs_vfs_lseek_n_closed_fd(void)
 /**
 * @testcase         itc_fs_vfs_lseek_p
 * @brief            Move current file position to specific position
-* @scenario         Move file position with diffrent offsets and read and write.
+* @scenario         Move file position with different offsets and read and write.
 * @apicovered       lseek, write, read
 * @precondition     NA
 * @postcondition    NA
