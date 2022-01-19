@@ -17,6 +17,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <string.h>
+#include <stdlib.h>
 #include <mqueue.h>
 #include <errno.h>
 #include <unistd.h>
