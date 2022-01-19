@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <stdlib.h>
 #include <errno.h>
 #include "ble_queue.h"
 
