@@ -87,11 +87,11 @@ struct netifapi_msg {
 			netifapi_void_fn voidfunc;
 			netifapi_errt_fn errtfunc;
 		} common;
-    struct {
-      netifapi_void_fn_arg voidfunc;
-			netifapi_errt_fn_arg errtfunc;
-      void *arg;
-    } common_arg;
+		struct {
+				netifapi_void_fn_arg voidfunc;
+				netifapi_errt_fn_arg errtfunc;
+				void *arg;
+		} common_arg;
 	} msg;
 };
 
