@@ -73,8 +73,10 @@ CSRCS  =
 DEPPATH = --dep-path .
 VPATH = .
 
-include mm_heap/Make.defs
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 include umm_heap/Make.defs
+endif
+include mm_heap/Make.defs
 include kmm_heap/Make.defs
 include mm_gran/Make.defs
 include shm/Make.defs
@@ -140,7 +142,7 @@ ifeq ($(CONFIG_BUILD_PROTECTED),y)
 	$(Q) $(MKDEP) --obj-path ubin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make_ubin.dep
 	$(Q) $(MKDEP) --obj-path kbin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) $(KDEFINE) -- $(SRCS) >Make_kbin.dep
 else
-	$(Q) $(MKDEP) --obj-path bin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make_bin.dep
+	$(Q) $(MKDEP) --obj-path kbin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) $(KDEFINE) -- $(SRCS) >Make_kbin.dep
 endif
 	$(Q) touch $@
 

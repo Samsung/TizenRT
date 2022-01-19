@@ -70,50 +70,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-/************************************************************************
- * Name: realloc_at
- *
- * Description:
- *   realloc to the specific heap.
- *   realloc_at tries to allocate memory for a specific heap which passed by api argument.
- *   If there is no enough space to allocate, it will return NULL.
- *
- * Return Value:
- *   The address of the allocated memory (NULL on failure to allocate)
- *
- ************************************************************************/
 
-#if CONFIG_KMM_NHEAPS > 1
-void *realloc_at(int heap_index, void *oldmem, size_t size)
-{
-	void *ret;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
-#endif
-
-	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
-		mdbg("realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
-		return NULL;
-	}
-
-	if (size == 0) {
-		mm_free(&BASE_HEAP[heap_index], oldmem);
-		return NULL;
-	}
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, caller_retaddr);
-#else
-	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size);
-#endif
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
-	}
-	return ret;
-}
-#endif
 /****************************************************************************
  * Name: realloc
  *
@@ -131,8 +88,6 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 
 FAR void *realloc(FAR void *oldmem, size_t size)
 {
-	int heap_idx;
-	int prev_heap_idx;
 	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	size_t caller_retaddr = 0;
@@ -140,42 +95,22 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 
-	heap_idx = mm_get_heapindex(oldmem);
-	if (heap_idx < HEAP_START_IDX) {
-		return NULL;
-	}
-
 	if (size == 0) {
-		mm_free(&BASE_HEAP[heap_idx], oldmem);
+		mm_free(BASE_HEAP, oldmem);
 		return NULL;
 	}
 
 	/* Try to realloc in previous allocated heap */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_realloc(&BASE_HEAP[heap_idx], oldmem, size, caller_retaddr);
+	ret = mm_realloc(BASE_HEAP, oldmem, size, caller_retaddr);
 #else
-	ret = mm_realloc(&BASE_HEAP[heap_idx], oldmem, size);
+	ret = mm_realloc(BASE_HEAP, oldmem, size);
 #endif
 	if (ret != NULL) {
 		return ret;
 	}
 
-	/* Try to mm_malloc to another heap */
-
-	prev_heap_idx = heap_idx;
-	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
-#else
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size);
-#endif
-		if (ret != NULL) {
-			mm_free(&BASE_HEAP[prev_heap_idx], oldmem);
-			return ret;
-		}
-	}
-
-	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_START_IDX, size, USER_HEAP);
 	return NULL;
 }

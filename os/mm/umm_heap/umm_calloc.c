@@ -66,81 +66,6 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-/************************************************************************
- * Name: calloc_at
- *
- * Description:
- *   calloc to the specific heap.
- *   calloc_at tries to allocate memory for a specific heap which passed by api argument.
- *   If there is no enough space to allocate, it will return NULL.
- *
- * Return Value:
- *   The address of the allocated memory (NULL on failure to allocate)
- *
- ************************************************************************/
-
-#if CONFIG_KMM_NHEAPS > 1
-void *calloc_at(int heap_index, size_t n, size_t elem_size)
-{
-	void *ret;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
-#endif
-	if (heap_index > HEAP_END_IDX || heap_index < 0) {
-		mdbg("calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
-		return NULL;
-	}
-
-	if (n == 0 || elem_size == 0) {
-		return NULL;
-	}
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size, caller_retaddr);
-#else
-	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size);
-#endif
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, n * elem_size, USER_HEAP);
-	}
-	return ret;
-}
-#endif
-
-/************************************************************************
- * Name: heap_calloc
- *
- * Description:
- *   Traverse the user heap arrays by index, and try to alloc memory.
- *
- * Parameters:
- *   n     - Element number
- *   elem_size - Size (in bytes) of each element.
- *   s     - Start index
- *   e     - End index
- *   caller_retaddr - caller function return address, used only for DEBUG_MM_HEAPINFO
- * Return Value:
- *   The address of the allocated memory (NULL on failure to allocate)
- *
- ************************************************************************/
-static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t caller_retaddr)
-{
-	int heap_idx;
-	void *ret;
-
-	for (heap_idx = s; heap_idx <= e; heap_idx++) {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_calloc(&BASE_HEAP[heap_idx], n, elem_size, caller_retaddr);
-#else
-		ret = mm_calloc(&BASE_HEAP[heap_idx], n, elem_size);
-#endif
-		if (ret != NULL) {
-			return ret;
-		}
-	}
-	mm_manage_alloc_fail(BASE_HEAP, s, e, n * elem_size, USER_HEAP);
-	return NULL;
-}
 
 /****************************************************************************
  * Name: calloc
@@ -152,31 +77,22 @@ static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t caller
 
 FAR void *calloc(size_t n, size_t elem_size)
 {
-	int heap_idx = HEAP_START_IDX;
 	void *ret = NULL;
-	size_t caller_retaddr = 0;
 
 	if (n == 0 || elem_size == 0) {
 		return NULL;
 	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_calloc(&BASE_HEAP[HEAP_START_IDX], n, elem_size, caller_retaddr);
+#else
+	ret = mm_calloc(&BASE_HEAP[HEAP_START_IDX], n, elem_size);
 #endif
-
-#ifdef CONFIG_RAM_MALLOC_PRIOR_INDEX
-	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
-#endif
-
-	ret = heap_calloc(n, elem_size, heap_idx, HEAP_END_IDX, caller_retaddr);
-	if (ret != NULL) {
-		return ret;
+	if (ret == NULL) {
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_START_IDX, n * elem_size, USER_HEAP);
 	}
-
-#if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
-	/* Try to mm_calloc to other heaps */
-	ret = heap_calloc(n, elem_size, HEAP_START_IDX, CONFIG_RAM_MALLOC_PRIOR_INDEX - 1, caller_retaddr);
-#endif
 
 	return ret;
 }

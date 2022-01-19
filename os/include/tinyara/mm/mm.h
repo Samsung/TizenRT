@@ -455,9 +455,12 @@ int kmm_initialize(FAR void *heap_start, size_t heap_size);
 
 /* Functions contained in umm_addregion.c ***********************************/
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#ifdef CONFIG_APP_BINARY_SEPARATION
 int umm_initialize(FAR void *heap_start, size_t heap_size);
 int umm_addregion(FAR void *heapstart, size_t heapsize);
+#else
+#define umm_initialize kmm_initialize
+#define umm_addregion kmm_addregion
 #endif
 
 /* Functions contained in kmm_addregion.c ***********************************/
@@ -475,9 +478,12 @@ void mm_givesemaphore(FAR struct mm_heap_s *heap);
 
 /* Functions contained in umm_sem.c ****************************************/
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#ifdef CONFIG_APP_BINARY_SEPARATION
 int umm_trysemaphore(void *address);
 void umm_givesemaphore(void *address);
+#else
+#define umm_trysemaphore kmm_trysemaphore
+#define umm_givesemaphore kmm_givesemaphore
 #endif
 
 /* Functions contained in kmm_sem.c ****************************************/
@@ -627,8 +633,10 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 
 /* Functions contained in umm_extend.c **************************************/
 
-#if !defined(CONFIG_BUILD_PROTECTED) || !defined(__KERNEL__)
+#ifdef CONFIG_APP_BINARY_SEPARATION
 void umm_extend(FAR void *mem, size_t size, int region);
+#else
+#define umm_extend kmm_extend
 #endif
 
 /* Functions contained in kmm_extend.c **************************************/
@@ -715,82 +723,10 @@ int mm_check_heap_corruption(struct mm_heap_s *heap);
 /* Function to manage the memory allocation failure case. */
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type);
 
-#if CONFIG_KMM_NHEAPS > 1
 /**
  * @cond
  * @internal
  */
-/**
- * @brief Allocate memory to the specific heap.
- * @details @b #include <tinyara/mm/mm.h>\n
- *   malloc_at tries to allocate memory for a specific heap which passed by api argument.
- *   If there is no enough space to allocate, it will return NULL.
- * @param[in] heap_index Index of specific heap
- * @param[in] size size (in bytes) of the memory region to be allocated
- * 
- * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
- * @since TizenRT v2.1 PRE
- */
-void *malloc_at(int heap_index, size_t size);
-/**
- * @brief Calloc to the specific heap.
- * @details @b #include <tinyara/mm/mm.h>\n
- *   calloc_at tries to allocate memory for a specific heap which passed by api argument.
- *   If there is no enough space to allocate, it will return NULL.
- * @param[in] heap_index Index of specific heap
- * @param[in] n the number of elements to be allocated
- * @param[in] elem_size the size of elements
- * 
- * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
- * @since TizenRT v2.1 PRE
- */
-void *calloc_at(int heap_index, size_t n, size_t elem_size);
-/**
- * @brief Memalign to the specific heap.
- * @details @b #include <tinyara/mm/mm.h>\n
- *   memalign_at tries to align the memory for a specific heap which passed by api argument.
- *   If there is no enough space, it will return NULL.
- * @param[in] heap_index Index of specific heap
- * @param[in] alignment A power of two for alignment
- * @param[in] size Allocated memory size
- * 
- * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
- * @since TizenRT v2.1 PRE
- */
-void *memalign_at(int heap_index, size_t alignment, size_t size);
-/**
- * @brief Realloc to the specific heap.
- * @details @b #include <tinyara/mm/mm.h>\n
- *   realloc_at tries to allocate memory for a specific heap which passed by api argument.
- *   If there is no enough space to allocate, it will return NULL.
- * @param[in] heap_index Index of specific heap
- * @param[in] oldmem the pointer to a memory block previously allocated
- * @param[in] size the new size for the memory block
- * 
- * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
- * @since TizenRT v2.1 PRE
- */
-void *realloc_at(int heap_index, void *oldmem, size_t size);
-/**
- * @brief Zalloc to the specific heap.
- * @details @b #include <tinyara/mm/mm.h>\n
- *   zalloc_at tries to allocate memory for a specific heap which passed by api argument.
- *   If there is no enough space to allocate, it will return NULL.
- * @param[in] heap_index Index of specific heap
- * @param[in] size size (in bytes) of the memory region to be allocated
- * 
- * @return On success, the address of the allocated memory is returned. On failure, NULL is returned.
- * @since TizenRT v2.1 PRE
- */
-void *zalloc_at(int heap_index, size_t size);
-#else
-#define malloc_at(heap_index, size)              malloc(size)
-#define calloc_at(heap_index, n, elem_size)      calloc(n, elem_size)
-#define memalign_at(heap_index, alignment, size) memalign(alignment, size)
-#define realloc_at(heap_index, oldmem, size)     realloc(oldmem, size)
-#define zalloc_at(heap_index, size)              zalloc(size)
-#endif
-
 /**
  * @brief Free the memory from specified user heap.
  * @details @b #include <tinyara/mm/mm.h>\n

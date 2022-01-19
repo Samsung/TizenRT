@@ -67,46 +67,6 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-/************************************************************************
- * Name: zalloc_at
- *
- * Description:
- *   zalloc to the specific heap.
- *   zalloc_at tries to allocate memory for a specific heap which passed by api argument.
- *   If there is no enough space to allocate, it will return NULL.
- *
- * Return Value:
- *   The address of the allocated memory (NULL on failure to allocate)
- *
- ************************************************************************/
-
-#if CONFIG_KMM_NHEAPS > 1
-void *zalloc_at(int heap_index, size_t size)
-{
-	void *ret;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
-#endif
-	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
-		mdbg("zalloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
-		return NULL;
-	}
-
-	if (size == 0) {
-		return NULL;
-	}
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_zalloc(&BASE_HEAP[heap_index], size, caller_retaddr);
-#else
-	ret = mm_zalloc(&BASE_HEAP[heap_index], size);
-#endif
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
-	}
-	return ret;
-}
-#endif
 
 #ifndef CONFIG_ARCH_ADDRENV
 /************************************************************************
@@ -161,7 +121,6 @@ static void *heap_zalloc(size_t size, int s, int e, size_t caller_retaddr)
 
 FAR void *zalloc(size_t size)
 {
-	size_t caller_retaddr = 0;
 	if (size == 0) {
 		return NULL;
 	}
@@ -183,22 +142,15 @@ FAR void *zalloc(size_t size)
 	void *ret = NULL;
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t caller_retaddr = 0;
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	ret = mm_zalloc(BASE_HEAP, size, caller_retaddr);
+#else
+	ret = mm_zalloc(BASE_HEAP, size);
 #endif
-
-#ifdef CONFIG_RAM_MALLOC_PRIOR_INDEX
-	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
-#endif
-
-	ret = heap_zalloc(size, heap_idx, HEAP_END_IDX, caller_retaddr);
-	if (ret != NULL) {
-		return ret;
+	if (ret == NULL) {
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_START_IDX, size, USER_HEAP);
 	}
-
-#if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
-	/* Try to mm_calloc to other heaps */
-	ret = heap_zalloc(size, HEAP_START_IDX, CONFIG_RAM_MALLOC_PRIOR_INDEX - 1, caller_retaddr);
-#endif
 
 	return ret;
 #endif /* CONFIG_ARCH_ADDRENV */

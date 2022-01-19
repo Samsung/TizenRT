@@ -71,6 +71,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <tinyara/kmalloc.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -450,7 +451,11 @@ int wctomb(FAR char *s, wchar_t wchar);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 FAR void *malloc(size_t);
+#else
+#define malloc kmm_malloc
+#endif
 /**
  * @ingroup STDLIB_LIBC
  * @brief free allocated memory
@@ -458,7 +463,11 @@ FAR void *malloc(size_t);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 void free(FAR void *);
+#else
+#define free kmm_free
+#endif
 /**
  * @ingroup STDLIB_LIBC
  * @brief memory reallocator
@@ -466,7 +475,11 @@ void free(FAR void *);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 FAR void *realloc(FAR void *, size_t);
+#else
+#define realloc kmm_realloc
+#endif
 /**
  * @ingroup STDLIB_LIBC
  * @brief allocates size bytes and returns a pointer to the allocated memory
@@ -477,7 +490,11 @@ FAR void *realloc(FAR void *, size_t);
  * @return On success, A pointer to the allocated memory is returned. On failure, NULL is returned.
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 FAR void *memalign(size_t, size_t);
+#else
+#define memalign kmm_memalign
+#endif
 /**
  * @ingroup STDLIB_LIBC
  * @brief Allocate and zero memory from the user heap.
@@ -487,7 +504,11 @@ FAR void *memalign(size_t, size_t);
  * @return On success, A pointer to the allocated memory is returned. On failure, NULL is returned.
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 FAR void *zalloc(size_t);
+#else
+#define zalloc kmm_zalloc
+#endif
 /**
  * @ingroup STDLIB_LIBC
  * @brief a memory allocator
@@ -495,7 +516,11 @@ FAR void *zalloc(size_t);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 FAR void *calloc(size_t, size_t);
+#else
+#define calloc kmm_calloc
+#endif
 
 /* Misc */
 /**
@@ -596,7 +621,11 @@ FAR void *bsearch(FAR const void *key, FAR const void *base, size_t nel, size_t 
  * @return Current mallinfo structure returned.
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 struct mallinfo mallinfo(void);
+#else
+#define mallinfo(void) kmm_mallinfo(void)
+#endif
 #else
 /**
  * @ingroup STDLIB_LIBC
@@ -606,7 +635,11 @@ struct mallinfo mallinfo(void);
  * @return OK returned.
  * @since TizenRT v1.0
  */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 int mallinfo(struct mallinfo *info);
+#else
+#define mallinfo(info) kmm_mallinfo(info)
+#endif
 #endif
 
 #undef EXTERN
