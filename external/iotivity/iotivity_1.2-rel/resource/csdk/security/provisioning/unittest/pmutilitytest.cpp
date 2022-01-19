@@ -62,7 +62,7 @@ TEST(ProvisionListTest, Addition)
     LL_FOREACH(gList,el){ ++cnt; };
     EXPECT_TRUE(1 == cnt);
 
-    // Differnet node must be inserted
+    // Different node must be inserted
     res = AddDevice(&gList, "110.120.130.140", 6789, OC_DEFAULT_ADAPTER, CT_IP_USE_V4, pDoxm);
     EXPECT_TRUE(OC_STACK_OK == res);
     EXPECT_TRUE(NULL != gList);
