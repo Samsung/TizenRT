@@ -140,7 +140,7 @@ void dhcp_client_stop(const char *intf)
 	return;
 }
 
-
+int dhcp_client_sethostname(const char *intf, const char *hostname)
 {
 	int ret = -1;
 	struct req_lwip_data req;

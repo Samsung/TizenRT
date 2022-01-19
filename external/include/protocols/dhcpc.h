@@ -115,7 +115,8 @@ void dhcp_client_stop(const char *intf);
  * @return On success, 0. On failure, returns negative
  * @since TizenRT v3.1
  *
- * @note It shouldn't be called while dhcp_client_start is called.
+ * @note It's only supported to lwIP dhcpc
+ *       To use this enable LWIP_DHCP_HOSTNAME
  */
 int dhcp_client_sethostname(const char *intf, const char *hostname);
 
