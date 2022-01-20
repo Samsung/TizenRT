@@ -61,5 +61,5 @@ int utc_control_mock(int cmd, int key, int value, int wait)
 	if (_send_msg(&msg) < 0) {
 		return -1;
 	}
-	return 0;
+	return res;
 }
