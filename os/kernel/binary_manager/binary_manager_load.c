@@ -205,6 +205,7 @@ static int binary_manager_load(int bin_idx)
 				printf("[Binary Loading] Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
+					need_update_bp = true;
 					printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
@@ -219,19 +220,23 @@ static int binary_manager_load(int bin_idx)
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 			if (bin_idx == BM_CMNLIB_IDX) {
 				ret = binary_manager_read_header(BINARY_COMMON, devpath, &common_header_data, true);
+				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = common_header_data.version;
 			} else
 #endif
 			{
 				ret = binary_manager_read_header(BINARY_USERAPP, devpath, &user_header_data, true);
+				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = user_header_data.bin_ver;
 			}
 			if (ret == BINMGR_OK) {
 				printf("[Binary Loading] %s Header Checking Success\n", BIN_NAME(bin_idx));
 			} else {
+				/* Clear version because of invalid binary */
+				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = 0;
 				printf("[Binary Loading] Invalid Header data, name : %s, devpath : %p\n", BIN_NAME(bin_idx), devpath);
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
-					printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					need_update_bp = true;
+					printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
 					printf("[Binary Loading] No valid binary %s\n", BIN_NAME(bin_idx));
@@ -281,6 +286,7 @@ static int binary_manager_load(int bin_idx)
 				update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
 				ret = binary_manager_write_bootparam(&update_bp_data);
 				if (ret == BINMGR_OK) {
+					binary_manager_set_bpdata(&update_bp_data);
 					bmvdbg("Update bootparam SUCCESS\n");
 				} else {
 					bmdbg("Failed to update bootparam, %d\n", ret);
@@ -291,8 +297,8 @@ static int binary_manager_load(int bin_idx)
 		if (--bin_count > 0) {
 			/* Change index 0 to 1 and 1 to 0. */
 			BIN_USEIDX(bin_idx) ^= 1;
-			printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 			need_update_bp = true;
+			printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 		} else {
 			printf("[Binary Loading] No valid binary %s\n", BIN_NAME(bin_idx));
 		}
