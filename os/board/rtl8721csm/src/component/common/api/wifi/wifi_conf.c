@@ -339,7 +339,19 @@ static void wifi_connected_hdl( char* buf, int buf_len, int flags, void* userdat
 		(join_user_data->network_info.security_type == RTW_SECURITY_WEP_SHARED))){
 		rtw_join_status = JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING;
 		rtw_up_sema(&join_user_data->join_sema);
-	}else if((join_user_data!=NULL)&&((join_user_data->network_info.security_type == RTW_SECURITY_WPA2_AES_PSK) )){
+	}else if((join_user_data!=NULL)&&((join_user_data->network_info.security_type == RTW_SECURITY_WPA2_AES_PSK) ||
+										(join_user_data->network_info.security_type == RTW_SECURITY_WPA2_TKIP_PSK) ||
+										(join_user_data->network_info.security_type == RTW_SECURITY_WPA2_MIXED_PSK) ||
+										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_AES_PSK) ||
+										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_TKIP_PSK) ||
+										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ||
+										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_AES_PSK) ||
+										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_TKIP_PSK) ||
+										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_MIXED_PSK)
+#ifdef CONFIG_SAE_SUPPORT
+										||(join_user_data->network_info.security_type == RTW_SECURITY_WPA3_AES_PSK)
+#endif
+										)){
 		rtw_join_status = JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING;
 	}
 }
@@ -384,7 +396,19 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 			else if(rtw_join_status == JOIN_CONNECTING)
 		 		error_flag = RTW_CONNECT_FAIL;
 
-		}else if(join_user_data->network_info.security_type == RTW_SECURITY_WPA2_AES_PSK){
+		}else if(join_user_data->network_info.security_type == RTW_SECURITY_WPA2_AES_PSK ||
+				join_user_data->network_info.security_type == RTW_SECURITY_WPA2_TKIP_PSK ||
+				join_user_data->network_info.security_type == RTW_SECURITY_WPA2_MIXED_PSK ||
+				join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_AES_PSK ||
+				join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_TKIP_PSK ||
+				join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK ||
+				join_user_data->network_info.security_type == RTW_SECURITY_WPA_AES_PSK ||
+				join_user_data->network_info.security_type == RTW_SECURITY_WPA_TKIP_PSK ||
+				join_user_data->network_info.security_type == RTW_SECURITY_WPA_MIXED_PSK
+#ifdef CONFIG_SAE_SUPPORT
+				||join_user_data->network_info.security_type == RTW_SECURITY_WPA3_AES_PSK
+#endif
+			){
 
 			if(rtw_join_status & JOIN_NO_NETWORKS)
 				error_flag = RTW_NONE_NETWORK;
