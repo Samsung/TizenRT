@@ -233,6 +233,9 @@ EXTERN const uint32_t g_idle_topstack;
 
 /* Address of the saved user stack pointer */
 
+EXTERN uint32_t g_nestedirqstkalloc;	/* Allocated nested irq stack base */
+EXTERN uint32_t g_nestedirqstkbase;	/* Initial top of nested interrupt stack */
+
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 EXTERN uint32_t g_intstackalloc;	/* Allocated stack base */
 EXTERN uint32_t g_intstackbase;	/* Initial top of interrupt stack */
