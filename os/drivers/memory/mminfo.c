@@ -141,6 +141,12 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = OK;
 		break;
 #endif
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	case MMINFOIOC_MNG_ALLOCFAIL:
+		/* There is a single heap for user. So start and end indexes of heap are always 0. */
+		mm_manage_alloc_fail(BASE_HEAP, 0, 0, (size_t)arg, USER_HEAP);
+		break;
+#endif
 	default:
 		mdbg("Not supported\n");
 		break;

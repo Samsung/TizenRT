@@ -160,8 +160,11 @@ static void *heap_malloc(size_t size, int s, int e, size_t caller_retaddr)
 			return ret;
 		}
 	}
-
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_ioctl_alloc_fail(size);
+#else
 	mm_manage_alloc_fail(BASE_HEAP, s, e, size, USER_HEAP);
+#endif
 	return NULL;
 }
 #endif

@@ -140,7 +140,11 @@ static void *heap_zalloc(size_t size, int s, int e, size_t caller_retaddr)
 		}
 	}
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_ioctl_alloc_fail(size);
+#else
 	mm_manage_alloc_fail(BASE_HEAP, s, e, size, USER_HEAP);
+#endif
 	return NULL;
 }
 #endif

@@ -21,6 +21,19 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
+#undef  CONFIG_DEBUG
+#undef  CONFIG_DEBUG_ERROR
+#undef  CONFIG_DEBUG_WARN
+#undef  CONFIG_DEBUG_VERBOSE
+#undef  CONFIG_LOGM
+#undef  CONFIG_DEBUG_MM
+#define CONFIG_DEBUG 1
+#define CONFIG_DEBUG_ERROR 1
+#define CONFIG_DEBUG_WARN 1
+#define CONFIG_DEBUG_VERBOSE 1
+#define CONFIG_DEBUG_MM 1
+
 #if !defined(__KERNEL__)
 #include <stdio.h>
 #endif
@@ -34,13 +47,15 @@
 #include <tinyara/reboot_reason.h>
 #endif
 #endif
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <errno.h>
+#include <fcntl.h>
+#include <tinyara/fs/ioctl.h>
+#include <tinyara/mminfo.h>
+#endif
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
-#if defined(__KERNEL__)
-#define mfdbg lldbg // When CONFIG_MM_ASSERT_ON_FAIL is enabled, we cannot use the buffer way like mdbg because of board assert.
-#else
-#define mfdbg printf
-#endif /* defined(__KERNEL__) */
+#define mfdbg lldbg
 #else  /* CONFIG_MM_ASSERT_ON_FAIL */
 #define mfdbg mdbg
 #endif
@@ -68,6 +83,11 @@
 
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type)
 {
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+	/* To prevent mixed log, disable the interrupts. */
+	irqsave();
+#endif
+
 	mfdbg("Allocation failed from %s heap.\n", (heap_type == KERNEL_HEAP) ? KERNEL_STR : USER_STR);
 	mfdbg(" - requested size %u\n", size);
 
@@ -95,3 +115,19 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	PANIC();
 #endif
 }
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+void mm_ioctl_alloc_fail(size_t size)
+{
+	int mmfd = open(MMINFO_DRVPATH, O_RDWR);
+	if (mmfd < 0) {
+		mdbg("Fail to open %s, errno %d\n", MMINFO_DRVPATH, get_errno());
+	} else {
+		int res = ioctl(mmfd, MMINFOIOC_MNG_ALLOCFAIL, (int)size);
+		if (res == ERROR) {
+			mdbg("Fail to call mm_manage_allocfail, errno %d\n", get_errno());
+		}
+		close(mmfd);
+	}
+}
+#endif

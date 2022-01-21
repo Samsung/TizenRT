@@ -714,6 +714,9 @@ int mm_check_heap_corruption(struct mm_heap_s *heap);
 
 /* Function to manage the memory allocation failure case. */
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+void mm_ioctl_alloc_fail(size_t size);
+#endif
 
 #if CONFIG_KMM_NHEAPS > 1
 /**

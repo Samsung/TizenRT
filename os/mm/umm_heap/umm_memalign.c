@@ -150,7 +150,11 @@ FAR void *memalign(size_t alignment, size_t size)
 		}
 	}
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_ioctl_alloc_fail(size);
+#else
 	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+#endif
 	return NULL;
 }
 

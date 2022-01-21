@@ -138,7 +138,11 @@ static void *heap_calloc(size_t n, size_t elem_size, int s, int e, size_t caller
 			return ret;
 		}
 	}
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	mm_ioctl_alloc_fail(n * elem_size);
+#else
 	mm_manage_alloc_fail(BASE_HEAP, s, e, n * elem_size, USER_HEAP);
+#endif
 	return NULL;
 }
 
