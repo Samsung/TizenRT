@@ -333,26 +333,28 @@ static void wifi_connected_hdl( char* buf, int buf_len, int flags, void* userdat
 		return;
 	}
 #endif /* CONFIG_ENABLE_EAP */
-	
-	if((join_user_data!=NULL)&&((join_user_data->network_info.security_type == RTW_SECURITY_OPEN) ||
-		(join_user_data->network_info.security_type == RTW_SECURITY_WEP_PSK) ||
-		(join_user_data->network_info.security_type == RTW_SECURITY_WEP_SHARED))){
-		rtw_join_status = JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING;
-		rtw_up_sema(&join_user_data->join_sema);
-	}else if((join_user_data!=NULL)&&((join_user_data->network_info.security_type == RTW_SECURITY_WPA2_AES_PSK) ||
-										(join_user_data->network_info.security_type == RTW_SECURITY_WPA2_TKIP_PSK) ||
-										(join_user_data->network_info.security_type == RTW_SECURITY_WPA2_MIXED_PSK) ||
-										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_AES_PSK) ||
-										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_TKIP_PSK) ||
-										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ||
-										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_AES_PSK) ||
-										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_TKIP_PSK) ||
-										(join_user_data->network_info.security_type == RTW_SECURITY_WPA_MIXED_PSK)
+
+	rtw_security_t security_type = join_user_data->network_info.security_type;
+
+	if (join_user_data != NULL) {
+		if (security_type == RTW_SECURITY_OPEN || security_type == RTW_SECURITY_WEP_PSK || security_type == RTW_SECURITY_WEP_SHARED) {
+			rtw_join_status = JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING;
+			rtw_up_sema(&join_user_data->join_sema);
+		} else if (security_type == RTW_SECURITY_WPA2_AES_PSK ||
+		security_type == RTW_SECURITY_WPA2_TKIP_PSK ||
+		security_type == RTW_SECURITY_WPA2_MIXED_PSK ||
+		security_type == RTW_SECURITY_WPA_WPA2_AES_PSK ||
+		security_type == RTW_SECURITY_WPA_WPA2_TKIP_PSK ||
+		security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK ||
+		security_type == RTW_SECURITY_WPA_AES_PSK ||
+		security_type == RTW_SECURITY_WPA_TKIP_PSK ||
+		security_type == RTW_SECURITY_WPA_MIXED_PSK
 #ifdef CONFIG_SAE_SUPPORT
-										||(join_user_data->network_info.security_type == RTW_SECURITY_WPA3_AES_PSK)
+		||(security_type == RTW_SECURITY_WPA3_AES_PSK)
 #endif
-										)){
-		rtw_join_status = JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING;
+		) {
+			rtw_join_status = JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING;
+		}
 	}
 }
 static void wifi_handshake_done_hdl( char* buf, int buf_len, int flags, void* userdata)
@@ -376,61 +378,63 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 	( void ) userdata;
 #define REASON_4WAY_HNDSHK_TIMEOUT 15
 	u16 disconn_reason = 0;
+	rtw_security_t security_type = join_user_data->network_info.security_type;
+
 	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
-	if (buf != NULL){
+	if (buf != NULL) {
 		/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
 		disconn_reason =*(u16*)(buf+6);
 	}
 
-	if(join_user_data != NULL){
-		if(join_user_data->network_info.security_type == RTW_SECURITY_OPEN){
+	if (join_user_data != NULL) {
+		if (security_type == RTW_SECURITY_OPEN) {
 
-			if(rtw_join_status & JOIN_NO_NETWORKS)
+			if (rtw_join_status & JOIN_NO_NETWORKS)
 				error_flag = RTW_NONE_NETWORK;
 
-		}else if(join_user_data->network_info.security_type == RTW_SECURITY_WEP_PSK){
+		} else if (security_type == RTW_SECURITY_WEP_PSK) {
 
-			if(rtw_join_status & JOIN_NO_NETWORKS)
+			if (rtw_join_status & JOIN_NO_NETWORKS)
 				error_flag = RTW_NONE_NETWORK;
 
-			else if(rtw_join_status == JOIN_CONNECTING)
+			else if (rtw_join_status == JOIN_CONNECTING)
 		 		error_flag = RTW_CONNECT_FAIL;
 
-		}else if(join_user_data->network_info.security_type == RTW_SECURITY_WPA2_AES_PSK ||
-				join_user_data->network_info.security_type == RTW_SECURITY_WPA2_TKIP_PSK ||
-				join_user_data->network_info.security_type == RTW_SECURITY_WPA2_MIXED_PSK ||
-				join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_AES_PSK ||
-				join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_TKIP_PSK ||
-				join_user_data->network_info.security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK ||
-				join_user_data->network_info.security_type == RTW_SECURITY_WPA_AES_PSK ||
-				join_user_data->network_info.security_type == RTW_SECURITY_WPA_TKIP_PSK ||
-				join_user_data->network_info.security_type == RTW_SECURITY_WPA_MIXED_PSK
+		} else if (security_type == RTW_SECURITY_WPA2_AES_PSK ||
+				security_type == RTW_SECURITY_WPA2_TKIP_PSK ||
+				security_type == RTW_SECURITY_WPA2_MIXED_PSK ||
+				security_type == RTW_SECURITY_WPA_WPA2_AES_PSK ||
+				security_type == RTW_SECURITY_WPA_WPA2_TKIP_PSK ||
+				security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK ||
+				security_type == RTW_SECURITY_WPA_AES_PSK ||
+				security_type == RTW_SECURITY_WPA_TKIP_PSK ||
+				security_type == RTW_SECURITY_WPA_MIXED_PSK
 #ifdef CONFIG_SAE_SUPPORT
-				||join_user_data->network_info.security_type == RTW_SECURITY_WPA3_AES_PSK
+				||security_type == RTW_SECURITY_WPA3_AES_PSK
 #endif
-			){
+			) {
 
-			if(rtw_join_status & JOIN_NO_NETWORKS)
+			if (rtw_join_status & JOIN_NO_NETWORKS)
 				error_flag = RTW_NONE_NETWORK;
 
-			else if(rtw_join_status == JOIN_CONNECTING)
+			else if (rtw_join_status == JOIN_CONNECTING)
 		 		error_flag = RTW_CONNECT_FAIL;
 
-			else if(rtw_join_status == (JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING))
+			else if (rtw_join_status == (JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING))
 			{
-				 if(disconn_reason == REASON_4WAY_HNDSHK_TIMEOUT)
+				 if (disconn_reason == REASON_4WAY_HNDSHK_TIMEOUT)
 					error_flag = RTW_4WAY_HANDSHAKE_TIMEOUT;
 				else
 					error_flag = RTW_WRONG_PASSWORD;
 			}
 		}
 		
-	}else{
-		if(error_flag == RTW_NO_ERROR) //wifi_disconn_hdl will be dispatched one more time after join_user_data = NULL add by frankie
+	} else {
+		if (error_flag == RTW_NO_ERROR) //wifi_disconn_hdl will be dispatched one more time after join_user_data = NULL add by frankie
 			error_flag = RTW_UNKNOWN;
 	}
 	
-	if(join_user_data != NULL) {
+	if (join_user_data != NULL) {
 		rtw_up_sema(&join_user_data->join_sema);
 	} else {
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
@@ -447,7 +451,7 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 
 // Need to use sema to make sure wifi_disconn_hdl invoked before setting join_user_data when connecting to another AP
 #if CONFIG_WIFI_IND_USE_THREAD
-	if(disconnect_sema != NULL){
+	if (disconnect_sema != NULL) {
 		rtw_up_sema(&disconnect_sema);
 	}
 #endif
