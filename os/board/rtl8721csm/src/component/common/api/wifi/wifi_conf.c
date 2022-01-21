@@ -334,9 +334,9 @@ static void wifi_connected_hdl( char* buf, int buf_len, int flags, void* userdat
 	}
 #endif /* CONFIG_ENABLE_EAP */
 
-	rtw_security_t security_type = join_user_data->network_info.security_type;
-
 	if (join_user_data != NULL) {
+		rtw_security_t security_type = join_user_data->network_info.security_type;
+
 		if (security_type == RTW_SECURITY_OPEN || security_type == RTW_SECURITY_WEP_PSK || security_type == RTW_SECURITY_WEP_SHARED) {
 			rtw_join_status = JOIN_COMPLETE | JOIN_SECURITY_COMPLETE | JOIN_ASSOCIATED | JOIN_AUTHENTICATED | JOIN_LINK_READY | JOIN_CONNECTING;
 			rtw_up_sema(&join_user_data->join_sema);
@@ -378,7 +378,6 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 	( void ) userdata;
 #define REASON_4WAY_HNDSHK_TIMEOUT 15
 	u16 disconn_reason = 0;
-	rtw_security_t security_type = join_user_data->network_info.security_type;
 
 	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
 	if (buf != NULL) {
@@ -387,6 +386,8 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 	}
 
 	if (join_user_data != NULL) {
+		rtw_security_t security_type = join_user_data->network_info.security_type;
+
 		if (security_type == RTW_SECURITY_OPEN) {
 
 			if (rtw_join_status & JOIN_NO_NETWORKS)
