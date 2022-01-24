@@ -226,6 +226,28 @@ static inline void up_registerdump(void)
 #endif
 
 /****************************************************************************
+ * Name: up_show_tcbinfo
+ *
+ * Description:
+ *   Show the specific tcb information
+ *
+ ****************************************************************************/
+
+void up_show_tcbinfo(struct tcb_s *tcb)
+{
+	lldbg("State       : %u\n", tcb->task_state);
+	lldbg("Flags       : %u\n", tcb->flags);
+	lldbg("Lock count  : %u\n", tcb->lockcount);
+	lldbg("Timeslice   : %d\n", tcb->timeslice);
+	lldbg("Waitdog     : %p\n", tcb->waitdog);
+	lldbg("WaitSem     : %p\n", tcb->waitsem);
+	lldbg("MsgwaitQ    : %p\n", tcb->msgwaitq);
+	lldbg("Sigdeliver  : %p\n", tcb->xcp.sigdeliver);
+	lldbg("Nsyscalls   : %u\n", tcb->xcp.nsyscalls);
+	lldbg("Syscall     : %p\n", tcb->xcp.syscall);
+}
+
+/****************************************************************************
  * Name: up_taskdump
  ****************************************************************************/
 
@@ -239,13 +261,13 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%*s | %5d | %4d | %7lu / %7lu | %16p\n", CONFIG_TASK_NAME_SIZE,
-			tcb->name, tcb->pid, tcb->sched_priority,
-			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr);
+	lldbg("%*s | %5d | %4d | %7lu / %7lu | %16p | %8p\n", CONFIG_TASK_NAME_SIZE,
+			tcb->name, tcb->pid, tcb->sched_priority,  
+			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb);
 #else
-	lldbg("%5d | %4d | %7lu / %7lu | %16p\n",
-			tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size,
-			(unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr);
+	lldbg("%5d | %4d | %7lu / %7lu | %16p | %8p\n",
+			tcb->pid, tcb->sched_priority, tcb, (unsigned long)used_stack_size,
+			(unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb);
 #endif
 
 	if (used_stack_size == tcb->adj_stack_size) {
@@ -267,10 +289,10 @@ static inline void up_showtasks(void)
 	lldbg("*******************************************\n");
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%*s | %5s | %4s | %7s / %7s | %16s\n", CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK",  "STACK ALLOC ADDR");
-	lldbg("-----------------------------------------------------------------------------------------\n");
+	lldbg("%*s | %5s | %4s | %7s / %7s | %16s | %8s\n", CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK",  "STACK ALLOC ADDR", "TCB ADDR");
+	lldbg("---------------------------------------------------------------------------------------------------\n");
 #else
-	lldbg("%5s | %4s | %7s / %7s | %16s\n", "PID", "PRI", "USED", "TOTAL STACK", "STACK ALLOC ADDR");
+	lldbg("%5s | %4s | %7s / %7s | %16s | %8s\n", "PID", "PRI", "USED", "TOTAL STACK", "STACK ALLOC ADDR", "TCB ADDR");
 	lldbg("------------------------------------------------------\n");
 #endif
 
@@ -496,6 +518,7 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	size_t kernel_assert_location = 0;
 	ARCH_GET_RET_ADDRESS(kernel_assert_location)
+	struct tcb_s *fault_tcb = this_task();
 
 	board_led_on(LED_ASSERTION);
 
@@ -520,7 +543,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	}
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
+	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
@@ -544,8 +567,6 @@ void up_assert(const uint8_t *filename, int lineno)
 		_up_assert(EXIT_FAILURE);
 	}
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	struct tcb_s *fault_tcb = this_task();
-
 	if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
 		lldbg("Checking current app heap for corruption...\n");
 		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
@@ -556,8 +577,15 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	lldbg("Assert location (PC) : 0x%08x\n", asserted_location);
 
+	/* Dump the asserted TCB */
+	lldbg("*******************************************\n");
+	lldbg("Asserted TCB Info\n");
+	lldbg("*******************************************\n");
+
+	up_show_tcbinfo(fault_tcb);
+
 #if defined(CONFIG_BOARD_CRASHDUMP)
-	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
+	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
 #endif
 
 #ifdef CONFIG_BINMGR_RECOVERY
