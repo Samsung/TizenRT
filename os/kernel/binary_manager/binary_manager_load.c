@@ -124,14 +124,14 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 			/* Set the data in table from header */
 			BIN_LOAD_ATTR(bin_idx) = *load_attr;
 			strncpy(BIN_NAME(bin_idx), load_attr->bin_name, BIN_NAME_MAX);
-			printf("[Binary Loading] Load success! [Name: %s] [Version: %d] [Partition: %s] %s\n", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx), GET_PARTNAME(BIN_USEIDX(bin_idx)), BINARY_COMP_TYPE);
+			bmdbg("Load success! [Name: %s] [Version: %d] [Partition: %s] %s\n", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx), GET_PARTNAME(BIN_USEIDX(bin_idx)), BINARY_COMP_TYPE);
 			return OK;
 		} else if (errno == ENOMEM) {
 			/* Sleep for a moment to get available memory */
 			usleep(1000);
 		}
 		retry_count++;
-		printf("[Binary Loading] Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
+		bmdbg("Load '%s' %dth fail, errno %d\n", BIN_NAME(bin_idx), retry_count, errno);
 	}
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp = load_attr->binp;
@@ -200,16 +200,16 @@ static int binary_manager_load(int bin_idx)
 			/* Check signature */
 			ret = up_verify_usersignature(BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 			if (ret == OK) {
-				printf("[Binary Loading] %s Signature Checking Success\n", BIN_NAME(bin_idx));
+				bmdbg("%s Signature Checking Success\n", BIN_NAME(bin_idx));
 			} else {
-				printf("[Binary Loading] Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
+				bmdbg("Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
 					need_update_bp = true;
-					printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
+					bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
-					printf("[Binary Loading] No valid binary %s\n", BIN_NAME(bin_idx));
+					bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
 					break;
 				}
 			}
@@ -228,18 +228,18 @@ static int binary_manager_load(int bin_idx)
 				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = user_header_data.bin_ver;
 			}
 			if (ret == BINMGR_OK) {
-				printf("[Binary Loading] %s Header Checking Success\n", BIN_NAME(bin_idx));
+				bmdbg("%s Header Checking Success\n", BIN_NAME(bin_idx));
 			} else {
 				/* Clear version because of invalid binary */
 				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = 0;
-				printf("[Binary Loading] Invalid Header data, name : %s, devpath : %p\n", BIN_NAME(bin_idx), devpath);
+				bmdbg("Invalid Header data, name : %s, devpath : %p\n", BIN_NAME(bin_idx), devpath);
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
 					need_update_bp = true;
-					printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
+					bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
-					printf("[Binary Loading] No valid binary %s\n", BIN_NAME(bin_idx));
+					bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
 					break;
 				}
 			}
@@ -289,7 +289,7 @@ static int binary_manager_load(int bin_idx)
 					binary_manager_set_bpdata(&update_bp_data);
 					bmvdbg("Update bootparam SUCCESS\n");
 				} else {
-					bmdbg("Failed to update bootparam, %d\n", ret);
+					bmdbg("Fail to update bootparam to recover, %d\n", ret);
 				}
 			}
 			return BINMGR_OK;
@@ -298,9 +298,9 @@ static int binary_manager_load(int bin_idx)
 			/* Change index 0 to 1 and 1 to 0. */
 			BIN_USEIDX(bin_idx) ^= 1;
 			need_update_bp = true;
-			printf("[Binary Loading] Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
+			bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 		} else {
-			printf("[Binary Loading] No valid binary %s\n", BIN_NAME(bin_idx));
+			bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
 		}
 	} while (bin_count > 0);
 
@@ -339,7 +339,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 #endif
 		ret = unload_module(g_lib_binp);
 		if (ret != OK) {
-			bmdbg("Failed to unload common binary %d\n", ret);
+			bmdbg("Fail to unload common binary %d\n", ret);
 			return BINMGR_OPERATION_FAIL;
 		}
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -360,7 +360,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	binid = BIN_ID(bin_idx);
 	btcb = (struct tcb_s *)sched_gettcb(binid);
 	if (btcb == NULL) {
-		bmdbg("Failed to get main task of binary %d\n", binid);
+		bmdbg("Fail to get main task of binary %d\n", binid);
 		return BINMGR_OPERATION_FAIL;
 	}
 
@@ -373,7 +373,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		/* Waits until some callbacks for cleanup are done if registered callbacks exist */
 		ret = binary_manager_send_statecb_msg(bin_idx, BIN_NAME(bin_idx), BINARY_READYTOUNLOAD, true);
 		if (ret != OK) {
-			bmdbg("Failed to execute callbacks for unloading %s\n", BIN_NAME(bin_idx));
+			bmdbg("Fail to execute callbacks for unloading %s\n", BIN_NAME(bin_idx));
 			/* Recover binary state on failure */
 			BIN_STATE(bin_idx) = state;
 			return ERROR;
@@ -392,7 +392,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		if (tcb != btcb) {
 			ret = task_terminate_unloaded(tcb);
 			if (ret < 0) {
-				bmdbg("Failed to terminate task of binary %d\n", binid);
+				bmdbg("Fail to terminate task of binary %d\n", binid);
 			}
 		}
 		tcb = ntcb;
@@ -407,7 +407,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		if (tcb != btcb) {
 			ret = task_terminate_unloaded(tcb);
 			if (ret < 0) {
-				bmdbg("Failed to terminate task of binary %d\n", binid);
+				bmdbg("Fail to terminate task of binary %d\n", binid);
 			}
 		}
 		tcb = ntcb;
@@ -423,7 +423,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	/* Finally, unload binary */
 	ret = task_terminate_unloaded(btcb);
 	if (ret < 0) {
-		bmdbg("Failed to unload binary %s\n", BIN_NAME(bin_idx));
+		bmdbg("Fail to unload binary %s\n", BIN_NAME(bin_idx));
 		/* Recover binary state on failure */
 		BIN_STATE(bin_idx) = state;
 		return ERROR;
@@ -554,10 +554,9 @@ static int reloading_thread(int argc, char *argv[])
 	for (bidx = 0; bidx <= bin_count; bidx++) {
 		ret = binary_manager_terminate_binary(bidx);
 		if (ret != OK) {
-			bmdbg("Failed to terminate binary %s\n", BIN_NAME(bidx));
 			return BINMGR_OPERATION_FAIL;
 		}
-		bmdbg("Terminate binary %d\n", bidx);
+		bmvdbg("Terminated binary %d\n", bidx);
 	}
 #else
 	load_cmd = LOADCMD_LOAD;
@@ -565,7 +564,6 @@ static int reloading_thread(int argc, char *argv[])
 	/* Unload the faulty binary */
 	ret = binary_manager_terminate_binary(bin_idx);
 	if (ret != OK) {
-		bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
 		return BINMGR_OPERATION_FAIL;
 	}
 #endif
@@ -576,7 +574,7 @@ static int reloading_thread(int argc, char *argv[])
 	/* Create a loader to reload binary */
 	ret = binary_manager_execute_loader(load_cmd, bin_idx);
 	if (ret != OK) {
-		bmdbg("Failed to execute loader to reload binary, %d\n", ret);
+		bmdbg("Fail to execute loader to reload binary, %d\n", ret);
 		return BINMGR_OPERATION_FAIL;
 	}
 
@@ -611,10 +609,9 @@ static int update_thread(int argc, char *argv[])
 		if (BIN_STATE(bin_idx) == BINARY_LOADED || BIN_STATE(bin_idx) == BINARY_RUNNING) {
 			ret = binary_manager_terminate_binary(bin_idx);
 			if (ret != OK) {
-				bmdbg("Failed to terminate binary %s\n", BIN_NAME(bin_idx));
 				return BINMGR_OPERATION_FAIL;
 			}
-			bmdbg("Terminate binary %d\n", bin_idx);
+			bmvdbg("Terminated binary %d\n", bin_idx);
 		}
 	}
 
@@ -622,7 +619,6 @@ static int update_thread(int argc, char *argv[])
 	/* Finally, Unload common library */
 	ret = binary_manager_terminate_binary(BM_CMNLIB_IDX);
 	if (ret != OK) {
-		bmdbg("Failed to terminate common binary\n");
 		return BINMGR_OPERATION_FAIL;
 	}
 #endif
@@ -636,7 +632,6 @@ static int update_thread(int argc, char *argv[])
 	/* Load binary */
 	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, bin_idx);
 	if (ret != OK) {
-		bmdbg("Failed to load binary, bin_idx %d\n", bin_idx);
 		return BINMGR_OPERATION_FAIL;
 	}
 
@@ -742,7 +737,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 		bmvdbg("Execute loading thread with pid %d\n", ret);
 		ret = OK;
 	} else {
-		bmdbg("Loading Fail, errno %d\n", errno);
+		bmdbg("Fail to create loading thread for binary idx %d, errno %d\n", bin_idx, errno);
 	}
 
 	return ret;
