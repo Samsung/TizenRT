@@ -497,7 +497,8 @@ void lpwork_restorepriority(uint8_t reqprio);
  * Description:
  *   Get the current running worker
  ****************************************************************************/
-#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+#if defined(CONFIG_DEBUG_WORKQUEUE)
+#if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
 worker_t work_get_current(void);
 
 #ifdef CONFIG_SCHED_HPWORK
@@ -510,6 +511,7 @@ worker_t work_get_current(void);
 #define IS_LPWORK (strncmp(this_task()->name, LPWORKNAME, sizeof(HPWORKNAME)) == 0)
 #else
 #define IS_LPWORK (false)
+#endif
 #endif
 #endif
 
