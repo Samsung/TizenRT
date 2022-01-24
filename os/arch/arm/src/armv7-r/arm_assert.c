@@ -84,6 +84,7 @@
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
+#include <tinyara/sched.h>
 #include <tinyara/usb/usbdev_trace.h>
 #include <arch/board/board.h>
 
@@ -474,6 +475,28 @@ void dump_stack(void)
 #endif						/* End of CONFIG_FRAME_POINTER */
 
 /****************************************************************************
+ * Name: up_show_tcbinfo
+ *
+ * Description:
+ *   Show the specific tcb information
+ *
+ ****************************************************************************/
+
+void up_show_tcbinfo(struct tcb_s *tcb)
+{
+	lldbg("State       : %u\n", tcb->task_state);
+	lldbg("Flags       : %u\n", tcb->flags);
+	lldbg("Lock count  : %u\n", tcb->lockcount);
+	lldbg("Timeslice   : %d\n", tcb->timeslice);
+	lldbg("Waitdog     : %p\n", tcb->waitdog);
+	lldbg("WaitSem     : %p\n", tcb->waitsem);
+	lldbg("MsgwaitQ    : %p\n", tcb->msgwaitq);
+	lldbg("Sigdeliver  : %p\n", tcb->xcp.sigdeliver);
+	lldbg("Nsyscalls   : %u\n", tcb->xcp.nsyscalls);
+	lldbg("Syscall     : %p\n", tcb->xcp.syscall);
+}
+
+/****************************************************************************
  * Name: up_taskdump
  ****************************************************************************/
 
@@ -486,13 +509,13 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 	/* Dump interesting properties of this task */
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%10s | %5d | %4d | %7lu / %7lu | %16p\n",
-			tcb->name, tcb->pid, tcb->sched_priority,
-			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr);
+	lldbg("%10s | %5d | %4d | %7lu / %7lu | %16p  %8p\n",
+			tcb->name, tcb->pid, tcb->sched_priority, 
+			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb);
 #else
 	lldbg("%5d | %4d | %7lu / %7lu | %16p\n",
 			tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size,
-			(unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr);
+			(unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb);
 #endif
 
 	if (used_stack_size == tcb->adj_stack_size) {
@@ -513,10 +536,10 @@ static inline void up_showtasks(void)
 	lldbg("*******************************************\n");
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("   NAME   |  PID  |  PRI |    USED /  TOTAL STACK | STACK ALLOC ADDR\n");
-	lldbg("----------------------------------------------------------------------\n");
+	lldbg("%*s | %5s | %4s | %7s / %7s | %16s | %8s\n", CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK", "STACK ALLOC ADDR", "TCB ADDR");
+	lldbg("---------------------------------------------------------------------------------------------------\n");
 #else
-	lldbg("  PID | PRI |   USED / TOTAL STACK | STACK ALLOC ADDR\n");
+	lldbg("%5s | %4s | %7s / %7s | %16s | %8s\n", "PID", "PRI", "USED", "TOTAL STACK", "STACK ALLOC ADDR", "TCB ADDR");
 	lldbg("------------------------------------------------------\n");
 #endif
 
@@ -954,6 +977,7 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 
 	board_autoled_on(LED_ASSERTION);
+	struct tcb_s *fault_tcb = this_task();
 #if defined(CONFIG_DEBUG_DISPLAY_SYMBOL)
 	/* First time, when code reaches here abort_mode will be false and
 	   for next iteration (recursive abort case), abort_mode is already
@@ -966,7 +990,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	abort_mode = true;
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
+	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
@@ -978,6 +1002,13 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif /* defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__) */
 
 	up_dumpstate();
+
+	/* Dump the asserted TCB */
+	lldbg("*******************************************\n");
+	lldbg("Asserted TCB Info\n");
+	lldbg("*******************************************\n");
+
+	up_show_tcbinfo(fault_tcb);
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
