@@ -77,8 +77,10 @@
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
-#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+#if defined(CONFIG_DEBUG_WORKQUEUE)
+#if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
 #include <tinyara/wqueue.h>
+#endif
 #endif
 
 #include <tinyara/irq.h>
@@ -971,11 +973,13 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
-#if defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__)
+#if defined(CONFIG_DEBUG_WORKQUEUE)
+#if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
 	if (IS_HPWORK || IS_LPWORK) {
 		lldbg("Running work function is %x.\n", work_get_current());
 	}
-#endif /* defined(CONFIG_DEBUG_WORKQUEUE) && defined(__KERNEL__) */
+#endif
+#endif /* defined(CONFIG_DEBUG_WORKQUEUE) */
 
 	up_dumpstate();
 
