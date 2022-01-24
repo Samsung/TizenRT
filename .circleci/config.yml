@@ -114,24 +114,6 @@ workflows:
       - artik055s/audio:
           requires:
             - checkout_code
-      - artik053/st_things:
-          requires:
-            - checkout_code
-      - artik053/tc:
-          requires:
-            - checkout_code
       - qemu/build_test:
-          requires:
-            - checkout_code
-      - esp_wrover_kit/hello_with_tash:
-          requires:
-            - checkout_code
-      - imxrt1020-evk/loadable_elf_apps:
-          requires:
-            - checkout_code
-      - rtl8721csm/hello:
-          requires:
-            - checkout_code
-      - rtl8721csm/loadable_apps:
           requires:
             - checkout_code
