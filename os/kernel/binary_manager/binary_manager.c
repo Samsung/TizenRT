@@ -150,7 +150,7 @@ int binary_manager(int argc, char *argv[])
 		bmvdbg("Launch fault msg sender thread with pid %d\n", ret);
 		binary_manager_set_faultmsg_sender(ret);
 	} else {
-		bmdbg("Fail to launch fault msg sender\n");
+		bmdbg("Fail to launch fault msg sender, EXIT!\n");
 		return 0;
 	}
 #endif
@@ -161,7 +161,7 @@ int binary_manager(int argc, char *argv[])
 	/* Create binary manager message queue */
 	g_binmgr_mq_fd = mq_open(BINMGR_REQUEST_MQ, O_RDWR | O_CREAT, 0666, &attr);
 	if (g_binmgr_mq_fd == (mqd_t)ERROR) {
-		bmdbg("Failed to open message queue\n");
+		bmdbg("Fail to open mq, errno %d. EXIT!\n", errno);
 		return 0;
 	}
 
@@ -169,7 +169,7 @@ int binary_manager(int argc, char *argv[])
 	/* Execute loading thread for load all binaries */
 	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, 0);
 	if (ret != OK) {
-		bmdbg("Failed to create loading thread, EXIT\n");
+		bmdbg("Fail to create loading thread. EXIT!\n");
 		mq_close(g_binmgr_mq_fd);
 		mq_unlink(BINMGR_REQUEST_MQ);
 		return 0;
@@ -180,7 +180,7 @@ int binary_manager(int argc, char *argv[])
 		bmvdbg("Wait for message\n");
 		nbytes = mq_receive(g_binmgr_mq_fd, (char *)&request_msg, sizeof(binmgr_request_t), NULL);
 		if (nbytes <= 0) {
-			bmdbg("receive ERROR %d, errno %d, retry!\n", nbytes, errno);
+			bmdbg("Fail to receive mq, ret %d, errno %d. retry!\n", nbytes, errno);
 			continue;
 		}
 

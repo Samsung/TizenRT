@@ -73,7 +73,7 @@ void binary_manager_unregister_statecb(int pid)
 	char q_name[BIN_PRIVMQ_LEN];
 
 	if (pid < 0) {
-		bmdbg("Invalid parameter\n");
+		bmdbg("Invalid pid %d\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
@@ -81,7 +81,7 @@ void binary_manager_unregister_statecb(int pid)
 	tcb = sched_gettcb(pid);
 
 	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_binidx < 0) {
-		bmdbg("Failed to get pid %d binary info\n", pid);
+		bmdbg("Fail to get tcb of pid %d\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
@@ -127,14 +127,14 @@ void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 	binmgr_statecb_response_t response_msg;
 
 	if (pid < 0 || cb_info == NULL) {
-		bmdbg("Invalid parameter\n");
+		bmdbg("Invalid pid %d\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
 
 	tcb = sched_gettcb(pid);
 	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_binidx < 0) {
-		bmdbg("Failed to get pid %d binary info\n", pid);
+		bmdbg("Fail to get tcb of pid %d\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
@@ -160,7 +160,7 @@ void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 	/* If not, allocate new callback node and copy data */
 	cb_node = (statecb_node_t *)kmm_malloc(sizeof(statecb_node_t));
 	if (cb_node == NULL) {
-		bmdbg("Out of Memory\n");
+		bmdbg("Fail to malloc for cb node\n");
 		response_msg.result = BINMGR_OUT_OF_MEMORY;
 		goto send_result;
 	}
@@ -203,7 +203,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 		attr.mq_msgsize = sizeof(binmgr_statecb_response_t);
 		recv_mq = mq_open(BINMGR_CBMSG_MQ, O_RDONLY | O_CREAT, 0666, &attr);
 		if (recv_mq == (mqd_t)ERROR) {
-			bmdbg("Failed to open recv mq, errno %d\n", errno);
+			bmdbg("Fail to open recv mq, errno %d\n", errno);
 			return ERROR;
 		}
 	}
@@ -223,7 +223,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 		snprintf(q_name, BIN_NAME_MAX, "%s%d", BINMGR_CBMSG_MQ, cb_node->pid);
 		send_mq = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
 		if (send_mq == (mqd_t)ERROR) {
-			bmdbg("Failed to open mq '%s', errno %d\n", q_name, errno);
+			bmdbg("Fail to open mq '%s', errno %d\n", q_name, errno);
 			goto errout;
 		}
 		state_data.callback = cb_node->cb_info;
@@ -236,12 +236,12 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 			if (ret == OK) {
 				send_count++;
 			} else {
-				bmdbg("Failed to send signal, errno %d\n", errno);
+				bmdbg("Fail to send signal, errno %d\n", errno);
 				mq_unlink(q_name);
 				goto errout;
 			}
 		} else {
-			bmdbg("Failed to send mq %s\n", q_name);
+			bmdbg("Fail to send mq %s\n", q_name);
 			mq_unlink(q_name);
 			goto errout;
 		}
@@ -258,7 +258,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 			} else if (ret < 0 && errno == EINTR) {
 				continue;
 			} else {
-				bmdbg("Failed to receive response. errno %d\n", errno);
+				bmdbg("Fail to receive response. errno %d\n", errno);
 				goto errout;
 			}
 		}
@@ -308,6 +308,6 @@ void binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 	}
 
 	if (fail_count > 0) {
-		bmdbg("Invalid parameter: bin idx %d, state %d\n", bin_idx, state);
+		bmdbg("Fail to send callback msg to threads of binary %s, state %d, failed count %d\n", BIN_NAME(bin_idx), state, fail_count);
 	}
 }

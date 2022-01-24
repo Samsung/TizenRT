@@ -106,7 +106,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	int header_size = 0;
 
 	if (type < BINARY_KERNEL || type >= BINARY_TYPE_MAX || !header_data) {
-		bmdbg("Invalid parameter\n");
+		bmdbg("Invalid parameter, type %d\n", type);
 		return BINMGR_INVALID_PARAM;
 	}
 	
@@ -123,7 +123,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 
 	fd = open(devpath, O_RDONLY);
 	if (fd < 0) {
-		bmdbg("Failed to open %s: %d, errno %d\n", devpath, ret, errno);
+		bmdbg("Fail to open %s: errno %d\n", devpath, errno);
 		return BINMGR_OPERATION_FAIL;
 	}
 
@@ -131,7 +131,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	if (type != BINARY_KERNEL) {
 		ret = lseek(fd, USER_SIGN_PREPEND_SIZE, SEEK_SET);
 		if (ret < 0) {
-			bmdbg("Failed to set offset to skip signing header, errno : %d\n", errno);
+			bmdbg("Fail to set offset to skip signing header, errno : %d\n", errno);
 			ret = BINMGR_OPERATION_FAIL;
 			goto errout_with_fd;
 		}
@@ -141,7 +141,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	/* Read the binary header */
 	ret = read(fd, (FAR uint8_t *)header_data, header_size);
 	if (ret != header_size) {
-		bmdbg("Failed to read %s: %d, errno %d\n", devpath, ret, errno);
+		bmdbg("Fail to read %s, ret %d, errno %d\n", devpath, ret, errno);
 		ret = BINMGR_OPERATION_FAIL;
 		goto errout_with_fd;
 	}
@@ -176,7 +176,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		crc_bufsize = crc_bufsize < (mem.mxordblk / 2) ? crc_bufsize : (mem.mxordblk / 2);
 		crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
 		if (!crc_buffer) {
-			bmdbg("Failed to allocate buffer for checking crc, size %u\n", crc_bufsize);
+			bmdbg("Fail to malloc buffer for checking crc, size %u\n", crc_bufsize);
 			ret = BINMGR_OUT_OF_MEMORY;
 			goto errout_with_fd;
 		}
@@ -186,7 +186,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 			read_size = bin_size < crc_bufsize ? bin_size : crc_bufsize;
 			ret = read(fd, (void *)crc_buffer, read_size);
 			if (ret < 0 || ret != read_size) {
-				bmdbg("Failed to read : %d, errno %d\n", ret, errno);
+				bmdbg("Fail to read header for checksum : %d, errno %d\n", ret, errno);
 				ret = BINMGR_OPERATION_FAIL;
 				goto errout_with_fd;
 			}
@@ -195,7 +195,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		}
 
 		if (calculate_crc != crc_hash) {
-			bmdbg("Failed to crc check : %u != %u\n", calculate_crc, crc_hash);
+			bmdbg("Fail to crc check : %u != %u\n", calculate_crc, crc_hash);
 			ret = BINMGR_NOT_FOUND;
 			goto errout_with_fd;
 		}

@@ -96,7 +96,7 @@ binmgr_kinfo_t *binary_manager_get_kdata(void)
 void binary_manager_register_kpart(int part_num, int part_size, int part_offset)
 {
 	if (part_num < 0 || part_size <= 0 || part_offset < 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
-		bmdbg("ERROR: Invalid part info : num %d, size %d, offset %d\n", part_num, part_size, part_offset);
+		bmdbg("Invalid kernel partition : num %d, size %d, offset %d\n", part_num, part_size, part_offset);
 		return;
 	}
 
@@ -198,21 +198,21 @@ int binary_manager_update_kernel_binary(void)
 	/* Get the latest bootparam */
 	ret = binary_manager_scan_bootparam(&bp_info);
 	if (ret < 0) {
-		bmdbg("Failed to scan bootparam %d\n", ret);
+		bmdbg("Fail to scan BP %d\n", ret);
 		return ret;
 	}
 
 	/* Compare bootparam version with current running version */
 	if (binary_manager_get_bpdata()->version >= bp_info.bp_data.version) {
 		/* No bootparam update */
-		bmdbg("All binaries are running based on bootparam\n");
+		bmdbg("All binaries are running based on BP\n");
 		return BINMGR_NOT_FOUND;
 	}
 
 	/* Running kernel binary is the latest? */
 	if (binary_manager_get_kdata()->inuse_idx == bp_info.bp_data.active_idx) {
 		/* Yes, current version is the latest. No need to update kernel */
-		bmvdbg("Already running kernel binary is the latest\n");
+		bmdbg("Already running kernel binary is the latest\n");
 		return BINMGR_ALREADY_UPDATED;
 	}
 
@@ -260,7 +260,7 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, int 
 	int bin_idx;
 
 	if (part_num < 0 || part_size <= 0 || g_bin_count >= USER_BIN_COUNT || part_offset < 0) {
-		bmdbg("ERROR: Invalid part info : num %d, size %d, registered user count: %u\n", part_num, part_size, g_bin_count);
+		bmdbg("Invalid user partition : num %d, size %d, registered user count: %u\n", part_num, part_size, g_bin_count);
 		return;
 	}
 
@@ -328,7 +328,7 @@ bool binary_manager_scan_ubin_all(void)
 	for (bp_app_idx = 0; bp_app_idx < bp_data->app_count; bp_app_idx++) {
 		bin_idx = binary_manager_get_index_with_name(bp_data->app_data[bp_app_idx].name);
 		if (bin_idx < 0) {
-			printf("[Binary Scanning] Failed to find matched binary %s in binary table \n", bp_data->app_data[bp_app_idx].name);
+			bmdbg("Fail to find matched binary %s in binary table \n", bp_data->app_data[bp_app_idx].name);
 			continue;
 		}
 		BIN_BPIDX(bin_idx) = bp_app_idx;
@@ -345,14 +345,14 @@ bool binary_manager_scan_ubin_all(void)
 			/* Return true it there is at least one valid binary */
 			BIN_USEIDX(bin_idx) = part_idx;
 			BIN_VER(bin_idx, part_idx) = version;			
-			printf("[Binary Scanning] Found binary %s in partition %d, version %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx), version);
+			bmdbg("Found binary %s in partition %d, version %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx), version);
 			if (bin_idx != BM_CMNLIB_IDX) {
 				BIN_LOAD_PRIORITY(bin_idx, part_idx) = user_header_data.loading_priority;
 			}
 			/* Return true it there is at least one valid binary */
 			is_found = true;
 		} else {
-			printf("[Binary Scanning] Failed to find valid binary %s based on boot parameter. \n", BIN_NAME(bin_idx));
+			bmdbg("Fail to find valid binary %s based on BP. \n", BIN_NAME(bin_idx));
 		}
 	}
 
@@ -414,7 +414,7 @@ int binary_manager_check_user_update(int bin_idx)
  			bmvdbg("Found Latest version %u in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
 			return BINMGR_OK;
 		} else {
-			bmvdbg("Latest version is running, version %d\n", running_ver);
+			bmdbg("No update! Latest version is running, version %d\n", running_ver);
 			return BINMGR_ALREADY_UPDATED;
 		}
 	}
@@ -468,7 +468,7 @@ void binary_manager_add_binlist(FAR struct tcb_s *tcb)
 		 * the pointer. So, perform a null check here. If group is null, it is ok to not add the tcb to our
 		 * list because, task has already exited.
 		 */
-		bmdbg("Failed to add pid %d to binlist. This task has already exited and group is NULL\n", tcb->pid);
+		bmdbg("Fail to add pid %d to binlist. This task has already exited and group is NULL\n", tcb->pid);
 		return;
 	}
 

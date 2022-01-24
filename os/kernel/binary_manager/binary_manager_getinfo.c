@@ -55,7 +55,7 @@ int binary_manager_get_index_with_name(char *bin_name)
 	uint32_t bin_count;
 
 	if (bin_name == NULL) {
-		bmdbg("Invalid binary name, NULL\n");
+		bmdbg("binary name is NULL\n");
 		return ERROR;
 	}
 
@@ -86,7 +86,7 @@ void binary_manager_get_state_with_name(int requester_pid, char *bin_name)
 	binmgr_getstate_response_t response_msg;
 
 	if (requester_pid < 0 || bin_name == NULL) {
-		bmdbg("Invalid data pid %d name %s\n", requester_pid, bin_name);
+		bmdbg("Invalid pid %d name %s\n", requester_pid, bin_name);
 		return;
 	}
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
@@ -125,7 +125,7 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 	binmgr_getinfo_response_t response_msg;
 
 	if (requester_pid < 0 || bin_name == NULL) {
-		bmdbg("Invalid data pid %d name %s\n", requester_pid, bin_name);
+		bmdbg("Invalid pid %d name %s\n", requester_pid, bin_name);
 		return;
 	}
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
@@ -232,7 +232,7 @@ int binary_manager_get_inactive_path(int requester_pid, char *bin_name)
 	binmgr_getpath_response_t response_msg;
 
 	if (requester_pid < 0 || bin_name == NULL) {
-		bmdbg("Invalid data : pid %d name %s \n", requester_pid, bin_name);
+		bmdbg("Invalid param : pid %d name %s \n", requester_pid, bin_name);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
