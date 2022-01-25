@@ -489,13 +489,21 @@ void up_show_tcbinfo(struct tcb_s *tcb)
 	lldbg("State       : %u\n", tcb->task_state);
 	lldbg("Flags       : %u\n", tcb->flags);
 	lldbg("Lock count  : %u\n", tcb->lockcount);
+#if CONFIG_RR_INTERVAL > 0
 	lldbg("Timeslice   : %d\n", tcb->timeslice);
+#endif
 	lldbg("Waitdog     : %p\n", tcb->waitdog);
 	lldbg("WaitSem     : %p\n", tcb->waitsem);
+#ifndef CONFIG_DISABLE_MQUEUE
 	lldbg("MsgwaitQ    : %p\n", tcb->msgwaitq);
+#endif
+#ifndef CONFIG_DISABLE_SIGNALS
 	lldbg("Sigdeliver  : %p\n", tcb->xcp.sigdeliver);
+#endif
+#ifdef CONFIG_LIB_SYSCALL
 	lldbg("Nsyscalls   : %u\n", tcb->xcp.nsyscalls);
 	lldbg("Syscall     : %p\n", tcb->xcp.syscall);
+#endif
 }
 
 /****************************************************************************
