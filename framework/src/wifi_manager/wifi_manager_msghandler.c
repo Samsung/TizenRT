@@ -79,7 +79,6 @@ int wifimgr_run_msghandler(void)
 	return 0;
 }
 
-
 int wifimgr_post_message(wifimgr_msg_s *msg)
 {
 	handler_msg hmsg;
@@ -97,13 +96,8 @@ int wifimgr_post_message(wifimgr_msg_s *msg)
 		return -1;
 	}
 
-	res = sem_wait(hmsg.signal);
-	if (res == -1) {
-		NET_LOGE(TAG, "wait msg signal fail %d\n", errno);
-		return -2;
-	}
+	WIFIMGR_WAIT_SIG(hmsg.signal);
 	sem_destroy(hmsg.signal);
 
 	return 0;
 }
-

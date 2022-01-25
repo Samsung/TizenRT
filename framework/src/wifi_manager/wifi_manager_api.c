@@ -52,7 +52,7 @@
 #define RETURN_RESULT(res, msg)					\
 	do {										\
 		if (res < 0) {							\
-			return WIFI_MANAGER_FAIL;			\
+			return WIFI_MANAGER_POST_FAIL;			\
 		} else {								\
 			return msg.result;					\
 		}										\
