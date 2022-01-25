@@ -54,7 +54,7 @@ static const char *get_color_code(nl_color_e color)
 	}
 }
 
-static inline void _print_time(void)
+static inline int _print_time(void)
 {
 	time_t time_info = time(NULL);
 	struct tm *tm = localtime(&time_info);
@@ -66,7 +66,7 @@ static inline void _print_time(void)
 	clock_gettime(CLOCK_REALTIME, &current_time);
 
 	unsigned int micro_sec = current_time.tv_nsec / 10000000;
-	printf(" [%02d:%02d:%02d.%02u]",
+	return printf(" [%02d:%02d:%02d.%02u]",
 		   tm->tm_hour, tm->tm_min, tm->tm_sec, micro_sec);
 }
 
@@ -84,24 +84,25 @@ int netlogger_print(netlog_module_e mod,
 		return 0;
 	}
 
+  int len = 0;
 	va_list args;
 	va_start(args, fmt);
 	if (level == NL_LEVEL_ERROR) {
-		printf("\033[01;45m ");
+		len += printf("\033[01;45m ");
 	} else {
-		printf("%s", get_color_code(g_mod_config[mod].color));
+		len += printf("%s", get_color_code(g_mod_config[mod].color));
 	}
 	if (g_nl_timer == NL_OPT_ENABLE) {
-		_print_time();
+		len += _print_time();
 	}
 	if (g_nl_function == NL_OPT_ENABLE) {
-		printf("[%s]", func);
+		len += printf("[%s]", func);
 	}
 	if (g_nl_files == NL_OPT_ENABLE) {
-		printf("[%s:%d]", file, line);
+		len += printf("[%s:%d]", file, line);
 	}
-	int len = vprintf(fmt, args);
-	printf("\033[m"); // Resets the terminal to default.
+	len += vprintf(fmt, args);
+	len += printf("\033[m"); // Resets the terminal to default.
 	va_end(args);
 
 	return len;
