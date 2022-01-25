@@ -32,6 +32,7 @@ build_targets=(
 	"qemu/build_test"
 	"esp_wrover_kit/hello_with_tash"
 	"imxrt1020-evk/loadable_elf_apps"
+	"rtl8721csm/hello"
 	"rtl8721csm/loadable_apps"
 )
 
