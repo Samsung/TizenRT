@@ -241,19 +241,19 @@ void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 				   st_unit_tc func_setup, st_unit_tc func_teardown, st_unit_tc func,
 				   unsigned int expect)
 {
-	st_performance *perf = (st_performance *)zalloc(sizeof(st_performance));
+	st_performance *perf = (st_performance *)calloc(sizeof(st_performance), 1);
 	if (!perf) {
 		PERF_ERR("perf alloc fail\n");
 		return;
 	}
-	st_stability *stab = (st_stability *)zalloc(sizeof(st_stability));
+	st_stability *stab = (st_stability *)calloc(sizeof(st_stability), 1);
 	if (!stab) {
 		PERF_ERR("stab alloc fail\n");
 		free(perf);
 		return;
 	}
 
-	st_func *sfunc = (st_func *)zalloc(sizeof(st_func));
+	st_func *sfunc = (st_func *)calloc(sizeof(st_func), 1);
 	if (!sfunc) {
 		PERF_ERR("func alloc fail\n");
 		free(perf);
@@ -269,7 +269,7 @@ void perf_add_item(st_pack *pack, int repeat, char *tc_desc,
 
 	perf->expect = expect;
 
-	st_smoke *smoke = (st_smoke *)zalloc(sizeof(st_smoke));
+	st_smoke *smoke = (st_smoke *)calloc(sizeof(st_smoke), 1);
 	if (!smoke) {
 		PERF_ERR("smoke alloc fail\n");
 		free(sfunc);

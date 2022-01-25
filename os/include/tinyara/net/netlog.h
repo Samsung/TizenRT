@@ -43,6 +43,7 @@ typedef netmgr_logger *netmgr_logger_p;
 
 typedef enum {
 	NL_MOD_UNKNOWN,
+  NL_MODE_ALL,
 	/*  user level module */
 	NL_MOD_WIFI_MANAGER,
 	NL_MOD_NETLIB,
@@ -58,6 +59,41 @@ typedef enum {
 	NL_LEVEL_UNKNOWN,
 } netlog_log_level_e;
 
+typedef enum {
+	NL_LWIP_ETHARP,
+	NL_LWIP_NETIF,
+	NL_LWIP_PBUF,
+	NL_LWIP_API_LIB,
+	NL_LWIP_API_MSG,
+	NL_LWIP_SOCKETS,
+	NL_LWIP_ICMP,
+	NL_LWIP_IGMP,
+	NL_LWIP_INET,
+	NL_LWIP_IP,
+	NL_LWIP_IP_REASS,
+	NL_LWIP_RAW,
+	NL_LWIP_MEM,
+	NL_LWIP_MEMP,
+	NL_LWIP_SYS,
+	NL_LWIP_TIMERS,
+	NL_LWIP_TCP,
+	NL_LWIP_TCP_INPUT,
+	NL_LWIP_TCP_FR,
+	NL_LWIP_TCP_RTO,
+	NL_LWIP_TCP_CWND,
+	NL_LWIP_TCP_WND,
+	NL_LWIP_TCP_OUTPUT,
+	NL_LWIP_TCP_RST,
+	NL_LWIP_TCP_QLEN,
+	NL_LWIP_UDP,
+	NL_LWIP_TCPIP,
+	NL_LWIP_SLIP,
+	NL_LWIP_DHCP,
+	NL_LWIP_AUTOIP,
+	NL_LWIP_DNS,
+	NL_LWIP_IP6,
+	NL_LWIP_ND6,
+} netlog_lwip_sublevel_e;
 /*
  * DESCRIPTION: Initialize logger
  * RETURN: return 0 if succeed, else return negative if fail
@@ -151,13 +187,13 @@ int netlog_reset(void);
 /*  network log for user space */
 #ifdef __LINUX__
 #define NET_LOG(mod, fmt, args...) \
-	netlogger_print(mod, NL_LEVEL_UNKNOWN, __FUNCTION__, __FILE__, __LINE__, fmt, ##args);
+	netlogger_print(mod, NL_LEVEL_UNKNOWN, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
 #define NET_LOGE(mod, fmt, args...) \
-	netlogger_print(mod, NL_LEVEL_ERROR, __FUNCTION__, __FILE__, __LINE__, fmt, ##args);
+	netlogger_print(mod, NL_LEVEL_ERROR, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
 #define NET_LOGI(mod, fmt, args...) \
-	netlogger_print(mod, NL_LEVEL_INFO, __FUNCTION__, __FILE__, __LINE__, fmt, ##args);
+	netlogger_print(mod, NL_LEVEL_INFO, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
 #define NET_LOGV(mod, fmt, args...) \
-	netlogger_print(mod, NL_LEVEL_VERB, __FUNCTION__, __FILE__, __LINE__, fmt, ##args);
+	netlogger_print(mod, NL_LEVEL_VERB, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
 #else
 #define NET_LOG(mod, fmt, args...) \
 	printf(mod fmt, ##args);
