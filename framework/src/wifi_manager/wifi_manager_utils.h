@@ -72,6 +72,18 @@ int net_task_create(FAR const char *name, int priority, int stack_size,
 		}												\
 	} while (0)
 
+/* errno EINVAL shouldn't happen
+ * if it happens then the system could be corrupted */
+#define WIFIMGR_WAIT_SIG(signal)		\
+	do {                              \
+		if (sem_wait(signal) == -1) { \
+			if (errno == EINTR) {     \
+				continue;             \
+			}                         \
+			assert(0);                \
+		}                             \
+	} while (0)
+
 /*  Network Interface Card name definition */
 #define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
 #define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME
