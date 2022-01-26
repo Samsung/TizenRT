@@ -180,91 +180,94 @@ void perf_set_keeprunning(int enable);
  * Expect?
  */
 
-#define ST_EXPECT_EQ(val, exp)                                          \
-	do {                                                                \
-		if (exp != val) {                                               \
-			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
+#define ST_EXPECT_EQ(exp, val)                                    \
+	do {                                                            \
+		uint32_t tmp_val = val;                                       \
+		if (exp != tmp_val) {                                         \
+			printf("\t[ERROR] val (%d) exp (%d)\n", tmp_val, exp);      \
 			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 			st_res = STRESS_TC_FAIL;                                    \
 			goto STFUNC_OUT;                                            \
-		}                                                               \
+		}                                                             \
 	} while (0)
 
-#define ST_ASSERT_EQ(val, exp)                                          \
-	do {                                                                \
-		if (exp != val) {                                               \
-			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
+#define ST_ASSERT_EQ(exp, val)                                    \
+	do {                                                            \
+		uint32_t tmp_val = val;                                       \
+		if (exp != tmp_val) {                                         \
+			printf("\t[ERROR] val (%d) exp (%d)\n", tmp_val, exp);      \
 			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 			assert(0);                                                  \
-		}                                                               \
+		}                                                             \
 	} while (0)
 
-#define ST_ASSERT_NEQ(val, exp)                                          \
-	do {                                                                \
-		if (exp == val) {                                               \
-			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
+#define ST_ASSERT_NEQ(exp, val)                                   \
+	do {                                                            \
+		uint32_t tmp_val = val;                                       \
+		if (exp == tmp_val) {                                         \
+			printf("\t[ERROR] val (%d) exp (%d)\n", tmp_val, exp);      \
 			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 			assert(0);                                                  \
-		}                                                               \
+		}                                                             \
 	} while (0)
 
-#define ST_EXPECT_EQ2(val1, val2, exp)                                           \
-	do {                                                                         \
-		if (exp != val1 && exp != val2) {                                        \
+#define ST_EXPECT_EQ2(val1, val2, exp)                                     \
+	do {                                                                     \
+		if (exp != val1 && exp != val2) {                                      \
 			printf("\t[ERROR] val1 (%d) val2 (%d) exp (%d)\n", val1, val2, exp); \
 			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__);          \
 			st_res = STRESS_TC_FAIL;                                             \
 			goto STFUNC_OUT;                                                     \
-		}                                                                        \
+		}                                                                      \
 	} while (0)
 
-#define ST_EXPECT_NEQ(val, exp)                                         \
-	do {                                                                \
-		if ((exp) == val) {                                             \
+#define ST_EXPECT_NEQ(val, exp)                                   \
+	do {                                                            \
+		if ((exp) == val) {                                           \
 			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
 			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 			goto STFUNC_OUT;                                            \
-		}                                                               \
+		}                                                             \
 	} while (0)
 
-#define ST_EXPECT_LT(val, exp)                                          \
-	do {                                                                \
-		if ((exp) >= val) {                                             \
-			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
-			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
-			st_res = STRESS_TC_FAIL;                                    \
-			goto STFUNC_OUT;                                            \
-		}                                                               \
-	} while (0)
-
-#define ST_EXPECT_LE(val, exp)                                          \
-	do {                                                                \
-		if (exp > val) {                                                \
+#define ST_EXPECT_LT(val, exp)                                    \
+	do {                                                            \
+		if ((exp) >= val) {                                           \
 			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
 			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 			st_res = STRESS_TC_FAIL;                                    \
 			goto STFUNC_OUT;                                            \
-		}                                                               \
+		}                                                             \
 	} while (0)
 
-#define ST_EXPECT_GT(val, exp)                                          \
-	do {                                                                \
-		if (exp <= val) {                                               \
+#define ST_EXPECT_LE(val, exp)                                    \
+	do {                                                            \
+		if (exp > val) {                                              \
 			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
 			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 			st_res = STRESS_TC_FAIL;                                    \
 			goto STFUNC_OUT;                                            \
-		}                                                               \
+		}                                                             \
 	} while (0)
 
-#define ST_EXPECT_GE(val, exp)                                          \
-	do {                                                                \
-		if (exp < val) {                                                \
+#define ST_EXPECT_GT(val, exp)                                    \
+	do {                                                            \
+		if (exp <= val) {                                             \
 			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
 			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 			st_res = STRESS_TC_FAIL;                                    \
 			goto STFUNC_OUT;                                            \
-		}                                                               \
+		}                                                             \
+	} while (0)
+
+#define ST_EXPECT_GE(val, exp)                                    \
+	do {                                                            \
+		if (exp < val) {                                              \
+			printf("\t[ERROR] val (%d) exp (%d)\n", val, exp);          \
+			printf("\t %s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+			st_res = STRESS_TC_FAIL;                                    \
+			goto STFUNC_OUT;                                            \
+		}                                                             \
 	} while (0)
 
 /*
