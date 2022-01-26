@@ -110,19 +110,19 @@ $(COBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 	$(call MOVEOBJ,$(patsubst $(BINDIR)$(DELIM)%$(OBJEXT),%,$@),$(BINDIR))
 
-# Memory manager for the flat build
+# Workqueue for the flat build
 
 $(BIN):	$(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
-# Memory manager for the user phase of the two-pass kernel build
+# Workqueue for the user phase of the two-pass kernel build
 
 ifneq ($(BIN),$(UBIN))
 $(UBIN):
 	$(Q) $(MAKE) $(UBIN) BIN=$(UBIN) BINDIR=ubin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
 
-# Memory manager for the kernel phase of the two-pass kernel build
+# Workqueue for the kernel phase of the two-pass kernel build
 
 ifneq ($(BIN),$(KBIN))
 $(KBIN):
