@@ -17,6 +17,7 @@
  ****************************************************************************/
 #pragma once
 
+#include <stdint.h>
 #ifndef __LINUX__
 #include <debug.h>
 #endif
@@ -42,23 +43,35 @@ typedef struct {
 typedef netmgr_logger *netmgr_logger_p;
 
 typedef enum {
-	NL_MOD_UNKNOWN,
-  NL_MODE_ALL,
 	/*  user level module */
 	NL_MOD_WIFI_MANAGER,
 	NL_MOD_NETLIB,
 	/*  kernel level module */
 	NL_MOD_LWIP,
 	NL_MOD_NET_MANAGER,
+	NL_MOD_UNKNOWN,
+  NL_MODE_ALL,
 } netlog_module_e;
 
-typedef enum {
-	NL_LEVEL_ERROR,
-	NL_LEVEL_INFO,
-	NL_LEVEL_VERB,
-	NL_LEVEL_UNKNOWN,
-} netlog_log_level_e;
+/* typedef enum { */
+/* 	NL_LEVEL_ERROR, */
+/* 	NL_LEVEL_INFO, */
+/* 	NL_LEVEL_VERB, */
+/* 	NL_LEVEL_UNKNOWN, */
+/* } uint8_t; */
+#define NL_LEVEL_ERROR 0x00
+#define NL_LEVEL_INFO 0x01
+#define NL_LEVEL_VERB 0x02
+#define NL_LEVEL_UNKNOWN 0x03
 
+/*
+ * lwip log level mapped to netlog like following table
+ *   |---------+-----------------|
+ *   | ERROR   | severe          |
+ *   | INFO    | serious warning |
+ *   | VERBOSE | all             |
+ *   |---------+-----------------|
+*/
 typedef enum {
 	NL_LWIP_ETHARP,
 	NL_LWIP_NETIF,
@@ -93,7 +106,43 @@ typedef enum {
 	NL_LWIP_DNS,
 	NL_LWIP_IP6,
 	NL_LWIP_ND6,
+	NL_LWIP_SUBLEVEL_SIZE,
 } netlog_lwip_sublevel_e;
+
+#define TC_ETHARP_DEBUG 0x0000U
+#define TC_NETIF_DEBUG 0x0010U
+#define TC_PBUF_DEBUG 0x0020U
+#define TC_API_LIB_DEBUG 0x0030U
+#define TC_API_MSG_DEBUG 0x0040U
+#define TC_SOCKETS_DEBUG 0x0050U
+#define TC_ICMP_DEBUG 0x0060U
+#define TC_IGMP_DEBUG 0x0070U
+#define TC_INET_DEBUG 0x0080U
+#define TC_IP_DEBUG 0x0090U
+#define TC_IP_REASS_DEBUG 0x00a0U
+#define TC_RAW_DEBUG 0x00b0U
+#define TC_MEM_DEBUG 0x00c0U
+#define TC_MEMP_DEBUG 0x00e0U
+#define TC_SYS_DEBUG 0x00f0U
+#define TC_TIMERS_DEBUG 0x0100U
+#define TC_TCP_DEBUG 0x0110U
+#define TC_TCP_INPUT_DEBUG 0x0120U
+#define TC_TCP_FR_DEBUG 0x0130U
+#define TC_TCP_RTO_DEBUG 0x0140U
+#define TC_TCP_CWND_DEBUG 0x0150U
+#define TC_TCP_WND_DEBUG 0x0160U
+#define TC_TCP_OUTPUT_DEBUG 0x0170U
+#define TC_TCP_RST_DEBUG 0x0180U
+#define TC_TCP_QLEN_DEBUG 0x0190U
+#define TC_UDP_DEBUG 0x01a0U
+#define TC_TCPIP_DEBUG 0x01b0U
+#define TC_SLIP_DEBUG 0x01c0U
+#define TC_DHCP_DEBUG 0x01d0U
+#define TC_AUTOIP_DEBUG 0x01e0U
+#define TC_DNS_DEBUG 0x01f0U
+#define TC_IP6_DEBUG 0x0200U
+#define TC_ND6_DEBUG 0x0210U
+
 /*
  * DESCRIPTION: Initialize logger
  * RETURN: return 0 if succeed, else return negative if fail
@@ -128,7 +177,7 @@ int netlogger_serialize(netmgr_logger_p log, char **buf);
  * RETURN: return log length
  */
 int netlogger_print(netlog_module_e mod,
-					netlog_log_level_e level,
+					uint32_t level,
 					const char *func,
 					const char *file,
 					const int line,
@@ -138,7 +187,13 @@ int netlogger_print(netlog_module_e mod,
  * DESCRIPTION: set level
  * RETURN: if succeeded return 0 else return -1
  */
-int netlog_set_level(netlog_module_e module, netlog_log_level_e level);
+int netlog_set_level(netlog_module_e module, uint32_t level);
+
+/*
+ * DESCRIPTION: set lwip level
+ * RETURN: if succeeded return 0 else return -1
+ */
+int netlog_set_lwip_level(uint32_t lwip, uint32_t level);
 
 /*
  * DESCRIPTION: set color

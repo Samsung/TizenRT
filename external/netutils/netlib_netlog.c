@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
+#include <assert.h>
 #ifdef __LINUX__
 #include "netlog.h"
 #else
@@ -26,7 +27,7 @@
 #endif
 
 typedef struct {
-	netlog_log_level_e level;
+	uint8_t level;
 	nl_color_e color;
 } netlog_config_s;
 
@@ -36,6 +37,8 @@ static netlog_config_s g_mod_config[4] = {
 	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
 	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
 };
+
+static uint8_t g_lwip_mod_level[33] = {NL_LEVEL_UNKNOWN,};
 
 static nl_options g_nl_timer = NL_OPT_DISABLE;
 static nl_options g_nl_function = NL_OPT_DISABLE;
@@ -70,21 +73,60 @@ static inline int _print_time(void)
 		   tm->tm_hour, tm->tm_min, tm->tm_sec, micro_sec);
 }
 
+static uint32_t _get_lwip_level(uint32_t debug)
+{
+	uint8_t mask = (debug & 0x0f);
+	if (mask == 0) {
+		return NL_LEVEL_VERB;
+	} else if (mask == 0x01 || mask == 0x02) {
+		return NL_LEVEL_INFO;
+	} else if (mask == 0x03) {
+		return NL_LEVEL_ERROR;
+	} else {
+		assert(0);
+	}
+}
+
+static int _filter_lwip_level(uint32_t mod, uint32_t level)
+{
+	uint32_t lwip_mod = mod >> 4;
+	if (g_lwip_mod_level[lwip_mod] < level || g_lwip_mod_level[lwip_mod] == NL_LEVEL_UNKNOWN) {
+		return -1;
+	}
+	return 0;
+}
+
+static int _filter_level(uint32_t level)
+{
+	if (g_mod_config[level].level < level || g_mod_config[level].level == NL_LEVEL_UNKNOWN) {
+		return -1;
+	}
+	return 0;
+}
+
 int netlogger_print(netlog_module_e mod,
-					netlog_log_level_e level,
+					uint32_t log_level,
 					const char *func,
 					const char *file,
 					const int line,
 					const char *fmt, ...)
 {
+	uint32_t level = NL_LEVEL_UNKNOWN;
 	if (mod == NL_MOD_UNKNOWN) {
 		return 0;
 	}
-	if (g_mod_config[mod].level < level || g_mod_config[mod].level == NL_LEVEL_UNKNOWN) {
-		return 0;
+	if (mod == NL_MOD_LWIP) {
+		level = _get_lwip_level(log_level);
+		if (_filter_lwip_level(log_level, level)) {
+			return 0;
+		}
+	} else {
+		if (_filter_level(level)) {
+			return 0;
+		}
 	}
 
-  int len = 0;
+	int len = 0;
 	va_list args;
 	va_start(args, fmt);
 	if (level == NL_LEVEL_ERROR) {
@@ -104,13 +146,20 @@ int netlogger_print(netlog_module_e mod,
 	len += vprintf(fmt, args);
 	len += printf("\033[m"); // Resets the terminal to default.
 	va_end(args);
-
+	
 	return len;
 }
 
-int netlog_set_level(netlog_module_e mod, netlog_log_level_e level)
+int netlog_set_level(netlog_module_e mod, uint32_t level)
 {
 	g_mod_config[mod].level = level;
+	return 0;
+}
+
+int netlog_set_lwip_level(uint32_t submod, uint32_t level)
+{
+	uint32_t lwip_mode = submod >> 4;
+	g_lwip_mod_level[lwip_mode] = level;
 	return 0;
 }
 
@@ -140,10 +189,15 @@ int netlog_set_file(nl_options opt)
 
 int netlog_reset(void)
 {
-	int size = sizeof(g_mod_config) / sizeof(netlog_log_level_e);
+	int size = sizeof(g_mod_config) / sizeof(netlog_config_s);
 	for (int i = 0; i < size; i++) {
 		g_mod_config[i].level = NL_LEVEL_UNKNOWN;
 		g_mod_config[i].color = NL_COLOR_DEFAULT;
+	}
+
+	size = sizeof(g_lwip_mod_level)/sizeof(uint8_t);
+	for (int i = 0; i < size; i++) {
+		g_lwip_mod_level[i] = NL_LEVEL_UNKNOWN;
 	}
 	g_nl_timer = NL_OPT_DISABLE;
 	g_nl_function = NL_OPT_DISABLE;
