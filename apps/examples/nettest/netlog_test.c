@@ -17,16 +17,43 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <stdint.h>
 #include <sys/time.h>
 #include <queue.h>
 #include <stress_tool/st_perf.h>
-#ifdef __LINUX__
-#include "netlog.h"
-#else
 #include <tinyara/net/netlog.h>
-#endif
 
 #define NT_TEST_TRIAL 1
+
+#define TC_LWIP_DBG_LEVEL_ALL     0x00
+#define TC_LWIP_DBG_LEVEL_WARNING 0x01
+#define TC_LWIP_DBG_LEVEL_SERIOUS 0x02
+#define TC_LWIP_DBG_LEVEL_SEVERE  0x03
+
+#define TC_LWIP_DBG_LEVEL_ALL     0x00
+#define TC_LWIP_DBG_MIN_LEVEL              TC_LWIP_DBG_LEVEL_ALL
+#define TC_LWIP_DBG_MASK_LEVEL    0x03
+#define TC_LWIP_DBG_LEVEL_OFF     TC_LWIP_DBG_LEVEL_ALL
+#define TC_LWIP_DBG_ON            0x80U
+#define TC_LWIP_DBG_OFF           0x00U
+#define TC_LWIP_DBG_TYPES_ON               TC_LWIP_DBG_ON
+#define TC_LWIP_DBG_HALT 0x00
+
+#define TC_LWIP_DEBUGF(debug, message)                                                \
+			netlogger_print(NL_MOD_LWIP, debug, __FUNCTION__, __FILE__, __LINE__, message)
+
+/* #define TC_LWIP_DEBUGF(debug, message)                                                \ */
+/* 	do {                                                                                \ */
+/* 		if (((debug)&TC_LWIP_DBG_ON) &&                                                   \ */
+/* 				((debug)&TC_LWIP_DBG_TYPES_ON)) {                                             \ */
+/* 			netlogger_print(NL_MOD_LWIP, debug, __FUNCTION__, __FILE__, __LINE__, message);\ */
+/* 			if ((debug)&TC_LWIP_DBG_HALT) {                                                 \ */
+/* 				while (1);																											\ */
+/* 			}                                                                               \ */
+/* 		}                                                                                 \ */
+/* 	} while (0) */
+
+//#define TC_NETIF_DEBUG TC_LWIP_DBG_ON
 
 static const char wifimanager_err_log[] = "wifi_manager error\n";
 static const char wifimanager_info_log[] = "wifi_manager info\n";
@@ -35,6 +62,30 @@ static const char wifimanager_verb_log[] = "wifi_manager verb\n";
 static const char netlib_err_log[] = "netlib error\n";
 static const char netlib_info_log[] = "netlib info\n";
 static const char netlib_verb_log[] = "netlib verb\n";
+
+static const char lwip_tcp_err_log[] = "lwip tcp error\n";
+static const char lwip_tcp_info_log[] = "lwip tcp info\n";
+static const char lwip_tcp_verb_log[] = "lwip tcp verbose\n";
+
+static const char lwip_tcprto_err_log[] = "lwip tcprto error\n";
+static const char lwip_tcprto_info_log[] = "lwip tcprto info\n";
+static const char lwip_tcprto_verb_log[] = "lwip tcprto verbose\n";
+
+static const char lwip_dhcp_err_log[] = "lwip dhcp error\n";
+static const char lwip_dhcp_info_log[] = "lwip dhcp info\n";
+static const char lwip_dhcp_verb_log[] = "lwip dhcp verbose\n";
+
+static const char lwip_dns_err_log[] = "lwip dns error\n";
+static const char lwip_dns_info_log[] = "lwip dns info\n";
+static const char lwip_dns_verb_log[] = "lwip dns verbose\n";
+
+static const char lwip_udp_err_log[] = "lwip udp error\n";
+static const char lwip_udp_info_log[] = "lwip udp info\n";
+static const char lwip_udp_verb_log[] = "lwip udp verbose\n";
+
+static const char lwip_netif_err_log[] = "lwip netif error\n";
+static const char lwip_netif_info_log[] = "lwip netif info\n";
+static const char lwip_netif_verb_log[] = "lwip netif verbose\n";
 
 START_TEST_F(info_log)
 {
@@ -52,20 +103,20 @@ START_TEST_F(verb_log)
 	ST_EXPECT_EQ(0, netlog_reset());
 	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_WIFI_MANAGER, NL_LEVEL_VERB));
 	ST_EXPECT_EQ(31, NET_LOGE(NL_MOD_WIFI_MANAGER, wifimanager_err_log));
-  // this should be 0 because log level is error;
-	ST_EXPECT_EQ(24, NET_LOGI(NL_MOD_WIFI_MANAGER, wifimanager_info_log)); 
-  // this should be 0 because log level is error;
-	ST_EXPECT_EQ(24, NET_LOGV(NL_MOD_WIFI_MANAGER, wifimanager_verb_log)); 
+	// this should be 0 because log level is error;
+	ST_EXPECT_EQ(24, NET_LOGI(NL_MOD_WIFI_MANAGER, wifimanager_info_log));
+	// this should be 0 because log level is error;
+	ST_EXPECT_EQ(24, NET_LOGV(NL_MOD_WIFI_MANAGER, wifimanager_verb_log));
 }
 END_TEST_F
 
 START_TEST_F(error_log)
 {
-  ST_EXPECT_EQ(0, netlog_reset());
+	ST_EXPECT_EQ(0, netlog_reset());
 	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_WIFI_MANAGER, NL_LEVEL_ERROR));
 	ST_EXPECT_EQ(31, NET_LOGE(NL_MOD_WIFI_MANAGER, wifimanager_err_log));
 	ST_EXPECT_EQ(0, NET_LOGI(NL_MOD_WIFI_MANAGER, wifimanager_info_log));
-	ST_EXPECT_EQ(0, NET_LOGV(NL_MOD_WIFI_MANAGER, wifimanager_verb_log)); 
+	ST_EXPECT_EQ(0, NET_LOGV(NL_MOD_WIFI_MANAGER, wifimanager_verb_log));
 }
 END_TEST_F
 
@@ -74,9 +125,9 @@ START_TEST_F(mode_log)
 	ST_EXPECT_EQ(0, netlog_reset());
 	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_NETLIB, NL_LEVEL_ERROR));
 	ST_EXPECT_EQ(0, NET_LOGE(NL_MOD_WIFI_MANAGER, wifimanager_err_log));
-  // this should be 0 because log level is error;
+	// this should be 0 because log level is error;
 	ST_EXPECT_EQ(0, NET_LOGI(NL_MOD_WIFI_MANAGER, wifimanager_info_log));
-  // this should be 0 because log level is error;
+	// this should be 0 because log level is error;
 	ST_EXPECT_EQ(0, NET_LOGV(NL_MOD_WIFI_MANAGER, wifimanager_verb_log));
 	ST_EXPECT_EQ(25, NET_LOGE(NL_MOD_NETLIB, "%s", netlib_err_log));
 }
@@ -87,7 +138,7 @@ END_TEST_F
  */
 START_TEST_F(color_log)
 {
-  ST_EXPECT_EQ(0, netlog_reset());
+	ST_EXPECT_EQ(0, netlog_reset());
 	ST_EXPECT_EQ(0, netlog_set_color(NL_MOD_WIFI_MANAGER, NL_COLOR_GREEN));
 	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_WIFI_MANAGER, NL_LEVEL_VERB));
 	ST_EXPECT_EQ(28, NET_LOGV(NL_MOD_WIFI_MANAGER, wifimanager_verb_log));
@@ -142,16 +193,100 @@ START_TEST_F(remove_option)
 }
 END_TEST_F
 
+#if 0
+/*
+ * description: lwip submodule log level test
+ */
+START_TEST_F(lwip_tcp_log_level)
+{
+	ST_EXPECT_EQ(0, netlog_reset());
+	
+	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_LWIP, NL_LWIP_TCP, NL_LEVEL_ERROR));
+	ST_EXPECT_EQ(0, NET_LOGKV(NL_MOD_LWIP, lwip_tcp_verb_log));
+	ST_EXPECT_EQ(0, NET_LOGKI(NL_MOD_LWIP, lwip_tcp_info_log));
+	ST_EXPECT_EQ(-1, NET_LOGKE(NL_MOD_LWIP, lwip_tcp_err_log));
+
+	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_LWIP, NL_LWIP_TCP, NL_LEVEL_INFO));
+	ST_EXPECT_EQ(0, NET_LOGKV(NL_MOD_LWIP, lwip_tcp_verb_log));
+	ST_EXPECT_EQ(-1, NET_LOGKI(NL_MOD_LWIP, lwip_tcp_info_log));
+	ST_EXPECT_EQ(-1, NET_LOGKE(NL_MOD_LWIP, lwip_tcp_err_log));
+
+	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_LWIP, NL_LWIP_TCP, NL_LEVEL_VERB));
+	ST_EXPECT_EQ(-1, NET_LOGKV(NL_MOD_LWIP, lwip_tcp_verb_log));
+	ST_EXPECT_EQ(-1, NET_LOGKI(NL_MOD_LWIP, lwip_tcp_info_log));
+	ST_EXPECT_EQ(-1, NET_LOGKE(NL_MOD_LWIP, lwip_tcp_err_log));
+}
+END_TEST_F
+#endif
+
+/*
+ * description: lwip submode test
+ */
+START_TEST_F(lwip_submodule)
+{
+	ST_EXPECT_EQ(0, netlog_reset());
+
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_DEBUG, NL_LEVEL_ERROR));
+	ST_EXPECT_EQ(27, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_RTO_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcprto_err_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DHCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_dhcp_err_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DNS_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_dns_err_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_UDP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_udp_err_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_netif_err_log)));
+
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_RTO_DEBUG, NL_LEVEL_INFO));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(23, TC_LWIP_DEBUGF(TC_TCP_RTO_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcprto_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DHCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_dhcp_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DNS_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_dns_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_UDP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_udp_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_netif_info_log)));
+
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(23, TC_LWIP_DEBUGF(TC_TCP_RTO_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcprto_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DHCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_dhcp_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DNS_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_dns_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_UDP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_udp_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_netif_info_log)));
+
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_DHCP_DEBUG, NL_LEVEL_VERB));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_tcp_verb_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_RTO_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_tcprto_verb_log)));
+	ST_EXPECT_EQ(24, TC_LWIP_DEBUGF(TC_DHCP_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_dhcp_verb_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DNS_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_dns_verb_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_UDP_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_udp_verb_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_netif_verb_log)));
+}
+END_TEST_F
+
+/*
+ * description: lwip TC
+ */
+START_TEST_F(lwip_tc)
+{
+	ST_EXPECT_EQ(0, netlog_reset());
+	TC_LWIP_DEBUGF(TC_NETIF_DEBUG, ("%s\n", lwip_netif_err_log));
+	TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s\n", lwip_netif_verb_log));
+	TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s\n", lwip_netif_info_log));
+	TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s\n", lwip_netif_info_log));
+	TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s\n", lwip_netif_err_log));
+}
+END_TEST_F
+
 void netlog_run_test(void)
 {
 	ST_SET_PACK(netlog);
-	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "turn on info", info_log);
-	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "turn on debug", verb_log);
-	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "turn on error", error_log);
-	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "log per mode", mode_log);
-	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "color log", color_log);
-	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "timer log", timer_log);
-	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "set additional info", add_option);
-	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "remove additional info", remove_option);
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "turn on info", info_log); */
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "turn on debug", verb_log); */
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "turn on error", error_log); */
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "log per mode", mode_log); */
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "color log", color_log); */
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "timer log", timer_log); */
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "set additional info", add_option); */
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "remove additional info", remove_option); */
+
+	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip log", lwip_tc);
+	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip submodule test", lwip_submodule);
+	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip tcp log level", lwip_tcp_log_level); */
 	ST_RUN_TEST(netlog);
 }
