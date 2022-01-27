@@ -143,6 +143,7 @@ typedef enum {
 #define TC_DNS_DEBUG 0x01f0U
 #define TC_IP6_DEBUG 0x0200U
 #define TC_ND6_DEBUG 0x0210U
+#define TC_UNKNOWN_DEBUG 0xffffU
 
 /*
  * DESCRIPTION: Initialize logger

@@ -29,4 +29,5 @@ typedef struct cl_options {
   nl_options op;
   netlog_module_e mod;
   uint32_t level;
+  uint32_t sub_mod;
 } cl_options_s;

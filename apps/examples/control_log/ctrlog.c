@@ -31,6 +31,77 @@
 #define CMD_COLOR "color="
 #define CMD_MOD "mod="
 
+static char *g_lwip_mod_table_str[] = {
+		"etharp",
+		"netif",
+		"pbuf",
+		"api_lib",
+		"api_msg",
+		"sockets",
+		"icmp",
+		"igmp",
+		"inet",
+		"ip",
+		"ip_reass",
+		"raw",
+		"mem",
+		"memp",
+		"sys",
+		"timers",
+		"tcp",
+		"tcp_input",
+		"tcp_fr",
+		"tcp_rto",
+		"tcp_cwnd",
+		"tcp_wnd",
+		"tcp_output",
+		"tcp_rst",
+		"tcp_qlen",
+		"udp",
+		"tcpip",
+		"slip",
+		"dhcp",
+		"autoip",
+		"dns",
+		"ip6",
+		"nd6"};
+
+static uint32_t g_lwip_mod_table[] = {
+		TC_ETHARP_DEBUG,
+		TC_NETIF_DEBUG,
+		TC_PBUF_DEBUG,
+		TC_API_LIB_DEBUG,
+		TC_API_MSG_DEBUG,
+		TC_SOCKETS_DEBUG,
+		TC_ICMP_DEBUG,
+		TC_IGMP_DEBUG,
+		TC_INET_DEBUG,
+		TC_IP_DEBUG,
+		TC_IP_REASS_DEBUG,
+		TC_RAW_DEBUG,
+		TC_MEM_DEBUG,
+		TC_MEMP_DEBUG,
+		TC_SYS_DEBUG,
+		TC_TIMERS_DEBUG,
+		TC_TCP_DEBUG,
+		TC_TCP_INPUT_DEBUG,
+		TC_TCP_FR_DEBUG,
+		TC_TCP_RTO_DEBUG,
+		TC_TCP_CWND_DEBUG,
+		TC_TCP_WND_DEBUG,
+		TC_TCP_OUTPUT_DEBUG,
+		TC_TCP_RST_DEBUG,
+		TC_TCP_QLEN_DEBUG,
+		TC_UDP_DEBUG,
+		TC_TCPIP_DEBUG,
+		TC_SLIP_DEBUG,
+		TC_DHCP_DEBUG,
+		TC_AUTOIP_DEBUG,
+		TC_DNS_DEBUG,
+		TC_IP6_DEBUG,
+		TC_ND6_DEBUG,
+};
+
 static char *g_level_table_str[] = {
 		"error",
 		"info",
@@ -69,10 +140,23 @@ static nl_options g_opt_table[] = {
 		NL_OPT_DISABLE,
 };
 
+static uint32_t _get_lwip_mod(char *mod_str)
+{
+	printf("[pkbuild] %s \t%s:%d\n", mod_str, __FUNCTION__, __LINE__);
+	int size = sizeof(g_lwip_mod_table_str) / sizeof(char *);
+	for (int i = 0; i < size; i++) {
+		if ((strlen(mod_str) == strlen(g_lwip_mod_table_str[i]))
+        && strncmp(mod_str, g_lwip_mod_table_str[i], strlen(mod_str) + 1) == 0) {
+			return g_lwip_mod_table[i];
+		}
+	}
+	return TC_UNKNOWN_DEBUG;
+}
+
 static uint32_t _get_level(char *level_str)
 {
-  printf("[pkbuild] level %s \t%s:%d\n", level_str, __FUNCTION__, __LINE__);
-  int size = sizeof(g_level_table_str) / sizeof(char *);
+	printf("[pkbuild] level %s \t%s:%d\n", level_str, __FUNCTION__, __LINE__);
+	int size = sizeof(g_level_table_str) / sizeof(char *);
 	for (int i = 0; i < size; i++) {
 		if (strncmp(level_str, g_level_table_str[i], strlen(g_level_table_str[i]) + 1) == 0) {
 			printf("[pkbuild] i %d %d %s \t%s:%d\n", i, g_level_table[i], g_level_table_str[i], __FUNCTION__, __LINE__);
@@ -126,9 +210,9 @@ static nl_options _get_option(char *opt_str)
  */
 static int _handle_level(void *arg)
 {
-  cl_options_s *opt = (cl_options_s *)arg;
-	printf("[pkbuild] mod %d level %d \t%s:%d\n", opt->mod, opt->level, __FUNCTION__, __LINE__);
-  
+	cl_options_s *opt = (cl_options_s *)arg;
+	printf("[pkbuild] mod (%d/%02x) level %d \t%s:%d\n", opt->mod, opt->sub_mod, opt->level, __FUNCTION__, __LINE__);
+
 	return 0;
 }
 
@@ -170,9 +254,13 @@ static int _parse_level(void *arg, int argc, char **argv)
 		return -1;
 	}
 	cl_options_s *opt = (cl_options_s *)arg;
-  opt->level = _get_level(argv[0] + strlen(CMD_LEVEL));
-  opt->mod = _get_mod(argv[1] + strlen(CMD_MOD));
-  opt->func = _handle_level;
+	opt->level = _get_level(argv[0] + strlen(CMD_LEVEL));
+	opt->mod = _get_mod(argv[1] + strlen(CMD_MOD));
+	if (opt->mod == NL_MOD_LWIP) {
+		// get lwip sub module
+		opt->sub_mod = _get_lwip_mod(argv[1] + strlen(CMD_MOD) + strlen("lwip:"));
+	}
+	opt->func = _handle_level;
 
 	return 0;
 }
@@ -256,9 +344,11 @@ void ctrlog_cmd(int argc, char **argv)
 		return;
 	}
 	cl_options_s opt;
+  memset(&opt, 0, sizeof(cl_options_s));
+
 	int res = _parse_cmd((void *)&opt, argc - 1, argv + 1);
 	if (res != 0) {
-		printf("fail to parse mode %d\n", res);
+    printf("%s", CTRLOG_USAGE);
 		return;
 	}
 
