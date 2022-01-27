@@ -742,7 +742,8 @@ CONFIG_DEBUG_ERROR=y
 # Subsystem Debug Options
 #
 # CONFIG_DEBUG_BINFMT is not set
-# CONFIG_DEBUG_BINMGR is not set
+CONFIG_DEBUG_BINMGR=y
+CONFIG_DEBUG_BINMGR_ERROR=y
 # CONFIG_DEBUG_FS is not set
 # CONFIG_DEBUG_LIB is not set
 # CONFIG_DEBUG_MM is not set
