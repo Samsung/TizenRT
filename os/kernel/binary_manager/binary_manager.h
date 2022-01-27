@@ -57,7 +57,7 @@
 
 /* Binary Manager Core Thread information */
 #define BINARY_MANAGER_NAME        "binary_manager"           /* Binary manager thread name */
-#define BINARY_MANAGER_STACKSIZE   4096                       /* Binary manager thread stack size */
+#define BINARY_MANAGER_STACKSIZE   8192                       /* Binary manager thread stack size */
 #define BINARY_MANAGER_PRIORITY    203                        /* Binary manager thread priority */
 
 /* Loading Thread information */

@@ -26,6 +26,7 @@
 #include <tinyara/config.h>
 #include <stdint.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #ifdef CONFIG_BINARY_MANAGER
 /****************************************************************************
@@ -125,6 +126,7 @@ enum binmgr_result_type {
 	BINMGR_NOT_FOUND = -5,
 	BINMGR_ALREADY_REGISTERED = -6,
 	BINMGR_ALREADY_UPDATED = -7,
+	BINMGR_INVALID_SIGNATURE = -8,
 };
 typedef enum binmgr_result_type binmgr_result_type_e;
 
