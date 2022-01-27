@@ -193,31 +193,32 @@ START_TEST_F(remove_option)
 }
 END_TEST_F
 
-#if 0
 /*
  * description: lwip submodule log level test
  */
 START_TEST_F(lwip_tcp_log_level)
 {
 	ST_EXPECT_EQ(0, netlog_reset());
-	
-	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_LWIP, NL_LWIP_TCP, NL_LEVEL_ERROR));
-	ST_EXPECT_EQ(0, NET_LOGKV(NL_MOD_LWIP, lwip_tcp_verb_log));
-	ST_EXPECT_EQ(0, NET_LOGKI(NL_MOD_LWIP, lwip_tcp_info_log));
-	ST_EXPECT_EQ(-1, NET_LOGKE(NL_MOD_LWIP, lwip_tcp_err_log));
 
-	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_LWIP, NL_LWIP_TCP, NL_LEVEL_INFO));
-	ST_EXPECT_EQ(0, NET_LOGKV(NL_MOD_LWIP, lwip_tcp_verb_log));
-	ST_EXPECT_EQ(-1, NET_LOGKI(NL_MOD_LWIP, lwip_tcp_info_log));
-	ST_EXPECT_EQ(-1, NET_LOGKE(NL_MOD_LWIP, lwip_tcp_err_log));
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_DEBUG, NL_LEVEL_ERROR));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(27, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
 
-	ST_EXPECT_EQ(0, netlog_set_level(NL_MOD_LWIP, NL_LWIP_TCP, NL_LEVEL_VERB));
-	ST_EXPECT_EQ(-1, NET_LOGKV(NL_MOD_LWIP, lwip_tcp_verb_log));
-	ST_EXPECT_EQ(-1, NET_LOGKI(NL_MOD_LWIP, lwip_tcp_info_log));
-	ST_EXPECT_EQ(-1, NET_LOGKE(NL_MOD_LWIP, lwip_tcp_err_log));
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_DEBUG, NL_LEVEL_INFO));
+	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
+	ST_EXPECT_EQ(20, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(20, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(27, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
+
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_DEBUG, NL_LEVEL_VERB));
+	ST_EXPECT_EQ(23, TC_LWIP_DEBUGF(TC_TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
+	ST_EXPECT_EQ(20, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(20, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(27, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
 }
 END_TEST_F
-#endif
 
 /*
  * description: lwip submode test
@@ -287,6 +288,7 @@ void netlog_run_test(void)
 
 	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip log", lwip_tc);
 	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip submodule test", lwip_submodule);
-	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip tcp log level", lwip_tcp_log_level); */
+	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip tcp log level", lwip_tcp_log_level);
+
 	ST_RUN_TEST(netlog);
 }
