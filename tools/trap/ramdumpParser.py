@@ -740,6 +740,13 @@ def find_crash_point(log_file, elf):
                 # word[2] contains the current stack pointer
                 stack_curr = int(word[2], 16)
                 print("\t- Current stack pointer:\t", hex(stack_curr))
+            # Print the current running work function
+            if 'Running work function is' in line:
+                line = line[:-2]
+                word = line.split(' ')
+                # Last word[-1] contains the current running work function
+                curr_worker = int(word[-1], 16)
+                print("\t- Current running work function is:\t", hex(curr_worker))
 
     # It displays the debug symbols corresponding to all the addresses in the kernel and application text address range
     print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
