@@ -92,6 +92,7 @@
 
 #include "up_arch.h"
 #include "sched/sched.h"
+#include "task/task.h"
 #include "up_internal.h"
 #ifdef CONFIG_ARMV7M_MPU
 #include "mpu.h"
@@ -476,91 +477,6 @@ void dump_stack(void)
 }
 #endif						/* End of CONFIG_FRAME_POINTER */
 
-/****************************************************************************
- * Name: up_show_tcbinfo
- *
- * Description:
- *   Show the specific tcb information
- *
- ****************************************************************************/
-
-void up_show_tcbinfo(struct tcb_s *tcb)
-{
-	lldbg("State       : %u\n", tcb->task_state);
-	lldbg("Flags       : %u\n", tcb->flags);
-	lldbg("Lock count  : %u\n", tcb->lockcount);
-#if CONFIG_RR_INTERVAL > 0
-	lldbg("Timeslice   : %d\n", tcb->timeslice);
-#endif
-	lldbg("Waitdog     : %p\n", tcb->waitdog);
-	lldbg("WaitSem     : %p\n", tcb->waitsem);
-#ifndef CONFIG_DISABLE_MQUEUE
-	lldbg("MsgwaitQ    : %p\n", tcb->msgwaitq);
-#endif
-#ifndef CONFIG_DISABLE_SIGNALS
-	lldbg("Sigdeliver  : %p\n", tcb->xcp.sigdeliver);
-#endif
-#ifdef CONFIG_LIB_SYSCALL
-	lldbg("Nsyscalls   : %u\n", tcb->xcp.nsyscalls);
-	lldbg("Syscall     : %p\n", tcb->xcp.syscall);
-#endif
-}
-
-/****************************************************************************
- * Name: up_taskdump
- ****************************************************************************/
-
-#ifdef CONFIG_STACK_COLORATION
-static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
-{
-	size_t used_stack_size;
-
-	used_stack_size = up_check_tcbstack(tcb);
-	/* Dump interesting properties of this task */
-
-#if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%10s | %5d | %4d | %7lu / %7lu | %16p  %8p\n",
-			tcb->name, tcb->pid, tcb->sched_priority, 
-			(unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb);
-#else
-	lldbg("%5d | %4d | %7lu / %7lu | %16p\n",
-			tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size,
-			(unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb);
-#endif
-
-	if (used_stack_size == tcb->adj_stack_size) {
-		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
-	}
-}
-#endif
-
-/****************************************************************************
- * Name: up_showtasks
- ****************************************************************************/
-
-#ifdef CONFIG_STACK_COLORATION
-static inline void up_showtasks(void)
-{
-	lldbg("*******************************************\n");
-	lldbg("List of all tasks in the system:\n");
-	lldbg("*******************************************\n");
-
-#if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("%*s | %5s | %4s | %7s / %7s | %16s | %8s\n", CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK", "STACK ALLOC ADDR", "TCB ADDR");
-	lldbg("---------------------------------------------------------------------------------------------------\n");
-#else
-	lldbg("%5s | %4s | %7s / %7s | %16s | %8s\n", "PID", "PRI", "USED", "TOTAL STACK", "STACK ALLOC ADDR", "TCB ADDR");
-	lldbg("------------------------------------------------------\n");
-#endif
-
-	/* Dump interesting properties of each task in the crash environment */
-
-	sched_foreach(up_taskdump, NULL);
-}
-#else
-#define up_showtasks()
-#endif
-
 struct arm_mode_regs_s {
 	/* ARM provides 37 General purpos registers as below */
 	uint32_t r0;
@@ -930,7 +846,7 @@ static void up_dumpstate(void)
 
 	/* Dump the state of all tasks (if available) */
 
-	up_showtasks();
+	task_show_alivetask_list();
 
 #ifdef CONFIG_FRAME_POINTER
 	/* Display the call stack of all tasks */
@@ -1020,7 +936,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Asserted TCB Info\n");
 	lldbg("*******************************************\n");
 
-	up_show_tcbinfo(fault_tcb);
+	task_show_tcbinfo(fault_tcb);
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
