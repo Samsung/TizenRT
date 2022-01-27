@@ -46,6 +46,10 @@
 #endif
 #include "binary_manager/binary_manager.h"
 
+#ifdef CONFIG_BINARY_SIGNING
+#include <tinyara/signature.h>
+#endif
+
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
