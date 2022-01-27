@@ -32,6 +32,7 @@ typedef enum {
 typedef enum {
 	NL_OPT_ENABLE,
 	NL_OPT_DISABLE,
+  NL_OPT_UNKNOWN,
 } nl_options;
 
 typedef struct {
