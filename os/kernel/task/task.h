@@ -134,4 +134,8 @@ void notify_cancellation(FAR struct tcb_s *tcb);
 void thread_termination_handler(void);
 #endif
 
+void task_show_alivetask_list(void);
+
+void task_show_tcbinfo(struct tcb_s *tcb);
+
 #endif							/* __SCHED_TASK_TASK_H */
