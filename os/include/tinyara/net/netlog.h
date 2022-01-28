@@ -83,8 +83,10 @@ typedef enum {
 #define TC_LWIP_DBG_TYPES_ON TC_LWIP_DBG_ON
 #define TC_LWIP_DBG_HALT 0x00
 
-#define TC_LWIP_DEBUGF(debug, message) \
-	netlogger_print(NL_MOD_LWIP, debug, __FUNCTION__, __FILE__, __LINE__, message)
+#define LWIP_STRIP_PARENS( ... )   __VA_ARGS__
+#define TC_LWIP_DEBUGF(debug, message)                                  \
+	netlogger_print(NL_MOD_LWIP, debug, __FUNCTION__, __FILE__, __LINE__, \
+									LWIP_STRIP_PARENS message)
 
 #define TC_ETHARP_DEBUG 0x0000U
 #define TC_NETIF_DEBUG 0x0010U
@@ -120,7 +122,7 @@ typedef enum {
 #define TC_IP6_DEBUG 0x0200U
 #define TC_ND6_DEBUG 0x0210U
 #define TC_UNKNOWN_DEBUG 0xffffU
-#endif
+#endif /*  __LINUX__  */
 
 typedef enum {
 	NL_LWIP_ETHARP,

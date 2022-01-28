@@ -857,6 +857,8 @@
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define LWIP_DEBUG 1
 
+#ifdef CONFIG_NET_LWIP_BUILDTIME_DEBUG
+
 #ifdef CONFIG_NET_LWIP_DEBUG_LEVEL
 #define LWIP_DBG_MIN_LEVEL      CONFIG_NET_LWIP_DEBUG_LEVEL
 #endif
@@ -1054,6 +1056,10 @@
 #else
 #define ND6_DEBUG	LWIP_DBG_OFF
 #endif
+
+#elif CONFIG_NET_LWIP_RUNTIME_DEBUG /* CONFIG_NET_LWIP_BUILDTIME_DEBUG */
+#include <tinyara/net/netlog_lwip.h>
+#endif /* CONFIG_NET_LWIP_BUILDTIME_DEBUG */
 
 #endif /* CONFIG_NET_LWIP_DEBUG */
 /* ---------- Debug options ---------- */
