@@ -196,6 +196,7 @@ ssize_t up_check_stack_remain(void)
 	return up_check_tcbstack_remain(this_task());
 }
 
+#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
 size_t up_check_nestirqstack(void)
 {
 	return do_stackcheck((uintptr_t)&g_nestedirqstkalloc, (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3));
@@ -205,6 +206,7 @@ size_t up_check_nestirqstack_remain(void)
 {
 	return (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3) - up_check_nestirqstack();
 }
+#endif
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 size_t up_check_intstack(void)

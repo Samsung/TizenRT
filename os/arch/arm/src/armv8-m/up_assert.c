@@ -266,19 +266,22 @@ static void up_dumpstate(void)
 	uint32_t istackbase;
 	uint32_t istacksize;
 #endif
+#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
 	uint32_t nestirqstkbase;
 	uint32_t nestirqstksize;
+#endif
 
 	/* Get the limits on the user stack memory */
 
 	ustackbase = (uint32_t)rtcb->adj_stack_ptr;
 	ustacksize = (uint32_t)rtcb->adj_stack_size;
+	lldbg("sp:     %08x\n", sp);
 
+#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
 	/* Get the limits on the nested irq stack */
 	nestirqstkbase = (uint32_t)&g_nestedirqstkbase;
 	nestirqstksize = (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3);
 
-	lldbg("sp:     %08x\n", sp);
 	lldbg("Nested IRQ stack:\n");
 	lldbg("  base: %08x\n", nestirqstkbase);
 	lldbg("  size: %08x\n", nestirqstksize);
@@ -295,6 +298,7 @@ static void up_dumpstate(void)
 
 		up_stackdump(sp, nestirqstkbase);
 	}
+#endif
 
 	
 #if CONFIG_ARCH_INTERRUPTSTACK > 3

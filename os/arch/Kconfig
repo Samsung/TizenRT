@@ -587,7 +587,7 @@ config ARCH_INTERRUPTSTACK
 
 config ARCH_NESTED_IRQ_STACK_SIZE
 	int "Nested IRQ secondary stack size"
-	depends on ARCH_HAVE_INTERRUPTSTACK
+	depends on ARCH_HAVE_INTERRUPTSTACK && ARCH_ARMV8M_FAMILY
 	default 512
 	---help---
 		This is an additional stack which will be used only when nested irq
