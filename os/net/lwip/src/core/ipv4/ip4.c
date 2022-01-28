@@ -1017,7 +1017,8 @@ err_t ip4_output_hinted(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t 
  */
 void ip4_debug_print(struct pbuf *p)
 {
-	struct ip_hdr *iphdr = (struct ip_hdr *)p->payload;
+	struct ip_hdr *iphdr = NULL;
+  iphdr = (struct ip_hdr *)p->payload;
 
 	LWIP_DEBUGF(IP_DEBUG, ("IP header:\n"));
 	LWIP_DEBUGF(IP_DEBUG, ("+-------------------------------+\n"));
