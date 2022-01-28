@@ -142,6 +142,7 @@ static inline void up_color_intstack(void)
 #define up_color_intstack()
 #endif
 
+#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
 static inline void up_color_nestirqstack(void)
 {
 	uint32_t *ptr = (uint32_t *)&g_nestedirqstkalloc;
@@ -151,6 +152,9 @@ static inline void up_color_nestirqstack(void)
 		*ptr++ = INTSTACK_COLOR;
 	}
 }
+#else
+#define up_color_nestirqstack()
+#endif
 
 /****************************************************************************
  * Public Functions
