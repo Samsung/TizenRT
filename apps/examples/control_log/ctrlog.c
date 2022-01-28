@@ -15,12 +15,12 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <tinyara/net/netlog.h>
+#include <tinyara/net/netlog_lwip.h>
 #include "ctrlog_utils.h"
 #include "ctrlog_usage.h"
 
@@ -67,39 +67,39 @@ static char *g_lwip_mod_table_str[] = {
 		"nd6"};
 
 static uint32_t g_lwip_mod_table[] = {
-		TC_ETHARP_DEBUG,
-		TC_NETIF_DEBUG,
-		TC_PBUF_DEBUG,
-		TC_API_LIB_DEBUG,
-		TC_API_MSG_DEBUG,
-		TC_SOCKETS_DEBUG,
-		TC_ICMP_DEBUG,
-		TC_IGMP_DEBUG,
-		TC_INET_DEBUG,
-		TC_IP_DEBUG,
-		TC_IP_REASS_DEBUG,
-		TC_RAW_DEBUG,
-		TC_MEM_DEBUG,
-		TC_MEMP_DEBUG,
-		TC_SYS_DEBUG,
-		TC_TIMERS_DEBUG,
-		TC_TCP_DEBUG,
-		TC_TCP_INPUT_DEBUG,
-		TC_TCP_FR_DEBUG,
-		TC_TCP_RTO_DEBUG,
-		TC_TCP_CWND_DEBUG,
-		TC_TCP_WND_DEBUG,
-		TC_TCP_OUTPUT_DEBUG,
-		TC_TCP_RST_DEBUG,
-		TC_TCP_QLEN_DEBUG,
-		TC_UDP_DEBUG,
-		TC_TCPIP_DEBUG,
-		TC_SLIP_DEBUG,
-		TC_DHCP_DEBUG,
-		TC_AUTOIP_DEBUG,
-		TC_DNS_DEBUG,
-		TC_IP6_DEBUG,
-		TC_ND6_DEBUG,
+		ETHARP_DEBUG,
+		NETIF_DEBUG,
+		PBUF_DEBUG,
+		API_LIB_DEBUG,
+		API_MSG_DEBUG,
+		SOCKETS_DEBUG,
+		ICMP_DEBUG,
+		IGMP_DEBUG,
+		INET_DEBUG,
+		IP_DEBUG,
+		IP_REASS_DEBUG,
+		RAW_DEBUG,
+		MEM_DEBUG,
+		MEMP_DEBUG,
+		SYS_DEBUG,
+		TIMERS_DEBUG,
+		TCP_DEBUG,
+		TCP_INPUT_DEBUG,
+		TCP_FR_DEBUG,
+		TCP_RTO_DEBUG,
+		TCP_CWND_DEBUG,
+		TCP_WND_DEBUG,
+		TCP_OUTPUT_DEBUG,
+		TCP_RST_DEBUG,
+		TCP_QLEN_DEBUG,
+		UDP_DEBUG,
+		TCPIP_DEBUG,
+		SLIP_DEBUG,
+		DHCP_DEBUG,
+		AUTOIP_DEBUG,
+		DNS_DEBUG,
+		IP6_DEBUG,
+		ND6_DEBUG,
 };
 
 static char *g_level_table_str[] = {
@@ -150,7 +150,7 @@ static uint32_t _get_lwip_mod(char *mod_str)
 			return g_lwip_mod_table[i];
 		}
 	}
-	return TC_UNKNOWN_DEBUG;
+	return UNKNOWN_DEBUG;
 }
 
 static uint32_t _get_level(char *level_str)
@@ -349,11 +349,15 @@ static int _parse_cmd(void *arg, int argc, char **argv)
 	return -1;
 }
 
-void ctrlog_cmd(int argc, char **argv)
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int ctrlog_main(int argc, char *argv[])
+#endif
 {
 	if (argc < 2) {
 		printf("%s", CTRLOG_USAGE);
-		return;
+		return -1;
 	}
 	cl_options_s opt;
   memset(&opt, 0, sizeof(cl_options_s));
@@ -361,10 +365,10 @@ void ctrlog_cmd(int argc, char **argv)
 	int res = _parse_cmd((void *)&opt, argc - 1, argv + 1);
 	if (res != 0) {
     printf("%s", CTRLOG_USAGE);
-		return;
+		return -1;
 	}
 
 	opt.func((void *)&opt);
 
-	return;
+	return 0;
 }
