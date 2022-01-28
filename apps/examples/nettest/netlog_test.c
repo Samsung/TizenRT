@@ -25,36 +25,6 @@
 
 #define NT_TEST_TRIAL 1
 
-#define TC_LWIP_DBG_LEVEL_ALL     0x00
-#define TC_LWIP_DBG_LEVEL_WARNING 0x01
-#define TC_LWIP_DBG_LEVEL_SERIOUS 0x02
-#define TC_LWIP_DBG_LEVEL_SEVERE  0x03
-
-#define TC_LWIP_DBG_LEVEL_ALL     0x00
-#define TC_LWIP_DBG_MIN_LEVEL              TC_LWIP_DBG_LEVEL_ALL
-#define TC_LWIP_DBG_MASK_LEVEL    0x03
-#define TC_LWIP_DBG_LEVEL_OFF     TC_LWIP_DBG_LEVEL_ALL
-#define TC_LWIP_DBG_ON            0x80U
-#define TC_LWIP_DBG_OFF           0x00U
-#define TC_LWIP_DBG_TYPES_ON               TC_LWIP_DBG_ON
-#define TC_LWIP_DBG_HALT 0x00
-
-#define TC_LWIP_DEBUGF(debug, message)                                                \
-			netlogger_print(NL_MOD_LWIP, debug, __FUNCTION__, __FILE__, __LINE__, message)
-
-/* #define TC_LWIP_DEBUGF(debug, message)                                                \ */
-/* 	do {                                                                                \ */
-/* 		if (((debug)&TC_LWIP_DBG_ON) &&                                                   \ */
-/* 				((debug)&TC_LWIP_DBG_TYPES_ON)) {                                             \ */
-/* 			netlogger_print(NL_MOD_LWIP, debug, __FUNCTION__, __FILE__, __LINE__, message);\ */
-/* 			if ((debug)&TC_LWIP_DBG_HALT) {                                                 \ */
-/* 				while (1);																											\ */
-/* 			}                                                                               \ */
-/* 		}                                                                                 \ */
-/* 	} while (0) */
-
-//#define TC_NETIF_DEBUG TC_LWIP_DBG_ON
-
 static const char wifimanager_err_log[] = "wifi_manager error\n";
 static const char wifimanager_info_log[] = "wifi_manager info\n";
 static const char wifimanager_verb_log[] = "wifi_manager verb\n";

@@ -54,12 +54,6 @@ typedef enum {
   NL_MODE_ALL,
 } netlog_module_e;
 
-/* typedef enum { */
-/* 	NL_LEVEL_ERROR, */
-/* 	NL_LEVEL_INFO, */
-/* 	NL_LEVEL_VERB, */
-/* 	NL_LEVEL_UNKNOWN, */
-/* } uint8_t; */
 #define NL_LEVEL_ERROR 0x00
 #define NL_LEVEL_INFO 0x01
 #define NL_LEVEL_VERB 0x02
@@ -72,7 +66,62 @@ typedef enum {
  *   | INFO    | serious warning |
  *   | VERBOSE | all             |
  *   |---------+-----------------|
-*/
+ */
+#ifdef __LINUX__
+/*  To test netlog under linux without lwIP build, it needs lwIP definitions. */
+#define TC_LWIP_DBG_LEVEL_ALL 0x00
+#define TC_LWIP_DBG_LEVEL_WARNING 0x01
+#define TC_LWIP_DBG_LEVEL_SERIOUS 0x02
+#define TC_LWIP_DBG_LEVEL_SEVERE 0x03
+
+#define TC_LWIP_DBG_LEVEL_ALL 0x00
+#define TC_LWIP_DBG_MIN_LEVEL TC_LWIP_DBG_LEVEL_ALL
+#define TC_LWIP_DBG_MASK_LEVEL 0x03
+#define TC_LWIP_DBG_LEVEL_OFF TC_LWIP_DBG_LEVEL_ALL
+#define TC_LWIP_DBG_ON 0x80U
+#define TC_LWIP_DBG_OFF 0x00U
+#define TC_LWIP_DBG_TYPES_ON TC_LWIP_DBG_ON
+#define TC_LWIP_DBG_HALT 0x00
+
+#define TC_LWIP_DEBUGF(debug, message) \
+	netlogger_print(NL_MOD_LWIP, debug, __FUNCTION__, __FILE__, __LINE__, message)
+
+#define TC_ETHARP_DEBUG 0x0000U
+#define TC_NETIF_DEBUG 0x0010U
+#define TC_PBUF_DEBUG 0x0020U
+#define TC_API_LIB_DEBUG 0x0030U
+#define TC_API_MSG_DEBUG 0x0040U
+#define TC_SOCKETS_DEBUG 0x0050U
+#define TC_ICMP_DEBUG 0x0060U
+#define TC_IGMP_DEBUG 0x0070U
+#define TC_INET_DEBUG 0x0080U
+#define TC_IP_DEBUG 0x0090U
+#define TC_IP_REASS_DEBUG 0x00a0U
+#define TC_RAW_DEBUG 0x00b0U
+#define TC_MEM_DEBUG 0x00c0U
+#define TC_MEMP_DEBUG 0x00e0U
+#define TC_SYS_DEBUG 0x00f0U
+#define TC_TIMERS_DEBUG 0x0100U
+#define TC_TCP_DEBUG 0x0110U
+#define TC_TCP_INPUT_DEBUG 0x0120U
+#define TC_TCP_FR_DEBUG 0x0130U
+#define TC_TCP_RTO_DEBUG 0x0140U
+#define TC_TCP_CWND_DEBUG 0x0150U
+#define TC_TCP_WND_DEBUG 0x0160U
+#define TC_TCP_OUTPUT_DEBUG 0x0170U
+#define TC_TCP_RST_DEBUG 0x0180U
+#define TC_TCP_QLEN_DEBUG 0x0190U
+#define TC_UDP_DEBUG 0x01a0U
+#define TC_TCPIP_DEBUG 0x01b0U
+#define TC_SLIP_DEBUG 0x01c0U
+#define TC_DHCP_DEBUG 0x01d0U
+#define TC_AUTOIP_DEBUG 0x01e0U
+#define TC_DNS_DEBUG 0x01f0U
+#define TC_IP6_DEBUG 0x0200U
+#define TC_ND6_DEBUG 0x0210U
+#define TC_UNKNOWN_DEBUG 0xffffU
+#endif
+
 typedef enum {
 	NL_LWIP_ETHARP,
 	NL_LWIP_NETIF,
@@ -109,41 +158,6 @@ typedef enum {
 	NL_LWIP_ND6,
 	NL_LWIP_SUBLEVEL_SIZE,
 } netlog_lwip_sublevel_e;
-
-#define TC_ETHARP_DEBUG 0x0000U
-#define TC_NETIF_DEBUG 0x0010U
-#define TC_PBUF_DEBUG 0x0020U
-#define TC_API_LIB_DEBUG 0x0030U
-#define TC_API_MSG_DEBUG 0x0040U
-#define TC_SOCKETS_DEBUG 0x0050U
-#define TC_ICMP_DEBUG 0x0060U
-#define TC_IGMP_DEBUG 0x0070U
-#define TC_INET_DEBUG 0x0080U
-#define TC_IP_DEBUG 0x0090U
-#define TC_IP_REASS_DEBUG 0x00a0U
-#define TC_RAW_DEBUG 0x00b0U
-#define TC_MEM_DEBUG 0x00c0U
-#define TC_MEMP_DEBUG 0x00e0U
-#define TC_SYS_DEBUG 0x00f0U
-#define TC_TIMERS_DEBUG 0x0100U
-#define TC_TCP_DEBUG 0x0110U
-#define TC_TCP_INPUT_DEBUG 0x0120U
-#define TC_TCP_FR_DEBUG 0x0130U
-#define TC_TCP_RTO_DEBUG 0x0140U
-#define TC_TCP_CWND_DEBUG 0x0150U
-#define TC_TCP_WND_DEBUG 0x0160U
-#define TC_TCP_OUTPUT_DEBUG 0x0170U
-#define TC_TCP_RST_DEBUG 0x0180U
-#define TC_TCP_QLEN_DEBUG 0x0190U
-#define TC_UDP_DEBUG 0x01a0U
-#define TC_TCPIP_DEBUG 0x01b0U
-#define TC_SLIP_DEBUG 0x01c0U
-#define TC_DHCP_DEBUG 0x01d0U
-#define TC_AUTOIP_DEBUG 0x01e0U
-#define TC_DNS_DEBUG 0x01f0U
-#define TC_IP6_DEBUG 0x0200U
-#define TC_ND6_DEBUG 0x0210U
-#define TC_UNKNOWN_DEBUG 0xffffU
 
 /*
  * DESCRIPTION: Initialize logger

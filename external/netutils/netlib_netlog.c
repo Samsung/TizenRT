@@ -31,14 +31,60 @@ typedef struct {
 	nl_color_e color;
 } netlog_config_s;
 
+#ifdef NETLOG_TEST
+static netlog_config_s g_mod_config[4] = {
+	{NL_LEVEL_VERB, NL_COLOR_DEFAULT},
+	{NL_LEVEL_VERB, NL_COLOR_DEFAULT},
+	{NL_LEVEL_VERB, NL_COLOR_DEFAULT},
+	{NL_LEVEL_VERB, NL_COLOR_DEFAULT},
+};
+#else
 static netlog_config_s g_mod_config[4] = {
 	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
 	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
 	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
 	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
 };
-
+#endif
+#ifdef NETLOG_TEST
+static uint8_t g_lwip_mod_level[33] = {
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+};
+#else
 static uint8_t g_lwip_mod_level[33] = {NL_LEVEL_UNKNOWN,};
+#endif
 
 static nl_options g_nl_timer = NL_OPT_DISABLE;
 static nl_options g_nl_function = NL_OPT_DISABLE;
@@ -70,7 +116,7 @@ static inline int _print_time(void)
 
 	unsigned int micro_sec = current_time.tv_nsec / 10000000;
 	return printf(" [%02d:%02d:%02d.%02u]",
-		   tm->tm_hour, tm->tm_min, tm->tm_sec, micro_sec);
+								tm->tm_hour, tm->tm_min, tm->tm_sec, micro_sec);
 }
 
 static uint32_t _get_lwip_level(uint32_t debug)
@@ -96,9 +142,9 @@ static int _filter_lwip_level(uint32_t mod, uint32_t level)
 	return 0;
 }
 
-static int _filter_level(uint32_t level)
+static int _filter_level(uint32_t mod, uint32_t level)
 {
-	if (g_mod_config[level].level < level || g_mod_config[level].level == NL_LEVEL_UNKNOWN) {
+	if (g_mod_config[mod].level < level || g_mod_config[mod].level == NL_LEVEL_UNKNOWN) {
 		return -1;
 	}
 	return 0;
@@ -121,7 +167,8 @@ int netlogger_print(netlog_module_e mod,
 			return 0;
 		}
 	} else {
-		if (_filter_level(level)) {
+    level = log_level;
+		if (_filter_level(mod, log_level)) {
 			return 0;
 		}
 	}
@@ -146,8 +193,8 @@ int netlogger_print(netlog_module_e mod,
 	len += vprintf(fmt, args);
 	len += printf("\033[m"); // Resets the terminal to default.
 	va_end(args);
-	
-	return len;
+
+  return len;
 }
 
 int netlog_set_level(netlog_module_e mod, uint32_t level)
