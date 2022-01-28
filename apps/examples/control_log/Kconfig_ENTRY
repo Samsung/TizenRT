@@ -1,0 +1,3 @@
+config ENTRY_CTRLOG
+	bool "Control log tool for network log""
+	depends on EXAMPLES_CTRLOG

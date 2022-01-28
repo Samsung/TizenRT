@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_CTRLOG
+	bool "network logging tool"
+	default n
+	---help---
+		Enable network logging tool
+
+config USER_ENTRYPOINT
+	string
+	default "ctrlog_main" if ENTRY_CTRLOG
