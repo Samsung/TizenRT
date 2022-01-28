@@ -89,6 +89,10 @@ CSRCS += netlib_setmacaddr.c \
 	netlib_getmacaddr.c
 endif
 
+ifeq ($(CONFIG_NET_LOGGER),y)
+CSRCS += netlib_netlog.c
+endif
+
 # IGMP support
 
 ifeq ($(CONFIG_NET_IGMP),y)

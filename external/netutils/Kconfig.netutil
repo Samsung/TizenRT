@@ -24,4 +24,10 @@ config NETUTILS_STATS_DISPLAY_TOOL
 	---help---
 		Enable support for the network statistics.
 
+config NET_LOGGER
+	bool "Network logger"
+	default n
+	---help---
+		Enable support for network logger
+
 endif

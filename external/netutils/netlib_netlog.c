@@ -131,6 +131,7 @@ static uint32_t _get_lwip_level(uint32_t debug)
 	} else {
 		assert(0);
 	}
+  return NL_LEVEL_UNKNOWN;
 }
 
 static int _filter_lwip_level(uint32_t mod, uint32_t level)
