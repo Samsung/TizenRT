@@ -30,6 +30,7 @@
 #define CMD_FILE "file="
 #define CMD_COLOR "color="
 #define CMD_MOD "mod="
+#define CMD_RESET "reset"
 
 static char *g_lwip_mod_table_str[] = {
 		"etharp",
@@ -246,6 +247,11 @@ static int _handle_color(void *arg)
 	return netlog_set_color(opt->mod, opt->color);
 }
 
+static int _handle_reset(void *arg)
+{
+  printf("[pkbuild]  \t%s:%d\n",  __FUNCTION__, __LINE__);
+  return netlog_reset();
+}
 /*
  * Parser
  */
@@ -331,6 +337,15 @@ static int _parse_color(void *arg, int argc, char **argv)
 	return 0;
 }
 
+static int _parse_reset(void *arg, int argc, char **argv) {
+  printf("[pkbuild]  \t%s:%d\n",  __FUNCTION__, __LINE__);
+  if (argc != 1) {
+    return -1;
+  }
+  cl_options_s *opt = (cl_options_s *)arg;
+  opt->func = _handle_reset;
+  return 0;
+}
 static int _parse_cmd(void *arg, int argc, char **argv)
 {
 	if (strncmp(argv[0], CMD_LEVEL, strlen(CMD_LEVEL)) == 0) {
@@ -343,7 +358,9 @@ static int _parse_cmd(void *arg, int argc, char **argv)
 		return _parse_file(arg, argc, argv);
 	} else if (strncmp(argv[0], CMD_COLOR, strlen(CMD_COLOR)) == 0) {
 		return _parse_color(arg, argc, argv);
-	} else {
+	} else if (strncmp(argv[0], CMD_RESET, strlen(CMD_RESET) + 1) == 0) {
+    return _parse_reset(arg, argc, argv);
+  } else {
 		assert(0);
 	}
 	return -1;
