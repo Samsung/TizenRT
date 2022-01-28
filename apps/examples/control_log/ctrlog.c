@@ -212,36 +212,38 @@ static int _handle_level(void *arg)
 {
 	cl_options_s *opt = (cl_options_s *)arg;
 	printf("[pkbuild] mod (%d/%02x) level %d \t%s:%d\n", opt->mod, opt->sub_mod, opt->level, __FUNCTION__, __LINE__);
-
-	return 0;
+  if (opt->mod == NL_MOD_LWIP) {
+    return netlog_set_lwip_level(opt->sub_mod, opt->level);
+  }
+	return netlog_set_level(opt->mod, opt->level);
 }
 
 static int _handle_time(void *arg)
 {
 	cl_options_s *opt = (cl_options_s *)arg;
 	printf("[pkbuild] opt %d \t%s:%d\n", opt->op, __FUNCTION__, __LINE__);
-	return 0;
+	return netlog_set_timer(opt->op);
 }
 
 static int _handle_func(void *arg)
 {
 	cl_options_s *opt = (cl_options_s *)arg;
 	printf("[pkbuild] opt %d \t%s:%d\n", opt->op, __FUNCTION__, __LINE__);
-	return 0;
+	return netlog_set_function(opt->op);
 }
 
 static int _handle_file(void *arg)
 {
 	cl_options_s *opt = (cl_options_s *)arg;
 	printf("[pkbuild] opt %d \t%s:%d\n", opt->op, __FUNCTION__, __LINE__);
-	return 0;
+	return netlog_set_file(opt->op);
 }
 
 static int _handle_color(void *arg)
 {
 	cl_options_s *opt = (cl_options_s *)arg;
 	printf("[pkbuild] color %d mode %d \t%s:%d\n", opt->color, opt->mod, __FUNCTION__, __LINE__);
-	return 0;
+	return netlog_set_color(opt->mod, opt->color);
 }
 
 /*
@@ -260,6 +262,7 @@ static int _parse_level(void *arg, int argc, char **argv)
 		// get lwip sub module
 		opt->sub_mod = _get_lwip_mod(argv[1] + strlen(CMD_MOD) + strlen("lwip:"));
 	}
+  printf("[pkbuild] %d %d %d \t%s:%d\n", opt->level, opt->mod, opt->sub_mod, __FUNCTION__, __LINE__);
 	opt->func = _handle_level;
 
 	return 0;
@@ -273,6 +276,9 @@ static int _parse_time(void *arg, int argc, char **argv)
 	}
 	cl_options_s *opt = (cl_options_s *)arg;
 	opt->op = _get_option(argv[0] + strlen(CMD_TIME));
+	if (opt->op == NL_OPT_UNKNOWN) {
+		return -1;
+	}
 	opt->func = _handle_time;
 	return 0;
 }
@@ -285,6 +291,9 @@ static int _parse_func(void *arg, int argc, char **argv)
 	}
 	cl_options_s *opt = (cl_options_s *)arg;
 	opt->op = _get_option(argv[0] + strlen(CMD_FUNC));
+	if (opt->op == NL_OPT_UNKNOWN) {
+		return -1;
+	}
 	opt->func = _handle_func;
 	return 0;
 }
@@ -297,6 +306,9 @@ static int _parse_file(void *arg, int argc, char **argv)
 	}
 	cl_options_s *opt = (cl_options_s *)arg;
 	opt->op = _get_option(argv[0] + strlen(CMD_FILE));
+	if (opt->op == NL_OPT_UNKNOWN) {
+		return -1;
+	}
 	opt->func = _handle_file;
 	return 0;
 }
@@ -311,9 +323,9 @@ static int _parse_color(void *arg, int argc, char **argv)
 		return -1;
 	}
 	cl_options_s *opt = (cl_options_s *)arg;
-	opt->func = _handle_color;
 	opt->color = _get_color(argv[0] + strlen(CMD_COLOR));
 	opt->mod = _get_mod(argv[1] + strlen(CMD_MOD));
+	opt->func = _handle_color;
 	printf("[pkbuild] color %d %d\t%s:%d\n", opt->color, opt->mod, __FUNCTION__, __LINE__);
 
 	return 0;
