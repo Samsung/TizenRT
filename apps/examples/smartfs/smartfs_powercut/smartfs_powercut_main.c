@@ -297,7 +297,7 @@ static int init_backup_file(char *path, ssize_t bufsize, file_type_t type)
 		/* Modify reference index variable to indicate that the file was unlinked */
 		index = FILE_CHUNK_NO_INDEX;
 	} else {
-		printf("Complete file: %s already exists\n", path);
+		printf("Complete file: %s already exists, size: %d\n", path, bufsize * TEST_WRITECOUNT);
 	}
 
 create_backup_file:
@@ -322,7 +322,7 @@ static int init_main_file(char *path, ssize_t bufsize, file_type_t type)
 		/* Main file already exists, return OK
 		 * completeness and correctness will be verified and recovered
 		 */
-		printf("File: %s already exists\n", path);
+		printf("File: %s already exists, size: %d\n", path, st.st_size);
 		return OK;
 	}
 
