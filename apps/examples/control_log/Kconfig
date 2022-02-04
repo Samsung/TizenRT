@@ -5,6 +5,7 @@
 
 config EXAMPLES_CTRLOG
 	bool "network logging tool"
+  depends on NET_LOGGER
 	default n
 	---help---
 		Enable network logging tool
