@@ -170,23 +170,23 @@ START_TEST_F(lwip_tcp_log_level)
 {
 	ST_EXPECT_EQ(0, netlog_reset());
 
-	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_DEBUG, NL_LEVEL_ERROR));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
-	ST_EXPECT_EQ(27, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TCP_DEBUG, NL_LEVEL_ERROR));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(27, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
 
-	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_DEBUG, NL_LEVEL_INFO));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
-	ST_EXPECT_EQ(20, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
-	ST_EXPECT_EQ(20, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
-	ST_EXPECT_EQ(27, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TCP_DEBUG, NL_LEVEL_INFO));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
+	ST_EXPECT_EQ(20, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(20, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(27, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
 
-	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_DEBUG, NL_LEVEL_VERB));
-	ST_EXPECT_EQ(23, TC_LWIP_DEBUGF(TC_TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
-	ST_EXPECT_EQ(20, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
-	ST_EXPECT_EQ(20, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
-	ST_EXPECT_EQ(27, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TCP_DEBUG, NL_LEVEL_VERB));
+	ST_EXPECT_EQ(23, LWIP_DEBUGF(TCP_DEBUG, ("%s", lwip_tcp_verb_log)));
+	ST_EXPECT_EQ(20, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(20, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(27, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
 }
 END_TEST_F
 
@@ -197,36 +197,36 @@ START_TEST_F(lwip_submodule)
 {
 	ST_EXPECT_EQ(0, netlog_reset());
 
-	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_DEBUG, NL_LEVEL_ERROR));
-	ST_EXPECT_EQ(27, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_RTO_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcprto_err_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DHCP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_dhcp_err_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DNS_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_dns_err_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_UDP_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_udp_err_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_netif_err_log)));
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TCP_DEBUG, NL_LEVEL_ERROR));
+	ST_EXPECT_EQ(27, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcp_err_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_RTO_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_tcprto_err_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_dhcp_err_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(DNS_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_dns_err_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_udp_err_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s", lwip_netif_err_log)));
 
-	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_TCP_RTO_DEBUG, NL_LEVEL_INFO));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
-	ST_EXPECT_EQ(23, TC_LWIP_DEBUGF(TC_TCP_RTO_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcprto_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DHCP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_dhcp_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DNS_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_dns_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_UDP_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_udp_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_netif_info_log)));
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(TCP_RTO_DEBUG, NL_LEVEL_INFO));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(23, LWIP_DEBUGF(TCP_RTO_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_tcprto_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_dhcp_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(DNS_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_dns_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_udp_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s", lwip_netif_info_log)));
 
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
-	ST_EXPECT_EQ(23, TC_LWIP_DEBUGF(TC_TCP_RTO_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcprto_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DHCP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_dhcp_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DNS_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_dns_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_UDP_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_udp_info_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s", lwip_netif_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcp_info_log)));
+	ST_EXPECT_EQ(23, LWIP_DEBUGF(TCP_RTO_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_tcprto_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_dhcp_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(DNS_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_dns_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_udp_info_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s", lwip_netif_info_log)));
 
-	ST_EXPECT_EQ(0, netlog_set_lwip_level(TC_DHCP_DEBUG, NL_LEVEL_VERB));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_tcp_verb_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_TCP_RTO_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_tcprto_verb_log)));
-	ST_EXPECT_EQ(24, TC_LWIP_DEBUGF(TC_DHCP_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_dhcp_verb_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_DNS_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_dns_verb_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_UDP_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_udp_verb_log)));
-	ST_EXPECT_EQ(0, TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s", lwip_netif_verb_log)));
+	ST_EXPECT_EQ(0, netlog_set_lwip_level(DHCP_DEBUG, NL_LEVEL_VERB));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_DEBUG | LWIP_DBG_LEVEL_ALL, ("%s", lwip_tcp_verb_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(TCP_RTO_DEBUG | LWIP_DBG_LEVEL_ALL, ("%s", lwip_tcprto_verb_log)));
+	ST_EXPECT_EQ(24, LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_LEVEL_ALL, ("%s", lwip_dhcp_verb_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(DNS_DEBUG | LWIP_DBG_LEVEL_ALL, ("%s", lwip_dns_verb_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_LEVEL_ALL, ("%s", lwip_udp_verb_log)));
+	ST_EXPECT_EQ(0, LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_ALL, ("%s", lwip_netif_verb_log)));
 }
 END_TEST_F
 
@@ -236,11 +236,11 @@ END_TEST_F
 START_TEST_F(lwip_tc)
 {
 	ST_EXPECT_EQ(0, netlog_reset());
-	TC_LWIP_DEBUGF(TC_NETIF_DEBUG, ("%s\n", lwip_netif_err_log));
-	TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_ALL, ("%s\n", lwip_netif_verb_log));
-	TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_WARNING, ("%s\n", lwip_netif_info_log));
-	TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_SERIOUS, ("%s\n", lwip_netif_info_log));
-	TC_LWIP_DEBUGF(TC_NETIF_DEBUG | TC_LWIP_DBG_LEVEL_SEVERE, ("%s\n", lwip_netif_err_log));
+	LWIP_DEBUGF(NETIF_DEBUG, ("%s\n", lwip_netif_err_log));
+	LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_ALL, ("%s\n", lwip_netif_verb_log));
+	LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("%s\n", lwip_netif_info_log));
+	LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s\n", lwip_netif_info_log));
+	LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("%s\n", lwip_netif_err_log));
 }
 END_TEST_F
 
@@ -256,6 +256,7 @@ void netlog_run_test(void)
 	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "set additional info", add_option); */
 	/* ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "remove additional info", remove_option); */
 
+  /*  lwip is kernel module so it isn't built in loadable configurations */
 	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip log", lwip_tc);
 	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip submodule test", lwip_submodule);
 	ST_SET_SMOKE1(netlog, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "lwip tcp log level", lwip_tcp_log_level);
