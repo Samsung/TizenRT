@@ -37,7 +37,7 @@
 #include "lwip/snmp.h"
 #include "lwip/igmp.h"
 #include "netdev_mgr_internal.h"
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 
 /* This is really kind of bogus.. When asked for an IP address, this is
  * family that is returned in the ifr structure.  Probably could just skip

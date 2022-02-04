@@ -27,7 +27,7 @@
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include "netdev_mgr_internal.h"
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 #include "netdev_stats.h"
 
 #define TAG "[NETMGR]"

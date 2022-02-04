@@ -22,7 +22,7 @@
 #include <net/if.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 
 #define TAG "[NETMGR]"
 #ifdef CONFIG_NET_LWIP

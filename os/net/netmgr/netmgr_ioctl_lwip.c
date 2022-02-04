@@ -29,7 +29,7 @@
 #include "netdev_mgr_internal.h"
 #include "netdev_stats.h"
 #include "netstack.h"
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 #include <tinyara/netmgr/netctl.h>
 #include "lwip/opt.h"
 #include "lwip/netif.h"

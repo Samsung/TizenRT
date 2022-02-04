@@ -18,7 +18,7 @@
 #include <tinyara/config.h>
 
 #include "sys/sockio.h"
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 
 #define TAG "[NETMGR]"
 

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2021 Samsung Electronics All Rights Reserved.
+ * Copyright 2022 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,17 @@
  *
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <debug.h>
-#include <tinyara/net/netlogk.h>
-#define TAG "[NETMGR]"
+#pragma once
 
-uint32_t g_link_recv_byte = 0;
-uint32_t g_link_recv_cnt = 0;
-uint32_t g_link_recv_err = 0;
+typedef enum {
+	NL_COLOR_DEFAULT,
+	NL_COLOR_RED,
+	NL_COLOR_GREEN,
+	NL_COLOR_YELLOW,
+} nl_color_e;
 
-uint32_t g_app_recv_byte = 0;
-uint32_t g_app_recv_cnt = 0;
-
-void netstats_display(void)
-{
-	NET_LOGK(TAG, "[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
-	NET_LOGK(TAG, "[driver] mbox err %u\n", g_link_recv_err);
-	NET_LOGK(TAG, "[app] total recv %u\t%u\n", g_app_recv_byte, g_app_recv_cnt);
-}
+typedef enum {
+	NL_OPT_ENABLE,
+	NL_OPT_DISABLE,
+  NL_OPT_UNKNOWN,
+} nl_options;

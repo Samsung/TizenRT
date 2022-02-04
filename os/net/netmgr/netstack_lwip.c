@@ -25,7 +25,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <net/route.h>
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 #include <tinyara/sched.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/mqueue.h>

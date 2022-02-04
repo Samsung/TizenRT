@@ -21,7 +21,7 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "netmgr/netstack.h"
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 
 #define TAG "[NETMGR]"
 

@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 #include <tinyara/kmalloc.h>
 
 #define NETLOGGER_BUF_SIZE 256
@@ -83,4 +83,49 @@ int netlogger_serialize(netmgr_logger_p log, char **buf)
 	(*buf)[log->idx] = 0;
 
 	return log->idx;
+}
+
+int netlogk_print(netlogk_module_e mod,
+					uint32_t level,
+					const char *func,
+					const char *file,
+					const int line,
+					const char *fmt, ...)
+{
+  return 0;
+}
+
+int netlogk_set_level(netlogk_module_e module, uint32_t level)
+{
+  return 0;
+}
+
+int netlogk_set_lwip_level(uint32_t lwip, uint32_t level)
+{
+  return 0;
+}
+
+int netlogk_set_color(netlogk_module_e module, nl_color_e color)
+{
+  return 0;
+}
+
+int netlogk_set_timer(nl_options opt)
+{
+  return 0;
+}
+
+int netlogk_set_function(nl_options opt)
+{
+  return 0;
+}
+
+int netlogk_set_file(nl_options opt)
+{
+  return 0;
+}
+
+int netlogk_reset(void)
+{
+  return 0;
 }

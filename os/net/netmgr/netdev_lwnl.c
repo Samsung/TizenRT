@@ -26,7 +26,7 @@
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <tinyara/net/if/wifi.h>
 #include "netdev_mgr_internal.h"
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 
 #define TAG "[NETMGR]"
 

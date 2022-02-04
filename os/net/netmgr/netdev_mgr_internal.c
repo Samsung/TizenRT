@@ -29,7 +29,7 @@
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include "netdev_mgr_internal.h"
-#include <tinyara/net/netlog.h>
+#include <tinyara/net/netlogk.h>
 
 #define NETDEV_LOCK								\
 	do {										\

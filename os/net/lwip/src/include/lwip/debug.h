@@ -136,7 +136,6 @@
 	} while (0)
 
 #else /*  CONFIG_NET_LWIP_BUILDTIME_DEBUG */
-
 #include <tinyara/net/netlogk.h>
 #define LWIP_STRIP_PARENS( ... )   __VA_ARGS__
 #define LWIP_DEBUGF(debug, message) \
