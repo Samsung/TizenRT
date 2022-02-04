@@ -67,7 +67,7 @@ void print_test_result(const char *name, int file_size, int itr, int buf_size, u
 {
 	printf("\n**************************************************************************************\n");
 	printf("Throughput while %s %dKb file %d time(s) with %dbyte buffer size = %.02fKbps\n",\
-			name, file_size, itr, buf_size, (float)(file_size * itr * 1000000) / time);
+			name, file_size, itr, buf_size, ((float)file_size * itr) / ((float)time / 1000000));
 	printf("\n**************************************************************************************\n");
 	return;
 }
@@ -344,7 +344,7 @@ static int read_test(int frt_fd, int file_size)
 	}
 
 	time_read = time_2.timeleft - time_1.timeleft;
-	print_test_result("reading", file_size, READ_TEST_ITR, DEFAULT_BUF_SIZE_S, time_read);
+	print_test_result("reading", file_size * 1024, READ_TEST_ITR, DEFAULT_BUF_SIZE_S, time_read);
 
 	ret = ioctl(frt_fd, TCIOC_GETSTATUS, (unsigned long)(uintptr_t)&time_1);
 	if (ret < 0) {
@@ -365,7 +365,7 @@ static int read_test(int frt_fd, int file_size)
 	}
 
 	time_read = time_2.timeleft - time_1.timeleft;
-	print_test_result("reading", file_size, READ_TEST_ITR, DEFAULT_BUF_SIZE_L, time_read);
+	print_test_result("reading", file_size * 1024, READ_TEST_ITR, DEFAULT_BUF_SIZE_L, time_read);
 
 	ret = stat("/mnt", &st);
 	if (ret < 0) {
@@ -394,7 +394,7 @@ static int read_test(int frt_fd, int file_size)
 
 	time_read = time_2.timeleft - time_1.timeleft;
 	printf("TEST WITH OPTIMIZED BUFFER\n");
-	print_test_result("reading", file_size, READ_TEST_ITR, buf_size, time_read);
+	print_test_result("reading", file_size * 1024, READ_TEST_ITR, buf_size, time_read);
 
 	printf("================================== READ TESTS COMPLETE ==================================\n\n");
 
