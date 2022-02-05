@@ -23,6 +23,71 @@
 #include <tinyara/kmalloc.h>
 
 #define NETLOGGER_BUF_SIZE 256
+#ifdef NETLOG_TEST
+static uint8_t g_lwip_mod_level[33] = {
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+		NL_LEVEL_VERB,
+};
+#else
+static uint8_t g_lwip_mod_level[33] = {
+		NL_LEVEL_UNKNOWN,
+};
+#endif
+
+/* static uint32_t _get_lwip_level(uint32_t debug) */
+/* { */
+/* 	uint8_t mask = (debug & 0x0f); */
+/* 	if (mask == 0) { */
+/* 		return NL_LEVEL_VERB; */
+/* 	} else if (mask == 0x01 || mask == 0x02) { */
+/* 		return NL_LEVEL_INFO; */
+/* 	} else if (mask == 0x03) { */
+/* 		return NL_LEVEL_ERROR; */
+/* 	} else { */
+/* 		assert(0); */
+/* 	} */
+/* 	return NL_LEVEL_UNKNOWN; */
+/* } */
+
+/* static int _filter_lwip_level(uint32_t mod, uint32_t level) */
+/* { */
+/* 	uint32_t lwip_mod = mod >> 4; */
+/* 	if (g_lwip_mod_level[lwip_mod] < level || g_lwip_mod_level[lwip_mod] == NL_LEVEL_UNKNOWN) { */
+/* 		return -1; */
+/* 	} */
+/* 	return 0; */
+/* } */
 
 int netlogger_init(netmgr_logger_p *log)
 {
@@ -61,7 +126,7 @@ int netlogger_debug_msg(netmgr_logger_p log, const char *format, ...)
 	int remain = log->size - log->idx;
 	if (ret > remain) {
 		log->size =
-			((log->idx + ret) / NETLOGGER_BUF_SIZE + 1) * NETLOGGER_BUF_SIZE;
+				((log->idx + ret) / NETLOGGER_BUF_SIZE + 1) * NETLOGGER_BUF_SIZE;
 		log->buf = (char *)kmm_realloc(log->buf, log->size);
 		if (!log->buf) {
 			return -1;
@@ -85,47 +150,82 @@ int netlogger_serialize(netmgr_logger_p log, char **buf)
 	return log->idx;
 }
 
-int netlogk_print(netlogk_module_e mod,
-					uint32_t level,
-					const char *func,
-					const char *file,
-					const int line,
-					const char *fmt, ...)
+int netlogk_print(netlog_module_e mod,
+									uint32_t level,
+									const char *func,
+									const char *file,
+									const int line,
+									const char *fmt, ...)
 {
-  return 0;
+	return 0;
 }
 
-int netlogk_set_level(netlogk_module_e module, uint32_t level)
+int netlogk_set_level(netlog_msg_s *msg)
 {
-  return 0;
+	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
+	if (msg->mod == NL_MOD_LWIP) {
+		return netlogk_set_lwip_level(msg);
+	}
+	return 0;
 }
 
-int netlogk_set_lwip_level(uint32_t lwip, uint32_t level)
+int netlogk_set_lwip_level(netlog_msg_s *msg)
 {
-  return 0;
+	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
+	uint32_t lwip_mode = msg->sub_mod >> 4;
+	g_lwip_mod_level[lwip_mode] = msg->level;
+	return 0;
 }
 
-int netlogk_set_color(netlogk_module_e module, nl_color_e color)
+int netlogk_set_color(netlog_msg_s *msg)
 {
-  return 0;
+	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
+	return 0;
 }
 
-int netlogk_set_timer(nl_options opt)
+int netlogk_set_timer(netlog_msg_s *msg)
 {
-  return 0;
+	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
+	return 0;
 }
 
-int netlogk_set_function(nl_options opt)
+int netlogk_set_function(netlog_msg_s *msg)
 {
-  return 0;
+	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
+	return 0;
 }
 
-int netlogk_set_file(nl_options opt)
+int netlogk_set_file(netlog_msg_s *msg)
 {
-  return 0;
+	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
+	return 0;
 }
 
 int netlogk_reset(void)
 {
-  return 0;
+	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
+	uint32_t size = sizeof(g_lwip_mod_level) / sizeof(uint8_t);
+	for (int i = 0; i < size; i++) {
+		g_lwip_mod_level[i] = NL_LEVEL_UNKNOWN;
+	}
+	return 0;
+}
+
+int netlogk_handle_msg(netlog_msg_s *msg)
+{
+	switch (msg->ops) {
+	case NL_OPS_TIMER:
+		return netlogk_set_timer(msg);
+	case NL_OPS_FUNCTION:
+		return netlogk_set_function(msg);
+	case NL_OPS_FILE:
+		return netlogk_set_file(msg);
+	case NL_OPS_LEVEL:
+		return netlogk_set_level(msg);
+	case NL_OPS_COLOR:
+		return netlogk_set_color(msg);
+	default:
+		assert(0);
+	}
+	return -1;
 }

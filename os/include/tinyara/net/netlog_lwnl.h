@@ -15,34 +15,25 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #pragma once
 
-typedef enum {
-	NL_COLOR_DEFAULT,
-	NL_COLOR_RED,
-	NL_COLOR_GREEN,
-	NL_COLOR_YELLOW,
-} nl_color_e;
+#include <stdint.h>
+#include "netlog_util.h"
 
 typedef enum {
-	NL_OPT_ENABLE,
-	NL_OPT_DISABLE,
-  NL_OPT_UNKNOWN,
-} nl_options;
+  NL_OPS_TIMER,
+  NL_OPS_FUNCTION,
+  NL_OPS_FILE,
+  NL_OPS_LEVEL,
+  NL_OPS_COLOR,
+  NL_OPS_RESET,
+} nl_ops_e;
 
-typedef enum {
-	/*  user level module */
-	NL_MOD_WIFI_MANAGER,
-	NL_MOD_NETLIB,
-	/*  kernel level module */
-	NL_MOD_LWIP,
-	NL_MOD_NET_MANAGER,
-	NL_MOD_UNKNOWN,
-  NL_MODE_ALL,
-} netlog_module_e;
-
-#define NL_LEVEL_ERROR 0x00
-#define NL_LEVEL_INFO 0x01
-#define NL_LEVEL_VERB 0x02
-#define NL_LEVEL_UNKNOWN 0x03
+typedef struct netlog_msg {
+  nl_ops_e ops;
+	nl_color_e color;
+	nl_options op;
+	netlog_module_e mod;
+	uint32_t level;
+	uint32_t sub_mod;
+} netlog_msg_s;

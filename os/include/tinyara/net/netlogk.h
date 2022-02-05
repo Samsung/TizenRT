@@ -19,7 +19,10 @@
 #pragma once
 
 #include <stdint.h>
+#include "netlog_lwnl.h"
 #include "netlog_util.h"
+
+//#define USE_NDBG
 
 typedef struct {
 	int idx;
@@ -27,17 +30,6 @@ typedef struct {
 	char *buf;
 } netmgr_logger;
 typedef netmgr_logger *netmgr_logger_p;
-
-typedef enum {
-	/*  user level module */
-	NL_MOD_WIFI_MANAGER,
-	NL_MOD_NETLIB,
-	/*  kernel level module */
-	NL_MOD_LWIP,
-	NL_MOD_NET_MANAGER,
-	NL_MOD_UNKNOWN,
-  NL_MODE_ALL,
-} netlogk_module_e;
 
 /*
  * lwip log level mapped to netlog like following table
@@ -140,7 +132,7 @@ int netlogger_serialize(netmgr_logger_p log, char **buf);
  * DESCRIPTION: print log to stdout
  * RETURN: return log length
  */
-int netlogk_print(netlogk_module_e mod,
+int netlogk_print(netlog_module_e mod,
 					uint32_t level,
 					const char *func,
 					const char *file,
@@ -151,37 +143,37 @@ int netlogk_print(netlogk_module_e mod,
  * DESCRIPTION: set level
  * RETURN: if succeeded return 0 else return -1
  */
-int netlogk_set_level(netlogk_module_e module, uint32_t level);
+int netlogk_set_level(netlog_msg_s *msg);
 
 /*
  * DESCRIPTION: set lwip level
  * RETURN: if succeeded return 0 else return -1
  */
-int netlogk_set_lwip_level(uint32_t lwip, uint32_t level);
+int netlogk_set_lwip_level(netlog_msg_s *msg);
 
 /*
  * DESCRIPTION: set color
  * RETURN: if succeeded return 0 else return -1
  */
-int netlogk_set_color(netlogk_module_e module, nl_color_e color);
+int netlogk_set_color(netlog_msg_s *msg);
 
 /*
  * DESCRIPTION: configure timer in log
  * RETURN: if succeeded return 0 else return -1
  */
-int netlogk_set_timer(nl_options opt);
+int netlogk_set_timer(netlog_msg_s *msg);
 
 /*
  * DESCRIPTION: configure timer in log
  * RETURN: if succeeded return 0 else return -1
  */
-int netlogk_set_function(nl_options opt);
+int netlogk_set_function(netlog_msg_s *msg);
 
 /*
  * DESCRIPTION: configure timer in log
  * RETURN: if succeeded return 0 else return -1
  */
-int netlogk_set_file(nl_options opt);
+int netlogk_set_file(netlog_msg_s *msg);
 
 /*
  * DESCRIPTION: reset all log configurations
@@ -189,10 +181,16 @@ int netlogk_set_file(nl_options opt);
  */
 int netlogk_reset(void);
 
+/*
+ * DESCRIPTION: handle the requests from applications.
+ * RETURN: if succeeded return 0 else return -1
+ */
+int netlogk_handle_msg(netlog_msg_s *msg);
 /**************************************************
  * API
  ***************************************************/
 /*  network log for kernel space */
+#ifdef USE_NDBG
 #define NET_LOGK(tag, fmt, args...) \
 	nwdbg(fmt, ##args)
 #define NET_LOGKE(tag, fmt, args...) \
@@ -201,3 +199,13 @@ int netlogk_reset(void);
 	nwdbg("%d " tag "[INFO]\t" fmt, __LINE__, ##args)
 #define NET_LOGKV(tag, fmt, args...) \
 	nvdbg("%d " tag "[VERB]\t" fmt, __LINE__, ##args)
+#else
+#define NET_LOGK(mod, fmt, args...) \
+  netlogk_print(mod, NL_LEVEL_UNKNOWN, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+#define NET_LOGKE(mod, fmt, args...) \
+  netlogk_print(mod, NL_LEVEL_ERROR, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+#define NET_LOGKI(mod, fmt, args...) \
+  netlogk_print(mod, NL_LEVEL_INFO, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+#define NET_LOGKV(mod, fmt, args...) \
+  netlogk_print(mod, NL_LEVEL_VERB, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+#endif

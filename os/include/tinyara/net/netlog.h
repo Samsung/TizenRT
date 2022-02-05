@@ -23,22 +23,6 @@
 #endif
 #include "netlog_util.h"
 
-typedef enum {
-	/*  user level module */
-	NL_MOD_WIFI_MANAGER,
-	NL_MOD_NETLIB,
-	/*  kernel level module */
-	NL_MOD_LWIP,
-	NL_MOD_NET_MANAGER,
-	NL_MOD_UNKNOWN,
-  NL_MODE_ALL,
-} netlog_module_e;
-
-#define NL_LEVEL_ERROR 0x00
-#define NL_LEVEL_INFO 0x01
-#define NL_LEVEL_VERB 0x02
-#define NL_LEVEL_UNKNOWN 0x03
-
 /*
  * DESCRIPTION: print log to stdout
  * RETURN: return log length
