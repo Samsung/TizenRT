@@ -25,8 +25,9 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <tinyara/net/if/wifi.h>
-#include "netdev_mgr_internal.h"
 #include <tinyara/net/netlogk.h>
+#include <tinyara/net/netlog_lwnl.h>
+#include "netdev_mgr_internal.h"
 
 #define TAG "[NETMGR]"
 
@@ -44,7 +45,7 @@ static int _netdev_getifaddr(struct netdev *dev, void *arg)
 	struct ifaddrs *addr = NULL;
 	int res = ND_NETOPS(dev, get_ifaddrs)(dev, &addr);
 	if (res < 0) {
-		NET_LOGKE(TAG, "get_ifaddrs fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "get_ifaddrs fail\n");
 		return -1;
 	}
 
@@ -73,8 +74,10 @@ static int _handle_common(lwnl_msg *msg)
 		} else {
 			res = -1;
 		}
+	} else if (msg->req_type.type == LWNL_REQ_COMMON_NETLOG) {
+		res = netlogk_handle_msg((netlog_msg_s *)msg->data);
 	} else {
-		NET_LOGKE(TAG, "invalid request type");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "invalid request type");
 		res = -1;
 	}
 
@@ -101,13 +104,11 @@ int netdev_req_handle(const char *msg, size_t msg_len)
 	case NM_WIFI: {
 		trwifi_result_e *res = (trwifi_result_e *)lmsg->result;
 		*res = netdev_handle_wifi(dev, lmsg->req_type, lmsg->data, lmsg->data_len);
-	}
-		break;
+	} break;
 	case NM_ETHERNET: {
 		int *res = (int *)lmsg->result;
 		*res = netdev_handle_ethernet(dev, lmsg->req_type, lmsg->data, lmsg->data_len);
-	}
-		break;
+	} break;
 	default:
 		return -ENOSYS;
 	}

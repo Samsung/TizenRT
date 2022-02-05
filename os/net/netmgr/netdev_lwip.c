@@ -62,7 +62,7 @@ static int _netif_soft_ifup(FAR struct netif *dev)
 {
 	err_t res = netifapi_netif_set_up(dev);
 	if (res != ERR_OK) {
-		NET_LOGKE(TAG, "netdev soft ifup fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "netdev soft ifup fail\n");
 		return -1;
 	}
 	return 0;
@@ -72,7 +72,7 @@ static int _netif_soft_ifdown(FAR struct netif *dev)
 {
 	err_t res = netifapi_netif_set_down(dev);
 	if (res != ERR_OK) {
-		NET_LOGKE(TAG, "netdev soft ifdown fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "netdev soft ifdown fail\n");
 		return -1;
 	}
 	return 0;
@@ -96,7 +96,7 @@ static inline void _convert_ip4addr_ntol(ip_addr_t *dest_addr, struct sockaddr_i
 static inline void _convert_ip6addr_lton(FAR struct sockaddr_in6 *outaddr, ip_addr_t *addr)
 {
 	ip6_addr_t *tmp = ip_2_ip6(addr);
-	NET_LOGKV(TAG, "convert address lwip to netstack: %4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x\n",
+	NET_LOGKV(NL_MOD_NET_MANAGER, "convert address lwip to netstack: %4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x\n",
 			 IP6_ADDR_BLOCK1(tmp),
 			 IP6_ADDR_BLOCK2(tmp),
 			 IP6_ADDR_BLOCK3(tmp),
@@ -122,7 +122,7 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 	s8_t idx;
 
 	if (!dev || !inaddr) {
-		NET_LOGKE(TAG, "Invalid parameters\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "Invalid parameters\n");
 		return;
 	}
 
@@ -137,7 +137,7 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 		/* leaving MLD6 group */
 		ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
 		mld6_leavegroup_netif(dev, &solicit_addr);
-		NET_LOGKV(TAG, "MLD6 group left - %X : %X : %X : %X\n",
+		NET_LOGKV(NL_MOD_NET_MANAGER, "MLD6 group left - %X : %X : %X : %X\n",
 				 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
 				 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
@@ -160,7 +160,7 @@ static void _netif_setip6addr(struct netif *dev, FAR const struct sockaddr_stora
 	/* set MLD6 group to receive solicit multicast message */
 	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&dev->ip6_addr[0])->addr[idx]);
 	mld6_joingroup_netif(dev, &solicit_addr);
-	NET_LOGKV(TAG, "MLD6 group added - %X : %X : %X : %X\n",
+	NET_LOGKV(NL_MOD_NET_MANAGER, "MLD6 group added - %X : %X : %X : %X\n",
 			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
 			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
@@ -280,7 +280,7 @@ static err_t lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 
 	int res = ND_NETOPS(dev, linkoutput)(dev, (void *)buf, 0);
 	if (res < 0) {
-		NET_LOGKE(TAG, "linkoutput fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "linkoutput fail\n");
 		return ERR_IF;
 	}
 
@@ -291,7 +291,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 {
 	(void)len;
 	if (!dev || !frame_ptr) {
-		NET_LOGKE(TAG, "invalid parameter\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "invalid parameter\n");
 		return -1;
 	}
 
@@ -312,7 +312,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 		/* full packet send to tcpip_thread to process */
 		if (netif->input(p, netif) != ERR_OK) {
 			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
-			NET_LOGKE(TAG, "input processing error\n");
+			NET_LOGKE(NL_MOD_NET_MANAGER, "input processing error\n");
 			LINK_STATS_INC(link.err);
 			NETMGR_STATS_INC(g_link_recv_err);
 		} else {
@@ -321,7 +321,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	} break;
 	default:
 		LWIP_DEBUGF(NETIF_DEBUG, ("not supported ethernet type error\n"));
-		NET_LOGKE(TAG, "not supported ethernet type\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "not supported ethernet type\n");
 		break;
 	}
 	return 0;
@@ -340,7 +340,7 @@ static err_t lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 
 	int res = ND_NETOPS(dev, linkoutput)(dev, dev->tx_buf, offset);
 	if (res < 0) {
-		NET_LOGKE(TAG, "linkoutput fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "linkoutput fail\n");
 		return ERR_IF;
 	}
 
@@ -354,7 +354,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	/* Receive the complete packet */
 	/* Obtain the size of the packet and put it into the "len" variable. */
 	if (0 == len) {
-		NET_LOGKV(TAG, "input size is 0\n");
+		NET_LOGKV(NL_MOD_NET_MANAGER, "input size is 0\n");
 		return 0;
 	}
 	struct netif *netif = GET_NETIF_FROM_NETDEV(dev);
@@ -362,7 +362,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
 
 	if (!p) {
-		NET_LOGKE(TAG, "pbuf alloc\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "pbuf alloc\n");
 		LWIP_DEBUGF(NETIF_DEBUG, ("mem error\n"));
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
@@ -390,7 +390,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	{
 		/* full packet send to tcpip_thread to process */
 		if (netif->input(p, netif) != ERR_OK) {
-			NET_LOGKE(TAG, "input processing\n");
+			NET_LOGKE(NL_MOD_NET_MANAGER, "input processing\n");
 			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
 			LINK_STATS_INC(link.err);
 			pbuf_free(p);
@@ -416,7 +416,7 @@ static err_t lwip_set_multicast_list(struct netif *nic, const ip4_addr_t *group,
 	int res = ND_NETOPS(dev, igmp_mac_filter)(dev, &addr,
 											  (action == NETIF_DEL_MAC_FILTER) ? NM_DEL_MAC_FILTER : NM_ADD_MAC_FILTER);
 	if (res < 0) {
-		NET_LOGKE(TAG, "set igmp mac filter\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "set igmp mac filter\n");
 		return ERR_IF;
 	}
 	return ERR_OK;
@@ -433,7 +433,7 @@ static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 	} else if (type == NETDEV_NETMASK) {
 		_convert_ip4addr_lton((struct sockaddr_in *)addr, &ni->netmask);
 	} else {
-		NET_LOGKE(TAG, "unknown sock type\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "unknown sock type\n");
 		return -1;
 	}
 
@@ -470,13 +470,13 @@ static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 #else  /*  CONFIG_NET_IPv4 */
 static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
-	NET_LOGKV(TAG, "IPv4 not supported\n");
+	NET_LOGKV(NL_MOD_NET_MANAGER, "IPv4 not supported\n");
 	return -ENOTTY;
 }
 
 static int lwip_set_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {
-	NET_LOGKV(TAG, "IPv4 not supported\n");
+	NET_LOGKV(NL_MOD_NET_MANAGER, "IPv4 not supported\n");
 	return -ENOTTY;
 }
 #endif /*  CONFIG_NET_IPv4 */
@@ -500,7 +500,7 @@ static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, i
 		/*  ToDo it's not supported to set ipv6 netmask */
 		_convert_ip6addr_ntol(&ni->netmask, (struct sockaddr_in6 *)addr);
 	} else {
-		NET_LOGKE(TAG, "unknown type\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "unknown type\n");
 	}
 
 	if (flags & NETIF_FLAG_UP) {
@@ -521,13 +521,13 @@ static int lwip_set_ip6addr_type(struct netdev *dev, uint8_t type)
 #else  /* CONFIG_NET_IPv6 */
 static int lwip_set_ip6addr(struct netdev *dev, struct sockaddr_storage *addr, int type)
 {
-	NET_LOGKV(TAG, "IPv6 not supported\n");
+	NET_LOGKV(NL_MOD_NET_MANAGER, "IPv6 not supported\n");
 	return -ENOTTY;
 }
 
 static int lwip_set_ip6addr_type(struct netdev *dev, uint8_t type)
 {
-	NET_LOGKV(TAG, "IPv6 not supported\n");
+	NET_LOGKV(NL_MOD_NET_MANAGER, "IPv6 not supported\n");
 	return -ENOTTY;
 }
 #endif /* CONFIG_NET_IPv6 */
@@ -536,7 +536,7 @@ static int lwip_get_ifaddrs(struct netdev *dev, struct ifaddrs **addrs)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	if (!ni) {
-		NET_LOGKE(TAG, "fail to get netif from netdev\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "fail to get netif from netdev\n");
 		return -1;
 	}
 
@@ -545,19 +545,19 @@ static int lwip_get_ifaddrs(struct netdev *dev, struct ifaddrs **addrs)
 	// get ipv4 address
 	struct ifaddrs *ifa4 = (struct ifaddrs *)zalloc(sizeof(struct ifaddrs));
 	if (!ifa4) {
-		NET_LOGKE(TAG, "zalloc fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "zalloc fail\n");
 		return -1;
 	}
 	ifa4->ifa_name = (char *)zalloc(IFNAMSIZ);
 	if (!ifa4->ifa_name) {
-		NET_LOGKE(TAG, "zalloc fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "zalloc fail\n");
 		goto free_list;
 	}
 	strncpy(ifa4->ifa_name, dev->ifname, IFNAMSIZ - 1);
 
 	FAR struct sockaddr_in *dest = (struct sockaddr_in *)zalloc(sizeof(struct sockaddr_in) * 3);
 	if (!dest) {
-		NET_LOGKE(TAG, "zalloc fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "zalloc fail\n");
 		goto free_list;
 	}
 
@@ -578,7 +578,7 @@ static int lwip_get_ifaddrs(struct netdev *dev, struct ifaddrs **addrs)
 		}
 		struct ifaddrs *ifa6 = (struct ifaddrs *)zalloc(sizeof(struct ifaddrs));
 		if (!ifa6) {
-			NET_LOGKE(TAG, "zalloc fail\n");
+			NET_LOGKE(NL_MOD_NET_MANAGER, "zalloc fail\n");
 			goto free_list;
 		}
 		cursor->ifa_next = ifa6;
@@ -586,14 +586,14 @@ static int lwip_get_ifaddrs(struct netdev *dev, struct ifaddrs **addrs)
 
 		ifa6->ifa_name = (char *)zalloc(IFNAMSIZ);
 		if (!ifa6->ifa_name) {
-			NET_LOGKE(TAG, "zalloc fail\n");
+			NET_LOGKE(NL_MOD_NET_MANAGER, "zalloc fail\n");
 			goto free_list;
 		}
 		strncpy(ifa6->ifa_name, dev->ifname, IFNAMSIZ - 1);
 
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)zalloc(sizeof(struct sockaddr_in6));
 		if (!sin6) {
-			NET_LOGKE(TAG, "zalloc fail\n");
+			NET_LOGKE(NL_MOD_NET_MANAGER, "zalloc fail\n");
 			goto free_list;
 		}
 		_convert_ip6addr_lton(sin6, &ni->ip6_addr[j]);
@@ -617,12 +617,12 @@ static int lwip_delete_ipaddr(struct netdev *dev)
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	err_t lres = netifapi_netif_set_link_down(ni);
 	if (lres != ERR_OK) {
-		NET_LOGKE(TAG, "netdev link down fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "netdev link down fail\n");
 		return -ENOTTY;
 	}
 	int res = _netif_soft_ifdown(ni);
 	if (res < 0) {
-		NET_LOGKE(TAG, "netdev stack down\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "netdev stack down\n");
 		return -ENOTTY;
 	}
 #ifdef CONFIG_NET_IPv6
@@ -681,7 +681,7 @@ static int lwip_softup(struct netdev *dev)
 {
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	if (_netif_soft_ifup(ni) != 0) {
-		NET_LOGKE(TAG, "netdev stack up fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "netdev stack up fail\n");
 		return -1;
 	}
 
@@ -692,14 +692,14 @@ static int lwip_softup(struct netdev *dev)
 	 */
 #ifdef CONFIG_NET_IPv6
 	/* IPV6 auto configuration : Link-Local address */
-	NET_LOGKV(TAG, "IPV6 link local address auto config\n");
+	NET_LOGKV(NL_MOD_NET_MANAGER, "IPV6 link local address auto config\n");
 #ifdef CONFIG_NET_IPv6_AUTOCONFIG
 	/* enable IPv6 address stateless auto-configuration */
 	netif_set_ip6_autoconfig_enabled(ni, 1);
 #endif /* CONFIG_NET_IPv6_AUTOCONFIG */
 	/* To auto-config linklocal address, ni should have mac address already */
 	netif_create_ip6_linklocal_address(ni);
-	NET_LOGKV(TAG, "generated IPV6 linklocal address - %X : %X : %X : %X\n",
+	NET_LOGKV(NL_MOD_NET_MANAGER, "generated IPV6 linklocal address - %X : %X : %X : %X\n",
 			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[0]),
 			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[1]),
 			 PP_HTONL(ip_2_ip6(&ni->ip6_addr[0])->addr[2]),
@@ -710,7 +710,7 @@ static int lwip_softup(struct netdev *dev)
 	/* set MLD6 group to receive solicit multicast message */
 	ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&ni->ip6_addr[0])->addr[3]);
 	mld6_joingroup_netif(ni, &solicit_addr);
-	NET_LOGKV(TAG, "MLD6 group added - %X : %X : %X : %X\n",
+	NET_LOGKV(NL_MOD_NET_MANAGER, "MLD6 group added - %X : %X : %X : %X\n",
 			 PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]),
 			 PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
 #endif /* CONFIG_NET_IPv6_MLD */
@@ -729,12 +729,12 @@ static int lwip_ifup(struct netdev *dev)
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	/* Is the interface already up? */
 	if (ni->flags & NETIF_FLAG_LINK_UP) {
-		NET_LOGKE(TAG, "netif is already up\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "netif is already up\n");
 		return 0;
 	}
 	err_t lres = netifapi_netif_set_link_up(ni);
 	if (lres != ERR_OK) {
-		NET_LOGKE(TAG, "netdev link up fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "netdev link up fail\n");
 		return -2;
 	}
 	return 0;
@@ -745,7 +745,7 @@ static int lwip_ifdown(struct netdev *dev)
 	struct netif *ni = GET_NETIF_FROM_NETDEV(dev);
 	err_t res = netifapi_netif_set_link_down(ni);
 	if (res != ERR_OK) {
-		NET_LOGKE(TAG, "netdev link down fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "netdev link down fail\n");
 		return -1;
 	}
 	return 0;
@@ -768,13 +768,13 @@ static int lwip_leavegroup(struct netdev *dev, struct in_addr *addr)
 static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 {
 	if (!dev) {
-		NET_LOGKE(TAG, "invalid parameter (dev)\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "invalid parameter (dev)\n");
 		return -1;
 	}
 
 	char *rnetif = (char *)kmm_zalloc(sizeof(struct netif) + sizeof(struct netdev *));
 	if (!rnetif) {
-		NET_LOGKE(TAG, "zalloc fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "zalloc fail\n");
 		return -1;
 	}
 	struct netif *nic = (struct netif *)rnetif;
@@ -834,7 +834,7 @@ static int lwip_init_nic(struct netdev *dev, struct nic_config *config)
 static int lwip_deinit_nic(struct netdev *dev)
 {
 	if (!dev) {
-		NET_LOGKE(TAG, "invalid parameter dev\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "invalid parameter dev\n");
 		return -1;
 	}
 
@@ -890,7 +890,7 @@ struct netdev_ops *get_netdev_ops_lwip(void)
 {
 	struct netdev_ops *netdev_ops = (struct netdev_ops *)kmm_malloc(sizeof(struct netdev_ops));
 	if (!netdev_ops) {
-		NET_LOGKE(TAG, "alloc netdev_ops fail\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "alloc netdev_ops fail\n");
 		return NULL;
 	}
 	netdev_ops->init_nic = lwip_init_nic;

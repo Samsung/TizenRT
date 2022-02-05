@@ -25,7 +25,7 @@
 static FAR struct netdev *_netdev_imsfdev(FAR struct ip_msfilter *imsf)
 {
 	if (!imsf) {
-		NET_LOGKE(TAG, "ip msfilter is invalid\n");
+		NET_LOGKE(NL_MOD_NET_MANAGER, "ip msfilter is invalid\n");
 		return NULL;
 	}
 	/* Find the network device associated with the device name
@@ -57,14 +57,14 @@ int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *i
 	FAR struct netdev *dev;
 	int ret = -EINVAL;
 
-	NET_LOGKV(TAG, "cmd: %d\n", cmd);
+	NET_LOGKV(NL_MOD_NET_MANAGER, "cmd: %d\n", cmd);
 
 	/* Execute the command */
 	switch (cmd) {
 	case SIOCSIPMSFILTER: {		/* Set source filter content */
 		dev = _netdev_imsfdev(imsf);
 		if (!dev) {
-			NET_LOGKE(TAG, "No dev for ip ms filter\n");
+			NET_LOGKE(NL_MOD_NET_MANAGER, "No dev for ip ms filter\n");
 			break;
 		}
 
