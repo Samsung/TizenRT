@@ -43,7 +43,7 @@
 			if (derr_no == EINTR) {							\
 				continue;									\
 			} else {										\
-				NET_LOGKE(TAG, "lock fail %d\n", derr_no);	\
+				NET_LOGE(TAG, "lock fail %d\n", derr_no);	\
 				assert(0);									\
 			}												\
 		}													\
@@ -52,7 +52,7 @@
 #define UNLOCK_EVTQUEUE(queue)							\
 	do {												\
 		if (sem_post(&queue.lock) != 0) {				\
-			NET_LOGKE(TAG, "unlock fail %d\n", errno);	\
+			NET_LOGE(TAG, "unlock fail %d\n", errno);	\
 			assert(0);									\
 		}												\
 	} while (0)
@@ -64,7 +64,7 @@
 			if (derr_no == EINTR) {									\
 				continue;											\
 			} else {												\
-				NET_LOGKE(TAG, "wait signal error %d\n", derr_no);	\
+				NET_LOGE(TAG, "wait signal error %d\n", derr_no);	\
 				assert(0);											\
 			}														\
 		}															\
@@ -73,7 +73,7 @@
 #define SIGNAL_EVTQUEUE(queue)								\
 	do {													\
 		if (sem_post(&queue.signal) != 0) {					\
-			NET_LOGKE(TAG, "send signal fail %d\n", errno);	\
+			NET_LOGE(TAG, "send signal fail %d\n", errno);	\
 			assert(0);										\
 		}													\
 	} while (0)
@@ -108,7 +108,7 @@ static trwifi_evt_queue g_queue;
 int _trwifi_handle_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len)
 {
 	if (!dev) {
-		NET_LOGKE(TAG, "invalid parameter dev\n");
+		NET_LOGE(TAG, "invalid parameter dev\n");
 		return -1;
 	}
 	if (evt == LWNL_EVT_STA_CONNECTED) {
@@ -123,7 +123,7 @@ int _trwifi_handle_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uin
 int _trwifi_handle_command(struct netdev *dev, lwnl_req cmd)
 {
 	if (!dev) {
-		NET_LOGKE(TAG, "invalid parameter dev\n");
+		NET_LOGE(TAG, "invalid parameter dev\n");
 		return -1;
 	}
 	switch (cmd.type) {
@@ -145,25 +145,11 @@ int _trwifi_handle_command(struct netdev *dev, lwnl_req cmd)
 	return 0;
 }
 
-/* it's for reloading operation in binary manager.
- * it must be used to binary manager only.
- */
-trwifi_result_e netdev_deinit_wifi(void)
-{
-	struct netdev *dev = (struct netdev *)nm_get_netdev((uint8_t *)"wlan0");
-	if (!dev) {
-		return TRWIFI_FAIL;
-	}
-	trwifi_result_e res = TRWIFI_FAIL;
-	TRWIFI_CALL(res, dev, deinit, (dev));
-	return res;
-}
-
 int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
 	trwifi_result_e res = TRWIFI_FAIL;
 
-	NET_LOGKV(TAG, "T%d cmd(%d) (%p) (%d)\n", getpid(), cmd.type, data, data_len);
+	NET_LOGV(TAG, "T%d cmd(%d) (%p) (%d)\n", getpid(), cmd.type, data, data_len);
 	switch (cmd.type) {
 	case LWNL_REQ_WIFI_INIT:
 	{
@@ -226,7 +212,7 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 	if (res == TRWIFI_SUCCESS) {
 		if (_trwifi_handle_command(dev, cmd) < 0) {
 			// if network stack is not enabled. it needs to be restart
-			NET_LOGKE(TAG, "critical error network stack is not enabled\n");
+			NET_LOGE(TAG, "critical error network stack is not enabled\n");
 			assert(0);
 		}
 	}
@@ -245,11 +231,11 @@ int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list)
 	}
 	total = cnt * sizeof(trwifi_ap_scan_info_s);
 	uint32_t item_size = sizeof(trwifi_ap_scan_info_s);
-	NET_LOGKV(TAG, "total size(%d) (%d) \n", sizeof(trwifi_ap_scan_info_s), total);
+	NET_LOGV(TAG, "total size(%d) (%d) \n", sizeof(trwifi_ap_scan_info_s), total);
 
 	*buffer = (uint8_t *)kmm_malloc(total);
 	if (!(*buffer)) {
-		NET_LOGKE(TAG, "malloc fail %d\n", total);
+		NET_LOGE(TAG, "malloc fail %d\n", total);
 		return -1;
 	}
 
@@ -296,13 +282,13 @@ void *_trwifi_event_handler(void *arg)
 		int res = _trwifi_handle_event(evt->dev, evt->evt, evt->buf, evt->buf_len);
 		if (res < 0) {
 			// if network stack is not enabled. it needs to be restart
-			NET_LOGKE(TAG, "critical error network stack is not enabled\n");
+			NET_LOGE(TAG, "critical error network stack is not enabled\n");
 			assert(0);
 		}
 
 		res = lwnl_postmsg(LWNL_DEV_WIFI, evt->evt, evt->buf, evt->buf_len);
 		if (res < 0) {
-			NET_LOGKE(TAG, "critical error network stack is not enabled\n");
+			NET_LOGE(TAG, "critical error network stack is not enabled\n");
 			assert(0);
 		}
 		if (evt->buf) {
@@ -312,18 +298,18 @@ void *_trwifi_event_handler(void *arg)
 		kmm_free(evt);
 	}
 
-	NET_LOGKE(TAG, "critical error\n", errno);
+	NET_LOGE(TAG, "critical error\n", errno);
 	return NULL;
 }
 
 int trwifi_run_handler(void)
 {
 	if (sem_init(&g_queue.lock, 0, 1) != 0) {
-		NET_LOGKE(TAG, "init lock fail %d\n", errno);
+		NET_LOGE(TAG, "init lock fail %d\n", errno);
 		return -1;
 	}
 	if (sem_init(&g_queue.signal, 0, 0) != 0) {
-		NET_LOGKE(TAG, "init signal fail %d\n", errno);
+		NET_LOGE(TAG, "init signal fail %d\n", errno);
 		return -1;
 	}
 
@@ -331,7 +317,7 @@ int trwifi_run_handler(void)
 	tid = kernel_thread("netmgr_event_handler", NETMGR_EVTHANDLER_PRIO,
 						NETMGR_EVTHANDLER_STACKSIZE, _trwifi_event_handler, NULL);
 	if (tid == ERROR) {
-		NET_LOGKE(TAG, "critical error %d\n", errno);
+		NET_LOGE(TAG, "critical error %d\n", errno);
 		return -2;
 	}
 	return 0;

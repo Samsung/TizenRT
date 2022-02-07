@@ -1,0 +1,39 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "Unix Domain Socket Support"
+	depends on NET && !DISABLE_PSEUDOFS_OPERATIONS
+
+config NET_LOCAL
+	bool "Unix domain (local) sockets"
+	default n
+	select PIPES
+	---help---
+		Enable or disable Unix domain (aka Local) sockets.
+
+if NET_LOCAL
+
+config NUDS_DESCRIPTORS
+	int "Number of uds socket descriptors"
+	default 8
+	range 1 99999
+	---help---
+		Maximum number of uds socket descriptors per task/thread.
+
+config NET_LOCAL_STREAM
+	bool "Unix domain stream sockets"
+	default y
+	---help---
+		Enable support for Unix domain SOCK_STREAM type sockets
+
+config NET_LOCAL_DGRAM
+	bool "Unix domain datagram sockets"
+	default y
+	---help---
+		Enable support for Unix domain SOCK_DGRAM type sockets
+
+endif # NET_LOCAL
+
+endmenu # Unix Domain Sockets

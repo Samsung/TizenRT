@@ -19,14 +19,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <tinyara/net/netlog.h>
-#include <tinyara/kmalloc.h>
 
 #define NETLOGGER_BUF_SIZE 256
 
 int netlogger_init(netmgr_logger_p *log)
 {
-	netmgr_logger *tlog = (netmgr_logger *)kmm_malloc(sizeof(netmgr_logger));
+	printf("[pkbuild] --> %s\n", __FUNCTION__);
+	netmgr_logger *tlog = (netmgr_logger *)malloc(sizeof(netmgr_logger));
 	if (!tlog) {
 		return -1;
 	}
@@ -40,16 +39,18 @@ int netlogger_init(netmgr_logger_p *log)
 
 void netlogger_deinit(netmgr_logger_p log)
 {
+	printf("[pkbuild] --> %s\n", __FUNCTION__);
 	if (log) {
 		if (log->buf) {
-			kmm_free(log->buf);
+			free(log->buf);
 		}
-		kmm_free(log);
+		free(log);
 	}
 }
 
 int netlogger_debug_msg(netmgr_logger_p log, const char *format, ...)
 {
+	printf("[pkbuild] --> %s\n", __FUNCTION__);
 	va_list argp;
 	char str[NETLOGGER_BUF_SIZE];
 	int ret;
@@ -58,24 +59,34 @@ int netlogger_debug_msg(netmgr_logger_p log, const char *format, ...)
 	ret = vsnprintf(str, NETLOGGER_BUF_SIZE, format, argp);
 	va_end(argp);
 
+	printf("ret %d\n", ret);
 	int remain = log->size - log->idx;
+	printf("remain %d\n", remain);
+
 	if (ret > remain) {
 		log->size =
 			((log->idx + ret) / NETLOGGER_BUF_SIZE + 1) * NETLOGGER_BUF_SIZE;
-		log->buf = (char *)kmm_realloc(log->buf, log->size);
+		printf("log->size %d\n", log->size);
+		log->buf = realloc(log->buf, log->size);
 		if (!log->buf) {
+			printf("realloc fail\n");
 			return -1;
 		}
 	}
 	memcpy(log->buf + log->idx, str, ret);
 	log->idx += ret;
-
-	return 0;
 }
 
+/*
+ * return: return size of buffer if success, else return -1
+ *
+ * note: a caller has responsibile to free buf.
+ */
 int netlogger_serialize(netmgr_logger_p log, char **buf)
 {
-	*buf = (char *)kumm_malloc(log->idx + 1); // pad 1 bypte for null character
+	printf("[pkbuild] --> %s\n", __FUNCTION__);
+	printf("[pkbuild] size %d idx %d\n", log->size, log->idx);
+	*buf = (char *)malloc(log->idx + 1); // pad 1bypte for null character
 	if (!*buf) {
 		return -1;
 	}

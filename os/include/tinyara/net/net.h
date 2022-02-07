@@ -64,6 +64,7 @@
 #include <stdarg.h>
 #include <semaphore.h>
 #include <sys/types.h>
+#include <tinyara/net/net_lock.h>
 
 /****************************************************************************
  * Pre-processor Definitions

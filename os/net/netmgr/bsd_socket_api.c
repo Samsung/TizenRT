@@ -195,6 +195,9 @@ int socket(int domain, int type, int protocol)
 	struct netstack *stk = NULL;
 	if (domain == AF_LWNL) {
 		stk = get_netstack(TR_LWNL);
+	} else if (domain == AF_UNIX) {
+		// create user domain socket and return it
+		stk = get_netstack(TR_UDS);
 	} else {
 		stk = get_netstack(TR_SOCKET);
 	}

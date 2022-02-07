@@ -28,6 +28,9 @@
 #ifdef CONFIG_NET_LWIP
 extern struct netstack *get_netstack_lwip(void);
 #endif
+#ifdef CONFIG_NET_LOCAL
+extern struct netstack *get_netstack_uds(void);
+#endif
 #ifdef CONFIG_LWNL80211
 extern struct netstack *get_netstack_netlink(void);
 #endif
@@ -36,10 +39,16 @@ static sock_type _get_socktype(int fd)
 {
 	if (fd < CONFIG_NFILE_DESCRIPTORS) {
 		return TR_LWNL;
-	} else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS) {
+	}
+#ifdef CONFIG_NET_LOCAL
+	else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NUDS_DESCRIPTORS) {
+		return TR_UDS;
+	}
+#endif
+	else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS) {
 		return TR_SOCKET;
 	}
-	NET_LOGKE(TAG, "not supported socket type\n");
+	NET_LOGE(TAG, "not supported socket type\n");
 	return TR_UNKNOWN;
 }
 
@@ -47,12 +56,16 @@ struct netstack *get_netstack(sock_type type)
 {
 	if (type == TR_SOCKET) {
 		return get_netstack_lwip();
+	} else if (type == TR_UDS) {
+#ifdef CONFIG_NET_LOCAL
+		return get_netstack_uds();
+#endif
 	} else if (type == TR_LWNL) {
 #ifdef CONFIG_LWNL80211
 		return get_netstack_netlink();
 #endif
 	}
-	NET_LOGKE(TAG, "not supported stack type\n");
+	NET_LOGE(TAG, "not supported stack type\n");
 	return NULL;
 }
 
@@ -62,11 +75,15 @@ struct netstack *get_netstack_byfd(int fd)
 
 	if (type == TR_SOCKET) {
 		return get_netstack_lwip();
+	} else if (type == TR_UDS) {
+#ifdef CONFIG_NET_LOCAL
+		return get_netstack_uds();
+#endif
 	} else if (type == TR_LWNL) {
 #ifdef CONFIG_LWNL80211
 		return get_netstack_netlink();
 #endif
 	}
-	NET_LOGKE(TAG, "not supported stack type\n");
+	NET_LOGE(TAG, "not supported stack type\n");
 	return NULL;
 }

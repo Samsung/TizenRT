@@ -81,12 +81,17 @@ struct netstack_ops {
 	int (*getpeername)(int s, struct sockaddr *name, socklen_t *namelen);
 	int (*setsockopt)(int s, int level, int optname, const void *optval, socklen_t optlen);
 	int (*getsockopt)(int s, int level, int optname, void *optval, socklen_t *optlen);
+
 	// etc
 #ifdef CONFIG_NET_ROUTE
 	int (*addroute)(struct rtentry *entry);
 	int (*delroute)(struct rtentry *entry);
 #endif
-	int (*getstats)(void *arg);
+
+#ifdef CONFIG_NET_NETMON
+	int (*getstats)(int fd, struct netmon_sock **sock);
+#endif
+
 	void (*initlist)(struct socketlist *list);
 	void (*releaselist)(struct socketlist *list);
 };
