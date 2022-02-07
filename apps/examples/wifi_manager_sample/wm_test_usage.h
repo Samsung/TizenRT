@@ -17,7 +17,7 @@
  ****************************************************************************/
 #define WT_SOFTAP_USAGE							\
 	"\n softap mode options:\n"					\
-	"	 wm_test softap ssid password channel\n"
+	"	 wm_test softap [ssid] [password]\n"
 
 #define WT_STA_USAGE												\
 	"\n station mode options:\n"									\
@@ -31,15 +31,13 @@
 #define WT_STRESS_USAGE													\
 	"\n stress test mode options:\n"									\
 	" stress test 1: validate deinit ops on each wi-fi state\n"			\
-	" stress test 2: Unit TC and Integrated TC\n"											\
+	" stress test 2: Unit TC\n"											\
 	" stress test 3: scenario base TC (client)\n"						\
 	" stress test 4: scenario base TC (server)\n"						\
 	"	 wm_test stress 1 [ssid] [security mode] [password]\n"			\
 	"	 wm_test stress 2 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
-	"	 wm_test stress 2 file [file path] [softap ssid] [softap password] [softap channel]\n" \
-	"	 wm_test stress 3 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel] [count]\n" \
-	"	 wm_test stress 4 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel] [count]\n\n" \
-	" Note: stress test 2, 3, 4 doesn't support open auth type"\
+	"	 wm_test stress 3 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
+	"	 wm_test stress 4 [ssid] [security mode] [password] [softap ssid] [softap password] [softap channel]\n" \
 
 #define WT_ONOFF_USAGE											\
 	"\n onoff test mode options:\n"								\
@@ -77,23 +75,6 @@
 	"	 wm_test power [mode]\n"				\
 	"	 mode examples : on, off\n\n"
 
-#define WT_INTEROP_USAGE						\
-	"\n Interoperability test: \n"				\
-	"	wm_test interop [file_path]\n"
-
-#define WT_DISPLAY_AP_USAGE					\
-	"\n Display AP configuration  \n"				\
-	"	wm_test display_ap [file_path]  \n"		\
-
-#define WT_ADD_AP_USAGE					\
-	"\n Add AP config in file /mnt/wm_aplist.conf \n"				\
-	"	wm_test add_ap [ssid] [security mode] [password] \n\n"		\
-
-#define WT_DNS_USAGE											\
-	"\n dns test mode\n"										\
-	"\n it can be run after a device is connected to an AP\n"	\
-	"	 wm_test dns count\n"
-
 #define WT_USAGE									\
 	"\n usage: wm_test [options]\n"					\
 	"\n run Wi-Fi Manager:\n"						\
@@ -106,8 +87,4 @@
 	WT_PROFILE_USAGE								\
 	WT_INFO_USAGE									\
 	WT_STRESS_USAGE									\
-	WT_ONOFF_USAGE									\
-	WT_INTEROP_USAGE								\
-	WT_ADD_AP_USAGE									\
-	WT_DISPLAY_AP_USAGE\
-	WT_DNS_USAGE
+	WT_ONOFF_USAGE

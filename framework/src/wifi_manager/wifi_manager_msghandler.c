@@ -19,12 +19,9 @@
 #include <tinyara/config.h>
 #include <stdint.h>
 #include <sched.h>
-#include <errno.h>
-#include <sys/types.h>
 #include <wifi_manager/wifi_manager.h>
 #include <tinyara/wifi/wifi_manager.h>
 #include <tinyara/net/netlog.h>
-#include <tinyara/net/if/wifi.h>
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"
@@ -43,8 +40,6 @@ static handler_queue g_wifi_message_queue;
  * External functions
  */
 extern wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg);
-extern int wifimgr_create_msgqueue(handler_queue *queue);
-extern int wifimgr_message_out(handler_msg *msg, handler_queue *queue);
 
 static int _process_msg(int argc, char *argv[])
 {
@@ -70,7 +65,7 @@ static int _process_msg(int argc, char *argv[])
  */
 int wifimgr_run_msghandler(void)
 {
-	int tid = net_task_create("wifi msg handler", 100, 4096, (main_t)_process_msg, NULL);
+	int tid = task_create("wifi msg handler", 100, 4096, (main_t)_process_msg, NULL);
 	if (tid == -1) {
 		NET_LOGE(TAG, "wifi msg handler task create %d\n", errno);
 		return -1;

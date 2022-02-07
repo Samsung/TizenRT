@@ -15,16 +15,19 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+
 #pragma once
 
-trwifi_result_e wifi_utils_init(void);
-trwifi_result_e wifi_utils_deinit(void);
-trwifi_result_e wifi_utils_scan_ap(void *arg);
-trwifi_result_e wifi_utils_connect_ap(trwifi_ap_config_s *ap_connect_config, void *arg);
-trwifi_result_e wifi_utils_disconnect_ap(void *arg);
-trwifi_result_e wifi_utils_get_info(trwifi_info *wifi_info);
-trwifi_result_e wifi_utils_start_softap(trwifi_softap_config_s *softap_config);
-trwifi_result_e wifi_utils_start_sta(void);
-trwifi_result_e wifi_utils_stop_softap(void);
-trwifi_result_e wifi_utils_set_autoconnect(uint8_t check);
-trwifi_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg);
+#ifdef CONFIG_VIRTUAL_WLAN
+#include <tinyara/net/if/wifi.h>
+#include "../../../os/drivers/wireless/virtual/vdev_command.h"
+
+int control_mock(int cmd, int key, int value, int wait);
+#define CONTROL_VDRIVER(cmd, key, value, wait)	\
+	(void)control_mock(cmd, key, value, wait)
+
+#else
+
+#define CONTROL_VDRIVER(cmd, key, value, wait)
+
+#endif

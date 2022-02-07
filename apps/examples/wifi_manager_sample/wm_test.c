@@ -26,44 +26,74 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <errno.h>
-#include <semaphore.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wm_test.h"
 #include "wm_test_usage.h"
 #include "wm_test_log.h"
-#include "wm_test_utils.h"
 
-#define WM_TEST_COUNT 10
+#define WM_TEST_COUNT  10
 #define TAG "[WT]"
 
 typedef int (*parser_func)(struct wt_options *opt, int argc, char *argv[]);
 
-#define WT_TEST_SIGNAL              \
-	do {                            \
-		sem_post(&g_wm_sem);        \
-		WT_LOG(TAG, "send signal"); \
+#define WT_TEST_SIGNAL							\
+	do {										\
+		sem_post(&g_wm_sem);					\
+		WT_LOG(TAG, "send signal");				\
 	} while (0)
 
-#define WT_TEST_WAIT                \
-	do {                            \
-		WT_LOG(TAG, "wait signal"); \
-		sem_wait(&g_wm_sem);        \
+#define WT_TEST_WAIT							\
+	do {										\
+		WT_LOG(TAG, "wait signal");				\
+		sem_wait(&g_wm_sem);					\
 	} while (0)
 
-#define WT_TEST_FUNC_SIGNAL              \
-	do {                                 \
-		sem_post(&g_wm_func_sem);        \
-		WT_LOG(TAG, "send func signal"); \
+#define WT_TEST_FUNC_SIGNAL						\
+	do {										\
+		sem_post(&g_wm_func_sem);				\
+		WT_LOG(TAG, "send func signal");		\
 	} while (0)
 
-#define WT_TEST_FUNC_WAIT                \
-	do {                                 \
-		WT_LOG(TAG, "wait func signal"); \
-		sem_wait(&g_wm_func_sem);        \
+#define WT_TEST_FUNC_WAIT						\
+	do {										\
+		WT_LOG(TAG, "wait func signal");		\
+		sem_wait(&g_wm_func_sem);				\
 	} while (0)
 #define WT_STRESS_MAX_IDX 4
 #define WT_STRESS_MIN_IDX 1
-#define WT_MIN_ARG 2 // wm_test requires more than 2 arguments.
+
+/* Supported security method */
+static const char *g_wifi_test_auth_method[] = {
+#ifdef WT_AUTH_TABLE
+#undef WT_AUTH_TABLE
+#endif
+#define WT_AUTH_TABLE(type, str, desc) str,
+#include "wm_test_auth_table.h"
+};
+
+static const wifi_manager_ap_auth_type_e g_auth_type_table[] = {
+#ifdef WT_AUTH_TABLE
+#undef WT_AUTH_TABLE
+#endif
+#define WT_AUTH_TABLE(type, str, desc) type,
+#include "wm_test_auth_table.h"
+};
+
+static const char *g_wifi_test_crypto_method[] = {
+#ifdef WT_CRYPTO_TABLE
+#undef WT_CRYPTO_TABLE
+#endif
+#define WT_CRYPTO_TABLE(type, str, desc) str,
+#include "wm_test_crypto_table.h"
+};
+
+static const wifi_manager_ap_crypto_type_e g_crypto_type_table[] = {
+#ifdef WT_CRYPTO_TABLE
+#undef WT_CRYPTO_TABLE
+#endif
+#define WT_CRYPTO_TABLE(type, str, desc) type,
+#include "wm_test_crypto_table.h"
+};
 
 typedef enum {
 #ifdef WT_MEMBER_POOL
@@ -79,17 +109,10 @@ typedef enum {
 #ifdef WT_MEMBER_POOL
 #undef WT_MEMBER_POOL
 #endif
-#define WT_MEMBER_POOL(type, func, parser, str) static void func(void *arg);
+#define WT_MEMBER_POOL(type, func, parser, str) static void func(void* arg);
 #include "wm_test_table.h"
-
 extern void wm_run_stress_test(void *arg);
 extern void wm_test_on_off(void *arg);
-extern void wm_run_dns_test(void *arg);
-extern void wm_test_interop(void *arg);
-extern void wm_interop_add_ap_config(void *arg);
-extern void wm_interop_display_ap_config(void *arg);
-extern void wm_test_connect_stable(void *arg);
-extern void wm_run_event_tc(struct wt_options *opt);
 
 /* Parser */
 #ifdef WT_MEMBER_POOL
@@ -98,6 +121,8 @@ extern void wm_run_event_tc(struct wt_options *opt);
 #define WT_MEMBER_POOL(type, func, parser, str) \
 	static int parser(struct wt_options *opt, int argc, char *argv[]);
 #include "wm_test_table.h"
+static wifi_manager_ap_auth_type_e _wt_get_auth_type(const char *method);
+static wifi_manager_ap_crypto_type_e _wt_get_crypto_type(const char *method);
 static int _wt_parse_commands(struct wt_options *opt, int argc, char *argv[]);
 
 /* Signal */
@@ -105,11 +130,18 @@ static void _wt_signal_deinit(void);
 static int _wt_signal_init(void);
 
 /* Callbacks */
-static void _wt_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
-static void _wt_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
-static void _wt_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
-static void _wt_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
-static void _wt_scan_done(wifi_manager_cb_msg_s msg, void *arg);
+static void _wt_sta_connected(wifi_manager_result_e);
+static void _wt_sta_disconnected(wifi_manager_disconnect_e);
+static void _wt_softap_sta_join(void);
+static void _wt_softap_sta_leave(void);
+static void _wt_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
+
+/*  print info */
+static void _wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title);
+static void _wt_print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title);
+static void _wt_print_stats(wifi_manager_stats_s *stats);
+static void _wt_print_scanlist(wifi_manager_scan_info_s *list);
+static void _wt_print_conninfo(wifi_manager_info_s *info);
 
 /* Main */
 static wt_type_e _wt_get_opt(int argc, char *argv[]);
@@ -148,52 +180,117 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 	_wt_scan_done,
 };
 
-static sem_t g_wm_sem;
-static sem_t g_wm_func_sem;
+static sem_t g_wm_sem = SEM_INITIALIZER(0);
+static sem_t g_wm_func_sem = SEM_INITIALIZER(0);
 static int g_mode = 0; // check program is running
 
 // if _wt_scan_done is for WT_TYPE_SJOIN then it doesn't need to print
 // scan list. So if g_scan_join is 1 then it doesn't print scan list
 static int g_scan_join = 0;
 static int g_scanned_result = 0;
-static char g_scanned_ssid[WIFIMGR_SSID_LEN + 1] = {
-	0,
-};
+static char g_scanned_ssid[WIFIMGR_SSID_LEN + 1] = {0, };
 static wifi_manager_ap_auth_type_e g_scanned_auth_type = WIFI_MANAGER_AUTH_OPEN;
 static wifi_manager_ap_crypto_type_e g_scanned_crypto_type = WIFI_MANAGER_CRYPTO_NONE;
 
-static int _parse_security_str(struct wt_options *opt, const char *type, char *pwd)
+
+void _wt_print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 {
-	opt->auth_type = wt_get_auth_type(type);
-	opt->password = pwd;
-	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN ||
-		opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
-		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
-	} else if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
-		if ((strlen(pwd) == 13) || (strlen(pwd) == 26)) {
-			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
-		} else if ((strlen(pwd) == 5) || (strlen(pwd) == 10)) {
-			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
-		} else {
-			return -1;
-		}
+	WT_LOGP(TAG, "====================================\n");
+	if (title) {
+		WT_LOGP(TAG, "%s\n", title);
+	}
+	WT_LOGP(TAG, "------------------------------------\n");
+	WT_LOGP(TAG, "SSID: %s\n", config->ssid);
+	if (config->ap_auth_type == WIFI_MANAGER_AUTH_UNKNOWN
+		|| config->ap_crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+		WT_LOGP(TAG, "SECURITY: unknown\n");
 	} else {
-		opt->crypto_type = wt_get_crypto_type(type);
-		if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
-			return -1;
+		char security_type[21] = {0,};
+		strncat(security_type, g_wifi_test_auth_method[config->ap_auth_type], 20);
+		wifi_manager_ap_auth_type_e tmp_type = config->ap_auth_type;
+		if (tmp_type == WIFI_MANAGER_AUTH_OPEN
+			|| tmp_type == WIFI_MANAGER_AUTH_IBSS_OPEN
+			|| tmp_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+			WT_LOGP(TAG, "SECURITY: %s\n", security_type);
+		} else {
+			strncat(security_type, "_", strlen("_"));
+			strncat(security_type, g_wifi_test_crypto_method[config->ap_crypto_type],
+					strlen(g_wifi_test_crypto_method[config->ap_crypto_type]));
+			WT_LOGP(TAG, "SECURITY: %s\n", security_type);
 		}
 	}
-	return 0;
+	WT_LOGP(TAG, "====================================\n");
 }
 
-static void _parse_unknown_security_str(struct wt_options *opt, char *pwd)
+void _wt_print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
 {
-	opt->auth_type = WIFI_MANAGER_AUTH_UNKNOWN;
-	opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
-	opt->password = pwd;
+	WT_LOGP(TAG, "====================================\n");
+	if (title) {
+		WT_LOGP(TAG, "%s\n", title);
+	}
+	WT_LOGP(TAG, "------------------------------------\n");
+	WT_LOGP(TAG, "SSID: %s\n", config->ssid);
+	WT_LOGP(TAG, "channel: %d\n", config->channel);
+	WT_LOGP(TAG, "====================================\n");
 }
 
-static int _wt_get_scanned_list(wifi_manager_scan_info_s *slist, char *ssid,
+void _wt_print_stats(wifi_manager_stats_s *stats)
+{
+	WT_LOGP(TAG, "=======================================================================\n");
+	WT_LOGP(TAG, "CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
+	WT_LOGP(TAG, "%-8d%-12d%-11d%-10d\n", stats->connect, stats->connectfail, stats->disconnect, stats->reconnect);
+	WT_LOGP(TAG, "%-8d%-10d%-8d%-8d\n", stats->scan, stats->softap, stats->joined, stats->left);
+	WT_LOGP(TAG, "=======================================================================\n");
+}
+
+void _wt_print_scanlist(wifi_manager_scan_info_s *slist)
+{
+	while (slist != NULL) {
+		WT_LOGP(TAG, "WiFi AP SSID: %-25s, BSSID: %-20s, Rssi: %d, Auth: %s, Crypto: %s\n",
+			   slist->ssid, slist->bssid, slist->rssi,
+			   g_wifi_test_auth_method[slist->ap_auth_type],
+			   g_wifi_test_crypto_method[slist->ap_crypto_type]);
+		slist = slist->next;
+	}
+}
+
+void _wt_print_conninfo(wifi_manager_info_s *info)
+{
+	if (info->mode == SOFTAP_MODE) {
+		if (info->status == CLIENT_CONNECTED) {
+			WT_LOGP(TAG, "MODE: softap (client connected)\n");
+		} else if (info->status == CLIENT_DISCONNECTED) {
+			WT_LOGP(TAG, "MODE: softap (no client)\n");
+		}
+		WT_LOGP(TAG, "IP: %s\n", info->ip4_address);
+		WT_LOGP(TAG, "SSID: %s\n", info->ssid);
+		WT_LOGP(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		   info->mac_address[0], info->mac_address[1],
+		   info->mac_address[2], info->mac_address[3],
+		   info->mac_address[4], info->mac_address[5]);
+	} else if (info->mode == STA_MODE) {
+		if (info->status == AP_CONNECTED) {
+			WT_LOGP(TAG, "MODE: station (connected)\n");
+			WT_LOGP(TAG, "IP: %s\n", info->ip4_address);
+			WT_LOGP(TAG, "SSID: %s\n", info->ssid);
+			WT_LOGP(TAG, "rssi: %d\n", info->rssi);
+		} else if (info->status == AP_DISCONNECTED) {
+			WT_LOGP(TAG, "MODE: station (disconnected)\n");
+		} else if (info->status == AP_RECONNECTING) {
+			WT_LOGP(TAG, "MODE: station (reconnecting)\n");
+			WT_LOGP(TAG, "IP: %s\n", info->ip4_address);
+			WT_LOGP(TAG, "SSID: %s\n", info->ssid);
+		}
+		WT_LOGP(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		   info->mac_address[0], info->mac_address[1],
+		   info->mac_address[2], info->mac_address[3],
+		   info->mac_address[4], info->mac_address[5]);
+	} else {
+		WT_LOGP(TAG, "STATE: NONE\n");
+	}
+}
+
+int _wt_get_scanned_list(wifi_manager_scan_info_s *slist, char *ssid,
 						 wifi_manager_ap_auth_type_e *atype,
 						 wifi_manager_ap_crypto_type_e *ctype)
 {
@@ -208,17 +305,52 @@ static int _wt_get_scanned_list(wifi_manager_scan_info_s *slist, char *ssid,
 	}
 	return -1;
 }
-
-static int _wt_signal_init(void)
+wifi_manager_ap_auth_type_e _wt_get_auth_type(const char *method)
 {
-	int res = sem_init(&g_wm_sem, 0, 0);
-	if (res != 0) {
-		return -1;
+	int list_size = sizeof(g_wifi_test_auth_method) / sizeof(g_wifi_test_auth_method[0]);
+	char *result[3];
+	char *next_ptr;
+	char data[20];
+	strncpy(data, method, 20);
+	result[0] = strtok_r(data, "_", &next_ptr);
+	result[1] = strtok_r(NULL, "_", &next_ptr);
+	result[2] = strtok_r(NULL, "_", &next_ptr);
+
+	for (int i = 0; i < list_size; i++) {
+		if ((strncmp(method, g_wifi_test_auth_method[i], strlen(method) + 1) == 0)
+			|| (result[0] && (strncmp(result[0], g_wifi_test_auth_method[i], strlen(method) + 1) == 0))) {
+			if (result[2] != NULL) {
+				if (strcmp(result[2], "ent") == 0) {
+					return WIFI_MANAGER_AUTH_UNKNOWN;
+				}
+			}
+			return g_auth_type_table[i];
+		}
 	}
-	res = sem_init(&g_wm_func_sem, 0, 0);
-	if (res != 0) {
-		return -1;
+	return WIFI_MANAGER_AUTH_UNKNOWN;
+}
+
+wifi_manager_ap_crypto_type_e _wt_get_crypto_type(const char *method)
+{
+	char data[20];
+	char *result[2];
+	char *next_ptr;
+	int list_size = sizeof(g_wifi_test_crypto_method) / sizeof(g_wifi_test_crypto_method[0]);
+
+	strncpy(data, method, 20);
+	result[0] = strtok_r(data, "_", &next_ptr);
+	result[1] = next_ptr;
+
+	for (int i = 0; i < list_size; i++) {
+		if (strncmp(result[1], g_wifi_test_crypto_method[i], strlen(result[1]) + 1) == 0) {
+			return g_crypto_type_table[i];
+		}
 	}
+	return WIFI_MANAGER_CRYPTO_UNKNOWN;
+}
+
+int _wt_signal_init(void)
+{
 	if (g_mode != 0) {
 		WT_LOGE(TAG, "Program is already running");
 		return -1;
@@ -227,55 +359,52 @@ static int _wt_signal_init(void)
 	return 0;
 }
 
-static void _wt_signal_deinit(void)
+void _wt_signal_deinit(void)
 {
-	sem_destroy(&g_wm_sem);
-	sem_destroy(&g_wm_func_sem);
 	g_mode = 0;
 }
 
 /*  callback */
-void _wt_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
+void _wt_sta_connected(wifi_manager_result_e res)
 {
-	WT_LOG(TAG, "-->res(%d)", msg.res);
+	WT_LOG(TAG, "-->res(%d)", res);
 	WT_TEST_SIGNAL;
 }
 
-void _wt_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
-{
-	WT_LOG(TAG, "-->");
-	WT_TEST_SIGNAL;
-}
-
-void _wt_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
+void _wt_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	WT_LOG(TAG, "-->");
 	WT_TEST_SIGNAL;
 }
 
-void _wt_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
+void _wt_softap_sta_join(void)
 {
 	WT_LOG(TAG, "-->");
 	WT_TEST_SIGNAL;
 }
 
-void _wt_scan_done(wifi_manager_cb_msg_s msg, void *arg)
+void _wt_softap_sta_leave(void)
+{
+	WT_LOG(TAG, "-->");
+	WT_TEST_SIGNAL;
+}
+
+void _wt_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
 	WT_LOG(TAG, "-->");
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
-	if (msg.res != WIFI_MANAGER_SUCCESS || msg.scanlist == NULL) {
+	if (scan_result == NULL) {
 		WT_TEST_SIGNAL;
 		return;
 	}
 	if (g_scan_join == 0) {
-		wt_print_scanlist(msg.scanlist);
+		_wt_print_scanlist(*scan_result);
 	} else {
-		/* request type is WT_TYPE_SJOIN. so it doesn't print scan list
-		 * and pass scan list result to _wt_scan_connect;
-		 */
-		g_scanned_result = _wt_get_scanned_list(msg.scanlist,
+		// request type is WT_TYPE_SJOIN. so it doesn't print scan list
+		// and pass scan list result to _wt_scan_connect;
+		g_scanned_result = _wt_get_scanned_list(*scan_result,
 												g_scanned_ssid,
 												&g_scanned_auth_type,
 												&g_scanned_crypto_type);
@@ -317,13 +446,13 @@ void _wt_softap_start(void *arg)
 		return;
 	}
 	wifi_manager_softap_config_s ap_config;
-	strncpy(ap_config.ssid, ap_info->ssid, WIFIMGR_SSID_LEN - 1);
-	ap_config.ssid[WIFIMGR_SSID_LEN - 1] = '\0';
-	strncpy(ap_config.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN - 1);
-	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN - 1] = '\0';
-	ap_config.channel = ap_info->softap_channel;
+	strncpy(ap_config.ssid, ap_info->ssid, WIFIMGR_SSID_LEN-1);
+	ap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
+	strncpy(ap_config.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN-1);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	ap_config.channel = 1;
 
-	wt_print_wifi_softap_profile(&ap_config, "AP INFO");
+	_wt_print_wifi_softap_profile(&ap_config, "AP INFO");
 
 	res = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
 	if (res != WIFI_MANAGER_SUCCESS) {
@@ -360,13 +489,13 @@ void _wt_connect(void *arg)
 		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
-	} else {
+	} else{
 		apconfig.passphrase[0] = '\0';
 		apconfig.passphrase_length = 0;
 		apconfig.ap_crypto_type = ap_info->crypto_type;
 	}
 
-	wt_print_wifi_ap_profile(&apconfig, "Connecting AP Info");
+	_wt_print_wifi_ap_profile(&apconfig, "Connecting AP Info");
 
 	wifi_manager_result_e res = wifi_manager_connect_ap(&apconfig);
 	if (res != WIFI_MANAGER_SUCCESS) {
@@ -420,7 +549,7 @@ void _wt_scan_connect(void *arg)
 		apconfig.ap_crypto_type = ap_info->crypto_type;
 	}
 
-	wt_print_wifi_ap_profile(&apconfig, "Scan connect AP Info");
+	_wt_print_wifi_ap_profile(&apconfig, "Scan connect AP Info");
 
 	res = wifi_manager_connect_ap(&apconfig);
 	if (res != WIFI_MANAGER_SUCCESS) {
@@ -444,8 +573,7 @@ void _wt_disconnect(void *arg)
 		return;
 	}
 	WT_TEST_WAIT;
-	WT_LEAVE;
-	;
+	WT_LEAVE;;
 }
 
 void _wt_cancel(void *arg)
@@ -482,7 +610,7 @@ void _wt_set_info(void *arg)
 
 	apconfig.ap_crypto_type = ap_info->crypto_type;
 
-	wt_print_wifi_ap_profile(&apconfig, "Set AP Info");
+	_wt_print_wifi_ap_profile(&apconfig, "Set AP Info");
 
 	wifi_manager_result_e res = wifi_manager_save_config(&apconfig);
 	if (res != WIFI_MANAGER_SUCCESS) {
@@ -501,7 +629,7 @@ void _wt_get_info(void *arg)
 		WT_LOGE(TAG, "Get AP configuration failed");
 		return;
 	}
-	wt_print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Infomation");
+	_wt_print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Infomation");
 	WT_LEAVE;
 }
 
@@ -552,7 +680,7 @@ void _wt_get_stats(void *arg)
 	if (res != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "Get WiFi Manager stats failed");
 	} else {
-		wt_print_stats(&stats);
+		_wt_print_stats(&stats);
 	}
 	WT_LEAVE;
 }
@@ -566,7 +694,7 @@ void _wt_get_conn_info(void *arg)
 		WT_LOGE(TAG, "fail to get connection info(%d)", res);
 		return;
 	}
-	wt_print_conninfo(&info);
+	_wt_print_conninfo(&info);
 
 	WT_LEAVE;
 }
@@ -593,50 +721,20 @@ void _wt_stress_test(void *arg)
 	wm_run_stress_test(arg);
 }
 
-void _wt_conn_stable_test(void *arg)
-{
-  wm_test_connect_stable(arg);
-}
-
 void _wt_onoff_test(void *arg)
 {
 	wm_test_on_off(arg);
 }
 
-void _wt_dns_test(void *arg)
-{
-	wm_run_dns_test(arg);
-}
-
-void _wt_interop_test(void *arg)
-{
-	wm_test_interop(arg);
-}
-
-void _wt_interop_add_ap(void *arg)
-{
-	wm_interop_add_ap_config(arg);
-}
-
-void _wt_interop_display_ap(void *arg)
-{
-	wm_interop_display_ap_config(arg);
-}
-
-void _wt_run_evt_tc(void *arg)
-{
-	wm_run_event_tc(arg);
-}
-
 wt_type_e _wt_get_opt(int argc, char *argv[])
 {
 	int idx = 0;
-	if (argc < WT_MIN_ARG) {
+	if (argc < 3) {
 		return WT_TYPE_ERR;
 	}
 
 	for (idx = 0; idx < WT_TYPE_MAX; idx++) {
-		if (strcmp(argv[1], g_func_name[idx]) == 0) {
+		if (strcmp(argv[2], g_func_name[idx]) == 0) {
 			return (wt_type_e)idx;
 		}
 	}
@@ -645,7 +743,7 @@ wt_type_e _wt_get_opt(int argc, char *argv[])
 
 int _wt_parse_none(struct wt_options *opt, int argc, char *argv[])
 {
-	if (argc != 2) {
+	if (argc != 3) {
 		return -1;
 	}
 	return 0;
@@ -657,190 +755,229 @@ int _wt_parse_softap(struct wt_options *opt, int argc, char *argv[])
 		return -1;
 	}
 	/* wpa2 aes is a default security mode. */
-	opt->ssid = argv[2];
-	opt->password = argv[3];
-	opt->softap_channel = atoi(argv[4]);
-
+	opt->ssid = argv[3];
+	opt->password = argv[4];
 	return 0;
 }
 
 int _wt_parse_join(struct wt_options *opt, int argc, char *argv[])
 {
+	if (argc < 5) {
+		return -1;
+	}
+	opt->ssid = argv[3];
+	opt->auth_type = _wt_get_auth_type(argv[4]);
+	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+		// case: open mode
+		opt->password = "";
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+		return 0;
+	}
+
 	if (argc == 5) {
-		// command contains both auth type and password
+		// case: unspecified security mode
+		opt->auth_type = WIFI_MANAGER_AUTH_UNKNOWN;
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
 		opt->password = argv[4];
-		if (_parse_security_str(opt, argv[3], argv[4]) != 0) {
+		return 0;
+	}
+
+	// case: security mode + password
+	if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
+		return -1;
+	}
+
+	if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+		if ((strlen(argv[5]) == 13) || (strlen(argv[5]) == 26)) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
+		} else if ((strlen(argv[5]) == 5) || (strlen(argv[5]) == 10)) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
+		} else {
 			return -1;
 		}
-	} else if (argc == 4) {
-		// command doesn't contain auth type but it
-		// contains password
-		_parse_unknown_security_str(opt, argv[3]);
-	} else if (argc == 3) {
-		// AP is open mode
-		opt->auth_type = WIFI_MANAGER_AUTH_OPEN;
-		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+	} else {
+		opt->crypto_type = _wt_get_crypto_type(argv[4]);
+		if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+			return -1;
+		}
 	}
-	opt->ssid = argv[2];
-
+	opt->password = argv[5];
 	return 0;
 }
 
 int _wt_parse_stress(struct wt_options *opt, int argc, char *argv[])
 {
-	if (argc < 3) {
+	if (argc < 4) {
 		return -1;
 	}
-	opt->stress_tc_idx = atoi(argv[2]);
+
+	opt->stress_tc_idx = atoi(argv[3]);
+	if (opt->stress_tc_idx > WT_STRESS_MAX_IDX
+		|| opt->stress_tc_idx < WT_STRESS_MIN_IDX) {
+		return -2;
+	}
 	if (opt->stress_tc_idx == 1) {
-		if (argc == 6) {
-			if (_parse_security_str(opt, argv[4], argv[5]) != 0) {
-				return -1;
-			}
-		} else if (argc == 5) {
-			_parse_unknown_security_str(opt, argv[4]);
-		} else if (argc == 4) {
-			opt->auth_type = WIFI_MANAGER_AUTH_OPEN;
-			opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
-		} else {
+		// TC index is 1
+		if (argc != 7 && argc != 6) {
 			return -1;
 		}
-		opt->ssid = argv[3];
-	} else if (opt->stress_tc_idx == 2) {
-		if (argc == 8) {
-			if (!strncmp(argv[3], "file", 5)) {
-				opt->path = argv[4];
-				opt->softap_ssid = argv[5];
-				opt->softap_password = argv[6];
-				opt->softap_channel = atoi(argv[7]);
-			} else {
-				return -1;
-			}
-		} else if (argc == 9) {
-			if (_parse_security_str(opt, argv[4], argv[5]) != 0) {
-				return -1;
-			}
-			opt->ssid = argv[3];
-			opt->softap_ssid = argv[6];
-			opt->softap_password = argv[7];
-			opt->softap_channel = atoi(argv[8]);
-		} else {
-			return -1;
-		}
-	} else if (opt->stress_tc_idx == 3 || opt->stress_tc_idx == 4) {
-		if (argc != 10) {
-			return -1;
-		}
-		if (_parse_security_str(opt, argv[4], argv[5]) != 0) {
-			return -1;
-		}
-		opt->ssid = argv[3];
-		opt->softap_ssid = argv[6];
-		opt->softap_password = argv[7];
-		opt->softap_channel = atoi(argv[8]);
-		opt->repeat = atoi(argv[9]);
 	} else {
+		if (argc != 10 && argc != 9) {
+			return -1;
+		}
+	}
+
+	opt->ssid = argv[4];
+	opt->auth_type = _wt_get_auth_type(argv[5]);
+	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+		// case: open mode
+		opt->password = "";
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+		return 0;
+	}
+
+	if (argc == 6) {
+		// case: unspecified security mode
+		opt->auth_type = WIFI_MANAGER_AUTH_UNKNOWN;
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
+		opt->password = argv[5];
+		return 0;
+	}
+
+	// case: security mode + password
+	if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
 		return -1;
 	}
+
+	if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+		if (strlen(argv[6]) == 13) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
+		} else if (strlen(argv[6]) == 5) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
+		} else {
+			return -1;
+		}
+	} else {
+		opt->crypto_type = _wt_get_crypto_type(argv[5]);
+		if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+			return -1;
+		}
+	}
+	opt->password = argv[6];
+
+	int softap_index = 7;
+	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN) {
+		softap_index = 6;
+	}
+	if (opt->stress_tc_idx != 1) {
+		/* wpa2 aes is a default security mode. */
+		opt->softap_ssid = argv[softap_index++];
+		opt->softap_password = argv[softap_index++];
+		opt->softap_channel = atoi(argv[softap_index]);
+	}
+
 	return 0;
 }
 
 int _wt_parse_set(struct wt_options *opt, int argc, char *argv[])
 {
-	if (argc == 5) {
-		opt->password = argv[4];
-		opt->security = argv[3];
-		opt->ssid = argv[2];
-		if (_parse_security_str(opt, argv[3], argv[4]) != 0) {
-			return -1;
-		}
-	} else if (argc == 4) {
-		// to-do separate ibss open and open
-	} else {
+	if (argc < 5) {
 		return -1;
 	}
+	opt->ssid = argv[3];
+	opt->auth_type = _wt_get_auth_type(argv[4]);
+	if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
+		return -1;
+	}
+	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+		opt->password = "";
+		return 0;
+	}
+
+	if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+		if ((strlen(argv[5]) == 13) || (strlen(argv[5]) == 26)) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
+		} else if ((strlen(argv[5]) == 5) || (strlen(argv[5]) == 10)) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
+		} else {
+			return -1;
+		}
+	} else {
+		opt->crypto_type = _wt_get_crypto_type(argv[4]);
+		if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+			return -1;
+		}
+	}
+	opt->password = argv[5];
 	return 0;
 }
 
 int _wt_parse_scan(struct wt_options *opt, int argc, char *argv[])
 {
-	if (argc == 2) {
-		// full scan
-		opt->scan_specific = 0;
-	} else if (argc == 4) {
+	if (argc == 5) {
 		opt->scan_specific = 1;
-		if (strncmp("ssid", argv[2], strlen("ssid") + 1) == 0) {
-			if (strlen(argv[3]) > WIFIMGR_SSID_LEN) {
-				WT_LOGE(TAG, "ssid length(%lu) is too long\n", strlen(argv[4]));
+		if (strncmp("ssid", argv[3], strlen("ssid") + 1) == 0) {
+			if (strlen(argv[4]) > WIFIMGR_SSID_LEN) {
+				WT_LOGE(TAG, "ssid length is too long\n", strlen(argv[4]));
 				return -1;
 			}
-			opt->ssid = argv[3];
-		} else if (strncmp("ch", argv[2], strlen("ch") + 1) == 0) {
-			opt->channel = atoi(argv[3]);
-		} else {
-			return -1;
-		}
-	} else if (argc == 5) {
-		opt->scan_specific = 1;
-		if (strncmp("both", argv[2], strlen("both") + 1) != 0) {
-			return -1;
-		} else {
-			opt->ssid = argv[3];
+			opt->ssid = argv[4];
+		} else if (strncmp("ch", argv[3], strlen("ch") + 1) == 0) {
 			opt->channel = atoi(argv[4]);
+		} else {
+			return -1;
 		}
-	} else {
+		return 0;
+	} else if (argc == 6) {
+		opt->scan_specific = 1;
+		if (strncmp("both", argv[3], strlen("both") + 1) == 0) {
+			opt->ssid = argv[4];
+			opt->channel = atoi(argv[5]);
+			return 0;
+		} else {
+			return -1;
+		}
+	} else if (argc == 3) {
+		// full scan
+		opt->scan_specific = 0;
+		return 0;
+	}
+	return -1;
+}
+
+int _wt_parse_auto(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc < 7) {
 		return -1;
 	}
+	opt->softap_ssid = argv[3];
+	opt->softap_password = argv[4];
+	opt->ssid = argv[5];
+	opt->auth_type = _wt_get_auth_type(argv[6]);
+	if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
+		return -1;
+	}
+	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN) {
+		return 0;
+	}
+	opt->crypto_type = _wt_get_crypto_type(argv[6]);
+	opt->password = argv[7];
 	return 0;
 }
 
 int _wt_parse_power(struct wt_options *opt, int argc, char *argv[])
 {
-	if (argc != 3) {
+	if (argc != 4) {
 		return -1;
-	}
-	if (!strncmp(argv[2], "on", 3)) {
+	} else if (!strncmp(argv[3], "on", 3)) {
 		opt->power_mode = 1;
-	} else if (!strncmp(argv[2], "off", 4)) {
+		return 0;
+	} else if (!strncmp(argv[3], "off", 4)) {
 		opt->power_mode = 0;
-	} else {
-		return -1;
+		return 0;
 	}
-	return 0;
-}
-
-int _wt_parse_interop(struct wt_options *opt, int argc, char *argv[])
-{
-	if (argc != 3) {
-		return -1;
-	}
-	opt->path = argv[2];
-	return 0;
-}
-
-int _wt_parse_evt_tc(struct wt_options *opt, int argc, char *argv[])
-{
-	if (argc != 9) {
-		return -1;
-	}
-	if (_parse_security_str(opt, argv[3], argv[4]) != 0) {
-		return -1;
-	}
-	opt->ssid = argv[2];
-	opt->softap_ssid = argv[5];
-	opt->softap_password = argv[6];
-	opt->softap_channel = atoi(argv[7]);
-	opt->repeat = atoi(argv[8]);
-	return 0;
-}
-
-int _wt_parse_dns(struct wt_options *opt, int argc, char *argv[])
-{
-	if (argc != 3) {
-		return -1;
-	}
-	opt->repeat = atoi(argv[2]);
-	return 0;
+	return -1;
 }
 
 int _wt_parse_commands(struct wt_options *opt, int argc, char *argv[])
@@ -867,13 +1004,7 @@ void _wt_process(int argc, char *argv[])
 {
 	struct wt_options opt;
 	memset(&opt, 0, sizeof(struct wt_options));
-	opt.repeat = 1;
-	opt.softap_channel = 1;
-#ifdef __LINUX__
 	int res = _wt_parse_commands(&opt, argc, argv);
-#else
-	int res = _wt_parse_commands(&opt, argc - 1, &argv[1]);
-#endif
 	if (res < 0) {
 		WT_LOGE(TAG, "%s", WT_USAGE);
 		goto exit;
@@ -894,11 +1025,7 @@ int wm_test_main(int argc, char *argv[])
 	if (res < 0) {
 		return -1;
 	}
-#ifdef __LINUX__
-	_wt_process(argc, argv);
-#else
 	task_create("wifi test sample", 100, 1024 * 10, (main_t)_wt_process, argv);
-#endif
 
 	WT_TEST_FUNC_WAIT;
 

@@ -15,11 +15,12 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
 
-#include <wifi_manager/wifi_manager.h>
+#ifndef _WIFI_MANAGER_STATS_H__
+#define _WIFI_MANAGER_STATS_H__
 
 #define WIFIMGR_STATS_INC(s) wifimgr_inc_stats(s)
 
 void wifimgr_inc_stats(int stats);
-void wifimgr_get_stats(wifi_manager_stats_s *stats);
+
+#endif // _WIFI_MANAGER_STATS_H__

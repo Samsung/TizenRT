@@ -24,10 +24,4 @@ config WIFIMANAGER_TEST_TRIAL
 	---help---
 		Number of test trial
 
-config EXAMPLES_WIFIMANAGER_AP_LIST_ITEMS_COUNT
-        int "Number of APs in input file"
-        default 10
-        ---help---
-                Number of APs in input file
-
 endif #if EXAMPLES_WIFIMANAGER_TEST

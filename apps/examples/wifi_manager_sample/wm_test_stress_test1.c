@@ -1,4 +1,3 @@
-
 /****************************************************************************
  *
  * Copyright 2020 Samsung Electronics All Rights Reserved.
@@ -17,18 +16,14 @@
  *
  ****************************************************************************/
 
-#include <pthread.h>
 #include <tinyara/config.h>
 
-#include <stdio.h>
-#include <string.h>
 #include <sys/types.h>
-#include <queue.h>
+#include <stdio.h>
 #include <wifi_manager/wifi_manager.h>
 #include <stress_tool/st_perf.h>
 #include "wm_test.h"
 #include "wm_test_log.h"
-#include "wm_test_utils.h"
 
 /* Macro*/
 #define WM_TEST_TRIAL	   CONFIG_WIFIMANAGER_TEST_TRIAL
@@ -56,11 +51,11 @@ static wifi_manager_ap_crypto_type_e WM_AP_CRYPTO;
 	} while (0)
 
 /* callbacks*/
-static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_softap_sta_joined(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_softap_sta_left(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_scan_ap_done(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_connected(wifi_manager_result_e);
+static void wm_sta_disconnected(wifi_manager_disconnect_e);
+static void wm_softap_sta_joined(void);
+static void wm_softap_sta_left(void);
+static void wm_scan_ap_done(wifi_manager_scan_info_s **, wifi_manager_scan_result_e);
 
 /* Global*/
 static wifi_manager_cb_s g_wifi_callbacks = {
@@ -71,35 +66,47 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 	wm_scan_ap_done
 };
 
-static pthread_mutex_t g_wm_mutex;
-static pthread_cond_t g_wm_cond;
+static pthread_mutex_t g_wm_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_wm_cond = PTHREAD_COND_INITIALIZER;
 
-void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
+void wm_sta_connected(wifi_manager_result_e res)
 {
-	WT_LOG(TAG, "--> res(%d)", msg.res);
+	WT_LOG(TAG, "--> res(%d)", res);
 	WM_TEST_SIGNAL;
 }
 
-void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
+void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	WT_LOG(TAG, "-->");
 	WM_TEST_SIGNAL;
 }
 
-void wm_softap_sta_joined(wifi_manager_cb_msg_s msg, void *arg)
+void wm_softap_sta_joined(void)
 {
 	WT_LOG(TAG, "-->");
 }
 
-void wm_softap_sta_left(wifi_manager_cb_msg_s msg, void *arg)
+void wm_softap_sta_left(void)
 {
 	WT_LOG(TAG, "-->");
 }
 
-void wm_scan_ap_done(wifi_manager_cb_msg_s msg, void *arg)
+void wm_scan_ap_done(wifi_manager_scan_info_s **info, wifi_manager_scan_result_e res)
 {
 	WT_LOG(TAG, "-->");
-	WT_LOG(TAG, " result (%d) info pointer(%p)", msg.res, msg.scanlist);
+	WT_LOG(TAG, " result (%d) info pointer(%p)", res, *info);
+}
+
+static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)
+{
+	strncpy(apconfig->ssid, WM_AP_SSID, strlen(WM_AP_SSID) + 1);
+	apconfig->ssid_length = strlen(WM_AP_SSID);
+	apconfig->ap_auth_type = WM_AP_AUTH;
+	if (WM_AP_AUTH != WIFI_MANAGER_AUTH_OPEN) {
+		strncpy(apconfig->passphrase, WM_AP_PASSWORD, strlen(WM_AP_PASSWORD) + 1);
+		apconfig->passphrase_length = strlen(WM_AP_PASSWORD);
+		apconfig->ap_crypto_type = WM_AP_CRYPTO;
+	}
 }
 
 /*
@@ -133,7 +140,7 @@ TEST_SETUP(connect)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
+	wm_get_apinfo(&apconfig);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	ST_END_TEST;
 }
@@ -160,7 +167,7 @@ TEST_SETUP(connect_done)
 
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
+	wm_get_apinfo(&apconfig);
 
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WM_TEST_WAIT;
@@ -190,7 +197,7 @@ TEST_SETUP(disconnect)
 
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
+	wm_get_apinfo(&apconfig);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WM_TEST_WAIT;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_disconnect_ap());
@@ -236,26 +243,6 @@ TEST_F(scan)
 	ST_END_TEST;
 }
 
-static int _wm_initialize_signal(void)
-{
-	int status = pthread_cond_init(&g_wm_cond, NULL);
-	if (status != 0) {
-		printf("start_thread: ERROR pthread_cond_init failed, status=%d\n", status);
-	}
-	status = pthread_mutex_init(&g_wm_mutex, NULL);
-	if (status != 0) {
-		printf("start_thread: ERROR pthread_mutex_init failed, status=%d\n", status);
-	}
-	return 0;
-}
-
-static int _wm_deinitialize_signal(void)
-{
-	pthread_cond_destroy(&g_wm_cond);
-	pthread_mutex_destroy(&g_wm_mutex);
-	return 0;
-}
-
 void wm_run_stress_test1(struct wt_options *opt)
 {
 	WM_AP_SSID = opt->ssid;
@@ -263,7 +250,6 @@ void wm_run_stress_test1(struct wt_options *opt)
 	WM_AP_AUTH = opt->auth_type;
 	WM_AP_CRYPTO = opt->crypto_type;
 
-	_wm_initialize_signal();
 	ST_SET_PACK(wifi);
 
 	ST_SET_SMOKE(wifi, WM_TEST_TRIAL, 10000000, "init", init);
@@ -274,5 +260,4 @@ void wm_run_stress_test1(struct wt_options *opt)
 
 	ST_RUN_TEST(wifi);
 	ST_RESULT_TEST(wifi);
-	_wm_deinitialize_signal();
 }

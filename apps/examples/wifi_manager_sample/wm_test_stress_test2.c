@@ -20,10 +20,6 @@
 
 #include <sys/types.h>
 #include <stdio.h>
-#include <queue.h>
-#include <semaphore.h>
-#include <assert.h>
-#include <string.h>
 #include <wifi_manager/wifi_manager.h>
 #include <stress_tool/st_perf.h>
 #include "wm_test.h"
@@ -34,8 +30,6 @@
 #define WM_TEST_TRIAL	   CONFIG_WIFIMANAGER_TEST_TRIAL
 #define WM_NSOFTAP_SSID "no_sta_0101" // for auto test
 #define TAG "[WTS2]"
-
-static interop_ap_config_list_s g_apconfig_list;
 static char *WM_AP_SSID;
 static char *WM_AP_PASSWORD;
 static wifi_manager_ap_auth_type_e WM_AP_AUTH;
@@ -47,13 +41,12 @@ static int WM_SOFTAP_CHANNEL;
 /*
  * callbacks
  */
-static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_connected(wifi_manager_result_e);
+static void wm_sta_disconnected(wifi_manager_disconnect_e);
+static void wm_softap_sta_join(void);
+static void wm_softap_sta_leave(void);
+static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
 
-extern int wifi_interop_read_file(interop_ap_config_list_s *ap_config_list, char *file_path);
 /*
  * Global
  */
@@ -69,42 +62,67 @@ static int g_conn = 0;
 /*
  * Callback
  */
-void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
+void wm_sta_connected(wifi_manager_result_e res)
 {
-	WT_LOG(TAG, "-->  res(%d)", msg.res);
-	WO_TEST_SIGNAL(msg.res, g_wo_queue);
+	WT_LOG(TAG, "-->  res(%d)", res);
+	WO_TEST_SIGNAL(res, g_wo_queue);
 }
 
-void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
-{
-	WT_LOG(TAG, "-->");
-	WO_TEST_SIGNAL(msg.res, g_wo_queue);
-}
-
-void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
+void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	WT_LOG(TAG, "-->");
-	WO_TEST_SIGNAL(-1, g_wo_queue);
+	WO_TEST_SIGNAL(disconn, g_wo_queue);
 }
 
-void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
+void wm_softap_sta_join(void)
 {
 	WT_LOG(TAG, "-->");
 	WO_TEST_SIGNAL(-1, g_wo_queue);
 }
 
-void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg)
+void wm_softap_sta_leave(void)
+{
+	WT_LOG(TAG, "-->");
+	WO_TEST_SIGNAL(-1, g_wo_queue);
+}
+
+void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
 	WT_LOG(TAG, "-->");
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
-	if (msg.res != WIFI_MANAGER_SUCCESS || msg.scanlist == NULL) {
-		WO_TEST_SIGNAL(msg.res, g_wo_queue);
+	if (scan_result == NULL) {
+		WO_TEST_SIGNAL(res, g_wo_queue);
 		return;
 	}
-	wt_print_scanlist(msg.scanlist);
-	WO_TEST_SIGNAL(msg.res, g_wo_queue);
+	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
+	while (wifi_scan_iter != NULL) {
+		WT_LOG(TAG, "WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d",
+			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
+			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
+		wifi_scan_iter = wifi_scan_iter->next;
+	}
+	WO_TEST_SIGNAL(res, g_wo_queue);
+}
+
+static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)
+{
+	strncpy(apconfig->ssid, WM_AP_SSID, strlen(WM_AP_SSID) + 1);
+	apconfig->ssid_length = strlen(WM_AP_SSID);
+	apconfig->ap_auth_type = WM_AP_AUTH;
+	if (WM_AP_AUTH != WIFI_MANAGER_AUTH_OPEN) {
+		strncpy(apconfig->passphrase, WM_AP_PASSWORD, strlen(WM_AP_PASSWORD) + 1);
+		apconfig->passphrase_length = strlen(WM_AP_PASSWORD);
+		apconfig->ap_crypto_type = WM_AP_CRYPTO;
+	}
+}
+
+static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
+{
+	strncpy(ap_config->ssid, WM_SOFTAP_SSID, strlen(WM_SOFTAP_SSID) + 1);
+	strncpy(ap_config->passphrase, WM_SOFTAP_PASSWORD, strlen(WM_SOFTAP_PASSWORD) + 1);
+	ap_config->channel = WM_SOFTAP_CHANNEL;
 }
 
 static void wm_get_nosoftapinfo(wifi_manager_softap_config_s *ap_config)
@@ -137,7 +155,7 @@ TEST_F(sta_join)
 {
 	ST_START_TEST;
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
+	wm_get_apinfo(&apconfig);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 
@@ -178,7 +196,7 @@ TEST_SETUP(sta_leave)
 
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
+	wm_get_apinfo(&apconfig);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 
@@ -263,7 +281,7 @@ TEST_SETUP(softap_joined_scan)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_softap_config_s ap_config;
-	wm_get_softapinfo(&ap_config, WM_SOFTAP_SSID, WM_SOFTAP_PASSWORD, WM_SOFTAP_CHANNEL);
+	wm_get_softapinfo(&ap_config);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 
@@ -319,7 +337,7 @@ TEST_SETUP(softap_joined_stop)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_softap_config_s ap_config;
-	wm_get_softapinfo(&ap_config, WM_SOFTAP_SSID, WM_SOFTAP_PASSWORD, WM_SOFTAP_CHANNEL);
+	wm_get_softapinfo(&ap_config);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 
@@ -373,7 +391,7 @@ TEST_SETUP(conn_to_softap)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
+	wm_get_apinfo(&apconfig);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WO_TEST_WAIT(g_conn, g_wo_queue);
 	ST_END_TEST;
@@ -430,7 +448,7 @@ TEST_SETUP(join_to_sta)
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_softap_config_s ap_config;
-	wm_get_softapinfo(&ap_config, WM_SOFTAP_SSID, WM_SOFTAP_PASSWORD, WM_SOFTAP_CHANNEL);
+	wm_get_softapinfo(&ap_config);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
 	WO_TEST_WAIT(g_conn, g_wo_queue); // wait STA joined
 	ST_END_TEST;
@@ -450,7 +468,7 @@ TEST_F(join_to_sta)
 	ST_END_TEST;
 }
 
-void wm_run_stress_test2_single_ap(struct wt_options *opt)
+void wm_run_stress_test2(struct wt_options *opt)
 {
 	WM_AP_SSID = opt->ssid;
 	WM_AP_PASSWORD = opt->password;
@@ -487,33 +505,4 @@ void wm_run_stress_test2_single_ap(struct wt_options *opt)
 
 	/*  Destroy queue */
 	wo_destroy_queue(g_wo_queue);
-}
-
-void wm_run_stress_test2(struct wt_options *opt)
-{
-	if (!opt->path) {
-		wm_run_stress_test2_single_ap(opt);
-	} else {
-		int ap_count = 0;
-		interop_ap_info_s *ap_info = NULL;
-		memset(&g_apconfig_list, 0, sizeof(g_apconfig_list));
-		int ret = 0;
-		ret = wifi_interop_read_file(&g_apconfig_list, opt->path);
-		if (ret < 0) {
-			WT_LOGE(TAG, "-->%s: failed to open file \n", __FUNCTION__);
-			return;
-		}
-		print_ap_config_list(&g_apconfig_list);
-		ap_count = g_apconfig_list.ap_count;
-
-		for (int i = 0; i < ap_count; i++) {
-			ap_info = g_apconfig_list.ap_info + i;
-			opt->ssid = ap_info->ap_config.ssid;
-			opt->password = ap_info->ap_config.passphrase;
-			opt->auth_type = ap_info->ap_config.ap_auth_type;
-			opt->crypto_type = ap_info->ap_config.ap_crypto_type;
-
-			wm_run_stress_test2_single_ap(opt);
-		}
-	}
 }

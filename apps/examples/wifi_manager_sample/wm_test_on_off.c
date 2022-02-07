@@ -34,13 +34,15 @@
 #define WIFIMGR_AUTH WIFI_MANAGER_AUTH_WPA2_PSK
 #define WIFIMGR_CRYPTO WIFI_MANAGER_CRYPTO_AES
 
+#define WO_CONN_FAIL 1
+#define WO_CONN_SUCCESS 2
 #define WO_INTERVAL 10
 #define WO_GOAL_CNT 1000
 #define TAG "[WTON]"
 
 /* callbacks*/
-static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_connected(wifi_manager_result_e);
+static void wm_sta_disconnected(wifi_manager_disconnect_e);
 
 /* State */
 static int run_init(void *arg);
@@ -55,11 +57,11 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 };
 static struct wo_queue *g_wo_queue = NULL;
 
-void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
+void wm_sta_connected(wifi_manager_result_e res)
 {
 	int conn = 0;
-	WT_LOG(TAG, "-->res(%d)", msg.res);
-	if (WIFI_MANAGER_SUCCESS == msg.res) {
+	WT_LOG(TAG, "-->res(%d)", res);
+	if (WIFI_MANAGER_SUCCESS == res) {
 		conn = WO_CONN_SUCCESS;
 	} else {
 		conn = WO_CONN_FAIL;
@@ -67,9 +69,9 @@ void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 	WO_TEST_SIGNAL(conn, g_wo_queue);
 }
 
-void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
+void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
-	WT_LOG(TAG, "--> %d", msg.res);
+	WT_LOG(TAG, "--> %d", disconn);
 	WO_TEST_SIGNAL(WO_CONN_FAIL, g_wo_queue);
 }
 
@@ -85,6 +87,18 @@ static void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	WT_LOG(TAG, "====================================");
 }
 
+static void wm_get_info(wifi_manager_ap_config_s *arg)
+{
+	WT_LOG(TAG, "-->");
+	wifi_manager_ap_config_s apconfig;
+	wifi_manager_result_e res = wifi_manager_get_config(&apconfig);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "Get AP configuration failed");
+		return;
+	}
+	print_wifi_ap_profile(&apconfig, "Stored Wi-Fi Information");
+}
+
 static int run_init(void *arg)
 {
 	wifi_manager_result_e res = wifi_manager_init(&g_wifi_callbacks);
@@ -98,8 +112,22 @@ static int run_init(void *arg)
 	/* Set AP Configuration */
 	struct wt_options *ap_info = (struct wt_options *)arg;
 	wifi_manager_ap_config_s apconfig;
-  wm_get_apinfo(&apconfig, ap_info->ssid, ap_info->password, ap_info->auth_type, ap_info->crypto_type);
-  print_wifi_ap_profile(&apconfig, "Connecting AP Info");
+	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
+	apconfig.ssid_length = strlen(ap_info->ssid);
+	apconfig.ssid[WIFIMGR_SSID_LEN] = '\0';
+	apconfig.ap_auth_type = ap_info->auth_type;
+	if (ap_info->auth_type != WIFI_MANAGER_AUTH_OPEN) {
+		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
+		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
+		apconfig.passphrase_length = strlen(ap_info->password);
+		apconfig.ap_crypto_type = ap_info->crypto_type;
+	} else {
+		apconfig.passphrase[0] = '\0';
+		apconfig.passphrase_length = 0;
+		apconfig.ap_crypto_type = ap_info->crypto_type;
+	}
+
+	print_wifi_ap_profile(&apconfig, "Connecting AP Info");
 
 	/*  Run Auto Test */
 	int state = 1;

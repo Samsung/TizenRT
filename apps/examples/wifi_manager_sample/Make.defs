@@ -17,5 +17,5 @@
 ###########################################################################
 
 ifeq ($(CONFIG_EXAMPLES_WIFIMANAGER_TEST),y)
-CONFIGURED_APPS += examples/wifi_manager/wm_test
+CONFIGURED_APPS += examples/wifi_manager_sample
 endif

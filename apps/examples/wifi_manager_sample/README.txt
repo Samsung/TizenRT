@@ -1,5 +1,5 @@
-examples/wifi_manager/wm_test
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+examples/wifi_manager_sample
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   This is an example to control Wi-Fi by wifi manager APIs
   

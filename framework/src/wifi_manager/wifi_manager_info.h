@@ -21,13 +21,15 @@
 
 #define WIFIMGR_SSID 0x01
 #define WIFIMGR_SOFTAP_SSID 0x02
+#define	WIFIMGR_MACADDR 0x04
 #define WIFIMGR_RSSI 0x08
 #define WIFIMGR_STATE 0X10
-#define WIFIMGR_ALL_INFO (WIFIMGR_SSID | WIFIMGR_SOFTAP_SSID | WIFIMGR_RSSI | WIFIMGR_STATE)
+#define WIFIMGR_ALL_INFO (WIFIMGR_SSID | WIFIMGR_SOFTAP_SSID | WIFIMGR_MACADDR | WIFIMGR_RSSI | WIFIMGR_STATE)
 
 struct wifimgr_info_msg {
 	char *ssid;
 	char *softap_ssid;
+	char *mac_addr;
 	int rssi;
 	wifimgr_state_e state;
 };

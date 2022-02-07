@@ -2,7 +2,7 @@
  *
  * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License\n");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -15,19 +15,23 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #pragma once
 
-#ifdef CONFIG_VIRTUAL_WLAN
-#include <tinyara/net/if/wifi.h>
-#include "../../../../os/drivers/wireless/virtual/vdev_command.h"
+#define WT_LOG(tag, fmt, args...)										\
+	printf(tag"[T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__, ##args)
 
-int control_mock(int cmd, int key, int value, int wait);
-#define CONTROL_VDRIVER(cmd, key, value, wait)	\
-	(void)control_mock(cmd, key, value, wait)
+#define WT_LOGE(tag, fmt, args...)										\
+	printf(tag"[ERR][T%d] "fmt"\t%s:%d\n", getpid(), ##args, __FUNCTION__, __LINE__, ##args)
 
-#else
+#define WT_LOGP(tag, fmt, args...)				\
+	printf(fmt, ##args)
 
-#define CONTROL_VDRIVER(cmd, key, value, wait)
+#define WT_ENTER								\
+	do {										\
+		WT_LOG(TAG, "-->");						\
+	} while (0)
 
-#endif
+#define WT_LEAVE								\
+	do {										\
+		WT_LOG(TAG, "<--");						\
+	} while (0)

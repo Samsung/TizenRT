@@ -15,15 +15,26 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
+
+#ifndef _WIFI_MANAGER_EVENT_H__
+#define _WIFI_MANAGER_EVENT_H__
+
+#define WIFIMGR_EVENT_INITIALIZER {NULL, {NULL, NULL, NULL, NULL, NULL} }
 
 enum _wifimgr_evt {
 #define WIFIMGR_REQUEST_TABLE(str, type, desc) type,
-#include "wifi_manager_cmd_table.h"
-#define WIFIMGR_EVT_TABLE(str, type, desc) type,
-#include "wifi_manager_event_table.h"
-	WIFIMGR_EVT_NONE,
+	#include "wifi_manager_event_table.h"
+	EVT_NONE,
 };
 typedef enum _wifimgr_evt wifimgr_evt_e;
 
+struct wifimgr_evt_handler {
+	dhcp_sta_joined_cb dhcps_sta_joined;
+	wifi_utils_cb_s wifi_evt;
+};
+typedef struct wifimgr_evt_handler wifimgr_evt_handler_s;
+
+int wifimgr_get_evthandler(wifimgr_evt_handler_s *evt);
 char *wifimgr_get_evt_str(wifimgr_evt_e evt);
+
+#endif // _WIFI_MANAGER_EVENT_H__

@@ -16,13 +16,15 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <stdlib.h>
+#include <debug.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
+#include <tinyara/wifi/wifi_utils.h>
+#include "wifi_manager_lwnl_listener.h"
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"
@@ -31,57 +33,24 @@
 
 #define TAG "[WM]"
 
-typedef struct {
-	wifimgr_evt_e wevt;
-	lwnl_cb_wifi levt;
-} lwnl_convert_table;
-
-lwnl_convert_table g_convert_table[8] = {
-#define WIFIMGR_LWNL_MAP_TABLE(lwnl, type) {type, lwnl},
-#include "wifi_manager_lwnl_table.h"
-};
-
-/*  only wifi msg handler thread can use this variable */
-static wifimgr_msg_s g_msg = {WIFIMGR_EVT_NONE, WIFI_MANAGER_FAIL, NULL, NULL};
-static trwifi_cbk_msg_s g_cbk;
-static const trwifi_cbk_msg_s g_nullmsg = TRWIFI_CBK_MSG_INITIALIZER;
-static inline void LWNL_SET_MSG(wifimgr_msg_s *msg, wifimgr_evt_e event,
-								wifi_manager_result_e result, void *param, sem_t *signal)
-{
-	msg->event = event;
-	msg->result = result;
-	msg->param = param;
-	msg->signal = signal;
-}
-
-static wifimgr_evt_e _lwnl_convert_levent(lwnl_cb_wifi levt)
-{
-	int size = sizeof(g_convert_table) / sizeof(lwnl_convert_table);
-	for (int i = 0; i < size; i++) {
-		if (levt == g_convert_table[i].levt) {
-			return g_convert_table[i].wevt;
-		}
-	}
-	return WIFIMGR_EVT_NONE;
-}
-static int _lwnl_convert_scan(trwifi_scan_list_s **scan_list, void *input, int len)
+static int _lwnl_convert_scan(wifi_utils_scan_list_s **scan_list, void *input, int len)
 {
 	NET_LOGV(TAG, "len(%d)\n", len);
 	int remain = len;
-	trwifi_scan_list_s *prev = NULL;
+	wifi_utils_scan_list_s *prev = NULL;
 
 	while (remain > 0) {
-		trwifi_scan_list_s *item = (trwifi_scan_list_s *)malloc(sizeof(trwifi_scan_list_s));
+		wifi_utils_scan_list_s *item = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
 		if (!item) {
-			assert(0); // out of memory
+			// To Do
 			return -1;
 		}
-		// definition of trwifi_scan_list_s and lwnl80211_scan_list shoud be same
-		memcpy(&item->ap_info, input, sizeof(trwifi_ap_scan_info_s));
+		// definition of wifi_utils_scan_list_s and lwnl80211_scan_list shoud be same
+		memcpy(&item->ap_info, input, sizeof(wifi_utils_ap_scan_info_s));
 		item->next = NULL;
 
-		remain -= sizeof(trwifi_ap_scan_info_s);
-		input = input + sizeof(trwifi_ap_scan_info_s);
+		remain -= sizeof(wifi_utils_ap_scan_info_s);
+		input = input + sizeof(wifi_utils_ap_scan_info_s);
 		if (!prev) {
 			prev = item;
 			*scan_list = item;
@@ -94,7 +63,7 @@ static int _lwnl_convert_scan(trwifi_scan_list_s **scan_list, void *input, int l
 	return 0;
 }
 
-static trwifi_scan_list_s *_lwnl_handle_scan(int fd, int len)
+static wifi_utils_scan_list_s *_lwnl_handle_scan(int fd, int len)
 {
 	char *buf = (char *)malloc(len);
 	if (!buf) {
@@ -108,7 +77,7 @@ static trwifi_scan_list_s *_lwnl_handle_scan(int fd, int len)
 		return NULL;
 	}
 
-	trwifi_scan_list_s *scan_list = NULL;
+	wifi_utils_scan_list_s *scan_list = NULL;
 	res = _lwnl_convert_scan(&scan_list, buf, len);
 	free(buf);
 	if (res < 0) {
@@ -117,11 +86,45 @@ static trwifi_scan_list_s *_lwnl_handle_scan(int fd, int len)
 	return scan_list;
 }
 
-static int _lwnl_generate_msg(int fd, lwnl_cb_status status, int len)
+/*  only wifi msg handler thread can use this variable */
+static wifimgr_msg_s g_msg = {EVT_NONE, WIFI_MANAGER_FAIL, NULL, NULL};
+
+static inline void LWNL_SET_MSG(wifimgr_msg_s *msg, wifimgr_evt_e event,
+								wifi_manager_result_e result, void *param, sem_t *signal)
 {
+	msg->event = event;
+	msg->result = result;
+	msg->param = param;
+	msg->signal = signal;
+}
+
+static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
+{
+	if (status.evt != LWNL_EVT_SCAN_DONE && len != 0) {
+		assert(0);
+	}
 	switch (status.evt) {
-	case LWNL_EVT_SCAN_DONE: {
-		trwifi_scan_list_s *scan_list = _lwnl_handle_scan(fd, len);
+	case LWNL_EVT_STA_CONNECTED:
+		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_STA_CONNECTED, WIFI_MANAGER_FAIL, NULL, NULL);
+		break;
+	case LWNL_EVT_STA_CONNECT_FAILED:
+		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_STA_CONNECT_FAILED, WIFI_MANAGER_FAIL, NULL, NULL);
+		break;
+	case LWNL_EVT_STA_DISCONNECTED:
+		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_STA_DISCONNECTED, WIFI_MANAGER_FAIL, NULL, NULL);
+		break;
+	case LWNL_EVT_SOFTAP_STA_JOINED:
+		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_JOINED, WIFI_MANAGER_FAIL, NULL, NULL);
+		break;
+	case LWNL_EVT_SOFTAP_STA_LEFT:
+		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_LEFT, WIFI_MANAGER_FAIL, NULL, NULL);
+		break;
+	case LWNL_EVT_SCAN_FAILED:
+		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_SCAN_DONE, WIFI_MANAGER_FAIL, NULL, NULL);
+		break;
+	case LWNL_EVT_SCAN_DONE:
+	{
+		wifi_utils_scan_list_s *scan_list = _lwnl_handle_scan(fd, len);
 		if (scan_list) {
 			LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_SCAN_DONE, WIFI_MANAGER_FAIL, scan_list, NULL);
 		} else {
@@ -129,31 +132,8 @@ static int _lwnl_generate_msg(int fd, lwnl_cb_status status, int len)
 		}
 		break;
 	}
-	case LWNL_EVT_SCAN_FAILED:
-		LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_SCAN_DONE, WIFI_MANAGER_FAIL, NULL, NULL);
-		break;
-	case LWNL_EVT_STA_CONNECTED:
-	case LWNL_EVT_STA_CONNECT_FAILED:
-	case LWNL_EVT_STA_DISCONNECTED:
-	case LWNL_EVT_SOFTAP_STA_JOINED:
-	case LWNL_EVT_SOFTAP_STA_LEFT: {
-		if (len == sizeof(trwifi_cbk_msg_s)) {
-			int res = read(fd, (void *)&g_cbk, len);
-			if (res == -1) {
-				NET_LOGE(TAG, "read lwnl msg error %d %d\n", status.evt, errno);
-				assert(0);
-			}
-		} else if (len == 0){
-			g_cbk = g_nullmsg;
-		} else {
-			assert(0);
-		}
-		wifimgr_evt_e wevt = _lwnl_convert_levent(status.evt);
-		LWNL_SET_MSG(&g_msg, wevt, WIFI_MANAGER_FAIL, &g_cbk, NULL);
-		break;
-	}
 	default:
-		NET_LOGE(TAG, "Bad status received (%d)\n", status.evt);
+		NET_LOGE(TAG, "Bad status received (%d)\n", status);
 		return -1;
 	}
 	return 0;
@@ -164,14 +144,15 @@ static int _lwnl_generate_msg(int fd, lwnl_cb_status status, int len)
  */
 int lwnl_fetch_event(int fd, void *buf, int buflen)
 {
+	#define LWNL_CB_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
 	lwnl_cb_status status;
 	uint32_t len;
-	char type_buf[LWNL_CB_HEADER_LEN] = {0, };
+	char type_buf[LWNL_CB_HEADER_LEN] = {0,};
 	handler_msg *hmsg = (handler_msg *)buf;
 
-	/* lwnl guarantees that type_buf will read LWNL_CB_HEADER_LEN if it succeeds
-	 * So it doesn't need to consider partial read
-	 */
+	/*  lwnl guarantees that type_buf will read LWNL_CB_HEADER_LEN if it succeeds
+	* So it doesn't need to consider partial read
+	*/
 	int nbytes = read(fd, (char *)type_buf, LWNL_CB_HEADER_LEN);
 	if (nbytes < 0) {
 		NET_LOGE(TAG, "Failed to receive (nbytes=%d)\n", nbytes);
@@ -181,9 +162,8 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	NET_LOGV(TAG, "receive state(%d) length(%d)\n", status.evt, len);
-	(void)_lwnl_generate_msg(fd, status, len);
-
+	NET_LOGV(TAG, "scan state(%d) length(%d)\n", status.evt, len);
+	(void)_lwnl_call_event(fd, status, len);
 	hmsg->msg = &g_msg;
 	hmsg->signal = NULL;
 

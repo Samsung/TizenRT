@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 
+#include <tinyara/wifi/wifi_utils.h>
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>
 #include <arpa/inet.h>
@@ -61,7 +62,7 @@ void dhcps_reset_num(void);
 uint8_t dhcps_get_num(void);
 
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-wifi_manager_result_e wm_dhcps_start(void);
+wifi_manager_result_e wm_dhcps_start(dhcp_sta_joined_cb cb);
 wifi_manager_result_e wm_dhcps_stop(void);
 
 /* TODO: Currently, wifi manager stores only a single mac address of the associated node

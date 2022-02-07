@@ -16,9 +16,12 @@
  *
  ****************************************************************************/
 
-#pragma once
+#ifndef _WIFI_PROFILE_H__
+#define _WIFI_PROFILE_H__
 
-trwifi_result_e wifi_profile_init(void);
-trwifi_result_e wifi_profile_reset(int internal);
-trwifi_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int internal);
-trwifi_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int internal);
+wifi_utils_result_e wifi_profile_init(void);
+wifi_utils_result_e wifi_profile_reset(int internal);
+wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config, int internal);
+wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int internal);
+
+#endif //_WIFI_PROFILE_H__

@@ -30,18 +30,14 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 
-MAINSRC = wm_test.c wm_test_on_off.c wm_test_utils.c wm_test_interop.c
+MAINSRC = wm_test.c wm_test_on_off.c wm_test_utils.c
 CSRCS = wm_test_stress.c\
 wm_test_stress_test1.c\
 wm_test_stress_test2.c\
 wm_test_stress_test3.c\
 wm_test_stress_test4.c\
 wm_test_daemon.c\
-wm_test_network.c\
-wm_test_event_tc.c\
-wm_test_connect_stable.c\
-wm_test_dns.c
-
+wm_test_network.c
 ifeq ($(CONFIG_VIRTUAL_WLAN),y)
 CSRCS += wm_test_mock.c
 endif
@@ -58,12 +54,12 @@ ifneq ($(CONFIG_BUILD_KERNEL),y)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = $(APPDIR)\libapps$(LIBEXT)
+  BIN = ..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = $(APPDIR)\\libapps$(LIBEXT)
+  BIN = ..\\..\\libapps$(LIBEXT)
 else
-  BIN = $(APPDIR)/libapps$(LIBEXT)
+  BIN = ../../libapps$(LIBEXT)
 endif
 endif
 

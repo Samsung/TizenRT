@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <tinyara/wifi/wifi_utils.h>
 #include <tinyara/net/if/wifi.h>
 #include "wm_test_mock.h"
 #include "wm_test_log.h"

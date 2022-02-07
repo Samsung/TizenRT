@@ -1,5 +1,3 @@
-#if 0
-pkbuild
 /****************************************************************************
  *
  * Copyright 2019 Samsung Electronics All Rights Reserved.
@@ -26,5 +24,4 @@ void lwnl_stop_monitor(void);
 int lwnl_join_monitor(wifi_utils_cb_s *cb);
 int lwnl_leave_monitor(wifi_utils_cb_s *cb);
 
-#endif
 #endif

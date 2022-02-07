@@ -21,9 +21,6 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <errno.h>
-#include <queue.h>
-#include <semaphore.h>
-#include <string.h>
 #include <wifi_manager/wifi_manager.h>
 #include <stress_tool/st_perf.h>
 #include "wm_test.h"
@@ -46,11 +43,11 @@ static sem_t g_wm_sem;
 /*
  * callbacks
  */
-static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg);
-static void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg);
+static void wm_sta_connected(wifi_manager_result_e);
+static void wm_sta_disconnected(wifi_manager_disconnect_e);
+static void wm_softap_sta_join(void);
+static void wm_softap_sta_leave(void);
+static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
 
 static wifi_manager_cb_s g_wifi_callbacks = {
 	wm_sta_connected,
@@ -72,42 +69,67 @@ static wifi_manager_cb_s g_wifi_callbacks = {
 		sem_wait(&g_wm_sem);                        \
 	} while (0)
 
-void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
+void wm_sta_connected(wifi_manager_result_e res)
 {
-	WT_LOG(TAG, "--> res(%d)", msg.res);
+	WT_LOG(TAG, "--> res(%d)", res);
 	WM_TEST_SIGNAL;
 }
 
-void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
-{
-	WT_LOG(TAG, "-->");
-	WM_TEST_SIGNAL;
-}
-
-void wm_softap_sta_join(wifi_manager_cb_msg_s msg, void *arg)
+void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	WT_LOG(TAG, "-->");
 	WM_TEST_SIGNAL;
 }
 
-void wm_softap_sta_leave(wifi_manager_cb_msg_s msg, void *arg)
+void wm_softap_sta_join(void)
 {
 	WT_LOG(TAG, "-->");
 	WM_TEST_SIGNAL;
 }
 
-void wm_scan_done(wifi_manager_cb_msg_s msg, void *arg)
+void wm_softap_sta_leave(void)
+{
+	WT_LOG(TAG, "-->");
+	WM_TEST_SIGNAL;
+}
+
+void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
 	WT_LOG(TAG, "-->");
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
-	if (msg.res != WIFI_MANAGER_SUCCESS || msg.scanlist == NULL) {
+	if (scan_result == NULL) {
 		WM_TEST_SIGNAL;
 		return;
 	}
-	wt_print_scanlist(msg.scanlist);
+	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
+	while (wifi_scan_iter != NULL) {
+		WT_LOG(TAG, "WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d, AUTH: %d, CRYPTO: %d",
+			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi,
+			   wifi_scan_iter->ap_auth_type, wifi_scan_iter->ap_crypto_type);
+		wifi_scan_iter = wifi_scan_iter->next;
+	}
 	WM_TEST_SIGNAL;
+}
+
+static void wm_get_apinfo(wifi_manager_ap_config_s *apconfig)
+{
+	strncpy(apconfig->ssid, WM_AP_SSID, strlen(WM_AP_SSID) + 1);
+	apconfig->ssid_length = strlen(WM_AP_SSID);
+	apconfig->ap_auth_type = WM_AP_AUTH;
+	if (WM_AP_AUTH != WIFI_MANAGER_AUTH_OPEN) {
+		strncpy(apconfig->passphrase, WM_AP_PASSWORD, strlen(WM_AP_PASSWORD) + 1);
+		apconfig->passphrase_length = strlen(WM_AP_PASSWORD);
+		apconfig->ap_crypto_type = WM_AP_CRYPTO;
+	}
+}
+
+static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
+{
+	strncpy(ap_config->ssid, WM_SOFTAP_SSID, strlen(WM_SOFTAP_SSID) + 1);
+	strncpy(ap_config->passphrase, WM_SOFTAP_PASSWORD, strlen(WM_SOFTAP_PASSWORD) + 1);
+	ap_config->channel = WM_SOFTAP_CHANNEL;
 }
 
 static int run_procedure(void *arg)
@@ -118,7 +140,7 @@ static int run_procedure(void *arg)
 	/* Join to softAP*/
 	WT_LOG(TAG, "connect AP");
 	wifi_manager_ap_config_s apconfig;
-	wm_get_apinfo(&apconfig, WM_AP_SSID, WM_AP_PASSWORD, WM_AP_AUTH, WM_AP_CRYPTO);
+	wm_get_apinfo(&apconfig);
 	res = wifi_manager_connect_ap(&apconfig);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "connect AP fail %d", res);
@@ -138,7 +160,7 @@ static int run_procedure(void *arg)
 	/* Set softAP */
 	WT_LOG(TAG, "start softAP");
 	wifi_manager_softap_config_s softap_config;
-	wm_get_softapinfo(&softap_config, WM_SOFTAP_SSID, WM_SOFTAP_PASSWORD, WM_SOFTAP_CHANNEL);
+	wm_get_softapinfo(&softap_config);
 	res = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		WT_LOGE(TAG, "set softap fail %d", res);
