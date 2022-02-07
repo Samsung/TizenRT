@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
-
+#ifndef __INCLUDE_TINYARA_LWNL_H__
+#define __INCLUDE_TINYARA_LWNL_H__
 #include <stdbool.h>
 #include <stdint.h>
 /****************************************************************************
@@ -110,13 +110,34 @@ struct lwnl_upperhalf_s;
 /* Callback */
 typedef CODE void (*lwnl_callback_t)(struct lwnl_lowerhalf_s *dev, lwnl_cb_status status, void *buffer);
 
-struct lwnl_lowerhalf_s {
+typedef struct lwnl_lowerhalf_s {
 	struct lwnl_ops_s *ops;
 	struct lwnl_upperhalf_s *parent;
 	lwnl_callback_t cbk;
 	void *priv;
 };
 
+#ifndef CONFIG_NET_NETMGR
+typedef enum {
+	NM_LOOPBACK,
+	NM_WIFI,
+	NM_ETHERNET,
+	NM_UNKNOWN,
+} netdev_type;
+
+typedef enum {
+	/** Delete a filter entry */
+	NM_DEL_MAC_FILTER = 0,
+	/** Add a filter entry */
+	NM_ADD_MAC_FILTER = 1
+} netdev_mac_filter_action;
+
+struct netdev {
+	char ifname[IFNAMSIZ];
+	netdev_type type;
+	void *ops;
+};
+#endif //CONFIG_NET_NETMGR
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -124,6 +145,14 @@ struct lwnl_lowerhalf_s {
 /* Registrations */
 int lwnl_register(struct lwnl_lowerhalf_s *ldev);
 int lwnl_unregister(struct lwnl_lowerhalf_s *ldev);
-struct netdev;
 int lwnl_register_dev(struct netdev *dev);
-int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, int32_t buf_len);
+int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, uint32_t buf_len);
+
+#define LWNL_POST_BLEMSG(evt, buffer, buf_len) \
+	lwnl_postmsg(LWNL_DEV_BLE, evt, buffer, buf_len)
+
+#ifndef CONFIG_NET_NETMGR
+int lwnl_register_dev(struct netdev *dev);
+#endif // CONFIG_NET_NETMGR
+
+#endif /* __INCLUDE_TINYARA_LWNL_H__ */
