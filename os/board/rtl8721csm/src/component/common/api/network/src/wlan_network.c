@@ -14,7 +14,7 @@
 #include "main.h"
 #include "main_test.h"
 #if CONFIG_WLAN
-#include "wifi/wifi_conf.h"
+#include "wifi_conf.h"
 #include "wlan_intf.h"
 #include "wifi_constants.h"
 #endif

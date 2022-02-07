@@ -27,6 +27,7 @@
 #define __RTK_WIFI_UTILS_H
 
 #include <sys/types.h>
+#include <tinyara/wifi/wifi_common.h>
 #include "wifi_constants.h"
 #include "wifi_structures.h"
 #include <tinyara/net/if/wifi.h>
@@ -87,7 +88,7 @@ extern int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_
 extern int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id);
 extern int8_t cmd_wifi_off(void);
 extern int wifi_scan_networks(rtw_scan_result_handler_t results_handler, void* user_data);
-extern int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32_t ap_channel);
+extern int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg);
 extern int wifi_get_mac_address(char * mac);
 extern int wifi_is_connected_to_ap(void);
 extern int wifi_get_rssi(int *pRSSI);

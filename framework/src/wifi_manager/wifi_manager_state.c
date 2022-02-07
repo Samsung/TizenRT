@@ -36,9 +36,6 @@
 #include "wifi_manager_cb.h"
 #include "wifi_manager_state.h"
 #include "wifi_manager_info.h"
-#ifdef CONFIG_LOG_BUFFER
-#include <log_buffer.h>
-#endif
 
 /*  Setting MACRO */
 static inline void WIFIMGR_SET_SSID(char *s)
@@ -462,10 +459,6 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 		wifi_utils_info_s info_utils;
 		wifi_utils_result_e wres = wifi_utils_get_info(&info_utils);
-		printf("NS41 AP connected success, rssi : %d\n", info_utils.rssi);
-#ifdef CONFIG_LOG_BUFFER
-		LOG_BUFFER_ADD_INFO("NS41", "%d", info_utils.rssi);
-#endif
 	} else if (msg->event == WIFIMGR_EVT_STA_CONNECT_FAILED) {
 		wifimgr_call_cb(CB_STA_CONNECT_FAILED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
