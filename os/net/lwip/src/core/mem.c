@@ -299,9 +299,15 @@ struct mem {
  * how that space is calculated). */
 #ifndef LWIP_RAM_HEAP_POINTER
 /** the heap. we need one struct mem at the end and some room for alignment */
+#if defined(CONFIG_ARCH_CHIP_MT7686)
+#define ATTR_ZIDATA_IN_TCM    __attribute__ ((__section__(".tcm_zidata")))
+ATTR_ZIDATA_IN_TCM u8_t ram_heap[LWIP_MEM_ALIGN_BUFFER(MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM))] ;
+#else
 LWIP_DECLARE_MEMORY_ALIGNED(ram_heap, MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM));
+#endif
 #define LWIP_RAM_HEAP_POINTER ram_heap
-#endif							/* LWIP_RAM_HEAP_POINTER */
+#endif                            /* LWIP_RAM_HEAP_POINTER */
+
 
 /** pointer to the heap (ram_heap): for alignment, ram is now a pointer instead of an array */
 static u8_t *ram;

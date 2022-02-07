@@ -66,8 +66,6 @@ extern "C" {
 
 typedef void (*netifapi_void_fn) (struct netif * netif);
 typedef err_t(*netifapi_errt_fn) (struct netif * netif);
-typedef void (*netifapi_void_fn_arg) (struct netif * netif, void *arg);
-typedef err_t(*netifapi_errt_fn_arg) (struct netif * netif, void *arg);
 
 struct netifapi_msg {
 	struct tcpip_api_call_data call;
@@ -87,11 +85,6 @@ struct netifapi_msg {
 			netifapi_void_fn voidfunc;
 			netifapi_errt_fn errtfunc;
 		} common;
-		struct {
-				netifapi_void_fn_arg voidfunc;
-				netifapi_errt_fn_arg errtfunc;
-				void *arg;
-		} common_arg;
 	} msg;
 };
 
@@ -139,9 +132,6 @@ err_t netifapi_netif_common(struct netif *netif, netifapi_void_fn voidfunc, neti
 #define netifapi_dhcp_release(n)      netifapi_netif_common(n, NULL, dhcp_release)
 /** @ingroup netifapi_dhcp4 */
 #define netifapi_dhcp_address_valid(n)      netifapi_netif_common(n, NULL, dhcp_address_valid)
-#if LWIP_NETIF_HOSTNAME
-#define netifapi_dhcp_sethostname(n, arg)   netifapi_netif_common_arg(n, NULL, dhcp_sethostname, arg)
-#endif
 /** @ingroup netifapi_dhcp4 */
 #define netifapi_dhcps_start(n)        netifapi_netif_common(n, NULL, dhcps_start)
 /** @ingroup netifapi_dhcp4 */
@@ -159,9 +149,6 @@ err_t netifapi_netif_common(struct netif *netif, netifapi_void_fn voidfunc, neti
 #define netifapi_dhcp_release(n)      dhcp_release(n)
 /** @ingroup netifapi_dhcp4 */
 #define netifapi_dhcp_address_valid(n)      dhcp_address_valid(n)
-#if LWIP_NETIF_HOSTNAME
-#define netifapi_dhcp_sethostname(n, arg) dhcp_sethostname(n, arg)
-#endif
 /** @ingroup netifapi_dhcp4 */
 #define netifapi_dhcps_start(n)        dhcps_start(n)
 /** @ingroup netifapi_dhcp4 */

@@ -115,24 +115,6 @@ static err_t netifapi_do_netif_common(struct tcpip_api_call_data *m)
 }
 
 /**
- * Call the "errtfunc" (or the "voidfunc" if "errtfunc" is NULL) inside the
- * tcpip_thread context.
- */
-static err_t netifapi_do_netif_common_arg(struct tcpip_api_call_data *m)
-{
-	/* cast through void* to silence alignment warnings.
-	 * We know it works because the structs have been instantiated as struct netifapi_msg */
-	struct netifapi_msg *msg = (struct netifapi_msg *)(void *)m;
-
-	if (msg->msg.common.errtfunc != NULL) {
-		return msg->msg.common_arg.errtfunc(msg->netif, msg->msg.common_arg.arg);
-	} else {
-		msg->msg.common_arg.voidfunc(msg->netif, msg->msg.common_arg.arg);
-		return ERR_OK;
-	}
-}
-
-/**
  * Call netif_add() in a thread-safe way by running that function inside the
  * tcpip_thread context.
  *
@@ -223,27 +205,6 @@ err_t netifapi_netif_common(struct netif *netif, netifapi_void_fn voidfunc, neti
 	NETIFAPI_VAR_REF(msg).msg.common.voidfunc = voidfunc;
 	NETIFAPI_VAR_REF(msg).msg.common.errtfunc = errtfunc;
 	err = tcpip_api_call(netifapi_do_netif_common, &API_VAR_REF(msg).call);
-	NETIFAPI_VAR_FREE(msg);
-	return err;
-}
-
-/**
- * call the "errtfunc" (or the "voidfunc" if "errtfunc" is NULL) in a thread-safe
- * way by running that function inside the tcpip_thread context.
- *
- * @note if netif needs to get argurment, use this API
- */
-err_t netifapi_netif_common_arg(struct netif *netif, netifapi_void_fn_arg voidfunc, netifapi_errt_fn_arg errtfunc, void *arg)
-{
-	err_t err;
-	NETIFAPI_VAR_DECLARE(msg);
-	NETIFAPI_VAR_ALLOC(msg);
-
-	NETIFAPI_VAR_REF(msg).netif = netif;
-	NETIFAPI_VAR_REF(msg).msg.common_arg.voidfunc = voidfunc;
-	NETIFAPI_VAR_REF(msg).msg.common_arg.errtfunc = errtfunc;
-	NETIFAPI_VAR_REF(msg).msg.common_arg.arg = arg;
-	err = tcpip_api_call(netifapi_do_netif_common_arg, &API_VAR_REF(msg).call);
 	NETIFAPI_VAR_FREE(msg);
 	return err;
 }

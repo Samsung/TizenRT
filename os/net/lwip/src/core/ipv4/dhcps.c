@@ -320,14 +320,14 @@ static uint8_t *dhcps_add_offer_options(uint8_t *optptr)
 	*optptr++ = ip4_addr2(&ipaddr);
 	*optptr++ = ip4_addr3(&ipaddr);
 	*optptr++ = 255;
-#ifdef CONFIG_LWIP_DHCPS_ADDITIONAL_DNS
-	*optptr++ = DHCP_OPTION_DNS_SERVER;
-	*optptr++ = 4;
-	*optptr++ = 8;
-	*optptr++ = 8;
-	*optptr++ = 8;
-	*optptr++ = 8;
-#endif
+
+   *optptr++ = DHCP_OPTION_DNS_SERVER;
+    *optptr++ = 4;
+    *optptr++ = 8;
+    *optptr++ = 8;
+    *optptr++ = 8;
+    *optptr++ = 8;
+
 	return optptr;
 }
 
@@ -652,7 +652,6 @@ POOL_CHECK:
 		}
 		memset(&client_address, 0x0, sizeof(client_address));
 	}
-
 	return ret;
 }
 

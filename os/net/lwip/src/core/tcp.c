@@ -797,6 +797,22 @@ void tcp_recved(struct tcp_pcb *pcb, u16_t len)
 	}
 
 	LWIP_DEBUGF(TCP_DEBUG, ("tcp_recved: received %" U16_F " bytes, wnd %" TCPWNDSIZE_F " (%" TCPWNDSIZE_F ").\n", len, pcb->rcv_wnd, (u16_t)(TCP_WND_MAX(pcb) - pcb->rcv_wnd)));
+
+	time_t time_info = time(NULL);
+	struct tm *tm = localtime(&time_info);
+
+	// for korea time zone
+	tm->tm_hour = (tm->tm_hour + 9) % 24;
+
+	struct timespec current_time;
+	clock_gettime(CLOCK_REALTIME, &current_time);
+
+	unsigned int micro_sec = current_time.tv_nsec / 10000000;
+
+	char log_buffer[64] = "";
+	snprintf(log_buffer, 64, "\e[35m|%02d:%02d:%02d.%02u| TCP RECV | %-15s | %5hd bytes\e[m",
+			tm->tm_hour, tm->tm_min, tm->tm_sec, micro_sec, ipaddr_ntoa(&pcb->remote_ip), len);
+	puts(log_buffer);
 }
 
 /**
@@ -1814,8 +1830,8 @@ u32_t tcp_next_iss(struct tcp_pcb *pcb)
 
 #if TCP_CALCULATE_EFF_SEND_MSS
 /**
- * Calculates the effective send mss that can be used for a specific IP address
- * by using ip_route to determine the netif used to send to the address and
+ * Calcluates the effective send mss that can be used for a specific IP address
+ * by using ip_route to determin the netif used to send to the address and
  * calculating the minimum of TCP_MSS and that netif's mtu (if set).
  */
 u16_t tcp_eff_send_mss_impl(u16_t sendmss, const ip_addr_t *dest

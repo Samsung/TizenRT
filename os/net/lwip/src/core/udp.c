@@ -230,6 +230,22 @@ void udp_input(struct pbuf *p, struct netif *inp)
 	src = lwip_ntohs(udphdr->src);
 	dest = lwip_ntohs(udphdr->dest);
 
+	time_t time_info = time(NULL);
+	struct tm *tm = localtime(&time_info);
+
+	// for korea time zone
+	tm->tm_hour = (tm->tm_hour + 9) % 24;
+
+	struct timespec current_time;
+	clock_gettime(CLOCK_REALTIME, &current_time);
+
+	unsigned int micro_sec = current_time.tv_nsec / 10000000;
+
+	char log_buffer[96] = "";
+	snprintf(log_buffer, sizeof(log_buffer), "\e[35m|%02d:%02d:%02d.%02u| UDP RECV | %-15s | %5hu bytes | checksum: 0x%04hx\e[m",
+			tm->tm_hour, tm->tm_min, tm->tm_sec, micro_sec, ipaddr_ntoa(ip_current_src_addr()), p->tot_len, lwip_ntohs(udphdr->chksum));
+	puts(log_buffer);
+	
 	udp_debug_print(udphdr);
 
 	/* print the UDP source and destination */
@@ -766,6 +782,7 @@ err_t udp_sendto_if_src_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_add
 #endif							/* LWIP_UDPLITE */
 	{							/* UDP */
 		LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP packet length %" U16_F "\n", q->tot_len));
+
 		udphdr->len = lwip_htons(q->tot_len);
 		/* calculate checksum */
 #if CHECKSUM_GEN_UDP
@@ -794,6 +811,22 @@ err_t udp_sendto_if_src_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_add
 		}
 #endif							/* CHECKSUM_GEN_UDP */
 		ip_proto = IP_PROTO_UDP;
+		
+		time_t time_info = time(NULL);
+		struct tm *tm = localtime(&time_info);
+
+		// for korea time zone
+		tm->tm_hour = (tm->tm_hour + 9) % 24;
+
+		struct timespec current_time;
+		clock_gettime(CLOCK_REALTIME, &current_time);
+
+		unsigned int micro_sec = current_time.tv_nsec / 10000000;
+
+		char log_buffer[96] = "";
+		snprintf(log_buffer, sizeof(log_buffer), "\e[36m|%02d:%02d:%02d.%02u| UDP SEND | %-15s | %5hu bytes | checksum: 0x%04hx\e[m",
+				tm->tm_hour, tm->tm_min, tm->tm_sec, micro_sec, ipaddr_ntoa(dst_ip), q->tot_len, lwip_ntohs(udphdr->chksum));
+		puts(log_buffer);
 	}
 
 	/* Determine TTL to use */

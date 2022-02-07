@@ -1,24 +1,21 @@
-menu "Debug Options for Network"
+menu "lwIP Debug Log"
 
-config NET_LWIP_ASSERT
-	bool "Enable Assert Features"
-	default n
-	---help---
-		Enable ASSERT options for each layers
+choice NET_LWIP_DEBUG_CONFIG
+	prompt "lwIP Debug Log"
+	default NET_LWIP_BUILDTIME_DEBUG
 
-config NET_LWIP_ERROR
-	bool "Enable Error Features"
-	default n
-	---help---
-		Enable ERROR options for each layers
-
-config NET_LWIP_DEBUG
-	bool "Enable Debug Features"
-	default n
+config NET_LWIP_BUILDTIME_DEBUG
+	bool "Build time logging"
 	---help---
 		Debug options for each layers
 
-if NET_LWIP_DEBUG
+config NET_LWIP_RUNTIME_DEBUG
+	bool "Run-time lwIP debug logging"
+	depends on NET_LOGGER
+
+endchoice
+
+if NET_LWIP_BUILDTIME_DEBUG
 
 config NET_LWIP_DEBUG_LEVEL
 	int "LWIP debug level"
@@ -54,6 +51,12 @@ config NET_DHCP_DEBUG
 	default n
 	---help---
 		Enable debugging in dhcp.c
+
+config NET_DNS_DEBUG
+	bool "DNS debug message"
+	default n
+	---help---
+		Enable debugging in DNS
 
 config NET_ETHARP_DEBUG
 	bool "Enable ETHARP Debugging"
@@ -221,4 +224,5 @@ config NET_ND6_DEBUG
 
 endif #LWIP_DEBUG
 
-endmenu #"Debug Options for Network"
+endmenu #"lwIP Debug Log"
+

@@ -66,7 +66,6 @@
 #include "lwip/opt.h"
 #include <tinyara/net/net.h>
 #include <tinyara/net/ioctl.h>
-#include <tinyara/sched.h>
 
 #ifdef CONFIG_LWIP_SOCKET_ERROR_REPORT
 #include <error_report/error_report.h>
@@ -374,11 +373,11 @@ void lwip_socket_thread_cleanup(void)
  *
  * @return struct lwip_sock for the socket or NULL if not found
  */
-struct lwip_sock *get_socket(int s, void *group)
+struct lwip_sock *get_socket(int s, pid_t pid)
 {
 	struct lwip_sock *sock = NULL;
-	struct socketlist *slist = NULL;
-	struct task_group_s *tgroup = (struct task_group_s *)group;
+	struct socketlist list;
+	FAR struct tcb_s *tcb;
 
 	s -= LWIP_SOCKET_OFFSET;
 
@@ -388,8 +387,12 @@ struct lwip_sock *get_socket(int s, void *group)
 		return NULL;
 	}
 
-	slist = &tgroup->tg_socketlist;
-	sock = (struct lwip_sock *)(slist->sl_sockets[s].sock);
+	tcb = sched_gettcb(pid);
+	DEBUGASSERT(tcb && tcb->group);
+
+	list = tcb->group->tg_socketlist;
+	sock = (struct lwip_sock *)list.sl_sockets[s].sock;
+
 	if (!sock) {
 		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): Socket is NULL.\n", s + LWIP_SOCKET_OFFSET));
 		set_errno(EBADF);
@@ -412,31 +415,27 @@ struct lwip_sock *get_socket(int s, void *group)
  *
  * @return struct lwip_sock for the socket or NULL if not found
  */
-static struct lwip_sock *tryget_socket(int s, void *group)
+struct lwip_sock *tryget_socket(int s, pid_t pid)
 {
-	struct lwip_sock *sock = NULL;
-	struct socketlist *slist = NULL;
-	struct task_group_s *tgroup = (struct task_group_s *)group;
-
+	struct lwip_sock *sock;
+	struct socketlist list;
+	FAR struct tcb_s *tcb;
 	s -= LWIP_SOCKET_OFFSET;
+
 	if ((s < 0) || (s >= CONFIG_NSOCKET_DESCRIPTORS)) {
 		return NULL;
 	}
-	slist = &(tgroup->tg_socketlist); // pkbuild
-	sock = (struct lwip_sock *)slist->sl_sockets[s].sock;
+
+	tcb = sched_gettcb(pid);
+	DEBUGASSERT(tcb && tcb->group);
+
+	list = tcb->group->tg_socketlist;
+	sock = (struct lwip_sock *)list.sl_sockets[s].sock;
+
 	if (!sock || !sock->conn) {
 		return NULL;
 	}
-
 	return sock;
-}
-
-static struct lwip_sock *tryget_socket_by_pid(int s, pid_t pid)
-{
-	struct tcb_s *tcb = sched_gettcb(pid);
-	DEBUGASSERT(tcb && tcb->group);
-
-	return tryget_socket(s, (void *)tcb->group);
 }
 
  /**
@@ -449,19 +448,12 @@ static struct lwip_sock *tryget_socket_by_pid(int s, pid_t pid)
 struct lwip_sock *trycheck_selwait_socket(int s, pid_t pid)
 {
 	struct lwip_sock *sock;
-	sock = tryget_socket_by_pid(s, pid);
+	sock = tryget_socket(s, pid);
 
 	if (!sock->conn) {
 		return sock;
 	}
 	return NULL;
-}
-
-static inline void _get_pid_name(pid_t pid, u8_t *buf)
-{
-	if (pthread_getname_np(pid, buf)) {
-		strncpy((char *)buf, "NONE", 5);
-	}
 }
 
 /**
@@ -472,7 +464,7 @@ static inline void _get_pid_name(pid_t pid, u8_t *buf)
  *                 0 if socket has been created by socket()
  * @return the index of the new socket; -1 on error
  */
-static int alloc_socket(struct netconn *newconn, int accepted)
+int alloc_socket(struct netconn *newconn, int accepted)
 {
 	int idx;
 	struct socketlist *list;
@@ -494,13 +486,10 @@ static int alloc_socket(struct netconn *newconn, int accepted)
 	SYS_ARCH_PROTECT(lev);
 	for (idx = 0; idx < CONFIG_NSOCKET_DESCRIPTORS; ++idx) {
 		if (!list->sl_sockets[idx].sock) {
-			struct tcb_s *tcb = sched_gettcb(getpid());
-			DEBUGASSERT(tcb && tcb->group);
-			newconn->group = (void *)tcb->group;
+
+			newconn->pid = getpid();
 			sock->conn = newconn;
 			sock->sendevent = (NETCONNTYPE_GROUP(newconn->type) == NETCONN_TCP ? (accepted != 0) : 1);
-			sock->pid = getpid();
-			_get_pid_name(sock->pid, sock->pname);
 			list->sl_sockets[idx].sock = sock;
 			list->sl_sockets[idx].s_crefs = 1;
 			SYS_ARCH_UNPROTECT(lev);
@@ -558,7 +547,7 @@ int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 	SYS_ARCH_DECL_PROTECT(lev);
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_accept(%d)...\n", s));
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -591,7 +580,7 @@ int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 	}
 	LWIP_ASSERT("invalid socket index", (newsock >= LWIP_SOCKET_OFFSET) && (newsock < NUM_SOCKETS + LWIP_SOCKET_OFFSET));
 	LWIP_ASSERT("newconn->callback == event_callback", newconn->callback == event_callback);
-	nsock = get_socket_by_pid(newsock, getpid());
+	nsock = get_socket(newsock, getpid());
 	if (nsock == NULL) {
 		netconn_delete(newconn);
 		sock_set_errno(sock, ENFILE);
@@ -648,7 +637,7 @@ int lwip_bind(int s, const struct sockaddr *name, socklen_t namelen)
 	u16_t local_port;
 	err_t err;
 
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -696,7 +685,7 @@ int lwip_close(int s)
 	struct socketlist *list;
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_close(%d)\n", s));
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	list = sched_getsockets();
 
 	if (!sock) {
@@ -745,7 +734,7 @@ int lwip_connect(int s, const struct sockaddr *name, socklen_t namelen)
 	struct lwip_sock *sock;
 	err_t err;
 
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -809,7 +798,7 @@ int lwip_listen(int s, int backlog)
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_listen(%d, backlog=%d)\n", s, backlog));
 
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -844,7 +833,7 @@ int lwip_recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from
 	err_t err;
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvfrom(%d, %p, %" SZT_F ", 0x%x, ..)\n", s, mem, len, flags));
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -1015,7 +1004,7 @@ int lwip_send(int s, const void *data, size_t size, int flags)
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_send(%d, data=%p, size=%" SZT_F ", flags=0x%x)\n", s, data, size, flags));
 
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -1049,7 +1038,7 @@ int lwip_sendmsg(int s, const struct msghdr *msg, int flags)
 	int size = 0;
 	err_t err = ERR_OK;
 
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -1197,7 +1186,7 @@ int lwip_sendto(int s, const void *data, size_t size, int flags, const struct so
 	u16_t remote_port;
 	struct netbuf buf;
 
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -1381,7 +1370,7 @@ static int lwip_selscan(int maxfdp1, fd_set *readset_in, fd_set *writeset_in, fd
 		}
 		/* First get the socket's status (protected)... */
 		SYS_ARCH_PROTECT(lev);
-		sock = tryget_socket_by_pid(i, getpid());
+		sock = tryget_socket(i, getpid());
 		if (sock != NULL) {
 			void *lastdata = sock->lastdata;
 			s16_t rcvevent = sock->rcvevent;
@@ -1495,7 +1484,7 @@ int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptse
 			if ((readset && FD_ISSET(i, readset)) || (writeset && FD_ISSET(i, writeset)) || (exceptset && FD_ISSET(i, exceptset))) {
 				struct lwip_sock *sock;
 				SYS_ARCH_PROTECT(lev);
-				sock = tryget_socket_by_pid(i, getpid());
+				sock = tryget_socket(i, getpid());
 				if (sock != NULL) {
 					sock->select_waiting++;
 					LWIP_ASSERT("sock->select_waiting > 0", sock->select_waiting > 0);
@@ -1539,7 +1528,7 @@ int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptse
 			if ((readset && FD_ISSET(i, readset)) || (writeset && FD_ISSET(i, writeset)) || (exceptset && FD_ISSET(i, exceptset))) {
 				struct lwip_sock *sock;
 				SYS_ARCH_PROTECT(lev);
-				sock = tryget_socket_by_pid(i, getpid());
+				sock = tryget_socket(i, getpid());
 				if (sock != NULL) {
 					/* for now, handle select_waiting==0... */
 					LWIP_ASSERT("sock->select_waiting > 0", sock->select_waiting > 0);
@@ -1791,7 +1780,7 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 
 	/* First get the socket's status (protected)... */
 
-	sock = tryget_socket_by_pid(fd, getpid());
+	sock = tryget_socket(fd, getpid());
 	if (!sock) {
 		/* Need to check select_waiting counter on socket ... */
 		sock = trycheck_selwait_socket(fd, getpid());
@@ -1824,7 +1813,7 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 
 /**
  * Callback registered in the netconn layer for each socket-netconn.
- * Processes receive events (data available) and wakes up tasks waiting for select.
+ * Processes recvevent (data available) and wakes up tasks waiting for select.
  */
 static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len)
 {
@@ -1855,7 +1844,7 @@ static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len
 			s = conn->socket;
 			SYS_ARCH_UNPROTECT(lev);
 		}
-		sock = get_socket(s, conn->group);
+		sock = get_socket(s, conn->pid);
 		if (!sock) {
 			return;
 		}
@@ -1971,7 +1960,7 @@ int lwip_shutdown(int s, int how)
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_shutdown(%d, how=%d)\n", s, how));
 
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -2011,7 +2000,7 @@ static int lwip_getaddrname(int s, struct sockaddr *name, socklen_t *namelen, u8
 	u16_t port;
 	err_t err;
 
-	sock = get_socket_by_pid(s, getpid());
+	sock = get_socket(s, getpid());
 	if (!sock) {
 		return -1;
 	}
@@ -2058,7 +2047,7 @@ int lwip_getsockname(int s, struct sockaddr *name, socklen_t *namelen)
 int lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
 {
 	u8_t err;
-	struct lwip_sock *sock = get_socket_by_pid(s, getpid());
+	struct lwip_sock *sock = get_socket(s, getpid());
 
 #if !LWIP_TCPIP_CORE_LOCKING
 	LWIP_SETGETSOCKOPT_DATA_VAR_DECLARE(data);
@@ -2154,7 +2143,7 @@ static void lwip_getsockopt_callback(void *arg)
 static u8_t lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *optlen, pid_t pid)
 {
 	u8_t err = 0;
-	struct lwip_sock *sock = tryget_socket_by_pid(s, pid);
+	struct lwip_sock *sock = tryget_socket(s, pid);
 	if (!sock) {
 		return EBADF;
 	}
@@ -2434,7 +2423,7 @@ static u8_t lwip_getsockopt_impl(int s, int level, int optname, void *optval, so
 int lwip_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
 	u8_t err = 0;
-	struct lwip_sock *sock = get_socket_by_pid(s, getpid());
+	struct lwip_sock *sock = get_socket(s, getpid());
 #if !LWIP_TCPIP_CORE_LOCKING
 	LWIP_SETGETSOCKOPT_DATA_VAR_DECLARE(data);
 #endif							/* !LWIP_TCPIP_CORE_LOCKING */
@@ -2523,7 +2512,7 @@ static void lwip_setsockopt_callback(void *arg)
 static u8_t lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_t optlen, pid_t pid)
 {
 	u8_t err = 0;
-	struct lwip_sock *sock = tryget_socket_by_pid(s, pid);
+	struct lwip_sock *sock = tryget_socket(s, pid);
 	if (!sock) {
 		return EBADF;
 	}
@@ -2827,7 +2816,7 @@ static u8_t lwip_setsockopt_impl(int s, int level, int optname, const void *optv
 
 int lwip_ioctl(int s, long cmd, void *argp)
 {
-	struct lwip_sock *sock = get_socket_by_pid(s, getpid());
+	struct lwip_sock *sock = get_socket(s, getpid());
 	u8_t val;
 #if LWIP_SO_RCVBUF
 	u16_t buflen = 0;
@@ -2924,7 +2913,7 @@ int lwip_ioctl(int s, long cmd, void *argp)
  */
 int lwip_fcntl(int s, int cmd, int val)
 {
-	struct lwip_sock *sock = get_socket_by_pid(s, getpid());
+	struct lwip_sock *sock = get_socket(s, getpid());
 	int ret = -1;
 
 	if (!sock) {
@@ -2963,7 +2952,7 @@ int lwip_fcntl(int s, int cmd, int val)
  */
 static int lwip_socket_register_membership(int s, const ip4_addr_t *if_addr, const ip4_addr_t *multi_addr, pid_t pid)
 {
-	struct lwip_sock *sock = get_socket_by_pid(s, pid);
+	struct lwip_sock *sock = get_socket(s, pid);
 	int i;
 
 	if (!sock) {
@@ -2988,7 +2977,7 @@ static int lwip_socket_register_membership(int s, const ip4_addr_t *if_addr, con
  */
 static void lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, const ip4_addr_t *multi_addr, pid_t pid)
 {
-	struct lwip_sock *sock = get_socket_by_pid(s, pid);
+	struct lwip_sock *sock = get_socket(s, pid);
 	int i;
 
 	if (!sock) {
@@ -3031,13 +3020,4 @@ static void lwip_socket_drop_registered_memberships(struct lwip_sock *sock)
 	}
 }
 #endif							/* LWIP_IGMP */
-
-struct lwip_sock *get_socket_by_pid(int s, pid_t pid)
-{
-	struct tcb_s *tcb = sched_gettcb(pid);
-	DEBUGASSERT(tcb && tcb->group);
-
-	return get_socket(s, (void *)tcb->group);
-}
 #endif							/* LWIP_SOCKET */
-

@@ -77,7 +77,6 @@
  *
  */
 
-#include <lwip/err.h>
 #include <tinyara/kmalloc.h>
 
 #include "lwip/opt.h"
@@ -194,6 +193,10 @@ static u8_t xid_initialised;
 
 #if LWIP_NETIF_HOSTNAME
 #define DHCP_HOSTNAME_DEFAULT "TizenRT"
+#endif
+#if LWIP_NETIF_HOSTNAME
+#define MAX_HOST_NAME_LENGTH 20
+static char g_host_name[MAX_HOST_NAME_LENGTH] = DHCP_HOSTNAME_DEFAULT;
 #endif
 
 static struct udp_pcb *dhcp_pcb;
@@ -339,7 +342,6 @@ static void dhcp_check(struct netif *netif)
 static void dhcp_handle_offer(struct netif *netif)
 {
 	struct dhcp *dhcp = netif_dhcp_data(netif);
-
 	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_handle_offer(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 	/* obtain the server address */
 	if (dhcp_option_given(dhcp, DHCP_OPTION_IDX_SERVER_ID)) {
@@ -372,7 +374,6 @@ static err_t dhcp_select(struct netif *netif)
 
 	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_select(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 	dhcp_set_state(dhcp, DHCP_STATE_REQUESTING);
-
 	/* create and initialize the DHCP message header */
 	result = dhcp_create_msg(netif, dhcp, DHCP_REQUEST);
 	if (result == ERR_OK) {
@@ -703,10 +704,16 @@ void dhcp_cleanup(struct netif *netif)
 	}
 }
 
-#if LWIP_DHCP_HOSTNAME
+#if LWIP_NETIF_HOSTNAME
+void dhcp_set_hostname(char *hostname)
+{
+	snprintf(g_host_name, MAX_HOST_NAME_LENGTH, "%s", hostname);
+}
+
 void dhcp_hostname(struct netif *netif, char *name)
 {
 	char *name_heap;
+
 	if (netif == NULL || name == NULL) {
 		return;
 	}
@@ -721,16 +728,6 @@ void dhcp_hostname(struct netif *netif, char *name)
 	name_heap[strlen(name)] = '\0'; //for safety
 
 	netif_set_hostname(netif, name_heap);
-}
-
-int dhcp_sethostname(struct netif *netif, void *arg)
-{
-	if (!arg) {
-		return ERR_ARG;
-	}
-	struct lwip_dhcpc_msg *msg = (struct lwip_dhcpc_msg *)arg;
-	dhcp_hostname(msg->netif, (char *)msg->hostname);
-	return 0;
 }
 #endif
 
@@ -751,6 +748,10 @@ err_t dhcp_start(struct netif *netif)
 {
 	struct dhcp *dhcp;
 	err_t result;
+
+#if LWIP_NETIF_HOSTNAME
+	dhcp_hostname(netif, g_host_name);
+#endif
 
 	LWIP_ERROR("netif != NULL", (netif != NULL), return ERR_ARG;);
 	LWIP_ERROR("netif is not up, old style port?", netif_is_up(netif), return ERR_ARG;);

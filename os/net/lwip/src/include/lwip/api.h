@@ -186,7 +186,7 @@ enum netconn_state {
  * to call netconn_accept 3 times without being blocked.
  * Same thing for receive mbox.
  *
- * RCVMINUS events say: Your call to a possibly blocking function is "acknowledged".
+ * RCVMINUS events say: Your call to to a possibly blocking function is "acknowledged".
  * Socket implementation decrements the counter.
  *
  * For TX, there is no need to count, its merely a flag. SENDPLUS means you may send something.
@@ -264,6 +264,12 @@ struct netconn {
 	sys_mbox_t acceptmbox;
 #endif							/* LWIP_TCP */
 	/* only used for socket layer */
+#if LWIP_SOCKET
+	int socket;
+	struct socketlist *slist;
+	/* interoperability with tinyara network stack */
+	int crefs;				/* for dup */
+#endif							/* LWIP_SOCKET */
 #if LWIP_SO_SNDTIMEO
 	/* timeout to wait for sending data (which means enqueueing data for sending
 	   in internal buffers) in milliseconds */
@@ -300,16 +306,8 @@ struct netconn {
 #endif							/* LWIP_TCP */
 	/* A callback function that is informed about events for this netconn */
 	netconn_callback callback;
-#if LWIP_SOCKET
-	int socket;
-	//pkbuild struct socketlist *slist;
-	/* interoperability with tinyara network stack */
-	int crefs;				/* for dup */
-	/* task group information that generates netconn
-	 * this will be used when get socketlist from task group
-	 */
-	void *group;
-#endif							/* LWIP_SOCKET */
+	/* pid information that generates netconn */
+	pid_t pid;
 };
 
 /* Register an Network connection event */
