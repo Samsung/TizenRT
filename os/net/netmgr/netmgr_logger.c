@@ -263,7 +263,6 @@ int netlogk_print(netlog_module_e mod,
 
 int netlogk_set_level(netlog_msg_s *msg)
 {
-	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
 	if (msg->mod == NL_MOD_LWIP) {
 		return netlogk_set_lwip_level(msg);
 	}
@@ -273,7 +272,6 @@ int netlogk_set_level(netlog_msg_s *msg)
 
 int netlogk_set_lwip_level(netlog_msg_s *msg)
 {
-	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
 	uint32_t lwip_mode = msg->sub_mod >> 4;
 	g_lwip_mod_level[lwip_mode] = msg->level;
 	return 0;
@@ -281,35 +279,30 @@ int netlogk_set_lwip_level(netlog_msg_s *msg)
 
 int netlogk_set_color(netlog_msg_s *msg)
 {
-	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
 	g_mod_config[msg->mod].color = msg->color;
 	return 0;
 }
 
 int netlogk_set_timer(netlog_msg_s *msg)
 {
-	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
 	g_nl_timer = msg->op;
 	return 0;
 }
 
 int netlogk_set_function(netlog_msg_s *msg)
 {
-	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
 	g_nl_function = msg->op;
 	return 0;
 }
 
 int netlogk_set_file(netlog_msg_s *msg)
 {
-	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
 	g_nl_files = msg->op;
 	return 0;
 }
 
 int netlogk_reset(void)
 {
-	printf("[pkbuild]  \t%s:%d\n", __FUNCTION__, __LINE__);
 	uint32_t size = sizeof(g_mod_config) / sizeof(netlog_config_s);
 	for (int i = 0; i < size; i++) {
 		g_mod_config[i].level = NL_LEVEL_UNKNOWN;
