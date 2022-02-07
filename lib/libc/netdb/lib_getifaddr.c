@@ -58,11 +58,11 @@ int getifaddrs(struct ifaddrs **ifap)
 	// iotivity doesn't call freeifaddr, so it's defined to static
 	static struct ifaddrs ifa;
 	static struct sockaddr_in addr, netmask;
-	static char ifname[10] = {0,};
+	static char ifname[10] = "wlan0";
 	uint8_t flags;
 
 	// get interface name to fetch ip address
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	/*int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
 		printf("socket() failed with errno: %d\n", errno);
 		return -1;
@@ -78,7 +78,7 @@ int getifaddrs(struct ifaddrs **ifap)
 		return ret;
 	}
 	close(sockfd);
-	strncpy(ifname, req.ifr_name, IFNAMSIZ);
+	strncpy(ifname, req.ifr_name, IFNAMSIZ);*/
 
 	memset(&ifa, 0, sizeof(ifa));
 	memset(&addr, 0, sizeof(addr));
@@ -97,5 +97,5 @@ int getifaddrs(struct ifaddrs **ifap)
 
 	*ifap = &ifa;
 
-	return ret;
+	return 0;
 }

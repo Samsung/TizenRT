@@ -26,7 +26,7 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
-#include <tinyara/netmgr/netctl.h>
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -76,8 +76,8 @@ struct hostent *gethostbyname(const char *name)
 
 	memset(&req, 0, sizeof(req));
 	req.type = GETHOSTBYNAME;
-	req.msg.netdb.host_name = name;
-	req.msg.netdb.host_entry = &g_hent;
+	req.host_name = name;
+	req.host_entry = &g_hent;
 
 	int ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
@@ -87,6 +87,6 @@ struct hostent *gethostbyname(const char *name)
 	}
 
 	close(sockfd);
-	return req.msg.netdb.host_entry;
+	return req.host_entry;
 }
 #endif
