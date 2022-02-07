@@ -26,7 +26,6 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
-#include <tinyara/netmgr/netctl.h>
 #include <tinyara/net/netlog.h>
 
 #define TAG "[NETLIB]"
@@ -58,7 +57,7 @@
  *
  ****************************************************************************/
 
-int netlib_getstats(void *arg)
+int netlib_getstats(void)
 {
 	int ret = -1;
 	struct req_lwip_data req;

@@ -70,11 +70,28 @@
 #include <netdb.h>
 #include <protocols/dhcpc.h>
 #include <netutils/netlib.h>
-#include <tinyara/netmgr/netctl.h>
+
 
 /****************************************************************************
  * Definitions
  ****************************************************************************/
+#define DHCPC_SET_IP4ADDR(intf, ip, netmask, gateway)	        \
+	do {							\
+		int res = -1;					\
+		res = netlib_set_ipv4addr(intf, &ip);		\
+		if (res == -1) {				\
+			nvdbg("set ipv4 addr error\n");	\
+		}						\
+		res = netlib_set_ipv4netmask(intf, &netmask);	\
+		if (res == -1) {				\
+			nvdbg("set netmask addr error\n");	\
+		}						\
+		res = netlib_set_dripv4addr(intf, &gateway);	\
+		if (res == -1) {				\
+			nvdbg("set route addr error\n");	\
+		}						\
+	} while (0)
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -97,17 +114,17 @@ int dhcp_client_start(const char *intf)
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		printf("socket() failed with errno: %d\n", errno);
+		ndbg("socket() failed with errno: %d\n", errno);
 		return ret;
 	}
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPCSTART;
-	req.msg.dhcp.intf = intf;
+	req.intf = intf;
 
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	if (ret == ERROR) {
-		printf("ioctl() failed with errno: %d\n", errno);
+		ndbg("ioctl() failed with errno: %d\n", errno);
 		close(sockfd);
 		return ret;
 	}
@@ -126,43 +143,16 @@ void dhcp_client_stop(const char *intf)
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		printf("socket() failed with errno: %d\n", errno);
+		ndbg("socket() failed with errno: %d\n", errno);
 		return;
 	}
 
 	memset(&req, 0, sizeof(req));
 	req.type = DHCPCSTOP;
-	req.msg.dhcp.intf = intf;
+	req.intf = intf;
 
 	(void)ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 
 	close(sockfd);
 	return;
-}
-
-int dhcp_client_sethostname(const char *intf, const char *hostname)
-{
-	int ret = -1;
-	struct req_lwip_data req;
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		printf("socket() failed with errno: %d\t%s\n", errno, __FUNCTION__);
-		return ret;
-	}
-
-	memset(&req, 0, sizeof(req));
-	req.type = DHCPCSETHOSTNAME;
-	req.msg.dhcp.intf = intf;
-	req.msg.dhcp.hostname = hostname;
-
-	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
-	close(sockfd);
-	if (ret == ERROR) {
-		printf("ioctl() failed with errno: %d\t%s\n", errno, __FUNCTION__);
-		return ret;
-	}
-	ret = req.req_res;
-
-	return ret;
 }
