@@ -105,15 +105,15 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	}
 	DBG_TRACE("%s is called", __FUNCTION__);
 
-	save_and_cli();
+	unsigned int irq_flags = save_and_cli();
 	if (rltk_wlan_check_isup(idx)) {
 		rltk_wlan_tx_inc(idx);
 	} else {
 		DBG_ERR("netif is DOWN");
-		restore_flags();
+		restore_flags(irq_flags);
 		return -1;
 	}
-	restore_flags();
+	restore_flags(irq_flags);
 
 #ifdef CONFIG_TX_ZERO_COPY
 	data = rtw_malloc(1640);
@@ -160,9 +160,9 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	rltk_wlan_send_skb(idx, skb);
 
 exit:
-	save_and_cli();
+	irq_flags = save_and_cli();
 	rltk_wlan_tx_dec(idx);
-	restore_flags();
+	restore_flags(irq_flags);
 	return ret;
 #endif
 }

@@ -136,8 +136,8 @@ void list_add(struct list_head *new, struct list_head *head);
 void list_add_tail(struct list_head *new, struct list_head *head);
 #endif
 
-extern void save_and_cli(void);
-extern void restore_flags(void);
+extern unsigned int save_and_cli(void);
+extern void restore_flags(unsigned int flag);
 //----- ------------------------------------------------------------------
 // SKB Operation
 //----- ------------------------------------------------------------------
