@@ -43,26 +43,14 @@ static _list _tizenrt_timer_table;
 static u8 _tizenrt_timer_table_init = 0;
 static _mutex _tizenrt_timer_mutex = NULL;
 
-static irqstate_t initial_tizen_flags, up_tizen_flag;
-static int flagcnt = 0;
-void save_and_cli()
+unsigned int save_and_cli(void)
 {
-	if(flagcnt){
-		up_tizen_flag = irqsave();
-	}else{
-		initial_tizen_flags = irqsave();
-	}
-	flagcnt++;
+	return irqsave();
 }
 
-void restore_flags()
+void restore_flags(unsigned int flag)
 {
-	flagcnt--;
-	if(flagcnt){
-		irqrestore(up_tizen_flag);
-	}else{
-		irqrestore(initial_tizen_flags);
-	}
+	irqrestore(flag);
 }
 
 void cli()
@@ -143,18 +131,12 @@ void _tizenrt_timer_wrapper(void *timer)
 
 u8 *_tizenrt_malloc(u32 sz)
 {
-	return kmm_zalloc(sz);
+	return kmm_malloc(sz);
 }
 
 u8 *_tizenrt_zmalloc(u32 sz)
 {
-	u8 *pbuf = _tizenrt_malloc(sz);
-
-	if (pbuf != NULL) {
-		memset(pbuf, 0, sz);
-	}
-
-	return pbuf;
+	return kmm_zalloc(sz);
 }
 
 void _tizenrt_mfree(u8 *pbuf, u32 sz)
@@ -353,12 +335,12 @@ static void _tizenrt_mutex_put(_lock *plock)
 
 static void _tizenrt_enter_critical(_lock *plock, _irqL *pirqL)
 {
-	save_and_cli();
+	printf("\n");
 }
 
 static void _tizenrt_exit_critical(_lock *plock, _irqL *pirqL)
 {
-	restore_flags();
+	printf("\n");
 }
 
 static void _tizenrt_enter_critical_from_isr(_lock *plock, _irqL *pirqL)
@@ -460,7 +442,7 @@ static void _tizenrt_spinunlock(_lock *plock)
 static void _tizenrt_spinlock_irqsave(_lock *plock, _irqL *irqL)
 {
 	DBG_INFO("\n");
-	save_and_cli();
+	/* save_and_cli(); */
 	_tizenrt_spinlock(plock);
 }
 
@@ -468,7 +450,7 @@ static void _tizenrt_spinunlock_irqsave(_lock *plock, _irqL *irqL)
 {
 	DBG_INFO("\n");
 	_tizenrt_spinunlock(plock);
-	restore_flags();
+	/* restore_flags(); */
 }
 
 static int _tizenrt_init_xqueue(_xqueue *queue, const char *name, u32 message_size, u32 number_of_messages)
@@ -567,16 +549,16 @@ static int _tizenrt_ATOMIC_READ(ATOMIC_T *v)
 
 static void _tizenrt_ATOMIC_ADD(ATOMIC_T *v, int i)
 {
-	save_and_cli();
+	unsigned int irq_flags = save_and_cli();
 	v->counter += i;
-	restore_flags();
+	restore_flags(irq_flags);
 }
 
 static void _tizenrt_ATOMIC_SUB(ATOMIC_T *v, int i)
 {
-	save_and_cli();
+	unsigned int irq_flags = save_and_cli();
 	v->counter -= i;
-	restore_flags();
+	restore_flags(irq_flags);
 }
 
 static void _tizenrt_ATOMIC_INC(ATOMIC_T *v)
@@ -593,11 +575,11 @@ static int _tizenrt_ATOMIC_ADD_RETURN(ATOMIC_T *v, int i)
 {
 	int temp;
 
-	save_and_cli();
+	unsigned int irq_flags = save_and_cli();
 	temp = v->counter;
 	temp += i;
 	v->counter = temp;
-	restore_flags();
+	restore_flags(irq_flags);
 
 	return temp;
 }
@@ -606,11 +588,11 @@ static int _tizenrt_ATOMIC_SUB_RETURN(ATOMIC_T *v, int i)
 {
 	int temp;
 
-	save_and_cli();
+	unsigned int irq_flags = save_and_cli();
 	temp = v->counter;
 	temp -= i;
 	v->counter = temp;
-	restore_flags();
+	restore_flags(irq_flags);
 
 	return temp;
 }
@@ -898,12 +880,12 @@ _timerHandle _tizenrt_timerCreate(const signed char *pcTimerName, osdepTickType 
 	timer->function = pxCallbackFunction;
 
 	if(_tizenrt_timer_mutex == NULL) {
-		save_and_cli();
+		unsigned int irq_flags = save_and_cli();
 		if(_tizenrt_timer_mutex == NULL) {
 			_tizenrt_mutex_init(&_tizenrt_timer_mutex);
 			INIT_LIST_HEAD(&_tizenrt_timer_table);
 		}
-		restore_flags();
+		restore_flags(irq_flags);
 	}
 
 	struct _tizenrt_timer_entry *timer_entry;
@@ -913,7 +895,6 @@ _timerHandle _tizenrt_timerCreate(const signed char *pcTimerName, osdepTickType 
 		kmm_free(timer);
 		return NULL;
 	}
-	memset(timer_entry, 0, sizeof(struct _tizenrt_timer_entry));
 	timer_entry->timer = timer;
 
 	_tizenrt_mutex_get(&_tizenrt_timer_mutex);
@@ -1161,12 +1142,12 @@ char * vTaskName(void)
 
 void vPortEnterCritical(void)
 {
-	save_and_cli();
+	printf("\n");
 }
 
 void vPortExitCritical(void)
 {
-	restore_flags();
+	printf("\n");
 }
 
 void vTaskDelay(int ms)

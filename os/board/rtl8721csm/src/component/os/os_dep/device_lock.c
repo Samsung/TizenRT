@@ -22,14 +22,12 @@ static _mutex device_mutex[RT_DEV_LOCK_MAX];
 static void device_mutex_init(RT_DEV_LOCK_E device)
 {
 	if(!DEVICE_MUTEX_IS_INIT(device)){
-		_lock lock;
-		_irqL irqL;
-		rtw_enter_critical(&lock, &irqL);
+		unsigned int irq_flags = save_and_cli();
 		if(!DEVICE_MUTEX_IS_INIT(device)){
 			rtw_mutex_init(&device_mutex[device]);
 			DEVICE_MUTEX_SET_INIT(device);
 		}
-		rtw_exit_critical(&lock, &irqL);
+		restore_flags(irq_flags);
 	}
 }
 
@@ -37,14 +35,12 @@ static void device_mutex_init(RT_DEV_LOCK_E device)
 void device_mutex_free(RT_DEV_LOCK_E device)
 {
 	if(DEVICE_MUTEX_IS_INIT(device)){
-		_lock lock;
-		_irqL irqL;
-		rtw_enter_critical(&lock, &irqL);
+		unsigned int irq_flags = save_and_cli();
 		if(!DEVICE_MUTEX_IS_INIT(device)){
 			rtw_mutex_free(&device_mutex[device]);
 			DEVICE_MUTEX_CLR_INIT(device);
 		}
-		rtw_exit_critical(&lock, &irqL);
+		restore_flags(irq_flags);
 	}
 }
 

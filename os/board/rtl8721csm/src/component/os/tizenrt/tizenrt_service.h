@@ -183,8 +183,8 @@ static __inline _list *get_list_head(_queue *queue)
 
 #define TIMER_MAX_DELAY				0xFFFFFFFF
 
-void save_and_cli(void);
-void restore_flags(void);
+unsigned int save_and_cli(void);
+void restore_flags(unsigned int flag);
 void cli(void);
 
 #ifndef mdelay
