@@ -136,17 +136,18 @@ static void elf_elfsize(struct elf_loadinfo_s *loadinfo)
 
 			if ((shdr->sh_flags & SHF_WRITE) != 0) {
 				datasize += ELF_ALIGNUP(shdr->sh_size);
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 				if (shdr->sh_type == SHT_NOBITS) {
-					loadinfo->binp->bsssize = ELF_ALIGNUP(shdr->sh_size);
+					loadinfo->binp->sizes[BIN_BSS] = ELF_ALIGNUP(shdr->sh_size);
 				}
-			} else if ((shdr->sh_flags & SHF_EXECINSTR) != 0) {
+			} 
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+			else if ((shdr->sh_flags & SHF_EXECINSTR) != 0) {
 				textsize += ELF_ALIGNUP(shdr->sh_size);
 			} else {
 				rosize += ELF_ALIGNUP(shdr->sh_size);
 			}
 #else
-			} else {
+			else {
 				textsize += ELF_ALIGNUP(shdr->sh_size);
 			}
 #endif
@@ -154,11 +155,11 @@ static void elf_elfsize(struct elf_loadinfo_s *loadinfo)
 	}
 
 	/* Save the allocation size */
+	loadinfo->binp->sizes[BIN_TEXT] = textsize;
+	loadinfo->binp->sizes[BIN_DATA] = datasize - loadinfo->binp->sizes[BIN_BSS];	/* Data size must contain size of data section only */
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	loadinfo->rosize = rosize;
+	loadinfo->binp->sizes[BIN_RO] = rosize;
 #endif
-	loadinfo->textsize = textsize;
-	loadinfo->datasize = datasize;
 
 }
 
@@ -189,10 +190,10 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 	/* Read each section into memory that is marked SHF_ALLOC + SHT_NOBITS */
 
 	binfo("Loaded sections:\n");
-	text = (FAR uint8_t *)loadinfo->textalloc;
-	data = (FAR uint8_t *)loadinfo->dataalloc;
+	text = (FAR uint8_t *)loadinfo->binp->sections[BIN_TEXT];
+	data = (FAR uint8_t *)loadinfo->binp->sections[BIN_DATA];
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	ro = (FAR uint8_t *)loadinfo->roalloc;
+	ro = (FAR uint8_t *)loadinfo->binp->sections[BIN_RO];
 #endif
 
 	for (i = 0; i < loadinfo->ehdr.e_shnum; i++) {
@@ -238,17 +239,6 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 			}
 		}
 
-		/* If there is no data in an allocated section, then the allocated
-		 * section must be cleared.
-		 */
-
-		else {
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			loadinfo->binp->bssstart = (uint32_t)*pptr;
-#endif
-			memset(*pptr, 0, shdr->sh_size);
-		}
-
 		/* Update sh_addr to point to copy in memory */
 
 		binfo("%d. %08lx->%08lx\n", i, (unsigned long)shdr->sh_addr, (unsigned long)*pptr);
@@ -282,7 +272,6 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 
 int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 {
-	size_t heapsize;
 #ifdef CONFIG_CXX_EXCEPTION
 	int exidx;
 #endif
@@ -303,52 +292,20 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 
 	elf_elfsize(loadinfo);
 
-	/* Determine the heapsize to allocate.  heapsize is ignored if there is
-	 * no address environment because the heap is a shared resource in that
-	 * case.  If there is no dynamic stack then heapsize must at least as big
-	 * as the fixed stack size since the stack will be allocated from the heap
-	 * in that case.
-	 */
-
-#if !defined(CONFIG_ARCH_ADDRENV)
-	heapsize = 0;
-#elif defined(CONFIG_ARCH_STACK_DYNAMIC)
-	heapsize = ARCH_HEAP_SIZE;
-#else
-	heapsize = MAX(ARCH_HEAP_SIZE, CONFIG_ELF_STACKSIZE);
-#endif
-
 	/* Allocate (and zero) memory for the ELF file. */
 
-	ret = elf_addrenv_alloc(loadinfo, loadinfo->textsize, loadinfo->datasize, heapsize);
+	ret = elf_addrenv_alloc(loadinfo);
 	if (ret < 0) {
 		berr("ERROR: elf_addrenv_alloc() failed: %d\n", ret);
 		goto errout_with_buffers;
 	}
-#ifdef CONFIG_ARCH_ADDRENV
-	/* If CONFIG_ARCH_ADDRENV=y, then the loaded ELF lies in a virtual address
-	 * space that may not be in place now.  elf_addrenv_select() will
-	 * temporarily instantiate that address space.
-	 */
-
-	ret = elf_addrenv_select(loadinfo);
-	if (ret < 0) {
-		berr("ERROR: elf_addrenv_select() failed: %d\n", ret);
-		goto errout_with_buffers;
-	}
-#ifdef CONFIG_BUILD_KERNEL
-	/* Initialize the user heap */
-
-	umm_initialize((FAR void *)CONFIG_ARCH_HEAP_VBASE, up_addrenv_heapsize(&loadinfo->addrenv));
-#endif
-#endif
 
 	/* Load ELF section data into memory */
 
 	ret = elf_loadfile(loadinfo);
 	if (ret < 0) {
 		berr("ERROR: elf_loadfile failed: %d\n", ret);
-		goto errout_with_addrenv;
+		goto errout_with_buffers;
 	}
 
 	/* Load static constructors and destructors. */
@@ -357,13 +314,13 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 	ret = elf_loadctors(loadinfo);
 	if (ret < 0) {
 		berr("ERROR: elf_loadctors failed: %d\n", ret);
-		goto errout_with_addrenv;
+		goto errout_with_buffers;
 	}
 
 	ret = elf_loaddtors(loadinfo);
 	if (ret < 0) {
 		berr("ERROR: elf_loaddtors failed: %d\n", ret);
-		goto errout_with_addrenv;
+		goto errout_with_buffers;
 	}
 #endif
 
@@ -376,24 +333,9 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 	}
 #endif
 
-#ifdef CONFIG_ARCH_ADDRENV
-	/* Restore the original address environment */
-
-	ret = elf_addrenv_restore(loadinfo);
-	if (ret < 0) {
-		berr("ERROR: elf_addrenv_restore() failed: %d\n", ret);
-		goto errout_with_buffers;
-	}
-#endif
 	return OK;
 
 	/* Error exits */
-
-errout_with_addrenv:
-#ifdef CONFIG_ARCH_ADDRENV
-	(void)elf_addrenv_restore(loadinfo);
-#endif
-
 errout_with_buffers:
 	elf_unload(loadinfo);
 	return ret;

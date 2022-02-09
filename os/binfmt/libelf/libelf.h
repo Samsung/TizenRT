@@ -336,55 +336,13 @@ int elf_loaddtors(FAR struct elf_loadinfo_s *loadinfo);
  *
  * Input Parameters:
  *   loadinfo - Load state information
- *   textsize - The size (in bytes) of the .text address environment needed
- *     for the ELF image (read/execute).
- *   datasize - The size (in bytes) of the .bss/.data address environment
- *     needed for the ELF image (read/write).
- *   heapsize - The initial size (in bytes) of the heap address environment
- *     needed by the task.  This region may be read/write only.
  *
  * Returned Value:
  *   Zero (OK) on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
-int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo, size_t textsize, size_t datasize, size_t heapsize);
-
-/****************************************************************************
- * Name: elf_addrenv_select
- *
- * Description:
- *   Temporarily select the task's address environment.
- *
- * Input Parameters:
- *   loadinfo - Load state information
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno value on failure.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_ADDRENV
-#define elf_addrenv_select(l) up_addrenv_select(&(l)->addrenv, &(l)->oldenv)
-#endif
-
-/****************************************************************************
- * Name: elf_addrenv_restore
- *
- * Description:
- *   Restore the address environment before elf_addrenv_select() was called..
- *
- * Input Parameters:
- *   loadinfo - Load state information
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno value on failure.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_ADDRENV
-#define elf_addrenv_restore(l) up_addrenv_restore(&(l)->oldenv)
-#endif
+int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo);
 
 /****************************************************************************
  * Name: elf_addrenv_free

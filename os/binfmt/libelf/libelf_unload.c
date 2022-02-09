@@ -107,22 +107,12 @@ int elf_unload(struct elf_loadinfo_s *loadinfo)
 	/* Release memory used to hold static constructors and destructors */
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-#ifndef CONFIG_ARCH_ADDRENV
 	if (loadinfo->ctoralloc != 0) {
-#ifdef CONFIG_APP_BINARY_SEPARATION
-		mm_free(loadinfo->uheap, loadinfo->ctoralloc);
-#else
 		kumm_free(loadinfo->ctoralloc);
-#endif
 	}
 	if (loadinfo->dtoralloc != 0) {
-#ifdef CONFIG_APP_BINARY_SEPARATION
-		mm_free(loadinfo->uheap, loadinfo->dtoralloc);
-#else
 		kumm_free(loadinfo->dtoralloc);
-#endif
 	}
-#endif
 
 	loadinfo->ctoralloc = NULL;
 	loadinfo->ctors = NULL;

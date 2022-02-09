@@ -367,9 +367,6 @@ ret_err:
 
 int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exports, int nexports)
 {
-#ifdef CONFIG_ARCH_ADDRENV
-	int status;
-#endif
 	int ret;
 	int i;
 
@@ -394,19 +391,6 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 	} else {
 		exports = (struct symtab_s *)g_lib_symhash;
 		nexports = g_num_lib_syms;
-	}
-#endif
-
-#ifdef CONFIG_ARCH_ADDRENV
-	/* If CONFIG_ARCH_ADDRENV=y, then the loaded ELF lies in a virtual address
-	 * space that may not be in place now.  elf_addrenv_select() will
-	 * temporarily instantiate that address space.
-	 */
-
-	ret = elf_addrenv_select(loadinfo);
-	if (ret < 0) {
-		berr("ERROR: elf_addrenv_select() failed: %d\n", ret);
-		goto ret_err;
 	}
 #endif
 
@@ -441,40 +425,18 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 		}
 	}
 
-#if defined(CONFIG_ARCH_ADDRENV)
+#if defined(CONFIG_ARCH_HAVE_COHERENT_DCACHE)
 	/* Ensure that the I and D caches are coherent before starting the newly
 	 * loaded module by cleaning the D cache (i.e., flushing the D cache
 	 * contents to memory and invalidating the I cache).
 	 */
 
-#if 0							/* REVISIT... has some problems */
-	(void)up_addrenv_coherent(&loadinfo->addrenv);
-#else
-	up_coherent_dcache(loadinfo->textalloc, loadinfo->textsize);
-	up_coherent_dcache(loadinfo->dataalloc, loadinfo->datasize);
-#endif
-
-	/* Restore the original address environment */
-
-	status = elf_addrenv_restore(loadinfo);
-	if (status < 0) {
-		berr("ERROR: elf_addrenv_restore() failed: %d\n", status);
-		if (ret == OK) {
-			ret = status;
-		}
-	}
-#elif defined(CONFIG_ARCH_HAVE_COHERENT_DCACHE)
-	/* Ensure that the I and D caches are coherent before starting the newly
-	 * loaded module by cleaning the D cache (i.e., flushing the D cache
-	 * contents to memory and invalidating the I cache).
-	 */
-
-	up_coherent_dcache(loadinfo->textalloc, loadinfo->textsize);
-	up_coherent_dcache(loadinfo->dataalloc, loadinfo->datasize);
+	up_coherent_dcache(loadinfo->binp->sections[BIN_TEXT], loadinfo->binp->sizes[BIN_TEXT]);
+	up_coherent_dcache(loadinfo->binp->sections[BIN_DATA], loadinfo->binp->sizes[BIN_DATA]);
 
 #endif
 
-#if defined(CONFIG_ARCH_ADDRENV) || defined(CONFIG_SUPPORT_COMMON_BINARY)
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
 ret_err:
 #endif
 	if (loadinfo->strtab) {
@@ -485,5 +447,6 @@ ret_err:
 		kmm_free((void *)loadinfo->symtab);
 		loadinfo->symtab = (uintptr_t)NULL;
 	}
+
 	return ret;
 }

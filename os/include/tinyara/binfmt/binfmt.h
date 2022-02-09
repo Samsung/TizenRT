@@ -75,16 +75,18 @@
  * Public Types
  ****************************************************************************/
 enum {
-	ALLOC_TEXT,
+	BIN_TEXT,
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-	ALLOC_CTOR,
-	ALLOC_DTOR,
+	BIN_CTOR,
+	BIN_DTOR,
 #endif
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	ALLOC_RO,
-	ALLOC_DATA,
+	BIN_RO,
 #endif
-	ALLOC_MAX
+	BIN_DATA,
+	BIN_BSS,
+	BIN_HEAP,
+	BIN_MAX
 };
 
 /* The type of one C++ constructor or destructor */
@@ -105,38 +107,25 @@ struct symtab_s;
 struct binary_s {
 	/* Information provided to the loader to load and bind a module */
 
-	FAR const char *filename;	/* Full path to the binary to be loaded (See NOTE 1 above) */
+	FAR const char *filename;		/* Full path to the binary to be loaded (See NOTE 1 above) */
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	struct mm_heap_s *uheap;	/* User heap pointer to allocate memory for sections */
-	uint32_t uheap_size;		/* The size of user heap */
-	uint32_t ramstart;		/* Start address of ram partition */
-	uint32_t ramsize;		/* Size of the RAM paritition */
-	uint32_t heapstart;		/* Start address of app heap area */
-	uint32_t datastart;		/* Start address of data section */
+	struct mm_heap_s *uheap;		/* User heap pointer to allocate memory for sections */
+	uint32_t ramstart;			/* Start address of ram partition */
+	uint32_t ramsize;			/* Size of the RAM paritition */
 #endif
 
-	size_t textsize;		/* Size of text section */
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	size_t rosize;			/* Size of ro section */
-	size_t datasize;		/* Size of data section */
-	uint32_t reload;		/* Indicate whether this binary will be reloaded */
-	uint32_t bssstart;		/* Start address of bss section */
-	size_t bsssize;			/* Size of bss section */
-	uint32_t data_backup;		/* Start address of copy of data section */
+	uint32_t reload;			/* Indicate whether this binary will be reloaded */
+	uint32_t data_backup;			/* Start address of copy of data section */
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	uint8_t islibrary;		/* Is this bin object containing a library */
+	uint8_t islibrary;			/* Is this bin object containing a library */
 #ifdef CONFIG_ARM_MPU							/* MPU register values for common binary only */
 	uint32_t cmn_mpu_regs[MPU_REG_NUMBER * MPU_NUM_REGIONS];	/* Common binary MPU is configured during loading and disabled during unload_module */
 #endif
 #endif
-#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
-	FAR char *argbuffer;		/* Allocated argument list */
-	FAR char **argv;			/* Copy of argument list */
-#else
-	FAR char *const *argv;		/* Argument list */
-#endif
+	FAR char *const *argv;			/* Argument list */
 	FAR const struct symtab_s *exports;	/* Table of exported symbols */
 	int nexports;				/* The number of symbols in exports[] */
 
@@ -145,29 +134,15 @@ struct binary_s {
 	 */
 
 	main_t entrypt;				/* Entry point into a program module */
-	FAR void *mapped;			/* Memory-mapped, address space */
-	FAR void *alloc[ALLOC_MAX];	/* Allocated address spaces */
+	FAR uint32_t sections[BIN_MAX];		/* Allocated sections */
+	FAR size_t sizes[BIN_MAX];		/* Size of sections */
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-	/* Constructors/destructors */
-
-	FAR binfmt_ctor_t *ctors;	/* Pointer to a list of constructors */
-	FAR binfmt_dtor_t *dtors;	/* Pointer to a list of destructors */
+	FAR binfmt_ctor_t *ctors;		/* Pointer to a list of constructors */
+	FAR binfmt_dtor_t *dtors;		/* Pointer to a list of destructors */
 	uint16_t nctors;			/* Number of constructors in the list */
 	uint16_t ndtors;			/* Number of destructors in the list */
 #endif
-
-#ifdef CONFIG_ARCH_ADDRENV
-	/* Address environment.
-	 *
-	 * addrenv - This is the handle created by up_addrenv_create() that can be
-	 *   used to manage the tasks address space.
-	 */
-
-	group_addrenv_t addrenv;	/* Task group address environment */
-#endif
-
-	size_t mapsize;				/* Size of the mapped address region (needed for munmap) */
 
 	/* Start-up information that is provided by the loader, but may be modified
 	 * by the caller between load_module() and exec_module() calls.

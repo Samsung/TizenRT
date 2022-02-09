@@ -121,10 +121,14 @@ static void elf_dumploadinfo(FAR struct elf_loadinfo_s *loadinfo)
 	int i;
 
 	binfo("LOAD_INFO:\n");
-	binfo("  textalloc:    %08lx\n", (long)loadinfo->textalloc);
-	binfo("  dataalloc:    %08lx\n", (long)loadinfo->dataalloc);
-	binfo("  textsize:     %ld\n", (long)loadinfo->textsize);
-	binfo("  datasize:     %ld\n", (long)loadinfo->datasize);
+	binfo("  textalloc:    %08lx\n", (long)loadinfo->binp->sections[BIN_TEXT]);
+	binfo("  textsize:     %ld\n", (long)loadinfo->binp->sizes[BIN_TEXT]);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	binfo("  roalloc:      %08lx\n", (long)loadinfo->binp->sections[BIN_RO]);
+	binfo("  rosize:       %ld\n", (long)loadinfo->binp->sizes[BIN_RO]);
+#endif
+	binfo("  dataalloc:    %08lx\n", (long)loadinfo->binp->sections[BIN_DATA]);
+	binfo("  datasize:     %ld\n", (long)loadinfo->binp->sizes[BIN_DATA]);
 	binfo("  filelen:      %ld\n", (long)loadinfo->filelen);
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	binfo("  ctoralloc:    %08lx\n", (long)loadinfo->ctoralloc);
@@ -182,31 +186,8 @@ static void elf_dumploadinfo(FAR struct elf_loadinfo_s *loadinfo)
 #ifdef CONFIG_ELF_DUMPBUFFER
 static void elf_dumpentrypt(FAR struct binary_s *binp, FAR struct elf_loadinfo_s *loadinfo)
 {
-#ifdef CONFIG_ARCH_ADDRENV
-	int ret;
+	elf_dumpbuffer("Entry code", (FAR const uint8_t *)binp->entrypt, MIN(loadinfo->sizes[BIN_TEXT] - loadinfo->ehdr.e_entry, 512));
 
-	/* If CONFIG_ARCH_ADDRENV=y, then the loaded ELF lies in a virtual address
-	 * space that may not be in place now.  elf_addrenv_select() will
-	 * temporarily instantiate that address space.
-	 */
-
-	ret = elf_addrenv_select(loadinfo);
-	if (ret < 0) {
-		berr("ERROR: elf_addrenv_select() failed: %d\n", ret);
-		return;
-	}
-#endif
-
-	elf_dumpbuffer("Entry code", (FAR const uint8_t *)binp->entrypt, MIN(loadinfo->textsize - loadinfo->ehdr.e_entry, 512));
-
-#ifdef CONFIG_ARCH_ADDRENV
-	/* Restore the original address environment */
-
-	ret = elf_addrenv_restore(loadinfo);
-	if (ret < 0) {
-		berr("ERROR: elf_addrenv_restore() failed: %d\n", ret);
-	}
-#endif
 }
 #else
 #define elf_dumpentrypt(b, l)
@@ -235,13 +216,11 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	/* Initialize the ELF library to load the program binary. */
 	loadinfo.offset = binp->offset;
 	loadinfo.filelen = binp->filelen;
-#ifdef CONFIG_APP_BINARY_SEPARATION
 	loadinfo.binp = binp;
-#endif
 
 	ret = elf_init(binp->filename, &loadinfo);
-	elf_dumploadinfo(&loadinfo);
 	if (ret != 0) {
+		elf_dumploadinfo(&loadinfo);
 		berr("Failed to initialize for load of ELF program: %d\n", ret);
 		goto errout;
 	}
@@ -263,48 +242,16 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 		goto errout_with_load;
 	}
 
-	/* Return the load information */
 
-	binp->entrypt = (main_t)(loadinfo.textalloc + loadinfo.ehdr.e_entry);
+	binp->entrypt = (main_t)((uint32_t)loadinfo.binp->sections[BIN_TEXT] + loadinfo.ehdr.e_entry);
 	if (binp->stacksize == 0) {
 		binp->stacksize = CONFIG_ELF_STACKSIZE;
 	}
 
-	/* Add the ELF allocation to the alloc[] only if there is no address
-	 * environment.  If there is an address environment, it will automatically
-	 * be freed when the function exits
-	 *
-	 * REVISIT:  If the module is loaded then unloaded, wouldn't this cause
-	 * a memory leak?
-	 */
-
-#ifdef CONFIG_ARCH_ADDRENV
-	/* Save the address environment in the binfmt structure.  This will be
-	 * needed when the module is executed.
-	 */
-
-	up_addrenv_clone(&loadinfo.addrenv, &binp->addrenv);
-#else
-	binp->alloc[ALLOC_TEXT] = (FAR void *)loadinfo.textalloc;
-	binp->textsize = loadinfo.textsize;
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-	binp->alloc[ALLOC_CTOR] = loadinfo.ctoralloc;
-	binp->alloc[ALLOC_DTOR] = loadinfo.dtoralloc;
+	binp->sections[BIN_CTOR] = loadinfo.ctoralloc;
+	binp->sections[BIN_DTOR] = loadinfo.dtoralloc;
 #endif
-#endif
-
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	binp->alloc[ALLOC_RO] = (FAR void *)loadinfo.roalloc;
-	binp->alloc[ALLOC_DATA] = (FAR void *)loadinfo.dataalloc;
-	binp->rosize = loadinfo.rosize;
-	/* loadinfo.datasize includes the size of data and bss sections.
-	 * But, binp->datasize is used to backup the data section as
-	 * part of RO region. So, we subtract bss size from loadinfo.datasize
-	 * to obtain the size of just the data backup.
-	 */
-	binp->datasize = loadinfo.datasize - binp->bsssize;
-#endif
-	binp->datastart = loadinfo.dataalloc;
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	/* Save information about constructors and destructors. */
