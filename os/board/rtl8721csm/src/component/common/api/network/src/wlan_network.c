@@ -75,7 +75,7 @@ void wlan_network()
 		printf("\n\r%s xTaskCreate(init_thread) failed", __FUNCTION__);
 }
 #else
-#include "wifi/wifi_conf.h"
+#include "wifi_conf.h"
 #include "wlan_intf.h"
 #include "wifi_constants.h"
 #include <platform/platform_stdlib.h>

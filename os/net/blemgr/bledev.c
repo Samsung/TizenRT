@@ -35,7 +35,7 @@
 		}										\
 	} while (0)
 
-static trble_queue *g_scan_queue = NULL;
+static trble_scan_queue *g_scan_queue = NULL;
 
 int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len)
 {
@@ -60,14 +60,13 @@ int trble_scan_data_enque(trble_scanned_device *info)
 
 	int i;
 	uint32_t *u1 = (uint32_t *)info;
-	uint32_t *u2 = (uint32_t *)(g_scan_queue->queue + (g_scan_queue->data_size * g_scan_queue->write_index));
-	for (i = 0; i < g_scan_queue->data_size / sizeof(uint32_t); i++) {
+	uint32_t *u2 = (uint32_t *)&g_scan_queue->queue[g_scan_queue->write_index];
+	for (i = 0; i < sizeof(trble_scanned_device) / sizeof(uint32_t); i++) {
 		*(u2 + i) = *(u1 + i);
 	}
 	g_scan_queue->write_index = write_index_next;
 
 	sem_post(&g_scan_queue->countsem);
-	sem_post(g_scan_queue->grp_count);
 
 	return 0;
 }
@@ -93,7 +92,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		if (t_server == NULL) {
 			t_server = bledrv_server_get_null_config();
 		}
-		g_scan_queue = (trble_queue *)param.param[1];
+		g_scan_queue = (trble_scan_queue *)param.param[1];
 
 		TRBLE_DRV_CALL(ret, dev, init, (dev, t_client, t_server));
 
