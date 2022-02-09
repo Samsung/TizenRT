@@ -73,7 +73,7 @@ typedef struct {
 
 typedef enum {
 	LWNL_REQ_COMMON_GETADDRINFO,
-  LWNL_REQ_COMMON_NETLOG,
+	LWNL_REQ_COMMON_NETLOG,
 } lwnl_req_common;
 
 typedef struct {

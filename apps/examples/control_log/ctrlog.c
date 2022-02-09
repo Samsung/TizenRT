@@ -179,7 +179,7 @@ static netlog_module_e _get_mod(char *mod_str)
 	int size = sizeof(g_mod_table_str) / sizeof(char *);
 	for (int i = 0; i < size; i++) {
 		/* lwIP has additional submodule. So instead of comparing null
-		 * chracter at the end of string, it won't compare it */
+		 * character at the end of string, it won't compare it */
 		if (strncmp(mod_str, g_mod_table_str[i], strlen(g_mod_table_str[i])) == 0) {
 			return g_mod_table[i];
 		}

@@ -21,16 +21,16 @@
 #include "netlog_util.h"
 
 typedef enum {
-  NL_OPS_TIMER,
-  NL_OPS_FUNCTION,
-  NL_OPS_FILE,
-  NL_OPS_LEVEL,
-  NL_OPS_COLOR,
-  NL_OPS_RESET,
+	NL_OPS_TIMER,
+	NL_OPS_FUNCTION,
+	NL_OPS_FILE,
+	NL_OPS_LEVEL,
+	NL_OPS_COLOR,
+	NL_OPS_RESET,
 } nl_ops_e;
 
 typedef struct netlog_msg {
-  nl_ops_e ops;
+	nl_ops_e ops;
 	nl_color_e color;
 	nl_options op;
 	netlog_module_e mod;
