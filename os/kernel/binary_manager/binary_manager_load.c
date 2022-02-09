@@ -345,12 +345,13 @@ static int binary_manager_terminate_binary(int bin_idx)
 			return BINMGR_OPERATION_FAIL;
 		}
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		if (binp == NULL || binp->reload != true)
-#endif
-		{
+		if (binp == NULL || binp->reload != true) {
 			g_lib_binp = NULL;
 			BIN_LOADINFO(bin_idx) = NULL;
 		}
+#else
+		g_lib_binp = NULL;
+#endif
 		BIN_STATE(bin_idx) = BINARY_INACTIVE;
 		bmvdbg("Unload common binary Done!!\n");
 		return BINMGR_OK;

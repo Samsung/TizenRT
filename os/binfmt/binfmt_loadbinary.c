@@ -33,7 +33,6 @@
 #include <tinyara/sched.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binary_manager.h>
-#include <tinyara/mpu.h>
 
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 #include "libelf/libelf.h"
@@ -107,8 +106,8 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			goto errout_with_bin;
 		}
 
-		memcpy((void *)bin->datastart, (const void *)bin->data_backup, bin->datasize);
-		memset((void *)bin->bssstart, 0, bin->bsssize);
+		memcpy((void *)bin->sections[BIN_DATA], (const void *)bin->data_backup, bin->sizes[BIN_DATA]);
+		memset((void *)bin->sections[BIN_BSS], 0, bin->sizes[BIN_BSS]);
 		bin->reload = false;
 	} else {
 #endif
@@ -169,30 +168,17 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 			goto errout_with_bin;
 		}
 
-		memcpy((void *)bin->data_backup, (const void *)bin->datastart, bin->datasize);
+		memcpy((void *)bin->data_backup, (const void *)bin->sections[BIN_DATA], bin->sizes[BIN_DATA]);
 	}
 #endif
 
+	elf_save_bin_section_addr(bin);
+	binfmt_set_mpu(bin);
+
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
-		g_umm_app_id = (uint32_t *)(bin->datastart + 4);
-		elf_save_bin_section_addr(bin);
+		g_umm_app_id = (uint32_t *)(bin->sections[BIN_DATA] + 4);
 
-#if (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU))
-		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_COMMON_BIN);
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		/* Get MPU register values for MPU regions */
-		mpu_get_register_config_value(&bin->cmn_mpu_regs[0], nregion - 3, (uintptr_t)bin->alloc[ALLOC_TEXT], bin->textsize, true,  true);
-		mpu_get_register_config_value(&bin->cmn_mpu_regs[3], nregion - 2, (uintptr_t)bin->alloc[ALLOC_RO],   bin->rosize,   true,  false);
-		mpu_get_register_config_value(&bin->cmn_mpu_regs[6], nregion - 1, (uintptr_t)bin->alloc[ALLOC_DATA], bin->ramsize,  false, false);
-#else
-		mpu_get_register_config_value(&bin->cmn_mpu_regs[0], nregion - 1, (uintptr_t)bin->ramstart,          bin->ramsize,  false, true);
-#endif
-		/* Set MPU register values to real MPU h/w */
-		for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
-			up_mpu_set_register(&bin->cmn_mpu_regs[i]);
-		}
-#endif
 		/* Update binary table */
 		BIN_STATE(binary_idx) = BINARY_RUNNING;
 		BIN_LOADVER(binary_idx) = bin->bin_ver;
@@ -204,11 +190,10 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	/* If we support common binary, then we need to place a pointer to the app's heap object
 	 * into the heap table which is present at the start of the common library data section
 	 */
-	uint32_t *heap_table = (uint32_t *)(g_lib_binp->datastart + 8);
-	heap_table[binary_idx] = bin->heapstart;
+	uint32_t *heap_table = (uint32_t *)(g_lib_binp->sections[BIN_DATA] + 8);
+	heap_table[binary_idx] = bin->sections[BIN_HEAP];
 #endif
 
-	elf_save_bin_section_addr(bin);
 	/* Start the module */
 	pid = exec_module(bin);
 	if (pid < 0) {
@@ -220,12 +205,12 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 	/* Print Binary section address & size details */
 
-	binfo("[%s] text    start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->alloc[ALLOC_TEXT], bin->textsize);
+	binfo("[%s] text    start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_TEXT], bin->sizes[BIN_TEXT]);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	binfo("[%s] rodata  start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->alloc[ALLOC_RO], bin->rosize);
-	binfo("[%s] data    start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->datastart, bin->datasize);
-	binfo("[%s] bss     start addr =  0x%x  size = %u\n", bin->bin_name, (uint32_t)bin->bssstart, bin->bsssize);
+	binfo("[%s] rodata  start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_RO], bin->sizes[BIN_RO]);
 #endif
+	binfo("[%s] data    start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_DATA], bin->sizes[BIN_DATA]);
+	binfo("[%s] bss     start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_BSS], bin->sizes[BIN_BSS]);
 
 	return pid;
 

@@ -90,21 +90,17 @@ int dump_module(FAR const struct binary_s *bin)
 		berr("  filename:  %s\n", bin->filename);
 		berr("  argv:      %p\n", bin->argv);
 		berr("  entrypt:   %p\n", bin->entrypt);
-		berr("  mapped:    %p size=%d\n", bin->mapped, bin->mapsize);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		berr("  text alloc:     %p\n", bin->alloc[ALLOC_TEXT]);
-		berr("  ro alloc:     %p\n", bin->alloc[ALLOC_RO]);
-		berr("  data alloc:     %p\n", bin->alloc[ALLOC_DATA]);
+		berr("  text alloc:     %p\n", bin->sections[BIN_TEXT]);
+		berr("  ro alloc:     %p\n", bin->sections[BIN_RO]);
+		berr("  data alloc:     %p\n", bin->sections[BIN_DATA]);
 #else
-		berr("  start of alloc:     %p\n", bin->alloc[0]);
+		berr("  start of alloc:     %p\n", bin->sections[0]);
 #endif
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-		berr("  alloc:     %p %p\n", bin->alloc[ALLOC_CTOR], bin->alloc[ALLOC_DTOR]);
+		berr("  alloc:     %p %p\n", bin->sections[BIN_CTOR], bin->sections[BIN_DTOR]);
 		berr("  ctors:     %p nctors=%d\n", bin->ctors, bin->nctors);
 		berr("  dtors:     %p ndtors=%d\n", bin->dtors, bin->ndtors);
-#endif
-#ifdef CONFIG_ARCH_ADDRENV
-		berr("  addrenv:   %p\n", bin->addrenv);
 #endif
 		berr("  stacksize: %d\n", bin->stacksize);
 		berr("  unload:    %p\n", bin->unload);

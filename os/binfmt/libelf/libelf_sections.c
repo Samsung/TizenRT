@@ -188,9 +188,9 @@ static inline int elf_sectname(FAR struct elf_loadinfo_s *loadinfo, FAR const El
 #ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
 void *elf_find_start_section_addr(struct binary_s *binp)
 {
-	int text_addr = (int)binp->alloc[ALLOC_TEXT];
-	int ro_addr = (int)binp->alloc[ALLOC_DATA];
-	int data_addr = (int)binp->alloc[ALLOC_DATA];
+	int text_addr = (int)binp->sections[BIN_TEXT];
+	int ro_addr = (int)binp->sections[BIN_RO];
+	int data_addr = (int)binp->sections[BIN_DATA];
 
 	if (text_addr <= ro_addr) {
 		if (text_addr <= data_addr) {
@@ -225,14 +225,14 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 	bin_info = (bin_addr_info_t *)kmm_malloc(sizeof(bin_addr_info_t));
 	if (bin_info != NULL) {
 		bin_info->bin_idx = bin->binary_idx;
-		bin_info->text_addr = (uint32_t)bin->alloc[ALLOC_TEXT];
-		bin_info->text_size = bin->textsize;
+		bin_info->text_addr = bin->sections[BIN_TEXT];
+		bin_info->text_size = bin->sizes[BIN_TEXT];
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 		binfo("[%s] text_addr : %x\n", bin->bin_name, bin_info->text_addr);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		bin_info->rodata_addr = (uint32_t)bin->alloc[ALLOC_RO];
-		bin_info->data_addr = (uint32_t)bin->datastart;
-		bin_info->bss_addr = (uint32_t)bin->bssstart;
+		bin_info->rodata_addr = bin->sections[BIN_RO];
+		bin_info->data_addr = bin->sections[BIN_DATA];
+		bin_info->bss_addr = bin->sections[BIN_BSS];
 
 		binfo("   rodata_addr : %x\n", bin_info->rodata_addr);
 		binfo("   data_addr   : %x\n", bin_info->data_addr);

@@ -59,11 +59,9 @@
 #include <sys/types.h>
 #include <assert.h>
 #include <debug.h>
-#ifdef CONFIG_APP_BINARY_SEPARATION
 #include <queue.h>
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 #include "libelf/libelf.h"
-#endif
 #endif
 
 #include <tinyara/mm/mm.h>
@@ -73,9 +71,7 @@
 #include "binfmt.h"
 
 #ifdef CONFIG_BINFMT_LOADABLE
-#ifdef CONFIG_APP_BINARY_SEPARATION
 extern volatile sq_queue_t g_delayed_kufree;
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -103,12 +99,11 @@ extern volatile sq_queue_t g_delayed_kufree;
 int binfmt_exit(FAR struct binary_s *bin)
 {
 	int ret;
-#ifdef CONFIG_APP_BINARY_SEPARATION
 	irqstate_t flags;
 	FAR void *address;
 	uint32_t uheap_start;
 	uint32_t uheap_end;
-#endif
+
 	DEBUGASSERT(bin != NULL);
 
 	/* Unload the module */
@@ -120,9 +115,8 @@ int binfmt_exit(FAR struct binary_s *bin)
 
 	elf_delete_bin_section_addr(bin);
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
 	uheap_start = (uint32_t)bin->uheap;
-	uheap_end = uheap_start + bin->uheap_size;
+	uheap_end = uheap_start + bin->sizes[BIN_HEAP];
 
 	/* Remove resources which in binary to be unloaded from delayed deallocation. */
 	address = sq_peek(&g_delayed_kufree);
@@ -136,7 +130,7 @@ int binfmt_exit(FAR struct binary_s *bin)
 		address = (FAR void *)sq_next((FAR sq_entry_t *)address);
 	}
 	mm_disable_app_heap_list(bin->uheap);
-#endif
+
 	/* Free the load structure */
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME

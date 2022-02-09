@@ -94,21 +94,7 @@
 static inline int exec_dtors(FAR struct binary_s *binp)
 {
 	binfmt_dtor_t *dtor = binp->dtors;
-#ifdef CONFIG_ARCH_ADDRENV
-	save_addrenv_t oldenv;
-	int ret;
-#endif
 	int i;
-
-	/* Instantiate the address environment containing the destructors */
-
-#ifdef CONFIG_ARCH_ADDRENV
-	ret = up_addrenv_select(&binp->addrenv, &oldenv);
-	if (ret < 0) {
-		berr("ERROR: up_addrenv_select() failed: %d\n", ret);
-		return ret;
-	}
-#endif
 
 	/* Execute each destructor */
 
@@ -119,13 +105,7 @@ static inline int exec_dtors(FAR struct binary_s *binp)
 		dtor++;
 	}
 
-	/* Restore the address environment */
-
-#ifdef CONFIG_ARCH_ADDRENV
-	return up_addrenv_restore(&oldenv);
-#else
 	return OK;
-#endif
 }
 #endif
 
@@ -180,14 +160,6 @@ int unload_module(FAR struct binary_s *binp)
 
 		binfmt_freeargv(binp);
 
-		/* Unmap mapped address spaces */
-
-		if (binp->mapped) {
-			binfo("Unmapping address space: %p\n", binp->mapped);
-
-			munmap(binp->mapped, binp->mapsize);
-		}
-
 		/* Free allocated address spaces */
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -209,10 +181,10 @@ int unload_module(FAR struct binary_s *binp)
 			 * They need to be freed each.
 			 */
 			int section_idx;
-			for (section_idx = 0; section_idx < ALLOC_MAX; section_idx++) {
-				if (binp->alloc[section_idx]) {
-					binfo("Freeing alloc[%d]: %p\n", section_idx, binp->alloc[section_idx]);
-					kmm_free((FAR void *)binp->alloc[section_idx]);
+			for (section_idx = 0; section_idx < BIN_MAX; section_idx++) {
+				if (binp->sections[section_idx]) {
+					binfo("Freeing sections[%d]: %p\n", section_idx, binp->sections[section_idx]);
+					kmm_free((FAR void *)binp->sections[section_idx]);
 				}
 			}
 
@@ -220,8 +192,8 @@ int unload_module(FAR struct binary_s *binp)
 		}
 #else
 		/* Whole loading sections are in one memory block, so free the first allocated memory is enough. */
-		binfo("Freeing : %p\n", binp->alloc[0]);
-		kmm_free((FAR void *)binp->alloc[0]);
+		binfo("Freeing : %p\n", binp->sections[0]);
+		kmm_free((FAR void *)binp->sections[0]);
 #endif
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY

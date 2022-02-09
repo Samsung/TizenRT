@@ -60,6 +60,9 @@
 #include <tinyara/config.h>
 
 #include <tinyara/binfmt/binfmt.h>
+#ifdef CONFIG_ARM_MPU
+#include <tinyara/mpu.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -147,6 +150,50 @@ void binfmt_freeargv(FAR struct binary_s *bin);
 #else
 #define binfmt_freeargv(bin)
 #endif
+
+
+#ifdef CONFIG_ARM_MPU
+static inline void binfmt_set_mpu(struct binary_s *binp)
+{
+	uint32_t *regs = NULL;
+	uint8_t nregion = 0;
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	if (binp->islibrary) {
+		regs = binp->cmn_mpu_regs;
+		nregion = mpu_get_nregion_info(MPU_REGION_COMMON_BIN);
+	} else
+#endif
+	{
+		regs = sched_self()->mpu_regs;
+		nregion = mpu_get_nregion_info(MPU_REGION_APP_BIN);
+	}
+
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	/* Configure text section as RO and executable region */
+	mpu_get_register_config_value(&regs[0], nregion - 3, (uintptr_t)binp->sections[BIN_TEXT], binp->sizes[BIN_TEXT], true, true);
+	/* Configure ro section as RO and non-executable region */
+	mpu_get_register_config_value(&regs[3], nregion - 2, (uintptr_t)binp->sections[BIN_RO], binp->sizes[BIN_RO], true, false);
+	/* Complete RAM partition will be configured as RW region */
+	mpu_get_register_config_value(&regs[6], nregion - 1, (uintptr_t)binp->sections[BIN_DATA], binp->ramsize, false, false);
+#else
+	/* Complete RAM partition will be configured as RW region */
+	mpu_get_register_config_value(&regs[0], nregion - 1, (uintptr_t)binp->ramstart, binp->ramsize, false, true);
+#endif
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	if (binp->islibrary) {
+		/* Set MPU register values to real MPU h/w */
+		for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+			up_mpu_set_register(&regs[i]);
+		}
+	}
+#endif
+}
+#else
+#define binfmt_mpuinit(bin)
+#endif
+
 
 #undef EXTERN
 #if defined(__cplusplus)
