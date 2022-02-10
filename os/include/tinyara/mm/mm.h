@@ -713,7 +713,18 @@ int mm_check_heap_corruption(struct mm_heap_s *heap);
 #define HEAP_END_IDX   (CONFIG_KMM_NHEAPS - 1)
 
 /* Function to manage the memory allocation failure case. */
+#if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
+void mm_ioctl_alloc_fail(size_t size);
+#define mm_manage_alloc_fail(h, b, e, s, t) 	do { \
+							(void)h; \
+							(void)b; \
+							(void)e; \
+							(void)t; \
+							mm_ioctl_alloc_fail(s); \
+						} while (0)
+#else
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type);
+#endif
 
 #if CONFIG_KMM_NHEAPS > 1
 /**

@@ -499,6 +499,12 @@ int get_errno(void);
 #define mllvdbg(...)
 #endif
 
+#if defined(CONFIG_MM_ASSERT_ON_FAIL) && defined(CONFIG_APP_BINARY_SEPARATION) && defined (__KERNEL__)
+#define mfdbg(format, ...) lldbg(format, ##__VA_ARGS__)
+#else
+#define mfdbg(format, ...) dbg(format, ##__VA_ARGS__)
+#endif
+
 #ifdef CONFIG_DEBUG_NET_ERROR
 #define ndbg(format, ...)    dbg_noarg(format, ##__VA_ARGS__)
 #define nlldbg(format, ...)  lldbg_noarg(format, ##__VA_ARGS__)
@@ -1307,6 +1313,12 @@ int get_errno(void);
 #else
 #define mvdbg       (void)
 #define mllvdbg     (void)
+#endif
+
+#if defined(CONFIG_MM_ASSERT_ON_FAIL) && defined(CONFIG_APP_BINARY_SEPARATION) && defined (__KERNEL__)
+#define mfdbg lldbg
+#else
+#define mfdbg dbg
 #endif
 
 #ifdef CONFIG_DEBUG_NET_ERROR
