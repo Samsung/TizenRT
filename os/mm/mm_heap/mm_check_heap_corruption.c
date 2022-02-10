@@ -96,9 +96,9 @@ static void dump_node(struct mm_allocnode_s *node, node_type_t type)
 #endif
 
 	if (type == TYPE_CORRUPTED) {
-		dbg("CORRUPTED NODE: addr = 0x%08x size = %u preceding size = %u\n", node, node->size, MM_PREV_NODE_SIZE(node));
+		mfdbg("CORRUPTED NODE: addr = 0x%08x size = %u preceding size = %u\n", node, node->size, MM_PREV_NODE_SIZE(node));
 	} else if (type == TYPE_OVERFLOWED) {
-		dbg("OVERFLOWED NODE: addr = 0x%08x size = %u type = %c\n", node, node->size, IS_ALLOCATED_NODE(node) ? 'A' : 'F');
+		mfdbg("OVERFLOWED NODE: addr = 0x%08x size = %u type = %c\n", node, node->size, IS_ALLOCATED_NODE(node) ? 'A' : 'F');
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	pid_t pid = node->pid;
@@ -112,12 +112,12 @@ static void dump_node(struct mm_allocnode_s *node, node_type_t type)
 	}
 #if CONFIG_TASK_NAME_SIZE > 0
 	if (prctl(PR_GET_NAME_BYPID, myname, pid) == OK) {
-		dbg("Node owner pid = %d (%s%s), allocated by code at addr = 0x%08x\n", node->pid, myname, is_stack, node->alloc_call_addr);
+		mfdbg("Node owner pid = %d (%s%s), allocated by code at addr = 0x%08x\n", node->pid, myname, is_stack, node->alloc_call_addr);
 	} else {
-		dbg("Node owner pid = %d (Exited Task%s), allocated by code at addr = 0x%08x\n", node->pid, is_stack, node->alloc_call_addr);
+		mfdbg("Node owner pid = %d (Exited Task%s), allocated by code at addr = 0x%08x\n", node->pid, is_stack, node->alloc_call_addr);
 	}
 #else
-	dbg("Node owner pid = %d%s, allocated by code at addr = 0x%08x\n", node->pid, is_stack, node->alloc_call_addr);
+	mfdbg("Node owner pid = %d%s, allocated by code at addr = 0x%08x\n", node->pid, is_stack, node->alloc_call_addr);
 #endif
 #endif
 }
@@ -173,11 +173,11 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 
 		for (; node < heap->mm_heapend[region]; prev = node, node = next, next = (struct mm_allocnode_s *)((char *)next + next->size)) {
 			if (prev && prev->size != MM_PREV_NODE_SIZE(node)) {
-				dbg("#########################################################################################\n");
-				dbg("ERROR: Heap node corruption detected\n");
+				mfdbg("#########################################################################################\n");
+				mfdbg("ERROR: Heap node corruption detected\n");
 				dump_node(prev, TYPE_OVERFLOWED);
 				dump_node(node, TYPE_CORRUPTED);
-				dbg("#########################################################################################\n");
+				mfdbg("#########################################################################################\n");
 				if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 					&& !up_interrupt_context()
@@ -187,19 +187,19 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				}
 				return -1;
 			} else if (node->size != MM_PREV_NODE_SIZE(next)) {
-				dbg("#########################################################################################\n");
-				dbg("ERROR: Heap node corruption detected.\n");
-				dbg("=========================================================================================\n");
-				dbg("Possible corruption scenario 1:\n");
-				dbg("=========================================================================================\n");
+				mfdbg("#########################################################################################\n");
+				mfdbg("ERROR: Heap node corruption detected.\n");
+				mfdbg("=========================================================================================\n");
+				mfdbg("Possible corruption scenario 1:\n");
+				mfdbg("=========================================================================================\n");
 				dump_node(prev, TYPE_OVERFLOWED);
 				dump_node(node, TYPE_CORRUPTED);
-				dbg("=========================================================================================\n");
-				dbg("Possible corruption scenario 2:\n");
-				dbg("=========================================================================================\n");
+				mfdbg("=========================================================================================\n");
+				mfdbg("Possible corruption scenario 2:\n");
+				mfdbg("=========================================================================================\n");
 				dump_node(node, TYPE_OVERFLOWED);
 				dump_node(next, TYPE_CORRUPTED);
-				dbg("#########################################################################################\n");
+				mfdbg("#########################################################################################\n");
 				if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 					&& !up_interrupt_context()
@@ -210,13 +210,13 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				return -1;
 			} else if (IS_FREE_NODE(node)) {
 				if ((((struct mm_freenode_s *)node)->blink && ((struct mm_freenode_s *)node)->blink->flink != ((struct mm_freenode_s *)node))) {
-					dbg("#########################################################################################\n");
-					dbg("ERROR: Heap node corruption detected in free node list\n");
+					mfdbg("#########################################################################################\n");
+					mfdbg("ERROR: Heap node corruption detected in free node list\n");
 					dump_node(prev, TYPE_OVERFLOWED);
 					dump_node(node, TYPE_CORRUPTED);
-					dbg("Corrupted node blink(0x%08x) and prev node flink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->blink,
+					mfdbg("Corrupted node blink(0x%08x) and prev node flink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->blink,
 							((struct mm_freenode_s *)node)->blink->flink);
-					dbg("#########################################################################################\n");
+					mfdbg("#########################################################################################\n");
 					if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 						&& !up_interrupt_context()
@@ -226,13 +226,13 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					}
 					return -1;
 				} else if (((struct mm_freenode_s *)node)->flink && ((struct mm_freenode_s *)node)->flink->blink != ((struct mm_freenode_s *)node)) {
-					dbg("#########################################################################################\n");
-					dbg("ERROR: Heap node corruption detected in free node list\n");
+					mfdbg("#########################################################################################\n");
+					mfdbg("ERROR: Heap node corruption detected in free node list\n");
 					dump_node(prev, TYPE_OVERFLOWED);
 					dump_node(node, TYPE_CORRUPTED);
-					dbg("Corrupted node flink(0x%08x) and next node blink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->flink,
+					mfdbg("Corrupted node flink(0x%08x) and next node blink(0x%08x) do not match\n", ((struct mm_freenode_s *)node)->flink,
 							((struct mm_freenode_s *)node)->flink->blink);
-					dbg("#########################################################################################\n");
+					mfdbg("#########################################################################################\n");
 					if (!aborted
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 						 && !up_interrupt_context()

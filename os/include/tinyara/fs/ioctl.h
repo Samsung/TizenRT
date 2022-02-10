@@ -431,6 +431,7 @@
 
 #define MMINFOIOC_HEAP              _MMINFOIOC(0x0001)
 #define MMINFOIOC_PARSE             _MMINFOIOC(0x0002)
+#define MMINFOIOC_MNG_ALLOCFAIL     _MMINFOIOC(0x0003)
 
 /* Cpuload driver ioctl definitions ************************/
 

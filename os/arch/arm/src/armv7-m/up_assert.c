@@ -447,6 +447,7 @@ void up_assert(const uint8_t *filename, int lineno)
 		asserted_location = (uint32_t)kernel_assert_location;
 	}
 
+	irqstate_t flags = irqsave();
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
 #else
@@ -492,6 +493,8 @@ void up_assert(const uint8_t *filename, int lineno)
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
 #endif
+
+	irqrestore(flags);
 
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
