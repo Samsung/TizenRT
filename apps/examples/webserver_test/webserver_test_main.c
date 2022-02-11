@@ -528,7 +528,8 @@ static int ws_test_base(void *arg)
 	}
 
 	send_len = sndlen;
-	for (int i = 0; i <= param->keep_alive_count; i++) {
+	for (int i = 0; i < param->keep_alive_count; i++) {
+		read_finish = false;
 		if (!param->encoding) {
 			buf_len = 0;
 			sndlen = send_len;
@@ -721,6 +722,7 @@ static int ws_test_prepare_request(int argc, char** argv, struct http_client_req
 	FUNC_EN;
 	char *p, *q;
 	memset(request, 0, sizeof(struct http_client_request_t));
+	request->keep_alive_count = 1;
 
 	if (!strncmp(argv[2], "GET", 4)) {
 		request->method = WS_TEST_MODE_GET;
