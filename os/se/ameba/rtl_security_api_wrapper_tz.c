@@ -17,6 +17,7 @@
 ***************************************************************************************************/
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "flash_api.h"
 #include "device_lock.h"
@@ -29,6 +30,7 @@ typedef struct {
 	void (*device_unlock)(uint32_t);
 	void (*setstatusbits)(uint32_t);
 	int (*get_random_bytes)(void *, uint32_t);
+	void (*info_printf)(const char *);
 } nsfunc_ops_s;
 
 /* Flash Status Bit */
@@ -79,6 +81,11 @@ static void ns_setstatusbits(u32 NewState)
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 }
 
+static void ns_printf(const char *input)
+{
+	printf("%s\n", input);
+}
+
 extern int rtw_get_random_bytes(void *dst, u32 size);
 void *rtl_set_ns_func(void)
 {
@@ -89,6 +96,7 @@ void *rtl_set_ns_func(void)
 	ns_func.device_unlock = device_mutex_unlock;
 	ns_func.setstatusbits = ns_setstatusbits;
 	ns_func.get_random_bytes = rtw_get_random_bytes;
+	ns_func.info_printf = ns_printf;
 
 	return (void *)&ns_func;
 }
