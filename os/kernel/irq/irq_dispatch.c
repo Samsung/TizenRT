@@ -123,7 +123,7 @@ void irq_dispatch(int irq, FAR void *context)
 #endif
 
 #ifdef CONFIG_IRQ_SCHED_HISTORY
-	save_irq_scheduling_status(irq, (void *)vector);
+	save_irq_scheduling_status(irq);
 #endif
 
 	/* Then dispatch to the interrupt handler */

@@ -64,7 +64,7 @@ struct sched_history_s {
 #endif
 	pid_t pid;
 	uint8_t sched_priority;
-	struct tcb_s *ptcb;
+	uint8_t context_switch_reason;
 };
 
 typedef struct sched_history_s sched_history_t;
@@ -72,7 +72,6 @@ typedef struct sched_history_s sched_history_t;
 struct irq_history_s {
 	clock_t time;
 	uint32_t irq;
-	void *fn;
 };
 
 typedef struct irq_history_s irq_history_t;
@@ -118,7 +117,7 @@ struct sysdbg_s {
 typedef struct sysdbg_s sysdbg_t;
 
 extern void save_task_scheduling_status(struct tcb_s *tcb);
-extern void save_irq_scheduling_status(uint32_t irq, void *fn);
+extern void save_irq_scheduling_status(uint32_t irq);
 extern void save_semaphore_history(FAR sem_t *sem, void *addr, sem_status_t status);
 
 #undef EXTERN
