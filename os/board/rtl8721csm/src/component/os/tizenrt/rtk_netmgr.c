@@ -108,8 +108,10 @@ static void _scan_timer_handler(void *FunctionContext)
 	rtw_mutex_get(&scanlistbusy);
 	vddbg("scan Timer expired : sizeof(ap_scan_list_s) =%d, scan_number=%d \r\n", sizeof(ap_scan_list_s), scan_number);
 
-	if (saved_scan_list)
+	if (saved_scan_list) {
 		rtw_mfree((unsigned char *)saved_scan_list, sizeof(ap_scan_list_s) * scan_number);
+		saved_scan_list = NULL;
+	}
 	scan_number = 0;
 	rtw_del_timer(&(scan_timer));
 	rtw_mutex_put(&scanlistbusy);
@@ -120,8 +122,10 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 	rtw_mutex_get(&scanlistbusy);
 	// If application calls scan before scan result free(before timeout), release scan list and cancel timer
 	if (scan_number) {
-		if (saved_scan_list)
+		if (saved_scan_list) {
 			rtw_mfree((unsigned char *)saved_scan_list, sizeof(ap_scan_list_s) * scan_number);
+			saved_scan_list = NULL;
+		}
 		rtw_cancel_timer(&(scan_timer));
 		vddbg("scan is called before timeout\r\n");
 	} else {
@@ -134,6 +138,10 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 	scan_number	 = 0;
 	saved_scan_list = (ap_scan_list_s *)rtw_malloc(sizeof(ap_scan_list_s) * g_scan_num);
 	if (saved_scan_list == NULL) {
+		if (scan_timer.timer_hdl != NULL) {
+			rtw_cancel_timer(&(scan_timer));
+			rtw_del_timer(&(scan_timer));
+		}
 		rtw_mutex_put(&scanlistbusy);
 		return RTW_NOMEM;
 	}
@@ -473,6 +481,17 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_NONE;
 		wuret = TRWIFI_SUCCESS;
+		rtw_mutex_get(&scanlistbusy);
+		if (scan_timer.timer_hdl != NULL) {
+			rtw_cancel_timer(&(scan_timer));
+			rtw_del_timer(&(scan_timer));
+		}
+		if (saved_scan_list) {
+			rtw_mfree((unsigned char *)saved_scan_list, sizeof(ap_scan_list_s) * scan_number);
+			saved_scan_list = NULL;
+		}
+		scan_number = 0;
+		rtw_mutex_put(&scanlistbusy);
 		rtw_mutex_free(&scanlistbusy);
 	} else {
 		ndbg("[RTK] Failed to stop STA mode\n");
