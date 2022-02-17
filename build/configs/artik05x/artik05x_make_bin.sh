@@ -75,7 +75,7 @@ fi
 
 add_checksum() {
 	echo "ATTACHNS2: ${TIZENRT_BIN} --> ${SAMSUNG_NS2_BIN}"
-	${OS_DIR_PATH}/tools/s5jchksum.py ${OUTPUT_BINARY_PATH}/${TIZENRT_BIN} ${OUTPUT_BINARY_PATH}/${SAMSUNG_NS2_BIN}
+	python ${OS_DIR_PATH}/tools/s5jchksum.py ${OUTPUT_BINARY_PATH}/${TIZENRT_BIN} ${OUTPUT_BINARY_PATH}/${SAMSUNG_NS2_BIN}
 }
 
 signing() {
