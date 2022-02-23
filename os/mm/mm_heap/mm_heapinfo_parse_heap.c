@@ -205,7 +205,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		}
 
 		if (mode != HEAPINFO_SIMPLE) {
-			heapinfo_dbg("** PID(S) in Pid colum means that mem is used for stack of PID\n\n");
+			heapinfo_dbg("** PID(S) in Pid column means that mem is used for stack of PID\n\n");
 		}
 		mm_givesemaphore(heap);
 	}
