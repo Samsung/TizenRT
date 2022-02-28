@@ -149,6 +149,11 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 		 */
 
 		if (switch_needed) {
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which is being switched out */
+
+			save_task_scheduling_status(rtcb);
+#endif
 			/* If we are going to do a context switch, then now is the right
 			 * time to add any pending tasks back into the ready-to-run list.
 			 * task list now
@@ -174,6 +179,11 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				rtcb = this_task();
 				sllvdbg("New Active Task TCB=%p\n", rtcb);
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+				/* Save the task name which will be scheduled */
+
+				save_task_scheduling_status(rtcb);
+#endif
 				/* Restore rtcb data for context switching */
 				
 				up_restoretask(rtcb);
@@ -194,6 +204,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				struct tcb_s *nexttcb = this_task();
 #ifdef CONFIG_TASK_SCHED_HISTORY
 				/* Save the task name which will be scheduled */
+
 				save_task_scheduling_status(nexttcb);
 #endif
 				up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);

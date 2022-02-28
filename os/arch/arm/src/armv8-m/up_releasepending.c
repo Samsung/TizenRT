@@ -108,6 +108,10 @@ void up_release_pending(void)
 
 	/* sched_lock(); */
 	if (sched_mergepending()) {
+#ifdef CONFIG_TASK_SCHED_HISTORY
+		/* Save the task name which is being switched out */
+		save_task_scheduling_status(rtcb);
+#endif
 		/* The currently active task has changed!  We will need to switch
 		 * contexts.  First check if we are operating in interrupt context.
 		 */
@@ -131,6 +135,10 @@ void up_release_pending(void)
 			rtcb = this_task();
 			sllvdbg("New Active Task TCB=%p\n", rtcb);
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
 			/* Restore rtcb data for context switching */
 
 			up_restoretask(rtcb);

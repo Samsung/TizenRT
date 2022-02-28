@@ -125,6 +125,10 @@ void up_unblock_task(struct tcb_s *tcb)
 	 */
 
 	if (sched_addreadytorun(tcb)) {
+#ifdef CONFIG_TASK_SCHED_HISTORY
+		/* Save the task name which is being switched out */
+		save_task_scheduling_status(rtcb);
+#endif
 		/* The currently active task has changed! We need to do
 		 * a context switch to the new task.
 		 *
@@ -144,6 +148,10 @@ void up_unblock_task(struct tcb_s *tcb)
 
 			rtcb = this_task();
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
 			/* Restore rtcb data for context switching */
 
 			up_restoretask(rtcb);

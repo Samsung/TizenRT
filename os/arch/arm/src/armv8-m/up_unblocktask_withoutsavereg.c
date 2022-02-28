@@ -101,11 +101,15 @@
  ****************************************************************************/
 void up_unblock_task_without_savereg(struct tcb_s *tcb)
 {
-	struct tcb_s *rtcb;
+	struct tcb_s *rtcb = this_task();
 
 	/* Remove the task from the blocked task list */
 	dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+	/* Save the task name which is being switched out */
+	save_task_scheduling_status(rtcb);
+#endif
 	/* Reset its timeslice.  This is only meaningful for round
 	* robin tasks but it doesn't here to do it for everything
 	*/
@@ -144,6 +148,10 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 
 		rtcb = this_task();
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+		/* Save the task name which will be scheduled */
+		save_task_scheduling_status(rtcb);
+#endif
 		/* Restore rtcb data for context switching */
 
 		up_restoretask(rtcb);

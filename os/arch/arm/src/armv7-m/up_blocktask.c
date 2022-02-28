@@ -138,6 +138,11 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 	/* Now, perform the context switch if one is needed */
 
 	if (switch_needed) {
+#ifdef CONFIG_TASK_SCHED_HISTORY
+		/* Save the task name which is being switched out */
+
+		save_task_scheduling_status(rtcb);
+#endif
 		/* Are we in an interrupt handler? */
 
 		if (current_regs) {
@@ -153,6 +158,11 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 			rtcb = this_task();
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+
+			save_task_scheduling_status(rtcb);
+#endif
 			/* Restore rtcb data for context switching */
 
 			up_restoretask(rtcb);
@@ -173,6 +183,7 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			struct tcb_s *nexttcb = this_task();
 #ifdef CONFIG_TASK_SCHED_HISTORY
 			/* Save the task name which will be scheduled */
+
 			save_task_scheduling_status(nexttcb);
 #endif
 			up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
