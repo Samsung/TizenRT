@@ -544,11 +544,15 @@ bool osif_msg_send(void *p_handle, void *p_msg, uint32_t wait_ms)
 		return _FAIL;
 	}
 
-	if (osif_task_context_check() == true && wait_ms != 0xFFFFFFFF) {
+	if (wait_ms != 0xFFFFFFFF && osif_task_context_check() == true) {
 		struct timespec ts;
 		clock_gettime(CLOCK_REALTIME, &ts);
 		ts.tv_sec += wait_ms / 1000;
 		ts.tv_nsec += (wait_ms % 1000) * 1000 * 1000;
+		if (ts.tv_nsec >= NSEC_PER_SEC) {
+			ts.tv_sec ++;
+			ts.tv_nsec -= NSEC_PER_SEC;
+		}
 		if (mq_timedsend((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, prio, &ts) != OK) {
 			ret = get_errno();
 			dbg("mq time send fail: %d \n", ret);
@@ -583,6 +587,10 @@ bool osif_msg_recv(void *p_handle, void *p_msg, uint32_t wait_ms)
 		clock_gettime(CLOCK_REALTIME, &ts);
 		ts.tv_sec += wait_ms / 1000;
 		ts.tv_nsec += (wait_ms % 1000) * 1000 * 1000;
+		if (ts.tv_nsec >= NSEC_PER_SEC) {
+			ts.tv_sec ++;
+			ts.tv_nsec -= NSEC_PER_SEC;
+		}
 		if (mq_timedreceive((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, &prio, &ts) == ERROR) {
 			ret = get_errno();
 			if (ETIMEDOUT != ret)

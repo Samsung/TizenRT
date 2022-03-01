@@ -37,9 +37,9 @@
 /*============================================================================*
  *                              Macros
  *============================================================================*/
-#define BLE_TIZENRT_SCATTERNET_APP_TASK_PRIORITY             4         /* Task priorities */
+#define BLE_TIZENRT_SCATTERNET_APP_TASK_PRIORITY             5         /* Task priorities */
 #define BLE_TIZENRT_SCATTERNET_APP_TASK_STACK_SIZE           256 * 4   /* Task stack size */
-#define BLE_TIZENRT_SCATTERNET_CALLBACK_TASK_PRIORITY        (BLE_TIZENRT_SCATTERNET_APP_TASK_PRIORITY - 1)         /* Task priorities */
+#define BLE_TIZENRT_SCATTERNET_CALLBACK_TASK_PRIORITY        BLE_TIZENRT_SCATTERNET_APP_TASK_PRIORITY         /* Task priorities */
 #define BLE_TIZENRT_SCATTERNET_CALLBACK_TASK_STACK_SIZE      256 * 8   /* Task stack size */
 #define BLE_TIZENRT_SCATTERNET_MAX_NUMBER_OF_GAP_MESSAGE     0x20      /* GAP message queue size */
 #define BLE_TIZENRT_SCATTERNET_MAX_NUMBER_OF_IO_MESSAGE      0x20      /* IO message queue size */
