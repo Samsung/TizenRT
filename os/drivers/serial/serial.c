@@ -72,6 +72,9 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/serial/serial.h>
 #include <tinyara/fs/ioctl.h>
+#ifdef CONFIG_LOG_DUMP
+#include <tinyara/log_dump/log_dump.h>
+#endif
 
 /************************************************************************************
  * Definitions
@@ -265,6 +268,9 @@ static int uart_putxmitchar(FAR uart_dev_t *dev, int ch, bool oktoblock)
 	for (;;) {
 		if (nexthead != dev->xmit.tail) {
 			dev->xmit.buffer[dev->xmit.head] = ch;
+#ifdef CONFIG_LOG_DUMP
+			log_dump_save(ch);
+#endif
 			dev->xmit.head = nexthead;
 			return OK;
 		}

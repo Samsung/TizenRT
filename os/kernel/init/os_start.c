@@ -98,6 +98,9 @@
 #endif
 #include  "init/init.h"
 #include  "debug/memdbg.h"
+#ifdef CONFIG_LOG_DUMP
+#include <tinyara/log_dump/log_dump.h>
+#endif
 
 extern const uint32_t g_idle_topstack;
 
@@ -602,6 +605,10 @@ void os_start(void)
 
 #ifdef CONFIG_DEBUG_MM_WARN
 	display_memory_information();
+#endif
+
+#ifdef CONFIG_LOG_DUMP
+	DEBUGVERIFY(log_dump_init());
 #endif
 
 	DEBUGVERIFY(os_bringup());
