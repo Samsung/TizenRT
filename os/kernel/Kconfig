@@ -997,3 +997,32 @@ config PTHREAD_STACK_DEFAULT
 		Default pthread stack size
 endmenu # Stack size information
 
+config LOG_DUMP
+	bool "Enable log dump functionality"
+	default n
+	depends on DEBUG_MM_HEAPINFO
+
+if LOG_DUMP 
+
+config LOG_DUMP_CHUNK_SIZE
+	int "Log dump chunk size in bytes"
+	range 0 LOG_DUMP_MAX_SIZE
+	default 4096
+
+config LOG_DUMP_MAX_SIZE
+	int "Maximum size allocated for logs in bytes"
+	default 262144
+
+config LOG_DUMP_MIN_SIZE
+	int "Minimum size allocated for logs in bytes"
+	default 16384
+
+config LOG_DUMP_MEMCHECK_SIZE
+	int "Number of bytes written before checking the memory constraints"
+	default 1024
+
+config LOG_DUMP_MAX_FREE_HEAP
+	int "Maximum percent of memory occupied by logs compared to free heap"
+	default 20
+
+endif # LOG_DUMP

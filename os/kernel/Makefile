@@ -78,6 +78,7 @@ include environ/Make.defs
 include debug/Make.defs
 include preference/Make.defs
 include task_monitor/Make.defs
+include log_dump/Make.defs
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
