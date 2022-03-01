@@ -96,6 +96,9 @@ extern const struct procfs_operations proc_operations;
 extern const struct procfs_operations cpuload_operations;
 extern const struct procfs_operations uptime_operations;
 extern const struct procfs_operations version_operations;
+#if defined(CONFIG_LOG_DUMP)
+extern const struct procfs_operations logsave_operations;
+#endif
 
 /* This is not good.  These are implemented in drivers/mtd.  Having to
  * deal with them here is not a good coupling.
@@ -127,6 +130,10 @@ static const struct procfs_entry_s g_procfsentries[] = {
 
 #if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_FS_PROCFS_EXCLUDE_CPULOAD)
 	{"cpuload", &cpuload_operations},
+#endif
+
+#if defined(CONFIG_LOG_DUMP)
+	{"logsave", &logsave_operations},
 #endif
 
 #if defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
