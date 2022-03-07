@@ -694,6 +694,8 @@ struct mm_heap_s *mm_get_heap_with_index(int index);
 
 int mm_get_heapindex(void *mem);
 
+size_t mm_get_largest_freenode_size(void);
+
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
 void mm_initialize_app_heap_q(void);
 void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name);
