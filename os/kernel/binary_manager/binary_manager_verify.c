@@ -167,13 +167,8 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 			bin_size = ((common_binary_header_t *)header_data)->bin_size;
 			crc_hash = ((common_binary_header_t *)header_data)->crc_hash;
 		}
-		struct mallinfo mem;
-#ifdef CONFIG_CAN_PASS_STRUCTS
-		mem = kmm_mallinfo();
-#else
-		(void)kmm_mallinfo(&mem);
-#endif
-		crc_bufsize = crc_bufsize < (mem.mxordblk / 2) ? crc_bufsize : (mem.mxordblk / 2);
+		size_t largest_size = mm_get_largest_freenode_size();
+		crc_bufsize = crc_bufsize < (largest_size / 2) ? crc_bufsize : (largest_size / 2);
 		crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
 		if (!crc_buffer) {
 			bmdbg("Fail to malloc buffer for checking crc, size %u\n", crc_bufsize);
