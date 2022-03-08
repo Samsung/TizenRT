@@ -25,7 +25,8 @@ aliases:
 
 jobs:
   checkout_code:
-    machine: true
+    machine: 
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - checkout
@@ -35,7 +36,8 @@ jobs:
             - ./
             
   artik055s/audio:
-    machine: true
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -44,7 +46,8 @@ jobs:
       - *build-job
 
   artik053/st_things:
-    machine: true
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -53,7 +56,8 @@ jobs:
       - *build-job
 
   artik053/tc:
-    machine: true
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -62,7 +66,8 @@ jobs:
       - *build-job
 
   qemu/build_test:
-    machine: true
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -71,7 +76,8 @@ jobs:
       - *build-job
 
   esp_wrover_kit/hello_with_tash:
-    machine: true
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -80,7 +86,8 @@ jobs:
       - *build-job
 
   imxrt1020-evk/loadable_elf_apps:
-    machine: true
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -89,7 +96,8 @@ jobs:
       - *build-job
 
   rtl8721csm/hello:
-    machine: true
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -98,7 +106,8 @@ jobs:
       - *build-job
 
   rtl8721csm/loadable_apps:
-    machine: true
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
