@@ -34,8 +34,6 @@
 #include <netutils/netlib.h>
 #include <tinyara/net/netlog.h>
 
-#define TAG "[NETLIB]"
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -62,7 +60,7 @@ int netlib_netmon_sock(void *arg)
 	struct req_lwip_data req;
 	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
 	if (sockfd == -1) {
-		NET_LOGE(TAG, "socket() failed with errno: %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "socket() failed with errno: %d\n", errno);
 		return -1;
 	}
 
@@ -72,7 +70,7 @@ int netlib_netmon_sock(void *arg)
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	close(sockfd);
 	if (ret == ERROR) {
-		NET_LOGE(TAG, "ioctl() failed with errno: %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "ioctl() failed with errno: %d\n", errno);
 		return -1;
 	}
 	arg = (void *)req.msg.netmon.info;
@@ -105,7 +103,7 @@ int netlib_netmon_devstats(const char *ifname, void **arg)
 	struct req_lwip_data req;
 	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
 	if (sockfd == -1) {
-		NET_LOGE(TAG, "socket() failed with errno: %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "socket() failed with errno: %d\n", errno);
 		return -1;
 	}
 
@@ -116,7 +114,7 @@ int netlib_netmon_devstats(const char *ifname, void **arg)
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	close(sockfd);
 	if (ret == ERROR) {
-		NET_LOGE(TAG, "ioctl() failed with errno: %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "ioctl() failed with errno: %d\n", errno);
 		return -1;
 	}
 	ret = req.req_res;

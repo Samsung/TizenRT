@@ -67,8 +67,6 @@
 #include <netutils/netlib.h>
 #include <tinyara/net/netlog.h>
 
-#define TAG "[NETLIB]"
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -114,7 +112,7 @@ bool netlib_hwmacconv(const char *hwstr, uint8_t *hw)
 	unsigned char j;
 
 	if (strlen(hwstr) != 17) {
-		NET_LOGE(TAG, "insufficient buffer\n");
+		NET_LOGE(NL_MOD_NETLIB, "insufficient buffer\n");
 		return false;
 	}
 
@@ -131,7 +129,7 @@ bool netlib_hwmacconv(const char *hwstr, uint8_t *hw)
 
 			if (c == ':' || c == 0) {
 				*hw = tmp;
-				NET_LOGV(TAG, "HWMAC[%d]%0.2X\n", i, tmp);
+				NET_LOGV(NL_MOD_NETLIB, "HWMAC[%d]%0.2X\n", i, tmp);
 				++hw;
 				tmp = 0;
 			} else if (c >= '0' && c <= '9') {

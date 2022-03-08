@@ -33,17 +33,9 @@ typedef enum {
 	NL_OPT_DISABLE,
 } nl_options;
 
-typedef struct {
-	int idx;
-	int size;
-	char *buf;
-} netmgr_logger;
-
-typedef netmgr_logger *netmgr_logger_p;
-
 typedef enum {
 	NL_MOD_UNKNOWN,
-  NL_MODE_ALL,
+	NL_MODE_ALL,
 	/*  user level module */
 	NL_MOD_WIFI_MANAGER,
 	NL_MOD_NETLIB,
@@ -94,45 +86,17 @@ typedef enum {
 	NL_LWIP_IP6,
 	NL_LWIP_ND6,
 } netlog_lwip_sublevel_e;
-/*
- * DESCRIPTION: Initialize logger
- * RETURN: return 0 if succeed, else return negative if fail
- *
- * NOTE: netlogger_deinit() have to be called to prevent memory leak
- *       if it was succeeded.
- */
-int netlogger_init(netmgr_logger_p *log);
-
-/*
- * DESCRIPTION: Deinitialize logger
- * RETURN: None
- */
-void netlogger_deinit(netmgr_logger_p log);
-
-/*
- * DESCRIPTION: add msg to logger.
- * RETURN: return 0 if succeed, else return negative if fail to add logger.
- */
-int netlogger_debug_msg(netmgr_logger_p log, const char *format, ...);
-
-/*
- * DESCRIPTION: serialize message in logger to user memory region.
- * RETURN: return size of buffer if success, else return -1
- *
- * NOTE: a caller has responsible to free buf.
- */
-int netlogger_serialize(netmgr_logger_p log, char **buf);
 
 /*
  * DESCRIPTION: print log to stdout
  * RETURN: return log length
  */
 int netlogger_print(netlog_module_e mod,
-					netlog_log_level_e level,
-					const char *func,
-					const char *file,
-					const int line,
-					const char *fmt, ...);
+										netlog_log_level_e level,
+										const char *func,
+										const char *file,
+										const int line,
+										const char *fmt, ...);
 
 /*
  * DESCRIPTION: set level
@@ -173,6 +137,28 @@ int netlog_reset(void);
 /**************************************************
  * API
  ***************************************************/
+#ifdef CONFIG_NET_RUNTIME_LOG
+/*  network log for kernel space */
+#define NET_LOGK(tag, fmt, args...) \
+	nwdbg(fmt, ##args)
+#define NET_LOGKE(tag, fmt, args...) \
+	ndbg("%d " tag "[ERR]\t" fmt, __LINE__, ##args)
+#define NET_LOGKI(tag, fmt, args...) \
+	nwdbg("%d " tag "[INFO]\t" fmt, __LINE__, ##args)
+#define NET_LOGKV(tag, fmt, args...) \
+	nvdbg("%d " tag "[VERB]\t" fmt, __LINE__, ##args)
+/*  network log for user space */
+#define NET_LOG(mod, fmt, args...) \
+	netlogger_print(mod, NL_LEVEL_UNKNOWN, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+#define NET_LOGE(mod, fmt, args...) \
+	netlogger_print(mod, NL_LEVEL_ERROR, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+#define NET_LOGI(mod, fmt, args...) \
+	netlogger_print(mod, NL_LEVEL_INFO, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+#define NET_LOGV(mod, fmt, args...) \
+	netlogger_print(mod, NL_LEVEL_VERB, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+
+#else /*  CONFIG_NET_RUNTIME_LOG */
+/*  build time log */
 /*  network log for kernel space */
 #define NET_LOGK(tag, fmt, args...) \
 	nwdbg(fmt, ##args)
@@ -183,23 +169,49 @@ int netlog_reset(void);
 #define NET_LOGKV(tag, fmt, args...) \
 	nvdbg("%d " tag "[VERB]\t" fmt, __LINE__, ##args)
 
-/*  To-do: change printf to netlogger_print */
 /*  network log for user space */
-#ifdef __LINUX__
 #define NET_LOG(mod, fmt, args...) \
-	netlogger_print(mod, NL_LEVEL_UNKNOWN, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+	printf(fmt, ##args);
 #define NET_LOGE(mod, fmt, args...) \
-	netlogger_print(mod, NL_LEVEL_ERROR, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
+	printf(#mod "[ERR] " fmt, ##args);
 #define NET_LOGI(mod, fmt, args...) \
-	netlogger_print(mod, NL_LEVEL_INFO, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
-#define NET_LOGV(mod, fmt, args...) \
-	netlogger_print(mod, NL_LEVEL_VERB, __FUNCTION__, __FILE__, __LINE__, fmt, ##args)
-#else
-#define NET_LOG(mod, fmt, args...) \
-	printf(mod fmt, ##args);
-#define NET_LOGE(mod, fmt, args...) \
-	printf(mod"[ERR] " fmt, ##args);
-#define NET_LOGI(mod, fmt, args...) \
-	printf(mod"[INFO] " fmt, ##args);
+	printf(#mod "[INFO] " fmt, ##args);
 #define NET_LOGV(mod, fmt, args...)
-#endif
+
+#endif /*  CONFIG_NET_RUNTIME_LOG */
+
+typedef struct {
+	int idx;
+	int size;
+	char *buf;
+} netmgr_logger;
+
+typedef netmgr_logger *netmgr_logger_p;
+/*
+ * DESCRIPTION: Initialize logger
+ * RETURN: return 0 if succeed, else return negative if fail
+ *
+ * NOTE: netlogger_deinit() have to be called to prevent memory leak
+ *       if it was succeeded.
+ */
+int netlogger_init(netmgr_logger_p *log);
+
+/*
+ * DESCRIPTION: Deinitialize logger
+ * RETURN: None
+ */
+void netlogger_deinit(netmgr_logger_p log);
+
+/*
+ * DESCRIPTION: add msg to logger.
+ * RETURN: return 0 if succeed, else return negative if fail to add logger.
+ */
+int netlogger_debug_msg(netmgr_logger_p log, const char *format, ...);
+
+/*
+ * DESCRIPTION: serialize message in logger to user memory region.
+ * RETURN: return size of buffer if success, else return -1
+ *
+ * NOTE: a caller has responsible to free buf.
+ */
+int netlogger_serialize(netmgr_logger_p log, char **buf);

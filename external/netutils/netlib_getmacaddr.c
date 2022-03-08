@@ -68,7 +68,6 @@
 #include <netutils/netlib.h>
 #include <tinyara/net/netlog.h>
 
-#define TAG "[NETLIB]"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -105,13 +104,13 @@ int netlib_getmacaddr(const char *ifname, uint8_t *macaddr)
 {
 	int ret = ERROR;
 	if (!ifname || !macaddr) {
-		NET_LOGE(TAG, "invalid parameter %p %p\n", ifname, macaddr);
+		NET_LOGE(NL_MOD_NETLIB, "invalid parameter %p %p\n", ifname, macaddr);
 	}
 	/* Get a socket (only so that we get access to the INET subsystem) */
 
 	int sockfd = socket(PF_INETX, NETLIB_SOCK_IOCTL, 0);
 	if (sockfd < 0) {
-		NET_LOGE(TAG, "create socket %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "create socket %d\n", errno);
 	}
 
 	struct ifreq req;
@@ -124,7 +123,7 @@ int netlib_getmacaddr(const char *ifname, uint8_t *macaddr)
 	ret = ioctl(sockfd, SIOCGIFHWADDR, (unsigned long)&req);
 	close(sockfd);
 	if (ret == -1) {
-		NET_LOGE(TAG, "ioctl fail %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "ioctl fail %d\n", errno);
 		return ERROR;
 	}
 	/* Return the MAC address */

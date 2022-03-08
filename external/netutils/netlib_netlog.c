@@ -15,7 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
@@ -25,16 +25,17 @@
 #include <tinyara/net/netlog.h>
 #endif
 
+#ifdef CONFIG_NET_RUNTIME_LOG
 typedef struct {
 	netlog_log_level_e level;
 	nl_color_e color;
 } netlog_config_s;
 
 static netlog_config_s g_mod_config[4] = {
-	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
-	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
-	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
-	{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
+		{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
+		{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
+		{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
+		{NL_LEVEL_UNKNOWN, NL_COLOR_DEFAULT},
 };
 
 static nl_options g_nl_timer = NL_OPT_DISABLE;
@@ -71,11 +72,11 @@ static inline int _print_time(void)
 }
 
 int netlogger_print(netlog_module_e mod,
-					netlog_log_level_e level,
-					const char *func,
-					const char *file,
-					const int line,
-					const char *fmt, ...)
+										netlog_log_level_e level,
+										const char *func,
+										const char *file,
+										const int line,
+										const char *fmt, ...)
 {
 	if (mod == NL_MOD_UNKNOWN) {
 		return 0;
@@ -151,3 +152,46 @@ int netlog_reset(void)
 
 	return 0;
 }
+#else	 /*  CONFIG_NET_RUNTIME_LOG */
+int netlogger_print(netlog_module_e mod,
+										netlog_log_level_e level,
+										const char *func,
+										const char *file,
+										const int line,
+										const char *fmt, ...)
+{
+	/*  enable CONFIG_NET_RUNTIME_LOG */
+	return -1;
+}
+int netlog_set_level(netlog_module_e module, netlog_log_level_e level)
+{
+	/*  enable CONFIG_NET_RUNTIME_LOG */
+	return -1;
+}
+int netlog_set_color(netlog_module_e module, nl_color_e color)
+{
+	/*  enable CONFIG_NET_RUNTIME_LOG */
+	return -1;
+}
+int netlog_set_timer(nl_options opt)
+{
+	/*  enable CONFIG_NET_RUNTIME_LOG */
+	return -1;
+}
+int netlog_set_function(nl_options opt)
+{
+	/*  enable CONFIG_NET_RUNTIME_LOG */
+	return -1;
+}
+int netlog_set_file(nl_options opt)
+{
+	/*  enable CONFIG_NET_RUNTIME_LOG */
+	return -1;
+}
+
+int netlog_reset(void)
+{
+	/*  enable CONFIG_NET_RUNTIME_LOG */
+	return -1;
+}
+#endif /*  CONFIG_NET_RUNTIME_LOG */

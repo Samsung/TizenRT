@@ -62,6 +62,7 @@ CSRCS += netlib_setifstatus.c \
 	netlib_getifstatus.c
 CSRCS += netlib_getifaddrs.c
 CSRCS += netlib_getstats.c
+CSRCS += netlib_netlog.c
 
 ifeq ($(CONFIG_NET_NETMON),y)
 CSRCS += netlib_netmon.c

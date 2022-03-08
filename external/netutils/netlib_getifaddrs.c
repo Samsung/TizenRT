@@ -35,18 +35,16 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/netlog.h>
 
-#define TAG "[NETLIB]"
-
 static inline int _send_msg(lwnl_msg *msg)
 {
 	int ret = 0;
 	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (fd < 0) {
-		NET_LOGE(TAG, "create socket %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "create socket %d\n", errno);
 		ret = -1;
 	} else {
 		if (write(fd, msg, sizeof(*msg)) < 0) {
-			NET_LOGE(TAG, "write %d\n", errno);
+			NET_LOGE(NL_MOD_NETLIB, "write %d\n", errno);
 			ret = -2;
 		}
 		close(fd);
@@ -61,7 +59,7 @@ int netlib_getifaddrs(struct ifaddrs **ifap)
 					sizeof(*ifap), NULL, (void *)&res};
 	int lres = _send_msg(&msg);
 	if (lres < 0) {
-		NET_LOGE(TAG, "send request msg fail %d %d\n", lres, res);
+		NET_LOGE(NL_MOD_NETLIB, "send request msg fail %d %d\n", lres, res);
 		return -1;
 	}
 	*ifap = (struct ifaddrs *)msg.data;

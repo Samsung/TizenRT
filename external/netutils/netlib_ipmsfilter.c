@@ -69,8 +69,6 @@
 #include <netutils/ipmsfilter.h>
 #include <tinyara/net/netlog.h>
 
-#define TAG "[NETLIB]"
-
 #ifdef CONFIG_NET_IGMP
 
 /****************************************************************************
@@ -102,7 +100,7 @@ int ipmsfilter(FAR const char *ifname, FAR const struct in_addr *multiaddr, uint
 {
 	int ret = ERROR;
 
-	NET_LOGV(TAG, "ifname: %s muliaddr: %08x fmode: %ld\n", ifname, *multiaddr, fmode);
+	NET_LOGV(NL_MOD_NETLIB, "ifname: %s muliaddr: %08x fmode: %ld\n", ifname, *multiaddr, fmode);
 	if (ifname && multiaddr) {
 		/* Get a socket (only so that we get access to the INET subsystem) */
 

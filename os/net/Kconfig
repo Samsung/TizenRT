@@ -33,6 +33,12 @@ if NET_LWIP
 source net/lwip/configs/Kconfig
 endif #NET_LWIP
 
+config NET_RUNTIME_LOG
+	bool "Run-time logging"
+	default n
+	---help---
+		Enable runtime logging in network log
+
 menu "Driver buffer configuration"
 
 config NET_ETH_MTU

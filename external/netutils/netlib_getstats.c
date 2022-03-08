@@ -29,7 +29,6 @@
 #include <tinyara/netmgr/netctl.h>
 #include <tinyara/net/netlog.h>
 
-#define TAG "[NETLIB]"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -65,7 +64,7 @@ int netlib_getstats(void *arg)
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		NET_LOGE(TAG, "socket() failed with errno: %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "socket() failed with errno: %d\n", errno);
 		return ret;
 	}
 
@@ -75,7 +74,7 @@ int netlib_getstats(void *arg)
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	close(sockfd);
 	if (ret == ERROR) {
-		NET_LOGE(TAG, "ioctl() failed with errno: %d\n", errno);
+		NET_LOGE(NL_MOD_NETLIB, "ioctl() failed with errno: %d\n", errno);
 		return ret;
 	}
 	// req_req_res is always OK.
