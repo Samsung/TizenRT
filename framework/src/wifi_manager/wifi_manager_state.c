@@ -144,8 +144,6 @@ static char *wifimgr_state_str[] = {
 		wifimgr_set_info(WIFIMGR_STATE, &twmsg);         \
 	} while (0)
 
-#define TAG "[WM]"
-
 static inline void WIFIMGR_SET_STATE(wifimgr_state_e s)
 {
 	g_manager_info.state = s;
@@ -214,7 +212,7 @@ wifi_manager_result_e _wifimgr_save_connected_config(wifi_manager_ap_config_s *c
 #ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
 	trwifi_result_e ret = wifi_profile_write(config, 1);
 	if (ret != TRWIFI_SUCCESS) {
-		NET_LOGE(TAG, "Failed to save the connected AP configuration in file system\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "Failed to save the connected AP configuration in file system\n");
 		return WIFI_MANAGER_FAIL;
 	}
 #endif
@@ -259,7 +257,7 @@ wifi_manager_result_e _wifimgr_disconnect_ap(void)
 wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 {
 	if (strlen(config->ssid) > WIFIMGR_SSID_LEN || strlen(config->passphrase) > WIFIMGR_PASSPHRASE_LEN) {
-		NET_LOGE(TAG, "SSID or PASSPHRASE length invalid\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "SSID or PASSPHRASE length invalid\n");
 		return WIFI_MANAGER_FAIL;
 	}
 	trwifi_softap_config_s softap_config;
@@ -337,7 +335,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 	wifi_manager_cb_s *cb = (wifi_manager_cb_s *)msg->param;
 	int res = wifimgr_register_cb(cb);
 	if (res < 0) {
-		NET_LOGE(TAG, "WIFIMGR REGISTER CB\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "WIFIMGR REGISTER CB\n");
 	}
 #ifdef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), TAG, "Set Autoconnect failed");
@@ -388,7 +386,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 		&& msg->event != WIFIMGR_EVT_STA_CONNECT_FAILED
 		&& msg->event != WIFIMGR_EVT_SCAN_DONE) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
-		NET_LOGE(TAG, "invalid param\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "invalid param\n");
 		return WIFI_MANAGER_BUSY;
 	}
 
@@ -421,7 +419,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		break;
 	default:
-		NET_LOGE(TAG, "invalid argument\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "invalid argument\n");
 		break;
 	}
 
@@ -598,7 +596,7 @@ wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_FAIL;
 
-	NET_LOGI(TAG, "handle request state(%s) evt(%s)\n",
+	NET_LOGI(NL_MOD_WIFI_MANAGER, "handle request state(%s) evt(%s)\n",
 			 wifimgr_get_state_str(WIFIMGR_GET_STATE),
 			 wifimgr_get_evt_str(msg->event));
 	if (msg->event == WIFIMGR_CMD_GETSTATS) {
@@ -611,6 +609,6 @@ wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)
 #ifdef CONFIG_WIFIMGR_ERROR_REPORT
 	_set_error_code(res);
 #endif
-	NET_LOGV(TAG, "<-- _handle_request\n");
+	NET_LOGV(NL_MOD_WIFI_MANAGER, "<-- _handle_request\n");
 	return res;
 }

@@ -34,8 +34,6 @@
 #define WIFIMGR_NUM_CALLBACKS 3
 #define LOCK_WIFICB pthread_mutex_lock(&g_cb_handler.lock)
 #define UNLOCK_WIFICB pthread_mutex_unlock(&g_cb_handler.lock)
-#define TAG "[WM]"
-
 /*  Handler */
 struct wifimgr_cb_handler {
 	wifi_manager_cb_s *cb[WIFIMGR_NUM_CALLBACKS];
@@ -109,7 +107,7 @@ static void _create_cb_msg(wifi_manager_cb_msg_s *msg,
 		trwifi_scan_list_s *list = (trwifi_scan_list_s *)arg;
 		wifi_manager_scan_info_s *info = NULL;
 		if (!list || WIFI_MANAGER_SUCCESS != _convert_scan_info(&info, list)) {
-			NET_LOGE(TAG, "convert scan error\n");
+			NET_LOGE(NL_MOD_WIFI_MANAGER, "convert scan error\n");
 			msg->res = WIFI_MANAGER_FAIL;
 		} else {
 			msg->scanlist = info;
@@ -145,44 +143,44 @@ static void _post_user_cb(_wifimgr_usr_cb_type_e evt,
 		}
 		switch (evt) {
 		case CB_STA_CONNECTED:
-			NET_LOGV(TAG, "call sta connect success event\n");
+			NET_LOGV(NL_MOD_WIFI_MANAGER, "call sta connect success event\n");
 			if (cbk->sta_connected) {
 				cbk->sta_connected(msg, NULL);
 			}
 			break;
 		case CB_STA_CONNECT_FAILED:
-			NET_LOGV(TAG, "call sta connect fail event\n");
+			NET_LOGV(NL_MOD_WIFI_MANAGER, "call sta connect fail event\n");
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 			if (cbk->sta_connected) {
 				cbk->sta_connected(msg, NULL);
 			}
 			break;
 		case CB_STA_DISCONNECTED:
-			NET_LOGV(TAG, "call sta disconnect event\n");
+			NET_LOGV(NL_MOD_WIFI_MANAGER, "call sta disconnect event\n");
 			if (cbk->sta_disconnected) {
 				cbk->sta_disconnected(msg, NULL);
 			}
 			break;
 		case CB_STA_RECONNECTED:
-			NET_LOGV(TAG, "call sta reconnect event\n");
+			NET_LOGV(NL_MOD_WIFI_MANAGER, "call sta reconnect event\n");
 			if (cbk->sta_disconnected) {
 				cbk->sta_disconnected(msg, NULL);
 			}
 			break;
 		case CB_STA_JOINED:
-			NET_LOGV(TAG, "call sta join event\n");
+			NET_LOGV(NL_MOD_WIFI_MANAGER, "call sta join event\n");
 			if (cbk->softap_sta_joined) {
 				cbk->softap_sta_joined(msg, NULL);
 			}
 			break;
 		case CB_STA_LEFT:
-			NET_LOGV(TAG, "call sta leave event\n");
+			NET_LOGV(NL_MOD_WIFI_MANAGER, "call sta leave event\n");
 			if (cbk->softap_sta_left) {
 				cbk->softap_sta_left(msg, NULL);
 			}
 			break;
 		case CB_SCAN_DONE:
-			NET_LOGV(TAG, "call sta scan event\n");
+			NET_LOGV(NL_MOD_WIFI_MANAGER, "call sta scan event\n");
 			/* convert scan data.*/
 			if (cbk->scan_ap_done) {
 				cbk->scan_ap_done(msg, NULL);
@@ -190,7 +188,7 @@ static void _post_user_cb(_wifimgr_usr_cb_type_e evt,
 			break;
 		default:
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
-			NET_LOGE(TAG, "Invalid State\n");
+			NET_LOGE(NL_MOD_WIFI_MANAGER, "Invalid State\n");
 		}
 	}
 }

@@ -28,8 +28,6 @@
 #include "wifi_manager_info.h"
 #include "wifi_manager_lwnl.h"
 
-#define TAG "[WM]"
-
 struct _wifimgr_info {
 	char ssid[WIFIMGR_SSID_LEN + 1];		// SSID of Connected AP if mode is a station
 	char softap_ssid[WIFIMGR_SSID_LEN + 1]; // SoftAP SSID if mode is a soft ap

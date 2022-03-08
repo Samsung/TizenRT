@@ -30,8 +30,6 @@
 #include "wifi_manager_error.h"
 #include "wifi_manager_dhcp.h"
 
-#define TAG "[WM]"
-
 /**
  * Internal DHCP client APIs
  */
@@ -45,17 +43,17 @@ wifi_manager_result_e dhcpc_get_ipaddr(void)
 	ret = dhcp_client_start(WIFIMGR_STA_IFNAME);
 	if (ret != 0) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
-		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "[DHCPC] get IP address fail\n");
 		return wret;
 	}
 
 	ret = netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, &ip);
 	if (ret != 0) {
-		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "[DHCPC] get IP address fail\n");
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 		return wret;
 	}
-	NET_LOGV(TAG, "[DHCPC] get IP address %s\n", inet_ntoa(ip));
+	NET_LOGV(NL_MOD_WIFI_MANAGER, "[DHCPC] get IP address %s\n", inet_ntoa(ip));
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -70,6 +68,6 @@ void dhcpc_close_ipaddr(void)
 	/* To-Do is it right to clear IP address in here */
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
-	NET_LOGV(TAG, "release IP address\n");
+	NET_LOGV(NL_MOD_WIFI_MANAGER, "release IP address\n");
 	return;
 }

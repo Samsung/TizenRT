@@ -27,8 +27,6 @@
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"
 
-#define TAG "[WM]"
-
 /*  wifimgr_evt_str should be mapped to enum _wifimgr_evt  */
 static char *wifimgr_evt_str[] = {
 #undef WIFIMGR_REQUEST_TABLE

@@ -29,8 +29,6 @@
 #include <tinyara/net/netlog.h>
 #include "wifi_manager_message.h"
 
-#define TAG "[WM]"
-
 typedef struct {
 	wifimgr_evt_e wevt;
 	lwnl_cb_wifi levt;
@@ -66,7 +64,7 @@ static wifimgr_evt_e _lwnl_convert_levent(lwnl_cb_wifi levt)
 }
 static int _lwnl_convert_scan(trwifi_scan_list_s **scan_list, void *input, int len)
 {
-	NET_LOGV(TAG, "len(%d)\n", len);
+	NET_LOGV(NL_MOD_WIFI_MANAGER, "len(%d)\n", len);
 	int remain = len;
 	trwifi_scan_list_s *prev = NULL;
 
@@ -103,7 +101,7 @@ static trwifi_scan_list_s *_lwnl_handle_scan(int fd, int len)
 
 	int res = read(fd, buf, len);
 	if (res != len) {
-		NET_LOGE(TAG, "read error\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "read error\n");
 		free(buf);
 		return NULL;
 	}
@@ -140,7 +138,7 @@ static int _lwnl_generate_msg(int fd, lwnl_cb_status status, int len)
 		if (len == sizeof(trwifi_cbk_msg_s)) {
 			int res = read(fd, (void *)&g_cbk, len);
 			if (res == -1) {
-				NET_LOGE(TAG, "read lwnl msg error %d %d\n", status.evt, errno);
+				NET_LOGE(NL_MOD_WIFI_MANAGER, "read lwnl msg error %d %d\n", status.evt, errno);
 				assert(0);
 			}
 		} else if (len == 0){
@@ -153,7 +151,7 @@ static int _lwnl_generate_msg(int fd, lwnl_cb_status status, int len)
 		break;
 	}
 	default:
-		NET_LOGE(TAG, "Bad status received (%d)\n", status.evt);
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "Bad status received (%d)\n", status.evt);
 		return -1;
 	}
 	return 0;
@@ -174,14 +172,14 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 	 */
 	int nbytes = read(fd, (char *)type_buf, LWNL_CB_HEADER_LEN);
 	if (nbytes < 0) {
-		NET_LOGE(TAG, "Failed to receive (nbytes=%d)\n", nbytes);
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "Failed to receive (nbytes=%d)\n", nbytes);
 		return -1;
 	}
 
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	NET_LOGV(TAG, "receive state(%d) length(%d)\n", status.evt, len);
+	NET_LOGV(NL_MOD_WIFI_MANAGER, "receive state(%d) length(%d)\n", status.evt, len);
 	(void)_lwnl_generate_msg(fd, status, len);
 
 	hmsg->msg = &g_msg;

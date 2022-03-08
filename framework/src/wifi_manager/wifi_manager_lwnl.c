@@ -31,20 +31,19 @@
 #include <tinyara/net/netlog.h>
 
 #define WU_INTF_NAME "wlan0"
-#define TAG "[WM]"
 
 static inline int _send_msg(lwnl_msg *msg)
 {
 	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (fd < 0) {
-		NET_LOGE(TAG, "send lwnl msg open error\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "send lwnl msg open error\n");
 		return -1;
 	}
 
 	int res = write(fd, msg, sizeof(*msg));
 	close(fd);
 	if (res < 0) {
-		NET_LOGE(TAG, "send lwnl msg write error\n");
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "send lwnl msg write error\n");
 		return -2;
 	}
 	return 0;

@@ -38,7 +38,6 @@
 #else
 #define WIFIMGR_MSG_QUEUE_NAME "/tmp/wifimgr_msg"
 #endif
-#define TAG "[WM]"
 
 extern wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg);
 
@@ -52,7 +51,7 @@ static inline int _send_message(int fd, void *buf, int buflen)
 			if (err_no == EAGAIN || err_no == EINTR) {
 				continue;
 			}
-			NET_LOGE(TAG, "write error %d\n", err_no);
+			NET_LOGE(NL_MOD_WIFI_MANAGER, "write error %d\n", err_no);
 			return -1;
 		}
 		sent += res;
@@ -73,7 +72,7 @@ static inline int _recv_message(int fd, void *buf, int buflen)
 			if (err_no == EAGAIN || err_no == EINTR) {
 				continue;
 			}
-			NET_LOGE(TAG, "read error %d\n", err_no);
+			NET_LOGE(NL_MOD_WIFI_MANAGER, "read error %d\n", err_no);
 			return -1;
 		}
 		received += res;
@@ -91,7 +90,7 @@ int wifimgr_message_in(handler_msg *msg, handler_queue *queue)
 {
 	int fd = open(WIFIMGR_MSG_QUEUE_NAME, O_WRONLY);
 	if (fd < 0) {
-		NET_LOGE(TAG, "open error %d\n", errno);
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "open error %d\n", errno);
 		return -1;
 	}
 
@@ -115,13 +114,13 @@ int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 		if (err_no == EINTR) {
 			return 1;
 		}
-		NET_LOGE(TAG, "select error(%d)\n", err_no);
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "select error(%d)\n", err_no);
 		return -1;
 	}
 	if (FD_ISSET(queue->fd, &rfds)) {
 		res = _recv_message(queue->fd, (void *)msg, sizeof(handler_msg));
 		if (res < 0) {
-			NET_LOGE(TAG, "critical error\n");
+			NET_LOGE(NL_MOD_WIFI_MANAGER, "critical error\n");
 		} else {
 			wifimgr_msg_s *wmsg = msg->msg;
 			wmsg->result = wifimgr_handle_request(wmsg);
@@ -134,7 +133,7 @@ int wifimgr_message_out(handler_msg *msg, handler_queue *queue)
 	if (FD_ISSET(queue->nd, &rfds)) {
 		res = lwnl_fetch_event(queue->nd, (void *)msg, sizeof(handler_msg));
 		if (res < 0) {
-			NET_LOGE(TAG, "critical error\n");
+			NET_LOGE(NL_MOD_WIFI_MANAGER, "critical error\n");
 		} else {
 			wifimgr_msg_s *wmsg = msg->msg;
 			if (wmsg) {
@@ -156,13 +155,13 @@ int wifimgr_create_msgqueue(handler_queue *queue)
 
 	int res = mkfifo(WIFIMGR_MSG_QUEUE_NAME, 0666);
 	if (res < 0 && res != -EEXIST) {
-		NET_LOGE(TAG, "create wifimgr msg queue fail %d\n", errno);
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "create wifimgr msg queue fail %d\n", errno);
 		return -1;
 	}
 
 	queue->fd = open(WIFIMGR_MSG_QUEUE_NAME, O_RDWR);
 	if (queue->fd < 0) {
-		NET_LOGE(TAG, "open wifimgr msg queue fail %d\n", errno);
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "open wifimgr msg queue fail %d\n", errno);
 		unlink(WIFIMGR_MSG_QUEUE_NAME);
 		return -1;
 	}
@@ -172,7 +171,7 @@ int wifimgr_create_msgqueue(handler_queue *queue)
 	queue->nd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
 	if (queue->nd < 0) {
 		close(queue->fd);
-		NET_LOGE(TAG, "socket open fail %d\n", errno);
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "socket open fail %d\n", errno);
 		return -1;
 	}
 
@@ -181,7 +180,7 @@ int wifimgr_create_msgqueue(handler_queue *queue)
 	if (res < 0) {
 		close(queue->fd);
 		close(queue->nd);
-		NET_LOGE(TAG, "bind fail %d\n", errno);
+		NET_LOGE(NL_MOD_WIFI_MANAGER, "bind fail %d\n", errno);
 		return -1;
 	}
 	FD_SET(queue->nd, &queue->rfds);

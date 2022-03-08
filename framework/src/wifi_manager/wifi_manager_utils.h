@@ -66,7 +66,7 @@ int net_task_create(FAR const char *name, int priority, int stack_size,
 	do {												\
 		trwifi_result_e wmres = func;					\
 		if (wmres != TRWIFI_SUCCESS) {					\
-			NET_LOGE(TAG, msg " reason(%d)\n", wmres);	\
+			NET_LOGE(NL_MOD_WIFI_MANAGER, msg " reason(%d)\n", wmres);	\
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_UTILS_FAIL);	\
 			return wifimgr_convert2wifimgr_res(wmres);		\
 		}												\

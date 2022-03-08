@@ -15,7 +15,7 @@ static inline _set_error_code(wifi_manager_result_e res)
 		return;
 	}
 
-	NET_LOGE(TAG, "Wi-Fi manager fail: state error\n");
+	NET_LOGE(NL_MOD_WIFI_MANAGER, "Wi-Fi manager fail: state error\n");
 	error_code_wifi_manager_t wifi_err_code;
 	switch (msg->event) {
 	case WIFIMGR_CMD_INIT:
