@@ -693,8 +693,10 @@ struct mm_heap_s *mm_get_heap(void *address);
 struct mm_heap_s *mm_get_heap_with_index(int index);
 
 int mm_get_heapindex(void *mem);
-
 size_t mm_get_largest_freenode_size(void);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+size_t mm_get_heap_free_size(void);
+#endif
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
 void mm_initialize_app_heap_q(void);

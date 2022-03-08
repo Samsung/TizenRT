@@ -79,10 +79,18 @@ size_t mm_get_largest_freenode_size(void)
 		}
 	}
 #else
+#ifdef CONFIG_TASK_NAME_SIZE > 0
+	char appname[CONFIG_TASK_NAME_SIZE + 1] = { 0 };
+#endif
 	/* User can only have single heap. */
 	heap = BASE_HEAP;
 	if (!heap) {
-		mdbg("Fail to find the heap.\n");
+#ifdef CONFIG_TASK_NAME_SIZE > 0
+		prctl(PR_GET_NAME, appname);
+		mdbg("Failed to retrieve the %s heap region.\n", appname);
+#else
+		mdbg("Failed to retrieve the app heap region.\n");
+#endif
 		return 0;
 	}
 	largest_size = mm_get_largest_freesize_from_specific_heap(heap);
@@ -90,3 +98,47 @@ size_t mm_get_largest_freenode_size(void)
 
 	return largest_size;
 }
+
+/****************************************************************************
+ * Name: mm_get_heap_free_size
+ *
+ * Description:
+ *   returns free size in the heap
+ ****************************************************************************/
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+size_t mm_get_heap_free_size(void)
+{
+	struct mm_heap_s *heap;
+
+#ifdef __KERNEL__
+	size_t free_size = 0;
+	int heap_idx;
+	heap = g_kmmheap;
+	struct mm_heap_s *target_heap;
+
+	/* Kernel can have multi-heap, so traversing all n-heaps and add all free sizes. */
+	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
+		target_heap = &heap[heap_idx];
+		free_size += (target_heap->mm_heapsize - target_heap->total_alloc_size);
+	}
+
+	return free_size;
+#else
+#ifdef CONFIG_TASK_NAME_SIZE > 0
+	char appname[CONFIG_TASK_NAME_SIZE + 1] = { 0 };
+#endif
+	/* User can only have single heap. */
+	heap = BASE_HEAP;
+	if (!heap) {
+#ifdef CONFIG_TASK_NAME_SIZE > 0
+		prctl(PR_GET_NAME, appname);
+		mdbg("Failed to retrieve the %s heap region.\n", appname);
+#else
+		mdbg("Failed to retrieve the app heap region.\n");
+#endif
+		return 0;
+	}
+	return (heap->mm_heapsize - heap->total_alloc_size);
+#endif
+}
+#endif
