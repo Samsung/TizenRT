@@ -1000,7 +1000,6 @@ endmenu # Stack size information
 config LOG_DUMP
 	bool "Enable log dump functionality"
 	default n
-	depends on DEBUG_MM_HEAPINFO
 
 if LOG_DUMP 
 
