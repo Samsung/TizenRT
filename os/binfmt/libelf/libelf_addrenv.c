@@ -248,7 +248,7 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo)
 	memset(loadinfo->binp->sections[BIN_BSS], 0, loadinfo->binp->sizes[BIN_BSS]);
 
 	if (!loadinfo->binp->sections[BIN_TEXT]) {
-		berr("ERROR: Failed to allocate text section (size = %u)\n", binp->sizes[BIN_TEXT]);
+		berr("ERROR: Failed to allocate text section (size = %u)\n", loadinfo->binp->sizes[BIN_TEXT]);
 		return -ENOMEM;
 	}
 
