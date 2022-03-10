@@ -79,13 +79,13 @@ size_t mm_get_largest_freenode_size(void)
 		}
 	}
 #else
-#ifdef CONFIG_TASK_NAME_SIZE > 0
+#if CONFIG_TASK_NAME_SIZE > 0
 	char appname[CONFIG_TASK_NAME_SIZE + 1] = { 0 };
 #endif
 	/* User can only have single heap. */
 	heap = BASE_HEAP;
 	if (!heap) {
-#ifdef CONFIG_TASK_NAME_SIZE > 0
+#if CONFIG_TASK_NAME_SIZE > 0
 		prctl(PR_GET_NAME, appname);
 		mdbg("Failed to retrieve the %s heap region.\n", appname);
 #else
@@ -124,13 +124,13 @@ size_t mm_get_heap_free_size(void)
 
 	return free_size;
 #else
-#ifdef CONFIG_TASK_NAME_SIZE > 0
+#if CONFIG_TASK_NAME_SIZE > 0
 	char appname[CONFIG_TASK_NAME_SIZE + 1] = { 0 };
 #endif
 	/* User can only have single heap. */
 	heap = BASE_HEAP;
 	if (!heap) {
-#ifdef CONFIG_TASK_NAME_SIZE > 0
+#if CONFIG_TASK_NAME_SIZE > 0
 		prctl(PR_GET_NAME, appname);
 		mdbg("Failed to retrieve the %s heap region.\n", appname);
 #else
