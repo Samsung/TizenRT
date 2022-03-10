@@ -288,6 +288,10 @@ errout:
 #ifndef CONFIG_BUILD_KERNEL
 int task_create(FAR const char *name, int priority, int stack_size, main_t entry, FAR char *const argv[])
 {
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	ASSERT((sched_self()->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL);
+#endif
+
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	if (BM_PRIORITY_MIN - 1 < priority && priority < BM_PRIORITY_MAX + 1) {
 		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);

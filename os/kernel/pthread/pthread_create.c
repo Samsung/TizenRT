@@ -258,6 +258,10 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	bool group_joined = false;
 #endif
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	ASSERT((sched_self()->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL);
+#endif
+
 	trace_begin(TTRACE_TAG_TASK, "pthread_create");
 
 	/* Check whether we are allowed to create new pthread ? */
