@@ -25,6 +25,7 @@
 #include <tinyara/sched.h>
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
@@ -56,7 +57,7 @@
  * Private Type Declarations
  ****************************************************************************/
 
-static struct log_dump_chunk_s {
+struct log_dump_chunk_s {
 	struct log_dump_chunk_s *flink;
 	char arr[CONFIG_LOG_DUMP_CHUNK_SIZE];
 };
