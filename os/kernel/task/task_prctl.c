@@ -132,25 +132,26 @@ int prctl(int option, ...)
 		/* Get the prctl arguments */
 
 		FAR char *name = va_arg(ap, FAR char *);
-		int pid = va_arg(ap, int);
 		FAR struct tcb_s *tcb;
 
 		if (option == PR_SET_NAME_BYPID || option == PR_GET_NAME_BYPID) {
+			int pid = va_arg(ap, int);
+
 			/* Get the TCB associated with the PID */
 			tcb = sched_gettcb((pid_t)pid);
+
+			/* An invalid pid will be indicated by a NULL TCB returned from
+			 * sched_gettcb()
+			 */
+
+			if (!tcb) {
+				sdbg("Pid does not correspond to a task: %d\n", pid);
+				err = ESRCH;
+				goto errout;
+			}
 		} else {
 			/* Get the current running TCB */
 			tcb = this_task();
-		}
-
-		/* An invalid pid will be indicated by a NULL TCB returned from
-		 * sched_gettcb()
-		 */
-
-		if (!tcb) {
-			sdbg("Pid does not correspond to a task: %d\n", pid);
-			err = ESRCH;
-			goto errout;
 		}
 
 		/* A pointer to the task name storage must also be provided */
