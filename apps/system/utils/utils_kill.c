@@ -58,6 +58,9 @@
 #include <signal.h>
 #include <sched.h>
 #include <pthread.h>
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
+#include <sys/mount.h>
+#endif
 #ifdef CONFIG_ENABLE_KILLALL
 #include "utils_proc.h"
 #define KILLALL_BUFLEN 128
