@@ -174,15 +174,6 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 {
 	size_t stack_alloc_size = stack_size;
 
-	/* new thread does not have the uheap value yet, It's added in the task_
-	 * schedsetup function.
-	 * Parent and child threads must have the same uheap value, so we are
-	 * using the parent thread uheap
-	 */
-#if defined(HAVE_KERNEL_HEAP) || defined(CONFIG_MPU_STACK_OVERFLOW_PROTECTION)
-	uint32_t uheap = sched_self()->uheap;	/* User heap pointer */
-#endif
-
 	/* Is there already a stack allocated of a different size?  Because of
 	 * alignment issues, stack_size might erroneously appear to be of a
 	 * different size.  Fortunately, this is not a critical operation.
@@ -202,12 +193,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 */
 
 #ifdef HAVE_KERNEL_HEAP
-		/* Use the kernel allocator if this is a task / pthread being created
-		 * to run only on kernel side. We verify this by checking the uheap
-		 * object in the tcb of current running task. uheap is always non-null
-		 * in user threads and null for kernel threads.
-		 */
-		if (!uheap || ttype == TCB_FLAG_TTYPE_KERNEL) {
+		if (ttype == TCB_FLAG_TTYPE_KERNEL) {
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 			stack_alloc_size = stack_alloc_size + CONFIG_MPU_STACK_GUARD_SIZE;
 			tcb->stack_alloc_ptr = (uint32_t *)kmm_memalign(STACK_PROTECTION_MPU_ALIGNMENT, stack_alloc_size);
