@@ -150,7 +150,6 @@ static void exec_ctors(FAR void *arg)
 int exec_module(FAR struct binary_s *binp)
 {
 	FAR struct task_tcb_s *newtcb;
-	FAR struct tcb_s *rtcb;
 	FAR uint32_t *stack;
 	pid_t pid;
 	int ret;
@@ -182,8 +181,6 @@ int exec_module(FAR struct binary_s *binp)
 	pointer to the application's mm_heap object. Here we will store the mm_heap
 	pointer to the start of the text section */
 	*(uint32_t *)(binp->sections[BIN_DATA]) = (uint32_t)binp->uheap;
-	rtcb = (struct tcb_s *)sched_self();
-	rtcb->uheap = (uint32_t)binp->uheap;
 
 	/* Allocate a TCB for the new task. */
 
@@ -272,20 +269,23 @@ int exec_module(FAR struct binary_s *binp)
 
 	pid = newtcb->cmn.pid;
 
-	/* Parent task rtcb was initialized with uheap and mpu_regs values.
-	 * These values are used for stack allocation and task_init and will
-	 * be passed on to all the child tasks of the user app. Since the user
-	 * app is now created, we will reset these values here
-	 */
-	rtcb->uheap = 0;
-#ifdef CONFIG_ARM_MPU
-	memset(rtcb->mpu_regs, 0, sizeof(rtcb->mpu_regs));
-#endif
-
 	/* Store the address of the applications userspace object in the newtcb  */
 	/* The app's userspace object will be found at an offset of 4 bytes from the start of the binary */
 	newtcb->cmn.uspace = binp->sections[BIN_TEXT] + 4;
 	newtcb->cmn.uheap = (uint32_t)binp->uheap;
+	/* Copy the MPU register values from parent to child task */
+#ifdef CONFIG_ARM_MPU
+	int i = 0;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	for (; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER)
+#endif
+	{
+		newtcb->cmn.mpu_regs[i + MPU_REG_RNR] = binp->mpu_regs[i + MPU_REG_RNR];
+		newtcb->cmn.mpu_regs[i + MPU_REG_RBAR] = binp->mpu_regs[i + MPU_REG_RBAR];
+		newtcb->cmn.mpu_regs[i + MPU_REG_RASR] = binp->mpu_regs[i + MPU_REG_RASR];
+	}
+#endif
+
 
 #ifdef CONFIG_BINARY_MANAGER
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
