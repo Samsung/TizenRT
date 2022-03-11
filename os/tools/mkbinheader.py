@@ -22,6 +22,7 @@ import os
 import sys
 import struct
 import string
+import config_util as util
 
 cfg_path = os.path.dirname(__file__) + '/../.config'
 
@@ -41,27 +42,6 @@ def roundup_power_two(size):
     size = size + 1
 
     return size
-
-def get_config_value(file_name, config):
-    with open(file_name, 'r+') as fp:
-        lines = fp.readlines()
-        found = False
-        for line in lines:
-            if config in line:
-                value = (line.split("=")[1])
-                value = value.replace('"','').replace('\n','')
-                found = True
-                break
-    if found == False:
-        print ("FAIL!! No found config %s" %config)
-        sys.exit(1)
-    return int(value);
-
-def check_optimize_config(file_name):
-    with open(file_name, 'r+') as f:
-        lines = f.readlines()
-    
-    return any([True if 'CONFIG_OPTIMIZE_APP_RELOAD_TIME=y' in line and not line.startswith('#') else False for line in lines ])
 
 def get_static_ram_size(bin_type):
     # Calculate static RAM size
@@ -94,7 +74,7 @@ def get_static_ram_size(bin_type):
         # If CONFIG_OPTIMIZE_APP_RELOAD_TIME is enabled, then we will make a copy
         # of the data section inside the ro section and it will be used in
         # reload time. So, we add datasize to rosize to make place for data section.
-        if check_optimize_config(cfg_path) == True:
+        if util.check_config_existence(cfg_path, 'CONFIG_OPTIMIZE_APP_RELOAD_TIME=y') == True:
             rosize = rosize + datasize;
             rosize = roundup_power_two(rosize)
             textsize = roundup_power_two(textsize)
@@ -139,11 +119,12 @@ def make_kernel_binary_header():
     header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINVER + SIZE_OF_BINSIZE + SIZE_OF_SECURE_HEADER_SIZE
 
     # Get binary version
-    bin_ver = get_config_value(cfg_path, "CONFIG_BOARD_BUILD_DATE=")
-    if bin_ver < 0 :
+    bin_ver = util.get_value_from_file(cfg_path, "CONFIG_BOARD_BUILD_DATE=").replace('"','').replace('\n','')
+    if bin_ver == 'None' :
         print("Error : Not Found config for version, CONFIG_BOARD_BUILD_DATE")
         sys.exit(1)
-    elif bin_ver < 101 or bin_ver > 991231 :
+    bin_ver = int(bin_ver)
+    if bin_ver < 101 or bin_ver > 991231 :
         print("Error : Invalid value. It has 'YYMMDD' format so it should be in (101, 991231)")
         sys.exit(1)
 
@@ -248,10 +229,10 @@ def make_user_binary_header():
         print("Dynamic ram size : %d, Main stack size : %d" %(int(dynamic_ram_size), int(main_stack_size)))
         sys.exit(1)
 
-    priority = get_config_value(cfg_path, "CONFIG_BM_PRIORITY_MAX=")
+    priority = int(util.get_value_from_file(cfg_path, "CONFIG_BM_PRIORITY_MAX=").replace('"','').replace('\n',''))
     if priority > 0 :
         BM_PRIORITY_MAX = priority
-    priority = get_config_value(cfg_path, "CONFIG_BM_PRIORITY_MIN=")
+    priority = int(util.get_value_from_file(cfg_path, "CONFIG_BM_PRIORITY_MIN=").replace('"','').replace('\n',''))
     if priority > 0 :
         BM_PRIORITY_MIN = priority
 
@@ -285,18 +266,19 @@ def make_user_binary_header():
             sys.exit(1)
 
         static_ram_size = get_static_ram_size(bin_type)
-        if check_optimize_config(cfg_path) == True:
+        if util.check_config_existence(cfg_path, 'CONFIG_OPTIMIZE_APP_RELOAD_TIME=y') == True:
             binary_ram_size = int(dynamic_ram_size)
         else:
             binary_ram_size = int(static_ram_size) + int(dynamic_ram_size)
             binary_ram_size = roundup_power_two(binary_ram_size)
 
         # Get kernel binary version
-        kernel_ver = get_config_value(cfg_path, "CONFIG_BOARD_BUILD_DATE=")
-        if kernel_ver < 0 :
+        kernel_ver = util.get_value_from_file(cfg_path, "CONFIG_BOARD_BUILD_DATE=").replace('"','').replace('\n','')
+        if kernel_ver == 'None' :
             print("Error : Not Found config for kernel version, CONFIG_BOARD_BUILD_DATE")
             sys.exit(1)
-        elif kernel_ver < 101 or kernel_ver > 991231 :
+    kernel_ver = int(kernel_ver)
+        if kernel_ver < 101 or kernel_ver > 991231 :
             print("Error : Invalid value. It has 'YYMMDD' format so it should be in (101, 991231)")
             sys.exit(1)
 
@@ -367,7 +349,7 @@ def make_common_binary_header():
     header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINVER + SIZE_OF_BINSIZE
 
     # Get binary version
-    bin_ver = get_config_value(cfg_path, "CONFIG_COMMON_BINARY_VERSION=")
+    bin_ver = util.get_value_from_file(cfg_path, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').replace('\n','')
     if bin_ver < 0 :
         print("Error : Not Found config for version, CONFIG_COMMON_BINARY_VERSION")
         sys.exit(1)
