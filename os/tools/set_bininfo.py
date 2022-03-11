@@ -20,6 +20,7 @@
 import os
 import sys
 import string
+import config_util as util
 
 SOURCE_EXT_NAME = sys.argv[1]
 TARGET_EXT_NAME = "trpk" # TizenRT Package (TizenRT Header + output)
@@ -31,22 +32,6 @@ os_folder = os.path.dirname(__file__) + '/..'
 cfg_file = os_folder + '/.config'
 build_folder = os_folder + '/../build'
 output_folder = build_folder + '/output/bin'
-
-def get_value_from_file(file_name, target):
-	with open(file_name, 'r+') as f:
-		lines = f.readlines()
-		value = 'None'
-		for line in lines:
-			if target in line:
-				value = (line.split("=")[1])
-				break		
-	return value;
-
-def check_version_config(file_name):
-    with open(file_name, 'r+') as f:
-        lines = f.readlines()
-    
-    return any([True if 'CONFIG_BOARD_BUILD_DATE' in line and not line.startswith('#') else False for line in lines ])
 
 def save_bininfo(bin_name) :
 	with open(os_folder + '/.bininfo', "a") as f :
@@ -64,13 +49,13 @@ if os.path.isfile(os_folder + '/.bininfo') :
 	os.remove(os_folder + '/.bininfo')
 
 # Check the board type. Because kernel binary name is different based on board type.
-BOARD_TYPE = get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
+BOARD_TYPE = util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
 
 # Extract Common binary name
-CONFIG_CMN_BIN_NAME = get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_NAME=").replace('"', '').rstrip("\n")
+CONFIG_CMN_BIN_NAME = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_NAME=").replace('"', '').rstrip("\n")
 
-if check_version_config(cfg_file) :
-	BIN_VERSION = get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=").replace('"', '').rstrip("\n")
+if util.check_config_existence(cfg_file, 'CONFIG_BOARD_BUILD_DATE') == True:
+	BIN_VERSION = util.get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=").replace('"', '').rstrip("\n")
 	BIN_NAME = 'kernel_' + BOARD_TYPE + '_' + BIN_VERSION
 else :
 	BIN_NAME = 'kernel_' + BOARD_TYPE
@@ -78,7 +63,7 @@ else :
 # Read the kernel binary name from board_metadata.txt.
 metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
 if os.path.isfile(metadata_file) :
-	kernel_bin_name = get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n')
+	kernel_bin_name = util.get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n')
 	for filename in os.listdir(output_folder) :
 		if (filename == kernel_bin_name + '.' + SOURCE_EXT_NAME) :
 			# Change the kernel bin name as "kernel_[board]_[version].extension"
@@ -87,14 +72,14 @@ if os.path.isfile(metadata_file) :
 			continue
 		# Change the user bin name as "[user_bin_name]_[board]_[version]"
 		if ("app1" == filename or "app2" == filename) :
-			APP_BIN_VER = get_value_from_file(cfg_file, "CONFIG_" + filename.upper() + "_BIN_VER").rstrip("\n")
+			APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_" + filename.upper() + "_BIN_VER").rstrip("\n")
 			USER_BIN_NAME = filename + '_' + BOARD_TYPE + '_' + APP_BIN_VER
 			os.rename(output_folder + '/' + filename, output_folder + '/' + USER_BIN_NAME + '.' + TARGET_EXT_NAME)
 			save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
 			continue
 		# Change the common bin name as "common_[board]_[version]"
 		if (filename == CONFIG_CMN_BIN_NAME) :
-			COMMON_BIN_VER = get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n')
+			COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n')
 			COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
 			os.rename(output_folder + '/' + CONFIG_CMN_BIN_NAME, output_folder + '/' + COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
 			save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)

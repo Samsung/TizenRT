@@ -24,6 +24,7 @@
 import os
 import sys
 import string
+import config_util as util
 
 os_folder = os.path.dirname(__file__) + '/..'
 cfg_file = os_folder + '/.config'
@@ -38,20 +39,9 @@ def number_with_comma_align(number):
 def number_with_comma(number):
 	return ("{:,}".format(number))
 
-def get_value_from_file(file_name, target):
-	with open(file_name, 'r+') as f:
-		lines = f.readlines()
-		value = 'None'
-		for line in lines:
-			if target in line:
-				value = (line.split("=")[1])
-				break
-	return value;
-
 def check_binary_size(bin_type, part_size):
 	# Read the binary name from .bininfo
-	bininfo_file = os_folder + '/.bininfo'
-	bin_name = get_value_from_file(bininfo_file, bin_type + "_BIN_NAME=").replace('"','').rstrip('\n')
+	bin_name = util.get_binname_from_bininfo(bin_type)
 	if bin_name == 'None' :
 		return
 	output_path = build_folder + '/output/bin/' + bin_name
@@ -71,11 +61,11 @@ def check_binary_size(bin_type, part_size):
 		os.remove(output_path)
 		FAIL_TO_BUILD = True
 
-PARTITION_SIZE_LIST = get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
-PARTITION_NAME_LIST = get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
+PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
+PARTITION_NAME_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
 
-CONFIG_APP_BINARY_SEPARATION = get_value_from_file(cfg_file, "CONFIG_APP_BINARY_SEPARATION=").rstrip('\n')
-CONFIG_SUPPORT_COMMON_BINARY = get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
+CONFIG_APP_BINARY_SEPARATION = util.get_value_from_file(cfg_file, "CONFIG_APP_BINARY_SEPARATION=").rstrip('\n')
+CONFIG_SUPPORT_COMMON_BINARY = util.get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
 
 if PARTITION_SIZE_LIST == 'None' :
 	sys.exit(0)

@@ -19,6 +19,7 @@
 import os
 import sys
 import struct
+import config_util as util
 
 config_file_path = os.path.dirname(__file__) + '/../.config'
 bootparam_file_path = os.path.dirname(__file__) + '/../../build/output/bin/bootparam.bin'
@@ -64,16 +65,6 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 #
 ###########################################################################################
 
-def get_config_value(file_name, config):
-	with open(file_name, 'r+') as fp:
-		lines = fp.readlines()
-		for line in lines:
-			if config in line:
-				value = (line.split("=")[1])
-				return value
-	print ("FAIL!! No found config %s" %config)
-	sys.exit(1)
-
 def make_bootparam():
 	print "========== Start to make boot parameters =========="
 	SIZE_OF_CHECKSUM = 4
@@ -85,10 +76,10 @@ def make_bootparam():
 
 	kernel_data_size = SIZE_OF_CHECKSUM + SIZE_OF_BP_VERSION + SIZE_OF_BP_VERSION + SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
 
-	FLASH_START_ADDR = get_config_value(config_file_path, "CONFIG_FLASH_START_ADDR=")
-	FLASH_SIZE = get_config_value(config_file_path, "CONFIG_FLASH_SIZE=")
-	names = get_config_value(config_file_path, "CONFIG_FLASH_PART_NAME=").replace('"','').replace('\n','').split(",")
-	sizes = get_config_value(config_file_path, "CONFIG_FLASH_PART_SIZE=").replace('"','').replace('\n','').split(",")
+	FLASH_START_ADDR = util.get_value_from_file(config_file_path, "CONFIG_FLASH_START_ADDR=")
+	FLASH_SIZE = util.get_value_from_file(config_file_path, "CONFIG_FLASH_SIZE=")
+	names = util.get_value_from_file(config_file_path, "CONFIG_FLASH_PART_NAME=").replace('"','').replace('\n','').split(",")
+	sizes = util.get_value_from_file(config_file_path, "CONFIG_FLASH_PART_SIZE=").replace('"','').replace('\n','').split(",")
 	names = filter(None, names)
 	sizes = filter(None, sizes)
 
