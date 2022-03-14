@@ -1037,6 +1037,66 @@ int smartfs_unmount(struct smartfs_mountpt_s *fs)
 }
 
 /****************************************************************************
+ * Name: smartfs_get_datalen
+ *
+ * Description: Calculates the length of the opened file
+ *
+ ****************************************************************************/
+
+int smartfs_get_datalen(struct smartfs_mountpt_s *fs, uint16_t firstsector, uint32_t *datalen)
+{
+	fvdbg("Entry\n");
+	int ret = 0;
+	uint16_t dirsector;
+	struct smart_read_write_s readwrite;
+	struct smartfs_chain_header_s *header;
+
+	(*datalen) = 0;
+
+	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+	dirsector = firstsector;
+
+	while (dirsector != SMARTFS_ERASEDSTATE_16BIT) {
+		/* Read the next sector of the file */
+		smartfs_setbuffer(&readwrite, dirsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Error in sector chain at %d, ret : %d\n", readwrite.logsector, ret);
+			break;
+		}
+
+#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
+		if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
+			readwrite.count = fs->fs_llformat.availbytes;
+			readwrite.buffer = (uint8_t *)fs->fs_chunk_buffer;
+			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+			if (ret < 0) {
+				fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
+				break;
+			}
+			used_value = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
+			(*datalen) += used_value;
+		} else {
+			(*datalen) += SMARTFS_AVAIL_DATABYTES(fs);
+		}
+		readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
+#else
+		if (SMARTFS_USED(header) != SMARTFS_ERASEDSTATE_16BIT) {
+			(*datalen) += SMARTFS_USED(header);
+		}
+#endif
+		dirsector = SMARTFS_NEXTSECTOR(header);
+	}
+
+	if (ret < 0) {
+		fdbg("Unable to calculate length of file\n");
+		return ret;
+	}
+	fvdbg("Length of the file = %lu\n", (*datalen));
+	return OK;
+}
+
+/****************************************************************************
  * Name: smartfs_finddirentry
  *
  * Description: Finds an entry in the filesystem as specified by relpath.
@@ -1220,10 +1280,9 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 							strncpy(direntry->name, entry->name, fs->fs_llformat.namesize);
 							direntry->datalen = 0;
 
-							/* Scan the file's sectors to calculate the length and perform
-							 * a rudimentary check.
+							/* Invoke smartfs_get_datalen to scan through the file's sectors to calculate
+							 * its length and perform a rudimentary check.
 							 */
-
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
 							if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
 								dirsector = smartfs_rdle16(&entry->firstsector);
@@ -1231,39 +1290,10 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 							if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
 								dirsector = entry->firstsector;
 #endif
-								while (dirsector != SMARTFS_ERASEDSTATE_16BIT) {
-									/* Read the next sector of the file */
-
-									smartfs_setbuffer(&readwrite, dirsector, 0, sizeof(struct smartfs_chain_header_s), (uint8_t *)fs->fs_rwbuffer);
-									ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-									if (ret < 0) {
-										fdbg("Error in sector chain at %d, ret : %d\n", readwrite.logsector, ret);
-										break;
-									}
-#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-									if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
-
-										readwrite.count = fs->fs_llformat.availbytes;
-										readwrite.buffer = (uint8_t *)fs->fs_chunk_buffer;
-
-										ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-										if (ret < 0) {
-											fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
-											break;
-										}
-										used_value = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
-										direntry->datalen += used_value;
-									} else {
-										direntry->datalen += SMARTFS_AVAIL_DATABYTES(fs);
-									}
-									readwrite.buffer = (uint8_t *)fs->fs_rwbuffer;
-#else
-									/* Add used bytes to the total and point to next sector */
-									if (SMARTFS_USED(header) != SMARTFS_ERASEDSTATE_16BIT) {
-										direntry->datalen += SMARTFS_USED(header);
-									}
-#endif
-									dirsector = SMARTFS_NEXTSECTOR(header);
+								ret = smartfs_get_datalen(fs, dirsector, &(direntry->datalen));
+								if (ret < 0) {
+									fvdbg("ERROR wihle calculating file's data length\n");
+									goto errout;
 								}
 							}
 
