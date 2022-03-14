@@ -1066,7 +1066,7 @@ VOID app_vdd1833_detect(VOID)
 		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HS_RFAFE_IND_VIO1833, temp);
 	}
 
-	DBG_8195A("REG_HS_RFAFE_IND_VIO1833 (0 is 1.8V): %x\n", HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HS_RFAFE_IND_VIO1833));
+	DiagPrintf("REG_HS_RFAFE_IND_VIO1833 (0 is 1.8V): %x\n", HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HS_RFAFE_IND_VIO1833));
 }
 
 #if defined (__GNUC__)
@@ -1078,11 +1078,11 @@ void INT_HardFault_Patch_C(uint32_t mstack[], uint32_t pstack[], uint32_t lr_val
 {
 	u8 IsPstack = 0;
 
-	DBG_8195A("\r\nHard Fault Patch (Non-secure)\r\n");
+	DiagPrintf("\r\nHard Fault Patch (Non-secure)\r\n");
 
 	/* EXC_RETURN.S, 1: original is Secure, 0: original is Non-secure */
 	if (lr_value & BIT(6)) {					//Taken from S
-		DBG_8195A("\nException taken from Secure to Non-secure.\nSecure stack is used to store context." 
+		DiagPrintf("\nException taken from Secure to Non-secure.\nSecure stack is used to store context."
 			"It can not be dumped from non-secure side for security reason!!!\n");
 
 		while(1);

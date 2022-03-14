@@ -1,5 +1,12 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 093fd3e42cfb85250b9ca279d657fcda0a09d13a_2022/03/14-11:01:26 ==
+1.	Change 'printf' to  'vddbg'
+	- Change 'printf' to  'vddbg'
+	- Add default print information
+2.      Correct buffer init that cause hardfault when using malloc
+	-Correct buffer init that cause hardfault when using malloc for lib_wlan  and lib_wps
+
 == version ea2be28855c9e8881bfe113ad70d44b3bdd94bf1_2022/02/18-19:35:46 ==
 1.	Change save_and_cli() and restore_flags() to direct call irqsave() and irqrestore().
 	- Change return and input variable for APIs to prevent multiple access issue
