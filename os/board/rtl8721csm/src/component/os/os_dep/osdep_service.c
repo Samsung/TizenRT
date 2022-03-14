@@ -22,7 +22,6 @@
 #define OSDEP_DBG(x, ...) do {} while(0)
 
 extern struct osdep_service_ops osdep_service;
-extern int _tizenrt_printf(const char *format);
 
 #ifdef CONFIG_LITTLE_ENDIAN
 u16
@@ -458,10 +457,7 @@ int rtw_memcmp(void *dst, void *src, u32 sz)
 
 	return _FALSE;
 }
-int rtw_printf(const char *format,...)
-{
-	_tizenrt_printf(format);
-}
+
 void rtw_memset(void *pbuf, int c, u32 sz)
 {
 	if(osdep_service.rtw_memset)
