@@ -378,6 +378,8 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable);
 
 int smartfs_unmount(struct smartfs_mountpt_s *fs);
 
+int smartfs_get_datalen(struct smartfs_mountpt_s *fs, uint16_t firstsector, uint32_t *datalen);
+
 int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry, const char *relpath);
 
 int smartfs_createdirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *direntry);
