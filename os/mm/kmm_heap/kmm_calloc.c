@@ -71,7 +71,7 @@ static void *kheap_calloc(size_t n, size_t elem_size, size_t retaddr)
 {
 	int heap_idx;
 	void *ret;
-	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -122,7 +122,7 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 		return NULL;
 	}
 
-	kheap = kmm_get_heap();
+	kheap = kmm_get_baseheap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ret = mm_calloc(&kheap[heap_index], n, elem_size, caller_retaddr);
 	if (ret == NULL) {

@@ -103,7 +103,7 @@ bool kmm_heapmember(FAR void *mem)
 {
 	int kheap_idx;
 	int region_idx;
-	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	/* A valid address from the kernel heap for this region would have to lie
 	 * between the region's two guard nodes.

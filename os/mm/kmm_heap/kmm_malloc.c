@@ -84,7 +84,7 @@ static void *kheap_malloc(size_t size, size_t caller_retaddr)
 {
 	int heap_idx;
 	void *ret;
-	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -139,7 +139,7 @@ void *kmm_malloc_at(int heap_index, size_t size)
 		return NULL;
 	}
 
-	kheap = kmm_get_heap();
+	kheap = kmm_get_baseheap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ret = mm_malloc(&kheap[heap_index], size, caller_retaddr);
 #else

@@ -195,7 +195,7 @@ struct mm_heap_s *mm_get_heap(void *address)
 #ifdef CONFIG_MM_KERNEL_HEAP
 	int kheap_idx;
 	int region_idx;
-	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
 		for (region_idx = 0; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
