@@ -93,9 +93,9 @@ static void tc_umm_heap_malloc_free(void)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* Verify Allocation */
 
-		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
-		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		heap = umm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("umm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("umm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
 		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 #endif
 
@@ -159,9 +159,9 @@ static void tc_umm_heap_calloc(void)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* Verify Allocation */
 
-		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
-		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		heap = umm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("umm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("umm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
 		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 #endif
 
@@ -237,9 +237,9 @@ static void tc_umm_heap_realloc(void)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* Verify allocation by heapinfo */
 
-		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
-		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		heap = umm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("umm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("umm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
 		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 #endif
 
@@ -260,7 +260,7 @@ static void tc_umm_heap_realloc(void)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* Verify freeing by heapinfo */
 
-		TC_ASSERT_EQ("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
+		TC_ASSERT_EQ("umm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size, ALL_FREE);
 #endif
 	}
 
@@ -344,9 +344,9 @@ static void tc_umm_heap_memalign(void)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* Verify Allocation */
 
-		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
-		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		heap = umm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("umm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("umm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
 		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 #endif
 
@@ -453,9 +453,9 @@ static void tc_umm_heap_zalloc(void)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* Verify Allocation */
 
-		heap = mm_get_heap(mem_ptr[n_alloc - 1]);
-		TC_ASSERT_NEQ_CLEANUP("mm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
-		TC_ASSERT_EQ_ERROR_CLEANUP("mm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
+		heap = umm_get_heap(mem_ptr[n_alloc - 1]);
+		TC_ASSERT_NEQ_CLEANUP("umm_get_heap", heap, NULL, mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
+		TC_ASSERT_EQ_ERROR_CLEANUP("umm_get_heap", heap->alloc_list[hash_pid].curr_alloc_size,
 		          MEM_REQ_SIZE(alloc_size, ALLOC_FREE_TIMES), get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 #endif
 
