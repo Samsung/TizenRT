@@ -99,7 +99,7 @@
  ************************************************************************/
 bool kmm_heapmember(FAR void *mem)
 {
-	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *kheap = kmm_get_baseheap();
 	struct mm_heap_s *pheap = mm_get_heap(mem);
 
 	/* mm_get_heap will return either the kernel heap (if no app loaded)

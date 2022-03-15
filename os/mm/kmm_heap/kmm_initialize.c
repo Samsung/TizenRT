@@ -83,7 +83,7 @@ struct mm_heap_s g_kmmheap[CONFIG_KMM_NHEAPS];
 /************************************************************************
  * Public Functions
  ************************************************************************/
-struct mm_heap_s *kmm_get_heap(void)
+struct mm_heap_s *kmm_get_baseheap(void)
 {
 	return g_kmmheap;
 }

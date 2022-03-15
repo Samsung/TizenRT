@@ -98,7 +98,7 @@ void *kmm_zalloc_at(int heap_index, size_t size)
 		return NULL;
 	}
 
-	kheap = kmm_get_heap();
+	kheap = kmm_get_baseheap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ret = mm_zalloc(&kheap[heap_index], size, caller_retaddr);
 #else
@@ -137,7 +137,7 @@ FAR void *kmm_zalloc(size_t size)
 		return NULL;
 	}
 
-	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO

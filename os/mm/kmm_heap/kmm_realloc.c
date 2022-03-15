@@ -98,7 +98,7 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 		return NULL;
 	}
 
-	kheap = kmm_get_heap();
+	kheap = kmm_get_baseheap();
 
 	if (size == 0) {
 		mm_free(&kheap[heap_index], oldmem);
@@ -158,7 +158,7 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	}
 
 	/* Try to mm_malloc to another heap. */
-	kheap_new = kmm_get_heap();
+	kheap_new = kmm_get_baseheap();
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_malloc(&kheap_new[kheap_idx], newsize, caller_retaddr);

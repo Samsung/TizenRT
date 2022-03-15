@@ -390,7 +390,7 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #ifndef CONFIG_BUILD_PROTECTED
 		heap = mm_get_heap_with_index(0);
 #else
-		heap = kmm_get_heap();
+		heap = kmm_get_baseheap();
 #endif
 	} else {
 		heap = mm_get_heap(tcb->stack_alloc_ptr);

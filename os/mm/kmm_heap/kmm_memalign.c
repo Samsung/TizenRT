@@ -105,7 +105,7 @@ void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 		return NULL;
 	}
 
-	kheap = kmm_get_heap();
+	kheap = kmm_get_baseheap();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ret = mm_memalign(&kheap[heap_index], alignment, size, caller_retaddr);
 #else
@@ -145,7 +145,7 @@ FAR void *kmm_memalign(size_t alignment, size_t size)
 	size_t caller_retaddr = 0;
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
-	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *kheap = kmm_get_baseheap();
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_memalign(&kheap[kheap_idx], alignment, size, caller_retaddr);

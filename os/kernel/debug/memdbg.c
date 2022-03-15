@@ -80,7 +80,7 @@ void display_memory_information(void)
 {
 	int region_idx;
 	int heap_idx;
-	struct mm_heap_s *kheap = kmm_get_heap();
+	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	mllwdbg("--------------------RAM Configuration---------------------\n");
 	/* Print RAM configuration */

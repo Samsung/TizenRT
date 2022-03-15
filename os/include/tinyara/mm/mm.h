@@ -653,7 +653,7 @@ int kmm_mallinfo(struct mallinfo *info);
 #endif							/* CONFIG_CAN_PASS_STRUCTS */
 
 #ifdef CONFIG_MM_KERNEL_HEAP
-struct mm_heap_s *kmm_get_heap(void);
+struct mm_heap_s *kmm_get_baseheap(void);
 #endif
 
 /* Functions contained in mm_shrinkchunk.c **********************************/
