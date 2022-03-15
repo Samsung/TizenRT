@@ -191,8 +191,9 @@
 #define SMARTFS_DIRENT_TYPE_DIR   0x2000
 #define SMARTFS_DIRENT_TYPE_FILE  0x0000
 
-/* Number of bytes in the SMART magic sequences */
+#define SMARTFS_DIRENT_LEN_UNKWN  0xFFFFFFFF	/* Signifies that the length of the openend file is not calculated yet */
 
+/* Number of bytes in the SMART magic sequences */
 #define SMART_MAGICSIZE           4
 
 /* Quasi-standard definitions */

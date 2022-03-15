@@ -548,6 +548,16 @@ off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s
 		return sf->filepos;
 	}
 
+	/* Before any further checks/operations, we need to make sure that the length of the file has been calculated */
+
+	if (sf->entry.datalen == SMARTFS_DIRENT_LEN_UNKWN) {
+		fvdbg("Need to get data length before seeking\n");
+		ret = smartfs_get_datalen(fs, sf->entry.firstsector, &sf->entry.datalen);
+		if (ret < 0) {
+			goto errout;
+		}
+	}
+
 	/* Test if we need to sync the file */
 
 	if (sf->byteswritten > 0) {
@@ -1290,11 +1300,8 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 							if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
 								dirsector = entry->firstsector;
 #endif
-								ret = smartfs_get_datalen(fs, dirsector, &(direntry->datalen));
-								if (ret < 0) {
-									fvdbg("ERROR wihle calculating file's data length\n");
-									goto errout;
-								}
+								/* Mark the file's length as unknown, it will be calculated later if required */
+								direntry->datalen = SMARTFS_DIRENT_LEN_UNKWN;
 							}
 
 							direntry->prev_parent = dirstack[depth];
