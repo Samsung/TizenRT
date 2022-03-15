@@ -1026,3 +1026,14 @@ config LOG_DUMP_MAX_FREE_HEAP
 	default 20
 
 endif # LOG_DUMP
+
+menu "SRAM Heap size information"
+
+config SRAM_HEAP_SIZE
+	int "SRAM heap size(KB)"
+	default 109
+	depends on ARCH_BOARD_RTL8721CSM
+	---help---
+		SRAM heap size required for wifi performance
+		Default: 109(in KB)
+endmenu # Heap size information
