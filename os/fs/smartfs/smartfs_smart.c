@@ -221,6 +221,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 
 	sf->entry.name = NULL;
 	ret = smartfs_finddirentry(fs, &sf->entry, relpath);
+
 	/* Three possibilities: (1) a node exists for the relpath and
 	 * dirinfo describes the directory entry of the entity, (2) the
 	 * node does not exist, or (3) some error occurred.
@@ -243,6 +244,15 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 
 			ret = -EEXIST;
 			goto errout_with_buffer;
+		}
+
+		/* If the file is being opened in a mode other than "READ ONLY", we will need the length of the file */
+		if ((oflags & O_ACCMODE) != O_RDONLY) {
+			ret = smartfs_get_datalen(fs, sf->entry.firstsector, &sf->entry.datalen);
+			if (ret < 0) {
+				fdbg("ERROR, Could not get the length of the file, ret : %d\n", ret);
+				goto errout_with_buffer;
+			}
 		}
 
 		/* The file exists already.
@@ -1742,6 +1752,13 @@ static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat 
 	entry.name = NULL;
 	ret = smartfs_finddirentry(fs, &entry, relpath);
 	if (ret < 0) {
+		goto errout_with_semaphore;
+	}
+
+	/* We need to know the data length of the file too */
+	ret = smartfs_get_datalen(fs, entry.firstsector, &entry.datalen);
+	if (ret < 0) {
+		fdbg("ERROR, Could not get the length of the file, ret : %d\n", ret);
 		goto errout_with_semaphore;
 	}
 
