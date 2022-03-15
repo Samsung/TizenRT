@@ -135,7 +135,7 @@ void stackinfo_save_terminated(struct tcb_s *tcb)
 	terminated_thread_stkinfo[stkmon_chk_idx % STKMON_MAX_LOGS].chk_peaksize = up_check_tcbstack(tcb);
 #endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heap = mm_get_heap(tcb->stack_alloc_ptr);
+	heap = kmm_get_heap(tcb->stack_alloc_ptr);
 	if (heap == NULL) {
 		return;
 	}
