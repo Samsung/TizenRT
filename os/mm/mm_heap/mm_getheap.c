@@ -181,8 +181,9 @@ char *mm_get_app_heap_name(void *address)
  ****************************************************************************/
 struct mm_heap_s *mm_get_heap(void *address)
 {
-#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
-	/* If address was not found in kernel or user heap, search for it in app heaps */
+#if defined(CONFIG_APP_BINARY_SEPARATION)
+#if defined(__KERNEL__)
+	/* Try to find the app heap from kernel. */
 	app_heap_s *node =  mm_get_app_heap_node(address);
 	if (node) {
 		if (node->is_active) {
@@ -191,30 +192,27 @@ struct mm_heap_s *mm_get_heap(void *address)
 			return NULL;
 		}
 	}
+#else
+	/* User can only have single heap. */
+	return BASE_HEAP;
 #endif
-#ifdef CONFIG_MM_KERNEL_HEAP
-	int kheap_idx;
-	int region_idx;
-	struct mm_heap_s *kheap = kmm_get_baseheap();
+#endif
 
-	for (kheap_idx = 0; kheap_idx < CONFIG_KMM_NHEAPS; kheap_idx++) {
+#ifdef CONFIG_MM_KERNEL_HEAP
+	int heap_idx;
+	int region_idx;
+	struct mm_heap_s *heap = kmm_get_baseheap();
+
+	for (heap_idx = 0; heap_idx < CONFIG_KMM_NHEAPS; heap_idx++) {
 		for (region_idx = 0; region_idx < CONFIG_KMM_REGIONS; region_idx++) {
-			if (address >= (FAR void *)kheap[kheap_idx].mm_heapstart[region_idx] && address < (FAR void *)kheap[kheap_idx].mm_heapend[region_idx]) {
-				return &kheap[kheap_idx];
+			if (address >= (FAR void *)heap[heap_idx].mm_heapstart[region_idx] && address < (FAR void *)heap[heap_idx].mm_heapend[region_idx]) {
+				return &heap[heap_idx];
 			}
 		}
 	}
 #endif
-	int heap_idx;
-	heap_idx = mm_get_heapindex(address);
-	if (heap_idx == INVALID_HEAP_IDX) {
-		mdbg("address 0x%x is not in heap region.\n", address);
-		return NULL;
-	}
-
-	return &BASE_HEAP[heap_idx];
+	return NULL;
 }
-
 
 /****************************************************************************
  * Name: mm_get_heap_with_index

@@ -707,6 +707,11 @@ struct mm_heap_s *mm_get_app_heap_with_name(char *app_name);
 char *mm_get_app_heap_name(void *address);
 #endif
 
+struct mm_heap_s *umm_get_heap(void *address);
+struct mm_heap_s *kmm_get_heap(void *addr);
+struct mm_heap_s *kmm_get_heap_with_index(int index);
+int kmm_get_heapindex(void *mem);
+
 /* Function to check heap corruption */
 int mm_check_heap_corruption(struct mm_heap_s *heap);
 
