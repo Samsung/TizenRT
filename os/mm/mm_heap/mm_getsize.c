@@ -56,7 +56,7 @@ static size_t mm_get_largest_freesize_from_specific_heap(struct mm_heap_s *heap)
  * Name: mm_get_largest_freenode_size
  *
  * Description:
- *   returns a largest free node size in the heap
+ *   Returns the largest free node size in the heap
  ****************************************************************************/
 
 size_t mm_get_largest_freenode_size(void)
@@ -103,7 +103,7 @@ size_t mm_get_largest_freenode_size(void)
  * Name: mm_get_heap_free_size
  *
  * Description:
- *   returns free size in the heap
+ *   Returns free size in the heap
  ****************************************************************************/
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 size_t mm_get_heap_free_size(void)
