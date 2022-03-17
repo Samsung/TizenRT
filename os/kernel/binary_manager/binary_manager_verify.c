@@ -167,7 +167,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 			bin_size = ((common_binary_header_t *)header_data)->bin_size;
 			crc_hash = ((common_binary_header_t *)header_data)->crc_hash;
 		}
-		size_t max_bufsize = mm_get_largest_freenode_size() / 2;
+		size_t max_bufsize = kmm_get_largest_freenode_size() / 2;
 		crc_bufsize = crc_bufsize < max_bufsize ? crc_bufsize : max_bufsize;
 		crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
 		if (!crc_buffer) {
