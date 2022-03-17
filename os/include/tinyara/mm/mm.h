@@ -711,6 +711,12 @@ struct mm_heap_s *umm_get_heap(void *address);
 struct mm_heap_s *kmm_get_heap(void *addr);
 struct mm_heap_s *kmm_get_heap_with_index(int index);
 int kmm_get_heapindex(void *mem);
+size_t kmm_get_largest_freenode_size(void);
+size_t umm_get_largest_freenode_size(void);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+size_t kmm_get_heap_free_size(void);
+size_t umm_get_heap_free_size(void);
+#endif
 
 /* Function to check heap corruption */
 int mm_check_heap_corruption(struct mm_heap_s *heap);
