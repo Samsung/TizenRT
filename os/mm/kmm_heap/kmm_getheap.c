@@ -23,9 +23,17 @@
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
 
+/* This is the kernel heap */
+
+struct mm_heap_s g_kmmheap[CONFIG_KMM_NHEAPS];
+
 /************************************************************************
  * Public Functions
  ************************************************************************/
+struct mm_heap_s *kmm_get_baseheap(void)
+{
+	return g_kmmheap;
+}
 
 /************************************************************************
  * Name: kmm_get_heap

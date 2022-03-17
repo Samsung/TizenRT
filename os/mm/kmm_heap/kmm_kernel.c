@@ -59,6 +59,7 @@
 #include <assert.h>
 
 #include <tinyara/kmalloc.h>
+#include <tinyara/mm/mm.h>
 
 #if ((defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)) || \
 	 defined(CONFIG_BUILD_KERNEL)) && defined(CONFIG_MM_KERNEL_HEAP)

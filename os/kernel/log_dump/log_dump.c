@@ -155,7 +155,7 @@ int log_dump_save(char ch)
 
 	size_t free_size;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	free_size = mm_get_heap_free_size(void);
+	free_size = kmm_get_heap_free_size(void);
 #else
 	struct mallinfo mem;
 #ifdef CONFIG_CAN_PASS_STRUCTS
