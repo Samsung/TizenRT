@@ -125,7 +125,8 @@ def make_kernel_binary_header():
         sys.exit(1)
     bin_ver = int(bin_ver)
     if bin_ver < 101 or bin_ver > 991231 :
-        print("Error : Invalid value. It has 'YYMMDD' format so it should be in (101, 991231)")
+        print("Error : Invalid Kernel Binary Version, ",bin_ver,".")
+        print("        Please check CONFIG_BOARD_BUILD_DATE with 'YYMMDD' format in (101, 991231)")
         sys.exit(1)
 
     with open(file_path, 'rb') as fp:
@@ -277,9 +278,10 @@ def make_user_binary_header():
         if kernel_ver == 'None' :
             print("Error : Not Found config for kernel version, CONFIG_BOARD_BUILD_DATE")
             sys.exit(1)
-    kernel_ver = int(kernel_ver)
+        kernel_ver = int(kernel_ver)
         if kernel_ver < 101 or kernel_ver > 991231 :
-            print("Error : Invalid value. It has 'YYMMDD' format so it should be in (101, 991231)")
+            print("Error : Invalid Kernel Binary Version, ",kernel_ver,".")
+            print("        Please check CONFIG_BOARD_BUILD_DATE with 'YYMMDD' format in (101, 991231)")
             sys.exit(1)
 
         # based on comp_enabled, check if we need to compress binary.
@@ -350,11 +352,13 @@ def make_common_binary_header():
 
     # Get binary version
     bin_ver = util.get_value_from_file(cfg_path, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').replace('\n','')
-    if bin_ver < 0 :
-        print("Error : Not Found config for version, CONFIG_COMMON_BINARY_VERSION")
+    if bin_ver == 'None' :
+        print("Error : Not Found config for Common binary version, CONFIG_COMMON_BINARY_VERSION")
         sys.exit(1)
-    elif bin_ver < 101 or bin_ver > 991231 :
-        print("Error : Invalid value. It has 'YYMMDD' format so it should be in (101, 991231)")
+    bin_ver = int(bin_ver)
+    if bin_ver < 101 or bin_ver > 991231 :
+        print("Error : Invalid Common Binary Version, ",bin_ver,".")
+        print("        Please check CONFIG_COMMON_BINARY_VERSION with 'YYMMDD' format in (101, 991231)")
         sys.exit(1)
 
     with open(file_path, 'rb') as fp:
