@@ -227,9 +227,9 @@ struct mm_heap_s *mm_get_heap_with_index(int index)
 }
 
 /****************************************************************************
- * Name: mm_get_heapindex
+ * Name: mm_get_index_of_heap
  ****************************************************************************/
-int mm_get_heapindex(void *mem)
+int mm_get_index_of_heap(void *mem)
 {
 	int heap_idx;
 	if (mem == NULL) {
