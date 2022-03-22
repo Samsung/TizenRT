@@ -51,7 +51,7 @@ def get_static_ram_size(bin_type):
     bsssize = 0
     if bin_type == ELF :
         # Static RAM size : Extract from readelf command in linux(ONLY for elf)
-        os.system('readelf -S ' + file_path + ' > ' + STATIC_RAM_ESTIMATION)
+        os.system('readelf -S ' + file_path + '_dbg > ' + STATIC_RAM_ESTIMATION)
         ram_fp = open(STATIC_RAM_ESTIMATION, 'rb')
         line = ram_fp.readline()
         while line:
@@ -174,9 +174,7 @@ def make_kernel_binary_header():
 # argv[6] is a dynamic ram size required to run this binary.
 # argv[7] is main task stack size.
 # argv[8] is main task priority.
-# argv[9] is compression type
-# argv[10] is block size for compression
-# argv[11] is a loading priority.
+# argv[9] is a loading priority.
 #
 ############################################################################
 
@@ -187,9 +185,7 @@ def make_user_binary_header():
     dynamic_ram_size = sys.argv[6]
     main_stack_size = sys.argv[7]
     main_priority = sys.argv[8]
-    comp_enabled = sys.argv[9]
-    comp_blk_size = sys.argv[10]
-    loading_priority = sys.argv[11]
+    loading_priority = sys.argv[9]
 
     # Path to directory of this file
     mkbinheader_path = os.path.dirname(__file__)
@@ -206,11 +202,6 @@ def make_user_binary_header():
     SIZE_OF_KERNELVER = 4
 
     header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_MAINPRIORITY + SIZE_OF_LOADINGPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER
-
-    COMP_NONE = 0
-    COMP_LZMA = 1
-    COMP_MINIZ = 2
-    COMP_MAX = COMP_MINIZ
 
     # Loading priority
     LOADING_LOW = 1
@@ -283,29 +274,6 @@ def make_user_binary_header():
             print("Error : Invalid Kernel Binary Version, ",kernel_ver,".")
             print("        Please check CONFIG_BOARD_BUILD_DATE with 'YYMMDD' format in (101, 991231)")
             sys.exit(1)
-
-        # based on comp_enabled, check if we need to compress binary.
-        # If yes, assign to bin_comp value for compression algorithm to use.
-        # Else, assign 0 to bin_comp to represent no compression
-        if 0 < int(comp_enabled) <= COMP_MAX :
-            bin_comp = int(comp_enabled)
-        else :
-            bin_comp = 0
-
-        # Compress data according to Compression Algorithm represented by bin_comp
-        # Run mkcompressimg tool with provided options. Read output compressed file into data.
-        if bin_comp > COMP_NONE :
-            os.system('cp ' + file_path + ' ' + file_path + '.uncomp')
-            fp_tmp = open("tmp", 'wb+')
-            fp_tmp.write(data)
-            fp_tmp.close()
-            if os.system(mkbinheader_path + '/compression/mkcompressimg ' + comp_blk_size + ' ' + comp_enabled + ' tmp' + ' tmp_comp') != 0 :
-                sys.exit(1)
-            fp_tmp = open("tmp_comp", 'rb')
-            data = fp_tmp.read()
-            file_size = fp_tmp.tell()
-            fp_tmp.close()
-            os.system('rm tmp tmp_comp')
 
         fp = open(file_path, 'wb')
 

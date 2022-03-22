@@ -72,15 +72,13 @@ $(foreach CDIR, $(BUILDIRS), $(eval $(call DIR_template,$(CDIR),clean)))
 $(foreach CDIR, $(BUILDIRS), $(eval $(call DIR_template,$(CDIR),distclean)))
 
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-$(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),verify)))
 $(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),install)))
 
-all: build verify install
-.PHONY: all build clean install distclean depend verify preconfig
+all: build install
+.PHONY: all build clean install distclean depend preconfig
 
 install: $(foreach BDIR, $(CONFIGURED), $(BDIR)_install)
 
-verify: $(foreach BDIR, $(CONFIGURED), $(BDIR)_verify)
 else # !CONFIG_APP_BINARY_SEPARATION
 
 all: build

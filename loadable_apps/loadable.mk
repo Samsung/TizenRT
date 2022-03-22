@@ -31,14 +31,6 @@ LDLIBS += $(LIBGCC)
 
 OBJCOPY = $(CROSSDEV)objcopy
 
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
-COMPRESSION_TYPE = $(CONFIG_COMPRESSION_TYPE)
-BLOCK_SIZE = $(CONFIG_COMPRESSION_BLOCK_SIZE)
-else
-COMPRESSION_TYPE = 0
-BLOCK_SIZE = 0
-endif
-
 APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
 
 SRCS += $(USERSPACE).c
@@ -49,7 +41,7 @@ prebuild:
 	$(call DELFILE, $(USERSPACE)$(OBJEXT))
 
 all: prebuild $(BIN)
-.PHONY: prebuild clean install verify
+.PHONY: prebuild clean install
 
 $(OBJS): %$(OBJEXT): %.c
 	@echo "CC: $<"
@@ -72,25 +64,4 @@ clean:
 distclean: clean
 
 install:
-	$(Q) mkdir -p $(USER_BIN_DIR)/user
 	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
-ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
-	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)_dbg
-	$(Q) $(OBJCOPY) --remove-section .comment $(USER_BIN_DIR)/$(BIN)
-	$(Q) $(STRIP) -g $(USER_BIN_DIR)/$(BIN) -o $(USER_BIN_DIR)/$(BIN)
-endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(USER_BIN_DIR)/$(BIN) user $(BIN_TYPE) $(BIN) $(BIN_VER) $(DYNAMIC_RAM_SIZE) $(STACKSIZE) $(PRIORITY) $(COMPRESSION_TYPE) $(BLOCK_SIZE) $(LOADING_PRIORITY)
-	$(Q) $(TOPDIR)/tools/mkchecksum.py $(USER_BIN_DIR)/$(BIN)
-	$(Q) cp $(USER_BIN_DIR)/$(BIN) $(USER_BIN_DIR)/user
-
-verify:
-# If we support common binary, then the symbols in the common binary will appear as UNDEFINED
-# in the application binary. So, verification is required only when we dont support common binary.
-ifneq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
-	$(Q) if [ "`nm -u $(BIN) | wc -l`" != "0" ]; then \
-		echo "Undefined Symbols"; \
-		nm -u -l $(BIN); \
-		rm $(BIN); \
-		exit 1; \
-	fi
-endif
