@@ -451,26 +451,6 @@ ifeq ($(CONFIG_BUILD_2PASS),y)
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
-	$(Q) if [ "`nm -u $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) | wc -l`" != "0" ]; then \
-		echo "Undefined Symbols in Common binary"; \
-		nm -u -l $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME); \
-		rm $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME); \
-		exit 1; \
-	fi
-	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)_dbg
-	$(Q) $(STRIP) -g -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
-	$(Q) $(OBJCOPY) --remove-section .comment $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
-	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).uncomp
-	$(Q) tools/compression/mkcompressimg $(CONFIG_COMPRESSION_BLOCK_SIZE) $(CONFIG_COMPRESSION_TYPE) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).comp
-	$(Q) mv $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).comp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
-endif
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) common
-	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
-	$(Q) cp $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $(OUTBIN_DIR)/user/common
-endif
-ifeq ($(CONFIG_BINARY_SIGNING),y)
-	$(Q) $(call MAKE_USER_SIGNING)
 endif
 endif
 
@@ -495,7 +475,63 @@ ifeq ($(CONFIG_RAW_BINARY),y)
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
 endif
 
+# Verify app binary to make sure there are no undefined symbols
+define VERIFY_APP
+	$(Q) echo "Verify $(OUTBIN_DIR)/$1"
+	$(Q) if [ "`nm -u $(OUTBIN_DIR)/$1 | wc -l`" != "0" ]; then \
+		echo "Undefined Symbols in $(OUTBIN_DIR)/$1"; \
+		nm -u -l $(OUTBIN_DIR)/$1; \
+		rm $(OUTBIN_DIR)/$1; \
+		exit 1; \
+	fi
+endef
+
+# Strip debug symbols from binary if CONFIG_ELF_EXCLUDE_SYMBOLS is enabled
+ifeq ($(CONFIG_ELF_EXCLUDE_SYMBOLS),y)
+define STRIP_DBG
+	$(Q) $(OBJCOPY) --remove-section .comment $(OUTBIN_DIR)/$1
+	$(Q) $(STRIP) -g $(OUTBIN_DIR)/$1 -o $(OUTBIN_DIR)/$1
+endef
+endif
+
+# Perform binary compression if it is enabled
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+define COMPRESS_BIN
+	$(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/$1.uncomp
+	$(Q) tools/compression/mkcompressimg $(CONFIG_COMPRESSION_BLOCK_SIZE) $(CONFIG_COMPRESSION_TYPE) $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/$1.comp
+	$(Q) mv $(OUTBIN_DIR)/$1.comp $(OUTBIN_DIR)/$1
+endef
+endif
+
+# Prepare the app binary according to TizenRT requirement
+# Strip debug symbols, Compress and add binary header
+define PREPARE_APP
+	$(Q) echo "Preparing final $(OUTBIN_DIR)/$1 binary"
+	$(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/$1_dbg
+	$(Q) $(call STRIP_DBG,$1)
+	$(Q) $(call COMPRESS_BIN,$1)
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/$1 $2 $3 $1 $4 $5 $6 $7 $8
+	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$1
+	$(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/user
+endef
+
 post:
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+	$(Q) mkdir -p $(OUTBIN_DIR)/user
+ifneq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+	$(Q) $(call VERIFY_APP,"app1") #When common binary is used, undefined symbols of app
+	$(Q) $(call VERIFY_APP,"app2") #will be defined in common binary. So dont perform "verify" for apps
+endif 
+	$(Q) $(call PREPARE_APP,"app1","user",$(CONFIG_APP1_BIN_TYPE),$(CONFIG_APP1_BIN_VER),$(CONFIG_APP1_BIN_DYN_RAMSIZE),$(CONFIG_APP1_MAIN_STACKSIZE),$(CONFIG_APP1_MAIN_PRIORITY),$(CONFIG_APP1_BIN_LOADING_PRIORITY))
+	$(Q) $(call PREPARE_APP,"app2","user",$(CONFIG_APP2_BIN_TYPE),$(CONFIG_APP2_BIN_VER),$(CONFIG_APP2_BIN_DYN_RAMSIZE),$(CONFIG_APP2_MAIN_STACKSIZE),$(CONFIG_APP2_MAIN_PRIORITY),$(CONFIG_APP2_BIN_LOADING_PRIORITY))
+ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+	$(Q) $(call VERIFY_APP,$(CONFIG_COMMON_BINARY_NAME))
+	$(Q) $(call PREPARE_APP,$(CONFIG_COMMON_BINARY_NAME),"common",$(CONFIG_COMMON_BINARY_VERSION))
+endif
+ifeq ($(CONFIG_BINARY_SIGNING),y)
+	$(Q) $(call MAKE_USER_SIGNING)
+endif
+endif
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) python ./tools/set_bininfo.py $(BIN_EXT)
