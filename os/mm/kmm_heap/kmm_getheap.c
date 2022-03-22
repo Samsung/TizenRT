@@ -39,7 +39,7 @@ struct mm_heap_s *kmm_get_baseheap(void)
  * Name: kmm_get_heap
  *
  * Description:
- *   returns the kernel heap structure.
+ *   Returns the kernel heap structure.
  *
  ************************************************************************/
 struct mm_heap_s *kmm_get_heap(void *addr)
@@ -51,7 +51,7 @@ struct mm_heap_s *kmm_get_heap(void *addr)
  * Name: kmm_get_heap_with_index
  *
  * Description:
- *   returns the kernel heap matched with index.
+ *   Returns the kernel heap matched with index.
  *
  ************************************************************************/
 struct mm_heap_s *kmm_get_heap_with_index(int index)
@@ -60,13 +60,13 @@ struct mm_heap_s *kmm_get_heap_with_index(int index)
 }
 
 /************************************************************************
- * Name: kmm_get_heapindex
+ * Name: kmm_get_index_of_heap
  *
  * Description:
- *   returns the kernel heap index.
+ *   Returns the kernel heap index.
  *
  ************************************************************************/
-int kmm_get_heapindex(void *mem)
+int kmm_get_index_of_heap(void *mem)
 {
-	return mm_get_heapindex(mem);
+	return mm_get_index_of_heap(mem);
 }

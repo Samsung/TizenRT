@@ -692,7 +692,7 @@ void mm_is_sem_available(void *address);
 struct mm_heap_s *mm_get_heap(void *address);
 struct mm_heap_s *mm_get_heap_with_index(int index);
 
-int mm_get_heapindex(void *mem);
+int mm_get_index_of_heap(void *mem);
 size_t mm_get_largest_freenode_size(void);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 size_t mm_get_heap_free_size(void);
@@ -710,7 +710,7 @@ char *mm_get_app_heap_name(void *address);
 struct mm_heap_s *umm_get_heap(void *address);
 struct mm_heap_s *kmm_get_heap(void *addr);
 struct mm_heap_s *kmm_get_heap_with_index(int index);
-int kmm_get_heapindex(void *mem);
+int kmm_get_index_of_heap(void *mem);
 size_t kmm_get_largest_freenode_size(void);
 size_t umm_get_largest_freenode_size(void);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO

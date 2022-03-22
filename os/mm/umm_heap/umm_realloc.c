@@ -140,7 +140,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 
-	heap_idx = mm_get_heapindex(oldmem);
+	heap_idx = mm_get_index_of_heap(oldmem);
 	if (heap_idx < HEAP_START_IDX) {
 		return NULL;
 	}
