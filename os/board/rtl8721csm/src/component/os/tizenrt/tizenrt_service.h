@@ -315,6 +315,9 @@ extern int rtw_if_wifi_thread(char *name);
 int rtw_printf(const char *format,...);
 int rtw_printf_info(const char *format,...);
 
+void rtw_block_current_task(void);
+void rtw_unblock_task(void *task);
+
 #if (defined CONFIG_PLATFORM_8711B) || (defined CONFIG_PLATFORM_8721D)
 extern u32 random_seed;
 #endif

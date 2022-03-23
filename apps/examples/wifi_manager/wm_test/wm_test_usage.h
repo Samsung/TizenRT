@@ -93,6 +93,11 @@
 	"\n dns test mode\n"										\
 	"\n it can be run after a device is connected to an AP\n"	\
 	"	 wm_test dns count\n"
+	
+#define WT_EAP_USAGE							\
+	"\n run eap\n"							\
+	"	wm_test eap [eap_method]\n"				\
+	"	eap_method examples: peap, tls, ttls\n"
 
 #define WT_USAGE									\
 	"\n usage: wm_test [options]\n"					\
@@ -110,4 +115,5 @@
 	WT_INTEROP_USAGE								\
 	WT_ADD_AP_USAGE									\
 	WT_DISPLAY_AP_USAGE\
-	WT_DNS_USAGE
+	WT_DNS_USAGE									\
+	WT_EAP_USAGE

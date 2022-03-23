@@ -723,12 +723,52 @@ int wifi_connect(
 					rtw_free(join_result->network_info.password);
 				}
 				result = RTW_TIMEOUT;
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+				memset(&reason, 0, sizeof(rtk_reason_t));
+				switch (error_flag) {
+					case RTW_NONE_NETWORK:
+						reason.reason_code = RTK_REASON_NETWORK_CONFIGURATION_NOT_FOUND;
+						break;
+					case RTW_CONNECT_FAIL:
+						reason.reason_code = RTK_STATUS_ERROR;
+						break;
+					case RTW_4WAY_HANDSHAKE_TIMEOUT:
+						reason.reason_code = RTK_REASON_NETWORK_AUTHENTICATION_FAILED;
+						break;
+					default:
+						reason.reason_code = RTK_STATUS_ERROR;
+						break;
+				}
+
+				if (g_link_up) {
+					if (reason.reason_code)
+						nvdbg("reason.reason_code=%d\n", reason.reason_code);
+					nvdbg("RTK_API %s() send link_up\n", __func__);
+					g_link_up(&reason);
+				}
+#endif
 				goto error;
 			} else {
 				if(wifi_is_connected_to_ap( ) != RTW_SUCCESS) {
 					result = RTW_ERROR;
 					goto error;
 				}
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+				memset(&reason, 0, sizeof(rtk_reason_t));
+				rtw_memcpy(reason.bssid, join_result->network_info.bssid.octet, ETH_ALEN);
+				rtw_memcpy(reason.ssid, join_result->network_info.ssid.val, 32);
+				reason.ssid_len = join_result->network_info.ssid.len;
+				reason.reason_code = RTK_STATUS_SUCCESS;
+
+				if (g_link_up) {
+					if (reason.reason_code) {
+						nvdbg("reason.reason_code=%d\n", reason.reason_code);
+					}
+					nvdbg("RTK_API %s() send link_up\n", __func__);
+					g_link_up(&reason);
+				}
+#endif
+
 			}
 		}
 		else
@@ -742,18 +782,18 @@ int wifi_connect(
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)			
 				memset(&reason, 0, sizeof(rtk_reason_t));
 				switch (error_flag) {
-				case RTW_NONE_NETWORK:
-					reason.reason_code = RTK_REASON_NETWORK_CONFIGURATION_NOT_FOUND;
-					break;
-				case RTW_CONNECT_FAIL:
-					reason.reason_code = RTK_STATUS_ERROR;
-					break;
-				case RTW_4WAY_HANDSHAKE_TIMEOUT:
-					reason.reason_code = RTK_REASON_NETWORK_AUTHENTICATION_FAILED;
-					break;
-				default:
-					reason.reason_code = RTK_STATUS_ERROR;
-					break;
+					case RTW_NONE_NETWORK:
+						reason.reason_code = RTK_REASON_NETWORK_CONFIGURATION_NOT_FOUND;
+						break;
+					case RTW_CONNECT_FAIL:
+						reason.reason_code = RTK_STATUS_ERROR;
+						break;
+					case RTW_4WAY_HANDSHAKE_TIMEOUT:
+						reason.reason_code = RTK_REASON_NETWORK_AUTHENTICATION_FAILED;
+						break;
+					default:
+						reason.reason_code = RTK_STATUS_ERROR;
+						break;
 				}
 
 				if (g_link_up) {
