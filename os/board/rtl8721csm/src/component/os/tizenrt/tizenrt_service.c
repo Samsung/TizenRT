@@ -1185,6 +1185,30 @@ int rtw_printf_info(const char *format,...)
 	return ret;
 }
 
+/* Blocks the currently running task, need to called within the currently running task.
+ * It is added because there is no task suspension related function found in the SDK.
+ */
+void rtw_block_current_task(void){
+	FAR struct tcb_s *tcb;
+	tcb = this_task();
+	up_block_task(tcb, TSTATE_WAIT_FIN);
+}
+
+/* Unblocks the task previously blocked by rtw_block_current_task(), the input *task
+ * is the pid of the previously blocked task.
+ */
+void rtw_unblock_task(void *task){
+	FAR struct tcb_s *tcb;
+	tcb = sched_gettcb(*(pid_t *)task);
+
+	if (tcb == NULL) {
+		DBG_ERR("Failed to get main task %d!\n", *(pid_t *)task);
+		return;
+	}
+
+	up_unblock_task(tcb);
+}
+
 const struct osdep_service_ops osdep_service = {
 	_tizenrt_malloc,			//rtw_vmalloc
 	_tizenrt_zmalloc,			//rtw_zvmalloc

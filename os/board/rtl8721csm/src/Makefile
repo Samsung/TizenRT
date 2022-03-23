@@ -109,6 +109,7 @@ endif
 ifeq ($(CONFIG_AMEBAD_WIFI),y)
 include component/common/api/wifi/Make.defs
 include component/common/api/wifi/rtw_wpa_supplicant/wpa_supplicant/Make.defs
+include component/common/api/wifi/rtw_wpa_supplicant/src/crypto/Make.defs
 include component/common/api/Make.defs
 include component/common/api/network/src/Make.defs
 include component/os/os_dep/Make.defs
@@ -165,6 +166,7 @@ CFLAGS += -I$(COMPONENT_DIR)/common/drivers/wlan/realtek/wlan_ram_map/rom
 CFLAGS += -I$(COMPONENT_DIR)/os/os_dep/include
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/src
+CFLAGS += -I$(DIR_WIFI)/rtw_wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/soc/realtek/amebad/misc
 CFALGS += -I$(DIR_CRYPTO)/../include
 CFLAGS += -I$(DIR_FW)/../include

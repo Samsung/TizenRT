@@ -1,5 +1,6 @@
 #if !defined(CONFIG_MBED_ENABLED)
 #include "main.h"
+#include <lwip_netconf.h>
 #include <lwip/netif.h>
 #endif
 #include <stdio.h>
@@ -9,6 +10,7 @@
 #include "utils/os.h"
 #include "wifi/wifi_conf.h"
 #include <platform/platform_stdlib.h>
+#include <wifi_manager/wifi_manager.h>
 
 #define WLAN0_NAME "wlan0"
 #ifndef ENABLE
@@ -27,10 +29,19 @@ char *eap_identity = NULL;
 char *eap_password = NULL;
 // if set eap_ca_cert and defined(EAP_SSL_VERIFY_SERVER), client will verify server's cert
 const unsigned char *eap_ca_cert = NULL;
+int eap_ca_cert_len = 0;
 // if set eap_client_cert, eap_client_key, and defined(EAP_SSL_VERIFY_CLIENT), client will send its cert to server
 const unsigned char *eap_client_cert = NULL;
 const unsigned char *eap_client_key = NULL;
+int eap_client_cert_len = 0;
+int eap_client_key_len = 0;
 char *eap_client_key_pwd = NULL;
+int eap_fast_max_pac_list_len = 10;
+int eap_fast_provisioning_mode = 2;
+int eap_fast_use_binary_pac = 0;
+char * eap_fast_machine_pac = "";
+
+static struct task_struct wifi_eap_autoreconnect_task;
 
 void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void* handler_user_data);
 void eap_eapol_start_hdl(char *buf, int buf_len, int flags, void* handler_user_data);
@@ -48,7 +59,7 @@ int get_eap_method(void){
 	return eap_method;
 }
 
-#if !defined(CONFIG_MBED_ENABLED) && !defined(CONFIG_PLATFORM_TIZENRT_OS)
+#if !defined(CONFIG_MBED_ENABLED)
 void reset_config(void){
 	eap_target_ssid = NULL;
 	eap_identity = NULL;
@@ -57,9 +68,13 @@ void reset_config(void){
 	eap_client_cert = NULL;
 	eap_client_key = NULL;
 	eap_client_key_pwd = NULL;
+	eap_fast_max_pac_list_len = 10;
+	eap_fast_provisioning_mode = 2;
+	eap_fast_use_binary_pac = 0;
+	eap_fast_machine_pac = "";
 }
 
-void judge_station_disconnect(void) 
+void judge_station_disconnect(void)
 {
 	int mode = 0;
 	unsigned char ssid[33];
@@ -86,89 +101,13 @@ void eap_disconnected_hdl(char *buf, int buf_len, int flags, void* handler_user_
 	( void ) flags;
 	( void ) handler_user_data;
 	
-//	printf("disconnected\n");
 #if (RTL8192E_SUPPORT == 0)//devin_li rtl8192es_temp_mask	
 	wifi_unreg_event_handler(WIFI_EVENT_EAPOL_RECVD, eap_eapol_recvd_hdl);
 	wifi_unreg_event_handler(WIFI_EVENT_DISCONNECT, eap_disconnected_hdl);	
 	eap_peer_unregister_methods();
 	eap_sm_deinit();
-	//reset_config();
 #endif	
 }
-
-/*
-void eap_config(void){
-	eap_target_ssid = "Test_eap";
-	eap_identity = "guest2";
-	eap_password = "test2";
-
-	eap_client_cert = \
-"-----BEGIN CERTIFICATE-----\r\n" \
-"MIIC9zCCAd8CAQMwDQYJKoZIhvcNAQEEBQAwgZMxCzAJBgNVBAYTAkZSMQ8wDQYD\r\n" \
-"VQQIEwZSYWRpdXMxEjAQBgNVBAcTCVNvbWV3aGVyZTEVMBMGA1UEChMMRXhhbXBs\r\n" \
-"ZSBJbmMuMSAwHgYJKoZIhvcNAQkBFhFhZG1pbkBleGFtcGxlLmNvbTEmMCQGA1UE\r\n" \
-"AxMdRXhhbXBsZSBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMTYwMzE1MDgwNzEx\r\n" \
-"WhcNMTcwMzE1MDgwNzExWjBzMQswCQYDVQQGEwJGUjEPMA0GA1UECBMGUmFkaXVz\r\n" \
-"MRUwEwYDVQQKEwxFeGFtcGxlIEluYy4xGjAYBgNVBAMUEXVzZXIyQGV4YW1wbGUu\r\n" \
-"Y29tMSAwHgYJKoZIhvcNAQkBFhF1c2VyMkBleGFtcGxlLmNvbTCBnzANBgkqhkiG\r\n" \
-"9w0BAQEFAAOBjQAwgYkCgYEAqESlV4OYfBcIgZ+Cs8mWpiBjhvKoa0/kIe7saqhC\r\n" \
-"e5q4snox0jdkUpLcc4vOs3vQ7ZGnimqTltA9oF6XNUzTWW4vlJTKEfrCWK085l7c\r\n" \
-"DHFvHavH3E6vuP71lI7jq4PLXbo2TvZK+uBul4ozjzVWihaZBtz8eLHq446h/D/p\r\n" \
-"kzkCAwEAATANBgkqhkiG9w0BAQQFAAOCAQEAAfhVAIkNdeeUNJud720uUHVnIcxz\r\n" \
-"GXWI+Svi1qchuTEnRNhLwXmnE+A0WWSHyfdR6FvzdT3xtz3K50iOif8jY2gCGkSK\r\n" \
-"8RjKr97228SwbrGO9y9+dYIjH1uz9cBpoVKcpzdsWpKObrDPDYyReHSWo99jM2+O\r\n" \
-"vfJxnBw4PLiBj7Q0/dpd6o4JXyp7Cxa0mB4/+cZqjCzzuKfuK3WP7j6laMCV6mg4\r\n" \
-"wRZ528IdwDqB7OOqsDm1PVQM8vzny9PM6ikWUCRTVNQJN8RDLkrHR3FRjy15YLdt\r\n" \
-"yOfDqVnT/z0wGBaxnNziSJjqPGHPpRi4bJFGXwXOhtknKmciKzfj9/npoQ==\r\n" \
-"-----END CERTIFICATE-----\r\n";
-
-	eap_client_key = \
-"-----BEGIN RSA PRIVATE KEY-----\r\n" \
-"MIICXQIBAAKBgQCoRKVXg5h8FwiBn4KzyZamIGOG8qhrT+Qh7uxqqEJ7mriyejHS\r\n" \
-"N2RSktxzi86ze9DtkaeKapOW0D2gXpc1TNNZbi+UlMoR+sJYrTzmXtwMcW8dq8fc\r\n" \
-"Tq+4/vWUjuOrg8tdujZO9kr64G6XijOPNVaKFpkG3Px4serjjqH8P+mTOQIDAQAB\r\n" \
-"AoGARI+LyweshssfxSkIKVc3EcNaqi6PHwJzUrw2ChM624AkR1xwllXJg7ehKVdK\r\n" \
-"xmjprRLO8CASuL1qjsBb3fTKnBl+sIVxIFS0AI4Y3ri8VUKbangvSsI7pCzAFry7\r\n" \
-"p1gmy9WWRV2ZEa+dV8xcrjb3bloT7hcdeLehgBCvExJIQM0CQQDXlSAKdW3AhYyj\r\n" \
-"1A+pfyBSGxJbpSwNyyWgwHIHHjxendxmdUbrc8EbAu1eNKbP58TLgdCZsKcMonAv\r\n" \
-"MY1Y2/nnAkEAx9CrUaCU8pJqXTRypM5JtexLKnYMJhpnA9uUILBQOq4Oe0eruyF5\r\n" \
-"SaSxhyJYXY491ahWYPF0PTb3jkUhoN+l3wJBAJZthjgGDJlEFwjSFkOtYz4nib3N\r\n" \
-"GVpeoFj1MBvrazCScpJDz0LIOLzCZCNSFfwIu3dNk+NKMqZMSn+D0h9pD40CQQC5\r\n" \
-"K9n4NXaTLbjAU2CC9mE85JPr76XmkcUxwAWQHZTcLH1jJdIyAx1hb+zNLLjzSmRn\r\n" \
-"Yi9ae6ibKhtUjyBQ87HFAkA2Bb3z7NUx+AA2g2HZocFZFShBxylACyQkl8FAFZtf\r\n" \
-"osudmKdFQHyAWuBMex4tpz/OLTqJ1ecL1JQeC7OvlpEX\r\n" \
-"-----END RSA PRIVATE KEY-----\r\n";
-	
-	eap_ca_cert = \
-"-----BEGIN CERTIFICATE-----\r\n" \
-"MIIEpzCCA4+gAwIBAgIJAPvZaozpdfjkMA0GCSqGSIb3DQEBCwUAMIGTMQswCQYD\r\n" \
-"VQQGEwJGUjEPMA0GA1UECBMGUmFkaXVzMRIwEAYDVQQHEwlTb21ld2hlcmUxFTAT\r\n" \
-"BgNVBAoTDEV4YW1wbGUgSW5jLjEgMB4GCSqGSIb3DQEJARYRYWRtaW5AZXhhbXBs\r\n" \
-"ZS5jb20xJjAkBgNVBAMTHUV4YW1wbGUgQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4X\r\n" \
-"DTE2MDMxNDExMjU0OVoXDTE2MDQxMzExMjU0OVowgZMxCzAJBgNVBAYTAkZSMQ8w\r\n" \
-"DQYDVQQIEwZSYWRpdXMxEjAQBgNVBAcTCVNvbWV3aGVyZTEVMBMGA1UEChMMRXhh\r\n" \
-"bXBsZSBJbmMuMSAwHgYJKoZIhvcNAQkBFhFhZG1pbkBleGFtcGxlLmNvbTEmMCQG\r\n" \
-"A1UEAxMdRXhhbXBsZSBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwggEiMA0GCSqGSIb3\r\n" \
-"DQEBAQUAA4IBDwAwggEKAoIBAQC9pireu0aCDLNfMaGv3vId7RXjUhQwSK0jV2Oc\r\n" \
-"SyvlKWH3P/N+5kLrP2iL6SCzyETVDXZ0vOsAMjcBF0zHp16prXV0d51cTUqeWBb0\r\n" \
-"I5UnGxleIuuOfSg8zLUJoBWZPqLv++eZ5WgOKHt7SXocjvg7TU5t/TMB0Y8OCz3H\r\n" \
-"CW2vJ/XKMgMA9HDUu4g57cJu88i1JPRpyFaz/HIQBc7+UNb9z+q09uTZKWTmEMqi\r\n" \
-"E2U0EEIs7EtbxnOze1/8C4XNlmztrEdwvu6UEBU/TFkUoh9M646NkkBK7wP9n9pv\r\n" \
-"T0nPQRJiiCrICzVqUtlEi9lIKpbBSMbQ0KzrGF7lGTgm4rz9AgMBAAGjgfswgfgw\r\n" \
-"HQYDVR0OBBYEFIVyecka74kvOKIW0BjlTc/B+a2NMIHIBgNVHSMEgcAwgb2AFIVy\r\n" \
-"ecka74kvOKIW0BjlTc/B+a2NoYGZpIGWMIGTMQswCQYDVQQGEwJGUjEPMA0GA1UE\r\n" \
-"CBMGUmFkaXVzMRIwEAYDVQQHEwlTb21ld2hlcmUxFTATBgNVBAoTDEV4YW1wbGUg\r\n" \
-"SW5jLjEgMB4GCSqGSIb3DQEJARYRYWRtaW5AZXhhbXBsZS5jb20xJjAkBgNVBAMT\r\n" \
-"HUV4YW1wbGUgQ2VydGlmaWNhdGUgQXV0aG9yaXR5ggkA+9lqjOl1+OQwDAYDVR0T\r\n" \
-"BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAZYHM26sxbKOckVqJJ1QY0U2QFlGP\r\n" \
-"1GYd8v27znxdnRmSonDvv3GjFfhwoyDk0JUuxkK/33ikCxihrgoO/EQTY9BV2OpW\r\n" \
-"qkB1PDtb3i5ZRNvfjmW0pVA4p+GmdTGaEE5pTlcVnorzVrUeFKaZakb+IDFYzmeF\r\n" \
-"xp8B3Bb5wvinDligLOaJnSlgS8QeeIab9HZfaVTTuPmVK6zE6D54Y0dJPnykvDdE\r\n" \
-"cGN0FC+migfilFjJgkDJ0r78nwes55L8zjoofiZuO03rrHww6ARc3v1jYzAufddk\r\n" \
-"QTiZHgjlMQb2XXMmXLn8kBgoDnqkXFNe8j0h8uxIJSrjOoIyn1h1wvX5/w==\r\n" \
-"-----END CERTIFICATE-----\r\n";
-}
-*/
 
 int eap_start(char *method)
 {
@@ -179,7 +118,10 @@ int eap_start(char *method)
 
 	//unsigned long tick1 = xTaskGetTickCount();
 	//unsigned long tick2;
-	
+	while(!(wifi_is_up(RTW_STA_INTERFACE) || wifi_is_up(RTW_AP_INTERFACE))) {
+		rtw_mdelay_os(1000);
+	}
+        
 	if(rltk_wlan_running(WLAN1_IDX)){
 		printf("\n\rNot support con-current mode!\n\r");
 		return -1;
@@ -188,20 +130,26 @@ int eap_start(char *method)
 	judge_station_disconnect();
 
 #if CONFIG_ENABLE_PEAP
-	if(strcmp(method,"peap") == 0){
+	if(strncmp(method, "peap", strlen("peap") + 1) == 0){
 		ret = set_eap_peap_method();
 	}
 #endif
 
 #if CONFIG_ENABLE_TLS
-	if(strcmp(method,"tls") == 0){
+	if(strncmp(method, "tls", strlen("tls") + 1) == 0){
 		ret = set_eap_tls_method();
 	}
 #endif
 
 #if CONFIG_ENABLE_TTLS
-	if(strcmp(method,"ttls") == 0){
+	if(strncmp(method, "ttls", strlen("ttls") + 1) == 0){
 		ret = set_eap_ttls_method();
+	}
+#endif
+
+#if CONFIG_ENABLE_FAST
+	if(strncmp(method, "fast", strlen("fast") + 1) == 0){
+		ret = set_eap_fast_method();
 	}
 #endif
 
@@ -214,13 +162,9 @@ int eap_start(char *method)
 
 	printf("\n==================== %s_start ====================\n", method);
 
-	//eap_config();
-
 	set_eap_phase(ENABLE);
 	wifi_reg_event_handler(WIFI_EVENT_EAPOL_START, eap_eapol_start_hdl, NULL);
 	wifi_reg_event_handler(WIFI_EVENT_EAPOL_RECVD, eap_eapol_recvd_hdl, NULL);
-
-	
 
 	ret = connect_by_open_system(eap_target_ssid);
 
@@ -254,24 +198,27 @@ int eap_start(char *method)
 
 int connect_by_open_system(char *target_ssid)
 {
-	int retry_count = 0, ret;
+	int retry_count = 3;
 	
 	if (target_ssid != NULL) {
 		while (1) {
 			rtw_msleep_os(500);	//wait scan complete.
-			ret = wifi_connect(target_ssid,
-							RTW_SECURITY_OPEN,
-							NULL,
-							strlen(target_ssid),
-							0,
-							0,
-							NULL);
-			if (ret == RTW_SUCCESS) {
-			  	//printf("\r\n[EAP]Associate with AP success\n");
+			wifi_manager_ap_config_s apconfig;
+			strncpy(apconfig.ssid, target_ssid, WIFIMGR_SSID_LEN);
+			apconfig.ssid_length = strlen(target_ssid);
+			apconfig.ssid[WIFIMGR_SSID_LEN] = '\0';
+			apconfig.ap_auth_type = WIFI_MANAGER_AUTH_OPEN;
+			apconfig.passphrase[0] = '\0';
+			apconfig.passphrase_length = 0;
+			apconfig.ap_crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+		
+			wifi_manager_result_e res = wifi_manager_connect_ap(&apconfig);
+			
+			if (res == RTW_SUCCESS) {
 				break;
 			}
 			if (retry_count == 0) {
-				//printf("\r\n[EAP]Associate with AP failed %d\n", ret);
+				printf("\r\n[EAP]Associate with AP failed %d\n", res);
 				return -1;
 			}
 			retry_count --;
@@ -291,7 +238,7 @@ int connect_by_open_system(char *target_ssid)
 void eap_autoreconnect_thread(void *method)
 {
 	eap_start((char*)method);
-	vTaskDelete(NULL);
+	rtw_delete_task(&wifi_eap_autoreconnect_task);
 }
 #endif
 
@@ -311,11 +258,15 @@ void eap_autoreconnect_hdl(u8 method_id)
 		case 21: // EAP_TYPE_TTLS
 			method = "ttls";
 			break;
+		case 43: // EAP_TYPE_FAST
+			method = "fast";
+			break;
 		default:
 			printf("invalid eap method\n");
 			return;
 	}
-	if(xTaskCreate(eap_autoreconnect_thread, ((const char*)"eap_autoreconnect_thread"), 1024, (void*) method, tskIDLE_PRIORITY + 1, NULL) != pdPASS)
+
+	if(rtw_create_task(&wifi_eap_autoreconnect_task, ((const char*)"eap_autoreconnect_thread"), 1024, 1, eap_autoreconnect_thread, (void*) method) != TRUE)
 		printf("\n\r%s xTaskCreate failed\n", __FUNCTION__);
 #endif
 }
@@ -595,19 +546,31 @@ int eap_cert_setup(struct eap_tls *tls_context)
 	( void ) tls_context;
 #if (defined(ENABLE_EAP_SSL_VERIFY_CLIENT) && ENABLE_EAP_SSL_VERIFY_CLIENT)
 	if(eap_client_cert != NULL && eap_client_key != NULL){
-		if(mbedtls_x509_crt_parse(_cli_crt, eap_client_cert, strlen(eap_client_cert)+1) != 0)
+		if(mbedtls_x509_crt_parse(_cli_crt, eap_client_cert, eap_client_cert_len) != 0) {
+			printf("\n client cert parse failed\n");
 			return -1;
-	
-		if(mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, strlen(eap_client_key)+1, eap_client_key_pwd, strlen(eap_client_key_pwd)+1) != 0)
-			return -1;
+		}
+		if(eap_client_key_pwd){
+			if(mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, eap_client_key_len, eap_client_key_pwd, strlen(eap_client_key_pwd)+1) != 0) {
+				printf("\n client key parse failed\n");
+				return -1;
+			}
+		}else{
+			if(mbedtls_pk_parse_key(_clikey_rsa, eap_client_key, eap_client_key_len, eap_client_key_pwd, 0) != 0) {
+				printf("\n client key parse failed\n");
+				return -1;
+			}
+		}
 
 		mbedtls_ssl_conf_own_cert(tls_context->conf, _cli_crt, _clikey_rsa);
 	}
 #endif
 #if (defined(ENABLE_EAP_SSL_VERIFY_SERVER) && ENABLE_EAP_SSL_VERIFY_SERVER)
 	if(eap_ca_cert != NULL){
-		if(mbedtls_x509_crt_parse(_ca_crt, eap_ca_cert, strlen(eap_ca_cert)+1) != 0)
+		if(mbedtls_x509_crt_parse(_ca_crt, eap_ca_cert, eap_ca_cert_len) != 0) {
+			printf("\n ca cert parse failed\n");
 			return -1;
+		}
 		mbedtls_ssl_conf_ca_chain(tls_context->conf, _ca_crt, NULL);
 		mbedtls_ssl_conf_authmode(tls_context->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 		mbedtls_ssl_conf_verify(tls_context->conf, eap_verify, NULL);

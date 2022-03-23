@@ -292,12 +292,18 @@ $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721
 
 $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps_fpu$(LIBEXT)
 	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps_fpu$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)lib_eap$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_eap_fpu$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_eap_fpu$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_eap$(LIBEXT)
 else
 $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan$(LIBEXT)
 	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wlan$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps$(LIBEXT)
 	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_wps$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+	
+$(LIBRARIES_DIR)$(DELIM)lib_eap$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_eap$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8721csm$(DELIM)src$(DELIM)libs$(DELIM)lib_eap$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_eap$(LIBEXT)
 endif
 endif
 
