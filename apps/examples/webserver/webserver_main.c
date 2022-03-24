@@ -68,6 +68,9 @@
 #include <protocols/webserver/http_keyvalue_list.h>
 #include "mbedtls/certs.h"
 
+#define MAX_DATA_SIZE 50
+#define MAX_BUF_SIZE 100
+#define MAX_DATA_COUNT 5
 #define WEBSERVER_STACK_SIZE   (1024 * 8)
 #define WEBSERVER_SCHED_PRI    100
 #define WEBSERVER_SCHED_POLICY SCHED_RR
@@ -99,12 +102,43 @@ static const char g_httpcnlost[] = "close";
 struct http_server_t *http_server = NULL;
 struct http_server_t *https_server = NULL;
 
+static int http_send_chunk(struct http_client_t *client)
+{
+	char msg_body[MAX_DATA_SIZE + 1] = {0, };
+	int ret = 0;
+
+	//add data
+	memset(msg_body, 'a', MAX_DATA_SIZE);
+	msg_body[MAX_DATA_SIZE] = 0;
+
+	ret = http_send_response_chunk(client, 200, "OK", msg_body, NULL, FIRST_DATA);
+	if (ret < 0) {
+		printf("Error: Fail to send FIRST_DATA \n");
+		return ret;
+	}
+
+	for (int i = 0; i < MAX_DATA_COUNT; i++) {
+		ret = http_send_response_chunk(client, 200, "OK", msg_body, NULL, NEXT_DATA);
+		if (ret < 0) {
+			printf("Error: Fail to send NEXT_DATA \n");
+			return ret;
+		}
+	}
+
+	ret = http_send_response_chunk(client, 200, "OK", msg_body, NULL, LAST_DATA);
+	if (ret < 0) {
+		printf("Error: Fail to send LAST_DATA \n");
+		return ret;
+	}
+}
+
 /* GET callbacks */
 void http_get_root(struct http_client_t *client, struct http_req_message *req)
 {
 	struct http_keyvalue_list_t response_headers;
 	const char *msg = "This is a root page";
 	char contlen[6] = { 0, };
+	int resp_type = 1; // 0 - Normal response, 1 - Chunk response
 
 	http_keyvalue_list_init(&response_headers);
 
@@ -114,9 +148,17 @@ void http_get_root(struct http_client_t *client, struct http_req_message *req)
 	http_keyvalue_list_add(&response_headers, g_httpconnect, g_httpcnlost);
 
 	printf("===== GET_ROOT CALLBACK url : %s =====\n", req->url);
-	if (http_send_response(client, 200, msg, &response_headers) < 0) {
-		printf("Error: Fail to send response\n");
+
+	if (resp_type == 1) { // this is temporary change
+		if (http_send_chunk(client) < 0) {
+			printf("Error: Fail to send response\n");
+		}
+	} else {
+		if (http_send_response(client, 200, msg, &response_headers) < 0) {
+			printf("Error: Fail to send response\n");
+		}
 	}
+
 	http_keyvalue_list_release(&response_headers);
 }
 

@@ -871,6 +871,194 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 	}
 }
 
+static int prepare_chunk_body(char *buf, int len, const char *body, bool is_last_msg)
+{
+	int chunk_size;
+	char httpcrnl[] = "\r\n";
+	int buflen = 0;
+
+	buflen = len;
+
+	if (is_last_msg) {
+		chunk_size = 0;
+	} else {
+		if (body == NULL) {
+			HTTP_LOGE("msg body is NULL \n");
+			return -1;
+		}
+		chunk_size = strlen(body);
+	}
+
+	//append length of message
+	buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "%x", chunk_size);
+
+	//append httpcrnl
+	buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "%s", httpcrnl);
+
+	if (is_last_msg) {
+		//append httpcrnl and no body
+		buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "%s", httpcrnl);
+		return buflen;
+	}
+
+	if (HTTP_CONF_MAX_REQUEST_LENGTH - buflen - 2 <= chunk_size) {
+		HTTP_LOGE("msg body is larger than buffer can hold \n");
+		return -1;
+	}
+
+
+	//append body
+	buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "%s", body);
+
+	//append httpcrnl
+	buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "%s", httpcrnl);
+
+	return buflen;
+}
+
+static int http_send_chunk_buffer(struct http_client_t *client, char *buf)
+{
+	int  ret = 0;
+	int sndlen = 0;
+	int buflen = 0;
+
+	if (client == NULL) {
+		HTTP_LOGE("client is NULL \n");
+		return -1;
+	}
+
+	sndlen = strlen(buf);
+	while (sndlen > 0) {
+#ifdef CONFIG_NET_SECURITY_TLS
+		if (client->server->tls_init) {
+			ret = mbedtls_ssl_write(&(client->tls_ssl), (unsigned char *)buf + buflen, sndlen);
+		} else
+#endif
+		{
+			ret = send(client->client_fd, buf + buflen, sndlen, 0);
+		}
+
+		if (ret < 1) {
+			HTTP_LOGE("Fail to send buffer ret[%d] \n", ret);
+			return -1;
+		} else {
+			sndlen -= ret;
+			buflen += ret;
+		}
+	}
+
+	return 0;
+}
+
+static int http_send_chunk(struct http_client_t *client, char *buf, int buflen, const char *body, bool is_last_msg)
+{
+	int ret = 0;
+
+	ret = prepare_chunk_body(buf, buflen, body, is_last_msg);
+	if (ret < 0) {
+		HTTP_LOGE("Failed to prepare chunk body \n");
+		return ret;
+	}
+
+	ret = http_send_chunk_buffer(client, buf);
+	if (ret < 0) {
+		HTTP_LOGE("Failed to send chunk buffer \n");
+		return ret;
+	}
+
+	return 0;
+}
+
+int http_send_response_chunk(struct http_client_t *client, int status, const char* status_message,
+			const char *body, struct http_keyvalue_list_t *headers, data_type_e data_type)
+{
+	char *buf;
+	int buflen = 0;
+	struct http_keyvalue_t *cur = NULL;
+	int ret = 0;
+
+	if (body == NULL) {
+		HTTP_LOGE("There is empty body \n");
+		return HTTP_ERROR;
+	}
+
+	buf = HTTP_MALLOC(HTTP_CONF_MAX_REQUEST_LENGTH);
+	if (buf == NULL) {
+		HTTP_LOGE("Fail to malloc buffer\n");
+		return HTTP_ERROR;
+	}
+
+	memset(buf, 0, HTTP_CONF_MAX_REQUEST_LENGTH);
+
+	if (data_type == FIRST_DATA) {
+		//add header and data
+		buflen = snprintf(buf, HTTP_CONF_MAX_REQUEST_LENGTH, "HTTP/1.1 %d %s\r\n",
+					  status, status_message);
+		if (headers && headers->head) {
+			cur = headers->head->next;
+			while (cur != headers->tail) {
+				if (strcmp(cur->key, "Content-Length") == 0 || strcmp(cur->key, "Content-Type") == 0
+					|| strcmp(cur->key, "Keep-Alive") == 0 || strcmp(cur->key, "Connection") == 0
+					|| strcmp(cur->key, "Transfer-Encoding") == 0)  {
+					cur = cur->next;
+					continue;
+				}
+
+				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+								   "%s: %s\r\n", cur->key, cur->value);
+				cur = cur->next;
+			}
+		}
+
+		buflen += snprintf(buf + buflen,
+					   HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+					   "Content-Type: text/html\r\n");
+
+		buflen += snprintf(buf + buflen,
+					   HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+					   "Transfer-Encoding: chunked\r\n");
+
+		if (client->keep_alive == 0) {
+			buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+							"Connection: close\r\n");
+		} else {
+			buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+							"Connection: Keep-Alive\r\n");
+		}
+
+		buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
+					"Keep-Alive: timeout=%d, max=%d\r\n",
+					client->keep_alive_timeout, client->max_request);
+
+		// Append extra CRLF to mark headers done
+		buflen += snprintf(buf + buflen,
+					HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "\r\n");
+	}
+
+
+	// Include response body for chunk
+	ret = http_send_chunk(client, buf, buflen, body, false);
+	if (ret < 0) {
+		HTTP_FREE(buf);
+		return HTTP_ERROR;
+	}
+
+	if (data_type == LAST_DATA) {
+		//last chunk with no body
+		memset (buf, 0, HTTP_CONF_MAX_REQUEST_LENGTH);
+		buflen = 0;
+
+		ret = http_send_chunk(client, buf, buflen, NULL, true);
+		if (ret < 0) {
+			HTTP_FREE(buf);
+			return HTTP_ERROR;
+		}
+	}
+
+	HTTP_FREE(buf);
+	return HTTP_OK;
+}
+
 int http_send_response_helper(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers)
 {
 	char *buf;
@@ -1008,6 +1196,7 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 	HTTP_FREE(buf);
 	return HTTP_OK;
 }
+
 int http_send_response(struct http_client_t *client, int status, const char *body, struct http_keyvalue_list_t *headers)
 {
 	const char* status_message = (status == 200) ? "OK" : body;
