@@ -19,10 +19,15 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <stdio.h>
+#include <fcntl.h>
 
 /********************************************************************************
  * Definitions
  ********************************************************************************/
+
+ #define LOGDUMP_SAVE_START	"1"
+ #define LOGDUMP_SAVE_STOP	"2"
 
 /********************************************************************************
  * Public Types
@@ -32,10 +37,8 @@
  * Public Functions
  ********************************************************************************/
 
-int log_dump_init(void);
-
-void log_dump_read_init(void);
-
-int log_dump_save(char ch);
-
-size_t log_dump_read(FAR char *buffer, size_t buflen);
+#define OPEN_LOGDUMP()			open("/proc/logsave", O_RDWR)
+#define START_LOGDUMP_SAVE(fd)		write(fd, LOGDUMP_SAVE_START, strlen(LOGDUMP_SAVE_START) + 1)
+#define STOP_LOGDUMP_SAVE(fd)		write(fd, LOGDUMP_SAVE_STOP, strlen(LOGDUMP_SAVE_STOP) + 1)
+#define READ_LOGDUMP(fd, buf, bufsize)	read(fd, buf, bufsize)
+#define CLOSE_LOGDUMP(fd)		close(fd)
