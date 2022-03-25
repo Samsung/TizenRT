@@ -22,7 +22,9 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <tinyara/log_dump/log_dump.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -42,24 +44,52 @@ int log_dump_main(int argc, char *argv[])
 {
 	int ret = 1;
 	char buf[READ_BUFFER_SIZE];
-	int fd = open("/proc/logsave", O_RDONLY);
+	int fd = OPEN_LOGDUMP();
 
 	if (fd < 0) {
 		printf("Please ensure that procfs is mounted\n");
-		return 0;
+		return -1;
 	}
+
+	/* Log dump starts automatically from boot up.
+	 * To test start, intentionally add to stop. */
+	if (STOP_LOGDUMP_SAVE(fd) < 0) {
+		printf("Failed to stop log dump, errno %d\n", get_errno());
+		goto errout;
+	}
+
+	printf("This Log Should NOT be saved!!!\n");
+	sleep(1);
 
 	lldbg("\n*********************   LOG DUMP START  *********************\n");
 
+	if (START_LOGDUMP_SAVE(fd) < 0)	{
+		printf("Failed to start log dump, errno %d\n", get_errno());
+		goto errout;
+	}
+
+	printf("This Log Should be saved!!!\n");
+	sleep(1);
+
+	if (STOP_LOGDUMP_SAVE(fd) < 0) {
+		printf("Failed to stop log dump, errno %d\n", get_errno());
+		goto errout;
+	}
+
 	while (ret > 0) {
-     		ret = read(fd, buf, sizeof(buf));
+		ret = READ_LOGDUMP(fd, buf, sizeof(buf));
 		for (int i = 0; i < ret; i++) {
 			lldbg_noarg("%c", buf[i]);
 		}
 	}
-	close(fd);
 
         lldbg("\n*********************   LOG DUMP END  ***********************\n");
 
+	CLOSE_LOGDUMP(fd);
+
 	return 0;
+
+errout:
+	CLOSE_LOGDUMP(fd);
+	return -1;
 }
