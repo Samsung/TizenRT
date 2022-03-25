@@ -43,6 +43,8 @@
 #include <tinyara/fs/procfs.h>
 #include <tinyara/log_dump/log_dump.h>
 
+#include <tinyara/log_dump/log_dump_internal.h>
+
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
 #if defined(CONFIG_LOG_DUMP)
 
@@ -74,6 +76,7 @@ struct logsave_file_s {
 static int logsave_open(FAR struct file *filep, FAR const char *relpath, int oflags, mode_t mode);
 static int logsave_close(FAR struct file *filep);
 static ssize_t logsave_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
+static ssize_t logsave_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 static int logsave_dup(FAR const struct file *oldp, FAR struct file *newp);
 static int logsave_stat(FAR const char *relpath, FAR struct stat *buf);
 
@@ -94,7 +97,7 @@ const struct procfs_operations logsave_operations = {
 	logsave_open,				/* open */
 	logsave_close,				/* close */
 	logsave_read,				/* read */
-	NULL,					/* write */
+	logsave_write,				/* write */
 
 	logsave_dup,				/* dup */
 
@@ -139,6 +142,15 @@ static int logsave_close(FAR struct file *filep)
 static ssize_t logsave_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	return log_dump_read(buffer, buflen);
+}
+
+/****************************************************************************
+ * Name: logsave_write
+ ****************************************************************************/
+
+static ssize_t logsave_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+{
+	return log_dump_set(buffer, buflen);
 }
 
 /****************************************************************************

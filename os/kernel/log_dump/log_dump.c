@@ -33,6 +33,7 @@
 #include <queue.h>
 
 #include <tinyara/log_dump/log_dump.h>
+#include <tinyara/log_dump/log_dump_internal.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -50,8 +51,11 @@
 #define LOG_DUMP_MEM_FAIL		-1
 #define LOG_DUMP_HEAP_FAIL		-2
 #define LOG_DUMP_SIZE_FAIL		-3
+#define LOG_DUMP_OPT_FAIL		-4
 
 #define LOG_CHUNK_SIZE			sizeof(struct log_dump_chunk_s)
+
+static bool is_started_to_save;
 
 /****************************************************************************
  * Private Type Declarations
@@ -99,6 +103,8 @@ int log_dump_init(void)
 	sq_addfirst((sq_entry_t *)node, &log_dump_chunks);
 	/* set the size of chunks to 1 chunk */
 	log_dump_size = LOG_CHUNK_SIZE;
+	/* Initialize to save the log by default */
+	is_started_to_save = true;
 
 	return LOG_DUMP_OK;
 }
@@ -125,8 +131,26 @@ static void log_dump_mem_check(size_t max_size)
 	}
 }
 
+int log_dump_set(FAR const char *buffer, size_t buflen)
+{
+	(void)buflen;
+
+	if (strncmp(buffer, LOGDUMP_SAVE_START, strlen(LOGDUMP_SAVE_START) + 1) == 0) {
+		is_started_to_save = true;
+	} else if (strncmp(buffer, LOGDUMP_SAVE_STOP, strlen(LOGDUMP_SAVE_STOP) + 1) == 0) {
+		is_started_to_save = false;
+	} else {
+		return LOG_DUMP_OPT_FAIL;
+	}
+	return LOG_DUMP_OK;
+}
+
 int log_dump_save(char ch)
 {
+	if (is_started_to_save == false) {
+		return LOG_DUMP_OK;
+	}
+
 	/* need to check if the current chunks size is over max_log_size or greater than x% of free heap */
 
 	size_t free_size;
