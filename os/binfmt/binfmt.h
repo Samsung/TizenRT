@@ -160,13 +160,14 @@ static inline void binfmt_set_mpu(struct binary_s *binp)
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (binp->islibrary) {
+		regs = binp->cmn_mpu_regs;
 		nregion = mpu_get_nregion_info(MPU_REGION_COMMON_BIN);
 	} else
 #endif
 	{
+		regs = sched_self()->mpu_regs;
 		nregion = mpu_get_nregion_info(MPU_REGION_APP_BIN);
 	}
-	regs = binp->mpu_regs;
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
