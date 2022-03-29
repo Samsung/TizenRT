@@ -49,7 +49,10 @@ T_HCI_UART *hci_uart_obj;
 extern uint8_t flag_for_hci_trx;
 
 #define TX_TRASMIT_COUNT 16
-#define hci_board_debug DBG_8195A
+#define hci_board_debug printf
+#define hci_board_debug(...)     do {\
+        printf("[RTK_BT] " __VA_ARGS__);\
+}while(0)
 
 #define HCI_UART_IDX  1      /* (only 0, 1, 3) */
 

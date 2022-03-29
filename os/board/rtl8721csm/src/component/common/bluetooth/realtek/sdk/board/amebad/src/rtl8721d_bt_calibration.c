@@ -279,13 +279,13 @@ boolean _btiqk_lok_8721d(void *dm_void, u32 *u32bt_iqk_x, u32 *u32bt_iqk_y, u32 
 	{
 		btiqk_success |= 0x01;
 #if DBG_BT_CALIBRATION 
-        DBG_8195A("the IQK and LOK procedure is done");	/* success != workable */
+        printf("[RTK_BT] the IQK and LOK procedure is done\n");	/* success != workable */
 #endif
 	}
 	else
 	{
 #if DBG_BT_CALIBRATION 
-        DBG_8195A("the IQK and LOK procedure is fail");
+        printf("[RTK_BT] the IQK and LOK procedure is fail\n");
 #endif
 		RF_DBG(dm, DBG_RF_IQK, "[BTIQK] pathA TX IQK is fail!\n");
 	}

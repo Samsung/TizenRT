@@ -126,7 +126,7 @@ void hci_tp_config(uint8_t *p_buf, uint16_t len)
     if (pkt_type != HCI_EVT_PKT)
     {
         /* Skip non-hci event pkt. */
-        hci_board_debug("\r\nERROR:%s:packet type is %x\n",__FUNCTION__, pkt_type);
+        hci_board_debug("ERROR:%s:packet type is %x\n",__FUNCTION__, pkt_type);
         return;
     }
 
@@ -166,7 +166,7 @@ void hci_tp_config(uint8_t *p_buf, uint16_t len)
                             return;
                             break;
                         default:
-                            hci_board_debug("\r\n%s:unexpect status is %x\n",__FUNCTION__,ret);
+                            hci_board_debug("%s:unexpect status is %x\n",__FUNCTION__,ret);
                             break;
                     }
                 }
@@ -182,7 +182,7 @@ hci_tp_config_ok:
                 //dbg("-- [hci_tp_config_ok]  %p %d--\n", __builtin_return_address(0), g_hci_step);
                 if(g_hci_step == hci_total_step)
                 {
-                    hci_board_debug("\r\n%s:BT INIT success %x\n",__FUNCTION__,g_hci_step);
+                    hci_board_debug("%s:BT INIT success %x\n",__FUNCTION__,g_hci_step);
                     bte_init_buff_free();
                     if(hci_board_complete() == true)
                     {
@@ -209,27 +209,27 @@ hci_tp_config_ok:
                     }
                     else
                     {
-                        hci_board_debug("\r\nERROR:%s:start_pro is null %x\n",__FUNCTION__, g_hci_step);
+                        hci_board_debug("ERROR:%s:start_pro is null %x\n",__FUNCTION__, g_hci_step);
 
                     }
                 }
             }
             else
             {
-                hci_board_debug("\r\nERROR:%s:wrong status is %x, opcode is 0x%x\n",__FUNCTION__,
+                hci_board_debug("ERROR:%s:wrong status is %x, opcode is 0x%x\n",__FUNCTION__,
                         status,opcode);
             }
 
         }
         else
         {
-            hci_board_debug("\r\nERROR:%s:wrong type is %x\n",__FUNCTION__, opcode);
+            hci_board_debug("ERROR:%s:wrong type is %x\n",__FUNCTION__, opcode);
         }
 
     }
     else
     {
-        hci_board_debug("\r\nERROR:%s:unhandle evt is %x\n", __FUNCTION__ ,evt_code);
+        hci_board_debug("ERROR:%s:unhandle evt is %x\n", __FUNCTION__ ,evt_code);
     }
     return;
 
