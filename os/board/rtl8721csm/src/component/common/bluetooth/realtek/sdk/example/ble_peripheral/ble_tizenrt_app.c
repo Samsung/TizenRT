@@ -309,7 +309,7 @@ void ble_tizenrt_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new
             {
                 dbg("connection lost cause 0x%x \n", disc_cause);
             }
-            dbg("BT Disconnected \n");
+            dbg("BT Disconnected, conn_id %d, cause 0x%x\n", conn_id, disc_cause);
 
             T_TIZENRT_CONNECTED_CALLBACK_DATA *disconn_data = os_mem_alloc(0, sizeof(T_TIZENRT_CONNECTED_CALLBACK_DATA));
             if(disconn_data)

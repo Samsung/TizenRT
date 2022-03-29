@@ -159,7 +159,7 @@ extern uint32_t bt_flatk_8721d(uint16_t txgain_flatk);
                         p[j] = efuse_buf[5-j]; 
                     }
 
-                    hci_board_debug("\nBT ADDRESS: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+                    hci_board_debug("BT ADDRESS: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
                         efuse_buf[0], efuse_buf[1], efuse_buf[2],
                         efuse_buf[3], efuse_buf[4], efuse_buf[5]);
 				}
@@ -178,7 +178,7 @@ extern uint32_t bt_flatk_8721d(uint16_t txgain_flatk);
                     /* 0 */
                     tx_flatk=hci_tp_phy_efuse[0xa] | hci_tp_phy_efuse[0xb]<<8;
                     bt_flatk_8721d(tx_flatk);
-                    hci_board_debug("\r\n WRITE  physical FLATK=tx_flatk=%x \r\n", tx_flatk);
+                    hci_board_debug("WRITE  physical FLATK=tx_flatk=%x\n", tx_flatk);
                 }
 
                 break;
@@ -199,7 +199,7 @@ extern uint32_t bt_flatk_8721d(uint16_t txgain_flatk);
                     
                     tx_flatk=efuse_buf[LEFUSE(0x198)] | efuse_buf[LEFUSE(0x199)]<<8;
                     bt_flatk_8721d(tx_flatk);
-                    hci_board_debug("\r\n WRITE logic FLATK=tx_flatk=%x \r\n", tx_flatk);
+                    hci_board_debug("WRITE logic FLATK=tx_flatk=%x\n", tx_flatk);
 
                 }
                 else
@@ -210,7 +210,7 @@ extern uint32_t bt_flatk_8721d(uint16_t txgain_flatk);
                         tx_flatk=hci_tp_phy_efuse[0xa] | hci_tp_phy_efuse[0xb]<<8;
 
                         bt_flatk_8721d(tx_flatk);
-                        hci_board_debug("\r\n WRITE  physical FLATK=tx_flatk=%x \r\n", tx_flatk);
+                        hci_board_debug("WRITE  physical FLATK=tx_flatk=%x\n", tx_flatk);
                     }
 
                 }
@@ -226,7 +226,7 @@ extern uint32_t bt_flatk_8721d(uint16_t txgain_flatk);
             {
                 for(i = 0;i < entry_len;i ++)
                 {
-                    hci_board_debug("\r\n logic efuseMap[%x] = %x\r\n",0x196+i, p[i]);
+                    hci_board_debug("logic efuseMap[%x] = %x\n",0x196+i, p[i]);
                 }
             }
             break;
@@ -238,7 +238,7 @@ extern uint32_t bt_flatk_8721d(uint16_t txgain_flatk);
                     p[i]= efuse_buf[LEFUSE(0x19c+i)];
                     if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
                     {
-                        hci_board_debug("\r\n logic efuseMap[%x] = %x\r\n",0x19c+i, p[i]);
+                        hci_board_debug("logic efuseMap[%x] = %x\n",0x19c+i, p[i]);
                     }
                 }
             }
@@ -251,7 +251,7 @@ extern uint32_t bt_flatk_8721d(uint16_t txgain_flatk);
                     p[i]= efuse_buf[LEFUSE(0x1A2+i)];
                     if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
                     {
-                        hci_board_debug("\r\n logic efuseMap[%x] = %x\r\n",0x1A2+i, p[i]);
+                        hci_board_debug("logic efuseMap[%x] = %x\n",0x1A2+i, p[i]);
                     }
                 }
             }
@@ -276,7 +276,7 @@ uint8_t *hci_find_patch_address(void)
 {
     if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
     {
-    hci_board_debug("\nWe use DEBUG VAL:0x%x\n", HAL_READ32(0x08000000, 0x3028));
+    hci_board_debug("We use DEBUG VAL:0x%x\n", HAL_READ32(0x08000000, 0x3028));
     }
 
     if(CHECK_SW(EFUSE_SW_USE_FLASH_PATCH))
@@ -286,7 +286,7 @@ uint8_t *hci_find_patch_address(void)
     }
     else
     {
-        hci_board_debug("\nWe use BT ROM OTA1 PATCH ADDRESS:0x%x\n", MERGE_PATCH_ADDRESS_OTA1);
+        hci_board_debug("We use BT ROM OTA1 PATCH ADDRESS:0x%x\n", MERGE_PATCH_ADDRESS_OTA1);
         HCI_PRINT_INFO1("\nWe use BT ROM OTA1 PATCH ADDRESS:0x%x\n", MERGE_PATCH_ADDRESS_OTA1);
         return (uint8_t *)MERGE_PATCH_ADDRESS_OTA1;
     }
@@ -332,7 +332,7 @@ uint8_t *hci_rtk_combine_config(void)
         hci_board_debug("hci_rtk_combine_config: all config length is %x\r\n",config_length);
         for(uint8_t i=0;i< config_length;i++)
         {
-            hci_board_debug("\n:%02x", full_config_buf[i]);
+            hci_board_debug(":%02x\n", full_config_buf[i]);
         }
     }
     return full_config_buf;
@@ -381,8 +381,8 @@ bool hci_rtk_find_patch(uint8_t bt_hci_chip_id)
             hci_flash_stream_read(p_merge_addr+0x0e +4*mp_num_of_patch ,4, (uint8_t *)&fw_offset);
             if (rltk_wlan_is_mp())
             {
-                hci_board_debug("\n fw_chip_id patch =%x,mp_num_of_patch=%x \n", fw_chip_id,mp_num_of_patch);
-                hci_board_debug("\n  lmp_subversion=%x , fw_len =%x, fw_offset = %x \n", lmp_subversion, fw_len, fw_offset);
+                hci_board_debug("fw_chip_id patch =%x,mp_num_of_patch=%x \n", fw_chip_id,mp_num_of_patch);
+                hci_board_debug("lmp_subversion=%x , fw_len =%x, fw_offset = %x \n", lmp_subversion, fw_len, fw_offset);
             }
         }
         else
@@ -398,8 +398,8 @@ bool hci_rtk_find_patch(uint8_t bt_hci_chip_id)
                     if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
                     {
                         /* 0 */
-                        hci_board_debug("\n fw_chip_id patch =%x,mp_num_of_patch=%x \n", fw_chip_id,mp_num_of_patch);
-                        hci_board_debug("\n  lmp_subversion=%x , fw_len =%x, fw_offset = %x \n", lmp_subversion, fw_len, fw_offset);
+                        hci_board_debug("fw_chip_id patch =%x,mp_num_of_patch=%x \n", fw_chip_id,mp_num_of_patch);
+                        hci_board_debug("lmp_subversion=%x , fw_len =%x, fw_offset = %x \n", lmp_subversion, fw_len, fw_offset);
                     }
                     break;
                 }
@@ -407,7 +407,7 @@ bool hci_rtk_find_patch(uint8_t bt_hci_chip_id)
 
             if(i >= mp_num_of_patch)
             {
-                hci_board_debug("\n ERROR:no match patch\n");
+                hci_board_debug("ERROR:no match patch\n");
                 return false;
             }
         }
@@ -415,7 +415,7 @@ bool hci_rtk_find_patch(uint8_t bt_hci_chip_id)
         fw_buf = os_mem_zalloc(RAM_TYPE_DATA_ON, fw_len);
         if(fw_buf == NULL)
         {
-            hci_board_debug("\n fw_buf ,malloc %d byte fail, \n", fw_len);
+            hci_board_debug("fw_buf ,malloc %d byte fail, \n", fw_len);
             return false;
         }
         else
@@ -426,15 +426,15 @@ bool hci_rtk_find_patch(uint8_t bt_hci_chip_id)
     }
     else if(!memcmp(tmp_patch_head, no_patch_sing, sizeof(no_patch_sing)))
     {
-        hci_board_debug("\nWrong patch head %x %x %x %x\n",p_merge_addr[0], p_merge_addr[1], p_merge_addr[2], p_merge_addr[3]);
+        hci_board_debug("Wrong patch head %x %x %x %x\n",p_merge_addr[0], p_merge_addr[1], p_merge_addr[2], p_merge_addr[3]);
         return false;
     }
     else
     {
-        hci_board_debug("\nwe use single patch\n");
+        hci_board_debug("we use single patch\n");
         if(p_merge_addr != (uint8_t *)rltk_bt_get_patch_code())
         {
-            hci_board_debug("\nnot support single patch on rom\n");
+            hci_board_debug("not support single patch on rom\n");
             return false;
         }
 
@@ -462,7 +462,7 @@ bool hci_rtk_find_patch(uint8_t bt_hci_chip_id)
 
     if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
     {
-        hci_board_debug("\nWe use lmp_subversion=%x fw_buf=%x, fw_len = %x, config_buf = %x,config_len= %x, baudrate 0x%x\n", lmp_subversion,fw_buf, fw_len, config_buf, config_len, hci_tp_baudrate);
+        hci_board_debug("We use lmp_subversion=%x fw_buf=%x, fw_len = %x, config_buf = %x,config_len= %x, baudrate 0x%x\n", lmp_subversion,fw_buf, fw_len, config_buf, config_len, hci_tp_baudrate);
     }
 
     hci_set_patch(fw_buf, fw_len, config_buf, config_len, hci_tp_baudrate);
@@ -488,7 +488,7 @@ void bt_read_efuse(void)
     if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
     {
         /* 0 */
-        hci_board_debug("\r\n==logic_efuse:==\r\n ");
+        hci_board_debug("==logic_efuse:==\r\n ");
         for (Idx = 0; Idx < BT_EFUSE_TABLE_LEN; Idx++)
         {
             hci_board_debug("\n%x:", hci_tp_lgc_efuse[Idx]);
@@ -505,7 +505,7 @@ void bt_read_efuse(void)
     if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
     {
         /* 0 */
-        hci_board_debug("\r\n==bt phy_efuse 0x120~0x130:==\r\n ");
+        hci_board_debug("==bt phy_efuse 0x120~0x130:==\r\n ");
         for (Idx = 0; Idx < 16; Idx++)
         {
             hci_board_debug("\n%x:", hci_tp_phy_efuse[Idx]);
@@ -576,7 +576,7 @@ bool hci_board_init()
     //bool ret=false;
 	
     if(!(wifi_is_up(RTW_STA_INTERFACE) || wifi_is_up(RTW_AP_INTERFACE))) {
-        hci_board_debug("\nWIFI is off !Please restart BT after WIFI on!\n");
+        hci_board_debug("WIFI is off !Please restart BT after WIFI on!\n");
         return false;
     }
 	
@@ -584,14 +584,14 @@ bool hci_board_init()
 
     if (rltk_wlan_is_mp())
     {
-        hci_board_debug("\r\n==========this is BT MP DRIVER===========,\r\n this cut is AmebaD %X CUT\r\n",SYSCFG_CUTVersion()+10);
+        hci_board_debug("==========this is BT MP DRIVER===========,\r\n this cut is AmebaD %X CUT\n",SYSCFG_CUTVersion()+10);
     }
     else if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
     {
-        hci_board_debug("\r\n***********this is BT NORMAL DRIVER*******,\r\n this cut is AmebaD %X CUT\r\n",SYSCFG_CUTVersion()+10);
+        hci_board_debug("***********this is BT NORMAL DRIVER*******,\r\n this cut is AmebaD %X CUT\n",SYSCFG_CUTVersion()+10);
     }
 
-    hci_board_debug("\r\nBT BUILD Date: %s \r\n",UTS_VERSION);
+    hci_board_debug("BT BUILD Date: %s\n",UTS_VERSION);
     bt_read_efuse();
 
     return true;
@@ -621,7 +621,7 @@ void bt_write_phy_efuse_value(void)
 
     for(int i=0;i<0x10; i++)
     {
-        hci_board_debug("\r\n write physical efuse 0x%x =0x%02x",0x120+i, hci_tp_phy_efuse[i]);
+        hci_board_debug(" write physical efuse 0x%x =0x%02x\n",0x120+i, hci_tp_phy_efuse[i]);
         EFUSE_PMAP_WRITE8(0, 0x120 + i, hci_tp_phy_efuse[i], L25EOUTVOLTAGE);
     }
 }
@@ -633,21 +633,21 @@ bool hci_board_complete(void)
 #ifdef FT_MODE
         uint8_t TestItem;
         static bool write_efuse_ok=false;
-        hci_board_debug("\r\n=================original ========================\r\n");
+        hci_board_debug("=================original ========================\n");
         for (int Idx = 0; Idx < 16; Idx++)
         {
             EFUSE_PMAP_READ8(0, 0x120 + Idx, orignal_hci_tp_phy_efuse + Idx, L25EOUTVOLTAGE);
-            hci_board_debug("\r\n original physical efuse 0x%x =0x%02x",0x120+Idx, orignal_hci_tp_phy_efuse[Idx]);
+            hci_board_debug(" original physical efuse 0x%x =0x%02x",0x120+Idx, orignal_hci_tp_phy_efuse[Idx]);
             if(orignal_hci_tp_phy_efuse[Idx] != 0xff)
             {
                 write_efuse_ok = true;
             }
         }
 
-        hci_board_debug("\r\n=================will write physical efuse ========================\r\n");
+        hci_board_debug("=================will write physical efuse ========================\n");
         for(int i=0;i<0x10; i++)
         {
-            hci_board_debug("\r\n 0x%x =0x%02x",0x120+i, hci_tp_phy_efuse[i]);
+            hci_board_debug("0x%x =0x%02x\n",0x120+i, hci_tp_phy_efuse[i]);
         }
 
         /* TODO:GNT_BT TO WIFI */
@@ -772,7 +772,7 @@ bool bt_check_iqk(void)
     if(!(hci_tp_lgc_efuse[LEFUSE(0x1A1)] & BIT0))
     {
         /* 0 */
-        hci_board_debug("\r\n%s: USE FIX LOGIC EFUSE\r\n",__FUNCTION__);
+        hci_board_debug("%s: USE FIX LOGIC EFUSE\n",__FUNCTION__);
         if (bt_iqk_logic_efuse_valid(&bt_iqk_data))
         {
             bt_dump_iqk(&bt_iqk_data);
@@ -785,7 +785,7 @@ bool bt_check_iqk(void)
             hci_tp_phy_efuse[6] = (bt_iqk_data.IQK_yy >> 8) & 0xff;
             return true;
         }
-		hci_board_debug("\r\n%s: LOGIC EFUSE HAS NO DATA\r\n",__FUNCTION__);
+		hci_board_debug("%s: LOGIC EFUSE HAS NO DATA\n",__FUNCTION__);
         return false;
     }
 
@@ -797,7 +797,7 @@ bool bt_check_iqk(void)
         }
         else
         {
-            hci_board_debug("\r\nhci_tp_phy_efuse[0]=0,\r\n");
+            hci_board_debug("hci_tp_phy_efuse[0]=0,\n");
         }
         bt_dump_iqk(&bt_iqk_data);
         bt_lok_write(bt_iqk_data.IDAC, bt_iqk_data.QDAC);
@@ -834,12 +834,12 @@ bool hci_start_iqk(void)
         ret = bt_iqk_8721d(&g_iqk_data, 0);
         bt_dump_iqk(&g_iqk_data);
 
-        hci_board_debug("\r\n Please write logic efuse 0x1A6 =0x%02x", g_iqk_data.IQK_xx & 0xff);
-        hci_board_debug("\r\n Please write logic efuse 0x1A7 =0x%02x", (g_iqk_data.IQK_xx >> 8) & 0xff);
-        hci_board_debug("\r\n Please write logic efuse 0x1A8 =0x%02x", g_iqk_data.IQK_yy & 0xff);
-        hci_board_debug("\r\n Please write logic efuse 0x1A9 =0x%02x", (g_iqk_data.IQK_yy >> 8) & 0xff);
-        hci_board_debug("\r\n Please write logic efuse 0x1AA =0x%02x", g_iqk_data.QDAC);
-        hci_board_debug("\r\n Please write logic efuse 0x1AB =0x%02x\r\n", g_iqk_data.IDAC);
+        hci_board_debug("Please write logic efuse 0x1A6 =0x%02x\n", g_iqk_data.IQK_xx & 0xff);
+        hci_board_debug("Please write logic efuse 0x1A7 =0x%02x\n", (g_iqk_data.IQK_xx >> 8) & 0xff);
+        hci_board_debug("Please write logic efuse 0x1A8 =0x%02x\n", g_iqk_data.IQK_yy & 0xff);
+        hci_board_debug("Please write logic efuse 0x1A9 =0x%02x\n", (g_iqk_data.IQK_yy >> 8) & 0xff);
+        hci_board_debug("Please write logic efuse 0x1AA =0x%02x\n", g_iqk_data.QDAC);
+        hci_board_debug("Please write logic efuse 0x1AB =0x%02x\n", g_iqk_data.IDAC);
     }
     else
     {
@@ -856,7 +856,7 @@ bool hci_start_iqk(void)
     bt_lok_write(g_iqk_data.IDAC, g_iqk_data.QDAC);
 
 	hci_tp_phy_efuse[0] = 0;
-    hci_tp_phy_efuse[1] =hci_tp_phy_efuse[1] & (~BIT0);
+    hci_tp_phy_efuse[1] = hci_tp_phy_efuse[1] & (~BIT0);
     hci_tp_phy_efuse[3] = g_iqk_data.IQK_xx & 0xff;
     hci_tp_phy_efuse[4] = (g_iqk_data.IQK_xx >> 8) & 0xff;
     hci_tp_phy_efuse[5] = g_iqk_data.IQK_yy & 0xff;
@@ -874,12 +874,12 @@ void bt_write_lgc_efuse_value(void)
     hci_tp_lgc_efuse[0x1a] = g_iqk_data.QDAC;
     hci_tp_lgc_efuse[0x1b] = g_iqk_data.IDAC;
 
-    hci_board_debug("\r\n write logic efuse 0x1A6 =0x%02x", hci_tp_lgc_efuse[0x16]);
-    hci_board_debug("\r\n write logic efuse 0x1A7 =0x%02x", hci_tp_lgc_efuse[0x17]);
-    hci_board_debug("\r\n write logic efuse 0x1A8 =0x%02x", hci_tp_lgc_efuse[0x18]);
-    hci_board_debug("\r\n write logic efuse 0x1A9 =0x%02x", hci_tp_lgc_efuse[0x19]);
-    hci_board_debug("\r\n write logic efuse 0x1Aa =0x%02x", hci_tp_lgc_efuse[0x1a]);
-    hci_board_debug("\r\n write logic efuse 0x1Ab =0x%02x", hci_tp_lgc_efuse[0x1b]);
+    hci_board_debug(" write logic efuse 0x1A6 =0x%02x\n", hci_tp_lgc_efuse[0x16]);
+    hci_board_debug(" write logic efuse 0x1A7 =0x%02x\n", hci_tp_lgc_efuse[0x17]);
+    hci_board_debug(" write logic efuse 0x1A8 =0x%02x\n", hci_tp_lgc_efuse[0x18]);
+    hci_board_debug(" write logic efuse 0x1A9 =0x%02x\n", hci_tp_lgc_efuse[0x19]);
+    hci_board_debug(" write logic efuse 0x1Aa =0x%02x\n", hci_tp_lgc_efuse[0x1a]);
+    hci_board_debug(" write logic efuse 0x1Ab =0x%02x\n", hci_tp_lgc_efuse[0x1b]);
 }
 
 
@@ -888,6 +888,6 @@ void bt_show_efuse_value(void)
     int i = 0;
     for(i=0;i<0x10;i++)
     {
-        hci_board_debug("\r\n write physical efuse 0x%x =0x%02x",0x120+i, hci_tp_phy_efuse[i]);
+        hci_board_debug(" write physical efuse 0x%x =0x%02x\n",0x120+i, hci_tp_phy_efuse[i]);
     }
 }

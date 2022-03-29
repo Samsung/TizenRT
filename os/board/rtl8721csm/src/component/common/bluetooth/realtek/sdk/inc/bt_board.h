@@ -9,7 +9,7 @@ extern "C" {
 #include <stdio.h>
 #include "ameba_soc.h"
 
-#define platform_debug DBG_8195A
+#define platform_debug printf
 
 #define TRACE_SWITCH_CLOSE
 /* ======== trace_uart ======== */
@@ -47,7 +47,9 @@ extern "C" {
 #define TRACE_TASK_PRIO  3
 
 /* ======== hci_rtk ======== */
-#define hci_board_debug DBG_8195A
+#define hci_board_debug(...)     do {\
+        printf("[RTK_BT] " __VA_ARGS__);\
+}while(0)
 #define BT_DEFAUT_LMP_SUBVER   0x8721
 
 #define HCI_START_IQK

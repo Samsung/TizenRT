@@ -578,7 +578,7 @@ void ble_tizenrt_central_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_S
                 debug_print("ble_tizenrt_central_app_handle_conn_state_evt: connection lost, conn_id %d, cause 0x%x \n", conn_id,
                                  disc_cause);
             }
-            dbg("Disconnect conn_id %d \n", conn_id);
+            dbg("Disconnect conn_id %d, cause 0x%x\n", conn_id, disc_cause);
             if (ble_tizenrt_central_app_link_table[conn_id].role == GAP_LINK_ROLE_MASTER)
                 if (g_master_link_num){
                     g_master_link_num --;
@@ -656,7 +656,7 @@ void ble_tizenrt_central_app_handle_authen_state_evt(uint8_t conn_id, uint8_t ne
     {
     case GAP_AUTHEN_STATE_STARTED:
         {
-            debug_print("Auth started \n");
+            dbg("Auth started \n");
             ble_tizenrt_central_app_link_table[conn_id].auth_state = GAP_AUTHEN_STATE_STARTED;
             APP_PRINT_INFO0("ble_tizenrt_central_app_handle_authen_state_evt: GAP_AUTHEN_STATE_STARTED");
         }
