@@ -32,6 +32,9 @@
  *
  * Description:
  *   Returns the largest free node size of user heap.
+ *   NOTE : The available size to allocate is smaller than
+ *         the return of this API, because of the size of alloc node.
+ *         available size = largest free size - SIZEOF_MM_ALLOCNODE
  ****************************************************************************/
 
 size_t umm_get_largest_freenode_size(void)
@@ -43,7 +46,7 @@ size_t umm_get_largest_freenode_size(void)
  * Name: umm_get_heap_free_size
  *
  * Description:
- *   Returns the available free size of user heap.
+ *   Returns the free size of user heap.
  *
  ************************************************************************/
 #ifdef CONFIG_DEBUG_MM_HEAPINFO

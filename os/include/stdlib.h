@@ -115,11 +115,15 @@ struct mallinfo {
 	int arena;					/* This is the total size of memory allocated
 								 * for use by malloc in bytes. */
 	int ordblks;				/* This is the number of free (not in use) chunks */
-	int mxordblk;				/* Size of the largest free (not in use) chunk */
+	int mxordblk;				/* Size of the largest free (not in use) chunk
+								 *   NOTE : The available size to allocate is smaller than
+ 								 *    the return of this API, because of the size of alloc node.
+ 								 *   available size = largest free size - SIZEOF_MM_ALLOCNODE*/
 	int uordblks;				/* This is the total size of memory occupied by
 								 * chunks handed out by malloc. */
 	int fordblks;				/* This is the total size of memory occupied
-								 * by free (not in use) chunks.*/
+								 * by free (not in use) chunks. */
+
 };
 
 /* Structure type returned by the div() function. */
