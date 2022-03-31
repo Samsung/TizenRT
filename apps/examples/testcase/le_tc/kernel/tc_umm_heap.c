@@ -471,6 +471,36 @@ static void tc_umm_heap_zalloc(void)
 	}
 	TC_SUCCESS_RESULT();
 }
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+static void tc_umm_heap_get_heap_free_size(void)
+{
+	size_t free_size = umm_get_heap_free_size();
+	struct mallinfo info;
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+	info = mallinfo();
+#else
+	(void)mallinfo(&info);
+#endif
+	TC_ASSERT_EQ("umm_get_heap_free_size", free_size, info.fordblks);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_umm_heap_get_largest_freenode_size(void)
+{
+	size_t largest_size = umm_get_largest_freenode_size();
+	struct mallinfo info;
+
+#ifdef CONFIG_CAN_PASS_STRUCTS
+	info = mallinfo();
+#else
+	(void)mallinfo(&info);
+#endif
+	TC_ASSERT_EQ("umm_get_largest_freenode_size", largest_size, info.mxordblk);
+	TC_SUCCESS_RESULT();
+}
+#endif
 
 static int umm_test(int argc, char *argv[])
 {
@@ -482,6 +512,10 @@ static int umm_test(int argc, char *argv[])
 	tc_umm_heap_memalign();
 	tc_umm_heap_mallinfo();
 	tc_umm_heap_zalloc();
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	tc_umm_heap_get_heap_free_size();
+	tc_umm_heap_get_largest_freenode_size();
+#endif
 
 	sched_unlock();
 
