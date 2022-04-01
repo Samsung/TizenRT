@@ -239,6 +239,10 @@ int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list)
 	int32_t cnt = 0;
 	int32_t total = 0;
 
+	if (item == NULL) {
+		return 0;
+	}
+
 	while (item) {
 		item = item->next;
 		cnt++;
