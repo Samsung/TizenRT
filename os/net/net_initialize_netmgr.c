@@ -35,6 +35,9 @@ extern int netdev_mgr_start(void);
 #ifdef CONFIG_VIRTUAL_WLAN
 extern void vwifi_start(void);
 #endif
+#ifdef CONFIG_VIRTUAL_BLE
+extern void vble_start(void);
+#endif
 extern int trwifi_run_handler(void);
 /****************************************************************************
  * Name: netmgr_setup
@@ -104,6 +107,9 @@ void net_initialize(void)
 {
 #ifdef CONFIG_VIRTUAL_WLAN
 	vwifi_start();
+#endif
+#ifdef CONFIG_VIRTUAL_BLE
+    vble_start();
 #endif
 	/*  start network stack */
 	struct netstack *stk = get_netstack(TR_SOCKET);

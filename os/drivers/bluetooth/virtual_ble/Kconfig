@@ -1,0 +1,3 @@
+config VIRTUAL_BLE
+	bool "Virtual BLE Driver"
+	default n
