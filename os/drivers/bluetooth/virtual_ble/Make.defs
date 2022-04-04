@@ -19,7 +19,7 @@
 ifeq ($(CONFIG_VIRTUAL_BLE),y)
 
 #Driver API
-CSRCS += ble_vdev.c
+CSRCS += ble_vdev.c vble_handler.c
 
 # Include wireless devices build support
 
