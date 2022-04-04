@@ -84,6 +84,10 @@ extern int wifi_enable_packet_filter(unsigned char filter_id);
 extern int wifi_disable_packet_filter(unsigned char filter_id);
 extern int wifi_remove_packet_filter(unsigned char filter_id);
 
+#ifdef CONFIG_VIRTUAL_BLE
+extern void vble_register(void);
+#endif
+
 #define MULTICAST_IP_TO_MAC(ip) { (u8)0x01, \
 				  (u8)0x00, \
 				  (u8)0x5e, \
@@ -211,10 +215,15 @@ void up_netinitialize(void)
 		rtw_printf("Failed to register amebad netdev\n");
 	}
 #endif
+#ifdef CONFIG_VIRTUAL_BLE
+	vble_register();
+#else
 #if defined(CONFIG_AMEBAD_BLE) && defined(CONFIG_DRIVERS_BLE)
 	ameba_bm_dev_ble0 = bledev_register(&g_trble_drv_ops);
 	if (ameba_bm_dev_ble0 == NULL) {
 		rtw_printf("Failed to register amebad netdev\n");
 	}
 #endif
+#endif
+
 }
