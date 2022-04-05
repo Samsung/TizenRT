@@ -122,8 +122,10 @@ APP2_PARTITION_SIZE = int(SIZE_LIST[APP2_IDX]) * 1024
 print("\n========== Size Verification of built Binaries ==========")
 check_binary_size("KERNEL", KERNEL_PARTITION_SIZE)
 if CONFIG_APP_BINARY_SEPARATION == "y" :
-    check_binary_size("APP1", APP1_PARTITION_SIZE)
-    check_binary_size("APP2", APP2_PARTITION_SIZE)
+    if APP1_IDX != 0 :
+        check_binary_size("APP1", APP1_PARTITION_SIZE)
+    if APP2_IDX != 0 :
+        check_binary_size("APP2", APP2_PARTITION_SIZE)
     if CONFIG_SUPPORT_COMMON_BINARY == "y" :
         check_binary_size("COMMON", COMMON_PARTITION_SIZE)
 
