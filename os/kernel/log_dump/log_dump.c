@@ -48,10 +48,13 @@
 #endif
 
 #define LOG_DUMP_OK			 0
+#define LOG_DUMP_OK			0
+#define LOG_DUMP_OK_FSZ		1
 #define LOG_DUMP_MEM_FAIL		-1
 #define LOG_DUMP_HEAP_FAIL		-2
 #define LOG_DUMP_SIZE_FAIL		-3
 #define LOG_DUMP_OPT_FAIL		-4
+#define LOG_DUMP_STR_FREEMEM	14
 
 #define LOG_CHUNK_SIZE			sizeof(struct log_dump_chunk_s)
 
@@ -145,18 +148,13 @@ int log_dump_set(FAR const char *buffer, size_t buflen)
 	return LOG_DUMP_OK;
 }
 
-int log_dump_save(char ch)
+int log_dump_tobuffer(char ch, size_t *free_size)
 {
-	if (is_started_to_save == false) {
-		return LOG_DUMP_OK;
-	}
-
 	/* need to check if the current chunks size is over max_log_size or greater than x% of free heap */
 
-	size_t free_size;
 	size_t max_size;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	free_size = kmm_get_heap_free_size();
+	*free_size = kmm_get_heap_free_size();
 #else
 	struct mallinfo mem;
 #ifdef CONFIG_CAN_PASS_STRUCTS
@@ -164,15 +162,15 @@ int log_dump_save(char ch)
 #else
 	(void)kmm_mallinfo(&mem);
 #endif
-	free_size = mem.fordblks;
+	*free_size = mem.fordblks;
 #endif
-	size_t percent_free_size = (free_size * CONFIG_LOG_DUMP_MAX_FREE_HEAP) / 100;
+	size_t percent_free_size = (*free_size * CONFIG_LOG_DUMP_MAX_FREE_HEAP) / 100;
 
 	if(percent_free_size < CONFIG_LOG_DUMP_MAX_SIZE) {
 		max_size = LOG_CHUNK_SIZE;
 	} else {
-		max_size = MIN(percent_free_size, CONFIG_LOG_DUMP_MAX_SIZE);             /* setting the upper limit */
-		max_size = MAX(max_size, CONFIG_LOG_DUMP_MIN_SIZE);                             /* checking the lower limit */
+		max_size = MIN(percent_free_size, CONFIG_LOG_DUMP_MAX_SIZE);			/* setting the upper limit */
+		max_size = MAX(max_size, CONFIG_LOG_DUMP_MIN_SIZE);						/* checking the lower limit */
 	}
 
 	if (curbytes == CONFIG_LOG_DUMP_CHUNK_SIZE) { /* last chunk is full */
@@ -206,10 +204,35 @@ int log_dump_save(char ch)
 		curbytes += 1;
 		if (curbytes % CONFIG_LOG_DUMP_MEMCHECK_SIZE == 0) {
 			log_dump_mem_check(max_size);
+			return LOG_DUMP_OK_FSZ;
 		}
 	}
 
 	return LOG_DUMP_OK;
+}
+
+int log_dump_save(char ch)
+{
+	if (is_started_to_save == false) {
+		return LOG_DUMP_OK;
+	}
+
+	size_t free_size = 0;
+	int ret = 0;
+	char fsz_array[LOG_DUMP_STR_FREEMEM];
+
+	ret = log_dump_tobuffer(ch, &free_size);
+	if (ret == LOG_DUMP_OK_FSZ)
+	{
+		snprintf(fsz_array, sizeof(size_t), "<fsz:%d>", free_size);
+		for(int i = 0; i < sizeof(fsz_array); i++)
+		{
+			ret = log_dump_tobuffer(fsz_array[i], &free_size);
+			if(ret < 0)
+				return ret;
+		}
+	}
+	return ret;
 }
 
 size_t log_dump_read(FAR char *buffer, size_t buflen)
