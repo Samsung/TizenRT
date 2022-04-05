@@ -1013,7 +1013,7 @@ config LOG_DUMP_MAX_SIZE
 	default 262144
 
 config LOG_DUMP_MIN_SIZE
-	int "Minimum size allocated for logs in bytes"
+	int "Minimum size allocated for logs in bytes if free heap more than LOG_DUMP_MAX_SIZE"
 	default 16384
 
 config LOG_DUMP_MEMCHECK_SIZE
