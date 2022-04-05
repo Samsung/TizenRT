@@ -174,7 +174,6 @@ int log_dump_save(char ch)
 		max_size = MIN(percent_free_size, CONFIG_LOG_DUMP_MAX_SIZE);             /* setting the upper limit */
 		max_size = MAX(max_size, CONFIG_LOG_DUMP_MIN_SIZE);                             /* checking the lower limit */
 	}
-	struct log_dump_chunk_s *log_dump_tail = (struct log_dump_chunk_s *)sq_tail(&log_dump_chunks);
 
 	if (curbytes == CONFIG_LOG_DUMP_CHUNK_SIZE) { /* last chunk is full */
 
@@ -202,7 +201,7 @@ int log_dump_save(char ch)
 		}
 
 	} else { /* there is place in tail */
-
+		struct log_dump_chunk_s *log_dump_tail = (struct log_dump_chunk_s *)sq_tail(&log_dump_chunks);
 		log_dump_tail->arr[curbytes] = ch;
 		curbytes += 1;
 		if (curbytes % CONFIG_LOG_DUMP_MEMCHECK_SIZE == 0) {
