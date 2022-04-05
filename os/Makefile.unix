@@ -519,11 +519,19 @@ post:
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 	$(Q) mkdir -p $(OUTBIN_DIR)/user
 ifneq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+ifeq ($(CONFIG_APP1_INFO),y)
 	$(Q) $(call VERIFY_APP,"app1") #When common binary is used, undefined symbols of app
+endif
+ifeq ($(CONFIG_APP2_INFO),y)
 	$(Q) $(call VERIFY_APP,"app2") #will be defined in common binary. So dont perform "verify" for apps
+endif
 endif 
+ifeq ($(CONFIG_APP1_INFO),y)
 	$(Q) $(call PREPARE_APP,"app1","user",$(CONFIG_APP1_BIN_TYPE),$(CONFIG_APP1_BIN_VER),$(CONFIG_APP1_BIN_DYN_RAMSIZE),$(CONFIG_APP1_MAIN_STACKSIZE),$(CONFIG_APP1_MAIN_PRIORITY),$(CONFIG_APP1_BIN_LOADING_PRIORITY))
+endif
+ifeq ($(CONFIG_APP2_INFO),y)
 	$(Q) $(call PREPARE_APP,"app2","user",$(CONFIG_APP2_BIN_TYPE),$(CONFIG_APP2_BIN_VER),$(CONFIG_APP2_BIN_DYN_RAMSIZE),$(CONFIG_APP2_MAIN_STACKSIZE),$(CONFIG_APP2_MAIN_PRIORITY),$(CONFIG_APP2_BIN_LOADING_PRIORITY))
+endif
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	$(Q) $(call VERIFY_APP,$(CONFIG_COMMON_BINARY_NAME))
 	$(Q) $(call PREPARE_APP,$(CONFIG_COMMON_BINARY_NAME),"common",$(CONFIG_COMMON_BINARY_VERSION))
