@@ -154,8 +154,9 @@ int log_dump_save(char ch)
 	/* need to check if the current chunks size is over max_log_size or greater than x% of free heap */
 
 	size_t free_size;
+	size_t max_size;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	free_size = kmm_get_heap_free_size(void);
+	free_size = kmm_get_heap_free_size();
 #else
 	struct mallinfo mem;
 #ifdef CONFIG_CAN_PASS_STRUCTS
@@ -166,9 +167,13 @@ int log_dump_save(char ch)
 	free_size = mem.fordblks;
 #endif
 	size_t percent_free_size = (free_size * CONFIG_LOG_DUMP_MAX_FREE_HEAP) / 100;
-	size_t max_size = MIN(percent_free_size, CONFIG_LOG_DUMP_MAX_SIZE);             /* setting the upper limit */
-	max_size = MAX(max_size, CONFIG_LOG_DUMP_MIN_SIZE);                             /* checking the lower limit */
 
+	if(percent_free_size < CONFIG_LOG_DUMP_MAX_SIZE) {
+		max_size = LOG_CHUNK_SIZE;
+	} else {
+		max_size = MIN(percent_free_size, CONFIG_LOG_DUMP_MAX_SIZE);             /* setting the upper limit */
+		max_size = MAX(max_size, CONFIG_LOG_DUMP_MIN_SIZE);                             /* checking the lower limit */
+	}
 	struct log_dump_chunk_s *log_dump_tail = (struct log_dump_chunk_s *)sq_tail(&log_dump_chunks);
 
 	if (curbytes == CONFIG_LOG_DUMP_CHUNK_SIZE) { /* last chunk is full */
