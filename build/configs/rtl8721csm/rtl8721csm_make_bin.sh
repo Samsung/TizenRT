@@ -168,19 +168,11 @@ function concatenate_binary_with_signing()
 	#signing
 	echo "========== Binary SIGNING =========="
 	bash $BUILDDIR/configs/rtl8721csm/rtl8721csm_signing.sh kernel
-
-	if [ "${CONFIG_AMEBAD_TRUSTZONE}" != "y" ];then
-		echo "========== Concatenate_binary for TZ disabled =========="
-		cat $BINDIR/xip_image2_prepend.bin $BINDIR/ram_2_prepend.bin $BINDIR/psram_2_prepend.bin > $BINDIR/km4_image2_all.bin
-		cat $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin > $BINDIR/km0_km4_image2.bin
-	else
-		echo "========== Concatenate_binary for TZ enabled =========="
-		cat $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all-en.bin $BINDIR/km4_image3_psram-en.bin > $BINDIR/km0_km4_image2.bin
-	fi
 }
 copy_bootloader;
 if [ "${CONFIG_BINARY_SIGNING}" == "y" ];then
-	concatenate_binary_with_signing;
+	# Not support binary signing on public repo. So call making binary without binary signing.
+	concatenate_binary_without_signing;
 else
 	concatenate_binary_without_signing;
 fi
