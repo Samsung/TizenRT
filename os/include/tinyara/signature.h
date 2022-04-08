@@ -22,8 +22,10 @@
 #include <tinyara/config.h>
 #include <stdint.h>
 
-#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_BOARD_RTL8721CSM)
-/* The size of prepended binary signing data */
+/* The size of prepended binary signing data which is board-specific value */
+#ifdef CONFIG_USER_SIGN_PREPEND_SIZE
+#define USER_SIGN_PREPEND_SIZE     CONFIG_USER_SIGN_PREPEND_SIZE
+#else
 #define USER_SIGN_PREPEND_SIZE     0
 #endif
 
