@@ -280,11 +280,12 @@ config BOARD_BUILD_DATE
 		So it should be set to a higer value than versions of old binaries if you want to make the binary the latest version.
 
 config BINARY_SIGNING
-	bool "Enable Binary Signing"
+	bool
 	default n
 	depends on ARCH_BOARD_RTL8721CSM
 	---help---
 		Enable Encryption and Secure boot.
+		But this config is set as n and invisible because binary signing is not supported here.
 
 config USER_SIGN_PREPEND_SIZE
 	int "Prepended user binary signing size"
