@@ -174,7 +174,11 @@ int binary_manager_check_kernel_update(void)
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[inactive_partidx].devnum);
 	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, true);
 	if (ret == BINMGR_OK) {
+#ifdef CONFIG_BINMGR_UPDATE_SAME_VERSION
+		if (kernel_info.version <= header_data.version) {
+#else
 		if (kernel_info.version < header_data.version) {
+#endif
 			/* Need to update bootparam and reboot */
 			return BINMGR_OK;
 		} else {
@@ -414,7 +418,11 @@ int binary_manager_check_user_update(int bin_idx)
 		if (bin_idx != BM_CMNLIB_IDX) {
 			BIN_LOAD_PRIORITY(bin_idx, part_idx) = user_header_data.loading_priority;
 		}
+#ifdef CONFIG_BINMGR_UPDATE_SAME_VERSION
+		if (running_ver <= version) {
+#else
 		if (running_ver < version) {
+#endif
  			bmvdbg("Found Latest version %u in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
 			return BINMGR_OK;
 		} else {

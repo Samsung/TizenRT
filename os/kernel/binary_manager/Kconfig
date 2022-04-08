@@ -45,6 +45,14 @@ config BINMGR_UPDATE
 	---help---
 		Enables Binary Manager Update APIs.
 
+config BINMGR_UPDATE_SAME_VERSION
+	bool "Allow Same Version Binary Update"
+	default y
+	depends on BINMGR_UPDATE
+	---help---
+		Allow same version binary update.
+		If it is disabled, only higher version can be updated.
+
 config BINMGR_RELOAD_REBOOT
 	bool "Enable board reset for binary reloading"
 	default n
