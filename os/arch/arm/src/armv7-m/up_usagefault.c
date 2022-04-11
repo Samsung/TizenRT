@@ -87,25 +87,28 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
 	system_exception_location = regs[REG_R15];
 
-	lldbg("PANIC!!! Usagefault occurred while executing instruction at address : 0x%08x\n", regs[REG_R15]);
-	lldbg("CFAULTS: 0x%08x\n", cfsr);
+	lldbg("#########################################################################\n");
+	lldbg("PANIC!!! Usagefault at instruction: 0x%08x\n", regs[REG_R15]);
 
 	if (cfsr & DIVBYZERO) {
-		lldbg("Divide by zero error has occurred.\n");
+		lldbg("FAULT TYPE: DIVBYZERO (Divide by zero error has occurred).\n");
 	} else if (cfsr & UNALIGNED) {
-		lldbg("Unaligned access error has occurred.\n");
+		lldbg("FAULT TYPE: UNALIGNED (Unaligned access error has occurred).\n");
 	} else if (cfsr & NOCP) {
-		lldbg("A coprocessor error has occurred.\n");
+		lldbg("FAULT TYPE: NOCP (A coprocessor error has occurred).\n");
 	} else if (cfsr & INVPC) {
-		lldbg("An integrity check error has occurred on EXC_RETURN. PC value might be invalid.\n");
+		lldbg("FAULT TYPE: INVPC (Integrity check error during EXC_RETURN).\n");
 		/* As PC value might be invalid use LR value to determine if
 		 * the crash occurred in the kernel space or in the user space */
 		system_exception_location = regs[REG_R14];
 	} else if (cfsr & INVSTATE) {
-		lldbg("Invalid state. Instruction executed with invalid EPSR.T or EPSR.IT field.\n");
+		lldbg("FAULT TYPE: INVSTATE (Invalid state. Check EPSR T bit. XPSR = 0x%08x).\n", regs[REG_XPSR]);
 	} else if (cfsr & UNDEFINSTR) {
-		lldbg("Undefined instruction executed.\n");
+		lldbg("FAULT TYPE: UNDEFINSTR (Undefined instruction executed).\n");
 	}
+
+	lldbg("FAULT REGS: CFAULTS: 0x%08x\n", cfsr);
+	lldbg("#########################################################################\n");
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);

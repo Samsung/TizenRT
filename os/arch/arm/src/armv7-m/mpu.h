@@ -239,6 +239,34 @@ static inline void mpu_showtype(void)
 }
 
 /****************************************************************************
+ * Name: mpu_get_access_type_str
+ *
+ * Description:
+ *   Get the mpu region access type string
+ *
+ ****************************************************************************/
+
+static inline char *mpu_get_access_type_str(uint32_t rasr)
+{
+	uint32_t val = rasr & MPU_RASR_AP_MASK;
+	if (val == MPU_RASR_AP_NONO) {
+		return "NO/NO";
+	} else if (val == MPU_RASR_AP_RONO) {
+		return "RO/NO";
+	} else if (val == MPU_RASR_AP_RWNO) {
+		return "RW/NO";
+	} else if (val == MPU_RASR_AP_RORO) {
+		return "RO/RO";
+	} else if (val == MPU_RASR_AP_RWRO) {
+		return "RW/RO";
+	} else if (val == MPU_RASR_AP_RWRW) {
+		return "RW/RW";
+	} else {
+		return "XX/XX";
+	}
+}
+
+/****************************************************************************
  * Name: mpu_show_regioninfo
  *
  * Description:
@@ -255,23 +283,24 @@ static inline void mpu_show_regioninfo(void)
 	/* save the current region before printing the information */
 	temp = getreg32(MPU_RNR);
 
-	lldbg("*****************************************************************************\n");
-	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t REG\t   \tSTATUS\tATTRIBUTES*\n");
-	lldbg("*****************************************************************************\n");
+	lldbg("********************************************************************************************************\n");
+	lldbg("%-12s\t%-12s\t%-12s\t%-12s\t%-12s\t%-12s\t%-12s\n", "REGION_NO.", "BASE_ADDRESS", "SIZE", "REG",  "STATUS", "ACCESS (P/U)", "EXECUTE");
+	lldbg("********************************************************************************************************\n");
 	for (idx = 0; idx < 8; idx++) {
 		putreg32(idx, MPU_RNR);
 		base = getreg32(MPU_RBAR);
 		size = getreg32(MPU_RASR);
 		attr = getreg32(MPU_RASR);
-		lldbg("%8d\t\t%8X\t%8X\t%8X\t%8X\t%8X\n",
+		lldbg("%-12d\t0x%-10X\t0x%-10X\t%0x%-10x\t%-12s\t%-12s\t%-12s\n",
 			(base & MPU_RBAR_REGION_MASK),
 			(base & MPU_RBAR_ADDR_MASK),
 			(size ? (1 << (((size & MPU_RASR_SIZE_MASK) >> MPU_RASR_SIZE_SHIFT) + 1)) : 0),
 			((size & MPU_RASR_SRD_MASK) >> MPU_RASR_SRD_SHIFT),
-			(size & MPU_RASR_ENABLE) ? 1 : 0,
-			((attr & MPU_RASR_ATTR_MASK) >> MPU_RASR_ATTR_SHIFT));
+			(size & MPU_RASR_ENABLE) ? "ENABLED" : "DISABLED",
+			mpu_get_access_type_str(attr),
+			(attr & MPU_RASR_XN) ? "XN" : "X");
 	}
-	lldbg("*****************************************************************************\n");
+	lldbg("********************************************************************************************************\n");
 	/* restore the previous region */
 	putreg32(temp, MPU_RNR);
 #endif

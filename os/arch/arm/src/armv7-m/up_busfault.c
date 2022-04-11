@@ -89,28 +89,31 @@ int up_busfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t bfar = getreg32(NVIC_BFAULT_ADDR);
 	system_exception_location = regs[REG_R15];
 
-	lldbg("PANIC!!! Bus fault occurred while executing instruction at address : 0x%08x\n", regs[REG_R15]);
-	lldbg("CFAULTS: 0x%08x\n", cfsr);
-
-	if (cfsr & BFARVALID) {
-		lldbg("Fault occurred while accessing address (BFAR) : 0x%08x\n", bfar);
-	} else {
-		lldbg("Unable to determine fault address.\n");
-	}
+	lldbg("#########################################################################\n");
+	lldbg("PANIC!!! Bus fault at instruction: 0x%08x\n", regs[REG_R15]);
 
 	if (cfsr & PRECISERR) {
-		lldbg("Precise data access error occurred.\n");
+		lldbg("FAULT TYPE: PRECISERR (Precise data access error occurred).\n");
 	} else if (cfsr & IMPRECISERR) {
-		lldbg("Imprecise data access error occurred.\n");
+		lldbg("FAULT TYPE: IMPRECISERR (Imprecise data access error occurred).\n");
 	} else if (cfsr & STKERR) {
-		lldbg("Error while stacking registers during exception entry.\n");
+		lldbg("FAULT TYPE: STKERR (Error while stacking registers during exception entry).\n");
 	} else if (cfsr & UNSTKERR) {
-		lldbg("Error while unstacking registers during exception return.\n");
+		lldbg("FAULT TYPE: UNSTKERR (Error while unstacking registers during exception return).\n");
 	} else if (cfsr & LSPERR) {
-		lldbg("Error occurred during lazy state preservation of Floating Point unit registers.\n");
+		lldbg("FAULT TYPE: LSPERR (Error occurred during lazy state preservation of Floating Point unit registers).\n");
 	} else if (cfsr & IBUSERR) {
-		lldbg("Error on an instruction prefetch.\n");
+		lldbg("FAULT TYPE: IBUSERR (Error on an instruction prefetch).\n");
 	}
+
+	if (cfsr & BFARVALID) {
+		lldbg("FAULT ADDRESS: 0x%08x\n", bfar);
+	} else {
+		lldbg("FAULT ADDRESS: Unable to determine fault address.\n");
+	}
+
+	lldbg("FAULT REGS: CFAULTS: 0x%08x BFAR: 0x%08x\n", cfsr, bfar);
+	lldbg("#########################################################################\n");
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	if (cfsr & IBUSERR) {
