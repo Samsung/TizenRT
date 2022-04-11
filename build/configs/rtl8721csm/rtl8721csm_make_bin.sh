@@ -171,8 +171,7 @@ function concatenate_binary_with_signing()
 }
 copy_bootloader;
 if [ "${CONFIG_BINARY_SIGNING}" == "y" ];then
-	# Not support binary signing on public repo. So call making binary without binary signing.
-	concatenate_binary_without_signing;
+	concatenate_binary_with_signing;
 else
 	concatenate_binary_without_signing;
 fi
