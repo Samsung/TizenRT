@@ -287,6 +287,30 @@ static inline void mpu_showtype(void)
 }
 
 /****************************************************************************
+ * Name: mpu_get_access_type_str
+ *
+ * Description:
+ *   Get the mpu region access type string
+ *
+ ****************************************************************************/
+
+static inline char *mpu_get_access_type_str(uint32_t rbar)
+{
+	uint32_t val = rbar & MPU_RBAR_AP_MASK;
+	if (val == MPU_RBAR_AP_RWNO) {
+		return "RW/NO";
+	} else if (val == MPU_RBAR_AP_RWRW) {
+		return "RW/RW";
+	} else if (val == MPU_RBAR_AP_RONO) {
+		return "RO/NO";
+	} else if (val == MPU_RBAR_AP_RORO) {
+		return "RO/RO";
+	} else {
+		return "XX/XX";
+	}
+}
+
+/****************************************************************************
  * Name: mpu_show_regioninfo
  *
  * Description:
@@ -303,22 +327,22 @@ static inline void mpu_show_regioninfo(void)
 	/* save the current region before printing the information */
 	temp = getreg32(MPU_RNR);
 
-	lldbg("*****************************************************************************\n");
-	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t   STATUS\t ACCESS\t   \tNO_EXECUTE*\n");
-	lldbg("*****************************************************************************\n");
+	lldbg("********************************************************************************************\n");
+	lldbg("%-12s\t%-12s\t%-12s\t%-12s\t%-12s\t%-12s\n", "REGION_NO.", "BASE_ADDRESS", "SIZE", "STATUS", "ACCESS (P/U)", "EXECUTE");
+	lldbg("********************************************************************************************\n");
 	for (idx = 0; idx < 8; idx++) {
 		putreg32(idx, MPU_RNR);
 		rbar = getreg32(MPU_RBAR);
 		rlar = getreg32(MPU_RLAR);
-		lldbg("%8d\t\t%8X\t%8X\t%8X\t%8X\t%8X\n",
+		lldbg("%-12d\t0x%-10X\t0x%-10X\t%-12s\t%-12s\t%-12s\n",
 			idx,
 			(rbar & MPU_RBAR_ADDR_MASK),
 			(((rlar & MPU_RLAR_LIMIT_MASK) - (rbar & MPU_RBAR_ADDR_MASK)) | 0x1f) + 1,
-			(rlar & MPU_RLAR_ENABLE) ? 1 : 0,
-			((rbar & MPU_RBAR_AP_MASK) >> MPU_RBAR_AP_SHIFT),
-			(rbar & MPU_RBAR_XN));
+			(rlar & MPU_RLAR_ENABLE) ? "ENABLED" : "DISABLED",
+			mpu_get_access_type_str(rbar),
+			(rbar & MPU_RBAR_XN) ? "XN" : "X");
 	}
-	lldbg("*****************************************************************************\n");
+	lldbg("********************************************************************************************\n");
 	/* restore the previous region */
 	putreg32(temp, MPU_RNR);
 #endif
