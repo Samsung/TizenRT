@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_LIBMINIZ),y)
+ifeq ($(CONFIG_LIB_MINIZ),y)
 CONFIGURED_EXT += miniz
 endif
