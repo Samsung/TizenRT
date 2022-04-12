@@ -90,6 +90,7 @@ extern void wm_interop_add_ap_config(void *arg);
 extern void wm_interop_display_ap_config(void *arg);
 extern void wm_test_connect_stable(void *arg);
 extern void wm_run_event_tc(struct wt_options *opt);
+extern void wm_connectbyrssi_test(void *arg);
 
 /* Parser */
 #ifdef WT_MEMBER_POOL
@@ -603,6 +604,11 @@ void _wt_onoff_test(void *arg)
 	wm_test_on_off(arg);
 }
 
+void _wt_connectbyrssi_test(void *arg)
+{
+	wm_connectbyrssi_test(arg);
+}
+
 void _wt_dns_test(void *arg)
 {
 	wm_run_dns_test(arg);
@@ -840,6 +846,53 @@ int _wt_parse_dns(struct wt_options *opt, int argc, char *argv[])
 		return -1;
 	}
 	opt->repeat = atoi(argv[2]);
+	return 0;
+}
+
+int _wt_parse_connectbyrssi(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc < 6) {
+		WT_LOGE(TAG, "Incorrect number of command line arugments, it should be 6");
+		return -1;
+	}
+	
+	// rssi connect test argv array
+	// wm_test connect_by_rssi [SSID_NAME][SSID_authentication][SSID_Password][Repeat Count]
+	opt->ssid = argv[2];
+	opt->auth_type = wt_get_auth_type(argv[3]);
+	// If Auth type is open or ibss_open
+	if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN || opt->auth_type == WIFI_MANAGER_AUTH_IBSS_OPEN) {
+		// case: open mode
+		opt->password = "";
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+		opt->repeat = atoi(argv[5]);
+		return 0;
+	}
+	// if Auth type is unknown ,so return
+	if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
+		WT_LOGE(TAG, "Unknown Auth type");
+		return -1;
+	}
+	// If Auth type is wep_shared
+	if (opt->auth_type == WIFI_MANAGER_AUTH_WEP_SHARED) {
+		// If Auth type wep_shared ,check password length
+		if ((strlen(argv[4]) == 13) || (strlen(argv[4]) == 26)) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
+		} else if ((strlen(argv[4]) == 5) || (strlen(argv[4]) == 10)) {
+			opt->crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
+		} else {
+			WT_LOGE(TAG, "Auth_type is wep_shared but password length is not correct");
+			return -1;
+		}
+	} else {
+		opt->crypto_type = wt_get_crypto_type(argv[3]);
+		if (opt->crypto_type == WIFI_MANAGER_CRYPTO_UNKNOWN) {
+			WT_LOGE(TAG, "Unknown Cryto type");
+			return -1;
+		}
+	}
+	opt->password = argv[4];
+	opt->repeat = atoi(argv[5]);
 	return 0;
 }
 
