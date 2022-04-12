@@ -19,10 +19,6 @@
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_COMPRESSION),y)
 CSRCS += compression_tc_main.c
 
-ifeq ($(CONFIG_TC_LZMA),y)
-CSRCS += tc_lzma.c
-endif
-
 ifeq ($(CONFIG_TC_COMPRESS_READ),y)
 CSRCS += tc_compress_read.c
 endif

@@ -51,13 +51,7 @@ int tc_compression_main(int argc, char *argv[])
 		printf("Failed to open OS API test driver %d\n", errno);
 		return ERROR;
 	}
-#endif
 
-#ifdef CONFIG_TC_LZMA
-	lzma_main();
-#endif
-
-#ifdef CONFIG_TC_COMPRESS_READ
 	tc_compress_read_main();
 	close(g_tc_fd);
 #endif
