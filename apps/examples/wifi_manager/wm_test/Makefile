@@ -40,7 +40,8 @@ wm_test_daemon.c\
 wm_test_network.c\
 wm_test_event_tc.c\
 wm_test_connect_stable.c\
-wm_test_dns.c
+wm_test_dns.c\
+wm_test_connectbyrssi_test.c
 
 ifeq ($(CONFIG_VIRTUAL_WLAN),y)
 CSRCS += wm_test_mock.c

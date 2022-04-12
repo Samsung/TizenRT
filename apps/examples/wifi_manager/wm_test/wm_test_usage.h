@@ -94,6 +94,10 @@
 	"\n it can be run after a device is connected to an AP\n"	\
 	"	 wm_test dns count\n"
 
+#define WT_CONNECTBYBESTRSSI_USAGE								\
+	"\n connectbybestrssi test mode options:\n"					\
+	"	 wm_test connect_by_rssi [SSID_NAME] [SSID_authentication] [SSID_Password] [Repeat Count]\n"\
+
 #define WT_USAGE									\
 	"\n usage: wm_test [options]\n"					\
 	"\n run Wi-Fi Manager:\n"						\
@@ -109,5 +113,6 @@
 	WT_ONOFF_USAGE									\
 	WT_INTEROP_USAGE								\
 	WT_ADD_AP_USAGE									\
-	WT_DISPLAY_AP_USAGE\
-	WT_DNS_USAGE
+	WT_DISPLAY_AP_USAGE								\
+	WT_DNS_USAGE									\
+	WT_CONNECTBYBESTRSSI_USAGE
