@@ -37,7 +37,6 @@
 #define TAG "[WT]"
 
 typedef int (*parser_func)(struct wt_options *opt, int argc, char *argv[]);
-
 #define WT_TEST_SIGNAL              \
 	do {                            \
 		sem_post(&g_wm_sem);        \
@@ -628,6 +627,18 @@ void _wt_run_evt_tc(void *arg)
 	wm_run_event_tc(arg);
 }
 
+extern void example_eap(char *method);
+void _wt_eap(void *arg)
+{
+	WT_ENTER;
+	struct wt_options *opt = (struct wt_options *)arg;
+	example_eap(opt->eap_method);
+	/* Wait for DHCP connection */
+	WT_LOG(TAG, "wait join done");
+	WT_TEST_WAIT;
+	WT_LEAVE;
+}
+
 wt_type_e _wt_get_opt(int argc, char *argv[])
 {
 	int idx = 0;
@@ -840,6 +851,17 @@ int _wt_parse_dns(struct wt_options *opt, int argc, char *argv[])
 		return -1;
 	}
 	opt->repeat = atoi(argv[2]);
+	return 0;
+}
+
+int _wt_parse_eap(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc != 3) {
+		return -1;
+	}
+	if ((strncmp(argv[2], "tls", 4)) && (strncmp(argv[2], "peap", 5)) && (strncmp(argv[2], "ttls", 5)))
+		return -1;
+	opt->eap_method = argv[2];
 	return 0;
 }
 

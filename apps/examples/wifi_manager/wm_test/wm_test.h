@@ -38,4 +38,5 @@ struct wt_options {
 	char *security;
 	char *path;
 	int repeat;
+	char *eap_method;
 };

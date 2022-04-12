@@ -681,7 +681,7 @@ static void* my_calloc(size_t nelements, size_t elementSize)
 	void *ptr = NULL;
 
 	size = nelements * elementSize;
-	ptr = pvPortMalloc(size);
+	ptr = kmm_malloc(size);
 
 	if(ptr)
 		memset(ptr, 0, size);
@@ -695,7 +695,20 @@ struct eap_tls{
 	void *fd;
 };
 
-extern int mbedtls_platform_set_calloc_free( void * (*calloc_func)( size_t, size_t ),void (*free_func)( void * ) );
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#include <rom_ssl_ram_map.h>
+#define mbedtls_platform_set_calloc_free tls_platform_set_calloc_free
+int tls_platform_set_calloc_free( void * (*calloc_func)( size_t, size_t ),
+							  void (*free_func)( void * ) )
+{
+	/* Realtek added to initialize ROM code calloc & free function handler */
+	p_rom_ssl_ram_map = (struct _rom_mbedtls_ram_map*)&rom_ssl_ram_map;
+	p_rom_ssl_ram_map->ssl_calloc = calloc_func;
+	p_rom_ssl_ram_map->ssl_free = free_func;
+	return 0;
+}
+#endif
+
 void * tls_init(const struct tls_config *conf)
 {
 	/* To avoid gcc warnings */
@@ -703,7 +716,7 @@ void * tls_init(const struct tls_config *conf)
 	
 	struct eap_tls *tls_context;
 
-	mbedtls_platform_set_calloc_free(my_calloc, vPortFree);
+	mbedtls_platform_set_calloc_free(my_calloc, rtw_vmfree);
 
 	tls_context = os_zalloc(sizeof(struct eap_tls));
 
@@ -973,7 +986,7 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	{
 		wpa_printf(MSG_INFO, "TLS: connection handshake, state: %d", ssl->state);
 		//printf("\nTLS: connection handshake, state: %d\n", ssl->state);
-		
+
 		ret = mbedtls_ssl_handshake_step( ssl );
 
 		// keep the client random & server random for eap further use

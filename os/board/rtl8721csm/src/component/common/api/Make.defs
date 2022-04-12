@@ -49,7 +49,9 @@
 #
 ############################################################################
 
-CSRCS += wifi_interactive_mode.c
+CSRCS += wifi_interactive_mode.c \
+	 example_eap.c \
+	 lwip_netconf.c
 
 DEPPATH += --dep-path component/common/api
 VPATH += :component/common/api
