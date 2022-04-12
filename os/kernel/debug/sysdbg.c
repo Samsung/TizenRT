@@ -97,99 +97,6 @@ static int32_t sysdbg_dev_opened;
  ****************************************************************************/
 
 /****************************************************************************
-* Name: simulate_data_abort
-*
-* Description:
-*   This function simulates the data abort with null pointer access
-*
-* Inputs:
-*   None
-*
-* Return Value:
-*   None
-*
-* Assumptions:
-*   None
-****************************************************************************/
-
-static void simulate_data_abort(void)
-{
-	int *p = NULL;
-	dbg("\nSimulating Data abort exception by Null pointer access\n");
-	*p = 0x0;
-}
-
-/****************************************************************************
-* Name: simulate_user_assert
-*
-* Description:
-*   This function simulates the user assert by calling up_assert through PANIC macro
-*
-* Inputs:
-*   None
-*
-* Return Value:
-*   None
-*
-* Assumptions:
-*   None
-****************************************************************************/
-
-static void simulate_user_assert(void)
-{
-	dbg("\nSimulating user assert\n");
-	PANIC();
-}
-
-/****************************************************************************
-* Name: simulate_prefetch_abort
-*
-* Description:
-*   This function simulates the prefetch abort by accessing the unreachable addr
-*
-* Inputs:
-*   None
-*
-* Return Value:
-*   None
-*
-* Assumptions:
-*   None
-*
-****************************************************************************/
-
-static void simulate_prefetch_abort(void)
-{
-	dbg("\nSimulating Prefetch abort by accessing unreachable address \n");
-
-	((void (*)(void))0xDEADBEEF)();
-}
-
-/****************************************************************************
-* Name: simulate_undef_abort
-*
-* Description:
-*   This function simulates the undefined Instruction exception by executing invalid instruction
-*
-* Inputs:
-*   None
-*
-* Return Value:
-*   None
-*
-* Assumptions:
-*   None
-*
-****************************************************************************/
-
-static void simulate_undef_abort(void)
-{
-	dbg("\nSimulating Undefined instruction exception\n");
-	/*  0xe7f0def0 is an undefined instruction for both Arm and Thumb mode */
-	__asm__ __volatile__(".word 0xe7f0def0\n");
-}
-
-/****************************************************************************
  * Name:  show_usage
  *
  * Description:
@@ -208,20 +115,23 @@ static void simulate_undef_abort(void)
 
 static void show_usage(void)
 {
-	dbg("USAGE:\n");
-	dbg("sysdbg enable_monitor  /* Allocates memory and enables monitoring */\n");
-	dbg("sysdbg disable_monitor /* Frees the memory and disables monitoring */\n");
-	dbg("sysdbg read   /* Reads /dev/sysdbg to view debug information*/\n");
-	dbg("sysdbg max_task_count <count> /* Enter max_task_count */\n");
-	dbg("sysdbg max_irq_count <count> /* Enter max_irq_count */\n");
-	dbg("sysdbg max_sem_count <count> /* Enter max_sem_count */\n");
-	dbg("sysdbg data_abort /* Simulate data abort */\n");
-	dbg("sysdbg prefetch_abort /* Simulate Prefetch abort */\n");
-	dbg("sysdbg undef_abort  /* Simulate Undefined abort */\n");
-	dbg("sysdbg usr_assert /* Simulate User Assert */\n");
-	dbg("sysdbg dump_stack /* Dumps the current task stack */\n");
-	dbg("sysdbg dump_allstack /* Dumps the stack of all tasks */\n");
-	dbg("sysdbg help /* Display the help */\n");
+	dbg("\n");
+	dbg(" ______________________________________________________________________________\n");
+	dbg("| USAGE: sysdbg OPTION [COUNT]\n");
+	dbg("|  OPTION       -     Description \n");
+	dbg("|______________________________________________________________________________\n");
+	dbg("|     1         -  enable_monitor  : Allocates memory for debug struct & enables sysdbg monitoring\n");
+	dbg("|     2         -  disable_monitor : Frees the memory for debug struct & disables sysdbg monitoring\n");
+	dbg("|     3         -  read            : Reads /dev/sysdbg to view saved debug information\n");
+	dbg("|     4 [count] -  max_task_count  : Updates the maximum count value for task monitoring\n");
+	dbg("|                                    count - input value in the power of 2\n");
+	dbg("|     5 [count] -  max_irq_count   : Updates the maximum count value for irq monitoring\n");
+	dbg("|                                    count - input value in the power of 2\n");
+	dbg("|     6 [count] -  max_sem_count   : Updates the maximum count value for semaphore monitoring\n");
+	dbg("|                                    count - input value in the power of 2\n");
+	dbg("|     7         -  dump_stack      : Dumps the current task stack\n");
+	dbg("|     8         -  dump_allstack   : Dumps the stack of all tasks\n");
+	dbg("|     help      -                  : Display the help menu\n");
 }
 
 /****************************************************************************
@@ -416,60 +326,86 @@ static void sysdbg_print(void)
 
 static ssize_t sysdbg_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
-	char arg1[32] = { '\0' };
-	char arg2[32] = { '\0' };
+	char option[32] = { '\0' };
+	char count[32] = { '\0' };
 
-	sscanf(buffer, "%s %s", arg1, arg2);
+	sscanf(buffer, "%s %s", option, count);
 
-	if (strncmp("enable_monitor", arg1, 14) == 0) {
+	if (option[0] == '\0') {
+		dbg("Invalid argrument.\n");
+		show_usage();
+		return -1;
+	}
+
+	if (strncmp("help", option, 5) == 0) {
+		show_usage();
+		return 0;
+	}
+
+	switch (atoi(option)) {
+	case SYSDBG_ENABLE_MONITOR:		/*Enable monitor*/
 		sysdbg_monitor_enable();
-	} else if (strncmp("disable_monitor", arg1, 15) == 0) {
+		break;
+	case SYSDBG_DISABLE_MONITOR:		/*Disable monitor*/
 		sysdbg_monitor_disable();
-	} else if (strncmp("read", arg1, 4) == 0) {
+		break;
+	case SYSDBG_PRINT:			/*Read /dev/sysdbg to view debug information*/
 		sysdbg_print();
-	} else if (strncmp(arg1, "max_task_count", 14) == 0) {
+		break;
+	case SYSDBG_UPDATE_MAX_TASK_CNT:	/*Update max task count*/
 #ifdef CONFIG_TASK_SCHED_HISTORY
-		update_maxtask_count(atoi(arg2));
+		if (count[0] == '\0') {
+			dbg("Enter the count in power of 2 and > 0.\n");
+			dbg("For help type : sysdbg help\n");
+			return -1;
+		}
+		update_maxtask_count(atoi(count));
 #else
 		dbg("To use this feature, kindly enable CONFIG_TASK_SCHED_HISTORY\n");
 #endif
-	} else if (strncmp(arg1, "max_irq_count", 13) == 0) {
+		break;
+	case SYSDBG_UPDATE_MAX_IRQ_CNT:		/*Update maxirq_count*/
 #ifdef CONFIG_IRQ_SCHED_HISTORY
-		update_maxirq_count(atoi(arg2));
+		if (count[0] == '\0') {
+			dbg("Enter the count in power of 2 and > 0.\n");
+			dbg("For help type : sysdbg help\n");
+			return -1;
+		}
+		update_maxirq_count(atoi(count));
 #else
 		dbg("To use this feature, kindly enable CONFIG_IRQ_SCHED_HISTORY\n");
 #endif
-	} else if (strncmp(arg1, "max_sem_count", 13) == 0) {
+		break;
+	case SYSDBG_UPDATE_MAX_SEM_CNT:		/*Update maxsem_count*/
 #ifdef CONFIG_SEMAPHORE_HISTORY
-		update_maxsem_count(atoi(arg2));
+		if (count[0] == '\0') {
+			dbg("Enter the count in power of 2 and > 0.\n");
+			dbg("For help type : sysdbg help\n");
+			return -1;
+		}
+		update_maxsem_count(atoi(count));
 #else
 		dbg("To use this feature, kindly enable CONFIG_SEMAPHORE_HISTORY\n");
 #endif
-	} else if (strncmp("data_abort", arg1, 10) == 0) {
-		simulate_data_abort();
-	} else if (strncmp("prefetch_abort", arg1, 14) == 0) {
-		simulate_prefetch_abort();
-	} else if (strncmp("undef_abort", arg1, 11) == 0) {
-		simulate_undef_abort();
-	} else if (strncmp("usr_assert", arg1, 10) == 0) {
-		simulate_user_assert();
-	} else if (strncmp("dump_stack", arg1, 10) == 0) {
+		break;
+	case SYSDBG_DUMP_STACK:			/*Dumps current task stack*/
 #ifndef CONFIG_FRAME_POINTER
 		dbg("To use this feature, kindly enable CONFIG_FRAME_POINTER\n");
 #else
 		dump_stack();
 #endif
-	} else if (strncmp("dump_allstack", arg1, 13) == 0) {
+		break;
+	case SYSDBG_DUMP_ALL_STACK:		/*Dumps stack of all the tasks*/
 #ifndef CONFIG_FRAME_POINTER
 		dbg("To use this feature, kindly enable CONFIG_FRAME_POINTER\n");
 #else
 		dump_all_stack();
 #endif
-	} else if (strncmp("help", arg1, 4) == 0) {
+		break;
+	default:
+		dbg("Invalid argument %s\n", option);
 		show_usage();
-	} else {
-		dbg("Invalid argument %s\n", arg1);
-		show_usage();
+		return -1;
 	}
 
 	return 0;

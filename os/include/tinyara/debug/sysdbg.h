@@ -37,6 +37,16 @@
 #define TASK_NAME_SIZE 15
 
 #define SEMAPHORE_STATUS_SIZE 2
+
+/* Options for sysdbg. */
+#define SYSDBG_ENABLE_MONITOR		1
+#define SYSDBG_DISABLE_MONITOR		2
+#define SYSDBG_PRINT			3
+#define SYSDBG_UPDATE_MAX_TASK_CNT	4
+#define SYSDBG_UPDATE_MAX_IRQ_CNT	5
+#define SYSDBG_UPDATE_MAX_SEM_CNT	6
+#define SYSDBG_DUMP_STACK		7
+#define SYSDBG_DUMP_ALL_STACK		8
 /****************************************************************************
  * Public Types
  ****************************************************************************/
