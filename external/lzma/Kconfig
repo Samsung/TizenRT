@@ -3,7 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config LIBLZMA
+config LIB_LZMA
 	bool "LZMA library"
 	default y if COMPRESSION_TYPE=1 && BUILD_PROTECTED=n
 	---help---

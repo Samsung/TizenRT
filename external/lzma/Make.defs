@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_LIBLZMA),y)
+ifeq ($(CONFIG_LIB_LZMA),y)
 CONFIGURED_EXT += lzma
 endif
