@@ -28,12 +28,14 @@
 #include "tc_common.h"
 #include "tc_internal.h"
 
+#ifdef CONFIG_TC_COMPRESS_READ
 static int g_tc_fd;
 
 int tc2_get_drvfd(void)
 {
 	return g_tc_fd;
 }
+#endif
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -41,6 +43,7 @@ int main(int argc, FAR char *argv[])
 int tc_compression_main(int argc, char *argv[])
 #endif
 {
+#ifdef CONFIG_TC_COMPRESS_READ
 	g_tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
 
 	/*If FAIL : Failed to open testcase driver*/
@@ -48,6 +51,7 @@ int tc_compression_main(int argc, char *argv[])
 		printf("Failed to open OS API test driver %d\n", errno);
 		return ERROR;
 	}
+#endif
 
 #ifdef CONFIG_TC_LZMA
 	lzma_main();
@@ -55,8 +59,8 @@ int tc_compression_main(int argc, char *argv[])
 
 #ifdef CONFIG_TC_COMPRESS_READ
 	tc_compress_read_main();
+	close(g_tc_fd);
 #endif
 
-	close(g_tc_fd);
 	return 0;
 }
