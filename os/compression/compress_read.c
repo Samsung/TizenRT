@@ -403,13 +403,27 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen)
 	/* Allocating memory for read and out buffer to be used for LZMA decompression */
 	if (compression_header->compression_format == COMPRESSION_TYPE_LZMA) {
 		buffers.read_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize + LZMA_PROPS_SIZE);
+		if (buffers.read_buffer == NULL) {
+			return -ENOMEM;
+		}
 		buffers.out_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize);
+		if (buffers.out_buffer == NULL) {
+			kmm_free(buffers.read_buffer);
+			return -ENOMEM;
+		}
 	}
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
 	/* Allocating memory for read and out buffer to be used for Miniz decompression */
 	if (compression_header->compression_format == COMPRESSION_TYPE_MINIZ) {
 		buffers.read_buffer = (unsigned char *)kmm_malloc(compressBound(compression_header->blocksize));
+		if (buffers.read_buffer == NULL) {
+			return -ENOMEM;
+		}
 		buffers.out_buffer = (unsigned char *)kmm_malloc(compression_header->blocksize);
+		if (buffers.out_buffer == NULL) {
+			kmm_free(buffers.read_buffer);
+			return -ENOMEM;
+		}
 	}
 #endif
 
