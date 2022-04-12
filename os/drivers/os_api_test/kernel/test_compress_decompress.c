@@ -32,12 +32,11 @@
 #include <tinyara/binfmt/compression/compress_read.h>
 #include <tinyara/kmalloc.h>
 
+#define READSIZE 2048
+
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
-
-static struct s_header *compression_header;
-static uint8_t *dst_buffer;
 
 /****************************************************************************
  * Private Function
@@ -50,9 +49,10 @@ static int test_compress_decompress_function(unsigned long arg)
 	int filefd;
 	int ret;
 	off_t filelen;
-	unsigned int writesize;
 	unsigned int size;
-	size_t readsize = 2048;
+	size_t readsize = READSIZE;
+	uint8_t *dst_buffer;
+	struct s_header *compression_header;
 
 	filefp = fopen("/mnt/myfile_comp", "r");
 	filefd = fileno(filefp);
@@ -72,18 +72,20 @@ static int test_compress_decompress_function(unsigned long arg)
 
 	compression_header = get_compression_header();
 
-	dst_buffer = (uint8_t *)kmm_malloc(2048 * sizeof(uint8_t));
-
+	dst_buffer = (uint8_t *)kmm_malloc(READSIZE * sizeof(uint8_t));
 	if (dst_buffer == NULL) {
 		berr("Allocation of memory failed\n");
+		compress_uninit();
 		return ERROR;
 	}
 
 
 	for (i = 0; i < (compression_header->sections - 1); i++) {
-		size = compress_read(filefd, 0, dst_buffer, readsize, i*2048);
-		if (size != 2048) {
+		size = compress_read(filefd, 0, dst_buffer, readsize, i * READSIZE);
+		if (size != READSIZE) {
 			berr("Read for compressed block %d failed\n", i);
+			compress_uninit();
+			kmm_free(dst_buffer);
 			return ERROR;
 		}
 	}
