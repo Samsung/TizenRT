@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version f3e6168ab04f60a9abfbf29c6726ceedf81b208e_2022/04/13-15:57:49 ==
+1.	Fix pmk cache incorrect issue when switching mode between sta/softapos\board\rtl8721csm\src\libs\lib_wps.a
+
 == version 093fd3e42cfb85250b9ca279d657fcda0a09d13a_2022/03/14-11:01:26 ==
 1.	Change 'printf' to  'vddbg'
 	- Change 'printf' to  'vddbg'

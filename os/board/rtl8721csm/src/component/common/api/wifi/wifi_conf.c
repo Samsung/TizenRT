@@ -177,6 +177,10 @@ extern int wext_close_lps_rf(const char *ifname);
 extern int rltk_wlan_reinit_drv_sw(const char *ifname, rtw_mode_t mode);
 extern int rltk_set_mode_prehandle(rtw_mode_t curr_mode, rtw_mode_t next_mode, const char *ifname);
 extern int rltk_set_mode_posthandle(rtw_mode_t curr_mode, rtw_mode_t next_mode, const char *ifname);	
+#ifdef CONFIG_PMKSA_CACHING
+extern int wifi_set_pmk_cache_enable(unsigned char value);
+#endif
+
 //----------------------------------------------------------------------------//
 static int wifi_connect_local(rtw_network_info_t *pWifi)
 {
@@ -1514,6 +1518,10 @@ int wifi_set_mode(rtw_mode_t mode)
 		rtw_msleep_os(50);	
 
 		wifi_mode = mode;
+#ifdef CONFIG_PMKSA_CACHING
+			wifi_set_pmk_cache_enable(0);
+#endif
+
 	}else if((wifi_mode == RTW_MODE_AP) && (mode ==RTW_MODE_STA)){
 		RTW_API_INFO("\n\r[%s] WIFI Mode Change: AP-->STA",__FUNCTION__);
 	
@@ -1523,6 +1531,9 @@ int wifi_set_mode(rtw_mode_t mode)
 		rtw_msleep_os(50);	
 
 		wifi_mode = mode;
+#ifdef CONFIG_PMKSA_CACHING
+			wifi_set_pmk_cache_enable(1);
+#endif
 
 	}else if ((wifi_mode == RTW_MODE_AP) && (mode == RTW_MODE_AP)){
 		RTW_API_INFO("\n\rWIFI Mode Change: AP-->AP");
