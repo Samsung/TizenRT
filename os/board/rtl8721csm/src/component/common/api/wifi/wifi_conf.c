@@ -1987,7 +1987,7 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*buf, int buflen, cha
 	memcpy(scan_buf.buf + sizeof(int), ssid, ssid_len);
 
 	//Scan channel
-	if ((scan_cnt = wifi_scan(RTW_SCAN_TYPE_ACTIVE, RTW_BSS_TYPE_ANY, &scan_buf)) <= 0) {
+	if ((scan_cnt = wifi_scan(RTW_SCAN_TYPE_ACTIVE, RTW_BSS_TYPE_ANY, &scan_buf)) < 0) {
 		RTW_API_INFO("\n\rERROR: wifi scan failed");
 		ret = RTW_ERROR;
 	} else {
