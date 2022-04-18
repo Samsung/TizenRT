@@ -136,7 +136,17 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 	rtw_set_timer(&(scan_timer), SCAN_TIMER_DURATION);
 
 	scan_number	 = 0;
-	saved_scan_list = (ap_scan_list_s *)rtw_malloc(sizeof(ap_scan_list_s) * g_scan_num);
+	if(g_scan_num != 0)  
+	{
+		saved_scan_list = (ap_scan_list_s *)rtw_malloc(sizeof(ap_scan_list_s) * g_scan_num);
+	}
+	else
+	{
+		if (saved_scan_list) {
+			rtw_mfree((unsigned char *)saved_scan_list, sizeof(ap_scan_list_s) * scan_number);
+			saved_scan_list = NULL;
+		}
+	}
 	if (saved_scan_list == NULL) {
 		if (scan_timer.timer_hdl != NULL) {
 			rtw_cancel_timer(&(scan_timer));
