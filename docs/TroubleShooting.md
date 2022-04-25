@@ -5,6 +5,8 @@
 - [Board-Specific](#board-specific)
 
 ## Common
+The issues below are faced during the manual setup of build environment.
+
 ### Issues on Kconfig-frontend
 #### Build break on hconf
 If you are using gperf 3.1 and kconfig-frontends-4.11.0.1,
@@ -52,6 +54,24 @@ cd <Kconfig-frontend_package_PATH>
 ./configure --prefix=/usr
 make
 sudo make install
+```
+
+### Issues with toolchain
+When ```make ``` executes, you may encounter below error:
+```
+arm-none-eabi-gcc: Command not found
+```
+This may happen if the toolchain path is not added to ```PATH```.  
+To resolve:
+```
+export PATH=<Your Toolchain PATH>:$PATH
+```
+If toolchain path is added to ```PATH```, then this may be because the toolchain you 
+set uses 32-bit libs on the 64-bit system. For this matter, install the below toolchain 
+as alternative.  
+To resolve:
+```
+> $ sudo apt-get install -y gcc-arm-none-eabi
 ```
 
 ### Issue on build of Proto buffers
