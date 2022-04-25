@@ -1,0 +1,3 @@
+config ENTRY_SMART
+	bool "SMART filesystem example"
+	depends on EXAMPLES_SMART

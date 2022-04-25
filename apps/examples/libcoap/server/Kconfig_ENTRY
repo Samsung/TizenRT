@@ -1,0 +1,3 @@
+config ENTRY_LIBCOAP_SERVER_TEST
+	bool "libcoap Server Test"
+	depends on EXAMPLES_LIBCOAP_SERVER_TEST
