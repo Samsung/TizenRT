@@ -1,0 +1,3 @@
+config ENTRY_LIBCOAP_CLIENT_TEST
+	bool "libcoap Client Test"
+	depends on EXAMPLES_LIBCOAP_CLIENT_TEST

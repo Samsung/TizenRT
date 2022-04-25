@@ -1,0 +1,3 @@
+config ENTRY_ESP32_WIFI_DEMO
+	bool "Esp32 wifi Demo example"
+	depends on EXAMPLES_ESP32WIFIDEMO
