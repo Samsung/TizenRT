@@ -269,7 +269,11 @@ static int uart_putxmitchar(FAR uart_dev_t *dev, int ch, bool oktoblock)
 		if (nexthead != dev->xmit.tail) {
 			dev->xmit.buffer[dev->xmit.head] = ch;
 #ifdef CONFIG_LOG_DUMP
-			log_dump_save(ch);
+			/* only save UART data that is being transmitted to the console */
+
+			if (dev->isconsole) {
+				log_dump_save(ch);
+			}
 #endif
 			dev->xmit.head = nexthead;
 			return OK;
