@@ -78,8 +78,8 @@ nothing:
 install:
 
 preconfig: $(foreach SDIR, $(SUBDIRS), $(SDIR)_preconfig)
-	$(Q) $(MKKCONFIG) -m $(MENUDESC) -maxdepth 3
-	$(Q) $(MKKCONFIG) -o Kconfig_ENTRY -maxdepth 3
+	$(Q) $(MKKCONFIG) -m $(MENUDESC)
+	$(Q) $(MKKCONFIG) -o Kconfig_ENTRY
 
 context: $(foreach SDIR, $(SUBDIRS), $(SDIR)_context)
 
