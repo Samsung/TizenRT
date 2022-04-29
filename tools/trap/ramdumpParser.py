@@ -753,8 +753,30 @@ def find_crash_point(log_file, elf):
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
 
     print('\n4. Miscellaneous information:')
+    # Parse the contents based on tokens in log file for heap corruption
+    with open(log_file) as searchfile:
+        heap_corr = 0
+        for line in searchfile:
+            # Print the heap corruption data (if any)
+            if 'mm_check_heap_corruption:' in line:
+                if (heap_corr == 0):
+                    print("\n## Heap Corruption Data:\n")
+                    heap_corr = 1
+                print("\033[F", line)
+            if 'dump_node:' in line:
+                print("\033[F", line)
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            if 'allocated by code at addr' in line:
+                print("## Code Location of possible corrupted node allocation:")
+                # It displays the debug symbols corresponding to the corrupted heap node
+                # The last argument to debugsymbolviewer specifies whether or not to check for corrupted heap node addresses (2)
+                print('Allocated by code at addr\t\tFile_name')
+                os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 2")
+                break
+
     # It displays the debug symbols corresponding to all the wrong sp addresses (if any)
-    # The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses
+    # The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses (1)
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
     print('-----------------------------------------------------------------------------------------')
 
