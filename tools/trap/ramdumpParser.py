@@ -50,6 +50,7 @@ g_assertpc = 0 # To extract the global PC value g_assertpc
 g_stext_app = [0] * 10
 g_etext_app = [0] * 10
 app_name = []
+crash_type_assert = False
 
 BIN_PATH = '../../build/output/bin/'
 CONFIG_PATH = '../../os/.config'
@@ -511,6 +512,26 @@ def format_output(res, string):
      print('\t- function name {0}     : {1}'.format(string, r[1]))
      print('\t- file {0}              : {1}'.format(string, r[2]))
 
+def print_crash_type(string):
+    global crash_type_assert
+    if 'up_memfault' in string:
+        print('\n2. Crash type               : memory fault')
+    elif 'up_busfault' in string:
+        print('\n2. Crash type               : bus fault')
+    elif 'up_usagefault' in string:
+        print('\n2. Crash type               : usage fault')
+    elif 'up_hardfault' in string:
+        print('\n2. Crash type               : hard fault')
+    elif 'Assertion failed at file' in string:
+        crash_type_assert = True
+        print('\n2. Crash type               : code assertion by code ASSERT or PANIC')
+    else:
+        print('\n2. Crash type               : etc')
+    if (crash_type_assert == True):
+        print('\n3. Crash point              :', string)
+    else:
+        print('   Crash log                :', string)
+
 # Function to get the number of application binaries, names, text address and sizes
 def find_number_of_binaries(log_file):
 
@@ -556,6 +577,7 @@ def find_crash_point(log_file, elf):
     lr_value = 0
     is_app_crash = 0
     is_kernel_crash = 0
+    assertline = ""
 
     # Parse the contents based on tokens in log file.
     with open(log_file) as searchfile:
@@ -580,6 +602,8 @@ def find_crash_point(log_file, elf):
                     continue
 
             # Get the assert location PC value
+            if 'up_assert: Assertion failed at file:' in line:
+                assertline = line
             if 'Assert location (PC) :' in line:
                 word = line.split(':')
                 #word[2] contains the g_assertpc value
@@ -601,9 +625,11 @@ def find_crash_point(log_file, elf):
                 if '??' not in result and '$d' not in result:
                     is_app_crash = 1
                     print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
-                    print('\n2. Crash point (PC or LR)')
-                    print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
-                    format_output(result, "")
+                    print_crash_type(assertline)
+                    if (crash_type_assert == False):
+                        print('3. Crash point (PC or LR)')
+                        print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
+                        format_output(result, "")
             if (address2 >= hex(g_stext_app[app_idx]) and address2 < hex(g_etext_app[app_idx])):
                 addr = pc_value - int(hex(g_stext_app[app_idx]), 16)
                 f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
@@ -611,22 +637,27 @@ def find_crash_point(log_file, elf):
                 if '??' not in result and '$d' not in result:
                     if (not is_app_crash):
                         print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
-                        print('\n2. Crash point (PC or LR)')
+                        print_crash_type(assertline)
+                        if (crash_type_assert == False):
+                            print('3. Crash point (PC or LR)')
                     is_app_crash = 1
-                    print('\n\t[ Current location (PC) of assert ]')
-                    format_output(result, "")
+                    if (crash_type_assert == False):
+                        print('\n\t[ Current location (PC) of assert ]')
+                        format_output(result, "")
                 if ((addr - 4) > 0x0):
                     f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
                     result1 = f.read()
                     if '??' not in result1 and '$d' not in result1:
-                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                        format_output(result1, "of (pc - 4)")
+                        if (crash_type_assert == False):
+                            print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                            format_output(result1, "of (pc - 4)")
                 if ((addr - 8) > 0x0):
                     f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
                     result2 = f.read()
                     if '??' not in result2 and '$d' not in result2:
-                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                        format_output(result2, "of (pc - 8)")
+                        if (crash_type_assert == False):
+                            print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                            format_output(result2, "of (pc - 8)")
 
     # Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
     else:
@@ -640,21 +671,25 @@ def find_crash_point(log_file, elf):
                 if '??' not in result and '$d' not in result:
                     is_app_crash = 1
                     print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
-                    print('\n2. Crash point (PC or LR)')
-                    print('\n\t[ Current location (PC) of assert ]')
-                    format_output(result, "")
+                    print_crash_type(assertline)
+                    if (crash_type_assert == False):
+                        print('3. Crash point (PC or LR)')
+                        print('\n\t[ Current location (PC) of assert ]')
+                        format_output(result, "")
                 if ((addr - 4) > 0x0):
                     f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
                     result1 = f.read()
                     if '??' not in result1 and '$d' not in result1:
-                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                        format_output(result1, "of (pc - 4)")
+                        if (crash_type_assert == False):
+                            print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                            format_output(result1, "of (pc - 4)")
                 if ((addr - 8) > 0x0):
                     f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
                     result2 = f.read()
                     if '??' not in result2 and '$d' not in result2:
-                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                        format_output(result2, "of (pc - 8)")
+                        if (crash_type_assert == False):
+                            print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                            format_output(result2, "of (pc - 8)")
 
     # Check for lr & pc values in kernel text address range
     if (not is_app_crash) and (pc_value != 00000000):
@@ -666,31 +701,38 @@ def find_crash_point(log_file, elf):
             if '??' not in result and '$d' not in result:
                 is_kernel_crash = 1
                 print('1. Crash Binary             : kernel')
-                print('\n2. Crash point (PC or LR)')
-                print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
-                format_output(result, "")
+                print_crash_type(assertline)
+                if (crash_type_assert == False):
+                    print('3. Crash point (PC or LR)')
+                    print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
+                    format_output(result, "")
         if (address2 >= hex(g_stext_flash) and address2 < hex(g_etext_flash)) or (address2 >= hex(g_stext_ram) and address2 < hex(g_etext_ram)):
             f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value))
             result = f.read()
             if '??' not in result and '$d' not in result:
                 if (not is_kernel_crash):
                     print('1. Crash Binary             : kernel')
-                    print('\n2. Crash point (PC or LR)')
+                    print_crash_type(assertline)
+                    if (crash_type_assert == False):
+                        print('3. Crash point (PC or LR)')
                 is_kernel_crash = 1
-                print('\n\t[ Current location (PC) of assert ]')
-                format_output(result, "")
+                if (crash_type_assert == False):
+                    print('\n\t[ Current location (PC) of assert ]')
+                    format_output(result, "")
             if ((pc_value - 4) > 0x0):
                 f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 4))
                 result1 = f.read()
                 if '??' not in result1 and '$d' not in result1:
-                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                    format_output(result1, "of (pc - 4)")
+                    if (crash_type_assert == False):
+                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                        format_output(result1, "of (pc - 4)")
             if ((pc_value - 8) > 0x0):
                 f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 8))
                 result2 = f.read()
                 if '??' not in result2 and '$d' not in result2:
-                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                    format_output(result2, "of (pc - 8)")
+                    if (crash_type_assert == False):
+                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                        format_output(result2, "of (pc - 8)")
 
     # Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
     if (pc_value == 00000000 and g_assertpc):
@@ -702,34 +744,40 @@ def find_crash_point(log_file, elf):
             if '??' not in result and '$d' not in result:
                 is_kernel_crash = 1
                 print('1. Crash Binary             : kernel')
-                print('\n2. Crash point (PC or LR)')
-                print('\n\t[ Current location (PC) of assert ]')
-                format_output(result, "")
+                print_crash_type(assertline)
+                if (crash_type_assert == False):
+                    print('3. Crash point (PC or LR)')
+                    print('\n\t[ Current location (PC) of assert ]')
+                    format_output(result, "")
             if ((g_assertpc - 4) > 0x0):
                 f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 4))
                 result1 = f.read()
                 if '??' not in result1 and '$d' not in result1:
-                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                    format_output(result1, "of (pc - 4)")
+                    if (crash_type_assert == False):
+                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                        format_output(result1, "of (pc - 4)")
             if ((g_assertpc - 8) > 0x0):
                 f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 8))
                 result2 = f.read()
                 if '??' not in result2 and '$d' not in result2:
-                    print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                    format_output(result2, "of (pc - 8)")
+                    if (crash_type_assert == False):
+                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+                        format_output(result2, "of (pc - 8)")
 
     if (not is_app_crash) and (not is_kernel_crash):
         print('1. Crash Binary             : NA')
-        print('\n2. Crash point (PC or LR)')
-        # Parse the contents based on tokens in log file.
-        with open(log_file) as searchfile:
-            for line in searchfile:
-                # If PC value is invalid, show invalid PC
-                if 'PC value might be invalid' in line:
-                    print('\tPC value might be invalid.')
-        print('\tPC & LR values not in any text range! No probable crash point detected.')
+        print_crash_type(assertline)
+        if (crash_type_assert == False):
+            print('3. Crash point (PC or LR)')
+            # Parse the contents based on tokens in log file.
+            with open(log_file) as searchfile:
+                for line in searchfile:
+                    # If PC value is invalid, show invalid PC
+                    if 'PC value might be invalid' in line:
+                        print('\tPC value might be invalid.')
+            print('\tPC & LR values not in any text range! No probable crash point detected.')
 
-    print('\n3. Call stack of last run thread using Stack dump\n')
+    print('\n4. Call stack of last run thread\n')
     # Parse the contents based on tokens in log file.
     with open(log_file) as searchfile:
         for line in searchfile:
@@ -738,20 +786,24 @@ def find_crash_point(log_file, elf):
                 word = line.split(':')
                 # word[2] contains the current stack pointer
                 stack_curr = int(word[2], 16)
-                print("\t- Current stack pointer:\t", hex(stack_curr))
+                print("\n\t- Current stack pointer:\t\t", hex(stack_curr))
             # Print the current running work function
             if 'Running work function is' in line:
-                line = line[:-2]
                 word = line.split(' ')
                 # Last word[-1] contains the current running work function
-                curr_worker = int(word[-1], 16)
+                wf = word[-1]
+                curr_worker = int(wf[:-2], 16)
                 print("\t- Current running work function is:\t", hex(curr_worker))
+                # It displays the symbol corresponding to the current running work function
+                # The last argument to debugsymbolviewer specifies whether or not to check for current running work function (3)
+                print('\nCurrent running work function\t\tFile_name')
+                os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 3")
 
     # It displays the debug symbols corresponding to all the addresses in the kernel and application text address range
     print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
 
-    print('\n4. Miscellaneous information:')
+    print('\n5. Miscellaneous information:')
     # Parse the contents based on tokens in log file for heap corruption
     with open(log_file) as searchfile:
         heap_corr = 0

@@ -160,11 +160,22 @@ def print_symbol(stack_addr, search_addr, is_app_symbol):
 			next_addr = ksymbol_lookup_table[mid][0]
 
 		if (search_addr >= addr and search_addr <= next_addr):
-			if (is_app_symbol):
-				print("{:8}\t {:8}\t app{}    \t  {}".format(hex(stack_addr), hex(addr), is_app_symbol, asymbol_lookup_table[is_app_symbol][mid - 1][1]))
+			if (stack_addr == 0x00000000):
+				if (is_app_symbol):
+        	                        loc = asymbol_lookup_table[is_app_symbol][mid - 1][1]
+        	                        filen = loc.split('	')
+        	                        print("{:8}\t\t\t\t{}".format(hex(search_addr), filen[-1]))
+				else:
+        	                        loc = ksymbol_lookup_table[mid - 1][1]
+        	                        filen = loc.split('	')
+        	                        print("{:8}\t\t\t\t{}".format(hex(search_addr), filen[-1]))
+				break
 			else:
-				print("{:8}\t {:8}\t kernel  \t  {}".format(hex(stack_addr), hex(addr), ksymbol_lookup_table[mid - 1][1]))
-			break
+				if (is_app_symbol):
+					print("{:8}\t {:8}\t app{}    \t  {}".format(hex(stack_addr), hex(addr), is_app_symbol, asymbol_lookup_table[is_app_symbol][mid - 1][1]))
+				else:
+					print("{:8}\t {:8}\t kernel  \t  {}".format(hex(stack_addr), hex(addr), ksymbol_lookup_table[mid - 1][1]))
+				break
 
 		if (search_addr < addr):
 			h = mid - 1
@@ -176,48 +187,6 @@ def print_symbol(stack_addr, search_addr, is_app_symbol):
 	if (l > h):
 		if debug:
 			print('Symbol not found for address: {0} in map file'.format(hex(search_addr)))
-
-# Function to search the search_addr for corrupted heap node present in the Address to Symbol mapping table and print its corresponding symbol
-def print_symbol_heap_corruption(search_addr, is_app_symbol):
-	addr = 0x00000000
-	next_addr = 0x00000000
-	l = 0
-	if (is_app_symbol):
-		h = len(asymbol_lookup_table[is_app_symbol]) - 1
-	else:
-		h = len(ksymbol_lookup_table) - 1
-	mid = (l + h) // 2
-
-	while (l <= h):
-		if (is_app_symbol):
-			addr = asymbol_lookup_table[is_app_symbol][mid - 1][0]
-			next_addr = asymbol_lookup_table[is_app_symbol][mid][0]
-		else:
-			addr = ksymbol_lookup_table[mid - 1][0]
-			next_addr = ksymbol_lookup_table[mid][0]
-
-		if (search_addr >= addr and search_addr <= next_addr):
-			if (is_app_symbol):
-                                loc = asymbol_lookup_table[is_app_symbol][mid - 1][1]
-                                filen = loc.split('	')
-                                print("{:8}\t\t\t\t{}".format(hex(search_addr), filen[-1]))
-			else:
-                                loc = ksymbol_lookup_table[mid - 1][1]
-                                filen = loc.split('	')
-                                print("{:8}\t\t\t\t{}".format(hex(search_addr), filen[-1]))
-			break
-
-		if (search_addr < addr):
-			h = mid - 1
-		else:
-			l = mid + 1
-
-		mid = (l + h) // 2
-
-	if (l > h):
-		if debug:
-			print('Symbol not found for address: {0} in map file'.format(hex(search_addr)))
-
 
 # Function to check if address lies in the applications' text address range
 def is_app_text_address(address):
@@ -334,16 +303,27 @@ def print_heap_corruption_data(log_file):
 			if 'allocated by code at addr' in line:
                             word = line.split(' ')
                             node = int(word[-1], 16)
-                            print_symbol_heap_corruption(node, 0)
-                            print_symbol_heap_corruption(node, 1)
+                            print_symbol(0x00000000, node, 0)
+                            print_symbol(0x00000000, node, 1)
 
+# Function to Parse the input log file (which contains current running work function) and to print its owner
+def print_running_work_function(log_file):
+	# Parse the contents based on tokens in log file.
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if 'Running work function is' in line:
+                            word = line.split(' ')
+                            wf = word[-1]
+                            node = int(wf[:-2], 16)
+                            print_symbol(0x00000000, node, 0)
+                            print_symbol(0x00000000, node, 1)
 #Execution starts here
 if (__name__ == '__main__'):
 
 	# init
 	log_file = sys.argv[1]		# Log file containing crash logs
 	app_idx = int(sys.argv[2])	# Number of applications (g_app_idx)
-	addr_type = int(sys.argv[3])	# 2 for corrupted heap node info, 1 for wrong SP info, 0 to print regular stack addresses
+	addr_type = int(sys.argv[3])	# Type of address information to be printed
 
 	if debug:
 		print("Log file : " + log_file)
@@ -359,9 +339,17 @@ if (__name__ == '__main__'):
 		os.system("nm --defined-only -l --numeric-sort " + bin_path + app_name[idx] + "_dbg > " + bin_path + app_name[idx] + ".map")
 		setup_symbol_table(bin_path + app_name[idx] + ".map", idx + 1)
 
-	if (addr_type == 1):
-		print_wrong_sp(log_file)
-	elif (addr_type == 2):
-                print_heap_corruption_data(log_file)
-	else:
+        # The addr_type specifies the type of addresses to be printed
+
+        # 0 specifies to print the call stack of the last run thread
+	if (addr_type == 0):
 		print_stack(log_file)
+        # 1 specifies to print wrong stack pointer (SP) information (if any)
+	elif (addr_type == 1):
+		print_wrong_sp(log_file)
+        # 2 specifies to print corrupted heap node information (if any)
+	elif (addr_type == 2):
+		print_heap_corruption_data(log_file)
+        # 3 specifies to print the running work function information
+	elif (addr_type == 3):
+		print_running_work_function(log_file)
