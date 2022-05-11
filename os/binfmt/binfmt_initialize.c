@@ -60,9 +60,6 @@
 #include <tinyara/binfmt/builtin.h>
 #include <tinyara/binfmt/elf.h>
 
-#include <queue.h>
-sq_queue_t g_bin_addr_list;
-
 #ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
@@ -107,10 +104,6 @@ void binfmt_initialize(void)
 	if (ret < 0) {
 		berr("ERROR: nxflat_initialize failed: %d\n", ret);
 	}
-#endif
-
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
-	sq_init(&g_bin_addr_list);
 #endif
 
 	UNUSED(ret);

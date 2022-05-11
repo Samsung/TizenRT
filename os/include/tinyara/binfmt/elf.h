@@ -253,8 +253,10 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 
 int elf_unload(struct elf_loadinfo_s *loadinfo);
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
 void *elf_find_text_section_addr(int bin_idx);
-void elf_show_all_bin_addr(void);
+void elf_show_all_bin_section_addr(void);
+#endif
 
 #undef EXTERN
 #if defined(__cplusplus)

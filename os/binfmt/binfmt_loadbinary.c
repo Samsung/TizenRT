@@ -199,7 +199,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	if (pid < 0) {
 		errcode = pid;
 		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
-		elf_delete_bin_section_addr(bin);
+		elf_delete_bin_section_addr(bin->binary_idx);
 		goto errout_with_unload;
 	}
 
