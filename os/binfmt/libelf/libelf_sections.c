@@ -65,13 +65,16 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/elf.h>
 
-#include <queue.h>
 #include <string.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <binary_manager/binary_manager.h>
 
 #include "libelf.h"
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+/* The list for a common binary and user binaries(CONFIG_NUM_APPS) */
+static bin_addr_info_t g_bin_addr_list[CONFIG_NUM_APPS + 1];
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -206,68 +209,59 @@ void *elf_find_start_section_addr(struct binary_s *binp)
 }
 #endif
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
 void *elf_find_text_section_addr(int bin_idx)
 {
-	bin_addr_info_t *info;
-	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
-	while (info) {
-		if (info->bin_idx == bin_idx) {
-			return (void *)info->text_addr;
-		}
-		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
+	if (bin_idx >= 0 && bin_idx <= CONFIG_NUM_APPS) {
+		return (void *)g_bin_addr_list[bin_idx].text_addr;
 	}
 	return NULL;
 }
 
 void elf_save_bin_section_addr(struct binary_s *bin)
 {
-	bin_addr_info_t *bin_info;
-	bin_info = (bin_addr_info_t *)kmm_malloc(sizeof(bin_addr_info_t));
-	if (bin_info != NULL) {
-		bin_info->bin_idx = bin->binary_idx;
-		bin_info->text_addr = bin->sections[BIN_TEXT];
-		bin_info->text_size = bin->sizes[BIN_TEXT];
+	if (bin != NULL) {
+		uint8_t bin_idx = bin->binary_idx;
+
+		/* Save binary section address information */
+
+		g_bin_addr_list[bin_idx].text_addr = bin->sections[BIN_TEXT];
+		g_bin_addr_list[bin_idx].text_size = bin->sizes[BIN_TEXT];
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
-		binfo("[%s] text_addr : %x\n", bin->bin_name, bin_info->text_addr);
+		binfo("[%s] text_addr : %x\n", bin->bin_name, g_bin_addr_list[bin_idx].text_addr);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		bin_info->rodata_addr = bin->sections[BIN_RO];
-		bin_info->data_addr = bin->sections[BIN_DATA];
-		bin_info->bss_addr = bin->sections[BIN_BSS];
+		g_bin_addr_list[bin_idx].rodata_addr = bin->sections[BIN_RO];
+		g_bin_addr_list[bin_idx].data_addr = bin->sections[BIN_DATA];
+		g_bin_addr_list[bin_idx].bss_addr = bin->sections[BIN_BSS];
 
-		binfo("   rodata_addr : %x\n", bin_info->rodata_addr);
-		binfo("   data_addr   : %x\n", bin_info->data_addr);
-		binfo("   bss_addr    : %x\n", bin_info->bss_addr);
+		binfo("   rodata_addr : %x\n", g_bin_addr_list[bin_idx].rodata_addr);
+		binfo("   data_addr   : %x\n", g_bin_addr_list[bin_idx].data_addr);
+		binfo("   bss_addr    : %x\n", g_bin_addr_list[bin_idx].bss_addr);
 #endif
 #endif
-		sq_addlast((sq_entry_t *)bin_info, &g_bin_addr_list);
 	} else {
-		berr("ERROR : Failed to allocate for bin symbol.\n");
+		berr("ERROR : Failed to save bin section addresses\n");
 	}
 }
 
-void elf_delete_bin_section_addr(struct binary_s *bin)
+void elf_delete_bin_section_addr(uint8_t bin_idx)
 {
-	bin_addr_info_t *info;
-	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
-	while (info) {
-		if (info->bin_idx == bin->binary_idx) {
-			sq_rem((sq_entry_t *)info, &g_bin_addr_list);
-			kmm_free(info);
-			break;
+	/* Clear binary section address information */
+
+	memset(&g_bin_addr_list[bin_idx], 0, sizeof(bin_addr_info_t));
+}
+
+void elf_show_all_bin_section_addr(void)
+{
+	int bin_idx;
+
+	for (bin_idx = 0; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
+		if (g_bin_addr_list[bin_idx].text_addr != 0) {
+			lldbg("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(bin_idx), g_bin_addr_list[bin_idx].text_addr, g_bin_addr_list[bin_idx].text_size);
 		}
-		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
 	}
 }
-
-void elf_show_all_bin_addr(void)
-{
-	bin_addr_info_t *info;
-	info = (bin_addr_info_t *)sq_peek(&g_bin_addr_list);
-	while (info) {
-		lldbg("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(info->bin_idx), info->text_addr, info->text_size);
-		info = (FAR void *)sq_next((FAR sq_entry_t *)info);
-	}
-}
+#endif /* CONFIG_APP_BINARY_SEPARATION */
 
 /****************************************************************************
  * Name: elf_loadshdrs

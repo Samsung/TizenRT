@@ -113,7 +113,7 @@ int binfmt_exit(FAR struct binary_s *bin)
 		berr("ERROR: unload_module() failed: %d\n", ret);
 	}
 
-	elf_delete_bin_section_addr(bin);
+	elf_delete_bin_section_addr(bin->binary_idx);
 
 	uheap_start = (uint32_t)bin->uheap;
 	uheap_end = uheap_start + bin->sizes[BIN_HEAP];
