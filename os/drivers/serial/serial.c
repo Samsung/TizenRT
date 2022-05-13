@@ -65,6 +65,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <debug.h>
+#include <mqueue.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -73,6 +74,7 @@
 #include <tinyara/serial/serial.h>
 #include <tinyara/fs/ioctl.h>
 #ifdef CONFIG_LOG_DUMP
+#include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
 #endif
 
