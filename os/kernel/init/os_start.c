@@ -607,10 +607,6 @@ void os_start(void)
 	display_memory_information();
 #endif
 
-#ifdef CONFIG_LOG_DUMP
-	DEBUGVERIFY(log_dump_init());
-#endif
-
 	DEBUGVERIFY(os_bringup());
 
 	/* The IDLE Loop **********************************************************/

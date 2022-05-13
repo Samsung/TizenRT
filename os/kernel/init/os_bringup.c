@@ -100,6 +100,10 @@
 #ifdef CONFIG_MESSAGING_IPC
 #include "messaging/message_ctrl.h"
 #endif
+#ifdef CONFIG_LOG_DUMP
+#include <tinyara/log_dump/log_dump.h>
+#include <tinyara/log_dump/log_dump_internal.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -288,6 +292,15 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_PRODCONFIG
 	prodconfig_register();
+#endif
+
+#ifdef CONFIG_LOG_DUMP
+	svdbg("Starting log_dump thread\n");
+
+	pid = kernel_thread(LOG_DUMP_NAME, 200, LOG_DUMP_STACKSIZE, log_dump, NULL);
+	if (pid < 0) {
+		sdbg("Failed to start log dump");
+	}
 #endif
 
 #ifdef CONFIG_TASK_MONITOR
