@@ -22,15 +22,32 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-int log_dump_init(void);
-
-void log_dump_read_init(void);
-
+/****************************************************************************
+ * Description:
+ *   This is used to save each charecter to log buffer
+ *
+ ****************************************************************************/
 int log_dump_save(char ch);
 
+/****************************************************************************
+ * Description:
+ *   This is used to read the logs saved in the log buffer
+ *
+ ****************************************************************************/
 size_t log_dump_read(FAR char *buffer, size_t buflen);
 
+/****************************************************************************
+ * Description:
+ *   This is used to START and STOP storing the log dump
+ *   buffer contents either LOGDUMP_SAVE_START or LOGDUMP_SAVE_STOP
+ ****************************************************************************/
 int log_dump_set(FAR const char *buffer, size_t buflen);
+
+/****************************************************************************
+ * Description:
+ *   Thread used to receive log data and compress the same
+ *
+ ****************************************************************************/
+int log_dump(int argc, char *argv[]);
 
 #endif							/* __LOG_DUMP_INTERNAL_H */

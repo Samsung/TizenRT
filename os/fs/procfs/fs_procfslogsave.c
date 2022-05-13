@@ -120,9 +120,12 @@ const struct procfs_operations logsave_operations = {
 static int logsave_open(FAR struct file *filep, FAR const char *relpath, int oflags, mode_t mode)
 {
 	FAR struct logsave_file_s *attr = (struct logsave_file_s *)kmm_zalloc(sizeof(struct logsave_file_s));
-	fvdbg("Open '%s'\n", relpath);
 	filep->f_priv = (FAR void *)attr;
-	log_dump_read_init();
+	if(log_dump_read_wake() != OK) {
+		fvdbg("log dump read wake fail\n");
+		return ERROR;
+	}
+	fvdbg("Open '%s'\n", relpath);
 	return OK;
 }
 
