@@ -55,7 +55,7 @@ BIN_PATH = '../../build/output/bin/'
 CONFIG_PATH = '../../os/.config'
 MAKEFILE_PATH = '../../os/Make.defs'
 HEAPINFO_PATH = '../../os/include/tinyara/mm/heapinfo_internal.h'
-BIN_ADDR_FXN = 'elf_show_all_bin_addr'
+BIN_ADDR_FXN = 'elf_show_all_bin_section_addr'
 debug_cmd = 'addr2line'
 file_data = 'HeapInfo'
 

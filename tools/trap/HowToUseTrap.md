@@ -83,8 +83,8 @@ up_assert: Checking kernel heap for corruption...
 up_assert: No kernel heap corruption detected
 up_assert: Checking current app heap for corruption...
 up_assert: No app heap corruption detected
-elf_show_all_bin_addr: [common] Text Addr : 0x2100020, Text Size : 672480
-elf_show_all_bin_addr: [app] Text Addr : 0x232d2c0, Text Size : 179616
+elf_show_all_bin_section_addr: [common] Text Addr : 0x2100020, Text Size : 672480
+elf_show_all_bin_section_addr: [app] Text Addr : 0x232d2c0, Text Size : 179616
 up_assert: Assert location (PC) : 0x02100025
 ```
 3. In the scenario where log file format is not supported, you will see a prompt as below:

@@ -54,7 +54,7 @@ def find_app_text_range(log_file):
 	with open(log_file) as searchfile:
 		for line in searchfile:
 			# Read the app text address and size
-			if 'elf_show_all_bin_addr:' in line:
+			if 'elf_show_all_bin_section_addr:' in line:
 				word = line.split(':')
 				t = word[2].split(',') # word[2] is the App Start Text address
 				w = word[1].split(' ')
