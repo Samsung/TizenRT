@@ -140,7 +140,7 @@ def setup_symbol_table(map_file, is_app):
 		print('~~~~~~~~~~~~~~~~~~~~~~~~SYMBOL TABLE END   ~~~~~~~~~~~~~~~~~~~~~')
 
 
-# Function to search the search_addr present in the Address to Symbol mapping table and print its corresponding symbol
+# Function to search the search_addr present in the Address to Symbol mapping table and print its corresponding symbol and related information
 def print_symbol(stack_addr, search_addr, is_app_symbol):
 	addr = 0x00000000
 	next_addr = 0x00000000
@@ -239,7 +239,7 @@ def is_kernel_text_address(address):
 		return False
 
 
-# Function to Parse the i/p log file (which contains stackdump during assert) and to print stack values
+# Function to Parse the input log file (which contains stackdump during assert) and to print stack values
 def print_stack(log_file):
 	stack_addr = 0x00000000
 	stack_val = 0x00000000
@@ -285,7 +285,7 @@ def print_stack(log_file):
 						print_symbol(stack_addr, stack_val, is_app_symbol)
 
 
-# Function to Parse the i/p log file (which contains wrong stackdump during assert)
+# Function to Parse the input log file (which contains wrong stackdump during assert)
 def print_wrong_sp(log_file):
 	stack_addr = 0x00000000
 	format_print = True
@@ -326,7 +326,7 @@ def print_wrong_sp(log_file):
 						stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
 						print_symbol(stack_addr, stack_val, is_app_symbol)
 
-# Function to Parse the i/p log file (which contains heap corruption data) and to print owner of corrupted node
+# Function to Parse the input log file (which contains heap corruption data) and to print owner of corrupted node
 def print_heap_corruption_data(log_file):
 	# Parse the contents based on tokens in log file.
 	with open(log_file) as searchfile:
