@@ -226,8 +226,7 @@ class dumpParser:
 								pc = lr
 
 					continue
-				# Incase if log file already has this data, address to symbol mapping is
-				# enough to get the call stack.
+				# In case if log file already has this data, address to symbol mapping is enough to get the call stack.
 				if 'unwind_backtrace_with_fp:' in line:
 					word = line.split(':')
 					if word[1] == ' CallTrace_Start':
@@ -324,8 +323,8 @@ class dumpParser:
 			a = self.elf_file_fd.read(length)
 		return a
 
-	# returns a tuple of the result by reading address from the "specified format string"
-	# return None on failure
+	# Returns a tuple of the result by reading the address from the "specified format string"
+	# In case of failure, return None
 	def read_string(self, address, format_string, debug=False):
 		addr = address
 
@@ -335,10 +334,10 @@ class dumpParser:
 				print(('Failed to read address {0:x}'.format(addr)))
 			return None
 
-		# Unpack the string with proper format and return to calle.
+		# Unpack the string with proper format and return to caller
 		return struct.unpack(format_string, s)
 
-	# returns a word size (4 bytes = 32 bits) read from dump "<" means little endian format
+	# Returns a word size (4 bytes = 32 bits) read from dump "<" means little endian format
 	# I indicates word
 	def read_word(self, address, debug=False):
 		if debug:
@@ -350,7 +349,7 @@ class dumpParser:
 			return None
 		else:
 			return s[0]
-	# returns a single Byte read from given dump address "<" means little endian format
+        # Returns a single Byte read from given dump address "<" means little endian format
 	# H indicates Half word
 	def read_halfword(self, address, debug=False):
 		if debug:
@@ -363,7 +362,7 @@ class dumpParser:
 		else:
 			return s[0]
 
-	# returns a single Byte read from given dump address "<" means little endian format
+	# Returns a single Byte read from given dump address "<" means little endian format
 	# B indicates Byte, It's useful while reading a String from dump
 	def read_byte(self, address, debug=False):
 		if debug:
@@ -1119,7 +1118,7 @@ def main():
 		SIZE_OF_ALLOC_NODE = 16
 
 		max_tasks = 0
-		# get MAX_TASKS num
+		# Get MAX_TASKS num
 		if 'CONFIG_MAX_TASKS=' in data:
 			index = data.find('CONFIG_MAX_TASKS=')
 			index += len('CONFIG_MAX_TASKS=')
