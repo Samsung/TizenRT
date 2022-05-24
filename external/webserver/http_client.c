@@ -1059,12 +1059,49 @@ int http_send_response_chunk(struct http_client_t *client, int status, const cha
 	return HTTP_OK;
 }
 
+static int http_send_buffer(struct http_client_t *client, const char *buf, int len)
+{
+	int send_byte = 0;
+	int sndlen = 0;
+	int buflen = 0;
+
+	if ((client == NULL) || (buf == NULL) || (len <= 0)) {
+		HTTP_LOGE("Invalid arguments  \n");
+		return -1;
+	}
+
+	sndlen = len;
+	while (sndlen > 0) {
+#ifdef CONFIG_NET_SECURITY_TLS
+		if (client->server->tls_init) {
+			send_byte = mbedtls_ssl_write(&(client->tls_ssl), (unsigned char *)buf + buflen, sndlen);
+		} else
+#endif
+		{
+			send_byte = send(client->client_fd, buf + buflen, sndlen, 0);
+		}
+
+		if (send_byte < 1) {
+			HTTP_LOGE("Fail to send buffer send_byte[%d] errno[%d] \n", send_byte, errno);
+			return -1;
+		} else {
+			sndlen -= send_byte;
+			buflen += send_byte;
+		}
+	}
+
+	return 0;
+}
+
 int http_send_response_helper(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers)
 {
 	char *buf;
-	int buflen = 0, ret, sndlen;
+	int buflen = 0;
 	struct http_keyvalue_t *cur = NULL;
 	int len = 0;
+	int body_len = 0;
+	int rem_body_len = 0;
+	int ret = 0;
 
 	buf = HTTP_MALLOC(HTTP_CONF_MAX_REQUEST_LENGTH);
 	if (buf == NULL) {
@@ -1105,11 +1142,12 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 
 			// Add content type and content length headers
 			if (body) {
+				body_len = strlen(body);
 				len = snprintf(buf + buflen,
                                                            HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
                                                            "Content-Type: text/html\r\n"
                                                            "Content-Length: %d\r\n",
-                                                           strlen(body));
+                                                           body_len);
 				if (len < 0) {
 					HTTP_LOGE("Error: snprintf failed \n");
 					return HTTP_ERROR;
@@ -1141,11 +1179,12 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 
 			// Add content type and content length headers
 			if (body) {
+				body_len = strlen(body);
 				buflen += snprintf(buf + buflen,
                                                            HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
                                                            "Content-type: text/html\r\n"
                                                            "Content-Length: %d\r\n",
-                                                           strlen(body));
+                                                           body_len);
 			}
 
 			// Add keep alive header
@@ -1163,36 +1202,38 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 		// Append extra CRLF to mark headers done
 		buflen += snprintf(buf + buflen,
 					HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "\r\n");
-
 		// Include response body
 		if (body) {
-			buflen += snprintf(buf + buflen,
-						HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-						"%s",
-						body);
+			memcpy(buf + buflen, body, HTTP_CONF_MAX_REQUEST_LENGTH - buflen);
+			if (body_len <= HTTP_CONF_MAX_REQUEST_LENGTH - buflen) {
+				len = body_len;
+			} else {
+				len = HTTP_CONF_MAX_REQUEST_LENGTH - buflen;
+				rem_body_len = body_len - len;
+			}
+			buflen += len;
 		}
 	}
 
-	sndlen = strlen(buf);
-	buflen = 0;
-	while (sndlen > 0) {
-#ifdef CONFIG_NET_SECURITY_TLS
-		if (client->server->tls_init) {
-			ret = mbedtls_ssl_write(&(client->tls_ssl), (unsigned char *)buf + buflen, sndlen);
-		} else
-#endif
-		{
-			ret = send(client->client_fd, buf + buflen, sndlen, 0);
-		}
+	ret = http_send_buffer(client, buf, buflen);
+	if (ret < 0) {
 
-		if (ret < 1) {
+		HTTP_LOGE("Error: failed to send buffer \n");
+		HTTP_FREE(buf);
+		return HTTP_ERROR;
+	}
+
+	//send remaining body
+	if (rem_body_len > 0) {
+		ret = http_send_buffer(client, body + len, rem_body_len);
+		if (ret < 0) {
+
+			HTTP_LOGE("Error: failed to send buffer \n");
 			HTTP_FREE(buf);
 			return HTTP_ERROR;
-		} else {
-			sndlen -= ret;
-			buflen += ret;
 		}
 	}
+
 	HTTP_FREE(buf);
 	return HTTP_OK;
 }
