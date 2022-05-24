@@ -135,7 +135,7 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
 endif
 
 # Add libraries for the Compression sub-system
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+ifeq ($(CONFIG_COMPRESSION),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
 endif
 
