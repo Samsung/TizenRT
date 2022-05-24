@@ -24,7 +24,7 @@
  ****************************************************************************/
 /****************************************************************************
  * Description:
- *   This is used to save each charecter to log buffer
+ *   This is used to save each character to log buffer
  *
  ****************************************************************************/
 int log_dump_save(char ch);
@@ -35,6 +35,13 @@ int log_dump_save(char ch);
  *
  ****************************************************************************/
 size_t log_dump_read(FAR char *buffer, size_t buflen);
+
+/****************************************************************************
+ * Description:
+ *   This is used to wake up the compression thread to compress current data
+ *
+ ****************************************************************************/
+int log_dump_read_wake(void);
 
 /****************************************************************************
  * Description:

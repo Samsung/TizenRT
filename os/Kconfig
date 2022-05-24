@@ -560,7 +560,7 @@ menu "Binary Loader"
 source binfmt/Kconfig
 endmenu
 
-menu "Binary Compression"
+menu "Compression"
 source compression/Kconfig
 endmenu
 
