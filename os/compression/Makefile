@@ -36,7 +36,12 @@ endif
 # Basic source files for compression support
 
 COMPRESSION_ASRCS  =
+
+ifeq ($(CONFIG_COMPRESSED_BINARY),y)
 COMPRESSION_CSRCS  += compress_read.c
+endif
+
+COMPRESSION_CSRCS += compress.c
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 ifeq ($(CONFIG_COMPRESSION_TYPE),$(LZMA))

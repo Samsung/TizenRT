@@ -999,10 +999,10 @@ endmenu # Stack size information
 
 config LOG_DUMP
 	bool "Enable log dump functionality"
-	depends on LIB_LZMA || LIB_MINIZ
+	select COMPRESSION
 	default n
 
-if LOG_DUMP 
+if LOG_DUMP
 
 config LOG_DUMP_CHUNK_SIZE
 	int "Log dump chunk size in bytes"
