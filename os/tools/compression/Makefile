@@ -61,7 +61,7 @@ OBJECTS		=  $(patsubst %,$(OBJDIR)/%,$(OBJTMP))
 DEPS		=  $(patsubst $(OBJDIR)/%.o,$(DEPDIR)/%.d,$(OBJECTS))
 CCONFIG		=  include/tinyara/config.h
 CONFIG		=  .config
-COMPHEADER	=  include/tinyara/binfmt/compression/compression.h
+COMPHEADER	=  include/tinyara/compression.h
 
 all: init $(APPNAME)
 
@@ -111,8 +111,8 @@ $(CCONFIG): $(TINYARADIR)/include/tinyara/config.h
 # ==========================================================
 # Rule to retrieve compression header file
 # ==========================================================
-$(COMPHEADER): $(TINYARADIR)/include/tinyara/binfmt/compression/compression.h
-	@cp $(TINYARADIR)/include/tinyara/binfmt/compression/compression.h .
+$(COMPHEADER): $(TINYARADIR)/include/tinyara/compression.h
+	@cp $(TINYARADIR)/include/tinyara/compression.h .
 
 # =================================
 # Rule to retrieve the .config file
