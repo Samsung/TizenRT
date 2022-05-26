@@ -1185,7 +1185,7 @@ int rtw_printf_info(const char *format,...)
 	return ret;
 }
 
-/* Blocks the currently running task, need to called within the currently running task.
+/* Blocks the currently running task, need to be called within the currently running task.
  * It is added because there is no task suspension related function found in the SDK.
  */
 void rtw_block_current_task(void){
