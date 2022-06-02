@@ -59,6 +59,7 @@
 #include <limits.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include <json/cJSON.h>
 
