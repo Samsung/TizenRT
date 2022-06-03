@@ -70,7 +70,7 @@
 #define WS_TEST_CONF_MAX_URL_SIZE       50
 #define WS_TEST_CONF_MAX_ENTITY_SIZE    2048
 #define WS_TEST_CONF_MAX_PHRASE_SIZE    50
-#define WS_TEST_CONF_MAX_MESSAGE_SIZE   2100
+#define WS_TEST_CONF_MAX_MESSAGE_SIZE   6100
 
 #define WS_TEST_MODE_GET                     0
 #define WS_TEST_MODE_POST                    1
