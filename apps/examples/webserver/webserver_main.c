@@ -138,7 +138,7 @@ void http_get_root(struct http_client_t *client, struct http_req_message *req)
 	struct http_keyvalue_list_t response_headers;
 	const char *msg = "This is a root page";
 	char contlen[6] = { 0, };
-	int resp_type = 1; // 0 - Normal response, 1 - Chunk response
+	int resp_type = 0; // 0 - Normal response, 1 - Chunk response
 
 	http_keyvalue_list_init(&response_headers);
 
