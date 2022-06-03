@@ -61,6 +61,8 @@ int ws_test_http_client_response_init(struct http_client_response_t *response)
 		free(response->phrase);
 		return WS_TEST_ERR;
 	}
+	memset(response->message, 0, WS_TEST_CONF_MAX_MESSAGE_SIZE);
+
 	response->headers = malloc(sizeof(struct http_keyvalue_list_t));
 	if (response->headers == NULL || http_keyvalue_list_init(response->headers) < 0) {
 		PRNT("Error: Fail to init");
@@ -68,6 +70,8 @@ int ws_test_http_client_response_init(struct http_client_response_t *response)
 		free(response->message);
 		return WS_TEST_ERR;
 	}
+
+	response->entity = NULL;
 	return 0;
 }
 
@@ -303,39 +307,24 @@ void parse_body(struct http_message_len_t *len, char *buf, int buf_len,
 					 struct http_client_response_t *response, int *state,
 					 char **body, int *read_finish, int *process_finish)
 {
-	bool is_header = false;
 	if (!len->message_len) {
-		is_header = true;
 		*body = buf + len->sentence_start;
 	}
-	if (buf_len - len->sentence_start + len->message_len == len->content_len) {
+
+	len->message_len = buf_len;
+
+	if (buf_len - len->sentence_start == len->content_len) {
 		buf[buf_len] = '\0';
 		if (response) {
 			response->total_len = len->content_len;
 
-			if (is_header == true) {
 				response->entity_len = buf_len - len->sentence_start;
 				response->entity = buf + len->sentence_start;
-			} else {
-				response->entity_len = buf_len;
-				response->entity = buf;
-			}
+				PRNT("response entity: %s\n",response->entity);
 		}
 
 		*read_finish = true;
 	} else {
-		len->message_len += buf_len;
-		if (response) {
-			response->total_len = len->content_len;
-
-			if (is_header == true) {
-				response->entity_len = buf_len - len->sentence_start;
-				response->entity = buf + len->sentence_start;
-			} else {
-				response->entity = buf;
-				response->entity_len = buf_len;
-			}
-		}
 		printf("Not all body readed\n");
 	}
 	*process_finish = true;

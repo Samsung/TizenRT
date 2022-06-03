@@ -530,6 +530,9 @@ static int ws_test_base(void *arg)
 	send_len = sndlen;
 	for (int i = 0; i < param->keep_alive_count; i++) {
 		read_finish = false;
+		memset(&mlen, 0, sizeof(mlen));
+		state = HTTP_REQUEST_HEADER;
+
 		if (!param->encoding) {
 			buf_len = 0;
 			sndlen = send_len;
@@ -565,16 +568,31 @@ static int ws_test_base(void *arg)
 			}
 		}
 		int loopcount = 0;
+		int buf_msg_len = 0;
+
+		len = 0;
+
+		if (param->response->message == NULL) {
+			PRNT("Error: message is NULL \n");
+			goto errout;
+		}
+		memset(param->response->message, 0, WS_TEST_CONF_MAX_MESSAGE_SIZE);
+
 		while (!read_finish) {
-			PRNT("Receive start");
-			memset(param->response->message, 0, WS_TEST_CONF_MAX_MESSAGE_SIZE);
+
+			if (WS_TEST_CONF_MAX_MESSAGE_SIZE - buf_msg_len <= 0) {
+				PRNT("Error: Received message size is too large!!\n");
+				goto errout;
+			}
+
+			PRNT("Receive start \n");
 			if (param->tls) {
 				len = mbedtls_ssl_read(&(client_tls->tls_ssl),
 									   (unsigned char *)param->response->message,
 									   WS_TEST_CONF_MAX_MESSAGE_SIZE);
 			} else {
-				len = recv(sockfd, param->response->message,
-						   WS_TEST_CONF_MAX_MESSAGE_SIZE, 0);
+				len = recv(sockfd, param->response->message + buf_msg_len,
+						   WS_TEST_CONF_MAX_MESSAGE_SIZE - buf_msg_len, 0);
 			}
 
 			if (len < 0) {
@@ -591,9 +609,9 @@ static int ws_test_base(void *arg)
 				}
 			}
 
-			read_finish = parse_message(param->response->message,len, param->response->url,
+			buf_msg_len += len;
+			read_finish = parse_message(param->response->message, buf_msg_len, param->response->url,
 							 			&param->response->entity, &state, &mlen, param->response);
-			printf("%s\n",param->response->entity);
 			++loopcount;
 			PRNT("====== loopcount : %d read_finish : %d=====", loopcount, read_finish);
 			if (read_finish == WS_TEST_ERR) {
