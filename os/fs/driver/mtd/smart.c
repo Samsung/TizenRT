@@ -4399,8 +4399,9 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 	}
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 
-	/* When CRC is enabled, we read the entire sector into RAM so we can
-	 * validate the CRC.
+	/* When CRC is enabled, we read the entire sector into RAM so we can validate the CRC.
+	 * However, if Journaling is enabled, written data is read back and verified with CRC,
+	 * so we can skip this step.
 	 */
 
 	ret = MTD_BREAD(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
@@ -4408,6 +4409,8 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 		fdbg("Error reading phys sector %d\n", physsector);
 		return -EIO;
 	}
+
+#ifndef CONFIG_MTD_SMART_JOURNALING
 #if SMART_STATUS_VERSION == 1
 	/* Test if this sector has CRC enabled or not. */
 
@@ -4428,7 +4431,7 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 			return -EIO;
 		}
 	}
-
+#endif
 	/* Copy data to the output buffer. */
 
 	memmove((FAR char *)req->buffer, &dev->rwbuffer[req->offset + sizeof(struct smart_sect_header_s)], req->count);
