@@ -112,10 +112,14 @@ def getListfromString(s):
 
 
 def PLO(size, libObj, currSym, subSym):
-    if currSym not in list(Required.keys()):
+    found = False
+    for key in list(Required.keys()):
+        if currSym.find(key) != -1:
+            found = True
+            if subSym not in Required[key]:
+                Required[key].append(subSym)
+    if found == False:
         return
-    if subSym not in Required[currSym]:
-        Required[currSym].append(subSym)
 
     libObj = libObj.strip().split('/')
     libObj = libObj[len(libObj)-1]
@@ -286,7 +290,7 @@ for line in infile:
             level1[currentSymbol] = {}
             continue
         else:
-            if re.search('\*\(.*\)', line.strip()) != None:
+            if re.search('\*\(.*\)', line.strip()) != None or re.search('\**.o\(', lsplit[0]) != None:
                 level2string = getListfromString(line.strip())
                 for l2strs in level2string:
                     if l2strs in list(level1[currentSymbol].keys()):
@@ -324,7 +328,6 @@ for line in infile:
                         level1[currentSymbol][subSymbol] += int(lsplit[2], 16)
                         PLO(int(lsplit[2], 16), libObject,
                             currentSymbol, subSymbol)
-
 infile.close()
 if options.all:
     options.totsize = options.libsize = options.details = True
