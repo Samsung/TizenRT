@@ -60,6 +60,12 @@ else
 LDSCRIPT = rlx8721d_img2_is.ld
 endif
 
+ifeq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
+LIBSUPXX = ${shell $(CC) $(CXXFLAGS) --print-file-name=libsupc++.a}
+EXTRA_LIBPATHS += -L "${shell dirname "$(LIBSUPXX)"}"
+EXTRA_LIBS += -lsupc++
+endif
+
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
   DIRLINK = $(TOPDIR)/tools/copydir.sh
@@ -73,10 +79,8 @@ else
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
   ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include
   ARCHINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
-  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../external/include
+  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include -isystem $(TOPDIR)/../external/include/libcxx
   ARCHXXINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
-  ARCHXXINCLUDES += -isystem $(TOPDIR)/../external/include/libcxx
-  ARCHXXINCLUDES += -isystem $(TOPDIR)/../framework/include
   ARCHSCRIPT = -T$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)
 endif
 
@@ -127,7 +131,7 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
 endif
 
 ARCHCFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
-ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
+ARCHCXXFLAGS = -fno-builtin $(ARCHCPUFLAGS)
 ifeq ($(QUICKBUILD),y)
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
 ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef
@@ -148,8 +152,8 @@ ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 
 CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe -ffunction-sections -fdata-sections
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
-CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
-CXXFLAGS += -std=c++11 -DCLOCK_MONOTONIC -D__TINYARA__
+CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES)
+CXXFLAGS += $(ARCHDEFINES) $(EXTRADEFINES) -pipe -std=c++11 -DCLOCK_MONOTONIC -D__TINYARA__
 CXXFLAGS += -fexceptions -fcheck-new -frtti
 CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
