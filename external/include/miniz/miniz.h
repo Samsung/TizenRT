@@ -146,7 +146,7 @@
 /*#define MINIZ_NO_TIME */
 
 /* Define MINIZ_NO_ARCHIVE_APIS to disable all ZIP archive API's. */
-/*#define MINIZ_NO_ARCHIVE_APIS */
+#define MINIZ_NO_ARCHIVE_APIS
 
 /* Define MINIZ_NO_ARCHIVE_WRITING_APIS to disable all writing related ZIP archive API's. */
 /*#define MINIZ_NO_ARCHIVE_WRITING_APIS */
