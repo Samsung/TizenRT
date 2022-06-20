@@ -74,6 +74,14 @@ config ARCH_CHIP_AMEBAD
 	---help---
 		Realtek AMEBAD architectures (ARM Cortex-M23/33).
 
+config ARCH_CHIP_AMEBALITE
+	bool "Realtek AMEBALITE"
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_HEAPCHECK if DEBUG
+	---help---
+		Realtek AMEBALITE architectures (ARM Cortex-M23/33).
+
 endchoice
 
 config ARCH_CHIP
@@ -85,6 +93,7 @@ config ARCH_CHIP
 	default "imxrt"		if ARCH_CHIP_IMXRT
 	default "stm32l4"	if ARCH_CHIP_STM32L4
 	default "amebad"	if ARCH_CHIP_AMEBAD
+	default "amebalite"	if ARCH_CHIP_AMEBALITE
 
 comment "ARM Options"
 
@@ -371,5 +380,8 @@ source arch/arm/src/stm32l4/Kconfig
 endif
 if ARCH_CHIP_AMEBAD
 source arch/arm/src/amebad/Kconfig
+endif
+if ARCH_CHIP_AMEBALITE
+source arch/arm/src/amebalite/Kconfig
 endif
 endif

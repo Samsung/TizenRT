@@ -1,0 +1,122 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "AMEBALITE Configuration Options"
+
+choice
+	prompt "AMEBALITE Chip Selection"
+	default ARCH_CHIP_RTL8720E
+	depends on ARCH_CHIP_AMEBALITE
+
+config ARCH_CHIP_RTL8720E
+	bool "RTL8720E"
+	select ARCH_CORTEXM33
+	select ARCH_HAVE_FPU
+	select AMEBALITE_WIFI
+	select ARMV8M_HAVE_ICACHE
+	select ARMV8M_HAVE_DCACHE
+
+endchoice
+
+menu "Realtek RTL8720E Peripheral Support"
+
+config RTL8720E_UART
+	bool "UART"
+	default n
+
+config RTL8720E_UART0
+	bool "UART 0"
+	default n
+	select RTL8720E_UART
+	select ARCH_HAVE_UART0
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config RTL8720E_UART1
+	bool "UART 1"
+	default n
+	select RTL8720E_UART
+	select ARCH_HAVE_UART1
+	select ARCH_HAVE_SERIAL_TERMIOS	
+
+config RTL8720E_UART2
+	bool "UART 2"
+	default n
+	select RTL8720E_UART
+	select ARCH_HAVE_UART2
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config RTL8720E_SERIAL_FIFO
+	bool "UART SERIAL FIFO"
+	default n
+
+endmenu
+
+menu "Realtek RTL8720E WIFI Support"
+
+config AMEBALITE_WIFI
+	bool "Enable Amebalite WIFI"
+	default n
+
+endmenu
+
+menu "Realtek RTL8720E BLE Support"
+
+config AMEBALITE_BLE
+	bool "Enable Amebalite BLE"
+	default n
+	select FTL_ENABLED
+
+if AMEBALITE_BLE
+config FTL_ENABLED
+	bool "Enable FTL"
+	default n
+
+config AMEBALITE_BLE_DEBUG
+	bool "Enable BLE Debug"
+	default n
+
+config AMEBALITE_BLE_PERIPHERAL
+	bool "Enable Amebalite BLE Peripheral"
+	default n
+
+config AMEBALITE_BLE_CENTRAL
+	bool "Enable Amebalite BLE Central"
+	default n
+
+if AMEBALITE_BLE_CENTRAL && AMEBALITE_BLE_PERIPHERAL
+	config AMEBALITE_BLE_SCATTERNET
+		bool "Enable Amebalite BLE Scatternet"
+		default n
+endif
+
+endif
+
+endmenu
+
+menu "Realtek RTL8720E TrustZone Support"
+
+config AMEBALITE_TRUSTZONE
+	bool "Enable Amebalite TrustZone"
+	default n
+	select ARMV8M_TRUSTZONE
+
+config AMEBALITE_RDP
+	bool "Enable Amebalite RDP"
+	default n
+	depends on AMEBALITE_TRUSTZONE
+	---help---
+		Enable RDP Encryption for binary.
+		RDP key once written, cannot be reprogrammed.
+		Can disable this for testing only TrustZone without writing RDP key.
+		However, should be enabled along with TrustZone to provide binary security.
+		If unsure, do not enable this.
+
+config AMEBALITE_RDP_KEY
+	hex "Amebalite RDP Key"
+	default 0x2473040ab47c48655a15aa431c4bbb8a
+	range 00000000000000000000000000000000 ffffffffffffffffffffffffffffffff
+	depends on AMEBALITE_RDP
+
+endmenu
