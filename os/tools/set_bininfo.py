@@ -84,5 +84,7 @@ if os.path.isfile(metadata_file) :
             save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
             continue
 else :
-    save_bininfo("tinyara.bin")
-
+    # All boards except QEMU which is a emulator should have board_metadata.txt.
+    if util.check_config_existence(cfg_file, "CONFIG_QEMU_") == False :
+        print("ERROR: Board metafile is not exist!!!")
+        sys.exit(1)
