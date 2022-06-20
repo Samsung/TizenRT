@@ -23,9 +23,9 @@ USBRULE_BOARD="artik"
 USBRULE_IDVENDOR="0403"
 USBRULE_IDPRODUCT="6010"
 
-BL1="bl1"
-BL2="bl2"
-KERNEL="tinyara_head"
-OTA="ota"
+BL1="bl1.bin"
+BL2="bl2.bin"
+KERNEL="tinyara_head.bin"
+OTA="ota.bin"
 
 DEFAULT_PORT=ttyUSB1

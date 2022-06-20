@@ -29,6 +29,6 @@ DEFAULT_PORT="ttyACM0"
 
 BL1=""
 BL2=""
-KERNEL="tinyara"
+KERNEL="tinyara.bin"
 OTA=""
 BOOTPARAM=""
