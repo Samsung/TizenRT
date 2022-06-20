@@ -143,6 +143,11 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_AMEBALITE_WIFI),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_enc$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+endif
+
 # Add library for wifi driver
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libwifidriver$(LIBEXT)
 # Add library for wifi stack

@@ -301,6 +301,22 @@ $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8721c
 endif
 endif
 
+ifeq ($(CONFIG_AMEBALITE_WIFI),y)
+ifeq ($(CONFIG_ARCH_FPU),y)
+#$(LIBRARIES_DIR)$(DELIM)lib_enc$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8720e$(DELIM)src$(DELIM)libs$(DELIM)lib_enc_fpu$(LIBEXT)
+#	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8720e$(DELIM)src$(DELIM)libs$(DELIM)lib_enc_fpu$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_enc$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8720e$(DELIM)src$(DELIM)libs$(DELIM)lib_wps_fpu$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8720e$(DELIM)src$(DELIM)libs$(DELIM)lib_wps_fpu$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+else
+#$(LIBRARIES_DIR)$(DELIM)lib_enc$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8720e$(DELIM)src$(DELIM)libs$(DELIM)lib_enc$(LIBEXT)
+#	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8720e$(DELIM)src$(DELIM)libs$(DELIM)lib_enc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_enc$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT): $(TOPDIR)$(DELIM)board$(DELIM)rtl8720e$(DELIM)src$(DELIM)libs$(DELIM)lib_wps$(LIBEXT)
+	$(Q) install $(TOPDIR)$(DELIM)board$(DELIM)rtl8720e$(DELIM)src$(DELIM)libs$(DELIM)lib_wps$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+endif
+endif
+
 # External esp32 wifi static Lib builds
 ifeq ($(CONFIG_ESP32_WIFI_SUPPORT),y)
 $(LIBRARIES_DIR)$(DELIM)libcoexist$(LIBEXT): $(EXTDIR)$(DELIM)esp_idf_port/esp32$(DELIM)lib$(DELIM)libcoexist$(LIBEXT)

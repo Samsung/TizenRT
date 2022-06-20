@@ -176,6 +176,11 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_AMEBALITE_WIFI),y)
+#TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_enc$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+endif
+
 # Add library for external esp32 wifi support.
 ifeq ($(CONFIG_ESP32_WIFI_SUPPORT),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcore$(LIBEXT)
@@ -194,4 +199,3 @@ endif
 
 # Export all libraries
 EXPORTLIBS = $(TINYARALIBS)
-
