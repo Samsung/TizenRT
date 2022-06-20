@@ -84,6 +84,8 @@ function FIND_BINFILE()
 			BINFILE="${BINDIR}/tinyara_master_strip"
 		elif [[ "${CONFIG_ARCH_BOARD}" == "rtl8721csm" ]]; then
 			BINFILE="${BINDIR}/${KERNEL_BIN_NAME}"
+		elif [[ "${CONFIG_ARCH_BOARD}" == "rtl8720e" ]]; then
+			BINFILE="${BINDIR}/${KERNEL_BIN_NAME}"
 		else
 			BINFILE="${BINDIR}/tinyara${EXTNAME}"
 		fi
