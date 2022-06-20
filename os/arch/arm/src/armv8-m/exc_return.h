@@ -78,8 +78,8 @@
 
 /* EXC_RETURN_BASE: Bits that are always set in an EXC_RETURN value. */
 
-#ifdef CONFIG_ARMV8M_TRUSTZONE
-/* In case of ARMv8 with TZ, following bits have special meaning. 
+#if 1 //CONFIG_ARMV8M_TRUSTZONE
+/* In case of ARMv8 with TZ, following bits have special meaning.
  * BIT 6 :	Set if secure stack is used, else reset
  * BIT 5 : 	Set if default rules used for stacking callee registers
  * BIT 4 :	Set if space for FP registers is not allocated
