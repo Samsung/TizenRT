@@ -151,6 +151,11 @@ ifeq ($(CONFIG_AMEBAD_WIFI),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wlan$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
 endif
+
+ifeq ($(CONFIG_AMEBALITE_WIFI),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_enc$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)lib_wps$(LIBEXT)
+endif
 # Add libraries for iotjs support
 
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
