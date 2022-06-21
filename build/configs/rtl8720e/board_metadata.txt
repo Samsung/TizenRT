@@ -21,8 +21,7 @@ BOARD="RTL8720E"
 
 DEFAULT_PORT="ttyUSB1"
 
-BL1=""
-BL2=""
-KERNEL=""
-OTA=""
-BOOTPARAM=""
+BL1="km4_boot_all"
+KERNEL="kr4_km4_image2"
+OTA="kr4_km4_image2"
+BOOTPARAM="bootparam"
