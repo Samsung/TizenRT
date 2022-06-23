@@ -71,8 +71,6 @@ struct insert_buffer_s {
 	unsigned char *buffer;		/* write buffer */
 	int data_size;				/* size of data in buffer */
 };
-
-struct insert_buffer_s g_storage_write_buffer;
 #endif
 
 typedef unsigned char *storage_row_t;
