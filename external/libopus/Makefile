@@ -79,7 +79,7 @@ CFLAGS := -DNULL=0 -DSOCKLEN_T=socklen_t -DLOCALE_NOT_USED \
           -Drestrict='' -D__EMX__ -DOPUS_BUILD \
     	  -DHAVE_LRINT -DHAVE_LRINTF -O1 -fno-math-errno
 CFLAGS += -DFIXED_POINT -DDISABLE_FLOAT_API
-CFLAGS += -DUSE_SHAREDPTR
+CFLAGS += -DVAR_ARRAYS
 
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/include
