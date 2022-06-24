@@ -51,9 +51,9 @@
 
 #define PREPARE_RETRY_COUNT 10
 /****************************************************************************
- * Global Variables
+ * Private Variables
  ****************************************************************************/
-struct pcm *g_pcm;
+static struct pcm *g_pcm;
 
 static void clean_all_data(int fd, char *buffer)
 {
