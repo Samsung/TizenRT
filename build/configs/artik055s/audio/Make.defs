@@ -106,10 +106,10 @@ endif
 ARCHCFLAGS = -fno-builtin -mcpu=cortex-r4 -mfpu=vfpv3
 ARCHCXXFLAGS = -fno-builtin -mcpu=cortex-r4 -mfpu=vfpv3
 ifeq ($(QUICKBUILD),y)
-ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
+ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable -Wno-address-of-packed-member
 ARCHWARNINGSXX = -Wall -Wshadow -Wundef
 else
-ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
+ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable -Wno-address-of-packed-member
 ARCHWARNINGSXX = -Wall -Wshadow -Wundef
 # only version 4.9 supports color diagnostics
 ifeq "$(ARCHMAJOR)" "4"
