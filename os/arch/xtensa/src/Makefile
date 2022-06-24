@@ -146,7 +146,7 @@ GCC_LIBDIR := ${shell dirname $(LIBGCC)}
 VPATH += chip
 VPATH += $(ARCH_SUBDIR)
 
-all: $(STARTUP_OBJS) libarch$(LIBEXT)
+all: $(STARTUP_OBJS) libarch$(LIBEXT) install
 
 .PHONY: board/libboard$(LIBEXT)
 
@@ -171,6 +171,23 @@ ifneq ($(CONFIG_WINDOWS_NATIVE),y)
 	$(Q) $(NM) $(TINYARA) | \
 	grep -v '\(compiled\)\|\(\$(OBJEXT)$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
 	sort > $(TOPDIR)/$(OUTBIN_DIR)/System.map
+endif
+
+install:
+# External esp32 wifi static Lib builds
+ifeq ($(CONFIG_ESP32_WIFI_SUPPORT),y)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libcoexist$(LIBEXT) $(LIBRARIES_DIR)/libcoexist$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libcore$(LIBEXT) $(LIBRARIES_DIR)/libcore$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libespnow$(LIBEXT) $(LIBRARIES_DIR)/libespnow$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libmesh$(LIBEXT) $(LIBRARIES_DIR)/libmesh$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libnet80211$(LIBEXT) $(LIBRARIES_DIR)/libnet80211$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libphy$(LIBEXT) $(LIBRARIES_DIR)/libphy$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libpp$(LIBEXT) $(LIBRARIES_DIR)/libpp$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/librtc$(LIBEXT) $(LIBRARIES_DIR)/librtc$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libsmartconfig$(LIBEXT) $(LIBRARIES_DIR)/libsmartconfig$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libwpa2$(LIBEXT) $(LIBRARIES_DIR)/libwpa2$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libwpa$(LIBEXT) $(LIBRARIES_DIR)/libwpa$(LIBEXT)
+	$(Q) cp $(EXTDIR)/esp_idf_port/esp32/lib/libwps$(LIBEXT) $(LIBRARIES_DIR)/libwps$(LIBEXT)
 endif
 
 # This is part of the top-level export target

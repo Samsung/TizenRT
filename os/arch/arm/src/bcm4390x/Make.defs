@@ -107,3 +107,8 @@ CFLAGS += -I$(TOPDIR)/../external/WICED/bcm4390x/include
 
 VPATH += chip
 EXTRA_LIBS += chip/libbcmarch.a
+
+# External WICED Lib builds
+ifeq ($(CONFIG_WL_BCM4390X),y)
+EXTRA_LIBS += $(EXTDIR)/WICED/libbcmexternal.a
+endif
