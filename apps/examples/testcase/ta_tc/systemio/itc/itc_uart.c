@@ -32,11 +32,12 @@
 
 #define MICROSECOND 1000000
 #define BUF_LEN 32
-#ifdef CONFIG_ARCH_CHIP_STM32
-#define DEVPATH "/dev/ttyS1"
-#else                            // artik
-#define DEVPATH "/dev/ttyS2"
+
+#if !defined(CONFIG_SYSIO_ITC_UART_FILE_PATH)
+#error To run system I/O testcase, kindly set file path of uart device(CONFIG_SYSIO_ITC_UART_FILE_PATH) on menuconfig.
 #endif
+
+#define DEVPATH   CONFIG_SYSIO_ITC_UART_FILE_PATH
 
 /**
 * @testcase         itc_systemio_iotbus_uart_init_stop_p
