@@ -27,8 +27,6 @@
 #include <iotbus_i2c.h>
 #include <iotbus_error.h>
 
-int g_bus = 0;
-
 /**
 * @testcase         itc_systemio_i2c_init_stop_p
 * @brief            initializes and closes i2c_context
@@ -40,7 +38,7 @@ int g_bus = 0;
 void itc_systemio_i2c_init_stop_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
-	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
+	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(CONFIG_SYSIO_ITC_I2C_BUS);
 	TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	ret = iotbus_i2c_stop(h_i2c);
@@ -64,7 +62,7 @@ void itc_systemio_i2c_set_frequency_p(void)
 	int num_modes = sizeof(freq_mode) / sizeof(int);
 	int index = 0;
 	bool check = true;
-	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
+	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(CONFIG_SYSIO_ITC_I2C_BUS);
 	TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	for (index = 0; index < num_modes; index++) {
@@ -93,7 +91,7 @@ void itc_systemio_i2c_set_address_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	uint8_t address = 0x8;
-	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
+	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(CONFIG_SYSIO_ITC_I2C_BUS);
 	TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	ret = iotbus_i2c_set_address(h_i2c, address);
@@ -120,7 +118,7 @@ void itc_systemio_i2c_write_read_p(void)
 	uint8_t address = 0x23;
 	uint8_t read_buf;
 
-	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
+	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(CONFIG_SYSIO_ITC_I2C_BUS);
 	TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	ret = iotbus_i2c_set_address(h_i2c, address);
@@ -160,7 +158,7 @@ void itc_systemio_i2c_set_frequency_address_p(void)
 	int num_modes = sizeof(freq_mode) / sizeof(freq_mode[0]);
 	int index = 0;
 	bool check = true;
-	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
+	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(CONFIG_SYSIO_ITC_I2C_BUS);
 	TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	for (index = 0; index < num_modes; index++) {
@@ -206,7 +204,7 @@ void itc_systemio_i2c_write_read_p_all_freq(void)
 	iotbus_i2c_context_h h_i2c;
 
 	for (index = 0; index < num_modes; index++) {
-		h_i2c = iotbus_i2c_init(g_bus);
+		h_i2c = iotbus_i2c_init(CONFIG_SYSIO_ITC_I2C_BUS);
 		if (h_i2c == NULL) {
 			check = false;
 			SYSIO_ITC_PRINT("\nitc_systemio_i2c_write_read_p_all_freq: iotbus_i2c_init FAIL for init for index : %d\n", index);
@@ -339,7 +337,7 @@ void itc_systemio_i2c_set_address_n_after_stop(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	uint8_t address = 0x8;
-	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
+	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(CONFIG_SYSIO_ITC_I2C_BUS);
 	TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	ret = iotbus_i2c_stop(h_i2c);

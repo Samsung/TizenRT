@@ -25,12 +25,10 @@
 #include <iotbus_spi.h>
 #include <iotbus_error.h>
 
-static unsigned int g_bus = 0;
-
 static struct iotbus_spi_config_s g_st_config = {
-	(char)8,
-	0,
-	12000000,
+	(char)CONFIG_SYSIO_ITC_SPI_BITS_PER_WORD,
+	CONFIG_SYSIO_ITC_SPI_CHIP_SELECT,
+	CONFIG_SYSIO_ITC_SPI_FREQUENCY,
 	IOTBUS_SPI_MODE0,
 };
 
@@ -45,7 +43,7 @@ static struct iotbus_spi_config_s g_st_config = {
 void itc_systemio_spi_open_close_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
-	iotbus_spi_context_h h_spi = iotbus_spi_open(g_bus, &g_st_config);
+	iotbus_spi_context_h h_spi = iotbus_spi_open(CONFIG_SYSIO_ITC_SPI_BUS, &g_st_config);
 	TC_ASSERT_NEQ("iotbus_spi_open", h_spi, NULL);
 
 	ret = iotbus_spi_close(h_spi);
@@ -65,10 +63,10 @@ void itc_systemio_spi_open_close_p(void)
 static void itc_systemio_spi_open_close_p_multi_handler(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
-	iotbus_spi_context_h h_spi_1 = iotbus_spi_open(g_bus, &g_st_config);
+	iotbus_spi_context_h h_spi_1 = iotbus_spi_open(CONFIG_SYSIO_ITC_SPI_BUS, &g_st_config);
 	TC_ASSERT_NEQ("iotbus_spi_open", h_spi_1, NULL);
 
-	iotbus_spi_context_h h_spi_2 = iotbus_spi_open(g_bus, &g_st_config);
+	iotbus_spi_context_h h_spi_2 = iotbus_spi_open(CONFIG_SYSIO_ITC_SPI_BUS, &g_st_config);
 	TC_ASSERT_NEQ_CLEANUP("iotbus_spi_open", h_spi_2, NULL, iotbus_spi_close(h_spi_1));
 
 	ret = iotbus_spi_close(h_spi_2);
@@ -96,9 +94,9 @@ static void itc_systemio_spi_open_close_p_modes(void)
 	int check_close = 0;
 	int index = 0;
 	struct iotbus_spi_config_s st_config = {
-		(char)8,
-		0,
-		12000000,
+		(char)CONFIG_SYSIO_ITC_SPI_BITS_PER_WORD,
+		CONFIG_SYSIO_ITC_SPI_CHIP_SELECT,
+		CONFIG_SYSIO_ITC_SPI_FREQUENCY,
 		IOTBUS_SPI_MODE0,
 	};
 
@@ -108,7 +106,7 @@ static void itc_systemio_spi_open_close_p_modes(void)
 	for (index = 0; index < max_index; ++index) {
 		st_config.mode = modes[index];
 
-		iotbus_spi_context_h h_spi = iotbus_spi_open(g_bus, &st_config);
+		iotbus_spi_context_h h_spi = iotbus_spi_open(CONFIG_SYSIO_ITC_SPI_BUS, &st_config);
 		if (h_spi == NULL) {
 			SYSIO_ITC_PRINT("iotbus_spi_open failed, mode :: %s \n", str_modes[index]);
 			check_open++;
@@ -165,12 +163,12 @@ static void itc_systemio_spi_open_close_n_invalid_bpw(void)
 
 	struct iotbus_spi_config_s st_config = {
 		(char)1,
-		0,
-		12000000,
+		CONFIG_SYSIO_ITC_SPI_CHIP_SELECT,
+		CONFIG_SYSIO_ITC_SPI_FREQUENCY,
 		IOTBUS_SPI_MODE0,
 	};
 
-	iotbus_spi_context_h h_spi = iotbus_spi_open(g_bus, &st_config);
+	iotbus_spi_context_h h_spi = iotbus_spi_open(CONFIG_SYSIO_ITC_SPI_BUS, &st_config);
 	TC_ASSERT_EQ("iotbus_spi_open", h_spi, NULL);
 
 	ret = iotbus_spi_close(h_spi);
@@ -192,13 +190,13 @@ static void itc_systemio_spi_open_close_n_invalid_frequecy(void)
 	int ret = IOTBUS_ERROR_NONE;
 
 	struct iotbus_spi_config_s st_config = {
-		(char)8,
-		0,
+		(char)CONFIG_SYSIO_ITC_SPI_BITS_PER_WORD,
+		CONFIG_SYSIO_ITC_SPI_CHIP_SELECT,
 		13000000, //13Mhz Invalid frequency
 		IOTBUS_SPI_MODE0,
 	};
 
-	iotbus_spi_context_h h_spi = iotbus_spi_open(g_bus, &st_config);
+	iotbus_spi_context_h h_spi = iotbus_spi_open(CONFIG_SYSIO_ITC_SPI_BUS, &st_config);
 	TC_ASSERT_EQ("iotbus_spi_open", h_spi, NULL);
 
 	ret = iotbus_spi_close(h_spi);
@@ -220,7 +218,7 @@ void itc_systemio_spi_write_recv_transfer_p(void)
 	unsigned char sz_txbuf[64] = { 0, };
 	unsigned char sz_rxbuf[64] = { 0, };
 	int ret = IOTBUS_ERROR_NONE;
-	iotbus_spi_context_h h_spi = iotbus_spi_open(g_bus, &g_st_config);
+	iotbus_spi_context_h h_spi = iotbus_spi_open(CONFIG_SYSIO_ITC_SPI_BUS, &g_st_config);
 	TC_ASSERT_NEQ("iotbus_spi_open", h_spi, NULL);
 
 	ret = iotbus_spi_write(h_spi, sz_txbuf, 8);

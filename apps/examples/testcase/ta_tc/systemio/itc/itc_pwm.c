@@ -37,10 +37,8 @@
 */
 void itc_systemio_pwm_open_close_p(void)
 {
-	int device = 0;
-	int channel = 1;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	ret = iotbus_pwm_close(h_pwm);
@@ -59,11 +57,9 @@ void itc_systemio_pwm_open_close_p(void)
 */
 void itc_systemio_pwm_set_get_duty_cycle_p(void)
 {
-	int device = 0;
-	int channel = 1;
 	int cycle = 20;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	ret = iotbus_pwm_set_duty_cycle(h_pwm, cycle);
@@ -88,18 +84,15 @@ void itc_systemio_pwm_set_get_duty_cycle_p(void)
 */
 void itc_systemio_pwm_set_get_period_p(void)
 {
-	int device = 0;
-	int channel = 1;
-	int period = 1000;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
-	ret = iotbus_pwm_set_period(h_pwm, period);
+	ret = iotbus_pwm_set_period(h_pwm, CONFIG_SYSIO_ITC_PWM_PERIOD);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, OK, iotbus_pwm_close(h_pwm));
 
 	ret = iotbus_pwm_get_period(h_pwm);
-	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, period, iotbus_pwm_close(h_pwm));
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, CONFIG_SYSIO_ITC_PWM_PERIOD, iotbus_pwm_close(h_pwm));
 
 	ret = iotbus_pwm_close(h_pwm);
 	TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
@@ -117,20 +110,17 @@ void itc_systemio_pwm_set_get_period_p(void)
 */
 void itc_systemio_pwm_set_period_is_enabled_p(void)
 {
-	int device = 0;
-	int channel = 1;
-	int period = 1000;
 	int ret = 0;
 	int default_state = 0;
 	int get_state = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
-	ret = iotbus_pwm_set_period(h_pwm, period);
+	ret = iotbus_pwm_set_period(h_pwm, CONFIG_SYSIO_ITC_PWM_PERIOD);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, OK, iotbus_pwm_close(h_pwm));
 
 	ret = iotbus_pwm_get_period(h_pwm);
-	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, period, iotbus_pwm_close(h_pwm));
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, CONFIG_SYSIO_ITC_PWM_PERIOD, iotbus_pwm_close(h_pwm));
 
 	default_state = iotbus_pwm_is_enabled(h_pwm);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_is_enabled", default_state < OK, false, iotbus_pwm_close(h_pwm));
@@ -173,12 +163,10 @@ void itc_systemio_pwm_set_period_is_enabled_p(void)
 */
 void itc_systemio_pwm_set_get_duty_cycle_p_different_cycle(void)
 {
-	int device = 0;
-	int channel = 1;
 	int cycle;
 	int ret = 0;
 	bool check = true;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	for (cycle = 0; cycle <= 100; cycle++) {
@@ -213,15 +201,13 @@ void itc_systemio_pwm_set_get_duty_cycle_p_different_cycle(void)
 */
 void itc_systemio_pwm_set_get_period_p_different_period(void)
 {
-	int device = 0;
-	int channel = 1;
 	int period[] = { 10, 100, 1000, 10000, 100000, 1000000 };
 	int count;
 	int index;
 	int ret = 0;
 	bool check = true;
 	count = sizeof(period) / sizeof(period[0]);
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	for (index = 0; index < count; index++) {
@@ -256,8 +242,7 @@ void itc_systemio_pwm_set_get_period_p_different_period(void)
 void itc_systemio_pwm_open_n(void)
 {
 	int invalid_device = 1;
-	int channel = 1;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(invalid_device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(invalid_device, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_open", h_pwm, NULL, iotbus_pwm_close(h_pwm));
 
 	TC_SUCCESS_RESULT();
@@ -289,12 +274,10 @@ void itc_systemio_pwm_close_n(void)
 */
 void itc_systemio_pwm_set_duty_cycle_n(void)
 {
-	int device = 0;
-	int channel = 1;
 	int cycle = 100;
 	int invalid_cycle = 101;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	ret = iotbus_pwm_set_duty_cycle(NULL, cycle);
@@ -319,11 +302,9 @@ void itc_systemio_pwm_set_duty_cycle_n(void)
 */
 void itc_systemio_pwm_set_duty_cycle_n_after_close(void)
 {
-	int device = 0;
-	int channel = 1;
 	int cycle = 20;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	ret = iotbus_pwm_close(h_pwm);
@@ -361,11 +342,9 @@ void itc_systemio_pwm_get_duty_cycle_n(void)
 */
 void itc_systemio_pwm_get_duty_cycle_n_after_close(void)
 {
-	int device = 0;
-	int channel = 1;
 	int cycle = 20;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	ret = iotbus_pwm_set_duty_cycle(h_pwm, cycle);
@@ -390,14 +369,11 @@ void itc_systemio_pwm_get_duty_cycle_n_after_close(void)
 */
 void itc_systemio_pwm_set_period_n(void)
 {
-	int device = 0;
-	int channel = 1;
-	int period = 1000;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
-	ret = iotbus_pwm_set_period(NULL, period);
+	ret = iotbus_pwm_set_period(NULL, CONFIG_SYSIO_ITC_PWM_PERIOD);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, IOTBUS_ERROR_INVALID_PARAMETER, iotbus_pwm_close(h_pwm));
 
 	ret = iotbus_pwm_close(h_pwm);
@@ -416,17 +392,14 @@ void itc_systemio_pwm_set_period_n(void)
 */
 void itc_systemio_pwm_set_period_n_after_close(void)
 {
-	int device = 0;
-	int channel = 1;
-	int period = 1000;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	ret = iotbus_pwm_close(h_pwm);
 	TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
 
-	ret = iotbus_pwm_set_period(h_pwm, period);
+	ret = iotbus_pwm_set_period(h_pwm, CONFIG_SYSIO_ITC_PWM_PERIOD);
 	TC_ASSERT_LT("iotbus_pwm_set_period", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -458,14 +431,11 @@ void itc_systemio_pwm_get_period_n(void)
 */
 void itc_systemio_pwm_get_period_n_after_close(void)
 {
-	int device = 0;
-	int channel = 1;
-	int period = 1000;
 	int ret = 0;
-	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(CONFIG_SYSIO_ITC_PWM_DEVICE, CONFIG_SYSIO_ITC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
-	ret = iotbus_pwm_set_period(h_pwm, period);
+	ret = iotbus_pwm_set_period(h_pwm, CONFIG_SYSIO_ITC_PWM_PERIOD);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, OK, iotbus_pwm_close(h_pwm));
 
 	ret = iotbus_pwm_close(h_pwm);

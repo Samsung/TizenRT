@@ -25,7 +25,15 @@
 #include <iotbus_gpio.h>
 #include <iotbus_error.h>
 
-#define GPIO_PIN 41
+#if !defined(CONFIG_SYSIO_ITC_GPIO1) || !defined(CONFIG_SYSIO_ITC_GPIO2)
+#error To run system I/O testcase, kindly set GPIO pin numbers on menuconfig.
+#error Namely, CONFIG_SYSIO_ITC_GPIO1 & CONFIG_SYSIO_ITC_GPIO2
+#endif
+
+#if ((CONFIG_SYSIO_ITC_GPIO1 == 0) || (CONFIG_SYSIO_ITC_GPIO2 == 0))
+#error To run system I/O testcase, kindly set appropriate GPIO number for CONFIG_SYSIO_ITC_GPIO1 & CONFIG_SYSIO_ITC_GPIO2 on menuconfig.
+#endif
+
 #define WAIT_SECONDS 2
 #define LOOP_COUNT 10
 
@@ -63,7 +71,7 @@ static void itc_systemio_gpio_open_close_p(void)
 {
 	int ret;
 	g_gpio_h = NULL;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -91,7 +99,7 @@ static void itc_systemio_gpio_set_get_direction_p(void)
 	char *ptr_dir[] = { "IOTBUS_GPIO_DIRECTION_NONE", "IOTBUS_GPIO_DIRECTION_OUT", "IOTBUS_GPIO_DIRECTION_IN" };
 	ncount = sizeof(set_direction) / sizeof(set_direction[0]);
 	bool check = true;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	for (index = 0; index < ncount; index++) {
@@ -142,7 +150,7 @@ static void itc_systemio_gpio_set_get_edge_mode_p(void)
 	char *ptr_edge[] = { "IOTBUS_GPIO_EDGE_NONE", "IOTBUS_GPIO_EDGE_BOTH", "IOTBUS_GPIO_EDGE_RISING", "IOTBUS_GPIO_EDGE_FALLING" };
 	ncount = sizeof(set_edge) / sizeof(set_edge[0]);
 	bool check = true;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	for (index = 0; index < ncount; index++) {
@@ -191,7 +199,7 @@ static void itc_systemio_gpio_set_get_drive_mode_p(void)
 	ncount = sizeof(set_drive) / sizeof(set_drive[0]);
 	bool check = true;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	for (index = 0; index < ncount; index++) {
@@ -231,7 +239,7 @@ static void itc_systemio_gpio_set_get_drive_mode_p(void)
 static void itc_systemio_gpio_get_pin_p(void)
 {
 	int ret;
-	int gpio_set_pin = GPIO_PIN;
+	int gpio_set_pin = CONFIG_SYSIO_ITC_GPIO1;
 	int gpio_get_pin;
 	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(gpio_set_pin);
 	TC_ASSERT_NEQ("iotbus_gpio_open", m_gpio, NULL);
@@ -257,7 +265,7 @@ static void itc_systemio_gpio_read_write_p(void)
 {
 	int ret;
 	g_gpio_h = NULL;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_read(g_gpio_h);
@@ -287,8 +295,8 @@ static void itc_systemio_gpio_register_unregister_callback_p(void)
 	g_gpio_h = NULL;
 	g_gpio_h2 = NULL;
 	int data = 0;
-	int gpio_pin2 = 57;
-	int gpio_pin1 = GPIO_PIN;
+	int gpio_pin1 = CONFIG_SYSIO_ITC_GPIO1;
+	int gpio_pin2 = CONFIG_SYSIO_ITC_GPIO2;
 
 	g_gpio_h = iotbus_gpio_open(gpio_pin1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
@@ -362,7 +370,7 @@ static void itc_systemio_gpio_set_direction_read_write_p_all_directions(void)
 
 	count_dir = sizeof(set_direction) / sizeof(set_direction[0]);
 	bool check = true;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	for (i = 0; i < count_dir; i++) {
@@ -415,7 +423,7 @@ static void itc_systemio_gpio_set_edge_read_write_p_all_edges(void)
 
 	count_edge = sizeof(set_edge) / sizeof(set_edge[0]);
 	bool check = true;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	for (i = 0; i < count_edge; i++) {
@@ -468,7 +476,7 @@ static void itc_systemio_gpio_set_drive_read_write_p_all_drive_mode(void)
 
 	count_drive = sizeof(set_drive) / sizeof(set_drive[0]);
 	bool check = true;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	for (i = 0; i < count_drive; i++) {
@@ -533,7 +541,7 @@ static void itc_systemio_gpio_set_get_direction_edge_drive_mode_p(void)
 	count_mode = sizeof(set_edge) / sizeof(set_edge[0]);
 	count_drive = sizeof(set_drive) / sizeof(set_drive[0]);
 	bool check = true;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	for (h = 0; h < LOOP_COUNT; h++) {
@@ -640,10 +648,10 @@ static void itc_systemio_gpio_open_close_p_multi_handle(void)
 	int ret;
 	g_gpio_h = NULL;
 	g_gpio_h2 = NULL;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	g_gpio_h2 = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h2 = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ_CLEANUP("iotbus_gpio_open", g_gpio_h2, NULL, iotbus_gpio_close(g_gpio_h));
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -669,7 +677,7 @@ static void itc_systemio_gpio_open_close_p_reclose(void)
 	int ret;
 	g_gpio_h = NULL;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -747,7 +755,7 @@ static void itc_systemio_gpio_get_pin_n_after_close(void)
 {
 	int ret;
 	g_gpio_h = NULL;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -793,7 +801,7 @@ static void itc_systemio_gpio_read_n_after_close(void)
 {
 	int ret;
 	g_gpio_h = NULL;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -817,7 +825,7 @@ static void itc_systemio_gpio_write_n_after_close(void)
 {
 	int ret;
 	g_gpio_h = NULL;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -841,7 +849,7 @@ static void itc_systemio_gpio_set_direction_n(void)
 {
 	int ret;
 	g_gpio_h = NULL;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_direction(g_gpio_h, -1);
@@ -886,7 +894,7 @@ static void itc_systemio_gpio_set_direction_n_after_close(void)
 	int ret;
 	g_gpio_h = NULL;
 	iotbus_gpio_direction_e set_direction = IOTBUS_GPIO_DIRECTION_NONE;
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -913,7 +921,7 @@ static void itc_systemio_gpio_get_direction_n_after_close(void)
 	iotbus_gpio_direction_e set_direction = IOTBUS_GPIO_DIRECTION_NONE;
 	iotbus_gpio_direction_e get_direction;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_direction(g_gpio_h, set_direction);
@@ -941,7 +949,7 @@ static void itc_systemio_gpio_set_edge_mode_n(void)
 	int ret;
 	g_gpio_h = NULL;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_edge_mode(g_gpio_h, -1);
@@ -987,7 +995,7 @@ static void itc_systemio_gpio_set_edge_mode_n_after_close(void)
 	g_gpio_h = NULL;
 	iotbus_gpio_edge_e set_edge = IOTBUS_GPIO_EDGE_NONE;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -1014,7 +1022,7 @@ static void itc_systemio_gpio_get_edge_mode_n_after_close(void)
 	iotbus_gpio_edge_e set_edge = IOTBUS_GPIO_EDGE_NONE;
 	iotbus_gpio_edge_e get_edge;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_edge_mode(g_gpio_h, set_edge);
@@ -1042,7 +1050,7 @@ static void itc_systemio_gpio_set_drive_mode_n(void)
 	int ret;
 	g_gpio_h = NULL;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_drive_mode(g_gpio_h, -1);
@@ -1088,7 +1096,7 @@ static void itc_systemio_gpio_set_drive_mode_n_after_close(void)
 	g_gpio_h = NULL;
 	iotbus_gpio_drive_e set_drive = IOTBUS_GPIO_DRIVE_PULLUP;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_close(g_gpio_h);
@@ -1115,7 +1123,7 @@ static void itc_systemio_gpio_get_drive_mode_n_after_close(void)
 	iotbus_gpio_drive_e set_drive = IOTBUS_GPIO_DRIVE_PULLUP;
 	iotbus_gpio_drive_e get_drive;
 
-	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
+	g_gpio_h = iotbus_gpio_open(CONFIG_SYSIO_ITC_GPIO1);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_drive_mode(g_gpio_h, set_drive);
