@@ -30,7 +30,7 @@ iotbus_pwm_context_h pwm;
 
 static void utc_systemio_pwm_open_p(void)
 {
-	iotbus_pwm_context_h m_pwm = iotbus_pwm_open(0, 1);
+	iotbus_pwm_context_h m_pwm = iotbus_pwm_open(CONFIG_SYSIO_UTC_PWM_DEVICE, CONFIG_SYSIO_UTC_PWM_CHANNEL);
 	TC_ASSERT_NEQ("iotbus_pwm_open", m_pwm, NULL);
 	pwm = m_pwm;
 	TC_SUCCESS_RESULT();
@@ -69,19 +69,19 @@ static void utc_systemio_pwm_get_duty_cycle_n(void)
 
 static void utc_systemio_pwm_set_period_p(void)
 {
-	TC_ASSERT_EQ("iotbus_pwm_set_period", iotbus_pwm_set_period(pwm, 1000), IOTBUS_ERROR_NONE);
+	TC_ASSERT_EQ("iotbus_pwm_set_period", iotbus_pwm_set_period(pwm, CONFIG_SYSIO_ITC_PWM_PERIOD), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_systemio_pwm_set_period_n(void)
 {
-	TC_ASSERT_LT("iotbus_pwm_set_period", iotbus_pwm_set_period(NULL, 1000), 0);
+	TC_ASSERT_LT("iotbus_pwm_set_period", iotbus_pwm_set_period(NULL, CONFIG_SYSIO_ITC_PWM_PERIOD), 0);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_systemio_pwm_get_period_p(void)
 {
-	TC_ASSERT_EQ("iotbus_pwm_set_period", iotbus_pwm_get_period(pwm), 1000);
+	TC_ASSERT_EQ("iotbus_pwm_set_period", iotbus_pwm_get_period(pwm), CONFIG_SYSIO_ITC_PWM_PERIOD);
 	TC_SUCCESS_RESULT();
 }
 
