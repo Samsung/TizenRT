@@ -24,26 +24,74 @@ config SYSIO_UTC_SPI
 	bool "Sysio SPI TC"
 	default n
 
+if SYSIO_UTC_SPI
+config SYSIO_UTC_SPI_BUS
+	int "Sysio SPI test bus"
+	default 0
+
+config SYSIO_UTC_SPI_BITS_PER_WORD
+	int "Sysio SPI test bits per word"
+	default 8
+
+config SYSIO_UTC_SPI_CHIP_SELECT
+	int "Sysio SPI test chip select"
+	default 0
+
+config SYSIO_UTC_SPI_FREQUENCY
+	int "Sysio SPI test frequency"
+	default 12000000
+
+config SYSIO_UTC_SPI_MODE
+	int "Sysio SPI test mode"
+	default 0
+
+if SPI_EXCHANGE
+config SYSIO_UTC_SPI_BUF_LENGTH
+	int "Sysio SPI test buffer length"
+	default 16
+endif
+endif
+
 config SYSIO_UTC_I2C
 	bool "Sysio I2C TC"
 	default n
 
+if SYSIO_UTC_I2C
+config SYSIO_UTC_I2C_BUS
+	int "Sysio I2C test bus"
+	default 0
+endif
+
 config SYSIO_UTC_PWM
 	bool "Sysio PWM TC"
 	default n
+
+if SYSIO_UTC_PWM
+config SYSIO_UTC_PWM_DEVICE
+	int "Sysio PWM test device"
+	default 0
+
+config SYSIO_UTC_PWM_CHANNEL
+	int "Sysio PWM test channel"
+	default 1
+
+config SYSIO_UTC_PWM_PERIOD
+	int "Sysio PWM test period"
+	default 1000
+endif
 
 config SYSIO_UTC_GPIO
 	bool "Sysio GPIO TC"
 	default n
 
 if SYSIO_UTC_GPIO
-config SYSIO_UTC_GPIO1_NUM
+config SYSIO_UTC_GPIO1
 	int "1st GPIO Number to run testcase"
-	default 41
+	default 0
 
-config SYSIO_UTC_GPIO2_NUM
+config SYSIO_UTC_GPIO2
 	int "2nd GPIO Number to run testcase"
-	default 57
+	default 0
 endif
 
 config SYSIO_UTC_ADC

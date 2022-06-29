@@ -31,7 +31,7 @@ iotbus_i2c_context_h i2c;
 
 static void utc_systemio_i2c_init_p(void)
 {
-	iotbus_i2c_context_h m_i2c = iotbus_i2c_init(0);
+	iotbus_i2c_context_h m_i2c = iotbus_i2c_init(CONFIG_SYSIO_UTC_I2C_BUS);
 	TC_ASSERT_NEQ("iotbus_i2c_init", m_i2c, NULL);
 	i2c = m_i2c;
 	TC_SUCCESS_RESULT();

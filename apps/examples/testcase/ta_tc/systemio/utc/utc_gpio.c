@@ -28,12 +28,17 @@
 #include <iotbus/iotbus_error.h>
 #include "utc_internal.h"
 
-#if !defined(CONFIG_SYSIO_UTC_GPIO1_NUM) || !defined(CONFIG_SYSIO_UTC_GPIO2_NUM)
+#if !defined(CONFIG_SYSIO_UTC_GPIO1) || !defined(CONFIG_SYSIO_UTC_GPIO2)
 #error To run system I/O testcase, kindly set GPIOs number on menuconfig.
+#error Namely, CONFIG_SYSIO_UTC_GPIO1 & CONFIG_SYSIO_UTC_GPIO2
 #endif
 
-#define TEST_GPIO_1ST           CONFIG_SYSIO_UTC_GPIO1_NUM
-#define TEST_GPIO_2ND           CONFIG_SYSIO_UTC_GPIO2_NUM
+#if ((CONFIG_SYSIO_UTC_GPIO1 == 0) || (CONFIG_SYSIO_UTC_GPIO2 == 0))
+#error To run system I/O testcase, kindly set appropriate GPIO number for CONFIG_SYSIO_ITC_GPIO1 & CONFIG_SYSIO_ITC_GPIO2 on menuconfig.
+#endif
+
+#define TEST_GPIO_1ST           CONFIG_SYSIO_UTC_GPIO1
+#define TEST_GPIO_2ND           CONFIG_SYSIO_UTC_GPIO2
 #define TEST_GPIO_INVALID       (-1)
 
 static iotbus_gpio_context_h gpio;
