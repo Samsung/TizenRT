@@ -36,7 +36,7 @@
 #include "utc_internal.h"
 
 #if !defined(CONFIG_SYSIO_UTC_UART_FILE_PATH)
-#error To run system I/O testcase, kindly set file path of uart on menuconfig.
+#error To run system I/O testcase, kindly set file path of uart device(CONFIG_SYSIO_UTC_UART_FILE_PATH) on menuconfig.
 #endif
 
 #define UART_FILE_PATH   CONFIG_SYSIO_UTC_UART_FILE_PATH
