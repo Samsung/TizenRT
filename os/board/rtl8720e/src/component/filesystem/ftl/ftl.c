@@ -8,7 +8,6 @@
 #include "platform_stdlib.h"
 #include "platform_opts.h"
 #include "device_lock.h"
-#include "freertos_service.h"
 #include "osdep_service.h"
 
 #include "ftl_int.h"
@@ -49,6 +48,10 @@
 
 #if defined(WIN32) && (WIN32 == 1)
 #define RAVEN_DEBUG 1
+#endif
+
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#define FTL_LONGEST_WAIT_TIME 0xffff
 #endif
 
 /////////////////////////////////////////////////////////////////
@@ -104,7 +107,11 @@ struct Page_T {
 };
 
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+_sema ftl_sem = NULL;
+#elif
 QueueHandle_t ftl_sem = NULL;
+#endif
 uint8_t *ftl_mapping_table = NULL;
 bool do_gc_in_idle = FALSE;
 uint8_t idle_gc_page_thres = 1;
@@ -546,7 +553,12 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 	uint8_t result = 0;
 
 	if (NULL != ftl_sem) {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		rtw_up_sema(&ftl_sem);
+#elif
 		xSemaphoreTakeRecursive(ftl_sem, portMAX_DELAY);
+#endif
+
 	}
 
 	if (g_doingGarbageCollection == 0) {
@@ -565,7 +577,11 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 	}
 
 	if (NULL != ftl_sem) {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		rtw_down_timeout_sema(&ftl_sem, FTL_LONGEST_WAIT_TIME);
+#elif
 		xSemaphoreGiveRecursive(ftl_sem);
+#endif
 	}
 
 	return result;
@@ -982,7 +998,9 @@ uint32_t ftl_save_to_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
 __WEAK uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	u32 ret;
-	if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 0) {
+	if (ftl_mutex_lock == NULL) {
+		return FTL_WRITE_ERROR_NOT_INIT;
+	} else if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 0) {
 		return ERROR_MUTEX_GET_TIMEOUT;
 	}
 
@@ -1046,7 +1064,13 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 //
 //#endif
 	if (NULL != ftl_sem) {
-		if (xSemaphoreTakeRecursive(ftl_sem, portMAX_DELAY) == TRUE) {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		rtw_up_sema(&ftl_sem);
+#elif
+		if(xSemaphoreTakeRecursive(ftl_sem, 0xffffffff) == TRUE)
+#endif
+
+		{
 			sem_flag = TRUE;
 		}
 	}
@@ -1130,7 +1154,12 @@ L_retry:
 	}
 
 	if (sem_flag) {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		rtw_down_timeout_sema(&ftl_sem, FTL_LONGEST_WAIT_TIME);
+#elif
 		xSemaphoreGiveRecursive(ftl_sem);
+#endif
+
 	}
 
 	FTL_PRINTF(FTL_LEVEL_WARN, "[ftl] w 0x%08x: 0x%08x (%d)\r\n", logical_addr, (unsigned int)w_data, (int)ret);
@@ -1141,9 +1170,12 @@ L_retry:
 __WEAK uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	u32 ret;
-	if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 0) {
+	if (ftl_mutex_lock == NULL) {
+		return FTL_READ_ERROR_NOT_INIT;
+	} else if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 0) {
 		return ERROR_MUTEX_GET_TIMEOUT;
 	}
+
 
 
 	ret = ftl_load_from_storage_i(pdata_tmp, offset, size);
@@ -1280,7 +1312,12 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 	g_PAGE_num = pagenum;
 
 	if (ftl_sem == NULL) {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		rtw_init_sema(&ftl_sem, 0);
+#elif
 		ftl_sem = xSemaphoreCreateRecursiveMutex();
+#endif
+
 	}
 
 	g_pPage = (struct Page_T *)(u32PageStartAddr);
