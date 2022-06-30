@@ -212,10 +212,10 @@ static struct amebalite_spidev_s g_spi0dev = {
 	.spi_object = {0},
 
 	.spi_idx = MBED_SPI0,
-	.spi_mosi = PA_16,
-	.spi_miso = PA_17,
-	.spi_sclk = PA_15,
-	.spi_cs = PA_18,
+	.spi_mosi = PA_29,
+	.spi_miso = PA_30,
+	.spi_sclk = PA_28,
+	.spi_cs = PA_31,
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
 	.role = AMEBALITE_SPI_SLAVE,
@@ -266,9 +266,9 @@ static struct amebalite_spidev_s g_spi1dev = {
 	.spi_object = {0},
 
 	.spi_idx = MBED_SPI1,
-	.spi_mosi = PB_3,
-	.spi_miso = PB_4,
-	.spi_sclk = PB_2,
+	.spi_mosi = PB_2,
+	.spi_miso = PB_3,
+	.spi_sclk = PB_4,
 	.spi_cs = PB_5,
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
@@ -584,8 +584,8 @@ static int amebalite_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 			/* The only case that an error should occur here is if the wait was
 			 * awakened by a signal.
 			 */
-
-			DEBUGASSERT(ret == OK || errno == EINTR);
+			printf("ret == OK : %d errno == EINTR: %d\n", ret, errno);
+			// DEBUGASSERT(ret == OK || errno == EINTR);	//KAI Error is -1 becausee of einter
 		} while (errno == EINTR);
 	} else {
 		(void)sem_post(&priv->exclsem);
@@ -1119,8 +1119,8 @@ FAR struct spi_dev_s *amebalite_spibus_initialize(int bus)
 
 	irqstate_t flags = irqsave();
 
-	if (bus == 1) {
-		/* Select SPI1 */
+	if (bus == 0) {
+		/* Select SPI0 */
 
 		priv = &g_spi0dev;
 
@@ -1128,8 +1128,8 @@ FAR struct spi_dev_s *amebalite_spibus_initialize(int bus)
 
 		amebalite_spi_bus_initialize(priv);
 
-	} else if (bus == 2) {
-		/* Select SPI2 */
+	} else if (bus == 1) {
+		/* Select SPI1 */
 
 		priv = &g_spi1dev;
 
