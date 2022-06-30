@@ -207,7 +207,7 @@
  * LOGUART_DEV: KM0 log uart
  */
 
-static serial_t* sdrv[MAX_UART_INDEX + 1] = {NULL, NULL, NULL, NULL, NULL}; //uart 0~3, uart2 is configured as log uart
+static serial_t* sdrv[MAX_UART_INDEX + 1] = {NULL, NULL, NULL, NULL, NULL}; //uart 0~4, uart4 is configured as log uart
 
 struct rtl8720e_up_dev_s {
 	uint8_t parity;				/* 0=none, 1=odd, 2=even */
@@ -268,9 +268,8 @@ static bool rtl8720e_up_txempty(struct uart_dev_s *dev);
  ****************************************************************************/
 
 /* Serial driver UART operations */
-#ifdef CONFIG_UART4_SERIAL_CONSOLE
-static const struct uart_ops_s g_uart_ops = {
-	.setup = rtl8720e_log_up_setup,
+static const struct uart_ops_s log_g_uart_ops = {
+	.setup = rtl8720e_up_setup,
 	.shutdown = rtl8720e_log_up_shutdown,
 	.attach = rtl8720e_log_up_attach,
 	.detach = rtl8720e_log_up_detach,
@@ -286,7 +285,7 @@ static const struct uart_ops_s g_uart_ops = {
 	.txready = rtl8720e_log_up_txready,
 	.txempty = rtl8720e_log_up_txempty,
 };
-#else
+
 static const struct uart_ops_s g_uart_ops = {
 	.setup = rtl8720e_up_setup,
 	.shutdown = rtl8720e_up_shutdown,
@@ -304,7 +303,7 @@ static const struct uart_ops_s g_uart_ops = {
 	.txready = rtl8720e_up_txready,
 	.txempty = rtl8720e_up_txempty,
 };
-#endif
+
 #ifdef CONFIG_RTL8720E_UART0
 static char g_uart0rxbuffer[CONFIG_UART0_RXBUFSIZE];
 static char g_uart0txbuffer[CONFIG_UART0_TXBUFSIZE];
@@ -344,10 +343,10 @@ static struct rtl8720e_up_dev_s g_uart0priv = {
 #endif
 	.baud = CONFIG_UART0_BAUD,
 	.irq = RTL8720E_UART0_IRQ,
-	.tx = PA_4,
-	.rx = PA_3,
-	.rts = PA_16,
-	.cts = PA_15,
+	.tx = PA_16,
+	.rx = PA_15,
+	.rts = PA_17,
+	.cts = PA_18,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
@@ -401,7 +400,7 @@ static uart_dev_t g_uart1port = {
 	.priv = &g_uart1priv,
 };
 #endif
-
+#if 0
 #ifdef CONFIG_RTL8720E_UART2
 static struct rtl8720e_up_dev_s g_uart2priv = {
 
@@ -469,7 +468,7 @@ static uart_dev_t g_uart3port = {
 	.priv = &g_uart3priv,
 };
 #endif
-
+#endif
 #ifdef CONFIG_RTL8720E_UART4
 static struct rtl8720e_up_dev_s g_uart4priv = {
 
@@ -499,7 +498,7 @@ static uart_dev_t g_uart4port = {
 		.size = CONFIG_UART4_TXBUFSIZE,
 		.buffer = g_uart4txbuffer,
 	},
-	.ops = &g_uart_ops,
+	.ops = &log_g_uart_ops,
 	.priv = &g_uart4priv,
 };
 #endif
@@ -511,6 +510,8 @@ static u32 uart_index_get(PinName tx)
 {
 	if ((tx == PA_1)) {
 		return 1;
+	} else if ((tx == PA_20)) {		//loguart pin
+		return 4;
 	} else if ((tx >= PA_8) && (tx <= PB_10)) {
 		return 0;
 	} else {
@@ -523,29 +524,6 @@ static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
 	{3, LOGUART_BIT_TP4F_NOT_FULL, LOGUART_BIT_TP4F_EMPTY, 3127500, NULL},	/* DSP IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
 };
 
-/****************************************************************************
- * Name: rtl8720e_log_up_setup
- *
- * Description:
- *   Configure the UART baud, bits, parity, fifos, etc. This
- *   method is called the first time that the serial port is
- *   opened.
- *
- ****************************************************************************/
-static int rtl8720e_log_up_setup(struct uart_dev_s *dev)
-{
-	/*Log uart already initialized*/
-	struct rtl8720e_up_dev_s *priv = (struct rtl8720e_up_dev_s *)dev->priv;
-	DEBUGASSERT(priv);
-	sdrv[4] = (serial_t *)kmm_malloc(sizeof(serial_t));
-
-	irq_disable(RTL8720E_UART_LOG_IRQ-16);
-	irq_unregister(RTL8720E_UART_LOG_IRQ-16);
-	
-	InterruptRegister((IRQ_FUN)rtl8720e_log_uart_irq, RTL8720E_UART_LOG_IRQ-16, NULL, 4);
-	InterruptEn(RTL8720E_UART_LOG_IRQ-16, 4);
-	return OK;
-}
 /****************************************************************************
  * Name: up_shutdown
  *
@@ -671,19 +649,12 @@ static int rtl8720e_log_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned l
 		if (sdrv[uart_index_get(priv->tx)]) {
 			rtl8720e_log_up_shutdown(dev);
 		}
-		rtl8720e_log_up_setup(dev);
+		rtl8720e_up_setup(dev);
 		rtl8720e_log_up_attach(dev);
 		rtl8720e_log_up_txint(dev, priv->txint_enable);
 		rtl8720e_log_up_rxint(dev, priv->rxint_enable);
 		break;
-#if 0 //Feng, no such API in smart
-	case TIOCLOOPBACK:
-		if (!arg) {
-			return -EINVAL;
-		}
-		serial_control_loopback(sdrv[uart_index_get(priv->tx)], *(bool *)arg);
-		break;
-#endif
+
 	default:
 		ret = -ENOTTY;
 		break;
@@ -840,11 +811,19 @@ static int rtl8720e_up_setup(struct uart_dev_s *dev)
 	DEBUGASSERT(!sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = (serial_t *)kmm_malloc(sizeof(serial_t));
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
-	sdrv[uart_index_get(priv->tx)]->uart_idx = 1;//FENG same way as current uart mbed example
+
+	if (uart_index_get(priv->tx) == 4)	{//Loguart cannot be stopped
+	irq_disable(RTL8720E_UART_LOG_IRQ-16);
+	irq_unregister(RTL8720E_UART_LOG_IRQ-16);
+	InterruptRegister((IRQ_FUN)rtl8720e_log_uart_irq, RTL8720E_UART_LOG_IRQ-16, NULL, 4);
+	InterruptEn(RTL8720E_UART_LOG_IRQ-16, 4);
+	} else {
+	sdrv[uart_index_get(priv->tx)]->uart_idx = uart_index_get(priv->tx);
 	serial_init((serial_t *) sdrv[uart_index_get(priv->tx)], priv->tx, priv->rx);
 	serial_baud(sdrv[uart_index_get(priv->tx)], priv->baud);
 	serial_format(sdrv[uart_index_get(priv->tx)], priv->bits, priv->parity, priv->stopbit);
-	//serial_set_flow_control(sdrv[uart_index_get(priv->tx)], priv->FlowControl, priv->rts, priv->cts);
+	serial_set_flow_control(sdrv[uart_index_get(priv->tx)], priv->FlowControl, priv->rts, priv->cts);
+	}
 	return OK;
 }
 
@@ -991,14 +970,13 @@ static int rtl8720e_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long 
 		rtl8720e_up_txint(dev, priv->txint_enable);
 		rtl8720e_up_rxint(dev, priv->rxint_enable);
 		break;
-#if 0 //Feng, no such API in smart
+
 	case TIOCLOOPBACK:
 		if (!arg) {
 			return -EINVAL;
 		}
 		serial_control_loopback(sdrv[uart_index_get(priv->tx)], *(bool *)arg);
 		break;
-#endif
 	default:
 		ret = -ENOTTY;
 		break;
@@ -1143,19 +1121,10 @@ static bool rtl8720e_up_txempty(struct uart_dev_s *dev)
 
 void up_serialinit(void)
 {
-	//UART_WaitBusy(CONSOLE, 100);
-	//UART_DeInit(CONSOLE);
-	//UART_ClearRxFifo(CONSOLE);
-	//UART_ClearTxFifo(CONSOLE);
-
 #ifdef CONSOLE_DEV
 	CONSOLE_DEV.isconsole = true;
 
-#ifdef CONFIG_UART4_SERIAL_CONSOLE
-	rtl8720e_log_up_setup(&CONSOLE_DEV);
-#else
 	rtl8720e_up_setup(&CONSOLE_DEV);
-#endif
 
 	/* Register the console */
 	uart_register("/dev/console", &CONSOLE_DEV);
@@ -1321,4 +1290,3 @@ int up_getc(void)
 	return ch;
 }
 #endif							/* USE_SERIALDRIVER */
-

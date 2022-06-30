@@ -695,6 +695,24 @@ void serial_irq_set(serial_t *obj, SerialIrq irq, uint32_t enable)
 }
 
 /**
+  * @brief  Enable/Disable UART loopback mode.
+  * @param  obj: uart object define in application software.
+  * @param  enable: enable/disable the loopback mode
+  *             @arg 0 disable
+  *             @arg 1 enable
+  * @retval none
+  */
+void serial_control_loopback(serial_t *obj, bool enable)
+{
+	UART_TypeDef* UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
+	if (enable) {
+		UARTx->MCR |= BIT(4);
+	} else {
+		UARTx->MCR &= ~BIT(4);
+	}
+}
+
+/**
   * @brief  Get one byte data through UART.
   * @param  obj: UART object defined in application software.
   * @return Received character.

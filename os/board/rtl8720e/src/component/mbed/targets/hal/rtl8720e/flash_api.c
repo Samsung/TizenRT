@@ -47,9 +47,9 @@ void flash_write_protect(flash_t *obj, u32 protect)
 	/* To avoid gcc warnings */
 	(void) obj;
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	FLASH_SetStatusBits(0x1c, protect);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 }
 
 /**
@@ -72,7 +72,7 @@ int flash_set_status(flash_t *obj, u32 data)
 	u8 StatusLen = 1;
 
 	status[0] = (u8)data;
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 
 	/* check if status2 */
 	if (flash_init_para.FLASH_Status2_exist) {
@@ -86,7 +86,7 @@ int flash_set_status(flash_t *obj, u32 data)
 		FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status, 1, &status[0]);
 		FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status2, 1, &status[1]);
 	}
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 
 	return 1;
 }
@@ -115,9 +115,9 @@ int flash_get_status(flash_t *obj)
 
 	int data;
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_status, 1, (u8 *)&data);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 
 	return data;
 }
@@ -134,10 +134,10 @@ void flash_erase_sector(flash_t *obj, u32 address)
 	/* To avoid gcc warnings */
 	(void) obj;
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	FLASH_Erase(EraseSector, address);
 	DCache_Invalidate(SPI_FLASH_BASE + address, 0x1000);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 }
 
 /**
@@ -152,11 +152,11 @@ void flash_erase_block(flash_t *obj, u32 address)
 	/* To avoid gcc warnings */
 	(void) obj;
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	FLASH_Erase(EraseBlock, address);
 
 	DCache_Invalidate(SPI_FLASH_BASE + address, 0x10000);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 }
 
 /**
@@ -169,10 +169,10 @@ void flash_erase_chip(flash_t *obj)
 	/* To avoid gcc warnings */
 	(void) obj;
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	FLASH_Erase(EraseChip, 0);
 	Cache_Flush();
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 }
 
 /**
@@ -234,7 +234,7 @@ int  flash_write_word(flash_t *obj, u32 address, u32 data)
 	u32 temp;
 	u32 i = 4 - offset_to_align;
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	if (offset_to_align) {
 		address -= offset_to_align;
 		temp = HAL_READ32(SPI_FLASH_BASE, address);
@@ -250,7 +250,7 @@ int  flash_write_word(flash_t *obj, u32 address, u32 data)
 	}
 
 	DCache_Invalidate(SPI_FLASH_BASE + address, 4);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 
 	return 1;
 }
@@ -361,7 +361,7 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 *data)
 	u32 read_word;
 	u32 i;
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	while (page_cnt) {
 		offset_to_align = addr_begin & 0x3;
 
@@ -421,7 +421,7 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 *data)
 	}
 
 	DCache_Invalidate(SPI_FLASH_BASE + address, len);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 
 	return 1;
 }
@@ -479,9 +479,9 @@ int flash_set_extend_addr(flash_t *obj, u32 data)
 	/*Write Extended Address Register to select operating segment*/
 	u8 segnum = (u8)(data & 0x07);
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	FLASH_SetStatus(0xC5, 1, &segnum);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 	return 1;
 }
 
@@ -499,9 +499,9 @@ int flash_get_extend_addr(flash_t *obj)
 
 	u8 temp = 0;
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	FLASH_RxCmd(0xC8, 1, &temp);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 	return temp;
 }
 
@@ -520,9 +520,9 @@ int flash_read_id(flash_t *obj, uint8_t *buf, uint8_t len)
 	assert_param(buf != NULL);
 	assert_param(len >= 3);
 
-	FLASH_Write_Lock();
+	//FLASH_Write_Lock();
 	FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_id, len, buf);
-	FLASH_Write_Unlock();
+	//FLASH_Write_Unlock();
 
 	return len;
 }
