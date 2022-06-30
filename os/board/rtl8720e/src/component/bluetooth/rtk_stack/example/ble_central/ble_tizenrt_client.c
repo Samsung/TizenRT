@@ -86,7 +86,7 @@ trble_result_e rtw_ble_client_scan_whitelist_add(trble_addr *addr)
 
     if (ble_tizenrt_modify_whitelist_sem == NULL)
     {
-        if(false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
+        if(false == os_sem_create(&ble_tizenrt_modify_whitelist_sem, 0, 1))
         {
             printf("\create sem fail! \n");
             return TRBLE_FAIL;
@@ -143,7 +143,7 @@ trble_result_e rtw_ble_client_scan_whitelist_delete(trble_addr *addr)
 
     if (ble_tizenrt_modify_whitelist_sem == NULL)
     {
-        if(false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
+        if(false == os_sem_create(&ble_tizenrt_modify_whitelist_sem, 0, 1))
         {
             printf("create sem fail! \n");
             return TRBLE_FAIL;
@@ -200,7 +200,7 @@ trble_result_e rtw_ble_client_scan_whitelist_clear_all(void)
 
     if (ble_tizenrt_modify_whitelist_sem == NULL)
     {
-        if (false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
+        if (false == os_sem_create(&ble_tizenrt_modify_whitelist_sem, 0, 1))
         {
             printf("create sem fail! \n");
             return TRBLE_FAIL;
@@ -575,7 +575,7 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
 { 
     if(ble_tizenrt_read_sem == NULL)
     {
-        if(!os_mutex_create(&ble_tizenrt_read_sem))
+        if(!os_sem_create(&ble_tizenrt_read_sem, 0, 1))
         {
             dbg("create mutex fail! \n");
             return TRBLE_FAIL;
@@ -652,7 +652,7 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
 
     if(ble_tizenrt_write_sem == NULL)
     {
-        if(false == os_mutex_create(&ble_tizenrt_write_sem))
+        if(false == os_sem_create(&ble_tizenrt_write_sem, 0, 1))
         {
             dbg("creat write mutex fail! \n");
             return TRBLE_FAIL;
@@ -716,7 +716,7 @@ trble_result_e rtw_ble_client_operation_write_no_response(trble_operation_handle
 
     if(ble_tizenrt_write_no_rsp_sem == NULL)
     {
-        if(false == os_mutex_create(&ble_tizenrt_write_no_rsp_sem))
+        if(false == os_sem_create(&ble_tizenrt_write_no_rsp_sem, 0, 1))
         {
             debug_print("create mutex fail! \n");
             return TRBLE_FAIL;
