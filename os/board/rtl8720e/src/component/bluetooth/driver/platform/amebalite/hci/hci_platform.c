@@ -480,11 +480,13 @@ bool rtk_bt_pre_enable(void)
 		return false;
 	}
 
+	wifi_set_powersave_mode(IPS_MODE_NONE, LPS_MODE_NONE);
 	return true;
 }
 
 bool rtk_bt_post_disable(void)
 {
+	wifi_set_powersave_mode(IPS_MODE_RESUME, LPS_MODE_RESUME);
 	return true;
 }
 
