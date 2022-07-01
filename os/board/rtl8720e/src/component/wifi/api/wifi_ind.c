@@ -2,7 +2,7 @@
 #include "wifi_ind.h"
 #include "wifi_conf.h"
 #include "platform_stdlib.h"
-#if defined(CONFIG_INIC_IPC_DEV) && CONFIG_INIC_IPC_DEV
+#if defined(CONFIG_AS_INIC_NP)
 #include "inic_ipc_api.h"
 #endif
 
@@ -43,11 +43,9 @@ void wifi_indication(rtw_event_indicate_t event, char *buf, int buf_len, int fla
 	//		not available for the following operations.
 	//		ex: using semaphore to notice another thread.
 
-#ifdef CONFIG_INIC_EN
-#if defined(CONFIG_INIC_IPC_DEV) && CONFIG_INIC_IPC_DEV
+#if defined(CONFIG_AS_INIC_NP)
 	inic_ipc_wifi_event_indicate(event, buf, buf_len, flags);
 #endif
-#endif//CONFIG_INIC_EN
 
 	if (event == WIFI_EVENT_JOIN_STATUS) {
 		if (p_wifi_joinstatus_internal_callback) {

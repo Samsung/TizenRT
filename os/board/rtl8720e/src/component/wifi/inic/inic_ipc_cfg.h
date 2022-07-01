@@ -26,12 +26,12 @@
 #define IPC_DIR_MSG_RX IPC_NP_TO_AP
 #define IPC_DIR_MSG_TX IPC_AP_TO_NP
 #define IPC_INT_CHAN_WIFI_TRX_TRAN IPC_A2N_WIFI_TRX_TRAN
-#if defined(CONFIG_AS_NP)
+#if defined(CONFIG_AS_INIC_NP)
 /* configuration for device */
 #define IPC_H2D_WIFI_TRX_TRAN IPC_N2A_WIFI_TRX_TRAN
 #define IPC_H2D_WIFI_API_TRAN IPC_N2A_WIFI_API_TRAN
 #define IPC_D2H_WIFI_API_TRAN IPC_A2N_WIFI_API_TRAN
-#elif defined(CONFIG_AS_AP)
+#elif defined(CONFIG_AS_INIC_AP)
 /* configuration for host */
 #define IPC_D2H_WIFI_TRX_TRAN IPC_N2A_WIFI_TRX_TRAN
 #define IPC_D2H_WIFI_API_TRAN IPC_N2A_WIFI_API_TRAN
@@ -41,12 +41,12 @@
 #define IPC_DIR_MSG_RX IPC_AP_TO_NP
 #define IPC_DIR_MSG_TX IPC_NP_TO_AP
 #define IPC_INT_CHAN_WIFI_TRX_TRAN IPC_N2A_WIFI_TRX_TRAN
-#if defined(CONFIG_AS_AP)
+#if defined(CONFIG_AS_INIC_AP)
 /* configuration for host */
 #define IPC_D2H_WIFI_TRX_TRAN IPC_A2N_WIFI_TRX_TRAN
 #define IPC_D2H_WIFI_API_TRAN IPC_A2N_WIFI_API_TRAN
 #define IPC_H2D_WIFI_API_TRAN IPC_N2A_WIFI_API_TRAN
-#elif defined(CONFIG_AS_NP)
+#elif defined(CONFIG_AS_INIC_NP)
 /* configuration for device */
 #define IPC_H2D_WIFI_TRX_TRAN IPC_A2N_WIFI_TRX_TRAN
 #define IPC_H2D_WIFI_API_TRAN IPC_A2N_WIFI_API_TRAN
@@ -56,7 +56,7 @@
 
 #elif defined(CONFIG_PLATFORM_AMEBALITE)
 #if defined(RSICV_CORE_KR4)
-#if defined(CONFIG_AS_AP)
+#if defined(CONFIG_AS_INIC_AP)
 /* configuration for AP */
 #define IPC_DIR_MSG_RX IPC_KM4_TO_KR4
 #define IPC_DIR_MSG_TX IPC_KR4_TO_KM4
@@ -64,7 +64,7 @@
 #define IPC_D2H_WIFI_TRX_TRAN	IPC_M2R_WIFI_TRX_TRAN
 #define IPC_D2H_WIFI_API_TRAN	IPC_M2R_WIFI_API_TRAN
 #define IPC_H2D_WIFI_API_TRAN	IPC_R2M_WIFI_API_TRAN
-#elif defined(CONFIG_AS_NP)
+#elif defined(CONFIG_AS_INIC_NP)
 /* configuration for NP */
 #define IPC_DIR_MSG_RX IPC_KM4_TO_KR4
 #define IPC_DIR_MSG_TX IPC_KR4_TO_KM4
@@ -74,7 +74,7 @@
 #define IPC_D2H_WIFI_API_TRAN	IPC_R2M_WIFI_API_TRAN
 #endif
 #elif defined(ARM_CORE_CM4)
-#if defined(CONFIG_AS_AP)
+#if defined(CONFIG_AS_INIC_AP)
 /* configuration for AP */
 #define IPC_DIR_MSG_RX IPC_KR4_TO_KM4
 #define IPC_DIR_MSG_TX IPC_KM4_TO_KR4
@@ -82,7 +82,7 @@
 #define IPC_D2H_WIFI_TRX_TRAN	IPC_R2M_WIFI_TRX_TRAN
 #define IPC_D2H_WIFI_API_TRAN	IPC_R2M_WIFI_API_TRAN
 #define IPC_H2D_WIFI_API_TRAN	IPC_M2R_WIFI_API_TRAN
-#elif defined(CONFIG_AS_NP)
+#elif defined(CONFIG_AS_INIC_NP)
 /* configuration for NP */
 #define IPC_DIR_MSG_RX IPC_KR4_TO_KM4
 #define IPC_DIR_MSG_TX IPC_KM4_TO_KR4

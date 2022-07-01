@@ -334,7 +334,9 @@ void board_initialize(void)
 #ifdef CONFIG_FTL_ENABLED
 	app_ftl_init();
 #endif
-//	wlan_initialize();
+#ifdef CONFIG_AMEBALITE_WIFI
+	wlan_initialize();
+#endif
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"

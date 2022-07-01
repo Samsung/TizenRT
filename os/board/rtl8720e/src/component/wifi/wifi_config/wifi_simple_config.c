@@ -49,13 +49,6 @@ extern u32 _ntohl(u32 n);
 #define WIFI_MESH_EN	1
 #endif
 
-#ifdef CONFIG_INIC_EN
-#ifndef CONFIG_INIC_IPC
-#undef SC_SOFTAP_EN
-#define SC_SOFTAP_EN      0 // disable softAP mode for iNIC applications
-#endif
-#endif
-
 #if SC_SOFTAP_EN
 #define SOFTAP_SSID_LEN		33
 #endif

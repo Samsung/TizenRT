@@ -11,7 +11,7 @@
 #define CONFIG_WLAN 1
 #endif
 
-#ifdef CONFIG_INIC_IPC
+#ifdef CONFIG_AS_INIC_AP
 #include "inic_ipc_api.h"
 #endif
 #if CONFIG_WLAN

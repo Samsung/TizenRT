@@ -15,9 +15,6 @@ struct skb_data {
 	struct list_head list;
 	unsigned char buf[MAX_SKB_BUF_SIZE];
 	atomic_t ref;
-#if defined(CONFIG_INIC_IPC) && CONFIG_INIC_IPC
-	u8 dummy[54];
-#endif
 };
 
 unsigned int nr_xmitframe = MAX_SKB_BUF_NUM;

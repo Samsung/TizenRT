@@ -23,7 +23,7 @@
 #include <wifi_wps_config.h>
 #endif
 
-#if defined(CONFIG_INIC_IPC) && CONFIG_INIC_IPC
+#if defined(CONFIG_AS_INIC_NP)
 #include "inic_ipc_api.h"
 #endif
 
@@ -53,7 +53,7 @@ extern struct netif xnetif[NET_IF_NUM];
  ******************************************************/
 static internal_join_block_param_t *join_block_param = NULL;
 
-#if defined(CONFIG_MBED_ENABLED) || defined (CONFIG_INIC_IPC)
+#if defined(CONFIG_MBED_ENABLED) || defined (CONFIG_AS_INIC_NP)
 rtw_mode_t wifi_mode = RTW_MODE_STA;
 #else
 extern rtw_mode_t wifi_mode;
@@ -261,6 +261,7 @@ int wifi_get_channel(int *channel)
 
 void wifi_set_user_config(void)
 {
+#ifndef CONFIG_AS_INIC_NP
 	// adaptivity
 	wifi_user_config.rtw_adaptivity_en = DISABLE;
 	/*
@@ -320,6 +321,7 @@ void wifi_set_user_config(void)
 #endif
 
 	wifi_user_config.channel_plan = 0;
+#endif
 }
 
 int wifi_get_disconn_reason_code(unsigned short *reason_code)
@@ -495,7 +497,7 @@ int wifi_set_mode(rtw_mode_t mode)
 	}
 
 #ifdef CONFIG_WLAN_SWITCH_MODE
-#ifndef CONFIG_INIC_IPC
+#ifndef CONFIG_AS_INIC_NP
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 	wifi_get_autoreconnect(&autoreconnect_mode);
 	if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
@@ -611,7 +613,7 @@ int wifi_set_mode(rtw_mode_t mode)
 		wifi_mode = RTW_MODE_STA;
 	}
 #endif
-#ifndef CONFIG_INIC_IPC
+#ifndef CONFIG_AS_INIC_NP
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 	/* enable auto reconnect */
 	if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
@@ -626,7 +628,7 @@ int wifi_set_mode(rtw_mode_t mode)
 
 Exit:
 #ifdef CONFIG_WLAN_SWITCH_MODE
-#ifndef CONFIG_INIC_IPC
+#ifndef CONFIG_AS_INIC_NP
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 	/* enable auto reconnect */
 	if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {

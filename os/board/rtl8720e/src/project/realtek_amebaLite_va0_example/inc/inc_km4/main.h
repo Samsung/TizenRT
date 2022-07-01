@@ -3,10 +3,7 @@
 #include "platform_stdlib.h"
 #include <autoconf.h>
 
-#ifndef CONFIG_WLAN
-#define CONFIG_WLAN	1
-#endif
-
+#ifdef CONFIG_WLAN
 #define ATVER_1 1 // For First AT command
 #define ATVER_2 2 // For UART Module AT command
 
@@ -107,6 +104,7 @@ extern int mbedtls_platform_set_calloc_free(
 	void *(*calloc_func)(unsigned int, unsigned int),
 	void (*free_func)(void *)
 );
+#endif
 
 #ifndef RTL8720E_WL_TODO
 extern void pre_example_entry(void);

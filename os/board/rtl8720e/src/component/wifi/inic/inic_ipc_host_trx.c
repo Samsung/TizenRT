@@ -172,7 +172,7 @@ static void inic_ipc_host_rx_tasklet(void)
 			inic_ipc_ipc_send_msg(&ipc_msg);
 		}
 	} while (1);
-	rtw_delete_task(&inic_ipc_host_rx_task);
+	//rtw_delete_task(&inic_ipc_host_rx_task);
 }
 
 /**
@@ -260,17 +260,21 @@ void inic_ipc_host_init_priv(void)
 	g_inic_host_priv.rx_pending_flag = 0;
 
 	/* Initialize the RX task */
-
-// if (pdTRUE != xTaskCreate((TaskFunction_t)inic_ipc_host_rx_tasklet, \
-// 						  (const char *const)"inic_host_rx_tasklet", 1024, NULL, \
-// 						  4, NULL)) {
-// 	DBG_8195A("Create TaskCommon_8721D Err!!\n");
-// }
 	if (rtw_create_task(&inic_ipc_host_rx_task, (const char *const)"inic_host_rx_tasklet", 1024, 4, (void *)inic_ipc_host_rx_tasklet, NULL) != _SUCCESS){
 			DBG_8195A("Create inic_ipc_host_rx_task Err!!\n");
 		}
 }
 
+/* ---------------------------- Public Functions ---------------------------- */
+/**
+ * @brief  to de-initialize inic_ipc_host_rx_task.
+ * @param  none
+ * @return none.
+ */
+void inic_ipc_host_deinit_priv(void)
+{
+	rtw_delete_task(&inic_ipc_host_rx_task);
+}
 /**
  * @brief  to put the Rx data from rx buffer into Rx queue.
  * @param  idx_wlan[in]: which port of wifi to rx.

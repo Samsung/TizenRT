@@ -9,10 +9,10 @@
 
 #include "platform_autoconf.h"
 
-#if defined(CONFIG_AS_AP)
-#include "platform_opts_ap.h"
-#elif defined(CONFIG_AS_NP)
+#if defined(CONFIG_AS_INIC_NP)
 #include "platform_opts_np.h"
+#else
+#include "platform_opts_ap.h"
 #endif
 
 #endif //__PLATFORM_OPTS_H__

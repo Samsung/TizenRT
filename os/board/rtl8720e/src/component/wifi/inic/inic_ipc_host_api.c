@@ -15,6 +15,7 @@
 #include "wifi_conf.h"
 #include "lwip_netconf.h"
 #include "inic_ipc_cfg.h"
+//#include "ameba_freertos_pmu.h"
 
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_INIC_IPC_HOST_API_PRIO 3
@@ -46,6 +47,7 @@ extern void (*ipc_promisc_callback)(unsigned char *, unsigned int, void *);
 extern rtw_result_t (*scan_user_callback_ptr)(unsigned int, void *);
 extern rtw_result_t (*scan_each_report_user_callback_ptr)(rtw_scan_result_t *, void *);
 extern ap_channel_switch_callback_t p_ap_channel_switch_callback;
+extern void pmu_register_sleep_callback(u32 nDeviceId, PSM_HOOK_FUN sleep_hook_fun, void *sleep_param_ptr, PSM_HOOK_FUN wakeup_hook_fun, void *wakeup_param_ptr);
 /* ---------------------------- Private Functions --------------------------- */
 static void _inic_ipc_api_host_scan_user_callback_handler(inic_ipc_dev_request_message *p_ipc_msg)
 {
@@ -167,6 +169,25 @@ static void _inic_ipc_api_host_set_netif_info_handler(inic_ipc_dev_request_messa
 	LwIP_wlan_set_netif_info(idx, NULL, dev_addr);
 }
 
+u32 inic_ipc_ip_addr_update(u32 expected_idle_time, void *param)
+{
+	/* To avoid gcc warnings */
+	(void) expected_idle_time;
+	(void) param;
+
+	u32 param_buf[1];
+	u32 ret = 0;
+
+	param_buf[0] = (u32)LwIP_GetIP(0);
+	DCache_Clean(param_buf[0], 4);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_IP_UPDATE, param_buf, 1);
+	if (ret == 0) {
+		return _SUCCESS;
+	} else {
+		return _FAIL;
+	}
+}
+
 /* ---------------------------- Public Functions ---------------------------- */
 /**
  * @brief  process the ipc message.
@@ -235,7 +256,7 @@ void inic_ipc_api_host_task(void)
 		p_ipc_msg->EVENT_ID = 0;
 		DCache_Clean((u32)p_ipc_msg, sizeof(inic_ipc_dev_request_message));
 	} while (1);
-	rtw_delete_task(&inic_ipc_api_host_handler);
+	//rtw_delete_task(&inic_ipc_api_host_handler);
 }
 
 /**
@@ -312,10 +333,23 @@ void inic_ipc_api_init_host(VOID)
 	rtw_init_sema(&g_host_inic_api_message_send_sema, 0);
 	rtw_up_sema(&g_host_inic_api_message_send_sema);
 
+	/*for updating ip address before sleep*/
+	pmu_register_sleep_callback(PMU_WLAN_DEVICE, (PSM_HOOK_FUN)inic_ipc_ip_addr_update, NULL, NULL, NULL);
+
 	/* Initialize the event task */
 	if (rtw_create_task(&inic_ipc_api_host_handler, (const char *const)"inic_ipc_api_host_task", HOST_STACK_SIZE, (0 + CONFIG_INIC_IPC_HOST_API_PRIO), (void*)inic_ipc_api_host_task, NULL) != 1) {
 			DBG_8195A("Create inic_ipc_api_host_task Err!!\n");
 		}
+}
+
+/**
+ * @brief  to deinitialize the ipc host for WIFI api.
+ * @param  none.
+ * @return none.
+ */
+void inic_ipc_api_deinit_host(VOID)
+{
+	rtw_delete_task(&inic_ipc_api_host_handler);
 }
 
 unsigned int inic_ipc_host_get_wifi_tsf_low(unsigned char port_id)
