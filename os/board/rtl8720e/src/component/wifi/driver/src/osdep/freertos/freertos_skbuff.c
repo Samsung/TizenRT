@@ -10,13 +10,13 @@ static int skb_fail_count;
 struct skb_buf {
 	struct list_head list;
 	struct sk_buff skb;
-#if defined(CONFIG_INIC_IPC) && CONFIG_INIC_IPC
+#if defined(CONFIG_AS_INIC_AP)
 	u8 rsvd[16]; /* keep total size 64B alignment */
 #endif
 };
 
 _WEAK int max_local_skb_num = MAX_LOCAL_SKB_NUM;
-#if defined(CONFIG_INIC_IPC) && CONFIG_INIC_IPC
+#if defined(CONFIG_AS_INIC_AP)
 _WEAK struct skb_buf skb_pool[MAX_LOCAL_SKB_NUM] __attribute__((aligned(64)));
 #else
 _WEAK struct skb_buf skb_pool[MAX_LOCAL_SKB_NUM];
@@ -36,7 +36,7 @@ struct skb_data {
 
 _WEAK int max_skb_buf_num = MAX_SKB_BUF_NUM;
 SRAM_BD_DATA_SECTION
-#if defined(CONFIG_INIC_IPC) && CONFIG_INIC_IPC
+#if defined(CONFIG_AS_INIC_AP)
 _WEAK struct skb_data skb_data_pool[MAX_SKB_BUF_NUM] __attribute__((aligned(64)));
 #else
 _WEAK struct skb_data skb_data_pool[MAX_SKB_BUF_NUM];
@@ -172,9 +172,9 @@ struct sk_buff *alloc_skb(int size)
 	if (size + GSPI_STATUS_LEN > MAX_SKB_BUF_SIZE) {
 		data = rtw_zmalloc(size + GSPI_STATUS_LEN);
 	} else {
-		unsigned int irq_flags = save_and_cli();
+		unsigned int irq_flags2 = save_and_cli();
 		data = (unsigned char *) get_buf_from_poll(&skbdata_list, &skbdata_used_num);
-		restore_flags(irq_flags);
+		restore_flags(irq_flags2);
 	}
 
 	if (data == NULL) {
@@ -184,9 +184,9 @@ struct sk_buff *alloc_skb(int size)
 #else
 		DBG_ERR("Wait for skbdata\n");
 #endif
-		unsigned int irq_flags =save_and_cli();
+		unsigned int irq_flags3 = save_and_cli();
 		release_buf_to_poll((unsigned char *)skb, &wrapper_skbbuf_list, &skbbuf_used_num);
-		restore_flags(irq_flags);
+		restore_flags(irq_flags3);
 		return NULL;
 	}
 
@@ -693,5 +693,3 @@ void list_add_tail(struct list_head *new, struct list_head *head)
 	__list_add(new, head->prev, head);
 }
 #endif
-
-

@@ -40,7 +40,10 @@
 * 2.4G use bit 0 ~ 3, 5G use bit 4 ~ 7
 * 0x21 means enable 2.4G 40MHz & 5G 80MHz */
 #define CONFIG_BW_MODE 0x00
-#define SUPPORT_5G_CHANNEL
+
+/*Amebalite not support 5G*/
+//#define SUPPORT_5G_CHANNEL
+
 #define CONFIG_INIT_CHAN 1
 /* PHY layer band config end */
 
@@ -52,7 +55,10 @@
 /* enable 1X code in lib_wlan as default (increase 380 bytes) */
 #define CONFIG_EAP
 
-//#define CONFIG_BT_COEXIST
+#ifdef CONFIG_BT_EN
+#define CONFIG_BT_COEXIST
+#endif
+
 //#define CONFIG_WIFI_MESH 0
 
 //#define RX_SHORTCUT
@@ -61,9 +67,15 @@
 /* For 11 ax function */
 #define CONFIG_80211AX_HE
 #ifdef CONFIG_80211AX_HE
-//#define MBSSID_SUPPORT
+//#define CONFIG_MBSSID_AX
 #endif
 //#define CONFIG_DEBUG_RTL871X
+
+#if WIFI_LOGO_CERTIFICATION
+#ifdef CONFIG_80211AX_HE
+#define CONFIG_MBSSID_AX
+#endif
+#endif
 
 #define TXBD_PRE_MALLOC
 #define RTL8720E_SPECIFIC
@@ -80,21 +92,16 @@
 #define DRV_BB_DFS_DISABLE
 #define DRV_BB_RUA_DISABLE
 #define DRV_BB_LA_MODE_DISABLE
-#define PHL_MAX_STA_NUM AP_STA_NUM
+#define DRV_BB_DIG_MCC_DISABLE
+#define PHL_MAX_STA_NUM NUM_STA
 #define PLATFOM_IS_LITTLE_ENDIAN	1/*for halbb use*/
+#define CONFIG_PHYDM_CMD  /*can save 172KB code size*/
 
-#ifdef CONFIG_WIFI_VERIFY
-#define DISABLE_BB_RF 1
-#else
-#define DISABLE_BB_RF 0
-#endif
-
-#ifdef CONFIG_MAC_LBK
-#define INT_HANDLE_IN_ISR 1
-#define CONFIG_LWIP_LAYER 0
-#define CONFIG_WLAN_HAL_TEST
-#define CONFIG_WLAN_HAL_RX_TASK
-#define CONFIG_MAC_LOOPBACK_DRIVER_AMEBA 1
+/*Wifi verification*/
+#if defined(CONFIG_WIFI_VERIFY_TRUEPHY) || defined(CONFIG_WIFI_VERIFY_PSPHY)
+#define RTL8720E_WIFI_TEST	1//test code, should delete when use ASIC
+#define DISABLE_FW
+#define DISABLE_BB_RF
 #endif
 
 /* enable csi function */
@@ -106,10 +113,11 @@
 #endif
 
 #define RTL8720E_WL_TODO
+#define DISABLE_BB_WATCHDOG
 
 #define CONFIG_REG_ENABLE_KFREE 0  // 0: Depend on efuse(flash), 1: enable, 2: disable
 
 #define PHYSTS_WORK_AROUND
-
+#define RTL8720E_WORK_AROUND
 #endif /*#ifndef AUTOCONF_8720E_H */
 

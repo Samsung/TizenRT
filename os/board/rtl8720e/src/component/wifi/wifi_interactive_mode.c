@@ -186,8 +186,8 @@ static void cmd_wifi_sta_and_ap(int argc, char **argv)
 {
 	int timeout = 20; //, mode;
 	int channel;
-	rtw_softap_info_t softAP_config;
-	rtw_wifi_setting_t wlan_setting;
+	rtw_softap_info_t softAP_config = {0};
+	rtw_wifi_setting_t wlan_setting = {0};
 
 	if ((argc != 3) && (argc != 4)) {
 		ndbg("\n\rUsage: wifi_ap SSID CHANNEL [PASSWORD]");
@@ -353,7 +353,7 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	int ret = 0;
 	rtw_security_t security_type;
 	char *password;
-	rtw_softap_info_t rtw_AP_config;
+	rtw_softap_info_t rtw_AP_config = {0};
 
 	if (wifi_is_running(WLAN0_IDX)) {
 		if (wifi_set_mode(RTW_MODE_AP) < 0) {
@@ -482,6 +482,19 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 			security_type = RTW_SECURITY_WPA_AES_PSK;
 		} else {
 			security_type = RTW_SECURITY_WPA_TKIP_PSK;
+		}
+		password = ap_connect_config->passphrase;
+		ssid_len = strlen((const char *)ssid);
+		password_len = ap_connect_config->passphrase_length;
+		semaphore = NULL;
+		break;
+	case TRWIFI_AUTH_WPA_AND_WPA2_PSK:
+		if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_TKIP_AND_AES) {
+			security_type = RTW_SECURITY_WPA2_MIXED_PSK;
+		} else if (ap_connect_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
+			security_type = RTW_SECURITY_WPA2_AES_PSK;
+		} else {
+			security_type = RTW_SECURITY_WPA2_TKIP_PSK;
 		}
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
@@ -786,7 +799,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 		nvdbg("\r\n===============>>wifi_on success!!\r\n");
 	}
 #endif
-	wlan_initialize();
+	wifi_on(RTW_MODE_STA);
 
 #if 0//RTW_AUTO_RECONNECT
 	//setup reconnection flag
@@ -962,7 +975,7 @@ exit:
 		vPortFree(pscan_config);
 }
 #endif
-void cmd_wifi_scan(int argc, char **argv) // Deprecated Function 
+void cmd_wifi_scan(int argc, char **argv) // Deprecated Function
 {
 
 	u8 *channel_list = NULL;

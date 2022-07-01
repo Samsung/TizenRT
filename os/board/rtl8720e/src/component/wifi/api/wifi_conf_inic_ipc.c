@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------------//
 //#include <flash/stm32_flash.h>
-#if !defined(CONFIG_MBED_ENABLED)
-#if !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 #include "main.h"
-#endif
 #if CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 //#include <dhcp/dhcps.h>
-#endif
 #endif
 
 #include <platform_stdlib.h>
@@ -26,7 +22,7 @@
 #include <wifi_wps_config.h>
 #endif
 
-#if defined(CONFIG_INIC_IPC) && CONFIG_INIC_IPC
+#if defined(CONFIG_AS_INIC_AP)
 #include "inic_ipc_api.h"
 #include "freertos/wrapper.h"
 #endif
@@ -321,6 +317,78 @@ int wifi_get_channel(int *channel)
 	return ret;
 }
 
+void wifi_set_user_config(void)
+{
+	u32 param_buf[1];
+	struct wifi_user_conf *p_wifi_user_config = (struct wifi_user_conf *)rtw_zmalloc(sizeof(struct wifi_user_conf));
+	if (!p_wifi_user_config) {
+		DBG_ERR("wifi set user config fail\n");
+		return;
+	}
+
+	//below items for user config
+	/* adaptivity */
+	p_wifi_user_config->rtw_adaptivity_en = DISABLE;
+	p_wifi_user_config->rtw_adaptivity_mode = 0; //0 : RTW_ADAPTIVITY_MODE_NORMAL,1: RTW_ADAPTIVITY_MODE_CARRIER_SENSE
+	/* trp */
+	p_wifi_user_config->rtw_tx_pwr_lmt_enable = 2;	// 0: disable, 1: enable, 2: Depend on efuse(flash)
+	p_wifi_user_config->rtw_tx_pwr_by_rate	= 2;	// 0: disable, 1: enable, 2: Depend on efuse(flash)
+	p_wifi_user_config->rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
+
+	p_wifi_user_config->rtw_powersave_en = 1;
+
+#ifdef CONFIG_SAE_SUPPORT
+	// set to 'ENABLE' when using WPA3
+	p_wifi_user_config->rtw_cmd_tsk_spt_wap3 = ENABLE;
+#endif
+
+	p_wifi_user_config->g_user_ap_sta_num = NUM_STA;//NUM_STA (2 + AP_STA_NUM)
+
+	/* power save */
+	p_wifi_user_config->lps_dtim = 0;
+	p_wifi_user_config->lps_enter_threshold = 0; // LPS_THRESH_PKT_COUNT
+
+	p_wifi_user_config->rtw_power_mgnt = PS_MODE_MIN;
+#if defined(CONFIG_LPS_PG)
+	p_wifi_user_config->rtw_lps_level = LPS_PG;
+#else
+	p_wifi_user_config->rtw_lps_level = LPS_NORMAL;
+#endif
+#ifdef CONFIG_PLATFORM_8195BHP
+	p_wifi_user_config->rtw_lps_level = LPS_NORMAL;
+	p_wifi_user_config->rtw_power_mgnt = PS_MODE_MAX;//PS_MODE_MIN
+#endif
+	p_wifi_user_config->rtw_ps_timeout = 20;// default: 20
+	p_wifi_user_config->smart_ps = 2;
+
+	/* AP */
+	p_wifi_user_config->bForwardingDisabled = 0;
+
+	p_wifi_user_config->bAcceptAddbaReq = (u8)_TRUE; // 0:Reject AP's Add BA req, 1:Accept AP's Add BA req.
+	p_wifi_user_config->bIssueAddbaReq = (u8)_TRUE;
+
+	p_wifi_user_config->bCheckDestAddress = (u8)_TRUE;
+
+	p_wifi_user_config->ap_compatibilty_enabled = 0x0B;
+
+#ifdef CONFIG_LAYER2_ROAMING
+	p_wifi_user_config->max_roaming_times = 2;
+#endif
+
+#ifdef CONFIG_ENABLE_AP_POLLING_CLIENT_ALIVE
+	p_wifi_user_config->ap_polling_sta = 1;
+#else
+	p_wifi_user_config->ap_polling_sta = 0;
+#endif
+
+	p_wifi_user_config->channel_plan = 0;
+
+	DCache_Clean((u32)p_wifi_user_config, sizeof(struct wifi_user_conf));
+	param_buf[0] = (u32)p_wifi_user_config;
+	inic_ipc_api_host_message_send(IPC_API_WIFI_SET_USR_CFG, param_buf, 1);
+	rtw_mfree((u8 *)p_wifi_user_config, 0);
+}
+
 int wifi_get_disconn_reason_code(unsigned short *reason_code)
 {
 	int ret = 0;
@@ -360,6 +428,8 @@ int wifi_on(rtw_mode_t mode)
 	}
 #endif
 
+	wifi_set_user_config();
+
 	param_buf[0] = mode;
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_ON, param_buf, 1);
 	init_timer_wrapper();
@@ -368,17 +438,17 @@ int wifi_on(rtw_mode_t mode)
 		p_wifi_do_fast_connect();
 	}
 
- 	if (ret == RTW_SUCCESS) { //wifi on success
- #if CONFIG_LWIP_LAYER
- 		LwIP_netif_set_up(0);
- 		if (mode == RTW_MODE_AP) {
- 			LwIP_netif_set_link_up(0);
- 		} else	 if (mode == RTW_MODE_STA_AP) {
- 			LwIP_netif_set_up(1);
- 			LwIP_netif_set_link_up(1);
- 		}
- #endif
- 	}
+	if (ret == RTW_SUCCESS) { //wifi on success
+#if CONFIG_LWIP_LAYER
+		LwIP_netif_set_up(0);
+		if (mode == RTW_MODE_AP) {
+			LwIP_netif_set_link_up(0);
+		} else if (mode == RTW_MODE_STA_AP) {
+			LwIP_netif_set_up(1);
+			LwIP_netif_set_link_up(1);
+		}
+#endif
+	}
 
 	return ret;
 }
@@ -392,6 +462,15 @@ int wifi_off(void)
 		RTW_API_INFO("\n\rWIFI is not running");
 		return 0;
 	}
+
+#if CONFIG_LWIP_LAYER
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
+	dhcps_deinit();
+	LwIP_DHCP(0, DHCP_STOP);
+#endif
+	LwIP_netif_set_down(0);
+	LwIP_netif_set_down(1);
+#endif
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_OFF, NULL, 0);
 	deinit_timer_wrapper();

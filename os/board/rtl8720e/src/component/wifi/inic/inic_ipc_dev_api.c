@@ -19,7 +19,11 @@
 
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_INIC_IPC_DEV_API_PRIO 3
-
+#ifdef CONFIG_PHYDM_CMD/*halbb debug cmd need bigger stack size*/
+#define INIC_IPC_API_STACK 1024
+#else
+#define INIC_IPC_API_STACK 512
+#endif
 typedef void (*inic_ipc_promisc_callback_t)(\
 		unsigned char *buf, unsigned int len, void *user_data);
 
@@ -40,7 +44,7 @@ IPC_MSG_STRUCT g_dev_ipc_api_msg __attribute__((aligned(64)));
 #if CONFIG_AUTO_RECONNECT
 extern p_wlan_autoreconnect_hdl_t p_wlan_autoreconnect_hdl;
 #endif
-
+extern u8 inic_ipc_ip_addr[4];
 #ifdef CONFIG_MP_INCLUDED
 extern int wext_private_command(const char *ifname, char *cmd, int show_msg);
 #endif
@@ -114,6 +118,13 @@ void inic_ipc_api_dev_task(void)
 			ret = wifi_get_channel(channel);
 			DCache_Clean((u32)channel, sizeof(int));
 			p_ipc_msg->ret = ret;
+			break;
+		}
+		case IPC_API_WIFI_SET_USR_CFG: {
+			struct wifi_user_conf *usr_conf = (struct wifi_user_conf *)p_ipc_msg->param_buf[0];
+			DCache_Invalidate((u32)usr_conf, sizeof(struct wifi_user_conf));
+			rtw_memcpy(&wifi_user_config, usr_conf, sizeof(struct wifi_user_conf));
+			p_ipc_msg->ret = 0;
 			break;
 		}
 		case IPC_API_WIFI_GET_DISCONN_REASCON: {
@@ -609,6 +620,36 @@ void inic_ipc_api_dev_task(void)
 			p_ipc_msg->ret = ret;
 			break;
 		}
+		case IPC_API_WIFI_CONFIG_CSI: {
+			rtw_csi_action_parm_t *act_param = (rtw_csi_action_parm_t *)p_ipc_msg->param_buf[0];
+			DCache_Invalidate((u32)act_param, sizeof(rtw_csi_action_parm_t));
+			ret = wifi_csi_config(act_param);
+			p_ipc_msg->ret = ret;
+			break;
+		}
+		case IPC_API_WIFI_GET_CSI_REPORT: {
+			void *csi_buf = (u8 *)p_ipc_msg->param_buf[0];
+			u32 buf_len = (u32)p_ipc_msg->param_buf[1];
+			rtw_csi_header_t *csi_header = (rtw_csi_header_t *)p_ipc_msg->param_buf[2];
+			u32 *len = (u32 *)p_ipc_msg->param_buf[3];
+			DCache_Invalidate((u32)csi_buf, buf_len);
+			DCache_Invalidate((u32)csi_header, sizeof(rtw_csi_header_t));
+			DCache_Invalidate((u32)len, sizeof(u32));
+
+			ret = wifi_csi_report(buf_len, csi_buf, len, csi_header);
+			DCache_Clean((u32)csi_buf, buf_len);
+			DCache_Clean((u32)csi_header, sizeof(rtw_csi_header_t));
+			DCache_Clean((u32)len, sizeof(u32));
+			p_ipc_msg->ret = ret;
+			break;
+		}
+		case IPC_API_WIFI_IP_UPDATE: {
+			u8 *p_ip_addr = (u8 *)p_ipc_msg->param_buf[0];
+			DCache_Invalidate((u32)(p_ip_addr), 4);
+			rtw_memcpy(inic_ipc_ip_addr, p_ip_addr, 4);
+			p_ipc_msg->ret = 0;
+			break;
+		}
 #ifdef CONFIG_MP_INCLUDED
 		case IPC_API_WIFI_MP_CMD: {
 			char *cmd = (char *)p_ipc_msg->param_buf[0];
@@ -833,7 +874,7 @@ void inic_ipc_api_init_dev(VOID)
 
 	/* Initialize the event task */
 	if (pdTRUE != xTaskCreate((TaskFunction_t)inic_ipc_api_dev_task, \
-							  (const char *const)"inic_ipc_api_dev_task", 512, NULL, \
+							  (const char *const)"inic_ipc_api_dev_task", INIC_IPC_API_STACK, NULL, \
 							  tskIDLE_PRIORITY + CONFIG_INIC_IPC_DEV_API_PRIO, &api_dev_task)) {
 		DBG_8195A("Create inic_ipc_api_dev_task Err!!\n");
 	}

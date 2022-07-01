@@ -7,6 +7,9 @@
 #ifndef __PLATFORM_OPTS_AP_H__
 #define __PLATFORM_OPTS_AP_H__
 
+#if defined CONFIG_BT && CONFIG_BT
+#include "platform_opts_bt.h"
+#endif
 /*For MP mode setting*/
 //#define SUPPORT_MP_MODE		1
 
@@ -25,8 +28,7 @@
 /**
  * For Wlan configurations
  */
-#define CONFIG_WLAN	1
-#if CONFIG_WLAN
+#ifdef CONFIG_WLAN
 #define CONFIG_LWIP_LAYER	1
 #define CONFIG_INIT_NET		1 //init lwip layer when start up
 
@@ -72,6 +74,7 @@
 #define CONFIG_GAGENT			0
 #define CONFIG_JOINLINK    0
 
+#define CONFIG_FAST_DHCP 0
 #endif //end of #if CONFIG_WLAN
 /*******************************************************************************/
 
@@ -82,8 +85,19 @@
 /**
  * For AT cmd Log service configurations
  */
-#define SUPPORT_LOG_SERVICE	1
-#if SUPPORT_LOG_SERVICE
+#if defined (CONFIG_AS_INIC_AP)
+#undef SUPPORT_LOG_SERVICE
+#define SUPPORT_LOG_SERVICE 1
+#define CONFIG_INIC_IPC_TODO 1
+#define CONFIG_STDLIB_TODO 1
+#endif
+
+#if defined (CONFIG_SINGLE_CORE_WIFI)
+#undef SUPPORT_LOG_SERVICE
+#define SUPPORT_LOG_SERVICE 1
+#endif
+
+#ifdef SUPPORT_LOG_SERVICE
 #define LOG_SERVICE_BUFLEN     100 //can't larger than UART_LOG_CMD_BUFLEN(127)
 #define CONFIG_LOG_SERVICE_LOCK 0
 #endif
@@ -126,25 +140,14 @@
 #define CONFIG_DYNAMIC_TICKLESS  1
 
 /*******************************************************************************/
-/**
- * For INIC configurations
- */
-#if defined (CONFIG_INIC_IPC) && CONFIG_INIC_IPC
-#define CONFIG_INIC_IPC_HOST 1
-#define CONFIG_WIFI_NORMAL
-#undef SUPPORT_LOG_SERVICE
-#define SUPPORT_LOG_SERVICE 1
-#define CONFIG_INIC_IPC_TODO 1
-#define CONFIG_STDLIB_TODO 1
-#endif
-
-/*******************************************************************************/
 
 /*For uart update example*/
 #define CONFIG_UART_UPDATE				0
 
 #define AUTO_RECONNECT_COUNT	8
 #define AUTO_RECONNECT_INTERVAL	5 // in sec
+
+#define CONFIG_ATCMD_MP 1  //support MP AT command
 
 #endif
 

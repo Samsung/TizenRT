@@ -202,11 +202,6 @@ rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *user_dat
 	}
 
 	for (i = 0; i < scanned_AP_num; i++) {
-#if (defined(SUPPORT_UART_LOG_SERVICE) && SUPPORT_UART_LOG_SERVICE) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-		at_printf("\r\nAP : %d,", (i + 1));
-#else
-		RTW_API_INFO("%d\t ", (i + 1));
-#endif
 		scanned_AP_info = (rtw_scan_result_t *)(scan_buf + i * sizeof(rtw_scan_result_t));
 		scanned_AP_info->SSID.val[scanned_AP_info->SSID.len] = 0; /* Ensure the SSID is null terminated */
 
@@ -400,6 +395,7 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 	} else {
 		ndbg("[RTK] Failed to stop STA mode\n");
 	}
+	//wlan_deinitialize();
 	return wuret;
 }
 

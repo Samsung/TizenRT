@@ -26,8 +26,7 @@
 /**
  * For Wlan configurations
  */
-#define CONFIG_WLAN	1
-#if CONFIG_WLAN
+#ifdef CONFIG_WLAN
 #define CONFIG_LWIP_LAYER	1
 #define CONFIG_INIT_NET		1 //init lwip layer when start up
 
@@ -81,16 +80,6 @@
 #endif //end of #if CONFIG_WLAN
 /*******************************************************************************/
 
-/**
- * For AT cmd Log service configurations
- */
-#define SUPPORT_LOG_SERVICE	0
-#if SUPPORT_LOG_SERVICE
-#define LOG_SERVICE_BUFLEN     100 //can't larger than UART_LOG_CMD_BUFLEN(127)
-#define CONFIG_ATCMD_MP				1 //support MP AT command
-#define CONFIG_LOG_SERVICE_LOCK 0
-#endif
-
 /* For UART Module AT command */
 #define SUPPORT_UART_LOG_SERVICE	0
 #if SUPPORT_UART_LOG_SERVICE
@@ -131,8 +120,7 @@
 /**
  * For iNIC configurations
  */
-#if defined (CONFIG_INIC_IPC) && CONFIG_INIC_IPC
-#define CONFIG_INIC_IPC_DEV 1
+#if defined (CONFIG_AS_INIC_NP)
 #undef CONFIG_ATCMD_MP
 #define CONFIG_ATCMD_MP				0 //support MP AT command
 #undef CONFIG_LWIP_LAYER
@@ -144,24 +132,6 @@
 #define CONFIG_OTA_UPDATE				0
 #endif
 
-
-/*******************************************************************************/
-
-/**
- * For FATFS configurations
- */
-#define CONFIG_FATFS_EN	                1
-#if CONFIG_FATFS_EN
-// fatfs version
-//#define FATFS_R_10C
-//#define FATFS_R_13C
-#define FATFS_R_14B
-
-// fatfs disk interface
-#define FATFS_DISK_USB	                0
-#define FATFS_DISK_SD 	                1
-#define FATFS_DISK_FLASH 	          0
-#endif
 
 /*******************************************************************************/
 

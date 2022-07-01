@@ -184,18 +184,6 @@
 #endif /* #ifdef CONFIG_MP_INCLUDED */
 /************************* Config for MP_MODE end *****************************/
 
-/******************************** inic config *********************************/
-#if defined(CONFIG_INIC_EN)
-#ifndef CONFIG_LWIP_LAYER
-#define CONFIG_LWIP_LAYER 0
-#endif /* defined(CONFIG_INIC_EN) */
-#endif
-
-#ifndef CONFIG_LWIP_LAYER
-#define CONFIG_LWIP_LAYER 1
-#endif /* ndef CONFIG_LWIP_LAYER */
-/****************************** inic config end *******************************/
-
 #ifdef CONFIG_RTK_MESH
 #define CONFIG_BEACON_PERIOD 1024
 #else

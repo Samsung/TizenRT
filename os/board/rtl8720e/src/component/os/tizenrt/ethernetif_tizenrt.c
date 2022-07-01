@@ -169,7 +169,7 @@ err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
 		}
 	if (sg_len) {
 #if CONFIG_WLAN
-#if defined(CONFIG_INIC_IPC) && CONFIG_INIC_IPC
+#if defined(CONFIG_AS_INIC_AP)
 		ret = inic_ipc_host_send(get_idx_from_dev(dev), sg_list, sg_len, dlen);
 		if (ret == ERR_IF) {
 			return ret;
