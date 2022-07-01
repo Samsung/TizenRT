@@ -15,6 +15,8 @@
 #define H4_HDR_LEN          (1)
 #define RESERVED_LEN        (H4_HDR_LEN + 0)
 
+#define SECURE_CONTEXT_SIZE (128)
+
 #ifdef CONFIG_AYNSC_HCI_INTF
 #define HCI_IF_TASK_SIZE    (2*1024)
 #define HCI_IF_TASK_PRIO    (5)
@@ -74,7 +76,6 @@ static uint8_t *rtk_stack_get_buf(uint8_t type, uint16_t len, uint32_t timeout)
 		return (buf + RESERVED_LEN + HCI_H4_RX_ACL_PKT_BUF_OFFSET);
 		break;
 	case H4_EVT:
-	//case H4_ISO:
 	case H4_SCO:
 		buf = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, actual_len, 4);
 		memset(buf, 0, actual_len);
@@ -92,7 +93,12 @@ static uint8_t rtk_stack_recv(uint8_t type, uint8_t *buf, uint16_t len)
 	uint8_t *hci_buf = buf - RESERVED_LEN;
 	uint32_t actual_len = len + H4_HDR_LEN;
 
-	if (H4_ACL == type) {
+	if (H4_ACL == type
+#if HCI_ISO_DATA_PACKET
+			|| H4_ISO == type
+#endif
+	)
+	{
 		hci_buf -= HCI_H4_RX_ACL_PKT_BUF_OFFSET;
 		actual_len += HCI_H4_RX_ACL_PKT_BUF_OFFSET;
 	}
@@ -112,81 +118,89 @@ static void hci_if_task(void *context)
 	struct tx_queue_t *tx_queue = &hci_if_rtk.tx_queue;
 
 #if defined(CONFIG_BUILD_NONSECURE)
-	osif_create_secure_context(128);
+	osif_create_secure_context(SECURE_CONTEXT_SIZE);
 #endif
 
 	while (task_run) {
-		osif_msg_recv(hci_if_rtk.msg_q, &msg, 0xFFFFFFFF);
-		switch (msg) {
-		case HCI_IF_MSG_OPEN: {
-			/* BT Board Init */
-			if (HCI_FAIL == hci_platform_init()) {
-				task_run = 0;
-				break;
-			}
-
-			/* HCI Transport */
-			if (HCI_FAIL == hci_transport_open()) {
-				task_run = 0;
-				break;
-			}
-
-			/* HCI Transport Bridge to StandAlone */
-			hci_transport_set_get_buf(hci_sa_recv_get_buf);
-			hci_transport_set_recv(hci_sa_recv);
-
-			/* HCI UART Bridge to Transport */
-			hci_uart_set_rx_ind(hci_transport_recv_ind);
-			if (HCI_FAIL == hci_process()) {
-				task_run = 0;
-				break;
-			}
-			/* HCI Transport Bridge to RTK Stack
-			 * (Stop and Start rx_ind for this Moment)
-			 */
-			hci_uart_set_rx_ind(NULL);
-			hci_transport_set_get_buf(rtk_stack_get_buf);
-			hci_transport_set_recv(rtk_stack_recv);
-			hci_uart_set_rx_ind(hci_transport_recv_ind);
-
-			hci_if_rtk.status = 1;
-			hci_if_rtk.cb(HCI_IF_EVT_OPENED, true, NULL, 0);	//If in normal mode, start upper stack
-			HCI_PRINT("Start upper stack\r\n");
-			break;
-		}
-		case HCI_IF_MSG_CLOSE: {
-			task_run = 0;
-			break;
-		}
-		case HCI_IF_MSG_WRITE: {
-			while (tx_queue->head) {
-				osif_mutex_take(hci_if_rtk.tx_lock, 0xffffffff);
-				struct tx_item_t *tx_item = tx_queue->head;
-				tx_queue->head = tx_queue->head->next;
-				if (tx_item == tx_queue->tail) {
-					tx_queue->tail = 0;
+		if (osif_msg_recv(hci_if_rtk.msg_q, &msg, 0xFFFFFFFF) == true) {
+			switch (msg) {
+			case HCI_IF_MSG_OPEN: {
+				/* BT Board Init */
+				if (HCI_FAIL == hci_platform_init()) {
+					task_run = 0;
+					break;
 				}
-				tx_item->next = 0;
-				osif_mutex_give(hci_if_rtk.tx_lock);
+				/* HCI Transport */
+				if (HCI_FAIL == hci_transport_open()) {
+					task_run = 0;
+					break;
+				}
+				/* HCI Transport Bridge to StandAlone */
+				hci_transport_set_get_buf(hci_sa_recv_get_buf);
+				hci_transport_set_recv(hci_sa_recv);
 
-				uint16_t offset = 0;
-				if (H4_ACL == tx_item->buf[0]
+				/* HCI UART Bridge to Transport */
+				hci_uart_set_rx_ind(hci_transport_recv_ind);
+
+				if (HCI_FAIL == hci_process()) {
+					task_run = 0;
+					break;
+				}
+				/* HCI Transport Bridge to RTK Stack
+				 * (Stop and Start rx_ind for this Moment)
+				 */
+				hci_uart_set_rx_ind(NULL);
+				hci_transport_set_get_buf(rtk_stack_get_buf);
+				hci_transport_set_recv(rtk_stack_recv);
+				hci_uart_set_rx_ind(hci_transport_recv_ind);
+
+				hci_if_rtk.status = 1;
+				if (wifi_driver_is_mp()) {
+					hci_if_rtk.cb(HCI_IF_EVT_OPENED, false, NULL, 0);	//If in MP mode, do not start upper stack
+					HCI_PRINT("Not start upper stack for MP test\r\n");
+				} else {
+					hci_if_rtk.cb(HCI_IF_EVT_OPENED, true, NULL, 0);	//If in normal mode, start upper stack
+					HCI_PRINT("Start upper stack\r\n");
+				}
+				break;
+			}
+			case HCI_IF_MSG_CLOSE: {
+				task_run = 0;
+				break;
+			}
+			case HCI_IF_MSG_WRITE: {
+				while (tx_queue->head) {
+					osif_mutex_take(hci_if_rtk.tx_lock, 0xffffffff);
+					struct tx_item_t *tx_item = tx_queue->head;
+					tx_queue->head = tx_queue->head->next;
+					if (tx_item == tx_queue->tail) {
+						tx_queue->tail = 0;
+					}
+					tx_item->next = 0;
+					osif_mutex_give(hci_if_rtk.tx_lock);
+
+					uint16_t offset = 0;
+					if (H4_ACL == tx_item->buf[0]
 #if HCI_ISO_DATA_PACKET
-					|| H4_ISO == tx_item->buf[0]
+						|| H4_ISO == tx_item->buf[0]
 #endif
-					) {
-					offset = HCI_H4_TX_ACL_PKT_BUF_OFFSET + H4_HDR_LEN;
-				} 				
-				else {
-					offset = H4_HDR_LEN;
+						) {
+						offset = HCI_H4_TX_ACL_PKT_BUF_OFFSET + H4_HDR_LEN;
+					}
+					else {
+						offset = H4_HDR_LEN;
+					}
+
+					hci_transport_send(tx_item->buf[0], tx_item->buf + offset, tx_item->len - offset, 1);
+					hci_if_rtk.cb(HCI_IF_EVT_DATA_XMIT, true, tx_item->buf, tx_item->len);
+					osif_mem_free(tx_item);
 				}
-				hci_transport_send(tx_item->buf[0], tx_item->buf + offset, tx_item->len - offset, 1);
-				hci_if_rtk.cb(HCI_IF_EVT_DATA_XMIT, true, tx_item->buf, tx_item->len);
-				osif_mem_free(tx_item);
 			}
-		}
-		default:
-			break;
+			default:
+				break;
+			}
+		} else {
+			HCI_ERR("hci_if_rtk.msg_q recv fail!");
 		}
 	}
 
@@ -283,7 +297,6 @@ bool hci_if_close(void)
 	osif_sem_delete(hci_deinit_sem);
 	hci_deinit_sem = NULL;
 	
-	/* Execute Close Flow and Delete task */
 	osif_msg_queue_delete(hci_if_rtk.msg_q);
 	hci_if_rtk.msg_q = NULL;
 #else
@@ -310,7 +323,7 @@ void hci_if_deinit(void)
 		osif_delay(1);
 
 	memset(&hci_if_rtk, 0, sizeof(hci_if_rtk));
-	
+
 	if (HCI_FAIL == hci_uart_free() ||       /* UART Free */
 		HCI_FAIL == hci_transport_free()) {  /* HCI Transport Free */
 		HCI_ERR("hci_if_deinit fail!");
@@ -348,9 +361,14 @@ bool hci_if_write(uint8_t *buf, uint32_t len)
 #else
 	uint16_t offset = 0;
 
-	if (H4_ACL == buf[0]) {
+	if (H4_ACL == buf[0]
+#if HCI_ISO_DATA_PACKET
+		|| H4_ISO == buf[0]
+#endif
+	) {
 		offset = HCI_H4_TX_ACL_PKT_BUF_OFFSET + H4_HDR_LEN;
-	} else {
+	}
+	else {
 		offset = H4_HDR_LEN;
 	}
 
