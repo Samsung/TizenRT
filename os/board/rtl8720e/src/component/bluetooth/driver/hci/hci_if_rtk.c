@@ -381,10 +381,6 @@ bool hci_if_write(uint8_t *buf, uint32_t len)
 
 bool hci_if_confirm(uint8_t *buf)
 {
-#if 0//def CONFIG_AYNSC_HCI_INTF
-	/* TODO */
-#else
 	osif_mem_aligned_free(buf - (RESERVED_LEN - H4_HDR_LEN));
-#endif
 	return true;
 }

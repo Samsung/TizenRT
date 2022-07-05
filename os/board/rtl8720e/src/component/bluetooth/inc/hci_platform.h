@@ -14,7 +14,7 @@
 
 //#define hci_platform_START_IQK
 #define hci_platform_WRITE_IQK
-#define HCI_WRITE_IQK_DATA_LEN 	 0x61
+#define HCI_WRITE_IQK_DATA_LEN 	 0x70
 
 #define HCI_DEFAULT_LMP_SUBVER   0x8720
 #define HCI_PATCH_PROJECT_ID     0x27
