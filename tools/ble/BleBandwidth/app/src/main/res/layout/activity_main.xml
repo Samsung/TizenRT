@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/ScanButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="24dp"
+            android:onClick="StartBleScanOnClick"
+            android:text="@string/button_start_scan"
+            app:layout_constraintBaseline_toBaselineOf="@+id/deviceName"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <EditText
+            android:id="@+id/deviceName"
+            android:layout_width="213dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="56dp"
+            android:layout_marginEnd="16dp"
+            android:ems="10"
+            android:hint="@string/Plain_text_device_name"
+            android:inputType="textPersonName"
+            app:layout_constraintEnd_toStartOf="@+id/ScanButton"
+            app:layout_constraintHorizontal_bias="0.705"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/scanResult"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="72dp"
+            android:textColor="@color/purple_700"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="invisible" />
+
+        <Button
+            android:id="@+id/connectButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:onClick="ConnectDeviceOnClick"
+            android:text="@string/button_connect"
+            android:visibility="invisible"
+            app:layout_constraintBaseline_toBaselineOf="@+id/scanResult"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/scanResult" />
+
+        <TextView
+            android:id="@+id/deviceStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Device Status"
+            android:textColor="@color/purple_500"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.498"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.018" />
+
+        <Button
+            android:id="@+id/speedTestButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_marginStart="16dp"
+            android:onClick="SpeedTestOnClick"
+            android:text="@string/button_speed_test"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/bandWidthResult"
+
+            app:layout_constraintTop_toBottomOf="@id/packetCount" />
+
+        <TextView
+            android:id="@+id/bandWidthResult"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bandwidth Result"
+            android:textSize="16sp"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.494"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/speedTestButton"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <ExpandableListView
+            android:id="@+id/expandServiceListView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            app:layout_constraintBottom_toTopOf="@id/packetCount"
+            app:layout_constraintTop_toBottomOf="@id/scanResult"
+            app:layout_constraintVertical_bias="0.060"
+            android:divider="@android:color/darker_gray"
+            android:dividerHeight="0.5dp"
+            android:indicatorLeft="?android:attr/expandableListPreferredItemIndicatorLeft"/>
+
+        <EditText
+            android:id="@+id/packetCount"
+            android:layout_width="128dp"
+            android:layout_height="45dp"
+            android:layout_marginStart="16dp"
+            android:ems="10"
+            android:background="@drawable/edit_text_boundry"
+            android:hint="@string/Packet_count_plain_text"
+            android:inputType="number"
+            android:visibility="invisible"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/expandServiceListView" />
+
+        <EditText
+            android:id="@+id/packetSize"
+            android:layout_width="128dp"
+            android:layout_height="45dp"
+            android:layout_marginEnd="16dp"
+            android:ems="10"
+            android:background="@drawable/edit_text_boundry"
+            android:hint="@string/Packet_Size_Plain_Text"
+            android:inputType="number"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/expandServiceListView" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

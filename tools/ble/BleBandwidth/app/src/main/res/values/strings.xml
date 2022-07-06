@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">BleBandwidth</string>
+    <string name="button_start_scan">Start Scan</string>
+    <string name="Plain_text_device_name">Device Name</string>
+    <string name="button_connect">Connect</string>
+    <string name="button_speed_test">Speed Test</string>
+    <string name="Packet_count_plain_text">Packet Count</string>
+    <string name="Packet_Size_Plain_Text">Packet Size</string>
+</resources>
