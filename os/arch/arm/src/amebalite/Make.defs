@@ -185,6 +185,10 @@ CHIP_CSRCS += amebalite_i2c.c
 #CHIP_CSRCS += amebalite_i2s.c
 CHIP_CSRCS += amebalite_spi.c
 
+ifeq ($(CONFIG_AMEBALITE_BLE),y)
+EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/lib_btgap.a
+endif
+
 ifeq ($(CONFIG_AMEBALITE_TRUSTZONE),y)
 CHIP_CSRCS += amebalite_nsc.c
 
