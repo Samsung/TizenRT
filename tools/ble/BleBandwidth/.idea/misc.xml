@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/drawable/edit_text_border.xml" value="0.2445" />
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/drawable/edit_text_boundry.xml" value="0.186" />
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/layout/activity_main.xml" value="0.3333333333333333" />
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/layout/activity_service.xml" value="0.22" />
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/layout/edit_text_border.xml" value="0.22" />
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/layout/list_child.xml" value="0.3333333333333333" />
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/layout/list_group.xml" value="0.3333333333333333" />
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/layout/row_highlighter.xml" value="0.15775972637879435" />
+        <entry key="..\:/Android/BleBandwidth/app/src/main/res/layout/selector_list_item.xml" value="0.3333333333333333" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>
