@@ -133,7 +133,7 @@ python $GNUUTL/code_analyze.py
 
 cat $BINDIR/xip_image2_prepend.bin $BINDIR/psram_2_prepend.bin $BINDIR/sram_2_prepend.bin > $BINDIR/km4_image2_all.bin
 
-#$GNUUTL/pad.sh $BINDIR/km4_image2_all.bin
+$GNUUTL/pad.sh $BINDIR/km4_image2_all.bin
 
 if [ "${BUILD_TYPE}" == "MFG" ];then
 	cat $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin \
@@ -191,10 +191,10 @@ function concatenate_binary_without_signing()
 
 	if [ "${CONFIG_AMEBALITE_TRUSTZONE}" != "y" ];then
 		echo "========== Concatenate_binary for TZ disabled =========="
-		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin > $BINDIR/kr4_km4_image2.bin
+		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin > $BINDIR/kr4_km4_image2.bin
 	else
 		echo "========== Concatenate_binary for TZ enabled =========="
-		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin > $BINDIR/kr4_km4_image2.bin
+		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin > $BINDIR/kr4_km4_image2.bin
 	fi
 }
 
@@ -213,10 +213,10 @@ function concatenate_binary_with_signing()
 
 	if [ "${CONFIG_AMEBALITE_TRUSTZONE}" != "y" ];then
 		echo "========== Concatenate_binary for TZ disabled =========="
-		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin > $BINDIR/kr4_km4_image2.bin
+		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin > $BINDIR/kr4_km4_image2.bin
 	else
 		echo "========== Concatenate_binary for TZ enabled =========="
-		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin > $BINDIR/kr4_km4_image2.bin
+		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin > $BINDIR/kr4_km4_image2.bin
 	fi
 }
 

@@ -84,35 +84,25 @@ extern uint32_t SystemCoreClock;
 #define configMAX_TASK_NAME_LEN							( 10 )
 
 //AP
-#if defined(CONFIG_AS_AP)
-#ifdef CONFIG_WIFI_EN	//wlan + lwip
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200* 1024 ) ) //default
-#if (defined CONFIG_HIGH_TP_TEST)
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 250 * 1024 ) )
-#endif
-#else
-#ifdef CONFIG_INIC_EN	//lwip
+#if defined(CONFIG_AS_INIC_AP)
 #define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200 * 1024 ) )
-#if (defined CONFIG_INIC_IPC_HIGH_TP)
+#if defined(CONFIG_INIC_IPC_HIGH_TP)
 #define configTOTAL_HEAP_SIZE						( ( size_t ) ( 250 * 1024 ) )
 #endif
-
-#else
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 40 * 1024 ) )
-#endif
-#endif
-
 //NP
-#elif defined(CONFIG_AS_NP)
-#ifdef CONFIG_WIFI_EN	//wlan
+#elif defined(CONFIG_AS_INIC_NP)
 #define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200 * 1024 ) )
-#if (defined CONFIG_INIC_IPC_HIGH_TP)
+#if defined(CONFIG_INIC_IPC_HIGH_TP)
 #define configTOTAL_HEAP_SIZE						( ( size_t ) ( 250 * 1024 ) )
 #endif
-
+//Single Core
+#elif defined(CONFIG_SINGLE_CORE_WIFI)
+#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200* 1024 ) ) //default
+#if defined(CONFIG_HIGH_TP_TEST)
+#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 250 * 1024 ) )
+#endif
 #else
 #define configTOTAL_HEAP_SIZE						( ( size_t ) ( 40 * 1024 ) )
-#endif
 #endif
 
 #define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( 6 * 1024 ) ) )
@@ -120,7 +110,7 @@ extern uint32_t SystemCoreClock;
 
 /* Constants that build features in or out. */
 #define configUSE_MUTEXES								1
-#define configUSE_APPLICATION_TASK_TAG					0
+#define configUSE_APPLICATION_TASK_TAG					1
 #define configUSE_NEWLIB_REENTRANT						0
 #define configUSE_CO_ROUTINES							1 ///
 #define configMAX_CO_ROUTINE_PRIORITIES 				( 2 )

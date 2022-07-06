@@ -51,6 +51,7 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_IS_RUNNING,
 	IPC_API_WIFI_SET_CHANNEL,
 	IPC_API_WIFI_GET_CHANNEL,
+	IPC_API_WIFI_SET_USR_CFG,
 	IPC_API_WIFI_GET_DISCONN_REASCON,
 	IPC_API_WIFI_ON,
 	IPC_API_WIFI_OFF,
@@ -96,6 +97,8 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_DEL_STA,
 	IPC_API_WIFI_AP_CH_SWITCH,
 	IPC_API_WIFI_SET_NO_BEACON_TIMEOUT,
+	IPC_API_WIFI_CONFIG_CSI,
+	IPC_API_WIFI_GET_CSI_REPORT,
 	//promisc
 	IPC_API_PROMISC_FILTER_RETRANSMIT_PKT,
 	IPC_API_PROMISC_FILTER_WITH_LEN,
@@ -112,6 +115,8 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_PROMISC_INIT_PACKET_FILTER,
 	IPC_API_PROMISC_ADD_PACKET_FILTER,
 	IPC_API_PROMISC_PACKET_FILTER_CONTROL,
+	//misc
+	IPC_API_WIFI_IP_UPDATE,
 	IPC_API_WIFI_IWPRIV_INFO, //dbg cmd
 	IPC_API_WIFI_MP_CMD //mp cmd
 };
@@ -142,6 +147,7 @@ typedef struct inic_ipc_dev_request_message {
 /* -------------------------- Function declaration -------------------------- */
 /*for ipc host api*/
 void inic_ipc_api_init_host(VOID);
+void inic_ipc_api_deinit_host(void);
 void inic_ipc_api_host_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum);
 int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len);
 

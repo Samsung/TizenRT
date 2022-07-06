@@ -49,8 +49,11 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_AMEBALITE_WIFI),y)
+CSRCS += rtk_netmgr.c
+endif
+
 CSRCS += tizenrt_service.c \
-       rtk_netmgr.c \
        lwip_intf_tizenrt.c \
        ethernetif_tizenrt.c
 

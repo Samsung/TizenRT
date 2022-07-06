@@ -5,7 +5,7 @@
 
 #include <lwipconf.h>
 #include <platform_stdlib.h>
-#if defined(CONFIG_INIC_IPC) && CONFIG_INIC_IPC
+#if defined(CONFIG_AS_INIC_AP)
 #define BSD_STACK_SIZE		    1024
 #else
 #define BSD_STACK_SIZE		    256

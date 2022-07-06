@@ -11,6 +11,7 @@
 #include "wifi_structures.h"
 #include "main.h"
 
+#ifdef CONFIG_WLAN
 #define IW_PASSPHRASE_MAX_SIZE 64
 //#define FAST_RECONNECT_DATA (0x80000 - 0x1000)
 #define NDIS_802_11_LENGTH_SSID         32
@@ -39,5 +40,5 @@ extern write_fast_connect_info_ptr p_store_fast_connect_info;
 
 int check_is_the_same_ap(void);
 void wifi_fast_connect_enable(unsigned char enable);
-
+#endif
 #endif //#ifndef __WIFI_FAST_CONNECT__

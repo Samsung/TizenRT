@@ -28,6 +28,7 @@
 
 /* -------------------------- Function declaration -------------------------- */
 void inic_ipc_host_init_priv(void);
+void inic_ipc_host_deinit_priv(void);
 void inic_ipc_host_tx_done(void);
 void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb);
 void inic_ipc_host_tx_alloc_skb_rsp(inic_ipc_ex_msg_t *p_ipc_msg);

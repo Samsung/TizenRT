@@ -26,7 +26,13 @@
 #include <tinyara/security_hal.h>
 #include <tinyara/kmalloc.h>
 
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 #include <arch/chip/amebad_nsc.h>
+#endif
+#ifdef CONFIG_AMEBALITE_TRUSTZONE
+#include <arch/chip/amebalite_nsc.h>
+#endif
+#include <device_lock.h>
 
 #define AWRAP_TAG "[AMEBA_WRAPPER]"
 #define AWRAP_ENTER                                     \
@@ -63,7 +69,12 @@
 
 /* Secure Storage Base Address, After Bootloader before Kernel */
 /* Fix Address, should not be changed, once change previous data will be lost */
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 #define SS_BASE_ADDRESS 0xA000
+#endif
+#ifdef CONFIG_AMEBALITE_TRUSTZONE
+#define SS_BASE_ADDRESS 0x14000
+#endif
 
 /* 8 Slots for Cert, 8 Slots for Key, 1 Slot is 4KB */
 #define SE_FACTORY_KEY_SIZE 0x8000
@@ -167,9 +178,11 @@ int se_ameba_hal_init(hal_init_param *params)
 	/* Secure Storage Key Address (efuse) */
 	input_data.samsung_key_addr = SAMSUNG_KEY_ADDR;
 
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_init(params, &input_data, &ns_passin);
 	up_free_secure_context();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 exit:
 	if (ret != HAL_SUCCESS) {
@@ -589,9 +602,11 @@ int se_ameba_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 	AWRAP_ENTER;
 	int ret = HAL_SUCCESS;
 
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_factory_key(key_idx, key);
 	up_free_secure_context();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
@@ -604,9 +619,11 @@ int se_ameba_hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 	AWRAP_ENTER;
 	int ret = HAL_SUCCESS;
 
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_factory_cert(cert_idx, cert);
 	up_free_secure_context();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
@@ -619,9 +636,11 @@ int se_ameba_hal_get_factory_data(uint32_t data_idx, hal_data *data)
 	AWRAP_ENTER;
 	int ret = HAL_SUCCESS;
 
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_factory_data(data_idx, data);
 	up_free_secure_context();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
@@ -748,9 +767,11 @@ int se_ameba_hal_write_storage(uint32_t ss_idx, hal_data *data)
 		}
 	}
 
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_write_storage(ss_idx, data);
 	up_free_secure_context();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
@@ -767,10 +788,16 @@ int se_ameba_hal_read_storage(uint32_t ss_idx, hal_data *data)
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
+	if (data->data == NULL) {
+		return HAL_INVALID_ARGS;
+	}
+
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	ss_idx = ss_idx + 1;	/* Change Range to Slot 1-33 */
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_read_storage(ss_idx, data);
 	up_free_secure_context();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);
@@ -787,10 +814,12 @@ int se_ameba_hal_delete_storage(uint32_t ss_idx)
 		return HAL_INVALID_SLOT_RANGE;
 	}
 
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	ss_idx = ss_idx + 1;	/* Change Range to Slot 1-33 */
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_delete_storage(ss_idx);
 	up_free_secure_context();
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	if (ret != HAL_SUCCESS) {
 		sedbg("RTL SE failed (%zu)\n", ret);

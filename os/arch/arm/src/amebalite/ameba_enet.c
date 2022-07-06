@@ -69,6 +69,7 @@
 
 //for concurrent mode, not supported now
 //#define RTK_CONCURRENT_MODE
+#ifdef CONFIG_AMEBALITE_WIFI
 
 struct netdev *ameba_nm_dev_wlan0 = NULL;
 struct netdev *ameba_nm_dev_wlan1 = NULL;
@@ -193,9 +194,11 @@ struct netdev* amebalite_register_dev(int sizeof_priv)
 
 	return netdev_register(&config);
 }
+#endif
 
 void up_netinitialize(void)
 {
+#ifdef CONFIG_AMEBALITE_WIFI
 	int alloc_size;
 	//struct netdev *dev = NULL;
 
@@ -210,6 +213,7 @@ DiagPrintf("\n\r%s: amebalite_register_dev", __func__);
 	if (ameba_nm_dev_wlan1 == NULL) {
 		rtw_printf("Failed to register amebalite netdev\n");
 	}
+#endif
 #endif
 #if defined(CONFIG_AMEBAD_BLE) && defined(CONFIG_DRIVERS_BLE)
 	ameba_bm_dev_ble0 = bledev_register(&g_trble_drv_ops);

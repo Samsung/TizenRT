@@ -136,8 +136,14 @@ void list_add(struct list_head *new, struct list_head *head);
 void list_add_tail(struct list_head *new, struct list_head *head);
 #endif
 
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+extern unsigned int save_and_cli(void);
+extern void restore_flags(unsigned int flag);
+#else
 extern void save_and_cli(void);
 extern void restore_flags(void);
+#endif
+
 //----- ------------------------------------------------------------------
 // SKB Operation
 //----- ------------------------------------------------------------------
@@ -431,6 +437,3 @@ u8		rtw_cancel_timer(_timer *ptimer);
 void	rtw_del_timer(_timer *ptimer);
 
 #endif //__WRAPPER_H__
-
-
-

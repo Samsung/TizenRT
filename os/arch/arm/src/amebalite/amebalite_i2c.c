@@ -83,7 +83,9 @@
  * debug interface syslog() but does not require that any other debug
  * is enabled.
  */
-#define amebalite_IRQ_I2C0 54	//KAI CHECK
+#define amebalite_IRQ_I2C0 54
+#define amebalite_IRQ_I2C1 55
+
 #ifndef CONFIG_I2C_TRACE
 #define amebalite_i2c_tracereset(p)
 #define amebalite_i2c_tracenew(p, s)
@@ -298,13 +300,13 @@ static const struct i2c_ops_s amebalite_i2c_ops = {
 
 /* I2C device structures */
 
-static const struct amebalite_i2c_config_s amebalite_i2c1_config = {
-	//.base = amebalite_I2C1_BASE,
-	//.busy_idle = CONFIG_I2C1_BUSYIDLE,
-	//.filtscl = CONFIG_I2C1_FILTSCL,
-	//.filtsda = CONFIG_I2C1_FILTSDA,
-	.scl_pin = PA_9,
-	.sda_pin = PA_8,
+static const struct amebalite_i2c_config_s amebalite_i2c0_config = {
+	//.base = amebalite_I2C0_BASE,
+	//.busy_idle = CONFIG_I2C0_BUSYIDLE,
+	//.filtscl = CONFIG_I2C0_FILTSCL,
+	//.filtsda = CONFIG_I2C0_FILTSDA,
+	.scl_pin = PA_16,
+	.sda_pin = PA_15,
 #ifndef CONFIG_I2C_SLAVE
 	.mode = amebalite_I2C_MASTER,
 #else
@@ -312,6 +314,36 @@ static const struct amebalite_i2c_config_s amebalite_i2c1_config = {
 #endif
 #ifndef CONFIG_I2C_POLLED
 	.irq = amebalite_IRQ_I2C0,
+#endif
+};
+
+static struct amebalite_i2c_priv_s amebalite_i2c0_priv = {
+	.ops = &amebalite_i2c_ops,
+	.config = &amebalite_i2c0_config,
+	.refs = 0,
+	.intstate = INTSTATE_IDLE,
+	.msgc = 0,
+	.msgv = NULL,
+	.ptr = NULL,
+	.dcnt = 0,
+	.flags = 0,
+	.status = 0
+};
+
+static const struct amebalite_i2c_config_s amebalite_i2c1_config = {
+	//.base = amebalite_I2C1_BASE,
+	//.busy_idle = CONFIG_I2C1_BUSYIDLE,
+	//.filtscl = CONFIG_I2C1_FILTSCL,
+	//.filtsda = CONFIG_I2C1_FILTSDA,
+	.scl_pin = PA_18,
+	.sda_pin = PA_17,
+#ifndef CONFIG_I2C_SLAVE
+	.mode = amebalite_I2C_MASTER,
+#else
+	.mode = amebalite_I2C_SLAVE,
+#endif
+#ifndef CONFIG_I2C_POLLED
+	.irq = amebalite_IRQ_I2C1,
 #endif
 };
 
@@ -1085,12 +1117,18 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 	irqstate_t flags;
 
 	/* Get I2C private structure */
+	if (port == 0) {
+		priv = (struct amebalite_i2c_priv_s *)&amebalite_i2c0_priv;
+ 	} else if (port == 1) {
+		priv = (struct amebalite_i2c_priv_s *)&amebalite_i2c1_priv;
+ 	} else {
+	 	printf("Please select I2CO or I2C1 bus\n");
+	 	return -1;
+ 	}
 
-	priv = (struct amebalite_i2c_priv_s *)&amebalite_i2c1_priv;
-	/* Initialize private data for the first time, increment reference count,
-	 * power-up hardware and configure GPIOs.
-	 */
-
+ /* Initialize private data for the first time, increment reference count,
+	* power-up hardware and configure GPIOs.
+	*/
 	flags = irqsave();
 
 	if ((volatile int)priv->refs++ == 0) {

@@ -148,7 +148,7 @@ static void inic_ipc_msg_q_task(void)
 			p_node = dequeue_ipc_msg_node(p_queue);
 		}
 	} while (g_ipc_msg_q_priv.b_queue_working);
-	rtw_delete_task(&ipc_msgQ_wlan_task);
+	//rtw_delete_task(&ipc_msgQ_wlan_task);
 }
 
 /* ---------------------------- Public Functions ---------------------------- */
@@ -189,6 +189,17 @@ void inic_ipc_msg_q_init(void (*task_hdl)(inic_ipc_ex_msg_t *))
 
 	/* sign the queue is working */
 	g_ipc_msg_q_priv.b_queue_working = 1;
+}
+
+/* ---------------------------- Public Functions ---------------------------- */
+/**
+ * @brief  to de-initialize the message queue.
+ * @param  none
+ * @return none
+ */
+void inic_ipc_msgQ_wlan_task_deinit(void)
+{
+	rtw_delete_task(&ipc_msgQ_wlan_task);
 }
 
 /**

@@ -35,12 +35,6 @@
 #undef  CONFIG_XIP_FLASH
 
 /*
- * < CONFIG PROCESSOR ROLE
- */
-#define CONFIG_AS_AP 1
-#undef  CONFIG_AS_NP
-
-/*
  * < CONFIG OS
  */
 #define CONFIG_KERNEL 1
@@ -88,44 +82,26 @@
 /*
  * < CONFIG BT
  */
-#define  CONFIG_BT_EN 1
-#define  CONFIG_BT    1
-#define  CONFIG_BT_PERIPHERAL 1
-#define  CONFIG_BT_CENTRAL 1
-#define  CONFIG_BT_SCATTERNET 1
-#undef  CONFIG_BT_BEACON
-#undef  CONFIG_BT_CONFIG
-#undef  CONFIG_BT_AIRSYNC_CONFIG
-#undef  CONFIG_BT_MESH_PROVISIONER
-#undef  CONFIG_BT_MESH_DEVICE
-#undef  CONFIG_BT_MESH_PROVISIONER_MULTIPLE_PROFILE
-#undef  CONFIG_BT_MESH_DEVICE_MULTIPLE_PROFILE
-#undef  CONFIG_BT_MESH_CENTRAL
-#undef  CONFIG_BT_MESH_PERIPHERAL
-#undef  CONFIG_BT_MESH_SCATTERNET
-#undef  CONFIG_BT_MESH_TEST
-
-/*
- * < CONFIG INIC IPC
- */
-#define CONFIG_INIC_EN 1
-#define CONFIG_INIC_IPC 1
-#undef  CONFIG_INIC_IPC_HIGH_TP
+#undef  CONFIG_BT_EN
+#undef  CONFIG_BT
+#undef  CONFIG_BT_AP
+#undef  CONFIG_BT_NP
+#undef  CONFIG_BT_SINGLE_CORE
 
 /*
  * < CONFIG WIFI
  */
-#undef  CONFIG_WIFI_EN
+#define CONFIG_WLAN 1
+#define CONFIG_AS_INIC_AP 1
+#undef  CONFIG_AS_INIC_NP
+#undef  CONFIG_SINGLE_CORE_WIFI
+#define CONFIG_LWIP_LAYER 1
 
 /*
  * < CONFIG WIFI FW
  */
 #undef  CONFIG_WIFI_FW_EN
-
-/*
- * < CONFIG NETWORK
- */
-#undef  CONFIG_NETWORK
+#undef  CONFIG_FW_DRIVER_COEXIST
 
 /*
  * < SSL Config
@@ -148,6 +124,11 @@
  * < Audio Config
  */
 #undef  CONFIG_AUDIO_EN
+
+/*
+ * < IMQ Config
+ */
+#undef  CONFIG_IMQ_EN
 
 /*
  * To set debug msg flag

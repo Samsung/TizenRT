@@ -43,9 +43,7 @@ static void ns_flash_erase(uint32_t address)
 {
 	flash_t flash;
 
-	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	flash_erase_sector(&flash, address);
-	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 }
 
 static int ns_flash_read(uint32_t address, uint32_t len, uint8_t *data)
@@ -53,9 +51,7 @@ static int ns_flash_read(uint32_t address, uint32_t len, uint8_t *data)
 	int ret;
 	flash_t flash;
 
-	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	ret = flash_stream_read(&flash, address, len, data);
-	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	return ret;
 }
@@ -65,20 +61,18 @@ static int ns_flash_write(uint32_t address, uint32_t len, uint8_t *data)
 	int ret;
 	flash_t flash;
 
-	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	ret = flash_stream_write(&flash, address, len, data);
-	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	return ret;
 }
 
 static void ns_setstatusbits(u32 NewState)
 {
-	device_mutex_lock(RT_DEV_LOCK_FLASH);
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 	FLASH_Write_Lock();
 	FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);
 	FLASH_Write_Unlock();
-	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+#endif
 }
 
 static void ns_printf(const char *input)

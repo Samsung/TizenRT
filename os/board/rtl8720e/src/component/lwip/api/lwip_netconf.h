@@ -50,7 +50,7 @@ struct static_ip_config {
 };
 
 /* Extern functions ------------------------------------------------------------*/
-#ifndef CONFIG_INIC_IPC
+#ifndef CONFIG_AS_INIC_AP
 void rtw_wakelock_timeout(uint32_t timeoutms);
 #endif
 /** Release a DHCP lease. */

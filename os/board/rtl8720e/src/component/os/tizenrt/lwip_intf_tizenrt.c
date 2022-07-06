@@ -263,7 +263,7 @@ void set_callback_func(emac_callback p, void *data)
 void netif_rx(int idx, unsigned int len)
 {
 #ifdef CONFIG_INIC_EN
-#if (CONFIG_INIC_IPC)
+#if defined(CONFIG_AS_INIC_AP)
 	inic_ipc_dev_recv(idx);
 #else
 	inic_netif_rx(idx, len);

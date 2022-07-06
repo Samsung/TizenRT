@@ -132,6 +132,7 @@ uint32_t rtsp_get_timestamp(struct stream_context *stream_ctx, uint32_t current_
 		RTSP_DBG_ERROR("stream clock_rate not set! Cannot get correct tick!");
 		return 0;
 	}
+
 	if (stream_ctx->use_rtp_tick_inc) {
 		stream_ctx->rtp_timestamp += stream_ctx->statistics.rtp_tick_inc;
 	} else {
@@ -878,7 +879,7 @@ static void create_sdp_a_string(char *string, struct stream_context *s, void *ex
 				"a=ptime:20" CRLF \
 				"a=maxptime:60" CRLF \
 				"a=control:streamid=%d" CRLF \
-				, s->codec->pt, s->codec->clock_rate, s->codec->audio_channels, s->codec->pt, s->samplerate, s->channel, s->stream_id);
+				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->codec->audio_channels, (s->codec->pt + s->stream_id), s->samplerate, s->channel, s->stream_id);
 		//printf("OPUS\r\n%s\r\n",string);
 
 		/*

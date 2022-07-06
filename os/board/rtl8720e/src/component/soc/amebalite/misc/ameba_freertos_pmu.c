@@ -272,6 +272,7 @@ int freertos_ready_to_dsleep(void)
 	}
 }
 
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 __STATIC_INLINE void pmu_psp_modify(u8 backup)
 {
 #if defined (ARM_CORE_CM4)
@@ -296,6 +297,7 @@ __STATIC_INLINE void pmu_psp_modify(u8 backup)
 	}
 #endif
 }
+#endif
 
 /*
  *  It is called when freertos is going to sleep.
@@ -371,6 +373,7 @@ void freertos_pre_sleep_processing(unsigned int *expected_idle_time)
 #endif
 
 CONFIG_FW_CRITICAL_CODE_SECTION
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 void freertos_post_sleep_processing(unsigned int *expected_idle_time)
 {
 #if defined (ARM_CORE_CM4)
@@ -384,10 +387,12 @@ void freertos_post_sleep_processing(unsigned int *expected_idle_time)
 	(void)expected_idle_time;
 #endif
 }
+#endif
 
 /* NVIC will power off under sleep power gating mode, so we can */
 /* not use systick like FreeRTOS default implementation */
 CONFIG_FW_CRITICAL_CODE_SECTION
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 {
 	unsigned int xModifiableIdleTime;
@@ -435,6 +440,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 
 	system_can_yield = 1;
 }
+#endif
 
 /* -------- FreeRTOS macro implementation -------- */
 

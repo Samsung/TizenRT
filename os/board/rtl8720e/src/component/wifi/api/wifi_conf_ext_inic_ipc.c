@@ -1,13 +1,10 @@
 //----------------------------------------------------------------------------//
 //#include <flash/stm32_flash.h>
-#if !defined(CONFIG_MBED_ENABLED)
-#if !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
+
 #include "main.h"
-#endif
 #if CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 //#include <dhcp/dhcps.h>
-#endif
 #endif
 
 #include <platform_stdlib.h>
@@ -25,7 +22,7 @@
 #if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
 #include <wifi_wps_config.h>
 #endif
-#ifdef CONFIG_INIC_IPC
+#ifdef CONFIG_AS_INIC_AP
 #include "inic_ipc_api.h"
 #endif
 /******************************************************
@@ -302,7 +299,7 @@ int wifi_set_powersave_mode(u8 ips_mode, u8 lps_mode)
 	param_buf[0] = (u32)ips_mode;
 	param_buf[1] = (u32)lps_mode;
 
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_POWERSAVE_MODE, param_buf, 1);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_POWERSAVE_MODE, param_buf, 2);
 	return ret;
 }
 
@@ -396,6 +393,13 @@ int wifi_set_network_mode(rtw_network_mode_t mode)
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_NETWORK_MODE, param_buf, 1);
 	return ret;
 }
+
+// int wifi_set_wpa_mode(rtw_wpa_mode wpa_mode)
+// {
+// 	(void) wpa_mode;
+// 	//todo
+// 	return 0;
+// }
 
 int wifi_set_wps_phase(unsigned char is_trigger_wps)
 {
@@ -882,5 +886,63 @@ unsigned int wifi_get_tsf_low(unsigned char port_id)
 {
 	return inic_ipc_host_get_wifi_tsf_low(port_id);
 }
+
+//----------------------------------------------------------------------------//
+int wifi_csi_config(rtw_csi_action_parm_t *act_param)
+{
+	int ret = 0;
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)act_param;
+	DCache_Clean((u32)act_param, sizeof(rtw_csi_action_parm_t));
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_CONFIG_CSI, param_buf, 1);
+	return ret;
+}
+
+int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len, rtw_csi_header_t *csi_header)
+{
+	int ret = 0;
+	u32 param_buf[4];
+
+	void *csi_buf_temp = rtw_zmalloc(buf_len);
+	if (csi_buf_temp == NULL) {
+		return -1;
+	}
+	rtw_csi_header_t *csi_header_temp = (rtw_csi_header_t *)rtw_malloc(sizeof(rtw_csi_header_t));
+	if (csi_header_temp == NULL) {
+		rtw_mfree((u8 *)csi_buf_temp, 0);
+		return -1;
+	}
+	u32 *len_temp = (u32 *)rtw_zmalloc(sizeof(u32));
+	if (len_temp == NULL) {
+		rtw_mfree((u8 *)csi_buf_temp, 0);
+		rtw_mfree((u8 *)csi_header_temp, 0);
+		return -1;
+	}
+
+	param_buf[0] = (u32)csi_buf_temp;
+	param_buf[1] = (u32)buf_len;
+	param_buf[2] = (u32)csi_header_temp;
+	param_buf[3] = (u32)len_temp;
+	DCache_CleanInvalidate((u32)csi_buf_temp, buf_len);
+	DCache_CleanInvalidate((u32)csi_header_temp, sizeof(rtw_csi_header_t));
+	DCache_CleanInvalidate((u32)len_temp, sizeof(u32));
+
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_CSI_REPORT, param_buf, 4);
+	DCache_Invalidate((u32)csi_buf_temp, buf_len);
+	rtw_memcpy(csi_buf, csi_buf_temp, buf_len);
+
+	DCache_Invalidate((u32)csi_header_temp, sizeof(rtw_csi_header_t));
+	rtw_memcpy(csi_header, csi_header_temp, sizeof(rtw_csi_header_t));
+
+	DCache_Invalidate((u32)len_temp, sizeof(u32));
+	rtw_memcpy(len, len_temp, sizeof(u32));
+
+	rtw_mfree((u8 *)csi_buf_temp, 0);
+	rtw_mfree((u8 *)csi_header_temp, 0);
+	rtw_mfree((u8 *)len_temp, 0);
+	return ret;
+}
+//----------------------------------------------------------------------------//
 
 #endif	//#if CONFIG_WLAN
