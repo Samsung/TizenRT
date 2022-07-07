@@ -643,9 +643,8 @@ trble_result_e rtw_ble_server_set_adv_type(trble_adv_type_e type, trble_addr *ad
 
     rtw_ble_server_adv_into_idle();
 
-    le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-    if(adv_evt_type == TRBLE_ADV_TYPE_DIRECT)
-    {
+    if(adv_evt_type == TRBLE_ADV_TYPE_DIRECT) {
+        adv_evt_type = 4;/* maps the TRBLE_ADV_TYPE_DIRECT (value is 1) to 4 for Low Duty Cycle Directed advertising */
         uint8_t adv_direct_type;
         if (addr->type == TRBLE_ADDR_TYPE_PUBLIC) {
             adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
@@ -657,6 +656,7 @@ trble_result_e rtw_ble_server_set_adv_type(trble_adv_type_e type, trble_addr *ad
         le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(adv_direct_type), &adv_direct_type);
         le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(adv_direct_addr), adv_direct_addr);
     }
+    le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
     return TRBLE_SUCCESS;
 }
 #endif /* TRBLE_SERVER_C_ */
