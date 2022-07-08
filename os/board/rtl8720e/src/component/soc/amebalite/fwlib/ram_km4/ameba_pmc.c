@@ -205,15 +205,13 @@ VOID SOCPS_SleepPG(VOID)
 			ipc_send_message(IPC_KM4_TO_KR4, IPC_M2R_TICKLESS_INDICATION, (PIPC_MSG_STRUCT)&sleep_param);
 		} else {
 			DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4G NP\n");
-			//SOCPS_NP_suspend_config(SLEEP_PG);
-			SOCPS_PLL_open(DISABLE);
+
+			SOCPS_NP_suspend_and_resume(SLEEP_PG, DISABLE);
 
 			DCache_Clean(0xFFFFFFFF, 0xFFFFFFFF);
 			Cache_Enable(DISABLE);
 
-			if (ps_config.np_config_ddr == APM_PSRAM_SlEEP_Mode || ps_config.np_config_ddr == WB_PSRAM_SlEEP_Mode) {
-				set_psram_suspend_and_restore(DISABLE);
-			}
+			set_psram_suspend_and_restore(DISABLE);
 
 			/* close CPU */
 			Rtemp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
@@ -234,14 +232,11 @@ VOID SOCPS_SleepPG(VOID)
 			//currently set 1 to all rw_prot register
 
 		} else {
-			if (ps_config.np_config_ddr == APM_PSRAM_SlEEP_Mode || ps_config.np_config_ddr == WB_PSRAM_SlEEP_Mode) {
-				set_psram_suspend_and_restore(ENABLE);
-			}
+			SOCPS_NP_suspend_and_resume(SLEEP_PG, ENABLE);
+
+			set_psram_suspend_and_restore(ENABLE);
 
 			Cache_Enable(ENABLE);
-
-			//SOCPS_NP_resume_config(SLEEP_PG);
-			SOCPS_PLL_open(ENABLE);
 		}
 
 	} else {
@@ -252,9 +247,8 @@ VOID SOCPS_SleepPG(VOID)
 			//currently set 1 to all rw_prot register
 
 		} else {
+			SOCPS_NP_suspend_and_resume(SLEEP_PG, ENABLE);
 			DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4GW NP\n");
-			//SOCPS_NP_resume_config(SLEEP_PG);
-			SOCPS_PLL_open(ENABLE);
 		}
 
 		/* ReFill registers */
@@ -400,15 +394,13 @@ void SOCPS_SleepCG(void)
 		ipc_send_message(IPC_KM4_TO_KR4, IPC_M2R_TICKLESS_INDICATION, (PIPC_MSG_STRUCT)&sleep_param);
 	} else {
 		DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4C NP\n");
-		//SOCPS_NP_suspend_config(SLEEP_CG);
-		SOCPS_PLL_open(DISABLE);
+
+		SOCPS_NP_suspend_and_resume(SLEEP_CG, DISABLE);
 
 		DCache_Clean(0xFFFFFFFF, 0xFFFFFFFF);
 		Cache_Enable(DISABLE);
 
-		if (ps_config.np_config_ddr == APM_PSRAM_SlEEP_Mode || ps_config.np_config_ddr == WB_PSRAM_SlEEP_Mode) {
-			set_psram_suspend_and_restore(DISABLE);
-		}
+		set_psram_suspend_and_restore(DISABLE);
 
 		/* don't close CPU*/
 		Rtemp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
@@ -430,14 +422,11 @@ void SOCPS_SleepCG(void)
 		//TODO: set token bit, close KR4 access authority
 
 	} else {
-		if (ps_config.np_config_ddr == APM_PSRAM_SlEEP_Mode || ps_config.np_config_ddr == WB_PSRAM_SlEEP_Mode) {
-			set_psram_suspend_and_restore(ENABLE);
-		}
+		SOCPS_NP_suspend_and_resume(SLEEP_CG, ENABLE);
+
+		set_psram_suspend_and_restore(ENABLE);
 
 		Cache_Enable(ENABLE);
-
-		//SOCPS_NP_resume_config(SLEEP_CG);
-		SOCPS_PLL_open(ENABLE);
 	}
 
 	if (HAL_READ32(PMC_BASE, SYSPMC_CTRL) & PMC_BIT_PMEN_SLEP) {
@@ -459,36 +448,3 @@ resume:
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 
 }
-
-
-/**
-  * @brief  KR4 wake KM4 by IPC
-  * @param  None
-  * @note  ipc_msg_temp.msg represents who wakes up KM4
-  		* ipc_msg_temp.msg = 0: FW wakeup KM4
-  * @retval None
-  */
-IMAGE2_RAM_TEXT_SECTION
-void SOCPS_KR4WKM4_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
-{
-	/* To avoid gcc warnings */
-	UNUSED(Data);
-	UNUSED(IrqStatus);
-	UNUSED(ChanNum);
-
-	PIPC_MSG_STRUCT	ipc_msg_temp = (PIPC_MSG_STRUCT)ipc_get_message(IPC_KR4_TO_KM4, IPC_R2M_WAKE_AP);
-
-	u32 type = ipc_msg_temp->msg;
-
-	if (type == FW_NPWAP_IPC) {
-		DBG_8195A("FW wakeup KM4 via IPC \n");
-	} else if (type == TIMER_NPWAP_IPC) {
-		DBG_8195A("TIMER wakeup KM4 via IPC \n");
-	}
-
-}
-
-IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_KR4WKM4_table[] = {
-	{IPC_USER_DATA, 	SOCPS_KR4WKM4_ipc_int,	(VOID *) NULL, IPC_KR4_TO_KM4, IPC_R2M_WAKE_AP, IPC_RX_FULL},
-};

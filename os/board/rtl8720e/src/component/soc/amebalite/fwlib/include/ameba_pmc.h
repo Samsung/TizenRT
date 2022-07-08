@@ -193,6 +193,10 @@ typedef struct {
 /**
   * @}
   */
+enum PMC_CORE_ROLE_TYPE {
+	PMC_CORE_ROLE_AP2NP = 0,
+	PMC_CORE_ROLE_SINGLE = 1,
+};
 
 /**
   * @}
@@ -227,6 +231,7 @@ void km4_resume(void);
 void kr4_resume(void);
 u32 kr4_status_on(void);
 u32 km4_status_on(void);
+u32 dsp_status_on(void);
 
 void km4_set_wake_event(u32 wevt);
 

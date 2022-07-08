@@ -117,7 +117,16 @@ typedef struct _mib_info_ {
 	u8						TxPauseDRVInfo;
 	u8						TxPauseFWInfo_0;
 #endif /* #if CONFIG_TX_PAUSE_DRV_INFO */
+#if CONFIG_TPBASE_RA
+	TPBASE_RA_PARM TPBaseRAParm[MACID_NUM];
+#endif
 
+#if CONFIG_PERIOD_CCA
+	u8						period_cca_en;
+	u8						period_cca_reg_backup_done;
+	u8						preiod_cca_bbreg_backup[7];
+	u8						period_cca_rssi;
+#endif
 	u8                                  RxShiftEn: 1;
 	u8                                  DMAShiftMode: 1;
 	u8                                  rsvd: 6;

@@ -61,7 +61,7 @@ void PSRAM_PHY_StructInit(PSPHY_InitTypeDef *PSPHY_InitStruct)
 
 	//0x18
 	PSPHY_InitStruct->PSRAMP_SW_RST_N = 0x1;
-	PSPHY_InitStruct->PSRAMP_LATENCY_TYPE = PSPHY_VAR_LATENCY;	//0:variable latency 1:fix leatency
+	PSPHY_InitStruct->PSRAMP_LATENCY_TYPE = PSRSAM_FIX_LATENCY;	//0:variable latency 1:fix leatency
 	PSPHY_InitStruct->PSRAMP_CAL_RWDS_PHASE = 0x1;
 	if (PSPHY_InitStruct->PSRAMP_LATENCY_TYPE) {
 		PSPHY_InitStruct->PSRAMP_RFIFO_RDY_DLY = PSPHY_RFIFO_READY_DELAY_FIX;
@@ -69,6 +69,10 @@ void PSRAM_PHY_StructInit(PSPHY_InitTypeDef *PSPHY_InitStruct)
 		PSPHY_InitStruct->PSRAMP_RFIFO_RDY_DLY = PSPHY_RFIFO_READY_DELAY_VL;
 
 	}
+
+	PSPHY_InitStruct-> DDR_PAD_CTRL1 = PAD_DDR_PTB(PSRAM_PHY_PAD_DRIVING) | PAD_DDR_PT(PSRAM_PHY_PAD_DRIVING) | PAD_DDR_NT(PSRAM_PHY_PAD_DRIVING) | \
+									   PAD_DDR_NTB(PSRAM_PHY_PAD_DRIVING) | PAD_BIT_DDR_PWDPADN_2REGU | PAD_BIT_DDR_VREF_RANGE;
+	PSPHY_InitStruct-> DDR_PAD_CTRL2 = PAD_DDR_S(PSRAM_PHY_VOL_TUNE);
 }
 
 /**
@@ -82,6 +86,12 @@ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct)
 {
 
 	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
+
+	//enable phy pad and set ddr phy pad driving strength
+	HAL_WRITE32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1, PSPHY_InitStruct->DDR_PAD_CTRL1);
+
+	//set REF voltage fine-tune
+	HAL_WRITE32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL2, PSPHY_InitStruct->DDR_PAD_CTRL2);
 
 	//0x04
 	psram_phy->PSPHY_CAL_PAR = PSPHY_PRE_CAL_PHASE(PSPHY_InitStruct->PSRAMP_PRE_CAL_PHASE) | \
@@ -124,8 +134,8 @@ void PSRAM_CTRL_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
 	PCTL_InitStruct->PSRAMC_cs_tcem = 0x0c;
 	PCTL_InitStruct->PSRAMC_rd_dum_len = APM_WR_DUMMY_LATENCY;
 	PCTL_InitStruct->PSRAMC_wr_dum_len = APM_WR_DUMMY_LATENCY;
-	PCTL_InitStruct->WR_VL_EN = 0x0;	//1:variable latency 0:fix latency
-	PCTL_InitStruct->RD_VL_EN = 0x1;	//1:variable latency 0:fix latency
+	PCTL_InitStruct->WR_VL_EN = (!PSRSAM_FIX_LATENCY);	// 1:variable latency 0:fix latency
+	PCTL_InitStruct->RD_VL_EN = (!PSRSAM_FIX_LATENCY);		// 1:variable latency 0:fix latency
 	if (PCTL_InitStruct->RD_VL_EN) {
 		PCTL_InitStruct->PSRAMC_auto_in_phy_cyc = 0;
 
@@ -215,8 +225,8 @@ void PSRAM_CTRL_WB_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
 	PCTL_InitStruct->PSRAMC_cs_tcem = 0x0c;
 	PCTL_InitStruct->PSRAMC_rd_dum_len = 0xc;
 	PCTL_InitStruct->PSRAMC_wr_dum_len = 0xc;
-	PCTL_InitStruct->RD_VL_EN = 0x1;	//1:variable latency 0:fix latency
-	PCTL_InitStruct->WR_VL_EN = 0x1;	//1:variable latency 0:fix latency
+	PCTL_InitStruct->WR_VL_EN = (!PSRSAM_FIX_LATENCY);	// 1:variable latency 0:fix latency
+	PCTL_InitStruct->RD_VL_EN = (!PSRSAM_FIX_LATENCY);	// 1:variable latency 0:fix latency
 	if (PCTL_InitStruct->RD_VL_EN) {
 		PCTL_InitStruct->PSRAMC_auto_in_phy_cyc = 0x0;
 
@@ -267,6 +277,26 @@ void PSRAM_CTRL_WB_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
 	}
 }
 
+/* boot_finish time = (2^16)/40 = 1.6ms when no speedup, when speed up 256 cycles will be used */
+/* 16 is defined in SPIC config form, 40 is SPIC IP clock */
+/* after SPIC clock & function enable, auto mode read */
+/* will be stucked when boot_finish not ready, */
+/* but user mode will hang if boot_finish not ready */
+VOID PSRAM_CTRL_SPU(u32 state)
+{
+	u32 temp = 0;
+	/* Should decide to speedup or not before spic clk&func enable */
+	/* this register will write speed_up signal in spic to change BOOT_DELAY (speed_up = 1: boot_delay = 8; speed_up = 0: boot_delay = by config form) */
+	temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL);
+
+	if (state == DISABLE) {
+		temp &= ~LSYS_BIT_PSRAM_SPDUPSIM;
+	} else {
+		temp |= LSYS_BIT_PSRAM_SPDUPSIM;
+	}
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL, temp);
+}
+
 /**
   * @brief Initializes the PSRAM controller according to the specified
   *   parameters in the PSRAM_InitStruct
@@ -276,7 +306,6 @@ void PSRAM_CTRL_WB_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
   */
 void PSRAM_CTRL_Init(PCTL_InitTypeDef *PCTL_InitStruct)
 {
-
 	SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
 
 	/* Disable psramc */
@@ -344,37 +373,12 @@ void PSRAM_CTRL_Init(PCTL_InitTypeDef *PCTL_InitStruct)
 	while ((psram_ctrl->SR & BIT_BOOT_FIN) == 0);
 }
 
-/**
-  * @brief Generate PSRAM command address value for dpin mode
-  * @param  PSRAM_CA: pointer to the CA array to be generated
-  * @param  StartAddr: Specify the target address
-  * @param  BurstType: Indicate the burst transmission mode
-  *			@arg PSRAM_WRAPPED_TYPE: indicate wrapper burst.
-  *			@arg PSRAM_LINEAR_TYPE: indicate linear burst.
-  * @param  AddSpace: Indicate access the memory or register space
-  *			@arg PSRAM_MEM_SPACE: indicate memory space.
-  *			@arg PSRAM_REG_SPACE: indicate register space.
-  * @param  RW: Indicate the transaction mode
-  *			@arg PSRAM_WRITE_TRANSACTION: indicate a write transaction.
-  *			@arg PSRAM_READ_TRANSACTION: indicate a read transaction.
-  * @retval None
-  */
-void PSRAM_CTRL_CA_Gen(u8 *PSRAM_CA, u32 StartAddr, u8 BurstType, u8 AddSpace, u8 RW)
-{
-	PSRAM_CA[0] = StartAddr & 0x7;
-	PSRAM_CA[1] = 0;
-	PSRAM_CA[2] = (StartAddr >> 3) & 0xf;
-	PSRAM_CA[3] = (StartAddr >> 11) & 0xf;
-	PSRAM_CA[4] = (StartAddr >> 19) & 0xf;
-	PSRAM_CA[5] = ((StartAddr >> 27) & 0xf) | (BurstType << 5) | (AddSpace << 6) | (RW << 7);
-}
-
 void PSRAM_APM_DEVIC_Init(void)
 {
 	u8 mr0[2];
 	u8 mr4[2];
 	mr0[0] = PSRAM_READ_LATENCY_CODE(PSRAM_INIT_FIX_RD_LATENCY_CLK / 2 - 3) | \
-			 PSRAM_LT_SELECT(0); //0:variable latency 1:fix latency
+			 PSRAM_LT_SELECT(PSRSAM_FIX_LATENCY); //0:variable latency 1:fix latency
 
 	mr4[0] = PSRAM_WRITE_LATENCY_CODE(APM_WR_INIT_LATENCY_SPEC[PSRAM_INIT_WR_LATENCY_CLK - 3]);
 
@@ -394,7 +398,7 @@ void PSRAM_WB_DEVIC_Init(void)
 
 	data[1] = PSRAM_WB_BURST_LENGTH(0x0) | \
 			  PSRAM_WB_HyBURSE_EN | \
-			  PSRAM_WB_FIX_LATENCY_EN(0) | \
+			  PSRAM_WB_FIX_LATENCY_EN(PSRSAM_FIX_LATENCY) | \
 			  PSRAM_WB_INIT_LATENCY(0x1);		// 1 for 6T 150M, 2 for 7T 200M (need modifycation)
 	PSRAM_REG_Write(1, PSRAM_WB_CR0, 2, data);
 }
@@ -791,8 +795,9 @@ void PSRAM_AutoGating(u32 Enable, u32 IDleCnt, u32 ResumeCnt)
 void set_psram_sleep_mode(u32 type)
 {
 	u8 psram_halfsleep[2];
+	u32 cur_src = LSYS_GET_CKSL_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
 
-	PSRAM_AutoGating(DISABLE, 1, 16);
+	PSRAM_AutoGating(DISABLE, 10, 3);
 
 	// 50ns will be enough, check if need
 	DelayUs(1);
@@ -811,6 +816,12 @@ void set_psram_sleep_mode(u32 type)
 
 	}
 
+	if (cur_src == BIT_LSYS_CKSL_PSRAM_LBUS) {
+		PSRAM_AutoGating(ENABLE, 10, 3);
+	} else if (cur_src == BIT_LSYS_CKSL_PSRAM_CPUPLL || cur_src == BIT_LSYS_CKSL_PSRAM_DSPPLL) {
+		PSRAM_AutoGating(ENABLE, 1, 16);
+	}
+
 }
 
 /**
@@ -822,6 +833,10 @@ void set_psram_sleep_mode(u32 type)
 void set_psram_wakeup_mode(u32 type)
 {
 	u32 temp;
+	u32 cur_src = LSYS_GET_CKSL_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
+
+	PSRAM_AutoGating(DISABLE, 10, 3);
+
 	DCache_CleanInvalidate(0x60000100, 32);
 	temp = HAL_READ32(0x60000100, 0);
 
@@ -836,63 +851,50 @@ void set_psram_wakeup_mode(u32 type)
 		DelayUs(100);
 	}
 
-
 	DCache_Invalidate(0x60000100, 32);
 
-	PSRAM_AutoGating(ENABLE, 1, 16);
+	if (cur_src == BIT_LSYS_CKSL_PSRAM_LBUS) {
+		PSRAM_AutoGating(ENABLE, 10, 3);
+	} else if (cur_src == BIT_LSYS_CKSL_PSRAM_CPUPLL || cur_src == BIT_LSYS_CKSL_PSRAM_DSPPLL) {
+		PSRAM_AutoGating(ENABLE, 1, 16);
+	}
 
 }
 
 void set_psram_suspend_and_restore(u8 restore)
 {
-	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
 	RRAM_TypeDef *rram = RRAM_DEV;
+	u32 Rtemp = 0;
 
-	if (restore) {
-		/* psram re-enable */
-		//open psram phy & pad
-		RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, ENABLE);
-		HAL_WRITE32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1, HAL_READ32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1) | PAD_BIT_DDR_PWDPADN_2REGU);
+	if (rram->PSRAM_TYPE == PSRAM_TYPE_APM || rram->PSRAM_TYPE == PSRAM_TYPE_WB) {
 
-		//PSRAM CTRL&PHY register restore
-		psram_phy->PSPHY_PHY_CTRL =  rram->PSRAM_PHY_BK[0];
-		psram_phy->PSPHY_CAL_PAR =  rram->PSRAM_PHY_BK[1];
+		if (restore) {
+			/* psram re-enable */
+			//open psram pad
+			Rtemp = HAL_READ32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1);
+			Rtemp |= PAD_BIT_DDR_PWDPADN_2REGU;
+			Rtemp &= ~PAD_BIT_DDR_PD_REF;
+			HAL_WRITE32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1, Rtemp);
 
-		/* set pad driving */
-		//	HAL_WRITE32(0x4100C9c0, 0, 0x134D49A6);
-		//	HAL_WRITE8(0x4100C9c7, 0, 0x58);
+			//psram device exit self refresh
+			set_psram_wakeup_mode(rram->PSRAM_TYPE);
 
-		SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
+		} else {
+			/* psram shutdown */
+			set_psram_sleep_mode(rram->PSRAM_TYPE);
 
-		psram_ctrl->SSIENR = 0;
-		psram_ctrl->CTRLR0 = rram->PSRAM_CTRL_BK[0];
-		psram_ctrl->BAUDR =  rram->PSRAM_CTRL_BK[1];
-		psram_ctrl->VALID_CMD =  rram->PSRAM_CTRL_BK[2];
-		psram_ctrl->TPR0 =  rram->PSRAM_CTRL_BK[3];
-		psram_ctrl->DEVICE_INFO =  rram->PSRAM_CTRL_BK[4];
-		psram_ctrl->CTRLR2 =  rram->PSRAM_CTRL_BK[5];
-		psram_ctrl->AUTO_LENGTH =  rram->PSRAM_CTRL_BK[6];
-		psram_ctrl->AUTO_LENGTH2 =  rram->PSRAM_CTRL_BK[7];
-		psram_ctrl->READ_FAST_SINGLE =  rram->PSRAM_CTRL_BK[8];
-		psram_ctrl->WRITE_SIGNLE =  rram->PSRAM_CTRL_BK[9];
-		psram_ctrl->USER_LENGTH =  rram->PSRAM_CTRL_BK[10];
-		while ((psram_ctrl->SR & BIT_BOOT_FIN) == 0);
-
-		//psram device exit self refresh
-		set_psram_wakeup_mode(rram->PSRAM_TYPE);
-
+			/* shutdown psram pad */
+			Rtemp = HAL_READ32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1);
+			Rtemp &= ~PAD_BIT_DDR_PWDPADN_2REGU;
+			Rtemp |= PAD_BIT_DDR_PD_REF;
+			HAL_WRITE32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1, Rtemp);
+		}
 	} else {
-		/* psram shutdown */
-		//backup psram cal
-		rram->PSRAM_PHY_BK[1] = psram_phy->PSPHY_CAL_PAR;
-
-		set_psram_sleep_mode(rram->PSRAM_TYPE);
-
-		/* shutdown psram phy & pad */
-		HAL_WRITE32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1, HAL_READ32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL1) & ~PAD_BIT_DDR_PWDPADN_2REGU);
-		RCC_PeriphClockCmd(APBPeriph_PSRAM, APBPeriph_PSRAM_CLOCK, DISABLE);
+		/* no psram */
+		return;
 	}
 }
+
 
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor Corporation *****END OF FILE****/

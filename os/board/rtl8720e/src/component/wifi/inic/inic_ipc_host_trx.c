@@ -381,6 +381,8 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 
 	if (skb == NULL) {
 		//DBG_ERR("rltk_wlan_alloc_skb() for data len=%d failed!", total_len);
+		/*NP doesn't have enough skb right now, so AP TX block 1ms to wait NP TX*/
+		vTaskDelay(1);
 		rtw_up_sema(&g_inic_host_priv.host_send_sema);
 		return ERR_BUF;
 	}

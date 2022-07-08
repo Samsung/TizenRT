@@ -120,6 +120,8 @@
 #define MediaConnection					MediaConnection_8720E
 
 // hioe
+#define SetHIOESingleCmdValWM SetHIOESingleCmdValWM_8720E
+#define SetHIOESingleCmdValBM SetHIOESingleCmdValBM_8720E
 #define SetHIOEConfigFile 				SetHIOEConfigFile_8720E
 #define HIOEBackupRestore 				HIOEBackupRestore_8720E
 #define CHKHigh8kTXFFPGUseOverlap 		CHKHigh8kTXFFPGUseOverlap_8720E
@@ -150,6 +152,8 @@
 #define PSSleepTo32K 						PSSleepTo32K_8720E
 #define PSRxBcnProcess 					PSRxBcnProcess_8720E
 #define LowPowerRxBeacon 					LowPowerRxBeacon_8720E
+#define PSPeriodCCA							PSPeriodCCA_8720E
+#define BeaconModeDCKbackup 				BeaconModeDCKbackup_8720E
 #define Set32KLpsOption 					Set32KLpsOption_8720E
 #define InitBcnEarlyAdjustStat 			InitBcnEarlyAdjustStat_8720E
 #define InitBcnEarlyAdjustPID 			InitBcnEarlyAdjustPID_8720E
@@ -187,6 +191,7 @@
 //LPS offload
 #define LPSOfld_HIOECmdFileToTXFF 		LPSOfld_HIOECmdFileToTXFF_8720E
 #define LPSOfld_HIOECmdFileInit 		LPSOfld_HIOECmdFileInit_8720E
+#define LPSOfld_RxbcnModeCmdFileValInit	LPSOfld_RxbcnModeCmdFileValInit_8720E
 #define LPSOfld_HIOECmdFilePGRSInit 	LPSOfld_HIOECmdFilePGRSInit_8720E
 #define LPSOfld_ByPassLsysWakeInt 		LPSOfld_ByPassLsysWakeInt_8720E
 #define LPSOfld_SwtHIOECmdFile 			LPSOfld_SwtHIOECmdFile_8720E
@@ -216,6 +221,8 @@
 #define SetPeriodTxNullAddrRate			SetPeriodTxNullAddrRate_8720E
 #define H2CHDL_Set_CSI_TXNULL 			H2CHDL_Set_CSI_TXNULL_8720E
 #endif
+#define halbb_fw_read_rf_reg				halbb_fw_read_rf_reg_8720e
+#define halbb_fw_write_rf_reg			halbb_fw_write_rf_reg_8720e
 
 //Wolwan
 #define InitRemoteWakeUp 					InitRemoteWakeUp_8720E
@@ -337,8 +344,11 @@
 #define BTC_RestoreBtSlot              	BTC_RestoreBtSlot_8720E
 #define BTC_GenRandomValue             	BTC_GenRandomValue_8720E
 #define BTC_WifiRandomSlot             	BTC_WifiRandomSlot_8720E
-#if CONFIG_BTCOEX_DEBUG
-#define InitBTCoexGpioDebug            	InitBTCoexGpioDebug_8720E
+#define BTC_WifiWindowSlot             	BTC_WifiWindowSlot_8720E
+#define BTC_Set_GntBt             		BTC_Set_GntBt_8720E
+#if (CONFIG_BTCOEX_GPIO_DEBUG || CONFIG_BTCOEX_SLOT_DEBUG)
+#define InitBTCoexDebugPort            	InitBTCoexDebugPort_8720E
+#define BTC_SlotGpioDbgCtrl            	BTC_SlotGpioDbgCtrl_8720E
 #endif
 #define BTC_AOACSwitch                 	BTC_AOACSwitch_8720E
 //BTCoex
@@ -393,7 +403,8 @@
 //3 BB base address
 #define RTL8720E_BBREG_AHB_BASE             	0x40010000
 //3 RF base address
-#define RTL8720E_RFREG_AHB_BASE             	0x40017000
+#define RTL8720E_ARFCREG_AHB_BASE             	0x40017000
+#define RTL8720E_DRFCREG_AHB_BASE             	0x4001E000
 //3 DDMA control base address
 #define RTL8720E_DDMA_CTRL_AHB_BASE         	0x40000000 //0x4000_1200- 0x4000_12FF
 //3 BT mailbox base address
@@ -470,8 +481,10 @@
 #define ReadPortBBUchar(offset)             	(rtl_inb((offset)+RTL8720E_BBREG_AHB_BASE))
 
 //3 RF Reg only support dword mode
-#define WritePortRFUlong(offset, value)     	rtl_outl(4*(offset)+RTL8720E_RFREG_AHB_BASE, value)
-#define ReadPortRFUlong(offset)             	(rtl_inl(4*(offset)+RTL8720E_RFREG_AHB_BASE))
+#define WritePortARFCUlong(offset, value)  rtl_outl(4*(offset)+RTL8720E_ARFCREG_AHB_BASE, value)
+#define WritePortDRFCUlong(offset, value)  rtl_outl(4*(offset)+RTL8720E_DRFCREG_AHB_BASE, value)
+#define ReadPortARFCUlong(offset)             	(rtl_inl(4*(offset)+RTL8720E_ARFCREG_AHB_BASE))
+#define ReadPortDRFCUlong(offset)             	(rtl_inl(4*(offset)+RTL8720E_DRFCREG_AHB_BASE))
 
 //3 SEC CAM
 #define WriteSECCAMDWord(offset, value)  	rtl_outl((offset)+RTL8720E_SECCAM_AHB_BASE, value)
@@ -601,6 +614,8 @@
 #define ReadLSONDWord(offset)                	(rtl_inl((offset)+SYSTEM_CTRL_BASE))
 #define ReadLSONWord(offset)                 	(rtl_inw((offset)+SYSTEM_CTRL_BASE))
 #define ReadLSONByte(offset)                 	(rtl_inb((offset)+SYSTEM_CTRL_BASE))
+
+#define RFCRegToByteAddr(x)		((x)<<2)
 
 //============================================================================
 //       8720E Regsiter Bit and Content definition

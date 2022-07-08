@@ -16,8 +16,8 @@
 #include "wififw_txreport_ram.h"
 #include "wififw_phydm_ram.h"
 #include "wififw_cmd_ram.h"
-#include "wififw_sysmib_ram.h"
 #include "wififw_rate_adaptive_ram.h"
+#include "wififw_sysmib_ram.h"
 #include "wififw_halbb_cmd_ram.h"
 #include "wififw_phydm_offload_ram.h"
 

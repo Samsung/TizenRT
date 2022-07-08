@@ -40,7 +40,7 @@
 	SET_BITS_TO_LE_1BYTE((_pEleStart) + 2, 1, 1, _val)
 #define SET_HE_MAC_CAP_TRS_SUPPORT(_pEleStart, _val) \
 	SET_BITS_TO_LE_1BYTE((_pEleStart) + 2, 2, 1, _val)
-#define SET_HE_MAC_CAP_BRS_SUPPORT(_pEleStart, _val) \
+#define SET_HE_MAC_CAP_BSR_SUPPORT(_pEleStart, _val) \
 	SET_BITS_TO_LE_1BYTE((_pEleStart) + 2, 3, 1, _val)
 #define SET_HE_MAC_CAP_BC_TWT_SUPPORT(_pEleStart, _val) \
 	SET_BITS_TO_LE_1BYTE((_pEleStart) + 2, 4, 1, _val)
@@ -922,11 +922,6 @@ struct mu_ac_parameter {
 struct HE_mu_edca_element {
 	u8 qos_info; /* AP/STA specific QoS info */
 	struct mu_ac_parameter edca[4]; /* AC_BE, AC_BK, AC_VI, AC_VO */
-};
-
-struct rtw_rts_threshold {
-	u16 rts_time_th;
-	u16 rts_len_th;
 };
 
 void HE_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);

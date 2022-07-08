@@ -42,7 +42,7 @@
 #define CONFIG_TX_PAUSE_DRV_INFO		1
 #define CONFIG_RF_JAGUAR                0   //8723d no support new 3-wire
 #define CONFIG_SW_QUEUE_TX		0
-#define CONFIG_CSI_REPORT			0
+#define CONFIG_CSI_REPORT			1
 
 //3 PS Related
 #define CONFIG_SAPPS                    1
@@ -54,10 +54,11 @@
 #define CONFIG_BCNADJ_LPSOFFLOAD_V1    0   //david_liu,220419
 #define CONFIG_BCNADJ_LPSOFFLOAD_V2    0   //david_liu,220419
 #define CONFIG_BEACON_MODE		0
+#define CONFIG_PERIOD_CCA		0
 #define CONFIG_S1_NULL1_IVL_PATCH       0
 #define CONFIG_LPS_Offload 		0
 #if CONFIG_LPS_Offload
-#define LPSOFLD_MULTIBCN_PATCH 1//bcnearly and bcn agg early both trigger HIOE on cause bcn agg early cannot be used to multibcn lps mode, need ECO
+#define LPSOFLD_MULTIBCN_PATCH 0//bcnearly and bcn agg early both trigger HIOE on cause bcn agg early cannot be used to multibcn lps mode, need ECO
 #else
 #define LPSOFLD_MULTIBCN_PATCH 0
 #endif
@@ -74,7 +75,8 @@
 #define CONFIG_DIG_OFFLOAD 0
 
 //3 Dynamic Mechanism Offload
-#define CONFIG_RATE_ADAPTIVE            0//keep the macro control for some case that need to reduce FW image size
+#define CONFIG_RATE_ADAPTIVE        1//keep the macro control for some case that need to reduce FW image size
+#define CONFIG_TPBASE_RA			1
 #define CONFIG_RA_PS_MODE           0
 #define CONFIG_POWER_TRAINING_WIL   1
 #define CONFIG_11AC_1SS             0
@@ -101,7 +103,9 @@
 
 //1  Debug control
 #define CONFIG_PS_DEBUG                 1
-#define CONFIG_BTCOEX_DEBUG             0
+#define CONFIG_BTCOEX_LOG_DEBUG         0
+#define CONFIG_BTCOEX_GPIO_DEBUG        0
+#define CONFIG_BTCOEX_SLOT_DEBUG        0
 
 //1 Test & verification control
 #define CONFIG_DV_SIMULATION_TEST		0

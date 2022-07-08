@@ -42,6 +42,8 @@ typedef struct {
 	u32 PSRAMP_RFIFO_RDY_DLY;		/* variable latency: delay read data cycles(phy clk) after detecting first DQS rising edge, must < 4
 										fixed latency: delay read data cycles(phy clk) after asserting spi_rx_data_en, recommend 4 ~ 6
 										4*read_latency - rd_dummy_length + rfifo_rdy_dly = in_physical_cyc */
+	u32 DDR_PAD_CTRL1;
+	u32 DDR_PAD_CTRL2;
 } PSPHY_InitTypeDef;
 
 /**
@@ -214,8 +216,8 @@ typedef struct {
 /** @defgroup PSRAMP_Latency_Type
   * @{
   */
-#define PSPHY_VAR_LATENCY			0x0 //variable latency
-#define PSPHY_FIX_LATENCY			0x1	//fix latency
+#define PSRSAM_FIX_LATENCY			0x0		//0 for variable, 1 for fix
+
 /**
   * @}
   */
@@ -268,6 +270,7 @@ _LONG_CALL_ void set_psram_sleep_mode(u32 type);
 _LONG_CALL_ void set_psram_wakeup_mode(u32 type);
 _LONG_CALL_ void set_psram_suspend_and_restore(u8 restore);
 
+_LONG_CALL_ VOID PSRAM_CTRL_SPU(u32 state);
 
 /**
   * @}
@@ -290,6 +293,9 @@ _LONG_CALL_ void set_psram_suspend_and_restore(u8 restore);
 
 #define PSRAM_TYPE_APM		0
 #define PSRAM_TYPE_WB		1
+
+#define PSRAM_PHY_PAD_DRIVING	0x28
+#define PSRAM_PHY_VOL_TUNE		0x2C
 
 extern u8 APM_WR_INIT_LATENCY_SPEC[6];
 

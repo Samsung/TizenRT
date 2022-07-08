@@ -17,7 +17,7 @@
 #include "inic_ipc.h"
 
 /* -------------------------------- Defines --------------------------------- */
-#define CONFIG_INIC_IPC_MSG_Q_PRI	(3)
+#define CONFIG_INIC_IPC_MSG_Q_PRI	(7)
 
 /* -------------------------------- Macros ---------------------------------- */
 
