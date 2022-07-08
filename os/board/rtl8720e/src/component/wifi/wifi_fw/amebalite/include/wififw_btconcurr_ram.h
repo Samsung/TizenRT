@@ -7,7 +7,7 @@
 #define MaxTBTTOnPeriod             0x2A
 #define MinTBTTOnPeriod             0x3
 #define NULL_EARLY                  0x3
-#define BTC_BCN_EARLY               DEFAULT_PS_BCN_EARLY + 3
+#define BTC_BCN_EARLY               DEFAULT_PS_BCN_EARLY + 1
 #define BTC_FLEX_EXT_NUM            3
 #define BTC_IQK_WAIT_CNT            6
 #define BTC_AUTO_SLOT_TIME_THD      30
@@ -57,6 +57,12 @@ so we use 0ms 50ms(timer) and 100ms(bcn early) as slots. */
 #define SEL_COEX_TABLE_1            		0x03   //0x6CC[1:0]=2'b11 -> select 0x6C0
 #define SEL_COEX_TABLE_2            		0xFC   //0x6CC[1:0]=2'b00 -> select 0x6C4
 
+#define BTC_TDMA0_3_PIN						_PB_2	//ALite MAC debugport[10]
+#define BTC_TDMA1_4_PIN						_PB_3	//ALite MAC debugport[11]
+#define BTC_TDMA2_5_PIN						_PA_15	//ALite MAC debugport[15]
+#define BTC_TBTT_PIN						_PA_16	//ALite MAC debugport[16]
+
+#define MAX_RANDOM_INDEX					50
 /*--------------------Define Enum---------------------------------------*/
 typedef enum _BTC_Mailbox_CMD_ {
 	_BT_FW_PATCH                      			= 0x0a,
@@ -119,7 +125,7 @@ typedef struct _BTC_PsTdma_Parm_ {
 	u8   	TdmaChange			: 1;
 	u8   	WLPeriodCntIncrease	: 1;
 	u8   	UnderBCNProtection	: 1;
-	u8   	Rsvd1				: 1;
+	u8   	WifiWindowSlotStart : 1;
 
 	u32 	BtSlotStartTime;
 	u8   	H2cTdmaValue[7];
@@ -188,8 +194,9 @@ typedef struct _H2C_BT_Tdma_Parm_ {
 	u8  	Rsvd0                   		: 2;
 	u8   	PanEnable               		: 1;
 	u8   	PsPoll                  		: 1;
-	u8   	WifiRandomSlot          	: 1;
-	u8   	Rsvd1                   		: 3;
+	u8   	WifiRandomSlot          		: 1;
+	u8  	WifiWindowSlot          		: 1;
+	u8   	Rsvd1                   		: 2;
 	/* B3 */
 	u8  	NoTxPause               		: 1;
 	u8  	Valueof778InWIFI        	: 1;
@@ -296,9 +303,10 @@ typedef struct _H2C_BT_OnlyTest_Parm_ {
 
 /* H2C Index: 0x70 */
 typedef struct _H2C_BT_Init_Parm_ {
-	u8    	Enhance3wireMode	: 1;
-	u8   	HighPowerPAMode	: 1;
-	u8   	Rsvd0             	: 6;
+	u8   	Enhance3wireMode	: 1;
+	u8   	HighPowerPAMode		: 1;
+	u8   	DirectBtMode		: 1;
+	u8   	Rsvd0             	: 5;
 	//B1-B6
 	u8    	Rsvd1[6];
 } H2C_BT_Init_Parm, *PH2C_BT_Init_Parm;
@@ -409,6 +417,12 @@ typedef enum _H2C_BTWIFI_CTRL_ {
 	BT_HID_SLOT_TABLE_2     = 13
 } H2C_BTWIFI_CTRL, *PH2C_BTWIFI_CTRL;
 
+typedef enum _GNTBT_CTRL_ {
+	GNT_HW_PTA        = 0,
+	GNT_SW_LOW        = 1,
+	GNT_SW_HIGH       = 2
+} GNTBT_CTRL, *PGNTBT_CTRL;
+
 /*--------------------Define MACRO--------------------------------------*/
 #define MAILBOX_MAX_LENGTH    7
 /* Mailbox MP Rpt OPCODE */
@@ -476,7 +490,10 @@ extern void BTC_ProtectBCN_8720E(void);
 extern void BTC_RestoreBtSlot_8720E(void);
 extern u8 BTC_GenRandomValue_8720E(u8 range, u8 count);
 extern void BTC_WifiRandomSlot_8720E(void);
-extern void InitBTCoexGpioDebug_8720E(void);
+extern void BTC_WifiWindowSlot_8720E(void);
+extern void BTC_Set_GntBt_8720E(u8 control);
+extern void InitBTCoexDebugPort_8720E(void);
+extern void BTC_SlotGpioDbgCtrl_8720E(u32 GPIO_Pin, u32 Val);
 extern void BTC_AOACSwitch_8720E(u8  state);
 
 #endif /* #ifndef __ASSEMBLY__ */

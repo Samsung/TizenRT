@@ -1191,6 +1191,8 @@ int wps_judge_staion_disconnect(void)
 		if (os_strlen((char *)setting.ssid) > 0) {
 			wifi_disconnect();
 		}
+	default:
+		break;
 	}
 	return 0;
 }

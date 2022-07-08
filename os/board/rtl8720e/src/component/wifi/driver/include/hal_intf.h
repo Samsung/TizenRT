@@ -193,6 +193,10 @@ typedef enum _HW_VARIABLES {
 	HW_VAR_PORT1_NETTYPE,
 	HW_VAR_TX_AGG_MAX_NUM,
 	HW_VAR_CCA_EDCCA,
+
+	/* add for 11ax support: start */
+	HW_VAR_BSS_COLOR,
+	/* add for 11ax support: end */
 } HW_VARIABLES;
 
 typedef enum _HAL_DEF_VARIABLE {
@@ -396,7 +400,7 @@ struct hal_ops {
 	void (*fill_fake_txdesc)(PADAPTER, u8 *pDesc, u32 BufferLen,
 							 u8 IsPsPoll, u8 IsBTQosNull, u8 bDataFrame);
 	u8(*hal_get_tx_buff_rsvd_page_num)(_adapter *adapter, bool wowlan);
-#if defined(RTL8730E_WIFI_TEST) || defined(RTL8720E_WIFI_TEST)  //MBSSID test
+#ifdef CONFIG_MBSSID_AX
 	void (*hal_mbssid_cfg)(u8 enable, mbssid_info_t mbssid_info);
 #endif
 #ifdef CONFIG_DFS_MASTER
@@ -409,6 +413,8 @@ struct hal_ops {
 	void (*add_bb_sta)(_adapter *padapter, struct sta_info *psta);
 	void (*del_bb_sta)(_adapter *padapter, struct sta_info *psta);
 	void (*phydm_cmd)(_adapter *padapter, char *input, char *output, u32 out_len);
+	void (*set_bss_color)(_adapter *padapter, u8 bss_color, enum phl_phy_idx phy_idx);
+	void (*set_TXOP_thres)(_adapter *padapter, u16 rts_th, u8 enable);
 #ifdef CONFIG_CSI
 	u8(*csi_en)(_adapter *padapter, rtw_csi_action_parm_t *act_param);
 	u8(*csi_cfg)(_adapter *padapter, rtw_csi_action_parm_t *act_param);
@@ -842,6 +848,7 @@ void rtw_hal_dm_cmd(_adapter *padapter, char *input, char *output, u32 out_len);
 
 void rtw_hal_add_bb_sta(_adapter *padapter, struct sta_info *psta);
 void rtw_hal_del_bb_sta(_adapter *padapter, struct sta_info *psta);
+void rtw_hal_set_bss_color(_adapter *padapter, u8 bss_color, enum phl_phy_idx phy_idx);
 
 #ifdef CONFIG_CSI
 u8 rtw_hal_csi_en(_adapter *padapter, rtw_csi_action_parm_t *act_param);

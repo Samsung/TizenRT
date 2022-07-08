@@ -52,23 +52,6 @@
 
 /*--------------------Define Enum---------------------------------------*/
 
-typedef enum {
-	/* MAC/Common 0x0 ~ 0x3F*/
-	H2C_RET_SUCCESS = 0x0,
-	H2C_INVALID_CAT = 0x1,
-	H2C_INVALID_CLASS = 0x2,
-	H2C_INVALID_FUNC = 0x3,
-	H2C_FUNC_FAIL = 0x4,
-	H2C_RET_NO_SUPPORT = 0x5,
-
-	/* HALBB 0x40 ~ 0x7F*/
-	H2C_HALBB_RET = 0x40,
-	/* RF 0x80 ~ 0xBF*/
-	H2C_HALRF_RET = 0x80,
-	/* HALBB 0xC0 ~ 0xEF*/
-	H2C_HALBTC_RET = 0xC0,
-	H2C_RET_MAX = 0xFF,
-} H2C_RET_CODE;
 
 
 /**
@@ -158,84 +141,6 @@ struct halbb_c2h_hdr {
 };
 
 
-
-
-/**
- * @struct _h2c_cmd_macidcfg_
- * @brief _h2c_cmd_macidcfg_
- *
- * @var _h2c_cmd_macidcfg_::dis_ra
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::en_md_sel
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::bw_cap
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::macid
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::dcm_cap
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::er_cap
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::init_rate_lv
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::bw_noupdate
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::en_sgi
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::ldpc_cap
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::stbc_cap
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::ss_num
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::gi_ltf
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::rsvd0
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::ra_mask0
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::ra_mask1
- * Please Place Description here.
- * @var _h2c_cmd_macidcfg_::rsvd1
- * Please Place Description here.
- */
-struct _h2c_cmd_macidcfg_ {
-
-	// DWORD 0
-	u8 dis_ra: 1;
-	u8 en_md_sel: 5;
-	/*u32 en_cck: 1;
-	u32 en_legofdm: 1;
-	u32 en_ht: 1;
-	u32 en_vht: 1;
-	u32 en_he: 1;*/
-	u8 bw_cap: 2;
-
-	u8 macid;
-
-	u8 dcm_cap: 1;
-	u8 er_cap: 1;
-	u8 init_rate_lv: 2;
-	u8 bw_noupdate: 1;
-	u8 en_sgi: 1;
-	u8 ldpc_cap: 1;
-	u8 stbc_cap: 1;
-
-	u8 ss_num: 3;
-	u8 gi_ltf: 3;
-	u8 rsvd0: 2;
-
-	//DWORD 1
-	u32 ra_mask0;
-
-	//DWORD 2
-	u32 ra_mask1: 28;
-	u32 rsvd1: 4;
-
-};
-
-
-
 /**
  * @struct _h2c_fwtrace_
  * @brief _h2c_fwtrace_
@@ -305,9 +210,9 @@ struct _h2c_fw_edcca_ {
  * Please Place Description here.
  */
 struct _c2h_rpt_txsts_ {
-	u16 macid;
+	u8 macid;
 	u8 avg_agg;
-	u8 rsvd;
+	u16 rsvd;
 
 	u16 tx_ok[4];
 
@@ -373,7 +278,7 @@ halbb_fw_l6m_wa(
 
 
 
-H2C_RET_CODE Halbb_h2chdl(
+extern void Halbb_h2chdl(
 	u8  CmdID,
 	u8  *content
 );

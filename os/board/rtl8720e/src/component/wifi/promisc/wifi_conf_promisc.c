@@ -82,6 +82,8 @@ void wifi_enter_promisc_mode()
 			if (strlen((const char *)setting.ssid) > 0) {
 				wifi_disconnect();
 			}
+		default:
+			break;
 		}
 	}
 #endif

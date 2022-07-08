@@ -34,6 +34,15 @@
 
 #define PHYSTS_TYPE_NUM 32
 
+#define CONFIG_RA_DBG_LOG       0
+#if CONFIG_RA_DBG_LOG
+#define DBG_RA_LOG   DBG_8195A
+#else
+#define DBG_RA_LOG(...)
+#endif
+
+#define RA_Pending_Code 	0
+
 /*@--------------------------[Enum]------------------------------------------*/
 
 
@@ -797,6 +806,28 @@ struct _ra_c2h_rpt {
 	u8 rsvd4;
 };
 
+typedef struct TPBASE_RA_PARM {
+	u8 high_cadidante_rate;
+	u8 low_cadidante_rate;
+	u8 badpcr_trystate_bitmap;//BIT0:low rate BIT1:high rate
+	u8 goodpcr_trystate_bitmap;//BIT0:high rate1 BIT1:high rate2
+	u8 base_rate;
+	u8 base_gi_ltf;
+	u32 BaseTP;
+	u32 CurrentTP;
+	u8  try_down_gi_ltf[2];
+	u8  try_up_gi_ltf[2];
+	u8 trydown_rateidxtable[2];
+	u8 tryup_rateidxtable[2];
+	u32 trydown_rateidxTPtable[2];
+	u32 tryup_rateidxTPtable[2];
+	u8 fewpacket_trydec_cnt;
+	u8 fewpacket_cnt;
+	u8 rateupkeepgiltf;
+	u8 rateupkeeprate;
+	u8 rateupkeepcnt;
+	u8 rateuplock;
+} TPBASE_RA_PARM, *PTPBASE_RA_PARM;
 
 
 /*--------------------Define MACRO--------------------------------------*/
@@ -830,11 +861,10 @@ RateDecision(
  */
 extern void
 write_rate_tab(
-	u16 macid,
+	u8 macid,
 	PRA_RATE_T prate_t,
 	u8 tryrate,
-	u8 darfc_index,
-	struct _bb_sta_info *sta
+	u8 darfc_index
 );
 
 /**
@@ -847,7 +877,7 @@ write_rate_tab(
 
 extern RA_RATE_T
 read_ctrl_info_rate(
-	u16 macid
+	u8 macid
 );
 
 /**
@@ -864,12 +894,11 @@ read_ctrl_info_rate(
 
 extern void
 fw_fixed_ctrl_info_rate(
-	u16 macid,
+	u8 macid,
 	u8 fixed_gi_ltf,
 	u8 fixed_bw,
 	u8 fixed_mode,
-	u8 fixed_rate,
-	struct _bb_sta_info *sta
+	u8 fixed_rate
 );
 
 /**
@@ -887,8 +916,7 @@ extern void
 Halbb_start_rate(
 	u8 macid,
 	u8 start_rssi,
-	u8 bw_idx,
-	struct _bb_sta_info *sta
+	u8 bw_idx
 );
 #if 0
 /**
@@ -913,7 +941,7 @@ init_ra_rty_c2h(
 
 extern void
 init_ra_rpt(
-	struct _bb_sta_info *sta
+	u8 macid
 );
 
 /**
@@ -932,8 +960,7 @@ init_ra_rpt(
 extern void
 Halbb_arfrrefresh(
 	u8 macid,
-	u32 mask0,
-	struct _bb_sta_info *sta
+	u32 mask0
 );
 
 
@@ -947,7 +974,7 @@ Halbb_arfrrefresh(
 
 extern void
 get_tx_statistics(
-	IN u8 rpt_idx
+	u8 rpt_idx
 );
 
 //---------------------------------------------------------------------
@@ -989,7 +1016,7 @@ extern void
 manual_adjust_ra_mask(
 	u8 rate_idx,
 	u8 mode,
-	struct _bb_sta_info *sta
+	u8 macid
 );
 
 extern u8
@@ -1012,7 +1039,7 @@ mcs_ss_to_rate_idx(
 
 extern void
 reset_ra_rpt_c2h(
-	struct _bb_sta_info *sta
+	u8 macid
 );
 
 /**
@@ -1025,7 +1052,7 @@ reset_ra_rpt_c2h(
 
 extern void
 reset_ra_rpt_normal(
-	struct _bb_sta_info *sta
+	u8 macid
 );
 
 /**
@@ -1038,9 +1065,13 @@ reset_ra_rpt_normal(
 
 extern void
 reset_ra_rpt_try(
-	struct _bb_sta_info *sta
+	u8 macid
 );
 
+extern void
+InitRAInfo(
+	void
+);
 
 
 #endif

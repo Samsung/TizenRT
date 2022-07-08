@@ -93,6 +93,8 @@ void judge_station_disconnect(void)
 		if (strlen((char *)setting.ssid) > 0) {
 			wifi_disconnect();
 		}
+	default:
+		break;
 	}
 }
 extern void eap_peer_unregister_methods(void);

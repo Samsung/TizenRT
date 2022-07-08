@@ -1169,24 +1169,7 @@ VOID VectorTableOverride(VOID)
 IMAGE2_RAM_TEXT_SECTION
 void app_psram_suspend(void)
 {
-	SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
-	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
 	RRAM_TypeDef *rram = RRAM_DEV;
-
-	rram->PSRAM_CTRL_BK[0] = psram_ctrl->CTRLR0;
-	rram->PSRAM_CTRL_BK[1] = psram_ctrl->BAUDR;
-	rram->PSRAM_CTRL_BK[2] = psram_ctrl->VALID_CMD;
-	rram->PSRAM_CTRL_BK[3] = psram_ctrl->TPR0;
-	rram->PSRAM_CTRL_BK[4] = psram_ctrl->DEVICE_INFO;
-	rram->PSRAM_CTRL_BK[5] = psram_ctrl->CTRLR2;
-	rram->PSRAM_CTRL_BK[6] = psram_ctrl->AUTO_LENGTH;
-	rram->PSRAM_CTRL_BK[7] = psram_ctrl->AUTO_LENGTH2;
-	rram->PSRAM_CTRL_BK[8] = psram_ctrl->READ_FAST_SINGLE;
-	rram->PSRAM_CTRL_BK[9] = psram_ctrl->WRITE_SIGNLE;
-	rram->PSRAM_CTRL_BK[10] = psram_ctrl->USER_LENGTH;
-
-	rram->PSRAM_PHY_BK[0] = psram_phy->PSPHY_PHY_CTRL;
-	rram->PSRAM_PHY_BK[1] = psram_phy->PSPHY_CAL_PAR;
 
 	rram->PSRAM_TYPE = ChipInfo_PSRAMType() >> 4;
 }

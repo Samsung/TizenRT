@@ -211,70 +211,21 @@ typedef struct _CCTRL_INFO_ {
 } CCTRL_INFO, *PCCTRL_INFO;
 
 
-struct _bb_sta_info {
-	//sta capability
-	u8 gi_ltf_4x8_support: 1;
-	u8 gi_ltf_1x8_support: 1;
-	u8 rsvd0: 6;
-
+typedef struct _bb_sta_info {
 	//downlink su
-	u8 dl_su_info_en: 1;
 	u8 dl_su_bw: 2;
 	u8 dl_su_gi_ltf: 3;
-	u8 dl_su_doppler_ctrl: 2;
-
-
 	u8 dl_su_coding: 1;
 	u8 dl_su_txbf: 1;
 	u8 dl_su_stbc: 1;
-	u8 dl_fw_cqi_flag: 1;
-	u8 dl_ru_rate_table_row_idx: 4;
-
-	u8 csi_info_bitmap;
-
-	//sw_grp_bitmap_t dl_sw_grp_bitmap;
-
-	u16 dl_su_dcm: 1;
-	u16 rsvd1: 6;
-	u16 dl_su_rate: 9;
-
-	u8 dl_su_pwr: 6;
-	u8 rsvd2: 2;
 
 	u8 sgi_pending_cnt: 3; // For modified SGI try rate flow
-	u8 rsvd3: 5; //for alignment
+	u8 rsvd1: 5; //for alignment
 
-	//uplink su
-	u8 ul_su_info_en: 1;
-	u8 ul_su_bw: 2;
-	u8 ul_su_gi_ltf: 3;
-	u8 ul_su_doppler_ctrl: 2;
+	u16 dl_su_dcm: 1;
+	u16 rsvd2: 6;
+	u16 dl_su_rate: 9;
 
-	u8 ul_su_dcm: 1;
-	u8 ul_su_ss: 3;
-	u8 ul_su_mcs: 4;
-
-	u16 ul_fw_cqi_flag: 1;
-	u16 ul_ru_rate_table_row_idx: 4;
-	u16 ul_su_stbc: 1;
-	u16 ul_su_coding: 1;
-	u16 ul_su_rssi_m: 9;
-
-	//sw_grp_bitmap_t ul_sw_grp_bitmap;
-
-	//ru info
-	u8 dl_ru_dcm: 1;
-	u8 dl_ru_ss: 3;
-	u8 dl_ru_mcs: 4;
-	u8 dl_ru_trying;
-	u8 disable_bw_switch;
-
-
-	//tb info
-	u8 tb_info_en: 1;
-	u8 tb_rsvd: 7;
-
-	// ra report info
 	/*RA report*/
 	u16 TOTAL;   /* TOTAL = 1*R[0]+2*R[1]+...+(N+1)*R[N]:rate down*/
 	//u16 DROP;
@@ -283,27 +234,24 @@ struct _bb_sta_info {
 	u8 TOTAL_PKT; /*Total Packet*/
 	u8  TXCLS_PKT; /*Tx Collision Packet*/
 
-
 	/*RA report for Beacon Cnt*/
 	u16 BCN_TOTAL;    /* TOTAL = 1*R[0]+2*R[1]+...+(N+1)*R[N]:rate down*/
 	u16 BCN_OK;       /* OK = R[0]+R[1]+R[2]+R[3]: Initial rate, no rate down*/
 	u8  BCN_CNT;
-
+	u8 	rsvd3;
 	/*RA report for try rate*/
-	u16 TRY_OK;
+
 	u16 TRY_TOTAL;
-	u8 TRY_TOTAL_PKT; /*Total Packet*/
-	//u16 TRY_DROP;
+	u16 TRY_OK;
 	u16 TRY_OK_ALL;
+	u8 TRY_TOTAL_PKT; /*Total Packet*/
+
+	u8 disable_bw_switch;
 
 	/*for H2C_AP_Req_Txrpt*/
 	u8 avg_agg;
-	//u16 PASS_C2H;
-	//u16 DROP_C2H;
-	//u16 RTY_CNT_C2H;
-	u16 TOTAL_CNT_C2H;
-	//u16 TOTAL_RTY_C2H; /*total "try" number despite of pkts TX OK or Fail*/
 	u16 acq_rpt[2][4]; /*0: ok, 1: retry =1*/ /* BE BK VI VO */
+	u16 TOTAL_CNT_C2H;
 	// ra report info -- End
 
 	u64 ra_mask;
@@ -330,11 +278,11 @@ struct _bb_sta_info {
 	/*en_cck, en_legofdm, en_ht, en_vht, en_he*/
 	u8 DISPT: 1;
 	u8 DISRA: 1;
-	u8 ra_info_ignore_drop: 1;
+	u8 rsvd5: 1;
 
-	u8 multi_rate_state_idx: 2;
+	//u8 multi_rate_state_idx: 2;
 	u8 updown_bitmap: 4;
-	u8 rsvd5: 2;
+	u8 rsvd6: 4;
 
 	u8 rate_down_cnt;
 	u8 rate_up_cnt;
@@ -349,17 +297,13 @@ struct _bb_sta_info {
 	u8 try_fail_count: 2;
 	u8 trying_enable: 1;
 
-	u8  mu_support: 1;
-	u8  mu_not_support_256q: 1;
-	u8  mu_not_support_1024q: 1;
-	u8  HRateUseSGI: 1;
-	u8  mu_rsvd0: 4;
-	u8  mu_rsvd1;
-
-	u8 rsvd6: 1; /*for power training*/
+	u8 rsvd7: 1; /*for power training*/
 	u8 gi_ltf_cap: 3; /* bit(0)=4x0.8, bit(1)=1x0.8*/
 	u8 max_ss_support: 3;
 	u8 bForcePktRA: 1;
+
+	u16 ra_ratio;       /*MA vlaue of ra_ratio*/
+	u16 ra_down_ratio;  /*MA vlaue of ra_down_ratio*/
 
 	u8 dcm_cap: 1;
 	u8 er_cap: 1;
@@ -370,22 +314,15 @@ struct _bb_sta_info {
 
 	u8 try_ness;
 	u8 try_ness_max;
-	u16 ra_ratio;       /*MA vlaue of ra_ratio*/
-	u16 ra_down_ratio;  /*MA vlaue of ra_down_ratio*/
+
 	u8 RSSI; /* It is also means RSSI_A when we send per path RSSI to FW */
-	u8 RSSI_B;
-	u8 rsvd_Stage_RA;
 	u8 bcn_rssi_a;
-	u8 bcn_rssi_b;
 
 	// ============= RA ctrl info ============== //
-	u8 RAINFO_RX_STATE: 1;
 	u8 RAINFO_STBC_STATE: 1;
-	u8 RAINFO_LDPC_STATE: 1;
 	u8 ra_info_rsvd6: 2; // instead of SHORT_CUT
-	u8 bFirstConnect: 1;;
 	u8 TxBF_STATE: 1;
-	u8 ra_info_rsvd7: 1;
+	u8 ra_info_rsvd7: 4;
 	// ======================================== //
 
 	// ============= CSI rate ctrl info ============== //
@@ -405,9 +342,6 @@ struct _bb_sta_info {
 
 	u8 fixed_rate: 7;
 	u8 fixed_rsvd0: 1;
-	// ======================================== //
-
-	u8 DTP_Utility[3];
 
 	// ============= Driver shift RU/RD threshold (H2C) ============== //
 	u8 drv_shift_value: 7;
@@ -428,6 +362,7 @@ struct _bb_sta_info {
 	u8 Rate_Support_Type: 3; /*0:legacy, 1:1SS, 2:2SS, 3:3SS, 4:4SS*/
 
 	u8 pre_rate_up_cnt_th;
+
 	u8 up_fail_limit_rate[LIMIT_RATE_SIZE]; /*for 1SS & 2ss rate*/
 	u16 up_fail_limit_cnt[LIMIT_RATE_SIZE];
 	u8 multi_bw[MULTI_RATE_NUM]; /*multi_bw[0]: 2nd rate, multi_bw[1]: 3rd rate*/
@@ -450,13 +385,16 @@ struct _bb_sta_info {
 	u32 agg_type;
 	//
 	u16 rate_up_fail_cnt_lmt_val;
-
-	// su-ra info
-	//PSTAINFO_nonSU_RA pstainfo_su_ra;
-	// mu-ra info
-	//PSTAINFO_nonSU_RA pstainfo_mu_ra;
-	// ru-ra info
-	//PSTAINFO_nonSU_RA pstainfo_ru_ra;
+	u8    multi_try_times: 4;
+	u8    consective_rate_up_fail_cnt: 4;
+	// Multi Try RA
+	u8    rate_up_waiting;
+	//u8    ra_up_fail_rssi;
+	u8    ra_candidate_rate1;
+	u8    ra_candidate_rate2;
+	u8    ra_stage;
+	u8    no_rate_up_cnt;
+	u8    pcr_shift;
 
 	u8 d_o_timer_max;
 	u8 d_o_timer_cnt;
@@ -465,7 +403,7 @@ struct _bb_sta_info {
 	u8 d_o_timer_state;
 	BOOLEAN d_o_timer_en;
 
-};
+} BB_STA_INFO, *PBB_STA_INFO;
 
 typedef struct _bb_com {
 	//PWR_BY_RATE_1SS (0-11), PWR_BY_RATE_2SS (11-23), PWR_BY_RATW_1SS_DCM (24-27), PWR_BY_RATW_2SS_DCM (28-31)
@@ -491,37 +429,17 @@ typedef struct _bb_com {
 	u8 bb_com_rsvd0;
 	u8 bb_com_rsvd1;
 	u8 is_disra_by_ps;
-	/* bit0 fw_trace_en*/
 
-	/* DWORD 2  */
-	//BB_CCAPWR_INFO pccapwr_i;
-
-	/* DWORD 17 */
-	//struct physts_info physts_i;
-
-	/* Halbb */
-	//struct bb_info bb;
-	// PMAC Tx
-	//struct halbb_pmac_info tx_info;
-
-//#if CONFIG_RATE_ADAPTIVE
-	//TimerHandle_t dl_ra_timer;
-	//TimerHandle_t ul_ra_timer;
 
 	//u32 RTY_C2H;
 	PHYDM_RA_T phydm_ra;
-	//PHY_FWDBG_PARM phy_dbg_t; // Can be removed??
 
-	u8 en_th_adapt;
-	u8 max_ser_try_cnt;
-//#endif // CONFIG_RATE_ADAPTIVE
 	u32 com_rsvd0;
 } BB_COM, *PBB_COM;
 
 
 typedef  struct _RA_ADP_FUNC_ { /*the 4-th layer*/
 
-	//struct _bb_sta_info              stainfo_ra[MACID_NUM];
 	//PHYDM_RA_T             RA;
 	//PHY_FWDBG_PARM    Phy_fwdbgParm;
 	//TXRPT_INFO                 TxRptInfo;
@@ -534,7 +452,7 @@ typedef  struct _RA_ADP_FUNC_ { /*the 4-th layer*/
 struct _PPHYDM {
 
 	//PHYDM_FUNC            Phydm;
-	struct _bb_sta_info *sta_info_list[MACID_NUM];
+	BB_STA_INFO sta_info_list[MACID_NUM];
 	//PHYDM_RA_T phydm_ra;
 #if CONFIG_RATE_ADAPTIVE
 	RA_ADP_FUNC           Ra_adp;

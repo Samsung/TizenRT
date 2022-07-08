@@ -145,8 +145,14 @@ extern void SysClkDown_8720E(void);
 extern void SysClkUp_8720E(void);
 extern void LowLPSOff_8720E(u8 LowLPSEnable);
 extern BOOLEAN WaitTxStateMachineOk_8720E(void);
+extern void LowPowerRxBeacon_8720E(BOOLEAN on);
+extern void PSPeriodCCA_8720E(BOOLEAN on);
 extern void WriteTxPause_8720E(u8 value, u8 rcode);
 extern void SetTxPauseFWInfo_8720E(u8 BitMask, u8 UserValue);
 extern void WriteTxPauseWithMask_8720E(u8 mask, u8 value, u8 rcode);
-
+extern void PwrGatedInitBBTRX(BOOLEAN on);
+extern void BeaconModeDCKbackup_8720E(void);
+extern void PwrGatedInitRFC(BOOLEAN on);
+extern void PwrGatedInitBB(void);
+extern void PwrGatedInitBBGain(void);
 #endif  /* __WIFIFW_POWERCTRL_RAM_H__ */
