@@ -171,6 +171,7 @@ typedef enum
 {
     PA_SYNC_PARAM_PERIODIC_ADV_LIST_SIZE = 0x2A0,          /**< Periodic advertiser list size. Read only. */
     PA_SYNC_PARAM_SYNCHRONIZED_PARAM     = 0x2A1,          /**< PA synchronized parameters. Read only. Identifier is sync_id. */
+    PA_SYNC_PARAM_DEV_STATE              = 0x2A2,          /**< PA synchronization device state. Read only. */
 } T_GAP_PA_SYNC_PARAM_TYPE;
 
 /** @brief  Definition of GAP PA Sync Common Sync parameter. */
@@ -283,7 +284,8 @@ T_GAP_CAUSE le_pa_sync_init(uint8_t sync_handle_num);
  * @param[in,out]  p_value   Pointer to location to get the parameter value. This is dependent on the parameter type, and will be cast to the appropriate
  *                           data type (e.g. if data type of param is uint16_t, p_value will be cast to pointer of uint16_t).
  * @param[in]      sync_id   Identify the periodic advertising train.
- *                           NOTE: If param is @ref PA_SYNC_PARAM_PERIODIC_ADV_LIST_SIZE, sync_id is irrelevant.
+ *                           NOTE: If param is @ref PA_SYNC_PARAM_PERIODIC_ADV_LIST_SIZE or @ref PA_SYNC_PARAM_DEV_STATE,
+ *                                 sync_id is irrelevant.
  *
  * @return GAP operation result.
  * @retval GAP_CAUSE_SUCCESS  GAP operation success.

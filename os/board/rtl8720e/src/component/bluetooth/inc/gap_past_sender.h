@@ -107,10 +107,9 @@ extern "C"
         switch (cb_type)
         {
         case GAP_MSG_LE_PAST_SENDER_PERIODIC_ADV_SET_INFO_TRANSFER:
-            APP_PRINT_INFO3("GAP_MSG_LE_PAST_SENDER_PERIODIC_ADV_SET_INFO_TRANSFER: cause 0x%x, conn_id 0x%x, adv_handle 0x%x",
+            APP_PRINT_INFO2("GAP_MSG_LE_PAST_SENDER_PERIODIC_ADV_SET_INFO_TRANSFER: cause 0x%x, conn_id 0x%x",
                             p_data->p_le_past_sender_periodic_adv_set_info_transfer_rsp->cause,
-                            p_data->p_le_past_sender_periodic_adv_set_info_transfer_rsp->conn_id,
-                            p_data->p_le_past_sender_periodic_adv_set_info_transfer_rsp->adv_handle);
+                            p_data->p_le_past_sender_periodic_adv_set_info_transfer_rsp->conn_id);
             break;
 
         ......
@@ -154,11 +153,9 @@ T_GAP_CAUSE le_past_sender_periodic_adv_set_info_transfer(uint8_t conn_id, uint1
         switch (cb_type)
         {
         case GAP_MSG_LE_PAST_SENDER_PERIODIC_ADV_SYNC_TRANSFER:
-            APP_PRINT_INFO4("GAP_MSG_LE_PAST_SENDER_PERIODIC_ADV_SYNC_TRANSFER: cause 0x%x, conn_id 0x%x, sync_id %d, sync_handle 0x%x",
+            APP_PRINT_INFO2("GAP_MSG_LE_PAST_SENDER_PERIODIC_ADV_SYNC_TRANSFER: cause 0x%x, conn_id 0x%x",
                             p_data->p_le_past_sender_periodic_adv_sync_transfer_rsp->cause,
-                            p_data->p_le_past_sender_periodic_adv_sync_transfer_rsp->conn_id,
-                            p_data->p_le_past_sender_periodic_adv_sync_transfer_rsp->sync_id,
-                            p_data->p_le_past_sender_periodic_adv_sync_transfer_rsp->sync_handle);
+                            p_data->p_le_past_sender_periodic_adv_sync_transfer_rsp->conn_id);
             break;
 
         ......

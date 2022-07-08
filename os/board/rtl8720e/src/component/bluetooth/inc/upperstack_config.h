@@ -77,6 +77,10 @@
 #define F_BT_CONNECTION_ACCEPT_TIMEOUT_SUPPORT            ((F_BT_BREDR_SUPPORT || F_BT_LE_5_2_ISOC_CIS_PERIPHERAL_SUPPORT) && 1)
 #define F_BT_5_2_READ_LOCAL_SUPPORTED_CODECS_V2_SUPPORT   ((F_BT_LE_5_2_SUPPORT) && 1)
 
+#define F_BT_LE_5_2_POWER_CONTROL_SUPPORT                 (F_BT_LE_5_2_SUPPORT && 1)
+#define F_BT_LE_5_2_PATH_LOSS_MONITORING_SUPPORT          (F_BT_LE_5_2_SUPPORT && 1)
+#define F_BT_LE_5_2_DTM_SUPPORT                           (F_BT_LE_5_2_SUPPORT && 1)
+
 #define F_BT_5_2_EATT_SUPPORT                          (1)
 #define F_BT_5_2_L2C_ECFC_SUPPORT                      (F_BT_5_2_EATT_SUPPORT && 1)
 #define F_BT_GATT_SERVER_EXT_API                       (F_BT_LE_GATT_SERVER_SUPPORT && 1)

@@ -115,6 +115,8 @@ typedef struct
     uint8_t                     bd_addr[6];
     uint8_t                     data_len;
     uint8_t                    *p_data;
+    uint16_t                    cccd_handle;
+    uint16_t                    cccd_bits;
 } T_GATT_SERVER_STORE_IND;
 
 #if F_BT_APP_BOND_MANAGER
