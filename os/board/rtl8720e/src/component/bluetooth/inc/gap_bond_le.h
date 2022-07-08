@@ -955,6 +955,78 @@ T_GAP_CAUSE le_bond_get_param(T_LE_BOND_PARAM_TYPE param, void *p_value);
 T_GAP_CAUSE le_bond_pair(uint8_t conn_id);
 
 /**
+ * @brief   Get type of LE pair procedure.
+ *
+ *          NOTE: The API should only be used when receive @ref GAP_MSG_LE_BOND_JUST_WORK,
+ *                @ref GAP_MSG_LE_BOND_PASSKEY_DISPLAY, @ref GAP_MSG_LE_BOND_PASSKEY_INPUT,
+ *                @ref GAP_MSG_LE_BOND_USER_CONFIRMATION, @ref GAP_MSG_LE_BOND_OOB_INPUT.
+ *
+ * @param[in]     conn_id       Connection ID.
+ * @param[in,out] p_value       Pointer to location to get the value.
+ *                                  Value of LE pair procedure type:
+ *                                      0: LE Legacy Pairing
+ *                                      1: LE Secure Connections
+ *                                      All other values: Reserved for future use.
+ * @return Operation result.
+ * @retval GAP_CAUSE_SUCCESS    Operation success.
+ * @retval GAP_CAUSE_NON_CONN   Operation failure. No connection.
+ *
+ * <b>Example usage</b>
+ * \code{.c}
+    void app_handle_gap_msg(T_IO_MSG *p_gap_msg)
+    {
+      ...
+    case GAP_MSG_LE_BOND_JUST_WORK:
+        {
+            ...
+            if (le_bond_get_pair_procedure_type(conn_id, &le_pair_proc_type) == GAP_CAUSE_SUCCESS)
+            {
+            ...
+        }
+        break;
+
+    case GAP_MSG_LE_BOND_PASSKEY_DISPLAY:
+        {
+            ...
+            if (le_bond_get_pair_procedure_type(conn_id, &le_pair_proc_type) == GAP_CAUSE_SUCCESS)
+            {
+            ...
+        }
+        break;
+
+    case GAP_MSG_LE_BOND_PASSKEY_INPUT:
+        {
+            ...
+            if (le_bond_get_pair_procedure_type(conn_id, &le_pair_proc_type) == GAP_CAUSE_SUCCESS)
+            {
+            ...
+        }
+        break;
+
+    case GAP_MSG_LE_BOND_USER_CONFIRMATION:
+        {
+            ...
+            if (le_bond_get_pair_procedure_type(conn_id, &le_pair_proc_type) == GAP_CAUSE_SUCCESS)
+            {
+            ...
+        }
+        break;
+
+    case GAP_MSG_LE_BOND_OOB_INPUT:
+        {
+            ...
+            if (le_bond_get_pair_procedure_type(conn_id, &le_pair_proc_type) == GAP_CAUSE_SUCCESS)
+            {
+            ...
+        }
+        break;
+      ...
+    }
+ * \endcode
+ */
+T_GAP_CAUSE le_bond_get_pair_procedure_type(uint8_t conn_id, uint8_t *p_value);
+
+/**
  * @brief   Get the display key information
  *
  * @param[in] conn_id   Connection ID.
@@ -1556,7 +1628,8 @@ T_GAP_CAUSE le_bond_get_sec_level(uint8_t conn_id, T_GAP_SEC_LEVEL *p_type);
 
 #if F_BT_LE_GATT_CCCD_DATA_PENDING
 bool le_bond_set_cccd_data_pending(T_LE_KEY_ENTRY *p_entry, uint16_t handle, bool data_pending);
-bool gap_bond_set_cccd_data_pending(uint16_t conn_handle, uint16_t handle, bool data_pending);
+bool gap_bond_set_cccd_data_pending(uint8_t *bd_addr, uint8_t bd_type, uint16_t handle,
+                                    bool data_pending);
 #endif
 
 /** End of GAP_LE_BONDMGR_Exported_Functions

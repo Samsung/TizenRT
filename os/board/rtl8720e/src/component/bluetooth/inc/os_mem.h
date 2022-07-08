@@ -120,6 +120,8 @@ void *os_mem_aligned_alloc_intern(RAM_TYPE ram_type, size_t size, uint8_t alignm
 #define os_mem_zalloc(ram_type, size)   \
     os_mem_zalloc_intern(ram_type, size, __func__, __LINE__)
 
+#define os_mem_zalloc2(size)   \
+    os_mem_zalloc_intern(RAM_TYPE_DATA_ON, size, __func__, __LINE__)
 /**
  * os_mem.h
  *

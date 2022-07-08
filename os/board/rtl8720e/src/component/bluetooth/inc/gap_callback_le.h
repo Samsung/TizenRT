@@ -428,6 +428,7 @@ extern "C"
 #if F_BT_LE_5_1_DTM_SUPPORT
 #define GAP_MSG_LE_DTM_RECEIVER_TEST_V3             0x75 //!<Response msg type for le_dtm_receiver_test_v3
 #define GAP_MSG_LE_DTM_TRANSMITTER_TEST_V3          0x76 //!<Response msg type for le_dtm_transmitter_test_v3
+#define GAP_MSG_LE_DTM_TRANSMITTER_TEST_V4          0x77 //!<Response msg type for le_dtm_transmitter_test_v4
 #endif
 #endif
 
@@ -895,7 +896,7 @@ typedef struct
 {
     uint16_t        cause;
     uint8_t         conn_id;
-    uint8_t         adv_handle;
+    uint8_t         adv_handle;    /* Not used */
 } T_LE_PAST_SENDER_PERIODIC_ADV_SET_INFO_TRANSFER_RSP;
 #endif
 #if F_BT_LE_5_1_PAST_SENDER_SYNC_SUPPORT
@@ -903,8 +904,8 @@ typedef struct
 {
     uint16_t        cause;
     uint8_t         conn_id;
-    uint8_t         sync_id;
-    uint16_t        sync_handle;
+    uint8_t         sync_id;       /* Not used */
+    uint16_t        sync_handle;   /* Not used */
 } T_LE_PAST_SENDER_PERIODIC_ADV_SYNC_TRANSFER_RSP;
 #endif
 #endif

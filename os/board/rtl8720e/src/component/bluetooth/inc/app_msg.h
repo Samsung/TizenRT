@@ -252,6 +252,7 @@ typedef enum {
 	IO_MSG_TYPE_ANCS,            /**< ANCS message*/
 	IO_MSG_TYPE_CONSOLE,    /**< Console message with subtype @ref T_IO_CONSOLE */
 	IO_MSG_TYPE_LE_MGR,
+	IO_MSG_TYPE_LE_AUDIO,
 	IO_MSG_TYPE_AT_CMD,     /**< AT cmd message*/
 	IO_MSG_TYPE_ADV,
 } T_IO_MSG_TYPE;

@@ -832,6 +832,23 @@ T_GAP_CAUSE le_ext_adv_clear_set(void);
  */
 T_GAP_CAUSE le_ext_adv_remove_set(uint8_t adv_handle);
 
+/**
+ * @brief       Check whether all advertising sets are idle state.
+ *
+ * @return Operation result.
+ * @retval true        All advertising sets are @ref EXT_ADV_STATE_IDLE.
+ * @retval false       At least one advertising set is not @ref EXT_ADV_STATE_IDLE.
+ *
+ * <b>Example usage</b>
+ * \code{.c}
+    void test(void)
+    {
+        bool ret = le_ext_adv_check_adv_idle();
+    }
+ * \endcode
+ */
+bool le_ext_adv_check_adv_idle(void);
+
 #if F_BT_LE_GAP_MSG_INFO_WAY
 /**
 * @brief  Set extended advertising gap message inform way.

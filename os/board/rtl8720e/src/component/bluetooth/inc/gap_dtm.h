@@ -686,6 +686,81 @@ T_GAP_CAUSE le_dtm_transmitter_test_v3(uint8_t tx_channel, uint8_t test_data_len
                                        uint8_t cte_length, T_GAP_CTE_TYPE cte_type,
                                        uint8_t switching_pattern_length, uint8_t *p_antenna_ids);
 #endif
+#if F_BT_LE_5_2_DTM_SUPPORT
+/**
+* @brief   Start a test where the DUT transmits test reference packets at a fixed interval.
+*
+* @param[in]   tx_channel - channel to transmit packets.
+                            N = (F-2402) / 2
+                            Range: 0x00 to 0x27
+                            Frequency Range: 2402 MHz to 2480 MHz.
+* @param[in]   test_data_length - length in bytes of payload data in each packet.
+                                  Range: 0x00 to 0xFF.
+* @param[in]   packet_payload - contents of the payload of the test reference packets:
+*                               @ref T_GAP_DTM_PACKET_PAYLOAD_TYPE.
+* @param[in]   phy - physical to transmit packets: @ref T_GAP_DTM_PHYS_TYPE.
+* @param[in]   cte_length - the length of the Constant Tone Extension in the test reference packets.
+                            0x00: Do not transmit a Constant Tone Extension
+                            0x02 to 0x14: Length of the Constant Tone Extension in 8 us units.
+* @param[in]   cte_type - the type of the Constant Tone Extension in the test reference packets.
+                          @ref T_GAP_CTE_TYPE.
+* @param[in]   switching_pattern_length - the number of Antenna IDs in the pattern and shall be ignored when
+                                          cte_type is set to GAP_CTE_TYPE_AOA.
+                                          Range: 0x02 to max_switching_pattern_length supported by controller
+                                                 max_switching_pattern_length shall be less than or equal to 0x4B.
+* @param[in]   p_antenna_ids - Antenna ID in the pattern and shall be ignored when expected_cte_type
+*                              is set to GAP_CTE_TYPE_AOA.
+* @param[in]   tx_power_level - set transmitter to the specified or the nearest transmit power level.
+                                      Range: -127 to +20.
+                                      Units: dBm.
+                                      Note:  0x7E Set transmitter to minimum transmit power level.
+                                             0x7F Set transmitter to maximum transmit power level.
+*
+* @retval GAP_CAUSE_SUCCESS: Send request success.
+* @retval GAP_CAUSE_SEND_REQ_FAILED: Send request fail.
+  *
+  * <b>Example usage</b>
+  * \code{.c}
+    void dtm_test_req(uint16_t command)
+    {
+        uint8_t tx_channel = 0;
+        uint8_t test_data_length = 2;
+        T_GAP_DTM_PACKET_PAYLOAD_TYPE packet_payload = GAP_DTM_PACKET_PAYLOAD_PRBS9;
+        T_GAP_DTM_PHYS_TYPE phy = GAP_DTM_PHYS_1M;
+        uint8_t cte_length = 2;
+        T_GAP_CTE_TYPE cte_type = GAP_CTE_TYPE_AOD_2US_SLOT;
+        uint8_t switching_pattern_length = 2;
+        uint8_t p_antenna_ids[2] = {0, 1};
+        int8_t tx_power_level = 0x10;
+
+        le_dtm_transmitter_test_v3(tx_channel, test_data_length,
+                                   packet_payload, phy, cte_length, cte_type,
+                                   switching_pattern_length, p_antenna_ids, tx_power_level);
+    }
+
+    T_APP_RESULT app_gap_callback(uint8_t cb_type, void *p_cb_data)
+    {
+        T_APP_RESULT result = APP_RESULT_SUCCESS;
+        T_LE_CB_DATA *p_data = (T_LE_CB_DATA *)p_cb_data;
+
+        uint16_t status  = 0;
+        uint16_t event = 0;
+        switch (cb_type)
+        {
+        ...
+        case GAP_MSG_LE_DTM_TRANSMITTER_TEST_V4:
+            APP_PRINT_INFO1("GAP_MSG_LE_DTM_TRANSMITTER_TEST_V4: cause 0x%x",
+                            p_data->le_cause.cause);
+            break;
+        ...
+    }
+  * \endcode
+  */
+T_GAP_CAUSE le_dtm_transmitter_test_v4(uint8_t tx_channel, uint8_t test_data_length,
+                                       T_GAP_DTM_PACKET_PAYLOAD_TYPE packet_payload, T_GAP_DTM_PHYS_TYPE phy,
+                                       uint8_t cte_length, T_GAP_CTE_TYPE cte_type,
+                                       uint8_t switching_pattern_length, uint8_t *p_antenna_ids, int8_t tx_power_level);
+#endif
 /** End of GAP_LE_DTM_Exported_Functions
   * @}
   */
