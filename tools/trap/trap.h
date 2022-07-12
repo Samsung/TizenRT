@@ -34,9 +34,10 @@
  ****************************************************************************/
 
 #define RAMDUMP_HANDSHAKE_STRING        "TIZENRTRMDUMP"
-#define FSDUMP_HANDSHAKE_STRING         "TIZENRTFSDUMP"
-#define EXTFSDUMP_HANDSHAKE_STRING      "TIZENRTEXTFSD"
+#define FSDUMP_HANDSHAKE_STRING         "TIZENRTFSDUMP"	//Dump the entire userfs flash partition
+#define EXTFSDUMP_HANDSHAKE_STRING      "TIZENRTEXTFSD"	//Dump the entire userfs partition from external flash
 #define TARGET_REBOOT_STRING            "TIZENRTREBOOT"
+#define USERFS_FDUMP_HANDSHAKE_STRING   "TIZENRTFILDUM"	//Dump a particular file from Userfs
 #define HANDSHAKE_STR_LEN_MAX           (13)
 #define BINFILE_NAME_SIZE               (40)
 #define KB_CHECK_COUNT                  (16 * 1024)
@@ -49,6 +50,7 @@
 #define USERFSDUMP_FLAG         2
 #define REBOOT_DEVICE_FLAG      4
 #define EXTUSERFS_DUMP_FLAG     8
+#define FILE_DUMP_FLAG		16
 
 /****************************************************************************
  * Public Types
