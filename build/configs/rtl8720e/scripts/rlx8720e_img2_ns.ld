@@ -143,17 +143,8 @@ SECTIONS
 	{
 		__sram_text_start__ = .;
 		*(.image2.sram.text*)
-		*(.image2.net.ram.text*)
-		*ameba_psram.o(.text* .rodata*)
-		*ameba_pll.o(.text* .rodata*)
-		*ameba_swr_calib.o(.text* .rodata*)
-		*ameba_otp.o(.text* .rodata*)
 		__sram_data_start__ = .;
 		*(.image2.sram.data*)
-		*ameba_psram.o(.data*)
-		*ameba_pll.o(.data*)
-		*ameba_swr_calib.o(.data*)
-		*ameba_otp.o(.data*)
 		__sram_data_end__ = .;
 		__sram_text_end__ = .;
 	} > KM4_BD_RAM
@@ -169,20 +160,24 @@ SECTIONS
 		__image2_validate_code__ = .;
 		KEEP(*(.image2.validate.rodata*))
 
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	.ram_image2.data :
 	{
 		_sdata = ABSOLUTE(.);
 		__data_start__ = .;
 		*(.data*)
+		*ameba_psram.o(.data*)
+		*ameba_pll.o(.data*)
+		*ameba_swr_calib.o(.data*)
+		*ameba_otp.o(.data*)
 		__data_end__ = .;
 		_sdata = ABSOLUTE(.);
 		__ram_image2_text_end__ = .;
 
 		/*cache line size aligned in order to avoid MMU remap err*/
 		. = ALIGN(32);
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	.ram_image2.text :
 	{
@@ -191,9 +186,12 @@ SECTIONS
 		*(.img2_custom_signature*)
 
 		*(.text*)
-	/*	*(.image2.net.ram.text*) */
+		*(.image2.net.ram.text*)
 		*(.rodata*)
-
+		*ameba_psram.o(.text* .rodata*)
+		*ameba_pll.o(.text* .rodata*)
+		*ameba_swr_calib.o(.text* .rodata*)
+		*ameba_otp.o(.text* .rodata*)
 		. = ALIGN (4);
 		__cmd_table_start__ = .;
 		KEEP(*(.cmd.table.data*))
@@ -227,20 +225,20 @@ SECTIONS
 		__flash_text_end__ = .;
 
 		. = ALIGN (32);
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	.ARM.extab  :
 	{
 		*(.ARM.extab* .gnu.linkonce.armextab.*)
 
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	.ARM.exidx :
 	{
 		__exidx_start = .;
 		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
 		__exidx_end = .;
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	/*-----------------*/
 	.ram_image2.bss (NOLOAD):
@@ -249,7 +247,7 @@ SECTIONS
 		*(.bss*)
 		*(COMMON)
 		__bss_end__ = .;
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	.ram_image2.bd.data (NOLOAD):
 	{
@@ -258,7 +256,7 @@ SECTIONS
 		*(.bdsram.data*)
 		. = ALIGN (32);
 		__ram_bd_end__ = .;
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	.ram_image2.nocache.data (NOLOAD):
 	{
@@ -267,7 +265,7 @@ SECTIONS
 		*(.ncsram.data*)
 		. = ALIGN (32);
 		__ram_nocache_end__ = .;
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	.ram_heap.data (NOLOAD):
 	{
@@ -278,7 +276,7 @@ SECTIONS
 		. = . + 4096;
 		_ebss = ABSOLUTE(.);
 
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_PSRAM_NS_TZ
 
 	.bluetooth_trace.text :
 	{
@@ -288,7 +286,7 @@ SECTIONS
 	} > BTRACE
   __StackStart = ABSOLUTE(ORIGIN(DSP_TCM));
 	__StackLimit = ABSOLUTE(ORIGIN(DSP_TCM) + LENGTH(DSP_TCM));
-	__PsramStackLimit = ABSOLUTE(ORIGIN(KM4_BD_PSRAM_NS_NTZ) + LENGTH(KM4_BD_PSRAM_NS_NTZ));
+	__PsramStackLimit = ABSOLUTE(ORIGIN(KM4_BD_PSRAM_NS_TZ) + LENGTH(KM4_BD_PSRAM_NS_TZ));
 }
 
 SECTIONS

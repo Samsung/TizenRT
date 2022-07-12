@@ -39,7 +39,11 @@ SECTION(".data") u8 *__psram_bss_end__ = 0;
 static u32 g_mpu_nregion_allocated;
 extern int main(void);
 extern u32 GlobalDebugEnable;
+
+extern unsigned int __StackStart;
+extern unsigned int __StackLimit;
 extern unsigned int _ebss;
+extern unsigned int __PsramStackLimit;
 void NS_ENTRY BOOT_IMG3(void);
 void app_init_psram(void);
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
@@ -54,16 +58,29 @@ void os_heap_init(void){
 }
 
 #else
-// Ameba D porting way
-#define AMEBA_LITE_HEAP_SIZE 250 * 1024
-#define IDLE_STACK ((uintptr_t)&_ebss+CONFIG_IDLETHREAD_STACKSIZE-4)
-#define HEAP_BASE  ((uintptr_t)&_ebss+CONFIG_IDLETHREAD_STACKSIZE)
+#define IDLE_STACK ((uintptr_t)&__StackStart+CONFIG_IDLETHREAD_STACKSIZE-4)
+#define HEAP_BASE  ((uintptr_t)&__StackStart+CONFIG_IDLETHREAD_STACKSIZE)
+#define HEAP_LIMIT ((uintptr_t)&__StackLimit)
+#define PSRAM_HEAP_BASE ((uintptr_t)&_ebss)
+#define PSRAM_HEAP_LIMIT ((uintptr_t)&__PsramStackLimit)
 
 void os_heap_init(void){
 	kregionx_start[0] = (void *)HEAP_BASE;
-	kregionx_size[0] = (size_t)AMEBA_LITE_HEAP_SIZE;
-#if CONFIG_KMM_REGIONS > 1
+	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
+#if CONFIG_KMM_REGIONS >= 2
+	int region_idx;
+#if CONFIG_KMM_REGIONS == 3
+	kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
+	kregionx_size[1] = (size_t)kregionx_start[1] + kregionx_size[1] - PSRAM_HEAP_BASE;
+
+	kregionx_start[2] = (void *)kregionx_start[2];
+	kregionx_size[2] = (size_t)PSRAM_HEAP_LIMIT - (size_t)kregionx_start[2];
+#elif CONFIG_KMM_REGIONS > 3
 #error "Need to check here for heap."
+#else
+	kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
+	kregionx_size[1] = (size_t)(PSRAM_HEAP_LIMIT - PSRAM_HEAP_BASE);
+#endif
 #endif
 }
 #endif
