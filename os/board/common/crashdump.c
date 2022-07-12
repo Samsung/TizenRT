@@ -32,6 +32,7 @@
 #include "up_internal.h"
 #include "up_watchdog.h"
 #include <sys/boardctl.h>
+#include <sys/stat.h>
 #include <limits.h>
 
 #include <tinyara/mm/heap_regioninfo.h>
@@ -45,6 +46,7 @@
 #define FSDUMP_HANDSHAKE_STRING	"TIZENRTFSDUMP"
 #define EXTFSDUMP_HANDSHAKE_STRING	"TIZENRTEXTFSD"
 #define TARGET_REBOOT_STRING		"TIZENRTREBOOT"
+#define USERFS_FDUMP_HANDSHAKE_STRING	"TIZENRTFILDUM"
 #define HANDSHAKE_STR_LEN_MAX		(13)
 #define USERFS_PART_NAME		"user"
 #define USERFS_PART_NAME_LEN		(4)
@@ -205,6 +207,65 @@ static int get_ext_userfs_part(size_t *size, int *index)
 	*index = -1;
 #endif
 
+	return 0;
+}
+
+static int send_file(void)
+{
+	int i;
+	int fd;
+	int ret;
+	struct stat st;
+	off_t size;
+	char buf;
+	char filename[CONFIG_SMARTFS_MAXNAMLEN + 1] = {'\0'};
+	char char_filesize;
+
+	/* Send acknowledgement for USERFS FILE DUMP Handshake */
+	up_lowputc('A');
+
+	/* Receive the file name to be sent to the host */
+	for (i = 0; i < CONFIG_SMARTFS_MAXNAMLEN + 1; i++) {
+		filename[i] = up_getc();
+	}
+	if (filename[i - 1] != '\0') {
+		return -ENAMETOOLONG;
+	}
+
+	ret = stat(filename, &st);
+	if (ret != OK) {
+		/* We are not able to stat the file for some reason */
+		return ERROR;
+	}
+	size = st.st_size;
+
+	/* Send the size of the file we are dumping to the host so that it knows how much data is coming in
+	 * It is a 64 bit data type so has to be transmitted accordingly
+	 * This also acts as a confirmation of the presence of the file in itself.
+	 */
+	for (i = 0; i < 8; i++) {
+		char_filesize = (size >> ((8 - 1 - i) * 8));
+		up_lowputc(char_filesize);
+	}
+
+	fd = open(filename, O_RDOK);
+	if (fd < 0) {
+		//Unable to open file for transmitting data
+		return ERROR;
+	}
+
+	while (size) {
+		ret = read(fd, &buf, 1);
+		if (ret != 1) {
+			//Unable to read from file
+			close(fd);
+			return ERROR;
+		}
+		up_lowputc(buf);
+		size--;
+	}
+
+	close(fd);
 	return 0;
 }
 
@@ -450,6 +511,12 @@ static int dump_via_uart(void)
 			lldbg("Unable to reset device\n");
 #endif
 			break;
+		/* Check handshake string for USERFS FILE DUMP signal */
+		} else if (strncmp(host_buf, USERFS_FDUMP_HANDSHAKE_STRING, strlen(USERFS_FDUMP_HANDSHAKE_STRING)) == 0) {
+			i = send_file();
+			if (i != 0) {
+				break;
+			}
 		} else {
 			/* Send NAK */
 			up_lowputc('N');

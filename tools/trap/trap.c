@@ -24,6 +24,14 @@
  ****************************************************************************/
 
 #include "trap.h"
+#include "../../os/include/tinyara/config.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+#ifndef CONFIG_SMARTFS_MAXNAMLEN
+#define USERFS_MAXNAMLEN 32
+#endif
 
 /****************************************************************************
  * Private Variables
@@ -288,6 +296,69 @@ static int extfsdump_recv(int dev_fd)
         return 0;
 }
 
+int dump_file_from_fs(int dev_fd, char *filename, int maxnamelen)
+{
+	int ret;
+	int fd;
+	int i, last_subdir;
+	char buf;
+	FILE *fp;
+	u_int64_t file_size;
+	char char_filesize[8];
+	char local_filename[maxnamelen + 9];
+
+	printf("Attempting to Dump File %s from Target Device\n", filename);
+
+	ret = write(dev_fd, filename, maxnamelen);
+	if (ret != maxnamelen) {
+		printf("Unable to send Dump File name to Target Device, ret = %d\n", ret);
+		return -1;
+	}
+
+	file_size = 0;
+	for (i = 0; i < 8; i++) {
+		ret = read(dev_fd, &char_filesize[i], sizeof(char_filesize[i]));
+		if (ret != sizeof(char_filesize[i])) {
+			printf("Unable to get file size from Target Device, ret = %d\n", ret);
+			return -1;
+		}
+	}
+
+	for (i = 7; i >= 0; i--) {
+		file_size += ((u_int64_t)char_filesize[8 - i - 1] << (i * 8)) & ((u_int64_t)0xFF << (i * 8));
+	}
+
+	printf("\nReceiving file %s of size %lu from Target Device\n\n", filename, file_size);
+
+	i = 0;
+	last_subdir = -1;
+	while (filename[i] != '\0') {
+		/* We dont want the file to be saved in the root folder, we want it in the current folder */
+		if (filename[i] == '/') {
+			last_subdir = i;
+		}
+		i++;
+	}
+
+	filename = filename + last_subdir + 1;
+	snprintf(local_filename, maxnamelen + 9, "%s%s", "DumpFile_", filename);
+
+	fp = fopen(local_filename, "w");
+	if (fp == NULL) {
+		printf("Unable to open file %s to save logs chain dump\n", filename);
+		return -1;
+	}
+
+	ret = get_dump(dev_fd, fp, file_size);
+	fclose(fp);
+	if (ret != 0) {
+		printf("Unable to receive logs chain dump file from target device, ret = %d\n", ret);
+		return -1;
+	}
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int ret;
@@ -350,7 +421,7 @@ int main(int argc, char *argv[])
 	printf("Target device locked and ready to DUMP!!!\n");
 
 	while (1) {
-		printf("Choose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. External Userfs Partition Dump\n5. Exit TRAP Tool\n6. Reboot TARGET Device\n");
+		printf("Choose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. External Userfs Partition Dump\n5. Exit TRAP Tool\n6. Reboot TARGET Device\n7. Dump specific file from Target Device\n");
 		fflush(stdout);
 		scanf("%d", &choice);
 		getchar();
@@ -375,6 +446,9 @@ int main(int argc, char *argv[])
 			break;
 		case 6:
 			DUMP_FLAGS |= REBOOT_DEVICE_FLAG;
+			break;
+		case 7:
+			DUMP_FLAGS |= FILE_DUMP_FLAG;
 			break;
 		default:
 			printf("Invalid Input\n");
@@ -461,6 +535,49 @@ int main(int argc, char *argv[])
 				goto dump_err;
 			}
 			printf("\nExternal Userfs partition dump received successfully\n");
+			fflush(stdout);
+		}
+
+		if (DUMP_FLAGS & FILE_DUMP_FLAG) {
+#ifdef CONFIG_SMARTFS_MAXNAMLEN
+			int userfs_maxnamelength = CONFIG_SMARTFS_MAXNAMLEN + 1;
+			char filename[CONFIG_SMARTFS_MAXNAMLEN + 1];
+#else
+			int userfs_maxnamelength;
+			char filename[USERFS_MAXNAMLEN + 1];
+
+			printf("No Config found for maximum possible file name length, please enter manually (usually = 32)\n");
+			printf("Else, the arbitrarily set default value will be used (enter '0' to continue with the default\n");
+			scanf("%d\n", userfs_maxnamelength);
+
+			if (userfs_maxnamlen == 0) {
+				userfs_maxnamelength = USERFS_MAXNAMLEN + 1;
+			} else {
+				userfs_maxnamelength += 1;
+			}
+#endif
+			printf("This utility will allow you to enter a file name that you want to be dumped from the device\n");
+			printf("It is the responsibility of the user to ensure that the correct file name/path is provided\n");
+
+			strncpy(handshake_string, USERFS_FDUMP_HANDSHAKE_STRING, HANDSHAKE_STR_LEN_MAX);
+			if (do_handshake(dev_fd, handshake_string) != 0) {
+				printf("Target handshake failed\n");
+				goto handshake_err;
+			}
+
+			memset(filename, '\0', userfs_maxnamelength);
+			printf("Enter the absolute path of the file that you want to be dumped from the Filesystem: -");
+			fflush(stdout);
+			scanf("%s", filename);
+			getchar();
+
+			ret = dump_file_from_fs(dev_fd, filename, userfs_maxnamelength);
+			if (ret != 0) {
+				printf("Dump Tool failed to dump file %s from the filesystem.\n", filename);
+				goto dump_err;
+			}
+
+			printf("\nDumped file %s from filesystem successfully\n", filename);
 			fflush(stdout);
 		}
 	}
