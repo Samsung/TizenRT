@@ -71,12 +71,12 @@
  * Name: up_checkarch
  *
  * Description:
- *   Given the ELF header in 'hdr', verify that the ELF file is appropriate
+ *   Given the ELF header in 'ehdr', verify that the ELF file is appropriate
  *   for the current, configured architecture.  Every architecture that uses
  *   the ELF loader must provide this function.
  *
  * Input Parameters:
- *   hdr - The ELF header read from the ELF file.
+ *   ehdr - The ELF header read from the ELF file.
  *
  * Returned Value:
  *   True if the architecture supports this ELF file.
@@ -215,21 +215,21 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 		 * upper_insn:
 		 *
 		 *  1   1   1   1   1   1
-		 *  5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0
+		 *  5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0 Instruction
 		 * +----------+---+-------------------------------+--------------+
-		 * |1   1   1 |OP1|     OP2                       |              | 32-Bit Instructions
+		 * |1   1   1 |OP1|     OP2                       |              | 32-Bit
 		 * +----------+---+--+-----+----------------------+--------------+
-		 * |1   1   1 | 1   0|  S  |              imm10                  | BL Instruction
+		 * |1   1   1 | 1   0|  S  |              imm10                  | BL
 		 * +----------+------+-----+-------------------------------------+
 		 *
 		 * lower_insn:
 		 *
 		 *  1   1   1   1   1   1
-		 *  5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0
+		 *  5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0 Instruction
 		 * +---+---------------------------------------------------------+
-		 * |OP |                                                         | 32-Bit Instructions
+		 * |OP |                                                         | 32-Bit
 		 * +---+--+---+---+---+------------------------------------------+
-		 * |1   1 |J1 | 1 |J2 |                 imm11                    | BL Instruction
+		 * |1   1 |J1 | 1 |J2 |                 imm11                    | BL
 		 * +------+---+---+---+------------------------------------------+
 		 *
 		 * The branch target is encoded in these bits:
@@ -360,21 +360,21 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 		 * upper_insn:
 		 *
 		 *  1   1   1   1   1   1
-		 *  5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0
+		 *  5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0 Instruction
 		 * +----------+---+-------------------------------+--------------+
-		 * |1   1   1 |OP1|     OP2                       |              | 32-Bit Instructions
+		 * |1   1   1 |OP1|     OP2                       |              | 32-Bit
 		 * +----------+---+--+-----+----------------------+--------------+
-		 * |1   1   1 | 1   0|  i  | 1  0   1   1   0   0 |    imm4      | MOVT Instruction
+		 * |1   1   1 | 1   0|  i  | 1  0   1   1   0   0 |    imm4      | MOVT
 		 * +----------+------+-----+----------------------+--------------+
 		 *
 		 * lower_insn:
 		 *
 		 *  1   1   1   1   1   1
-		 *  5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0
+		 *  5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0 Instruction
 		 * +---+---------------------------------------------------------+
-		 * |OP |                                                         | 32-Bit Instructions
+		 * |OP |                                                         | 32-Bit
 		 * +---+----------+--------------+-------------------------------+
-		 * |0  |   imm3   |      Rd      |            imm8               | MOVT Instruction
+		 * |0  |   imm3   |      Rd      |            imm8               | MOVT
 		 * +---+----------+--------------+-------------------------------+
 		 *
 		 * The 16-bit immediate value is encoded in these bits:
