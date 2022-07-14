@@ -124,8 +124,8 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
   ARCHOPTIMIZATION += -fomit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
-ARCHCFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
-ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
+ARCHCFLAGS = -fno-builtin -mcpu=cortex-m55 -mfpu=fpv5-sp-d16
+ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-m55 -mfpu=fpv5-sp-d16
 ifeq ($(QUICKBUILD),y)
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
 ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef
@@ -152,7 +152,6 @@ CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
 
 ##########################################################################################################################################
-CFLAGS += -march=armv8-m.main+dsp #CFLAGS += -march=armv8.1-m.main+dsp
 CFLAGS += -mthumb
 CFLAGS += -mcmse
 #CFLAGS += -mfloat-abi=hard
