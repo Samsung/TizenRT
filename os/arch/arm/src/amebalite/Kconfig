@@ -12,7 +12,7 @@ choice
 
 config ARCH_CHIP_RTL8720E
 	bool "RTL8720E"
-	select ARCH_CORTEXM33
+	select ARCH_CORTEXM55
 	select ARCH_HAVE_FPU
 	select AMEBALITE_WIFI
 	select ARMV8M_HAVE_ICACHE
