@@ -400,7 +400,6 @@ static uart_dev_t g_uart1port = {
 	.priv = &g_uart1priv,
 };
 #endif
-#if 0
 #ifdef CONFIG_RTL8720E_UART2
 static struct rtl8720e_up_dev_s g_uart2priv = {
 
@@ -447,8 +446,6 @@ static struct rtl8720e_up_dev_s g_uart3priv = {
 #endif
 	.baud = CONFIG_UART3_BAUD,
 	.irq = RTL8720E_UART3_BT_IRQ,
-	//.tx = PB_22,
-	//.rx = PB_21,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
@@ -467,7 +464,6 @@ static uart_dev_t g_uart3port = {
 	.ops = &g_uart_ops,
 	.priv = &g_uart3priv,
 };
-#endif
 #endif
 #ifdef CONFIG_RTL8720E_UART4
 static struct rtl8720e_up_dev_s g_uart4priv = {
@@ -517,11 +513,12 @@ static u32 uart_index_get(PinName tx)
 	} else {
 		assert_param(0);
 	}
+	return -1;
 }
 static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
 	{1, LOGUART_BIT_TP2F_NOT_FULL, LOGUART_BIT_TP2F_EMPTY, 781875, UART_LOG_IRQ_KR4},	/* KR4 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
 	{0, LOGUART_BIT_TP1F_NOT_FULL, LOGUART_BIT_TP1F_EMPTY, 781875, UART_LOG_IRQ},		/* KM4 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
-	{3, LOGUART_BIT_TP4F_NOT_FULL, LOGUART_BIT_TP4F_EMPTY, 3127500, NULL},	/* DSP IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
+	{3, LOGUART_BIT_TP4F_NOT_FULL, LOGUART_BIT_TP4F_EMPTY, 3127500, 0},	/* DSP IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
 };
 
 /****************************************************************************
@@ -580,7 +577,6 @@ static void rtl8720e_log_up_detach(struct uart_dev_s *dev)
 {
 	InterruptUnRegister(RTL8720E_UART_LOG_IRQ-16);
 	InterruptDis(RTL8720E_UART_LOG_IRQ-16);
-	return 0;
 }
 
 /****************************************************************************
@@ -771,7 +767,7 @@ static bool rtl8720e_log_up_txready(struct uart_dev_s *dev)
 	struct rtl8720e_up_dev_s *priv = (struct rtl8720e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 
-	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+	//LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
 	//return (UARTLOG->LOGUART_UART_LSR & LOG_UART_IDX_FLAG[2].not_full);
 	return 1;
 
