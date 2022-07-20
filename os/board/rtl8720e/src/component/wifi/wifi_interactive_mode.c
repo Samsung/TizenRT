@@ -811,10 +811,12 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 	wifi_show_setting(WLAN0_NAME, &setting);
 
 #if CONFIG_LWIP_LAYER
+#ifdef CONFIG_NET_ETHERNET // TO BE UPDATED
 		uint8_t *mac = LwIP_GetMAC(0);
 		nvdbg("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		nvdbg("\n\r  IP  => %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 		netlib_setmacaddr(CONFIG_WIFIMGR_STA_IFNAME, mac);
+#endif
 #endif
 
 	nvdbg("\r\n===============>>Finish wifi_on!!\r\n");
