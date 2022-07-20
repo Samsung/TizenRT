@@ -40,24 +40,14 @@ static u32 g_mpu_nregion_allocated;
 extern int main(void);
 extern u32 GlobalDebugEnable;
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 extern unsigned int __StackStart;
 extern unsigned int __StackLimit;
 extern unsigned int _ebss;
 extern unsigned int __PsramStackLimit;
 void NS_ENTRY BOOT_IMG3(void);
 void app_init_psram(void);
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-#if 0
-// Default SDK heap defined in section
-SRAM_BF_DATA_SECTION
-static unsigned char ucHeap[ (250 * 1024) ];
 
-void os_heap_init(void){
-	kregionx_start[0] = (void *)ucHeap;
-	kregionx_size[0] = (size_t)(sizeof(ucHeap));
-}
-
-#else
 #define IDLE_STACK ((uintptr_t)&__StackStart+CONFIG_IDLETHREAD_STACKSIZE-4)
 #define HEAP_BASE  ((uintptr_t)&__StackStart+CONFIG_IDLETHREAD_STACKSIZE)
 #define HEAP_LIMIT ((uintptr_t)&__StackLimit)
@@ -68,7 +58,6 @@ void os_heap_init(void){
 	kregionx_start[0] = (void *)HEAP_BASE;
 	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
 #if CONFIG_KMM_REGIONS >= 2
-	int region_idx;
 #if CONFIG_KMM_REGIONS == 3
 	kregionx_start[1] = (void *)PSRAM_HEAP_BASE;
 	kregionx_size[1] = (size_t)kregionx_start[1] + kregionx_size[1] - PSRAM_HEAP_BASE;
@@ -931,7 +920,6 @@ void hard_fault_handler_c(uint32_t mstack[], uint32_t pstack[], uint32_t lr_valu
     }
     while (1);
 }
-#endif
 
 void app_section_init(void)
 {
