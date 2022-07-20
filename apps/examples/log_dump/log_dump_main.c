@@ -61,7 +61,7 @@ int log_dump_main(int argc, char *argv[])
 	printf("This Log Should NOT be saved!!!\n");
 	sleep(1);
 
-	lldbg("\n*********************   LOG DUMP START  *********************\n");
+	printf("\n*********************   LOG DUMP START  *********************\n");
 
 	if (START_LOGDUMP_SAVE(fd) < 0)	{
 		printf("Failed to start log dump, errno %d\n", get_errno());
@@ -79,11 +79,11 @@ int log_dump_main(int argc, char *argv[])
 	while (ret > 0) {
 		ret = READ_LOGDUMP(fd, buf, sizeof(buf));
 		for (int i = 0; i < ret; i++) {
-			lldbg_noarg("%c", buf[i]);
+			printf("%c", buf[i]);
 		}
 	}
 
-        lldbg("\n*********************   LOG DUMP END  ***********************\n");
+        printf("\n*********************   LOG DUMP END  ***********************\n");
 
 	CLOSE_LOGDUMP(fd);
 
