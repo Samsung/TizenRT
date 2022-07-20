@@ -220,7 +220,7 @@ endef
 SECURE_HEADER_SIZE=32
 
 define MAKE_SAMSUNG_HEADER
-  $(TOPDIR)/../build/tools/amebalite/gnu_utility/dummy_DoNothing.py #kernel ${SECURE_HEADER_SIZE}
+  $(TOPDIR)/../os/tools/mksamsungheader.py kernel ${SECURE_HEADER_SIZE}
 endef
 
 define MAKE_BOOTPARAM

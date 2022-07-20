@@ -77,7 +77,9 @@ elif [ "$IMAGE_FILENAME_NEW" == "xip_boot.bin" ]; then
 else
     MakeFixedWidthHeaderString $IMG2SIGN    16  HEADER_FINAL 0
 fi
-
+if ! [[ "$IMAGE_LEN" ]]; then
+	IMAGE_LEN="0x00000000"
+fi
 MakeFixedWidthHeaderString $IMAGE_LEN   8  HEADER_FINAL 1
 MakeFixedWidthHeaderString $IMAGE_ADDR  8  HEADER_FINAL 1
 
