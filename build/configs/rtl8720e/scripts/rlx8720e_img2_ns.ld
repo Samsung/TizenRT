@@ -127,6 +127,11 @@ __dsp_flash_text_start__ = ORIGIN(DSP_IMG2);
 __kr4_psram_text_start__ = ORIGIN(KR4_BD_PSRAM);
 __km4_boot_text_start__ = ORIGIN(KM4_BOOT);
 
+_stext_flash = __km4_flash_text_start__;
+_etext_flash = LENGTH(KM4_IMG2);
+__flash_text_start__ = _stext_flash;
+__flash_text_end__ = _etext_flash;
+
 SECTIONS
 {
 	.rom.text (NOLOAD): { } > KM4_IROM_NS
@@ -157,7 +162,7 @@ SECTIONS
 		*ameba_swr_calib.o(.data*)
 		*ameba_otp.o(.data*)
 		__data_end__ = .;
-		_sdata = ABSOLUTE(.);
+		_edata = ABSOLUTE(.);
 		__ram_image2_text_end__ = .;
 
 		/*cache line size aligned in order to avoid MMU remap err*/
@@ -167,6 +172,7 @@ SECTIONS
 	.ram_image2.text :
 	{
 		__sram_text_start__ = .;
+		_stext_ram = ABSOLUTE(.);
 		*(.image2.sram.text*)
 		*(.image2.net.ram.text*)
 		__sram_data_start__ = .;
@@ -176,6 +182,7 @@ SECTIONS
 		*ameba_swr_calib.o(.text* .rodata*)
 		*ameba_otp.o(.text* .rodata*)
 		__sram_data_end__ = .;
+		_etext_ram = ABSOLUTE(.);
 		__sram_text_end__ = .;
 	} > KM4_BD_RAM
 
@@ -209,8 +216,10 @@ SECTIONS
 		__preinit_array_end = .;
 		. = ALIGN(4);
 		__init_array_start = .;
+		_sinit = ABSOLUTE(.);
 		KEEP(*(SORT(.init_array.*)))
 		KEEP(*(.init_array))
+		_einit = ABSOLUTE(.);
 		__init_array_end = .;
 		. = ALIGN(4);
 		__fini_array_start = .;
@@ -267,6 +276,7 @@ SECTIONS
 	.ram_heap.data (NOLOAD):
 	{
 		. = ALIGN (32);
+		_sbss = ABSOLUTE(.);
 		*(.bfsram.data*)
 		end = .;
 		*(.heap.stdlib*)
