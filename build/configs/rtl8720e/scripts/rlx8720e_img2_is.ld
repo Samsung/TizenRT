@@ -65,11 +65,11 @@ MEMORY
 	/* KM4 Secure RAM, BIT(28)=1 */
 	KM4_ROMBSS_RAM_S (rw) :                 ORIGIN = 0x30007000, LENGTH = 0x30008000 - 0x30007000	/* KM4 ROM BSS RAM S: 4k */
 	KM4_MSP_RAM_S (rw) :                    ORIGIN = 0x30008000, LENGTH = 0x3000A000 - 0x30008000	/* KM4 MSP_S RAM: 8k */
-	KM4_BOOTLOADER_RAM_S (rwx) :            ORIGIN = 0x3000A020, LENGTH = 0x30012000 - 0x3000A020	/* KM4 BOOT Loader RAM: 24k */
+	KM4_BOOTLOADER_RAM_S (rwx) :            ORIGIN = 0x3000A020, LENGTH = 0x30012000 - 0x3000A020	/* KM4 BOOT Loader RAM: 32k */
 	KM4_FLOADER_RAM_S (rwx) :               ORIGIN = 0x3000A020, LENGTH = 0x30020000 - 0x3000A020	/* KM4 ImgTool Flash Loader RAM: 88k */
-	KM4_BD_RAM_NSC (rwx) :                  ORIGIN = 0x6015B020, LENGTH = 0x6015C000 - 0x6015B020	/* KM4 BD RAM NSC: 4k */
-	KM4_BD_RAM_ENTRY (rwx) :                ORIGIN = 0x6015C000, LENGTH = 0x60160000 - 0x6015C000	/* KM4 BD RAM ENTRY: 16k */
-	KM4_BD_RAM_S (rwx) :                    ORIGIN = 0x70160020, LENGTH = 0x701B0000 - 0x70160020	/* KM4 BD RAM S: 320k */
+	KM4_BD_RAM_NSC (rwx) :                  ORIGIN = 0x60347020, LENGTH = 0x60348000 - 0x60347020	/* KM4 BD RAM NSC: 4k */
+	KM4_BD_RAM_ENTRY (rwx) :                ORIGIN = 0x60348000, LENGTH = 0x6034C000 - 0x60348000	/* KM4 BD RAM ENTRY: 16k */
+	KM4_BD_RAM_S (rwx) :                    ORIGIN = 0x7034C020, LENGTH = 0x7039C000 - 0x7034C020	/* KM4 BD RAM S: 320k */
 
 	/* KM4 Non-secure RAM */
 	KM4_MSP_RAM_NS (rw) :                   ORIGIN = 0x20003000, LENGTH = 0x20004000 - 0x20003000	/* KM4  MSP_NS RAM: 4k */
@@ -78,7 +78,7 @@ MEMORY
 	KM4_STDLIB_HEAP_RAM_NS (rw) :           ORIGIN = 0x20006000, LENGTH = 0x20007000 - 0x20006000	/* KM4 ROM STDLIB HEAP: 4k */
 
 	/* IMG2 RAM */
-	KM4_BD_RAM (rwx) :                      ORIGIN = 0x20010020, LENGTH = 0x20030000 - 0x20010020	/* KM4 BD RAM: 128k */
+	KM4_BD_RAM (rwx) :                      ORIGIN = 0x20012020, LENGTH = 0x20030000 - 0x20012020	/* KM4 BD RAM: 120k */
 	DSP_BD_RAM (rwx) :                      ORIGIN = 0x20030020, LENGTH = 0x20040000 - 0x20030020	/* DSP BD RAM: 64k */
 	KR4_BD_RAM (rwx) :                      ORIGIN = 0x20040020, LENGTH = 0x2005FD00 - 0x20040020	/* KR4 BD RAM: 127k */
 	KR4_IPC_RAM (rwx) :                     ORIGIN = 0x2005FD00, LENGTH = 0x20060000 - 0x2005FD00	/* KR4 IPC RAM: 0k */
@@ -86,10 +86,9 @@ MEMORY
 	DSP_TCM (rwx) :                         ORIGIN = 0x20080020, LENGTH = 0x200C0000 - 0x20080020	/* DSP TCM: 256k */
 
 	/* KM4 Non-secure PSRAM */
-	KM4_BD_PSRAM_NS_TZ (rwx) :              ORIGIN = 0x60000020, LENGTH = 0x6015B000 - 0x60000020	/* KM4 MAIN RAM NS TRUSTZONE EN: 1388k */
-	KM4_BD_PSRAM_NS_NTZ (rwx) :             ORIGIN = 0x60000020, LENGTH = 0x60180000 - 0x60000020	/* KM4 MAIN RAM NS TRUSTZONE DIS: 1536k */
-	KR4_BD_PSRAM (rwx) :                    ORIGIN = 0x601B0020, LENGTH = 0x60330000 - 0x601B0020	/* KR4 BD PSRAM: 1536k */
-	DSP_BD_PSRAM (rwx) :                    ORIGIN = 0x60330020, LENGTH = 0x60830000 - 0x60330020	/* DSP BD PSRAM: 5120k */
+	KM4_BD_PSRAM_NS_TZ (rwx) :              ORIGIN = 0x60000020, LENGTH = 0x60347000 - 0x60000020	/* KM4 MAIN RAM NS TRUSTZONE EN: 3356K */
+	KM4_BD_PSRAM_NS_NTZ (rwx) :             ORIGIN = 0x60000020, LENGTH = 0x6039C000 - 0x60000020	/* KM4 MAIN RAM NS TRUSTZONE DIS: 3696k */
+	KR4_BD_PSRAM (rwx) :                    ORIGIN = 0x6039C020, LENGTH = 0x60400000 - 0x6039C020	/* KR4 BD PSRAM: 400k */
 
 	/* KM4 EXTENTION SRAM */
 	EXTENTION_SRAM (rwx) :                  ORIGIN = 0x22000000, LENGTH = 0x22000000 - 0x22000000	/* KM4 EXTENTION SRAM: 0k */
@@ -108,7 +107,7 @@ MEMORY
 	KR4_STDLIB_HEAP_RAM (rw) :              ORIGIN = 0x20002000, LENGTH = 0x20003000 - 0x20002000	/* KR4 ROM STDLIB HEAP: 4k */
 
 	/* Flash */
-	PHY_IMG1 (rx) :                         ORIGIN = 0x08001020, LENGTH = 0x08007000 - 0x08001020	/* KM4 Bootloader Physical address: 24k */
+	PHY_IMG1 (rx) :                         ORIGIN = 0x08001020, LENGTH = 0x08009000 - 0x08001020	/* KM4 Bootloader Physical address: 32k */
 	KM4_BOOT (rx) :                         ORIGIN = 0x0F800020, LENGTH = 0x10000000 - 0x0F800020	/* KM4 Bootloader Virtual address: 8192k */
 	PHY_DSP (rx) :                          ORIGIN = 0x08400000, LENGTH = 0x08600000 - 0x08400000	/* DSP IMG Physical address: 2048k */
 	KR4_IMG2 (rx) :                         ORIGIN = 0x0C000020, LENGTH = 0x0E000000 - 0x0C000020	/* KR4 IMG2 Virtual address: 32768k */
@@ -127,9 +126,6 @@ __km4_flash_text_start__ = ORIGIN(KM4_IMG2);
 __dsp_flash_text_start__ = ORIGIN(DSP_IMG2);
 __kr4_psram_text_start__ = ORIGIN(KR4_BD_PSRAM);
 __km4_boot_text_start__ = ORIGIN(KM4_BOOT);
-__nspe_phy_addr__ = ORIGIN(PHY_IMG2);
-__dsp_phy_addr__ = ORIGIN(PHY_DSP);
-__dsp_ram_addr__ = ORIGIN(DSP_BD_RAM);
 
 SECTIONS
 {
@@ -138,27 +134,6 @@ SECTIONS
 	.hal.rom.bss (NOLOAD): { } > KM4_ROMBSS_RAM_COM
 	.hal.ns_rom.bss (NOLOAD): { } > KM4_ROMBSS_RAM_NS
 
-	/* ram part */
-	.sram_image2.text :
-	{
-		__sram_text_start__ = .;
-		*(.image2.sram.text*)
-		*(.image2.net.ram.text*)
-		*ameba_psram.o(.text* .rodata*)
-		*ameba_pll.o(.text* .rodata*)
-		*ameba_swr_calib.o(.text* .rodata*)
-		*ameba_otp.o(.text* .rodata*)
-		__sram_data_start__ = .;
-		*(.image2.sram.data*)
-		*ameba_psram.o(.data*)
-		*ameba_pll.o(.data*)
-		*ameba_swr_calib.o(.data*)
-		*ameba_otp.o(.data*)
-		__sram_data_end__ = .;
-		__sram_text_end__ = .;
-	} > KM4_BD_RAM
-
-	/* psram part */
 	/* image2: normal image start */
 	.ram_image2.entry :
 	{
@@ -169,22 +144,42 @@ SECTIONS
 		__image2_validate_code__ = .;
 		KEEP(*(.image2.validate.rodata*))
 
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_RAM
 
+	/* ram part */
 	.ram_image2.data :
 	{
 		_sdata = ABSOLUTE(.);
 		__data_start__ = .;
 		*(.data*)
+		*ameba_psram.o(.data*)
+		*ameba_pll.o(.data*)
+		*ameba_swr_calib.o(.data*)
+		*ameba_otp.o(.data*)
 		__data_end__ = .;
 		_sdata = ABSOLUTE(.);
 		__ram_image2_text_end__ = .;
 
 		/*cache line size aligned in order to avoid MMU remap err*/
 		. = ALIGN(32);
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_RAM
 
 	.ram_image2.text :
+	{
+		__sram_text_start__ = .;
+		*(.image2.sram.text*)
+		*(.image2.net.ram.text*)
+		__sram_data_start__ = .;
+		*(.image2.sram.data*)
+		*ameba_psram.o(.text* .rodata*)
+		*ameba_pll.o(.text* .rodata*)
+		*ameba_swr_calib.o(.text* .rodata*)
+		*ameba_otp.o(.text* .rodata*)
+		__sram_data_end__ = .;
+		__sram_text_end__ = .;
+	} > KM4_BD_RAM
+
+	.xip_image2.text :
 	{
 		__flash_text_start__ = .;
 
@@ -227,20 +222,20 @@ SECTIONS
 		__flash_text_end__ = .;
 
 		. = ALIGN (32);
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_IMG2
 
 	.ARM.extab  :
 	{
 		*(.ARM.extab* .gnu.linkonce.armextab.*)
 
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_IMG2
 
 	.ARM.exidx :
 	{
 		__exidx_start = .;
 		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
 		__exidx_end = .;
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_IMG2
 
 	/*-----------------*/
 	.ram_image2.bss (NOLOAD):
@@ -249,7 +244,7 @@ SECTIONS
 		*(.bss*)
 		*(COMMON)
 		__bss_end__ = .;
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_RAM
 
 	.ram_image2.bd.data (NOLOAD):
 	{
@@ -258,7 +253,7 @@ SECTIONS
 		*(.bdsram.data*)
 		. = ALIGN (32);
 		__ram_bd_end__ = .;
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_RAM
 
 	.ram_image2.nocache.data (NOLOAD):
 	{
@@ -267,7 +262,7 @@ SECTIONS
 		*(.ncsram.data*)
 		. = ALIGN (32);
 		__ram_nocache_end__ = .;
-	} > KM4_BD_PSRAM_NS_NTZ
+	} > KM4_BD_RAM
 
 	.ram_heap.data (NOLOAD):
 	{
@@ -286,7 +281,7 @@ SECTIONS
 		*(.BTTRACE)
 		__btrace_end__ = .;
 	} > BTRACE
-  __StackStart = ABSOLUTE(ORIGIN(DSP_TCM));
+	__StackStart = ABSOLUTE(ORIGIN(DSP_TCM));
 	__StackLimit = ABSOLUTE(ORIGIN(DSP_TCM) + LENGTH(DSP_TCM));
 	__PsramStackLimit = ABSOLUTE(ORIGIN(KM4_BD_PSRAM_NS_NTZ) + LENGTH(KM4_BD_PSRAM_NS_NTZ));
 }
