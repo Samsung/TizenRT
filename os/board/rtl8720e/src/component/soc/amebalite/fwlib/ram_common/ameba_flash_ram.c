@@ -36,12 +36,6 @@ void FLASH_Write_Lock(void)
 {
 	/* disable irq */
 	PrevIrqStatus = irq_disable_save();
-
-	FLASH_UserMode_Enter();
-	/* if 8 auto rd wrap ever occur, and user rd + auto rd wrap is together, SPIC will return 0xFFFFFFFF only in Lite. */
-	/* Set DIS_WRAP_ALIGN = 1, SPIC will chop wrap transation into two incremental transactions to avoid corner case.*/
-	SPIC->CTRLR2 |= BIT_DIS_WRAP_ALIGN;
-	FLASH_UserMode_Exit();
 }
 
 /**
@@ -53,17 +47,6 @@ void FLASH_Write_Lock(void)
 IMAGE2_RAM_TEXT_SECTION
 void FLASH_Write_Unlock(void)
 {
-	/* use uncacheable read (no wrap) to restore to normal function */
-	DCache_Invalidate(SPI_FLASH_BASE, 4);
-
-	/* Avoid compiler optimizations */
-	if (0 != HAL_READ32(SPI_FLASH_BASE, 4)) {
-		/* reopen read wrap improvement */
-		FLASH_UserMode_Enter();
-		SPIC->CTRLR2 &= ~BIT_DIS_WRAP_ALIGN;
-		FLASH_UserMode_Exit();
-	}
-
 	/* restore irq */
 	irq_enable_restore(PrevIrqStatus);
 }
