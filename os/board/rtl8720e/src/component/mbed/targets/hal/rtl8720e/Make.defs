@@ -34,7 +34,6 @@ CSRCS += flash_api.c \
 		efuse_api.c \
 		wdt_api.c \
 		us_ticker_api.c \
-		wait_api.c \
 		rtc_api.c \
 		captouch_api.c \
 		i2s_api.c \
