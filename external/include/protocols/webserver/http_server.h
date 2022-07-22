@@ -317,19 +317,34 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 int http_send_response_with_status_msg(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers);
 
 /**
+ * @brief http_send_response_with_status() sends the response of text or binary body.
+ *
+ * @param[in] client a pointer of HTTP client.
+ * @param[in] status status code of a response.
+ * @param[in] status_message status message associated with status code.
+ * @param[in] body Response payload (text or binary body)
+ * @param[in] body_len of Response payload.
+ * @param[in] headers HTTP headers of a response.
+ * @return On success, HTTP_OK(0) is returned.
+ *         On failure, HTTP_ERROR(-1) is returned.
+ */
+int http_send_response_with_status(struct http_client_t *client, int status, const char* status_message, const char* body, int body_len, struct http_keyvalue_list_t *headers);
+
+/**
  * @brief http_send_response_chunk() sends the response in chunk form.
  *
  * @param[in] client a pointer of HTTP client.
  * @param[in] status status code of a response.
  * @param[in] status_message status message associated with status code.
  * @param[in] body Response payload.
+ * @param[in] body_len of Response payload.
  * @param[in] headers HTTP headers of a response.
  * @param[in] data_type - FIRST_DATA, NEXT_DATA, LAST_DATA
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
  */
 int http_send_response_chunk(struct http_client_t *client, int status, const char* status_message,
-                        const char *body, struct http_keyvalue_list_t *headers, data_type_e data_type);
+                        const char *body, int body_len, struct http_keyvalue_list_t *headers, data_type_e data_type);
 
 #ifdef CONFIG_NET_SECURITY_TLS
 /**
