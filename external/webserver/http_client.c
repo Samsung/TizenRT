@@ -871,11 +871,16 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 	}
 }
 
-static int prepare_chunk_body(char *buf, int len, const char *body, bool is_last_msg)
+static int prepare_chunk_body(char *buf, unsigned int len, const char *body, unsigned int body_len, bool is_last_msg)
 {
 	int chunk_size;
 	char httpcrnl[] = "\r\n";
 	int buflen = 0;
+
+	if (buf == NULL) {
+		HTTP_LOGE("buf is NULL \n");
+		return -1;
+	}
 
 	buflen = len;
 
@@ -886,7 +891,7 @@ static int prepare_chunk_body(char *buf, int len, const char *body, bool is_last
 			HTTP_LOGE("msg body is NULL \n");
 			return -1;
 		}
-		chunk_size = strlen(body);
+		chunk_size = body_len;
 	}
 
 	//append length of message
@@ -906,9 +911,9 @@ static int prepare_chunk_body(char *buf, int len, const char *body, bool is_last
 		return -1;
 	}
 
-
 	//append body
-	buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "%s", body);
+	memcpy(buf + buflen, body, body_len); 
+	buflen += body_len;
 
 	//append httpcrnl
 	buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "%s", httpcrnl);
@@ -916,9 +921,9 @@ static int prepare_chunk_body(char *buf, int len, const char *body, bool is_last
 	return buflen;
 }
 
-static int http_send_chunk_buffer(struct http_client_t *client, char *buf)
+static int http_send_chunk_buffer(struct http_client_t *client, char *buf, int len)
 {
-	int  ret = 0;
+	int ret = 0;
 	int sndlen = 0;
 	int buflen = 0;
 
@@ -927,7 +932,8 @@ static int http_send_chunk_buffer(struct http_client_t *client, char *buf)
 		return -1;
 	}
 
-	sndlen = strlen(buf);
+	sndlen = len;
+
 	while (sndlen > 0) {
 #ifdef CONFIG_NET_SECURITY_TLS
 		if (client->server->tls_init) {
@@ -950,17 +956,26 @@ static int http_send_chunk_buffer(struct http_client_t *client, char *buf)
 	return 0;
 }
 
-static int http_send_chunk(struct http_client_t *client, char *buf, int buflen, const char *body, bool is_last_msg)
+static int http_send_chunk(struct http_client_t *client, char *buf, int buflen,
+					const char *body, int body_len, bool is_last_msg)
 {
 	int ret = 0;
+	int buf_len = 0;
 
-	ret = prepare_chunk_body(buf, buflen, body, is_last_msg);
+	if(client == NULL || buf == NULL) {
+		HTTP_LOGE("client or buf is NULL \n");
+		return -1;
+	}
+
+	ret = prepare_chunk_body(buf, buflen, body, body_len, is_last_msg);
 	if (ret < 0) {
 		HTTP_LOGE("Failed to prepare chunk body \n");
 		return ret;
 	}
 
-	ret = http_send_chunk_buffer(client, buf);
+	buf_len = ret;
+
+	ret = http_send_chunk_buffer(client, buf, buf_len);
 	if (ret < 0) {
 		HTTP_LOGE("Failed to send chunk buffer \n");
 		return ret;
@@ -970,7 +985,7 @@ static int http_send_chunk(struct http_client_t *client, char *buf, int buflen, 
 }
 
 int http_send_response_chunk(struct http_client_t *client, int status, const char* status_message,
-			const char *body, struct http_keyvalue_list_t *headers, data_type_e data_type)
+			const char *body, int body_len, struct http_keyvalue_list_t *headers, data_type_e data_type)
 {
 	char *buf;
 	int buflen = 0;
@@ -987,7 +1002,6 @@ int http_send_response_chunk(struct http_client_t *client, int status, const cha
 		HTTP_LOGE("Fail to malloc buffer\n");
 		return HTTP_ERROR;
 	}
-
 	memset(buf, 0, HTTP_CONF_MAX_REQUEST_LENGTH);
 
 	if (data_type == FIRST_DATA) {
@@ -1037,7 +1051,7 @@ int http_send_response_chunk(struct http_client_t *client, int status, const cha
 
 
 	// Include response body for chunk
-	ret = http_send_chunk(client, buf, buflen, body, false);
+	ret = http_send_chunk(client, buf, buflen, body, body_len, false);
 	if (ret < 0) {
 		HTTP_FREE(buf);
 		return HTTP_ERROR;
@@ -1048,7 +1062,7 @@ int http_send_response_chunk(struct http_client_t *client, int status, const cha
 		memset (buf, 0, HTTP_CONF_MAX_REQUEST_LENGTH);
 		buflen = 0;
 
-		ret = http_send_chunk(client, buf, buflen, NULL, true);
+		ret = http_send_chunk(client, buf, buflen, NULL, 0, true);
 		if (ret < 0) {
 			HTTP_FREE(buf);
 			return HTTP_ERROR;
@@ -1093,13 +1107,13 @@ static int http_send_buffer(struct http_client_t *client, const char *buf, int l
 	return 0;
 }
 
-int http_send_response_helper(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers)
+int http_send_response_helper(struct http_client_t *client, int status, const char* status_message,
+				const char* body, int body_len, struct http_keyvalue_list_t *headers)
 {
 	char *buf;
 	int buflen = 0;
 	struct http_keyvalue_t *cur = NULL;
 	int len = 0;
-	int body_len = 0;
 	int rem_body_len = 0;
 	int ret = 0;
 
@@ -1142,7 +1156,6 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 
 			// Add content type and content length headers
 			if (body) {
-				body_len = strlen(body);
 				len = snprintf(buf + buflen,
                                                            HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
                                                            "Content-Type: text/html\r\n"
@@ -1181,7 +1194,6 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 
 			// Add content type and content length headers
 			if (body) {
-				body_len = strlen(body);
 				buflen += snprintf(buf + buflen,
                                                            HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
                                                            "Content-type: text/html\r\n"
@@ -1245,10 +1257,17 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 {
 	const char* status_message = (status == 200) ? "OK" : body;
 
-	return http_send_response_helper(client, status, status_message, body, headers);
+	int body_len = strlen(body);
+	return http_send_response_helper(client, status, status_message, body, body_len, headers);
 }
 
 int http_send_response_with_status_msg(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers)
 {
-	return http_send_response_helper(client, status, status_message, body, headers);
+	int body_len = strlen(body);
+	return http_send_response_helper(client, status, status_message, body, body_len, headers);
+}
+
+int http_send_response_with_status(struct http_client_t *client, int status, const char* status_message, const char* body, int body_len, struct http_keyvalue_list_t *headers)
+{
+	return http_send_response_helper(client, status, status_message, body, body_len, headers);
 }

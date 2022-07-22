@@ -71,6 +71,7 @@
 #define MAX_DATA_SIZE 50
 #define MAX_BUF_SIZE 100
 #define MAX_DATA_COUNT 5
+#define HTTP_200_RESPONSE 200
 #define WEBSERVER_STACK_SIZE   (1024 * 8)
 #define WEBSERVER_SCHED_PRI    100
 #define WEBSERVER_SCHED_POLICY SCHED_RR
@@ -111,25 +112,27 @@ static int http_send_chunk(struct http_client_t *client)
 	memset(msg_body, 'a', MAX_DATA_SIZE);
 	msg_body[MAX_DATA_SIZE] = 0;
 
-	ret = http_send_response_chunk(client, 200, "OK", msg_body, NULL, FIRST_DATA);
+	ret = http_send_response_chunk(client, HTTP_200_RESPONSE, "OK", msg_body, MAX_DATA_SIZE, NULL, FIRST_DATA);
 	if (ret < 0) {
 		printf("Error: Fail to send FIRST_DATA \n");
 		return ret;
 	}
 
 	for (int i = 0; i < MAX_DATA_COUNT; i++) {
-		ret = http_send_response_chunk(client, 200, "OK", msg_body, NULL, NEXT_DATA);
+		ret = http_send_response_chunk(client, HTTP_200_RESPONSE, "OK", msg_body, MAX_DATA_SIZE, NULL, NEXT_DATA);
 		if (ret < 0) {
 			printf("Error: Fail to send NEXT_DATA \n");
 			return ret;
 		}
 	}
 
-	ret = http_send_response_chunk(client, 200, "OK", msg_body, NULL, LAST_DATA);
+	ret = http_send_response_chunk(client, HTTP_200_RESPONSE, "OK", msg_body, MAX_DATA_SIZE, NULL, LAST_DATA);
 	if (ret < 0) {
 		printf("Error: Fail to send LAST_DATA \n");
 		return ret;
 	}
+
+	return 0;
 }
 
 /* GET callbacks */
