@@ -180,7 +180,7 @@ static int process_trailer_header(char *buf, unsigned int buf_len, struct http_r
 				struct http_client_t *client, unsigned int sentence_start)
 {
 	char *header_field_value = NULL;
-	unsigned int sentence_end;
+	int sentence_end;
 	char *entity;
 	unsigned int trailter_len;
 
