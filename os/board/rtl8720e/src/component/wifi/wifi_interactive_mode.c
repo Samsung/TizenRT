@@ -31,6 +31,8 @@
 #include "lwip/tcpip.h"
 #include "rtk_wifi_utils.h"
 #include <tinyara/net/if/wifi.h>
+#include <netutils/netlib.h>
+#include <net/if.h>
 
 #define vTaskDelay(t) usleep(t*1000)
 
@@ -778,6 +780,32 @@ void cmd_wifi_info(int argc, char **argv)
 #endif
 }
 
+extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
+static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
+{
+	int ret = ERROR;
+	if (ifname && macaddr) {
+		/* Get a socket (only so that we get access to the INET subsystem) */
+
+		int sockfd = socket(2, NETLIB_SOCK_IOCTL, 0);
+		if (sockfd >= 0) {
+			struct ifreq req;
+
+			/* Put the driver name into the request */
+			strncpy(req.ifr_name, ifname, 6);
+
+			/* Put the new MAC address into the request */
+			req.ifr_hwaddr.sa_family = 2;
+			memcpy(&req.ifr_hwaddr.sa_data, macaddr, 6);
+
+			/* Perform the ioctl to set the MAC address */
+			ret = netdev_ifrioctl(sockfd, 1813, (unsigned long)&req);
+			close(sockfd);
+		}
+	}
+	return ret;
+}
+
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
 	int ret;
@@ -811,14 +839,10 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 	wifi_show_setting(WLAN0_NAME, &setting);
 
 #if CONFIG_LWIP_LAYER
-#ifdef CONFIG_NET_ETHERNET // TO BE UPDATED
-		uint8_t *mac = LwIP_GetMAC(0);
-		nvdbg("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-		nvdbg("\n\r  IP  => %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-		netlib_setmacaddr(CONFIG_WIFIMGR_STA_IFNAME, mac);
+	uint8_t *mac = LwIP_GetMAC(0);
+	nvdbg("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	_netlib_setmacaddr(CONFIG_WIFIMGR_STA_IFNAME, mac);
 #endif
-#endif
-
 	nvdbg("\r\n===============>>Finish wifi_on!!\r\n");
 	return RTK_STATUS_SUCCESS;
 }
