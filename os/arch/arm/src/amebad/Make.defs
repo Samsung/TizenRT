@@ -200,10 +200,6 @@ EXTRA_LIBS += ${TOPDIR}/board/rtl8721csm/src/libs/cmse_implib.a
 endif
 endif
 
-ifeq ($(CONFIG_RTK_WLAN),y)
-EXTRA_LIBS += $(TOPDIR)/drivers/wireless/realtek/librtl.a
-endif
-
 ifeq ($(CONFIG_AMEBAD_WIFI),y)
 ifeq ($(CONFIG_ARCH_FPU),y)
 EXTRA_LIBS += $(TOPDIR)/board/rtl8721csm/src/libs/lib_wlan_fpu.a
