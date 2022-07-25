@@ -789,7 +789,7 @@ CONFIG_NET_GUARDSIZE=2
 # Data link support
 #
 # CONFIG_NET_MULTILINK is not set
-# CONFIG_NET_ETHERNET is not set
+CONFIG_NET_ETHERNET=y
 
 #
 # Protocols
