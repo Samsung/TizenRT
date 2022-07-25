@@ -1150,6 +1150,7 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
                                                            body_len);
 				if (len < 0) {
 					HTTP_LOGE("Error: snprintf failed \n");
+					HTTP_FREE(buf);
 					return HTTP_ERROR;
 				}
 
@@ -1163,6 +1164,7 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 
 			if (len < 0) {
 				HTTP_LOGE("Error: snprintf failed \n");
+				HTTP_FREE(buf);
 				return HTTP_ERROR;
 			}
 
@@ -1193,6 +1195,7 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 						client->keep_alive_timeout, client->max_request);
 			if (len < 0) {
 				HTTP_LOGE("Error: snprintf failed \n");
+				HTTP_FREE(buf);
 				return HTTP_ERROR;
 			}
 
