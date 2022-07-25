@@ -244,3 +244,8 @@ else
 CHIP_CSRCS += imxrt_usbhost.c imxrt_ehci.c
 endif
 endif
+
+# Library for external RTK wifi chip
+ifeq ($(CONFIG_RTK_WLAN),y)
+EXTRA_LIBS += $(TOPDIR)/drivers/wireless/realtek/librtl.a
+endif
