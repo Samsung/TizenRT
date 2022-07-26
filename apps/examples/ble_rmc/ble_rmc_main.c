@@ -69,6 +69,13 @@ static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
 /* These values can be modified as a developer wants. */
 static uint8_t ble_filter[] = { 0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 };
 
+static uint8_t g_adv_raw[] = { 
+	0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 
+};
+static uint8_t g_adv_resp[] = {
+	0x11, 0x09, 'T', 'I', 'Z', 'E', 'N', 'R', 'T', ' ', 'T', 'E', 'S', 'T', '(', '0', '2', ')',
+};
+
 static void ble_device_scanned_cb_for_test(ble_scanned_device *scanned_device)
 {
 	RMC_LOG(RMC_CLIENT_TAG, "scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
@@ -147,11 +154,45 @@ static void ble_operation_notification_cb(ble_client_ctx *ctx, ble_attr_handle a
 	return;
 }
 
+void restart_server(void) {
+	ble_result_e ret = BLE_MANAGER_FAIL;
+	ble_data data[1] = { 0, };
+	data->data = g_adv_raw;
+	data->length = sizeof(g_adv_raw);
+
+	ret = ble_server_set_adv_data(data);
+	if (ret != BLE_MANAGER_SUCCESS) {
+		RMC_LOG(RMC_SERVER_TAG, "Fail to set adv raw data ret:[%d]\n");
+		return;
+	}
+	RMC_LOG(RMC_SERVER_TAG, "Set adv raw data ... ok\n");
+
+	data->data = g_adv_resp;
+	data->length = sizeof(g_adv_resp);
+
+	ret = ble_server_set_adv_resp(data);
+	if (ret != BLE_MANAGER_SUCCESS) {
+		RMC_LOG(RMC_SERVER_TAG, "Fail to set adv resp data ret:[%d]\n");
+		return;
+	}
+	RMC_LOG(RMC_SERVER_TAG, "Set adv resp data ... ok\n");
+
+	ret = ble_server_start_adv();
+	if (ret != BLE_MANAGER_SUCCESS) {
+		RMC_LOG(RMC_SERVER_TAG, "Fail to start adv ret:[%d]\n");
+		return;
+	}
+	RMC_LOG(RMC_SERVER_TAG, "Start adv ... ok\n");
+}
+
 static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
 {
 	RMC_LOG(RMC_SERVER_TAG, "'%s' is called\n", __FUNCTION__);
 	RMC_LOG(RMC_SERVER_TAG, "conn : %d / conn_type : %d\n", con_handle, conn_type);
 	RMC_LOG(RMC_SERVER_TAG, "conn mac : %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	if (conn_type == BLE_SERVER_DISCONNECTED) {
+		restart_server();
+	}
 	return;
 }
 
@@ -201,13 +242,6 @@ static ble_server_gatt_t gatt_profile[] = {
 		.cb = utc_cb_desc_b_1, 
 		.arg = "desc_b_1",
 	},
-};
-
-static uint8_t g_adv_raw[] = { 
-	0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 
-};
-static uint8_t g_adv_resp[] = {
-	0x11, 0x09, 'T', 'I', 'Z', 'E', 'N', 'R', 'T', ' ', 'T', 'E', 'S', 'T', '(', '0', '2', ')',
 };
 
 static ble_scan_callback_list scan_config = {

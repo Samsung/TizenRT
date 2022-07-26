@@ -84,7 +84,7 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC)
 #define TC_WIFI_MANAGER_STACK  4096
 #endif
-#if defined(CONFIG_EXAMPLES_TESTCASE_BLE_MANAGER_UTC)
+#if defined(CONFIG_EXAMPLES_TESTCASE_BLE_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_BLE_MANAGER_ITC)
 #define TC_BLE_MANAGER_STACK  4096
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
@@ -126,6 +126,7 @@ extern int itc_taskmanager_main(int argc, char *argv[]);
 extern int utc_wifimanager_main(int argc, char *argv[]);
 extern int itc_wifimanager_main(int argc, char *argv[]);
 extern int utc_blemanager_main(int argc, char *argv[]);
+extern int itc_blemanager_main(int argc, char *argv[]);
 
 /* Not yet */
 extern int tc_mpu_main(int argc, char *argv[]);
@@ -217,6 +218,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_BLE_MANAGER_UTC
 	{"blemgr_utc", utc_blemanager_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_BLE_MANAGER_ITC
+	{"blemgr_itc", itc_blemanager_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
 	{"tcp_tls_stress", tc_tcp_tls_main, TASH_EXECMD_ASYNC},
@@ -436,6 +440,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("blemgrutc", SCHED_PRIORITY_DEFAULT, TC_BLE_MANAGER_STACK, utc_blemanager_main, argv);
 	if (pid < 0) {
 		printf("BLE Manager utc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_BLE_MANAGER_ITC
+	pid = task_create("blemgritc", SCHED_PRIORITY_DEFAULT, TC_BLE_MANAGER_STACK, itc_blemanager_main, argv);
+	if (pid < 0) {
+		printf("BLE Manager itc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
