@@ -220,6 +220,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_BLE_MANAGER_UTC),y)
 	$(Q) $(call REGISTER,blemgr_utc,utc_blemanager_main,TASH_EXECMD_ASYNC,100,4096)
 endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_BLE_MANAGER_ITC),y)
+	$(Q) $(call REGISTER,blemgr_itc,itc_blemanager_main,TASH_EXECMD_ASYNC,100,4096)
+endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS),y)
 	$(Q) $(call REGISTER,tcp_tls_stress,tc_tcp_tls_main,TASH_EXECMD_ASYNC,100,8192)
 endif
