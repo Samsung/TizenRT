@@ -477,6 +477,7 @@ int log_dump(int argc, char *argv[])
 			compress_last_block = false;
 		} else {
 			/* compress the completely filled block */
+			writesize = CONFIG_LOG_DUMP_CHUNK_SIZE;
 			compress_ret = compress_block(out_buf, &writesize, uncomp_array, CONFIG_LOG_DUMP_CHUNK_SIZE);
 			if (compress_ret != LOG_DUMP_OK) {
 				lldbg("Fail to compress compress_ret = %d\n", compress_ret);
