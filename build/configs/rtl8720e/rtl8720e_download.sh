@@ -18,3 +18,56 @@
 ###########################################################################
 # rtl8720e_download.sh
 
+TOOL_PATH=${TOP_PATH}/build/tools/amebalite
+IMG_TOOL_PATH=${TOOL_PATH}/image_tool
+
+OS_PATH=${TOP_PATH}/os
+CONFIG=${OS_PATH}/.config
+source ${CONFIG}
+APP_NUM=0
+
+function pre_download()
+{
+	source ${TOP_PATH}/os/.bininfo
+	cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
+	cp -p ${BIN_PATH}/kernel_rtl8720e_200204.trpk ${IMG_TOOL_PATH}/kernel_rtl8720e_200204.trpk
+	cp -p ${BIN_PATH}/bootparam.bin ${IMG_TOOL_PATH}/bootparam.bin
+}
+
+function board_download()
+{
+	cd ${IMG_TOOL_PATH}
+	if [ ! -f ${IMG_TOOL_PATH}/$3 ];then
+		echo "$3 not present"
+	else
+		./upload_image_tool_linux "download" $1 1 $2 $3
+	fi
+}
+
+function board_erase()
+{
+	cd ${IMG_TOOL_PATH}
+	./upload_image_tool_linux "erase" $1 1 $2 $3
+}
+
+function post_download()
+{
+	cd ${IMG_TOOL_PATH}
+	[ -e ${BL1}.bin ] && rm ${BL1}.bin
+	[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
+	if test -f "${APP1_BIN_NAME}"; then
+		[ -e ${APP1_BIN_NAME} ] && rm ${APP1_BIN_NAME}
+	fi
+	if test -f "${APP2_BIN_NAME}"; then
+		[ -e ${APP2_BIN_NAME} ] && rm ${APP2_BIN_NAME}
+	fi
+	if test -f "${COMMON_BIN_NAME}"; then
+		[ -e ${COMMON_BIN_NAME} ] && rm ${COMMON_BIN_NAME}
+	fi
+	if test -f "${SMARTFS_BIN_PATH}"; then
+		[ -e ${CONFIG_ARCH_BOARD}_smartfs.bin ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin
+	fi
+	[ -e ${BOOTPARAM}.bin ] && rm ${BOOTPARAM}.bin
+}
+
+
