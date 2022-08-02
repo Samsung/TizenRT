@@ -107,5 +107,7 @@ endif #EXAMPLES_MICOM_TIMER_TEST
 endif #EXAMPLES_LOADABLE_AUTOMATIC_TEST
 endif #EXAMPLES_LOADABLE
 
+if APP_BINARY_SEPARATION
 source "$LOADABLEDIR/loadable_sample/micomapp/Kconfig"
 source "$LOADABLEDIR/loadable_sample/wifiapp/Kconfig"
+endif #APP_BINARY_SEPARATION
