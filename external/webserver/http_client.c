@@ -229,7 +229,7 @@ static void parse_keep_alive_header(struct http_client_t *client, struct http_ke
 	char *header_field_value = NULL;
 
 	if (client->keep_alive_header_flag == 1) {
-		HTTP_LOGE("keep alive header is already set: timeout[%d] max[%d] \n",
+		HTTP_LOGD("keep alive header is already set: timeout[%d] max[%d] \n",
 				client->keep_alive_timeout, client->max_request);
 		return;
 	}
