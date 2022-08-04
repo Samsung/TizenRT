@@ -17,6 +17,7 @@
 
 #include "objects.h"
 #include "PinNames.h"
+#include "ameba_soc.h"
 #include "flash_api.h"
 
 extern u32 ConfigDebugInfo;
@@ -74,7 +75,7 @@ int flash_set_status(flash_t *obj, u32 data)
 	status[0] = (u8)data;
 	FLASH_Write_Lock();
 
-	/* check if status2 */
+	/* check if status2, some flash need to write status2 */
 	if (flash_init_para.FLASH_Status2_exist) {
 		StatusLen = 2;
 		FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_status2, 1, &status[1]);
@@ -154,7 +155,6 @@ void flash_erase_block(flash_t *obj, u32 address)
 
 	FLASH_Write_Lock();
 	FLASH_Erase(EraseBlock, address);
-
 	DCache_Invalidate(SPI_FLASH_BASE + address, 0x10000);
 	FLASH_Write_Unlock();
 }
@@ -171,7 +171,7 @@ void flash_erase_chip(flash_t *obj)
 
 	FLASH_Write_Lock();
 	FLASH_Erase(EraseChip, 0);
-	Cache_Flush();
+	DCache_Invalidate(SPI_FLASH_BASE, 0x0FFFFFFF - SPI_FLASH_BASE);
 	FLASH_Write_Unlock();
 }
 
@@ -208,7 +208,7 @@ int  flash_read_word(flash_t *obj, u32 address, u32 *data)
 
 		*data = read_data;
 	} else {
-		* data = HAL_READ32(SPI_FLASH_BASE, address);
+		*data = HAL_READ32(SPI_FLASH_BASE, address);
 	}
 
 	return 1;
@@ -230,25 +230,21 @@ int  flash_write_word(flash_t *obj, u32 address, u32 data)
 	(void) obj;
 
 	u32 write_word = data;
-	u32 offset_to_align = address & 0x03;
-	u32 temp;
-	u32 i = 4 - offset_to_align;
+	u32 offset_to_align, i;
 
 	FLASH_Write_Lock();
-	if (offset_to_align) {
-		address -= offset_to_align;
-		temp = HAL_READ32(SPI_FLASH_BASE, address);
-		temp = (temp << (i * 8)) >> (8 * i) | write_word << (8 * offset_to_align);
-		FLASH_TxData(address, 4, (u8 *)&temp);
-
-		address += 4;
-		temp = HAL_READ32(SPI_FLASH_BASE, address);
-		temp = (temp >> (offset_to_align * 8)) << (offset_to_align * 8) | write_word >> (8 * i);
-		FLASH_TxData(address, 4, (u8 *)&temp);
-	} else {
+	/* addr should page(256) align */
+	if ((address & 0xFF) + 4 <= 0x100) {
 		FLASH_TxData(address, 4, (u8 *)&write_word);
-	}
+	} else {
+		offset_to_align = address & 0x03;
+		i = 4 - offset_to_align;
+		FLASH_TxData(address, i, (u8 *)&write_word);
 
+		address = address - offset_to_align + 4;
+		write_word = data >> (8 * i);
+		FLASH_TxData(address, offset_to_align, (u8 *)&write_word);
+	}
 	DCache_Invalidate(SPI_FLASH_BASE + address, 4);
 	FLASH_Write_Unlock();
 
@@ -355,65 +351,14 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 *data)
 	u32 addr_end = (page_cnt == 1) ? (address + len) : (page_begin + 0x100);
 	u32 size = addr_end - addr_begin;
 	u8 *buffer = data;
-	u8 write_data[12];
-
-	u32 offset_to_align;
-	u32 read_word;
-	u32 i;
 
 	FLASH_Write_Lock();
 	while (page_cnt) {
-		offset_to_align = addr_begin & 0x3;
-
-		if (offset_to_align != 0) {
-			read_word = HAL_READ32(SPI_FLASH_BASE, addr_begin - offset_to_align);
-			for (i = offset_to_align; i < 4; i++) {
-				read_word = (read_word & (~(0xff << (8 * i)))) | ((*buffer) << (8 * i));
-				size--;
-				buffer++;
-				if (size == 0) {
-					break;
-				}
-			}
-			FLASH_TxData(addr_begin - offset_to_align, 4, (u8 *)&read_word);
+		FLASH_TxData(addr_begin, size, buffer);
+		buffer += size;
 #ifdef MICRON_N25Q00AA
-			FLASH_ReadFlagStatusReg();
+		FLASH_ReadFlagStatusReg();
 #endif
-		}
-
-		addr_begin = (((addr_begin - 1) >> 2) + 1) << 2;
-		for (; size >= 12 ; size -= 12) {
-			_memcpy(write_data, buffer, 12);
-			FLASH_TxData(addr_begin, 12, write_data);
-#ifdef MICRON_N25Q00AA
-			FLASH_ReadFlagStatusReg();
-#endif
-			buffer += 12;
-			addr_begin += 12;
-		}
-
-		for (; size >= 4; size -= 4) {
-			_memcpy(write_data, buffer, 4);
-			FLASH_TxData(addr_begin, 4, write_data);
-#ifdef MICRON_N25Q00AA
-			FLASH_ReadFlagStatusReg();
-#endif
-			buffer += 4;
-			addr_begin += 4;
-		}
-
-		if (size > 0) {
-			read_word = HAL_READ32(SPI_FLASH_BASE, addr_begin);
-			for (i = 0; i < size; i++) {
-				read_word = (read_word & (~(0xff << (8 * i)))) | ((*buffer) << (8 * i));
-				buffer++;
-			}
-			FLASH_TxData(addr_begin, 4, (u8 *)&read_word);
-#ifdef MICRON_N25Q00AA
-			FLASH_ReadFlagStatusReg();
-#endif
-		}
-
 		page_cnt--;
 		addr_begin = addr_end;
 		addr_end = (page_cnt == 1) ? (address + len) : (((addr_begin >> 8) + 1) << 8);
