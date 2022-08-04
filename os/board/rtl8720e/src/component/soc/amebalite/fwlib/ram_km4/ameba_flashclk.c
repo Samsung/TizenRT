@@ -19,6 +19,98 @@ static u8 check_config_reg = 0;
 extern FlashInfo_TypeDef Flash_AVL[];
 extern u16 Flash_ReadMode;
 extern u16 Flash_Speed;
+extern u8 BOOT_SocClk_Info_Get_SPIC_DIV(void);
+
+/* When OTF enabled, FLASH_CalibrationNew in ROM will Fail because Cache In RSIP is not Clean */
+BOOT_RAM_TEXT_SECTION
+u32 FLASH_CalibrationNew(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 new_calibration_end, u8 CalStep, u8 SpicClkDelay, u8 StartIdx)
+{
+	SPIC_TypeDef *spi_flash = SPIC;
+
+	u32 pgolden_data[2];
+	u8 data_idx = 0;
+	u8 phase_int = 0;
+	u8 phase_frac = 0;
+
+	int window1_start = -1;
+	int window1_size = 0;
+	int window1_end = -1;
+
+	/* set bit mode  */
+	FLASH_SetSpiMode(&flash_init_para, SpicBitMode);
+
+	/* set spic register before IC clock close */
+	spi_flash->BAUDR = SCKDV(flash_init_para.FLASH_baud_rate);
+	spi_flash->AUTO_LENGTH = (spi_flash->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(SpicClkDelay);
+
+	/* calibration Enable */
+	FLASH_CalibrationNewCmd(DISABLE);
+	FLASH_CalibrationNewCmd(ENABLE);
+
+	/* first phase sample data */
+	data_idx = StartIdx;
+	while (1) {
+		/* shift unit is CalStep*PLLCLK/FLASH_PLLCLK_EQUAL_PAHSE */
+		phase_int = FLASH_SHIFT_IDX_TO_PLLCLK(data_idx);
+		phase_frac = FLASH_SHIFT_IDX_TO_PAHSE(data_idx);
+
+		if (data_idx > new_calibration_end) {
+			break;
+		}
+
+		FLASH_CalibrationPhaseIdx(data_idx);
+
+		DCache_Invalidate(SPI_FLASH_BASE, 8);
+		RSIP_MMU_Cache_Clean(); 	/* Clean Cache in RSIP when otf enabled */
+		pgolden_data[0] = HAL_READ32(SPI_FLASH_BASE, 0x00);
+		pgolden_data[1] = HAL_READ32(SPI_FLASH_BASE, 0x04);
+
+		if (FLASH_InitStruct->debug) {
+			DBG_8195A("FLASH_CalibrationNew %x:%x phase_int:%x phase_frac:%x\n", pgolden_data[0], pgolden_data[1], phase_int, phase_frac);
+		}
+
+		/* compare data */
+		if (_memcmp(pgolden_data, SPIC_CALIB_PATTERN, 8) == 0) {
+			if (window1_start < 0) {
+				window1_size = 1;
+				window1_start = data_idx;
+			} else {
+				window1_size += CalStep;
+			}
+			window1_end = data_idx;
+		} else {
+			if (window1_size > 0) {
+				window1_end = data_idx - CalStep;
+				break;
+			}
+		}
+
+		data_idx = data_idx + CalStep;
+	}
+
+	if (FLASH_InitStruct->debug) {
+		DBG_8195A("FLASH_CalibrationNew LineDelay:%x phase_int:%x phase_frac:%x\n", SpicClkDelay, phase_int, phase_frac);
+		DBG_8195A("FLASH_CalibrationNew window1_start:%d window1_size:%d \n", window1_start, window1_size);
+	}
+
+	if (window1_size > 0) {
+		/* get phase_shift_idx */
+		FLASH_InitStruct->phase_shift_idx = window1_start + window1_size / 2;
+
+		if (FLASH_InitStruct->debug) {
+			DBG_8195A("FLASH_CalibrationNew phase_shift_idx:%d \n", FLASH_InitStruct->phase_shift_idx);
+		}
+	}
+
+	/* should disable it, enbale it outside if needed */
+	FLASH_CalibrationNewCmd(DISABLE);
+
+	/* Recover  */
+	spi_flash->BAUDR = SCKDV(flash_init_para.FLASH_baud_boot);
+	FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
+
+	return (window1_size | (window1_start << 16) | (window1_end << 24));
+}
 
 BOOT_RAM_TEXT_SECTION
 BOOL _flash_calibration_highspeed(u8 SpicBitMode, FlashDivInt_E Div)
@@ -81,20 +173,51 @@ BOOL _flash_calibration_highspeed(u8 SpicBitMode, FlashDivInt_E Div)
 }
 
 BOOT_RAM_TEXT_SECTION
+void flash_clksrc_sel(FlashDivInt_E div, u8 isCPUPLL, u8 is_handshake)
+{
+	if (isCPUPLL == BIT_LSYS_CKSL_SPIC_CPUPLL) {
+		/*HW need DSPPLL & CPUPLL open*/
+		FLASH_CalibrationPLLSel(FALSE);
+		FLASH_Calibration_PSPLL_Open();
+		if (is_handshake) {
+			/* clock gate for ps_pll */
+			FLASH_CalibrationPLLPSCmd(DISABLE);
+		}
+
+		/* SPIC clock switch to PLLM */
+		FLASH_CalibrationPLLSel(TRUE);
+		FLASH_PLLInit_ClockDiv(div);
+		if (is_handshake) {
+			/* clock gate for ps_pll */
+			FLASH_CalibrationPLLPSCmd(DISABLE);
+		}
+	} else {
+		/*HW need DSPPLL & CPUPLL open*/
+		FLASH_CalibrationPLLSel(TRUE);
+		FLASH_Calibration_PSPLL_Open();
+		if (is_handshake) {
+			/* clock gate for ps_pll */
+			FLASH_CalibrationPLLPSCmd(DISABLE);
+		}
+
+		/* SPIC clock switch to PLLD */
+		FLASH_CalibrationPLLSel(FALSE);
+		FLASH_PLLInit_ClockDiv(div);
+		if (is_handshake) {
+			/* clock gate for ps_pll */
+			FLASH_CalibrationPLLPSCmd(DISABLE);
+		}
+	}
+}
+
+BOOT_RAM_TEXT_SECTION
 u32 flash_calibration_highspeed(FlashDivInt_E div)
 {
 	u32 Ret = _SUCCESS;
 	u8 spic_mode = flash_init_para.FLASH_cur_bitmode;
 
 	flash_init_para.debug = FLASH_CALIBRATION_DEBUG;
-
-	/*HW need DSPPLL & CPUPLL open*/
-	FLASH_CalibrationPLLSel(TRUE);
-	FLASH_Calibration_PSPLL_Open();
-
-	/* SPIC clock switch to PLL */
-	FLASH_CalibrationPLLSel(FALSE);
-	FLASH_PLLInit_ClockDiv(div);
+	flash_clksrc_sel(div, BIT_LSYS_CKSL_SPIC_CPUPLL, FALSE);
 
 	if (_flash_calibration_highspeed(spic_mode, div) == _TRUE) {
 		/* we should open calibration new first, and then set phase index */
@@ -124,20 +247,14 @@ u32 flash_handshake_highspeed(FlashDivInt_E div)
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
 
 	flash_init_para.debug = FLASH_CALIBRATION_DEBUG;
-	/*HW need DSPPLL & CPUPLL open*/
-	FLASH_CalibrationPLLSel(TRUE);
-	FLASH_Calibration_PSPLL_Open();
-	FLASH_CalibrationPLLPSCmd(DISABLE);
+	flash_clksrc_sel(div, BIT_LSYS_CKSL_SPIC_CPUPLL, TRUE);
 
-	/* SPIC clock switch to PLL */
-	FLASH_CalibrationPLLSel(FALSE);
-	FLASH_PLLInit_ClockDiv(div);
-	/* clock gate for ps_pll */
-	FLASH_CalibrationPLLPSCmd(DISABLE);
+	RSIP_MMU_Cache_Clean(); 	/* Clean Cache in RSIP when otf enabled */
 
 	if (FLASH_Read_HandShake(&flash_init_para, spic_mode, Dphy_Dly_Cnt) == _TRUE) {
 		FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, ENABLE);
-		flash_init_para.FLASH_rd_sample_dly_cycle = Dphy_Dly_Cnt + 2;
+		flash_init_para.FLASH_rd_sample_dly_cycle_cal = Dphy_Dly_Cnt + 2;
+		flash_init_para.FLASH_rd_sample_dly_cycle = flash_init_para.FLASH_rd_sample_dly_cycle_cal;
 
 		/* this code is rom code, so it is safe */
 		FLASH_Init(spic_mode);
@@ -331,6 +448,7 @@ u32 flash_rx_mode_switch(u8 read_mode)
 		FLASH_Init(spic_mode);
 
 		DCache_Invalidate(SPI_FLASH_BASE, 8);
+		RSIP_MMU_Cache_Clean();		/* Clean Cache in RSIP when otf enabled */
 		pdata[0] = HAL_READ32(SPI_FLASH_BASE, 0x00);
 		pdata[1] = HAL_READ32(SPI_FLASH_BASE, 0x04);
 
@@ -357,9 +475,13 @@ void flash_highspeed_setup(void)
 {
 	u8 read_mode;
 	u8 flash_speed;
+	u8 SPIC_CKD;
 
 	read_mode = flash_get_option(Flash_ReadMode, _FALSE);
 	flash_speed = flash_get_option(Flash_Speed, _TRUE);
+
+	SPIC_CKD = BOOT_SocClk_Info_Get_SPIC_DIV() - 1; /* Get SPIC max speed of this BDNum */
+	flash_speed  = (SPIC_CKD > flash_speed) ? SPIC_CKD : flash_speed;
 
 	__asm volatile("cpsid i");
 
@@ -368,6 +490,14 @@ void flash_highspeed_setup(void)
 	 */
 	SPIC_TypeDef *spi_flash = SPIC;
 	spi_flash->CTRLR0 |= BIT_SPI_DREIR_R_DIS;
+
+	/* if 8 auto rd wrap ever occur, and user rd + auto rd wrap is together, SPIC will return 0xFFFFFFFF only in Lite. */
+	/* Set DIS_WRAP_ALIGN = 1, SPIC will chop wrap transation into two incremental transactions to avoid corner case.*/
+	spi_flash->CTRLR2 |= BIT_DIS_WRAP_ALIGN;
+	/* use uncacheable read (no wrap) to restore to normal function */
+	DCache_Invalidate(SPI_FLASH_BASE, 8);
+	RSIP_MMU_Cache_Clean(); 	/* Clean Cache in RSIP when otf enabled */
+	HAL_READ32(SPI_FLASH_BASE, 0x00);
 
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
 	flash_get_vendor();
@@ -379,9 +509,8 @@ void flash_highspeed_setup(void)
 	flash_rx_mode_switch(read_mode);
 
 	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_FPGA) {
-		flash_calibration_highspeed(flash_speed);
+		flash_handshake_highspeed(flash_speed);
 	}
 
 	__asm volatile("cpsie i");
 }
-

@@ -121,7 +121,7 @@ void FLASH_TxData12BXIP(u32 StartAddr, u8 DataPhaseLen, u8 *pData)
 	FLASH_Write_Lock();
 
 	FLASH_TxData(StartAddr, DataPhaseLen, pData);
-	Cache_Flush();
+	DCache_Invalidate(SPI_FLASH_BASE + StartAddr, DataPhaseLen);
 
 	FLASH_Write_Unlock();
 }
@@ -142,7 +142,13 @@ void FLASH_EraseXIP(u32 EraseType, u32 Address)
 	FLASH_Write_Lock();
 
 	FLASH_Erase(EraseType, Address);
-	Cache_Flush();
+	if (EraseType == EraseSector) {
+		DCache_Invalidate(SPI_FLASH_BASE + Address, 0x1000);
+	} else if (EraseType == EraseBlock) {
+		DCache_Invalidate(SPI_FLASH_BASE + Address, 0x10000);
+	} else {
+		DCache_Invalidate(SPI_FLASH_BASE, 0x0FFFFFFF - SPI_FLASH_BASE);
+	}
 
 	FLASH_Write_Unlock();
 }
@@ -213,8 +219,8 @@ void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 	FLASH_Write_Lock();
 
 	FLASH_TxData(StartAddr, DataPhaseLen, pData);
+	DCache_Invalidate(SPI_FLASH_BASE + StartAddr, DataPhaseLen);
 
-	Cache_Flush();
 	FLASH_Write_Unlock();
 }
 
@@ -363,7 +369,7 @@ int  FLASH_WriteStream(u32 address, u32 len, u8 *data)
 		size = addr_end - addr_begin;
 	}
 
-	Cache_Flush();
+	DCache_Invalidate(SPI_FLASH_BASE + address, len);
 	FLASH_Write_Unlock();
 
 	return 1;
@@ -381,9 +387,12 @@ IMAGE2_RAM_TEXT_SECTION
 void FLASH_ClockSwitch(u32 Source, u32 Protection)
 {
 	u32 Temp = 0;
+	u32 PreState_tick = 0;
+	u32 PreState_irq = 0;
 
 	if (Protection) {
-		__disable_irq();
+		PreState_tick = Systick_State();
+		PreState_irq = irq_disable_save();
 		Systick_Cmd(DISABLE);
 	}
 
@@ -397,7 +406,11 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 		Temp &= ~(LSYS_BIT_FLASH_PS_DIV_EN | LSYS_BIT_FLASH_DIV_EN); /* disable clock ps div & disable clock div*/
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SPIC_CTRL, Temp);
 
+		if (flash_init_para.phase_shift_idx != 0) {
 		FLASH_CalibrationNewCmd(DISABLE);
+		} else {
+			FLASH_Read_HandShake_Cmd(0, DISABLE);
+		}
 
 		FLASH_CalibrationPLLSel(TRUE);
 		FLASH_Calibration_PSPLL_Close();
@@ -422,7 +435,6 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 			FLASH_Calibration_PSPLL_Open();
 		}
 
-
 		u8 phase_sel = FLASH_SHIFT_IDX_TO_PAHSE(flash_init_para.phase_shift_idx);
 		FLASH_CalibrationPLLPS_Shift(phase_sel);
 
@@ -438,7 +450,11 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 			}
 		}
 
+		if (flash_init_para.phase_shift_idx != 0) {
 		FLASH_CalibrationNewCmd(ENABLE);
+		} else {
+			FLASH_Read_HandShake_Cmd(flash_init_para.FLASH_rd_sample_dly_cycle_cal - 2, ENABLE);
+		}
 
 		/* 2. clock source switch */
 		if (Source) {
@@ -453,8 +469,8 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 	}
 
 	if (Protection) {
-		Systick_Cmd(ENABLE);
-		__enable_irq();
+		Systick_Cmd(PreState_tick);
+		irq_enable_restore(PreState_irq);
 	}
 }
 
