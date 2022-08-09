@@ -686,6 +686,8 @@ int _wt_parse_join(struct wt_options *opt, int argc, char *argv[])
 		// AP is open mode
 		opt->auth_type = WIFI_MANAGER_AUTH_OPEN;
 		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
+	} else {
+		return -1;
 	}
 	opt->ssid = argv[2];
 
