@@ -140,27 +140,9 @@ if [ "${BUILD_TYPE}" == "MFG" ];then
 	> $BINDIR/kr4_km4_image2.bin
 	mv $BINDIR/kr4_km4_image2.bin $BINDIR/kr4_km4_image2_mp.bin
 	rm $BINDIR/km4_image2_all.bin
-else
-	$GNUUTL/imagetool.sh $BINDIR/km4_image2_all.bin
 fi
 
 echo "========== Image manipulating end =========="
-
-function image_encryption()
-{
-	if [ ! -f ${CONFIG} ];then
-		echo "No .config file"
-		exit 1
-	fi
-
-	source ${CONFIG}
-
-	if [ "${CONFIG_AMEBALITE_TRUSTZONE}" == "y" ];then
-		RDP_KEY="${CONFIG_AMEBAD_RDP_KEY:2}"
-		$GNUUTL/imagetool.sh ${CONFIG_AMEBASMART_RDP} ${RDP_KEY}
-	fi
-}
-image_encryption;
 
 function copy_bootloader()
 {
@@ -209,15 +191,7 @@ function concatenate_binary_with_signing()
 
 	#signing
 	echo "========== Binary SIGNING =========="
-	bash $BUILDDIR/configs/rtl8721csm/rtl8721csm_signing.sh kernel
-
-	if [ "${CONFIG_AMEBALITE_TRUSTZONE}" != "y" ];then
-		echo "========== Concatenate_binary for TZ disabled =========="
-		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin > $BINDIR/kr4_km4_image2.bin
-	else
-		echo "========== Concatenate_binary for TZ enabled =========="
-		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin > $BINDIR/kr4_km4_image2.bin
-	fi
+	bash $BUILDDIR/configs/rtl8720e/rtl8720e_signing.sh kernel
 }
 
 #*****************************************************************************#
@@ -235,6 +209,21 @@ function copy_flashloader()
 	echo "========== Copy flashloader into bin output folder=========="
 	cp $FLOADER_PATH/flash_loader_ram_1.bin $BINDIR/flash_loader_ram_1.bin
 	cp $FLOADER_PATH/target_FPGA.axf $BINDIR/target_FPGA.axf
+}
+
+function copy_km4_image3()
+{
+	if [ ! -f ${CONFIG} ];then
+		echo "No .config file"
+		exit 1
+	fi
+
+	source ${CONFIG}
+
+	echo "========== Copy km4_image3_all into bin output folder=========="
+	if [ "${CONFIG_AMEBALITE_TRUSTZONE}" == "y" ];then
+		cp $GNUUTL/km4_image3_all.bin $BINDIR/km4_image3_all.bin
+	fi
 }
 
 #*****************************************************************************#
@@ -255,6 +244,7 @@ function copy_kr4_image()
 
 copy_bootloader;
 copy_flashloader;
+copy_km4_image3;
 copy_kr4_image;
 if [ "${CONFIG_BINARY_SIGNING}" == "y" ];then
 	concatenate_binary_with_signing;

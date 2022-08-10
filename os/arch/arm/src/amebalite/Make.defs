@@ -198,8 +198,8 @@ CHIP_CSRCS += amebalite_nsc.c
 
 # trustzone library
 ifeq ($(CONFIG_ARCH_FPU),y)
-EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/cmse_implib_fpu.a
+EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/cmse_implib_fpu.lib
 else
-EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/cmse_implib.a
+EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/cmse_implib.lib
 endif
 endif

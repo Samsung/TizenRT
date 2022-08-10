@@ -91,11 +91,9 @@ int rtl_ss_flash_read(uint32_t address, uint32_t len, uint8_t *data, int en_disp
 
 static void ns_setstatusbits(u32 NewState)
 {
-#ifdef CONFIG_AMEBAD_TRUSTZONE
 	FLASH_Write_Lock();
 	FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);
 	FLASH_Write_Unlock();
-#endif
 }
 
 static void ns_printf(const char *input)

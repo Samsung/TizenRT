@@ -17,3 +17,28 @@
 #
 ###########################################################################
 
+function kernel_binary_signing()
+{
+	# Call script for Kernel binary signing
+	echo "Not Support Kernel binary signing"
+}
+
+function user_binary_signing()
+{
+	# Call script for user binary signing
+	echo "Not Support user binary signing"
+}
+
+############################################################################
+#
+# Signing for binary types
+#
+############################################################################
+if [ "$1" == "kernel" ];then
+	kernel_binary_signing;
+elif [ "$1" == "user" ];then
+	user_binary_signing;
+else
+	echo "Error : Not supported Binary Type"
+	exit 1
+fi
