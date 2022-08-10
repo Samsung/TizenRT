@@ -152,7 +152,6 @@ CONFIG_AMEBALITE_WIFI=y
 # Realtek RTL8721D TrustZone Support
 #
 #CONFIG_AMEBALITE_TRUSTZONE=y
-# CONFIG_AMEBALITE_RDP is not set
 
 #
 # Architecture Options

@@ -38,7 +38,7 @@ config RTL8720E_UART1
 	default n
 	select RTL8720E_UART
 	select ARCH_HAVE_UART1
-	select ARCH_HAVE_SERIAL_TERMIOS	
+	select ARCH_HAVE_SERIAL_TERMIOS
 
 config RTL8720E_UART2
 	bool "UART 2"
@@ -115,22 +115,5 @@ config AMEBALITE_TRUSTZONE
 	bool "Enable Amebalite TrustZone"
 	default n
 	select ARMV8M_TRUSTZONE
-
-config AMEBALITE_RDP
-	bool "Enable Amebalite RDP"
-	default n
-	depends on AMEBALITE_TRUSTZONE
-	---help---
-		Enable RDP Encryption for binary.
-		RDP key once written, cannot be reprogrammed.
-		Can disable this for testing only TrustZone without writing RDP key.
-		However, should be enabled along with TrustZone to provide binary security.
-		If unsure, do not enable this.
-
-config AMEBALITE_RDP_KEY
-	hex "Amebalite RDP Key"
-	default 0x2473040ab47c48655a15aa431c4bbb8a
-	range 00000000000000000000000000000000 ffffffffffffffffffffffffffffffff
-	depends on AMEBALITE_RDP
 
 endmenu
