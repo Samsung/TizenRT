@@ -1,0 +1,161 @@
+/****************************************************************************
+ *
+ * Copyright 2022 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * configs/stm32h745zi-nucleo/scripts/ld.script
+ *
+ *   Copyright (C) 2011-2012 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *
+ *       Modified 11/4/2013 for STM32F429 support
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name NuttX nor the names of its contributors may be
+ *    used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ ****************************************************************************/
+
+/* The STM32H745ZI has 2048Kb of FLASH beginning at address 0x0800:0000 and
+ * total 1024Kb of SRAM. SRAM is split up into seven blocks:
+ *
+ * 1)  64Kb of ITCM     beginning at address 0x0000:0000
+ * 2) 128Kb of DTCM     beginning at address 0x2000:0000
+ * 3) 512Kb of AXI SRAM beginning at address 0x2400:0000
+ * 4) 128Kb of SRAM1    beginning at address 0x3000:0000
+ * 5) 128Kb of SRAM2    beginning at address 0x3002:0000
+ * 6)  32Kb of SRAM3    beginning at address 0x3004:0000
+ * 7)  64Kb of SRAM4    beginning at address 0x3800:0000
+ *
+ * When booting from FLASH, FLASH memory is aliased to address 0x0000:0000
+ * where the code expects to begin execution by jumping to the entry point in
+ * the 0x0800:0000 address
+ * range.
+ */
+EXTERN(_vectors)
+
+MEMORY
+{
+    flash (rx) : ORIGIN = 0x08000000, LENGTH = 768K
+    itcm_sram  (rwx) : ORIGIN = 0x00000000, LENGTH = 64K
+    dtcm_sram  (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+    axi_sram   (rwx) : ORIGIN = 0x24000000, LENGTH = 512K
+    sarm1_sram (rwx) : ORIGIN = 0x30000000, LENGTH = 128K
+    sarm2_sram (rwx) : ORIGIN = 0x30020000, LENGTH = 128K
+    sarm3_sram (rwx) : ORIGIN = 0x30040000, LENGTH = 32K
+    sarm4_sram (rwx) : ORIGIN = 0x38000000, LENGTH = 64K
+}
+
+OUTPUT_ARCH(arm)
+ENTRY(_stext_flash)
+SECTIONS
+{
+	.text : {
+		_stext_flash = ABSOLUTE(.);
+		*(.vectors)
+		*(.text .text.*)
+		*(.fixup)
+		*(.gnu.warning)
+		*(.rodata .rodata.*)
+		*(.gnu.linkonce.t.*)
+		*(.glue_7)
+		*(.glue_7t)
+		*(.got)
+		*(.gcc_except_table)
+		*(.gnu.linkonce.r.*)
+		_etext_flash = ABSOLUTE(.);
+	} > flash
+
+	.init_section : {
+		_sinit = ABSOLUTE(.);
+		*(.init_array .init_array.*)
+		_einit = ABSOLUTE(.);
+	} > flash
+
+	.ARM.extab : {
+		*(.ARM.extab*)
+	} > flash
+
+	__exidx_start = ABSOLUTE(.);
+	.ARM.exidx : {
+		*(.ARM.exidx*)
+	} > flash
+	__exidx_end = ABSOLUTE(.);
+
+	_eronly = ABSOLUTE(.);
+
+	.data : {
+		_sdata = ABSOLUTE(.);
+		*(.data .data.*)
+		*(.gnu.linkonce.d.*)
+		CONSTRUCTORS
+		_edata = ABSOLUTE(.);
+	} > dtcm_sram AT > flash
+    
+    .ramfunc ALIGN(4):
+    {
+        _sramfuncs = ABSOLUTE(.);
+        *(.ramfunc  .ramfunc.*)
+        _eramfuncs = ABSOLUTE(.);
+    } > dtcm_sram AT > flash
+
+    _framfuncs = LOADADDR(.ramfunc);
+
+	.bss : {
+		_sbss = ABSOLUTE(.);
+		*(.bss .bss.*)
+		*(.gnu.linkonce.b.*)
+		*(COMMON)
+		_ebss = ABSOLUTE(.);
+	} > dtcm_sram
+
+	/* Stabs debugging sections. */
+	.stab 0 : { *(.stab) }
+	.stabstr 0 : { *(.stabstr) }
+	.stab.excl 0 : { *(.stab.excl) }
+	.stab.exclstr 0 : { *(.stab.exclstr) }
+	.stab.index 0 : { *(.stab.index) }
+	.stab.indexstr 0 : { *(.stab.indexstr) }
+	.comment 0 : { *(.comment) }
+	.debug_abbrev 0 : { *(.debug_abbrev) }
+	.debug_info 0 : { *(.debug_info) }
+	.debug_line 0 : { *(.debug_line) }
+	.debug_pubnames 0 : { *(.debug_pubnames) }
+	.debug_aranges 0 : { *(.debug_aranges) }
+}
