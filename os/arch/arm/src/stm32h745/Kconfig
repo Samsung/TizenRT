@@ -1,0 +1,149 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+if ARCH_CHIP_STM32H745
+
+comment "STM32H745 Configuration Options"
+
+choice
+	prompt "STM32 H745 Chip Selection"
+	default ARCH_CHIP_STM32H745ZI
+	depends on ARCH_CHIP_STM32H745
+
+config ARCH_CHIP_STM32H745ZI
+	bool "STM32H745ZI"
+	select ARCH_CORTEXM7
+	select STM32H745_STM32H745ZI
+	---help---
+		STM32 H745 Cortex M7, 2048 Kb FLASH, 512 Kb AXI RAM
+
+endchoice # STM32 H745 Chip Selection
+
+# Chip product lines
+
+config STM32H745_STM32H745ZI
+	# STM32H745ZI Access Lines
+	#
+	# Avoid using this config as it is basically same subfamily
+	# as STM32H745_STM32H745ZI (documented in RMxxxx).
+	#
+	bool
+	default n
+	select ARCH_HAVE_RAMFUNCS
+	select STM32H745_HAVE_TIM7
+	select STM32H745_HAVE_USART2
+	select STM32H745_HAVE_USART3
+	select STM32H745_HAVE_USART6
+	select STM32H745_HAVE_WWDG1
+	select STM32H745_HAVE_HSEM
+
+# Pin/package configurations
+
+config STM32H745_IO_CONFIG_A
+	bool
+	default n
+
+config STM32H745_IO_CONFIG_B
+	bool
+	default n
+
+config STM32H745_IO_CONFIG_C
+	bool
+	default n
+
+config STM32H745_IO_CONFIG_D
+	bool
+	default n
+
+config STM32H745_IO_CONFIG_E
+	bool
+	default n
+
+config STM32H745_IO_CONFIG_F
+	bool
+	default n
+
+config STM32H745_IO_CONFIG_G
+	bool
+	default n
+
+config STM32H745_IO_CONFIG_H
+	bool
+	default n
+
+
+comment "STM32H745 Peripherals"
+
+menu "STM32H745 Peripheral Support"
+
+# These "hidden" settings determine is a peripheral option is available for the
+# selection MCU
+
+config STM32H745_HAVE_TIM7
+	bool
+	default y
+
+config STM32H745_HAVE_USART2
+	bool
+	default y
+
+config STM32H745_HAVE_USART3
+	bool
+	default y
+
+config STM32H745_HAVE_USART6
+	bool
+	default y
+
+config STM32H745_HAVE_WWDG1
+	bool
+	default y
+
+config STM32H745_HAVE_HSEM
+	bool
+	default y
+
+# These "hidden" settings are the OR of individual peripheral selections
+# indicating that the general capability is required.
+
+config STM32H745_TIM7
+	bool "TIM7"
+	default n
+	depends on STM32H745_HAVE_TIM7
+
+config STM32H745_USART2
+	bool "USART2"
+	default n
+	depends on STM32H745_HAVE_USART2
+	select ARCH_HAVE_USART2
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config STM32H745_USART3
+	bool "USART3"
+	default n
+	depends on STM32H745_HAVE_USART3
+	select ARCH_HAVE_USART3
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config STM32H745_USART6
+	bool "USART6"
+	default n
+	depends on STM32H745_HAVE_USART6
+	select ARCH_HAVE_USART6
+	select ARCH_HAVE_SERIAL_TERMIOS
+	
+config STM32H745_WWDG1
+	bool "WWDG1"
+	default n
+	depends on STM32H745_HAVE_WWDG1
+
+config STM32H745_HSEM
+	bool "HSEM"
+	default n
+	depends on STM32H745_HAVE_HSEM
+
+endmenu
+
+endif # ARCH_CHIP_STM32H745

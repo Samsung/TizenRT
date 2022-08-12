@@ -1,0 +1,163 @@
+############################################################################
+# arch/arm/src/stm32h745/Make.defs
+#
+#   Copyright (C) 2017-2018 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2015-2016 Sebastien Lorquet. All rights reserved.
+#   Author: Sebastien Lorquet <sebastien@lorquet.fr>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+# The start-up, "head", file.  Only common vectors are support so there
+# isn't one.
+
+HEAD_ASRC =
+
+# Common ARM and Cortex-M7 files (copied from stm32/Make.defs)
+
+CMN_UASRCS =
+CMN_UCSRCS =
+
+CMN_ASRCS  = up_saveusercontext.S up_fullcontextrestore.S up_switchcontext.S
+CMN_ASRCS += vfork.S
+
+CMN_CSRCS  = up_assert.c up_blocktask.c up_copyfullstate.c up_createstack.c
+CMN_CSRCS += up_doirq.c up_exit.c up_hardfault.c up_initialize.c
+CMN_CSRCS += up_initialstate.c up_interruptcontext.c up_mdelay.c up_memfault.c up_busfault.c up_usagefault.c
+CMN_CSRCS += up_modifyreg8.c up_modifyreg16.c up_modifyreg32.c
+CMN_CSRCS += up_releasepending.c up_releasestack.c up_reprioritizertr.c
+CMN_CSRCS += up_schedulesigaction.c up_sigdeliver.c up_stackframe.c
+CMN_CSRCS += up_svcall.c up_systemreset.c up_trigger_irq.c up_udelay.c
+CMN_CSRCS += up_unblocktask.c up_usestack.c up_vfork.c
+CMN_CSRCS += up_puts.c up_restoretask.c up_checkspace.c
+
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += go_os_start.c
+endif
+
+# Configuration-dependent common files
+
+ifeq ($(CONFIG_ARMV7M_STACKCHECK),y)
+CMN_CSRCS += up_stackcheck.c
+endif
+
+ifeq ($(CONFIG_ARMV7M_LAZYFPU),y)
+CMN_ASRCS += up_lazyexception.S
+else
+CMN_ASRCS += up_exception.S
+endif
+CMN_CSRCS += up_vectors.c
+
+ifeq ($(CONFIG_ARCH_FPU),y)
+CMN_ASRCS += up_fpu.S
+CMN_CSRCS += up_copyarmstate.c
+endif
+
+ifeq ($(CONFIG_ARCH_RAMVECTORS),y)
+CMN_CSRCS += up_ramvec_initialize.c up_ramvec_attach.c
+endif
+
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+CMN_CSRCS += up_mpu.c up_task_start.c up_pthread_start.c
+CMN_CSRCS += up_signal_dispatch.c
+CMN_UASRCS += up_signal_handler.S
+endif
+
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += up_checkstack.c
+endif
+
+ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
+CMN_CSRCS += up_schedyield.c
+endif
+
+CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
+endif
+
+ifeq ($(CONFIG_ARMV7M_DCACHE),y)
+CMN_CSRCS += arch_enable_dcache.c arch_disable_dcache.c
+CMN_CSRCS += arch_invalidate_dcache.c arch_invalidate_dcache_all.c
+ifneq ($(CONFIG_ARMV7M_DCACHE_WRITETHROUGH),y)
+CMN_CSRCS += arch_clean_dcache.c arch_clean_dcache_all.c
+CMN_CSRCS += arch_flush_dcache.c arch_flush_dcache_all.c
+endif
+endif
+
+# Required STM32H745 files
+
+CHIP_ASRCS  =
+CHIP_CSRCS  = stm32h745_start.c
+CHIP_CSRCS += stm32h745_haltick.c
+CHIP_CSRCS += stm32h745_rcc.c
+CHIP_CSRCS += stm32h745_gpio.c
+CHIP_CSRCS += stm32h745_wwdg1.c
+CHIP_CSRCS += stm32h745_systemreset.c
+CHIP_CSRCS += stm32h745_usart.c
+CHIP_CSRCS += stm32h745_serial.c
+CHIP_CSRCS += stm32h745_flash.c
+CHIP_CSRCS += stm32h745_tim.c
+CHIP_CSRCS += stm32h745_idle.c
+CHIP_CSRCS += stm32h745_irq.c
+CHIP_CSRCS += stm32h745_timerisr.c
+CHIP_CSRCS += stm32h745_sharedmem.c
+CHIP_CSRCS += stm32h745_optionbyte.c
+CHIP_CSRCS += system_stm32h745.c
+
+CHIP_CSRCS += stm32h7xx_hal.c
+CHIP_CSRCS += stm32h7xx_hal_msp.c
+CHIP_CSRCS += stm32h7xx_hal_cortex.c
+CHIP_CSRCS += stm32h7xx_hal_gpio.c
+CHIP_CSRCS += stm32h7xx_hal_pwr.c
+CHIP_CSRCS += stm32h7xx_hal_rcc.c stm32h7xx_hal_rcc_ex.c
+CHIP_CSRCS += stm32h7xx_hal_tim.c stm32h7xx_hal_tim_ex.c
+CHIP_CSRCS += stm32h7xx_hal_flash.c stm32h7xx_hal_flash_ex.c
+CHIP_CSRCS += stm32h7xx_hal_uart.c stm32h7xx_hal_uart_ex.c
+CHIP_CSRCS += stm32h7xx_hal_hsem.c
+CHIP_CSRCS += stm32h7xx_hal_wwdg.c
+CHIP_CSRCS += stm32h7xx_hal_dma.c stm32h7xx_hal_dma_ex.c
+CHIP_CSRCS += stm32h7xx_hal_mdma.c
+CHIP_CSRCS += stm32h7xx_ll_gpio.c
+CHIP_CSRCS += stm32h7xx_ll_rcc.c
+CHIP_CSRCS += stm32h7xx_ll_usart.c
+
+
+CFLAGS += -I$(ARCH_SRCDIR)/chip/hal
+CFLAGS += -I$(ARCH_SRCDIR)/chip/chip
+VPATH += chip/hal
+VPATH += chip/chip
+
+# ST Defines
+CFLAGS += \
+-DCORE_CM7 \
+-DUSE_HAL_DRIVER \
+-DSTM32H745xx \
+-DUSE_FULL_LL_DRIVER \
