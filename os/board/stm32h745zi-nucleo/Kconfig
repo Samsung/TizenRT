@@ -1,0 +1,45 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+if ARCH_BOARD_STM32H745ZI_NUCLEO
+
+config FLASH_START_ADDR
+    hex
+    default 0x80C0000
+    help
+        A start address of flash (in hex).
+        This is fixed value, so user doesn't need to change it.
+
+config FLASH_SIZE
+    int
+    default 262144
+    help
+        A size of flash (in bytes).
+        This is fixed value, so user doesn't need to change it.
+
+config SHARED_MEMORY
+    bool
+    default y
+
+config SHARED_MEMORY_AXI_RAM
+    bool
+    default n
+
+config SHARED_MEMORY_SRAM1
+    bool
+    default n
+
+config SHARED_MEMORY_SRAM2
+    bool
+    default n
+
+config SHARED_MEMORY_SRAM3
+    bool
+    default n
+
+config SHARED_MEMORY_SRAM4
+    bool
+    default y
+
+endif # ARCH_BOARD_STM32H745ZI_NUCLEO

@@ -136,6 +136,17 @@ config ARCH_BOARD_RTL8721CSM
 	select ARCH_HAVE_RAM_KERNEL_TEXT
 	---help---
 		Realtek RTL8721CSM-Discovery board based on the Realtek RTL8721CSM MCU.		
+
+config ARCH_BOARD_STM32H745ZI_NUCLEO
+	bool "STMicro STM32H745ZI-Nucleo board"
+	depends on ARCH_CHIP_STM32H745
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	select ARCH_BOARD_HAVE_FLASH
+	---help---
+		STMicro STM32H745ZI-Nucleo board based on the STMicro STM32H745ZI MCU.
+
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -159,6 +170,7 @@ config ARCH_BOARD
 	default "imxrt1050-evk"      if ARCH_BOARD_IMXRT1050_EVK
 	default "stm32l4r9ai-disco"  if ARCH_BOARD_STM32L4R9AI_DISCO
 	default "rtl8721csm"         if ARCH_BOARD_RTL8721CSM
+	default "stm32h745zi-nucleo" if ARCH_BOARD_STM32H745ZI_NUCLEO
 	
 comment "Common Board Options"
 
@@ -335,6 +347,9 @@ source board/stm32l4r9ai-disco/Kconfig
 endif
 if ARCH_BOARD_RTL8721CSM
 source board/rtl8721csm/Kconfig
+endif
+if ARCH_BOARD_STM32H745ZI_NUCLEO
+source board/stm32h745zi-nucleo/Kconfig
 endif
 
 source board/common/Kconfig
