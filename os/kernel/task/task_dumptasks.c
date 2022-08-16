@@ -36,20 +36,24 @@
 
 #ifdef CONFIG_STACK_COLORATION
 #if CONFIG_TASK_NAME_SIZE > 0
+#define TASKDUMP_ARGS_FORMAT "%*s | %5s | %4s | %7s / %7s | %16s | %8s\n"
 #define TASKDUMP_FORMAT "%*s | %5d | %4d | %7lu / %7lu | %16p | %8p\n"
 #define TASKDUMP_VALUE  CONFIG_TASK_NAME_SIZE, tcb->name, tcb->pid, tcb->sched_priority, (unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb
 #define TASKDUMP_ARGS  CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "USED", "TOTAL STACK",  "STACK ALLOC ADDR", "TCB ADDR"
 #else
+#define TASKDUMP_ARGS_FORMAT "%5s | %4s | %7s / %7s | %16s | %8s\n"
 #define TASKDUMP_FORMAT "%5d | %4d | %7lu / %7lu | %16p | %8p\n"
 #define TASKDUMP_VALUE  tcb->pid, tcb->sched_priority, tcb, (unsigned long)used_stack_size, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb
 #define TASKDUMP_ARGS  "PID", "PRI", "USED", "TOTAL STACK", "STACK ALLOC ADDR", "TCB ADDR"
 #endif
 #else
 #if CONFIG_TASK_NAME_SIZE > 0
+#define TASKDUMP_ARGS_FORMAT "%*s | %5s | %4s | %7s | %16s | %8s\n"
 #define TASKDUMP_FORMAT "%*s | %5d | %4d | %7lu | %16p | %8p\n"
 #define TASKDUMP_VALUE  CONFIG_TASK_NAME_SIZE, tcb->name, tcb->pid, tcb->sched_priority, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb
 #define TASKDUMP_ARGS  CONFIG_TASK_NAME_SIZE, "NAME", "PID", "PRI", "TOTAL STACK",  "STACK ALLOC ADDR", "TCB ADDR"
 #else
+#define TASKDUMP_ARGS_FORMAT "%5s | %4s | %7s | %16s | %8s\n"
 #define TASKDUMP_FORMAT "%5d | %4d | %7lu | %16p | %8p\n"
 #define TASKDUMP_VALUE  tcb->pid, tcb->sched_priority, tcb, (unsigned long)tcb->adj_stack_size, tcb->stack_alloc_ptr, tcb
 #define TASKDUMP_ARGS  "PID", "PRI", "TOTAL STACK", "STACK ALLOC ADDR", "TCB ADDR"
@@ -139,7 +143,7 @@ void task_show_alivetask_list(void)
 	lldbg("List of all tasks in the system:\n");
 	lldbg("*******************************************\n");
 
-	lldbg(TASKDUMP_FORMAT, TASKDUMP_ARGS);
+	lldbg(TASKDUMP_ARGS_FORMAT, TASKDUMP_ARGS);
 	lldbg("---------------------------------------------------------------------------------------------------\n");
 
 	/* Dump interesting properties of each task in the crash environment */
