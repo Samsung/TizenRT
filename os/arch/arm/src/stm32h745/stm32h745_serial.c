@@ -77,18 +77,36 @@
 #include <system_stm32h745.h>
 
 #if defined(CONFIG_USART2_SERIAL_CONSOLE)
+
   #define CONSOLE_DEV             g_uart2             /* USART2 is console */
+#ifdef CONFIG_USART3_ISUART
   #define TTYS0_DEV               g_uart3             /* USART3 is ttyS0 */
-  #define TTYS1_DEV               g_uart6             /* USART6 is ttyS0 */
-#elif defined(CONFIG_USART3_SERIAL_CONSOLE)
-  #define CONSOLE_DEV             g_uart3             /* USART3 is console */
-  #define TTYS0_DEV               g_uart2             /* USART2 is ttyS0 */
-  #define TTYS1_DEV               g_uart6             /* USART6 is ttyS0 */
-#elif defined(CONFIG_USART6_SERIAL_CONSOLE)
-  #define CONSOLE_DEV             g_uart6             /* USART6 is console */
-  #define TTYS0_DEV               g_uart2             /* USART2 is ttyS0 */
-  #define TTYS1_DEV               g_uart3             /* USART3 is ttyS0 */
 #endif
+#ifdef CONFIG_USART6_ISUART
+  #define TTYS1_DEV               g_uart6             /* USART6 is ttyS1 */
+#endif
+
+#elif defined(CONFIG_USART3_SERIAL_CONSOLE)
+
+  #define CONSOLE_DEV             g_uart3             /* USART3 is console */
+#ifdef CONFIG_USART2_ISUART
+  #define TTYS0_DEV               g_uart2             /* USART2 is ttyS0 */
+#endif
+#ifdef CONFIG_USART6_ISUART
+  #define TTYS1_DEV               g_uart6             /* USART6 is ttyS1 */
+#endif
+
+#elif defined(CONFIG_USART6_SERIAL_CONSOLE)
+
+  #define CONSOLE_DEV             g_uart6             /* USART6 is console */
+#ifdef CONFIG_USART2_ISUART
+  #define TTYS0_DEV               g_uart2             /* USART2 is ttyS0 */
+#endif
+#ifdef CONFIG_USART3_ISUART
+  #define TTYS1_DEV               g_uart3             /* USART3 is ttyS1 */
+#endif
+
+#endif //CONFIG_USART2_SERIAL_CONSOLE
 
 
 
@@ -344,7 +362,7 @@ static int  stm32h745_up_setup(struct uart_dev_s *dev)
     LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     USART_InitStruct.PrescalerValue = LL_USART_PRESCALER_DIV1;
-    USART_InitStruct.BaudRate = 115200;
+    USART_InitStruct.BaudRate = priv->baud;
     USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
     USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
     USART_InitStruct.Parity = LL_USART_PARITY_NONE;
@@ -387,7 +405,7 @@ static int  stm32h745_up_setup(struct uart_dev_s *dev)
 
     /* USER CODE END USART2_Init 1 */
     USART_InitStruct.PrescalerValue = LL_USART_PRESCALER_DIV1;
-    USART_InitStruct.BaudRate = 115200;
+    USART_InitStruct.BaudRate = priv->baud;
     USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
     USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
     USART_InitStruct.Parity = LL_USART_PARITY_NONE;
@@ -434,7 +452,7 @@ static int  stm32h745_up_setup(struct uart_dev_s *dev)
 
     /* USER CODE END USART6_Init 1 */
     USART_InitStruct.PrescalerValue = LL_USART_PRESCALER_DIV1;
-    USART_InitStruct.BaudRate = 115200;
+    USART_InitStruct.BaudRate = priv->baud;
     USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
     USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
     USART_InitStruct.Parity = LL_USART_PARITY_NONE;
