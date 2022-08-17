@@ -203,3 +203,14 @@ else
 EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/cmse_implib.a
 endif
 endif
+
+# Wifi
+ifeq ($(CONFIG_AMEBALITE_WIFI),y)
+ifeq ($(CONFIG_ARCH_FPU),y)
+EXTRA_LIBS += $(TOPDIR)/board/rtl8720e/src/libs/lib_enc_fpu.a
+EXTRA_LIBS += $(TOPDIR)/board/rtl8720e/src/libs/lib_wps_fpu.a
+else
+EXTRA_LIBS += $(TOPDIR)/board/rtl8720e/src/libs/lib_enc.a
+EXTRA_LIBS += $(TOPDIR)/board/rtl8720e/src/libs/lib_wps.a
+endif
+endif
