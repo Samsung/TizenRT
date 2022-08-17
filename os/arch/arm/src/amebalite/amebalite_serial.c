@@ -558,7 +558,7 @@ static int rtl8720e_log_uart_irq(void *Data)
 
 static int rtl8720e_log_up_attach(struct uart_dev_s *dev)
 {
-	InterruptRegister((IRQ_FUN)rtl8720e_log_uart_irq, RTL8720E_UART_LOG_IRQ-16, NULL, 4);
+	InterruptRegister((IRQ_FUN)rtl8720e_log_uart_irq, RTL8720E_UART_LOG_IRQ-16, NULL, 0);
 	InterruptEn(RTL8720E_UART_LOG_IRQ-16, 4);
 	return 0;
 }
