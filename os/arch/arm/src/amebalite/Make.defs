@@ -178,8 +178,8 @@ CHIP_CSRCS += amebalite_lowerhalf.c
 CHIP_CSRCS += amebalite_timer_lowerhalf.c
 CHIP_CSRCS += amebalite_serial.c
 CHIP_CSRCS += ameba_enet.c
-#CHIP_CSRCS += amebalite_rtc_lowerhalf.c
-#CHIP_CSRCS += amebalite_rtc.c
+CHIP_CSRCS += amebalite_rtc_lowerhalf.c
+CHIP_CSRCS += amebalite_rtc.c
 CHIP_CSRCS += amebalite_watchdog_lowerhalf.c
 CHIP_CSRCS += amebalite_i2c.c
 #CHIP_CSRCS += amebalite_i2s.c
@@ -188,7 +188,12 @@ CHIP_CSRCS += amebalite_spi.c
 ifeq ($(CONFIG_BOARDCTL_RESET),y)
 CHIP_CSRCS += amebalite_systemreset.c
 endif
-
+ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
+#CMN_CSRCS += amebalite_reboot_reason.c #FIXME
+endif
+ifeq ($(CONFIG_BINARY_SIGNING),y)
+#CMN_CSRCS += amebalite_signature.c	#FIXME
+endif
 ifeq ($(CONFIG_AMEBALITE_BLE),y)
 EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/lib_btgap.a
 endif

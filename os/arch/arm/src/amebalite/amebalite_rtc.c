@@ -118,7 +118,7 @@ int up_rtc_gettime(FAR struct timespec *tp)
 {
 	time_t timer;
 	int ret;
-	timer = rtk_rtc_read();
+	timer = rtc_read();
 
 	ret = gmtime_r(&timer, tp);
 	if (ret == 0) {
@@ -150,7 +150,7 @@ int up_rtc_gettime(FAR struct timespec *tp)
 
 time_t up_rtc_time(void)
 {
-	return rtk_rtc_read();
+	return rtc_read();
 }
 
 /************************************************************************************
@@ -171,7 +171,7 @@ time_t up_rtc_time(void)
 int up_rtc_settime(FAR const struct timespec *ts)
 {
 	if (ts) {
-		rtk_rtc_write(ts->tv_sec);
+		rtc_write(ts->tv_sec);
 
 		return OK;
 	} else {
