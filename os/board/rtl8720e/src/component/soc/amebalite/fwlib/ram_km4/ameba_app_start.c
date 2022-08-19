@@ -1238,8 +1238,6 @@ void app_start(void)
 #ifdef CONFIG_AMEBALITE_TRUSTZONE
 	BOOT_IMG3();
 #endif
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "KM4 BOOT REASON: %x \n", BOOT_Reason());
-
 	SystemCoreClockUpdate();
 	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "KM4 CPU CLK: %d Hz \n", SystemCoreClock);
 
