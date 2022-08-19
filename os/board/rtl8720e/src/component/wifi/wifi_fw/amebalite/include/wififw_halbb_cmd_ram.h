@@ -150,10 +150,14 @@ struct halbb_c2h_hdr {
  * @var _h2c_fwtrace_::halbb_fwtrace
  * Please Place Description here.
  */
-struct _h2c_fwtrace_ {
-	u32 halbb_dbg_comp;
+typedef struct _h2c_fwtrace_ {
+	//for modify kr4 memory align warning
+	u8 halbb_dbg_comp_0;
+	u8 halbb_dbg_comp_1;
+	u8 halbb_dbg_comp_2;
+	u8 halbb_dbg_comp_3;
 	u8 halbb_fwtrace;
-};
+} H2C_FWTRACE, *PH2C_FWTRACE;
 
 
 /**

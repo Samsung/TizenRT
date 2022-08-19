@@ -85,16 +85,10 @@ extern uint32_t SystemCoreClock;
 
 //AP
 #if defined(CONFIG_AS_INIC_AP)
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200 * 1024 ) )
-#if defined(CONFIG_INIC_IPC_HIGH_TP)
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 250 * 1024 ) )
-#endif
+#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 100 * 1024 ) )
 //NP
 #elif defined(CONFIG_AS_INIC_NP)
 #define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200 * 1024 ) )
-#if defined(CONFIG_INIC_IPC_HIGH_TP)
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 250 * 1024 ) )
-#endif
 //Single Core
 #elif defined(CONFIG_SINGLE_CORE_WIFI)
 #define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200* 1024 ) ) //default
@@ -132,8 +126,12 @@ extern uint32_t SystemCoreClock;
 
 /* Software timer definitions. */
 #define configUSE_TIMERS								1
-#define configTIMER_TASK_PRIORITY						1
-#define configTIMER_QUEUE_LENGTH						10
+#define configTIMER_TASK_PRIORITY						 (configMAX_PRIORITIES - 1)
+#if defined(CONFIG_AS_INIC_NP) || defined(CONFIG_SINGLE_CORE_WIFI)
+#define configTIMER_QUEUE_LENGTH					(10 + 64)
+#else
+#define configTIMER_QUEUE_LENGTH					10
+#endif
 #define configTIMER_TASK_STACK_DEPTH					( 512  )
 
 /* Set the following definitions to 1 to include the API function, or zero
@@ -186,7 +184,7 @@ extern uint32_t SystemCoreClock;
  * routine that makes calls to interrupt safe FreeRTOS API functions.  DO NOT
  * CALL INTERRUPT SAFE FREERTOS API FUNCTIONS FROM ANY INTERRUPT THAT HAS A
  * HIGHER PRIORITY THAN THIS! (higher priorities are lower numeric values). */
-#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY	5
+#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY	2
 
 /* Interrupt priorities used by the kernel port layer itself.  These are generic
  * to all Cortex-M ports, and do not rely on any particular library functions. */

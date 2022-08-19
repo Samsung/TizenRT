@@ -48,7 +48,7 @@ static void inic_ipc_dev_task_hdl(inic_ipc_ex_msg_t *p_ipc_msg)
 		inic_ipc_dev_alloc_tx_skb(p_ipc_msg->msg_len, p_ipc_msg->msg_addr);
 		break;
 	case IPC_WIFI_MSG_RECV_DONE:
-		inic_ipc_dev_rx_done();
+		inic_ipc_dev_rx_done(p_ipc_msg);
 		break;
 	case IPC_WIFI_MSG_RECV_PENDING:
 		inic_ipc_dev_rx_pending();

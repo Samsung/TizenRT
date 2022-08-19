@@ -71,7 +71,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	struct sk_buff *skb = NULL;
 	int ret = 0;
 
-	WIFI_MONITOR_TIMER_START(wifi_time_test.wlan_send_time);
+	WIFI_MONITOR_TIMER_START(wlan_send_time);
 	if (idx == -1) {
 		DBG_ERR("netif is DOWN");
 		return -1;
@@ -88,25 +88,25 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	}
 	restore_flags();
 
-	WIFI_MONITOR_TIMER_START(wifi_time_test.wlan_send_time1);
+	WIFI_MONITOR_TIMER_START(wlan_send_time1);
 	skb = rltk_wlan_alloc_skb(total_len);
-	WIFI_MONITOR_TIMER_END(wifi_time_test.wlan_send_time1, total_len);
+	WIFI_MONITOR_TIMER_END(wlan_send_time1, total_len);
 	if (skb == NULL) {
 		//DBG_ERR("rltk_wlan_alloc_skb() for data len=%d failed!", total_len);
 		ret = -1;
 		goto exit;
 	}
-	WIFI_MONITOR_TIMER_START(wifi_time_test.wlan_send_time2);
+	WIFI_MONITOR_TIMER_START(wlan_send_time2);
 	for (last_sg = &sg_list[sg_len]; sg_list < last_sg; ++sg_list) {
 		rtw_memcpy(skb->tail, (void *)(sg_list->buf), sg_list->len);
 		skb_put(skb,  sg_list->len);
 	}
-	WIFI_MONITOR_TIMER_END(wifi_time_test.wlan_send_time2, total_len);
+	WIFI_MONITOR_TIMER_END(wlan_send_time2, total_len);
 
-	WIFI_MONITOR_TIMER_START(wifi_time_test.wlan_send_skb_time);
+	WIFI_MONITOR_TIMER_START(wlan_send_skb_time);
 	rltk_wlan_send_skb(idx, skb);
-	WIFI_MONITOR_TIMER_END(wifi_time_test.wlan_send_skb_time, total_len);
-	WIFI_MONITOR_TIMER_END(wifi_time_test.wlan_send_time, total_len);
+	WIFI_MONITOR_TIMER_END(wlan_send_skb_time, total_len);
+	WIFI_MONITOR_TIMER_END(wlan_send_time, total_len);
 
 exit:
 	save_and_cli();
@@ -185,7 +185,7 @@ void set_callback_func(emac_callback p, void *data)
 
 void netif_rx(int idx, unsigned int len)
 {
-	WIFI_MONITOR_TIMER_START(wifi_time_test.netif_rx_time);
+	WIFI_MONITOR_TIMER_START(netif_rx_time);
 #if (CONFIG_LWIP_LAYER == 1)
 #if defined(CONFIG_MBED_ENABLED)
 	emac_callback_func(emac_callback_data, NULL, len);
@@ -196,9 +196,11 @@ void netif_rx(int idx, unsigned int len)
 
 
 #ifdef CONFIG_AS_INIC_NP
+	WIFI_MONITOR_TIMER_START(ethernetif_recv_time);
 	inic_ipc_dev_recv(idx);
+	WIFI_MONITOR_TIMER_END(ethernetif_recv_time, len);
 #endif
-	WIFI_MONITOR_TIMER_END(wifi_time_test.netif_rx_time, len);
+	WIFI_MONITOR_TIMER_END(netif_rx_time, len);
 }
 
 #ifdef CONFIG_WOWLAN

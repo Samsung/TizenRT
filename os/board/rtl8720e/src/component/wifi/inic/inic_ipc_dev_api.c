@@ -13,6 +13,7 @@
 ******************************************************************************/
 #include "inic_ipc_api.h"
 #include "wifi_conf.h"
+#include "wifi_conf_inter.h"
 
 #include "wlan_intf.h"
 #include "inic_ipc_cfg.h"
@@ -48,6 +49,7 @@ extern u8 inic_ipc_ip_addr[4];
 #ifdef CONFIG_MP_INCLUDED
 extern int wext_private_command(const char *ifname, char *cmd, int show_msg);
 #endif
+extern rtw_wpa_mode wifi_wpa_mode;
 /* ---------------------------- Private Functions --------------------------- */
 
 
@@ -222,6 +224,25 @@ void inic_ipc_api_dev_task(void)
 		case IPC_API_WIFI_COEX_BLE_SET_SCAN_DUTY: {
 			u8 duty = (u8)p_ipc_msg->param_buf[0];
 			ret = wifi_btcoex_set_ble_scan_duty(duty);
+			p_ipc_msg->ret = ret;
+			break;
+		}
+		case IPC_API_WIFI_COEX_SET_PTA: {
+			u32 gntbt_id = p_ipc_msg->param_buf[0];
+			if (gntbt_id == 0) {
+				wifi_btcoex_set_pta(PTA_WIFI);
+			}
+			if (gntbt_id == 1) {
+				wifi_btcoex_set_pta(PTA_BT);
+			}
+			if (gntbt_id == 2) {
+				wifi_btcoex_set_pta(PTA_AUTO);
+			}
+			break;
+		}
+		case IPC_API_WIFI_SET_WPA_MODE: {
+			rtw_wpa_mode wpa_mode = p_ipc_msg->param_buf[0];
+			ret = wifi_set_wpa_mode(wpa_mode);
 			p_ipc_msg->ret = ret;
 			break;
 		}

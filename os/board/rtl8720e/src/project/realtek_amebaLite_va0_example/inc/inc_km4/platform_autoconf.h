@@ -22,6 +22,8 @@
 #undef  CONFIG_CP
 #undef  CONFIG_FT
 #undef  CONFIG_EQC
+#undef  CONFIG_QA
+#undef  CONFIG_CornerTest
 #undef  CONFIG_POST_SIM
 
 /*
@@ -67,7 +69,7 @@
 /*
  * < MBED_API
  */
-#undef  CONFIG_MBED_API_EN
+#define CONFIG_MBED_API_EN 1
 
 /*
  * < CONFIG FUNCTION TEST
@@ -95,6 +97,7 @@
 #define CONFIG_AS_INIC_AP 1
 #undef  CONFIG_AS_INIC_NP
 #undef  CONFIG_SINGLE_CORE_WIFI
+#define CONFIG_HIGH_TP_TEST 1
 #define CONFIG_LWIP_LAYER 1
 
 /*
@@ -102,6 +105,11 @@
  */
 #undef  CONFIG_WIFI_FW_EN
 #undef  CONFIG_FW_DRIVER_COEXIST
+
+/*
+ * < CONFIG 802154
+ */
+#undef  CONFIG_802154_PHY_EN
 
 /*
  * < SSL Config
@@ -124,6 +132,9 @@
  * < Audio Config
  */
 #undef  CONFIG_AUDIO_EN
+#undef  CONFIG_AUDIO_FWK
+#undef  CONFIG_MEDIA_PLAYER
+#undef  CONFIG_AUDIO_SPEECH
 
 /*
  * < IMQ Config

@@ -264,10 +264,10 @@ static inline void *os_calloc(size_t nmemb, size_t size)
 
 static inline int os_memcmp_const(const void *a, const void *b, size_t len)
 {
-	const u8 *aa = a;
-	const u8 *bb = b;
+	const uint8_t *aa = a;
+	const uint8_t *bb = b;
 	size_t i;
-	u8 res;
+	uint8_t res;
 
 	for (res = 0, i = 0; i < len; i++) {
 		res |= aa[i] ^ bb[i];
@@ -480,17 +480,17 @@ int os_snprintf(char *str, size_t size, const char *format, ...);
 
 #if !defined(CONFIG_PLATFORM_8195A) && !defined(CONFIG_PLATFORM_8711B) && !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_AMEBAD2)
 #ifdef CONFIG_MEM_MONITOR
-u8 *os_malloc(u32 sz);
-void os_mfree(u8 *pbuf, u32 sz);
+uint8_t *os_malloc(uint32_t sz);
+void os_mfree(uint8_t *pbuf, uint32_t sz);
 #ifndef os_free
-#define os_free(p, sz) os_mfree(((u8*)(p)), (sz))
+#define os_free(p, sz) os_mfree(((uint8_t*)(p)), (sz))
 #endif
 #else
 #ifndef os_malloc
 #define os_malloc(sz) _rtw_malloc(sz)
 #endif
 #ifndef os_free
-#define os_free(p, sz) _rtw_mfree(((u8*)(p)), (sz))
+#define os_free(p, sz) _rtw_mfree(((uint8_t*)(p)), (sz))
 #endif
 #endif
 #endif

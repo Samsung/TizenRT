@@ -17,8 +17,11 @@
 #include "inic_ipc.h"
 
 /* -------------------------------- Defines --------------------------------- */
-#define CONFIG_INIC_IPC_MSG_Q_PRI	(7)
-
+#ifdef CONFIG_AS_INIC_NP
+#define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
+#else
+#define CONFIG_INIC_IPC_MSG_Q_PRI	(5)
+#endif
 /* -------------------------------- Macros ---------------------------------- */
 
 /* ------------------------------- Data Types ------------------------------- */
@@ -28,7 +31,6 @@
 /* -------------------------- Function declaration -------------------------- */
 extern int rtw_in_interrupt(void);
 void inic_ipc_msg_q_init(void (*task_hdl)(inic_ipc_ex_msg_t *));
-void inic_ipc_msgQ_wlan_task_deinit(void);
 sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg);
 void inic_ipc_msg_q_deinit(void);
 u8 inic_ipc_msg_get_queue_status(void);

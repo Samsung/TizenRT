@@ -313,9 +313,12 @@ struct protocol_cap_t {
 	u8 htc_rx: 1;
 	u8 trig_padding: 2;	//hal_mac used
 	u8 sm_ps: 2;
+	/* bit0:twt requester; bit1:twt responder; bit2:b-twt;
+	 * bit3:Flex twt schedule; bit4:psr responder; bit5:sst;
+	 */
 	u8 twt: 6;
 	u8 all_ack: 1;
-	u8 a_ctrl: 3;	/* bit0: BSR, bit1: BSPR BQPR AMPDU AGG, bit2: BQR */
+	u8 a_ctrl: 3;	/* bit0:TRS; bit1:BSR; bit2:BQR */
 	u8 ops: 1;
 	u8 ht_vht_trig_rx: 1;
 	u8 bsscolor;

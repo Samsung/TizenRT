@@ -539,10 +539,9 @@
 #define BIT_GET_RESP_GI_LTF(x)              ((u32)(((x >> 13) & 0x00000007)))
 #define BIT_RESP_CHK_ZBCCA                  ((u32)0x00000001 << 12)          /*!<R/W 0  check zigbee cca when response */
 #define BIT_RESP_CHK_EDCCA_PER20            ((u32)0x00000001 << 11)          /*!<R/W 0  check edcca_per20_bitmap_sifs[0] when response */
-/*redefine*/
-/*#define BIT_MASK_RESP_TXRATE                ((u32)0x000003FF << 0)  */        /*!<R/W 0x04  tx rate use to decide response rate */
-/*#define BIT_RESP_TXRATE(x)                  ((u32)(((x) & 0x000003FF) << 0))
-#define BIT_GET_RESP_TXRATE(x)              ((u32)(((x >> 0) & 0x000003FF)))*/
+#define BIT_MASK_RESP_TXRATE                ((u32)0x000003FF << 0)           /*!<R/W 0x04  tx rate use to decide response rate */
+#define BIT_RESP_TXRATE(x)                  ((u32)(((x) & 0x000003FF) << 0))
+#define BIT_GET_RESP_TXRATE(x)              ((u32)(((x >> 0) & 0x000003FF)))
 /** @} */
 
 /**************************************************************************//**

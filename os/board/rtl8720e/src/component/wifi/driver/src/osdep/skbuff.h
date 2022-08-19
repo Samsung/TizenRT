@@ -44,7 +44,8 @@ struct sk_buff {
 #endif
 
 	int 			dyalloc_flag;
-
+	unsigned char	busy;
+	unsigned char	no_free;
 };
 
 unsigned char *skb_put(struct sk_buff *skb, unsigned int len);

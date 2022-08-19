@@ -31,6 +31,6 @@ void inic_ipc_dev_tx_handler(inic_ipc_ex_msg_t *ipc_msg);
 void inic_ipc_dev_alloc_tx_skb(int len, int idx);
 void inic_ipc_dev_recv(int idx);
 void inic_ipc_dev_scan_done(void);
-void inic_ipc_dev_rx_done(void);
+void inic_ipc_dev_rx_done(inic_ipc_ex_msg_t *p_ipc_msg);
 void inic_ipc_dev_rx_pending(void);
 #endif /* __INIC_IPC_DEV_TX_H__ */

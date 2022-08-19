@@ -57,6 +57,7 @@
 #define CONFIG_PERIOD_CCA		0
 #define CONFIG_S1_NULL1_IVL_PATCH       0
 #define CONFIG_LPS_Offload 		0
+#define CONFIG_LPS_I_TWT 		0
 #if CONFIG_LPS_Offload
 #define LPSOFLD_MULTIBCN_PATCH 0//bcnearly and bcn agg early both trigger HIOE on cause bcn agg early cannot be used to multibcn lps mode, need ECO
 #else
@@ -76,7 +77,7 @@
 
 //3 Dynamic Mechanism Offload
 #define CONFIG_RATE_ADAPTIVE        1//keep the macro control for some case that need to reduce FW image size
-#define CONFIG_TPBASE_RA			1
+#define CONFIG_TPBASE_RA			0
 #define CONFIG_RA_PS_MODE           0
 #define CONFIG_POWER_TRAINING_WIL   1
 #define CONFIG_11AC_1SS             0

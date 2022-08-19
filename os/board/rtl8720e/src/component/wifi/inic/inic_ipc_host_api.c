@@ -15,7 +15,6 @@
 #include "wifi_conf.h"
 #include "lwip_netconf.h"
 #include "inic_ipc_cfg.h"
-//#include "ameba_freertos_pmu.h"
 
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_INIC_IPC_HOST_API_PRIO 3
@@ -47,7 +46,6 @@ extern void (*ipc_promisc_callback)(unsigned char *, unsigned int, void *);
 extern rtw_result_t (*scan_user_callback_ptr)(unsigned int, void *);
 extern rtw_result_t (*scan_each_report_user_callback_ptr)(rtw_scan_result_t *, void *);
 extern ap_channel_switch_callback_t p_ap_channel_switch_callback;
-extern void pmu_register_sleep_callback(u32 nDeviceId, PSM_HOOK_FUN sleep_hook_fun, void *sleep_param_ptr, PSM_HOOK_FUN wakeup_hook_fun, void *wakeup_param_ptr);
 /* ---------------------------- Private Functions --------------------------- */
 static void _inic_ipc_api_host_scan_user_callback_handler(inic_ipc_dev_request_message *p_ipc_msg)
 {
@@ -169,24 +167,43 @@ static void _inic_ipc_api_host_set_netif_info_handler(inic_ipc_dev_request_messa
 	LwIP_wlan_set_netif_info(idx, NULL, dev_addr);
 }
 
-u32 inic_ipc_ip_addr_update(u32 expected_idle_time, void *param)
+static u32 _inic_ipc_ip_addr_update_in_wowlan(u32 expected_idle_time, void *param)
 {
 	/* To avoid gcc warnings */
 	(void) expected_idle_time;
 	(void) param;
+	u32 try_cnt = 5000;//wait 10ms
 
-	u32 param_buf[1];
-	u32 ret = 0;
+	rtw_memset(&g_host_ipc_api_request_info, 0, sizeof(inic_ipc_host_request_message));
 
-	param_buf[0] = (u32)LwIP_GetIP(0);
-	DCache_Clean(param_buf[0], 4);
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_IP_UPDATE, param_buf, 1);
-	if (ret == 0) {
-		return _SUCCESS;
-	} else {
+	g_host_ipc_api_request_info.API_ID = IPC_API_WIFI_IP_UPDATE;
+	g_host_ipc_api_request_info.param_buf[0] = (u32)LwIP_GetIP(0);
+	DCache_Clean((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
+
+	rtw_memset(&g_host_ipc_api_msg, 0, sizeof(IPC_MSG_STRUCT));
+	g_host_ipc_api_msg.msg = (u32)&g_host_ipc_api_request_info;
+	g_host_ipc_api_msg.msg_type = IPC_USER_POINT;
+	g_host_ipc_api_msg.msg_len = sizeof(inic_ipc_host_request_message);
+	DCache_Clean((u32)&g_host_ipc_api_msg, sizeof(IPC_MSG_STRUCT));
+	ipc_send_message(IPC_DIR_MSG_TX, IPC_H2D_WIFI_API_TRAN, \
+					 &g_host_ipc_api_msg);
+
+	while (try_cnt) {
+		DCache_Invalidate((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
+		if (g_host_ipc_api_request_info.API_ID != IPC_WIFI_API_PROCESS_DONE) {
+			try_cnt --;
+			DelayUs(2);
+		} else {
+			break;
+		}
+	}
+	if (try_cnt == 0) {
+		DBG_ERR("wowlan update ip address fail\n");
 		return _FAIL;
 	}
+	return _SUCCESS;
 }
+
 
 /* ---------------------------- Public Functions ---------------------------- */
 /**
@@ -256,7 +273,7 @@ void inic_ipc_api_host_task(void)
 		p_ipc_msg->EVENT_ID = 0;
 		DCache_Clean((u32)p_ipc_msg, sizeof(inic_ipc_dev_request_message));
 	} while (1);
-	//rtw_delete_task(&inic_ipc_api_host_handler);
+	rtw_delete_task(&inic_ipc_api_host_handler);
 }
 
 /**
@@ -334,22 +351,12 @@ void inic_ipc_api_init_host(VOID)
 	rtw_up_sema(&g_host_inic_api_message_send_sema);
 
 	/*for updating ip address before sleep*/
-	pmu_register_sleep_callback(PMU_WLAN_DEVICE, (PSM_HOOK_FUN)inic_ipc_ip_addr_update, NULL, NULL, NULL);
+	pmu_register_sleep_callback(PMU_WLAN_DEVICE, (PSM_HOOK_FUN)_inic_ipc_ip_addr_update_in_wowlan, NULL, NULL, NULL);
 
 	/* Initialize the event task */
 	if (rtw_create_task(&inic_ipc_api_host_handler, (const char *const)"inic_ipc_api_host_task", HOST_STACK_SIZE, (0 + CONFIG_INIC_IPC_HOST_API_PRIO), (void*)inic_ipc_api_host_task, NULL) != 1) {
 			DBG_8195A("Create inic_ipc_api_host_task Err!!\n");
 		}
-}
-
-/**
- * @brief  to deinitialize the ipc host for WIFI api.
- * @param  none.
- * @return none.
- */
-void inic_ipc_api_deinit_host(VOID)
-{
-	rtw_delete_task(&inic_ipc_api_host_handler);
 }
 
 unsigned int inic_ipc_host_get_wifi_tsf_low(unsigned char port_id)
@@ -366,6 +373,22 @@ unsigned int inic_ipc_host_get_wifi_tsf_low(unsigned char port_id)
 	UNUSED(port_id);
 #endif
 	return ret;
+}
+
+int inic_ipc_host_get_txbuf_pkt_num(void)
+{
+	int ret = 0;
+#ifdef CONFIG_PLATFORM_AMEBAD2
+	u16 queue0_info = (HAL_READ16(WIFI_REG_BASE, 0x400) & 0x7F00) >> 8;//REG_Q0_INFO
+	u16 queue1_info = (HAL_READ16(WIFI_REG_BASE, 0x404) & 0x7F00) >> 8;//REG_Q1_INFO
+	u16 queue2_info = (HAL_READ16(WIFI_REG_BASE, 0x408) & 0x7F00) >> 8;//REG_Q2_INFO
+	u16 queue3_info = (HAL_READ16(WIFI_REG_BASE, 0x40C) & 0x7F00) >> 8;//REG_Q3_INFO
+	u16 mgnt_queue_info = (HAL_READ16(WIFI_REG_BASE, 0x410) & 0x7F00) >> 8;//REG_MGQ_INFO
+	u16 high_queue_info = (HAL_READ16(WIFI_REG_BASE, 0x414) & 0x7F00) >> 8;//REG_HIQ_INFO
+	ret = queue0_info + queue1_info + queue2_info + queue3_info + mgnt_queue_info + high_queue_info;
+#endif
+	return ret;
+
 }
 
 int inic_ipc_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg)

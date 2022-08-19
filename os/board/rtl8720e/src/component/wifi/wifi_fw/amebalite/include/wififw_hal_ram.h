@@ -75,6 +75,36 @@
 #define ISR_GTimer4             				ISR_GTimer4_8720E
 #define ISR_GTimer5             				ISR_GTimer5_8720E
 #define ISR_GTimer6             				ISR_GTimer6_8720E
+#if CONFIG_LPS_I_TWT
+#define ISR_PSTIMERA             			ISR_PSTIMERA_8720E
+#define ISR_PSTIMERAEarly					ISR_PSTIMERAEarly_8720E
+#define ISR_PSTIMERB             			ISR_PSTIMERB_8720E
+#define ISR_PSTIMERBEarly					ISR_PSTIMERBEarly_8720E
+#define ISR_PSTIMERC             			ISR_PSTIMERC_8720E
+#define ISR_PSTIMERCEarly					ISR_PSTIMERCEarly_8720E
+#define ISR_PSTIMERD             			ISR_PSTIMERD_8720E
+#define ISR_PSTIMERDEarly					ISR_PSTIMERDEarly_8720E
+#define ISR_PSTIMERE             			ISR_PSTIMERE_8720E
+#define ISR_PSTIMEOUT0						ISR_PSTIMEOUT0_8720E
+#define ISR_PSTIMEOUT1						ISR_PSTIMEOUT1_8720E
+#define ISR_PSTIMEOUT2						ISR_PSTIMEOUT2_8720E
+#define CHECKTWTClientNULL				CHECKTWTClientNULL_8720E
+#define CHECKTWTClientSPEND				CHECKTWTClientSPEND_8720E
+#define PSTWTBcnEarlyProcess				PSTWTBcnEarlyProcess_8720E
+#define PSTWTEarlyProcess					PSTWTEarlyProcess_8720E
+#define PSTWTBcnToProcess					PSTWTBcnToProcess_8720E
+#define PSTWTBcnRxProcess					PSTWTBcnRxProcess_8720E
+#define LPS_ITWTTimeUpdate				LPS_ITWTTimeUpdate_8720E
+#define LPS_ITWTDurationUpdate			LPS_ITWTDurationUpdate_8720E
+#define LPS_ITWTTIMERSetting				LPS_ITWTTIMERSetting_8720E
+#define LPS_ITWTStatusSet					LPS_ITWTStatusSet_8720E
+#define LPS_ITWTIMRSetting				LPS_ITWTIMRSetting_8720E
+#define LPS_ITWTByPassLsysWakeInt		LPS_ITWTByPassLsysWakeInt_8720E
+#define LPS_ITWTSPWORK						LPS_ITWTSPWORK_8720E
+#define LPS_ITWT_PortSet 					LPS_ITWT_PortSet_8720E
+#define LPS_ITWT_ClientSPSet				LPS_ITWT_ClientSPSet_8720E
+#define LPS_ITWT_ClientSPEarlySet		LPS_ITWT_ClientSPEarlySet_8720E
+#endif
 #define ISR_RPWM                				ISR_RPWM_8720E
 #define ISR_BCNERLY1            			ISR_BCNERLY1_8720E
 #define ISR_BcnEarlyAGG         			ISR_BcnEarlyAGG_8720E
@@ -132,6 +162,7 @@
 #define CheckDDMADone               		CheckDDMADone_8720E
 
 //lps
+#define PwrGatedInitLLTAndPageAlloc PwrGatedInitLLTAndPageAlloc_8720E
 #define Change_PS_State             		Change_PS_State_8720E
 #define PS_S2_Condition_Match   		PS_S2_Condition_Match_8720E
 #define PS_S4_Condition_Match   		PS_S4_Condition_Match_8720E
@@ -147,6 +178,7 @@
 #define ChangePSStateByRPWM  			ChangePSStateByRPWM_8720E
 #define PSBcnEarlyProcess 				PSBcnEarlyProcess_8720E
 #define PSBcnAggEarlyProcess 			PSBcnAggEarlyProcess_8720E
+#define PsDtimToProcess				PsDtimToProcess_8720E
 #define PsBcnToProcess 					PsBcnToProcess_8720E
 #define TxPktInPSOn 							TxPktInPSOn_8720E
 #define PSSleepTo32K 						PSSleepTo32K_8720E
@@ -192,15 +224,13 @@
 #define LPSOfld_HIOECmdFileToTXFF 		LPSOfld_HIOECmdFileToTXFF_8720E
 #define LPSOfld_HIOECmdFileInit 		LPSOfld_HIOECmdFileInit_8720E
 #define LPSOfld_RxbcnModeCmdFileValInit	LPSOfld_RxbcnModeCmdFileValInit_8720E
-#define LPSOfld_HIOECmdFilePGRSInit 	LPSOfld_HIOECmdFilePGRSInit_8720E
 #define LPSOfld_ByPassLsysWakeInt 		LPSOfld_ByPassLsysWakeInt_8720E
 #define LPSOfld_SwtHIOECmdFile 			LPSOfld_SwtHIOECmdFile_8720E
 #define LPSOfld_IMRSetting 				LPSOfld_IMRSetting_8720E
 #define LPSOfld_SetBcnErlyandTimeout	LPSOfld_SetBcnErlyandTimeout_8720E
 #define LPSOfld_FuncInit 					LPSOfld_FuncInit_8720E
-#define 	LPSOfld_PGResume 			LPSOfld_PGResume_8720E
+#define LPSOfld_PGResume 			LPSOfld_PGResume_8720E
 #define LPSOfld_HWCtrlTRXOnOff 			LPSOfld_HWCtrlTRXOnOff_8720E
-#define   LPSOfld_Reload_PHYREG	LPSOfld_Reload_PHYREG_8720E
 #define LPSOfld_PSRxBcnProcess			LPSOfld_PSRxBcnProcess_8720E
 
 //Sapps

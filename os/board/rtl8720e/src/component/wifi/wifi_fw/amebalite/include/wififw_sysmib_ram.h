@@ -69,7 +69,9 @@ typedef struct _mib_info_ {
 	LPSOFFLOADParm	LPSOffloadParm;
 	LPSPG_PARM	   		LPSPGParm;
 	PS_DBGPARM			PSDbgParm;
-
+#if CONFIG_LPS_I_TWT
+	LPS_ITWT_PARM		LPSITWTParm;
+#endif
 #if CONFIG_BTCOEX
 	BTC_PsTdma_Parm                  BtcPsTdma;
 	H2C_BT_Tdma_Parm                 H2cBtTdma;                //H2C Index: 0x60

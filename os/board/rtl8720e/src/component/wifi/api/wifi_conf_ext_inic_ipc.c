@@ -201,7 +201,6 @@ int wifi_get_setting(unsigned char wlan_idx, rtw_wifi_setting_t *psetting)
 	if (setting_temp == NULL) {
 		return -1;
 	}
-	memset(setting_temp, 0, sizeof(rtw_wifi_setting_t));
 
 	param_buf[0] = (u32)wlan_idx;
 	param_buf[1] = (u32)setting_temp;
@@ -212,82 +211,6 @@ int wifi_get_setting(unsigned char wlan_idx, rtw_wifi_setting_t *psetting)
 	rtw_memcpy(psetting, setting_temp, sizeof(rtw_wifi_setting_t));
 	rtw_mfree((u8 *)setting_temp, 0);
 
-	return ret;
-}
-
-//----------------------------------------------------------------------------//
-int wifi_show_setting(const char *ifname, rtw_wifi_setting_t *pSetting)
-{
-	int ret = 0;
-#ifndef CONFIG_INIC_NO_FLASH
-
-	RTW_API_INFO("\n\r\nWIFI  %s Setting:",ifname);
-	RTW_API_INFO("\n\r==============================");
-
-	switch(pSetting->mode) {
-		case RTW_MODE_AP:
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-			at_printf("\r\nAP,");
-#endif
-			RTW_API_INFO("\n\r      MODE => AP");
-			break;
-		case RTW_MODE_STA:
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-			at_printf("\r\nSTA,");
-#endif
-			RTW_API_INFO("\n\r      MODE => STATION");
-			break;
-		default:
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-			at_printf("\r\nUNKNOWN,");
-#endif
-			RTW_API_INFO("\n\r      MODE => UNKNOWN");
-	}
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-	at_printf("%s,%d,", pSetting->ssid, pSetting->channel);
-#endif
-	RTW_API_INFO("\n\r      SSID => %s", pSetting->ssid);
-	RTW_API_INFO("\n\r   CHANNEL => %d", pSetting->channel);
-
-	switch(pSetting->security_type) {
-		case RTW_SECURITY_OPEN:
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-			at_printf("OPEN,");
-#endif
-			RTW_API_INFO("\n\r  SECURITY => OPEN");
-			break;
-		case RTW_SECURITY_WEP_PSK:
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-			at_printf("WEP,%d,", pSetting->key_idx);
-#endif
-			RTW_API_INFO("\n\r  SECURITY => WEP");
-			RTW_API_INFO("\n\r KEY INDEX => %d", pSetting->key_idx);
-			break;
-		case RTW_SECURITY_WPA_TKIP_PSK:
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-			at_printf("TKIP,");
-#endif
-			RTW_API_INFO("\n\r  SECURITY => TKIP");
-			break;
-		case RTW_SECURITY_WPA2_AES_PSK:
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-			at_printf("AES,");
-#endif
-			RTW_API_INFO("\n\r  SECURITY => AES");
-			break;
-		default:
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-			at_printf("UNKNOWN,");
-#endif
-			RTW_API_INFO("\n\r  SECURITY => UNKNOWN");
-	}
-
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-	at_printf("%s,", pSetting->password);
-#endif
-	RTW_API_INFO("\n\r  PASSWORD => %s", pSetting->password);
-	RTW_API_INFO("\n\r");
-#endif
 	return ret;
 }
 
@@ -393,13 +316,6 @@ int wifi_set_network_mode(rtw_network_mode_t mode)
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_NETWORK_MODE, param_buf, 1);
 	return ret;
 }
-
-// int wifi_set_wpa_mode(rtw_wpa_mode wpa_mode)
-// {
-// 	(void) wpa_mode;
-// 	//todo
-// 	return 0;
-// }
 
 int wifi_set_wps_phase(unsigned char is_trigger_wps)
 {
@@ -885,6 +801,11 @@ void wifi_set_no_beacon_timeout(unsigned char timeout_sec)
 unsigned int wifi_get_tsf_low(unsigned char port_id)
 {
 	return inic_ipc_host_get_wifi_tsf_low(port_id);
+}
+
+int wifi_get_txbuf_pkt_num(void)
+{
+	return inic_ipc_host_get_txbuf_pkt_num();
 }
 
 //----------------------------------------------------------------------------//

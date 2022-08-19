@@ -431,6 +431,7 @@ int wifi_on(rtw_mode_t mode)
 	wifi_set_user_config();
 
 	param_buf[0] = mode;
+	inic_ipc_host_init_skb();
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_ON, param_buf, 1);
 	init_timer_wrapper();
 
@@ -443,7 +444,7 @@ int wifi_on(rtw_mode_t mode)
 		LwIP_netif_set_up(0);
 		if (mode == RTW_MODE_AP) {
 			LwIP_netif_set_link_up(0);
-		} else if (mode == RTW_MODE_STA_AP) {
+		} else	 if (mode == RTW_MODE_STA_AP) {
 			LwIP_netif_set_up(1);
 			LwIP_netif_set_link_up(1);
 		}

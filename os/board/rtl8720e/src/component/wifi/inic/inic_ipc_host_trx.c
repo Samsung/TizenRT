@@ -43,7 +43,6 @@ struct host_recv_buf {
 /* recv structure */
 struct host_priv {
 	_sema recv_sema; /* sema to wait allloc skb from device */
-	_sema xmit_sema; /* sema to wait allloc skb from device */
 	_sema alloc_skb_sema; /* sema to wait allloc skb from device */
 	_sema host_send_sema; /* sema to protect inic ipc host send */
 	_queue recv_queue; /* recv queue */
@@ -67,7 +66,7 @@ struct skb_data {
 struct skb_buf {
 	struct list_head list;
 	struct sk_buff skb;
-	u8 rsvd[16];
+	u8 rsvd[10];
 };
 
 /* -------------------------- Function declaration -------------------------- */
@@ -79,6 +78,9 @@ extern struct netif xnetif[NET_IF_NUM];
 struct host_priv g_inic_host_priv __attribute__((aligned(64)));
 struct sk_buff *allocated_tx_skb = NULL;
 struct task_struct inic_ipc_host_rx_task;
+
+struct skb_data host_skb_data[HOST_SKB_NUM] __attribute__((aligned(64)));
+struct skb_buf host_skb_buf[HOST_SKB_NUM] __attribute__((aligned(64)));
 
 /* ---------------------------- Private Functions --------------------------- */
 /**
@@ -172,39 +174,8 @@ static void inic_ipc_host_rx_tasklet(void)
 			inic_ipc_ipc_send_msg(&ipc_msg);
 		}
 	} while (1);
-	//rtw_delete_task(&inic_ipc_host_rx_task);
-}
 
-/**
- * @brief  to apply for the skb buffer to send the data from device.
- * @param  total_len[in]: the length to require for sending from device.
- * @return address of skb from device.
- */
-static struct sk_buff *inic_ipc_host_alloc_skb(unsigned int total_len, int idx)
-{
-	struct sk_buff *skb = NULL;
-	inic_ipc_ex_msg_t ipc_msg = {0};
-
-	ipc_msg.event_num = IPC_WIFI_MSG_ALLOC_SKB;
-	ipc_msg.msg_addr = idx;
-	ipc_msg.msg_len = total_len;
-	inic_ipc_ipc_send_msg(&ipc_msg);
-	rtw_down_sema(&(g_inic_host_priv.alloc_skb_sema));
-
-	skb = allocated_tx_skb;
-	if (skb == NULL || (((u32)skb) == FLAG_WLAN_IF_NOT_RUNNING)) {
-		allocated_tx_skb = NULL;
-		return skb;
-	}
-
-#ifdef CONFIG_ENABLE_CACHE
-	DCache_Invalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
-	DCache_Invalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
-#endif /* CONFIG_ENABLE_CACHE */
-
-	allocated_tx_skb = NULL;
-
-	return skb;
+	rtw_delete_task(&inic_ipc_host_rx_task);
 }
 
 /**
@@ -227,12 +198,20 @@ static int inic_ipc_host_send_skb(int idx, struct sk_buff *skb)
 	ipc_msg.msg_len = idx;
 	inic_ipc_ipc_send_msg(&ipc_msg);
 
-	/* wait for device tx done */
-	rtw_down_sema(&g_inic_host_priv.xmit_sema);
 	return 0;
 }
 
 /* ---------------------------- Public Functions ---------------------------- */
+/**
+ * @brief  to initialize the skb in host.
+ * @param  none
+ * @return none.
+ */
+void inic_ipc_host_init_skb(void)
+{
+	rtw_memset(host_skb_buf, 0, HOST_SKB_NUM * sizeof(struct skb_buf));
+	rtw_memset(host_skb_data, 0, HOST_SKB_NUM * sizeof(struct skb_data));
+}
 /**
  * @brief  to initialize the parameters of recv.
  * @param  none
@@ -247,7 +226,6 @@ void inic_ipc_host_init_priv(void)
 	rtw_init_sema(&(g_inic_host_priv.alloc_skb_sema), 0);
 	rtw_init_sema(&(g_inic_host_priv.host_send_sema), 0);
 	rtw_up_sema(&(g_inic_host_priv.host_send_sema));
-	rtw_init_sema(&(g_inic_host_priv.xmit_sema), 0);
 
 	/* initialize the Rx queue. */
 	rtw_init_queue(&(g_inic_host_priv.recv_queue));
@@ -265,16 +243,6 @@ void inic_ipc_host_init_priv(void)
 		}
 }
 
-/* ---------------------------- Public Functions ---------------------------- */
-/**
- * @brief  to de-initialize inic_ipc_host_rx_task.
- * @param  none
- * @return none.
- */
-void inic_ipc_host_deinit_priv(void)
-{
-	rtw_delete_task(&inic_ipc_host_rx_task);
-}
 /**
  * @brief  to put the Rx data from rx buffer into Rx queue.
  * @param  idx_wlan[in]: which port of wifi to rx.
@@ -300,12 +268,8 @@ void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb)
 	p_buf = pbuf_alloc(PBUF_RAW, skb->len, PBUF_POOL);
 	if (p_buf == NULL) {
 		//DBG_8195A("Alloc pbuf rx buf Err, alloc_sz %d!!\n\r", skb->len);
-		g_inic_host_priv.rx_pending_flag = 1;
-		ipc_msg.event_num = IPC_WIFI_MSG_RECV_PENDING;
-		inic_ipc_ipc_send_msg(&ipc_msg);
-		/* wakeup recv task */
-		rtw_up_sema(&g_inic_host_priv.recv_sema);
-		return;
+		//just send rsp when pbuf alloc fail
+		goto RSP;
 	}
 
 	/* cpoy data from skb(ipc data) to pbuf(ether net data) */
@@ -319,10 +283,6 @@ void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb)
 		skb_pull(skb, temp_buf->len);
 		temp_buf = temp_buf->next;
 	}
-#ifdef CONFIG_ENABLE_CACHE
-	DCache_CleanInvalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
-	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
-#endif /* CONFIG_ENABLE_CACHE */
 
 	/* allocate host_recv_buf and associate to the p_buf */
 	precvbuf = (struct host_recv_buf *)rtw_zmalloc(sizeof(struct host_recv_buf));
@@ -331,8 +291,19 @@ void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb)
 
 	/* enqueue recv buffer  */
 	inic_enqueue_recvbuf(precvbuf, recv_queue);
+
+RSP:
+#ifdef CONFIG_ENABLE_CACHE
+	/*need cache clean here even if NP only need free skb,
+	because AP may occur cache full issue and flush to skb to memory, but list in skb is old*/
+	DCache_CleanInvalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
+	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
+#endif /* CONFIG_ENABLE_CACHE */
+
 	ipc_msg.event_num = IPC_WIFI_MSG_RECV_DONE;
+	ipc_msg.msg_addr = (u32)skb;
 	inic_ipc_ipc_send_msg(&ipc_msg);
+
 	/* wakeup recv task */
 	rtw_up_sema(&g_inic_host_priv.recv_sema);
 }
@@ -350,17 +321,6 @@ void inic_ipc_host_tx_alloc_skb_rsp(inic_ipc_ex_msg_t *p_ipc_msg)
 }
 
 /**
- * @brief  to notice the tx is done in device port. It will wakeup
- * 	inic_ipc_host_send_skb
- * @param  none.
- * @return none.
- */
-void inic_ipc_host_tx_done(void)
-{
-	rtw_up_sema(&g_inic_host_priv.xmit_sema);
-}
-
-/**
  * @brief  to put the Rx data from rx buffer into Rx queue.
  * @param  idx[in]: which port of wifi to tx.
  * @param  sg_list[in]: pbuf list to send.
@@ -371,32 +331,48 @@ void inic_ipc_host_tx_done(void)
 int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 					   int total_len)
 {
+	//WIFI_MONITOR_TIMER_START(wlan_send_time);
 	struct sk_buff *skb = NULL;
+	struct skb_buf *skb_buf = NULL;
 	struct eth_drv_sg *psg_list;
+	unsigned char *skb_data = NULL;
 	int ret = 0, i = 0;
+	static int used_skb_num = 0;
+	int size = 0;
 
 	rtw_down_sema(&g_inic_host_priv.host_send_sema);
-	/* allocate the skb buffer to send from device */
-	skb = inic_ipc_host_alloc_skb(total_len, idx);
 
-	if (skb == NULL) {
-		//DBG_ERR("rltk_wlan_alloc_skb() for data len=%d failed!", total_len);
-		/*NP doesn't have enough skb right now, so AP TX block 1ms to wait NP TX*/
-		vTaskDelay(1);
+	/* allocate the skb buffer */
+
+	skb_buf = &host_skb_buf[used_skb_num];
+	skb = &host_skb_buf[used_skb_num].skb;
+	DCache_Invalidate((u32)skb_buf, sizeof(struct skb_buf));
+	if (skb->busy) {
+		/*AP doesn't have enough skb right now, taskdelay here will directly
+		block tcpip thred, so return ERR_BUF to inform upper layer*/
 		rtw_up_sema(&g_inic_host_priv.host_send_sema);
 		return ERR_BUF;
 	}
+	memset(skb, '\0', sizeof(struct sk_buff));
+	size = SKB_DATA_ALIGN(total_len + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN));
+	skb_data = host_skb_data[used_skb_num].buf;
+	skb->head = skb_data;
+	skb->end = skb_data + size;
+	skb->data = skb_data + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN);
+	skb->tail = skb_data + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN);
+	skb->busy = 1;
+	skb->no_free = 1;
+	atomic_set(&LIST_CONTAINOR(skb->head, struct skb_data, buf)->ref, 1);
 
-	if (((u32)skb) == FLAG_WLAN_IF_NOT_RUNNING) {
-		/* since corresponding wlan interface is not running ,return ERR_IF*/
-		rtw_up_sema(&g_inic_host_priv.host_send_sema);
-		return ERR_IF;
-	}
+	used_skb_num++;
+	used_skb_num = used_skb_num % HOST_SKB_NUM;
 
 	psg_list = sg_list;
 	for (i = 0; i < sg_len; i++) {
 		psg_list = &sg_list[i];
+		//WIFI_MONITOR_TIMER_START(wlan_send_time2);
 		rtw_memcpy(skb->tail, (void *)(psg_list->buf), psg_list->len);
+		//WIFI_MONITOR_TIMER_END(wlan_send_time2, total_len);
 		skb_put(skb, psg_list->len);
 	}
 
@@ -405,8 +381,11 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
 #endif /* CONFIG_ENABLE_CACHE */
 
+	//WIFI_MONITOR_TIMER_START(wlan_send_time3);
 	inic_ipc_host_send_skb(idx, skb);
+	//WIFI_MONITOR_TIMER_END(wlan_send_time3, total_len);
 	rtw_up_sema(&g_inic_host_priv.host_send_sema);
+	//WIFI_MONITOR_TIMER_END(wlan_send_time, total_len);
 
 	return ret;
 }
