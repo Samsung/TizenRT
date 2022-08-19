@@ -93,7 +93,7 @@ typedef enum _RT_REGULATOR_MODE {
 #define CHANNEL_MAX_NUMBER_5G_80M				7
 
 // Tx Power Limit Table Size
-#define MAX_REGULATION_NUM						(TXPWR_LMT_MAX_REGULATION_NUM - 1)       /* ignore NCC */
+#define MAX_REGULATION_NUM						TXPWR_LMT_MAX_REGULATION_NUM
 #define MAX_2_4G_BANDWITH_NUM					2 // 20M, 40M
 #if defined(NOT_SUPPORT_RF_MULTIPATH) && (!defined(CONFIG_80211AC_VHT))
 #define MAX_RATE_SECTION_NUM					3 // CCk, OFDM, HT
@@ -173,10 +173,11 @@ struct 	dm_priv {
 struct csi_priv {
 	struct rx_csi_pool *csi_pool;  /* csi buffer pool */
 	struct rx_csi_data *handing_buf;  /* handing csi packet */
-	u8 csi_curr_flush_cnt;
+	u8 csi_handle_flag;  /* 0: wait new csi; 1: handling curr csi */
 	u8 trig_addr[6];
 	u8 num_bit_per_tone;
 	u16 num_sub_carrier;
+	u32 rx_csi_cnt;
 };
 #endif /* CONFIG_CSI */
 
@@ -274,15 +275,7 @@ typedef struct hal_com_data {
 	u8	rf_chip;
 	u8	rf_type;
 	u8	PackageType;
-#if defined(CONFIG_PLATFORM_8711B) \
-	|| defined(CONFIG_PLATFORM_8721D) || defined (CONFIG_RTL8188F) \
-	|| defined (CONFIG_RTL8192E) || defined (CONFIG_RTL8723D) \
-	|| defined(CONFIG_PLATFORM_8710C) \
-	|| defined(CONFIG_PLATFORM_AMEBAD2) \
-	|| defined (CONFIG_PLATFORM_AMEBALITE) \
-	|| defined(CONFIG_PLATFORM_8735B)
 	u32	ChipID;
-#endif
 	u8	NumTotalRFPath;
 
 	u8	BoardType;
@@ -331,16 +324,6 @@ typedef struct hal_com_data {
 	u16 firmware_version;
 	u16 firmware_sub_version;
 #endif
-//	u8	bAPKThermalMeterIgnore;
-
-//	BOOLEAN 			EepromOrEfuse;
-	//u8				EfuseMap[2][HWSET_MAX_SIZE_512]; //92C:256bytes, 88E:512bytes, we use union set (512bytes)
-
-#if defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B) || defined(CONFIG_RTL8723D)
-	u8	adjuseVoltageVal;
-	u8	need_restore;
-	BB_INIT_REGISTER	RegForRecover[5];
-#endif
 
 #if defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8735B)
 	u8				EfuseUsedPercentage;
@@ -359,6 +342,7 @@ typedef struct hal_com_data {
 	u8	Regulation5G;
 #endif
 
+#if (PHYDM_VERSION < 3)
 	s8	TxPwrByRateOffset[TX_PWR_BY_RATE_NUM_BAND]
 	[TX_PWR_BY_RATE_NUM_RF]
 	[TX_PWR_BY_RATE_NUM_RF]
@@ -415,40 +399,13 @@ typedef struct hal_com_data {
 	[MAX_BASE_NUM_IN_PHY_REG_PG_5G];
 #endif
 
-#if(RTL8188E_SUPPORT == 1)
-	u8	TxPwrLevelCck[MAX_RF_PATH][CHANNEL_MAX_NUMBER];
-	u8	TxPwrLevelHT40_1S[MAX_RF_PATH][CHANNEL_MAX_NUMBER];	// For HT 40MHZ pwr
-	u8	TxPwrLevelHT40_2S[MAX_RF_PATH][CHANNEL_MAX_NUMBER];	// For HT 40MHZ pwr
-	u8	TxPwrHt20Diff[MAX_RF_PATH][CHANNEL_MAX_NUMBER];// HT 20<->40 Pwr diff
-	u8	TxPwrLegacyHtDiff[MAX_RF_PATH][CHANNEL_MAX_NUMBER];// For HT<->legacy pwr diff
-#endif
-
-	// For power group
-//	u8	PwrGroupHT20[MAX_RF_PATH][CHANNEL_MAX_NUMBER];
-//	u8	PwrGroupHT40[MAX_RF_PATH][CHANNEL_MAX_NUMBER];
-
-//	u8	LegacyHTTxPowerDiff;// Legacy to HT rate power diff
-	// The current Tx Power Level
 	u8	CurrentCckTxPwrIdx;
 	u8	CurrentOfdm24GTxPwrIdx;
 	u8	CurrentBW2024GTxPwrIdx;
 #if !defined(NOT_SUPPORT_40M)
 	u8	CurrentBW4024GTxPwrIdx;
 #endif
-	//u32	AntennaTxPath;					// Antenna path Tx
-	//u32	AntennaRxPath;					// Antenna path Rx
-	//u8	BluetoothCoexist;
-//	u8	ExternalPA;
-
-#if defined(CONFIG_RTL8188F) ||defined (CONFIG_RTL8723D) || defined(CONFIG_RTL8188E)
-
-	/* PHY DM & DM Section */
-	u8			INIDATA_RATE[32/*MACID_NUM_SW_LIMIT*/];
-	/* Upper and Lower Signal threshold for Rate Adaptive*/
-	int			EntryMinUndecoratedSmoothedPWDB;
-	int			EntryMaxUndecoratedSmoothedPWDB;
-	int			MinUndecoratedPWDBForDM;
-#endif
+#endif//(PHYDM_VERSION < 3)
 
 #if defined(CONFIG_RTL8192E) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8735B) || \
 	defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E)
@@ -469,13 +426,7 @@ typedef struct hal_com_data {
 	u8	TypeAPA;
 	u8	INIDATA_RATE[32/*MACID_NUM_SW_LIMIT*/];
 #endif
-	//u8	bLedOpenDrain; // Support Open-drain arrangement for controlling the LED. Added by Roger, 2009.10.16.
 
-	//u32	LedControlNum;
-	//u32	LedControlMode;
-	//u8	b1x1RecvCombine;	// for 1T1R receive combining
-
-	//u8	bCurrentTurboEDCA;
 	BOOLEAN     bSwChnl;
 	BOOLEAN     bSetChnlBW;
 	BOOLEAN     bChnlBWInitialized;
@@ -568,38 +519,6 @@ typedef struct hal_com_data {
 
 	// Auto FSM to Turn On, include clock, isolation, power control for MAC only
 	u8			bMacPwrCtrlOn;
-
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-
-	//
-	// For SDIO Interface HAL related
-	//
-
-	//
-	// SDIO ISR Related
-	//
-//	u32			IntrMask[1];
-//	u32			IntrMaskToSet[1];
-//	LOG_INTERRUPT		InterruptLog;
-//	u32			sdio_himr;
-//	u32			sdio_hisr;
-
-	//
-	// SDIO Tx FIFO related.
-	//
-	// HIQ, MID, LOW, PUB free pages; padapter->xmitpriv.free_txpg
-//	u8			SdioTxFIFOFreePage[TX_FREE_PG_QUEUE];
-//	_lock		SdioTxFIFOFreePageLock;
-//	_thread_hdl_	SdioXmitThread;
-//	_sema		SdioXmitSema;
-//	_sema		SdioXmitTerminateSema;
-
-	//
-	// SDIO Rx FIFO related.
-	//
-	u8			SdioRxFIFOCnt;
-//	u16			SdioRxFIFOSize;
-#endif //CONFIG_SDIO_HCI
 
 #if defined (CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 //	u32	TransmitConfig;

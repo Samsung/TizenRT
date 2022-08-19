@@ -10,13 +10,13 @@ static int skb_fail_count;
 struct skb_buf {
 	struct list_head list;
 	struct sk_buff skb;
-#if defined(CONFIG_AS_INIC_AP)
-	u8 rsvd[16]; /* keep total size 64B alignment */
+#if defined(CONFIG_AS_INIC_NP)
+	u8 rsvd[10]; /* keep total size 64B alignment */
 #endif
 };
 
 _WEAK int max_local_skb_num = MAX_LOCAL_SKB_NUM;
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_AS_INIC_NP)
 _WEAK struct skb_buf skb_pool[MAX_LOCAL_SKB_NUM] __attribute__((aligned(64)));
 #else
 _WEAK struct skb_buf skb_pool[MAX_LOCAL_SKB_NUM];
@@ -36,7 +36,7 @@ struct skb_data {
 
 _WEAK int max_skb_buf_num = MAX_SKB_BUF_NUM;
 SRAM_BD_DATA_SECTION
-#if defined(CONFIG_AS_INIC_AP)
+#if defined(CONFIG_AS_INIC_NP)
 _WEAK struct skb_data skb_data_pool[MAX_SKB_BUF_NUM] __attribute__((aligned(64)));
 #else
 _WEAK struct skb_data skb_data_pool[MAX_SKB_BUF_NUM];
@@ -70,7 +70,7 @@ int skb_fail_get_and_rst(void)
 	return fail;
 }
 
-static __inline__ unsigned char *get_buf_from_poll(struct list_head *phead, int *count)
+static __inline__ void *get_buf_from_poll(struct list_head *phead, int *count)
 {
 	struct sk_buff *skb;
 	struct list_head *plist;
@@ -226,7 +226,7 @@ struct sk_buff *dev_alloc_skb(unsigned int length, unsigned int reserve_len)
 
 	skb = alloc_skb(length + SKB_DATA_ALIGN(reserve_len));
 
-	//DBG_871X("%s(): length=%d reserve_len=%d skb->data=%p skb->tail=%p skb->end=%p\n", __func__, length, reserve_len, skb->data, skb->tail, skb->end);
+
 
 	if (skb) {
 		skb_reserve(skb, SKB_DATA_ALIGN(reserve_len));
@@ -238,6 +238,17 @@ struct sk_buff *dev_alloc_skb(unsigned int length, unsigned int reserve_len)
 void kfree_skb(struct sk_buff *skb)
 {
 	unsigned int irq_flags = save_and_cli();
+#ifdef CONFIG_AS_INIC_NP
+	if (skb->busy) {
+		skb->busy = 0;
+		struct skb_buf *skb_buf = container_of(skb, struct skb_buf, skb);
+		DCache_Clean((u32)skb_buf, sizeof(struct skb_buf));
+	}
+	if (skb->no_free) {
+		restore_flags();
+		return;
+	}
+#endif
 	if (skb->dyalloc_flag == 1) {
 		skb->dyalloc_flag = 0;
 		rtw_free(skb->head);

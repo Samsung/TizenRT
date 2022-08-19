@@ -57,14 +57,14 @@
 #define DEFAULT_PS_BCN_EARLY   	     	3
 #define DEFAULT_PS_BCN_EARLY_128US   	5
 #define DEFAULT_PS_BCN_EARLY_32US    	0
-#define DEFAULT_PS_BCN_EARLY_32K   	 	4
+#define DEFAULT_PS_BCN_EARLY_32K   	 	5
 #define DEFAULT_PS_BCN_EARLY_128US_32K	2
 #define DEFAULT_PS_BCN_EARLY_32US_32K	1
-#define DEFAULT_BCN_TO_PERIOD_32K			15
+#define DEFAULT_BCN_TO_PERIOD_32K			20
 
-#define DEFAULT_PS_BCN_EARLY_V_32K   	 3
-#define DEFAULT_PS_BCN_EARLY_V_128US_32K   3
-#define DEFAULT_PS_BCN_EARLY_V_32US_32K    0
+#define DEFAULT_PS_BCN_EARLY_V_32K   	 5
+#define DEFAULT_PS_BCN_EARLY_V_128US_32K   2
+#define DEFAULT_PS_BCN_EARLY_V_32US_32K    1
 
 #define DEFAULT_PS_32K_EARLY(x)       	(((DEFAULT_PS_BCN_EARLY_V_32K+(x)) << 5)+(DEFAULT_PS_BCN_EARLY_V_128US_32K<< 2)+(DEFAULT_PS_BCN_EARLY_V_32US_32K))
 #define BCN_PS_32K_SHIFT_MAX(x)        	(((DEFAULT_PS_BCN_EARLY_V_32K+(x)) << 5)+(DEFAULT_PS_BCN_EARLY_V_128US_32K<< 2)+(DEFAULT_PS_BCN_EARLY_V_32US_32K))
@@ -283,6 +283,20 @@ typedef struct _PS_PARM_ {
 	u8 TrafficLeakageCnt;
 	BOOLEAN waiting_leakage_check;
 #endif
+#if CONFIG_BEACON_MODE
+	u32 BCN_G7_DCK;
+	u32 BCN_DCKG0;
+	u32 BCN_DCKG1;
+	u32 BCN_DCKG2;
+	u32 BCN_DCKG3;
+	u32 BCN_DCKG4;
+	u32 BCN_DCKG5;
+	u32 BCN_DCKG6;
+	u32 BCN_DCKG7;
+	u32 BB4454;
+	u32 BCNModeCH;
+#endif
+
 } PS_PARM, *PPS_PARM;
 
 typedef enum _SMART_PS_MODE_FOR_LEGACY_ {
@@ -327,12 +341,18 @@ typedef struct _LPSOFFLOAD_Parm_ {
 	u8	RcvingTimhitBcn: 1;
 	u8	ReceiveTimhit: 1;
 	u8	BKForPGResDone: 1;
-	u8	rsvd: 1;
+	u8	InHWCtrlOnOffPeriod: 1;
+	u16 RxbcnModeCmdFileStartAddr;
+	u16 RxbcnModeCmdFileEndAddr;
 	u16 TRXOnCmdFileHWStartAddr;
 	u16 TRXOnCmdFileFWStartAddr;
 	u16 TRXOnCmdFileEndAddr;
 	u16 TRXOffCmdFileStartAddr;
 	u16 TRXOffCmdFileEndAddr;
+	u16 BBBkRsCmdFileStartAddr;
+	u16 BBBkRsCmdFileEndAddr;
+	u16 RF0x18RSCmdFileStartAddr;
+	u16 RF0x18RSCmdFileEndAddr;
 	u16 Delay2USCmdFileStartAddr;
 	u16 Delay2USCmdFileEndAddr;
 	u16 PGHIOECH1BKStartAddr;
@@ -399,7 +419,39 @@ typedef struct _LPSPG_PARM_ {
 	u8     	HioeRestoreDone: 1;
 	u8     	HioeBackupDone: 1;
 	u8	rsvd: 6;
+	u32	ARFC18;
+	u32	DRFC18;
 } LPSPG_PARM, *PLPSPG_PARM;
+
+typedef enum _ITWTCLT_ {
+	ITWTCLIENTA               = 0x0,
+	ITWTCLIENTB               = 0x1,
+	ITWTCLIENTC               = 0x2,
+	ITWTCLIENTD               = 0x3,
+} ITWTCLT, *PITWTCLT;
+
+typedef struct _ITWTCLIENT_PARM_ {
+	u8		TWT_En;
+	u8		TRIGGER_En;
+	u8		TXPAUSE;
+	u8		ANNOUNCED;
+	u16	DURATION;
+	u32	INTERVAL;
+	u32	TWTIME_H;
+	u32	TWTIME_L;
+	u8		SPSTARTFLAG;
+	u8		TWTEarly;
+} ITWTCLIENT_PARM, *PITWTCLIENT_PARM;
+
+typedef struct _LPS_ITWT_PARM_ {
+	u8		FLOW_ID;//client number
+	u8		TWTVALID;
+	u8		TWTBCNTo;
+	ITWTCLIENT_PARM ITWTCLIENT1;
+	ITWTCLIENT_PARM ITWTCLIENT2;
+	ITWTCLIENT_PARM ITWTCLIENT3;
+	ITWTCLIENT_PARM ITWTCLIENT4;
+} LPS_ITWT_PARM, *PLPS_ITWT_PARM;
 
 typedef struct _PS_DBGPARM_ {
 	//DW
@@ -444,6 +496,7 @@ extern void SetSmartPSTimer_8720E(void);
 extern void ChangePSStateByRPWM_8720E(void);
 extern void PSBcnEarlyProcess_8720E(void);
 extern void PSBcnAggEarlyProcess_8720E(void);
+extern void PsDtimToProcess_8720E(void);
 extern void PsBcnToProcess_8720E(void);
 extern void TxPktInPSOn_8720E(void);
 extern void PSSleepTo32K_8720E(void);
@@ -453,6 +506,22 @@ extern void SAPPSTBTTHDL_8720E(void);
 extern void SAPPSTimeOutHDL_8720E(void);
 extern void SAPPSEarlyHDL_8720E(void);
 extern void SAPLPS_8720E(void);
+extern BOOLEAN CHECKTWTClientNULL_8720E(void);
+extern BOOLEAN CHECKTWTClientSPEND_8720E(void);
+extern void PSTWTBcnEarlyProcess_8720E(void);
+extern void PSTWTEarlyProcess_8720E(void);
+extern void PSTWTBcnToProcess_8720E(void);
+extern void PSTWTBcnRxProcess_8720E(void);
+extern void LPS_ITWTTimeUpdate_8720E(u8 clientnum);
+extern void LPS_ITWTDurationUpdate_8720E(u8 clientnum);
+extern void LPS_ITWTTIMERSetting_8720E(u8 portnum, u8 clientnum);
+extern void LPS_ITWTStatusSet_8720E(u8 clientnum);
+extern void LPS_ITWTIMRSetting_8720E(u8 clientnum);
+extern void LPS_ITWTByPassLsysWakeInt_8720E(BOOLEAN ByPassLsysWakeEn);
+extern void LPS_ITWTSPWORK_8720E(BOOLEAN ITWTSTART);
+extern void LPS_ITWT_PortSet_8720E(u8 portnum, u8 clientnum);
+extern void LPS_ITWT_ClientSPSet_8720E(u8 clientnum, u32 TWTH, u32 TWTL);
+extern void LPS_ITWT_ClientSPEarlySet_8720E(u8 clientnum, u8 TWTEarly);
 extern void InitInactivePS_8720E(void);
 extern void InactivePSTBTTHDL_8720E(void);
 extern void InactivePSBCNAggEarlyHDL_8720E(void);
@@ -465,7 +534,6 @@ extern void BcnEarlyADJSTSSearchBaseValue_8720E(void);
 extern void BcnEarlyADJSTSCheckBaseValue_8720E(void);
 extern void BcnEarlyADJPIDSearchBaseValue_8720E(void);
 extern void BcnEarlyADJPIDCheckBaseValue_8720E(void);
-extern void LowPowerRxBeacon_8720E(BOOLEAN on);
 extern void Set32KLpsOption_8720E(u32 *LpsControl, u8 CutPower);
 extern void CheckTrafficLeakage(void);
 

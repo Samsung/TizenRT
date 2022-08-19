@@ -218,7 +218,11 @@ typedef struct _remote_wakeup_ {
 	u8		TwoAnt;
 	u8		AntSelReverse;
 	u8		RunTimePMFilter;
-	u32	TotalRSSIByFw;
+	//for modify kr4 memory align warning
+	u8		TotalRSSIByFw_0;
+	u8		TotalRSSIByFw_1;
+	u8		TotalRSSIByFw_2;
+	u8		TotalRSSIByFw_3;
 } RemoteWakeup_Parm, *PRemoteWakeup_Parm;
 
 //H2C Index: 0x4
@@ -313,6 +317,9 @@ typedef enum _H2C_CMD_ {
 	H2CID_NOLINK_PS             					= 0x28,
 	H2CID_PARTIAL_OFF_CTRL   					= 0x29,
 	H2CID_PARTIAL_OFF_PARM  					= 0x2A,
+	H2CID_LPS_I_TWT_INFO1         				= 0x31,
+	H2CID_LPS_I_TWT_INFO2         				= 0x32,
+	H2CID_LPS_I_TWT_INFO3         				= 0x33,
 	H2CID_S1_NULL1_CTRL         				= 0x3F,
 	/* 1 Class3: Dynamic Mechaism */
 	H2CID_MACID_CFG             					= 0x40,
@@ -498,11 +505,11 @@ extern void C2HInQueue_8720E(PC2H_EVT_HDR pc2h_hdr);
 extern u8 CheckMaxMacidNum_8720E(void);
 extern void SetMediaStatus_8720E(u8 macid, u8 status);
 extern BOOLEAN GetMediaStatus_8720E(u8 macid);
-extern void MediaConnection_8720E(void);
-extern void MediaDisconnection_8720E(void);
+extern void MediaConnection_8720E(u8 macid);
+extern void MediaDisconnection_8720E(u8 macid);
 extern void C2HSpeRPT_8720E(void);
 extern void H2CCmdFunc_8720E(u8  CmdID, u8  *content);
 extern void SetTxPauseDRVInfo_8720E(u8 BitMask, u8 UserValue);
-extern void MacidDropAction_8720E(u8 action);
+extern void MacidDropAction_8720E(u8 action, u8 macid);
 
 #endif  /* __WIFIFW_CMD_RAM_H__ */

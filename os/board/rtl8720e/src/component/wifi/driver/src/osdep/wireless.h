@@ -14,6 +14,7 @@
 /***************************** INCLUDES *****************************/
 
 //#include <sockets.h>
+#undef IFNAMSIZ
 #define IFNAMSIZ	16
 #define	ARPHRD_ETHER	1	/* ethernet hardware format */
 

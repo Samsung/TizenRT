@@ -836,7 +836,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 
 	rtw_wifi_setting_t setting;
 	wifi_get_setting(WLAN0_IDX, &setting);
-	wifi_show_setting(WLAN0_NAME, &setting);
+	//wifi_show_setting(WLAN0_NAME, &setting);
 
 #if CONFIG_LWIP_LAYER
 	uint8_t *mac = LwIP_GetMAC(0);

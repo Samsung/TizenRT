@@ -104,6 +104,7 @@ int rltk_wlan_get_ccmp_key(unsigned char *uncst_key, unsigned char *group_key);
 int rltk_wlan_set_tx_rate_by_ToS(unsigned char enable, unsigned char ToS_precedence, unsigned char tx_rate);
 int rltk_wlan_set_EDCA_param(unsigned int AC_param);
 int rltk_wlan_set_TX_CCA(unsigned char enable);
+int rltk_wlan_get_txbuf_remain_pkt_num(void);
 int rltk_wlan_ap_switch_chl_and_inform_sta(unsigned char new_chl, unsigned char chl_switch_cnt, ap_channel_switch_callback_t callback);
 int rltk_wlan_set_cts2self_dur_and_send(unsigned char wlan_idx, unsigned short duration);
 int rltk_wlan_get_sta_max_data_rate(unsigned char *inidata_rate);
@@ -122,6 +123,7 @@ extern int rtw_wx_set_enc_ext(const char *ifname, __u16 alg, __u8 *addr, int key
 extern int rtw_wx_get_enc_ext(unsigned char wlan_idx, __u16 *alg, __u8 *key_idx, __u8 *passphrase);
 extern int rtw_wx_get_auth_type(unsigned char wlan_idx, unsigned int *auth_type);
 extern int rtw_wx_set_passphrase(unsigned char wlan_idx, __u8 *passphrase, __u16 passphrase_len);
+extern int rtw_wx_set_wpa_mode(const char *ifname, unsigned int wpa_mode);
 extern int rtw_wx_connect_local(rtw_network_info_t *connect_param);
 extern int rtw_wx_get_passphrase(unsigned char wlan_idx, __u8 *passphrase);
 #ifdef CONFIG_IEEE80211W

@@ -99,6 +99,9 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_SET_NO_BEACON_TIMEOUT,
 	IPC_API_WIFI_CONFIG_CSI,
 	IPC_API_WIFI_GET_CSI_REPORT,
+	//inter
+	IPC_API_WIFI_COEX_SET_PTA,
+	IPC_API_WIFI_SET_WPA_MODE,
 	//promisc
 	IPC_API_PROMISC_FILTER_RETRANSMIT_PKT,
 	IPC_API_PROMISC_FILTER_WITH_LEN,
@@ -147,7 +150,6 @@ typedef struct inic_ipc_dev_request_message {
 /* -------------------------- Function declaration -------------------------- */
 /*for ipc host api*/
 void inic_ipc_api_init_host(VOID);
-void inic_ipc_api_deinit_host(void);
 void inic_ipc_api_host_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum);
 int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len);
 
@@ -163,5 +165,6 @@ void inic_ipc_ap_ch_switch_callback_indicate(unsigned char channel, rtw_channel_
 int inic_ipc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int inic_ipc_get_lwip_info(u32 type, unsigned char *input, int index);
 unsigned int inic_ipc_host_get_wifi_tsf_low(unsigned char port_id);
-
+int inic_ipc_host_get_txbuf_pkt_num(void);
+extern void inic_ipc_host_init_skb(VOID);
 #endif /* __INIC_IPC_H__ */

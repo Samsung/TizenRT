@@ -115,6 +115,7 @@ typedef enum _TPRC_ {
 	TPRC_MCCBcnEarlyHDL_2           = 0x59,
 	TPRC_WAITTXSMOK_3               = 0x5A,
 	TPRC_WAITTXSMOK_4               = 0x5B,
+	TPRC_WAITTRIGEERSPEND         = 0x5C,
 } TPRC, *PTPRC;
 
 /* RxPauseReasonCode */
@@ -152,7 +153,7 @@ extern void SetTxPauseFWInfo_8720E(u8 BitMask, u8 UserValue);
 extern void WriteTxPauseWithMask_8720E(u8 mask, u8 value, u8 rcode);
 extern void PwrGatedInitBBTRX(BOOLEAN on);
 extern void BeaconModeDCKbackup_8720E(void);
-extern void PwrGatedInitRFC(BOOLEAN on);
+extern void PwrGatedInitDRFC(BOOLEAN on);
 extern void PwrGatedInitBB(void);
-extern void PwrGatedInitBBGain(void);
+extern void PwrGatedInitLLTAndPageAlloc_8720E(void);
 #endif  /* __WIFIFW_POWERCTRL_RAM_H__ */

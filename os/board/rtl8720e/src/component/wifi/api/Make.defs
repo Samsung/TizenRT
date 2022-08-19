@@ -51,7 +51,8 @@
 
 CSRCS += wifi_conf_inic_ipc.c \
 	 wifi_conf_ext_inic_ipc.c \
-	 wifi_ind.c 
+	 wifi_ind.c \
+	 wifi_conf_inter_inic_ipc.c
 
 DEPPATH += --dep-path component/wifi/api
 VPATH += :component/wifi/api

@@ -48,12 +48,6 @@ static void inic_ipc_host_task_hdl(inic_ipc_ex_msg_t *p_ipc_msg)
 								 (struct sk_buff *)(p_ipc_msg->msg_addr));
 		break;
 	/* other contrl operations */
-	case IPC_WIFI_MSG_ALLOC_SKB:
-		inic_ipc_host_tx_alloc_skb_rsp(p_ipc_msg);
-		break;
-	case IPC_WIFI_MSG_XMIT_DONE:
-		inic_ipc_host_tx_done();
-		break;
 	default:
 		DBG_8195A("Host Unknown event(%d)!\n\r", \
 				  p_ipc_msg->event_num);

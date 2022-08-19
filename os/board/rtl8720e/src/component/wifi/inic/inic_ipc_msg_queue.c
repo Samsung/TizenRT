@@ -144,11 +144,23 @@ static void inic_ipc_msg_q_task(void)
 			}
 			/* release the memory for this ipc message. */
 			p_node->is_used = 0;
+#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+			u32 isr_status = portDISABLE_INTERRUPTS();
+			spin_lock(&ipc_msg_queue_lock);
+#else
+			rtw_enter_critical(NULL, NULL);
+#endif
 			g_ipc_msg_q_priv.queue_free++;
+#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+			spin_unlock(&ipc_msg_queue_lock);
+			portRESTORE_INTERRUPTS(isr_status);
+#else
+			rtw_exit_critical(NULL, NULL);
+#endif
 			p_node = dequeue_ipc_msg_node(p_queue);
 		}
 	} while (g_ipc_msg_q_priv.b_queue_working);
-	//rtw_delete_task(&ipc_msgQ_wlan_task);
+	rtw_delete_task(&ipc_msgQ_wlan_task);
 }
 
 /* ---------------------------- Public Functions ---------------------------- */
@@ -191,17 +203,6 @@ void inic_ipc_msg_q_init(void (*task_hdl)(inic_ipc_ex_msg_t *))
 	g_ipc_msg_q_priv.b_queue_working = 1;
 }
 
-/* ---------------------------- Public Functions ---------------------------- */
-/**
- * @brief  to de-initialize the message queue.
- * @param  none
- * @return none
- */
-void inic_ipc_msgQ_wlan_task_deinit(void)
-{
-	rtw_delete_task(&ipc_msgQ_wlan_task);
-}
-
 /**
  * @brief  put the ipc message to queue.
  * @param  p_node[in]: the pointer for the ipc message that need to be
@@ -221,6 +222,7 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 			p_node = &(g_ipc_msg_q_priv.ipc_msg_pool[i]);
 			/* a node is used, the free node will decrease */
 			g_ipc_msg_q_priv.queue_free--;
+			break;
 		}
 	}
 

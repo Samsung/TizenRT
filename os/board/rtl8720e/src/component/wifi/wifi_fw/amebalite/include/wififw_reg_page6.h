@@ -1007,12 +1007,6 @@
  *****************************************************************************/
 #define BIT_CTL_IDLE_CLR_CSI_RPT_V1                ((u32)0x00000001 << 31)          /*!<R/W 0  ckr csi report request if response fsm idle */
 #define BIT_USE_NDPARATE                           ((u32)0x00000001 << 30)          /*!<R/W 1  1: use ndpa rx rate to decide csi report rate 0: use ndp rx rate to decide csi report rate */
-#define BIT_MASK_CSI_RATE                          ((u32)0x0000003F << 24)          /*!<R/W 0xB  csi report init tx rate */
-#define BIT_CSI_RATE(x)                            ((u32)(((x) & 0x0000003F) << 24))
-#define BIT_GET_CSI_RATE(x)                        ((u32)(((x >> 24) & 0x0000003F)))
-#define BIT_MASK_RESP_TXRATE                       ((u32)0x000000FF << 16)          /*!<R/W 0x04  tx rate use to decide response rate */
-#define BIT_RESP_TXRATE(x)                         ((u32)(((x) & 0x000000FF) << 16))
-#define BIT_GET_RESP_TXRATE(x)                     ((u32)(((x >> 16) & 0x000000FF)))
 #define BIT_WMAC_CSI_RATE_FORCE_EN                 ((u32)0x00000001 << 15)          /*!<R/W 0  0: disable CSI force rate. Refer to RRSR bitmask 1: CSI frame Tx rate refers to 0x6DC[29:24] */
 #define BIT_MASK_WMAC_CSI_RSC_FORCE                ((u32)0x00000003 << 13)          /*!<R/W 0  If csi_force_rate_en = 1, CSI frame sub-channel configuration 00: Primary 20Mhz BW(0x483[3:0]) 01: Follow Rx packet BW. 10: Duplicate mode. 11: Reserved */
 #define BIT_WMAC_CSI_RSC_FORCE(x)                  ((u32)(((x) & 0x00000003) << 13))

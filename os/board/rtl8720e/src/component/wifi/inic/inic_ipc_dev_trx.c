@@ -22,6 +22,7 @@
 #include "inic_ipc_dev_trx.h"
 #include "inic_ipc_msg_queue.h"
 #include "wifi_conf.h"
+#include "wifi_performance_monitor.h"
 #define CONFIG_ENABLE_CACHE
 
 /* -------------------------------- Defines --------------------------------- */
@@ -58,10 +59,11 @@ struct skb_data {
 struct skb_buf {
 	struct list_head list;
 	struct sk_buff skb;
-	u8 rsvd[16];
+	u8 rsvd[10];
 };
 
 /* -------------------------- Function declaration -------------------------- */
+extern void kfree_skb(struct sk_buff *skb);
 
 /* ---------------------------- Global Variables ---------------------------- */
 
@@ -137,7 +139,9 @@ static void inic_xmit_tasklet_handler(struct ipc_dev_tx_buf *p_xmit_buf)
 
 		g_ipc_dev_priv.tx_bytes += skb->len;
 		g_ipc_dev_priv.tx_pkts++;
+		WIFI_MONITOR_TIMER_START(wlan_send_skb_time);
 		rltk_wlan_send_skb(p_ipc_msg->msg_len, skb);
+		WIFI_MONITOR_TIMER_END(wlan_send_skb_time, skb->len);
 		break;
 	default:
 		DBG_8195A("Device Unknown Event(%d)!\n", \
@@ -164,7 +168,9 @@ static void inic_xmit_tasklet(void)
 		/* get the data from tx queue. */
 		p_xmit_buf = inic_dequeue_xmitbuf(p_xmit_queue);
 		while (p_xmit_buf) {
+			WIFI_MONITOR_TIMER_START(xmit_handler_time);
 			inic_xmit_tasklet_handler(p_xmit_buf);
+			WIFI_MONITOR_TIMER_END(xmit_handler_time, 502);
 
 			/* release the memory for this packet. */
 			rtw_mfree((u8 *)p_xmit_buf, sizeof(struct ipc_dev_tx_buf));
@@ -203,7 +209,7 @@ void inic_ipc_dev_init_priv(void)
 	/* Initialize the tX task */
 	if (pdTRUE != xTaskCreate((TaskFunction_t)inic_xmit_tasklet, \
 							  (const char *const)"inic_ipc_dev_tx_tasklet", 1024, NULL, \
-							  tskIDLE_PRIORITY + 4, NULL)) {
+							  tskIDLE_PRIORITY + 6, NULL)) {
 		DBG_8195A("Create inic_ipc_dev_tx_tasklet Err!!\n");
 	}
 }
@@ -217,7 +223,15 @@ void inic_ipc_dev_tx_handler(inic_ipc_ex_msg_t *p_ipc_msg)
 {
 	_queue *p_xmit_queue = NULL;
 	struct ipc_dev_tx_buf *p_xmit_buf = NULL;
-	inic_ipc_ex_msg_t ipc_msg = {0};
+
+	if (!wifi_is_running((unsigned char)p_ipc_msg->msg_len)) {
+		/*free skb and return*/
+		struct sk_buff *skb = (struct sk_buff *)p_ipc_msg->msg_addr;
+		skb->busy = 0;
+		struct skb_buf *skb_buf = container_of(skb, struct skb_buf, skb);
+		DCache_Clean((u32)skb_buf, sizeof(struct skb_buf));
+		return;
+	}
 
 	/* get the tx queue. */
 	p_xmit_queue = &(g_ipc_dev_priv.xmit_queue);
@@ -227,7 +241,7 @@ void inic_ipc_dev_tx_handler(inic_ipc_ex_msg_t *p_ipc_msg)
 	if (p_xmit_buf == NULL) {
 		DBG_8195A("Alloc xmit buffer Err!!\n\r");
 		//todo: may need send ipc to inform xmit fail other than ximt done
-		goto TX_RSP;
+		goto END;
 	}
 
 	/* To store the ipc message from host to queue's node. */
@@ -235,16 +249,10 @@ void inic_ipc_dev_tx_handler(inic_ipc_ex_msg_t *p_ipc_msg)
 	p_xmit_buf->ipc_msg.msg_addr = p_ipc_msg->msg_addr;
 	p_xmit_buf->ipc_msg.msg_len = p_ipc_msg->msg_len;
 
-TX_RSP:
-	/* response to tx pending in host. */
-	ipc_msg.event_num = IPC_WIFI_MSG_XMIT_DONE;
-	inic_ipc_ipc_send_msg(&ipc_msg);
+	/* enqueue xmit buffer. */
+	inic_enqueue_xmitbuf(p_xmit_buf, p_xmit_queue);
 
-	if (p_xmit_buf != NULL) {
-		/* enqueue xmit buffer. */
-		inic_enqueue_xmitbuf(p_xmit_buf, p_xmit_queue);
-	}
-
+END:
 	/* wakeup xmit task */
 	rtw_up_sema(&g_ipc_dev_priv.xmit_sema);
 }
@@ -307,26 +315,6 @@ void inic_ipc_dev_recv(int idx)
 	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
 #endif /* CONFIG_ENABLE_CACHE */
 	inic_ipc_ipc_send_msg(&ipc_msg);
-
-	if (rtw_down_timeout_sema(&(g_ipc_dev_priv.rx_done_sema), 5000) != _TRUE) {
-		DBG_8195A("inic ipc dev recv down sema timeout\n");
-		return;
-	}
-
-	/* send data to host, if rx is pending. it will wait until not pending
-	 * */
-	if (g_ipc_dev_priv.rx_pending_flag) {
-		rtw_down_sema(&(g_ipc_dev_priv.rx_pending_sema));
-		ipc_msg.event_num = IPC_WIFI_EVT_RECV_PKTS;
-		ipc_msg.msg_addr = (u32)skb;
-		ipc_msg.msg_len = idx;
-#ifdef CONFIG_ENABLE_CACHE
-		DCache_CleanInvalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
-		DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
-#endif /* CONFIG_ENABLE_CACHE */
-		inic_ipc_ipc_send_msg(&ipc_msg);
-		rtw_down_sema(&(g_ipc_dev_priv.rx_done_sema));
-	}
 }
 
 /**
@@ -334,15 +322,10 @@ void inic_ipc_dev_recv(int idx)
  * @param  none.
  * @return none.
  */
-void inic_ipc_dev_rx_done(void)
+void inic_ipc_dev_rx_done(inic_ipc_ex_msg_t *p_ipc_msg)
 {
-	if (g_ipc_dev_priv.rx_pending_flag) {
-		g_ipc_dev_priv.rx_pending_flag = 0;
-		/* wakeup rx pending */
-		rtw_up_sema(&(g_ipc_dev_priv.rx_pending_sema));
-	} else {
-		rtw_up_sema(&(g_ipc_dev_priv.rx_done_sema));
-	}
+	struct sk_buff *skb = (struct sk_buff *)p_ipc_msg->msg_addr;
+	kfree_skb(skb);
 }
 
 /**

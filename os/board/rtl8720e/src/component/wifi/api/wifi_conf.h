@@ -38,6 +38,7 @@
 #include "wlan_intf.h"
 #include "wifi_ind.h"
 #include <platform_stdlib.h>
+#include "bt_intf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +61,7 @@ extern "C" {
 /**
 * @brief Create RTW_API_INFO
 */
-#ifdef RTW_ENABLE_API_INFO
+#if defined RTW_ENABLE_API_INFO || defined __DOXYGEN__
 #if defined(CONFIG_MBED_ENABLED)
 extern __u32 GlobalDebugEnable;
 #define RTW_API_INFO(...)     do {\
@@ -228,7 +229,7 @@ typedef struct {
 	unsigned char		block;
 } internal_join_block_param_t;
 
-#ifdef CONFIG_WOWLAN
+#if defined CONFIG_WOWLAN || defined __DOXYGEN__
 /**
  * @brief  The enumeration is wowlan pattern param.
  */
@@ -617,7 +618,7 @@ int wifi_set_promisc(
  */
 void wifi_enter_promisc_mode(void);
 
-#ifdef CONFIG_PROMISC
+#if defined CONFIG_PROMISC || defined __DOXYGEN__
 
 /**
  * @brief  Initialize packet filter related data.
@@ -807,6 +808,13 @@ int wifi_get_sw_statistic(unsigned char idx, rtw_sw_statistics_t *sw_statistics)
 int wifi_fetch_phy_statistic(rtw_phy_statistics_t *phy_statistic);
 
 /**
+ * @brief  get current remaining number of packets in HW TX buffer.
+ * @param[in]  None
+ * @return  RTW_ERROR or the remaining packets number.
+ */
+int wifi_get_txbuf_pkt_num(void);
+
+/**
  * @brief  config mode of HW indicating packets(mgnt and data)
  * 	and SW reporting packets to wifi_indication().
  * @param[in]  enable
@@ -826,7 +834,7 @@ void wifi_set_indicate_mgnt(int enable);
  * @return  0 if get successfully, otherwise return -1.
  */
 
-#ifdef CONFIG_ANTENNA_DIVERSITY
+#if defined CONFIG_ANTENNA_DIVERSITY ||defined __DOXYGEN__
 int wifi_get_antenna_info(unsigned char *antenna);
 #endif // #ifdef CONFIG_ANTENNA_DIVERSITY
 
@@ -1045,7 +1053,7 @@ int wifi_set_TX_CCA(unsigned char enable);
  */
 int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short duration);
 
-#ifdef CONFIG_WOWLAN_TCP_KEEP_ALIVE
+#if defined CONFIG_WOWLAN_TCP_KEEP_ALIVE || defined __DOXYGEN__
 /**
  * @brief  construct a tcp packet that offload to wlan. wlan would keep sending this packet to tcp server.
  *
@@ -1060,7 +1068,7 @@ int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short d
 int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len, uint32_t interval_ms, uint32_t resend_ms, uint8_t wake_sys);
 #endif
 
-#ifdef CONFIG_WOWLAN_DHCP_RENEW
+#if defined CONFIG_WOWLAN_DHCP_RENEW || defined __DOXYGEN__
 /**
  * @brief  construct a udp renew packet that offload to wlan. wlan would keep sending this packet to dhcp server.
  *
@@ -1071,7 +1079,7 @@ int wifi_set_dhcp_offload(void);
 
 
 
-#ifdef CONFIG_ARP_KEEP_ALIVE
+#if defined CONFIG_ARP_KEEP_ALIVE || defined __DOXYGEN__
 /**
  * @brief   use ARP response as keep alive packet instead of null frame
  *
@@ -1081,11 +1089,11 @@ int wifi_set_dhcp_offload(void);
 int wifi_wowlan_set_arp_rsp_keep_alive(int enable);
 #endif
 
-#ifdef CONFIG_WOWLAN_DTIMTO
+#if defined CONFIG_WOWLAN_DTIMTO || defined __DOXYGEN__
 int wifi_wowlan_set_dtimto(uint8_t dtimto_enable, uint8_t retry_inc, uint8_t ack_timeout, uint8_t dtim);
 #endif
 
-#ifdef CONFIG_WOWLAN_PARAM
+#if defined CONFIG_WOWLAN_PARAM || defined __DOXYGEN__
 int wifi_wowlan_set_wowlan_param(u8  fwdis_period,
 								 u8  fwdis_trypktnum,
 								 u8  pno_enable,
@@ -1093,10 +1101,14 @@ int wifi_wowlan_set_wowlan_param(u8  fwdis_period,
 								 u8  l2_keepalive_period);
 #endif
 
+#if defined CONFIG_SMART_DTIM || defined __DOXYGEN__
+int wifi_wowlan_set_smartdtim(uint8_t check_period, uint8_t threshold, uint8_t change_dtim, uint8_t dtim);
+#endif
+
 
 // WoWlan related
 //-------------------------------------------------------------//
-#ifdef CONFIG_WOWLAN
+#if defined CONFIG_WOWLAN || defined __DOXYGEN__
 /**
  * @brief  control wowlan mode enable and disable
  * @param[in]  enable:
@@ -1114,7 +1126,7 @@ int wifi_wowlan_ctrl(int enable);
 int wifi_wowlan_set_pattern(wowlan_pattern_t pattern);
 #endif
 
-#ifdef CONFIG_RTK_MESH
+#if defined CONFIG_RTK_MESH || defined __DOXYGEN__
 /**
  * @brief  print current mac filter list
  * @return  RTW_SUCCESS or RTW_ERROR

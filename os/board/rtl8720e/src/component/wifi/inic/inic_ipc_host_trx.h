@@ -19,17 +19,19 @@
 #include "inic_ipc.h"
 
 /* -------------------------------- Defines --------------------------------- */
+#define SKB_DATA_ALIGN(X)	(((X) + (4 - 1)) & ~(4 - 1))
 
 /* -------------------------------- Macros ---------------------------------- */
+#define HOST_SKB_NUM 5
+#define SKB_WLAN_TX_EXTRA_LEN 74
 
 /* ------------------------------- Data Types ------------------------------- */
 
 /* ---------------------------- Global Variables ---------------------------- */
 
 /* -------------------------- Function declaration -------------------------- */
+void inic_ipc_host_init_skb(void);
 void inic_ipc_host_init_priv(void);
-void inic_ipc_host_deinit_priv(void);
-void inic_ipc_host_tx_done(void);
 void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb);
 void inic_ipc_host_tx_alloc_skb_rsp(inic_ipc_ex_msg_t *p_ipc_msg);
 int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,

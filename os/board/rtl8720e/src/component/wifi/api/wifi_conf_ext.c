@@ -22,6 +22,9 @@
 #if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
 #include <wifi_wps_config.h>
 #endif
+#ifdef CONFIG_BT_COEXIST
+#include "bt_intf.h"
+#endif
 
 /******************************************************
  *                    Constants
@@ -101,20 +104,6 @@ int wifi_get_mac_address(rtw_mac_t *mac)
 }
 
 //----------------------------------------------------------------------------//
-//  20210422
-//  wifi_btcoex_set_bt_on(), wifi_btcoex_set_bt_off() have been replaced.
-//  Remove defination and reference.
-//
-/*void wifi_btcoex_set_bt_on(void)
-{
-	//rltk_wlan_btcoex_set_bt_state(1);
-}*/
-
-/*void wifi_btcoex_set_bt_off(void)
-{
-	//rltk_wlan_btcoex_set_bt_state(0);
-}*/
-
 int wifi_btcoex_set_ble_scan_duty(u8 duty)
 {
 	return rltk_coex_set_ble_scan_duty(duty);
@@ -487,6 +476,11 @@ unsigned int wifi_get_tsf_low(unsigned char port_id)
 	return rltk_wlan_get_tsf(port_id);
 }
 
+int wifi_get_txbuf_pkt_num(void)
+{
+	return rltk_wlan_get_txbuf_remain_pkt_num();
+}
+
 int wifi_set_tx_rate_by_ToS(unsigned char enable, unsigned char ToS_precedence, unsigned char tx_rate)
 {
 	return rltk_wlan_set_tx_rate_by_ToS(enable, ToS_precedence, tx_rate);
@@ -597,6 +591,110 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len, rtw_csi_header_t *csi_he
 	int ret = 0;
 	ret = rltk_wlan_csi_report(buf_len, csi_buf, len, csi_header);
 	return ret;
+}
+/*--------------------------------porting interl api -------------------- */
+void wifi_psk_info_set(struct psk_info *psk_data)
+{
+	rltk_psk_info_set(psk_data);
+}
+
+void wifi_psk_info_get(struct psk_info *psk_data)
+{
+	rltk_psk_info_get(psk_data);
+}
+
+u8 wifi_driver_is_mp(void)
+{
+	return rltk_wlan_is_mp();
+}
+
+int wifi_set_pmk_cache_enable(unsigned char value)
+{
+	return rtw_wx_set_pmk_cache_enable(WLAN0_IDX, value);
+}
+
+//----------------------------------------------------------------------------//
+int wifi_get_sw_statistic(unsigned char idx, rtw_sw_statistics_t *sw_statistics)
+{
+	return rltk_wlan_statistic(idx, sw_statistics);
+}
+
+int wifi_set_wps_phase(unsigned char is_trigger_wps)
+{
+	return rltk_wlan_set_wps_phase(is_trigger_wps);
+}
+
+int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags)
+{
+#ifdef CONFIG_WPS
+	return rtw_wx_set_gen_ie(wlan_idx, buf, buf_len, flags);
+#else
+	return -1;
+#endif
+}
+
+int wifi_set_eap_phase(unsigned char is_trigger_eap)
+{
+#ifdef CONFIG_EAP
+	return rltk_wlan_set_eap_phase(is_trigger_eap);
+#else
+	return -1;
+#endif
+}
+
+unsigned char wifi_get_eap_phase(void)
+{
+#ifdef CONFIG_EAP
+	return rltk_wlan_get_eap_phase();
+#else
+	return 0;
+#endif
+}
+
+int wifi_set_eap_method(unsigned char eap_method)
+{
+#ifdef CONFIG_EAP
+	return rltk_wlan_set_eap_method(eap_method);
+#else
+	return -1;
+#endif
+}
+
+int wifi_send_eapol(const char *ifname, char *buf, __u16 buf_len, __u16 flags)
+{
+	return rtw_wx_send_eapol(ifname, buf, buf_len, flags);
+}
+
+/*
+ * @brief get WIFI band type
+ *@retval  the support band type.
+ * 	WL_BAND_2_4G: only support 2.4G
+ *	WL_BAND_5G: only support 5G
+ *      WL_BAND_2_4G_5G_BOTH: support both 2.4G and 5G
+ */
+WL_BAND_TYPE wifi_get_band_type(void)
+{
+	u8 ret;
+
+	ret = rltk_get_band_type();
+
+	if (ret == 0) {
+		return WL_BAND_2_4G;
+	} else if (ret == 1) {
+		return WL_BAND_5G;
+	} else {
+		return WL_BAND_2_4G_5G_BOTH;
+	}
+}
+
+int wifi_get_auto_chl(unsigned char wlan_idx, unsigned char *channel_set, unsigned char channel_num)
+{
+	return rltk_get_auto_chl(wlan_idx, channel_set, channel_num);
+}
+
+int wifi_del_station(unsigned char wlan_idx, unsigned char *hwaddr)
+{
+	return rltk_del_station(wlan_idx, hwaddr);
 }
 
 #endif	//#if CONFIG_WLAN

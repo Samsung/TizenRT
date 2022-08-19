@@ -42,7 +42,8 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 {
 	/* To avoid gcc warnings */
 #if(!defined(CONFIG_FAST_DHCP) || (!CONFIG_FAST_DHCP))
-	(void) offer_ip, server_ip;
+	(void) offer_ip;
+	(void) server_ip;
 #endif
 	struct wlan_fast_reconnect read_data = {0};
 	struct wlan_fast_reconnect wifi_data_to_flash = {0};
