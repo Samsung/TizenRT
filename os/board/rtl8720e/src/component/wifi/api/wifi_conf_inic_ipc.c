@@ -444,7 +444,7 @@ int wifi_on(rtw_mode_t mode)
 		LwIP_netif_set_up(0);
 		if (mode == RTW_MODE_AP) {
 			LwIP_netif_set_link_up(0);
-		} else	 if (mode == RTW_MODE_STA_AP) {
+		} else if (mode == RTW_MODE_STA_AP) {
 			LwIP_netif_set_up(1);
 			LwIP_netif_set_link_up(1);
 		}
