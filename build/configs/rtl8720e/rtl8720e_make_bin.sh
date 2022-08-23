@@ -82,14 +82,9 @@ if [ "${CONFIG_XIP_FLASH}" == "y" ];then
 	arm-none-eabi-objcopy -j .xip_image2.text -j .ARM.extab -j .ARM.exidx \
 	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/xip_image2.bin
 
-	arm-none-eabi-objcopy -j .bluetooth_trace.text \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/APP.trace
 else
 	arm-none-eabi-objcopy -j .null.null \
 	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/psram_2.bin
-
-	arm-none-eabi-objcopy -j .bluetooth_trace.text \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/APP.trace
 
 	arm-none-eabi-objcopy -R .xip_image2.text -R .ARM.extab -R .ARM.exidx -R .bluetooth_trace.text \
 	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/sram_2.bin

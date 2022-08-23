@@ -337,6 +337,9 @@ void board_initialize(void)
 #ifdef CONFIG_AMEBALITE_WIFI
 	wlan_initialize();
 #endif
+#if defined(CONFIG_BT_AP) && CONFIG_BT_AP
+	bt_ipc_api_init_host();
+#endif
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"

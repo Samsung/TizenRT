@@ -49,7 +49,7 @@
 #
 ############################################################################
 
-CSRCS += ble_tizenrt_ipc_host.c 
+CSRCS += bt_ipc_host_api.c 
 
-DEPPATH += --dep-path component/bluetooth/api
-VPATH += :component/bluetooth/api
+DEPPATH += --dep-path component/bluetooth/api/ipc
+VPATH += :component/bluetooth/api/ipc

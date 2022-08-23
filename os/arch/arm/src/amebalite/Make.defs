@@ -194,10 +194,6 @@ endif
 ifeq ($(CONFIG_BINARY_SIGNING),y)
 #CMN_CSRCS += amebalite_signature.c	#FIXME
 endif
-ifeq ($(CONFIG_AMEBALITE_BLE),y)
-EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/lib_btgap.a
-endif
-
 ifeq ($(CONFIG_AMEBALITE_TRUSTZONE),y)
 CHIP_CSRCS += amebalite_nsc.c
 

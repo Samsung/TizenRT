@@ -259,6 +259,8 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_R2M_FLASHPG_REQ				3	/*!<  KR4 -->  KM4 Flash Program REQUEST*/
 //#define IPC_R2M_Channel4				4
 //#define IPC_R2M_Channel5				5
+#define IPC_R2M_BT_API_TRAN					5	/*!<  KR4 -->  KM4 BT API Exchange */
+// #define IPC_R2M_BT_DATA_TRAN				5	/*!<  KR4 -->  KM4 BT DATA Exchange */
 #define IPC_R2M_WIFI_TRX_TRAN				6	/*!<  KR4 -->  KM4 WIFI Message Exchange */
 #define IPC_R2M_WIFI_API_TRAN				7	/*!<  KR4 -->  KM4 API WIFI Message Exchange */
 
@@ -283,13 +285,15 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_M2R_LOGUART_RX_SWITCH				3	/*!<  KM4 -->  KR4 Loguart Rx Switch*/
 #define IPC_M2R_FLASHPG_REQ						4	/*!<  KM4 -->  KR4 IFlash Program Request*/
 //#define IPC_M2R_Channel5						5
+#define IPC_M2R_BT_API_TRAN						5	/*!<  KM4 -->  KR4 BT API Exchange */
+// #define IPC_M2R_BT_DATA_TRAN					5	/*!<  KM4 -->  KR4 BT DATA Exchange */
 #define IPC_M2R_WIFI_TRX_TRAN						6	/*!<  KM4 -->  KR4 WIFI Message Exchange */
 #define IPC_M2R_WIFI_API_TRAN						7	/*!<  KM4 -->  KR4 WIFI API Message Exchange */
 
 #define IPC_M2D_WAKE_DSP						0	/*!<  KM4 -->  DSP Wakeup */
 //#define IPC_M2D_Channel1							1
 #define IPC_M2D_LOGUART_RX_SWITCH				2	/*!<  KM4 -->  DSP Loguart Rx Switch*/
-//#define IPC_M2D_Channel3						3
+#define IPC_M2D_802154_TRAN						3
 //#define IPC_M2D_Channel4						4
 //#define IPC_M2D_Channel5						5
 //#define IPC_M2D_Channel6						6
@@ -313,7 +317,7 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_D2M_TICKLESS_INDICATION				0	/*!<  DSP -->  KM4 Tickless Indicate */
 //#define IPC_D2M_WIFI_TRX_TRAN						1	/*!<  DSP -->  KM4 WIFI Message Exchange */
 //#define IPC_D2M_WIFI_API_TRAN						2	/*!<  DSP -->  KM4 WIFI API Message Exchange */
-//#define IPC_D2M_Channel3						3
+#define IPC_D2M_802154_TRAN						3
 //#define IPC_D2M_Channel4						4
 //#define IPC_D2M_Channel5						5
 //#define IPC_D2M_Channel6						6

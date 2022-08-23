@@ -97,31 +97,10 @@ include component/os/tizenrt/Make.defs
 include component/soc/amebalite/misc/Make.defs
 endif
 
-ifeq ($(CONFIG_FTL_ENABLED),y)
-include component/filesystem/ftl/Make.defs
-endif
-
 ifeq ($(CONFIG_AMEBALITE_BLE),y)
 include component/bluetooth/api/Make.defs
-include component/bluetooth/driver/hci/Make.defs
-include component/bluetooth/driver/hci/hci_process/Make.defs
-include component/bluetooth/driver/hci/hci_transport/Make.defs
-include component/bluetooth/driver/platform/amebalite/hci/Make.defs
+include component/bluetooth/api/ipc/Make.defs
 include component/bluetooth/os/tizenrt/Make.defs
-include component/bluetooth/rtk_stack/platform/amebalite/src/Make.defs
-include component/bluetooth/rtk_stack/platform/amebalite/src/vendor_cmd/Make.defs
-include component/bluetooth/rtk_stack/src/ble/privacy/Make.defs
-include component/bluetooth/rtk_stack/src/ble/profile/client/Make.defs
-include component/bluetooth/rtk_stack/src/ble/profile/server/Make.defs
-ifeq ($(CONFIG_AMEBALITE_BLE_PERIPHERAL),y)
-include component/bluetooth/rtk_stack/example/ble_peripheral/Make.defs
-endif
-ifeq ($(CONFIG_AMEBALITE_BLE_CENTRAL),y)
-include component/bluetooth/rtk_stack/example/ble_central/Make.defs
-endif
-ifeq ($(CONFIG_AMEBALITE_BLE_SCATTERNET),y)
-include component/bluetooth/rtk_stack/example/ble_scatternet/Make.defs
-endif
 endif
 
 ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src
@@ -183,13 +162,6 @@ CFLAGS += -I$(TOPDIR)/net/netmgr
 
 ifeq ($(CONFIG_AMEBALITE_BLE),y)
 CFLAGS += -I$(DIR_BT)/inc
-CFLAGS += -I$(DIR_BT)/rtk_stack/example/ble_peripheral
-CFLAGS += -I$(DIR_BT)/rtk_stack/example/ble_central
-CFLAGS += -I$(DIR_BT)/rtk_stack/example/ble_scatternet
-endif
-
-ifeq ($(CONFIG_FTL_ENABLED),y)
-CFLAGS += -I$(COMPONENT_DIR)/filesystem/ftl
 endif
 
 #CFLAGS += -DARM_CORE_CM4
