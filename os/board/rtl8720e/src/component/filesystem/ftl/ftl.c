@@ -1000,7 +1000,7 @@ __WEAK uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t s
 	u32 ret;
 	if (ftl_mutex_lock == NULL) {
 		return FTL_WRITE_ERROR_NOT_INIT;
-	} else if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 0) {
+	} else if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 1) {
 		return ERROR_MUTEX_GET_TIMEOUT;
 	}
 
@@ -1172,7 +1172,7 @@ __WEAK uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t
 	u32 ret;
 	if (ftl_mutex_lock == NULL) {
 		return FTL_READ_ERROR_NOT_INIT;
-	} else if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 0) {
+	} else if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 1) {
 		return ERROR_MUTEX_GET_TIMEOUT;
 	}
 
