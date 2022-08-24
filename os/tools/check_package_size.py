@@ -17,9 +17,8 @@
 #
 ###########################################################################
 
-# This script is for checking if the kernel, common and user partitions are large enough to accommodate their respective binaries.
-# For this, get the partition size and binary size,
-# and check if the binary sizes are smaller than their respective partition sizes.
+# This script checks if the each partitions are large enough to accommodate their respective binaries.
+# It gets the partition size and binary size and check if the binary sizes are smaller than their respective partition sizes.
 
 import os
 import sys
@@ -28,6 +27,7 @@ import config_util as util
 
 os_folder = os.path.dirname(__file__) + '/..'
 cfg_file = os_folder + '/.config'
+tool_folder = os_folder + '/tools'
 build_folder = os_folder + '/../build'
 output_folder = build_folder + '/output/bin'
 
@@ -60,6 +60,16 @@ def check_binary_size(bin_type, part_size):
         print("   " + bin_type + " Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
         os.remove(output_path)
         FAIL_TO_BUILD = True
+
+def check_binary_header(bin_type):
+    # Read the binary name from .bininfo
+    bin_name = util.get_binname_from_bininfo(bin_type)
+    if bin_name == 'None' :
+        return
+    output_path = build_folder + '/output/bin/' + bin_name
+
+    # Run script for checking binary header
+    os.system('python ' + tool_folder + '/check_package.py ' + output_path)
 
 PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
 PARTITION_NAME_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
@@ -133,4 +143,4 @@ if FAIL_TO_BUILD == True :
     # Stop to build, because there is mismatched size problem.
     sys.exit(1)
 else :
-    print("Size verification is done.")
+    print("=> Size verification SUCCESS!! The size of all binaries are OK.\n")

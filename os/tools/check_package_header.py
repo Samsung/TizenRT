@@ -20,7 +20,7 @@
 # And verify the package by calculating the crc and comparing it with the value of the header.
 #
 # Usage :
-#   python check_package.py [package path]
+#   python check_package_header.py [package path]
 
 from __future__ import with_statement
 import struct
@@ -46,8 +46,8 @@ VERIFY_SUCCESS = True
 target = sys.argv[1]
 if target == "-h" or target == "--help" :
     print("Usage :")
-    print("\tpython check_package.py [package_path]")
-    print("\tex) python check_package.py ../../build/output/bin/kernel_XXX_YYMMDD.trpk")
+    print("\tpython check_package_header.py [package_path]")
+    print("\tex) python check_package_header.py ../../build/output/bin/kernel_XXX_YYMMDD.trpk")
     sys.exit(0)
 
 # Read the package header
@@ -56,7 +56,7 @@ with open(target, 'r') as f:
 
 check_signing = struct.unpack('H', data[4:6])
 
-if "kernel_" in target :
+if "kernel" in target :
     print("=== Kernel Package Header Information ===")
     print("< Cannot check the signing >")
     SIGNING_OFFSET = 0 #For kernel package, signing info is not added at the first. So we will not use the offset for kernel package case.
@@ -71,7 +71,7 @@ if "kernel_" in target :
     print("\tFile Size          : " + str(file_size[0]))
     print("\tSecure Header Size : " + str(secure_size[0]))
 
-elif "common_" in target :
+elif "common" in target :
     print("=== Common Package Header Information ===")
 
     if int(check_signing[0]) == COMMON_HEADER_SIZE :
@@ -89,7 +89,7 @@ elif "common_" in target :
     print("\tPackage Version : " + str(package_ver[0]))
     print("\tFile Size       : " + str(file_size[0]))
 
-elif "app_" in target :
+elif "app" in target :
     print("=== App Package Header Information ===")
 
     if int(check_signing[0]) == APP_HEADER_SIZE :
@@ -168,3 +168,6 @@ else :
 # Return exit(1) if there is a validation failure.
 if VERIFY_SUCCESS == False :
     sys.exit(1)
+    print("!!!!ERROR!!!! Binary is invalid. Please check the package.\n")
+else :
+    print("=> Header verification SUCCESS!!\n")

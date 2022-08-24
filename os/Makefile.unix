@@ -545,7 +545,7 @@ endif
 	$(Q) python ./tools/set_bininfo.py $(BIN_EXT)
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXE), $(BIN_EXT))
 ifeq ($(CONFIG_FLASH_PARTITION),y)
-	$(Q) python ./tools/check_output_size.py
+	$(Q) python ./tools/validate_output.py
 endif
 	$(Q) $(call MAKE_BOOTPARAM)
 
