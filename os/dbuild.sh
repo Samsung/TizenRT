@@ -372,6 +372,21 @@ function SELECT_DL
 		echo "  \"x. Exit\""
 		echo ==================================================
 		read SELECTED_DL
+
+		if [ "${command[$SELECTED_DL - 1]}" == "ERASE SS" ]; then
+			echo -n "Warning, this will erase important data (Secure storage). Press 'y' or 'n' to continue : "
+			read PROCEED
+			if [ "$PROCEED" != "y" ]; then
+				exit 1
+			fi
+		fi
+		if [ "${command[$SELECTED_DL - 1]}" == "ERASE USERFS" ]; then
+                        echo -n "Warning, this will erase important data (User data). Press 'y' or 'n' to continue : "
+                        read PROCEED
+                        if [ "$PROCEED" != "y" ]; then
+                                exit 1
+                        fi
+                fi
 	fi
 
 	for ((i=1;i<=${#command[@]};i++)); do
