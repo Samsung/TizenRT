@@ -433,7 +433,7 @@ struct smart_journal_entry_s {
 	uint8_t crc16[2];			/* CRC-16 for current journal data */
 	uint8_t psector[2];			/* Target Physical Sector, For MTD_ERASE, Target Physical Block */
 	uint8_t seq[2];				/* Sequence number of Journal for validation check */
-	uint8_t status;				/* Journal Staus low 4bits for state, high 4bits for type */
+	uint8_t status;				/* Journal Status low 4bits for state, high 4bits for type */
 };
 
 typedef struct smart_journal_entry_s journal_log_t;
@@ -932,9 +932,9 @@ static ssize_t smart_write(FAR struct inode *inode, FAR const unsigned char *buf
 
 	/* I think maybe we need to lock on a mutex here. */
 
-	/* Get the aligned block.  Here is is assumed: (1) The number of R/W blocks
-	 * per erase block is a power of 2, and (2) the erase begins with that same
-	 * alignment.
+	/* Get the aligned block. Here it is assumed that:
+	 *  (1) The number of R/W blocks per erase block is a power of 2, and
+	 *  (2) the erase begins with that same alignment.
 	 */
 
 	mask = dev->sectorsPerBlk - 1;
