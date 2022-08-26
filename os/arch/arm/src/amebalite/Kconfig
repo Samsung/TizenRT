@@ -47,18 +47,18 @@ config RTL8720E_UART2
 	select ARCH_HAVE_UART2
 	select ARCH_HAVE_SERIAL_TERMIOS
 
+config RTL8720E_UART3
+	bool "UART 3"
+	default n
+	select RTL8720E_UART
+	select ARCH_HAVE_UART3
+	select ARCH_HAVE_SERIAL_TERMIOS
+
 config RTL8720E_UART4
 	bool "UART 4"
 	default n
 	select RTL8720E_UART
 	select ARCH_HAVE_UART4
-	select ARCH_HAVE_SERIAL_TERMIOS
-
-config RTL8720E_UART5
-	bool "UART 5"
-	default n
-	select RTL8720E_UART
-	select ARCH_HAVE_UART5
 	select ARCH_HAVE_SERIAL_TERMIOS
 
 config RTL8720E_SERIAL_FIFO
