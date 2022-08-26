@@ -175,7 +175,7 @@
 #define INODE_STATE_FILE          (CONFIG_NXFFS_ERASEDSTATE ^ 0x22)
 #define INODE_STATE_DELETED       (CONFIG_NXFFS_ERASEDSTATE ^ 0xaa)
 
-/* Smartfs worbuffer maxuimum length */
+/* Smartfs workbuffer maximum length */
 
 #define SMARTFS_MAX_WORKBUFFER_LEN 256
 
