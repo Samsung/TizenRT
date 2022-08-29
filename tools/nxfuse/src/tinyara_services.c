@@ -117,7 +117,7 @@ static int g_inode_count = 0;
 
 static struct fs_ops_s g_fs_ops[] = {
 #ifdef CONFIG_FS_SMARTFS
-	{"smartfs", smartfs_vmount, smartfs_mkfs, &smartfs_operations},
+	{"jSmartFs", smartfs_vmount, smartfs_mkfs, &smartfs_operations},
 #endif
 
 	{"", NULL, NULL}
@@ -355,10 +355,10 @@ struct inode *vmount(const char *datasource, const char *mount_point, const char
 /****************************************************************************
  * Name: smartfs_vmount
  *
- *  The mount implementation for SmartFS type FS.
+ *  The mount implementation for jSmartFs type FS.
  *
  *  This creates a file based MTD device using the given datasource and
- *  initialized smart MTD and SmartFS on that filemtd device.
+ *  initialized smart MTD and jSmartFs on that filemtd device.
  *
  ****************************************************************************/
 
@@ -392,7 +392,7 @@ void *smartfs_vmount(const char *datasource, const char *mount_point, uint32_t e
 		return NULL;
 	}
 
-	/* Setup the SmartFS */
+	/* Setup the jSmartFs */
 
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 
@@ -461,7 +461,7 @@ int mkfs(const char *datasource, const char *fs_type, uint32_t erasesize, uint16
 /****************************************************************************
  * Name: smartfs_umount
  *
- *  Unmounts a previously mounted SmartFS
+ *  Unmounts a previously mounted jSmartFs
  *
  ****************************************************************************/
 
@@ -498,7 +498,7 @@ static int smartfs_umount(struct inode *blkdriver, void *fshandle)
 /****************************************************************************
  * Name: smartfs_mkfs
  *
- *  Creates a SmartfS filesystem on the datasource
+ *  Creates a jSmartFs filesystem on the datasource
  *
  ****************************************************************************/
 

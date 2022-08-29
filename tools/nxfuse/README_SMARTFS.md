@@ -1,14 +1,14 @@
-# How to make smartfs user image for TizenRT
+# How to make jSmartFs user image for TizenRT
 
 ## Contents
-> [How to Enable SmartFS user image](#how-to-enable-smartfs-user-image)  
+> [How to Enable jSmartFs user image](#how-to-enable-jSmartFs-user-image)  
 > [APPENDIX](#appendix)  
 
-## How to Enable SmartFS user image
+## How to Enable jSmartFs user image
 Enable below configurations as followings
 
 ### Configurations
-SMARTFS file system(CONFIG_FS_SMARTFS) needs to be enabled in order to use SMARTFS image
+SMARTFS file system(CONFIG_FS_SMARTFS) needs to be enabled in order to use jSmartFs image
 
 ```
 -> File Systems
@@ -24,7 +24,7 @@ CRC flag is must
 			->  Enable "Enable Sector CRC error detection" (=y)
 ```
 
-### SmartFS Partition size
+### jSmartFs Partition size
 
 Developer needs to align below 4 varibles to create a perfect image in file
 $TIZENRT_BASEDIR/tools/nxfuse/mksmartfsimg.sh
@@ -37,7 +37,7 @@ erasesize
 ```
 
 #### How to set the blkcount & blksize variables?
-Below menuconfig path would fetch the smartfs *partition size in KB's*
+Below menuconfig path would fetch the jSmartFs *partition size in KB's*
 Developer need to map the index of partition size w.r.t "Flash partition type list"
 
 ```
@@ -49,7 +49,7 @@ Developer need to map the index of partition size w.r.t "Flash partition type li
 ```
 
 Developer can modify this "2048" to suit their requirements
-blkcount multiplied by blksize should be equal to SMARTFS partition size
+blkcount multiplied by blksize should be equal to jSmartFs partition size
 
 ```
 For Ex:
@@ -71,7 +71,7 @@ For Ex:
 	then the user base-files path would be "$TIZENRT_BASEDIR/tools/fs/contents-smartfs/imxrt1020-evk/base-files/"
 ```
 
-### Command to create smartfs image
+### Command to create jSmartFs image
 
 ```bash
 $TIZENRT_BASEDIR/os# ./dbuild.sh smartfs
@@ -86,7 +86,7 @@ For Ex:
 	then the bin file would be named as "$TIZENRT_BASEDIR/build/output/bin/imxrt1020-evk_smartfs.bin"
 ```
 
-### Command to flash smartfs image to device
+### Command to flash jSmartFs image to device
 
 ```bash
 $TIZENRT_BASEDIR/os# ./dbuild.sh download userfs
@@ -97,7 +97,7 @@ $TIZENRT_BASEDIR/os# ./dbuild.sh download userfs
 ### About NxFuse tool
 
 A Linux FUSE implmentation that enables native mounting of TizenRT filesystems
-in Linux.  Currently the implementation supports SmartFS.  The
+in Linux.  Currently the implementation supports jSmartFs.  The
 Some of the Linux utilities depend on this capability (overwriting an existing file
 with new content for instance) and may fail.
 
@@ -124,7 +124,7 @@ is not define, the Makefile will use the default value of "../../os",
 which makes the assumption that the NuttX tools repo is located at the same
 directory level as the main "nuttx" source repo.
 
-To enable / disable SmartFS features (wear leveling, CRC, etc.) in the
+To enable / disable jSmartFs features (wear leveling, CRC, etc.) in the
 nxfuse implementation, run the 'make menuconfig' routine from within the nuttx
 directory and select the features required.  Then run 'make context' within
 the nuttx directory.  The newly generated tinyara/include/tinyara/config.h file
