@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config UART_HW_TEST
+    bool "UART HW test application"
+    default n
+        ---help---
+	Enable UART HW test application
