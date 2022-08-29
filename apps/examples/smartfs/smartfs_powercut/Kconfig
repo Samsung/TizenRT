@@ -4,10 +4,10 @@
 #
 
 config EXAMPLES_SMARTFS_POWERCUT
-	bool "\"Smartfs Powercut Test\" example"
+	bool "\"jSmartFs Powercut Test\" example"
 	default n
 	---help---
-		Enable the \"Smartfs Powercut Test\" example
+		Enable the \"jSmartFs Powercut Test\" example
 
 config USER_ENTRYPOINT
 	string

@@ -346,7 +346,7 @@ static int make_long_file(void)
  * @brief            Mount file system
  * @scenario         Mount initialized file system
  * @apicovered       mount
- * @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
+ * @precondition     File system should be initialized. For jSmartFs, smart_initialize & mksmartfs should be excuted.
  * @postcondition    NA
  */
 static void tc_fs_vfs_mount_p(void)
@@ -377,7 +377,7 @@ static void tc_fs_vfs_mount_p(void)
  * @brief            Mount file system
  * @scenario         Mount file system on exist path
  * @apicovered       mount
- * @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
+ * @precondition     File system should be initialized. For jSmartFs, smart_initialize & mksmartfs should be excuted.
  * @postcondition    NA
  */
 static void tc_fs_vfs_mount_exist_path_n(void)

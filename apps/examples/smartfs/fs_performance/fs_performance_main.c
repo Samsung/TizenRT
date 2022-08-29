@@ -108,7 +108,7 @@ static int do_test(int option, int fsz, int bsz)
 	case TEST_FLAG_FILE_CREATION :
 		printf("\n****************************************************************************************\n");
 		printf("********************************  TEST FILE CREATION  **********************************\n\n");
-		printf("Testing jSmartfs File creation with File size: %d bytes\n", fsz);
+		printf("Testing jSmartFs File creation with File size: %d bytes\n", fsz);
 		printf("The test creates a file with buffer size equal to file size.\n\n");
 
 		ret = ioctl(frt_fd, TCIOC_GETSTATUS, (unsigned long)(uintptr_t)&before);
@@ -154,7 +154,7 @@ static int do_test(int option, int fsz, int bsz)
 	case TEST_FLAG_OVERWRITE :
 		printf("\n****************************************************************************************\n");
 		printf("**********************************  TEST OVERWRITE  ************************************\n\n");
-		printf("Testing jSmartfs overwrite with File size: %d bytes, Buffer size: %d bytes\n", fsz, bsz);
+		printf("Testing jSmartFs overwrite with File size: %d bytes, Buffer size: %d bytes\n", fsz, bsz);
 		printf("The test overwrites a file from start, one buffer size at a time.\n\n");
 
 		fd = open(g_file[0], O_WROK | O_CREAT);
@@ -228,7 +228,7 @@ static int do_test(int option, int fsz, int bsz)
 	case TEST_FLAG_APPEND :
 		printf("\n****************************************************************************************\n");
 		printf("************************************  TEST APPEND  *************************************\n\n");
-		printf("Testing jSmartfs Append with file size: %d bytes, buffer size: %d bytes\n", fsz, bsz);
+		printf("Testing jSmartFs Append with file size: %d bytes, buffer size: %d bytes\n", fsz, bsz);
 		printf("The test append 64kb data to the end of the file given.\n\n");
 		for (i = 1; i <= ITR_APP; i++) {
 			fd = open(g_file[0], O_WROK | O_CREAT);
@@ -293,7 +293,7 @@ static int do_test(int option, int fsz, int bsz)
 	case TEST_FLAG_READ :
 		printf("\n****************************************************************************************\n");
 		printf("************************************  TEST READ  ***************************************\n\n");
-		printf("Testing jSmartfs Read with file size: %d bytes, buffer size: %d bytes\n", fsz, bsz);
+		printf("Testing jSmartFs Read with file size: %d bytes, buffer size: %d bytes\n", fsz, bsz);
 		printf("The test reads a given file size with the given buffer size %d times.\n\n", ITR_READ);
 		memset(g_read_buf, '1', MAX_RD_BUF_SIZE);
 
@@ -352,7 +352,7 @@ static int do_test(int option, int fsz, int bsz)
 	case TEST_FLAG_GC_EFFECT :
 		printf("\n****************************************************************************************\n");
 		printf("**************************  TEST GARBAGE COLLECTION EFFECT  ****************************\n\n");
-		printf("Testing jSmartfs Garbage collection with file size: %d bytes, buffer size: %d bytes\n", fsz, bsz);
+		printf("Testing jSmartFs Garbage collection with file size: %d bytes, buffer size: %d bytes\n", fsz, bsz);
 		printf("The test triggers Garbage Collection by repeatedly creating and unlinking a file.\n\n");
 		for (i = 1; i <= ITR_GC; i++) {
 			ret = ioctl(frt_fd, TCIOC_GETSTATUS, (unsigned long)(uintptr_t)&before);

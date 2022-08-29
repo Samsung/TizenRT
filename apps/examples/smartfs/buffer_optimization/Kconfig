@@ -4,8 +4,8 @@
 #
 
 config EXAMPLES_SMARTFS_BUF_OPTIMIZATION
-	bool "SmartFs Buffer Optimization Example"
+	bool "jSmartFs Buffer Optimization Example"
 	default n
 	depends on TIMER
 	---help---
-		Enable the SmartFs Buffer Optimization Example
+		Enable the jSmartFs Buffer Optimization Example
