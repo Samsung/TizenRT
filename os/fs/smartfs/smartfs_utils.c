@@ -870,7 +870,7 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 		fs->fs_workbuffer = (char *)kmm_malloc(256);
 	}
 
-	/* Now add ourselves to the linked list of SMART mounts */
+	/* Now add ourselves to the linked list of jSmartFs mounts */
 
 	fs->fs_next = g_mounthead;
 	g_mounthead = fs;
@@ -884,7 +884,7 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 #endif							/* CONFIG_SMARTFS_MULTI_ROOT_DIRS */
 
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS)
-	/* Now add ourselves to the linked list of SMART mounts */
+	/* Now add ourselves to the linked list of jSmartFs mounts */
 
 	fs->fs_next = g_mounthead;
 	g_mounthead = fs;
@@ -1401,8 +1401,8 @@ errout:
  *   allocate a new entry. Then returns the 1st entry of the new sector.
  *
  * Input Parameters:
- *   fs - pointer to smartfs mountpoint structure.
- *   direntry - pointer to smartfs entry to return details of allocated
+ *   fs - pointer to jSmartFs mountpoint structure.
+ *   direntry - pointer to jSmartFs entry to return details of allocated
  *     entry.
  *
  * Returned Values:
@@ -1439,8 +1439,8 @@ int smartfs_createdirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s 
  *   The first one to be found is used.
  *
  * Input Parameters:
- *   fs - pointer to smartfs mountpoint structure.
- *   direntry - pointer to smartfs entry structure for returning details
+ *   fs - pointer to jSmartFs mountpoint structure.
+ *   direntry - pointer to jSmartFs entry structure for returning details
  *     of the available entry found.
  *     If no available entry is found, it returns with the logical sector
  *     number of the last sector chained to parentdirsector.
@@ -1519,7 +1519,7 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_ent
  *   find_availableentry or createentry.
  *
  * Input Parameters:
- *   fs - pointer to smartfs mountpoint structure.
+ *   fs - pointer to jSmartFs mountpoint structure.
  *   new_entry - the details of the entry in MTD where new entry is to be
  *     written.
  *   type - type of new entry (file/dir).
@@ -1635,10 +1635,10 @@ errout:
  * Description: Allocate new data sector for a new file/directory entry.
  *
  * Input Parameters:
- *   fs - ponter to smartfs mountpoint structure.
+ *   fs - ponter to jSmartFs mountpoint structure.
  *   sector - pointer to return the sector number allocated.
  *   type - to set the type(file/dir) of the new sector allocated.
- *   sf - pointer to smartfs ofile structure in case a new file is being
+ *   sf - pointer to jSmartFs ofile structure in case a new file is being
  *     opened.
  *
  * Returned Values:
@@ -1702,7 +1702,7 @@ int smartfs_alloc_firstsector(struct smartfs_mountpt_s *fs, uint16_t *sector, ui
  * Description: Invalidates the smartfs entry passed as a parameter.
  *
  * Input Parameters:
- *  fs - pointer to smartfs mountpoint structure.
+ *  fs - pointer to jSmartFs mountpoint structure.
  *  parentdirsector - parent sector of entry to be marked invalid.
  *  offset - offset of entry in parent directory sector
  *
@@ -2257,7 +2257,7 @@ ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs
 /****************************************************************************
  * Name: smartfs_get_first_mount
  *
- * Description: Returns a pointer to the first mounted smartfs volume.
+ * Description: Returns a pointer to the first mounted jSmartFs volume.
  *
  ****************************************************************************/
 
@@ -2532,7 +2532,7 @@ errout:
 /****************************************************************************
  * Name: smartfs_sector_recovery
  *
- * Description: Recover Isolated sector that is not able to access in smartfs.
+ * Description: Recover Isolated sector that is not able to access in jSmartFs.
  *              Because of power off, Isolated sector can be exist.
  *              This works stand alone, but it works properly with journaling
  *

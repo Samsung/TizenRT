@@ -19,6 +19,7 @@
  * fs/driver/mtd/smart.c
  *
  * Sector Mapped Allocation for Really Tiny (SMART) Flash block driver.
+ * Journaling mechanism is added to the SMART layer itself and upgrades smartfs to jSmartFs.
  *
  *   Copyright (C) 2013-2014 Ken Pettit. All rights reserved.
  *   Author: Ken Pettit <pettitkd@gmail.com>
@@ -265,7 +266,7 @@ struct smart_struct_s {
 	uint16_t lastallocblock;	/* Last  block we allocated a sector from */
 	uint16_t freesectors;		/* Total number of free sectors */
 	uint16_t releasesectors;	/* Total number of released sectors */
-	uint16_t mtdBlksPerSector;	/* Number of MTD blocks per SMART Sector */
+	uint16_t mtdBlksPerSector;	/* Number of MTD blocks per jSmartFs Sector */
 	uint16_t sectorsPerBlk;		/* Number of sectors per erase block */
 	uint16_t sectorsize;		/* Sector size on device */
 	uint16_t totalsectors;		/* Total number of sectors on device */
@@ -1103,7 +1104,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	}
 	
 #ifdef CONFIG_MTD_SMART_JOURNALING
-	/** Journal Sector is reserved at the last of smartfs partition, it doesn't use MTD Header.
+	/** Journal Sector is reserved at the last of jSmartFs partition, it doesn't use MTD Header.
 	  * We will use it as a contigous memory space...
 	  */
 	size_t log_size = sizeof(journal_log_t);

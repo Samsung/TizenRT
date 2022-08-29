@@ -175,7 +175,7 @@
 #define INODE_STATE_FILE          (CONFIG_NXFFS_ERASEDSTATE ^ 0x22)
 #define INODE_STATE_DELETED       (CONFIG_NXFFS_ERASEDSTATE ^ 0xaa)
 
-/* Smartfs worbuffer maxuimum length */
+/* jSmartFs worbuffer maxuimum length */
 
 #define SMARTFS_MAX_WORKBUFFER_LEN 256
 
@@ -257,7 +257,7 @@
 
 /* This structure defines each packed block on the FLASH media */
 
-/* This is an in-memory representation of the SMART inode as extracted from
+/* This is an in-memory representation of the jSmartFs inode as extracted from
  * FLASH and with additional state information.
  */
 
@@ -273,7 +273,7 @@ struct smartfs_entry_s {
 	uint16_t prev_parent;		/* To track the processed directory sector to find parent for entry. Holds last active sector in parent chain if new sector has tobe chained */
 };
 
-/* This is an on-device representation of the SMART inode which exists on
+/* This is an on-device representation of the jSmartFs inode which exists on
  * the FLASH.
  */
 
@@ -287,7 +287,7 @@ struct smartfs_entry_header_s {
 	char name[0];				/* inode name */
 };
 
-/* This structure describes the smartfs header at the start of each
+/* This structure describes the jSmartFs header at the start of each
  * sector.  It manages the sector chain and used bytes in the sector.
  */
 
@@ -317,7 +317,7 @@ struct smartfs_ofile_s {
 #endif
 	int16_t crefs;				/* Reference count */
 	mode_t oflags;				/* Open mode */
-	struct smartfs_entry_s entry;	/* Describes the SMARTFS inode entry */
+	struct smartfs_entry_s entry;	/* Describes the jSmartFs inode entry */
 	size_t filepos;				/* Current file position */
 	uint16_t currsector;		/* Current sector of filepos */
 	uint16_t curroffset;		/* Current offset in sector */
@@ -331,12 +331,12 @@ struct smartfs_ofile_s {
 
 /* This structure represents the overall mountpoint state.  An instance of this
  * structure is retained as inode private data on each mountpoint that is
- * mounted with a smartfs filesystem.
+ * mounted with a jSmartFs filesystem.
  */
 
 struct smartfs_mountpt_s {
 #if defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS) || defined(CONFIG_FS_PROCFS)
-	struct smartfs_mountpt_s *fs_next;	/* Pointer to next SMART filesystem */
+	struct smartfs_mountpt_s *fs_next;	/* Pointer to next jSmartFs filesystem */
 #endif
 	FAR struct inode *fs_blkdriver;	/* Our underlying block device */
 	sem_t *fs_sem;				/* Used to assure thread-safe access */

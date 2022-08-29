@@ -83,7 +83,7 @@
  * Name: mksmartfs
  *
  * Description:
- *   Make a SMART Flash file system image on the specified block device
+ *   Make a jSmartFs image on the specified block device
  *
  * Inputs:
  *   pathname - the full path to a registered block driver

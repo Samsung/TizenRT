@@ -604,7 +604,7 @@ static int smartfs_readdir(struct fs_dirent_s *dir)
 		/* Test the type of directory listing */
 
 		if (level1->base.level == 1) {
-			/* Listing the top level (mounted smartfs volumes) */
+			/* Listing the top level (mounted jSmartFs volumes) */
 
 			if (!level1->mount) {
 				return -ENOENT;
