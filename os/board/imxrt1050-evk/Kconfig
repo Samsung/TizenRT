@@ -71,7 +71,7 @@ config IMXRT_RAMMTD_NEBLOCKS
 		You have to consider total ramsize to alloc ramfs size.
 
 config IMXRT_RAMMTD_DEV_NUMBER
-	int "device number for mtd of smartfs"
+	int "device number for mtd of jSmartFs"
 	default 3
 
 config IMXRT_RAMMTD_DEV_POINT

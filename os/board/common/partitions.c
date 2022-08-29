@@ -151,7 +151,7 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 	}
 #endif
 #if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
-	else if (!strncmp(types, "smartfs,", 8)) {
+	else if (!strncmp(types, "jSmartFs,", 9)) {
 		char partref[4];
 
 		snprintf(partref, sizeof(partref), "p%d", partno);

@@ -26,14 +26,14 @@ config AMEBAD_FLASH_BASE
     default 0x180000
     help
         Setting this vaule to configure flash start address for user filesystem,
-        such as smartfs, romfs.
+        such as jSmartFs, romfs.
 
 config AMEBAD_FLASH_CAPACITY
     hex "Size for user filesystem"
     default 0x80000
     help
         Setting this vaule to configure flash size  for user filesystem,
-        such as smartfs, romfs.
+        such as jSmartFs, romfs.
 
 config AMEBAD_FLASH_PAGE_SIZE
     int "Read/write unit size of SPI flash"

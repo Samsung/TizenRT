@@ -237,7 +237,7 @@ CONFIG_ARCH_HAVE_IRQBUTTONS=y
 #
 # Board-Specific Options
 #
-CONFIG_SIDK_S5JT200_FLASH_PART_TYPE="none,ftl,none,none,none,none,none,none,none,none,config,none,none,smartfs,smartfs,"
+CONFIG_SIDK_S5JT200_FLASH_PART_TYPE="none,ftl,none,none,none,none,none,none,none,none,config,none,none,jSmartFs,jSmartFs,"
 
 #
 # Kernel Features
