@@ -1609,7 +1609,7 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 
 	if (new_entry.prev_parent != new_entry.dsector) {
 
-		/* Chain the next sector into this sector sector */
+		/* Chain the next sector into this sector */
 		nextsector = new_entry.dsector;
 
 		smartfs_setbuffer(&readwrite, new_entry.prev_parent, offsetof(struct smartfs_chain_header_s, nextsector), sizeof(uint16_t), (uint8_t *)&nextsector);

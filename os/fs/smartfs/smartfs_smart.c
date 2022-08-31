@@ -1246,7 +1246,7 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 	}
 
 	/* If the global semaphore hasn't been initialized, then
-	 * initialized it now. */
+	 * initialize it now. */
 
 	fs->fs_sem = &g_sem;
 	if (!g_seminitialized) {
@@ -1259,7 +1259,7 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 	}
 
 	/* Initialize the allocated mountpt state structure.  The filesystem is
-	 * responsible for one reference ont the blkdriver inode and does not
+	 * responsible for one reference on the blkdriver inode and does not
 	 * have to addref() here (but does have to release in ubind().
 	 */
 
