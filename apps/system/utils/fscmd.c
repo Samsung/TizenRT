@@ -104,7 +104,7 @@
 
 /** Define FS Type **/
 #define NONEFS_TYPE     "None FS"
-#define SMARTFS_TYPE    "smartfs"
+#define SMARTFS_TYPE    "jSmartFs"
 #define PROCFS_TYPE     "procfs"
 #define ROMFS_TYPE      "romfs"
 #define TMPFS_TYPE      "tmpfs"
@@ -1237,7 +1237,7 @@ static const char *get_fstype(FAR struct statfs *statbuf)
 
 #ifdef CONFIG_FS_SMARTFS
 	case SMARTFS_MAGIC:
-		fstype = "smartfs";
+		fstype = "jSmartFs";
 		break;
 #endif
 
@@ -1363,7 +1363,7 @@ static int format_filesystem(fs_minor_t minor)
 		if (fd < 0) {
 			continue;
 		}
-		/* TODO Multi root of smartfs should be considered when it enabled */
+		/* TODO Multi root of jSmartFs should be considered when it enabled */
 		ret = ioctl(fd, BIOC_BULKERASE, 0);
 		close(fd);
 		if (ret != OK) {

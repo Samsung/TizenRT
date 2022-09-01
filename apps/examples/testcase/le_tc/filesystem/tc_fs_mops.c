@@ -160,9 +160,9 @@ static void tc_fs_mops_mount(const char *filesystemtype)
 		ret = mount(ROMFS_MOUNT_DEV_DIR, ROMFS_TEST_MOUNTPOINT, "romfs", 1, NULL);
 
 #endif
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = umount(SMARTFS_TEST_MOUNTPOINT);
-		ret = mount(SMARTFS_MOUNT_DEV_DIR, SMARTFS_TEST_MOUNTPOINT, "smartfs", 0, NULL);
+		ret = mount(SMARTFS_MOUNT_DEV_DIR, SMARTFS_TEST_MOUNTPOINT, "jSmartFs", 0, NULL);
 	}
 
 	TC_ASSERT_EQ("mount", ret, OK);	
@@ -174,7 +174,7 @@ static void tc_fs_mops_open(const char *filesystemtype, int *fd)
 		*fd = open(TMPFS_TEST_MOUNTPOINT"/test", O_RDWR | O_CREAT | O_TRUNC);
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		*fd = open(ROMFS_TEST_FILEPATH, O_RDONLY);
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		*fd = open(SMARTFS_TEST_MOUNTPOINT"/test", O_RDWR | O_CREAT | O_TRUNC);
 	}
 
@@ -197,7 +197,7 @@ static void tc_fs_mops_write(const char *filesystemtype, int fd)
 static void tc_fs_mops_sync(const char *filesystemtype, int fd)
 {
 	int ret = -1;
-	if (strcmp(filesystemtype, "smartfs") == 0) {
+	if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = fsync(fd);
 		TC_ASSERT_EQ_CLEANUP("fsync", ret, OK, close(fd));	
 	}
@@ -236,7 +236,7 @@ static void tc_fs_mops_ioctl(const char *filesystemtype, int fd)
 
 	if (strcmp(filesystemtype, "tmpfs") == 0 || strcmp(filesystemtype, "romfs") == 0) {
 		ret = ioctl(fd, FIOC_MMAP, (unsigned long)&size);
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		return;
 	}
 
@@ -269,7 +269,7 @@ static void tc_fs_mops_opendir(const char *filesystemtype, DIR **dir)
 		*dir = opendir(TMPFS_TEST_MOUNTPOINT);
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		*dir = opendir("/rom/init.d");
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		*dir = opendir(SMARTFS_TEST_MOUNTPOINT);
 	}
 
@@ -293,7 +293,7 @@ static void tc_fs_mops_closedir(const char *filesystemtype, DIR *dir)
 {
 	int ret = -1;
 
-	if (strcmp(filesystemtype, "romfs") == 0 || strcmp(filesystemtype, "smartfs") == 0) {
+	if (strcmp(filesystemtype, "romfs") == 0 || strcmp(filesystemtype, "jSmartFs") == 0) {
 		return;
 	}
 
@@ -309,7 +309,7 @@ static void tc_fs_mops_mkdir(const char *filesystemtype)
 		ret = mkdir(TMPFS_TEST_MOUNTPOINT"/dir", 0777);
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		return;
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = mkdir(SMARTFS_TEST_MOUNTPOINT"/dir", 0777);
 	}
 
@@ -324,7 +324,7 @@ static void tc_fs_mops_rmdir(const char *filesystemtype)
 		ret = rmdir(TMPFS_TEST_MOUNTPOINT"/dir");
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		return;
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = rmdir(SMARTFS_TEST_MOUNTPOINT"/dir");
 	}
 
@@ -341,7 +341,7 @@ static void tc_fs_mops_stat(const char *filesystemtype)
 		ret = stat(TMPFS_TEST_MOUNTPOINT"/test", &st);
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		ret = stat(filename, &st);
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = stat(SMARTFS_TEST_MOUNTPOINT"/test", &st);
 	}
 
@@ -356,7 +356,7 @@ static void tc_fs_mops_rename(const char *filesystemtype)
 		ret = rename(TMPFS_TEST_MOUNTPOINT"/test", TMPFS_TEST_MOUNTPOINT"/test_new");
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		return;
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = rename(SMARTFS_TEST_MOUNTPOINT"/test", SMARTFS_TEST_MOUNTPOINT"/test_new");
 	}
 
@@ -372,7 +372,7 @@ static void tc_fs_mops_statfs(const char *filesystemtype)
 		ret = statfs(TMPFS_TEST_MOUNTPOINT, &fs);
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		ret = statfs("/rom", &fs);
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = statfs(SMARTFS_TEST_MOUNTPOINT, &fs);
 	}
 
@@ -387,7 +387,7 @@ static void tc_fs_mops_unlink(const char *filesystemtype)
 		ret = unlink(TMPFS_TEST_MOUNTPOINT"/test_new");
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		return;
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = unlink(SMARTFS_TEST_MOUNTPOINT"/test_new");
 	}
 
@@ -402,7 +402,7 @@ static void tc_fs_mops_umount(const char *filesystemtype)
 		ret = umount(TMPFS_TEST_MOUNTPOINT);
 	} else if (strcmp(filesystemtype, "romfs") == 0) {
 		ret = umount("/rom");
-	} else if (strcmp(filesystemtype, "smartfs") == 0) {
+	} else if (strcmp(filesystemtype, "jSmartFs") == 0) {
 		ret = umount(SMARTFS_TEST_MOUNTPOINT);
 	}
 
@@ -451,6 +451,6 @@ void tc_fs_mops_main(void)
 #endif
 #endif
 #ifdef CONFIG_TC_FS_SMARTFS_MOPS
-	tc_fs_mops_test_main("smartfs");
+	tc_fs_mops_test_main("jSmartFs");
 #endif
 }

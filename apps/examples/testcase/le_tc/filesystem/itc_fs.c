@@ -51,7 +51,7 @@ static char *TMP_MOUNT_DEV_DIR;
 #define MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR
 #endif
 
-#define FS_TYPE "smartfs"
+#define FS_TYPE "jSmartFs"
 #else
 #define MOUNT_DEV_DIR "/dev/fs1"
 #define FS_TYPE "unknwon"

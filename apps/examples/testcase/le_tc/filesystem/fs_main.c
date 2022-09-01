@@ -83,7 +83,7 @@ static char *TMP_MOUNT_DEV_DIR;
 #define MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR
 #endif
 
-#define TARGET_FS_NAME "smartfs"
+#define TARGET_FS_NAME "jSmartFs"
 #else
 #define MOUNT_DEV_DIR "/dev/fs1"
 #define TARGET_FS_NAME "unknwon"
@@ -161,7 +161,7 @@ static char *TMP_MOUNT_DEV_DIR;
 #define ROOT_PATH "/"
 
 #define NONEFS_TYPE     "None FS"
-#define SMARTFS_TYPE    "smartfs"
+#define SMARTFS_TYPE    "jSmartFs"
 #define PROCFS_TYPE     "procfs"
 #define ROMFS_TYPE      "romfs"
 #define TMPFS_TYPE      "tmpfs"
@@ -346,7 +346,7 @@ static int make_long_file(void)
  * @brief            Mount file system
  * @scenario         Mount initialized file system
  * @apicovered       mount
- * @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
+ * @precondition     File system should be initialized. For jSmartFs, smart_initialize & mksmartfs should be excuted.
  * @postcondition    NA
  */
 static void tc_fs_vfs_mount_p(void)
@@ -377,7 +377,7 @@ static void tc_fs_vfs_mount_p(void)
  * @brief            Mount file system
  * @scenario         Mount file system on exist path
  * @apicovered       mount
- * @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
+ * @precondition     File system should be initialized. For jSmartFs, smart_initialize & mksmartfs should be excuted.
  * @postcondition    NA
  */
 static void tc_fs_vfs_mount_exist_path_n(void)
@@ -5487,7 +5487,7 @@ static void tc_libc_stdio_mktemp_p(void)
 #if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
 #elif defined(CONFIG_FS_SMARTFS)
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "jSmartFs", 0, NULL);
 #endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
@@ -5548,7 +5548,7 @@ static void tc_libc_stdio_mktemp_invalid_path_n(void)
 #if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
 #elif defined(CONFIG_FS_SMARTFS)
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "jSmartFs", 0, NULL);
 #endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
@@ -5602,7 +5602,7 @@ static void tc_libc_stdio_mkstemp_p(void)
 #if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
 #elif defined(CONFIG_FS_SMARTFS)
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "jSmartFs", 0, NULL);
 #endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
@@ -5697,7 +5697,7 @@ static void tc_libc_stdio_tempnam_p(void)
 #if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
 #elif defined(CONFIG_FS_SMARTFS)
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "jSmartFs", 0, NULL);
 #endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
@@ -5748,7 +5748,7 @@ static void tc_libc_stdio_tempnam_null_arg_n(void)
 #if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
 #elif defined(CONFIG_FS_SMARTFS)
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "jSmartFs", 0, NULL);
 #endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
@@ -5800,7 +5800,7 @@ static void tc_libc_stdio_tmpnam_p(void)
 #if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
 #elif defined(CONFIG_FS_SMARTFS)
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "jSmartFs", 0, NULL);
 #endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
@@ -5851,7 +5851,7 @@ static void tc_libc_stdio_tmpnam_null_string_n(void)
 #if defined(CONFIG_FS_TMPFS)
 	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
 #elif defined(CONFIG_FS_SMARTFS)
-	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "jSmartFs", 0, NULL);
 #endif
 	if (ret_check < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);

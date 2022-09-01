@@ -375,7 +375,7 @@ static int smart_seek_with_write_test(char *filename)
  *    In the test below, we use open / write, not fopen / fwrite.  If the
  *    fopen / fwrite routines were used instead, they would provide us with
  *    stream buffer management which we DO NOT WANT.  This will throw off
- *    the SMARTFS write sizes which will not generate the optimized wear
+ *    the jSmartFs write sizes which will not generate the optimized wear
  *    operations.
  *
  ****************************************************************************/
@@ -539,7 +539,7 @@ static void smart_usage(void)
 	fprintf(stderr, "usage: smart_test [-c COUNT] [-s SEEKCOUNT] [-w WRITECOUNT] smart_mounted_filename\n\n");
 
 	fprintf(stderr, "DESCRIPTION\n");
-	fprintf(stderr, "    Conducts various stress tests to validate SMARTFS operation.\n");
+	fprintf(stderr, "    Conducts various stress tests to validate jSmartFs operation.\n");
 	fprintf(stderr, "    Please choose one or more of -c, -s, or -w to conduct tests.\n\n");
 
 	fprintf(stderr, "OPTIONS\n");

@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-MENUDESC = "SmartFs Test Applications"
+MENUDESC = "jSmartFs Test Applications"
 
 include $(APPDIR)/Make.defs
 

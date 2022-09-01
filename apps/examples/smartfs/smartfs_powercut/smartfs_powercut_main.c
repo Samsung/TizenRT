@@ -730,7 +730,7 @@ static int do_test(char *src, char *backup, char *backupdir, int bufsize, file_t
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int smartfs_powercut_main(int argc, char *argv[])
+int jsmartfs_powercut_main(int argc, char *argv[])
 #endif
 {
 	int ret;

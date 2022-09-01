@@ -27,7 +27,7 @@ include $(APPDIR)/Make.defs
 
 # Smartfs Buffer Optimization Example info
 
-APPNAME = smartfs_buf_opt
+APPNAME = jsmartfs_buf_opt
 FUNCNAME = buffer_optimization_main
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 4096

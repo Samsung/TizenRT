@@ -276,7 +276,7 @@ int buffer_optimization_main(int argc, char *argv[])
 			file_size = atoi(argv[2]);
 		}
 	} else {
-		printf("\nCorrect test command usage is: smartfs_buf_opt <Timer Device No.> <File Size in Kb>\n");
+		printf("\nCorrect test command usage is: jsmartfs_buf_opt <Timer Device No.> <File Size in Kb>\n");
 		printf("-> Read test example will read the file back to back, one buffer size at a time\n");
 		return -1;
 	}
@@ -324,6 +324,6 @@ int buffer_optimization_main(int argc, char *argv[])
 
 error_with_frt_fd:
 	close(frt_fd);
-	printf("SmartFs Optimized Buffer Test Example Exits\n\n");
+	printf("jSmartFs Optimized Buffer Test Example Exits\n\n");
 	return ret;
 }
