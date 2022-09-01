@@ -1,17 +1,20 @@
-SMARTFS README
-^^^^^^^^^^^^^^
+jSmartFs README
+^^^^^^^^^^^^^^^
 
 This README file contains information about the implemenation of the TinyAra
-Sector Mapped Allocation for Really Tiny (SMART) FLASH file system, SMARTFS.
+Journaling - Sector Mapped Allocation for Really Tiny FLASH file system, jSmartFs.
+Journaling tries to provide an assurance of file system integrity during system crash.
+By writing changes to a journal quickly, we can ensure that all changes to files
+are recorded and not lost during power shutdowns or crashes.
 
 Contents:
 
   Features
   General operation
-  SMARTFS organization
+  jSmartFs organization
   Headers
   Multiple mount points
-  SMARTFS Limitations
+  jSmartFs Limitations
   ioctls
   Things to Do
 
@@ -136,7 +139,7 @@ General operation
   at at time (which is typically 256 bytes).  For FLASH devices that support
   byte write mode, support for this config item can be added to the MTD
   driver.  Enabling and supporting this feature reduces the traffic on the
-  SPI bus considerably because SMARTFS performs many operations that affect
+  SPI bus considerably because jSmartFs performs many operations that affect
   only a few bytes on the device.  Without BYTE_WRITE, the code must
   perform a full page read-modify-write operation on a 256 or even 512
   byte page.
@@ -253,7 +256,7 @@ General operation
   as a chain or "linked list" of logical sectors.  Thus the actual physical
   sectors that a give file or directory uses does not need to be contiguous
   and in fact can (and will) move around over time.  To manage the sector
-  chains, the SMARTFS layer adds a "chain header" after the sector's "sector
+  chains, the jSmartFs layer adds a "chain header" after the sector's "sector
   header".  This is a 5-byte header which contains the chain type (file or
   directory), a "next logical sector" entry and the count of bytes actually
   used within the sector.
@@ -283,7 +286,7 @@ General operation
   existing data) or appending to a sector for regular files requires copying
   the file data to a new sector and releasing the old one.
 
-SMARTFS organization
+jSmartFs organization
 ====================
 
   The following example assumes 2 logical blocks per FLASH erase block.  The
@@ -393,11 +396,11 @@ Multiple Mount Points
   in the others).  Each directory structure is isolated from the others,
   they simply share the same physical media for storage.
 
-SMARTFS Limitations
+jSmartFs Limitations
 ===================
 
 This implementation has several limitations that you should be aware
-before opting to use SMARTFS:
+before opting to use jSmartFs:
 
 1. The implementation can support CRC-8 or CRC-16 error detection, and can
    relocate a failed write operation to a new sector.  However with no bad

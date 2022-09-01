@@ -19,6 +19,7 @@
  * fs/driver/mtd/smart.c
  *
  * Sector Mapped Allocation for Really Tiny (SMART) Flash block driver.
+ * Journaling mechanism is added to the SMART layer itself and upgrades smartfs to jSmartFs.
  *
  *   Copyright (C) 2013-2014 Ken Pettit. All rights reserved.
  *   Author: Ken Pettit <pettitkd@gmail.com>

@@ -133,7 +133,7 @@ static const struct fsmap_t g_bdfsmap[] = {
 	 * here. If no file system exists then you have to add { NULL, NULL }
 	 */
 #ifdef CONFIG_FS_SMARTFS
-	{"smartfs", &smartfs_operations},
+	{"jSmartFs", &smartfs_operations},
 #endif
 #ifdef CONFIG_FS_ROMFS
 	{"romfs", &romfs_operations},
