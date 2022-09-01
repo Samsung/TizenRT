@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 	char *mount_point;
 	struct inode *pinode;
 	struct nxfuse_state *nxfuse_data = NULL;
-	const char *fs_type = "smartfs";
+	const char *fs_type = "jSmartFs";
 	char fsname[128];
 
 	/* We will recreate the argv array for fuse_main with only those

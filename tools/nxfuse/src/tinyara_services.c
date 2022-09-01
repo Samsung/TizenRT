@@ -117,7 +117,7 @@ static int g_inode_count = 0;
 
 static struct fs_ops_s g_fs_ops[] = {
 #ifdef CONFIG_FS_SMARTFS
-	{"smartfs", smartfs_vmount, smartfs_mkfs, &smartfs_operations},
+	{"jSmartFs", smartfs_vmount, smartfs_mkfs, &smartfs_operations},
 #endif
 
 	{"", NULL, NULL}
