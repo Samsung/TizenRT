@@ -141,6 +141,7 @@ TARGETDIR = 	$(COMPONENT_DIR)/soc/amebalite
 CFLAGS += -I$(DIR)/../include
 CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/armv8-m
 CFLAGS += -I$(PROJ_DIR)/inc/inc_km4
+CFLAGS += -I$(TARGETDIR)/bootloader
 CFLAGS += -I$(TARGETDIR)/cmsis
 CFLAGS += -I$(TARGETDIR)/cmsis-dsp/Include
 CFLAGS += -I$(TARGETDIR)/cmsis-dsp/PrivateInclude
