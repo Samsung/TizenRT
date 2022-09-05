@@ -26,7 +26,7 @@ BINDIR="${BUILDDIR}/output/bin"
 CONFIGDIR="${BUILDDIR}/configs"
 DOCKER_VERSION="1.5.5"
 
-STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD"
+STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD_READY"
 BUILD_CMD=make
 
 # Checking docker is installed
@@ -405,7 +405,7 @@ function SELECT_DL
 	esac
 
 	if [ ! -z "${DL_ARG}" ]; then
-		STATUS=DOWNLOAD
+		STATUS=DOWNLOAD_READY
 	fi
 }
 
@@ -422,7 +422,6 @@ function DOWNLOAD()
 	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} ${BUILD_CMD} download $1 $2 $3 $4 $5 $6
 	popd > /dev/null
 
-	exit 0
 }
 
 function UPDATE_STATUS()
@@ -476,7 +475,7 @@ function BUILD()
 
 function MENU()
 {
-	while [ "${STATUS}" != "DOWNLOAD" ]; do
+	while [ 1 ]; do
 		case ${STATUS} in
 		NOT_CONFIGURED)
 			SELECT_BOARD
@@ -487,6 +486,10 @@ function MENU()
 			;;
 		PREPARE_DL)
 			SELECT_DL
+			;;
+		DOWNLOAD_READY)
+			DOWNLOAD ${DL_ARG}
+			STATUS=BUILT
 			;;
 		*)
 			echo "Invalid Status!! ${STATUS}"
@@ -509,7 +512,7 @@ elif [ "$1" == "menu" ]; then
 	MENU
 else
 	while test $# -gt 0; do
-		if [ "${STATUS}" == "PREPARE_DL" -o "${STATUS}" == "DOWNLOAD" ]; then
+		if [ "${STATUS}" == "PREPARE_DL" -o "${STATUS}" == "DOWNLOAD_READY" ]; then
 			if [ "$1" == "all" ]; then
 				ARG=$(echo $1 | tr '[:lower:]' '[:upper:]')
 			else
@@ -528,9 +531,9 @@ else
 		CONFIGURED|BUILT)
 			SELECT_OPTION ${ARG}
 			;;
-		PREPARE_DL|DOWNLOAD)
+		PREPARE_DL|DOWNLOAD_READY)
 			DL_ARG+="${ARG} "
-			STATUS=DOWNLOAD
+			STATUS=DOWNLOAD_READY
 			;;
 		*)
 			echo "Invalid Status!! ${STATUS}"
@@ -541,7 +544,7 @@ else
 	done
 fi
 
-if [ "${STATUS}" == "DOWNLOAD" ]; then
+if [ "${STATUS}" == "DOWNLOAD_READY" ]; then
 	DOWNLOAD ${DL_ARG}
 fi
 exit 0
