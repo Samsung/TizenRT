@@ -93,7 +93,11 @@ VOID OSC131_R_Set(u32 setbit, u32 clearbit)
 	}
 
 	/* It takes 1ms to stable */
-	DelayMs(1);
+	if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
+		DelayMs(2);
+	} else {
+		DelayMs(1);
+	}
 }
 
 /**

@@ -215,7 +215,7 @@ DiagPrintf("\n\r%s: amebalite_register_dev", __func__);
 	}
 #endif
 #endif
-#if defined(CONFIG_AMEBAD_BLE) && defined(CONFIG_DRIVERS_BLE)
+#if defined(CONFIG_AMEBALITE_BLE) && defined(CONFIG_DRIVERS_BLE)
 	ameba_bm_dev_ble0 = bledev_register(&g_trble_drv_ops);
 	if (ameba_bm_dev_ble0 == NULL) {
 		rtw_printf("Failed to register amebad netdev\n");

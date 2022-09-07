@@ -953,14 +953,8 @@ u32 app_mpu_nocache_init(void)
 	mpu_region_config mpu_cfg;
 	u32 mpu_entry = 0;
 
-	/* No cache init */
-	/* It is for wifi related buffer area, to prevent non-sync from happening.
-	*  Because DMA is involved, so it cannot be used together with cache.
-	*/
-
 	mpu_cfg.region_base = (uint32_t)__ram_nocache_start__;
 	mpu_cfg.region_size = __ram_nocache_end__ - __ram_nocache_start__;
-
 	mpu_cfg.xn = MPU_EXEC_ALLOW;
 	mpu_cfg.ap = MPU_UN_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
@@ -970,33 +964,17 @@ u32 app_mpu_nocache_init(void)
 		mpu_region_cfg(mpu_entry, &mpu_cfg);
 	}
 
-#if 0//#ifndef CONFIG_PLATFORM_TIZENRT_OS
-	/* The following 3 MPU settings are not in use for TizenRT
-	*  "close 216K irom_ns cache" and "close 80K drom_ns cache" are added to prevent ROM code accessing data through the Cache.
-	*  "set 1KB retention ram no-cache" is for Deep Sleep
-	*  There is no performance drop after removing these 3 MPU setting, Verified.
-	*/
-
 	/* close rom_ns cache */
 	mpu_entry = mpu_entry_alloc();
-	mpu_cfg.region_base = 0x16000;
-	mpu_cfg.region_size = 0x94000 - 0x16000;
+	mpu_cfg.region_base = 0x1E000;
+	mpu_cfg.region_size = 0x45000 - 0x1E000;
 	mpu_cfg.xn = MPU_EXEC_ALLOW;
 	mpu_cfg.ap = MPU_UN_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
-	/* set 16KB retention ram no-cache */
-	mpu_entry = mpu_entry_alloc();
-	mpu_cfg.region_base = 0x22000000;
-	mpu_cfg.region_size = 0x1000000;
-	mpu_cfg.xn = MPU_EXEC_ALLOW;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
-	mpu_cfg.sh = MPU_NON_SHAREABLE;
-	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
-	mpu_region_cfg(mpu_entry, &mpu_cfg);
-#endif
+	g_mpu_nregion_allocated = mpu_entry + 1;
 	return 0;
 }
 

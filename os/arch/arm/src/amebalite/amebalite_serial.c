@@ -199,7 +199,7 @@
  * Private Types
  ****************************************************************************/
 /*
- * Available UARTs in AmebaSmart
+ * Available UARTs in AmebaLite
  * UART0_DEV: hp uart0
  * UART1_DEV: hp uart1
  * UART2_DEV: hp uart2
@@ -225,7 +225,7 @@ struct rtl8720e_up_dev_s {
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
 	uint8_t iflow:1;			/* input flow control (RTS) enabled */
 #endif
-#ifdef CONFIG_SERIAL_OFLOWCONTROL
+#ifdef CONFIG_SERIAL_OFLOWCONTROL /* Only UART0 & 3 has flow control in Lite */
 	uint8_t oflow:1;			/* output flow control (CTS) enabled */
 #endif
 	uint8_t tx_level;
@@ -277,7 +277,7 @@ static const struct uart_ops_s log_g_uart_ops = {
 	.receive = rtl8720e_log_up_receive,
 	.rxint = rtl8720e_log_up_rxint,
 	.rxavailable = rtl8720e_log_up_rxavailable,
-#ifdef CONFIG_SERIAL_IFLOWCONTROL
+#ifdef CONFIG_SERIAL_IFLOWCONTROL //Flowcontrol available only for UART 0 & 3
 	.rxflowcontrol = NULL,
 #endif
 	.send = rtl8720e_log_up_send,
@@ -295,7 +295,7 @@ static const struct uart_ops_s g_uart_ops = {
 	.receive = rtl8720e_up_receive,
 	.rxint = rtl8720e_up_rxint,
 	.rxavailable = rtl8720e_up_rxavailable,
-#ifdef CONFIG_SERIAL_IFLOWCONTROL
+#ifdef CONFIG_SERIAL_IFLOWCONTROL //Flowcontrol available only for UART 0 & 3
 	.rxflowcontrol = NULL,
 #endif
 	.send = rtl8720e_up_send,
@@ -381,7 +381,7 @@ static struct rtl8720e_up_dev_s g_uart1priv = {
 	.irq = RTL8720E_UART1_IRQ,
 	.tx = PA_1,
 	.rx = PA_0,
-	.FlowControl = FlowControlNone,
+	.FlowControl = FlowControlNone, // No flowcontrol for UART1
 	.txint_enable = false,
 	.rxint_enable = false,
 };
@@ -414,7 +414,7 @@ static struct rtl8720e_up_dev_s g_uart2priv = {
 	.irq = RTL8720E_UART2_IRQ,
 	.tx = PA_22,
 	.rx = PA_21,
-	.FlowControl = FlowControlNone,
+	.FlowControl = FlowControlNone,	// No flowcontrol for UART2
 	.txint_enable = false,
 	.rxint_enable = false,
 };
@@ -479,7 +479,7 @@ static struct rtl8720e_up_dev_s g_uart4priv = {
 	.irq = RTL8720E_UART_LOG_IRQ,
 	.tx = PA_20,
 	.rx = PA_19,
-	.FlowControl = FlowControlNone,
+	.FlowControl = FlowControlNone, // No flowcontrol for UART4
 	.txint_enable = false,
 	.rxint_enable = false,
 };
@@ -809,16 +809,24 @@ static int rtl8720e_up_setup(struct uart_dev_s *dev)
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
 
 	if (uart_index_get(priv->tx) == 4)	{//Loguart cannot be stopped
-	irq_disable(RTL8720E_UART_LOG_IRQ-16);
-	irq_unregister(RTL8720E_UART_LOG_IRQ-16);
-	InterruptRegister((IRQ_FUN)rtl8720e_log_uart_irq, RTL8720E_UART_LOG_IRQ-16, NULL, 4);
-	InterruptEn(RTL8720E_UART_LOG_IRQ-16, 4);
+		irq_disable(RTL8720E_UART_LOG_IRQ-16);
+		irq_unregister(RTL8720E_UART_LOG_IRQ-16);
+		InterruptRegister((IRQ_FUN)rtl8720e_log_uart_irq, RTL8720E_UART_LOG_IRQ-16, NULL, 4);
+		InterruptEn(RTL8720E_UART_LOG_IRQ-16, 4);
 	} else {
-	sdrv[uart_index_get(priv->tx)]->uart_idx = uart_index_get(priv->tx);
-	serial_init((serial_t *) sdrv[uart_index_get(priv->tx)], priv->tx, priv->rx);
-	serial_baud(sdrv[uart_index_get(priv->tx)], priv->baud);
-	serial_format(sdrv[uart_index_get(priv->tx)], priv->bits, priv->parity, priv->stopbit);
-	serial_set_flow_control(sdrv[uart_index_get(priv->tx)], priv->FlowControl, priv->rts, priv->cts);
+		sdrv[uart_index_get(priv->tx)]->uart_idx = uart_index_get(priv->tx);
+		serial_init((serial_t *) sdrv[uart_index_get(priv->tx)], priv->tx, priv->rx);
+		serial_baud(sdrv[uart_index_get(priv->tx)], priv->baud);
+		serial_format(sdrv[uart_index_get(priv->tx)], priv->bits, priv->parity, priv->stopbit);
+
+#if defined(CONFIG_SERIAL_IFLOWCONTROL) || defined(CONFIG_SERIAL_OFLOWCONTROL)
+		if ((uart_index_get(priv->tx) == 0) || (uart_index_get(priv->tx) == 3)) {
+			serial_set_flow_control(sdrv[uart_index_get(priv->tx)], priv->FlowControl, priv->rts, priv->cts);
+		} else {
+			printf("\nSetting UART%d flow control failed.\n", uart_index_get(priv->tx));
+			printf("\nNOTE: Only UART0 & UART3 are able to use flowcontrol!\n");
+		}
+#endif
 	}
 	return OK;
 }

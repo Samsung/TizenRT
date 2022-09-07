@@ -578,6 +578,48 @@ int wifi_set_mode(rtw_mode_t mode)
 	}
 }
 
+static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* userdata)
+{
+	/* To avoid gcc warnings */
+	( void ) buf;
+	( void ) buf_len;
+	( void ) flags;
+	( void ) userdata;
+	//USER TODO
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	rtk_reason_t reason;
+	memset(&reason, 0, sizeof(rtk_reason_t));
+	if (strlen(buf) >= 17) {			  // bssid is a 17 character string
+		memcpy(&(reason.bssid), buf, 17); // Exclude null-termination
+	}
+
+	if (g_link_up) {
+		nvdbg("RTK_API rtk_link_event_handler send link_up\n");
+		g_link_up(&reason);
+	}
+#endif
+}
+static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* userdata)
+{
+	/* To avoid gcc warnings */
+	( void ) buf;
+	( void ) buf_len;
+	( void ) flags;
+	( void ) userdata;
+	//USER TODO
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	rtk_reason_t reason;
+	memset(&reason, 0, sizeof(rtk_reason_t));
+	if (strlen(buf) >= 17) { // bssid is a 17 character string
+		memcpy(&(reason.bssid), buf, 17);
+	}
+	if (g_link_down) {
+		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
+		g_link_down(&reason);
+	}
+#endif
+}
+
 int wifi_start_ap(rtw_softap_info_t *softAP_config)
 {
 	int ret = 0;
@@ -586,6 +628,9 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 	DCache_Clean((u32)softAP_config->password, softAP_config->password_len);
 	DCache_Clean((u32)softAP_config, sizeof(rtw_softap_info_t));
 	param_buf[0] = (u32)softAP_config;
+
+	wifi_reg_event_handler(WIFI_EVENT_STA_ASSOC, wifi_ap_sta_assoc_hdl, NULL);
+	wifi_reg_event_handler(WIFI_EVENT_STA_DISASSOC, wifi_ap_sta_disassoc_hdl, NULL);
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_START_AP, param_buf, 1);
 
