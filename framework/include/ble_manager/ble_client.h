@@ -170,6 +170,8 @@ ble_result_e ble_client_connected_info(ble_client_ctx *ctx, ble_device_connected
 
 /****************************************************************************
  * Name: ble_client_operation_enable_notification
+ *       ble_client_operation_enable_indication
+ *       ble_client_operation_enable_notification_and_indication
  *
  * Description:
  *   Enable the notification coming from the Server(Peripheral).
@@ -184,6 +186,8 @@ ble_result_e ble_client_connected_info(ble_client_ctx *ctx, ble_device_connected
  *
  ****************************************************************************/
 ble_result_e ble_client_operation_enable_notification(ble_client_ctx *ctx, ble_attr_handle attr_handle);
+ble_result_e ble_client_operation_enable_indication(ble_client_ctx *ctx, ble_attr_handle attr_handle);
+ble_result_e ble_client_operation_enable_notification_and_indication(ble_client_ctx *ctx, ble_attr_handle attr_handle);
 
 /****************************************************************************
  * Name: ble_client_operation_read

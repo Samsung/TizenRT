@@ -56,6 +56,27 @@ bool tizenrt_ble_service_send_notify(uint8_t conn_id, uint16_t abs_handle, uint8
                             length, GATT_PDU_TYPE_NOTIFICATION);
 }
 
+bool tizenrt_ble_service_send_indicate(uint8_t conn_id, uint16_t abs_handle, uint8_t *p_value,
+                                     uint16_t length)
+{
+    T_SERVER_ID service_id = 0xff;
+    uint16_t cha_index = 0;
+    for(uint8_t i = 0; i < tizenrt_ble_srv_count; i++)
+    {
+        if(tizenrt_ble_srv_database[i].start_handle < abs_handle &&
+            tizenrt_ble_srv_database[i].start_handle + tizenrt_ble_srv_database[i].att_count >= abs_handle)
+        {
+            service_id = tizenrt_ble_srv_database[i].srv_id;
+            cha_index = abs_handle - tizenrt_ble_srv_database[i].start_handle;
+        }
+    }
+    /* send notification to client */
+    debug_print("service_id %d index = 0x%x, value = 0x%x len = 0x%x \n",
+                                        service_id, cha_index, *p_value, length);
+    return server_send_data(conn_id, service_id, cha_index, p_value,
+                            length, GATT_PDU_TYPE_INDICATION);
+}
+
 void tizenrt_ble_service_cccd_update_cb(uint8_t conn_id, T_SERVER_ID service_id, uint16_t attrib_index,
                                      uint16_t cccbits)
 {

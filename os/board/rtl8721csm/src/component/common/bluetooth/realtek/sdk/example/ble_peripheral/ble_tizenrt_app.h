@@ -44,6 +44,7 @@ typedef enum
 	BLE_TIZENRT_MSG_STOP_ADV,
 	BLE_TIZENRT_MSG_DISCONNECT,
 	BLE_TIZENRT_MSG_NOTIFY,
+	BLE_TIZENRT_MSG_INDICATE,
 	BLE_TIZENRT_MSG_DELETE_BOND,
 	BLE_TIZENRT_MSG_DELETE_BOND_ALL,
 	BLE_TIZENRT_SERVER_MSG_MAX
@@ -63,6 +64,14 @@ typedef struct
 	uint8_t	 *data;
   uint16_t len;
 } T_TIZENRT_NOTIFY_PARAM;
+
+typedef struct
+{
+  trble_attr_handle att_handle;
+  trble_conn_handle conn_id;
+	uint8_t	 *data;
+  uint16_t len;
+} T_TIZENRT_INDICATE_PARAM;
 
 typedef struct
 {

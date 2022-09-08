@@ -88,7 +88,7 @@ trble_result_e rtw_ble_client_scan_whitelist_add(trble_addr *addr)
     {
         if(false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
         {
-            printf("\create sem fail! \n");
+            printf("create sem fail! \n");
             return TRBLE_FAIL;
         } else {
             debug_print("create sem 0x%x success \n", ble_tizenrt_modify_whitelist_sem);
@@ -784,6 +784,58 @@ trble_result_e rtw_ble_client_operation_enable_notification(trble_operation_hand
     }
 
     uint8_t val[2] = {0x1, 0x0};
+    trble_data in_data;
+    in_data.length = 2;
+    in_data.data = val;
+
+    return rtw_ble_client_operation_write(handle, &in_data);
+}
+
+trble_result_e rtw_ble_client_operation_enable_indication(trble_operation_handle* handle)
+{
+    if (handle == NULL)
+    {
+        return TRBLE_FAIL;
+    }
+
+    if(!le_get_active_link_num())
+    {
+        debug_print("No active connection \n");
+        return TRBLE_FAIL;
+    }
+
+    if (client_init_parm == NULL || client_init_parm->trble_operation_notification_cb == NULL)
+    {
+        return TRBLE_FAIL;
+    }
+
+    uint8_t val[2] = {0x2, 0x0};
+    trble_data in_data;
+    in_data.length = 2;
+    in_data.data = val;
+
+    return rtw_ble_client_operation_write(handle, &in_data);
+}
+
+trble_result_e rtw_ble_client_operation_enable_notification_and_indication(trble_operation_handle* handle)
+{
+    if (handle == NULL)
+    {
+        return TRBLE_FAIL;
+    }
+
+    if(!le_get_active_link_num())
+    {
+        debug_print("No active connection \n");
+        return TRBLE_FAIL;
+    }
+
+    if (client_init_parm == NULL || client_init_parm->trble_operation_notification_cb == NULL)
+    {
+        return TRBLE_FAIL;
+    }
+
+    uint8_t val[2] = {0x3, 0x0};
     trble_data in_data;
     in_data.length = 2;
     in_data.data = val;
