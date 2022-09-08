@@ -17,7 +17,7 @@
 #include "inic_ipc_cfg.h"
 
 /* -------------------------------- Defines --------------------------------- */
-#define CONFIG_INIC_IPC_HOST_API_PRIO 3
+#define CONFIG_INIC_IPC_HOST_API_PRIO 6
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 #define HOST_STACK_SIZE 2048
 #else
