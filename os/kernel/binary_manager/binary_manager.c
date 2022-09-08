@@ -235,7 +235,7 @@ errout_with_nobinary:
 		printf("=============== !!ERROR!! ============== \n");
 		if (!is_found_bootparam) {
 			printf("ERROR!! Not found user partitions because parsing a partition list is failed.\n");
-			printf("Please check whether the partition 'bootparam' exists in CONFIG_FLASH_PART_TYPE with 8192K size.\n");
+			printf("Please check whether the partition 'bootparam' exists in CONFIG_FLASH_PART_TYPE with 8K size.\n");
 		}
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		if (!is_found_ubin) {
