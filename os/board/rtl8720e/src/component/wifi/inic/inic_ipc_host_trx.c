@@ -25,6 +25,7 @@
 
 #define pdFALSE 0
 #define pdTRUE 1
+#define INIC_HOST_RX_TASKLET_PRIO 6
 
 /* -------------------------------- Defines --------------------------------- */
 #ifndef GET_NETIF_FROM_NETDEV
@@ -238,7 +239,7 @@ void inic_ipc_host_init_priv(void)
 	g_inic_host_priv.rx_pending_flag = 0;
 
 	/* Initialize the RX task */
-	if (rtw_create_task(&inic_ipc_host_rx_task, (const char *const)"inic_host_rx_tasklet", 1024, 4, (void *)inic_ipc_host_rx_tasklet, NULL) != _SUCCESS){
+	if (rtw_create_task(&inic_ipc_host_rx_task, (const char *const)"inic_host_rx_tasklet", 1024, INIC_HOST_RX_TASKLET_PRIO, (void *)inic_ipc_host_rx_tasklet, NULL) != _SUCCESS){
 			DBG_8195A("Create inic_ipc_host_rx_task Err!!\n");
 		}
 }

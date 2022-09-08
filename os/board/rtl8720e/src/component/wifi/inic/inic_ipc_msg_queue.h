@@ -20,7 +20,7 @@
 #ifdef CONFIG_AS_INIC_NP
 #define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
 #else
-#define CONFIG_INIC_IPC_MSG_Q_PRI	(5)
+#define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
 #endif
 /* -------------------------------- Macros ---------------------------------- */
 
