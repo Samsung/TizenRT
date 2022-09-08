@@ -117,6 +117,9 @@ ble_result_e ble_server_get_profile_count(uint16_t *count);
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
 ble_result_e ble_server_charact_notify(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
 
+// API for sending a characteristic value indication to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
+ble_result_e ble_server_charact_indicate(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
+
 // set data of attribute value
 ble_result_e ble_server_attr_set_data(ble_attr_handle attr_handle, ble_data *data);
 

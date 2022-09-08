@@ -68,6 +68,7 @@ trble_result_e ble_drv_operation_write_no_response(trble_operation_handle *handl
 /*** Peripheral(Server) ***/
 trble_result_e ble_drv_get_profile_count(uint16_t *count);
 trble_result_e ble_drv_charact_notify(trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
+trble_result_e ble_drv_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
 trble_result_e ble_drv_attr_set_data(trble_attr_handle attr_handle, trble_data *data);
 trble_result_e ble_drv_attr_get_data(trble_attr_handle attr_handle, trble_data *data);
 trble_result_e ble_drv_attr_reject(trble_attr_handle attr_handle, uint8_t app_errorcode);

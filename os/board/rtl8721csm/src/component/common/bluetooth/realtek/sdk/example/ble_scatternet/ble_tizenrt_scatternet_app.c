@@ -448,6 +448,23 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
             }
         }
 			break;
+		case BLE_TIZENRT_MSG_INDICATE:
+        {
+            T_TIZENRT_INDICATE_PARAM *param = pdata;
+            if(param)
+            {
+                debug_print("conn_id %d abs_handle 0x%x data %p \n",
+                                            param->conn_id, param->att_handle, param->data);
+                if(tizenrt_ble_service_send_indicate(param->conn_id, param->att_handle, param->data, param->len))
+                    debug_print("success : subtype = 0x%x \n", subtype);
+                else
+                    debug_print("fail : subtype = 0x%x \n", subtype);
+                os_mem_free(param->data);
+            } else {
+                debug_print("Notify parameter is NULL \n");
+            }
+        }
+			break;
         case BLE_TIZENRT_MSG_DELETE_BOND:
         {
             T_TIZENRT_SERVER_DELETE_BOND_PARAM *param = pdata;

@@ -234,8 +234,49 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
     param->att_handle = attr_handle;
     if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_NOTIFY, param) == false)
     {
-        os_mem_free(param);
         os_mem_free(param->data);
+        os_mem_free(param);
+        debug_print("msg send fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *data_ptr, uint16_t data_length)
+{
+    debug_print("send indicate abs_handle 0x%x \n", attr_handle);
+    if (is_server_init != true)
+    {
+        return TRBLE_INVALID_STATE;
+    }
+
+    if (attr_handle == 0x0000) /* invalid attr_handle */
+    {
+        return TRBLE_NOT_FOUND;
+    }
+
+    T_TIZENRT_NOTIFY_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_INDICATE_PARAM));;
+    if(!param)
+    {
+        debug_print("Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+    param->data = os_mem_alloc(0, data_length);
+    if(!param->data)
+    {
+        os_mem_free(param);
+        debug_print("Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+
+    memcpy(param->data, data_ptr, data_length);
+    param->len = data_length;
+    param->conn_id = con_handle;
+    param->att_handle = attr_handle;
+    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_INDICATE, param) == false)
+    {
+        os_mem_free(param->data);
+        os_mem_free(param);
         debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }

@@ -296,6 +296,32 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, op_enable_noti, (dev, handle));
 	}
 	break;
+
+	case LWNL_REQ_BLE_OP_ENABLE_INDICATE:
+	{
+		trble_operation_handle *handle = NULL;
+		if (data != NULL) {
+			handle = (trble_operation_handle *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, op_enable_indi, (dev, handle));
+	}
+	break;
+
+	case LWNL_REQ_BLE_OP_ENABLE_NOTI_AND_INDICATE:
+	{
+		trble_operation_handle *handle = NULL;
+		if (data != NULL) {
+			handle = (trble_operation_handle *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, op_enable_noti_n_indi, (dev, handle));
+	}
+	break;
 	case LWNL_REQ_BLE_OP_READ:
 	{
 		trble_operation_handle *handle = NULL;
@@ -377,6 +403,25 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		buf = (trble_data *)param.param[2];
 
 		TRBLE_DRV_CALL(ret, dev, charact_noti, (dev, attr_handle, con_handle, buf));
+	}
+	break;
+	case LWNL_REQ_BLE_CHARACT_INDI:
+	{
+		trble_attr_handle attr_handle = 0;
+		trble_conn_handle con_handle = 0;
+		trble_data *buf = NULL;
+
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		attr_handle = *(trble_attr_handle *)param.param[0];
+		con_handle = *(trble_conn_handle *)param.param[1];
+		buf = (trble_data *)param.param[2];
+
+		TRBLE_DRV_CALL(ret, dev, charact_indi, (dev, attr_handle, con_handle, buf));
 	}
 	break;
 	case LWNL_REQ_BLE_ATTR_SET_DATA:

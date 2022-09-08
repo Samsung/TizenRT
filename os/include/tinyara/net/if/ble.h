@@ -81,6 +81,8 @@ typedef enum {
 	LWNL_REQ_BLE_CONNECTED_DEV_LIST,
 	LWNL_REQ_BLE_CONNECTED_INFO,
 	LWNL_REQ_BLE_OP_ENABLE_NOTI,
+	LWNL_REQ_BLE_OP_ENABLE_INDICATE,
+	LWNL_REQ_BLE_OP_ENABLE_NOTI_AND_INDICATE,
 	LWNL_REQ_BLE_OP_READ,
 	LWNL_REQ_BLE_OP_WRITE,
 	LWNL_REQ_BLE_OP_WRITE_NO_RESP,
@@ -88,6 +90,7 @@ typedef enum {
 	// Server
 	LWNL_REQ_BLE_GET_PROFILE_COUNT,
 	LWNL_REQ_BLE_CHARACT_NOTI,
+	LWNL_REQ_BLE_CHARACT_INDI,
 	LWNL_REQ_BLE_ATTR_SET_DATA,
 	LWNL_REQ_BLE_ATTR_GET_DATA,
 	LWNL_REQ_BLE_ATTR_REJECT,
@@ -320,6 +323,8 @@ typedef trble_result_e (*trble_client_disconnect_all)(struct bledev *dev);
 typedef trble_result_e (*trble_connected_device_list)(struct bledev *dev, trble_connected_list *out_connected_list);
 typedef trble_result_e (*trble_connected_info)(struct bledev *dev, trble_conn_handle conn_handle, trble_device_connected *out_connected_device);
 typedef trble_result_e (*trble_operation_enable_notification)(struct bledev *dev, trble_operation_handle *handle);
+typedef trble_result_e (*trble_operation_enable_indication)(struct bledev *dev, trble_operation_handle *handle);
+typedef trble_result_e (*trble_operation_enable_notification_and_indication)(struct bledev *dev, trble_operation_handle *handle);
 typedef trble_result_e (*trble_operation_read)(struct bledev *dev, trble_operation_handle *handle, trble_data *out_data);
 typedef trble_result_e (*trble_operation_write)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
 typedef trble_result_e (*trble_operation_write_no_response)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
@@ -328,6 +333,8 @@ typedef trble_result_e (*trble_operation_write_no_response)(struct bledev *dev, 
 typedef trble_result_e (*trble_get_profile_count)(struct bledev *dev, uint16_t *count);
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
 typedef trble_result_e (*trble_charact_notify)(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
+// API for sending a characteristic value indicate to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
+typedef trble_result_e (*trble_charact_indicate)(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
 typedef trble_result_e (*trble_attr_set_data)(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 typedef trble_result_e (*trble_attr_get_data)(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 // reject attribute request in callback function and return error code
@@ -370,6 +377,9 @@ struct trble_ops {
 	trble_connected_device_list conn_dev_list;
 	trble_connected_info conn_info;
 	trble_operation_enable_notification op_enable_noti;
+	trble_operation_enable_indication op_enable_indi;
+	trble_operation_enable_notification_and_indication op_enable_noti_n_indi;
+
 	trble_operation_read op_read;
 	trble_operation_write op_write;
 	trble_operation_write_no_response op_wrtie_no_resp;
@@ -377,6 +387,7 @@ struct trble_ops {
 	/* Peripheral(Server) */
 	trble_get_profile_count get_profile_count;
 	trble_charact_notify charact_noti;
+	trble_charact_indicate charact_indi;
 	trble_attr_set_data attr_set_data;
 	trble_attr_get_data attr_get_data;
 	trble_attr_reject attr_reject;

@@ -714,6 +714,54 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_operation_enable_notification(handle);
 	} break;
 
+	case BLE_CMD_OP_ENABLE_INDICATE: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		ble_client_ctx *ctx = (ble_client_ctx *)param->param[0];
+		ble_attr_handle attr_handle = *(ble_attr_handle *)param->param[1];
+
+		if (ctx == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+
+		if (ctx->state != BLE_CLIENT_CONNECTED) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+
+		trble_operation_handle handle[1] = { 0, };
+		handle->conn_handle = ctx->conn_handle;
+		handle->attr_handle = attr_handle;
+
+		ret = ble_drv_operation_enable_indication(handle);
+	} break;
+
+	case BLE_CMD_OP_ENABLE_NOTI_AND_INDICATE: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		ble_client_ctx *ctx = (ble_client_ctx *)param->param[0];
+		ble_attr_handle attr_handle = *(ble_attr_handle *)param->param[1];
+
+		if (ctx == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+
+		if (ctx->state != BLE_CLIENT_CONNECTED) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+
+		trble_operation_handle handle[1] = { 0, };
+		handle->conn_handle = ctx->conn_handle;
+		handle->attr_handle = attr_handle;
+
+		ret = ble_drv_operation_enable_notification_and_indication(handle);
+	} break;
+
 	case BLE_CMD_OP_READ: {
 		BLE_STATE_CHECK;
 
@@ -806,6 +854,17 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		trble_data *data = (trble_data *)param->param[2];
 
 		ret = ble_drv_charact_notify(attr_handle, con_handle, data);
+	} break;
+
+	case BLE_CMD_CHARACT_INDI: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		trble_attr_handle attr_handle = *(trble_attr_handle *)param->param[0];
+		trble_conn_handle con_handle = *(trble_conn_handle *)param->param[1];
+		trble_data *data = (trble_data *)param->param[2];
+
+		ret = ble_drv_charact_indicate(attr_handle, con_handle, data);
 	} break;
 
 	case BLE_CMD_ATTR_SET_DATA: {

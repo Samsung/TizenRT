@@ -259,6 +259,28 @@ trble_result_e ble_drv_operation_enable_notification(trble_operation_handle *han
 	return res;
 }
 
+trble_result_e ble_drv_operation_enable_indication(trble_operation_handle *handle)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_OP_ENABLE_INDICATE}, sizeof(trble_operation_handle *), (void *)handle, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+	dbg("res %d\n", res);
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_operation_enable_notification_and_indication(trble_operation_handle *handle)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_OP_ENABLE_NOTI_AND_INDICATE}, sizeof(trble_operation_handle *), (void *)handle, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+	dbg("res %d\n", res);
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_operation_read(trble_operation_handle *handle, trble_data *out_data)
 {
 	trble_result_e res = TRBLE_SUCCESS;
@@ -308,6 +330,17 @@ trble_result_e ble_drv_charact_notify(trble_attr_handle attr_handle, trble_conn_
 	trble_result_e res = TRBLE_SUCCESS;
 	lwnl_msg_params msg_data = { 3, {(void *)&attr_handle, (void *)&con_handle, (void *)data} };
 	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CHARACT_NOTI}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 3, {(void *)&attr_handle, (void *)&con_handle, (void *)data} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CHARACT_INDI}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
