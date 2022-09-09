@@ -215,7 +215,7 @@ int board_initialize(void)
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed, ret = %d\n", devname, ret);
 	} else {
-		ret = mount(devname, QEMU_SMARTFS_MOUNT_POINT, "smartfs", 0, NULL);
+		ret = mount(devname, QEMU_SMARTFS_MOUNT_POINT, "jSmartFs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed, ret = %d\n", devname, ret);
 		} else {

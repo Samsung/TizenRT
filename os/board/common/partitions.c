@@ -351,7 +351,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 	if (ret != OK) {
 		printf("ERROR: mksmartfs on %s failed errno : %d\n", fs_devname, errno);
 	} else {
-		ret = mount(fs_devname, "/mnt", "smartfs", 0, NULL);
+		ret = mount(fs_devname, "/mnt", "jSmartFs", 0, NULL);
 		if (ret != OK) {
 			printf("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
 		} else {

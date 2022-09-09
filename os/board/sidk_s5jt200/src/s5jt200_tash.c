@@ -329,7 +329,7 @@ int board_app_initialize(void)
 	} else {
 		ret = mount(SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME,
 				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_MOUNTPOINT,
-				"smartfs", 0, NULL);
+				"jSmartFs", 0, NULL);
 		if (ret != OK)
 			lldbg("ERROR: mounting '%s' failed\n",
 				SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
@@ -349,7 +349,7 @@ int board_app_initialize(void)
 	} else {
 		ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME,
 				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_MOUNTPOINT,
-				"smartfs", 0, NULL);
+				"jSmartFs", 0, NULL);
 		if (ret != OK)
 			lldbg("ERROR: mounting '%s' failed\n",
 				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME);
@@ -377,7 +377,7 @@ int board_app_initialize(void)
 				lldbg("ERROR: mksmartfs on %s failed", CONFIG_SIDK_S5JT200_RAMMTD_DEV_POINT);
 				kmm_free(rambuf);
 			} else {
-				ret = mount(CONFIG_SIDK_S5JT200_RAMMTD_DEV_POINT, CONFIG_SIDK_S5JT200_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
+				ret = mount(CONFIG_SIDK_S5JT200_RAMMTD_DEV_POINT, CONFIG_SIDK_S5JT200_RAMMTD_MOUNT_POINT, "jSmartFs", 0, NULL);
 				if (ret < 0) {
 					lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
 					kmm_free(rambuf);

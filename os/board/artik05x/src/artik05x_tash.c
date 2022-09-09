@@ -201,7 +201,7 @@ int board_app_initialize(void)
 	} else {
 		ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME,
 				CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_MOUNTPOINT,
-				"smartfs", 0, NULL);
+				"jSmartFs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed\n",
 					CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME);
@@ -234,7 +234,7 @@ int board_app_initialize(void)
 					lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK05X_RAMMTD_DEV_POINT);
 					kmm_free(rambuf);
 				} else {
-					ret = mount(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, CONFIG_ARTIK05X_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
+					ret = mount(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, CONFIG_ARTIK05X_RAMMTD_MOUNT_POINT, "jSmartFs", 0, NULL);
 					if (ret < 0) {
 						lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
 						kmm_free(rambuf);

@@ -202,7 +202,7 @@ void imxrt_filesystem_initialize(void)
 					IMXLOG("SMARTFS ERROR: mksmartfs failed");
 					kmm_free(rambuf);
 				} else {
-					ret = mount(CONFIG_IMXRT_RAMMTD_DEV_POINT, CONFIG_IMXRT_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
+					ret = mount(CONFIG_IMXRT_RAMMTD_DEV_POINT, CONFIG_IMXRT_RAMMTD_MOUNT_POINT, "jSmartFs", 0, NULL);
 					if (ret < 0) {
 						IMXLOG("SMARTFS ERROR: mount the SMART volume failed");
 						kmm_free(rambuf);
