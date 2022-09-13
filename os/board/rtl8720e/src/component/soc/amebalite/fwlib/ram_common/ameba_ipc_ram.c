@@ -87,10 +87,12 @@ void IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum)
 		break;
 	}
 
-	if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
-		DBG_8195A("Last Req not clean!\n");
-	} else {
-		IPCx->IPC_TX_DATA |= (BIT(IPC_ChNum + ipc_shift));
+	if (IPCx) {
+		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
+			DBG_8195A("Last Req not clean!\n");
+		} else {
+			IPCx->IPC_TX_DATA |= (BIT(IPC_ChNum + ipc_shift));
+		}
 	}
 }
 

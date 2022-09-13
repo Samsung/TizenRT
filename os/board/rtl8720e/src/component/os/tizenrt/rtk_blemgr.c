@@ -365,7 +365,7 @@ trble_result_e trble_netmgr_attr_get_data(struct bledev *dev, trble_attr_handle 
 		data->data = rtw_ble_server_att_get_data_ptr(attr_handle);
 		data->length = rtw_ble_server_att_get_length(attr_handle);
 	} else {
-		ret = TRBLE_FAIL;
+		return TRBLE_FAIL;
 	}
 	if (data->data == NULL || data->length == 0) {
 		ret = TRBLE_FAIL;
