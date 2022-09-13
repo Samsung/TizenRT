@@ -393,7 +393,7 @@ int OTA_Image2SignatureCheck(uint32_t input_addr)
 	SubImgInfo_TypeDef SubImgInfo[12];
 	Certificate_TypeDef Cert;
 	Manifest_TypeDef Manifest;
-	u32 LogAddr, PhyAddr, ImgAddr, TotalLen, TotalLen_KM4= 0;
+	u32 LogAddr, PhyAddr, ImgAddr, TotalLen = 0, TotalLen_KM4 = 0;
 	u8 Index = 0, Cnt, i; 
 	int ret;
 
