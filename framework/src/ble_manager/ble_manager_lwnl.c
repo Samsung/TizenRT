@@ -264,7 +264,7 @@ trble_result_e ble_drv_operation_enable_indication(trble_operation_handle *handl
 	trble_result_e res = TRBLE_SUCCESS;
 	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_OP_ENABLE_INDICATE}, sizeof(trble_operation_handle *), (void *)handle, (void *)&res};
 	if (_send_msg(&msg) < 0) {
-	dbg("res %d\n", res);
+		dbg("res %d\n", res);
 		res = TRBLE_FILE_ERROR;
 	}
 	return res;

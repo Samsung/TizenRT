@@ -88,7 +88,7 @@ trble_result_e rtw_ble_client_scan_whitelist_add(trble_addr *addr)
     {
         if(false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
         {
-            printf("create sem fail! \n");
+            debug_print("create sem fail! \n");
             return TRBLE_FAIL;
         } else {
             debug_print("create sem 0x%x success \n", ble_tizenrt_modify_whitelist_sem);
@@ -145,7 +145,7 @@ trble_result_e rtw_ble_client_scan_whitelist_delete(trble_addr *addr)
     {
         if(false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
         {
-            printf("create sem fail! \n");
+            debug_print("create sem fail! \n");
             return TRBLE_FAIL;
         } else {
             debug_print("create sem 0x%x success \n", ble_tizenrt_modify_whitelist_sem);
@@ -202,7 +202,7 @@ trble_result_e rtw_ble_client_scan_whitelist_clear_all(void)
     {
         if (false == os_mutex_create(&ble_tizenrt_modify_whitelist_sem))
         {
-            printf("create sem fail! \n");
+            debug_print("create sem fail! \n");
             return TRBLE_FAIL;
         } else {
             debug_print("create sem 0x%x success \n", ble_tizenrt_modify_whitelist_sem);
@@ -307,7 +307,7 @@ trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_par
     if (scan_parm->raw_data_length != 0) {
         if(!le_scan_info_filter(true, 0, scan_parm->raw_data_length, scan_parm->raw_data))
         {
-            printf("set scan info fail !! \n");
+            debug_print("set scan info fail !! \n");
             return TRBLE_FAIL;
         } else {
             debug_print("set scan info success \n");
