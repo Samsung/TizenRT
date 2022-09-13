@@ -273,7 +273,6 @@ void inic_ipc_api_host_task(void)
 		p_ipc_msg->EVENT_ID = 0;
 		DCache_Clean((u32)p_ipc_msg, sizeof(inic_ipc_dev_request_message));
 	} while (1);
-	rtw_delete_task(&inic_ipc_api_host_handler);
 }
 
 /**
