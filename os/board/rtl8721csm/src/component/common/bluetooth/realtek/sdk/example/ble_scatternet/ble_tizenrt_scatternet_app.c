@@ -1648,27 +1648,29 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
                                 p_gcs_cb_data->cb_content.notif_ind.handle,
                                 p_gcs_cb_data->cb_content.notif_ind.value_size);
                 T_TIZENRT_CLIENT_NOTIFICATION *notify_result = os_mem_alloc(0, sizeof(T_TIZENRT_CLIENT_NOTIFICATION));
-                notify_result->noti_data.data = os_mem_alloc(0, p_gcs_cb_data->cb_content.notif_ind.value_size);
-                if(notify_result &&notify_result->noti_data.data)
-                {
-                    memcpy(notify_result->noti_data.data, p_gcs_cb_data->cb_content.notif_ind.p_value,
-                                                    p_gcs_cb_data->cb_content.notif_ind.value_size);
-                    notify_result->noti_data.length = p_gcs_cb_data->cb_content.notif_ind.value_size;
-                    notify_result->handle.conn_handle = conn_id;
-                    notify_result->handle.attr_handle = p_gcs_cb_data->cb_content.notif_ind.handle;
-                    debug_print("Notification: 0x \n");
-                    for (int i = 0; i < notify_result->noti_data.length; i++)
+                if (notify_result) {
+                    notify_result->noti_data.data = os_mem_alloc(0, p_gcs_cb_data->cb_content.notif_ind.value_size);
+                    if (notify_result->noti_data.data)
                     {
-                        debug_print("%x",notify_result->noti_data.data[i]);
+                        memcpy(notify_result->noti_data.data, p_gcs_cb_data->cb_content.notif_ind.p_value,
+                                                        p_gcs_cb_data->cb_content.notif_ind.value_size);
+                        notify_result->noti_data.length = p_gcs_cb_data->cb_content.notif_ind.value_size;
+                        notify_result->handle.conn_handle = conn_id;
+                        notify_result->handle.attr_handle = p_gcs_cb_data->cb_content.notif_ind.handle;
+                        debug_print("Notification: 0x \n");
+                        for (int i = 0; i < notify_result->noti_data.length; i++)
+                        {
+                            debug_print("%x",notify_result->noti_data.data[i]);
+                        }
+                        if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_NOTIFICATION_MSG, notify_result) == false)
+                        {
+                            os_mem_free(notify_result->noti_data.data);
+                            os_mem_free(notify_result);
+                            debug_print("callback msg send fail \n");
+                        }
+                    } else {
+                        debug_print("Memory allocation failed \n");
                     }
-                    if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_NOTIFICATION_MSG, notify_result) == false)
-                    {
-                        os_mem_free(notify_result->noti_data.data);
-                        os_mem_free(notify_result);
-                        debug_print("callback msg send fail \n");
-                    }
-                } else {
-                    debug_print("Memory allocation failed \n");
                 }
             }
             break;
