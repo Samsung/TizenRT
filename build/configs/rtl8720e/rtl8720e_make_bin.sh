@@ -220,9 +220,15 @@ function copy_km4_image3()
 
 	source ${CONFIG}
 
+	if [ "${CONFIG_ARCH_FPU}" == "y" ];then
+		IMG3_ALL_BIN=$GNUUTL/km4_image3_all_fpu.bin
+	else
+		IMG3_ALL_BIN=$GNUUTL/km4_image3_all.bin
+	fi
+
 	echo "========== Copy km4_image3_all into bin output folder=========="
 	if [ "${CONFIG_AMEBALITE_TRUSTZONE}" == "y" ];then
-		cp $GNUUTL/km4_image3_all.bin $BINDIR/km4_image3_all.bin
+		cp $IMG3_ALL_BIN $BINDIR/km4_image3_all.bin
 	fi
 }
 
