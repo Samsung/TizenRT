@@ -206,6 +206,11 @@ bool osif_task_priority_get(void *p_handle, uint16_t *p_priority)
 
 	p_tcb = sched_gettcb(pid);
 
+	if (!p_tcb) {
+		dbg("p_tcb is NULL\n");
+		return _FAIL;
+	}
+
 	*p_priority = p_tcb->sched_priority - SCHED_PRIORITY_DEFAULT;
 
 	return _SUCCESS;
