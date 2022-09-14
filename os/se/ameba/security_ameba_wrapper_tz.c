@@ -99,7 +99,12 @@
 #define SECTOR_SIZE 4096
 
 /* Secure efuse key location */
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 #define SAMSUNG_KEY_ADDR 0x150
+#endif
+#ifdef CONFIG_AMEBALITE_TRUSTZONE
+#define SAMSUNG_KEY_ADDR 0x390
+#endif
 
 /* Non-Secure Data buff, 8K (2 Sector + Tag) */
 #define NS_BUF_LEN ((SECTOR_SIZE * 2) + 32)
