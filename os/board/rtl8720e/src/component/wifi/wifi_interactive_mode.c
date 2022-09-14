@@ -441,7 +441,7 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 	int key_id = 0;
 	void *semaphore;
 	int security_retry_count = 0;
-	uint8_t pscan_config;
+	uint8_t pscan_config = 0;
 	rtw_network_info_t wifi_info = {0};
 
 	trwifi_ap_auth_type_e auth = ap_connect_config->ap_auth_type;
