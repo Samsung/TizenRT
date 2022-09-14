@@ -230,8 +230,8 @@ void promisc_update_candi_ap_rssi_avg(s8 rssi, u8 cnt)
 #ifdef CONFIG_PROMISC
 	u32 param_buf[2];
 
-	param_buf[0] = rssi;
-	param_buf[1] = cnt;
+	param_buf[0] = (u32)rssi;
+	param_buf[1] = (u32)cnt;
 	inic_ipc_api_host_message_send(IPC_API_PROMISC_UPDATE_CANDI_AP_RSSI_AVG, param_buf, 2);
 #endif
 }
@@ -303,13 +303,14 @@ int promisc_add_packet_filter(u8 filter_id, rtw_packet_filter_pattern_t *patt, r
 
 	if (patt) {
 		DCache_Clean((u32)patt, sizeof(rtw_packet_filter_pattern_t));
+		if (patt->mask) {
+			DCache_Clean((u32)patt->mask, (u32)patt->mask_size);
+		}
+		if (patt->pattern) {
+			DCache_Clean((u32)patt->pattern, (u32)patt->mask_size);
+		}
 	}
-	if (patt->mask) {
-		DCache_Clean((u32)patt->mask, (u32)patt->mask_size);
-	}
-	if (patt->pattern) {
-		DCache_Clean((u32)patt->pattern, (u32)patt->mask_size);
-	}
+
 	param_buf[0] = filter_id;
 	param_buf[1] = (u32)patt;
 	param_buf[2] = rule;
@@ -566,7 +567,7 @@ void cmd_promisc(int argc, char **argv)
 #ifdef CONFIG_PROMISC
 	wifi_init_packet_filter();
 #endif
-	if ((argc == 2) && ((duration = atoi(argv[1])) > 0))
+	if ((argc == 2) && ((duration = atoi(argv[1])) > 0) && (duration < 0x7FFFFFFF))
 		//promisc_test(duration, 0);
 	{
 		promisc_test_all(duration, 0);
