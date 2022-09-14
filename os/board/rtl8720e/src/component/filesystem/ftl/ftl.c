@@ -1440,6 +1440,11 @@ void ftl_mapping_table_init(void)
 		//                                  MAPPING_TABLE_SIZE);//table is initialised as 0
 
 		ftl_mapping_table = rtw_zmalloc(MAPPING_TABLE_SIZE);
+
+		if (NULL == ftl_mapping_table) {
+			FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] ftl_mapping_table rtw_zmalloc fail!");
+			ASSERT(0);
+		}
 	}
 
 	uint8_t pageID = g_cur_pageID;
