@@ -73,9 +73,8 @@ static uint16_t h4_recv_data(uint8_t *buf, uint16_t len)
 {
     uint16_t read_len = 0;
     uint16_t read_len_per = 0;
-    uint16_t try_times = len+10;
 
-    while (try_times)
+    while (1)
     {
         read_len_per = hci_uart_read(buf+read_len, len - read_len);
         read_len += read_len_per;
@@ -83,7 +82,6 @@ static uint16_t h4_recv_data(uint8_t *buf, uint16_t len)
             break;
         if (0 == read_len_per)
         {
-            try_times--;
             osif_sem_take(hci_h4->rx_ind_sema, 0xffffffffUL);
             if(!hci_h4->rx_run)
                 return 0;
