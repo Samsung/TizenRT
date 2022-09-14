@@ -203,8 +203,6 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 
 	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
 
-	u32 tmp;
-	u32 clock;
 	RCC_PeriphClockSource_SPORT(CKSL_I2S_XTAL40M);
 
 	if (obj->i2s_idx == I2S1) {
@@ -239,7 +237,6 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 	SP_InitStruct.SP_SR = obj->sampling_rate;
 	SP_InitStruct.SP_SetMultiIO = SP_TX_MULTIIO_EN;
 	SP_InitStruct.SP_SetMultiIO = SP_RX_MULTIIO_EN;
-	SP_InitStruct.SP_SelClk = clock;
 	if (obj->direction == I2S_DIR_TX) {
 		AUDIO_SP_Init(obj->i2s_idx, SP_DIR_TX, &SP_InitStruct);
 	} else {

@@ -211,8 +211,8 @@ u32 AUDIO_SP_GetRXChnLen(AUDIO_SPORT_TypeDef *SPORTx)
 void AUDIO_SP_SetTXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 {
 	u32 Tmp;
-	u32 MI;
-	u32 NI;
+	u32 MI = 0;
+	u32 NI = 0;
 	u32 Bclk_div;
 
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
@@ -296,8 +296,8 @@ void AUDIO_SP_SetTXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 void AUDIO_SP_SetRXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 {
 	u32 Tmp;
-	u32 NI;
-	u32 MI;
+	u32 NI = 0;
+	u32 MI = 0;
 	u32 Bclk_div;
 
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
