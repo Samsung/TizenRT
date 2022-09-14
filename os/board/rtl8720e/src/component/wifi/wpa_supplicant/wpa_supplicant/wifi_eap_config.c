@@ -285,35 +285,25 @@ int eap_start(char *method)
 
 int connect_by_open_system(char *target_ssid)
 {
-	int retry_count = 0, ret;
+	int ret;
 	rtw_network_info_t connect_param = {0};
 	if (target_ssid != NULL) {
 		rtw_memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
 		connect_param.ssid.len = strlen(target_ssid);
 		connect_param.security_type = RTW_SECURITY_OPEN;
-		while (1) {
-			rtw_msleep_os(500);	//wait scan complete.
-			ret = wifi_connect(&connect_param, 1);
-			if (ret == RTW_SUCCESS) {
-				//printf("\r\n[EAP]Associate with AP success\n");
-				break;
-			}
-			if (retry_count == 0) {
-				//printf("\r\n[EAP]Associate with AP failed %d\n", ret);
-				return -1;
-			}
-			retry_count --;
-			printf("Retry connection...\n");
-
-			judge_station_disconnect();
-			set_eap_phase(ENABLE);
+		rtw_msleep_os(500);	//wait scan complete.
+		ret = wifi_connect(&connect_param, 1);
+		if (ret == RTW_SUCCESS) {
+			//printf("\r\n[EAP]Associate with AP success\n");
+			return 0;
+		} else {
+			//printf("\r\n[EAP]Associate with AP failed %d\n", ret);
+			return -1;
 		}
 	} else {
 		printf("\r\n[EAP]Target SSID is NULL\n");
 		return -1;
 	}
-
-	return 0;
 }
 
 void eap_autoreconnect_thread(void *method)
