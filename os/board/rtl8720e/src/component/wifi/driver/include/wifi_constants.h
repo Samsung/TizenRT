@@ -202,7 +202,7 @@ enum {
 
 	RTW_SECURITY_FORCE_32_BIT   = 0x7fffffff                                        /**< Exists only to force rtw_security_t type to 32 bits */
 };
-typedef unsigned long rtw_security_t;
+typedef long rtw_security_t;
 
 /**
  * @brief The enumeration lists wpa mode
