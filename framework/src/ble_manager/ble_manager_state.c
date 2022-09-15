@@ -573,7 +573,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			break;
 		}
 
-		if (ctx->mqfd < 0) {
+		if (ctx->mqfd == (mqd_t)ERROR) {
 			ret = TRBLE_INVALID_STATE;
 			break;
 		}
