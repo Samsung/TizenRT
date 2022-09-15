@@ -140,10 +140,17 @@ T_APP_RESULT tizenrt_ble_service_attr_write_cb(uint8_t conn_id, T_SERVER_ID serv
         }
     }
 
-    if(p_char_info->app_reject)
+    if(p_char_info) 
     {
-        debug_print("app_reject = 0x%x \n", p_char_info->app_reject);
-        return p_char_info->app_reject;
+        if(p_char_info->app_reject)
+        {
+            debug_print("app_reject = 0x%x \n", p_char_info->app_reject);
+            return p_char_info->app_reject;
+        }
+    }
+    else 
+    {
+        return APP_RESULT_APP_ERR;
     }
     return cause;
 }
@@ -184,9 +191,17 @@ T_APP_RESULT  tizenrt_ble_service_attr_read_cb(uint8_t conn_id, T_SERVER_ID serv
     {
         tizenet_ble_service_cb(service_id, (void *)&callback_data);
     }
-    *pp_value = p_char_info->read_ptr;
-    *p_length = p_char_info->read_len;
 
+    if (p_char_info != NULL)
+    {
+        *pp_value = p_char_info->read_ptr;
+        *p_length = p_char_info->read_len;
+    }
+    else
+    {
+        return APP_RESULT_APP_ERR;
+    }
+	
     debug_print("p_char_info->data %p  \n", p_char_info->data);
     debug_print("pp_value %p \n", *pp_value);
     for (int i = 0; i < *p_length; i++)
