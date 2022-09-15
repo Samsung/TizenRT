@@ -543,14 +543,17 @@ int main(int argc, char **argv, char **envp)
 		case '?':
 			fprintf(stderr, "Unrecognized option: %c\n", optopt);
 			show_usage(argv[0]);
+			break;
 
 		case ':':
 			fprintf(stderr, "Missing option argument, option: %c\n", optopt);
 			show_usage(argv[0]);
+			break;
 
 		default:
 			fprintf(stderr, "Unexpected option: %c\n", ch);
 			show_usage(argv[0]);
+			break;
 		}
 	}
 
