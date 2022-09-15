@@ -398,6 +398,10 @@ bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
     debug_print("tizenrt_ble_service_tbl profile %p profile_count %d \n", profile, profile_count);
     abs_att_count = 0;
     tizenrt_ble_service_tbl = (T_ATTRIB_APPL *)os_mem_alloc(0, profile_count * sizeof(T_ATTRIB_APPL));
+    if (!tizenrt_ble_service_tbl) {
+        debug_print("tizenrt_ble_service_tbl malloc fail\n");
+        return false;
+    }
     memset(tizenrt_ble_service_tbl, 0, profile_count * sizeof(T_ATTRIB_APPL));
     uint8_t srv_index = 0;
     uint8_t char_index = 0;
