@@ -237,7 +237,7 @@ static off_t compress_lseek_block(int filfd, uint16_t binary_header_size, int bl
 static off_t compress_read_block(int filfd, uint16_t binary_header_size, FAR uint8_t *buf, int block_number)
 {
 	off_t rpos;
-	size_t readsize;
+	off_t readsize;
 	ssize_t nbytes;
 	off_t current_block_offset;
 	off_t next_block_offset;
@@ -302,6 +302,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 	int block_size_to_write;	/* Size to write into buffer from decompressed block */
 	int buffer_index;
 	int blocksize;
+	int block_readsize;
 #if CONFIG_COMPRESSION_TYPE == LZMA
 	unsigned int writesize;
 	unsigned int size;
@@ -327,13 +328,18 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 	/* Reading and decompressing blocks from first_block to last_block. Then writing to buffer. */
 	for (; index < first_block + no_blocks; index++) {
 		/* Read compressed 'index' block into read_buffer */
-		size = compress_read_block(filfd, binary_header_size, buffers.read_buffer, index);
-		if (size < 0) {
+		block_readsize = compress_read_block(filfd, binary_header_size, buffers.read_buffer, index);
+		if (block_readsize < 0) {
 			bcmpdbg("Read for compressed block %d failed\n", index);
-			buffer_index = size;
+			buffer_index = block_readsize;
 			goto error_compress_read;
 		}
 
+#if CONFIG_COMPRESSION_TYPE == LZMA
+		size = (unsigned int)block_readsize;
+#elif CONFIG_COMPRESSION_TYPE == MINIZ
+		size = (long unsigned int)block_readsize;
+#endif
 		/* Decompress block in read_buffer to out_buffer */
 		ret = compress_decompress_block(buffers.out_buffer, &writesize, buffers.read_buffer, &size, index);
 		if (ret == ERROR) {
