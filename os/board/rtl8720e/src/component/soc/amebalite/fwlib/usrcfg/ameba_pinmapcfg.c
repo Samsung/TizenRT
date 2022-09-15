@@ -47,7 +47,7 @@ const PMAP_TypeDef pmap_func[] = {
 	{_PA_16,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_17,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_18,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
-	{_PA_19,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
+	{_PA_19,			GPIO_PuPd_UP,			GPIO_PuPd_UP},			 //
 	{_PA_20,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 	//log_TX sleep need pull up
 	{_PA_21,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_22,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 	//swr_voltage_sel sleep
