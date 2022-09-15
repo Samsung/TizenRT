@@ -285,6 +285,10 @@ void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb)
 
 	/* allocate host_recv_buf and associate to the p_buf */
 	precvbuf = (struct host_recv_buf *)rtw_zmalloc(sizeof(struct host_recv_buf));
+	if (!precvbuf) {
+		DBG_8195A("Allocate host_recv_buf Err!!\n");
+		return;
+	}
 	precvbuf->p_buf = p_buf;
 	precvbuf->idx_wlan = idx_wlan;
 
