@@ -87,7 +87,11 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	int ret;
 
 	/* Sanity check */
-	if (load_attr && load_attr->bin_size <= 0) {
+	if (!load_attr) {
+		berr("ERROR: Invalid load_attr\n");
+		errcode = -EINVAL;
+		goto errout;
+	} else if (load_attr->bin_size <= 0) {
 		berr("ERROR: Invalid file length!\n");
 		errcode = -EINVAL;
 		goto errout;
