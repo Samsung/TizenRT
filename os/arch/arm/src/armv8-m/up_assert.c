@@ -118,6 +118,7 @@
 #include "up_arch.h"
 #include "up_internal.h"
 #include "mpu.h"
+#include "nvic.h"
 
 bool abort_mode = false;
 
@@ -129,6 +130,7 @@ extern sq_queue_t g_freemsg_list;
 
 extern uint32_t system_exception_location;
 extern uint32_t user_assert_location;
+extern int g_irq_nums[3];
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -260,122 +262,134 @@ static void up_dumpstate(void)
 {
 	struct tcb_s *rtcb = this_task();
 	uint32_t sp = up_getsp();
-	uint32_t ustackbase;
-	uint32_t ustacksize;
+	uint32_t stackbase = 0;
+	uint32_t stacksize = 0;
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
-	uint32_t istackbase;
-	uint32_t istacksize;
+	uint32_t istackbase = 0;
+	uint32_t istacksize = 0;
 #endif
-#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
-	uint32_t nestirqstkbase;
-	uint32_t nestirqstksize;
-#endif
+	uint32_t nestirqstkbase = 0;
+	uint32_t nestirqstksize = 0;
+	uint8_t irq_num;
 
-	/* Get the limits on the user stack memory */
+	/* Get the limits for each type of stack */
 
-	ustackbase = (uint32_t)rtcb->adj_stack_ptr;
-	ustacksize = (uint32_t)rtcb->adj_stack_size;
-	lldbg("sp:     %08x\n", sp);
-
-#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
-	/* Get the limits on the nested irq stack */
-	nestirqstkbase = (uint32_t)&g_nestedirqstkbase;
-	nestirqstksize = (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3);
-
-	lldbg("Nested IRQ stack:\n");
-	lldbg("  base: %08x\n", nestirqstkbase);
-	lldbg("  size: %08x\n", nestirqstksize);
-#ifdef CONFIG_STACK_COLORATION
-	lldbg("  used: %08x\n", up_check_nestirqstack());
-#endif
-
-	/* Does the current stack pointer lie within the nested interrupt
-	 * stack?
-	 */
-
-	if (sp <= nestirqstkbase && sp > nestirqstkbase - nestirqstksize) {
-		/* Yes.. dump the interrupt stack */
-
-		up_stackdump(sp, nestirqstkbase);
-	}
-#endif
-
-	
+	stackbase = (uint32_t)rtcb->adj_stack_ptr;
+	stacksize = (uint32_t)rtcb->adj_stack_size;
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
-	/* Get the limits on the interrupt stack memory */
-
 	istackbase = (uint32_t)&g_intstackbase;
 	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
-
-	/* Show interrupt stack info */
-
-	lldbg("IRQ stack:\n");
-	lldbg("  base: %08x\n", istackbase);
-	lldbg("  size: %08x\n", istacksize);
-#ifdef CONFIG_STACK_COLORATION
-	lldbg("  used: %08x\n", up_check_intstack());
 #endif
-
-	/* Does the current stack pointer lie within the interrupt
-	 * stack?
-	 */
-
-	if (sp <= istackbase && sp > istackbase - istacksize) {
-		/* Yes.. dump the interrupt stack */
-
-		up_stackdump(sp, istackbase);
-	}
-
-	/* Extract the user stack pointer if we are in an interrupt handler.
-	 * If we are not in an interrupt handler.  Then sp is the user stack
-	 * pointer (and the above range check should have failed).
-	 */
-
-	if (current_regs) {
-		sp = current_regs[REG_R13];
-		lldbg("sp:     %08x\n", sp);
-	}
-
-	lldbg("User stack:\n");
-	lldbg("  base: %08x\n", ustackbase);
-	lldbg("  size: %08x\n", ustacksize);
-#ifdef CONFIG_STACK_COLORATION
-	lldbg("  used: %08x\n", up_check_tcbstack(rtcb));
+#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
+	nestirqstkbase = (uint32_t)&g_nestedirqstkbase;
+	nestirqstksize = (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3);
 #endif
+	bool is_irq_assert = false;
+	bool is_sp_corrupt = false;
 
-	/* Dump the user stack if the stack pointer lies within the allocated user
-	 * stack memory.
+	/* Check if the assert location is in user thread or IRQ handler.
+	 * If the irq_num is lesser than NVIC_IRQ_USAGEFAULT, then it is
+	 * a fault and not an irq.
 	 */
-
-	if (sp <= ustackbase && sp > ustackbase - ustacksize) {
-		up_stackdump(sp, ustackbase);
+	if (g_irq_nums[2] && (g_irq_nums[0] <= NVIC_IRQ_USAGEFAULT)) {
+		/* Assert in nested irq */
+		irq_num = 1;
+		is_irq_assert = true;
+		lldbg("Code asserted in nested IRQ state!\n");
+	} else if (g_irq_nums[1] && (g_irq_nums[0] > NVIC_IRQ_USAGEFAULT)) {
+		/* Assert in nested irq */
+		irq_num = 0;
+		is_irq_assert = true;
+		lldbg("Code asserted in nested IRQ state!\n");
+	} else if (g_irq_nums[1] && (g_irq_nums[0] <= NVIC_IRQ_USAGEFAULT)) {
+		/* Assert in irq */
+		irq_num = 1;
+		is_irq_assert = true;
+		lldbg("Code asserted in IRQ state!\n");
+	} else if (g_irq_nums[0] > NVIC_IRQ_USAGEFAULT) {
+		/* Assert in irq */
+		irq_num = 0;
+		is_irq_assert = true;
+		lldbg("Code asserted in IRQ state!\n");
+	} else {
+		/* Assert in user thread */
+		lldbg("Code asserted in normal thread!\n");
+		if (current_regs) {
+			/* If assert is in user thread, but current_regs is not NULL,
+			 * it means that assert happened due to a fault. So, we want to
+			 * reset the sp to the value just before the fault happened
+			 */
+			sp = current_regs[REG_R13];
+		}
 	}
+
+	/* Print IRQ handler details if required */
+
+	if (is_irq_assert) {
+		lldbg("IRQ num: %d\n", g_irq_nums[irq_num]);
+		lldbg("IRQ handler: %08x \n", g_irqvector[g_irq_nums[irq_num]].handler);
+#ifdef CONFIG_DEBUG_IRQ_INFO
+		lldbg("IRQ name: %s \n", g_irqvector[g_irq_nums[irq_num]].irq_name);
+#endif
+		if ((sp <= nestirqstkbase) && (sp > (nestirqstkbase - nestirqstksize))) {
+			stackbase = nestirqstkbase;
+			stacksize = nestirqstksize;
+			lldbg("Current SP is Nested IRQ SP: %08x\n", sp);
+			lldbg("Nested IRQ stack:\n");
+		} else
+#if CONFIG_ARCH_INTERRUPTSTACK > 3
+		if ((sp <= istackbase) && (sp > (istackbase - istacksize))) {
+			stackbase = istackbase;
+			stacksize = istacksize;
+			lldbg("Current SP is IRQ SP: %08x\n", sp);
+			lldbg("IRQ stack:\n");
+		} else {
+			is_sp_corrupt = true;
+		}
 #else
-
-	/* Show user stack info */
-
-	lldbg("stack base: %08x\n", ustackbase);
-	lldbg("stack size: %08x\n", ustacksize);
-#ifdef CONFIG_STACK_COLORATION
-	lldbg("stack used: %08x\n", up_check_tcbstack(rtcb));
+		if ((sp <= stackbase) && (sp > (stackbase - stacksize))) {
+			lldbg("Current SP is User Thread SP: %08x\n", sp);
+			lldbg("User stack:\n");
+		} else {
+			is_sp_corrupt = true;
+		}
 #endif
+	} else if ((sp <= stackbase) && (sp > (stackbase - stacksize))) {
+		lldbg("Current SP is User Thread SP: %08x\n", sp);
+		lldbg("User stack:\n");
+	} else {
+		is_sp_corrupt = true;
+	}
 
-	/* Dump the user stack if the stack pointer lies within the allocated user
-	 * stack memory.
-	 */
 
-	if (sp > ustackbase || sp <= ustackbase - ustacksize) {
-		lldbg("ERROR: Stack pointer is not within the allocated stack\n");
-		lldbg("Proper task stack dump:\n");
-		up_stackdump(ustackbase - ustacksize + 1, ustackbase);
+	if (is_sp_corrupt) {
+		lldbg("ERROR: Stack pointer is not within any of the allocated stack\n");
 		lldbg("Wrong Stack pointer %08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
 		sp, *((uint32_t *)sp + 0), *((uint32_t *)sp + 1), *((uint32_t *)sp + 2), ((uint32_t *)sp + 3),
 		*((uint32_t *)sp + 4), ((uint32_t *)sp + 5), ((uint32_t *)sp + 6), ((uint32_t *)sp + 7));
-	} else {
-		up_stackdump(sp, ustackbase);
-	}
 
+		/* Since SP is corrupted, we dont know which stack was being used.
+		 * So, dump all the available stacks.
+		 */
+#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
+		lldbg("Nested IRQ stack dump:\n");
+		up_stackdump(nestirqstkbase - nestirqstksize + 1, nestirqstkbase);
 #endif
+#if CONFIG_ARCH_INTERRUPTSTACK > 3
+		lldbg("IRQ stack dump:\n");
+		up_stackdump(istackbase - istacksize + 1, istackbase);
+#endif
+		lldbg("User thread stack dump:\n");
+		up_stackdump(stackbase - stacksize + 1, stackbase);
+	} else {
+		/* Dump the stack region which contains the current stack pointer */
+		lldbg("  base: %08x\n", stackbase);
+		lldbg("  size: %08x\n", stacksize);
+#ifdef CONFIG_STACK_COLORATION
+		lldbg("  used: %08x\n", up_check_assertstack((uintptr_t)(stackbase - stacksize), stacksize));
+#endif
+		up_stackdump(sp, stackbase);
+	}
 
 	/* Then dump the registers (if available) */
 
@@ -500,6 +514,7 @@ void up_assert(const uint8_t *filename, int lineno)
 #if defined(CONFIG_DEBUG_WORKQUEUE)
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
 	if (IS_HPWORK || IS_LPWORK) {
+		lldbg("Code asserted in workqueue!\n");
 		lldbg("Running work function is %x.\n", work_get_current());
 	}
 #endif
@@ -554,3 +569,5 @@ void up_assert(const uint8_t *filename, int lineno)
 		_up_assert(EXIT_FAILURE);
 	}
 }
+
+

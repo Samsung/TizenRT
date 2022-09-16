@@ -191,6 +191,11 @@ size_t up_check_stack(void)
 	return up_check_tcbstack(this_task());
 }
 
+size_t up_check_assertstack(uintptr_t alloc, size_t size)
+{
+	return do_stackcheck((uintptr_t)alloc, size);
+}
+
 ssize_t up_check_stack_remain(void)
 {
 	return up_check_tcbstack_remain(this_task());
