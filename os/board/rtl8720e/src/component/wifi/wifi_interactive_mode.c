@@ -305,7 +305,8 @@ static int _find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num
 	for (i = 0; i < ap_num; i++) {
 		scanned_ap_info = (rtw_scan_result_t *)(scan_buf + i * sizeof(rtw_scan_result_t));
 		if ((scanned_ap_info->SSID.len == strlen(target_ssid)) && (!memcmp(scanned_ap_info->SSID.val, target_ssid, scanned_ap_info->SSID.len))) {
-			strncpy((char *)pwifi->ssid, target_ssid, sizeof(pwifi->ssid));
+			strncpy((char *)pwifi->ssid, target_ssid, sizeof(pwifi->ssid) - 1);
+			pwifi->ssid[sizeof(pwifi->ssid) - 1] = '\0';
 			pwifi->channel = scanned_ap_info->channel;
 			pwifi->security_type = scanned_ap_info->security;
 		}
@@ -534,7 +535,8 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 	wifi_info.channel = ap_channel;
 	wifi_info.pscan_option = pscan_config; //0 for normal partial scan, PSCAN_FAST_SURVEY for fast survey
 	wifi_info.security_type = security_type;
-	strcpy((char *)wifi_info.ssid.val, (char *)(ssid));
+	strncpy((char *)wifi_info.ssid.val, (char *)(ssid), sizeof(wifi_info.ssid.val) - 1);
+	wifi_info.ssid.val[sizeof(wifi_info.ssid.val) - 1] = '\0';
 	wifi_info.ssid.len = ssid_len;
 	wifi_info.password = (unsigned char *)(password);
 	wifi_info.password_len = password_len;
@@ -792,7 +794,8 @@ static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 			struct ifreq req;
 
 			/* Put the driver name into the request */
-			strncpy(req.ifr_name, ifname, 6);
+			strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
+			req.ifr_name[IFNAMSIZ - 1] = '\0';
 
 			/* Put the new MAC address into the request */
 			req.ifr_hwaddr.sa_family = 2;
