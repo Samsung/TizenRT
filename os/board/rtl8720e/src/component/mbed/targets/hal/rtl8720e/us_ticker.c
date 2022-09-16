@@ -57,15 +57,16 @@ void us_ticker_init(void)
 }
 
 #if (!TICK_READ_FROM_CPU) || !defined(PLATFORM_FREERTOS)
-uint32_t us_ticker_read(void)
+uint32_t us_ticker_read(void) 
 {
-	uint32_t tick_cnt;
+	uint32_t tick_cnt, us_tick_32;
 	uint64_t us_tick;
 
 	tick_cnt = SYSTIMER_TickGet(); //up counter
 	us_tick = tick_cnt * (1000000 / 32768);
+	us_tick_32 = us_tick & 0xFFFFFFFF;
 
-	return ((uint32_t)us_tick);
+	return us_tick_32;
 }
 #else
 // if the system tick didn't be initialed, call delay function may got system hang
