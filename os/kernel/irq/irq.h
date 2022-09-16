@@ -84,6 +84,8 @@ struct irq {
 };
 
 extern struct irq g_irqvector[NR_IRQS];
+/* Array to store the last two interrupt numbers */
+//extern int g_irq_nums[2];
 
 /****************************************************************************
  * Public Variables

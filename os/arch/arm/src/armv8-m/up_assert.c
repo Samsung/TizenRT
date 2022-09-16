@@ -129,6 +129,7 @@ extern sq_queue_t g_freemsg_list;
 
 extern uint32_t system_exception_location;
 extern uint32_t user_assert_location;
+extern int g_irq_nums[2];
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -275,80 +276,103 @@ static void up_dumpstate(void)
 
 	ustackbase = (uint32_t)rtcb->adj_stack_ptr;
 	ustacksize = (uint32_t)rtcb->adj_stack_size;
+
 	lldbg("sp:     %08x\n", sp);
 
+	/* Show the interrupt number, handler and stack information
+	 * if we are in an interrupt handler (g_irq_nums[1] != 0)
+	 */
+
+	int assertInIrq = g_irq_nums[1];
+
+	if (assertInIrq) {
 #ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
-	/* Get the limits on the nested irq stack */
-	nestirqstkbase = (uint32_t)&g_nestedirqstkbase;
-	nestirqstksize = (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3);
-
-	lldbg("Nested IRQ stack:\n");
-	lldbg("  base: %08x\n", nestirqstkbase);
-	lldbg("  size: %08x\n", nestirqstksize);
 #ifdef CONFIG_STACK_COLORATION
-	lldbg("  used: %08x\n", up_check_nestirqstack());
+		if (up_check_nestirqstack()) {
+			lldbg("Code asserted in nested IRQ state!\n");
+		}
 #endif
-
-	/* Does the current stack pointer lie within the nested interrupt
-	 * stack?
-	 */
-
-	if (sp <= nestirqstkbase && sp > nestirqstkbase - nestirqstksize) {
-		/* Yes.. dump the interrupt stack */
-
-		up_stackdump(sp, nestirqstkbase);
+#else
+		lldbg("Code asserted in IRQ state!\n");
+#endif
+		lldbg("IRQ num: %d \n", g_irq_nums[1]);
+		lldbg("IRQ handler: %08x \n", g_irqvector[g_irq_nums[1]].handler);
+#ifdef CONFIG_DEBUG_IRQ_INFO
+		lldbg("IRQ name: %s \n", g_irqvector[g_irq_nums[1]].irq_name);
+#endif
 	}
-#endif
-
-	
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
-	/* Get the limits on the interrupt stack memory */
+	if (assertInIrq) {
+#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
+		/* Get the limits on the nested irq stack */
+		nestirqstkbase = (uint32_t)&g_nestedirqstkbase;
+		nestirqstksize = (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3);
 
-	istackbase = (uint32_t)&g_intstackbase;
-	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
-
-	/* Show interrupt stack info */
-
-	lldbg("IRQ stack:\n");
-	lldbg("  base: %08x\n", istackbase);
-	lldbg("  size: %08x\n", istacksize);
+		lldbg("Nested IRQ stack:\n");
+		lldbg("  base: %08x\n", nestirqstkbase);
+		lldbg("  size: %08x\n", nestirqstksize);
 #ifdef CONFIG_STACK_COLORATION
-	lldbg("  used: %08x\n", up_check_intstack());
+		lldbg("  used: %08x\n", up_check_nestirqstack());
 #endif
 
-	/* Does the current stack pointer lie within the interrupt
-	 * stack?
-	 */
+		/* Does the current stack pointer lie within the nested interrupt
+		 * stack?
+		 */
 
-	if (sp <= istackbase && sp > istackbase - istacksize) {
-		/* Yes.. dump the interrupt stack */
+		if (sp <= nestirqstkbase && (sp > nestirqstkbase - nestirqstksize)) {
+			/* Yes.. dump the interrupt stack */
 
-		up_stackdump(sp, istackbase);
-	}
+			up_stackdump(sp, nestirqstkbase);
+		}
+#endif
+		/* Get the limits on the interrupt stack memory */
 
-	/* Extract the user stack pointer if we are in an interrupt handler.
-	 * If we are not in an interrupt handler.  Then sp is the user stack
-	 * pointer (and the above range check should have failed).
-	 */
+		istackbase = (uint32_t)&g_intstackbase;
+		istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
 
-	if (current_regs) {
-		sp = current_regs[REG_R13];
-		lldbg("sp:     %08x\n", sp);
-	}
+		/* Show interrupt stack info */
 
-	lldbg("User stack:\n");
-	lldbg("  base: %08x\n", ustackbase);
-	lldbg("  size: %08x\n", ustacksize);
+		lldbg("IRQ stack:\n");
+		lldbg("  base: %08x\n", istackbase);
+		lldbg("  size: %08x\n", istacksize);
 #ifdef CONFIG_STACK_COLORATION
-	lldbg("  used: %08x\n", up_check_tcbstack(rtcb));
+		lldbg("  used: %08x\n", up_check_intstack());
 #endif
 
-	/* Dump the user stack if the stack pointer lies within the allocated user
-	 * stack memory.
-	 */
+		/* Does the current stack pointer lie within the interrupt stack ? */
 
-	if (sp <= ustackbase && sp > ustackbase - ustacksize) {
-		up_stackdump(sp, ustackbase);
+		if (sp <= istackbase && (sp > istackbase - istacksize)) {
+			/* Yes.. dump the interrupt stack */
+
+			up_stackdump(sp, istackbase);
+		}
+
+		/* Extract the user stack pointer if we are in an interrupt handler.
+		 * If we are not in an interrupt handler.  Then sp is the user stack
+		 * pointer (and the above range check should have failed).
+		 */
+
+		if (current_regs) {
+			sp = current_regs[REG_R13];
+			lldbg("sp:     %08x\n", sp);
+		}
+
+		lldbg("User stack:\n");
+		lldbg("  base: %08x\n", ustackbase);
+		lldbg("  size: %08x\n", ustacksize);
+#ifdef CONFIG_STACK_COLORATION
+		lldbg("  used: %08x\n", up_check_tcbstack(rtcb));
+#endif
+
+		/* Dump the user stack if the stack pointer lies within the allocated user
+		 * stack memory.
+		 */
+
+		if (sp <= ustackbase && sp > ustackbase - ustacksize) {
+			up_stackdump(sp, ustackbase);
+		}
+	} else {
+		lldbg("Code asserted in normal thread!\n");
 	}
 #else
 
@@ -500,6 +524,7 @@ void up_assert(const uint8_t *filename, int lineno)
 #if defined(CONFIG_DEBUG_WORKQUEUE)
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
 	if (IS_HPWORK || IS_LPWORK) {
+		lldbg("Code asserted in workqueue!\n");
 		lldbg("Running work function is %x.\n", work_get_current());
 	}
 #endif

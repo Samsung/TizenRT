@@ -76,6 +76,7 @@
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT
 extern uint32_t g_nestlevel; /* Initial top of interrupt stack */
 #endif
+int g_irq_nums[2] = {0};
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -90,6 +91,10 @@ extern uint32_t g_nestlevel; /* Initial top of interrupt stack */
 
 uint32_t *up_doirq(int irq, uint32_t *regs)
 {
+	/* Store the last two interrupt numbers for reference during assert */
+	g_irq_nums[1] = g_irq_nums[0];
+	g_irq_nums[0] = irq;
+
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT
 	irqstate_t flags;
 #endif
@@ -179,6 +184,10 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	current_regs = savestate;
 #endif
 #endif
+	/* Reset the interrupt number values */
+	g_irq_nums[0] = g_irq_nums[1];
+	g_irq_nums[1] = 0;
+
 	board_led_off(LED_INIRQ);
 	return regs;
 }
