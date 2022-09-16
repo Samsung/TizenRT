@@ -54,6 +54,8 @@
 #define TEST_FILE_STR		"abcdefghijklmnopqrstuvwxyz"
 #define TEST_FILE_STR_LEN	26
 
+#define HANDSHAKE_INTERVAL	100		/* msecs */
+
 int iperf_main(int argc, char **argv);
 
 struct pthread_arg {
@@ -70,11 +72,11 @@ static int poll_read(int fd, void *buf, int len, int timeout)
 	struct pollfd fds[1];
 	fds[0].fd = fd;
 	fds[0].events = POLLIN;
-	int ret = poll(fds, 1, timeout);
-	if (ret > 0) {
+	poll(fds, 1, timeout);
+	if (fds[0].revents & POLLIN) {
 		return read(fd, buf, len);
 	} else {
-		return ret;
+		return -1;
 	}
 #else
 	return read(fd, buf, len);
@@ -85,7 +87,7 @@ static void uart_hw_rx_test(int fd)
 {
 	volatile uint8_t ch;
 
-	printf("test_uart_rx: Test START\n\r");
+	printf("test_uart_rx: Test START\n");
 
 	/* Loop until we receive the start value */
 	do {
@@ -98,14 +100,14 @@ static void uart_hw_rx_test(int fd)
 		write(fd, (void *)&ch, 1);
 	} while (ch != UART_TEST_STOP_VAL);
 
-	printf("test_uart_rx: Test COMPLETE\n\n\r");
+	printf("test_uart_rx: Test COMPLETE\n");
 }
 
 static void uart_hw_tx_test(int fd)
 {
 	volatile char ch;
 
-	printf("test_uart_tx: Test START\n\r");
+	printf("test_uart_tx: Test START\n");
 
 	/* Send test start value */
 	ch = UART_TEST_START_VAL;
@@ -121,7 +123,7 @@ static void uart_hw_tx_test(int fd)
 	ch = UART_TEST_STOP_VAL;
 	write(fd, (void *)&ch, 1);
 
-	printf("test_uart_tx: Test COMPLETE\n\n\r");
+	printf("test_uart_tx: Test COMPLETE\n");
 }
 
 static void configure_tty(int fd, int baud)
@@ -210,10 +212,11 @@ static void handshake(int fd, char c)
 	volatile char ch;
 	do {
 		ch = 0;
-		poll_read(fd, (void *)&ch, 1, 100);
+		poll_read(fd, (void *)&ch, 1, HANDSHAKE_INTERVAL);
 	} while (ch != c);
+	usleep(1000);
 	write(fd, (void *)&ch, 1);
-	usleep(100);
+	usleep(1000);
 }
 
 static void perform_uart_tests(int fd)
@@ -222,7 +225,6 @@ static void perform_uart_tests(int fd)
 	for (int i = 0; i < sizeof(bauds) / sizeof(int); i++) {
 		configure_tty(fd, bauds[i]);
 		printf("BAUD = %d\n\r", bauds[i]);
-		printf("Waiting for input from PC\n\r");
 		handshake(fd, 't');
 		uart_hw_tx_test(fd);
 		handshake(fd, 'r');
@@ -245,7 +247,7 @@ int uart_hw_test_main(int argc, char **argv)
 	char port[20] = {'\0'};
 	pthread_t tid;
 	pid_t t_sr, t_cl;
-	char *args[3] = {NULL, NULL, NULL};
+	char *args[5] = {NULL, NULL, NULL, NULL, NULL};
 
 	printf("Enter UART port number\n");
 	p = getchar();
@@ -288,14 +290,20 @@ int uart_hw_test_main(int argc, char **argv)
 	pthread_cancel(tid);
 
 	printf("Scenario 3: Running UART test with background iperf test\n\r");
+
+	/* Start iperf server */
 	args[0] = "-s";
 	t_sr = task_create("iperf server", 125, 4096, iperf_main, args);
 	if (t_sr < 0) {
 		printf("Failed to create iperf server thread\n\r");
 		goto fail_after_open;
 	}
+
+	/* Start iperf client and transmit data to localhost for 60 secs */
 	args[0] = "-c";
 	args[1] = "127.0.0.1";
+        args[2] = "-t";
+        args[3] = "60"; 
 	t_cl = task_create("iperf client", 125, 4096, iperf_main, args);
 	if (t_cl < 0) {
 		printf("Failed to create iperf client thread\n\r");
@@ -303,9 +311,10 @@ int uart_hw_test_main(int argc, char **argv)
 		goto fail_after_open;
 	}
 	perform_uart_tests(fd);
-	task_delete(t_cl);
-	task_delete(t_sr);
+	kill(t_sr, SIGKILL);
+	kill(t_cl, SIGKILL);
 
+	printf("######################### UART HW test COMPLETE #########################\n");
 fail_after_open:
 	close(fd);
 	unlink(TEST_FILE_PATH);
