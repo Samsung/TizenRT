@@ -328,9 +328,10 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
 			break;
         case BLE_TIZENRT_BOND:
         {
-            trble_conn_handle param = *((trble_conn_handle *)pdata);
+            trble_conn_handle param;
             if (pdata)
             {
+		param = *((trble_conn_handle *)pdata);
                 debug_print("\r\n[%s] bond_id 0x%x", __FUNCTION__, param);
                 ret = le_bond_pair(param);
             } else {

@@ -303,9 +303,10 @@ int ble_tizenrt_central_handle_upstream_msg(uint16_t subtype, void *pdata)
 			break;
         case BLE_TIZENRT_BOND:
         {
-            uint8_t param = *((uint8_t *)pdata);
+            uint8_t param;
             if (pdata)
             {
+                param = *((uint8_t *)pdata);
                 debug_print("[%s] bond_id 0x%x \n", param);
                 ret = le_bond_pair(param);
             } else {
