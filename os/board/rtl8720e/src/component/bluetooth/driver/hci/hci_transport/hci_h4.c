@@ -149,6 +149,8 @@ static void h4_rx_thread(void *context)
             {
                 if (discardable)
                 {
+                    if (body_len - 1 > CONFIG_HCI_RX_BUF_LEN)
+                        break;
                     if (body_len - 1 != h4_recv_data(buffer, body_len - 1))
                         break;
                     continue;
