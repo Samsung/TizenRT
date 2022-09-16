@@ -47,6 +47,9 @@
 
 #define UART_MAX_DELAY_MS	80
 #define UART_POLL_TIMEOUT_MS	2000
+
+#define HANDSHAKE_INTERVAL	100	/* msecs */
+#define HANDSHAKE_CNT_MAX	10
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -60,19 +63,15 @@ static void configure_tty(int fd, int baud)
 	struct termios ttyio;
 	memset(&ttyio, 0, sizeof(ttyio));
 
-	tcgetattr(fd, &ttyio);
-
-	/* set baudrate */
-	cfsetispeed(&ttyio, baud);
-	cfsetospeed(&ttyio, baud);
-
-	ttyio.c_cflag &= ~CSTOPB;
-	ttyio.c_cflag &= ~(PARENB | PARODD);
-	ttyio.c_cflag &= ~CSIZE;
-	ttyio.c_cflag |= CS8;
+	ttyio.c_cflag       = baud | CS8 | CLOCAL | CREAD;
+	ttyio.c_oflag       = 0;
+	ttyio.c_lflag       = 0;
+	ttyio.c_cc[VTIME]   = 0;
+	ttyio.c_cc[VMIN]    = 1;
 
 	tcflush(fd, TCIOFLUSH);
 	tcsetattr(fd, TCSANOW, &ttyio);
+	fcntl(fd, F_SETFL, FNDELAY);
 }
 
 static int poll_read(int fd, void *buf, int len, int timeout)
@@ -80,11 +79,11 @@ static int poll_read(int fd, void *buf, int len, int timeout)
 	struct pollfd fds[1];
 	fds[0].fd = fd;
 	fds[0].events = POLLIN;
-	int ret = poll(fds, 1, timeout);
-	if (ret > 0) {
+	poll(fds, 1, timeout);
+	if (fds[0].revents & POLLIN) {
 		return read(fd, buf, len);
 	} else {
-		return ret;
+		return -1;
 	}
 }
 
@@ -106,7 +105,7 @@ static void test_uart_rx(int fd, int baud)
 		ch = UART_TEST_VAL;
 		write(fd, (void *)&ch, 1);
 		ch = 0;
-		read(fd, (void *)&ch, 1);
+		poll_read(fd, (void *)&ch, 1, HANDSHAKE_INTERVAL);
 		if (ch == UART_TEST_VAL) {
 			i++;
 		}
@@ -124,6 +123,9 @@ static void test_uart_rx(int fd, int baud)
 		printf("[BAUD %6d Rx] FAIL Bytes lost = %d / %d\n", baud, UART_TEST_COUNT - i, UART_TEST_COUNT);
 		fail++;
 	}
+
+	do {
+	} while (poll_read(fd, (void *)&ch, 1, 200) >= 0);
 }
 
 /* UART Tx byte gap time test
@@ -175,6 +177,9 @@ result:
 		pass++;
 		printf("[BAUD %6d Tx] PASS\n", baud);
 	}
+
+	do {
+	} while (poll_read(fd, (void *)&ch, 1, 200) >= 0);
 }
 
 static void handshake(int fd, char c)
@@ -183,7 +188,7 @@ static void handshake(int fd, char c)
 	do {
 		ch = 0;
 		write(fd, (void *)&c, 1);
-		poll_read(fd, (void *)&ch, 1, 100);
+		poll_read(fd, (void *)&ch, 1, HANDSHAKE_INTERVAL);
 		usleep(300000);
 	} while(ch != c);
 }
