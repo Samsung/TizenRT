@@ -4,7 +4,8 @@
 #
 
 config UART_HW_TEST
-    bool "UART HW test application"
-    default n
-        ---help---
-	Enable UART HW test application
+	bool "UART HW test application"
+	default n
+	select SYSTEM_IPERF
+	---help---
+		Enable UART HW test application
