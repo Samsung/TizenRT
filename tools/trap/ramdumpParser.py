@@ -528,9 +528,9 @@ def print_crash_type(string):
     else:
         print('\n2. Crash type               : etc')
     if (crash_type_assert == True):
-        print('\n3. Crash point              :', string)
+        print('\n3. Crash point\n\t- ', string)
     else:
-        print('   Crash log                :', string)
+        print('   Crash log\n\t-', string)
 
 # Function to get the number of application binaries, names, text address and sizes
 def find_number_of_binaries(log_file):
@@ -572,11 +572,13 @@ def find_crash_point(log_file, elf):
     global g_assertpc
     global g_stext_app
     global g_etext_app
+    global crash_type_assert
     app_idx = 0
     pc_value = 0
     lr_value = 0
     is_app_crash = 0
     is_kernel_crash = 0
+    is_interrupt_mode = 0
     assertline = ""
 
     # Parse the contents based on tokens in log file.
@@ -775,7 +777,62 @@ def find_crash_point(log_file, elf):
                     # If PC value is invalid, show invalid PC
                     if 'PC value might be invalid' in line:
                         print('\tPC value might be invalid.')
-            print('\tPC & LR values not in any text range! No probable crash point detected.')
+            print('\t-  PC & LR values not in any text range! No probable crash point detected.')
+
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            if 'ERROR: Stack pointer is not within any of the allocated stack' in line:
+                word = line.split(':')
+                print('\n\t-', word[1], ':', word[2])
+
+    # Parse the contents based on tokens in log file to determine point of assertion in details
+    with open(log_file) as searchfile:
+        found_type = 0
+        for line in searchfile:
+            if 'Code asserted in nested IRQ state!' in line:
+                found_type = 1
+                print('\n\t- Code asserted in Nested IRQ state.')
+                break
+            elif 'Code asserted in IRQ state!' in line:
+                found_type = 1
+                print('\n\t- Code asserted in IRQ state.')
+                break
+            elif 'Running work function is' in line:
+                found_type = 1
+                print('\n\t- Code asserted in workqueue.')
+                break
+        if (found_type == 0):
+                print('\n\t- Code asserted in normal thread.')
+
+    # Parse the contents based on tokens in log file for assert during interrupt context
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            # Print the interrupt data during crash (if crashed during interrupt context)
+            if 'IRQ num:' in line:
+                word = line.split(' ')
+                # Last word[-1] contains the interrupt number
+                irq_num = word[-1]
+                print('\n\t- Interrupt number\t\t:',irq_num)
+            if 'Code asserted in IRQ state!' in line:
+                is_interrupt_mode = 1
+                # It displays the interrupt handler information corresponding to the Interrupt
+                # The last argument to debugsymbolviewer specifies whether or not to check for interrupt handler address (4)
+                print("\n4. Assertion Data during interrupt mode:\n")
+                print('- Interrupt handler at addr\t\tSymbol_name')
+                os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 4")
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            if 'Nested IRQ stack:' in line:
+                is_interrupt_mode = 2
+                print("- IRQ Stack information:\n")
+            if (is_interrupt_mode >= 2 and is_interrupt_mode < 9):
+                is_interrupt_mode = is_interrupt_mode + 1
+                print("\033[F", line)
+
+    if (is_interrupt_mode):
+        print('\n5. Call stack of last run thread')
+    else:
+        print('\n4. Call stack of last run thread')
 
     # Parse the contents based on tokens in log file for memory allocation failure data
     with open(log_file) as searchfile:
@@ -788,7 +845,6 @@ def find_crash_point(log_file, elf):
             if (mm_fail == 1):
                 print(line)
 
-    print('\n4. Call stack of last run thread\n')
     # Parse the contents based on tokens in log file.
     with open(log_file) as searchfile:
         for line in searchfile:
@@ -814,9 +870,10 @@ def find_crash_point(log_file, elf):
     print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
 
-    print('\n5. Miscellaneous information:')
-    # Parse the contents based on tokens in log file for heap corruption
+    print('\nx. Miscellaneous information:')
+
     with open(log_file) as searchfile:
+    # Parse the contents based on tokens in log file for heap corruption
         heap_corr = 0
         for line in searchfile:
             # Print the heap corruption data (if any)
