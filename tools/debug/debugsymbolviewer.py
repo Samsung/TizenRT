@@ -228,6 +228,13 @@ def print_stack(log_file):
 						continue
 				continue
 
+			if 'Code asserted in IRQ state!' in line:
+				print('[Interrupt Stack]')
+			if 'Code asserted in nested IRQ state!' in line:
+				print('[Interrupt Stack]')
+			if 'User stack:' in line:
+				print('[User stack]')
+
 			# Read the stack contents of aborted stack and check for valid addresses
 			if 'up_stackdump:' in line:
 				word = line.split(':')
@@ -317,6 +324,19 @@ def print_running_work_function(log_file):
                             node = int(wf[:-2], 16)
                             print_symbol(0x00000000, node, 0)
                             print_symbol(0x00000000, node, 1)
+
+# Function to Parse the input log file (which contains interrupt handler data) and to print its owner
+def print_interrupt_handler_data(log_file):
+	# Parse the contents based on tokens in log file.
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if 'IRQ handler' in line:
+                            word = line.split(' ')
+                            node = int(word[-1], 16)
+                            print_symbol(0x00000000, node, 0)
+                            print_symbol(0x00000000, node, 1)
+
+# Function to Parse the input log file (which contains current running work function) and to print its owner
 #Execution starts here
 if (__name__ == '__main__'):
 
@@ -353,3 +373,6 @@ if (__name__ == '__main__'):
         # 3 specifies to print the running work function information
 	elif (addr_type == 3):
 		print_running_work_function(log_file)
+        # 4 specifies to print the interrupt handler information (if any)
+	elif (addr_type == 4):
+		print_interrupt_handler_data(log_file)
