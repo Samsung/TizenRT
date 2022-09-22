@@ -23,7 +23,7 @@
 THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 
 # When location of this script is changed, only OS_DIR_PATH should be changed together!!!
-OS_DIR_PATH=${THIS_PATH}/../../../os
+OS_DIR_PATH=${THIS_PATH}/../../os
 
 source ${OS_DIR_PATH}/.config
 
@@ -44,8 +44,7 @@ else
 	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
 fi
 
-# MAIN
-main()
+function pre_download()
 {
 	echo "openocd is picked from ${OPENOCD_BIN_PATH}"
 	echo "Binaries are picked from ${OUTPUT_BIN_PATH}"
@@ -59,7 +58,7 @@ main()
 			echo "ALL :"
 
 			# check existence of os binary
-			if [ ! -f "${OUTPUT_BIN_PATH}/tinyara_head.bin" ]; then
+			if [ ! -f "${OUTPUT_BIN_PATH}/${KERNEL_BIN_NAME}" ]; then
 				echo "TinyAra binary is not existed, build first"
 				exit 1
 			fi
@@ -77,13 +76,7 @@ main()
 			if [ -f "${OPENOCD_DIR_PATH}/partition_gen.sh" ]; then
 				${OPENOCD_DIR_PATH}/partition_gen.sh
 			fi
-
-			# download all binaries using openocd script
-			pushd ${OPENOCD_DIR_PATH}
-			${OPENOCD_BIN_PATH}/openocd -f s5jt200_silicon_evt0_fusing_flash_all.cfg -c "init; reset; exit" || exit 1
-			popd
 			;;
-
 		*)
 			echo "${arg} is not suppported in ${BOARD_NAME}"
 			echo "Usage : make download [ ALL ]"
@@ -91,9 +84,16 @@ main()
 			;;
 		esac
 	done
-	# Done
 }
 
-main $*
+function board_download()
+{
+	echo ${OPENOCD_DIR_PATH}
+	# download all binaries using openocd script
+	pushd ${OPENOCD_DIR_PATH}
+	${OPENOCD_BIN_PATH}/openocd -f s5jt200_silicon_evt0_fusing_flash_all.cfg -c "init; reset; exit" || exit 1
+	popd
+}
 
+function post_download(){ :; }
 # END

@@ -98,16 +98,16 @@ function get_executable_name()
 			if [[ ! -n "${BL1}" ]];then
 				echo "No Binary Match"
 			else
-				echo "${BL1}.bin"
+				echo "${BL1}"
 			fi;;
 		bl2)
 			if [[ ! -n "${BL2}" ]];then
 				echo "No Binary Match"
 			else
-				echo "${BL2}.bin"
+				echo "${BL2}"
 			fi;;
 		kernel|os) echo "${KERNEL_BIN_NAME}";;
-		ota) echo "${OTA}.bin";;
+		ota) echo "${OTA}";;
 		app1) echo "${APP1_BIN_NAME}";;
 		app2) echo "${APP2_BIN_NAME}";;
 		loadparam) echo "$1";;

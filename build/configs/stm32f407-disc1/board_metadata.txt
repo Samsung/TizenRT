@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2021 Samsung Electronics All Rights Reserved.
+# Copyright 2022 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,15 +17,10 @@
 ###########################################################################
 # board_metadata.txt
 
-BOARD="ARTIK05X_FAMILY"
+BOARD="STM32F407-DISC1"
 
-USBRULE_BOARD="artik"
-USBRULE_IDVENDOR="0403"
-USBRULE_IDPRODUCT="6010"
-
-BL1="bl1.bin"
-BL2="bl2.bin"
-KERNEL="tinyara_head.bin"
-OTA="ota.bin"
-
-DEFAULT_PORT=ttyUSB1
+BL1=""
+BL2=""
+KERNEL="tinyara.bin"
+OTA=""
+BOOTPARAM=""

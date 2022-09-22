@@ -542,7 +542,7 @@ endif
 endif
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
-	$(Q) python ./tools/set_bininfo.py $(BIN_EXT)
+	$(Q) python ./tools/set_bininfo.py
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXE), $(BIN_EXT))
 ifeq ($(CONFIG_FLASH_PARTITION),y)
 	$(Q) python ./tools/validate_output.py

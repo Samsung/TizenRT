@@ -21,8 +21,8 @@ BOARD="RTL8721CSM"
 
 DEFAULT_PORT="ttyUSB1"
 
-BL1="km0_boot_all"
-BL2="km4_boot_all"
-KERNEL="km0_km4_image2"
-OTA="km0_km4_image2"
-BOOTPARAM="bootparam"
+BL1="km0_boot_all.bin"
+BL2="km4_boot_all.bin"
+KERNEL="km0_km4_image2.bin"
+OTA="km0_km4_image2.bin"
+BOOTPARAM="bootparam.bin"
