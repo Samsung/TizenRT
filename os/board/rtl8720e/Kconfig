@@ -47,6 +47,12 @@ config AMEBALITE_FLASH_BLOCK_SIZE
     help
         Setting this vaule to configure erase unit size of esp32 SPI flash.
 	
+config AMEBALITE_SECURE_WORLD_ADDRESS
+     hex "Secure address to read/write"
+     default 0x735C021
+     help
+         Setting this value to a secure address to check whether it can be accessed from non-secure zone.
+
 endmenu
 endif
 
