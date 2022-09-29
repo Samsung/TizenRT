@@ -1107,13 +1107,21 @@ static int http_send_buffer(struct http_client_t *client, const char *buf, int l
 	return 0;
 }
 
+<<<<<<< HEAD
 int http_send_response_helper(struct http_client_t *client, int status, const char* status_message,
 				const char* body, int body_len, struct http_keyvalue_list_t *headers)
+=======
+int http_send_response_helper(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers)
+>>>>>>> RTL8720E_Support
 {
 	char *buf;
 	int buflen = 0;
 	struct http_keyvalue_t *cur = NULL;
 	int len = 0;
+<<<<<<< HEAD
+=======
+	int body_len = 0;
+>>>>>>> RTL8720E_Support
 	int rem_body_len = 0;
 	int ret = 0;
 
@@ -1156,6 +1164,7 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 
 			// Add content type and content length headers
 			if (body) {
+				body_len = strlen(body);
 				len = snprintf(buf + buflen,
                                                            HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
                                                            "Content-Type: text/html\r\n"
@@ -1194,6 +1203,7 @@ int http_send_response_helper(struct http_client_t *client, int status, const ch
 
 			// Add content type and content length headers
 			if (body) {
+				body_len = strlen(body);
 				buflen += snprintf(buf + buflen,
                                                            HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
                                                            "Content-type: text/html\r\n"

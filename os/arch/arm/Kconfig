@@ -76,11 +76,19 @@ config ARCH_CHIP_AMEBAD
 
 config ARCH_CHIP_STM32H745
 	bool "STMicro STM32H745"
+	select ARCH_HAVE_MPU                                                                                                                                                                             
+         select ARCH_HAVE_I2CRESET                                                                                                                                                                        
+         select ARCH_HAVE_HEAPCHECK if DEBUG                                                                                                                                                              
+         ---help---
+		STMicro STM32 architectures (ARM Cortex-M7/M4 Dual core).
+config ARCH_CHIP_AMEBALITE
+	bool "Realtek AMEBALITE"
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_I2CRESET
 	select ARCH_HAVE_HEAPCHECK if DEBUG
 	---help---
-		STMicro STM32 architectures (ARM Cortex-M7/M4 Dual core).
+		Realtek AMEBALITE architectures (ARM Cortex-M23/33).
+
 endchoice
 
 config ARCH_CHIP
@@ -93,6 +101,7 @@ config ARCH_CHIP
 	default "stm32l4"	if ARCH_CHIP_STM32L4
 	default "amebad"	if ARCH_CHIP_AMEBAD
 	default "stm32h745"	if ARCH_CHIP_STM32H745	
+	default "amebalite"	if ARCH_CHIP_AMEBALITE
 
 comment "ARM Options"
 
@@ -132,6 +141,19 @@ config ARCH_CORTEXM7
 	select ARCH_ARMV7M_FAMILY
 
 config ARCH_CORTEXM33
+	bool
+	default n
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_CMNVECTOR
+	select ARCH_HAVE_RAMVECTORS
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_HIPRI_INTERRUPT
+	select ARCH_ARMV8M_FAMILY
+	select ARCH_HAVE_NESTED_INTERRUPT
+	select ARCH_HAVE_LAZYFPU
+
+config ARCH_CORTEXM55
 	bool
 	default n
 	select ARCH_HAVE_FPU
@@ -383,4 +405,8 @@ endif
 if ARCH_CHIP_STM32H745
 source arch/arm/src/stm32h745/Kconfig
 endif
+if ARCH_CHIP_AMEBALITE
+source arch/arm/src/amebalite/Kconfig
+endif
+
 endif

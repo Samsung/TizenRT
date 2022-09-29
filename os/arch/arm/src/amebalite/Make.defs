@@ -1,0 +1,221 @@
+###########################################################################
+#
+# Copyright 2022 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+#
+#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+HEAD_ASRC  =
+
+# Common ARM and Cortex-M33 files
+
+CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/include/$(CONFIG_ARCH_CHIP)/
+
+CMN_ASRCS  = up_saveusercontext.S up_fullcontextrestore.S up_switchcontext.S
+CMN_ASRCS += up_fetchadd.S vfork.S
+
+CMN_CSRCS  = up_assert.c up_blocktask.c up_copyfullstate.c up_coherent_dcache.c
+CMN_CSRCS += up_createstack.c up_mdelay.c up_udelay.c up_exit.c
+CMN_CSRCS += up_puts.c up_initialize.c up_initialstate.c up_interruptcontext.c
+CMN_CSRCS += up_memfault.c up_busfault.c up_usagefault.c up_modifyreg8.c up_modifyreg16.c up_modifyreg32.c
+CMN_CSRCS += up_releasepending.c up_releasestack.c up_reprioritizertr.c
+CMN_CSRCS += up_schedulesigaction.c up_sigdeliver.c up_stackframe.c
+CMN_CSRCS += up_unblocktask.c up_usestack.c up_doirq.c up_hardfault.c
+CMN_CSRCS += up_svcall.c up_vfork.c up_trigger_irq.c up_systemreset.c
+CMN_CSRCS += up_unblocktask_withoutsavereg.c up_restoretask.c
+
+ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
+CMN_CSRCS += up_reboot_reason.c
+endif
+
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += go_os_start.c
+endif
+
+ifeq ($(CONFIG_ARMV8M_STACKCHECK),y)
+CMN_CSRCS += up_stackcheck.c
+endif
+
+# Configuration-dependent common files
+
+ifeq ($(CONFIG_ARMV8M_LAZYFPU),y)
+CMN_ASRCS += up_lazyexception.S
+else
+CMN_ASRCS += up_exception.S
+endif
+CMN_CSRCS += up_vectors.c
+
+ifeq ($(CONFIG_ARCH_RAMVECTORS),y)
+CMN_CSRCS += up_ramvec_initialize.c up_ramvec_attach.c
+endif
+
+ifeq ($(CONFIG_ARMV8M_TRUSTZONE),y)
+CMN_ASRCS += up_secure_context.S
+endif
+
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+CMN_CSRCS += up_mpu.c up_task_start.c up_pthread_start.c up_checkspace.c
+ifneq ($(CONFIG_DISABLE_SIGNALS),y)
+CMN_CSRCS += up_signal_dispatch.c
+CMN_UASRCS += up_signal_handler.S
+endif
+endif
+
+ifeq ($(CONFIG_STACK_COLORATION),y)
+CMN_CSRCS += up_checkstack.c
+endif
+
+ifeq ($(CONFIG_ARMV8M_DCACHE),y)
+CMN_CSRCS += arch_enable_dcache.c arch_disable_dcache.c
+CMN_CSRCS += arch_invalidate_dcache.c arch_invalidate_dcache_all.c
+ifneq ($(CONFIG_ARMV8M_DCACHE_WRITETHROUGH),y)
+CMN_CSRCS += arch_clean_dcache.c arch_clean_dcache_all.c
+CMN_CSRCS += arch_flush_dcache.c arch_flush_dcache_all.c
+endif
+endif
+
+ifeq ($(CONFIG_ARCH_FPU),y)
+CMN_ASRCS += up_fpu.S
+CMN_CSRCS += up_copyarmstate.c
+endif
+
+ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
+CMN_CSRCS += up_schedyield.c
+endif
+
+CMN_CSRCS += up_allocateheap.c
+
+ifeq ($(CONFIG_ARM_MPU),y)
+CMN_CSRCS += up_mpuinit.c
+endif
+
+ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
+
+CFLAGS+= -mcmse
+
+CFLAGS += -I$(ARCH_SRCDIR)/armv8-m
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/fwlib/include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/freertos
+#CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/freertos/freertos_v10.2.0/Source/include/		#KAI	freertos is not in folder
+#CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/freertos/freertos_v10.2.0/Source/portable/GCC/AmebaD2_HP/non_secure
+#CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/freertos/freertos_v10.2.0/Source/portable/GCC/AmebaD2_HP/secure
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/cmsis
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/cmsis-dsp/Include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/cmsis-dsp/PrivateInclude
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/fwlib/include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/app/monitor/include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/app/xmodem
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/swlib
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebalite/misc
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaLite_va0_example/inc/inc_km4
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/stdlib
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/api
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/driver/include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/wifi_config
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/wifi_fast_connect
+#CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/example			#Not placed in smart
+#CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/audio/driver/si
+
+#temp for git server code
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/mbed/targets/hal/rtl8720e/
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/mbed/api/
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/mbed/hal/
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/mbed/hal_ext/
+
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/os_dep/include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/tizenrt
+
+CHIP_ASRCS  =
+CHIP_CSRCS = amebalite_start.c
+CHIP_CSRCS += amebalite_idle.c
+CHIP_CSRCS += amebalite_irq.c
+CHIP_CSRCS += amebalite_flash.c
+CHIP_CSRCS += amebalite_timerisr.c
+CHIP_CSRCS += amebalite_lowerhalf.c
+CHIP_CSRCS += amebalite_timer_lowerhalf.c
+CHIP_CSRCS += amebalite_serial.c
+CHIP_CSRCS += ameba_enet.c
+CHIP_CSRCS += amebalite_rtc_lowerhalf.c
+CHIP_CSRCS += amebalite_rtc.c
+CHIP_CSRCS += amebalite_watchdog_lowerhalf.c
+CHIP_CSRCS += amebalite_i2c.c
+#CHIP_CSRCS += amebalite_i2s.c
+CHIP_CSRCS += amebalite_spi.c
+
+ifeq ($(CONFIG_BOARDCTL_RESET),y)
+CHIP_CSRCS += amebalite_systemreset.c
+endif
+ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
+#CMN_CSRCS += amebalite_reboot_reason.c #FIXME
+endif
+ifeq ($(CONFIG_BINARY_SIGNING),y)
+#CMN_CSRCS += amebalite_signature.c	#FIXME
+endif
+ifeq ($(CONFIG_AMEBALITE_BLE),y)
+EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/lib_btgap.a
+endif
+
+ifeq ($(CONFIG_AMEBALITE_TRUSTZONE),y)
+CHIP_CSRCS += amebalite_nsc.c
+
+# trustzone library
+ifeq ($(CONFIG_ARCH_FPU),y)
+EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/cmse_implib_fpu.lib
+else
+EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/cmse_implib.lib
+endif
+endif
+
+# Wifi
+ifeq ($(CONFIG_AMEBALITE_WIFI),y)
+ifeq ($(CONFIG_ARCH_FPU),y)
+EXTRA_LIBS += $(TOPDIR)/board/rtl8720e/src/libs/lib_enc_fpu.a
+EXTRA_LIBS += $(TOPDIR)/board/rtl8720e/src/libs/lib_wps_fpu.a
+else
+EXTRA_LIBS += $(TOPDIR)/board/rtl8720e/src/libs/lib_enc.a
+EXTRA_LIBS += $(TOPDIR)/board/rtl8720e/src/libs/lib_wps.a
+endif
+endif

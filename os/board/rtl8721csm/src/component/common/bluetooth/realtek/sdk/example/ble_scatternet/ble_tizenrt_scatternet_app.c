@@ -1687,6 +1687,7 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
                         }
                     } else {
                         debug_print("Memory allocation failed \n");
+                        os_mem_free(notify_result);
                     }
                 }
             }

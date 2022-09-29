@@ -151,7 +151,7 @@ static inline uint32_t up_getsp(void)
 	return sp;
 }
 
-#ifdef CONFIG_ARCH_CORTEXM33
+#if defined(CONFIG_ARCH_ARMV8M_FAMILY)
 static inline uint32_t get_PSPLIM(void)
 {
 	uint32_t result;

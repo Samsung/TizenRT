@@ -83,12 +83,12 @@
  * Name: up_checkarch
  *
  * Description:
- *   Given the ELF header in 'hdr', verify that the ELF file is appropriate
+ *   Given the ELF header in 'ehdr', verify that the ELF file is appropriate
  *   for the current, configured architecture.  Every architecture that uses
  *   the ELF loader must provide this function.
  *
  * Input Parameters:
- *   hdr - The ELF header read from the ELF file.
+ *   ehdr - The ELF header read from the ELF file.
  *
  * Returned Value:
  *   True if the architecture supports this ELF file.

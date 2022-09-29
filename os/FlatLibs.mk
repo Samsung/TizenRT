@@ -161,6 +161,8 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
 endif
 
+<<<<<<< HEAD
 # Export all libraries
+=======
+>>>>>>> RTL8720E_Support
 EXPORTLIBS = $(TINYARALIBS)
-

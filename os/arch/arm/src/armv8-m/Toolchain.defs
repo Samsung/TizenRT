@@ -161,6 +161,10 @@ ifeq ($(CONFIG_ARCH_CORTEXM33),y)
   TOOLCHAIN_MTUNE    := -mtune=cortex-m33
   TOOLCHAIN_MARCH    := -march=armv8-m.main+dsp
   TOOLCHAIN_MFLOAT   := -mfloat-abi=soft
+else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+  TOOLCHAIN_ARM8EM   := n
+  TOOLCHAIN_MCPU     := -mcpu=cortex-m55
+  TOOLCHAIN_MFLOAT   := -mfloat-abi=soft
 endif
 
 # Atollic toolchain under Windows
@@ -175,6 +179,12 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),ATOLLIC)
     else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ifeq ($(CONFIG_ARCH_FPU),y)
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
+    else
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
+    endif
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
     WINTOOL = y
@@ -187,7 +197,11 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),BUILDROOT)
 ifeq ($(CONFIG_ARMV8M_OABI_TOOLCHAIN),y)
   CROSSDEV ?= arm-nuttx-elf-
   ARCROSSDEV ?= arm-nuttx-elf-
-  ARCHCPUFLAGS = -mtune=cortex-m33 -mfloat-abi=soft
+  ifeq ($(CONFIG_ARCH_CORTEXM33),y)
+    ARCHCPUFLAGS = -mtune=cortex-m33 -mfloat-abi=soft
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ARCHCPUFLAGS = -mfloat-abi=soft
+  endif
 else
   CROSSDEV ?= arm-nuttx-eabi-
   ARCROSSDEV ?= arm-nuttx-eabi-
@@ -196,6 +210,12 @@ else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
+    endif
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ifeq ($(CONFIG_ARCH_FPU),y)
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
+    else
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
 endif
@@ -214,6 +234,12 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),CODEREDL)
     else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ifeq ($(CONFIG_ARCH_FPU),y)
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
+    else
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
+    endif
   endif
 endif
 
@@ -228,6 +254,12 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),CODEREDW)
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
+    endif
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ifeq ($(CONFIG_ARCH_FPU),y)
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
+    else
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
     endif
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
@@ -247,6 +279,12 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),CODESOURCERYL)
     else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ifeq ($(CONFIG_ARCH_FPU),y)
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
+    else
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
+    endif
   endif
 endif
 
@@ -262,6 +300,12 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),CODESOURCERYW)
     else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ifeq ($(CONFIG_ARCH_FPU),y)
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
+    else
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
+    endif
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
     WINTOOL = y
@@ -276,7 +320,11 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),DEVKITARM)
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
     WINTOOL = y
   endif
-  ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
+  ifeq ($(CONFIG_ARCH_CORTEXM33),y)
+    ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
+  endif
 endif
 
 # Generic GNU EABI toolchain on OS X, Linux or any typical Posix system
@@ -292,6 +340,12 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),GNU_EABIL)
     else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
     endif
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ifeq ($(CONFIG_ARCH_FPU),y)
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=hard -mfpu=fpv5-sp-d16
+    else
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
+    endif
   endif
 endif
 
@@ -306,7 +360,13 @@ ifeq ($(CONFIG_ARMV8M_TOOLCHAIN),GNU_EABIW)
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
     else
       ARCHCPUFLAGS = -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=soft
-  endif
+    endif
+  else ifeq ($(CONFIG_ARCH_CORTEXM55),y)
+    ifeq ($(CONFIG_ARCH_FPU),y)
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfpu=fpv5-sp-d16 -mfloat-abi=hard
+    else
+      ARCHCPUFLAGS = -mcpu=cortex-m55 -mthumb -mcmse -mfloat-abi=soft
+    endif
   endif
   ifneq ($(CONFIG_WINDOWS_NATIVE),y)
     WINTOOL = y

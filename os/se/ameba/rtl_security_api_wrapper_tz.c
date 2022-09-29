@@ -62,6 +62,28 @@ static int ns_flash_write(uint32_t address, uint32_t len, uint8_t *data)
 	flash_t flash;
 
 	ret = flash_stream_write(&flash, address, len, data);
+	return ret;
+}
+
+/* Verify Flash Data Function */
+int rtl_ss_flash_read(uint32_t address, uint32_t len, uint8_t *data, int en_display)
+{
+	int ret;
+	flash_t flash;
+
+	ret = flash_stream_read(&flash, address, len, data);
+	if (ret) {
+		if (en_display){
+			printf("\n\r---- [Address = %02x] Start [len = %d]-----\n", address, len);
+			for(int i = 0; i < len; i++){
+				printf("%02x ", data[i]);
+				if (!((i + 1) % 16)) {
+					printf("\n");
+				}
+			}
+			printf("\n\r---- [%s] End -----\n", __FUNCTION__);
+		}
+	}
 
 	return ret;
 }

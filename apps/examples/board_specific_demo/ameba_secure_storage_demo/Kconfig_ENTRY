@@ -1,0 +1,3 @@
+config EXAMPLES_SSTORAGE
+	bool "Secure Storage example"
+	depends on EXAMPLES_SSTORAGE

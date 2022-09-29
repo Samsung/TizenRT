@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_SECURE_WORLD
+	bool "Secure World example"
+	default n
+	depends on ARMV8M_TRUSTZONE && SE_AMEBA
+	---help---
+		Enable the Secure World example
+
+config USER_ENTRYPOINT
+	string
+	default "secure_world" if ENTRY_SECURE_WORLD
