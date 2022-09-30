@@ -68,7 +68,7 @@ typedef struct rtw_mac {
 /**
   * @brief  The structure is used to describe the setting about SSID,
   *			security type, password and default channel, used to start AP mode.
-  * @note  The data length of string pointed by ssid should not exceed 32, 
+  * @note  The data length of string pointed by ssid should not exceed 32,
   *        and the data length of string pointed by password should not exceed 64.
   */
 typedef struct rtw_ap_info {
@@ -80,9 +80,9 @@ typedef struct rtw_ap_info {
 }rtw_ap_info_t;
 
 /**
-  * @brief  The structure is used to describe the station mode setting about SSID, 
+  * @brief  The structure is used to describe the station mode setting about SSID,
   *			security type and password, used when connecting to an AP.
-  * @note  The data length of string pointed by ssid should not exceed 32, 
+  * @note  The data length of string pointed by ssid should not exceed 32,
   *        and the data length of string pointed by password should not exceed 64.
   */
 typedef struct rtw_network_info {
@@ -109,7 +109,7 @@ typedef struct rtw_scan_result {
     rtw_security_t          security;         /**< Security type                                                             */
     rtw_wps_type_t          wps_type;         /**< WPS type                                                                  */
     unsigned int                      channel;          /**< Radio channel that the AP beacon was received on                          */
-    rtw_802_11_band_t       band;             /**< Radio band                                                                */                                        
+    rtw_802_11_band_t       band;             /**< Radio band                                                                */
 } rtw_scan_result_t;
 #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || defined(__CC_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
 #pragma pack()
@@ -129,6 +129,45 @@ typedef struct rtw_scan_handler_result {
 #pragma pack(1)
 #endif
 
+
+/**
+  * @brief  The structure is used to describe the cfg parameters used for csi report,
+  * @note  The mac_addr if not specified, the default value must be 0.
+  */
+#ifdef CONFIG_ARCH_CHIP_RTL8720E
+typedef struct {
+	rtw_csi_group_num group_num;
+	rtw_csi_mode mode;
+	rtw_csi_action act;
+	rtw_csi_accuracy accuracy;
+	unsigned char enable;
+	unsigned char trig_period;  /* unit:ms*/
+	unsigned char data_rate;
+	unsigned char mac_addr[6];
+} rtw_csi_action_parm_t;
+#endif
+/**
+  * @brief  The structure is used to describe the extra info of csi report
+  */
+typedef struct {
+	unsigned char mac_addr[6];  /**< may be sta addr, driver define */
+	unsigned char trig_addr[6];  /**< add new,tx addr for trig chan_info */
+	unsigned int hw_assigned_timestamp;  /**< rxdesc: u32 r_rx_tsfl */
+	unsigned char channel;  /**< driver define */
+	unsigned char bandwidth; /**< rxdesc: u8 bw */
+	unsigned char rx_data_rate;  /**< rxdesc: u16 rx_rate <ack> */
+	unsigned char protocol_mode; /**< add new,ofdm(0)/ht(1)/vht(2)/he(3) */
+	unsigned char nc;  /**< ch_rpt_hdr_info */
+	unsigned char nr;  /**< ch_rpt_hdr_info */
+	unsigned short num_sub_carrier;  /**< cfg param, driver define */
+	unsigned char num_bit_per_tone;  /**< cfg param, driver define per I/Q */
+	unsigned char avg_idle_noise_pwr;  /**< ch_rpt_hdr_info */
+	unsigned char evm[2];  /**< ch_rpt_hdr_info + phy_info_rpt */
+	unsigned char rssi[2];  /**< phy_info_rpt */
+	unsigned int csi_data_length;  /**< ch_rpt_hdr_info */
+	unsigned char rxsc;  /**< phy_info_rpt */
+	unsigned char csi_valid;  /**< ch_rpt_hdr_info */
+} rtw_csi_header_t;
 /**
   * @brief  The structure is used to store the WIFI setting gotten from WIFI driver.
   */
