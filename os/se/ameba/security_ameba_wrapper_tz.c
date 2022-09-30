@@ -26,7 +26,12 @@
 #include <tinyara/security_hal.h>
 #include <tinyara/kmalloc.h>
 
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 #include <arch/chip/amebad_nsc.h>
+#endif
+#ifdef CONFIG_AMEBALITE_TRUSTZONE
+#include <arch/chip/amebalite_nsc.h>
+#endif
 #include <device_lock.h>
 
 #define AWRAP_TAG "[AMEBA_WRAPPER]"
@@ -64,7 +69,12 @@
 
 /* Secure Storage Base Address, After Bootloader before Kernel */
 /* Fix Address, should not be changed, once change previous data will be lost */
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 #define SS_BASE_ADDRESS 0xA000
+#endif
+#ifdef CONFIG_AMEBALITE_TRUSTZONE
+#define SS_BASE_ADDRESS 0x14000
+#endif
 
 /* 8 Slots for Cert, 8 Slots for Key, 1 Slot is 4KB */
 #define SE_FACTORY_KEY_SIZE 0x8000
@@ -89,7 +99,12 @@
 #define SECTOR_SIZE 4096
 
 /* Secure efuse key location */
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 #define SAMSUNG_KEY_ADDR 0x150
+#endif
+#ifdef CONFIG_AMEBALITE_TRUSTZONE
+#define SAMSUNG_KEY_ADDR 0x390
+#endif
 
 /* Non-Secure Data buff, 8K (2 Sector + Tag) */
 #define NS_BUF_LEN ((SECTOR_SIZE * 2) + 32)
@@ -776,6 +791,10 @@ int se_ameba_hal_read_storage(uint32_t ss_idx, hal_data *data)
 
 	if (ss_idx >= SEC_STORE_MAX_SLOT) {	/* Index Out of Range */
 		return HAL_INVALID_SLOT_RANGE;
+	}
+
+	if (data->data == NULL) {
+		return HAL_INVALID_ARGS;
 	}
 
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
