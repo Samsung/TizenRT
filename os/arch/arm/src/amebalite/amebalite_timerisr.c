@@ -1,24 +1,23 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2022 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/include/syscall.h
  *
- *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2020 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,60 +49,108 @@
  *
  ****************************************************************************/
 
-/* This file should never be included directed but, rather, only indirectly
- * through include/syscall.h or include/sys/sycall.h
- */
-
-#ifndef __ARCH_ARM_INCLUDE_SYSCALL_H
-#define __ARCH_ARM_INCLUDE_SYSCALL_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-/* Include ARM architecture-specific syscall macros */
-#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
-#include <arch/armv7-m/syscall.h>
-#elif defined(CONFIG_ARCH_CORTEXR4) || defined(CONFIG_ARCH_CORTEXR4F)
-#include <arch/armv7-r/syscall.h>
-#elif defined(CONFIG_ARCH_CORTEXM33) || defined(CONFIG_ARCH_CORTEXM55)
-#include <arch/armv8-m/syscall.h>
-#else
-#include <arch/arm/syscall.h>
+#include <tinyara/config.h>
+
+#include <stdint.h>
+#include <time.h>
+#include <debug.h>
+#include <tinyara/arch.h>
+#include <arch/board/board.h>
+
+#include "nvic.h"
+#include "clock/clock.h"
+#include "up_internal.h"
+#include "up_arch.h"
+
+#include "chip.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* The desired timer interrupt frequency is provided by the definition
+ * CLK_TCK (see include/time.h).  CLK_TCK defines the desired number of
+ * system clock ticks per second.  That value is a user configurable setting
+ * that defaults to 100 (100 ticks per second = 10 MS interval).
+ *
+ */
+
+
+/* The size of the reload field is 24 bits.  Verify that the reload value
+ * will fit in the reload register.
+ */
+extern uint32_t SystemCoreClock; 
+
+#define SYSTICK_RELOAD ((SystemCoreClock / CLK_TCK) - 1)
+
+#if SYSTICK_RELOAD > 0x00ffffff
+#  error SYSTICK_RELOAD exceeds the range of the RELOAD register
 #endif
 
 /****************************************************************************
- * Definitions
+ * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Public Types
+ * Function:  amebalite_timerisr
+ *
+ * Description:
+ *   The timer ISR will perform a variety of services for various portions
+ *   of the systems.
+ *
  ****************************************************************************/
 
-/****************************************************************************
- * Inline functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
-
-#undef EXTERN
-#ifdef __cplusplus
+int up_timerisr(int irq, uint32_t *regs)
+{
+    /* Process timer interrupt */
+    sched_process_timer();
+    
+    return 0;
 }
-#endif
+
+/****************************************************************************
+ * Function:  up_timer_initialize
+ *
+ * Description:
+ *   This function is called during start-up to initialize
+ *   the timer interrupt.
+ *
+ ****************************************************************************/
+
+void up_timer_initialize(void)
+{
+  /* Set the SysTick interrupt to the min priority */ 
+#ifdef CONFIG_ARCH_IRQPRIO
+  up_prioritize_irq(AMEBALITE_IRQ_SYSTICK, NVIC_SYSH_PRIORITY_DEFAULT);
+#else
+  uint32_t regval;
+  regval = getreg32(NVIC_SYSH12_15_PRIORITY);
+  regval &= ~NVIC_SYSH_PRIORITY_PR15_MASK;
+  regval |= (NVIC_SYSH_PRIORITY_MIN << NVIC_SYSH_PRIORITY_PR15_SHIFT);
+  putreg32(regval, NVIC_SYSH12_15_PRIORITY);
 #endif
 
-#endif							/* __ARCH_ARM_INCLUDE_SYSCALL_H */
+  putreg32(0, NVIC_SYSTICK_CTRL);
+  putreg32(0, NVIC_SYSTICK_CURRENT);
+
+  /* Configure SysTick to interrupt at the requested rate */
+
+  putreg32(SYSTICK_RELOAD, NVIC_SYSTICK_RELOAD);
+
+  /* Attach the timer interrupt vector */
+
+  (void)irq_attach(AMEBALITE_IRQ_SYSTICK, (xcpt_t)up_timerisr, NULL);
+
+  /* Enable SysTick interrupts */
+
+  putreg32((NVIC_SYSTICK_CTRL_CLKSOURCE | NVIC_SYSTICK_CTRL_TICKINT |
+            NVIC_SYSTICK_CTRL_ENABLE), NVIC_SYSTICK_CTRL);
+
+  /* And enable the timer interrupt */
+
+  //up_enable_irq(AMEBALITE_IRQ_SYSTICK);
+}

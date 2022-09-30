@@ -1,24 +1,23 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2022 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/include/irq.h
  *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2021 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,53 +49,37 @@
  *
  ****************************************************************************/
 
-/* This file should never be included directed but, rather, only indirectly
- * through include/tinyara/irq.h
- */
-
-#ifndef __ARCH_ARM_INCLUDE_IRQ_H
-#define __ARCH_ARM_INCLUDE_IRQ_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-/* Include TinyAra-specific IRQ definitions */
+#ifndef __ARCH_ARM_SRC_AMEBALITE_RTC_H
+#define __ARCH_ARM_SRC_AMEBALITE_RTC_H
 
-#include <tinyara/irq.h>
+#include <tinyara/config.h>
 
-/* Include chip-specific IRQ definitions (including IRQ numbers) */
+#include "chip.h"
 
-#include <arch/chip/irq.h>
+#ifdef CONFIG_RTC
 
-/* Include ARM architecture-specific IRQ definitions (including register
- * save structure and irqsave()/irqrestore() macros)
- */
+/****************************************************************************
+ * Preprocessor Definitions
+ ****************************************************************************/
 
-#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
-#include <arch/armv7-m/irq.h>
-#elif defined(CONFIG_ARCH_CORTEXR4)
-#include <arch/armv7-r/irq.h>
-#elif defined(CONFIG_ARCH_ARMV8M_FAMILY)
-#include <arch/armv8-m/irq.h>
-#else
-#include <arch/arm/irq.h>
+#ifdef CONFIG_RTC_DATETIME
+#error CONFIG_RTC_DATETIME should not be selected with this driver
+#endif
+
+#ifdef CONFIG_RTC_PERIODIC
+#error CONFIG_RTC_PERIODIC should not be selected with this driver
 #endif
 
 /****************************************************************************
- * Definitions
+ * Private Types
  ****************************************************************************/
 
 /****************************************************************************
- * Public Types
- ****************************************************************************/
-
-/****************************************************************************
- * Inline functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
+ * Public Data
  ****************************************************************************/
 
 /****************************************************************************
@@ -104,17 +87,25 @@
  ****************************************************************************/
 
 #ifndef __ASSEMBLY__
-#ifdef __cplusplus
+
+#undef EXTERN
+#if defined(__cplusplus)
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
 #endif
 
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
+#ifdef CONFIG_RTC_DRIVER
+struct rtc_lowerhalf_s;
+FAR struct rtc_lowerhalf_s *amebalite_rtc_lowerhalf(void);
 #endif
 
-#endif							/* __ARCH_ARM_INCLUDE_IRQ_H */
+#undef EXTERN
+#if defined(__cplusplus)
+}
+#endif
+#endif							/* __ASSEMBLY__ */
+
+#endif							/* CONFIG_RTC */
+#endif							/* __ARCH_ARM_SRC_AMEBALITE_RTC_H */
