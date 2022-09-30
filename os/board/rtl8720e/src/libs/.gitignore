@@ -1,0 +1,5 @@
+!./lib_enc.a
+!./lib_enc_fpu.a
+!./lib_wps.a
+!./lib_wps_fpu.a
+!./cmse_implib.a
