@@ -1,24 +1,23 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2022 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/include/irq.h
  *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2020 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,72 +48,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-
-/* This file should never be included directed but, rather, only indirectly
- * through include/tinyara/irq.h
- */
-
-#ifndef __ARCH_ARM_INCLUDE_IRQ_H
-#define __ARCH_ARM_INCLUDE_IRQ_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-/* Include TinyAra-specific IRQ definitions */
+#include <tinyara/config.h>
 
-#include <tinyara/irq.h>
+#include <stdint.h>
+#include <assert.h>
+#include <debug.h>
 
-/* Include chip-specific IRQ definitions (including IRQ numbers) */
+#include <tinyara/init.h>
+#include <arch/board/board.h>
 
-#include <arch/chip/irq.h>
+#include "up_arch.h"
+#include "up_internal.h"
 
-/* Include ARM architecture-specific IRQ definitions (including register
- * save structure and irqsave()/irqrestore() macros)
- */
-
-#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
-#include <arch/armv7-m/irq.h>
-#elif defined(CONFIG_ARCH_CORTEXR4)
-#include <arch/armv7-r/irq.h>
-#elif defined(CONFIG_ARCH_ARMV8M_FAMILY)
-#include <arch/armv8-m/irq.h>
-#else
-#include <arch/arm/irq.h>
+#include "cache.h"
+#ifdef CONFIG_ARCH_FPU
+#include "nvic.h"
 #endif
 
-/****************************************************************************
- * Definitions
- ****************************************************************************/
+#define MSP_RAM_HP_NS		0x20003FFC
+const uintptr_t g_idle_topstack = MSP_RAM_HP_NS;
 
 /****************************************************************************
- * Public Types
+ * Name: _start
+ *
+ * Description:
+ *   This is the reset entry point.
+ *
  ****************************************************************************/
 
-/****************************************************************************
- * Inline functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
-
-#undef EXTERN
-#ifdef __cplusplus
+void __start(void)
+{
+	//prvSetupFPU();
+	//os_start();
+	app_start();
 }
-#endif
-#endif
-
-#endif							/* __ARCH_ARM_INCLUDE_IRQ_H */
