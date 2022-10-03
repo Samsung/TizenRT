@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_WIFICSI
+	bool "WIFI CSI example"
+	default n
+	---help---
+		Enable WIFI CSI Example
+
+config USER_ENTRYPOINT
+	string
+	default "wificsi" if ENTRY_WIFICSI
