@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_BLE_TESTER
+	bool "BLE spec tester"
+	default n
+	---help---
+		Enable BLE spec tester
+
+config USER_ENTRYPOINT
+	string
+	default "ble_tester_main" if ENTRY_BLE_TESTER

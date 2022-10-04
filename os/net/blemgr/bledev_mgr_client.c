@@ -100,7 +100,7 @@ static trble_client_init_config g_client_fake_config = {
 	bledrv_device_disconnected_cb,
 	bledrv_device_connected_cb,
 	bledrv_operation_notification_cb,
-	240
+	247
 };
 
 trble_client_init_config *bledrv_client_get_fake_config(void)

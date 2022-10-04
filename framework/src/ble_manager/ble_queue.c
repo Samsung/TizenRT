@@ -20,6 +20,7 @@
 #include <errno.h>
 #include "ble_queue.h"
 
+#define BLE_EVT_TASK_STACK_SIZE 4096
 #define BLE_QUEUE_CHECK do { if (g_q_grp == NULL) {return BLE_QUEUE_NOT_INIT;}} while(0)
 
 static ble_queue_group *g_q_grp = NULL;
@@ -85,7 +86,19 @@ ble_queue_ret_e ble_queue_init(queue_event_caller caller)
 		g_q_grp->caller = caller;
 		g_run_process = 1;
 
-		int ret = pthread_create(&g_q_grp->thread, NULL, (pthread_startroutine_t)_ble_evt_handler, NULL);
+		int ret;
+		pthread_attr_t attr;
+		/* Initialize the attribute variable */
+		if ((ret = pthread_attr_init(&attr)) != 0) {
+			printf("[BLEQUEUE] pthread_attr_init failed, status=%d\n", __func__, ret);
+		}
+
+		/* set a stacksize */
+		if ((ret = pthread_attr_setstacksize(&attr, BLE_EVT_TASK_STACK_SIZE)) != 0) {
+			printf("[BLEQUEUE] pthread_attr_setstacksize failed, status=%d\n", __func__, ret);
+		}
+
+		ret = pthread_create(&g_q_grp->thread, &attr, (pthread_startroutine_t)_ble_evt_handler, NULL);
 		if (ret < 0) {
 			printf("[BLEQUEUE] create task fail\n");
 			g_q_grp->caller = NULL;
@@ -104,7 +117,7 @@ ble_queue_ret_e ble_queue_deinit(void)
 	BLE_QUEUE_CHECK;
 
 	int i;
-	ble_queue_ret_e ret;
+	ble_queue_ret_e ret = BLE_QUEUE_SUCCESS;
 	if (g_q_grp != NULL) {
 		g_q_grp->caller = NULL;
 		g_run_process = 0;
@@ -120,7 +133,7 @@ ble_queue_ret_e ble_queue_deinit(void)
 		free(g_q_grp);
 		g_q_grp = NULL;
 	}
-	return BLE_QUEUE_SUCCESS;
+	return ret;
 }
 
 ble_queue_ret_e ble_queue_pri_set(int priority, int queue_size, int data_size) {
